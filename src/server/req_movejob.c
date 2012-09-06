@@ -268,7 +268,8 @@ int req_orderjob(
     }
   else if ((pjob1->ji_qhdr == NULL) || (pjob2->ji_qhdr == NULL))
     {
-    req_reject(PBSE_BADSTATE, 0, req, NULL, "One of the jobs does not have a queue");     
+    req_reject(PBSE_BADSTATE, 0, req, NULL, "One of the jobs does not have a queue");
+    return(PBSE_NONE);
     }
   else if (pjob1->ji_qhdr != pjob2->ji_qhdr)
     {
@@ -276,7 +277,7 @@ int req_orderjob(
     int ok = FALSE;
 
     if ((pque2 = get_jobs_queue(&pjob2)) == NULL)
-      req_reject(PBSE_BADSTATE, 0, req, NULL, "job2 queue is unavailable");
+      rc = PBSE_BADSTATE;
     else
       {
       if ((rc = svr_chkque(pjob1, pque2, get_variable(pjob1, pbs_o_host), MOVE_TYPE_Order, NULL)) == PBSE_NONE)
@@ -284,7 +285,7 @@ int req_orderjob(
         unlock_queue(pque2, "req_orderjob", "pque2 svr_chkque pass", LOGLEVEL);
         if ((pque1 = get_jobs_queue(&pjob1)) == NULL)
           {
-          req_reject(PBSE_BADSTATE, 0, req, NULL, "job1 queue is unavailable");
+          rc = PBSE_BADSTATE;
           }
         else if (pjob1 != NULL)
           {

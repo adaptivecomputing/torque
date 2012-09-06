@@ -299,13 +299,13 @@ static pid_t fork_to_user(
     if ((pwdp = getpwnam_ext(preq->rq_ind.rq_cpyfile.rq_user)) == NULL)
       {
       if (MOMUNameMissing[0] == '\0')
-        strncpy(MOMUNameMissing, preq->rq_ind.rq_cpyfile.rq_user, 64);
+        snprintf(MOMUNameMissing, 64, "%s", preq->rq_ind.rq_cpyfile.rq_user);
 
       sprintf(log_buffer, "cannot find user '%s' in password file",
               preq->rq_ind.rq_cpyfile.rq_user);
 
       if (EMsg != NULL)
-        strncpy(EMsg, log_buffer, 1024);
+        snprintf(EMsg, 1024, "%s", log_buffer);
 
       log_err(errno, __func__, log_buffer);
 
@@ -329,7 +329,7 @@ static pid_t fork_to_user(
               preq->rq_ind.rq_cpyfile.rq_user);
 
       if (EMsg != NULL)
-        strncpy(EMsg, log_buffer, 1024);
+        snprintf(EMsg, 1024, "%s", log_buffer);
 
       log_err(errno, __func__, log_buffer);
 
@@ -362,7 +362,7 @@ static pid_t fork_to_user(
     log_err(PBSE_UNKRESC, __func__, "cannot determine home directory");
 
     if (EMsg != NULL)
-      strncpy(EMsg, "cannot determine home directory", 1024);
+      snprintf(EMsg, 1024, "%s", "cannot determine home directory");
 
     return(-PBSE_UNKRESC);
     }
@@ -387,7 +387,7 @@ static pid_t fork_to_user(
       }
 
     if (EMsg != NULL)
-      strncpy(EMsg, log_buffer, 1024);
+      snprintf(EMsg, 1024, "%s", log_buffer);
 
     /* NOTE:  warn only, root may not be able to stat directory */
 
@@ -401,7 +401,7 @@ static pid_t fork_to_user(
     log_err(PBSE_UNKRESC, __func__, log_buffer);
 
     if (EMsg != NULL)
-      strncpy(EMsg, log_buffer, 1024);
+      snprintf(EMsg, 1024, "%s", log_buffer);
 
     return(-PBSE_UNKRESC);
     }
@@ -436,7 +436,7 @@ static pid_t fork_to_user(
     log_err(-1, __func__, log_buffer);
 
     if (EMsg != NULL)
-      strncpy(EMsg, log_buffer, 1024);
+      snprintf(EMsg, 1024, "%s", log_buffer);
 
     return(-PBSE_SYSTEM);
     }
@@ -513,7 +513,7 @@ static pid_t fork_to_user(
       log_err(-1, __func__, log_buffer);
 
       if (EMsg != NULL)
-        strncpy(EMsg, log_buffer, 1024);
+        snprintf(EMsg, 1024, "%s", log_buffer);
 
       return(-PBSE_SYSTEM);
       }
@@ -535,7 +535,7 @@ static pid_t fork_to_user(
       log_err(-1, __func__, log_buffer);
 
       if (EMsg != NULL)
-        strncpy(EMsg, log_buffer, 1024);
+        snprintf(EMsg, 1024, "%s", log_buffer);
 
       return(-PBSE_SYSTEM);
       }
@@ -608,9 +608,7 @@ static void add_bad_list(
 
 #define RT_BLK_SZ 4096
 
-/* return 0 on failure */
-
-static int return_file(
+int return_file(
 
   job           *pjob,
   enum job_file  which,
@@ -655,7 +653,7 @@ static int return_file(
 
   if (fds < 0)
     {
-    return(0);
+    return(errno);
     }
 
   strcpy(prq->rq_host, mom_host);
@@ -678,6 +676,8 @@ static int return_file(
              (rc = encode_DIS_ReqExtend(chan, NULL)))
       {
       DIS_tcp_cleanup(chan);
+      chan = NULL;
+
       break;
       }
 
@@ -689,6 +689,8 @@ static int return_file(
       rc = -1;
 
       DIS_tcp_cleanup(chan);
+      chan = NULL;
+
       break;
       }
 
@@ -1684,7 +1686,7 @@ void req_modifyjob(
       if (newattr[i].at_type == ATR_TYPE_STR)
         {
         if (newattr[i].at_val.at_str != NULL)
-          strncpy(tmpLine, newattr[i].at_val.at_str, sizeof(tmpLine));
+          snprintf(tmpLine, sizeof(tmpLine), "%s", newattr[i].at_val.at_str);
         }
       else if (newattr[i].at_type == ATR_TYPE_LONG)
         {
@@ -1714,7 +1716,7 @@ void req_modifyjob(
                      &newattr[i]);
 
           if (tmpPtr != NULL)
-            strncpy(tmpLine, tmpPtr, sizeof(tmpLine));
+            snprintf(tmpLine, sizeof(tmpLine), "%s", tmpPtr);
           }
         else
           {
@@ -1932,7 +1934,7 @@ int sigalltasks_sisters(
 
   for (i = 0;i < pjob->ji_numnodes;i++)
     {
-    int ret;
+    int      ret = PBSE_NONE;
     hnodent *np = &pjob->ji_hosts[i];
 
     if (np->hn_node == pjob->ji_nodeid) /* this is me */
@@ -1947,6 +1949,7 @@ int sigalltasks_sisters(
 
     if ((chan = DIS_tcp_setup(stream)) == NULL)
       {
+      ret = ENOMEM;
       }
     else if ((ret = im_compose(chan, 
             pjob->ji_qs.ji_jobid,
@@ -1975,7 +1978,7 @@ int sigalltasks_sisters(
     close(stream);
 
     if (ret != DIS_SUCCESS)
-      return ret;
+      return(ret);
     } /* END for each node in ji_hosts */
 
   return(PBSE_NONE);
@@ -2690,7 +2693,7 @@ static int del_files(
       /* the job's stdout/stderr */
 
 #if NO_SPOOL_OUTPUT == 0
-      strncpy(path, path_spool, sizeof(path));
+      snprintf(path, sizeof(path), "%s", path_spool);
 #endif /* !NO_SPOOL_OUTPUT */
       }
     else if (AsUser == FALSE)
@@ -3424,7 +3427,7 @@ void req_cpyfile(
           {
           havehomespool = 1;
 
-          strncpy(homespool, wdir, sizeof(homespool));
+          snprintf(homespool, sizeof(homespool), "%s", wdir);
 
           break;
           }
@@ -3433,7 +3436,7 @@ void req_cpyfile(
           {
           havehomespool = 1;
 
-          strncpy(homespool, wdir, sizeof(homespool));
+          snprintf(homespool, sizeof(homespool), "%s", wdir);
 
           break;
           }
@@ -3944,10 +3947,9 @@ error:
 
         /* Copying out files and in spool area ... */
         /* move to "undelivered" directory         */
-
-        strncpy(localname, path_spool, sizeof(localname));
+        snprintf(localname, sizeof(localname), "%s", path_spool);
         strncat(localname, pair->fp_local, (sizeof(localname) - strlen(localname) - 1));
-        strncpy(undelname, path_undeliv, sizeof(undelname));
+        snprintf(undelname, sizeof(undelname), "%s", path_undeliv);
         strncat(undelname, pair->fp_local, (sizeof(undelname) - strlen(undelname) - 1));
 
         if (rename(localname, undelname) == 0)

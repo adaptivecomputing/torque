@@ -451,7 +451,7 @@ void post_checkpointsend(
  * svr_send_checkpoint - direct MOM to copy in the checkpoint files for a job
  */
 
-static int svr_send_checkpoint(
+int svr_send_checkpoint(
 
   job                  **pjob_ptr, /* I */
   struct batch_request **preq,     /* I */
@@ -502,7 +502,10 @@ static int svr_send_checkpoint(
      */
 
     if (*preq != NULL)
+      {
       reply_ack(*preq);
+      *preq = NULL;
+      }
     }
   else
     {
@@ -1816,7 +1819,7 @@ char *get_correct_spec_string(
   char      mode[20];
   char     *mode_string;
   char     *request;
-  char     *correct_spec;
+  char     *correct_spec = NULL;
   char     *outer_plus;
   char     *plus;
   char     *one_req;
@@ -1941,12 +1944,11 @@ char *get_correct_spec_string(
             log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
             }
           }
-        else
-          correct_spec = strdup(given);
         }
       }
     }
-  else
+
+  if (correct_spec == NULL)
     correct_spec = strdup(given);
 
   return(correct_spec);

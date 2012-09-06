@@ -141,7 +141,7 @@ static void post_delete_mom2(struct work_task *);
 static int forced_jobpurge(job *,struct batch_request *);
 static void job_delete_nanny(struct work_task *);
 void post_job_delete_nanny(batch_request *);
-static void purge_completed_jobs(struct batch_request *);
+void purge_completed_jobs(struct batch_request *);
 
 /* Public Functions in this file */
 
@@ -1430,8 +1430,6 @@ void purge_completed_jobs(
       "must have operator or manager privilege to use -c parameter");
     return;
     }
-    
-  reply_ack(preq);
 
   if (LOGLEVEL >= 4)
     {
@@ -1440,6 +1438,8 @@ void purge_completed_jobs(
 
     log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
     }
+    
+  reply_ack(preq);
 
   iter = -1;
 

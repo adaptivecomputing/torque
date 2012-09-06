@@ -88,18 +88,21 @@ char *checkpoint_strings = "n,c,s,u,none,shutdown,periodic,enabled,interval,dept
  * xauth_path was a global.  */
 
 char *x11_get_proto(
+
   char *xauth_path, /* I */
-  int debug)        /* I */
+  int   debug)        /* I */
 
   {
-/*   #define X11_CHAR_SIZE 512 */
-  char line[X11_CHAR_SIZE];
-  char proto[X11_CHAR_SIZE], data[X11_CHAR_SIZE], screen[X11_CHAR_SIZE];
-  char *authstring;
-  FILE *f;
-  int  got_data = 0;
-  char *display, *p;
-  struct stat st;
+  char         line[X11_CHAR_SIZE];
+  char         proto[X11_CHAR_SIZE];
+  char         data[X11_CHAR_SIZE];
+  char         screen[X11_CHAR_SIZE];
+  char        *authstring;
+  FILE        *f;
+  int          got_data = 0;
+  char        *display;
+  char        *p;
+  struct stat  st;
 
   proto[0]  = '\0';
   data[0]   = '\0';
@@ -150,9 +153,9 @@ char *x11_get_proto(
     p = strchr(p, '.');
 
   if (p != NULL)
-    strncpy(screen, p + 1, X11_CHAR_SIZE);
+    snprintf(screen, sizeof(screen), "%s", p + 1);
   else
-    strcpy(screen, "0");
+    snprintf(screen, sizeof(screen), "0");
 
   if (debug)
     fprintf(stderr, "x11_get_proto: %s\n",
@@ -190,36 +193,6 @@ char *x11_get_proto(
 
   if (f != NULL)
     pclose(f);
-
-#if 0 /* we aren't inspecting the returned xauth data yet */
-  /*
-   * If we didn't get authentication data, just make up some
-   * data.  The forwarding code will check the validity of the
-   * response anyway, and substitute this data.  The X11
-   * server, however, will ignore this fake data and use
-   * whatever authentication mechanisms it was using otherwise
-   * for the local connection.
-   */
-  if (!got_data)
-    {
-    u_int32_t _rand = 0;
-    int i;
-
-    fprintf(stderr, "Warning: No xauth data; using fake authentication data for X11 forwarding.\n");
-    strncpy(proto, "MIT-MAGIC-COOKIE-1", sizeof proto);
-
-    for (i = 0; i < 16; i++)
-      {
-      if (i % 4 == 0)
-        _rand = rand();
-
-      snprintf(data + 2 * i, sizeof data - 2 * i, "%02x", _rand & 0xff);
-
-      _rand >>= 8;
-      }
-    }
-
-#endif
 
   if (!got_data)
     {
@@ -3031,16 +3004,6 @@ void process_opts(
           print_qsub_usage_exit("qsub: illegal -w value");
         else
           hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_init_work_dir, optarg, data_type);
-/*          {
-          strncpy(PBS_WorkDir, optarg, sizeof(PBS_WorkDir));
-          }
-        else
-          {
-          fprintf(stderr, "qsub: illegal -w value\n");
-
-          errflg++;
-          }
-          */
 
         break;
 
@@ -3904,7 +3867,7 @@ char *get_param(
     return(NULL);
     }
 
-  strncpy(tmpLine, param_val, sizeof(tmpLine));
+  snprintf(tmpLine, sizeof(tmpLine), "%s", param_val);
 
   strtok(tmpLine, " \t\n");
 

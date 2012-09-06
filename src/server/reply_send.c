@@ -152,9 +152,9 @@ int reply_send(
 
   {
 #ifdef PBS_MOM
-  return reply_send_mom(request);
+  return(reply_send_mom(request));
 #else
-  return reply_send_svr(request);
+  return(reply_send_svr(request));
 #endif
   }
 
@@ -226,7 +226,8 @@ int reply_send_svr(
     }
 
   if (((request->rq_type != PBS_BATCH_AsyModifyJob) && 
-       (request->rq_type != PBS_BATCH_AsyrunJob)) ||
+       (request->rq_type != PBS_BATCH_AsyrunJob) &&
+       (request->rq_type != PBS_BATCH_AsySignalJob)) ||
       (request->rq_noreply == TRUE))
     {
     free_br(request);

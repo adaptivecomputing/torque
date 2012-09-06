@@ -456,7 +456,7 @@ int main(
 int send_command(
 
   struct tcp_chan *chan,
-  int cmd)
+  int              cmd)
 
   {
   int rc;
@@ -489,16 +489,17 @@ int send_command(
 int send_command_str(
 
   struct tcp_chan *chan,
-  int   cmd,
-  char *query)     /* I */
+  int              cmd,
+  char            *query) /* I */
 
   {
-  int rc = send_command(chan,cmd);
+  int rc = send_command(chan, cmd);
 
-  if (rc != DIS_SUCCESS)
+  if ((rc != DIS_SUCCESS) ||
+      (cmd == RM_CMD_CLOSE))
     return(rc);
 
-  rc = diswcs(chan,query,strlen(query));
+  rc = diswcs(chan, query, strlen(query));
 
   DIS_tcp_wflush(chan);
 

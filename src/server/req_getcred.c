@@ -204,8 +204,8 @@ int get_UID(
   
   {
   char *ptr;
-  char user_name[PBS_MAXHOSTNAME];
-  int i;
+  char  user_name[PBS_MAXUSER];
+  int   i;
 
 
   ptr = strstr(munge_buf, "UID:");

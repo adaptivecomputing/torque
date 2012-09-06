@@ -498,28 +498,29 @@ char *PBSD_queuejob(
 
   if ((chan = DIS_tcp_setup(sock)) == NULL)
     {
-    return NULL;
+    return(NULL);
     }
   /* first, set up the body of the Queue Job request */
   else if ((rc = encode_DIS_ReqHdr(chan,PBS_BATCH_QueueJob,pbs_current_user)) ||
-      (rc = encode_DIS_QueueJob(chan, jobid, destin, attrib)) ||
-      (rc = encode_DIS_ReqExtend(chan, extend)))
+           (rc = encode_DIS_QueueJob(chan, jobid, destin, attrib)) ||
+           (rc = encode_DIS_ReqExtend(chan, extend)))
     {
-    pthread_mutex_unlock(connection[connect].ch_mutex);
+    pthread_mutex_lock(connection[connect].ch_mutex);
     connection[connect].ch_errtxt = strdup(dis_emsg[rc]);
     pthread_mutex_unlock(connection[connect].ch_mutex);
 
     *local_errno = PBSE_PROTOCOL;
     DIS_tcp_cleanup(chan);
-    return NULL;
+    return(NULL);
     }
 
   if (DIS_tcp_wflush(chan))
     {
     *local_errno = PBSE_PROTOCOL;
     DIS_tcp_cleanup(chan);
-    return NULL;
+    return(NULL);
     }
+
   DIS_tcp_cleanup(chan);
 
   /* read reply from stream into presentation element */

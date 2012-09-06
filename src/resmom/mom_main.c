@@ -1752,10 +1752,13 @@ static u_long settmpdir(
     return(0);
     }
 
-  strncpy(tmpdir_basename, Value, sizeof(tmpdir_basename));
+  snprintf(tmpdir_basename, sizeof(tmpdir_basename), "%s", Value);
 
   return(1);
   }
+
+
+
 
 static u_long setexecwithexec(
 
@@ -1775,6 +1778,8 @@ static u_long setexecwithexec(
   } /* END setexecwithexec() */
 
 
+
+
 static u_long setxauthpath(
 
   char *Value)
@@ -1789,11 +1794,10 @@ static u_long setxauthpath(
     return(0);
     }
 
-  strncpy(xauth_path, Value, sizeof(xauth_path));
+  snprintf(xauth_path, sizeof(xauth_path), "%s", Value);
 
   return(1);
   }
-
 
 
 
@@ -1816,7 +1820,7 @@ static u_long setrcpcmd(
     return(0);
     }
 
-  strncpy(rcp_path, Value, sizeof(rcp_path));
+  snprintf(rcp_path, sizeof(rcp_path), "%s", Value);
 
   strcpy(rcp_args, "");
 
@@ -1826,7 +1830,7 @@ static u_long setrcpcmd(
 
     if (*(ptr + 1) != '\0')
       {
-      strncpy(rcp_args, ptr + 1, sizeof(rcp_args));
+      snprintf(rcp_args, sizeof(rcp_args), "%s", ptr + 1);
       }
     }
 
@@ -1941,7 +1945,7 @@ static u_long configversion(
     return(0);
     }
 
-  strncpy(MOMConfigVersion, Value, sizeof(MOMConfigVersion));
+  snprintf(MOMConfigVersion, sizeof(MOMConfigVersion), "%s", Value);
 
   /* SUCCESS */
 
@@ -2276,7 +2280,7 @@ static unsigned long setumask(
     "setumask",
     value);
 
-  strncpy(DEFAULT_UMASK, value, sizeof(DEFAULT_UMASK));
+  snprintf(DEFAULT_UMASK, sizeof(DEFAULT_UMASK), "%s", value);
 
   return(1);
   }  /* END setumask() */
@@ -2295,7 +2299,7 @@ static unsigned long setpreexec(
     "setpreexec",
     value);
 
-  strncpy(PRE_EXEC, value, sizeof(PRE_EXEC));
+  snprintf(PRE_EXEC, sizeof(PRE_EXEC), "%s", value);
 
 #if SHELL_USE_ARGV == 0
   log_err(0, __func__, "pbs_mom not configured with enable-shell-user-argv option");
@@ -2734,7 +2738,7 @@ static unsigned long setnodecheckscript(
     return(0);
     }
 
-  strncpy(PBSNodeCheckPath, value, sizeof(PBSNodeCheckPath));
+  snprintf(PBSNodeCheckPath, sizeof(PBSNodeCheckPath), "%s", value);
 
   strcat(newstr, value);
 
@@ -3072,7 +3076,7 @@ static unsigned long setmomhost(
   {
   hostname_specified = 1;
 
-  strncpy(mom_host, value, PBS_MAXHOSTNAME);     /* remember name */
+  snprintf(mom_host, sizeof(mom_host), "%s", value);
 
   /* SUCCESS */
 
@@ -3342,12 +3346,14 @@ unsigned long jobstarter(char *value)  /* I */
     return(0);  /* error */
     }
 
-  strncpy(jobstarter_exe_name, value, sizeof(jobstarter_exe_name));
+  snprintf(jobstarter_exe_name, sizeof(jobstarter_exe_name), "%s", value);
 
   jobstarter_set = 1;
 
   return(1);
   }  /* END jobstarter() */
+
+
 
 
 static unsigned long setremchkptdirlist(
@@ -5439,7 +5445,7 @@ bad:
 
   free(tmp);
 
-  strcat(log_buffer, output);
+  snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), "%s", output);
 
   log_err(errno, __func__, log_buffer);
 
@@ -5449,9 +5455,11 @@ bad:
 
 
 int tcp_read_proto_version(
-    struct tcp_chan *chan,
-    int *proto,
-    int *version)
+
+  struct tcp_chan *chan,
+  int             *proto,
+  int             *version)
+
   {
   int rc = DIS_SUCCESS;
   time_t tmpT;
@@ -5569,7 +5577,7 @@ int do_tcp(
       while ((rc == PBSE_NONE) &&
              (tcp_chan_has_data(chan) == TRUE))
         {
-        if ((rc = tcp_read_proto_version(chan,&proto,&version)) == DIS_SUCCESS)
+        if ((rc = tcp_read_proto_version(chan, &proto, &version)) == DIS_SUCCESS)
           rc = tm_request(chan, version);
         }
 
@@ -6273,7 +6281,7 @@ char *MOMFindMyExe(
         }
       else
         {
-        strncpy(link, p, p_len);
+        snprintf(link, MAXPATHLEN + 1, "%s", p);
         *(link + p_len) = '\0';
         strcat(link, "/");
         strcat(link, argv0);
@@ -6670,7 +6678,7 @@ void parse_command_line(
 
         /* mom's alias name - used for multi-mom */
 
-        strncpy(mom_alias, optarg, PBS_MAXHOSTNAME); /* remember name */
+        snprintf(mom_alias, sizeof(mom_alias), "%s", optarg);
 
         break;
 
@@ -6694,7 +6702,7 @@ void parse_command_line(
 
         hostname_specified = 1;
 
-        strncpy(mom_host, optarg, PBS_MAXHOSTNAME); /* remember name */
+        snprintf(mom_host, sizeof(mom_host), "%s", optarg);
 
         break;
 

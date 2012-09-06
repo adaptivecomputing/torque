@@ -201,6 +201,7 @@ int req_signaljob(
   if (preq->rq_type == PBS_BATCH_AsySignalJob)
     {
     reply_ack(preq);
+    preq->rq_noreply = TRUE;
     }
 
   /* pass the request on to MOM */
@@ -247,7 +248,7 @@ int issue_signal(
   int                   rc;
   job                  *pjob = *pjob_ptr;
   struct batch_request *newreq;
-  char                  jobid[PBS_MAXSVRJOBID];
+  char                  jobid[PBS_MAXSVRJOBID + 1];
 
   /* build up a Signal Job batch request */
 

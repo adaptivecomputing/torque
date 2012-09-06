@@ -314,7 +314,7 @@ int create_cpuset(
    * libcpuset does not want the root-cpuset path in it */
 
   if (name[0] == '/')
-    strncpy(cpuset_path, name, sizeof(cpuset_path));
+    snprintf(cpuset_path, sizeof(cpuset_path), "%s", name);
   else
     snprintf(cpuset_path, sizeof(cpuset_path), "%s/%s", TTORQUECPUSET_BASE, name);
 
@@ -440,7 +440,7 @@ int create_cpuset(
 
   /* Construct the name of the cpuset */
   if (name[0] == '/')
-    strncpy(cpuset_path, name, sizeof(cpuset_path));
+    snprintf(cpuset_path, sizeof(cpuset_path), "%s", name);
   else
     snprintf(cpuset_path, sizeof(cpuset_path), "%s/%s", TTORQUECPUSET_PATH, name);
 
@@ -597,7 +597,7 @@ int read_cpuset(
    * libcpuset does not want the root-cpuset path in it */
 
   if (name[0] == '/')
-    strncpy(cpuset_path, name, sizeof(cpuset_path));
+    snprintf(cpuset_path, sizeof(cpuset_path), "%s", name);
   else
     snprintf(cpuset_path, sizeof(cpuset_path), "%s/%s", TTORQUECPUSET_BASE, name);
 
@@ -681,7 +681,7 @@ int read_cpuset(
 
   /* Construct the name of the cpuset */
   if (name[0] == '/')
-    strncpy(cpuset_path, name, sizeof(cpuset_path));
+    snprintf(cpuset_path, sizeof(cpuset_path), "%s", name);
   else
     snprintf(cpuset_path, sizeof(cpuset_path), "%s/%s", TTORQUECPUSET_PATH, name);
 
@@ -808,7 +808,7 @@ int delete_cpuset(
   /* Construct the name of the cpuset.
    * libcpuset does not want the root-cpuset path in it */
   if (name[0] == '/')
-    strncpy(cpuset_path, name, sizeof(cpuset_path));
+    snprintf(cpuset_path, sizeof(cpuset_path), "%s", name);
   else
     snprintf(cpuset_path, sizeof(cpuset_path), "%s/%s", TTORQUECPUSET_BASE, name);
 
@@ -837,7 +837,7 @@ int delete_cpuset(
 
   /* Construct the name of the cpuset */
   if (name[0] == '/')
-    strncpy(cpuset_path, name, sizeof(cpuset_path));
+    snprintf(cpuset_path, sizeof(cpuset_path), "%s", name);
   else
     snprintf(cpuset_path, sizeof(cpuset_path), "%s/%s", TTORQUECPUSET_PATH, name);
 
@@ -1877,7 +1877,7 @@ struct pidl *get_cpuset_pidlist(
    * libcpuset does not want the root-cpuset path in it */
 
   if (name[0] == '/')
-    strncpy(cpuset_path, name, sizeof(cpuset_path));
+    snprintf(cpuset_path, sizeof(cpuset_path), "%s", name);
   else
     snprintf(cpuset_path, sizeof(cpuset_path), "%s/%s", TTORQUECPUSET_BASE, name);
 
@@ -1928,7 +1928,7 @@ struct pidl *get_cpuset_pidlist(
 #else
   /* Construct the name of the cpuset */
   if (name[0] == '/')
-    strncpy(cpuset_path, name, sizeof(cpuset_path));
+    snprintf(cpuset_path, sizeof(cpuset_path), "%s", name);
   else
     snprintf(cpuset_path, sizeof(cpuset_path), "%s/%s", TTORQUECPUSET_PATH, name);
 
@@ -2068,7 +2068,7 @@ int get_cpuset_mempressure(
   /* Construct the name of the cpuset.
    * libcpuset does not want the root-cpuset path in it */
   if (name[0] == '/')
-    strncpy(path, name, sizeof(path));
+    snprintf(path, sizeof(path), "%s", name);
   else
     snprintf(path, sizeof(path), "%s/%s", TTORQUECPUSET_BASE, name);
 

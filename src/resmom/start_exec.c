@@ -2676,8 +2676,7 @@ int write_nodes_to_file(
     char *ptr;
 
     /* FORMAT:  <HOST>[:<HOST>]... */
-
-    strncpy(tmpBuffer, BPtr, sizeof(tmpBuffer));
+    snprintf(tmpBuffer, sizeof(tmpBuffer), "%s", BPtr);
 
     ptr = strtok(tmpBuffer, ":");
 
@@ -3155,7 +3154,9 @@ void setup_interactive_job(
   handle_reservation(pjob, sjr, TJE);
   
   start_interactive_session(pjob, sjr, TJE, pts_ptr, qsub_sock_ptr, qsubhostname, qsubhostname_size);
-  
+
+  memset(&act, 0, sizeof(act));
+  sigemptyset(&act.sa_mask);
   act.sa_handler = SIG_IGN;  /* setup to ignore SIGTERM */
   
   writerpid = fork();
@@ -6691,13 +6692,11 @@ char *std_file_name(
     if (spoolasfinalname == FALSE)
       {
       /* force all output to user's HOME */
-
-      strncpy(path, pjob->ji_grpcache->gc_homedir, sizeof(path));
+      snprintf(path, sizeof(path), "%s", pjob->ji_grpcache->gc_homedir);
 
       /* check for $HOME/.pbs_spool */
       /* if it's not a directory, just use $HOME us usual */
-
-      strncpy(path_alt, path, sizeof(path_alt));
+      snprintf(path_alt, sizeof(path_alt), "%s", path);
 
       strncat(path_alt, "/.pbs_spool/", sizeof(path_alt));
 
@@ -6711,7 +6710,7 @@ char *std_file_name(
       seteuid(pbsuser);
 
       if ((rcstat == 0) && (S_ISDIR(myspooldir.st_mode)))
-        strncpy(path, path_alt, sizeof(path));
+        snprintf(path, sizeof(path), "%s", path_alt);
       else
         strncat(path, "/", sizeof(path));
 
@@ -6758,7 +6757,7 @@ char *std_file_name(
               if (LOGLEVEL >= 10)
                 log_ext(-1, __func__, "inside !strcasecmp", LOG_DEBUG);
 
-              strncpy(path, wdir, sizeof(path));
+              snprintf(path, sizeof(path), "%s", wdir);
 
               break;
               }
@@ -6770,7 +6769,7 @@ char *std_file_name(
               if (LOGLEVEL >= 10)
                 log_ext(-1, __func__, "inside !strncmp", LOG_DEBUG);
 
-              strncpy(path, wdir, sizeof(path));
+              snprintf(path, sizeof(path), "%s", wdir);
 
               break;
               }
@@ -6780,11 +6779,11 @@ char *std_file_name(
 
       if (havehomespool == 0)
         {
-        strncpy(path, path_spool, sizeof(path));
+        snprintf(path, sizeof(path), "%s", path_spool);
         }
       else
         {
-        strncat(path, "/", sizeof(path));
+        strncat(path, "/", sizeof(path) - strlen(path) - 1);
         }
 
       } /* END if (spoolasfinalname == FALSE) */
@@ -7066,8 +7065,7 @@ int open_std_file(
       if (still_failed == TRUE)
         {
         /* parent directory does not exist - find out what part of subtree exists */
-        
-        strncpy(tmpLine, path, sizeof(tmpLine));
+        snprintf(tmpLine, sizeof(tmpLine), "%s", path);
         
         while ((ptr = strrchr(tmpLine, '/')) != NULL)
           {
@@ -7923,7 +7921,7 @@ int create_WLM_Rec(
 
   wkm.arrayid = 0;
 
-  strncpy(&wkm.serv_provider[0], "TORQUE          ", sizeof(wkm.serv_provider));
+  snprintf(wkm.serv_provider, sizeof(wkm.serv_provider), "TORQUE          ");
 
   if ((wkm.time = time(NULL)) == (time_t) - 1)
     {
@@ -7957,9 +7955,9 @@ int create_WLM_Rec(
   /*
   * character fields need to be NULL terminated
   */
-  strncpy(&wkm.machname[0], "TORQUE-MACHINE", sizeof(wkm.machname) - 1);
-  strncpy(&wkm.reqname[0], "TORQUE-REQUEST", sizeof(wkm.reqname) - 1);
-  strncpy(&wkm.quename[0], "TORQUE-QUEUE", sizeof(wkm.quename) - 1);
+  snprintf(wkm.machname, sizeof(wkm.machname), "TORQUE-MACHINE");
+  snprintf(wkm.reqname, sizeof(wkm.reqname), "TORQUE-REQUEST");
+  snprintf(wkm.quename, sizeof(wkm.quename), "TORQUE-QUEUE");
   wkm.reqid = reqid;
 
   if (type == WM_TERM)

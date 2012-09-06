@@ -405,10 +405,11 @@ int read_and_convert_259_array(
 
   pa->ai_qs.deps = pa_259->ai_qs.deps;
 
-  strncpy(pa->ai_qs.owner, pa_259->ai_qs.owner, PBS_MAXUSER + PBS_MAXSERVERNAME + 2);
-  strncpy(pa->ai_qs.parent_id, pa_259->ai_qs.parent_id, PBS_MAXSVRJOBID + 1);
-  strncpy(pa->ai_qs.fileprefix, pa_259->ai_qs.fileprefix, PBS_JOBBASE + 1);
-  strncpy(pa->ai_qs.submit_host, pa_259->ai_qs.submit_host, PBS_MAXSERVERNAME + 1);
+  snprintf(pa->ai_qs.owner, sizeof(pa->ai_qs.owner), "%s", pa_259->ai_qs.owner);
+  snprintf(pa->ai_qs.parent_id, sizeof(pa->ai_qs.parent_id), "%s", pa_259->ai_qs.parent_id);
+  snprintf(pa->ai_qs.fileprefix, sizeof(pa->ai_qs.fileprefix), "%s", pa_259->ai_qs.fileprefix);
+  snprintf(pa->ai_qs.submit_host, sizeof(pa->ai_qs.submit_host), "%s", pa_259->ai_qs.submit_host);
+
   array_save(pa);
 
   return(PBSE_NONE);

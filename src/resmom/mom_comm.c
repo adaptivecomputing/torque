@@ -245,7 +245,6 @@ int get_radix_reply_stream(job *);
 int run_prologue_scripts(job *pjob);
 char *cat_dirs(char *root, char *base);
 char *get_local_script_path(job *pjob, char *base);
-int run_prologue_scripts(job *pjob);
 void *im_demux_thread(void *threadArg);
 void fork_demux(job *pjob);
 
@@ -1068,7 +1067,7 @@ void job_start_error(
   char  *nodename) /* I */
 
   {
-  static char    abortjobid[64];
+  static char    abortjobid[PBS_MAXSVRJOBID + 1];
   static int     abortcount = -1;
 
   pbs_attribute *pattr;
@@ -1107,7 +1106,7 @@ void job_start_error(
     }
   else
     {
-    strcpy(abortjobid, pjob->ji_qs.ji_jobid);
+    snprintf(abortjobid, sizeof(abortjobid), "%s", pjob->ji_qs.ji_jobid);
 
     abortcount = 1;
     }
@@ -1703,11 +1702,11 @@ char *resc_string(
  */
 int contact_sisters(
 
-  job  *pjob,
-  tm_event_t event,
-  int   sister_count,
-  char *radix_hosts,
-  char *radix_ports)
+  job        *pjob,
+  tm_event_t  event,
+  int         sister_count,
+  char       *radix_hosts,
+  char       *radix_ports)
 
   {
   int                index;
@@ -1720,10 +1719,10 @@ int contact_sisters(
   tlist_head         phead;
   pbs_attribute     *pattr;
   
-  char *host_addr = NULL;
-  int addr_len;
-  int local_errno;
-  unsigned short af_family;
+  char              *host_addr = NULL;
+  int                addr_len;
+  int                local_errno;
+  unsigned short     af_family;
 
   /* we have to have a sister count of 2 or more for
      this to work */
@@ -1841,7 +1840,7 @@ int contact_sisters(
   free_attrlist(&phead);
 
   return(ret);
-  } /*end contact_sisters */
+  } /* END contact_sisters */
 
 
 
@@ -1882,8 +1881,12 @@ void send_im_error(
         rc = DIS_tcp_wflush(local_chan);
 
       close(socket);
+
       if (local_chan != NULL)
+        {
         DIS_tcp_cleanup(local_chan);
+        local_chan = NULL;
+        }
 
       if (rc == DIS_SUCCESS)
         break;
@@ -2347,7 +2350,10 @@ int im_join_job_as_sister(
   ret = run_prologue_scripts(pjob);
   if (ret != PBSE_NONE)
     {
-    send_im_error(ret,1,pjob,cookie,event,fromtask);
+    send_im_error(ret, 1, pjob, cookie, event, fromtask);
+    
+    mom_job_purge(pjob);
+
     return(IM_DONE);
     }
   
@@ -6935,7 +6941,7 @@ int tm_resources_request(
 int tm_request(
  
   struct tcp_chan *chan,
-  int version)
+  int              version)
  
   {
   int            command, reply = 0;
@@ -7079,7 +7085,7 @@ int tm_request(
     if (cookie)
       free(cookie);
 
-    return(PBSE_NONE);  
+    return(1);
     }
  
   /* verify the jobid is known and the cookie matches */
@@ -7417,11 +7423,12 @@ err:
     ipadd = svr_conn[chan->sock].cn_addr;
   
     sprintf(log_buffer, "message refused from port %d addr %ld.%ld.%ld.%ld",
-        svr_conn[chan->sock].cn_port,
-        (ipadd & 0xff000000) >> 24,
-        (ipadd & 0x00ff0000) >> 16,
-        (ipadd & 0x0000ff00) >> 8,
-        (ipadd & 0x000000ff));
+      svr_conn[chan->sock].cn_port,
+      (ipadd & 0xff000000) >> 24,
+      (ipadd & 0x00ff0000) >> 16,
+      (ipadd & 0x0000ff00) >> 8,
+      (ipadd & 0x000000ff));
+
     DIS_tcp_close(chan);
     }
 
@@ -7863,8 +7870,6 @@ int run_prologue_scripts(
 
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
 
-    mom_job_purge(pjob);
-
     ret = PBSE_SYSTEM;
     goto done;
     }
@@ -7880,8 +7885,6 @@ int run_prologue_scripts(
       j);
 
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
-
-    mom_job_purge(pjob);
 
     ret = PBSE_SYSTEM;
     goto done;
@@ -8293,15 +8296,15 @@ void send_update_soon()
 int read_status_strings(
     
   struct tcp_chan *chan,
-  int   version)  /* I */
+  int              version)  /* I */
 
   {
   unsigned short  is_new = FALSE;
   int             rc;
   int             index;
   char           *str;
-  char           *hostname;
-  char           *node_str;
+  char           *hostname = NULL;
+  char           *node_str = NULL;
   received_node  *rn;
  
   /* was mom_port but storage unnecessary */ 
@@ -8315,9 +8318,10 @@ int read_status_strings(
     if (rc == DIS_SUCCESS)
       {
       node_str = disrst(chan,&rc);
+
+      if (rc == DIS_SUCCESS)
+        hostname = node_str + strlen("node=");
       }
-  
-    hostname = node_str + strlen("node=");
     }
 
   if (rc != DIS_SUCCESS)
