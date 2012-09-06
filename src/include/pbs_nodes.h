@@ -157,7 +157,7 @@ struct prop
 
 struct jobinfo
   {
-  char            jobid[PBS_MAXSVRJOBID];
+  char            jobid[PBS_MAXSVRJOBID+1];
 
   struct jobinfo *next;
   };
@@ -207,7 +207,7 @@ struct pbssubn
 
 struct gpusubn
   {
-  char            jobid[PBS_MAXSVRJOBID];   /* jobid on this gpu subnode */
+  char            jobid[PBS_MAXSVRJOBID+1];   /* jobid on this gpu subnode */
   unsigned short  inuse;  /* 1 if this node is in use, 0 otherwise */
   enum gpstatit   state;  /* gpu state determined by server */
   enum gpmodeit   mode;   /* gpu mode from hardware */

@@ -367,7 +367,7 @@ static int local_move(
   if (rc)
     return(rc);
 
-  strcpy(pjob->ji_qs.ji_queue, destination);
+  snprintf(pjob->ji_qs.ji_queue, sizeof(pjob->ji_qs.ji_queue), "%s", destination);
 
   pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
     

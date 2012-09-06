@@ -506,8 +506,8 @@ int mom_server_add(
   else if ((pms = mom_server_find_empty_slot()) != NULL)
     {
     /* Fill in the new server instance */
+    snprintf(tmp_server_name, sizeof(tmp_server_name), "%s", value);
 
-    strncpy(tmp_server_name, value, PBS_MAXSERVERNAME);
     colon = strchr(tmp_server_name,':');
     if (colon != NULL)
       {
@@ -526,7 +526,7 @@ int mom_server_add(
       }
 
     /* copy the server name and set up the sock address */
-    strncpy(pms->pbs_servername,tmp_server_name,PBS_MAXSERVERNAME);
+    snprintf(pms->pbs_servername, sizeof(pms->pbs_servername), "%s", tmp_server_name);
 
     pms->sock_addr.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
     pms->sock_addr.sin_family = AF_INET;
@@ -1457,17 +1457,17 @@ static char *gpus(
 
 #ifdef NVIDIA_GPUS
 static int gpumodes(
+
   int  buffer[],
   int  buffer_size)
-  {
-  static char id[] = "gpumodes";
 
+  {
   FILE *fd;
   char *ptr; /* pointer to the current place to copy data into buf */
-  char buf[201];
-  int  idx;
-  int  gpuid;
-  int  gpumode;
+  char  buf[201];
+  int   idx;
+  int   gpuid;
+  int   gpumode = 0;
 
   if (!check_nvidia_setup())
     {
@@ -1483,8 +1483,8 @@ static int gpumodes(
 
   if (LOGLEVEL >= 7)
     {
-    sprintf(log_buffer,"%s: GPU cmd issued: %s\n", id, "nvidia-smi -s 2>&1");
-    log_ext(-1, id, log_buffer, LOG_DEBUG);
+    sprintf(log_buffer,"%s: GPU cmd issued: %s\n", __func__, "nvidia-smi -s 2>&1");
+    log_ext(-1, __func__, log_buffer, LOG_DEBUG);
     }
 
 	if ((fd = popen("nvidia-smi -s 2>&1", "r")) != NULL)
@@ -1506,6 +1506,7 @@ static int gpumodes(
             ptr++;
             gpumode = atoi(ptr);
             }
+
           buffer[gpuid] = gpumode;
           }
         }
@@ -1518,15 +1519,14 @@ static int gpumodes(
       {
       sprintf(log_buffer, "error %d (%s) on popen", errno, strerror(errno));
 
-      log_err(
-        PBSE_RMSYSTEM,
-        id,
-        log_buffer);
+      log_err(PBSE_RMSYSTEM, __func__, log_buffer);
       }
+
     return(FALSE);
     }
+
   return(TRUE);
-  }
+  } /* END gpumodes() */
 #endif  /* NVIDIA_GPUS */
 
 
@@ -1536,11 +1536,11 @@ static int gpumodes(
 
 #ifdef NVIDIA_GPUS
 int setgpumode(
+
   char *gpuid,
   int   gpumode)
-  {
-  static char id[] = "setgpumode";
 
+  {
 #ifdef NVML_API
   nvmlReturn_t      rc;
   nvmlComputeMode_t compute_mode;
@@ -1554,28 +1554,34 @@ int setgpumode(
   switch (gpumode)
     {
     case gpu_normal:
+
       compute_mode = NVML_COMPUTEMODE_DEFAULT;
       break;
+
     case gpu_exclusive_thread:
+
       compute_mode = NVML_COMPUTEMODE_EXCLUSIVE_THREAD;
       break;
+
     case gpu_prohibited:
+
       compute_mode = NVML_COMPUTEMODE_PROHIBITED;
       break;
+
     case gpu_exclusive_process:
+
       compute_mode = NVML_COMPUTEMODE_EXCLUSIVE_PROCESS;
       break;
+
     default:
+
       if (LOGLEVEL >= 1)
         {
-        sprintf(log_buffer, "Unexpected compute mode %d",
-          rc);
-        log_err(
-          PBSE_RMSYSTEM,
-          id,
-          log_buffer);
+        sprintf(log_buffer, "Unexpected compute mode %d", rc);
+        log_err(PBSE_RMSYSTEM, __func__, log_buffer);
         }
-      return (FALSE);
+
+      return(FALSE);
     }
 
   /* get the device handle */
@@ -1590,7 +1596,7 @@ int setgpumode(
 			        gpumode,
 			        gpuid);
 
-      log_ext(-1, id, log_buffer, LOG_DEBUG);
+      log_ext(-1, __func__, log_buffer, LOG_DEBUG);
 	    }
 
     rc = nvmlDeviceSetComputeMode(device_hndl, compute_mode);
@@ -1598,7 +1604,7 @@ int setgpumode(
     if (rc == NVML_SUCCESS)
       return (TRUE);
 
-    log_nvml_error (rc, gpuid, id);
+    log_nvml_error (rc, gpuid, __func__);
     }
 
   return(FALSE);
@@ -1629,8 +1635,8 @@ int setgpumode(
 
   if (LOGLEVEL >= 7)
     {
-    sprintf(log_buffer,"%s: GPU cmd issued: %s\n", id, buf);
-    log_ext(-1, id, log_buffer, LOG_DEBUG);
+    sprintf(log_buffer,"%s: GPU cmd issued: %s\n", __func__, buf);
+    log_ext(-1, __func__, log_buffer, LOG_DEBUG);
     }
 
 	if ((fd = popen(buf, "r")) != NULL)
@@ -1654,14 +1660,13 @@ int setgpumode(
           {
           break;
           }
+
         if (LOGLEVEL >= 7)
           {
-          sprintf(
-            log_buffer,
-            "nvidia-smi gpu change mode returned: %s",
-            buf);
-          log_ext(-1, id, log_buffer, LOG_INFO);
+          sprintf(log_buffer, "nvidia-smi gpu change mode returned: %s", buf);
+          log_ext(-1, __func__, log_buffer, LOG_INFO);
           }
+
         pclose(fd);
         return(FALSE);
         }
@@ -1674,10 +1679,7 @@ int setgpumode(
       {
       sprintf(log_buffer, "error %d (%s) on popen", errno, strerror(errno));
 
-      log_err(
-        PBSE_RMSYSTEM,
-        id,
-        log_buffer);
+      log_err(PBSE_RMSYSTEM, __func__, log_buffer);
       }
     return(FALSE);
     }
@@ -4527,11 +4529,7 @@ void check_state(
     if (tmpPBSNodeMsgBuf[0] != '\0')
       {
       /* update node msg buffer */
-
-      strncpy(
-        PBSNodeMsgBuf,
-        tmpPBSNodeMsgBuf,
-        sizeof(PBSNodeMsgBuf));
+      snprintf(PBSNodeMsgBuf, sizeof(PBSNodeMsgBuf), "%s", tmpPBSNodeMsgBuf);
 
       PBSNodeMsgBuf[sizeof(PBSNodeMsgBuf) - 1] = '\0';
 

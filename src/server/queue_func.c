@@ -249,7 +249,7 @@ pbs_queue *que_alloc(
   pthread_mutex_init(pq->qu_mutex,NULL);
   lock_queue(pq, __func__, NULL, LOGLEVEL);
 
-  strncpy(pq->qu_qs.qu_name, name, PBS_MAXQUEUENAME);
+  snprintf(pq->qu_qs.qu_name, sizeof(pq->qu_qs.qu_name), "%s", name);
 
   insert_queue(&svr_queues,pq);
  
@@ -663,7 +663,7 @@ pbs_queue *lock_queue_with_job_held(
   job       **pjob_ptr)
 
   {
-  char       jobid[PBS_MAXSVRJOBID];
+  char       jobid[PBS_MAXSVRJOBID + 1];
   job       *pjob = *pjob_ptr;
 
   if (pque != NULL)

@@ -1038,7 +1038,9 @@ void *req_modifyarray(
       }
 
     /* we modified the job array. We now need to update the job */
-    pjob = chk_job_request(preq->rq_ind.rq_modify.rq_objname, preq);
+    if ((pjob = chk_job_request(preq->rq_ind.rq_modify.rq_objname, preq)) == NULL)
+      return(NULL);
+
     rc2 = modify_job((void **)&pjob, plist, preq, checkpoint_req, NO_MOM_RELAY);
 
     if ((rc2) && 
@@ -1092,10 +1094,10 @@ void *req_modifyjob(
   void *vp) /* I */
 
   {
-  job  *pjob;
-  svrattrl *plist;
-  int   rc;
-  int   checkpoint_req = FALSE;
+  job                  *pjob;
+  svrattrl             *plist;
+  int                   rc;
+  int                   checkpoint_req = FALSE;
   struct batch_request *preq = (struct batch_request *)vp;
 
   pjob = chk_job_request(preq->rq_ind.rq_modify.rq_objname, preq);

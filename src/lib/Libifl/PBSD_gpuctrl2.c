@@ -109,13 +109,16 @@ int PBSD_gpu_put(
   sock = connection[c].ch_socket;
   if ((chan = DIS_tcp_setup(sock)) == NULL)
     {
-    return PBSE_PROTOCOL;
+    return(PBSE_PROTOCOL);
     }
   else if ((rc = encode_DIS_ReqHdr(chan, PBS_BATCH_GpuCtrl, pbs_current_user)) ||
-      (rc = encode_DIS_GpuCtrl(chan, node, gpuid, gpumode, reset_perm, reset_vol)) ||
-      (rc = encode_DIS_ReqExtend(chan, extend)))
+           (rc = encode_DIS_GpuCtrl(chan, node, gpuid, gpumode, reset_perm, reset_vol)) ||
+           (rc = encode_DIS_ReqExtend(chan, extend)))
     {
+    pthread_mutex_lock(connection[c].ch_mutex);
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
+    pthread_mutex_unlock(connection[c].ch_mutex);
+
     DIS_tcp_cleanup(chan);
     return(PBSE_PROTOCOL);
     }
@@ -126,6 +129,7 @@ int PBSD_gpu_put(
     }
 
   DIS_tcp_cleanup(chan);
+
   return(rc);
-  }
+  } /* END PBSD_gpu_put() */
 

@@ -131,10 +131,7 @@ void *remove_some_recycle_jobs(
   {
   int  i;
   int  iter = -1;
-  job *pjob;
-
-  if (LOGLEVEL >= 10)
-    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
+  job *pjob = NULL;
 
   pthread_mutex_lock(recycler.rc_mutex);
 
@@ -145,7 +142,10 @@ void *remove_some_recycle_jobs(
     if (pjob == NULL)
       break;
 
-    remove_job(&recycler.rc_jobs,pjob);
+    if (LOGLEVEL >= 10)
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
+
+    remove_job(&recycler.rc_jobs, pjob);
     unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     free(pjob->ji_mutex);
     memset(pjob, 255, sizeof(job));

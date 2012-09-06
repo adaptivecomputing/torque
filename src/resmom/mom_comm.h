@@ -126,8 +126,6 @@ char *get_local_script_path(job *pjob, char *base);
 
 int get_job_struct(job **pjob, char *jobid, int command, struct tcp_chan *chan, struct sockaddr_in *addr, tm_node_id nodeid);
 
-int run_prologue_scripts(job *pjob);
-
 int readit(int sock, int fd);
 
 void demux_wait(int sig);

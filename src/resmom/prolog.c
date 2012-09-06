@@ -433,7 +433,7 @@ int run_pelog(
     }
   else
     {
-    strncpy(pelog,specpelog,sizeof(pelog));
+    snprintf(pelog, sizeof(pelog), "%s", specpelog);
     }
     
   real_uid = getuid();
@@ -536,7 +536,7 @@ int run_pelog(
 
   if ((rc == -1) && (jobtypespecified == 1))
     {
-    strncpy(pelog,specpelog,sizeof(pelog));
+    snprintf(pelog, sizeof(pelog), "%s", specpelog);
 
     rc = stat(pelog,&sbuf);
     }

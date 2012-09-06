@@ -166,7 +166,7 @@ cnt:
         {
         pbs_disconnect(connect);
 
-        strcpy(server_out, rmt_server);
+        snprintf(server_out, sizeof(server_out), "%s", rmt_server);
 
         goto cnt;
         }

@@ -1,4 +1,3 @@
-#include "license_pbs.h" /* See here for the software license */
 /*
  *
  * qstat - (PBS) show stats of batch jobs, queues, or servers
@@ -584,13 +583,9 @@ static void altdsp_statjob(
     eltimewal = blank;
     jstate    = blank;
     comment   = blank;
-    /* *pfs      = *blank;  */
     strcpy(pfs, blank);
-    /* *rqmem    = *blank;  */
     strcpy(rqmem, blank);
-    /* *srfsbig  = *blank;  */
     strcpy(srfsbig, blank);
-    /* *srfsfast = *blank;  */
     strcpy(srfsfast, blank);
     usecput = 0;
 
@@ -663,7 +658,7 @@ static void altdsp_statjob(
           }
         else if (!strcmp(pat->resource, "mem"))
           {
-          strncpy(rqmem, cnv_size(pat->value, alt_opt), SIZEL);
+          snprintf(rqmem, sizeof(rqmem), "%s", cnv_size(pat->value, alt_opt));
           }
         else if (!strcmp(pat->resource, "walltime"))
           {
@@ -676,15 +671,15 @@ static void altdsp_statjob(
           }
         else if (!strcmp(pat->resource, "srfs_big"))
           {
-          strncpy(srfsbig, cnv_size(pat->value, alt_opt), SIZEL - 1);
+          snprintf(srfsbig, sizeof(srfsbig), "%s", cnv_size(pat->value, alt_opt));
           }
         else if (!strcmp(pat->resource, "srfs_fast"))
           {
-          strncpy(srfsfast, cnv_size(pat->value, alt_opt), SIZEL - 1);
+          snprintf(srfsfast, sizeof(srfsfast), "%s", cnv_size(pat->value, alt_opt));
           }
         else if (!strcmp(pat->resource, "piofs"))
           {
-          strncpy(pfs, cnv_size(pat->value, alt_opt), SIZEL - 1);
+          snprintf(pfs, sizeof(pfs), "%s", cnv_size(pat->value, alt_opt));
           }
         }
       else if (!strcmp(pat->name, ATTR_exechost))
@@ -852,9 +847,7 @@ static void altdsp_statque(
 
   while (pstat != NULL)
     {
-    /* *rmem = '\0'; */
-
-    strncpy(rmem, "--  ", SIZEL - 1);
+    snprintf(rmem, sizeof(rmem), "--  ");
 
     cput  = blank;
     wallt = blank;
@@ -896,10 +889,7 @@ static void altdsp_statque(
         {
         if (strcmp(pat->resource, "mem") == 0)
           {
-          strncpy(
-            rmem,
-            cnv_size(pat->value, opt),
-            SIZEL);
+          snprintf(rmem, sizeof(rmem), "%s", cnv_size(pat->value, opt));
           }
         else if (strcmp(pat->resource, "cput") == 0)
           {
@@ -2502,7 +2492,7 @@ int main(
 
           stat_single_job = 0;
 
-          strcpy(destination, operand);
+          snprintf(destination, sizeof(destination), "%s", operand);
 
           if (parse_destination_id(
                 destination,

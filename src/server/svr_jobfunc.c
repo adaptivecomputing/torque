@@ -794,7 +794,7 @@ int svr_setjobstate(
     {
     sprintf(log_buf, "%s: setting job %s state from %s-%s to %s-%s (%d-%d)\n",
       __func__,
-      (pjob->ji_qs.ji_jobid != NULL) ? pjob->ji_qs.ji_jobid : "",
+      pjob->ji_qs.ji_jobid,
       PJobState[pjob->ji_qs.ji_state],
       PJobSubState[pjob->ji_qs.ji_substate],
       PJobState[newstate],

@@ -708,6 +708,8 @@ dynamic_string *parse_mom_hierarchy(
   unsigned char   first_missing_node = TRUE;
   dynamic_string *send_format = NULL;
 
+  memset(&buffer, 0, sizeof(buffer));
+
   if ((bytes_read = read(fds, buffer, sizeof(buffer))) < 0)
     {
     snprintf(log_buf, sizeof(log_buf),

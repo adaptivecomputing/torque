@@ -109,15 +109,15 @@ int setup_env(
   char *filen)
 
   {
-  char      buf[256];
-  int      evbufsize = 0;
-  FILE     *efile;
+  char         buf[256];
+  int          evbufsize = 0;
+  FILE        *efile;
   char        *envbuf = NULL;
   static char *envp[PBS_ENVP_STR + 1];
-  int      len;
-  int      nstr = 0;
-  char     *pequal;
-  char     *pval = NULL;
+  int          len;
+  int          nstr = 0;
+  char        *pequal;
+  char        *pval = NULL;
 
   envp[0] = NULL;
 
@@ -160,12 +160,12 @@ int setup_env(
           evbufsize = PBS_ENV_CHUNCK;
           }
 
-        (void)strcpy(envbuf, buf);
+        strcpy(envbuf, buf);
 
         if (pequal == NULL)
           {
-          (void)strcat(envbuf, "=");
-          (void)strcat(envbuf, pval);
+          strcat(envbuf, "=");
+          strcat(envbuf, pval);
           }
 
         envp[nstr++] = envbuf;

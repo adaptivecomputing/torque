@@ -765,7 +765,7 @@ void req_mvjobfile(
 
   if ((fds = open_std_file(pj, jft, oflag, pwd->pw_gid)) < 0)
     {
-    int keeping = 1;
+    int   keeping = 1;
     char *path = std_file_name(pj, jft, &keeping);
 
     snprintf(log_buffer,sizeof(log_buffer),
@@ -786,23 +786,23 @@ void req_mvjobfile(
     }
   else
     {
+    if (LOGLEVEL >= 6)
+      {
+      sprintf(log_buffer, "successfully moved %s file for job '%s'",
+        TJobFileType[jft],
+        preq->rq_ind.rq_jobfile.rq_jobid);
+      
+      log_record(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
+        log_buffer);
+      }
+
     reply_ack(preq);
     }
 
   close(fds);
-
-  if (LOGLEVEL >= 6)
-    {
-    sprintf(log_buffer, "successfully moved %s file for job '%s'",
-            TJobFileType[jft],
-            preq->rq_ind.rq_jobfile.rq_jobid);
-
-    log_record(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
-      log_buffer);
-    }
 
   return;
   }  /* END req_mvjobfile() */

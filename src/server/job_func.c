@@ -2668,7 +2668,7 @@ job_array *get_jobs_array(
 
   {
   char       log_buf[LOCAL_LOG_BUF_SIZE];
-  char       jobid[PBS_MAXSVRJOBID];
+  char       jobid[PBS_MAXSVRJOBID + 1];
   job       *pjob = *pjob_ptr;
   job_array *pa = pjob->ji_arraystruct;
 

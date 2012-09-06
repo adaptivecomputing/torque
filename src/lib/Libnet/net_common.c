@@ -234,7 +234,11 @@ int socket_get_tcp_priv()
         if (++priv_port >= RES_PORT_END)
           priv_port = RES_PORT_START;
         local.sin_port = htons(priv_port);
-        if (((rc = bind(local_socket, (struct sockaddr *)&local, sizeof(struct sockaddr))) < 0) && ((rc == EADDRINUSE) || (errno = EADDRNOTAVAIL) || (errno == EINVAL) || (rc == EINPROGRESS)))
+        if (((rc = bind(local_socket, (struct sockaddr *)&local, sizeof(struct sockaddr))) < 0) &&
+            ((rc == EADDRINUSE) ||
+             (errno == EADDRNOTAVAIL) ||
+             (errno == EINVAL) ||
+             (rc == EINPROGRESS)))
           {
           cntr++;
           }
