@@ -140,6 +140,7 @@ typedef unsigned long pbs_net_t;        /* for holding host addresses */
 
 #define PBS_NET_RC_FATAL -1
 #define PBS_NET_RC_RETRY -2
+#define PBS_NET_RC_UNSET -3
 
 
 /* defines for unix sockets and creds */

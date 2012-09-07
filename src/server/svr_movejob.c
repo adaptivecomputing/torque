@@ -655,7 +655,7 @@ int send_job_work(
   int                   local_errno = 0;
   tlist_head            attrl;
   enum conn_type        cntype = ToServerDIS;
-  int                   con = -1;
+  int                   con = PBS_NET_RC_UNSET;
   int                   sock = -1;
   int                   encode_type;
   int                   mom_err = PBSE_NONE;
@@ -806,8 +806,7 @@ int send_job_work(
       if (con >= 0)
         {
         svr_disconnect(con);
-
-        close_conn(sock, FALSE);
+        con = PBS_NET_RC_UNSET;
         }
 
       /* check my_err from previous attempt */
@@ -1004,8 +1003,7 @@ int send_job_work(
       }
 
     svr_disconnect(con);
-
-    close_conn(sock, FALSE);
+    con = PBS_NET_RC_UNSET;
 
     /* SUCCESS */
     rc = PBSE_NONE;  /* Equivalent value to LOCUTION_SUCCESS */
@@ -1015,8 +1013,6 @@ int send_job_work(
   if (con >= 0)
     {
     svr_disconnect(con);
-
-    close_conn(sock, FALSE);
     }
 
   if (Timeout == TRUE)
