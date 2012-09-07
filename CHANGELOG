@@ -34,6 +34,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Cores with multiple processing units were being incorrectly assigned in cpusets.
       Additionally, multi-node jobs were getting the cpu list from each node in each
       cpuset, also causing problems. TRQ-1202.
+  b - Finding subjobs (for heterogeneous jobs) wasn't compatible with hostnames that
+      have dashes. TRQ-1229.
 
 4.1.1
   e - pbs_server will now detect and release orphaned ALPS reservations
