@@ -2156,6 +2156,7 @@ job *svr_find_job(
   char *comp;
   int   different = FALSE;
   char *dash = NULL;
+  char *dot = NULL;
   char  without_dash[PBS_MAXSVRJOBID + 1];
 
   job  *pj = NULL;
@@ -2171,12 +2172,18 @@ job *svr_find_job(
    * the get the external sub-job */
   if (get_subjob == TRUE)
     {
-    if ((dash = strchr(jobid, '-')) != NULL)
+    dot = strchr(jobid, '-');
+
+    if (((dash = strchr(jobid, '-')) != NULL) &&
+        (dot != NULL) &&
+        (dash < dot))
       {
       *dash = '\0';
       snprintf(without_dash, sizeof(without_dash), "%s%s", jobid, dash + 2);
       jobid = without_dash;
       }
+    else
+      dash = NULL;
     }
 
   if ((is_svr_attr_set(SRV_ATR_display_job_server_suffix)) ||
