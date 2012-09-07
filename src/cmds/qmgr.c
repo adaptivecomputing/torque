@@ -2230,17 +2230,17 @@ void show_help(
 
 int parse(
 
-  char    *request,
-  int     *oper,
-  int     *type,
-  char   **names,
+  char            *request,
+  int             *oper,
+  int             *type,
+  char           **names,
   struct attropl **attr)
 
   {
-  int error;
-  int lp;                     /* Length of current string */
-  int len;        /* ammount parsed by parse_request */
-  int i;        /* loop var */
+  int         error;
+  int         lp;       /* Length of current string */
+  int         len;      /* ammount parsed by parse_request */
+  int         i;        /* loop var */
   static char req[MAX_REQ_WORDS][MAX_REQ_WORD_LEN] = { {'\0'} };
 
   /* clear old data in req */
@@ -2906,7 +2906,8 @@ int parse_request(
       CaretErr(request, chars_parsed);
       }
 
-    snprintf(req[i], sizeof(req[i]), "%s", backptr);
+    strncpy(req[i], backptr, len);
+    req[i][len] = '\0';
 
     i++;
     }  /* END for (i) */
