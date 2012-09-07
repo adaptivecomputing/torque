@@ -131,17 +131,20 @@ void insert_link(
     if (pobj == NULL)
       fprintf(stderr, "ERROR:  bad pobj pointer in insert_link\n");
 
-    if (old->ll_prior == NULL)
-      fprintf(stderr, "ERROR:  bad head->ll_prior pointer in insert_link\n");
+    if (old != NULL)
+      {
+      if (old->ll_prior == NULL)
+        fprintf(stderr, "ERROR:  bad head->ll_prior pointer in insert_link\n");
 
-    if (old->ll_next == NULL)
-      fprintf(stderr, "ERROR:  bad head->ll_next pointer in insert_link\n");
+      if (old->ll_next == NULL)
+        fprintf(stderr, "ERROR:  bad head->ll_next pointer in insert_link\n");
 
-    if (new->ll_prior != (list_link *)new)
-      fprintf(stderr, "ERROR:  bad new->ll_prior pointer in insert_link\n");
+      if (new->ll_prior != (list_link *)new)
+        fprintf(stderr, "ERROR:  bad new->ll_prior pointer in insert_link\n");
 
-    if (new->ll_next != (list_link *)new)
-      fprintf(stderr, "ERROR:  bad new->ll_next pointer in insert_link\n");
+      if (new->ll_next != (list_link *)new)
+        fprintf(stderr, "ERROR:  bad new->ll_next pointer in insert_link\n");
+      }
 
     fprintf(stderr, "%p %p %p\n", (void *)new->ll_next, (void *)new->ll_prior, (void *)new);
 

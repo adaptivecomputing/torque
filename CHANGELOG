@@ -10,6 +10,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Backported revision 6750 from 3.0-fixes to fix TRQ-1137. This fixed a problem where all 
       jobs get deleted if Moab is configured with SYNCJOBID=TRUE and ROOTPROXYJOBSUBMISSION 
       set in the RMCFG flags.
+  b - Fixed potential NULL pointer dereferences in insert_link, parse_equal_string and
+      MXMLSetChild.
 
 2.5.12
   b - Fix so child pbs_mom does not remain running after qdel on slow starting job.

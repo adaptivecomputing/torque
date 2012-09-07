@@ -120,9 +120,9 @@ char **value;
 
   if (start != (char *)0)
     pc = start;
-
-  if (*pc == '\0')
+  else 
     {
+    pc = NULL;
     *name = (char *)0;
     return (0); /* already at end, return no strings */
     }
