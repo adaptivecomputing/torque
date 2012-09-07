@@ -198,14 +198,14 @@ int get_encode_host(
 
 int get_UID(
     
-  int s, 
-  char *munge_buf, 
+  int                   s, 
+  char                 *munge_buf, 
   struct batch_request *preq)
   
   {
   char *ptr;
   char  user_name[PBS_MAXUSER];
-  int   i;
+  int   i = 0;
 
 
   ptr = strstr(munge_buf, "UID:");
@@ -222,9 +222,11 @@ int get_UID(
 	  ptr++;
 	  }
 
-	memset(user_name, 0, PBS_MAXHOSTNAME);
-	i = 0;
-	while (*ptr != SPACE && !isspace(*ptr))
+	memset(user_name, 0, sizeof(user_name));
+
+	while ((*ptr != SPACE) && 
+         (!isspace(*ptr)) &&
+         (i < (int)sizeof(user_name)))
 	  {
 	  user_name[i++] = *ptr;
 	  ptr++;
@@ -232,8 +234,8 @@ int get_UID(
 
 	strcpy(conn_credent[s].username, user_name);
 	
-  return(0);
-  }
+  return(PBSE_NONE);
+  } /* END get_UID() */
 
 
 int write_munge_temp_file(

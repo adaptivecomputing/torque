@@ -2693,7 +2693,7 @@ static int del_files(
       /* the job's stdout/stderr */
 
 #if NO_SPOOL_OUTPUT == 0
-      snprintf(path, sizeof(path), "%s", path_spool);
+      snprintf(path, MAXPATHLEN + 1, "%s", path_spool);
 #endif /* !NO_SPOOL_OUTPUT */
       }
     else if (AsUser == FALSE)
