@@ -34,6 +34,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Cores with multiple processing units were being incorrectly assigned in cpusets.
       Additionally, multi-node jobs were getting the cpu list from each node in each
       cpuset, also causing problems. TRQ-1202.
+  b - Removed some ambiguity in the for loop of send_job_work around svr_connect and
+      svr_disconnect. We were checking the handle for positive values but never
+      setting it negative after calling svr_disconnect. Potential race condition
+      to inadvertently close this file in multi-threaded environment.
   b - Finding subjobs (for heterogeneous jobs) wasn't compatible with hostnames that
       have dashes. TRQ-1229.
 
