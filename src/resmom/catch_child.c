@@ -885,7 +885,8 @@ int send_job_status(
   char            *dash;
   char            *send_ptr = pjob->ji_qs.ji_jobid;
 
-  if ((dash = strchr(pjob->ji_qs.ji_jobid, '-')) != NULL)
+  if (((dash = strchr(pjob->ji_qs.ji_jobid, '-')) != NULL) &&
+      (dash < strchr(pjob->ji_qs.ji_jobid, '.')))
     {
     *dash = '\0';
     snprintf(jobid_to_send, sizeof(jobid_to_send), "%s%s", pjob->ji_qs.ji_jobid, dash + 2);
