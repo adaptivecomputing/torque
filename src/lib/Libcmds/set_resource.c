@@ -161,12 +161,14 @@ int set_resources(
 
       ptr = strchr(v, ',');
 
-      if (((qptr = strchr(v, '\'')) != NULL) && (ptr != NULL) && (qptr < ptr))
-        {
+      if (((qptr = strchr(v, '\'')) != NULL) && 
+          ((ptr == NULL) || ((ptr != NULL) && (qptr < ptr))))
+        { /* skip quote if before ',' or at the end of the string */
         v = qptr + 1;
         }
-      else if (((qptr = strchr(v, '\"')) != NULL) && (ptr != NULL) && (qptr < ptr))
-        {
+      else if (((qptr = strchr(v, '\"')) != NULL) &&
+               ((ptr == NULL) || ((ptr != NULL) && (qptr < ptr))))
+        { /* skip quote if before ',' or at the end of the string */
         v = qptr + 1;
         }
       else
