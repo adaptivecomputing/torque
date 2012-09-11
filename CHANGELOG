@@ -43,6 +43,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Removed the call to wait_request the main_loop on pbs_server. All of our communication
       is handled directly and there is no longer a need to wait for an out of band
       reply from a client. TRQ-1161.
+  e - Modfied output for qstat -r. Expanded Req'd Time to include seconds and centered Elap Time
+      over it's column.
 
 4.1.2
   e - Add the ability to run a single job partially on CRAY hardware and partially
