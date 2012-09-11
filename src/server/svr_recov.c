@@ -742,6 +742,7 @@ int svr_recov_xml(
       strerror(errno));
 
     log_err(errno, __func__, log_buf);
+    close(sdb);
 
     return(-1);
     }
@@ -941,6 +942,7 @@ int svr_save_xml(
     {
     sprintf(log_buf, "%s:4", __func__);
     unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
+    close(fds);
     free(tmp_file);
     return(rc);
     }

@@ -2457,7 +2457,7 @@ int main(
 
     located = FALSE;
 
-    strcpy(operand, argv[optind]);
+    snprintf(operand, sizeof(operand), "%s", argv[optind]);
 
     tcl_addarg(ops, operand);
 
@@ -2472,9 +2472,9 @@ int main(
 
           stat_single_job = 1;
 
-          strcpy(job_id, operand);
+          snprintf(job_id, sizeof(job_id), "%s", operand);
 
-          if (get_server(job_id, job_id_out, server_out))
+          if (get_server(job_id, job_id_out, sizeof(job_id_out), server_out, sizeof(server_out)))
             {
             fprintf(stderr, "qstat: illegally formed job identifier: %s\n",
                     job_id);
@@ -2511,14 +2511,14 @@ int main(
 
           if (notNULL(server_name_out))
             {
-            strcpy(server_out, server_name_out);
+            snprintf(server_out, sizeof(server_out), "%s", server_name_out);
             }
           else
             {
             server_out[0] = '\0';
             }
 
-          strcpy(job_id_out, queue_name_out);
+          snprintf(job_id_out, sizeof(job_id_out), "%s", queue_name_out);
 
           if (*queue_name_out != '\0')
             {
@@ -2558,7 +2558,7 @@ job_no_args:
 
           p_server = pbs_statserver_err(connect, NULL, NULL, &any_failed);
 
-          strcpy(server_old, pbs_server);
+          snprintf(server_old, sizeof(server_old), "%s", pbs_server);
           }
         else
           {
@@ -2596,7 +2596,7 @@ job_no_args:
               {
               pbs_disconnect(connect);
 
-              strcpy(server_out, rmt_server);
+              snprintf(server_out, sizeof(server_out), "%s", rmt_server);
 
               goto job_no_args;
               }
@@ -2643,7 +2643,7 @@ job_no_args:
 
       case QUEUES:        /* get status of batch queues */
 
-        strcpy(destination, operand);
+        snprintf(destination, sizeof(destination), "%s", operand);
 
         if (parse_destination_id(destination,
                                  &queue_name_out,
@@ -2658,7 +2658,7 @@ job_no_args:
           {
           if (notNULL(server_name_out))
             {
-            strcpy(server_out, server_name_out);
+            snprintf(server_out, sizeof(server_out), "%s", server_name_out);
             }
           else
             server_out[0] = '\0';
@@ -2732,7 +2732,8 @@ que_no_args:
         break;
 
       case SERVERS:           /* get status of batch servers */
-        strcpy(server_out, operand);
+
+        snprintf(server_out, sizeof(server_out), "%s", operand);
 
 svr_no_args:
         connect = cnt2server(server_out);

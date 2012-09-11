@@ -509,12 +509,14 @@ char *parse_servername(
     tmp_val = (char *)calloc(1,1);
     tmp_val[0] = '\0';
 
-    return tmp_val;
+    return(tmp_val);
     }
 
-  while (*pc && (i < PBS_MAXSERVERNAME + PBS_MAXPORTNUM + 2))
+  while ((*pc) && 
+         (i < (int)sizeof(buf) - 1))
     {
-    if ((*pc == '+') || (*pc == '/'))
+    if ((*pc == '+') ||
+        (*pc == '/'))
       {
       break;
       }

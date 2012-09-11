@@ -144,6 +144,8 @@ const char *PPEType[] =
   "epilog",
   "userprolog",
   "userepilog",
+  "prolog_user_job",
+  "epilog_user_job",
   NULL
   };
 
@@ -456,7 +458,7 @@ int run_pelog(
     
   real_uid = getuid();
   real_gid = getgid();
-  if ((num_gids = getgroups(0,real_gids)) < 0)
+  if ((num_gids = getgroups(0, real_gids)) < 0)
     {
     log_err(errno,id,"getgroups failed\n");
     

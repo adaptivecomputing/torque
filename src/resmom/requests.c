@@ -2708,6 +2708,8 @@ static int del_files(
 
         add_bad_list(pbadfile,log_buffer,1);
 
+        free(path);
+
         return(-1);
         }
 
@@ -2721,6 +2723,8 @@ static int del_files(
           strerror(errno));
 
         add_bad_list(pbadfile,log_buffer,1);
+        
+        free(path);
 
         return(-1);
         }
@@ -2735,6 +2739,8 @@ static int del_files(
           strerror(errno));
 
         add_bad_list(pbadfile,log_buffer,1);
+        
+        free(path);
 
         return(-1);
         }
@@ -2799,6 +2805,8 @@ static int del_files(
                 path);
 
         add_bad_list(pbadfile, log_buffer, 1);
+
+        free(path);
 
         return(-1);
 
@@ -2918,6 +2926,7 @@ static int del_files(
       }
     }
 
+  free(path);
 
   return(rc);
   }  /* END del_files() */

@@ -205,6 +205,7 @@ int openrm(
     if (getaddrinfo(host, NULL, NULL, &addr_info) != 0)
       {
       DBPRT(("host %s not found\n", host))
+      close(stream);
 
       return(ENOENT * -1);
       }
@@ -231,6 +232,8 @@ int openrm(
         nanosleep(&rem, &rem);
         continue;
         }
+
+      close(stream);
 
       return(-1 * errno);
       }
@@ -790,10 +793,10 @@ char *getreq_err(
   int  stream)  /* I */
 
   {
-  char *startline;
+  char       *startline = NULL;
 
   struct out *op;
-  int ret;
+  int         ret;
 
   if ((op = findout(local_errno, stream)) == NULL)
     {
@@ -840,6 +843,9 @@ char *getreq_err(
     {
     if (!errno)
       errno = EIO;
+
+    if (startline != NULL)
+      free(startline);
 
     DBPRT(("getreq: cannot read string %s\n",
            dis_emsg[ret]))

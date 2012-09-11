@@ -520,13 +520,15 @@ int get_parent_client_socket(int psock, int *pcsock)
   return rc;
   }
 
+
+
+
 int validate_socket(
 
   int psock)
 
   {
   int            rc = PBSE_NONE;
-  static char    id[] = "validate_socket";
   char           tmp_buf[LOCAL_LOG_BUF];
   char           write_buf[1024];
   char          *read_buf = NULL;
@@ -548,7 +550,7 @@ int validate_socket(
   if ((pwent = getpwuid(myrealuid)) == NULL)
     {
     snprintf(tmp_buf, LOCAL_LOG_BUF, "cannot get account info: uid %d, errno %d (%s)\n", (int)myrealuid, errno, strerror(errno));
-    log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,id,tmp_buf);
+    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, tmp_buf);
     }
   else if ((rc = get_hostaddr_hostent_af(&local_errno, AUTH_IP, &af_family, &l_server, &l_server_len)) != PBSE_NONE)
     {
@@ -596,11 +598,15 @@ int validate_socket(
       {
       if (getenv("PBSDEBUG"))
         {
-        fprintf(stderr, "%s : Connection authorized (server socket %d)\n", id, parent_client_socket);
+        fprintf(stderr, "%s : Connection authorized (server socket %d)\n", __func__, parent_client_socket);
         }
-      socket_close(local_socket);
+
       }
+
+    if (local_socket >= 0)
+      socket_close(local_socket);
     }
+
   if (rc != PBSE_NONE)
     {
     if (err_msg != NULL)
@@ -608,11 +614,17 @@ int validate_socket(
       fprintf(stderr, "Error in connection to trqauthd (%d)-[%s]\n", rc, err_msg);
       }
     }
+
   if (err_msg != NULL)
     free(err_msg);
+
   if (read_buf != NULL)
     free(read_buf);
-  return rc;
+
+  if (l_server != NULL)
+    free(l_server);
+
+  return(rc);
   }
 
 #endif /* ifndef MUNGE_AUTH */
@@ -1199,16 +1211,19 @@ int pbs_disconnect(
 
 
 void print_server_port_to_stderr(
-    char *s_name)
+    
+  char *s_name)
+
   {
-  int rc = PBSE_NONE;
-  char *s_addr = NULL;
-  unsigned short af_family;
+  int             rc = PBSE_NONE;
+  char           *s_addr = NULL;
+  unsigned short  af_family;
   struct in_addr  hostaddr;
-  char *ip_addr = NULL;
-  int s_len = 0;
+  char           *ip_addr = NULL;
+  int             s_len = 0;
+
   if ((rc = get_hostaddr_hostent_af(&rc, s_name, &af_family, &s_addr, &s_len)) == PBSE_NONE)
-    {   
+    {
     memcpy((void *)&hostaddr, (void *)s_addr, s_len);
     ip_addr = inet_ntoa(hostaddr);
     fprintf(stderr, "Error communicating with %s(%s)\n", s_name, ip_addr);
@@ -1219,7 +1234,10 @@ void print_server_port_to_stderr(
         s_name,
         rc,  
         pbs_strerror(rc));
-    }        
+    }
+
+  if (s_addr != NULL)
+    free(s_addr);
   }
 
 /**

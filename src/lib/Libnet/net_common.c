@@ -80,25 +80,25 @@ int socket_get_tcp()
     }
   else if (setsockopt(local_socket, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) == -1)
     {
+    close(local_socket);
     local_socket = -3;
     }
   else if (setsockopt(local_socket, SOL_SOCKET, SO_LINGER, &l_delay, sizeof(struct linger)) == -1)
     {
+    close(local_socket);
     local_socket = -4;
     }
   else if (setsockopt(local_socket, SOL_SOCKET, SO_KEEPALIVE, &ka_val, sizeof(int)) < 0)
     {
+    close(local_socket);
     local_socket = -5;
     }
   else if (setsockopt(local_socket, SOL_TCP, TCP_KEEPIDLE, &ka_timeout, sizeof(int)) < 0)
     {
+    close(local_socket);
     local_socket = -6;
     }
-/*  else
-    {
-    socket_read_flush(local_socket);
-    }
-    */
+
   return local_socket;
   } /* END socket_get_tcp() */
 
@@ -677,12 +677,14 @@ int socket_read_num(
   long long *the_num)
 
   {
-  int rc =  PBSE_INTERNAL;
-  int pos = 0;
+  int  rc =  PBSE_INTERNAL;
+  int  pos = 0;
   char str_ll[MAX_NUM_LEN];
   char tmp_char = '\0';
-  int avail_bytes = socket_avail_bytes_on_descriptor(socket);
+  int  avail_bytes = socket_avail_bytes_on_descriptor(socket);
+
   memset(str_ll, 0, MAX_NUM_LEN);
+
   while (1)
     {
     if (avail_bytes == 0)
@@ -699,7 +701,7 @@ int socket_read_num(
       }
     else if (read(socket, &tmp_char, 1) == -1)
       break;
-    else if (pos > MAX_NUM_LEN)
+    else if (pos >= (int)sizeof(str_ll) - 1)
       break;
     else if ((tmp_char >= '0' && tmp_char <= '9') || (tmp_char == '-'))
       {
@@ -718,8 +720,10 @@ int socket_read_num(
     else
       break;
     }
-  if (str_ll[0] == 0)
+
+  if (str_ll[0] == '\0')
     rc = PBSE_SOCKET_READ;
+
   return rc;
   } /* END socket_read_num() */
 

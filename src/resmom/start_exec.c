@@ -312,7 +312,7 @@ int TMomCheckJobChild(pjobexec_t *, int, int *, int *);
 
 int InitUserEnv(job *,task *,char **,struct passwd *pwdp,char *);
 int mkdirtree(char *,mode_t);
-int TTmpDirName(job*, char *);
+int TTmpDirName(job*, char *, int);
 
 struct radix_buf **allocate_sister_list(int radix);
 int add_host_to_sister_list(char *, unsigned short , struct radix_buf *);
@@ -1089,12 +1089,13 @@ int mkdirtree(
 int TTmpDirName(
     
   job  *pjob,   /* I */
-  char *tmpdir) /* O */
+  char *tmpdir, /* O */
+  int   tmpdir_size)
 
   {
   if (tmpdir_basename[0] == '/')
     {
-    snprintf(tmpdir, MAXPATHLEN,
+    snprintf(tmpdir, tmpdir_size,
       "%s/%s",
       tmpdir_basename,
       pjob->ji_qs.ji_jobid);
@@ -1507,8 +1508,8 @@ int InitUserEnv(
 
   /* setup TMPDIR */
 
-  if (!usertmpdir && TTmpDirName(pjob, buf))
-      bld_env_variables(&vtable, variables_else[tveTmpDir], buf);
+  if (!usertmpdir && TTmpDirName(pjob, buf, sizeof(buf)))
+    bld_env_variables(&vtable, variables_else[tveTmpDir], buf);
 
   /* PBS_VERSION */
 
@@ -1788,12 +1789,14 @@ struct radix_buf **allocate_sister_list(
     {
     if ((sister_list[i] = calloc(1, sizeof(struct radix_buf))) == NULL)
       {
+      free(sister_list);
       log_err(ENOMEM,__func__,"");
       return(NULL);
       }
 
     if ((sister_list[i]->host_list = calloc(1, THE_LIST_SIZE)) == NULL)
       {
+      free(sister_list);
       log_err(ENOMEM,__func__,"");
       return(NULL);
       }
@@ -5943,7 +5946,6 @@ int start_exec(
 #ifndef NUMA_SUPPORT
   int                 i;
   int                 j;
-  int                 index;
   int                 local_errno;
   int                 addr_len;
 
@@ -5991,7 +5993,7 @@ int start_exec(
 
   /* should we make a tmpdir? */
 
-  if (TTmpDirName(pjob, tmpdir))
+  if (TTmpDirName(pjob, tmpdir, sizeof(tmpdir)))
     {
     if ((ret = TMakeTmpDir(pjob, tmpdir)) != PBSE_NONE)
       {
@@ -6009,13 +6011,11 @@ int start_exec(
      return once job is started */
 
 #ifndef NUMA_SUPPORT
-  index = find_attr(job_attr_def, "job_radix", JOB_ATR_LAST);
-  
-  if ((pjob->ji_wattr[index].at_flags & ATR_VFLAG_SET) &&
-      (pjob->ji_wattr[index].at_val.at_long != 0))
+  if ((pjob->ji_wattr[JOB_ATR_job_radix].at_flags & ATR_VFLAG_SET) &&
+      (pjob->ji_wattr[JOB_ATR_job_radix].at_val.at_long != 0))
     {
     /* parallel job */
-    mom_radix = pjob->ji_wattr[index].at_val.at_long;
+    mom_radix = pjob->ji_wattr[JOB_ATR_job_radix].at_val.at_long;
     }
   
   pjob->ji_radix = mom_radix;

@@ -968,7 +968,8 @@ int dispatch_request(
 
       req_reject(PBSE_UNKREQ, 0, request, NULL, NULL);
 
-      close_conn(sfds, FALSE);
+      if (sfds != PBS_LOCAL_CONNECTION)
+        close_conn(sfds, FALSE);
 
       break;
     }  /* END switch (request->rq_type) */

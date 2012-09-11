@@ -188,6 +188,8 @@ int decode_arst_direct(
   if ((stp = (struct array_strings *)calloc(1, bksize)) == NULL)
     {
     /* FAILURE */
+    free(tmpval);
+    free(pbuf);
 
     return(PBSE_SYSTEM);
     }
@@ -779,7 +781,10 @@ int set_arst(
       pc = calloc(1, need);
 
       if (pc == NULL)
+        {
+        free(tmp_arst);
         return(PBSE_SYSTEM);
+        }
 
       memset(pc, 0, need);
 

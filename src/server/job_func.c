@@ -1586,13 +1586,14 @@ int record_jobinfo(
     snprintf(namebuf, sizeof(namebuf), "%s%s%s",
       path_jobs, pjob->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
     
-    if ((fd = open(namebuf, O_RDONLY)) > 0)
+    if ((fd = open(namebuf, O_RDONLY)) >= 0)
       {
-      while ((bytes_read = read(fd, job_script_buf, sizeof(job_script_buf))) > 0)
+      memset(job_script_buf, 0, sizeof(job_script_buf));
+
+      while ((bytes_read = read(fd, job_script_buf, sizeof(job_script_buf) - 1)) > 0)
         {
-        job_script_buf[bytes_read] = '\0';
-        
         rc = append_dynamic_string(buffer, job_script_buf);
+        memset(job_script_buf, 0, sizeof(job_script_buf));
         }
 
       close(fd);

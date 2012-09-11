@@ -151,6 +151,7 @@ alps_reservation *populate_alps_reservation(
       {
       free(ar->job_id);
       free(ar->rsv_id);
+      free(ar);
       ar = NULL;
       }
     }

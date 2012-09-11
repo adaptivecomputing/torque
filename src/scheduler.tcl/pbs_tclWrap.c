@@ -962,7 +962,7 @@ char *argv[];
     return TCL_OK;
     }
 
-  if (get_server(argv[1], job_id_out, server_out))
+  if (get_server(argv[1], job_id_out, sizeof(job_id_out), server_out, sizeof(server_out)))
     {
     msg = pbs_geterrmsg(connector);
     sprintf(log_buffer, "%s", msg ? msg : fail);

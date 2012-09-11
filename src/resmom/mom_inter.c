@@ -508,29 +508,36 @@ int mom_writer(
 
 int x11_create_display(
 
-  int x11_use_localhost, /* non-zero to use localhost only */
-  char *display,         /* O */
-  char *phost,           /* hostname where qsub is waiting */
-  int pport,             /* port where qsub is waiting */
-  char *homedir,         /* need to set $HOME for xauth */
-  char *x11authstr)      /* proto:data:screen */
+  int   x11_use_localhost, /* non-zero to use localhost only */
+  char *display,           /* O */
+  char *phost,             /* hostname where qsub is waiting */
+  int   pport,             /* port where qsub is waiting */
+  char *homedir,           /* need to set $HOME for xauth */
+  char *x11authstr)        /* proto:data:screen */
 
   {
 #ifdef HAVE_GETADDRINFO
-  int display_number, sock;
-  u_short port;
+  int              display_number;
+  int              sock;
+  u_short          port;
 
-  struct addrinfo hints, *ai, *aitop;
-  char strport[NI_MAXSERV];
-  int gaierr, n, num_socks = 0;
-  unsigned int x11screen;
-  char x11proto[512], x11data[512], cmd[512];
-  char auth_display[512];
-  FILE *f;
-  pid_t childpid;
+  struct addrinfo  hints;
+  struct addrinfo *ai;
+  struct addrinfo *aitop;
+  char             strport[NI_MAXSERV];
+  int              gaierr;
+  int              n;
+  int              num_socks = 0;
+  unsigned int     x11screen;
+  char             x11proto[512];
+  char             x11data[512];
+  char             cmd[512];
+  char             auth_display[512];
+  FILE            *f;
+  pid_t            childpid;
 
   struct pfwdsock *socks;
-  char *homeenv;
+  char            *homeenv;
 
   *display = '\0';
 
@@ -546,7 +553,7 @@ int x11_create_display(
   if ((homeenv = calloc(1, strlen("HOME=") + strlen(homedir) + 2)) == NULL)
     {
     /* FAILURE - cannot alloc memory */
-
+    free(socks);
     fprintf(stderr, "ERROR: could not calloc!\n");
 
     return(-1);

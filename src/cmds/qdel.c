@@ -208,9 +208,9 @@ int main(
 
     /* check to see if user specified 'all' to delete all jobs */
 
-    strcpy(job_id, argv[optind]);
+    snprintf(job_id, sizeof(job_id), "%s", argv[optind]);
 
-    if (get_server(job_id, job_id_out, server_out))
+    if (get_server(job_id, job_id_out, sizeof(job_id_out), server_out, sizeof(server_out)))
       {
       fprintf(stderr, "qdel: illegally formed job identifier: %s\n",
               job_id);

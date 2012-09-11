@@ -43,6 +43,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       over it's column.
   b - Fixed a bug found at Univ. of Michigan where a corrupt .JB file would cause
       pbs_server to seg-fault and restart.
+  b - Don't leave quotes on any arguments passed to the resource list. TRQ-1209.
 
 4.1.1
   e - pbs_server will now detect and release orphaned ALPS reservations

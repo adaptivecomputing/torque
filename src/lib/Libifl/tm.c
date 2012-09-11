@@ -1385,10 +1385,11 @@ tm_register(tm_whattodo_t *what, tm_event_t *event)
 */
 
 int tm_poll(
-    tm_event_t poll_event,
-    tm_event_t *result_event,
-    int  wait,
-    int  *tm_errno)
+
+  tm_event_t  poll_event,
+  tm_event_t *result_event,
+  int         wait,
+  int        *tm_errno)
 
   {
   DOID("tm_poll")
@@ -1401,8 +1402,8 @@ int tm_poll(
   tm_task_id tid, *tidp;
   tm_event_t nevent;
   tm_node_id node;
-  char  *jobid;
-  char  *info;
+  char  *jobid = NULL;
+  char  *info = NULL;
 
   struct tm_roots *roots;
 
@@ -1713,7 +1714,12 @@ int tm_poll(
       info = disrst(static_chan, &ret);
 
       if (ret != DIS_SUCCESS)
+        {
+        if (info != NULL)
+          free(info);
+
         break;
+        }
 
       snprintf(rhold->resc, rhold->len, "%s", info);
 
@@ -1729,6 +1735,9 @@ int tm_poll(
   DIS_tcp_wflush(static_chan);
 tm_poll_done:
 
+  if (jobid != NULL)
+    free(jobid);
+
   del_event(ep);
   if (tcp_chan_has_data(static_chan) == FALSE)
     {
@@ -1739,6 +1748,9 @@ tm_poll_done:
   return TM_SUCCESS;
 
 tm_poll_error:
+
+  if (jobid != NULL)
+    free(jobid);
 
   if (ep)
     del_event(ep);

@@ -895,8 +895,7 @@ static char *getjoblist(
       int   new_list_len = listlen + BUFSIZ;
       char *tmpList;
 
-
-      tmpList = realloc(list,listlen);
+      tmpList = realloc(list, new_list_len);
 
       if (tmpList == NULL)
       	{
@@ -1183,7 +1182,6 @@ char *reqgres(
       }
 
     /* verify parameter is not common */
-
     for (sindex = 0;sindex < RM_NPARM;sindex++)
       {
       if (common_config[sindex].c_name == NULL)
@@ -3967,7 +3965,7 @@ char *conf_res(
   ** is the first step.
   */
 
-  for (i = 0;i < RM_NPARM;i++)
+  for (i = 0; i < (int)sizeof(name) - 1; i++)
     {
     /* remember params */
 
@@ -4001,7 +3999,7 @@ char *conf_res(
     goto done;
     }
 
-  name[i] = NULL;
+  name[i] = '\0';
 
   for (d = ret_string, resline++;*resline;)
     {
@@ -5050,13 +5048,19 @@ int rm_request(
                 if (verbositylevel >= 2)
                   {
                   if (pjob->ji_wattr[JOB_ATR_resc_used].at_type != ATR_TYPE_RESC)
-                    return DIS_INVALID;
+                    {
+                    free(cp);
+                    return(DIS_INVALID);
+                    }
 
                   pres = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resc_used].at_val.at_list);
                   for (;pres != NULL;pres = (resource *)GET_NEXT(pres->rs_link))
                     {
                     if (pres->rs_defin == NULL) 
-                      return DIS_INVALID;
+                      {
+                      free(cp);
+                      return(DIS_INVALID);
+                      }
 
                     resname = pres->rs_defin->rs_name;
                     if (!(strcmp(resname, "mem")))
@@ -6162,6 +6166,7 @@ static char *orig_path;
 char *MOMFindMyExe(
 
   char *argv0)  /* I */
+
   {
   char *link;
   int  has_slash = 0;
@@ -6293,6 +6298,8 @@ char *MOMFindMyExe(
         }
       }  /* END for (p = path; *p; p = p_next) */
     }
+
+  free(link);
 
   return(NULL);
   }  /* END MOMFindMyExe() */

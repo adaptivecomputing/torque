@@ -278,9 +278,13 @@ int tcp_read(
       snprintf(err_msg, sizeof(err_msg), "eod ptr BEYOND end of buffer!!(expand) Remaining buffer = %d, read_len = %lld", max_read_len, *read_len);
       log_err(PBSE_INTERNAL,__func__,err_msg);
       }
+
     free(new_data);
     }
-  return rc;
+  else
+    free(new_data);
+
+  return(rc);
   }  /* END tcp_read() */
 
 

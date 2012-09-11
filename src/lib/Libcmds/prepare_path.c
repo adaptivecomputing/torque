@@ -106,20 +106,20 @@ int prepare_path(
   char *host)      /* I */
 
   {
-  int i;
+  int          i;
 
-  char *c;
+  char        *c;
 
-  char host_name[PBS_MAXSERVERNAME+1];
-  int h_pos;
-  char path_name[MAXPATHLEN+1];
-  int p_pos;
-  char cwd[MAXPATHLEN+1];
-  char *host_given;
+  char         host_name[PBS_MAXSERVERNAME+1];
+  int          h_pos;
+  char         path_name[MAXPATHLEN+1];
+  int          p_pos;
+  char         cwd[MAXPATHLEN+1];
+  char        *host_given;
 
-  struct stat statbuf;
-  dev_t dev;
-  ino_t ino;
+  struct stat  statbuf;
+  dev_t        dev;
+  ino_t        ino;
 
   if (path_out != NULL)
     path_out[0] = '\0';

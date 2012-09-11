@@ -226,7 +226,7 @@ parse_depend_item(
               *open_square_bracket = '\0';
               }
 
-            if (get_server(s,full_job_id,server_out) != 0)
+            if (get_server(s, full_job_id, sizeof(full_job_id), server_out, sizeof(server_out)) != PBSE_NONE)
               return 1;
 
             /* now put it back */
@@ -253,7 +253,7 @@ parse_depend_item(
         {
         at = strchr(s, (int)'@');
 
-        if (get_server(s, full_job_id, server_out) != 0)
+        if (get_server(s, full_job_id, sizeof(full_job_id), server_out, sizeof(server_out)) != PBSE_NONE)
           return 1;
 
         /* check if we will exceed the length of the return string size */
@@ -309,9 +309,12 @@ int parse_depend_list(
   int   rtn_size)  /* size of above array */
 
   {
-  char *b, *c, *s, *lc;
-  int comma = 0;
-  int rtn = 0;
+  char *b = NULL;
+  char *c = NULL;
+  char *s = NULL;
+  char *lc = NULL;
+  int   comma = 0;
+  int   rtn = 0;
 
   if (strlen(list) == 0) return (1);
 
@@ -347,8 +350,8 @@ int parse_depend_list(
 
 
     /* Parse the individual list item */
-
     rtn = parse_depend_item(s, rtn_list, rtn_size);
+
     if (rtn)
       {
       return (rtn);

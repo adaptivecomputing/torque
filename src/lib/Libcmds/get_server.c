@@ -113,9 +113,11 @@ int TShowAbout_exit(void)
  */
 int get_server(
 
-  char *job_id_in,    /* read only */
-  char *job_id_out,   /* write only */
-  char *server_out)   /* write only */
+  char *job_id_in,       /* read only */
+  char *job_id_out,      /* write only */
+  int   job_id_out_size, /* sizeof the out buffer */
+  char *server_out,      /* write only */
+  int   server_out_size) /* sizeof the out buffer */
 
   {
   char *seq_number;
@@ -129,7 +131,7 @@ int get_server(
 
   if (!strcasecmp("all",job_id_in))
     {
-    strcpy(job_id_out,job_id_in);
+    snprintf(job_id_out, job_id_out_size, "%s", job_id_in);
     server_out[0] = '\0';
     }
   else
@@ -145,33 +147,26 @@ int get_server(
     if (notNULL(current_server))
       {
       /* @server found */
-      
-      strcpy(server_out, current_server);
+      snprintf(server_out, server_out_size, "%s", current_server);
       }
     else if (notNULL(parent_server))
       {
       /* .server found */
-      
-      strcpy(server_out, parent_server);
+      snprintf(server_out, server_out_size, "%s", parent_server);
       }
     else
       {
       /* can't locate a server, so return a NULL to tell pbs_connect to use default */
-      
       server_out[0] = '\0';
       }
     
     /* Make a fully qualified name of the job id. */  
-    strcpy(job_id_out, seq_number);
-    
-    strcat(job_id_out, ".");
-    
     if (notNULL(parent_server))
       {
       if (notNULL(current_server))
         {
+        snprintf(job_id_out, job_id_out_size, "%s.%s", seq_number, parent_server);
         /* parent_server might not be resolvable if current_server specified */
-        strcat(job_id_out, parent_server);
         }
       else
         {
@@ -181,7 +176,7 @@ int get_server(
          return(1);
          }
         
-        strcat(job_id_out, host_server);
+        snprintf(job_id_out, job_id_out_size, "%s.%s", seq_number, host_server);
         }
       
       if ((c = strchr(parent_server, ':')) != 0)
@@ -189,7 +184,7 @@ int get_server(
         if (*(c - 1) == '\\')
           c--;
         
-        strcat(job_id_out, c);
+        snprintf(job_id_out + strlen(job_id_out), job_id_out_size - strlen(job_id_out), "%s", c);
         }
       }
     else
@@ -217,19 +212,22 @@ int get_server(
         return(1);
         }
       
-      strcat(job_id_out, host_server);
-
       if ((c = strchr(def_server, ':')) != 0)
         {
         if (*(c - 1) == '\\')
           c--;
         
-        strcat(job_id_out, c);
+        snprintf(job_id_out + strlen(job_id_out), job_id_out_size - strlen(job_id_out),
+          "%s%s", host_server, c);
         }
+      else
+        snprintf(job_id_out + strlen(job_id_out), job_id_out_size - strlen(job_id_out),
+          "%s", host_server);
+
       }    /* END else */
     }
   
-  return(0);
+  return(PBSE_NONE);
   }  /* END get_server() */
 
 /* END get_server.c */

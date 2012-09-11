@@ -190,7 +190,8 @@ int main(
           exit(EXIT_FAILURE);
           }
 
-        size = ftell(fp);
+        if ((size = ftell(fp)) < 0)
+          size = 0;
 
         HostList[MIN(size,(long)sizeof(HostList) - 1)] = '\0';
 
@@ -540,12 +541,12 @@ int check_success(
 
 char *read_mom_reply(
 
-  int *local_errno, /* O */
+  int             *local_errno, /* O */
   struct tcp_chan *chan)
 
   {
   int   rc;
-  char *value;
+  char *value = NULL;
 
   if (check_success(chan))
     return(NULL);
@@ -554,6 +555,9 @@ char *read_mom_reply(
 
   if (rc != DIS_SUCCESS)
     {
+    if (value != NULL)
+      free(value);
+
     *local_errno = EIO;
 
     return(NULL);
@@ -809,6 +813,8 @@ int do_mom(
               Value);
             }
           }
+
+        free(Value);
 
         if (ptr != NULL)
           {

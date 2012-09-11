@@ -839,6 +839,12 @@ int send_job_work(
       continue;
       }
 
+    if (con == PBS_LOCAL_CONNECTION)
+      {
+      log_err(-1, __func__, "attempting to run the job on pbs_server???");
+      return(PBSE_SYSTEM);
+      }
+
     pthread_mutex_lock(connection[con].ch_mutex);
     sock = connection[con].ch_socket;
     pthread_mutex_unlock(connection[con].ch_mutex);

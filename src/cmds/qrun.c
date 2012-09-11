@@ -98,7 +98,7 @@ int main(
 
   for (;optind < argc;optind++)
     {
-    if (get_server(argv[optind], job, server))
+    if (get_server(argv[optind], job, sizeof(job), server, sizeof(server)))
       {
       fprintf(stderr, "qrun: illegally formed job identifier: %s\n",
               argv[optind]);

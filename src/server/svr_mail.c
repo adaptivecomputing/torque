@@ -516,6 +516,7 @@ void svr_mailowner(
     {
     if ((mi->text = strdup(text)) == NULL)
       {
+      free(mi);
       log_err(ENOMEM, __func__, memory_err);
       return;
       }

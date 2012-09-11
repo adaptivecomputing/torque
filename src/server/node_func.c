@@ -920,9 +920,12 @@ static int process_host_name_part(
     return(PBSE_UNKNODE);
     }
 
+  if (pul == NULL)
+    return(PBSE_BAD_PARAMETER);
+
   phostname = strdup(objname);
 
-  if ((phostname == NULL) || (pul == NULL))
+  if (phostname == NULL)
     {
     return(PBSE_SYSTEM);
     }
@@ -1074,6 +1077,7 @@ static int process_host_name_part(
         phostname = NULL;
         }
       }
+
     *pul = tmp;
     
     for (addr_iter = addr_info; addr_iter != NULL; addr_iter = addr_iter->ai_next)
@@ -1585,9 +1589,11 @@ int setup_node_boards(
       return(PBSE_SYSTEM);
       }
 
-    rc = initialize_pbsnode(pn,allocd_name,pul,NTYPE_CLUSTER);
-    if (rc != PBSE_NONE)
+    if ((rc = initialize_pbsnode(pn, allocd_name, pul, NTYPE_CLUSTER)) != PBSE_NONE)
+      {
+      free(pn);
       return(rc);
+      }
 
     /* make sure the server communicates on the correct ports */
     pn->nd_mom_port = pnode->nd_mom_port;
@@ -1772,8 +1778,9 @@ int create_pbs_node(
       strcpy(host_info->nodename, objname);
       }
 
-    /* does anyone know why that comment is there? --dbeer */
-    set_task(WORK_Timed, time_now + 30 /*PBS_LOG_CHECK_RATE  five minutes */, recheck_for_node, host_info, FALSE);
+    set_task(WORK_Timed, time_now + 30, recheck_for_node, host_info, FALSE);
+
+    free(pul);
 
     return(rc);
     }
@@ -1810,13 +1817,20 @@ int create_pbs_node(
     }
 
   if ((rc = initialize_pbsnode(pnode, pname, pul, ntype)) != PBSE_NONE)
+    {
+    free(pul);
+    free(pname);
+    free(pnode);
+
     return(rc);
+    }
 
   /* create and initialize the first subnode to go with the parent node */
   if (create_subnode(pnode) == NULL)
     {
     free(pul);
     free(pname);
+    free(pnode);
 
     return(PBSE_SYSTEM);
     }
@@ -2269,6 +2283,7 @@ int setup_nodes(void)
         "pbs_server is Cray enabled but no login nodes are configured. Jobs cannot run. Exiting");
       log_err(-1, __func__, log_buf);
 
+      fclose(nin);
       return(-1);
       }
     }

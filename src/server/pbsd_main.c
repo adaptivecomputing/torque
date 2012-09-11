@@ -2582,6 +2582,7 @@ int start_update_ha_lock_thread()
   if (write(fds,smallBuf,strlen(smallBuf)) != (ssize_t)strlen(smallBuf))
     {
     log_err(-1, __func__, "Couldn't write the pid to the lockfile\n");
+    close(fds);
 
     return(FAILURE);
     }

@@ -40,12 +40,15 @@ int load_config(
     return(1);
     }
 
-  if ((fread(config_buf, BufSize, 1, config_stream) <= 0) && (ferror(config_stream) != 0))
+  if ((fread(config_buf, BufSize - 1, 1, config_stream) <= 0) && 
+      (ferror(config_stream) != 0))
     {
     /* FAILURE */
     fclose(config_stream);
     return(1);
     }
+
+  config_buf[BufSize - 1] = '\0';
 
   ptr = config_buf;
 
@@ -60,8 +63,12 @@ int load_config(
 
   /* SUCCESS */
   fclose(config_stream);
-  return(0);
+
+  return(PBSE_NONE);
   }  /* END load_config() */
+
+
+
 
 char *get_trq_param(
 

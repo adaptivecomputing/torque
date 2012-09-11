@@ -4416,6 +4416,7 @@ int node_spec(
       {
       snprintf(EMsg, MAXLINE, "%s", log_buf);
       }
+
     if (naji != NULL)
       release_node_allocation(naji);
 
@@ -5027,6 +5028,8 @@ int translate_howl_to_string(
       
       if (EMsg != NULL)
         sprintf(EMsg,"no nodes can be allocated to job");
+
+      free(str);
       
       return(PBSE_RESCUNAV);
       }
@@ -5391,12 +5394,15 @@ int set_nodes(
       log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
       }
 
+    free_naji(naji);
+
     return(PBSE_RESCUNAV);
     }
   else if (i < 0)
     {
     /* request failed, corrupt request */
     log_err(PBSE_UNKNODE, __func__, "request failed, corrupt request");
+    free_naji(naji);
     return(PBSE_UNKNODE);
     }
 
@@ -5611,6 +5617,7 @@ int procs_requested(
     {
     if ((i = number(&str, &num_nodes)) == -1 )
       {
+      free(tmp_spec);
       /* Bad string syntax. Fail */
       return(-1);
       }
@@ -5626,6 +5633,7 @@ int procs_requested(
 
         if (proplist(&str, &prop, &num_procs, &num_gpus))
           {
+          free(tmp_spec);
           return(-1);
           }
         }
@@ -5637,6 +5645,7 @@ int procs_requested(
       if (proplist(&str, &prop, &num_procs, &num_gpus))
         {
         /* must be a prop list with no number in front */
+        free(tmp_spec);
 
         return(-1);
         }
