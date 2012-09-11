@@ -662,10 +662,18 @@ int get_hash(
   void         *key)
 
   {
-  size_t   len = strlen(key);
+  size_t   len;
   uint32_t hash;
   uint32_t mask = 0;
-  uint32_t counter = ht->size >> 1;
+  uint32_t counter;
+
+  if (ht == NULL)
+    return(-1);
+  if (key == NULL)
+    return(-1);
+
+  len = strlen(key);
+  counter = ht->size >> 1;
 
 #ifdef HASH_LITTLE_ENDIAN
   hash = hashlittle(key,len,0);
@@ -840,8 +848,19 @@ int get_value_hash(
 
   {
   int     value = -1;
-  bucket *b = ht->buckets[get_hash(ht, key)];
+  int     hash_index;
+  bucket *b;
 
+  if (ht == NULL)
+    return(-1);
+  if (key == NULL)
+    return(-1);
+
+  hash_index = get_hash(ht, key);
+  if (hash_index < 0)
+    return(-1);
+
+  b = ht->buckets[hash_index];
   while (b != NULL)
     {
     if (!strcmp(b->key, key))
