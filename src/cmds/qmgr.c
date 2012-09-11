@@ -1530,7 +1530,7 @@ int execute(
           if (len < 256)
             {
             sprintf(errnomsg, "qmgr obj=%s svr=%s: %s\n",
-                    pname -> obj_name, Svrname(sp),  errmsg);
+              pname -> obj_name, Svrname(sp),  errmsg);
 
             if (! zopt) fprintf(stderr, "%s", errnomsg);
             }
@@ -2094,31 +2094,33 @@ int is_attr(
     *name_ptr = '\0';
     }
 
-  if (attr_public != NULL && (attr_type & TYPE_ATTR_PUBLIC))
+  if ((attr_public != NULL) &&
+      (attr_type & TYPE_ATTR_PUBLIC))
     {
     while (*attr_public != NULL && ret == FALSE)
       {
-/*      if (strncmp(name, *attr_public, strlen(*attr_public)) == 0)*/
-      if(strcmp(dupname, *attr_public) == 0)
+      if (strcmp(dupname, *attr_public) == 0)
         {
-          ret =  TRUE;
+        ret =  TRUE;
         }
 
       attr_public++;
       }
     }
 
-  if (attr_readonly != NULL && (attr_type & TYPE_ATTR_READONLY))
+  if ((attr_readonly != NULL) &&
+      (attr_type & TYPE_ATTR_READONLY))
     {
     while (*attr_readonly != NULL && ret == FALSE)
       {
-      /*if (strncmp(name, *attr_readonly, strlen(*attr_readonly)) == 0)*/
       if (strcmp(dupname, *attr_readonly) == 0)
         ret = TRUE;
 
       attr_readonly++;
       }
     }
+
+  free(dupname);
 
   return(ret);
   }  /* END is_attr() */
@@ -2901,9 +2903,12 @@ int parse_request(
       error = 1;
       chars_parsed = (int)(foreptr - request);
 
-      if (! zopt) fprintf(stderr, "qmgr: max word length exceeded\n");
+      if (!zopt)
+        fprintf(stderr, "qmgr: max word length exceeded\n");
 
       CaretErr(request, chars_parsed);
+
+      return(error);
       }
 
     strncpy(req[i], backptr, len);

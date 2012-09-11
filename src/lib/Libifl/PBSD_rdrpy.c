@@ -146,10 +146,16 @@ struct batch_reply *PBSD_rdrpy(
       }
 
     connection[c].ch_errno = *local_errno;
-    if ((the_msg = dis_emsg[rc]) != NULL)
+    
+    if ((rc >= 0) &&
+        (rc <= DIS_INVALID))
       {
-      connection[c].ch_errtxt = strdup(the_msg);
+      if ((the_msg = dis_emsg[rc]) != NULL)
+        {
+        connection[c].ch_errtxt = strdup(the_msg);
+        }
       }
+
     DIS_tcp_cleanup(chan);
 
     return(NULL);

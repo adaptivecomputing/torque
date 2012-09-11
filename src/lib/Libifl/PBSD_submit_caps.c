@@ -586,7 +586,9 @@ int PBSD_QueueJob_hash(
     pthread_mutex_lock(connection[connect].ch_mutex);
     if (connection[connect].ch_errtxt == NULL)
       {
-      connection[connect].ch_errtxt = memmgr_strdup(mm, (char *)dis_emsg[rc], &tmp_size);
+      if ((rc >= 0) &&
+          (rc <= DIS_INVALID))
+        connection[connect].ch_errtxt = memmgr_strdup(mm, (char *)dis_emsg[rc], &tmp_size);
       }
     *msg = memmgr_strdup(mm, connection[connect].ch_errtxt, &tmp_size);
 

@@ -1945,12 +1945,20 @@ int mom_restart_job(
   int            tcount = 0;
   long  mach_restart(task *, char *path);
 
+  if (pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str != NULL)
+    snprintf(path, sizeof(path), "%s", pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str);
+  else
+    {
+    /* we can't do anything if there's no checkpoint directory specified here */
+    return(PBSE_RMEXIST);
+    }
+
   get_jobs_default_checkpoint_dir(pjob->ji_qs.ji_fileprefix, namebuf);
 
   if ((dir = opendir(path)) == NULL)
     {
     sprintf(log_buffer, "opendir %s",
-            path);
+      path);
 
     log_err(errno, __func__, log_buffer);
 
@@ -2316,7 +2324,7 @@ int create_missing_files(
 
     if (access(namebuf, F_OK) != 0)
       {
-      if ((fd = creat(namebuf, S_IRUSR | S_IWUSR)) > 0)
+      if ((fd = creat(namebuf, S_IRUSR | S_IWUSR)) >= 0)
         {
         if (fchown(fd,  pjob->ji_qs.ji_un.ji_momt.ji_exuid, pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1)
           {
@@ -2352,7 +2360,7 @@ int create_missing_files(
 
     if (access(namebuf, F_OK) != 0)
       {
-      if ((fd = creat(namebuf, S_IRUSR | S_IWUSR)) > 0)
+      if ((fd = creat(namebuf, S_IRUSR | S_IWUSR)) >= 0)
         {
         if (fchown(fd,  pjob->ji_qs.ji_un.ji_momt.ji_exuid, pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1)
           {
@@ -2369,10 +2377,9 @@ int create_missing_files(
       }
 
     free(namebuf);
-
     }
 
   return files_created;
-  }
+  } /* END create_missing_files() */
 
 

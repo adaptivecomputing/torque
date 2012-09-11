@@ -410,6 +410,8 @@ int read_and_convert_259_array(
   snprintf(pa->ai_qs.fileprefix, sizeof(pa->ai_qs.fileprefix), "%s", pa_259->ai_qs.fileprefix);
   snprintf(pa->ai_qs.submit_host, sizeof(pa->ai_qs.submit_host), "%s", pa_259->ai_qs.submit_host);
 
+  free(pa_259);
+
   array_save(pa);
 
   return(PBSE_NONE);

@@ -584,6 +584,7 @@ int create_alps_reservation(
 
   if (host_req_list->num == 0)
     {
+    free(user);
     /* this is a login only job */
     return(PBSE_NONE);
     }
@@ -593,6 +594,7 @@ int create_alps_reservation(
   
   command = get_reservation_command(host_req_list, user, jobid, apbasil_path, apbasil_protocol);
 
+  free_resizable_array(host_req_list);
   free(user);
 
   /* retry on failure up to  */

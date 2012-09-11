@@ -23,15 +23,18 @@ int start_listener(
   void *(*process_meth)(void *))
 
   {
-  struct sockaddr_in adr_svr, adr_client;
-  int rc = PBSE_NONE;
-  int sockoptval = 1;
-  int len_inet = sizeof(struct sockaddr_in);
-  int *new_conn_port = NULL;
-  int listen_socket = 0;
-  int total_cntr = 0;
-  pthread_t tid;
-  pthread_attr_t t_attr;
+  struct sockaddr_in  adr_svr;
+  struct sockaddr_in  adr_client;
+  int                 rc = PBSE_NONE;
+  int                 sockoptval = 1;
+  int                 len_inet = sizeof(struct sockaddr_in);
+  int                *new_conn_port = NULL;
+  int                 listen_socket = 0;
+  int                 total_cntr = 0;
+  pthread_t           tid;
+  pthread_attr_t      t_attr;
+
+  memset(&adr_svr, 0, sizeof(adr_svr));
   adr_svr.sin_family = AF_INET;
 
   if (!(adr_svr.sin_port = htons(server_port)))
@@ -155,6 +158,7 @@ int start_listener_addrinfo(
   port_net_byte_order = htons(server_port);
   memcpy(&adr_svr->ai_addr->sa_data, &port_net_byte_order, sizeof(unsigned short));
 
+  memset(&svr_address, 0, sizeof(svr_address));
   svr_address.sin_family      = adr_svr->ai_family;
   svr_address.sin_port        = htons(server_port);
   svr_address.sin_addr.s_addr = htonl(INADDR_ANY);

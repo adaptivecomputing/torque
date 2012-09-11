@@ -83,5 +83,4 @@
 
 /* In get_server.c */
 int TShowAbout_exit(void);
-int get_server( char *job_id_in, char *job_id_out, char *server_out);
 

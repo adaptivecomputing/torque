@@ -594,10 +594,7 @@ int chk_file_sec(
 
   if (S_ISLNK(sbuf.st_mode) != 0)
     {
-    i = readlink(
-          path,
-          symlink,  /* O */
-          _POSIX_PATH_MAX);
+    i = readlink(path, symlink, sizeof(symlink) - 1);
 
     if (i < 0)
       {
@@ -613,7 +610,10 @@ int chk_file_sec(
       goto chkerr;
       }
 
-    symlink[i] = '\0';
+    if (i == sizeof(symlink) - 1)
+      symlink[i] = '\0';
+    else
+      symlink[i + 1] = '\0';
 
     if (symlink[0] == '/')
       {

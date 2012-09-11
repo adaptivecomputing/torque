@@ -114,17 +114,17 @@
 int decode_DIS_svrattrl(
     
   struct tcp_chan *chan,
-  tlist_head *phead)
+  tlist_head      *phead)
 
   {
-  unsigned int i;
-  unsigned int hasresc;
-  size_t  ls;
-  unsigned int data_len;
-  unsigned int numattr;
-  svrattrl       *psvrat = NULL;
-  int  rc;
-  size_t  tsize;
+  unsigned int  i;
+  unsigned int  hasresc;
+  size_t        ls;
+  unsigned int  data_len;
+  unsigned int  numattr;
+  svrattrl     *psvrat = NULL;
+  int           rc;
+  size_t        tsize;
 
 
   numattr = disrui(chan, &rc); /* number of attributes in set */
@@ -133,10 +133,13 @@ int decode_DIS_svrattrl(
 
   for (i = 0; i < numattr; ++i)
     {
-
     data_len = disrui(chan, &rc); /* here it is used */
 
-    if (rc) return rc;
+    if (data_len == 0)
+      data_len = sizeof(char);
+
+    if (rc)
+      return(rc);
 
     tsize = sizeof(svrattrl) + data_len;
 

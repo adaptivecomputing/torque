@@ -95,7 +95,8 @@ char *pbs_geterrmsg(
   {
   char *errmsg;
 
-  if ((connect < 0) || (connect > PBS_NET_MAX_CONNECTIONS))
+  if ((connect < 0) ||
+      (connect >= PBS_NET_MAX_CONNECTIONS))
     {
     return(NULL);
     }

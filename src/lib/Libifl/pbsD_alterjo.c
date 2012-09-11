@@ -128,6 +128,8 @@ int pbs_alterjob_asyncflag(
     if (ap == NULL)
       {
       /* FAILURE */
+      if (ap1 != NULL)
+        free(ap1);
 
       return(PBSE_SYSTEM);
       }

@@ -2201,7 +2201,7 @@ int validate_group_list(
    * group list is of the form group[@host][,group[@host]...] */
   char          *groups = strdup(glist);
   char          *delims = ",";
-  char          *tmp_group = strtok(groups,delims); 
+  char          *tmp_group = strtok(groups, delims); 
   char          *at;
   char          *u_name;
   char         **pmem;
@@ -2218,12 +2218,18 @@ int validate_group_list(
       *at = '\0';
     
     if ((grent = getgrnam(tmp_group)) == NULL)
+      {
+      free(groups);
       return(FALSE);
+      }
     
     pmem = grent->gr_mem;
     
     if (pmem == NULL)
+      {
+      free(groups);
       return(FALSE);
+      }
     
     while (*pmem != NULL)
       {
@@ -2236,11 +2242,14 @@ int validate_group_list(
     if (*pmem == NULL)
       {
       /* match not found */
+      free(groups);
       return(FALSE);
       }
 
     tmp_group = strtok(NULL,delims);
     }
+      
+  free(groups);
 
   return(TRUE);
   }

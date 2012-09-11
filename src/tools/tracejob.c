@@ -859,6 +859,7 @@ int log_path(
       if (filenames[filecount] == NULL)
         {
         perror("malloc failed in log_path");
+        pclose(fp);
         return(-1);
         }
 

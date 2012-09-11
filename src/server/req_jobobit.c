@@ -1966,10 +1966,18 @@ void on_job_exit(
           return;
 
         if ((ptask->wt_mutex = calloc(1, sizeof(pthread_mutex_t))) == NULL)
+          {
+          free(ptask);
           return;
+          }
 
         if ((ptask->wt_parm1 = strdup(pjob->ji_qs.ji_jobid)) == NULL)
+          {
+          free(ptask->wt_mutex);
+          free(ptask);
+
           return;
+          }
 
         handle_complete_second_time(ptask);
         }

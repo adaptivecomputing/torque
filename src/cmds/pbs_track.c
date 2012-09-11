@@ -94,7 +94,7 @@ int main(
     exit(2);
     }
 
-  if (get_server(tmpJobID, JobID, ServerName))
+  if (get_server(tmpJobID, JobID, sizeof(JobID), ServerName, sizeof(ServerName)))
     {
     fprintf(stderr, "pbs_track: illegally formed job identifier: '%s'\n", JobID);
     exit(1);

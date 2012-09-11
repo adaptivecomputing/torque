@@ -1730,7 +1730,6 @@ void init_abort_jobs(
   int            j;
   int            sisters;
   int            mom_radix = 0;
-  int            index;
 #endif /* ndef NUMA_SUPPORT */
 
   struct dirent *pdirent;
@@ -1952,9 +1951,7 @@ void init_abort_jobs(
 
         pj->ji_resources = (noderes *)calloc(sisters, sizeof(noderes));
 
-        index = find_attr(job_attr_def, "job_radix", JOB_ATR_LAST);
-
-        mom_radix = pj->ji_wattr[index].at_val.at_long;
+        mom_radix = pj->ji_wattr[JOB_ATR_job_radix].at_val.at_long;
 
         if (mom_radix)
           {
@@ -2260,34 +2257,40 @@ int send_job_obit_to_ms(
     resend_momcomm     *mc = calloc(1, sizeof(resend_momcomm));
     killjob_reply_info *kj = calloc(1, sizeof(killjob_reply_info));
 
-    if ((kj != NULL) &&
-        (mc != NULL))
+    if (mc == NULL)
       {
-      mc->mc_type   = KILLJOB_REPLY;
-      mc->mc_struct = kj;
-
-      kj->ici = create_compose_reply_info(pjob->ji_qs.ji_jobid, cookie, np, command, event, TM_NULL_TASK);
-
-      if (kj->ici == NULL)
-        {
-        free(mc);
+      if (kj != NULL)
         free(kj);
-        }
-      else
-        {
-        kj->mem = mem;
-        kj->vmem = vmem;
-        kj->cputime = cput;
-        
-        if (mom_radix >= 2)
-          kj->node_id = pjob->ji_nodeid;
-        else
-          kj->node_id = -1;
-        
-        add_to_resend_things(mc);
-        }
+      
+      return(ENOMEM);
       }
+    else if (kj == NULL)
+      return(ENOMEM);
 
+    mc->mc_type   = KILLJOB_REPLY;
+    mc->mc_struct = kj;
+    
+    kj->ici = create_compose_reply_info(pjob->ji_qs.ji_jobid, cookie, np, command, event, TM_NULL_TASK);
+    
+    if (kj->ici == NULL)
+      {
+      free(mc);
+      free(kj);
+      }
+    else
+      {
+      kj->mem = mem;
+      kj->vmem = vmem;
+      kj->cputime = cput;
+      
+      if (mom_radix >= 2)
+        kj->node_id = pjob->ji_nodeid;
+      else
+        kj->node_id = -1;
+      
+      add_to_resend_things(mc);
+      }
+    
     if (LOGLEVEL >= 3)
       {
       log_event(

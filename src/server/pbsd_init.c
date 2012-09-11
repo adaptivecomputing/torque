@@ -918,6 +918,8 @@ int get_default_threads()
   snprintf(log_buf, sizeof(log_buf),
     "Defaulting min_threads to %d threads", default_threads);
   log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buf);
+  
+  fclose(fp);
 
   return(default_threads);
   } /* END get_default_threads() */
@@ -1547,6 +1549,8 @@ int handle_array_recovery(
           sprintf(log_buf, "%s:3", __func__);
           unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
 
+          closedir(dir);
+
           return(rc);
           }
 
@@ -1943,6 +1947,7 @@ int handle_tracking_records()
   if (fstat(fd, &statbuf) < 0)
     {
     log_err(errno, "pbs_init", "unable to stat tracking file");
+    close(fd);
 
     return(-1);
     }
@@ -1956,6 +1961,7 @@ int handle_tracking_records()
     {
     /* FAILURE - cannot alloc memory */
     log_err(errno, "pbs_init", "calloc failure");
+    close(fd);
 
     return(-1);
     }

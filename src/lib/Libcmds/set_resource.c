@@ -104,15 +104,21 @@ int set_resources(
   int            add)       /* I */
 
   {
-  static char *gres_str = "gres";
-  char *r, *eq, *v, *e = NULL;
-  char *str;
+  static char  *gres_str = "gres";
+  char         *r;
+  char         *eq;
+  char         *v;
+  char         *e = NULL;
+  char         *str;
 
-  struct attrl *attr, *ap, *aplast;
+  struct attrl *attr = NULL;
+  struct attrl *ap;
+  struct attrl *aplast;
 
-  int found, len;
+  int           found;
+  int           len;
 
-  char *qptr = NULL;
+  char         *qptr = NULL;
 
   r = resources;
 
@@ -135,6 +141,8 @@ int set_resources(
     if (r == eq)
       {
       /* FAILURE */
+      if (attr != NULL)
+        free(attr);
 
       return(1);
       }

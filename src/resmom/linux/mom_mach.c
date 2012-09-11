@@ -1899,7 +1899,7 @@ int mom_get_sample(void)
 
       hold = (proc_stat_t *)realloc(proc_array, (max_proc + 1) * sizeof(proc_stat_t));
 
-      if (proc_array == NULL)
+      if (hold == NULL)
         {
         log_err(errno, id, "unable to realloc space for proc_array sample");
 

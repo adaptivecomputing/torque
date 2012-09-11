@@ -230,23 +230,17 @@ int tcp_read(
   /* data read is less than buffer size */
   else if (max_read_len > *read_len)
     {
-/*This is a check to see if the ptr's have changed. Needed only in testing
- * if (max_read_len != (int)(tp->tdis_bufsize - (tp->tdis_eod - tp->tdis_thebuf)))
-      {
-      snprintf(err_msg, sizeof(err_msg), "someone has been messing with the buffer!!!!");
-      log_err(PBSE_INTERNAL,__func__,err_msg);
-      exit(1);
-      }
-      */
     memcpy(tp->tdis_eod, new_data, *read_len);
     tp->tdis_eod += *read_len;
     *avail_len = tp->tdis_eod - tp->tdis_leadp;
     max_read_len = tp->tdis_eod - tp->tdis_thebuf;
+
     if (max_read_len > tdis_buf_len)
       {
       snprintf(err_msg, sizeof(err_msg), "eod ptr BEYOND end of buffer!! (fit) Remaining buffer = %d, read_len = %lld", max_read_len, *read_len);
       log_err(PBSE_INTERNAL,__func__,err_msg);
       }
+
     free(new_data);
     }
   /* data read is greater than buffer size */
@@ -282,9 +276,13 @@ int tcp_read(
       snprintf(err_msg, sizeof(err_msg), "eod ptr BEYOND end of buffer!!(expand) Remaining buffer = %d, read_len = %lld", max_read_len, *read_len);
       log_err(PBSE_INTERNAL,__func__,err_msg);
       }
+
     free(new_data);
     }
-  return rc;
+  else
+    free(new_data);
+
+  return(rc);
   }  /* END tcp_read() */
 
 

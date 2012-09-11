@@ -357,6 +357,7 @@ int log_open(
 
     if (log_opened < 0)
       {
+      close(fds);
       return(-1);
       }
 
@@ -453,6 +454,7 @@ int job_log_open(
 
     if (job_log_opened < 0)
       {
+      close(fds);
       log_err(errno, id, "failed to dup job log file descriptor");
       return(-1);
       }

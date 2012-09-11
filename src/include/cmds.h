@@ -117,7 +117,7 @@ extern char *optarg;
 
 int check_job_name(char *name, int);
 time_t cvtdate(char *);
-int get_server(char *, char *, char *);
+int get_server(char *, char *, int, char *, int);
 int locate_job(char *, char *, char *);
 int parse_destination_id(char *, char **, char **);
 int parse_equal_string(char *, char **, char **);

@@ -3981,6 +3981,7 @@ int read_cluster_addresses(
       {
       /* done */
       free(str);
+      str = NULL;
       break;
       }
     else
@@ -3992,6 +3993,12 @@ int read_cluster_addresses(
 
     free(str);
     } /* END reading input from chan */
+
+  if (str != NULL)
+    {
+    free(str);
+    str = NULL;
+    }
 
   if (rc != DIS_SUCCESS)
     {

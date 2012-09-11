@@ -284,7 +284,9 @@ static char **PBSD_select_get(
 
       pthread_mutex_unlock(connection[c].ch_mutex);
 
-      return (char **)NULL;
+      PBSD_FreeReply(reply);
+
+      return(NULL);
       }
 
     sr = reply->brp_un.brp_select;

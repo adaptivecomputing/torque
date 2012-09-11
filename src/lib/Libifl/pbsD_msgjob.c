@@ -107,14 +107,15 @@ int pbs_msgjob_err(
     return(PBSE_IVALREQ);
 
   /* setup DIS support routines for following DIS calls */
-
-/*  DIS_tcp_setup(connection[c].ch_socket); */
-
   pthread_mutex_lock(connection[c].ch_mutex);
 
   if ((rc = PBSD_msg_put(c, jobid, fileopt, msg, extend)))
     {
-    connection[c].ch_errtxt = strdup(dis_emsg[rc]);
+    if ((rc >= 0) &&
+        (rc <= DIS_INVALID))
+      connection[c].ch_errtxt = strdup(dis_emsg[rc]);
+    else
+      connection[c].ch_errtxt = strdup("Unknown error");
 
     pthread_mutex_unlock(connection[c].ch_mutex);
 
