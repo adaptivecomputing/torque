@@ -563,11 +563,11 @@ static void altdsp_statjob(
       }
     else
       {
-      printf("\n                                                                               Req'd  Req'd   Elap\n");
+      printf("\n                                                                               Req'd    Req'd      Elap\n");
 
-      printf("Job ID               Username    Queue    Jobname          SessID NDS   TSK    Memory Time  S Time\n");
+      printf("Job ID               Username    Queue    Jobname          SessID NDS   TSK    Memory   Time   S   Time\n");
 
-      printf("-------------------- ----------- -------- ---------------- ------ ----- ------ ------ ----- - -----\n");
+      printf("-------------------- ----------- -------- ---------------- ------ ----- ------ ------ -------- - --------\n");
       }
     }
 
@@ -731,7 +731,7 @@ static void altdsp_statjob(
       }
     else
       {
-      snprintf(tmpLine, sizeof(tmpLine), "%%-%d.%ds %%6.6s %%5.5s %%*.*s %%6.6s %%5.5s %%1.1s %%8.8s",
+      snprintf(tmpLine, sizeof(tmpLine), "%%-%d.%ds %%6.6s %%5.5s %%*.*s %%6.6s %%8.8s %%1.1s %%8.8s",
                PBS_NAMELEN, PBS_NAMELEN);
 
       printf(tmpLine,

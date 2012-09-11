@@ -1439,11 +1439,6 @@ void main_loop(void)
         }
       }
 
-    /* wait for a request and process it */
-    if (wait_request(waittime, &state) != 0)
-      {
-      log_err(-1, msg_daemonname, "wait_request failed");
-      }
 
     if (plogenv == NULL)
       {
