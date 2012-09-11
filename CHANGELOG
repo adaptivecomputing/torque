@@ -45,6 +45,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       reply from a client. TRQ-1161.
   e - Modfied output for qstat -r. Expanded Req'd Time to include seconds and centered Elap Time
       over it's column.
+  b - Fixed a bug found at Univ. of Michigan where a corrupt .JB file would cause
+      pbs_server to seg-fault and restart.
 
 4.1.2
   e - Add the ability to run a single job partially on CRAY hardware and partially
