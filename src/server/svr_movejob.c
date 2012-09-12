@@ -140,8 +140,8 @@ extern struct pbsnode *PGetNodeFromAddr(pbs_net_t);
 
 /* Private Functions local to this file */
 
-static int  local_move(job *, int *, struct batch_request *, int);
-static int should_retry_route(int err);
+int  local_move(job *, int *, struct batch_request *, int);
+int should_retry_route(int err);
 
 /* Global Data */
 
@@ -258,7 +258,7 @@ int svr_movejob(
  *  1 failed but try again
  */
 
-static int local_move(
+int local_move(
 
   job                  *pjob,
   int                  *my_err,
@@ -275,11 +275,20 @@ static int local_move(
   char       job_id[PBS_MAXSVRJOBID+1];
   int        rc;
 
+  /* Sometimes multiple threads are trying to route the same job. Protect against this
+   * by making sure that the destionation queue and the current queue are different. 
+   * If they are the same then consider it done correctly */
+  if (!strcmp(pjob->ji_qs.ji_queue, pjob->ji_qs.ji_destin))
+    {
+    return(PBSE_NONE);
+    }
+
   if (LOGLEVEL >= 7)
     {
     sprintf(log_buf, "%s", pjob->ji_qs.ji_jobid);
     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
+
   /* search for destination queue */
   /* CAUTION!!! This code is very complex - be very careful editing */
   if (parent_queue_mutex_held == TRUE)
@@ -1198,7 +1207,7 @@ int net_move(
  *  -1 if destination should not be retried
  */
 
-static int should_retry_route(
+int should_retry_route(
 
   int err)
 

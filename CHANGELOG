@@ -48,6 +48,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Fixed a bug found at Univ. of Michigan where a corrupt .JB file would cause
       pbs_server to seg-fault and restart.
   b - Don't leave quotes on any arguments passed to the resource list. TRQ-1209.
+  b - Fix a race condition that causes deadlock when two threads are routing the same job.
 
 4.1.2
   e - Add the ability to run a single job partially on CRAY hardware and partially
