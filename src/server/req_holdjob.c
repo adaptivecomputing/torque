@@ -241,8 +241,6 @@ int req_holdjob(
       }
     else
       {
-      process_hold_reply(dup_req);
-
       if (pjob != NULL)
         {
         pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_FILE;
@@ -253,8 +251,12 @@ int req_holdjob(
         sprintf(log_buf, msg_jobholdset, pset, preq->rq_user, preq->rq_host);
         
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
+        pjob = NULL;
         req_reject(rc, 0, preq, NULL, "relay to mom failed");
         }
+
+      process_hold_reply(dup_req);
       }
     }
 #ifdef ENABLE_BLCR
@@ -346,15 +348,17 @@ void *req_checkpointjob(
       }
     else
       {
-      process_checkpoint_reply(dup_req);
-
       if (pjob != NULL)
         {
         pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
         
         job_save(pjob, SAVEJOB_QUICK, 0);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+        pjob = NULL;
         }
+
+      process_checkpoint_reply(dup_req);
       }
     }
   else

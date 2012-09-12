@@ -399,16 +399,17 @@ int modify_job(
   int                    flag)            /* I */
 
   {
-  int   bad = 0;
-  int   i;
-  int   newstate;
-  int   newsubstate;
-  resource_def *prsd;
-  int   rc;
-  int   sendmom = 0;
-  int   copy_checkpoint_files = FALSE;
+  int                   bad = 0;
+  int                   i;
+  int                   newstate;
+  int                   newsubstate;
+  resource_def         *prsd;
+  int                   rc;
+  int                   sendmom = 0;
+  int                   copy_checkpoint_files = FALSE;
 
-  char  log_buf[LOCAL_LOG_BUF_SIZE];
+  char                  jobid[PBS_MAXSVRJOBID + 1];
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
   struct batch_request *dup_req = NULL;
 
   job *pjob = (job *)*j;
@@ -616,7 +617,20 @@ int modify_job(
         return(rc); /* unable to get to MOM */
         }
       else
+        {
+        jobid[0] = '\0';
+
+        if (pjob != NULL)
+          {
+          strcpy(jobid, pjob->ji_qs.ji_jobid);
+          unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+          }
+
         post_modify_req(dup_req);
+
+        if (jobid[0] != '\0')
+          pjob = svr_find_job(jobid, TRUE);
+        }
       }
 
     return(PBSE_RELAYED_TO_MOM);
@@ -905,7 +919,15 @@ int modify_whole_array(
           return(rc); /* unable to get to MOM */
           }
         else
+          {
+          if (pjob != NULL)
+            {
+            unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
+            pjob = NULL;
+            }
+
           post_modify_arrayreq(array_req);
+          }
         }
 
       if (pjob != NULL)
@@ -1430,7 +1452,6 @@ void post_modify_arrayreq(
   batch_request *preq)
 
   {
-
   struct batch_request *parent_req;
   job                  *pjob;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];

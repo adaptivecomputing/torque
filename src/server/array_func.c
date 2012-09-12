@@ -1517,10 +1517,13 @@ int modify_array_range(
                 return(rc); /* unable to get to MOM */
                 }
               else
+                {
+                unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
                 post_modify_arrayreq(array_req);
+                }
               }
-          
-            unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+            else
+              unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
             }
           else
             pa->job_ids[i] = NULL;
