@@ -463,6 +463,7 @@ int svr_send_checkpoint(
   struct batch_request *momreq = 0;
   int                   rc;
   char                 *tmp_jobid = NULL;
+  char                  jobid[PBS_MAXSVRJOBID + 1];
   job                  *pjob = *pjob_ptr;
 
   momreq = cpy_checkpoint(momreq, pjob, JOB_ATR_checkpoint_name, CKPT_DIR_IN);
@@ -491,16 +492,24 @@ int svr_send_checkpoint(
    * or in issue_Drequest (success) */
   if ((rc = relay_to_mom(&pjob, momreq, NULL)) == PBSE_NONE)
     {
+    jobid[0] = '\0';
+    
+    if (pjob != NULL)
+      {
+      svr_setjobstate(pjob, state, substate, FALSE);
+      strcpy(jobid, pjob->ji_qs.ji_jobid);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+      }
+
     post_checkpointsend(momreq);
 
-    if (pjob != NULL)
-      svr_setjobstate(pjob, state, substate, FALSE);
+    if (jobid[0] != '\0')
+      pjob = svr_find_job(jobid, FALSE);
 
     /*
      * checkpoint copy started ok - reply to client as copy may
      * take too long to wait.
      */
-
     if (*preq != NULL)
       {
       reply_ack(*preq);
@@ -700,6 +709,7 @@ static int svr_stagein(
   struct batch_request *momreq = 0;
   int                   rc;
   char                 *tmp_jobid = NULL;
+  char                  jobid[PBS_MAXSVRJOBID + 1];
 
   momreq = cpy_stage(momreq, pjob, JOB_ATR_stagein, STAGE_DIR_IN);
 
@@ -729,10 +739,19 @@ static int svr_stagein(
    * or in issue_Drequest (success) */
   if ((rc = relay_to_mom(&pjob, momreq, NULL)) == PBSE_NONE)
     {
-    post_stagein(momreq);
+    jobid[0] = '\0';
 
     if (pjob != NULL)
+      {
+      strcpy(jobid, pjob->ji_qs.ji_jobid);
       svr_setjobstate(pjob, state, substate, FALSE);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+      }
+
+    post_stagein(momreq);
+
+    if (jobid[0] != '\0')
+      pjob = svr_find_job(jobid, FALSE);
 
     /*
      * stage-in started ok - reply to client as copy may

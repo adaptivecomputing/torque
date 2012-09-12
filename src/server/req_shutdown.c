@@ -364,6 +364,8 @@ static int shutdown_checkpoint(
   job                  *pjob = *pjob_ptr;
   struct batch_request *phold;
   pbs_attribute         temp;
+  char                  jobid[PBS_MAXSVRJOBID + 1];
+  int                   rc = PBSE_NONE;
 
   phold = alloc_br(PBS_BATCH_HoldJob);
 
@@ -397,15 +399,15 @@ static int shutdown_checkpoint(
 
   /* The phold is freed in relay_to_mom (failure)
    * or in issue_Drequest (success) */
-  if (relay_to_mom(&pjob, phold, NULL) != PBSE_NONE)
+  if ((rc = relay_to_mom(&pjob, phold, NULL)) != PBSE_NONE)
     {
     /* FAILURE */
     free_br(phold);
 
     return(-1);
     }
-  else
-    post_checkpoint(phold);
+    
+  jobid[0] = '\0';
 
   if (pjob != NULL)
     {
@@ -422,6 +424,16 @@ static int shutdown_checkpoint(
       }
   
     job_save(pjob, SAVEJOB_QUICK, 0);
+    strcpy(jobid, pjob->ji_qs.ji_jobid);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+    }
+  
+  if (rc == PBSE_NONE)
+    {
+    post_checkpoint(phold);
+
+    if (jobid[0] != '\0')
+      pjob = svr_find_job(jobid, TRUE);
     }
 
   return(PBSE_NONE);

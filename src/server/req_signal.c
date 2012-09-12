@@ -209,22 +209,30 @@ int req_signaljob(
   if ((rc = copy_batchrequest(&dup_req, preq, 0, -1)) != 0)
     {
     req_reject(rc, 0, preq, NULL, "can not allocate memory");
+    unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
     }
   /* The dup_req is freed in relay_to_mom (failure)
    * or in issue_Drequest (success) */
-  else if ((rc = relay_to_mom(&pjob, dup_req, NULL)) != PBSE_NONE)
+  else 
     {
-    free_br(dup_req);
-    req_reject(rc, 0, preq, NULL, NULL);  /* unable to get to MOM */
-    }
-  else
-    {
-    post_signal_req(dup_req);
-    free_br(preq);
+    rc = relay_to_mom(&pjob, dup_req, NULL);
+
+    if (pjob != NULL)
+      unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
+
+    if (rc != PBSE_NONE)
+      {
+      free_br(dup_req);
+      req_reject(rc, 0, preq, NULL, NULL);  /* unable to get to MOM */
+      }
+    else
+      {
+      post_signal_req(dup_req);
+      free_br(preq);
+      }
     }
 
   /* If successful we ack after mom replies to us, we pick up in post_signal_req() */
-  unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
 
   return(PBSE_NONE);
   }  /* END req_signaljob() */
@@ -268,7 +276,6 @@ int issue_signal(
   /* The newreq is freed in relay_to_mom (failure)
    * or in issue_Drequest (success) */
   rc = relay_to_mom(&pjob, newreq, NULL);
-
 
   if (rc == PBSE_NONE)
     {
