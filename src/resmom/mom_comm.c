@@ -871,7 +871,6 @@ int send_sisters(
       /* we need to record the addresses of sister nodes for later */
       get_hostaddr_hostent_af(&local_errno, np->hn_host, &af_family, &host_addr, &addr_len);
       memmove(&np->sock_addr.sin_addr, host_addr, addr_len);
-      free(host_addr);
       np->sock_addr.sin_port = htons(np->hn_port);
       np->sock_addr.sin_family = af_family;
      
@@ -2479,6 +2478,7 @@ int im_join_job_as_sister(
       {
       sister_job_nodes(pjob, radix_hosts, radix_ports);
       free(radix_ports);
+      radix_ports = NULL;
 
       np = &pjob->ji_sisters[0];
       if (np != NULL)
