@@ -836,6 +836,9 @@ char *getreq_err(
 
   if (ret == DIS_EOF)
     {
+    if (startline != NULL)
+      free(startline);
+
     return(NULL);
     }
 

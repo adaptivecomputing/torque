@@ -585,6 +585,7 @@ int create_alps_reservation(
   if (host_req_list->num == 0)
     {
     free(user);
+    free_resizable_array(host_req_list);
     /* this is a login only job */
     return(PBSE_NONE);
     }

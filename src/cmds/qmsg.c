@@ -72,7 +72,7 @@ int main(
     exit(2);
     }
 
-  strcpy(msg_string, argv[optind]);
+  snprintf(msg_string, sizeof(msg_string), "%s", argv[optind]);
 
   for (optind++; optind < argc; optind++)
     {

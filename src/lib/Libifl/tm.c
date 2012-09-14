@@ -1700,6 +1700,9 @@ int tm_poll(
 
       if (ret != DIS_SUCCESS)
         {
+        if (info != NULL)
+          free(info);
+
         DBPRT(("%s: GETINFO failed info\n", id))
         break;
         }

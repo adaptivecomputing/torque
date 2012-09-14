@@ -506,6 +506,7 @@ void svr_mailowner(
     if (mi->jobname == NULL)
       {
       log_err(ENOMEM, __func__, memory_err);
+      free(mi);
       return;
       }
     }

@@ -925,6 +925,7 @@ int svr_save_xml(
     sprintf(log_buf, "%s:2", __func__);
     unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
     free(tmp_file);
+    close(fds);
     return(rc);
     }
 
@@ -933,6 +934,7 @@ int svr_save_xml(
     sprintf(log_buf, "%s:3", __func__);
     unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
     free(tmp_file);
+    close(fds);
     return(rc);
     }
  

@@ -2265,7 +2265,12 @@ int send_job_obit_to_ms(
       return(ENOMEM);
       }
     else if (kj == NULL)
+      {
+      if (mc != NULL)
+        free(mc);
+
       return(ENOMEM);
+      }
 
     mc->mc_type   = KILLJOB_REPLY;
     mc->mc_struct = kj;

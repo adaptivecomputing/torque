@@ -3965,7 +3965,7 @@ char *conf_res(
   ** is the first step.
   */
 
-  for (i = 0; i < (int)sizeof(name) - 1; i++)
+  for (i = 0; i < RM_NPARM - 1; i++)
     {
     /* remember params */
 
@@ -4519,6 +4519,12 @@ int rm_request(
 
         if (ret == DIS_EOD)
           {
+          if (cp != NULL)
+            {
+            free(cp);
+            cp = NULL;
+            }
+
           break;
           }
 
@@ -6239,8 +6245,11 @@ char *MOMFindMyExe(
 
     if (access(link, X_OK) == 0)
       {
+      free(link);
       return(link);
       }
+
+    free(link);
 
     return(NULL);
     }

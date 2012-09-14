@@ -40,7 +40,7 @@ int main(int argc, char **argv) /* qmove */
 
   initialize_network_info();
 
-  strcpy(destination, argv[1]);
+  snprintf(destination, sizeof(destination), "%s", argv[1]);
 
   if (parse_destination_id(destination, &q_n_out, &s_n_out))
     {

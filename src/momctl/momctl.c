@@ -699,6 +699,8 @@ int do_mom(
 
       fprintf(stdout,"job clear request successful on %s\n",
         HPtr);
+
+      free(Value);
       }  /* END BLOCK (case momClear) */
 
     break;
