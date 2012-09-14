@@ -708,6 +708,9 @@ void DIS_tcp_cleanup(
 
   {
   struct tcpdisbuf *tp = NULL;
+
+  if (chan == NULL)
+    return;
   tp = &chan->readbuf;
   free(tp->tdis_thebuf);
 

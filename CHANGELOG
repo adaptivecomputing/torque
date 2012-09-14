@@ -45,6 +45,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       pbs_server to seg-fault and restart.
   b - Don't leave quotes on any arguments passed to the resource list. TRQ-1209.
   b - Fix a race condition that causes deadlock when two threads are routing the same job.
+  b - Fixed a bug with qsub where environment variables were not getting populated with the 
+      -v option. TRQ-1228.
 
 4.1.1
   e - pbs_server will now detect and release orphaned ALPS reservations
