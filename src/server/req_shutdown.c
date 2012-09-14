@@ -433,7 +433,7 @@ static int shutdown_checkpoint(
     post_checkpoint(phold);
 
     if (jobid[0] != '\0')
-      pjob = svr_find_job(jobid, TRUE);
+     *pjob_ptr = svr_find_job(jobid, TRUE);
     }
 
   return(PBSE_NONE);

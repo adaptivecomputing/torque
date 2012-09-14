@@ -6245,7 +6245,6 @@ char *MOMFindMyExe(
 
     if (access(link, X_OK) == 0)
       {
-      free(link);
       return(link);
       }
 

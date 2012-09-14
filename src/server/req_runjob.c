@@ -504,7 +504,7 @@ int svr_send_checkpoint(
     post_checkpointsend(momreq);
 
     if (jobid[0] != '\0')
-      pjob = svr_find_job(jobid, FALSE);
+      *pjob_ptr = svr_find_job(jobid, FALSE);
 
     /*
      * checkpoint copy started ok - reply to client as copy may
@@ -751,7 +751,7 @@ static int svr_stagein(
     post_stagein(momreq);
 
     if (jobid[0] != '\0')
-      pjob = svr_find_job(jobid, FALSE);
+      *pjob_ptr = svr_find_job(jobid, FALSE);
 
     /*
      * stage-in started ok - reply to client as copy may
