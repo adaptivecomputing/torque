@@ -126,18 +126,22 @@ int get_listen_socket(
     }
   else if (setsockopt(local_socket, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) == -1)
     {
+    close(local_socket);
     local_socket = -3;
     }
   else if (setsockopt(local_socket, SOL_SOCKET, SO_LINGER, &l_delay, sizeof(struct linger)) == -1)
     {
+    close(local_socket);
     local_socket = -4;
     }
   else if (setsockopt(local_socket, SOL_SOCKET, SO_KEEPALIVE, &ka_val, sizeof(int)) < 0)
     {
+    close(local_socket);
     local_socket = -5;
     }
   else if (setsockopt(local_socket, SOL_TCP, TCP_KEEPIDLE, &ka_timeout, sizeof(int)) < 0)
     {
+    close(local_socket);
     local_socket = -6;
     }
 

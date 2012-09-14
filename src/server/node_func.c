@@ -1608,6 +1608,7 @@ int setup_node_boards(
       if (create_subnode(pn) == NULL)
         {
         /* ERROR */
+        free(pn);
         return(PBSE_SYSTEM);
         }
       }
@@ -1618,6 +1619,7 @@ int setup_node_boards(
       if (create_a_gpusubnode(pn) != PBSE_NONE)
         {
         /* ERROR */
+        free(pn);
         return(PBSE_SYSTEM);
         }
       }
@@ -1715,7 +1717,7 @@ int create_pbs_node(
 
   int              ntype; /* node type; time-shared, not */
   char            *pname; /* node name w/o any :ts       */
-  u_long          *pul;  /* 0 terminated host adrs array*/
+  u_long          *pul = NULL;  /* 0 terminated host adrs array*/
   int              rc;
   node_info        *host_info;
   int              i;
@@ -1749,6 +1751,9 @@ int create_pbs_node(
       if (pattrl == NULL)
         {
         log_err(-1, __func__, "cannot create node attribute");
+        free(host_info);
+        if (pul != NULL)
+          free(pul);
         return(PBSE_MEM_MALLOC);
         }
 
@@ -1769,6 +1774,8 @@ int create_pbs_node(
       if (host_info->nodename == NULL)
         {
         free(host_info);
+        if (pul != NULL)
+          free(pul);
         log_err(-1, __func__, "create_pbs_node calloc failed");
         return(PBSE_MEM_MALLOC);
         }
@@ -1778,7 +1785,8 @@ int create_pbs_node(
 
     set_task(WORK_Timed, time_now + 30, recheck_for_node, host_info, FALSE);
 
-    free(pul);
+    if (pul != NULL)
+      free(pul);
 
     return(rc);
     }

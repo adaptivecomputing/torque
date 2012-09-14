@@ -1967,8 +1967,12 @@ int reply_to_join_job_as_sister(
       ret = DIS_tcp_wflush(local_chan);
 
     close(socket);
+
     if (local_chan != NULL)
+      {
       DIS_tcp_cleanup(local_chan);
+      local_chan = NULL;
+      }
 
     if (ret == DIS_SUCCESS)
       {
@@ -2147,11 +2151,15 @@ int im_join_job_as_sister(
         dis_emsg[ret]);
       
       log_err(-1, __func__, log_buffer);
+
+      if (radix_hosts != NULL)
+        free(radix_hosts);
       
       return(IM_FAILURE);
       }
     
     radix_ports = disrst(chan, &ret);
+
     if (ret != DIS_SUCCESS)
       {
       sprintf(log_buffer, "%s: join_job_radix request to node %d for job %s failed - %s (radix_ports)",
@@ -2161,6 +2169,11 @@ int im_join_job_as_sister(
         dis_emsg[ret]);
       
       log_err(-1, __func__, log_buffer);
+
+      if (radix_ports != NULL)
+        free(radix_ports);
+
+      free(radix_hosts);
       
       return(IM_FAILURE);
       }
@@ -2176,6 +2189,7 @@ int im_join_job_as_sister(
       
       log_err(-1, __func__, log_buffer);
 
+      free(radix_hosts);
       free(radix_ports);
       
       return(IM_FAILURE);
@@ -2194,7 +2208,10 @@ int im_join_job_as_sister(
     
     log_err(-1, __func__, log_buffer);
    
-    free(radix_ports);
+    if (radix_hosts != NULL)
+      free(radix_hosts);
+    if (radix_ports != NULL)
+      free(radix_ports);
     
     return(IM_FAILURE);
     }
@@ -2278,8 +2295,12 @@ int im_join_job_as_sister(
     send_im_error(rc,1,pjob,cookie,event,fromtask);
    
     mom_job_purge(pjob);
-      
-    free(radix_ports);
+
+    if (radix_hosts != NULL)
+      free(radix_hosts);
+
+    if (radix_ports != NULL)
+      free(radix_ports);
       
     return(IM_DONE);
     }
@@ -2311,8 +2332,12 @@ int im_join_job_as_sister(
     send_im_error(PBSE_BADUSER,1,pjob,cookie,event,fromtask);
     
     mom_job_purge(pjob);
-      
-    free(radix_ports);
+
+    if (radix_hosts != NULL)
+      free(radix_hosts);
+
+    if (radix_ports != NULL)
+      free(radix_ports);
       
     return(IM_DONE);
     }
@@ -2333,7 +2358,11 @@ int im_join_job_as_sister(
       
       mom_job_purge(pjob);
       
-      free(radix_ports);
+      if (radix_hosts != NULL)
+        free(radix_hosts);
+
+      if (radix_ports != NULL)
+        free(radix_ports);
         
       return(IM_DONE);
       }
@@ -2367,8 +2396,12 @@ int im_join_job_as_sister(
     send_im_error(ret, 1, pjob, cookie, event, fromtask);
     
     mom_job_purge(pjob);
-      
-    free(radix_ports);
+    
+    if (radix_hosts != NULL)
+      free(radix_hosts);
+
+    if (radix_ports != NULL)
+      free(radix_ports);
 
     return(IM_DONE);
     }
@@ -2382,8 +2415,12 @@ int im_join_job_as_sister(
     log_err(-1, __func__, "cannot load sp switch table");
     
     mom_job_purge(pjob);
-      
-    free(radix_ports);
+    
+    if (radix_hosts != NULL)
+      free(radix_hosts);
+
+    if (radix_ports != NULL)
+      free(radix_ports);
       
     return(IM_DONE);
     }
@@ -2414,13 +2451,19 @@ int im_join_job_as_sister(
 
     pjob->ji_im_nodeid = 1; /* this will identify us as an intermediate node later */
 
-    if (allocate_demux_sockets(pjob,INTERMEDIATE_MOM))
+    if (allocate_demux_sockets(pjob, INTERMEDIATE_MOM))
+      {
+      free(radix_hosts);
+      free(radix_ports);
       return(IM_DONE);
+      }
 
     contact_sisters(pjob,event,sister_count,radix_hosts,radix_ports);
     pjob->ji_intermediate_join_event = event;
     job_save(pjob,SAVEJOB_FULL,momport);
+
     free(radix_ports);
+    free(radix_hosts);
     
     return(IM_DONE);
     }
@@ -2473,6 +2516,12 @@ int im_join_job_as_sister(
     else
       ret = IM_FAILURE;
     }
+
+  if (radix_ports != NULL)
+    free(radix_ports);
+
+  if (radix_hosts != NULL)
+    free(radix_hosts);
 
   return(ret);
   } /* END im_join_job_as_sister() */
@@ -2606,7 +2655,12 @@ int im_spawn_task(
     }
 
   if (ret != DIS_SUCCESS)
+    {
+    if (globid != NULL)
+      free(globid);
+
     return(IM_FAILURE);
+    }
   
   if (LOGLEVEL >= 3)
     {
@@ -2719,6 +2773,9 @@ int im_spawn_task(
         {
         if (envp != NULL)
           free(envp);
+
+        arrayfree(argv);
+        free(cp);
 
         return(ENOMEM);
         }
@@ -3218,7 +3275,12 @@ int im_get_info(
     }
   
   if (ret != DIS_SUCCESS)
+    {
+    if (name != NULL)
+      free(name);
+
     return(IM_FAILURE);
+    }
 
   if ((np = find_node(pjob, chan->sock, nodeid)) == NULL)
     {
@@ -6862,6 +6924,8 @@ int tm_getinfo_request(
       
       if (*ret == DIS_SUCCESS)
         *ret = diswcs(chan, ip->ie_info, ip->ie_len);
+
+      free(name);
       
       return(TM_DONE);
       }
@@ -6871,6 +6935,8 @@ int tm_getinfo_request(
   
   if (*ret == DIS_SUCCESS)
     *ret = diswsi(chan, TM_ENOTFOUND);
+      
+  free(name);
  
   return(TM_DONE);
   } /* END tm_getinfo_request() */
@@ -7129,7 +7195,7 @@ int tm_request(
     if (ret != DIS_SUCCESS) 
       goto err;
 
-    DIS_tcp_cleanup(chan);
+    svr_conn[chan->sock].cn_stay_open = FALSE;
   
     if (jobid)
       free(jobid);
@@ -7481,7 +7547,9 @@ err:
       (ipadd & 0x0000ff00) >> 8,
       (ipadd & 0x000000ff));
 
-    DIS_tcp_close(chan);
+    close(chan->sock);
+
+    svr_conn[chan->sock].cn_stay_open = FALSE;
     }
 
   if (jobid)
@@ -8408,6 +8476,7 @@ int read_status_strings(
     if (rn->statuses == NULL)
       {
       log_err(ENOMEM, __func__, "No memory to allocate for status information\n");
+      free(rn);
       return(ENOMEM);
       }
     

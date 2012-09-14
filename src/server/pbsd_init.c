@@ -710,7 +710,7 @@ dynamic_string *parse_mom_hierarchy(
 
   memset(&buffer, 0, sizeof(buffer));
 
-  if ((bytes_read = read(fds, buffer, sizeof(buffer))) < 0)
+  if ((bytes_read = read(fds, buffer, sizeof(buffer) - 1)) < 0)
     {
     snprintf(log_buf, sizeof(log_buf),
       "Unable to read from %s", path_mom_hierarchy);
@@ -1939,6 +1939,7 @@ int handle_tracking_records()
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
   if (chk_file_sec(path_track, 0, 0, S_IWGRP | S_IWOTH, 0, EMsg) != 0)
     {
+    close(fd);
     return(-1);
     }
 

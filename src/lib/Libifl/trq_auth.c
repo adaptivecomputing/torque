@@ -271,7 +271,7 @@ void *process_svr_conn(
     disconnect_svr = FALSE;
     debug_mark = 2;
     }
-  else if ((svr_sock = socket_get_tcp_priv()) <= 0)
+  else if ((svr_sock = socket_get_tcp_priv()) < 0)
     {
     rc = PBSE_SOCKET_FAULT;
     disconnect_svr = FALSE;

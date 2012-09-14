@@ -177,6 +177,7 @@ int decode_arst_direct(
   if ((pbuf = calloc(1, (unsigned)ssize)) == NULL)
     {
     /* FAILURE */
+    free(tmpval);
 
     return(PBSE_SYSTEM);
     }

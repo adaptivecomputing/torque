@@ -219,7 +219,7 @@ int read_attr(
     return(0);
     }
 
-  pal = (svrattrl *)malloc(tempal.al_tsize);
+  pal = (svrattrl *)calloc(1, tempal.al_tsize);
 
   if (pal == NULL)
     {
@@ -234,7 +234,7 @@ int read_attr(
 
   amt = pal->al_tsize - sizeof(svrattrl);
 
-  i = read(fd, (char *)pal + sizeof(svrattrl), amt);
+  i = read(fd, (char *)pal + sizeof(svrattrl), amt - 1);
 
   if (i != amt)
     {
