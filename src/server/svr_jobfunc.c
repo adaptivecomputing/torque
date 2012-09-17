@@ -1609,6 +1609,7 @@ int svr_chkque(
   int failed_group_acl = 0;
   int failed_user_acl  = 0;
   int user_jobs;
+  int total_jobs;
 
   struct array_strings *pas;
   int j = 0;
@@ -1927,7 +1928,7 @@ int svr_chkque(
     if ((pque->qu_attr[QA_ATR_MaxJobs].at_flags & ATR_VFLAG_SET)) 
       {
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-      user_jobs = count_queued_jobs(pque, NULL);
+      total_jobs = count_queued_jobs(pque, NULL);
 
       lock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       if (pjob->ji_being_recycled == TRUE)
@@ -1936,7 +1937,7 @@ int svr_chkque(
         return(PBSE_JOB_RECYCLED);
         }
 
-      if ((user_jobs + array_jobs) >= pque->qu_attr[QA_ATR_MaxJobs].at_val.at_long)
+      if ((total_jobs + array_jobs) >= pque->qu_attr[QA_ATR_MaxJobs].at_val.at_long)
         {
         if (EMsg)
           snprintf(EMsg, 1024,
@@ -1965,7 +1966,7 @@ int svr_chkque(
         return(PBSE_JOB_RECYCLED);
         }
 
-      if (user_jobs + array_jobs >= pque->qu_attr[QA_ATR_MaxUserJobs].at_val.at_long)
+      if (user_jobs + total_jobs + array_jobs >= pque->qu_attr[QA_ATR_MaxUserJobs].at_val.at_long)
         {
         if (EMsg)
           snprintf(EMsg, 1024,
