@@ -1871,7 +1871,7 @@ int svr_chkque(
         return(PBSE_MAXUSERQUED);
         }
 
-      if ((user_jobs + total_jobs + array_jobs) >= pque->qu_attr[QA_ATR_MaxJobs].at_val.at_long)
+      if ((total_jobs + array_jobs) >= pque->qu_attr[QA_ATR_MaxJobs].at_val.at_long)
         {
         if (EMsg)
           snprintf(EMsg, 1024,
