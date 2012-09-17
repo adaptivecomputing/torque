@@ -1525,7 +1525,8 @@ int svr_chkque(
   int i;
   int failed_group_acl = 0;
   int failed_user_acl  = 0;
-  int user_jobs;
+  int user_jobs = 0;
+  int total_jobs = 0;
 
   struct array_strings *pas;
   int j = 0;
@@ -1833,17 +1834,21 @@ int svr_chkque(
       return(PBSE_QUNOENB);
       }
 
-    if ((pque->qu_attr[QA_ATR_MaxJobs].at_flags & ATR_VFLAG_SET) &&
-        ((count_queued_jobs(pque,NULL) + array_jobs) >= pque->qu_attr[QA_ATR_MaxJobs].at_val.at_long))
+    if ((pque->qu_attr[QA_ATR_MaxJobs].at_flags & ATR_VFLAG_SET))
       {
-      if (EMsg)
-        snprintf(EMsg, 1024,
-          "total number of jobs in queue exceeds the queue limit: "
-          "user %s, queue %s",
-          pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
-          pque->qu_qs.qu_name);
+      total_jobs = count_queued_jobs(pque,NULL);
+      if ((total_jobs + array_jobs) >= pque->qu_attr[QA_ATR_MaxJobs].at_val.at_long)
+        {
 
-      return(PBSE_MAXQUED);
+        if (EMsg)
+          snprintf(EMsg, 1024,
+            "total number of jobs in queue exceeds the queue limit: "
+            "user %s, queue %s",
+            pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
+            pque->qu_qs.qu_name);
+
+        return(PBSE_MAXQUED);
+        }
       }
 
     if ((pque->qu_attr[QA_ATR_MaxUserJobs].at_flags & ATR_VFLAG_SET) &&
@@ -1854,7 +1859,7 @@ int svr_chkque(
       user_jobs = count_queued_jobs(pque,
           pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
 
-      if (user_jobs + array_jobs >= pque->qu_attr[QA_ATR_MaxUserJobs].at_val.at_long)
+      if (user_jobs >= pque->qu_attr[QA_ATR_MaxUserJobs].at_val.at_long)
         {
         if (EMsg)
           snprintf(EMsg, 1024,
@@ -1865,6 +1870,19 @@ int svr_chkque(
 
         return(PBSE_MAXUSERQUED);
         }
+
+      if ((user_jobs + total_jobs + array_jobs) >= pque->qu_attr[QA_ATR_MaxJobs].at_val.at_long)
+        {
+        if (EMsg)
+          snprintf(EMsg, 1024,
+            "total number of current user's jobs exceeds the queue limit: "
+            "user %s, queue %s",
+            pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
+            pque->qu_qs.qu_name);
+
+        return(PBSE_MAXQUED);
+        }
+
       }
 
     /* 3. if "from_route_only" is true, only local route allowed */

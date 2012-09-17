@@ -13,6 +13,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Fixed potential NULL pointer dereferences in insert_link, parse_equal_string and
       MXMLSetChild.
   b - Don't leave quotes on any arguments passed to the resource list. TRQ-1209.
+  b - backported fix for TRQ-1088 from 4.1-fixes. max_user_queuable value is ignored. 
 
 2.5.12
   b - Fix so child pbs_mom does not remain running after qdel on slow starting job.
