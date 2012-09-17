@@ -1966,7 +1966,19 @@ int svr_chkque(
         return(PBSE_JOB_RECYCLED);
         }
 
-      if (user_jobs + total_jobs + array_jobs >= pque->qu_attr[QA_ATR_MaxUserJobs].at_val.at_long)
+      if (user_jobs >= pque->qu_attr[QA_ATR_MaxUserJobs].at_val.at_long)
+        {
+        if (EMsg)
+          snprintf(EMsg, 1024,
+            "total number of current user's jobs exceeds the queue limit: "
+            "user %s, queue %s",
+            pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
+            pque->qu_qs.qu_name);
+
+        return(PBSE_MAXUSERQUED);
+        }
+
+      if (user_jobs + total_jobs + array_jobs >= pque->qu_attr[QA_ATR_MaxJobs].at_val.at_long)
         {
         if (EMsg)
           snprintf(EMsg, 1024,
