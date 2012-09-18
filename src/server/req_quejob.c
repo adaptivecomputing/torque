@@ -129,6 +129,7 @@
 #include "ji_mutex.h"
 #include "user_info.h"
 #include "work_task.h"
+#include "req_runjob.h"
 
 
 /* External Functions Called: */
