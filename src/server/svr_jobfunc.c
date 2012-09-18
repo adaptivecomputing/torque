@@ -139,6 +139,7 @@
 #include "../lib/Libutils/u_lock_ctl.h" /* *startup */
 #include "ji_mutex.h"
 #include "user_info.h"
+#include "svr_jobfunc.h"
 
 #define MSG_LEN_LONG 160
 
@@ -304,6 +305,9 @@ int svr_enquejob(
   char           job_id[PBS_MAXSVRJOBID+1];
   char           queue_name[PBS_MAXQUEUENAME+1];
   long           job_qrank = -1;
+  int            total_jobs = 0;
+  int            user_jobs = 0;
+  int            array_jobs = 0;
 
   /* make sure queue is still there, there exists a small window ... */
   strcpy(job_id, pjob->ji_qs.ji_jobid);
@@ -323,8 +327,39 @@ int svr_enquejob(
   if (pjob->ji_being_recycled == TRUE)
     {
     unlock_queue(pque, __func__, NULL, 0);
-    unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
     return(PBSE_JOB_RECYCLED);
+    }
+
+  /* Check again if there are any maximum queuable limits */
+  if (pjob->ji_is_array_template)
+    {
+    array_jobs = num_array_jobs(pjob->ji_wattr[JOB_ATR_job_array_request].at_val.at_str);
+    if (array_jobs > 0)
+      array_jobs--;
+    }
+      
+  if ((pque->qu_attr[QA_ATR_MaxJobs].at_flags & ATR_VFLAG_SET))
+    {
+    total_jobs = count_queued_jobs(pque, NULL);
+    if (total_jobs + array_jobs >= pque->qu_attr[QA_ATR_MaxJobs].at_val.at_long)
+      {
+      unlock_queue(pque, __func__, "1", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
+      return(PBSE_MAXQUED);
+      }
+    }
+
+
+  if ((pque->qu_attr[QA_ATR_MaxUserJobs].at_flags & ATR_VFLAG_SET))
+    {
+    user_jobs = count_queued_jobs(pque, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+    if (user_jobs >= pque->qu_attr[QA_ATR_MaxUserJobs].at_val.at_long)
+      {
+      unlock_queue(pque, __func__, "1", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
+      return(PBSE_MAXUSERQUED);
+      }
     }
 
   /* add job to server's 'all job' list and update server counts */
@@ -1967,18 +2002,6 @@ int svr_chkque(
         }
 
       if (user_jobs >= pque->qu_attr[QA_ATR_MaxUserJobs].at_val.at_long)
-        {
-        if (EMsg)
-          snprintf(EMsg, 1024,
-            "total number of current user's jobs exceeds the queue limit: "
-            "user %s, queue %s",
-            pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
-            pque->qu_qs.qu_name);
-
-        return(PBSE_MAXUSERQUED);
-        }
-
-      if (total_jobs + array_jobs >= pque->qu_attr[QA_ATR_MaxJobs].at_val.at_long)
         {
         if (EMsg)
           snprintf(EMsg, 1024,
