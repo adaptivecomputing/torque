@@ -51,6 +51,12 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Fix a race condition that causes deadlock when two threads are routing the same job.
   b - Fixed a bug with qsub where environment variables were not getting populated with the 
       -v option. TRQ-1228.
+  b - This time for sure. TRQ-1228. When max_queuable or max_user_queuable were set it
+      was still possible to go over the limit. This was because a job is qualified
+      in the call to req_quejob but does not get inserted into the queue until svr_enquejob
+      is called in req_commit, four network requests later. In a multi-threaded environment
+      this allowed several jobs to be qualified and put in the pipeline before they
+      were actually commited to a queue.
   b - If max_user_queuable or max_queuable were set on a queue TORQUE would not honor
       the limit when filling those queues from a routing queue. This has now
       been fixed. TRQ-1088.
