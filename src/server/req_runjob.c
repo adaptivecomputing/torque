@@ -243,7 +243,7 @@ int req_runjob(
       (preq->rq_type == PBS_BATCH_AsyrunJob))
     {
     reply_ack(preq);
-    preq->rq_noreply = TRUE;
+    preq = NULL;
     }
 
   /* if the job is part of an array, check the slot limit */
@@ -1112,7 +1112,7 @@ int send_job_to_mom(
   *pjob_ptr = NULL;
   pjob = NULL;
 
-  if (preq->rq_reply.brp_un.brp_txt.brp_str != NULL)
+  if ((preq != NULL) && (preq->rq_reply.brp_un.brp_txt.brp_str != NULL))
     mail_text = strdup(preq->rq_reply.brp_un.brp_txt.brp_str);
 
   if (send_job_work(job_id, NULL, MOVE_TYPE_Exec, &my_err, preq) == PBSE_NONE)
