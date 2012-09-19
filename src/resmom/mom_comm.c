@@ -2677,13 +2677,13 @@ int im_spawn_task(
   
   if (pjob->ji_globid == NULL)
     {
-    pjob->ji_globid = globid;
+    pjob->ji_globid = strdup(globid);
     }
   else if (strcmp(pjob->ji_globid, noglobid) == 0)
     {
     free(pjob->ji_globid);
     
-    pjob->ji_globid = globid;
+    pjob->ji_globid = strdup(globid);
     }
   else if (strcmp(pjob->ji_globid, globid) != 0)
     {
