@@ -205,6 +205,7 @@ void *check_if_orphaned(
   int                   handle = -1;
   int                   retries = 0;
   struct pbsnode       *pnode;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (is_orphaned(rsv_id) == TRUE)
     {
@@ -219,6 +220,12 @@ void *check_if_orphaned(
 
       memcpy(&hostaddr, &pnode->nd_sock_addr.sin_addr, sizeof(hostaddr));
       momaddr = ntohl(hostaddr.s_addr);
+
+      snprintf(log_buf, sizeof(log_buf),
+        "Found orphan ALPS reservation ID %s; asking %s to remove it",
+        rsv_id,
+        pnode->nd_name);
+      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, __func__, log_buf);
 
       while ((handle < 0) &&
              (retries < 3))
@@ -538,6 +545,7 @@ int process_alps_status(
   struct pbsnode *current = NULL;
   int             rc;
   pbs_attribute   temp;
+  hash_table_t   *rsv_ht;
 
   memset(&temp, 0, sizeof(temp));
 
@@ -550,6 +558,9 @@ int process_alps_status(
   /* if we can't find the parent node, ignore the update */
   if ((parent = find_nodebyname(nd_name)) == NULL)
     return(PBSE_NONE);
+
+  /* keep track of reservations so that they're only processed once per update */
+  rsv_ht = create_hash(INITIAL_RESERVATION_HOLDER_SIZE);
 
   /* loop over each string */
   for (str = status_info->str; str != NULL && *str != '\0'; str += strlen(str) + 1)
@@ -577,12 +588,19 @@ int process_alps_status(
       }
     else if (!strncmp(reservation_id, str, strlen(reservation_id)))
       {
-      process_reservation_id(current, str);
+      char *just_rsv_id = str + strlen(reservation_id);
+
+      if (get_value_hash(rsv_ht, just_rsv_id) == -1)
+        {
+        add_hash(rsv_ht, 1, just_rsv_id);
+        process_reservation_id(current, str);
+        }
       }
     /* save this as is to the status strings */
     else if ((rc = decode_arst(&temp, NULL, NULL, str, 0)) != PBSE_NONE)
       {
       free_arst(&temp);
+      free_hash(rsv_ht);
       return(rc);
       }
 
@@ -607,6 +625,8 @@ int process_alps_status(
     }
 
   unlock_node(parent, __func__, NULL, 0);
+
+  free_hash(rsv_ht);
 
   return(PBSE_NONE);
   } /* END process_alps_status() */

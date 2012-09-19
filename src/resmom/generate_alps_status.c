@@ -385,8 +385,13 @@ int process_node(
 
   if (rsv_id != NULL)
     {
-    copy_to_end_of_dynamic_string(status, "reservation_id=");
-    append_dynamic_string(status, rsv_id);
+    /* don't write the reservation id if we're in interactive mode */
+    if ((role_value == NULL) ||
+        (strcmp(role_value, interactive_caps)))
+      {
+      copy_to_end_of_dynamic_string(status, "reservation_id=");
+      append_dynamic_string(status, rsv_id);
+      }
 
     free(rsv_id);
 
@@ -408,7 +413,8 @@ int process_node(
     free(attr_value);
     }
 
-  free(role_value);
+  if (role_value != NULL)
+    free(role_value);
 
   if (features->used > 0)
     {
