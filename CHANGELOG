@@ -62,6 +62,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       been fixed. TRQ-1088.
   b - Fixed seg-fault when running jobs asynchronously. TRQ-1252.
   b - Job dependencies didn't work with display_server_suffix=false. Fixed. TRQ-1255.
+  b - Don't report alps reservation ids if a node is in interactive mode. TRQ-1251.
+  b - Only attempt to cancel an orphaned alps reservation a maximum of one time per
+      iteration. TRQ-1251.
 
 4.1.2
   e - Add the ability to run a single job partially on CRAY hardware and partially
