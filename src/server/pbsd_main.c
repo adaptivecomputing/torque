@@ -390,6 +390,7 @@ int process_pbs_server_port(
    
   if ((chan = DIS_tcp_setup(sock)) == NULL)
     {
+    return(PBSE_MEM_MALLOC);
     }
 
   proto_type = disrui_peek(chan,&rc);
@@ -489,6 +490,7 @@ void process_pbs_server_port_scheduler(
          (rc != PBSE_SOCKET_INFORMATION) &&
          (rc != PBSE_INTERNAL) &&
          (rc != PBSE_SYSTEM) &&
+         (rc != PBSE_MEM_MALLOC) &&
          (rc != PBSE_SOCKET_CLOSE))
     {
     netcounter_incr();
@@ -523,6 +525,7 @@ void *start_process_pbs_server_port(
          (rc != PBSE_SOCKET_INFORMATION) &&
          (rc != PBSE_INTERNAL) &&
          (rc != PBSE_SYSTEM) &&
+         (rc != PBSE_MEM_MALLOC) &&
          (rc != PBSE_SOCKET_CLOSE))
     {
     netcounter_incr();
