@@ -555,6 +555,12 @@ void mom_job_free(
     pj->ji_globid = NULL;
     }
 
+  if (pj->ji_sister_vnods)
+    {
+    free(pj->ji_sister_vnods);
+    pj->ji_sister_vnods = NULL;
+    }
+
   /* now free the main structure */
 
   free((char *)pj);
