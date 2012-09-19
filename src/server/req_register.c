@@ -2017,24 +2017,32 @@ static int unregister_sync(
   return(0);
   }  /* END unregister_sync() */
 
+
+
+
 /*
  * find_dependjob - find a child dependent job with a certain job id
  */
 
-static struct depend_job *find_dependjob(
+struct depend_job *find_dependjob(
 
-        struct depend *pdep,
-        char          *name)
+  struct depend *pdep,
+  char          *name)
 
   {
-
   struct depend_job *pdj;
+  long               display_server_suffix = TRUE;
+
+  get_svr_attr_l(SRV_ATR_display_job_server_suffix, &display_server_suffix);
 
   pdj = (struct depend_job *)GET_NEXT(pdep->dp_jobs);
 
   while (pdj)
     {
-    if (!strcmp(name, pdj->dc_child))
+    if ((!strcmp(name, pdj->dc_child)) ||
+        ((display_server_suffix == FALSE) &&
+         (!strncmp(name, pdj->dc_child, strlen(name))) &&
+         (strchr(name, '.') == NULL)))
       break;
 
     pdj = (struct depend_job *)GET_NEXT(pdj->dc_link);
@@ -2046,16 +2054,15 @@ static struct depend_job *find_dependjob(
 
 
 
-
 /*
  * make_dependjob - add a depend_job structue
  */
 
 static struct depend_job *make_dependjob(
 
-        struct depend *pdep,
-        char          *jobid,
-        char          *host)
+  struct depend *pdep,
+  char          *jobid,
+  char          *host)
 
   {
 

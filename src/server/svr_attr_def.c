@@ -1012,7 +1012,7 @@ attribute_def svr_attr_def[] =
       PARENT_TYPE_SERVER
   },
 
-  /*SRV_ATR_display_job_server_suffix */
+  /* SRV_ATR_display_job_server_suffix */
   { ATTR_dispsvrsuffix, /* "display_job_server_suffix" */
     decode_b,
     encode_b,
@@ -1025,7 +1025,7 @@ attribute_def svr_attr_def[] =
     PARENT_TYPE_SERVER
   },
 
-  /*SRV_ATR_job_suffix_alias */
+  /* SRV_ATR_job_suffix_alias */
   { ATTR_jobsuffixalias, /* "job_suffix_alias" */
     decode_str,
     encode_str,

@@ -57,7 +57,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       the limit when filling those queues from a routing queue. This has now
       been fixed. TRQ-1088.
   b - Fixed seg-fault when running jobs asynchronously. TRQ-1252.
-
+  b - Job dependencies didn't work with display_server_suffix=false. Fixed. TRQ-1255.
 
 4.1.2
   e - Add the ability to run a single job partially on CRAY hardware and partially
