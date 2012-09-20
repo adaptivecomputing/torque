@@ -643,6 +643,37 @@ void free_buckets(
   } /* END free_buckets() */
 
 
+
+
+/* 
+ * NOTE: this should only be called right before a hash table is freed
+ * and *ONLY* if the keys are all OWNED by the hash table and nobody else
+ */
+
+void free_all_keys(
+    
+  hash_table_t *ht) 
+
+  {
+  bucket *b;
+  int     i;
+
+  for (i = 0; i < ht->size; i++)
+    {
+    b = ht->buckets[i];
+
+    while (b != NULL)
+      {
+      free(b->key);
+      b = b->next;
+      }
+    }
+
+  } /* END free_all_keys() */
+
+
+
+
 void free_hash(
 
   hash_table_t *ht)
