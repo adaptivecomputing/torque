@@ -592,7 +592,7 @@ int process_alps_status(
 
       if (get_value_hash(rsv_ht, just_rsv_id) == -1)
         {
-        add_hash(rsv_ht, 1, just_rsv_id);
+        add_hash(rsv_ht, 1, strdup(just_rsv_id));
         process_reservation_id(current, str);
         }
       }
@@ -600,6 +600,7 @@ int process_alps_status(
     else if ((rc = decode_arst(&temp, NULL, NULL, str, 0)) != PBSE_NONE)
       {
       free_arst(&temp);
+      free_all_keys(rsv_ht);
       free_hash(rsv_ht);
       return(rc);
       }
@@ -626,6 +627,7 @@ int process_alps_status(
 
   unlock_node(parent, __func__, NULL, 0);
 
+  free_all_keys(rsv_ht);
   free_hash(rsv_ht);
 
   return(PBSE_NONE);
