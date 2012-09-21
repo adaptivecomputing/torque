@@ -187,10 +187,13 @@ extern hello_container failures;
 extern int             svr_chngNodesfile;
 extern int             svr_totnodes;
 extern struct all_jobs alljobs;
+extern int run_change_logs;
 
 /* External Functions */
 
 extern int    recov_svr_attr (int);
+extern void  change_logs_handler(int);
+extern void  change_logs();
 
 /* Local Private Functions */
 
@@ -1369,6 +1372,9 @@ void main_loop(void)
 
     monitor_accept_thread();
     monitor_route_retry_thread();
+
+    if (run_change_logs == TRUE)
+      change_logs();
 
     if (try_hellos <= time_now)
       send_any_hellos_needed();

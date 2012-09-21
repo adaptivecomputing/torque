@@ -57,6 +57,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       the limit when filling those queues from a routing queue. This has now
       been fixed. TRQ-1088.
   b - Fixed seg-fault when running jobs asynchronously. TRQ-1252.
+  b - Fixed a bug with SIGHUP to pbs_server. The signal handler (change_logs()) does file I/O
+      which is not allowed for signal interruption. This caused pbs_server to be up but
+      unresponsive to any commands. TRQ-1250 and TR!-1224
   b - Job dependencies didn't work with display_server_suffix=false. Fixed. TRQ-1255.
   b - Don't report alps reservation ids if a node is in interactive mode. TRQ-1251.
   b - Only attempt to cancel an orphaned alps reservation a maximum of one time per
