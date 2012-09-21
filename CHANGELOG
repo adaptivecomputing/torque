@@ -65,6 +65,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Don't report alps reservation ids if a node is in interactive mode. TRQ-1251.
   b - Only attempt to cancel an orphaned alps reservation a maximum of one time per
       iteration. TRQ-1251.
+  b - Fixed a bug with SIGHUP to pbs_server. The signal handler (change_logs()) does file I/O
+      which is not allowed for signal interruption. This caused pbs_server to be up but
+      unresponsive to any commands. TRQ-1250 and TR!-1224
 
 4.1.2
   e - Add the ability to run a single job partially on CRAY hardware and partially

@@ -242,7 +242,8 @@ void          on_job_exit_task(struct work_task *);
 void  init_abt_job(job *);
 char *build_path(char *, char *, char *);
 void  catch_abort(int);
-void  change_logs(int);
+void  change_logs();
+void  change_logs_handler(int);
 void  change_log_level(int);
 int   chk_save_file(char *);
 int   pbsd_init_job(job *, int);
@@ -250,8 +251,11 @@ int   pbsd_init_reque(job *, int);
 void  resume_net_move(struct work_task *);
 void  rm_files(char *);
 void  stop_me(int);
+void change_logs_handler(int sig);
 
 /* private data */
+
+int run_change_logs = FALSE;
 
 #define CHANGE_STATE 1
 #define KEEP_STATE   0
@@ -976,7 +980,7 @@ int setup_signal_handling()
   sigemptyset(&act.sa_mask);
 
   act.sa_flags   = 0;
-  act.sa_handler = change_logs;
+  act.sa_handler = change_logs_handler;
 
   if (sigaction(SIGHUP, &act, &oact) != 0)
     {
@@ -2589,6 +2593,11 @@ void catch_abort(
 
 
 
+void change_logs_handler(int sig)
+  {
+  run_change_logs = TRUE;
+  return;
+  }
 
 
 /*
@@ -2597,12 +2606,12 @@ void catch_abort(
  * Thus the old one can be renamed.
  */
 
-void change_logs(
-
-  int sig)
+void change_logs()
 
   {
   long record_job_info = FALSE;
+
+  run_change_logs = FALSE;
   acct_close();
   pthread_mutex_lock(log_mutex);
   log_close(1);
@@ -2618,9 +2627,6 @@ void change_logs(
     job_log_open(job_log_file, path_jobinfo_log);
     pthread_mutex_unlock(job_log_mutex);
     }
-
-  rpp_dbprt = 1 - rpp_dbprt; /* toggle debug prints for RPP */
-
   return;
   }
 
