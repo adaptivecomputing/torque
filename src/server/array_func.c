@@ -1506,7 +1506,7 @@ int modify_array_range(
                * or in issue_Drequest (success) */
               
               if ((rc = relay_to_mom(&pjob, array_req, NULL)))
-                {  
+                {
                 snprintf(log_buf,sizeof(log_buf),
                   "Unable to relay information to mom for job '%s'\n",
                   pjob->ji_qs.ji_jobid);

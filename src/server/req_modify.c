@@ -327,19 +327,15 @@ void mom_cleanup_checkpoint_hold(
 
 void chkpt_xfr_hold(
 
-  batch_request *preq)
+  batch_request *preq,
+  job           *pjob)
 
   {
-  job                  *pjob;
-
-  char                  log_buf[LOCAL_LOG_BUF_SIZE];
-
+  char   log_buf[LOCAL_LOG_BUF_SIZE];
 
   if ((preq == NULL) ||
-      (preq->rq_extra == NULL))
-    return;
-
-  if ((pjob = svr_find_job(preq->rq_extra, FALSE)) == NULL)
+      (preq->rq_extra == NULL) ||
+      (pjob == NULL))
     return;
 
   if (LOGLEVEL >= 7)
@@ -355,8 +351,6 @@ void chkpt_xfr_hold(
   free_br(preq);
 
   set_task(WORK_Immed, 0, mom_cleanup_checkpoint_hold, strdup(pjob->ji_qs.ji_jobid), FALSE);
-
-  unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
   return;
   }  /* END chkpt_xfr_hold() */
@@ -650,7 +644,7 @@ int modify_job(
        * or in issue_Drequest (success) */
       rc = relay_to_mom(&pjob, momreq, NULL);
 
-      if (rc != 0)
+      if (rc != PBSE_NONE)
         {
         free_br(momreq);
 
@@ -666,7 +660,7 @@ int modify_job(
         return(PBSE_NONE);  /* come back when mom replies */
         }
       else if (checkpoint_req == CHK_HOLD)
-        chkpt_xfr_hold(momreq);
+        chkpt_xfr_hold(momreq, pjob);
       else
         chkpt_xfr_done(momreq);
       }

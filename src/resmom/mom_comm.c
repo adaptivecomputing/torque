@@ -2612,7 +2612,7 @@ void im_kill_job_as_sister(
 
 int im_spawn_task(
 
-  struct tcp_chan *chan,
+  struct tcp_chan    *chan,
   char               *cookie,   /* I */
   tm_event_t          event,    /* I */
   struct sockaddr_in *addr,     /* I */
@@ -2625,7 +2625,7 @@ int im_spawn_task(
   int                  num;
   int                  i;
   int                  local_socket;
-  struct tcp_chan *local_chan = NULL;
+  struct tcp_chan     *local_chan = NULL;
   hnodent             *np;
   tm_node_id           nodeid;
   char                *globid = NULL;

@@ -341,7 +341,7 @@ void *req_checkpointjob(
       }
     /* The dup_req is freed in relay_to_mom (failure)
      * or in issue_Drequest (success) */
-    else if ((rc = relay_to_mom(&pjob, dup_req, NULL)) != 0)
+    else if ((rc = relay_to_mom(&pjob, dup_req, NULL)) != PBSE_NONE)
       {
       req_reject(rc, 0, preq, NULL, NULL);
       free_br(dup_req);
