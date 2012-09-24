@@ -59,6 +59,7 @@ EXTRA_DIST = acinclude.m4 \
 bin_SCRIPTS = pbs-config
 
 DISTCLEANFILES = pbs-config
+MOSTLYCLEANFILES = *.gcda *.gcno *.gcov
 
 DISTCHECK_CONFIGURE_FLAGS=--with-server-home=$$dc_install_base/spool
 
