@@ -482,8 +482,6 @@ job *job_alloc(void)
     return(NULL);
     }
 
-  memset(pj, 0 ,sizeof(job));
-
   pj->ji_qs.qs_version = PBS_QS_VERSION;
 
   CLEAR_LINK(pj->ji_alljobs);

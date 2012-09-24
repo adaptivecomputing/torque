@@ -196,7 +196,7 @@ void remove_stagein(
 
     /* The preq is freed in relay_to_mom (failure)
      * or in issue_Drequest (success) */
-    if (relay_to_mom(&pjob, preq, NULL) == 0)
+    if (relay_to_mom(&pjob, preq, NULL) == PBSE_NONE)
       {
       if (pjob != NULL)
         pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_StagedIn;
