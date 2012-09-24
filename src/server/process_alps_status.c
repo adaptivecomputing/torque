@@ -478,12 +478,17 @@ int record_reservation(
   struct pbssubn *sub_node;
   job            *pjob;
   int             found_job = FALSE;
+  char            jobid[PBS_MAXSVRJOBID];
   
   for (sub_node = pnode->nd_psn; sub_node != NULL; sub_node = sub_node->next)
     {
     if (sub_node->jobs != NULL)
       {
-      if ((pjob = svr_find_job(sub_node->jobs->jobid, TRUE)) != NULL)
+      strcpy(jobid, sub_node->jobs->jobid);
+
+      unlock_node(pnode, __func__, NULL, 0);
+
+      if ((pjob = svr_find_job(jobid, TRUE)) != NULL)
         {
         pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str = strdup(rsv_id);
         pjob->ji_wattr[JOB_ATR_reservation_id].at_flags = ATR_VFLAG_SET;
@@ -492,8 +497,11 @@ int record_reservation(
         found_job = TRUE;
 
         unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+        lock_node(pnode, __func__, NULL, 0);
         break;
         }
+      else
+        lock_node(pnode, __func__, NULL, 0);
       }
     }
 
