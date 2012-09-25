@@ -48,7 +48,7 @@ Parser.c: Parser.y
 	$(YACCCOMPILE) $< && mv y.tab.c $@
 
 MOSTLYCLEANFILES = Parser.c y.tab.h Lexer.c pbs_sched.c
-
+MOSTLYCLEANFILES += *.gcda *.gcno *.gcov
 
 install-exec-hook:
 	rm -f $(DESTDIR)$(sbindir)/$(program_prefix)qschedd$(program_suffix)$(EXEEXT)

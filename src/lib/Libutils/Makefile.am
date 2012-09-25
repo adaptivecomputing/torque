@@ -5,6 +5,7 @@ SUBDIRS = test
 endif
 
 DIST_SUBDIRS =
+CLEANFILES = *.gcda *.gcno *.gcov
 
 noinst_LIBRARIES = libutils.a
 

@@ -136,7 +136,7 @@ nodist_man8_MANS = man8/pbs_mom.8 \
 
 CLEANFILES = $(nodist_man1_MANS) $(nodist_man3_MANS) $(nodist_man7_MANS) \
 	     $(nodist_man8_MANS)
-MOSTLYCLEANFILES = 
+MOSTLYCLEANFILES = *.gcda *.gcno *.gcov
 
 SUFFIXES = .1.in .3.in .7.in .8.in .1 .3 .7 .8 .so
 

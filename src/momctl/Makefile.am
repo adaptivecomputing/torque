@@ -5,6 +5,7 @@ SUBDIRS = test
 endif
 
 DIST_SUBDIRS =
+CLEANFILES = *.gcda *.gcno *.gcov
 
 PBS_LIBS = ../lib/Libpbs/libtorque.la
 

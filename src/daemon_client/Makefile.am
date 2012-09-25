@@ -5,6 +5,7 @@ SUBDIRS = test
 endif
 
 DIST_SUBDIRS =
+CLEANFILES = *.gcda *.gcno *.gcov
 
 include_HEADERS = trq_auth_daemon.h
 
