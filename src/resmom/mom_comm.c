@@ -2675,15 +2675,10 @@ int im_spawn_task(
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
     }
   
-  if (pjob->ji_globid == NULL)
+  if ((pjob->ji_globid[0] == '\0') ||
+      (strcmp(pjob->ji_globid, noglobid) == 0))
     {
-    pjob->ji_globid = strdup(globid);
-    }
-  else if (strcmp(pjob->ji_globid, noglobid) == 0)
-    {
-    free(pjob->ji_globid);
-    
-    pjob->ji_globid = strdup(globid);
+    snprintf(pjob->ji_globid, sizeof(pjob->ji_globid), "%s", globid);
     }
   else if (strcmp(pjob->ji_globid, globid) != 0)
     {
