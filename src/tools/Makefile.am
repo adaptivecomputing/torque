@@ -32,6 +32,7 @@ endif
 bin_PROGRAMS = chk_tree hostn printjob printtracking printserverdb tracejob $(PROGRAMS_TCL) $(PROGRAMS_TK)
 
 LDADD = $(PBS_LIBS)
+CLEANFILES = *.gcda *.gcno *.gcov
 
 tracejob_CFLAGS = -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
 printserverdb_CFLAGS = -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"

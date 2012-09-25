@@ -3,6 +3,9 @@ include $(top_srcdir)/buildutils/config.mk
 if HAVE_CHECK
 SUBDIRS = test
 endif
+
+CLEANFILES = *.gcda *.gcno *.gcov
+
 DIST_SUBDIRS=
 
 include_HEADERS = array_func.h issue_request.h job_func.h node_func.h node_manager.h pbsd_main.h process_request.h queue_func.h queue_recov.h pbsd_init.h reply_send.h req_delete.h req_deletearray.h req_getcred.h req_gpuctrl.h req_holdarray.h req_holdjob.h req_jobobit.h req_locate.h req_manager.h req_message.h req_modify.h req_movejob.h req_quejob.h req_register.h req_rerun.h req_rescq.h req_runjob.h req_select.h req_shutdown.h req_signal.h req_stat.h req_track.h svr_connect.h svr_jobfunc.h queue_recycler.h svr_movejob.h svr_task.h svr_func.h ji_mutex.h

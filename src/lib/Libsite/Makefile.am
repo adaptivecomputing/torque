@@ -5,6 +5,7 @@ SUBDIRS = test
 endif
 
 DIST_SUBDIRS =
+CLEANFILES = *.gcda *.gcno *.gcov
 
 AM_CPPFLAGS += -I$(top_srcdir)/src/resmom/@PBS_MACH@
 

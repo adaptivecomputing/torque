@@ -62,6 +62,7 @@ qgpureset_SOURCES = qgpureset.c
 pbs_track_SOURCES = pbs_track.c
 
 CLEANFILES = $(dist_bin_SCRIPTS)
+CLEANFILES += *.gcda *.gcno *.gcov
 
 do_subst = sed -e 's,[@]AWK[@],$(AWK),g'
 

@@ -6,6 +6,7 @@ endif
 
 CPPFLAGS = -DPBS_DEFAULT_FILE=\"$(PBS_DEFAULT_FILE)\" -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
 DIST_SUBDIRS =
+CLEANFILES = *.gcda *.gcno *.gcov
 
 include_HEADERS = lib_ifl.h
 
