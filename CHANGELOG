@@ -70,6 +70,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       unresponsive to any commands. TRQ-1250 and TRQ-1224
   b - Fix a deadlock when recording an alps reservation on the server side. Cray only. 
       TRQ-1272.
+  c - Fix mismanagement of the ji_globid. TRQ-1262.
 
 
 4.1.2

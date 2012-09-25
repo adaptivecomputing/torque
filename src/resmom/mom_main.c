@@ -7962,7 +7962,7 @@ examine_all_running_jobs(void)
         {
 #ifdef _CRAY
 
-        if (pjob->ji_globid == NULL)
+        if (pjob->ji_globid[0] == '\0')
           break;
 
         c = atoi(pjob->ji_globid);

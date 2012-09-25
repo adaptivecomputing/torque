@@ -547,12 +547,6 @@ void mom_job_free(
     pj->ji_resources = NULL;
     }
 
-  if (pj->ji_globid)
-    {
-    free(pj->ji_globid);
-    pj->ji_globid = NULL;
-    }
-
   if (pj->ji_sister_vnods)
     {
     free(pj->ji_sister_vnods);

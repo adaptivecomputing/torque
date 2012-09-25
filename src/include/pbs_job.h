@@ -572,7 +572,7 @@ struct job
   tlist_head     ji_tasks; /* list of task structs */
   tm_node_id     ji_nodekill; /* set to nodeid requesting job die */
   int            ji_flags; /* mom only flags */
-  char           *ji_globid; /* global job id */
+  char           ji_globid[64]; /* global job id */
   int            ji_portout; /* socket port allocated for ji_stdout */
   int            ji_porterr; /* socket port allocated for ji_stderr */
   int            ji_stdout; /* socket for stdout */
