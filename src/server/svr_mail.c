@@ -99,7 +99,7 @@
 #include "server.h"
 #include "utils.h"
 #include "threadpool.h"
-#include "svr_func.h" /* get_svr_attr_* */
+#include "svrfunc.h" /* get_svr_attr_* */
 
 /* External Functions Called */
 

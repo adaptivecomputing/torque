@@ -99,7 +99,7 @@
 #ifdef _CRAY
 #include <udb.h>
 #endif /* _CRAY */
-#include "svr_func.h" /* get_svr_attr_* */
+#include "svrfunc.h" /* get_svr_attr_* */
 
 /* External Data */
 

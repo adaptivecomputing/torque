@@ -107,7 +107,7 @@
 #ifdef USESAVEDRESOURCES
 #include "resource.h"
 #endif
-#include "svr_func.h"
+#include "svrfunc.h"
 #include "server.h"
 
 /* Local Data */

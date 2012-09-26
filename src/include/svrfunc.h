@@ -9,6 +9,8 @@
  */
 
 int get_svr_attr_l(int index, long *l);
+int get_svr_attr_str(int index, char **str);
+int get_svr_attr_arst(int index, struct array_strings **arst);
 
 extern int   chk_hold_priv(long hold, int priv);
 extern void  get_jobowner(char *from, char *to); 

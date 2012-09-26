@@ -48,7 +48,7 @@
 #include "req_manager.h" /* mgr_set_node_attr */
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
 #include "../lib/Libnet/lib_net.h" /* get_addr_info */
-#include "svr_func.h" /* get_svr_attr_* */
+#include "svrfunc.h" /* get_svr_attr_* */
 #include "alps_constants.h"
 #include "login_nodes.h"
 #include "work_task.h"

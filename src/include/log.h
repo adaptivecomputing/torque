@@ -179,6 +179,8 @@ extern char log_buffer[LOG_BUF_SIZE];
 /* extern int  chk_file_sec (char *, int, int, int, int, char *); */
 /* extern int  setup_env (char *); */
 
+extern int LOGLEVEL;
+
 
 /* Event types */
 

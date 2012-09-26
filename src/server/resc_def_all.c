@@ -97,7 +97,7 @@
 #include "server.h"
 #include "array.h"
 #include "utils.h"
-#include "svr_func.h" /* get_svr_attr_* */
+#include "svrfunc.h" /* get_svr_attr_* */
 
 extern struct server server;
 
