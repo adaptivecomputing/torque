@@ -91,7 +91,7 @@ int node_satisfies_request(struct pbsnode *pnode, char *ProcBMStr);
 int reserve_node(struct pbsnode *pnode, short newstate, job *pjob, char *ProcBMStr, struct howl **hlistptr);
 #endif /* GEOMETRY_REQUESTS */
 
-int add_job_to_node(struct pbsnode *pnode, struct pbssubn *snp, short newstate, job *pjob, int exclusive);
+int add_job_to_node(struct pbsnode *pnode, struct pbssubn *snp, short newstate, job *pjob);
 
 int add_job_to_gpu_subnode(struct pbsnode *pnode, struct gpusubn *gn, job *pjob);
 
@@ -108,10 +108,6 @@ int node_avail_complex(char *spec, int *navail, int *nalloc, int *nresvd, int *n
 int node_avail(char *spec, int *navail, int *nalloc, int *nresvd, int *ndown);
 
 int node_reserve(char *nspec, resource_t tag);
-
-int is_ts_node(char *nodestr);
-
-char *find_ts_node(void);
 
 void free_nodes(job *pjob);
 

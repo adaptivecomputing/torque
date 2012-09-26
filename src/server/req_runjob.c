@@ -146,30 +146,29 @@ static int  assign_hosts(job *, char *, int, char *, char *);
 
 /* Global Data Items: */
 
-extern pbs_net_t pbs_mom_addr;
-extern int  pbs_mom_port;
+extern pbs_net_t        pbs_mom_addr;
+extern int              pbs_mom_port;
 
-extern struct server server;
-extern char  server_host[PBS_MAXHOSTNAME + 1];
-extern char  server_name[PBS_MAXSERVERNAME + 1];
-extern char *msg_badexit;
-extern char *msg_jobrun;
-extern char *msg_manager;
-extern char *msg_stageinfail;
+extern struct server    server;
+extern char             server_host[PBS_MAXHOSTNAME + 1];
+extern char             server_name[PBS_MAXSERVERNAME + 1];
+extern char            *msg_badexit;
+extern char            *msg_jobrun;
+extern char            *msg_manager;
+extern char            *msg_stageinfail;
 extern int              scheduler_jobct;
 extern int              scheduler_sock;
 extern pthread_mutex_t *scheduler_sock_jobct_mutex;
-extern int   svr_totnodes; /* non-zero if using nodes */
-extern int   svr_tsnodes; /* non-zero if time-shared nodes */
+extern int              svr_totnodes; /* non-zero if using nodes */
 
-extern const char   *PJobSubState[];
-extern unsigned int  pbs_rm_port;
-extern char         *msg_err_malloc;
+extern const char      *PJobSubState[];
+extern unsigned int     pbs_rm_port;
+extern char            *msg_err_malloc;
 
-pthread_mutex_t *dispatch_mutex = NULL;
-long  DispatchTime[20];
-job  *DispatchJob[20];
-char *DispatchNode[20];
+pthread_mutex_t        *dispatch_mutex = NULL;
+long                    DispatchTime[20];
+job                    *DispatchJob[20];
+char                   *DispatchNode[20];
 
 extern job  *chk_job_request(char *, struct batch_request *);
 extern struct batch_request *cpy_checkpoint(struct batch_request *, job *, enum job_atr, int);
@@ -2094,17 +2093,6 @@ static int assign_hosts(
 
     hosttoalloc = def_node;
     }
-  else if (svr_tsnodes != 0)
-    {
-    /* find first time-shared node */
-
-    if ((hosttoalloc = find_ts_node()) == NULL)
-      {
-      /* FAILURE */
-
-      return(PBSE_NOTSNODE);
-      }
-    }
   else
     {
     /* fall back to 1 cluster node */
@@ -2116,14 +2104,11 @@ static int assign_hosts(
 
   if (svr_totnodes != 0)
     {
-    if ((rc = is_ts_node(hosttoalloc)) != FALSE)
-      {
-      rc = set_nodes(pjob, hosttoalloc, procs, &list, &portlist, FailHost, EMsg);
-
-      set_exec_host = 1; /* maybe new VPs, must set */
-
-      hosttoalloc = list;
-      }
+    rc = set_nodes(pjob, hosttoalloc, procs, &list, &portlist, FailHost, EMsg);
+    
+    set_exec_host = 1; /* maybe new VPs, must set */
+    
+    hosttoalloc = list;
     }
 
   if (rc == 0)

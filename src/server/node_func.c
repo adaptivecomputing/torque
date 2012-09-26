@@ -5,7 +5,6 @@
  * pbsnlist     - the server's global node list
  * svr_totnodes - total number of pbshost entries
  * svr_clnodes  - number of cluster (space-shared) nodes
- * svr_tsnodes  - number of time-shared nodes, one per host
  *
  * Included functions are:
  * find_nodebyname() - find a node host with a given name
@@ -65,7 +64,6 @@ extern int h_errno;
 extern hello_container  failures;
 extern struct addrinfo  hints;
 extern int              svr_totnodes;
-extern int              svr_tsnodes;
 extern int              svr_clnodes;
 extern char            *path_nodes_new;
 extern char            *path_nodes;
@@ -934,12 +932,6 @@ static int process_host_name_part(
 
   *pul = NULL;
 
-  if ((len >= 3) && !strcmp(&phostname[len - 3], ":ts"))
-    {
-    phostname[len - 3] = '\0';
-    *ntype = NTYPE_TIMESHARED;
-    }
-
   if (getaddrinfo(phostname, NULL, &hints, &addr_info) != 0)
     {
     snprintf(log_buf, sizeof(log_buf), "host %s not found", objname);
@@ -1164,9 +1156,6 @@ int update_nodes_file(
     /* ... write its name, and if time-shared, append :ts */
     fprintf(nin, "%s", np->nd_name); /* write name */
 
-    if (np->nd_ntype == NTYPE_TIMESHARED)
-      fprintf(nin, ":ts");
-
     /* if number of subnodes is gt 1, write that; if only one,   */
     /* don't write to maintain compatability with old style file */
     if (np->nd_nsn > 1)
@@ -1263,7 +1252,6 @@ void recompute_ntype_cnts(void)
 
   {
   int              svr_loc_clnodes = 0;
-  int              svr_loc_tsnodes = 0;
 
   struct pbsnode  *pnode = NULL;
 
@@ -1276,15 +1264,10 @@ void recompute_ntype_cnts(void)
     while ((pnode = next_node(&allnodes, pnode, &iter)) != NULL)
       {
       /* count normally */
-      if (pnode->nd_ntype == NTYPE_CLUSTER)
-        svr_loc_clnodes += pnode->nd_nsn;
-      else if (pnode->nd_ntype == NTYPE_TIMESHARED)
-        svr_loc_tsnodes++;
+      svr_loc_clnodes += pnode->nd_nsn;
       }
 
     svr_clnodes = svr_loc_clnodes;
-
-    svr_tsnodes = svr_loc_tsnodes;
     }
   } /* END recompute_ntype_cnts() */
 
@@ -1347,8 +1330,8 @@ struct pbssubn *create_subnode(
   psubn->index = pnode->nd_nsn++;
   pnode->nd_nsnfree++;
 
-  if ((pnode->nd_state & (INUSE_JOB | INUSE_JOBSHARE)) != 0)
-    pnode->nd_state &= ~(INUSE_JOB|INUSE_JOBSHARE);
+  if ((pnode->nd_state & INUSE_JOB) != 0)
+    pnode->nd_state &= ~INUSE_JOB;
 
   if (pnode->nd_psn == NULL)
     pnode->nd_psn = psubn;
@@ -2315,7 +2298,7 @@ int setup_nodes(void)
           np->nd_state = num | INUSE_NEEDS_HELLO_PING;
 
           /* exclusive bits are calculated later in set_old_nodes() */
-          np->nd_state &= ~(INUSE_JOB | INUSE_JOBSHARE);
+          np->nd_state &= ~INUSE_JOB;
 
           unlock_node(np, __func__, "match", LOGLEVEL);
 
@@ -2419,7 +2402,7 @@ static void delete_a_subnode(
    * and the real node is overwritten by the copy
    */
 
-  if ((psubn->inuse & (INUSE_JOB | INUSE_JOBSHARE)) == 0)
+  if ((psubn->inuse & INUSE_JOB) == 0)
     pnode->nd_nsnfree--;
 
   subnode_delete(psubn);

@@ -257,7 +257,7 @@ extern struct server server;
  * Other misc defines
  */
 #define SVR_HOSTACL "svr_hostacl"
-#define PBS_DEFAULT_NODE "1#shared"
+#define PBS_DEFAULT_NODE "1"
 
 #define SVR_SAVE_QUICK 0
 #define SVR_SAVE_FULL  1

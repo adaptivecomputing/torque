@@ -141,11 +141,9 @@ extern int              allow_any_mom;
 extern int              h_errno;
 #endif
   
-const char              shared[] = "shared";
 
 int                     svr_totnodes = 0; /* total number nodes defined       */
 int                     svr_clnodes  = 0; /* number of cluster nodes     */
-int                     svr_tsnodes  = 0; /* number of time shared nodes     */
 int                     svr_chngNodesfile = 0; /* 1 signals want nodes file update */
 int                     gpu_mode_rqstd = -1;  /* default gpu mode requested */
 #ifdef NVIDIA_GPUS
@@ -154,8 +152,6 @@ int                     gpu_err_reset = FALSE;    /* was a gpu errcount reset re
 /* on server shutdown, (qmgr mods)  */
 
 all_nodes               allnodes;
-
-static int              exclusive;  /* node allocation type */
 
 static int              num_addrnote_tasks = 0; /* number of outstanding send_cluster_addrs tasks */
 pthread_mutex_t        *addrnote_mutex = NULL;
@@ -199,7 +195,7 @@ extern int              multi_mom;
 int handle_complete_first_time(job *pjob);
 int is_compute_node(char *node_id);
 int hasprop(struct pbsnode *, struct prop *);
-int add_job_to_node(struct pbsnode *,struct pbssubn *,short,job *,int);
+int add_job_to_node(struct pbsnode *,struct pbssubn *,short,job *);
 int node_satisfies_request(struct pbsnode *,char *);
 int reserve_node(struct pbsnode *,short,job *,char *,struct howl **);
 int build_host_list(struct howl **,struct pbssubn *,struct pbsnode *);
@@ -390,7 +386,6 @@ void update_node_state(
 #ifdef BROKENVNODECHECKS
 
     if ((np->nd_state & INUSE_JOB) ||
-        (np->nd_state & INUSE_JOBSHARE) ||
         (np->nd_nsn != np->nd_nsnfree))
       {
       int snjcount;   /* total number of jobs assigned to nodes */
@@ -422,7 +417,7 @@ void update_node_state(
 
           snjacount++;
 
-          sp->inuse &= ~(INUSE_JOB | INUSE_JOBSHARE);
+          sp->inuse &= ~INUSE_JOB;
 
           /* look for and remove duplicate job entries in subnode job list */
 
@@ -486,7 +481,7 @@ void update_node_state(
           strcat(log_buf, " - subnode job array is corrupt");
           }
 
-        np->nd_state &= ~(INUSE_JOB | INUSE_JOBSHARE);
+        np->nd_state &= ~INUSE_JOB;
         }
       else
         {
@@ -498,10 +493,6 @@ void update_node_state(
             nsn_free);
 
           np->nd_nsnfree = nsn_free;
-
-          /* what is the exact meaning of JOBSHARE? */
-
-          np->nd_state &= ~INUSE_JOBSHARE;
           }
         else
           {
@@ -3159,7 +3150,7 @@ int can_reshuffle(
       return(FALSE);
 
     if ((skip == SKIP_ANYINUSE) &&
-        (vpreq < (pnode->nd_nsnfree + pnode->nd_nsnshared)) &&
+        (vpreq < pnode->nd_nsnfree) &&
         (gpureq < gpu_count(pnode, TRUE)))
       return(FALSE);
 
@@ -3370,7 +3361,7 @@ int proplist(
       {
       gpu_mode_rqstd = gpu_normal;
       }
-    else if (have_gpus && (!strcasecmp(pname, shared)))
+    else if (have_gpus && (!strcasecmp(pname, "shared")))
       {
       gpu_mode_rqstd = gpu_normal;
       }
@@ -3576,7 +3567,6 @@ int node_is_spec_acceptable(
   struct pbsnode   *pnode,
   single_spec_data *spec,
   char             *ProcBMStr,
-  int               exclusive,
   int              *eligible_nodes)
 
   {
@@ -3585,6 +3575,8 @@ int node_is_spec_acceptable(
 
   int             ppn_req = spec->ppn;
   int             gpu_req = spec->gpu;
+  int             gpu_free;
+  int             np_free;
 
 #ifdef GEOMETRY_REQUESTS
   if (IS_VALID_STR(ProcBMStr))
@@ -3629,15 +3621,12 @@ int node_is_spec_acceptable(
   if ((pnode->nd_state & (INUSE_OFFLINE | INUSE_DOWN | INUSE_RESERVE | INUSE_JOB)) != 0)
     return(FALSE);
 
-  if (exclusive == TRUE) 
-    {
-    int gpu_free = gpu_count(pnode, TRUE) - pnode->nd_ngpus_to_be_used;
-    int np_free  = pnode->nd_nsnfree - pnode->nd_np_to_be_used;
-
-    if ((ppn_req > np_free) ||
-        (gpu_req > gpu_free))
-      return(FALSE);
-    }
+  gpu_free = gpu_count(pnode, TRUE) - pnode->nd_ngpus_to_be_used;
+  np_free  = pnode->nd_nsnfree - pnode->nd_np_to_be_used;
+  
+  if ((ppn_req > np_free) ||
+      (gpu_req > gpu_free))
+    return(FALSE);
 
   return(TRUE);
   } /* END node_is_spec_acceptable() */
@@ -4153,8 +4142,6 @@ int node_spec(
     DBPRT(("%s\n", log_buf));
     }
 
-  exclusive = 1; /* by default, nodes (VPs) are requested exclusively */
-
   set_first_node_name(spec_param, first_node_name);
   get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
 
@@ -4188,32 +4175,18 @@ int node_spec(
       {
       *cp++ = '\0';
 
-      if (strcmp(cp, shared) != 0)
-        {
-        hold = mod_spec(spec, cp);
-
-        free(spec);
-
-        spec = hold;
-        }
-      else
-        {
-        exclusive = 0;
-        }
-      }
-
-    if (strcmp(globs, shared) != 0)
-      {
-      hold = mod_spec(spec, globs);
-
+      hold = mod_spec(spec, cp);
+      
       free(spec);
-
+      
       spec = hold;
       }
-    else
-      {
-      exclusive = 0;
-      }
+
+    hold = mod_spec(spec, globs);
+    
+    free(spec);
+    
+    spec = hold;
 
     free(globs);
     }  /* END if ((globs = strchr(spec,'#')) != NULL) */
@@ -4343,7 +4316,7 @@ int node_spec(
 
       if (req->nodes > 0)
         {
-        if (node_is_spec_acceptable(pnode, req, ProcBMStr, exclusive, &eligible_nodes) == TRUE)
+        if (node_is_spec_acceptable(pnode, req, ProcBMStr, &eligible_nodes) == TRUE)
           {
           if (naji != NULL)
             {
@@ -4600,7 +4573,7 @@ int reserve_node(
     if (ProcBMStr[BMIndex--] != '1')
       continue;
 
-    add_job_to_node(pnode,snp,INUSE_JOB,pjob,exclusive);
+    add_job_to_node(pnode, snp, INUSE_JOB, pjob);
 
     build_host_list(hlistptr,snp,pnode);
     }
@@ -4626,15 +4599,13 @@ int reserve_node(
  * @param nd_psn - the subnode (processor) that the job is running on
  * @param newstate - the state nodes are transitioning to when used
  * @param pjob - the job that is going to be run
- * @param exclusive - TRUE if jobs are given exclusive node use, FALSE otherwise
  */
 int add_job_to_node(
 
   struct pbsnode *pnode,     /* I/O */
   struct pbssubn *snp,       /* I/O */
   short           newstate,  /* I */
-  job            *pjob,      /* I */
-  int             exclusive) /* I */
+  job            *pjob)      /* I */
 
   {
   struct jobinfo *jp;
@@ -4678,9 +4649,6 @@ int add_job_to_node(
     if (snp->inuse == INUSE_FREE)
       {
       snp->inuse = newstate;
-
-      if (!exclusive)
-        pnode->nd_nsnshared++;
       }
     }
 
@@ -4954,21 +4922,11 @@ int place_subnodes_in_hostlist(
   /* place the subnodes (nps) in the hostlist */
   for (snp = pnode->nd_psn; snp && naji->ppn_needed > 0; snp = snp->next)
     {
-    if (exclusive)
-      {
-      if (snp->inuse != INUSE_FREE)
-        continue;
-      }
-    else
-      {
-      if ((snp->inuse != INUSE_FREE) && (snp->inuse != INUSE_JOBSHARE))
-        {
-        continue;
-        }
-      }
+    if (snp->inuse != INUSE_FREE)
+      continue;
     
     /* Mark subnode as being IN USE */
-    add_job_to_node(pnode, snp, newstate, pjob, exclusive);
+    add_job_to_node(pnode, snp, newstate, pjob);
     build_host_list(hlist, snp, pnode);
     naji->ppn_needed--;
     }  /* END for (snp) */
@@ -5263,29 +5221,17 @@ int build_hostlist_procs_req(
       {
       for (snp = pnode->nd_psn;snp && procs_needed > 0;snp = snp->next)
         {
-        if (exclusive)
-          {
-          if (snp->inuse != INUSE_FREE)
-            {
-            continue;
-            }
-          }
-        else
-          {
-          if ((snp->inuse != INUSE_FREE) && (snp->inuse != INUSE_JOBSHARE))
-            {
-            continue;
-            }
-          }
+        if (snp->inuse != INUSE_FREE)
+          continue;
 
         /* Mark subnode as being IN USE */
         pnode->nd_needed++; /* we do this because add_job_to_node will decrement it */
 
         /* We need to set the node to thinking. */
         pnode->nd_flag = thinking;
-        add_job_to_node(pnode,snp,newstate,pjob,exclusive);
+        add_job_to_node(pnode, snp, newstate, pjob);
 
-        build_host_list(hlist,snp,pnode);
+        build_host_list(hlist, snp, pnode);
         procs_needed--;
         } /* END for (snp) */
       } /* END for each node */
@@ -5409,7 +5355,7 @@ int set_nodes(
   hlist = NULL;
   gpu_list = NULL;
 
-  newstate = exclusive ? INUSE_JOB : INUSE_JOBSHARE;
+  newstate = INUSE_JOB;
 
   if ((rc = build_hostlist_nodes_req(pjob, EMsg, spec, newstate, &hlist, &gpu_list, naji)) != PBSE_NONE)
     {
@@ -5581,32 +5527,18 @@ int procs_requested(
       {
       *cp++ = '\0';
 
-      if (strcmp(cp, shared) != 0)
-        {
-        hold = mod_spec(spec, cp);
-
-        free(tmp_spec);
-
-        tmp_spec = hold;
-        }
-      else
-        {
-        exclusive = 0;
-        }
-      }
-
-    if (strcmp(globs, shared) != 0)
-      {
-      hold = mod_spec(tmp_spec, globs);
-
+      hold = mod_spec(spec, cp);
+      
       free(tmp_spec);
-
+      
       tmp_spec = hold;
       }
-    else
-      {
-      exclusive = 0;
-      }
+
+    hold = mod_spec(tmp_spec, globs);
+    
+    free(tmp_spec);
+    
+    tmp_spec = hold;
 
     free(globs);
     }  /* END if ((globs = strchr(spec,'#')) != NULL) */
@@ -5698,7 +5630,6 @@ int node_avail_complex(
 
 /*
  * node_avail - report if nodes requested are available
- * Does NOT even consider Time Shared Nodes
  *
  * Return 0 when no error in request and
  *  *navail is set to number available
@@ -5829,7 +5760,6 @@ int node_avail(
 
 /*
  * node_reserve - Reserve nodes
- * Cannot reserve Time Shared Nodes
  *
  * Returns: >0 - reservation succeeded, number of nodes reserved
  *    0 - None or partial reservation
@@ -5918,71 +5848,6 @@ int node_reserve(
   return(ret_val);
   }  /* END node_reserve() */
 
-
-
-
-
-
-/*
- * is_ts_node - does the nodestr specify a single time share node?
- * 0 - yes
- * 1 - no, not a ts node or more than one node (name will not match)
- */
-
-int is_ts_node(
-
-  char *nodestr)
-
-  {
-  int             rc = 1; /* see comment above */
-  struct pbsnode *np = find_nodebyname(nodestr);
-
-  if (np != NULL)
-    {
-    if (np->nd_ntype == NTYPE_TIMESHARED)
-      {
-      rc = 0;
-      }
-
-    unlock_node(np, "is_ts_node", NULL, LOGLEVEL);
-    }
-
-  return(rc);
-  }  /* END is_ts_node() */
-
-
-
-
-
-/*
- * find_ts_node - find first up time-shared node
- *
- * returns name of node or null
- */
-
-char *find_ts_node(void)
-
-  {
-  struct pbsnode *np = NULL;
-  node_iterator   iter;
-
-  reinitialize_node_iterator(&iter);
-
-  while ((np = next_node(&allnodes,np,&iter)) != NULL)
-    {
-    if ((np->nd_ntype == NTYPE_TIMESHARED) &&
-        ((np->nd_state & (INUSE_DOWN | INUSE_OFFLINE)) == 0))
-      {
-      char *name = np->nd_name;
-
-      unlock_node(np, "find_ts_node", NULL, LOGLEVEL);
-
-      return(name);
-      }
-    } /* END for each node */
-
-  return(NULL);
-  }  /* END find_ts_node() */
 
 
 
@@ -6151,17 +6016,14 @@ int remove_job_from_node(
         log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
         }
       
-      pnode->nd_state &= ~(INUSE_JOB | INUSE_JOBSHARE);
+      pnode->nd_state &= ~INUSE_JOB;
       
       /* if no jobs are associated with subnode, mark subnode as free */
       
       if (np->jobs == NULL)
         {
-        if (np->inuse & INUSE_JOBSHARE)
-          pnode->nd_nsnshared--;
-        
         /* adjust node state (turn off job/job-exclusive) */        
-        np->inuse &= ~(INUSE_JOB | INUSE_JOBSHARE);
+        np->inuse &= ~INUSE_JOB;
         }
       
       break;
@@ -6280,8 +6142,7 @@ struct pbsnode *get_compute_node(
 void set_one_old(
 
   char *name,
-  job  *pjob,
-  int   is_shared) /* how used flag, either INUSE_JOB or INUSE_JOBSHARE */
+  job  *pjob)
 
   {
   int             index;
@@ -6334,7 +6195,7 @@ void set_one_old(
         {
         if (snp->index == index)
           {
-          snp->inuse = is_shared;
+          snp->inuse = INUSE_JOB;
           
           jp = (struct jobinfo *)calloc(1, sizeof(struct jobinfo));
           
@@ -6349,7 +6210,7 @@ void set_one_old(
             }
           
           if (--pnode->nd_nsnfree <= 0)
-            pnode->nd_state |= is_shared;
+            pnode->nd_state |= INUSE_JOB;
          
           break;
           }
@@ -6378,26 +6239,9 @@ void set_old_nodes(
   {
   char     *old;
   char     *po;
-  resource *presc;
-  int       is_shared = INUSE_JOB;
 
   if (pjob->ji_wattr[JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET)
     {
-    /* are the nodes being used shared? Look in "neednodes" */
-
-    presc = find_resc_entry(
-              &pjob->ji_wattr[JOB_ATR_resource],
-              find_resc_def(svr_resc_def, "neednodes", svr_resc_size));
-
-    if ((presc != NULL) && (presc->rs_value.at_flags & ATR_VFLAG_SET))
-      {
-      if ((po = strchr(presc->rs_value.at_val.at_str, '#')))
-        {
-        if (strstr(++po, shared) != NULL)
-          is_shared = INUSE_JOBSHARE;
-        }
-      }
-
     old = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
 
     if (old == NULL)
@@ -6411,16 +6255,18 @@ void set_old_nodes(
       {
       *po++ = '\0';
 
-      set_one_old(po, pjob, is_shared);
+      set_one_old(po, pjob);
       }
 
-    set_one_old(old, pjob, is_shared);
+    set_one_old(old, pjob);
 
     free(old);
     }  /* END if pjobs exec host is set */
 
   return;
   }  /* END set_old_nodes() */
+
+
 
   
 job *get_job_from_jobinfo(

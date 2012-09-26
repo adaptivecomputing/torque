@@ -154,13 +154,12 @@ static struct node_state
 
   {
     {INUSE_UNKNOWN, ND_state_unknown},
-  {INUSE_DOWN,    ND_down},
-  {INUSE_OFFLINE, ND_offline},
-  {INUSE_RESERVE, ND_reserve},
-  {INUSE_JOB,     ND_job_exclusive},
-  {INUSE_JOBSHARE, ND_job_sharing},
-  {INUSE_BUSY,    ND_busy},
-  {0,             NULL}
+    {INUSE_DOWN,    ND_down},
+    {INUSE_OFFLINE, ND_offline},
+    {INUSE_RESERVE, ND_reserve},
+    {INUSE_JOB,     ND_job_exclusive},
+    {INUSE_BUSY,    ND_busy},
+    {0,             NULL}
   };
 
 
@@ -223,22 +222,6 @@ int PNodeStateToString(
         len--;
       
       strcat(Buf, ND_job_exclusive);
-      BufSize -= len;
-      }
-    }
-
-  if (SBM & (INUSE_JOBSHARE))
-    {
-    len = strlen(ND_job_sharing) + 1;
-    
-    if (len < BufSize)
-      {
-      if (Buf[0] != '\0')
-        strcat(Buf, ",");
-      else
-        len--;
-      
-      strcat(Buf, ND_job_sharing);
       BufSize -= len;
       }
     }
@@ -694,8 +677,6 @@ int decode_ntype(
 
   if (val == (char *)0)
     rc = (PBSE_BADNDATVAL);
-  else if (!strcmp(val, ND_timeshared))
-    tmp = NTYPE_TIMESHARED;
   else if (!strcmp(val, ND_cluster))
     tmp = NTYPE_CLUSTER;
   else
@@ -841,12 +822,8 @@ int set_node_ntype(
 
       if (pattr->at_val.at_short != new->at_val.at_short)
         rc = PBSE_MUTUALEX;  /*types are mutually exclusive*/
-
-      else if (pattr->at_val.at_short == NTYPE_TIMESHARED)
+      else 
         pattr->at_val.at_short = NTYPE_CLUSTER;
-
-      else
-        pattr->at_val.at_short = NTYPE_TIMESHARED;
 
       break;
 

@@ -37,8 +37,6 @@ int set_svr_attr(int, void *);
 
 #ifdef PBS_JOB_H
 extern int   set_nodes(job *, char *, int, char **, char **, char *, char *);
-extern int   is_ts_node(char *);
-extern char *find_ts_node(void);
 extern void  free_nodes(job *);
 #endif /* PBS_JOB_H */
 
