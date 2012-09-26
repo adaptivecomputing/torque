@@ -274,6 +274,7 @@ char                    server_name[PBS_MAXSERVERNAME + 1]; /* host_name[:servic
 int                     svr_do_schedule = SCH_SCHEDULE_NULL;
 pthread_mutex_t        *svr_do_schedule_mutex;
 pthread_mutex_t        *check_tasks_mutex;
+pthread_mutex_t        *reroute_job_mutex;
 extern int              listener_command;
 extern hello_container  hellos;
 extern hello_container  failures;

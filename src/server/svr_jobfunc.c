@@ -837,7 +837,7 @@ int svr_setjobstate(
       newstate,
       newsubstate);
 
-    log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
 
   /*

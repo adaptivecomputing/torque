@@ -131,6 +131,7 @@ extern char *msg_routexceed;
 extern char *msg_err_malloc;
 extern char *msg_err_noqueue;
 extern int LOGLEVEL;
+extern pthread_mutex_t *reroute_job_mutex;
 
 /*
  * Add an entry to the list of bad destinations for a job.
@@ -472,6 +473,7 @@ void *reroute_job(
   int        rc;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
 
+  pthread_mutex_lock(reroute_job_mutex);
   jobid = (char *)vp;
 
   if ((jobid != NULL) &&
@@ -507,6 +509,7 @@ void *reroute_job(
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     }
 
+  pthread_mutex_unlock(reroute_job_mutex);
   return(NULL);      
   } /* END reroute_job() */
 

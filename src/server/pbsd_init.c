@@ -218,6 +218,7 @@ extern pthread_mutex_t *svr_do_schedule_mutex;
 extern pthread_mutex_t *listener_command_mutex;
 extern pthread_mutex_t *node_state_mutex;
 extern pthread_mutex_t *check_tasks_mutex;
+extern pthread_mutex_t *reroute_job_mutex;
 
 extern int a_opt_init;
 
@@ -225,6 +226,7 @@ extern int LOGLEVEL;
 extern char *plogenv;
 
 extern struct server server;
+
 
 /* External Functions Called */
 
@@ -1223,6 +1225,9 @@ int initialize_data_structures_and_mutexes()
 
   scheduler_sock_jobct_mutex = calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(scheduler_sock_jobct_mutex, NULL);
+
+  reroute_job_mutex = calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(reroute_job_mutex, NULL);
 
   pthread_mutex_lock(scheduler_sock_jobct_mutex);
   scheduler_sock = -1;
