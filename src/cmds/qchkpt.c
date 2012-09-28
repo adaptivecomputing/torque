@@ -55,7 +55,7 @@ cnt:
       {
       any_failed = -1 * connect;
 
-      if (server_out != 0)
+      if (server_out[0] != '\0')
         fprintf(stderr, "qchkpt: cannot connect to server %s (errno=%d)\n",
               server_out, any_failed);
       else

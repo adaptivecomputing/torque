@@ -3650,7 +3650,8 @@ char *nusers(
 
           return(NULL);
           }
-        memset(hold+((maxuid-100)*sizeof(uid_t)), 0, 100*sizeof(uid_t));
+
+        memset(hold+(maxuid-100), 0, 100*sizeof(uid_t));
 
         if (LOGLEVEL >= 7)
           {

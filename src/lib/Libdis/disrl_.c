@@ -89,7 +89,7 @@
 
 int disrl_(
 
-  struct tcp_chan *chan,
+  struct tcp_chan   *chan,
   dis_long_double_t *ldval,
   unsigned          *ndigs,
   unsigned          *nskips,
@@ -97,14 +97,15 @@ int disrl_(
   unsigned           count)
 
   {
-  int  c;
-  int  negate;
-  unsigned unum;
-  char  *cp;
-  dis_long_double_t fpnum;
-  char  scratch[DIS_BUFSIZ+1];
+  int                c;
+  int                negate;
+  unsigned           unum;
+  char              *cp;
+  dis_long_double_t  fpnum;
+  char               scratch[DIS_BUFSIZ];
 
-  memset(scratch, 0, DIS_BUFSIZ+1);
+  memset(scratch, 0, sizeof(scratch));
+
   if (dis_umaxd == 0)
     disiui_();
 

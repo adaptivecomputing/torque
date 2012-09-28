@@ -393,7 +393,7 @@ int req_register(
                 {
                 /* has prior register, update it */
 
-                if (server_name != NULL)
+                if (server_name[0] != '\0')
                   snprintf(pdj->dc_svr, sizeof(pdj->dc_svr), "%s", server_name);
                 else
                   snprintf(pdj->dc_svr, sizeof(pdj->dc_svr), "%s", preq->rq_ind.rq_register.rq_svr);
@@ -829,10 +829,10 @@ int register_array_depend(
     CLEAR_LINK(pdj->dc_link);
 
     snprintf(pdj->dc_child,sizeof(pdj->dc_child),"%s",preq->rq_ind.rq_register.rq_child);
-    if (server_name != NULL)
-      snprintf(pdj->dc_svr,sizeof(pdj->dc_svr),"%s",server_name);
+    if (server_name[0] != '\0')
+      snprintf(pdj->dc_svr, sizeof(pdj->dc_svr), "%s", server_name);
     else
-      snprintf(pdj->dc_svr,sizeof(pdj->dc_svr),"%s",preq->rq_ind.rq_register.rq_svr);
+      snprintf(pdj->dc_svr, sizeof(pdj->dc_svr), "%s", preq->rq_ind.rq_register.rq_svr);
 
     if (num_jobs == -1)
       {
@@ -1847,7 +1847,7 @@ static int register_sync(
     {
     /* existing regist., just update the location of the child */
 
-    if (server_name != NULL)
+    if (server_name[0] != '\0')
       strcpy(pdj->dc_svr, server_name);
     else
       strcpy(pdj->dc_svr, host);
@@ -1913,7 +1913,7 @@ static int register_dep(
 
   if ((pdj = find_dependjob(pdep, preq->rq_ind.rq_register.rq_child)))
     {
-    if (server_name != NULL)
+    if (server_name[0] != '\0')
       strcpy(pdj->dc_svr, server_name);
     else
       strcpy(pdj->dc_svr, preq->rq_ind.rq_register.rq_svr);
@@ -2079,7 +2079,7 @@ static struct depend_job *make_dependjob(
     pdj->dc_cost  = 0;
 
     strcpy(pdj->dc_child, jobid);
-    if (server_name != NULL)
+    if (server_name[0] != '\0')
       strcpy(pdj->dc_svr, server_name);
     else
       strcpy(pdj->dc_svr, host);
@@ -2955,7 +2955,7 @@ static int build_depend(
 
           if (pwhere)
             {
-            if (server_name != NULL)
+            if (server_name[0] != '\0')
               strcpy(pdjb->dc_svr, server_name);
             else
               strcpy(pdjb->dc_svr, pwhere + 1);

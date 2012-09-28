@@ -919,13 +919,13 @@ int get_default_threads()
 
     if (count > 0)
       default_threads = (2 * count) + 1;
+  
+    fclose(fp);
     }
 
   snprintf(log_buf, sizeof(log_buf),
     "Defaulting min_threads to %d threads", default_threads);
   log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buf);
-  
-  fclose(fp);
 
   return(default_threads);
   } /* END get_default_threads() */
@@ -1455,7 +1455,7 @@ int handle_queue_recovery(
 
   while ((pdirent = readdir(dir)) != NULL)
     {
-    if (pdirent->d_name == NULL)
+    if (pdirent->d_name[0] == '\0')
       {
       /* invalid name returned */
       continue;

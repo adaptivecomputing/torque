@@ -3611,12 +3611,17 @@ int read_config(
     nconfig = 0;
     linenum = 0;
 
-    while (fgets(line, sizeof(line), conf))
+    memset(line, 0, sizeof(line));
+
+    while (fgets(line, sizeof(line) - 1, conf))
       {
       linenum++;
 
       if (line[0] == '#') /* comment */
+        {
+        memset(line, 0, sizeof(line));
         continue;
+        }
 
       if ((ptr = strchr(line, '#')) != NULL)
         {
@@ -3628,7 +3633,10 @@ int read_config(
       str = skipwhite(line); /* pass over initial whitespace */
 
       if (*str == '\0')
+        {
+        memset(line, 0, sizeof(line));
         continue;
+        }
 
       if (LOGLEVEL >= 6)
         {
@@ -3658,6 +3666,8 @@ int read_config(
                   name);
 
           log_err(-1, __func__, log_buffer);
+    
+          memset(line, 0, sizeof(line));
 
           continue;
           }
@@ -3676,6 +3686,8 @@ int read_config(
 
           log_err(-1, __func__, log_buffer);
           }
+    
+        memset(line, 0, sizeof(line));
 
         continue;
         }
@@ -3683,6 +3695,8 @@ int read_config(
       add_static(str, file, linenum);
 
       nconfig++;
+    
+      memset(line, 0, sizeof(line));
       }  /* END while (fgets()) */
 
     /*
@@ -9062,6 +9076,8 @@ void resend_things()
       case OBIT_TASK_REPLY:
 
         ret = resend_obit_task_reply((obit_task_info *)mc->mc_struct);
+
+        break;
 
       default:
 

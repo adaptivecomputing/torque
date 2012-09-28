@@ -995,7 +995,7 @@ int main(
     stop  = numnodes;
     }
 
-  if ((ioenv = calloc(2, sizeof(char *)))==NULL)
+  if ((ioenv = calloc(2, sizeof(char **))) == NULL)
     {
     /* FAILURE - cannot alloc memory */
 
@@ -1009,7 +1009,7 @@ int main(
     {
     stdoutfd = build_listener(&stdoutport);
 
-    if ((*ioenv = calloc(50,sizeof(char *))) == NULL)
+    if ((*ioenv = calloc(50, sizeof(char *))) == NULL)
       {
       /* FAILURE - cannot alloc memory */
 

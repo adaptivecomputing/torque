@@ -121,14 +121,14 @@ int diswul(
   unsigned long value)   /* I */
 
   {
-  int  retval;
-  unsigned ndigs;
+  int           retval;
+  unsigned      ndigs;
   char         *cp;
 
   int           rc;
-  char  scratch[DIS_BUFSIZ+1];
+  char          scratch[DIS_BUFSIZ];
 
-  memset(scratch, 0, DIS_BUFSIZ+1);
+  memset(scratch, 0, sizeof(scratch));
   cp = discul_(&scratch[DIS_BUFSIZ], value, &ndigs);
 
   *--cp = '+';

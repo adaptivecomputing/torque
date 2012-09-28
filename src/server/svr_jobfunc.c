@@ -640,7 +640,6 @@ int svr_dequejob(
   if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
     return(PBSE_JOBNOTFOUND);
 
-
   if (LOGLEVEL >= 10)
     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
 
@@ -701,8 +700,6 @@ int svr_dequejob(
     if (parent_queue_mutex_held == FALSE)
       unlock_queue(pque, __func__, NULL, LOGLEVEL);
     }
-  else if (pjob == NULL)
-    return(PBSE_JOBNOTFOUND);
 
 #ifndef NDEBUG
 

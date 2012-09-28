@@ -478,7 +478,7 @@ int record_reservation(
   struct pbssubn *sub_node;
   job            *pjob;
   int             found_job = FALSE;
-  char            jobid[PBS_MAXSVRJOBID];
+  char            jobid[PBS_MAXSVRJOBID + 1];
   
   for (sub_node = pnode->nd_psn; sub_node != NULL; sub_node = sub_node->next)
     {

@@ -333,8 +333,8 @@ int svr_get_privilege(
 #else /* __CYGWIN__ */
 
   if ((strcmp(user, PBS_DEFAULT_ADMIN) == 0) &&
-       ((!strcasecmp(host_no_port, server_host)) || 
-        (!strcasecmp(host_no_port, server_localhost))))
+      ((!strcasecmp(host_no_port, server_host)) || 
+       (!strcasecmp(host_no_port, server_localhost))))
     {
     is_root = 1;
 

@@ -2040,12 +2040,15 @@ int setup_nodes(void)
   get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
 
   /* clear out line so we don't have residual data if there is no LF */
-  memset(line, '\0', sizeof(line));
+  memset(line, 0, sizeof(line));
 
-  for (linenum = 1;fgets(line, sizeof(line), nin);linenum++)
+  for (linenum = 1; fgets(line, sizeof(line) - 1, nin); linenum++)
     {
     if (line[0] == '#') /* comment */
+      {
+      memset(line, 0, sizeof(line));
       continue;
+      }
 
     is_alps_reporter = FALSE;
     is_alps_starter = FALSE;
@@ -2056,7 +2059,10 @@ int setup_nodes(void)
     token = parse_node_token(line, 1, 0, &err, &xchar);
 
     if (token == NULL)
+      {
+      memset(line, 0, sizeof(line));
       continue; /* blank line */
+      }
 
     if (err != 0)
       {
@@ -2248,6 +2254,8 @@ int setup_nodes(void)
       log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
 
       free_attrlist(&atrlist);
+      memset(line, 0, sizeof(line));
+
       continue;
       }
 
@@ -2279,6 +2287,8 @@ int setup_nodes(void)
       }
 
     free_attrlist(&atrlist);
+
+    memset(line, 0, sizeof(line));
     }  /* END for (linenum) */
 
   if (cray_enabled == TRUE)

@@ -120,12 +120,12 @@ static int disrd_(
   int  negate;
   unsigned int  unum;
   char  *cp;
-  char scratch[DIS_BUFSIZ+1];
+  char scratch[DIS_BUFSIZ];
 
   if (dis_umaxd == 0)
     disiui_();
 
-  memset(scratch, 0, DIS_BUFSIZ+1);
+  memset(scratch, 0, sizeof(scratch));
 
   c = tcp_getc(chan);
 

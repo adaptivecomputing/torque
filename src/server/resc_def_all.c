@@ -772,13 +772,15 @@ int svr_resc_size = 0;
 int init_resc_defs(void)
 
   {
-  resource_def *tmpresc = NULL;
-  int rindex = 0, dindex = 0, unkindex = 0;
+  int                   rindex = 0;
+  int                   dindex = 0;
+  int                   unkindex = 0;
 #ifndef PBS_MOM
 
+  resource_def         *tmpresc = NULL;
   struct array_strings *resc_arst = NULL;
   char                 *extra_resc;
-  int   resc_num = 0;
+  int                   resc_num = 0;
 #endif
 
   svr_resc_size = sizeof(svr_resc_def_const) / sizeof(resource_def);
@@ -832,8 +834,8 @@ int init_resc_defs(void)
 
   unkindex = rindex;
 
+#ifndef PBS_MOM
   /* copy our dynamic resources */
-
   if (tmpresc)
     {
     for (dindex = 0; (tmpresc + dindex)->rs_decode; dindex++)
@@ -847,22 +849,15 @@ int init_resc_defs(void)
 
     free(tmpresc);
     }
+#endif
 
   /* copy the last "unknown" resource */
   memcpy(svr_resc_def + rindex, svr_resc_def_const + unkindex, sizeof(resource_def));
 
   svr_resc_size = rindex + 1;
 
-  /* uncomment if you feel like debugging this
-    for (rindex=0; rindex<svr_resc_size; rindex++)
-      {
-      fprintf(stderr,"resource: %s (%d)\n",(svr_resc_def+rindex)->rs_name,rindex);
-      }
-  */
-  return 0;
-  }
-
-
+  return(PBSE_NONE);
+  } /* END init_resc_defs() */
 
 
 

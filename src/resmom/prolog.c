@@ -269,7 +269,7 @@ static int pelog_err(
   sprintf(PBSNodeMsgBuf,"ERROR: %s",
     log_buffer);
 
-  log_err(-1,"run_pelog",log_buffer);
+  log_err(-1, __func__, log_buffer);
 
   return(n);
   }  /* END pelog_err() */
@@ -308,12 +308,12 @@ static void pelogalm(
 
 int undo_set_euid_egid(
 
-  int    which,
-  uid_t  real_uid,
-  gid_t  real_gid,
-  int    num_gids,
-  gid_t *real_gids,
-  char  *id)
+  int         which,
+  uid_t       real_uid,
+  gid_t       real_gid,
+  int         num_gids,
+  gid_t      *real_gids,
+  const char *id)
     
   {
   if ((which == PE_PROLOGUSER) || 
@@ -381,44 +381,44 @@ int run_pelog(
   int   pe_io_type) /* I */
 
   {
-  char *id = "run_pelog";
+  struct sigaction  act;
+  struct sigaction  oldact;
+  char             *arg[12];
+  int               fds1 = 0;
+  int               fds2 = 0;
+  int               fd_input;
+  char              resc_list[2048];
+  char              resc_used[2048];
 
-  struct sigaction act;
-  struct sigaction oldact;
-  char *arg[12];
-  int   fds1 = 0;
-  int   fds2 = 0;
-  int   fd_input;
-  char  resc_list[2048];
-  char  resc_used[2048];
+  struct stat       sbuf;
+  char              sid[20];
+  char              exit_stat[11];
+  int               waitst;
+  int               isjoined;  /* boolean */
+  char              buf[MAXPATHLEN + 1024];
+  char              pelog[MAXPATHLEN + 1024];
 
-  struct stat sbuf;
-  char   sid[20];
-  char   exit_stat[11];
-  int    waitst;
-  int    isjoined;  /* boolean */
-  char   buf[MAXPATHLEN + 1024];
-  char   pelog[MAXPATHLEN + 1024];
+  uid_t             real_uid;
+  gid_t            *real_gids = NULL;
+  gid_t             real_gid;
+  int               num_gids;
 
-  uid_t  real_uid;
-  gid_t *real_gids = NULL;
-  gid_t  real_gid;
-  int    num_gids;
+  int               jobtypespecified = 0;
 
-  int    jobtypespecified = 0;
+  resource         *r;
 
-  resource      *r;
+  char             *EmptyString = "";
 
-  char          *EmptyString = "";
+  int               LastArg;
+  int               aindex;
 
-  int            LastArg;
-  int            aindex;
+  int               rc;
 
-  int            rc;
+  char             *ptr;
 
-  char          *ptr;
-
-  if ((pjob == NULL) || (specpelog == NULL) || (specpelog[0] == '\0'))
+  if ((pjob == NULL) ||
+      (specpelog == NULL) ||
+      (specpelog[0] == '\0'))
     {
     return(0);
     }
@@ -442,7 +442,7 @@ int run_pelog(
   real_gid = getgid();
   if ((num_gids = getgroups(0, real_gids)) < 0)
     {
-    log_err(errno,id,"getgroups failed\n");
+    log_err(errno, __func__, "getgroups failed\n");
     
     return(-1);
     }
@@ -458,14 +458,14 @@ int run_pelog(
     
     if (real_gids == NULL)
       {
-      log_err(ENOMEM,id,"Cannot allocate memory! FAILURE\n");
+      log_err(ENOMEM, __func__, "Cannot allocate memory! FAILURE\n");
       
       return(-1);
       }
     
     if (getgroups(num_gids,real_gids) < 0)
       {
-      log_err(errno,id,"getgroups failed\n");
+      log_err(errno, __func__, "getgroups failed\n");
       free(real_gids);
       
       return(-1);
@@ -485,9 +485,9 @@ int run_pelog(
           (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
           strerror(errno));
       
-        log_err(errno, id, log_buffer);
+        log_err(errno, __func__, log_buffer);
       
-        undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
+        undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,__func__);
         free(real_gids);
       
         return(-1);
@@ -496,8 +496,8 @@ int run_pelog(
     else
       {
       sprintf(log_buffer, "pjob->ji_grpcache is null. check_pwd likely failed.");
-      log_err(-1, id, log_buffer);
-      undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
+      log_err(-1, __func__, log_buffer);
+      undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,__func__);
       free(real_gids);
       return(-1);
       }
@@ -510,9 +510,9 @@ int run_pelog(
         (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
         strerror(errno));
       
-      log_err(errno, id, log_buffer);
+      log_err(errno, __func__, log_buffer);
       
-      undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
+      undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,__func__);
       free(real_gids);
       
       return(-1);
@@ -525,9 +525,9 @@ int run_pelog(
         (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
         strerror(errno));
       
-      log_err(errno, id, log_buffer);
+      log_err(errno, __func__, log_buffer);
       
-      undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
+      undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,__func__);
       free(real_gids);
 
       return(-1);
@@ -560,7 +560,7 @@ int run_pelog(
           getcwd(tmpBuf, sizeof(tmpBuf)),
           getpid());
 
-        log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
+        log_record(PBSEVENT_SYSTEM, 0, __func__, log_buffer);
         }
 
 #ifdef ENABLE_CSA
@@ -574,7 +574,7 @@ int run_pelog(
           sprintf(log_buffer, "%s calling add_wkm_end from run_pelog() - no user epilog",
             pjob->ji_qs.ji_jobid);
 
-          log_err(-1, id, log_buffer);
+          log_err(-1, __func__, log_buffer);
           }
 
         add_wkm_end(pjob->ji_wattr[JOB_ATR_pagg_id].at_val.at_ll,
@@ -583,13 +583,13 @@ int run_pelog(
 
 #endif /* ENABLE_CSA */
 
-      undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
+      undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,__func__);
       free(real_gids);
 
       return(0);
       }
       
-    undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
+    undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,__func__);
     free(real_gids);
 
     return(pelog_err(pjob,pelog,errno,"cannot stat"));
@@ -599,10 +599,10 @@ int run_pelog(
     {
     sprintf(log_buffer,"running %s script '%s' for job %s",
       PPEType[which],
-      (pelog != NULL) ? pelog : "NULL",
+      (pelog[0] != '\0') ? pelog : "NULL",
       pjob->ji_qs.ji_jobid);
 
-    log_ext(-1,id,log_buffer,LOG_DEBUG);  /* not actually an error--but informational */
+    log_ext(-1, __func__, log_buffer, LOG_DEBUG);  /* not actually an error--but informational */
     }
 
   /* script must be owned by root, be regular file, read and execute by user *
@@ -613,7 +613,7 @@ int run_pelog(
     if ((!S_ISREG(sbuf.st_mode)) ||
         (!(sbuf.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH))))
       {
-      undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
+      undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,__func__);
       free(real_gids);
       return(pelog_err(pjob,pelog,-1,"permission Error"));
       }
@@ -627,7 +627,7 @@ int run_pelog(
           ((sbuf.st_mode & (S_IRUSR | S_IXUSR)) != (S_IRUSR | S_IXUSR)) ||
           (sbuf.st_mode & (S_IWGRP | S_IWOTH)))
         {
-        undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
+        undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,__func__);
         free(real_gids);
         return(pelog_err(pjob,pelog,-1,"permission Error"));
         }
@@ -637,7 +637,7 @@ int run_pelog(
         ((sbuf.st_mode & (S_IRUSR | S_IXUSR)) != (S_IRUSR | S_IXUSR)) ||\
         (sbuf.st_mode & (S_IWGRP | S_IWOTH)))
       {
-      undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
+      undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,__func__);
       free(real_gids);
       return(pelog_err(pjob,pelog,-1,"permission Error"));
       }
@@ -648,7 +648,7 @@ int run_pelog(
       
       if ((sbuf.st_mode & (S_IROTH | S_IXOTH)) != (S_IROTH | S_IXOTH))
         {
-        undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
+        undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,__func__);
         free(real_gids);
         return(pelog_err(pjob, pelog, -1, "permission Error"));
         }
@@ -659,7 +659,7 @@ int run_pelog(
 
   if (fd_input < 0)
     {
-    undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
+    undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,__func__);
     free(real_gids);
     return(pelog_err(pjob, pelog, -2, "no pro/epilogue input file"));
     }
@@ -677,7 +677,7 @@ int run_pelog(
     close(fd_input);
 
     /* switch back to root if necessary */
-    undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,id);
+    undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,__func__);
     free(real_gids);
 
     act.sa_handler = pelogalm;
@@ -752,7 +752,7 @@ int run_pelog(
         sprintf(log_buffer, "%s calling add_wkm_end from run_pelog() - after user epilog",
                 pjob->ji_qs.ji_jobid);
 
-        log_err(-1, id, log_buffer);
+        log_err(-1, __func__, log_buffer);
         }
 
       add_wkm_end(pjob->ji_wattr[JOB_ATR_pagg_id].at_val.at_ll,
@@ -1200,7 +1200,7 @@ int run_pelog(
         (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
         strerror(errno));
       
-      log_err(errno, id, log_buffer);
+      log_err(errno, __func__, log_buffer);
       
       return(-1);
       }
@@ -1212,7 +1212,7 @@ int run_pelog(
         (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
         strerror(errno));
       
-      log_err(errno, id, log_buffer);
+      log_err(errno, __func__, log_buffer);
       
       return(-1);
       }

@@ -2243,9 +2243,9 @@ int is_ha_lock_file_valid(
 
   {
   char        LockDir[MAX_PATH_LEN];
-  char        ErrorString[MAX_LINE];
   struct stat Stat;
   bool_t      GoodPermissions = FALSE;
+  char        log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (HALockFile[0] == '\0')
     {
@@ -2261,11 +2261,11 @@ int is_ha_lock_file_valid(
     /* stat failed */
     tmpLine = strerror(errno);
 
-    snprintf(tmpLine,sizeof(tmpLine),"could not stat the lockfile dir '%s': %s",
+    snprintf(log_buf, sizeof(log_buf), "could not stat the lockfile dir '%s': %s",
       LockDir,
-      ErrorString);
+      tmpLine);
 
-    log_err(errno, __func__, tmpLine);
+    log_err(errno, __func__, log_buf);
 
     return(FALSE);
     }

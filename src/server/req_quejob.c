@@ -1901,7 +1901,7 @@ int req_rdytocommit(
     log_record(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      (jobid != NULL) ? jobid : "NULL",
+      jobid,
       "ready to commit job completed");
     }
 

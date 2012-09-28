@@ -602,14 +602,17 @@ void finish_move_process(
     switch (type)
       {
       case MOVE_TYPE_Move:
+
         finish_moving_processing(pjob, preq, status);
         break;
         
       case MOVE_TYPE_Route:
+
         finish_routing_processing(pjob, status);
         break;
         
       case MOVE_TYPE_Exec:
+
         unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         pjob = NULL;
         finish_sendmom(job_id, preq, time, node_name, status, mom_err);
@@ -617,10 +620,9 @@ void finish_move_process(
         break;
       } /* END switch (type) */
     }
+
   if (pjob != NULL)
     unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
-
-
   } /* END finish_move_process() */
 
 

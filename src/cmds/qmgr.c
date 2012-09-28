@@ -2919,16 +2919,8 @@ int parse_request(
 
   chars_parsed = foreptr - request;
 
-  if (error == 0)
-    {
-    /* FAILURE */
-
-    return(chars_parsed);
-    }
-
   /* SUCCESS */
-
-  return(0);
+  return(PBSE_NONE);
   }
 
 

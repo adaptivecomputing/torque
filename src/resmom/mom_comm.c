@@ -1789,7 +1789,6 @@ int contact_sisters(
     add_host_to_sister_list(np->hn_host, np->hn_port, sister_list[j]);
     ret = get_hostaddr_hostent_af(&local_errno, np->hn_host, &af_family, &host_addr, &addr_len);
     memmove(&np->sock_addr.sin_addr, host_addr, addr_len);
-    free(host_addr);
     np->sock_addr.sin_port = htons(np->hn_port);
     np->sock_addr.sin_family = af_family;
     index++;
