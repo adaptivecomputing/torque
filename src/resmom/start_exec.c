@@ -6474,31 +6474,31 @@ char *std_file_name(
 
   {
   static char  path[MAXPATHLEN + 1];
-  char  key;
-  int   len;
-  char *pd;
-  char *suffix;
-  char *jobpath = NULL;
+  char         key;
+  int          len;
+  char        *pd;
+  char        *suffix;
+  char        *jobpath = NULL;
 #ifdef QSUB_KEEP_NO_OVERRIDE
-  char *pt;
-  char endpath[MAXPATHLEN + 1];
+  char        *pt;
+  char         endpath[MAXPATHLEN + 1];
 #endif
 
 #if NO_SPOOL_OUTPUT == 0
-  int   havehomespool = 0;
+  int          havehomespool = 0;
 
   extern char *TNoSpoolDirList[];
 #else /* NO_SPOOL_OUTPUT */
 
-  struct stat myspooldir;
+  struct stat  myspooldir;
   static char  path_alt[MAXPATHLEN + 1];
-  int   rcstat;
+  int          rcstat;
 #endif /* NO_SPOOL_OUTPUT */
 
   if (LOGLEVEL >= 5)
     {
     sprintf(log_buffer, "getting %s file name",
-            (which == StdOut) ? "stdout" : "stderr");
+      (which == StdOut) ? "stdout" : "stderr");
 
     log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
     }
@@ -6542,7 +6542,7 @@ char *std_file_name(
           {
           remove_leading_hostname(&jobpath);
 
-          if (expand_path(pjob,jobpath,sizeof(path),path) != SUCCESS)
+          if (expand_path(pjob, jobpath, sizeof(path), path) != SUCCESS)
             {
             return(NULL);
             }
