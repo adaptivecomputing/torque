@@ -315,7 +315,7 @@ AvlTree AVL_delete_node(
       if (tree->right)
         {
         h1 = AVL_delete_node(key, port, tree->right);
-        tree->left = h1;
+        tree->right = h1;
         }
       return(tree);
       }
