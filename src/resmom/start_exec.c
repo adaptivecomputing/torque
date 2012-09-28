@@ -2853,7 +2853,14 @@ void handle_reservation(
     
   if (is_login_node == TRUE)
     {
-    j = create_alps_reservation(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
+    char *exec_str;
+
+    if (pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str != NULL)
+      exec_str = pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str;
+    else
+      exec_str = pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str;
+
+    j = create_alps_reservation(exec_str,
           pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
           pjob->ji_qs.ji_jobid,
           apbasil_path,

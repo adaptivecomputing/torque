@@ -116,6 +116,7 @@
 #define ATTR_login_node_id "login_node_id"
 #define ATTR_login_prop "login_property"
 #define ATTR_external_nodes "external_nodes"
+#define ATTR_multi_req_alps "multi_req_alps"
 #define ATTR_M "Mail_Users"
 #define ATTR_N "Job_Name"
 #define ATTR_S "Shell_Path_List"
