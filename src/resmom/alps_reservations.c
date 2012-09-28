@@ -199,22 +199,87 @@ int save_current_reserve_param(
 
 
 
+int create_reserve_params_from_host_req_list(
+
+  resizable_array *host_req_list, /* I */
+  dynamic_string  *command)       /* O */
+
+  {
+  dynamic_string *node_list = get_dynamic_string(-1, NULL);
+  host_req       *hr;
+  unsigned int    nppn = 0;
+  unsigned int    width = 0;
+  int             iter = -1;
+  
+  while ((hr = (host_req *)next_thing(host_req_list, &iter)) != NULL)
+    {
+    width += hr->ppn;
+    nppn = MAX(nppn,hr->ppn);
+    
+    if (node_list->used != 0)
+      append_dynamic_string(node_list, ",");
+    
+    append_dynamic_string(node_list, hr->hostname);
+    
+    free_host_req(hr);
+    }
+  
+  save_current_reserve_param(command, node_list, width, nppn);
+
+  return(PBSE_NONE);
+  } /* END create_reserve_params_from_host_req_list() */
+
+
+
+int create_reserve_params_from_multi_req_list(
+
+  char           *multi_req_list, /* I */
+  dynamic_string *command)        /* O */
+
+  {
+  dynamic_string *node_list = get_dynamic_string(-1, NULL);
+  char           *tok;
+  char           *str = multi_req_list;
+  int             node_count = 1;
+  char           *comma;
+  unsigned int    width;
+  unsigned int    nppn;
+  
+  while ((tok = threadsafe_tokenizer(&str, "*")) != NULL)
+    {
+    clear_dynamic_string(node_list);
+    append_dynamic_string(node_list, tok);
+    
+    comma = tok;
+    while ((comma = strchr(comma+1, ',')) != NULL)
+      node_count++;
+    
+    tok = threadsafe_tokenizer(&str, "|");
+    nppn = atoi(tok);
+    
+    width = nppn * node_count;
+    save_current_reserve_param(command, node_list, width, nppn);
+    }
+
+  return(PBSE_NONE);
+  } /* END create_reserve_params_from_multi_req_list() */
+
+
+
+
 dynamic_string *get_reservation_command(
 
   resizable_array *host_req_list,
   char            *username,
   char            *jobid,
   char            *apbasil_path,
-  char            *apbasil_protocol)
+  char            *apbasil_protocol,
+  char            *multi_req_list)
 
   {
   dynamic_string *command = get_dynamic_string(-1, NULL);
   dynamic_string *node_list = get_dynamic_string(-1, NULL);
   char            buf[MAXLINE * 2];
-  unsigned int    width = 0;
-  unsigned int    nppn = 0;
-  int             iter = -1;
-  host_req       *hr;
 
   /* place the top header */
   snprintf(buf, sizeof(buf), APBASIL_RESERVE_REQ, 
@@ -225,20 +290,14 @@ dynamic_string *get_reservation_command(
   snprintf(buf, sizeof(buf), APBASIL_RESERVE_ARRAY, username, jobid);
   append_dynamic_string(command, buf);
 
-  while ((hr = (host_req *)next_thing(host_req_list, &iter)) != NULL)
+  if (multi_req_list == NULL)
     {
-    width += hr->ppn;
-    nppn = MAX(nppn,hr->ppn);
-    
-    if (node_list->used != 0)
-      append_dynamic_string(node_list, ",");
-    
-    append_dynamic_string(node_list, hr->hostname);
-
-    free_host_req(hr);
+    create_reserve_params_from_host_req_list(host_req_list, command);
     }
-      
-  save_current_reserve_param(command, node_list, width, nppn);
+  else
+    {
+    create_reserve_params_from_multi_req_list(multi_req_list, command);
+    }
 
   free_dynamic_string(node_list);
 
@@ -579,23 +638,31 @@ int create_alps_reservation(
   int              retry_count = 0;
   char            *user = strdup(username);
   char            *aroba;
-
-  host_req_list = parse_exec_hosts(exec_hosts);
-
-  if (host_req_list->num == 0)
-    {
-    free(user);
-    free_resizable_array(host_req_list);
-    /* this is a login only job */
-    return(PBSE_NONE);
-    }
-
+  
   if ((aroba = strchr(user, '@')) != NULL)
     *aroba = '\0';
-  
-  command = get_reservation_command(host_req_list, user, jobid, apbasil_path, apbasil_protocol);
 
-  free_resizable_array(host_req_list);
+  if (strchr(exec_hosts, '|') == NULL)
+    {
+    host_req_list = parse_exec_hosts(exec_hosts);
+    
+    if (host_req_list->num == 0)
+      {
+      free(user);
+      free_resizable_array(host_req_list);
+      /* this is a login only job */
+      return(PBSE_NONE);
+      }
+  
+    command = get_reservation_command(host_req_list, user, jobid, apbasil_path, apbasil_protocol, NULL);
+  
+    free_resizable_array(host_req_list);
+    }
+  else
+    {
+    command = get_reservation_command(NULL, user, jobid, apbasil_path, apbasil_protocol, exec_hosts);
+    }
+
   free(user);
 
   /* retry on failure up to  */

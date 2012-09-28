@@ -162,12 +162,19 @@ struct jobinfo
   struct jobinfo *next;
   };
 
+typedef struct alps_req_data
+  {
+  dynamic_string *node_list;
+  int             ppn;
+  } alps_req_data;
+
 typedef struct single_spec_data
   {
-  int          nodes; /* nodes needed for this req */
-  int          ppn;   /* ppn for this req */
-  int          gpu;   /* gpus for this req */
-  struct prop *prop;  /* node properties needed */
+  int          nodes;   /* nodes needed for this req */
+  int          ppn;     /* ppn for this req */
+  int          gpu;     /* gpus for this req */
+  int          req_id;  /* the id of this alps req - used only for cray */
+  struct prop *prop;    /* node properties needed */
   } single_spec_data;
 
 typedef struct complete_spec_data

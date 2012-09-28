@@ -297,6 +297,7 @@ struct pbsnode *tfind_addr(
 
 
 
+
 /* update_node_state - central location for updating node state */
 /* NOTE:  called each time a node is marked down, each time a MOM reports node  */
 /*        status, and when pbs_server sends hello/cluster_addrs */
@@ -4114,34 +4115,38 @@ int node_is_external(
 
 int node_spec(
 
-  char              *spec_param, /* I */
-  int                early,      /* I (boolean) */
-  int                exactmatch, /* I (boolean) - NOT USED */
-  char              *ProcBMStr,  /* I */
-  char              *FailNode,   /* O (optional,minsize=1024) */
-  node_job_add_info *naji,       /* O (optional) */
-  char              *EMsg,       /* O (optional,minsize=1024) */
-  char              *login_prop) /* I (optional) */
+  char               *spec_param, /* I */
+  int                 early,      /* I (boolean) */
+  int                 exactmatch, /* I (boolean) - NOT USED */
+  char               *ProcBMStr,  /* I */
+  char               *FailNode,   /* O (optional,minsize=1024) */
+  node_job_add_info  *naji,       /* O (optional) */
+  char               *EMsg,       /* O (optional,minsize=1024) */
+  char               *login_prop, /* I (optional) */
+  alps_req_data     **ard_array,  /* O (optional) */
+  int                *num_reqs)   /* O (optional) */
 
   {
-  struct pbsnode     *pnode;
-  char                first_node_name[PBS_MAXHOSTNAME + 1];
-  char               *first_name_ptr;
-  node_iterator       iter;
-  char                log_buf[LOCAL_LOG_BUF_SIZE];
+  struct pbsnode      *pnode;
+  char                 first_node_name[PBS_MAXHOSTNAME + 1];
+  char                *first_name_ptr;
+  node_iterator        iter;
+  char                 log_buf[LOCAL_LOG_BUF_SIZE];
 
-  char               *globs;
-  char               *cp;
-  char               *hold;
-  int                 i;
-  int                 num;
-  int                 rc;
-  int                 eligible_nodes = 0;
-  complete_spec_data  all_reqs;
-  char               *spec;
-  char               *plus;
-  long                cray_enabled = FALSE;
-  enum job_types      job_type = JOB_TYPE_normal;
+  char                *globs;
+  char                *cp;
+  char                *hold;
+  int                  i;
+  int                  num;
+  int                  rc;
+  int                  eligible_nodes = 0;
+  complete_spec_data   all_reqs;
+  char                *spec;
+  char                *plus;
+  char                *tmp_marker = NULL;
+  long                 cray_enabled = FALSE;
+  enum job_types       job_type = JOB_TYPE_normal;
+  int                  num_alps_reqs = 0;
 
   if (EMsg != NULL)
     EMsg[0] = '\0';
@@ -4224,11 +4229,15 @@ int node_spec(
     }  /* END if ((globs = strchr(spec,'#')) != NULL) */
 
   all_reqs.num_reqs = 1;
-  plus = spec;
+  tmp_marker = spec;
 
   /* count number of reqs */
-  while ((plus = strchr(plus + 1, '+')) != NULL)
+  while (((plus = strchr(tmp_marker, '+')) != NULL) ||
+         ((plus = strchr(tmp_marker, '|')) != NULL))
+    {
     all_reqs.num_reqs++;
+    tmp_marker = plus + 1;
+    }
 
   /* allocate space in all_reqs */
   all_reqs.reqs      = calloc(all_reqs.num_reqs, sizeof(single_spec_data));
@@ -4246,10 +4255,17 @@ int node_spec(
   i = 0;
   all_reqs.req_start[i] = spec;
   i++;
+  tmp_marker = plus + 1;
 
-  while ((plus = strchr(plus + 1, '+')) != NULL)
+  while (((plus = strchr(tmp_marker, '+')) != NULL) ||
+         ((plus = strchr(tmp_marker, '|')) != NULL))
     {
     /* make the '+' NULL and advance past it */
+    if (*plus == '|')
+      num_alps_reqs++;
+
+    all_reqs.reqs[i].req_id = num_alps_reqs;
+
     *plus = '\0';
     plus++;
 
@@ -4258,6 +4274,7 @@ int node_spec(
       plus += strlen("nodes=");
 
     all_reqs.req_start[i] = plus;
+    tmp_marker = plus + 1;
     i++;
     }
 
@@ -4333,6 +4350,17 @@ int node_spec(
         return(-1);
         }
       }
+
+    if ((num_alps_reqs > 0) &&
+        (ard_array != NULL))
+      {
+      *ard_array = calloc(num_alps_reqs + 1, sizeof(alps_req_data));
+      
+      for (i = 0; i <= num_alps_reqs; i++)
+        (*ard_array)[i].node_list = get_dynamic_string(-1, NULL);
+
+      *num_reqs = num_alps_reqs + 1;
+      }
     }
 
   reinitialize_node_iterator(&iter);
@@ -4359,6 +4387,17 @@ int node_spec(
               save_node_for_adding(naji, pnode, req, first_node_name, TRUE);
             else
               save_node_for_adding(naji, pnode, req, first_node_name, FALSE);
+
+            if (num_alps_reqs > 0)
+              {
+              if ((*ard_array)[req->req_id].node_list->used != 0)
+                append_char_to_dynamic_string((*ard_array)[req->req_id].node_list, ',');
+
+              append_dynamic_string((*ard_array)[req->req_id].node_list, pnode->nd_name);
+
+              if (req->ppn > (*ard_array)[req->req_id].ppn)
+                (*ard_array)[req->req_id].ppn = req->ppn;
+              }
             }
 
           /* decrement needed nodes */
@@ -5323,6 +5362,62 @@ int add_to_ms_list(
 
 
 
+void free_alps_req_data_array(
+    
+  alps_req_data *ard_array,
+  int            num_reqs)
+
+  {
+  int i;
+
+  for (i = 0; i < num_reqs; i++)
+    free_dynamic_string(ard_array[i].node_list);
+
+  free(ard_array);
+  } /* END free_alps_req_data_array() */
+
+
+
+
+int add_multi_reqs_to_job(
+    
+  job           *pjob,
+  int            num_reqs,
+  alps_req_data *ard_array)
+
+  {
+  int             i;
+  dynamic_string *attr_str;
+  char            buf[MAXLINE];
+
+  if (ard_array == NULL)
+    return(PBSE_NONE);
+
+  attr_str = ard_array[0].node_list;
+
+  for (i = 0; i < num_reqs; i++)
+    {
+    if (i != 0)
+      {
+      append_char_to_dynamic_string(attr_str, '|');
+      append_dynamic_string(attr_str, ard_array[i].node_list->str);
+      }
+
+    snprintf(buf, sizeof(buf), "*%d", ard_array[i].ppn);
+    append_dynamic_string(attr_str, buf);
+    }
+
+  if (pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str != NULL)
+    free(pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str);
+
+  pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str = strdup(attr_str->str);
+  pjob->ji_wattr[JOB_ATR_multi_req_alps].at_flags |= ATR_VFLAG_SET;
+
+  return(PBSE_NONE);
+  } /* END add_multi_reqs_to_job() */
+
+
+
 
 /*
  * set_nodes() - Call node_spec() to allocate nodes then set them inuse.
@@ -5354,6 +5449,8 @@ int set_nodes(
   char               ProcBMStr[MAX_BM];
   char               log_buf[LOCAL_LOG_BUF_SIZE];
   node_job_add_info *naji = NULL;
+  alps_req_data     *ard_array = NULL;
+  int                num_reqs = 0;
   long               cray_enabled = FALSE; 
 
 #ifdef NVIDIA_GPUS
@@ -5386,7 +5483,7 @@ int set_nodes(
     login_prop = pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str;
 
   /* allocate nodes */
-  if ((i = node_spec(spec, 1, 1, ProcBMStr, FailHost, naji, EMsg, login_prop)) == 0) /* check spec */
+  if ((i = node_spec(spec, 1, 1, ProcBMStr, FailHost, naji, EMsg, login_prop, &ard_array, &num_reqs)) == 0)
     {
     /* no resources located, request failed */
     if (EMsg != NULL)
@@ -5400,6 +5497,7 @@ int set_nodes(
       }
 
     free_naji(naji);
+    free_alps_req_data_array(ard_array, num_reqs);
 
     return(PBSE_RESCUNAV);
     }
@@ -5408,6 +5506,7 @@ int set_nodes(
     /* request failed, corrupt request */
     log_err(PBSE_UNKNODE, __func__, "request failed, corrupt request");
     free_naji(naji);
+    free_alps_req_data_array(ard_array, num_reqs);
     return(PBSE_UNKNODE);
     }
 
@@ -5418,11 +5517,13 @@ int set_nodes(
 
   if ((rc = build_hostlist_nodes_req(pjob, EMsg, spec, newstate, &hlist, &gpu_list, naji)) != PBSE_NONE)
     {
+    free_alps_req_data_array(ard_array, num_reqs);
     return(rc);
     }
 
   if ((rc = build_hostlist_procs_req(pjob, procs, newstate, &hlist)) != PBSE_NONE)
     {
+    free_alps_req_data_array(ard_array, num_reqs);
     return(rc);
     }
 
@@ -5438,6 +5539,8 @@ int set_nodes(
 
     if (EMsg != NULL)
       sprintf(EMsg, "no nodes can be allocated to job");
+    
+    free_alps_req_data_array(ard_array, num_reqs);
 
     return(PBSE_RESCUNAV);
     }  /* END if (hlist == NULL) */
@@ -5450,6 +5553,7 @@ int set_nodes(
   /* build list of allocated nodes, gpus, and ports */
   if ((rc = translate_howl_to_string(hlist, EMsg, &NCount, rtnlist, rtnportlist, TRUE)) != PBSE_NONE)
     {
+    free_alps_req_data_array(ard_array, num_reqs);
     return(rc);
     }
 
@@ -5479,6 +5583,7 @@ int set_nodes(
     {
     if ((rc = translate_howl_to_string(gpu_list, EMsg, &NCount, &gpu_str, NULL, FALSE)) != PBSE_NONE)
       {
+      free_alps_req_data_array(ard_array, num_reqs);
       return(rc);
       }
 
@@ -5514,7 +5619,6 @@ int set_nodes(
 
         log_ext(-1, __func__, log_buf, LOG_DEBUG);
         }
-/*      job_save(pjob,SAVEJOB_FULL,0); */
       }
 #endif  /* NVIDIA_GPUS */
     }
@@ -5528,6 +5632,9 @@ int set_nodes(
 
     log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
     }
+
+  add_multi_reqs_to_job(pjob, num_reqs, ard_array);
+  free_alps_req_data_array(ard_array, num_reqs);
 
   /* SUCCESS */
 
@@ -5687,7 +5794,7 @@ int node_avail_complex(
   {
   int ret;
 
-  ret = node_spec(spec, 1, 0, NULL, NULL, NULL, NULL, NULL);
+  ret = node_spec(spec, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
   *navail = ret;
   *nalloc = 0;
@@ -5868,7 +5975,7 @@ int node_reserve(
 
   naji = calloc(1, sizeof(node_job_add_info));
 
-  if ((ret_val = node_spec(nspec, 0, 0, NULL, NULL, naji, NULL, NULL)) >= 0)
+  if ((ret_val = node_spec(nspec, 0, 0, NULL, NULL, naji, NULL, NULL, NULL, NULL)) >= 0)
     {
     /*
     ** Zero or more of the needed Nodes are available to be
