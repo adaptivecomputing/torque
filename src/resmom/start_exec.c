@@ -6029,7 +6029,7 @@ char *std_file_name(
           {
           remove_leading_hostname(&jobpath);
 
-          if (expand_path(pjob,jobpath,sizeof(path),path) != SUCCESS)
+          if (expand_path(pjob, jobpath, sizeof(path), path) != SUCCESS)
             {
             return(NULL);
             }

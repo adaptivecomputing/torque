@@ -774,15 +774,17 @@ job *job_clone(
   hostname = index(oldid, '.');
 
   *bracket = '\0';
-  hostname++;
 
-  pnewjob->ji_qs.ji_jobid[PBS_MAXSVRJOBID-1] = '\0';
-
-  snprintf(pnewjob->ji_qs.ji_jobid, PBS_MAXSVRJOBID, "%s[%d].%s",
-           oldid,
-           taskid,
-           hostname);
-
+  if (hostname != NULL)
+    {
+    hostname++;
+    
+    snprintf(pnewjob->ji_qs.ji_jobid, sizeof(pnewjob->ji_qs.ji_jobid), "%s[%d].%s",
+      oldid, taskid, hostname);
+    }
+  else
+    snprintf(pnewjob->ji_qs.ji_jobid, sizeof(pnewjob->ji_qs.ji_jobid), "%s[%d]",
+      oldid, taskid);
 
   /* update the job filename
    * We could optimize the sub-jobs to all use the same file. We would need a
@@ -794,7 +796,11 @@ job *job_clone(
    * make up new job file name, it is based on the new jobid
    */
 
-  snprintf(basename, PBS_JOBBASE, "%s-%d.%s", oldid, taskid, hostname);
+  if (hostname != NULL)
+    snprintf(basename, sizeof(basename), "%s-%d.%s", oldid, taskid, hostname);
+  else
+    snprintf(basename, sizeof(basename), "%s-%d", oldid, taskid);
+
   free(oldid);
 
   do
