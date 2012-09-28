@@ -417,10 +417,10 @@ void scan_for_exiting(void)
       }
 
 
-    for (
-      ptask = (task *)GET_NEXT(pjob->ji_tasks);
-      ptask != NULL;
-      ptask = (task *)GET_NEXT(ptask->ti_jobtask))
+    for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
+         ptask != NULL;
+         ptask = (task *)GET_NEXT(ptask->ti_jobtask))
+
       {
       if (ptask->ti_qs.ti_status != TI_STATE_EXITED)
         continue;
@@ -438,11 +438,7 @@ void scan_for_exiting(void)
           pjob->ji_qs.ji_un.ji_momt.ji_exitstat = ptask->ti_qs.ti_exitstat;
           }
 
-        log_event(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          "job was terminated");
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "job was terminated");
           
         mom_radix = pjob->ji_wattr[JOB_ATR_job_radix].at_val.at_long;
 
@@ -453,9 +449,11 @@ void scan_for_exiting(void)
         else
           {
           NumSisters = 1; /* We use this for later */
+
           if (pjob->ji_sampletim == 0)
             {
             pjob->ji_sampletim = time(NULL);
+
             if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) == 0)
               {
               /* only call send_sisters with radix == TRUE if this
@@ -472,16 +470,16 @@ void scan_for_exiting(void)
             time_now = time(NULL);
             if (time_now - pjob->ji_sampletim > 5)
               {
-               
-               if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) == 0)
-                 {
-                 /* only call send_sisters with radix == TRUE if this is
-                  * mother superior intermediate moms already called this
-                  * in im_request IM_KILL_JOB_RADIX */
-                 NumSisters = send_sisters(pjob, IM_KILL_JOB_RADIX, TRUE);
-                 pjob->ji_outstanding = NumSisters;
-                 }
-               }
+
+              if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) == 0)
+                {
+                /* only call send_sisters with radix == TRUE if this is
+                 * mother superior intermediate moms already called this
+                 * in im_request IM_KILL_JOB_RADIX */
+                NumSisters = send_sisters(pjob, IM_KILL_JOB_RADIX, TRUE);
+                pjob->ji_outstanding = NumSisters;
+                }
+              }
             }
           } 
 
@@ -504,6 +502,7 @@ void scan_for_exiting(void)
             {
             momport = pbs_rm_port;
             }
+
           job_save(pjob, SAVEJOB_QUICK, momport);
           }
         else if (LOGLEVEL >= 3)
@@ -586,7 +585,8 @@ void scan_for_exiting(void)
     /* If we are an intermediate mom we need to see if everyone has checked in */
 	  if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM))
 	    {
-	    if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXITING) && (pjob->ji_qs.ji_substate != JOB_SUBSTATE_NOTERM_REQUE))
+	    if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXITING) &&
+          (pjob->ji_qs.ji_substate != JOB_SUBSTATE_NOTERM_REQUE))
 	  	  {
 	  	  if (LOGLEVEL >= 3)
 	  	    {
@@ -627,6 +627,7 @@ void scan_for_exiting(void)
            server. If we have tasks to complete continue. But if there
            are no tasks left to run we need to delete the job.*/
         ptask = (task *)GET_NEXT(pjob->ji_tasks);
+
         if (ptask == NULL)
           mom_deljob(pjob);
         }
@@ -691,7 +692,7 @@ void scan_for_exiting(void)
     pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_Suspend;
 
     if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_NOTERM_REQUE) &&
-       (pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXIT_WAIT))
+        (pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXIT_WAIT))
       kill_job(pjob, SIGKILL, __func__, "local task termination detected");
     else
       {
@@ -753,20 +754,19 @@ void scan_for_exiting(void)
 
     if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXIT_WAIT)
       run_epilogues(pjob);
+
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_PREOBIT;
+
     rc = send_job_status(pjob);
+
     if (rc != PBSE_NONE)
       {
       pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXIT_WAIT;
-      if(LOGLEVEL >= 4)
+      if (LOGLEVEL >= 4)
         {
         snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "could not contact server for job %s: error: %d", 
-            pjob->ji_qs.ji_jobid, rc);
-        log_record(
-            PBSEVENT_JOB,
-            PBS_EVENTCLASS_JOB,
-            __func__,
-            log_buf);
+          pjob->ji_qs.ji_jobid, rc);
+        log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
         }
       }
 
@@ -803,12 +803,12 @@ int run_epilogues(
 
   /* check epilog script */
 
-  if ((pjob->ji_wattr[(int)JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
-       pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long)
+  if ((pjob->ji_wattr[JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
+       pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long)
     {
     /* job is interactive */
 
-    presc = find_resc_entry( &pjob->ji_wattr[(int)JOB_ATR_resource],
+    presc = find_resc_entry( &pjob->ji_wattr[JOB_ATR_resource],
                              find_resc_def(svr_resc_def, "epilogue", svr_resc_size));
     if ((presc != NULL))
       if ((presc->rs_value.at_flags & ATR_VFLAG_SET) && (presc->rs_value.at_val.at_str != NULL))
@@ -838,7 +838,7 @@ int run_epilogues(
     {
     /* job is not interactive */
 
-    presc = find_resc_entry( &pjob->ji_wattr[(int)JOB_ATR_resource], 
+    presc = find_resc_entry( &pjob->ji_wattr[JOB_ATR_resource], 
                              find_resc_def(svr_resc_def, "epilogue", svr_resc_size));
     if ((presc != NULL))
       if ((presc->rs_value.at_flags & ATR_VFLAG_SET) && 

@@ -4946,8 +4946,7 @@ int is_mom_server_down(
  * @see scan_for_exiting
  */
 
-int
-no_mom_servers_down(void)
+int no_mom_servers_down(void)
 
   {
   if (down_svraddrs[0] == 0)

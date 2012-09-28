@@ -1375,11 +1375,16 @@ int req_quejob(
 
     hostname = index(oldid, '.');
 
-    *(hostname++) = '\0';
-
-    snprintf(pj->ji_qs.ji_jobid, PBS_MAXSVRJOBID, "%s[].%s",
-      oldid,
-      hostname);
+    if (hostname != NULL)
+      {
+      *(hostname++) = '\0';
+      
+      snprintf(pj->ji_qs.ji_jobid, PBS_MAXSVRJOBID, "%s[].%s",
+        oldid,
+        hostname);
+      }
+    else
+      snprintf(pj->ji_qs.ji_jobid, sizeof(pj->ji_qs.ji_jobid), "%s[]", oldid);
 
     free(oldid);    
     }
