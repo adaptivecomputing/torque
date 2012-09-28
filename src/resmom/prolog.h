@@ -12,8 +12,6 @@
 
 /* static void pelogalm(int sig); */
 
-int undo_set_euid_egid(int which, uid_t real_uid, gid_t real_gid, int num_gids, gid_t *real_gids, char *id);
-
 int run_pelog(int which, char *specpelog, job *pjob, int pe_io_type);
 
 #endif /* _PROLOG_H */

@@ -289,6 +289,8 @@ int escape_xml(
           final_len += APOS_ESCAPED_LEN;
           }
 
+        break;
+
       default:
 
         if (size <= final_len)
@@ -307,16 +309,21 @@ int escape_xml(
 
 
 
-char *find_next_tag(char *buffer, char **tag)
+char *find_next_tag(
+    
+  char  *buffer,
+  char **tag)
+
   {
   char *ptr;
 
   ptr = buffer;
 
-  if (ptr == NULL || ptr == (char *)0)
+  if (ptr == NULL)
     {
     return(NULL);
     }
+
   /* We want the next tag. If we are currently
      pointing to a tag increment ptr*/
   if (*ptr == '<')
@@ -324,7 +331,9 @@ char *find_next_tag(char *buffer, char **tag)
     ptr++;
     }
 
-  while(*ptr != '<' && ptr[1] != '/' && ptr != (char *)0)
+  while ((*ptr != '<') && 
+         (ptr[1] != '/') && 
+         (ptr != NULL))
     {
     ptr++;
     }

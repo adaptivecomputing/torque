@@ -698,9 +698,6 @@ int return_file(
     chan = NULL;
     }    /* END while ((amt = read()) */
 
-  if (chan != NULL)
-    DIS_tcp_cleanup(chan);
-
   free_br(prq);
 
   close(fds);

@@ -20,11 +20,11 @@ int disrsi_(
   unsigned         count)
 
   {
-  int  c;
-  unsigned locval;
-  unsigned ndigs;
-  char  *cp;
-  char  scratch[DIS_BUFSIZ+1];
+  int       c;
+  unsigned  locval;
+  unsigned  ndigs;
+  char     *cp;
+  char      scratch[DIS_BUFSIZ];
 
   if (negate == NULL)
     return DIS_INVALID;
@@ -33,7 +33,7 @@ int disrsi_(
   if (count == 0)
     return DIS_INVALID;
 
-  memset(scratch, 0, DIS_BUFSIZ+1);
+  memset(scratch, 0, sizeof(scratch));
 
   if (dis_umaxd == 0)
     disiui_();

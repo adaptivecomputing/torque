@@ -399,7 +399,7 @@ void post_checkpointsend(
       if (preq->rq_reply.brp_choice == BATCH_REPLY_CHOICE_Text)
         {
         sprintf(log_buf, "Failed to copy checkpoint file to mom - %s",
-                preq->rq_reply.brp_un.brp_txt.brp_str);
+          preq->rq_reply.brp_un.brp_txt.brp_str);
 
         log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
@@ -1116,7 +1116,8 @@ int send_job_to_mom(
   *pjob_ptr = NULL;
   pjob = NULL;
 
-  if ((preq != NULL) && (preq->rq_reply.brp_un.brp_txt.brp_str != NULL))
+  if ((preq != NULL) && 
+      (preq->rq_reply.brp_un.brp_txt.brp_str != NULL))
     mail_text = strdup(preq->rq_reply.brp_un.brp_txt.brp_str);
 
   if (send_job_work(job_id, NULL, MOVE_TYPE_Exec, &my_err, preq) == PBSE_NONE)
@@ -1355,7 +1356,9 @@ void finish_sendmom(
 
   if ((pjob = svr_find_job(job_id, TRUE)) == NULL)
     {
-    req_reject(PBSE_JOBNOTFOUND, 0, preq, node_name, log_buf);
+    if (preq != NULL)
+      req_reject(PBSE_JOBNOTFOUND, 0, preq, node_name, log_buf);
+
     return;
     }
 
@@ -1528,8 +1531,8 @@ void finish_sendmom(
       break;
       }
     }  /* END switch (status) */
-  unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
 
+  unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
   } /* END finish_sendmom() */
 
 
@@ -2193,9 +2196,6 @@ static int assign_hosts(
   if (list != NULL)
     free(list);
         
-  if (to_free != NULL)
-    free(to_free);
-
   if (portlist != NULL)
     free(portlist);
 

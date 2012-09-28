@@ -142,9 +142,11 @@ int parse_env_line(
  * a hashmap for use through out the execution of the command
  */
 void set_env_opts(
-  memmgr **mm,            /* memory manager */
+
+  memmgr   **mm,            /* memory manager */
   job_data **env_attr,
-  char **envp)
+  char     **envp)
+
   {
   int   var_num = 0;
   char *name = NULL;

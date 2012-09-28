@@ -906,15 +906,12 @@ int handle_returnstd(
 
     if (pque != NULL)
       {
-      if (pque->qu_attr != NULL)
-        {
-        pthread_mutex_lock(server.sv_attr_mutex);
-        KeepSeconds = attr_ifelse_long(
-            &pque->qu_attr[QE_ATR_KeepCompleted],
-            &server.sv_attr[SRV_ATR_KeepCompleted],
-            0);
-        pthread_mutex_unlock(server.sv_attr_mutex);
-        }
+      pthread_mutex_lock(server.sv_attr_mutex);
+      KeepSeconds = attr_ifelse_long(
+        &pque->qu_attr[QE_ATR_KeepCompleted],
+        &server.sv_attr[SRV_ATR_KeepCompleted],
+        0);
+      pthread_mutex_unlock(server.sv_attr_mutex);
 
       unlock_queue(pque, __func__, NULL, LOGLEVEL);
       }
@@ -1650,15 +1647,12 @@ int handle_complete_first_time(
   
   if (pque != NULL)
     {
-    if (pque->qu_attr != NULL)
-      {
-      pthread_mutex_lock(server.sv_attr_mutex);
-      KeepSeconds = attr_ifelse_long(
-        &pque->qu_attr[QE_ATR_KeepCompleted],
-        &server.sv_attr[SRV_ATR_KeepCompleted],
-        0);
-      pthread_mutex_unlock(server.sv_attr_mutex);
-      }
+    pthread_mutex_lock(server.sv_attr_mutex);
+    KeepSeconds = attr_ifelse_long(
+      &pque->qu_attr[QE_ATR_KeepCompleted],
+      &server.sv_attr[SRV_ATR_KeepCompleted],
+      0);
+    pthread_mutex_unlock(server.sv_attr_mutex);
 
     unlock_queue(pque, __func__, NULL, LOGLEVEL);
     }

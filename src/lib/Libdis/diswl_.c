@@ -133,24 +133,25 @@
 
 int diswl_(
     
-  struct tcp_chan *chan,
-  dis_long_double_t value,
-  unsigned          ndigs)
+  struct tcp_chan   *chan,
+  dis_long_double_t  value,
+  unsigned           ndigs)
 
   {
-  int  c;
-  int  expon;
-  int  negate;
-  int  retval;
-  unsigned pow2;
-  char  *cp;
-  char  *ocp;
-  dis_long_double_t ldval;
-  char  scratch[DIS_BUFSIZ+1];
+  int                c;
+  int                expon;
+  int                negate;
+  int                retval;
+  unsigned           pow2;
+  char              *cp;
+  char              *ocp;
+  dis_long_double_t  ldval;
+  char               scratch[DIS_BUFSIZ];
 
   assert(ndigs > 0 && ndigs <= LDBL_DIG);
   
-  memset(scratch, 0, DIS_BUFSIZ+1);
+  memset(scratch, 0, sizeof(scratch));
+
   /* Make zero a special case.  If we don't it will blow exponent  */
   /* calculation.        */
 

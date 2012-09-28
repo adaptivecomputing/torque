@@ -120,9 +120,9 @@ int diswsl(
   unsigned long ulval;
   char  c;
   char  *cp;
-  char  scratch[DIS_BUFSIZ+1];
+  char  scratch[DIS_BUFSIZ];
 
-  memset(scratch, 0, DIS_BUFSIZ+1);
+  memset(scratch, 0, sizeof(scratch));
 
   if (value < 0)
     {

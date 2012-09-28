@@ -186,7 +186,7 @@ void post_modify_req(
         if (LOGLEVEL >= 0)
           {
           sprintf(log_buf, "post_modify_req: PBSE_UNKJOBID for job %s in state %s-%s, dest = %s",
-            (pjob->ji_qs.ji_jobid != NULL) ? pjob->ji_qs.ji_jobid : "",
+            pjob->ji_qs.ji_jobid,
             PJobState[pjob->ji_qs.ji_state],
             PJobSubState[pjob->ji_qs.ji_substate],
             pjob->ji_qs.ji_destin);
@@ -1497,7 +1497,7 @@ void post_modify_arrayreq(
         if (LOGLEVEL >= 0)
           {
           sprintf(log_buf, "post_modify_req: PBSE_UNKJOBID for job %s in state %s-%s, dest = %s",
-            (pjob->ji_qs.ji_jobid != NULL) ? pjob->ji_qs.ji_jobid : "",
+            pjob->ji_qs.ji_jobid,
             PJobState[pjob->ji_qs.ji_state],
             PJobSubState[pjob->ji_qs.ji_substate],
             pjob->ji_qs.ji_destin);

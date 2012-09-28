@@ -104,21 +104,21 @@
 int diswf(
     
   struct tcp_chan *chan,
-  double value)
+  double           value)
   
   {
-  int  c;
-  int  expon;
-  unsigned ndigs;
-  int  negate;
-  int  retval;
-  unsigned pow2;
-  char  *cp;
-  char  *ocp;
-  double  dval;
-  char  scratch[DIS_BUFSIZ+1];
+  int       c;
+  int       expon;
+  unsigned  ndigs;
+  int       negate;
+  int       retval;
+  unsigned  pow2;
+  char     *cp;
+  char     *ocp;
+  double    dval;
+  char      scratch[DIS_BUFSIZ];
 
-  memset(scratch, 0, DIS_BUFSIZ+1);
+  memset(scratch, 0, sizeof(scratch));
   /* Make zero a special case.  If we don't it will blow exponent  */
   /* calculation.        */
 

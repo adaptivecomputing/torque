@@ -591,12 +591,9 @@ int check_node_for_job(
     /* for each jobinfo on subnode on node ... */
     for (jp = np->jobs; jp != NULL; jp = jp->next)
       {
-      if (jp->jobid != NULL)
+      if (strcmp(jobid, jp->jobid) == 0)
         {
-        if (strcmp(jobid, jp->jobid) == 0)
-          {
-          return(TRUE);
-          }
+        return(TRUE);
         }
       } /* END for each job on the subnode */
     } /* END for each subnode */
@@ -2758,7 +2755,8 @@ int write_node_note(void)
   while ((np = next_host(&allnodes, &iter, NULL)) != NULL)
     {
     /* write node name followed by its note string */
-    if (np->nd_note != NULL && np->nd_note != '\0')
+    if ((np->nd_note != NULL) && 
+        (np->nd_note[0] != '\0'))
       {
       fprintf(nin, "%s %s\n", np->nd_name, np->nd_note);
       }
@@ -4197,14 +4195,16 @@ int node_spec(
     }  /* END if ((globs = strchr(spec,'#')) != NULL) */
 
   all_reqs.num_reqs = 1;
-  tmp_marker = spec;
+  plus = spec;
 
   /* count number of reqs */
-  while (((plus = strchr(tmp_marker, '+')) != NULL) ||
-         ((plus = strchr(tmp_marker, '|')) != NULL))
+  while (*plus != '\0')
     {
-    all_reqs.num_reqs++;
-    tmp_marker = plus + 1;
+    if ((*plus == '+') ||
+        (*plus == '|'))
+      all_reqs.num_reqs++;
+
+    plus++;
     }
 
   /* allocate space in all_reqs */
@@ -4214,7 +4214,13 @@ int node_spec(
   if ((all_reqs.reqs == NULL) ||
       (all_reqs.req_start == NULL))
     {
+    if (all_reqs.reqs != NULL)
+      free(all_reqs.reqs);
+    else if (all_reqs.req_start != NULL)
+      free(all_reqs.req_start);
+
     log_err(ENOMEM, __func__, "Cannot allocate memory!");
+    free(spec);
     return(-1);
     }
 
@@ -4225,25 +4231,28 @@ int node_spec(
   i++;
   tmp_marker = plus + 1;
 
-  while (((plus = strchr(tmp_marker, '+')) != NULL) ||
-         ((plus = strchr(tmp_marker, '|')) != NULL))
+  while (*plus != '\0')
     {
     /* make the '+' NULL and advance past it */
     if (*plus == '|')
       num_alps_reqs++;
 
-    all_reqs.reqs[i].req_id = num_alps_reqs;
-
-    *plus = '\0';
-    plus++;
-
-    /* advance past "nodes=" */
-    if (!strncmp(plus, "nodes=", strlen("nodes=")))
-      plus += strlen("nodes=");
-
-    all_reqs.req_start[i] = plus;
-    tmp_marker = plus + 1;
-    i++;
+    if ((*plus == '|') ||
+        (*plus == '+'))
+      {
+      all_reqs.reqs[i].req_id = num_alps_reqs;
+      
+      *plus = '\0';
+      plus++;
+      
+      /* advance past "nodes=" */
+      if (!strncmp(plus, "nodes=", strlen("nodes=")))
+        plus += strlen("nodes=");
+      
+      all_reqs.req_start[i] = plus;
+      tmp_marker = plus + 1;
+      i++;
+      }
     }
 
   /* now parse each spec into the data */
@@ -4255,6 +4264,8 @@ int node_spec(
     
     free(all_reqs.reqs);
     free(all_reqs.req_start);
+
+    free(spec);
 
     return(rc);
     }
@@ -4315,6 +4326,9 @@ int node_spec(
           (login_prop != NULL) ? login_prop : "null");
         
         log_err(-1, __func__, log_buf);
+
+        free(spec);
+
         return(-1);
         }
       }
@@ -4356,7 +4370,8 @@ int node_spec(
             else
               save_node_for_adding(naji, pnode, req, first_node_name, FALSE);
 
-            if (num_alps_reqs > 0)
+            if ((num_alps_reqs > 0) &&
+                (ard_array != NULL))
               {
               if ((*ard_array)[req->req_id].node_list->used != 0)
                 append_char_to_dynamic_string((*ard_array)[req->req_id].node_list, ',');
