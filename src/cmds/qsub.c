@@ -131,6 +131,7 @@
 #include "net_connect.h"
 #include "log.h"
 #include "port_forwarding.h"
+#include "utils.h"
 
 int load_config(char *config_buf, int buffer_size);
 
@@ -153,9 +154,9 @@ static char *DefaultXauthPath = XAUTH_PATH;
 static char PBS_DPREFIX_DEFAULT[] = "#PBS";
 
 char PBS_Filter[256];
-char PBS_InitDir[256];
-char PBS_RootDir[256];
-char PBS_WorkDir[256];
+char PBS_InitDir[MAXLINE*2];
+char PBS_RootDir[MAXLINE*2];
+char PBS_WorkDir[MAXLINE*2];
 
 char xauth_path[256];
 char default_ckpt[256];
