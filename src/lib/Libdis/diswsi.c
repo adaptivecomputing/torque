@@ -140,7 +140,7 @@ int diswsi(
     c = '+';
     }
 
-  cp = discui_(&scratch[DIS_BUFSIZ], uval, &ndigs);
+  cp = discui_(&scratch[DIS_BUFSIZ-1], uval, &ndigs);
 
   *--cp = c;
 
