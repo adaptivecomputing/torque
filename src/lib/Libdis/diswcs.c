@@ -103,8 +103,8 @@
 int diswcs(
 
   struct tcp_chan *chan,
-  const char  *value,
-  size_t       nchars)
+  const char      *value,
+  size_t           nchars)
 
   {
   int retval;

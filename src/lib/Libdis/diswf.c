@@ -187,7 +187,7 @@ int diswf(
 
   /* Starting in the middle of the buffer, convert coefficient digits, */
   /* most significant first.      */
-  ocp = cp = &scratch[DIS_BUFSIZ - FLT_DIG];
+  ocp = cp = &scratch[sizeof(scratch) - 1 - FLT_DIG];
 
   ndigs = FLT_DIG;
 

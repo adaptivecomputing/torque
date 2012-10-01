@@ -2254,7 +2254,7 @@ int parse(
 
   len = parse_request(request, req);
 
-  if (len != 0)  /* error in parse_request */
+  if (len != 0)
     {
     lp = strlen(req[IND_CMD]);
 
@@ -2920,8 +2920,8 @@ int parse_request(
   chars_parsed = foreptr - request;
 
   /* SUCCESS */
-  return(PBSE_NONE);
-  }
+  return(chars_parsed);
+  } /* END parse_request() */
 
 
 /* END qmgr.c */

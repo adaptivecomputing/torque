@@ -38,7 +38,7 @@ int disrsi_(
   if (dis_umaxd == 0)
     disiui_();
   
-  if (count > DIS_BUFSIZ)
+  if (count > sizeof(scratch) - 1)
     return DIS_INVALID;
 
   switch (c = tcp_getc(chan))
