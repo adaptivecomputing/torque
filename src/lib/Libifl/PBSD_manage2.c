@@ -111,11 +111,11 @@ int PBSD_mgr_put(
     {
     pthread_mutex_unlock(connection[c].ch_mutex);
     rc = PBSE_PROTOCOL;
-    return rc;
+    return(rc);
     }
   else if ((rc = encode_DIS_ReqHdr(chan, function, pbs_current_user)) ||
-      (rc = encode_DIS_Manage(chan, command, objtype, objname, aoplp)) ||
-      (rc = encode_DIS_ReqExtend(chan, extend)))
+           (rc = encode_DIS_Manage(chan, command, objtype, objname, aoplp)) ||
+           (rc = encode_DIS_ReqExtend(chan, extend)))
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
 

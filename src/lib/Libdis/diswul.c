@@ -129,7 +129,7 @@ int diswul(
   char          scratch[DIS_BUFSIZ];
 
   memset(scratch, 0, sizeof(scratch));
-  cp = discul_(&scratch[DIS_BUFSIZ-1], value, &ndigs);
+  cp = discul_(&scratch[sizeof(scratch)-1], value, &ndigs);
 
   *--cp = '+';
 

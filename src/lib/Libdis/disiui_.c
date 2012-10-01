@@ -102,15 +102,15 @@ unsigned  dis_umaxd = 0;
 void disiui_(void)
   {
   char  *cp;
-  char  scratch[DIS_BUFSIZ];
+  char   scratch[DIS_BUFSIZ];
 
   if ((dis_umax != NULL) ||
       (dis_umaxd != 0))
     return;
 
-  memset(scratch, 0, DIS_BUFSIZ);
-  cp = discui_(&scratch[DIS_BUFSIZ-1], UINT_MAX, &dis_umaxd);
-  dis_umax = (char *)calloc(1, dis_umaxd);
+  memset(scratch, 0, sizeof(scratch));
+  cp = discui_(&scratch[sizeof(scratch)-1], UINT_MAX, &dis_umaxd);
+  dis_umax = (char *)calloc(1, dis_umaxd + 1);
   memcpy(dis_umax, cp, dis_umaxd);
   }
 

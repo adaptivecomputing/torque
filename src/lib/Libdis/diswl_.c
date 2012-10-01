@@ -220,7 +220,7 @@ int diswl_(
 
   /* Starting in the middle of the buffer, convert coefficient digits, */
   /* most significant first.      */
-  ocp = cp = &scratch[DIS_BUFSIZ - ndigs];
+  ocp = cp = &scratch[sizeof(scratch) - 1 - ndigs];
 
   do
     {

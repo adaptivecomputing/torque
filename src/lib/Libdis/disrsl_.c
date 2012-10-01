@@ -114,7 +114,7 @@ int disrsl_(
 
   if (ulmaxdigs == 0)
     {
-    cp = discul_(scratch + DIS_BUFSIZ, ULONG_MAX, &ulmaxdigs);
+    cp = discul_(scratch + sizeof(scratch) - 1, ULONG_MAX, &ulmaxdigs);
 
     ulmax = (char *)calloc(1, ulmaxdigs);
 
