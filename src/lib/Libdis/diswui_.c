@@ -98,7 +98,7 @@ int diswui_(
   
   memset(scratch, 0, sizeof(scratch));
 
-  cp = discui_(&scratch[DIS_BUFSIZ], value, &ndigs);
+  cp = discui_(&scratch[DIS_BUFSIZ-1], value, &ndigs);
   if  (cp == NULL)
     {
     return(DIS_PROTO);

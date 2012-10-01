@@ -135,7 +135,7 @@ int diswsl(
     c = '+';
     }
 
-  cp = discul_(&scratch[DIS_BUFSIZ], ulval, &ndigs);
+  cp = discul_(&scratch[DIS_BUFSIZ-1], ulval, &ndigs);
 
   *--cp = c;
 
