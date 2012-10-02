@@ -76,6 +76,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       result of this behavior made it so pbs_server could not be shut down with a SIGTERM or 
       SIGHUP. TRQ-1224
   c - Setting display_job_server_suffix=false crashed with job arrays. Fixed. bugzilla #216
+  b - Restore the asynchronous functionality. TRQ-1284.
 
 
 4.1.2
