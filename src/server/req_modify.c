@@ -110,6 +110,7 @@
 #include "array.h"
 #include "svr_func.h" /* get_svr_attr_* */
 #include "ji_mutex.h"
+#include "threadpool.h"
 
 #define CHK_HOLD 1
 #define CHK_CONT 2
@@ -944,26 +945,21 @@ int modify_whole_array(
 
 
 
-/*
- * req_modifyarray()
- * modifies a job array
- * additionally, can change the slot limit of the array
- */
 
-void *req_modifyarray(
+void *modify_array_work(
 
-  void *vp) /* I */
+  void *vp)
 
   {
-  job_array            *pa;
-  job                  *pjob = NULL;
-  svrattrl             *plist;
-  int                   checkpoint_req = FALSE;
-  char                 *array_spec = NULL;
-  char                 *pcnt = NULL;
-  int                   rc = 0;
-  int                   rc2 = 0;
-  struct batch_request *preq = (struct batch_request *)vp;
+  batch_request *preq = (batch_request *)vp;
+  svrattrl      *plist;
+  int            rc = 0;
+  int            rc2 = 0;
+  char          *pcnt = NULL;
+  char          *array_spec = NULL;
+  int            checkpoint_req = FALSE;
+  job           *pjob = NULL;
+  job_array     *pa;
 
   pa = get_array(preq->rq_ind.rq_modify.rq_objname);
 
@@ -973,18 +969,7 @@ void *req_modifyarray(
     return(NULL);
     }
 
-  plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_modify.rq_attr);
-
-  /* If async modify, reply now; otherwise reply is handled later */
-  if (preq->rq_type == PBS_BATCH_AsyModifyJob)
-    {
-    reply_ack(preq);
-
-    preq->rq_noreply = TRUE; /* set for no more replies */
-    }
-
   /* pbs_mom sets the extend string to trigger copying of checkpoint files */
-
   if (preq->rq_extend != NULL)
     {
     if (strcmp(preq->rq_extend,CHECKPOINTHOLD) == 0)
@@ -1014,6 +999,8 @@ void *req_modifyarray(
       pa->ai_qs.slot_limit = slot_limit;
       }
     }
+  
+  plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_modify.rq_attr);
 
   if ((array_spec != NULL) &&
       (pcnt != array_spec))
@@ -1091,8 +1078,108 @@ void *req_modifyarray(
   reply_ack(preq);
 
   return(NULL);
+  } /* END modify_array_work() */
+
+
+
+
+/*
+ * req_modifyarray()
+ * modifies a job array
+ * additionally, can change the slot limit of the array
+ */
+
+void *req_modifyarray(
+
+  void *vp) /* I */
+
+  {
+  job_array            *pa;
+  struct batch_request *preq = (struct batch_request *)vp;
+
+  pa = get_array(preq->rq_ind.rq_modify.rq_objname);
+
+  if (pa == NULL)
+    {
+    req_reject(PBSE_UNKARRAYID, 0, preq, NULL, "unable to find array");
+    return(NULL);
+    }
+
+  unlock_ai_mutex(pa, __func__, "4", LOGLEVEL);
+
+  /* If async modify, reply now; otherwise reply is handled later */
+  if (preq->rq_type == PBS_BATCH_AsyModifyJob)
+    {
+    reply_ack(preq);
+
+    preq->rq_noreply = TRUE; /* set for no more replies */
+    enqueue_threadpool_request(modify_array_work, preq);
+    }
+  else
+    modify_array_work(preq);
+
+  return(NULL);
   } /* END req_modifyarray() */
 
+
+
+void *modify_job_work(
+
+  void *vp)
+
+  {
+  job           *pjob;
+  svrattrl      *plist;
+  int            rc;
+  int            checkpoint_req = FALSE;
+  batch_request *preq = (struct batch_request *)vp;
+  
+  pjob = svr_find_job(preq->rq_ind.rq_modify.rq_objname, FALSE);
+
+  if (pjob == NULL)
+    {
+    req_reject(PBSE_JOBNOTFOUND, 0, preq, NULL, "Job unexpectedly deleted");
+    return(NULL);
+    }
+  
+  /* pbs_mom sets the extend string to trigger copying of checkpoint files */
+  if (preq->rq_extend != NULL)
+    {
+    if (strcmp(preq->rq_extend,CHECKPOINTHOLD) == 0)
+      {
+      checkpoint_req = CHK_HOLD;
+      }
+    else if (strcmp(preq->rq_extend,CHECKPOINTCONT) == 0)
+      {
+      checkpoint_req = CHK_CONT;
+      }
+    }
+
+  plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_modify.rq_attr);
+
+  if ((rc = modify_job((void **)&pjob, plist, preq, checkpoint_req, 0)) != 0)
+    {
+    if ((rc == PBSE_MODATRRUN) ||
+        (rc == PBSE_UNKRESC))
+      {
+      reply_badattr(rc,1,plist,preq);
+      }
+    else if ( rc == PBSE_RELAYED_TO_MOM )
+      {
+      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+      
+      return(NULL);
+      }
+    else
+      req_reject(rc,0,preq,NULL,NULL);
+    }
+  else
+    reply_ack(preq);
+
+  unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
+
+  return(NULL);
+  } /* END modify_job_work() */
 
 
 
@@ -1112,8 +1199,6 @@ void *req_modifyjob(
   {
   job                  *pjob;
   svrattrl             *plist;
-  int                   rc;
-  int                   checkpoint_req = FALSE;
   struct batch_request *preq = (struct batch_request *)vp;
 
   pjob = chk_job_request(preq->rq_ind.rq_modify.rq_objname, preq);
@@ -1128,7 +1213,6 @@ void *req_modifyjob(
   if (plist == NULL)
     {
     /* nothing to do */
-
     reply_ack(preq);
 
     /* SUCCESS */
@@ -1136,6 +1220,8 @@ void *req_modifyjob(
 
     return(NULL);
     }
+    
+  unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
 
   /* If async modify, reply now; otherwise reply is handled later */
   if (preq->rq_type == PBS_BATCH_AsyModifyJob)
@@ -1143,40 +1229,11 @@ void *req_modifyjob(
     reply_ack(preq);
 
     preq->rq_noreply = TRUE; /* set for no more replies */
-    }
 
-  /* pbs_mom sets the extend string to trigger copying of checkpoint files */
-
-  if (preq->rq_extend != NULL)
-    {
-    if (strcmp(preq->rq_extend,CHECKPOINTHOLD) == 0)
-      {
-      checkpoint_req = CHK_HOLD;
-      }
-    else if (strcmp(preq->rq_extend,CHECKPOINTCONT) == 0)
-      {
-      checkpoint_req = CHK_CONT;
-      }
-    }
-
-  if ((rc = modify_job((void **)&pjob, plist, preq, checkpoint_req, 0)) != 0)
-    {
-    if ((rc == PBSE_MODATRRUN) ||
-        (rc == PBSE_UNKRESC))
-      reply_badattr(rc,1,plist,preq);
-    else if ( rc == PBSE_RELAYED_TO_MOM )
-      {
-      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
-      
-      return(NULL);
-      }
-    else
-      req_reject(rc,0,preq,NULL,NULL);
+    enqueue_threadpool_request(modify_job_work, preq);
     }
   else
-    reply_ack(preq);
-
-  unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
+    modify_job_work(preq);
   
   return(NULL);
   }  /* END req_modifyjob() */

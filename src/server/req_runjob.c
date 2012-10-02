@@ -139,10 +139,10 @@ int  svr_startjob(job *, struct batch_request **, char *, char *);
 
 /* Private Functions local to this file */
 
-static int  svr_stagein(job **, struct batch_request **, int, int);
-static int  svr_strtjob2(job **, struct batch_request *);
-static job *chk_job_torun(struct batch_request *, int);
-static int  assign_hosts(job *, char *, int, char *, char *);
+int  svr_stagein(job **, struct batch_request **, int, int);
+int  svr_strtjob2(job **, struct batch_request *);
+job *chk_job_torun(struct batch_request *, int);
+int  assign_hosts(job *, char *, int, char *, char *);
 
 /* Global Data Items: */
 
@@ -176,6 +176,121 @@ void poll_job_task(work_task *);
 int  kill_job_on_mom(char *jobid, struct pbsnode *pnode);
 
 
+
+void *check_and_run_job(
+
+  void *vp)
+
+  {
+  batch_request   *preq = (batch_request *)vp;
+  job             *pjob;
+  int             *rc_ptr = calloc(1, sizeof(int));
+  char             failhost[MAXLINE];
+  char             emsg[MAXLINE];
+  long             job_atr_hold;
+  int              job_exit_status;
+  int              job_state;
+  char             job_id[PBS_MAXSVRJOBID+1];
+  struct badplace *bp;
+  char             log_buf[LOCAL_LOG_BUF_SIZE + 1];
+
+  *rc_ptr = PBSE_NONE;
+  pjob = svr_find_job(preq->rq_ind.rq_run.rq_jid, FALSE);
+
+  if (pjob == NULL)
+    {
+    req_reject(PBSE_JOBNOTFOUND, 0, preq, NULL, "Job unexpectedly deleted");
+    *rc_ptr = PBSE_JOBNOTFOUND;
+    return(rc_ptr);
+    }
+
+  strcpy(job_id, pjob->ji_qs.ji_jobid);
+
+  /* if the job is part of an array, check the slot limit */
+  if ((pjob->ji_arraystruct != NULL) &&
+      (pjob->ji_is_array_template == FALSE))
+    {
+    job_array *pa = get_jobs_array(&pjob);
+
+    if (pjob == NULL)
+      {
+      req_reject(PBSE_JOBNOTFOUND, 0, preq, NULL, "Job unexpectedly deleted");
+      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+      *rc_ptr = PBSE_JOBNOTFOUND;
+      return(rc_ptr);
+      }
+    
+    if ((pa->ai_qs.slot_limit < 0) ||
+        (pa->ai_qs.slot_limit > pa->ai_qs.jobs_running))
+      {
+      job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
+      job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
+      job_state = pjob->ji_qs.ji_state;
+
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+
+      update_array_values(pa,job_state,aeRun,
+          job_id, job_atr_hold, job_exit_status);
+
+      if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
+        {
+        req_reject(PBSE_JOBNOTFOUND, 0, preq, NULL,
+          "Job deleted while updating array values");
+        unlock_ai_mutex(pa, __func__, "2", LOGLEVEL);
+        *rc_ptr = PBSE_JOBNOTFOUND;
+        return(rc_ptr);
+        }
+      }
+    else
+      {
+      snprintf(log_buf,sizeof(log_buf),
+        "Cannot run job. Array slot limit is %d and there are already %d jobs running\n",
+        pa->ai_qs.slot_limit,
+        pa->ai_qs.jobs_running);
+     
+      req_reject(PBSE_IVALREQ, 0, preq, NULL, log_buf);
+      
+      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+
+      *rc_ptr = PBSE_IVALREQ;
+
+      return(rc_ptr);
+      }
+    
+    unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+    }
+
+  /* NOTE:  nodes assigned to job in svr_startjob() */
+
+  *rc_ptr = svr_startjob(pjob, &preq, failhost, emsg);
+
+  if ((*rc_ptr != 0) && 
+      (preq != NULL))
+    {
+    free_nodes(pjob);
+
+    /* if the job has a non-empty rejectdest list, pass the first host into req_reject() */
+
+    if ((bp = GET_NEXT(pjob->ji_rejectdest)) != NULL)
+      {
+      req_reject(*rc_ptr, 0, preq, bp->bp_dest, "could not contact host");
+      }
+    else
+      {
+      req_reject(*rc_ptr, 0, preq, failhost, emsg);
+      }
+    }
+
+  unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
+
+  return(rc_ptr);
+  } /* END check_and_run_job() */
+
+
+
+
+
 /*
  * req_runjob - service the Run Job and Async Run Job Requests
  *
@@ -188,17 +303,10 @@ int req_runjob(
 
   {
   job                  *pjob;
-  int                   rc;
-  void                 *bp;
+  int                   rc = PBSE_NONE;
   int                   setneednodes;
-  char                  failhost[MAXLINE];
-  char                  emsg[MAXLINE];
+  int                  *rc_ptr;
   char                  log_buf[LOCAL_LOG_BUF_SIZE + 1];
-  char                  job_id[PBS_MAXSVRJOBID+1];
-  long                  job_atr_hold;
-  int                   job_exit_status;
-  int                   job_state;
-
 
   /* chk_job_torun will extract job id and assign hostlist if specified */
 
@@ -216,7 +324,6 @@ int req_runjob(
 
   /* we don't currently allow running of an entire job array */
 
-  strcpy(job_id, pjob->ji_qs.ji_jobid);
   if (strstr(pjob->ji_qs.ji_jobid,"[]") != NULL)
     {
     unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
@@ -235,89 +342,21 @@ int req_runjob(
 
   /* If async run, reply now; otherwise reply is handled in */
   /* post_sendmom or post_stagein */
-
-  /* perhaps node assignment should be handled immediately in async run? */
+  unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
 
   if ((preq != NULL) &&
       (preq->rq_type == PBS_BATCH_AsyrunJob))
     {
     reply_ack(preq);
-    preq = NULL;
+    preq->rq_noreply = TRUE;
+    enqueue_threadpool_request(check_and_run_job, preq);
     }
-
-  /* if the job is part of an array, check the slot limit */
-  if ((pjob->ji_arraystruct != NULL) &&
-      (pjob->ji_is_array_template == FALSE))
+  else
     {
-    job_array *pa = get_jobs_array(&pjob);
-
-    if (pjob == NULL)
-      {
-      rc = PBSE_JOBNOTFOUND;
-      req_reject(rc, 0, preq, NULL, "Job unexpectedly deleted");
-      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
-      return(rc);
-      }
-    
-    if ((pa->ai_qs.slot_limit < 0) ||
-        (pa->ai_qs.slot_limit > pa->ai_qs.jobs_running))
-      {
-      job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
-      job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
-      job_state = pjob->ji_qs.ji_state;
-      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
-      update_array_values(pa,job_state,aeRun,
-          job_id, job_atr_hold, job_exit_status);
-      if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
-        {
-        rc = PBSE_JOBNOTFOUND;
-        req_reject(rc, 0, preq, NULL,
-          "Job deleted while updating array values");
-        unlock_ai_mutex(pa, __func__, "2", LOGLEVEL);
-        return(rc);
-        }
-
-      }
-    else
-      {
-      snprintf(log_buf,sizeof(log_buf),
-        "Cannot run job. Array slot limit is %d and there are already %d jobs running\n",
-        pa->ai_qs.slot_limit,
-        pa->ai_qs.jobs_running);
-     
-      req_reject(PBSE_IVALREQ,0,preq,NULL,log_buf);
-      
-      unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
-      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
-
-      return(PBSE_IVALREQ);
-      }
-    
-    unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+    rc_ptr = (int *)check_and_run_job(preq);
+    rc = *rc_ptr;
+    free(rc_ptr);
     }
-
-  /* NOTE:  nodes assigned to job in svr_startjob() */
-
-  rc = svr_startjob(pjob, &preq, failhost, emsg);
-
-  if ((rc != 0) && 
-      (preq != NULL))
-    {
-    free_nodes(pjob);
-
-    /* if the job has a non-empty rejectdest list, pass the first host into req_reject() */
-
-    if ((bp = GET_NEXT(pjob->ji_rejectdest)) != NULL)
-      {
-      req_reject(rc, 0, preq, ((struct badplace *)bp)->bp_dest, "could not contact host");
-      }
-    else
-      {
-      req_reject(rc, 0, preq, failhost, emsg);
-      }
-    }
-
-  unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
 
   return(rc);
   }  /* END req_runjob() */
@@ -696,7 +735,7 @@ void post_stagein(
  * svr_stagein - direct MOM to stage in the requested files for a job
  */
 
-static int svr_stagein(
+int svr_stagein(
 
   job                  **pjob_ptr, /* I */
   struct batch_request **preq,     /* I */
@@ -1287,7 +1326,7 @@ int handle_heterogeneous_job_launch(
 
 
 
-static int svr_strtjob2(
+int svr_strtjob2(
 
   job                  **pjob_ptr, /* I */
   struct batch_request  *preq)     /* I (modified - report status) */
@@ -1545,7 +1584,7 @@ void finish_sendmom(
  *  Returns pointer to job if all is ok, else returns NULL.
  */
 
-static job *chk_job_torun(
+job *chk_job_torun(
 
   struct batch_request *preq,  /* I */
   int                   setnn) /* I */
@@ -1989,7 +2028,7 @@ char *get_correct_spec_string(
  * 3. use default (local system or a single node).
  */
 
-static int assign_hosts(
+int assign_hosts(
 
   job  *pjob,           /* I (modified) */
   char *given,          /* I (optional) list of requested hosts */

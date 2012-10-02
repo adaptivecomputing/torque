@@ -114,6 +114,7 @@
 #include "svr_func.h" /* get_svr_attr_* */
 #include "job_func.h" /* svr_job_purge */
 #include "ji_mutex.h"
+#include "threadpool.h"
 
 #define PURGE_SUCCESS 1
 #define MOM_DELETE    2
@@ -162,6 +163,9 @@ extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_a
 extern int   svr_chk_owner(struct batch_request *, job *);
 void chk_job_req_permissions(job **,struct batch_request *);
 void          on_job_exit_task(struct work_task *);
+
+
+
 
 /*
  * remove_stagein() - request that mom delete staged-in files for a job
@@ -655,30 +659,20 @@ struct batch_request *duplicate_request(
 
 
 
+void *delete_all_work(
 
-int handle_delete_all(
-
-  struct batch_request *preq,
-  struct batch_request *preq_tmp,
-  char                 *Msg)
+  void *vp)
 
   {
-  /* don't use the actual request so we can reply about all of the jobs */
-  struct batch_request *preq_dup = duplicate_request(preq);
-  job                  *pjob;
-  int                   iter = -1;
-  int                   failed_deletes = 0;
-  int                   total_jobs = 0;
-  int                   rc = PBSE_NONE;
-  char                  tmpLine[MAXLINE];
-
-  preq_dup->rq_noreply = TRUE;
-  
-  if (preq_tmp != NULL)
-    {
-    reply_ack(preq_tmp);
-    preq->rq_noreply = TRUE; /* set for no more replies */
-    }
+  batch_request *preq = (batch_request *)vp;
+  batch_request *preq_dup = duplicate_request(preq);
+  job           *pjob;
+  int            iter = -1;
+  int            failed_deletes = 0;
+  int            total_jobs = 0;
+  int            rc = PBSE_NONE;
+  char           tmpLine[MAXLINE];
+  char          *Msg = preq->rq_extend;
   
   while ((pjob = next_job(&alljobs, &iter)) != NULL)
     {
@@ -750,8 +744,64 @@ int handle_delete_all(
   if (preq_dup != NULL)
     free_br(preq_dup);
 
+  return(NULL);
+  } /* END delete_all_work() */
+
+
+
+
+int handle_delete_all(
+
+  struct batch_request *preq,
+  struct batch_request *preq_tmp,
+  char                 *Msg)
+
+  {
+  /* preq_tmp is not null if this is an asynchronous request */
+  if (preq_tmp != NULL)
+    {
+    reply_ack(preq_tmp);
+    preq->rq_noreply = TRUE; /* set for no more replies */
+    enqueue_threadpool_request(delete_all_work, preq);
+    }
+  else
+    delete_all_work(preq);
+
   return(PBSE_NONE);
   } /* END handle_delete_all() */
+
+
+
+void *single_delete_work(
+
+  void *vp)
+
+  {
+  int              rc = -1;
+  batch_request   *preq = (batch_request *)vp;
+  char            *jobid = preq->rq_ind.rq_delete.rq_objname;
+  job             *pjob;
+  char            *Msg = preq->rq_extend;
+
+  pjob = svr_find_job(jobid, FALSE);
+
+  if (pjob == NULL)
+    {
+    req_reject(PBSE_JOBNOTFOUND, 0, preq, NULL, "job unexpectedly deleted");
+    }
+  else
+    {
+    /* mutex is freed below */
+    if ((rc = forced_jobpurge(pjob, preq)) == PBSE_NONE)
+      rc = execute_job_delete(pjob, Msg, preq);
+ 
+    if ((rc == PBSE_NONE) ||
+        (rc == PURGE_SUCCESS))
+      reply_ack(preq);
+    }
+
+  return(NULL);
+  } /* END single_delete_work() */
 
 
 
@@ -763,7 +813,6 @@ int handle_single_delete(
   char                 *Msg)
 
   {
-  int   rc= -1;
   char *jobid = preq->rq_ind.rq_delete.rq_objname;
   job  *pjob = svr_find_job(jobid, FALSE);
 
@@ -775,20 +824,18 @@ int handle_single_delete(
     }
   else
     {
+    unlock_ji_mutex(pjob, __func__, NULL, 0);
+
+    /* send the asynchronous reply if needed */
     if (preq_tmp != NULL)
       {
       reply_ack(preq_tmp);
       preq->rq_noreply = TRUE; /* set for no more replies */
+      enqueue_threadpool_request(single_delete_work, preq);
       }
-    
-    /* mutex is freed below */
-    if ((rc = forced_jobpurge(pjob, preq)) == PBSE_NONE)
-      rc = execute_job_delete(pjob, Msg, preq);
+    else
+      single_delete_work(preq);
     }
-  
-  if ((rc == PBSE_NONE) ||
-      (rc == PURGE_SUCCESS))
-    reply_ack(preq);
 
   return(PBSE_NONE);
   } /* END handle_single_delete() */
@@ -856,9 +903,9 @@ int req_deletejob(
       
       return(PBSE_NONE);
       }
-    else if (strncmp(preq->rq_extend, deldelaystr, strlen(deldelaystr)) &&
-        strncmp(preq->rq_extend, delasyncstr, strlen(delasyncstr)) &&
-        strncmp(preq->rq_extend, delpurgestr, strlen(delpurgestr)))
+    else if ((strncmp(preq->rq_extend, deldelaystr, strlen(deldelaystr))) &&
+             (strncmp(preq->rq_extend, delasyncstr, strlen(delasyncstr))) &&
+             (strncmp(preq->rq_extend, delpurgestr, strlen(delpurgestr))))
       {
       /* have text message in request extension, add it */
       Msg = preq->rq_extend;
