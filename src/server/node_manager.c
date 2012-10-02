@@ -4253,6 +4253,8 @@ int node_spec(
       tmp_marker = plus + 1;
       i++;
       }
+    else
+      plus++;
     }
 
   /* now parse each spec into the data */
