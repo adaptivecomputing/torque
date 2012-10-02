@@ -67,6 +67,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Fix a deadlock when recording an alps reservation on the server side. Cray only. 
       TRQ-1272.
   c - Fix mismanagement of the ji_globid. TRQ-1262.
+  c - Setting display_job_server_suffix=false crashed with job arrays. Fixed. bugzilla #216
   b - Restore the asynchronous functionality. TRQ-1284.
 
 4.1.2
