@@ -114,6 +114,7 @@
 #include <memory.h>
 #endif
 #include "ji_mutex.h"
+#include "queue_func.h" /*find_queuebyname */
 
 #define ROUTE_RETRY_TIME 30
 
@@ -124,7 +125,7 @@ long count_proc(char *spec);
 /* Local Functions */
 
 int  job_route(job *);
-void queue_route(pbs_queue *);
+void *queue_route(void *);
 
 /* Global Data */
 extern char *msg_routexceed;
@@ -462,55 +463,37 @@ int job_route(
 
 
 
-void *reroute_job(
+int reroute_job(
 
-  void *vp)
+  job *pjob,
+  pbs_queue *pque)
 
   {
-  pbs_queue *pque;
-  char      *jobid;
-  job       *pjob;
-  int        rc;
+  int        rc = PBSE_NONE;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
 
-  pthread_mutex_lock(reroute_job_mutex);
-  jobid = (char *)vp;
-
-  if ((jobid != NULL) &&
-      ((pjob = svr_find_job(jobid, FALSE)) != NULL))
+  if (LOGLEVEL >= 7)
     {
-    if (LOGLEVEL >= 7)
-      {
-      sprintf(log_buf, "%s", pjob->ji_qs.ji_jobid);
-      LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-      }
-
-    pque = get_jobs_queue(&pjob);
-
-    if ((pque != NULL) &&
-        (pque->qu_qs.qu_type == QTYPE_RoutePush))
-      {
-      rc = job_route(pjob);
-      
-      unlock_queue(pque, __func__, NULL, 0);
-
-      if (rc == PBSE_ROUTEREJ)
-        job_abt(&pjob, pbse_to_txt(PBSE_ROUTEREJ));
-      else if (rc == PBSE_ROUTEEXPD)
-        job_abt(&pjob, msg_routexceed);
-      else if (rc == PBSE_QUENOEN)
-        job_abt(&pjob, msg_err_noqueue);
-
-      }
-    else if (pque != NULL)
-      unlock_queue(pque, __func__, NULL, 0);
-
-    if (pjob != NULL)
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+    sprintf(log_buf, "%s", pjob->ji_qs.ji_jobid);
+    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
 
-  pthread_mutex_unlock(reroute_job_mutex);
-  return(NULL);      
+  if ((pque != NULL) &&
+      (pque->qu_qs.qu_type == QTYPE_RoutePush))
+    {
+    rc = job_route(pjob);
+    
+
+    if (rc == PBSE_ROUTEREJ)
+      job_abt(&pjob, pbse_to_txt(PBSE_ROUTEREJ));
+    else if (rc == PBSE_ROUTEEXPD)
+      job_abt(&pjob, msg_routexceed);
+    else if (rc == PBSE_QUENOEN)
+      job_abt(&pjob, msg_err_noqueue);
+
+    }
+
+  return(rc);      
   } /* END reroute_job() */
 
 
@@ -525,17 +508,44 @@ void *reroute_job(
  * If the queue is "started" and if the number of jobs in the
  * Transiting state is less than the max_running limit, then
  * attempt to route it.
+ *
+ * Be sure to free vp. It is a string that was allocated
+ * in handle_queue_routing_retries
  */
 
-void queue_route(
+void *queue_route(
 
-  pbs_queue *pque)
+  void *vp)
 
   {
-  job    *pjob = NULL;
+  pbs_queue *pque;
+  job       *pjob = NULL;
+  char      *queue_name;
+  char      log_buf[LOCAL_LOG_BUF_SIZE];
 
-  int     iter = -1;
-  time_t  time_now = time(NULL);
+  int       iter = -1;
+  time_t    time_now = time(NULL);
+
+  queue_name = (char *)vp;
+
+  if (queue_name == NULL)
+    {
+    sprintf(log_buf, "NULL queue name");
+    log_err(-1, __func__, log_buf);
+    return(NULL);
+    }
+  
+  pthread_mutex_lock(reroute_job_mutex);
+
+  pque = find_queuebyname(queue_name);
+  if (pque == NULL)
+    {
+    sprintf(log_buf, "Could not find queue %s", queue_name);
+    log_err(-1, __func__, log_buf);
+    free(queue_name);
+    pthread_mutex_unlock(reroute_job_mutex);
+    return(NULL);
+    }
 
   while ((pjob = next_job(pque->qu_jobs,&iter)) != NULL)
     {
@@ -545,13 +555,17 @@ void queue_route(
     if ((pjob->ji_qs.ji_un.ji_routet.ji_rteretry <= time_now - ROUTE_RETRY_TIME) &&
         (pjob->ji_qs.ji_un.ji_routet.ji_rteretry != 0))
       {
-      enqueue_threadpool_request(reroute_job, strdup(pjob->ji_qs.ji_jobid));
+      reroute_job(pjob, pque);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       }
-
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+    else
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     }
 
-  return;
+  free(queue_name);
+  unlock_queue(pque, __func__, NULL, 0);
+  pthread_mutex_unlock(reroute_job_mutex);
+  return(NULL);
   } /* END queue_route() */
 
 

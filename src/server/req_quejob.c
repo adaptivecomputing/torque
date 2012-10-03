@@ -2247,10 +2247,13 @@ int req_commit(
   /* if job array, setup the cloning work task */
   if (pj->ji_is_array_template)
     {
+    sprintf(log_buf, "threading job_clone_wt: job id %s", pj->ji_qs.ji_jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     enqueue_threadpool_request(job_clone_wt, strdup(pj->ji_qs.ji_jobid));
     }
     
-  log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pj->ji_qs.ji_jobid,log_buf);
+  sprintf(log_buf, "job_id: %s", pj->ji_qs.ji_jobid);
+  log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,__func__,log_buf);
 
   if ((pj->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
     {

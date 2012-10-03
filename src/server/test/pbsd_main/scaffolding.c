@@ -270,7 +270,7 @@ void track_save(struct work_task *pwt)
   exit(1);
   }
 
-void queue_route(pbs_queue *pque)
+void *queue_route(void *vp)
   {
   fprintf(stderr, "The call to queue_route needs to be mocked!!\n");
   exit(1);
