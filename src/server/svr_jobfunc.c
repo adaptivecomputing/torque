@@ -1998,7 +1998,7 @@ int svr_chkque(
         return(PBSE_JOB_RECYCLED);
         }
 
-      if (user_jobs >= pque->qu_attr[QA_ATR_MaxUserJobs].at_val.at_long)
+      if ((user_jobs + array_jobs) >= pque->qu_attr[QA_ATR_MaxUserJobs].at_val.at_long)
         {
         if (EMsg)
           snprintf(EMsg, 1024,

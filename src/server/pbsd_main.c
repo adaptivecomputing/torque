@@ -254,7 +254,7 @@ int                     queue_rank = 0;
 int                     a_opt_init = -1;
 int                     wait_for_moms_hierarchy = FALSE;
 
-int                     route_retry_interval = 10; /* time in seconds to check routing queues */
+int                     route_retry_interval = 5; /* time in seconds to check routing queues */
 /* HA global data items */
 long                    HALockCheckTime = 0;
 long                    HALockUpdateTime = 0;
@@ -1237,17 +1237,17 @@ void start_routing_retry_thread()
   if ((pthread_attr_init(&routing_attr)) != 0)
     {
     perror("pthread_attr_init failed. Could not start accept thread");
-    log_err(-1, msg_daemonname,"pthread_attr_init failed. Could not start accept thread");
+    log_err(-1, msg_daemonname,"pthread_attr_init failed. Could not start handle_queue_routing_retries");
     }
   else if ((pthread_attr_setdetachstate(&routing_attr, PTHREAD_CREATE_DETACHED) != 0))
     {
     perror("pthread_attr_setdetatchedstate failed. Could not start accept thread");
-    log_err(-1, msg_daemonname,"pthread_attr_setdetachedstate failed. Could not start accept thread");
+    log_err(-1, msg_daemonname,"pthread_attr_setdetachedstate failed. Could not start handle_queue_routing_retries");
     }
   else if ((pthread_create(&route_retry_thread_id, &routing_attr, handle_queue_routing_retries, NULL)) != 0)
     {
     perror("could not start listener for pbs_server");
-    log_err(-1, msg_daemonname, "Failed to start listener for pbs_server");
+    log_err(-1, msg_daemonname, "Failed to start handle_queue_routing_retries");
     }
   } /* END start_routing_retry_thread() */
 
