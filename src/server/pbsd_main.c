@@ -138,6 +138,7 @@
 #include "net_connect.h" /* set_localhost_name */
 #include "tcp.h" /* tcp_chan */
 #include "ji_mutex.h"
+#include "job_route.h" /* queue_route */
 
 #define TASK_CHECK_INTERVAL    10
 #define HELLO_WAIT_TIME        600
@@ -153,7 +154,6 @@ extern void tcp_settimeout(long);
 extern void poll_job_task(struct work_task *);
 extern int  schedule_jobs(void);
 extern int  notify_listeners(void);
-extern void queue_route(pbs_queue *);
 extern void svr_shutdown(int);
 extern void acct_close(void);
 extern int  svr_startjob(job *, struct batch_request *, char *, char *);
@@ -274,6 +274,7 @@ char                    server_name[PBS_MAXSERVERNAME + 1]; /* host_name[:servic
 int                     svr_do_schedule = SCH_SCHEDULE_NULL;
 pthread_mutex_t        *svr_do_schedule_mutex;
 pthread_mutex_t        *check_tasks_mutex;
+pthread_mutex_t        *reroute_job_mutex;
 extern int              listener_command;
 extern hello_container  hellos;
 extern hello_container  failures;
@@ -1151,6 +1152,7 @@ void *handle_queue_routing_retries(
 
   {
   pbs_queue *pque;
+  char       *queuename;
   int        iter = -1;
 
   while(1)
@@ -1159,7 +1161,10 @@ void *handle_queue_routing_retries(
     while ((pque = next_queue(&svr_queues, &iter)) != NULL)
       {
       if (pque->qu_qs.qu_type == QTYPE_RoutePush)
-        queue_route(pque);
+        {
+        queuename = strdup(pque->qu_qs.qu_name); /* make sure this gets freed inside queue_route */
+        enqueue_threadpool_request(queue_route, queuename);
+        }
 
       unlock_queue(pque, __func__, NULL, 0);
       }

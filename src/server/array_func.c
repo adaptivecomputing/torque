@@ -818,6 +818,13 @@ int setup_array_struct(
 
   /* initialize the array */
   pa->job_ids = calloc(array_size, sizeof(char *));
+  if (pa->job_ids == NULL)
+    {
+    sprintf(log_buf, "Failed to alloc job_ids: job %s", pjob->ji_qs.ji_jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    return(PBSE_MEM_MALLOC);
+    }
+
 
   /* remember array_size */
   pa->ai_qs.array_size = array_size;
