@@ -236,8 +236,6 @@ void initialize_globals(void);
 
 /* static void PBSAdjustLogLevel(int sig); */
 
-char *mk_dirs(char *base);
-
 void parse_command_line(int argc, char *argv[]);
 
 int setup_program_environment(void);

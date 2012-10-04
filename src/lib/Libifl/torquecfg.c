@@ -21,7 +21,7 @@ int load_config(
   {
   FILE *config_stream;
   char home_dir[MAXPATHLEN];
-  int  length = strlen(PBS_SERVER_HOME) + strlen(TCONST_CFGFILE) + 1;
+  int  length = strlen(SYSCONF_DIR) + strlen(TCONST_CFGFILE) + 1;
   char *ptr;
 
   if (length >= MAXPATHLEN)
@@ -32,7 +32,7 @@ int load_config(
     }
 
   snprintf(home_dir, sizeof(home_dir), "%s/%s",
-    PBS_SERVER_HOME, TCONST_CFGFILE);
+    SYSCONF_DIR, TCONST_CFGFILE);
 
   if ((config_stream = fopen(home_dir, "r")) == NULL)
     {
@@ -118,7 +118,7 @@ char *trq_get_if_name()
   char home_dir[MAXPATHLEN];
   char *torque_cfg_buf;
   char *if_name, *ptr;
-  int  length = strlen(PBS_SERVER_HOME) + strlen(TCONST_CFGFILE) + 1;
+  int  length = strlen(SYSCONF_DIR) + strlen(TCONST_CFGFILE) + 1;
   int  file_size;
   int  rc;
 
@@ -127,7 +127,7 @@ char *trq_get_if_name()
 
   home_dir[0] = '\0';
   snprintf(home_dir, sizeof(home_dir), "%s/%s",
-    PBS_SERVER_HOME, TCONST_CFGFILE);
+    SYSCONF_DIR, TCONST_CFGFILE);
 
   rc = stat(home_dir, &filestruct);
   if (rc < 0)
