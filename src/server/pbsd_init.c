@@ -1127,7 +1127,7 @@ int initialize_paths()
   appstate_priv      = build_path(appstate_basedir, PBS_SVR_PRIVATE, suffix_slash);
 
   if (path_priv == NULL)
-    path_priv        = build_path(appstate_priv, PBS_SVR_PRIVATE, suffix_slash);
+    path_priv        = build_path(appstate_basedir, PBS_SVR_PRIVATE, suffix_slash);
 
   path_acct          = build_path(appstate_priv, PBS_ACCT, suffix_slash);
   path_credentials   = build_path(appstate_priv, PBS_CREDENTIALDIR, suffix_slash);
