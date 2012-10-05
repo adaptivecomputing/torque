@@ -167,14 +167,10 @@ extern char *msg_script_open;
 extern char *acct_file;
 extern char *log_file;
 extern char *job_log_file;
+extern char *path_home;
 extern char *path_acct;
 extern char  path_log[];
 extern char *path_priv;
-extern char *log_basedir;
-extern char *appstate_basedir;
-char        *appstate_priv;
-extern char *sysconf_basedir;
-extern char *spool_basedir;
 extern char *path_arrays;
 extern char *path_jobs;
 extern char *path_credentials;
@@ -1102,46 +1098,35 @@ int initialize_paths()
   int          rc = PBSE_NONE;
   char        *suffix_slash = "/";
   char        *new_tag = ".new";
-  char        *conf_priv;
   struct stat  statbuf;
   char         log_buf[LOCAL_LOG_BUF_SIZE];
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
   char         EMsg[1024];
 #endif /* not DEBUG and not NO_SECURITY_CHECK */
 
-  /* make the directories for the sysconf dirs */
-  conf_priv          = build_path(sysconf_basedir, PBS_SVR_PRIVATE, suffix_slash);
-  path_mom_hierarchy = build_path(conf_priv, PBS_MOM_HIERARCHY, NULL);
-  path_nodes         = build_path(conf_priv, NODE_DESCRIP, NULL);
-  path_nodes_new     = build_path(conf_priv, NODE_DESCRIP, new_tag);
-  free(conf_priv);
-
-  /* make the log dir */
-  path_svrlog        = build_path(log_basedir, PBS_LOGFILES, suffix_slash);
-  path_jobinfo_log   = build_path(log_basedir, PBS_JOBINFOLOGDIR, suffix_slash);
-
-  /* make the spool dirs */
-  path_spool         = build_path(spool_basedir, PBS_SPOOLDIR, suffix_slash);
-
-  /* make the app state dirs */
-  appstate_priv      = build_path(appstate_basedir, PBS_SVR_PRIVATE, suffix_slash);
-
   if (path_priv == NULL)
-    path_priv        = build_path(appstate_basedir, PBS_SVR_PRIVATE, suffix_slash);
+    path_priv        = build_path(path_home, PBS_SVR_PRIVATE, suffix_slash);
 
-  path_acct          = build_path(appstate_priv, PBS_ACCT, suffix_slash);
-  path_credentials   = build_path(appstate_priv, PBS_CREDENTIALDIR, suffix_slash);
-  path_arrays        = build_path(appstate_priv, PBS_ARRAYDIR, suffix_slash);
-  path_queues        = build_path(appstate_priv, PBS_QUEDIR,   suffix_slash);
-  path_jobs          = build_path(appstate_priv, PBS_JOBDIR,   suffix_slash);
+  path_arrays        = build_path(path_priv, PBS_ARRAYDIR, suffix_slash);
+  path_spool         = build_path(path_home, PBS_SPOOLDIR, suffix_slash);
+  path_queues        = build_path(path_priv, PBS_QUEDIR,   suffix_slash);
+  path_jobs          = build_path(path_priv, PBS_JOBDIR,   suffix_slash);
+  path_credentials   = build_path(path_priv, PBS_CREDENTIALDIR, suffix_slash);
+  path_acct          = build_path(path_priv, PBS_ACCT,     suffix_slash);
 
   if (path_svrdb == NULL)
-    path_svrdb       = build_path(appstate_priv, PBS_SERVERDB, NULL);
-  path_nodestate     = build_path(appstate_priv, NODE_STATUS,  NULL);
-  path_nodenote      = build_path(appstate_priv, NODE_NOTE,    NULL);
-  path_nodenote_new  = build_path(appstate_priv, NODE_NOTE, new_tag);
-  path_svrdb_new     = build_path(appstate_priv, PBS_SERVERDB, new_tag);
+    path_svrdb       = build_path(path_priv, PBS_SERVERDB, NULL);
+
+  path_svrdb_new     = build_path(path_priv, PBS_SERVERDB, new_tag);
+  path_svrlog        = build_path(path_home, PBS_LOGFILES, suffix_slash);
+  path_jobinfo_log   = build_path(path_home, PBS_JOBINFOLOGDIR, suffix_slash);
   path_track         = build_path(path_priv, PBS_TRACKING, NULL);
+  path_nodes         = build_path(path_priv, NODE_DESCRIP, NULL);
+  path_nodes_new     = build_path(path_priv, NODE_DESCRIP, new_tag);
+  path_nodestate     = build_path(path_priv, NODE_STATUS,  NULL);
+  path_nodenote      = build_path(path_priv, NODE_NOTE,    NULL);
+  path_nodenote_new  = build_path(path_priv, NODE_NOTE, new_tag);
+  path_mom_hierarchy = build_path(path_priv, PBS_MOM_HIERARCHY, NULL);
 
 #ifdef SERVER_CHKPTDIR
   /* need to make sure path ends with a '/' */
@@ -1157,7 +1142,7 @@ int initialize_paths()
     }
 
 #else
-  path_checkpoint    = build_path(appstate_basedir, PBS_CHKPTDIR, suffix_slash);
+  path_checkpoint    = build_path(path_home, PBS_CHKPTDIR, suffix_slash);
 #endif
 
   /* check existance amd make sure it is a directory */
@@ -2184,7 +2169,7 @@ char *build_path(
     return(ppath);
     }
 
-  log_err(errno, __func__, msg_err_malloc);
+  log_err(errno, "build_path", msg_err_malloc);
 
   pthread_mutex_lock(log_mutex);
   log_close(1);
@@ -2902,16 +2887,19 @@ int recov_svr_attr(
 
   {
   int	 rc;
+  char	*suffix_slash = "/";
 
   if (type != RECOV_CREATE)
     {
     /* Open the server database (save file) and read it in */
-    if (appstate_priv == NULL)
-      appstate_priv  = build_path(appstate_basedir, PBS_SVR_PRIVATE, "/");
 
+    if (path_priv == NULL)
+      {
+      path_priv = build_path(path_home, PBS_SVR_PRIVATE, suffix_slash);
+      }
     if (path_svrdb == NULL)
       {
-      path_svrdb     = build_path(appstate_priv, PBS_SERVERDB, NULL);
+      path_svrdb     = build_path(path_priv, PBS_SERVERDB, NULL);
       }
 
     if (svr_resc_def == NULL)
@@ -2925,8 +2913,7 @@ int recov_svr_attr(
         }
       }
 
-    if (((rc = chk_save_file(path_svrdb))!= 0) || 
-        ((rc = svr_recov_xml(path_svrdb, TRUE)) == -1)) 
+    if (((rc = chk_save_file(path_svrdb))!= 0) || ((rc = svr_recov_xml(path_svrdb, TRUE)) == -1)) 
       {
       log_err(rc, __func__, msg_init_baddb);
 

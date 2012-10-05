@@ -1557,7 +1557,7 @@ esac])dnl
 
 AC_ARG_ENABLE(mom-checkspool, [
   --disable-mom-checkspool
-                          Do not check free space on spool directory and set an error],
+                          Don't check free space on spool directory and set an error],
 [case "${enableval}" in
   yes) MOMCHECKLOCALSPOOL=1 ;;
   no)  MOMCHECKLOCALSPOOL=0;;
@@ -1606,38 +1606,6 @@ AC_ARG_WITH(server_home, [
     [PBS_SERVER_HOME="/var/spool/torque"])
 AC_SUBST(PBS_SERVER_HOME)
 
-
-dnl 
-dnl new with options for the rpm build
-dnl
-AC_ARG_WITH(spool_dir, [
-  --with-spool-dir=DIR  set the spool directory. Defaults to /var/spool/torque],
-    [PBS_SPOOL_DIR="${withval}" ; RPM_AC_OPTS="$RPM_AC_OPTS --define \"spooldir ${withval}\"" ],
-    [PBS_SPOOL_DIR="${PBS_SERVER_HOME}"])
-AC_DEFINE_UNQUOTED(PBS_SPOOL_DIR, "${PBS_SPOOL_DIR}", [The spool base directory])
-
-
-AC_ARG_WITH(appstate_dir, [
-    --with-appstate-dir=DIR  set the base directory for the app state files. Defaults to /var/spool/torque],
-      [APP_STATE_DIR="${withval}" ; RPM_AC_OPTS="$RPM_AC_OPTS --define \"appstatedir ${withval}\"" ],
-      [APP_STATE_DIR="${PBS_SERVER_HOME}"])
-AC_DEFINE_UNQUOTED(APP_STATE_DIR, "${APP_STATE_DIR}", [The base directory for app state information])
-
-
-AC_ARG_WITH(log_dir, [
-    --with-log-dir=DIR  set the base directory for the logs. Defaults to /var/spool/torque],
-      [LOG_DIR="${withval}" ; RPM_AC_OPTS="$RPM_AC_OPTS --define \"logdir ${withval}\"" ],
-      [LOG_DIR="${PBS_SERVER_HOME}"])
-AC_DEFINE_UNQUOTED(LOG_DIR, "${LOG_DIR}", [The base directory for logging])
-
-
-AC_ARG_WITH(sysconf_dir, [
-    --with-sysconf-dir=DIR  set the base directory for the system configuration files. Defaults to
-    /var/spool/torque],
-      [SYSCONF_DIR="${withval}" ; RPM_AC_OPTS="$RPM_AC_OPTS --define \"sysconfdir ${withval}\"" ],
-      [SYSCONF_DIR="${PBS_SERVER_HOME}"])
-AC_DEFINE_UNQUOTED(SYSCONF_DIR, "${SYSCONF_DIR}", [The base directory for configuration files])
-
     dnl [PBS_SERVER_HOME="${withval}"], [PBS_SERVER_HOME="$localstatedir/spool/torque"])
 
 AC_ARG_WITH(server_name_file, [
@@ -1653,7 +1621,7 @@ AC_ARG_WITH(server_name_file, [
     [pbs_default_file="${withval}"], [pbs_default_file="server_name"])
 case "${pbs_default_file}" in
   /*) PBS_DEFAULT_FILE="${pbs_default_file}" ;;
-  *)  PBS_DEFAULT_FILE="\${SYSCONF_DIR}/${pbs_default_file}" ;;
+  *)  PBS_DEFAULT_FILE="\${PBS_SERVER_HOME}/${pbs_default_file}" ;;
 esac
 AC_SUBST(PBS_DEFAULT_FILE)
 
@@ -1696,9 +1664,9 @@ AC_ARG_WITH(environ, [
 [pbs_environ="${withval}"], [pbs_environ="no"])
 case "${pbs_environ}" in
   yes) AC_MSG_ERROR([--with-environ must be given a path]) ;;
-  no)  PBS_ENVIRON="\${SYSCONF_DIR}/pbs_environment" ;;
+  no)  PBS_ENVIRON="\${PBS_SERVER_HOME}/pbs_environment" ;;
   /*)  PBS_ENVIRON="${pbs_environ}" ;;
-  *)   PBS_ENVIRON="\${SYSCONF_DIR}/${pbs_environ}" ;;
+  *)   PBS_ENVIRON="\${PBS_SERVER_HOME}/${pbs_environ}" ;;
 esac
 AC_SUBST(PBS_ENVIRON)
 

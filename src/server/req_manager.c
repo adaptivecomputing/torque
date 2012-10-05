@@ -2440,10 +2440,10 @@ int disallowed_types_chk(
     return(0);
     }
 
-  for (i = 0; i < pstr->as_usedptr; i++)
+  for (i = 0;i < pstr->as_usedptr;i++)
     {
     /* first check for dupe */
-    for (j = 0; j < pstr->as_usedptr; j++)
+    for (j = 0; j < pstr->as_usedptr;j++)
       {
       if (i == j)
         continue;
@@ -2473,8 +2473,6 @@ int disallowed_types_chk(
 
   return(0);
   } /* END disallowed_types_chk() */
-
-
 
 
 static int mgr_long_action_helper(

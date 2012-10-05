@@ -96,176 +96,171 @@
 #define MAX_UPDATES_BEFORE_SENDING  20
 /* Global Data Items */
 
-char                    *program_name;
-int                      MOMIsLocked = 0;
-int                      MOMIsPLocked = 0;
-int                      ServerStatUpdateInterval = DEFAULT_SERVER_STAT_UPDATES;
-int                      CheckPollTime            = CHECK_POLL_TIME;
-int                      ForceServerUpdate = 0;
+char  *program_name;
+int    MOMIsLocked = 0;
+int    MOMIsPLocked = 0;
+int    ServerStatUpdateInterval = DEFAULT_SERVER_STAT_UPDATES;
+int    CheckPollTime            = CHECK_POLL_TIME;
+int    ForceServerUpdate = 0;
 
-int                      verbositylevel = 0;
-double                   cputfactor = 1.00;
-unsigned int             default_server_port = 0;
+int    verbositylevel = 0;
+double cputfactor = 1.00;
+unsigned int default_server_port = 0;
 
-int                      exiting_tasks = 0;
-float                    ideal_load_val = -1.0;
-int                      internal_state = 0;
+int    exiting_tasks = 0;
+float  ideal_load_val = -1.0;
+int    internal_state = 0;
 
 /* mom data items */
 #ifdef NUMA_SUPPORT
-int                      num_node_boards;
-nodeboard                node_boards[MAX_NODE_BOARDS]; 
-int                      numa_index;
+int            num_node_boards;
+nodeboard      node_boards[MAX_NODE_BOARDS]; 
+int            numa_index;
 #else
-char                     path_meminfo[MAX_LINE];
+char           path_meminfo[MAX_LINE];
 #endif
 
-extern pthread_mutex_t  *log_mutex;
+extern pthread_mutex_t *log_mutex;
 
-int                      thread_unlink_calls = FALSE;
+int          thread_unlink_calls = FALSE;
 /* by default, enforce these policies */
-int                      ignwalltime = 0; 
-int                      ignmem = 0;
-int                      igncput = 0;
-int                      ignvmem = 0; 
+int          ignwalltime = 0; 
+int          ignmem = 0;
+int          igncput = 0;
+int          ignvmem = 0; 
 /* end policies */
-int                      spoolasfinalname = 0;
-int                      maxupdatesbeforesending = MAX_UPDATES_BEFORE_SENDING;
-char                    *apbasil_path     = NULL;
-char                    *apbasil_protocol = NULL;
-int                      reject_job_submit = 0;
-int                      attempttomakedir = 0;
-int                      reduceprologchecks;
-int                      lockfds = -1;
-int                      multi_mom = 0;
-time_t                   loopcnt;  /* used for MD5 calc */
-float                    max_load_val = -1.0;
-int                      hostname_specified = 0;
-char                     mom_host[PBS_MAXHOSTNAME + 1];
-char                     mom_alias[PBS_MAXHOSTNAME + 1];
-char                     TMOMRejectConn[MAXLINE];   /* most recent rejected connection */
-char                     mom_short_name[PBS_MAXHOSTNAME + 1];
-int                      num_var_env;
-int                      received_cluster_addrs;
-time_t                   requested_cluster_addrs;
-time_t                   first_update_time = 0;
+int          spoolasfinalname = 0;
+int          maxupdatesbeforesending = MAX_UPDATES_BEFORE_SENDING;
+char        *apbasil_path     = NULL;
+char        *apbasil_protocol = NULL;
+int          reject_job_submit = 0;
+int          attempttomakedir = 0;
+int          reduceprologchecks;
+int          lockfds = -1;
+int          multi_mom = 0;
+time_t       loopcnt;  /* used for MD5 calc */
+float        max_load_val = -1.0;
+int          hostname_specified = 0;
+char         mom_host[PBS_MAXHOSTNAME + 1];
+char         mom_alias[PBS_MAXHOSTNAME + 1];
+char         TMOMRejectConn[MAXLINE];   /* most recent rejected connection */
+char         mom_short_name[PBS_MAXHOSTNAME + 1];
+int          num_var_env;
+int          received_cluster_addrs;
+time_t       requested_cluster_addrs;
+time_t       first_update_time = 0;
+char        *path_epilog;
+char        *path_epilogp;
+char        *path_epiloguser;
+char        *path_epiloguserp;
+char        *path_epilogpdel;
+char        *path_jobs;
+char        *path_prolog;
+char        *path_prologp;
+char        *path_prologuser;
+char        *path_prologuserp;
+char        *path_mom_hierarchy;
+char        *path_spool;
+char        *path_undeliv;
+char        *path_aux;
+char        *path_home = PBS_SERVER_HOME;
+char        *mom_home;
 
-char                    *log_basedir = LOG_DIR;
-char                    *appstate_basedir = APP_STATE_DIR;
-char                    *sysconf_basedir = SYSCONF_DIR;
-char                    *spool_basedir   = PBS_SPOOL_DIR;
-char                    *path_spool;
-char                    *path_epilog;
-char                    *path_epilogp;
-char                    *path_epiloguser;
-char                    *path_epiloguserp;
-char                    *path_epilogpdel;
-char                    *path_jobs;
-char                    *path_prolog;
-char                    *path_prologp;
-char                    *path_prologuser;
-char                    *path_prologuserp;
-char                    *path_undeliv;
-char                    *path_aux;
-char                    *path_home = PBS_SERVER_HOME;
-char                    *mom_home;
-char                    *config_file;
+extern dynamic_string *mom_status;
+extern int  multi_mom;
+extern unsigned int pbs_rm_port;
+char        *path_layout;
+extern char *msg_daemonname;          /* for logs     */
+extern char *msg_info_mom; /* Mom information message   */
+gid_t  pbsgroup;
+uid_t pbsuser;
+unsigned int pbs_mom_port = 0;
+unsigned int pbs_rm_port = 0;
+tlist_head mom_polljobs; /* jobs that must have resource limits polled */
+tlist_head svr_newjobs; /* jobs being sent to MOM */
+tlist_head svr_alljobs; /* all jobs under MOM's control */
+tlist_head mom_varattrs; /* variable attributes */
+int  termin_child = 0;  /* boolean - one or more children need to be terminated this iteration */
+int  exec_with_exec = 0;
+time_t  time_now = 0;
+time_t  last_poll_time = 0;
+extern tlist_head svr_requests;
 
-extern dynamic_string   *mom_status;
-extern int               multi_mom;
-extern unsigned int      pbs_rm_port;
-char                    *path_layout;
-extern char             *msg_daemonname;          /* for logs     */
-extern char             *msg_info_mom; /* Mom information message   */
-gid_t                    pbsgroup;
-uid_t                    pbsuser;
-unsigned int             pbs_mom_port = 0;
-unsigned int             pbs_rm_port = 0;
-tlist_head               mom_polljobs; /* jobs that must have resource limits polled */
-tlist_head               svr_newjobs; /* jobs being sent to MOM */
-tlist_head               svr_alljobs; /* all jobs under MOM's control */
-tlist_head               mom_varattrs; /* variable attributes */
-int                      termin_child = 0;  /* boolean - one or more children need to be terminated this iteration */
-int                      exec_with_exec = 0;
-time_t                   time_now = 0;
-time_t                   last_poll_time = 0;
-extern tlist_head        svr_requests;
+extern struct var_table vtable; /* see start_exec.c */
+double  wallfactor = 1.00;
+long  log_file_max_size = 0;
+long  log_file_roll_depth = 1;
 
-extern struct var_table  vtable; /* see start_exec.c */
-double                   wallfactor = 1.00;
-long                     log_file_max_size = 0;
-long                     log_file_roll_depth = 1;
+time_t          last_log_check;
+char           *nodefile_suffix = NULL;    /* suffix to append to each host listed in job host file */
+char           *submithost_suffix = NULL;  /* suffix to append to submithost for interactive jobs */
+char           *TNoSpoolDirList[TMAX_NSDCOUNT];
+char           *TRemChkptDirList[TMAX_RCDCOUNT];
 
-time_t                   last_log_check;
-char                    *nodefile_suffix = NULL;    /* suffix to append to each host listed in job host file */
-char                    *submithost_suffix = NULL;  /* suffix to append to submithost for interactive jobs */
-char                    *TNoSpoolDirList[TMAX_NSDCOUNT];
-char                    *TRemChkptDirList[TMAX_RCDCOUNT];
+job            *JobsToResend[MAX_RESEND_JOBS];
 
-job                     *JobsToResend[MAX_RESEND_JOBS];
+resizable_array  *things_to_resend;
+char             *AllocParCmd = NULL;  /* (alloc) */
 
-resizable_array         *things_to_resend;
-char                    *AllocParCmd = NULL;  /* (alloc) */
+int      src_login_batch = TRUE;
+int      src_login_interactive = TRUE;
 
-int                      src_login_batch = TRUE;
-int                      src_login_interactive = TRUE;
+mom_hierarchy_t *mh;
 
-mom_hierarchy_t         *mh;
-
-char                     jobstarter_exe_name[MAXPATHLEN + 1];
-int                      jobstarter_set = 0;
+char    jobstarter_exe_name[MAXPATHLEN + 1];
+int     jobstarter_set = 0;
 
 #ifdef PENABLE_LINUX26_CPUSETS
-hwloc_topology_t         topology = NULL;       /* system topology */
+hwloc_topology_t topology = NULL;       /* system topology */
 
-int                      memory_pressure_threshold = 0; /* 0: off, >0: check and kill */
-short                    memory_pressure_duration  = 0; /* 0: off, >0: check and kill */
-int                      MOMConfigUseSMT           = 1; /* 0: off, 1: on */
+int      memory_pressure_threshold = 0; /* 0: off, >0: check and kill */
+short    memory_pressure_duration  = 0; /* 0: off, >0: check and kill */
+int      MOMConfigUseSMT           = 1; /* 0: off, 1: on */
 #endif
 
-int                      is_reporter_mom = FALSE;
-int                      is_login_node   = FALSE;
+int      is_reporter_mom = FALSE;
+int      is_login_node   = FALSE;
 
 /* externs */
 
-extern char             *server_alias;
-extern unsigned int      pe_alarm_time;
-extern time_t            pbs_tcp_timeout;
-extern long              MaxConnectTimeout;
+extern char *server_alias;
+extern unsigned int pe_alarm_time;
+extern time_t   pbs_tcp_timeout;
+extern long     MaxConnectTimeout;
 
-extern resizable_array  *received_statuses;
-extern hash_table_t     *received_table;
+extern resizable_array *received_statuses;
+extern hash_table_t    *received_table;
 
-char                     tmpdir_basename[MAXPATHLEN];  /* for $TMPDIR */
+char            tmpdir_basename[MAXPATHLEN];  /* for $TMPDIR */
 
-char                     rcp_path[MAXPATHLEN];
-char                     rcp_args[MAXPATHLEN];
-char                     xauth_path[MAXPATHLEN];
+char            rcp_path[MAXPATHLEN];
+char            rcp_args[MAXPATHLEN];
+char            xauth_path[MAXPATHLEN];
 
-time_t                   LastServerUpdateTime = 0;  /* NOTE: all servers updated together */
-int                      UpdateFailCount = 0;
+time_t          LastServerUpdateTime = 0;  /* NOTE: all servers updated together */
+int             UpdateFailCount = 0;
 
-time_t                   MOMStartTime         = 0;
-int                      MOMPrologTimeoutCount;
-int                      MOMPrologFailureCount;
+time_t          MOMStartTime         = 0;
+int             MOMPrologTimeoutCount;
+int             MOMPrologFailureCount;
 
-char                     MOMConfigVersion[64];
-char                     MOMUNameMissing[64];
+char            MOMConfigVersion[64];
+char            MOMUNameMissing[64];
 
-int                      MOMConfigDownOnError      = 0;
-int                      MOMConfigRestart          = 0;
-int                      MOMConfigRReconfig        = 0;
-long                     system_ncpus = 0;
-char                    *auto_ideal_load = NULL;
-char                    *auto_max_load   = NULL;
+int             MOMConfigDownOnError      = 0;
+int             MOMConfigRestart          = 0;
+int             MOMConfigRReconfig        = 0;
+long            system_ncpus = 0;
+char           *auto_ideal_load = NULL;
+char           *auto_max_load   = NULL;
 #ifdef NVIDIA_GPUS
-int                      MOMNvidiaDriverVersion    = 0;
-int                      use_nvidia_gpu = TRUE;
+int             MOMNvidiaDriverVersion    = 0;
+int             use_nvidia_gpu = TRUE;
 #endif  /* NVIDIA_GPUS */
 
 #define TMAX_JE  64
 
-pjobexec_t               TMOMStartInfo[TMAX_JE];
+pjobexec_t      TMOMStartInfo[TMAX_JE];
 
 
 /* prototypes */
@@ -552,6 +547,7 @@ int   cphosts_num = 0;
 struct cphosts         *pcphosts = NULL;
 
 static int  config_file_specified = 0;
+static char  config_file[_POSIX_PATH_MAX] = "config";
 
 char                    PBSNodeMsgBuf[1024];
 char                    PBSNodeCheckPath[1024];
@@ -6604,22 +6600,13 @@ static void PBSAdjustLogLevel(
 
 char *mk_dirs(
 
-  char *base,       /* I - optional */
-  char *extension)  /* I */
+  char *base)  /* I */
 
   {
   char *pn;
-  int   ltop;
-  char *start;
+  int   ltop = strlen(path_home);
 
-  if (base == NULL)
-    start = path_home;
-  else
-    start = base;
-
-  ltop = strlen(start);
-
-  pn = calloc(1, ltop + strlen(extension) + 2);
+  pn = calloc(1, ltop + strlen(base) + 2);
 
   if (pn == NULL)
     {
@@ -6628,12 +6615,12 @@ char *mk_dirs(
     exit(2);
     }
 
-  strcpy(pn, start);
+  strcpy(pn, path_home);
 
-  if (*(start + ltop - 1) != '/')
+  if (*(path_home + ltop - 1) != '/')
     strcat(pn, "/");
 
-  strcat(pn, extension);
+  strcat(pn, base);
 
   return(pn);
   }  /* END mk_dirs() */
@@ -6728,10 +6715,7 @@ void parse_command_line(
 
         config_file_specified = 1;
 
-        if (config_file != NULL)
-          free(config_file);
-
-        config_file = strdup(optarg);
+        strcpy(config_file, optarg); /* remember name */
 
         break;
 
@@ -7044,37 +7028,36 @@ int setup_program_environment(void)
 
   c = 0;
 
-  mom_home              = mk_dirs(appstate_basedir, "mom_priv");
-  path_jobs             = mk_dirs(appstate_basedir, "mom_priv/jobs/");
-  path_epilog           = mk_dirs(appstate_basedir, "mom_priv/epilogue");
-  path_prolog           = mk_dirs(appstate_basedir, "mom_priv/prologue");
-  path_epiloguser       = mk_dirs(appstate_basedir, "mom_priv/epilogue.user");
-  path_prologuser       = mk_dirs(appstate_basedir, "mom_priv/prologue.user");
-  path_epilogp          = mk_dirs(appstate_basedir, "mom_priv/epilogue.parallel");
-  path_prologp          = mk_dirs(appstate_basedir, "mom_priv/prologue.parallel");
-  path_epiloguserp      = mk_dirs(appstate_basedir, "mom_priv/epilogue.user.parallel");
-  path_prologuserp      = mk_dirs(appstate_basedir, "mom_priv/prologue.user.parallel");
-  path_epilogpdel       = mk_dirs(appstate_basedir, "mom_priv/epilogue.precancel");
-  path_layout           = mk_dirs(sysconf_basedir,  "mom_priv/mom.layout");
-  if (config_file == NULL)
-    config_file         = mk_dirs(sysconf_basedir,  "mom_priv/config");
+  mom_home              = mk_dirs("mom_priv");
+  path_jobs             = mk_dirs("mom_priv/jobs/");
+  path_epilog           = mk_dirs("mom_priv/epilogue");
+  path_prolog           = mk_dirs("mom_priv/prologue");
+  path_epiloguser       = mk_dirs("mom_priv/epilogue.user");
+  path_prologuser       = mk_dirs("mom_priv/prologue.user");
+  path_epilogp          = mk_dirs("mom_priv/epilogue.parallel");
+  path_prologp          = mk_dirs("mom_priv/prologue.parallel");
+  path_epiloguserp      = mk_dirs("mom_priv/epilogue.user.parallel");
+  path_prologuserp      = mk_dirs("mom_priv/prologue.user.parallel");
+  path_epilogpdel       = mk_dirs("mom_priv/epilogue.precancel");
+  path_layout           = mk_dirs("mom_priv/mom.layout");
+  path_mom_hierarchy    = mk_dirs("mom_priv/mom_hierarchy");
 
 #ifndef DEFAULT_MOMLOGDIR
 
   if (path_log == NULL)
-    path_log       = mk_dirs(log_basedir, "mom_logs");
+    path_log       = mk_dirs("mom_logs");
 
 #endif
 
-  path_spool       = mk_dirs(spool_basedir, "spool/");
+  path_spool       = mk_dirs("spool/");
 
-  path_undeliv     = mk_dirs(spool_basedir, "undelivered/");
+  path_undeliv     = mk_dirs("undelivered/");
 
 #ifdef __CYGWIN__
 /*  AUX is reserved word in Windows  */
-  path_aux         = mk_dirs(appstate_basedir, "auxx/");
+  path_aux         = mk_dirs("auxx/");
 #else
-  path_aux         = mk_dirs(appstate_basedir, "aux/");
+  path_aux         = mk_dirs("aux/");
 #endif  /* __CYGWIN__ */
 
   /* initialize the mom_status */
@@ -7553,8 +7536,8 @@ int setup_program_environment(void)
   if (read_config(NULL))
     {
     fprintf(stderr, "%s: cannot load config file '%s'\n",
-      program_name,
-      config_file);
+            program_name,
+            config_file);
 
     exit(1);
     }

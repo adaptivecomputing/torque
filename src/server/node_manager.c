@@ -166,6 +166,7 @@ int        is_gpustat_get(struct pbsnode *np, char **str_ptr);
 
 extern int              ctnodes(char *);
 
+extern char            *path_home;
 extern char            *path_nodes;
 extern char            *path_nodes_new;
 extern char            *path_nodestate;

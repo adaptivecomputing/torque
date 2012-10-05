@@ -107,17 +107,16 @@ extern uint64_t get_jobid(char *);
 extern void add_wkm_start(uint64_t, char *);
 #endif /* ENABLE_CSA */
 
-int          checkpoint_system_type = CST_NONE;
-char         path_checkpoint[MAXPATHLEN + 1];
+int     checkpoint_system_type = CST_NONE;
+char    path_checkpoint[MAXPATHLEN + 1];
 
 /* BLCR variables */
-char         checkpoint_script_name[MAXPATHLEN + 1];
-char         restart_script_name[MAXPATHLEN + 1];
-char         checkpoint_run_exe_name[MAXPATHLEN + 1];
-int          default_checkpoint_interval = 10; /* minutes */
-extern char *appstate_basedir;
+char       checkpoint_script_name[MAXPATHLEN + 1];
+char       restart_script_name[MAXPATHLEN + 1];
+char       checkpoint_run_exe_name[MAXPATHLEN + 1];
+int        default_checkpoint_interval = 10; /* minutes */
 
-extern char *mk_dirs(char *, char *);
+extern char *mk_dirs(char *);
 extern void set_attr(struct attrl **, char *, char *);
 extern int write_nodes_to_file(job *);
 extern int write_gpus_to_file(job *);
@@ -247,7 +246,7 @@ int mom_checkpoint_init(void)
     {
     /* mk_dirs callocs the string it returns so this string must be freed */
 
-    path_checkpt_tmp = mk_dirs(appstate_basedir, "checkpoint/");
+    path_checkpt_tmp = mk_dirs("checkpoint/");
     snprintf(path_checkpoint,sizeof(path_checkpoint),"%s",path_checkpt_tmp);
     free(path_checkpt_tmp);
     }
