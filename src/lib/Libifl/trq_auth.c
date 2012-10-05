@@ -6,6 +6,7 @@
 #include <stdio.h> /* sprintf */
 #include <arpa/inet.h> /* inet_addr */
 #include "../Libnet/lib_net.h" /* get_hostaddr, socket_* */
+#include "../../include/log.h" /* log event types */
 
 
 char *trq_addr = NULL;
@@ -228,6 +229,7 @@ void *process_svr_conn(
   void *sock)
 
   {
+  char *className = "trqauthd";
   int   rc = PBSE_NONE;
   char *server_name = NULL;
   int   server_port = 0;
@@ -244,6 +246,7 @@ void *process_svr_conn(
   int   msg_len = 0;
   int   debug_mark = 0;
   int   local_socket = *(int *)sock;
+  char  msg_buf[1024];
 
   /* incoming message format is:
    * trq_system_len|trq_system|trq_port|Validation_type|user_len|user|psock|
@@ -316,6 +319,11 @@ void *process_svr_conn(
       {
       fprintf(stderr, "Conn to %s port %d success. Conn %d authorized\n", server_name, server_port, user_sock);
       }
+
+    snprintf(msg_buf, sizeof(msg_buf),
+      "User %s at IP:port %s:%d logged in", user_name, server_name, server_port);
+    log_record(PBSEVENT_CLIENTAUTH, PBS_EVENTCLASS_TRQAUTHD,
+      className, msg_buf);
     }
 
   if (rc != PBSE_NONE)
@@ -333,6 +341,11 @@ void *process_svr_conn(
       {
       fprintf(stderr, "Conn to %s port %d Fail. Conn %d not authorized (dm = %d, Err Num %d)\n", server_name, server_port, user_sock, debug_mark, rc);
       }
+
+    snprintf(msg_buf, sizeof(msg_buf),
+      "User %s at IP:port %s:%d login attemptfailed --%s", user_name, server_name, server_port, error_msg);
+    log_record(PBSEVENT_CLIENTAUTH, PBS_EVENTCLASS_TRQAUTHD,
+      className, msg_buf);
     }
 
   rc = socket_write(local_socket, send_message, strlen(send_message));

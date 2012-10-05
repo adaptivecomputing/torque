@@ -164,7 +164,8 @@ static char *class_names[] =
   "Req",
   "Fil",
   "Act",
-  "node"
+  "node",
+  "trqauthd"
   };
 
 /* External functions called */
@@ -511,8 +512,8 @@ void log_err(
  *  log_ext (log extended) - log message to syslog (if available) and to the TORQUE log.
  *
  *  The error is recorded to the TORQUE log file and to syslogd if it is
- *	available.  If the error file has not been opened and if syslog is
- *	not defined, then the console is opened.
+ *  available.  If the error file has not been opened and if syslog is
+ *  not defined, then the console is opened.
 
  *  Note that this function differs from log_err in that you can specify a severity
  *  level that will accompany the message in the syslog (see 'manpage syslog' for a list
@@ -745,6 +746,8 @@ void log_record(
   FILE  *savlog;
   char  *start = NULL, *end = NULL;
   size_t nchars;
+  int eventclass = 0;
+  char time_formatted_str[64];
 
   thr_id = syscall(SYS_gettid);
   pthread_mutex_lock(log_mutex);
@@ -773,7 +776,13 @@ void log_record(
       return;
       }
     }
-      
+  
+  time_formatted_str[0] = 0;    
+  log_get_set_eventclass(&eventclass, GETV);
+  if (eventclass == PBS_EVENTCLASS_TRQAUTHD)
+    {
+    log_format_trq_timestamp(time_formatted_str, sizeof(time_formatted_str));
+    }
 
   /*
    * Looking for the newline characters and splitting the output message
@@ -793,7 +802,9 @@ void log_record(
 
     while (tryagain)
       {
-      rc = fprintf(logfile,
+      if (eventclass != PBS_EVENTCLASS_TRQAUTHD)
+        {
+        rc = fprintf(logfile,
               "%02d/%02d/%04d %02d:%02d:%02d;%04x;%10.10s.%d;%s;%s;%s%.*s\n",
               ptm->tm_mon + 1,
               ptm->tm_mday,
@@ -809,7 +820,16 @@ void log_record(
               (text == start ? "" : "[continued]"),
               (int)nchars,
               start);
-
+        }
+      else
+        {
+        rc = fprintf(logfile,
+              "%s %s%.*s\n",
+              time_formatted_str,
+              (text == start ? "" : "[continued]"),
+              (int)nchars,
+              start);
+        }
       if ((rc < 0) &&
           (errno == EPIPE) &&
           (tryagain == 2))
@@ -1389,4 +1409,38 @@ void print_trace(
   free(meth_names);
   }
 
+
+void log_get_set_eventclass(
+
+  int *objclass, 
+  SGetter action)
+
+  {
+  static int log_objclass = 0;
+
+  if (action == SETV)
+    log_objclass = *objclass;
+  else if (action == GETV)
+    *objclass = log_objclass;
+
+  } /* end of log_get_set_evnetclass */
+
+void log_format_trq_timestamp(
+
+  char *time_formatted_str, 
+  unsigned int buflen)
+
+  {
+  char buffer[30];
+  struct timeval tv;
+  time_t curtime;
+  unsigned int milisec=0;
+
+  gettimeofday(&tv, NULL); 
+  curtime=tv.tv_sec;
+
+  strftime(buffer,30,"%Y-%m-%d %T.",localtime(&curtime));
+  milisec = tv.tv_usec/100;
+  snprintf(time_formatted_str, buflen, "%s%04d", buffer, milisec);
+  } /* end of log_format_trq_timestamp */
 /* END pbs_log.c */

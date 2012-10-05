@@ -8,4 +8,8 @@ int load_ssh_key(char **ssh_key);
 
 int trq_main(int argc, char **argv, char **envp);
 
+void clean_log_init_mutex(void);
+
+void initialize_globals_for_log(void);
+
 #endif /* _TRQ_AUTH_DAEMON_H */
