@@ -17,8 +17,18 @@
 #include "../lib/Libnet/lib_net.h" /* start_listener */
 #include "../lib/Libifl/lib_ifl.h" /* process_svr_conn */
 #include "../lib/Liblog/chk_file_sec.h" /* IamRoot */
+#include "../lib/Liblog/pbs_log.h" /* logging stuff */
+#include "../include/log.h"  /* log events and event classes */
+
+#define MAX_BUF 1024
+#define TRQ_LOGFILES "client_logs"
+
+extern char *msg_daemonname;
+extern pthread_mutex_t *log_mutex;
+extern pthread_mutex_t *job_log_mutex;
 
 extern int debug_mode;
+static int changed_msg_daem = 0;
 
 int load_config(
     char **ip,
@@ -65,12 +75,32 @@ int validate_server(
   return rc;
   }
 
+void initialize_globals_for_log(void)
+  {
+  strcpy(pbs_current_user, "trqauthd");   
+  if ((msg_daemonname = strdup(pbs_current_user)))
+    changed_msg_daem = 1;
+  }
+
+void clean_log_init_mutex(void)
+  {
+  pthread_mutex_destroy(log_mutex);
+  pthread_mutex_destroy(job_log_mutex);
+  free(log_mutex);
+  free(job_log_mutex);
+  }
+
 int daemonize_trqauthd(char *server_ip, int server_port, void *(*process_meth)(void *))
   {
   int gid;
   pid_t pid;
   int   rc;
-  char  error_buf[1024];
+  char  error_buf[MAX_BUF];
+  char msg_trqauthddown[MAX_BUF];
+  char path_log[MAXPATHLEN + 1];
+  char *log_file=NULL;
+  int eventclass = PBS_EVENTCLASS_TRQAUTHD;
+  char *path_home = PBS_SERVER_HOME;
 
   umask(022);
 
@@ -121,15 +151,50 @@ int daemonize_trqauthd(char *server_ip, int server_port, void *(*process_meth)(v
     fprintf(stderr, "trqauthd port: %d\n", server_port);
     }
 
+    log_init(NULL, NULL);
+    log_get_set_eventclass(&eventclass, SETV);
+    initialize_globals_for_log();
+    sprintf(path_log, "%s/%s", path_home, TRQ_LOGFILES);
+    if ((mkdir(path_log, 0755) == -1) && (errno != EEXIST))
+      {
+         openlog("daemonize_trqauthd", LOG_PID | LOG_NOWAIT, LOG_DAEMON);
+         syslog(LOG_ALERT, "Failed to create client_logs directory: errno: %d", errno);
+         log_err(errno,"daemonize_trqauthd", "Failed to create client_logs directory");
+         closelog();
+      }
+    pthread_mutex_lock(log_mutex);
+    log_open(log_file, path_log);
+    pthread_mutex_unlock(log_mutex);
+
     /* start the listener */
     rc = start_listener(server_ip, server_port, process_meth);
     if(rc != PBSE_NONE)
       {
       openlog("daemonize_trqauthd", LOG_PID | LOG_NOWAIT, LOG_DAEMON);
       syslog(LOG_ALERT, "trqauthd could not start: %d\n", rc);
+      log_err(rc, "daemonize_trqauthd", "trqauthd could not start");
+      pthread_mutex_lock(log_mutex);
+      log_close(1);
+      pthread_mutex_unlock(log_mutex);
+      if (changed_msg_daem && msg_daemonname) {
+          free(msg_daemonname);
+      }
+      clean_log_init_mutex();
       exit(-1);
       }
-
+    snprintf(msg_trqauthddown, sizeof(msg_trqauthddown),
+      "TORQUE authd daemon shut down and no longer listening on IP:port %s:%d",
+      server_ip, server_port);
+    log_event(PBSEVENT_SYSTEM | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD,
+      msg_daemonname, msg_trqauthddown);
+    pthread_mutex_lock(log_mutex);
+    log_close(1);
+    pthread_mutex_unlock(log_mutex);
+    if (changed_msg_daem && msg_daemonname)
+      {
+      free(msg_daemonname);
+      }
+    clean_log_init_mutex();
     exit(0);
   }
 

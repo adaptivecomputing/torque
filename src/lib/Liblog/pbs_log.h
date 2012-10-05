@@ -2,6 +2,9 @@
 #define _PBS_LOG_H
 #include "license_pbs.h" /* See here for the software license */
 
+enum getter_setter { GETV, SETV };
+typedef enum getter_setter SGetter;
+
 int log_init(char *suffix, char *hostname); 
 
 int log_open(char *filename, char *directory); 
@@ -29,5 +32,9 @@ long log_size(void);
 long job_log_size(void);
 
 void print_trace(int socknum);
+
+void log_get_set_eventclass(int *objclass, SGetter action);
+
+void log_format_trq_timestamp(char *time_formatted_str, unsigned int buflen);
 
 #endif /* _PBS_LOG_H */

@@ -11,9 +11,11 @@
 #include "../Libifl/lib_ifl.h" /* process_svr_conn */
 #include "../Libnet/lib_net.h"
 #include "threadpool.h"
+#include "../Liblog/pbs_log.h"
 
 extern int debug_mode;
 extern void *(*read_func[])(void *);
+extern char *msg_daemonname;
 
 /* Note, in extremely high load cases, the alloc value in /proc/net/sockstat can exceed the max value. This will substantially slow down throughput and generate connection failures (accept gets a EMFILE error). As the client is designed to run on each submit host, that issue shouldn't occur. The client must be restarted to clear out this issue. */
 int start_listener(
@@ -33,6 +35,8 @@ int start_listener(
   int                 total_cntr = 0;
   pthread_t           tid;
   pthread_attr_t      t_attr;
+  int objclass = 0;
+  char msg_started[1024];
 
   memset(&adr_svr, 0, sizeof(adr_svr));
   adr_svr.sin_family = AF_INET;
@@ -75,6 +79,14 @@ int start_listener(
     }
   else
     {
+    log_get_set_eventclass(&objclass, GETV);
+    if (objclass == PBS_EVENTCLASS_TRQAUTHD)
+      {
+      snprintf(msg_started, sizeof(msg_started),
+        "TORQUE authd daemon started and listening on IP:port %s:%d", server_ip, server_port);
+      log_event(PBSEVENT_SYSTEM | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD,
+        msg_daemonname, msg_started);
+      }
     while (1)
       {
       new_conn_port = (int *)calloc(1, sizeof(int));

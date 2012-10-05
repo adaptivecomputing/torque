@@ -9,7 +9,7 @@ CLEANFILES = *.gcda *.gcno *.gcov
 
 include_HEADERS = trq_auth_daemon.h
 
-AM_CFLAGS = -Wall -pthread -ldl -lrt -lssl -lcrypto
+AM_CFLAGS = -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" -Wall -pthread -ldl -lrt -lssl -lcrypto
 
 sbin_PROGRAMS = trqauthd
 
