@@ -69,6 +69,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   c - Fix mismanagement of the ji_globid. TRQ-1262.
   c - Setting display_job_server_suffix=false crashed with job arrays. Fixed. bugzilla #216
   b - Restore the asynchronous functionality. TRQ-1284.
+  e - Made it so pbs_server will come up even if a job cannot recover because of a missing
+      job dependency. TRQ-1287
 
 4.1.2
   e - Add the ability to run a single job partially on CRAY hardware and partially
