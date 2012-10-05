@@ -1592,6 +1592,7 @@ int handle_job_recovery(
   DIR              *dir;
   int               had;
   int               rc = PBSE_NONE;
+  int               job_rc = PBSE_NONE;
   job              *pjob;
   int               logtype;
   int               baselen = 0;
@@ -1731,9 +1732,9 @@ int handle_job_recovery(
 
       lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
-      rc = pbsd_init_job(pjob, type);
+      job_rc = pbsd_init_job(pjob, type);
 
-      if (rc == FAILURE)
+      if (job_rc != PBSE_NONE)
         {
         log_event(
           PBSEVENT_ERROR | PBSEVENT_SYSTEM | PBSEVENT_ADMIN | PBSEVENT_JOB | PBSEVENT_FORCE,
@@ -2227,7 +2228,7 @@ int pbsd_init_job(
 
     init_abt_job(pjob);
 
-    return(FAILURE);
+    return(PBSE_BAD_PARAMETER);
     }
 
   if (type != RECOV_HOT)
@@ -2431,7 +2432,7 @@ int pbsd_init_job(
 
       if (pjob == NULL)
         {
-        return(FAILURE);
+        return(PBSE_JOBSUBSTATE);
         }
 
       break;
