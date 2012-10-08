@@ -586,7 +586,8 @@ void scan_for_exiting(void)
     /* If we are an intermediate mom we need to see if everyone has checked in */
 	  if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM))
 	    {
-	    if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXITING) && (pjob->ji_qs.ji_substate != JOB_SUBSTATE_NOTERM_REQUE))
+	    if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXITING) &&
+          (pjob->ji_qs.ji_substate != JOB_SUBSTATE_NOTERM_REQUE))
 	  	  {
 	  	  if (LOGLEVEL >= 3)
 	  	    {
@@ -753,6 +754,7 @@ void scan_for_exiting(void)
 
     if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXIT_WAIT)
       run_epilogues(pjob);
+
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_PREOBIT;
     rc = send_job_status(pjob);
     if (rc != PBSE_NONE)
@@ -791,6 +793,8 @@ void scan_for_exiting(void)
   return;
   }  /* END scan_for_exiting() */
 
+
+
  
 int run_epilogues(
     
@@ -803,12 +807,12 @@ int run_epilogues(
 
   /* check epilog script */
 
-  if ((pjob->ji_wattr[(int)JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
-       pjob->ji_wattr[(int)JOB_ATR_interactive].at_val.at_long)
+  if ((pjob->ji_wattr[JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
+       pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long)
     {
     /* job is interactive */
 
-    presc = find_resc_entry( &pjob->ji_wattr[(int)JOB_ATR_resource],
+    presc = find_resc_entry( &pjob->ji_wattr[JOB_ATR_resource],
                              find_resc_def(svr_resc_def, "epilogue", svr_resc_size));
     if ((presc != NULL))
       if ((presc->rs_value.at_flags & ATR_VFLAG_SET) && (presc->rs_value.at_val.at_str != NULL))
@@ -838,7 +842,7 @@ int run_epilogues(
     {
     /* job is not interactive */
 
-    presc = find_resc_entry( &pjob->ji_wattr[(int)JOB_ATR_resource], 
+    presc = find_resc_entry( &pjob->ji_wattr[JOB_ATR_resource], 
                              find_resc_def(svr_resc_def, "epilogue", svr_resc_size));
     if ((presc != NULL))
       if ((presc->rs_value.at_flags & ATR_VFLAG_SET) && 
@@ -869,7 +873,8 @@ int run_epilogues(
     }    /* END else (jobisinteractive) */
 
   return(PBSE_NONE);
-  }
+  } /* END run_epilogues() */
+
 
 
 

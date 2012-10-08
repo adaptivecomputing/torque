@@ -1989,7 +1989,7 @@ int req_commit(
 
 #ifdef AUTORUN_JOBS
 
-  struct batch_request *preq_run = '\0';
+  struct batch_request *preq_run = NULL;
   pbs_attribute        *pattr;
   int                   nodes_avail = -1;
   int                   dummy;
@@ -2226,16 +2226,16 @@ int req_commit(
   if ((pattr->at_val.at_long == 0) && (nodes_avail > 0))
     {
     /* Create a new batch request and fill it in */
-    preq_run = alloc_br(PBS_BATCH_AsyrunJob);
+    preq_run = alloc_br(PBS_BATCH_RunJob);
     preq_run->rq_perm = preq->rq_perm | ATR_DFLAG_OPWR;
     preq_run->rq_ind.rq_run.rq_resch = 0;
     preq_run->rq_ind.rq_run.rq_destin = rq_destin;
     preq_run->rq_fromsvr = preq->rq_fromsvr;
     preq_run->rq_extsz = preq->rq_extsz;
     preq_run->rq_noreply = TRUE; /* set for no replies */
-    memcpy(preq_run->rq_user, preq->rq_user, PBS_MAXUSER + 1);
-    memcpy(preq_run->rq_host, preq->rq_host, PBS_MAXHOSTNAME + 1);
-    memcpy(preq_run->rq_ind.rq_run.rq_jid, preq->rq_ind.rq_rdytocommit,PBS_MAXSVRJOBID + 1);
+    strcpy(preq_run->rq_user, preq->rq_user);
+    strcpy(preq_run->rq_host, preq->rq_host);
+    strcpy(preq_run->rq_ind.rq_run.rq_jid, preq->rq_ind.rq_rdytocommit);
     }
 
 #endif
