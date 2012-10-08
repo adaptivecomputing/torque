@@ -277,7 +277,8 @@ int issue_signal(
    * or in issue_Drequest (success) */
   rc = relay_to_mom(&pjob, newreq, NULL);
 
-  if (rc == PBSE_NONE)
+  if ((rc == PBSE_NONE) &&
+      (pjob != NULL))
     {
     strcpy(jobid, pjob->ji_qs.ji_jobid);
     unlock_ji_mutex(pjob, __func__, NULL, 0);
@@ -286,7 +287,12 @@ int issue_signal(
     *pjob_ptr = svr_find_job(jobid, TRUE);
     }
   else
+    {
     free_br(newreq);
+
+    if (pjob == NULL)
+      *pjob_ptr = NULL;
+    }
 
   return(rc);
   }  /* END issue_signal() */
