@@ -15,7 +15,7 @@ int main(
   {
   initialize_network_info();
 
-  main_func(argc,argv,envp);
+  main_func(argc, argv, envp);
 
   return(0);
   } /* END main() */
