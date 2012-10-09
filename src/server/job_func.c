@@ -2695,6 +2695,7 @@ job_array *get_jobs_array(
       sprintf(log_buf, "Trying to lock ai_mutex, %s", pjob->ji_qs.ji_jobid);
       LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
       }
+
     if (pthread_mutex_trylock(pa->ai_mutex))
       {
       if (LOGLEVEL >= 7)

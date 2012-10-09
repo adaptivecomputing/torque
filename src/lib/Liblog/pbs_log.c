@@ -99,6 +99,7 @@
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/time.h>
 #include <limits.h>
 #include <time.h>
 #include <fcntl.h>
