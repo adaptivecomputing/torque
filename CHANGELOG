@@ -79,6 +79,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Restore the asynchronous functionality. TRQ-1284.
   e - Made it so pbs_server will come up even if a job cannot recover because of a missing
       job dependency. TRQ-1287
+  b - Fixed a segfault in the path from do_tcp to tm_request to tm_eof. In this path we freed
+      the tcp channel three times. the call to DIS_tcp_cleanup was removed from tm_eof and
+      tm_request. TRQ-1232.
 
 
 4.1.2
