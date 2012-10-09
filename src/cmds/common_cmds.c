@@ -88,19 +88,25 @@ int copy_env_value(
  * name & value are both allocated inside the function
  */
 int parse_env_line(
+
   memmgr **mm,            /* memory manager */
-  char *one_var,
-  char **name,
-  char **value)
+  char    *one_var,
+  char   **name,
+  char   **value)
+
   {
   char *tmp_char = NULL;
-  int pos_eq = 0, tmp_pos = 0;
-  int len_name = 0, len_value = 0, len_total = 0;
+  int   pos_eq = 0;
+  int   tmp_pos = 0;
+  int   len_name = 0;
+  int   len_value = 0;
+  int   len_total = 0;
 
   len_total = strlen(one_var);
   tmp_char = strchr(one_var, '=');
+
   /* check to make sure we got an '=' */
-  if(tmp_char == NULL)
+  if (tmp_char == NULL)
     return(PBSE_BAD_PARAMETER);
 
   pos_eq = tmp_char - one_var;
@@ -156,17 +162,12 @@ void set_env_opts(
   while (envp[var_num] != NULL)
     {
     rc = parse_env_line(mm, envp[var_num], &name, &value);
-    if (rc != PBSE_NONE) 
+    if (rc == PBSE_NONE) 
       {
-      fprintf(stderr, "Malformed environment variable %s. Will not add to job environment\n", envp[var_num]);
-      ;
-      exit(1);
+      hash_add_item(mm, env_attr, name, value, ENV_DATA, SET);
+      memmgr_free(mm, name); name = NULL;
+      memmgr_free(mm, value); value = NULL;
       }
-
-/*      strtolower(name); */
-    hash_add_item(mm, env_attr, name, value, ENV_DATA, SET);
-    memmgr_free(mm, name); name = NULL;
-    memmgr_free(mm, value); value = NULL;
 
     var_num++;
     }
