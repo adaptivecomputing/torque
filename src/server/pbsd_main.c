@@ -1711,6 +1711,13 @@ int main(
     {
     return(1);
     }
+  
+  if (check_network_port(pbs_server_port_dis) != 0)
+    {
+    perror("pbs_server port already bound");
+
+    exit(3);
+    }
 
   /* With multi-threaded TORQUE we need to ask confirmation for
      RECOV_CREATE and RECOV_COLD before we daemonize the server */
@@ -1895,15 +1902,6 @@ int main(
     msg_daemonname,
     log_buf);
 
-
-  if (check_network_port(pbs_server_port_dis) != 0)
-    {
-    perror("pbs_server: network");
-
-    log_err(-1, msg_daemonname, "pbs_server port already bound");
-
-    exit(3);
-    }
 
   if (init_network(0, start_process_pbs_server_port) != 0)
     {
