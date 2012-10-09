@@ -1234,7 +1234,8 @@ int chk_svr_resc_limit(
         }
 
       /* Added 6/14/2010 Ken Nielson for ability to parse the procs resource */
-      else if ((jbrc->rs_defin == procresc) && (qtype == QTYPE_Execution))
+      else if ((jbrc->rs_defin == procresc) &&
+               (qtype == QTYPE_Execution))
         {
         proc_ct = jbrc->rs_value.at_val.at_long;
         }

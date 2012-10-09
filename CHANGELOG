@@ -84,6 +84,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       tm_request. TRQ-1232.
   b - Fixed a deadlock which occurs when there is a job with a dependency that is being moved 
       from a routing queue to an execution queue. TRQ-1294
+  b - Fix a deadlock in logging when the machine is out of disk space. TRQ-1302.
 
 
 4.1.2

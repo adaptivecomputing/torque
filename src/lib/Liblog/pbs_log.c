@@ -868,9 +868,12 @@ void log_record(
      * if we can't open this then we're going to have a nice surprise failure */
     if (logfile != NULL)
       {
-      log_err(rc, "log_record", "PBS cannot write to its log");
+      pthread_mutex_unlock(log_mutex);
+      log_err(rc, __func__, "PBS cannot write to its log");
       fclose(logfile);
+      pthread_mutex_lock(log_mutex);
       }
+
     logfile = savlog;
     }
   
