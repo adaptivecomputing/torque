@@ -1534,19 +1534,22 @@ int record_jobinfo(
   append_dynamic_string(buffer, "<Jobinfo>\n");
   append_dynamic_string(buffer, "\t<Job_Id>");
   append_dynamic_string(buffer, pjob->ji_qs.ji_jobid);
-  append_dynamic_string(buffer, "</JobId>");
-  
+  append_dynamic_string(buffer, "</JobId>\n");
+ 
+ #if 0
   if ((rc = log_job_record(buffer->str)) != PBSE_NONE)
     {
     log_err(rc, __func__, "log_job_record failed");
     free_dynamic_string(buffer);
     return(rc);
     }
+#endif
 
   for (i = 0; i < JOB_ATR_LAST; i++)
     {
+#if 0
     clear_dynamic_string(buffer);
-
+#endif
     pattr = &(pjob->ji_wattr[i]);
 
     if (pattr->at_flags & ATR_VFLAG_SET)
@@ -1572,14 +1575,16 @@ int record_jobinfo(
 
       append_dynamic_string(buffer, "</");
       append_dynamic_string(buffer, job_attr_def[i].at_name);
-      append_dynamic_string(buffer, ">");
+      append_dynamic_string(buffer, ">\n");
 
+#if 0
       if ((rc = log_job_record(buffer->str)) != PBSE_NONE)
         {
         log_err(rc, __func__, "log_job_record failed recording attributes");
         free_dynamic_string(buffer);
         return(rc);
         }
+#endif
       }
     }
   
@@ -1613,15 +1618,19 @@ int record_jobinfo(
    
     append_dynamic_string(buffer, "\t</job_script>\n");
     
+#if 0
     if ((rc = log_job_record(buffer->str)) != PBSE_NONE)
       {
       free_dynamic_string(buffer);
       log_err(rc, __func__, "log_job_record failed");
       return(rc);
       }
+#endif
     }
-  
+ 
+#if 0
   clear_dynamic_string(buffer);
+#endif
 
   if ((rc = append_dynamic_string(buffer, "</Jobinfo>\n")) != PBSE_NONE)
     {

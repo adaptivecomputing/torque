@@ -409,7 +409,7 @@ int attr_to_str(
           {
           case ATR_TYPE_LONG:
 
-            append_dynamic_string(ds, "\n<");
+            append_dynamic_string(ds, "\t\t<");
             append_dynamic_string(ds, current->rs_defin->rs_name);
             append_dynamic_string(ds, ">");
 
@@ -435,7 +435,7 @@ int attr_to_str(
             if (strlen(current->rs_value.at_val.at_str) == 0)
               break;
 
-            append_dynamic_string(ds, "\n<");
+            append_dynamic_string(ds, "\t\t<");
             append_dynamic_string(ds, current->rs_defin->rs_name);
             append_dynamic_string(ds, ">");
 
@@ -453,7 +453,7 @@ int attr_to_str(
 
           case ATR_TYPE_SIZE:
 
-            append_dynamic_string(ds, "\n<");
+            append_dynamic_string(ds, "\t\t<");
             append_dynamic_string(ds, current->rs_defin->rs_name);
             append_dynamic_string(ds, ">");
 
@@ -470,9 +470,8 @@ int attr_to_str(
           return(rc);
 
         current = (resource *)GET_NEXT(current->rs_link);
+        append_dynamic_string(ds, "\n");
         }
-      append_dynamic_string(ds, "\n");
-
       }
 
       break;

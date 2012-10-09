@@ -713,6 +713,7 @@ int log_job_record(char *buf)
     }
 
   fprintf(joblogfile, "%s\n", buf);
+  fflush(joblogfile);
   pthread_mutex_unlock(job_log_mutex);
 
   return(0);
