@@ -1171,7 +1171,10 @@ int depend_on_que(
 
   /* First set a System hold if required */
 
+  unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
   set_depend_hold(pjob, pattr);
+  if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
+    return PBSE_JOBNOTFOUND;
 
   /* Check if there are dependencies that require registering */
 
