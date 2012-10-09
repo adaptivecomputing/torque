@@ -5912,8 +5912,6 @@ void tm_eof(
             "matching task located, marking interface closed");
           }
 
-        ptask->ti_chan = NULL;
-
         return;
         }
       }
@@ -7502,7 +7500,6 @@ tm_req_finish:
       if (ptask->ti_chan != NULL)
         {
         close_conn(ptask->ti_chan->sock, FALSE);
-        DIS_tcp_cleanup(ptask->ti_chan);
         ptask->ti_chan = NULL;
         }
       }

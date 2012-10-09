@@ -111,6 +111,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <sys/syscall.h>
+#include <sys/time.h>
 
 #include "log.h"
 #if SYSLOG
