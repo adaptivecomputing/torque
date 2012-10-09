@@ -1443,7 +1443,7 @@ void log_format_trq_timestamp(
   gettimeofday(&tv, NULL); 
   curtime=tv.tv_sec;
 
-  strftime(buffer,30,"%Y-%m-%d %T.",localtime(&curtime));
+  strftime(buffer,30,"%Y-%m-%d %H:%M:%S.",localtime(&curtime));
   milisec = tv.tv_usec/100;
   snprintf(time_formatted_str, buflen, "%s%04d", buffer, milisec);
   } /* end of log_format_trq_timestamp */
