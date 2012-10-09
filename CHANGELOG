@@ -71,6 +71,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Restore the asynchronous functionality. TRQ-1284.
   e - Made it so pbs_server will come up even if a job cannot recover because of a missing
       job dependency. TRQ-1287
+  b - Fix a deadlock in logging when the machine is out of disk space. TRQ-1302.
 
 4.1.2
   e - Add the ability to run a single job partially on CRAY hardware and partially
