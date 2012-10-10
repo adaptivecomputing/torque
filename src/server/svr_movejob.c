@@ -667,7 +667,6 @@ int send_job_work(
   tlist_head            attrl;
   enum conn_type        cntype = ToServerDIS;
   int                   con = PBS_NET_RC_UNSET;
-  int                   sock = -1;
   int                   encode_type;
   int                   mom_err = PBSE_NONE;
   int                   i;
@@ -857,7 +856,6 @@ int send_job_work(
       }
 
     pthread_mutex_lock(connection[con].ch_mutex);
-    sock = connection[con].ch_socket;
     pthread_mutex_unlock(connection[con].ch_mutex);
 
     if (attempt_to_queue_job == TRUE)

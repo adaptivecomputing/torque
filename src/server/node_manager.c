@@ -925,7 +925,6 @@ void *sync_node_jobs(
   char                 *joblist;
   char                 *jobidstr;
   resizable_array      *ms_jobs;
-  int                   rc;
 
   if (vp == NULL)
     return(NULL);
@@ -968,7 +967,7 @@ void *sync_node_jobs(
     {
     if (job_should_be_on_node(jobidstr, np) == FALSE)
       {
-      rc = kill_job_on_mom(jobidstr, np);
+      kill_job_on_mom(jobidstr, np);
       }
     else
       {
@@ -4141,7 +4140,6 @@ int node_spec(
   complete_spec_data   all_reqs;
   char                *spec;
   char                *plus;
-  char                *tmp_marker = NULL;
   long                 cray_enabled = FALSE;
   enum job_types       job_type = JOB_TYPE_normal;
   int                  num_alps_reqs = 0;
@@ -4261,7 +4259,6 @@ int node_spec(
   i = 0;
   all_reqs.req_start[i] = spec;
   i++;
-  tmp_marker = plus + 1;
 
   while (*plus != '\0')
     {
@@ -4282,7 +4279,6 @@ int node_spec(
         plus += strlen("nodes=");
       
       all_reqs.req_start[i] = plus;
-      tmp_marker = plus + 1;
       i++;
       }
     else
