@@ -1087,8 +1087,8 @@ int handle_stageout(
   if (LOGLEVEL >= 10 )
     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
 
-  strcpy(job_id, pjob->ji_qs.ji_jobid);
-  strcpy(job_fileprefix, pjob->ji_qs.ji_fileprefix);
+  snprintf(job_id, sizeof(job_id), "%s", pjob->ji_qs.ji_jobid);
+  snprintf(job_fileprefix, sizeof(job_fileprefix), "%s", pjob->ji_qs.ji_fileprefix);
   job_momname = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
 
   if (job_momname == NULL)
@@ -1177,7 +1177,7 @@ int handle_stageout(
       svrattrl tA;
       
       /* error from MOM */
-      snprintf(log_buf, LOCAL_LOG_BUF_SIZE, msg_obitnocpy, job_id, job_momname);
+      snprintf(log_buf, sizeof(log_buf), msg_obitnocpy, job_id, job_momname);
       
       log_event(
         PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
@@ -1254,7 +1254,7 @@ int handle_stageout(
       {
       if (link(namebuf2, namebuf) == -1)
         {
-        sprintf(log_buf, "%s, pathname=%s, Link(3) failed", job_id, namebuf2);
+        snprintf(log_buf, sizeof(log_buf), "%s, pathname=%s, Link(3) failed", job_id, namebuf2);
         log_event(
           PBSEVENT_ERROR | PBSEVENT_SECURITY,
           PBS_EVENTCLASS_JOB,
@@ -1276,7 +1276,7 @@ int handle_stageout(
       {    
       if (link(namebuf2, namebuf) == -1)
         {
-        sprintf(log_buf, "%s, pathname=%s, Link(4) failed", job_id, namebuf2);
+        snprintf(log_buf, sizeof(log_buf), "%s, pathname=%s, Link(4) failed", job_id, namebuf2);
         log_event(
           PBSEVENT_ERROR | PBSEVENT_SECURITY,
           PBS_EVENTCLASS_JOB,
@@ -1481,7 +1481,7 @@ int handle_exited(
 
   if (LOGLEVEL >= 4)
     {
-    sprintf(log_buf, "%s; JOB_SUBSTATE_EXITED", job_id);
+    snprintf(log_buf, sizeof(log_buf), "%s; JOB_SUBSTATE_EXITED", job_id);
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,__func__,log_buf);
     }
 
