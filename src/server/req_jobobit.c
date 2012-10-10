@@ -644,8 +644,6 @@ int mom_comm(
   int               local_errno = 0;
   int               handle = -1;
   long              cray_enabled = FALSE;
-  pbs_net_t         momaddr;
-  unsigned short    momport;
   char              jobid[PBS_MAXSVRJOBID + 1];
 
   /* need to make connection, called from pbsd_init() */
@@ -666,8 +664,6 @@ int mom_comm(
     }
 
   strcpy(jobid, pjob->ji_qs.ji_jobid);
-  momaddr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
-  momport = pjob->ji_qs.ji_un.ji_exect.ji_momport;
 
   unlock_ji_mutex(pjob, __func__, NULL, 0);
 
@@ -2856,7 +2852,6 @@ int req_jobobit(
   char                  acctbuf[RESC_USED_BUF];
   int                   accttail;
   int                   exitstatus;
-  int                   have_resc_used = FALSE;
   char                  mailbuf[RESC_USED_BUF];
   int                   newstate;
   int                   newsubst;
@@ -2876,6 +2871,9 @@ int req_jobobit(
   long                  events = 0;
   pbs_net_t             mom_addr;
   int                   rerunning_job = FALSE;
+#ifdef USESAVEDRESOURCES
+  int                   have_resc_used = FALSE;
+#endif    /* USESAVEDRESOURCES */
 
   /* This will be needed later for logging after preq is freed. */
   strcpy(job_id, preq->rq_ind.rq_jobobit.rq_jid);
@@ -3030,9 +3028,8 @@ int req_jobobit(
 
   accttail = strlen(acctbuf);
 
-  have_resc_used = get_used(patlist, acctbuf);
-
 #ifdef USESAVEDRESOURCES
+  have_resc_used = get_used(patlist, acctbuf);
 
   /* if we don't have resources from the obit, use what the job already had */
 

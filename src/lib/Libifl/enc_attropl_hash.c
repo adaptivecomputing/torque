@@ -127,7 +127,6 @@ int build_var_list(
   int       name_len = 0;
   int       value_len = 0;
   int       item_count = 0;
-  char     *workdir_val = NULL;
   int       preexisting_var_list = FALSE;
 
   HASH_ITER(hh, *attrs, atr, tmp)
@@ -158,8 +157,6 @@ int build_var_list(
 
       (*var_list)[current_len] = '\0';
 
-      if (strcmp(atr->name, ATTR_pbs_o_workdir) == 0)
-        workdir_val = atr->value;
       item_count++;
       }
     else if (strncmp(atr->name, "pbs_var_", 8) == 0)
