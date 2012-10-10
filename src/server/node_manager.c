@@ -4401,7 +4401,8 @@ int node_spec(
               save_node_for_adding(naji, pnode, req, first_node_name, FALSE);
 
             if ((num_alps_reqs > 0) &&
-                (ard_array != NULL))
+                (ard_array != NULL) &&
+                (*ard_array != NULL))
               {
               if ((*ard_array)[req->req_id].node_list->used != 0)
                 append_char_to_dynamic_string((*ard_array)[req->req_id].node_list, ',');
