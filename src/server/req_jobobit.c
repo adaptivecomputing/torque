@@ -119,6 +119,7 @@
 #include "job_func.h" /* svr_job_purge */
 #include "ji_mutex.h"
 #include "../lib/Libutils/u_lock_ctl.h"
+#include "exiting_jobs.h"
 
 #define RESC_USED_BUF 2048
 #define JOBMUSTREPORTDEFAULTKEEP 30
@@ -1636,6 +1637,8 @@ int handle_complete_first_time(
   /* first time in */
   if (LOGLEVEL >= 4)
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "JOB_SUBSTATE_COMPLETE");
+
+  remove_job_from_exiting_list(pjob);
 
   pque = get_jobs_queue(&pjob);
   
@@ -3235,6 +3238,8 @@ int req_jobobit(
     /*  update state and send mail        */
 
     svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITING, FALSE);
+
+    record_job_as_exiting(pjob);
 
     if (alreadymailed == 0)
       svr_mailowner(pjob, MAIL_END, MAIL_NORMAL, mailbuf);

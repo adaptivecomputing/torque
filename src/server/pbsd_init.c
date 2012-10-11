@@ -129,6 +129,7 @@
 #include "net_cache.h"
 #include "ji_mutex.h"
 #include "user_info.h"
+#include "hash_map.h"
 
 /*#ifndef SIGKILL*/
 /* there is some weird stuff in gcc include files signal.h & sys/params.h */
@@ -202,6 +203,7 @@ extern struct all_jobs  newjobs;
 all_queues              svr_queues;
 job_recycler            recycler;
 queue_recycler          q_recycler;
+hash_map               *exiting_jobs_info;
 
 dynamic_string         *hierarchy_holder;
 hello_container         hellos;
@@ -1259,6 +1261,8 @@ int initialize_data_structures_and_mutexes()
   initialize_all_arrays_array();
 
   initialize_allques_array(&svr_queues);
+
+  exiting_jobs_info = get_hash_map(-1);
 
   get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
   if (cray_enabled == TRUE)

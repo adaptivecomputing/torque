@@ -2532,7 +2532,8 @@ int  remove_job(
   int index;
 
   if (LOGLEVEL >= 10)
-    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
+
   if (pthread_mutex_trylock(aj->alljobs_mutex))
     {
     unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
