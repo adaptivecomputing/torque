@@ -1342,12 +1342,19 @@ long log_size(void)
     {
     /* FAILURE */
 
+    pthread_mutex_unlock(log_mutex);
+    /* log_err through log_ext will lock the log_mutex, so release log_mutex before calling log_err */
     log_err(errno, "log_size", "PBS cannot fstat logfile");
 
-    pthread_mutex_unlock(log_mutex);
     return(0);
     }
   
+  if (!log_opened) {
+      pthread_mutex_unlock(log_mutex);
+      log_err(EAGAIN, "log_size", "PBS cannot find size of log file because logfile has not been opened");
+      return(0);
+  }
+
   pthread_mutex_unlock(log_mutex);
 
   return(file_stat.st_size / 1024);

@@ -268,16 +268,19 @@ int prepare_path(
           return(1);
           }
         }
-
-      if ((!memcmp(&dev, &statbuf.st_dev, sizeof(dev_t))) &&
-          (!memcmp(&ino, &statbuf.st_ino, sizeof(ino_t))))
+     
+      if (c != NULL)
         {
-        if (c != NULL)
-          snprintf(cwd, MAXPATHLEN, "%s", c);
-        }
-      else
-        {
-        c = NULL;
+          if ((!memcmp(&dev, &statbuf.st_dev, sizeof(dev_t))) &&
+              (!memcmp(&ino, &statbuf.st_ino, sizeof(ino_t))))
+            {
+            if (c != NULL)
+              snprintf(cwd, MAXPATHLEN, "%s", c);
+            }
+          else
+            {
+            c = NULL;
+            }
         }
       }
 
