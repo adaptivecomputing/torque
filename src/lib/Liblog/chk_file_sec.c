@@ -771,13 +771,13 @@ chkerr:
       {
       if (EMsg[0] != '\0')
         {
-        sprintf(error_buf, "Security violation with \"%s\" - %s",
+        snprintf(error_buf, _POSIX_PATH_MAX, "Security violation with \"%s\" - %s",
                 path,
                 EMsg);
         }
       else
         {
-        sprintf(error_buf, "Security violation with \"%s\", errno=%d, %s",
+        snprintf(error_buf, _POSIX_PATH_MAX, "Security violation with \"%s\", errno=%d, %s",
                 path,
                 rc,
                 strerror(rc));
