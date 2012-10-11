@@ -8,7 +8,7 @@ CLEANFILES = *.gcda *.gcno *.gcov
 
 DIST_SUBDIRS=
 
-include_HEADERS = array_func.h issue_request.h job_func.h node_func.h node_manager.h pbsd_main.h process_request.h queue_func.h queue_recov.h pbsd_init.h reply_send.h req_delete.h req_deletearray.h req_getcred.h req_gpuctrl.h req_holdarray.h req_holdjob.h req_jobobit.h req_locate.h req_manager.h req_message.h req_modify.h req_movejob.h req_quejob.h req_register.h req_rerun.h req_rescq.h req_runjob.h req_select.h req_shutdown.h req_signal.h req_stat.h req_track.h svr_connect.h svr_jobfunc.h queue_recycler.h svr_movejob.h svr_task.h svr_func.h ji_mutex.h
+include_HEADERS = array_func.h issue_request.h job_func.h node_func.h node_manager.h pbsd_main.h process_request.h queue_func.h queue_recov.h pbsd_init.h reply_send.h req_delete.h req_deletearray.h req_getcred.h req_gpuctrl.h req_holdarray.h req_holdjob.h req_jobobit.h req_locate.h req_manager.h req_message.h req_modify.h req_movejob.h req_quejob.h req_register.h req_rerun.h req_rescq.h req_runjob.h req_select.h req_shutdown.h req_signal.h req_stat.h req_track.h svr_connect.h svr_jobfunc.h queue_recycler.h svr_movejob.h svr_task.h svr_func.h ji_mutex.h job_route.h
 
 PBS_LIBS = ../lib/Libattr/libattr.a \
 	   ../lib/Libsite/libsite.a \
@@ -41,7 +41,7 @@ pbs_server_SOURCES = accounting.c array_func.c array_upgrade.c attr_recov.c \
 		     job_qs_upgrade.c req_holdarray.c svr_format_job.c \
 				 job_recycler.c queue_recycler.c process_alps_status.c \
 				 display_alps_status.c login_nodes.c track_alps_reservations.c \
-				 batch_request.c user_info.c job_container.c
+				 batch_request.c user_info.c job_container.c exiting_jobs.c
 
 install-exec-hook:
 	$(PBS_MKDIRS) aux || :

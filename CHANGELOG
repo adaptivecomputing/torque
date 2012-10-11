@@ -77,6 +77,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Fix a deadlock in logging when the machine is out of disk space. TRQ-1302.
   b - Fixed a deadlock which occurs when there is a job with a dependency that is being moved 
       from a routing queue to an execution queue. TRQ-1294
+  e - Retry cleanup with the mom every 20 seconds for jobs that are stuck in an exiting state.
+      TRQ-1299.
 
 4.1.2
   e - Add the ability to run a single job partially on CRAY hardware and partially

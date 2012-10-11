@@ -77,149 +77,168 @@
 * without reference to its choice of law rules.
 */
 
+
+
+
+
+#include <errno.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <stdio.h>
+
+#include "exiting_jobs.h"
+#include "log.h"
+#include "batch_request.h"
+#include "ji_mutex.h"
+
+
+
+
+void on_job_exit(batch_request *preq, char *jobid);
+void force_purge_work(job *pjob);
+
+
+
+
+int record_job_as_exiting(
+
+  job *pjob)
+
+  {
+  job_exiting_retry_info *jeri = calloc(1, sizeof(job_exiting_retry_info));
+
+  if (jeri == NULL)
+    return(ENOMEM);
+
+  strcpy(jeri->jobid, pjob->ji_qs.ji_jobid);
+  jeri->last_attempt = time(NULL);
+
+  return(add_to_hash_map(exiting_jobs_info, jeri, jeri->jobid));
+  } /* END record_job_as_exiting() */
+
+
+
+
+int remove_job_from_exiting_list(
+
+  job *pjob)
+
+  {
+  job_exiting_retry_info *jeri = get_remove_from_hash_map(exiting_jobs_info, pjob->ji_qs.ji_jobid);
+
+  if (jeri != NULL)
+    {
+    free(jeri);
+    }
+
+  return(PBSE_NONE);
+  } /* END remove_job_from_exiting_list() */
+
+
+
+
+int remove_entry_from_exiting_list(
+
+  job_exiting_retry_info *jeri) /* I, freed */
+
+  {
+  int rc = remove_from_hash_map(exiting_jobs_info, jeri->jobid);
+
+  free(jeri);
+
+  return(rc);
+  } /* END remove_entry_from_exiting_list() */
+
+
+
+
+int retry_job_exit(
+
+  job_exiting_retry_info *jeri)
+
+  {
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
+  job  *pjob;
+
+  jeri->attempts++;
+
+  if (jeri->attempts >= MAX_EXITING_RETRY_ATTEMPTS)
+    {
+    /* job has been attempted the maximum number of times. Destroy the job */
+    if ((pjob = svr_find_job(jeri->jobid, TRUE)) != NULL)
+      {
+      force_purge_work(pjob);
+      }
+
+    remove_entry_from_exiting_list(jeri);
+    }
+  else
+    {
+    snprintf(log_buf, sizeof(log_buf), "Retrying job exiting for job %s",
+      jeri->jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    
+    jeri->last_attempt = time(NULL);
+    on_job_exit(NULL, jeri->jobid);
+    }
+
+  return(PBSE_NONE);
+  } /* END retry_job_exit() */
+
+
+
+
 /*
- * include file for error/event logging
+ * inspect_exiting_jobs
+ * looks at jobs marked as exiting and retries mom-communication as needed
+ *
+ * @param vp - not used
  */
 
-#ifndef LOG_H
-#define LOG_H
+void *inspect_exiting_jobs(
 
-#include <pthread.h>
-#define LOG_BUF_SIZE        16384
-#define LOCAL_LOG_BUF_SIZE  5096
+  void *vp)
 
-/* The following macro assist in sharing code between the Server and Mom */
-#define LOG_EVENT log_event
+  {
+  int                     iter;
+  job_exiting_retry_info *jeri;
+  job                    *pjob;
+  time_t                  time_now = time(NULL);
 
-/*
-** Set up a debug print macro.
-*/
-#ifdef NDEBUG
-#define DBPRT(x)
-#else
-#define DBPRT(x) printf x;
-#endif  /* END NDEBUG */
+  while (1)
+    {
+    iter = -1;
 
-#if SYSLOG
-#include <syslog.h>
-#endif /* SYSLOG */
+    while ((jeri = (job_exiting_retry_info *)next_from_hash_map(exiting_jobs_info, &iter)) != NULL)
+      {
+      if (time_now - jeri->last_attempt > EXITING_RETRY_TIME)
+        {
+        if ((pjob = svr_find_job(jeri->jobid, TRUE)) == NULL)
+          {
+          remove_entry_from_exiting_list(jeri);
+          }
+        else
+          {
+          if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
+            {
+            remove_entry_from_exiting_list(jeri);
+            unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+            }
+          else
+            {
+            unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+            retry_job_exit(jeri);
+            }
+          }
+        }
 
-#if !SYSLOG
-/* define syslog constants that can be used in code regardless of whether we
- * are using syslog or not! */
+      sleep(EXITING_SLEEP_TIME);
+      }
+    }
 
-#ifndef LOG_EMERG
-#define LOG_EMERG 1
-#endif
-
-#ifndef LOG_ALERT
-#define LOG_ALERT 2
-#endif
-
-#ifndef LOG_CRIT
-#define LOG_CRIT 3
-#endif
-
-#ifndef LOG_ERR
-#define LOG_ERR 4 
-#endif
-
-#ifndef LOG_ERR
-#define LOG_ERR 5 
-#endif
-
-#ifndef LOG_WARNING
-#define LOG_WARNING 6
-#endif
-
-#ifndef LOG_NOTICE
-#define LOG_NOTICE 7
-#endif
-
-#ifndef LOG_INFO
-#define LOG_INFO 8
-#endif
-
-#ifndef LOG_DEBUG
-#define LOG_DEBUG 9
-#endif
-#endif /* SYSLOG */
-
-#define MAXLINE 1024
-
-extern int LOGLEVEL;
-
-extern long *log_event_mask;
-extern pthread_mutex_t *log_mutex;
-extern pthread_mutex_t *job_log_mutex;
-
-/* set this to non-zero in calling app if errors go to stderr */
-extern int   chk_file_sec_stderr;
-
-/* extern void log_close (int); */
-/* extern void job_log_close (int); */
-void log_err (int, const char *, char *);
-void log_ext (int, const char *,char *,int);
-void log_event (int, int, const char *, char *);
-/* extern int  log_open (char *, char *); */
-/* extern int  job_log_open (char *, char *); */
-void log_record (int, int, const char *, char *);
-/* extern void log_roll (int); */
-/* extern long log_size (void); */
-/* extern long job_log_size (void); */
-/* extern int  log_remove_old (char *,unsigned long); */
-extern char log_buffer[LOG_BUF_SIZE];
-/* int log_init (char *, char *); */
-
-/* extern int  IamRoot (void); */
-/* #ifdef __CYGWIN__ */
-/* extern int  IamAdminByName (char *); */
-/* extern int  IamUser (void); */
-/* extern int  IamUserByName (char *); */
-/* #endif  __CYGWIN__ */
-
-/* extern int  chk_file_sec (char *, int, int, int, int, char *); */
-/* extern int  setup_env (char *); */
-
-extern int LOGLEVEL;
+  return(NULL);
+  } /* END inspect_exiting_jobs() */
 
 
-/* Event types */
 
-#define PBSEVENT_ERROR  0x0001  /* internal errors       */
-#define PBSEVENT_SYSTEM  0x0002  /* system (server) & (trqauthd) events     */
-#define PBSEVENT_ADMIN  0x0004  /* admin events        */
-#define PBSEVENT_JOB  0x0008  /* job related events       */
-#define PBSEVENT_JOB_USAGE 0x0010  /* End of Job accounting      */
-#define PBSEVENT_SECURITY 0x0020  /* security violation events  */
-#define PBSEVENT_SCHED  0x0040  /* scheduler events       */
-#define PBSEVENT_DEBUG  0x0080  /* common debug messages      */
-#define PBSEVENT_DEBUG2  0x0100  /* less needed debug messages */
-#define PBSEVENT_CLIENTAUTH 0X0200 /* TRQAUTHD login events */
-#define PBSEVENT_FORCE  0x8000  /* set to force a messag      */
 
-/* Event Object Classes, see array class_names[] in ../lib/Liblog/pbs_log.c   */
-
-#define PBS_EVENTCLASS_SERVER 1 /* The server itself */
-#define PBS_EVENTCLASS_QUEUE 2 /* Queues  */
-#define PBS_EVENTCLASS_JOB 3 /* Jobs   */
-#define PBS_EVENTCLASS_REQUEST 4 /* Batch Requests */
-#define PBS_EVENTCLASS_FILE 5 /* A Job related File */
-#define PBS_EVENTCLASS_ACCT 6 /* Accounting info */
-#define PBS_EVENTCLASS_NODE 7 /* Nodes           */
-#define PBS_EVENTCLASS_TRQAUTHD 8 /* trqauthd */
-
-/* Logging Masks */
-
-#define PBSEVENT_MASK  0x01ff
-
-/* definition's for pbs_log.c's log_remove_old() function */
-#define MAX_PATH_LEN    1024  /* maximum possible length of any path */
-#define SECS_PER_DAY     86400
-
-#if !defined(TRUE) || !defined(FALSE)
-#define TRUE 1
-#define FALSE 0
-#endif /* !defined(TRUE) || !defined(FALSE) */
-
-#endif /* ifndef LOG_H */

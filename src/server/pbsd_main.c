@@ -139,6 +139,7 @@
 #include "tcp.h" /* tcp_chan */
 #include "ji_mutex.h"
 #include "job_route.h" /* queue_route */
+#include "exiting_jobs.h"
 
 #define TASK_CHECK_INTERVAL    10
 #define HELLO_WAIT_TIME        600
@@ -1254,6 +1255,32 @@ void start_routing_retry_thread()
 
 
 
+void start_exiting_retry_thread()
+
+  {
+  pthread_attr_t attr;
+  pthread_t      exiting_thread;
+
+  if (pthread_attr_init(&attr) != 0)
+    {
+    perror("pthread_attr_init failed. Could not start exiting retry thread");
+    log_err(-1, msg_daemonname,"pthread_attr_init failed. Could not start inspect_exiting_jobs");
+    }
+  else if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) != 0)
+    {
+    perror("pthread_attr_setdetatchedstate failed. Could not start exiting retry thread");
+    log_err(-1, msg_daemonname,"pthread_attr_setdetachedstate failed. Could not start inspect_exiting_jobs");
+    }
+  else if (pthread_create(&exiting_thread, &attr, inspect_exiting_jobs, NULL) != 0)
+    {
+    perror("could not start exiting job retry thread for pbs_server");
+    log_err(-1, msg_daemonname, "Failed to start inspect_exiting_jobs");
+    }
+  } /* END start_exiting_retry_thread() */
+
+
+
+
 void monitor_accept_thread()
   {
   if (accept_thread_id == (pthread_t)-1)
@@ -1369,6 +1396,7 @@ void main_loop(void)
 
   start_accept_thread();
   start_routing_retry_thread();
+  start_exiting_retry_thread();
 
   while (state != SV_STATE_DOWN)
     {
