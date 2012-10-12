@@ -188,6 +188,45 @@ int retry_job_exit(
 
 
 
+int check_exiting_jobs()
+
+  {
+  int                     iter = -1;
+  job_exiting_retry_info *jeri;
+  job                    *pjob;
+  time_t                  time_now = time(NULL);
+    
+  while ((jeri = (job_exiting_retry_info *)next_from_hash_map(exiting_jobs_info, &iter)) != NULL)
+    {
+    if (time_now - jeri->last_attempt > EXITING_RETRY_TIME)
+      {
+      if ((pjob = svr_find_job(jeri->jobid, TRUE)) == NULL)
+        {
+        remove_entry_from_exiting_list(jeri);
+        }
+      else
+        {
+        if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
+          {
+          remove_entry_from_exiting_list(jeri);
+          unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+          }
+        else
+          {
+          unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+          retry_job_exit(jeri);
+          }
+        }
+      }
+    
+    }
+
+  return(PBSE_NONE);
+  } /* END check_exiting_jobs() */
+
+
+
+
 /*
  * inspect_exiting_jobs
  * looks at jobs marked as exiting and retries mom-communication as needed
@@ -200,40 +239,12 @@ void *inspect_exiting_jobs(
   void *vp)
 
   {
-  int                     iter;
-  job_exiting_retry_info *jeri;
-  job                    *pjob;
-  time_t                  time_now = time(NULL);
 
   while (1)
     {
-    iter = -1;
+    check_exiting_jobs();
 
-    while ((jeri = (job_exiting_retry_info *)next_from_hash_map(exiting_jobs_info, &iter)) != NULL)
-      {
-      if (time_now - jeri->last_attempt > EXITING_RETRY_TIME)
-        {
-        if ((pjob = svr_find_job(jeri->jobid, TRUE)) == NULL)
-          {
-          remove_entry_from_exiting_list(jeri);
-          }
-        else
-          {
-          if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
-            {
-            remove_entry_from_exiting_list(jeri);
-            unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
-            }
-          else
-            {
-            unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
-            retry_job_exit(jeri);
-            }
-          }
-        }
-
-      sleep(EXITING_SLEEP_TIME);
-      }
+    sleep(EXITING_SLEEP_TIME);
     }
 
   return(NULL);

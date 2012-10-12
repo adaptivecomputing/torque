@@ -346,6 +346,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/lib/Libutils/test/u_MXML/Makefile
     src/lib/Libutils/test/u_dynamic_string/Makefile
     src/lib/Libutils/test/u_groups/Makefile
+    src/lib/Libutils/test/u_hash_map/Makefile
     src/lib/Libutils/test/u_hash_map_structs/Makefile
     src/lib/Libutils/test/u_hash_table/Makefile
     src/lib/Libutils/test/u_lock_ctl/Makefile
@@ -391,6 +392,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/server/test/attr_recov/Makefile
     src/server/test/dis_read/Makefile
     src/server/test/display_alps_status/Makefile
+    src/server/test/exiting_jobs/Makefile
     src/server/test/geteusernam/Makefile
     src/server/test/issue_request/Makefile
     src/server/test/job_func/Makefile
