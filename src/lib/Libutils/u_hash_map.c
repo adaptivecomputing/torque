@@ -174,15 +174,19 @@ int add_to_hash_map(
   pthread_mutex_lock(hm->hm_mutex);
 
   if (get_value_hash(hm->hm_ht, key) >= 0)
-    return(ALREADY_IN_HASH_MAP);
-  
-  if ((index = insert_thing(hm->hm_ra, obj)) == -1)
     {
-    rc = ENOMEM;
-    log_err(rc, __func__, "Memory failure");
+    rc = ALREADY_IN_HASH_MAP;
     }
   else
-    add_hash(hm->hm_ht, index, key);
+    {
+    if ((index = insert_thing(hm->hm_ra, obj)) == -1)
+      {
+      rc = ENOMEM;
+      log_err(rc, __func__, "Memory failure");
+      }
+    else
+      add_hash(hm->hm_ht, index, key);
+    }
 
   pthread_mutex_unlock(hm->hm_mutex);
 
