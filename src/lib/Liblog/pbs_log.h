@@ -2,8 +2,7 @@
 #define _PBS_LOG_H
 #include "license_pbs.h" /* See here for the software license */
 
-enum getter_setter { GETV, SETV };
-typedef enum getter_setter SGetter;
+#include "log.h"
 
 int log_init(char *suffix, char *hostname); 
 

@@ -147,6 +147,9 @@
 
 #define MAXLINE 1024
 
+enum getter_setter { GETV, SETV };
+typedef enum getter_setter SGetter;
+
 extern int LOGLEVEL;
 
 extern long *log_event_mask;

@@ -337,3 +337,9 @@ int unlock_ai_mutex(job_array *pa, const char *id, char *msg, int logging)
   {
   return(0);
   }
+
+int enqueue_threadpool_request(void *(*func)(void *), void *arg)
+
+  {
+  return(0);
+  }

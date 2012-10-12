@@ -457,3 +457,5 @@ pid_t fork_me(int conn)
 void DIS_tcp_close(struct tcp_chan *chan) {}
 
 void DIS_tcp_cleanup(struct tcp_chan *chan) {}
+
+void free_dynamic_string(dynamic_string *ds) {}

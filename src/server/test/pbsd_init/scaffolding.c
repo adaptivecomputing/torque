@@ -18,10 +18,12 @@
 #include "net_connect.h" /* pbs_net_t */
 #include "queue.h" /* all_queues, pbs_queue */
 #include "user_info.h"
+#include "hash_map.h"
 
 int scheduler_sock=0;
 int scheduler_jobct = 0;
 pthread_mutex_t *job_log_mutex;
+pthread_mutex_t *reroute_job_mutex;
 pthread_mutex_t *log_mutex;
 char *msg_init_chdir = "unable to change to directory %s";
 char *path_jobs;
@@ -617,3 +619,7 @@ int unlock_ai_mutex(job_array *pa, const char *func_id, char *msg, int logging)
   return(0);
   }
 
+hash_map *get_hash_map(int size)
+  {
+  return(NULL);
+  }

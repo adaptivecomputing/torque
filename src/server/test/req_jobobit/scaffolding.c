@@ -335,3 +335,13 @@ int unlock_ai_mutex(job_array *pa, const char *id, char *msg, int logging)
   {
   return(0);
   }
+
+int record_job_as_exiting(job *pjob)
+  {
+  return(0);
+  }
+
+int remove_job_from_exiting_list(job *pjob)
+  {
+  return(0);
+  }

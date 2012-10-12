@@ -4,7 +4,22 @@
 #include "tcp.h"
 
 time_t pbs_tcp_timeout = 20;
-
+const char *dis_emsg[] =
+  {
+  "No error",
+  "Input value too large to convert to this type",
+  "Tried to write floating point infinity",
+  "Negative sign on an unsigned datum",
+  "Input count or value has leading zero",
+  "Non-digit found where a digit was expected",
+  "Input string has an embedded ASCII NUL",
+  "Premature end of message",
+  "Unable to calloc enough space for string",
+  "Supporting protocol failure",
+  "Protocol failure in commit",
+  "End of File",
+  "Invalid condition in code"
+  };
 
 struct tcp_chan *DIS_tcp_setup(int fd)
   {
