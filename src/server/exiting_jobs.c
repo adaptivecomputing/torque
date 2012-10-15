@@ -179,7 +179,7 @@ int retry_job_exit(
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     
     jeri->last_attempt = time(NULL);
-    on_job_exit(NULL, jeri->jobid);
+    on_job_exit(NULL, strdup(jeri->jobid));
     }
 
   return(PBSE_NONE);
