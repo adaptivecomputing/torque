@@ -13,7 +13,9 @@
 
 
 void strtolower(
+
   char *value)
+
   {
   int pos = 0;
   
@@ -30,9 +32,11 @@ void strtolower(
  * and escapes nested characters if necessary.
  */
 int copy_env_value(
+
   memmgr **mm,            /* memory manager */
   char    *cur_val,
   char   **value)
+
   {
   char *tmpPtr;
   int   escape_count = 0, len_value = 0;
@@ -121,12 +125,15 @@ int parse_env_line(
     {
     tmp_pos++;
     }
+
   if (tmp_pos == len_total)
     {
     /* The value consists of ALL spaces, reset to = pos + 1 */
     tmp_pos = pos_eq + 1;
     }
+
   len_value = len_total - tmp_pos;
+
   if (len_value == 0)
     {
     *value = NULL;
@@ -210,12 +217,12 @@ void parse_variable_list(
   char      *the_list)  /* name=value,name1=value1,etc to be parsed */
 
   {
-  int alloc_size = 0;
+  int             alloc_size = 0;
   dynamic_string *job_env = get_dynamic_string(-1, NULL);
-  char name[JOB_ENV_START_SIZE];
-  char *s = NULL;
-  char *c = NULL;
-  char *delim = NULL;
+  char            name[JOB_ENV_START_SIZE];
+  char           *s = NULL;
+  char           *c = NULL;
+  char           *delim = NULL;
 
   s = the_list;
 
@@ -235,7 +242,7 @@ void parse_variable_list(
        ((*delim == '=') && (*(delim + 1) == ',')) ||
        ((*delim == '=') && ((delim + 1) == NULL)))
       {
-      if(delim == NULL)
+      if (delim == NULL)
         alloc_size = strlen(s);
       else
         alloc_size = delim - s;
@@ -260,19 +267,20 @@ void parse_variable_list(
         }
       else
         {
-        /* No environment variable set for this name. No need to pass it on */
-        alloc_size = delim - s;
-        if ( delim == NULL)
+        /* No environment variable set for this name. Pass it on with value "" */
+        if (delim == NULL)
           {
-          memcpy(name, s, alloc_size);
+          snprintf(name, sizeof(name), "%s", s);
           append_dynamic_string(job_env, name);
+          append_dynamic_string(job_env, "=");
           s = NULL;
           }
         else
           {
-          memcpy(name, s, alloc_size);
+          memcpy(name, s, delim - s);
+          name[delim - s] = '\0';
           append_dynamic_string(job_env, name);
-          append_dynamic_string(job_env, ",");
+          append_dynamic_string(job_env, "=,");
           s = delim + 1;
           }
         }

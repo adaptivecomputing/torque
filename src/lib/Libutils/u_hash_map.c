@@ -144,7 +144,7 @@ void free_hash_map(
   free_resizable_array(hm->hm_ra);
   free(hm);
  
-  pthread_mutex_unlock(hm->hm_mutex);
+  pthread_mutex_unlock(tmp);
   free(tmp);
   } /* END free_hash_map() */
 
