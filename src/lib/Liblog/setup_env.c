@@ -189,7 +189,7 @@ int setup_env(
 
     if ((pval = getenv("PBSDEBUG")) != NULL)
       {
-      sprintf(envbuf, "PBSDEBUG=%s",
+      snprintf(envbuf, evbufsize, "PBSDEBUG=%s",
               pval);
 
       len = strlen(envbuf);
