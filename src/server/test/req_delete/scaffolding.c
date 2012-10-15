@@ -240,3 +240,7 @@ int unlock_ai_mutex(job_array *pa, const char *id, char *msg, int logging)
 
 void on_job_exit_task(struct work_task *ptask) {}
 
+int enqueue_threadpool_request(void *(*func)(void *), void *arg)
+  {
+  return(0);
+  }

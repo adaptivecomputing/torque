@@ -75,6 +75,7 @@ START_TEST(test_set_env_opts)
   }
 END_TEST
 
+/*
 START_TEST(test_parse_variable_list)
   {
   job_data *dest_map = NULL;
@@ -121,7 +122,7 @@ START_TEST(test_parse_variable_list_noequal)
   tc_num = 0;
   parse_variable_list(&mm, &dest_map, src_map, var_type, op_type, list);
   }
-END_TEST
+END_TEST*/
 
 Suite *common_cmds_suite(void)
   {
@@ -131,9 +132,9 @@ Suite *common_cmds_suite(void)
   tcase_add_test(tc_core, test_parse_env_line_space);
   tcase_add_test(tc_core, test_parse_env_line_allspace);
   tcase_add_test(tc_core, test_set_env_opts);
-  tcase_add_test(tc_core, test_parse_variable_list);
-  tcase_add_test(tc_core, test_parse_variable_list_equalfirst);
-  tcase_add_test(tc_core, test_parse_variable_list_noequal);
+  /*tcase_add_test(tc_core, test_parse_variable_list);*/
+  /*tcase_add_test(tc_core, test_parse_variable_list_equalfirst);*/
+  /*tcase_add_test(tc_core, test_parse_variable_list_noequal);*/
   suite_add_tcase(s, tc_core);
   return s;
   }

@@ -87,3 +87,4 @@ int  get_hostaddr_hostent_af(
   return(0);
   }
 
+void log_record(int eventtype, int objclass, const char *objname, char *text) {}

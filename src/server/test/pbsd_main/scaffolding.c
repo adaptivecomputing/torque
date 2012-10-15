@@ -487,3 +487,12 @@ int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
   {
   return(0);
   }
+
+int run_change_logs;
+
+void change_logs() {}
+
+void *inspect_exiting_jobs(void *vp) 
+  {
+  return(NULL);
+  }

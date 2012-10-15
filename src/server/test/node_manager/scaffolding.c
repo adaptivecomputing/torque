@@ -453,3 +453,13 @@ struct pbsnode *create_alps_subnode(
   {
   return(NULL);
   }
+
+int append_dynamic_string(dynamic_string *ds, const char *str)
+  {
+  return(0);
+  }
+
+int append_char_to_dynamic_string(dynamic_string *ds, char c)
+  {
+  return(0);
+  }

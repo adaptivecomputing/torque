@@ -8,6 +8,7 @@
 job *scaf_pjob = NULL;
 pbs_queue *scaf_qp = NULL;
 int scaf_retry_time = -1;
+int LOGLEVEL;
 
 int default_router(job *pjob, struct pbs_queue *qp, long retry_time)
   {
@@ -17,4 +18,10 @@ int default_router(job *pjob, struct pbs_queue *qp, long retry_time)
   return 1;
   }
 
+void log_event(
+
+  int         eventtype,
+  int         objclass,
+  const char *objname,
+  char       *text) {}
 

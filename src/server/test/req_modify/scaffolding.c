@@ -262,3 +262,9 @@ job_array *get_jobs_array(job **pjob_ptr)
   {
   return(NULL);
   }
+
+int enqueue_threadpool_request(void *(*func)(void *), void *arg)
+
+  {
+  return(0);
+  }

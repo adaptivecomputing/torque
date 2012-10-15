@@ -7,6 +7,7 @@
 #include "work_task.h"
 #include "attribute.h"
 #include "u_tree.h"
+#include "hash_table.h"
 
 
 #define rot(x,k) (((x)<<(k)) | ((x)>>(32-(k))))
@@ -46,7 +47,6 @@ struct node_state
     {INUSE_OFFLINE, ND_offline},
     {INUSE_RESERVE, ND_reserve},
     {INUSE_JOB,     ND_job_exclusive},
-    {INUSE_JOBSHARE, ND_job_sharing},
     {INUSE_BUSY,    ND_busy},
     {0,             NULL}
 };
@@ -428,22 +428,6 @@ int PNodeStateToString(
       BufSize -= len;
       }
 
-    }
-
-  if (SBM & (INUSE_JOBSHARE))
-    {
-    len = strlen(ND_job_sharing) + 1;
-
-    if (len < BufSize)
-      {
-      if (Buf[0] != '\0')
-        strcat(Buf, ",");
-      else
-        len--;
-
-      strcat(Buf, ND_job_sharing);
-      BufSize -= len;
-      }
     }
 
   if (SBM & (INUSE_BUSY))
@@ -1901,6 +1885,9 @@ int add_hash(hash_table_t *ht, int value, void *key)
   {
   int index;
 
+  if (ht == NULL)
+    return(0);
+
   /* check if we need to rehash */
   if (ht->size == ht->num)
     {
@@ -2276,3 +2263,12 @@ int copy_properties(struct pbsnode *dest, struct pbsnode *src)
   {
   return(0);
   }
+
+hash_table_t *create_hash(int size)
+  {
+  return(NULL);
+  }
+
+void free_hash(hash_table_t *ht) {}
+
+void free_all_keys(hash_table_t *ht) {}

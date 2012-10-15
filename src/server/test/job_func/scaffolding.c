@@ -675,3 +675,19 @@ int unlock_ai_mutex(job_array *pa, const char *func_id, char *msg, int logging)
   {
   return(0);
   }
+
+job *svr_find_job(char *jobid, int sub)
+  {
+  return(NULL);
+  }
+
+int remove_job(struct all_jobs *aj, job             *pjob)
+  {
+  return(0);
+  }
+
+int get_jobs_index(struct all_jobs *aj, job             *pjob)
+  {
+  return(0);
+  }
+  

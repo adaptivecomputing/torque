@@ -1,5 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <libxml/parser.h>
+#include <libxml/tree.h>
 
 
 #include "dynamic_string.h"
@@ -237,3 +239,10 @@ int append_dynamic_string(
   } /* END append_dynamic_string() */
 
 
+int find_error_type(
+
+  xmlNode *node)
+
+  {
+  return(0);
+  }

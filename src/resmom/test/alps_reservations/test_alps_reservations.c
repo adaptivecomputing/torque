@@ -27,7 +27,7 @@ char *alps_rsv_outputs[] = {
   "tom"};
 
 resizable_array *parse_exec_hosts(char *exec_hosts);
-dynamic_string  *get_reservation_command(resizable_array *, char *, char *, char *, char *);
+dynamic_string  *get_reservation_command(resizable_array *, char *, char *, char *, char *, char *);
 int              parse_reservation_output(char *, char **);
 int              execute_reservation(char *, char **);
 int              confirm_reservation(char *, char **, long long, char *, char *);
@@ -133,14 +133,20 @@ END_TEST
 START_TEST(get_reservation_command_test)
   {
   resizable_array *hrl = parse_exec_hosts(eh1);
-  dynamic_string  *apbasil_command = get_reservation_command(hrl, uname, jobids[0], NULL, apbasil_protocol);
+  dynamic_string  *apbasil_command;
   char            *reserve_param;
   char            *reserve_param2;
   char            *nppn;
   int              ppn;
 
+  printf("getting the command\n");
+  apbasil_command = get_reservation_command(hrl, uname, jobids[0], NULL, apbasil_protocol, NULL);
+  printf("checking for the username\n");
+
   snprintf(buf, sizeof(buf), "Username '%s' not found in command '%s'", uname, apbasil_command->str);
   fail_unless(strstr(apbasil_command->str, uname) != NULL, buf);
+
+  printf("got the command\n");
 
   reserve_param = strstr(apbasil_command->str, "ReserveParam ");
   fail_unless(reserve_param != NULL, "Couldn't find a ReserveParam element in the request");
@@ -153,7 +159,7 @@ START_TEST(get_reservation_command_test)
   free_dynamic_string(apbasil_command);
 
   hrl = parse_exec_hosts(eh3);
-  apbasil_command = get_reservation_command(hrl, uname, jobids[1], apbasil_path, apbasil_protocol);
+  apbasil_command = get_reservation_command(hrl, uname, jobids[1], apbasil_path, apbasil_protocol, NULL);
 
   reserve_param = strstr(apbasil_command->str, "ReserveParam ");
   reserve_param2 = strstr(reserve_param + 1, "ReserveParam ");

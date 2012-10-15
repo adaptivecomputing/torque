@@ -4,6 +4,11 @@
 #include <netdb.h>
 
 #include "net_connect.h"
+#include "log.h"
+
+char *msg_daemonname = "unset";
+
+void log_get_set_eventclass(int *objclass, SGetter action) {}
 
 int debug_mode = 0;
 int socket_get_tcp()
