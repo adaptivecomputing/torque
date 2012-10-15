@@ -354,6 +354,7 @@ int parse_depend_list(
 
     if (rtn)
       {
+      free(lc);
       return (rtn);
       }
 

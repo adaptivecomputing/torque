@@ -232,7 +232,11 @@ parse_at_list(char *list, int use_count, int abs_path)
     while (*c != ',' && *c) c++;
 
     /* If requested, is this an absolute path */
-    if (abs_path && *s != '/') return 1;
+    if (abs_path && *s != '/') 
+      {
+      free(l);
+      return 1;
+      }
 
     /* Drop any trailing blanks */
     comma = (*c == ',');
@@ -246,11 +250,16 @@ parse_at_list(char *list, int use_count, int abs_path)
     /* Parse the individual list item */
     if (parse_at_item(s, &user, &host))
       {
+      free(l);
       return 1;
       }
 
     /* The user part must be given */
-    if (strcmp(user, "") == 0) return 1;
+    if (strcmp(user, "") == 0)
+      {
+      free(l);
+      return 1;
+      }
 
     /* If requested, make sure the host name is not repeated */
     if (use_count)
@@ -259,8 +268,11 @@ parse_at_list(char *list, int use_count, int abs_path)
 
       while (ph)
         {
-        if (strcmp(ph->host, host) == 0) return 1;
-
+        if (strcmp(ph->host, host) == 0) 
+          {
+          free(l);
+          return 1;
+          }
         ph = ph->next;
         }
 
@@ -268,6 +280,7 @@ parse_at_list(char *list, int use_count, int abs_path)
 
       if (!nh)
         {
+        free(l);
         fprintf(stderr, "Out of memory\n");
         exit(1);
         }
