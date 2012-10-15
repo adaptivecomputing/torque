@@ -98,12 +98,14 @@
  * Boolean return value
  */
 int hash_add_item(
-  memmgr **mm,                /* M - memory manager */
+
+  memmgr   **mm,                /* M - memory manager */
   job_data **head,            /* M - hashmap */
-  char *name,                 /* key for the item */
-  char *value,                /* value for the item */
-  int var_type,               /* type of variable */
-  int op_type)                /* operation of variable */
+  char      *name,                 /* key for the item */
+  char      *value,                /* value for the item */
+  int        var_type,               /* type of variable */
+  int        op_type)                /* operation of variable */
+
   {
   int rc = TRUE;
   int name_len = 0;
@@ -128,7 +130,7 @@ int hash_add_item(
           rc = -3;
         else
           item->value[0] = '\0';
-        } 
+        }
       else
         {
         value_len = strlen(value);
@@ -138,6 +140,7 @@ int hash_add_item(
         }
       }
     }
+
   if (rc == TRUE)
     {
     item->var_type = var_type;
@@ -163,18 +166,22 @@ int hash_add_item(
       }
     rc = FALSE;
     }
+
   return rc;
-  }
+  } /* END hash_add_item() */
+
+
 
 
 /* A wrapper for hash to accomodate for memory allocation errors
  */
 void hash_add_or_exit(
-  memmgr **mm,              /* M - memory manager */
+
+  memmgr   **mm,              /* M - memory manager */
   job_data **head,          /* M - hashmap */
-  char *name,               /* I - The item being added to the hashmap */
-  char *val,                /* I - Sets the value of variable */
-  int var_type)             /* I - Sets the type of the variable */
+  char      *name,               /* I - The item being added to the hashmap */
+  char      *val,                /* I - Sets the value of variable */
+  int        var_type)             /* I - Sets the type of the variable */
   {
   if (hash_add_item(mm, head, name, val, var_type, SET) == FALSE)
     {

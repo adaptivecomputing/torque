@@ -210,12 +210,12 @@ void parse_variable_list(
   char      *the_list)  /* name=value,name1=value1,etc to be parsed */
 
   {
-  int alloc_size = 0;
+  int             alloc_size = 0;
   dynamic_string *job_env = get_dynamic_string(-1, NULL);
-  char name[JOB_ENV_START_SIZE];
-  char *s = NULL;
-  char *c = NULL;
-  char *delim = NULL;
+  char            name[JOB_ENV_START_SIZE];
+  char           *s = NULL;
+  char           *c = NULL;
+  char           *delim = NULL;
 
   s = the_list;
 
@@ -235,19 +235,21 @@ void parse_variable_list(
        ((*delim == '=') && (*(delim + 1) == ',')) ||
        ((*delim == '=') && ((delim + 1) == NULL)))
       {
-      if(delim == NULL)
+      if (delim == NULL)
         alloc_size = strlen(s);
       else
         alloc_size = delim - s;
+
       memcpy(name, s, alloc_size);
-      name[alloc_size] = 0;
+      name[alloc_size] = '\0';
       c = getenv(name);
 
-      if ( c != NULL )
+      if (c != NULL)
         {
         append_dynamic_string(job_env, name);
         append_dynamic_string(job_env, "=");
         append_dynamic_string(job_env, c);
+
         if (delim == NULL)
           s = NULL;
         else
@@ -260,19 +262,20 @@ void parse_variable_list(
         }
       else
         {
-        /* No environment variable set for this name. No need to pass it on */
-        alloc_size = delim - s;
-        if ( delim == NULL)
+        /* No environment variable set for this name. Pass it on with value "" */
+        if (delim == NULL)
           {
-          memcpy(name, s, alloc_size);
+          snprintf(name, sizeof(name), "%s", s);
           append_dynamic_string(job_env, name);
+          append_dynamic_string(job_env, "=");
           s = NULL;
           }
         else
           {
-          memcpy(name, s, alloc_size);
+          memcpy(name, s, delim - s);
+          name[delim - s] = '\0';
           append_dynamic_string(job_env, name);
-          append_dynamic_string(job_env, ",");
+          append_dynamic_string(job_env, "=,");
           s = delim + 1;
           }
         }
@@ -301,7 +304,9 @@ void parse_variable_list(
     }
 
   hash_add_or_exit(mm, dest_hash, ATTR_v, job_env->str, ENV_DATA);
-  free(job_env);
+
+  free_dynamic_string(job_env);
+
   return;
   } /* END parse_variable_list() */ 
 
