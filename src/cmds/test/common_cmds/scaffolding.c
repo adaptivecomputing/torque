@@ -103,10 +103,19 @@ int memmgr_free(memmgr **mgr, void *ptr)
 
 int append_dynamic_string(dynamic_string *ds, const char *str)
   {
+  strcat(ds->str, str);
   return(0);
   }
 
 dynamic_string *get_dynamic_string(int size, const char *str)
   {
-  return(NULL);
+  dynamic_string *ds = calloc(1, sizeof(dynamic_string));
+  ds->str = calloc(1, 1024*10);
+  return(ds);
+  }
+
+void free_dynamic_string(dynamic_string *ds)
+  {
+  free(ds->str);
+  free(ds);
   }
