@@ -924,7 +924,7 @@ void *sync_node_jobs(
   char                 *jobstring_in;
   char                 *joblist;
   char                 *jobidstr;
-  resizable_array      *ms_jobs;
+  /*resizable_array      *ms_jobs;*/
 
   if (vp == NULL)
     return(NULL);
@@ -960,7 +960,7 @@ void *sync_node_jobs(
   joblist = jobstring_in;
   jobidstr = threadsafe_tokenizer(&joblist, " ");
   
-  ms_jobs = initialize_resizable_array(MAX(np->nd_ms_jobs->num, 2));
+  /*ms_jobs = initialize_resizable_array(MAX(np->nd_ms_jobs->num, 2));*/
 
   while ((jobidstr != NULL) && 
          (isdigit(*jobidstr)) != FALSE)
@@ -971,10 +971,10 @@ void *sync_node_jobs(
       }
     else
       {
-      char *jobid = remove_thing_memcmp(np->nd_ms_jobs, jobidstr, strlen(jobidstr));
+/*      char *jobid = remove_thing_memcmp(np->nd_ms_jobs, jobidstr, strlen(jobidstr));
 
       if (jobid != NULL)
-        insert_thing(ms_jobs, jobid);
+        insert_thing(ms_jobs, jobid);*/
       }
     
     jobidstr = threadsafe_tokenizer(&joblist, " ");
@@ -984,11 +984,11 @@ void *sync_node_jobs(
   free(raw_input);
 
   /* now check if the mom is reporting any jobs that the server doesn't know about */
-  remove_jobs_that_have_disappeared(np, ms_jobs, sji->timestamp);
+  /*remove_jobs_that_have_disappeared(np, ms_jobs, sji->timestamp);*/
 
   free(sji);
 
-  free_resizable_array(ms_jobs);
+  /*free_resizable_array(ms_jobs);*/
 
   unlock_node(np, __func__, NULL, 0);
 
@@ -1648,11 +1648,11 @@ int process_status_info(
       /* update job attributes based on what the MOM gives us */      
       update_job_data(current, str + strlen("jobdata="));
       }
-    /*else if ((mom_job_sync == TRUE) &&
+    else if ((mom_job_sync == TRUE) &&
              (!strncmp(str, "jobs=", 5)))
-      {*/
+      {
       /* walk job list reported by mom */
-      /*size_t         len = strlen(str) + strlen(current->nd_name) + 2;
+      size_t         len = strlen(str) + strlen(current->nd_name) + 2;
       char          *jobstr = calloc(1, len);
       sync_job_info *sji = calloc(1, sizeof(sync_job_info));
 
@@ -1660,11 +1660,11 @@ int process_status_info(
         {
         sprintf(jobstr, "%s:%s", current->nd_name, str+5);
         sji->input = jobstr;
-        sji->timestamp = time(NULL);*/
+        sji->timestamp = time(NULL);
         /* jobstr must be freed in sync_node_jobs */
-      /*  enqueue_threadpool_request(sync_node_jobs, sji);
+        enqueue_threadpool_request(sync_node_jobs, sji);
         }
-      }*/
+      }
     else if (auto_np)
       {
       if (!(strncmp(str, "ncpus=", 6)))
@@ -5561,8 +5561,8 @@ int set_nodes(
 
   pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HasNodes;  /* indicate has nodes */
 
-  /* add this job to ms's job list */
-  add_to_ms_list(hlist->name, pjob);
+  /* add this job to ms's job list --not used right now, will be debugged later */
+  /*add_to_ms_list(hlist->name, pjob);*/
 
   /* build list of allocated nodes, gpus, and ports */
   if ((rc = translate_howl_to_string(hlist, EMsg, &NCount, rtnlist, rtnportlist, TRUE)) != PBSE_NONE)
