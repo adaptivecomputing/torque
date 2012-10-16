@@ -207,7 +207,7 @@ void calloc_or_fail(
  * return 1 on success, 0 on failure
  */
 
-void parse_variable_list(
+int parse_variable_list(
 
   memmgr   **mm,        /* memory manager */
   job_data **dest_hash, /* This is the dest hashmap for vars found */
@@ -229,10 +229,11 @@ void parse_variable_list(
   while (s)
     {
     delim = strpbrk(s, "=,");
+
     if (delim == s)
       {
       fprintf(stderr, "invalid -v syntax\n");
-      exit(3);
+      return(3);
       }
 
     /* If delim is ','or NULL we have no value. Get the environment variable in s */ 
@@ -247,10 +248,10 @@ void parse_variable_list(
       else
         alloc_size = delim - s;
       memcpy(name, s, alloc_size);
-      name[alloc_size] = 0;
+      name[alloc_size] = '\0';
       c = getenv(name);
 
-      if ( c != NULL )
+      if (c != NULL)
         {
         append_dynamic_string(job_env, name);
         append_dynamic_string(job_env, "=");
@@ -309,8 +310,9 @@ void parse_variable_list(
     }
 
   hash_add_or_exit(mm, dest_hash, ATTR_v, job_env->str, ENV_DATA);
-  free(job_env);
-  return;
+  free_dynamic_string(job_env);
+
+  return(PBSE_NONE);
   } /* END parse_variable_list() */ 
 
 
