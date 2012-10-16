@@ -570,10 +570,11 @@ job *job_recov(
     }
 
 #ifndef PBS_MOM
+  /* Comment out the mother superior tracking. Will be debugged later 
   if (pj->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
-    {
+    {*/
     /* add job to the mother superior list for it's node */
-    char *ms = strdup(pj->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+/*    char *ms = strdup(pj->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
     char *end = strchr(ms, '/');
 
     if (end != NULL)
@@ -585,7 +586,7 @@ job *job_recov(
     add_to_ms_list(ms, pj);
 
     free(ms);
-    }
+    }*/
 #endif
 
 #ifdef PBS_MOM
