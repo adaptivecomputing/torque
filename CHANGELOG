@@ -87,6 +87,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Fix a deadlock in logging when the machine is out of disk space. TRQ-1302.
   e - Retry cleanup with the mom every 20 seconds for jobs that are stuck in an exiting state.
       TRQ-1299.
+  b - Fixed a deadlock where torque would hang shortly after startup if a routing queue is
+      present and there are no jobs in any queue. TRQ-1315
 
 
 4.1.2

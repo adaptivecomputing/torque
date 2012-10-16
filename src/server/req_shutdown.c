@@ -154,7 +154,7 @@ void save_queues()
   while ((pque = next_queue(&svr_queues, &iter)) != NULL)
     {
     que_save(pque);
-    unlock_queue(pque, __func__, NULL, 0);
+    unlock_queue(pque, __func__, NULL, LOGLEVEL);
     }
   } /* END save_queues() */
 

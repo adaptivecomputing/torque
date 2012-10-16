@@ -1155,6 +1155,13 @@ void *handle_queue_routing_retries(
   pbs_queue *pque;
   char       *queuename;
   int        iter = -1;
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
+
+  if (LOGLEVEL>=7)
+    {
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, " ");
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_QUEUE, __func__, log_buf);
+    }
 
   while(1)
     {
@@ -1164,10 +1171,11 @@ void *handle_queue_routing_retries(
       if (pque->qu_qs.qu_type == QTYPE_RoutePush)
         {
         queuename = strdup(pque->qu_qs.qu_name); /* make sure this gets freed inside queue_route */
+        unlock_queue(pque, __func__, NULL, LOGLEVEL);
         enqueue_threadpool_request(queue_route, queuename);
         }
-
-      unlock_queue(pque, __func__, NULL, 0);
+      else
+        unlock_queue(pque, __func__, NULL, LOGLEVEL);
       }
     }
 

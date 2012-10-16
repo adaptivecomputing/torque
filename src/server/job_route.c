@@ -485,11 +485,20 @@ int reroute_job(
     
 
     if (rc == PBSE_ROUTEREJ)
+      {
+      unlock_queue(pque, __func__, "1", LOGLEVEL);
       job_abt(&pjob, pbse_to_txt(PBSE_ROUTEREJ));
+      }
     else if (rc == PBSE_ROUTEEXPD)
+      {
+      unlock_queue(pque, __func__, "2", LOGLEVEL);
       job_abt(&pjob, msg_routexceed);
+      }
     else if (rc == PBSE_QUENOEN)
+      {
+      unlock_queue(pque, __func__, "3", LOGLEVEL);
       job_abt(&pjob, msg_err_noqueue);
+      }
 
     }
 
@@ -534,6 +543,13 @@ void *queue_route(
     log_err(-1, __func__, log_buf);
     return(NULL);
     }
+
+   if (LOGLEVEL>=7)
+     {
+     snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "queue name: %s ", queue_name);
+     log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_QUEUE, __func__, log_buf);
+     }
+   
   
   pthread_mutex_lock(reroute_job_mutex);
 
@@ -563,7 +579,7 @@ void *queue_route(
     }
 
   free(queue_name);
-  unlock_queue(pque, __func__, NULL, 0);
+  unlock_queue(pque, __func__, NULL, LOGLEVEL);
   pthread_mutex_unlock(reroute_job_mutex);
   return(NULL);
   } /* END queue_route() */

@@ -319,11 +319,11 @@ int local_move(
   if (get_parent_dest_queues(pjob->ji_qs.ji_queue, destination, &routing_que, &dest_que, &pjob) != PBSE_NONE)
     {
     if (dest_que != NULL)
-      unlock_queue(dest_que, __func__, NULL, 0);
+      unlock_queue(dest_que, __func__, NULL, LOGLEVEL);
 
     if ((parent_queue_mutex_held == FALSE) &&
         (routing_que != NULL))
-      unlock_queue(routing_que, __func__, NULL, 0);
+      unlock_queue(routing_que, __func__, NULL, LOGLEVEL);
 
     if (pjob == NULL)
       return(-10);
@@ -356,7 +356,7 @@ int local_move(
                      dest_que,
                      get_variable(pjob, pbs_o_host), mtype, NULL)))
     {
-    unlock_queue(dest_que, __func__, NULL, 0);
+    unlock_queue(dest_que, __func__, NULL, LOGLEVEL);
 
     /* should this queue be retried? */
     if (parent_queue_mutex_held == FALSE)
@@ -380,7 +380,7 @@ int local_move(
 
   pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
     
-  unlock_queue(dest_que, __func__, NULL, 0);
+  unlock_queue(dest_que, __func__, NULL, LOGLEVEL);
   unlock_queue(routing_que, __func__, "success", LOGLEVEL);
 
   if ((*my_err = svr_enquejob(pjob, FALSE, -1)) == PBSE_JOB_RECYCLED)
@@ -390,7 +390,7 @@ int local_move(
     {
     /* re-lock the routing queue */
     if ((tmp_que = lock_queue_with_job_held(routing_que, &pjob)) == NULL)
-      lock_queue(routing_que, __func__, NULL, 0);
+      lock_queue(routing_que, __func__, NULL, LOGLEVEL);
     else
       routing_que = tmp_que;
     }
