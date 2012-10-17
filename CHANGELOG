@@ -89,6 +89,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       TRQ-1299.
   b - Fixed a deadlock where torque would hang shortly after startup if a routing queue is
       present and there are no jobs in any queue. TRQ-1315
+  b - Enabled qsub filters to be access from a non-default location.i TRQ-1127
+  b - Put the ability to write the resources_used data to the accounting logs. This was in 4.1.1 
+      and 4.1.2 but failed to make it into 4.1.3. TRQ-1329
 
 
 4.1.2
