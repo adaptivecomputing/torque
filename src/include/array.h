@@ -153,8 +153,6 @@ int  array_save(job_array *pa);
 int  array_save(job_array *pa);
 void array_get_parent_id(char *job_id, char *parent_id);
 
-job *find_array_template(char *arrayid);
-
 job_array *get_array(char *id);
 int array_recov(char *path, job_array **pa);
 
@@ -180,7 +178,7 @@ int first_job_index(job_array *);
 
 void update_array_statuses(job_array *);
 
-int num_array_jobs(char *);
+int num_array_jobs(const char *);
 
 int        insert_array(job_array *);
 int        remove_array(job_array *);

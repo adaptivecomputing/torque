@@ -70,10 +70,10 @@ extern char *pbs_o_host;
 
 extern int array_259_upgrade;
 
-static int  is_num(char *);
-static int  array_request_token_count(char *);
-static int  array_request_parse_token(char *, int *, int *);
-static int  parse_array_request(char *request, tlist_head *tl);
+int         is_num(const char *);
+int         array_request_token_count(const char *);
+int         array_request_parse_token(char *, int *, int *);
+int         parse_array_request(char *request, tlist_head *tl);
 job_array  *next_array_check(int *, job_array *);
 
 
@@ -243,8 +243,10 @@ int array_save(
 
   close(fds);
 
-  return 0;
-  }
+  return(PBSE_NONE);
+  } /* END array_save() */
+
+
 
 
 /* if a job belongs to an array, this will return the id of the parent job
@@ -287,60 +289,9 @@ void array_get_parent_id(
   *pid = '\0';
   strcat(pid, c);
 
-  }
+  } /* END array_get_parent_id() */
 
 
-/*
- * find_array_template() - find an array template job by jobid
- *
- * Return NULL if not found or pointer to job struct if found
- */
-
-job *find_array_template(
-    
-  char *arrayid)
-
-  {
-  char *at;
-  char *comp;
-  int   different = FALSE;
-  int   iter = -1;
-
-  job  *pj;
-
-  if ((at = strchr(arrayid, (int)'@')) != NULL)
-    * at = '\0'; /* strip off @server_name */
-
-  if ((is_svr_attr_set(SRV_ATR_display_job_server_suffix) == TRUE) ||
-      (is_svr_attr_set(SRV_ATR_job_suffix_alias) == TRUE))
-    {
-    comp = get_correct_jobname(arrayid);
-    different = TRUE;
-
-    if (comp == NULL)
-      return NULL;
-    }
-  else
-    {
-    comp = arrayid;
-    }
-
-  while ((pj = next_job(&array_summary,&iter)) != NULL)
-    {
-    if (!strcmp(comp, pj->ji_qs.ji_jobid))
-      break;
-
-    unlock_ji_mutex(pj, __func__, NULL, LOGLEVEL);
-    }
-
-  if (at)
-    *at = '@'; /* restore @server_name */
-
-  if (different)
-    free(comp);
-
-  return(pj);  /* may be NULL */
-  }   /* END find_array_template() */
 
 
 int read_and_convert_259_array(
@@ -566,9 +517,10 @@ int array_recov(
 
   *new_pa = pa;
 
-  return PBSE_NONE;
+  return(PBSE_NONE);
+  } /* END array_recov() */
 
-  }
+
 
 
 /* delete a job array struct from memory and disk. This is used when the number
@@ -652,7 +604,7 @@ int array_delete(
   /* free the memory allocated for the struct */
   free(pa);
 
-  return 0;
+  return(PBSE_NONE);
   } /* END array_delete() */
 
 
@@ -711,8 +663,10 @@ int set_slot_limit(
     pa->ai_qs.slot_limit = max_limit;
     }
 
-  return(0);
+  return(PBSE_NONE);
   } /* END set_slot_limit() */
+
+
 
 
 int setup_array_struct(
@@ -729,7 +683,7 @@ int setup_array_struct(
   char                log_buf[LOCAL_LOG_BUF_SIZE];
   long                max_array_size;
 
-    pa = (job_array *)calloc(1,sizeof(job_array));
+  pa = (job_array *)calloc(1,sizeof(job_array));
 
   pa->ai_qs.struct_version = ARRAY_QS_STRUCT_VERSION;
   
@@ -825,7 +779,6 @@ int setup_array_struct(
     return(PBSE_MEM_MALLOC);
     }
 
-
   /* remember array_size */
   pa->ai_qs.array_size = array_size;
 
@@ -852,9 +805,9 @@ int setup_array_struct(
 
 
 
-static int is_num(
+int is_num(
     
-  char *str)
+  const char *str)
 
   {
   int i;
@@ -864,18 +817,18 @@ static int is_num(
 
   if (len == 0)
     {
-    return 0;
+    return(FALSE);
     }
 
   for (i = 0; i < len; i++)
     {
     if (str[i] < '0' || str[i] > '9')
       {
-      return 0;
+      return(FALSE);
       }
     }
 
-  return 1;
+  return(TRUE);
   } /* END is_num() */
 
 
@@ -883,17 +836,12 @@ static int is_num(
 
 int array_request_token_count(
     
-  char *str)
+  const char *str)
 
   {
-  int token_count;
-  int len;
+  int token_count = 1;
+  int len = strlen(str);
   int i;
-
-
-  len = strlen(str);
-
-  token_count = 1;
 
   for (i = 0; i < len; i++)
     {
@@ -903,26 +851,24 @@ int array_request_token_count(
       }
     }
 
-  return token_count;
-
+  return(token_count);
   } /* END array_request_token_count() */
 
 
 
 
-static int array_request_parse_token(
+int array_request_parse_token(
     
-  char *str, 
-  int *start, 
-  int *end)
+  char *str,   /* I */
+  int  *start, /* O */
+  int  *end)   /* O */
 
   {
-  int num_ids;
-  long start_l;
-  long end_l;
+  int   num_ids;
+  long  start_l;
+  long  end_l;
   char *idx;
   char *ridx;
-
 
   idx = index(str, '-');
   ridx = rindex(str, '-');
@@ -950,7 +896,8 @@ static int array_request_parse_token(
     idx++;
 
     /* check for an invalid range */
-    if (!is_num(str) || !is_num(idx))
+    if ((!is_num(str)) || 
+        (!is_num(idx)))
       {
       start_l = -1;
       end_l = -1;
@@ -971,18 +918,23 @@ static int array_request_parse_token(
     }
 
   /* restore the string so this function is non-destructive to the token */
-  if (idx != NULL && idx == ridx)
+  if ((idx != NULL) &&
+      (idx == ridx + 1))
     {
     idx--;
     *idx = '-';
     }
-    
 
   /* make sure the start or end of the range is not out of the range for 
      job array task IDs, and make sure that end_l is not less than start_l 
      (it is OK for end_l to == start_l)*/
-  if (start_l < 0 || start_l >= INT_MAX || end_l < 0 || end_l >= INT_MAX
-      || start_l > PBS_MAXJOBARRAY || end_l > PBS_MAXJOBARRAY || end_l < start_l)
+  if ((start_l < 0) ||
+      (start_l >= INT_MAX) ||
+      (end_l < 0) ||
+      (end_l >= INT_MAX) ||
+      (start_l > PBS_MAXJOBARRAY) ||
+      (end_l > PBS_MAXJOBARRAY) ||
+      (end_l < start_l))
     {
     *start = -1;
     *end = -1;
@@ -999,28 +951,30 @@ static int array_request_parse_token(
     *end   = (int)end_l;
     }
 
-  return num_ids;
+  return(num_ids);
   } /* END array_request_parse_token() */
 
 
-static int parse_array_request(
+
+
+int parse_array_request(
     
-  char *request, 
+  char       *request, 
   tlist_head *tl)
 
   {
-  char *temp_str;
-  int num_tokens;
-  char **tokens;
-  int i;
-  int j;
-  int num_elements;
-  int start;
-  int end;
-  int num_bad_tokens;
-  int searching;
-  array_request_node *rn;
-  array_request_node *rn2;
+  char                *temp_str;
+  int                  num_tokens;
+  char               **tokens;
+  int                  i;
+  int                  j;
+  int                  num_elements;
+  int                  start;
+  int                  end;
+  int                  num_bad_tokens;
+  int                  searching;
+  array_request_node  *rn;
+  array_request_node  *rn2;
 
   temp_str = strdup(request);
   num_tokens = array_request_token_count(request);
@@ -1032,7 +986,6 @@ static int parse_array_request(
 
   for (i = strlen(temp_str) - 1; i >= 0; i--)
     {
-
     if (temp_str[i] == ',')
       {
       tokens[j--] = &temp_str[i+1];
@@ -1043,7 +996,6 @@ static int parse_array_request(
       tokens[0] = temp_str;
       }
     }
-
 
   for (i = 0; i < num_tokens; i++)
     {
@@ -1200,7 +1152,8 @@ int delete_array_range(
     }
 
   return(num_skipped);
-  }
+  } /* END delete_array_range() */
+
 
 
 
@@ -1220,10 +1173,10 @@ int first_job_index(
   for (i = 0; i < pa->ai_qs.array_size; i++)
     {
     if (pa->job_ids[i] != NULL)
-      return i;
+      return(i);
     }
 
-  return -1;
+  return(-1);
   } /* END first_job_index() */
 
 
@@ -1560,6 +1513,7 @@ int modify_array_range(
 
 
 
+
 /**
  * update_array_values()
  *
@@ -1687,6 +1641,8 @@ void update_array_values(
   } /* END update_array_values() */
 
 
+
+
 void update_array_statuses(
     
   job_array *owned)
@@ -1794,7 +1750,7 @@ void update_array_statuses(
 
 int num_array_jobs(
 
-  char *req_str) /* I */
+  const char *req_str) /* I */
 
   {
   int    num_jobs = 0;

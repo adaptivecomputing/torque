@@ -177,12 +177,58 @@ void *get_next(list_link pl, char *file, int line)
 
 char *threadsafe_tokenizer(char **str, char *delims)
   {
-  fprintf(stderr, "The call to threadsafe_tokenizer needs to be mocked!!\n");
-  exit(1);
+  char *current_char;
+  char *start;
+
+  if ((str == NULL) ||
+      (*str == NULL))
+    return(NULL);
+
+  /* save start position */
+  start = *str;
+
+  /* return NULL at the end of the string */
+  if (*start == '\0')
+    return(NULL);
+
+  /* begin at the start */
+  current_char = start;
+
+  /* advance to the end of the string or until you find a delimiter */
+  while ((*current_char != '\0') &&
+         (!strchr(delims, *current_char)))
+    current_char++;
+
+  /* advance str */
+  if (*current_char != '\0')
+    {
+    /* not at the end of the string */
+    *str = current_char + 1;
+    *current_char = '\0';
+    }
+  else
+    {
+    /* at the end of the string */
+    *str = current_char;
+    }
+
+  return(start);
   }
 
 int get_svr_attr_l(int attr_index, long *l)
   {
+  static int count = 0;
+
+  if (attr_index == SRV_ATR_MaxSlotLimit)
+    {
+    count++;
+
+    if (count == 1)
+      return(-1);
+    
+    *l = 5;
+    }
+
   return(0);
   }
 
