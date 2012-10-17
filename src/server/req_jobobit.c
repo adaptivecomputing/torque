@@ -2874,9 +2874,7 @@ int req_jobobit(
   long                  events = 0;
   pbs_net_t             mom_addr;
   int                   rerunning_job = FALSE;
-#ifdef USESAVEDRESOURCES
   int                   have_resc_used = FALSE;
-#endif    /* USESAVEDRESOURCES */
 
   /* This will be needed later for logging after preq is freed. */
   strcpy(job_id, preq->rq_ind.rq_jobobit.rq_jid);
@@ -3031,9 +3029,9 @@ int req_jobobit(
 
   accttail = strlen(acctbuf);
 
-#ifdef USESAVEDRESOURCES
   have_resc_used = get_used(patlist, acctbuf);
 
+#ifdef USESAVEDRESOURCES
   /* if we don't have resources from the obit, use what the job already had */
 
   if (!have_resc_used)
