@@ -247,9 +247,11 @@ int hash_clear(
  * Use the hash_clear or hash_del_item function
  */
 int hash_find(
-    job_data *head,           /* I - hashmap */
-    char *name,               /* I - name to find */
-    job_data **env_var)       /* O - return value when found */
+    
+  job_data  *head,           /* I - hashmap */
+  char      *name,               /* I - name to find */
+  job_data **env_var)       /* O - return value when found */
+
   {
   int rc = TRUE;
   *env_var = NULL;
@@ -258,7 +260,9 @@ int hash_find(
   if (*env_var == NULL)
     rc = FALSE;
   return rc;
-  }
+  } /* END hash_find() */
+
+
 
 /* Returns the quantity of elements in the hashmap */
 int hash_count(

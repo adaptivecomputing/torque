@@ -817,10 +817,71 @@ void validate_qsub_host_pbs_o_server(
 
 
 
+int are_mpp_present(
+
+  job_data  *resources,
+  job_data **dummy)
+
+  {
+  int mpp_present = hash_find(resources, "mppwidth", dummy);
+
+  return(mpp_present);
+  } /* END are_mpp_present() */
+
+
+
+
+void validate_basic_resourcing(
+
+  job_info *ji)
+
+  {
+  job_data *resources = ji->res_attr;
+  job_data *dummy;
+  int       nodes;
+  int       size;
+  int       mpp;
+
+  nodes = hash_find(resources, "nodes", &dummy);
+  size  = hash_find(resources, "size", &dummy);
+
+  if ((nodes == TRUE) &&
+      (size == TRUE))
+    {
+    fprintf(stderr, "qsub: Specifying -l nodes is incompatible with specifying -l size\n");
+    exit(4);
+    }
+  else if ((nodes == TRUE) ||
+           (size == TRUE))
+    {
+    mpp = are_mpp_present(resources, &dummy);
+
+    if (mpp == TRUE)
+      {
+      if (nodes == TRUE)
+        {
+        fprintf(stderr, "qsub: Specifying -l nodes is incompatible with specifying -l mppwidth\n");
+        exit(4);
+        }
+      else
+        {
+        fprintf(stderr, "qsub: Specifying -l size is incompatible with specifying -l mppwidth\n");
+        exit(4);
+        }
+      }
+    }
+
+  } /* END validate_basic_rsourcing() */
+
+
+
+
 void post_check_attributes(job_info *ji)
   {
   validate_pbs_o_workdir(&ji->mm, &ji->job_attr);
   validate_qsub_host_pbs_o_server(&ji->mm, &ji->job_attr);
+  
+  validate_basic_resourcing(ji);
   } /* END post_check_attributes() */
 
 
@@ -3583,7 +3644,7 @@ void process_opts(
 
   /* END ORNL WRAPPER */
 
-  }  /* END process_opts() */
+  } /* END process_opts() */
 
 
 

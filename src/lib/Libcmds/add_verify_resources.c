@@ -107,18 +107,21 @@ int add_verify_resources(
 
   memmgr        **mm,       /* M */
   job_data      **res_attr, /* M */
-  char          *resources, /* I */
-  int            p_type)    /* I */
+  char           *resources, /* I */
+  int             p_type)    /* I */
 
   {
-  char *r, *eq, *v, *e = NULL;
+  char *r;
+  char *eq;
+  char *v;
+  char *e = NULL;
   char *str;
   char *name;
   char *value = NULL;
   int   gpugres;
 
-  int len;
-  int vlen;
+  int   len;
+  int   vlen;
 
   char *qptr = NULL;
 
@@ -281,122 +284,6 @@ int add_verify_resources(
       fprintf(stderr, "Error allocating memory for add_verify_resources\n");
       exit(1);
       }
-    /* Allocate memory for the attrl structure */
-
-/*    attr = (struct attrl *)calloc(sizeof(struct attrl));
-
-    if (attr == NULL)
-      {
-      fprintf(stderr, "Out of memory\n");
-
-      FAILURE
-
-      exit(2);
-      }
-      */
-
-    /* Allocate memory for the attribute name and copy */
-
-/*    str = (char *)calloc(strlen(ATTR_l) + 1);
-
-    if (str == NULL)
-      {
-      fprintf(stderr, "Out of memory\n");
-
-      exit(2);
-      }
-
-    strcpy(str, ATTR_l);
-
-    attr->name = str;
-    */
-
-    /* Allocate memory for the resource name and copy */
-
-/*    str = (char *)calloc(len + 1);
-
-    if (str == NULL)
-      {
-      fprintf(stderr, "Out of memory\n");
-
-      exit(2);
-      }
-
-    strncpy(str, r, len);
-
-    str[len] = '\0';
-
-    attr->resource = str;
-    */
-
-    /* Allocate memory for the value and copy */
-
-/*    if (v != NULL)
-      {
-      str = (char *)calloc(e - v + 1);
-
-      if (str == NULL)
-        {
-        fprintf(stderr, "Out of memory\n");
-
-        exit(2);
-        }
-
-      strncpy(str, v, e - v);
-
-      str[e - v] = '\0';
-
-      attr->value = str;
-      }
-    else
-      {
-      str = (char *)calloc(1);
-
-      if (str == NULL)
-        {
-        fprintf(stderr, "Out of memory\n");
-
-        exit(2);
-        }
-
-      str[0] = '\0';
-
-      attr->value = str;
-      }
-      */
-
-    /* Put it on the attribute list */
-
-    /* If the argument add is true, add to the list regardless.
-     * Otherwise, add it to the list only if the resource name
-     * is not already on the list.
-     */
-
-    /*
-    attr->next = NULL;
-
-    if (*attrib == NULL)
-      {
-      *attrib = attr;
-      }
-    else
-      {
-      ap = *attrib;
-
-      found = FALSE;
-
-      while (ap->next != NULL)
-        {
-        if (!strcmp(ap->name, ATTR_l) && !strcmp(ap->resource, attr->resource))
-          found = TRUE;
-
-        ap = ap->next;
-        }
-
-      if (add || !found)
-        ap->next = attr;
-      }
-      */
 
     /* Get ready for next resource/value pair */
 
