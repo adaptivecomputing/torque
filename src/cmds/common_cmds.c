@@ -297,6 +297,7 @@ int parse_variable_list(
         /* We have another variable in the list. Take care of the current one */
         alloc_size = delim - s;
         memcpy(name, s, alloc_size);
+        name[alloc_size] = '\0';
         append_dynamic_string(job_env, name);
         append_dynamic_string(job_env, ",");
         s = delim + 1;
