@@ -1,5 +1,9 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
+4.1.4
+  e - When in cray mode, write physmem and availmem in addition to totmem so that 
+      Moab correctly reads memory info.
+
 4.1.3
   b - fix a security loophole that potentially allowed an interactive job to run 
       as root due to not resetting a value when $attempt_to_make_dir and $tmpdir
