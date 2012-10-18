@@ -16,8 +16,6 @@ int array_save(job_array *pa);
 
 void array_get_parent_id(char *job_id, char *parent_id);
 
-job *find_array_template(char *arrayid);
-
 int array_recov(char *path, job_array **);
 
 int array_delete(job_array *pa);
@@ -27,8 +25,6 @@ int set_slot_limit(char *request, job_array *pa);
 int setup_array_struct(job *pjob);
 
 /* static int is_num(char *str); */
-
-int array_request_token_count(char *str);
 
 /* static int array_request_parse_token(char *str, int *start, int *end); */
 
@@ -49,8 +45,6 @@ int modify_array_range(job_array *pa, char *range, svrattrl *plist, struct batch
 void update_array_values(job_array *pa,int old_state,enum ArrayEventsEnum event, char *job_id, long job_atr_hold, int job_exit_status);
 
 void update_array_statuses(job_array *owned);
-
-int num_array_jobs(char *req_str);
 
 void initialize_all_arrays_array();
 

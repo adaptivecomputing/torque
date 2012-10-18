@@ -239,8 +239,6 @@ int req_stat_job(
         {
         type = tjstArray;
         }
-      
-      pjob = find_array_template(name);
       }
     else
       {
@@ -250,10 +248,9 @@ int req_stat_job(
         {
         rc = PBSE_UNKJOBID;
         }
+      else
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       }
-   
-    if (pjob != NULL)
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     }
   else if (isalpha(name[0]))
     {
@@ -429,7 +426,8 @@ static void req_stat_job_step2(
   if (type == tjstArray)
     {
     pa = get_array(preq->rq_ind.rq_status.rq_id);
-    if(pa == NULL)
+
+    if (pa == NULL)
       {
       req_reject(PBSE_UNKARRAYID, 0, preq, NULL, "unable to find array");
       return;

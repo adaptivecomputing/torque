@@ -382,6 +382,9 @@ int process_node(
   snprintf(buf, sizeof(buf), "totmem=%llukb", mem_kb);
   copy_to_end_of_dynamic_string(status, buf);
 
+  snprintf(buf, sizeof(buf), "physmem=%llukb", mem_kb);
+  copy_to_end_of_dynamic_string(status, buf);
+
   if (rsv_id != NULL)
     {
     /* don't write the reservation id if we're in interactive mode */
@@ -396,6 +399,9 @@ int process_node(
 
     /* if there's a reservation on this node, the state is busy */
     copy_to_end_of_dynamic_string(status, "state=BUSY");
+    
+    snprintf(buf, sizeof(buf), "availmem=0kb");
+    copy_to_end_of_dynamic_string(status, buf);
     }
   else
     {
@@ -405,9 +411,19 @@ int process_node(
     
     if ((role_value != NULL) &&
         (!strcmp(role_value, interactive_caps)))
+      {
       append_dynamic_string(status, "DOWN");
+      
+      snprintf(buf, sizeof(buf), "availmem=0kb");
+      copy_to_end_of_dynamic_string(status, buf);
+      }
     else
+      {
       append_dynamic_string(status, attr_value);
+     
+      snprintf(buf, sizeof(buf), "availmem=%llukb", mem_kb);
+      copy_to_end_of_dynamic_string(status, buf);
+      }
 
     free(attr_value);
     }
