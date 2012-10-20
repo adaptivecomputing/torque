@@ -111,9 +111,9 @@ job *next_job_from_recycler(
   {
   job *pjob;
 
-  pthread_mutex_lock(aj->alljobs_mutex);
+  lock_alljobs_mutex(aj, __func__, NULL, LOGLEVEL);
   pjob = next_thing(aj->ra, iter);
-  pthread_mutex_unlock(aj->alljobs_mutex);
+  unlock_alljobs_mutex(aj, __func__, NULL, LOGLEVEL);
 
   if (pjob != NULL)
     lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);

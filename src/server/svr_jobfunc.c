@@ -640,7 +640,7 @@ int svr_dequejob(
   if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
     return(PBSE_JOBNOTFOUND);
 
-  if (LOGLEVEL >= 10)
+  if (LOGLEVEL >= 6)
     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
 
   if (parent_queue_mutex_held == FALSE)
@@ -2849,7 +2849,7 @@ int lock_ji_mutex(
   char *err_msg = NULL;
   char stub_msg[] = "no pos";
 
-  if (logging >= 20)
+  if (logging >= 10)
     {
     err_msg = (char *)calloc(1, MSG_LEN_LONG);
     if (msg == NULL)
@@ -2860,7 +2860,7 @@ int lock_ji_mutex(
 
   if (pthread_mutex_lock(pjob->ji_mutex) != 0)
     {
-    if (logging >= 20)
+    if (logging >= 10)
       {
       snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot lock job %s mutex in method %s",
                                    pjob->ji_qs.ji_jobid, id);
@@ -2888,7 +2888,7 @@ int unlock_ji_mutex(
   char *err_msg = NULL;
   char stub_msg[] = "no pos";
 
-  if (logging >= 20)
+  if (logging >= 10)
     {
     err_msg = (char *)calloc(1, MSG_LEN_LONG);
     if (msg == NULL)
@@ -2899,7 +2899,7 @@ int unlock_ji_mutex(
 
   if (pthread_mutex_unlock(pjob->ji_mutex) != 0)
     {
-    if (logging >= 20)
+    if (logging >= 10)
       {
       snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot unlock job %s mutex in method %s",
                                           pjob->ji_qs.ji_jobid, id);
@@ -2937,7 +2937,7 @@ int lock_ai_mutex(
 
   if (pthread_mutex_lock(pa->ai_mutex) != 0)
     {
-    if (logging >= 20)
+    if (logging >= 10)
       {
       snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot lock job array %s mutex in method %s",
                                    pa->ai_qs.parent_id, id);
@@ -2959,7 +2959,6 @@ int unlock_ai_mutex(
   const char *id,
   char       *msg,
   int        logging)
-
   {
   int rc = PBSE_NONE;
   char *err_msg = NULL;
@@ -2976,7 +2975,7 @@ int unlock_ai_mutex(
 
   if (pthread_mutex_unlock(pa->ai_mutex) != 0)
     {
-    if (logging >= 20)
+    if (logging >= 10)
       {
       snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot unlock job array %s mutex in method %s",
                                    pa->ai_qs.parent_id, id);
@@ -2990,6 +2989,81 @@ int unlock_ai_mutex(
 
   return rc;
   }
+
+int lock_alljobs_mutex(
+
+  struct all_jobs *aj,
+  const char      *id,
+  char            *msg,
+  int             logging)
+
+  {
+  int rc = PBSE_NONE;
+  char *err_msg = NULL;
+  char stub_msg[] = "no pos";
+
+  if (logging >= 10)
+    {
+    err_msg = (char *)calloc(1, MSG_LEN_LONG);
+    if (msg == NULL)
+      msg = stub_msg;
+    snprintf(err_msg, MSG_LEN_LONG, "locking alljobs_mutex");
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+    }
+
+  if (pthread_mutex_lock(aj->alljobs_mutex) != 0)
+    {
+    if (logging >= 10)
+      {
+      snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot lock alljobs_mutex"); 
+      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+      }
+    rc = PBSE_MUTEX;
+    }
+
+  if (err_msg != NULL)
+    free(err_msg);
+
+  return rc;
+  }
+
+
+int unlock_alljobs_mutex(
+
+  struct all_jobs *aj,
+  const char      *id,
+  char            *msg,
+  int             logging)
+  {
+  int rc = PBSE_NONE;
+  char *err_msg = NULL;
+  char stub_msg[] = "no pos";
+
+  if (logging >= 10)
+    {
+    err_msg = (char *)calloc(1, MSG_LEN_LONG);
+    if (msg == NULL)
+      msg = stub_msg;
+    snprintf(err_msg, MSG_LEN_LONG, "unlocking alljobs_mutex");
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+    }
+
+  if (pthread_mutex_unlock(aj->alljobs_mutex) != 0)
+    {
+    if (logging >= 10)
+      {
+      snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot unlock job alljobs_mutex");
+      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+      }
+    rc = PBSE_MUTEX;
+    }
+
+  if (err_msg != NULL)
+    free(err_msg);
+
+  return rc;
+  }
+
 
   
 #endif  /* NDEBUG */

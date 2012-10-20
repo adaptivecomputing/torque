@@ -425,6 +425,13 @@ int job_abt(
   job  *pjob = *pjobp;
   strcpy(job_id, pjob->ji_qs.ji_jobid);
 
+  if (LOGLEVEL >= 6)
+    {
+    sprintf(log_buf, "%s", job_id);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
+
+
   /* save old state and update state to Exiting */
 
   old_state = pjob->ji_qs.ji_state;
@@ -2118,7 +2125,7 @@ job *find_job_by_array(
   job *pj = NULL;
   int  i;
 
-  pthread_mutex_lock(aj->alljobs_mutex);
+  lock_alljobs_mutex(aj, __func__, NULL, LOGLEVEL);
   
   i = get_value_hash(aj->ht, job_id);
   
@@ -2127,7 +2134,7 @@ job *find_job_by_array(
   if (pj != NULL)
     lock_ji_mutex(pj, __func__, NULL, LOGLEVEL);
   
-  pthread_mutex_unlock(aj->alljobs_mutex);
+  unlock_alljobs_mutex(aj, __func__, NULL, LOGLEVEL);
   
   if (pj != NULL)
     {
@@ -2306,7 +2313,7 @@ int insert_job(
   {
   int           rc;
 
-  pthread_mutex_lock(aj->alljobs_mutex);
+  lock_alljobs_mutex(aj, __func__, NULL, LOGLEVEL);
 
   if ((rc = insert_thing(aj->ra,pjob)) == -1)
     {
@@ -2320,7 +2327,7 @@ int insert_job(
     rc = PBSE_NONE;
     }
 
-  pthread_mutex_unlock(aj->alljobs_mutex);
+  unlock_alljobs_mutex(aj, __func__, NULL, LOGLEVEL);
 
   return(rc);
   } /* END insert_job() */
@@ -2346,7 +2353,7 @@ int insert_job_after(
   int rc;
   int i;
 
-  pthread_mutex_lock(aj->alljobs_mutex);
+  lock_alljobs_mutex(aj, __func__, NULL, LOGLEVEL);
 
   i = get_value_hash(aj->ht,already_in->ji_qs.ji_jobid);
   
@@ -2366,7 +2373,7 @@ int insert_job_after(
       }
     }
 
-  pthread_mutex_unlock(aj->alljobs_mutex);
+  unlock_alljobs_mutex(aj, __func__, NULL, LOGLEVEL);
 
   return(rc);
   } /* END insert_job_after() */
@@ -2383,7 +2390,7 @@ int insert_job_after_index(
   {
   int rc;
 
-  pthread_mutex_lock(aj->alljobs_mutex);
+  lock_alljobs_mutex(aj, __func__, NULL, LOGLEVEL);
 
   if ((rc = insert_thing_after(aj->ra, pjob, index)) == -1)
     {
@@ -2396,7 +2403,7 @@ int insert_job_after_index(
     rc = PBSE_NONE;
     }
 
-  pthread_mutex_unlock(aj->alljobs_mutex);
+  unlock_alljobs_mutex(aj, __func__, NULL, LOGLEVEL);
 
   return(rc);
   } /* END insert_job_after_index() */
@@ -2415,7 +2422,7 @@ int insert_job_first(
   {
   int          rc;
 
-  pthread_mutex_lock(aj->alljobs_mutex);
+  lock_alljobs_mutex(aj, __func__, NULL, LOGLEVEL);
 
   if ((rc = insert_thing_after(aj->ra,pjob,ALWAYS_EMPTY_INDEX)) == -1)
     {
@@ -2428,7 +2435,7 @@ int insert_job_first(
     rc = PBSE_NONE;
     }
 
-  pthread_mutex_unlock(aj->alljobs_mutex);
+  unlock_alljobs_mutex(aj, __func__, NULL, LOGLEVEL);
 
   return(rc);
   } /* END insert_job_first () */
@@ -2451,19 +2458,19 @@ int get_jobs_index(
   if (pthread_mutex_trylock(aj->alljobs_mutex))
     {
     unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-    pthread_mutex_lock(aj->alljobs_mutex);
+    lock_alljobs_mutex(aj, __func__, NULL, LOGLEVEL);
     lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
     if (pjob->ji_being_recycled == TRUE)
       {
-      pthread_mutex_unlock(aj->alljobs_mutex);
+      unlock_alljobs_mutex(aj, __func__, NULL, LOGLEVEL);
       unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
       return(-1);
       }
     }
 
   index = get_value_hash(aj->ht, pjob->ji_qs.ji_jobid);
-  pthread_mutex_unlock(aj->alljobs_mutex);
+  unlock_alljobs_mutex(aj, __func__, NULL, LOGLEVEL);
 
   return(index);
   } /* END get_jobs_index() */
@@ -2489,12 +2496,12 @@ int has_job(
   if (pthread_mutex_trylock(aj->alljobs_mutex))
     {
     unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-    pthread_mutex_lock(aj->alljobs_mutex);
+    lock_alljobs_mutex(aj, __func__, NULL, LOGLEVEL);
     lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
     if (pjob->ji_being_recycled == TRUE)
       {
-      pthread_mutex_unlock(aj->alljobs_mutex);
+      unlock_alljobs_mutex(aj, __func__, NULL, LOGLEVEL);
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
       return(PBSE_JOB_RECYCLED);
@@ -2506,7 +2513,7 @@ int has_job(
   else
     rc = TRUE;
 
-  pthread_mutex_unlock(aj->alljobs_mutex);
+  unlock_alljobs_mutex(aj, __func__, NULL, LOGLEVEL);
 
   return(rc);
   } /* END has_job() */
@@ -2530,19 +2537,30 @@ int  remove_job(
   {
   int rc = PBSE_NONE;
   int index;
+  char log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (LOGLEVEL >= 10)
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
 
-  if (pthread_mutex_trylock(aj->alljobs_mutex))
+  rc = pthread_mutex_trylock(aj->alljobs_mutex);
+  if (rc != 0)
     {
     unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-    pthread_mutex_lock(aj->alljobs_mutex);
+    lock_alljobs_mutex(aj, __func__, NULL, LOGLEVEL);
     lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+
+    if (LOGLEVEL >= 7)
+      {
+      sprintf(log_buf, "trylock failed: %d", rc);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+      }
+    rc = PBSE_NONE;
+     
+    
 
     if (pjob->ji_being_recycled == TRUE)
       {
-      pthread_mutex_unlock(aj->alljobs_mutex);
+      unlock_alljobs_mutex(aj, __func__, NULL, LOGLEVEL);
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       return(PBSE_JOB_RECYCLED);
       }
@@ -2556,7 +2574,7 @@ int  remove_job(
     remove_hash(aj->ht,pjob->ji_qs.ji_jobid);
     }
 
-  pthread_mutex_unlock(aj->alljobs_mutex);
+  unlock_alljobs_mutex(aj, __func__, NULL, LOGLEVEL);
 
   return(rc);
   } /* END remove_job() */
@@ -2575,11 +2593,11 @@ job *next_job(
   char log_buf[LOCAL_LOG_BUF_SIZE];
   int  last_index = *iter;
 
-  pthread_mutex_lock(aj->alljobs_mutex);
+  lock_alljobs_mutex(aj, __func__, NULL, LOGLEVEL);
 
   pjob = (job *)next_thing(aj->ra,iter);
 
-  pthread_mutex_unlock(aj->alljobs_mutex);
+  unlock_alljobs_mutex(aj, __func__, NULL, LOGLEVEL);
 
   if (pjob != NULL)
     {
@@ -2615,13 +2633,13 @@ job *next_job_from_back(
   {
   job *pjob;
 
-  pthread_mutex_lock(aj->alljobs_mutex);
+  lock_alljobs_mutex(aj, __func__, NULL, LOGLEVEL);
 
   pjob = (job *)next_thing_from_back(aj->ra,iter);
   if (pjob != NULL)
     lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
-  pthread_mutex_unlock(aj->alljobs_mutex);
+  unlock_alljobs_mutex(aj, __func__, NULL, LOGLEVEL);
 
   if (pjob != NULL)
     {
@@ -2656,7 +2674,7 @@ int swap_jobs(
     aj = &alljobs;
     }
 
-  pthread_mutex_lock(aj->alljobs_mutex);
+  lock_alljobs_mutex(aj, __func__, NULL, LOGLEVEL);
 
   new2 = get_value_hash(aj->ht,job1->ji_qs.ji_jobid);
   new1 = get_value_hash(aj->ht,job2->ji_qs.ji_jobid);
@@ -2674,7 +2692,7 @@ int swap_jobs(
     change_value_hash(aj->ht,job2->ji_qs.ji_jobid,new2);
     }
 
-  pthread_mutex_unlock(aj->alljobs_mutex);
+  unlock_alljobs_mutex(aj, __func__, NULL, LOGLEVEL);
   
   return(rc);
   } /* END swap_jobs() */

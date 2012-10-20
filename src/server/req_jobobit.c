@@ -1997,6 +1997,7 @@ void on_job_exit_task(
 
   {
   char *jobid = ptask->wt_parm1;
+  job  *pjob = NULL;
 
   free(ptask->wt_mutex);
   free(ptask);
@@ -2004,6 +2005,13 @@ void on_job_exit_task(
   if (jobid != NULL)
     {
     on_job_exit(NULL, jobid);
+    pjob = svr_find_job(jobid, FALSE);
+    if(pjob)
+      {
+      if (pjob->ji_qs.ji_state == JOB_STATE_EXITING)
+        record_job_as_exiting(pjob);
+      unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+      }
     }
 
   } /* END on_job_exit_task() */
@@ -3237,7 +3245,11 @@ int req_jobobit(
 
     svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITING, FALSE);
 
-    record_job_as_exiting(pjob);
+    /* We will record_job_as_exiting after the call to on_job_exit_task
+       so we guarantee that this won't conflict with the exiting job
+       clearnup thread
+     */
+    /*record_job_as_exiting(pjob);*/
 
     if (alreadymailed == 0)
       svr_mailowner(pjob, MAIL_END, MAIL_NORMAL, mailbuf);

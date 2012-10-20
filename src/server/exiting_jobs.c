@@ -198,7 +198,7 @@ int check_exiting_jobs()
     
   while ((jeri = (job_exiting_retry_info *)next_from_hash_map(exiting_jobs_info, &iter)) != NULL)
     {
-    if (time_now - jeri->last_attempt > EXITING_RETRY_TIME)
+    if ((time_now - jeri->last_attempt) > (EXITING_RETRY_TIME * CLOCKS_PER_SEC))
       {
       if ((pjob = svr_find_job(jeri->jobid, TRUE)) == NULL)
         {
