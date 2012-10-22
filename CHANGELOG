@@ -103,6 +103,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       thread" tries to remove them. This prevents a deadlock when on_job_exit and the 
       cleanup thread try to run at the same time. I also changed the time comparision
       in check_exiting_jobs to use like units for the time comparison. TRQ-1306
+  c - Fix a double free if the same chan is stored on two tasks for a job. TRQ-1299.
 
 
 4.1.2
