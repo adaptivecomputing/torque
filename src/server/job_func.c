@@ -413,7 +413,6 @@ int job_abt(
   char  *text)  /* I (optional) */
 
   {
-  char *myid = "job_abt";
   char  log_buf[LOCAL_LOG_BUF_SIZE];
   int   old_state;
   int   old_substate;
@@ -463,7 +462,7 @@ int job_abt(
         {
         sprintf(log_buf, msg_abt_err, pjob->ji_qs.ji_jobid, old_substate);
         
-        log_err(-1, myid, log_buf);
+        log_err(-1, __func__, log_buf);
         
         if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
           {
@@ -515,7 +514,7 @@ int job_abt(
     sprintf(log_buf, msg_abt_err,
       pjob->ji_qs.ji_jobid,
       old_substate);
-    log_err(-1, myid, log_buf);
+    log_err(-1, __func__, log_buf);
     unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
     }
   else

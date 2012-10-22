@@ -115,7 +115,7 @@ int          issue_signal(job **, char *, void(*)(batch_request *), void *);
 
 static int shutdown_checkpoint(job **);
 static void post_checkpoint(batch_request *preq);
-static void rerun_or_kill(job *, char *text);
+void  rerun_or_kill(job **, char *text);
 
 /* Private Data Items */
 
@@ -276,10 +276,11 @@ void svr_shutdown(
       /* if no checkpoint (not supported, not allowed, or fails */
       /* rerun if possible, else kill job */
 
-      rerun_or_kill(pjob, msg_on_shutdown);
+      rerun_or_kill(&pjob, msg_on_shutdown);
       }
 
-    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+    if (pjob != NULL)
+      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
     }
 
   return;
@@ -483,7 +484,7 @@ void post_checkpoint(
       pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
 
       if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
-        rerun_or_kill(pjob, msg_on_shutdown);
+        rerun_or_kill(&pjob, msg_on_shutdown);
       }
     }
 
@@ -499,15 +500,16 @@ void post_checkpoint(
 
 /* NOTE:  pjob may be free with dangling pointer */
 
-static void rerun_or_kill(
+void rerun_or_kill(
 
-  job  *pjob,  /* I (modified/freed) */
-  char *text)  /* I */
+  job  **pjob_ptr, /* I (modified/freed) */
+  char  *text)     /* I */
 
   {
   long       server_state = SV_STATE_DOWN;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
   pbs_queue *pque;
+  job       *pjob = *pjob_ptr;
 
   get_svr_attr_l(SRV_ATR_State, &server_state);
   if (pjob->ji_wattr[JOB_ATR_rerunable].at_val.at_long)
@@ -540,7 +542,7 @@ static void rerun_or_kill(
       pjob->ji_qs.ji_jobid,
       log_buf);
 
-    job_abt(&pjob, log_buf);
+    job_abt(pjob_ptr, log_buf);
 
     return;
     }
