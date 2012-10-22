@@ -3071,7 +3071,11 @@ int req_jobobit(
     
     free_br(tmppreq);
     }
-
+#else
+   if (!have_resc_used) 
+     {
+       /* this is so higher versions of gcc won't abort because of the condition 'variable set but not used' */
+     }
 #endif    /* USESAVEDRESOURCES */
 
   safe_strncat(mailbuf, (acctbuf + accttail), sizeof(mailbuf) - strlen(mailbuf) - 1);
