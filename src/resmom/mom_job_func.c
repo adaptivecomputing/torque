@@ -195,9 +195,10 @@ void tasks_free(
   job *pj)
 
   {
-  task *tp = (task *)GET_NEXT(pj->ji_tasks);
-  obitent *op;
-  infoent *ip;
+  task            *tp = (task *)GET_NEXT(pj->ji_tasks);
+  obitent         *op;
+  infoent         *ip;
+  resizable_array *freed_chans = initialize_resizable_array(30);
 
   while (tp != NULL)
     {
@@ -227,8 +228,13 @@ void tasks_free(
 
     if (tp->ti_chan != NULL)
       {
-      close_conn(tp->ti_chan->sock, FALSE);
-      DIS_tcp_cleanup(tp->ti_chan);
+      if (is_present(freed_chans, tp->ti_chan) == FALSE)
+        {
+        close_conn(tp->ti_chan->sock, FALSE);
+        DIS_tcp_cleanup(tp->ti_chan);
+        insert_thing(freed_chans, tp->ti_chan);
+        }
+        
       tp->ti_chan = NULL;
       }
 
@@ -238,6 +244,8 @@ void tasks_free(
 
     tp = (task *)GET_NEXT(pj->ji_tasks);
     }  /* END while (tp != NULL) */
+
+  free_resizable_array(freed_chans);
 
   return;
   }  /* END tasks_free() */

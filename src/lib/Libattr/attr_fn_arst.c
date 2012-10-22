@@ -424,13 +424,13 @@ int encode_arst(
   int             perm)   /* only used for resources */
 
   {
-  char  *end;
-  int   i;
-  int   j;
+  char     *end;
+  int       i;
+  int       j;
   svrattrl *pal;
-  char  *pc;
-  char   *pfrom;
-  char   separator;
+  char     *pc;
+  char     *pfrom;
+  char      separator;
 
   if (attr == NULL)
     {
