@@ -665,7 +665,7 @@ pbs_queue *lock_queue_with_job_held(
   {
   char       jobid[PBS_MAXSVRJOBID + 1];
   job       *pjob = *pjob_ptr;
-  int       rc = PBSE_NONE;
+  int        rc = PBSE_NONE;
 
   if (pque != NULL)
     {
