@@ -1999,6 +1999,7 @@ void *on_job_exit_task(
   {
   struct work_task *ptask = (struct work_task *)vp;
   char *jobid = ptask->wt_parm1;
+  char  local_jobid[PBS_MAXSVRJOBID+1];
   job  *pjob = NULL;
 
   free(ptask->wt_mutex);
@@ -2006,9 +2007,11 @@ void *on_job_exit_task(
 
   if (jobid != NULL)
     {
+    snprintf(local_jobid, sizeof(local_jobid), "%s", jobid);
+
     on_job_exit(NULL, jobid);
 
-    pjob = svr_find_job(jobid, FALSE);
+    pjob = svr_find_job(local_jobid, FALSE);
     if (pjob)
       {
       if (pjob->ji_qs.ji_state == JOB_STATE_EXITING)
