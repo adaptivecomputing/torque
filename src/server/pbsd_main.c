@@ -1748,7 +1748,8 @@ int main(
     return(1);
     }
   
-  if (check_network_port(pbs_server_port_dis) != 0)
+  if ((check_network_port(pbs_server_port_dis) != PBSE_NONE) &&
+      (!high_availability_mode))
     {
     perror("pbs_server port already bound");
 
