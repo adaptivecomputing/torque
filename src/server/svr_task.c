@@ -264,7 +264,7 @@ void dispatch_task(
   pthread_mutex_unlock(ptask->wt_mutex);
 
   if (ptask->wt_func != NULL)
-    enqueue_threadpool_request((void *(*)(void *))ptask->wt_func,ptask);
+    enqueue_threadpool_request((void *(*)(void *))ptask->wt_func, ptask);
 
   return;
   }  /* END dispatch_task() */

@@ -160,6 +160,7 @@ extern void cleanup_restart_file(job *);
 void        on_job_exit(batch_request *preq, char *jobid);
 int         kill_job_on_mom(char *jobid, struct pbsnode *pnode);
 void        handle_complete_second_time(struct work_task *ptask);
+void       *on_job_exit_task(void *vp);
 
 /*
  * setup_from - setup the "from" name for a standard job file:
@@ -636,7 +637,7 @@ struct batch_request *cpy_stage(
 int mom_comm(
 
   job *pjob,
-  void (*func)(batch_request *, char *))
+  void *(*func)(void *))
 
   {
   unsigned int      dummy;
@@ -694,7 +695,7 @@ int mom_comm(
           "cannot establish connection with mom for clean-up - will retry later");
       }
 
-    set_task(WORK_Timed, time_now + PBS_NET_RETRY_TIME, func, strdup(pjob->ji_qs.ji_jobid), FALSE);
+    set_task(WORK_Timed, time_now + PBS_NET_RETRY_TIME, (void (*)())func, strdup(jobid), FALSE);
 
     return(-1);
     }
@@ -976,7 +977,7 @@ int handle_returnstd(
         free(preq->rq_extra);
       preq->rq_extra = strdup(job_id);
 
-      if ((handle = mom_comm(pjob, on_job_exit)) < 0)
+      if ((handle = mom_comm(pjob, on_job_exit_task)) < 0)
         {
         unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
 
@@ -1128,7 +1129,7 @@ int handle_stageout(
       
       preq->rq_extra = strdup(job_id);
       
-      if ((handle = mom_comm(pjob, on_job_exit)) < 0) /* Error */
+      if ((handle = mom_comm(pjob, on_job_exit_task)) < 0) /* Error */
         {
         unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
 
@@ -1365,7 +1366,7 @@ int handle_stagedel(
       preq->rq_type = PBS_BATCH_DelFiles;
       preq->rq_extra = strdup(job_id);
       
-      if ((handle = mom_comm(pjob, on_job_exit)) < 0)
+      if ((handle = mom_comm(pjob, on_job_exit_task)) < 0)
         {
         unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
@@ -1493,7 +1494,7 @@ int handle_exited(
     {
     strcpy(preq->rq_ind.rq_delete.rq_objname, job_id);
     
-    if ((handle = mom_comm(pjob, on_job_exit)) < 0)
+    if ((handle = mom_comm(pjob, on_job_exit_task)) < 0)
       {
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
@@ -1993,11 +1994,12 @@ void on_job_exit(
 
 
 
-void on_job_exit_task(
+void *on_job_exit_task(
 
-  struct work_task *ptask)
+  void *vp)
 
   {
+  struct work_task *ptask = (struct work_task *)vp;
   char *jobid = ptask->wt_parm1;
 
   free(ptask->wt_mutex);
@@ -2008,15 +2010,17 @@ void on_job_exit_task(
     on_job_exit(NULL, jobid);
     }
 
+  return(NULL);
   } /* END on_job_exit_task() */
 
 
 
-void on_job_rerun_task(
+void *on_job_rerun_task(
 
-  struct work_task *ptask)
+  void *vp)
 
   {
+  struct work_task *ptask = (struct work_task *)vp;
   char *jobid = ptask->wt_parm1;
 
   free(ptask->wt_mutex);
@@ -2026,6 +2030,8 @@ void on_job_rerun_task(
     {
     on_job_rerun(NULL, jobid);
     }
+
+  return(NULL);
   } /* END on_job_rerun_task() */
 
 
@@ -2086,7 +2092,7 @@ void on_job_rerun(
     return;
     }
 
-  if ((handle = mom_comm(pjob, on_job_rerun)) < 0)
+  if ((handle = mom_comm(pjob, on_job_rerun_task)) < 0)
     {
     unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     if (preq != NULL)
@@ -2761,7 +2767,7 @@ int rerun_job(
   
   svr_setjobstate(pjob, JOB_STATE_EXITING, pjob->ji_qs.ji_substate, FALSE);
   
-  set_task(WORK_Immed, 0, on_job_rerun_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
+  set_task(WORK_Immed, 0, (void (*)())on_job_rerun_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
   
   if (LOGLEVEL >= 4)
     {
@@ -3365,7 +3371,7 @@ int req_jobobit(
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, log_buf);
       }
     
-    set_task(WORK_Immed, 0, on_job_exit_task, strdup(job_id), 0);
+    set_task(WORK_Immed, 0, (void (*)())on_job_exit_task, strdup(job_id), 0);
     }
 
   return(PBSE_NONE);
