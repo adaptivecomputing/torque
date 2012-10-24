@@ -94,6 +94,8 @@
 #endif /* _POSIX_MEMLOCK */
 
 #define MAX_UPDATES_BEFORE_SENDING  20
+#define PMOMTCPTIMEOUT 60  /* duration in seconds mom TCP requests will block */
+
 /* Global Data Items */
 
 char  *program_name;
@@ -225,12 +227,12 @@ int      is_login_node   = FALSE;
 
 extern char *server_alias;
 extern unsigned int pe_alarm_time;
-extern time_t   pbs_tcp_timeout;
 extern long     MaxConnectTimeout;
 
 extern resizable_array *received_statuses;
 extern hash_table_t    *received_table;
 
+time_t          pbs_tcp_timeout = PMOMTCPTIMEOUT;
 char            tmpdir_basename[MAXPATHLEN];  /* for $TMPDIR */
 
 char            rcp_path[MAXPATHLEN];
@@ -294,7 +296,6 @@ static void mom_lock(int fds, int op);
 int setup_nodeboards();
 #endif /* NUMA_SUPPORT */
 
-#define PMOMTCPTIMEOUT 60  /* duration in seconds mom TCP requests will block */
 
 
 /* Local Data Items */
