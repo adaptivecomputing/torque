@@ -5718,6 +5718,10 @@ int tm_request(
 
 done:
 
+  free(jobid);
+
+  free(cookie);
+
   if (reply)
     {
     DBPRT(("%s: REPLY %s\n",
@@ -5733,12 +5737,9 @@ done:
               log_buffer);
 
       close_conn(fd);
+      return(-1);
       }
     }
-
-  free(jobid);
-
-  free(cookie);
 
   return(0);
 
