@@ -1141,15 +1141,15 @@ int pbs_original_connect(
                 errno,
                 strerror(errno));
               }
+            pthread_mutex_unlock(connection[out].ch_mutex);
+            return(-1 * local_errno);
             }
-          pthread_mutex_unlock(connection[out].ch_mutex);
-          return(-1 * local_errno);
-          }
-        else
-          {
-          retries++;
-          usleep(1000);
-          continue;
+            else
+              {
+              retries++;
+              usleep(1000);
+              continue;
+              }
           }
         }
 #else  
