@@ -108,6 +108,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       MAX_RETRIES (5) times before returning failure. This will
       reduce the number of client commands that fail due to a connection
       failure. TRQ-1355
+  b - Fix the proliferation of "Non-digit found where a digit was expected" messages, due
+      to an off-by-one error. TRQ-1230.
 
 
 4.1.2

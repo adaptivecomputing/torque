@@ -23,7 +23,7 @@ int disrsi_(
   int       c;
   unsigned  locval;
   unsigned  ndigs;
-  char     *cp;
+  char     *cp = NULL;
   char      scratch[DIS_BUFSIZ];
 
   if (negate == NULL)
@@ -69,9 +69,7 @@ int disrsi_(
       do
         {
         if (((c = *cp++) < '0') || (c > '9'))
-          {
           return(DIS_NONDIGIT);
-          }
 
         locval = 10 * locval + c - '0';
         }
@@ -140,6 +138,7 @@ int disrsi_(
       break;
 
     default:
+
       return(DIS_NONDIGIT);
       break;
     }

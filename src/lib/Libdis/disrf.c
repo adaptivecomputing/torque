@@ -113,14 +113,14 @@ static double dval;
 static int disrd_(
 
   struct tcp_chan *chan,
-  unsigned int count)
+  unsigned int     count)
 
   {
-  int  c;
-  int  negate;
+  int           c;
+  int           negate;
   unsigned int  unum;
-  char  *cp;
-  char scratch[DIS_BUFSIZ];
+  char         *cp = NULL;
+  char          scratch[DIS_BUFSIZ];
 
   if (dis_umaxd == 0)
     disiui_();

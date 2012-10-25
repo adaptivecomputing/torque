@@ -105,7 +105,7 @@
 
 int decode_DIS_ReqHdr(
 
-  struct tcp_chan *chan,
+  struct tcp_chan      *chan,
   struct batch_request *preq,
   int                  *proto_type,
   int                  *proto_ver)

@@ -482,7 +482,6 @@ int reroute_job(
       (pque->qu_qs.qu_type == QTYPE_RoutePush))
     {
     rc = job_route(pjob);
-    
 
     if (rc == PBSE_ROUTEREJ)
       {
