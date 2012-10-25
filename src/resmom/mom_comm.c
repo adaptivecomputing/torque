@@ -7502,6 +7502,14 @@ tm_req_finish:
         close_conn(ptask->ti_chan->sock, FALSE);
         ptask->ti_chan = NULL;
         }
+
+      if (jobid)
+        free(jobid);
+
+      if (cookie)
+        free(cookie);
+
+      return(-1);
       }
     }
   
