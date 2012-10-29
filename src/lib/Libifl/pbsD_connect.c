@@ -1093,7 +1093,6 @@ int pbs_original_connect(
           }
         else
           {
-          fprintf(stderr, "Trying again");
           retries++;
           usleep(1000);
           continue;

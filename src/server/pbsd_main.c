@@ -255,7 +255,7 @@ int                     queue_rank = 0;
 int                     a_opt_init = -1;
 int                     wait_for_moms_hierarchy = FALSE;
 
-int                     route_retry_interval = 5; /* time in seconds to check routing queues */
+int                     route_retry_interval = 10; /* time in seconds to check routing queues */
 /* HA global data items */
 long                    HALockCheckTime = 0;
 long                    HALockUpdateTime = 0;
@@ -1145,8 +1145,6 @@ void send_any_hellos_needed()
   } /* END send_any_hellos_needed() */
 
 
-
-
 void *handle_queue_routing_retries(
 
   void *vp)
@@ -1155,13 +1153,24 @@ void *handle_queue_routing_retries(
   pbs_queue *pque;
   char       *queuename;
   int        iter = -1;
-  char       log_buf[LOCAL_LOG_BUF_SIZE];
+  void       *status;
+  pthread_t  queue_route_thread_id = -1;
+  pthread_attr_t queue_route_attr;
 
-  if (LOGLEVEL>=7)
+
+  if ((pthread_attr_init(&queue_route_attr)) != 0)
     {
-    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, " ");
-    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_QUEUE, __func__, log_buf);
+    perror("pthread_attr_init failed. handle_queue_routing_retries not started");
+    log_err(-1, msg_daemonname, "pthread_attr_init failed. handle_queue_routing_retries not started");
+    return(NULL);
     }
+  else if (pthread_attr_setdetachstate(&queue_route_attr, PTHREAD_CREATE_JOINABLE) != 0)
+    {
+    perror("pthread_attr_setdetachstate failed. handle_queue_routing_retries not started");
+    log_err(-1, msg_daemonname, "pthread_attr_setdetachstate failed. handle_queue_routing_retries not started");
+    return(NULL);
+    }
+
 
   while(1)
     {
@@ -1171,18 +1180,17 @@ void *handle_queue_routing_retries(
       if (pque->qu_qs.qu_type == QTYPE_RoutePush)
         {
         queuename = strdup(pque->qu_qs.qu_name); /* make sure this gets freed inside queue_route */
-        unlock_queue(pque, __func__, NULL, LOGLEVEL);
-        enqueue_threadpool_request(queue_route, queuename);
+        unlock_queue(pque, __func__, NULL, 0);
+        pthread_create(&queue_route_thread_id, &queue_route_attr, queue_route, queuename);
+        pthread_join(queue_route_thread_id, &status);
         }
       else
-        unlock_queue(pque, __func__, NULL, LOGLEVEL);
+        unlock_queue(pque, __func__, NULL, 0);
       }
     }
 
   return(NULL);
   } /* END handle_queue_routing_retries() */
-
-
 
 
 void *handle_scheduler_contact(

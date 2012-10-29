@@ -103,6 +103,8 @@
 #include "array.h"
 #include "svr_func.h" /* get_svr_attr_* */
 #include "ji_mutex.h"
+#include "req_register.h"
+#include "pbs_job.h"
 
 #define SYNC_SCHED_HINT_NULL 0
 #define SYNC_SCHED_HINT_FIRST 1
@@ -118,10 +120,9 @@
 extern int issue_to_svr(char *svr, struct batch_request *, void (*func)(struct work_task *));
 extern long calc_job_cost(job *);
 
-
 /* Local Private Functions */
 
-void set_depend_hold(job *, pbs_attribute *);
+void set_depend_hold(char *, pbs_attribute *);
 static int register_sync(struct depend *,  char *child, char *host, long);
 static int register_dep(pbs_attribute *, struct batch_request *, int, int *);
 static int unregister_dep(pbs_attribute *, struct batch_request *);
@@ -175,16 +176,17 @@ int req_register(
 
   {
   int                   made;
-  pbs_attribute        *pattr;
+  pbs_attribute        *pattr = NULL;
 
-  struct depend        *pdep;
+  struct depend        *pdep = NULL;
 
-  struct depend_job    *pdj;
+  struct depend_job    *pdj = NULL;
   job                  *pjob;
   char                 *ps;
   int                   rc = PBSE_NONE;
   int                   revtype;
   int                   type;
+  char                  job_id[PBS_MAXSVRJOBID + 1];
   char                  log_buf[LOCAL_LOG_BUF_SIZE + 1];
 
   /*  make sure request is from a server */
@@ -194,6 +196,12 @@ int req_register(
     req_reject(PBSE_IVALREQ, 0, preq, NULL, NULL);
 
     return(PBSE_IVALREQ);
+    }
+
+  if (LOGLEVEL >= 10)
+    {
+    snprintf(log_buf, sizeof(log_buf), "rq_parent: %s", preq->rq_ind.rq_register.rq_parent);
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_QUEUE, __func__, log_buf);
     }
 
   /* find the "parent" job specified in the request */
@@ -460,7 +468,12 @@ int req_register(
 
                 del_depend(pdep);
 
-                set_depend_hold(pjob, pattr);
+                snprintf(job_id, sizeof(job_id), "%s", pjob->ji_qs.ji_jobid);
+                unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+                set_depend_hold(job_id, pattr);
+                pjob = svr_find_job(job_id, TRUE);
+                if (pjob == NULL)
+                  rc = PBSE_JOBNOTFOUND;
                 }
 
               break;
@@ -483,7 +496,12 @@ int req_register(
             char tmpcoststr[64];
             pdep->dp_released = 1;
 
-            set_depend_hold(pjob, pattr);
+            snprintf(job_id, sizeof(job_id), "%s", pjob->ji_qs.ji_jobid);
+            unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+            set_depend_hold(job_id, pattr);
+            pjob = svr_find_job(job_id, TRUE);
+            if (pjob == NULL)
+              rc = PBSE_JOBNOTFOUND;
 
             sprintf(tmpcoststr, "%ld", preq->rq_ind.rq_register.rq_cost);
             pjob->ji_wattr[JOB_ATR_sched_hint].at_val.at_str =
@@ -568,7 +586,12 @@ int req_register(
         unregister_dep(pattr, preq);
         }
 
-      set_depend_hold(pjob, pattr);
+      snprintf(job_id, sizeof(job_id), "%s", pjob->ji_qs.ji_jobid);
+      unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
+      set_depend_hold(job_id, pattr);
+      pjob = svr_find_job(job_id, TRUE);
+      if (pjob == NULL)
+        rc = PBSE_JOBNOTFOUND;
 
       break;
 
@@ -865,6 +888,7 @@ void set_array_depend_holds(
   job_array *pa)
 
   {
+  char job_id[PBS_MAXSVRJOBID + 1];
   int  compareNumber;
 
   job *pjob;
@@ -962,7 +986,9 @@ void set_array_depend_holds(
           /* release the array's hold - set_depend_hold
            * will clear holds if there are no other dependencies
            * logged in set_depend_hold */
-          set_depend_hold(pjob,&pjob->ji_wattr[JOB_ATR_depend]);
+          snprintf(job_id, sizeof(job_id), "%s",  pjob->ji_qs.ji_jobid);
+          unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+          set_depend_hold(job_id,&pjob->ji_wattr[JOB_ATR_depend]);
           }
 
         unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
@@ -1039,9 +1065,9 @@ void post_doq(
           pjob->ji_modified = 1;
           }
 
-        set_depend_hold(pjob, pattr);
-
         unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+        set_depend_hold(jobid, pattr);
+
         }
       }
     }
@@ -1136,9 +1162,12 @@ int depend_on_que(
   int                type;
   job               *pjob = (job *)pj;
   pbs_queue         *pque = get_jobs_queue(&pjob);
-  char job_id[PBS_MAXSVRJOBID+1];
+  char               job_id[PBS_MAXSVRJOBID+1];
 
   strcpy(job_id, pjob->ji_qs.ji_jobid);
+
+  if (LOGLEVEL >= 10)
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, job_id);
 
   if (pque == NULL)
     {
@@ -1170,9 +1199,8 @@ int depend_on_que(
     }
 
   /* First set a System hold if required */
-
   unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
-  set_depend_hold(pjob, pattr);
+  set_depend_hold(job_id, pattr);
   if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
     return PBSE_JOBNOTFOUND;
 
@@ -1592,13 +1620,14 @@ static void release_cheapest(
 
 void set_depend_hold(
 
-  job           *pjob,
+  char          *job_id,
   pbs_attribute *pattr)
 
   {
   int  loop = 1;
   int  newstate;
   int  newsubst;
+  job  *pjob;
 
   struct depend *pdp = NULL;
 
@@ -1606,6 +1635,13 @@ void set_depend_hold(
 
   struct job *djp = NULL;
   int  substate = -1;
+
+  if (LOGLEVEL >= 10)
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, __func__, job_id);
+
+  pjob = svr_find_job(job_id, TRUE);
+  if (pjob == NULL)
+    return;
 
   if (pattr->at_flags & ATR_VFLAG_SET)
     pdp = (struct depend *)GET_NEXT(pattr->at_val.at_list);
@@ -1644,7 +1680,14 @@ void set_depend_hold(
 
         if (djob)
           {
-          djp = svr_find_job(djob->dc_child, TRUE);
+          int jobids_match = 0;
+
+          /* if dc_child is the same job id as pjob don't
+             lock the job. It is already locked */
+          if (strcmp(djob->dc_child, pjob->ji_qs.ji_jobid))
+            djp = svr_find_job(djob->dc_child, TRUE);
+          else
+            jobids_match = 1;
 
           if (!djp ||
               ((pdp->dp_type == JOB_DEPEND_TYPE_AFTERSTART) &&
@@ -1665,8 +1708,10 @@ void set_depend_hold(
             substate = JOB_SUBSTATE_DEPNHOLD;
             }
 
-          if (djp != NULL)
+          if ((djp != NULL) && (jobids_match == 0))
             unlock_ji_mutex(djp, __func__, "1", LOGLEVEL);
+          else
+            jobids_match = 0;
           }
 
         break;
@@ -1681,6 +1726,7 @@ void set_depend_hold(
 
     pdp = (struct depend *)GET_NEXT(pdp->dp_link);
     }  /* END while ((pdp != NULL) && (loop != 0)) */
+
 
   if (substate == -1)
     {
@@ -1725,6 +1771,8 @@ void set_depend_hold(
 
     svr_setjobstate(pjob, JOB_STATE_HELD, substate, FALSE);
     }
+
+  unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
   return;
   }  /* END set_depend_hold() */
@@ -1781,6 +1829,13 @@ static struct depend *find_depend(
   {
 
   struct depend *pdep = NULL;
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
+
+  if (LOGLEVEL >= 10)
+    {
+    snprintf(log_buf, sizeof(log_buf), "type: %d", type);
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
 
   if (pattr->at_flags & ATR_VFLAG_SET)
     {
@@ -2126,6 +2181,13 @@ int send_depend_req(
     log_err(errno, __func__, msg_err_malloc);
     unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     return(PBSE_SYSTEM);
+    }
+
+  if (LOGLEVEL >= 10)
+    {
+    snprintf(log_buf, sizeof(log_buf), "type: %d - job: %s - parent job: %s", 
+        type, pjob->ji_qs.ji_jobid, pparent->dc_child);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
 
   for (i = 0;i < PBS_MAXUSER;++i)

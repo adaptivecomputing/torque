@@ -202,6 +202,75 @@ int unlock_queue(
   return rc;
   }
 
+int lock_allques_mutex(
+
+  all_queues       *all_ques,
+  const char       *id,
+  char             *msg,
+  int               logging)
+
+  {
+  int rc = PBSE_NONE;
+  char *err_msg = NULL;
+
+  if (logging >= 10)
+    { 
+    err_msg = (char *)calloc(1, MSG_LEN_LONG);
+    snprintf(err_msg, MSG_LEN_LONG, "locking allques_mutex in method %s", id);
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_QUEUE, __func__, err_msg);
+    }
+
+  if (pthread_mutex_lock(all_ques->allques_mutex) != 0)
+    { 
+    if (logging >= 10) 
+      {
+      snprintf(err_msg, MSG_LEN_LONG, "alert: cannot lock allques_mutex in method %s", id);
+      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_QUEUE, __func__, err_msg);
+      }
+    rc = PBSE_MUTEX;
+    } 
+
+  if (err_msg != NULL)
+    free(err_msg);
+
+  return rc;
+  }
+
+int unlock_allques_mutex(
+
+  all_queues       *all_ques,
+  const char       *id,
+  char             *msg,
+  int               logging)
+
+  {
+  int rc = PBSE_NONE;
+  char *err_msg = NULL;
+
+  if (logging >= 10)
+    { 
+    err_msg = (char *)calloc(1, MSG_LEN_LONG);
+    snprintf(err_msg, MSG_LEN_LONG, "unlocking allques_mutex in method %s", id);
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, err_msg);
+    }
+
+  if (pthread_mutex_unlock(all_ques->allques_mutex) != 0)
+    { 
+    if (logging >= 10) 
+      {
+      snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot unlock allques_mutex in method %s", id);
+      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, err_msg);
+      }
+    rc = PBSE_MUTEX;
+    } 
+
+  if (err_msg != NULL)
+    free(err_msg);
+
+  return rc;
+  }
+
+
 
 /*
  * que_alloc - allocate space for a queue structure and initialize
@@ -394,7 +463,7 @@ pbs_queue *find_queuebyname(
   if (pc != NULL)
     *pc = '\0';
 
-  pthread_mutex_lock(svr_queues.allques_mutex);
+  lock_allques_mutex(&svr_queues, __func__, NULL, LOGLEVEL);
 
   i = get_value_hash(svr_queues.ht,qname);
 
@@ -406,7 +475,7 @@ pbs_queue *find_queuebyname(
   if (pque != NULL)
     lock_queue(pque, __func__, NULL, LOGLEVEL);
 
-  pthread_mutex_unlock(svr_queues.allques_mutex);
+  unlock_allques_mutex(&svr_queues, __func__, NULL, LOGLEVEL);
   
   if (pque != NULL)
     {
@@ -484,7 +553,7 @@ int insert_queue(
   {
   int          rc;
 
-  pthread_mutex_lock(aq->allques_mutex);
+  lock_allques_mutex(aq, __func__, NULL, LOGLEVEL);
 
   if ((rc = insert_thing(aq->ra,pque)) == -1)
     {
@@ -497,7 +566,7 @@ int insert_queue(
     rc = PBSE_NONE;
     }
 
-  pthread_mutex_unlock(aq->allques_mutex);
+  unlock_allques_mutex(aq, __func__, NULL, LOGLEVEL);
 
   return(rc);
   } /* END insert_queue() */
@@ -519,7 +588,7 @@ int remove_queue(
   if (pthread_mutex_trylock(aq->allques_mutex))
     {
     unlock_queue(pque, __func__, NULL, LOGLEVEL);
-    pthread_mutex_lock(aq->allques_mutex);
+    lock_allques_mutex(aq, __func__, "1", LOGLEVEL);
     lock_queue(pque, __func__, NULL, LOGLEVEL);
     }
 
@@ -534,7 +603,7 @@ int remove_queue(
   snprintf(log_buf, sizeof(log_buf), "index = %d, name = %s", index, pque->qu_qs.qu_name);
   log_err(-1, __func__, log_buf);
 
-  pthread_mutex_unlock(aq->allques_mutex);
+  unlock_allques_mutex(aq, __func__, "2", LOGLEVEL);
 
   return(rc);
   } /* END remove_queue() */
@@ -551,12 +620,12 @@ pbs_queue *next_queue(
   {
   pbs_queue *pque;
 
-  pthread_mutex_lock(aq->allques_mutex);
+  lock_allques_mutex(aq, __func__, NULL, LOGLEVEL);
 
   pque = (pbs_queue *)next_thing(aq->ra,iter);
   if (pque != NULL)
     lock_queue(pque, "next_queue", NULL, LOGLEVEL);
-  pthread_mutex_unlock(aq->allques_mutex);
+  unlock_allques_mutex(aq, __func__, NULL, LOGLEVEL);
 
   if (pque != NULL)
     {
@@ -612,7 +681,7 @@ int get_parent_dest_queues(
   *parent = NULL;
   *dest   = NULL;
 
-  pthread_mutex_lock(svr_queues.allques_mutex);
+  lock_allques_mutex(&svr_queues, __func__, NULL, LOGLEVEL);
 
   index_parent = get_value_hash(svr_queues.ht, queue_parent_name);
   index_dest   = get_value_hash(svr_queues.ht, queue_dest_name);
@@ -645,7 +714,7 @@ int get_parent_dest_queues(
       }
     }
 
-  pthread_mutex_unlock(svr_queues.allques_mutex);
+  unlock_allques_mutex(&svr_queues, __func__, NULL, LOGLEVEL);
 
   if ((*pjob_ptr = svr_find_job(jobid, TRUE)) == NULL)
     rc = -1;
@@ -669,6 +738,8 @@ pbs_queue *lock_queue_with_job_held(
 
   if (pque != NULL)
     {
+    if (LOGLEVEL >= 10 )
+      log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_QUEUE, __func__, pque->qu_qs.qu_name);
     rc = pthread_mutex_trylock(pque->qu_mutex);
     if (rc != 0)
       {

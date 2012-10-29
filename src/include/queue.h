@@ -251,6 +251,8 @@ struct job;
 pbs_queue *lock_queue_with_job_held(pbs_queue *pque, struct job **pjob_ptr);
 int lock_queue(struct pbs_queue *the_queue, const char *method_name, char *msg, int logging);
 int unlock_queue(struct pbs_queue *the_queue, const char *method_name, char *msg, int logging);
+int lock_allques_mutex(all_queues *all_ques, const char *method_name, char *msg, int logging);
+int unlock_allques_mutex(all_queues *all_ques, const char *method_name, char *msg, int logging);
 pbs_queue *next_queue(all_queues *,int *);
 int        insert_queue(all_queues *,pbs_queue *);
 int        remove_queue(all_queues *,pbs_queue *);

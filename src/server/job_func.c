@@ -2756,6 +2756,9 @@ pbs_queue *get_jobs_queue(
   job       *pjob = *pjob_ptr;
   pbs_queue *pque;
 
+  if (LOGLEVEL >= 10)
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
+
   pque = lock_queue_with_job_held(pjob->ji_qhdr, pjob_ptr);
 
   return(pque);

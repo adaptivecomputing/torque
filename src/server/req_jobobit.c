@@ -1848,6 +1848,12 @@ void on_job_exit(
     return;
     }
 
+  if (LOGLEVEL >= 10)
+    {
+    snprintf(log_buf, sizeof(log_buf), "%s", job_id);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
+
   /* make sure the job is actually still there */
   pjob = svr_find_job(job_id, TRUE);
 

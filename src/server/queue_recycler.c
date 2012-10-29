@@ -39,11 +39,11 @@ pbs_queue *next_queue_from_recycler(
   {
   pbs_queue *pq;
 
-  pthread_mutex_lock(aq->allques_mutex);
+  lock_allques_mutex(aq, __func__, NULL, LOGLEVEL);
   pq = next_thing(aq->ra, iter);
   if (pq != NULL)
     lock_queue(pq, __func__, NULL, LOGLEVEL);
-  pthread_mutex_unlock(aq->allques_mutex);
+  unlock_allques_mutex(aq, __func__, NULL, LOGLEVEL);
 
   return(pq);
   } /* END next_queue_from_recycler() */

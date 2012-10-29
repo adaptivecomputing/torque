@@ -2180,6 +2180,10 @@ int req_commit(
 
   if ((pque = get_jobs_queue(&pj)) != NULL)
     {
+    /* None of the queue information we are accessing in 
+       this segment is volatile. Unlock the queue so we
+       don't deadlock in job_route */
+    unlock_queue(pque, __func__, log_buf, LOGLEVEL);
     if ((preq->rq_fromsvr == 0) &&
         (pque->qu_qs.qu_type == QTYPE_RoutePush) &&
         (pque->qu_attr[QA_ATR_Started].at_val.at_long != 0))
@@ -2188,7 +2192,6 @@ int req_commit(
         {
         snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "can not route job %s",
             pj->ji_qs.ji_jobid);
-        unlock_queue(pque, __func__, log_buf, LOGLEVEL);
 
         if (LOGLEVEL >= 6)
           {
@@ -2209,7 +2212,6 @@ int req_commit(
       pj->ji_wattr[JOB_ATR_jobname].at_val.at_str,
       pque->qu_qs.qu_name);
 
-    unlock_queue(pque, __func__, "route success", LOGLEVEL);
     }
 
 #ifdef AUTORUN_JOBS

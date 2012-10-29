@@ -639,6 +639,11 @@ int svr_dequejob(
   char           log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* remove job from server's all job list and reduce server counts */
+  if (LOGLEVEL >= 10)
+    {
+    snprintf(log_buf, sizeof(log_buf), "%s", job_id);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
 
   if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
     return(PBSE_JOBNOTFOUND);
