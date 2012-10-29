@@ -4052,12 +4052,6 @@ void main_func(
   char **envp)  /* I */
 
   {
-  /**
-   * Before we go to the trouble of allocating memory, initializing structures,
-   * and setting up for ordinary workflow, check options to see if we'll be
-   * short-circuiting. If yes, then we'll exit without ever returning to main_func.
-   */
-  process_early_opts(argc, argv);
 
   int               errflg;                         /* option error */
   char              script[MAXPATHLEN + 1] = ""; /* name of script file */
@@ -4085,6 +4079,13 @@ void main_func(
   int               debug = FALSE;
   job_info          ji;
 
+  /**
+   * Before we go to the trouble of allocating memory, initializing structures,
+   * and setting up for ordinary workflow, check options to see if we'll be
+   * short-circuiting. If yes, then we'll exit without ever returning to main_func.
+   */
+  process_early_opts(argc, argv);
+  
   memset(&ji, 0, sizeof(job_info));
   if (memmgr_init(&ji.mm, 8192) != PBSE_NONE)
     {
