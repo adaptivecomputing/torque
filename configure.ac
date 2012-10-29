@@ -68,6 +68,15 @@ dnl  for each compile, use a file called "pbs_config.h" that will
 dnl  be created in the include directory.
 AM_CONFIG_HEADER([src/include/pbs_config.h])
 
+dnl
+dnl Find our svn revision number for program outputs
+dnl
+AC_PATH_PROG(svnversioncommand, svnversion)
+if test "X$svnversioncommand" != "X" && test `$svnversioncommand -n '.'` != "exported"; then
+  AC_DEFINE_UNQUOTED(SVN_VERSION, ["`svnversion -n`"], [repository svn version])
+fi
+
+
 
 dnl
 dnl  ######################################################################

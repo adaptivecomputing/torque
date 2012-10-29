@@ -2206,8 +2206,8 @@ int main(
 
         if ((optarg != NULL) && !strcmp(optarg, "version"))
           {
-          fprintf(stderr, "version: %s\n",
-                  PACKAGE_VERSION);
+          fprintf(stderr, "Version: %s\nRevision: %s\n",
+            PACKAGE_VERSION, SVN_VERSION);
 
           exit(0);
           }
