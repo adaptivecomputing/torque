@@ -4020,12 +4020,18 @@ void add_variable_list(
  * This function should exit() if a short-circuit turns out to be what
  * the user requested.
  */
-void process_early_opts(int argc, char ** argv)
+void process_early_opts(
+    
+  int    argc,
+  char **argv)
+
   {
   int i;
+
   for (i = 0; i < argc; ++i)
     {
-    char const * name = argv[i];
+    char const *name = argv[i];
+
     if (name[0] == '-' && name[1] == '-')
       {
       name += 2;
@@ -4038,7 +4044,10 @@ void process_early_opts(int argc, char ** argv)
         }
       }
     }
-  } /* end process_early_opts() */
+  } /* END process_early_opts() */
+
+
+
 
 /** 
  * qsub main 
