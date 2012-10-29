@@ -89,6 +89,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Put the ability to write the resources_used data to the accounting logs. This was in 4.1.1 
       and 4.1.2 but failed to make it into 4.1.3. TRQ-1329
   c - Fix a double free if the same chan is stored on two tasks for a job. TRQ-1299.
+  b - Fix the proliferation of "Non-digit found where a digit was expected" messages, due
+      to an off-by-one error. TRQ-1230.
 
 4.1.2
   e - Add the ability to run a single job partially on CRAY hardware and partially

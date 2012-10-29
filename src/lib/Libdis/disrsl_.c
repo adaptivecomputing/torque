@@ -234,7 +234,6 @@ int disrsl_(
           if (((c = *++cp) < '0') || (c > '9'))
             {
             /* FAILURE */
-
             return(DIS_NONDIGIT);
             }
 

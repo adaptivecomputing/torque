@@ -199,7 +199,7 @@ int svr_movejob(
   if (LOGLEVEL >= 7)
     {
     sprintf(log_buf, "%s", jobp->ji_qs.ji_jobid);
-    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
 
  if (strlen(destination) >= (size_t)PBS_MAXROUTEDEST)

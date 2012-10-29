@@ -123,13 +123,13 @@ int decode_DIS_attrl(
   struct attrl  *patprior = NULL;
   int   rc;
 
-
   numpat = disrui(chan, &rc);
 
   if (rc) return rc;
 
   for (i = 0; i < numpat; ++i)
     {
+
     disrui(chan, &rc); /* name_len is unusued here */
 
     if (rc) break;

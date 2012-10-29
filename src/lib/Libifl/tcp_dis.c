@@ -214,18 +214,23 @@ int tcp_read(
     switch (rc)
       {
       case PBSE_TIMEOUT:
+
         chan->IsTimeout = 1;
-        /* This return 0. This isn't accurate on a timeout */
-/*        rc = 0; */
+
         break;
+
       default:
+
         chan->SelectErrno = rc;
         chan->ReadErrno = rc;
+
         break;
       }
+
     if (new_data != NULL)
       free(new_data);
-    return rc;
+
+    return(rc);
     }
   /* data read is less than buffer size */
   else if (max_read_len > *read_len)
@@ -246,7 +251,7 @@ int tcp_read(
     free(new_data);
     }
   /* data read is greater than buffer size */
-  else if (max_read_len < *read_len)
+  else if (max_read_len <= *read_len)
     {
     newsize = (tdis_buf_len + *read_len) * 2;
     if ((ptr = (char *)calloc(1, newsize+1)) == NULL)
@@ -281,8 +286,6 @@ int tcp_read(
 
     free(new_data);
     }
-  else
-    free(new_data);
 
   return(rc);
   }  /* END tcp_read() */
@@ -436,14 +439,14 @@ int tcp_rskip(
 int tcp_gets(
 
   struct tcp_chan *chan,
-  char   *str,
-  size_t  ct)
+  char            *str,
+  size_t           ct)
 
   {
-  int rc = 0;
+  int               rc = 0;
   struct tcpdisbuf *tp;
-  long long data_read = 0;
-  long long data_avail = 0;
+  long long         data_read = 0;
+  long long         data_avail = 0;
 
   tp = &chan->readbuf;
   /* length of usable data in current buffer */

@@ -100,7 +100,7 @@ int disrl_(
   int                c;
   int                negate;
   unsigned           unum;
-  char              *cp;
+  char              *cp = NULL;
   dis_long_double_t  fpnum;
   char               scratch[DIS_BUFSIZ];
 
@@ -193,7 +193,7 @@ int disrl_(
             break;
 
           default:
-
+          
             return(DIS_NONDIGIT);
 
             /*NOTREACHED*/

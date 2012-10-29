@@ -311,6 +311,7 @@ int svr_enquejob(
 
   /* make sure queue is still there, there exists a small window ... */
   strcpy(job_id, pjob->ji_qs.ji_jobid);
+  /* ji_qs.ji_queue now holds the name of the destination queue */
   strcpy(queue_name, pjob->ji_qs.ji_queue);
   unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
   pque = find_queuebyname(queue_name);
@@ -608,6 +609,8 @@ int svr_enquejob(
     
     unlock_queue(pque, __func__, "route job", LOGLEVEL);
     }
+  else
+    unlock_queue(pque, __func__, "pull queue", LOGLEVEL);
 
   return(PBSE_NONE);
   }  /* END svr_enquejob() */

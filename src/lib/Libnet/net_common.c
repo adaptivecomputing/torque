@@ -607,7 +607,7 @@ int socket_read(
   long long  *str_len)
 
   {
-  int rc = PBSE_NONE;
+  int       rc = PBSE_NONE;
   long long avail_bytes = socket_avail_bytes_on_descriptor(socket);
   long long byte_count = 0;
 
