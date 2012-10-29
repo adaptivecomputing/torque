@@ -8,6 +8,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Merged changes for revision 7000 by hand because the merge was not clean. This
       fixes problems with a deadlock when doing job dependencies using synccount/syncwith.
       TRQ-1374
+  b - Fix a segfault in req_jobobit due to an off-by-one error. TRQ-1361.
 
 4.1.3
   b - fix a security loophole that potentially allowed an interactive job to run 

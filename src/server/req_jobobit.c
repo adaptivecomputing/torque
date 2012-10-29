@@ -558,7 +558,7 @@ struct batch_request *cpy_stage(
       {
       /* FAILURE */
 
-      snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot copy stage file for job %s", pjob->ji_qs.ji_jobid);
+      snprintf(log_buf, sizeof(log_buf), "cannot copy stage file for job %s", pjob->ji_qs.ji_jobid);
 
       log_event(
         PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
@@ -1205,7 +1205,7 @@ int handle_stageout(
         {
         safe_strncat(log_buf,
           preq->rq_reply.brp_un.brp_txt.brp_str,
-          LOCAL_LOG_BUF_SIZE - strlen(log_buf) - 1);
+          sizeof(log_buf) - strlen(log_buf) - 1);
         }
       
       if ((pjob = svr_find_job(job_id, TRUE)) == NULL)
@@ -1410,13 +1410,13 @@ int handle_stagedel(
     if (preq->rq_reply.brp_code != 0)
       {
       /* an error occurred */
-      snprintf(log_buf, LOCAL_LOG_BUF_SIZE, msg_obitnodel, job_id, job_momname);
+      snprintf(log_buf, sizeof(log_buf), msg_obitnodel, job_id, job_momname);
       
       log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,job_id,log_buf);
       
       if (LOGLEVEL >= 3)
         {
-        snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+        snprintf(log_buf, sizeof(log_buf),
           "request to remove stage-in files failed on node '%s' for job %s%s",
           job_momname,
           job_id,
@@ -1432,7 +1432,7 @@ int handle_stagedel(
       if (preq->rq_reply.brp_choice == BATCH_REPLY_CHOICE_Text)
         {
         safe_strncat(log_buf, preq->rq_reply.brp_un.brp_txt.brp_str,
-          LOCAL_LOG_BUF_SIZE - strlen(log_buf) - 1);
+          sizeof(log_buf) - strlen(log_buf) - 1);
         }
       
       if ((pjob = svr_find_job(job_id, TRUE)) == NULL)
@@ -1506,7 +1506,7 @@ int handle_exited(
 
       if ((rc = issue_Drequest(handle, preq)) != PBSE_NONE)
         {
-        snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "DeleteJob issue_Drequest failure, rc = %d", rc);
+        snprintf(log_buf, sizeof(log_buf), "DeleteJob issue_Drequest failure, rc = %d", rc);
 
         log_event(
             PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
@@ -2148,7 +2148,7 @@ void on_job_rerun(
 
           if (pjob == NULL)
             {
-            snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Job %s removed during call to issue_Drequest", job_id );
+            snprintf(log_buf, sizeof(log_buf), "Job %s removed during call to issue_Drequest", job_id );
             log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
   
             free(job_id);
@@ -2167,7 +2167,7 @@ void on_job_rerun(
           
           if (LOGLEVEL >= 3)
             {
-            snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+            snprintf(log_buf, sizeof(log_buf),
               "request to save output files failed on node '%s' for job %s%s",
               pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
               pjob->ji_qs.ji_jobid,
@@ -2240,7 +2240,7 @@ void on_job_rerun(
             /* error from MOM */
             if (LOGLEVEL >= 3)
               {
-              snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+              snprintf(log_buf, sizeof(log_buf),
                 "request to save stageout files failed on node '%s' for job %s%s",
                 pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
                 pjob->ji_qs.ji_jobid,
@@ -2253,7 +2253,7 @@ void on_job_rerun(
                 log_buf);
               }
             
-            snprintf(log_buf, LOCAL_LOG_BUF_SIZE, msg_obitnocpy,
+            snprintf(log_buf, sizeof(log_buf), msg_obitnocpy,
               pjob->ji_qs.ji_jobid,
               pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
 
@@ -2268,7 +2268,7 @@ void on_job_rerun(
               safe_strncat(
                 log_buf,
                 preq->rq_reply.brp_un.brp_txt.brp_str,
-                LOCAL_LOG_BUF_SIZE - strlen(log_buf) - 1);
+                sizeof(log_buf) - strlen(log_buf) - 1);
               }
             
             svr_mailowner(pjob, MAIL_OTHER, MAIL_FORCE, log_buf);
@@ -2338,7 +2338,7 @@ void on_job_rerun(
               }
             
             /* for now, just log it */
-            snprintf(log_buf, LOCAL_LOG_BUF_SIZE, msg_obitnocpy,
+            snprintf(log_buf, sizeof(log_buf), msg_obitnocpy,
               pjob->ji_qs.ji_jobid,
               pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
             
@@ -2381,7 +2381,7 @@ void on_job_rerun(
 
         if (rc != 0)
           {
-          snprintf(log_buf, LOCAL_LOG_BUF_SIZE, 
+          snprintf(log_buf, sizeof(log_buf), 
             "DeleteJob issue_Drequest failure, rc = %d",
             rc);
 
@@ -2394,7 +2394,7 @@ void on_job_rerun(
 
         if ((pjob = svr_find_job(job_id, TRUE)) == NULL)
           {
-          snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Job %s removed during call to issue_Drequest", job_id);
+          snprintf(log_buf, sizeof(log_buf), "Job %s removed during call to issue_Drequest", job_id);
           log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
           
           free(job_id);
