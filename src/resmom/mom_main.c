@@ -6672,8 +6672,8 @@ void parse_command_line(
           }
         else if (!strcmp(optarg, "version"))
           {
-          printf("version: %s\n",
-                 PACKAGE_VERSION);
+          printf("Version: %s\nRevision: %s\n",
+            PACKAGE_VERSION, SVN_VERSION);
 
           exit(0);
           }

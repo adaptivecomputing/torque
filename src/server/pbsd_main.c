@@ -680,8 +680,8 @@ void parse_command_line(
 
         if (!strcmp(optarg, "version"))
           {
-          fprintf(stderr, "version: %s\n",
-                  PACKAGE_VERSION);
+          fprintf(stderr, "Version: %s\nRevision: %s \n",
+            PACKAGE_VERSION, SVN_VERSION);
 
           exit(0);
           }
