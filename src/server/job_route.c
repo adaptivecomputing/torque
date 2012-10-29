@@ -116,7 +116,7 @@
 #include "ji_mutex.h"
 #include "queue_func.h" /*find_queuebyname */
 
-#define ROUTE_RETRY_TIME 30
+#define ROUTE_RETRY_TIME 10
 
 /* External functions called */
 int svr_movejob(job *, char *, int *, struct batch_request *, int);
@@ -484,12 +484,20 @@ int reroute_job(
     rc = job_route(pjob);
 
     if (rc == PBSE_ROUTEREJ)
+      {
+      unlock_queue(pque, __func__, "1", LOGLEVEL);
       job_abt(&pjob, pbse_to_txt(PBSE_ROUTEREJ));
+      }
     else if (rc == PBSE_ROUTEEXPD)
+      {
+      unlock_queue(pque, __func__, "1", LOGLEVEL);
       job_abt(&pjob, msg_routexceed);
+      }
     else if (rc == PBSE_QUENOEN)
+      {
+      unlock_queue(pque, __func__, "1", LOGLEVEL);
       job_abt(&pjob, msg_err_noqueue);
-
+      }
     }
 
   return(rc);      
@@ -532,6 +540,12 @@ void *queue_route(
     sprintf(log_buf, "NULL queue name");
     log_err(-1, __func__, log_buf);
     return(NULL);
+    }
+
+  if (LOGLEVEL >= 7)
+    {
+    snprintf(log_buf, sizeof(log_buf), "queue name: %s", queue_name);
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_QUEUE, __func__, log_buf);
     }
   
   pthread_mutex_lock(reroute_job_mutex);

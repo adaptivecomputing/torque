@@ -1419,6 +1419,12 @@ void mgr_queue_set(
   int        iter = -1;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
 
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buf, "from user %s", preq->rq_user);
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_QUEUE, __func__, log_buf);
+    }
+
   if ((*preq->rq_ind.rq_manager.rq_objname == '\0') ||
       (*preq->rq_ind.rq_manager.rq_objname == '@'))
     {
@@ -1531,6 +1537,12 @@ void mgr_queue_unset(
   int    rc;
   int    iter = -1;
   char   log_buf[LOCAL_LOG_BUF_SIZE];
+
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buf, "from user %s", preq->rq_user);
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_QUEUE, __func__, log_buf);
+    }
 
   if ((*preq->rq_ind.rq_manager.rq_objname == '\0') ||
       (*preq->rq_ind.rq_manager.rq_objname == '@'))

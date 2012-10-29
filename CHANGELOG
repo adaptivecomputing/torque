@@ -94,6 +94,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   c - Fix a double free if the same chan is stored on two tasks for a job. TRQ-1299.
   b - Fix the proliferation of "Non-digit found where a digit was expected" messages, due
       to an off-by-one error. TRQ-1230.
+  b - Fixed a deadlock caused by queue not getting released when jobs are aborted when
+      moving jobs from a routing queue to an execution queue. TRQ-1344.
 
 4.1.2
   e - Add the ability to run a single job partially on CRAY hardware and partially

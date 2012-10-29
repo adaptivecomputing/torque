@@ -200,6 +200,7 @@ int req_stat_job(
   pbs_queue            *pque = NULL;
   int                   rc = PBSE_NONE;
   long                  poll_jobs = 0;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   enum TJobStatTypeEnum type = tjstNONE;
 
@@ -207,6 +208,12 @@ int req_stat_job(
    * first, validate the name of the requested object, either
    * a job, a queue, or the whole server.
    */
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buf, "note");
+    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
+
 
   /* FORMAT:  name = { <JOBID> | <QUEUEID> | '' } */
 
