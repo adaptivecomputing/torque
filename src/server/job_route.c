@@ -484,20 +484,11 @@ int reroute_job(
     rc = job_route(pjob);
 
     if (rc == PBSE_ROUTEREJ)
-      {
-      unlock_queue(pque, __func__, "1", LOGLEVEL);
       job_abt(&pjob, pbse_to_txt(PBSE_ROUTEREJ));
-      }
     else if (rc == PBSE_ROUTEEXPD)
-      {
-      unlock_queue(pque, __func__, "1", LOGLEVEL);
       job_abt(&pjob, msg_routexceed);
-      }
     else if (rc == PBSE_QUENOEN)
-      {
-      unlock_queue(pque, __func__, "1", LOGLEVEL);
       job_abt(&pjob, msg_err_noqueue);
-      }
     }
 
   return(rc);      
