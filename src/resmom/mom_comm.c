@@ -8404,6 +8404,83 @@ void send_update_soon()
 
 
 
+received_node *get_received_node_entry(
+
+  char *str,
+  int  *is_new)
+
+  {
+  received_node  *rn;
+  int             index;
+  char           *hostname;
+
+  if ((str == NULL) ||
+      (is_new == NULL))
+    return(NULL);
+
+  hostname = str + strlen("node=");
+
+  /* get the old node for this table if present. If not, create a new one */
+  index = get_value_hash(received_table, hostname);
+  
+  if (index == -1)
+    {
+    *is_new = TRUE;
+
+    rn = calloc(1, sizeof(received_node));
+    
+    if (rn == NULL)
+      {
+      log_err(ENOMEM, __func__, "No memory to allocate for status information\n");
+      return(NULL);
+      }
+    
+    /* initialize the received node struct */
+    rn->statuses = get_dynamic_string(MAXLINE,NULL);
+    strcpy(rn->hostname,hostname);
+    
+    if (rn->statuses == NULL)
+      {
+      log_err(ENOMEM, __func__, "No memory to allocate for status information\n");
+      free(rn);
+      return(NULL);
+      }
+    
+    rn->hellos_sent = 0;
+
+    if (LOGLEVEL >= 7)
+      {
+      snprintf(log_buffer,sizeof(log_buffer),
+        "Received first status from mom %s",
+        hostname);
+
+      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
+      }
+    }
+  else
+    {
+    *is_new = FALSE;
+
+    rn = (received_node *)received_statuses->slots[index].item;
+    
+    /* make sure we aren't hold 2 statuses for the same node */
+    clear_dynamic_string(rn->statuses);
+
+    if (LOGLEVEL >= 10)
+      {
+      snprintf(log_buffer,sizeof(log_buffer),
+        "Received status update from mom %s",
+        hostname);
+      
+      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
+      }
+    }
+
+  return(rn);
+  } /* END get_received_node_entry() */
+
+
+
 
 /*
  * reads the status strings sent from another mom
@@ -8419,12 +8496,11 @@ int read_status_strings(
   int              version)  /* I */
 
   {
-  unsigned short  is_new = FALSE;
+  int             is_new = FALSE;
+  int             any_new = FALSE;
   int             rc;
   int             index;
   char           *str;
-  char           *hostname = NULL;
-  char           *node_str = NULL;
   received_node  *rn;
  
   /* was mom_port but storage unnecessary */ 
@@ -8434,82 +8510,12 @@ int read_status_strings(
     {
     /* was rm_port but no longer needed to be stored */   
     disrsi(chan,&rc);
-
-    if (rc == DIS_SUCCESS)
-      {
-      node_str = disrst(chan,&rc);
-
-      if (rc == DIS_SUCCESS)
-        hostname = node_str + strlen("node=");
-      }
     }
 
   if (rc != DIS_SUCCESS)
     {
-    if (node_str != NULL)
-      free(node_str);
-
     return(rc);
     }
-  
-  /* get the old node for this table if present. If not, create a new one */
-  index = get_value_hash(received_table,hostname);
-  
-  if (index == -1)
-    {
-    rn = calloc(1, sizeof(received_node));
-    
-    if (rn == NULL)
-      {
-      log_err(ENOMEM, __func__, "No memory to allocate for status information\n");
-      return(ENOMEM);
-      }
-    
-    /* initialize the received node struct */
-    rn->statuses = get_dynamic_string(MAXLINE,NULL);
-    strcpy(rn->hostname,hostname);
-    
-    if (rn->statuses == NULL)
-      {
-      log_err(ENOMEM, __func__, "No memory to allocate for status information\n");
-      free(rn);
-      return(ENOMEM);
-      }
-    
-    rn->hellos_sent = 0;
-
-    if (LOGLEVEL >= 7)
-      {
-      snprintf(log_buffer,sizeof(log_buffer),
-        "Received first status from mom %s",
-        hostname);
-
-      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
-      }
-    
-    is_new = TRUE;
-    }
-  else
-    {
-    rn = (received_node *)received_statuses->slots[index].item;
-    
-    /* make sure we aren't hold 2 statuses for the same node */
-    clear_dynamic_string(rn->statuses);
-
-    if (LOGLEVEL >= 10)
-      {
-      snprintf(log_buffer,sizeof(log_buffer),
-        "Received status update from mom %s",
-        hostname);
-      
-      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
-      }
-    }
-  
-  /* append the node name string to the front first */
-  copy_to_end_of_dynamic_string(rn->statuses,node_str);
-  
-  free(node_str);
   
   /* read each string */
   while (((str = disrst(chan,&rc)) != NULL) &&
@@ -8521,6 +8527,29 @@ int read_status_strings(
       free(str);
       str = NULL;
       break;
+      }
+
+    if (!strncmp(str, "node=", strlen("node=")))
+      {
+      if ((rn != NULL) &&
+          (is_new == TRUE))
+        {
+        any_new = TRUE;
+
+        /* add the previous status to the received nodes list */
+        index = insert_thing(received_statuses, rn);
+
+        if (index == -1)
+          log_err(ENOMEM, __func__, "No memory to resize the received_statuses array...SYSTEM FAILURE\n");
+        else
+          {
+          add_hash(received_table, index, rn->hostname);
+          
+          send_update_soon();
+          }
+        }
+
+      rn = get_received_node_entry(str, &is_new);
       }
 
     /* place each string into the buffer */
@@ -8539,22 +8568,7 @@ int read_status_strings(
     write_tcp_reply(chan, IS_PROTOCOL, IS_PROTOCOL_VER, IS_STATUS, PBSE_NONE);
     updates_waiting_to_send++;
   
-    if (is_new == TRUE)
-      {
-      int index = insert_thing(received_statuses, rn);
-      
-      if (index == -1)
-        {
-        log_err(ENOMEM, __func__, "No memory to resize the received_statuses array...SYSTEM FAILURE\n");
-        }
-      else
-        {
-        add_hash(received_table, index, rn->hostname);
-        
-        send_update_soon();
-        }
-      }
-    else if (updates_waiting_to_send >= maxupdatesbeforesending)
+    if (updates_waiting_to_send >= maxupdatesbeforesending)
       {
       if (LOGLEVEL >= 3)
         {
