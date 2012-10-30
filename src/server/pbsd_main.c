@@ -1380,6 +1380,7 @@ int main(
 
   ProgName = argv[0];
 
+  memset(&server, 0, sizeof(struct server));
   initialize_globals();
   time_now = time((time_t *)0);
   set_globals_from_environment();

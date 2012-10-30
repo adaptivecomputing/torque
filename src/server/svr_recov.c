@@ -803,6 +803,9 @@ int svr_recov_xml(
   /* adjust end for the newline character preceeding the close server tag */
   end--;
 
+  server.sv_qs.sv_numjobs = 0; 
+  server.sv_qs.sv_numque = server.sv_qs.sv_jobidnumber = 0;
+
   while (current < end)
     {
     if (get_parent_and_child(current,&parent,&child,&current))
