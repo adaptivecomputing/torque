@@ -4828,7 +4828,7 @@ int rm_request(
                   }
                 else
                   {
-                  MUSNPrintF(&BPtr, &BSpace, "ALERT:  stdout/stderr spool directory '%s' is full.\nFree space then restart both the programs pbs_server and pbs_mom.\n",
+                  MUSNPrintF(&BPtr, &BSpace, "ALERT:  stdout/stderr spool directory '%s' is full.\nFree space then restart the pbs_mom.\n",
                              path_spool);
                   }
                 }
