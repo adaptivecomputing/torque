@@ -74,6 +74,8 @@ dnl
 AC_PATH_PROG(svnversioncommand, svnversion)
 if test "X$svnversioncommand" != "X" && test `$svnversioncommand -n '.'` != "exported"; then
   AC_DEFINE_UNQUOTED(SVN_VERSION, ["`svnversion -n`"], [repository svn version])
+else
+  AC_DEFINE_UNQUOTED(SVN_VERSION, ["unknown"], [repository svn version])
 fi
 
 
