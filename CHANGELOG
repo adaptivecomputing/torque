@@ -11,6 +11,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Fix a segfault in req_jobobit due to an off-by-one error. TRQ-1361.
   e - Add the svn revision to --version outputs. TRQ-1357.
   b - Fix a race condition in mom hierarchy reporting. TRQ-1378.
+  b - Fixed pbs_mom so epilogue will only run once. TRQ-1134
   b - Fix some debug output escaping into job output. TRQ-1360.
 
 4.1.3

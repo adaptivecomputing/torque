@@ -828,11 +828,7 @@ int run_epilogues(
       {
       log_err(-1, __func__, "user epilog failed - interactive job");
       }
-
-    if (run_pelog(PE_EPILOG, path_epilog, pjob, PE_IO_TYPE_NULL) != 0)
-      {
-      log_err(-1, __func__, "system epilog failed - interactive job");
-      }
+    /* let preobit_reply run the epilogue */
     }
   else
     {
@@ -861,11 +857,7 @@ int run_epilogues(
       log_err(-1, __func__, "user epilog failed");
       }
 
-    if ((rc = run_pelog(PE_EPILOG, path_epilog, pjob, PE_IO_TYPE_STD)) != 0)
-      {
-      sprintf(log_buffer, "system epilog failed w/rc=%d", rc);
-      log_err(-1, __func__, log_buffer);
-      }
+    /* let the epilogue be run in preobit_reply */
     }    /* END else (jobisinteractive) */
 
   return(PBSE_NONE);
