@@ -799,7 +799,6 @@ int run_epilogues(
   {
   char     *path_epiloguserjob;
   resource *presc; 
-  int       rc;
 
   /* check epilog script */
 

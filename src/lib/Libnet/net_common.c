@@ -459,35 +459,31 @@ int socket_wait_for_read(
   pfd.events = POLLIN | POLLHUP; /* | POLLRDNORM; */
   pfd.revents = 0;
 
-  while (pfd.revents == 0)
+  ret = poll(&pfd, 1, pbs_tcp_timeout * 1000); /* poll's timeout is in milliseconds */
+  if (ret > 0)
     {
-    ret = poll(&pfd, 1, pbs_tcp_timeout * 1000); /* poll's timeout is in milliseconds */
-    if (ret > 0)
+    char buf[8];
+    if (recv(socket, buf, 7, MSG_PEEK | MSG_DONTWAIT) == 0)
       {
-      char buf[8];
-      if (recv(socket, buf, 7, MSG_PEEK | MSG_DONTWAIT) == 0)
-        {
-        /* This will only occur when the socket has closed */
-        rc = PBSE_SOCKET_CLOSE;
-        break;
-        }
-      else
-        break; /* data exists */
+      /* This will only occur when the socket has closed */
+      rc = PBSE_SOCKET_CLOSE;
       }
-    else if (ret == 0)
+    }
+  else if (ret == 0)
+    {
+    /* Server timeout reached */
+    rc = PBSE_TIMEOUT;
+    }
+  else /* something bad happened to poll */
+    {
+    if (pfd.revents & POLLNVAL)
       {
-      /* Server timeout reached */
-      rc = PBSE_TIMEOUT;
-      break;
+      rc = PBSE_SOCKET_CLOSE;
       }
-    else /* something bad happened to poll */
+    else
       rc = PBSE_SOCKET_DATA;
     }
 
-  if (pfd.revents & POLLNVAL)
-    {
-    rc = PBSE_SOCKET_CLOSE;
-    }
 
   return(rc);
   } /* END socket_wait_for_read() */
