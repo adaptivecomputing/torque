@@ -8497,7 +8497,6 @@ int read_status_strings(
 
   {
   int             is_new = FALSE;
-  int             any_new = FALSE;
   int             rc;
   int             index;
   char           *str;
@@ -8534,7 +8533,6 @@ int read_status_strings(
       if ((rn != NULL) &&
           (is_new == TRUE))
         {
-        any_new = TRUE;
 
         /* add the previous status to the received nodes list */
         index = insert_thing(received_statuses, rn);
