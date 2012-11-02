@@ -169,12 +169,20 @@ resizable_array *parse_exec_hosts(
 
 
 
+
+/*
+ * save_current_reserve_param
+ *
+ * @param nppn - the number of cores to use per node, or -1 if the alps 
+ * request shouldn't specify this.
+ */
+
 int save_current_reserve_param(
 
   dynamic_string *command,
   dynamic_string *node_list,
   unsigned int    width,
-  unsigned int    nppn)
+  int             nppn)
 
   {
   char            buf[MAXLINE * 2];
@@ -182,7 +190,11 @@ int save_current_reserve_param(
 
   /* print out the current reservation param element */
   /* place everything up to the node list */
-  snprintf(buf, sizeof(buf), APBASIL_RESERVE_PARAM_BEGIN, width, nppn);
+  if (nppn == -1)
+    snprintf(buf, sizeof(buf), APBASIL_RESERVE_PARAM_BEGIN_SANS_NPPN, width);
+  else
+    snprintf(buf, sizeof(buf), APBASIL_RESERVE_PARAM_BEGIN, width, nppn);
+
   rc = append_dynamic_string(command, buf);
   
   /* add the node list */
@@ -202,19 +214,20 @@ int save_current_reserve_param(
 int create_reserve_params_from_host_req_list(
 
   resizable_array *host_req_list, /* I */
+  int              use_nppn,      /* I */
   dynamic_string  *command)       /* O */
 
   {
   dynamic_string *node_list = get_dynamic_string(-1, NULL);
   host_req       *hr;
-  unsigned int    nppn = 0;
+  int             nppn = 0;
   unsigned int    width = 0;
   int             iter = -1;
   
   while ((hr = (host_req *)next_thing(host_req_list, &iter)) != NULL)
     {
     width += hr->ppn;
-    nppn = MAX(nppn,hr->ppn);
+    nppn = MAX((unsigned int)nppn, hr->ppn);
     
     if (node_list->used != 0)
       append_dynamic_string(node_list, ",");
@@ -223,11 +236,15 @@ int create_reserve_params_from_host_req_list(
     
     free_host_req(hr);
     }
+
+  if (use_nppn == FALSE)
+    nppn = -1;
   
   save_current_reserve_param(command, node_list, width, nppn);
 
   return(PBSE_NONE);
   } /* END create_reserve_params_from_host_req_list() */
+
 
 
 
@@ -274,7 +291,8 @@ dynamic_string *get_reservation_command(
   char            *jobid,
   char            *apbasil_path,
   char            *apbasil_protocol,
-  char            *multi_req_list)
+  char            *multi_req_list,
+  int              use_nppn)
 
   {
   dynamic_string *command = get_dynamic_string(-1, NULL);
@@ -292,10 +310,11 @@ dynamic_string *get_reservation_command(
 
   if (multi_req_list == NULL)
     {
-    create_reserve_params_from_host_req_list(host_req_list, command);
+    create_reserve_params_from_host_req_list(host_req_list, use_nppn, command);
     }
   else
     {
+    /* no need to account for use_nppn here, this path always should */
     create_reserve_params_from_multi_req_list(multi_req_list, command);
     }
 
@@ -621,6 +640,17 @@ int confirm_reservation(
 
 
 
+/*
+ * create_alps_reservation
+ * 
+ * @param use_nppn - specifies whether or not to place nppn='X' in the alps request. 
+ * If the user requested their resources using -l procs we shouldn't specify nppn because
+ * if there are nodes of different core counts this can cause alps failures, because the
+ * nppn would be the number of cores of the largest nodes, causing alps to reject the 
+ * smaller nodes.
+ * specify 
+ */
+
 int create_alps_reservation(
 
   char       *exec_hosts,
@@ -629,6 +659,7 @@ int create_alps_reservation(
   char       *apbasil_path,
   char       *apbasil_protocol,
   long long   pagg_id_value,
+  int         use_nppn,
   char      **reservation_id)
 
   {
@@ -654,13 +685,13 @@ int create_alps_reservation(
       return(PBSE_NONE);
       }
   
-    command = get_reservation_command(host_req_list, user, jobid, apbasil_path, apbasil_protocol, NULL);
+    command = get_reservation_command(host_req_list, user, jobid, apbasil_path, apbasil_protocol, NULL, use_nppn);
   
     free_resizable_array(host_req_list);
     }
   else
     {
-    command = get_reservation_command(NULL, user, jobid, apbasil_path, apbasil_protocol, exec_hosts);
+    command = get_reservation_command(NULL, user, jobid, apbasil_path, apbasil_protocol, exec_hosts, use_nppn);
     }
 
   free(user);
@@ -676,8 +707,6 @@ int create_alps_reservation(
       usleep(100);
     }
 
-  free_dynamic_string(command);
-
   if (rc == PBSE_NONE)
     {
     rc = 1;
@@ -692,7 +721,20 @@ int create_alps_reservation(
       if (rc != PBSE_NONE)
         usleep(100);
       }
+
+    snprintf(log_buffer, sizeof(log_buffer),
+      "Successful reservation command is: %s", command->str);
+    log_err(-1, __func__, log_buffer);
+
     }
+  else if (LOGLEVEL >= 7)
+    {
+    snprintf(log_buffer, sizeof(log_buffer),
+      "Failed reservation command is: %s", command->str);
+    log_err(-1, __func__, log_buffer);
+    }
+
+  free_dynamic_string(command);
 
   return(rc);
   } /* END create_alps_reservation() */

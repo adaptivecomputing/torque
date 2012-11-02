@@ -16,6 +16,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Fixed a problem where server threads all get stuck in a poll. The problem
       was an infinite loop created in socket_wait_for_read if poll return -1.
       TRQ-1382
+  b - Fix a Cray-mode bug with jobs ending immediately when spanning nodes of 
+      different proc counts when specifying -l procs. TRQ-1365.
 
 4.1.3
   b - fix a security loophole that potentially allowed an interactive job to run 

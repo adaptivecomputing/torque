@@ -650,7 +650,7 @@ static void req_stat_job_step2(
           (pque->qu_qs.qu_type != QTYPE_Execution))
         {
         /* ignore routing queues */
-        unlock_queue(pque, "req_stat_job_step2", "ignore queue", LOGLEVEL);
+        unlock_queue(pque, __func__, "ignore queue", LOGLEVEL);
         continue;
         }
 
@@ -710,7 +710,7 @@ static void req_stat_job_step2(
             unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
             }
           unlock_ji_mutex(pjob, __func__, "7", LOGLEVEL);
-          unlock_queue(pque, "req_stat_job_step2", "perm", LOGLEVEL);
+          unlock_queue(pque, __func__, "perm", LOGLEVEL);
           return;
           }
 
@@ -767,12 +767,12 @@ static void req_stat_job_step2(
         
         if (pque->qu_qs.qu_type != QTYPE_Execution)
           {
-          unlock_queue(pque, "req_stat_job_step2", "not exec", LOGLEVEL);
+          unlock_queue(pque, __func__, "not exec", LOGLEVEL);
         
           goto nextjob;
           }
 
-        unlock_queue(pque, "req_stat_job_step2", "exec", LOGLEVEL);
+        unlock_queue(pque, __func__, "exec", LOGLEVEL);
         }
       }
 
