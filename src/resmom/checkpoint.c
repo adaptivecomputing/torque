@@ -1880,12 +1880,22 @@ int blcr_restart_job(
 
     if (is_login_node == TRUE)
       {
+      int       use_nppn = TRUE;
+      resource *pres = find_resc_entry(
+                         &pjob->ji_wattr[JOB_ATR_resource],
+                         find_resc_def(svr_resc_def, "procs", svr_resc_size));
+     
+      if ((pres != NULL) &&
+          (pres->rs_value.at_val.at_long != 0))
+        use_nppn = FALSE;
+
       if (create_alps_reservation(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
             pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
             pjob->ji_qs.ji_jobid,
             apbasil_path,
             apbasil_protocol,
             pagg,
+            use_nppn,
             &rsv_id) != PBSE_NONE)
         {
         snprintf(log_buffer, sizeof(log_buffer),

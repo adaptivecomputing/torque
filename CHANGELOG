@@ -13,6 +13,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Fix a race condition in mom hierarchy reporting. TRQ-1378.
   b - Fixed pbs_mom so epilogue will only run once. TRQ-1134
   b - Fix some debug output escaping into job output. TRQ-1360.
+  b - Fix a Cray-mode bug with jobs ending immediately when spanning nodes of 
+      different proc counts when specifying -l procs. TRQ-1365.
 
 4.1.3
   b - fix a security loophole that potentially allowed an interactive job to run 

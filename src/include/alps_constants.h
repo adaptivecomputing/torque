@@ -87,6 +87,7 @@
 #define DEFAULT_APBASIL_PROTOCOL    "1.0"
 #define APBASIL_QUERY               "echo \"<?xml version='1.0'?><BasilRequest protocol='%s' method='QUERY' type='INVENTORY'></BasilRequest>\" | %s"
 #define APBASIL_RESERVE_PARAM_BEGIN "<ReserveParam architecture='XT' width='%d' nppn='%d'><NodeParamArray><NodeParam>"
+#define APBASIL_RESERVE_PARAM_BEGIN_SANS_NPPN "<ReserveParam architecture='XT' width='%d'><NodeParamArray><NodeParam>"
 #define APBASIL_RESERVE_PARAM_END   "</NodeParam></NodeParamArray></ReserveParam>"
 #define APBASIL_RESERVE_ARRAY       "<ReserveParamArray user_name='%s' batch_id='%s'>"
 #define CLOSE_RESERVE_ARRAY         "</ReserveParamArray>"

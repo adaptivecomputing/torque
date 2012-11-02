@@ -8439,7 +8439,7 @@ received_node *get_received_node_entry(
     
     /* initialize the received node struct */
     rn->statuses = get_dynamic_string(MAXLINE,NULL);
-    strcpy(rn->hostname,hostname);
+    strcpy(rn->hostname, hostname);
     
     if (rn->statuses == NULL)
       {

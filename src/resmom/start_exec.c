@@ -2831,6 +2831,8 @@ void handle_reservation(
   long long  pagg = 0;
   int        j;
   char      *rsv_id = NULL;
+  resource  *pres;
+  int        use_nppn = TRUE;
   
   sjr->sj_session = setsid();
 
@@ -2860,12 +2862,21 @@ void handle_reservation(
     else
       exec_str = pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str;
 
+    pres = find_resc_entry(
+             &pjob->ji_wattr[JOB_ATR_resource],
+             find_resc_def(svr_resc_def, "procs", svr_resc_size));
+
+    if ((pres != NULL) &&
+        (pres->rs_value.at_val.at_long != 0))
+      use_nppn = FALSE;
+
     j = create_alps_reservation(exec_str,
           pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
           pjob->ji_qs.ji_jobid,
           apbasil_path,
           apbasil_protocol,
           pagg,
+          use_nppn,
           &rsv_id);
     
     if (rsv_id != NULL)
