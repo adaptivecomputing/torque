@@ -375,18 +375,19 @@ int unmunge_request(
   time_t          myTime;
   struct timeval  tv;
   suseconds_t     millisecs;
-  struct tm      *timeinfo;
+  struct tm       timeinfo;
   char            mungeFileName[MAXPATHLEN + MAXNAMLEN+1];
   int             rc = PBSE_NONE;
 
   /* create a sudo random file name */
   gettimeofday(&tv, NULL);
   myTime = tv.tv_sec;
-  timeinfo = localtime(&myTime);
+  /* FIXME: use localtime_r */
+  localtime_r(&myTime, &timeinfo);
   millisecs = tv.tv_usec;
   sprintf(mungeFileName, "%smunge-%d-%d-%d-%d", 
-	  path_credentials, timeinfo->tm_hour, timeinfo->tm_min, 
-	  timeinfo->tm_sec, (int)millisecs);
+	  path_credentials, timeinfo.tm_hour, timeinfo.tm_min, 
+	  timeinfo.tm_sec, (int)millisecs);
 
   /* Write the munge credential to the newly created file */
   if ((rc = write_munge_temp_file(preq,mungeFileName)) == PBSE_NONE)
