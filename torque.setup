@@ -24,7 +24,7 @@ fi
 
 if [ "$2" = "" ] ; then
   # obtain name obtained from reverse lookup of ip address
-  HOSTNAME=`perl -e "print +(gethostbyname(\"$(hostname)\"))[0]"`
+  HOSTNAME=`hostname`
 else
   HOSTNAME=$2
 fi
