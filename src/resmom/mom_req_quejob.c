@@ -741,14 +741,15 @@ void req_mvjobfile(
       preq->rq_ind.rq_jobfile.rq_jobid,
       TJobFileType[jft]);
 
-    log_err(-1, "req_mvjobfile", log_buffer);
+    log_err(-1, __func__, log_buffer);
 
     req_reject(PBSE_UNKJOBID, 0, preq, NULL, NULL);
 
     return;
     }
 
-  if ((pj->ji_grpcache == NULL) && (check_pwd(pj) == NULL))
+  if ((pj->ji_grpcache == NULL) && 
+      (check_pwd(pj) == NULL))
     {
     req_reject(PBSE_UNKJOBID, 0, preq, NULL, NULL);
 

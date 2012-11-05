@@ -144,7 +144,6 @@ extern int mkdirtree(
     char *dirpath, /* I */
     mode_t mode);
 
-extern int TTmpDirName(job*, char *);
 extern int TMOMJobGetStartInfo(job *, pjobexec_t **) ;
 
 #endif /* HAVE_WORDEXP */
@@ -3479,7 +3478,7 @@ void req_cpyfile(
 
     strcpy(pjob->ji_qs.ji_jobid, preq->rq_ind.rq_cpyfile.rq_jobid);
 
-    if (TTmpDirName(pjob, faketmpdir))
+    if (TTmpDirName(pjob, faketmpdir, sizeof(faketmpdir)))
       {
       if (!mkdirtree(faketmpdir, 0755))
         {

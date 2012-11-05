@@ -312,7 +312,6 @@ int TMomCheckJobChild(pjobexec_t *, int, int *, int *);
 
 int InitUserEnv(job *,task *,char **,struct passwd *pwdp,char *);
 int mkdirtree(char *,mode_t);
-int TTmpDirName(job*, char *, int);
 
 struct radix_buf **allocate_sister_list(int radix);
 int add_host_to_sister_list(char *, unsigned short , struct radix_buf *);
@@ -1508,7 +1507,8 @@ int InitUserEnv(
 
   /* setup TMPDIR */
 
-  if (!usertmpdir && TTmpDirName(pjob, buf, sizeof(buf)))
+  if ((!usertmpdir) && 
+      (TTmpDirName(pjob, buf, sizeof(buf))))
     bld_env_variables(&vtable, variables_else[tveTmpDir], buf);
 
   /* PBS_VERSION */
