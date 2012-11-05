@@ -222,7 +222,6 @@ extern int TMomCheckJobChild(pjobexec_t *, int, int *, int *);
 extern void job_nodes(job *);
 extern void sister_job_nodes( job *pjob, char *radix_hosts, char *radix_ports );
 extern int tlist(tree *, char *, int);
-extern int TTmpDirName(job *, char *);
 extern int TMakeTmpDir(job *, char *);
 extern int exec_job_on_ms(job *pjob);
 
@@ -2341,8 +2340,7 @@ int im_join_job_as_sister(
     }
 
   /* should we make a tmpdir? */
-  
-  if (TTmpDirName(pjob, namebuf))
+  if (TTmpDirName(pjob, namebuf, sizeof(namebuf)))
     {
     if (TMakeTmpDir(pjob, namebuf) != PBSE_NONE)
       {

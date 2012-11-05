@@ -179,7 +179,6 @@ extern tlist_head svr_newjobs;
 extern tlist_head svr_alljobs;
 
 void nodes_free(job *);
-int TTmpDirName(job *, char *);
 extern int thread_unlink_calls;
 
 extern void MOMCheckRestart(void);

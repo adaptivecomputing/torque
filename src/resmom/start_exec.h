@@ -34,8 +34,6 @@ int is_joined(job *pjob);
 
 int mkdirtree(char *dirpath, mode_t mode);
 
-int TTmpDirName(job *pjob, char *tmpdir);
-
 int TMakeTmpDir(job *pjob, char *tmpdir);
 
 int InitUserEnv(job *pjob, task *ptask, char **envp, struct passwd *pwdp, char *shell);

@@ -15,6 +15,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Fix some debug output escaping into job output. TRQ-1360.
   b - Fix a Cray-mode bug with jobs ending immediately when spanning nodes of 
       different proc counts when specifying -l procs. TRQ-1365.
+  b - Don't fail to make the tmpdir for sister moms. bugzilla #220, TRQ-1403.
 
 4.1.3
   b - fix a security loophole that potentially allowed an interactive job to run 
