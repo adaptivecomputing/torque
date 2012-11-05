@@ -106,6 +106,7 @@
 #include "dis_init.h"
 #include "rm.h"
 
+#define    MAX_RETRIES 5
 extern int pbs_errno;
 static int full = 1;
 
@@ -181,6 +182,7 @@ int openrm(
   {
   int                 stream;
   int                 rc;
+  int                 retries = 0;
 
   static unsigned int gotport = 0;
 
@@ -197,7 +199,6 @@ int openrm(
 
   if ((stream = socket(AF_INET, SOCK_STREAM, 0)) != -1)
     {
-    int tryport = IPPORT_RESERVED;
 
     struct sockaddr_in  addr;
     struct addrinfo    *addr_info;
@@ -215,27 +216,20 @@ int openrm(
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-    while (--tryport > 0)
+    while (retries++ < MAX_RETRIES)
       {
-      addr.sin_port = htons((u_short)tryport);
-
-      rc = bind(stream, (struct sockaddr *)&addr, sizeof(addr));
-      if (rc == 0)
-        break;
-
-      if ((errno == EADDRINUSE) || (errno == EADDRNOTAVAIL))
+      rc = bindresvport(stream, &addr);
+      if (rc != 0)
         {
-        struct timespec rem;
-        /* We can't get the port we want. Wait a bit and try again */
-        rem.tv_sec = 0;
-        rem.tv_nsec = 3000000;
-        nanosleep(&rem, &rem);
-        continue;
+        if (retries >= MAX_RETRIES)
+          {
+          close(stream);
+          return(-1*errno);
+          }
+        sleep(1);
         }
-
-      close(stream);
-
-      return(-1 * errno);
+      else
+        break;
       }
 
     memset(&addr, '\0', sizeof(addr));

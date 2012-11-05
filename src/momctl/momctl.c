@@ -395,7 +395,19 @@ int main(
               {
               if (!strstr(nodeattrs->value, ND_down))
                 {
-                rc = do_mom(pbstat->name, MOMPort, CmdIndex) >= 0 ? HostCount++ : FailCount++;
+                int retries = 0;
+
+                while (retries < 5)
+                  {
+                  rc = do_mom(pbstat->name, MOMPort, CmdIndex) >= 0 ? HostCount++ : FailCount++;
+                  if (rc >= 0)
+                    break;
+                  fprintf(stdout, "attempting command again\n");
+                  retries++;
+                  sleep(1);
+                  continue;
+                  }
+
                 }
               else
                 {
@@ -424,11 +436,25 @@ int main(
       }
     else
       {
-      rc = do_mom(HPtr, MOMPort, CmdIndex);
-      if (rc >= 0)
-        HostCount++;
-      else
-        FailCount++;
+      int retries = 0;
+
+      while (retries < 5)
+        {
+        rc = do_mom(HPtr, MOMPort, CmdIndex);
+        if (rc >= 0)
+          {
+          HostCount++;
+          break;
+          }
+        else
+          {
+          FailCount++;
+          fprintf(stdout, "attempting command again\n");
+          retries++;
+          sleep(1);
+          continue;
+          }
+        }
       } /* END if (*HPtr == ':') */
 
     HPtr = strtok(NULL, ", \t\n");
@@ -558,7 +584,7 @@ char *read_mom_reply(
     if (value != NULL)
       free(value);
 
-    *local_errno = EIO;
+    *local_errno = rc;
 
     return(NULL);
     }
@@ -793,6 +819,9 @@ int do_mom(
             pbs_strerror(errno),
             local_errno,
             pbs_strerror(local_errno));
+            send_command(chan,RM_CMD_CLOSE);
+            return(-1);
+
           }
         else
           {
