@@ -812,80 +812,13 @@ void validate_qsub_host_pbs_o_server(
     else
       hash_add_or_exit(mm, job_attr, ATTR_pbs_o_server, tmp_host, LOGIC_DATA);
     }
-  } /* validate_qsub_host_pbs_o_server() */
-
-
-
-
-int are_mpp_present(
-
-  job_data  *resources,
-  job_data **dummy)
-
-  {
-  int mpp_present = hash_find(resources, "mppwidth", dummy);
-
-  return(mpp_present);
-  } /* END are_mpp_present() */
-
-
-
-
-void validate_basic_resourcing(
-
-  job_info *ji)
-
-  {
-  job_data *resources = ji->res_attr;
-  job_data *dummy;
-  int       nodes;
-  int       size;
-  int       mpp;
-
-  nodes = hash_find(resources, "nodes", &dummy);
-  size  = hash_find(resources, "size", &dummy);
-
-  if ((nodes == TRUE) &&
-      (size == TRUE))
-    {
-    fprintf(stderr, "qsub: Specifying -l nodes is incompatible with specifying -l size\n");
-    exit(4);
-    }
-  else if ((nodes == TRUE) ||
-           (size == TRUE))
-    {
-    mpp = are_mpp_present(resources, &dummy);
-
-    if (mpp == TRUE)
-      {
-      if (nodes == TRUE)
-        {
-        fprintf(stderr, "qsub: Specifying -l nodes is incompatible with specifying -l mppwidth\n");
-        exit(4);
-        }
-      else
-        {
-        fprintf(stderr, "qsub: Specifying -l size is incompatible with specifying -l mppwidth\n");
-        exit(4);
-        }
-      }
-    }
-
-  } /* END validate_basic_rsourcing() */
-
-
-
+  }
 
 void post_check_attributes(job_info *ji)
   {
   validate_pbs_o_workdir(&ji->mm, &ji->job_attr);
   validate_qsub_host_pbs_o_server(&ji->mm, &ji->job_attr);
-
-  validate_basic_resourcing(ji);
-  } /* END post_check_attributes() */
-
-
-
+  }
 
 /* return 3, 4, 5, 6, -1 on FAILURE, 0 on success */
 
@@ -2414,11 +2347,18 @@ void process_opts(
       {
 
       case '-':
-        /**
-         * We have already tested for --version and --about, in process_early_opts().
-         * Any other opt that has - as the first char is invalid.
-         */
-        print_qsub_usage_exit("a single - is not a valid option");
+
+        if ((optarg != NULL) && !strcmp(optarg, "version"))
+          {
+          fprintf(stderr, "version: %s\n", PACKAGE_VERSION);
+          exit(0);
+          }
+
+        else if ((optarg != NULL) && !strcmp(optarg, "about"))
+          TShowAbout_exit();
+
+        else
+          print_qsub_usage_exit("a single - is no a valid option");
 
         break;
 
@@ -2626,21 +2566,29 @@ void process_opts(
         break;
 
 
+/* #if !defined(PBS_NO_POSIX_VIOLATION) */
+      
       case 'f':
       
         hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_f, "TRUE", data_type);
         break;
       
+/* #endif */
+
       case 'h':
 
         hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_h, "u", data_type);
         break;
+
+/* #if !defined(PBS_NO_POSIX_VIOLATION) */
 
       case 'I':
 
         hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_inter, interactive_port(&inter_sock), data_type);
 
         break;
+
+/* #endif */
 
       case 'j':
 
@@ -2685,6 +2633,54 @@ void process_opts(
 
         if (add_verify_resources(&ji->mm, &ji->res_attr, optarg, data_type) != 0)
           print_qsub_usage_exit("qsub: illegal -l value");
+
+          /* walltime update has been pushed back to after all the
+           * job attributes have been added */
+/*          if (strstr(optarg, "walltime") != NULL)
+            {
+
+            struct attrl *attr;
+            char   *ptr;
+
+            // if walltime range specified, break into minwclimit and walltime resources
+
+            for (attr = attrib;attr != NULL;attr = attr->next)
+              {
+              if (!strcmp(attr->name, "walltime"))
+                {
+                if ((ptr = strchr(attr->value, '-')))
+                  {
+
+                  *ptr = '\0';
+
+                  ptr++;
+
+                  // set minwclimit to min walltime range value
+
+                  snprintf(tmpLine, sizeof(tmpLine), "minwclimit=%s",
+                           attr->value);
+
+                  if (set_resources(&res_attr, tmpLine, (pass == 0)) != 0)
+                    print_qsub_usage_exit("qsub: illegal -l value");
+//                    {
+                    fprintf(stderr, "qsub: illegal -l value\n");
+
+                    errflg++;
+                    }
+
+                  // set walltime to max walltime range value
+
+                  strcpy(tmpLine, ptr);
+
+                  strcpy(attr->value, tmpLine);
+                  }
+
+                break;
+                }
+              }  // END for (attr) 
+            } */
+
+        /* END ORNL WRAPPER */
 
         break;
 
@@ -2747,34 +2743,54 @@ void process_opts(
         break;
 
       case 'p':
-        
-        while (isspace((int)*optarg))
-          optarg++;
-        
-        pc = optarg;
-        
-        if ((*pc == '-') || (*pc == '+'))
-          pc++;
-        
-        if (strlen(pc) == 0)
-          print_qsub_usage_exit("qsub: illegal -p value");
-        
-        while (*pc != '\0')
-          {
-          if (!isdigit(*pc))
+        /* { */
+          while (isspace((int)*optarg))
+            optarg++;
+
+          pc = optarg;
+
+          if ((*pc == '-') || (*pc == '+'))
+            pc++;
+
+          if (strlen(pc) == 0)
             print_qsub_usage_exit("qsub: illegal -p value");
-          
-          pc++;
-          }
-        
-        i = atoi(optarg);
-        
-        if ((i < -1024) || (i > 1023))
-          print_qsub_usage_exit("qsub: illegal -p value");
-        
-        hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_p, optarg, data_type);
-        
+
+          while (*pc != '\0')
+            {
+            if (!isdigit(*pc))
+              print_qsub_usage_exit("qsub: illegal -p value");
+/*              {
+              fprintf(stderr, "qsub: illegal -p value\n");
+
+              errflg++;
+
+              break;
+              }
+              */
+
+            pc++;
+            }
+
+          i = atoi(optarg);
+
+          if ((i < -1024) || (i > 1023))
+            print_qsub_usage_exit("qsub: illegal -p value");
+/*            {
+            fprintf(stderr, "qsub: illegal -p value\n");
+
+            errflg++;
+
+            break;
+            }
+            */
+
+          hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_p, optarg, data_type);
+/*           set_attr(&attrib, ATTR_p, optarg); */
+/*           } */
+
         break;
+
+/* #if !defined(PBS_NO_POSIX_VIOLATION) */
 
       case 'P':
 
@@ -2796,79 +2812,193 @@ void process_opts(
             group = colon+1;
             *colon = '\0';
             hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_g, group, data_type);
+/*             set_attr(&attrib, ATTR_g, group); */
             }
 
           hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_P, user, data_type);
+/*           set_attr(&attrib, ATTR_P, user); */
 
           P_opt = TRUE;
           }
         else
           print_qsub_usage_exit("qsub: -P requires a user name");
+/*          {
+          fprintf(stderr, "qsub: -P requires a user name\n");
+
+          errflg++;
+          }
+          */
 
         break;
+
+/* #endif */
 
       case 'q':
 
         hash_add_or_exit(&ji->mm, &ji->client_attr, "destination", optarg, data_type);
+/*        if_cmd_line(q_opt)
+          {
+          q_opt = passet;
+
+          strcpy(destination, optarg);
+          }
+          */
 
         break;
 
       case 'r':
 
+/*        if_cmd_line(r_opt)
+          {
+          r_opt = passet;
+          */
+
           if (strlen(optarg) != 1)
             print_qsub_usage_exit("qsub: illegal -r value (y/n)");
+/*            {
+            fprintf(stderr, "qsub: illegal -r value\n");
+
+            errflg++;
+
+            break;
+            }
+            */
 
           if ((*optarg != 'y') && (*optarg != 'n'))
             print_qsub_usage_exit("qsub: illegal -r value (y/n)");
+/*            {
+            fprintf(stderr, "qsub: illegal -r value\n");
+
+            errflg++;
+
+            break;
+            }
+            */
 
           hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_r, optarg, data_type);
+/*           set_attr(&attrib, ATTR_r, optarg); */
+/*           } */
 
         break;
 
       case 'S':
 
+/*        if_cmd_line(S_opt)
+          {
+          S_opt = passet;
+          */
+
           if (parse_at_list(optarg, TRUE, TRUE))
             print_qsub_usage_exit("qsub: illegal -S value");
+/*            {
+            fprintf(stderr, "qsub: illegal -S value\n");
+
+            errflg++;
+
+            break;
+            }
+            */
 
         hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_S, optarg, data_type);
+/*           set_attr(&attrib, ATTR_S, optarg); */
+/*           } */
 
         break;
 
+/* #if !defined(PBS_NO_POSIX_VIOLATION) */
+
       case 't':
 
+/*        if_cmd_line(t_opt)
+          {
+          t_opt = passet;
+          */
+          /* validate before sending request to server? */
         hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_t, optarg, data_type);
+/*           set_attr(&attrib, ATTR_t, optarg); */
+/*           } */
 
         break;
 
       case 'T':
 
+/*        if_cmd_line(T_opt)
+          {
+          T_opt = passet;
+          */
 
           /* validate before sending request to server? */
+
           hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_jobtype, optarg, data_type);
+/*           set_attr(&attrib,ATTR_jobtype,optarg); */
+/*           } */
 
         break;
 
+/* #endif */
+
       case 'u':
+
+/*        if_cmd_line(u_opt)
+          {
+          u_opt = passet;
+          */
 
           if (parse_at_list(optarg, TRUE, FALSE))
             print_qsub_usage_exit("qsub: illegal -u value");
+/*            {
+            fprintf(stderr, "qsub: illegal -u value\n");
+
+            errflg++;
+
+            break;
+            }
+            */
 
           hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_u, optarg, data_type);
+/*           set_attr(&attrib, ATTR_u, optarg); */
+/*           } */
 
         break;
 
       case 'v':
 
-        rc = parse_variable_list(&ji->mm, &ji->job_attr, ji->user_attr, CMDLINE_DATA, SET, optarg);
+          /* Moved into a function */
+        parse_variable_list(&ji->mm, &ji->job_attr, ji->user_attr, CMDLINE_DATA, SET, optarg);
+/*          print_qsub_usage_exit("qsub: error parsing -v value"); */
+/*        if_cmd_line(v_opt)
+          {
+          v_opt = passet;
 
-        if (rc != PBSE_NONE)
-          exit(rc);
+          if (v_value != NULL)
+            free(v_value);
+
+          v_value = (char *)calloc(1, strlen(optarg) + 1);
+
+          if (v_value == NULL)
+            {
+            fprintf(stderr, "qsub: out of memory\n");
+
+            errflg++;
+
+            break;
+            }
+
+          strcpy(v_value, optarg);
+          }
+          */
 
         break;
 
       case 'V':
 
         hash_add_or_exit(&ji->mm, &ji->client_attr, "user_attr", "1", LOGIC_DATA);
+        /* Kept for legacy purposes, all env information is now always sent */
+/*        if_cmd_line(V_opt)
+          {
+          V_opt = passet;
+          }
+          */
 
         break;
 
@@ -3638,7 +3768,7 @@ void process_opts(
 
   /* END ORNL WRAPPER */
 
-  } /* END process_opts() */
+  }  /* END process_opts() */
 
 
 
@@ -3813,7 +3943,7 @@ void process_config_file(
 
     if ((param_val = get_param("SUBMITFILTER", config_buf)) != NULL)
       {
-      hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_pbs_o_submit_filter, param_val, CONFIG_DATA);
+      hash_add_or_exit(&ji->mm, &ji->client_attr, ATTR_pbs_o_submit_filter, param_val, CONFIG_DATA);
       }
 
     if ((param_val = get_param("SERVERHOST", config_buf)) != NULL)
@@ -4014,41 +4144,6 @@ void add_variable_list(
   hash_add_or_exit(&ji->mm, &ji->job_attr, var_name, var_list, CMDLINE_DATA);
   }
 
-/**
- * Handle --about and --version, and any other options that would cause
- * the program to exit quickly instead of doing normal workflow.
- * This function should exit() if a short-circuit turns out to be what
- * the user requested.
- */
-void process_early_opts(
-    
-  int    argc,
-  char **argv)
-
-  {
-  int i;
-
-  for (i = 0; i < argc; ++i)
-    {
-    char const *name = argv[i];
-
-    if (name[0] == '-' && name[1] == '-')
-      {
-      name += 2;
-      if (strcmp(name, "about") == 0)
-        TShowAbout_exit();
-      else if (strcmp(name, "version") == 0)
-        {
-        fprintf(stderr, "version: %s\n", PACKAGE_VERSION);
-        exit(0);
-        }
-      }
-    }
-  } /* END process_early_opts() */
-
-
-
-
 /** 
  * qsub main 
  *
@@ -4061,7 +4156,6 @@ void main_func(
   char **envp)  /* I */
 
   {
-
   int               errflg;                         /* option error */
   char              script[MAXPATHLEN + 1] = ""; /* name of script file */
   char              script_tmp[MAXPATHLEN + 1] = "";    /* name of script file copy */
@@ -4088,13 +4182,6 @@ void main_func(
   int               debug = FALSE;
   job_info          ji;
 
-  /**
-   * Before we go to the trouble of allocating memory, initializing structures,
-   * and setting up for ordinary workflow, check options to see if we'll be
-   * short-circuiting. If yes, then we'll exit without ever returning to main_func.
-   */
-  process_early_opts(argc, argv);
-  
   memset(&ji, 0, sizeof(job_info));
   if (memmgr_init(&ji.mm, 8192) != PBSE_NONE)
     {
@@ -4111,7 +4198,7 @@ void main_func(
    * 5 - environment variables
    * 6 - predefined code defaults
    *
-   * These are processed and added to the hash in reverse order.
+   * These are processed and added to the has in reverse order.
    * The default hashmap functionality is to remove existing values to add
    *  new ones.
    */

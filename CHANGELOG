@@ -16,6 +16,12 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Fix a Cray-mode bug with jobs ending immediately when spanning nodes of 
       different proc counts when specifying -l procs. TRQ-1365.
   b - Don't fail to make the tmpdir for sister moms. bugzilla #220, TRQ-1403.
+  e - Changed momctl to do retries to get connections to make it more robust
+      on busy systems. TRQ-1328.
+  e - Added new option to torque.cfg named HOST_NAME_SUFFIX which allows qsub
+      to add a suffix to a hostname on job submission. TRQ-1332
+
+
 
 4.1.3
   b - fix a security loophole that potentially allowed an interactive job to run 
