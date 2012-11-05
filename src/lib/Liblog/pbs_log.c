@@ -1443,15 +1443,17 @@ void log_format_trq_timestamp(
   unsigned int buflen)
 
   {
-  char buffer[30];
+  char           buffer[30];
   struct timeval tv;
-  time_t curtime;
-  unsigned int milisec=0;
+  time_t         curtime;
+  struct tm      result;
+  unsigned int   milisec=0;
 
   gettimeofday(&tv, NULL); 
   curtime=tv.tv_sec;
 
-  strftime(buffer,30,"%Y-%m-%d %H:%M:%S.",localtime(&curtime));
+  localtime_r(&curtime, &result);
+  strftime(buffer,30,"%Y-%m-%d %H:%M:%S.", &result);
   milisec = tv.tv_usec/100;
   snprintf(time_formatted_str, buflen, "%s%04d", buffer, milisec);
   } /* end of log_format_trq_timestamp */
