@@ -8406,16 +8406,14 @@ void send_update_soon()
 
 received_node *get_received_node_entry(
 
-  char *str,
-  int  *is_new)
+  char *str)
 
   {
   received_node  *rn;
   int             index;
   char           *hostname;
 
-  if ((str == NULL) ||
-      (is_new == NULL))
+  if (str == NULL)
     return(NULL);
 
   hostname = str + strlen("node=");
@@ -8425,7 +8423,6 @@ received_node *get_received_node_entry(
   
   if (index == -1)
     {
-    *is_new = TRUE;
 
     rn = calloc(1, sizeof(received_node));
     
@@ -8456,11 +8453,21 @@ received_node *get_received_node_entry(
 
       log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
       }
+
+    /* add the new node to the received status list */
+    index = insert_thing(received_statuses, rn);
+
+    if (index == -1)
+      log_err(ENOMEM, __func__, "No memory to resize the received_statuses array...SYSTEM FAILURE\n");
+    else
+      {
+      add_hash(received_table, index, rn->hostname);
+
+      send_update_soon();
+      }
     }
   else
     {
-    *is_new = FALSE;
-
     rn = (received_node *)received_statuses->slots[index].item;
     
     /* make sure we aren't hold 2 statuses for the same node */
@@ -8496,9 +8503,7 @@ int read_status_strings(
   int              version)  /* I */
 
   {
-  int             is_new = FALSE;
   int             rc;
-  int             index;
   char           *str;
   received_node  *rn;
  
@@ -8529,26 +8534,7 @@ int read_status_strings(
       }
 
     if (!strncmp(str, "node=", strlen("node=")))
-      {
-      if ((rn != NULL) &&
-          (is_new == TRUE))
-        {
-
-        /* add the previous status to the received nodes list */
-        index = insert_thing(received_statuses, rn);
-
-        if (index == -1)
-          log_err(ENOMEM, __func__, "No memory to resize the received_statuses array...SYSTEM FAILURE\n");
-        else
-          {
-          add_hash(received_table, index, rn->hostname);
-          
-          send_update_soon();
-          }
-        }
-
-      rn = get_received_node_entry(str, &is_new);
-      }
+      rn = get_received_node_entry(str);
 
     /* place each string into the buffer */
     copy_to_end_of_dynamic_string(rn->statuses, str);

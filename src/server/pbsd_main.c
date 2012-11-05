@@ -799,11 +799,11 @@ void parse_command_line(
                 "unable to determine full hostname for specified server host '%s' - %s",
                 server_host, EMsg);
 
-            log_err(-1, "pbsd_main", tmpLine);
+            log_err(-1, __func__, tmpLine);
             }
           else
             {
-            log_err(-1, "pbsd_main", "unable to determine full server hostname");
+            log_err(-1, __func__, "unable to determine full server hostname");
             }
 
           exit(1);
