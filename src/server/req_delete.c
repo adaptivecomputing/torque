@@ -495,7 +495,7 @@ jump:
   if ((array_compatible != FALSE) &&
       ((pjob->ji_wattr[JOB_ATR_hold].at_val.at_long & HOLD_l) == FALSE))
     {
-    if ((pjob->ji_arraystruct != NULL) &&
+    if ((pjob->ji_arraystructid[0] != '\0') &&
         (pjob->ji_is_array_template == FALSE))
       {
       int        i;

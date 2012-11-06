@@ -772,10 +772,17 @@ int send_job_work(
   attrl_fixlink(&attrl);
 
   /* put together the job script file name */
-  if (pjob->ji_arraystruct != NULL)
+  if (pjob->ji_arraystructid[0] != '\0')
     {
-    snprintf(script_name, sizeof(script_name), "%s%s%s",
-      path_jobs, pjob->ji_arraystruct->ai_qs.fileprefix, JOB_SCRIPT_SUFFIX);
+    job_array *pa = get_jobs_array(&pjob);
+
+    if (pa != NULL)
+      {
+      snprintf(script_name, sizeof(script_name), "%s%s%s",
+        path_jobs, pa->ai_qs.fileprefix, JOB_SCRIPT_SUFFIX);
+      }
+    else if (pjob == NULL)
+      return(PBSE_JOB_RECYCLED);
     }
   else
     {

@@ -595,7 +595,7 @@ struct job
   int               ji_lastdest; /* last destin tried by route */
   int               ji_retryok; /* ok to retry, some reject was temp */
   tlist_head        ji_rejectdest; /* list of rejected destinations */
-  struct job_array *ji_arraystruct; /* pointer to job_array for this array */
+  char              ji_arraystructid[PBS_MAXSVRJOBID + 1]; /* id of job array for this job */
   int               ji_is_array_template;    /* set to TRUE if this is a "template job" for a job array*/
   int               ji_have_nodes_request; /* set to TRUE if node spec uses keyword nodes */
   int               ji_cold_restart; /* set to TRUE if this job has been loaded through a cold restart */

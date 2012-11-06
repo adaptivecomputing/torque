@@ -618,15 +618,15 @@ job *job_recov(
       return NULL;
       }
 
+    strcpy(pj->ji_arraystructid, parent_id);
+
     if (strcmp(parent_id, pj->ji_qs.ji_jobid) == 0)
       {
       pj->ji_is_array_template = TRUE;
-      pj->ji_arraystruct = pa;
       }
     else
       {
       pa->job_ids[(int)pj->ji_wattr[JOB_ATR_job_array_id].at_val.at_long] = strdup(pj->ji_qs.ji_jobid);
-      pj->ji_arraystruct = pa; 
       pa->jobs_recovered++;
 
       /* This is a bit of a kluge, but for some reason if an array job was 
@@ -634,7 +634,8 @@ job *job_recov(
          value is 0 on recovery even though pj->ji_qs.ji_state is JOB_STATE_HELD and
          the substate is JOB_SUBSTATE_HELD
       */
-      if ((pj->ji_qs.ji_state == JOB_STATE_HELD) && (pj->ji_qs.ji_substate == JOB_SUBSTATE_HELD))
+      if ((pj->ji_qs.ji_state == JOB_STATE_HELD) &&
+          (pj->ji_qs.ji_substate == JOB_SUBSTATE_HELD))
         {
         pj->ji_wattr[JOB_ATR_hold].at_val.at_long = HOLD_l;
         pj->ji_wattr[JOB_ATR_hold].at_flags = ATR_VFLAG_SET;

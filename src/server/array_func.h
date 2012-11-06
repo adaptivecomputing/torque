@@ -44,8 +44,6 @@ int modify_array_range(job_array *pa, char *range, svrattrl *plist, struct batch
 
 void update_array_values(job_array *pa,int old_state,enum ArrayEventsEnum event, char *job_id, long job_atr_hold, int job_exit_status);
 
-void update_array_statuses(job_array *owned);
-
 void initialize_all_arrays_array();
 
 int insert_array(job_array *pa);

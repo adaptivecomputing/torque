@@ -575,9 +575,11 @@ static void req_stat_job_step2(
    * loop through again
    */
 
-  if (type == tjstSummarizeArraysQueue || type == tjstSummarizeArraysServer)
+  if ((type == tjstSummarizeArraysQueue) || 
+      (type == tjstSummarizeArraysServer))
     {
-    update_array_statuses(pa);
+    /* No array can be owned for these options */
+    update_array_statuses();
     }
 
   if (type == tjstJob)
