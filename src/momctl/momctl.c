@@ -819,7 +819,6 @@ int do_mom(
             pbs_strerror(errno),
             local_errno,
             pbs_strerror(local_errno));
-            send_command(chan,RM_CMD_CLOSE);
             return(-1);
 
           }

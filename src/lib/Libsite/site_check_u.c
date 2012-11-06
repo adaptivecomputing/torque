@@ -82,6 +82,8 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <netdb.h>
 #ifdef _AIX
 #include <arpa/aixrcmds.h>
@@ -139,6 +141,7 @@ int site_check_user_map(
   char *p1;
   char *p2;
   int   rc;
+  pid_t pid;
 
   int   ProxyAllowed = 0;
   int   ProxyRequested = 0;
@@ -297,18 +300,72 @@ int site_check_user_map(
                We set rc to 0 to be consistent with the original ruserok functionality */
     }
 #else
-  rc = ruserok(orighost, 0, owner, luser);
 
-  if (rc != 0 && EMsg != NULL)
+  pid = fork();
+  if (pid < 0)
     {
-    /* Test rc so as to not fill this message in the case of success, since other
-     * callers might not fill this message in the case of their errors and
-     * very misleading error message will go into the logs.
-     */
-    snprintf(EMsg, 1024, "ruserok failed validating %s/%s from %s",
-             owner,
-             luser,
-             orighost);
+    rc = PBSE_SYSTEM;
+    if (EMsg != NULL)
+      snprintf(EMsg, 1024, "fork failed");
+    }
+
+  else if (pid > 0)
+    {
+    int    status;
+    pid_t  wait_pid;
+    int    retries = 0;
+    int    exit_val = 0;
+
+    while ((wait_pid = waitpid(pid, &status, WNOHANG)) == 0)
+      {
+      if (retries > 5)
+        break;
+
+      sleep(1);
+      retries++;
+      }
+
+    if (wait_pid <= 0)
+      {
+      /* Something went wrong. Kill the child process */
+      kill(pid, SIGKILL);
+      rc = -1;
+      }
+    else
+      {
+      if (WIFEXITED(status))
+        exit_val = WEXITSTATUS(status);
+      else if (WIFSIGNALED(status))
+        exit_val = WTERMSIG(status)+10000;
+      else
+        exit_val = 10;
+
+      if (exit_val == 0)
+        rc = PBSE_NONE;
+      else
+        {
+        /* Test rc so as to not fill this message in the case of success, since other
+         * callers might not fill this message in the case of their errors and
+         * very misleading error message will go into the logs.
+         */
+        if (EMsg != NULL)
+          snprintf(EMsg, 1024, "ruserok failed validating %s/%s from %s",
+                 owner,
+                 luser,
+                 orighost);
+        rc = -1;
+        }
+      }
+    }
+  else
+    {
+    /* This is the child */
+    rc = ruserok(orighost, 0, owner, luser);
+    if (rc != 0)
+      exit (2);
+
+    exit(0);
+
     }
 #endif
 
