@@ -396,7 +396,8 @@ int svr_enquejob(
     }
   
   /* place into array_summary if necessary */
-  if (pjob->ji_is_array_template || pjob->ji_arraystruct == NULL)
+  if ((pjob->ji_is_array_template) ||
+      (pjob->ji_arraystructid[0] == '\0'))
     {
     if ((rc = has_job(&array_summary, pjob)) == FALSE)
       {
@@ -463,7 +464,8 @@ int svr_enquejob(
     increment_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob);
     }
 
-  if (pjob->ji_is_array_template || pjob->ji_arraystruct == NULL)
+  if ((pjob->ji_is_array_template) ||
+      (pjob->ji_arraystructid[0] == '\0'))
     {
     iter = -1;
 

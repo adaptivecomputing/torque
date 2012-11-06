@@ -1753,7 +1753,7 @@ int handle_job_recovery(
 
       if ((type != RECOV_COLD) &&
           (type != RECOV_CREATE) &&
-          (pjob->ji_arraystruct == NULL) &&
+          (pjob->ji_arraystructid[0] == '\0') &&
           (pjob->ji_qs.ji_svrflags & JOB_SVFLG_SCRIPT))
         {
         snprintf(basen, sizeof(basen), "%s%s", pjob->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
@@ -1826,14 +1826,13 @@ int cleanup_recovered_arrays()
   {
   job_array *pa;
   job       *pjob;
+  char       arrayid[PBS_MAXSVRJOBID+1];
   int        iter = -1;
   int        rc = PBSE_NONE;
 
   while ((pa = next_array(&iter)) != NULL)
     {
     int job_template_exists = FALSE;
-
-    lock_ai_mutex(pa, __func__, NULL, LOGLEVEL);
      
     if ((pjob = svr_find_job(pa->ai_qs.parent_id, FALSE)) != NULL)
       {
@@ -1852,6 +1851,8 @@ int cleanup_recovered_arrays()
       /* move on to the next array */
       continue;
       }
+
+    strcpy(arrayid, pa->ai_qs.parent_id);
 
     /* see if we need to upgrade the array version. */
     /* We will upgrade from version 3 or later */
@@ -1879,7 +1880,8 @@ int cleanup_recovered_arrays()
               {
               unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
               svr_job_purge(pjob);
-              lock_ai_mutex(pa, __func__, NULL, LOGLEVEL);
+
+              pa = get_array(arrayid);
               }
             }
           }
@@ -2385,7 +2387,7 @@ int pbsd_init_job(
       rc = pbsd_init_reque(pjob, KEEP_STATE);
 
       /* do array bookeeping */
-      if ((pjob->ji_arraystruct != NULL) &&
+      if ((pjob->ji_arraystructid[0] != '\0') &&
           (pjob->ji_is_array_template == FALSE))
         {
         job_array *pa = get_jobs_array(&pjob);

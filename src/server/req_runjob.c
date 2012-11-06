@@ -208,7 +208,7 @@ void *check_and_run_job(
   strcpy(job_id, pjob->ji_qs.ji_jobid);
 
   /* if the job is part of an array, check the slot limit */
-  if ((pjob->ji_arraystruct != NULL) &&
+  if ((pjob->ji_arraystructid[0] != '\0') &&
       (pjob->ji_is_array_template == FALSE))
     {
     job_array *pa = get_jobs_array(&pjob);

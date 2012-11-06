@@ -20,7 +20,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       on busy systems. TRQ-1328.
   e - Added new option to torque.cfg named HOST_NAME_SUFFIX which allows qsub
       to add a suffix to a hostname on job submission. TRQ-1332
-
+  c - Fix crashes due to unprotected array accesses. TRQ-1395.
 
 
 4.1.3

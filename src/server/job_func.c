@@ -485,7 +485,7 @@ int job_abt(
         
         /* update internal array bookeeping values */
         if ((pjob != NULL) &&
-            (pjob->ji_arraystruct != NULL) &&
+            (pjob->ji_arraystructid[0] != '\0') &&
             (pjob->ji_is_array_template == FALSE))
           {
           job_array *pa = get_jobs_array(&pjob);
@@ -541,7 +541,7 @@ int job_abt(
 
     /* update internal array bookeeping values */
     if ((pjob != NULL) &&
-        (pjob->ji_arraystruct != NULL) &&
+        (pjob->ji_arraystructid != '\0') &&
         (pjob->ji_is_array_template == FALSE))
       {
       job_array *pa = get_jobs_array(&pjob);
@@ -669,7 +669,6 @@ job *job_alloc(void)
   pj->ji_qs.qs_version = PBS_QS_VERSION;
 
   CLEAR_HEAD(pj->ji_rejectdest);
-  pj->ji_arraystruct = NULL;
   pj->ji_is_array_template = FALSE;
 
   pj->ji_momhandle = -1;  /* mark mom connection invalid */
@@ -1050,7 +1049,7 @@ job *job_clone(
     }
 
   pa->job_ids[taskid] = strdup(pnewjob->ji_qs.ji_jobid);
-  pnewjob->ji_arraystruct = pa;
+  strcpy(pnewjob->ji_arraystructid, pa->ai_qs.parent_id);
 
   if (release_mutex == TRUE)
     {
@@ -1089,6 +1088,7 @@ void *job_clone_wt(
   int                 newsub;
   int                 rc;
   char                namebuf[MAXPATHLEN];
+  char                arrayid[PBS_MAXSVRJOBID + 1];
   job_array          *pa;
 
   array_request_node *rn;
@@ -1113,6 +1113,8 @@ void *job_clone_wt(
       unlock_ji_mutex(template_job, __func__, "1", LOGLEVEL);
     return(NULL);
     }
+
+  strcpy(arrayid, pa->ai_qs.parent_id);
 
   free(jobid);
 
@@ -1157,7 +1159,7 @@ void *job_clone_wt(
         if (rc != PBSE_JOB_RECYCLED)
           svr_job_purge(pjobclone);
 
-        lock_ai_mutex(pa, __func__, NULL, LOGLEVEL);
+        pa = get_array(arrayid);
         continue;
         }
 
@@ -1166,7 +1168,9 @@ void *job_clone_wt(
         /* XXX need more robust error handling */
         unlock_ai_mutex(pa, __func__, "2", LOGLEVEL);
         svr_job_purge(pjobclone);
-        lock_ai_mutex(pa, __func__, NULL, LOGLEVEL);
+       
+        pa = get_array(arrayid);
+        
         continue;
         }
       
@@ -1682,7 +1686,7 @@ int svr_job_purge(
   strcpy(job_fileprefix, pjob->ji_qs.ji_fileprefix);
   job_substate = pjob->ji_qs.ji_substate;
   job_is_array_template = pjob->ji_is_array_template;
-  job_has_arraystruct = ((pjob->ji_arraystruct == NULL)?FALSE:TRUE);
+  job_has_arraystruct = ((pjob->ji_arraystructid[0] == '\0') ? FALSE:TRUE);
   job_has_checkpoint_file = pjob->ji_wattr[JOB_ATR_checkpoint_name].at_flags;
 
   if (LOGLEVEL >= 10)
@@ -2709,37 +2713,30 @@ job_array *get_jobs_array(
   {
   char       log_buf[LOCAL_LOG_BUF_SIZE];
   char       jobid[PBS_MAXSVRJOBID + 1];
+  char       arrayid[PBS_MAXSVRJOBID + 1];
   job       *pjob = *pjob_ptr;
-  job_array *pa = pjob->ji_arraystruct;
+  job_array *pa = NULL;
 
-  if (pa != NULL)
+  strcpy(jobid, pjob->ji_qs.ji_jobid);
+
+  if (pjob->ji_arraystructid[0] != '\0')
     {
+    strcpy(arrayid, pjob->ji_arraystructid);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+   
     if (LOGLEVEL >= 7)
       {
-      sprintf(log_buf, "Trying to lock ai_mutex, %s", pjob->ji_qs.ji_jobid);
-      LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+      sprintf(log_buf, "Locking ai_mutex, %s", pjob->ji_qs.ji_jobid);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
       }
 
-    if (pthread_mutex_trylock(pa->ai_mutex))
+    pa = get_array(arrayid);
+      
+    if ((pjob = svr_find_job(jobid, TRUE)) == NULL)
       {
-      if (LOGLEVEL >= 7)
-        {
-        sprintf(log_buf, "ai_mutex already locked for %s", pjob->ji_qs.ji_jobid);
-        LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-        }
-
-      strcpy(jobid, pjob->ji_qs.ji_jobid);
-      
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-
-      lock_ai_mutex(pa, __func__, NULL, LOGLEVEL);
-      
-      if ((pjob = svr_find_job(jobid, TRUE)) == NULL)
-        {
-        unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
-        pa = NULL;
-        *pjob_ptr = NULL;
-        }
+      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+      pa = NULL;
+      *pjob_ptr = NULL;
       }
     }
 

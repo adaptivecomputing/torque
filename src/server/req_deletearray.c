@@ -401,7 +401,7 @@ void array_delete_wt(
           /* job_abt() calls svr_job_purge which will try to lock the array again */
           unlock_ai_mutex(pa, __func__, "3", LOGLEVEL);
           job_abt(&pjob, NULL);
-          lock_ai_mutex(pa, __func__, NULL, LOGLEVEL);
+          pa = get_array(preq->rq_ind.rq_delete.rq_objname);
           }
         }
       else
@@ -409,7 +409,7 @@ void array_delete_wt(
         /* job_abt() calls svr_job_purge which will try to lock the array again */
         unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
         job_abt(&pjob, NULL);
-        lock_ai_mutex(pa, __func__, NULL, LOGLEVEL);
+        pa = get_array(preq->rq_ind.rq_delete.rq_objname);
         }
       } /* END if (ji_substate == JOB_SUBSTATE_PRERUN) */
     } /* END for each job in array */

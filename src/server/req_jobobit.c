@@ -3312,7 +3312,7 @@ int req_jobobit(
       }
 
     /* decrease array running job count */
-    if ((pjob->ji_arraystruct != NULL) &&
+    if ((pjob->ji_arraystructid[0] != '\0') &&
         (pjob->ji_is_array_template == FALSE))
       {
       job_array *pa = get_jobs_array(&pjob);
