@@ -284,6 +284,59 @@ const char *PJobSubState[] =
 
 
 
+
+int insert_into_alljobs_by_rank(
+
+  struct all_jobs *aj,
+  job             *pjob,
+  char            *jobid)
+
+  {
+  job  *pjcur;
+  int   iter = -1;
+  long  job_qrank = pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long;
+  
+  unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
+
+  while ((pjcur = next_job_from_back(aj, &iter)) != NULL)
+    {
+    if (job_qrank > pjcur->ji_wattr[JOB_ATR_qrank].at_val.at_long)
+      {
+      break;
+      }
+    
+    if (strcmp(jobid, pjcur->ji_qs.ji_jobid) == 0)
+      {
+      unlock_ji_mutex(pjcur, __func__, "6", LOGLEVEL);
+      return(ALREADY_IN_LIST);
+      }
+
+    unlock_ji_mutex(pjcur, __func__, "7", LOGLEVEL);
+    }
+  
+  if ((pjob = svr_find_job(jobid, FALSE)) == NULL)
+    {
+    return(PBSE_JOBNOTFOUND);
+    }
+  
+  if (pjcur == NULL)
+    {
+    /* link first in list */
+    insert_job_first(aj, pjob);
+    }
+  else
+    {
+    /* link after 'current' job in list */
+    insert_job_after(aj, pjcur, pjob);
+    unlock_ji_mutex(pjcur, __func__, "8", LOGLEVEL);
+    }
+
+  return(PBSE_NONE);
+  } /* END insert_into_alljobs_by_rank() */
+
+
+
+
 /*
  * svr_enquejob() - enqueue job into specified queue
  */
@@ -296,15 +349,12 @@ int svr_enquejob(
   {
   pbs_attribute *pattrjb;
   attribute_def *pdef;
-  job           *pjcur;
   pbs_queue     *pque;
   int            rc;
-  int            iter;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
   time_t         time_now = time(NULL);
   char           job_id[PBS_MAXSVRJOBID+1];
   char           queue_name[PBS_MAXQUEUENAME+1];
-  long           job_qrank = -1;
   int            total_jobs = 0;
   int            user_jobs = 0;
   int            array_jobs = 0;
@@ -413,47 +463,16 @@ int svr_enquejob(
     
   if (!pjob->ji_is_array_template)
     {
-    iter = -1;
+    rc = insert_into_alljobs_by_rank(pque->qu_jobs, pjob, job_id);
 
-    /* we have to unlock the job because next_job_from_back may 
-       give us this job */
-    job_qrank = pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long;
-    unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
-
-    while ((pjcur = next_job_from_back(pque->qu_jobs,& iter)) != NULL)
+    if ((rc == ALREADY_IN_LIST) ||
+        (rc == PBSE_JOBNOTFOUND))
       {
-      if (job_qrank > pjcur->ji_wattr[JOB_ATR_qrank].at_val.at_long)
-        {
-        unlock_ji_mutex(pjcur, __func__, "5", LOGLEVEL);
-        break;
-        }
+      unlock_queue(pque, __func__, "not array_template check", LOGLEVEL);
+      if (rc == ALREADY_IN_LIST)
+        rc = PBSE_NONE;
 
-      if (strcmp(job_id, pjcur->ji_qs.ji_jobid) == 0)
-        {
-        unlock_ji_mutex(pjcur, __func__, "6", LOGLEVEL);
-        unlock_queue(pque, __func__, "not array_template check", LOGLEVEL);
-        return PBSE_NONE;
-        }
-
-      unlock_ji_mutex(pjcur, __func__, "7", LOGLEVEL);
-      }
-
-    if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
-      {
-      unlock_queue(pque, __func__, "array_template check lost job", LOGLEVEL);
-      return(PBSE_JOBNOTFOUND);
-      }
-
-    if (pjcur == NULL)
-      {
-      /* link first in list */
-      insert_job_first(pque->qu_jobs, pjob);
-      }
-    else
-      {
-      /* link after 'current' job in list */
-      insert_job_after(pque->qu_jobs, pjcur, pjob);
-      unlock_ji_mutex(pjcur, __func__, "8", LOGLEVEL);
+      return(rc);
       }
 
     /* update counts: queue and queue by state */
@@ -467,46 +486,16 @@ int svr_enquejob(
   if ((pjob->ji_is_array_template) ||
       (pjob->ji_arraystructid[0] == '\0'))
     {
-    iter = -1;
+    rc = insert_into_alljobs_by_rank(pque->qu_jobs_array_sum, pjob, job_id);
 
-    job_qrank = pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long;
-    unlock_ji_mutex(pjob, __func__, "9", LOGLEVEL);
-
-    while ((pjcur = next_job_from_back(pque->qu_jobs_array_sum,&iter)) != NULL)
+    if ((rc == ALREADY_IN_LIST) ||
+        (rc == PBSE_JOBNOTFOUND))
       {
-      if (job_qrank > pjcur->ji_wattr[JOB_ATR_qrank].at_val.at_long)
-        {
-        unlock_ji_mutex(pjcur, __func__, "10", LOGLEVEL);
-        break;
-        }
+      unlock_queue(pque, __func__, "not array_template check", LOGLEVEL);
+      if (rc == ALREADY_IN_LIST)
+        rc = PBSE_NONE;
 
-      if (strcmp(job_id, pjcur->ji_qs.ji_jobid) == 0)
-        {
-        unlock_ji_mutex(pjcur, __func__, "11", LOGLEVEL);
-        unlock_queue(pque, __func__, "not array_template check", LOGLEVEL);
-        return PBSE_NONE;
-        }
-
-      unlock_ji_mutex(pjcur, __func__, "12", LOGLEVEL);
-      } /* end of while */
-
-    if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
-      {
-      unlock_queue(pque, __func__, "array_template check lost job", LOGLEVEL);
-      return(PBSE_JOBNOTFOUND);
-      }
-
-    if (pjcur == NULL)
-      {
-      /* link first in list */
-      insert_job_first(pque->qu_jobs_array_sum, pjob);
-      }
-    else
-      {
-      /* link after 'current' job in list */
-      insert_job_after(pque->qu_jobs_array_sum, pjcur, pjob);
-
-      unlock_ji_mutex(pjcur, __func__, "13", LOGLEVEL);
+      return(rc);
       }
     }
 

@@ -254,6 +254,7 @@ int req_deletearray(
 
       log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
       }
+
     /* parse the array range */
     num_skipped = delete_array_range(pa,range);
 
