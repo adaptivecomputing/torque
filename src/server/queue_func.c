@@ -673,15 +673,17 @@ int get_parent_dest_queues(
     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
 
+  strcpy(jobid, pjob->ji_qs.ji_jobid);
+
   if ((queue_parent_name != NULL) && (queue_dest_name != NULL))
     {
-    if (!strcmp(pque_parent, pque_dest))
+    if (!strcmp(queue_parent_name, queue_dest_name))
       {
       /* parent and destination are the same. 
          Job is already in destnation queue. return */
-      snprintf(log_buf, "parent and destination queues are the same: parent %s - dest %s. jobid: %s",
-          pque_parent,
-          qpue_dest,
+      snprintf(log_buf, sizeof(log_buf), "parent and destination queues are the same: parent %s - dest %s. jobid: %s",
+          queue_parent_name,
+          queue_dest_name,
           jobid);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
       return(-1); 
@@ -690,7 +692,6 @@ int get_parent_dest_queues(
   else
     return(-1);
 
-  strcpy(jobid, pjob->ji_qs.ji_jobid);
   unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
   unlock_queue(*parent, __func__, NULL, LOGLEVEL);
