@@ -780,6 +780,7 @@ int send_job_work(
       {
       snprintf(script_name, sizeof(script_name), "%s%s%s",
         path_jobs, pa->ai_qs.fileprefix, JOB_SCRIPT_SUFFIX);
+      unlock_ai_mutex(pa, __func__, NULL, LOGLEVEL);
       }
     else if (pjob == NULL)
       return(PBSE_JOB_RECYCLED);

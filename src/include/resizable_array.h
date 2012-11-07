@@ -82,6 +82,8 @@
 
 #define THING_NOT_FOUND    -2
 #define ALWAYS_EMPTY_INDEX  0
+/* resizable arrays don't forbid duplication, only certain functions do. */
+#define ALREADY_IN_LIST     9
 
 /* Struct definitions */
 struct slot_t
