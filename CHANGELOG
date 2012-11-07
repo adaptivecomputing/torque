@@ -22,7 +22,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       to add a suffix to a hostname on job submission. TRQ-1332
   c - Fix crashes due to unprotected array accesses. TRQ-1395.
   b - Fixed a deadlock in get_parent_dest_queues when the queue_parent_name
-      and queue_dest_name are the same.
+      and queue_dest_name are the same. TRQ-1413. 11/7/12
 
 4.1.3
   b - fix a security loophole that potentially allowed an interactive job to run 
