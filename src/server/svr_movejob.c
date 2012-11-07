@@ -695,7 +695,11 @@ int send_job_work(
   unsigned short        job_momport = -1;
 
   if ((pjob = svr_find_job(job_id, TRUE)) == NULL)
+    {
+    *my_err = PBSE_JOBNOTFOUND;
+    req_reject(-1, 0, preq, NULL, NULL);
     return(PBSE_JOBNOTFOUND);
+    }
 
   if (strlen(pjob->ji_qs.ji_destin) != 0)
     strcpy(job_destin, pjob->ji_qs.ji_destin);
