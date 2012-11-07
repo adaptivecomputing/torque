@@ -20,6 +20,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       different proc counts when specifying -l procs. TRQ-1365.
   b - Don't fail to make the tmpdir for sister moms. bugzilla #220, TRQ-1403.
   c - Fix crashes due to unprotected array accesses. TRQ-1395.
+  b - Fixed a deadlock in get_parent_dest_queues when the queue_parent_name
+      and queue_dest_name are the same. TRQ-1413. 11/7/12
 
 4.1.3
   b - fix a security loophole that potentially allowed an interactive job to run 
