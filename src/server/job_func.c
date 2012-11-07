@@ -541,7 +541,7 @@ int job_abt(
 
     /* update internal array bookeeping values */
     if ((pjob != NULL) &&
-        (pjob->ji_arraystructid != '\0') &&
+        (pjob->ji_arraystructid[0] != '\0') &&
         (pjob->ji_is_array_template == FALSE))
       {
       job_array *pa = get_jobs_array(&pjob);
