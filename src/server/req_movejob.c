@@ -165,9 +165,9 @@ int req_movejob(
   /* We have found that sometimes the destination queue and the 
      parent queue are the same. If so we do not need to do
      anything else */
-  if (strcmp(jobp->ji_qhdr->qu_qs.qu_name, req->rq_ind.rq_move.rq_destin) == 0)
+  if (strcmp(jobp->ji_qs.ji_queue, req->rq_ind.rq_move.rq_destin) == 0)
     {
-    sprintf(log_buf, "Job %s already in queue %s", jobp->ji_qs.ji_jobid, jobp->ji_qhdr->qu_qs.qu_name);
+    sprintf(log_buf, "Job %s already in queue %s", jobp->ji_qs.ji_jobid, jobp->ji_qs.ji_queue);
     if (LOGLEVEL >= 7)
       {
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
