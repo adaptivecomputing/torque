@@ -584,6 +584,29 @@ void log_ext(
 
   buf[LOG_BUF_SIZE - 1] = '\0';
 
+  if (!log_mutex)
+    {
+    if (isatty(2))
+      {
+      fprintf(stderr, "%s: %s\n",
+              msg_daemonname,
+              buf);
+      }
+
+#if SYSLOG
+    if (syslogopen == 0)
+      {
+      openlog(msg_daemonname, LOG_NOWAIT, LOG_DAEMON);
+
+      syslogopen = 1;
+      }
+
+    syslog(severity|LOG_DAEMON,"%s",buf);
+#endif /* SYSLOG */
+
+    return;
+    }
+
   pthread_mutex_lock(log_mutex);
 
   if (log_opened == 0)
