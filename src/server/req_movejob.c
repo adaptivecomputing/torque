@@ -161,6 +161,21 @@ int req_movejob(
    * svr_movejob() does the real work, handles both local and
    * network moves
    */
+  
+  /* We have found that sometimes the destination queue and the 
+     parent queue are the same. If so we do not need to do
+     anything else */
+  if (strcmp(jobp->ji_qs.ji_queue, req->rq_ind.rq_move.rq_destin) == 0)
+    {
+    sprintf(log_buf, "Job %s already in queue %s", jobp->ji_qs.ji_jobid, jobp->ji_qs.ji_queue);
+    if (LOGLEVEL >= 7)
+      {
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+      }
+    unlock_ji_mutex(jobp, __func__, "2", LOGLEVEL);
+    req_reject(PBSE_JOB_ALREADY_IN_QUEUE, 0, req, NULL, log_buf);
+    return(PBSE_NONE);
+    }
 
   switch (svr_movejob(jobp, req->rq_ind.rq_move.rq_destin, &local_errno, req, FALSE))
     {
