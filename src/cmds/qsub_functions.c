@@ -77,6 +77,8 @@ static char server_out[PBS_MAXSERVERNAME + PBS_MAXPORTNUM + 2];
 struct termios oldtio;
 /* END: bailout globals */
 
+char *host_name_suffix = NULL;
+
 /* state booleans for protecting already-set options */
 int    J_opt = FALSE;
 int    P_opt = FALSE;
@@ -770,11 +772,18 @@ void validate_qsub_host_pbs_o_server(
   job_data *tmp_job_info = NULL;
   char *qsub_host = NULL;
   char tmp_host_name[PBS_MAXHOSTNAME];
+
+  /* check if QSUBHOST was entered in torque.cfg */
   if (hash_find(*job_attr, ATTR_submit_host, &tmp_job_info))
     qsub_host = tmp_job_info->value;
-
   else if (gethostname(tmp_host_name, PBS_MAXHOSTNAME) == 0)
     qsub_host = tmp_host_name;
+
+  if (host_name_suffix != NULL)
+    {
+    snprintf((char *)tmp_host_name, PBS_MAXHOSTNAME, "%s%s", qsub_host, host_name_suffix);
+    qsub_host = tmp_host_name;
+    }
 
   if (qsub_host)
     {
@@ -3888,6 +3897,8 @@ void process_config_file(
       if (!strcasecmp(param_val, "true"))
         hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_r, "TRUE", STATIC_DATA);
       }
+    if ((param_val = get_param("HOST_NAME_SUFFIX", config_buf)) != NULL)
+      host_name_suffix = param_val;
     }    /* END if (load_config(config_buf,sizeof(config_buf)) == 0) */
   }
 
