@@ -24,6 +24,11 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Fixed a deadlock in get_parent_dest_queues when the queue_parent_name
       and queue_dest_name are the same. TRQ-1413. 11/7/12
   b - Fixed segfault in req_movejob where the job ji_qhdr was NULL. TRQ-1416
+  b - Fixed an End of File problem between Moab and TORQUE. This one had to do
+      with SO_KEEPALIVE getting set on the accept socket for port 15001. Because
+      we already check connections with the tcp_timeout we do not need the
+      keep alive. The setsockopt commands to set the keep alive have been removed.
+      TRQ-1211
   b - Fix a conflict in the code for herogeneous jobs and regular jobs.
   b - For alps jobs, use the login nodes evenly even when one goes down. TRQ-1317.
   b - Display the correct 'Assigned Cpu Count' in momctl output. TRQ-1307.

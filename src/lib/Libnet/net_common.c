@@ -68,8 +68,6 @@ int socket_get_tcp()
   int local_socket = 0;
   struct linger l_delay;
   int on = 1;
-  int ka_val = 1;
-  int ka_timeout = 10;
 
   (void) signal(SIGPIPE, SIG_IGN);
   memset(&l_delay, 0, sizeof(struct linger));
@@ -88,16 +86,6 @@ int socket_get_tcp()
     close(local_socket);
     local_socket = -4;
     }
-  else if (setsockopt(local_socket, SOL_SOCKET, SO_KEEPALIVE, &ka_val, sizeof(int)) < 0)
-    {
-    close(local_socket);
-    local_socket = -5;
-    }
-  else if (setsockopt(local_socket, SOL_TCP, TCP_KEEPIDLE, &ka_timeout, sizeof(int)) < 0)
-    {
-    close(local_socket);
-    local_socket = -6;
-    }
 
   return local_socket;
   } /* END socket_get_tcp() */
@@ -113,8 +101,6 @@ int get_listen_socket(
   int local_socket = 0;
   struct linger l_delay;
   int on = 1;
-  int ka_val = 1;
-  int ka_timeout = 10;
   
   (void) signal(SIGPIPE, SIG_IGN);
   memset(&l_delay, 0, sizeof(struct linger));
@@ -133,16 +119,6 @@ int get_listen_socket(
     {
     close(local_socket);
     local_socket = -4;
-    }
-  else if (setsockopt(local_socket, SOL_SOCKET, SO_KEEPALIVE, &ka_val, sizeof(int)) < 0)
-    {
-    close(local_socket);
-    local_socket = -5;
-    }
-  else if (setsockopt(local_socket, SOL_TCP, TCP_KEEPIDLE, &ka_timeout, sizeof(int)) < 0)
-    {
-    close(local_socket);
-    local_socket = -6;
     }
 
   return(local_socket);
