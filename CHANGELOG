@@ -24,6 +24,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       and queue_dest_name are the same. TRQ-1413. 11/7/12
   b - Fixed segfault in req_movejob where the job ji_qhdr was NULL. TRQ-1416
   b - Fix a conflict in the code for herogeneous jobs and regular jobs.
+  b - For alps jobs, use the login nodes evenly even when one goes down. TRQ-1317.
 
 4.1.3
   b - fix a security loophole that potentially allowed an interactive job to run 
