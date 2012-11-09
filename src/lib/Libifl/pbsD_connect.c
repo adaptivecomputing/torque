@@ -759,25 +759,40 @@ int pbs_original_connect(
   char *server)  /* I (FORMAT:  NULL | '\0' | HOSTNAME | HOSTNAME:PORT )*/
 
   {
-  struct sockaddr_in server_addr;
-  char *if_name;
-  struct addrinfo *addr_info;
-  int out;
-  int i;
-  int rc;
-  int local_errno;
+  struct sockaddr_in   server_addr;
+  char                *if_name;
+  struct addrinfo     *addr_info;
+  int                  out;
+  int                  i;
+  int                  rc;
+  int                  local_errno;
 
-  struct sockaddr preferred_addr; /* set if TRQ_IFNAME set in torque.cfg */
-  struct passwd *pw;
-  int use_unixsock = 0;
-  uid_t pbs_current_uid;
+  struct sockaddr      preferred_addr; /* set if TRQ_IFNAME set in torque.cfg */
+  struct passwd       *pw;
+  int                  use_unixsock = 0;
+  uid_t                pbs_current_uid;
+  struct timeval       tv;
+  long                 sockflags;
+  fd_set               fdset;
+  socklen_t            socklen;
 
 #ifdef ENABLE_UNIX_SOCKETS
-  struct sockaddr_un unserver_addr;
-  char hnamebuf[256];
+  struct sockaddr_un  unserver_addr;
+  char                hnamebuf[256];
 #endif
 
-  char  *ptr;
+  char               *ptr;
+
+  /* Read the timeout from the environment */
+  if ((ptr = getenv("PBSAPITIMEOUT")) != NULL)
+    {
+    pbs_tcp_timeout = strtol(ptr, NULL, 0);
+
+    if (pbs_tcp_timeout <= 0)
+      pbs_tcp_timeout = 10800;
+    }
+  else
+    pbs_tcp_timeout = 10800;
 
   /* reserve a connection state record */
 
@@ -832,7 +847,8 @@ int pbs_original_connect(
     if (getenv("PBSDEBUG"))
       fprintf(stderr, "ALERT:  PBS_get_server() failed\n");
 
-    return(PBSE_NOSERVER * -1);
+    rc = PBSE_NOSERVER * -1;
+    goto cleanup_conn_lite;
     }
 
   /* determine who we are */
@@ -847,9 +863,8 @@ int pbs_original_connect(
               (long)pbs_current_uid);
       }
 
-    pthread_mutex_unlock(connection[out].ch_mutex);
-
-    return(PBSE_SYSTEM * -1);
+    rc = PBSE_NOSERVER * -1;
+    goto cleanup_conn_lite;
     }
 
   strcpy(pbs_current_user, pw->pw_name);
@@ -961,16 +976,16 @@ int pbs_original_connect(
                   strerror(errno));
           }
 
-        connection[out].ch_inuse = FALSE;
-
-
         if (retries >= MAX_RETRIES)
           {
-          pthread_mutex_unlock(connection[out].ch_mutex);
-          return(PBSE_PROTOCOL * -1);
+          rc = PBSE_PROTOCOL * -1;
+          goto cleanup_conn;
           }
         else
           {
+          connection[out].ch_inuse = FALSE;
+          pthread_mutex_unlock(connection[out].ch_mutex);
+
           retries++;
           usleep(1000);
           continue;
@@ -989,18 +1004,19 @@ int pbs_original_connect(
             fprintf(stderr, "could not set preferred network interface (%s): %d\n",
                   if_name, rc);
 
-          if(if_name)
+          if (if_name)
             free(if_name);
 
-          close(connection[out].ch_socket);
-          connection[out].ch_inuse = FALSE;
           if (retries >= MAX_RETRIES)
             {
-            pthread_mutex_unlock(connection[out].ch_mutex);
-            return(rc);
+            rc = rc * -1;
+            goto cleanup_conn;
             }
           else
             {
+            connection[out].ch_inuse = FALSE;
+            pthread_mutex_unlock(connection[out].ch_mutex);
+
             retries++;
             usleep(1000);
             continue;
@@ -1017,16 +1033,16 @@ int pbs_original_connect(
           if (if_name)
             free(if_name);
 
-          close(connection[out].ch_socket);
-          connection[out].ch_inuse = FALSE;
-
           if (retries >= MAX_RETRIES)
             {
-            pthread_mutex_unlock(connection[out].ch_mutex);
-            return(PBSE_SYSTEM * -1);
+            rc = PBSE_SYSTEM * -1;
+            goto cleanup_conn;
             }
           else
             {
+            close(connection[out].ch_socket);
+            connection[out].ch_inuse = FALSE;
+
             retries++;
             usleep(1000);
             continue;
@@ -1043,9 +1059,6 @@ int pbs_original_connect(
 
       if (getaddrinfo(server, NULL, NULL, &addr_info) != 0)
         {
-        close(connection[out].ch_socket);
-        connection[out].ch_inuse = FALSE;
-
         if (getenv("PBSDEBUG"))
           {
           if (retries >= MAX_RETRIES)
@@ -1057,11 +1070,14 @@ int pbs_original_connect(
 
         if (retries >= MAX_RETRIES)
           {
-          pthread_mutex_unlock(connection[out].ch_mutex);
-          return(PBSE_BADHOST * -1);
+          rc = PBSE_BADHOST * -1;
+          goto cleanup_conn;
           }
         else
           {
+          close(connection[out].ch_socket);
+          connection[out].ch_inuse = FALSE;
+
           retries++;
           usleep(1000);
           continue;
@@ -1073,28 +1089,180 @@ int pbs_original_connect(
 
       server_addr.sin_port = htons(server_port);
 
-      if (connect(
-            connection[out].ch_socket,
-            (struct sockaddr *)&server_addr,
-            sizeof(server_addr)) < 0)
+      /* Set the socket to non-blocking mode so we can timeout */
+      if ((sockflags = fcntl(connection[out].ch_socket, F_GETFL, NULL)) < 0)
         {
-        close(connection[out].ch_socket);
-        connection[out].ch_inuse = FALSE;
-
         if (retries >= MAX_RETRIES)
           {
           if (getenv("PBSDEBUG"))
-            {
-            fprintf(stderr, "ERROR:  cannot connect to server, errno=%d (%s)\n",
-                    errno,
-                    strerror(errno));
-            }
-          pthread_mutex_unlock(connection[out].ch_mutex);
-          return(errno * -1);
+            fprintf(stderr, "ERROR:  getting socket flags failed\n");
+
+          rc = errno * -1;
+          goto cleanup_conn;
           }
         else
           {
-          fprintf(stderr, "Trying again");
+          close(connection[out].ch_socket);
+          connection[out].ch_inuse = FALSE;
+
+          retries++;
+          usleep(1000);
+          continue;
+          }
+        }
+      
+      sockflags |= O_NONBLOCK;
+
+      if (fcntl(connection[out].ch_socket, F_SETFL, sockflags) < 0)
+        {
+        if (retries >= MAX_RETRIES)
+          {
+          if (getenv("PBSDEBUG"))
+            fprintf(stderr, "ERROR:  setting socket flags failed\n");
+
+          rc = errno * -1;
+          goto cleanup_conn;
+          }
+        else
+          {
+          close(connection[out].ch_socket);
+          connection[out].ch_inuse = FALSE;
+
+          retries++;
+          usleep(1000);
+          continue;
+          }
+        }
+
+      rc = connect(connection[out].ch_socket,
+          (struct sockaddr *)&server_addr,
+          sizeof(server_addr));
+
+      /* Try a select() with a timeout if we connect()ed */
+      if (rc < 0)
+        {
+        if (errno == EINPROGRESS) /* Non-blocking connection in progress */
+          {
+          tv.tv_sec = pbs_tcp_timeout;
+          tv.tv_usec = 0;
+          FD_ZERO(&fdset);
+          FD_SET(connection[out].ch_socket, &fdset);
+          rc = select(connection[out].ch_socket + 1, NULL, &fdset, NULL, &tv);
+
+          if (rc > 0)
+             {
+            socklen = sizeof(int);
+            getsockopt(connection[out].ch_socket, SOL_SOCKET, SO_ERROR, (void*)(&rc), &socklen);
+
+            if (rc)
+              {
+              if (getenv("PBSDEBUG"))
+                fprintf(stderr, "ERROR: socket has error status %d\n", rc);
+         
+              if (retries >= MAX_RETRIES)
+                {
+                rc = PBSE_SOCKET_FAULT * -1;
+                goto cleanup_conn;
+                }
+              else
+                {
+                close(connection[out].ch_socket);
+                connection[out].ch_inuse = FALSE;
+                
+                retries++;
+                usleep(1000);
+                continue;
+                }
+              }
+            }
+          else if (rc == 0) /* Select timed out */
+            {
+            if (getenv("PBSDEBUG"))
+              {
+              fprintf(stderr,
+                "ERROR: could not connect to host after %d seconds\n",
+                (int)pbs_tcp_timeout);
+              }
+              
+            if (retries >= MAX_RETRIES)
+              {
+              rc = PBSE_TIMEOUT * -1;
+              goto cleanup_conn;
+              }
+            else
+              {
+              close(connection[out].ch_socket);
+              connection[out].ch_inuse = FALSE;
+              
+              retries++;
+              usleep(1000);
+              continue;
+              }
+            }
+          else /* Select returned some error */
+            {
+            if (getenv("PBSDEBUG"))
+              {
+              fprintf(stderr, "ERROR: select failed rc=%d errno=%d - %s\n",
+                rc, errno, strerror(errno));
+              }
+
+            if (retries >= MAX_RETRIES)
+              {
+              rc = PBSE_SELECT * -1;
+              goto cleanup_conn;
+              }
+            else
+              {
+              close(connection[out].ch_socket);
+              connection[out].ch_inuse = FALSE;
+              
+              retries++;
+              usleep(1000);
+              continue;
+              }
+            }
+          }
+        else /* Connect errno != EINPROGRESS */
+          {
+          if (getenv("PBSDEBUG"))
+            fprintf(stderr, "ERROR: connect failed\n");
+
+          if (retries >= MAX_RETRIES)
+            {
+            rc = PBSE_SOCKET_FAULT * -1;
+            goto cleanup_conn;
+            }
+          else
+            {
+            close(connection[out].ch_socket);
+            connection[out].ch_inuse = FALSE;
+            
+            retries++;
+            usleep(1000);
+            continue;
+            }
+          }
+        }
+      
+      /* Set the socket back to blocking so read()s actually work */
+      sockflags &= (~O_NONBLOCK);
+      
+      if (fcntl(connection[out].ch_socket, F_SETFL, sockflags) < 0)
+        {
+        if (getenv("PBSDEBUG"))
+          fprintf(stderr, "ERROR: setting socket flags failed\n");
+
+        if (retries >= MAX_RETRIES)
+          {
+          rc = PBSE_SOCKET_FAULT * -1;
+          goto cleanup_conn;
+          }
+        else
+          {
+          close(connection[out].ch_socket);
+          connection[out].ch_inuse = FALSE;
+          
           retries++;
           usleep(1000);
           continue;
@@ -1115,8 +1283,6 @@ int pbs_original_connect(
       rc = PBSD_munge_authenticate(connection[out].ch_socket, out);
       if (rc != 0)
         {
-        close(connection[out].ch_socket);
-        connection[out].ch_inuse = FALSE;
 
         if (rc == PBSE_MUNGE_NOT_FOUND)
           {
@@ -1126,8 +1292,9 @@ int pbs_original_connect(
             {
             fprintf(stderr, "ERROR:  cannot find munge executable\n");
             }
-          pthread_mutex_unlock(connection[out].ch_mutex);
-          return(-1 * local_errno);
+
+          rc = -1 * local_errno;
+          goto cleanup_conn;
           }
         else
           {
@@ -1143,11 +1310,15 @@ int pbs_original_connect(
                 strerror(errno));
               }
             }
-          pthread_mutex_unlock(connection[out].ch_mutex);
-          return(-1 * local_errno);
+
+          rc = -1 * local_errno;
+          goto cleanup_conn;
           }
         else
           {
+          close(connection[out].ch_socket);
+          connection[out].ch_inuse = FALSE;
+
           retries++;
           usleep(1000);
           continue;
@@ -1155,11 +1326,9 @@ int pbs_original_connect(
         }
 #else  
       /* new version of iff using daemon */
-      if ((ENABLE_TRUSTED_AUTH == FALSE) && ((rc = validate_socket(connection[out].ch_socket)) != PBSE_NONE))
+      if ((ENABLE_TRUSTED_AUTH == FALSE) &&
+          ((rc = validate_socket(connection[out].ch_socket)) != PBSE_NONE))
         {
-        close(connection[out].ch_socket);
-        connection[out].ch_inuse = FALSE;
-
         if (retries >= MAX_RETRIES)
           {
           if (getenv("PBSDEBUG"))
@@ -1167,41 +1336,39 @@ int pbs_original_connect(
             fprintf(stderr, "ERROR:  cannot authenticate connection to server \"%s\", errno=%d (%s)\n",
                     server, rc, pbs_strerror(rc));
             }
+
           local_errno = PBSE_SOCKET_FAULT;
-          pthread_mutex_unlock(connection[out].ch_mutex);
-          return(-1 * local_errno);
+          rc = -1 * local_errno;
+          goto cleanup_conn;
           }
         else
           {
+          close(connection[out].ch_socket);
+          connection[out].ch_inuse = FALSE;
+
           retries++;
           usleep(1000);
           continue;
           }
         }
 #endif /* ifdef MUNGE_AUTH */
-      } while((rc != PBSE_NONE) && (retries <= MAX_RETRIES));
+      } while ((rc != PBSE_NONE) && (retries <= MAX_RETRIES));
 
     } /* END if !use_unixsock */
-
-  /* setup DIS support routines for following pbs_* calls */
-
-  if ((ptr = getenv("PBSAPITIMEOUT")) != NULL)
-    {
-    pbs_tcp_timeout = strtol(ptr, NULL, 0);
-
-    if (pbs_tcp_timeout <= 0)
-      {
-      pbs_tcp_timeout = 10800;      /* set for 3 hour time out */
-      }
-    }
-  else
-    {
-    pbs_tcp_timeout = 10800;      /* set for 3 hour time out */
-    }
 
   pthread_mutex_unlock(connection[out].ch_mutex);
 
   return(out);
+
+cleanup_conn:
+  
+  close(connection[out].ch_socket);
+
+cleanup_conn_lite:
+  connection[out].ch_inuse = FALSE;
+  pthread_mutex_unlock(connection[out].ch_mutex);
+
+  return(rc < 0 ? rc : rc * -1);
   }  /* END pbs_original_connect() */
 
 
