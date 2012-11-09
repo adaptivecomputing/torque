@@ -32,6 +32,8 @@ void *next_thing(
   } /* END next_thing() */
 
 
+
+
 int hasprop(
 
   struct pbsnode *pnode,
@@ -180,6 +182,48 @@ int insert_thing(
 
   return(rc);
   } /* END insert_thing() */
+
+
+
+
+int insert_thing_before(
+
+  resizable_array *ra,
+  void            *thing,
+  int              index)
+
+  {
+  int rc;
+  int prev;
+  
+  /* check if the array must be resized */
+  if ((rc = check_and_resize(ra)) != PBSE_NONE)
+    {
+    return(-1);
+    }
+
+  /* insert this element */
+  ra->slots[ra->next_slot].item = thing;
+ 
+  /* save the insertion point */
+  rc = ra->next_slot;
+
+  /* move pointers around */
+  prev = ra->slots[index].prev;
+  ra->slots[rc].next = index;
+  ra->slots[rc].prev = prev;
+  ra->slots[index].prev = rc;
+  ra->slots[prev].next = rc;
+
+  /* increase the count */
+  ra->num++;
+
+  update_next_slot(ra);
+
+  return(rc);
+  } /* END insert_thing_before() */
+
+
 
 
 void *next_thing_from_back(

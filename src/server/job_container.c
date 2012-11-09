@@ -407,7 +407,7 @@ job *svr_find_job(
    * the get the external sub-job */
   if (get_subjob == TRUE)
     {
-    dot = strchr(jobid, '-');
+    dot = strchr(jobid, '.');
 
     if (((dash = strchr(jobid, '-')) != NULL) &&
         (dot != NULL) &&

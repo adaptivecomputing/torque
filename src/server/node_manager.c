@@ -3979,7 +3979,7 @@ enum job_types find_job_type(
   complete_spec_data *all_reqs)
 
   {
-  enum job_types jt = JOB_TYPE_login;
+  enum job_types jt = JOB_TYPE_cray;
   
   if (check_for_node_type(all_reqs, ND_TYPE_CRAY) == TRUE)
     {
@@ -4332,7 +4332,8 @@ int node_spec(
       }
 
     if ((num_alps_reqs > 0) &&
-        (ard_array != NULL))
+        (ard_array != NULL) &&
+        (job_type == JOB_TYPE_cray))
       {
       *ard_array = calloc(num_alps_reqs + 1, sizeof(alps_req_data));
       
