@@ -130,6 +130,7 @@
 #define CNTRETRYDELAY 5
 #define MUNGE_SIZE 256 /* I do not know what the proper size of this should be. My 
                           testing with munge shows it creates a string of 128 bytes */
+#define MAX_RETRIES 5  /* maximum number of times to try and successfully connect in pbs_original_connect */
 
 
 /* NOTE:  globals, must not impose per connection constraints */
@@ -495,7 +496,6 @@ int parse_daemon_response(long long code, long long len, char *buf)
     }
   else
     {
-    fprintf(stderr, "Error code - %lld : message [%s]\n", code, buf);
     rc = code;
     }
   return rc;
@@ -592,7 +592,7 @@ int validate_socket(
       }
     else if ((rc = parse_daemon_response(code, read_buf_len, read_buf)) != PBSE_NONE)
       {
-      fprintf(stderr, "parse_daemon_response error\n");
+      /*fprintf(stderr, "parse_daemon_response error\n");*/
       }
     else
       {
@@ -943,105 +943,163 @@ int pbs_original_connect(
 
   if (!use_unixsock)
     {
-
+    int retries = 0;
     /* at this point, either using unix sockets failed, or we determined not to
      * try */
-
-    connection[out].ch_socket = socket(AF_INET, SOCK_STREAM, 0);
-
-    if (connection[out].ch_socket < 0)
+    do
       {
-      if (getenv("PBSDEBUG"))
+      connection[out].ch_socket = socket(AF_INET, SOCK_STREAM, 0);
+
+      if (connection[out].ch_socket < 0)
         {
-        fprintf(stderr, "ERROR:  cannot connect to server \"%s\", errno=%d (%s)\n",
-                server,
-                errno,
-                strerror(errno));
+        if (getenv("PBSDEBUG"))
+          {
+          if (retries >= MAX_RETRIES)
+            fprintf(stderr, "ERROR:  cannot connect to server \"%s\", errno=%d (%s)\n",
+                  server,
+                  errno,
+                  strerror(errno));
+          }
+
+        connection[out].ch_inuse = FALSE;
+
+
+        if (retries >= MAX_RETRIES)
+          {
+          pthread_mutex_unlock(connection[out].ch_mutex);
+          return(PBSE_PROTOCOL * -1);
+          }
+        else
+          {
+          retries++;
+          usleep(1000);
+          continue;
+          }
         }
 
-      connection[out].ch_inuse = FALSE;
-
-      pthread_mutex_unlock(connection[out].ch_mutex);
-
-      return(PBSE_PROTOCOL * -1);
-      }
-
-    /* This is probably an IPv4 solution for the if_name and preferred_addr
-       We need to see what ioctl call we need for IPv6 */
-    if_name = trq_get_if_name();
-    if (if_name)
-      {
-      rc = trq_set_preferred_network_interface(if_name, &preferred_addr);
-      if (rc != PBSE_NONE)
+      /* This is probably an IPv4 solution for the if_name and preferred_addr
+         We need to see what ioctl call we need for IPv6 */
+      if_name = trq_get_if_name();
+      if (if_name)
         {
-        fprintf(stderr, "could not set preferred network interface (%s): %d\n",
-                if_name, rc);
-        if(if_name)
-          free(if_name);
-        return(rc);
+        rc = trq_set_preferred_network_interface(if_name, &preferred_addr);
+        if (rc != PBSE_NONE)
+          {
+          if (retries >= MAX_RETRIES)
+            fprintf(stderr, "could not set preferred network interface (%s): %d\n",
+                  if_name, rc);
+
+          if(if_name)
+            free(if_name);
+
+          close(connection[out].ch_socket);
+          connection[out].ch_inuse = FALSE;
+          if (retries >= MAX_RETRIES)
+            {
+            pthread_mutex_unlock(connection[out].ch_mutex);
+            return(rc);
+            }
+          else
+            {
+            retries++;
+            usleep(1000);
+            continue;
+            }
+          }
+
+        rc = bind(connection[out].ch_socket, &preferred_addr, sizeof(struct sockaddr));
+        if (rc < 0)
+          {
+          if (retries >= MAX_RETRIES)
+            fprintf(stderr, "ERROR: could not bind preferred network interface (%s): errno: %d",
+                  if_name, errno);
+
+          if (if_name)
+            free(if_name);
+
+          close(connection[out].ch_socket);
+          connection[out].ch_inuse = FALSE;
+
+          if (retries >= MAX_RETRIES)
+            {
+            pthread_mutex_unlock(connection[out].ch_mutex);
+            return(PBSE_SYSTEM * -1);
+            }
+          else
+            {
+            retries++;
+            usleep(1000);
+            continue;
+            }
+          }
         }
 
-      rc = bind(connection[out].ch_socket, &preferred_addr, sizeof(struct sockaddr));
-      if (rc < 0)
+      /* we are done with if_name at this point. trq_get_if_name allocated
+         space for it. We need to free it */
+      if (if_name)
+        free(if_name);
+
+      server_addr.sin_family = AF_INET;
+
+      if (getaddrinfo(server, NULL, NULL, &addr_info) != 0)
         {
-        fprintf(stderr, "ERROR: could not bind preferred network interface (%s): errno: %d",
-                if_name, errno);
-        if (if_name)
-          free(if_name);
-        return(PBSE_SYSTEM * -1);
-        }
-      }
+        close(connection[out].ch_socket);
+        connection[out].ch_inuse = FALSE;
 
-    /* we are done with if_name at this point. trq_get_if_name allocated
-       space for it. We need to free it */
-    if (if_name)
-      free(if_name);
+        if (getenv("PBSDEBUG"))
+          {
+          if (retries >= MAX_RETRIES)
+            fprintf(stderr, "ERROR:  cannot get servername (%s) errno=%d (%s)\n",
+                  (server != NULL) ? server : "NULL",
+                  errno,
+                  strerror(errno));
+          }
 
-    server_addr.sin_family = AF_INET;
-
-    if (getaddrinfo(server, NULL, NULL, &addr_info) != 0)
-      {
-      close(connection[out].ch_socket);
-      connection[out].ch_inuse = FALSE;
-
-      if (getenv("PBSDEBUG"))
-        {
-        fprintf(stderr, "ERROR:  cannot get servername (%s) errno=%d (%s)\n",
-                (server != NULL) ? server : "NULL",
-                errno,
-                strerror(errno));
-        }
-
-      pthread_mutex_unlock(connection[out].ch_mutex);
-
-      return(PBSE_BADHOST * -1);
-      }
-
-    server_addr.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
-    freeaddrinfo(addr_info);
-
-    server_addr.sin_port = htons(server_port);
-
-    if (connect(
-          connection[out].ch_socket,
-          (struct sockaddr *)&server_addr,
-          sizeof(server_addr)) < 0)
-      {
-      close(connection[out].ch_socket);
-
-      connection[out].ch_inuse = FALSE;
-
-      if (getenv("PBSDEBUG"))
-        {
-        fprintf(stderr, "ERROR:  cannot connect to server, errno=%d (%s)\n",
-                errno,
-                strerror(errno));
+        if (retries >= MAX_RETRIES)
+          {
+          pthread_mutex_unlock(connection[out].ch_mutex);
+          return(PBSE_BADHOST * -1);
+          }
+        else
+          {
+          retries++;
+          usleep(1000);
+          continue;
+          }
         }
 
-      pthread_mutex_unlock(connection[out].ch_mutex);
+      server_addr.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
+      freeaddrinfo(addr_info);
 
-      return(errno * -1);
-      }
+      server_addr.sin_port = htons(server_port);
+
+      if (connect(
+            connection[out].ch_socket,
+            (struct sockaddr *)&server_addr,
+            sizeof(server_addr)) < 0)
+        {
+        close(connection[out].ch_socket);
+        connection[out].ch_inuse = FALSE;
+
+        if (retries >= MAX_RETRIES)
+          {
+          if (getenv("PBSDEBUG"))
+            {
+            fprintf(stderr, "ERROR:  cannot connect to server, errno=%d (%s)\n",
+                    errno,
+                    strerror(errno));
+            }
+          pthread_mutex_unlock(connection[out].ch_mutex);
+          return(errno * -1);
+          }
+        else
+          {
+          fprintf(stderr, "Trying again");
+          retries++;
+          usleep(1000);
+          continue;
+          }
+        }
 
     /* FIXME: is this necessary?  Contributed by one user that fixes a problem,
        but doesn't fix the same problem for another user! */
@@ -1054,63 +1112,74 @@ int pbs_original_connect(
 #endif
 
 #ifdef MUNGE_AUTH
-    rc = PBSD_munge_authenticate(connection[out].ch_socket, out);
-
-    if (rc != 0)
-      {
-      close(connection[out].ch_socket);
-
-      connection[out].ch_inuse = FALSE;
-
-      if (rc == PBSE_MUNGE_NOT_FOUND)
+      rc = PBSD_munge_authenticate(connection[out].ch_socket, out);
+      if (rc != 0)
         {
-        local_errno = PBSE_MUNGE_NOT_FOUND;
-        
-        if (getenv("PBSDEBUG"))
+        close(connection[out].ch_socket);
+        connection[out].ch_inuse = FALSE;
+
+        if (rc == PBSE_MUNGE_NOT_FOUND)
           {
-          fprintf(stderr, "ERROR:  cannot find munge executable\n");
+          local_errno = PBSE_MUNGE_NOT_FOUND;
+          
+          if (getenv("PBSDEBUG"))
+            {
+            fprintf(stderr, "ERROR:  cannot find munge executable\n");
+            }
+          pthread_mutex_unlock(connection[out].ch_mutex);
+          return(-1 * local_errno);
+          }
+        else
+          {
+          if (retries >= MAX_RETRIES)
+            {
+            local_errno = PBSE_PERM;
+            
+            if (getenv("PBSDEBUG"))
+              {
+              fprintf(stderr, "ERROR:  cannot authenticate connection to server \"%s\", errno=%d (%s)\n",
+                server,
+                errno,
+                strerror(errno));
+              }
+            }
+          pthread_mutex_unlock(connection[out].ch_mutex);
+          return(-1 * local_errno);
+          }
+        else
+          {
+          retries++;
+          usleep(1000);
+          continue;
           }
         }
-      else
-        {
-        local_errno = PBSE_PERM;
-        
-        if (getenv("PBSDEBUG"))
-          {
-          fprintf(stderr, "ERROR:  cannot authenticate connection to server \"%s\", errno=%d (%s)\n",
-            server,
-            errno,
-            strerror(errno));
-          }
-        }
-
-      pthread_mutex_unlock(connection[out].ch_mutex);
-
-      return(-1 * local_errno);
-      }
-    
-    
 #else  
-    /* new version of iff using daemon */
-    if ((ENABLE_TRUSTED_AUTH == FALSE) && ((rc = validate_socket(connection[out].ch_socket)) != PBSE_NONE))
-      {
-      close(connection[out].ch_socket);
-
-      connection[out].ch_inuse = FALSE;
-
-      if (getenv("PBSDEBUG"))
+      /* new version of iff using daemon */
+      if ((ENABLE_TRUSTED_AUTH == FALSE) && ((rc = validate_socket(connection[out].ch_socket)) != PBSE_NONE))
         {
-        fprintf(stderr, "ERROR:  cannot authenticate connection to server \"%s\", errno=%d (%s)\n",
-                server, rc, pbs_strerror(rc));
+        close(connection[out].ch_socket);
+        connection[out].ch_inuse = FALSE;
+
+        if (retries >= MAX_RETRIES)
+          {
+          if (getenv("PBSDEBUG"))
+            {
+            fprintf(stderr, "ERROR:  cannot authenticate connection to server \"%s\", errno=%d (%s)\n",
+                    server, rc, pbs_strerror(rc));
+            }
+          local_errno = PBSE_SOCKET_FAULT;
+          pthread_mutex_unlock(connection[out].ch_mutex);
+          return(-1 * local_errno);
+          }
+        else
+          {
+          retries++;
+          usleep(1000);
+          continue;
+          }
         }
-      
-      local_errno = PBSE_SOCKET_FAULT;
-
-      pthread_mutex_unlock(connection[out].ch_mutex);
-
-      return(-1 * local_errno);
-      }
 #endif /* ifdef MUNGE_AUTH */
+      } while((rc != PBSE_NONE) && (retries <= MAX_RETRIES));
 
     } /* END if !use_unixsock */
 
