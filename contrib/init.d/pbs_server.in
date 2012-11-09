@@ -16,7 +16,7 @@ create() {
     fi
 
     for SLEEP in 2 4 6 8 10 ; do
-        $PBS_DAEMON -d $PBS_HOME -t create &
+        $PBS_DAEMON -d $PBS_HOME -t create -f &
         sleep $SLEEP
         $BIN_PATH/qterm
     done
