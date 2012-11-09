@@ -772,6 +772,7 @@ void validate_qsub_host_pbs_o_server(
   job_data *tmp_job_info = NULL;
   char *qsub_host = NULL;
   char tmp_host_name[PBS_MAXHOSTNAME];
+  char tmp_host_name_with_suffix[PBS_MAXHOSTNAME];
 
   /* check if QSUBHOST was entered in torque.cfg */
   if (hash_find(*job_attr, ATTR_submit_host, &tmp_job_info))
@@ -781,8 +782,8 @@ void validate_qsub_host_pbs_o_server(
 
   if (host_name_suffix != NULL)
     {
-    snprintf((char *)tmp_host_name, PBS_MAXHOSTNAME, "%s%s", qsub_host, host_name_suffix);
-    qsub_host = tmp_host_name;
+    snprintf((char *)tmp_host_name_with_suffix, PBS_MAXHOSTNAME, "%s%s", qsub_host, host_name_suffix);
+    qsub_host = tmp_host_name_with_suffix;
     }
 
   if (qsub_host)
