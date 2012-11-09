@@ -77,6 +77,8 @@
 * without reference to its choice of law rules.
 */
 
+#include <stdio.h>
+
 #include "resizable_array.h"
 #include "pbs_nodes.h"
 #include "login_nodes.h"
@@ -92,7 +94,6 @@ void initialize_login_holder()
   {
   logins.ra = initialize_resizable_array(LOGIN_INITIAL_SIZE);
   logins.next_node = 0;
-  logins.iterate_backwards = 0;
   logins.ln_mutex = calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(logins.ln_mutex, NULL);
   }
@@ -134,7 +135,9 @@ struct pbsnode *check_node(
   lock_node(pnode, __func__, NULL, 20);
 
   if ((hasprop(pnode, needed) == TRUE) &&
-      (pnode->nd_nsn - pnode->nd_np_to_be_used >= 1))
+      (pnode->nd_nsn - pnode->nd_np_to_be_used >= 1) &&
+      ((pnode->nd_state & INUSE_DOWN) == 0) &&
+      ((pnode->nd_state & INUSE_OFFLINE) == 0))
     return(pnode);
   else
     {
@@ -151,36 +154,54 @@ struct pbsnode *find_fitting_node(
   struct prop *needed)
 
   {
-  struct pbsnode *pnode = NULL;
-  login_node     *ln;
-  int             iter = -1;
+  struct pbsnode  *pnode = NULL;
+  login_node      *ln;
+  login_node      *ordered_ln;
+  int              iter = -1;
+  int              ordered_iter;
+  int              index;
+  resizable_array *ordered = initialize_resizable_array(logins.ra->num + 1);
 
-  if (logins.iterate_backwards == TRUE)
+  /* create a sorted list of the logins */
+  while ((ln = next_thing(logins.ra, &iter)) != NULL)
     {
-    logins.iterate_backwards = FALSE;
-
-    while ((ln = next_thing_from_back(logins.ra, &iter)) != NULL)
+    /* if ordered is empty just insert without attempting to sort */
+    if (ordered->num == 0)
+      insert_thing(ordered, ln);
+    else
       {
-      if ((pnode = check_node(ln, needed)) != NULL)
+      ordered_iter = -1;
+      index = ordered->slots[ALWAYS_EMPTY_INDEX].next;
+
+      while ((ordered_ln = next_thing(ordered, &ordered_iter)) != NULL)
         {
-        ln->times_used++;
-        return(pnode);
+        if (ln->times_used <= ordered_ln->times_used)
+          {
+          insert_thing_before(ordered, ln, index);
+          break;
+          }
+
+        index = ordered_iter;
         }
+
+      /* insert if it hasn't been inserted yet */
+      if (ordered_ln == NULL)
+        insert_thing(ordered, ln);
       }
     }
-  else
-    {
-    logins.iterate_backwards = TRUE;
 
-    while ((ln = next_thing(logins.ra, &iter)) != NULL)
+  iter = -1;
+
+  while ((ln = next_thing(ordered, &iter)) != NULL)
+    {
+    if ((pnode = check_node(ln, needed)) != NULL)
       {
-      if ((pnode = check_node(ln, needed)) != NULL)
-        {
-        ln->times_used++;
-        return(pnode);
-        }
+      ln->times_used++;
+      return(pnode);
       }
     }
+
+  free_resizable_array(ordered);
 
   return(NULL);
   } /* END find_fitting_node() */
@@ -243,8 +264,7 @@ struct pbsnode *get_next_login_node(
     /* must have at least one execution slot available */
     if ((pnode->nd_nsn - pnode->nd_np_to_be_used < 1) ||
         ((pnode->nd_state & INUSE_DOWN) != 0) ||
-        ((pnode->nd_state & INUSE_OFFLINE) != 0) ||
-        ((pnode->nd_state & INUSE_DELETED) != 0))
+        ((pnode->nd_state & INUSE_OFFLINE) != 0))
       {
       node_fits = FALSE;
       }

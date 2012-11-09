@@ -39,6 +39,7 @@ START_TEST(add_test)
   struct pbsnode *n1 = (struct pbsnode *)1;
   struct pbsnode *n2 = (struct pbsnode *)2;
   struct pbsnode *n3 = (struct pbsnode *)3;
+  struct pbsnode *n4 = (struct pbsnode *)4;
   int            rc;
   
   initialize_login_holder();
@@ -51,6 +52,9 @@ START_TEST(add_test)
 
   rc = add_to_login_holder(n3);
   fail_unless(rc == 0, "Couldn't add n3");
+
+  rc = add_to_login_holder(n4);
+  fail_unless(rc == 0, "Couldn't add n4");
   }
 END_TEST
 
@@ -62,10 +66,12 @@ void increment_counts(
   struct pbsnode *n1,
   struct pbsnode *n2,
   struct pbsnode *n3,
+  struct pbsnode *n4,
   struct pbsnode *rtd,
   int            *n1_cnt,
   int            *n2_cnt,
-  int            *n3_cnt)
+  int            *n3_cnt,
+  int            *n4_cnt)
 
   {
   if (rtd == n1)
@@ -74,6 +80,8 @@ void increment_counts(
     *n2_cnt += 1;
   else if (rtd == n3)
     *n3_cnt += 1;
+  else if (rtd == n4)
+    *n4_cnt += 1;
   } /* END increment_counts() */
 
 
@@ -83,42 +91,71 @@ START_TEST(retrieval_test)
   struct pbsnode  n1;
   struct pbsnode  n2;
   struct pbsnode  n3;
+  struct pbsnode  n4;
   struct pbsnode *rtd;
   int             rc;
   int             n1_rtd = 0;
   int             n2_rtd = 0;
   int             n3_rtd = 0;
+  int             n4_rtd = 0;
 
   initialize_login_holder();
   initialize_node_for_testing(&n1);
   initialize_node_for_testing(&n2);
   initialize_node_for_testing(&n3);
+  initialize_node_for_testing(&n4);
   rc = add_to_login_holder(&n1);
   rc = add_to_login_holder(&n2);
   rc = add_to_login_holder(&n3);
+  rc = add_to_login_holder(&n4);
 
   rtd = get_next_login_node(NULL);
-  increment_counts(&n1, &n2, &n3, rtd, &n1_rtd, &n2_rtd, &n3_rtd);
+  increment_counts(&n1, &n2, &n3, &n4, rtd, &n1_rtd, &n2_rtd, &n3_rtd, &n4_rtd);
   rtd = get_next_login_node(NULL);
-  increment_counts(&n1, &n2, &n3, rtd, &n1_rtd, &n2_rtd, &n3_rtd);
+  increment_counts(&n1, &n2, &n3, &n4, rtd, &n1_rtd, &n2_rtd, &n3_rtd, &n4_rtd);
   rtd = get_next_login_node(NULL);
-  increment_counts(&n1, &n2, &n3, rtd, &n1_rtd, &n2_rtd, &n3_rtd);
+  increment_counts(&n1, &n2, &n3, &n4, rtd, &n1_rtd, &n2_rtd, &n3_rtd, &n4_rtd);
+  rtd = get_next_login_node(NULL);
+  increment_counts(&n1, &n2, &n3, &n4, rtd, &n1_rtd, &n2_rtd, &n3_rtd, &n4_rtd);
   snprintf(buf, sizeof(buf), "Should have used n1 once but is %d", n1_rtd);
   fail_unless(n1_rtd == 1, buf);
   snprintf(buf, sizeof(buf), "Should have used n2 once but is %d", n2_rtd);
   fail_unless(n2_rtd == 1, buf);
   snprintf(buf, sizeof(buf), "Should have used n3 once but is %d", n3_rtd);
   fail_unless(n3_rtd == 1, buf);
+  snprintf(buf, sizeof(buf), "Should have used n4 once but is %d", n4_rtd);
+  fail_unless(n4_rtd == 1, buf);
   
   rtd = get_next_login_node(NULL);
-  increment_counts(&n1, &n2, &n3, rtd, &n1_rtd, &n2_rtd, &n3_rtd);
+  increment_counts(&n1, &n2, &n3, &n4, rtd, &n1_rtd, &n2_rtd, &n3_rtd, &n4_rtd);
   rtd = get_next_login_node(NULL);
-  increment_counts(&n1, &n2, &n3, rtd, &n1_rtd, &n2_rtd, &n3_rtd);
+  increment_counts(&n1, &n2, &n3, &n4, rtd, &n1_rtd, &n2_rtd, &n3_rtd, &n4_rtd);
   rtd = get_next_login_node(NULL);
-  increment_counts(&n1, &n2, &n3, rtd, &n1_rtd, &n2_rtd, &n3_rtd);
+  increment_counts(&n1, &n2, &n3, &n4, rtd, &n1_rtd, &n2_rtd, &n3_rtd, &n4_rtd);
+  rtd = get_next_login_node(NULL);
+  increment_counts(&n1, &n2, &n3, &n4, rtd, &n1_rtd, &n2_rtd, &n3_rtd, &n4_rtd);
   fail_unless(n1_rtd == 2, "Should have used n1 twice");
   fail_unless(n2_rtd == 2, "Should have used n2 twice");
   fail_unless(n3_rtd == 2, "Should have used n3 twice");
+  fail_unless(n4_rtd == 2, "Should have used n4 twice");
+
+  /* Set a node down and make sure it doesn't get used */
+  n2.nd_state = INUSE_DOWN;
+
+  n1.nd_name = strdup("n1");
+  n2.nd_name = strdup("n2");
+  n3.nd_name = strdup("n3");
+  n4.nd_name = strdup("n4");
+
+  rtd = get_next_login_node(NULL);
+  increment_counts(&n1, &n2, &n3, &n4, rtd, &n1_rtd, &n2_rtd, &n3_rtd, &n4_rtd);
+  rtd = get_next_login_node(NULL);
+  increment_counts(&n1, &n2, &n3, &n4, rtd, &n1_rtd, &n2_rtd, &n3_rtd, &n4_rtd);
+  rtd = get_next_login_node(NULL);
+  increment_counts(&n1, &n2, &n3, &n4, rtd, &n1_rtd, &n2_rtd, &n3_rtd, &n4_rtd);
+  fail_unless(((n1_rtd == 3) && (n2_rtd == 2) && (n3_rtd == 3) && (n4_rtd == 3)),
+    "Should have used n1,n2,n3,n4 3,2,3,3 times but found %d,%d,%d,%d",
+    n1_rtd, n2_rtd, n3_rtd, n4_rtd);
   }
 END_TEST
 
@@ -130,6 +167,7 @@ START_TEST(prop_test)
   struct pbsnode        n1;
   struct pbsnode        n2;
   struct pbsnode        n3;
+  struct pbsnode        n4;
   struct pbsnode       *rtd;
   int                   rc;
   int                   dummy1;
@@ -137,6 +175,7 @@ START_TEST(prop_test)
   int                   n1_rtd = 0;
   int                   n2_rtd = 0;
   int                   n3_rtd = 0;
+  int                   n4_rtd = 0;
   char                 *feature = "tom";
   char                 *feature2 = "bob";
   struct prop          *props = NULL;
@@ -145,6 +184,7 @@ START_TEST(prop_test)
   initialize_node_for_testing(&n1);
   initialize_node_for_testing(&n2);
   initialize_node_for_testing(&n3);
+  initialize_node_for_testing(&n4);
 
   proplist(&feature, &props, &dummy1, &dummy2);
   proplist(&feature2, &props2, &dummy1, &dummy2);
@@ -156,25 +196,29 @@ START_TEST(prop_test)
   rc = add_to_login_holder(&n1);
   rc = add_to_login_holder(&n2);
   rc = add_to_login_holder(&n3);
+  rc = add_to_login_holder(&n4);
 
   rtd = get_next_login_node(props);
-  increment_counts(&n1, &n2, &n3, rtd, &n1_rtd, &n2_rtd, &n3_rtd);
+  increment_counts(&n1, &n2, &n3, &n4, rtd, &n1_rtd, &n2_rtd, &n3_rtd, &n4_rtd);
   rtd = get_next_login_node(props);
-  increment_counts(&n1, &n2, &n3, rtd, &n1_rtd, &n2_rtd, &n3_rtd);
+  increment_counts(&n1, &n2, &n3, &n4, rtd, &n1_rtd, &n2_rtd, &n3_rtd, &n4_rtd);
   snprintf(buf, sizeof(buf), "Should have used n1 once but is %d", n1_rtd);
   fail_unless(n1_rtd == 1, buf);
   snprintf(buf, sizeof(buf), "Should have used n2 once but is %d", n2_rtd);
   fail_unless(n2_rtd == 1, buf);
   snprintf(buf, sizeof(buf), "Shouldn't have used n3 but is %d", n3_rtd);
   fail_unless(n3_rtd == 0, buf);
+  snprintf(buf, sizeof(buf), "Shouldn't have used n4 but is %d", n4_rtd);
+  fail_unless(n4_rtd == 0, buf);
 
   rtd = get_next_login_node(props);
-  increment_counts(&n1, &n2, &n3, rtd, &n1_rtd, &n2_rtd, &n3_rtd);
+  increment_counts(&n1, &n2, &n3, &n4, rtd, &n1_rtd, &n2_rtd, &n3_rtd, &n4_rtd);
   rtd = get_next_login_node(props);
-  increment_counts(&n1, &n2, &n3, rtd, &n1_rtd, &n2_rtd, &n3_rtd);
+  increment_counts(&n1, &n2, &n3, &n4, rtd, &n1_rtd, &n2_rtd, &n3_rtd, &n4_rtd);
   fail_unless(n1_rtd == 2, "Should have used n1 twice");
   fail_unless(n2_rtd == 2, "Should have used n2 twice");
   fail_unless(n3_rtd == 0, "Shouldn't have used n3");
+  fail_unless(n4_rtd == 0, "Shouldn't have used n4");
 
   fail_unless(get_next_login_node(props2) == NULL, "Somehow found a node when none have the property");
   }
