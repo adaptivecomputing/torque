@@ -235,10 +235,13 @@ int acct_job(
   /* For large clusters strings can get pretty long. We need to see if there
      is a need to allocate a bigger buffer */
   /* execution host name */
-  append_dynamic_string(ds, "exec_host=");
-  append_dynamic_string(ds, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
-  if ((rc = append_dynamic_string(ds, " ")) != PBSE_NONE)
-    return(rc);
+  if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
+    {
+    append_dynamic_string(ds, "exec_host=");
+    append_dynamic_string(ds, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+    if ((rc = append_dynamic_string(ds, " ")) != PBSE_NONE)
+      return(rc);
+    }
 
   get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
   if ((cray_enabled == TRUE) &&
@@ -475,6 +478,7 @@ void account_jobstr(
 
   job *pjob)
 
+                //numvnodes += pjob->ji_numvnod;
   {
   dynamic_string *ds;
 
