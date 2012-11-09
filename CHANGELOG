@@ -33,6 +33,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - For alps jobs, use the login nodes evenly even when one goes down. TRQ-1317.
   b - Display the correct 'Assigned Cpu Count' in momctl output. TRQ-1307.
   b - Make pbs_original_connect() no longer hang if the host is down. TRQ-1388.
+  b - Make epilogues run only once and be executed by the child and not the main
+      pbs_mom process. TRQ-937.
 
 4.1.3
   b - fix a security loophole that potentially allowed an interactive job to run 
