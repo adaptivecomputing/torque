@@ -14,8 +14,6 @@ int send_task_obit_response(job *pjob, hnodent *pnode, char *cookie, obitent *po
 
 void scan_for_exiting(void);
 
-int run_epilogues(job *pjob);
-
 int send_job_status(job *pjob);
 
 int post_epilogue(job *pjob, int ev);
@@ -31,8 +29,6 @@ void init_abort_jobs(int recover);
 void mom_deljob(job *pjob);
 
 int needs_and_ready_for_reply(job *pjob);
-
-void run_any_epilogues(job *pjob);
 
 int send_job_obit_to_ms(job *pjob, int mom_radix);
 
