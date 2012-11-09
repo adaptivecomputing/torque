@@ -40,6 +40,8 @@
 
 %define common_pkg      %{name}-%{common_sub}
 %define client_pkg      %{name}-%{client_sub}
+%define server_pkg      %{name}-%{server_sub}
+%define mom_pkg         %{name}-%{mom_sub}
 %define devel_pkg       %{name}-%{devel_sub}
 
 # End Autoconf variables #######################################################
@@ -94,7 +96,7 @@
 %{!?sendmail_path:%global sendmail_path %{_sbindir}/sendmail}
 
 # This ensures that the debugging symbols are not stripped
-%define __os_install_post %{nil}
+%define __os_install_post /usr/lib/rpm/brp-compress
 
 # Additional autoconf variables
 # Set according to the standard found here:
