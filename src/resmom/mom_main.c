@@ -5054,10 +5054,19 @@ int rm_request(
               char          *VPtr;  /* job env variable value pointer */
               char          *SPtr;
               int            SSpace;
+              int            vnindex;
 
               for (;pjob != NULL;pjob = (job *)GET_NEXT(pjob->ji_alljobs))
                 {
-                numvnodes += pjob->ji_numvnod;
+
+                /* count the CPUs assigned to this mom */
+                for (vnindex = 0; vnindex < pjob->ji_numvnod; vnindex++)
+                  {
+                  if (!strcmp(pjob->ji_vnods[vnindex].vn_host->hn_host, mom_alias))
+                    {
+                    numvnodes++;
+                    }
+                  }
 
                 /* JobId, job state */
                 sprintf(tmpLine, "job[%s]  state=%s",
