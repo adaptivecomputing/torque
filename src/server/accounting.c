@@ -478,7 +478,6 @@ void account_jobstr(
 
   job *pjob)
 
-                //numvnodes += pjob->ji_numvnod;
   {
   dynamic_string *ds;
 
