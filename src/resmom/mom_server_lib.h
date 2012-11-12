@@ -81,8 +81,6 @@ int write_my_server_status(struct tcp_chan *chan, const char *id, char *status_s
 
 int write_cached_statuses(struct tcp_chan *chan, const char *id, void *dest, int mode);
 
-void mom_server_update_stat(mom_server *pms, char *status_strings);
-
 void node_comm_error(node_comm_t *nc, char *message);
 
 int write_status_strings(char *stat_str, node_comm_t *nc);

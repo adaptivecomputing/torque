@@ -249,7 +249,9 @@
 #define UPDATE_TO_MOM                     1
 #define MIN_SERVER_UDPATE_SPACING         3
 #define MAX_SERVER_UPDATE_SPACING         40
-#define MAX_GPUS  32
+#define MAX_GPUS                          32
+#define NO_SERVER_CONFIGURED             -1
+#define COULD_NOT_CONTACT_SERVER         -2
 
 #ifdef NUMA_SUPPORT
 extern int numa_index;
@@ -2993,22 +2995,23 @@ int write_cached_statuses(
  * @param pms pointer to mom_server instance
  */
  
-void mom_server_update_stat(
+int mom_server_update_stat(
  
   mom_server *pms,
   char       *status_strings)
  
   {
-  int            stream;
-  int            ret = -1;
+  int              stream;
+  int              ret = -1;
+  int              rc  = COULD_NOT_CONTACT_SERVER;
   struct tcp_chan *chan = NULL;
 
-  if ((pms->pbs_servername[0] == 0) ||
+  if ((pms->pbs_servername[0] == '\0') ||
       (time_now < (pms->MOMLastSendToServerTime + ServerStatUpdateInterval)))
     {
     /* No server is defined for this slot */
     
-    return;
+    return(NO_SERVER_CONFIGURED);
     }
 
   stream = tcp_connect_sockaddr((struct sockaddr *)&pms->sock_addr, sizeof(pms->sock_addr));
@@ -3037,6 +3040,7 @@ void mom_server_update_stat(
       {
       read_tcp_reply(chan, IS_PROTOCOL, IS_PROTOCOL_VER, IS_STATUS, &ret);
       }
+
     if (chan != NULL)
       DIS_tcp_cleanup(chan);
       
@@ -3077,6 +3081,8 @@ void mom_server_update_stat(
         sprintf(log_buffer, "status update successfully sent to %s", pms->pbs_servername);
         
         log_record(PBSEVENT_SYSTEM, 0, __func__, log_buffer);
+
+        rc = PBSE_NONE;
         }
       
       /* It would be redundant to send state since it is already in status */  
@@ -3096,13 +3102,9 @@ void mom_server_update_stat(
   else
     {
     UpdateFailCount++;
-
-    sprintf(log_buffer,
-      "Cannot get a valid stream to send update to server '%s'",
-      pms->pbs_servername);
-    log_err(-1, __func__, log_buffer);
     }
   
+  return(rc);
   }  /* END mom_server_update_stat() */
 
 
@@ -3284,6 +3286,7 @@ void mom_server_all_update_stat(void)
   {
   node_comm_t *nc = NULL;
   int          sindex;
+  int          rc = NO_SERVER_CONFIGURED;
 
   time_now = time(NULL);
 
@@ -3347,10 +3350,17 @@ void mom_server_all_update_stat(void)
     
     if (nc == NULL)
       {
-      for (sindex = 0; sindex < PBS_MAXSERVER; sindex++)
+      /* now, once we contact one server we stop attempting to report in */
+      for (sindex = 0; sindex < PBS_MAXSERVER && rc != PBSE_NONE; sindex++)
         {
-        mom_server_update_stat(&mom_servers[sindex], mom_status->str);
+        int tmp_rc = mom_server_update_stat(&mom_servers[sindex], mom_status->str);
+
+        if (tmp_rc != NO_SERVER_CONFIGURED)
+          rc = tmp_rc;
         }
+
+      if (rc == COULD_NOT_CONTACT_SERVER)
+        log_err(-1, __func__, "Could not contact any of the servers to send an update");
       }
     else
       close(nc->stream);
