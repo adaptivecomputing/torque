@@ -29,6 +29,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Make pbs_original_connect() no longer hang if the host is down. TRQ-1388.
   b - Make epilogues run only once and be executed by the child and not the main
       pbs_mom process. TRQ-937.
+  b - Reduce the error messages in HA mode from moms. They now only log errors if
+      no server could be contacted. TRQ-1385.
 
 4.1.3
   b - fix a security loophole that potentially allowed an interactive job to run 
