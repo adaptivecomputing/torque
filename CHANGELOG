@@ -1,5 +1,10 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
+4.2.0
+  f - Support the MIC architecture. This was co-developed with Doug Johnson at 
+      Ohio Supercomputer Center (OSC) and provides support for the Intel® MIC 
+      architecture similar to GPU support in TORQUE.
+
 4.1.4
   e - When in cray mode, write physmem and availmem in addition to totmem so that 
       Moab correctly reads memory info.

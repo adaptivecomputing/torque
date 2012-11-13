@@ -119,7 +119,7 @@ int        default_checkpoint_interval = 10; /* minutes */
 extern char *mk_dirs(char *);
 extern void set_attr(struct attrl **, char *, char *);
 extern int write_nodes_to_file(job *);
-extern int write_gpus_to_file(job *);
+extern int write_attr_to_file(job *, int, char *);
 
 int create_missing_files(job *pjob);
 
@@ -2237,7 +2237,12 @@ int mom_checkpoint_start_restart(
           return(FAILURE);
           }
 
-	      if (write_gpus_to_file(pjob) == -1)
+	      if (write_attr_to_file(pjob, JOB_ATR_exec_gpus, "gpu") == -1)
+          {
+          return(FAILURE);
+          }
+	      
+        if (write_attr_to_file(pjob, JOB_ATR_exec_mics, "mic") == -1)
           {
           return(FAILURE);
           }

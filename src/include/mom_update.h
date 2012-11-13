@@ -77,26 +77,8 @@
 * without reference to its choice of law rules.
 */
 
-/*
- * This is a list of public node attributes
- *
- * FORMAT:
- *  attr1,
- *   attr2, <--- important the last has a comma after it
- *
- *  This file will be used for the initialization of an array
- *
- *
- * @(#) $Id$
- */
 
-ATTR_NODE_state,
-ATTR_NODE_properties,
-ATTR_NODE_np,
-ATTR_NODE_ntype,
-ATTR_NODE_status,
-ATTR_NODE_note,
-ATTR_NODE_gpus,
-ATTR_NODE_gpustatus,
-ATTR_NODE_mics,
-ATTR_NODE_micstatus,
+#include "dynamic_string.h"
+
+
+int process_status_info(char *nd_name, dynamic_string *status_info);

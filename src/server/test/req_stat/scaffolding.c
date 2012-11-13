@@ -88,7 +88,7 @@ job *find_array_template(char *arrayid)
   exit(1);
   }
 
-int lock_node(struct pbsnode *the_node, char *id, char *msg, int logging)
+int lock_node(struct pbsnode *the_node, const char *id, char *msg, int logging)
   {
   fprintf(stderr, "The call to lock_node to be mocked!!\n");
   exit(1);
@@ -106,7 +106,7 @@ struct work_task *set_task(enum work_type type, long event_id, void (*func)(), v
   exit(1);
   }
 
-int unlock_node(struct pbsnode *the_node, char *id, char *msg, int logging)
+int unlock_node(struct pbsnode *the_node, const char *id, char *msg, int logging)
   {
   fprintf(stderr, "The call to unlock_node to be mocked!!\n");
   exit(1);

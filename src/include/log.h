@@ -186,6 +186,7 @@ extern char log_buffer[LOG_BUF_SIZE];
 
 extern int LOGLEVEL;
 
+extern int LOGLEVEL;
 
 /* Event types */
 

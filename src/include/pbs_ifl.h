@@ -194,6 +194,7 @@
 #define ATTR_P           "proxy_user"
 #define ATTR_node_exclusive "node_exclusive"
 #define ATTR_exec_gpus   "exec_gpus"
+#define ATTR_exec_mics   "exec_mics"
 #define ATTR_J           "job_id"
 #define ATTR_pagg         "pagg_id"
 
@@ -346,6 +347,8 @@
 #define ATTR_NODE_gpus             "gpus"
 #define ATTR_NODE_gpustatus        "gpu_status"
 #define ATTR_NODE_gpus_str         "numa_gpu_node_str"
+#define ATTR_NODE_mics             "mics"
+#define ATTR_NODE_micstatus        "mic_status"
 
 /* notification email formating */
 #define ATTR_mailsubjectfmt "mail_subject_fmt"

@@ -1203,8 +1203,9 @@ int depend_on_que(
         if ((pjob == NULL) &&
             ((pjob = svr_find_job(job_id, TRUE)) == NULL))
           {
-          return PBSE_JOBNOTFOUND;
+          return(PBSE_JOBNOTFOUND);
           }
+
         if ((rc = send_depend_req(pjob, pparent, type, JOB_DEPEND_OP_REGISTER, SYNC_SCHED_HINT_NULL, post_doq)) != PBSE_NONE)
           {
           pjob = svr_find_job(job_id, TRUE);

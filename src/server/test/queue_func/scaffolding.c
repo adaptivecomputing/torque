@@ -8,6 +8,7 @@
 #include "attribute.h" /* pbs_attribute */
 #include "hash_table.h" /* hash_table */
 #include "pbs_job.h" /* job */
+#include "user_info.h"
 
 char *msg_err_unlink = "Unlink of %s file %s failed";
 all_queues svr_queues;

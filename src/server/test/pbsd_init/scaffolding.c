@@ -251,7 +251,7 @@ int insert_job(struct all_jobs *aj, job *pjob)
   exit(1);
   }
 
-int unlock_node(struct pbsnode *the_node, char *id, char *msg, int logging)
+int unlock_node(struct pbsnode *the_node, const char *id, char *msg, int logging)
   {
   fprintf(stderr, "The call to unlock_node needs to be mocked!!\n");
   exit(1);

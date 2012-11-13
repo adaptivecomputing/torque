@@ -11,6 +11,7 @@
 #include "work_task.h" /* work_task */
 #include "sched_cmds.h" /* SCH_SCHEDULE_NULL */
 #include "list_link.h" /* list_link */
+#include "user_info.h"
 
 
 int svr_resc_size = 0;

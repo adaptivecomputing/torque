@@ -957,7 +957,7 @@ int comp_arst(
 
 void free_arst(
 
- pbs_attribute *attr)
+  pbs_attribute *attr)
 
   {
   if ((attr->at_flags & ATR_VFLAG_SET) && (attr->at_val.at_arst))

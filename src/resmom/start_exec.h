@@ -55,7 +55,6 @@ int determine_umask(int uid);
 #ifdef PENABLE_LINUX26_CPUSETS
 int use_cpusets(job *pjob);
 #endif /* PENABLE_LINUX26_CPUSETS */
-int write_gpus_to_file(job *pjob);
 
 int write_nodes_to_file(job *pjob);
 

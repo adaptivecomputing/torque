@@ -1218,6 +1218,83 @@ int node_gpustatus_list(
   }  /* END node_status_list() */
 
 
+
+
+int node_micstatus_list(
+
+  pbs_attribute *new,      /* derive status into this pbs_attribute*/
+  void          *pnode,    /* pointer to a pbsnode struct     */
+  int            actmode)  /* action mode; "NEW" or "ALTER"   */
+
+  {
+  int              rc = 0;
+
+  struct pbsnode *np;
+  pbs_attribute   temp;
+
+  np = (struct pbsnode *)pnode;    /* because of at_action arg type */
+
+  switch (actmode)
+    {
+
+    case ATR_ACTION_NEW:
+
+      /* if node has a status list, then copy array_strings    */
+      /* into temp to use to setup a copy, otherwise setup empty */
+
+      if (np->nd_micstatus != NULL)
+        {
+        /* setup temporary pbs_attribute with the array_strings */
+        /* from the node                                    */
+
+        temp.at_val.at_arst = np->nd_micstatus;
+        temp.at_flags = ATR_VFLAG_SET;
+        temp.at_type  = ATR_TYPE_ARST;
+
+        rc = set_arst(new, &temp, SET);
+        }
+      else
+        {
+        /* node has no properties, setup empty pbs_attribute */
+
+        new->at_val.at_arst = NULL;
+        new->at_flags       = 0;
+        new->at_type        = ATR_TYPE_ARST;
+        }
+
+      break;
+
+    case ATR_ACTION_ALTER:
+
+      if (np->nd_micstatus != NULL)
+        {
+        free(np->nd_micstatus->as_buf);
+        free(np->nd_micstatus);
+
+        np->nd_micstatus = NULL;
+        }
+
+      /* update node with new attr_strings */
+
+      np->nd_micstatus = new->at_val.at_arst;
+
+      new->at_val.at_arst = NULL;
+
+      break;
+
+    default:
+
+      rc = PBSE_INTERNAL;
+
+      break;
+    }  /* END switch(actmode) */
+
+  return(rc);
+  }  /* END node_status_list() */
+
+
+
+
 /*
  * node_note - Either derive a note pbs_attribute from the node
  *             or update node's note from pbs_attribute's list.

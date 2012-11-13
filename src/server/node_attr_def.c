@@ -294,5 +294,29 @@ attribute_def node_attr_def[] =
    ATR_TYPE_ARST,
    PARENT_TYPE_NODE,
    },
+  /* ND_ATR_mics */
+  { ATTR_NODE_mics,    /* "mics" */
+    decode_l,
+    encode_l,
+    set_l,
+    comp_null,
+    free_null,
+    node_mics_action,
+    NO_USER_SET,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_NODE,
+  },
+  /* ND_ATR_micstatus */
+  {ATTR_NODE_micstatus,   /* "mic_status" */
+   decode_arst,
+   encode_arst,
+   set_arst,
+   comp_null,
+   free_arst,
+   node_micstatus_list,
+   MGR_ONLY_SET,
+   ATR_TYPE_ARST,
+   PARENT_TYPE_NODE,
+  }
 
   };

@@ -347,7 +347,7 @@ hello_info *pop_hello(hello_container *hc)
   exit(1);
   }
 
-int unlock_node(struct pbsnode *pnode, char *id, char *msg, int log_level)
+int unlock_node(struct pbsnode *pnode, const char *id, char *msg, int log_level)
   {
   fprintf(stderr, "The call to unlock_node needs to be mocked!!\n");
   exit(1);

@@ -15,8 +15,6 @@ int check_node_for_job(struct pbsnode *pnode, char *jobid);
 
 job *find_job_by_node(struct pbsnode *pnode, char *jobid);
 
-void *sync_node_jobs(void *vp);
-
 void update_job_data(struct pbsnode *np, char *jobstring_in);
 
 void setup_notification(char *pname);

@@ -264,6 +264,7 @@ enum TVarElseEnum
   tveGpuFile,
   tveNprocs,
   tveWallTime,
+  tveMicFile,
   tveLAST
   };
 
@@ -289,6 +290,7 @@ static char *variables_else[] =   /* variables to add, value computed */
   "PBS_GPUFILE",    /* file containing which GPUs to access */
   "PBS_NP",         /* number of processors requested */
   "PBS_WALLTIME",   /* requested or default walltime */
+  "PBS_MICFILE",    /* file containing which MICs to access */
   NULL
   };
 
@@ -1427,6 +1429,10 @@ int InitUserEnv(
     sprintf(buf, "%s/%sgpu", path_aux, pjob->ji_qs.ji_jobid);
 
     bld_env_variables(&vtable, variables_else[tveGpuFile], buf);
+
+    sprintf(buf, "%s/%smic", path_aux, pjob->ji_qs.ji_jobid);
+
+    bld_env_variables(&vtable, variables_else[tveMicFile], buf);
     }
 
   /* PBS_WALLTIME */
@@ -2506,24 +2512,28 @@ int use_cpusets(
 
 
 /*
- * writes the exec_gpu str to a file
+ * writes an exec attr to a file
  * receives strings in the format: <hostname>-gpu/<index>[+<hostname>-gpu/<index>...]
  * and prints them in the format: <hostname>-gpu<index>[\n<hostname>-gpu<index>...]
+ * Currently this is only supported for JOB_ATR_exec_gpus and JOB_ATR_exec_mics
  *
  * @param file - the file to print to
  * @param pjob - the job whose gpu string will be printed
  * @return PBSE_NONE if success, error code otherwise
  */
-int write_gpus_to_file(
 
-  job  *pjob) /* I */
+int write_attr_to_file(
+
+  job  *pjob,
+  int   index,
+  char *suffix)
 
   {
-  char         filename[MAXPATHLEN];
+  char  filename[MAXPATHLEN];
   FILE *file;
 
-  char *gpu_str;
-  char *gpu_worker;
+  char *attr_str;
+  char *worker;
 
   char *plus;
   char *slash;
@@ -2531,18 +2541,19 @@ int write_gpus_to_file(
   char *curr;
 
   /* if there are no gpus, do nothing */
-  if ((pjob->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET) == 0)
+  if ((pjob->ji_wattr[index].at_flags & ATR_VFLAG_SET) == 0)
     return(PBSE_NONE);
 
-  gpu_str = pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str;
+  attr_str = pjob->ji_wattr[index].at_val.at_str;
 
-  if (gpu_str == NULL)
+  if (attr_str == NULL)
     return(PBSE_NONE);
 
   /* open the file just like $PBS_NODEFILE */
-  sprintf(filename, "%s/%sgpu",
+  sprintf(filename, "%s/%s%s",
     path_aux,
-    pjob->ji_qs.ji_jobid);
+    pjob->ji_qs.ji_jobid,
+    suffix);
 
   if ((file = fopen(filename, "w")) == NULL)
     {
@@ -2564,7 +2575,7 @@ int write_gpus_to_file(
     return(-1);
     }
 
-  if ((gpu_worker = strdup(gpu_str)) == NULL)
+  if ((worker = strdup(attr_str)) == NULL)
     {
     fclose(file);
 
@@ -2572,7 +2583,7 @@ int write_gpus_to_file(
     return(ENOMEM);
     }
 
-  curr = gpu_worker;
+  curr = worker;
 
   while (curr != NULL)
     {
@@ -2609,12 +2620,12 @@ int write_gpus_to_file(
     }
 
   /* SUCCESS */
-  free(gpu_worker);
+  free(worker);
 
   fclose(file);
 
   return(PBSE_NONE);
-  } /* END write_gpus_to_file() */
+  } /* END write_attr_to_file() */
 
 
 
@@ -2773,7 +2784,10 @@ void take_care_of_nodes_file(
     if (write_nodes_to_file(pjob) == -1)
       starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, sjr);
 
-    if (write_gpus_to_file(pjob) == -1)
+    if (write_attr_to_file(pjob, JOB_ATR_exec_gpus, "gpu") == -1)
+      starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, sjr);
+
+    if (write_attr_to_file(pjob, JOB_ATR_exec_mics, "mic") == -1)
       starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, sjr);
 
 #ifdef NVIDIA_GPUS

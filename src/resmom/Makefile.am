@@ -50,6 +50,14 @@ if BUILDCPA
 pbs_mom_SOURCES += cray_cpa.c
 endif
 
+if MIC
+pbs_mom_SOURCES += mic.c
+endif
+
+if NVIDIA
+pbs_mom_SOURCES += nvidia.c
+endif
+
 pbs_demux_SOURCES = pbs_demux.c
 # use LDADD here so that we don't have to link MOM with libcr
 pbs_demux_LDADD = $(BLCR_LDFLAGS) @PBS_MACH@/libmommach.a $(MOMLIBS) $(PBS_LIBS)

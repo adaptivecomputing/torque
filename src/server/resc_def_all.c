@@ -367,6 +367,16 @@ resource_def svr_resc_def_const[] =
     READ_ONLY | ATR_DFLAG_SvRD | ATR_DFLAG_SvWR,
     ATR_TYPE_LONG
   },
+  { "mics",     /* number of mics for job */
+    decode_l,
+    encode_l,
+    set_l,
+    comp_l,
+    free_null,
+    NULL_FUNC,
+    READ_ONLY | ATR_DFLAG_SvRD | ATR_DFLAG_SvWR,
+    ATR_TYPE_LONG
+  },
 
   /* the following are found only on Cray systems */
 

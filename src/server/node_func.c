@@ -613,8 +613,20 @@ int status_nodeattrib(
       atemp[i].at_val.at_arst = pnode->nd_gpustatus;
     else if (!strcmp((padef + i)->at_name, ATTR_NODE_gpus))
       {
+      if (pnode->nd_ngpus == 0)
+        continue;
+
       atemp[i].at_val.at_long  = pnode->nd_ngpus;
       }
+    else if (!strcmp((padef + i)->at_name, ATTR_NODE_mics))
+      {
+      if (pnode->nd_nmics == 0)
+        continue;
+
+      atemp[i].at_val.at_long  = pnode->nd_nmics;
+      }
+    else if (!strcmp((padef + i)->at_name, ATTR_NODE_micstatus))
+      atemp[i].at_val.at_arst = pnode->nd_micstatus;
     else
       {
       /*we don't ever expect this*/
@@ -1613,7 +1625,7 @@ int setup_node_boards(
     if (gp_ptr != NULL)
       read_val_and_advance(&gpus,&gp_ptr);
 
-    copy_properties(pn,pnode);
+    copy_properties(pn, pnode);
 
     /* add the node to the private tree */
     pnode->node_boards = AVL_insert(i,
@@ -1637,6 +1649,8 @@ int setup_node_boards(
 
   return(PBSE_NONE);
   } /* END setup_node_boards() */
+
+
 
 
 /* recheck_for_node :
@@ -1881,7 +1895,6 @@ int create_pbs_node(
 
 
 
-
 /*
  * parse_node_token - parse tokens in the nodes file
  *
@@ -1953,7 +1966,6 @@ static char *parse_node_token(
 
   return(ts);
   }  /* END parse_node_token() */
-
 
 
 
@@ -2626,6 +2638,68 @@ int node_gpus_action(
 
   return(rc);
   } /* END node_gpus_action() */
+
+
+
+
+int node_mics_action(
+
+  pbs_attribute *new,
+  void          *pnode,
+  int            actmode)
+
+  {
+  struct pbsnode *np = (struct pbsnode *)pnode;
+  int             old_mics;
+  int             new_mics;
+  int             rc = 0;
+
+  switch (actmode)
+    {
+    case ATR_ACTION_NEW:
+
+      new->at_val.at_long = np->nd_nmics;
+
+      break;
+
+    case ATR_ACTION_ALTER:
+
+      old_mics = np->nd_nmics;
+      new_mics = new->at_val.at_long;
+
+      if (new_mics <= 0)
+        return(PBSE_BADATVAL);
+
+      np->nd_nmics = new_mics;
+
+      if (new_mics > old_mics)
+        {
+        np->nd_nmics_free += new_mics - old_mics;
+        np->nd_nmics = new_mics;
+
+        if (new_mics > np->nd_nmics_alloced)
+          {
+          struct jobinfo *tmp = calloc(new_mics, sizeof(struct jobinfo));
+
+          if (tmp == NULL)
+            return(ENOMEM);
+
+          memcpy(tmp, np->nd_micjobs, sizeof(struct jobinfo) * np->nd_nmics_alloced);
+          free(np->nd_micjobs);
+          np->nd_micjobs = tmp;
+
+          np->nd_nmics_alloced = new_mics;
+          }
+        }
+
+      break;
+
+    default:
+      rc = PBSE_INTERNAL;
+    }
+
+  return(rc);
+  } /* END node_mics_action() */
 
 
 

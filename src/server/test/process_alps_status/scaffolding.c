@@ -54,8 +54,8 @@ struct node_state
 void log_record(int eventtype, int objclass, const char *objname, char *msg) {}
 void log_event(int eventtype, int objclass, const char *objname, char *text) {}
 void log_err(int errnum, const char *routine, char *text) {}
-void lock_node(struct pbsnode *pnode, const char *method, char *msg, int log_level) {}
-void unlock_node(struct pbsnode *pnode, const char *method, char *msg, int log_level) {}
+int lock_node(struct pbsnode *pnode, const char *method, char *msg, int log_level) {return(0);}
+int unlock_node(struct pbsnode *pnode, const char *method, char *msg, int log_level) {return(0);}
 
 
 

@@ -379,6 +379,7 @@ enum job_atr
   JOB_ATR_login_prop,
   JOB_ATR_external_nodes,
   JOB_ATR_multi_req_alps,
+  JOB_ATR_exec_mics,
 #include "site_job_attr_enum.h"
 
   JOB_ATR_UNKN,  /* the special "unknown" type    */

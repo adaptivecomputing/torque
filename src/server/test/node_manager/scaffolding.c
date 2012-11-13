@@ -306,12 +306,12 @@ void reinitialize_node_iterator(node_iterator *iter)
   exit(1);
   }
 
-int unlock_node(struct pbsnode *the_node, char *id, char *msg, int logging)
+int unlock_node(struct pbsnode *the_node, const char *id, char *msg, int logging)
   {
   return(0);
   }        
 
-int lock_node(struct pbsnode *the_node, char *id, char *msg, int logging)
+int lock_node(struct pbsnode *the_node, const char *id, char *msg, int logging)
   {
   return(0);
   }        

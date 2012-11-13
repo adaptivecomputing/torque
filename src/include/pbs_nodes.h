@@ -102,6 +102,8 @@
 #define NUMA_KEYWORD           "numa"
 #define START_GPU_STATUS       "<gpu_status>"
 #define END_GPU_STATUS         "</gpu_status>"
+#define START_MIC_STATUS       "<mic_status>"
+#define END_MIC_STATUS         "</mic_status>"
 
 #ifdef NUMA_SUPPORT
 #  define MAX_NODE_BOARDS      2048
@@ -173,6 +175,7 @@ typedef struct single_spec_data
   int          nodes;   /* nodes needed for this req */
   int          ppn;     /* ppn for this req */
   int          gpu;     /* gpus for this req */
+  int          mic;   /* mics for this req */
   int          req_id;  /* the id of this alps req - used only for cray */
   struct prop *prop;    /* node properties needed */
   } single_spec_data;
@@ -191,6 +194,7 @@ typedef struct node_job_add_info
   char                      node_name[PBS_MAXNODENAME + 1];
   int                       ppn_needed;
   int                       gpu_needed;
+  int                       mic_needed;
   int                       is_external;
   struct node_job_add_info *next;
   } node_job_add_info;
@@ -212,6 +216,9 @@ struct pbssubn
   short           index;  /* subnode index */
   };
 
+
+
+
 struct gpusubn
   {
   char            jobid[PBS_MAXSVRJOBID+1];   /* jobid on this gpu subnode */
@@ -224,6 +231,8 @@ struct gpusubn
   char           *gpuid;  /* gpu id */
   int             job_count;
   };
+
+
 
 
 #ifdef NUMA_SUPPORT
@@ -245,6 +254,7 @@ typedef struct nodeboard_t
 
 
 
+#define SEND_HELLO 11
 
 /* container for holding communication information */
 typedef struct received_node
@@ -326,6 +336,13 @@ struct pbsnode
   struct array_strings *nd_gpustatus;        /* string array of GPU status */
   short                 nd_ngpustatus;       /* number of gpu status items */
 
+  short                 nd_nmics;            /* number of mics */
+  struct array_strings *nd_micstatus;        /* string array of MIC status */
+  struct jobinfo       *nd_micjobs;          /* array for the jobs on the mic(s) */
+  short                 nd_nmics_alloced;    /* number of mic slots alloc'ed */
+  short                 nd_nmics_free;       /* number of free mics */
+  short                 nd_nmics_to_be_used; /* number of mics marked for a job but not yet assigned */
+
   struct pbsnode       *parent;              /* pointer to the node holding this node, or NULL */
   unsigned short        num_node_boards;     /* number of numa nodes */
   struct AvlNode       *node_boards;         /* private tree of numa nodes */
@@ -382,6 +399,9 @@ hello_info *pop_hello(hello_container *);
 int         remove_hello(hello_container *, char *);
 int         send_hierarchy(char *, unsigned short);
 void       *send_hierarchy_threadtask(void *);
+
+
+extern hello_container  hellos;
 
 
 
@@ -498,8 +518,10 @@ enum nodeattr
   ND_ATR_num_node_boards,
   ND_ATR_numa_str,
   ND_ATR_gpus,
-  ND_ATR_gpustatus,
   ND_ATR_gpus_str,
+  ND_ATR_gpustatus,
+  ND_ATR_mics,
+  ND_ATR_micstatus,
   ND_ATR_LAST
   }; /* WARNING: Must be the highest valued enum */
 
@@ -524,6 +546,12 @@ typedef struct node_check_info
   char        *note;
   } node_check_info;
 
+
+typedef struct sync_job_info
+  {
+  char   *input;
+  time_t  timestamp;
+  } sync_job_info;
 
 
 
@@ -562,10 +590,15 @@ void            *send_hierarchy_file(void *);
 node_iterator   *get_node_iterator();
 void             reinitialize_node_iterator(node_iterator *);
 
-struct prop     *init_prop(char *pname);
 #endif /* BATCH_REQUEST_H */
 
+struct prop     *init_prop(char *pname);
 int              initialize_pbsnode(struct pbsnode *, char *pname, u_long *pul, int ntype);
 int              hasprop(struct pbsnode *pnode, struct prop *props);
+int              unlock_node(struct pbsnode *the_node, const char *id, char *msg, int logging);
+int              lock_node(struct pbsnode *the_node, const char *id, char *msg, int logging);
+void             update_node_state(struct pbsnode *np, int newstate);
+int              is_job_on_node(struct pbsnode *np, char *jobid);
+void            *sync_node_jobs(void *vp);
 
 #endif /* PBS_NODES_H */ 

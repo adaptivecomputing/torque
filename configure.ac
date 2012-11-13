@@ -418,9 +418,11 @@ m4_ifdef([AM_SILENT_RULES],[
     src/server/test/pbsd_init/Makefile
     src/server/test/pbsd_main/Makefile
     src/server/test/process_alps_status/Makefile
+    src/server/test/process_mom_update/Makefile
     src/server/test/process_request/Makefile
     src/server/test/queue_func/Makefile
     src/server/test/queue_recov/Makefile
+    src/server/test/receive_mom_communication/Makefile
     src/server/test/reply_send/Makefile
     src/server/test/req_delete/Makefile
     src/server/test/req_deletearray/Makefile
@@ -936,6 +938,49 @@ fi
 
 
 
+
+dnl
+dnl tell TORQUE where to find the MIC libs
+dnl
+AC_ARG_WITH(mic-path, [
+  --with-mic-path=PATH
+                     Specifies the path to the mic COI libraries and include files.
+                     Example: ./configure --with-mic-path=/opt/intel/mic/coi will
+                     specify that the include files are in /opt/intel/mic/coi/include
+                     and the libraries are in /opt/intel/mic/coi/host-linux-release/lib],
+  [MOMLIBS="$MOMLIBS -L${withval}/host-linux-release/lib"; CFLAGS="$CFLAGS -I${withval}/include"],
+  [MOMLIBS="$MOMLIBS -L/opt/intel/mic/coi/host-linux-release/lib"; CFLAGS="$CFLAGS -I/opt/intel/mic/coi/include"])
+
+
+dnl
+dnl enable mic support
+dnl
+AC_MSG_CHECKING([whether to compile with MIC support])
+AC_ARG_ENABLE(mic, [
+  --enable-mic   Builds TORQUE with mic support so that pbs_mom will auto-detect the mics and report a status for each mic on that host. If no mic exists, the pbs_mom will behave normally],
+  MIC=$enableval,MIC=no)
+AC_MSG_RESULT($MIC)
+
+case "$MIC" in
+  yes) AC_DEFINE([MIC], 1, [Define to enable MIC support]) ;;
+  no) : ;;
+  *) AC_MSG_ERROR([--enable-mic-gpus should be yes or no]) ;;
+esac
+AM_CONDITIONAL([MIC], test "$MIC" = yes)
+
+if test "$MIC" = "yes" ; then
+  MOMLIBS="$MOMLIBS -lcoi_host"
+  CPPFLAGS="$CPPFLAGS $CFLAGS"
+  AC_CHECK_HEADERS([source/COIPipeline_source.h],
+    [],
+    [AC_MSG_ERROR(MIC COI LLAPI headers not found)],
+    [])
+fi
+
+
+
+
+
 dnl
 dnl add an option to specify a different path where TORQUE should look for HWLOC 
 dnl lib and include files
@@ -1157,6 +1202,7 @@ case "$NVIDIA" in
   no) : ;;
   *) AC_MSG_ERROR([--enable-nvidia-gpus should be yes or no]) ;;
 esac
+AM_CONDITIONAL([NVIDIA], test "$NVIDIA" = yes)
 
 AC_ARG_WITH(nvml_include,
     [  --with-nvml-include=DIR include path for nvml.h],
