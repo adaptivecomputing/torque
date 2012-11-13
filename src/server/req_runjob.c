@@ -1878,7 +1878,7 @@ char *get_correct_spec_string(
   int       num_gpu_reqs;
   char     *gpu_req;
   int       len;
-  resource *pres;
+  resource *pres = NULL;
 
   /* check to see if there is a gpus request. If so moab
    * sripted the mode request if it existed. We need to
@@ -1906,7 +1906,12 @@ char *get_correct_spec_string(
       if ((request != NULL) && 
           (request[0] != 0))
         {
-        gpu_req = strstr(request, ":gpus=");
+
+        if (!(gpu_req = strstr(request, ":gpus=")))
+          {
+           correct_spec = strdup(given);
+           return(correct_spec);
+          }
 
         mode_string = gpu_req + strlen(":gpus=");
         while (isdigit(*mode_string))
