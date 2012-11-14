@@ -39,6 +39,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       no server could be contacted. TRQ-1385.
   b - Fixed a seg-fault in send_depend_req. Also fixed a deadlock in the depend_on_term
       TRQ-1430 and TRQ-1436
+  b - Fixed a null pointer dereference seg-fault when checking for disallowed types
+      TRQ-1408.
 
 4.1.3
   b - fix a security loophole that potentially allowed an interactive job to run 

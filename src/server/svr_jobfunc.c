@@ -1723,16 +1723,19 @@ int svr_chkque(
         if ((pjob->ji_wattr[JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
             (pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long > 0))
           {
-          if (strcmp(Q_DT_interactive,
-                     pque->qu_attr[QA_ATR_DisallowedTypes].at_val.at_arst->as_string[i]) == 0)
+          if (pque->qu_attr[QA_ATR_DisallowedTypes].at_val.at_arst != NULL)
             {
-            if (EMsg) 
-              snprintf(EMsg, 1024,
-                "interactive job is not allowed for queue: user %s, queue %s",
-                pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
-                pque->qu_qs.qu_name);
+            if (strcmp(Q_DT_interactive,
+                       pque->qu_attr[QA_ATR_DisallowedTypes].at_val.at_arst->as_string[i]) == 0)
+              {
+              if (EMsg) 
+                snprintf(EMsg, 1024,
+                  "interactive job is not allowed for queue: user %s, queue %s",
+                  pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
+                  pque->qu_qs.qu_name);
 
-            return(PBSE_NOINTERACTIVE);
+              return(PBSE_NOINTERACTIVE);
+              }
             }
           }
         else /* else job is batch... */
