@@ -164,7 +164,7 @@ void req_reject(int code, int aux, struct batch_request *preq, char *HostName, c
   exit(1);
   }
 
-int depend_on_term(job *pjob)
+int depend_on_term(char *job_id)
   {
   fprintf(stderr, "The call to depend_on_term to be mocked!!\n");
   exit(1);

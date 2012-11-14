@@ -1407,10 +1407,10 @@ int depend_on_exec(
 
 int depend_on_term(
 
-  job *pjob)
+  char *job_id)
 
   {
-  int                exitstat = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
+  int                exitstat;
   int                op;
   pbs_attribute     *pattr;
 
@@ -1420,11 +1420,14 @@ int depend_on_term(
   int                rc;
   int                shouldkill = 0;
   int                type;
-  char               job_id[PBS_MAXSVRJOBID+1];
   int                job_unlocked = 0;
+  job                *pjob;
  
-  strcpy(job_id, pjob->ji_qs.ji_jobid);
+  pjob = svr_find_job(job_id, FALSE);
+  if (pjob == NULL)
+    return(PBSE_JOBNOTFOUND);
 
+  exitstat = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
   pattr = &pjob->ji_wattr[JOB_ATR_depend];
 
   pdep = (struct depend *)GET_NEXT(pattr->at_val.at_list);
@@ -1498,9 +1501,12 @@ int depend_on_term(
 
           while (pparent)
             {
-            if ((pjob == NULL) && 
-                ((pjob = svr_find_job(job_id, TRUE)) == NULL))
-              return(PBSE_JOBNOTFOUND);
+            if (job_unlocked == 1)
+              {
+              pjob = svr_find_job(job_id, TRUE);
+              if (pjob == NULL)
+                return(PBSE_JOBNOTFOUND);
+              }
 
             rc = send_depend_req(pjob, pparent, type, JOB_DEPEND_OP_DELETE, SYNC_SCHED_HINT_NULL, free_br);
 
@@ -1515,15 +1521,19 @@ int depend_on_term(
 
       } /* END switch(type) */
 
+
     if (op != -1)
       {
       pparent = (struct depend_job *)GET_NEXT(pdep->dp_jobs);
 
       while (pparent)
         {
-        if ((pjob == NULL) && 
-            ((pjob = svr_find_job(job_id, TRUE)) == NULL))
-          return(PBSE_JOBNOTFOUND);
+        if (job_unlocked == 1)
+          {
+          pjob = svr_find_job(job_id, TRUE);
+          if (pjob == NULL)
+            return(PBSE_JOBNOTFOUND);
+          }
 
         /* "release" the job to execute */
         if ((rc = send_depend_req(pjob, pparent, type, op, SYNC_SCHED_HINT_NULL, free_br)) != PBSE_NONE)
@@ -2192,6 +2202,12 @@ int send_depend_req(
 
   for (i = 0;i < PBS_MAXUSER;++i)
     {
+    if (pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str == NULL)
+      {
+      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+      free_br(preq);
+      return(PBSE_BADATVAL);
+      }
     preq->rq_ind.rq_register.rq_owner[i] =
       pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str[i];
 

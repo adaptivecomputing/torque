@@ -479,7 +479,8 @@ int job_abt(
         
         if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
           {
-          depend_on_term(pjob);
+          unlock_ji_mutex(pjob, __func__, "1a",LOGLEVEL);
+          depend_on_term(job_id);
           pjob = svr_find_job(job_id, TRUE);
           }
         
@@ -535,7 +536,8 @@ int job_abt(
     if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
       {
       strcpy(job_id, pjob->ji_qs.ji_jobid);
-      depend_on_term(pjob);
+      unlock_ji_mutex(pjob, __func__, "1b", LOGLEVEL);
+      depend_on_term(job_id);
       pjob = svr_find_job(job_id, TRUE);
       }
 

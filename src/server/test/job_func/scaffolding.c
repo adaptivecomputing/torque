@@ -197,7 +197,7 @@ void delete_task(struct work_task *ptask)
   exit(1);
   }
 
-int depend_on_term(job *pjob)
+int depend_on_term(char *job_id)
   {
   fprintf(stderr, "The call to depend_on_term needs to be mocked!!\n");
   exit(1);
