@@ -26,7 +26,7 @@ int depend_on_que(pbs_attribute *pattr, void *pjob, int mode);
 
 int depend_on_exec(job *pjob);
 
-int depend_on_term(job *pjob);
+int depend_on_term(char *job_id);
 
 /* static void release_cheapest(job *pjob, struct depend *pdep); */
 

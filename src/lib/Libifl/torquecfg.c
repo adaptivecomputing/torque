@@ -146,7 +146,6 @@ char *trq_get_if_name()
   rc = load_config(torque_cfg_buf, file_size);
   if (rc)
     {
-    fprintf(stderr, "load_config failed in trq_get_if_name: %d\n", rc);
 	if (torque_cfg_buf)
       free(torque_cfg_buf);
     return(NULL);
