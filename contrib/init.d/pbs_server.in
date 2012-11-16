@@ -52,7 +52,7 @@ stop() {
         exit 0
     fi
     echo -n "Shutting down TORQUE Server: "
-    qterm
+    $BIN_PATH/qterm
     RET=$?
     if [[ $RET -ne 0 ]]; then
       killproc pbs_server -TERM
