@@ -257,13 +257,15 @@ int create_reserve_params_from_multi_req_list(
   dynamic_string *node_list = get_dynamic_string(-1, NULL);
   char           *tok;
   char           *str = multi_req_list;
-  int             node_count = 1;
+  int             node_count;
   char           *comma;
   unsigned int    width;
   unsigned int    nppn;
   
   while ((tok = threadsafe_tokenizer(&str, "*")) != NULL)
     {
+    node_count = 1;
+
     clear_dynamic_string(node_list);
     append_dynamic_string(node_list, tok);
     
