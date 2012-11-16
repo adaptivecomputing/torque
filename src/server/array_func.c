@@ -1071,7 +1071,9 @@ int delete_array_range(
 
   int                 i;
   int                 num_skipped = 0;
+  int                 num_deleted = 0;
   int                 deleted;
+  int                 running;
 
   /* get just the numeric range specified, '=' should
    * always be there since we put it there in qdel */
@@ -1113,6 +1115,8 @@ int delete_array_range(
           continue;
           }
 
+        running = (pjob->ji_qs.ji_state == JOB_STATE_RUNNING);
+
         pthread_mutex_unlock(pa->ai_mutex);
         deleted = attempt_delete(pjob);
 
@@ -1123,6 +1127,11 @@ int delete_array_range(
           unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
           num_skipped++;
+          }
+        else if (running == FALSE)
+          {
+          /* running jobs will increase the deleted count when their obit is reported */
+          num_deleted++;
           }
 
         pthread_mutex_lock(pa->ai_mutex);
@@ -1135,6 +1144,8 @@ int delete_array_range(
     /* release mem */
     free(to_free);
     }
+
+  pa->ai_qs.num_failed += num_deleted;
 
   return(num_skipped);
   } /* END delete_array_range() */
@@ -1181,7 +1192,9 @@ int delete_whole_array(
   int i;
   int num_skipped = 0;
   int num_jobs = 0;
+  int num_deleted = 0;
   int deleted;
+  int running;
 
   job *pjob;
 
@@ -1198,12 +1211,15 @@ int delete_whole_array(
     else
       {
       num_jobs++;
+
       if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
         {
         /* invalid state for request,  skip */
         unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         continue;
         }
+        
+      running = (pjob->ji_qs.ji_state == JOB_STATE_RUNNING);
 
       pthread_mutex_unlock(pa->ai_mutex);
       deleted = attempt_delete(pjob);
@@ -1215,10 +1231,17 @@ int delete_whole_array(
         unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
         num_skipped++;
         }
+      else if (running == FALSE)
+        {
+        /* running jobs will increase the deleted count when their obit is reported */
+        num_deleted++;
+        }
 
       pthread_mutex_lock(pa->ai_mutex);
       }
     }
+
+  pa->ai_qs.num_failed += num_deleted;
 
   if (num_jobs == 0)
     return(NO_JOBS_IN_ARRAY);
