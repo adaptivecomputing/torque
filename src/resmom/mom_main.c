@@ -41,6 +41,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/utsname.h>
+#include <dirent.h>
 
 
 #include "libpbs.h"
@@ -4420,6 +4421,78 @@ static void mom_lock(
   }  /* END mom_lock() */
 
 
+
+
+int could_be_mic_or_gpu_file(
+
+  const char *jobid)
+
+  {
+  int         len = strlen(jobid);
+  const char *start = jobid + len - 3;
+
+  if (*start == 'g')
+    {
+    if ((start[1] == 'p') &&
+        (start[2] == 'u'))
+      return(TRUE);
+    }
+  else if (*start == 'm')
+    {
+    if ((start[1] == 'i') &&
+        (start[2] == 'c'))
+      return(TRUE);
+    }
+
+  return(FALSE);
+  } /* END could_be_mic_or_gpu_file() */
+
+
+
+
+void cleanup_aux()
+
+  {
+  struct dirent *pdirent;
+  DIR           *auxdir;
+  char           namebuf[MAXLINE];
+  unsigned int   len;
+
+  auxdir = opendir(path_aux);
+
+  if (auxdir != NULL)
+    {
+    while ((pdirent = readdir(auxdir)) != NULL)
+      {
+      if (pdirent->d_name[0] == '.')
+        continue;
+        
+      if (could_be_mic_or_gpu_file(pdirent->d_name) == TRUE)
+        continue;
+     
+      if (mom_find_job(pdirent->d_name) == NULL)
+        {
+        /* this job doesn't exist */
+        snprintf(namebuf, sizeof(namebuf), "%s/%s", path_aux, pdirent->d_name);
+        unlink(namebuf);
+
+        len = strlen(namebuf);
+        if (sizeof(namebuf) - 3 > len)
+          {
+          strcpy(namebuf + len, "gpu");
+          unlink(namebuf);
+          strcpy(namebuf + len, "mic");
+          unlink(namebuf);
+          }
+        }
+      }
+    }
+
+  } /* END cleanup_aux() */
+
+
+
+
 /*
 ** Process a request for the resource monitor.  The i/o
 ** will take place using DIS over a tcp fd or an rpp stream.
@@ -6379,6 +6452,7 @@ time_t MOMGetFileMtime(
  */
 
 void MOMCheckRestart(void)
+
   {
   time_t newmtime;
 
@@ -6389,7 +6463,8 @@ void MOMCheckRestart(void)
 
   newmtime = MOMGetFileMtime(MOMExePath);
 
-  if ((newmtime > 0) && (newmtime != MOMExeTime))
+  if ((newmtime > 0) && 
+      (newmtime != MOMExeTime))
     {
     if (mom_run_state == MOM_RUN_STATE_RUNNING)
       mom_run_state = MOM_RUN_STATE_RESTART;
@@ -6403,15 +6478,14 @@ void MOMCheckRestart(void)
 
     if (LOGLEVEL > 6)
       {
-      log_record(
-        PBSEVENT_SYSTEM,
-        PBS_EVENTCLASS_SERVER,
-        msg_daemonname,
-        log_buffer);
+      log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buffer);
       }
 
     DBPRT(("%s\n", log_buffer));
     }
+
+  /* make sure we're not making a mess in the aux dir */
+  cleanup_aux();
   }  /* END MOMCheckRestart() */
 
 
@@ -7948,8 +8022,7 @@ void examine_all_polled_jobs(void)
  * examine_all_running_jobs
  */
 
-void
-examine_all_running_jobs(void)
+void examine_all_running_jobs(void)
 
   {
   job         *pjob;
