@@ -1305,8 +1305,9 @@ int mom_server_update_stat(
         
         log_record(PBSEVENT_SYSTEM, 0, __func__, log_buffer);
 
-        rc = PBSE_NONE;
         }
+        
+      rc = PBSE_NONE;
       
       /* It would be redundant to send state since it is already in status */  
       pms->ReportMomState = 0;
