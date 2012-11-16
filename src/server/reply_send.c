@@ -166,47 +166,10 @@ int reply_send_svr(
   {
   int               rc = 0;
   char              log_buf[LOCAL_LOG_BUF_SIZE];
-  int               iter = -1;
   int               sfds = request->rq_conn;  /* socket */
 
-  struct work_task *ptask;
-
-  /* determine where the reply should go, remote or local */
-
-  if (sfds == PBS_LOCAL_CONNECTION)
-    {
-
-    /*
-     * reply stays local, find work task and move it to
-     * the immediate list for dispatching.
-     */
-
-    while ((ptask = next_task(&task_list_event, &iter)) != NULL)
-      {
-      if ((ptask->wt_type == WORK_Deferred_Local) &&
-          (ptask->wt_parm1 != NULL) &&
-          (!strcmp((char *)ptask->wt_parm1, request->rq_id)))
-        {
-        if (ptask->wt_tasklist)
-          remove_task(ptask->wt_tasklist,ptask);
-        
-        pthread_mutex_unlock(ptask->wt_mutex);
-
-        ptask->wt_func(ptask);
-
-        return(0);
-        }
-
-      pthread_mutex_unlock(ptask->wt_mutex);
-      }
-
-    /* should have found a task and didn't */
-
-    log_err(-1, __func__, "did not find work task for local request");
-
-    rc = PBSE_SYSTEM;
-    }
-  else if (sfds >= 0)
+  /* Handle remote replies - local no longer create work tasks */
+  if (sfds >= 0)
     {
     /* Otherwise, the reply is to be sent to a remote client */
 
