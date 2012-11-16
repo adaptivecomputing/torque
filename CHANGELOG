@@ -40,6 +40,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       TRQ-1430 and TRQ-1436
   b - Fixed a null pointer dereference seg-fault when checking for disallowed types
       TRQ-1408.
+  b - Fix a counting problem when running multi-req ALPS jobs (cray only). TRQ-1431.
 
 4.1.3
   b - fix a security loophole that potentially allowed an interactive job to run 
