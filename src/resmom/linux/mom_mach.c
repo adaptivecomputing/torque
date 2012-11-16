@@ -710,9 +710,7 @@ void dep_initialize(void)
 void dep_cleanup(void)
 
   {
-  char *id = "dep_cleanup";
-
-  log_record(PBSEVENT_SYSTEM, 0, id, "dependent cleanup");
+  log_record(PBSEVENT_SYSTEM, 0, __func__, "dependent cleanup");
 
   if (pdir)
     {

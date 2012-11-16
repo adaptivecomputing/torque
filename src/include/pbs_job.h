@@ -832,7 +832,6 @@ typedef struct job_file_delete_info
   char           prefix[PBS_JOBBASE + 1];
   char          *checkpoint_dir;
   unsigned char  has_temp_dir;
-  unsigned char  has_node_file;
   gid_t          gid;
   uid_t          uid;
   } job_file_delete_info;

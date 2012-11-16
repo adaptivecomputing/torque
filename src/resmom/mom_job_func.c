@@ -683,14 +683,11 @@ void *delete_job_files(
 #endif /* PENABLE_LINUX26_CPUSETS */
 
   /* delete the node file and gpu file */
-  if (jfdi->has_node_file == TRUE)
-    {
-    sprintf(namebuf,"%s/%s", path_aux, jfdi->jobid);
-    unlink(namebuf);
-
-    sprintf(namebuf, "%s/%sgpu", path_aux, jfdi->jobid);
-    unlink(namebuf);
-    } /* END code to delete node and gpu files */
+  sprintf(namebuf,"%s/%s", path_aux, jfdi->jobid);
+  unlink(namebuf);
+  
+  sprintf(namebuf, "%s/%sgpu", path_aux, jfdi->jobid);
+  unlink(namebuf);
 
   /* delete script file */
   if (multi_mom)
@@ -845,14 +842,6 @@ void mom_job_purge(
     }
   else
     jfdi->has_temp_dir = FALSE;
-  
-  if (pjob->ji_flags & MOM_HAS_NODEFILE)
-    {
-    jfdi->has_node_file = TRUE;
-    pjob->ji_flags &= ~MOM_HAS_NODEFILE;
-    }
-  else
-    jfdi->has_node_file = FALSE;
 
   strcpy(jfdi->jobid,pjob->ji_qs.ji_jobid);
   strcpy(jfdi->prefix,pjob->ji_qs.ji_fileprefix);
