@@ -940,7 +940,7 @@ int get_script(
     return(4);
     }
 
-  if (hash_find(ji->job_attr, ATTR_pbs_o_submit_filter, &tmp_job_info))
+  if (hash_find(ji->client_attr, ATTR_pbs_o_submit_filter, &tmp_job_info))
     {
     /* run the copy through the submit filter. */
     if ((tmpfd = mkstemp(tmp_name2)) < 0)
@@ -3429,7 +3429,7 @@ void process_opts(
 
 
 /*     if (stat(PBS_Filter, &sfilter) != -1) */
-    if (hash_find(ji->job_attr, ATTR_pbs_o_submit_filter, &tmp_job_info))
+    if (hash_find(ji->client_attr, ATTR_pbs_o_submit_filter, &tmp_job_info))
       {
       int index;
 
@@ -4110,7 +4110,7 @@ void main_func(
   process_config_file(&ji);
 
   /* check/set submit filter_path */
-  validate_submit_filter(&ji.mm, &ji.job_attr);
+  validate_submit_filter(&ji.mm, &ji.client_attr);
 
   /* NOTE:  load config before processing opts since config may modify how opts are handled */
 
