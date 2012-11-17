@@ -45,6 +45,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Remove red herring error messages 'did not find work task for local request'.
       These tasks are no longer created since issue_Drequest blocks until it gets the
       reply and then processes it. TRQ-1423.
+  b - Fixed a problem where qsub was not applying the submit filter when given in the torque.cfg
+      file. TRQ-1446
   e - When the mom has no jobs, check the aux path to make sure it is clean and 
       that we aren't leaving any files there. TRQ-1240.
 
