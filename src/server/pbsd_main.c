@@ -190,6 +190,9 @@ extern int             svr_totnodes;
 extern struct all_jobs alljobs;
 extern int run_change_logs;
 
+extern pthread_mutex_t *poll_job_task_mutex;
+extern int max_poll_job_tasks;
+
 /* External Functions */
 
 extern int    recov_svr_attr (int);
@@ -1941,6 +1944,22 @@ int main(
     exit(3);
     }
 
+  /* poll_job_task uses a mutex to protect a counter
+     that prevents the number of poll job tasks from
+     consuming all available threads */
+  poll_job_task_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  if (poll_job_task_mutex == NULL)
+    {
+    perror("pbs_server: failed to initialize poll_job_task_mutex");
+    log_err(-1, msg_daemonname, "pbs_server: failed to initialize poll_job_task_mutex");
+    exit(3);
+    }
+
+  pthread_mutex_init(poll_job_task_mutex, NULL);
+
+  max_poll_job_tasks = (int)(request_pool->tp_max_threads * 0.7) - 5;
+  if (max_poll_job_tasks <= 0)
+    max_poll_job_tasks = 1;
 
 #if (PLOCK_DAEMONS & 1)
   plock(PROCLOCK);

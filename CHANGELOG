@@ -54,6 +54,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       reply and then processes it. TRQ-1423.
   e - When the mom has no jobs, check the aux path to make sure it is clean and
       that we aren't leaving any files there. TRQ-1240.
+  b - Made it so that threads taken up by poll job tasks cannot consume all available
+      threads in the thread pool. This will make it so other work can continue if 
+      poll jobs get stuck for whatever reason and that the server will recover.  TRQ-1433
 
 4.1.3
   b - fix a security loophole that potentially allowed an interactive job to run 
