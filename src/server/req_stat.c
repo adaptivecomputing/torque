@@ -121,6 +121,7 @@
 #include "alps_functions.h"
 #include "node_manager.h" /* tfind_addr */
 #include "ji_mutex.h"
+#include "unistd.h"
 
 /* Global Data Items: */
 
@@ -138,6 +139,10 @@ extern char       *msg_init_norerun;
 extern int             LOGLEVEL;
 
 extern pthread_mutex_t *netrates_mutex;
+
+pthread_mutex_t  *poll_job_task_mutex;
+int              max_poll_job_tasks;
+int              current_poll_job_tasks = 0;
 
 /* Extern Functions */
 
@@ -1107,7 +1112,7 @@ void stat_mom_job(
 
 
 /**
- * poll_job_task
+ * poll _job_task
  *
  * The invocation of this routine is triggered from
  * the pbs_server main_loop code.  The check of
@@ -1135,7 +1140,22 @@ void poll_job_task(
       get_svr_attr_l(SRV_ATR_PollJobs, &poll_jobs);
       if ((poll_jobs) && (job_state == JOB_STATE_RUNNING))
         {
-        stat_mom_job(job_id);
+        /* we need to throttle the number of outstanding threads are
+           doing job polling. This prevents a problem where pbs_server
+           gets hung waiting on I/O from the mom */
+        pthread_mutex_lock(poll_job_task_mutex);
+        if (current_poll_job_tasks < max_poll_job_tasks)
+          {
+          current_poll_job_tasks++;
+          pthread_mutex_unlock(poll_job_task_mutex);
+
+          stat_mom_job(job_id);
+
+          pthread_mutex_lock(poll_job_task_mutex);
+          current_poll_job_tasks--;
+          }
+        pthread_mutex_unlock(poll_job_task_mutex);
+
         
         /* add another task */
         set_task(WORK_Timed, time_now + JobStatRate, poll_job_task, strdup(job_id), FALSE);
