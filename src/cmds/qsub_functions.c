@@ -936,7 +936,7 @@ int get_script(
     return(4);
     }
 
-  if (hash_find(ji->client_attr, ATTR_pbs_o_submit_filter, &tmp_job_info))
+  if (hash_find(ji->job_attr, ATTR_pbs_o_submit_filter, &tmp_job_info))
     {
     /* run the copy through the submit filter. */
     if ((tmpfd = mkstemp(tmp_name2)) < 0)
@@ -3615,7 +3615,7 @@ void process_opts(
 
 
 /*     if (stat(PBS_Filter, &sfilter) != -1) */
-    if (hash_find(ji->client_attr, ATTR_pbs_o_submit_filter, &tmp_job_info))
+    if (hash_find(ji->job_attr, ATTR_pbs_o_submit_filter, &tmp_job_info))
       {
       int index;
 
@@ -4015,7 +4015,7 @@ void process_config_file(
 
     if ((param_val = get_param("SUBMITFILTER", config_buf)) != NULL)
       {
-      hash_add_or_exit(&ji->mm, &ji->client_attr, ATTR_pbs_o_submit_filter, param_val, CONFIG_DATA);
+      hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_pbs_o_submit_filter, param_val, CONFIG_DATA);
       }
 
     if ((param_val = get_param("SERVERHOST", config_buf)) != NULL)
