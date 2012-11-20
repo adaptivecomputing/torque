@@ -141,7 +141,6 @@ int site_check_user_map(
   char *p1;
   char *p2;
   int   rc;
-  pid_t pid;
 
   int   ProxyAllowed = 0;
   int   ProxyRequested = 0;
@@ -153,6 +152,8 @@ int site_check_user_map(
 
 #ifdef MUNGE_AUTH
   char  uh[PBS_MAXUSER + PBS_MAXHOSTNAME + 2];
+#else
+  pid_t pid;
 #endif
 
   if (EMsg != NULL)

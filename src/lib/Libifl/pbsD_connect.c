@@ -1309,19 +1309,19 @@ int pbs_original_connect(
                 errno,
                 strerror(errno));
               }
+            
+            rc = -1 * local_errno;
+            goto cleanup_conn;
             }
-
-          rc = -1 * local_errno;
-          goto cleanup_conn;
-          }
-        else
-          {
-          close(connection[out].ch_socket);
-          connection[out].ch_inuse = FALSE;
-
-          retries++;
-          usleep(1000);
-          continue;
+          else
+            {
+            close(connection[out].ch_socket);
+            connection[out].ch_inuse = FALSE;
+            
+            retries++;
+            usleep(1000);
+            continue;
+            }
           }
         }
 #else  
