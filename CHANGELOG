@@ -57,6 +57,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Made it so that threads taken up by poll job tasks cannot consume all available
       threads in the thread pool. This will make it so other work can continue if 
       poll jobs get stuck for whatever reason and that the server will recover.  TRQ-1433
+  b - Fix a deadlock when recording alps reservations. TRQ-1421.
 
 4.1.3
   b - fix a security loophole that potentially allowed an interactive job to run 

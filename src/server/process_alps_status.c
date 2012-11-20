@@ -601,7 +601,23 @@ int process_alps_status(
       if (get_value_hash(rsv_ht, just_rsv_id) == -1)
         {
         add_hash(rsv_ht, 1, strdup(just_rsv_id));
+
+        /* sub-functions will attempt to lock a job, so we must unlock the
+         * reporter node */
+        unlock_node(parent, __func__, NULL, 0);
+
         process_reservation_id(current, str);
+
+        /* re-lock the parent */
+        if ((parent = find_nodebyname(nd_name)) == NULL)
+          {
+          /* reporter node disappeared - this shouldn't be possible */
+          log_err(PBSE_UNKNODE, __func__, "Alps reporter node disappeared while recording a reservation");
+          free_arst(&temp);
+          free_all_keys(rsv_ht);
+          free_hash(rsv_ht);
+          return(PBSE_NONE);
+          }
         }
       }
     /* save this as is to the status strings */
