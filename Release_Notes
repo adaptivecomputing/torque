@@ -33,6 +33,13 @@ OVERVIEW
     
 ---------------------------------------------------------------------------
 WHAT'S NEW
+    In 2.5.9 a change was made to the internal job structure of TORQUE
+    which made upgrading to 2.5.9 with job arrays not possible. If you
+    are upgrading from 2.5.9 to 2.5.10 or later and have job arrays be sure to
+    start pbs_server the first time with the -u option. This will convert
+    the 2.5.9 jobs format to the correct format. The -u option only needs
+    to be run once.
+
 
 New in 2.5.12
     Enabled MOMs to change a users group on stderr/stdout files. This fixes
@@ -53,13 +60,6 @@ New in 2.5.12
     For all bugs fixed in 2.5.12 please see the CHANGELOG.
 
 New in 2.5.11 and 2.5.10 
-    In 2.5.9 a change was made to the internal job structure of TORQUE
-    which made upgrading to 2.5.9 with job arrays not possible. If you
-    are upgrading from 2.5.9 to 2.5.11 and have job arrays be sure to
-    start pbs_server the first time with the -u option. This will convert
-    the 2.5.9 jobs format to the correct format. The -u option only needs
-    to be run once.
-
     The moab_array_compatible server parameter has been changed to be 
     TRUE by default. This affects job arrays submitted with job limits.
     This not only affects Moab users but also Maui users.
