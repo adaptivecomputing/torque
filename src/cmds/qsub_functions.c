@@ -890,9 +890,9 @@ void post_check_attributes(job_info *ji)
   {
   validate_pbs_o_workdir(&ji->mm, &ji->job_attr);
   validate_qsub_host_pbs_o_server(&ji->mm, &ji->job_attr);
-  
   validate_basic_resourcing(ji);
   } /* END post_check_attributes() */
+
 
 
 
@@ -2423,18 +2423,11 @@ void process_opts(
       {
 
       case '-':
-
-        if ((optarg != NULL) && !strcmp(optarg, "version"))
-          {
-          fprintf(stderr, "version: %s\n", PACKAGE_VERSION);
-          exit(0);
-          }
-
-        else if ((optarg != NULL) && !strcmp(optarg, "about"))
-          TShowAbout_exit();
-
-        else
-          print_qsub_usage_exit("a single - is no a valid option");
+        /**
+         * We have already tested for --version and --about, in process_early_opts().
+         * Any other opt that has - as the first char is invalid.
+         */
+        print_qsub_usage_exit("a single - is not a valid option");
 
         break;
 
@@ -4032,6 +4025,41 @@ void add_variable_list(
   hash_add_or_exit(&ji->mm, &ji->job_attr, var_name, var_list, CMDLINE_DATA);
   }
 
+/**
+ * Handle --about and --version, and any other options that would cause
+ * the program to exit quickly instead of doing normal workflow.
+ * This function should exit() if a short-circuit turns out to be what
+ * the user requested.
+ */
+void process_early_opts(
+    
+  int    argc,
+  char **argv)
+
+  {
+  int i;
+
+  for (i = 0; i < argc; ++i)
+    {
+    char const *name = argv[i];
+
+    if (name[0] == '-' && name[1] == '-')
+      {
+      name += 2;
+      if (strcmp(name, "about") == 0)
+        TShowAbout_exit();
+      else if (strcmp(name, "version") == 0)
+        {
+        fprintf(stderr, "version: %s\n", PACKAGE_VERSION);
+        exit(0);
+        }
+      }
+    }
+  } /* END process_early_opts() */
+
+
+
+
 /** 
  * qsub main 
  *
@@ -4044,6 +4072,7 @@ void main_func(
   char **envp)  /* I */
 
   {
+
   int               errflg;                         /* option error */
   char              script[MAXPATHLEN + 1] = ""; /* name of script file */
   char              script_tmp[MAXPATHLEN + 1] = "";    /* name of script file copy */
@@ -4070,6 +4099,13 @@ void main_func(
   int               debug = FALSE;
   job_info          ji;
 
+  /**
+   * Before we go to the trouble of allocating memory, initializing structures,
+   * and setting up for ordinary workflow, check options to see if we'll be
+   * short-circuiting. If yes, then we'll exit without ever returning to main_func.
+   */
+  process_early_opts(argc, argv);
+  
   memset(&ji, 0, sizeof(job_info));
   if (memmgr_init(&ji.mm, 8192) != PBSE_NONE)
     {
@@ -4086,7 +4122,7 @@ void main_func(
    * 5 - environment variables
    * 6 - predefined code defaults
    *
-   * These are processed and added to the has in reverse order.
+   * These are processed and added to the hash in reverse order.
    * The default hashmap functionality is to remove existing values to add
    *  new ones.
    */
@@ -4110,7 +4146,7 @@ void main_func(
   process_config_file(&ji);
 
   /* check/set submit filter_path */
-  validate_submit_filter(&ji.mm, &ji.client_attr);
+  validate_submit_filter(&ji.mm, &ji.job_attr);
 
   /* NOTE:  load config before processing opts since config may modify how opts are handled */
 
