@@ -469,7 +469,7 @@
 #define PBS_MAXQUEUENAME 15 /* max queue name length */
 #define PBS_MAXSERVERNAME PBS_MAXHOSTNAME /* max server name length */
 #define PBS_MAXJOBARRAYLEN      7       /* number of characters allowed in jobarray portion of job id, including '[]' */
-#define PBS_MAXSEQNUM  8 /* max sequence number length */
+#define PBS_MAXSEQNUM  12 /* max sequence number length */
 #define PBS_MAXPORTNUM  5 /* udp/tcp port numbers max=16 bits */
 #define PBS_MAXJOBARRAY  99999
 #define PBS_MAXSVRJOBID  (PBS_MAXSEQNUM + PBS_MAXSERVERNAME + PBS_MAXPORTNUM + PBS_MAXJOBARRAYLEN + 2 ) /* server job id size */
