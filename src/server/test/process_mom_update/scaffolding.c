@@ -216,3 +216,42 @@ int update_nodes_file(
   {
   return(0);
   }
+
+int append_dynamic_string(
+
+  dynamic_string *ds,
+  const char     *str)
+
+  {
+  return(0);
+  }
+
+dynamic_string *get_dynamic_string(
+    
+  int         initial_size, /* I (-1 means default) */
+  const char *str)          /* I (optional) */
+
+  {
+  return(NULL);
+  }
+
+int node_micstatus_list(
+
+  pbs_attribute *new,      /* derive status into this pbs_attribute*/
+  void          *pnode,    /* pointer to a pbsnode struct     */
+  int            actmode)  /* action mode; "NEW" or "ALTER"   */
+
+  {
+  return(0);
+  }
+
+int append_char_to_dynamic_string(
+    
+  dynamic_string *ds,
+  char            c)
+
+  {
+  return(0);
+  }
+
+void clear_dynamic_string(dynamic_string *ds) {}

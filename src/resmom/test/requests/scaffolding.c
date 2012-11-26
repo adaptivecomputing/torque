@@ -260,7 +260,7 @@ void append_link(tlist_head *head, list_link *new, void *pobj)
   exit(1);
   }
 
-int TTmpDirName(job *pjob, char *tmpdir)
+int TTmpDirName(job *pjob, char *tmpdir, int tmpdir_size)
   {
   fprintf(stderr, "The call to TTmpDirName needs to be mocked!!\n");
   exit(1);

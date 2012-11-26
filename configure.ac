@@ -401,6 +401,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/server/test/array_func/Makefile
     src/server/test/array_upgrade/Makefile
     src/server/test/attr_recov/Makefile
+    src/server/test/batch_request/Makefile
     src/server/test/dis_read/Makefile
     src/server/test/display_alps_status/Makefile
     src/server/test/exiting_jobs/Makefile

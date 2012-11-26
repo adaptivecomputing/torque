@@ -262,3 +262,13 @@ int create_alps_reservation(
   {
   return(0);
   }
+
+int write_attr_to_file(
+
+  job  *pjob,
+  int   index,
+  char *suffix)
+
+  {
+  return(0);
+  }

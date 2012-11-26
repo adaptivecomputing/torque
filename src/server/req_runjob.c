@@ -1917,8 +1917,8 @@ char *get_correct_spec_string(
 
         if (!(gpu_req = strstr(request, ":gpus=")))
           {
-           correct_spec = strdup(given);
-           return(correct_spec);
+          correct_spec = strdup(given);
+          return(correct_spec);
           }
 
         mode_string = gpu_req + strlen(":gpus=");

@@ -1283,6 +1283,8 @@ int apply_job_delete_nanny(
     return(-1);
     }
 
+  pjob->ji_has_delete_nanny = TRUE;
+
   /* add a nanny task at the requested time */
   set_task(tasktype, delay, job_delete_nanny, strdup(pjob->ji_qs.ji_jobid), FALSE);
 

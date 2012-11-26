@@ -623,3 +623,11 @@ hash_map *get_hash_map(int size)
   {
   return(NULL);
   }
+
+job_array *get_array(
+    
+  char *id)
+
+  {
+  return(NULL);
+  }

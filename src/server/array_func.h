@@ -16,8 +16,6 @@ int array_save(job_array *pa);
 
 void array_get_parent_id(char *job_id, char *parent_id);
 
-int array_recov(char *path, job_array **);
-
 int array_delete(job_array *pa);
 
 int set_slot_limit(char *request, job_array *pa);

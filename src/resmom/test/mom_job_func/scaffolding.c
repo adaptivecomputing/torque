@@ -118,3 +118,31 @@ int destroy_alps_reservation(
   {
   return(0);
   }
+
+void free_resizable_array(resizable_array *ra) {}
+
+resizable_array *initialize_resizable_array(
+
+  int               size)
+
+  {
+  return(NULL);
+  }
+
+int insert_thing(
+    
+  resizable_array *ra,
+  void             *thing)
+
+  {
+  return(0);
+  }
+
+int is_present(
+
+  resizable_array *ra,
+  void            *thing)
+
+  {
+  return(0);
+  }
