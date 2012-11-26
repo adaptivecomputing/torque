@@ -86,8 +86,8 @@
 
 # Missing:
 # libcpuset -> libcpuset.so.*
-# numa: hwlock.so.*
-# cpuset: hwlock.so.*
+# numa: hwloc.so.*
+# cpuset: hwloc.so.*
 # memacct: memacct.so.*
 
 ### Macro variables
@@ -124,6 +124,38 @@
     do \
        %{__sed} -i "s|%{2}|%{3}|g" $i; \
     done
+# These allow the automatic back up to take place.
+
+%define pre_clear_back_up() \
+    echo "  Removing files looking like " \
+    echo "    '/var/tmp/backup-%{name}%{?1:-%{1}}.*\\.tar'..." \
+    ls -1A /var/tmp | \
+        grep 'backup-%{name}%{?1:-%{1}}.*\\.tar' | \
+        xargs rm -f >/dev/null 2>&1 || :
+
+%define pre_add_back_up_dir() \
+    if [ -d "%{1}" ] \
+    then \
+        echo "  Adding '%{1}' to the back-up tar file" \
+        echo "    '/var/tmp/backup-%{name}%{?2:-%{2}}.tar'..." \
+        tar uf "/var/tmp/backup-%{name}%{?2:-%{2}}.tar" "%{1}" \
+    fi
+
+%define pre_add_back_up_file() \
+    if [ -d "%{1}" ] \
+    then \
+        echo "  Adding '%{1}' to the back-up tar file" \
+        echo "    '/var/tmp/backup-%{name}%{?2:-%{2}}.tar'..." \
+        tar uf "/var/tmp/backup-%{name}%{?2:-%{2}}.tar" "%{1}" \
+    fi
+
+%define pre_zip_back_up() \
+    if [ -s "/var/tmp/backup-%{name}%{?1:-%{1}}.tar" ] \
+    then \
+        echo "  gzipping the file " \
+        echo "    '/var/tmp/backup-%{name}%{?1:-%{1}}.tar'..." \
+        gzip "/var/tmp/backup-%{name}%{?1:-%{1}}.tar" \
+    fi
 
 Name:           %{name}
 Version:        %{version}
@@ -162,7 +194,6 @@ Group:      Applications/System
 Conflicts:  pbspro, openpbs, openpbs-oscar
 Obsoletes:  scatorque <= %{version}-%{release}
 Provides:   pbs, pbs-docs %{?with_pam:, pbs-pam}
-Provides:   %{community_top_pkg}-docs = %{version}-%{release}
 Provides:   %{community_client_pkg} = %{version}-%{release}
 Obsoletes:  %{community_client_pkg} < %{version}-%{release}
 %ifarch x86_64 amd64
@@ -239,16 +270,9 @@ TORQUE-managed batch system.
 
 %build
 
-if [ -s "autogen.sh" ]
-then
-    ./autogen.sh
-else
-    autoreconf --install
-fi
-
 # 0 optimization for full-on debugging.
-CFLAGS="-g -O0"
-CXXFLAGS="-g -O0"
+CFLAGS="-g3 -O0"
+CXXFLAGS="-g3 -O0"
 
 %configure  --includedir=%{_includedir}/%{project_name} \
             --with-server-home=%{torque_home} \
@@ -314,13 +338,15 @@ rm -f %{buildroot}%{_sbindir}/pbs_sched
 rm -f %{buildroot}%{_sbindir}/qschedd
 rm -rf %{buildroot}%{torque_spooldir}/sched_logs
 
-# %%ghost files
+# Empty config files
 
 touch %{buildroot}%{torque_sysconfdir}/server_priv/nodes
 touch %{buildroot}%{torque_appstatedir}/server_priv/serverdb
-%{__install} -d %{buildroot}%{torque_appstatedir}/server_priv/bad_job_state
 touch %{buildroot}%{torque_sysconfdir}/server_priv/mom_hierarchy
 
+# %%ghost files
+
+%{__install} -d %{buildroot}%{torque_appstatedir}/server_priv/bad_job_state
 %{__install} -d %{buildroot}/etc/ld.so.conf.d
 echo '%{_libdir}' > %{buildroot}/etc/ld.so.conf.d/torque.conf
 
@@ -329,7 +355,7 @@ echo '%{_libdir}' > %{buildroot}/etc/ld.so.conf.d/torque.conf
 %grep_safety_net "%{buildroot}" "localhost" "__AC_HOSTNAME_NOT_SET__"
 
 %pre %{common_sub}
-TIMESTAMP="`date +%Y.%m.%d_%H.%M.%S`"
+TIMESTAMP="`date +%%Y.%%m.%%d_%%H.%%M.%%S`"
 # This for loop enables globbing, which the macros do not support
 %{pre_clear_back_up %{common_sub}-${TIMESTAMP}}
 for file in %{_libdir}/lib%{project_name}.so.*
@@ -366,7 +392,7 @@ echo "  Running 'ldconfig'..."
 ldconfig
 
 %pre %{client_sub}
-TIMESTAMP="`date +%Y.%m.%d_%H.%M.%S`"
+TIMESTAMP="`date +%%Y.%%m.%%d_%%H.%%M.%%S`"
 %{pre_clear_back_up %{client_sub}-${TIMESTAMP}}
 # Taken from the client's file list
 %{pre_add_back_up_file %{_initrddir}/trqauthd %{client_sub}-${TIMESTAMP}}
@@ -415,7 +441,7 @@ then
 fi
 
 %pre %{server_sub}
-TIMESTAMP="`date +%Y.%m.%d_%H.%M.%S`"
+TIMESTAMP="`date +%%Y.%%m.%%d_%%H.%%M.%%S`"
 %{pre_clear_back_up %{server_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{pkg_doc_dir}/doc/admin_guide.ps %{server_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{pkg_doc_dir}/torque.setup %{server_sub}-${TIMESTAMP}}
@@ -458,31 +484,25 @@ trqauthd      15005/udp           # authorization daemon
 EOF
     }
 
-    for dir in "%{torque_sysconfdir}" "%{torque_appstatedir}" \
-        "%{torque_spooldir}"
-    do
-        %grep_safety_net "${dir}" "__AC_HOSTNAME_NOT_SET__" "${HOSTNAME}"
-    done
-
+    %grep_safety_net "%{torque_home}" "__AC_HOSTNAME_NOT_SET__" "${HOSTNAME}"
 
     echo "`hostname` np=`grep processor /proc/cpuinfo | wc -l`" > \
         %{torque_sysconfdir}/server_priv/nodes
 
     echo "  Checking for the existence of the file"
     echo "    '%{torque_appstatedir}/server_priv/serverdb'..."
-    if [ ! -e %{torque_appstatedir}/server_priv/serverdb ]
+    if [ ! -s %{torque_appstatedir}/server_priv/serverdb ]
     then
         echo "  '%{torque_appstatedir}/server_priv/serverdb' does not"
-        echo "    exist."
+        echo "    exist or is empty."
         export TORQUE_SERVER="${HOSTNAME}"
         echo "  Running '%{_docdir}/torque.setup' with first argument as"
         echo "    '%{torque_user}'..."
         yes 'y' | %{_docdir}/%{server_pkg}-%{version}/torque.setup \
-            "%{torque_user}"
+            "%{torque_user}" >/dev/null
 
-        killall -TERM pbs_server >/dev/null 2>&1 || :
+        qterm >/dev/null 2>&1 || :
     fi
-
 
     chkconfig --add pbs_server >/dev/null 2>&1 || :
     chkconfig pbs_server on >/dev/null 2>&1 || :
@@ -504,7 +524,7 @@ then
 fi
 
 %pre %{devel_sub}
-TIMESTAMP="`date +%Y.%m.%d_%H.%M.%S`"
+TIMESTAMP="`date +%%Y.%%m.%%d_%%H.%%M.%%S`"
 %{pre_clear_back_up %{devel_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{_bindir}/pbs-config %{devel_sub}-${TIMESTAMP}}
 %{pre_add_back_up_dir  %{_includedir}/%{project_name} %{devel_sub}-${TIMESTAMP}}
@@ -527,7 +547,7 @@ echo "  Running 'ldconfig'..."
 ldconfig
 
 %pre %{mom_sub}
-TIMESTAMP="`date +%Y.%m.%d_%H.%M.%S`"
+TIMESTAMP="`date +%%Y.%%m.%%d_%%H.%%M.%%S`"
 %{pre_clear_back_up %{mom_sub}-${TIMESTAMP}}
 %{pre_add_back_up_dir %{torque_appstatedir}/mom_priv %{mom_sub}-${TIMESTAMP}}
 %{pre_add_back_up_dir %{torque_appstatedir}/aux %{mom_sub}-${TIMESTAMP}}
@@ -572,11 +592,7 @@ trqauthd      15005/udp           # authorization daemon
 EOF
     }
 
-    for dir in "%{torque_sysconfdir}" "%{torque_appstatedir}" \
-        "%{torque_spooldir}"
-    do
-        %grep_safety_net "${dir}" "__AC_HOSTNAME_NOT_SET__" "${HOSTNAME}"
-    done
+    %grep_safety_net "%{torque_home}" "__AC_HOSTNAME_NOT_SET__" "${HOSTNAME}"
 
     export TORQUE_SERVER="${HOSTNAME}"
 
@@ -606,8 +622,8 @@ echo "  Running 'ldconfig'..."
 ldconfig
 
 %files
-%files %{common_sub}
 
+%files %{common_sub}
 %attr(-,root,root) %{_libdir}/lib%{project_name}.so.*
 %attr(-,root,root) %config(noreplace) %{torque_sysconfdir}/pbs_environment
 %attr(-,root,root) %config(noreplace) /etc/ld.so.conf.d/torque.conf
@@ -638,8 +654,8 @@ ldconfig
 %files %{server_sub}
 %attr(-,root,root) %doc doc/admin_guide.ps
 %attr(0755,root,root) %doc torque.setup
-%attr(-,root,root) %ghost %{torque_sysconfdir}/server_priv/mom_hierarchy
-%attr(-,root,root) %ghost %{torque_appstatedir}/server_priv/serverdb
+%attr(-,root,root) %config(noreplace) %{torque_sysconfdir}/server_priv/mom_hierarchy
+%attr(-,root,root) %config(noreplace) %{torque_appstatedir}/server_priv/serverdb
 %attr(-,root,root) %config(noreplace) %{torque_sysconfdir}/server_name
 %attr(-,root,root) %config(noreplace) %{torque_sysconfdir}/server_priv/nodes
 %attr(-,root,root) %config(noreplace) %{_initrddir}/pbs_server
