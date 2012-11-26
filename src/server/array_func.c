@@ -360,7 +360,7 @@ int read_and_convert_259_array(
    the servers list of arrays */
 int array_recov(
 
-  char *path, 
+  char       *path, 
   job_array **new_pa)
 
   {
@@ -374,15 +374,17 @@ int array_recov(
   int   len;
   int   rc;
 
+  *new_pa = NULL;
+
   old_version = ARRAY_QS_STRUCT_VERSION;
 
   /* allocate the storage for the struct */
   pa = (job_array*)calloc(1,sizeof(job_array));
 
   if (pa == NULL)
-  {
-    return PBSE_SYSTEM;
-  }
+    {
+    return(PBSE_SYSTEM);
+    }
 
   /* initialize the linked list nodes */
 
@@ -393,11 +395,11 @@ int array_recov(
   if (array_259_upgrade)
     {
     rc = read_and_convert_259_array(fd, pa, path);
-    if(rc != PBSE_NONE)
+    if (rc != PBSE_NONE)
       {
       free(pa);
       close(fd);
-      return rc;
+      return(rc);
       }
     }
   else
@@ -413,19 +415,19 @@ int array_recov(
       log_err(errno, __func__, log_buf);
       free(pa);
       close(fd);
-      return PBSE_SYSTEM;
+      return(PBSE_SYSTEM);
       }
 
     if (pa->ai_qs.struct_version != ARRAY_QS_STRUCT_VERSION)
       {
       rc = array_upgrade(pa, fd, pa->ai_qs.struct_version, &old_version);
-      if(rc)
+      if (rc)
         {
         sprintf(log_buf, "Cannot upgrade array version %d to %d", pa->ai_qs.struct_version, ARRAY_QS_STRUCT_VERSION);
         log_err(errno, __func__, log_buf);
         free(pa);
         close(fd);
-        return rc;
+        return(rc);
         }
       }
     }
@@ -445,7 +447,7 @@ int array_recov(
 
       free(pa);
       close(fd);
-      return PBSE_SYSTEM;
+      return(PBSE_SYSTEM);
       }
 
     for (i = 0; i < num_tokens; i++)
@@ -454,7 +456,6 @@ int array_recov(
 
       if (read(fd, rn, sizeof(array_request_node)) != sizeof(array_request_node))
         {
-
         sprintf(log_buf, "error reading array_request_node from %s", path);
         log_err(errno, __func__, log_buf);
 
@@ -471,7 +472,7 @@ int array_recov(
         free(pa);
 
         close(fd);
-        return PBSE_SYSTEM;
+        return(PBSE_SYSTEM);
         }
 
       CLEAR_LINK(rn->request_tokens_link);

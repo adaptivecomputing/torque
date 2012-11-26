@@ -282,3 +282,48 @@ int lock_ai_mutex(
   return(0);
   }
 
+int remove_from_hash_map(
+
+  hash_map *hm,
+  char     *key)
+
+  {
+  return(0);
+  }
+
+int add_to_hash_map(
+    
+  hash_map *hm,
+  void     *obj,
+  char     *key)
+
+  {
+  return(0);
+  }
+
+hash_map *get_hash_map(
+
+  int size_param)
+
+  {
+  return(NULL);
+  }
+
+void *get_from_hash_map(
+
+  hash_map *hm,
+  char     *key)
+
+  {
+  return(NULL);
+  }
+
+void *next_from_hash_map(
+
+  hash_map *hm,
+  int      *iter)
+
+  {
+  return(NULL);
+  }
+

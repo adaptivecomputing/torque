@@ -16,7 +16,7 @@
 char log_buffer[LOG_BUF_SIZE];
 char mom_host[1];
 char mom_alias[1];
-
+int  LOGLEVEL;
 
 
 /* dynamic string stuff */

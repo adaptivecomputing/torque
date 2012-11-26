@@ -346,7 +346,7 @@ void sister_job_nodes(job *pjob, char *radix_hosts, char *radix_ports )
   exit(1);
   }
 
-int TTmpDirName(job *pjob, char *tmpdir)
+int TTmpDirName(job *pjob, char *tmpdir, int tmdir_size)
   {
   fprintf(stderr, "The call to TTmpDirName needs to be mocked!!\n");
   exit(1);

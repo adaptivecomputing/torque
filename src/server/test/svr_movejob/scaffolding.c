@@ -10,6 +10,7 @@
 #include "queue.h" /* pbs_queue */
 #include "pbs_nodes.h" /* pbsnode */
 #include "list_link.h" /* tlist_head, list_link */
+#include "array.h"
 
 char *path_jobs;
 struct connect_handle connection[10];
@@ -270,6 +271,25 @@ struct pbs_queue *lock_queue_with_job_held(
 void svr_mailowner(job *pjob, int mailpoint, int force, char *text) {}
 
 int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+  {
+  return(0);
+  }
+
+job_array *get_jobs_array(
+
+  job **pjob_ptr)
+
+  {
+  return(NULL);
+  }
+
+int unlock_ai_mutex(
+
+  job_array  *pa,
+  const char *id,
+  char       *msg,
+  int        logging)
+
   {
   return(0);
   }

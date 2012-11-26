@@ -387,3 +387,4 @@ int proplist(char **str, struct prop **plist, int *node_req, int *gpu_req)
   return(PBSE_NONE);
   } /* END proplist() */
 
+void free_resizable_array(resizable_array *ra) {}

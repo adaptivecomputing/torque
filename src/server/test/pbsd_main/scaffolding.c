@@ -14,6 +14,7 @@
 #include "server.h" /* server */
 #include "pbs_nodes.h" /* pbsnode */
 #include "sched_cmds.h" /* SCH_SCHEDULE_NULL */
+#include "threadpool.h"
 
 hello_container failures;
 pthread_mutex_t *job_log_mutex;
@@ -34,7 +35,9 @@ int svr_chngNodesfile = 0; /* 1 signals want nodes file update */
 int svr_totnodes = 0; /* total number nodes defined */
 hello_container hellos;
 char pbs_server_name[1];
-
+pthread_mutex_t *poll_job_task_mutex;
+threadpool_t *request_pool;
+int              max_poll_job_tasks;
 
 int log_remove_old(char *DirPath, unsigned long ExpireTime)
   {

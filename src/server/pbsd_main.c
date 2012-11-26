@@ -1929,7 +1929,7 @@ int main(
   /* initialize the server objects and perform specified recovery */
   /* will be left in the server's private directory  */
   /* NOTE:  env cleared in pbsd_init() */
-  if (pbsd_init(server_init_type) != 0)
+  if (pbsd_init(server_init_type) != PBSE_NONE)
     {
     log_err(-1, msg_daemonname, "pbsd_init failed");
 

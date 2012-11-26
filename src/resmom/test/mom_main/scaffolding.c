@@ -40,7 +40,6 @@ char *msg_info_mom = "Torque Mom Version = %s, loglevel = %d";
 hash_table_t *received_table;
 threadpool_t *request_pool;
 AvlTree okclients;
-time_t pbs_tcp_timeout = 20;
 time_t wait_time = 10;
 pthread_mutex_t *log_mutex;
 dynamic_string  *mom_status;

@@ -53,3 +53,13 @@ int lock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
   {
   return(0);
   }
+
+int lock_alljobs_mutex(struct all_jobs *aj, const char *id, char *msg, int logging)
+  {
+  return(0);
+  }
+
+int unlock_alljobs_mutex(struct all_jobs *aj, const char *id, char *msg, int logging)
+  {
+  return(0);
+  }
