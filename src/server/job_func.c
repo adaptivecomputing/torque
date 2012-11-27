@@ -1727,23 +1727,26 @@ int svr_job_purge(
 
     if (pjob != NULL)
       {
-      /* erase the pointer to this job in the job array */
-      free(pa->job_ids[pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long]);
-      pa->job_ids[pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long] = NULL;
-      
-      /* if there are no more jobs in the arry,
-       * then we can clean that up too */
-      pa->ai_qs.num_purged++;
-      if (pa->ai_qs.num_purged == pa->ai_qs.num_jobs)
+      if (pa != NULL)
         {
-        /* array_delete will unlock pa->ai_mutex */
-        array_delete(pa);
-        }
-      else
-        {
-        array_save(pa);
+        /* erase the pointer to this job in the job array */
+        free(pa->job_ids[pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long]);
+        pa->job_ids[pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long] = NULL;
         
-        unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+        /* if there are no more jobs in the arry,
+         * then we can clean that up too */
+        pa->ai_qs.num_purged++;
+        if (pa->ai_qs.num_purged == pa->ai_qs.num_jobs)
+          {
+          /* array_delete will unlock pa->ai_mutex */
+          array_delete(pa);
+          }
+        else
+          {
+          array_save(pa);
+          
+          unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+          }
         }
       }
     else
