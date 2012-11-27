@@ -53,6 +53,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       threads in the thread pool. This will make it so other work can continue if 
       poll jobs get stuck for whatever reason and that the server will recover.  TRQ-1433
   b - Fix a deadlock when recording alps reservations. TRQ-1421.
+  b - Fixed a segfault in req_jobobit caused by NULL pointer assignment to variable
+      pa. TRQ-1467
+  b - Fixed deadlock in remove_array. remove_array was calling get_arry with allarrays_mutex
+      locked. TRQ-1466
 
 4.1.3
   b - fix a security loophole that potentially allowed an interactive job to run 

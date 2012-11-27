@@ -1811,7 +1811,6 @@ int remove_array(
   job_array *pa)
 
   {
-  char log_buf[LOCAL_LOG_BUF_SIZE];
   int  rc;
   char arrayid[PBS_MAXSVRJOBID+1];
 
@@ -1821,22 +1820,17 @@ int remove_array(
 
     unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
 
-    pthread_mutex_lock(allarrays.allarrays_mutex);
-    if (LOGLEVEL >= 7)
-      {
-      sprintf(log_buf, "%s: unlocked allarrays_mutex", __func__);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-      }
-
     pa = get_array(arrayid);
     }
 
   if (pa == NULL)
     rc = PBSE_NONE;
   else
+    {
+    pthread_mutex_lock(allarrays.allarrays_mutex);
     rc = remove_from_hash_map(allarrays.hm, pa->ai_qs.parent_id);
-
-  pthread_mutex_unlock(allarrays.allarrays_mutex);
+    pthread_mutex_unlock(allarrays.allarrays_mutex);
+    }
 
   return(rc);
   } /* END remove_array() */
