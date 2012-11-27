@@ -1830,10 +1830,9 @@ int remove_array(
   if (pa == NULL)
     rc = PBSE_NONE;
   else
-    {
     rc = remove_from_hash_map(allarrays.hm, pa->ai_qs.parent_id);
-    pthread_mutex_unlock(allarrays.allarrays_mutex);
-    }
+
+  pthread_mutex_unlock(allarrays.allarrays_mutex);
 
   return(rc);
   } /* END remove_array() */
