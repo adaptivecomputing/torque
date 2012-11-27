@@ -1819,18 +1819,20 @@ int remove_array(
     strcpy(arrayid, pa->ai_qs.parent_id);
 
     unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+    pthread_mutex_lock(allarrays.allarrays_mutex);
 
-    pa = get_array(arrayid);
+    pa = (job_array *)get_from_hash_map(allarrays.hm, arrayid);
+
+    if (pa != NULL)
+      lock_ai_mutex(pa, __func__, "2", LOGLEVEL);
     }
 
   if (pa == NULL)
     rc = PBSE_NONE;
   else
-    {
-    pthread_mutex_lock(allarrays.allarrays_mutex);
     rc = remove_from_hash_map(allarrays.hm, pa->ai_qs.parent_id);
-    pthread_mutex_unlock(allarrays.allarrays_mutex);
-    }
+
+  pthread_mutex_unlock(allarrays.allarrays_mutex);
 
   return(rc);
   } /* END remove_array() */
