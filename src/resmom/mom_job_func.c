@@ -229,9 +229,9 @@ void tasks_free(
       {
       if (is_present(freed_chans, tp->ti_chan) == FALSE)
         {
+        insert_thing(freed_chans, tp->ti_chan);
         close_conn(tp->ti_chan->sock, FALSE);
         DIS_tcp_cleanup(tp->ti_chan);
-        insert_thing(freed_chans, tp->ti_chan);
         }
         
       tp->ti_chan = NULL;
