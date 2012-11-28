@@ -175,7 +175,7 @@ typedef enum
   #undef _POSIX_MEMLOCK
 #endif /* NOPOSIXMEMLOCK */
 
-#define EXTRA_VARIABLE_SPACE 2000
+#define EXTRA_VARIABLE_SPACE 5120
 #define EXTRA_ENV_PTRS        32
 
 #define MAX_JOB_ARGS          64
