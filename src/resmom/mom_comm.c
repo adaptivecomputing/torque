@@ -8503,7 +8503,7 @@ int read_status_strings(
   {
   int             rc;
   char           *str;
-  received_node  *rn;
+  received_node  *rn = NULL;
  
   /* was mom_port but storage unnecessary */ 
   disrsi(chan,&rc);
@@ -8535,7 +8535,10 @@ int read_status_strings(
       rn = get_received_node_entry(str);
 
     /* place each string into the buffer */
-    copy_to_end_of_dynamic_string(rn->statuses, str);
+    if(rn != NULL)
+      {
+      copy_to_end_of_dynamic_string(rn->statuses, str);
+      }
 
     free(str);
     }
@@ -8562,11 +8565,6 @@ int read_status_strings(
 
       send_update_soon();
       }
-    }
-  else
-    {
-    free_dynamic_string(rn->statuses);
-    free(rn);
     }
   
   return(PBSE_NONE);
