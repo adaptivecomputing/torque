@@ -8182,7 +8182,9 @@ void fork_demux(
     close(im_mom_stdout);
     close(im_mom_stderr);
 
-    (void)write(pipes[1], "fail", strlen("fail"));
+    if (write(pipes[1], "fail", strlen("fail")) < 0)
+      perror(__func__);
+
     close(pipes[1]);
 
     _exit(5);
@@ -8194,7 +8196,9 @@ void fork_demux(
     close(im_mom_stdout);
     close(im_mom_stderr);
 
-    (void)write(pipes[1], "fail", strlen("fail"));
+    if (write(pipes[1], "fail", strlen("fail")) < 0)
+      perror(__func__);
+
     close(pipes[1]);
 
     _exit(5);
@@ -8219,7 +8223,9 @@ void fork_demux(
     close(im_mom_stdout);
     close(im_mom_stderr);
     
-    (void)write(pipes[1], "fail", strlen("fail"));
+    if (write(pipes[1], "fail", strlen("fail")) < 0)
+      perror(__func__);
+
     close(pipes[1]);
 
     _exit(5);
@@ -8234,13 +8240,17 @@ void fork_demux(
     close(im_mom_stderr);
     close(fd1);
 
-    (void)write(pipes[1], "fail", strlen("fail"));
+    if (write(pipes[1], "fail", strlen("fail")) < 0)
+      perror(__func__);
+
     close(pipes[1]);
 
     _exit(5);
     }
 
-  (void)write(pipes[1], "success", strlen("success"));
+  if (write(pipes[1], "success", strlen("success")) < 0)
+    perror(__func__);
+
   close(pipes[1]);
   
   while (1)

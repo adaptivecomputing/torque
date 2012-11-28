@@ -89,7 +89,9 @@
 #ifndef SERVER_LIMITS_H
 #define SERVER_LIMITS_H
 
+#ifdef USE_MAXINT_JOBIDS
 #include <limits.h>
+#endif
 
 /* removing outdated 14 char filename limit */
 #define PBS_JOBBASE   61 /* basename size for job file, 61 = 64 - 3  */
@@ -98,7 +100,11 @@
 
 #define PBS_MAX_HOPCOUNT 10 /* limit on number of routing hops per job */
 
+#ifdef USE_MAXINT_JOBIDS
 #define PBS_SEQNUMTOP INT_MAX /* top number for job sequence number, reset */
+#else
+#define PBS_SEQNUMTOP 99999999 /* top number for job sequence number, reset */
+#endif
 /* to zero when reached, see req_quejob.c    */
 
 #define TORQUE_LISTENQUEUE     10  /* used for X11 and stdout/stderr forwarding */

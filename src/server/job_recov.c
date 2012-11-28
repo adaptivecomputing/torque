@@ -146,7 +146,6 @@ extern int LOGLEVEL;
 
 /* data global only to this file */
 
-static const unsigned int quicksize = sizeof(struct jobfix);
 #ifndef PBS_MOM
 int add_to_ms_list(char *node_name, job *pjob);
 #endif
@@ -252,7 +251,7 @@ int job_save(
 
     /* just write the "critical" base structure to the file */
 
-    while ((i = write(fds, (char *) & pjob->ji_qs, quicksize)) != (ssize_t)quicksize)
+    while ((i = write(fds, (char *)&pjob->ji_qs, sizeof(pjob->ji_qs))) != sizeof(pjob->ji_qs))
       {
       if ((i < 0) && (errno == EINTR))
         {
@@ -320,7 +319,7 @@ int job_save(
       lock_ss();
 #endif
 
-      if (save_struct((char *)&pjob->ji_qs, quicksize, fds, save_buf, &buf_remaining, sizeof(save_buf)) != PBSE_NONE)
+      if (save_struct((char *)&pjob->ji_qs, sizeof(pjob->ji_qs), fds, save_buf, &buf_remaining, sizeof(save_buf)) != PBSE_NONE)
         {
         redo++;
         }
@@ -464,7 +463,7 @@ job *job_recov(
 
   /* read in job quick save sub-structure */
 
-  if (read(fds, (char *)&pj->ji_qs, quicksize) != (ssize_t)quicksize &&
+  if (read(fds, (char *)&pj->ji_qs, sizeof(pj->ji_qs)) != sizeof(pj->ji_qs) &&
       pj->ji_qs.qs_version == PBS_QS_VERSION)
     {
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Unable to read %s", namebuf);
