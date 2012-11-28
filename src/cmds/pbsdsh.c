@@ -114,9 +114,9 @@ int obit_submit(
 
   if (verbose)
     {
-    fprintf(stderr, "%s: sending obit for task %u\n",
+    fprintf(stderr, "%s: sending obit for task %d\n",
             id,
-            *(tid + c));
+            c);
     }
 
   rc = tm_obit(*(tid + c), ev + c, events_obit + c);
@@ -343,10 +343,6 @@ int wait_for_task(
     {
     if (grabstdio)
       getstdout();
-
-    if (verbose)
-      {
-      }
 
     if (fire_phasers)
       {
