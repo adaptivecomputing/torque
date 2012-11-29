@@ -834,7 +834,6 @@ job *job_clone(
   char           basename[PBS_JOBBASE+1];
   char           namebuf[MAXPATHLEN + 1];
   char           buf[256];
-  char          *pc;
   int            fds;
 
   int            i;
@@ -924,24 +923,8 @@ job *job_clone(
       {
       if (errno == EEXIST)
         {
-        pc = basename + strlen(basename) - 1;
-
-        while (!isprint((int)*pc) || (*pc == '-'))
-          {
-          pc--;
-
-          if (pc <= basename)
-            {
-            /* FAILURE */
-
-            log_err(errno, __func__, "job file is corrupt");
-            job_free(pnewjob, FALSE);
-
-            return(NULL);
-            }
-          }
-
-        (*pc)++;
+        job_free(pnewjob, FALSE);
+        return((job *)1);
         }
       else
         {
@@ -1131,6 +1114,14 @@ void *job_clone_wt(
 
     for (i = start; i <= end; i++)
       {
+      if (pa->job_ids[i] != NULL)
+        {
+        /* This job already exists. This can happen when trying to recover a job
+         * array that wasn't fully cloned. */
+        rn->start++;
+        continue;
+        }
+
       lock_ji_mutex(template_job, __func__, NULL, LOGLEVEL);
       pjobclone = job_clone(template_job, pa, i);
       unlock_ji_mutex(template_job, __func__, "3", LOGLEVEL);
@@ -1138,6 +1129,12 @@ void *job_clone_wt(
       if (pjobclone == NULL)
         {
         log_err(-1, __func__, "unable to clone job in job_clone_wt");
+        continue;
+        }
+      else if (pjobclone == (job *)1)
+        {
+        /* this happens if we attempted to clone an existing job */
+        rn->start++;
         continue;
         }
 
