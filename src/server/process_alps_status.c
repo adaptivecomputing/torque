@@ -627,6 +627,7 @@ int process_alps_status(
         if ((current = find_nodebyname(current_node_id)) == NULL)
           {
           /* current node disappeared, this shouldn't be possible either */
+          unlock_node(parent, __func__, NULL, 0);
           snprintf(log_buf, sizeof(log_buf), "Current node '%s' disappeared while recording a reservation",
             current_node_id);
           log_err(PBSE_UNKNODE, __func__, log_buf);
