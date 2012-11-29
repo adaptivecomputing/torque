@@ -526,6 +526,17 @@ int send_command_str(
       (cmd == RM_CMD_CLOSE))
     return(rc);
 
+  rc = diswsi(chan, RM_PROTOCOL);
+
+  if (rc != DIS_SUCCESS)
+    return(rc);
+
+  rc = diswsi(chan, RM_PROTOCOL_VER);
+
+  if (rc != DIS_SUCCESS)
+    return(rc);
+
+
   rc = diswcs(chan, query, strlen(query));
 
   DIS_tcp_wflush(chan);
@@ -630,6 +641,7 @@ int do_mom(
   int socket;
   int local_errno = 0;
   struct tcp_chan *chan = NULL;
+  int rc;
 
   if ((socket = openrm(HPtr, MOMPort)) < 0)
     {
@@ -855,6 +867,16 @@ int do_mom(
 
     break;
     }  /* END switch(CmdIndex) */
+  rc = diswsi(chan, RM_PROTOCOL);
+
+  if (rc != DIS_SUCCESS)
+    return(rc);
+
+  rc = diswsi(chan, RM_PROTOCOL_VER);
+
+  if (rc != DIS_SUCCESS)
+    return(rc);
+
 
   send_command(chan,RM_CMD_CLOSE);
 

@@ -62,6 +62,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       pa. TRQ-1467
   b - Fixed deadlock in remove_array. remove_array was calling get_arry with allarrays_mutex
       locked. TRQ-1466
+  b - Fixed a problem with an end of file error when running momctl -dx. TRQ-1432.
   b - Fix a deadlock in rare cases on job insertion. TRQ-1472.
   b - Fix a deadlock after restarting pbs_server when it was SIGKILL'd before a 
       job array was done cloning. TRQ-1474.
