@@ -205,7 +205,7 @@ START_TEST(whole_test)
   dynamic_string *ds = get_dynamic_string(2048, NULL);
   int             rc;
   
-  ds->str = alps_status;
+  ds->str = strdup(alps_status);
  
   rc = process_alps_status("tom", ds);
   fail_unless(rc == 0, "didn't process alps status");
