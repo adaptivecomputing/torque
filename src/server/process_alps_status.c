@@ -547,6 +547,7 @@ int process_alps_status(
 
   {
   char           *str;
+  char           *current_node_id = NULL;
   char            node_index_buf[MAXLINE];
   int             node_index = 0;
   struct pbsnode *parent;
@@ -554,6 +555,7 @@ int process_alps_status(
   int             rc;
   pbs_attribute   temp;
   hash_table_t   *rsv_ht;
+  char            log_buf[LOCAL_LOG_BUF_SIZE];
 
   memset(&temp, 0, sizeof(temp));
 
@@ -608,6 +610,9 @@ int process_alps_status(
 
         process_reservation_id(current, str);
 
+        current_node_id = strdup(current->nd_name);
+        unlock_node(current, __func__, NULL, 0);
+
         /* re-lock the parent */
         if ((parent = find_nodebyname(nd_name)) == NULL)
           {
@@ -618,6 +623,21 @@ int process_alps_status(
           free_hash(rsv_ht);
           return(PBSE_NONE);
           }
+
+        if ((current = find_nodebyname(current_node_id)) == NULL)
+          {
+          /* current node disappeared, this shouldn't be possible either */
+          snprintf(log_buf, sizeof(log_buf), "Current node '%s' disappeared while recording a reservation",
+            current_node_id);
+          log_err(PBSE_UNKNODE, __func__, log_buf);
+          free_arst(&temp);
+          free_all_keys(rsv_ht);
+          free_hash(rsv_ht);
+          return(PBSE_NONE);
+          }
+
+        free(current_node_id);
+        current_node_id = NULL;
         }
       }
     /* save this as is to the status strings */

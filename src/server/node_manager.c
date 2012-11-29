@@ -3924,7 +3924,6 @@ int check_for_node_type(
     return(-1);
     }
 
-  lock_node(reporter, __func__, NULL, 0);
 
   for (i = 0; i < all_reqs->num_reqs; i++)
     {
@@ -3936,7 +3935,9 @@ int check_for_node_type(
           (!strcmp(p->name, alps_starter_feature)))
         continue;
 
+      lock_node(reporter, __func__, NULL, 0);
       pnode = find_node_in_allnodes(&(reporter->alps_subnodes), p->name);
+      unlock_node(reporter, __func__, NULL, 0);
 
       if (pnode != NULL)
         {
@@ -3953,9 +3954,7 @@ int check_for_node_type(
         {
         int login = FALSE;
 
-        unlock_node(reporter, __func__, NULL, 0);
         pnode = find_nodebyname(p->name);
-        lock_node(reporter, __func__, NULL, 0);
 
         if (pnode != NULL)
           {
@@ -3981,8 +3980,6 @@ int check_for_node_type(
     if (found_type == TRUE)
       break;
     }
-  
-  unlock_node(reporter, __func__, NULL, 0);
 
   return(found_type);
   } /* END check_for_node_type() */

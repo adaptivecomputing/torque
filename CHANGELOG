@@ -60,6 +60,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Fix a deadlock in rare cases on job insertion. TRQ-1472.
   b - Fix a deadlock after restarting pbs_server when it was SIGKILL'd before a 
       job array was done cloning. TRQ-1474.
+  b - Fix a Cray-related deadlock. Always lock the reporter mom before a compute 
+      node. TRQ-1445
 
 4.1.3
   b - fix a security loophole that potentially allowed an interactive job to run 
