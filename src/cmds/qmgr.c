@@ -1546,7 +1546,11 @@ int execute(
             fprintf(stderr, "qmgr: Error from server\n");
 
         if (aopt)
+          {
+          if (name != NULL)
+            free_objname_list(name);
           return perr;
+          }
 
         error = perr;
         }

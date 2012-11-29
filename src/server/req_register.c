@@ -1255,15 +1255,17 @@ void post_doe(
     pattr = &pjob->ji_wattr[JOB_ATR_depend];
     pdep  = find_depend(JOB_DEPEND_TYPE_BEFORESTART, pattr);
 
-    pdj   = find_dependjob(pdep, preq->rq_ind.rq_register.rq_parent);
-
-    del_depend_job(pdj);
-
-    if (GET_NEXT(pdep->dp_jobs) == 0)
+    if(pdep != NULL)
       {
-      /* no more dependencies of this type */
+      if((pdj   = find_dependjob(pdep, preq->rq_ind.rq_register.rq_parent)) != NULL)
+        del_depend_job(pdj);
 
-      del_depend(pdep);
+      if (GET_NEXT(pdep->dp_jobs) == 0)
+        {
+        /* no more dependencies of this type */
+
+        del_depend(pdep);
+        }
       }
     
     unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
@@ -2021,10 +2023,11 @@ static int unregister_sync(
     {
     if (pdp->dp_released == 1)
       {
-      pdjb = (struct depend_job *)GET_NEXT(pdp->dp_jobs);
-
-      pdjb->dc_state = 0;
-      pdp->dp_released = 0;
+      if((pdjb = (struct depend_job *)GET_NEXT(pdp->dp_jobs)) != NULL)
+        {
+        pdjb->dc_state = 0;
+        pdp->dp_released = 0;
+        }
       }
     }
 
