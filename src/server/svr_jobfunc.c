@@ -295,6 +295,7 @@ int insert_into_alljobs_by_rank(
   job  *pjcur;
   int   iter = -1;
   long  job_qrank = pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long;
+  int   index = -1;
   
   unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
 
@@ -313,13 +314,20 @@ int insert_into_alljobs_by_rank(
 
     unlock_ji_mutex(pjcur, __func__, "7", LOGLEVEL);
     }
-  
+
+  if (pjcur != NULL)
+    {
+    index = get_jobs_index(aj, pjcur);
+    unlock_ji_mutex(pjcur, __func__, "8", LOGLEVEL);
+    pjcur = NULL;
+    }
+
   if ((pjob = svr_find_job(jobid, FALSE)) == NULL)
     {
     return(PBSE_JOBNOTFOUND);
     }
   
-  if (pjcur == NULL)
+  if (index == -1)
     {
     /* link first in list */
     insert_job_first(aj, pjob);
@@ -327,8 +335,7 @@ int insert_into_alljobs_by_rank(
   else
     {
     /* link after 'current' job in list */
-    insert_job_after(aj, pjcur, pjob);
-    unlock_ji_mutex(pjcur, __func__, "8", LOGLEVEL);
+    insert_job_after_index(aj, index, pjob);
     }
 
   return(PBSE_NONE);
