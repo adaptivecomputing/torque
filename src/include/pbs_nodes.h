@@ -357,8 +357,6 @@ struct pbsnode
   pthread_mutex_t      *nd_mutex;            /* semaphore for accessing this node's data */
   };
 
-extern struct pbsnode *alps_reporter;
-
 
 #define INITIAL_NODE_SIZE  20
 
