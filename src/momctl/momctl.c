@@ -520,22 +520,18 @@ int send_command_str(
   char            *query) /* I */
 
   {
-  int rc = send_command(chan, cmd);
+  int rc;
+  
+  rc = diswsi(chan, cmd);
 
   if ((rc != DIS_SUCCESS) ||
       (cmd == RM_CMD_CLOSE))
     return(rc);
 
-  rc = diswsi(chan, RM_PROTOCOL);
-
-  if (rc != DIS_SUCCESS)
-    return(rc);
-
-  rc = diswsi(chan, RM_PROTOCOL_VER);
-
-  if (rc != DIS_SUCCESS)
-    return(rc);
-
+  if (cmd == RM_CMD_CONFIG)
+    {
+    diswst(chan, ConfigBuf);
+    }
 
   rc = diswcs(chan, query, strlen(query));
 
@@ -877,6 +873,10 @@ int do_mom(
   if (rc != DIS_SUCCESS)
     return(rc);
 
+  rc = diswsi(chan, 1);
+
+  if (rc != DIS_SUCCESS)
+    return(rc);
 
   send_command(chan,RM_CMD_CLOSE);
 

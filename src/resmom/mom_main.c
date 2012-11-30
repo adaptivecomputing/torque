@@ -5573,8 +5573,6 @@ int tcp_read_proto_version(
 
   tmpT = pbs_tcp_timeout;
 
-  pbs_tcp_timeout = 0;
-
   *proto = disrsi(chan, &rc);
 
   if (tmpT > 0)
@@ -5653,8 +5651,6 @@ int do_tcp(
       DBPRT(("%s: got a resource monitor request\n", __func__))
 
       tmpT = pbs_tcp_timeout;
-
-      pbs_tcp_timeout = 0;
 
       rc = rm_request(chan, version);
 
