@@ -3285,34 +3285,16 @@ void process_opts(
 
       case 'X':
 
-/*        if_cmd_line(Forwardx11_opt)
-          {
-          Forwardx11_opt = passet;
-          */
-
-/*           if (!getenv("DISPLAY")) */
         if (hash_find(ji->user_attr, "DISPLAY", &tmp_job_info))
           hash_add_or_exit(&ji->mm, &ji->client_attr, "DISPLAY", tmp_job_info->value, LOGIC_DATA);
         else
           print_qsub_usage_exit("qsub: DISPLAY not set");
-/*            {
-            fprintf(stderr, "qsub: DISPLAY not set\n");
-
-            errflg++;
-            }
-            */
-/*           } */
 
         break;
 
       case 'x':
 
         hash_add_or_exit(&ji->mm, &ji->client_attr, "run_inter_opt", "1", data_type);
-/*        if_cmd_line(Run_Inter_opt)
-          {
-          Run_Inter_opt = passet;
-          }
-          */
 
         break;
         
@@ -3321,9 +3303,6 @@ void process_opts(
       case 'z':
 
         hash_add_or_exit(&ji->mm, &ji->client_attr, "no_jobid_out", "1", data_type);
-/*        if_cmd_line(z_opt)
-        z_opt = passet;
-        */
 
         break;
 
@@ -3341,8 +3320,6 @@ void process_opts(
           {
           print_qsub_usage_exit("exiting");
           }
-
-/*         errflg++; */
 
         break;
       }
@@ -4320,7 +4297,8 @@ void main_func(
       }
     }
 
-  /* Given the change in parameter management, this is moving to the top of this function for ease of understanding */
+  /* Given the change in parameter management, this is moving to
+   * the top of this function for ease of understanding */
   server_out[0] = '\0';
 
   if (hash_find(ji.client_attr, "destination", &tmp_job_info))
@@ -4348,9 +4326,9 @@ void main_func(
     calloc_or_fail(&ji.mm, &destination, 2, "destination");
     destination[0] = '\0';
     }
+
   /* if walltime range specified, break into minwclimit and walltime */
   set_minwclimit(&ji.mm, &ji.job_attr);
-
 
   /* Root user submission not allowed */
   local_errno = PBSE_NONE;
@@ -4418,15 +4396,6 @@ void main_func(
 
   if (hash_find(ji.client_attr, "user_attr", &tmp_job_info))
     add_variable_list(&ji, ATTR_v, ji.user_attr);
-/*  if (!set_job_env(envp))
-    {
-    fprintf(stderr, "qsub: cannot send environment with the job\n");
-
-    unlink(script_tmp);
-
-    exit(3);
-    }
-    */
 
   /* disallow ^Z which hangs up MOM starting an interactive job */
 
