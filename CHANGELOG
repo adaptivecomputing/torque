@@ -63,6 +63,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       job array was done cloning. TRQ-1474.
   b - Fix a Cray-related deadlock. Always lock the reporter mom before a compute 
       node. TRQ-1445
+  b - Additional fix for TRQ-1472. In rm_request on the mom pbs_tcp_timeout was
+      getting set to 0 which made it so the MOM would fail reading incoming data 
+      if it had not already arrived. This would cause momctl -to fail with an
+      end of file message. 
 
 4.1.3
   b - fix a security loophole that potentially allowed an interactive job to run 

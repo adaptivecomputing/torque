@@ -106,7 +106,7 @@
 #endif
 
 #define MAX_SOCKETS 65536
-time_t pbs_tcp_timeout = 600;  /* reduced from 60 to 20 (CRI - Nov/03/2004) */
+time_t pbs_tcp_timeout = 300;  
 
 
 
