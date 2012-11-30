@@ -175,6 +175,41 @@ void *get_next(list_link pl, char *file, int line)
   exit(1);
   }
 
+hash_map *get_hash_map(int size)
+  {
+  fprintf(stderr, "The call to %s file %s line %d needs to be mocked!!\n",
+          __FUNCTION__,__FILE__,__LINE__);
+  exit(1);
+  }
+
+int remove_from_hash_map(hash_map *hm, char *key)
+  {
+  fprintf(stderr, "The call to %s file %s line %d needs to be mocked!!\n",
+          __FUNCTION__,__FILE__,__LINE__);
+  exit(1);
+  }
+
+void *next_from_hash_map(hash_map *hm, int *iter)
+  {
+  fprintf(stderr, "The call to %s file %s line %d needs to be mocked!!\n",
+          __FUNCTION__,__FILE__,__LINE__);
+  exit(1);
+  }
+
+int add_to_hash_map(hash_map *hm, void *obj, char *key)
+  {
+  fprintf(stderr, "The call to %s file %s line %d needs to be mocked!!\n",
+          __FUNCTION__,__FILE__,__LINE__);
+  exit(1);
+  }
+
+void *get_from_hash_map(hash_map *hm, char *key)
+  {
+  fprintf(stderr, "The call to %s file %s line %d needs to be mocked!!\n",
+          __FUNCTION__,__FILE__,__LINE__);
+  exit(1);
+  }
+
 char *threadsafe_tokenizer(char **str, char *delims)
   {
   char *current_char;

@@ -829,6 +829,10 @@ int array_request_token_count(
   int len = strlen(str);
   int i;
 
+  if (len == 0)
+    {
+    return 0;
+    }
   for (i = 0; i < len; i++)
     {
     if (str[i] == ',')
@@ -856,6 +860,12 @@ int array_request_parse_token(
   char *idx;
   char *ridx;
 
+  if ((NULL == str) ||
+      (NULL == start) ||
+      (NULL == end))
+    {
+    return 0;
+    }
   idx = index(str, '-');
   ridx = rindex(str, '-');
 
@@ -962,6 +972,12 @@ int parse_array_request(
   array_request_node  *rn;
   array_request_node  *rn2;
 
+  if ((request == NULL) || 
+      (request[0] == '\0') || 
+      (tl == NULL))
+    {
+    return 1; /* return "bad_token_count" as greater than 0 so caller knows there are problems */
+    }
   temp_str = strdup(request);
   num_tokens = array_request_token_count(request);
   num_bad_tokens = 0;
