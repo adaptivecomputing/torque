@@ -1531,6 +1531,7 @@ int modify_array_range(
  * @param pjob - the pjob that an event happened on
  * @param event - code for what event just happened
  */
+
 void update_array_values(
 
   job_array            *pa,        /* I */
@@ -1651,6 +1652,11 @@ void update_array_values(
 
 
 
+
+/*
+ * sets the state of the array summary job that is used strictly
+ * for qstat displays.
+ */
 
 void update_array_statuses()
 
