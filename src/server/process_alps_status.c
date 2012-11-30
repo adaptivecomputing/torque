@@ -624,7 +624,7 @@ int process_alps_status(
           return(PBSE_NONE);
           }
 
-        if ((current = find_nodebyname(current_node_id)) == NULL)
+        if ((current = find_node_in_allnodes(&parent->alps_subnodes, current_node_id)) == NULL)
           {
           /* current node disappeared, this shouldn't be possible either */
           unlock_node(parent, __func__, NULL, 0);
