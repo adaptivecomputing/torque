@@ -176,6 +176,10 @@ int get_encode_host(
   /* Move us to the end of the ENCODE_HOST keyword. There are spaces
    	 between the : and the first letter of the host name */
   ptr = strchr(ptr, ':');
+  if(ptr == NULL)
+    {
+    return (-1);
+    }
   ptr++;
   while (*ptr == SPACE)
     {
