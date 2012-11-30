@@ -669,6 +669,9 @@ int setup_array_struct(
   char                log_buf[LOCAL_LOG_BUF_SIZE];
   long                max_array_size;
 
+  if(pjob == NULL)
+    return RM_ERR_BADPARAM;
+
   pa = (job_array *)calloc(1,sizeof(job_array));
 
   pa->ai_qs.struct_version = ARRAY_QS_STRUCT_VERSION;
@@ -689,7 +692,6 @@ int setup_array_struct(
     {
     /* the array is deleted in svr_job_purge */
     unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
-    svr_job_purge(pjob);
     /* Does job array need to be removed? */
 
     if (LOGLEVEL >= 6)
@@ -697,9 +699,11 @@ int setup_array_struct(
       log_record(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        (pjob != NULL) ? pjob->ji_qs.ji_jobid : "NULL",
+        pjob->ji_qs.ji_jobid,
         "cannot save job");
       }
+
+    svr_job_purge(pjob);
 
     return(1);
     }

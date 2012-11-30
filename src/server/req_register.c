@@ -1314,7 +1314,6 @@ int depend_on_exec(
         JOB_DEPEND_OP_RELEASE,
         SYNC_SCHED_HINT_NULL,
         post_doe);
-      pjob = NULL; /* send_depend_req returns unlocked, NULL--> unlocked */
 
       if ((pjob = svr_find_job(jobid, TRUE)) == NULL)
         return PBSE_JOBNOTFOUND;
@@ -1337,9 +1336,6 @@ int depend_on_exec(
     if (pdj != NULL)
       {
       send_depend_req(pjob, pdj, pdep->dp_type, JOB_DEPEND_OP_READY, SYNC_SCHED_HINT_NULL, free_br);
-      if ((pjob == NULL) &&
-          ((pjob = svr_find_job(jobid, TRUE)) == NULL))
-        return PBSE_JOBNOTFOUND;
       }
     }
 

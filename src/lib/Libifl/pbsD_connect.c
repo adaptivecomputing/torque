@@ -1362,7 +1362,8 @@ int pbs_original_connect(
 
 cleanup_conn:
   
-  close(connection[out].ch_socket);
+  if(connection[out].ch_socket >= 0)
+    close(connection[out].ch_socket);
 
 cleanup_conn_lite:
   connection[out].ch_inuse = FALSE;

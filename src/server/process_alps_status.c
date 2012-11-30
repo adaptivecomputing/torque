@@ -425,7 +425,7 @@ int process_gpu_status(
   /* move past the initial gpu status */
   str += strlen(str) + 1;
   
-  for (; str != NULL && *str != '\0'; str += strlen(str) + 1)
+  for (; *str != '\0'; str += strlen(str) + 1)
     {
     if (!strcmp(str, CRAY_GPU_STATUS_END))
       break;
@@ -590,6 +590,9 @@ int process_alps_status(
         continue;
       }
 
+    if(current == NULL)
+      continue;
+
     /* process the gpu status information separately */
     if (!strcmp(CRAY_GPU_STATUS_START, str))
       {
@@ -621,6 +624,7 @@ int process_alps_status(
           free_arst(&temp);
           free_all_keys(rsv_ht);
           free_hash(rsv_ht);
+          free(current_node_id);
           return(PBSE_NONE);
           }
 
@@ -634,6 +638,7 @@ int process_alps_status(
           free_arst(&temp);
           free_all_keys(rsv_ht);
           free_hash(rsv_ht);
+          free(current_node_id);
           return(PBSE_NONE);
           }
 
