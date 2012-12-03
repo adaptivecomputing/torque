@@ -1,2 +1,5 @@
 # Ignore objects and archives.
 *.[oa]
+Makefile
+Makefile.in
+*.l[oa]
