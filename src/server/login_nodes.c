@@ -197,6 +197,7 @@ struct pbsnode *find_fitting_node(
     if ((pnode = check_node(ln, needed)) != NULL)
       {
       ln->times_used++;
+      free_resizable_array(ordered);
       return(pnode);
       }
     }

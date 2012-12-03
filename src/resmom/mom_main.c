@@ -4486,9 +4486,8 @@ void cleanup_aux()
           }
         }
       }
-      closedir(auxdir);
+    closedir(auxdir);
     }
-
   } /* END cleanup_aux() */
 
 

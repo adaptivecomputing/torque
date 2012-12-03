@@ -8182,7 +8182,9 @@ void fork_demux(
     close(im_mom_stdout);
     close(im_mom_stderr);
 
-    (void)write(pipes[1], "fail", strlen("fail"));
+    if (write(pipes[1], "fail", strlen("fail")) < 0)
+      perror(__func__);
+
     close(pipes[1]);
 
     _exit(5);
@@ -8194,7 +8196,9 @@ void fork_demux(
     close(im_mom_stdout);
     close(im_mom_stderr);
 
-    (void)write(pipes[1], "fail", strlen("fail"));
+    if (write(pipes[1], "fail", strlen("fail")) < 0)
+      perror(__func__);
+
     close(pipes[1]);
 
     _exit(5);
@@ -8219,7 +8223,9 @@ void fork_demux(
     close(im_mom_stdout);
     close(im_mom_stderr);
     
-    (void)write(pipes[1], "fail", strlen("fail"));
+    if (write(pipes[1], "fail", strlen("fail")) < 0)
+      perror(__func__);
+
     close(pipes[1]);
 
     _exit(5);
@@ -8234,13 +8240,17 @@ void fork_demux(
     close(im_mom_stderr);
     close(fd1);
 
-    (void)write(pipes[1], "fail", strlen("fail"));
+    if (write(pipes[1], "fail", strlen("fail")) < 0)
+      perror(__func__);
+
     close(pipes[1]);
 
     _exit(5);
     }
 
-  (void)write(pipes[1], "success", strlen("success"));
+  if (write(pipes[1], "success", strlen("success")) < 0)
+    perror(__func__);
+
   close(pipes[1]);
   
   while (1)
@@ -8503,7 +8513,7 @@ int read_status_strings(
   {
   int             rc;
   char           *str;
-  received_node  *rn;
+  received_node  *rn = NULL;
  
   /* was mom_port but storage unnecessary */ 
   disrsi(chan,&rc);
@@ -8535,7 +8545,10 @@ int read_status_strings(
       rn = get_received_node_entry(str);
 
     /* place each string into the buffer */
-    copy_to_end_of_dynamic_string(rn->statuses, str);
+    if(rn != NULL)
+      {
+      copy_to_end_of_dynamic_string(rn->statuses, str);
+      }
 
     free(str);
     }
@@ -8562,11 +8575,6 @@ int read_status_strings(
 
       send_update_soon();
       }
-    }
-  else
-    {
-    free_dynamic_string(rn->statuses);
-    free(rn);
     }
   
   return(PBSE_NONE);

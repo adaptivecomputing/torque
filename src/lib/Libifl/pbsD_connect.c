@@ -764,7 +764,7 @@ int pbs_original_connect(
   struct addrinfo     *addr_info;
   int                  out;
   int                  i;
-  int                  rc;
+  int                  rc = PBSE_NONE;
   int                  local_errno;
 
   struct sockaddr      preferred_addr; /* set if TRQ_IFNAME set in torque.cfg */

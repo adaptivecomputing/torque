@@ -862,6 +862,17 @@ AC_DEFINE_UNQUOTED(IBM_SP2, ${IBM_SP2}, [defined if this is an SP2])
 AC_SUBST(PBSPOE)    
 AC_SUBST(PBSPOEO)
 
+AC_ARG_ENABLE(maxint-jobids, [  --enable-maxint-jobids       enables job ids to go up to maxint])
+maxint_ids=0
+AC_MSG_CHECKING([whether to enable maxint job ids])
+if test "x$enable_maxint_jobids" = "xyes" ; then
+  AC_MSG_RESULT([yes])
+  maxint_ids=1
+  CFLAGS="$CFLAGS -DUSE_MAXINT_JOBIDS"
+else
+  AC_MSG_RESULT([no])
+fi
+
 AC_ARG_ENABLE(cpuset,[  --enable-cpuset         enable Linux 2.6 kernel cpusets])
 build_l26_cpuset=no
 cpuset=0
@@ -2266,5 +2277,11 @@ the build to fail if any compiler warnings are emitted.  If this build fails
 because of a harmless warning, please report the problem to $PACKAGE_BUGREPORT
 and run configure again without --enable-gcc-warnings.])
    echo
+fi
+
+if test "${maxint_ids}" = "1" ; then
+  AC_MSG_WARN([You are enabling job ids to go up to the maximum value of an int 
+    on your system. Depending on the size of your system, this may make existing 
+    jobs impossible to upgrade. BE CERTAIN BEFORE PROCEEDING!])
 fi
 echo "Ready for '${MAKE-make}'."

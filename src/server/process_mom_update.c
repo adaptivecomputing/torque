@@ -742,7 +742,7 @@ int process_status_info(
       char          *jobstr = calloc(1, len);
       sync_job_info *sji = calloc(1, sizeof(sync_job_info));
 
-      if (jobstr != NULL)
+      if ((jobstr != NULL)&&(sji != NULL))
         {
         sprintf(jobstr, "%s:%s", current->nd_name, str+5);
         sji->input = jobstr;
@@ -750,6 +750,17 @@ int process_status_info(
 
         /* sji must be freed in sync_node_jobs */
         enqueue_threadpool_request(sync_node_jobs, sji);
+        }
+      else
+        {
+        if( jobstr != NULL)
+          {
+          free(jobstr);
+          }
+        if(sji != NULL)
+          {
+          free(sji);
+          }
         }
       }
     else if (auto_np)
