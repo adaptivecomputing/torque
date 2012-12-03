@@ -7079,8 +7079,7 @@ int open_std_file(
         while (strchr(slash + 1, '/') != NULL)
           slash = strchr(slash + 1, '/');
 
-        if (slash != NULL)
-          *slash = '\0';
+        *slash = '\0';
 
         mkdirtree(path,0755);
  

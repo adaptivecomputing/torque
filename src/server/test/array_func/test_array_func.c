@@ -49,6 +49,7 @@ END_TEST
 
 START_TEST(array_request_token_count_test)
   {
+  fail_unless(array_request_token_count("") == 0, "counted tokens wrong 0");
   fail_unless(array_request_token_count("0-4") == 1, "counted tokens wrong 1");
   fail_unless(array_request_token_count("0-4,10") == 2, "counted tokens wrong 2");
   fail_unless(array_request_token_count("0-4,7-9") == 2, "counted tokens wrong 3");
@@ -64,6 +65,11 @@ START_TEST(array_request_parse_token_test)
   {
   int left;
   int right;
+
+  /* test for bad parameters */
+  fail_unless(array_request_parse_token(NULL,  &left, &right) == 0, "unhandled bad parameter (NULL str)");
+  fail_unless(array_request_parse_token("1-2", NULL,  &right) == 0, "unhandled bad parameter (NULL left)");
+  fail_unless(array_request_parse_token("1-2", &left, NULL)   == 0, "unhandled bad parameter (NULL right)");
 
   fail_unless(array_request_parse_token(strdup("--"), &left, &right) == 0, "bad range fail");
   fail_unless(left == -1, "start set incorrectly with bad range");

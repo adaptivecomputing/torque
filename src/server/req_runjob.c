@@ -310,6 +310,9 @@ int req_runjob(
 
   /* chk_job_torun will extract job id and assign hostlist if specified */
 
+  if(preq == NULL)
+    return(PBSE_UNKJOBID);
+
   if (getenv("TORQUEAUTONN"))
     setneednodes = 1;
   else
@@ -344,8 +347,7 @@ int req_runjob(
   /* post_sendmom or post_stagein */
   unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
 
-  if ((preq != NULL) &&
-      (preq->rq_type == PBS_BATCH_AsyrunJob))
+  if (preq->rq_type == PBS_BATCH_AsyrunJob)
     {
     reply_ack(preq);
     preq->rq_noreply = TRUE;
@@ -1172,11 +1174,14 @@ int send_job_to_mom(
         }
       }
 
-    svr_mailowner(
-        pjob,
-        MAIL_BEGIN,
-        MAIL_NORMAL,
-        mail_text);
+    if(pjob != NULL)
+      {
+      svr_mailowner(
+          pjob,
+          MAIL_BEGIN,
+          MAIL_NORMAL,
+          mail_text);
+      }
 
     if (mail_text != NULL)
       free(mail_text);

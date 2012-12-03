@@ -669,6 +669,9 @@ int setup_array_struct(
   char                log_buf[LOCAL_LOG_BUF_SIZE];
   long                max_array_size;
 
+  if(pjob == NULL)
+    return RM_ERR_BADPARAM;
+
   pa = (job_array *)calloc(1,sizeof(job_array));
 
   pa->ai_qs.struct_version = ARRAY_QS_STRUCT_VERSION;
@@ -689,7 +692,6 @@ int setup_array_struct(
     {
     /* the array is deleted in svr_job_purge */
     unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
-    svr_job_purge(pjob);
     /* Does job array need to be removed? */
 
     if (LOGLEVEL >= 6)
@@ -697,9 +699,11 @@ int setup_array_struct(
       log_record(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        (pjob != NULL) ? pjob->ji_qs.ji_jobid : "NULL",
+        pjob->ji_qs.ji_jobid,
         "cannot save job");
       }
+
+    svr_job_purge(pjob);
 
     return(1);
     }
@@ -829,6 +833,10 @@ int array_request_token_count(
   int len = strlen(str);
   int i;
 
+  if (len == 0)
+    {
+    return 0;
+    }
   for (i = 0; i < len; i++)
     {
     if (str[i] == ',')
@@ -856,6 +864,12 @@ int array_request_parse_token(
   char *idx;
   char *ridx;
 
+  if ((NULL == str) ||
+      (NULL == start) ||
+      (NULL == end))
+    {
+    return 0;
+    }
   idx = index(str, '-');
   ridx = rindex(str, '-');
 
@@ -962,6 +976,12 @@ int parse_array_request(
   array_request_node  *rn;
   array_request_node  *rn2;
 
+  if ((request == NULL) || 
+      (request[0] == '\0') || 
+      (tl == NULL))
+    {
+    return 1; /* return "bad_token_count" as greater than 0 so caller knows there are problems */
+    }
   temp_str = strdup(request);
   num_tokens = array_request_token_count(request);
   num_bad_tokens = 0;
@@ -1531,6 +1551,7 @@ int modify_array_range(
  * @param pjob - the pjob that an event happened on
  * @param event - code for what event just happened
  */
+
 void update_array_values(
 
   job_array            *pa,        /* I */
@@ -1651,6 +1672,11 @@ void update_array_values(
 
 
 
+
+/*
+ * sets the state of the array summary job that is used strictly
+ * for qstat displays.
+ */
 
 void update_array_statuses()
 

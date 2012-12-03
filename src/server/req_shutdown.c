@@ -466,7 +466,7 @@ void post_checkpoint(
   if (preq->rq_reply.brp_code == 0)
     {
     /* checkpointed ok */
-    if (preq->rq_reply.brp_auxcode) /* checkpoint can be moved */
+    if ((preq->rq_reply.brp_auxcode) && (pjob != NULL)) /* checkpoint can be moved */
       {
       pjob->ji_qs.ji_svrflags =
         (pjob->ji_qs.ji_svrflags & ~JOB_SVFLG_CHECKPOINT_FILE) |

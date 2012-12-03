@@ -1126,8 +1126,7 @@ void *send_job(
     send_job_work(job_id,node_name,type,&local_errno,preq);
     }
 
-  if (args)
-    free(args);
+  free(vp);
   return(NULL);
   }  /* END send_job() */
 

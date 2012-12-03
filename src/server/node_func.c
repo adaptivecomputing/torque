@@ -923,7 +923,7 @@ static int process_host_name_part(
   int                 rc = PBSE_NONE;
   ulong              *tmp = NULL;
 
-  len = strlen(objname);
+  len = (objname==NULL)?0:strlen(objname);
 
   if (len == 0)
     {

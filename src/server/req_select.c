@@ -745,7 +745,7 @@ static int sel_attr(
     /* find matching resource in job pbs_attribute if one */
 
     rescsl = (resource *)GET_NEXT(pselst->sl_attr.at_val.at_list);
-    rescjb = find_resc_entry(jobat, rescsl->rs_defin);
+    rescjb = (rescsl == NULL)?NULL:find_resc_entry(jobat, rescsl->rs_defin);
 
     if (rescjb && (rescjb->rs_value.at_flags & ATR_VFLAG_SET))
       /* found match, compare them */

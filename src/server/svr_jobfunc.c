@@ -1192,7 +1192,7 @@ int chk_svr_resc_limit(
       {
       qurc = find_resc_entry(&pque->qu_attr[QA_ATR_ResourceMax], jbrc->rs_defin);
 
-      LimitName = jbrc->rs_defin->rs_name;
+      LimitName = (jbrc->rs_defin->rs_name == NULL)?"resource":jbrc->rs_defin->rs_name;
 
       pthread_mutex_lock(server.sv_attr_mutex);
       cmpwith = get_resource(&pque->qu_attr[QA_ATR_ResourceMax],
@@ -1290,8 +1290,7 @@ int chk_svr_resc_limit(
             if ((EMsg != NULL) && (EMsg[0] == '\0'))
               {
               sprintf(EMsg, "cannot satisfy %s max %s requirement",
-                      (LimitIsFromQueue == 1) ? "queue" : "server",
-                      (LimitName != NULL) ? LimitName : "resource");
+                      (LimitIsFromQueue == 1) ? "queue" : "server",LimitName);
               }
 
               comp_resc_lt++;
