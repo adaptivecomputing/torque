@@ -4,3 +4,10 @@ Makefile
 Makefile.in
 *.l[oa]
 *.gcno
+coverage_run.sh
+*.gcov
+*.gcda
+*_suite.log
+.deps
+.libs
+
