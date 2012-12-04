@@ -1478,7 +1478,7 @@ void mom_server_all_update_stat(void)
   {
   node_comm_t *nc = NULL;
   int          sindex;
-  int          rc = NO_SERVER_CONFIGURED;
+  int          rc;
 
   time_now = time(NULL);
 
@@ -1507,6 +1507,8 @@ void mom_server_all_update_stat(void)
   for (numa_index = 0; numa_index < num_node_boards; numa_index++)
 #endif /* NUMA_SUPPORT */
     {
+    rc = NO_SERVER_CONFIGURED;
+
     clear_dynamic_string(mom_status);
 
     if (is_reporter_mom == FALSE)
