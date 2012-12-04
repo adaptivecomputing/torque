@@ -36,6 +36,7 @@
 #include "../lib/Libifl/lib_ifl.h" /* pbs_disconnect_socket */
 #include "../server/svr_connect.h" /* svr_disconnect_sock */
 #include "mom_job_func.h" /* mom_job_purge */
+#include "mom_job_cleanup.h"
 #ifdef ENABLE_CPA
 #include "pbs_cpa.h"
 #endif
@@ -504,6 +505,7 @@ void scan_for_exiting(void)
             {
             momport = pbs_rm_port;
             }
+
           job_save(pjob, SAVEJOB_QUICK, momport);
           }
         else if (LOGLEVEL >= 3)
@@ -759,15 +761,11 @@ void scan_for_exiting(void)
     if (rc != PBSE_NONE)
       {
       pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXIT_WAIT;
-      if(LOGLEVEL >= 4)
+      if (LOGLEVEL >= 4)
         {
         snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "could not contact server for job %s: error: %d", 
-            pjob->ji_qs.ji_jobid, rc);
-        log_record(
-            PBSEVENT_JOB,
-            PBS_EVENTCLASS_JOB,
-            __func__,
-            log_buf);
+          pjob->ji_qs.ji_jobid, rc);
+        log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
         }
       }
 
@@ -911,7 +909,9 @@ int send_job_status(
     }
   else
     {
-    if ((errno == EINPROGRESS) || (errno == ETIMEDOUT) || (errno == EINTR))
+    if ((errno == EINPROGRESS) ||
+        (errno == ETIMEDOUT) ||
+        (errno == EINTR))
       sprintf(log_buffer, "connect to server unsuccessful after 5 seconds - will retry");
 
     set_mom_server_down(pjob->ji_qs.ji_un.ji_momt.ji_svraddr);
@@ -1087,6 +1087,7 @@ void *preobit_reply(
   pid_t                 cpid;
   job                  *pjob;
   int                   irtn;
+  exiting_job_info     *eji;
 
   struct batch_request *preq;
 
@@ -1242,7 +1243,6 @@ void *preobit_reply(
 
   free_br(preq);
 
-
   if (deletejob == 1)
     {
     log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
@@ -1294,6 +1294,10 @@ void *preobit_reply(
     /* parent - mark that job epilog subtask has been launched */
 
     /* NOTE:  pjob->ji_mompost will be executed in scan_for_terminated() */
+    eji = calloc(1, sizeof(exiting_job_info));
+    strcpy(eji->jobid, pjob->ji_qs.ji_jobid);
+    eji->obit_sent = time(NULL);
+    insert_thing(exiting_job_list, eji);
 
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_OBIT;
     pjob->ji_momsubt = cpid;

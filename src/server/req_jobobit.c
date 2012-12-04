@@ -2955,7 +2955,10 @@ int req_jobobit(
     {
     if (pjob->ji_qs.ji_state == JOB_STATE_EXITING)
       {
-      /* already in exit processing, ignore this request */
+      /* already in exit processing, just make sure its in the exiting
+       * jobs list. No need to check return code because if it is 
+       * already present then we have no problem. */
+      record_job_as_exiting(pjob);
 
       rc = PBSE_ALRDYEXIT;
       }
