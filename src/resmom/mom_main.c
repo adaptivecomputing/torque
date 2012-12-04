@@ -82,6 +82,7 @@
 #include "mom_server.h"
 #include "mom_job_func.h" /* mom_job_purge */
 #include "net_cache.h"
+#include "mom_job_cleanup.h"
 
 #include "mcom.h"
 #include "mom_server_lib.h" /* shutdown_to_server */
@@ -202,6 +203,7 @@ char           *TRemChkptDirList[TMAX_RCDCOUNT];
 
 job            *JobsToResend[MAX_RESEND_JOBS];
 
+resizable_array  *exiting_job_list;
 resizable_array  *things_to_resend;
 char             *AllocParCmd = NULL;  /* (alloc) */
 
@@ -6254,7 +6256,6 @@ void usage(
 
 
 
-
 /*
  * MOMFindMyExe - attempt to find my running executable file.
  *                returns alloc'd memory that is never freed.
@@ -6404,7 +6405,6 @@ char *MOMFindMyExe(
 
   return(NULL);
   }  /* END MOMFindMyExe() */
-
 
 
 
@@ -7647,6 +7647,8 @@ int setup_program_environment(void)
   
   things_to_resend = initialize_resizable_array(10);
 
+  exiting_job_list = initialize_resizable_array(10);
+
   /* recover & abort jobs which were under MOM's control */
   log_record(
     PBSEVENT_DEBUG,
@@ -8148,13 +8150,46 @@ void examine_all_jobs_to_resend(void)
 
 
 
+void check_exiting_jobs()
+
+  {
+  exiting_job_info *eji;
+  job              *pjob;
+  time_t            time_now = time(NULL);
+
+  while ((eji = (exiting_job_info *)pop_thing(exiting_job_list)) != NULL)
+    {
+    if (time_now - eji->obit_sent < 300)
+      {
+      /* insert this back at the front */
+      insert_thing_after(exiting_job_list, eji, ALWAYS_EMPTY_INDEX);
+      break;
+      }
+
+    pjob = mom_find_job(eji->jobid);
+
+    if (pjob == NULL)
+      {
+      free(eji);
+      }
+    else
+      {
+      post_epilogue(pjob, 0);
+      eji->obit_sent = time_now;
+      insert_thing(exiting_job_list, eji);
+      }
+    }
+
+  } /* END check_exiting_jobs() */
+
+
+
 
 /*
  * kill_all_running_jobs
  */
 
-void
-kill_all_running_jobs(void)
+void kill_all_running_jobs(void)
 
   {
   job *pjob;
@@ -8388,9 +8423,10 @@ void main_loop(void)
       recover = JOB_RECOV_RUNNING;
       }
 
-
     if (exiting_tasks)
       scan_for_exiting();
+
+    check_exiting_jobs();
 
     TMOMScanForStarting();
 

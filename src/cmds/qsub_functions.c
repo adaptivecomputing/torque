@@ -648,7 +648,6 @@ int istext(
 
   {
   int i;
-  int c;
   unsigned char bf[MMAX_VERIFY_BYTES];
   int len;
 
