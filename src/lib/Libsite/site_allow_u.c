@@ -25,8 +25,7 @@
  *   non-zero error number (PBSE_PERM) if not
  */
 
-int
-site_allow_u(char *user, char *host)
+int site_allow_u(char *user, char *host)
   {
   return 0;
   }

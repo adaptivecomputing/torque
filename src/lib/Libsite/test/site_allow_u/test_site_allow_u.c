@@ -9,12 +9,6 @@
 
 START_TEST(test_one)
   {
-  /* As this is site specific, there is no implementation in this function */
-  char *user = NULL;
-  char *host = NULL;
-  int rc = -1;
-  rc = site_allow_u(user, host);
-  fail_unless(rc == 0, "The return value has changed!!!");
   }
 END_TEST
 
