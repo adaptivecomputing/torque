@@ -69,6 +69,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       end of file message.
   e - Add a safety net to resend any obits for exiting jobs on the mom that still
       haven't cleaned up after five minutes. TRQ-1458.
+  b - Fix cray running jobs being cancelled after a restart due to jobs not being 
+      set to the login nodes. TRQ-1482.
 
 4.1.3
   b - fix a security loophole that potentially allowed an interactive job to run 

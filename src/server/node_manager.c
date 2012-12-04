@@ -6504,6 +6504,7 @@ void set_old_nodes(
   char     *po;
   resource *presc;
   int       is_shared = INUSE_JOB;
+  long      cray_enabled = FALSE;
 
   if (pjob->ji_wattr[JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET)
     {
@@ -6542,6 +6543,14 @@ void set_old_nodes(
 
     free(old);
     }  /* END if pjobs exec host is set */
+
+  /* record the job on the alps_login if cray_enabled */
+  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
+  if ((cray_enabled == TRUE) &&
+      (pjob->ji_wattr[JOB_ATR_login_node_id].at_flags & ATR_VFLAG_SET))
+    {
+    set_one_old(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str, pjob, INUSE_JOBSHARE);
+    }
 
   return;
   }  /* END set_old_nodes() */
