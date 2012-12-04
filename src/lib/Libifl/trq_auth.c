@@ -291,7 +291,7 @@ void *process_svr_conn(
     socket_close(svr_sock);
     debug_mark = 5;
     }
-  else if ((send_len = strlen(send_message)) <= 0)
+  else if ((send_len = ((send_message == NULL)?0:strlen(send_message)) ) <= 0)
     {
     socket_close(svr_sock);
     rc = PBSE_INTERNAL;
@@ -314,7 +314,8 @@ void *process_svr_conn(
     if (send_message != NULL)
       free(send_message);
     send_message = (char *)calloc(1, 6);
-    strcat(send_message, "0|0||");
+    if(send_message != NULL)
+      strcat(send_message, "0|0||");
     if (debug_mode == TRUE)
       {
       fprintf(stderr, "Conn to %s port %d success. Conn %d authorized\n", server_name, server_port, user_sock);
@@ -336,7 +337,8 @@ void *process_svr_conn(
       error_msg = strdup(pbse_to_txt(rc));
     msg_len += strlen(error_msg);
     send_message = (char *)calloc(1, msg_len);
-    snprintf(send_message, msg_len, "%d|%d|%s|", rc, (int)strlen(error_msg), error_msg);
+    if(send_message != NULL)
+      snprintf(send_message, msg_len, "%d|%d|%s|", rc, (int)strlen(error_msg), error_msg);
     if (debug_mode == TRUE)
       {
       fprintf(stderr, "Conn to %s port %d Fail. Conn %d not authorized (dm = %d, Err Num %d)\n", server_name, server_port, user_sock, debug_mark, rc);
@@ -348,7 +350,8 @@ void *process_svr_conn(
       className, msg_buf);
     }
 
-  rc = socket_write(local_socket, send_message, strlen(send_message));
+  if(send_message != NULL)
+    rc = socket_write(local_socket, send_message, strlen(send_message));
 
   if (TRUE == disconnect_svr)
     {

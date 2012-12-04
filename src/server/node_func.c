@@ -3389,7 +3389,7 @@ int send_hierarchy(
         }
       }
 
-    diswst(chan, IS_EOL_MESSAGE);
+    ret = diswst(chan, IS_EOL_MESSAGE);
 
     DIS_tcp_wflush(chan);
     }

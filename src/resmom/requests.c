@@ -1889,6 +1889,8 @@ static void resume_suspend(
 
   signum = (susp == 1) ? SIGSTOP : SIGCONT;
 
+  if((pjob == NULL)||(preq == NULL))
+    return;
 
   if (LOGLEVEL >= 2)
     {
@@ -1898,7 +1900,7 @@ static void resume_suspend(
     log_record(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      (pjob != NULL) ? pjob->ji_qs.ji_jobid : "N/A",
+      pjob->ji_qs.ji_jobid,
       log_buffer);
     }
 
@@ -1984,7 +1986,7 @@ static void resume_suspend(
       log_record(
         PBSEVENT_ERROR,
         PBS_EVENTCLASS_JOB,
-        (pjob != NULL) ? pjob->ji_qs.ji_jobid : "N/A",
+        pjob->ji_qs.ji_jobid,
         log_buffer);
       }
 
@@ -2030,7 +2032,7 @@ static void resume_suspend(
       log_record(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        (pjob != NULL) ? pjob->ji_qs.ji_jobid : "N/A",
+        pjob->ji_qs.ji_jobid,
         "job suspended - adjusted job state");
       }
     }
@@ -2058,7 +2060,7 @@ static void resume_suspend(
       log_record(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        (pjob != NULL) ? pjob->ji_qs.ji_jobid : "N/A",
+        pjob->ji_qs.ji_jobid,
         "job resumed - adjusted job state");
       }
     }    /* END else (susp != 0) */

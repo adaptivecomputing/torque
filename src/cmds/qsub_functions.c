@@ -102,7 +102,8 @@ char *x11_get_proto(
   char        *authstring;
   FILE        *f;
   int          got_data = 0;
-  char        *display;
+  char        *display = NULL;
+  char        *tmp;
   char        *p;
   struct stat  st;
 
@@ -114,15 +115,20 @@ char *x11_get_proto(
 /*  if (EMsg != NULL)
     EMsg[0] = '\0'; */
 
-  if ((display = getenv("DISPLAY")) == NULL)
+  if ((tmp = getenv("DISPLAY")) == NULL)
     {
     fprintf(stderr, "qsub: DISPLAY not set\n");
+    return(NULL);
+    }
+  if((display = strdup(tmp)) == NULL)
+    {
     return(NULL);
     }
 
   if (stat(xauth_path, &st))
     {
     perror("qsub: xauth: ");
+    free(display);
     return(NULL);
     }
 
@@ -199,7 +205,7 @@ char *x11_get_proto(
   if (!got_data)
     {
     /* FAILURE */
-
+    free(display);
     return(NULL);
     }
 
@@ -209,6 +215,7 @@ char *x11_get_proto(
     {
     /* FAILURE */
 
+    free(display);
     return(NULL);
     }
 
@@ -217,6 +224,7 @@ char *x11_get_proto(
     data,
     screen);
 
+  free(display);
   return(authstring);
   }  /* END x11_get_proto() */
 
@@ -641,6 +649,8 @@ int istext(
   {
   int i;
   int c;
+  unsigned char bf[MMAX_VERIFY_BYTES];
+  int len;
 
   if (IsText != NULL)
     *IsText = FALSE;
@@ -656,26 +666,24 @@ int istext(
     }
 
   /* read first characters to ensure this is ASCII text */
-
-  for (i = 0;i < MMAX_VERIFY_BYTES;i++)
+  fseek(fd, 0, SEEK_SET);
+  len = fread(bf,1,MMAX_VERIFY_BYTES,fd);
+  fseek(fd, 0, SEEK_SET);
+  if(len < 0)
     {
-    c = fgetc(fd);
+    return(0);
+    }
 
-    if (c == EOF)
-      break;
-
-    if (!isprint(c) && !isspace(c))
+  for (i = 0;i < len;i++)
+    {
+    if (!isprint(bf[i]) && !isspace(bf[i]))
       {
-      fseek(fd, 0, SEEK_SET);
-
       return(0);
       }
     }  /* END for (i) */
 
   if (IsText != NULL)
     *IsText = TRUE;
-
-  fseek(fd, 0, SEEK_SET);
 
   return(1);
   }  /* END FileIsText() */

@@ -583,11 +583,10 @@ int chk_file_sec(
 
     /* FAILURE */
 
-    if (EMsg != NULL)
-      snprintf(EMsg, 1024, "%s cannot be lstat'd - errno=%d, %s",
-               path,
-               rc,
-               strerror(rc));
+    snprintf(EMsg, 1024, "%s cannot be lstat'd - errno=%d, %s",
+             path,
+             rc,
+             strerror(rc));
 
     goto chkerr;
     }
