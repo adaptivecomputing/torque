@@ -673,3 +673,12 @@ void DIS_tcp_cleanup(struct tcp_chan *chan) {}
 
 void initialize_network_info() {}
 
+void *pop_thing(resizable_array *ra)
+  {
+  return(NULL);
+  }
+
+int insert_thing_after(resizable_array *ra, void *thing, int i)
+  {
+  return(0);
+  }
