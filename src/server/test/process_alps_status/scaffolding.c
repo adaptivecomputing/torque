@@ -2289,3 +2289,9 @@ hash_table_t *create_hash(int size)
 void free_hash(hash_table_t *ht) {}
 
 void free_all_keys(hash_table_t *ht) {}
+
+struct pbsnode *find_node_in_allnodes(all_nodes *an, char *nodename)
+  {
+  return(NULL);
+  }
+
