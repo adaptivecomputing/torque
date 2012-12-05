@@ -3281,8 +3281,20 @@ void process_opts(
         break;
 
       case 'x':
+      
+        if (!(hash_find(ji->job_attr, ATTR_inter, &tmp_job_info)))
+          {
+          print_qsub_usage_exit("qsub: '-x' invalid on non-interactive job");
+          }
 
-        hash_add_or_exit(&ji->mm, &ji->client_attr, "run_inter_opt", "1", data_type);
+        if (hash_find(ji->client_attr, "cmdline_script", &tmp_job_info))
+          {
+          hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_intcmd, tmp_job_info->value, CMDLINE_DATA);
+          }
+        else
+          {
+          print_qsub_usage_exit("qsub: '-x' used without a script specified");
+          }
 
         break;
         
@@ -4140,7 +4152,11 @@ void main_func(
   script_index = find_job_script_index(optind + 1, &job_is_interactive, &prefix_index, argc, argv);
 
   if (script_index != -1)
+    {
     strcpy(script, argv[script_index]);
+    /* store the script so it can be used later (e.g. '-x' option) */
+    hash_add_or_exit(&ji.mm, &ji.client_attr, "cmdline_script", script, CMDLINE_DATA);
+    }
 
   if (prefix_index != -1)
     hash_add_or_exit(&ji.mm, &ji.client_attr, "pbs_dprefix", argv[prefix_index], CMDLINE_DATA);
@@ -4178,10 +4194,6 @@ void main_func(
 
       }
     }    /* END if (!strcmp(script,"") || !strcmp(script,"-")) */
-  else if ((hash_find(ji.job_attr, ATTR_inter, &tmp_job_info)) &&
-      (hash_find(ji.client_attr, "run_inter_opt", &tmp_job_info)))
-    hash_add_or_exit(&ji.mm, &ji.job_attr, ATTR_intcmd, script, CMDLINE_DATA);
-
   else
     {
     /* non-empty script, read it for directives */
