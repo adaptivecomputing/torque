@@ -1080,7 +1080,10 @@ void free_br(
   reply_free(&preq->rq_reply);
 
   if (preq->rq_extend) 
+    {
     free(preq->rq_extend);
+    preq->rq_extend = NULL;
+    }
 
   switch (preq->rq_type)
     {
@@ -1093,7 +1096,10 @@ void free_br(
     case PBS_BATCH_JobCred:
 
       if (preq->rq_ind.rq_jobcred.rq_data)
+        {
         free(preq->rq_ind.rq_jobcred.rq_data);
+        preq->rq_ind.rq_jobcred.rq_data = NULL;
+        }
 
       break;
 
@@ -1102,8 +1108,10 @@ void free_br(
     case PBS_BATCH_jobscript:
 
       if (preq->rq_ind.rq_jobfile.rq_data)
+        {
         free(preq->rq_ind.rq_jobfile.rq_data);
-
+        preq->rq_ind.rq_jobfile.rq_data = NULL;
+        }
       break;
 
     case PBS_BATCH_HoldJob:
@@ -1121,7 +1129,10 @@ void free_br(
     case PBS_BATCH_MessJob:
 
       if (preq->rq_ind.rq_message.rq_text)
+        {
         free(preq->rq_ind.rq_message.rq_text);
+        preq->rq_ind.rq_message.rq_text = NULL;
+        }
 
       break;
 
@@ -1191,8 +1202,10 @@ void free_br(
     case PBS_BATCH_AsyrunJob:
 
       if (preq->rq_ind.rq_run.rq_destin)
+        {
         free(preq->rq_ind.rq_run.rq_destin);
-
+        preq->rq_ind.rq_run.rq_destin = NULL;
+        }
       break;
 
     default:
