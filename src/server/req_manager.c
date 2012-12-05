@@ -400,7 +400,7 @@ static int mgr_set_attr(
 
   {
   int            index;
-  pbs_attribute *new;
+  pbs_attribute *new_attr;
   pbs_attribute *pnew;
   pbs_attribute *pold;
   int            rc;
@@ -410,29 +410,29 @@ static int mgr_set_attr(
     return(0);
     }
 
-  new = (pbs_attribute *)calloc((unsigned int)limit, sizeof(pbs_attribute));
+  new_attr = (pbs_attribute *)calloc((unsigned int)limit, sizeof(pbs_attribute));
 
-  if (new == NULL)
+  if (new_attr == NULL)
     {
     return(PBSE_SYSTEM);
     }
 
   /*
-   * decode the new pbs_attribute values which are in the request,
+   * decode the new_attr pbs_attribute values which are in the request,
    * copy the corresponding current pbs_attribute into a holding array
    * and update it with the newly decoded value
    */
 
-  if ((rc = attr_atomic_set(plist, pattr, new, pdef, limit, -1, privil, bad)) != 0)
+  if ((rc = attr_atomic_set(plist, pattr, new_attr, pdef, limit, -1, privil, bad)) != 0)
     {
-    attr_atomic_kill(new, pdef, limit);
+    attr_atomic_kill(new_attr, pdef, limit);
 
     return(rc);
     }
 
   for (index = 0;index < limit;index++)
     {
-    pnew = new + index;
+    pnew = new_attr + index;
 
     pold = pattr + index;
 
@@ -446,12 +446,12 @@ static int mgr_set_attr(
 
       if ((pdef + index)->at_action)
         {
-        if ((rc = (pdef + index)->at_action(new + index, parent, mode)))
+        if ((rc = (pdef + index)->at_action(new_attr + index, parent, mode)))
           {
           /* always allow removing from ACLs */
           if (!((plist->al_op == DECR) && (pdef + index)->at_type == ATR_TYPE_ACL))
             {
-            attr_atomic_kill(new, pdef, limit);
+            attr_atomic_kill(new_attr, pdef, limit);
 
             return(rc);
             }
@@ -485,7 +485,7 @@ static int mgr_set_attr(
    * we just free the new array, NOT call at_free on each.
    */
 
-  free((char *)new);
+  free((char *)new_attr);
 
   return(0);
   }  /* END mgr_set_attr() */
@@ -669,7 +669,7 @@ void update_subnode(
  *      function of our artificial attribute_def array with a mode value of NEW
  *      in constructing this temporary node pbs_attribute array. Once this temporary
  *      array is constucted, the "svrattrl" request list is processed against it
- * to produce a new "updated" pbs_attribute array.  When all the pbs_attribute
+ * to produce a new_attr "updated" pbs_attribute array.  When all the pbs_attribute
  *      processing completes, assuming it's successful, the updated pbs_attribute
  *      array is used to modify the node itself-- this can be done via each
  *      pbs_attribute's "action" function with the value of mode set to "ALTER".
@@ -699,7 +699,7 @@ int mgr_set_node_attr(
   int              nstatus = 0;
   int              nprops = 0;
   int              rc;
-  pbs_attribute   *new;
+  pbs_attribute   *new_attr;
   pbs_attribute   *unused = NULL;
   pbs_attribute   *pnew;
 
@@ -725,9 +725,9 @@ int mgr_set_node_attr(
    * structure members
    */
 
-  new = (pbs_attribute *)calloc((unsigned int)limit, sizeof(pbs_attribute));
+  new_attr = (pbs_attribute *)calloc((unsigned int)limit, sizeof(pbs_attribute));
 
-  if (new == NULL)
+  if (new_attr == NULL)
     {
     return(PBSE_SYSTEM);
     }
@@ -736,13 +736,13 @@ int mgr_set_node_attr(
     {
     if ((pdef + index)->at_action)
       {
-      if ((rc = (pdef + index)->at_action(new + index, (void *)pnode, ATR_ACTION_NEW)))
+      if ((rc = (pdef + index)->at_action(new_attr + index, (void *)pnode, ATR_ACTION_NEW)))
         {
         /*call the "at_free" func for each member of*/
         /*new" and then free the entire "new" array */
         /*return code (rc) shapes caller's reply    */
 
-        attr_atomic_kill(new, pdef, limit);
+        attr_atomic_kill(new_attr, pdef, limit);
 
         return(rc);
         }
@@ -761,9 +761,9 @@ int mgr_set_node_attr(
    * return code (rc) shapes caller's reply
    */
 
-  if ((rc = attr_atomic_node_set(plist, unused, new, pdef, limit, -1, privil, bad)) != 0)
+  if ((rc = attr_atomic_node_set(plist, unused, new_attr, pdef, limit, -1, privil, bad)) != 0)
     {
-    attr_atomic_kill(new, pdef, limit);
+    attr_atomic_kill(new_attr, pdef, limit);
 
     return(rc);
     }
@@ -786,7 +786,7 @@ int mgr_set_node_attr(
 
   for (index = 0;index < limit;index++)
     {
-    pnew = new + index;
+    pnew = new_attr + index;
 
     if (pnew->at_flags & ATR_VFLAG_MODIFY)
       {
@@ -801,9 +801,9 @@ int mgr_set_node_attr(
 
       if ((pdef + index)->at_action)
         {
-        if ((rc = (pdef + index)->at_action(new + index, (void *)&tnode, ATR_ACTION_ALTER)))
+        if ((rc = (pdef + index)->at_action(new_attr + index, (void *)&tnode, ATR_ACTION_ALTER)))
           {
-          attr_atomic_kill(new, pdef, limit);
+          attr_atomic_kill(new_attr, pdef, limit);
 
           return(rc);
           }
@@ -873,7 +873,7 @@ int mgr_set_node_attr(
 
   pnode->nd_psn->host = pnode;
 
-  free(new);  /*any new  prop list has been put on pnode*/
+  free(new_attr);  /*any new  prop list has been put on pnode*/
 
   /*dispense with the pbs_attribute array itself*/
 
@@ -2567,7 +2567,7 @@ int nextjobnum_chk(
 int set_nextjobnum(
 
   pbs_attribute *attr,
-  pbs_attribute *new,
+  pbs_attribute *new_attr,
   enum batch_op  op)
 
   {
@@ -2587,7 +2587,7 @@ int set_nextjobnum(
 
     case SET:
     
-      attr->at_val.at_long = new->at_val.at_long;
+      attr->at_val.at_long = new_attr->at_val.at_long;
     
       break;
 
@@ -2596,13 +2596,13 @@ int set_nextjobnum(
     case INCR:
 
 
-      attr->at_val.at_long = MAX(server.sv_qs.sv_jobidnumber, new->at_val.at_long);
+      attr->at_val.at_long = MAX(server.sv_qs.sv_jobidnumber, new_attr->at_val.at_long);
       
       break;
 
     case DECR:
       
-      attr->at_val.at_long -= new->at_val.at_long;
+      attr->at_val.at_long -= new_attr->at_val.at_long;
       
       break;
 

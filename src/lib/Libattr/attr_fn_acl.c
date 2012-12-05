@@ -127,8 +127,8 @@ static int hacl_match(const char *can, const char *master);
 static int uhacl_match(const char *can, const char *master);
 static int user_match(const char *can, const char *master);
 static int gid_match(const char *can, const char *master);
-static int host_order(char *old, char *new);
-static int user_order(char *old, char *new);
+static int host_order(char *old, char *new_order);
+static int user_order(char *old, char *new_order);
 static int set_allacl(pbs_attribute *, pbs_attribute *, enum batch_op,
                           int (*order_func)());
 
@@ -150,11 +150,11 @@ static int set_allacl(pbs_attribute *, pbs_attribute *, enum batch_op,
 int set_uacl(
     
   pbs_attribute *attr,
-  pbs_attribute *new,
+  pbs_attribute *uacl_new,
   enum batch_op  op)
 
   {
-  return (set_allacl(attr, new, op, user_order));
+  return (set_allacl(attr, uacl_new, op, user_order));
   }
 
 /*
@@ -172,11 +172,11 @@ int set_uacl(
 int set_hostacl(
 
   pbs_attribute *attr,
-  pbs_attribute *new,
+  pbs_attribute *new_host,
   enum batch_op  op)
 
   {
-  return(set_allacl(attr, new, op, host_order));
+  return(set_allacl(attr, new_host, op, host_order));
   }
 
 
@@ -349,22 +349,22 @@ int acl_check(
 static int chk_dup_acl(
 
   struct array_strings *old,
-  struct array_strings *new)
+  struct array_strings *new_string)
 
   {
   int i;
   int j;
 
-  for (i = 0;i < new->as_usedptr;++i)
+  for (i = 0;i < new_string->as_usedptr;++i)
     {
     /* first check against self */
 
-    for (j = 0; j < new->as_usedptr; ++j)
+    for (j = 0; j < new_string->as_usedptr; ++j)
       {
 
       if (i != j)
         {
-        if (strcmp(new->as_string[i], new->as_string[j]) == 0)
+        if (strcmp(new_string->as_string[i], new_string->as_string[j]) == 0)
           return 1;
         }
       }
@@ -374,7 +374,7 @@ static int chk_dup_acl(
     for (j = 0; j < old->as_usedptr; ++j)
       {
 
-      if (strcmp(new->as_string[i], old->as_string[j]) == 0)
+      if (strcmp(new_string->as_string[i], old->as_string[j]) == 0)
         return 1;
       }
     }
@@ -393,7 +393,7 @@ static int chk_dup_acl(
 static int set_allacl(
     
   pbs_attribute *attr,
-  pbs_attribute *new,
+  pbs_attribute *new_attr,
   enum batch_op  op,
   int          (*order_func)(char *, char *))
 
@@ -414,10 +414,10 @@ static int set_allacl(
 
   struct array_strings *newpas;
 
-  assert(attr && new && (new->at_flags & ATR_VFLAG_SET));
+  assert(attr && new_attr && (new_attr->at_flags & ATR_VFLAG_SET));
 
   pas = attr->at_val.at_arst; /* array of strings control struct */
-  newpas = new->at_val.at_arst; /* array of strings control struct */
+  newpas = new_attr->at_val.at_arst; /* array of strings control struct */
 
   if (!newpas)
     return (PBSE_INTERNAL);

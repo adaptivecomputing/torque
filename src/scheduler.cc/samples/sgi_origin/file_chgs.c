@@ -114,7 +114,7 @@ int
 schd_register_file(char *filename)
   {
   char    *id = "schd_register_file";
-  FileStatus *stats, *tail, *new = NULL;
+  FileStatus *stats, *tail, *new_fs = NULL;
 
   /*
    * Look for the tail of the list.  While walking the list, check to see
@@ -137,9 +137,9 @@ schd_register_file(char *filename)
     }
 
   /* Create space for the new record. */
-  new = (FileStatus *) malloc(sizeof(FileStatus));
+  new_fs = (FileStatus *) malloc(sizeof(FileStatus));
 
-  if (new == NULL)
+  if (new_fs == NULL)
     {
     sprintf(log_buffer,
             "%s: out of memory allocating FileStatus for file %s",
@@ -149,12 +149,12 @@ schd_register_file(char *filename)
     }
 
   /* Clear the record out -- this clears the ctime and next pointer. */
-  memset(new, 0, sizeof(FileStatus));
+  memset(new_fs, 0, sizeof(FileStatus));
 
   /* Keep a copy of the filename around. */
-  new->filename = schd_strdup(filename);
+  new_fs->filename = schd_strdup(filename);
 
-  if (new->filename == NULL)
+  if (new_fs->filename == NULL)
     {
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id,
                "schd_strdup(filename)");
@@ -166,9 +166,9 @@ schd_register_file(char *filename)
    * Otherwise, start the list with it.
    */
   if (tail)
-    tail->next = new;
+    tail->next = new_fs;
   else
-    filestats = new;
+    filestats = new_fs;
 
   (void)sprintf(log_buffer, "%s: file %s registered.", id, filename);
 

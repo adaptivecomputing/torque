@@ -10,7 +10,7 @@ svrattrl *attrlist_create(char *aname, char *rname, int vsize)
  exit(1);
  } 
 
-void append_link(tlist_head *head, list_link *new, void *pobj)
+void append_link(tlist_head *head, list_link *new_link, void *pobj)
   {
   fprintf(stderr, "The call to append_link needs to be mocked!!\n");
   exit(1);
@@ -22,13 +22,13 @@ void log_record(int eventtype, int objclass, const char *objname, char *text)
   exit(1);
   }
 
-int set_str(struct pbs_attribute *attr, struct pbs_attribute *new, enum batch_op op)
+int set_str(struct pbs_attribute *attr, struct pbs_attribute *new_link, enum batch_op op)
   {
   fprintf(stderr, "The call to set_str needs to be mocked!!\n");
   exit(1);
   }
 
-int set_arst(struct pbs_attribute *attr, struct pbs_attribute *new, enum batch_op op) 
+int set_arst(struct pbs_attribute *attr, struct pbs_attribute *new_link, enum batch_op op) 
   {
   fprintf(stderr, "The call to set_arst needs to be mocked!!\n");
   exit(1);

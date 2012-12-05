@@ -1152,7 +1152,7 @@ void set_globid(job *pjob, struct startjob_rtn *sjr)
   {
   }
 
-void append_link(tlist_head *head, list_link *new, void *pobj)
+void append_link(tlist_head *head, list_link *new_link, void *pobj)
   {
   }
 

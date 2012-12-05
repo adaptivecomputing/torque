@@ -102,7 +102,7 @@ char *prefix_std_file(job *pjob, dynamic_string *ds, int key)
   exit(1);
   }
 
-int attr_atomic_set(struct svrattrl *plist, pbs_attribute *old, pbs_attribute *new, attribute_def *pdef, int limit, int unkn, int privil, int *badattr)
+int attr_atomic_set(struct svrattrl *plist, pbs_attribute *old, pbs_attribute *new_attr, attribute_def *pdef, int limit, int unkn, int privil, int *badattr)
   {
   fprintf(stderr, "The call to attr_atomic_set to be mocked!!\n");
   exit(1);
@@ -150,7 +150,7 @@ void release_req(struct work_task *pwt)
   exit(1);
   }
 
-void append_link(tlist_head *head, list_link *new, void *pobj)
+void append_link(tlist_head *head, list_link *new_link, void *pobj)
   {
   fprintf(stderr, "The call to append_link to be mocked!!\n");
   exit(1);

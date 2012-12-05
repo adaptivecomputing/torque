@@ -727,47 +727,47 @@ free_prop_list(struct prop *prop)
 int set_node_state(
 
   pbs_attribute *pattr,  /*pbs_attribute gets modified    */
-  pbs_attribute *new,  /*carries new, modifying info that 
+  pbs_attribute *new_attr,  /*carries new, modifying info that 
                          got decoded into 'new"*/
   enum           batch_op op)
 
   {
   int rc = 0;
 
-  assert((pattr != NULL) && (new != NULL) && (new->at_flags & ATR_VFLAG_SET));
+  assert((pattr != NULL) && (new_attr != NULL) && (new_attr->at_flags & ATR_VFLAG_SET));
 
   switch (op)
     {
 
     case SET:
 
-      pattr->at_val.at_short = new->at_val.at_short;
+      pattr->at_val.at_short = new_attr->at_val.at_short;
 
       break;
 
     case INCR:
 
-      if (pattr->at_val.at_short && new->at_val.at_short == 0)
+      if (pattr->at_val.at_short && new_attr->at_val.at_short == 0)
         {
 
         rc = PBSE_BADNDATVAL;  /*"free" mutually exclusive*/
         break;
         }
 
-      pattr->at_val.at_short |= new->at_val.at_short;
+      pattr->at_val.at_short |= new_attr->at_val.at_short;
 
       break;
 
     case DECR:
 
-      if (pattr->at_val.at_short && new->at_val.at_short == 0)
+      if (pattr->at_val.at_short && new_attr->at_val.at_short == 0)
         {
 
         rc = PBSE_BADNDATVAL;  /*"free" mutually exclusive*/
         break;
         }
 
-      pattr->at_val.at_short &= ~new->at_val.at_short;
+      pattr->at_val.at_short &= ~new_attr->at_val.at_short;
 
       break;
 
@@ -793,24 +793,24 @@ int set_node_state(
 int set_node_ntype(
 
   pbs_attribute *pattr,  /*pbs_attribute gets modified    */
-  pbs_attribute *new,  /*carries new, modifying info*/
+  pbs_attribute *new_attr,  /*carries new, modifying info*/
   enum batch_op  op)
 
   {
   int rc = 0;
 
-  assert(pattr && new && (new->at_flags & ATR_VFLAG_SET));
+  assert(pattr && new_attr && (new_attr->at_flags & ATR_VFLAG_SET));
 
   switch (op)
     {
 
     case SET:
-      pattr->at_val.at_short = new->at_val.at_short;
+      pattr->at_val.at_short = new_attr->at_val.at_short;
       break;
 
     case INCR:
 
-      if (pattr->at_val.at_short != new->at_val.at_short)
+      if (pattr->at_val.at_short != new_attr->at_val.at_short)
         {
 
         rc = PBSE_MUTUALEX;  /*types are mutually exclusive*/
@@ -820,7 +820,7 @@ int set_node_ntype(
 
     case DECR:
 
-      if (pattr->at_val.at_short != new->at_val.at_short)
+      if (pattr->at_val.at_short != new_attr->at_val.at_short)
         rc = PBSE_MUTUALEX;  /*types are mutually exclusive*/
       else 
         pattr->at_val.at_short = NTYPE_CLUSTER;
@@ -887,7 +887,7 @@ static int set_nodeflag(
 
 int node_state(
 
-  pbs_attribute *new, /*derive state into this pbs_attribute*/
+  pbs_attribute *new_attr, /*derive state into this pbs_attribute*/
   void     *pnode, /*pointer to a pbsnode struct    */
   int      actmode) /*action mode; "NEW" or "ALTER"   */
 
@@ -903,13 +903,13 @@ int node_state(
 
     case ATR_ACTION_NEW:  /*derive pbs_attribute*/
 
-      new->at_val.at_short = np->nd_state;
+      new_attr->at_val.at_short = np->nd_state;
 
       break;
 
     case ATR_ACTION_ALTER:
 
-      np->nd_state = new->at_val.at_short;
+      np->nd_state = new_attr->at_val.at_short;
 
       break;
 
@@ -935,7 +935,7 @@ int node_state(
 
 int node_ntype(
 
-  pbs_attribute *new,      /*derive ntype into this pbs_attribute*/
+  pbs_attribute *new_attr,      /*derive ntype into this pbs_attribute*/
   void          *pnode,   /*pointer to a pbsnode struct     */
   int            actmode) /*action mode; "NEW" or "ALTER"   */
 
@@ -951,11 +951,11 @@ int node_ntype(
     {
 
     case ATR_ACTION_NEW:  /*derive pbs_attribute*/
-      new->at_val.at_short = np->nd_ntype;
+      new_attr->at_val.at_short = np->nd_ntype;
       break;
 
     case ATR_ACTION_ALTER:
-      np->nd_ntype = new->at_val.at_short;
+      np->nd_ntype = new_attr->at_val.at_short;
       break;
 
     default:
@@ -975,7 +975,7 @@ int node_ntype(
 
 int node_prop_list(
 
-  pbs_attribute *new,     /*derive props into this pbs_attribute*/
+  pbs_attribute *new_attr,     /*derive props into this pbs_attribute*/
   void          *pnode,   /*pointer to a pbsnode struct     */
   int            actmode) /*action mode; "NEW" or "ALTER"   */
 
@@ -1004,15 +1004,15 @@ int node_prop_list(
         temp.at_flags = ATR_VFLAG_SET;
         temp.at_type  = ATR_TYPE_ARST;
 
-        rc = set_arst(new, &temp, SET);
+        rc = set_arst(new_attr, &temp, SET);
         }
       else
         {
         /* Node has no properties, setup empty pbs_attribute */
 
-        new->at_val.at_arst = 0;
-        new->at_flags       = 0;
-        new->at_type        = ATR_TYPE_ARST;
+        new_attr->at_val.at_arst = 0;
+        new_attr->at_flags       = 0;
+        new_attr->at_type        = ATR_TYPE_ARST;
         }
 
       break;
@@ -1021,7 +1021,7 @@ int node_prop_list(
 
       /* update node with new attr_strings */
 
-      np->nd_prop = new->at_val.at_arst;
+      np->nd_prop = new_attr->at_val.at_arst;
 
       /* update number of properties listed in node */
       /* does not include name and subnode property */
@@ -1053,7 +1053,7 @@ int node_prop_list(
 
 int node_status_list(
 
-  pbs_attribute *new,           /*derive status into this pbs_attribute*/
+  pbs_attribute *new_attr,           /*derive status into this pbs_attribute*/
   void          *pnode,         /*pointer to a pbsnode struct     */
   int            actmode)       /*action mode; "NEW" or "ALTER"   */
 
@@ -1082,15 +1082,15 @@ int node_status_list(
         temp.at_flags = ATR_VFLAG_SET;
         temp.at_type  = ATR_TYPE_ARST;
 
-        rc = set_arst(new, &temp, SET);
+        rc = set_arst(new_attr, &temp, SET);
         }
       else
         {
         /* node has no properties, setup empty pbs_attribute */
 
-        new->at_val.at_arst = NULL;
-        new->at_flags       = 0;
-        new->at_type        = ATR_TYPE_ARST;
+        new_attr->at_val.at_arst = NULL;
+        new_attr->at_flags       = 0;
+        new_attr->at_type        = ATR_TYPE_ARST;
         }
 
       break;
@@ -1107,9 +1107,9 @@ int node_status_list(
 
       /* update node with new attr_strings */
 
-      np->nd_status = new->at_val.at_arst;
+      np->nd_status = new_attr->at_val.at_arst;
 
-      new->at_val.at_arst = NULL;
+      new_attr->at_val.at_arst = NULL;
 
       /* update number of status items listed in node */
       /* does not include name and subnode property */
@@ -1139,7 +1139,7 @@ int node_status_list(
 
 int node_gpustatus_list(
 
-  pbs_attribute *new,      /* derive status into this pbs_attribute*/
+  pbs_attribute *new_attr,      /* derive status into this pbs_attribute*/
   void          *pnode,    /* pointer to a pbsnode struct     */
   int            actmode)  /* action mode; "NEW" or "ALTER"   */
 
@@ -1168,15 +1168,15 @@ int node_gpustatus_list(
         temp.at_flags = ATR_VFLAG_SET;
         temp.at_type  = ATR_TYPE_ARST;
 
-        rc = set_arst(new, &temp, SET);
+        rc = set_arst(new_attr, &temp, SET);
         }
       else
         {
         /* node has no properties, setup empty pbs_attribute */
 
-        new->at_val.at_arst = NULL;
-        new->at_flags       = 0;
-        new->at_type        = ATR_TYPE_ARST;
+        new_attr->at_val.at_arst = NULL;
+        new_attr->at_flags       = 0;
+        new_attr->at_type        = ATR_TYPE_ARST;
         }
 
       break;
@@ -1193,9 +1193,9 @@ int node_gpustatus_list(
 
       /* update node with new attr_strings */
 
-      np->nd_gpustatus = new->at_val.at_arst;
+      np->nd_gpustatus = new_attr->at_val.at_arst;
 
-      new->at_val.at_arst = NULL;
+      new_attr->at_val.at_arst = NULL;
 
       /* update number of status items listed in node */
       /* does not include name and subnode property */
@@ -1222,7 +1222,7 @@ int node_gpustatus_list(
 
 int node_micstatus_list(
 
-  pbs_attribute *new,      /* derive status into this pbs_attribute*/
+  pbs_attribute *new_attr,      /* derive status into this pbs_attribute*/
   void          *pnode,    /* pointer to a pbsnode struct     */
   int            actmode)  /* action mode; "NEW" or "ALTER"   */
 
@@ -1251,15 +1251,15 @@ int node_micstatus_list(
         temp.at_flags = ATR_VFLAG_SET;
         temp.at_type  = ATR_TYPE_ARST;
 
-        rc = set_arst(new, &temp, SET);
+        rc = set_arst(new_attr, &temp, SET);
         }
       else
         {
         /* node has no properties, setup empty pbs_attribute */
 
-        new->at_val.at_arst = NULL;
-        new->at_flags       = 0;
-        new->at_type        = ATR_TYPE_ARST;
+        new_attr->at_val.at_arst = NULL;
+        new_attr->at_flags       = 0;
+        new_attr->at_type        = ATR_TYPE_ARST;
         }
 
       break;
@@ -1276,9 +1276,9 @@ int node_micstatus_list(
 
       /* update node with new attr_strings */
 
-      np->nd_micstatus = new->at_val.at_arst;
+      np->nd_micstatus = new_attr->at_val.at_arst;
 
-      new->at_val.at_arst = NULL;
+      new_attr->at_val.at_arst = NULL;
 
       break;
 
@@ -1302,7 +1302,7 @@ int node_micstatus_list(
 
 int node_note(
 
-  pbs_attribute *new,      /*derive status into this pbs_attribute*/
+  pbs_attribute *new_attr,      /*derive status into this pbs_attribute*/
   void          *pnode,    /*pointer to a pbsnode struct     */
   int            actmode)  /*action mode; "NEW" or "ALTER"   */
 
@@ -1330,15 +1330,15 @@ int node_note(
         temp.at_flags = ATR_VFLAG_SET;
         temp.at_type  = ATR_TYPE_STR;
 
-        rc = set_note_str(new, &temp, SET);
+        rc = set_note_str(new_attr, &temp, SET);
         }
       else
         {
         /* node has no properties, setup empty pbs_attribute */
 
-        new->at_val.at_str  = NULL;
-        new->at_flags       = 0;
-        new->at_type        = ATR_TYPE_STR;
+        new_attr->at_val.at_str  = NULL;
+        new_attr->at_flags       = 0;
+        new_attr->at_type        = ATR_TYPE_STR;
         }
 
       break;
@@ -1354,9 +1354,9 @@ int node_note(
 
       /* update node with new string */
 
-      np->nd_note = new->at_val.at_str;
+      np->nd_note = new_attr->at_val.at_str;
 
-      new->at_val.at_str = NULL;
+      new_attr->at_val.at_str = NULL;
 
       break;
 
@@ -1379,7 +1379,7 @@ int node_note(
 int set_note_str(
 
   pbs_attribute *attr,
-  pbs_attribute *new,
+  pbs_attribute *new_attr,
   enum batch_op  op)
 
   {
@@ -1388,8 +1388,8 @@ int set_note_str(
   int         rc = 0;
   char        log_buf[LOCAL_LOG_BUF_SIZE];
 
-  assert(attr && new && new->at_val.at_str && (new->at_flags & ATR_VFLAG_SET));
-  nsize = strlen(new->at_val.at_str);    /* length of new note */
+  assert(attr && new_attr && new_attr->at_val.at_str && (new_attr->at_flags & ATR_VFLAG_SET));
+  nsize = strlen(new_attr->at_val.at_str);    /* length of new note */
 
   if (nsize > MAX_NOTE)
     {
@@ -1402,7 +1402,7 @@ int set_note_str(
     rc = PBSE_BADNDATVAL;
     }
 
-  if (strchr(new->at_val.at_str, '\n') != NULL)
+  if (strchr(new_attr->at_val.at_str, '\n') != NULL)
     {
     sprintf(log_buf, "Warning: Client attempted to set note with a newline char");
 
@@ -1414,7 +1414,7 @@ int set_note_str(
   if (rc != 0)
     return(rc);
 
-  rc = set_str(attr, new, op);
+  rc = set_str(attr, new_attr, op);
 
   return(rc);
   }  /* END set_note_str() */

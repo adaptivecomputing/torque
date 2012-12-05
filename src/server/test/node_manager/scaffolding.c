@@ -165,7 +165,7 @@ struct prop *init_prop(char *pname)
   exit(1);
   }
 
-int node_status_list(pbs_attribute *new, void *pnode, int actmode)
+int node_status_list(pbs_attribute *new_attr, void *pnode, int actmode)
   {
   fprintf(stderr, "The call to node_status_list needs to be mocked!!\n");
   exit(1);
@@ -219,7 +219,7 @@ void release_req(struct work_task *pwt)
   exit(1);
   }
 
-void append_link(tlist_head *head, list_link *new, void *pobj)
+void append_link(tlist_head *head, list_link *new_link, void *pobj)
   {
   fprintf(stderr, "The call to append_link needs to be mocked!!\n");
   exit(1);

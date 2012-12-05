@@ -1064,7 +1064,7 @@ static void alter_unreg(
 
   job           *pjob,
   pbs_attribute *old,  /* current job dependency attribure */
-  pbs_attribute *new)  /* job dependency pbs_attribute after alter */
+  pbs_attribute *new_attr)  /* job dependency pbs_attribute after alter */
 
   {
   struct depend     *poldd;
@@ -1086,7 +1086,7 @@ static void alter_unreg(
 
     if ((type != JOB_DEPEND_TYPE_ON) && (type != JOB_DEPEND_TYPE_SYNCCT))
       {
-      pnewd = find_depend(type, new);
+      pnewd = find_depend(type, new_attr);
 
       oldjd = (struct depend_job *)GET_NEXT(poldd->dp_jobs);
 
@@ -2643,7 +2643,7 @@ int encode_depend(
 int set_depend(
 
   pbs_attribute *attr,
-  pbs_attribute *new,
+  pbs_attribute *new_attr,
   enum batch_op  op)
 
   {
@@ -2653,7 +2653,7 @@ int set_depend(
   struct depend *pdold;
   int        rc;
 
-  assert(attr && new);
+  assert(attr && new_attr);
 
   switch (op)
     {
@@ -2665,7 +2665,7 @@ int set_depend(
        * going to replace it, so get rid of the old and dup the new
        */
 
-      pdnew = (struct depend *)GET_NEXT(new->at_val.at_list);
+      pdnew = (struct depend *)GET_NEXT(new_attr->at_val.at_list);
 
       while (pdnew != NULL)
         {

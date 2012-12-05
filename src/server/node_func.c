@@ -2475,7 +2475,7 @@ static void delete_a_gpusubnode(
 
 int node_np_action(
     
-  pbs_attribute *new,     /* derive props into this pbs_attribute*/
+  pbs_attribute *new_attr,     /* derive props into this pbs_attribute*/
   void          *pobj,    /* pointer to a pbsnode struct     */
   int            actmode) /* action mode; "NEW" or "ALTER"   */
   
@@ -2488,12 +2488,12 @@ int node_np_action(
     {
 
     case ATR_ACTION_NEW:
-      new->at_val.at_long = pnode->nd_nsn;
+      new_attr->at_val.at_long = pnode->nd_nsn;
       break;
 
     case ATR_ACTION_ALTER:
       old_np = pnode->nd_nsn;
-      new_np = (short)new->at_val.at_long;
+      new_np = (short)new_attr->at_val.at_long;
 
       if (new_np <= 0)
         return PBSE_BADATVAL;
@@ -2528,7 +2528,7 @@ int node_np_action(
 
 int node_mom_port_action(
 
-  pbs_attribute *new,     /*derive props into this pbs_attribute*/
+  pbs_attribute *new_attr,     /*derive props into this pbs_attribute*/
   void          *pobj,    /*pointer to a pbsnode struct     */
   int            actmode) /*action mode; "NEW" or "ALTER"   */
 
@@ -2540,11 +2540,11 @@ int node_mom_port_action(
     {
 
     case ATR_ACTION_NEW:
-      new->at_val.at_long = pnode->nd_mom_port;
+      new_attr->at_val.at_long = pnode->nd_mom_port;
       break;
 
     case ATR_ACTION_ALTER:
-      pnode->nd_mom_port = new->at_val.at_long;
+      pnode->nd_mom_port = new_attr->at_val.at_long;
       break;
 
     default:
@@ -2561,7 +2561,7 @@ int node_mom_port_action(
 
 int node_mom_rm_port_action(
 
-  pbs_attribute *new,     /* derive props into this pbs_attribute*/
+  pbs_attribute *new_attr,     /* derive props into this pbs_attribute*/
   void          *pobj,    /* pointer to a pbsnode struct     */
   int            actmode) /* action mode; "NEW" or "ALTER"   */
 
@@ -2573,11 +2573,11 @@ int node_mom_rm_port_action(
     {
 
     case ATR_ACTION_NEW:
-      new->at_val.at_long = pnode->nd_mom_rm_port;
+      new_attr->at_val.at_long = pnode->nd_mom_rm_port;
       break;
 
     case ATR_ACTION_ALTER:
-      pnode->nd_mom_rm_port = new->at_val.at_long;
+      pnode->nd_mom_rm_port = new_attr->at_val.at_long;
       break;
 
     default:
@@ -2592,7 +2592,7 @@ int node_mom_rm_port_action(
 
 int node_gpus_action(
 
-  pbs_attribute *new,
+  pbs_attribute *new_attr,
   void          *pnode,
   int            actmode)
 
@@ -2605,12 +2605,12 @@ int node_gpus_action(
   switch (actmode)
     {
     case ATR_ACTION_NEW:
-      new->at_val.at_long = np->nd_ngpus;
+      new_attr->at_val.at_long = np->nd_ngpus;
       break;
 
     case ATR_ACTION_ALTER:
       old_gp = np->nd_ngpus;
-      new_gp = new->at_val.at_long;
+      new_gp = new_attr->at_val.at_long;
 
       if (new_gp <= 0)
         return PBSE_BADATVAL;
@@ -2644,7 +2644,7 @@ int node_gpus_action(
 
 int node_mics_action(
 
-  pbs_attribute *new,
+  pbs_attribute *new_attr,
   void          *pnode,
   int            actmode)
 
@@ -2658,14 +2658,14 @@ int node_mics_action(
     {
     case ATR_ACTION_NEW:
 
-      new->at_val.at_long = np->nd_nmics;
+      new_attr->at_val.at_long = np->nd_nmics;
 
       break;
 
     case ATR_ACTION_ALTER:
 
       old_mics = np->nd_nmics;
-      new_mics = new->at_val.at_long;
+      new_mics = new_attr->at_val.at_long;
 
       if (new_mics <= 0)
         return(PBSE_BADATVAL);
@@ -2706,7 +2706,7 @@ int node_mics_action(
 
 int node_numa_action(
 
-  pbs_attribute *new,     /* derive status into this pbs_attribute*/
+  pbs_attribute *new_attr,     /* derive status into this pbs_attribute*/
   void          *pnode,   /* pointer to a pbsnode struct     */
   int            actmode) /* action mode; "NEW" or "ALTER"   */
 
@@ -2718,11 +2718,11 @@ int node_numa_action(
   switch (actmode)
     {
     case ATR_ACTION_NEW:
-      new->at_val.at_long = np->num_node_boards;
+      new_attr->at_val.at_long = np->num_node_boards;
       break;
 
     case ATR_ACTION_ALTER:
-      np->num_node_boards = new->at_val.at_long;
+      np->num_node_boards = new_attr->at_val.at_long;
       break;
 
     default:
@@ -2737,7 +2737,7 @@ int node_numa_action(
 
 int numa_str_action(
 
-  pbs_attribute *new,     /* derive status into this pbs_attribute*/
+  pbs_attribute *new_attr,     /* derive status into this pbs_attribute*/
   void          *pnode,   /* pointer to a pbsnode struct     */
   int            actmode) /* action mode; "NEW" or "ALTER"   */
 
@@ -2752,29 +2752,29 @@ int numa_str_action(
       if (np->numa_str != NULL)
         {
         len = strlen(np->numa_str) + 1;
-        new->at_val.at_str = (char *)calloc(len, sizeof(char));
+        new_attr->at_val.at_str = (char *)calloc(len, sizeof(char));
 
-        if (new->at_val.at_str == NULL)
+        if (new_attr->at_val.at_str == NULL)
           return(PBSE_SYSTEM);
 
-        strcpy(new->at_val.at_str,np->numa_str);
+        strcpy(new_attr->at_val.at_str,np->numa_str);
         }
       else
-        new->at_val.at_str = NULL;
+        new_attr->at_val.at_str = NULL;
 
       break;
 
     case ATR_ACTION_ALTER:
 
-      if (new->at_val.at_str != NULL)
+      if (new_attr->at_val.at_str != NULL)
         {
-        len = strlen(new->at_val.at_str) + 1;
+        len = strlen(new_attr->at_val.at_str) + 1;
         np->numa_str = (char *)calloc(len, sizeof(char));
 
         if (np->numa_str == NULL)
           return(PBSE_SYSTEM);
 
-        strcpy(np->numa_str,new->at_val.at_str);
+        strcpy(np->numa_str,new_attr->at_val.at_str);
         }
       else
         np->numa_str = NULL;
@@ -2793,7 +2793,7 @@ int numa_str_action(
 
 int gpu_str_action(
 
-  pbs_attribute *new,
+  pbs_attribute *new_attr,
   void          *pnode,
   int            actmode)
 
@@ -2808,29 +2808,29 @@ int gpu_str_action(
       if (np->gpu_str != NULL)
         {
         len = strlen(np->gpu_str) + 1;
-        new->at_val.at_str = (char *)calloc(len, sizeof(char));
+        new_attr->at_val.at_str = (char *)calloc(len, sizeof(char));
 
-        if (new->at_val.at_str == NULL)
+        if (new_attr->at_val.at_str == NULL)
           return(PBSE_SYSTEM);
 
-        strcpy(new->at_val.at_str,np->gpu_str);
+        strcpy(new_attr->at_val.at_str,np->gpu_str);
         }
       else
-        new->at_val.at_str = NULL;
+        new_attr->at_val.at_str = NULL;
 
       break;
 
     case ATR_ACTION_ALTER:
 
-      if (new->at_val.at_str != NULL)
+      if (new_attr->at_val.at_str != NULL)
         {
-        len = strlen(new->at_val.at_str) + 1;
+        len = strlen(new_attr->at_val.at_str) + 1;
         np->gpu_str = (char *)calloc(len, sizeof(char));
 
         if (np->gpu_str == NULL)
           return(PBSE_SYSTEM);
 
-        strcpy(np->gpu_str,new->at_val.at_str);
+        strcpy(np->gpu_str,new_attr->at_val.at_str);
         }
       else
         np->gpu_str = NULL;

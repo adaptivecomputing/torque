@@ -153,22 +153,22 @@ static int set_note(
   {
   char          *errmsg;
 
-  struct attropl  new;
+  struct attropl  new_attr;
   int             rc;
   int             local_errno = 0;
 
-  new.name     = ATTR_NODE_note;
-  new.resource = NULL;
-  new.value    = msg;
-  new.op       = SET;
-  new.next     = NULL;
+  new_attr.name     = ATTR_NODE_note;
+  new_attr.resource = NULL;
+  new_attr.value    = msg;
+  new_attr.op       = SET;
+  new_attr.next     = NULL;
 
   rc = pbs_manager_err(
          con,
          MGR_CMD_SET,
          MGR_OBJ_NODE,
          name,
-         &new,
+         &new_attr,
          NULL,
          &local_errno);
 
@@ -274,27 +274,27 @@ static int marknode(
   {
   char          *errmsg;
 
-  struct attropl  new[2];
+  struct attropl  new_attr[2];
   int             rc;
   int             local_errno = 0;
 
-  new[0].name     = ATTR_NODE_state;
-  new[0].resource = NULL;
-  new[0].value    = state1;
-  new[0].op       = op1;
+  new_attr[0].name     = ATTR_NODE_state;
+  new_attr[0].resource = NULL;
+  new_attr[0].value    = state1;
+  new_attr[0].op       = op1;
 
   if (state2 == NULL)
     {
-    new[0].next     = NULL;
+    new_attr[0].next     = NULL;
     }
   else
     {
-    new[0].next     = &new[1];
-    new[1].next     = NULL;
-    new[1].name     = ATTR_NODE_state;
-    new[1].resource = NULL;
-    new[1].value    = state2;
-    new[1].op     = op2;
+    new_attr[0].next     = &new_attr[1];
+    new_attr[1].next     = NULL;
+    new_attr[1].name     = ATTR_NODE_state;
+    new_attr[1].resource = NULL;
+    new_attr[1].value    = state2;
+    new_attr[1].op     = op2;
     }
 
   rc = pbs_manager_err(
@@ -302,7 +302,7 @@ static int marknode(
          MGR_CMD_SET,
          MGR_OBJ_NODE,
          name,
-         new,
+         new_attr,
          NULL,
          &local_errno);
 

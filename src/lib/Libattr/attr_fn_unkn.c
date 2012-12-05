@@ -277,16 +277,16 @@ int encode_unkn(
 int set_unkn(
    
   pbs_attribute *old,
-  pbs_attribute *new,
+  pbs_attribute *new_attr,
   enum batch_op  op)
 
   {
   svrattrl *plist;
   svrattrl *pnext;
 
-  assert(old && new && (new->at_flags & ATR_VFLAG_SET));
+  assert(old && new_attr && (new_attr->at_flags & ATR_VFLAG_SET));
 
-  plist = (svrattrl *)GET_NEXT(new->at_val.at_list);
+  plist = (svrattrl *)GET_NEXT(new_attr->at_val.at_list);
 
   while (plist != (svrattrl *)0)
     {

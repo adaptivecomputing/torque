@@ -225,37 +225,37 @@ node_info *query_node_info(struct batch_status *node, server_info *sinfo)
  */
 node_info *new_node_info()
   {
-  node_info *new;
+  node_info *new_node_info;
 
-  if ((new = (node_info *) malloc(sizeof(node_info))) == NULL)
+  if ((new_node_info = (node_info *) malloc(sizeof(node_info))) == NULL)
     {
     perror("Memory Allocation Error");
     return NULL;
     }
 
-  new -> is_down = 0;
+  new_node_info -> is_down = 0;
 
-  new -> is_free = 0;
-  new -> is_offline = 0;
-  new -> is_unknown = 0;
-  new -> is_reserved = 0;
-  new -> is_exclusive = 0;
-  new -> is_sharing = 0;
-  new -> is_timeshare = 0;
-  new -> is_cluster = 0;
+  new_node_info -> is_free = 0;
+  new_node_info -> is_offline = 0;
+  new_node_info -> is_unknown = 0;
+  new_node_info -> is_reserved = 0;
+  new_node_info -> is_exclusive = 0;
+  new_node_info -> is_sharing = 0;
+  new_node_info -> is_timeshare = 0;
+  new_node_info -> is_cluster = 0;
 
-  new -> name = NULL;
-  new -> properties = NULL;
-  new -> jobs = NULL;
+  new_node_info -> name = NULL;
+  new_node_info -> properties = NULL;
+  new_node_info -> jobs = NULL;
 
-  new -> max_load = 0.0;
-  new -> ideal_load = 0.0;
-  new -> arch = NULL;
-  new -> ncpus = 0;
-  new -> physmem = 0;
-  new -> loadave = 0.0;
+  new_node_info -> max_load = 0.0;
+  new_node_info -> ideal_load = 0.0;
+  new_node_info -> arch = NULL;
+  new_node_info -> ncpus = 0;
+  new_node_info -> physmem = 0;
+  new_node_info -> loadave = 0.0;
 
-  return new;
+  return new_node_info;
   }
 
 /*

@@ -535,7 +535,7 @@ static int
 arg_to_qlist(char *arg, char *sep, QueueList **qlist_ptr)
   {
   char *id = "arg_to_qlist";
-  QueueList  *qptr = NULL, *new;
+  QueueList  *qptr = NULL, *new_qlist;
   int     num = 0;
   char   *name, *exechost, canon[PBS_MAXHOSTNAME + 1];
 
@@ -567,38 +567,38 @@ arg_to_qlist(char *arg, char *sep, QueueList **qlist_ptr)
      * address of the newly allocated struct.
      */
 
-    new = (QueueList *)malloc(sizeof(QueueList));
+    new_qlist = (QueueList *)malloc(sizeof(QueueList));
 
-    if (new == NULL)
+    if (new_qlist == NULL)
       {
       log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id,
                  "malloc(newQueue)");
       goto error_in_list;
       }
 
-    memset(new, 0, sizeof(QueueList));
+    memset(new_qlist, 0, sizeof(QueueList));
 
     if (qptr == NULL)
       {
-      *qlist_ptr = new;
+      *qlist_ptr = new_qlist;
       qptr = *qlist_ptr;
       }
     else
       {
-      qptr->next = new;
-      qptr = new;
+      qptr->next = new_qlist;
+      qptr = new_qlist;
       }
 
-    new->queue = (Queue *)malloc(sizeof(Queue));
+    new_qlist->queue = (Queue *)malloc(sizeof(Queue));
 
-    if (new->queue == NULL)
+    if (new_qlist->queue == NULL)
       {
       log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id,
                  "malloc(newQueue->queue)");
       goto error_in_list;
       }
 
-    memset(new->queue, 0, sizeof(Queue));
+    memset(new_qlist->queue, 0, sizeof(Queue));
 
     /*
      * Queue names may be either 'queue3' or 'queue3@exechost'.
@@ -633,18 +633,18 @@ arg_to_qlist(char *arg, char *sep, QueueList **qlist_ptr)
       exechost = schd_ThisHost; /* Queue lives on localhost. */
       }
 
-    new->queue->qname = schd_strdup(name);
+    new_qlist->queue->qname = schd_strdup(name);
 
-    if (new->queue->qname == NULL)
+    if (new_qlist->queue->qname == NULL)
       {
       log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id,
                  "schd_strdup(qname)");
       goto error_in_list;
       }
 
-    new->queue->exechost = schd_strdup(exechost);
+    new_qlist->queue->exechost = schd_strdup(exechost);
 
-    if (new->queue->exechost == NULL)
+    if (new_qlist->queue->exechost == NULL)
       {
       log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id,
                  "schd_strdup(exechost)");
