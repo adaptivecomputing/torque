@@ -1478,7 +1478,7 @@ void mom_server_all_update_stat(void)
   {
   node_comm_t *nc = NULL;
   int          sindex;
-  int          rc = NO_SERVER_CONFIGURED;
+  int          rc;
 
   time_now = time(NULL);
 
@@ -1507,6 +1507,8 @@ void mom_server_all_update_stat(void)
   for (numa_index = 0; numa_index < num_node_boards; numa_index++)
 #endif /* NUMA_SUPPORT */
     {
+    rc = NO_SERVER_CONFIGURED;
+
     clear_dynamic_string(mom_status);
 
     if (is_reporter_mom == FALSE)
@@ -1701,7 +1703,7 @@ void mom_server_diag(
   if (TMOMRejectConn[0] != '\0')
     {
     MUSNPrintF(BPtr, BSpace, "  WARNING:  invalid attempt to connect from server %s\n",
-               TMOMRejectConn);
+      TMOMRejectConn);
     }
 
   if (pms->MOMLastRecvFromServerTime > 0)
@@ -1954,8 +1956,6 @@ mom_server *mom_server_valid_message_source(
       snprintf(*err_msg, 240, "bad connect from %s - unauthorized server. Will check if its a valid mom",
         netaddr(((struct sockaddr_in *)&addr)));
       }
-
-    sprintf(TMOMRejectConn, "%s  %s", netaddr(((struct sockaddr_in *)&addr)), "(server not authorized)");
     }
 
   return(NULL);
@@ -2314,15 +2314,17 @@ void mom_is_request(
       addr = (struct sockaddr_in *)&s_addr;
       ipaddr = ntohl(addr->sin_addr.s_addr);
   
-      if (AVL_is_in_tree_no_port_compare(ipaddr,0,okclients) == 0)
+      if (AVL_is_in_tree_no_port_compare(ipaddr, 0, okclients) == 0)
         {
         if (err_msg)
           {
-          log_ext(-1,"mom_server_valid_message_source",err_msg,LOG_ALERT);
+          log_ext(-1,"mom_server_valid_message_source", err_msg, LOG_ALERT);
           free(err_msg);
           }
         else
           log_ext(-1, __func__, "Invalid source for IS_REQUEST", LOG_ALERT);
+        
+        sprintf(TMOMRejectConn, "%s  %s", netaddr(((struct sockaddr_in *)&addr)), "(server not authorized)");
         
         close_conn(chan->sock, FALSE);
         chan->sock = -1;

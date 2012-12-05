@@ -575,6 +575,14 @@ void check_if_in_nodes_file(
 
     create_partial_pbs_node(hostname, ipaddr, ATR_DFLAG_MGRD | ATR_DFLAG_MGWR);
     pnode = find_nodebyname(hostname);
+    if(pnode == NULL)
+      {
+      snprintf(log_buf, sizeof(log_buf),
+        "Failed to add node %s to nodes file.",
+        hostname);
+      log_err(-1, __func__, log_buf);
+      return;
+      }
     }
     
   pnode->nd_in_hierarchy = TRUE;
@@ -1532,7 +1540,8 @@ int handle_array_recovery(
     return(-1);
     }
 
-  dir = opendir(".");
+  if((dir = opendir(".")) == NULL)
+    return -1;
 
   while ((pdirent = readdir(dir)) != NULL)
     {
@@ -2773,7 +2782,8 @@ void resume_net_move(
 
   if (jobid != NULL)
     {
-    pjob = svr_find_job(jobid, FALSE);
+    if((pjob = svr_find_job(jobid, FALSE)) == NULL)
+      return;
   
     net_move(pjob, 0);
     

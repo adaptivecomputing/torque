@@ -1,0 +1,2287 @@
+dnl
+dnl This is an autoconf script.
+dnl To rebuild the `configure' script from this, use the bootstrap
+dnl script in the directory containing this script.
+dnl You must have autoconf version 2.53 or later.
+dnl
+
+dnl
+dnl Configuration and build system for PBS written
+dnl  by Lonhyn T. Jasinskyj (lonhyn@nas.nasa.gov)
+dnl 
+dnl (credit for the inspiration for some of this is due to the work of
+dnl  Martin Buchholz who autoconf'ed XEmacs)
+dnl
+dnl Partly rewritten and ported to Autoconf-2.53 and Automake
+dnl  by Karsten Petersen (kapet@hrz.tu-chemnitz.de)
+dnl
+dnl Expanded to support 'make distcheck', shared libs,
+dnl  bi-arches, pbs-config script, and updated to TORQUE 2.x
+dnl  by Garrick Staples (garrick@usc.edu)
+dnl
+dnl Added --enable-libcpuset to use the cpuset API from libcpuset when --enable-cpuset
+dnl Added --enable-memacct to enable pbs_mom to get rss values that are more reliable
+dnl Added requirement for libhwloc when --enable-cpuset or --enable-numa-support
+dnl   Bernd Kallies (kallies@zib.de)
+dnl
+dnl Expanded to allow unit testing via Check
+dnl Updated to use m4
+dnl added library functionality to testing
+dnl by John Rosenquist (jrosenquist@adaptivecomputing.com)
+
+AC_PREREQ(2.53)
+AC_INIT([torque], [4.2.0], [torqueusers@supercluster.org])
+AC_REVISION($Revision$)
+AC_CONFIG_SRCDIR([src/cmds/qrun.c])
+AC_CONFIG_AUX_DIR([buildutils])
+AC_CANONICAL_HOST
+AC_CONFIG_MACRO_DIR([buildutils])
+
+LT_INIT
+
+AC_CHECK_PROGS(MAKE,$MAKE make gmake,error)
+if test "x$MAKE" = "xerror" ;then
+  AC_MSG_ERROR([cannot find a make command])
+fi
+
+m4_ifdef([HAVE_CHECK],
+  [AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.9.6 color-tests])],
+  [AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.9.6])])
+
+AM_MAINTAINER_MODE
+
+if test "$program_prefix" = "NONE";then
+  program_prefix=""
+fi
+if test "$program_suffix" = "NONE";then
+  program_suffix=""
+fi
+AC_SUBST(program_prefix)
+AC_SUBST(program_suffix)
+
+
+m4_pattern_allow([RPM_AC_OPTS])
+RPM_AC_OPTS=""
+
+dnl  Instead of putting a long list of defines on the command line
+dnl  for each compile, use a file called "pbs_config.h" that will
+dnl  be created in the include directory.
+AM_CONFIG_HEADER([src/include/pbs_config.h])
+
+dnl
+dnl Find our svn revision number for program outputs
+dnl
+AC_PATH_PROG(svnversioncommand, svnversion)
+if test "X$svnversioncommand" != "X" && test `$svnversioncommand -n '.'` != "exported"; then
+  AC_DEFINE_UNQUOTED(SVN_VERSION, ["`svnversion -n`"], [repository svn version])
+else
+  AC_DEFINE_UNQUOTED(SVN_VERSION, ["unknown"], [repository svn version])
+fi
+
+
+
+dnl
+dnl  ######################################################################
+dnl  figure out what PBS "machine type" we are on
+dnl
+AC_CACHE_CHECK([PBS machine type], pbs_cv_type_mach,
+	       [pbs_cv_type_mach=`$ac_aux_dir/pbs_mach_type`])
+PBS_MACH=$pbs_cv_type_mach
+if test "x$PBS_MACH" = "xunknown"; then
+	AC_MSG_WARN([MOM Machine type "$host_os" is not supported.])
+        AC_DEFINE(UNSUPPORTED_MACH,1,[Define if building on unsupported OS])
+fi
+AC_SUBST(PBS_MACH)
+AC_DEFINE_UNQUOTED(PBS_MACH, "${PBS_MACH}",
+		   [the PBS style machine type name])
+
+#  this defines the name of a .c file which is then included in
+#  another resc_def_all.c
+AC_DEFINE_UNQUOTED(MACH_RESC_DEFS, "resc_def_${PBS_MACH}.c",
+		   [the machine specific resc_def_* file name])
+
+dnl
+dnl ##########################################################################
+dnl Do not install load library path in /etc/ld.so.conf.d
+
+AC_ARG_WITH(loadlibfile,
+   [AS_HELP_STRING([--with-loadlibfile], [ (Enable automatic install of libtorqueue.conf entry to ld.so.conf.d (default=no)])], [have_loadlibfile=yes], [have_loadlibfile=no])
+AC_SUBST(have_loadlibfile)
+
+dnl
+dnl  ######################################################################
+dnl  add unit testing if check is installed
+AC_ARG_WITH(check,
+   [AS_HELP_STRING([--with-check], [Enable unit testing (check package default=no)])], [have_check=yes], [have_check=no])
+ 
+AS_IF([test x"$have_check" = "xyes"], [
+  PKG_CHECK_MODULES([CHECK], [check >= 0.9.4], [check_installed="yes"], [check_installed="no"])
+  AS_IF([test x"$check_installed" = "xno"], [
+    AC_MSG_ERROR([Check not found; cannot run unit tests!!])
+  ])
+])
+AM_CONDITIONAL(HAVE_CHECK, test x"$have_check" = "xyes")
+
+m4_ifdef([AM_SILENT_RULES],[
+  if test "x$have_check" = "xyes"; then
+    AM_SILENT_RULES(no)
+    AC_CONFIG_FILES(src/cmds/test/Makefile
+    src/cmds/test/MXML/Makefile
+    src/cmds/test/common_cmds/Makefile
+    src/cmds/test/pbs_track/Makefile
+    src/cmds/test/pbsdsh/Makefile
+    src/cmds/test/pbsnodes/Makefile
+    src/cmds/test/pbspd/Makefile
+    src/cmds/test/pbspoe/Makefile
+    src/cmds/test/qalter/Makefile
+    src/cmds/test/qchkpt/Makefile
+    src/cmds/test/qdel/Makefile
+    src/cmds/test/qdisable/Makefile
+    src/cmds/test/qenable/Makefile
+    src/cmds/test/qgpumode/Makefile
+    src/cmds/test/qgpureset/Makefile
+    src/cmds/test/qhold/Makefile
+    src/cmds/test/qmgr/Makefile
+    src/cmds/test/qmove/Makefile
+    src/cmds/test/qmsg/Makefile
+    src/cmds/test/qorder/Makefile
+    src/cmds/test/qrerun/Makefile
+    src/cmds/test/qrls/Makefile
+    src/cmds/test/qrun/Makefile
+    src/cmds/test/qselect/Makefile
+    src/cmds/test/qsig/Makefile
+    src/cmds/test/qstart/Makefile
+    src/cmds/test/qstat/Makefile
+    src/cmds/test/qstop/Makefile
+    src/cmds/test/qsub_functions/Makefile
+    src/cmds/test/qterm/Makefile
+    src/daemon_client/test/Makefile
+    src/daemon_client/test/trq_auth_daemon/Makefile
+    src/lib/Libattr/test/Makefile
+    src/lib/Libattr/test/attr_atomic/Makefile
+    src/lib/Libattr/test/attr_fn_acl/Makefile
+    src/lib/Libattr/test/attr_fn_arst/Makefile
+    src/lib/Libattr/test/attr_fn_b/Makefile
+    src/lib/Libattr/test/attr_fn_c/Makefile
+    src/lib/Libattr/test/attr_fn_hold/Makefile
+    src/lib/Libattr/test/attr_fn_intr/Makefile
+    src/lib/Libattr/test/attr_fn_l/Makefile
+    src/lib/Libattr/test/attr_fn_ll/Makefile
+    src/lib/Libattr/test/attr_fn_resc/Makefile
+    src/lib/Libattr/test/attr_fn_size/Makefile
+    src/lib/Libattr/test/attr_fn_str/Makefile
+    src/lib/Libattr/test/attr_fn_time/Makefile
+    src/lib/Libattr/test/attr_fn_tokens/Makefile
+    src/lib/Libattr/test/attr_fn_tv/Makefile
+    src/lib/Libattr/test/attr_fn_unkn/Makefile
+    src/lib/Libattr/test/attr_func/Makefile
+    src/lib/Libattr/test/attr_node_func/Makefile
+    src/lib/Libcmds/test/Makefile
+    src/lib/Libcmds/test/add_verify_resources/Makefile
+    src/lib/Libcmds/test/ck_job_name/Makefile
+    src/lib/Libcmds/test/cnt2server/Makefile
+    src/lib/Libcmds/test/cvtdate/Makefile
+    src/lib/Libcmds/test/get_server/Makefile
+    src/lib/Libcmds/test/locate_job/Makefile
+    src/lib/Libcmds/test/parse_at/Makefile
+    src/lib/Libcmds/test/parse_depend/Makefile
+    src/lib/Libcmds/test/parse_destid/Makefile
+    src/lib/Libcmds/test/parse_equal/Makefile
+    src/lib/Libcmds/test/parse_jobid/Makefile
+    src/lib/Libcmds/test/parse_stage/Makefile
+    src/lib/Libcmds/test/prepare_path/Makefile
+    src/lib/Libcmds/test/prt_job_err/Makefile
+    src/lib/Libcmds/test/set_attr/Makefile
+    src/lib/Libcmds/test/set_resource/Makefile
+    src/lib/Libcsv/test/Makefile
+    src/lib/Libcsv/test/csv/Makefile
+    src/lib/Libdis/test/Makefile
+    src/lib/Libdis/test/discui_/Makefile
+    src/lib/Libdis/test/discul_/Makefile
+    src/lib/Libdis/test/disi10d_/Makefile
+    src/lib/Libdis/test/disi10l_/Makefile
+    src/lib/Libdis/test/disiui_/Makefile
+    src/lib/Libdis/test/disp10d_/Makefile
+    src/lib/Libdis/test/disp10l_/Makefile
+    src/lib/Libdis/test/disrcs/Makefile
+    src/lib/Libdis/test/disrd/Makefile
+    src/lib/Libdis/test/disrf/Makefile
+    src/lib/Libdis/test/disrfcs/Makefile
+    src/lib/Libdis/test/disrfst/Makefile
+    src/lib/Libdis/test/disrl/Makefile
+    src/lib/Libdis/test/disrl_/Makefile
+    src/lib/Libdis/test/disrsc/Makefile
+    src/lib/Libdis/test/disrsi/Makefile
+    src/lib/Libdis/test/disrsi_/Makefile
+    src/lib/Libdis/test/disrsl/Makefile
+    src/lib/Libdis/test/disrsl_/Makefile
+    src/lib/Libdis/test/disrss/Makefile
+    src/lib/Libdis/test/disrst/Makefile
+    src/lib/Libdis/test/disruc/Makefile
+    src/lib/Libdis/test/disrui/Makefile
+    src/lib/Libdis/test/disrul/Makefile
+    src/lib/Libdis/test/disrus/Makefile
+    src/lib/Libdis/test/diswcs/Makefile
+    src/lib/Libdis/test/diswf/Makefile
+    src/lib/Libdis/test/diswl_/Makefile
+    src/lib/Libdis/test/diswsi/Makefile
+    src/lib/Libdis/test/diswsl/Makefile
+    src/lib/Libdis/test/diswui/Makefile
+    src/lib/Libdis/test/diswui_/Makefile
+    src/lib/Libdis/test/diswul/Makefile
+    src/lib/Liblog/test/Makefile
+    src/lib/Liblog/test/chk_file_sec/Makefile
+    src/lib/Liblog/test/log_event/Makefile
+    src/lib/Liblog/test/pbs_log/Makefile
+    src/lib/Liblog/test/pbs_messages/Makefile
+    src/lib/Liblog/test/setup_env/Makefile
+    src/lib/Libifl/test/Makefile
+    src/lib/Libifl/test/PBSD_gpuctrl2/Makefile
+    src/lib/Libifl/test/PBSD_manage2/Makefile
+    src/lib/Libifl/test/PBSD_manager_caps/Makefile
+    src/lib/Libifl/test/PBSD_msg2/Makefile
+    src/lib/Libifl/test/PBSD_rdrpy/Makefile
+    src/lib/Libifl/test/PBSD_sig2/Makefile
+    src/lib/Libifl/test/PBSD_status/Makefile
+    src/lib/Libifl/test/PBSD_status2/Makefile
+    src/lib/Libifl/test/PBSD_submit_caps/Makefile
+    src/lib/Libifl/test/PBS_attr/Makefile
+    src/lib/Libifl/test/dec_Authen/Makefile
+    src/lib/Libifl/test/dec_CpyFil/Makefile
+    src/lib/Libifl/test/dec_Gpu/Makefile
+    src/lib/Libifl/test/dec_JobCred/Makefile
+    src/lib/Libifl/test/dec_JobFile/Makefile
+    src/lib/Libifl/test/dec_JobId/Makefile
+    src/lib/Libifl/test/dec_JobObit/Makefile
+    src/lib/Libifl/test/dec_Manage/Makefile
+    src/lib/Libifl/test/dec_MoveJob/Makefile
+    src/lib/Libifl/test/dec_MsgJob/Makefile
+    src/lib/Libifl/test/dec_QueueJob/Makefile
+    src/lib/Libifl/test/dec_Reg/Makefile
+    src/lib/Libifl/test/dec_ReqExt/Makefile
+    src/lib/Libifl/test/dec_ReqHdr/Makefile
+    src/lib/Libifl/test/dec_Resc/Makefile
+    src/lib/Libifl/test/dec_ReturnFile/Makefile
+    src/lib/Libifl/test/dec_RunJob/Makefile
+    src/lib/Libifl/test/dec_Shut/Makefile
+    src/lib/Libifl/test/dec_Sig/Makefile
+    src/lib/Libifl/test/dec_Status/Makefile
+    src/lib/Libifl/test/dec_Track/Makefile
+    src/lib/Libifl/test/dec_attrl/Makefile
+    src/lib/Libifl/test/dec_attropl/Makefile
+    src/lib/Libifl/test/dec_rpyc/Makefile
+    src/lib/Libifl/test/dec_rpys/Makefile
+    src/lib/Libifl/test/dec_svrattrl/Makefile
+    src/lib/Libifl/test/enc_CpyFil/Makefile
+    src/lib/Libifl/test/enc_Gpu/Makefile
+    src/lib/Libifl/test/enc_JobCred/Makefile
+    src/lib/Libifl/test/enc_JobFile/Makefile
+    src/lib/Libifl/test/enc_JobId/Makefile
+    src/lib/Libifl/test/enc_JobObit/Makefile
+    src/lib/Libifl/test/enc_Manage/Makefile
+    src/lib/Libifl/test/enc_MoveJob/Makefile
+    src/lib/Libifl/test/enc_MsgJob/Makefile
+    src/lib/Libifl/test/enc_QueueJob/Makefile
+    src/lib/Libifl/test/enc_QueueJob_hash/Makefile
+    src/lib/Libifl/test/enc_Reg/Makefile
+    src/lib/Libifl/test/enc_ReqExt/Makefile
+    src/lib/Libifl/test/enc_ReqHdr/Makefile
+    src/lib/Libifl/test/enc_ReturnFile/Makefile
+    src/lib/Libifl/test/enc_RunJob/Makefile
+    src/lib/Libifl/test/enc_Shut/Makefile
+    src/lib/Libifl/test/enc_Sig/Makefile
+    src/lib/Libifl/test/enc_Status/Makefile
+    src/lib/Libifl/test/enc_Track/Makefile
+    src/lib/Libifl/test/enc_attrl/Makefile
+    src/lib/Libifl/test/enc_attropl/Makefile
+    src/lib/Libifl/test/enc_attropl_hash/Makefile
+    src/lib/Libifl/test/enc_reply/Makefile
+    src/lib/Libifl/test/enc_svrattrl/Makefile
+    src/lib/Libifl/test/get_svrport/Makefile
+    src/lib/Libifl/test/list_link/Makefile
+    src/lib/Libifl/test/nonblock/Makefile
+    src/lib/Libifl/test/pbsD_alterjo/Makefile
+    src/lib/Libifl/test/pbsD_asyrun/Makefile
+    src/lib/Libifl/test/pbsD_chkptjob/Makefile
+    src/lib/Libifl/test/pbsD_connect/Makefile
+    src/lib/Libifl/test/pbsD_deljob/Makefile
+    src/lib/Libifl/test/pbsD_gpuctrl/Makefile
+    src/lib/Libifl/test/pbsD_holdjob/Makefile
+    src/lib/Libifl/test/pbsD_locjob/Makefile
+    src/lib/Libifl/test/pbsD_manager/Makefile
+    src/lib/Libifl/test/pbsD_movejob/Makefile
+    src/lib/Libifl/test/pbsD_msgjob/Makefile
+    src/lib/Libifl/test/pbsD_orderjo/Makefile
+    src/lib/Libifl/test/pbsD_rerunjo/Makefile
+    src/lib/Libifl/test/pbsD_resc/Makefile
+    src/lib/Libifl/test/pbsD_rlsjob/Makefile
+    src/lib/Libifl/test/pbsD_runjob/Makefile
+    src/lib/Libifl/test/pbsD_selectj/Makefile
+    src/lib/Libifl/test/pbsD_sigjob/Makefile
+    src/lib/Libifl/test/pbsD_stagein/Makefile
+    src/lib/Libifl/test/pbsD_statjob/Makefile
+    src/lib/Libifl/test/pbsD_statnode/Makefile
+    src/lib/Libifl/test/pbsD_statque/Makefile
+    src/lib/Libifl/test/pbsD_statsrv/Makefile
+    src/lib/Libifl/test/pbsD_submit/Makefile
+    src/lib/Libifl/test/pbsD_submit_hash/Makefile
+    src/lib/Libifl/test/pbsD_termin/Makefile
+    src/lib/Libifl/test/pbs_geterrmg/Makefile
+    src/lib/Libifl/test/pbs_statfree/Makefile
+    src/lib/Libifl/test/rpp/Makefile
+    src/lib/Libifl/test/tcp_dis/Makefile
+    src/lib/Libifl/test/tm/Makefile
+    src/lib/Libifl/test/torquecfg/Makefile
+    src/lib/Libifl/test/trq_auth/Makefile
+    src/lib/Libnet/test/Makefile
+    src/lib/Libnet/test/conn_table/Makefile
+    src/lib/Libnet/test/get_hostaddr/Makefile
+    src/lib/Libnet/test/get_hostname/Makefile
+    src/lib/Libnet/test/md5/Makefile
+    src/lib/Libnet/test/net_client/Makefile
+    src/lib/Libnet/test/net_common/Makefile
+    src/lib/Libnet/test/net_server/Makefile
+    src/lib/Libnet/test/net_set_clse/Makefile
+    src/lib/Libnet/test/port_forwarding/Makefile
+    src/lib/Libnet/test/rm/Makefile
+    src/lib/Libnet/test/server_core/Makefile
+    src/lib/Libsite/test/Makefile
+    src/lib/Libsite/test/site_allow_u/Makefile
+    src/lib/Libsite/test/site_alt_rte/Makefile
+    src/lib/Libsite/test/site_check_u/Makefile
+    src/lib/Libsite/test/site_map_usr/Makefile
+    src/lib/Libsite/test/site_mom_chu/Makefile
+    src/lib/Libsite/test/site_mom_ckp/Makefile
+    src/lib/Libsite/test/site_mom_jst/Makefile
+    src/lib/Libutils/test/Makefile
+    src/lib/Libutils/test/u_MXML/Makefile
+    src/lib/Libutils/test/u_dynamic_string/Makefile
+    src/lib/Libutils/test/u_groups/Makefile
+    src/lib/Libutils/test/u_hash_map/Makefile
+    src/lib/Libutils/test/u_hash_map_structs/Makefile
+    src/lib/Libutils/test/u_hash_table/Makefile
+    src/lib/Libutils/test/u_lock_ctl/Makefile
+    src/lib/Libutils/test/u_memmgr/Makefile
+    src/lib/Libutils/test/u_mom_hierarchy/Makefile
+    src/lib/Libutils/test/u_mu/Makefile
+    src/lib/Libutils/test/u_resizable_array/Makefile
+    src/lib/Libutils/test/u_threadpool/Makefile
+    src/lib/Libutils/test/u_tree/Makefile
+    src/lib/Libutils/test/u_users/Makefile
+    src/lib/Libutils/test/u_xml/Makefile
+    src/lib/test/Makefile
+    src/momctl/test/Makefile
+    src/momctl/test/momctl/Makefile
+    src/resmom/test/Makefile
+    src/resmom/test/alps_reservations/Makefile
+    src/resmom/test/catch_child/Makefile
+    src/resmom/test/checkpoint/Makefile
+    src/resmom/test/cray_cpa/Makefile
+    src/resmom/test/generate_alps_status/Makefile
+    src/resmom/test/mom_job_func/Makefile
+    src/resmom/test/mom_comm/Makefile
+    src/resmom/test/mom_inter/Makefile
+    src/resmom/test/mom_main/Makefile
+    src/resmom/test/mom_server/Makefile
+    src/resmom/test/mom_process_request/Makefile
+    src/resmom/test/mom_req_quejob/Makefile
+    src/resmom/test/pbs_demux/Makefile
+    src/resmom/test/prolog/Makefile
+    src/resmom/test/release_reservation/Makefile
+    src/resmom/test/requests/Makefile
+    src/resmom/test/start_exec/Makefile
+    src/resmom/test/tmsock_recov/Makefile
+    src/resmom/linux/test/Makefile
+    src/resmom/linux/test/cpuset/Makefile
+    src/resmom/linux/test/mom_mach/Makefile
+    src/resmom/linux/test/mom_start/Makefile
+    src/resmom/linux/test/pe_input/Makefile
+    src/server/test/Makefile
+    src/server/test/accounting/Makefile
+    src/server/test/array_func/Makefile
+    src/server/test/array_upgrade/Makefile
+    src/server/test/attr_recov/Makefile
+    src/server/test/batch_request/Makefile
+    src/server/test/dis_read/Makefile
+    src/server/test/display_alps_status/Makefile
+    src/server/test/exiting_jobs/Makefile
+    src/server/test/geteusernam/Makefile
+    src/server/test/issue_request/Makefile
+    src/server/test/job_container/Makefile
+    src/server/test/job_func/Makefile
+    src/server/test/job_qs_upgrade/Makefile
+    src/server/test/job_recov/Makefile
+    src/server/test/job_recycler/Makefile
+    src/server/test/job_route/Makefile
+    src/server/test/login_nodes/Makefile
+    src/server/test/node_func/Makefile
+    src/server/test/node_manager/Makefile
+    src/server/test/pbsd_init/Makefile
+    src/server/test/pbsd_main/Makefile
+    src/server/test/process_alps_status/Makefile
+    src/server/test/process_mom_update/Makefile
+    src/server/test/process_request/Makefile
+    src/server/test/queue_func/Makefile
+    src/server/test/queue_recov/Makefile
+    src/server/test/receive_mom_communication/Makefile
+    src/server/test/reply_send/Makefile
+    src/server/test/req_delete/Makefile
+    src/server/test/req_deletearray/Makefile
+    src/server/test/req_getcred/Makefile
+    src/server/test/req_gpuctrl/Makefile
+    src/server/test/req_holdarray/Makefile
+    src/server/test/req_holdjob/Makefile
+    src/server/test/req_jobobit/Makefile
+    src/server/test/req_locate/Makefile
+    src/server/test/req_manager/Makefile
+    src/server/test/req_message/Makefile
+    src/server/test/req_modify/Makefile
+    src/server/test/req_movejob/Makefile
+    src/server/test/req_quejob/Makefile
+    src/server/test/req_register/Makefile
+    src/server/test/req_rerun/Makefile
+    src/server/test/req_rescq/Makefile
+    src/server/test/req_runjob/Makefile
+    src/server/test/req_select/Makefile
+    src/server/test/req_shutdown/Makefile
+    src/server/test/req_signal/Makefile
+    src/server/test/req_stat/Makefile
+    src/server/test/req_tokens/Makefile
+    src/server/test/req_track/Makefile
+    src/server/test/resc_def_all/Makefile
+    src/server/test/run_sched/Makefile
+    src/server/test/stat_job/Makefile
+    src/server/test/svr_chk_owner/Makefile
+    src/server/test/svr_connect/Makefile
+    src/server/test/svr_format_job/Makefile
+    src/server/test/svr_func/Makefile
+    src/server/test/svr_jobfunc/Makefile
+    src/server/test/svr_mail/Makefile
+    src/server/test/svr_movejob/Makefile
+    src/server/test/svr_recov/Makefile
+    src/server/test/svr_resccost/Makefile
+    src/server/test/svr_task/Makefile
+    src/server/test/track_alps_reservations/Makefile
+    src/server/test/user_info/Makefile
+    src/tools/test/Makefile
+    src/tools/test/chk_tree/Makefile
+    src/tools/test/hostn/Makefile
+    src/tools/test/pbsTclInit/Makefile
+    src/tools/test/pbsTkInit/Makefile
+    src/tools/test/printjob/Makefile
+    src/tools/test/printserverdb/Makefile
+    src/tools/test/printtracking/Makefile
+    src/tools/test/tracejob/Makefile)
+  else
+    AM_SILENT_RULES(no)
+  fi
+])
+
+
+dnl
+dnl  ######################################################################
+dnl  Autorun mode?
+dnl
+AC_MSG_CHECKING([whether to turn on the AUTORUN_JOBS flag])
+AC_ARG_ENABLE(autorun,
+    [  --enable-autorun        turn on the AUTORUN_JOBS flag],
+    enable_autorun=$enableval, enable_autorun=no)
+AC_MSG_RESULT($enable_autorun)
+if test "x$enable_autorun" = "xyes" ; then
+	AC_DEFINE(AUTORUN_JOBS, 1, [turns on the compilation of AUTORUN_JOBS code])
+fi
+
+
+
+dnl
+dnl  ######################################################################
+dnl  Resource max not default mode?
+dnl
+dnl  NOTE: due to confusion we are changing MAX to not be default by default
+dnl
+AC_MSG_CHECKING([whether to turn on the RESOURCEMAXDEFAULT flag])
+AC_ARG_ENABLE(maxdefault,
+    [  --enable-maxdefault  turn on the RESOURCEMAXDEFAULT flag],
+    enable_maxdefault=$enableval, enable_maxdefault=no)
+AC_MSG_RESULT($enable_maxdefault)
+if test "x$enable_maxdefault" = "xyes" ; then
+	AC_DEFINE(RESOURCEMAXDEFAULT, 1, [turns on the compilation of RESOURCEMAXDEFAULT code])
+fi
+
+
+dnl
+dnl  ######################################################################
+dnl  Quick commit mode?
+dnl
+AC_MSG_CHECKING([whether to turn on the QUICKCOMMIT flag])
+AC_ARG_ENABLE(quickcommit,
+    [  --enable-quickcommit    turn on the QUICKCOMMIT flag],
+    enable_quickcommit=$enableval, enable_quickcommit=no)
+AC_MSG_RESULT($enable_quickcommit)
+if test "x$enable_quickcommit" = "xyes" ; then
+	AC_DEFINE(QUICKCOMMIT, 1, [turns on the compilation of QUICKCOMMIT code])
+fi
+
+dnl
+dnl  ######################################################################
+dnl   Disable qsub keep(-k) override?
+dnl
+AC_ARG_ENABLE(qsub-keep-override, [
+  --disable-qsub-keep-override 
+                          do not allow the qsub -k flag to override -o -e.],
+[case "${enableval}" in
+  yes)  ;;
+  no)  QSUB_KEEP_NO_OVERRIDE=1;
+       AC_DEFINE(QSUB_KEEP_NO_OVERRIDE, 1, [turns on the QSUB_KEEP_NO_OVERRIDE flag]) ;;
+  *)   AC_MSG_ERROR(--enable-qsub-keep-override cannot take a value) ;;
+esac])dnl
+
+
+
+dnl
+dnl  ######################################################################
+dnl  Let the user choose, what parts of PBS he wants to compile and install
+dnl
+partdefault=yes
+if test "x$PBS_MACH" = "xunknown"; then
+    partdefault=no
+fi
+AC_MSG_CHECKING([whether to include server and scheduler])
+AC_ARG_ENABLE(server,
+    [  --disable-server        do not include server and scheduler],
+    build_server=$enableval, build_server=$partdefault)
+AC_MSG_RESULT($build_server)
+AM_CONDITIONAL(INCLUDE_SERVER, [test "x$build_server" = "xyes"])
+AC_SUBST(build_server)
+
+
+AC_MSG_CHECKING([whether to include the mom daemon])
+AC_ARG_ENABLE(mom,
+    [  --disable-mom           do not include the mom daemon],
+    build_mom=$enableval, build_mom=$partdefault)
+AC_MSG_RESULT($build_mom)
+AM_CONDITIONAL(INCLUDE_MOM, [test "x$build_mom" = "xyes"])
+AC_SUBST(build_mom)
+
+
+AC_MSG_CHECKING([whether to include the clients])
+AC_ARG_ENABLE(clients,
+    [  --disable-clients       do not include the clients],
+    build_clients=$enableval, build_clients=yes)
+AC_MSG_RESULT($build_clients)
+AM_CONDITIONAL(INCLUDE_CLIENTS, [test "x$build_clients" = "xyes"])
+AC_SUBST(build_clients)
+
+AC_MSG_CHECKING([whether to build DRMAA lib])
+AC_ARG_ENABLE(drmaa,
+    [  --enable-drmaa          build the DRMAA 1.0 library (default is off)],
+    build_drmaa=$enableval, build_drmaa=no)
+AC_MSG_RESULT($build_drmaa)
+AM_CONDITIONAL(INCLUDE_DRMAA, [test "x$build_drmaa" = "xyes"])
+AC_SUBST(build_drmaa)
+
+
+dnl
+dnl  ######################################################################
+dnl  Check for the C compiler (some tests rely on it)
+dnl  this needs to be before AC_ARG_ENABLE(debug)
+dnl
+
+dnl  did the user provide CC and CFLAGS variables?  store for later
+dnl  user_choosed_cc_set=${CC+set}
+dnl  user_choosed_cflags_set=${CFLAGS+set}
+dnl  SPECIFIED_CFLAGS=$CFLAGS
+dnl  look for the C-Compiler
+AC_PROG_CC
+AC_PROG_GCC_TRADITIONAL
+
+dnl
+dnl  ######################################################################
+dnl  Check for programs
+dnl
+
+AC_CHECK_PROGS(AR,ar,exit)
+
+dnl wrapped libtool macro to remove annoying warning message
+AC_PROG_LIBTOOL
+TAC_PROG_LIBTOOL_PATCH
+
+AC_PROG_LN_S
+
+
+dnl  needed for scheduler.basl
+AM_PROG_LEX
+AC_PROG_YACC
+
+
+dnl  Check for troff and its family. Prefer groff because we know
+dnl  its fonts whereas various troffs name their fonts differently.
+dnl  (e.g. CO vs C)
+AC_CHECK_PROGS(TBL, gtbl tbl, exit)
+AC_CHECK_PROGS(PIC, gpic pic, exit)
+AC_CHECK_PROGS(ROFF, groff troff, exit)
+
+
+dnl
+dnl  ######################################################################
+dnl  Check how to compile
+dnl
+
+dnl
+dnl add _GNU_SOURCE
+dnl 
+AC_DEFINE([_GNU_SOURCE], 1, [Define _GNU_SOURCE for portability])
+
+dnl
+dnl  ######################################################################
+dnl  compile in debug code?
+dnl
+AC_MSG_CHECKING([whether to turn on the compilation of DEBUG code])
+AC_ARG_ENABLE(debug,
+    [  --enable-debug          turn on the compilation of DEBUG code],
+    enable_debug=$enableval, enable_debug=no)
+AC_MSG_RESULT($enable_debug)
+if test "x$enable_debug" = "xyes" ; then
+	AC_DEFINE(DEBUG, 1, [turns on the compilation of DEBUG code])
+fi
+
+
+dnl
+dnl  ######################################################################
+dnl  compile with debugging symbols
+dnl  this needs to be after AC_PROG_CC and before AX_CFLAGS_GCC_OPTION
+dnl  and TAC_SYS_LARGEFILE
+dnl
+AC_MSG_CHECKING([whether to compile with debugging symbols])
+AC_ARG_WITH([debug],
+  AC_HELP_STRING([--with-debug], [compile with debugging symbols]),
+  DEBUG_SYMBOLS=$withval, DEBUG_SYMBOLS="no")
+AC_MSG_RESULT([DEBUG_SYMBOLS=$DEBUG_SYMBOLS])
+dnl  remove -O* and add -g
+if test "$DEBUG_SYMBOLS" = 'yes'; then
+  AC_MSG_RESULT([before tweak CFLAGS=$CFLAGS])
+  CFLAGS=`echo $CFLAGS | sed 's/ \?-O[[^ ]]*//g'`
+  AC_MSG_RESULT([mid tweak CFLAGS=$CFLAGS])
+  case $CFLAGS in
+    *-g*)
+      ;;
+    *)
+      if test "$CFLAGS" = ''; then
+        CFLAGS="-g"
+      else
+        CFLAGS="-g $CFLAGS"
+      fi
+      ;;
+  esac
+  AC_MSG_RESULT([after tweak CFLAGS=$CFLAGS])
+fi
+
+dnl if using gcc, we can be very strict
+AC_ARG_ENABLE(gcc_warnings, [
+  --enable-gcc-warnings  Enable gcc strictness and warnings.  If using
+                          gcc, default is to not error on any warnings])
+if test "x$GCC" = "xyes" ;then
+  AC_MSG_CHECKING([whether to use strict gcc warnings])
+  if test "${enable_gcc_warnings}" == "yes" ; then
+    if test "x$build_drmaa" = "xyes" ;then
+      AC_MSG_RESULT([no... because DRMAA is being built])
+    else
+      AC_MSG_RESULT([yes])
+      AX_CFLAGS_GCC_OPTION([-W -Wall -Wno-unused-parameter -Wno-long-long -pedantic -Werror])
+      gccwarnings=yes
+    fi
+  else
+    AC_MSG_RESULT([no])
+  fi
+fi
+
+dnl Torque's own largefile support
+TAC_SYS_LARGEFILE
+
+
+dnl We need pthreads
+AC_CHECK_LIB(pthread, pthread_create, 
+    PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lrt",
+    [AC_MSG_ERROR([TORQUE needs pthreads in order to build]) ])
+LIBS="$LIBS $PTHREAD_LIBS"
+
+
+dnl we need -lssl and -lcrypto, lets make sure they exist
+AC_CHECK_LIB(ssl, SSL_accept,
+  [],
+  [AC_MSG_ERROR([TORQUE needs lib openssl-devel in order to build]) ])
+AC_CHECK_LIB(crypto, BN_init,
+  [],
+  [AC_MSG_ERROR([TORQUE needs lib crypto (often openssl-devel) in order to build]) ])
+
+
+
+dnl
+dnl we need libxml2
+dnl 
+xmlLib=`xml2-config --libs | sed 's/-L@<:@^@<:@:space:@:>@@:>@* //g;s/-l//'`
+
+dnl skip the first two chars because its -l<libname>
+AC_CHECK_LIB(${xmlLib}, xmlGetProp,
+  [],
+  [AC_MSG_ERROR([TORQUE needs libxml2-devel in order to build]) ])
+
+
+
+
+dnl ###########################################
+dnl Make only top dir mode?
+dnl
+
+AC_ARG_ENABLE(top_tempdir_only, [
+  --enable-top-tempdir-only  Creates only the top directory when creating the temporary dir for the job])
+if test "x$GCC" = "xyes" ; then
+  AC_MSG_CHECKING([whether to create only the top temporary job directory])
+  if test "${enable_top_tempdir_only}" == "yes" ; then
+    AC_MSG_RESULT([yes])
+    CFLAGS="$CFLAGS -DTOP_TEMPDIR_ONLY"
+  else
+    AC_MSG_RESULT([no])
+  fi
+  fi
+
+
+dnl
+
+dnl If hpux and gcc, force the XOPEN interface.
+AC_MSG_CHECKING([whether to force XOPEN networking stack])
+AC_ARG_ENABLE(xopen_networking, [
+  --disable-xopen-networking      
+                          With HPUX and GCC, don't force usage of XOPEN and libxnet])
+if test "${enable_xopen_networking}" != "no" ; then
+case $GCC,$PBS_MACH in
+  yes,hpux*) AC_MSG_RESULT([yes])
+             AC_MSG_WARN([On HPUX and gcc, forcing XOPEN network stack.])
+             AC_MSG_WARN([Use --disable-xopen-networking to prevent it])
+             AC_CHECK_LIB([xnet], [getpeername], 
+              [LIBS="-lxnet $LIBS"
+               CFLAGS="$CFLAGS -D_XOPEN_SOURCE -D_XOPEN_SOURCE_EXTENDED=1"],
+              [AC_MSG_WARN([This build will likely fail in mysterious ways at run-time])
+               sleep 10])
+  ;;
+  *) AC_MSG_RESULT([no... phew!])
+esac
+else
+  AC_MSG_RESULT([disabled])
+fi
+
+
+dnl
+dnl  ######################################################################
+dnl  Check for headers
+dnl
+
+AC_HEADER_DIRENT
+AC_HEADER_STDC
+AC_HEADER_SYS_WAIT
+
+AC_CHECK_HEADERS([arpa/inet.h fcntl.h float.h limits.h malloc.h netdb.h \
+		  netinet/in.h stddef.h sys/file.h sys/param.h sys/tty.h \
+		  sys/socket.h sys/time.h sys/ioctl.h sys/mount.h \
+                  sys/vfs.h sys/statfs.h sys/statvfs.h sys/ucred.h sys/un.h sys/uio.h \
+                  syslog.h readline/readline.h \
+                  termios.h err.h sys/poll.h pam/pam_modules.h security/pam_appl.h \
+                  mach/shared_region.h])
+
+# On Solaris, pam_modules.h requires pam_appl.h
+AC_CHECK_HEADERS([security/pam_modules.h], [], [],
+[#if HAVE_SECURITY_PAM_APPL_H
+# include <security/pam_appl.h>
+# endif
+])
+
+
+
+
+
+
+
+dnl
+dnl  ######################################################################
+dnl  System specific settings
+dnl
+
+
+AC_ARG_ENABLE(nodemask, [  --enable-nodemask       enable nodemask-based scheduling on the Origin 2000])
+if test "${enable_nodemask}" = "yes" ; then
+  case "${PBS_MACH}" in
+    irix6*) AC_DEFINE(NODEMASK, 1, [use nodemask-based scheduling on O2k]) ;;
+    *) AC_MSG_ERROR([Cannot --enable-nodemask on a machine not running IRIX6]);;
+  esac
+fi
+
+
+AC_ARG_ENABLE(pemask,
+    [  --enable-pemask         enable pemask-based scheduling on the Cray T3e])
+if test "${enable_pemask}" = "yes" ; then
+  case "${PBS_MACH}" in
+    unicosmk*) AC_DEFINE(PE_MASK, 1, [use pemask-based scheduling on Cray T3e]) ;;
+    *) AC_MSG_ERROR([Cannot --enable-pemask on a machine not running UNICOS/mk]);;
+  esac
+fi
+
+
+SRFS=0
+AC_ARG_ENABLE(srfs,
+    [  --enable-srfs           enable support for SRFS on Cray])
+if test "${enable_srfs}" = "yes" ; then
+  case "${PBS_MACH}" in
+    unicos*) SRFS=1 ;;
+    *) AC_MSG_ERROR([Cannot --enable-srfs on a machine not running UNICOS]);;
+  esac
+fi
+AC_DEFINE_UNQUOTED(SRFS, ${SRFS}, [include support for SRFS on Cray])
+
+
+MOMLIBS=""
+
+PBSPOE=""
+PBSPOEO=""
+AC_ARG_ENABLE(sp2,
+    [  --enable-sp2            build PBS for an IBM SP2])
+IBM_SP2=0
+if test "x$enable_sp2" = "xyes" ; then
+    MOMLIBS="-ljm_client -lSDR"
+    case "$PBS_MACH" in
+      aix*) AC_CHECK_LIB(switchtbl, swtbl_load_table,
+                         [ IBM_SP2=2
+                           LIBS="-lswitchtbl $LIBS"
+                           PBSPOE="pbspd pbspoe"
+                           PBSPOEO="pbspoe.o pbspd.o" ],
+                         [ IBM_SP2=1 ])
+            ;;
+      *) AC_MSG_ERROR([Cannot --enable-sp2 on a machine not running AIX]) ;;
+    esac
+fi
+AC_DEFINE_UNQUOTED(IBM_SP2, ${IBM_SP2}, [defined if this is an SP2])
+AC_SUBST(PBSPOE)    
+AC_SUBST(PBSPOEO)
+
+AC_ARG_ENABLE(maxint-jobids, [  --enable-maxint-jobids       enables job ids to go up to maxint])
+maxint_ids=0
+AC_MSG_CHECKING([whether to enable maxint job ids])
+if test "x$enable_maxint_jobids" = "xyes" ; then
+  AC_MSG_RESULT([yes])
+  maxint_ids=1
+  CFLAGS="$CFLAGS -DUSE_MAXINT_JOBIDS"
+else
+  AC_MSG_RESULT([no])
+fi
+
+AC_ARG_ENABLE(cpuset,[  --enable-cpuset         enable Linux 2.6 kernel cpusets])
+build_l26_cpuset=no
+cpuset=0
+AC_MSG_CHECKING([whether to enable cpusets])
+if test "x$enable_cpuset" = "xyes" ; then
+  AC_MSG_RESULT([yes])
+  build_l26_cpuset=yes
+  cpuset=1
+  AC_DEFINE(PENABLE_LINUX26_CPUSETS, 1, [Define to enable Linux 2.6 cpusets])
+  dnl define geometry requests to allow these to be requested here
+  dnl  CFLAGS="$CFLAGS -DGEOMETRY_REQUESTS"  
+else
+  AC_MSG_RESULT([no])
+fi
+AM_CONDITIONAL([BUILD_L26_CPUSETS], test "$build_l26_cpuset" = yes)
+
+
+dnl turn on the new feature to request a specific geometry for a process
+dnl this uses cpusets to bind the job to that geometry
+dnl --enable-geometry-requests
+AC_ARG_ENABLE(geometry_requests, [
+  --enable-geometry-requests  Enables the user to request a specific geometry using a cpuset implementation])
+if test "x$GCC" = "xyes" ;then
+  AC_MSG_CHECKING([whether to allow geometry requests])
+  if test "${enable_geometry_requests}" = "yes" ; then
+    AC_MSG_RESULT([yes])
+    build_l26_cpuset=yes
+    AC_DEFINE(PENABLE_LINUX26_CPUSETS, 1, [Define to enable Linux 2.6 cpusets])
+dnl    AC_DEFINE(GEOMETRY_REQUESTS, 1, [Define to allow job specific geometry requests])
+    if test "${cpuset}" = "1" ; then
+      CFLAGS="$CFLAGS -DGEOMETRY_REQUESTS -DALWAYS_USE_CPUSETS"
+    else
+      CFLAGS="$CFLAGS -DGEOMETRY_REQUESTS"
+    fi
+  else
+    AC_MSG_RESULT([no])
+  fi
+fi
+
+dnl compile for NUMA systems - allows the site to configure:
+dnl 1. cpusets and multi-moms
+dnl 2. memory fences to only access close memory
+dnl
+dnl --enable-numa-support
+AC_ARG_ENABLE(numa_support, [
+  --enable-numa-support   Specifies that the mom report itself as several numa nodes instead of one node, while adding numa reporting and numa cpusets, which include memory fencing])
+if test "x$GCC" = "xyes" ;then
+  AC_MSG_CHECKING([whether to support NUMA systems])
+  if test "${enable_numa_support}" = "yes" ; then
+    AC_MSG_RESULT([yes])
+    build_l26_cpuset=yes
+    AC_DEFINE(PENABLE_LINUX26_CPUSETS, 1, [Define to enable Linux 2.6 cpusets])
+    CFLAGS="$CFLAGS -DNUMA_SUPPORT"
+  else
+    AC_MSG_RESULT([no])
+  fi
+fi
+
+
+
+dnl
+dnl add the option to view coverage when executing TORQUE 
+dnl
+AC_ARG_ENABLE(coverage, [
+  --enable-coverage   Builds TORQUE with --coverage in order to allow evaluation of what parts of the code are being exercised. This is mainly useful for quality assurance.])
+if test "x$GCC" = "xyes" ;then
+  AC_MSG_CHECKING([whether to compile with coverage])
+  if test "${enable_coverage}" = "yes" ; then
+    AC_MSG_RESULT([yes])
+    CFLAGS="$CFLAGS --coverage"
+  else
+    AC_MSG_RESULT([no])
+  fi
+fi
+
+
+
+
+dnl
+dnl tell TORQUE where to find the MIC libs
+dnl
+AC_ARG_WITH(mic-path, [
+  --with-mic-path=PATH
+                     Specifies the path to the mic COI libraries and include files.
+                     Example: ./configure --with-mic-path=/opt/intel/mic/coi will
+                     specify that the include files are in /opt/intel/mic/coi/include
+                     and the libraries are in /opt/intel/mic/coi/host-linux-release/lib],
+  [MOMLIBS="$MOMLIBS -L${withval}/host-linux-release/lib"; CFLAGS="$CFLAGS -I${withval}/include"],
+  [MOMLIBS="$MOMLIBS -L/opt/intel/mic/coi/host-linux-release/lib"; CFLAGS="$CFLAGS -I/opt/intel/mic/coi/include"])
+
+
+dnl
+dnl enable mic support
+dnl
+AC_MSG_CHECKING([whether to compile with MIC support])
+AC_ARG_ENABLE(mic, [
+  --enable-mic   Builds TORQUE with mic support so that pbs_mom will auto-detect the mics and report a status for each mic on that host. If no mic exists, the pbs_mom will behave normally],
+  MIC=$enableval,MIC=no)
+AC_MSG_RESULT($MIC)
+
+case "$MIC" in
+  yes) AC_DEFINE([MIC], 1, [Define to enable MIC support]) ;;
+  no) : ;;
+  *) AC_MSG_ERROR([--enable-mic-gpus should be yes or no]) ;;
+esac
+AM_CONDITIONAL([MIC], test "$MIC" = yes)
+
+if test "$MIC" = "yes" ; then
+  MOMLIBS="$MOMLIBS -lcoi_host"
+  CPPFLAGS="$CPPFLAGS $CFLAGS"
+  AC_CHECK_HEADERS([source/COIPipeline_source.h],
+    [],
+    [AC_MSG_ERROR(MIC COI LLAPI headers not found)],
+    [])
+fi
+
+
+
+
+
+dnl
+dnl add an option to specify a different path where TORQUE should look for HWLOC 
+dnl lib and include files
+dnl
+AC_ARG_WITH(hwloc-path, [
+  --with-hwloc-path=PATH   
+                       Specifies the path to the hwloc libraries and include files.
+                       Example: ./configure --with-hwloc-path=/usr/local/hwloc-1.1
+                       Will specify that the include files are in /usr/local/hwloc-1.1/include and
+                       the libraries are in /usr/local/hwloc-1.1/lib],
+  [HWLOC_LIBS="-L${withval}/lib -lhwloc"; HWLOC_CFLAGS="-I${withval}/include"],
+  [TOM="BOB"])
+
+
+
+dnl For Linux 2.6 cpusets, libhwloc is needed for pbs_mom.
+dnl We are using pkg-config to figure out libs and cflags.
+dnl The used m4 macro is found in buildutils/pkg.m4.
+dnl In addition, we check libhwloc for hwloc_bitmap_alloc (present since v1.1).
+if test "${build_l26_cpuset}" = "yes" ; then
+  if test "${build_mom}" = "yes" ; then
+    PKG_CHECK_MODULES([HWLOC], [hwloc >= 1.1],
+      [ MOMLIBS="$MOMLIBS $HWLOC_LIBS"; CFLAGS="$CFLAGS $HWLOC_CFLAGS" ],
+      [ AC_MSG_ERROR([cpuset support requires the hwloc package
+
+$HWLOC_PKG_ERRORS
+
+This can be solved by configuring with --with-hwloc-path=<path>. This path
+should be the path to the directory containing the lib/ and include/ directories
+for your version of hwloc.
+Another option is adding the directory containing 'hwloc.pc'
+to the PKG_CONFIG_PATH environment variable.
+
+If you have done these and still get this  error, try running ./autogen.sh and
+then configuring again.
+])])
+    olibs=$LIBS
+    LIBS="$LIBS $HWLOC_LIBS";
+    AC_CHECK_LIB([hwloc], [hwloc_bitmap_alloc],,
+      [AC_MSG_ERROR([libhwloc does not look like >= 1.1])])
+    LIBS=$olibs
+  fi
+fi 
+
+
+dnl enable pbs_mom to use the cpuset API from libcpuset
+dnl only makes sense with cpusets enabled 
+AC_ARG_ENABLE(libcpuset, [  --enable-libcpuset      Allows pbs_mom to use the cpuset API from libcpuset])
+if test "${build_mom}" = "yes" ; then
+  if test "x$GCC" = "xyes" ; then
+    if test "${build_l26_cpuset}" = "yes" ; then
+      AC_MSG_CHECKING([whether to build libcpuset support])
+      if test "${enable_libcpuset}" = "yes" ; then
+        AC_MSG_RESULT([yes])
+        AC_CHECK_HEADERS([cpuset.h bitmask.h], ,
+          [AC_MSG_ERROR([header files missing to --enable-libcpuset]) ])
+        AC_CHECK_LIB([cpuset],[cpuset_version], ,
+          [AC_MSG_ERROR([--enable-libcpuset requires libcpuset to be installed]) ])
+        AC_DEFINE([USELIBCPUSET], 1, [Define to enable libcpuset support])
+        MOMLIBS="$MOMLIBS -lcpuset"
+      else
+        AC_MSG_RESULT([no])
+      fi
+    fi
+  fi
+fi
+
+
+
+
+dnl enable pbs_mom to query the SGI memory accounting utility to get rss values that are more reliable
+dnl
+dnl --enable-memacct
+AC_ARG_ENABLE(memacct, [  --enable-memacct        Allows pbs_mom to query the SGI memory accounting utility])
+if test "${build_mom}" = "yes" ; then
+  if test "x$GCC" = "xyes"; then
+    AC_MSG_CHECKING([whether to build libmemacct support])
+    if test "${enable_memacct}" = "yes" ; then
+      AC_MSG_RESULT([yes])
+      AC_CHECK_LIB([memacct],[get_weighted_memory_size], ,
+        [AC_MSG_ERROR([--enable-memacct requires libmemacct to be installed]) ])
+      AC_DEFINE([USELIBMEMACCT], 1, [Define to enable libmemacct support])
+      MOMLIBS="$MOMLIBS -lmemacct"
+    else
+      AC_MSG_RESULT([no])
+    fi
+  fi
+fi
+
+
+dnl fixes errors relating to unaligned memory accesses
+dnl some systems experience these errors
+dnl 
+dnl --enable-align-memory
+AC_ARG_ENABLE(align_memory, [
+  --enable-align-memory  Change compile flags to get rid of unaligned memory access errors])
+if test "x$GCC" = "xyes" ;then
+  AC_MSG_CHECKING([whether add memory alignment flags])
+  if test "${enable_align_memory}" = "yes" ; then
+    AC_MSG_RESULT([yes])
+    CFLAGS="$CFLAGS -fstack-protector -Wformat -Wformat-security -DFORTIFY_SOURCE=2"
+  else
+    AC_MSG_RESULT([no])
+  fi
+fi
+
+AM_CONDITIONAL([BUILD_L26_CPUSETS], test "$build_l26_cpuset" = yes)
+
+dnl  irix6 can be changed to irix6array explicitly with an
+dnl  --enable-array and irix6array can be made into irix6 with a
+dnl  --disable-array.
+AC_ARG_ENABLE(array,
+    [  --enable-array          setting this under IRIX enables the SGI Origin 2000
+                          parallel support. Normally autodetected from
+                          the /etc/config/array file.],
+[
+    if test "$PBS_MACH" = irix6; then
+        if test "$enableval" = yes; then
+            AC_MSG_WARN([No array daemon detected but enable-array overrides.])
+            PBS_MACH=irix6array
+        fi
+    elif test "$PBS_MACH" = irix6array; then
+        if test "$enableval" = no; then
+            AC_MSG_WARN([Array daemon detected but disable-array overrides.])
+            PBS_MACH=irix6
+        fi
+    else
+        AC_MSG_ERROR([Cannot use --en/disable-array unless configuring for IRIX 6.x or above])
+    fi
+])
+
+
+dnl
+dnl enable BLCR support
+dnl
+AC_ARG_ENABLE(blcr,
+    [  --enable-blcr           enable BLCR support],
+    BLCR=$enableval,BLCR=no)
+
+AC_ARG_WITH(blcr,
+    [  --with-blcr=DIR          BLCR installation prefix],
+    [
+        blcrprefix=$withval
+        BLCR=yes
+        blcrlib="${blcrprefix}/lib"
+        blcrbin="${blcrprefix}/bin"
+        blcrinclude="${blcrprefix}/include"
+    ],[
+        blcrprefix=none
+        blcrlib=none
+        blcrbin=none
+        blcrinclude=none
+    ])
+AC_ARG_WITH(blcr_include,
+    [  --with-blcr-include=DIR  include path for libcr.h],
+    blcrinclude=$withval)
+AC_ARG_WITH(blcr_lib,
+    [  --with-blcr-lib=DIR      lib path for libcr],
+    blcrlib=$withval)
+AC_ARG_WITH(blcr_bin,
+    [  --with-blcr-bin=DIR      bin path for BLCR utilities],
+    blcrbin=$withval)
+
+AC_MSG_CHECKING([whether to build BLCR support])
+AC_MSG_RESULT($BLCR)
+
+case "$BLCR" in
+  yes) AC_DEFINE([ENABLE_BLCR], 1, [Define to enable BLCR support])
+    AS_IF([test "x$blcrlib" != xnone], [
+      BLCR_LDFLAGS="-L$blcrlib -lcr"
+    ],[
+      BLCR_LDFLAGS="-lcr"
+    ])
+    SAVE_LDFLAGS="$LDFLAGS"
+    LDFLAGS="$BLCR_LDFLAGS $LDFLAGS"
+    AC_CHECK_LIB([cr], [cr_init], [ :], 
+      AC_MSG_ERROR([pass the path to libcr.so to --with-blcr-lib]))
+    LDFLAGS="$SAVE_LDFLAGS"
+    AC_SUBST([BLCR_LDFLAGS])
+
+    AS_IF([test "x$blcrinclude" != xnone], [
+      BLCR_CPPFLAGS="-I$blcrinclude -std=gnu99"
+    ],[
+      BLCR_CPPFLAGS=""
+    ])
+    SAVE_CPPFLAGS="$CPPFLAGS"
+    CPPFLAGS="$BLCR_CPPFLAGS $CPPFLAGS"
+    AC_CHECK_HEADER([libcr.h], [ :], 
+      AC_MSG_ERROR([pass the path to libcr.so to --with-blcr-include]))
+    CPPFLAGS="$SAVE_CPPFLAGS"
+    AC_SUBST([BLCR_CPPFLAGS])
+
+    AS_IF([test "x$blcrbin" != xnone], [
+        BLCR_BINDIR="$blcrbin"
+        BLCR_PATH="$PATH_SEPARATOR$BLCR_BINDIR"
+    ],[
+        BLCR_BINDIR=""
+        BLCR_PATH=""
+    ])
+    AC_CHECK_PROGS([HAVE_CR_RESTART], [cr_restart], [no],
+      [PATH=$PATH$BLCR_PATH])
+    AC_SUBST([BLCR_BINDIR])
+    ;;
+  no) : ;;
+  *) AC_MSG_ERROR([--enable-blcr should be yes or no]) ;;
+esac
+
+
+dnl
+dnl enable Nvidia gpu support
+dnl
+AC_MSG_CHECKING([whether to build Nvidia gpu support])
+AC_ARG_ENABLE(nvidia-gpus,
+    [  --enable-nvidia-gpus    enable Nvidia gpu support],
+    NVIDIA=$enableval,NVIDIA=no)
+AC_MSG_RESULT($NVIDIA)
+case "$NVIDIA" in
+  yes) AC_DEFINE([NVIDIA_GPUS], 1, [Define to enable Nvidia gpu support]) ;;
+  no) : ;;
+  *) AC_MSG_ERROR([--enable-nvidia-gpus should be yes or no]) ;;
+esac
+AM_CONDITIONAL([NVIDIA], test "$NVIDIA" = yes)
+
+AC_ARG_WITH(nvml_include,
+    [  --with-nvml-include=DIR include path for nvml.h],
+    nvmlinclude=$withval,nvmlinclude=none)   
+AC_ARG_WITH(nvml_lib,
+    [  --with-nvml-lib=DIR     lib path for libnvidia-ml],
+    nvmllib=$withval,nvmllib=none)   
+
+if test "x$nvmlinclude" != "xnone" && test "x$nvmllib" != "xnone" ;then
+  CPPFLAGS="$CPPFLAGS -I$nvmlinclude"
+  MOMLIBS="$MOMLIBS -L$nvmllib -lnvidia-ml"
+  AC_DEFINE([NVML_API], 1, [Define to enable Nvidia NVML api support])
+fi
+
+if test "x$nvmlinclude" != "xnone" && test "x$nvmllib" == "xnone" ;then
+  AC_MSG_ERROR([--with-nvml-lib needs to be specified])
+fi
+
+if test "x$nvmllib" != "xnone" && test "x$nvmlinclude" == "xnone" ;then
+  AC_MSG_ERROR([--with-nvml-include needs to be specified])
+fi
+
+
+
+dnl
+dnl enable logging of x attributes for accounting
+dnl
+AC_MSG_CHECKING([whether to add x attributes to accounting])
+AC_ARG_ENABLE(acct-x,
+    [  --enable-acct-x         enable adding x attributes to accounting log],
+    ACCTX=$enableval,ACCTX=no)
+AC_MSG_RESULT($ACCTX)
+case "$ACCTX" in
+  yes) AC_DEFINE([ATTR_X_ACCT], 1, [Define to add x attributes to accounting log]) ;;
+  no) : ;;
+  *) AC_MSG_ERROR([--enable-acct-x should be yes or no]) ;;
+esac
+
+dnl
+dnl enable Cray's CPA support
+dnl
+AC_MSG_CHECKING([whether to build Cray's CPA support])
+AC_ARG_ENABLE(cpa,
+    [  --enable-cpa            enable Cray's CPA support],
+    CPA=$enableval,CPA=no)   
+AC_MSG_RESULT($CPA)
+
+AC_ARG_WITH(cpa_include,
+    [  --with-cpa-include=DIR  include path for cpalib.h],
+    cpainclude=$withval,cpainclude=none)   
+AC_ARG_WITH(cpa_lib,
+    [  --with-cpa-lib=DIR      lib path for libcpalib],
+    cpalib=$withval,cpalib=none)   
+
+if test "x$cpainclude" != "xnone" ;then
+  CPPFLAGS="$CPPFLAGS -I$cpainclude"
+fi
+LDFLAGS_cpasave="$LDFLAGS"
+if test "x$cpalib" != "xnone" ;then
+  LDFLAGS="$LDFLAGS -L$cpalib"
+fi
+buildcpa="no"
+case "$CPA" in
+  yes) AC_DEFINE([ENABLE_CPA], 1, [Define to enable Cray's CPA support])
+    AC_CHECK_HEADERS([cpalib.h], [ :],
+      AC_MSG_ERROR([pass the path to cpalib.h to --with-cpa-include]))
+    AC_CHECK_LIB(cpalib, cpa_new_node_req, [ :],
+      AC_MSG_ERROR([pass the path to libcpalib to --with-cpa-lib]))
+      if test "x$cpalib" != "xnone" ;then
+        MOMLIBS="$MOMLIBS -L$cpalib -lcpalib"
+      else
+        MOMLIBS="$MOMLIBS -lcpalib"
+      fi
+      buildcpa="yes"
+      ;;
+  no) : ;;
+  *) AC_MSG_ERROR([--enable-cpa should be yes or no]) ;;
+esac
+AM_CONDITIONAL([BUILDCPA], test "$buildcpa" = yes)
+LDFLAGS="$LDFLAGS_cpasave"
+
+
+dnl
+dnl enable Cray's CSA support
+dnl
+AC_MSG_CHECKING([whether to build Cray's CSA support])
+AC_ARG_ENABLE(csa,
+    [  --enable-csa            enable Cray's CSA support],
+    CSA=$enableval,CSA=no)   
+AC_MSG_RESULT($CSA)
+
+case "$CSA" in
+  yes) AC_DEFINE([ENABLE_CSA], 1, [Define to enable Cray's CSA support])
+      LDFLAGS_csasave="$LDFLAGS"
+      LDFLAGS="$LDFLAGS -L/opt/cray/job/default/lib64"
+      AC_CHECK_LIB([csa], [csa_check],
+        [MOMLIBS="$MOMLIBS -L/opt/cray/job/default/lib64 -lcsa"],
+        [AC_MSG_ERROR([--enable-csa requires libcsa])])
+      LDFLAGS=$LDFLAGS_csasave
+      ;;
+  no) : ;;
+  *) AC_MSG_ERROR([--enable-csa should be yes or no]) ;;
+esac
+
+dnl
+dnl enable libjob job_create support
+dnl attempt to find a location to install job_create support for CRAY
+dnl
+AC_MSG_CHECKING([whether to enable libjob job_create support])
+jobcreatedir=disabled
+AC_ARG_WITH(job_create,
+    [  --with-job-create=DIR   Directory that holds the job create modules.
+                          On Linux, 'yes' uses the default /opt/cray.],
+    [jobcreatedir=$withval])
+case "$jobcreatedir" in
+  disabled) ;;
+  no) jobcreatedir=disabled ;;
+  yes)
+    case "${PBS_MACH}" in
+      linux) AC_DEFINE([USEJOBCREATE], 1, [Define to enable libjob job_create support])
+        AC_CHECK_LIB([job],[job_create],
+          [MOMLIBS="-L/opt/cray/job/default/lib64 -ljob $MOMLIBS"
+          CFLAGS="$CFLAGS -I/opt/cray/job/default/include"],
+          [AC_MSG_ERROR([--enable-job-create requires libjob support]) ]);;
+      *) AC_MSG_ERROR([--with-job-create takes a full path to a directory]);;
+    esac ;;
+  *)
+    case "${PBS_MACH}" in
+      linux) AC_DEFINE([USEJOBCREATE], 1, [Define to enable libjob job_create support])
+        MOMLIBS="$jobcreatedir $MOMLIBS"
+        CFLAGS="$CFLAGS $jobcreatedir"
+        ;;
+      *) AC_MSG_ERROR([--with-job-create takes a full path to a directory]);;
+    esac ;;
+esac
+AC_MSG_RESULT([$jobcreatedir])
+
+dnl compile for munge authorization - allows sites to use munge
+dnl as a means to validate user identity from remote hosts.
+dnl 
+AC_ARG_ENABLE(munge_auth, [
+  --enable-munge-auth Allows users to be authorized using munge instead of ruserok])
+if test "x$GCC" = "xyes" ;then
+  AC_MSG_CHECKING([whether to support munge authorization])
+  if test "${enable_munge_auth}" = "yes" ; then
+    AC_MSG_RESULT([yes])
+    CFLAGS="$CFLAGS -DMUNGE_AUTH"
+  else
+    AC_MSG_RESULT([no])
+  fi
+fi
+
+
+dnl
+dnl arch-specific libs
+dnl
+case $PBS_MACH in
+  aix4|aix5) MOMLIBS="$MOMLIBS -lodm -lcfg"
+    ;;
+
+  irix6array) MOMLIBS="$MOMLIBS -larray"
+    ;;
+
+  cygwin) MOMLIBS="$MOMLIBS -liphlpapi"
+    ;;
+
+  linux)
+    AC_CHECK_FUNC(openpty, ,
+      AC_CHECK_LIB(util, openpty, MOMLIBS="$MOMLIBS -lutil"),
+        AC_MSG_WARN([This is an ancient distro... will open ptys directly])
+        AC_DEFINE([USEOLDTTY], 1, [Define on ancient linux distros]))
+    ;;
+  darwin*) AC_DEFINE(SETCONTROLLINGTTY, 1, [Define to set the controlling tty])
+    ;;
+  digitalunix*) AC_DEFINE(SETCONTROLLINGTTY, 1, [Define to set the controlling tty])
+    ;;
+  unicosmk*) AC_DEFINE(SETCONTROLLINGTTY, 1, [Define to set the controlling tty])
+    ;;
+esac
+
+case $PBS_MACH in
+aix4|aix5|sunos4|solaris5|freebsd|freebsd5|darwin|fujitsu)
+  AC_CHECK_FUNC(nlist, , AC_CHECK_LIB(elf, nlist)) ;;
+esac
+
+case $PBS_MACH in
+sunos4|solaris5|netbsd|freebsd|freebsd5)
+  AC_CHECK_LIB(kvm, kvm_open) ;;
+esac
+
+
+
+dnl  Support for checkpointing, note that under IRIX at this time
+dnl  it seems that you must be compiling with the -64 flag to
+dnl  get the cpr libraries on O2000s
+MOM_CHECKPOINT=0
+case "$PBS_MACH" in
+    unicos*) MOM_CHECKPOINT=1 ;;
+    irix6*)  AC_CHECK_LIB(cpr, atcheckpoint, [MOM_CHECKPOINT=1])
+             if test "$MOM_CHECKPOINT" = 1 ; then
+                MOMLIBS="$MOMLIBS -lcpr"
+                #
+                # if we are using plain cc then under irix6array
+                # make it cc -64 unless the user has explicitly asked for cc
+                #
+		if test "$CC" = cc -a "x$user_choosed_cc_set" != xset ; then
+                  AC_MSG_WARN([Automatically setting CC='cc -64' under irix6.])
+                  CC='cc -64'
+		fi
+              fi ;;
+    linux)  if test "$BLCR" = "yes" ;then MOM_CHECKPOINT=1;fi ;;
+esac
+AC_DEFINE_UNQUOTED(MOM_CHECKPOINT, ${MOM_CHECKPOINT},
+	[whether checkpointing is supported])
+
+AC_SUBST(MOMLIBS)
+
+
+
+dnl  Streams on Solaris
+case "$build" in
+  *-*-solaris*) AC_DEFINE(PUSH_STREAM, 1,
+			[Define if you are on a solaris box]) ;;
+  *) ;;
+esac
+
+
+
+dnl
+dnl  ######################################################################
+dnl  Scheduler settings
+dnl
+AC_ARG_WITH(sched, [
+  --with-sched=TYPE       sets the scheduler type. If TYPE is
+                          "c" the scheduler will be written in C
+                          "tcl" the server will use a Tcl based scheduler
+                          "basl" will use the rule based scheduler
+                          "no" then their will be no scheduling done
+                          (the "c" scheduler is the default)],
+[case "${withval}" in
+  c*|C*)        SCHD_TYPE=cc ;;
+  tcl|Tcl)      SCHD_TYPE=tcl ;;
+  basl|BASL)    SCHD_TYPE=basl ;;
+  *)            SCHD_TYPE=none ;;
+esac],[SCHD_TYPE=cc])
+if test "x$build_server" != "xyes" ;then
+   SCHD_TYPE=none
+fi
+AC_DEFINE_UNQUOTED(SCHD_TYPE, "${SCHD_TYPE}",
+	[set the type of scheduler to use])
+
+SCHD_TYPE_SUBDIR=""
+if test "$SCHD_TYPE" != none; then
+  SCHD_TYPE_SUBDIR=scheduler.$SCHD_TYPE
+fi
+AC_SUBST(SCHD_TYPE_SUBDIR)
+AC_SUBST(SCHD_TYPE)
+AM_CONDITIONAL(SCHD_BASL, test "x$SCHD_TYPE" = "xbasl")
+
+if test "$SCHD_TYPE" = basl ;then
+    AC_CHECK_FUNC(sqrt, ,
+      AC_CHECK_LIB(m, sqrt, SCHD_LIBS="$SCHD_LIBS -lm"))
+fi
+AC_SUBST(SCHD_LIBS)
+
+AC_ARG_WITH(sched_code, [
+  --with-sched-code=PATH  sets the name of the scheduler to use.
+                          This only applies to BASL schedulers and those
+                          written in the C language. For C schedulers
+                          this should be a directory name and for BASL
+                          schedulers a filename ending in ".basl".
+			  It will be interpreted relative to
+			  srctree/src/schedulers.SCHD_TYPE/samples.
+                          As an example, an appropriate BASL scheduler
+                          realtive path would be "nas.basl". The default
+                          scheduler code for "C" schedulers is "fifo".],
+[if test "${SCHD_TYPE}" = "cc" -o "${SCHD_TYPE}" = "basl"; then
+  SCHD_CODE="${withval}"
+else
+  AC_MSG_ERROR([--with-sched-code was used but sched-type was not "c" or "basl".])
+fi],[SCHD_CODE=none])
+
+
+dnl  if the scheduler is the C scheduler then the default code is samples/fifo
+if test "$SCHD_CODE" = none -a "$SCHD_TYPE" = cc; then
+    SCHD_CODE=fifo
+fi
+
+if test "$SCHD_TYPE" = cc -o "$SCHD_TYPE" = basl; then
+  if test "$SCHD_CODE" = none; then
+    AC_MSG_ERROR([Must specify --with-sched-code for C and BASL schedulers.])
+  fi
+fi  
+
+AC_SUBST(SCHD_CODE)
+
+
+AC_ARG_ENABLE(filesync, [
+  --enable-filesync       open files with sync on each write operation.  Don't
+                          bother enabling this, all it does is slow down TORQUE.
+                          This is disabled by default.],
+[case "${enableval}" in
+  yes) TDISABLEFILESYNC=0; AC_MSG_WARN([--enable-filesync does not actually make for safer writes.]) ;;
+  no)  TDISABLEFILESYNC=1 ;;
+  *)   AC_MSG_ERROR(--enable-filesync cannot take a value) ;;
+esac],[TDISABLEFILESYNC=1])dnl
+AC_DEFINE_UNQUOTED(TDISABLEFILESYNC, ${TDISABLEFILESYNC}, [Define to prevent sync writes])
+
+
+
+AC_ARG_ENABLE(plock_daemons, [
+  --enable-plock-daemons[[=ARG]]
+                          enable daemons to lock themselves into memory:
+                          logical-or of 1 for pbs_server, 2 for pbs_scheduler,
+                          4 for pbs_mom (no argument means 7 for all three)],
+[case "${enableval}" in
+  yes) PLOCK_DAEMONS=7 ;;
+  no)  PLOCK_DAEMONS=0 ;;
+  *) PLOCK_DAEMONS="${enableval}" ;;
+esac],[PLOCK_DAEMONS=0])
+AC_DEFINE_UNQUOTED(PLOCK_DAEMONS, ${PLOCK_DAEMONS},
+	[Select which daemons plock themselves, a bit pattern])
+
+
+AC_ARG_ENABLE(syslog, [
+  --enable-syslog         enable (default) the use of syslog for error reporting],
+[case "${enableval}" in
+  yes) SYSLOG=1 ; RPM_AC_OPTS="$RPM_AC_OPTS --with syslog" ;;
+  no)  SYSLOG=0 ; RPM_AC_OPTS="$RPM_AC_OPTS --without syslog" ;;
+  *)   AC_MSG_ERROR(--enable-syslog cannot take a value.) ;;
+esac],[SYSLOG=1 ; RPM_AC_OPTS="$RPM_AC_OPTS --with syslog"])dnl
+AC_DEFINE_UNQUOTED(SYSLOG, ${SYSLOG}, [Define to enable syslog])
+AM_CONDITIONAL(USING_SYSLOG, [test "$SYSLOG" = "1"])
+
+
+
+AC_ARG_ENABLE(shell_pipe,
+    [  --disable-shell-pipe    give the job script file as standard input to
+                          the shell instead of passing its name via a pipe],
+[case "${enableval}" in
+  yes) SHELL_INVOKE=1 ;;
+  no)  SHELL_INVOKE=0 ;;
+  *)   SHELL_INVOKE=0 ;;
+esac],[SHELL_INVOKE=1])
+AC_DEFINE_UNQUOTED(SHELL_INVOKE, ${SHELL_INVOKE},
+	[set whether job scripts use a pipe])
+
+AC_ARG_WITH(maildomain, [
+  --with-maildomain=MAILDOMAIN
+                          override the default domain for outgoing mail messages,
+                          i.e. "user@maildomain".  The default maildomain is the
+                          hostname where the job was submitted from.],
+[MAILDOMAIN="${withval}"
+AC_MSG_WARN([--with-maildomain is depricated.  Set mail_domain in qmgr.])
+AC_DEFINE_UNQUOTED(TMAILDOMAIN, "${MAILDOMAIN}", [override the default domain for outgoing mail messages])])
+
+AC_ARG_ENABLE(spool, [
+  --disable-spool         if disabled, TORQUE will create output and error files
+                          directly in $HOME/.pbs_spool if it exists or in $HOME
+                          otherwise.  By default, TORQUE will spool files in
+                          $TORQUEHOME/spool and copy them to the users home
+                          directory when the job completes.],
+[case "${enableval}" in
+  yes) NO_SPOOL_OUTPUT=0 ;;
+  no)  NO_SPOOL_OUTPUT=1 ;;
+  *)   AC_MSG_ERROR(--enable-spool cannot take a value) ;;
+esac],[NO_SPOOL_OUTPUT=0])dnl
+AC_DEFINE_UNQUOTED(NO_SPOOL_OUTPUT, ${NO_SPOOL_OUTPUT}, [directly use homedirs instead of $TORQUEHOME/spool])
+
+AC_ARG_ENABLE(shell-use-argv, [
+  --enable-shell-use-argv enable this to put the job script name on the
+                          command line that invokes the shell.  Not on by
+                          default.  Ignores --enable-shell-pipe setting.],
+[case "${enableval}" in
+  yes) SHELL_USE_ARGV=1 ;;
+  no)  SHELL_USE_ARGV=0 ;;
+  *)   AC_MSG_ERROR(--enable-shell-use-argv cannot take a value) ;;
+esac],[SHELL_USE_ARGV=0])dnl
+AC_DEFINE_UNQUOTED(SHELL_USE_ARGV, ${SHELL_USE_ARGV}, [job script name passed as the shell's arg])
+
+
+AC_ARG_ENABLE(posixmemlock, [
+  --disable-posixmemlock  disable the moms use of mlockall.  
+                          Some versions of OSs seem to have buggy POSIX MEMLOCK.],
+[case "${enableval}" in
+  yes)  ;;
+  no)  NOPOSIXMEMLOCK=1; AC_DEFINE(NOPOSIXMEMLOCK, 1, [Define to disable mlockall]) ;;
+  *)   AC_MSG_ERROR(--enable-posixmemlock cannot take a value) ;;
+esac])dnl
+
+
+
+AC_ARG_ENABLE(privports, [
+  --disable-privports     disable the use of privileged ports for authentication.  
+                          Some versions of OSX have a buggy bind() and cannot
+                          bind to privileged ports.],
+[case "${enableval}" in
+  yes)  ;;
+  no)  NOPRIVPORTS=1; AC_DEFINE(NOPRIVPORTS, 1, [Define to disable privileged ports]) ;;
+  *)   AC_MSG_ERROR(--enable-privports cannot take a value) ;;
+esac])dnl
+
+AC_ARG_ENABLE(daemons, [
+  --disable-daemons       disable the use of background daemons.
+                          For Cygwin, disable daemons to run as Windows services],
+[case "${enableval}" in
+  yes)  ;;
+  no)  DISABLE_DAEMONS=1; AC_DEFINE(DISABLE_DAEMONS, 1, [Define to disable daemons]) ;;
+  *)   AC_MSG_ERROR(--enable-daemons cannot take a value) ;;
+esac])dnl
+
+
+AC_ARG_ENABLE(mom-checkspool, [
+  --disable-mom-checkspool
+                          Don't check free space on spool directory and set an error],
+[case "${enableval}" in
+  yes) MOMCHECKLOCALSPOOL=1 ;;
+  no)  MOMCHECKLOCALSPOOL=0;;
+  *)   AC_MSG_ERROR(--enable-mom-checkspool cannot take a value) ;;
+esac],[MOMCHECKLOCALSPOOL=1])dnl
+AC_DEFINE_UNQUOTED(MOMCHECKLOCALSPOOL, ${MOMCHECKLOCALSPOOL}, [Define to error if spool is full on MOM])
+
+
+AC_ARG_WITH(tmpdir, [
+  --with-tmpdir=DIR       set the tmp directory that pbs_mom will use
+                          defaults to "/tmp". This is a Cray-specific feature.],
+    [TMP_DIR="${withval}"], [TMP_DIR="/tmp"])
+test "$TMP_DIR" = yes && TMP_DIR="/tmp"
+AC_DEFINE_UNQUOTED(TMP_DIR, "${TMP_DIR}",
+		   [The pathname of the Cray temporary directory for mom])
+
+AC_ARG_ENABLE(force-nodefile, [
+  --enable-force-nodefile forces creation of nodefile regardless of job
+                          submission parameters. Not on by default.],
+[case "${enableval}" in
+  yes) MOM_FORCENODEFILE=1 ;;
+  no)  MOM_FORCENODEFILE=0 ;;
+  *)   AC_MSG_ERROR(--enable-force-nodefile cannot take a value) ;;
+esac],[MOM_FORCENODEFILE=0])dnl
+AC_DEFINE_UNQUOTED(MOM_FORCENODEFILE, ${MOM_FORCENODEFILE}, [force creation of nodefile])
+
+
+AC_MSG_CHECKING([if enabling Unix Domain socket support])
+AC_ARG_ENABLE(unixsockets, [
+  --enable-unixsockets    enable the use of Unix Domain sockets for authentication.],
+[case "${enableval}" in
+  yes) ENABLE_UNIX_SOCKETS=yes ;;
+  no) ENABLE_UNIX_SOCKETS=no;;
+  *)   AC_MSG_ERROR(--enable-unixsockets cannot take a value) ;;
+esac])dnl
+if test "x$ENABLE_UNIX_SOCKETS" = "xyes" ;then
+   AC_DEFINE(ENABLE_UNIX_SOCKETS, 1, [Define to enable unix domain sockets])
+fi
+AC_MSG_RESULT([$ENABLE_UNIX_SOCKETS])
+
+
+AC_ARG_WITH(server_home, [
+  --with-server-home=DIR  set the server home/spool directory for PBS use
+                          defaults to /var/spool/torque],
+    [PBS_SERVER_HOME="${withval}" ; RPM_AC_OPTS="$RPM_AC_OPTS --define \"torque_home ${withval}\"" ],
+    [PBS_SERVER_HOME="/var/spool/torque"])
+AC_SUBST(PBS_SERVER_HOME)
+
+    dnl [PBS_SERVER_HOME="${withval}"], [PBS_SERVER_HOME="$localstatedir/spool/torque"])
+
+AC_ARG_WITH(server_name_file, [
+  --with-server-name-file=FILE
+                          set the file that will contain the name of
+                          the default server for clients to use. If this
+                          is not an absolute pathname, it will be evaluated
+                          relative to the server home directory that either
+                          defaults to /usr/spool/torque or is set using
+                          the --with-server-home option to configure. If this
+                          option is not specified, the default name for
+                          this file will be set to "server_name".],
+    [pbs_default_file="${withval}"], [pbs_default_file="server_name"])
+case "${pbs_default_file}" in
+  /*) PBS_DEFAULT_FILE="${pbs_default_file}" ;;
+  *)  PBS_DEFAULT_FILE="\${PBS_SERVER_HOME}/${pbs_default_file}" ;;
+esac
+AC_SUBST(PBS_DEFAULT_FILE)
+
+
+
+
+AC_ARG_WITH(tcp_retry_limit, [
+  --with-tcp-retry-limit=NUMBER
+                         set the number of tcp retries. This avoids a rare
+                         but potential server hang. When a tcp connection
+                         between a mom and the server dies unexpectedly,
+                         such as the machine crashing, pbs_server can hang
+                         for long periods of time while retrying all possible
+                         sockets. This limits those retries.],
+    [TCP_RETRY_LIMIT=${withval}],[TCP_RETRY_LIMIT=0])
+AC_DEFINE_UNQUOTED(TCP_RETRY_LIMIT,${TCP_RETRY_LIMIT},[Define to set a max retry limit])
+
+
+
+AC_ARG_WITH(default_server, [
+  --with-default-server=HOSTNAME
+                          set the name of the computer that clients will
+                          access when no machine name is specified as part
+                          of the queue name. It defaults to the hostname
+                          of the machine on which PBS is being compiled.],
+[PBS_DEFAULT_SERVER="${withval}" ; RPM_AC_OPTS="$RPM_AC_OPTS --define \"torque_server ${withval}\"" ],
+[PBS_DEFAULT_SERVER="`uname -n`"])
+AC_DEFINE_UNQUOTED(PBS_DEFAULT_SERVER, "${PBS_DEFAULT_SERVER}",
+	[Define to the name of the default PBS server])
+AC_SUBST(PBS_DEFAULT_SERVER)
+
+
+AC_ARG_WITH(environ, [
+  --with-environ=PATH     set the path containing the environment variables
+                          for the daemons.  For SP2 and AIX systems,
+                          suggested setting is to /etc/environment. Defaults
+                          to the file "pbs_environment" in the server-home.
+                          Relative paths are interpreted within the context
+                          of the server-home.],
+[pbs_environ="${withval}"], [pbs_environ="no"])
+case "${pbs_environ}" in
+  yes) AC_MSG_ERROR([--with-environ must be given a path]) ;;
+  no)  PBS_ENVIRON="\${PBS_SERVER_HOME}/pbs_environment" ;;
+  /*)  PBS_ENVIRON="${pbs_environ}" ;;
+  *)   PBS_ENVIRON="\${PBS_SERVER_HOME}/${pbs_environ}" ;;
+esac
+AC_SUBST(PBS_ENVIRON)
+
+
+AC_ARG_WITH(qstatrc-file, [
+  --with-qstatrc-file=FILE
+                          set the name of the file that qstat will use
+                          if there is no ".qstatrc" file in the directory
+                          where it is being invoked.
+                          Relative path names will be evaluated relative
+                          to the server home directory (see above).
+                          If this option is not specified, the default name
+                          for this file will be set to "qstatrc" (no dot)
+                          in the server home directory.],
+[case "${withval}" in
+  /*)  QSTATRC_PATH="${withval}" ;;
+  *)   QSTATRC_PATH="${PBS_SERVER_HOME}/${withval}" ;;
+esac],[QSTATRC_PATH="${PBS_SERVER_HOME}/qstatrc"])
+AC_DEFINE_UNQUOTED(QSTATRC_PATH, "${QSTATRC_PATH}",
+	[Define to the path of the qstat init file])
+
+
+dnl Possibly define default MOM logdir and file suffix
+AC_ARG_WITH(momlogdir,
+    [  --with-momlogdir        use this directory for MOM logs.],
+    AC_DEFINE_UNQUOTED(DEFAULT_MOMLOGDIR,"$with_momlogdir",[Alternate directory for MOM logs])
+)
+AC_ARG_WITH(momlogsuffix,
+    [  --with-momlogsuffix     use this suffix for MOM logs.],
+    AC_DEFINE_UNQUOTED(DEFAULT_MOMLOGSUFFIX,"$with_momlogsuffix",[Alternate suffix for MOM logs])
+)
+
+dnl Possibly define server checkpoint directory
+AC_ARG_WITH(servchkptdir,
+    [  --with-servchkptdir     use this directory for Server checkpoint files.],
+    AC_DEFINE_UNQUOTED(SERVER_CHKPTDIR,"$with_servchkptdir",[Directory for Server checkpoint files])
+)
+
+dnl Declare which of scp, rcp, or mom_rcp is to be used for file delivery
+dnl As of TORQUE 2.1.0, default to scp if found, otherwise use the internal mom_rcp
+AC_ARG_WITH(scp,
+    [  --with-scp              use scp instead of mom_rcp (deprecated, use 
+                          --with-rcp=scp).],
+  [ AC_MSG_WARN([--with-scp is deprecated, use --with-rcp=scp])
+    AC_PATH_PROG(RCP_PATH, "scp", "error")
+    case "${RCP_PATH}" in
+      error) AC_MSG_ERROR([--with-scp scp not found in path]) ;;
+      *)     RCP_PATH="${RCP_PATH}" ;;
+    esac])
+
+AC_ARG_WITH(rcp,
+    [  --with-rcp              one of "scp", "rcp", "mom_rcp", or the fullpath of
+                          a remote file copy program.  scp is the default if
+                          found, otherwise mom_rcp is used.  Some rcp programs
+                          don't always exit with valid error codes in case of
+                          failure.  mom_rcp is a copy of BSD rcp included with
+                          this source that has correct error codes, but it is
+                          also old, unmaintained, and doesn't have largefile
+                          support. ],
+    [case "$with_rcp" in
+      yes|no) AC_MSG_ERROR([--with-rcp takes an argument]) ;;
+      *) RCP_PATH="$with_rcp" ;;
+    esac])
+
+# if noone requested an rcp prog, use scp if found, or use mom_rcp
+if test "x$RCP_PATH" = "x" ;then
+  AC_PATH_PROG(RCP_PATH, scp, error)
+  if test "x$RCP_PATH" = "xerror" ;then
+    RCP_PATH=mom_rcp
+    RPM_AC_OPTS="$RPM_AC_OPTS --without scp"
+  else
+    RPM_AC_OPTS="$RPM_AC_OPTS --with scp"
+  fi
+fi
+
+# figure out what was requested and turn that into a full path if necessary
+build_pbs_rcp=no
+case "$RCP_PATH" in
+  mom_rcp|pbs_rcp) RCP_PATH="${sbindir}/pbs_rcp"; build_pbs_rcp=yes ;;
+  /*) ;;
+  *) AC_PATH_PROG(RCP_PATH, "$RCP_PATH", error)
+    if test "x$RCP_PATH" = "xerror" ;then
+      AC_MSG_ERROR([requested copy program not found in path])
+    fi ;;
+esac
+
+# figure out the required args
+if test "x$RCP_ARGS" = "x" ;then
+  case "$RCP_PATH" in
+    *rcp) RCP_ARGS="-rp"; RSH_PATH=rsh ;;
+    *scp) RCP_ARGS="-rpB"; RSH_PATH=ssh ;;
+    *) RCP_ARGS="-rp"; RSH_PATH=rsh; AC_MSG_WARN([not using rcp or scp, assuming -r]) ;;
+  esac
+fi
+AC_MSG_NOTICE([remote file copy program... $RCP_PATH $RCP_ARGS])
+
+AC_SUBST(RCP_PATH)
+AC_SUBST(RCP_ARGS)
+AC_SUBST(RSH_PATH)
+AC_SUBST(build_pbs_rcp)
+AM_CONDITIONAL(INCLUDE_MOM_RCP, [test "x$build_pbs_rcp" = "xyes"])
+
+
+
+dnl find sendmail and add it to defs
+AC_ARG_WITH(sendmail,
+    [  --with-sendmail[[=FILE]]  sendmail executable to use],
+    [SENDMAIL_CMD=$withval],
+    [sendmail_maybe_in="/usr/lib:/usr/sbin:/usr/bin:/etc:/usr/etc:$PATH"
+     AC_PATH_PROGS(SENDMAIL_CMD, sendmail, sendmail,
+		   ${sendmail_maybe_in})
+    ])
+case "${SENDMAIL_CMD}" in
+  /*) ;;
+  *) AC_MSG_WARN([emails might not be sent unless ${SENDMAIL_CMD} is found at run-time]) ;;
+esac
+AC_DEFINE_UNQUOTED(SENDMAIL_CMD, "${SENDMAIL_CMD}",
+	[full pathname of sendmail])
+
+
+dnl attempt to find a location to install PAM modules
+AC_MSG_CHECKING([for PAM install directory])
+pammoddir=disabled
+AC_ARG_WITH(pam,
+    [  --with-pam=DIR          Directory that holds the system PAM modules.
+                          On Linux, 'yes' uses the default /lib(64)/security.],
+    [pammoddir=$withval])
+case "$pammoddir" in
+  disabled) ;;
+  no) pammoddir=disabled ;;
+  yes)
+    case "${PBS_MACH}" in
+      linux) pammoddir=/lib$libsuff/security;;
+      *) AC_MSG_ERROR([--with-pam takes a full path to a directory]);;
+    esac ;;
+  /*) ;;
+  *) AC_MSG_ERROR([--with-pam takes a full path to a directory $pammoddir]);;
+esac
+if test "x$pammoddir" = "xdisabled" ; then
+  RPM_AC_OPTS="$RPM_AC_OPTS --without pam"
+else
+  RPM_AC_OPTS="$RPM_AC_OPTS --with pam"
+fi
+AC_MSG_RESULT([$pammoddir])
+AC_SUBST(pammoddir)
+AM_CONDITIONAL(INCLUDE_PAM, [test "x$pammoddir" != "xdisabled"])
+      
+
+
+
+
+dnl find default xauth run-time path
+AC_ARG_WITH(xauth,
+        [  --with-xauth=PATH       Specify path to xauth program ],
+        [
+                if test "x$withval" != "xno" ; then
+                        xauth_path=$withval
+                fi
+        ],
+        [       
+                TestPath="$PATH"
+                TestPath="${TestPath}${PATH_SEPARATOR}/usr/X/bin"
+                TestPath="${TestPath}${PATH_SEPARATOR}/usr/bin/X11"
+                TestPath="${TestPath}${PATH_SEPARATOR}/usr/X11R6/bin"
+                TestPath="${TestPath}${PATH_SEPARATOR}/usr/openwin/bin"
+                AC_PATH_PROG(xauth_path, xauth, , $TestPath)
+                if (test ! -z "$xauth_path" && test -x "/usr/openwin/bin/xauth") ; then
+                        xauth_path="/usr/openwin/bin/xauth"
+                fi
+        ]
+)
+
+if test -z "$xauth_path" ; then
+        xauth_path="/usr/X11R6/bin/xauth"
+fi
+AC_DEFINE_UNQUOTED(XAUTH_PATH, "${xauth_path}", [Define to the path of xauth])
+
+
+dnl  Readline
+AC_ARG_WITH(readline,
+    [  --without-readline      do not include readline support
+                          (default: included if found)],
+    [HAVE_READLINE="${withval}"], [HAVE_READLINE="default"])
+case "$HAVE_READLINE" in
+	yes|no) ;;
+        default)
+          case $PBS_MACH in
+            aix5|darwin) HAVE_READLINE="no";;
+            *) HAVE_READLINE="yes";;
+          esac
+           ;;
+	*) AC_MSG_ERROR([--with-readline only takes "yes" or "no" as arguments]) ;;
+esac
+
+
+
+dnl modulefiles
+AC_MSG_CHECKING([whether to install modulefiles])
+
+AC_ARG_WITH(modulefiles,
+    AC_HELP_STRING([--with-modulefiles@<:@=DIR@:>@], [use modulefiles in specified directory [[/etc/modulefiles]]]),
+[], [with_modulefiles="no"])
+if test "$with_modulefiles" != 'no'; then
+  if test "$with_modulefiles" = 'yes'; then
+    MODULEFILES_DIR="/etc/modulefiles"
+  else
+    MODULEFILES_DIR="$with_modulefiles"
+  fi
+else
+  MODULEFILES_DIR=no
+fi
+AM_CONDITIONAL(INSTALL_MODULEFILES, [test "x$MODULEFILES_DIR" != "xno"])
+AC_SUBST(MODULEFILES_DIR)
+AC_MSG_RESULT($MODULEFILES_DIR)
+
+
+dnl
+dnl  ######################################################################
+dnl  Check for libraries
+dnl
+
+dnl  nsl is needed on some systems but duplicates libc.a on others (O2000s)
+AC_CHECK_FUNC(xdr_int, , AC_CHECK_LIB(nsl, xdr_int))
+AC_CHECK_FUNC(ruserok, , AC_CHECK_LIB(socket, ruserok))
+AC_CHECK_FUNC(hstrerror, , AC_CHECK_LIB(resolv, hstrerror))
+
+dnl  Readline
+if test "$HAVE_READLINE" = "yes" ; then
+AC_CHECK_LIB(ncurses, initscr, READLINE_LIBS="-lncurses")
+AC_CHECK_LIB(readline, rl_callback_handler_install,
+	     [READLINE_LIBS="$READLINE_LIBS -lreadline"],
+	     [HAVE_READLINE="no"], [$READLINE_LIBS])
+fi
+AC_SUBST(READLINE_LIBS)
+
+if test "$ac_cv_header_readline_readline_h" = "no" ; then
+	HAVE_READLINE="no"
+fi
+if test "$HAVE_READLINE" = "yes" ; then
+	AC_DEFINE(HAVE_READLINE, 1, [include readline support])
+else
+	AC_MSG_WARN([readline support is disabled])
+fi
+
+
+dnl
+dnl  ######################################################################
+dnl  Check for typedefs, structures and such
+dnl
+
+
+dnl  under some OSs h_errno is not visible
+AC_DECL_H_ERRNO
+
+dnl  see if we need to include sys/select.h to get FD_SET and friends
+AC_DECL_FD_SET_SYS_SELECT_H
+
+
+dnl  Check the sizes of various types for DIS
+dnl  The cross-compiling sizes are there to shut autoconf up
+dnl  and are chosen to all be different so that dis.h uses
+dnl  specific routines for each type instead of substituting in the
+dnl  unlikely (and unsupported) event of cross-compilation.
+AC_CHECK_SIZEOF(int, 20)
+AC_CHECK_SIZEOF(long, 21)
+AC_CHECK_SIZEOF(float, 22)
+AC_CHECK_SIZEOF(double, 23)
+AC_CHECK_SIZEOF(long double, 24)
+AC_CHECK_SIZEOF(short, 25)
+AC_CHECK_SIZEOF(unsigned, 26)
+AC_CHECK_SIZEOF(unsigned int, 27)
+AC_CHECK_SIZEOF(unsigned short, 28)
+AC_CHECK_SIZEOF(unsigned char, 29)
+AC_CHECK_SIZEOF(unsigned long, 30)
+AC_CHECK_SIZEOF(signed char, 31)
+AC_C_CHAR_UNSIGNED
+
+AC_CHECK_TYPE([socklen_t],
+  [AC_DEFINE_UNQUOTED([torque_socklen_t],[socklen_t],[type to use in place of socklen_t])],
+  [TAC_SOCKLEN_EQUIV([torque_socklen_t])])
+
+TAC_PAM_GET_USER_2ND_ARG
+if test "$tac_pam_get_user_2nd_arg" = "none" && test "$pammoddir" != "disabled" ;then
+  AC_MSG_ERROR([Unable to compile PAM bits, missing pam-devel?])
+fi
+
+dnl
+dnl  ######################################################################
+dnl  Check for functions
+dnl
+
+dnl  under HP-UX seteuid does not exist, look for setresuid instead
+AC_CHECK_FUNCS(seteuid setresuid,break)
+AC_CHECK_FUNCS(setegid setresgid,break)
+
+
+AC_CHECK_FUNCS([gettimeofday rresvport bindresvport wordexp poll getaddrinfo])
+
+AC_FUNC_GETGROUPS
+
+dnl see if atexit() exists, if not check for on_exit(), if that fails, panic
+AC_CHECK_FUNCS(atexit on_exit, [ { found_an_exit=yes; break; } ])
+if test "$found_an_exit" != yes; then
+    AC_MSG_ERROR([Must have atexit() or on_exit()])
+fi
+
+AC_CHECK_FUNC(ntohl, [ :],
+  AC_MSG_CHECKING([for ntohl in arpa/inet.h])
+  torque_cv_ntohl_needs_arpa_inet_h="no"
+  AC_TRY_COMPILE([
+  #ifdef HAVE_SYS_TYPES_H
+  #include <sys/types.h>
+  #endif
+  #ifdef HAVE_NETINET_IN_H
+  #include <netinet/in.h>
+  #endif
+  #ifdef HAVE_ARPA_INET_H
+  #include <arpa/inet.h>
+  #endif
+  ],[exit(ntohl(0));],
+    [torque_cv_ntohl_needs_arpa_inet_h="yes"
+     AC_DEFINE_UNQUOTED([NTOHL_NEEDS_ARPA_INET_H],1,[Define if ntohl() is declared in arpa/inet.h])])
+  AC_MSG_RESULT($torque_cv_ntohl_needs_arpa_inet_h)
+)
+
+TAC_TCLTK
+
+dnl
+dnl  ######################################################################
+dnl Checks needed to build DRMAA
+dnl
+if test "$build_drmaa" = "yes" ;then
+AC_MSG_NOTICE([Configuring DRMAA ...])
+AC_PATH_PROG(GPERF, "gperf")
+AX_PROG_DOT
+AC_PATH_PROG(DOXYGEN, "doxygen", "none")
+AC_C_BIGENDIAN_CROSS
+ACX_PTHREAD(,[AC_MSG_ERROR([POSIX threads library is required by DRMAA.])])
+
+AC_CHECK_HEADERS([stddef.h limits.h stdint.h inttypes.h])
+AC_HEADER_STDBOOL
+
+#AC_FUNC_MALLOC
+#AC_FUNC_REALLOC
+AC_FUNC_STRERROR_R
+AC_FUNC_STRFTIME
+AC_CHECK_FUNCS([getcwd strchr strdup strerror mkstemp fstat strlcpy asprintf vasprintf])
+
+AH_TEMPLATE([HAVE_VA_COPY],
+                [Define to 1 if you have the va_copy function.])
+AC_MSG_CHECKING([for va_copy])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdarg.h>]],
+                        [[va_list a, b; va_copy(a, b);]])],[
+  AC_MSG_RESULT([yes])
+  AC_DEFINE([HAVE_VA_COPY])
+  ],[
+      AC_MSG_RESULT([no])
+  ],[
+      AC_MSG_RESULT([no])
+])
+
+AH_TEMPLATE([HAVE___VA_COPY],
+                [Define to 1 if you have the __va_copy function.])
+AC_MSG_CHECKING([for __va_copy])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdarg.h>]],
+                        [[va_list a, b; __va_copy(a, b);]])],[
+  AC_MSG_RESULT([yes])
+  AC_DEFINE([HAVE___VA_COPY])
+        AH_BOTTOM([
+#ifndef HAVE_VA_COPY
+#       define va_copy(a,b) __va_copy(a,b)
+#endif
+])
+  ],[
+  AC_MSG_RESULT([no])
+  ], [
+  AC_MSG_RESULT([no])
+])
+
+  build_drmaa_docs=yes
+  RPM_AC_OPTS="$RPM_AC_OPTS --with drmaa"
+else  
+  DOXYGEN=none
+  build_drmaa_docs=no
+  RPM_AC_OPTS="$RPM_AC_OPTS --without drmaa"
+fi
+AM_CONDITIONAL(DRMAA_DOCS, [test "$DOXYGEN" != "none"])
+AC_SUBST(build_drmaa_docs)
+drmaadocdir=$datadir/doc/$PACKAGE-drmaa
+AC_SUBST(drmaadocdir)
+
+
+dnl
+dnl  ######################################################################
+dnl  Output
+dnl
+
+AC_CREATE_GENERIC_CONFIG([pbs],[-ltorque])
+
+AC_SUBST(ALPS_LIBS)
+
+dnl these are quoted, and this removes them
+SPEC_NAME=$PACKAGE_TARNAME
+SPEC_VERSION=$PACKAGE_VERSION
+AC_SUBST(SPEC_NAME)
+AC_SUBST(SPEC_VERSION)
+AC_SUBST(RPM_AC_OPTS)
+
+dnl  Head and bottom for the config-file
+AH_TOP([#ifndef _PBS_CONFIG_H_
+#define _PBS_CONFIG_H_])
+
+AH_BOTTOM([
+#ifndef __GNUC__
+#       define __attribute__ /* nothing */
+#endif
+])
+
+AH_BOTTOM([
+#endif /* _PBS_CONFIG_H_ */
+])
+
+
+dnl  Include the Cplant Fault Recovery Patch jugglery
+AH_VERBATIM([NEED_BLOCKING_CONNECTIONS],
+[#ifndef NEED_BLOCKING_CONNECTIONS
+#define write(a,b,c) write_nonblocking_socket(a,b,c)
+#define read(a,b,c) read_nonblocking_socket(a,b,c)
+#endif])
+
+pbs_build_host=`uname -n`
+pbs_build_date=`date`
+pbs_build_dir=`pwd`
+pbs_source_dir=`cd $srcdir && pwd`
+pbs_config_args=$@
+AC_DEFINE_UNQUOTED([PBS_BUILD_HOST],"${pbs_build_host}",[Define to the build hostname])
+AC_DEFINE_UNQUOTED([PBS_BUILD_DATE],"${pbs_build_date}",[Define to the build date])
+AC_DEFINE_UNQUOTED([PBS_BUILD_DIR],"${pbs_build_dir}",[Define to the build directory])
+AC_DEFINE_UNQUOTED([PBS_SOURCE_DIR],"${pbs_source_dir}",[Define to the source directory])
+AC_DEFINE_UNQUOTED([PBS_BUILD_USER],"${USER}",[Define to the building username])
+AC_DEFINE_UNQUOTED([PBS_INSTALL_DIR],"${prefix}",[Define to the install directory])
+AC_DEFINE_UNQUOTED([PBS_CONFIG_ARGS],"${ac_configure_args}",[Define to the install directory])
+AC_DEFINE_UNQUOTED([PBS_CFLAGS],"${CFLAGS}",[Define to the install directory])
+
+AC_CONFIG_FILES([torque.spec:buildutils/torque.spec.in])
+#The output files are alphabetically ordered by src then check test files
+AC_OUTPUT(buildutils/pbs_mkdirs
+	  buildutils/self-extract-head-sh
+	  buildutils/modulefiles
+	  buildutils/modulefiles.vers
+	  Makefile
+	  contrib/blcr/Makefile
+	  contrib/init.d/Makefile
+	  doc/Makefile
+	  doc/man1/Makefile
+	  doc/man3/Makefile
+	  doc/man7/Makefile
+	  doc/man8/Makefile
+	  src/Makefile
+	  src/cmds/Makefile
+    src/daemon_client/Makefile
+	  src/gui/Makefile
+	  src/gui/Ccode/Makefile
+	  src/include/Makefile
+	  src/lib/Makefile
+	  src/lib/Libattr/Makefile
+	  src/lib/Libcmds/Makefile
+	  src/lib/Libcsv/Makefile
+	  src/lib/Libdis/Makefile
+	  src/lib/Libifl/Makefile
+	  src/lib/Liblog/Makefile
+	  src/lib/Libnet/Makefile
+	  src/lib/Libpbs/Makefile
+	  src/lib/Libsite/Makefile
+	  src/lib/Libutils/Makefile
+	  src/mom_rcp/Makefile
+	  src/momctl/Makefile
+	  src/resmom/Makefile
+	  src/resmom/aix4/Makefile
+	  src/resmom/aix5/Makefile
+	  src/resmom/cygwin/Makefile
+	  src/resmom/darwin/Makefile
+	  src/resmom/digitalunix/Makefile
+	  src/resmom/freebsd/Makefile
+	  src/resmom/freebsd5/Makefile
+	  src/resmom/fujitsu/Makefile
+	  src/resmom/hpux10/Makefile
+	  src/resmom/hpux11/Makefile
+	  src/resmom/irix5/Makefile
+	  src/resmom/irix6/Makefile
+	  src/resmom/irix6array/Makefile
+	  src/resmom/linux/Makefile
+	  src/resmom/netbsd/Makefile
+	  src/resmom/solaris5/Makefile
+	  src/resmom/solaris7/Makefile
+	  src/resmom/sunos4/Makefile
+	  src/resmom/unicos8/Makefile
+	  src/resmom/unicosmk2/Makefile
+	  src/scheduler.basl/Makefile
+	  src/scheduler.cc/Makefile
+	  src/scheduler.cc/samples/Makefile
+	  src/scheduler.cc/samples/cray_t3e/Makefile
+	  src/scheduler.cc/samples/dec_cluster/Makefile
+	  src/scheduler.cc/samples/fifo/Makefile
+	  src/scheduler.cc/samples/msic_cluster/Makefile
+	  src/scheduler.cc/samples/sgi_origin/Makefile
+	  src/scheduler.cc/samples/umn_cluster/Makefile
+	  src/scheduler.tcl/Makefile
+	  src/server/Makefile
+	  src/tools/Makefile
+	  src/tools/xpbsmon/Makefile
+	  src/drmaa/Makefile
+	  src/drmaa/src/Makefile
+	  src/drmaa/test/Makefile
+	  src/drmaa/Doxyfile
+	  src/pam/Makefile
+)
+
+echo
+echo "Building components: server=$build_server mom=$build_mom clients=$build_clients 
+                     gui=$build_gui drmaa=$build_drmaa pam=`test "x$pammoddir" = "xdisabled" && echo no || echo yes`"
+echo "PBS Machine type    : $PBS_MACH"
+echo "Remote copy         : $RCP_PATH $RCP_ARGS"
+echo "PBS home            : $PBS_SERVER_HOME"
+echo "Default server      : $PBS_DEFAULT_SERVER"
+echo
+echo "Unix Domain sockets : $ENABLE_UNIX_SOCKETS"
+echo "Linux cpusets       : $build_l26_cpuset"
+echo "Tcl                 : `test "$TCL" = "1" && echo $MY_TCL_INCS $MY_TCL_LIBS || echo disabled`"
+echo "Tk                  : `test "$TK" = "1" && echo $MY_TCLTK_INCS $MY_TCLTK_LIBS || echo disabled`"
+echo
+
+if test "x$gccwarnings" = "xyes" ;then
+   AC_MSG_WARN([This compilation has strict compiler options enabled that cause
+the build to fail if any compiler warnings are emitted.  If this build fails
+because of a harmless warning, please report the problem to $PACKAGE_BUGREPORT
+and run configure again without --enable-gcc-warnings.])
+   echo
+fi
+
+if test "${maxint_ids}" = "1" ; then
+  AC_MSG_WARN([You are enabling job ids to go up to the maximum value of an int 
+    on your system. Depending on the size of your system, this may make existing 
+    jobs impossible to upgrade. BE CERTAIN BEFORE PROCEEDING!])
+fi
+echo "Ready for '${MAKE-make}'."

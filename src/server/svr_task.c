@@ -172,13 +172,10 @@ struct work_task *set_task(
     }
   else
     {
-    if (pnew->wt_mutex == NULL)
+    if ((pnew->wt_mutex = calloc(1, sizeof(pthread_mutex_t))) == NULL)
       {
-      if ((pnew->wt_mutex = calloc(1, sizeof(pthread_mutex_t))) == NULL)
-        {
-        free(pnew);
-        return(NULL);
-        }
+      free(pnew);
+      return(NULL);
       }
     
     pthread_mutex_init(pnew->wt_mutex,NULL);

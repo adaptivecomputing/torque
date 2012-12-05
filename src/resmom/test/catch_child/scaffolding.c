@@ -16,6 +16,9 @@
 #include "batch_request.h" /* batch_request */
 #include "errno.h"
 #include "mom_func.h"
+#include "resizable_array.h"
+
+resizable_array *exiting_job_list;
 
 const char *PMOMCommand[] =
   {
@@ -1319,3 +1322,7 @@ im_compose_info *create_compose_reply_info(char *jobid, char *cookie, hnodent *n
   return(NULL);
   }
 
+int insert_thing(resizable_array *ra, void *thing)
+  {
+  return(0);
+  }

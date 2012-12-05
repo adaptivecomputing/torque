@@ -1013,8 +1013,6 @@ void stat_update(
           /* must save session id    */
 
           job_save(pjob, SAVEJOB_FULL, 0);
-
-          svr_mailowner(pjob, MAIL_BEGIN, MAIL_NORMAL, NULL);
           }
 
 #ifdef USESAVEDRESOURCES
