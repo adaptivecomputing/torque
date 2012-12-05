@@ -977,22 +977,27 @@ int get_script(
 
     strcat(cfilter, tmp_name2);
 
-    filter_pipe = popen(cfilter, "w");
-
-    while ((in = fgets(s, MAX_LINE_LEN, file)) != NULL)
+    if((filter_pipe = popen(cfilter, "w")) != NULL)
       {
-      if (fputs(in, filter_pipe) < 0)
+      while ((in = fgets(s, MAX_LINE_LEN, file)) != NULL)
         {
-        fprintf(stderr, "qsub: error writing to filter stdin\n");
+        if (fputs(in, filter_pipe) < 0)
+          {
+          fprintf(stderr, "qsub: error writing to filter stdin\n");
 
-        fclose(filter_pipe);
-        unlink(tmp_name2);
+          fclose(filter_pipe);
+          unlink(tmp_name2);
 
-        return(3);
+          return(3);
+          }
         }
-      }
 
-    rc = pclose(filter_pipe);
+      rc = pclose(filter_pipe);
+      }
+    else
+      {
+      rc = -1;
+      }
 
     if (WEXITSTATUS(rc) == (unsigned char)SUBMIT_FILTER_ADMIN_REJECT_CODE)
       {

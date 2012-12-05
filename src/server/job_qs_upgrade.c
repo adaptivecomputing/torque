@@ -257,7 +257,17 @@ int job_qs_upgrade(
 
   strcat(namebuf, JOB_FILE_BACKUP);
 
-  source = fdopen(dup(fds), "r");
+    {
+    int fdsDup = dup(fds);
+    source = (fdsDup < 0)?NULL:fdopen(fdsDup, "r");
+    if(source == NULL)
+      {
+      sprintf(log_buf, "Can't duplicate fds.\n");
+      log_err(errno, __func__, log_buf);
+
+      return(-1);
+      }
+    }
 
   if ((backup = fopen(namebuf, "wb")) == NULL)
     {

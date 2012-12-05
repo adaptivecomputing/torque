@@ -391,6 +391,11 @@ int array_recov(
   CLEAR_HEAD(pa->request_tokens);
 
   fd = open(path, O_RDONLY, 0);
+  if(fd < 0)
+    {
+    free(pa);
+    return(PBSE_SYSTEM);
+    }
 
   if (array_259_upgrade)
     {
