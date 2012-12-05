@@ -1284,22 +1284,11 @@ void do_dir(
   int data_type)
 
   {
-/*   static int opt_pass = 1; */
-  int argc;
+  int argc = 0;
 
-/* #define MAX_ARGV_LEN 128 */
-  /* As this is overwritten in make_argv every time, I'm removing static */
   static char *vect[MAX_ARGV_LEN + 1];
 
-/*   if (opt_pass == 1) */
-/*     { */
-    argc = 0;
-
-    memset(&vect, 0, MAX_ARGV_LEN + 1);
-/*    while (argc < MAX_ARGV_LEN + 1)
-      vect[argc++] = NULL;
-      */
-/*     } */
+  memset(&vect, 0, MAX_ARGV_LEN + 1);
 
   make_argv(&argc, vect, opts);
 
@@ -1331,12 +1320,6 @@ char *interactive_port(
 
   if (*sock < 0)
     print_qsub_usage_exit("qsub: unable to obtain socket");
-/*    {
-    perror("qsub: unable to obtain socket");
-
-    exit(1);
-    }
-    */
 
   namelen = sizeof(myaddr);
 
@@ -1346,12 +1329,6 @@ char *interactive_port(
 
   if (bind(*sock, (struct sockaddr *)&myaddr, namelen) < 0)
     print_qsub_usage_exit("qsub: unable to bind to socket");
-/*    {
-    perror("qsub: unable to bind to socket");
-
-    exit(1);
-    }
-    */
 
   /* get port number assigned */
 
@@ -3985,11 +3962,27 @@ void add_variable_list(
   int       pos = 0;
   char     *var_list = NULL;
   job_data *en;
+  job_data *v_value = NULL;
 
-  total_len = hash_strlen(ji->user_attr);
+  /* if -v was used then it needs to be included as well. */
+  if (hash_find(ji->job_attr, var_name, &v_value) != 0)
+    {
+    /* add the length of this + 1 for the comma */
+    total_len = v_value->value_len + 1;;
+    }
+
+  total_len += hash_strlen(ji->user_attr);
   count = hash_count(ji->user_attr);
   total_len += count*2;
   var_list = memmgr_calloc(&ji->mm, 1, total_len);
+
+  if (v_value != NULL)
+    {
+    strcat(var_list, v_value->value);
+    if (src_hash != NULL)
+      strcat(var_list, ",");
+    }
+
   for (en=src_hash; en != NULL; en=en->hh.next)
     {
     pos++;
@@ -4005,7 +3998,6 @@ void add_variable_list(
       }
     }
 
-  /* If the attribute ATTR_v already exists, this will overwrite it */
   hash_add_or_exit(&ji->mm, &ji->job_attr, var_name, var_list, CMDLINE_DATA);
   }
 
