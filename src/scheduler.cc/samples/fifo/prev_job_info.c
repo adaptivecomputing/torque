@@ -98,7 +98,7 @@
  */
 prev_job_info *create_prev_job_info(job_info **jinfo_arr, int size)
   {
-  prev_job_info *new;  /* new prev_job_info array */
+  prev_job_info *new_job_info;  /* new prev_job_info array */
   int local_size;  /* the size of the array */
   int i;
 
@@ -112,7 +112,7 @@ prev_job_info *create_prev_job_info(job_info **jinfo_arr, int size)
   else
     local_size = size;
 
-  if ((new = (prev_job_info *) malloc(sizeof(prev_job_info)  * local_size)) == NULL)
+  if ((new_job_info = (prev_job_info *) malloc(sizeof(prev_job_info)  * local_size)) == NULL)
     {
     fprintf(stderr, "Error allocating memory\n");
     return NULL;
@@ -120,10 +120,10 @@ prev_job_info *create_prev_job_info(job_info **jinfo_arr, int size)
 
   for (i = 0; jinfo_arr[i] != NULL; i++)
     {
-    new[i].name = jinfo_arr[i] -> name;
-    new[i].resused = jinfo_arr[i] -> resused;
-    new[i].account = jinfo_arr[i] -> account;
-    new[i].ginfo = jinfo_arr[i] -> ginfo;
+    new_job_info[i].name = jinfo_arr[i] -> name;
+    new_job_info[i].resused = jinfo_arr[i] -> resused;
+    new_job_info[i].account = jinfo_arr[i] -> account;
+    new_job_info[i].ginfo = jinfo_arr[i] -> ginfo;
 
     /* so the memory is not freed at the end of the scheduling cycle */
     jinfo_arr[i] -> name = NULL;
@@ -131,7 +131,7 @@ prev_job_info *create_prev_job_info(job_info **jinfo_arr, int size)
     jinfo_arr[i] -> account = NULL;
     }
 
-  return new;
+  return new_job_info;
   }
 
 /*

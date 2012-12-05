@@ -63,7 +63,7 @@ int find_attr(struct attribute_def *attr_def, char *name, int limit)
   exit(1);
   }
 
-int set_str(struct pbs_attribute *attr, struct pbs_attribute *new, enum batch_op op)
+int set_str(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op)
   {
   fprintf(stderr, "The call to set_str to be mocked!!\n");
   exit(1);

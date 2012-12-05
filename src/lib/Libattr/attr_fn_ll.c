@@ -131,25 +131,25 @@ int encode_ll(
 int set_ll(
    
   pbs_attribute *attr, 
-  pbs_attribute *new,
+  pbs_attribute *new_attr,
   enum batch_op  op)
 
   {
-  assert(attr && new && (new->at_flags & ATR_VFLAG_SET));
+  assert(attr && new_attr && (new_attr->at_flags & ATR_VFLAG_SET));
 
   switch (op)
     {
 
     case SET:
-      attr->at_val.at_ll = new->at_val.at_ll;
+      attr->at_val.at_ll = new_attr->at_val.at_ll;
       break;
 
     case INCR:
-      attr->at_val.at_ll += new->at_val.at_ll;
+      attr->at_val.at_ll += new_attr->at_val.at_ll;
       break;
 
     case DECR:
-      attr->at_val.at_ll -= new->at_val.at_ll;
+      attr->at_val.at_ll -= new_attr->at_val.at_ll;
       break;
 
     default:

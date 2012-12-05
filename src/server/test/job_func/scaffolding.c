@@ -527,7 +527,7 @@ int decode_ll(
 int set_ll(
    
   pbs_attribute *attr, 
-  pbs_attribute *new,
+  pbs_attribute *new_attr,
   enum batch_op  op)
 
   {
@@ -582,7 +582,7 @@ int  decrement_queued_jobs(user_info_holder *uih, char *user_name)
 int set_str(
     
   pbs_attribute *attr,
-  pbs_attribute *new,
+  pbs_attribute *new_attr,
   enum batch_op  op)
 
   {
@@ -590,7 +590,7 @@ int set_str(
   char *p;
   size_t nsize;
 
-  nsize = strlen(new->at_val.at_str) + 1; /* length of new string */
+  nsize = strlen(new_attr->at_val.at_str) + 1; /* length of new string */
 
   if ((op == INCR) && (attr->at_val.at_str == NULL))
     op = SET; /* no current string, change INCR to SET */
@@ -607,7 +607,7 @@ int set_str(
         (void)free(attr->at_val.at_str);
       attr->at_val.at_str = new_value;
 
-      (void)strcpy(attr->at_val.at_str, new->at_val.at_str);
+      (void)strcpy(attr->at_val.at_str, new_attr->at_val.at_str);
 
       break;
 
@@ -620,7 +620,7 @@ int set_str(
         return (PBSE_SYSTEM);
 
       strcat(new_value, attr->at_val.at_str);
-      strcat(new_value, new->at_val.at_str);
+      strcat(new_value, new_attr->at_val.at_str);
 
       free(attr->at_val.at_str);
       attr->at_val.at_str = new_value;
@@ -639,7 +639,7 @@ int set_str(
 
       while (p >= attr->at_val.at_str)
         {
-        if (strncmp(p, new->at_val.at_str, (int)nsize) == 0)
+        if (strncmp(p, new_attr->at_val.at_str, (int)nsize) == 0)
           {
           do
             {

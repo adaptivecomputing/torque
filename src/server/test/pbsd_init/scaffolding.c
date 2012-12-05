@@ -287,7 +287,7 @@ void log_close(int msg)
   exit(1);
   }
 
-int set_arst(struct pbs_attribute *attr, struct pbs_attribute *new, enum batch_op op)
+int set_arst(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op)
   {
   fprintf(stderr, "The call to set_arst needs to be mocked!!\n");
   exit(1);

@@ -101,7 +101,7 @@ check_environment(void)
 
 int fix_cmdfile(char *ocmd, char *ncmd)
   {
-  FILE *new;
+  FILE *new_attr;
   FILE *old;
   int   len;
   char  linebuf[LINEBUFSIZ];
@@ -115,7 +115,7 @@ int fix_cmdfile(char *ocmd, char *ncmd)
 
   sprintf(ncmd, "/tmp/pbsCtemp.%s", getenv("PBS_JOBID"));
 
-  if ((new = fopen(ncmd, "w")) == NULL)
+  if ((new_attr = fopen(ncmd, "w")) == NULL)
     {
     fprintf(stderr, "%s: Unable to open %s for new command file\n", mcn, ncmd);
     return (-1);
@@ -131,10 +131,10 @@ int fix_cmdfile(char *ocmd, char *ncmd)
 
   while (fgets(pl, len, old) != NULL)
     {
-    fputs(linebuf, new);
+    fputs(linebuf, new_attr);
     }
 
-  fclose(new);
+  fclose(new_attr);
 
   fclose(old);
   return (0);

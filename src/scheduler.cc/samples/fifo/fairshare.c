@@ -195,27 +195,27 @@ group_info *find_alloc_ginfo(char *name)
  */
 group_info *new_group_info()
   {
-  group_info *new;  /* the new group */
+  group_info *new_group_info;  /* the new group */
 
-  if ((new = malloc(sizeof(group_info))) == NULL)
+  if ((new_group_info = malloc(sizeof(group_info))) == NULL)
     {
     perror("Error allocating memory");
     return NULL ;
     }
 
-  new -> name = NULL;
+  new_group_info -> name = NULL;
 
-  new -> resgroup = UNSPECIFIED;
-  new -> cresgroup = UNSPECIFIED;
-  new -> shares = UNSPECIFIED;
-  new -> percentage = 0.0;
-  new -> usage = 1;
-  new -> temp_usage = 1;
-  new -> parent = NULL;
-  new -> sibling = NULL;
-  new -> child = NULL;
+  new_group_info -> resgroup = UNSPECIFIED;
+  new_group_info -> cresgroup = UNSPECIFIED;
+  new_group_info -> shares = UNSPECIFIED;
+  new_group_info -> percentage = 0.0;
+  new_group_info -> usage = 1;
+  new_group_info -> temp_usage = 1;
+  new_group_info -> parent = NULL;
+  new_group_info -> sibling = NULL;
+  new_group_info -> child = NULL;
 
-  return new;
+  return new_group_info;
   }
 
 /*

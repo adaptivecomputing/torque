@@ -158,12 +158,12 @@ int
 schd_bits2mask(char *string, Bitfield *mask)
   {
   int    i, bit;
-  Bitfield new;
+  Bitfield new_bf;
 
   if (strlen(string) != BITFIELD_SIZE)
     return (-1);
 
-  BITFIELD_CLRALL(&new);
+  BITFIELD_CLRALL(&new_bf);
 
   /* Start with the high bit. */
   bit = BITFIELD_SIZE - 1;
@@ -171,7 +171,7 @@ schd_bits2mask(char *string, Bitfield *mask)
   for (i = 0; i < BITFIELD_SIZE; i++)
     {
     if (string[i] == '1')
-      BITFIELD_SETB(&new, bit);
+      BITFIELD_SETB(&new_bf, bit);
     else if (string[i] != '0')
       return (-1);
 
@@ -180,7 +180,7 @@ schd_bits2mask(char *string, Bitfield *mask)
 
   /* Done.  Copy the new nodemask and return success. */
 
-  BITFIELD_CPY(mask, &new);
+  BITFIELD_CPY(mask, &new_bf);
 
   return (0);
   }
@@ -192,12 +192,12 @@ int schd_alloc_nodes(int nnodes, Queue *queue, Bitfield *job_mask)
   {
   Bitfield *queue_mask;
   Bitfield *q_avail_mask;
-  Bitfield new;
+  Bitfield new_bf;
   int candidate;
   int n_found;
 
   n_found = 0;
-  BITFIELD_CLRALL(&new);
+  BITFIELD_CLRALL(&new_bf);
 
   queue_mask   = &(queue->queuemask);
   q_avail_mask = &(queue->availmask);
@@ -211,7 +211,7 @@ int schd_alloc_nodes(int nnodes, Queue *queue, Bitfield *job_mask)
       if (BITFIELD_TSTB(q_avail_mask, candidate))
         {
         /* available */
-        BITFIELD_SETB(&new, candidate);
+        BITFIELD_SETB(&new_bf, candidate);
         ++n_found;
         }
       }
@@ -225,7 +225,7 @@ int schd_alloc_nodes(int nnodes, Queue *queue, Bitfield *job_mask)
    */
   if (nnodes == n_found)
     {
-    BITFIELD_CPY(job_mask, &new);
+    BITFIELD_CPY(job_mask, &new_bf);
     return nnodes;
     }
 

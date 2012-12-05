@@ -39,7 +39,7 @@ void free_unkn(pbs_attribute *pattr)
   exit(1);
   }
 
-int set_unkn(struct pbs_attribute *old, struct pbs_attribute *new, enum batch_op op)
+int set_unkn(struct pbs_attribute *old, struct pbs_attribute *new_attr, enum batch_op op)
   {
   fprintf(stderr, "The call to set_unkn to be mocked!!\n");
   exit(1);
@@ -57,7 +57,7 @@ int comp_unkn(struct pbs_attribute *attr, struct pbs_attribute *with)
   exit(1);
   }
 
-int set_b(struct pbs_attribute *attr, struct pbs_attribute *new, enum batch_op op)
+int set_b(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op)
   {
   fprintf(stderr, "The call to set_b to be mocked!!\n");
   exit(1);
@@ -87,7 +87,7 @@ int encode_l(pbs_attribute *attr, tlist_head *phead, char *atname, char *rsname,
   exit(1);
   }
 
-int set_l(struct pbs_attribute *attr, struct pbs_attribute *new, enum batch_op op)
+int set_l(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op)
   {
   fprintf(stderr, "The call to set_l to be mocked!!\n");
   exit(1);
@@ -117,7 +117,7 @@ int decode_str(pbs_attribute *patr, char *name, char *rescn, char *val, int perm
   exit(1);
   }
 
-int set_str(struct pbs_attribute *attr, struct pbs_attribute *new, enum batch_op op)
+int set_str(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op)
   {
   fprintf(stderr, "The call to set_str to be mocked!!\n");
   exit(1);
@@ -141,7 +141,7 @@ int comp_ll(struct pbs_attribute *attr, struct pbs_attribute *with)
   exit(1);
   }
 
-int set_ll(struct pbs_attribute *attr, struct pbs_attribute *new, enum batch_op op)
+int set_ll(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op)
   {
   fprintf(stderr, "The call to set_ll to be mocked!!\n");
   exit(1);
@@ -183,7 +183,7 @@ int decode_size(pbs_attribute *patr, char *name, char *rescn, char *val, int per
   exit(1);
   }
 
-int set_size(struct pbs_attribute *attr, struct pbs_attribute *new, enum batch_op op)
+int set_size(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op)
   {
   fprintf(stderr, "The call to set_size to be mocked!!\n");
   exit(1);

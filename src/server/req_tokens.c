@@ -111,7 +111,7 @@ int compare_tokens(
 static int chk_dup_token(
     
   struct array_strings *old,
-  struct array_strings *new)
+  struct array_strings *new_string)
 
   {
   int i;
@@ -119,19 +119,19 @@ static int chk_dup_token(
 
   int ret = 0;
 
-  if (new != NULL && old != NULL)
+  if (new_string != NULL && old != NULL)
     {
-    for (i = 0; i < new->as_usedptr; ++i)
+    for (i = 0; i < new_string->as_usedptr; ++i)
       {
 
       /* first check against self */
 
-      for (j = 0; j < new->as_usedptr; ++j)
+      for (j = 0; j < new_string->as_usedptr; ++j)
         {
 
         if (i != j)
           {
-          if (compare_tokens(new->as_string[i], new->as_string[j]) != 0)
+          if (compare_tokens(new_string->as_string[i], new_string->as_string[j]) != 0)
             {
             ret = 1;
             break;
@@ -141,7 +141,7 @@ static int chk_dup_token(
 
       for (j = 0; j < old->as_usedptr; ++j)
         {
-        if (compare_tokens(new->as_string[i], old->as_string[j]) != 0)
+        if (compare_tokens(new_string->as_string[i], old->as_string[j]) != 0)
           {
           ret = 1;
           break;
@@ -160,7 +160,7 @@ static int chk_dup_token(
 int set_tokens(
     
   pbs_attribute *attr, 
-  pbs_attribute *new, 
+  pbs_attribute *new_attr, 
   enum batch_op  op)
 
   {
@@ -168,7 +168,7 @@ int set_tokens(
   struct array_strings *newpas;
 
   pas = attr->at_val.at_arst; /* array of strings control struct */
-  newpas = new->at_val.at_arst; /* array of strings control struct */
+  newpas = new_attr->at_val.at_arst; /* array of strings control struct */
 
   switch (op)
     {
@@ -191,6 +191,6 @@ int set_tokens(
       return (PBSE_INTERNAL);
     }
 
-  return (set_arst(attr, new, op));
+  return (set_arst(attr, new_attr, op));
   }
 

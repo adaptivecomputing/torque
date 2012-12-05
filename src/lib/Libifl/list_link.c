@@ -111,7 +111,7 @@
 void insert_link(
 
   struct list_link *old, /* ptr to old entry in list */
-  struct list_link *new, /* ptr to new link entry    */
+  struct list_link *new_link, /* ptr to new link entry    */
   void             *pobj, /* ptr to object to link in */
   int               position) /* 0=before old, else after */
 
@@ -123,8 +123,8 @@ void insert_link(
       (old == NULL) ||
       (old->ll_prior == NULL) ||
       (old->ll_next  == NULL) ||
-      (new->ll_prior != (list_link *)new) ||
-      (new->ll_next  != (list_link *)new))
+      (new_link->ll_prior != (list_link *)new_link) ||
+      (new_link->ll_next  != (list_link *)new_link))
     {
     fprintf(stderr, "Assertion failed, bad pointer in insert_link\n");
 
@@ -140,13 +140,13 @@ void insert_link(
         fprintf(stderr, "ERROR:  bad head->ll_next pointer in insert_link\n");
       }
 
-    if (new->ll_prior != (list_link *)new)
-      fprintf(stderr, "ERROR:  bad new->ll_prior pointer in insert_link\n");
+    if (new_link->ll_prior != (list_link *)new_link)
+      fprintf(stderr, "ERROR:  bad new_link->ll_prior pointer in insert_link\n");
 
-    if (new->ll_next != (list_link *)new)
-      fprintf(stderr, "ERROR:  bad new->ll_next pointer in insert_link\n");
+    if (new_link->ll_next != (list_link *)new_link)
+      fprintf(stderr, "ERROR:  bad new_link->ll_next pointer in insert_link\n");
 
-    fprintf(stderr, "%p %p %p\n", (void *)new->ll_next, (void *)new->ll_prior, (void *)new);
+    fprintf(stderr, "%p %p %p\n", (void *)new_link->ll_next, (void *)new_link->ll_prior, (void *)new_link);
 
     abort();
     }
@@ -156,19 +156,19 @@ void insert_link(
   if (position == LINK_INSET_AFTER)
     {
     /* insert new after old */
-    new->ll_prior = old;
-    new->ll_next  = old->ll_next;
+    new_link->ll_prior = old;
+    new_link->ll_next  = old->ll_next;
 
-    (old->ll_next)->ll_prior = new;
-    old->ll_next = new;
+    (old->ll_next)->ll_prior = new_link;
+    old->ll_next = new_link;
     }
   else
     {
     /* insert new before old */
-    new->ll_next = old;
-    new->ll_prior = old->ll_prior;
-    (old->ll_prior)->ll_next = new;
-    old->ll_prior = new;
+    new_link->ll_next = old;
+    new_link->ll_prior = old->ll_prior;
+    (old->ll_prior)->ll_next = new_link;
+    old->ll_prior = new_link;
     }
 
   /*
@@ -177,9 +177,9 @@ void insert_link(
    */
 
   if (pobj != NULL)
-    new->ll_struct = pobj;
+    new_link->ll_struct = pobj;
   else
-    new->ll_struct = (void *)new;
+    new_link->ll_struct = (void *)new_link;
 
   return;
   }
@@ -194,7 +194,7 @@ void insert_link(
 void append_link(
 
   tlist_head *head, /* ptr to head of list */
-  list_link  *new,  /* ptr to new entry */
+  list_link  *new_link,  /* ptr to new entry */
   void       *pobj) /* ptr to object to link in */
 
   {
@@ -204,8 +204,8 @@ void append_link(
   if ((pobj == NULL) ||
       (head->ll_prior == NULL) ||
       (head->ll_next  == NULL) ||
-      (new->ll_prior  != (list_link *)new) ||
-      (new->ll_next   != (list_link *)new))
+      (new_link->ll_prior  != (list_link *)new_link) ||
+      (new_link->ll_next   != (list_link *)new_link))
     {
     if (pobj == NULL)
       fprintf(stderr, "ERROR:  bad pobj pointer in append_link\n");
@@ -216,10 +216,10 @@ void append_link(
     if (head->ll_next == NULL)
       fprintf(stderr, "ERROR:  bad head->ll_next pointer in append_link\n");
 
-    if (new->ll_prior == NULL)
+    if (new_link->ll_prior == NULL)
       fprintf(stderr, "ERROR:  bad new->ll_prior pointer in append_link\n");
 
-    if (new->ll_next == NULL)
+    if (new_link->ll_next == NULL)
       fprintf(stderr, "ERROR:  bad new->ll_next pointer in append_link\n");
 
     abort();
@@ -235,7 +235,7 @@ void append_link(
 
   if (pobj != NULL)
     {
-    new->ll_struct = pobj;
+    new_link->ll_struct = pobj;
     }
   else
     {
@@ -244,14 +244,14 @@ void append_link(
          on is not the first embeded list_link in the surrounding
          structure, e.g. work_task.wt_link_obj */
 
-    new->ll_struct = (void *)new;
+    new_link->ll_struct = (void *)new_link;
     }
 
-  new->ll_prior = head->ll_prior;
+  new_link->ll_prior = head->ll_prior;
 
-  new->ll_next  = head;
-  head->ll_prior = new;
-  new->ll_prior->ll_next = new; /* now visible to forward iteration */
+  new_link->ll_next  = head;
+  head->ll_prior = new_link;
+  new_link->ll_prior->ll_next = new_link; /* now visible to forward iteration */
 
   return;
   }  /* END append_link() */

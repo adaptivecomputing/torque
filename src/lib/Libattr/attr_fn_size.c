@@ -235,7 +235,7 @@ int encode_size(
 int set_size(
    
   pbs_attribute *attr,
-  pbs_attribute *new,
+  pbs_attribute *new_attr,
   enum batch_op  op)
 
   {
@@ -245,21 +245,21 @@ int set_size(
 
   struct size_value tmpn; /* real attributes are not changed if error  */
 
-  assert(attr && new && (new->at_flags & ATR_VFLAG_SET));
+  assert(attr && new_attr && (new_attr->at_flags & ATR_VFLAG_SET));
 
   switch (op)
     {
 
     case SET:
-      attr->at_val.at_size.atsv_num   = new->at_val.at_size.atsv_num;
-      attr->at_val.at_size.atsv_shift = new->at_val.at_size.atsv_shift;
-      attr->at_val.at_size.atsv_units = new->at_val.at_size.atsv_units;
+      attr->at_val.at_size.atsv_num   = new_attr->at_val.at_size.atsv_num;
+      attr->at_val.at_size.atsv_shift = new_attr->at_val.at_size.atsv_shift;
+      attr->at_val.at_size.atsv_units = new_attr->at_val.at_size.atsv_units;
       break;
 
     case INCR:
 
       if (normalize_size(&attr->at_val.at_size,
-                         &new->at_val.at_size, &tmpa, &tmpn) < 0)
+                         &new_attr->at_val.at_size, &tmpa, &tmpn) < 0)
         return (PBSE_BADATVAL);
 
       old  = tmpa.atsv_num;
@@ -275,7 +275,7 @@ int set_size(
 
     case DECR:
       if (normalize_size(&attr->at_val.at_size,
-                         &new->at_val.at_size, &tmpa, &tmpn) < 0)
+                         &new_attr->at_val.at_size, &tmpa, &tmpn) < 0)
         return (PBSE_BADATVAL);
 
       old  = tmpa.atsv_num;
