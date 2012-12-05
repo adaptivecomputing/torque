@@ -1928,7 +1928,9 @@ static void resume_suspend(
 
   if (susp == 1)
     {
-    kill_task((task *)GET_NEXT(pjob->ji_tasks), SIGTSTP, 0);
+    task *tmpTask = (task *)GET_NEXT(pjob->ji_tasks);
+    if(tmpTask != NULL)
+      kill_task(tmpTask, SIGTSTP, 0);
 
     MUSleep(50000);
     }

@@ -490,7 +490,8 @@ int svr_is_request(
       else
         write_tcp_reply(chan,IS_PROTOCOL,IS_PROTOCOL_VER,IS_STATUS,ret);
 
-      node->nd_stream = -1;
+      if(node != NULL)
+        node->nd_stream = -1;
 
       if (ret != DIS_SUCCESS)
         {
@@ -526,7 +527,8 @@ int svr_is_request(
   /* must be closed because mom opens and closes this connection each time */
   close_conn(chan->sock, FALSE);
 
-  unlock_node(node, __func__, "close", LOGLEVEL);
+  if(node != NULL)
+    unlock_node(node, __func__, "close", LOGLEVEL);
   
   return PBSE_SOCKET_CLOSE;
 

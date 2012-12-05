@@ -7675,7 +7675,8 @@ static int adoptSession(
    * going to collide with the ones given to non-adopted tasks.
    */
 
-  ptask = pbs_task_create(pjob, (pjob->ji_taskid - 1) + TM_ADOPTED_TASKID_BASE);
+  if((ptask = pbs_task_create(pjob, (pjob->ji_taskid - 1) + TM_ADOPTED_TASKID_BASE)) == NULL)
+    return TM_ERROR;
 
   pjob->ji_taskid++;
 
@@ -7831,7 +7832,8 @@ char *get_local_script_path(
 	if (base[0] != '/')
 	  {
 	  /* base is not an absolute path. Prepend it with the working directory */
-	  wdir = get_job_envvar(pjob, "PBS_O_WORKDIR");
+	  if((wdir = get_job_envvar(pjob, "PBS_O_WORKDIR")) == NULL)
+	    return NULL;
 	  len = strlen(wdir);
 	  if (wdir[len-1] != '/')
       strcat(wdir, "/");

@@ -1015,7 +1015,7 @@ void display(
       {
       if (format)
         {
-        if (is_attr(otype, attr->name, TYPE_ATTR_PUBLIC))
+        if ((attr->name == NULL)?FALSE:is_attr(otype, attr->name, TYPE_ATTR_PUBLIC))
           {
           comma = TRUE;
           first = TRUE;
@@ -1035,8 +1035,7 @@ void display(
             if (otype == MGR_OBJ_NODE)
               printf("node %s ", status->name);
 
-            if (attr->name != NULL)
-              printf("%s", attr->name);
+            printf("%s", attr->name);
 
             if (attr->resource != NULL)
               printf(".%s", attr->resource);
@@ -1737,7 +1736,7 @@ struct objname *
 
       if (prev_obj == NULL)
         prev_obj = cur_obj;
-      else if (cur_obj != NULL)
+      else
         {
         prev_obj -> next = cur_obj;
         prev_obj = cur_obj;

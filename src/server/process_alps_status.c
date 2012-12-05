@@ -209,7 +209,8 @@ void *check_if_orphaned(
 
   if (is_orphaned(rsv_id) == TRUE)
     {
-    preq = alloc_br(PBS_BATCH_DeleteReservation);
+    if((preq = alloc_br(PBS_BATCH_DeleteReservation)) == NULL)
+      return NULL;
     preq->rq_extend = rsv_id;
 
     if ((pnode = get_next_login_node(NULL)) != NULL)
