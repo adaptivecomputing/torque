@@ -2650,7 +2650,12 @@ int start_update_ha_lock_thread()
   /* we don't need an open handle on the lockfile, just correct update times */
   close(fds);
 
-  pthread_attr_init(&HALockThreadAttr);
+  if ((rc = pthread_attr_init(&HALockThreadAttr)) != 0)
+    {
+    perror("pthread_attr_init failed. Could not start update ha lock thread");
+    log_err(-1, msg_daemonname,"pthread_attr_init failed. Could not start ha lock thread");
+    return FAILURE;
+    }
 
   rc = pthread_create(&HALockThread,&HALockThreadAttr,update_ha_lock_thread,NULL);
 
