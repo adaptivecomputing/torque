@@ -905,7 +905,7 @@ void post_check_attributes(job_info *ji)
 
 /* return 3, 4, 5, 6, -1 on FAILURE, 0 on success */
 
-int get_script(
+static int get_script(
 
   int        ArgC,     /* I */
   char     **ArgV,     /* I */
