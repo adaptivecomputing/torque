@@ -1214,6 +1214,7 @@ void start_accept_thread()
 
   {
   pthread_attr_t accept_attr;
+  accept_thread_id = -1;
   if ((pthread_attr_init(&accept_attr)) != 0)
     {
     perror("pthread_attr_init failed. Could not start accept thread");
@@ -1226,7 +1227,6 @@ void start_accept_thread()
     }
   else if ((pthread_create(&accept_thread_id, &accept_attr, start_accept_listener, NULL)) != 0)
     {
-    accept_thread_id = -1;
     perror("could not start listener for pbs_server");
     log_err(-1, msg_daemonname, "Failed to start listener for pbs_server");
     }

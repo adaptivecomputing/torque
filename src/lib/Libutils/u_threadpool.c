@@ -111,8 +111,13 @@ int create_work_thread(void)
     {
     initialize_threadpool(&request_pool,5,5,-1);
     }
+  if ((rc = pthread_attr_init(&attr)) != 0)
+    {
+    perror("pthread_attr_init failed. Could not start worker thread.");
+    log_err(-1, "work_thread","pthread_attr_init failed. Could not start worker thread.");
+    return rc;
+    }
 
-  pthread_attr_init(&attr);
   pthread_attr_getstacksize(&attr, &stack_size);
   if (stack_size < MINIMUM_STACK_SIZE)
     stack_size = MINIMUM_STACK_SIZE;
@@ -361,7 +366,13 @@ int initialize_threadpool(
   (*pool)->tp_started = FALSE;
   
   /* initialize attributes */
-  pthread_attr_init(&(*pool)->tp_attr);
+  if ((rc = pthread_attr_init(&(*pool)->tp_attr)) != 0)
+    {
+    perror("pthread_attr_init failed. Could not init thread pool.");
+    log_err(-1, "initialize_threadpool","pthread_attr_init failed. Could not init thread pool.");
+    return rc;
+    }
+
   pthread_attr_setdetachstate(&(*pool)->tp_attr,PTHREAD_CREATE_DETACHED);
 
   /* if threads are static, create them all now */
