@@ -321,6 +321,13 @@ int prepare_path(
 
     if((HomeVal == NULL)||(NamePtr == NULL))
       return(1);
+    /* check if the path exeeds MAXPATHLEN */
+    size_t path_out_length = strlen(HomeVal);
+    size_t home_val_length = strlen(NamePtr);
+    if (path_out_length + home_val_length >= MAXPATHLEN)
+      {
+      return(4);
+      }
     /* add the string to the path correctly */
     strcat(path_out,HomeVal);
     strcat(path_out,NamePtr);
