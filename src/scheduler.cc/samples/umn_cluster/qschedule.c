@@ -430,7 +430,7 @@ list_start_times(void)
   {
   int ret;
   int local_errno = 0;
-  Job    *joblist = NULL, *jobtail = NULL, *new, *this;
+  Job    *joblist = NULL, *jobtail = NULL, *new_joblist, *this;
   Batch_Status *pbs_head, *pbs_ptr;
 
   /* Connect to the default PBS server */
@@ -452,25 +452,25 @@ list_start_times(void)
      * create a new element and place it after the current tail.  The new
      * element then becomes the tail.
      */
-    new = (Job *)malloc(sizeof(Job));
+    new_joblist = (Job *)malloc(sizeof(Job));
 
-    if (new == NULL)
+    if (new_joblist == NULL)
       {
       fprintf(stderr, "ERROR: malloc of new job struct failed\n");
       joblist = NULL;
       break;
       }
 
-    new->next = NULL;
+    new_joblist->next = NULL;
 
     if (!joblist)
       {
-      joblist = new;
+      joblist = new_joblist;
       jobtail = joblist;
       }
     else
       {
-      jobtail->next = new;
+      jobtail->next = new_joblist;
       jobtail = jobtail->next;
       }
 

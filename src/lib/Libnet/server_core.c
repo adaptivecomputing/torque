@@ -89,7 +89,11 @@ int start_listener(
       }
     while (1)
       {
-      new_conn_port = (int *)calloc(1, sizeof(int));
+      if((new_conn_port = (int *)calloc(1, sizeof(int))) == NULL)
+        {
+        printf("Error allocating new connection handle on accept.\n");
+        break;
+        }
       if ((*new_conn_port = accept(listen_socket, (struct sockaddr *)&adr_client, (socklen_t *)&len_inet)) == -1)
         {
         if (errno == EMFILE)
@@ -206,7 +210,11 @@ int start_listener_addrinfo(
     while (1)
       {
       len_inet = sizeof(struct sockaddr);
-      new_conn_port = (int *)calloc(1, sizeof(int));
+      if((new_conn_port = (int *)calloc(1, sizeof(int))) == NULL)
+        {
+        printf("Error allocating new connection handle.\n");
+        break;
+        }
       if ((*new_conn_port = accept(listen_socket, (struct sockaddr *)&adr_client, (socklen_t *)&len_inet)) == -1)
         {
         if (errno == EMFILE)

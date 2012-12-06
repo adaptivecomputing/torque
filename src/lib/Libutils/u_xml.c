@@ -332,8 +332,7 @@ char *find_next_tag(
     }
 
   while ((*ptr != '<') && 
-         (ptr[1] != '/') && 
-         (ptr != NULL))
+         (ptr[1] != '/'))
     {
     ptr++;
     }

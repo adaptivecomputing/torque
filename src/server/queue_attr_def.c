@@ -91,7 +91,7 @@
 #include "attribute.h"
 #include "svrfunc.h"
 
-extern int set_null (pbs_attribute * patr, pbs_attribute * new, enum batch_op op);
+extern int set_null (pbs_attribute * patr, pbs_attribute * new_attr, enum batch_op op);
 extern int disallowed_types_chk (pbs_attribute * pattr, void *pobject,
 				 int actmode);
 

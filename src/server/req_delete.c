@@ -632,6 +632,8 @@ struct batch_request *duplicate_request(
   {
   struct batch_request *preq_tmp = alloc_br(preq->rq_type);
 
+  if(preq_tmp == NULL)
+    return NULL;
   preq_tmp->rq_perm = preq->rq_perm;
   preq_tmp->rq_ind.rq_manager.rq_cmd = preq->rq_ind.rq_manager.rq_cmd;
   preq_tmp->rq_ind.rq_manager.rq_objtype = preq->rq_ind.rq_manager.rq_objtype;

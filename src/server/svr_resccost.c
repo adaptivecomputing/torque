@@ -309,16 +309,16 @@ int encode_rcost(
 int set_rcost(
    
   pbs_attribute *old,
-  pbs_attribute *new,
+  pbs_attribute *new_attr,
   enum batch_op  op)
 
   {
   struct resource_cost *pcnew;
   struct resource_cost *pcold;
 
-  assert(old && new && (new->at_flags & ATR_VFLAG_SET));
+  assert(old && new_attr && (new_attr->at_flags & ATR_VFLAG_SET));
 
-  pcnew = (struct resource_cost *)GET_NEXT(new->at_val.at_list);
+  pcnew = (struct resource_cost *)GET_NEXT(new_attr->at_val.at_list);
 
   while (pcnew)
     {

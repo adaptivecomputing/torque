@@ -107,7 +107,7 @@ arg_to_fairaccess(char *arg, char *sep, FairAccessList **fairacl_ptr)
   int     max_A = 0, max_B = 0, fieldcnt, found;
   char   *id = "arg_to_fairaccess";
   char   *field, aclname[30], group[30], entrytuple[60], scratch[15];
-  AccessEntry *new, *FAptr = NULL, *fptr = NULL;
+  AccessEntry *new_ae, *FAptr = NULL, *fptr = NULL;
 
   /* first we process the configuration line passed in to use, saving
    * the important bits for later; at this point we don't know if we
@@ -210,37 +210,37 @@ arg_to_fairaccess(char *arg, char *sep, FairAccessList **fairacl_ptr)
 
   if (!found)
     {
-    new = (AccessEntry *)malloc(sizeof(AccessEntry));
+    new_ae = (AccessEntry *)malloc(sizeof(AccessEntry));
 
-    if (new == NULL)
+    if (new_ae == NULL)
       {
       log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id,
                  "malloc(newAccessEntry)");
       return(-1);
       }
 
-    memset(new, 0, sizeof(AccessEntry));
+    memset(new_ae, 0, sizeof(AccessEntry));
 
     if (FAptr == NULL)
       {
-      (*fairacl_ptr)->entry = new;
+      (*fairacl_ptr)->entry = new_ae;
       fptr = (*fairacl_ptr)->entry;
       }
     else
       {
-      fptr->next = new;
-      fptr = new;
+      fptr->next = new_ae;
+      fptr = new_ae;
       }
 
-    new->name = schd_strdup(entrytuple);
+    new_ae->name = schd_strdup(entrytuple);
     }
 
   /* Finially we get to fill it in with the info we saved earlier */
-  new->max_cpu      = max_A;
+  new_ae->max_cpu      = max_A;
 
   sprintf(scratch, "%dmb", max_B);
 
-  new->max_mem      = schd_val2byte(scratch);
+  new_ae->max_mem      = schd_val2byte(scratch);
 
   return (0);
   }

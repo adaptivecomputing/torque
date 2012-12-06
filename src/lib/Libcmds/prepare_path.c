@@ -319,6 +319,8 @@ int prepare_path(
     char *HomeVal = getenv("HOME");
     char *NamePtr = path_name+strlen("$HOME");
 
+    if((HomeVal == NULL)||(NamePtr == NULL))
+      return(1);
     /* add the string to the path correctly */
     strcat(path_out,HomeVal);
     strcat(path_out,NamePtr);

@@ -76,156 +76,17 @@
 * This license will be governed by the laws of the Commonwealth of Virginia,
 * without reference to its choice of law rules.
 */
-/* $Id$ */
 
-/* Get all the jobs queued in the specified queue. */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <time.h>
 
-#include "toolkit.h"
-
-#include "pbs_error.h"
 #include "pbs_ifl.h"
-#include "log.h"
+#include "resizable_array.h"
 
-extern int connector;
-
-Job *
-schd_get_jobs(char *qname, char *state)
+typedef struct exiting_job_info
   {
-  char   *id = "schd_get_jobs";
-  int     idx, ret;
-  int     local_errno = 0;
-  Job    *joblist = NULL, *jobtail = NULL, *new_joblist;
-  Batch_Status *pbs_head, *pbs_ptr;
-  AttrOpList *attr;
+  char   jobid[PBS_MAXSVRJOBID+1];
+  time_t obit_sent;
+  } exiting_job_info;
 
-  static AttrOpList alist[] =
-    {
-      {NULL, NULL, NULL, NULL, EQ},
-    {NULL, NULL, NULL, NULL, EQ}
-    };
-
-  if ((qname == NULL) && (state == NULL))
-    {
-    attr = NULL; /* Caller requested all jobs in all queues. */
-    }
-  else
-    {
-    /*
-     * Initialize the search criteria since alist is a static struct
-     * and it will retain the previous search when repeatedly called.
-     */
-    for (idx = 0; idx < (sizeof(alist) / sizeof(AttrOpList)); idx++)
-      {
-      alist[idx].next  = NULL;
-      alist[idx].name  = NULL;
-      alist[idx].value = NULL;
-      }
-
-    idx = 0;
-
-    /* Was a specific queue requested? */
-
-    if (qname != NULL)
-      {
-      alist[idx].name = ATTR_queue;
-      alist[idx].value = qname;
-      idx++;
-      }
-
-    /* Was a specific state requested? */
-    if (state != NULL)
-      {
-      alist[idx].name = ATTR_state;
-      alist[idx].value = state;
-
-      if (idx > 0)
-        alist[idx - 1].next = &alist[idx];
-
-      idx++;
-      }
-
-    /* (More tests can be added here.) */
-
-    attr = alist;
-    }
-
-  /* Ask PBS for the list of jobs requested */
-  pbs_head = pbs_selstat_err(connector, attr, NULL, &local_errno);
-
-  if ((pbs_head == NULL) && (local_errno))
-    {
-    (void)sprintf(log_buffer, "pbs_selstat failed, %d", local_errno);
-    log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, log_buffer);
-    return (NULL);
-    }
-
-  for (pbs_ptr = pbs_head; pbs_ptr != NULL; pbs_ptr = pbs_ptr->next)
-    {
-    /*
-     * If there is no list yet, create one.  If there is already a list,
-     * create a new element and place it after the current tail.  The new
-     * element then becomes the tail.
-     */
-    new_joblist = (Job *)malloc(sizeof(Job));
-
-    if (new_joblist == NULL)
-      {
-      log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id,
-                 "malloc(new Job)");
-      /*
-       * Free any allocated storage, set joblist to NULL, and break.
-       * By doing this, the PBS batch_struct list will be freed,
-       * and the NULL joblist returned to the caller.
-       */
-
-      if (joblist)
-        {
-        schd_free_jobs(joblist);
-        joblist = NULL;
-        }
-
-      break;
-      }
-
-    new_joblist->next = NULL;
-
-    if (!joblist)
-      {
-      joblist = new_joblist;
-      jobtail = joblist;
-      }
-    else
-      {
-      jobtail->next = new_joblist;
-      jobtail = jobtail->next;
-      }
-
-    /*
-     * 'jobtail' now points to a newly-created Job at the end of the
-     * list of jobs.  Call get_jobinfo() to fill it in with the contents
-     * of this PBS batch_struct description.
-     */
-
-    ret = schd_get_jobinfo(pbs_ptr, jobtail);
-
-    if (ret < 0)
-      {
-      ;
-      DBPRT(("%s: schd_get_jobinfo returned %d\n", id, ret));
-      }
-    }
-
-  /*
-   * We are left with a list of Job's that was created the from the list
-   * of Batch_Structs we got from pbs_selstat().  The Job list should
-   * contain everything we need to know about the jobs.  It is okay to
-   * free the list returned by PBS, and return the list of Job's.
-   */
-
-  pbs_statfree(pbs_head);
-
-  return (joblist);
-  }
+extern resizable_array *exiting_job_list;

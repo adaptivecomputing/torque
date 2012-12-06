@@ -98,7 +98,7 @@ schd_create_useracl(char *useracl)
   {
   char  *id = "schd_create_useracl";
   char  *useracl_copy, *user, *atsign;
-  UserAcl *acl, *new, *acltail;
+  UserAcl *acl, *new_acl, *acltail;
 
   /*
    * Copy the string.  This copy will be chopped up with '\0's to create
@@ -122,9 +122,9 @@ schd_create_useracl(char *useracl)
   while (user != NULL)
     {
 
-    new = (UserAcl *)malloc(sizeof(UserAcl));
+    new_acl = (UserAcl *)malloc(sizeof(UserAcl));
 
-    if (new == NULL)
+    if (new_acl == NULL)
       {
       log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id,
                  "malloc(UserAcl) failed");
@@ -142,7 +142,7 @@ schd_create_useracl(char *useracl)
      * a copy of the host string into the host pointer.
      */
 
-    new->host = NULL;
+    new_acl->host = NULL;
 
     if ((atsign = strchr(user, '@')) != NULL)
       {
@@ -151,9 +151,9 @@ schd_create_useracl(char *useracl)
       /* Skip forward to the start of the remaining host string. */
       atsign ++;
 
-      new->host = schd_strdup(atsign);
+      new_acl->host = schd_strdup(atsign);
 
-      if (new->host == NULL)
+      if (new_acl->host == NULL)
         {
         log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id,
                    "schd_strdup(host) failed");
@@ -162,7 +162,7 @@ schd_create_useracl(char *useracl)
         if (acl)
           schd_free_useracl(acl);
 
-        free(new);
+        free(new_acl);
 
         return (NULL);
         }
@@ -171,18 +171,18 @@ schd_create_useracl(char *useracl)
     /*
      * Copy the username into the static array in the UserAcl struct.
      */
-    strncpy(new->user, user, PBS_MAXUSER);
+    strncpy(new_acl->user, user, PBS_MAXUSER);
 
     /*
      * Place the new ACL element on the tail of the list, or create it
      * if this is the first element.
      */
     if (acltail)
-      acltail->next = new;
+      acltail->next = new_acl;
     else
-      acl = new;
+      acl = new_acl;
 
-    acltail = new;
+    acltail = new_acl;
 
     acltail->next = NULL;
 

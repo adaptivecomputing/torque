@@ -7185,11 +7185,8 @@ int tm_request(
 
     svr_conn[chan->sock].cn_stay_open = FALSE;
   
-    if (jobid)
-      free(jobid);
-    
-    if (cookie)
-      free(cookie);
+    free(jobid);
+    free(cookie);
 
     return(1);
     }
@@ -7501,21 +7498,15 @@ tm_req_finish:
         ptask->ti_chan = NULL;
         }
 
-      if (jobid)
-        free(jobid);
-
-      if (cookie)
-        free(cookie);
+      free(jobid);
+      free(cookie);
 
       return(-1);
       }
     }
   
-  if (jobid)
-    free(jobid);
-  
-  if (cookie)
-    free(cookie);
+  free(jobid);
+  free(cookie);
   
   return(PBSE_NONE);
   
@@ -7531,21 +7522,18 @@ err:
   
   log_err(errno, __func__, log_buffer);
   
-  if (chan != NULL)
-    {
-    ipadd = svr_conn[chan->sock].cn_addr;
-  
-    sprintf(log_buffer, "message refused from port %d addr %ld.%ld.%ld.%ld",
-      svr_conn[chan->sock].cn_port,
-      (ipadd & 0xff000000) >> 24,
-      (ipadd & 0x00ff0000) >> 16,
-      (ipadd & 0x0000ff00) >> 8,
-      (ipadd & 0x000000ff));
+  ipadd = svr_conn[chan->sock].cn_addr;
 
-    close(chan->sock);
+  sprintf(log_buffer, "message refused from port %d addr %ld.%ld.%ld.%ld",
+    svr_conn[chan->sock].cn_port,
+    (ipadd & 0xff000000) >> 24,
+    (ipadd & 0x00ff0000) >> 16,
+    (ipadd & 0x0000ff00) >> 8,
+    (ipadd & 0x000000ff));
 
-    svr_conn[chan->sock].cn_stay_open = FALSE;
-    }
+  close(chan->sock);
+
+  svr_conn[chan->sock].cn_stay_open = FALSE;
 
   if (jobid)
     free(jobid);
@@ -7687,7 +7675,8 @@ static int adoptSession(
    * going to collide with the ones given to non-adopted tasks.
    */
 
-  ptask = pbs_task_create(pjob, (pjob->ji_taskid - 1) + TM_ADOPTED_TASKID_BASE);
+  if((ptask = pbs_task_create(pjob, (pjob->ji_taskid - 1) + TM_ADOPTED_TASKID_BASE)) == NULL)
+    return TM_ERROR;
 
   pjob->ji_taskid++;
 
@@ -7843,7 +7832,8 @@ char *get_local_script_path(
 	if (base[0] != '/')
 	  {
 	  /* base is not an absolute path. Prepend it with the working directory */
-	  wdir = get_job_envvar(pjob, "PBS_O_WORKDIR");
+	  if((wdir = get_job_envvar(pjob, "PBS_O_WORKDIR")) == NULL)
+	    return NULL;
 	  len = strlen(wdir);
 	  if (wdir[len-1] != '/')
       strcat(wdir, "/");

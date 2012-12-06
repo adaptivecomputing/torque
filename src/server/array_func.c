@@ -391,6 +391,11 @@ int array_recov(
   CLEAR_HEAD(pa->request_tokens);
 
   fd = open(path, O_RDONLY, 0);
+  if(fd < 0)
+    {
+    free(pa);
+    return(PBSE_SYSTEM);
+    }
 
   if (array_259_upgrade)
     {
@@ -1098,7 +1103,8 @@ int delete_array_range(
 
   /* get just the numeric range specified, '=' should
    * always be there since we put it there in qdel */
-  range = strchr(range_str,'=');
+  if((range = strchr(range_str,'=')) == NULL)
+    return(-1);
   range++; /* move past the '=' */
 
   CLEAR_HEAD(tl);

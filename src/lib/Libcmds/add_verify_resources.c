@@ -267,6 +267,11 @@ int add_verify_resources(
           {
           char *gpu_eq = strchr(r, '=');
 
+          if(gpu_eq == NULL)
+            {
+            fprintf(stderr,"Error with resource strings.\n");
+            exit(1);
+            }
           *gpu_eq = ':';
           snprintf(value, vlen, "%s", r);
           *gpu_eq = '=';

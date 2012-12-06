@@ -112,7 +112,7 @@ arg_to_fairacl(char *arg, char *sep, FairAccessList **fairacl_ptr)
   int     num = 0, max_A = 0, max_B = 0, fieldcnt, found;
   char   *id = "arg_to_fairacl";
   char   *field, aclname[30], name[30];
-  AccessEntry *new, *FAptr = NULL, *fptr = NULL;
+  AccessEntry *new_ae, *FAptr = NULL, *fptr = NULL;
   FairACL *aptr = NULL, *new_acl = NULL;
 
   /*
@@ -200,29 +200,29 @@ arg_to_fairacl(char *arg, char *sep, FairAccessList **fairacl_ptr)
 
   if (!found)
     {
-    new = (AccessEntry *)malloc(sizeof(AccessEntry));
+    new_ae = (AccessEntry *)malloc(sizeof(AccessEntry));
 
-    if (new == NULL)
+    if (new_ae == NULL)
       {
       log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id,
                  "malloc(newAccessEntry)");
       return(-1);
       }
 
-    memset(new, 0, sizeof(AccessEntry));
+    memset(new_ae, 0, sizeof(AccessEntry));
 
     if (FAptr == NULL)
       {
-      (*fairacl_ptr)->entry = new;
+      (*fairacl_ptr)->entry = new_ae;
       fptr = (*fairacl_ptr)->entry;
       }
     else
       {
-      fptr->next = new;
-      fptr = new;
+      fptr->next = new_ae;
+      fptr = new_ae;
       }
 
-    new->name = schd_strdup(aclname);
+    new_ae->name = schd_strdup(aclname);
     }
 
   aptr = fptr->list;

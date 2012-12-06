@@ -97,7 +97,7 @@ schd_get_jobs(char *qname, char *state)
   char   *id = "schd_get_jobs";
   int     idx, ret;
   int     local_errno = 0;
-  Job    *joblist = NULL, *jobtail = NULL, *new;
+  Job    *joblist = NULL, *jobtail = NULL, *new_job;
   Batch_Status *pbs_head, *pbs_ptr;
   AttrOpList *attr;
 
@@ -174,9 +174,9 @@ schd_get_jobs(char *qname, char *state)
      * create a new element and place it after the current tail.  The new
      * element then becomes the tail.
      */
-    new = (Job *)malloc(sizeof(Job));
+    new_job = (Job *)malloc(sizeof(Job));
 
-    if (new == NULL)
+    if (new_job == NULL)
       {
       log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id,
                  "malloc(new Job)");
@@ -195,16 +195,16 @@ schd_get_jobs(char *qname, char *state)
       break;
       }
 
-    new->next = NULL;
+    new_job->next = NULL;
 
     if (!joblist)
       {
-      joblist = new;
+      joblist = new_job;
       jobtail = joblist;
       }
     else
       {
-      jobtail->next = new;
+      jobtail->next = new_job;
       jobtail = jobtail->next;
       }
 

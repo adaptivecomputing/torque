@@ -1889,6 +1889,8 @@ static void resume_suspend(
 
   signum = (susp == 1) ? SIGSTOP : SIGCONT;
 
+  if((pjob == NULL)||(preq == NULL))
+    return;
 
   if (LOGLEVEL >= 2)
     {
@@ -1898,7 +1900,7 @@ static void resume_suspend(
     log_record(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      (pjob != NULL) ? pjob->ji_qs.ji_jobid : "N/A",
+      pjob->ji_qs.ji_jobid,
       log_buffer);
     }
 
@@ -1926,7 +1928,9 @@ static void resume_suspend(
 
   if (susp == 1)
     {
-    kill_task((task *)GET_NEXT(pjob->ji_tasks), SIGTSTP, 0);
+    task *tmpTask = (task *)GET_NEXT(pjob->ji_tasks);
+    if(tmpTask != NULL)
+      kill_task(tmpTask, SIGTSTP, 0);
 
     MUSleep(50000);
     }
@@ -1984,7 +1988,7 @@ static void resume_suspend(
       log_record(
         PBSEVENT_ERROR,
         PBS_EVENTCLASS_JOB,
-        (pjob != NULL) ? pjob->ji_qs.ji_jobid : "N/A",
+        pjob->ji_qs.ji_jobid,
         log_buffer);
       }
 
@@ -2030,7 +2034,7 @@ static void resume_suspend(
       log_record(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        (pjob != NULL) ? pjob->ji_qs.ji_jobid : "N/A",
+        pjob->ji_qs.ji_jobid,
         "job suspended - adjusted job state");
       }
     }
@@ -2058,7 +2062,7 @@ static void resume_suspend(
       log_record(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        (pjob != NULL) ? pjob->ji_qs.ji_jobid : "N/A",
+        pjob->ji_qs.ji_jobid,
         "job resumed - adjusted job state");
       }
     }    /* END else (susp != 0) */
@@ -2223,7 +2227,7 @@ void req_signaljob(
   numprocs = kill_job(pjob, sig, __func__, "killing job");
 
   if ((numprocs == 0) && ((sig == 0)||(sig == SIGKILL)) &&
-    (pjob->ji_qs.ji_substate != JOB_SUBSTATE_OBIT))
+      (pjob->ji_qs.ji_substate != JOB_SUBSTATE_OBIT))
     {
     /* SIGNUL and no procs found, force job to exiting */
     /* force issue of (another) job obit */

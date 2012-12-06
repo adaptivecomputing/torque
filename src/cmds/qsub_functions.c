@@ -102,7 +102,8 @@ char *x11_get_proto(
   char        *authstring;
   FILE        *f;
   int          got_data = 0;
-  char        *display;
+  char        *display = NULL;
+  char        *tmp;
   char        *p;
   struct stat  st;
 
@@ -114,15 +115,20 @@ char *x11_get_proto(
 /*  if (EMsg != NULL)
     EMsg[0] = '\0'; */
 
-  if ((display = getenv("DISPLAY")) == NULL)
+  if ((tmp = getenv("DISPLAY")) == NULL)
     {
     fprintf(stderr, "qsub: DISPLAY not set\n");
+    return(NULL);
+    }
+  if((display = strdup(tmp)) == NULL)
+    {
     return(NULL);
     }
 
   if (stat(xauth_path, &st))
     {
     perror("qsub: xauth: ");
+    free(display);
     return(NULL);
     }
 
@@ -199,7 +205,7 @@ char *x11_get_proto(
   if (!got_data)
     {
     /* FAILURE */
-
+    free(display);
     return(NULL);
     }
 
@@ -209,6 +215,7 @@ char *x11_get_proto(
     {
     /* FAILURE */
 
+    free(display);
     return(NULL);
     }
 
@@ -217,6 +224,7 @@ char *x11_get_proto(
     data,
     screen);
 
+  free(display);
   return(authstring);
   }  /* END x11_get_proto() */
 
@@ -640,7 +648,8 @@ int istext(
 
   {
   int i;
-  int c;
+  unsigned char bf[MMAX_VERIFY_BYTES];
+  int len;
 
   if (IsText != NULL)
     *IsText = FALSE;
@@ -656,26 +665,24 @@ int istext(
     }
 
   /* read first characters to ensure this is ASCII text */
-
-  for (i = 0;i < MMAX_VERIFY_BYTES;i++)
+  fseek(fd, 0, SEEK_SET);
+  len = fread(bf,1,MMAX_VERIFY_BYTES,fd);
+  fseek(fd, 0, SEEK_SET);
+  if(len < 0)
     {
-    c = fgetc(fd);
+    return(0);
+    }
 
-    if (c == EOF)
-      break;
-
-    if (!isprint(c) && !isspace(c))
+  for (i = 0;i < len;i++)
+    {
+    if (!isprint(bf[i]) && !isspace(bf[i]))
       {
-      fseek(fd, 0, SEEK_SET);
-
       return(0);
       }
     }  /* END for (i) */
 
   if (IsText != NULL)
     *IsText = TRUE;
-
-  fseek(fd, 0, SEEK_SET);
 
   return(1);
   }  /* END FileIsText() */
@@ -970,22 +977,27 @@ int get_script(
 
     strcat(cfilter, tmp_name2);
 
-    filter_pipe = popen(cfilter, "w");
-
-    while ((in = fgets(s, MAX_LINE_LEN, file)) != NULL)
+    if((filter_pipe = popen(cfilter, "w")) != NULL)
       {
-      if (fputs(in, filter_pipe) < 0)
+      while ((in = fgets(s, MAX_LINE_LEN, file)) != NULL)
         {
-        fprintf(stderr, "qsub: error writing to filter stdin\n");
+        if (fputs(in, filter_pipe) < 0)
+          {
+          fprintf(stderr, "qsub: error writing to filter stdin\n");
 
-        fclose(filter_pipe);
-        unlink(tmp_name2);
+          fclose(filter_pipe);
+          unlink(tmp_name2);
 
-        return(3);
+          return(3);
+          }
         }
-      }
 
-    rc = pclose(filter_pipe);
+      rc = pclose(filter_pipe);
+      }
+    else
+      {
+      rc = -1;
+      }
 
     if (WEXITSTATUS(rc) == (unsigned char)SUBMIT_FILTER_ADMIN_REJECT_CODE)
       {
@@ -1277,22 +1289,11 @@ void do_dir(
   int data_type)
 
   {
-/*   static int opt_pass = 1; */
-  int argc;
+  int argc = 0;
 
-/* #define MAX_ARGV_LEN 128 */
-  /* As this is overwritten in make_argv every time, I'm removing static */
   static char *vect[MAX_ARGV_LEN + 1];
 
-/*   if (opt_pass == 1) */
-/*     { */
-    argc = 0;
-
-    memset(&vect, 0, MAX_ARGV_LEN + 1);
-/*    while (argc < MAX_ARGV_LEN + 1)
-      vect[argc++] = NULL;
-      */
-/*     } */
+  memset(&vect, 0, MAX_ARGV_LEN + 1);
 
   make_argv(&argc, vect, opts);
 
@@ -1324,12 +1325,6 @@ char *interactive_port(
 
   if (*sock < 0)
     print_qsub_usage_exit("qsub: unable to obtain socket");
-/*    {
-    perror("qsub: unable to obtain socket");
-
-    exit(1);
-    }
-    */
 
   namelen = sizeof(myaddr);
 
@@ -1339,12 +1334,6 @@ char *interactive_port(
 
   if (bind(*sock, (struct sockaddr *)&myaddr, namelen) < 0)
     print_qsub_usage_exit("qsub: unable to bind to socket");
-/*    {
-    perror("qsub: unable to bind to socket");
-
-    exit(1);
-    }
-    */
 
   /* get port number assigned */
 
@@ -3292,8 +3281,20 @@ void process_opts(
         break;
 
       case 'x':
+      
+        if (!(hash_find(ji->job_attr, ATTR_inter, &tmp_job_info)))
+          {
+          print_qsub_usage_exit("qsub: '-x' invalid on non-interactive job");
+          }
 
-        hash_add_or_exit(&ji->mm, &ji->client_attr, "run_inter_opt", "1", data_type);
+        if (hash_find(ji->client_attr, "cmdline_script", &tmp_job_info))
+          {
+          hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_intcmd, tmp_job_info->value, CMDLINE_DATA);
+          }
+        else
+          {
+          print_qsub_usage_exit("qsub: '-x' used without a script specified");
+          }
 
         break;
         
@@ -3978,11 +3979,27 @@ void add_variable_list(
   int       pos = 0;
   char     *var_list = NULL;
   job_data *en;
+  job_data *v_value = NULL;
 
-  total_len = hash_strlen(ji->user_attr);
+  /* if -v was used then it needs to be included as well. */
+  if (hash_find(ji->job_attr, var_name, &v_value) != 0)
+    {
+    /* add the length of this + 1 for the comma */
+    total_len = v_value->value_len + 1;;
+    }
+
+  total_len += hash_strlen(ji->user_attr);
   count = hash_count(ji->user_attr);
   total_len += count*2;
   var_list = memmgr_calloc(&ji->mm, 1, total_len);
+
+  if (v_value != NULL)
+    {
+    strcat(var_list, v_value->value);
+    if (src_hash != NULL)
+      strcat(var_list, ",");
+    }
+
   for (en=src_hash; en != NULL; en=en->hh.next)
     {
     pos++;
@@ -3998,7 +4015,6 @@ void add_variable_list(
       }
     }
 
-  /* If the attribute ATTR_v already exists, this will overwrite it */
   hash_add_or_exit(&ji->mm, &ji->job_attr, var_name, var_list, CMDLINE_DATA);
   }
 
@@ -4136,7 +4152,11 @@ void main_func(
   script_index = find_job_script_index(optind + 1, &job_is_interactive, &prefix_index, argc, argv);
 
   if (script_index != -1)
+    {
     strcpy(script, argv[script_index]);
+    /* store the script so it can be used later (e.g. '-x' option) */
+    hash_add_or_exit(&ji.mm, &ji.client_attr, "cmdline_script", script, CMDLINE_DATA);
+    }
 
   if (prefix_index != -1)
     hash_add_or_exit(&ji.mm, &ji.client_attr, "pbs_dprefix", argv[prefix_index], CMDLINE_DATA);
@@ -4174,10 +4194,6 @@ void main_func(
 
       }
     }    /* END if (!strcmp(script,"") || !strcmp(script,"-")) */
-  else if ((hash_find(ji.job_attr, ATTR_inter, &tmp_job_info)) &&
-      (hash_find(ji.client_attr, "run_inter_opt", &tmp_job_info)))
-    hash_add_or_exit(&ji.mm, &ji.job_attr, ATTR_intcmd, script, CMDLINE_DATA);
-
   else
     {
     /* non-empty script, read it for directives */

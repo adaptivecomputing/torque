@@ -487,7 +487,8 @@ int process_uname_str(
     char  node_name[PBS_MAXHOSTNAME + 1];
     int   count;
     
-    cp = strchr(str, ' ');
+    if((cp = strchr(str, ' ')) == NULL)
+      return (PBSE_RMBADPARAM);
     count = 0;
     
     do

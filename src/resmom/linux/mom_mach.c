@@ -4232,9 +4232,10 @@ void scan_non_child_tasks(void)
           pp  = pp->next;
 #else
           
-        rewinddir(pdir);
+        if(pdir != NULL)
+          rewinddir(pdir);
 
-        while ((dent = readdir(pdir)) != NULL)
+        while ((dent = ((pdir == NULL)?NULL:readdir(pdir))) != NULL)
           {
           if (!isdigit(dent->d_name[0]))
             continue;
@@ -4294,7 +4295,8 @@ void scan_non_child_tasks(void)
       }
     }    /* END for (job = GET_NEXT(svr_alljobs)) */
 
-  closedir(pdir);
+  if(pdir != NULL)
+    closedir(pdir);
 
   first_time = FALSE;
 

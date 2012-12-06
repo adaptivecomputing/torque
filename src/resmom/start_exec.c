@@ -3093,7 +3093,8 @@ int start_interactive_session(
   FDMOVE(*qsub_sock_ptr);
   
   /* send jobid as validation to qsub */
-  if (write(*qsub_sock_ptr, pjob->ji_qs.ji_jobid, PBS_MAXSVRJOBID + 1) != PBS_MAXSVRJOBID + 1)
+  if ((*qsub_sock_ptr < 0)||
+      (write(*qsub_sock_ptr, pjob->ji_qs.ji_jobid, PBS_MAXSVRJOBID + 1) != PBS_MAXSVRJOBID + 1))
     {
     log_err(errno, __func__, "cannot write jobid");
     
@@ -3363,15 +3364,14 @@ void set_job_script_as_stdin(
   
   FDMOVE(script_in); /* make sure descriptor > 2 */
   
-  if (script_in != 0)
+  if (script_in > 0)
     {
     close(0);
     
-    if (dup(script_in) == -1)
+    if(dup(script_in) > 0)
       {
+      close(script_in);
       }
-    
-    close(script_in);
     }
   } /* END set_job_script_as_stdin() */
 
@@ -4588,6 +4588,16 @@ int start_process(
     }
 
   parent_write = pipes[1];
+
+  if((kid_read < 0)||
+      (kid_write < 0)||
+      (parent_read < 0)||
+      (parent_write < 0))
+    {
+    log_err(-1, __func__, log_buffer);
+
+    return(-1);
+    }
 
   /*
   ** Get ipaddr to Mother Superior.

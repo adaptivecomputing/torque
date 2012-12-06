@@ -488,11 +488,13 @@ int send_command(
   {
   int rc;
 
-  rc = diswsi(chan,cmd);
+  if((rc = diswsi(chan,cmd)) != DIS_SUCCESS)
+    return (rc);
 
   if (cmd == RM_CMD_CONFIG)
     {
-    diswst(chan,ConfigBuf);
+    if((rc = diswst(chan,ConfigBuf)) != DIS_SUCCESS)
+      return(rc);
     }
 
   DIS_tcp_wflush(chan);
@@ -530,7 +532,8 @@ int send_command_str(
 
   if (cmd == RM_CMD_CONFIG)
     {
-    diswst(chan, ConfigBuf);
+    if((rc = diswst(chan, ConfigBuf)) != DIS_SUCCESS)
+      return (rc);
     }
 
   rc = diswcs(chan, query, strlen(query));

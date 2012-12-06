@@ -194,7 +194,7 @@ void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum even
   exit(1);
   }
 
-void append_link(tlist_head *head, list_link *new, void *pobj)
+void append_link(tlist_head *head, list_link *new_link, void *pobj)
   {
   fprintf(stderr, "The call to append_link to be mocked!!\n");
   exit(1);

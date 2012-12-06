@@ -316,7 +316,7 @@ int encode_resc(
 int set_resc(
 
   pbs_attribute *old,
-  pbs_attribute *new,
+  pbs_attribute *new_attr,
   enum batch_op  op)
 
   {
@@ -325,9 +325,9 @@ int set_resc(
   resource *oldresc;
   int   rc;
 
-  assert(old && new);
+  assert(old && new_attr);
 
-  newresc = (resource *)GET_NEXT(new->at_val.at_list);
+  newresc = (resource *)GET_NEXT(new_attr->at_val.at_list);
 
   while (newresc != NULL)
     {
@@ -790,7 +790,7 @@ resource *add_resource_entry(
 
   {
   int    i;
-  resource *new;
+  resource *new_resource;
   resource *pr;
 
   pr = (resource *)GET_NEXT(pattr->at_val.at_list);
@@ -807,32 +807,32 @@ resource *add_resource_entry(
     pr = (resource *)GET_NEXT(pr->rs_link);
     }
 
-  new = (resource *)calloc(1, sizeof(resource));
+  new_resource = (resource *)calloc(1, sizeof(resource));
 
-  if (new == NULL)
+  if (new_resource == NULL)
     {
     return NULL;
     }
 
-  CLEAR_LINK(new->rs_link);
+  CLEAR_LINK(new_resource->rs_link);
 
-  new->rs_defin = prdef;
-  new->rs_value.at_type = prdef->rs_type;
-  new->rs_value.at_flags = 0;
-  prdef->rs_free(&new->rs_value);
+  new_resource->rs_defin = prdef;
+  new_resource->rs_value.at_type = prdef->rs_type;
+  new_resource->rs_value.at_flags = 0;
+  prdef->rs_free(&new_resource->rs_value);
 
   if (pr != NULL)
     {
-    insert_link(&pr->rs_link, &new->rs_link, new, LINK_INSET_BEFORE);
+    insert_link(&pr->rs_link, &new_resource->rs_link, new_resource, LINK_INSET_BEFORE);
     }
   else
     {
-    append_link(&pattr->at_val.at_list, &new->rs_link, new);
+    append_link(&pattr->at_val.at_list, &new_resource->rs_link, new_resource);
     }
 
   pattr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
 
-  return(new);
+  return(new_resource);
   }
 
 

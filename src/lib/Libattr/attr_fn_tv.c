@@ -278,28 +278,28 @@ int encode_tv(
 int set_tv(
 
   pbs_attribute *attr, 
-  pbs_attribute *new, 
+  pbs_attribute *new_attr, 
 	enum batch_op op)
 
   {
-  assert(attr && new && (new->at_flags & ATR_VFLAG_SET));
+  assert(attr && new_attr && (new_attr->at_flags & ATR_VFLAG_SET));
 
   switch (op)
     {
 
 		case SET:
-			attr->at_val.at_timeval.tv_sec = new->at_val.at_timeval.tv_sec;
-			attr->at_val.at_timeval.tv_usec = new->at_val.at_timeval.tv_usec;
+			attr->at_val.at_timeval.tv_sec = new_attr->at_val.at_timeval.tv_sec;
+			attr->at_val.at_timeval.tv_usec = new_attr->at_val.at_timeval.tv_usec;
       break;
 
     case INCR:
-			attr->at_val.at_timeval.tv_sec += new->at_val.at_timeval.tv_sec;
-			attr->at_val.at_timeval.tv_usec += new->at_val.at_timeval.tv_usec;
+			attr->at_val.at_timeval.tv_sec += new_attr->at_val.at_timeval.tv_sec;
+			attr->at_val.at_timeval.tv_usec += new_attr->at_val.at_timeval.tv_usec;
       break;
 
     case DECR:
-			attr->at_val.at_timeval.tv_sec -= new->at_val.at_timeval.tv_sec;
-			attr->at_val.at_timeval.tv_usec -= new->at_val.at_timeval.tv_usec;
+			attr->at_val.at_timeval.tv_sec -= new_attr->at_val.at_timeval.tv_sec;
+			attr->at_val.at_timeval.tv_usec -= new_attr->at_val.at_timeval.tv_usec;
       break;
 
     default:
@@ -354,7 +354,7 @@ int comp_tv(
 
 int job_radix_action (
 
-  pbs_attribute *new,
+  pbs_attribute *new_attr,
   void          *pobj,
   int            actmode)
 
@@ -369,13 +369,13 @@ int job_radix_action (
     
     case ATR_ACTION_NEW:
 
-      pjob->ji_radix = new->at_val.at_long;
+      pjob->ji_radix = new_attr->at_val.at_long;
       
       break;
       
     case ATR_ACTION_ALTER:
   
-      pjob->ji_radix = new->at_val.at_long;
+      pjob->ji_radix = new_attr->at_val.at_long;
 
       break;
       

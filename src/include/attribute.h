@@ -213,7 +213,7 @@ struct attribute_def
   int (*at_decode)(pbs_attribute *patr, char *name, char *rn, char *val, int perm);
   int (*at_encode)(pbs_attribute *pattr, tlist_head *phead,
                       char *aname, char *rsname, int mode, int perm);
-  int (*at_set)(pbs_attribute *pattr, pbs_attribute *new, enum batch_op);
+  int (*at_set)(pbs_attribute *pattr, pbs_attribute *new_attr, enum batch_op);
   int (*at_comp)(pbs_attribute *pattr, pbs_attribute *with);
   void (*at_free)(pbs_attribute *pattr);
   int (*at_action)(pbs_attribute *pattr, void *pobject, int actmode);
@@ -346,10 +346,10 @@ extern svrattrl *attrlist_alloc(int szname, int szresc, int szval);
 extern svrattrl *attrlist_create(char *aname, char *rname, int szval);
 extern void free_attrlist(tlist_head *attrhead);
 extern int  attr_atomic_set(svrattrl *plist, pbs_attribute *old,
-                                  pbs_attribute *new, attribute_def *pdef, int limit,
+                                  pbs_attribute *new_attr, attribute_def *pdef, int limit,
                                   int unkn, int privil, int *badattr);
 extern int  attr_atomic_node_set(svrattrl *plist, pbs_attribute *old,
-                                       pbs_attribute *new, attribute_def *pdef, int limit,
+                                       pbs_attribute *new_attr, attribute_def *pdef, int limit,
                                        int unkn, int privil, int *badattr);
 extern void attr_atomic_kill(pbs_attribute *temp, attribute_def *pdef, int);
 
@@ -400,19 +400,19 @@ int encode_tv(pbs_attribute *attr, tlist_head *phead, char *atname,
 							char *rsname, int mode, int perm);
 
 
-extern int set_b(pbs_attribute *attr, pbs_attribute *new, enum batch_op);
-extern int set_c(pbs_attribute *attr, pbs_attribute *new, enum batch_op);
-extern int set_l(pbs_attribute *attr, pbs_attribute *new, enum batch_op);
-extern int set_ll(pbs_attribute *attr, pbs_attribute *new, enum batch_op);
-extern int set_size(pbs_attribute *attr, pbs_attribute *new, enum batch_op);
-extern int set_str(pbs_attribute *attr, pbs_attribute *new, enum batch_op);
-extern int set_arst(pbs_attribute *attr, pbs_attribute *new, enum batch_op);
-extern int set_resc(pbs_attribute *attr, pbs_attribute *new, enum batch_op);
-extern int set_hostacl(pbs_attribute *attr, pbs_attribute *new, enum batch_op);
-extern int set_uacl(pbs_attribute *attr, pbs_attribute *new, enum batch_op);
-extern int set_unkn(pbs_attribute *attr, pbs_attribute *new, enum batch_op);
-extern int set_depend(pbs_attribute *attr, pbs_attribute *new, enum batch_op);
-extern int set_tv(struct pbs_attribute *attr, struct pbs_attribute *new, enum batch_op op);
+extern int set_b(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+extern int set_c(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+extern int set_l(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+extern int set_ll(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+extern int set_size(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+extern int set_str(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+extern int set_arst(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+extern int set_resc(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+extern int set_hostacl(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+extern int set_uacl(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+extern int set_unkn(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+extern int set_depend(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+extern int set_tv(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op);
 
 enum compare_types { LESS, EQUAL, GREATER, NOT_COMPARED };
 
@@ -488,10 +488,10 @@ extern int      node_gpustatus_list(pbs_attribute*, void*, int);
 int             node_micstatus_list(pbs_attribute *, void *, int);
 extern int      node_note(pbs_attribute*, void*, int);
 extern int      node_alt_name(pbs_attribute*, void*, int);
-extern int      set_note_str(pbs_attribute *attr, pbs_attribute *new, enum batch_op);
-extern int      set_alt_name_str(pbs_attribute *attr, pbs_attribute *new, enum batch_op);
+extern int      set_note_str(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+extern int      set_alt_name_str(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
 extern void     replace_attr_string(pbs_attribute*, char*);
-extern int 		job_radix_action (pbs_attribute *new, void *pobj, int actmode);
+extern int 		job_radix_action (pbs_attribute *new_attr, void *pobj, int actmode);
 
 /* Token manipulation functions */
 

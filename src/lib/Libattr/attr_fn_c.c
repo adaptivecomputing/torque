@@ -197,28 +197,28 @@ int encode_c(
 int set_c(
    
   pbs_attribute *attr,
-  pbs_attribute *new,
+  pbs_attribute *new_attr,
   enum batch_op  op)
   {
-  assert(attr && new && (new->at_flags & ATR_VFLAG_SET));
+  assert(attr && new_attr && (new_attr->at_flags & ATR_VFLAG_SET));
 
   switch (op)
     {
 
     case SET:
-      attr->at_val.at_char = new->at_val.at_char;
+      attr->at_val.at_char = new_attr->at_val.at_char;
       break;
 
     case INCR:
       attr->at_val.at_char =
         (char)((int)attr->at_val.at_char +
-               (int)new->at_val.at_char);
+               (int)new_attr->at_val.at_char);
       break;
 
     case DECR:
       attr->at_val.at_char =
         (char)((int)attr->at_val.at_char -
-               (int)new->at_val.at_char);
+               (int)new_attr->at_val.at_char);
       break;
 
     default:

@@ -137,13 +137,13 @@ typedef struct pidl
 
 /* function prototypes */
 
-extern void insert_link(list_link *old, list_link *new, void *pobj, int pos);
-extern void append_link(tlist_head *head, list_link *new, void *pnewobj);
+extern void insert_link(list_link *old, list_link *new_link, void *pobj, int pos);
+extern void append_link(tlist_head *head, list_link *new_link, void *pnewobj);
 extern void delete_link(list_link *old);
 extern void swap_link(list_link *, list_link *);
 extern int  is_linked(list_link *head, list_link *old);
 extern int  is_link_initialized(list_link *);
-extern void list_move(tlist_head *old, tlist_head *new);
+extern void list_move(tlist_head *old, tlist_head *new_link);
 extern void free_pidlist(struct pidl *pl);
 
 #ifndef NDEBUG

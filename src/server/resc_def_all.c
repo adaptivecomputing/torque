@@ -118,7 +118,7 @@ extern struct server server;
 int decode_nodes(struct pbs_attribute *, char *, char *, char *, int);
 int set_node_ct(resource *, pbs_attribute *, int actmode);
 int set_proc_ct(resource *, pbs_attribute *, int actmode);
-int set_tokens_nodect(struct pbs_attribute *attr, struct pbs_attribute *new, enum batch_op actmode);
+int set_tokens_nodect(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op actmode);
 int set_mppnodect(resource *, pbs_attribute *, int actmode);
 int encode_procct(pbs_attribute *, tlist_head *phead, char *atname, char *rsname, int mode, int perm);
 
@@ -1225,7 +1225,7 @@ int set_proc_ct(
 int set_tokens_nodect(
 
   pbs_attribute *attr,
-  pbs_attribute *new,
+  pbs_attribute *new_attr,
   enum batch_op  op)
 
   {
@@ -1234,9 +1234,9 @@ int set_tokens_nodect(
 
   int ret = 0;
 
-  if (new != NULL)
+  if (new_attr != NULL)
     {
-    colon = strchr(new->at_val.at_str, (int)':');
+    colon = strchr(new_attr->at_val.at_str, (int)':');
 
     if (colon == NULL)
       {
@@ -1256,7 +1256,7 @@ int set_tokens_nodect(
 
   if (ret == 0)
     {
-    ret = set_str(attr, new, op);
+    ret = set_str(attr, new_attr, op);
     }
 
   return(ret);

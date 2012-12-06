@@ -438,7 +438,7 @@ int decode_null(pbs_attribute *patr, char *name, char *rn, char *val, int perm)
 int set_null(
 
   pbs_attribute *pattr,
-  pbs_attribute *new,
+  pbs_attribute *new_attr,
   enum batch_op  op)
 
   {
