@@ -144,14 +144,6 @@ void validate_pbs_o_workdir(memmgr **mm, job_data **job_attr);
 void validate_qsub_host_pbs_o_server(memmgr **mm, job_data **job_attr);
 void post_check_attributes(job_info *ji);
 
-/* return 3, 4, 5, 6, -1 on FAILURE, 0 on success */
-int get_script(
-    int    ArgC,            /* I */
-    char **ArgV,            /* I */
-    FILE  *file,            /* I */
-    char  *script,          /* O (minsize=X) */
-    job_info *ji);          /* M */
-
 void make_argv(
     int  *argc,
     char *argv[],

@@ -556,18 +556,18 @@ int login_encode_jobs(
 
 int status_nodeattrib(
 
-  svrattrl        *pal,         /*an svrattrl from the request  */
-  attribute_def   *padef, /*the defined node attributes   */
-  struct pbsnode  *pnode, /*no longer an pbs_attribute ptr */
-  int              limit, /*number of array elts in padef */
-  int              priv, /*requester's privilege  */
+  svrattrl        *pal,    /*an svrattrl from the request  */
+  attribute_def   *padef,  /*the defined node attributes   */
+  struct pbsnode  *pnode,  /*no longer an pbs_attribute ptr */
+  int              limit,  /*number of array elts in padef */
+  int              priv,   /*requester's privilege  */
 
   tlist_head       *phead, /*heads list of svrattrl structs that hang */
-  /*off the brp_attr member of the status sub*/
-  /*structure in the request's "reply area"  */
+                           /*off the brp_attr member of the status sub*/
+                           /*structure in the request's "reply area"  */
 
-  int             *bad)         /*if node-pbs_attribute error, record it's*/
-/*list position here                 */
+  int             *bad)    /*if node-pbs_attribute error, record it's*/
+                           /*list position here                 */
 
   {
   int   i;
@@ -584,34 +584,34 @@ int status_nodeattrib(
     {
     /*set up attributes using data from node*/
 
-    if (!strcmp((padef + i)->at_name, ATTR_NODE_state))
+    if (i == ND_ATR_state)
       atemp[i].at_val.at_short = pnode->nd_state;
-    else if (!strcmp((padef + i)->at_name, ATTR_NODE_properties))
+    else if (i == ND_ATR_properties)
       atemp[i].at_val.at_arst = pnode->nd_prop;
-    else if (!strcmp((padef + i)->at_name, ATTR_NODE_status))
+    else if (i == ND_ATR_status)
       atemp[i].at_val.at_arst = pnode->nd_status;
-    else if (!strcmp((padef + i)->at_name, ATTR_NODE_ntype))
+    else if (i == ND_ATR_ntype)
       atemp[i].at_val.at_short = pnode->nd_ntype;
-    else if (!strcmp((padef + i)->at_name, ATTR_NODE_jobs))
+    else if (i == ND_ATR_jobs)
       atemp[i].at_val.at_jinfo = pnode;
-    else if (!strcmp((padef + i)->at_name, ATTR_NODE_np))
+    else if (i == ND_ATR_np)
       atemp[i].at_val.at_long = pnode->nd_nsn;
-    else if (!strcmp((padef + i)->at_name, ATTR_NODE_note))
+    else if (i == ND_ATR_note)
       atemp[i].at_val.at_str  = pnode->nd_note;
-    else if (!strcmp((padef + i)->at_name, ATTR_NODE_mom_port))
+    else if (i == ND_ATR_mom_port)
       atemp[i].at_val.at_long  = pnode->nd_mom_port;
-    else if (!strcmp((padef + i)->at_name, ATTR_NODE_mom_rm_port))
+    else if (i == ND_ATR_mom_rm_port)
       atemp[i].at_val.at_long  = pnode->nd_mom_rm_port;
     /* skip NUMA attributes */
-    else if (!strcmp((padef + i)->at_name, ATTR_NODE_num_node_boards))
+    else if (i == ND_ATR_num_node_boards)
       continue;
-    else if (!strcmp((padef + i)->at_name, ATTR_NODE_numa_str))
+    else if (i == ND_ATR_numa_str)
       continue;
-    else if (!strcmp((padef + i)->at_name, ATTR_NODE_gpus_str))
+    else if (i == ND_ATR_gpus_str)
       continue;
-    else if (!strcmp((padef + i)->at_name, ATTR_NODE_gpustatus))
+    else if (i == ND_ATR_gpustatus)
       atemp[i].at_val.at_arst = pnode->nd_gpustatus;
-    else if (!strcmp((padef + i)->at_name, ATTR_NODE_gpus))
+    else if (i == ND_ATR_gpus)
       {
       if (pnode->nd_ngpus == 0)
         continue;
@@ -666,6 +666,9 @@ int status_nodeattrib(
           rc = login_encode_jobs(pnode, phead);
         else
           {
+          if (index == ND_ATR_status)
+            atemp[index].at_val.at_arst = pnode->nd_status;
+
           rc = ((padef + index)->at_encode(
                 &atemp[index],
                 phead,
@@ -704,6 +707,9 @@ int status_nodeattrib(
       else if (((padef + index)->at_flags & priv) &&
                !((padef + index)->at_flags & ATR_DFLAG_NOSTAT))
         {
+        if (index == ND_ATR_status)
+          atemp[index].at_val.at_arst = pnode->nd_status;
+
         rc = (padef + index)->at_encode(
                &atemp[index],
                phead,

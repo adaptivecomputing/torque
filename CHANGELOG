@@ -78,6 +78,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       set to the login nodes. TRQ-1482.
   b - Fix a bug that using -V got rid of -v. TRQ-1457.
   b - Make qsub -I -x work again. TRQ-1483.
+  c - Fix a potential crash when getting the status of a login node in cray mode.
+      TRQ-1491.
 
 4.1.3
   b - fix a security loophole that potentially allowed an interactive job to run 
