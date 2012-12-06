@@ -4590,9 +4590,7 @@ int start_process(
   parent_write = pipes[1];
 
   if((kid_read < 0)||
-      (kid_write < 0)||
-      (parent_read < 0)||
-      (parent_write < 0))
+      (kid_write < 0))
     {
     log_err(-1, __func__, log_buffer);
 
