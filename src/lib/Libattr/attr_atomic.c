@@ -110,7 +110,7 @@ int attr_atomic_set(
 
   struct svrattrl *plist,
   pbs_attribute   *old,
-  pbs_attribute   *new,
+  pbs_attribute   *new_attr,
   attribute_def   *pdef,
   int              limit,
   int              unkn,
@@ -127,7 +127,7 @@ int attr_atomic_set(
   int            resc_access_perm = privil; /* set privilege for decode_resc() */
 
   for (index = 0;index < limit;index++)
-    clear_attr(new + index, pdef + index);
+    clear_attr(new_attr + index, pdef + index);
 
   listidx = 0;
 
@@ -162,7 +162,7 @@ int attr_atomic_set(
         {
         /* from a daemon, just ignore this pbs_attribute */
 
-        plist = (struct svrattrl *)GET_NEXT(plist->al_link);
+        plist = GET_NEXT(plist->al_link);
 
         continue;
         }
@@ -174,7 +174,7 @@ int attr_atomic_set(
       break;
       }
 
-    /* decode new value */
+    /* decode new_attr value */
 
     clear_attr(&temp, pdef + index);
 
@@ -241,9 +241,9 @@ int attr_atomic_set(
     /* duplicate current value, if set AND not already dup-ed */
 
     if (((old + index)->at_flags & ATR_VFLAG_SET) &&
-        !((new + index)->at_flags & ATR_VFLAG_SET))
+        !((new_attr + index)->at_flags & ATR_VFLAG_SET))
       {
-      if ((rc = (pdef + index)->at_set(new + index, old + index, SET)) != 0)
+      if ((rc = (pdef + index)->at_set(new_attr + index, old + index, SET)) != 0)
         break;
 
       /*
@@ -252,11 +252,11 @@ int attr_atomic_set(
        * within resources.
        */
 
-      (new + index)->at_flags &= ~ATR_VFLAG_MODIFY;
+      (new_attr + index)->at_flags &= ~ATR_VFLAG_MODIFY;
 
-      if ((new + index)->at_type == ATR_TYPE_RESC)
+      if ((new_attr + index)->at_type == ATR_TYPE_RESC)
         {
-        prc = (resource *)GET_NEXT((new + index)->at_val.at_list);
+        prc = (resource *)GET_NEXT((new_attr + index)->at_val.at_list);
 
         while (prc)
           {
@@ -276,7 +276,7 @@ int attr_atomic_set(
 
     if (temp.at_flags & ATR_VFLAG_SET)
       {
-      if ((rc = (pdef + index)->at_set(new + index, &temp, plist->al_op)) != 0)
+      if ((rc = (pdef + index)->at_set(new_attr + index, &temp, plist->al_op)) != 0)
         {
         (pdef + index)->at_free(&temp);
 
@@ -285,9 +285,9 @@ int attr_atomic_set(
       }
     else if (temp.at_flags & ATR_VFLAG_MODIFY)
       {
-      (pdef + index)->at_free(new + index);
+      (pdef + index)->at_free(new_attr + index);
 
-      (new + index)->at_flags |= ATR_VFLAG_MODIFY;
+      (new_attr + index)->at_flags |= ATR_VFLAG_MODIFY;
       }
 
     (pdef + index)->at_free(&temp);
@@ -303,7 +303,7 @@ int attr_atomic_set(
     *badattr = listidx;
 
     for (index = 0; index < limit; index++)
-      (pdef + index)->at_free(new + index);
+      (pdef + index)->at_free(new_attr + index);
 
     return(rc);
     }
@@ -323,7 +323,7 @@ int attr_atomic_node_set(
 
   struct svrattrl *plist,    /* list of pbs_attribute modif structs */
   pbs_attribute   *old,      /* unused */
-  pbs_attribute   *new,      /* new pbs_attribute array begins here */
+  pbs_attribute   *new_attr,      /* new pbs_attribute array begins here */
   attribute_def   *pdef,     /* begin array  definition structs */
   int              limit,    /* number elts in definition array */
   int              unkn,     /* <0 unknown attrib not permitted */
@@ -395,7 +395,7 @@ int attr_atomic_node_set(
 
     /*update "new" with "temp", MODIFY is set on "new" if changed*/
 
-    (new + index)->at_flags &= ~ATR_VFLAG_MODIFY;
+    (new_attr + index)->at_flags &= ~ATR_VFLAG_MODIFY;
 
     if ((plist->al_op != INCR) && (plist->al_op != DECR) &&
         (plist->al_op != SET) && (plist->al_op != INCR_OLD))
@@ -406,7 +406,7 @@ int attr_atomic_node_set(
       {
       /* "temp" has a data value, use it to update "new" */
 
-      if ((rc = (pdef + index)->at_set(new + index, &temp, plist->al_op)) != 0)
+      if ((rc = (pdef + index)->at_set(new_attr + index, &temp, plist->al_op)) != 0)
         {
         (pdef + index)->at_free(&temp);
         break;
@@ -415,8 +415,8 @@ int attr_atomic_node_set(
     else if (temp.at_flags & ATR_VFLAG_MODIFY)
       {
 
-      (pdef + index)->at_free(new + index);
-      (new + index)->at_flags |= ATR_VFLAG_MODIFY;
+      (pdef + index)->at_free(new_attr + index);
+      (new_attr + index)->at_flags |= ATR_VFLAG_MODIFY;
       }
 
     (pdef + index)->at_free(&temp);

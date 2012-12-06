@@ -2487,14 +2487,14 @@ struct server *
       new_server(void)
   {
 
-  struct server *new;
+  struct server *new_svr;
 
-  Mstruct(new, struct server);
-  new -> s_connect = -1;
-  new -> s_name = NULL;
-  new -> ref = 0;
-  new -> next = NULL;
-  return new;
+  Mstruct(new_svr, struct server);
+  new_svr -> s_connect = -1;
+  new_svr -> s_name = NULL;
+  new_svr -> ref = 0;
+  new_svr -> next = NULL;
+  return new_svr;
   }
 
 /*
@@ -2554,15 +2554,15 @@ struct objname *
       new_objname(void)
   {
 
-  struct objname *new;
-  Mstruct(new, struct objname);
-  new -> obj_type = MGR_OBJ_NONE;
-  new -> obj_name = NULL;
-  new -> svr_name = NULL;
-  new -> svr = NULL;
-  new -> next = NULL;
+  struct objname *new_obj;
+  Mstruct(new_obj, struct objname);
+  new_obj -> obj_type = MGR_OBJ_NONE;
+  new_obj -> obj_name = NULL;
+  new_obj -> svr_name = NULL;
+  new_obj -> svr = NULL;
+  new_obj -> next = NULL;
 
-  return new;
+  return new_obj;
   }
 
 /*

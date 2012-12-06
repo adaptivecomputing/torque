@@ -108,7 +108,7 @@ arg_to_fairshare(char *arg, char *sep, FairAccessList **fairacl_ptr)
   int     num = 0, max_A = 0, max_B = 0, fieldcnt, found;
   char   *id = "arg_to_fairshare";
   char   *field, aclname[30];
-  AccessEntry *new, *FAptr = NULL, *fptr = NULL;
+  AccessEntry *new_ae, *FAptr = NULL, *fptr = NULL;
 
   /*
    * Multiple lines may be used to add entries to the FairACL list. Find
@@ -209,45 +209,45 @@ arg_to_fairshare(char *arg, char *sep, FairAccessList **fairacl_ptr)
 
   if (!found)
     {
-    new = (AccessEntry *)malloc(sizeof(AccessEntry));
+    new_ae = (AccessEntry *)malloc(sizeof(AccessEntry));
 
-    if (new == NULL)
+    if (new_ae == NULL)
       {
       log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id,
                  "malloc(newAccessEntry)");
       return(-1);
       }
 
-    memset(new, 0, sizeof(AccessEntry));
+    memset(new_ae, 0, sizeof(AccessEntry));
 
     if (FAptr == NULL)
       {
-      (*fairacl_ptr)->entry = new;
+      (*fairacl_ptr)->entry = new_ae;
       fptr = (*fairacl_ptr)->entry;
       }
     else
       {
-      fptr->next = new;
-      fptr = new;
+      fptr->next = new_ae;
+      fptr = new_ae;
       }
 
-    new->name = schd_strdup(aclname);
+    new_ae->name = schd_strdup(aclname);
     }
 
   /* Finially we get to fill it in with the info we saved earlier */
-  new->past_ndays   = 0;
+  new_ae->past_ndays   = 0;
 
-  new->past_percent = 0.0;
+  new_ae->past_percent = 0.0;
 
-  new->max_percent  = (double)max_A;
+  new_ae->max_percent  = (double)max_A;
 
-  new->max_running  = max_B;
+  new_ae->max_running  = max_B;
 
-  new->today_max    = 0.0;
+  new_ae->today_max    = 0.0;
 
-  new->today_usage  = 0.0;
+  new_ae->today_usage  = 0.0;
 
-  new->default_mem  = (size_t)0;
+  new_ae->default_mem  = (size_t)0;
 
   return (num);
   }

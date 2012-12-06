@@ -916,7 +916,7 @@ static int
 resolve_outage_overlap(Outage **outlistp)
   {
   char    *id = "resolve_outage_overlap";
-  Outage  *new, *discard;
+  Outage  *new_outage, *discard;
   Outage  *outp, *next, *this, *host, *sys;
   time_t   sys_beg, sys_end, host_beg, host_end;
   int      found = 0;
@@ -954,9 +954,9 @@ resolve_outage_overlap(Outage **outlistp)
    * Start with the original list head pointer.  This will be replaced
    * with the new head at the end of the for loop.
    */
-  new  = *outlistp;
+  new_outage  = *outlistp;
 
-  for (this = new; this->next != NULL; this = next)
+  for (this = new_outage; this->next != NULL; this = next)
     {
     next = this->next;
 
@@ -1078,9 +1078,9 @@ resolve_outage_overlap(Outage **outlistp)
        * the host element to the next one.
        */
 
-      if (host != new)
+      if (host != new_outage)
         {
-        for (outp = new; outp != NULL; outp = outp->next)
+        for (outp = new_outage; outp != NULL; outp = outp->next)
           /* Walk list looking for previous pointer. */
           if (outp->next == host)
             break;
@@ -1099,9 +1099,9 @@ resolve_outage_overlap(Outage **outlistp)
         }
       else
         {
-        new = host->next;
+        new_outage = host->next;
         DBPRT(("%s: host outage is head of list.  new head %s\n",
-               id, print_outage(new)));
+               id, print_outage(new_outage)));
         }
 
       host->next = discard;
@@ -1257,7 +1257,7 @@ resolve_outage_overlap(Outage **outlistp)
    * outage list.  The new list may not have the same head as the old one
    * (if the original head was discarded).
    */
-  *outlistp = new;
+  *outlistp = new_outage;
 
   /* Clean up the discard list, if necessary. */
   if (discard)

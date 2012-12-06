@@ -6,7 +6,7 @@
 #include "list_link.h" /* tlist_head */
 
 
-int set_arst(struct pbs_attribute *attr, struct pbs_attribute *new, enum batch_op op)
+int set_arst(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op)
   {
   fprintf(stderr, "The call to set_arst needs to be mocked!!\n");
   exit(1);
@@ -36,7 +36,7 @@ int decode_arst(struct pbs_attribute *patr, char *name, char *rescn, char *val, 
   exit(1);
   }
 
-int set_str(struct pbs_attribute *attr, struct pbs_attribute *new, enum batch_op op)
+int set_str(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op)
   {
   fprintf(stderr, "The call to set_str needs to be mocked!!\n");
   exit(1);
@@ -66,7 +66,7 @@ int decode_str(pbs_attribute *patr, char *name, char *rescn, char *val, int perm
   exit(1);
   }
 
-int set_resc(struct pbs_attribute *old, struct pbs_attribute *new, enum batch_op op)
+int set_resc(struct pbs_attribute *old, struct pbs_attribute *new_attr, enum batch_op op)
   {
   fprintf(stderr, "The call to set_resc needs to be mocked!!\n");
   exit(1);
@@ -102,7 +102,7 @@ int action_resc(pbs_attribute *pattr, void *pobject, int actmode)
   exit(1);
   }
 
-int set_unkn(struct pbs_attribute *old, struct pbs_attribute *new, enum batch_op op)
+int set_unkn(struct pbs_attribute *old, struct pbs_attribute *new_attr, enum batch_op op)
   {
   fprintf(stderr, "The call to set_unkn needs to be mocked!!\n");
   exit(1);
@@ -132,7 +132,7 @@ int decode_unkn(pbs_attribute *patr, char *name, char *rescn, char *value, int p
   exit(1);
   }
 
-int set_depend(struct pbs_attribute *attr, struct pbs_attribute *new, enum batch_op op)
+int set_depend(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op)
   {
   fprintf(stderr, "The call to set_depend needs to be mocked!!\n");
   exit(1);
@@ -180,7 +180,7 @@ int decode_hold(pbs_attribute *patr, char *name, char *rescn, char *val, int per
   exit(1);
   }
 
-int set_l(struct pbs_attribute *attr, struct pbs_attribute *new, enum batch_op op)
+int set_l(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op)
   {
   fprintf(stderr, "The call to set_l needs to be mocked!!\n");
   exit(1);
@@ -204,7 +204,7 @@ int decode_l(pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
   exit(1);
   }
 
-int set_b(struct pbs_attribute *attr, struct pbs_attribute *new, enum batch_op op)
+int set_b(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op)
   {
   fprintf(stderr, "The call to set_b needs to be mocked!!\n");
   exit(1);
@@ -228,7 +228,7 @@ int decode_b(pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
   exit(1);
   }
 
-int set_c(struct pbs_attribute *attr, struct pbs_attribute *new, enum batch_op op)
+int set_c(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op)
   {
   fprintf(stderr, "The call to set_c needs to be mocked!!\n");
   exit(1);
@@ -252,7 +252,7 @@ int decode_c(pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
   exit(1);
   }
 
-int set_tv(struct pbs_attribute *attr, struct pbs_attribute *new, enum batch_op op)
+int set_tv(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op)
   {
   fprintf(stderr, "The call to set_tv needs to be mocked!!\n");
   exit(1);
@@ -300,13 +300,13 @@ int job_set_wait(pbs_attribute *pattr, void *pjob, int mode)
   exit(1);
   }
 
-int job_radix_action (pbs_attribute *new, void *pobj, int actmode)
+int job_radix_action (pbs_attribute *new_attr, void *pobj, int actmode)
   {
   fprintf(stderr, "The call to job_radix_action  needs to be mocked!!\n");
   exit(1);
   }
 
-int set_uacl(struct pbs_attribute *attr, struct pbs_attribute *new, enum batch_op op)
+int set_uacl(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op)
   {
   fprintf(stderr, "The call to set_uacl needs to be mocked!!\n");
   exit(1);

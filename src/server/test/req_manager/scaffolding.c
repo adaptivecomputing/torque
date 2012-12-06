@@ -53,7 +53,7 @@ void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
   exit(1);
   }
 
-int attr_atomic_node_set(struct svrattrl *plist, pbs_attribute *old, pbs_attribute *new, attribute_def *pdef, int limit, int unkn, int privil, int *badattr)
+int attr_atomic_node_set(struct svrattrl *plist, pbs_attribute *old, pbs_attribute *new_attr, attribute_def *pdef, int limit, int unkn, int privil, int *badattr)
   {
   fprintf(stderr, "The call to attr_atomic_node_set to be mocked!!\n");
   exit(1);
@@ -155,7 +155,7 @@ struct prop *init_prop(char *pname)
   exit(1);
   }
 
-int attr_atomic_set(struct svrattrl *plist, pbs_attribute *old, pbs_attribute *new, attribute_def *pdef, int limit, int unkn, int privil, int *badattr)
+int attr_atomic_set(struct svrattrl *plist, pbs_attribute *old, pbs_attribute *new_attr, attribute_def *pdef, int limit, int unkn, int privil, int *badattr)
   {
   fprintf(stderr, "The call to attr_atomic_set to be mocked!!\n");
   exit(1);

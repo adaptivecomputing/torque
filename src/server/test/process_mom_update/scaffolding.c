@@ -177,7 +177,7 @@ int is_job_on_node(
 
 int node_status_list(
 
-  pbs_attribute *new,           /*derive status into this pbs_attribute*/
+  pbs_attribute *new_attr,           /*derive status into this pbs_attribute*/
   void          *pnode,         /*pointer to a pbsnode struct     */
   int            actmode)       /*action mode; "NEW" or "ALTER"   */
 
@@ -237,7 +237,7 @@ dynamic_string *get_dynamic_string(
 
 int node_micstatus_list(
 
-  pbs_attribute *new,      /* derive status into this pbs_attribute*/
+  pbs_attribute *new_attr,      /* derive status into this pbs_attribute*/
   void          *pnode,    /* pointer to a pbsnode struct     */
   int            actmode)  /* action mode; "NEW" or "ALTER"   */
 

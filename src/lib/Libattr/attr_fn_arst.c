@@ -336,7 +336,7 @@ int decode_arst_merge(
 
   {
   int           rc;
-  pbs_attribute new;
+  pbs_attribute new_attr;
   pbs_attribute tmp;
 
   if ((val == NULL) || (strlen(val) == 0))
@@ -355,7 +355,7 @@ int decode_arst_merge(
     return(decode_arst_direct(patr,val));
     }
 
-  memset(&new,0x0,sizeof(pbs_attribute));
+  memset(&new_attr,0x0,sizeof(pbs_attribute));
   memset(&tmp,0x0,sizeof(pbs_attribute));
 
   /* already have values, decode new into temp */
@@ -363,7 +363,7 @@ int decode_arst_merge(
 
   /* convert value string into pbs_attribute array */
 
-  if ((rc = decode_arst_direct(&new,val)) != 0)
+  if ((rc = decode_arst_direct(&new_attr,val)) != 0)
     {
     /* FAILURE */
 
@@ -373,7 +373,7 @@ int decode_arst_merge(
   /* copy patr to temp, and new to patr */
 
   tmp.at_val.at_arst = patr->at_val.at_arst;
-  patr->at_val.at_arst = new.at_val.at_arst;
+  patr->at_val.at_arst = new_attr.at_val.at_arst;
 
   /* incr original patr value onto new patr */
 
@@ -550,7 +550,7 @@ int encode_arst(
 int set_arst(
 
   pbs_attribute *attr,  /* I/O */
-  pbs_attribute *new,   /* I */
+  pbs_attribute *new_attr,   /* I */
   enum batch_op     op)    /* I */
 
   {
@@ -568,10 +568,10 @@ int set_arst(
 
   struct array_strings *tmp_arst = NULL;
 
-  assert(attr && new && (new->at_flags & ATR_VFLAG_SET));
+  assert(attr && new_attr && (new_attr->at_flags & ATR_VFLAG_SET));
 
   pas = attr->at_val.at_arst;
-  newpas = new->at_val.at_arst;
+  newpas = new_attr->at_val.at_arst;
 
   if (newpas == NULL)
     {
@@ -631,7 +631,7 @@ int set_arst(
 
       pas->as_next    = pas->as_buf;
 
-      if (new->at_val.at_arst == (struct array_strings *)0)
+      if (new_attr->at_val.at_arst == (struct array_strings *)0)
         break; /* none to set */
 
       nsize = newpas->as_next - newpas->as_buf; /* space needed */
