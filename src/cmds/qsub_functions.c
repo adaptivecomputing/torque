@@ -4237,6 +4237,7 @@ void main_func(
                       script_tmp, /* O */
                       &ji)) != 0)
         {
+        fclose(script_fp);
         unlink(script_tmp);
 
         exit(1);
