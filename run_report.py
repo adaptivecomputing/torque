@@ -18,9 +18,9 @@ def main():
   print "   Individual file code coverage and a Total";
   print "----------------------------------------------------------------------------";
   print coverage_file;
-  parse_res=Popen(["./parse_cov_results.pl", coverage_file]);
+  parse_res=Popen(["./parse_cov_results.py", coverage_file]);
   res=parse_res.communicate();
-  file_res=Popen(["./cov_file_results.pl"]);
+  file_res=Popen(["./cov_file_results.py"]);
   res=file_res.communicate();
 
 if __name__ == "__main__":
