@@ -839,7 +839,7 @@ int run_pelog(
           fds2 = open_std_file(pjob, StdErr, O_WRONLY | O_APPEND,
                                pjob->ji_qs.ji_un.ji_momt.ji_exgid);
 
-          fds1 = dup(fds2);
+          fds1 = (fds2 < 0)?-1:dup(fds2);
 
           break;
 
@@ -848,7 +848,7 @@ int run_pelog(
           fds1 = open_std_file(pjob, StdOut, O_WRONLY | O_APPEND,
                                pjob->ji_qs.ji_un.ji_momt.ji_exgid);
 
-          fds2 = dup(fds1);
+          fds2 = (fds1 < 0)?-1:dup(fds1);
 
           break;
 
@@ -863,6 +863,9 @@ int run_pelog(
         }
       }
 
+    if((fds1 < 0)||(fds2 < 0))
+      return -1;
+
     if (pe_io_type != PE_IO_TYPE_ASIS)
       {
       /* If PE_IO_TYPE_ASIS, leave as is, already open to job */
@@ -871,18 +874,20 @@ int run_pelog(
         {
         close(1);
 
-        if (dup(fds1) == -1) {}
-
-        close(fds1);
+        if (dup(fds1) >= 0)
+          {
+          close(fds1);
+          }
         }
 
       if (fds2 != 2)
         {
         close(2);
 
-        if (dup(fds2) == -1) {}
-
-        close(fds2);
+        if (dup(fds2) >= 0)
+          {
+          close(fds2);
+          }
         }
       }
 

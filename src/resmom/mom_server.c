@@ -591,7 +591,8 @@ void mom_server_stream_error(
 
   log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
 
-  close(stream);
+  if(stream >= 0)
+    close(stream);
 
   return;
   }  /* END mom_server_stream_error() */
@@ -3071,7 +3072,7 @@ int mom_open_socket_to_jobs_server(
       }
    
     /* Associate a message handler with the connection */
-    if (message_handler != NULL)
+    if ((message_handler != NULL)&&(sock >= 0))
       {
       add_conn(
         sock,

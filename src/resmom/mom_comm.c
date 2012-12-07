@@ -1880,7 +1880,8 @@ void send_im_error(
       else
         rc = DIS_tcp_wflush(local_chan);
 
-      close(socket);
+      if(socket >= 0)
+        close(socket);
 
       if (local_chan != NULL)
         {
@@ -1963,7 +1964,8 @@ int reply_to_join_job_as_sister(
     else
       ret = DIS_tcp_wflush(local_chan);
 
-    close(socket);
+    if(socket >= 0)
+      close(socket);
 
     if (local_chan != NULL)
       {
@@ -2875,7 +2877,9 @@ int im_spawn_task(
         else
           ret = DIS_tcp_wflush(local_chan);
 
-        close(local_socket);
+        if(socket >= 0)
+          close(local_socket);
+
         if (local_chan != NULL)
           DIS_tcp_cleanup(local_chan);
         
@@ -3056,7 +3060,9 @@ int im_signal_task(
   else
     DIS_tcp_wflush(local_chan);
 
-  close(socket);
+  if(socket >= 0)
+    close(socket);
+
   if (local_chan != NULL)
     DIS_tcp_cleanup(local_chan);
 
@@ -8076,7 +8082,11 @@ void fork_demux(
   int               pipe_failed = FALSE;
   char              buf[MAXLINE];
 
-  maxfd = sysconf(_SC_OPEN_MAX);
+  if((maxfd = sysconf(_SC_OPEN_MAX)) < 0)
+    {
+	fprintf(stderr, "Unexpected return from sysconf.");
+   	return;
+	}
 
   routem = (struct routefd *)calloc(sizeof(struct routefd), maxfd);
   if (routem == NULL)
@@ -8108,7 +8118,7 @@ void fork_demux(
   close(pjob->ji_im_stdout);
 
   im_mom_stderr = dup(pjob->ji_im_stderr);
-  if (im_mom_stdout == -1)
+  if (im_mom_stderr == -1)
     {
     fprintf(stderr, "could not dup stdout in fork_demux");
     free(routem);
