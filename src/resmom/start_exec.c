@@ -814,6 +814,12 @@ static int open_pty(
     {
     FDMOVE(pts);
 
+    if(pts < 0)
+      {
+      log_err(errno, "open_pty", "cannot move pts file.");
+      return -1;
+      }
+
     fchmod(pts, 0620);
 
     if (fchown(pts, pjob->ji_qs.ji_un.ji_momt.ji_exuid,
@@ -918,7 +924,7 @@ static int open_std_out_err(
                   filemode,
                   pjob->ji_qs.ji_un.ji_momt.ji_exgid);
 
-    file_err = dup(file_out);
+    file_err = (file_out < 0)?-1:dup(file_out);
     }
   else if (i == -1)
     {
@@ -927,7 +933,7 @@ static int open_std_out_err(
                   filemode,
                   pjob->ji_qs.ji_un.ji_momt.ji_exgid);
 
-    file_out = dup(file_err);
+    file_out = (file_err < 0)?-1:dup(file_err);
     }
 
   if (file_out == -2)
@@ -976,26 +982,30 @@ static int open_std_out_err(
 
   FDMOVE(file_err);  /* so don't clobber stdin/out/err */
 
+  if((file_out == -1)||(file_err == -1))
+    {
+    log_err(errno, __func__, "unable to open standard output/error");
+    return -1;
+    }
+
   if (file_out != 1)
     {
     close(1);
 
-    if (dup(file_out) == -1)
+    if (dup(file_out) >= 0)
       {
+      close(file_out);
       }
-
-    close(file_out);
     }
 
   if (file_err != 2)
     {
     close(2);
 
-    if (dup(file_err) == -1)
+    if (dup(file_err) >= 0)
      {
+     close(file_err);
      }
-
-    close(file_err);
     }
 
   return(PBSE_NONE);
