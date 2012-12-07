@@ -4488,11 +4488,7 @@ void cleanup_aux()
           }
         }
       }
-<<<<<<< HEAD
     closedir(auxdir);
-=======
-      closedir(auxdir);
->>>>>>> fix coverity issue
     }
   } /* END cleanup_aux() */
 
