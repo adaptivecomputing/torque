@@ -1,5 +1,5 @@
 #
-# TORQUE 4.1-dev README (released Aug, 7 2012)
+# TORQUE 4.1-dev README (ongoing minor fixes to v4.1)
 #
 
 Homepage:                     http://adaptivecomputing.com/torque/
