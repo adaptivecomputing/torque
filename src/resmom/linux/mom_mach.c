@@ -301,7 +301,7 @@ proc_stat_t *get_proc_stat(
       /* FAILURE */
 
       if (!Hertz_errored)
-        log_err(errno, "get_proc_stat", "sysconf(_SC_CLK_TCK) failed, unable to monitor processes");
+        log_err(errno, "get_proc_stat", (char *)"sysconf(_SC_CLK_TCK) failed, unable to monitor processes");
 
       Hertz_errored = 1;
 
@@ -693,7 +693,7 @@ void dep_initialize(void)
 
   if ((pdir = opendir(procfs)) == NULL)
     {
-    log_err(errno, id, "opendir");
+    log_err(errno, id, (char *)"opendir");
 
     return;
     }
@@ -1779,7 +1779,7 @@ int mom_open_poll(void)
 
   if (proc_array == NULL)
     {
-    log_err(errno, id, "calloc");
+    log_err(errno, id, (char *)"calloc");
 
     return(PBSE_SYSTEM);
     }
@@ -1899,7 +1899,7 @@ int mom_get_sample(void)
 
       if (hold == NULL)
         {
-        log_err(errno, id, "unable to realloc space for proc_array sample");
+        log_err(errno, id, (char *)"unable to realloc space for proc_array sample");
 
         return(PBSE_SYSTEM);
         }
@@ -2679,7 +2679,7 @@ int mom_close_poll(void)
     {
     if (closedir(pdir) != 0)
       {
-      log_err(errno, id, "closedir");
+      log_err(errno, id, (char *)"closedir");
 
       return(PBSE_SYSTEM);
       }
@@ -3344,7 +3344,7 @@ char *sessions(
     /* not found */
     if ((sp = (struct pidl *)calloc(1, sizeof(struct pidl))) == NULL)
       {
-      log_err(errno, id, "no memory");
+      log_err(errno, id, (char *)"no memory");
       rm_errno = RM_ERR_SYSTEM;
       if (sids)
         free_pidlist(sids);
@@ -3640,7 +3640,7 @@ char *nusers(
 
         if (hold == NULL)
           {
-          log_err(errno, id, "realloc");
+          log_err(errno, id, (char *)"realloc");
 
           rm_errno = RM_ERR_SYSTEM;
 
@@ -3703,7 +3703,7 @@ static char *totmem(
 
   if ((mm = get_proc_mem()) == NULL)
     {
-    log_err(errno, id, "get_proc_mem");
+    log_err(errno, id, (char *)"get_proc_mem");
 
     rm_errno = RM_ERR_SYSTEM;
 
@@ -3749,7 +3749,7 @@ static char *availmem(
 
   if ((mm = get_proc_mem()) == NULL)
     {
-    log_err(errno, id, "get_proc_mem");
+    log_err(errno, id, (char *)"get_proc_mem");
 
     rm_errno = RM_ERR_SYSTEM;
 
@@ -4041,7 +4041,7 @@ char *size_fs(
 
   if (statfs(param, &fsbuf) == -1)
     {
-    log_err(errno, id, "statfs");
+    log_err(errno, id, (char *)"statfs");
 
     rm_errno = RM_ERR_BADPARAM;
 
@@ -4087,7 +4087,7 @@ char *size_file(
 
   if (stat(param, &sbuf) == -1)
     {
-    log_err(errno, id, "stat");
+    log_err(errno, id, (char *)"stat");
 
     rm_errno = RM_ERR_BADPARAM;
 
@@ -4354,7 +4354,7 @@ char *idletime(
 
   if ((dp = opendir("/dev")) == NULL)
     {
-    log_err(errno, id, "opendir /dev");
+    log_err(errno, id, (char *)"opendir /dev");
 
     rm_errno = RM_ERR_SYSTEM;
 
@@ -4451,7 +4451,7 @@ static char *walltime(
 
   if ((now = time(NULL)) <= 0)
     {
-    log_err(errno, id, "time");
+    log_err(errno, id, (char *)"time");
 
     rm_errno = RM_ERR_SYSTEM;
 
@@ -4516,7 +4516,7 @@ int get_la(
   if (fscanf(fp, "%f",
              &load) != 1)
     {
-    log_err(errno, id, "fscanf of load in /proc/loadavg");
+    log_err(errno, id, (char *)"fscanf of load in /proc/loadavg");
 
     fclose(fp);
 
@@ -4593,7 +4593,7 @@ void collect_cpuact(void)
       {
       if ((cpu_array = (proc_cpu_t *)calloc(system_ncpus, sizeof(proc_cpu_t))) == NULL)
         {
-        log_err(errno, id, "failed to allocate memory");
+        log_err(errno, id, (char *)"failed to allocate memory");
         return;
         }
       }
@@ -4848,7 +4848,7 @@ static char *quota(
 
   if ((m = setmntent(MOUNTED, "r")) == NULL)
     {
-    log_err(errno, id, "setmntent");
+    log_err(errno, id, (char *)"setmntent");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }
@@ -4932,7 +4932,7 @@ static char *quota(
         uid,
         (caddr_t)&qi) == -1)
     {
-    log_err(errno, id, "quotactl");
+    log_err(errno, id, (char *)"quotactl");
 
     rm_errno = RM_ERR_SYSTEM;
 
@@ -5050,7 +5050,7 @@ static char *netload(
 
   if (rc < 0)
     {
-    log_err(errno, id, "fscanf of header lines in /proc/net/dev");
+    log_err(errno, id, (char *)"fscanf of header lines in /proc/net/dev");
 
     fclose(fp);
 

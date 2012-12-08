@@ -1343,7 +1343,7 @@ void node_comm_error(
  
   {
   snprintf(log_buffer,sizeof(log_buffer), "%s %s", message, nc->name);
-  log_err(-1,"Node communication process",log_buffer);
+  log_err(-1, (char *)"Node communication process",log_buffer);
   
   close(nc->stream);
   nc->stream = -1;
@@ -1560,7 +1560,7 @@ void mom_server_all_update_stat(void)
         }
 
       if (rc == COULD_NOT_CONTACT_SERVER)
-        log_err(-1, __func__, "Could not contact any of the servers to send an update");
+        log_err(-1, __func__, (char *)"Could not contact any of the servers to send an update");
       }
     else
       close(nc->stream);

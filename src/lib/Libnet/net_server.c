@@ -133,7 +133,7 @@ extern char local_host_name[];
 
 void initialize_connections_table();
 
-extern time_t time(time_t *);
+/*extern time_t time(time_t *);*/
 struct in_addr   net_serveraddr;
 char            *net_server_name = NULL;
 char             pbs_server_name[PBS_MAXSERVERNAME + 1];
@@ -339,10 +339,10 @@ int init_network(
     /* initialize global "read" socket FD bitmap */
     GlobalSocketReadSet = (fd_set *)calloc(1,sizeof(char) * get_fdset_size());
 
-    global_sock_read_mutex = calloc(1, sizeof(pthread_mutex_t));
+    global_sock_read_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
     pthread_mutex_init(global_sock_read_mutex,&t_attr);
 
-    num_connections_mutex = calloc(1, sizeof(pthread_mutex_t));
+    num_connections_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
     pthread_mutex_init(num_connections_mutex,&t_attr);
     
     type = Primary;
@@ -461,7 +461,7 @@ int init_network(
   /* allocate a minute's worth of counter structs */
   if (nc_list_mutex == NULL)
     {
-    nc_list_mutex = calloc(1, sizeof(pthread_mutex_t));
+    nc_list_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
     pthread_mutex_init(nc_list_mutex,NULL);
 
     pthread_mutex_lock(nc_list_mutex);
@@ -618,7 +618,7 @@ int wait_request(
 
       free(SelectSet);
 
-      log_err(errno, __func__, "Unable to select sockets to read requests");
+      log_err(errno, __func__, (char *)"Unable to select sockets to read requests");
 
       return(-1);
       }  /* END else (errno == EINTR) */
@@ -1029,7 +1029,7 @@ void close_conn(
   svr_conn[sd].cn_addr = 0;
   svr_conn[sd].cn_handle = -1;
   svr_conn[sd].cn_active = Idle;
-  svr_conn[sd].cn_func = (void *(*)())0;
+  svr_conn[sd].cn_func = (void *(*)(void *))0;
   svr_conn[sd].cn_authen = 0;
   svr_conn[sd].cn_stay_open = FALSE;
     
@@ -1222,7 +1222,7 @@ char *netaddr_pbs_net_t(
   char *return_value;
 
   if (ipadd == 0)
-    return "unknown";
+    return (char *)"unknown";
 
   sprintf(out, "%ld.%ld.%ld.%ld",
           (ipadd & 0xff000000) >> 24,
@@ -1230,7 +1230,7 @@ char *netaddr_pbs_net_t(
           (ipadd & 0x0000ff00) >> 8,
           (ipadd & 0x000000ff));
 
-  return_value = calloc(1, strlen(out) + 1);
+  return_value = (char *)calloc(1, strlen(out) + 1);
   strcpy(return_value,out);
 
   return(return_value);

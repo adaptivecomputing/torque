@@ -339,7 +339,6 @@ int write_buffer(
   int   fds)
 
   {
-  char *id = "write_buffer";
   int   written;
 
   while ((written = write(fds,buf,len)) != len)
@@ -354,7 +353,7 @@ int write_buffer(
       }
     else
       {
-      log_err(errno,id,"Unable to write to file or socket");
+      log_err(errno,__func__,(char *)"Unable to write to file or socket");
       
       return(-1);
       }

@@ -97,12 +97,51 @@
 #include "../Liblog/log_event.h"
 
 #if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
-extern int h_errno;
+/*extern int h_errno;*/
 #endif
 
 #ifdef _AIX
 extern const char *hstrerror(int);
 #endif
+
+/*
+   ** Put a human readable representation of a network addres passed
+   ** in as a long and return a staticly allocated string.
+   */
+char * netaddr_long(long ap, char *out)
+  {
+  u_long  ipadd;
+
+  ipadd = ap;
+
+  sprintf(out, "%ld.%ld.%ld.%ld",
+           (ipadd & 0xff000000) >> 24,
+           (ipadd & 0x00ff0000) >> 16,
+           (ipadd & 0x0000ff00) >> 8,
+           (ipadd & 0x000000ff));
+
+  return out;
+  }
+
+/*
+   ** Put a human readable representation of a network addres into
+   ** a staticly allocated string.
+   */
+char * netaddr(struct sockaddr_in *ap)
+  {
+  static char out[80];
+  char tmp[80];
+
+  if (ap == NULL)
+    return "unknown";
+
+  netaddr_long( ntohl(ap->sin_addr.s_addr), tmp);
+
+  sprintf(out, "%s:%d", tmp, ntohs(ap->sin_port));
+
+  return out;
+  }
+
 
 /*
  * get_hostaddr.c - contains functions to provide the internal

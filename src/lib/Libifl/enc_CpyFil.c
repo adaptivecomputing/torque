@@ -114,7 +114,7 @@ int encode_DIS_CopyFiles(
 
   {
   int   pair_ct = 0;
-  char *nullstr = "";
+  char *nullstr = (char *)"";
 
   struct rqfpair *ppair;
   int   rc;

@@ -504,7 +504,72 @@ typedef struct all_jobs
 
 
 
+/*
+ * fixed size internal data - maintained via "quick save"
+ * some of the items are copies of attributes, if so this
+ * internal version takes precendent
+ * 
+ * NOTE: IF YOU MAKE ANY CHANGES TO THIS STRUCT THEN YOU ARE INTRODUCING 
+ * AN INCOMPATIBILITY WITH .JB FILES FROM PREVIOUS VERSIONS OF TORQUE.
+ * YOU SHOULD INCREMENT THE VERSION OF THE STRUCT AND PROVIDE APPROPRIATE 
+ * SUPPORT IN joq_qs_upgrade() FOR UPGRADING PREVIOUS VERSIONS OF THIS 
+ * STRUCT TO THE CURRENT VERSION.  ALSO NOTE THAT ANY CHANGES TO CONSTANTS
+ * THAT DEFINE THE SIZE OF ANY ARRAYS IN THIS STRUCT ALSO INTRODUCE AN 
+ * INCOMPATIBILITY WITH .JB FILES FROM PREVIOUS VERSIONS AND REQUIRE A NEW
+ * STRUCT VERSION AND UPGRADE SUPPORT.
+ */
 
+struct jobfix
+  {
+  int     qs_version;  /* quick save version */
+  int     ji_state;    /* internal copy of state */
+  int     ji_substate; /* job sub-state */
+  int     ji_svrflags; /* server flags */
+  int     ji_numattr;  /* number of attributes in list - never used, delete me */
+  int     ji_ordering; /* special scheduling ordering - also never used */
+  int     ji_priority; /* internal priority  - also never used */
+  time_t  ji_stime;    /* time job started execution */
+  char    ji_jobid[PBS_MAXSVRJOBID + 1];   /* job identifier */
+  char    ji_fileprefix[PBS_JOBBASE + 1];  /* job file prefix */
+  char    ji_queue[PBS_MAXQUEUENAME + 1];  /* name of current queue */
+  char    ji_destin[PBS_MAXROUTEDEST + 1]; /* dest from qmove/route */
+  /*
+   * ji_destin gets set when we assign hosts and gets
+   * cleared on failure to run job on mom or at obit_reply
+   */
+  int     ji_un_type;  /* type of ji_un union */
+  union   /* depends on type of queue currently in */
+    {
+    struct   /* if in execution queue .. */
+      {
+      pbs_net_t ji_momaddr;  /* host addr of Server */
+      unsigned short ji_momport;  /* host port of Server default 15002 */
+      unsigned short ji_mom_rmport; /* host mom manager port of Server default 15003 */
+      int       ji_exitstat; /* job exit status from MOM */
+      } ji_exect;
+
+    struct
+      {
+      time_t  ji_quetime;        /* time entered queue */
+      time_t  ji_rteretry;       /* route retry time */
+      } ji_routet;
+
+    struct
+      {
+      pbs_net_t  ji_fromaddr;     /* host job coming from   */
+      int        ji_fromsock; /* socket job coming over */
+      int        ji_scriptsz; /* script size */
+      } ji_newt;
+
+    struct
+      {
+      pbs_net_t ji_svraddr;  /* host addr of Server */
+      int       ji_exitstat; /* job exit status from MOM */
+      uid_t     ji_exuid;    /* execution uid */
+      gid_t     ji_exgid;    /* execution gid */
+      } ji_momt;
+    } ji_un;
+  };
 
 /**
  * THE JOB
@@ -625,57 +690,7 @@ struct job
    * STRUCT VERSION AND UPGRADE SUPPORT.
    */
 
-  struct jobfix
-    {
-    int     qs_version;  /* quick save version */
-    int     ji_state;    /* internal copy of state */
-    int     ji_substate; /* job sub-state */
-    int     ji_svrflags; /* server flags */
-    int     ji_numattr;  /* number of attributes in list - never used, delete me */
-    int     ji_ordering; /* special scheduling ordering - also never used */
-    int     ji_priority; /* internal priority  - also never used */
-    time_t  ji_stime;    /* time job started execution */
-    char    ji_jobid[PBS_MAXSVRJOBID + 1];   /* job identifier */
-    char    ji_fileprefix[PBS_JOBBASE + 1];  /* job file prefix */
-    char    ji_queue[PBS_MAXQUEUENAME + 1];  /* name of current queue */
-    char    ji_destin[PBS_MAXROUTEDEST + 1]; /* dest from qmove/route */
-    /*
-     * ji_destin gets set when we assign hosts and gets
-     * cleared on failure to run job on mom or at obit_reply
-     */
-    int     ji_un_type;  /* type of ji_un union */
-    union   /* depends on type of queue currently in */
-      {
-      struct   /* if in execution queue .. */
-        {
-        pbs_net_t ji_momaddr;  /* host addr of Server */
-        unsigned short ji_momport;  /* host port of Server default 15002 */
-        unsigned short ji_mom_rmport; /* host mom manager port of Server default 15003 */
-        int       ji_exitstat; /* job exit status from MOM */
-        } ji_exect;
-
-      struct
-        {
-        time_t  ji_quetime;        /* time entered queue */
-        time_t  ji_rteretry;       /* route retry time */
-        } ji_routet;
-
-      struct
-        {
-        pbs_net_t  ji_fromaddr;     /* host job coming from   */
-        int        ji_fromsock; /* socket job coming over */
-        int        ji_scriptsz; /* script size */
-        } ji_newt;
-
-      struct
-        {
-        pbs_net_t ji_svraddr;  /* host addr of Server */
-        int       ji_exitstat; /* job exit status from MOM */
-        uid_t     ji_exuid;    /* execution uid */
-        gid_t     ji_exgid;    /* execution gid */
-        } ji_momt;
-      } ji_un;
-    } ji_qs;
+  struct jobfix   ji_qs;
 
   /*
    * The following array holds the decode format of the attributes.

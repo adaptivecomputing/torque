@@ -236,7 +236,6 @@ toolong(int sig)
 
   if ((cpid = fork()) > 0)   /* parent re-execs itself */
     {
-    rpp_terminate();
 #ifndef linux
     sleep(5);
 #endif
@@ -272,7 +271,6 @@ toolong(int sig)
       {
       log_close(1);
       abort();
-      rpp_terminate();
       exit(2); /* not reached (hopefully) */
       }
 
@@ -283,7 +281,6 @@ toolong(int sig)
 
              id, "exiting without core dump");
   log_close(1);
-  rpp_terminate();
   exit(0);
   }
 
@@ -752,7 +749,6 @@ char *argv[];
   caddr_t  curr_brk = 0, next_brk;
   extern char *optarg;
   extern int optind, opterr;
-  extern int rpp_fd;
   fd_set  fdset;
 
 #ifndef DEBUG
@@ -1157,8 +1153,6 @@ char *argv[];
     {
     unsigned int cmd;
 
-    if (rpp_fd != -1)
-      FD_SET(rpp_fd, &fdset);
 
     FD_SET(server_sock, &fdset);
 
@@ -1168,12 +1162,6 @@ char *argv[];
         log_err(errno, id, "select");
 
       continue;
-      }
-
-    if (rpp_fd != -1 && FD_ISSET(rpp_fd, &fdset))
-      {
-      if (rpp_io() == -1)
-        log_err(errno, id, "rpp_io");
       }
 
     if (!FD_ISSET(server_sock, &fdset))

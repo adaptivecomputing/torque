@@ -197,7 +197,7 @@ addClient(char *name)
 
   if (beforecnt == aftercnt)
     {
-    log_err(-1, id, "Unable to realloc okClients");
+    log_err(-1, id, (char *)"Unable to realloc okClients");
     return -1;
     }
 

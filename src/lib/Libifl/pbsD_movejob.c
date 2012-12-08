@@ -105,7 +105,7 @@ int pbs_movejob_err(
     return (PBSE_IVALREQ);
 
   if (destin == (char *)0)
-    destin = "";
+    destin = (char *)"";
 
   pthread_mutex_lock(connection[c].ch_mutex);
 

@@ -155,7 +155,7 @@ int que_save(
 
   if (fds < 0)
     {
-    log_err(errno, myid, "open error");
+    log_err(errno, myid, (char *)"open error");
 
     return(-1);
     }
@@ -171,7 +171,7 @@ int que_save(
 
   if ((rc = write_buffer(buf,strlen(buf),fds)))
     {
-    log_err(rc,myid,"unable to write to the file");
+    log_err(rc,myid, (char *)"unable to write to the file");
     close(fds);
     return(-1);
     }
@@ -180,7 +180,7 @@ int que_save(
 
   if (save_attr_xml(que_attr_def, pque->qu_attr, QA_ATR_LAST,fds) != 0)
     {
-    log_err(-1, myid, "save_attr failed");
+    log_err(-1, myid, (char *)"save_attr failed");
     close(fds);
     return(-1);
     }
@@ -189,7 +189,7 @@ int que_save(
   snprintf(buf,sizeof(buf),"</queue>");
   if ((rc = write_buffer(buf,strlen(buf),fds)))
     {
-    log_err(rc,myid,"unable to write to the queue's file");
+    log_err(rc,myid, (char *)"unable to write to the queue's file");
     close(fds);
     return(-1);
     }
@@ -199,7 +199,7 @@ int que_save(
 
   if (link(namebuf2, namebuf1) < 0)
     {
-    log_err(errno, myid, "unable to link queue name");
+    log_err(errno, myid, (char *)"unable to link queue name");
     }
   else
     {
@@ -236,7 +236,7 @@ pbs_queue *que_recov_xml(
 
   if (pq == NULL)
     {
-    log_err(-1, __func__, "que_alloc failed");
+    log_err(-1, __func__, (char *)"que_alloc failed");
 
     return(NULL);
     }
@@ -247,7 +247,7 @@ pbs_queue *que_recov_xml(
 
   if (fds < 0)
     {
-    log_err(errno, __func__, "open error");
+    log_err(errno, __func__, (char *)"open error");
 
     que_free(pq, TRUE);
 
@@ -288,7 +288,7 @@ pbs_queue *que_recov_xml(
 
   if (end == NULL)
     {
-    log_err(-1, __func__, "No queue tag found in the queue file???");
+    log_err(-1, __func__, (char *)"No queue tag found in the queue file???");
     que_free(pq, TRUE);
     close(fds);
     return(NULL);
@@ -409,7 +409,7 @@ pbs_queue *que_recov(
 
   if (pq == NULL)
     {
-    log_err(-1, __func__, "que_alloc failed");
+    log_err(-1, __func__, (char *)"que_alloc failed");
 
     return(NULL);
     }
@@ -420,7 +420,7 @@ pbs_queue *que_recov(
 
   if (fds < 0)
     {
-    log_err(errno, __func__, "open error");
+    log_err(errno, __func__, (char *)"open error");
 
     que_free(pq, TRUE);
 
@@ -432,7 +432,7 @@ pbs_queue *que_recov(
   if (read(fds, (char *)&pq->qu_qs, sizeof(struct queuefix)) !=
       sizeof(struct queuefix))
     {
-    log_err(errno, __func__, "read error");
+    log_err(errno, __func__, (char *)"read error");
     que_free(pq, TRUE);
     close(fds);
     return ((pbs_queue *)0);
@@ -443,7 +443,7 @@ pbs_queue *que_recov(
   if (recov_attr(fds, pq, que_attr_def, pq->qu_attr,
 	               QA_ATR_LAST, 0, TRUE) != 0)
     {
-    log_err(-1, __func__, "recov_attr[common] failed");
+    log_err(-1, __func__, (char *)"recov_attr[common] failed");
     que_free(pq, TRUE);
     close(fds);
     return ((pbs_queue *)0);

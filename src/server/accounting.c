@@ -191,14 +191,14 @@ int acct_job(
     {
     /* queue name */
     sprintf(local_buf, "queue=%s ", pque->qu_qs.qu_name);
-    unlock_queue(pque, __func__, NULL, LOGLEVEL);
+    unlock_queue(pque, __func__, (char *)NULL, LOGLEVEL);
 
     if ((rc = append_dynamic_string(ds, local_buf)) != PBSE_NONE)
       return(rc);
     }
   else if (pjob == NULL)
     {
-    log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 1");
+    log_err(PBSE_JOBNOTFOUND, __func__, (char *)"Job lost while acquiring queue 1");
     return(PBSE_JOBNOTFOUND);
     }
 
@@ -262,7 +262,7 @@ int acct_job(
     ATR_ENCODE_CLIENT,
     resc_access_perm);
 
-  while ((pal = GET_NEXT(attrlist)) != NULL)
+  while ((pal = (svrattrl *)GET_NEXT(attrlist)) != NULL)
     {
 		/* exec_host can use a lot of buffer space. Use a dynamic string */
     append_dynamic_string(ds, pal->al_name);
@@ -447,7 +447,7 @@ void account_record(
     }
 
   if (text == NULL)
-    text = "";
+    text = (char *)"";
 
   pthread_mutex_lock(acctfile_mutex);
   fprintf(acctfile, "%02d/%02d/%04d %02d:%02d:%02d;%c;%s;%s\n",
@@ -611,7 +611,7 @@ void acct_cleanup(
 
   if (log_remove_old(path_acct,(days_to_keep * SECS_PER_DAY)) != 0)
     {
-    log_err(-1, __func__, "failure occurred when checking for old accounting logs");
+    log_err(-1, __func__, (char *)"failure occurred when checking for old accounting logs");
     }
 
   return;

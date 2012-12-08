@@ -511,7 +511,7 @@ int login_encode_jobs(
       if (pjob != NULL)
         {
         login_id = pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str;
-        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
         }
 
       if ((login_id == NULL) ||
@@ -529,7 +529,7 @@ int login_encode_jobs(
 
   if ((pal = attrlist_create(ATTR_NODE_jobs, NULL, strlen(job_str->str) + 1)) == NULL)
     {
-    log_err(ENOMEM, __func__, "");
+    log_err(ENOMEM, __func__, (char *)"");
     return(ENOMEM);
     }
 
@@ -786,7 +786,7 @@ int initialize_pbsnode(
   pnode->nd_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   if (pnode->nd_mutex == NULL)
     {
-    log_err(ENOMEM, __func__, "Could not allocate memory for the node's mutex");
+    log_err(ENOMEM, __func__, (char *)"Could not allocate memory for the node's mutex");
     
     return(ENOMEM);
     }
@@ -1382,7 +1382,7 @@ int create_a_gpusubnode(
     {
     rc = PBSE_MEM_MALLOC;
     log_err(rc,__func__,
-        "Couldn't allocate memory for a subnode. EPIC FAILURE");
+        (char *)"Couldn't allocate memory for a subnode. EPIC FAILURE");
     return(rc);
     }
 
@@ -1585,7 +1585,7 @@ int setup_node_boards(
     if (allocd_name == NULL)
       {
       /* no memory error */
-      log_err(PBSE_SYSTEM, __func__, "Cannot allocate memory for node name\n");
+      log_err(PBSE_SYSTEM, __func__, (char *)"Cannot allocate memory for node name\n");
 
       return(PBSE_SYSTEM);
       }
@@ -1740,7 +1740,7 @@ int create_pbs_node(
 
     if (host_info == NULL)
       {
-      log_err(-1, __func__, "create_pbs_node calloc failed");
+      log_err(-1, __func__, (char *)"create_pbs_node calloc failed");
       return(PBSE_MEM_MALLOC);
       }
 
@@ -1755,7 +1755,7 @@ int create_pbs_node(
       pattrl = attrlist_create(pal->al_atopl.name, 0, strlen(pal->al_atopl.value) + 1);
       if (pattrl == NULL)
         {
-        log_err(-1, __func__, "cannot create node attribute");
+        log_err(-1, __func__, (char *)"cannot create node attribute");
         free(host_info);
         if (pul != NULL)
           free(pul);
@@ -1781,7 +1781,7 @@ int create_pbs_node(
         free(host_info);
         if (pul != NULL)
           free(pul);
-        log_err(-1, __func__, "create_pbs_node calloc failed");
+        log_err(-1, __func__, (char *)"create_pbs_node calloc failed");
         return(PBSE_MEM_MALLOC);
         }
 
@@ -3182,7 +3182,7 @@ int insert_node(
   if ((rc = insert_thing(an->ra,pnode)) == -1)
     {
     rc = ENOMEM;
-    log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE");
+    log_err(rc, __func__, (char *)"No memory to resize the array...SYSTEM FAILURE");
     }
   else
     {

@@ -224,7 +224,7 @@ int add_mic_status(
 
   if (COIEngineGetCount(COI_ISA_MIC, &num_engines) != COI_SUCCESS)
     {
-    log_err(-1, __func__, "Mics are present but apparently not configured correctly - can't get count");
+    log_err(-1, __func__, (char *)"Mics are present but apparently not configured correctly - can't get count");
     return(PBSE_SYSTEM);
     }
 

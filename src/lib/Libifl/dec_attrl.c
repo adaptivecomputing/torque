@@ -134,7 +134,7 @@ int decode_DIS_attrl(
 
     if (rc) break;
 
-    pat = calloc(1, sizeof(struct attrl));
+    pat = (struct attrl *)calloc(1, sizeof(struct attrl));
 
     if (pat == NULL)
       return DIS_NOMALLOC;

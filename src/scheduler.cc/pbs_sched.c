@@ -221,7 +221,7 @@ static void catch_abort(
   sigaction(SIGTRAP, &act, NULL);
   sigaction(SIGSYS, &act, NULL);
 
-  log_err(sig, "pbs_sched", "Caught fatal core signal");
+  log_err(sig, "pbs_sched", (char *)"Caught fatal core signal");
   rlimit.rlim_cur = RLIM_INFINITY;
   rlimit.rlim_max = RLIM_INFINITY;
 
@@ -276,14 +276,13 @@ void toolong(
   DBPRT(("scheduling iteration too long\n"))
 
   if (connector >= 0 && server_disconnect(connector))
-    log_err(errno, id, "server_disconnect");
+    log_err(errno, id, (char *)"server_disconnect");
 
   if (close(server_sock))
-    log_err(errno, id, "close");
+    log_err(errno, id, (char *)"close");
 
   if ((cpid = fork()) > 0)   /* parent re-execs itself */
     {
-    rpp_terminate();
 #ifndef linux
     sleep(5);
 #endif
@@ -305,7 +304,7 @@ void toolong(
                id, log_buffer);
 
     execv(glob_argv[0], glob_argv);
-    log_err(errno, id, "execv");
+    log_err(errno, id, (char *)"execv");
     exit(3);
     }
 
@@ -319,18 +318,16 @@ void toolong(
       {
       log_close(1);
       abort();
-      rpp_terminate();
       exit(2); /* not reached (hopefully) */
       }
 
-    log_err(errno, id, "stat");
+    log_err(errno, id, (char *)"stat");
     }
 
   log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER,
 
              id, "exiting without core dump");
   log_close(1);
-  rpp_terminate();
   exit(0);
   }
 
@@ -511,7 +508,7 @@ static int read_config(
 
   if ((conf = fopen(file, "r")) == NULL)
     {
-    log_err(errno, id, "cannot open config file");
+    log_err(errno, id, (char *)"cannot open config file");
 
     return(-1);
     }
@@ -666,7 +663,7 @@ server_command(void)
 
   if (new_socket == -1)
     {
-    log_err(errno, id, "accept");
+    log_err(errno, id, (char *)"accept");
 
     return(SCH_ERROR);
     }
@@ -710,14 +707,14 @@ server_command(void)
 
   if ((connector = socket_to_conn(new_socket)) < 0)
     {
-    log_err(errno, id, "socket_to_conn");
+    log_err(errno, id, (char *)"socket_to_conn");
 
     return(SCH_ERROR);
     }
 
   if (get_4byte(new_socket, &cmd) != 1)
     {
-    log_err(errno, id, "get4bytes");
+    log_err(errno, id, (char *)"get4bytes");
 
     return(SCH_ERROR);
     }
@@ -781,7 +778,6 @@ int main(
   caddr_t next_brk;
   extern char *optarg;
   extern int optind, opterr;
-  extern int rpp_fd;
   fd_set fdset;
 
   int  schedinit(int argc, char **argv);
@@ -991,26 +987,26 @@ int main(
 
   if (gethostname(host, sizeof(host)) == -1)
     {
-    log_err(errno, id, "gethostname");
+    log_err(errno, id, (char *)"gethostname");
     die(0);
     }
 
   if ((hp = gethostbyname(host)) == NULL)
     {
-    log_err(errno, id, "gethostbyname");
+    log_err(errno, id, (char *)"gethostbyname");
     die(0);
     }
 
   if ((server_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
-    log_err(errno, id, "socket");
+    log_err(errno, id, (char *)"socket");
     die(0);
     }
 
   if (setsockopt(server_sock, SOL_SOCKET, SO_REUSEADDR,
                  (char *)&t, sizeof(t)) == -1)
     {
-    log_err(errno, id, "setsockopt");
+    log_err(errno, id, (char *)"setsockopt");
     die(0);
     }
 
@@ -1021,13 +1017,13 @@ int main(
 
   if (bind(server_sock, (struct sockaddr *)&saddr, sizeof(saddr)) < 0)
     {
-    log_err(errno, id, "bind");
+    log_err(errno, id, (char *)"bind");
     die(0);
     }
 
   if (listen(server_sock, 5) < 0)
     {
-    log_err(errno, id, "listen");
+    log_err(errno, id, (char *)"listen");
     die(0);
     }
 
@@ -1046,7 +1042,7 @@ int main(
 
   if (lockfds < 0)
     {
-    log_err(errno, id, "open lock file");
+    log_err(errno, id, (char *)"open lock file");
     exit(1);
     }
 
@@ -1200,8 +1196,6 @@ int main(
     {
     int cmd;
 
-    if (rpp_fd != -1)
-      FD_SET(rpp_fd, &fdset);
 
     FD_SET(server_sock, &fdset);
 
@@ -1209,18 +1203,13 @@ int main(
       {
       if (errno != EINTR)
         {
-        log_err(errno, id, "select");
+        log_err(errno, id, (char *)"select");
         die(0);
         }
 
       continue;
       }
 
-    if (rpp_fd != -1 && FD_ISSET(rpp_fd, &fdset))
-      {
-      if (rpp_io() == -1)
-        log_err(errno, id, "rpp_io");
-      }
 
     if (!FD_ISSET(server_sock, &fdset))
       continue;
@@ -1228,7 +1217,7 @@ int main(
     cmd = server_command();
 
     if (sigprocmask(SIG_BLOCK, &allsigs, &oldsigs) == -1)
-      log_err(errno, id, "sigprocmaskSIG_BLOCK)");
+      log_err(errno, id, (char *)"sigprocmaskSIG_BLOCK)");
 
     alarm(alarm_time);
 
@@ -1239,7 +1228,7 @@ int main(
 
     if (connector >= 0 && server_disconnect(connector))
       {
-      log_err(errno, id, "server_disconnect");
+      log_err(errno, id, (char *)"server_disconnect");
       die(0);
       }
 
@@ -1254,7 +1243,7 @@ int main(
       }
 
     if (sigprocmask(SIG_SETMASK, &oldsigs, NULL) == -1)
-      log_err(errno, id, "sigprocmask(SIG_SETMASK)");
+      log_err(errno, id, (char *)"sigprocmask(SIG_SETMASK)");
     }
 
   sprintf(log_buffer, "%s normal finish pid %ld",

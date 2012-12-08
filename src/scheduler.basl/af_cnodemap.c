@@ -429,7 +429,7 @@ addRes(char *archType, char *nodeAttr, char *hostQuery)
 
   if (beforecnt == aftercnt)
     {
-    log_err(-1, id, "Unable to realloc Res");
+    log_err(-1, id, (char *)"Unable to realloc Res");
     return(-1);
     }
 

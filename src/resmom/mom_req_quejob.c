@@ -229,7 +229,7 @@ void req_quejob(
     {
     /* request must be from server */
 
-    log_err(errno, __func__, "request not from server");
+    log_err(errno, __func__, (char *)"request not from server");
 
     req_reject(PBSE_IVALREQ, 0, preq, NULL, "request not received from server");
 
@@ -280,7 +280,7 @@ void req_quejob(
       {
       /* FAILURE - job exists and is running */
 
-      log_err(errno, __func__, "cannot queue new job, job exists and is running");
+      log_err(errno, __func__, (char *)"cannot queue new job, job exists and is running");
 
       req_reject(PBSE_JOBEXIST, 0, preq, NULL, "job is running");
 
@@ -585,7 +585,7 @@ void req_jobscript(
 
   if (pj == NULL)
     {
-    log_err(errno, __func__, "cannot locate new job");
+    log_err(errno, __func__, (char *)"cannot locate new job");
 
     req_reject(PBSE_IVALREQ, 0, preq, NULL, NULL);
 
@@ -848,7 +848,7 @@ void req_rdytocommit(
   if (pj == NULL)
     {
     /* FAILURE */
-    log_err(errno, "req_rdytocommit", "unknown job id");
+    log_err(errno, "req_rdytocommit", (char *)"unknown job id");
 
     req_reject(PBSE_UNKJOBID, 0, preq, NULL, NULL);
 
@@ -858,7 +858,7 @@ void req_rdytocommit(
   if (pj->ji_qs.ji_substate != JOB_SUBSTATE_TRANSIN)
     {
     /* FAILURE */
-    log_err(errno, "req_rdytocommit", "cannot commit job in unexpected state");
+    log_err(errno, "req_rdytocommit", (char *)"cannot commit job in unexpected state");
 
     req_reject(PBSE_IVALREQ, 0, preq, NULL, NULL);
 
@@ -1004,7 +1004,7 @@ void req_commit(
 
   if (pj->ji_qs.ji_substate != JOB_SUBSTATE_TRANSICM)
     {
-    log_err(errno, "req_commit", "cannot commit job in unexpected state");
+    log_err(errno, "req_commit", (char *)"cannot commit job in unexpected state");
 
     req_reject(PBSE_IVALREQ, 0, preq, NULL, NULL);
 

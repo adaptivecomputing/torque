@@ -417,7 +417,7 @@ int process_pbs_server_port(
       
       if (rc != DIS_SUCCESS)
         {
-        log_err(-1,  __func__, "Cannot read version - skipping this request.\n");
+        log_err(-1,  __func__, (char *)"Cannot read version - skipping this request.\n");
         rc = PBSE_SOCKET_CLOSE; 
         break;
         }
@@ -806,7 +806,7 @@ void parse_command_line(
             }
           else
             {
-            log_err(-1, __func__, "unable to determine full server hostname");
+            log_err(-1, __func__, (char *)"unable to determine full server hostname");
             }
 
           exit(1);
@@ -1116,14 +1116,14 @@ static int start_hot_jobs(void)
         PBSEVENT_SYSTEM,
         PBS_EVENTCLASS_JOB,
         pjob->ji_qs.ji_jobid,
-        "attempting to hot start job");
+        (char *)"attempting to hot start job");
 
       svr_startjob(pjob, NULL, NULL, NULL);
 
       ct++;
       }
 
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
     }
 
   return(ct);
@@ -1170,7 +1170,7 @@ void *handle_queue_routing_retries(
         enqueue_threadpool_request(queue_route, queuename);
         }
 
-      unlock_queue(pque, __func__, NULL, 0);
+      unlock_queue(pque, __func__, (char *)NULL, 0);
       }
     }
 
@@ -1218,17 +1218,17 @@ void start_accept_thread()
   if ((pthread_attr_init(&accept_attr)) != 0)
     {
     perror("pthread_attr_init failed. Could not start accept thread");
-    log_err(-1, msg_daemonname,"pthread_attr_init failed. Could not start accept thread");
+    log_err(-1, msg_daemonname,(char *)"pthread_attr_init failed. Could not start accept thread");
     }
   else if ((pthread_attr_setdetachstate(&accept_attr, PTHREAD_CREATE_DETACHED) != 0))
     {
     perror("pthread_attr_setdetatchedstate failed. Could not start accept thread");
-    log_err(-1, msg_daemonname,"pthread_attr_setdetachedstate failed. Could not start accept thread");
+    log_err(-1, msg_daemonname,(char *)"pthread_attr_setdetachedstate failed. Could not start accept thread");
     }
   else if ((pthread_create(&accept_thread_id, &accept_attr, start_accept_listener, NULL)) != 0)
     {
     perror("could not start listener for pbs_server");
-    log_err(-1, msg_daemonname, "Failed to start listener for pbs_server");
+    log_err(-1, msg_daemonname, (char *)"Failed to start listener for pbs_server");
     }
   } /* END start_accept_thread() */
 
@@ -1241,17 +1241,17 @@ void start_routing_retry_thread()
   if ((pthread_attr_init(&routing_attr)) != 0)
     {
     perror("pthread_attr_init failed. Could not start accept thread");
-    log_err(-1, msg_daemonname,"pthread_attr_init failed. Could not start handle_queue_routing_retries");
+    log_err(-1, msg_daemonname,(char *)"pthread_attr_init failed. Could not start handle_queue_routing_retries");
     }
   else if ((pthread_attr_setdetachstate(&routing_attr, PTHREAD_CREATE_DETACHED) != 0))
     {
     perror("pthread_attr_setdetatchedstate failed. Could not start accept thread");
-    log_err(-1, msg_daemonname,"pthread_attr_setdetachedstate failed. Could not start handle_queue_routing_retries");
+    log_err(-1, msg_daemonname,(char *)"pthread_attr_setdetachedstate failed. Could not start handle_queue_routing_retries");
     }
   else if ((pthread_create(&route_retry_thread_id, &routing_attr, handle_queue_routing_retries, NULL)) != 0)
     {
     perror("could not start listener for pbs_server");
-    log_err(-1, msg_daemonname, "Failed to start handle_queue_routing_retries");
+    log_err(-1, msg_daemonname, (char *)"Failed to start handle_queue_routing_retries");
     }
   } /* END start_routing_retry_thread() */
 
@@ -1267,17 +1267,17 @@ void start_exiting_retry_thread()
   if (pthread_attr_init(&attr) != 0)
     {
     perror("pthread_attr_init failed. Could not start exiting retry thread");
-    log_err(-1, msg_daemonname,"pthread_attr_init failed. Could not start inspect_exiting_jobs");
+    log_err(-1, msg_daemonname,(char *)"pthread_attr_init failed. Could not start inspect_exiting_jobs");
     }
   else if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) != 0)
     {
     perror("pthread_attr_setdetatchedstate failed. Could not start exiting retry thread");
-    log_err(-1, msg_daemonname,"pthread_attr_setdetachedstate failed. Could not start inspect_exiting_jobs");
+    log_err(-1, msg_daemonname,(char *)"pthread_attr_setdetachedstate failed. Could not start inspect_exiting_jobs");
     }
   else if (pthread_create(&exiting_thread, &attr, inspect_exiting_jobs, NULL) != 0)
     {
     perror("could not start exiting job retry thread for pbs_server");
-    log_err(-1, msg_daemonname, "Failed to start inspect_exiting_jobs");
+    log_err(-1, msg_daemonname, (char *)"Failed to start inspect_exiting_jobs");
     }
   } /* END start_exiting_retry_thread() */
 
@@ -1352,18 +1352,18 @@ void main_loop(void)
     /* for large systems, give newly reported nodes more time before
        being marked down while pbs_moms are initialy reporting in */
 
-    set_task(WORK_Timed, when + svr_totnodes / 12, check_nodes, NULL, FALSE);
+    set_task(WORK_Timed, when + svr_totnodes / 12, check_nodes, (char *)NULL, FALSE);
     }
   else
     {
-    set_task(WORK_Timed, when, check_nodes, NULL, FALSE);
+    set_task(WORK_Timed, when, check_nodes, (char *)NULL, FALSE);
     }
 
   /* Just check the nodes with check_nodes above and don't ping anymore. */
 
-  set_task(WORK_Timed, time_now + 5, check_log, NULL, FALSE);
+  set_task(WORK_Timed, time_now + 5, check_log, (char *)NULL, FALSE);
 
-  set_task(WORK_Timed,time_now + 10,check_acct_log, NULL, FALSE);
+  set_task(WORK_Timed,time_now + 10,check_acct_log, (char *)NULL, FALSE);
 
   /*
    * Now at last, we are ready to do some batch work.  The
@@ -1537,7 +1537,7 @@ void main_loop(void)
     if (pjob->ji_modified)
       job_save(pjob, SAVEJOB_FULL, 0);
 
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
     }
 
   if (svr_chngNodesfile)
@@ -1878,7 +1878,7 @@ int main(
     if (write(lockfds, log_buf, strlen(log_buf)) !=
         (ssize_t)strlen(log_buf))
       {
-      log_err(errno, msg_daemonname, "failed to write pid to lockfile");
+      log_err(errno, msg_daemonname, (char *)"failed to write pid to lockfile");
 
       exit(-1);
       }
@@ -1915,7 +1915,7 @@ int main(
   /* NOTE:  env cleared in pbsd_init() */
   if (pbsd_init(server_init_type) != PBSE_NONE)
     {
-    log_err(-1, msg_daemonname, "pbsd_init failed");
+    log_err(-1, msg_daemonname, (char *)"pbsd_init failed");
 
     exit(3);
     }
@@ -1939,7 +1939,7 @@ int main(
     {
     perror("pbs_server: unix domain socket");
 
-    log_err(-1, msg_daemonname, "init_network failed unix domain socket");
+    log_err(-1, msg_daemonname, (char *)"init_network failed unix domain socket");
 
     exit(3);
     }
@@ -1951,7 +1951,7 @@ int main(
   if (poll_job_task_mutex == NULL)
     {
     perror("pbs_server: failed to initialize poll_job_task_mutex");
-    log_err(-1, msg_daemonname, "pbs_server: failed to initialize poll_job_task_mutex");
+    log_err(-1, msg_daemonname, (char *)"pbs_server: failed to initialize poll_job_task_mutex");
     exit(3);
     }
 
@@ -2029,7 +2029,7 @@ void check_job_log(
 
     if (log_remove_old(path_jobinfo_log, keep_days * SECS_PER_DAY) != 0)
       {
-      log_err(-1,"check_job_log","failure occurred when checking for old job logs");
+      log_err(-1,"check_job_log",(char *)"failure occurred when checking for old job logs");
       }
     }
 
@@ -2044,7 +2044,7 @@ void check_job_log(
         PBSEVENT_SYSTEM | PBSEVENT_FORCE,
         PBS_EVENTCLASS_SERVER,
         msg_daemonname,
-        "Rolling job log file");
+        (char *)"Rolling job log file");
 
       if (roll_depth != -1)
         {
@@ -2053,7 +2053,7 @@ void check_job_log(
 
       if ((depth >= INT_MAX) || (depth < 1))
         {
-        log_err(-1, "check_job_log", "job log roll cancelled, logfile depth is out of range");
+        log_err(-1, "check_job_log", (char *)"job log roll cancelled, logfile depth is out of range");
         }
       else
         {
@@ -2065,7 +2065,7 @@ void check_job_log(
   free(ptask->wt_mutex);
   free(ptask);
 
-  set_task(WORK_Timed, time_now + PBS_LOG_CHECK_RATE, check_job_log, NULL, FALSE);
+  set_task(WORK_Timed, time_now + PBS_LOG_CHECK_RATE, check_job_log, (char *)NULL, FALSE);
   } /* END check_job_log */
 
 
@@ -2097,7 +2097,7 @@ void check_log(
 
     if (log_remove_old(path_svrlog, keep_days * SECS_PER_DAY) != 0)
       {
-      log_err(-1,"check_log","failure occurred when checking for old pbs_server logs");
+      log_err(-1,"check_log",(char *)"failure occurred when checking for old pbs_server logs");
       }
     }
 
@@ -2112,13 +2112,13 @@ void check_log(
         PBSEVENT_SYSTEM | PBSEVENT_FORCE,
         PBS_EVENTCLASS_SERVER,
         msg_daemonname,
-        "Rolling log file");
+        (char *)"Rolling log file");
 
       get_svr_attr_l(SRV_ATR_LogFileRollDepth, &roll_depth);
 
       if ((roll_depth >= INT_MAX) || (roll_depth < 1))
         {
-        log_err(-1, "check_log", "log roll cancelled, logfile depth is out of range");
+        log_err(-1, "check_log", (char *)"log roll cancelled, logfile depth is out of range");
         }
       else
         {
@@ -2141,7 +2141,7 @@ void check_log(
   free(ptask->wt_mutex);
   free(ptask);
 
-  set_task(WORK_Timed, time_now + PBS_LOG_CHECK_RATE, check_log, NULL, FALSE);
+  set_task(WORK_Timed, time_now + PBS_LOG_CHECK_RATE, check_log, (char *)NULL, FALSE);
 
   return;
   } /* END check_log */
@@ -2176,7 +2176,7 @@ void check_acct_log(
   free(ptask->wt_mutex);
   free(ptask);
 
-  set_task(WORK_Timed,time_now + PBS_ACCT_CHECK_RATE,check_acct_log,NULL,FALSE);
+  set_task(WORK_Timed,time_now + PBS_ACCT_CHECK_RATE,check_acct_log,(char *)NULL,FALSE);
 
   return;
   } /* END check_acct_log */
@@ -2341,7 +2341,7 @@ int is_ha_lock_file_valid(
 
   if (GoodPermissions == FALSE)
     {
-    log_err(-1, __func__, "could not obtain the needed permissions for the lock file");
+    log_err(-1, __func__, (char *)"could not obtain the needed permissions for the lock file");
     }
 
   return(GoodPermissions);
@@ -2633,7 +2633,7 @@ int start_update_ha_lock_thread()
 
   if (fds < 0)
     {
-    log_err(-1, __func__, "Couldn't write the pid to the lockfile\n");
+    log_err(-1, __func__, (char *)"Couldn't write the pid to the lockfile\n");
 
     return(FAILURE);
     }
@@ -2641,7 +2641,7 @@ int start_update_ha_lock_thread()
   snprintf(smallBuf,sizeof(smallBuf),"%ld\n",(long)sid);
   if (write(fds,smallBuf,strlen(smallBuf)) != (ssize_t)strlen(smallBuf))
     {
-    log_err(-1, __func__, "Couldn't write the pid to the lockfile\n");
+    log_err(-1, __func__, (char *)"Couldn't write the pid to the lockfile\n");
     close(fds);
 
     return(FAILURE);
@@ -2663,7 +2663,7 @@ int start_update_ha_lock_thread()
     {
     /* error creating thread */
 
-    log_err(-1, __func__, "Could not create HA Lock Thread\n");
+    log_err(-1, __func__, (char *)"Could not create HA Lock Thread\n");
 
     return(FAILURE);
     }
@@ -2687,7 +2687,7 @@ int mutex_lock(
   {
   if (pthread_mutex_lock(Mutex) != 0)
     {
-    log_err(-1,"mutex_lock","ALERT:   cannot lock mutex!\n");
+    log_err(-1,"mutex_lock",(char *)"ALERT:   cannot lock mutex!\n");
 
     return(FAILURE);
     }
@@ -2705,7 +2705,7 @@ int mutex_unlock(
   {
   if (pthread_mutex_unlock(Mutex) != 0)
     {
-    log_err(-1,"mutex_unlock","ALERT:   cannot unlock mutex!\n");
+    log_err(-1,"mutex_unlock",(char *)"ALERT:   cannot unlock mutex!\n");
 
     return(FAILURE);
     }
@@ -2761,7 +2761,7 @@ static void lock_out_ha()
       {
       /* try to get a filesystem lock on the "mutex" file */
 
-      while (acquire_file_lock(MutexLockFile,&MutexLockFD,"HA") == FAILURE)
+      while (acquire_file_lock(MutexLockFile,&MutexLockFD, (char *)"HA") == FAILURE)
         {
         sprintf(log_buf,"Could not acquire HA flock--trying again in 1 second\n");
 
@@ -2841,7 +2841,7 @@ static void lock_out_ha()
     PBSEVENT_SYSTEM,
     PBS_EVENTCLASS_SERVER,
     __func__,
-    "high availability file lock obtained");
+    (char *)"high availability file lock obtained");
   } /* END lock_out_ha() */
 
 
@@ -2882,7 +2882,7 @@ static int daemonize_server(
 
   if ((pid = fork()) == -1)
     {
-    log_err(errno, __func__, "cannot fork into background");
+    log_err(errno, __func__, (char *)"cannot fork into background");
 
     return(FAILURE);
    }
@@ -2896,7 +2896,7 @@ static int daemonize_server(
        PBSEVENT_SYSTEM,
        PBS_EVENTCLASS_SERVER,
        __func__,
-       "INFO:      parent is exiting");
+       (char *)"INFO:      parent is exiting");
 
      exit(0);
     }
@@ -2905,7 +2905,7 @@ static int daemonize_server(
 
   if ((*sid = setsid()) == -1)
     {
-    log_err(errno, __func__, "Could not disconnect from controlling terminal");
+    log_err(errno, __func__, (char *)"Could not disconnect from controlling terminal");
 
     return(FAILURE);
     }
@@ -2927,7 +2927,7 @@ static int daemonize_server(
 
   if ((pid = fork()) == -1)
     {
-    log_err(errno, __func__, "cannot fork into background");
+    log_err(errno, __func__, (char *)"cannot fork into background");
 
     return(FAILURE);
     }
@@ -2940,7 +2940,7 @@ static int daemonize_server(
       PBSEVENT_SYSTEM,
       PBS_EVENTCLASS_SERVER,
       __func__,
-      "INFO:      parent is exiting");
+      (char *)"INFO:      parent is exiting");
 
     exit(0);
     }
@@ -2953,7 +2953,7 @@ static int daemonize_server(
     PBSEVENT_SYSTEM,
     PBS_EVENTCLASS_SERVER,
     __func__,
-    "INFO:      child process in background");
+    (char *)"INFO:      child process in background");
 
   return(SUCCESS);
   } /* END daemonize_server() */
@@ -3073,7 +3073,7 @@ int get_full_path(
 
   {
   char   *TokPtr = NULL;
-  char   *Delims = ":;"; /* windows and unix path deliminators */
+  char   *Delims = (char *)":;"; /* windows and unix path deliminators */
   char   *PathLocation;
   char    tmpPath[MAX_LINE];
   bool_t  IsExe = FALSE;
@@ -3181,13 +3181,13 @@ int svr_restart()
     {
     free(ArgV[0]);
 
-    ArgV[0] = calloc(sizeof(char), (strlen(FullCmd) + 1));
+    ArgV[0] = (char *)calloc(sizeof(char), (strlen(FullCmd) + 1));
 
     if (ArgV[0] == NULL)
       {
       /* could not calloc */
 
-      log_err(errno, __func__, "ERROR:     cannot allocate memory for full command, cannot restart\n");
+      log_err(errno, __func__, (char *)"ERROR:   (char *)  cannot allocate memory for full command, cannot restart\n");
 
       exit(-10);
       }

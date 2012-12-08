@@ -93,7 +93,7 @@ struct batch_status *pbs_statserver_err(
   int          *local_errno)
 
   {
-  return(PBSD_status(c, PBS_BATCH_StatusSvr, local_errno, "", attrib, extend));
+  return(PBSD_status(c, PBS_BATCH_StatusSvr, local_errno, (char *)"", attrib, extend));
   } /* END pbs_statserver_err() */
 
 
@@ -109,7 +109,7 @@ struct batch_status *pbs_statserver(
   {
   pbs_errno = 0;
 
-  return(PBSD_status(c, PBS_BATCH_StatusSvr, &pbs_errno, "", attrib, extend));
+  return(PBSD_status(c, PBS_BATCH_StatusSvr, &pbs_errno, (char *)"", attrib, extend));
   } /* END pbs_statserver() */
 
 

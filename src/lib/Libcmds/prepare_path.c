@@ -316,14 +316,16 @@ int prepare_path(
   if (strncmp(path_name,"$HOME",strlen("$HOME")) == 0)
     {
     /* get the actual value for $HOME */
+    size_t path_out_length;
+    size_t home_val_length;
     char *HomeVal = getenv("HOME");
     char *NamePtr = path_name+strlen("$HOME");
 
     if((HomeVal == NULL)||(NamePtr == NULL))
       return(1);
+    path_out_length = strlen(HomeVal);
+    home_val_length = strlen(NamePtr);
     /* check if the path exeeds MAXPATHLEN */
-    size_t path_out_length = strlen(HomeVal);
-    size_t home_val_length = strlen(NamePtr);
     if (path_out_length + home_val_length >= MAXPATHLEN)
       {
       return(4);

@@ -289,7 +289,7 @@ int remtree(
     {
 
     if (errno != ENOENT)
-      log_err(errno, __func__, "stat");
+      log_err(errno, __func__, (char *)"stat");
 
     return(-1);
     }
@@ -299,7 +299,7 @@ int remtree(
     if ((dir = opendir(dirname)) == NULL)
       {
       if (errno != ENOENT)
-        log_err(errno, __func__, "opendir");
+        log_err(errno, __func__, (char *)"opendir");
 
       return(-1);
       }
@@ -326,7 +326,7 @@ int remtree(
       if (lstat(namebuf, &sb) == -1)
 #endif
         {
-        log_err(errno, __func__, "stat");
+        log_err(errno, __func__, (char *)"stat");
 
         rtnv = -1;
 
@@ -484,7 +484,7 @@ job *job_alloc(void)
 
   if (pj == NULL)
     {
-    log_err(errno, "job_alloc", "no memory");
+    log_err(errno, "job_alloc", (char *)"no memory");
 
     return(NULL);
     }
@@ -818,7 +818,7 @@ void mom_job_purge(
 
   if (jfdi == NULL)
     {
-    log_err(ENOMEM,__func__,"No space to allocate info for job file deletion");
+    log_err(ENOMEM,__func__, (char *)"No space to allocate info for job file deletion");
     return;
     }
 

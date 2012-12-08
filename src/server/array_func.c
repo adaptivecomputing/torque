@@ -161,7 +161,7 @@ job_array *get_array(
   pa = (job_array *)get_from_hash_map(allarrays.hm, id);
 
   if (pa != NULL)
-    lock_ai_mutex(pa, __func__, NULL, LOGLEVEL);
+    lock_ai_mutex(pa, __func__, (char *)NULL, LOGLEVEL);
 
   pthread_mutex_unlock(allarrays.allarrays_mutex);
 
@@ -437,7 +437,7 @@ int array_recov(
       }
     }
 
-  pa->job_ids = calloc(pa->ai_qs.array_size, sizeof(char *));
+  pa->job_ids = (char **)calloc(pa->ai_qs.array_size, sizeof(char *));
 
   /* check to see if there is any additional info saved in the array file */
   /* check if there are any array request tokens that haven't been fully
@@ -498,10 +498,10 @@ int array_recov(
     array_save(pa);
     }
 
-  pa->ai_mutex = calloc(1, sizeof(pthread_mutex_t));
+  pa->ai_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(pa->ai_mutex,NULL);
 
-  lock_ai_mutex(pa, __func__, NULL, LOGLEVEL);
+  lock_ai_mutex(pa, __func__, (char *)NULL, LOGLEVEL);
 
   /* link the struct into the servers list of job arrays */
   insert_array(pa);
@@ -534,7 +534,7 @@ int array_delete(
   remove_array(pa);
 
   /* unlock the mutex and free it */
-  unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+  unlock_ai_mutex(pa, __func__, (char *)"1", LOGLEVEL);
   free(pa->ai_mutex);
 
   /* delete the on disk copy of the struct */
@@ -689,14 +689,14 @@ int setup_array_struct(
   pa->ai_qs.num_cloned = 0;
   CLEAR_HEAD(pa->request_tokens);
 
-  pa->ai_mutex = calloc(1, sizeof(pthread_mutex_t));
+  pa->ai_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(pa->ai_mutex, NULL);
-  lock_ai_mutex(pa, __func__, NULL, LOGLEVEL);
+  lock_ai_mutex(pa, __func__, (char *)NULL, LOGLEVEL);
 
   if (job_save(pjob, SAVEJOB_FULL, 0) != 0)
     {
     /* the array is deleted in svr_job_purge */
-    unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+    unlock_ai_mutex(pa, __func__, (char *)"1", LOGLEVEL);
     /* Does job array need to be removed? */
 
     if (LOGLEVEL >= 6)
@@ -705,7 +705,7 @@ int setup_array_struct(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
         pjob->ji_qs.ji_jobid,
-        "cannot save job");
+        (char *)"cannot save job");
       }
 
     svr_job_purge(pjob);
@@ -766,7 +766,7 @@ int setup_array_struct(
     }
 
   /* initialize the array */
-  pa->job_ids = calloc(array_size, sizeof(char *));
+  pa->job_ids = (char **)calloc(array_size, sizeof(char *));
   if (pa->job_ids == NULL)
     {
     sprintf(log_buf, "Failed to alloc job_ids: job %s", pjob->ji_qs.ji_jobid);
@@ -791,7 +791,7 @@ int setup_array_struct(
 
   insert_array(pa);
 
-  unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+  unlock_ai_mutex(pa, __func__, (char *)"1", LOGLEVEL);
 
   return(PBSE_NONE);
   } /* END setup_array_struct() */
@@ -1023,7 +1023,7 @@ int parse_array_request(
       rn->end = end;
       CLEAR_LINK(rn->request_tokens_link);
 
-      rn2 = GET_NEXT(*tl);
+      rn2 = (array_request_node *)GET_NEXT(*tl);
       searching = TRUE;
 
       while (searching)
@@ -1042,19 +1042,19 @@ int parse_array_request(
           }
         else
           {
-          rn2 = GET_NEXT(rn2->request_tokens_link);
+          rn2 = (array_request_node *)GET_NEXT(rn2->request_tokens_link);
           }
 
         }
 
-      rn2 = GET_PRIOR(rn->request_tokens_link);
+      rn2 = (array_request_node *)GET_PRIOR(rn->request_tokens_link);
 
       if (rn2 != NULL && rn2->end >= rn->start)
         {
         num_bad_tokens++;
         }
 
-      rn2 = GET_NEXT(rn->request_tokens_link);
+      rn2 = (array_request_node *)GET_NEXT(rn->request_tokens_link);
 
       if (rn2 != NULL && rn2->start <= rn->end)
         {
@@ -1138,7 +1138,7 @@ int delete_array_range(
         if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
           {
           /* invalid state for request,  skip */
-          unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+          unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
           continue;
           }
 
@@ -1151,7 +1151,7 @@ int delete_array_range(
           {
           /* if the job was deleted, this mutex would be taked care of elsewhere. When it fails,
            * release it here */
-          unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+          unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
 
           num_skipped++;
           }
@@ -1242,7 +1242,7 @@ int delete_whole_array(
       if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
         {
         /* invalid state for request,  skip */
-        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
         continue;
         }
         
@@ -1255,7 +1255,7 @@ int delete_whole_array(
         {
         /* if the job was deleted, this mutex would be taked care of elsewhere.
          * When it fails, release it here */
-        unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
         num_skipped++;
         }
       else if (running == FALSE)
@@ -1408,10 +1408,10 @@ int release_array_range(
         {
         if ((rc = release_job(preq,pjob)))
           {
-          unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+          unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
           return(rc);
           }
-        unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
         }
       }
     
@@ -1507,18 +1507,18 @@ int modify_array_range(
                   pjob->ji_qs.ji_jobid);
                 log_err(rc, __func__, log_buf);
                 
-                unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+                unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
                 
                 return(rc); /* unable to get to MOM */
                 }
               else
                 {
-                unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+                unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
                 post_modify_arrayreq(array_req);
                 }
               }
             else
-              unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+              unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
             }
           else
             pa->job_ids[i] = NULL;
@@ -1651,12 +1651,12 @@ void update_array_values(
                 svr_evaljobstate(pj, &newstate, &newsub, 1);
                 svr_setjobstate(pj, newstate, newsub, FALSE);
                 job_save(pj, SAVEJOB_FULL, 0);
-                unlock_ji_mutex(pj, __func__, "1", LOGLEVEL);
+                unlock_ji_mutex(pj, __func__, (char *)"1", LOGLEVEL);
                 
                 break;
                 }
 
-              unlock_ji_mutex(pj, __func__, "2", LOGLEVEL);
+              unlock_ji_mutex(pj, __func__, (char *)"2", LOGLEVEL);
               }
             }
           }
@@ -1709,7 +1709,7 @@ void update_array_statuses()
       }
 
     strcpy(jobid, pa->ai_qs.parent_id);
-    unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+    unlock_ai_mutex(pa, __func__, (char *)"1", LOGLEVEL);
     
     if ((pjob = svr_find_job(jobid, TRUE)) != NULL)
       {
@@ -1728,7 +1728,7 @@ void update_array_statuses()
         svr_setjobstate(pjob, JOB_STATE_QUEUED, pjob->ji_qs.ji_substate, FALSE);
         }
 
-      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
       }
     } /* END for each array */
 
@@ -1754,7 +1754,7 @@ int num_array_jobs(
   int    start;
   int    end;
 
-  char  *delim = ",";
+  char  *delim = (char *)",";
   char  *ptr;
   char  *dash;
   char  *tmp_ptr;
@@ -1804,7 +1804,7 @@ void initialize_all_arrays_array()
   {
   allarrays.hm = get_hash_map(INITIAL_HASH_MAP_SIZE);
 
-  allarrays.allarrays_mutex = calloc(1, sizeof(pthread_mutex_t));
+  allarrays.allarrays_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(allarrays.allarrays_mutex,NULL);
   } /* END initialize_all_arrays_array() */
 
@@ -1826,7 +1826,7 @@ int insert_array(
 
   if ((rc = add_to_hash_map(allarrays.hm, pa, pa->ai_qs.parent_id)) == ENOMEM)
     {
-    log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE\n");
+    log_err(rc, __func__, (char *)"No memory to resize the array...SYSTEM FAILURE\n");
     }
 
   pthread_mutex_unlock(allarrays.allarrays_mutex);
@@ -1850,13 +1850,13 @@ int remove_array(
     {
     strcpy(arrayid, pa->ai_qs.parent_id);
 
-    unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+    unlock_ai_mutex(pa, __func__, (char *)"1", LOGLEVEL);
     pthread_mutex_lock(allarrays.allarrays_mutex);
 
     pa = (job_array *)get_from_hash_map(allarrays.hm, arrayid);
 
     if (pa != NULL)
-      lock_ai_mutex(pa, __func__, "2", LOGLEVEL);
+      lock_ai_mutex(pa, __func__, (char *)"2", LOGLEVEL);
     }
 
   if (pa == NULL)
@@ -1885,7 +1885,7 @@ job_array *next_array(
   pa = (job_array *)next_from_hash_map(allarrays.hm, iter);
   
   if (pa != NULL)
-    lock_ai_mutex(pa, __func__, NULL, LOGLEVEL);
+    lock_ai_mutex(pa, __func__, (char *)NULL, LOGLEVEL);
 
   pthread_mutex_unlock(allarrays.allarrays_mutex);
 
@@ -1908,7 +1908,7 @@ job_array *next_array_check(
 
   if ((pa != NULL) &&
       (pa != owned))
-    lock_ai_mutex(pa, __func__, NULL, LOGLEVEL);
+    lock_ai_mutex(pa, __func__, (char *)NULL, LOGLEVEL);
   
   pthread_mutex_unlock(allarrays.allarrays_mutex);
 

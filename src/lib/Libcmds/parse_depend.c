@@ -88,30 +88,30 @@
 
 static char *deptypes[] =
   {
-  "on",  /* "on" and "synccount" must be first two */
-  "synccount",
-  "after",
-  "afterok",
-  "afternotok",
-  "afterany",
-  "before",
-  "beforeok",
-  "beforenotok",
-  "beforeany",
-  "syncwith",
+  (char *)"on",  /* "on" and "synccount" must be first two */
+  (char *)"synccount",
+  (char *)"after",
+  (char *)"afterok",
+  (char *)"afternotok",
+  (char *)"afterany",
+  (char *)"before",
+  (char *)"beforeok",
+  (char *)"beforenotok",
+  (char *)"beforeany",
+  (char *)"syncwith",
   (char *)0
   };
 
 static char *arraydeptypes[] =
   {
-  "afterstartarray",
-  "afterokarray",
-  "afternotokarray",
-  "afteranyarray",
-  "beforestartarray",
-  "beforeokarray",
-  "beforenotokarray",
-  "beforeanyarray",
+  (char *)"afterstartarray",
+  (char *)"afterokarray",
+  (char *)"afternotokarray",
+  (char *)"afteranyarray",
+  (char *)"beforestartarray",
+  (char *)"beforeokarray",
+  (char *)"beforenotokarray",
+  (char *)"beforeanyarray",
   (char *)0
   };
 

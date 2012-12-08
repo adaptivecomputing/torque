@@ -328,7 +328,6 @@ m4_ifdef([AM_SILENT_RULES],[
     src/lib/Libifl/test/pbsD_termin/Makefile
     src/lib/Libifl/test/pbs_geterrmg/Makefile
     src/lib/Libifl/test/pbs_statfree/Makefile
-    src/lib/Libifl/test/rpp/Makefile
     src/lib/Libifl/test/tcp_dis/Makefile
     src/lib/Libifl/test/tm/Makefile
     src/lib/Libifl/test/torquecfg/Makefile

@@ -237,14 +237,14 @@ int gpu_has_job(
               found_str = strstr (gpu_str, tmp_str);
               if (found_str != NULL)
                 {
-                unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+                unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
                 return(TRUE);
                 }
               }
             }
           
           /* done with job, unlock the mutex */
-          unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+          unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
           }
         }
       } /* END for each job on the subnode */
@@ -330,7 +330,7 @@ int svr_is_request(
   if (getpeername(chan->sock, &s_addr, &len) != 0)
     {
     close_conn(chan->sock, FALSE);
-    log_err(errno,__func__,"Cannot get socket name using getpeername\n");
+    log_err(errno,__func__, (char *)"Cannot get socket name using getpeername\n");
     return(PBSE_SOCKET_CLOSE);
     }
 

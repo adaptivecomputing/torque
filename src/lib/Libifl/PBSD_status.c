@@ -105,7 +105,7 @@ struct batch_status *PBSD_status(
   /* send the status request */
 
   if (id == NULL)
-    id = ""; /* set to null string for encoding */
+    id =(char *)""; /* set to null string for encoding */
 
   rc = PBSD_status_put(c, function, id, attrib, extend);
 

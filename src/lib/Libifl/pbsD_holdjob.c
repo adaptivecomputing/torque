@@ -102,12 +102,12 @@ int pbs_holdjob_err(
   if ((jobid == (char *)0) || (*jobid == '\0'))
     return(PBSE_IVALREQ);
 
-  aopl.name = ATTR_h;
+  aopl.name = (char *)ATTR_h;
 
   aopl.resource = (char *)NULL;
 
   if ((holdtype == (char *)NULL) || (*holdtype == '\0'))
-    aopl.value = "u";
+    aopl.value = (char *)"u";
   else
     aopl.value = holdtype;
 

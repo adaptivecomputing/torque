@@ -104,7 +104,7 @@ hash_map *get_hash_map(
   int size_param)
 
   {
-  hash_map *hm = calloc(1, sizeof(hash_map));
+  hash_map *hm = (hash_map *)calloc(1, sizeof(hash_map));
   int       size;
 
   if (size_param == -1)
@@ -115,7 +115,7 @@ hash_map *get_hash_map(
   hm->hm_ra = initialize_resizable_array(size);
   hm->hm_ht = create_hash(size);
 
-  hm->hm_mutex = calloc(1, sizeof(pthread_mutex_t));
+  hm->hm_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(hm->hm_mutex, NULL);
 
   return(hm);
@@ -182,7 +182,7 @@ int add_to_hash_map(
     if ((index = insert_thing(hm->hm_ra, obj)) == -1)
       {
       rc = ENOMEM;
-      log_err(rc, __func__, "Memory failure");
+      log_err(rc, __func__, (char *)"Memory failure");
       }
     else
       add_hash(hm->hm_ht, index, key);

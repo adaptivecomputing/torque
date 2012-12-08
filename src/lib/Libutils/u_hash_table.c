@@ -604,12 +604,12 @@ hash_table_t *create_hash(
   int size)
 
   {
-  hash_table_t *ht = calloc(1, sizeof(hash_table_t));
+  hash_table_t *ht = (hash_table_t *)calloc(1, sizeof(hash_table_t));
   size_t        amount = sizeof(bucket *) * size;
 
   ht->size = size;
   ht->num  = 0;
-  ht->buckets = calloc(1, amount);
+  ht->buckets = (bucket **)calloc(1, amount);
 
   return(ht);
   } /* END create_hash() */
@@ -703,7 +703,7 @@ int get_hash(
   if (key == NULL)
     return(-1);
 
-  len = strlen(key);
+  len = strlen((char *)key);
   counter = ht->size >> 1;
 
 #ifdef HASH_LITTLE_ENDIAN
@@ -734,9 +734,9 @@ void add_to_bucket(
   if (buckets[index] == NULL)
     {
     /* empty bucket, just add it here */
-    buckets[index] = calloc(1, sizeof(bucket));
+    buckets[index] = (bucket *)calloc(1, sizeof(bucket));
     buckets[index]->value = value;
-    buckets[index]->key   = key;
+    buckets[index]->key   = (char *)key;
     buckets[index]->next  = NULL;
     }
   else
@@ -747,9 +747,9 @@ void add_to_bucket(
     while (b->next != NULL)
       b = b->next;
 
-    b->next = calloc(1, sizeof(bucket));
+    b->next = (bucket *)calloc(1, sizeof(bucket));
     b->next->value = value;
-    b->next->key   = key;
+    b->next->key   = (char *)key;
     b->next->next  = NULL;
     }
   } /* END add_to_bucket() */
@@ -773,7 +773,7 @@ int add_hash(
     int      old_bucket_size = ht->size;
     int      new_bucket_size = ht->size * 2;
     size_t   amount = new_bucket_size * sizeof(bucket *);
-    bucket **tmp = calloc(1, amount);
+    bucket **tmp = (bucket **)calloc(1, amount);
     int      i;
     int      new_index;
       
@@ -894,7 +894,7 @@ int get_value_hash(
   b = ht->buckets[hash_index];
   while (b != NULL)
     {
-    if (!strcmp(b->key, key))
+    if (!strcmp(b->key, (char *)key))
       {
       value = b->value;
       break;

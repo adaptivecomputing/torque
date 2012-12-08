@@ -105,8 +105,6 @@
 #include "utils.h"
 #include "server.h"
 
-
-
 /* data items global to functions in this file */
 
 #define ENDATTRIBUTES -711
@@ -160,7 +158,7 @@ int save_struct(
       if (write_buffer(buf_ptr, buf_size, fds) != PBSE_NONE)
         {
         /* FAILURE */
-        log_err(-1, __func__, "Cannot write the buffer to the file!");
+        log_err(-1, __func__, (char *)"Cannot write the buffer to the file!");
         return(-1);
         }
       else
@@ -387,7 +385,7 @@ int recov_attr(
 
     if (i != sizeof(tempal))
       {
-      log_err(errno, __func__, "read1");
+      log_err(errno, __func__, (char *)"read1");
 
       return(-1);
       }
@@ -397,7 +395,7 @@ int recov_attr(
 
     if (tempal.al_tsize <= (int)sizeof(tempal))
       {
-      log_err(-1, __func__, "attr size too small");
+      log_err(-1, __func__, (char *)"attr size too small");
 
       return(-1);
       }
@@ -410,7 +408,7 @@ int recov_attr(
 
     if (pal == NULL)
       {
-      log_err(errno, __func__, "calloc failed");
+      log_err(errno, __func__, (char *)"calloc failed");
 
       return(-1);
       }
@@ -427,7 +425,7 @@ int recov_attr(
 
     if (i != amt)
       {
-      log_err(errno, __func__, "read2");
+      log_err(errno, __func__, (char *)"read2");
 
       free(pal);
 
@@ -470,7 +468,7 @@ int recov_attr(
         }
       else
         {
-        log_err(-1, __func__, "unknown attribute discarded");
+        log_err(-1, __func__, (char *)"unknown attribute discarded");
 
         free(pal);
 
@@ -485,7 +483,7 @@ int recov_attr(
         pal->al_value,
         resc_access_perm);
 
-    if ((do_actions) && (padef + index)->at_action != (int (*)())0)
+    if ((do_actions) && (padef + index)->at_action != NULL)
       (padef + index)->at_action(pattr + index, parent, ATR_ACTION_RECOV);
 
     (pattr + index)->at_flags = pal->al_flags & ~ATR_VFLAG_MODIFY;

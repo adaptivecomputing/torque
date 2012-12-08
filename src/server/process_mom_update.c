@@ -130,7 +130,7 @@ int save_single_mic_status(
     {
     if ((rc = decode_arst(temp, NULL, NULL, single_mic_status->str, 0)) != PBSE_NONE)
       {
-      log_err(ENOMEM, __func__, "");
+      log_err(ENOMEM, __func__, (char *)"");
       free_arst(temp);
       }
     
@@ -454,7 +454,7 @@ void update_job_data(
           attr_name = threadsafe_tokenizer(&jobdata_ptr, "=");
           }
         
-        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
         }
       
       if (on_node == FALSE)

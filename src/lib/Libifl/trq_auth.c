@@ -229,7 +229,7 @@ void *process_svr_conn(
   void *sock)
 
   {
-  char *className = "trqauthd";
+  char *className = (char *)"trqauthd";
   int   rc = PBSE_NONE;
   char *server_name = NULL;
   int   server_port = 0;

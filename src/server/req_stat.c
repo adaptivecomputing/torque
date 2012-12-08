@@ -261,7 +261,7 @@ int req_stat_job(
         rc = PBSE_UNKJOBID;
         }
       else
-        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
       }
     }
   else if (isalpha(name[0]))
@@ -308,7 +308,7 @@ int req_stat_job(
   if (cntl == NULL)
     {
     if (pque != NULL) 
-      unlock_queue(pque, "req_stat_job", "no memory cntl", LOGLEVEL);
+      unlock_queue(pque, "req_stat_job", (char *)"no memory cntl", LOGLEVEL);
     req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
 
     return(PBSE_SYSTEM);
@@ -319,7 +319,7 @@ int req_stat_job(
     {
     if (pque != NULL)
       {
-      unlock_queue(pque, __func__, "", LOGLEVEL);
+      unlock_queue(pque, __func__, (char *)"", LOGLEVEL);
       pque = NULL;
       }
     }
@@ -338,7 +338,7 @@ int req_stat_job(
   req_stat_job_step2(cntl); /* go to step 2, see if running is current */
 
   if (pque != NULL)
-    unlock_queue(pque, "req_stat_job", "success", LOGLEVEL);
+    unlock_queue(pque, "req_stat_job", (char *)"success", LOGLEVEL);
 
   free(cntl);
   return(PBSE_NONE);
@@ -483,7 +483,7 @@ static void req_stat_job_step2(
               {
               if ((pjob = svr_find_job(pa->job_ids[job_array_index], FALSE)) != NULL)
                 {
-                unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+                unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
                 break;
                 }
               }
@@ -500,7 +500,7 @@ static void req_stat_job_step2(
       else
         {
         strcpy(job_id, pjob->ji_qs.ji_jobid);
-        unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, (char *)"3", LOGLEVEL);
 
         if (type == tjstJob)
           break;
@@ -517,7 +517,7 @@ static void req_stat_job_step2(
               {
               if ((pjob = svr_find_job(pa->job_ids[job_array_index], FALSE)) != NULL)
                 {
-                unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
+                unlock_ji_mutex(pjob, __func__, (char *)"3", LOGLEVEL);
                 break;
                 }
               }
@@ -535,7 +535,7 @@ static void req_stat_job_step2(
       job_substate = pjob->ji_qs.ji_substate;
       job_momstattime = pjob->ji_momstat;
       strcpy(cntl->sc_jobid, job_id);
-      unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, (char *)"4", LOGLEVEL);
       pjob = NULL;
 
       /* PBS_RESTAT_JOB defaults to 30 seconds */
@@ -556,7 +556,7 @@ static void req_stat_job_step2(
           }
         
         if (pa != NULL)
-          unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+          unlock_ai_mutex(pa, __func__, (char *)"1", LOGLEVEL);
 
         return; /* will pick up after mom replies */
         }
@@ -565,7 +565,7 @@ static void req_stat_job_step2(
     if (rc != 0)
       {
       if (pa != NULL)
-        unlock_ai_mutex(pa, __func__, "2", LOGLEVEL);
+        unlock_ai_mutex(pa, __func__, (char *)"2", LOGLEVEL);
 
       reply_free(preply);
 
@@ -657,7 +657,7 @@ static void req_stat_job_step2(
           (pque->qu_qs.qu_type != QTYPE_Execution))
         {
         /* ignore routing queues */
-        unlock_queue(pque, __func__, "ignore queue", LOGLEVEL);
+        unlock_queue(pque, __func__, (char *)"ignore queue", LOGLEVEL);
         continue;
         }
 
@@ -684,7 +684,7 @@ static void req_stat_job_step2(
 
       /* loop through jobs in queue */
       if (pjob != NULL)
-        unlock_ji_mutex(pjob, __func__, "5", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, (char *)"5", LOGLEVEL);
 
       iter = -1;
 
@@ -694,7 +694,7 @@ static void req_stat_job_step2(
             (pjob->ji_qs.ji_state == JOB_STATE_QUEUED))
           {
           /* max_report of queued jobs reached for queue */
-          unlock_ji_mutex(pjob, __func__, "6", LOGLEVEL);
+          unlock_ji_mutex(pjob, __func__, (char *)"6", LOGLEVEL);
 
           continue;
           }
@@ -714,10 +714,10 @@ static void req_stat_job_step2(
 
           if (pa != NULL)
             {
-            unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+            unlock_ai_mutex(pa, __func__, (char *)"1", LOGLEVEL);
             }
-          unlock_ji_mutex(pjob, __func__, "7", LOGLEVEL);
-          unlock_queue(pque, __func__, "perm", LOGLEVEL);
+          unlock_ji_mutex(pjob, __func__, (char *)"7", LOGLEVEL);
+          unlock_queue(pque, __func__, (char *)"perm", LOGLEVEL);
           return;
           }
 
@@ -726,7 +726,7 @@ static void req_stat_job_step2(
         if (pjob->ji_qs.ji_state == JOB_STATE_QUEUED)
           qjcounter++;
 
-        unlock_ji_mutex(pjob, __func__, "8", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, (char *)"8", LOGLEVEL);
         }    /* END foreach (pjob from pque) */
 
       if (LOGLEVEL >= 5)
@@ -738,11 +738,11 @@ static void req_stat_job_step2(
         log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_QUEUE,pque->qu_qs.qu_name,log_buf);
         }
     
-      unlock_queue(pque, __func__, "end while", LOGLEVEL);
+      unlock_queue(pque, __func__, (char *)"end while", LOGLEVEL);
       }      /* END for (pque) */
       
     if (pa != NULL)
-      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+      unlock_ai_mutex(pa, __func__, (char *)"1", LOGLEVEL);
 
     reply_send_svr(preq);
 
@@ -774,12 +774,12 @@ static void req_stat_job_step2(
         
         if (pque->qu_qs.qu_type != QTYPE_Execution)
           {
-          unlock_queue(pque, __func__, "not exec", LOGLEVEL);
+          unlock_queue(pque, __func__, (char *)"not exec", LOGLEVEL);
         
           goto nextjob;
           }
 
-        unlock_queue(pque, __func__, "exec", LOGLEVEL);
+        unlock_queue(pque, __func__, (char *)"exec", LOGLEVEL);
         }
       }
 
@@ -797,9 +797,9 @@ static void req_stat_job_step2(
       {
       if (pa != NULL)
         {
-        unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+        unlock_ai_mutex(pa, __func__, (char *)"1", LOGLEVEL);
         }
-      unlock_ji_mutex(pjob, __func__, "9", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, (char *)"9", LOGLEVEL);
 
       req_reject(rc, bad, preq, NULL, NULL);
 
@@ -811,7 +811,7 @@ static void req_stat_job_step2(
 nextjob:
 
     if (pjob != NULL)
-      unlock_ji_mutex(pjob, __func__, "10", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, (char *)"10", LOGLEVEL);
 
     if (type == tjstJob)
       break;
@@ -845,7 +845,7 @@ nextjob:
 
   if (pa != NULL)
     {
-    unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+    unlock_ai_mutex(pa, __func__, (char *)"1", LOGLEVEL);
     }
  
   reply_send_svr(preq);
@@ -899,7 +899,7 @@ int stat_to_mom(
   job_momaddr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
   job_momport = pjob->ji_qs.ji_un.ji_exect.ji_momport;
   job_momname = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
-  unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+  unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
 
   if (job_momname == NULL)
     return PBSE_MEM_MALLOC;
@@ -1025,7 +1025,7 @@ void stat_update(
 
         pjob->ji_momstat = time_now;
 
-        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
         }
 
       pstatus = (struct brp_status *)GET_NEXT(pstatus->brp_stlink);
@@ -1135,7 +1135,7 @@ void poll_job_task(
     if (pjob != NULL)
       {
       job_state = pjob->ji_qs.ji_state;
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
       get_svr_attr_l(SRV_ATR_PollJobs, &poll_jobs);
       if ((poll_jobs) && (job_state == JOB_STATE_RUNNING))
         {
@@ -1224,7 +1224,7 @@ int req_stat_que(
     /* get status of the named queue */
 
     rc = status_que(pque, preq, &preply->brp_un.brp_status);
-    unlock_queue(pque, "req_stat_que", "type == 0", LOGLEVEL);
+    unlock_queue(pque, "req_stat_que", (char *)"type == 0", LOGLEVEL);
     }
   else
     {
@@ -1240,14 +1240,14 @@ int req_stat_que(
         {
         if (rc != PBSE_PERM)
           {
-          unlock_queue(pque, "req_stat_que", "break", LOGLEVEL);
+          unlock_queue(pque, "req_stat_que", (char *)"break", LOGLEVEL);
           break;
           }
 
         rc = 0;
         }
 
-      unlock_queue(pque, "req_stat_que", "end while", LOGLEVEL);
+      unlock_queue(pque, "req_stat_que", (char *)"end while", LOGLEVEL);
       }
     }
 

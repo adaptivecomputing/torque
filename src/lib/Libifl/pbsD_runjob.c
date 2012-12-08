@@ -154,7 +154,7 @@ int pbs_runjob_err(
 
   if (location == NULL)
     {
-    location = "";
+    location = (char *)"";
     }
 
   pthread_mutex_lock(connection[c].ch_mutex);
