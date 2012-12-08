@@ -71,7 +71,7 @@
 #define snap 0
 %if %{?snap}0
 %{expand:%%define version %(echo %{tarversion} | sed 's/-snap\..*$//')}
-%{expand:%%define release 0.adaptive.snap.%(echo %{tarversion} | sed 's/^.*-snap\.//')}.0%{?dist}}
+%{expand:%%define release 0.adaptive.snap.%(echo %{tarversion} | sed 's/^.*-snap\.//').0%{?dist}}
 %else
 %define version %{tarversion}
 %define release 1.adaptive%{?dist}
