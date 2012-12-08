@@ -304,6 +304,7 @@ int req_selectjobs(
 
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_select);
 
+  /* This will either leave pque NULL or return a locked queue */
   rc = build_selist(plist, preq->rq_perm, &selistp, &pque, &bad);
 
   if (rc != 0)
@@ -358,7 +359,7 @@ int req_selectjobs(
     }
 
   if (pque != NULL)
-    unlock_queue(pque, "req_selectjobs", NULL, LOGLEVEL);
+    unlock_queue(pque, __func__, NULL, LOGLEVEL);
 
   return PBSE_NONE;
   }  /* END req_selectjobs() */
@@ -972,8 +973,6 @@ static int build_selist(
 
           if (*pque == (pbs_queue *)0)
             return (PBSE_UNKQUE);
-          
-          unlock_queue(*pque, __func__, NULL, LOGLEVEL);
           }
         }
       }
