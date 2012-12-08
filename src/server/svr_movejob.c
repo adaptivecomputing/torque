@@ -867,9 +867,6 @@ int send_job_work(
       return(PBSE_SYSTEM);
       }
 
-    pthread_mutex_lock(connection[con].ch_mutex);
-    pthread_mutex_unlock(connection[con].ch_mutex);
-
     if (attempt_to_queue_job == TRUE)
       {
       if (change_substate_on_attempt_to_queue == TRUE)
