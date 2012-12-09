@@ -665,7 +665,13 @@ int get_jobs_index(
   {
   int  index;
 
+/*
+ * Acquiring this lock would be a lock order violation, but
+ * deadlock cannot occur. Have Helgrind ignore this.
+ */
+#ifndef HELGRIND
   if (pthread_mutex_trylock(aj->alljobs_mutex))
+#endif
     {
     unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     pthread_mutex_lock(aj->alljobs_mutex);
@@ -703,7 +709,13 @@ int has_job(
 
   strcpy(jobid, pjob->ji_qs.ji_jobid);
 
+/*
+ * Acquiring this lock would be a lock order violation, but
+ * deadlock cannot occur. Have Helgrind ignore this.
+ */
+#ifndef HELGRIND
   if (pthread_mutex_trylock(aj->alljobs_mutex))
+#endif
     {
     unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     pthread_mutex_lock(aj->alljobs_mutex);
@@ -750,7 +762,13 @@ int  remove_job(
 
   if (LOGLEVEL >= 10)
     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
+/*
+ * Acquiring this lock would be a lock order violation, but
+ * deadlock cannot occur. Have Helgrind ignore this.
+ */
+#ifndef HELGRIND
   if (pthread_mutex_trylock(aj->alljobs_mutex))
+#endif
     {
     unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     pthread_mutex_lock(aj->alljobs_mutex);

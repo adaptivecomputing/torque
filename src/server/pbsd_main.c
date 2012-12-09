@@ -140,6 +140,9 @@
 #include "ji_mutex.h"
 #include "job_route.h" /* queue_route */
 #include "exiting_jobs.h"
+#ifdef HELGRIND
+#include <helgrind.h>
+#endif
 
 #define TASK_CHECK_INTERVAL    10
 #define HELLO_WAIT_TIME        600
@@ -184,18 +187,18 @@ static void lock_out_ha();
 
 /* external data items */
 
-extern hello_container failures;
-extern int             svr_chngNodesfile;
-extern int             svr_totnodes;
-extern struct all_jobs alljobs;
-extern int run_change_logs;
-
+extern hello_container  failures;
+extern int              svr_chngNodesfile;
+extern int              svr_totnodes;
+extern struct           all_jobs alljobs;
+extern int              run_change_logs;
+extern time_t           pbs_tcp_timeout;
 extern pthread_mutex_t *poll_job_task_mutex;
-extern int max_poll_job_tasks;
+extern int              max_poll_job_tasks;
 
 /* External Functions */
 
-extern int    recov_svr_attr (int);
+extern int   recov_svr_attr (int);
 extern void  change_logs_handler(int);
 extern void  change_logs();
 
@@ -1650,6 +1653,17 @@ int main(
   extern char  pbs_server_name[];
   extern char *msg_svrdown; /* log message   */
   extern char *msg_startup1; /* log message   */
+
+#ifdef HELGRIND
+/* These global variables are written to from one or more threads, but
+ * read from many threads. This is technically a data race, but they
+ * should be benign. Adding mutexes around their access would negatively
+ * impact performance. Tell the Helgrind tool to ignore these.
+ */
+VALGRIND_HG_DISABLE_CHECKING(&LOGLEVEL, sizeof LOGLEVEL);
+VALGRIND_HG_DISABLE_CHECKING(&pbs_tcp_timeout, sizeof pbs_tcp_timeout);
+VALGRIND_HG_DISABLE_CHECKING(&last_task_check_time, sizeof last_task_check_time);
+#endif
 
   ProgName = argv[0];
   srand(get_random_number());

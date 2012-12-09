@@ -115,6 +115,12 @@ extern task_recycler tr;
 
 
 
+/*
+ * for a time-ordered work-task list, find the existing work
+ * task that comes chronologically AFTER the new work task
+ *
+ * The new work task should NOT be locked when calling this
+ */
 struct work_task *find_insertion_point(
 
   all_tasks *at,
@@ -179,7 +185,6 @@ struct work_task *set_task(
       }
     
     pthread_mutex_init(pnew->wt_mutex,NULL);
-    pthread_mutex_lock(pnew->wt_mutex);
    
     if (type == WORK_Timed)
       {
@@ -361,6 +366,8 @@ work_task *next_task(
 
 /*
  * adds a task to the specified array
+ * expects the work task to be unlocked upon entry
+ * returns it locked
  */
 
 int insert_task(
@@ -379,6 +386,7 @@ int insert_task(
     log_err(rc, __func__, "Cannot allocate space to resize the array");
     }
 
+  pthread_mutex_lock(wt->wt_mutex);
   wt->wt_tasklist = at;
   pthread_mutex_unlock(at->alltasks_mutex);
 
@@ -389,10 +397,11 @@ int insert_task(
 
 
 /*
- * NOTE: we currently don't unlock before in the trylock 
- * because this is only called in set_task, and before is
- * always a new task not in the structure yet
  * adds a task to the array after another
+ *
+ * expects the 'after' work task to be locked
+ * expects the 'before' work task to be unlocked
+ * returns the 'before' task locked
  */
 
 int insert_task_before(
@@ -405,7 +414,15 @@ int insert_task_before(
   int          rc;
   int          i;
 
+/*
+ * NOTE: the trylock below introduces a lock order violation.
+ * Since we are inserting a new task, we know nobody else
+ * can be holding it; deadlock cannot occur. Helgrind doesn't
+ * understand this, so use "correct" locking in that case
+ */
+#ifndef HELGRIND
   if (pthread_mutex_trylock(at->alltasks_mutex))
+#endif
     {
     pthread_mutex_unlock(after->wt_mutex);
     pthread_mutex_lock(at->alltasks_mutex);
@@ -436,6 +453,7 @@ int insert_task_before(
       rc = PBSE_NONE;
     }
 
+  pthread_mutex_lock(before->wt_mutex);
   pthread_mutex_unlock(at->alltasks_mutex);
 
   before->wt_tasklist = at;
@@ -447,6 +465,11 @@ int insert_task_before(
 
 
 
+/*
+ * inserts a task at the beginning
+ * expects the work task to be unlocked
+ * returns it locked
+ */
 int insert_task_first(
     
   all_tasks *at,
@@ -463,6 +486,7 @@ int insert_task_first(
     log_err(rc, __func__, "Cannot allocate space to resize the array");
     }
 
+  pthread_mutex_lock(wt->wt_mutex);
   wt->wt_tasklist = at;
   pthread_mutex_unlock(at->alltasks_mutex);
   
@@ -511,7 +535,15 @@ int remove_task(
   {
   int rc = PBSE_NONE;
 
+/*
+ * NOTE: the trylock below is a lock order violation.
+ * If it would cause a deadlock, it reverts to "correct"
+ * ordering. Helgrind doesn't understand this, so always
+ * use "correct" ordering when using Helgrind
+ */
+#ifndef HELGRIND
   if (pthread_mutex_trylock(at->alltasks_mutex))
+#endif
     {
     pthread_mutex_unlock(wt->wt_mutex);
     pthread_mutex_lock(at->alltasks_mutex);

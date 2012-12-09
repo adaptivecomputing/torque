@@ -1846,7 +1846,13 @@ int remove_array(
   int  rc;
   char arrayid[PBS_MAXSVRJOBID+1];
 
+/*
+ * Acquiring this lock would be a lock order violation, but
+ * deadlock cannot occur. Have Helgrind ignore this.
+ */
+#ifndef HELGRIND
   if (pthread_mutex_trylock(allarrays.allarrays_mutex))
+#endif
     {
     strcpy(arrayid, pa->ai_qs.parent_id);
 

@@ -991,7 +991,41 @@ fi
 
 
 
-
+dnl
+dnl enable helgrind support
+dnl
+AC_MSG_CHECKING([whether to enable helgrind support])
+helgrinddir=disabled
+AC_ARG_WITH(helgrind,
+    [  --with-helgrind=DIR     Directory that holds the helgrind headers.
+                          On Linux, 'yes' uses /usr/include/valgrind.],
+    [helgrinddir=$withval])
+case "$helgrinddir" in
+  disabled) ;;
+  no) helgrinddir=disabled ;;
+  yes)
+    case "${PBS_MACH}" in
+      linux) AC_DEFINE([HELGRIND], 1, [Define to enable helgrind support])
+        CFLAGS="$CFLAGS -I/usr/include/valgrind"
+        AC_CHECK_HEADERS([helgrind.h],
+          [CFLAGS="$CFLAGS -DHELGRIND"],
+          [AC_MSG_ERROR(Helgrind headers not found. Try installing valgrind-devel)],
+          []);;
+      *) AC_MSG_ERROR([--with-job-create takes a full path to a directory]);;
+    esac ;;
+  *)
+    case "${PBS_MACH}" in
+      linux) AC_DEFINE([HELGRIND], 1, [Define to enable helgrind support])
+        CFLAGS="$CFLAGS -I$helgrinddir"
+        AC_CHECK_HEADERS([helgrind.h],
+          [CFLAGS="$CFLAGS -DHELGRIND"],
+          [AC_MSG_ERROR("Helgrind headers not found. Is $helgrinddir correct??")],
+          [])
+        ;;
+      *) AC_MSG_ERROR([--with-helgrind takes a full path to a directory]);;
+    esac ;;
+esac
+AC_MSG_RESULT([$helgrinddir])
 
 dnl
 dnl add an option to specify a different path where TORQUE should look for HWLOC 
