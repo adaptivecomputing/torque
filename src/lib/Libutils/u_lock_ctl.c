@@ -78,16 +78,15 @@ int lock_startup()
   {
   int rc = PBSE_NONE;
 
-  if (locks == NULL)
+  if ((locks == NULL) && ((rc = lock_init()) != PBSE_NONE))
     {
-    if ((rc = lock_init()) == PBSE_NONE)
-      {
-      if (pthread_mutex_lock(locks->startup) != 0)
-        {
-        log_err(-1,"mutex_lock","ALERT:   cannot lock startup mutex!\n");
-        return(PBSE_MUTEX);
-        }
-      }
+    log_err(-1, "mutex_lock", "ALERT:   cannot initialize mutexes!\n");
+    return(PBSE_MUTEX);
+    }
+  if (pthread_mutex_lock(locks->startup) != 0)
+    {
+    log_err(-1, "mutex_lock", "ALERT:   cannot lock startup mutex!\n");
+    return(PBSE_MUTEX);
     }
 
   return(rc);
@@ -101,7 +100,7 @@ int unlock_startup()
   {
   if (pthread_mutex_unlock(locks->startup) != 0)
     {
-    log_err(-1,"mutex_unlock","ALERT:   cannot unlock startup mutex!\n");
+    log_err(-1, "mutex_unlock", "ALERT:   cannot unlock startup mutex!\n");
     return(PBSE_MUTEX);
     }
 
@@ -116,18 +115,15 @@ int lock_conn_table()
   {
   int rc = PBSE_NONE;
 
-  if (locks == NULL)
+  if ((locks == NULL) && ((rc = lock_init()) != PBSE_NONE))
     {
-    if ((rc = lock_init()) == PBSE_NONE)
-      {
-      lock_init();
-      
-      if (pthread_mutex_lock(locks->conn_table) != 0)
-        {
-        log_err(-1,"mutex_lock","ALERT:   cannot lock conn_table mutex!\n");
-        return(PBSE_MUTEX);
-        }
-      }
+    log_err(-1, "mutex_lock", "ALERT:   cannot initialize mutexes!\n");
+    return(PBSE_MUTEX);
+    }
+  if (pthread_mutex_lock(locks->conn_table) != 0)
+    {
+    log_err(-1, "mutex_lock", "ALERT:   cannot lock conn_table mutex!\n");
+    return(PBSE_MUTEX);
     }
 
   return(rc);
@@ -155,17 +151,15 @@ int lock_ss()
   {
   int rc = PBSE_NONE;
 
-  if (locks == NULL)
+  if ((locks == NULL) && ((rc = lock_init()) != PBSE_NONE))
     {
-    if ((rc = lock_init()) == PBSE_NONE)
-      {
-    
-      if (pthread_mutex_lock(locks->setup_save) != 0)
-        {
-        log_err(-1,"mutex_lock","ALERT:   cannot lock setup_save mutex!\n");
-        return(PBSE_MUTEX);
-        }
-      }
+    log_err(-1, "mutex_lock", "ALERT:   cannot initialize mutexes!\n");
+    return(PBSE_MUTEX);
+    }
+  if (pthread_mutex_lock(locks->setup_save) != 0)
+    {
+    log_err(-1, "mutex_lock", "ALERT:   cannot lock setup_save mutex!\n");
+    return(PBSE_MUTEX);
     }
 
   return(rc);
@@ -178,7 +172,7 @@ int unlock_ss()
   {
   if (pthread_mutex_unlock(locks->setup_save) != 0)
     {
-    log_err(-1,"mutex_unlock","ALERT:   cannot unlock setup_save mutex!\n");
+    log_err(-1, "mutex_unlock", "ALERT:   cannot unlock setup_save mutex!\n");
     return(PBSE_MUTEX);
     }
 
