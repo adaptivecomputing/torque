@@ -514,7 +514,13 @@ int remove_queue(
   int  index;
   char log_buf[1000];
 
+/*
+ * Acquiring this lock would be a lock order violation, but
+ * deadlock cannot occur. Have Helgrind ignore this.
+ */
+#ifndef HELGRIND
   if (pthread_mutex_trylock(aq->allques_mutex))
+#endif
     {
     unlock_queue(pque, __func__, NULL, LOGLEVEL);
     pthread_mutex_lock(aq->allques_mutex);
@@ -678,7 +684,13 @@ pbs_queue *lock_queue_with_job_held(
 
   if (pque != NULL)
     {
+/*
+ * Acquiring this lock would be a lock order violation, but
+ * deadlock cannot occur. Have Helgrind ignore this.
+ */
+#ifndef HELGRIND
     if (pthread_mutex_trylock(pque->qu_mutex))
+#endif
       {
       /* if fail */
       strcpy(jobid, pjob->ji_qs.ji_jobid);

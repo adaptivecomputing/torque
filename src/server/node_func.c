@@ -3214,7 +3214,13 @@ int remove_node(
   {
   int rc = PBSE_NONE;
 
+/*
+ * Acquiring this lock would be a lock order violation, but
+ * deadlock cannot occur. Have Helgrind ignore this.
+ */
+#ifndef HELGRIND
   if (pthread_mutex_trylock(an->allnodes_mutex))
+#endif
     {
     unlock_node(pnode, __func__, NULL, LOGLEVEL);
     pthread_mutex_lock(an->allnodes_mutex);
@@ -3241,7 +3247,13 @@ struct pbsnode *next_host(
   struct pbsnode *pnode;
   char           *name = NULL;
 
+/*
+ * Acquiring this lock would be a lock order violation, but
+ * deadlock cannot occur. Have Helgrind ignore this.
+ */
+#ifndef HELGRIND
   if (pthread_mutex_trylock(an->allnodes_mutex))
+#endif
     {
     if (held != NULL)
       {
