@@ -247,7 +247,6 @@ pbs_queue *que_alloc(
   initialize_all_jobs_array(pq->qu_jobs);
   initialize_all_jobs_array(pq->qu_jobs_array_sum);
   pthread_mutex_init(pq->qu_mutex,NULL);
-  lock_queue(pq, __func__, NULL, LOGLEVEL);
 
   snprintf(pq->qu_qs.qu_name, sizeof(pq->qu_qs.qu_name), "%s", name);
 
@@ -320,7 +319,7 @@ void que_free(
   remove_queue(&svr_queues, pq);
   pq->q_being_recycled = TRUE;
   insert_into_queue_recycler(pq);
-  unlock_queue(pq, "que_free", NULL, LOGLEVEL);
+  unlock_queue(pq, __func__, NULL, LOGLEVEL);
 
   return;
   }  /* END que_free() */
@@ -468,7 +467,12 @@ void free_alljobs_array(
 
 
 
-
+/*
+ * insert a queue to an all_queues hash
+ *
+ * expects a queue that is unlocked
+ * returns a the queue locked
+ */
 int insert_queue(
 
   all_queues *aq,
@@ -490,6 +494,7 @@ int insert_queue(
     rc = PBSE_NONE;
     }
 
+  lock_queue(pque, __func__, NULL, LOGLEVEL);
   pthread_mutex_unlock(aq->allques_mutex);
 
   return(rc);

@@ -100,6 +100,7 @@ int insert_into_queue_recycler(
     enqueue_threadpool_request(remove_some_recycle_queues,NULL);
     }
 
+  unlock_queue(pq, __func__, NULL, LOGLEVEL);
   rc = insert_queue(&q_recycler.queues,pq);
 
   update_queue_recycler_next_id();
