@@ -1181,7 +1181,10 @@ int initialize_paths()
 
 	if ((statbuf.st_mode && 01777) != 01777) 
 	  {
-    chmod(path_checkpoint, 01777);
+          if (chmod(path_checkpoint, 01777) != 0)
+            {
+            log_err(errno, __func__, "can't chmod 01777 checkpoint");
+            }
 	  }
 #endif
 
