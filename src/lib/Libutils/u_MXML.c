@@ -449,7 +449,7 @@ int MXMLAppendAttr(
 
     len = strlen(E->AVal[ATok]) + strlen(AVal) + 2;
 
-    tmpAVal = realloc(
+    tmpAVal = (char *)realloc(
       E->AVal[ATok],
       len);
 

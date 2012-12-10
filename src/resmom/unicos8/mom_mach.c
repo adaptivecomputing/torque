@@ -438,27 +438,27 @@ dep_main_loop_cycle(void)
 
   if (tabinfo(PWS, &info) == -1)
     {
-    log_err(errno, id, "tabinfo(PWS)");
+    log_err(errno, id, (char *)"tabinfo(PWS)");
     return;
     }
 
   if (tabread(PWS, (char *)&pw,
               info.ent * info.len, info.head) == -1)
     {
-    log_err(errno, id, "tabread(PWS)");
+    log_err(errno, id, (char *)"tabread(PWS)");
     return;
     }
 
   if (tabinfo(SINFO, &info) == -1)
     {
-    log_err(errno, id, "tabinfo(SINFO)");
+    log_err(errno, id, (char *)"tabinfo(SINFO)");
     return;
     }
 
   if (tabread(SINFO, (char *)&sysinfo,
               info.ent * info.len, info.head) == -1)
     {
-    log_err(errno, id, "tabread(SINFO)");
+    log_err(errno, id, (char *)"tabread(SINFO)");
     return;
     }
 
@@ -557,7 +557,7 @@ dep_initialize(void)
 
   if (target(MC_GET_TARGET, &tinfo) == -1)
     {
-    log_err(errno, id, "target");
+    log_err(errno, id, (char *)"target");
     die(0);
     }
 
@@ -1253,7 +1253,7 @@ mom_set_limits(
 
     if (lockudb() < 0)
       {
-      log_err(udb_errno, id, "Unable to lock UDB");
+      log_err(udb_errno, id, (char *)"Unable to lock UDB");
       }
     else
       {
@@ -1264,14 +1264,14 @@ mom_set_limits(
 
       if ((phost == (char *)0) ||
           ((phost = strchr(phost, (int)'=')) == (char *)0))
-        log_err(-1, id, "PBS_O_HOST not set");
+        log_err(-1, id, (char *)"PBS_O_HOST not set");
 
       strncpy(pudb->ue_batchhost, phost + 1, MAXUE_HOSTNAME);
 
       pudb->ue_batchhost[MAXUE_HOSTNAME] = '\0';
 
       if (rewriteudb(pudb) < 0)
-        log_err(udb_errno, id, "UDB Update failed");
+        log_err(udb_errno, id, (char *)"UDB Update failed");
       }
     }
 
@@ -2663,7 +2663,7 @@ sessions(struct rm_attribute *attrib)
 
   if ((jids = (pid_t *)calloc(maxjid, sizeof(pid_t))) == NULL)
     {
-    log_err(errno, id, "no memory");
+    log_err(errno, id, (char *)"no memory");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }
@@ -2706,7 +2706,7 @@ sessions(struct rm_attribute *attrib)
 
         if (hold == NULL)
           {
-          log_err(errno, id, "realloc");
+          log_err(errno, id, (char *)"realloc");
           rm_errno = RM_ERR_SYSTEM;
           free(jids);
           return NULL;
@@ -2782,7 +2782,7 @@ nusers(struct rm_attribute *attrib)
 
   if ((uids = calloc(nproc, sizeof(uid_t))) == NULL)
     {
-    log_err(errno, id, "no memory");
+    log_err(errno, id, (char *)"no memory");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }
@@ -2915,7 +2915,7 @@ totmem(struct rm_attribute *attrib)
 
   if (statfs(procfs, &fsbuf, sizeof(struct statfs), 0) == -1)
     {
-    log_err(errno, id, "statfs");
+    log_err(errno, id, (char *)"statfs");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }
@@ -2943,7 +2943,7 @@ availmem(struct rm_attribute *attrib)
 
   if (statfs(procfs, &fsbuf, sizeof(struct statfs), 0) == -1)
     {
-    log_err(errno, id, "statfs");
+    log_err(errno, id, (char *)"statfs");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }
@@ -3013,7 +3013,7 @@ size_fs(char *param)
 
   if (statfs(param, &fsbuf, sizeof(struct statfs), 0) == -1)
     {
-    log_err(errno, id, "statfs");
+    log_err(errno, id, (char *)"statfs");
     rm_errno = RM_ERR_BADPARAM;
     return NULL;
     }
@@ -3042,7 +3042,7 @@ size_file(char *param)
 
   if (stat(param, &sbuf) == -1)
     {
-    log_err(errno, id, "stat");
+    log_err(errno, id, (char *)"stat");
     rm_errno = RM_ERR_BADPARAM;
     return NULL;
     }
@@ -3121,7 +3121,7 @@ idletime(struct rm_attribute *attrib)
 
   if ((dp = opendir("/dev")) == NULL)
     {
-    log_err(errno, id, "opendir /dev");
+    log_err(errno, id, (char *)"opendir /dev");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }
@@ -3360,7 +3360,7 @@ quota(struct rm_attribute *attrib)
       if (quotactl(dirname, SRFS_INFO,
                    (caddr_t)&srfsinfo) == -1)
         {
-        log_err(errno, id, "quotactl(SRFS_INFO)");
+        log_err(errno, id, (char *)"quotactl(SRFS_INFO)");
         rm_errno = RM_ERR_SYSTEM;
         return NULL;
         }
@@ -3468,7 +3468,7 @@ quota(struct rm_attribute *attrib)
 
   if (quotactl(dirname, Q_GETQUOTA, (caddr_t)&qi) == -1)
     {
-    log_err(errno, id, "quotactl(Q_GETQUOTA)");
+    log_err(errno, id, (char *)"quotactl(Q_GETQUOTA)");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }
@@ -3566,7 +3566,7 @@ quota(struct rm_attribute *attrib)
 
   if (quotactl(dirname, Q_GETHEADER, (caddr_t)&header) == -1)
     {
-    log_err(errno, id, "quotactl(Q_GETHEADER)");
+    log_err(errno, id, (char *)"quotactl(Q_GETHEADER)");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }
@@ -3635,7 +3635,7 @@ srfs_reserve(struct rm_attribute *attrib)
 
     if (quotactl(name, SRFS_RESERVE, (caddr_t)&num) == -1)
       {
-      log_err(errno, id, "quotactl(SRFS_RESERVE)");
+      log_err(errno, id, (char *)"quotactl(SRFS_RESERVE)");
       rm_errno = RM_ERR_SYSTEM;
       return NULL;
       }
@@ -3746,14 +3746,14 @@ getswap(void)
 
   if (tabinfo(SWAPTAB, &info) == -1)
     {
-    log_err(errno, id, "tabinfo(SWAPTAB)");
+    log_err(errno, id, (char *)"tabinfo(SWAPTAB)");
     return 1;
     }
 
   if (tabread(SWAPTAB, (char *)&swapper,
               info.ent * info.len, info.head) == -1)
     {
-    log_err(errno, id, "tabread(SWAPTAB)");
+    log_err(errno, id, (char *)"tabread(SWAPTAB)");
     return 1;
     }
 

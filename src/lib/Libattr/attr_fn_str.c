@@ -142,7 +142,7 @@ int decode_str(
 
   if ((val != NULL) && ((len = strlen(val) + 1) > 1))
     {
-    patr->at_val.at_str = calloc(1, (unsigned)len);
+    patr->at_val.at_str = (char *)calloc(1, (unsigned)len);
 
     if (patr->at_val.at_str == NULL)
       {
@@ -260,7 +260,7 @@ int set_str(
 
     case SET: /* set is replace old string with new */
 
-      if ((new_value = calloc(1, nsize)) == NULL)
+      if ((new_value =(char *)calloc(1, nsize)) == NULL)
         return (PBSE_SYSTEM);
 
       if (attr->at_val.at_str)
@@ -274,7 +274,7 @@ int set_str(
     case INCR: /* INCR is concatenate new to old string */
 
       nsize += strlen(attr->at_val.at_str);
-      new_value = calloc(1, nsize + 1);
+      new_value = (char *)calloc(1, nsize + 1);
 
       if (new_value == NULL)
         return (PBSE_SYSTEM);

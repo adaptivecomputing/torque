@@ -233,14 +233,14 @@ dep_initialize(void)
     {
     if ((kd = kvm_open(NULL, NULL, NULL, O_RDONLY, "rm")) == NULL)
       {
-      log_err(errno, id, "kvm_open");
+      log_err(errno, id, (char *)"kvm_open");
       return;
       }
     }
 
   if (kvm_nlist(kd, nl) == -1)
     {
-    log_err(errno, id, "kvm_nlist");
+    log_err(errno, id, (char *)"kvm_nlist");
     return;
     }
 
@@ -423,7 +423,7 @@ cput_sum(job *pjob)
       if (kvm_read(kd, (unsigned long)pp->p_ru, (char *)&ru,
                    sizeof(ru)) != sizeof(ru))
         {
-        log_err(errno, id, "kvm_read(session)");
+        log_err(errno, id, (char *)"kvm_read(session)");
         continue;
         }
 
@@ -808,14 +808,14 @@ mom_open_poll(void)
 
     if (kd == NULL)
       {
-      log_err(errno, id, "kvm_open");
+      log_err(errno, id, (char *)"kvm_open");
       return (PBSE_SYSTEM);
       }
     }
 
   if (kvm_nlist(kd, nl) == -1)
     {
-    log_err(errno, id, "kvm_nlist");
+    log_err(errno, id, (char *)"kvm_nlist");
     return (PBSE_SYSTEM);
     }
 
@@ -849,14 +849,14 @@ mom_get_sample(void)
 
   if (nl[KSYM_NPROC].n_type == 0)
     {
-    log_err(-1, id, "number of process not found");
+    log_err(-1, id, (char *)"number of process not found");
     return (PBSE_SYSTEM);
     }
 
   if (kvm_read(kd, nl[KSYM_NPROC].n_value, (char *)&nproc,
                sizeof(nproc)) != sizeof(nproc))
     {
-    log_err(errno, id, "kvm_read(NPROC)");
+    log_err(errno, id, (char *)"kvm_read(NPROC)");
     return (PBSE_SYSTEM);
     }
 
@@ -870,14 +870,14 @@ mom_get_sample(void)
 
   if (nl[KSYM_PROC].n_type == 0)
     {
-    log_err(-1, id, "process table not found");
+    log_err(-1, id, (char *)"process table not found");
     return (PBSE_SYSTEM);
     }
 
   if (kvm_read(kd, nl[KSYM_PROC].n_value, (char *)&kernel_proc,
                sizeof(kernel_proc)) != sizeof(kernel_proc))
     {
-    log_err(errno, id, "kvm_read(PROC)");
+    log_err(errno, id, (char *)"kvm_read(PROC)");
     return (PBSE_SYSTEM);
     }
 
@@ -896,7 +896,7 @@ mom_get_sample(void)
   if (kvm_read(kd, (unsigned long)kernel_proc,
                (char *)proc_tbl, len) != len)
     {
-    log_err(errno, id, "kvm_read(proc_tbl)");
+    log_err(errno, id, (char *)"kvm_read(proc_tbl)");
     return (PBSE_SYSTEM);
     }
 
@@ -929,7 +929,7 @@ mom_get_sample(void)
     if (kvm_read(kd, (unsigned long)pp->p_sessp,
                  (char *)&s, sizeof(s)) != sizeof(s))
       {
-      log_err(errno, id, "kvm_read(session)");
+      log_err(errno, id, (char *)"kvm_read(session)");
       continue; /* session gone? */
       }
 
@@ -1195,7 +1195,7 @@ mom_close_poll(void)
     {
     if (kvm_close(kd) != 0)
       {
-      log_err(errno, "mom_close_poll", "kvm_close");
+      log_err(errno, "mom_close_poll", (char *)"kvm_close");
       return (PBSE_SYSTEM);
       }
 
@@ -1312,7 +1312,7 @@ pid_t jobid;
       if (kvm_read(kd, (unsigned long)pp->p_ru, (char *)&ru,
                    sizeof(ru)) != sizeof(ru))
         {
-        log_err(errno, id, "kvm_read(session)");
+        log_err(errno, id, (char *)"kvm_read(session)");
         continue;
         }
 
@@ -1359,7 +1359,7 @@ pid_t pid;
     {
     if (errno)
       {
-      log_err(errno, id, "kvm_getu");
+      log_err(errno, id, (char *)"kvm_getu");
       rm_errno = RM_ERR_SYSTEM;
       return NULL;
       }
@@ -1668,7 +1668,7 @@ sessions(struct rm_attribute *attrib)
 
   if ((jids = (pid_t *)calloc(nproc, sizeof(pid_t))) == NULL)
     {
-    log_err(errno, id, "no memory");
+    log_err(errno, id, (char *)"no memory");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }
@@ -1842,7 +1842,7 @@ nusers(struct rm_attribute *attrib)
 
   if ((uids = (uid_t *)calloc(nproc, sizeof(uid_t))) == NULL)
     {
-    log_err(errno, id, "no memory");
+    log_err(errno, id, (char *)"no memory");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }
@@ -1895,7 +1895,7 @@ getanon(char *id)
 
   if (nl[KSYM_ANON].n_type == 0)
     {
-    log_err(-1, id, "anoninfo struct not found");
+    log_err(-1, id, (char *)"anoninfo struct not found");
     rm_errno = RM_ERR_SYSTEM;
     return 1;
     }
@@ -1903,7 +1903,7 @@ getanon(char *id)
   if (kvm_read(kd, nl[KSYM_ANON].n_value, (char *)&ai,
                sizeof(struct anoninfo)) != sizeof(struct anoninfo))
     {
-    log_err(errno, id, "kvm_read");
+    log_err(errno, id, (char *)"kvm_read");
     rm_errno = RM_ERR_SYSTEM;
     return 1;
     }
@@ -1976,7 +1976,7 @@ physmem(struct rm_attribute *attrib)
 
   if (nl[KSYM_PHYS].n_type == 0)
     {
-    log_err(-1, id, "physmem count not found");
+    log_err(-1, id, (char *)"physmem count not found");
     rm_errno = RM_ERR_SYSTEM;
     return 0;
     }
@@ -1984,7 +1984,7 @@ physmem(struct rm_attribute *attrib)
   if (kvm_read(kd, nl[KSYM_PHYS].n_value, (char *)&pmem,
                sizeof(pmem)) != sizeof(pmem))
     {
-    log_err(errno, id, "kvm_read");
+    log_err(errno, id, (char *)"kvm_read");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }
@@ -2016,7 +2016,7 @@ size_fs(char *param)
 
   if (statfs(param, &fsbuf) == -1)
     {
-    log_err(errno, id, "statfs");
+    log_err(errno, id, (char *)"statfs");
     rm_errno = RM_ERR_BADPARAM;
     return NULL;
     }
@@ -2045,7 +2045,7 @@ size_file(char *param)
 
   if (stat(param, &sbuf) == -1)
     {
-    log_err(errno, id, "stat");
+    log_err(errno, id, (char *)"stat");
     rm_errno = RM_ERR_BADPARAM;
     return NULL;
     }
@@ -2124,7 +2124,7 @@ idletime(struct rm_attribute *attrib)
 
   if ((dp = opendir("/dev")) == NULL)
     {
-    log_err(errno, id, "opendir /dev");
+    log_err(errno, id, (char *)"opendir /dev");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }
@@ -2205,7 +2205,7 @@ walltime(struct rm_attribute *attrib)
 
   if ((now = time(NULL)) <= 0)
     {
-    log_err(errno, id, "time");
+    log_err(errno, id, (char *)"time");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }
@@ -2233,7 +2233,7 @@ walltime(struct rm_attribute *attrib)
 
     if ((uarea = kvm_getu(kd, pp)) == NULL)
       {
-      log_err(errno, id, "kvm_getu");
+      log_err(errno, id, (char *)"kvm_getu");
       rm_errno = RM_ERR_SYSTEM;
       return NULL;
       }
@@ -2269,14 +2269,14 @@ double *rv
 
   if (nl[KSYM_LOAD].n_type == 0)
     {
-    log_err(-1, id, "loadaverage count not found");
+    log_err(-1, id, (char *)"loadaverage count not found");
     return (rm_errno = RM_ERR_SYSTEM);
     }
 
   if (kvm_read(kd, nl[KSYM_LOAD].n_value, (char *)&load,
                sizeof(load)) != sizeof(load))
     {
-    log_err(errno, id, "kvm_read");
+    log_err(errno, id, (char *)"kvm_read");
     return (rm_errno = RM_ERR_SYSTEM);
     }
 
@@ -2406,7 +2406,7 @@ quota(struct rm_attribute *attrib)
 
   if ((m = setmntent(MOUNTED, "r")) == NULL)
     {
-    log_err(errno, id, "setmntent");
+    log_err(errno, id, (char *)"setmntent");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }
@@ -2481,7 +2481,7 @@ quota(struct rm_attribute *attrib)
 
   if (quotactl(Q_GETQUOTA, me->mnt_fsname, uid, &qi) == -1)
     {
-    log_err(errno, id, "quotactl");
+    log_err(errno, id, (char *)"quotactl");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }

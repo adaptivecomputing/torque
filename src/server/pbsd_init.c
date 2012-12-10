@@ -108,7 +108,6 @@
 #include "tracking.h"
 #include "svrfunc.h"
 #include "acct.h"
-#include "rpp.h"
 #include "net_connect.h"
 #include "pbs_proto.h"
 #include "batch_request.h"
@@ -397,7 +396,7 @@ void  update_default_np()
       npfreediff = pnode->nd_nsn - pnode->nd_nsnfree;
       pnode->nd_nsn = default_np;
       pnode->nd_nsnfree = default_np - npfreediff;
-      unlock_node(pnode, __func__, NULL, LOGLEVEL);
+      unlock_node(pnode, __func__, (char *)NULL, LOGLEVEL);
       }
     }
 
@@ -467,7 +466,7 @@ dynamic_string *make_default_hierarchy()
   if (((default_hierarchy = get_dynamic_string(-1, NULL)) == NULL) ||
       ((level_ds = get_dynamic_string(-1, NULL)) == NULL))
     {
-    log_err(ENOMEM, __func__, "Cannot allocate memory");
+    log_err(ENOMEM, __func__, (char *)"Cannot allocate memory");
     return(NULL);
     }
 
@@ -489,7 +488,7 @@ dynamic_string *make_default_hierarchy()
 
     pnode->nd_hierarchy_level = 0;
 
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+    unlock_node(pnode, __func__, (char *)NULL, LOGLEVEL);
     }
 
   copy_to_end_of_dynamic_string(default_hierarchy, level_ds->str);
@@ -590,7 +589,7 @@ void check_if_in_nodes_file(
   if (pnode->nd_hierarchy_level > level_index)
     pnode->nd_hierarchy_level = level_index;
 
-  unlock_node(pnode, __func__, NULL, LOGLEVEL);
+  unlock_node(pnode, __func__, (char *)NULL, LOGLEVEL);
 
   if (colon != NULL)
     *colon = ':';
@@ -614,7 +613,7 @@ int handle_level(
 
   if ((level_buf = get_dynamic_string(-1, NULL)) == NULL)
     {
-    log_err(ENOMEM, __func__, "Cannot allocate memory");
+    log_err(ENOMEM, __func__, (char *)"Cannot allocate memory");
     return(ENOMEM);
     }
 
@@ -737,7 +736,7 @@ dynamic_string *parse_mom_hierarchy(
   
   if ((send_format = get_dynamic_string(-1, NULL)) == NULL)
     {
-    log_err(ENOMEM, __func__, "Cannot allocate memory");
+    log_err(ENOMEM, __func__, (char *)"Cannot allocate memory");
     return(NULL);
     }
 
@@ -996,7 +995,7 @@ int setup_signal_handling()
 
   if (sigaction(SIGHUP, &act, &oact) != 0)
     {
-    log_err(errno, __func__, "sigaction for HUP");
+    log_err(errno, __func__, (char *)"sigaction for HUP");
 
     return(2);
     }
@@ -1005,14 +1004,14 @@ int setup_signal_handling()
 
   if (sigaction(SIGINT, &act, &oact) != 0)
     {
-    log_err(errno, __func__, "sigaction for INT");
+    log_err(errno, __func__, (char *)"sigaction for INT");
 
     return(2);
     }
 
   if (sigaction(SIGTERM, &act, &oact) != 0)
     {
-    log_err(errno, __func__, "sigactin for TERM");
+    log_err(errno, __func__, (char *)"sigactin for TERM");
 
     return(2);
     }
@@ -1021,7 +1020,7 @@ int setup_signal_handling()
 
   if (sigaction(SIGQUIT, &act, &oact) != 0)
     {
-    log_err(errno, __func__, "sigactin for QUIT");
+    log_err(errno, __func__, (char *)"sigactin for QUIT");
 
     return(2);
     }
@@ -1032,7 +1031,7 @@ int setup_signal_handling()
 
   if (sigaction(SIGSHUTDN, &act, &oact) != 0)
     {
-    log_err(errno, __func__, "sigactin for SHUTDN");
+    log_err(errno, __func__, (char *)"sigactin for SHUTDN");
 
     return(2);
     }
@@ -1066,7 +1065,7 @@ int setup_signal_handling()
 
   if (sigaction(SIGCHLD, &act, &oact) != 0)
     {
-    log_err(errno, __func__, "sigaction for CHLD");
+    log_err(errno, __func__, (char *)"sigaction for CHLD");
 
     return(2);
     }
@@ -1075,7 +1074,7 @@ int setup_signal_handling()
 
   if (sigaction(SIGPIPE, &act, &oact) != 0)
     {
-    log_err(errno, __func__, "sigaction for PIPE");
+    log_err(errno, __func__, (char *)"sigaction for PIPE");
 
     return(2);
     }
@@ -1084,14 +1083,14 @@ int setup_signal_handling()
 
   if (sigaction(SIGUSR1, &act, &oact) != 0)
     {
-    log_err(errno, __func__, "sigaction for USR1");
+    log_err(errno, __func__, (char *)"sigaction for USR1");
 
     return(2);
     }
 
   if (sigaction(SIGUSR2, &act, &oact) != 0)
     {
-    log_err(errno, __func__, "sigaction for USR2");
+    log_err(errno, __func__, (char *)"sigaction for USR2");
 
     return(2);
     }
@@ -1309,7 +1308,7 @@ int setup_server_attrs(
     &server.sv_attr[SRV_ATR_mailfrom],
     0,
     0,
-    PBS_DEFAULT_MAIL,
+    (char *)PBS_DEFAULT_MAIL,
     0);
 
   server.sv_attr[SRV_ATR_tcp_timeout].at_val.at_long = PBS_TCPTIMEOUT;
@@ -1372,7 +1371,7 @@ int setup_server_attrs(
     &server.sv_attr[SRV_ATR_version],
     0,
     0,
-    PACKAGE_VERSION,
+    (char *)PACKAGE_VERSION,
     0);
 
   /* open accounting file and job log file if logging is set */
@@ -1492,7 +1491,7 @@ int handle_queue_recovery(
           que_attr_def[QE_ATR_ResourceAssn].at_free(&pque->qu_attr[QE_ATR_ResourceAssn]);
           }
 
-        unlock_queue(pque, __func__, NULL, LOGLEVEL);
+        unlock_queue(pque, __func__, (char *)NULL, LOGLEVEL);
         }
       }
     }
@@ -1578,7 +1577,7 @@ int handle_array_recovery(
 
         pa->jobs_recovered = 0;
 
-        unlock_ai_mutex(pa, __func__, "2", LOGLEVEL);
+        unlock_ai_mutex(pa, __func__, (char *)"2", LOGLEVEL);
         }
       else
         {
@@ -1683,14 +1682,14 @@ int handle_job_recovery(
 
             if (DArrayAppend(&Array,pjob) == FAILURE)
               {
-              log_err(ENOMEM,"main","out of memory reloading jobs");
+              log_err(ENOMEM,"main", (char *)"out of memory reloading jobs");
               exit(-1);
               }
 
             if (type == RECOV_COLD)
               pjob->ji_cold_restart = TRUE;
             
-            unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+            unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
             }
 
           continue;
@@ -1704,14 +1703,14 @@ int handle_job_recovery(
 
           if (DArrayAppend(&Array,pjob) == FAILURE)
             {
-            log_err(ENOMEM, "main", "out of memory reloading jobs");
+            log_err(ENOMEM, "main", (char *)"out of memory reloading jobs");
             exit(-1);
             }
 
           if (type == RECOV_COLD)
             pjob->ji_cold_restart = TRUE;
 
-          unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+          unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
           }
         else
           {
@@ -1724,7 +1723,7 @@ int handle_job_recovery(
 
           if (link(pdirent->d_name, basen) < 0)
             {
-            log_err(errno, __func__, "failed to link corrupt .JB file to .BD");
+            log_err(errno, __func__, (char *)"failed to link corrupt .JB file to .BD");
             }
           else
             {
@@ -1743,7 +1742,7 @@ int handle_job_recovery(
       {
       job *pjob = (job *)Array.Data[Index];
 
-      lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+      lock_ji_mutex(pjob, __func__, (char *)NULL, LOGLEVEL);
 
       job_rc = pbsd_init_job(pjob, type);
 
@@ -1755,7 +1754,7 @@ int handle_job_recovery(
           pjob->ji_qs.ji_jobid,
           msg_script_open);
 
-        unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, (char *)"4", LOGLEVEL);
 
         continue;
         }
@@ -1779,11 +1778,11 @@ int handle_job_recovery(
           }
         else
           {
-          unlock_ji_mutex(pjob, __func__, "5", LOGLEVEL);
+          unlock_ji_mutex(pjob, __func__, (char *)"5", LOGLEVEL);
           }
         }
       else
-        unlock_ji_mutex(pjob, __func__, "6", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, (char *)"6", LOGLEVEL);
       }
 
     DArrayFree(&Array);
@@ -1820,7 +1819,7 @@ int handle_job_recovery(
       
       job_save(pjob, SAVEJOB_FULL, 0);
       
-      unlock_ji_mutex(pjob, __func__, "7", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, (char *)"7", LOGLEVEL);
       }
     }
 
@@ -1846,7 +1845,7 @@ int cleanup_recovered_arrays()
     if ((pjob = svr_find_job(pa->ai_qs.parent_id, FALSE)) != NULL)
       {
       job_template_exists = TRUE;
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
       }
 
     /* if no jobs were recovered, delete this array */
@@ -1887,7 +1886,7 @@ int cleanup_recovered_arrays()
             {
             if ((pjob = svr_find_job(pa->job_ids[i], FALSE)) != NULL)
               {
-              unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+              unlock_ai_mutex(pa, __func__, (char *)"1", LOGLEVEL);
               svr_job_purge(pjob);
 
               pa = get_array(arrayid);
@@ -1914,7 +1913,7 @@ int cleanup_recovered_arrays()
       continue;
       }
 
-    unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+    unlock_ai_mutex(pa, __func__, (char *)"1", LOGLEVEL);
     } /* END for each array */
 
   return(rc);
@@ -1956,7 +1955,7 @@ int handle_tracking_records()
 
   if ((fd = open(path_track, O_RDONLY | O_CREAT, 0600)) < 0)
     {
-    log_err(errno, __func__, "unable to open tracking file");
+    log_err(errno, __func__, (char *)"unable to open tracking file");
 
     return(-1);
     }
@@ -1972,7 +1971,7 @@ int handle_tracking_records()
 
   if (fstat(fd, &statbuf) < 0)
     {
-    log_err(errno, "pbs_init", "unable to stat tracking file");
+    log_err(errno, "pbs_init", (char *)"unable to stat tracking file");
     close(fd);
 
     return(-1);
@@ -1986,7 +1985,7 @@ int handle_tracking_records()
   if ((server.sv_track = calloc(server.sv_tracksize, sizeof(struct tracking))) == NULL)
     {
     /* FAILURE - cannot alloc memory */
-    log_err(errno, "pbs_init", "calloc failure");
+    log_err(errno, "pbs_init", (char *)"calloc failure");
     close(fd);
 
     return(-1);
@@ -2004,9 +2003,9 @@ int handle_tracking_records()
   close(fd);
 
   server.sv_trackmodifed = 0;
-  
+
   /* set work task to periodically save the tracking records */
-  set_task(WORK_Timed, (long)(time(NULL) + PBS_SAVE_TRACK_TM), track_save, NULL, FALSE);
+  set_task(WORK_Timed, (long)(time(NULL) + PBS_SAVE_TRACK_TM), track_save, (char *)NULL, FALSE);
 
   return(rc);
   } /* END handle_tracking_records() */
@@ -2406,11 +2405,11 @@ int pbsd_init_job(
           strcpy(job_id, pjob->ji_qs.ji_jobid);
           job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
           job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
-          unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+          unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
           update_array_values(pa,JOB_STATE_RUNNING,aeTerminate,
               job_id, job_atr_hold, job_exit_status);
           
-          unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+          unlock_ai_mutex(pa, __func__, (char *)"1", LOGLEVEL);
           pjob = svr_find_job(job_id, FALSE);
           }
          
@@ -2601,7 +2600,7 @@ void catch_abort(
   sigaction(SIGTRAP, &act, NULL);
   sigaction(SIGSYS, &act, NULL);
 
-  log_err(sig, "mom_main", "Caught fatal core signal");
+  log_err(sig, "mom_main", (char *)"Caught fatal core signal");
 
   rlimit.rlim_cur = RLIM_INFINITY;
   rlimit.rlim_max = RLIM_INFINITY;
@@ -2787,7 +2786,7 @@ void resume_net_move(
   
     net_move(pjob, 0);
     
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
 
     free(jobid);
     }
@@ -2911,11 +2910,11 @@ int recov_svr_attr(
 
     if (path_priv == NULL)
       {
-      path_priv = build_path(path_home, PBS_SVR_PRIVATE, suffix_slash);
+      path_priv = build_path((char *)path_home, (char *)PBS_SVR_PRIVATE, (char *)suffix_slash);
       }
     if (path_svrdb == NULL)
       {
-      path_svrdb     = build_path(path_priv, PBS_SERVERDB, NULL);
+      path_svrdb     = build_path(path_priv, (char *)PBS_SERVERDB, NULL);
       }
 
     if (svr_resc_def == NULL)

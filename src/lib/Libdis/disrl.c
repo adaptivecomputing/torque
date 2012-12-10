@@ -103,7 +103,6 @@
 
 #include "dis.h"
 #include "lib_dis.h"
-#include "rpp.h"
 #include "tcp.h"
 
 /* to work around a problem in a compiler */

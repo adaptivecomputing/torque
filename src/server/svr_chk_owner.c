@@ -575,7 +575,7 @@ void chk_job_req_permissions(
 
     req_reject(PBSE_PERM, 0, preq, NULL, "operation not permitted");
 
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
 
     *pjob_ptr = NULL;
     }
@@ -608,7 +608,7 @@ void chk_job_req_permissions(
 
         req_reject(PBSE_BADSTATE, 0, preq, NULL, tmpLine);
 
-        unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
 
         *pjob_ptr = NULL;
 

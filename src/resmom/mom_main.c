@@ -63,7 +63,6 @@
 #include "../lib/Liblog/setup_env.h"
 #include "../lib/Libnet/lib_net.h" /* socket_avail_bytes_on_descriptor */
 #include "net_connect.h"
-#include "rpp.h"
 #include "dis.h"
 #include "dis_init.h"
 #include "resmon.h"
@@ -75,7 +74,6 @@
 #ifdef PENABLE_LINUX26_CPUSETS
 #include "pbs_cpuset.h"
 #endif
-#include "rpp.h"
 #include "threadpool.h"
 #include "mom_hierarchy.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_init */
@@ -228,7 +226,7 @@ int      is_login_node   = FALSE;
 
 /* externs */
 
-extern char *server_alias;
+char *server_alias = NULL;
 extern unsigned int pe_alarm_time;
 extern long     MaxConnectTimeout;
 
@@ -402,7 +400,6 @@ static unsigned long setapbasilprotocol(char *);
 static unsigned long setreportermom(char *);
 static unsigned long setloginnode(char *);
 static unsigned long setrejectjobsubmission(char *);
-unsigned long rppthrottle(char *value);
 
 static struct specials
   {
@@ -470,7 +467,6 @@ static struct specials
   { "memory_pressure_duration",     setmempressdur },
 #endif
   { "reduce_prolog_checks",         setreduceprologchecks},
-  { "rpp_throttle", rppthrottle },
   { "thread_unlink_calls", setthreadunlinkcalls },
   { "attempt_to_make_dir", setattempttomakedir },
   { "ext_pwd_retry",       setextpwdretry },
@@ -691,7 +687,7 @@ char *nullproc(
   struct rm_attribute *attrib)
 
   {
-  log_err(-1, __func__, "should not be called");
+  log_err(-1, __func__, (char *)"should not be called");
 
   return(NULL);
   }  /* END nullproc() */
@@ -963,7 +959,7 @@ static char *reqvarattr(
       {
       /* FAILURE - cannot alloc memory */
 
-      log_err(errno, __func__, "cannot alloc memory");
+      log_err(errno, __func__, (char *)"cannot alloc memory");
 
       return(" ");
       }
@@ -1002,7 +998,7 @@ static char *reqvarattr(
 
           if (list == NULL)
             {
-            log_err(errno, __func__, "cannot alloc memory");
+            log_err(errno, __func__, (char *)"cannot alloc memory");
 
             return(" ");
             }
@@ -1051,7 +1047,7 @@ static char *reqvarattr(
         if (len == -1)
           {
           /* FAILURE - cannot read var script output */
-          log_err(errno, __func__, "pipe read");
+          log_err(errno, __func__, (char *)"pipe read");
 
           sprintf(pva->va_value, "? %d",
             RM_ERR_SYSTEM);
@@ -1111,7 +1107,7 @@ static char *reqvarattr(
 
       if (list == NULL)
         {
-        log_err(errno, __func__, "cannot alloc memory");
+        log_err(errno, __func__, (char *)"cannot alloc memory");
 
         return(" ");
         }
@@ -1492,7 +1488,7 @@ void memcheck(
     return;
     }
 
-  log_err(-1, "memcheck", "memory allocation failed");
+  log_err(-1, "memcheck", (char *)"memory allocation failed");
 
   die(0);
 
@@ -1749,7 +1745,7 @@ static u_long settmpdir(
 
   if (*Value != '/')
     {
-    log_err(-1, __func__, "tmpdir must be a full path");
+    log_err(-1, __func__, (char *)"tmpdir must be a full path");
 
     return(0);
     }
@@ -1791,7 +1787,7 @@ static u_long setxauthpath(
 
   if (*Value != '/')
     {
-    log_err(-1, __func__, "xauthpath must be a full path");
+    log_err(-1, __func__, (char *)"xauthpath must be a full path");
 
     return(0);
     }
@@ -1815,7 +1811,7 @@ static u_long setrcpcmd(
 
   if (*Value != '/')
     {
-    log_err(-1, __func__, "rcpcmd must be a full path");
+    log_err(-1, __func__, (char *)"rcpcmd must be a full path");
 
     /* FAILURE */
 
@@ -1883,7 +1879,7 @@ static u_long restricted(
       {
       /* FAILURE - cannot alloc memory */
 
-      log_err(errno, __func__, "cannot alloc memory");
+      log_err(errno, __func__, (char *)"cannot alloc memory");
 
       return(-1);
       }
@@ -1897,7 +1893,7 @@ static u_long restricted(
     {
     /* FAILURE - cannot alloc memory */
 
-    log_err(errno, __func__, "cannot alloc memory");
+    log_err(errno, __func__, (char *)"cannot alloc memory");
 
     return(-1);
     }
@@ -1916,7 +1912,7 @@ static u_long restricted(
       {
       /* FAILURE - cannot alloc memory */
 
-      log_err(errno, __func__, "cannot alloc memory");
+      log_err(errno, __func__, (char *)"cannot alloc memory");
 
       return(-1);
       }
@@ -2304,7 +2300,7 @@ static unsigned long setpreexec(
   snprintf(PRE_EXEC, sizeof(PRE_EXEC), "%s", value);
 
 #if SHELL_USE_ARGV == 0
-  log_err(0, __func__, "pbs_mom not configured with enable-shell-user-argv option");
+  log_err(0, __func__, (char *)"pbs_mom not configured with enable-shell-user-argv option");
 #endif
 
   return(1);
@@ -2856,21 +2852,6 @@ static unsigned long setlogfilemaxsize(
   }
 
 
-unsigned long rppthrottle(
-
-  char *value)  /* I */
-
-  {
-  long rpp_throttle_time;
-  rpp_throttle_time = strtol(value, NULL, 10);
-  /* call into Libifl to tell it what the sleep time is */
-  set_rpp_throttle_sleep_time(rpp_throttle_time);
-
-  return(rpp_throttle_time);
-  }
-
-
-
 
 
 static unsigned long setlogfilerolldepth(
@@ -2972,7 +2953,7 @@ static u_long setvarattr(
     {
     /* FAILURE */
 
-    log_err(errno, __func__, "no memory");
+    log_err(errno, __func__, (char *)"no memory");
 
     return(0);
     }
@@ -3441,7 +3422,7 @@ void check_log(void)
 
     if (log_remove_old(path_log,(LOGKEEPDAYS * SECS_PER_DAY)) != 0)
       {
-      log_err(-1,"check_log","failure occurred when checking for old pbs_mom logs");
+      log_err(-1,"check_log", (char *)"failure occurred when checking for old pbs_mom logs");
       }
     }
 
@@ -4010,7 +3991,7 @@ char *conf_res(
   if (attr != NULL)
     {
     /* too many params */
-    log_err(-1, __func__, "too many params");
+    log_err(-1, __func__, (char *)"too many params");
 
     sprintf(ret_string, "? %d", RM_ERR_BADPARAM);
 
@@ -4068,7 +4049,7 @@ char *conf_res(
     if (!used[i])
       {
       /* parameter sent but not used */
-      log_err(-1, __func__, "unused parameters");
+      log_err(-1, __func__, (char *)"unused parameters");
 
       sprintf(ret_string, "? %d", RM_ERR_BADPARAM);
 
@@ -4083,7 +4064,7 @@ char *conf_res(
 
   if ((child = popen(ret_string, "r")) == NULL)
     {
-    log_err(errno, __func__, "popen");
+    log_err(errno, __func__, (char *)"popen");
 
     sprintf(ret_string, "? %d", RM_ERR_SYSTEM);
 
@@ -4129,7 +4110,7 @@ retryread:
       goto retryread;
       }
 
-    log_err(errno, __func__, "pipe read");
+    log_err(errno, __func__, (char *)"pipe read");
 
     sprintf(ret_string, "? %d", RM_ERR_SYSTEM);
 
@@ -4210,9 +4191,6 @@ static void catch_hup(
   log_record(PBSEVENT_SYSTEM, 0, "catch_hup", "reset");
 
   call_hup = 1;
-
-  rpp_dbprt = 1 - rpp_dbprt; /* toggle debug prints for RPP */
-
 
   return;
   }  /* END catch_hup() */
@@ -4488,11 +4466,7 @@ void cleanup_aux()
           }
         }
       }
-<<<<<<< HEAD
     closedir(auxdir);
-=======
-      closedir(auxdir);
->>>>>>> fix coverity issue
     }
   } /* END cleanup_aux() */
 
@@ -5349,7 +5323,7 @@ int rm_request(
 
         if (DIS_tcp_wflush(chan) == -1)
           {
-          log_err(errno, __func__, "flush");
+          log_err(errno, __func__, (char *)"flush");
 
           goto bad;
           }
@@ -5366,14 +5340,14 @@ int rm_request(
       if (MOMConfigRReconfig == FALSE)
         {
         log_err(-1, __func__,
-          "remote reconfiguration disabled, ignoring request");
+          (char *)"remote reconfiguration disabled, ignoring request");
 
         goto bad;
         }
 
       if (restrictrm)
         {
-        log_err(-1, __func__, "restricted configure attempt");
+        log_err(-1, __func__, (char *)"restricted configure attempt");
 
         goto bad;
         }
@@ -5450,7 +5424,7 @@ int rm_request(
 
       if (DIS_tcp_wflush(chan) == -1)
         {
-        log_err(errno, __func__, "flush");
+        log_err(errno, __func__, (char *)"flush");
 
         goto bad;
         }
@@ -5463,7 +5437,7 @@ int rm_request(
 
       if (restrictrm)
         {
-        log_err(-1, __func__, "restricted shutdown attempt");
+        log_err(-1, __func__, (char *)"restricted shutdown attempt");
 
         goto bad;
         }
@@ -5909,7 +5883,7 @@ int kill_job(
     {
     if (run_pelog(PE_EPILOGUSER, path_epilogpdel, pjob, PE_IO_TYPE_NULL) != 0)
       {
-      log_err(-1, __func__, "precancel epilog failed");
+      log_err(-1, __func__, (char *)"precancel epilog failed");
 
       sprintf(PBSNodeMsgBuf, "ERROR:  precancel epilog failed");
       }
@@ -7283,19 +7257,19 @@ int setup_program_environment(void)
   /* load system topology */
   if ((hwloc_topology_init(&topology) == -1))
     {
-    log_err(-1, msg_daemonname, "Unable to init machine topology");
+    log_err(-1, msg_daemonname, (char *)"Unable to init machine topology");
     return(-1);
     }
 
   if ((hwloc_topology_set_flags(topology, HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM) != 0))
     {
-    log_err(-1, msg_daemonname, "Unable to configure machine topology");
+    log_err(-1, msg_daemonname, (char *)"Unable to configure machine topology");
     return(-1);
     }
 
   if ((hwloc_topology_load(topology) == -1))
     {
-    log_err(-1, msg_daemonname, "Unable to load machine topology");
+    log_err(-1, msg_daemonname, (char *)"Unable to load machine topology");
     return(-1);
     }
 
@@ -7336,7 +7310,7 @@ int setup_program_environment(void)
 
     if (setsid() == -1)
       {
-      log_err(errno, msg_daemonname, "setsid failed");
+      log_err(errno, msg_daemonname, (char *)"setsid failed");
 
       return(2);
       }
@@ -7388,7 +7362,7 @@ int setup_program_environment(void)
 
   if (ftruncate(lockfds, (off_t)0) != 0)
     {
-    log_err(errno, msg_daemonname, "failed to truncate lockfile");
+    log_err(errno, msg_daemonname, (char *)"failed to truncate lockfile");
 
     return(2);
     }
@@ -7398,7 +7372,7 @@ int setup_program_environment(void)
   if (write(lockfds, log_buffer, strlen(log_buffer) + 1) !=
       (ssize_t)(strlen(log_buffer) + 1))
     {
-    log_err(errno, msg_daemonname, "failed to write to lockfile");
+    log_err(errno, msg_daemonname, (char *)"failed to write to lockfile");
 
     return(2);
     }
@@ -7410,7 +7384,7 @@ int setup_program_environment(void)
 
   if (plock(PROCLOCK) == -1)
     {
-    log_err(errno, msg_daemonname, "failed to lock mom into memory with plock");
+    log_err(errno, msg_daemonname, (char *)"failed to lock mom into memory with plock");
     }
   else
     {
@@ -7590,7 +7564,7 @@ int setup_program_environment(void)
 
   if (c == -1)
     {
-    log_err(-1, msg_daemonname, "Unable to get my host name");
+    log_err(-1, msg_daemonname, (char *)"Unable to get my host name");
 
     return(-1);
     }
@@ -7637,14 +7611,14 @@ int setup_program_environment(void)
   /* initialize machine-dependent polling routines */
   if ((c = mom_open_poll()) != PBSE_NONE)
     {
-    log_err(c, msg_daemonname, "pre_poll failed");
+    log_err(c, msg_daemonname, (char *)"pre_poll failed");
 
     return(3);
     }
 
   if (mom_get_sample() != PBSE_NONE)
     {
-    log_err(c, msg_daemonname, "mom_get_sample failed after mom_open_poll");
+    log_err(c, msg_daemonname, (char *)"mom_get_sample failed after mom_open_poll");
 
     return(3);
     }
@@ -7727,7 +7701,7 @@ int setup_program_environment(void)
   if ((received_statuses == NULL) ||
       (received_table == NULL))
     {
-    log_err(ENOMEM, __func__, "No memory!!!");
+    log_err(ENOMEM, __func__, (char *)"No memory!!!");
     return(-1);
     }
 
@@ -8437,7 +8411,7 @@ void main_loop(void)
     /* unblock signals */
 
     if (sigprocmask(SIG_UNBLOCK, &allsigs, NULL) == -1)
-      log_err(errno, __func__, "sigprocmask(UNBLOCK)");
+      log_err(errno, __func__, (char *)"sigprocmask(UNBLOCK)");
 
     time_now = time((time_t *)0);
 
@@ -8464,13 +8438,13 @@ void main_loop(void)
         init_network(pbs_rm_port, tcp_request);
         }
 
-      log_err(-1, msg_daemonname, "wait_request failed");
+      log_err(-1, msg_daemonname, (char *)"wait_request failed");
       }
 
     /* block signals while we do things */
 
     if (sigprocmask(SIG_BLOCK, &allsigs, NULL) == -1)
-      log_err(errno, __func__, "sigprocmask(BLOCK)");
+      log_err(errno, __func__, (char *)"sigprocmask(BLOCK)");
 
 
     if ((pjob = (job *)GET_NEXT(svr_alljobs)) == NULL)
@@ -8595,7 +8569,7 @@ int read_layout_file()
         /* Allocate temp nodeset */
         if ((nodeset = hwloc_bitmap_alloc()) == NULL)
           {
-          log_err(errno, __func__, "failed to allocate nodeset");
+          log_err(errno, __func__, (char *)"failed to allocate nodeset");
           return(-1);
           }
 
@@ -8641,7 +8615,7 @@ int read_layout_file()
         /* Store nodeset of node_boards[i], may be empty */
         if ((node_boards[i].nodeset = hwloc_bitmap_dup(nodeset)) == NULL)
           {
-          log_err(errno, __func__, "failed to duplicate nodeset");      
+          log_err(errno, __func__, (char *)"failed to duplicate nodeset");      
           return(-1);
           }
 
@@ -8716,7 +8690,7 @@ int setup_nodeboards()
   /* Read mom.layout, init nodesets */
   if ((rc = read_layout_file()) != PBSE_NONE)
     {
-    log_err(-1, __func__, "Could not read layout file!\n");
+    log_err(-1, __func__, (char *)"Could not read layout file!\n");
     
     exit(rc);
     } 
@@ -8731,7 +8705,7 @@ int setup_nodeboards()
     /* Allocate cpuset for this nodeboard */
     if ((node_boards[i].cpuset = hwloc_bitmap_alloc()) == NULL)
       {
-      log_err(errno, __func__, "failed to allocate cpuset");
+      log_err(errno, __func__, (char *)"failed to allocate cpuset");
 
       exit(-1);
       }
@@ -8778,7 +8752,7 @@ int setup_nodeboards()
       {
       if ((node_boards[i].path_meminfo = (char **)calloc(node_boards[i].num_nodes, sizeof(char *))) == NULL)
         {
-        log_err(errno, __func__, "failed to allocate memory");   
+        log_err(errno, __func__, (char *)"failed to allocate memory");   
         exit(-1);
         }
 
@@ -8787,7 +8761,7 @@ int setup_nodeboards()
         {
         if ((node_boards[i].path_meminfo[k] = (char *)calloc(1, mempath_len)) == NULL)
           {
-          log_err(errno, __func__, "failed to allocate memory");   
+          log_err(errno, __func__, (char *)"failed to allocate memory");   
           exit(-1);
           }
 
@@ -8948,7 +8922,7 @@ im_compose_info *create_compose_reply_info(
     ici->taskid  = taskid;
     }
   else
-    log_err(ENOMEM, __func__, "Cannot allocate memory!");
+    log_err(ENOMEM, __func__, (char *)"Cannot allocate memory!");
 
   return(ici);
   } /* END create_compose_reply_info() */

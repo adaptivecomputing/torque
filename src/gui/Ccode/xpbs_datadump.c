@@ -1186,8 +1186,7 @@ display_statserver(struct batch_status *status, int prtheader, int full, int nod
         }
 
       printf(format, name, max, tot, que, run, hld, wat, trn, ext, stats,
-
-             nod, p->name ? p->name : "");
+             nod, p->name ? p->name : (char *)"");
       }
 
     if (full) printf("\n");
@@ -1309,7 +1308,7 @@ int main(  /* qstat */
 
   struct attropl *select_list = 0;
 
-  static char destination[PBS_MAXQUEUENAME+1] = "";
+  static char destination[PBS_MAXQUEUENAME+1];
 
   char *server_name_out;
 
@@ -1324,6 +1323,9 @@ int main(  /* qstat */
   /* for a connection to the server */
 
   struct sigaction act;
+
+  destination[0] = '\0';
+
 
 #define GETOPT_ARGS "a:A:c:h:l:N:p:q:r:s:u:JTt:"
 

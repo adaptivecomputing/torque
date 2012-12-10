@@ -253,7 +253,12 @@ int main(
   #endif
   */
 
-  maxfd = sysconf(_SC_OPEN_MAX);
+  if((maxfd = sysconf(_SC_OPEN_MAX)) < 0)
+    {
+    perror("unexpected return from sysconf.");
+
+    exit(5);
+    }
 
   routem = (struct routem *)calloc(maxfd, sizeof(struct routem));
 

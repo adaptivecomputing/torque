@@ -197,9 +197,9 @@ int job_save(
   tmp_ptr = JOB_FILE_SUFFIX;
 #else
   if (pjob->ji_is_array_template == TRUE)
-    tmp_ptr = JOB_FILE_TMP_SUFFIX;
+    tmp_ptr = (char *)JOB_FILE_TMP_SUFFIX;
   else
-    tmp_ptr = JOB_FILE_SUFFIX;
+    tmp_ptr = (char *)JOB_FILE_SUFFIX;
 #endif
 
   if (mom_port)
@@ -259,7 +259,7 @@ int job_save(
 
         if (lseek(fds, (off_t)0, SEEK_SET) < 0)
           {
-          log_err(errno, "job_save", "lseek");
+          log_err(errno, "job_save", (char *)"lseek");
 
           close(fds);
 
@@ -270,7 +270,7 @@ int job_save(
         }
       else
         {
-        log_err(errno, "job_save", "quickwrite");
+        log_err(errno, "job_save", (char *)"quickwrite");
 
         close(fds);
 
@@ -306,7 +306,7 @@ int job_save(
 
     if (fds < 0)
       {
-      log_err(errno, "job_save", "open for full save");
+      log_err(errno, "job_save", (char *)"open for full save");
 
       return(-1);
       }
@@ -354,7 +354,7 @@ int job_save(
         {
         if (lseek(fds, (off_t)0, SEEK_SET) < 0)
           {
-          log_err(errno, "job_save", "full lseek");
+          log_err(errno, "job_save", (char *)"full lseek");
           }
         }
       else
@@ -383,7 +383,7 @@ int job_save(
           PBSEVENT_ERROR | PBSEVENT_SECURITY,
           PBS_EVENTCLASS_JOB,
           pjob->ji_qs.ji_jobid,
-          "Link in job_save failed");
+          (char *)"Link in job_save failed");
         }
       else
         {
@@ -450,7 +450,7 @@ job *job_recov(
     log_err(errno, __func__, log_buf);
 
 #ifndef PBS_MOM
-    unlock_ji_mutex(pj, __func__, "1", LOGLEVEL);
+    unlock_ji_mutex(pj, __func__, (char *)"1", LOGLEVEL);
     free(pj->ji_mutex);
 #endif
 
@@ -471,7 +471,7 @@ job *job_recov(
     log_err(errno, __func__, log_buf);
 
 #ifndef PBS_MOM
-    unlock_ji_mutex(pj, __func__, "2", LOGLEVEL);
+    unlock_ji_mutex(pj, __func__, (char *)"2", LOGLEVEL);
     free(pj->ji_mutex);
 #endif
 
@@ -500,7 +500,7 @@ job *job_recov(
       log_err(-1, __func__, log_buf);
 
 #ifndef PBS_MOM
-      unlock_ji_mutex(pj, __func__, "3", LOGLEVEL);
+      unlock_ji_mutex(pj, __func__, (char *)"3", LOGLEVEL);
       free(pj->ji_mutex);
 #endif
 
@@ -529,7 +529,7 @@ job *job_recov(
     log_err(-1, __func__, log_buf);
 
 #ifndef PBS_MOM
-    unlock_ji_mutex(pj, __func__, "4", LOGLEVEL);
+    unlock_ji_mutex(pj, __func__, (char *)"4", LOGLEVEL);
     free(pj->ji_mutex);
 #endif
 
@@ -556,7 +556,7 @@ job *job_recov(
     log_err(-1, __func__, log_buf);
 
 #ifndef PBS_MOM
-    unlock_ji_mutex(pj, __func__, "5", LOGLEVEL);
+    unlock_ji_mutex(pj, __func__, (char *)"5", LOGLEVEL);
     job_free(pj, FALSE);
 #else
     mom_job_free(pj);
@@ -612,7 +612,7 @@ job *job_recov(
     pa = get_array(parent_id);
     if (pa == NULL)
       {   
-      job_abt(&pj, "Array job missing array struct, aborting job");
+      job_abt(&pj, (char *)"Array job missing array struct, aborting job");
       close(fds);
       return NULL;
       }
@@ -643,7 +643,7 @@ job *job_recov(
 
     if (pa != NULL)
       {
-      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+      unlock_ai_mutex(pa, __func__, (char *)"1", LOGLEVEL);
       }
     }
 

@@ -241,7 +241,7 @@ dep_initialize(void)
 
   if ((pdir = opendir(procfs)) == NULL)
     {
-    log_err(errno, id, "opendir");
+    log_err(errno, id, (char *)"opendir");
     return;
     }
 
@@ -771,7 +771,7 @@ mom_open_poll(void)
 
   if (proc_info == NULL)
     {
-    log_err(errno, id, "calloc");
+    log_err(errno, id, (char *)"calloc");
     return (PBSE_SYSTEM);
     }
 
@@ -1200,7 +1200,7 @@ mom_close_poll(void)
     {
     if (closedir(pdir) != 0)
       {
-      log_err(errno, id, "closedir");
+      log_err(errno, id, (char *)"closedir");
       return (PBSE_SYSTEM);
       }
     }
@@ -1634,7 +1634,7 @@ sessions(struct rm_attribute *attrib)
 
   if ((jids = (pid_t *)calloc(maxjid, sizeof(pid_t))) == NULL)
     {
-    log_err(errno, id, "no memory");
+    log_err(errno, id, (char *)"no memory");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }
@@ -1676,7 +1676,7 @@ sessions(struct rm_attribute *attrib)
 
         if (hold == NULL)
           {
-          log_err(errno, id, "realloc");
+          log_err(errno, id, (char *)"realloc");
           rm_errno = RM_ERR_SYSTEM;
           free(jids);
           return NULL;
@@ -1818,14 +1818,14 @@ nusers(struct rm_attribute *attrib)
 
   if (attrib)
     {
-    log_err(-1, id, extra_parm);
+    log_err(-1, id, (char *)extra_parm);
     rm_errno = RM_ERR_BADPARAM;
     return NULL;
     }
 
   if ((uids = (uid_t *)calloc(maxuid, sizeof(uid_t))) == NULL)
     {
-    log_err(errno, id, "no memory");
+    log_err(errno, id, (char *)"no memory");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }
@@ -1861,7 +1861,7 @@ nusers(struct rm_attribute *attrib)
 
         if (hold == NULL)
           {
-          log_err(errno, id, "realloc");
+          log_err(errno, id, (char *)"realloc");
           rm_errno = RM_ERR_SYSTEM;
           free(uids);
           return NULL;
@@ -1952,7 +1952,7 @@ size_fs(char *param)
 
   if (statvfs(param, &fsbuf) == -1)
     {
-    log_err(errno, id, "statvfs");
+    log_err(errno, id, (char *)"statvfs");
     rm_errno = RM_ERR_BADPARAM;
     return NULL;
     }
@@ -1981,7 +1981,7 @@ size_file(char *param)
 
   if (stat(param, &sbuf) == -1)
     {
-    log_err(errno, id, "stat");
+    log_err(errno, id, (char *)"stat");
     rm_errno = RM_ERR_BADPARAM;
     return NULL;
     }
@@ -2060,7 +2060,7 @@ idletime(struct rm_attribute *attrib)
 
   if ((dp = opendir("/dev/pts")) == NULL)
     {
-    log_err(errno, id, "opendir /dev");
+    log_err(errno, id, (char *)"opendir /dev");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }
@@ -2137,7 +2137,7 @@ walltime(struct rm_attribute *attrib)
 
   if ((now = time(NULL)) <= 0)
     {
-    log_err(errno, id, "time");
+    log_err(errno, id, (char *)"time");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }
@@ -2189,7 +2189,7 @@ get_la(double *rv)
 
   if (getloadavg(la, 3) == -1)
     {
-    log_err(errno, id, "getloadavg");
+    log_err(errno, id, (char *)"getloadavg");
     return (rm_errno = RM_ERR_SYSTEM);
     }
 

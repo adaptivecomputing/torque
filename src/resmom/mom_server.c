@@ -219,7 +219,6 @@
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
 #include "net_connect.h"
-#include "rpp.h"
 #include "dis.h"
 #include "dis_init.h"
 #include "list_link.h"
@@ -238,6 +237,7 @@
 #include "mom_server_lib.h"
 #include "../lib/Libifl/lib_ifl.h" /* pbs_disconnect_socket */
 #include "alps_functions.h"
+#include "../lib/Libnet/lib_net.h" /* netaddr */
 
 #define MAX_RETRY_TIME_IN_SECS           (5 * 60)
 #define STARTING_RETRY_INTERVAL_IN_SECS   2
@@ -591,7 +591,8 @@ void mom_server_stream_error(
 
   log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
 
-  close(stream);
+  if(stream >= 0)
+    close(stream);
 
   return;
   }  /* END mom_server_stream_error() */
@@ -1342,7 +1343,7 @@ void node_comm_error(
  
   {
   snprintf(log_buffer,sizeof(log_buffer), "%s %s", message, nc->name);
-  log_err(-1,"Node communication process",log_buffer);
+  log_err(-1, (char *)"Node communication process",log_buffer);
   
   close(nc->stream);
   nc->stream = -1;
@@ -1559,7 +1560,7 @@ void mom_server_all_update_stat(void)
         }
 
       if (rc == COULD_NOT_CONTACT_SERVER)
-        log_err(-1, __func__, "Could not contact any of the servers to send an update");
+        log_err(-1, __func__, (char *)"Could not contact any of the servers to send an update");
       }
     else
       close(nc->stream);
@@ -3071,7 +3072,7 @@ int mom_open_socket_to_jobs_server(
       }
    
     /* Associate a message handler with the connection */
-    if (message_handler != NULL)
+    if ((message_handler != NULL)&&(sock >= 0))
       {
       add_conn(
         sock,

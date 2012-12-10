@@ -104,7 +104,7 @@ int set_resources(
   int            add)       /* I */
 
   {
-  static char  *gres_str = "gres";
+  static char  *gres_str = (char *)"gres";
   char         *r;
   char         *eq;
   char         *v;
@@ -288,10 +288,10 @@ int set_resources(
       if (!strncmp(r,"gpus",strlen("gpus")))
         {
         /* handle gpus specially */
-        char *gpu_suffix = "gpus:";
+        char *gpu_suffix = (char *)"gpus:";
         int   gpu_len = strlen(gpu_suffix) + 1 + (e - v);
 
-        str = calloc(1, gpu_len);
+        str = (char *)calloc(1, gpu_len);
         
         if (str == NULL)
           {

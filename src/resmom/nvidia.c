@@ -156,7 +156,7 @@ void log_nvml_error(
         log_err(
           PBSE_RMSYSTEM,
           id,
-          "Successful");
+          (char *)"Successful");
         }
       break;
     case NVML_ERROR_ALREADY_INITIALIZED:
@@ -165,7 +165,7 @@ void log_nvml_error(
         log_err(
           PBSE_RMSYSTEM,
           id,
-          "Already initialized");
+          (char *)"Already initialized");
         }
       break;
     case NVML_ERROR_NO_PERMISSION:
@@ -174,7 +174,7 @@ void log_nvml_error(
         log_err(
           PBSE_RMSYSTEM,
           id,
-          "No permission");
+          (char *)"No permission");
         }
       break;
     case NVML_ERROR_INVALID_ARGUMENT:
@@ -183,7 +183,7 @@ void log_nvml_error(
         log_err(
           PBSE_RMSYSTEM,
           id,
-          "NVML invalid argument");
+          (char *)"NVML invalid argument");
         }
       break;
     case NVML_ERROR_NOT_FOUND:
@@ -214,7 +214,7 @@ void log_nvml_error(
         log_err(
           PBSE_RMSYSTEM,
           id,
-          "Unknown error");
+          (char *)"Unknown error");
         }
       break;
     default:
@@ -350,7 +350,7 @@ static int check_nvidia_module_loaded()
       log_err(
         errno,
         id,
-        "Failed to read /proc/modules");
+        (char *)"Failed to read /proc/modules");
       }
     return(FALSE);
     }
@@ -374,7 +374,7 @@ static int check_nvidia_module_loaded()
     log_err(
       PBSE_RMSYSTEM,
       id,
-      "No Nvidia driver loaded");
+      (char *)"No Nvidia driver loaded");
     }
 
   fclose(file);
@@ -400,7 +400,7 @@ static int check_nvidia_version_file()
       log_err(
         PBSE_RMSYSTEM,
         id,
-        "No Nvidia driver info available. Driver not supported?");
+        (char *)"No Nvidia driver info available. Driver not supported?");
       }
     return(FALSE);
     }
@@ -1842,7 +1842,7 @@ void generate_server_gpustatus_smi(
         /* unknown driver version */
         if (LOGLEVEL >= 3)
           {
-          log_err(PBSE_RMSYSTEM, __func__, "Unknown Nvidia driver version");
+          log_err(PBSE_RMSYSTEM, __func__, (char *)"Unknown Nvidia driver version");
           }
         
         /* need to advance dataptr so we don't recycle through same gpu */

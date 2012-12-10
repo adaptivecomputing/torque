@@ -202,7 +202,7 @@ int  increment_queued_jobs(
     if ((index = insert_thing(uih->ui_ra, ui)) == -1)
       {
       rc = ENOMEM;
-      log_err(rc, __func__, "Can't resize the user info array");
+      log_err(rc, __func__, (char *)"Can't resize the user info array");
       }
     else
       {

@@ -324,7 +324,7 @@ int undo_set_euid_egid(
         (setegid(real_gid) != 0) ||
         (setgroups(num_gids,real_gids) != 0))
       {
-      log_err(errno,id,"Couldn't revert back to the root user - IMMINENT FAILURE but will try to continue\n");
+      log_err(errno,id, (char *)"Couldn't revert back to the root user - IMMINENT FAILURE but will try to continue\n");
       }
 
     return(-1);
@@ -457,7 +457,7 @@ int run_pelog(
   real_gid = getgid();
   if ((num_gids = getgroups(0, real_gids)) < 0)
     {
-    log_err(errno, __func__, "getgroups failed\n");
+    log_err(errno, __func__, (char *)"getgroups failed\n");
     
     return(-1);
     }
@@ -473,14 +473,14 @@ int run_pelog(
     
     if (real_gids == NULL)
       {
-      log_err(ENOMEM, __func__, "Cannot allocate memory! FAILURE\n");
+      log_err(ENOMEM, __func__, (char *)"Cannot allocate memory! FAILURE\n");
       
       return(-1);
       }
     
     if (getgroups(num_gids,real_gids) < 0)
       {
-      log_err(errno, __func__, "getgroups failed\n");
+      log_err(errno, __func__, (char *)"getgroups failed\n");
       free(real_gids);
       
       return(-1);
@@ -630,7 +630,7 @@ int run_pelog(
       {
       undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,__func__);
       free(real_gids);
-      return(pelog_err(pjob,pelog,-1,"permission Error"));
+      return(pelog_err(pjob,pelog,-1, (char *)"permission Error"));
       }
     }
   else
@@ -644,7 +644,7 @@ int run_pelog(
         {
         undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,__func__);
         free(real_gids);
-        return(pelog_err(pjob,pelog,-1,"permission Error"));
+        return(pelog_err(pjob,pelog,-1, (char *)"permission Error"));
         }
       }
     else if ((sbuf.st_uid != 0) ||
@@ -654,7 +654,7 @@ int run_pelog(
       {
       undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,__func__);
       free(real_gids);
-      return(pelog_err(pjob,pelog,-1,"permission Error"));
+      return(pelog_err(pjob,pelog,-1, (char *)"permission Error"));
       }
     
     if ((which == PE_PROLOGUSER) || (which == PE_EPILOGUSER))
@@ -665,7 +665,7 @@ int run_pelog(
         {
         undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,__func__);
         free(real_gids);
-        return(pelog_err(pjob, pelog, -1, "permission Error"));
+        return(pelog_err(pjob, pelog, -1,  (char *)"permission Error"));
         }
       }
     } /* END !reduceprologchecks */
@@ -676,7 +676,7 @@ int run_pelog(
     {
     undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,__func__);
     free(real_gids);
-    return(pelog_err(pjob, pelog, -2, "no pro/epilogue input file"));
+    return(pelog_err(pjob, pelog, -2,  (char *)"no pro/epilogue input file"));
     }
 
   run_exit = 0;
@@ -839,7 +839,7 @@ int run_pelog(
           fds2 = open_std_file(pjob, StdErr, O_WRONLY | O_APPEND,
                                pjob->ji_qs.ji_un.ji_momt.ji_exgid);
 
-          fds1 = dup(fds2);
+          fds1 = (fds2 < 0)?-1:dup(fds2);
 
           break;
 
@@ -848,7 +848,7 @@ int run_pelog(
           fds1 = open_std_file(pjob, StdOut, O_WRONLY | O_APPEND,
                                pjob->ji_qs.ji_un.ji_momt.ji_exgid);
 
-          fds2 = dup(fds1);
+          fds2 = (fds1 < 0)?-1:dup(fds1);
 
           break;
 
@@ -863,6 +863,9 @@ int run_pelog(
         }
       }
 
+    if((fds1 < 0)||(fds2 < 0))
+      return -1;
+
     if (pe_io_type != PE_IO_TYPE_ASIS)
       {
       /* If PE_IO_TYPE_ASIS, leave as is, already open to job */
@@ -871,18 +874,20 @@ int run_pelog(
         {
         close(1);
 
-        if (dup(fds1) == -1) {}
-
-        close(fds1);
+        if (dup(fds1) >= 0)
+          {
+          close(fds1);
+          }
         }
 
       if (fds2 != 2)
         {
         close(2);
 
-        if (dup(fds2) == -1) {}
-
-        close(fds2);
+        if (dup(fds2) >= 0)
+          {
+          close(fds2);
+          }
         }
       }
 
@@ -1289,25 +1294,25 @@ int run_pelog(
 
     case - 3:
 
-      pelog_err(pjob, pelog, run_exit, "child wait interrupted");
+      pelog_err(pjob, pelog, run_exit,  (char *)"child wait interrupted");
 
       break;
 
     case - 4:
 
-      pelog_err(pjob, pelog, run_exit, "prolog/epilog timeout occurred, child cleaned up");
+      pelog_err(pjob, pelog, run_exit,  (char *)"prolog/epilog timeout occurred, child cleaned up");
 
       break;
 
     case - 5:
 
-      pelog_err(pjob, pelog, run_exit, "prolog/epilog timeout occurred, cannot kill child");
+      pelog_err(pjob, pelog, run_exit, (char *) "prolog/epilog timeout occurred, cannot kill child");
 
       break;
 
     default:
 
-      pelog_err(pjob, pelog, run_exit, "nonzero p/e exit status");
+      pelog_err(pjob, pelog, run_exit,  (char *)"nonzero p/e exit status");
 
       break;
     }  /* END switch (run_exit) */

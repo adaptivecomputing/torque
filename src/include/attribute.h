@@ -440,7 +440,7 @@ extern void free_unkn(pbs_attribute *);
 extern int   parse_equal_string(char *, char **, char **);
 extern char *parse_comma_string(char *,char **);
 
-#define NULL_FUNC (int (*)())0
+#define NULL_FUNC '\0'
 
 /* other associated funtions */
 struct dynamic_string;

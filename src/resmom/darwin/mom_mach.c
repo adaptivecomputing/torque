@@ -2099,7 +2099,7 @@ char *sessions(
 
   if ((jids = (pid_t *)calloc(nproc, sizeof(pid_t))) == NULL)
     {
-    log_err(errno, id, "no memory");
+    log_err(errno, id, (char *)"no memory");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }
@@ -2296,7 +2296,7 @@ char *nusers(
 
   if ((uids = (uid_t *)calloc(nproc, sizeof(uid_t))) == NULL)
     {
-    log_err(errno, id, "no memory");
+    log_err(errno, id, (char *)"no memory");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }
@@ -2403,7 +2403,7 @@ static char *totmem(
     sprintf(log_buffer, "sysctl failed with errno %d",
             errno);
 
-    log_err(-1, id, "log_buffer");
+    log_err(-1, id, (char *)"log_buffer");
 
     return(NULL);
     }
@@ -2473,7 +2473,7 @@ static char *availmem(
     {
     sprintf(log_buffer, "sysctl failed with errno %d",
             errno);
-    log_err(-1, id, "log_buffer");
+    log_err(-1, id, (char *)"log_buffer");
     return(NULL);
     }
 
@@ -2488,7 +2488,7 @@ static char *availmem(
   if (host_statistics(mach_host_self(), HOST_VM_INFO, (host_info_t)&stat,
                       &count) != KERN_SUCCESS)
     {
-    log_err(-1, id, "host_statistics failed");
+    log_err(-1, id, (char *)"host_statistics failed");
     rm_errno = RM_ERR_SYSTEM;
     return(NULL);
     }
@@ -2625,7 +2625,7 @@ static char *physmem(
 
     if (sysctlbyname("hw.memsize", &physmem, &len, NULL, 0) < 0)
       {
-      log_err(errno, id, "sysctl");
+      log_err(errno, id, (char *)"sysctl");
 
       rm_errno = RM_ERR_SYSTEM;
 
@@ -2651,7 +2651,7 @@ static char *physmem(
 
     if (sysctl(mib, 2, &physmem, &len, NULL, 0) < 0)
       {
-      log_err(errno, id, "sysctl");
+      log_err(errno, id, (char *)"sysctl");
 
       rm_errno = RM_ERR_SYSTEM;
 
@@ -2693,7 +2693,7 @@ char *size_fs(
 
   if (statfs(param, &fsbuf) == -1)
     {
-    log_err(errno, id, "statfs");
+    log_err(errno, id, (char *)"statfs");
     rm_errno = RM_ERR_BADPARAM;
     return NULL;
     }
@@ -2729,7 +2729,7 @@ char *size_file(
 
   if (stat(param, &sbuf) == -1)
     {
-    log_err(errno, id, "stat");
+    log_err(errno, id, (char *)"stat");
     rm_errno = RM_ERR_BADPARAM;
     return NULL;
     }
@@ -2822,7 +2822,7 @@ idletime(struct rm_attribute *attrib)
 
   if ((dp = opendir("/dev")) == NULL)
     {
-    log_err(errno, id, "opendir /dev");
+    log_err(errno, id, (char *)"opendir /dev");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }
@@ -2903,7 +2903,7 @@ walltime(struct rm_attribute *attrib)
 
   if ((now = time(NULL)) <= 0)
     {
-    log_err(errno, id, "time");
+    log_err(errno, id, (char *)"time");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }
@@ -2967,7 +2967,7 @@ int get_la(
 
   if (sysctl(mib, 2, &la, &len, NULL, 0) < 0)
     {
-    log_err(errno, id, "sysctl(VM_LOADAVG)");
+    log_err(errno, id, (char *)"sysctl(VM_LOADAVG)");
     return (rm_errno = RM_ERR_SYSTEM);
     }
 
@@ -3101,7 +3101,7 @@ static char *quota(
 
   if (setfsent() == 0)
     {
-    log_err(errno, id, "setfsent");
+    log_err(errno, id, (char *)"setfsent");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }
@@ -3166,7 +3166,7 @@ static char *quota(
 
   if (quotactl(fs->fs_file, Q_GETQUOTA, uid, (char *)&qi) == -1)
     {
-    log_err(errno, id, "quotactl");
+    log_err(errno, id, (char *)"quotactl");
     rm_errno = RM_ERR_SYSTEM;
     return (NULL);
     }

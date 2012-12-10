@@ -392,7 +392,7 @@ int AVL_list_add_item(
 	if ((*max_len - *current_len) < 23)
     {
     *max_len = *max_len + 1024;
-    tmp_buf = calloc(1, *max_len + 1);
+    tmp_buf = (char *)calloc(1, *max_len + 1);
     if (tmp_buf == NULL)
       return PBSE_MEM_MALLOC;
     memcpy(tmp_buf, *r_buf, *current_len);

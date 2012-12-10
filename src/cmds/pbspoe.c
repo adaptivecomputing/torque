@@ -551,7 +551,7 @@ void run_command(
   char *argv[])
 
   {
-  int junk = 0;
+  int   junk = 0;
   int   i;
   char *psyscmd;
   int   syssz;
@@ -600,6 +600,10 @@ void run_command(
       }
 
     junk = system(psyscmd);
+    if (junk)
+      {
+      ;
+      }
 
     clean_up(0);
     }

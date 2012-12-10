@@ -190,7 +190,7 @@ int openrm(
     {
     if (gotport == 0)
       {
-      gotport = get_svrport(PBS_MANAGER_SERVICE_NAME, "tcp",
+      gotport = get_svrport((char *)PBS_MANAGER_SERVICE_NAME, (char *)"tcp",
                             PBS_MANAGER_SERVICE_PORT);
       }  /* END if (gotport == 0) */
 

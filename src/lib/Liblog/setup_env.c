@@ -150,7 +150,7 @@ int setup_env(
 
         if (evbufsize < len)
           {
-          if ((envbuf = calloc(1, PBS_ENV_CHUNCK)) == NULL)
+          if ((envbuf = (char *)calloc(1, PBS_ENV_CHUNCK)) == NULL)
             {
             fclose(efile);
 
@@ -223,7 +223,7 @@ int setup_env(
 
 err:
 
-  log_err(-1, "setup_env", "could not set up the environment");
+  log_err(-1, "setup_env", (char *)"could not set up the environment");
 
   return(-1);
   }  /* END setup_env() */

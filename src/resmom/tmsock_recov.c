@@ -83,28 +83,28 @@ int recov_tmsock(
 
   if (read(fds, (char *)&pjob->ji_stdout, sizeofint) != sizeofint)
     {
-    log_err(errno, id, "read");
+    log_err(errno, id, (char *)"read");
 
     return(1);
     }
 
   if (read(fds, (char *)&pjob->ji_stderr, sizeofint) != sizeofint)
     {
-    log_err(errno, id, "read");
+    log_err(errno, id, (char *)"read");
 
     return(1);
     }
 
   if (read(fds, (char *)&pjob->ji_taskid, sizeof(tm_task_id)) != sizeof(tm_task_id))
     {
-    log_err(errno, id, "read");
+    log_err(errno, id, (char *)"read");
 
     return(1);
     }
 
   if (read(fds, (char *)&pjob->ji_nodeid, sizeof(tm_node_id)) != sizeof(tm_node_id))
     {
-    log_err(errno, id, "read");
+    log_err(errno, id, (char *)"read");
 
     return(1);
     }

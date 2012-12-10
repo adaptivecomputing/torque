@@ -213,7 +213,6 @@ static void *work_thread(
   void *a)
 
   {
-  static char      *id = "work_thread";
 
   int               rc;
 
@@ -228,7 +227,7 @@ static void *work_thread(
 
   if (request_pool == NULL)
     {
-    log_err(-1,id,"Pool doesn't exist, and thread is active??\nTerminating");
+    log_err(-1,__func__,(char *) "Pool doesn't exist, and thread is active??\nTerminating");
     return(NULL);
     }
 

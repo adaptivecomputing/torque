@@ -108,7 +108,7 @@ int attempt_delete(
         change_restart_comment_if_needed(pjob);
         }
 
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
       }
     
     return(!skipped);
@@ -159,7 +159,7 @@ int attempt_delete(
       {
       pque->qu_numcompleted++;
 
-      unlock_queue(pque, __func__, NULL, LOGLEVEL);
+      unlock_queue(pque, __func__, (char *)NULL, LOGLEVEL);
       }
     
     if (pjob != NULL)
@@ -184,7 +184,7 @@ int attempt_delete(
     }
 
   if (release_mutex == TRUE)
-    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
 
   return(!skipped);
   } /* END attempt_delete() */
@@ -233,7 +233,7 @@ int req_deletearray(
 
     log_event(PBSEVENT_SECURITY,PBS_EVENTCLASS_JOB,preq->rq_ind.rq_delete.rq_objname,log_buf);
 
-    unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+    unlock_ai_mutex(pa, __func__, (char *)"1", LOGLEVEL);
 
     req_reject(PBSE_PERM, 0, preq, NULL, "operation not permitted");
     return(PBSE_NONE);
@@ -261,7 +261,7 @@ int req_deletearray(
     if (num_skipped < 0)
       {
       /* ERROR */
-      unlock_ai_mutex(pa, __func__, "2", LOGLEVEL);
+      unlock_ai_mutex(pa, __func__, (char *)"2", LOGLEVEL);
 
       req_reject(PBSE_IVALREQ,0,preq,NULL,"Error in specified array range");
       return(PBSE_NONE);
@@ -285,12 +285,12 @@ int req_deletearray(
 
   if (num_skipped != NO_JOBS_IN_ARRAY)
     {
-    unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+    unlock_ai_mutex(pa, __func__, (char *)"1", LOGLEVEL);
     
     /* check if the array is gone */
     if ((pa = get_array(preq->rq_ind.rq_delete.rq_objname)) != NULL)
       {
-      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+      unlock_ai_mutex(pa, __func__, (char *)"1", LOGLEVEL);
       
       /* some jobs were not deleted.  They must have been running or had
          JOB_SUBSTATE_TRANSIT */
@@ -389,7 +389,7 @@ void array_delete_wt(
             }
           set_task(WORK_Immed, 0, on_job_exit_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
           
-          unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+          unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
           }
         }
       else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)
@@ -400,7 +400,7 @@ void array_delete_wt(
         if (pjob != NULL)
           {
           /* job_abt() calls svr_job_purge which will try to lock the array again */
-          unlock_ai_mutex(pa, __func__, "3", LOGLEVEL);
+          unlock_ai_mutex(pa, __func__, (char *)"3", LOGLEVEL);
           job_abt(&pjob, NULL);
           pa = get_array(preq->rq_ind.rq_delete.rq_objname);
           }
@@ -408,14 +408,14 @@ void array_delete_wt(
       else
         {
         /* job_abt() calls svr_job_purge which will try to lock the array again */
-        unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+        unlock_ai_mutex(pa, __func__, (char *)"1", LOGLEVEL);
         job_abt(&pjob, NULL);
         pa = get_array(preq->rq_ind.rq_delete.rq_objname);
         }
       } /* END if (ji_substate == JOB_SUBSTATE_PRERUN) */
     } /* END for each job in array */
   
-  unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+  unlock_ai_mutex(pa, __func__, (char *)"1", LOGLEVEL);
   
   if (num_jobs == num_prerun)
     {

@@ -37,7 +37,7 @@ int memmgr_init(memmgr **mgr, int mgr_size)
       mm->alloc_size = MEMMGR_DEFAULT_SIZE;
     else
       mm->alloc_size = mgr_size;
-    mm->the_mem = calloc_track(1, mm->alloc_size);
+    mm->the_mem = (unsigned char *)calloc_track(1, mm->alloc_size);
     if (mm->the_mem == NULL)
       rc = -2;
     else
@@ -252,7 +252,7 @@ void *memmgr_realloc(memmgr **mgr, void *ptr, int new_size)
         /* as it's the only thing, realloc the current block */
         if ((tmp = realloc(mm->the_mem, new_alloc)) != NULL)
           {
-          mm->the_mem = tmp;
+          mm->the_mem = (unsigned char *)tmp;
           memset(mm->the_mem + mm->alloc_size, 0, new_alloc - mm->alloc_size);
           res_mem = mm->the_mem + sizeof(int);
           mm->alloc_size =  new_alloc;

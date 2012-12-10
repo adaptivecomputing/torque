@@ -243,7 +243,7 @@ int check_dependency_job(
     rc = PBSE_BADSTATE;
     req_reject(rc, 0, preq, NULL, NULL);
 
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
     
     return(rc);
     }
@@ -807,7 +807,7 @@ int req_register(
     }
 
   if (pjob != NULL)
-    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
 
   return(rc);
   }  /* END req_register() */
@@ -924,7 +924,7 @@ int req_registerarray(
 
   if (type < JOB_DEPEND_TYPE_AFTERSTARTARRAY)
     {
-    unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+    unlock_ai_mutex(pa, __func__, (char *)"1", LOGLEVEL);
     rc = PBSE_IVALREQ;
     req_reject(rc,0,preq,NULL,
       "Arrays may only be given array dependencies");
@@ -958,7 +958,7 @@ int req_registerarray(
       break;
     } /* END switch (preq->rq_ind.rq_register.rq_op */
 
-  unlock_ai_mutex(pa, __func__, "2", LOGLEVEL);
+  unlock_ai_mutex(pa, __func__, (char *)"2", LOGLEVEL);
 
   return(rc);
   } /* END req_registerarray() */
@@ -1164,7 +1164,7 @@ void set_array_depend_holds(
           set_depend_hold(pjob, &pjob->ji_wattr[JOB_ATR_depend]);
           }
 
-        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
         }
 
       pdj = (struct array_depend_job *)GET_NEXT(pdj->dc_link);
@@ -1240,7 +1240,7 @@ void post_doq(
 
         set_depend_hold(pjob, pattr);
 
-        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
         }
       }
     }
@@ -1275,7 +1275,7 @@ void alter_unreg(
   char               job_id[PBS_MAXSVRJOBID+1];
 
   strcpy(job_id, pjob->ji_qs.ji_jobid);
-  unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+  unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
   pjob = NULL;
 
   for (poldd = (struct depend *)GET_NEXT(old->at_val.at_list);
@@ -1343,7 +1343,7 @@ int depend_on_que(
     {
     if (pjob == NULL)
       {
-      log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 8");
+      log_err(PBSE_JOBNOTFOUND, __func__, (char *)"Job lost while acquiring queue 8");
       return(PBSE_JOBNOTFOUND);
       }
     else
@@ -1353,11 +1353,11 @@ int depend_on_que(
             (mode != ATR_ACTION_NOOP)) ||
            (pque->qu_qs.qu_type != QTYPE_Execution))
     {
-    unlock_queue(pque, __func__, NULL, LOGLEVEL);
+    unlock_queue(pque, __func__, (char *)NULL, LOGLEVEL);
     return(PBSE_NONE);
     }
   else
-    unlock_queue(pque, __func__, NULL, LOGLEVEL);
+    unlock_queue(pque, __func__, (char *)NULL, LOGLEVEL);
 
   if (mode == ATR_ACTION_ALTER)
     {
@@ -1370,7 +1370,7 @@ int depend_on_que(
 
   /* First set a System hold if required */
 
-  unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+  unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
   set_depend_hold(pjob, pattr);
 /*  if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
     return PBSE_JOBNOTFOUND;*/
@@ -1468,7 +1468,7 @@ void post_doe(
         }
       }
     
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
     }
 
   free_br(preq);
@@ -1721,7 +1721,7 @@ int depend_on_term(
     } /* END loop over each dependency */
 
   if (!job_unlocked)
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
 
   return(0);
   }  /* END depend_on_term() */
@@ -1873,7 +1873,7 @@ void set_depend_hold(
             }
 
           if (djp != NULL)
-            unlock_ji_mutex(djp, __func__, "1", LOGLEVEL);
+            unlock_ji_mutex(djp, __func__, (char *)"1", LOGLEVEL);
           }
 
         break;
@@ -2321,7 +2321,7 @@ int send_depend_req(
   if (preq == NULL)
     {
     log_err(errno, __func__, msg_err_malloc);
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
     return(PBSE_SYSTEM);
     }
 
@@ -2329,7 +2329,7 @@ int send_depend_req(
     {
     if (pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str == NULL)
       {
-      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
       free_br(preq);
       return(PBSE_BADATVAL);
       }
@@ -2379,7 +2379,7 @@ int send_depend_req(
 
   /* save jobid and unlock mutex */
   strcpy(job_id, pjob->ji_qs.ji_jobid);
-  unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+  unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
 
   get_batch_request_id(preq);
   strcpy(br_id, preq->rq_id);

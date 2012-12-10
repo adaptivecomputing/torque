@@ -974,7 +974,7 @@ void mgr_queue_create(
 
   if ((pque = find_queuebyname(preq->rq_ind.rq_manager.rq_objname)))
     {
-    unlock_queue(pque, "mgr_queue_create", "fail", LOGLEVEL);
+    unlock_queue(pque, "mgr_queue_create", (char *)"fail", LOGLEVEL);
     req_reject(PBSE_QUEEXIST, 0, preq, NULL, NULL);
     return;
     }
@@ -1031,7 +1031,7 @@ void mgr_queue_create(
       reply_ack(preq);
       }
 
-    unlock_queue(pque, "mgr_queue_create", "success", LOGLEVEL);
+    unlock_queue(pque, "mgr_queue_create", (char *)"success", LOGLEVEL);
     }
 
   return;
@@ -1070,7 +1070,7 @@ void mgr_queue_delete(
   if ((rc = que_purge(pque)) != PBSE_NONE)
     {
     /* FAILURE */
-    unlock_queue(pque, __func__, "", LOGLEVEL);
+    unlock_queue(pque, __func__, (char *)"", LOGLEVEL);
     req_reject(rc, 0, preq, NULL, NULL);
     return;
     }
@@ -1468,7 +1468,7 @@ void mgr_queue_set(
 
     if (rc != 0)
       {
-      unlock_queue(pque, "mgr_queue_set", "fail badattr", LOGLEVEL);
+      unlock_queue(pque, "mgr_queue_set", (char *)"fail badattr", LOGLEVEL);
       reply_badattr(rc, bad, plist, preq);
       return;
       }
@@ -1480,7 +1480,7 @@ void mgr_queue_set(
     if (allques == FALSE)
       break;
     
-    unlock_queue(pque, "mgr_queue_set", "before next_queue call", LOGLEVEL);
+    unlock_queue(pque, "mgr_queue_set", (char *)"before next_queue call", LOGLEVEL);
 
     pque = next_queue(&svr_queues,&iter);
     }  /* END while (pque != NULL) */
@@ -1496,12 +1496,12 @@ void mgr_queue_set(
     if ((badattr = check_que_attr(pque)) != NULL)
       {
       sprintf(log_buf, msg_attrtype, pque->qu_qs.qu_name, badattr);
-      unlock_queue(pque, "mgr_queue_set", "attrtype", LOGLEVEL);
+      unlock_queue(pque, "mgr_queue_set", (char *)"attrtype", LOGLEVEL);
       reply_text(preq, PBSE_ATTRTYPE, log_buf);
       return;
       }
 
-    unlock_queue(pque, "mgr_queue_set", "last loop before next_queue", LOGLEVEL);
+    unlock_queue(pque, "mgr_queue_set", (char *)"last loop before next_queue", LOGLEVEL);
 
     if (allques == FALSE)
       break;
@@ -1577,7 +1577,7 @@ void mgr_queue_unset(
 
     if (rc != 0)
       {
-      unlock_queue(pque, "mgr_queue_unset", "badattr", LOGLEVEL);
+      unlock_queue(pque, "mgr_queue_unset", (char *)"badattr", LOGLEVEL);
       reply_badattr(rc, bad_attr, plist, preq);
       return;
       }
@@ -1589,7 +1589,7 @@ void mgr_queue_unset(
     if ((pque->qu_attr[QA_ATR_QType].at_flags & ATR_VFLAG_SET) == 0)
       pque->qu_qs.qu_type = QTYPE_Unset;
 
-    unlock_queue(pque, "mgr_queue_unset", "success", LOGLEVEL);
+    unlock_queue(pque, "mgr_queue_unset", (char *)"success", LOGLEVEL);
     if (allques == FALSE)
       break;
     
@@ -2401,7 +2401,7 @@ int extra_resc_chk(
   {
   /* Is there anything to validate?  Maybe check for all alphanum? */
   /* the new resource is at pattr->at_val.at_str */
-  set_task(WORK_Immed, 0, on_extra_resc, NULL, FALSE);
+  set_task(WORK_Immed, 0, on_extra_resc, (char *)NULL, FALSE);
 
   return(TRUE);
   }
@@ -2415,7 +2415,7 @@ void free_extraresc(
   pbs_attribute *attr)
 
   {
-  set_task(WORK_Immed, 0, on_extra_resc, NULL, FALSE);
+  set_task(WORK_Immed, 0, on_extra_resc, (char *)NULL, FALSE);
 
   free_arst(attr);
   }

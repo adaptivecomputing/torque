@@ -153,12 +153,12 @@ static struct node_state
   } ns[] =
 
   {
-    {INUSE_UNKNOWN, ND_state_unknown},
-    {INUSE_DOWN,    ND_down},
-    {INUSE_OFFLINE, ND_offline},
-    {INUSE_RESERVE, ND_reserve},
-    {INUSE_JOB,     ND_job_exclusive},
-    {INUSE_BUSY,    ND_busy},
+    {INUSE_UNKNOWN, (char *)ND_state_unknown},
+    {INUSE_DOWN,    (char *)ND_down},
+    {INUSE_OFFLINE, (char *)ND_offline},
+    {INUSE_RESERVE, (char *)ND_reserve},
+    {INUSE_JOB,     (char *)ND_job_exclusive},
+    {INUSE_BUSY,    (char *)ND_busy},
     {0,             NULL}
   };
 

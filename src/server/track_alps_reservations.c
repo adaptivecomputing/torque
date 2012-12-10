@@ -254,7 +254,7 @@ int is_orphaned(
       if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
         orphaned = TRUE;
 
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
       }
     else
       orphaned = TRUE;

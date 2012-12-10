@@ -1523,7 +1523,7 @@ sessions(struct rm_attribute *attrib)
 
   if ((jids = (pid_t *)calloc(maxjid, sizeof(pid_t))) == NULL)
     {
-    log_err(errno, id, "no memory");
+    log_err(errno, id, (char *)"no memory");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }
@@ -1565,7 +1565,7 @@ sessions(struct rm_attribute *attrib)
 
         if (hold == NULL)
           {
-          log_err(errno, id, "realloc");
+          log_err(errno, id, (char *)"realloc");
           rm_errno = RM_ERR_SYSTEM;
           free(jids);
           return NULL;
@@ -1716,7 +1716,7 @@ nusers(struct rm_attribute *attrib)
 
   if ((uids = (uid_t *)calloc(maxuid, sizeof(uid_t))) == NULL)
     {
-    log_err(errno, id, "no memory");
+    log_err(errno, id, (char *)"no memory");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }
@@ -1752,7 +1752,7 @@ nusers(struct rm_attribute *attrib)
 
         if (hold == NULL)
           {
-          log_err(errno, id, "realloc");
+          log_err(errno, id, (char *)"realloc");
           rm_errno = RM_ERR_SYSTEM;
           free(uids);
           return NULL;
@@ -1975,7 +1975,7 @@ char *size_fs(
 
   if (statvfs(param, &fsbuf) == -1)
     {
-    log_err(errno, id, "statvfs");
+    log_err(errno, id, (char *)"statvfs");
 
     rm_errno = RM_ERR_BADPARAM;
 
@@ -2018,7 +2018,7 @@ char *size_file(
 
   if (stat(param, &sbuf) == -1)
     {
-    log_err(errno, id, "stat");
+    log_err(errno, id, (char *)"stat");
 
     rm_errno = RM_ERR_BADPARAM;
 
@@ -2102,14 +2102,14 @@ char *idletime(
 
   if (attrib)
     {
-    log_err(-1, id, extra_parm);
+    log_err(-1, id, (char *)extra_parm);
     rm_errno = RM_ERR_BADPARAM;
     return NULL;
     }
 
   if ((dp = opendir("/dev/pts")) == NULL)
     {
-    log_err(errno, id, "opendir /dev");
+    log_err(errno, id, (char *)"opendir /dev");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }
@@ -2190,7 +2190,7 @@ walltime(struct rm_attribute *attrib)
 
   if ((now = time(NULL)) <= 0)
     {
-    log_err(errno, id, "time");
+    log_err(errno, id, (char *)"time");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }
