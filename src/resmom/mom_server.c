@@ -1800,12 +1800,19 @@ void mom_server_update_receive_time(
   time_now = time(NULL);
 
   getpeername(stream,&addr,&len);
-  ipaddr = ntohl(((struct sockaddr_in *)&addr)->sin_addr.s_addr);
-   
-  if ((pms = mom_server_find_by_ip(ipaddr)) != NULL)
+  if (getpeername(stream,&addr,&len) != 0)
     {
-    pms->MOMLastRecvFromServerTime = time_now;
-    strcpy(pms->MOMLastRecvFromServerCmd, command_name);
+    log_err(errno, __func__, "Calling getpeername() gave error.");
+    }
+  else
+    {
+    ipaddr = ntohl(((struct sockaddr_in *)&addr)->sin_addr.s_addr);
+   
+    if ((pms = mom_server_find_by_ip(ipaddr)) != NULL)
+      {
+      pms->MOMLastRecvFromServerTime = time_now;
+      strcpy(pms->MOMLastRecvFromServerCmd, command_name);
+      }
     }
   } /* END mom_server_update_receive_time() */
 
