@@ -114,6 +114,7 @@
 #include "svr_connect.h" /* svr_disconnect_sock */
 #include "node_manager.h" /* tfind_addr */
 #include "ji_mutex.h"
+#include "svr_task.h"
 
 
 /* Global Data Items: */
