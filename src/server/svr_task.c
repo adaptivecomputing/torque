@@ -148,7 +148,7 @@ struct work_task *set_task(
 
   enum work_type   type,
   long             event_id,  /* I - based on type can be time of event */
-  void           (*func)(work_task *),
+  void           (*func)(struct work_task *),
   void            *parm,
   int              get_lock)
 
