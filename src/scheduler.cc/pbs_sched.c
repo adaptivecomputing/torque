@@ -122,7 +122,6 @@
 #include "sched_cmds.h"
 #include "server_limits.h"
 #include "net_connect.h"
-#include "rpp.h"
 #include "rm.h"
 #include "libpbs.h"
 

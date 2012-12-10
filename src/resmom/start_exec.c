@@ -94,7 +94,6 @@
   #include <st_client.h>
 #endif /* IBM SP */
 
-#include "rpp.h"
 #include "libpbs.h"
 #include "portability.h"
 #include "list_link.h"

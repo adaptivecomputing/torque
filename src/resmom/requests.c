@@ -110,7 +110,6 @@
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
 #include "checkpoint.h" /* start_checkpoint */
-#include "rpp.h"
 #include "resmon.h"
 #include "net_connect.h"
 #include "utils.h"

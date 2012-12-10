@@ -112,7 +112,6 @@
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
 #include "net_connect.h"
-#include "rpp.h"
 #include "dis.h"
 #include "dis_init.h"
 #include "mom_func.h"
