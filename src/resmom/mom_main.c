@@ -63,7 +63,6 @@
 #include "../lib/Liblog/setup_env.h"
 #include "../lib/Libnet/lib_net.h" /* socket_avail_bytes_on_descriptor */
 #include "net_connect.h"
-#include "rpp.h"
 #include "dis.h"
 #include "dis_init.h"
 #include "resmon.h"
@@ -75,7 +74,6 @@
 #ifdef PENABLE_LINUX26_CPUSETS
 #include "pbs_cpuset.h"
 #endif
-#include "rpp.h"
 #include "threadpool.h"
 #include "mom_hierarchy.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_init */

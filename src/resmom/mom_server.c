@@ -219,7 +219,6 @@
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
 #include "net_connect.h"
-#include "rpp.h"
 #include "dis.h"
 #include "dis_init.h"
 #include "list_link.h"
@@ -238,6 +237,7 @@
 #include "mom_server_lib.h"
 #include "../lib/Libifl/lib_ifl.h" /* pbs_disconnect_socket */
 #include "alps_functions.h"
+#include "../lib/Libnet/lib_net.h" /* netaddr */
 
 #define MAX_RETRY_TIME_IN_SECS           (5 * 60)
 #define STARTING_RETRY_INTERVAL_IN_SECS   2

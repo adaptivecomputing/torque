@@ -111,7 +111,6 @@
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
 #include "pbs_nodes.h"
-#include "rpp.h"
 #include "dis.h"
 #include "dis_init.h"
 #include "resmon.h"

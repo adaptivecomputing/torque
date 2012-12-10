@@ -120,7 +120,6 @@
 #include "tracking.h"
 #include "acct.h"
 #include "sched_cmds.h"
-#include "rpp.h"
 #include "dis.h"
 #include "dis_init.h"
 #include "batch_request.h"

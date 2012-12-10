@@ -118,7 +118,6 @@
 #include "af_que.h"
 #include "af_cnodemap.h"
 #include "af_resmom.h"
-#include "rpp.h"
 #include "dis.h"
 /* Macros */
 #ifndef OPEN_MAX

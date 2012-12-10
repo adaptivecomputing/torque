@@ -108,7 +108,6 @@
 #include "tracking.h"
 #include "svrfunc.h"
 #include "acct.h"
-#include "rpp.h"
 #include "net_connect.h"
 #include "pbs_proto.h"
 #include "batch_request.h"

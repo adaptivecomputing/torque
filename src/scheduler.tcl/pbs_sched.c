@@ -122,7 +122,6 @@
 #include "resmon.h"
 #include "sched_cmds.h"
 #include "net_connect.h"
-#include "rpp.h"
 #include "rm.h"
 
 

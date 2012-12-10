@@ -113,3 +113,5 @@ int flushreq(void);
 int activereq(void);
 void fullresp(int flag);
 
+char * netaddr_long(long ap, char *out);
+char * netaddr(struct sockaddr_in *ap);
