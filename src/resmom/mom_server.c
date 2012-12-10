@@ -1799,7 +1799,6 @@ void mom_server_update_receive_time(
 
   time_now = time(NULL);
 
-  getpeername(stream,&addr,&len);
   if (getpeername(stream,&addr,&len) != 0)
     {
     log_err(errno, __func__, "Calling getpeername() gave error.");
