@@ -267,7 +267,7 @@ int local_move(
 
   {
   pbs_queue *routing_que;
-  pbs_queue *dest_que;
+  pbs_queue *dest_que = NULL;
   pbs_queue *tmp_que;
   char      *destination = pjob->ji_qs.ji_destin;
   int        mtype;
