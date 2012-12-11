@@ -1432,7 +1432,11 @@ int check_ms(
   hnodent            *np;
   unsigned long       ipaddr_ms;
  
-  getpeername(chan->sock,&s_addr,&len);
+  if (getpeername(chan->sock,&s_addr,&len) != 0)
+    {
+    log_err(errno, __func__, "Calling getpeername() gave error.");
+    return(TRUE);
+    }
   addr = (struct sockaddr_in *)&s_addr;
   ipaddr_connect = ntohl(addr->sin_addr.s_addr);
 
@@ -4194,8 +4198,10 @@ int handle_im_get_resc_response(
     tm_reply(ptask->ti_chan, TM_OKAY, event);
     
     diswst(ptask->ti_chan, info);
-    
-    DIS_tcp_wflush(ptask->ti_chan);
+    if ((ret = diswst(ptask->ti_chan, info)) == DIS_SUCCESS)
+      {
+      DIS_tcp_wflush(ptask->ti_chan);
+      }
     }
 
   free(info);
@@ -4603,7 +4609,12 @@ void im_request(
     }
 
   /* check that machine is known */  
-  getpeername(chan->sock,&stack_addr,&addr_len);
+  if (getpeername(chan->sock,&stack_addr,&addr_len) != 0)
+    {
+    log_err(errno, __func__, "Calling getpeername() gave error.");
+    goto im_req_finish;
+    }
+
   addr = (struct sockaddr_in *)&stack_addr;
   
   ipaddr = ntohl(addr->sin_addr.s_addr);

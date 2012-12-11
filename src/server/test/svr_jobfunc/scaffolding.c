@@ -301,3 +301,12 @@ int decrement_queued_jobs(
   {
   return(0);
   }
+
+int get_jobs_index(
+
+  struct all_jobs *aj,
+  job             *pjob)
+
+  {
+  return(0);
+  }
