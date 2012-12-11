@@ -258,7 +258,7 @@ int mom_checkpoint_init(void)
     
     if ((stat(path_checkpoint, &sb) == 0) && ((sb.st_mode & 01777) != 01777)) 
       {
-      chmod(path_checkpoint, 01777);
+      (void)chmod(path_checkpoint, 01777);
       }
     }
 

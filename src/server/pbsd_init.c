@@ -561,13 +561,20 @@ void check_if_in_nodes_file(
 
     if ((sai = get_cached_addrinfo(hostname)) == NULL)
       {
-      getaddrinfo(hostname, NULL, NULL, &addr_info);
-      sai = (struct sockaddr_in *)addr_info->ai_addr;
-      ipaddr = ntohl(sai->sin_addr.s_addr);
+      if (getaddrinfo(hostname, NULL, NULL, &addr_info) == 0)
+        {
+        sai = (struct sockaddr_in *)addr_info->ai_addr;
+        ipaddr = ntohl(sai->sin_addr.s_addr);
 
-      insert_addr_name_info(hostname, addr_info->ai_canonname, sai);
+        insert_addr_name_info(hostname, addr_info->ai_canonname, sai);
 
-      freeaddrinfo(addr_info);
+        freeaddrinfo(addr_info);
+        }
+      else
+        {
+          log_err(errno, __func__, "getaddrinfo failed");
+          return;
+        }
       }
     else
       ipaddr = ntohl(sai->sin_addr.s_addr);
@@ -1181,7 +1188,10 @@ int initialize_paths()
 
 	if ((statbuf.st_mode && 01777) != 01777) 
 	  {
-    chmod(path_checkpoint, 01777);
+          if (chmod(path_checkpoint, 01777) != 0)
+            {
+            log_err(errno, __func__, "can't chmod 01777 checkpoint");
+            }
 	  }
 #endif
 

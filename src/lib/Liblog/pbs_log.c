@@ -497,7 +497,7 @@ void log_err(
 
   int         errnum,  /* I (errno or PBSErrno) */
   const char *routine, /* I */
-  char       *text)    /* I */
+  const char *text)    /* I */
 
   {
   log_ext(errnum,routine,text,LOG_ERR);
@@ -525,7 +525,7 @@ void log_ext(
 
   int         errnum,   /* I (errno or PBSErrno) */
   const char *routine,  /* I */
-  char       *text,     /* I */
+  const char *text,     /* I */
   int         severity) /* I */
 
   {
@@ -756,7 +756,7 @@ void log_record(
   int         eventtype,  /* I */
   int         objclass,   /* I */
   const char *objname,    /* I */
-  char       *text)       /* I */
+  const char *text)       /* I */
 
   {
   int tryagain = 2;
@@ -811,7 +811,7 @@ void log_record(
    * Looking for the newline characters and splitting the output message
    * on them.  Sequence "\r\n" is mapped to the single newline.
    */
-  start = text;
+  start = (char *)text;
 
   while (1)
     {

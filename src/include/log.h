@@ -162,7 +162,7 @@ extern int   chk_file_sec_stderr;
 /* extern void log_close (int); */
 /* extern void job_log_close (int); */
 void log_err (int, const char *, const char *);
-void log_ext (int, const char *,const char *,int);
+void log_ext (int, const char *, const char *,int);
 void log_event (int, int, const char *, const char *);
 /* extern int  log_open (char *, char *); */
 /* extern int  job_log_open (char *, char *); */

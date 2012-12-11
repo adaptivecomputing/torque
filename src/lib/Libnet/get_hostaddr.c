@@ -134,7 +134,7 @@ char * netaddr(struct sockaddr_in *ap)
   char tmp[80];
 
   if (ap == NULL)
-    return "unknown";
+    return (char *)"unknown";
 
   netaddr_long( ntohl(ap->sin_addr.s_addr), tmp);
 

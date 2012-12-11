@@ -3286,10 +3286,14 @@ void setup_interactive_job(
       shutdown(*qsub_sock_ptr, 2);
       
       /* change pty back to available after job is done */
-      chmod((char *)TJE->ptc_name, 0666);
+      if (chmod((char *)TJE->ptc_name, 0666) != 0)
+        {
+          log_err(errno, __func__, "can't chmod 0666 to change pty back to available");
+        }
       
       if (chown(TJE->ptc_name, 0, 0) == -1)
         {
+          log_err(errno, __func__, "can't chown pty");
         }
       
       exit(0);
@@ -3301,10 +3305,14 @@ void setup_interactive_job(
     log_err(errno, __func__, (char *)"cannot fork nanny");
     
     /* change pty back to available */
-    chmod(TJE->ptc_name, 0666);
+    if (chmod(TJE->ptc_name, 0666) != 0)
+      {
+        log_err(errno, __func__, "can't chmod 0666 to change pty back to available");
+      }
     
     if (chown(TJE->ptc_name, 0, 0) == -1)
       {
+        log_err(errno, __func__, "can't chown ptc");
       }
     
     starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, sjr);

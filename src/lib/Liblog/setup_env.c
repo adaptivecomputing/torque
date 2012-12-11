@@ -106,7 +106,7 @@ extern char **environ;
 
 int setup_env(
 
-  char *filen)
+  const char *filen)
 
   {
   char         buf[256];
