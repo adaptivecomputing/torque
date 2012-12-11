@@ -140,6 +140,7 @@
 #include "ji_mutex.h"
 #include "user_info.h"
 #include "svr_jobfunc.h"
+#include "svr_task.h"
 
 #define MSG_LEN_LONG 160
 
@@ -2845,7 +2846,7 @@ int lock_ji_mutex(
 
   job        *pjob,
   const char *id,
-  char       *msg,
+  const char *msg,
   int        logging)
 
   {
@@ -2885,7 +2886,7 @@ int unlock_ji_mutex(
 
   job        *pjob,
   const char *id,
-  char       *msg,
+  const char *msg,
   int        logging)
   {
   int rc = PBSE_NONE;
@@ -2923,7 +2924,7 @@ int lock_ai_mutex(
 
   job_array  *pa,
   const char *id,
-  char       *msg,
+  const char *msg,
   int        logging)
 
   {
@@ -2962,7 +2963,7 @@ int unlock_ai_mutex(
 
   job_array  *pa,
   const char *id,
-  char       *msg,
+  const char *msg,
   int        logging)
 
   {

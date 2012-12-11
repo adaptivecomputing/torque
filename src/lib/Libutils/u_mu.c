@@ -128,7 +128,7 @@ int MUSNPrintF(
 char *threadsafe_tokenizer(
 
   char **str,    /* M */
-  char  *delims) /* I */
+  const char  *delims) /* I */
 
   {
   char *current_char;
@@ -353,7 +353,7 @@ int write_buffer(
       }
     else
       {
-      log_err(errno,__func__,(char *)"Unable to write to file or socket");
+      log_err(errno,__func__,"Unable to write to file or socket");
       
       return(-1);
       }

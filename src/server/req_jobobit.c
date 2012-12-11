@@ -120,6 +120,7 @@
 #include "ji_mutex.h"
 #include "../lib/Libutils/u_lock_ctl.h"
 #include "exiting_jobs.h"
+#include "svr_task.h" /* set_task */
 
 #define RESC_USED_BUF 2048
 #define JOBMUSTREPORTDEFAULTKEEP 30
@@ -2712,7 +2713,7 @@ int handle_subjob_exit_status(
         log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, other_jobid, log_buf);
         
         kill_job_on_mom(other_jobid, pnode);
-        unlock_node(pnode, __func__, NULL, 0);
+        unlock_node(pnode, __func__, (char *)NULL, 0);
         }
       }
     else

@@ -136,6 +136,7 @@
 #include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
 #include "queue_func.h" /* find_queuebyname, que_alloc, que_free */
 #include "queue_recov.h" /* que_save */
+#include "svr_task.h"
 
 
 #define PERM_MANAGER (ATR_DFLAG_MGWR | ATR_DFLAG_MGRD)
@@ -1783,7 +1784,7 @@ void mgr_node_set(
           break;
         }
 
-      unlock_node(pnode, "mgr_node_set", "error", LOGLEVEL);
+      unlock_node(pnode, "mgr_node_set", (char *)"error", LOGLEVEL);
       
       return;
       } /* END if (rc != 0) */ 
@@ -1795,7 +1796,7 @@ void mgr_node_set(
       mgr_log_attr(msg_man_set, plist, PBS_EVENTCLASS_NODE, pnode->nd_name);
       }
 
-    unlock_node(pnode, "mgr_node_set", "single_node", LOGLEVEL);
+    unlock_node(pnode, "mgr_node_set", (char *)"single_node", LOGLEVEL);
     } /* END single node case */
 
   if (need_todo & WRITENODE_STATE)

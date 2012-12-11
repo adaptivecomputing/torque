@@ -121,7 +121,6 @@
 #include "dis.h"
 #include "net_connect.h"
 #include "log.h" /* log */
-#include "../Liblog/log_event.h" /* log_event */
 #include "../Libnet/lib_net.h" /* socket_* */
 #include "../Libifl/lib_ifl.h" /* AUTH_TYPE_IFF, DIS_* */
 #include "pbs_constants.h" /* LOCAL_IP */
@@ -335,8 +334,8 @@ char *PBS_get_server(
   if (dflt_port == 0)
     {
     dflt_port = get_svrport(
-                  (char *)PBS_BATCH_SERVICE_NAME,
-                  (char *)"tcp",
+                  PBS_BATCH_SERVICE_NAME,
+                  "tcp",
                   PBS_BATCH_SERVICE_PORT);
     }
 
@@ -430,7 +429,7 @@ int PBSD_munge_authenticate(
     {
     /* read failed */
     local_errno = errno;
-    log_err(local_errno, __func__, (char *)"error reading pipe in PBSD_munge_authenticate");
+    log_err(local_errno, __func__, "error reading pipe in PBSD_munge_authenticate");
     return -1;
     }
   

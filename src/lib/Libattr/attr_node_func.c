@@ -95,7 +95,6 @@
 #include "pbs_nodes.h"
 #include "pbs_error.h"
 #include "log.h"
-#include "../Liblog/pbs_log.h"
 #if SYSLOG
 #include <syslog.h>
 #endif
@@ -149,16 +148,16 @@ static int set_nodeflag(char*, short*);
 static struct node_state
   {
   short  bit;
-  char  *name;
+  const char  *name;
   } ns[] =
 
   {
-    {INUSE_UNKNOWN, (char *)ND_state_unknown},
-    {INUSE_DOWN,    (char *)ND_down},
-    {INUSE_OFFLINE, (char *)ND_offline},
-    {INUSE_RESERVE, (char *)ND_reserve},
-    {INUSE_JOB,     (char *)ND_job_exclusive},
-    {INUSE_BUSY,    (char *)ND_busy},
+    {INUSE_UNKNOWN, ND_state_unknown},
+    {INUSE_DOWN,    ND_down},
+    {INUSE_OFFLINE, ND_offline},
+    {INUSE_RESERVE, ND_reserve},
+    {INUSE_JOB,     ND_job_exclusive},
+    {INUSE_BUSY,    ND_busy},
     {0,             NULL}
   };
 

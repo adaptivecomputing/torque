@@ -97,7 +97,7 @@
  * Matching entry must be added in site_job_attr_enum.h
  */
 
-{   (char *)"x",
+{   "x",
     decode_str,
     encode_str,
     set_str,

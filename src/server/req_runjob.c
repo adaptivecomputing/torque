@@ -117,6 +117,7 @@
 #include "svr_func.h" /* get_svr_attr_* */
 #include "req_stat.h" /* stat_mom_job */
 #include "ji_mutex.h"
+#include "svr_task.h"
 
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
@@ -1863,7 +1864,7 @@ int set_job_exec_info(
     memcpy(&hostaddr, &pnode->nd_sock_addr.sin_addr, sizeof(hostaddr));
     pjob->ji_qs.ji_un.ji_exect.ji_momaddr = ntohl(hostaddr.s_addr);
 
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+    unlock_node(pnode, __func__, (char *)NULL, LOGLEVEL);
     
     return(PBSE_NONE);
     }

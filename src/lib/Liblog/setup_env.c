@@ -223,7 +223,7 @@ int setup_env(
 
 err:
 
-  log_err(-1, "setup_env", (char *)"could not set up the environment");
+  log_err(-1, "setup_env", "could not set up the environment");
 
   return(-1);
   }  /* END setup_env() */

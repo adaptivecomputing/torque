@@ -156,17 +156,17 @@ pthread_mutex_t *job_log_mutex;
  * the order of these names MUST match the defintions of
  * PBS_EVENTCLASS_* in log.h
  */
-static char *class_names[] =
+static const char *class_names[] =
   {
-  (char *)"n/a",
-  (char *)"Svr",
-  (char *)"Que",
-  (char *)"Job",
-  (char *)"Req",
-  (char *)"Fil",
-  (char *)"Act",
-  (char *)"node",
-  (char *)"trqauthd"
+  "n/a",
+  "Svr",
+  "Que",
+  "Job",
+  "Req",
+  "Fil",
+  "Act",
+  "node",
+  "trqauthd"
   };
 
 /* External functions called */
@@ -388,8 +388,8 @@ int log_open(
   log_record(
     PBSEVENT_SYSTEM,
     PBS_EVENTCLASS_SERVER,
-    (char *)"Log",
-    (char *)"Log opened");
+    "Log",
+    "Log opened");
 
   pthread_mutex_lock(log_mutex);
 
@@ -418,7 +418,7 @@ int job_log_open(
 
   if (job_log_opened > 0)
     {
-    log_err(-1, (char *)__func__, (char *)"job log already open");
+    log_err(-1, __func__, "job log already open");
     return(1); /* already open */
     }
 
@@ -436,7 +436,7 @@ int job_log_open(
   else if (*filename != '/')
     {
     sprintf(err_log, "must use absolute file path: %s", filename);
-    log_err(-1, (char *)__func__, err_log);
+    log_err(-1, __func__, err_log);
     return(-1); /* must be absolute path */
     }
 
@@ -445,7 +445,7 @@ int job_log_open(
     job_log_opened = -1; /* note that open failed */
 
     sprintf(err_log, "could not open %s ", filename);
-    log_err(errno, (char *)__func__, err_log);
+    log_err(errno, __func__, err_log);
     return(-1);
     }
 
@@ -456,7 +456,7 @@ int job_log_open(
     if (job_log_opened < 0)
       {
       close(fds);
-      log_err(errno, __func__, (char *)"failed to dup job log file descriptor");
+      log_err(errno, __func__, "failed to dup job log file descriptor");
       return(-1);
       }
 
@@ -727,7 +727,7 @@ int log_job_record(char *buf)
 
     if (job_log_opened < 1)
       {
-      log_err(-1, __func__, (char *)"job_log_opened < 1");
+      log_err(-1, __func__, "job_log_opened < 1");
       pthread_mutex_unlock(job_log_mutex);
       return(-1);
       }
@@ -892,7 +892,7 @@ void log_record(
     if (logfile != NULL)
       {
       pthread_mutex_unlock(log_mutex);
-      log_err(rc, __func__, (char *)"PBS cannot write to its log");
+      log_err(rc, __func__, "PBS cannot write to its log");
       fclose(logfile);
       pthread_mutex_lock(log_mutex);
       }
@@ -928,7 +928,7 @@ void log_close(
         PBSEVENT_SYSTEM,
         PBS_EVENTCLASS_SERVER,
         "Log",
-        (char *)"Log closed");
+        "Log closed");
       pthread_mutex_lock(log_mutex);
       }
 
@@ -966,7 +966,7 @@ void job_log_close(
         PBSEVENT_SYSTEM,
         PBS_EVENTCLASS_SERVER,
         "Log",
-        (char *)"Log closed");
+        "Log closed");
       }
 
     fclose(joblogfile);
@@ -1197,7 +1197,7 @@ done_roll:
 
   if (err != 0)
     {
-    log_err(err, "log_roll", (char *)"error while rollng logs");
+    log_err(err, "log_roll", "error while rollng logs");
     }
   else
     {
@@ -1205,7 +1205,7 @@ done_roll:
       PBSEVENT_SYSTEM,
       PBS_EVENTCLASS_SERVER,
       "Log",
-      (char *)"Log Rolled");
+      "Log Rolled");
     }
 
   return;
@@ -1318,7 +1318,7 @@ done_job_roll:
 
   if (err != 0)
     {
-    log_err(err, "log_roll", (char *)"error while rollng logs");
+    log_err(err, "log_roll", "error while rollng logs");
     }
   else
     {
@@ -1326,7 +1326,7 @@ done_job_roll:
       PBSEVENT_SYSTEM,
       PBS_EVENTCLASS_SERVER,
       "Job Log",
-      (char *)"Job Log Rolled");
+      "Job Log Rolled");
     }
     
   pthread_mutex_unlock(job_log_mutex);
@@ -1365,14 +1365,14 @@ long log_size(void)
 
     pthread_mutex_unlock(log_mutex);
     /* log_err through log_ext will lock the log_mutex, so release log_mutex before calling log_err */
-    log_err(errno, "log_size", (char *)"PBS cannot fstat logfile");
+    log_err(errno, "log_size", "PBS cannot fstat logfile");
 
     return(0);
     }
   
   if (!log_opened) {
       pthread_mutex_unlock(log_mutex);
-      log_err(EAGAIN, "log_size", (char *)"PBS cannot find size of log file because logfile has not been opened");
+      log_err(EAGAIN, "log_size", "PBS cannot find size of log file because logfile has not been opened");
       return(0);
   }
 
@@ -1406,7 +1406,7 @@ long job_log_size(void)
     {
     /* FAILURE */
 
-    log_err(errno, __func__, (char *)"PBS cannot fstat joblogfile");
+    log_err(errno, __func__, "PBS cannot fstat joblogfile");
     pthread_mutex_unlock(job_log_mutex);
 
     return(0);

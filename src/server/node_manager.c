@@ -128,6 +128,7 @@
 #include "net_cache.h"
 #include "ji_mutex.h"
 #include "alps_constants.h"
+#include "svr_task.h"
 
 #define IS_VALID_STR(STR)  (((STR) != NULL) && ((STR)[0] != '\0'))
 
@@ -135,7 +136,7 @@ extern int              LOGLEVEL;
 
 
 #if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
-extern int              h_errno;
+/*extern int              h_errno;*/
 #endif
   
 
@@ -1259,7 +1260,7 @@ void *write_node_state_work(
 
   {
   struct pbsnode *np;
-  static char    *fmt = "%s %d\n";
+  static char    *fmt = (char *)"%s %d\n";
   static FILE    *nstatef = NULL;
   int             iter = -1;
 

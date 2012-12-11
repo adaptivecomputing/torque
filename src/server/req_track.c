@@ -103,6 +103,7 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
+#include "svr_task.h"
 
 /* External functions */
 

@@ -298,26 +298,11 @@ int tcp_connect_sockaddr(
   char *err_msg = NULL;
   char local_err_buf[LOCAL_LOG_BUF];
   char *tmp_ip = NULL;
-  /*
-  int   stream = socket(AF_INET,SOCK_STREAM,0);
-  
-  if (stream < 0)
-    {
-    log_err(errno,id,"Failed when trying to open tcp connection - socket() failed");
-    }
-  else if (setsockopt(stream,SOL_SOCKET,SO_REUSEADDR,&i,sizeof(i)) < 0)
-    {
-    log_err(errno,id,"Failed when trying to open tcp connection - setsockopt() failed");
-    }
-  else if (bindresvport(stream,NULL) < 0)
-    {
-    log_err(errno,id,"Failed when trying to open tcp connection - bindresvport() failed");
-    }
-    */
+
   if ((stream = socket_get_tcp_priv()) < 0)
     {
     /* FAILED */
-    log_err(errno,__func__,(char *)"Failed when trying to get privileged port - socket_get_tcp_priv() failed");
+    log_err(errno,__func__,"Failed when trying to get privileged port - socket_get_tcp_priv() failed");
     }
   else if ((rc = socket_connect_addr(&stream, sa, sa_size, 1, &err_msg)) != PBSE_NONE)
     {

@@ -26,6 +26,8 @@
 
 #include "ji_mutex.h"
 
+#include "svr_task.h"
+
 extern int LOGLEVEL;
 extern int  svr_authorize_req(struct batch_request *preq, char *owner, char *submit_host);
 

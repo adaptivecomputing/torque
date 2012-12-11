@@ -618,7 +618,7 @@ int wait_request(
 
       free(SelectSet);
 
-      log_err(errno, __func__, (char *)"Unable to select sockets to read requests");
+      log_err(errno, __func__, "Unable to select sockets to read requests");
 
       return(-1);
       }  /* END else (errno == EINTR) */

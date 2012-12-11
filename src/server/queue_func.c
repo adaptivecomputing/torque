@@ -234,7 +234,7 @@ pbs_queue *que_alloc(
 
   pq->qu_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pq->qu_jobs = (struct all_jobs *)calloc(1, sizeof(struct all_jobs));
-  pq->qu_jobs_array_sum = calloc(1, sizeof(struct all_jobs));
+  pq->qu_jobs_array_sum = (struct all_jobs *)calloc(1, sizeof(struct all_jobs));
   
   if ((pq->qu_mutex == NULL) ||
       (pq->qu_jobs == NULL) ||
