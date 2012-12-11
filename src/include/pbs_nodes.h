@@ -593,8 +593,6 @@ void             reinitialize_node_iterator(node_iterator *);
 struct prop     *init_prop(char *pname);
 int              initialize_pbsnode(struct pbsnode *, char *pname, u_long *pul, int ntype);
 int              hasprop(struct pbsnode *pnode, struct prop *props);
-int              unlock_node(struct pbsnode *the_node, const char *id, char *msg, int logging);
-int              lock_node(struct pbsnode *the_node, const char *id, char *msg, int logging);
 void             update_node_state(struct pbsnode *np, int newstate);
 int              is_job_on_node(struct pbsnode *np, char *jobid);
 void            *sync_node_jobs(void *vp);
