@@ -675,7 +675,6 @@ int get_parent_dest_queues(
 
   strcpy(jobid, pjob->ji_qs.ji_jobid);
 
-  *parent = NULL;
   *dest   = NULL;
 
   if ((queue_parent_name != NULL) && (queue_dest_name != NULL))
@@ -699,6 +698,7 @@ int get_parent_dest_queues(
 
   unlock_queue(*parent, __func__, NULL, LOGLEVEL);
 
+  *parent = NULL;
 
   lock_allques_mutex(&svr_queues, __func__, NULL, LOGLEVEL);
 
