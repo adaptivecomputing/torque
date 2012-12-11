@@ -16,7 +16,7 @@ char log_buffer[16384];
 
 
 
-void log_err(int errnum, const char *routine, char *msg) {}
+void log_err(int errnum, const char *routine, const char *msg) {}
 
 
 

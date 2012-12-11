@@ -76,7 +76,7 @@ void delete_link(struct list_link *old)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, const char *objname, char *text)
+void log_record(int eventtype, int objclass, const char *objname, const char *text)
   {
   fprintf(stderr, "The call to log_record needs to be mocked!!\n");
   exit(1);
@@ -166,7 +166,7 @@ int reply_jobid(struct batch_request *preq, char *jobid, int which)
   exit(1);
   }
 
-void log_err(int errnum, const char *routine, char *text)
+void log_err(int errnum, const char *routine, const char *text)
   {
   fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);

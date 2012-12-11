@@ -86,4 +86,4 @@ void on_job_exit(batch_request *preq, char *jobid) {}
 
 void force_purge_work(job *pjob) {}
 
-void log_event(int eventtype, int objclass, const char *objname, char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}

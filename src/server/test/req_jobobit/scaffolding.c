@@ -255,7 +255,7 @@ void get_jobowner(char *from, char *to)
   }
 
 
-char *threadsafe_tokenizer(char **str, char *delims)
+char *threadsafe_tokenizer(char **str, const char *delims)
   {
   fprintf(stderr, "The call to threadsafe_tokenizer needs to be mocked!!\n");
   exit(1);
