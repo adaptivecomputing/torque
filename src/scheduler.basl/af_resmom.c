@@ -208,7 +208,7 @@ ResMom *mom;
     {
     (void)sprintf(log_buffer, "openrm (%s, %d)", ResMomInetAddrGet(mom),
                   ResMomPortNumberGet(mom));
-    log_err(errno, id, log_buffer);
+    log_err(errno, id, (char *)log_buffer);
     perror(log_buffer);
     }
 

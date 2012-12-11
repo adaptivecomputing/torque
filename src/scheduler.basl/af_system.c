@@ -118,7 +118,6 @@
 #include "af_que.h"
 #include "af_cnodemap.h"
 #include "af_resmom.h"
-#include "rpp.h"
 #include "dis.h"
 /* Macros */
 #ifndef OPEN_MAX
@@ -219,7 +218,7 @@ static void initSchedCycle(void)
   static  char id[] = "initSchedCycle";
 
   if (sigprocmask(SIG_BLOCK, &allsigs, &oldsigs) == -1)
-    log_err(errno, id, "sigprocmaskSIG_BLOCK)"); /* start CS */
+    log_err(errno, id, (char *)"sigprocmaskSIG_BLOCK)"); /* start CS */
 
   for (s = AllServersHeadGet(); s; s = s->nextptr)
     {
@@ -230,7 +229,7 @@ static void initSchedCycle(void)
     }
 
   if (sigprocmask(SIG_SETMASK, &oldsigs, NULL) == -1)
-    log_err(errno, id, "sigprocmask(SIG_SETMASK)");  /* CS end */
+    log_err(errno, id, (char *)"sigprocmask(SIG_SETMASK)");  /* CS end */
   }
 
 static void addDefaults(void)
@@ -264,7 +263,6 @@ toolong(int sig)
 
   if ((cpid = fork()) > 0)        /* parent re-execs itself */
     {
-    rpp_terminate();
 #ifndef linux
     sleep(5);
 #endif
@@ -301,18 +299,16 @@ toolong(int sig)
       {
       log_close(1);
       abort();
-      rpp_terminate();
       exit(2);        /* not reached (hopefully) */
       }
 
-    log_err(errno, id, "stat");
+    log_err(errno, id, (char *)"stat");
     }
 
   log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER,
 
              id, "exiting without core dump");
   log_close(1);
-  rpp_terminate();
   exit(0);
   }
 
@@ -594,7 +590,7 @@ static void signalHandleSet(void)
   /* The following seemed to allow signals to be caught again after */
   /* a SIGALRM was received */
   if (sigprocmask(SIG_SETMASK, &allsigs, NULL) == -1)
-    log_err(errno, id, "sigprocmask(SIG_SETMASK)");
+    log_err(errno, id, (char *)"sigprocmask(SIG_SETMASK)");
 
   act.sa_flags = 0;
 
@@ -746,7 +742,7 @@ SystemInit(int argc, char *argv[])
 
   if ((pid = setsid()) == -1)
     {
-    log_err(errno, id, "setsid");
+    log_err(errno, id, (char *)"setsid");
     die(0);
     }
 
@@ -794,21 +790,17 @@ SystemStateRead(void (*sched_main)(void))
   CNode  *cn;
   int   server_sock;
   int   go;
-  extern int  rpp_fd;
 
   if (sigprocmask(SIG_BLOCK, &allsigs, &oldsigs) == -1)
-    log_err(errno, id, "sigprocmask(SIG_BLOCK)");
+    log_err(errno, id, (char *)"sigprocmask(SIG_BLOCK)");
 
   server_sock = ServerSocketGet(AllServersLocalHostGet());
 
   if (sigprocmask(SIG_SETMASK, &oldsigs, NULL) == -1)
-    log_err(errno, id, "sigprocmask(SIG_SETMASK)");
+    log_err(errno, id, (char *)"sigprocmask(SIG_SETMASK)");
 
   for (go = 1; go;)
     {
-
-    if (rpp_fd != -1)
-      FD_SET(rpp_fd, &fdset);
 
     FD_SET(server_sock, &fdset);
 
@@ -821,7 +813,7 @@ SystemStateRead(void (*sched_main)(void))
 
       if (errno != EINTR)
         {
-        log_err(errno, id, "select");
+        log_err(errno, id, (char *)"select");
         die(0);
         }
 
@@ -832,20 +824,6 @@ SystemStateRead(void (*sched_main)(void))
     printf("%s: After select\n", id);
 
 #endif
-    if (rpp_fd != -1 && FD_ISSET(rpp_fd, &fdset))
-      {
-
-      /* start CS */
-      if (sigprocmask(SIG_BLOCK, &allsigs, &oldsigs) == -1)
-        log_err(errno, id, "sigprocmask(SIG_BLOCK)");
-
-      if (rpp_io() == -1)
-        log_err(errno, id, "rpp_io");
-
-      /* CS end */
-      if (sigprocmask(SIG_SETMASK, &oldsigs, NULL) == -1)
-        log_err(errno, id, "sigprocmask(SIG_SETMASK)");
-      }
 
     if (!FD_ISSET(server_sock, &fdset))
       {
@@ -857,7 +835,7 @@ SystemStateRead(void (*sched_main)(void))
       }
 
     if (sigprocmask(SIG_BLOCK, &allsigs, &oldsigs) == -1)
-      log_err(errno, id, "sigprocmaskSIG_BLOCK)"); /* start CS */
+      log_err(errno, id, (char *)"sigprocmaskSIG_BLOCK)"); /* start CS */
 
     if (ServerOpen(AllServersLocalHostGet()) == 0)
       {
@@ -927,13 +905,13 @@ SystemStateRead(void (*sched_main)(void))
           break;
 
         default:
-          log_err(-1, id, "unknown command");
+          log_err(-1, id, (char *)"unknown command");
         }
 
       }
 
     if (sigprocmask(SIG_SETMASK, &oldsigs, NULL) == -1)
-      log_err(errno, id, "sigprocmask(SIG_SETMASK)"); /* CS end */
+      log_err(errno, id, (char *)"sigprocmask(SIG_SETMASK)"); /* CS end */
 
     } /* for */
   }

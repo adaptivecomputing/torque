@@ -206,7 +206,7 @@ int req_track(
         {
         /* FAILURE */
 
-        log_err(errno, "req_track", "calloc failed");
+        log_err(errno, "req_track", (char *)"calloc failed");
 
         req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
 
@@ -278,10 +278,10 @@ void track_save(
     free(pwt->wt_mutex);
     free(pwt);
 
-    wt = set_task(WORK_Timed, (long)time_now + PBS_SAVE_TRACK_TM, track_save, NULL, FALSE);
+    wt = set_task(WORK_Timed, (long)time_now + PBS_SAVE_TRACK_TM, track_save, (char *)NULL, FALSE);
 
     if (wt == NULL)
-      log_err(errno, myid, "Unable to set task for save");
+      log_err(errno, myid, (char *)"Unable to set task for save");
     }
 
   if (server.sv_trackmodifed == 0)
@@ -291,19 +291,19 @@ void track_save(
 
   if (fd < 0)
     {
-    log_err(errno, myid, "Unable to open tracking file");
+    log_err(errno, myid, (char *)"Unable to open tracking file");
     return;
     }
 
   if (write(fd, (char *)server.sv_track, server.sv_tracksize * sizeof(struct tracking)) !=
       (ssize_t)(server.sv_tracksize * sizeof(struct tracking)))
     {
-    log_err(errno, myid, "failed to write to track file");
+    log_err(errno, myid, (char *)"failed to write to track file");
     }
 
   if (close(fd) < 0)
     {
-    log_err(errno, myid, "failed to close track file after saving");
+    log_err(errno, myid, (char *)"failed to close track file after saving");
 
     return;
     }

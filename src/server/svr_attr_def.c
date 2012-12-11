@@ -141,7 +141,7 @@ attribute_def svr_attr_def[] =
   {
 
   /* SRV_ATR_State */
-    { ATTR_status,  /* "server_state" */
+    { (char *)ATTR_status,  /* "server_state" */
     decode_null,
     encode_svrstate,
     set_null,
@@ -154,7 +154,7 @@ attribute_def svr_attr_def[] =
     },
 
   /* SRV_ATR_scheduling */
-  { ATTR_scheduling,
+  { (char *)ATTR_scheduling,
     decode_b,
     encode_b,
     set_b,
@@ -167,7 +167,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_max_running */
-  { ATTR_maxrun,  /* "max_running" */
+  { (char *)ATTR_maxrun,  /* "max_running" */
     decode_l,
     encode_l,
     set_l,
@@ -180,7 +180,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_MaxUserRun */
-  { ATTR_maxuserrun, /* "max_user_run" */
+  { (char *)ATTR_maxuserrun, /* "max_user_run" */
     decode_l,
     encode_l,
     set_l,
@@ -193,7 +193,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_MaxGrpRun */
-  { ATTR_maxgrprun,  /* "max_group_run" */
+  { (char *)ATTR_maxgrprun,  /* "max_group_run" */
     decode_l,
     encode_l,
     set_l,
@@ -206,7 +206,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_TotalJobs */
-  { ATTR_total,  /* "total_jobs" */
+  { (char *)ATTR_total,  /* "total_jobs" */
     decode_null,
     encode_l,
     set_null,
@@ -219,7 +219,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_JobsByState */
-  { ATTR_count,  /* "state_count" */
+  { (char *)ATTR_count,  /* "state_count" */
     decode_null,  /* note-uses fixed buffer in server struct */
     encode_str,
     set_null,
@@ -232,7 +232,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_acl_host_enable */
-  { ATTR_aclhten,  /* "acl_host_enable" */
+  { (char *)ATTR_aclhten,  /* "acl_host_enable" */
     decode_b,
     encode_b,
     set_b,
@@ -245,7 +245,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_acl_hosts */
-  { ATTR_aclhost,  /* "acl_hosts" */
+  { (char *)ATTR_aclhost,  /* "acl_hosts" */
     decode_arst,
     encode_arst,
     set_hostacl,
@@ -258,7 +258,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_AclUserEnabled */ /* User ACL to be used */
-  { ATTR_acluren,  /* "acl_user_enable" */
+  { (char *)ATTR_acluren,  /* "acl_user_enable" */
     decode_b,
     encode_b,
     set_b,
@@ -271,7 +271,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_AclUsers */  /* User Acess Control List */
-  { ATTR_acluser,  /* "acl_users" */
+  { (char *)ATTR_acluser,  /* "acl_users" */
     decode_arst,
     encode_arst,
     set_uacl,
@@ -284,7 +284,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_AclRoot */  /* List of which roots may execute jobs */
-  { ATTR_aclroot,  /* "acl_roots"    */
+  { (char *)ATTR_aclroot,  /* "acl_roots"    */
     decode_arst,
     encode_arst,
     set_uacl,
@@ -297,7 +297,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_managers */
-  { ATTR_managers,  /* "managers" */
+  { (char *)ATTR_managers,  /* "managers" */
     decode_arst,
     encode_arst,
     set_uacl,
@@ -310,7 +310,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_operators */
-  { ATTR_operators,  /* "operators" */
+  { (char *)ATTR_operators,  /* "operators" */
     decode_arst,
     encode_arst,
     set_uacl,
@@ -323,7 +323,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_dflt_que */
-  { ATTR_dfltque,  /* "default_queue" */
+  { (char *)ATTR_dfltque,  /* "default_queue" */
     decode_str,
     encode_str,
     set_str,
@@ -336,7 +336,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_log_events */
-  { ATTR_logevents,  /* "log_events" */
+  { (char *)ATTR_logevents,  /* "log_events" */
     decode_l,
     encode_l,
     set_l,
@@ -349,7 +349,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_mailfrom */
-  { ATTR_mailfrom,  /* "mail_from" */
+  { (char *)ATTR_mailfrom,  /* "mail_from" */
     decode_str,
     encode_str,
     set_str,
@@ -362,7 +362,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_query_others */
-  { ATTR_queryother, /* "query_other_jobs" */
+  { (char *)ATTR_queryother, /* "query_other_jobs" */
     decode_b,
     encode_b,
     set_b,
@@ -375,7 +375,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_resource_avail */
-  { ATTR_rescavail,  /* "resources_available" */
+  { (char *)ATTR_rescavail,  /* "resources_available" */
     decode_resc,
     encode_resc,
     set_resc,
@@ -388,7 +388,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_resource_deflt */
-  { ATTR_rescdflt,  /* "resources_default" */
+  { (char *)ATTR_rescdflt,  /* "resources_default" */
     decode_resc,
     encode_resc,
     set_resc,
@@ -401,7 +401,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_ResourceMax */
-  { ATTR_rescmax,  /* "resources_max" */
+  { (char *)ATTR_rescmax,  /* "resources_max" */
     decode_resc,
     encode_resc,
     set_resc,
@@ -414,7 +414,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_resource_assn */
-  { ATTR_rescassn,  /* "resources_assigned" */
+  { (char *)ATTR_rescassn,  /* "resources_assigned" */
     decode_resc,
     encode_resc,
     set_resc,
@@ -427,7 +427,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_resource_cost */
-  { ATTR_resccost,  /* "resources_cost" */
+  { (char *)ATTR_resccost,  /* "resources_cost" */
     decode_rcost, /* these are not right, haven't figured this out yet */
     encode_rcost,
     set_rcost,
@@ -440,7 +440,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_sys_cost */
-  { ATTR_syscost,  /* "system_cost" */
+  { (char *)ATTR_syscost,  /* "system_cost" */
     decode_l,
     encode_l,
     set_l,
@@ -453,7 +453,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_schedule_iteration */
-  { ATTR_schedit,  /* "schedule_iteration" */
+  { (char *)ATTR_schedit,  /* "schedule_iteration" */
     decode_l,
     encode_l,
     set_l,
@@ -466,7 +466,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_ping_rate */
-  {   ATTR_pingrate,          /* "node_ping_rate" */
+  {   (char *)ATTR_pingrate,          /* "node_ping_rate" */
       decode_l,
       encode_l,
       set_l,
@@ -479,7 +479,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_check_rate */
-  {   ATTR_ndchkrate,         /* "node_check_rate" */
+  {   (char *)ATTR_ndchkrate,         /* "node_check_rate" */
       decode_l,
       encode_l,
       set_l,
@@ -492,7 +492,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_tcp_timeout */
-  {   ATTR_tcptimeout,         /* "tcp_timeout" */
+  {   (char *)ATTR_tcptimeout,         /* "tcp_timeout" */
       decode_l,
       encode_l,
       set_l,
@@ -505,7 +505,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_Comment */
-  { ATTR_comment,  /* "comment"  - information */
+  { (char *)ATTR_comment,  /* "comment"  - information */
     decode_str,
     encode_str,
     set_str,
@@ -518,7 +518,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_DefNode */
-  { ATTR_defnode,  /* "default_node" */
+  { (char *)ATTR_defnode,  /* "default_node" */
     decode_str,
     encode_str,
     set_str,
@@ -531,7 +531,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_NodePack */
-  { ATTR_nodepack,  /* "node_pack" */
+  { (char *)ATTR_nodepack,  /* "node_pack" */
     decode_b,
     encode_b,
     set_b,
@@ -544,7 +544,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_NodeSuffix */
-  {   ATTR_nodesuffix,        /* "node_suffix" */
+  {   (char *)ATTR_nodesuffix,        /* "node_suffix" */
       decode_str,
       encode_str,
       set_str,
@@ -557,7 +557,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_JobStatRate */
-  { ATTR_jobstatrate, /* "job_stat_rate" */
+  { (char *)ATTR_jobstatrate, /* "job_stat_rate" */
     decode_l,
     encode_l,
     set_l,
@@ -570,7 +570,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_PollJobs */
-  { ATTR_polljobs,  /* "poll_jobs" */
+  { (char *)ATTR_polljobs,  /* "poll_jobs" */
     decode_b,
     encode_b,
     set_b,
@@ -583,7 +583,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_LogLevel */
-  {   ATTR_loglevel,  /* "log_level" */
+  {   (char *)ATTR_loglevel,  /* "log_level" */
       decode_l,
       encode_l,
       set_l,
@@ -596,7 +596,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_DownOnError */
-  {   ATTR_downonerror, /* "down_on_error" */
+  {   (char *)ATTR_downonerror, /* "down_on_error" */
       decode_b,
       encode_b,
       set_b,
@@ -609,7 +609,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_DisableServerIdCheck */
-  {   ATTR_disableserveridcheck,       /* "disable_server_id_check" */
+  {   (char *)ATTR_disableserveridcheck,       /* "disable_server_id_check" */
       decode_b,
       encode_b,
       set_b,
@@ -622,7 +622,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_JobNanny */
-  {   ATTR_jobnanny,  /* "job_nanny" */
+  {   (char *)ATTR_jobnanny,  /* "job_nanny" */
       decode_b,
       encode_b,
       set_b,
@@ -635,7 +635,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_OwnerPurge */
-  {   ATTR_ownerpurge,       /* "owner_purge" */
+  {   (char *)ATTR_ownerpurge,       /* "owner_purge" */
       decode_b,
       encode_b,
       set_b,
@@ -648,7 +648,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_QCQLimits */
-  {   ATTR_qcqlimits,       /* "queue_centric_limits" */
+  {   (char *)ATTR_qcqlimits,       /* "queue_centric_limits" */
       decode_b,
       encode_b,
       set_b,
@@ -661,7 +661,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_MomJobSync */
-  { ATTR_momjobsync, /* "mom_job_sync" */
+  { (char *)ATTR_momjobsync, /* "mom_job_sync" */
     decode_b,
     encode_b,
     set_b,
@@ -674,7 +674,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_MailDomain */
-  { ATTR_maildomain, /* "mail_domain" */
+  { (char *)ATTR_maildomain, /* "mail_domain" */
     decode_str,
     encode_str,
     set_str,
@@ -687,7 +687,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_version */
-  { ATTR_pbsversion, /* "pbs_version" */
+  { (char *)ATTR_pbsversion, /* "pbs_version" */
     decode_str,
     encode_str,
     set_str,
@@ -700,7 +700,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_KillDelay */
-  {   ATTR_killdelay,         /* "kill_delay" */
+  {   (char *)ATTR_killdelay,         /* "kill_delay" */
       decode_l,
       encode_l,
       set_l,
@@ -713,7 +713,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_AclLogic */
-  {   ATTR_acllogic,          /* "acl_logic_or" */
+  {   (char *)ATTR_acllogic,          /* "acl_logic_or" */
       decode_b,
       encode_b,
       set_b,
@@ -726,7 +726,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_AclGroupSloppy */
-  {   ATTR_aclgrpslpy,          /* "acl_group_sloppy" */
+  {   (char *)ATTR_aclgrpslpy,          /* "acl_group_sloppy" */
       decode_b,
       encode_b,
       set_b,
@@ -739,7 +739,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_KeepCompleted */
-  {   ATTR_keepcompleted,     /* "keep_completed" */
+  {   (char *)ATTR_keepcompleted,     /* "keep_completed" */
       decode_l,
       encode_l,
       set_l,
@@ -752,7 +752,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_SubmitHosts */
-  {   ATTR_submithosts,         /* "submit_hosts" */
+  {   (char *)ATTR_submithosts,         /* "submit_hosts" */
       decode_arst,
       encode_arst,
       set_arst,
@@ -765,7 +765,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_AllowNodeSubmit */
-  {   ATTR_allownodesubmit,     /* "allow_node_submit" */
+  {   (char *)ATTR_allownodesubmit,     /* "allow_node_submit" */
       decode_b,
       encode_b,
       set_b,
@@ -778,7 +778,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_AllowProxyUser */
-  {   ATTR_allowproxyuser,     /* "allow_proxy_user" */
+  {   (char *)ATTR_allowproxyuser,     /* "allow_proxy_user" */
       decode_b,
       encode_b,
       set_b,
@@ -791,7 +791,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_AutoNodeNP */
-  {   ATTR_autonodenp,          /* "auto_node_np" */
+  {   (char *)ATTR_autonodenp,          /* "auto_node_np" */
       decode_b,
       encode_b,
       set_b,
@@ -804,7 +804,7 @@ attribute_def svr_attr_def[] =
   }, 
 
   /* SRV_ATR_LogFileMaxSize */
-  {   ATTR_logfilemaxsize,      /* "log_file_max_size" */
+  {   (char *)ATTR_logfilemaxsize,      /* "log_file_max_size" */
       decode_l,
       encode_l,
       set_l,
@@ -817,7 +817,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_LogFileRollDepth */
-  {   ATTR_logfilerolldepth,    /* "log_file_roll_depth" */
+  {   (char *)ATTR_logfilerolldepth,    /* "log_file_roll_depth" */
       decode_l,
       encode_l,
       set_l,
@@ -831,7 +831,7 @@ attribute_def svr_attr_def[] =
 
   /* SVR_ATR_LogKeepDays */
   {
-      ATTR_logkeepdays,          /* "log_keep_days" */
+      (char *)ATTR_logkeepdays,          /* "log_keep_days" */
       decode_l,
       encode_l,
       set_l,
@@ -844,7 +844,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_NextJobNumber */
-  { ATTR_nextjobnum,
+  { (char *)ATTR_nextjobnum,
     decode_l,
     encode_l,
     set_nextjobnum,
@@ -857,7 +857,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_tokens */
-  {  ATTR_tokens,
+  {  (char *)ATTR_tokens,
      decode_arst,
      encode_arst,
      set_tokens,
@@ -870,7 +870,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_NetCounter */
-  { ATTR_netcounter,  /* "net_counter" */
+  { (char *)ATTR_netcounter,  /* "net_counter" */
     decode_null,
     encode_str,
     set_null,
@@ -883,7 +883,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_ExtraResc */
-  {   ATTR_extraresc,  /* "extra_resc" */
+  {   (char *)ATTR_extraresc,  /* "extra_resc" */
       decode_arst,
       encode_arst,
       set_arst,
@@ -896,7 +896,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_ServerName */
-  {   ATTR_servername,     /* "server_name" */
+  {   (char *)ATTR_servername,     /* "server_name" */
       decode_str,
       encode_str,
       set_str,
@@ -909,7 +909,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_SchedVersion */
-  {   ATTR_schedversion,     /* "sched_version" */
+  {   (char *)ATTR_schedversion,     /* "sched_version" */
       decode_str,
       encode_str,
       set_str,
@@ -922,7 +922,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_AcctKeepDays */
-  {   ATTR_acctkeepdays,      /* "accounting_keep_days" */
+  {   (char *)ATTR_acctkeepdays,      /* "accounting_keep_days" */
     	decode_l,
     	encode_l,
     	set_l,
@@ -935,7 +935,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_lockfile */
-  {	  ATTR_lockfile,		/* "lock_file" */
+  {	  (char *)ATTR_lockfile,		/* "lock_file" */
     	decode_str,
     	encode_str,
     	set_str,
@@ -948,7 +948,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_LockfileUpdateTime */
-  {   ATTR_LockfileUpdateTime, /* lock_file_update_time */
+  {   (char *)ATTR_LockfileUpdateTime, /* lock_file_update_time */
       decode_l,
       encode_l,
       set_l,
@@ -961,7 +961,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_LockfileCheckTime */
-  {   ATTR_LockfileCheckTime, /* lock_file_check_time */
+  {   (char *)ATTR_LockfileCheckTime, /* lock_file_check_time */
       decode_l,
       encode_l,
       set_l,
@@ -974,7 +974,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_CredentialLifetime */
-  {   ATTR_credentiallifetime,  /* "credential_lifetime" */
+  {   (char *)ATTR_credentiallifetime,  /* "credential_lifetime" */
       decode_l,
       encode_l,
       set_l,
@@ -987,7 +987,7 @@ attribute_def svr_attr_def[] =
   },
 	
   /* SRV_ATR_JobMustReport */
-  { ATTR_jobmustreport,      /* "job_must_report" */
+  { (char *)ATTR_jobmustreport,      /* "job_must_report" */
     	decode_b,
     	encode_b,
     	set_b,
@@ -1000,7 +1000,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_checkpoint_dir */
-  {   ATTR_checkpoint_dir,   /* "checkpoint_dir" */
+  {   (char *)ATTR_checkpoint_dir,   /* "checkpoint_dir" */
       decode_str,
       encode_str,
       set_str,
@@ -1013,7 +1013,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_display_job_server_suffix */
-  { ATTR_dispsvrsuffix, /* "display_job_server_suffix" */
+  { (char *)ATTR_dispsvrsuffix, /* "display_job_server_suffix" */
     decode_b,
     encode_b,
     set_b,
@@ -1026,7 +1026,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_job_suffix_alias */
-  { ATTR_jobsuffixalias, /* "job_suffix_alias" */
+  { (char *)ATTR_jobsuffixalias, /* "job_suffix_alias" */
     decode_str,
     encode_str,
     set_str,
@@ -1039,7 +1039,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_MailSubjectFmt */
-  { ATTR_mailsubjectfmt, /* "mail_subject_fmt" */
+  { (char *)ATTR_mailsubjectfmt, /* "mail_subject_fmt" */
     decode_str,
     encode_str,
     set_str,
@@ -1052,7 +1052,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_MailBodyFmt */
-  { ATTR_mailbodyfmt, /* "mail_body_fmt" */
+  { (char *)ATTR_mailbodyfmt, /* "mail_body_fmt" */
     decode_str,
     encode_str,
     set_str,
@@ -1064,7 +1064,7 @@ attribute_def svr_attr_def[] =
     PARENT_TYPE_SERVER
   },
     /* SRV_ATR_NPDefault */
-  {   ATTR_npdefault,          /* "np_default" */
+  {   (char *)ATTR_npdefault,          /* "np_default" */
       decode_l,
       encode_l,
       set_l,
@@ -1077,7 +1077,7 @@ attribute_def svr_attr_def[] =
   },
 
     /* SRV_ATR_clonebatchsize */
-  {   ATTR_clonebatchsize,          /* "clone_batch_size" */
+  {   (char *)ATTR_clonebatchsize,          /* "clone_batch_size" */
       decode_l,
       encode_l,
       set_l,
@@ -1090,7 +1090,7 @@ attribute_def svr_attr_def[] =
   },
 
     /* SRV_ATR_clonebatchdelay */
-  {   ATTR_clonebatchdelay,          /* "clone_batch_delay" */
+  {   (char *)ATTR_clonebatchdelay,          /* "clone_batch_delay" */
       decode_l,
       encode_l,
       set_l,
@@ -1103,7 +1103,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_JobStartTimeout */
-  {   ATTR_jobstarttimeout,         /* "job_start_timeout" */
+  {   (char *)ATTR_jobstarttimeout,         /* "job_start_timeout" */
       decode_l,
       encode_l,
       set_l,
@@ -1116,7 +1116,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_JobForceCancelTime */
-  {   ATTR_jobforcecanceltime,     /* job_force_cancel_time */
+  {   (char *)ATTR_jobforcecanceltime,     /* job_force_cancel_time */
       decode_l,
       encode_l,
       set_l,
@@ -1129,7 +1129,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_MaxArraySize */
-  {  ATTR_maxarraysize,           /* max_job_array_size */
+  {  (char *)ATTR_maxarraysize,           /* max_job_array_size */
      decode_l,
      encode_l,
      set_l,
@@ -1142,7 +1142,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_MaxSlotLimit */
-  {  ATTR_maxslotlimit,           /* max_slot_limit */
+  {  (char *)ATTR_maxslotlimit,           /* max_slot_limit */
      decode_l,
      encode_l,
      set_l,
@@ -1155,7 +1155,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_RecordJobInfo */
-  {  ATTR_recordjobinfo,         /* record_job_info */
+  {  (char *)ATTR_recordjobinfo,         /* record_job_info */
      decode_b,
      encode_b,
      set_b,
@@ -1168,7 +1168,7 @@ attribute_def svr_attr_def[] =
   },
 
     /* SRV_ATR_RecordJobScript */
-  {  ATTR_recordjobscript,         /* record_job_script */
+  {  (char *)ATTR_recordjobscript,         /* record_job_script */
      decode_b,
      encode_b,
      set_b,
@@ -1181,7 +1181,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_JobLogFileMaxSize */
-  {ATTR_joblogfilemaxsize,		/* "job_log_file_max_size" */
+  {(char *)ATTR_joblogfilemaxsize,		/* "job_log_file_max_size" */
    decode_l,
    encode_l,
    set_l,
@@ -1193,7 +1193,7 @@ attribute_def svr_attr_def[] =
    PARENT_TYPE_SERVER},
 
   /* SRV_ATR_JobLogFileRollDepth */
-  {ATTR_joblogfilerolldepth,	/* "job_log_file_roll_depth" */
+  {(char *)ATTR_joblogfilerolldepth,	/* "job_log_file_roll_depth" */
    decode_l,
    encode_l,
    set_l,
@@ -1206,7 +1206,7 @@ attribute_def svr_attr_def[] =
 
   /* SVR_ATR_JobLogKeepDays */
   {
-   ATTR_joblogkeepdays,		/* "job_log_keep_days" */
+   (char *)ATTR_joblogkeepdays,		/* "job_log_keep_days" */
    decode_l,
    encode_l,
    set_l,
@@ -1219,7 +1219,7 @@ attribute_def svr_attr_def[] =
 
 #ifdef MUNGE_AUTH
   /* SRV_ATR_authusers */
-  {ATTR_authusers,		/* "autorized_users" */
+  {(char *)ATTR_authusers,		/* "autorized_users" */
    decode_arst,
    encode_arst,
    set_uacl,
@@ -1232,7 +1232,7 @@ attribute_def svr_attr_def[] =
 #endif
 
   /* SRV_ATR_minthreads */
-  {ATTR_minthreads,               /* "min_threads" */
+  {(char *)ATTR_minthreads,               /* "min_threads" */
    decode_l,
    encode_l,
    set_l,
@@ -1245,7 +1245,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_maxthreads */
-  {ATTR_maxthreads,               /* "max_threads" */
+  {(char *)ATTR_maxthreads,               /* "max_threads" */
    decode_l,
    encode_l,
    set_l,
@@ -1258,7 +1258,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_threadidleseconds */
-  {ATTR_threadidleseconds,        /* "thread_idle_seconds" */
+  {(char *)ATTR_threadidleseconds,        /* "thread_idle_seconds" */
    decode_l,
    encode_l,
    set_l,
@@ -1271,7 +1271,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_MoabArrayCompatible */
-  {ATTR_moabarraycompatible,
+  {(char *)ATTR_moabarraycompatible,
    decode_b,
    encode_b,
    set_b,
@@ -1284,7 +1284,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_NoMailForce */
-  {ATTR_nomailforce,		/* "no_mail_force" */
+  {(char *)ATTR_nomailforce,		/* "no_mail_force" */
    decode_b,
    encode_b,
    set_b,
@@ -1296,7 +1296,7 @@ attribute_def svr_attr_def[] =
    PARENT_TYPE_SERVER},
 
   /* SRV_ATR_CrayEnabled */
-  {ATTR_crayenabled,   /* "cray_enabled" */
+  {(char *)ATTR_crayenabled,   /* "cray_enabled" */
    decode_b,
    encode_b,
    set_b,
@@ -1308,7 +1308,7 @@ attribute_def svr_attr_def[] =
    PARENT_TYPE_SERVER},
 
   /* SRV_ATR_InteractiveJobsCanRoam */ /* NOTE: this only has effect if pbs_server is cray enabled */
-  {ATTR_interactivejobscanroam, /* "interactive_jobs_can_roam" */
+  {(char *)ATTR_interactivejobscanroam, /* "interactive_jobs_can_roam" */
    decode_b,
    encode_b,
    set_b,
@@ -1320,7 +1320,7 @@ attribute_def svr_attr_def[] =
    PARENT_TYPE_SERVER},
 
   /* SRV_ATR_MaxUserQueuable */
-  {ATTR_maxuserqueuable, /* "max_user_queuable" */
+  {(char *)ATTR_maxuserqueuable, /* "max_user_queuable" */
    decode_l,
    encode_l,
    set_l,

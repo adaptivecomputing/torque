@@ -96,7 +96,7 @@ nodist_man3_MANS = man3/pbs_alterjob.3 \
 			    man3/pbs_submit.3 \
 			    man3/pbs_terminate.3
 
-dist_man3_MANS = man3/rpp.3 man3/tm.3
+dist_man3_MANS = man3/tm.3
 
 nodist_man7_MANS = man7/pbs_job_attributes.7 \
 			    man7/pbs_queue_attributes.7 \

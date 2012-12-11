@@ -137,7 +137,7 @@ int start_listener(
       }
     pthread_attr_destroy(&t_attr);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, "net_srvr",
-                "Socket close of network listener requested");
+                (char *)"Socket close of network listener requested");
     }
 
   close(listen_socket);
@@ -271,7 +271,7 @@ int start_listener_addrinfo(
       }
     pthread_attr_destroy(&t_attr);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, "net_srvr",
-                "Socket close of network listener requested");
+                (char *)"Socket close of network listener requested");
     }
 
   close(listen_socket);

@@ -106,10 +106,10 @@ int encode_DIS_QueueJob(
   int   rc;
 
   if (jobid == (char *)0)
-    jobid = "";
+    jobid = (char *)"";
 
   if (destin == (char *)0)
-    destin = "";
+    destin = (char *)"";
 
   if ((rc = diswst(chan, jobid) != 0) ||
       (rc = diswst(chan, destin) != 0))

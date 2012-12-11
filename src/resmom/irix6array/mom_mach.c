@@ -262,7 +262,7 @@ dep_initialize(void)
 
   if ((pdir = opendir(procfs)) == NULL)
     {
-    log_err(errno, id, "opendir");
+    log_err(errno, id, (char *)"opendir");
     return;
     }
 
@@ -280,14 +280,14 @@ dep_initialize(void)
 
   if ((i = fcntl(kfd,  F_GETFD)) == -1)
     {
-    log_err(errno, id, "F_GETFD");
+    log_err(errno, id, (char *)"F_GETFD");
     }
 
   i |= FD_CLOEXEC;
 
   if (fcntl(kfd, F_SETFD, i) == -1)
     {
-    log_err(errno, id, "F_SETFD");
+    log_err(errno, id, (char *)"F_SETFD");
     }
 
   return;
@@ -1001,7 +1001,7 @@ mom_open_poll(void)
 
   if (proc_array == NULL)
     {
-    log_err(errno, id, "calloc");
+    log_err(errno, id, (char *)"calloc");
     return (PBSE_SYSTEM);
     }
 
@@ -1112,7 +1112,7 @@ mom_get_sample(void)
       if ((num = ioctl(fd, PIOCMAP_SGI, &maparg)) == -1)
         {
         if (errno != ENOENT)
-          log_err(errno, id, "ioctl(PIOCMAP_SGI)");
+          log_err(errno, id, (char *)"ioctl(PIOCMAP_SGI)");
 
         free(map);
 
@@ -1536,7 +1536,7 @@ mom_close_poll(void)
     {
     if (closedir(pdir) != 0)
       {
-      log_err(errno, id, "closedir");
+      log_err(errno, id, (char *)"closedir");
       return (PBSE_SYSTEM);
       }
     }
@@ -1651,7 +1651,7 @@ mach_restart(task *ptask, char *file)
 
   if ((pdir = opendir(procfs)) == NULL)
     {
-    log_err(errno, "mach_restart", "opendir");
+    log_err(errno, "mach_restart", (char *)"opendir");
     }
 
   return ((int)rc);
@@ -1738,7 +1738,7 @@ totmem(struct rm_attribute *attrib)
 
   if (statfs(procfs, &fsbuf, sizeof(struct statfs), 0) == -1)
     {
-    log_err(errno, id, "statfs");
+    log_err(errno, id, (char *)"statfs");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }
@@ -1771,7 +1771,7 @@ availmem(struct rm_attribute *attrib)
 
   if (statfs(procfs, &fsbuf, sizeof(struct statfs), 0) == -1)
     {
-    log_err(errno, id, "statfs");
+    log_err(errno, id, (char *)"statfs");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }
@@ -1830,7 +1830,7 @@ physmem(struct rm_attribute *attrib)
 
   if (read(kfd, (char *)&pmem, sizeof(pmem)) != sizeof(pmem))
     {
-    log_err(errno, id, "read");
+    log_err(errno, id, (char *)"read");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }
@@ -1862,7 +1862,7 @@ size_fs(char *param)
 
   if (statfs(param, &fsbuf, sizeof(struct statfs), 0) == -1)
     {
-    log_err(errno, id, "statfs");
+    log_err(errno, id, (char *)"statfs");
     rm_errno = RM_ERR_BADPARAM;
     return NULL;
     }
@@ -1895,7 +1895,7 @@ size_file(char *param)
 
   if (stat64(param, &sbuf) == -1)
     {
-    log_err(errno, id, "stat");
+    log_err(errno, id, (char *)"stat");
     rm_errno = RM_ERR_BADPARAM;
     return NULL;
     }
@@ -1974,7 +1974,7 @@ idletime(struct rm_attribute *attrib)
 
   if ((dp = opendir("/dev")) == NULL)
     {
-    log_err(errno, id, "opendir /dev");
+    log_err(errno, id, (char *)"opendir /dev");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }
@@ -2020,7 +2020,7 @@ get_la(double *rv)
 
   if (read(kfd, (char *)&load, sizeof(load)) != sizeof(load))
     {
-    log_err(errno, id, "read");
+    log_err(errno, id, (char *)"read");
     return (rm_errno = RM_ERR_SYSTEM);
     }
 
@@ -2155,7 +2155,7 @@ quota(struct rm_attribute *attrib)
 
   if ((m = setmntent(MOUNTED, "r")) == NULL)
     {
-    log_err(errno, id, "setmntent");
+    log_err(errno, id, (char *)"setmntent");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }
@@ -2230,7 +2230,7 @@ quota(struct rm_attribute *attrib)
 
   if (quotactl(Q_GETQUOTA, me->mnt_fsname, uid, (caddr_t)&qi) == -1)
     {
-    log_err(errno, id, "quotactl");
+    log_err(errno, id, (char *)"quotactl");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }
@@ -2309,7 +2309,7 @@ availmask(struct rm_attribute *attrib)
 
   if (nprocs < 1)
     {
-    log_err(errno, id, "sysmp(MP_NPROCS");
+    log_err(errno, id, (char *)"sysmp(MP_NPROCS");
     rm_errno = RM_ERR_SYSTEM;
     return (NULL);
     }
@@ -2317,7 +2317,7 @@ availmask(struct rm_attribute *attrib)
   if (sysmp(MP_NUMA_GETCPUNODEMAP, (void *)cpumap,
             sizeof(cnodeid_t) * nprocs) != 0)
     {
-    log_err(errno, id, "sysmp(MP_NUMA_GETCPUNODEMAP");
+    log_err(errno, id, (char *)"sysmp(MP_NUMA_GETCPUNODEMAP");
     rm_errno = RM_ERR_SYSTEM;
     return (NULL);
     }

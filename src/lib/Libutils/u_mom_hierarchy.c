@@ -146,7 +146,7 @@ void free_mom_hierarchy(
 mom_hierarchy_t *initialize_mom_hierarchy()
 
   {
-  mom_hierarchy_t *nt = calloc(1, sizeof(mom_hierarchy_t));
+  mom_hierarchy_t *nt = (mom_hierarchy_t *)calloc(1, sizeof(mom_hierarchy_t));
   nt->paths = initialize_resizable_array(INITIAL_SIZE_NETWORK);
 
   if (nt->paths == NULL)
@@ -177,7 +177,7 @@ int add_network_entry(
 
   {
   int              rc;
-  node_comm_t     *nc = calloc(1, sizeof(node_comm_t));
+  node_comm_t     *nc = (node_comm_t *)calloc(1, sizeof(node_comm_t));
   resizable_array *levels;
   resizable_array *node_comm_entries;
 
@@ -232,7 +232,7 @@ int add_network_entry(
   nc->sock_addr.sin_port = htons(rm_port);
   nc->stream = -1;
 
-  if ((nc->name   = calloc(1, strlen(name) + 1)) == NULL)
+  if ((nc->name = (char *)calloc(1, strlen(name) + 1)) == NULL)
     {
     free(nc);
     return(ENOMEM);
@@ -293,7 +293,6 @@ int tcp_connect_sockaddr(
   size_t           sa_size) /* I */
 
   {
-  char *id = "tcp_connect_sockaddr";
   int rc = PBSE_NONE;
   int stream = -1;
   char *err_msg = NULL;
@@ -318,17 +317,17 @@ int tcp_connect_sockaddr(
   if ((stream = socket_get_tcp_priv()) < 0)
     {
     /* FAILED */
-    log_err(errno,id,"Failed when trying to get privileged port - socket_get_tcp_priv() failed");
+    log_err(errno,__func__,(char *)"Failed when trying to get privileged port - socket_get_tcp_priv() failed");
     }
   else if ((rc = socket_connect_addr(&stream, sa, sa_size, 1, &err_msg)) != PBSE_NONE)
     {
     /* FAILED */
     tmp_ip = inet_ntoa(((struct sockaddr_in *)sa)->sin_addr);
     snprintf(local_err_buf, LOCAL_LOG_BUF, "Failed when trying to open tcp connection - connect() failed [rc = %d] [addr = %s:%d]", rc, tmp_ip, htons(((struct sockaddr_in *)sa)->sin_port));
-    log_err(errno,id,local_err_buf);
+    log_err(errno,__func__,local_err_buf);
     if (err_msg != NULL)
       {
-      log_err(errno,id,err_msg);
+      log_err(errno,__func__,err_msg);
       free(err_msg);
       }
     }

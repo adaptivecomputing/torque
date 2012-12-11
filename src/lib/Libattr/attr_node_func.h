@@ -20,23 +20,23 @@ int decode_ntype(pbs_attribute *pattr, char *name, char *rescn, char *val, int p
 
 void free_prop_list(struct prop *prop);
 
-int set_node_state(pbs_attribute *pattr, pbs_attribute *new, enum batch_op op);
+int set_node_state(pbs_attribute *pattr, pbs_attribute *new_attr, enum batch_op op);
 
-int set_node_ntype(pbs_attribute *pattr, pbs_attribute *new, enum batch_op op);
+int set_node_ntype(pbs_attribute *pattr, pbs_attribute *new_attr, enum batch_op op);
 
 /* static int set_nodeflag(char *str, short *pflag); */
 
-int node_state(pbs_attribute *new, void *pnode, int actmode); 
+int node_state(pbs_attribute *new_attr, void *pnode, int actmode); 
 
-int node_ntype(pbs_attribute *new, void *pnode, int actmode);
+int node_ntype(pbs_attribute *new_attr, void *pnode, int actmode);
 
-int node_prop_list(pbs_attribute *new, void *pnode, int actmode); 
+int node_prop_list(pbs_attribute *new_attr, void *pnode, int actmode); 
 
-int node_status_list(pbs_attribute *new, void *pnode, int actmode); 
+int node_status_list(pbs_attribute *new_attr, void *pnode, int actmode); 
 
-int node_gpustatus_list(pbs_attribute *new, void *pnode, int actmode); 
+int node_gpustatus_list(pbs_attribute *new_attr, void *pnode, int actmode); 
 
-int node_note(pbs_attribute *new, void *pnode, int actmode); 
+int node_note(pbs_attribute *new_attr, void *pnode, int actmode); 
 
-int set_note_str(struct pbs_attribute *attr, struct pbs_attribute *new, enum batch_op op);
+int set_note_str(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op);
 

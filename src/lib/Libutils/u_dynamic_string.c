@@ -134,7 +134,7 @@ int resize_if_needed(
     /* need to resize */
     difference = new_size - ds->size;
 
-    if ((tmp = realloc(ds->str, new_size)) == NULL)
+    if ((tmp = (char *)realloc(ds->str, new_size)) == NULL)
       return(ENOMEM);
 
     ds->str = tmp;
@@ -351,7 +351,7 @@ dynamic_string *get_dynamic_string(
   const char *str)          /* I (optional) */
 
   {
-  dynamic_string *ds = calloc(1, sizeof(dynamic_string));
+  dynamic_string *ds = (dynamic_string *)calloc(1, sizeof(dynamic_string));
 
   if (ds == NULL)
     return(ds);
@@ -361,7 +361,7 @@ dynamic_string *get_dynamic_string(
   else
     ds->size = DS_INITIAL_SIZE;
     
-  ds->str = calloc(1, ds->size);
+  ds->str = (char *)calloc(1, ds->size);
 
   if (ds->str == NULL)
     {

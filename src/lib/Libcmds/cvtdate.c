@@ -106,9 +106,10 @@
 #include <string.h>
 #include <time.h>
 
-time_t
-cvtdate(datestr)
-char   *datestr;
+time_t cvtdate(
+    
+    char *datestr)
+
   {
   char    buf[3];
   time_t    clock;

@@ -282,7 +282,7 @@ int add_verify_resources(
         hash_add_or_exit(mm, res_attr, name, value, p_type);
         }
       else
-        hash_add_or_exit(mm, res_attr, name, "\0", p_type);
+        hash_add_or_exit(mm, res_attr, name, (char *)"\0", p_type);
       }
     else
       {

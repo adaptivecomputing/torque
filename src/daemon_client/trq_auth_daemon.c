@@ -164,7 +164,7 @@ int daemonize_trqauthd(char *server_ip, int server_port, void *(*process_meth)(v
       {
          openlog("daemonize_trqauthd", LOG_PID | LOG_NOWAIT, LOG_DAEMON);
          syslog(LOG_ALERT, "Failed to create client_logs directory: errno: %d", errno);
-         log_err(errno,"daemonize_trqauthd", "Failed to create client_logs directory");
+         log_err(errno,"daemonize_trqauthd", (char *)"Failed to create client_logs directory");
          closelog();
       }
     pthread_mutex_lock(log_mutex);
@@ -177,7 +177,7 @@ int daemonize_trqauthd(char *server_ip, int server_port, void *(*process_meth)(v
       {
       openlog("daemonize_trqauthd", LOG_PID | LOG_NOWAIT, LOG_DAEMON);
       syslog(LOG_ALERT, "trqauthd could not start: %d\n", rc);
-      log_err(rc, "daemonize_trqauthd", "trqauthd could not start");
+      log_err(rc, "daemonize_trqauthd", (char *)"trqauthd could not start");
       pthread_mutex_lock(log_mutex);
       log_close(1);
       pthread_mutex_unlock(log_mutex);

@@ -298,7 +298,7 @@ int socket_connect(
 
 int socket_connect_addr(
     
-  int              *local_socket,
+  int              *socket,
   struct sockaddr  *remote,
   size_t            remote_size,
   int               is_privileged,
@@ -309,19 +309,20 @@ int socket_connect_addr(
   int rc = PBSE_NONE;
   char tmp_buf[LOCAL_LOG_BUF_SIZE+1];
   const char id[] = "socket_connect_addr";
+  int local_socket = *socket;
 
-  while ((rc = connect(*local_socket, remote, remote_size)) != 0)
+  while (((rc = connect(local_socket, remote, remote_size)) != 0) && (cntr < RES_PORT_RETRY))
     {
+    cntr++;
 /*    fprintf(stdout, "rc != 0 (%d)-(%d) (port_number=%d)\n", rc, errno, *local_socket); */
     switch (errno)
       {
       case ECONNREFUSED:    /* Connection refused */
-        snprintf(tmp_buf, LOCAL_LOG_BUF_SIZE, "cannot connect to port %d in %s - connection refused", *local_socket, id);
+        snprintf(tmp_buf, LOCAL_LOG_BUF_SIZE, "cannot connect to port %d in %s - connection refused", local_socket, id);
         *error_msg = strdup(tmp_buf);
         rc = PBS_NET_RC_RETRY;
-        close(*local_socket);
-        *local_socket = -1;
-        cntr = 0;
+        close(local_socket);
+        local_socket = -1;
         break;
 
       case EINPROGRESS:   /* Operation now in progress */
@@ -330,7 +331,7 @@ int socket_connect_addr(
       case ETIMEDOUT:   /* Connection timed out */
       case EAGAIN:    /* Operation would block */
       case EINTR:     /* Interrupted system call */
-        if ((rc = socket_wait_for_write(*local_socket)) == PBSE_NONE)
+        if ((rc = socket_wait_for_write(local_socket)) == PBSE_NONE)
           {
           /* no network failures detected, socket available */
           break;
@@ -344,10 +345,10 @@ int socket_connect_addr(
           rc = PBSE_SOCKET_FAULT;
           /* 3 connect attempts are made to each socket */
           /* Fail on RES_PORT_RETRY */
-          if (cntr++ < RES_PORT_RETRY)
+          if (cntr < RES_PORT_RETRY)
             {
-            close(*local_socket);
-            if ((*local_socket = socket_get_tcp_priv()) < 0)
+            close(local_socket);
+            if ((local_socket = socket_get_tcp_priv()) < 0)
               rc = PBSE_SOCKET_FAULT;
             else
               {
@@ -357,26 +358,23 @@ int socket_connect_addr(
             }
           else
             {
-            close(*local_socket);
-            *local_socket = -1;
-            /* Hit RES_PORT_RETRY, exit */
-            cntr = 0;
+            close(local_socket);
+            local_socket = -1;
             }
           }
         break;
 
       default:
-        snprintf(tmp_buf, LOCAL_LOG_BUF_SIZE, "cannot connect to port %d in %s - errno:%d %s", *local_socket, id, errno, strerror(errno));
+        snprintf(tmp_buf, LOCAL_LOG_BUF_SIZE, "cannot connect to port %d in %s - errno:%d %s", local_socket, id, errno, strerror(errno));
         *error_msg = strdup(tmp_buf);
-        close(*local_socket);
+        close(local_socket);
         rc = PBSE_SOCKET_FAULT;
-        cntr = 0;
-        *local_socket = -1;
+        local_socket = -1;
         break;
       }
-    if (cntr == 0)
-      break;
     }
+  if (rc == PBSE_NONE)
+    *socket = local_socket;
   return rc;
   } /* END socket_connect() */
 
@@ -625,7 +623,7 @@ int socket_read(
   if (rc != PBSE_NONE)
     {
     }
-  else if ((*the_str = calloc(1, avail_bytes+1)) == NULL)
+  else if ((*the_str = (char *)calloc(1, avail_bytes+1)) == NULL)
     {
     rc = PBSE_MEM_MALLOC;
     }

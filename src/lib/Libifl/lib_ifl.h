@@ -216,8 +216,8 @@ int encode_DIS_svrattrl(struct tcp_chan *chan, svrattrl *psattl);
 unsigned int get_svrport(char *service_name, char *ptype, unsigned int pdefault); 
 
 /* list_link.c */
-void insert_link(struct list_link *old, struct list_link *new, void *pobj, int position); 
-void append_link(tlist_head *head, list_link *new, void *pobj); 
+void insert_link(struct list_link *old, struct list_link *new_link, void *pobj, int position); 
+void append_link(tlist_head *head, list_link *new_link, void *pobj); 
 void delete_link(struct list_link *old);
 void swap_link(list_link *pone, list_link *ptwo);
 int is_linked(list_link *head, list_link *entry);
@@ -383,8 +383,6 @@ void blog_init(char *s, int len);
 int blog_write(char *s);
 void blog_out(char *filename);
 /* static int next_seq(int *seq); */
-char * netaddr_long(long ap, char *out);
-char * netaddr(struct sockaddr_in *ap);
 void set_rpp_throttle_sleep_time(long sleep_time);
 /* static void rpp_form_pkt(int index, int type, int seq, u_char *buf, int len); */
 /* static struct stream *rpp_check_pkt(int index, struct sockaddr_in *addrp); */
@@ -404,7 +402,6 @@ int rpp_flush(int index);
 int rpp_bind(uint port);
 int rpp_open(char *name, uint port, char *EMsg); 
 struct sockaddr_in *rpp_getaddr(int index);
-void rpp_terminate(void);
 void rpp_shutdown_on_exit(int foo, void *bar);
 void rpp_shutdown(void);
 int rpp_close(int index);

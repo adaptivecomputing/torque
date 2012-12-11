@@ -162,7 +162,7 @@ int  can_queue_new_job(
     num_to_add = count_jobs_submitted(pjob);
     num_queued = get_num_queued(&users, user_name);
 
-    if (num_queued + num_to_add > max_queuable)
+    if (num_queued + num_to_add > (unsigned int)max_queuable)
       can_queue_another = FALSE;
     }
   
@@ -202,7 +202,7 @@ int  increment_queued_jobs(
     if ((index = insert_thing(uih->ui_ra, ui)) == -1)
       {
       rc = ENOMEM;
-      log_err(rc, __func__, "Can't resize the user info array");
+      log_err(rc, __func__, (char *)"Can't resize the user info array");
       }
     else
       {

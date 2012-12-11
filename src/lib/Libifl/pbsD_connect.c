@@ -335,8 +335,8 @@ char *PBS_get_server(
   if (dflt_port == 0)
     {
     dflt_port = get_svrport(
-                  PBS_BATCH_SERVICE_NAME,
-                  "tcp",
+                  (char *)PBS_BATCH_SERVICE_NAME,
+                  (char *)"tcp",
                   PBS_BATCH_SERVICE_PORT);
     }
 
@@ -430,7 +430,7 @@ int PBSD_munge_authenticate(
     {
     /* read failed */
     local_errno = errno;
-    log_err(local_errno, __func__, "error reading pipe in PBSD_munge_authenticate");
+    log_err(local_errno, __func__, (char *)"error reading pipe in PBSD_munge_authenticate");
     return -1;
     }
   
@@ -552,7 +552,7 @@ int validate_socket(
     snprintf(tmp_buf, LOCAL_LOG_BUF, "cannot get account info: uid %d, errno %d (%s)\n", (int)myrealuid, errno, strerror(errno));
     log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, tmp_buf);
     }
-  else if ((rc = get_hostaddr_hostent_af(&local_errno, AUTH_IP, &af_family, &l_server, &l_server_len)) != PBSE_NONE)
+  else if ((rc = get_hostaddr_hostent_af(&local_errno, (char *)AUTH_IP, &af_family, &l_server, &l_server_len)) != PBSE_NONE)
     {
     }
   else if ((rc = get_parent_client_socket(psock, &parent_client_socket)) != PBSE_NONE)
@@ -802,7 +802,7 @@ int pbs_original_connect(
     {
     if (connection[i].ch_mutex == NULL)
       {
-      connection[i].ch_mutex = calloc(1, sizeof(pthread_mutex_t));
+      connection[i].ch_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
       pthread_mutex_init(connection[i].ch_mutex,NULL);
       }
 
@@ -1598,7 +1598,7 @@ void initialize_connections_table()
 
   for (i = 1;i < PBS_NET_MAX_CONNECTIONS;i++)
     {
-    connection[i].ch_mutex = calloc(1, sizeof(pthread_mutex_t));
+    connection[i].ch_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
     pthread_mutex_init(connection[i].ch_mutex, NULL);
     }
   } /* END initialize_connections_table() */

@@ -114,6 +114,7 @@
 #include "svr_connect.h" /* svr_disconnect_sock */
 #include "node_manager.h" /* tfind_addr */
 #include "ji_mutex.h"
+#include "svr_task.h"
 
 
 /* Global Data Items: */
@@ -183,7 +184,7 @@ int relay_to_mom(
   if ((node != NULL) &&
       (node->nd_state & INUSE_DOWN))
     {
-    unlock_node(node, __func__, "no rely mom", LOGLEVEL);
+    unlock_node(node, __func__, (char *)"no rely mom", LOGLEVEL);
     return(PBSE_NORELYMOM);
     }
 
@@ -197,7 +198,7 @@ int relay_to_mom(
     free(tmp);
     }
 
-  unlock_node(node, __func__, "after svr_connect", LOGLEVEL);
+  unlock_node(node, __func__, (char *)"after svr_connect", LOGLEVEL);
   handle = svr_connect(
            pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
            pjob->ji_qs.ji_un.ji_exect.ji_momport,
@@ -215,7 +216,7 @@ int relay_to_mom(
     }
 
   strcpy(jobid, pjob->ji_qs.ji_jobid);
-  unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+  unlock_ji_mutex(pjob, __func__, (char *)NULL, LOGLEVEL);
 
   request->rq_orgconn = request->rq_conn; /* save client socket */
 
@@ -235,13 +236,13 @@ int relay_to_mom(
  * a request that failed for a temporary reason
  */
 
-static void reissue_to_svr(
+void reissue_to_svr(
 
   struct work_task *pwt)
 
   {
   time_t         time_now = time(NULL);
-  char          *br_id = pwt->wt_parm1;
+  char          *br_id = (char *)pwt->wt_parm1;
   batch_request *preq = get_remove_batch_request(br_id);
 
   /* if not timed-out, retry send to remote server */
@@ -256,7 +257,7 @@ static void reissue_to_svr(
       pwt->wt_event = -1; /* seen as connection by post func */
       
       if (pwt->wt_parmfunc != NULL)
-        ((void (*)())pwt->wt_parmfunc)(pwt);
+        (* pwt->wt_parmfunc)(pwt);
       }
     }
 
@@ -379,7 +380,7 @@ void release_req(
 
   {
   batch_request *preq;
-  char          *br_id = pwt->wt_parm1;
+  char          *br_id = (char *)pwt->wt_parm1;
 
   if ((preq = get_remove_batch_request(br_id)) != NULL)
     free_br(preq);
@@ -432,7 +433,7 @@ int send_request_to_remote_server(
   if ((chan = DIS_tcp_setup(sock)) == NULL)
     {
     log_err(PBSE_MEM_MALLOC, __func__,
-      "Could not allocate memory for socket buffer");
+      (char *)"Could not allocate memory for socket buffer");
     close_conn(sock, FALSE);
     return(PBSE_MEM_MALLOC);
     }
@@ -564,9 +565,9 @@ int send_request_to_remote_server(
 
       rc = PBSD_sig_put(
              conn,
-             request->rq_ind.rq_signal.rq_jid,
-             request->rq_ind.rq_signal.rq_signame,
-             request->rq_extra);
+             (char *)request->rq_ind.rq_signal.rq_jid,
+             (char *)request->rq_ind.rq_signal.rq_signame,
+             (char *)request->rq_extra);
 
       break;
 

@@ -209,11 +209,11 @@ int check_exiting_jobs()
         if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
           {
           remove_entry_from_exiting_list(jeri);
-          unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+          unlock_ji_mutex(pjob, __func__, (char *)NULL, LOGLEVEL);
           }
         else
           {
-          unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+          unlock_ji_mutex(pjob, __func__, (char *)NULL, LOGLEVEL);
           retry_job_exit(jeri);
           }
         }

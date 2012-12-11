@@ -131,8 +131,8 @@ typedef struct pidl
 #define GET_NEXT(pe)  (pe).ll_next->ll_struct
 #define GET_PRIOR(pe) (pe).ll_prior->ll_struct
 #else
-#define GET_NEXT(pe) get_next(pe, __FILE__, __LINE__)
-#define GET_PRIOR(pe) get_prior(pe, __FILE__, __LINE__)
+#define GET_NEXT(pe) get_next(pe, (char *)__FILE__, __LINE__)
+#define GET_PRIOR(pe) get_prior(pe,(char *) __FILE__, __LINE__)
 #endif
 
 /* function prototypes */

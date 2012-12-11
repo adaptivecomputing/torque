@@ -295,7 +295,7 @@ rmonedir(char *tmpdir)
 
   if (pid < 0)
     {
-    log_err(errno, id, "Unable to fork");
+    log_err(errno, id, (char *)"Unable to fork");
     return;
     }
 
@@ -303,7 +303,7 @@ rmonedir(char *tmpdir)
 
   execl(rm, "pbs_cleandir", rf, tmpdir, 0);
 
-  log_err(errno, id, "This is really bad");
+  log_err(errno, id, (char *)"This is really bad");
 
   exit(1);
   }
@@ -327,7 +327,7 @@ rmtmpdir(char *sequence)
 
   if (pid < 0)
     {
-    log_err(errno, id, "Unable to fork");
+    log_err(errno, id, (char *)"Unable to fork");
     return;
     }
 

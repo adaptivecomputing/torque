@@ -149,7 +149,7 @@ int req_signaljob(
     {
     req_reject(PBSE_BADSTATE, 0, preq, NULL, NULL);
 
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
     return(PBSE_NONE);
     }
 
@@ -163,7 +163,7 @@ int req_signaljob(
       /* for suspend/resume, must be mgr/op */
       req_reject(PBSE_PERM, 0, preq, NULL, NULL);
       
-      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
       return(PBSE_NONE);
       }
   
@@ -184,7 +184,7 @@ int req_signaljob(
     {
     req_reject(PBSE_JOBTYPE, 0, preq, NULL, NULL);
 
-    unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, (char *)"3", LOGLEVEL);
     return(PBSE_NONE);
     }
 
@@ -209,7 +209,7 @@ int req_signaljob(
   if ((rc = copy_batchrequest(&dup_req, preq, 0, -1)) != 0)
     {
     req_reject(rc, 0, preq, NULL, "can not allocate memory");
-    unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, (char *)"4", LOGLEVEL);
     }
   /* The dup_req is freed in relay_to_mom (failure)
    * or in issue_Drequest (success) */
@@ -218,7 +218,7 @@ int req_signaljob(
     rc = relay_to_mom(&pjob, dup_req, NULL);
 
     if (pjob != NULL)
-      unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, (char *)"4", LOGLEVEL);
 
     if (rc != PBSE_NONE)
       {
@@ -284,7 +284,7 @@ int issue_signal(
     unlock_ji_mutex(pjob, __func__, NULL, 0);
     func(newreq);
 
-    *pjob_ptr = svr_find_job(jobid, TRUE);
+    *pjob_ptr = svr_find_job((char *)jobid, TRUE);
     }
   else
     {
@@ -337,7 +337,7 @@ void post_signal_req(
     {
     if ((jobid = preq->rq_extra) == NULL)
       {
-      log_err(ENOMEM, __func__, "Cannot allocate memory! FAILURE");
+      log_err(ENOMEM, __func__, (char *)"Cannot allocate memory! FAILURE");
       return;
       }
 
@@ -374,7 +374,7 @@ void post_signal_req(
           }
         }
     
-      unlock_ji_mutex(pjob, __func__, "5", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, (char *)"5", LOGLEVEL);
       }
     else
       {

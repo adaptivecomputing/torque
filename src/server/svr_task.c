@@ -148,7 +148,7 @@ struct work_task *set_task(
 
   enum work_type   type,
   long             event_id,  /* I - based on type can be time of event */
-  void           (*func)(),
+  void           (*func)(struct work_task *),
   void            *parm,
   int              get_lock)
 
@@ -306,14 +306,14 @@ void initialize_all_tasks_array(
 
   if (at->ra == NULL)
     {
-    log_err(ENOMEM, __func__, "Cannot allocate space for array...FAILURE");
+    log_err(ENOMEM, __func__, (char *)"Cannot allocate space for array...FAILURE");
     }
   
   at->alltasks_mutex = calloc(1, sizeof(pthread_mutex_t));
 
   if (at->alltasks_mutex == NULL)
     {
-    log_err(ENOMEM, __func__, "Cannot allocate space for mutex...FAILURE");
+    log_err(ENOMEM, __func__, (char *)"Cannot allocate space for mutex...FAILURE");
     }
   else
     {
@@ -376,7 +376,7 @@ int insert_task(
   if ((rc = insert_thing(at->ra,wt)) == -1)
     {
     rc = ENOMEM;
-    log_err(rc, __func__, "Cannot allocate space to resize the array");
+    log_err(rc, __func__, (char *)"Cannot allocate space to resize the array");
     }
 
   wt->wt_tasklist = at;
@@ -430,7 +430,7 @@ int insert_task_before(
     if ((rc = insert_thing_before(at->ra,before,i)) == -1)
       {
       rc = ENOMEM;
-      log_err(rc, __func__, "Cannot allocate space to resize the array");
+      log_err(rc, __func__, (char *)"Cannot allocate space to resize the array");
       }
     else
       rc = PBSE_NONE;
@@ -460,7 +460,7 @@ int insert_task_first(
   if ((rc = insert_thing_after(at->ra,wt,ALWAYS_EMPTY_INDEX)) == -1)
     {
     rc = ENOMEM;
-    log_err(rc, __func__, "Cannot allocate space to resize the array");
+    log_err(rc, __func__, (char *)"Cannot allocate space to resize the array");
     }
 
   wt->wt_tasklist = at;

@@ -1516,7 +1516,7 @@ int initialize_pbsnode(
   pnode->nd_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   if (pnode->nd_mutex == NULL)
     {
-    log_err(ENOMEM, __func__, "Could not allocate memory for the node's mutex");
+    log_err(ENOMEM, __func__, (char *)"Could not allocate memory for the node's mutex");
 
     return(ENOMEM);
     }
@@ -1563,7 +1563,7 @@ int check_and_resize(
 
     if ((tmp = realloc(ra->slots,size)) == NULL)
       {
-      log_err(ENOMEM,id,"No memory left to resize the array");
+      log_err(ENOMEM,id, (char *)"No memory left to resize the array");
       return(ENOMEM);
       }
 

@@ -176,13 +176,13 @@ static char *geteusernam(
 
   if (rule3)
     {
-    ptr = site_map_user(username, get_variable(pjob, "PBS_O_HOST"));
+    ptr = site_map_user(username, get_variable(pjob, (char *)"PBS_O_HOST"));
 
     if (ptr != username)
       snprintf(username, sizeof(username), "%s", ptr);
     }
 
-  ret_user = calloc(1, strlen(username) + 1);
+  ret_user = (char *)calloc(1, strlen(username) + 1);
   strcpy(ret_user,username);
 
   return(ret_user);
@@ -203,7 +203,7 @@ static char *geteusernam(
  * Returns pointer to the group name or null
  */
 
-static char *getegroup(
+char *getegroup(
 
   job           *pjob,  /* I */
   pbs_attribute *pattr) /* I group_list pbs_attribute */
@@ -258,7 +258,7 @@ static char *getegroup(
 
   get_jobowner(hit, groupname);
 
-  ret_group = calloc(1, strlen(groupname) + 1);
+  ret_group = (char *)calloc(1, strlen(groupname) + 1);
   strcpy(ret_group,groupname);
 
   return(ret_group);
@@ -410,7 +410,7 @@ int set_jobexid(
 
     pwent = getpwnam_ext(puser);
 
-    perm = svr_get_privilege(puser,get_variable(pjob,"PBS_O_HOST"));
+    perm = svr_get_privilege(puser,get_variable(pjob,(char *)"PBS_O_HOST"));
 
     if (pwent == NULL)
       {
@@ -640,7 +640,7 @@ int set_jobexid(
       }
     else
       {
-      log_err(errno, __func__, "getpwnam failed");
+      log_err(errno, __func__, (char *)"getpwnam failed");
 
       if (EMsg != NULL)
         snprintf(EMsg, 1024, "user does not exist in server password file");

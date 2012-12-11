@@ -26,7 +26,7 @@ int mom_server_count = 0;
 char *msg_daemonname = "unset";
 struct sig_tbl sig_tbl[2];
 char pbs_current_user[PBS_MAXUSER];
-char *server_alias = NULL;
+char *server_alias;
 const char *dis_emsg[10];
 long *log_event_mask = NULL;
 int rpp_dbprt = 0;

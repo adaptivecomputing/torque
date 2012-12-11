@@ -94,7 +94,7 @@ static int nodes_avail = 0;
 static int nodes_alloc = 0;
 static int nodes_resrv = 0;
 static int nodes_down  = 0;
-static char *resc_nodes = "nodes";
+static char *resc_nodes = (char *)"nodes";
 
 /*
  * tcp_encode_DIS_resc() - encode a resource related request,
@@ -416,13 +416,13 @@ char *avail(
   int dwn;
 
   if (pbs_rescquery(con, &resc, 1, &av, &al, &res, &dwn) != 0)
-    return ("?");
+    return ((char *)"?");
 
   else if (av > 0)
-    return ("yes");
+    return ((char *)"yes");
   else if (av == 0)
-    return ("no");
+    return ((char *)"no");
   else
-    return ("never");
+    return ((char *)"never");
   }
 

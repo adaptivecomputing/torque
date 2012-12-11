@@ -114,7 +114,7 @@ int create_work_thread(void)
   if ((rc = pthread_attr_init(&attr)) != 0)
     {
     perror("pthread_attr_init failed. Could not start worker thread.");
-    log_err(-1, "work_thread","pthread_attr_init failed. Could not start worker thread.");
+    log_err(-1, __func__, (char *)"pthread_attr_init failed. Could not start worker thread.");
     return rc;
     }
 
@@ -213,7 +213,6 @@ static void *work_thread(
   void *a)
 
   {
-  static char      *id = "work_thread";
 
   int               rc;
 
@@ -228,7 +227,7 @@ static void *work_thread(
 
   if (request_pool == NULL)
     {
-    log_err(-1,id,"Pool doesn't exist, and thread is active??\nTerminating");
+    log_err(-1,__func__,(char *) "Pool doesn't exist, and thread is active??\nTerminating");
     return(NULL);
     }
 
@@ -369,7 +368,7 @@ int initialize_threadpool(
   if ((rc = pthread_attr_init(&(*pool)->tp_attr)) != 0)
     {
     perror("pthread_attr_init failed. Could not init thread pool.");
-    log_err(-1, "initialize_threadpool","pthread_attr_init failed. Could not init thread pool.");
+    log_err(-1, __func__, (char *)"pthread_attr_init failed. Could not init thread pool.");
     return rc;
     }
 

@@ -69,7 +69,7 @@ int check_and_resize(
 
     if ((tmp = realloc(ra->slots,size)) == NULL)
       {
-      log_err(ENOMEM,id,"No memory left to resize the array");
+      log_err(ENOMEM,id, (char *)"No memory left to resize the array");
       return(ENOMEM);
       }
 
