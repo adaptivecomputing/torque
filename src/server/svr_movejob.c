@@ -266,9 +266,9 @@ int local_move(
   int                   parent_queue_mutex_held)
 
   {
-  pbs_queue *routing_que;
-  pbs_queue *dest_que;
-  pbs_queue *tmp_que;
+  pbs_queue *routing_que = NULL;
+  pbs_queue *dest_que = NULL;
+  pbs_queue *tmp_que = NULL;
   char      *destination = pjob->ji_qs.ji_destin;
   int        mtype;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
