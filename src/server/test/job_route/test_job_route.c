@@ -14,21 +14,17 @@ START_TEST(test_add_dest_null)
   }
 END_TEST
 
-
-
-START_TEST(test_one)
+START_TEST(test_add_dest)
   {
-
-
+  struct job j;
+  add_dest(&j);
   }
 END_TEST
 
-START_TEST(test_two)
+START_TEST(test_queue_route_null)
   {
-
-
+  fail_unless(NULL == queue_route(NULL));
   }
-END_TEST
 
 Suite *job_route_suite(void)
   {
