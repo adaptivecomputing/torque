@@ -811,7 +811,7 @@ void log_record(
    * Looking for the newline characters and splitting the output message
    * on them.  Sequence "\r\n" is mapped to the single newline.
    */
-  start = text;
+  start = (char *)text;
 
   while (1)
     {
