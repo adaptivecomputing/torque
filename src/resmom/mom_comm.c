@@ -452,7 +452,7 @@ task *pbs_task_create(
 
   at = &pjob->ji_wattr[JOB_ATR_resource];
 
-  rd = find_resc_def(svr_resc_def, "taskspn", svr_resc_size);
+  rd = find_resc_def(svr_resc_def, (char *)"taskspn", svr_resc_size);
 
   /* NYI: are checks like this necessary? Before this was an assert, which shouldn't
    * be in production code, so I figure this is better than that --dbeer */
@@ -601,7 +601,7 @@ int task_recov(
   char  namebuf[MAXPATHLEN];
   char  portname[MAXPATHLEN];
 
-  struct taskfix task_save;
+  taskfix task_save;
   tm_task_id tid;
 
   strcpy(namebuf, path_jobs);     /* job directory path */
@@ -904,7 +904,7 @@ int send_sisters(
         PBSEVENT_ERROR,
         PBS_EVENTCLASS_JOB,
         pjob->ji_qs.ji_jobid,
-        "cannot alloc event object in send_sisters");
+        (char *)"cannot alloc event object in send_sisters");
 
       continue;
       }
@@ -913,7 +913,7 @@ int send_sisters(
     
     if (IS_VALID_STREAM(local_socket) == FALSE)
       {
-      if ((mc = calloc(1, sizeof(resend_momcomm))) != NULL)
+      if ((mc = (resend_momcomm *)calloc(1, sizeof(resend_momcomm))) != NULL)
         {
         mc->mc_type = COMPOSE_REPLY;
         mc->mc_struct = create_compose_reply_info(pjob->ji_qs.ji_jobid, cookie, np, com, TM_NULL_EVENT, TM_NULL_TASK);
@@ -951,7 +951,7 @@ int send_sisters(
 
     if (ret != DIS_SUCCESS)
       {
-      if ((mc = calloc(1, sizeof(resend_momcomm))) != NULL)
+      if ((mc = (resend_momcomm *)calloc(1, sizeof(resend_momcomm))) != NULL)
         {
         mc->mc_type = COMPOSE_REPLY;
         mc->mc_struct = create_compose_reply_info(pjob->ji_qs.ji_jobid, cookie, np, com, TM_NULL_EVENT, TM_NULL_TASK);
@@ -1660,7 +1660,7 @@ char *resc_string(
       {
       tot *= 2;
 
-      tmpResStr = calloc(1, tot);
+      tmpResStr = (char *)calloc(1, tot);
 
       if (tmpResStr == NULL)
         {
@@ -1895,7 +1895,7 @@ void send_im_error(
       {
       resend_momcomm *mc;
 
-      if ((mc = calloc(1, sizeof(resend_momcomm))) != NULL)
+      if ((mc = (resend_momcomm *)calloc(1, sizeof(resend_momcomm))) != NULL)
         {
         mc->mc_type = COMPOSE_REPLY;
         mc->mc_struct = create_compose_reply_info(pjob->ji_qs.ji_jobid, 
@@ -1974,7 +1974,7 @@ int reply_to_join_job_as_sister(
       {
       /* SUCCESS */
       if (LOGLEVEL >= 8)
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "Successfully sent join job reply");
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, (char *)"Successfully sent join job reply");
 
       break;
       }
@@ -1984,7 +1984,7 @@ int reply_to_join_job_as_sister(
   
   if (ret != DIS_SUCCESS)
     {
-    resend_momcomm  *mc  = calloc(1, sizeof(resend_momcomm));
+    resend_momcomm  *mc  = (resend_momcomm *)calloc(1, sizeof(resend_momcomm));
     im_compose_info *ici;
 
     if (mc != NULL)
@@ -2347,7 +2347,7 @@ int im_join_job_as_sister(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
         pjob->ji_qs.ji_jobid,
-        "cannot create tmp dir");
+        (char *)"cannot create tmp dir");
       
       send_im_error(PBSE_BADUSER,1,pjob,cookie,event,fromtask);
       
@@ -2561,7 +2561,7 @@ void im_kill_job_as_sister(
    * die and are reaped.
    */
 
-  kill_job(pjob, SIGKILL, __func__, "kill_job message received");
+  kill_job(pjob, SIGKILL, __func__, (char *)"kill_job message received");
   
   pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
   
@@ -2758,7 +2758,7 @@ int im_spawn_task(
     
     if (i == num - 1)
       {
-      char **tmp = calloc(num * 2, sizeof(char **));
+      char **tmp = (char **)calloc(num * 2, sizeof(char **));
 
       if (tmp == NULL)
         {
@@ -2824,7 +2824,7 @@ int im_spawn_task(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
         jobid,
-        "saving task (IM_SPAWN_TASK)");
+        (char *)"saving task (IM_SPAWN_TASK)");
       }
     
     if (task_save(ptask) == -1)
@@ -2884,10 +2884,10 @@ int im_spawn_task(
           resend_momcomm  *mc;
           spawn_task_info *st;
           
-          if ((mc = calloc(1, sizeof(resend_momcomm))) != NULL)
+          if ((mc = (resend_momcomm *)calloc(1, sizeof(resend_momcomm))) != NULL)
             {
             mc->mc_type = COMPOSE_REPLY;
-            st = calloc(1, sizeof(spawn_task_info));
+            st = (spawn_task_info *)calloc(1, sizeof(spawn_task_info));
             
             if (st != NULL)
               {
@@ -3061,7 +3061,7 @@ int im_signal_task(
 
   if (ret != DIS_SUCCESS)
     {
-    resend_momcomm *mc = calloc(1, sizeof(resend_momcomm));
+    resend_momcomm *mc = (resend_momcomm *)calloc(1, sizeof(resend_momcomm));
 
     if (mc != NULL)
       {
@@ -3169,12 +3169,12 @@ int im_obit_task(
 
       if (ret != DIS_SUCCESS)
         {
-        resend_momcomm *mc = calloc(1, sizeof(resend_momcomm));
+        resend_momcomm *mc = (resend_momcomm *)calloc(1, sizeof(resend_momcomm));
         obit_task_info *ot;
         
         if (mc != NULL)
           {
-          if ((ot = calloc(1, sizeof(obit_task_info))) == NULL)
+          if ((ot = (obit_task_info *)calloc(1, sizeof(obit_task_info))) == NULL)
             {
             free(mc);
             }
@@ -3324,7 +3324,7 @@ int im_get_info(
     else if ((ret = im_compose(local_chan,jobid,cookie,IM_ALL_OKAY,event,fromtask)) != DIS_SUCCESS)
       {
       }
-    else if ((ret = diswcs(local_chan, ip->ie_info, ip->ie_len)) != DIS_SUCCESS)
+    else if ((ret = diswcs(local_chan, (char *)ip->ie_info, ip->ie_len)) != DIS_SUCCESS)
       {
       }
     else
@@ -3546,13 +3546,13 @@ int im_poll_job_as_sister(
     mom_set_use(pjob);
     
     /* ** Send the information tallied for the job.  */
-    if ((ret = diswul(local_chan, resc_used(pjob, "cput", gettime))) != DIS_SUCCESS)
+    if ((ret = diswul(local_chan, resc_used(pjob, (char *)"cput", gettime))) != DIS_SUCCESS)
       {
       }
-    else if ((ret = diswul(local_chan, resc_used(pjob, "mem", getsize))) != DIS_SUCCESS)
+    else if ((ret = diswul(local_chan, resc_used(pjob, (char *)"mem", getsize))) != DIS_SUCCESS)
       {
       }
-    else if ((ret = diswul(local_chan, resc_used(pjob, "vmem", getsize))) != DIS_SUCCESS)
+    else if ((ret = diswul(local_chan, resc_used(pjob, (char *)"vmem", getsize))) != DIS_SUCCESS)
       {
       }
     else
@@ -3742,7 +3742,7 @@ int handle_im_join_job_response(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
         pjob->ji_qs.ji_jobid,
-        "im_request: all sisters have reported in, launching job locally");
+        (char *)"im_request: all sisters have reported in, launching job locally");
       }
     
     exec_job_on_ms(pjob);
@@ -4418,7 +4418,7 @@ int handle_im_get_tid_response(
     
     if (LOGLEVEL >= 6)
       {
-      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,"saving task (IM_GET_TID)");
+      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,(char *)"saving task (IM_GET_TID)");
       }
     
     if (task_save(ptask) != -1)
@@ -4621,7 +4621,7 @@ void im_request(
     {
     long max_len = 1024;
     long final_len = 0;
-    char *tmp_line = calloc(1, max_len + 1);
+    char *tmp_line = (char *)calloc(1, max_len + 1);
     close_conn(chan->sock, FALSE);
     svr_conn[chan->sock].cn_stay_open = FALSE;
     chan->sock = -1;
@@ -5333,7 +5333,7 @@ void im_request(
                     PBSEVENT_JOB,
                     PBS_EVENTCLASS_JOB,
                     pjob->ji_qs.ji_jobid,
-                    "im_request:all sisters have reported in, launching job locally");
+                    (char *)"im_request:all sisters have reported in, launching job locally");
                   }
                 
                 exec_job_on_ms(pjob);
@@ -5906,7 +5906,7 @@ void tm_eof(
             PBSEVENT_JOB,
             PBS_EVENTCLASS_JOB,
             pjob->ji_qs.ji_jobid,
-            "matching task located, marking interface closed");
+            (char *)"matching task located, marking interface closed");
           }
 
         return;
@@ -5916,7 +5916,7 @@ void tm_eof(
 
   if (LOGLEVEL >= 1)
     {
-    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_SERVER, __func__, "no matching task found");
+    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_SERVER, __func__, (char *)"no matching task found");
     }
 
   return;
@@ -6196,7 +6196,7 @@ int tm_spawn_request(
   
   /* tack on PBS_VNODENUM */
   
-  envp[i] = calloc(MAXLINE, sizeof(char));
+  envp[i] = (char *)calloc(MAXLINE, sizeof(char));
   
   if (envp[i] == NULL)
     {
@@ -6204,7 +6204,7 @@ int tm_spawn_request(
       PBSEVENT_ERROR,
       PBS_EVENTCLASS_JOB,
       pjob->ji_qs.ji_jobid,
-      "cannot alloc env memory)");
+      (char *)"cannot alloc env memory)");
  
     arrayfree(argv);
     arrayfree(envp);
@@ -6256,7 +6256,7 @@ int tm_spawn_request(
           PBSEVENT_ERROR,
           PBS_EVENTCLASS_JOB,
           pjob->ji_qs.ji_jobid,
-          "saving task (TM_SPAWN)");
+          (char *)"saving task (TM_SPAWN)");
          }
       
       if (task_save(ptask) != -1)
@@ -6910,7 +6910,7 @@ int tm_getinfo_request(
       *ret = tm_reply(chan, TM_OKAY, event);
       
       if (*ret == DIS_SUCCESS)
-        *ret = diswcs(chan, ip->ie_info, ip->ie_len);
+        *ret = diswcs(chan, (char *)ip->ie_info, ip->ie_len);
 
       free(name);
       
@@ -7290,7 +7290,7 @@ int tm_request(
         PBSEVENT_ERROR,
         PBS_EVENTCLASS_JOB,
         pjob->ji_qs.ji_jobid,
-        "saving task (additional connection)");
+        (char *)"saving task (additional connection)");
       }
  
     if (task_save(ptask) == -1)
@@ -7786,7 +7786,7 @@ char *cat_dirs(
 
   len += strlen(base);
 
-  pn = calloc(1, len+2);
+  pn = (char *)calloc(1, len+2);
   if (!pn)
     {
     return(NULL);
@@ -7831,7 +7831,7 @@ char *get_local_script_path(
 	if (base[0] != '/')
 	  {
 	  /* base is not an absolute path. Prepend it with the working directory */
-	  if((wdir = get_job_envvar(pjob, "PBS_O_WORKDIR")) == NULL)
+	  if((wdir = get_job_envvar(pjob, (char *)"PBS_O_WORKDIR")) == NULL)
 	    return NULL;
 	  len = strlen(wdir);
 	  if (wdir[len-1] != '/')
@@ -8421,7 +8421,7 @@ received_node *get_received_node_entry(
   if (index == -1)
     {
 
-    rn = calloc(1, sizeof(received_node));
+    rn = (received_node *)calloc(1, sizeof(received_node));
     
     if (rn == NULL)
       {

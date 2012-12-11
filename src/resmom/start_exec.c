@@ -269,28 +269,28 @@ enum TVarElseEnum
 
 static char *variables_else[] =   /* variables to add, value computed */
   {
-  "HOME",
-  "LOGNAME",
-  "PBS_JOBNAME",
-  "PBS_JOBID",
-  "PBS_QUEUE",
-  "SHELL",
-  "USER",
-  "PBS_JOBCOOKIE",
-  "PBS_NODENUM",
-  "PBS_TASKNUM",
-  "PBS_MOMPORT",
-  "PBS_NODEFILE",
-  "PBS_NNODES",      /* number of nodes specified by size */
-  "TMPDIR",
-  "PBS_VERSION",
-  "PBS_NUM_NODES",  /* number of nodes specified by nodes string */
-  "PBS_NUM_PPN",    /* ppn value specified by nodes string */
-  "PBS_GPUFILE",    /* file containing which GPUs to access */
-  "PBS_NP",         /* number of processors requested */
-  "PBS_WALLTIME",   /* requested or default walltime */
-  "PBS_MICFILE",    /* file containing which MICs to access */
-  NULL
+  (char *)"HOME",
+  (char *)"LOGNAME",
+  (char *)"PBS_JOBNAME",
+  (char *)"PBS_JOBID",
+  (char *)"PBS_QUEUE",
+  (char *)"SHELL",
+  (char *)"USER",
+  (char *)"PBS_JOBCOOKIE",
+  (char *)"PBS_NODENUM",
+  (char *)"PBS_TASKNUM",
+  (char *)"PBS_MOMPORT",
+  (char *)"PBS_NODEFILE",
+  (char *)"PBS_NNODES",      /* number of nodes specified by size */
+  (char *)"TMPDIR",
+  (char *)"PBS_VERSION",
+  (char *)"PBS_NUM_NODES",  /* number of nodes specified by nodes string */
+  (char *)"PBS_NUM_PPN",    /* ppn value specified by nodes string */
+  (char *)"PBS_GPUFILE",    /* file containing which GPUs to access */
+  (char *)"PBS_NP",         /* number of processors requested */
+  (char *)"PBS_WALLTIME",   /* requested or default walltime */
+  (char *)"PBS_MICFILE",    /* file containing which MICs to access */
+  (char *)NULL
   };
 
 static int num_var_else = tveLAST;
@@ -382,7 +382,7 @@ static void no_hang(
   int sig)   /* I (not used) */
 
   {
-  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_REQUEST, " ", "alarm timed-out connect to qsub");
+  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_REQUEST, " ", (char *)"alarm timed-out connect to qsub");
   
   return;
   }   /* END no_hang() */
@@ -455,7 +455,7 @@ struct passwd *check_pwd(
 
   pjob->ji_qs.ji_un.ji_momt.ji_exuid = pwdp->pw_uid;
 
-  pjob->ji_grpcache = calloc(1, sizeof(struct grpcache) + strlen(pwdp->pw_dir) + 1);
+  pjob->ji_grpcache = (struct grpcache *)calloc(1, sizeof(struct grpcache) + strlen(pwdp->pw_dir) + 1);
 
   if (pjob->ji_grpcache == NULL)
     {
@@ -815,7 +815,7 @@ static int open_pty(
 
     if(pts < 0)
       {
-      log_err(errno, "open_pty", "cannot move pts file.");
+      log_err(errno, "open_pty", (char *)"cannot move pts file.");
       return -1;
       }
 
@@ -983,7 +983,7 @@ static int open_std_out_err(
 
   if((file_out == -1)||(file_err == -1))
     {
-    log_err(errno, __func__, "unable to open standard output/error");
+    log_err(errno, __func__, (char *)"unable to open standard output/error");
     return -1;
     }
 
@@ -1299,7 +1299,7 @@ int InitUserEnv(
   vtable.v_bsize = ebsize + EXTRA_VARIABLE_SPACE +
                      (vstrs != NULL ? (vstrs->as_next - vstrs->as_buf) : 0);
 
-  vtable.v_block = calloc(1, vtable.v_bsize);
+  vtable.v_block = (char *)calloc(1, vtable.v_bsize);
 
   if (vtable.v_block == NULL)
     {
@@ -1315,7 +1315,7 @@ int InitUserEnv(
   
   vtable.v_used = 0;
   
-  vtable.v_envp = calloc(vtable.v_ensize, sizeof(char *));
+  vtable.v_envp = (char **)calloc(vtable.v_ensize, sizeof(char *));
 
   if (vtable.v_envp == NULL)
     {
@@ -1447,7 +1447,7 @@ int InitUserEnv(
   /* PBS_WALLTIME */
 
   pattr = &pjob->ji_wattr[JOB_ATR_resource];
-  prd = find_resc_def(svr_resc_def, "walltime", svr_resc_size);
+  prd = find_resc_def(svr_resc_def, (char *)"walltime", svr_resc_size);
 
   if ((presc = find_resc_entry(pattr, prd)) != NULL)
     {
@@ -1460,7 +1460,7 @@ int InitUserEnv(
 
   pattr = &pjob->ji_wattr[JOB_ATR_resource];
 
-  prd = find_resc_def(svr_resc_def, "size", svr_resc_size);
+  prd = find_resc_def(svr_resc_def, (char *)"size", svr_resc_size);
 
   presc = find_resc_entry(pattr, prd);
 
@@ -1478,7 +1478,7 @@ int InitUserEnv(
 
   if (presc != NULL)
     {
-    char *ppn_str = "ppn=";
+    const char *ppn_str = "ppn=";
     char *tmp;
     
     if (presc->rs_value.at_val.at_str != NULL)
@@ -1573,7 +1573,7 @@ int mom_jobstarter_execute_job(
      note, this func is called from a child process that exits after the
      executable is launched, so we don't have to worry about freeing
      this calloc later */
-  arg[1] = calloc(1, strlen(shell) + 1);
+  arg[1] = (char *)calloc(1, strlen(shell) + 1);
   
   if (arg[1] == NULL)
     {
@@ -1794,7 +1794,7 @@ struct radix_buf **allocate_sister_list(
   int                i;
   
   /* create sister lists to send out to intermediate moms */
-  if ((sister_list = calloc((size_t)radix, sizeof(struct radix_buf *))) == NULL)
+  if ((sister_list = (radix_buf **)calloc((size_t)radix, sizeof(struct radix_buf *))) == NULL)
     {
     log_err(ENOMEM,__func__, (char *)"");
     return(NULL);
@@ -1802,14 +1802,14 @@ struct radix_buf **allocate_sister_list(
 
   for (i = 0; i < radix; i++)
     {
-    if ((sister_list[i] = calloc(1, sizeof(struct radix_buf))) == NULL)
+    if ((sister_list[i] = (radix_buf *)calloc(1, sizeof(struct radix_buf))) == NULL)
       {
       free(sister_list);
       log_err(ENOMEM,__func__, (char *)"");
       return(NULL);
       }
 
-    if ((sister_list[i]->host_list = calloc(1, THE_LIST_SIZE)) == NULL)
+    if ((sister_list[i]->host_list = (char *)calloc(1, THE_LIST_SIZE)) == NULL)
       {
       free(sister_list);
       log_err(ENOMEM,__func__, (char *)"");
@@ -2535,7 +2535,7 @@ int write_attr_to_file(
 
   job  *pjob,
   int   index,
-  char *suffix)
+  const char *suffix)
 
   {
   char  filename[MAXPATHLEN];
@@ -3609,7 +3609,7 @@ void setup_interactive_command_if_present(
 
   if ((pjob->ji_wattr[JOB_ATR_inter_cmd].at_flags & ATR_VFLAG_SET) != 0)
     {
-    arg[aindex] = calloc(1, strlen("-c") + 1);
+    arg[aindex] = (char *)calloc(1, strlen("-c") + 1);
     
     if (arg[aindex] == NULL)
       {
@@ -3624,7 +3624,7 @@ void setup_interactive_command_if_present(
     
     aindex++;
     
-    arg[aindex] = calloc(1, strlen(pjob->ji_wattr[JOB_ATR_inter_cmd].at_val.at_str) + 1);
+    arg[aindex] = (char *)calloc(1, strlen(pjob->ji_wattr[JOB_ATR_inter_cmd].at_val.at_str) + 1);
     
     if (arg[aindex] == NULL)
       {
@@ -3721,7 +3721,7 @@ void launch_the_demux(
 
   {
   /* child does demux */
-  char *demux = DEMUX;
+  const char *demux = DEMUX;
   char *shellname;
   char *arg[MAX_JOB_ARGS];
   int   aindex;
@@ -3741,7 +3741,7 @@ void launch_the_demux(
     close(pjob->ji_stderr);
   
   /* construct argv array */  
-  shellname = strrchr(demux, '/');
+  shellname = strrchr((char *)demux, '/');
 
   if (shellname != NULL)
     ++shellname; /* go past last '/' */
@@ -3750,7 +3750,7 @@ void launch_the_demux(
   
   aindex = 0;
   
-  arg[aindex] = calloc(1, strlen(shellname) + 1);
+  arg[aindex] = (char *)calloc(1, strlen(shellname) + 1);
   
   if (arg[aindex] == NULL)
     {
@@ -3770,7 +3770,7 @@ void launch_the_demux(
   execve(demux, arg, vtable.v_envp);
   
   /* reached only if execve fails */
-  *shell_ptr = demux;  /* for fprintf below */
+  *shell_ptr = (char *)demux;  /* for fprintf below */
 
   } /* END launch_the_demux() */
 
@@ -3793,7 +3793,7 @@ void source_login_shells_or_not(
   if (((TJE->is_interactive == TRUE) && (src_login_interactive == FALSE)) ||
       ((TJE->is_interactive != TRUE) && (src_login_batch == FALSE)))
     {
-    arg[aindex] = calloc(1, strlen(shellname) + 1);
+    arg[aindex] = (char *)calloc(1, strlen(shellname) + 1);
     
     if (arg[aindex] == NULL)
       {
@@ -3814,7 +3814,7 @@ void source_login_shells_or_not(
     }
   else
     {
-    arg[aindex] = calloc(1, strlen(shellname) + 2);
+    arg[aindex] = (char *)calloc(1, strlen(shellname) + 2);
     
     if (arg[aindex] == NULL)
       {
@@ -5934,7 +5934,7 @@ int generate_cookie(
 
   if (!(pjob->ji_wattr[JOB_ATR_Cookie].at_flags & ATR_VFLAG_SET))
     {
-    if ((tt = calloc(1, JOB_COOKIE_SIZE)) == NULL)
+    if ((tt = (char *)calloc(1, JOB_COOKIE_SIZE)) == NULL)
       {
       log_err(ENOMEM, __func__, (char *)"cannot alloc memory");
 
@@ -6526,7 +6526,7 @@ char *std_file_name(
   char         key;
   int          len;
   char        *pd;
-  char        *suffix;
+  const char        *suffix;
   char        *jobpath = NULL;
 #ifdef QSUB_KEEP_NO_OVERRIDE
   char        *pt;
@@ -7253,8 +7253,8 @@ static int find_env_slot(
 void bld_env_variables(
 
   struct var_table *vtable,   /* I (modified) */
-  char             *name,     /* I (required) */
-  char             *value)   /* I (optional) */
+  const char       *name,     /* I (required) */
+  const char       *value)   /* I (optional) */
 
   {
   int amt;
