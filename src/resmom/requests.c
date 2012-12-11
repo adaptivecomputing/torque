@@ -110,7 +110,6 @@
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
 #include "checkpoint.h" /* start_checkpoint */
-#include "rpp.h"
 #include "resmon.h"
 #include "net_connect.h"
 #include "utils.h"
@@ -1269,7 +1268,7 @@ int message_job(
 
   if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
     {
-    log_err(errno, "message_job", "cannot message job, not mother superior");
+    log_err(errno, "message_job", (char *)"cannot message job, not mother superior");
 
     return(PBSE_MOMREJECT);
     }
@@ -1320,7 +1319,7 @@ int message_job(
   alarm(alarm_time);
   if (write(fds, text, len) != len)
     {
-    log_err(errno, "message_job", "unable to write message to job");
+    log_err(errno, "message_job", (char *)"unable to write message to job");
 
     rc = PBSE_INTERNAL;
     }
@@ -1328,7 +1327,7 @@ int message_job(
 
   if (close(fds) != 0)
     {
-    log_err(errno, "message_job", "unable to write message to job");
+    log_err(errno, "message_job", (char *)"unable to write message to job");
 
     rc = PBSE_INTERNAL;
     }
@@ -1755,7 +1754,7 @@ static void cray_susp_resum(
     {
     /* fork failed - still the main mom */
 
-    log_err(-1, __func__, "cannot fork child for cray suspend");
+    log_err(-1, __func__, (char *)"cannot fork child for cray suspend");
 
     req_reject(PBSE_SYSTEM, errno, preq, NULL, NULL);
 
@@ -3637,7 +3636,7 @@ void req_cpyfile(
 
         if ((mkdir(needdir, 01777) == -1) && (errno != EEXIST))
           {
-          log_err(errno, __func__, "Failed to create jobs checkpoint directory");
+          log_err(errno, __func__, (char *)"Failed to create jobs checkpoint directory");
           }
 
         umask(saveumask);

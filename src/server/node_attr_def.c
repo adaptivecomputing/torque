@@ -122,7 +122,7 @@ attribute_def node_attr_def[] =
   {
 
 	/* ND_ATR_state */
-    { ATTR_NODE_state, /* "state" */
+    { (char *)ATTR_NODE_state, /* "state" */
     decode_state,
     encode_state,
     set_node_state,
@@ -135,7 +135,7 @@ attribute_def node_attr_def[] =
     },
 
 	/* ND_ATR_np */
-	{ ATTR_NODE_np,  /* "np" */
+	{ (char *)ATTR_NODE_np,  /* "np" */
 	  decode_l,
 	  encode_l,
 	  set_l,
@@ -147,7 +147,7 @@ attribute_def node_attr_def[] =
 	  PARENT_TYPE_NODE,
 	},
 	/* ND_ATR_properties */
-	{ ATTR_NODE_properties, /* "properties" */
+	{ (char *)ATTR_NODE_properties, /* "properties" */
 	  decode_arst,
 	  encode_arst,
 	  set_arst,
@@ -160,7 +160,7 @@ attribute_def node_attr_def[] =
 	},
   
 	/* ND_ATR_ntype */
-	{ ATTR_NODE_ntype, /* "ntype" */
+	{ (char *)ATTR_NODE_ntype, /* "ntype" */
 	  decode_ntype,
 	  encode_ntype,
 	  set_node_ntype,
@@ -173,7 +173,7 @@ attribute_def node_attr_def[] =
 	},
   
 	/* ND_ATR_jobs */
-	{   ATTR_NODE_jobs,         /* "jobs" */
+	{   (char *)ATTR_NODE_jobs,         /* "jobs" */
 		decode_null,
 		encode_jobs,
 		set_null,
@@ -186,7 +186,7 @@ attribute_def node_attr_def[] =
 	},
   
 	/* ND_ATR_status */
-	{  ATTR_NODE_status,
+	{  (char *)ATTR_NODE_status,
 	   decode_arst,
 	   encode_arst,
 	   set_arst,
@@ -199,7 +199,7 @@ attribute_def node_attr_def[] =
 	},
   
 	/* ND_ATR_note */
-	{ ATTR_NODE_note, /* "note" */
+	{ (char *)ATTR_NODE_note, /* "note" */
 	  decode_str,
 	  encode_str,
 	  set_note_str,
@@ -211,7 +211,7 @@ attribute_def node_attr_def[] =
 	  PARENT_TYPE_NODE,
 	},
 	/* ND_ATR_mom_port */
-	{ ATTR_NODE_mom_port,  /* "mom_service_port" */
+	{ (char *)ATTR_NODE_mom_port,  /* "mom_service_port" */
 	  decode_l,
 	  encode_l,
 	  set_l,
@@ -223,7 +223,7 @@ attribute_def node_attr_def[] =
 	  PARENT_TYPE_NODE,
 	},
 	/* ND_ATR_mom_rm_port */
-	{ ATTR_NODE_mom_rm_port,  /* "mom_manager_port" */
+	{ (char *)ATTR_NODE_mom_rm_port,  /* "mom_manager_port" */
 	  decode_l,
 	  encode_l,
 	  set_l,
@@ -235,7 +235,7 @@ attribute_def node_attr_def[] =
 	  PARENT_TYPE_NODE,
 	},
   /* ND_ATR_num_node_boards */
-  { ATTR_NODE_num_node_boards, /* "num_node_boards" */
+  { (char *)ATTR_NODE_num_node_boards, /* "num_node_boards" */
     decode_l,
     encode_l,
     set_l,
@@ -247,7 +247,7 @@ attribute_def node_attr_def[] =
     PARENT_TYPE_NODE,
   },
   /* ND_ATR_numa_str */
-  { ATTR_NODE_numa_str, /* "node_board_str" */
+  { (char *)ATTR_NODE_numa_str, /* "node_board_str" */
     decode_str,
     encode_str,
     set_str,
@@ -259,7 +259,7 @@ attribute_def node_attr_def[] =
     PARENT_TYPE_NODE,
   },
   /* ND_ATR_gpus */
-  { ATTR_NODE_gpus,    /* "gpus" */
+  { (char *)ATTR_NODE_gpus,    /* "gpus" */
     decode_l,
     encode_l,
     set_l,
@@ -271,7 +271,7 @@ attribute_def node_attr_def[] =
     PARENT_TYPE_NODE,
   },
   /* ND_ATR_gpus_str */
-  { ATTR_NODE_gpus_str, /* "numa_gpu_node_str" */
+  { (char *)ATTR_NODE_gpus_str, /* "numa_gpu_node_str" */
     decode_str,
     encode_str,
     set_str,
@@ -283,7 +283,7 @@ attribute_def node_attr_def[] =
     PARENT_TYPE_NODE,
   },
   /* ND_ATR_gpustatus */
-  {ATTR_NODE_gpustatus,		/* "gpu_status" */
+  {(char *)ATTR_NODE_gpustatus,		/* "gpu_status" */
    decode_arst,
    encode_arst,
    set_arst,
@@ -295,7 +295,7 @@ attribute_def node_attr_def[] =
    PARENT_TYPE_NODE,
    },
   /* ND_ATR_mics */
-  { ATTR_NODE_mics,    /* "mics" */
+  { (char *)ATTR_NODE_mics,    /* "mics" */
     decode_l,
     encode_l,
     set_l,
@@ -307,7 +307,7 @@ attribute_def node_attr_def[] =
     PARENT_TYPE_NODE,
   },
   /* ND_ATR_micstatus */
-  {ATTR_NODE_micstatus,   /* "mic_status" */
+  {(char *)ATTR_NODE_micstatus,   /* "mic_status" */
    decode_arst,
    encode_arst,
    set_arst,

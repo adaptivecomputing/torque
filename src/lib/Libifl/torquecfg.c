@@ -151,7 +151,7 @@ char *trq_get_if_name()
     return(NULL);
 	}
 
-  ptr = get_trq_param(TRQ_IFNAME, torque_cfg_buf);
+  ptr = get_trq_param((char *)TRQ_IFNAME, torque_cfg_buf);
   if (ptr == NULL)
     {
     if (torque_cfg_buf)

@@ -317,7 +317,7 @@ static int PBSD_scbuf(
     return(PBSE_MEM_MALLOC);
     }
   else if (jobid == NULL)
-    jobid = ""; /* use null string for null pointer */
+    jobid = (char *)""; /* use null string for null pointer */
 
   if ((rc = encode_DIS_ReqHdr(chan, reqtype, pbs_current_user)) ||
       (rc = encode_DIS_JobFile(chan, seq, buf, len, jobid, which)) ||

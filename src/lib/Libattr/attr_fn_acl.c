@@ -93,6 +93,9 @@
 #include "attribute.h"
 #include "pbs_error.h"
 
+/* This typedef allows a function to return a pointer to a function */
+typedef int (*fptr_int)(const char *, const char *);
+
 /*
  * This file contains general functions for attributes of type
  *      User/Group/Hosts Acess Control List.
@@ -123,14 +126,14 @@
 
 /* Private Functions */
 
-static int hacl_match(const char *can, const char *master);
-static int uhacl_match(const char *can, const char *master);
-static int user_match(const char *can, const char *master);
-static int gid_match(const char *can, const char *master);
-static int host_order(char *old, char *new_order);
-static int user_order(char *old, char *new_order);
-static int set_allacl(pbs_attribute *, pbs_attribute *, enum batch_op,
-                          int (*order_func)());
+int hacl_match(const char *can, const char *master);
+int uhacl_match(const char *can, const char *master);
+int user_match(const char *can, const char *master);
+int gid_match(const char *can, const char *master);
+int host_order(char *old, char *new_order);
+int user_order(char *old, char *new_order);
+int set_allacl(pbs_attribute *, pbs_attribute *, enum batch_op,
+                          int (*order_func)(char *, char *));
 
 /* for all decode_*acl() - use decode_arst() */
 /* for all encode_*acl() - use encode_arst() */
@@ -182,9 +185,9 @@ int set_hostacl(
 
 
 /* this function returns a function pointer */
-int (*get_my_match_func(
+fptr_int get_my_match_func(
 
-  int type))(const char *, const char *)
+  int type)
 
   {
   int (*match_func)(const char *, const char *);
@@ -215,11 +218,11 @@ int (*get_my_match_func(
 
     default:
 
-      match_func = (int (*)())strcmp;
+      match_func = strcmp;
       break;
     }
 
-  return(match_func);
+  return((fptr_int)match_func);
   } /* END get_my_match_func() */
 
 
@@ -346,7 +349,7 @@ int acl_check(
  * between the new and old list.
  */
 
-static int chk_dup_acl(
+int chk_dup_acl(
 
   struct array_strings *old,
   struct array_strings *new_string)
@@ -390,7 +393,7 @@ static int chk_dup_acl(
  * parameter which indicates the ACL type.
  */
 
-static int set_allacl(
+int set_allacl(
     
   pbs_attribute *attr,
   pbs_attribute *new_attr,
@@ -480,7 +483,7 @@ static int set_allacl(
 
         nsize += nsize / 2;  /* alloc extra space */
 
-        if (!(pas->as_buf = calloc(1, (size_t)nsize)))
+        if (!(pas->as_buf = (char *)calloc(1, (size_t)nsize)))
           {
           pas->as_bufsize = 0;
           return (PBSE_SYSTEM);
@@ -518,7 +521,7 @@ static int set_allacl(
 
         need = pas->as_bufsize + 2 * nsize;  /* alloc new buf */
 
-        pc = calloc(1, need);
+        pc = (char *)calloc(1, need);
 
         if (pc == (char *)0)
           return (PBSE_SYSTEM);
@@ -654,8 +657,7 @@ static int set_allacl(
  * Returns 0 if strings match,  1 if not   - to match strcmp()
  */
 
-static int
-user_match(const char *can, const char *master)
+int user_match(const char *can, const char *master)
   {
 
   /* match user name first */
@@ -703,7 +705,7 @@ user_match(const char *can, const char *master)
  *     1 if s1 sorts after s2
  */
 
-static int user_order(
+int user_order(
 
   char *s1,
   char *s2)
@@ -741,7 +743,7 @@ static int user_order(
 /*
  * group acl match - match 2 groups by gid
  */
-static int gid_match(const char *group1, const char *group2)
+int gid_match(const char *group1, const char *group2)
   {
 
   struct group *pgrp;
@@ -893,7 +895,7 @@ int acl_wildcard_check(
  * Returns 0 if strings match,  1 if not   - to match strcmp()
  */
 
-static int hacl_match(
+int hacl_match(
 
   const char *can,
   const char *master)
@@ -1035,7 +1037,7 @@ int match_strings(const char *can, const char *master)
  * Returns 0 if strings match,  1 if not   - to match strcmp()
  */
 
-static int uhacl_match(
+int uhacl_match(
 
   const char *can,
   const char *master)
@@ -1121,7 +1123,7 @@ static int uhacl_match(
  *     1 if s1 sorts after s2
  */
 
-static int host_order(
+int host_order(
 
   char *s1,
   char *s2)

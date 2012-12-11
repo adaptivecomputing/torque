@@ -182,12 +182,6 @@ int DIS_tcp_wflush(int fd)
   exit(1);
   }
 
-void rpp_terminate(void)
-  {
-  fprintf(stderr, "The call to rpp_terminate needs to be mocked!!\n");
-  exit(1);
-  }
-
 int attr_atomic_set(struct svrattrl *plist, pbs_attribute *old, pbs_attribute *new_attr, attribute_def *pdef, int limit, int unkn, int privil, int *badattr)
   {
   fprintf(stderr, "The call to attr_atomic_set needs to be mocked!!\n");

@@ -614,7 +614,7 @@ int process_request(
             }
 
           }
-        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
         }
       
       if (!skip)
@@ -1053,7 +1053,7 @@ int close_quejob_by_jobid(
     }
 
   if (pjob != NULL)
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
 
   return(rc);
   } /* close_quejob_by_jobid() */

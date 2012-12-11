@@ -106,7 +106,7 @@ int encode_DIS_JobFile(
   int   rc;
 
   if (jobid == (char *)0)
-    jobid = "";
+    jobid = (char *)"";
 
   if ((rc = diswui(chan, seq) != 0) ||
       (rc = diswui(chan, which) != 0) ||

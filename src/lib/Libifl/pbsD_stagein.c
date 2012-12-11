@@ -108,7 +108,7 @@ int pbs_stagein(
     return (PBSE_IVALREQ);
 
   if (location == (char *)0)
-    location = "";
+    location = (char *)"";
 
   pthread_mutex_lock(connection[c].ch_mutex);
 

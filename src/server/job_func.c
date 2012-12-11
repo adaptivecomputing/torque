@@ -206,7 +206,7 @@ void send_qsub_delmsg(
   pbs_attribute *pattri;
   int            qsub_sock;
 
-  phost = arst_string("PBS_O_HOST", &pjob->ji_wattr[JOB_ATR_variables]);
+  phost = arst_string((char *)"PBS_O_HOST", &pjob->ji_wattr[JOB_ATR_variables]);
 
   if ((phost == NULL) || ((phost = strchr(phost, '=')) == NULL))
     {
@@ -275,7 +275,7 @@ int remtree(
     {
 
     if (errno != ENOENT)
-      log_err(errno, __func__, "stat");
+      log_err(errno, __func__, (char *)"stat");
 
     return(-1);
     }
@@ -285,7 +285,7 @@ int remtree(
     if ((dir = opendir(dirname)) == NULL)
       {
       if (errno != ENOENT)
-        log_err(errno, __func__, "opendir");
+        log_err(errno, __func__, (char *)"opendir");
 
       return(-1);
       }
@@ -312,7 +312,7 @@ int remtree(
       if (lstat(namebuf, &sb) == -1)
 #endif
         {
-        log_err(errno, __func__, "stat");
+        log_err(errno, __func__, (char *)"stat");
 
         rtnv = -1;
 
@@ -439,7 +439,7 @@ int job_abt(
     {
     /* req_delete sends own mail and acct record */
 
-    account_record(PBS_ACCT_ABT, pjob, "");
+    account_record(PBS_ACCT_ABT, pjob, (char *)"");
     svr_mailowner(pjob, MAIL_ABORT, MAIL_NORMAL, text);
 
     if ((pjob->ji_qs.ji_state == JOB_STATE_QUEUED) &&
@@ -456,7 +456,7 @@ int job_abt(
     {
     svr_setjobstate(pjob, JOB_STATE_RUNNING, JOB_SUBSTATE_ABORT, FALSE);
 
-    if ((rc = issue_signal(&pjob, "SIGKILL", free_br, NULL)) != 0)
+    if ((rc = issue_signal(&pjob, (char *)"SIGKILL", free_br, NULL)) != 0)
       {
       if (pjob != NULL)
         {
@@ -475,7 +475,7 @@ int job_abt(
         
         if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
           {
-          unlock_ji_mutex(pjob, __func__, "1a",LOGLEVEL);
+          unlock_ji_mutex(pjob, __func__, (char *)"1a",LOGLEVEL);
           depend_on_term(job_id);
           pjob = svr_find_job(job_id, TRUE);
           }
@@ -491,11 +491,11 @@ int job_abt(
             {
             job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
             job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
-            unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+            unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
             update_array_values(pa,old_state,aeTerminate,
                 job_id, job_atr_hold, job_exit_status);
             
-            unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+            unlock_ai_mutex(pa, __func__, (char *)"1", LOGLEVEL);
             pjob = svr_find_job(job_id, TRUE);
             }
           }
@@ -516,7 +516,7 @@ int job_abt(
       pjob->ji_qs.ji_jobid,
       old_substate);
     log_err(-1, __func__, log_buf);
-    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
     }
   else
     {
@@ -532,7 +532,7 @@ int job_abt(
     if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
       {
       strcpy(job_id, pjob->ji_qs.ji_jobid);
-      unlock_ji_mutex(pjob, __func__, "1b", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, (char *)"1b", LOGLEVEL);
       depend_on_term(job_id);
       pjob = svr_find_job(job_id, TRUE);
       }
@@ -548,11 +548,11 @@ int job_abt(
         {
         job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
         job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
-        unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, (char *)"3", LOGLEVEL);
         update_array_values(pa,old_state,aeTerminate,
             job_id, job_atr_hold, job_exit_status);
         
-        unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+        unlock_ai_mutex(pa, __func__,(char *) "1", LOGLEVEL);
         pjob = svr_find_job(job_id, TRUE);
         }
       }
@@ -655,14 +655,14 @@ job *job_alloc(void)
   
   if (pj == NULL)
     {
-    log_err(errno, __func__, "no memory");
+    log_err(errno, __func__, (char *)"no memory");
     
     return(NULL);
     }
 
   pj->ji_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(pj->ji_mutex,NULL);
-  lock_ji_mutex(pj, __func__, NULL, LOGLEVEL);
+  lock_ji_mutex(pj, __func__, (char *)NULL, LOGLEVEL);
 
   pj->ji_qs.qs_version = PBS_QS_VERSION;
 
@@ -704,13 +704,13 @@ void job_free(
 
   if (pj->ji_cray_clone != NULL)
     {
-    lock_ji_mutex(pj->ji_cray_clone, __func__, NULL, 0);
+    lock_ji_mutex(pj->ji_cray_clone, __func__, (char *)NULL, 0);
     job_free(pj->ji_cray_clone, TRUE);
     }
 
   if (pj->ji_external_clone != NULL)
     {
-    lock_ji_mutex(pj->ji_external_clone, __func__, NULL, 0);
+    lock_ji_mutex(pj->ji_external_clone, __func__, (char *)NULL, 0);
     job_free(pj->ji_external_clone, TRUE);
     }
 
@@ -773,7 +773,7 @@ job *copy_job(
 
   if ((pnewjob = job_alloc()) == NULL)
     {
-    log_err(errno, __func__, "no memory");
+    log_err(errno, __func__, (char *)"no memory");
 
     return(NULL);
     }
@@ -844,14 +844,14 @@ job *job_clone(
 
   if (taskid > PBS_MAXJOBARRAY)
     {
-    log_err(-1, __func__, "taskid out of range");
+    log_err(-1, __func__, (char *)"taskid out of range");
 
     return(NULL);
     }
 
   if ((pnewjob = job_alloc()) == NULL)
     {
-    log_err(errno, __func__, "no memory");
+    log_err(errno, __func__, (char *)"no memory");
 
     return(NULL);
     }
@@ -869,7 +869,7 @@ job *job_clone(
   /* find the job id for the cloned job */
   if ((oldid = strdup(template_job->ji_qs.ji_jobid)) == NULL)
     {
-    log_err(ENOMEM, __func__, "no memory");
+    log_err(ENOMEM, __func__, (char *)"no memory");
     job_free(pnewjob, FALSE);
 
     return(NULL);
@@ -926,7 +926,7 @@ job *job_clone(
         {
         /* FAILURE */
 
-        log_err(errno, __func__, "cannot create job file");
+        log_err(errno, __func__, (char *)"cannot create job file");
         job_free(pnewjob, FALSE);
 
         return(NULL);
@@ -1034,7 +1034,7 @@ job *job_clone(
 
   if (release_mutex == TRUE)
     {
-    unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+    unlock_ai_mutex(pa, __func__, (char *)"1", LOGLEVEL);
     }
 
   return(pnewjob);
@@ -1080,7 +1080,7 @@ void *job_clone_wt(
 
   if (jobid == NULL)
     {
-    log_err(ENOMEM, __func__, "Can't malloc");
+    log_err(ENOMEM, __func__, (char *)"Can't malloc");
     return(NULL);
     }
 
@@ -1091,7 +1091,7 @@ void *job_clone_wt(
     free(jobid);
 
     if (template_job != NULL)
-      unlock_ji_mutex(template_job, __func__, "1", LOGLEVEL);
+      unlock_ji_mutex(template_job, __func__, (char *)"1", LOGLEVEL);
     return(NULL);
     }
 
@@ -1101,7 +1101,7 @@ void *job_clone_wt(
 
   snprintf(namebuf, sizeof(namebuf), "%s%s.AR",
     path_jobs, template_job->ji_qs.ji_fileprefix);
-  unlock_ji_mutex(template_job, __func__, "2", LOGLEVEL);
+  unlock_ji_mutex(template_job, __func__, (char *)"2", LOGLEVEL);
 
   while ((rn = (array_request_node *)GET_NEXT(pa->request_tokens)) != NULL)
     {
@@ -1118,13 +1118,13 @@ void *job_clone_wt(
         continue;
         }
 
-      lock_ji_mutex(template_job, __func__, NULL, LOGLEVEL);
+      lock_ji_mutex(template_job, __func__, (char *)NULL, LOGLEVEL);
       pjobclone = job_clone(template_job, pa, i);
-      unlock_ji_mutex(template_job, __func__, "3", LOGLEVEL);
+      unlock_ji_mutex(template_job, __func__, (char *)"3", LOGLEVEL);
 
       if (pjobclone == NULL)
         {
-        log_err(-1, __func__, "unable to clone job in job_clone_wt");
+        log_err(-1, __func__, (char *)"unable to clone job in job_clone_wt");
         continue;
         }
       else if (pjobclone == (job *)1)
@@ -1149,7 +1149,7 @@ void *job_clone_wt(
       if ((rc = svr_enquejob(pjobclone, FALSE, prev_index)))
         {
         /* XXX need more robust error handling */
-        unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+        unlock_ai_mutex(pa, __func__, (char *)"1", LOGLEVEL);
 
         if (rc != PBSE_JOB_RECYCLED)
           svr_job_purge(pjobclone);
@@ -1161,7 +1161,7 @@ void *job_clone_wt(
       if (job_save(pjobclone, SAVEJOB_FULL, 0) != 0)
         {
         /* XXX need more robust error handling */
-        unlock_ai_mutex(pa, __func__, "2", LOGLEVEL);
+        unlock_ai_mutex(pa, __func__, (char *)"2", LOGLEVEL);
         svr_job_purge(pjobclone);
        
         pa = get_array(arrayid);
@@ -1176,7 +1176,7 @@ void *job_clone_wt(
       rn->start++;
       
       if (prev_index != -1)
-        unlock_ji_mutex(pjobclone, __func__, "4", LOGLEVEL);
+        unlock_ji_mutex(pjobclone, __func__, (char *)"4", LOGLEVEL);
       }  /* END for (i) */
 
     if (rn->start > rn->end)
@@ -1231,11 +1231,11 @@ void *job_clone_wt(
       svr_evaljobstate(pjob, &newstate, &newsub, 1);
       svr_setjobstate(pjob, newstate, newsub, FALSE);
       
-      unlock_ji_mutex(pjob, __func__, "5", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, (char *)"5", LOGLEVEL);
       }
     }
 
-  unlock_ai_mutex(pa, __func__, "3", LOGLEVEL);
+  unlock_ai_mutex(pa, __func__, (char *)"3", LOGLEVEL);
   return(NULL);
   }  /* END job_clone_wt */
 
@@ -1306,7 +1306,7 @@ struct batch_request *cpy_checkpoint(
   saveumask = umask(0000);
   if ((mkdir(serverfile, 01777) == -1) && (errno != EEXIST))
     {
-    log_err(errno,"cpy_checkpoint", "Failed to create jobs checkpoint directory");
+    log_err(errno,"cpy_checkpoint", (char *)"Failed to create jobs checkpoint directory");
     }
   umask(saveumask);
 
@@ -1374,13 +1374,13 @@ struct batch_request *cpy_checkpoint(
       PBSEVENT_ERROR | PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
       pjob->ji_qs.ji_jobid,
-      "ERROR:  cannot allocate 'to' memory in cpy_checkpoint");
+      (char *)"ERROR:  cannot allocate 'to' memory in cpy_checkpoint");
 
     return(preq);
     }
 
   strcpy(to, server_name);
-  strcat(to, ":");
+  strcat(to, (char *)":");
   strcat(to, serverfile);
 
   from = (char *)calloc(1, strlen(momfile) + 1);
@@ -1393,7 +1393,7 @@ struct batch_request *cpy_checkpoint(
       PBSEVENT_ERROR | PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
       pjob->ji_qs.ji_jobid,
-      "ERROR:  cannot allocate 'from' memory for from in cpy_checkpoint");
+      (char *)"ERROR:  cannot allocate 'from' memory for from in cpy_checkpoint");
 
     free(to);
 
@@ -1462,7 +1462,7 @@ void remove_checkpoint(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_FILE,
         pjob->ji_qs.ji_jobid,
-        "unable to remove checkpoint file for job");
+        (char *)"unable to remove checkpoint file for job");
       }
 
     free_br(preq);
@@ -1522,14 +1522,14 @@ int record_jobinfo(
   if ((rc = job_log_open(job_log_file, path_jobinfo_log)) < 0)
     {
     pthread_mutex_unlock(job_log_mutex);
-    log_err(rc, __func__, "Could not open job log ");
+    log_err(rc, __func__, (char *)"Could not open job log ");
     return(rc);
     }
   pthread_mutex_unlock(job_log_mutex);
 
   if ((buffer = get_dynamic_string(MAXLINE << 3, NULL)) == NULL)
     {
-    log_err(ENOMEM, __func__, "Can't allocate memory");
+    log_err(ENOMEM, __func__, (char *)"Can't allocate memory");
     return(-1);
     }
  
@@ -1636,7 +1636,7 @@ int record_jobinfo(
 
   if ((rc = append_dynamic_string(buffer, "</Jobinfo>\n")) != PBSE_NONE)
     {
-    log_err(rc, __func__, "");
+    log_err(rc, __func__, (char *)"");
     free_dynamic_string(buffer);
     return(rc);
     }
@@ -1696,7 +1696,7 @@ int svr_job_purge(
     /* Start a task to monitor job log roll over if it is not already started */
     if (check_job_log_started == 0)
       {
-      set_task(WORK_Timed, time_now + 10, check_job_log, NULL, FALSE);
+      set_task(WORK_Timed, time_now + 10, check_job_log, (char *)NULL, FALSE);
 
       check_job_log_started = 1;
       }
@@ -1742,7 +1742,7 @@ int svr_job_purge(
           {
           array_save(pa);
           
-          unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+          unlock_ai_mutex(pa, __func__, (char *)"1", LOGLEVEL);
           }
         }
       }
@@ -1758,7 +1758,7 @@ int svr_job_purge(
     {
     int need_deque = !pjob->ji_cold_restart;
 
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
 
     /* jobs that are being deleted after a cold restart
      * haven't been queued */
@@ -1772,7 +1772,7 @@ int svr_job_purge(
       if (pjob->ji_being_recycled == FALSE)
         job_free(pjob, TRUE);
       else
-        unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
       }
     }
   else
@@ -1915,7 +1915,7 @@ job_array *get_jobs_array(
   if (pjob->ji_arraystructid[0] != '\0')
     {
     strcpy(arrayid, pjob->ji_arraystructid);
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
   
     if (LOGLEVEL >= 7)
       {
@@ -1927,7 +1927,7 @@ job_array *get_jobs_array(
 
     if ((pjob = svr_find_job(jobid, TRUE)) == NULL)
       {
-      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+      unlock_ai_mutex(pa, __func__, (char *)"1", LOGLEVEL);
       pa = NULL;
       *pjob_ptr = NULL;
       }
@@ -2072,7 +2072,7 @@ int fix_cray_exec_hosts(
   {
   char *external = pjob->ji_wattr[JOB_ATR_external_nodes].at_val.at_str;
   char *exec = pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str;
-  char *new_exec = calloc(1, strlen(exec) + 1);
+  char *new_exec = (char *)calloc(1, strlen(exec) + 1);
   char *exec_ptr = exec;
   char *plus;
   char *slash;
@@ -2149,7 +2149,7 @@ int split_job(
     change_external_job_name(external);
     external->ji_parent_job = pjob;
     pjob->ji_external_clone = external;
-    unlock_ji_mutex(external, __func__, NULL, 0);
+    unlock_ji_mutex(external, __func__, (char *)NULL, 0);
     }
 
   if (pjob->ji_cray_clone == NULL)
@@ -2158,7 +2158,7 @@ int split_job(
     fix_cray_exec_hosts(cray);
     cray->ji_parent_job     = pjob;
     pjob->ji_cray_clone     = cray;
-    unlock_ji_mutex(cray, __func__, NULL, 0);
+    unlock_ji_mutex(cray, __func__, (char *)NULL, 0);
     }
 
   return(PBSE_NONE);

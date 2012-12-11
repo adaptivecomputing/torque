@@ -1122,7 +1122,7 @@ Server *server;
 
     if ((connect = socket_to_conn(new_socket)) < 0)
       {
-      log_err(errno, id, "socket_to_conn");
+      log_err(errno, id, (char *)"socket_to_conn");
       return(1);
       }
 
@@ -1168,7 +1168,7 @@ Server *server;
 
   if (get_4byte(ServerFdOneWayGet(server), &bytes) != 1)
     {
-    log_err(errno, id, "get4byte");
+    log_err(errno, id, (char *)"get4byte");
     return(SCH_ERROR);
     }
 
@@ -1217,7 +1217,7 @@ void   *param;
       return(pbs_statjob_err(ServerFdTwoWayGet(server), NULL, param, NULL, &local_errno));
 
     default:
-      log_err(-1, id, "Unknown command sent!");
+      log_err(-1, id, (char *)"Unknown command sent!");
       return(NULL);
     }
   }
@@ -1253,7 +1253,7 @@ Server *server;
 
   if (connect < 0)
     {
-    log_err(-1, id, "Server not connected!");
+    log_err(-1, id, (char *)"Server not connected!");
     }
   else
     {
@@ -1284,10 +1284,10 @@ Server *server;
   sock = ServerSocketGet(server);
 
   if (shutdown(sock, 2))
-    log_err(errno, id, "shutdown");
+    log_err(errno, id, (char *)"shutdown");
 
   if (close(sock))
-    log_err(errno, id, "close");
+    log_err(errno, id, (char *)"close");
   }
 
 /* Nodes stuff */

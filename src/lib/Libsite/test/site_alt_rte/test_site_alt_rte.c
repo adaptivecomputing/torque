@@ -22,6 +22,8 @@ START_TEST(test_one)
   pbs_queue *qp = calloc(1, sizeof(pbs_queue));
   int retry_time = 3;
   rc = site_alt_router(pjob, qp, retry_time);
+  if (rc)
+    {;}
   fail_unless(pjob == scaf_pjob, "job ptr changed in the function!!!!");
   fail_unless(qp == scaf_qp, "queue ptr changed in the function!!!!");
   fail_unless(retry_time == scaf_retry_time, "retry value changed in the function!!!!");

@@ -143,7 +143,7 @@ int decode_arst_direct(
   ns = 1;
   ssize = strlen(val) + 1;
 
-  if ((tmpval = calloc(1, ssize)) == NULL)
+  if ((tmpval =(char *) calloc(1, ssize)) == NULL)
     {
     /* FAILURE */
 
@@ -174,7 +174,7 @@ int decode_arst_direct(
     ssize--;
     }
 
-  if ((pbuf = calloc(1, (unsigned)ssize)) == NULL)
+  if ((pbuf = (char *)calloc(1, (unsigned)ssize)) == NULL)
     {
     /* FAILURE */
     free(tmpval);
@@ -645,7 +645,7 @@ int set_arst(
 
         nsize += nsize / 2;   /* alloc extra space */
 
-        if (!(pas->as_buf = calloc(1, (size_t)nsize)))
+        if (!(pas->as_buf = (char *)calloc(1, (size_t)nsize)))
           {
           pas->as_bufsize = 0;
 
@@ -677,12 +677,12 @@ int set_arst(
 
         if (pas->as_buf)
           {
-          pc = realloc(pas->as_buf, (size_t)need);
+          pc = (char *)realloc(pas->as_buf, (size_t)need);
           if (pc != NULL)
             memset(pc + pas->as_bufsize, 0, need - pas->as_bufsize);
           }
         else
-          pc = calloc(1, (size_t)need);
+          pc = (char *)calloc(1, (size_t)need);
 
         if (pc == NULL)
           {
@@ -779,7 +779,7 @@ int set_arst(
       tmp_arst->as_bufsize = need;
 
       /* calloc the buffer size */
-      pc = calloc(1, need);
+      pc = (char *)calloc(1, need);
 
       if (pc == NULL)
         {

@@ -300,7 +300,7 @@ int hash_add_hash(
   {
   int cntr = 0;
   job_data *en, *tmp;
-  for (en=src; en != NULL; en=en->hh.next)
+  for (en=src; en != NULL; en=(job_data *)en->hh.next)
     {
     if (overwrite_existing)
       {
@@ -322,7 +322,7 @@ int hash_strlen(
   {
   int len = 0;
   job_data *en;
-  for (en=src; en != NULL; en=en->hh.next)
+  for (en=src; en != NULL; en=(job_data *)en->hh.next)
     {
     len += strlen(en->name);
     if (en->value != NULL)

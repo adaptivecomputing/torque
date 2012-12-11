@@ -1158,7 +1158,7 @@ tm_publish(
     goto tm_publish_cleanup;
     }
 
-  if (diswcs(chan, info, len) != DIS_SUCCESS)
+  if (diswcs(chan, (char *)info, len) != DIS_SUCCESS)
     {
     rc = TM_ESYSTEM;
     goto tm_publish_cleanup;
@@ -1848,12 +1848,12 @@ int tm_adopt(
   /* Fabricate the tm state as best we can - not really needed */
 
   if ((tm_jobid = getenv("PBS_JOBID")) == NULL)
-    tm_jobid = "ADOPT JOB";
+    tm_jobid = (char *)"ADOPT JOB";
 
   tm_jobid_len = strlen(tm_jobid);
 
   if ((tm_jobcookie = getenv("PBS_JOBCOOKIE")) == NULL)
-    tm_jobcookie = "ADOPT COOKIE";
+    tm_jobcookie = (char *)"ADOPT COOKIE";
 
   tm_jobcookie_len = strlen(tm_jobcookie);
 

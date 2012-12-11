@@ -139,7 +139,7 @@ int build_var_list(
 /*      new_len = len + 1; *//* Existing string, */
       name_len = strlen(atr->name); /* name= */
       value_len = strlen(atr->value); /* value\0 */
-      *var_list = memmgr_realloc(mm, *var_list,
+      *var_list = (char *)memmgr_realloc(mm, *var_list,
           current_len + 1 + name_len + 1 + value_len + 1);
       if (current_len != 0)
         {
@@ -163,7 +163,7 @@ int build_var_list(
       {
       name_len = strlen(atr->name)-8; /* name= */
       value_len = strlen(atr->value); /* value\0 */
-      *var_list = memmgr_realloc(mm, *var_list,
+      *var_list = (char *)memmgr_realloc(mm, *var_list,
           current_len + 1 + name_len + 1 + value_len + 1);
       if (current_len != 0)
         {
@@ -185,7 +185,7 @@ int build_var_list(
 /*         len = strlen(*var_list); */
 /*      new_len = len + 1; *//* Existing string, */
       value_len = strlen(atr->value); /* value\0 */
-      *var_list = memmgr_realloc(mm, *var_list,
+      *var_list = (char *)memmgr_realloc(mm, *var_list,
           current_len + 1 + value_len + 1);
       if (current_len != 0)
         {
@@ -203,7 +203,7 @@ int build_var_list(
     }
   if (preexisting_var_list == TRUE)
     {
-    hash_del_item(mm, attrs, ATTR_v);
+    hash_del_item(mm, attrs, (char *)ATTR_v);
     }
 
   return(item_count);

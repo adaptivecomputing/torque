@@ -162,7 +162,7 @@ int attr_atomic_set(
         {
         /* from a daemon, just ignore this pbs_attribute */
 
-        plist = GET_NEXT(plist->al_link);
+        plist = (svrattrl *)GET_NEXT(plist->al_link);
 
         continue;
         }
@@ -199,7 +199,7 @@ int attr_atomic_set(
 
         if (gpuval != NULL)
           {
-          rc = (pdef + index)->at_decode(&temp, plist->al_name, "gpus",
+          rc = (pdef + index)->at_decode(&temp, plist->al_name, (char *)"gpus",
               gpuval,ATR_DFLAG_ACCESS);
 
           free(gpuval);
@@ -217,7 +217,7 @@ int attr_atomic_set(
         /* delete old resource_list.gpus value if any.
          * this can be done by setting it to zero
          */
-        rc = (pdef + index)->at_decode(&temp, plist->al_name, "gpus",
+        rc = (pdef + index)->at_decode(&temp, plist->al_name, (char *)"gpus",
             0,ATR_DFLAG_ACCESS);
         if (rc != 0)
           {

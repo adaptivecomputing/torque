@@ -148,8 +148,6 @@ u_long addclient(char *name);
 
 /* static unsigned long setlogfilemaxsize(char *value); */
 
-unsigned long rppthrottle(char *value);
-
 /* static unsigned long setlogfilerolldepth(char *value); */
 
 /* static unsigned long setlogdirectory(char *value); */

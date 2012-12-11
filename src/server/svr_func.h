@@ -14,7 +14,7 @@ int ck_checkpoint(pbs_attribute *pattr, void *pobject, int mode);
 
 int decode_null(pbs_attribute *patr, char *name, char *rn, char *val, int perm);
 
-int set_null(pbs_attribute *pattr, pbs_attribute *new, enum batch_op op);
+int set_null(pbs_attribute *pattr, pbs_attribute *new_attr, enum batch_op op);
 
 int poke_scheduler(pbs_attribute *pattr, void *pobj, int actmode);
 

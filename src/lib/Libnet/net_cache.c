@@ -110,7 +110,7 @@ void initialize_network_info()
   cache.nc_namekey = create_hash(INITIAL_HASH_SIZE);
   cache.nc_saikey = create_hash(INITIAL_HASH_SIZE);
 
-  cache.nc_mutex = calloc(1, sizeof(pthread_mutex_t));
+  cache.nc_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(cache.nc_mutex, NULL);
   } /* END initialize_network_info() */
 
@@ -227,7 +227,7 @@ network_info *get_network_info_holder(
 
   {
   /* initialize the network info holder */
-  network_info *ni = calloc(1, sizeof(network_info));
+  network_info *ni = (network_info *)calloc(1, sizeof(network_info));
 
   ni->hostname = strdup(hostname);
 

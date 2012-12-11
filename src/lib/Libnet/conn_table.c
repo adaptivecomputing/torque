@@ -31,7 +31,7 @@ int get_connection_entry(
     lock_conn_table();
     if (connection[pos].ch_mutex == NULL)
       { 
-      if ((tmp_mut = calloc(1, sizeof(pthread_mutex_t))) == NULL)
+      if ((tmp_mut = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t))) == NULL)
         rc = PBSE_MEM_MALLOC;
       else 
         { 

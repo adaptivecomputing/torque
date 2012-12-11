@@ -297,7 +297,7 @@ int insert_into_alljobs_by_rank(
   long  job_qrank = pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long;
   int   index = -1;
   
-  unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
+  unlock_ji_mutex(pjob, __func__, (char *)"4", LOGLEVEL);
 
   while ((pjcur = next_job_from_back(aj, &iter)) != NULL)
     {
@@ -308,17 +308,17 @@ int insert_into_alljobs_by_rank(
     
     if (strcmp(jobid, pjcur->ji_qs.ji_jobid) == 0)
       {
-      unlock_ji_mutex(pjcur, __func__, "6", LOGLEVEL);
+      unlock_ji_mutex(pjcur, __func__, (char *)"6", LOGLEVEL);
       return(ALREADY_IN_LIST);
       }
 
-    unlock_ji_mutex(pjcur, __func__, "7", LOGLEVEL);
+    unlock_ji_mutex(pjcur, __func__, (char *)"7", LOGLEVEL);
     }
 
   if (pjcur != NULL)
     {
     index = get_jobs_index(aj, pjcur);
-    unlock_ji_mutex(pjcur, __func__, "8", LOGLEVEL);
+    unlock_ji_mutex(pjcur, __func__, (char *)"8", LOGLEVEL);
     pjcur = NULL;
     }
 
@@ -370,7 +370,7 @@ int svr_enquejob(
   strcpy(job_id, pjob->ji_qs.ji_jobid);
   /* ji_qs.ji_queue now holds the name of the destination queue */
   strcpy(queue_name, pjob->ji_qs.ji_queue);
-  unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+  unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
   pque = find_queuebyname(queue_name);
 
   if (pque == NULL)
@@ -380,12 +380,12 @@ int svr_enquejob(
 
   /* This is called when a job is not yet in the queue,
    * so svr_find_job can not be used.... */
-  lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+  lock_ji_mutex(pjob, __func__, (char *)NULL, LOGLEVEL);
 
   if (pjob->ji_being_recycled == TRUE)
     {
-    unlock_queue(pque, __func__, NULL, 0);
-    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+    unlock_queue(pque, __func__, (char *)NULL, 0);
+    unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
     return(PBSE_JOB_RECYCLED);
     }
 
@@ -402,8 +402,8 @@ int svr_enquejob(
     total_jobs = count_queued_jobs(pque, NULL);
     if (total_jobs + array_jobs >= pque->qu_attr[QA_ATR_MaxJobs].at_val.at_long)
       {
-      unlock_queue(pque, __func__, "1", LOGLEVEL);
-      unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
+      unlock_queue(pque, __func__, (char *)"1", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, (char *)"3", LOGLEVEL);
       return(PBSE_MAXQUED);
       }
     }
@@ -414,8 +414,8 @@ int svr_enquejob(
     user_jobs = count_queued_jobs(pque, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
     if (user_jobs >= pque->qu_attr[QA_ATR_MaxUserJobs].at_val.at_long)
       {
-      unlock_queue(pque, __func__, "1", LOGLEVEL);
-      unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
+      unlock_queue(pque, __func__, (char *)"1", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, (char *)"3", LOGLEVEL);
       return(PBSE_MAXUSERQUED);
       }
     }
@@ -475,7 +475,7 @@ int svr_enquejob(
     if ((rc == ALREADY_IN_LIST) ||
         (rc == PBSE_JOBNOTFOUND))
       {
-      unlock_queue(pque, __func__, "not array_template check", LOGLEVEL);
+      unlock_queue(pque, __func__, (char *)"not array_template check", LOGLEVEL);
       if (rc == ALREADY_IN_LIST)
         rc = PBSE_NONE;
 
@@ -498,7 +498,7 @@ int svr_enquejob(
     if ((rc == ALREADY_IN_LIST) ||
         (rc == PBSE_JOBNOTFOUND))
       {
-      unlock_queue(pque, __func__, "not array_template check", LOGLEVEL);
+      unlock_queue(pque, __func__, (char *)"not array_template check", LOGLEVEL);
       if (rc == ALREADY_IN_LIST)
         rc = PBSE_NONE;
 
@@ -566,7 +566,7 @@ int svr_enquejob(
       &pque->qu_attr[QE_ATR_checkpoint_min]);
 
     /* do anything needed doing regarding job dependencies */
-    unlock_queue(pque, __func__, "anything", LOGLEVEL);
+    unlock_queue(pque, __func__, (char *)"anything", LOGLEVEL);
 
     if ((pjob->ji_qs.ji_state != JOB_STATE_COMPLETE) && 
         (pjob->ji_qs.ji_substate != JOB_SUBSTATE_COMPLETE) && 
@@ -605,10 +605,10 @@ int svr_enquejob(
     /* must be set to 1 so that routing is attempted */
     pjob->ji_qs.ji_un.ji_routet.ji_rteretry = 1;
     
-    unlock_queue(pque, __func__, "route job", LOGLEVEL);
+    unlock_queue(pque, __func__, (char *)"route job", LOGLEVEL);
     }
   else
-    unlock_queue(pque, __func__, "pull queue", LOGLEVEL);
+    unlock_queue(pque, __func__, (char *)"pull queue", LOGLEVEL);
 
   return(PBSE_NONE);
   }  /* END svr_enquejob() */
@@ -651,7 +651,7 @@ int svr_dequejob(
     if ((pjob == NULL) ||
         (pque == NULL))
       {
-      log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 10");
+      log_err(PBSE_JOBNOTFOUND, __func__, (char *)"Job lost while acquiring queue 10");
       return(PBSE_JOBNOTFOUND);
       }
     }
@@ -699,7 +699,7 @@ int svr_dequejob(
     pjob->ji_qhdr = NULL;
 
     if (parent_queue_mutex_held == FALSE)
-      unlock_queue(pque, __func__, NULL, LOGLEVEL);
+      unlock_queue(pque, __func__, (char *)NULL, LOGLEVEL);
     }
 
 #ifndef NDEBUG
@@ -715,12 +715,12 @@ int svr_dequejob(
     char queue_name[PBS_MAXQUEUENAME];
 
     /* this function will lock queues and jobs */
-    unlock_ji_mutex(pjob, __func__, NULL, 0);
+    unlock_ji_mutex(pjob, __func__, (char *)NULL, 0);
 
     if (parent_queue_mutex_held == TRUE)
       {
       strcpy(queue_name, pque->qu_qs.qu_name);
-      unlock_queue(pque, __func__, NULL, LOGLEVEL);
+      unlock_queue(pque, __func__, (char *)NULL, LOGLEVEL);
       }
 
     correct_ct();
@@ -873,7 +873,7 @@ int svr_setjobstate(
 
         if (pjob == NULL)
           {
-          log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 11");
+          log_err(PBSE_JOBNOTFOUND, __func__, (char *)"Job lost while acquiring queue 11");
           return(PBSE_JOBNOTFOUND);
           }
         }
@@ -918,7 +918,7 @@ int svr_setjobstate(
           }
 
         if (has_queue_mutex == FALSE)
-          unlock_queue(pque, __func__, NULL, LOGLEVEL);
+          unlock_queue(pque, __func__, (char *)NULL, LOGLEVEL);
         }
       }
     }    /* END if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRANSICM) */
@@ -1143,12 +1143,12 @@ int chk_svr_resc_limit(
   if (EMsg != NULL)
     EMsg[0] = '\0';
 
-  noderesc     = find_resc_def(svr_resc_def, "nodes",     svr_resc_size);
-  needresc     = find_resc_def(svr_resc_def, "neednodes", svr_resc_size);
-  nodectresc   = find_resc_def(svr_resc_def, "nodect",    svr_resc_size);
-  mppwidthresc = find_resc_def(svr_resc_def, "mppwidth",  svr_resc_size);
-  mppnppn      = find_resc_def(svr_resc_def, "mppnppn",   svr_resc_size);
-  procresc     = find_resc_def(svr_resc_def, "procs",   svr_resc_size);
+  noderesc     = (resource_def *)find_resc_def(svr_resc_def, "nodes",     svr_resc_size);
+  needresc     = (resource_def *)find_resc_def(svr_resc_def, "neednodes", svr_resc_size);
+  nodectresc   = (resource_def *)find_resc_def(svr_resc_def, "nodect",    svr_resc_size);
+  mppwidthresc = (resource_def *)find_resc_def(svr_resc_def, "mppwidth",  svr_resc_size);
+  mppnppn      = (resource_def *)find_resc_def(svr_resc_def, "mppnppn",   svr_resc_size);
+  procresc     = (resource_def *)find_resc_def(svr_resc_def, "procs",   svr_resc_size);
   
   SvrNodeCt = 0;
   
@@ -1192,7 +1192,7 @@ int chk_svr_resc_limit(
       {
       qurc = find_resc_entry(&pque->qu_attr[QA_ATR_ResourceMax], jbrc->rs_defin);
 
-      LimitName = (jbrc->rs_defin->rs_name == NULL)?"resource":jbrc->rs_defin->rs_name;
+      LimitName = (jbrc->rs_defin->rs_name == NULL)?(char *)"resource":jbrc->rs_defin->rs_name;
 
       pthread_mutex_lock(server.sv_attr_mutex);
       cmpwith = get_resource(&pque->qu_attr[QA_ATR_ResourceMax],
@@ -1963,13 +1963,13 @@ int svr_chkque(
 
     if ((pque->qu_attr[QA_ATR_MaxJobs].at_flags & ATR_VFLAG_SET)) 
       {
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
       total_jobs = count_queued_jobs(pque, NULL);
 
-      lock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+      lock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
       if (pjob->ji_being_recycled == TRUE)
         {
-        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
         return(PBSE_JOB_RECYCLED);
         }
 
@@ -1990,15 +1990,15 @@ int svr_chkque(
         (pque->qu_attr[QA_ATR_MaxUserJobs].at_val.at_long >= 0))
       {
       /* count number of jobs user has in queue */
-      unlock_ji_mutex(pjob, __func__, NULL, 0);
+      unlock_ji_mutex(pjob, __func__, (char *)NULL, 0);
 
       user_jobs = count_queued_jobs(pque,
           pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
 
-      lock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+      lock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
       if (pjob->ji_being_recycled == TRUE)
         {
-        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
         return(PBSE_JOB_RECYCLED);
         }
 
@@ -2160,7 +2160,7 @@ void job_wait_over(
 
   if (jobid == NULL)
     {
-    log_err(ENOMEM, __func__, "Cannot allocate memory");
+    log_err(ENOMEM, __func__, (char *)"Cannot allocate memory");
     return;
     }
 
@@ -2183,7 +2183,7 @@ void job_wait_over(
         /* recreate the work task entry */
         set_task(WORK_Timed, when, job_wait_over, strdup(pjob->ji_qs.ji_jobid), FALSE);
         
-        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
         
         return;
         }
@@ -2201,7 +2201,7 @@ void job_wait_over(
     svr_evaljobstate(pjob, &newstate, &newsub, 0);
     svr_setjobstate(pjob, newstate, newsub, FALSE);
     
-    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
     }
 
   return;
@@ -2542,7 +2542,7 @@ void set_resc_deflt(
     pque = get_jobs_queue(&pjob);
     if (pjob == NULL)
       {
-      log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 12");
+      log_err(PBSE_JOBNOTFOUND, __func__, (char *)"Job lost while acquiring queue 12");
       return;
       }
     }
@@ -2569,7 +2569,7 @@ void set_resc_deflt(
 #endif
     pthread_mutex_unlock(server.sv_attr_mutex);
 
-    unlock_queue(pque, __func__, NULL, LOGLEVEL);
+    unlock_queue(pque, __func__, (char *)NULL, LOGLEVEL);
     }
 
   for (i = 0;i < JOB_ATR_LAST;++i)
@@ -2590,11 +2590,11 @@ void set_resc_deflt(
   if ((pque = get_jobs_queue(&pjob)) != NULL)
     {
     if (has_queue_mutex == FALSE)
-      unlock_queue(pque, __func__, NULL, LOGLEVEL);
+      unlock_queue(pque, __func__, (char *)NULL, LOGLEVEL);
     }
   else if (pjob == NULL)
     {
-    log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 13");
+    log_err(PBSE_JOBNOTFOUND, __func__, (char *)"Job lost while acquiring queue 13");
     }
  
   return;
@@ -2820,10 +2820,10 @@ void correct_ct()
       if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
         pque->qu_numcompleted++;
       
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
       }
     
-    unlock_queue(pque, __func__, NULL, LOGLEVEL);
+    unlock_queue(pque, __func__, (char *)NULL, LOGLEVEL);
     } /* END for each queue */
   
   sprintf(log_buf, "%s:2", __func__);

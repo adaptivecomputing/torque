@@ -156,7 +156,7 @@ attribute_def job_attr_def[] =
   {
 
   /* JOB_ATR_jobname */
-    { ATTR_N,   /* "Job_Name" */
+    { (char *)ATTR_N,   /* "Job_Name" */
     decode_str,
     encode_str,
     set_str,
@@ -168,7 +168,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
     },
   /* JOB_ATR_job_owner */
-  { ATTR_owner,  /* "Job_Owner" */
+  { (char *)ATTR_owner,  /* "Job_Owner" */
     decode_str,
     encode_str,
     set_str,
@@ -180,7 +180,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_resc_used */
-  { ATTR_used,  /* "Resources_Used" */
+  { (char *)ATTR_used,  /* "Resources_Used" */
     decode_resc,
     encode_resc,
     set_resc,
@@ -192,7 +192,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_state */
-  { ATTR_state,  /* "job_state" */
+  { (char *)ATTR_state,  /* "job_state" */
     decode_c,
     encode_c,
     set_c,
@@ -204,7 +204,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_in_queue */
-  { ATTR_queue,  /* "Queue" */
+  { (char *)ATTR_queue,  /* "Queue" */
     decode_str,
     encode_str,
     set_str,
@@ -216,7 +216,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_at_server */
-  { ATTR_server,  /* "Server" */
+  { (char *)ATTR_server,  /* "Server" */
     decode_str,
     encode_str,
     set_str,
@@ -228,7 +228,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_account */
-  { ATTR_A,   /* "Account_Name" */
+  { (char *)ATTR_A,   /* "Account_Name" */
     decode_str,
     encode_str,
     set_str,
@@ -240,7 +240,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_checkpoint */
-  { ATTR_c,   /* "Checkpoint" */
+  { (char *)ATTR_c,   /* "Checkpoint" */
     decode_str,
     encode_str,
     set_str,
@@ -264,7 +264,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_ctime */    /* create time, set when the job is queued */
-  { ATTR_ctime,  /* "ctime" */
+  { (char *)ATTR_ctime,  /* "ctime" */
     decode_l,
     encode_l,
     set_l,
@@ -276,7 +276,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_depend */
-  { ATTR_depend,   /* "depend" */
+  { (char *)ATTR_depend,   /* "depend" */
 #ifndef PBS_MOM
     decode_depend,
     encode_depend,
@@ -297,7 +297,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_errpath */
-  { ATTR_e,   /* "Error_Path" */
+  { (char *)ATTR_e,   /* "Error_Path" */
     decode_str,
     encode_str,
     set_str,
@@ -309,7 +309,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_exec_host */
-  { ATTR_exechost,  /* "exec_host" */
+  { (char *)ATTR_exechost,  /* "exec_host" */
     decode_str,
     encode_exec_host,
     set_str,
@@ -322,7 +322,7 @@ attribute_def job_attr_def[] =
   },
 
   /* JOB_ATR_exec_port */
-  { ATTR_execport,  /* "exec_port" */
+  { (char *)ATTR_execport,  /* "exec_port" */
     decode_str,
     encode_str,
     set_str,
@@ -335,7 +335,7 @@ attribute_def job_attr_def[] =
   },
 
   /* JOB_ATR_exec_gpus */
-  { ATTR_exec_gpus,  /* exec_gpus */
+  { (char *)ATTR_exec_gpus,  /* exec_gpus */
     decode_str,
     encode_str,
     set_str,
@@ -348,7 +348,7 @@ attribute_def job_attr_def[] =
   },
 
   /* JOB_ATR_exectime */
-  { ATTR_a,   /* "Execution_Time" (aka release_date) */
+  { (char *)ATTR_a,   /* "Execution_Time" (aka release_date) */
     decode_l,
     encode_l,
     set_l,
@@ -364,7 +364,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_grouplst */
-  { ATTR_g,   /* "group_list" */
+  { (char *)ATTR_g,   /* "group_list" */
     decode_arst,
     encode_arst,
     set_arst,
@@ -376,7 +376,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_hold */
-  { ATTR_h,   /* "Hold_Types" */
+  { (char *)ATTR_h,   /* "Hold_Types" */
     decode_hold,
     encode_hold,
     set_b,
@@ -388,7 +388,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_interactive */
-  { ATTR_inter,  /* "interactive" */
+  { (char *)ATTR_inter,  /* "interactive" */
     decode_l,
     encode_inter,
     set_l,
@@ -400,7 +400,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_join */
-  { ATTR_j,   /* "Join_Path" */
+  { (char *)ATTR_j,   /* "Join_Path" */
     decode_str,
     encode_str,
     set_str,
@@ -412,7 +412,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_keep */
-  { ATTR_k,   /* "Keep_Files" */
+  { (char *)ATTR_k,   /* "Keep_Files" */
     decode_str,
     encode_str,
     set_str,
@@ -424,7 +424,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_mailpnts */
-  { ATTR_m,   /* "Mail_Points" */
+  { (char *)ATTR_m,   /* "Mail_Points" */
     decode_str,
     encode_str,
     set_str,
@@ -436,7 +436,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_mailuser */
-  { ATTR_M,   /* "Mail_Users" */
+  { (char *)ATTR_M,   /* "Mail_Users" */
     decode_arst,
     encode_arst,
     set_arst,
@@ -448,7 +448,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_mtime */
-  { ATTR_mtime,  /* "mtime" */
+  { (char *)ATTR_mtime,  /* "mtime" */
     decode_l,
     encode_l,
     set_l,
@@ -460,7 +460,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_outpath */
-  { ATTR_o,   /* "Output_Path" */
+  { (char *)ATTR_o,   /* "Output_Path" */
     decode_str,
     encode_str,
     set_str,
@@ -472,7 +472,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_priority */
-  { ATTR_p,   /* "Priority" */
+  { (char *)ATTR_p,   /* "Priority" */
     decode_l,
     encode_l,
     set_l,
@@ -484,7 +484,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_qtime */
-  { ATTR_qtime,  /* "qtime"  (time entered queue) */
+  { (char *)ATTR_qtime,  /* "qtime"  (time entered queue) */
     decode_l,
     encode_l,
     set_l,
@@ -496,7 +496,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_rerunable */
-  { ATTR_r,   /* "Rerunable" */
+  { (char *)ATTR_r,   /* "Rerunable" */
     decode_b,
     encode_b,
     set_b,
@@ -508,7 +508,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_resource */
-  { ATTR_l,   /* "Resource_List" */
+  { (char *)ATTR_l,   /* "Resource_List" */
     decode_resc,
     encode_resc,
     set_resc,
@@ -520,7 +520,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_session_id */
-  { ATTR_session,  /* "session_id" */
+  { (char *)ATTR_session,  /* "session_id" */
     decode_l,
     encode_l,
     set_l,
@@ -532,7 +532,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_shell */
-  { ATTR_S,   /* "Shell_Path_List" */
+  { (char *)ATTR_S,   /* "Shell_Path_List" */
     decode_arst,
     encode_arst,
     set_arst,
@@ -544,7 +544,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_stagein */
-  { ATTR_stagein,  /* "stagein" */
+  { (char *)ATTR_stagein,  /* "stagein" */
     decode_arst,
     encode_arst,
     set_arst,
@@ -556,7 +556,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_stageout */
-  { ATTR_stageout,  /* "stageout" */
+  { (char *)ATTR_stageout,  /* "stageout" */
     decode_arst,
     encode_arst,
     set_arst,
@@ -568,7 +568,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_substate */
-  { ATTR_substate,  /* "substate" */
+  { (char *)ATTR_substate,  /* "substate" */
     decode_l,
     encode_l,
     set_l,
@@ -580,7 +580,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_userlst */
-  { ATTR_u,   /* "User_List" */
+  { (char *)ATTR_u,   /* "User_List" */
     decode_arst,
     encode_arst,
 #ifndef PBS_MOM
@@ -596,7 +596,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_variables (allow to be dynamically modifiable) */
-  { ATTR_v,   /* "Variable_List" */
+  { (char *)ATTR_v,   /* "Variable_List" */
     decode_arst,
     encode_arst,
     set_arst,
@@ -608,7 +608,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_euser    */
-  { ATTR_euser,  /* "euser" */
+  { (char *)ATTR_euser,  /* "euser" */
     decode_str,
     encode_str,
     set_str,
@@ -620,7 +620,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_egroup  */
-  { ATTR_egroup,  /* "egroup" */
+  { (char *)ATTR_egroup,  /* "egroup" */
     decode_str,
     encode_str,
     set_str,
@@ -632,7 +632,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_hashname */
-  { ATTR_hashname,  /* "hashname" */
+  { (char *)ATTR_hashname,  /* "hashname" */
     decode_str,
     encode_str,
     set_str,
@@ -644,7 +644,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_hopcount */
-  { ATTR_hopcount,  /* "hop_count" */
+  { (char *)ATTR_hopcount,  /* "hop_count" */
     decode_l,
     encode_l,
     set_l,
@@ -656,7 +656,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_queuerank */
-  { ATTR_qrank,  /* "queue_rank" */
+  { (char *)ATTR_qrank,  /* "queue_rank" */
     decode_l,
     encode_l,
     set_l,
@@ -668,7 +668,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_queuetype */
-  { ATTR_qtype,  /*"queue_type" - exists for Scheduler select */
+  { (char *)ATTR_qtype,  /*"queue_type" - exists for Scheduler select */
     decode_c,
     encode_c,
     set_c,
@@ -680,7 +680,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_sched_hint */
-  { ATTR_sched_hint,        /* "sched_hint" - inform scheduler re sync */
+  { (char *)ATTR_sched_hint,        /* "sched_hint" - inform scheduler re sync */
     decode_str,
     encode_str,
     set_str,
@@ -692,7 +692,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_security */
-  { ATTR_security,  /* "security" */
+  { (char *)ATTR_security,  /* "security" */
     decode_str,
     encode_str,
     set_str,
@@ -704,7 +704,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_Comment */
-  { ATTR_comment,  /* "comment" */
+  { (char *)ATTR_comment,  /* "comment" */
     decode_str,
     encode_str,
     set_str,
@@ -716,7 +716,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_Cookie */
-  { ATTR_cookie,  /* "cookie" */
+  { (char *)ATTR_cookie,  /* "cookie" */
     decode_str,
     encode_str,
     set_str,
@@ -728,7 +728,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_altid */
-  { ATTR_altid,  /* "alt_id" */
+  { (char *)ATTR_altid,  /* "alt_id" */
     decode_str,
     encode_str,
     set_str,
@@ -740,7 +740,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_etime */
-  { ATTR_etime,  /* "etime" */
+  { (char *)ATTR_etime,  /* "etime" */
     decode_l,
     encode_l,
     set_l,
@@ -752,7 +752,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_exitstat */
-  { ATTR_exitstat,  /* "exit_status" */
+  { (char *)ATTR_exitstat,  /* "exit_status" */
     decode_l,
     encode_l,
     set_l,
@@ -764,7 +764,7 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_forwardx11 */
-  { ATTR_forwardx11, /* "forward_x11" */
+  { (char *)ATTR_forwardx11, /* "forward_x11" */
     decode_str,
     encode_str,
     set_str,
@@ -777,7 +777,7 @@ attribute_def job_attr_def[] =
   },
 
   /* JOB_ATR_submit_args */
-  { ATTR_submit_args,
+  { (char *)ATTR_submit_args,
     decode_str,
     encode_str,
     set_str,
@@ -790,7 +790,7 @@ attribute_def job_attr_def[] =
   },
 
   /* JOB_ATR_job_array_id */
-  { ATTR_array_id,
+  { (char *)ATTR_array_id,
     decode_l,
     encode_l,
     set_l,
@@ -803,7 +803,7 @@ attribute_def job_attr_def[] =
   },
 
   /* JOB_ATR_job_array_request */
-  { ATTR_t,
+  { (char *)ATTR_t,
     decode_str,
     encode_str,
     set_str,
@@ -816,7 +816,7 @@ attribute_def job_attr_def[] =
   },
 
   /* JOB_ATR_umask */
-  { ATTR_umask,
+  { (char *)ATTR_umask,
     decode_l,
     encode_l,
     set_l,
@@ -829,7 +829,7 @@ attribute_def job_attr_def[] =
   },
 
   /* JOB_ATR_start_time */
-  { ATTR_start_time,
+  { (char *)ATTR_start_time,
     decode_l,
     encode_l,
     set_l,
@@ -842,7 +842,7 @@ attribute_def job_attr_def[] =
   },
 
   /* JOB_ATR_start_count */
-  { ATTR_start_count,
+  { (char *)ATTR_start_count,
     decode_l,
     encode_l,
     set_l,
@@ -855,7 +855,7 @@ attribute_def job_attr_def[] =
   },
 
   /* JOB_ATR_checkpoint_dir */
-  { ATTR_checkpoint_dir,  /* "checkpoint_dir" */
+  { (char *)ATTR_checkpoint_dir,  /* "checkpoint_dir" */
     decode_str,
     encode_str,
     set_str,
@@ -868,7 +868,7 @@ attribute_def job_attr_def[] =
   },
 
   /* JOB_ATR_checkpoint_name */
-  { ATTR_checkpoint_name,  /* "checkpoint_name" */
+  { (char *)ATTR_checkpoint_name,  /* "checkpoint_name" */
     decode_str,
     encode_str,
     set_str,
@@ -881,7 +881,7 @@ attribute_def job_attr_def[] =
   },
 
   /* JOB_ATR_checkpoint_time */
-  { ATTR_checkpoint_time,  /* "checkpoint_time" */
+  { (char *)ATTR_checkpoint_time,  /* "checkpoint_time" */
     decode_l,
     encode_l,
     set_l,
@@ -894,7 +894,7 @@ attribute_def job_attr_def[] =
   },
 
   /* JOB_ATR_checkpoint_restart_status */
-  { ATTR_checkpoint_restart_status,  /* "checkpoint_restart_status" */
+  { (char *)ATTR_checkpoint_restart_status,  /* "checkpoint_restart_status" */
     decode_str,
     encode_str,
     set_str,
@@ -907,7 +907,7 @@ attribute_def job_attr_def[] =
   },
 
   /* JOB_ATR_restart_name */
-  { ATTR_restart_name,  /* "restart_name" */
+  { (char *)ATTR_restart_name,  /* "restart_name" */
     decode_str,
     encode_str,
     set_str,
@@ -920,7 +920,7 @@ attribute_def job_attr_def[] =
   },
 
   /* JOB_ATR_f (fault_tolerant)*/
-  { ATTR_f,
+  { (char *)ATTR_f,
     decode_b,
     encode_b,
     set_b,
@@ -933,7 +933,7 @@ attribute_def job_attr_def[] =
   },
 
   /* JOB_ATR_comp_time */
-  { ATTR_comp_time, /* completion time */
+  { (char *)ATTR_comp_time, /* completion time */
     decode_l,
     encode_l,
     set_l,
@@ -946,7 +946,7 @@ attribute_def job_attr_def[] =
   },
 
   /* JOB_ATR_reported */
-  {	ATTR_reported,			/* "Reported" */
+  {	(char *)ATTR_reported,			/* "Reported" */
   	decode_b,
   	encode_b,
   	set_b,
@@ -959,7 +959,7 @@ attribute_def job_attr_def[] =
   },
 
   /* JOB_ATR_jobtype */
-  { ATTR_jobtype,   /* "Job_Type" */
+  { (char *)ATTR_jobtype,   /* "Job_Type" */
     decode_str,
     encode_str,
     set_str,
@@ -972,7 +972,7 @@ attribute_def job_attr_def[] =
   },
 
   /* JOB_ATR_inter_cmd */
-  { ATTR_intcmd,   /* "Interactive_Cmd" */
+  { (char *)ATTR_intcmd,   /* "Interactive_Cmd" */
     decode_str,
     encode_str,
     set_str,
@@ -985,7 +985,7 @@ attribute_def job_attr_def[] =
   },
 
   /* JOB_ATR_job_radix */
-  { ATTR_job_radix,  /* "job_radix" */
+  { (char *)ATTR_job_radix,  /* "job_radix" */
     decode_l,
     encode_l,
     set_l,
@@ -998,7 +998,7 @@ attribute_def job_attr_def[] =
   },
 
   /* JOB_ATR_total_runtime */
-  { ATTR_total_runtime, /* total time from start_time to comp_time in milliseconds */
+  { (char *)ATTR_total_runtime, /* total time from start_time to comp_time in milliseconds */
     decode_tv,
     encode_tv,
     set_tv,
@@ -1011,7 +1011,7 @@ attribute_def job_attr_def[] =
   },
 
   /* JOB_ATR_sister_list */
-  { ATTR_sister_list, /* sister_list */
+  { (char *)ATTR_sister_list, /* sister_list */
     decode_str,
     encode_str,
     set_str,
@@ -1024,7 +1024,7 @@ attribute_def job_attr_def[] =
   },
 
   /* JOB_ATR_proxy_user */
-  { ATTR_P, /* "proxy_user" */
+  { (char *)ATTR_P, /* "proxy_user" */
     decode_str,
     encode_str,
     set_str,
@@ -1037,7 +1037,7 @@ attribute_def job_attr_def[] =
   },
 
   /* JOB_ATR_node_exclusive */
-  { ATTR_node_exclusive, /* node_exclusive */
+  { (char *)ATTR_node_exclusive, /* node_exclusive */
     decode_b,
     encode_b,
     set_b,
@@ -1050,7 +1050,7 @@ attribute_def job_attr_def[] =
   },
 
   /* JOB_ATR_submit_host */
-  {ATTR_submit_host,		/* "submit_host - undocumented */
+  {(char *)ATTR_submit_host,		/* "submit_host - undocumented */
    decode_str,
    encode_str,
    set_str,
@@ -1062,7 +1062,7 @@ attribute_def job_attr_def[] =
    PARENT_TYPE_JOB},
 
   /* JOB_ATR_init_work_dir */
-  {ATTR_init_work_dir,		/* "init_work_dir - undocumented */
+  {(char *)ATTR_init_work_dir,		/* "init_work_dir - undocumented */
    decode_str,
    encode_str,
    set_str,
@@ -1074,7 +1074,7 @@ attribute_def job_attr_def[] =
    PARENT_TYPE_JOB},
 
   /* JOB_ATR_pagg_id */
-  { ATTR_pagg,  /* "pagg_id" */
+  { (char *)ATTR_pagg,  /* "pagg_id" */
     decode_ll,
     encode_ll,
     set_ll,
@@ -1088,7 +1088,7 @@ attribute_def job_attr_def[] =
 
 #ifdef NVIDIA_GPUS
   /* JOB_ATR_gpu_flags */
-  {ATTR_gpu_flags,		/* "gpu_flags" - mode and reset flags */
+  {(char *)ATTR_gpu_flags,		/* "gpu_flags" - mode and reset flags */
    decode_l,
    encode_l,
    set_l,
@@ -1101,7 +1101,7 @@ attribute_def job_attr_def[] =
 #endif  /* NVIDIA_GPUS */
 
   /* JOB_ATR_job_id */
-  {ATTR_J,      /* "job_id" */
+  {(char *)ATTR_J,      /* "job_id" */
    decode_str,
    encode_str,
    set_str,
@@ -1113,7 +1113,7 @@ attribute_def job_attr_def[] =
    PARENT_TYPE_JOB},
 
   /* JOB_ATR_arguments*/
-  {ATTR_args,		/* "job_arguments" */
+  {(char *)ATTR_args,		/* "job_arguments" */
    decode_str,
    encode_str,
    set_str,
@@ -1125,7 +1125,7 @@ attribute_def job_attr_def[] =
    PARENT_TYPE_JOB},
 
   /* JOB_ATR_reservation_id */
-  {ATTR_reservation_id, /* "reservation_id" */
+  {(char *)ATTR_reservation_id, /* "reservation_id" */
    decode_str,
    encode_str,
    set_str,
@@ -1137,7 +1137,7 @@ attribute_def job_attr_def[] =
    PARENT_TYPE_JOB},
 
   /* JOB_ATR_login_node_id */
-  {ATTR_login_node_id,  /* "login_node_id" */
+  {(char *)ATTR_login_node_id,  /* "login_node_id" */
    decode_str,
    encode_str,
    set_str,
@@ -1149,7 +1149,7 @@ attribute_def job_attr_def[] =
    PARENT_TYPE_JOB},
 
   /* JOB_ATR_login_prop */
-  {ATTR_login_prop, /* "login_property" */
+  {(char *)ATTR_login_prop, /* "login_property" */
    decode_str,
    encode_str,
    set_str,
@@ -1161,7 +1161,7 @@ attribute_def job_attr_def[] =
    PARENT_TYPE_JOB},
 
   /* JOB_ATR_external_nodes */
-  {ATTR_external_nodes, /* external_nodes */
+  {(char *)ATTR_external_nodes, /* external_nodes */
    decode_str,
    encode_str,
    set_str,
@@ -1173,7 +1173,7 @@ attribute_def job_attr_def[] =
    PARENT_TYPE_JOB},
 
   /* JOB_ATR_multi_req_alps */
-  {ATTR_multi_req_alps, /* "multi_req_alps" */
+  {(char *)ATTR_multi_req_alps, /* "multi_req_alps" */
    decode_str,
    encode_str,
    set_str,
@@ -1185,7 +1185,7 @@ attribute_def job_attr_def[] =
    PARENT_TYPE_JOB},
 
   /* JOB_ATR_exec_mics */
-  { ATTR_exec_mics,  /* "exec_mics" */
+  { (char *)ATTR_exec_mics,  /* "exec_mics" */
     decode_str,
     encode_str,
     set_str,
@@ -1197,11 +1197,11 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB,
   },
 
-  /* Site defined attributes if any, see site_job_attr_*.h  */
+/* Site defined attributes if any, see site_job_attr_*.h  */
 #include "site_job_attr_def.h"
 
   /* JOB_ATR_UNKN - THIS MUST BE THE LAST ENTRY */
-  { "_other_",
+  { (char *)"_other_",
     decode_unkn,
     encode_unkn,
     set_unkn,

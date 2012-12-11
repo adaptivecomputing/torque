@@ -196,7 +196,7 @@ int mom_checkpoint_execute_job(
 
   if (arg[1] == NULL)
     {
-    log_err(errno, __func__, "cannot alloc env");
+    log_err(errno, __func__, (char *)"cannot alloc env");
 
     return(-1);
     }
@@ -258,7 +258,7 @@ int mom_checkpoint_init(void)
     
     if ((stat(path_checkpoint, &sb) == 0) && ((sb.st_mode & 01777) != 01777)) 
       {
-      chmod(path_checkpoint, 01777);
+      (void)chmod(path_checkpoint, 01777);
       }
     }
 
@@ -920,7 +920,7 @@ int blcr_checkpoint_job(
           pjob->ji_qs.ji_un.ji_momt.ji_exuid,
           pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1)
       {
-      log_err(errno, __func__, "cannot change checkpoint directory owner");
+      log_err(errno, __func__, (char *)"cannot change checkpoint directory owner");
       }
     }
   
@@ -928,7 +928,7 @@ int blcr_checkpoint_job(
 
   if (checkpoint_script_name[0] == '\0')
     {
-    log_err(PBSE_RMEXIST, __func__, "No checkpoint script defined");
+    log_err(PBSE_RMEXIST, __func__, (char *)"No checkpoint script defined");
 
     if (preq != NULL)
       {
@@ -1571,7 +1571,7 @@ int start_checkpoint(
     {
     /* error on fork */
 
-    log_err(errno, __func__, "cannot fork child process for checkpoint");
+    log_err(errno, __func__, (char *)"cannot fork child process for checkpoint");
 
     return(PBSE_SYSTEM);
     }
@@ -1740,7 +1740,7 @@ int blcr_restart_job(
 
   if (restart_script_name[0] == '\0')
     {
-    log_err(PBSE_RMEXIST, __func__, "No restart script defined");
+    log_err(PBSE_RMEXIST, __func__, (char *)"No restart script defined");
 
     return(PBSE_RMEXIST);
     }
@@ -1757,7 +1757,7 @@ int blcr_restart_job(
        null and we need to create a task We'll just create one task*/
     if ((ptask = pbs_task_create(pjob, TM_NULL_TASK)) == NULL)
       {
-      log_err(PBSE_RMNOPARAM, __func__, "Job has no tasks");
+      log_err(PBSE_RMNOPARAM, __func__, (char *)"Job has no tasks");
       return(PBSE_RMNOPARAM);
       }
 
@@ -1839,7 +1839,7 @@ int blcr_restart_job(
           pjob->ji_qs.ji_un.ji_momt.ji_exuid,
           pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1)
       {
-      log_err(errno, __func__, "cannot change checkpoint restart file owner");
+      log_err(errno, __func__, (char *)"cannot change checkpoint restart file owner");
       }
 
 
@@ -2343,7 +2343,7 @@ int create_missing_files(
         {
         if (fchown(fd,  pjob->ji_qs.ji_un.ji_momt.ji_exuid, pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1)
           {
-          log_err(errno, "create_missing_files", "cannot change file owner");
+          log_err(errno, "create_missing_files", (char *)"cannot change file owner");
           }
         close(fd);
         ++files_created;
@@ -2379,7 +2379,7 @@ int create_missing_files(
         {
         if (fchown(fd,  pjob->ji_qs.ji_un.ji_momt.ji_exuid, pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1)
           {
-          log_err(errno, "create_missing_files", "cannot change file ownership");
+          log_err(errno, "create_missing_files", (char *)"cannot change file ownership");
           }
         close(fd);
         ++files_created;

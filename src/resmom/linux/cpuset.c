@@ -207,7 +207,7 @@ int init_cpusets(void)
   /* Allocate a cpuset */
   if ((cp = cpuset_alloc()) == NULL)
     {
-    log_err(errno, __func__, "failed to allocate cpuset");
+    log_err(errno, __func__, (char *)"failed to allocate cpuset");
     return(-1);
     }
 
@@ -215,11 +215,11 @@ int init_cpusets(void)
   if ((rc = cpuset_query(cp, TROOTCPUSET_BASE)) == -1)
     {
     if (errno == ENOSYS)
-      log_err(errno, __func__, "failed to query root cpuset, cpusets not supported on this system");
+      log_err(errno, __func__, (char *)"failed to query root cpuset, cpusets not supported on this system");
     else if (errno == ENODEV)
-      log_err(errno, __func__, "failed to query root cpuset, cpusets not enabled on this system");
+      log_err(errno, __func__, (char *)"failed to query root cpuset, cpusets not enabled on this system");
     else
-      log_err(errno, __func__, "failed to query root cpuset");
+      log_err(errno, __func__, (char *)"failed to query root cpuset");
     }
 
   cpuset_free(cp);
@@ -939,7 +939,7 @@ void cleanup_torque_cpuset(void)
 
   if ((dir = opendir(TTORQUECPUSET_PATH)) == NULL)
     {
-    log_err(errno, __func__, "failed to open TORQUE cpuset hierarchy");
+    log_err(errno, __func__, (char *)"failed to open TORQUE cpuset hierarchy");
     return;
     }
 
@@ -1056,7 +1056,7 @@ int init_torque_cpuset(void)
   if (((cpus = hwloc_bitmap_alloc()) == NULL) ||
       ((mems = hwloc_bitmap_alloc()) == NULL))
     {
-    log_err(ENOMEM, __func__, "failed to allocate bitmap");
+    log_err(ENOMEM, __func__, (char *)"failed to allocate bitmap");
     return(-1);
     }
 
@@ -1139,12 +1139,12 @@ int init_torque_cpuset(void)
   /* Allocate bitmaps before querying boot cpuset */
   if ((bootcpus = hwloc_bitmap_alloc()) == NULL)
     {
-    log_err(errno, __func__, "failed to allocate bitmap");
+    log_err(errno, __func__, (char *)"failed to allocate bitmap");
     goto finish;
     }
   if ((bootmems = hwloc_bitmap_alloc()) == NULL)
     {
-    log_err(errno, __func__, "failed to allocate bitmap");
+    log_err(errno, __func__, (char *)"failed to allocate bitmap");
     goto finish;
     }
 
@@ -1306,7 +1306,7 @@ int create_job_cpuset(
   if (((cpus = hwloc_bitmap_alloc()) == NULL) ||
       ((mems = hwloc_bitmap_alloc()) == NULL))
     {
-    log_err(errno, __func__, "failed to allocate bitmap");
+    log_err(errno, __func__, (char *)"failed to allocate bitmap");
     goto finish;
     }
 
@@ -1356,7 +1356,7 @@ int create_job_cpuset(
   /* Allocate bitmap for cpus of TORQUE cpuset */
   if ((tcpus = hwloc_bitmap_alloc()) == NULL)
     {
-    log_err(errno, __func__, "failed to allocate bitmap");
+    log_err(errno, __func__, (char *)"failed to allocate bitmap");
     goto finish;
     }
 
@@ -1908,7 +1908,7 @@ struct pidl *get_cpuset_pidlist(
 
     if ((pp = (struct pidl *)calloc(1,sizeof(struct pidl))) == NULL)
       {
-      log_err(errno, __func__, "calloc");
+      log_err(errno, __func__, (char *)"calloc");
       break;
       }
 
@@ -1997,7 +1997,7 @@ struct pidl *get_cpuset_pidlist(
 
             if ((pp = (struct pidl *)calloc(1, sizeof(struct pidl))) == NULL)
               {
-              log_err(errno, __func__, "calloc");
+              log_err(errno, __func__, (char *)"calloc");
               break;
               }
             else

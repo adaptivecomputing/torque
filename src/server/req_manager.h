@@ -62,6 +62,6 @@ int schiter_chk(pbs_attribute *pattr, void *pobject, int actmode);
 
 int nextjobnum_chk(pbs_attribute *pattr, void *pobject, int actmode);
 
-int set_nextjobnum(struct pbs_attribute *attr, struct pbs_attribute *new, enum batch_op op);
+int set_nextjobnum(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op);
 
 #endif /* _REQ_MANAGER_H */

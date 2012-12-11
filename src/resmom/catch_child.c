@@ -827,7 +827,7 @@ int run_epilogues(
           {
           if (run_pelog(PE_EPILOGUSERJOB, path_epiloguserjob, pjob, io_type) != 0)
             {
-            log_err(-1, __func__, "user local epilog failed");
+            log_err(-1, __func__, (char *)"user local epilog failed");
             }
           
           free(path_epiloguserjob);
@@ -836,7 +836,7 @@ int run_epilogues(
       }
   
     if (run_pelog(PE_EPILOGUSER, path_epiloguser, pjob, io_type) != 0)
-      log_err(-1, __func__, "user epilog failed - interactive job");
+      log_err(-1, __func__, (char *)"user epilog failed - interactive job");
     
     if ((rc = run_pelog(PE_EPILOG, path_epilog, pjob, io_type)) != 0)
       {
@@ -848,11 +848,11 @@ int run_epilogues(
   else
     {
     if (run_pelog(PE_EPILOGUSER, path_epiloguserp, pjob, io_type) != 0)
-      log_err(-1, __func__, "user epilog failed - interactive job");
+      log_err(-1, __func__, (char *)"user epilog failed - interactive job");
   
     if (run_pelog(PE_EPILOG, path_epilogp, pjob, PE_IO_TYPE_STD) != 0)
       {
-      log_err(-1, __func__, "parallel epilog failed");
+      log_err(-1, __func__, (char *)"parallel epilog failed");
       }
     }
 

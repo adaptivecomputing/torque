@@ -130,7 +130,7 @@ int pbs_submit_hash(
 
   /* Queue job with null string for job id */
 
-  rc = PBSD_QueueJob_hash(socket, "", destination, mm, job_attr, res_attr, extend, return_jobid, msg);
+  rc = PBSD_QueueJob_hash(socket, (char *)"", destination, mm, job_attr, res_attr, extend, return_jobid, msg);
 
   if (rc != PBSE_NONE)
     {

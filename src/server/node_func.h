@@ -64,19 +64,19 @@ int setup_nodes(void);
 
 /* static void delete_a_gpusubnode(struct pbsnode *pnode); */
 
-int node_np_action(pbs_attribute *new, void *pobj, int actmode);
+int node_np_action(pbs_attribute *new_attr, void *pobj, int actmode);
 
-int node_mom_port_action(pbs_attribute *new, void *pobj, int actmode);
+int node_mom_port_action(pbs_attribute *new_attr, void *pobj, int actmode);
 
-int node_mom_rm_port_action(pbs_attribute *new, void *pobj, int actmode);
+int node_mom_rm_port_action(pbs_attribute *new_attr, void *pobj, int actmode);
 
-int node_gpus_action(pbs_attribute *new, void *pnode, int actmode);
+int node_gpus_action(pbs_attribute *new_attr, void *pnode, int actmode);
 
-int node_numa_action(pbs_attribute *new, void *pnode, int actmode);
+int node_numa_action(pbs_attribute *new_attr, void *pnode, int actmode);
 
-int numa_str_action(pbs_attribute *new, void *pnode, int actmode);
+int numa_str_action(pbs_attribute *new_attr, void *pnode, int actmode);
 
-int gpu_str_action(pbs_attribute *new, void *pnode, int actmode);
+int gpu_str_action(pbs_attribute *new_attr, void *pnode, int actmode);
 
 int create_partial_pbs_node(char *nodename, unsigned long addr, int perms);
 
