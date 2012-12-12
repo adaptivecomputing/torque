@@ -149,21 +149,15 @@ void add_dest(
   char      *baddest = jobp->ji_qs.ji_destin;
 
   bp = (badplace *)calloc(1, sizeof(badplace));
-
   if (bp == NULL)
     {
     log_err(errno, __func__, msg_err_malloc);
-
     return;
     }
 
   CLEAR_LINK(bp->bp_link);
-
   strcpy(bp->bp_dest, baddest);
-
   append_link(&jobp->ji_rejectdest, &bp->bp_link, bp);
-
-  return;
   }  /* END add_dest() */
 
 
@@ -561,10 +555,8 @@ void *queue_route(
         (pjob->ji_qs.ji_un.ji_routet.ji_rteretry != 0))
       {
       reroute_job(pjob, pque);
-      unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
       }
-    else
-      unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
     }
 
   free(queue_name);
