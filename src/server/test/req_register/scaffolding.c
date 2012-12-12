@@ -312,5 +312,5 @@ int unlock_ai_mutex(job_array *pa, const char *id, char *msg, int logging)
   return(0);
   }
 
-void log_event(int eventtype, int objclass, const char *objname, char *text) {}
-void log_err(int errnum, const char *routine, char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_err(int errnum, const char *routine, const char *text) {}

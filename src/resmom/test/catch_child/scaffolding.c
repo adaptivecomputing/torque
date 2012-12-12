@@ -75,7 +75,7 @@ void exit_test(int num)
   exit_called = num;
   }
 
-void log_record(int eventtype, int objclass, const char *objname, char *text)
+void log_record(int eventtype, int objclass, const char *objname, const char *text)
   {
   }
 
@@ -617,7 +617,7 @@ void checkpoint_partial(job *pjob)
   {
   }
 
-void log_event(int eventtype, int objclass, const char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, const char *text)
   {
   }
 
@@ -1067,7 +1067,7 @@ int DIS_reply_read(struct tcp_chan *chan, struct batch_reply *preply)
   return rc;
   }
 
-void log_err(int errnum, const char *routine, char *text)
+void log_err(int errnum, const char *routine, const char *text)
   {
   }
 
@@ -1129,7 +1129,7 @@ int run_pelog(int which, char *specpelog, job *pjog, int pe_io_type)
   return 1;
   }
 
-void log_ext(int errnum, const char *routine, char *text, int severity)
+void log_ext(int errnum, const char *routine, const char *text, int severity)
   {
   }
 
