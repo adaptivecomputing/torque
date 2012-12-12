@@ -73,7 +73,7 @@ int mach_checkpoint(struct task *tsk, char *path, int abt)
  exit(1);
  }
 
-char *mk_dirs(char *base)
+char *mk_dirs(const char *base)
  {
  fprintf(stderr, "The call to mk_dirs needs to be mocked!!\n");
  exit(1);
@@ -97,7 +97,7 @@ int mom_does_checkpoint()
  exit(1);
  }
 
-int decode_str(pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_str(pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
  {
  fprintf(stderr, "The call to decode_str needs to be mocked!!\n");
  exit(1);
@@ -145,7 +145,7 @@ void net_close(int but)
  exit(1);
  }
 
-void req_reject(int code, int aux, struct batch_request *preq, char *HostName, char *Msg)
+void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
  {
  fprintf(stderr, "The call to req_reject needs to be mocked!!\n");
  exit(1);
@@ -175,7 +175,7 @@ long mach_restart(struct task *tsk, char *path)
  exit(1);
  }
 
-resource_def *find_resc_def(resource_def *rscdf, char *name, int limit)
+resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
  {
  fprintf(stderr, "The call to find_resc_def needs to be mocked!!\n");
  exit(1);
@@ -229,7 +229,7 @@ resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
  exit(1);
  }
 
-int kill_job(job *pjob, int sig, const char *killer_id_name, char *why_killed_reason)
+int kill_job(job *pjob, int sig, const char *killer_id_name, const char *why_killed_reason)
  {
  fprintf(stderr, "The call to kill_job needs to be mocked!!\n");
  exit(1);

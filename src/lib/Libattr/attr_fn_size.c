@@ -129,7 +129,7 @@ int normalize_size(struct size_value *a, struct size_value *b,
 int decode_size(
 
   pbs_attribute *patr,
-  char          *name, /* pbs_attribute name */
+  const char   *name, /* pbs_attribute name */
   char          *rescn, /* resource name, unused here */
   char          *val, /* pbs_attribute value */
   int            perm)  /* only used for resources */
@@ -174,8 +174,8 @@ int encode_size(
 
   pbs_attribute  *attr,    /* ptr to pbs_attribute */
   tlist_head     *phead,   /* head of attrlist list */
-  char           *atname,  /* pbs_attribute name */
-  char           *rsname,  /* resource name (optional) */
+  const char    *atname,  /* pbs_attribute name */
+  const char    *rsname,  /* resource name (optional) */
   int             mode,    /* encode mode (not used) */
   int             perm)    /* only used for resources */
 

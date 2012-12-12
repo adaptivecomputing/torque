@@ -100,11 +100,11 @@ extern int set_nextjobnum (pbs_attribute * attr, pbs_attribute * new_attr,
 extern int poke_scheduler (pbs_attribute * pattr, void *pobject, int actmode);
 
 extern int encode_svrstate (pbs_attribute * pattr, tlist_head * phead,
-			    char *aname, char *rsname, int mode, int perm);
+			    const char *aname, const char *rsname, int mode, int perm);
 
-extern int decode_rcost (pbs_attribute * patr, char *name, char *rn, char *val, int perm);
-extern int encode_rcost (pbs_attribute * attr, tlist_head * phead, char *atname,
-			 char *rsname, int mode, int perm);
+extern int decode_rcost (pbs_attribute * patr, const char *name, char *rn, char *val, int perm);
+extern int encode_rcost (pbs_attribute * attr, tlist_head * phead, const char *atname,
+			 const char *rsname, int mode, int perm);
 extern int set_rcost (pbs_attribute * attr, pbs_attribute * new_attr, enum batch_op);
 extern void free_rcost (pbs_attribute * attr);
 extern int set_null (pbs_attribute * patr, pbs_attribute * new_attr, enum batch_op op);

@@ -19,7 +19,7 @@ ssize_t read_blocking_socket(int fd, void *buf, ssize_t count)
   exit(1);
   }
 
-void port_forwarder( struct pfwdsock *socks, int (*connfunc)(char *, int, char *), char *phost, int pport, char *EMsg)
+void port_forwarder( struct pfwdsock *socks, int (*connfunc)(char *, long, char *), char *phost, int pport, char *EMsg)
   {
   fprintf(stderr, "The call to port_forwarder needs to be mocked!!\n");
   exit(1);

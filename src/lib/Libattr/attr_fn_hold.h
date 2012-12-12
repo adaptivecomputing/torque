@@ -3,9 +3,9 @@
 #include "attribute.h" /* pbs_attribute */
 #include "list_link.h" /* tlist_head */
 
-int decode_hold( pbs_attribute *patr, char *name, char *rescn, char *val, int perm); 
+int decode_hold( pbs_attribute *patr, const char *name, char *rescn, char *val, int perm);
 
-int encode_hold( pbs_attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int perm); 
+int encode_hold( pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm);
 
 int comp_hold(struct pbs_attribute *attr, struct pbs_attribute *with);
 

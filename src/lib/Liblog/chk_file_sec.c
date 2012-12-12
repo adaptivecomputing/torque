@@ -525,7 +525,7 @@ int IamRoot()
 
 int chk_file_sec(
 
-  char *path,   /* path to check */
+  const char *path,   /* path to check */
   int   isdir,   /* 1 = path is directory, 0 = file */
   int   sticky,   /* allow write on directory if sticky set */
   int   disallow, /* perm bits to disallow */

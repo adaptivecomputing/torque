@@ -63,7 +63,7 @@ int job_save(job *pjob, int updatetype, int mom_port)
   exit(1);
   }
 
-unsigned int get_svrport(char *service_name, char *ptype, unsigned int pdefault)
+unsigned int get_svrport(const char *service_name, const char *ptype, unsigned int pdefault)
   {
   fprintf(stderr, "The call to get_svrport needs to be mocked!!\n");
   exit(1);
@@ -75,7 +75,7 @@ char * netaddr(struct sockaddr_in *ap)
   exit(1);
   }
 
-int decode_b(pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_b(pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
   {
   fprintf(stderr, "The call to decode_b needs to be mocked!!\n");
   exit(1);

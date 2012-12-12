@@ -20,7 +20,7 @@ pthread_mutex_t *svr_do_schedule_mutex;
 pthread_mutex_t *scheduler_sock_jobct_mutex;
 pthread_mutex_t *listener_command_mutex;
 
-int encode_svrstate(pbs_attribute *pattr, tlist_head *phead, char *atname, char *rsname, int mode, int perm);
+int encode_svrstate(pbs_attribute *pattr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm);
 
 attribute_def svr_attr_def[] =
   {
@@ -44,7 +44,7 @@ resource *add_resource_entry(pbs_attribute *pattr, resource_def *prdef)
   exit(1);
   }
 
-svrattrl *attrlist_create(char *aname, char *rname, int vsize)
+svrattrl *attrlist_create(const char *aname, const char *rname, int vsize)
   {
   fprintf(stderr, "The call to attrlist_create to be mocked!!\n");
   exit(1);

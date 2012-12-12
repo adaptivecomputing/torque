@@ -286,8 +286,8 @@ static char *mk_job_log_name(
 
 int log_init(
 
-  char *suffix,    /* I (optional) */
-  char *hostname)  /* I (optional) */
+  const char *suffix,    /* I (optional) */
+  const char *hostname)  /* I (optional) */
 
   {
   if (suffix != NULL)
@@ -707,7 +707,7 @@ const char *log_get_severity_string(
 
 
 /* record job information of completed job to job log */
-int log_job_record(char *buf)
+int log_job_record(const char *buf)
   {
   struct tm *ptm;
   struct tm tmpPtm;

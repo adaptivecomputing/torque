@@ -300,8 +300,8 @@ int encode_state(
   pbs_attribute *pattr, /*struct pbs_attribute being encoded  */
   tlist_head    *ph, /*head of a list of  "svrattrl" structs 
                        which are to be returned*/
-  char          *aname, /*pbs_attribute's name    */
-  char          *rname, /*resource's name (null if none)  */
+  const char   *aname, /*pbs_attribute's name    */
+  const char   *rname, /*resource's name (null if none)  */
   int            mode, /*mode code, unused here   */
   int            perm) /* only used for resources */
 
@@ -381,8 +381,8 @@ int encode_ntype(
   
   pbs_attribute  *pattr, /*struct pbs_attribute being encoded  */
   tlist_head     *ph,    /*head of a list of  "svrattrl"   */
-  char           *aname, /*pbs_attribute's name    */
-  char           *rname, /*resource's name (null if none)  */
+  const char    *aname, /*pbs_attribute's name    */
+  const char    *rname, /*resource's name (null if none)  */
   int             mode,  /*mode code, unused here   */
   int             perm)  /* only used for resources */
 
@@ -443,8 +443,8 @@ int encode_jobs(
   pbs_attribute  *pattr, /*struct pbs_attribute being encoded  */
   tlist_head     *ph,    /*head of a  list of "svrattrl" structs 
                            which are to be returned*/
-  char           *aname, /*pbs_attribute's name    */
-  char           *rname, /*resource's name (null if none)  */
+  const char    *aname, /*pbs_attribute's name    */
+  const char    *rname, /*resource's name (null if none)  */
   int             mode,  /*mode code, unused here   */
   int             perm)  /* only used for resources */
 
@@ -554,7 +554,7 @@ int encode_jobs(
 int decode_state(
 
   pbs_attribute *pattr,   /* I (modified) */
-  char          *name,    /* pbs_attribute name */
+  const char   *name,    /* pbs_attribute name */
   char          *rescn,   /* resource name, unused here */
   char          *val,     /* pbs_attribute value */
   int            perm)    /* only used for resources */
@@ -664,7 +664,7 @@ int decode_state(
 int decode_ntype(
 
   pbs_attribute *pattr,
-  char          *name,   /* pbs_attribute name */
+  const char   *name,   /* pbs_attribute name */
   char          *rescn,  /* resource name, unused here */
   char          *val,    /* pbs_attribute value */
   int            perm)   /* only used for resources */

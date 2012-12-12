@@ -60,7 +60,7 @@ void account_record(int acctype, job *pjob, char *text)
   exit(1);
   }
 
-char *arst_string(char *str, pbs_attribute *pattr)
+char *arst_string(const char *str, pbs_attribute *pattr)
   {
   fprintf(stderr, "The call to arst_string needs to be mocked!!\n");
   exit(1);
@@ -515,7 +515,7 @@ struct pbs_queue *lock_queue_with_job_held(
 int decode_ll(
 
   pbs_attribute *patr,
-  char          *name,  /* pbs_attribute name */
+  const char   *name,  /* pbs_attribute name */
   char          *rescn, /* resource name, unused here */
   char          *val,   /* pbs_attribute value */
   int            perm)  /* only used for resources */
@@ -538,8 +538,8 @@ int encode_ll(
 
   pbs_attribute  *attr,   /* ptr to pbs_attribute */
   tlist_head     *phead,   /* head of attrlist list */
-  char           *atname,  /* pbs_attribute name */
-  char           *rsname,  /* resource name or null */
+  const char    *atname,  /* pbs_attribute name */
+  const char    *rsname,  /* resource name or null */
   int             mode,   /* encode mode, unused here */
   int             perm)  /* only used for resources */
 

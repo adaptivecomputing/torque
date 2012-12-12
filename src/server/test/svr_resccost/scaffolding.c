@@ -12,7 +12,7 @@ resource_def *svr_resc_def;
 struct server server;
 
 
-svrattrl *attrlist_create(char *aname, char *rname, int vsize)
+svrattrl *attrlist_create(const char *aname, const char *rname, int vsize)
   {
   fprintf(stderr, "The call to attrlist_create to be mocked!!\n");
   exit(1);
@@ -30,7 +30,7 @@ void *get_next(list_link pl, char *file, int line)
   exit(1);
   }
 
-resource_def *find_resc_def(resource_def *rscdf, char *name, int limit)
+resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
   {
   fprintf(stderr, "The call to find_resc_def to be mocked!!\n");
   exit(1);

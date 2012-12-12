@@ -147,7 +147,7 @@ int svr_recov(
   int  sdb;
   char log_buf[LOCAL_LOG_BUF_SIZE];
 
-  void recov_acl(pbs_attribute *, attribute_def *, char *, char *);
+  void recov_acl(pbs_attribute *, attribute_def *, const char *, const char *);
 
   sdb = open(svrfile, O_RDONLY, 0);
 
@@ -1004,8 +1004,8 @@ int save_acl(
 
   pbs_attribute *attr,  /* acl pbs_attribute */
   attribute_def *pdef,  /* pbs_attribute def structure */
-  char          *subdir, /* sub-directory path */
-  char          *name)  /* parent object name = file name */
+  const char   *subdir, /* sub-directory path */
+  const char   *name)  /* parent object name = file name */
 
   {
   static char *this_function_name = "save_acl";
@@ -1123,8 +1123,8 @@ void recov_acl(
 
   pbs_attribute *pattr, /* acl pbs_attribute */
   attribute_def *pdef, /* pbs_attribute def structure */
-  char          *subdir, /* directory path */
-  char         *name) /* parent object name = file name */
+  const char  *subdir, /* directory path */
+  const char  *name) /* parent object name = file name */
 
   {
   static char   *this_function_name = "recov_acl";

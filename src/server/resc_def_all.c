@@ -115,12 +115,12 @@ extern struct server server;
 
 /* sync w/job_attr_def.c */
 
-int decode_nodes(struct pbs_attribute *, char *, char *, char *, int);
+int decode_nodes(struct pbs_attribute *, const char *, char *, char *, int);
 int set_node_ct(resource *, pbs_attribute *, int actmode);
 int set_proc_ct(resource *, pbs_attribute *, int actmode);
 int set_tokens_nodect(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op actmode);
 int set_mppnodect(resource *, pbs_attribute *, int actmode);
-int encode_procct(pbs_attribute *, tlist_head *phead, char *atname, char *rsname, int mode, int perm);
+int encode_procct(pbs_attribute *, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm);
 
 
 resource_def *svr_resc_def;
@@ -829,7 +829,7 @@ int init_resc_defs(void)
 
 #endif
 
-  svr_resc_def = calloc(svr_resc_size + dindex, sizeof(resource_def));
+  svr_resc_def = (resource_def *)calloc(svr_resc_size + dindex, sizeof(resource_def));
 
   if (svr_resc_def == NULL)
      {
@@ -884,7 +884,7 @@ int init_resc_defs(void)
 int decode_nodes(
 
   pbs_attribute *patr,
-  char          *name,   /* pbs_attribute name */
+  const char   *name,   /* pbs_attribute name */
   char          *rescn,  /* resource name - unused here */
   char          *val,    /* pbs_attribute value */
   int            perm)   /* replaces resc_access_perm */
@@ -1352,8 +1352,8 @@ int encode_procct(
 
   pbs_attribute  *attr,   /* ptr to pbs_attribute */
   tlist_head     *phead,  /* head of attrlist list */
-  char           *atname, /* pbs_attribute name */
-  char           *rsname, /* resource name or null */
+  const char    *atname, /* pbs_attribute name */
+  const char    *rsname, /* resource name or null */
   int             mode,   /* encode mode, unused here */
   int             perm)   /* only used for resources */
 

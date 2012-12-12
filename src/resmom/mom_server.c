@@ -301,11 +301,11 @@ extern unsigned int        ssa_index;
 extern resizable_array    *received_statuses;
 dynamic_string            *mom_status = NULL;
 
-extern struct config *rm_search(struct config *where, char *what);
+extern struct config *rm_search(struct config *where, const char *what);
 
 extern struct rm_attribute *momgetattr(char *str);
 extern char *conf_res(char *resline, struct rm_attribute *attr);
-extern char *dependent(char *res, struct rm_attribute *attr);
+extern char *dependent(const char *res, struct rm_attribute *attr);
 extern char *reqgres(struct rm_attribute *);
 extern void send_update_soon();
 
@@ -315,7 +315,7 @@ extern int  use_nvidia_gpu;
 
 void check_state(int);
 void state_to_server(int, int);
-void node_comm_error(node_comm_t *, char *);
+void node_comm_error(node_comm_t *, const char *);
 
 
 /* clear servers */
@@ -370,7 +370,7 @@ void mom_server_all_init(void)
 
 mom_server *mom_server_find_by_name(
 
-  char *name)
+  const char *name)
 
   {
   mom_server *pms;
@@ -475,7 +475,7 @@ mom_server *mom_server_find_empty_slot(void)
 
 int mom_server_add(
 
-  char *value)
+  const char *value)
 
   {
   mom_server      *pms;
@@ -584,7 +584,7 @@ void mom_server_stream_error(
   int   stream,
   char *name,
   const char *id,
-  char *message)
+  const char *message)
 
   {
   sprintf(log_buffer, "error %s to server %s", message, name);
@@ -615,7 +615,7 @@ int mom_server_flush_io(
 
   struct tcp_chan *chan,
   const char      *id,
-  char            *message)
+  const char      *message)
 
   {
   if (DIS_tcp_wflush(chan) == -1)
@@ -649,7 +649,7 @@ int is_compose(
   int   command)
 
   {
-  static char *id = (char *)"is_compose";
+  static const char *id = "is_compose";
   int ret;
 
   if (chan->sock < 0)
@@ -659,19 +659,19 @@ int is_compose(
 
   if ((ret = diswsi(chan, IS_PROTOCOL)) != DIS_SUCCESS)
     {
-    mom_server_stream_error(chan->sock, server_name, id, (char *)"writing protocol");
+    mom_server_stream_error(chan->sock, server_name, id, "writing protocol");
 
     return(ret);
     }
   else if ((ret = diswsi(chan, IS_PROTOCOL_VER)) != DIS_SUCCESS)
     {
-    mom_server_stream_error(chan->sock, server_name, id, (char *)"writing protocol version");
+    mom_server_stream_error(chan->sock, server_name, id, "writing protocol version");
 
     return(ret);
     }
   else if ((ret = diswsi(chan, command)) != DIS_SUCCESS)
     {
-    mom_server_stream_error(chan->sock, server_name, id, (char *)"writing command");
+    mom_server_stream_error(chan->sock, server_name, id, "writing command");
 
     return(ret);
     }
@@ -731,7 +731,7 @@ extern struct config *config_array;
 
 void gen_size(
 
-  char  *name,
+  const char  *name,
   char **BPtr,
   int   *BSpace)
 
@@ -753,7 +753,7 @@ void gen_size(
 
       if (value && *value)
         {
-        MUSNPrintF(BPtr, BSpace, (char *)"%s=%s",
+        MUSNPrintF(BPtr, BSpace, "%s=%s",
           name,
           value);
 
@@ -772,7 +772,7 @@ void gen_size(
 
 void gen_arch(
 
-  char  *name,
+  const char  *name,
   char **BPtr,
   int   *BSpace)
 
@@ -783,7 +783,7 @@ void gen_arch(
 
   if (ap != NULL)
     {
-    MUSNPrintF(BPtr,BSpace,(char *)"%s=%s",
+    MUSNPrintF(BPtr,BSpace,"%s=%s",
       name,
       ap->c_u.c_value);
 
@@ -800,7 +800,7 @@ void gen_arch(
 
 void gen_opsys(
 
-  char  *name,
+  const char  *name,
   char **BPtr,
   int   *BSpace)
 
@@ -811,7 +811,7 @@ void gen_opsys(
 
   if (ap != NULL)
     {
-    MUSNPrintF(BPtr,BSpace,(char *)"%s=%s",
+    MUSNPrintF(BPtr,BSpace,"%s=%s",
       name,
       ap->c_u.c_value);
 
@@ -828,14 +828,14 @@ void gen_opsys(
 
 void gen_jdata(
 
-  char  *name,
+  const char  *name,
   char **BPtr,
   int   *BSpace)
 
   {
   if (TORQUE_JData[0] != '\0')
     {
-    MUSNPrintF(BPtr,BSpace,(char *)"%s=%s",
+    MUSNPrintF(BPtr,BSpace,"%s=%s",
       name,
       TORQUE_JData);
 
@@ -851,7 +851,7 @@ void gen_jdata(
 
 void gen_gres(
 
-  char  *name,
+  const char  *name,
   char **BPtr,
   int   *BSpace)
 
@@ -863,7 +863,7 @@ void gen_gres(
 
   if (value != NULL)
     {
-    MUSNPrintF(BPtr, BSpace, (char *)"%s=%s",
+    MUSNPrintF(BPtr, BSpace, "%s=%s",
                 name,
                 value);
     (*BPtr)++; /* Need to start the next string after the null */
@@ -880,7 +880,7 @@ void gen_gres(
 
 void gen_gen(
 
-  char  *name,
+  const char  *name,
   char **BPtr,
   int   *BSpace)
 
@@ -897,7 +897,7 @@ void gen_gen(
 
     if (ptr && *ptr)
       {
-      MUSNPrintF(BPtr,BSpace,(char *)"%s=%s",
+      MUSNPrintF(BPtr,BSpace,"%s=%s",
         name,
         ptr);
 
@@ -913,7 +913,7 @@ void gen_gen(
       {
       /* value not set (attribute required) */
 
-      MUSNPrintF(BPtr,BSpace,(char *)"%s=? %d",
+      MUSNPrintF(BPtr,BSpace,"%s=? %d",
         name,
         rm_errno);
 
@@ -926,7 +926,7 @@ void gen_gen(
       }
     else
       {
-      MUSNPrintF(BPtr, BSpace, (char *)"%s=%s",
+      MUSNPrintF(BPtr, BSpace, "%s=%s",
                  name,
                  value);
       (*BPtr)++; /* Need to start the next string after the null */
@@ -937,36 +937,36 @@ void gen_gen(
   return;
   }   /* END gen_gen() */
 
-typedef void (*gen_func_ptr)(char *, char **, int *);
+typedef void (*gen_func_ptr)(const char *, char **, int *);
 
 typedef struct stat_record
   {
-  char *name;
+  const char *name;
   gen_func_ptr func;
   } stat_record;
 
 stat_record stats[] = {
-  {(char *)"arch",        gen_arch},
-  {(char *)"opsys",       gen_gen},
-  {(char *)"uname",       gen_gen},
-  {(char *)"sessions",    gen_gen},
-  {(char *)"nsessions",   gen_gen},
-  {(char *)"nusers",      gen_gen},
-  {(char *)"idletime",    gen_gen},
-  {(char *)"totmem",      gen_gen},
-  {(char *)"availmem",    gen_gen},
-  {(char *)"physmem",     gen_gen},
-  {(char *)"ncpus",       gen_gen},
-  {(char *)"loadave",     gen_gen},
-  {(char *)"message",     gen_gen},
-  {(char *)"gres",        gen_gres},
-  {(char *)"netload",     gen_gen},
-  {(char *)"size",        gen_size},
-  {(char *)"state",       gen_gen},
-  {(char *)"jobs",        gen_gen},
-  {(char *)"jobdata",     gen_jdata},
-  {(char *)"varattr",     gen_gen},
-  {(char *)NULL,          NULL}
+  {"arch",        gen_arch},
+  {"opsys",       gen_gen},
+  {"uname",       gen_gen},
+  {"sessions",    gen_gen},
+  {"nsessions",   gen_gen},
+  {"nusers",      gen_gen},
+  {"idletime",    gen_gen},
+  {"totmem",      gen_gen},
+  {"availmem",    gen_gen},
+  {"physmem",     gen_gen},
+  {"ncpus",       gen_gen},
+  {"loadave",     gen_gen},
+  {"message",     gen_gen},
+  {"gres",        gen_gres},
+  {"netload",     gen_gen},
+  {"size",        gen_size},
+  {"state",       gen_gen},
+  {"jobs",        gen_gen},
+  {"jobdata",     gen_jdata},
+  {"varattr",     gen_gen},
+  {NULL,          NULL}
   };
 
 
@@ -1055,11 +1055,11 @@ int write_update_header(
           snprintf(buf,sizeof(buf),"node=%s",mom_alias);
           
           if ((ret = diswst(chan, buf)) != DIS_SUCCESS)
-            mom_server_stream_error(chan->sock, name, id, (char *)"writing status string");
+            mom_server_stream_error(chan->sock, name, id, "writing status string");
           else if (should_request_cluster_addrs() == TRUE)
             {
             if ((ret = diswst(chan, "first_update=true")) != DIS_SUCCESS)
-              mom_server_stream_error(chan->sock, name, id, (char *)"writing status string");
+              mom_server_stream_error(chan->sock, name, id, "writing status string");
             else
               requested_cluster_addrs = time_now;
             }
@@ -1109,7 +1109,7 @@ int write_my_server_status(
           
           pms = (mom_server *)dest;
           
-          mom_server_stream_error(chan->sock, pms->pbs_servername, id, (char *)"writing status string");
+          mom_server_stream_error(chan->sock, pms->pbs_servername, id, "writing status string");
           
           break;
           
@@ -1118,7 +1118,7 @@ int write_my_server_status(
           nc = (node_comm_t *)dest;
           nc->stream = chan->sock;
           
-          node_comm_error(nc,(char *)"Error writing strings to");
+          node_comm_error(nc,"Error writing strings to");
           
           break;
         } /* END switch (mode) */
@@ -1175,7 +1175,7 @@ int write_cached_statuses(
             
             pms = (mom_server *)dest;
             
-            mom_server_stream_error(chan->sock, pms->pbs_servername, id, (char *)"writing status string");
+            mom_server_stream_error(chan->sock, pms->pbs_servername, id, "writing status string");
             
             break;
             
@@ -1184,7 +1184,7 @@ int write_cached_statuses(
             nc = (node_comm_t *)dest;
             nc->stream = chan->sock;
             
-            node_comm_error(nc,(char *)"Error writing strings to");
+            node_comm_error(nc,"Error writing strings to");
             
             break;
           } /* END switch (mode) */
@@ -1339,11 +1339,11 @@ int mom_server_update_stat(
 void node_comm_error(
  
   node_comm_t *nc,
-  char        *message)
+  const char *message)
  
   {
   snprintf(log_buffer,sizeof(log_buffer), "%s %s", message, nc->name);
-  log_err(-1, (char *)"Node communication process",log_buffer);
+  log_err(-1, "Node communication process",log_buffer);
   
   close(nc->stream);
   nc->stream = -1;
@@ -1501,7 +1501,7 @@ void mom_server_all_update_stat(void)
  
   if (LOGLEVEL >= 6)
     {
-    log_record(PBSEVENT_SYSTEM, 0, __func__, (char *)"composing status update for server");
+    log_record(PBSEVENT_SYSTEM, 0, __func__, "composing status update for server");
     }
  
 #ifdef NUMA_SUPPORT
@@ -1560,7 +1560,7 @@ void mom_server_all_update_stat(void)
         }
 
       if (rc == COULD_NOT_CONTACT_SERVER)
-        log_err(-1, __func__, (char *)"Could not contact any of the servers to send an update");
+        log_err(-1, __func__, "Could not contact any of the servers to send an update");
       }
     else
       close(nc->stream);
@@ -1703,7 +1703,7 @@ void mom_server_diag(
 
   if (TMOMRejectConn[0] != '\0')
     {
-    MUSNPrintF(BPtr, BSpace, (char *)"  WARNING:  invalid attempt to connect from server %s\n",
+    MUSNPrintF(BPtr, BSpace, "  WARNING:  invalid attempt to connect from server %s\n",
       TMOMRejectConn);
     }
 
@@ -1760,7 +1760,7 @@ void mom_server_all_diag(
 
   if (mom_servers[0].pbs_servername[0] == '\0')
     {
-    MUStrNCat(BPtr, BSpace, (char *)"WARNING:  server not specified (set $pbsserver)\n");
+    MUStrNCat(BPtr, BSpace, "WARNING:  server not specified (set $pbsserver)\n");
     }
   else
     {
@@ -1834,7 +1834,7 @@ void mom_server_update_receive_time(
 void mom_server_update_receive_time_by_ip(
 
   u_long  ipaddr,
-  char   *command_name)
+  const char   *command_name)
 
   {
   mom_server *pms;
@@ -1980,7 +1980,7 @@ int process_host_name(
   int  *something_added)
 
   {
-  static char        *id = (char *)"process_host_name";
+  static const char        *id = "process_host_name";
   char               *colon;
   unsigned short      rm_port;
   unsigned long       ipaddr;
@@ -2070,7 +2070,7 @@ int process_level_string(
   int  *something_added)
 
   {
-  char *delims = (char *)",";
+  const char *delims = ",";
   char *host_tok;
   int   rc = PBSE_NONE;
   int   temp_rc;
@@ -2329,7 +2329,7 @@ void mom_is_request(
           free(err_msg);
           }
         else
-          log_ext(-1, __func__, (char *)"Invalid source for IS_REQUEST", LOG_ALERT);
+          log_ext(-1, __func__, "Invalid source for IS_REQUEST", LOG_ALERT);
         
         sprintf(TMOMRejectConn, "%s  %s", netaddr(((struct sockaddr_in *)&addr)), "(server not authorized)");
         
@@ -2669,7 +2669,7 @@ void check_state(
 
   static char tmpPBSNodeMsgBuf[1024];
 
-  char *id = (char *)"check_state";
+  const char *id = "check_state";
 
   if (Force)
     {
@@ -2834,12 +2834,12 @@ void shutdown_to_server(
 
   if (diswui(chan, internal_state) != DIS_SUCCESS)
     {
-    mom_server_stream_error(chan->sock, pms->pbs_servername, __func__, (char *)"writing internal state");
+    mom_server_stream_error(chan->sock, pms->pbs_servername, __func__, "writing internal state");
 
     goto shutdown_to_server_done;
     }
 
-  if (mom_server_flush_io(chan, __func__, (char *)"flush") == DIS_SUCCESS)
+  if (mom_server_flush_io(chan, __func__, "flush") == DIS_SUCCESS)
     {
     /* send successful, unset ReportMomState */
 
@@ -2911,9 +2911,9 @@ void state_to_server(
       }
     else if (diswui(chan, internal_state) != DIS_SUCCESS)
       {
-      mom_server_stream_error(chan->sock, pms->pbs_servername, __func__, (char *)"writing internal state");
+      mom_server_stream_error(chan->sock, pms->pbs_servername, __func__, "writing internal state");
       }
-    else if (mom_server_flush_io(chan, __func__, (char *)"flush") == DIS_SUCCESS)
+    else if (mom_server_flush_io(chan, __func__, "flush") == DIS_SUCCESS)
       {
       /* send successful, unset ReportMomState */
       pms->ReportMomState = 0;
@@ -2935,7 +2935,7 @@ void state_to_server(
     }
   else
     {
-    mom_server_stream_error(-1, pms->pbs_servername, __func__, (char *)"Couldn't open stream to server");
+    mom_server_stream_error(-1, pms->pbs_servername, __func__, "Couldn't open stream to server");
     }
 
   return;

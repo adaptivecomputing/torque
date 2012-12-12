@@ -161,8 +161,8 @@ unsigned long        ssa_size;
 resizable_array     *received_statuses; /* holds information on node's whose statuses we've received */
 hash_table_t        *received_table;
 int                  updates_waiting_to_send = 0;
-time_t               LastServerUpdateTime;
-int                  ServerStatUpdateInterval;
+extern time_t       LastServerUpdateTime;
+extern int         ServerStatUpdateInterval;
 extern struct connection svr_conn[];
 
 const char *PMOMCommand[] =
@@ -295,7 +295,7 @@ int task_save(
 
   if (fds < 0)
     {
-    log_err(errno, __func__, (char *)"error on open");
+    log_err(errno, __func__, "error on open");
 
     return(-1);
     }
@@ -315,7 +315,7 @@ int task_save(
   if (lseek(fds, (off_t)(TaskID*sizeof(ptask->ti_qs)), SEEK_SET) < 0)
 #endif
     {
-    log_err(errno, __func__, (char *)"lseek");
+    log_err(errno, __func__, "lseek");
 
     close(fds);
 
@@ -328,10 +328,7 @@ int task_save(
 
   /* just write the "critical" base structure to the file */
 
-  while ((i = write(
-                fds,
-                (char *) & ptask->ti_qs,
-                sizeof(ptask->ti_qs))) != sizeof(ptask->ti_qs))
+  while ((i = write(fds,&ptask->ti_qs,sizeof(ptask->ti_qs)) ) != sizeof(ptask->ti_qs))
     {
     if ((i < 0) && (errno == EINTR))
       {
@@ -343,7 +340,7 @@ int task_save(
       if (lseek(fds, (off_t)(TaskID*sizeof(ptask->ti_qs)), SEEK_SET) < 0)
 #endif
         {
-        log_err(errno, __func__, (char *)"lseek");
+        log_err(errno, __func__, "lseek");
 
         close(fds);
 
@@ -353,7 +350,7 @@ int task_save(
       continue;
       }
 
-    log_err(errno, __func__, (char *)"quickwrite");
+    log_err(errno, __func__, "quickwrite");
 
     close(fds);
 
@@ -442,7 +439,7 @@ task *pbs_task_create(
     {
     sprintf(log_buffer, "Ran into reserved task IDs on job %s",
             pjob->ji_qs.ji_jobid);
-    log_err(-1, __func__, (char *)log_buffer);
+    log_err(-1, __func__, log_buffer);
     return(NULL);
     }
 
@@ -452,13 +449,13 @@ task *pbs_task_create(
 
   at = &pjob->ji_wattr[JOB_ATR_resource];
 
-  rd = find_resc_def(svr_resc_def, (char *)"taskspn", svr_resc_size);
+  rd = find_resc_def(svr_resc_def, "taskspn", svr_resc_size);
 
   /* NYI: are checks like this necessary? Before this was an assert, which shouldn't
    * be in production code, so I figure this is better than that --dbeer */
   if (rd == NULL)
     {
-    log_err(-1, __func__, (char *)"No tasks per node resource definition? TORQUE is very broken!");
+    log_err(-1, __func__, "No tasks per node resource definition? TORQUE is very broken!");
     return(NULL);
     }
 
@@ -476,7 +473,7 @@ task *pbs_task_create(
 
   if (ptask == NULL)
     {
-    log_err(ENOMEM, __func__, (char *)"No memory to allocate task! IMMINENT FAILURE");
+    log_err(ENOMEM, __func__, "No memory to allocate task! IMMINENT FAILURE");
 
     return(NULL);
     }
@@ -623,7 +620,7 @@ int task_recov(
 
   if (fds < 0)
     {
-    log_err(errno, __func__, (char *)"open of task file");
+    log_err(errno, __func__, "open of task file");
 
     unlink(namebuf);
 
@@ -650,7 +647,7 @@ int task_recov(
 
     if ((pt = pbs_task_create(pjob, tid)) == NULL)
       {
-      log_err(errno, __func__, (char *)"cannot create task");
+      log_err(errno, __func__, "cannot create task");
 
       close(fds);
 
@@ -904,7 +901,7 @@ int send_sisters(
         PBSEVENT_ERROR,
         PBS_EVENTCLASS_JOB,
         pjob->ji_qs.ji_jobid,
-        (char *)"cannot alloc event object in send_sisters");
+        "cannot alloc event object in send_sisters");
 
       continue;
       }
@@ -1007,7 +1004,7 @@ hnodent *find_node(
 
   if (getpeername(stream,&connecting_stack_addr,&len) != 0)
     {
-    log_err(errno, __func__, (char *)"Couldn't find connecting information for this stream");
+    log_err(errno, __func__, "Couldn't find connecting information for this stream");
     return(NULL);
     }
 
@@ -1466,7 +1463,7 @@ int check_ms(
 
   if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE)
     {
-    log_err(-1, __func__, (char *)"Mother Superior talking to herself");
+    log_err(-1, __func__, "Mother Superior talking to herself");
 
     return(TRUE);
     }
@@ -1481,7 +1478,7 @@ int check_ms(
 u_long resc_used(
 
   job    *pjob,
-  char  *name,
+  const char  *name,
   u_long(*func)(resource *))
 
   {
@@ -1602,8 +1599,9 @@ char *resc_string(
   svrattrl  *pal;
   tlist_head  lhead;
   int   len, used, tot;
-  char   *res_str, *ch;
-  char   *getuname();
+  char   *res_str;
+  const char *ch;
+  const char   *getuname();
   int  resc_access_perm = ATR_DFLAG_USRD;
 
   char   *tmpResStr;
@@ -1978,7 +1976,7 @@ int reply_to_join_job_as_sister(
       {
       /* SUCCESS */
       if (LOGLEVEL >= 8)
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, (char *)"Successfully sent join job reply");
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "Successfully sent join job reply");
 
       break;
       }
@@ -2351,7 +2349,7 @@ int im_join_job_as_sister(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
         pjob->ji_qs.ji_jobid,
-        (char *)"cannot create tmp dir");
+        "cannot create tmp dir");
       
       send_im_error(PBSE_BADUSER,1,pjob,cookie,event,fromtask);
       
@@ -2382,7 +2380,7 @@ int im_join_job_as_sister(
       sprintf(log_buffer, "Could not create cpuset for job %s.\n",
         pjob->ji_qs.ji_jobid);
 
-      log_err(-1, __func__, (char *)log_buffer);
+      log_err(-1, __func__, log_buffer);
       }
     }
   
@@ -2411,7 +2409,7 @@ int im_join_job_as_sister(
     {
     send_im_error(PBSE_SYSTEM,1,pjob,cookie,event,fromtask);
     
-    log_err(-1, __func__, (char *)"cannot load sp switch table");
+    log_err(-1, __func__, "cannot load sp switch table");
     
     mom_job_purge(pjob);
     
@@ -2565,7 +2563,7 @@ void im_kill_job_as_sister(
    * die and are reaped.
    */
 
-  kill_job(pjob, SIGKILL, __func__, (char *)"kill_job message received");
+  kill_job(pjob, SIGKILL, __func__, "kill_job message received");
   
   pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
   
@@ -2828,7 +2826,7 @@ int im_spawn_task(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
         jobid,
-        (char *)"saving task (IM_SPAWN_TASK)");
+        "saving task (IM_SPAWN_TASK)");
       }
     
     if (task_save(ptask) == -1)
@@ -3211,7 +3209,7 @@ int im_obit_task(
     
     if (op == NULL)
       {
-      log_err(ENOMEM, __func__, (char *)"Cannot allocate memory for the obit entry");
+      log_err(ENOMEM, __func__, "Cannot allocate memory for the obit entry");
       }
     else
       {
@@ -3328,7 +3326,7 @@ int im_get_info(
     else if ((ret = im_compose(local_chan,jobid,cookie,IM_ALL_OKAY,event,fromtask)) != DIS_SUCCESS)
       {
       }
-    else if ((ret = diswcs(local_chan, (char *)ip->ie_info, ip->ie_len)) != DIS_SUCCESS)
+    else if ((ret = diswcs(local_chan, (const char *)ip->ie_info, ip->ie_len)) != DIS_SUCCESS)
       {
       }
     else
@@ -3550,13 +3548,13 @@ int im_poll_job_as_sister(
     mom_set_use(pjob);
     
     /* ** Send the information tallied for the job.  */
-    if ((ret = diswul(local_chan, resc_used(pjob, (char *)"cput", gettime))) != DIS_SUCCESS)
+    if ((ret = diswul(local_chan, resc_used(pjob, "cput", gettime))) != DIS_SUCCESS)
       {
       }
-    else if ((ret = diswul(local_chan, resc_used(pjob, (char *)"mem", getsize))) != DIS_SUCCESS)
+    else if ((ret = diswul(local_chan, resc_used(pjob, "mem", getsize))) != DIS_SUCCESS)
       {
       }
-    else if ((ret = diswul(local_chan, resc_used(pjob, (char *)"vmem", getsize))) != DIS_SUCCESS)
+    else if ((ret = diswul(local_chan, resc_used(pjob, "vmem", getsize))) != DIS_SUCCESS)
       {
       }
     else
@@ -3630,7 +3628,7 @@ int im_get_tid(
 
   if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
     {
-    log_err(-1, __func__, (char *)"got GET_TID and I'm not MS");
+    log_err(-1, __func__, "got GET_TID and I'm not MS");
     
     return(IM_FAILURE);
     }
@@ -3649,7 +3647,7 @@ int im_get_tid(
   
   if (IS_ADOPTED_TASK(pjob->ji_taskid))
     {
-    log_err(-1, __func__, (char *)"Ran into reserved task ids");
+    log_err(-1, __func__, "Ran into reserved task ids");
     return(IM_FAILURE);
     }
 
@@ -3703,7 +3701,7 @@ int handle_im_join_job_response(
   
   if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
     {
-    log_err(-1, __func__, (char *)"got JOIN_JOB OKAY and I'm not MS");
+    log_err(-1, __func__, "got JOIN_JOB OKAY and I'm not MS");
     
     return(IM_FAILURE);
     }
@@ -3746,7 +3744,7 @@ int handle_im_join_job_response(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
         pjob->ji_qs.ji_jobid,
-        (char *)"im_request: all sisters have reported in, launching job locally");
+        "im_request: all sisters have reported in, launching job locally");
       }
     
     exec_job_on_ms(pjob);
@@ -3801,7 +3799,7 @@ int handle_im_kill_job_response(
 
   if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
     {
-    log_err(-1, __func__, (char *)"got KILL_JOB OKAY and I'm not MS");
+    log_err(-1, __func__, "got KILL_JOB OKAY and I'm not MS");
     return(IM_FAILURE);
     }
 
@@ -4239,7 +4237,7 @@ int handle_im_poll_job_response(
 
   if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
     {
-    log_err(-1, __func__, (char *)"got POLL_JOB and I'm not MS");
+    log_err(-1, __func__, "got POLL_JOB and I'm not MS");
     
     return(IM_FAILURE);
     }
@@ -4424,7 +4422,7 @@ int handle_im_get_tid_response(
     
     if (LOGLEVEL >= 6)
       {
-      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,(char *)"saving task (IM_GET_TID)");
+      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,"saving task (IM_GET_TID)");
       }
     
     if (task_save(ptask) != -1)
@@ -4922,7 +4920,7 @@ void im_request(
 
       if (ret == IM_FAILURE)
         {
-        log_err(-1, __func__, (char *)"im_spawn_task error");
+        log_err(-1, __func__, "im_spawn_task error");
         goto err;
         }
  
@@ -4935,7 +4933,7 @@ void im_request(
       
       if (ret == IM_FAILURE)
         {
-        log_err(-1, __func__, (char *)"im_signal_task error");
+        log_err(-1, __func__, "im_signal_task error");
         goto err;
         }
       
@@ -4948,7 +4946,7 @@ void im_request(
       
       if (ret == IM_FAILURE)
         {
-        log_err(-1, __func__, (char *)"im_obit_task error");
+        log_err(-1, __func__, "im_obit_task error");
         goto err;
         }
       
@@ -4961,7 +4959,7 @@ void im_request(
       
       if (ret == IM_FAILURE)
         {
-        log_err(-1, __func__, (char *)"im_get_info error");
+        log_err(-1, __func__, "im_get_info error");
         goto err;
         }
       
@@ -4974,7 +4972,7 @@ void im_request(
       
       if (ret == IM_FAILURE)
         {
-        log_err(-1, __func__, (char *)"im_get_resc_as_sister error");
+        log_err(-1, __func__, "im_get_resc_as_sister error");
         goto err;
         }
       
@@ -4989,7 +4987,7 @@ void im_request(
         close_conn(chan->sock, FALSE);
         svr_conn[chan->sock].cn_stay_open = FALSE;
         chan->sock = -1;
-        log_err(-1, __func__, (char *)"check_ms error IM_POLL_JOB");
+        log_err(-1, __func__, "check_ms error IM_POLL_JOB");
         goto err;
         }
 
@@ -5010,7 +5008,7 @@ void im_request(
         close_conn(chan->sock, FALSE);
         svr_conn[chan->sock].cn_stay_open = FALSE;
         chan->sock = -1;
-        log_err(-1, __func__, (char *)"check_ms error IM_ABORT_JOB");
+        log_err(-1, __func__, "check_ms error IM_ABORT_JOB");
         goto err;
         }
       
@@ -5026,7 +5024,7 @@ void im_request(
         close_conn(chan->sock, FALSE);
         svr_conn[chan->sock].cn_stay_open = FALSE;
         chan->sock = -1;
-        log_err(-1, __func__, (char *)"im_get_tid error");
+        log_err(-1, __func__, "im_get_tid error");
         goto err;
         }
 
@@ -5047,7 +5045,7 @@ void im_request(
           chan->sock = -1;
           if (ret == IM_FAILURE)
             {
-            log_err(-1, __func__, (char *)"handle_im_join_job_response error");
+            log_err(-1, __func__, "handle_im_join_job_response error");
             goto err;
             }
 
@@ -5060,7 +5058,7 @@ void im_request(
           chan->sock = -1;
           if (ret == IM_FAILURE)
             {
-            log_err(-1, __func__, (char *)"handle_im_kill_job_response error");
+            log_err(-1, __func__, "handle_im_kill_job_response error");
             goto err;
             }
 
@@ -5072,7 +5070,7 @@ void im_request(
           chan->sock = -1;
           if (ret == IM_FAILURE)
             {
-            log_err(-1, __func__, (char *)"handle_im_spawn_task_response error");
+            log_err(-1, __func__, "handle_im_spawn_task_response error");
             goto err;
             }
 
@@ -5084,7 +5082,7 @@ void im_request(
           chan->sock = -1;
           if (ret == IM_FAILURE)
             {
-            log_err(-1, __func__, (char *)"handle_im_get_tasks_response error");
+            log_err(-1, __func__, "handle_im_get_tasks_response error");
             goto err;
             }
 
@@ -5096,7 +5094,7 @@ void im_request(
           chan->sock = -1;
           if (ret == IM_FAILURE)
             {
-            log_err(-1, __func__, (char *)"handle_im_signal_task_response error");
+            log_err(-1, __func__, "handle_im_signal_task_response error");
             goto err;
             }
 
@@ -5108,7 +5106,7 @@ void im_request(
           chan->sock = -1;
           if (ret == IM_FAILURE)
             {
-            log_err(-1, __func__, (char *)"handle_im_obit_task_response error");
+            log_err(-1, __func__, "handle_im_obit_task_response error");
             goto err;
             }
 
@@ -5120,7 +5118,7 @@ void im_request(
           chan->sock = -1;
           if (ret == IM_FAILURE)
             {
-            log_err(-1, __func__, (char *)"handle_im_get_info_response error");
+            log_err(-1, __func__, "handle_im_get_info_response error");
             goto err;
             }
 
@@ -5132,7 +5130,7 @@ void im_request(
           chan->sock = -1;
           if (ret == IM_FAILURE)
             {
-            log_err(-1, __func__, (char *)"handle_im_get_resc_response error");
+            log_err(-1, __func__, "handle_im_get_resc_response error");
             goto err;
             }
 
@@ -5144,7 +5142,7 @@ void im_request(
             {
             close_conn(chan->sock, FALSE);
             chan->sock = -1;
-            log_err(-1, __func__, (char *)"handle_im_poll_job_response error");
+            log_err(-1, __func__, "handle_im_poll_job_response error");
             goto err;
             }
           close_conn(chan->sock, FALSE);
@@ -5171,7 +5169,7 @@ void im_request(
 
             case IM_FAILURE:
               {
-              log_err(-1, __func__, (char *)"IM_FAILURE in IM_GET_TID handle response");
+              log_err(-1, __func__, "IM_FAILURE in IM_GET_TID handle response");
               goto err;
               }
             }
@@ -5222,7 +5220,7 @@ void im_request(
             if (((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) == 0) &&
                 ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0))
               {
-              log_err(-1, __func__, (char *)"got JOIN_JOB OKAY and I'm not an intermediate MOM or Mother Superior");
+              log_err(-1, __func__, "got JOIN_JOB OKAY and I'm not an intermediate MOM or Mother Superior");
               
               goto err;
               }
@@ -5344,7 +5342,7 @@ void im_request(
                     PBSEVENT_JOB,
                     PBS_EVENTCLASS_JOB,
                     pjob->ji_qs.ji_jobid,
-                    (char *)"im_request:all sisters have reported in, launching job locally");
+                    "im_request:all sisters have reported in, launching job locally");
                   }
                 
                 exec_job_on_ms(pjob);
@@ -5422,7 +5420,7 @@ void im_request(
               close_conn(chan->sock, FALSE);
               svr_conn[chan->sock].cn_stay_open = FALSE;
               chan->sock = -1;
-              log_err(-1, __func__, (char *)"Count not read cput||mem||vmem||nodeid");
+              log_err(-1, __func__, "Count not read cput||mem||vmem||nodeid");
               goto err;
               }
             
@@ -5505,7 +5503,7 @@ void im_request(
               close_conn(chan->sock, FALSE);
               svr_conn[chan->sock].cn_stay_open = FALSE;
               chan->sock = -1;
-              log_err(-1, __func__, (char *)"Count not read cput||mem||vmem||nodeid");
+              log_err(-1, __func__, "Count not read cput||mem||vmem||nodeid");
               goto err;
               }
             
@@ -5571,7 +5569,7 @@ void im_request(
             close_conn(chan->sock, FALSE);
             svr_conn[chan->sock].cn_stay_open = FALSE;
             chan->sock = -1;
-            log_err(-1, __func__, (char *)"KILL_JOB_RADIX OK received on a leaf node");
+            log_err(-1, __func__, "KILL_JOB_RADIX OK received on a leaf node");
             goto err;
             }
 
@@ -5617,7 +5615,7 @@ void im_request(
         svr_conn[chan->sock].cn_stay_open = FALSE;
         chan->sock = -1;
 
-        log_err(-1, __func__, (char *)"Could not read error code");
+        log_err(-1, __func__, "Could not read error code");
 
         goto err;
         }
@@ -5630,7 +5628,7 @@ void im_request(
           close_conn(chan->sock, FALSE);
           svr_conn[chan->sock].cn_stay_open = FALSE;
 
-          log_err(-1, __func__, (char *)"IM_GET_TID close_conn");
+          log_err(-1, __func__, "IM_GET_TID close_conn");
 
           goto err;
           }
@@ -5651,7 +5649,7 @@ void im_request(
            */
           if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
             {
-            log_err(-1, __func__, (char *)"JOIN_JOB ERROR and I'm not MS");
+            log_err(-1, __func__, "JOIN_JOB ERROR and I'm not MS");
             goto err;
             }
           
@@ -5670,7 +5668,7 @@ void im_request(
 
           if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
             {
-            log_err(-1, __func__, (char *)"KILL_JOB ERROR and I'm not MS");
+            log_err(-1, __func__, "KILL_JOB ERROR and I'm not MS");
             goto err;
             }
           
@@ -5778,7 +5776,7 @@ void im_request(
 
           if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
             {
-            log_err(-1, __func__, (char *)"POLL_JOB ERROR and I'm not MS");
+            log_err(-1, __func__, "POLL_JOB ERROR and I'm not MS");
             goto err;
             }
           
@@ -5917,7 +5915,7 @@ void tm_eof(
             PBSEVENT_JOB,
             PBS_EVENTCLASS_JOB,
             pjob->ji_qs.ji_jobid,
-            (char *)"matching task located, marking interface closed");
+            "matching task located, marking interface closed");
           }
 
         return;
@@ -5927,7 +5925,7 @@ void tm_eof(
 
   if (LOGLEVEL >= 1)
     {
-    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_SERVER, __func__, (char *)"no matching task found");
+    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_SERVER, __func__, "no matching task found");
     }
 
   return;
@@ -6129,7 +6127,7 @@ int tm_spawn_request(
   
   if (argv == NULL)
     {
-    log_err(ENOMEM, __func__, (char *)"No memory available, cannot calloc!");
+    log_err(ENOMEM, __func__, "No memory available, cannot calloc!");
     
     return(TM_ERROR);
     }
@@ -6154,7 +6152,7 @@ int tm_spawn_request(
   
   if (envp == NULL)
     {
-    log_err(ENOMEM, __func__, (char *)"No memory available, cannot calloc!");
+    log_err(ENOMEM, __func__, "No memory available, cannot calloc!");
     
     return(TM_ERROR);
     }
@@ -6215,7 +6213,7 @@ int tm_spawn_request(
       PBSEVENT_ERROR,
       PBS_EVENTCLASS_JOB,
       pjob->ji_qs.ji_jobid,
-      (char *)"cannot alloc env memory)");
+      "cannot alloc env memory)");
  
     arrayfree(argv);
     arrayfree(envp);
@@ -6267,7 +6265,7 @@ int tm_spawn_request(
           PBSEVENT_ERROR,
           PBS_EVENTCLASS_JOB,
           pjob->ji_qs.ji_jobid,
-          (char *)"saving task (TM_SPAWN)");
+          "saving task (TM_SPAWN)");
          }
       
       if (task_save(ptask) != -1)
@@ -6785,7 +6783,7 @@ int tm_obit_request(
     
     if (op == NULL)
       {
-      log_err(ENOMEM, __func__, (char *)"No memory! Cannot calloc!");
+      log_err(ENOMEM, __func__, "No memory! Cannot calloc!");
       return(TM_ERROR);
       }
     
@@ -6921,7 +6919,7 @@ int tm_getinfo_request(
       *ret = tm_reply(chan, TM_OKAY, event);
       
       if (*ret == DIS_SUCCESS)
-        *ret = diswcs(chan, (char *)ip->ie_info, ip->ie_len);
+        *ret = diswcs(chan, (const char *)ip->ie_info, ip->ie_len);
 
       free(name);
       
@@ -7301,7 +7299,7 @@ int tm_request(
         PBSEVENT_ERROR,
         PBS_EVENTCLASS_JOB,
         pjob->ji_qs.ji_jobid,
-        (char *)"saving task (additional connection)");
+        "saving task (additional connection)");
       }
  
     if (task_save(ptask) == -1)
@@ -7842,7 +7840,7 @@ char *get_local_script_path(
 	if (base[0] != '/')
 	  {
 	  /* base is not an absolute path. Prepend it with the working directory */
-	  if((wdir = get_job_envvar(pjob, (char *)"PBS_O_WORKDIR")) == NULL)
+	  if((wdir = get_job_envvar(pjob, "PBS_O_WORKDIR")) == NULL)
 	    return NULL;
 	  len = strlen(wdir);
 	  if (wdir[len-1] != '/')
@@ -7917,7 +7915,7 @@ int get_job_struct(
   if ((new_job = job_alloc()) == NULL)
     {
     /* out of memory */
-    log_err(-1, __func__, (char *)"insufficient memory to create job");
+    log_err(-1, __func__, "insufficient memory to create job");
 
     ret = PBSE_SYSTEM;
 
@@ -8135,7 +8133,7 @@ void fork_demux(
   /* create pipe so that child can tell us when the demux is opened */
   if (pipe(pipes) == -1)
     {
-    log_err(errno, __func__, (char *)"Couldn't create the pipe!");
+    log_err(errno, __func__, "Couldn't create the pipe!");
     pipe_failed = TRUE;
     }
 
@@ -8436,7 +8434,7 @@ received_node *get_received_node_entry(
     
     if (rn == NULL)
       {
-      log_err(ENOMEM, __func__, (char *)"No memory to allocate for status information\n");
+      log_err(ENOMEM, __func__, "No memory to allocate for status information\n");
       return(NULL);
       }
     
@@ -8446,7 +8444,7 @@ received_node *get_received_node_entry(
     
     if (rn->statuses == NULL)
       {
-      log_err(ENOMEM, __func__, (char *)"No memory to allocate for status information\n");
+      log_err(ENOMEM, __func__, "No memory to allocate for status information\n");
       free(rn);
       return(NULL);
       }
@@ -8466,7 +8464,7 @@ received_node *get_received_node_entry(
     index = insert_thing(received_statuses, rn);
 
     if (index == -1)
-      log_err(ENOMEM, __func__, (char *)"No memory to resize the received_statuses array...SYSTEM FAILURE\n");
+      log_err(ENOMEM, __func__, "No memory to resize the received_statuses array...SYSTEM FAILURE\n");
     else
       {
       add_hash(received_table, index, rn->hostname);

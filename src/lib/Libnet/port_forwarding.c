@@ -31,7 +31,7 @@
 void port_forwarder(
 
   struct pfwdsock *socks,
-  int (*connfunc)(char *, int, char *),
+  int (*connfunc)(char *, long, char *),
   char            *phost,
   int              pport,
   char            *EMsg)  /* O */
@@ -296,7 +296,7 @@ int connect_local_xsocket(
 int x11_connect_display(
 
   char *display,
-  int   alsounused,
+  long  alsounused,
   char *EMsg)        /* O */
 
   {

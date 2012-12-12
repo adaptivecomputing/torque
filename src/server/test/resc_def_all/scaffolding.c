@@ -21,13 +21,13 @@ resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   exit(1);
   }
 
-resource_def *find_resc_def(resource_def *rscdf, char *name, int limit)
+resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
   {
   fprintf(stderr, "The call to find_resc_def to be mocked!!\n");
   exit(1);
   }
 
-int encode_unkn(pbs_attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int perm)
+int encode_unkn(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm)
   {
   fprintf(stderr, "The call to encode_unkn to be mocked!!\n");
   exit(1);
@@ -45,7 +45,7 @@ int set_unkn(struct pbs_attribute *old, struct pbs_attribute *new_attr, enum bat
   exit(1);
   }
 
-int decode_unkn(pbs_attribute *patr, char *name, char *rescn, char *value, int perm)
+int decode_unkn(pbs_attribute *patr, const char *name, char *rescn, char *value, int perm)
   {
   fprintf(stderr, "The call to decode_unkn to be mocked!!\n");
   exit(1);
@@ -69,19 +69,19 @@ int comp_b(struct pbs_attribute *attr, struct pbs_attribute *with)
   exit(1);
   }
 
-int encode_b(pbs_attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int perm)
+int encode_b(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm)
   {
   fprintf(stderr, "The call to encode_b to be mocked!!\n");
   exit(1);
   }
 
-int decode_b(pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_b(pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
   {
   fprintf(stderr, "The call to decode_b to be mocked!!\n");
   exit(1);
   }
 
-int encode_l(pbs_attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int perm)
+int encode_l(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm)
   {
   fprintf(stderr, "The call to encode_l to be mocked!!\n");
   exit(1);
@@ -99,19 +99,19 @@ int comp_l(struct pbs_attribute *attr, struct pbs_attribute *with)
   exit(1);
   }
 
-int decode_l(pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_l(pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
   {
   fprintf(stderr, "The call to decode_l to be mocked!!\n");
   exit(1);
   }
 
-int encode_str(pbs_attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int perm)
+int encode_str(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm)
   {
   fprintf(stderr, "The call to encode_str to be mocked!!\n");
   exit(1);
   }
 
-int decode_str(pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_str(pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
   {
   fprintf(stderr, "The call to decode_str to be mocked!!\n");
   exit(1);
@@ -147,37 +147,37 @@ int set_ll(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batc
   exit(1);
   }
 
-int encode_ll(pbs_attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int perm)
+int encode_ll(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm)
   {
   fprintf(stderr, "The call to encode_ll to be mocked!!\n");
   exit(1);
   }
 
-int decode_ll(pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_ll(pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
   {
   fprintf(stderr, "The call to decode_ll to be mocked!!\n");
   exit(1);
   }
 
-int encode_time(pbs_attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int perm)
+int encode_time(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm)
   {
   fprintf(stderr, "The call to encode_time to be mocked!!\n");
   exit(1);
   }
 
-int decode_time(pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_time(pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
   {
   fprintf(stderr, "The call to decode_time to be mocked!!\n");
   exit(1);
   }
 
-int encode_size(pbs_attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int perm)
+int encode_size(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm)
   {
   fprintf(stderr, "The call to encode_size to be mocked!!\n");
   exit(1);
   }
 
-int decode_size(pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_size(pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
   {
   fprintf(stderr, "The call to decode_size to be mocked!!\n");
   exit(1);
@@ -201,7 +201,7 @@ void free_null(struct pbs_attribute *attr)
   exit(1);
   }
 
-int decode_tokens(pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_tokens(pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
   {
   fprintf(stderr, "The call to decode_tokens to be mocked!!\n");
   exit(1);

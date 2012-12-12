@@ -7,7 +7,7 @@
 char log_buffer[LOG_BUF_SIZE];
 
 
-void log_err(int errnum, const char *routine, char *text) {}
+void log_err(int errnum, const char *routine, const char *text) {}
 
 int find_error_type(
 

@@ -95,8 +95,8 @@
 void set_attr(
 
   struct attrl **attrib,        /* I */
-  char          *attrib_name,   /* I */
-  char          *attrib_value)  /* I */
+  const char   *attrib_name,   /* I */
+  const char   *attrib_value)  /* I */
 
   {
 

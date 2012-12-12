@@ -426,7 +426,7 @@ int append_char_to_dynamic_string(
 char *threadsafe_tokenizer(
 
   char **str,    /* M */
-  char  *delims) /* I */
+  const char  *delims) /* I */
 
   {
   char *current_char;
@@ -468,7 +468,7 @@ char *threadsafe_tokenizer(
   } /* END threadsafe_tokenizer() */
 
 
-void log_err(int errnum, const char *routine, char *text) {}
+void log_err(int errnum, const char *routine, const char *text) {}
 
 
 

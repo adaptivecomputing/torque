@@ -41,7 +41,7 @@ job_array *get_array(char *id)
   exit(1);
   }
 
-void req_reject(int code, int aux, struct batch_request *preq, char *HostName, char *Msg)
+void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
   {
   fprintf(stderr, "The call to req_reject to be mocked!!\n");
   exit(1);

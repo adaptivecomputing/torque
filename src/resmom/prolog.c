@@ -179,7 +179,7 @@ static char *resc_to_string(
 
   if (aindex == JOB_ATR_resource)
     {
-    if (encode_resc(pattr, &svlist, "x", NULL, ATR_ENCODE_CLIENT, ATR_DFLAG_ACCESS) <= 0)
+    if (encode_resc(pattr, &svlist, (char *)"x", NULL, ATR_ENCODE_CLIENT, ATR_DFLAG_ACCESS) <= 0)
       {
       return(buf);
       }
@@ -406,7 +406,7 @@ int run_pelog(
 
   resource         *r;
 
-  char             *EmptyString = "";
+  char             *EmptyString = (char *)"";
 
   int               LastArg;
   int               aindex;
@@ -417,20 +417,20 @@ int run_pelog(
 
   int               moabenvcnt = 14;  /* # of entries in moabenvs */
   static char      *moabenvs[] = {
-      "MOAB_NODELIST",
-      "MOAB_JOBID",
-      "MOAB_JOBNAME",
-      "MOAB_USER",
-      "MOAB_GROUP",
-      "MOAB_CLASS",
-      "MOAB_TASKMAP",
-      "MOAB_QOS",
-      "MOAB_PARTITION",
-      "MOAB_PROCCOUNT",
-      "MOAB_NODECOUNT",
-      "MOAB_MACHINE",
-      "MOAB_JOBARRAYINDEX",
-      "MOAB_JOBARRAYRANGE"
+      (char *)"MOAB_NODELIST",
+      (char *)"MOAB_JOBID",
+      (char *)"MOAB_JOBNAME",
+      (char *)"MOAB_USER",
+      (char *)"MOAB_GROUP",
+      (char *)"MOAB_CLASS",
+      (char *)"MOAB_TASKMAP",
+      (char *)"MOAB_QOS",
+      (char *)"MOAB_PARTITION",
+      (char *)"MOAB_PROCCOUNT",
+      (char *)"MOAB_NODECOUNT",
+      (char *)"MOAB_MACHINE",
+      (char *)"MOAB_JOBARRAYINDEX",
+      (char *)"MOAB_JOBARRAYRANGE"
       };
 
   if ((pjob == NULL) || (specpelog == NULL) || (specpelog[0] == '\0'))
@@ -469,7 +469,7 @@ int run_pelog(
       (which == PE_EPILOGUSERJOB))
     {
 
-    real_gids = calloc(num_gids, sizeof(gid_t));
+    real_gids = (gid_t *)calloc(num_gids, sizeof(gid_t));
     
     if (real_gids == NULL)
       {
@@ -607,7 +607,7 @@ int run_pelog(
     undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,__func__);
     free(real_gids);
 
-    return(pelog_err(pjob,pelog,errno,"cannot stat"));
+    return(pelog_err(pjob,pelog,errno,(char *)"cannot stat"));
     }
 
   if (LOGLEVEL >= 5)
@@ -985,7 +985,7 @@ int run_pelog(
 
     r = find_resc_entry(
           &pjob->ji_wattr[JOB_ATR_resource],
-          find_resc_def(svr_resc_def, "nodes", svr_resc_size));
+          find_resc_def(svr_resc_def, (char *)"nodes", svr_resc_size));
 
     if (r != NULL)
       {
@@ -994,7 +994,7 @@ int run_pelog(
       const char *envname = "PBS_RESOURCE_NODES=";
       char *envstr;
 
-      envstr = calloc((strlen(envname) + strlen(r->rs_value.at_val.at_str) + 1), sizeof(char));
+      envstr = (char *)calloc((strlen(envname) + strlen(r->rs_value.at_val.at_str) + 1), sizeof(char));
 
       if (envstr != NULL)
         {
@@ -1010,7 +1010,7 @@ int run_pelog(
 
     r = find_resc_entry(
           &pjob->ji_wattr[JOB_ATR_resource],
-          find_resc_def(svr_resc_def, "gres", svr_resc_size));
+          find_resc_def(svr_resc_def, (char *)"gres", svr_resc_size));
 
     if (r != NULL)
       {
@@ -1019,7 +1019,7 @@ int run_pelog(
       const char *envname = "PBS_RESOURCE_GRES=";
       char *envstr;
 
-      envstr = calloc((strlen(envname) + strlen(r->rs_value.at_val.at_str) + 1), sizeof(char));
+      envstr = (char *)calloc((strlen(envname) + strlen(r->rs_value.at_val.at_str) + 1), sizeof(char));
 
       if (envstr != NULL)
         {
@@ -1038,7 +1038,7 @@ int run_pelog(
       const char *envname = "TMPDIR=";
       char *envstr;
 
-      envstr = calloc((strlen(envname) + strlen(buf) + 1), sizeof(char));
+      envstr = (char *)calloc((strlen(envname) + strlen(buf) + 1), sizeof(char));
 
       if (envstr != NULL)
         {
@@ -1055,13 +1055,13 @@ int run_pelog(
     /* Set PBS_SCHED_HINT */
 
       {
-      char *envname = "PBS_SCHED_HINT";
+      char *envname = (char *)"PBS_SCHED_HINT";
       char *envval;
       char *envstr;
 
       if ((envval = get_job_envvar(pjob, envname)) != NULL)
         {
-        envstr = calloc((strlen(envname) + strlen(envval) + 2), sizeof(char));
+        envstr = (char *)calloc((strlen(envname) + strlen(envval) + 2), sizeof(char));
 
         if (envstr != NULL)
           {
@@ -1076,13 +1076,13 @@ int run_pelog(
 
     /* Set PBS_NODENUM */
       {
-      char *envname = "PBS_NODENUM";
+      char *envname = (char *)"PBS_NODENUM";
       char *envstr;
 
       sprintf(buf, "%d",
         pjob->ji_nodeid);
 
-      envstr = calloc((strlen(envname) + strlen(buf) + 2), sizeof(char));
+      envstr = (char *)calloc((strlen(envname) + strlen(buf) + 2), sizeof(char));
 
       if (envstr != NULL)
         {
@@ -1096,12 +1096,12 @@ int run_pelog(
 
     /* Set PBS_MSHOST */
       {
-      char *envname = "PBS_MSHOST";
+      char *envname = (char *)"PBS_MSHOST";
       char *envstr;
 
       if ((pjob->ji_vnods[0].vn_host != NULL) && (pjob->ji_vnods[0].vn_host->hn_host != NULL))
         {
-        envstr = calloc((strlen(envname) + strlen(pjob->ji_vnods[0].vn_host->hn_host) + 2), sizeof(char));
+        envstr = (char *)calloc((strlen(envname) + strlen(pjob->ji_vnods[0].vn_host->hn_host) + 2), sizeof(char));
 
         if (envstr != NULL)
           {
@@ -1116,7 +1116,7 @@ int run_pelog(
 
     /* Set PBS_NODEFILE */
       {
-      char *envname = "PBS_NODEFILE";
+      char *envname = (char *)"PBS_NODEFILE";
       char *envstr;
 
       if (pjob->ji_flags & MOM_HAS_NODEFILE)
@@ -1125,7 +1125,7 @@ int run_pelog(
           path_aux,
           pjob->ji_qs.ji_jobid);
 
-        envstr = calloc((strlen(envname) + strlen(buf) + 2), sizeof(char));
+        envstr = (char *)calloc((strlen(envname) + strlen(buf) + 2), sizeof(char));
 
         if (envstr != NULL)
           {
@@ -1140,14 +1140,14 @@ int run_pelog(
 
     /* Set PBS_O_Workdir */
       {
-      char *envname = "PBS_O_WORKDIR";
+      char *envname = (char *)"PBS_O_WORKDIR";
       char *workdir_val;
       char *envstr;
 
       workdir_val = get_job_envvar(pjob,envname);
       if (workdir_val != NULL)
         {
-        envstr = calloc((strlen(workdir_val) + strlen(envname) + 2), sizeof(char));
+        envstr = (char *)calloc((strlen(workdir_val) + strlen(envname) + 2), sizeof(char));
 
         if (envstr != NULL)
           {
@@ -1188,7 +1188,7 @@ int run_pelog(
         {
         char *envstr;
 
-        envstr = calloc((strlen(vstrs->as_string[j])), sizeof(char));
+        envstr = (char *)calloc((strlen(vstrs->as_string[j])), sizeof(char));
 
         if (envstr != NULL)
           {
@@ -1211,7 +1211,7 @@ int run_pelog(
         tmp_val = get_job_envvar(pjob,moabenvs[aindex]);
         if (tmp_val != NULL)
           {
-          envstr = calloc((strlen(tmp_val) + strlen(moabenvs[aindex]) + 2), sizeof(char));
+          envstr = (char *)calloc((strlen(tmp_val) + strlen(moabenvs[aindex]) + 2), sizeof(char));
 
           if (envstr != NULL)
             {

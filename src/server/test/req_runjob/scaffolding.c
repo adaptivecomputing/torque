@@ -136,7 +136,7 @@ int unlock_node(struct pbsnode *the_node, const char *id, char *msg, int logging
   exit(1);
   }
 
-void req_reject(int code, int aux, struct batch_request *preq, char *HostName, char *Msg)
+void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
   {
   fprintf(stderr, "The call to req_reject to be mocked!!\n");
   exit(1);
@@ -178,7 +178,7 @@ int job_set_wait(pbs_attribute *pattr, void *pjob, int mode)
   exit(1);
   }
 
- resource_def *find_resc_def(resource_def *rscdf, char *name, int limit)
+ resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
   {
   fprintf(stderr, "The call to find_resc_def to be mocked!!\n");
   exit(1);

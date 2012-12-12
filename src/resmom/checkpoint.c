@@ -116,10 +116,10 @@ char       restart_script_name[MAXPATHLEN + 1];
 char       checkpoint_run_exe_name[MAXPATHLEN + 1];
 int        default_checkpoint_interval = 10; /* minutes */
 
-extern char *mk_dirs(char *);
-extern void set_attr(struct attrl **, char *, char *);
+extern char *mk_dirs(const char *);
+extern void set_attr(struct attrl **, const char *, const char *);
 extern int write_nodes_to_file(job *);
-extern int write_attr_to_file(job *, int, char *);
+extern int write_attr_to_file(job *, int, const char *);
 
 int create_missing_files(job *pjob);
 
@@ -128,7 +128,7 @@ int create_missing_files(job *pjob);
  * for each arg so that the script gets a consistent
  * command line.
  */
-#define SET_ARG(x) (((x) == NULL) || (*(x) == 0))?"-":(x)
+#define SET_ARG(x) (((x) == NULL) || (*(x) == 0))?(char *)"-":(x)
 
 
 /**
@@ -192,7 +192,7 @@ int mom_checkpoint_execute_job(
      note, this func is called from a child process that exits after the
      executable is launched, so we don't have to worry about freeing
      this calloc later */
-  arg[1] = calloc(1, strlen(shell) + 1);
+  arg[1] = (char *)calloc(1, strlen(shell) + 1);
 
   if (arg[1] == NULL)
     {
@@ -286,7 +286,7 @@ int mom_checkpoint_init(void)
 
 void mom_checkpoint_set_directory_path(
     
-  char *str)
+  const char *str)
 
   {
   char *cp;
@@ -303,7 +303,7 @@ void mom_checkpoint_set_directory_path(
 
 
 unsigned long
-mom_checkpoint_set_checkpoint_interval(char *value)  /* I */
+mom_checkpoint_set_checkpoint_interval(const char *value)  /* I */
 
   {
   log_record(
@@ -323,7 +323,7 @@ mom_checkpoint_set_checkpoint_interval(char *value)  /* I */
 
 unsigned long mom_checkpoint_set_checkpoint_script(
     
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   struct stat sbuf;
@@ -352,7 +352,7 @@ unsigned long mom_checkpoint_set_checkpoint_script(
 
 unsigned long mom_checkpoint_set_restart_script(
     
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   struct stat sbuf;
@@ -381,7 +381,7 @@ unsigned long mom_checkpoint_set_restart_script(
 
 unsigned long mom_checkpoint_set_checkpoint_run_exe_name(
     
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   struct stat sbuf;
@@ -812,7 +812,7 @@ void mom_checkpoint_check_periodic_timer(
 
   {
   resource *prwall;
-  extern int start_checkpoint();
+  extern int start_checkpoint(job *pjob, int abort, struct batch_request *preq);
   int rc;
   static resource_def *rdwall;
 
@@ -967,8 +967,8 @@ int blcr_checkpoint_job(
   arg[4] = SET_ARG(pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str);
   arg[5] = SET_ARG(namebuf);
   arg[6] = SET_ARG(pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
-  arg[7] = (abort) ? "15" /*abort*/ : "0" /*run/continue*/;
-  arg[8] = SET_ARG(csv_find_value(pjob->ji_wattr[JOB_ATR_checkpoint].at_val.at_str, "depth"));
+  arg[7] = (abort) ? (char *)"15" /*abort*/ : (char *)"0" /*run/continue*/;
+  arg[8] = SET_ARG(csv_find_value(pjob->ji_wattr[JOB_ATR_checkpoint].at_val.at_str, (char *)"depth"));
   arg[9] = NULL;
 
   /* XXX this should be fixed to make sure there is no chance of a buffer overrun */
@@ -1097,7 +1097,7 @@ int blcr_checkpoint_job(
        * so it shouldn't have any holds set so we will send "uos"
        * to clear all holds
        */
-      pbs_rlsjob_err(conn, pjob->ji_qs.ji_jobid, "uos", NULL, &local_errno);
+      pbs_rlsjob_err(conn, pjob->ji_qs.ji_jobid, (char *)"uos", NULL, &local_errno);
 
       } /* END if (abort != 0) */
 
@@ -1150,7 +1150,7 @@ int blcr_checkpoint_job(
 
     err = pbs_alterjob_err(conn, 
         pjob->ji_qs.ji_jobid, attrib,
-        (request_type == PBS_BATCH_HoldJob) ? CHECKPOINTHOLD : CHECKPOINTCONT, 
+        (request_type == PBS_BATCH_HoldJob) ? (char *)CHECKPOINTHOLD : (char *)CHECKPOINTCONT,
         &local_errno);
 
     if (err != 0)
@@ -1561,7 +1561,7 @@ int start_checkpoint(
 
     /* Set the address of a function to execute in scan_for_terminated */
 
-    pjob->ji_mompost = (int (*)())post_checkpoint;
+    pjob->ji_mompost = (int (*)(job *,int))post_checkpoint;
 
     if (preq)
       free_br(preq); /* child will send reply */
@@ -2325,7 +2325,7 @@ int create_missing_files(
   if (should_have_stdout)
     {
     bufsize = strlen(pjob->ji_qs.ji_fileprefix) + strlen(path_spool) + strlen(JOB_STDOUT_SUFFIX) + 1;
-    namebuf = calloc(bufsize, sizeof(char));
+    namebuf = (char *)calloc(bufsize, sizeof(char));
 
     if (namebuf == NULL)
       {
@@ -2361,7 +2361,7 @@ int create_missing_files(
   if (should_have_stderr)
     {
     bufsize = strlen(pjob->ji_qs.ji_fileprefix) + strlen(path_spool) + strlen(JOB_STDOUT_SUFFIX) + 1;
-    namebuf = calloc(bufsize, sizeof(char));
+    namebuf = (char *)calloc(bufsize, sizeof(char));
 
     if (namebuf == NULL)
       {

@@ -15,6 +15,7 @@
 #include "pbs_job.h"
 #include "queue.h"
 #include "pbs_error.h"
+#include "svr_task.h"
 #include "acct.h"
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"

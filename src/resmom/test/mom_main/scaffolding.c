@@ -88,7 +88,7 @@ void scan_non_child_tasks(void)
   exit(1);
   }
 
-unsigned int get_svrport(char *service_name, char *ptype, unsigned int pdefault)
+unsigned int get_svrport(const char *service_name, const char *ptype, unsigned int pdefault)
   {
   fprintf(stderr, "The call to get_svrport needs to be mocked!!\n");
   exit(1);
@@ -172,7 +172,7 @@ int add_network_entry(mom_hierarchy_t *nt, char *name, struct addrinfo *ai, unsi
   exit(1);
   }
 
-int log_init(char *suffix, char *hostname)
+int log_init(const char *suffix, const char *hostname)
   {
   fprintf(stderr, "The call to log_init needs to be mocked!!\n");
   exit(1);
@@ -184,7 +184,7 @@ int post_epilogue(job *pjob, int ev)
   exit(1);
   }
 
-char *get_job_envvar(job *pjob, char *variable)
+char *get_job_envvar(job *pjob, const char *variable)
   {
   fprintf(stderr, "The call to get_job_envvar needs to be mocked!!\n");
   exit(1);

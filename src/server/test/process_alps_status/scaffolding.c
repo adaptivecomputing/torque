@@ -51,9 +51,9 @@ struct node_state
     {0,             NULL}
 };
 
-void log_record(int eventtype, int objclass, const char *objname, char *msg) {}
-void log_event(int eventtype, int objclass, const char *objname, char *text) {}
-void log_err(int errnum, const char *routine, char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *msg) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_err(int errnum, const char *routine, const char *text) {}
 int lock_node(struct pbsnode *pnode, const char *method, char *msg, int log_level) {return(0);}
 int unlock_node(struct pbsnode *pnode, const char *method, char *msg, int log_level) {return(0);}
 
@@ -517,7 +517,7 @@ int mgr_set_node_attr(
 
 
 /* nothing needed for this function */
-int decode_arst(pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_arst(pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
   {
   return(0);
   }  /* END decode_arst() */
@@ -684,8 +684,8 @@ void clear_attr(
 
 int str_nc_cmp(
 
-    char *s1,  /* I */
-    char *s2)
+    const char *s1,  /* I */
+    const char *s2)
 
   {
   return(0);
@@ -1646,22 +1646,22 @@ int comp_null(struct pbs_attribute *attr, struct pbs_attribute *with)
   return(0);
   }
 
-int decode_ntype(pbs_attribute *pattr, char *name, char *rescn, char *val, int perm)
+int decode_ntype(pbs_attribute *pattr, const char *name, char *rescn, char *val, int perm)
   {
   return(0);
   }
 
-int encode_l(pbs_attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int perm)
+int encode_l(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm)
   {
   return(0);
   }
 
-int encode_str(pbs_attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int perm)
+int encode_str(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm)
   {
   return(0);
   }
 
-int decode_null(pbs_attribute *patr, char *name, char *rn, char *val, int perm)
+int decode_null(pbs_attribute *patr, const char *name, char *rn, char *val, int perm)
   {
   return(0);
   }
@@ -2006,7 +2006,7 @@ char *parse_comma_string(
   return(rv);
   }  /* END parse_comma_string() */
 
-int decode_str(pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_str(pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
   {
   return(0);
   }
@@ -2031,12 +2031,12 @@ int set_note_str(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enu
   return(0);
   }
 
-int decode_state(pbs_attribute *pattr, char *name, char *rescn, char *val, int perm)
+int decode_state(pbs_attribute *pattr, const char *name, char *rescn, char *val, int perm)
   {
   return(0);
   }
 
-int encode_jobs(pbs_attribute *pattr, tlist_head *ph, char *aname, char *rname, int mode, int perm)
+int encode_jobs(pbs_attribute *pattr, tlist_head *ph, const char *aname, const char *rname, int mode, int perm)
   {
   return(0);
   }
@@ -2068,7 +2068,7 @@ int numa_str_action(pbs_attribute *new_attr, void *pnode, int actmode)
 
 void free_str(struct pbs_attribute *attr) {}
 
-int encode_ntype(pbs_attribute *pattr, tlist_head *ph, char *aname, char *rname, int mode, int perm)
+int encode_ntype(pbs_attribute *pattr, tlist_head *ph, const char *aname, const char *rname, int mode, int perm)
   {
   return(0);
   }
@@ -2103,12 +2103,12 @@ int node_numa_action(pbs_attribute *new_attr, void *pnode, int actmode)
   return(0);
   }
 
-int decode_l( pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_l( pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
   {
   return(0);
   }
 
-int encode_state(pbs_attribute *pattr, tlist_head *ph, char *aname, char *rname, int mode, int perm)
+int encode_state(pbs_attribute *pattr, tlist_head *ph, const char *aname, const char *rname, int mode, int perm)
   {
   return(0);
   }
@@ -2128,7 +2128,7 @@ int node_gpus_action(pbs_attribute *new_attr, void *pnode, int actmode)
   return(0);
   }
 
-int encode_arst( pbs_attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int perm)
+int encode_arst( pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm)
   {
   return(0);
   }

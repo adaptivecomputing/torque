@@ -51,7 +51,7 @@ int find_attr(struct attribute_def *attr_def, char *name, int limit)
  exit(1);
  }
 
-int decode_resc(struct pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_resc(struct pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
  {
  fprintf(stderr, "The call to decode_resc to be mocked!!\n");
  exit(1);
@@ -75,7 +75,7 @@ void *get_next(list_link pl, char *file, int line)
  exit(1);
  }
 
-int decode_arst(struct pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_arst(struct pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
  {
  fprintf(stderr, "The call to decode_arst to be mocked!!\n");
  exit(1);

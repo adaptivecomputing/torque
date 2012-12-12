@@ -209,10 +209,10 @@ typedef struct pbs_attribute pbs_attribute;
 
 struct attribute_def
   {
-  char *at_name;
-  int (*at_decode)(pbs_attribute *patr, char *name, char *rn, char *val, int perm);
+  const char *at_name;
+  int (*at_decode)(pbs_attribute *patr, const char *name, char *rn, char *val, int perm);
   int (*at_encode)(pbs_attribute *pattr, tlist_head *phead,
-                      char *aname, char *rsname, int mode, int perm);
+                      const char *aname, const char *rsname, int mode, int perm);
   int (*at_set)(pbs_attribute *pattr, pbs_attribute *new_attr, enum batch_op);
   int (*at_comp)(pbs_attribute *pattr, pbs_attribute *with);
   void (*at_free)(pbs_attribute *pattr);
@@ -343,7 +343,7 @@ extern long attr_ifelse_long(pbs_attribute *, pbs_attribute *, long);
 extern void free_null(pbs_attribute *attr);
 extern void free_noop(pbs_attribute *attr);
 extern svrattrl *attrlist_alloc(int szname, int szresc, int szval);
-extern svrattrl *attrlist_create(char *aname, char *rname, int szval);
+extern svrattrl *attrlist_create(const char *aname, const char *rname, int szval);
 extern void free_attrlist(tlist_head *attrhead);
 extern int  attr_atomic_set(svrattrl *plist, pbs_attribute *old,
                                   pbs_attribute *new_attr, attribute_def *pdef, int limit,
@@ -353,51 +353,51 @@ extern int  attr_atomic_node_set(svrattrl *plist, pbs_attribute *old,
                                        int unkn, int privil, int *badattr);
 extern void attr_atomic_kill(pbs_attribute *temp, attribute_def *pdef, int);
 
-int  decode_b(pbs_attribute *patr, char *name, char *rn, char *val, int);
-int  decode_c(pbs_attribute *patr, char *name, char *rn, char *val, int);
-int  decode_l(pbs_attribute *patr, char *name, char *rn, char *val, int);
-int  decode_ll(pbs_attribute *patr, char *name, char *rn, char *val, int);
-int  decode_size(pbs_attribute *patr, char *name, char *rn, char *val, int);
-int  decode_str(pbs_attribute *patr, char *name, char *rn, char *val, int);
-int  decode_time(pbs_attribute *patr, char *name, char *rn, char *val, int);
-int  decode_arst(pbs_attribute *patr, char *name, char *rn, char *val, int);
+int  decode_b(pbs_attribute *patr, const char *name, char *rn, char *val, int);
+int  decode_c(pbs_attribute *patr, const char *name, char *rn, char *val, int);
+int  decode_l(pbs_attribute *patr, const char *name, char *rn, char *val, int);
+int  decode_ll(pbs_attribute *patr, const char *name, char *rn, char *val, int);
+int  decode_size(pbs_attribute *patr, const char *name, char *rn, char *val, int);
+int  decode_str(pbs_attribute *patr, const char *name, char *rn, char *val, int);
+int  decode_time(pbs_attribute *patr, const char *name, char *rn, char *val, int);
+int  decode_arst(pbs_attribute *patr, const char *name, char *rn, char *val, int);
 int  decode_arst_direct(pbs_attribute *patr, char *val);
-int  decode_arst_merge(pbs_attribute *,char *,char *,char *);
-int  decode_resc(pbs_attribute *patr, char *name, char *rn, char *val, int);
-int  decode_depend(pbs_attribute *patr, char *name, char *rn, char *val, int);
-int  decode_hold(pbs_attribute *patr, char *name, char *rn, char *val, int);
-int  decode_uacl(pbs_attribute *patr, char *name, char *rn, char *val, int);
-int  decode_unkn(pbs_attribute *patr, char *name, char *rn, char *val, int);
-int  decode_tv(pbs_attribute *patr, char *name,  char *rescn,	char *val, int);
+int  decode_arst_merge(pbs_attribute *,const char *,char *,char *);
+int  decode_resc(pbs_attribute *patr, const char *name, char *rn, char *val, int);
+int  decode_depend(pbs_attribute *patr, const char *name, char *rn, char *val, int);
+int  decode_hold(pbs_attribute *patr, const char *name, char *rn, char *val, int);
+int  decode_uacl(pbs_attribute *patr, const char *name, char *rn, char *val, int);
+int  decode_unkn(pbs_attribute *patr, const char *name, char *rn, char *val, int);
+int  decode_tv(pbs_attribute *patr, const char *name,  char *rescn,	char *val, int);
  
-int  encode_b(pbs_attribute *attr, tlist_head *phead, char *atname,
-                           char *rsname, int mode, int perm);
-int  encode_c(pbs_attribute *attr, tlist_head *phead, char *atname,
-                           char *rsname, int mode, int perm);
-int encode_l(pbs_attribute *attr, tlist_head *phead, char *atname,
-                           char *rsname, int mode, int perm);
-int encode_ll(pbs_attribute *attr, tlist_head *phead, char *atname,
-                           char *rsname, int mode, int perm);
-int encode_size(pbs_attribute *attr, tlist_head *phead, char *atname,
-                              char *rsname, int mode, int perm);
-int encode_str(pbs_attribute *attr, tlist_head *phead, char *atname,
-                             char *rsname, int mode, int perm);
-int encode_time(pbs_attribute *attr, tlist_head *phead, char *atname,
-                             char *rsname, int mode, int perm);
-int encode_arst(pbs_attribute *attr, tlist_head *phead, char *atname,
-                             char *rsname, int mode, int perm);
-int encode_resc(pbs_attribute *attr, tlist_head *phead, char *atname,
-                             char *rsname, int mode, int perm);
-int encode_inter(pbs_attribute *attr, tlist_head *phead, char *atname,
-                              char *rsname, int mode, int perm);
-int encode_unkn(pbs_attribute *attr, tlist_head *phead, char *atname,
-                             char *rsname, int mode, int perm);
-int encode_depend(pbs_attribute *attr, tlist_head *phead, char *atname,
-                               char *rsname, int mode, int perm);
-int encode_hold(pbs_attribute *attr, tlist_head *phead, char *atname,
-                             char *rsname, int mode, int perm);
-int encode_tv(pbs_attribute *attr, tlist_head *phead, char *atname,
-							char *rsname, int mode, int perm);
+int  encode_b(pbs_attribute *attr, tlist_head *phead, const char *atname,
+                           const char *rsname, int mode, int perm);
+int  encode_c(pbs_attribute *attr, tlist_head *phead, const char *atname,
+                           const char *rsname, int mode, int perm);
+int encode_l(pbs_attribute *attr, tlist_head *phead, const char *atname,
+                           const char *rsname, int mode, int perm);
+int encode_ll(pbs_attribute *attr, tlist_head *phead, const char *atname,
+                           const char *rsname, int mode, int perm);
+int encode_size(pbs_attribute *attr, tlist_head *phead, const char *atname,
+                              const char *rsname, int mode, int perm);
+int encode_str(pbs_attribute *attr, tlist_head *phead, const char *atname,
+                             const char *rsname, int mode, int perm);
+int encode_time(pbs_attribute *attr, tlist_head *phead, const char *atname,
+                             const char *rsname, int mode, int perm);
+int encode_arst(pbs_attribute *attr, tlist_head *phead, const char *atname,
+                             const char *rsname, int mode, int perm);
+int encode_resc(pbs_attribute *attr, tlist_head *phead, const char *atname,
+                             const char *rsname, int mode, int perm);
+int encode_inter(pbs_attribute *attr, tlist_head *phead, const char *atname,
+                              const char *rsname, int mode, int perm);
+int encode_unkn(pbs_attribute *attr, tlist_head *phead, const char *atname,
+                             const char *rsname, int mode, int perm);
+int encode_depend(pbs_attribute *attr, tlist_head *phead, const char *atname,
+                               const char *rsname, int mode, int perm);
+int encode_hold(pbs_attribute *attr, tlist_head *phead, const char *atname,
+                             const char *rsname, int mode, int perm);
+int encode_tv(pbs_attribute *attr, tlist_head *phead, const char *atname,
+							const char *rsname, int mode, int perm);
 
 
 extern int set_b(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
@@ -447,10 +447,10 @@ struct dynamic_string;
 
 extern int   acl_check(pbs_attribute *, char *canidate, int type);
 int          acl_check_my_array_string(struct array_strings *, char *, int);
-extern char *arst_string(char *str, pbs_attribute *pattr);
+extern char *arst_string(const char *str, pbs_attribute *pattr);
 extern void  attrl_fixlink(tlist_head *svrattrl);
-extern void  recov_acl(pbs_attribute *, attribute_def *, char *, char *);
-extern int   save_acl(pbs_attribute *, attribute_def *,  char *, char *);
+extern void  recov_acl(pbs_attribute *, attribute_def *, const char *, const char *);
+extern int   save_acl(pbs_attribute *, attribute_def *,  const char *, const char *);
 extern int   save_attr(attribute_def *, pbs_attribute *, int, int, char *, size_t *, size_t);
 extern int   save_attr_xml(attribute_def *, pbs_attribute *, int, int);
 extern int   write_buffer(char *,int,int);
@@ -458,14 +458,14 @@ extern int   size_to_str(struct size_value,char *,int);
 extern int   attr_to_str(struct dynamic_string *ds, attribute_def *,struct pbs_attribute,int);
 extern int   str_to_attr(char *,char *,struct pbs_attribute *,struct attribute_def *);
 
-extern int      encode_state(pbs_attribute *, tlist_head *, char *, char *, int, int);
-extern int      encode_props(pbs_attribute*, tlist_head*, char*, char*, int, int);
-extern int      encode_jobs(pbs_attribute*, tlist_head*, char*, char*, int, int);
-extern int      encode_ntype(pbs_attribute*, tlist_head*, char*, char*, int, int);
-extern int      decode_state(pbs_attribute*, char*, char*, char*, int);
-extern int      decode_props(pbs_attribute*, char*, char*, char*, int);
-extern int      decode_ntype(pbs_attribute*, char*, char*, char*, int);
-extern int      decode_null(pbs_attribute*, char*, char*, char*, int);
+extern int      encode_state(pbs_attribute *, tlist_head *, const char *, const char *, int, int);
+extern int      encode_props(pbs_attribute*, tlist_head*, const char*, const char*, int, int);
+extern int      encode_jobs(pbs_attribute*, tlist_head*, const char*, const char*, int, int);
+extern int      encode_ntype(pbs_attribute*, tlist_head*, const char*, const char*, int, int);
+extern int      decode_state(pbs_attribute*, const char*, char*, char*, int);
+extern int      decode_props(pbs_attribute*, const char*, char*, char*, int);
+extern int      decode_ntype(pbs_attribute*, const char*, char*, char*, int);
+extern int      decode_null(pbs_attribute*, const char*, char*, char*, int);
 extern int      comp_null(pbs_attribute*, pbs_attribute*);
 extern int      count_substrings(char*, int*);
 extern int      set_node_state(pbs_attribute*, pbs_attribute*, enum batch_op);
@@ -495,7 +495,7 @@ extern int 		job_radix_action (pbs_attribute *new_attr, void *pobj, int actmode)
 
 /* Token manipulation functions */
 
-extern int  decode_tokens(pbs_attribute *, char *, char *, char *, int);
+extern int  decode_tokens(pbs_attribute *, const char *, char *, char *, int);
 
 int timeval_subtract(struct timeval *result, struct timeval *x, struct timeval *y);
 

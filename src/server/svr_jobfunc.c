@@ -125,6 +125,7 @@
 #include "queue.h"
 #include "pbs_job.h"
 #include "work_task.h"
+#include "svr_task.h"
 #include "pbs_error.h"
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
@@ -1116,7 +1117,7 @@ int chk_svr_resc_limit(
   resource     *cmpwith;
 
   int           LimitIsFromQueue = FALSE;
-  char         *LimitName;
+  const char  *LimitName;
 
   /* NOTE:  support Cray-specific evaluation */
 

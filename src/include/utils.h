@@ -142,14 +142,14 @@ extern int is_whitespace (char);
 extern int write_buffer (char *,int,int);
 
 /* utility functions in u_mu.c */
-int           MUSNPrintF (char **, int *, char *, ...);
-int           MUStrNCat (char **, int *, char *);
+int           MUSNPrintF (char **, int *, const char *, ...);
+int           MUStrNCat (char **, int *, const char *);
 int           MUSleep (long);
 int           MUReadPipe (char *, char *, int);
 int           is_whitespace (char);
 char         *trim(char *);
-char         *threadsafe_tokenizer(char **str, char  *delims);
-int           safe_strncat(char *, char *, size_t);
+char         *threadsafe_tokenizer(char **str, const char  *delims);
+int           safe_strncat(char *, const char *, size_t);
 unsigned int  get_random_number();
 
 /* MXML functions from u_MXML.c */

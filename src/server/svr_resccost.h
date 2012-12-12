@@ -9,9 +9,9 @@
 
 /* static struct resource_cost *add_cost_entry(pbs_attribute *patr, resource_def *prdef); */
 
-int decode_rcost(pbs_attribute *patr, char *name, char *rescn, char *val, int perm);
+int decode_rcost(pbs_attribute *patr, const char *name, char *rescn, char *val, int perm);
  
-int encode_rcost(pbs_attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int perm);
+int encode_rcost(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm);
 
 int set_rcost(pbs_attribute *attr_old, pbs_attribute *attr_new, enum batch_op op);
 

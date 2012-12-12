@@ -3,8 +3,7 @@
 #include <stdio.h>
 
 #include "attribute.h" /* svrattrl */
-
-svrattrl *attrlist_create(char *aname, char *rname, int vsize)
+svrattrl *attrlist_create(const char *aname, const char *rname, int vsize)
   {
   fprintf(stderr, "The call to attrlist_create needs to be mocked!!\n");
   exit(1);

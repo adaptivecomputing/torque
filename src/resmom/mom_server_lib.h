@@ -15,31 +15,31 @@ void mom_server_init(mom_server *pms);
 
 void mom_server_all_init(void);
 
-mom_server *mom_server_find_by_name(char *name);
+mom_server *mom_server_find_by_name(const char *name);
 
 mom_server *mom_server_find_by_ip(u_long search_ipaddr);
 
 mom_server *mom_server_find_empty_slot(void);
 
-int mom_server_add(char *value);
+int mom_server_add(const char *value);
 
-void mom_server_stream_error(int socket, char *name, const char *id, char *message);
+void mom_server_stream_error(int socket, char *name, const char *id, const char *message);
 
-int mom_server_flush_io(struct tcp_chan *chan, const char *id, char *message);
+int mom_server_flush_io(struct tcp_chan *chan, const char *id, const char *message);
 
 int is_compose(struct tcp_chan *chan, char *server_name, int command);
 
-void gen_size(char *name, char **BPtr, int *BSpace);
+void gen_size(const char *name, char **BPtr, int *BSpace);
 
-void gen_arch(char *name, char **BPtr, int *BSpace);
+void gen_arch(const char *name, char **BPtr, int *BSpace);
 
-void gen_opsys(char *name, char **BPtr, int *BSpace);
+void gen_opsys(const char *name, char **BPtr, int *BSpace);
 
-void gen_jdata(char *name, char **BPtr, int *BSpace);
+void gen_jdata(const char *name, char **BPtr, int *BSpace);
 
-void gen_gres(char *name, char **BPtr, int *BSpace);
+void gen_gres(const char *name, char **BPtr, int *BSpace);
 
-void gen_gen(char *name, char **BPtr, int *BSpace);
+void gen_gen(const char *name, char **BPtr, int *BSpace);
 
 #if defined(NVIDIA_GPUS) && defined(NVML_API)
 void log_nvml_error(nvmlReturn_t rc, char* gpuid, const char* id);
@@ -81,7 +81,7 @@ int write_my_server_status(struct tcp_chan *chan, const char *id, char *status_s
 
 int write_cached_statuses(struct tcp_chan *chan, const char *id, void *dest, int mode);
 
-void node_comm_error(node_comm_t *nc, char *message);
+void node_comm_error(node_comm_t *nc, const char *message);
 
 int write_status_strings(char *stat_str, node_comm_t *nc);
 
@@ -99,7 +99,7 @@ void mom_server_all_diag(char **BPtr, int *BSpace);
 
 void mom_server_update_receive_time(int stream, char *command_name);
 
-void mom_server_update_receive_time_by_ip(u_long ipaddr, char *command_name);
+void mom_server_update_receive_time_by_ip(u_long ipaddr, const char *command_name);
 
 mom_server *mom_server_valid_message_source(struct tcp_chan *chan, char **err_msg);
 

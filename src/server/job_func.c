@@ -166,7 +166,7 @@ int conn_qsub(char *, long, char *);
 extern void cleanup_restart_file(job *);
 extern struct batch_request *setup_cpyfiles(struct batch_request *,job *,char*,char *,int,int);
 extern int job_log_open(char *, char *);
-extern int log_job_record(char *buf);
+extern int log_job_record(const char *buf);
 extern void check_job_log(struct work_task *ptask);
 int issue_signal(job **, char *, void(*)(batch_request *), void *);
 

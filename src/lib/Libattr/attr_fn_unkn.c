@@ -129,7 +129,7 @@
 int decode_unkn(
 
   pbs_attribute *patr,  /* May be Modified on Return */
-  char          *name,
+  const char   *name,
   char          *rescn,
   char          *value,
   int            perm)  /* only used for resources */
@@ -193,8 +193,8 @@ int encode_unkn(
 
   pbs_attribute  *attr,   /* ptr to pbs_attribute to encode */
   tlist_head     *phead,   /* list to place entry in */
-  char           *atname,  /* pbs_attribute name, not used here */
-  char           *rsname,  /* resource name, not used here */
+  const char    *atname,  /* pbs_attribute name, not used here */
+  const char    *rsname,  /* resource name, not used here */
   int             mode,   /* encode mode, unused here */
   int             perm)  /* only used for resources */
 

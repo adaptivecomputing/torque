@@ -8,15 +8,15 @@
 
 int PNodeStateToString(int SBM, char *Buf, int BufSize); 
 
-int encode_state(pbs_attribute *pattr, tlist_head *ph, char *aname, char *rname, int mode, int perm); 
+int encode_state(pbs_attribute *pattr, tlist_head *ph, const char *aname, const char *rname, int mode, int perm);
 
-int encode_ntype(pbs_attribute *pattr, tlist_head *ph, char *aname, char *rname, int mode, int perm); 
+int encode_ntype(pbs_attribute *pattr, tlist_head *ph, const char *aname, const char *rname, int mode, int perm);
 
-int encode_jobs(pbs_attribute *pattr, tlist_head *ph, char *aname, char *rname, int mode, int perm); 
+int encode_jobs(pbs_attribute *pattr, tlist_head *ph, const char *aname, const char *rname, int mode, int perm);
 
-int decode_state(pbs_attribute *pattr, char *name, char *rescn, char *val, int perm); 
+int decode_state(pbs_attribute *pattr, const char *name, char *rescn, char *val, int perm);
 
-int decode_ntype(pbs_attribute *pattr, char *name, char *rescn, char *val, int perm); 
+int decode_ntype(pbs_attribute *pattr, const char *name, char *rescn, char *val, int perm);
 
 void free_prop_list(struct prop *prop);
 

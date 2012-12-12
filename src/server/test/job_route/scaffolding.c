@@ -69,7 +69,7 @@ long count_proc(char *param_spec)
   return(0);
   }
 
-resource_def *find_resc_def(resource_def *rscdf, char *name, int limit) 
+resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
   {
   return(NULL);
   }

@@ -267,30 +267,30 @@ enum TVarElseEnum
   tveLAST
   };
 
-static char *variables_else[] =   /* variables to add, value computed */
+static const char *variables_else[] =   /* variables to add, value computed */
   {
-  (char *)"HOME",
-  (char *)"LOGNAME",
-  (char *)"PBS_JOBNAME",
-  (char *)"PBS_JOBID",
-  (char *)"PBS_QUEUE",
-  (char *)"SHELL",
-  (char *)"USER",
-  (char *)"PBS_JOBCOOKIE",
-  (char *)"PBS_NODENUM",
-  (char *)"PBS_TASKNUM",
-  (char *)"PBS_MOMPORT",
-  (char *)"PBS_NODEFILE",
-  (char *)"PBS_NNODES",      /* number of nodes specified by size */
-  (char *)"TMPDIR",
-  (char *)"PBS_VERSION",
-  (char *)"PBS_NUM_NODES",  /* number of nodes specified by nodes string */
-  (char *)"PBS_NUM_PPN",    /* ppn value specified by nodes string */
-  (char *)"PBS_GPUFILE",    /* file containing which GPUs to access */
-  (char *)"PBS_NP",         /* number of processors requested */
-  (char *)"PBS_WALLTIME",   /* requested or default walltime */
-  (char *)"PBS_MICFILE",    /* file containing which MICs to access */
-  (char *)NULL
+  "HOME",
+  "LOGNAME",
+  "PBS_JOBNAME",
+  "PBS_JOBID",
+  "PBS_QUEUE",
+  "SHELL",
+  "USER",
+  "PBS_JOBCOOKIE",
+  "PBS_NODENUM",
+  "PBS_TASKNUM",
+  "PBS_MOMPORT",
+  "PBS_NODEFILE",
+  "PBS_NNODES",      /* number of nodes specified by size */
+  "TMPDIR",
+  "PBS_VERSION",
+  "PBS_NUM_NODES",  /* number of nodes specified by nodes string */
+  "PBS_NUM_PPN",    /* ppn value specified by nodes string */
+  "PBS_GPUFILE",    /* file containing which GPUs to access */
+  "PBS_NP",         /* number of processors requested */
+  "PBS_WALLTIME",   /* requested or default walltime */
+  "PBS_MICFILE",    /* file containing which MICs to access */
+  NULL
   };
 
 static int num_var_else = tveLAST;
@@ -382,7 +382,7 @@ static void no_hang(
   int sig)   /* I (not used) */
 
   {
-  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_REQUEST, " ", (char *)"alarm timed-out connect to qsub");
+  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_REQUEST, " ", "alarm timed-out connect to qsub");
   
   return;
   }   /* END no_hang() */
@@ -815,7 +815,7 @@ static int open_pty(
 
     if(pts < 0)
       {
-      log_err(errno, "open_pty", (char *)"cannot move pts file.");
+      log_err(errno, "open_pty", "cannot move pts file.");
       return -1;
       }
 
@@ -825,7 +825,7 @@ static int open_pty(
                  pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1)
       {
       close(pts);
-      log_err(errno, "open_pty", (char *)"cannot change slave's owner");
+      log_err(errno, "open_pty", "cannot change slave's owner");
       return -1;
       }
 
@@ -971,7 +971,7 @@ static int open_std_out_err(
       }
     else
       {
-      log_err(errno, __func__, (char *)"unable to open standard output/error");
+      log_err(errno, __func__, "unable to open standard output/error");
       }
 
     return(-1);
@@ -983,7 +983,7 @@ static int open_std_out_err(
 
   if((file_out == -1)||(file_err == -1))
     {
-    log_err(errno, __func__, (char *)"unable to open standard output/error");
+    log_err(errno, __func__, "unable to open standard output/error");
     return -1;
     }
 
@@ -1042,7 +1042,7 @@ int mkdirtree(
 
   oldmask = umask(0000);
 
-  part = strtok(path, (char *)"/");
+  part = strtok(path, "/");
 
   if (part == NULL)
     {
@@ -1447,7 +1447,7 @@ int InitUserEnv(
   /* PBS_WALLTIME */
 
   pattr = &pjob->ji_wattr[JOB_ATR_resource];
-  prd = find_resc_def(svr_resc_def, (char *)"walltime", svr_resc_size);
+  prd = find_resc_def(svr_resc_def, "walltime", svr_resc_size);
 
   if ((presc = find_resc_entry(pattr, prd)) != NULL)
     {
@@ -1460,7 +1460,7 @@ int InitUserEnv(
 
   pattr = &pjob->ji_wattr[JOB_ATR_resource];
 
-  prd = find_resc_def(svr_resc_def, (char *)"size", svr_resc_size);
+  prd = find_resc_def(svr_resc_def, "size", svr_resc_size);
 
   presc = find_resc_entry(pattr, prd);
 
@@ -1577,7 +1577,7 @@ int mom_jobstarter_execute_job(
   
   if (arg[1] == NULL)
     {
-    log_err(errno,__func__, (char *)"cannot alloc env");
+    log_err(errno,__func__, "cannot alloc env");
 
     return(-1);
     }
@@ -1794,25 +1794,25 @@ struct radix_buf **allocate_sister_list(
   int                i;
   
   /* create sister lists to send out to intermediate moms */
-  if ((sister_list = (radix_buf **)calloc((size_t)radix, sizeof(struct radix_buf *))) == NULL)
+  if ((sister_list = (struct radix_buf **)calloc((size_t)radix, sizeof(struct radix_buf *))) == NULL)
     {
-    log_err(ENOMEM,__func__, (char *)"");
+    log_err(ENOMEM,__func__, "");
     return(NULL);
     }
 
   for (i = 0; i < radix; i++)
     {
-    if ((sister_list[i] = (radix_buf *)calloc(1, sizeof(struct radix_buf))) == NULL)
+    if ((sister_list[i] = (struct radix_buf *)calloc(1, sizeof(struct radix_buf))) == NULL)
       {
       free(sister_list);
-      log_err(ENOMEM,__func__, (char *)"");
+      log_err(ENOMEM,__func__, "");
       return(NULL);
       }
 
     if ((sister_list[i]->host_list = (char *)calloc(1, THE_LIST_SIZE)) == NULL)
       {
       free(sister_list);
-      log_err(ENOMEM,__func__, (char *)"");
+      log_err(ENOMEM,__func__, "");
       return(NULL);
       }
 
@@ -2032,7 +2032,7 @@ int TMomFinalizeJob1(
       {
       /* FAILURE */
       
-      log_err(-1, __func__, (char *)"Restart failed");
+      log_err(-1, __func__, "Restart failed");
       
       /* retry for any kind of changable thing */
       
@@ -2113,7 +2113,7 @@ int TMomFinalizeJob1(
     
     if ((TJE->ptc = open_master(&TJE->ptc_name)) < 0)
       {
-      log_err(errno, __func__, (char *)"cannot open master pty");
+      log_err(errno, __func__, "cannot open master pty");
       
       *SC = JOB_EXEC_RETRY;
       
@@ -2588,7 +2588,7 @@ int write_attr_to_file(
     {
     fclose(file);
 
-    log_err(ENOMEM,__func__, (char *)"Couldn't allocate a string to work with? EPIC FAIL");
+    log_err(ENOMEM,__func__, "Couldn't allocate a string to work with? EPIC FAIL");
     return(ENOMEM);
     }
 
@@ -2748,7 +2748,7 @@ int write_nodes_to_file(
       else
         {
         /* this should never happen */
-        log_err(-1, __func__, (char *)"Numa enabled but no dash in hostname?");
+        log_err(-1, __func__, "Numa enabled but no dash in hostname?");
         }
 
 #endif /* def NUMA_SUPPORT */
@@ -2936,7 +2936,7 @@ void handle_prologs(
 
   if ((rc = run_pelog(PE_PROLOG, path_prolog, pjob, PE_IO_TYPE_ASIS)) != PBSE_NONE)
     {
-    log_err(-1, __func__, (char *)"prolog failed");
+    log_err(-1, __func__, "prolog failed");
 
     if ((TJE->is_interactive == FALSE) &&
         (rc != 1))
@@ -2955,7 +2955,7 @@ void handle_prologs(
   /* run user prolog */
   if ((rc = run_pelog(PE_PROLOGUSER, path_prologuser, pjob, PE_IO_TYPE_ASIS)) != PBSE_NONE)
     {
-    log_err(-1, __func__, (char *)"user prolog failed");
+    log_err(-1, __func__, "user prolog failed");
     
     if ((TJE->is_interactive == FALSE) &&
         (rc != 1))
@@ -2986,7 +2986,7 @@ void handle_prologs(
         {
         if ((rc = run_pelog(PE_PROLOGUSERJOB, path_prologuserjob, pjob, PE_IO_TYPE_ASIS)) != PBSE_NONE)
           {
-          log_err(-1, __func__, (char *)"batch job local user prolog failed");
+          log_err(-1, __func__, "batch job local user prolog failed");
           free(path_prologuserjob);
 
           if ((TJE->is_interactive == FALSE) &&
@@ -3068,7 +3068,7 @@ int start_interactive_session(
   if ((phost == NULL) ||
       ((phost = strchr(phost, '=')) == NULL))
     {
-    log_err(-1, __func__, (char *)"PBS_O_HOST not set");
+    log_err(-1, __func__, "PBS_O_HOST not set");
     
     starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, sjr);
     }
@@ -3105,7 +3105,7 @@ int start_interactive_session(
   if ((*qsub_sock_ptr < 0)||
       (write(*qsub_sock_ptr, pjob->ji_qs.ji_jobid, PBS_MAXSVRJOBID + 1) != PBS_MAXSVRJOBID + 1))
     {
-    log_err(errno, __func__, (char *)"cannot write jobid");
+    log_err(errno, __func__, "cannot write jobid");
     
     starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, sjr);
     }
@@ -3113,7 +3113,7 @@ int start_interactive_session(
   /* receive terminal type and window size */
   if ((termtype = rcvttype(*qsub_sock_ptr)) == NULL)
     {
-    log_err(errno, __func__, (char *)"cannot get termtype");
+    log_err(errno, __func__, "cannot get termtype");
     
     starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, sjr);
     }
@@ -3123,7 +3123,7 @@ int start_interactive_session(
   
   if (rcvwinsize(*qsub_sock_ptr) == -1)
     {
-    log_err(errno, __func__, (char *)"cannot get winsize");
+    log_err(errno, __func__, "cannot get winsize");
     
     starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, sjr);
     }
@@ -3140,7 +3140,7 @@ int start_interactive_session(
   /* open the slave pty as the controlling tty */
   if ((*pts_ptr = open_pty(pjob)) < 0)
     {
-    log_err(errno, __func__, (char *)"cannot open slave");
+    log_err(errno, __func__, "cannot open slave");
     
     starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, sjr);
     }
@@ -3286,7 +3286,7 @@ void setup_interactive_job(
       shutdown(*qsub_sock_ptr, 2);
       
       /* change pty back to available after job is done */
-      if (chmod((char *)TJE->ptc_name, 0666) != 0)
+      if (chmod(TJE->ptc_name, 0666) != 0)
         {
           log_err(errno, __func__, "can't chmod 0666 to change pty back to available");
         }
@@ -3302,7 +3302,7 @@ void setup_interactive_job(
   else
     {
     /* FAILURE - fork failed */
-    log_err(errno, __func__, (char *)"cannot fork nanny");
+    log_err(errno, __func__, "cannot fork nanny");
     
     /* change pty back to available */
     if (chmod(TJE->ptc_name, 0666) != 0)
@@ -3374,7 +3374,7 @@ void set_job_script_as_stdin(
   
   if (script_in < 0)
     {
-    log_err(errno, __func__, (char *)"unable to open script");
+    log_err(errno, __func__, "unable to open script");
     
     starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, sjr);
     }
@@ -3419,7 +3419,7 @@ void setup_batch_job(
   /* NOTE:  set arg2 to 5 to enable file open timeout check */
   if (open_std_out_err(pjob, 0) == -1)
     {
-    log_err(-1, __func__, (char *)"unable to open stdout/stderr descriptors");
+    log_err(-1, __func__, "unable to open stdout/stderr descriptors");
     
     starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_STDOUTFAIL, sjr);
     }
@@ -3484,7 +3484,7 @@ void attempt_to_set_limits(
       }
     else
       {
-      log_err(errno, __func__, (char *)"mom_set_limits failed");
+      log_err(errno, __func__, "mom_set_limits failed");
       }
 
     starter_return(TJE->upfds, TJE->downfds, j, sjr); /* exits */
@@ -3621,7 +3621,7 @@ void setup_interactive_command_if_present(
     
     if (arg[aindex] == NULL)
       {
-      log_err(errno, __func__, (char *)"cannot alloc env");
+      log_err(errno, __func__, "cannot alloc env");
       
       starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL2, sjr);
       }
@@ -3636,7 +3636,7 @@ void setup_interactive_command_if_present(
     
     if (arg[aindex] == NULL)
       {
-      log_err(errno, __func__, (char *)"cannot alloc env");
+      log_err(errno, __func__, "cannot alloc env");
       
       starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL2, sjr);
       }
@@ -3704,7 +3704,7 @@ void add_preexec_if_needed(
     
     if (arg[aindex] == NULL)
       {
-      log_err(errno, __func__, (char *)"cannot alloc env");
+      log_err(errno, __func__, "cannot alloc env");
       
       starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL2, sjr);
       }
@@ -3762,7 +3762,7 @@ void launch_the_demux(
   
   if (arg[aindex] == NULL)
     {
-    log_err(errno, __func__, (char *)"cannot alloc env");
+    log_err(errno, __func__, "cannot alloc env");
     
     starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL2, sjr);
     }
@@ -3805,7 +3805,7 @@ void source_login_shells_or_not(
     
     if (arg[aindex] == NULL)
       {
-      log_err(errno, __func__, (char *)"cannot alloc env");
+      log_err(errno, __func__, "cannot alloc env");
       
       starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL2, sjr);
       }
@@ -3826,7 +3826,7 @@ void source_login_shells_or_not(
     
     if (arg[aindex] == NULL)
       {
-      log_err(errno, __func__, (char *)"cannot alloc env");
+      log_err(errno, __func__, "cannot alloc env");
       
       starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL2, sjr);
       }
@@ -3880,7 +3880,7 @@ int TMomFinalizeChild(
 
   if (pwdp == NULL)
     {
-    log_err(PBSE_BADUSER, __func__, (char *)"Running job with no password entry?");
+    log_err(PBSE_BADUSER, __func__, "Running job with no password entry?");
 
     starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, &sjr);
 
@@ -3921,7 +3921,7 @@ int TMomFinalizeChild(
   /* Setup user env */
   if (InitUserEnv(pjob, ptask, NULL, pwdp, shell) < 0)
     {
-    log_err(-1, __func__, (char *)"failed to setup user env");
+    log_err(-1, __func__, "failed to setup user env");
 
     starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, &sjr);
     }
@@ -3950,7 +3950,7 @@ int TMomFinalizeChild(
 
   if ((j = CPACreatePartition(pjob, &vtable)) != 0)
     {
-    log_err(-1, __func__, (char *)"CPACreatePartition failed");
+    log_err(-1, __func__, "CPACreatePartition failed");
 
     starter_return(TJE->upfds, TJE->downfds, j, &sjr); /* exits */
 
@@ -3967,7 +3967,7 @@ int TMomFinalizeChild(
 
   if (j != 0)
     {
-    log_err(-1, __func__, (char *)"failed to set mach vars");
+    log_err(-1, __func__, "failed to set mach vars");
 
     starter_return(TJE->upfds, TJE->downfds, j, &sjr); /* exits */
 
@@ -4149,7 +4149,7 @@ int TMomFinalizeChild(
 
       if (arg[aindex] == NULL)
         {
-        log_err(errno, __func__, (char *)"cannot alloc env");
+        log_err(errno, __func__, "cannot alloc env");
 
         starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr);
 
@@ -4307,7 +4307,7 @@ int TMomFinalizeJob3(
 
   if (pjob == NULL)
     {
-    log_err(-1, __func__, (char *)"This function needs a valid job pointer");
+    log_err(-1, __func__, "This function needs a valid job pointer");
     return(FAILURE);
     }
 
@@ -4836,7 +4836,7 @@ int start_process(
 
   if (InitUserEnv(pjob, ptask, envp, NULL, NULL) < 0)
     {
-    log_err(errno, __func__, (char *)"failed to setup user env");
+    log_err(errno, __func__, "failed to setup user env");
 
     starter_return(kid_write, kid_read, JOB_EXEC_RETRY, &sjr);
 
@@ -4898,7 +4898,7 @@ int start_process(
 
   if ((fd0 = search_env_and_open("MPIEXEC_STDIN_PORT", ipaddr)) == -2)
     {
-    log_err(errno, __func__, (char *)"cannot locate MPIEXEC_STDIN_PORT");
+    log_err(errno, __func__, "cannot locate MPIEXEC_STDIN_PORT");
 
     starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
 
@@ -4909,7 +4909,7 @@ int start_process(
 
   if ((fd0 < 0) && ((fd0 = search_env_and_open("TM_STDIN_PORT", ipaddr)) == -2))
     {
-    log_err(errno, __func__, (char *)"cannot locate TM_STDIN_PORT");
+    log_err(errno, __func__, "cannot locate TM_STDIN_PORT");
 
     starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
 
@@ -4922,7 +4922,7 @@ int start_process(
 
   if ((fd0 < 0) && (fd0 = open("/dev/null", O_RDONLY)) == -1)
     {
-    log_err(errno, __func__, (char *)"could not open dev/null");
+    log_err(errno, __func__, "could not open dev/null");
 
     close(0);
     }
@@ -4938,7 +4938,7 @@ int start_process(
 
   if ((fd1 = search_env_and_open("MPIEXEC_STDOUT_PORT", ipaddr)) == -2)
     {
-    log_err(errno, __func__, (char *)"cannot locate MPIEXEC_STDOUT_PORT");
+    log_err(errno, __func__, "cannot locate MPIEXEC_STDOUT_PORT");
 
     starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
 
@@ -4951,7 +4951,7 @@ int start_process(
     {
     if ((fd1 = search_env_and_open("TM_STDOUT_PORT", ipaddr)) == -2)
       {
-      log_err(errno, __func__, (char *)"cannot locate TM_STDOUT_PORT");
+      log_err(errno, __func__, "cannot locate TM_STDOUT_PORT");
 
       starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
 
@@ -4963,7 +4963,7 @@ int start_process(
 
   if ((fd2 = search_env_and_open("MPIEXEC_STDERR_PORT", ipaddr)) == -2)
     {
-    log_err(errno, __func__, (char *)"cannot locate MPIEXEC_STDERR_PORT");
+    log_err(errno, __func__, "cannot locate MPIEXEC_STDERR_PORT");
 
     starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
 
@@ -4976,7 +4976,7 @@ int start_process(
     {
     if ((fd2 = search_env_and_open("TM_STDERR_PORT", ipaddr)) == -2)
       {
-      log_err(errno, __func__, (char *)"cannot locate TM_STDERR_PORT");
+      log_err(errno, __func__, "cannot locate TM_STDERR_PORT");
 
       starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
 
@@ -5025,7 +5025,7 @@ int start_process(
     if ((fd1 < 0) &&
         ((fd1 = open_demux(ipaddr, pjob->ji_portout)) == -1))
       {
-      log_err(errno, __func__, (char *)"cannot open mux stdout port");
+      log_err(errno, __func__, "cannot open mux stdout port");
 
       starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
 
@@ -5041,7 +5041,7 @@ int start_process(
 
     if ((fd2 < 0) && ((fd2 = open_demux(ipaddr, pjob->ji_porterr)) == -1))
       {
-      log_err(errno, __func__, (char *)"cannot open mux stderr port");
+      log_err(errno, __func__, "cannot open mux stderr port");
 
       starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
 
@@ -5076,7 +5076,7 @@ int start_process(
       {
       if ((pts = open_pty(pjob)) < 0)
         {
-        log_err(errno, __func__, (char *)"cannot open slave pty");
+        log_err(errno, __func__, "cannot open slave pty");
 
         starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
 
@@ -5117,7 +5117,7 @@ int start_process(
       {
       if (open_std_out_err(pjob, -1) == -1)
         {
-        log_err(errno, __func__, (char *)"cannot open job stderr/stdout files");
+        log_err(errno, __func__, "cannot open job stderr/stdout files");
 
         starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
         }
@@ -5456,7 +5456,7 @@ void job_nodes(
     }
   else
     {
-    log_err(-1, __func__, (char *)"Cannot parse the nodes for a job without exec hosts being set");
+    log_err(-1, __func__, "Cannot parse the nodes for a job without exec hosts being set");
     return;
     }
 
@@ -5466,7 +5466,7 @@ void job_nodes(
   if ((pjob->ji_hosts == NULL) ||
       (pjob->ji_vnods == NULL))
     {
-    log_err(-1,__func__,"(char *)Out of memory, system failure!\n");
+    log_err(-1,__func__,"Out of memory, system failure!\n");
     return;
     }
 
@@ -5944,7 +5944,7 @@ int generate_cookie(
     {
     if ((tt = (char *)calloc(1, JOB_COOKIE_SIZE)) == NULL)
       {
-      log_err(ENOMEM, __func__, (char *)"cannot alloc memory");
+      log_err(ENOMEM, __func__, "cannot alloc memory");
 
       exec_bail(pjob, JOB_EXEC_FAIL1);
 
@@ -6388,7 +6388,7 @@ pid_t fork_me(
     }
   else if (pid < 0)
     {
-    log_err(errno, "fork_me", (char *)"fork failed");
+    log_err(errno, "fork_me", "fork failed");
     }
 
   return(pid);
@@ -6903,7 +6903,7 @@ int open_std_file(
 
   if ((path = std_file_name(pjob, which, &keeping)) == NULL)
     {
-    log_err(-1, __func__, (char *)"cannot determine filename");
+    log_err(-1, __func__, "cannot determine filename");
 
     /* FAILURE - cannot determine filename */
 
@@ -6987,7 +6987,7 @@ int open_std_file(
 
       if (S_ISLNK(statbuf.st_mode))
         {
-        log_err(-1, __func__, (char *)"std file is symlink, someone is doing something fishy");
+        log_err(-1, __func__, "std file is symlink, someone is doing something fishy");
 
         goto reset_ids_fail;
         }
@@ -7022,12 +7022,12 @@ int open_std_file(
                   pjob->ji_qs.ji_un.ji_momt.ji_exuid,
                   pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1)
               {
-              log_err(errno, __func__, (char *)"std file exists with the wrong group, someone is doing something fishy, cannot change file group");
+              log_err(errno, __func__, "std file exists with the wrong group, someone is doing something fishy, cannot change file group");
 
               goto reset_ids_fail;
               }
 #else
-            log_err(-1, __func__, (char *)"std file exists with the wrong group, someone is doing something fishy");
+            log_err(-1, __func__, "std file exists with the wrong group, someone is doing something fishy");
 
             goto reset_ids_fail;
 #endif
@@ -7281,7 +7281,7 @@ void bld_env_variables(
 
     if (LOGLEVEL >= 7)
       {
-      log_err(-1, "bld_env_variables", (char *)"invalid name passed");
+      log_err(-1, "bld_env_variables", "invalid name passed");
       }
     }
 
@@ -7385,7 +7385,7 @@ int init_groups(
 
   if (nsaved < 0)
     {
-    log_err(errno, __func__, (char *)"getgroups");
+    log_err(errno, __func__, "getgroups");
 
     return(-1);
     }
@@ -7418,7 +7418,7 @@ int init_groups(
 
     if (pwe == NULL)
       {
-      log_err(errno, __func__, (char *)"no such user");
+      log_err(errno, __func__, "no such user");
 
       return(-1);
       }
@@ -7436,7 +7436,7 @@ int init_groups(
 
   if (sigprocmask(SIG_BLOCK, &allsigs, &savedset) == -1)
     {
-    log_err(errno, __func__, (char *)"sigprocmask(BLOCK)");
+    log_err(errno, __func__, "sigprocmask(BLOCK)");
 
     return(-1);
     }
@@ -7445,7 +7445,7 @@ int init_groups(
 
   if (initgroups(pwname, pwgrp) < 0)
     {
-    log_err(errno, __func__, (char *)"initgroups");
+    log_err(errno, __func__, "initgroups");
 
     n = -1;
     }
@@ -7462,10 +7462,10 @@ int init_groups(
   /* restore state */
 
   if (setgroups(nsaved, savedgroups) < 0)
-    log_err(errno, __func__, (char *)"setgroups");
+    log_err(errno, __func__, "setgroups");
 
   if (sigprocmask(SIG_SETMASK, &savedset, NULL) == -1)
-    log_err(errno, __func__, (char *)"sigprocmask(SIG_SETMASK)");
+    log_err(errno, __func__, "sigprocmask(SIG_SETMASK)");
 
   return(n);
   }   /* END init_groups() */
@@ -8437,7 +8437,7 @@ int allocate_demux_sockets(
 
      /* command sisters to abort job and continue */
 
-    log_err(errno, __func__, (char *)"stdout/err socket");
+    log_err(errno, __func__, "stdout/err socket");
 
     exec_bail(pjob, JOB_EXEC_FAIL1);
 

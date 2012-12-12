@@ -102,7 +102,7 @@ host_req *get_host_req(
   char *hostname)
 
   {
-  host_req *hr = calloc(1, sizeof(host_req));
+  host_req *hr = (host_req *)calloc(1, sizeof(host_req));
 
   hr->hostname = strdup(hostname);
   hr->ppn = 1;
@@ -133,7 +133,7 @@ resizable_array *parse_exec_hosts(
   char            *host_tok;
   char            *exec_hosts = strdup(exec_hosts_param);
   char            *str_ptr = exec_hosts;
-  char            *delims = "+";
+  const char     *delims = "+";
   char            *prev_host_tok = NULL;
   host_req        *hr;
   resizable_array *host_req_list = initialize_resizable_array(100);
