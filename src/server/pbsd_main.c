@@ -257,7 +257,6 @@ int                     queue_rank = 0;
 int                     a_opt_init = -1;
 int                     wait_for_moms_hierarchy = FALSE;
 
-int                     route_retry_interval = 5; /* time in seconds to check routing queues */
 /* HA global data items */
 long                    HALockCheckTime = 0;
 long                    HALockUpdateTime = 0;
@@ -1158,19 +1157,15 @@ void *handle_queue_routing_retries(
   char       *queuename;
   int        iter = -1;
 
-  while(1)
+  while ((pque = next_queue(&svr_queues, &iter)) != NULL)
     {
-    sleep(route_retry_interval);
-    while ((pque = next_queue(&svr_queues, &iter)) != NULL)
+    if (pque->qu_qs.qu_type == QTYPE_RoutePush)
       {
-      if (pque->qu_qs.qu_type == QTYPE_RoutePush)
-        {
-        queuename = strdup(pque->qu_qs.qu_name); /* make sure this gets freed inside queue_route */
-        enqueue_threadpool_request(queue_route, queuename);
-        }
-
-      unlock_queue(pque, __func__, (char *)NULL, 0);
+      queuename = strdup(pque->qu_qs.qu_name); /* make sure this gets freed inside queue_route */
+      enqueue_threadpool_request(queue_route, queuename);
       }
+
+    unlock_queue(pque, __func__, (char *)NULL, 0);
     }
 
   return(NULL);
