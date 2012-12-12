@@ -212,7 +212,7 @@ int get_svr_attr_arst(int index, struct array_strings **arst)
   return(0);
   }
 
-char *threadsafe_tokenizer(char **str, char *delims)
+char *threadsafe_tokenizer(char **str, const char *delims)
   {
   fprintf(stderr, "The call to threadsafe_tokenizer needs to be mocked!!\n");
   exit(1);

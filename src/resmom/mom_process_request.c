@@ -491,7 +491,7 @@ static void mom_close_client(
 
 struct batch_request *alloc_br(
 
-        int type)
+  int type)
 
   {
 

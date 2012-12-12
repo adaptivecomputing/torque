@@ -29,3 +29,5 @@ void log_record(int eventtype, int objclass, const char *objname, const char *te
   exit(1);
   }
 
+
+

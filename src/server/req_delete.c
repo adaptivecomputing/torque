@@ -116,6 +116,7 @@
 #include "svr_task.h"
 #include "ji_mutex.h"
 #include "threadpool.h"
+#include "svr_task.h"
 
 #define PURGE_SUCCESS 1
 #define MOM_DELETE    2

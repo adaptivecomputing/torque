@@ -84,7 +84,7 @@ int lock_startup()
       {
       if (pthread_mutex_lock(locks->startup) != 0)
         {
-        log_err(-1,"mutex_lock",(char *)"ALERT:   cannot lock startup mutex!\n");
+        log_err(-1,"mutex_lock","ALERT:   cannot lock startup mutex!\n");
         return(PBSE_MUTEX);
         }
       }
@@ -101,7 +101,7 @@ int unlock_startup()
   {
   if (pthread_mutex_unlock(locks->startup) != 0)
     {
-    log_err(-1,"mutex_unlock",(char *)"ALERT:   cannot unlock startup mutex!\n");
+    log_err(-1,"mutex_unlock","ALERT:   cannot unlock startup mutex!\n");
     return(PBSE_MUTEX);
     }
 
@@ -124,7 +124,7 @@ int lock_conn_table()
       
       if (pthread_mutex_lock(locks->conn_table) != 0)
         {
-        log_err(-1,"mutex_lock",(char *)"ALERT:   cannot lock conn_table mutex!\n");
+        log_err(-1,"mutex_lock","ALERT:   cannot lock conn_table mutex!\n");
         return(PBSE_MUTEX);
         }
       }
@@ -140,7 +140,7 @@ int unlock_conn_table()
   {
   if (pthread_mutex_unlock(locks->conn_table) != 0)
     {
-    log_err(-1, "mutex_unlock", (char *)"ALERT:   cannot unlock conn_table mutex!\n");
+    log_err(-1, "mutex_unlock", "ALERT:   cannot unlock conn_table mutex!\n");
     return(PBSE_MUTEX);
     }
 
@@ -162,7 +162,7 @@ int lock_ss()
     
       if (pthread_mutex_lock(locks->setup_save) != 0)
         {
-        log_err(-1,"mutex_lock",(char *)"ALERT:   cannot lock setup_save mutex!\n");
+        log_err(-1,"mutex_lock","ALERT:   cannot lock setup_save mutex!\n");
         return(PBSE_MUTEX);
         }
       }
@@ -178,7 +178,7 @@ int unlock_ss()
   {
   if (pthread_mutex_unlock(locks->setup_save) != 0)
     {
-    log_err(-1,"mutex_unlock",(char *)"ALERT:   cannot unlock setup_save mutex!\n");
+    log_err(-1,"mutex_unlock","ALERT:   cannot unlock setup_save mutex!\n");
     return(PBSE_MUTEX);
     }
 
@@ -192,7 +192,7 @@ int lock_node(
     
   struct pbsnode *the_node,
   const char     *id,
-  char           *msg,
+  const char     *msg,
   int             logging)
 
   {
@@ -233,7 +233,7 @@ int unlock_node(
     
   struct pbsnode *the_node,
   const char     *id,
-  char           *msg,
+  const char     *msg,
   int             logging)
 
   {

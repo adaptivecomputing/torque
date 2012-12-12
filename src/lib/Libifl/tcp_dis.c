@@ -97,7 +97,6 @@
 #include "../Libdis/lib_dis.h"
 #include "dis_init.h"
 #include "log.h"
-#include "../Liblog/pbs_log.h"
 #include "../Libutils/u_lock_ctl.h"
 #include "../Libnet/lib_net.h" /* socket_* */
 
@@ -256,7 +255,7 @@ int tcp_read(
     newsize = (tdis_buf_len + *read_len) * 2;
     if ((ptr = (char *)calloc(1, newsize+1)) == NULL)
       {
-      log_err(ENOMEM,__func__,(char *)"Could not allocate memory to read buffer");
+      log_err(ENOMEM,__func__,"Could not allocate memory to read buffer");
       rc = PBSE_MEM_MALLOC;
       free(new_data);
       return rc;
@@ -668,7 +667,7 @@ struct tcp_chan * DIS_tcp_setup(
 
   if ((chan = (struct tcp_chan *)calloc(1, sizeof(struct tcp_chan))) == NULL)
     {
-    log_err(ENOMEM, (char *)"DIS_tcp_setup", (char *)"calloc failure");
+    log_err(ENOMEM, "DIS_tcp_setup", "calloc failure");
     return(NULL);
     }
 
@@ -680,7 +679,7 @@ struct tcp_chan * DIS_tcp_setup(
   if ((tp->tdis_thebuf = (char *)calloc(1, THE_BUF_SIZE+1)) == NULL)
     {
     free(chan);
-    log_err(errno,(char *)"DIS_tcp_setup",(char *)"calloc failure");
+    log_err(errno,"DIS_tcp_setup","calloc failure");
     return(NULL);
     }
 
@@ -693,7 +692,7 @@ struct tcp_chan * DIS_tcp_setup(
     {
     free(chan->readbuf.tdis_thebuf);
     free(chan);
-    log_err(errno,(char *)"DIS_tcp_setup",(char *)"calloc failure");
+    log_err(errno,"DIS_tcp_setup","calloc failure");
     return(NULL);
     }
 

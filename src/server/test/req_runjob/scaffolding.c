@@ -264,7 +264,7 @@ int insert_task(all_tasks *at, work_task *wt)
   exit(1);
   }
 
-char *threadsafe_tokenizer(char **str, char *delims)
+char *threadsafe_tokenizer(char **str, const char *delims)
   {
   fprintf(stderr, "The call to threadsafe_tokenizer needs to be mocked!!\n");
   exit(1);

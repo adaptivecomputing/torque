@@ -16,7 +16,7 @@ void clear_listeners(void);
 
 int add_listener(pbs_net_t l_addr, unsigned int l_port);
 
-int PBSShowUsage(char *EMsg);
+int PBSShowUsage(const char *EMsg);
 
 void parse_command_line(int argc, char *argv[]);
 

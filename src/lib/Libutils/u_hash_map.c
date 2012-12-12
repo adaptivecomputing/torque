@@ -182,7 +182,7 @@ int add_to_hash_map(
     if ((index = insert_thing(hm->hm_ra, obj)) == -1)
       {
       rc = ENOMEM;
-      log_err(rc, __func__, (char *)"Memory failure");
+      log_err(rc, __func__, "Memory failure");
       }
     else
       add_hash(hm->hm_ht, index, key);

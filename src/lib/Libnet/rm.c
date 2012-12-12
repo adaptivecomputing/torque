@@ -190,7 +190,7 @@ int openrm(
     {
     if (gotport == 0)
       {
-      gotport = get_svrport((char *)PBS_MANAGER_SERVICE_NAME, (char *)"tcp",
+      gotport = get_svrport(PBS_MANAGER_SERVICE_NAME, "tcp",
                             PBS_MANAGER_SERVICE_PORT);
       }  /* END if (gotport == 0) */
 
@@ -363,8 +363,6 @@ static int startcom(
   if (ret != DIS_SUCCESS)
     {
     /* NOTE:  cannot resolve log_err */
-
-    /* log_err(ret,"startcom - diswsi error",(char *)dis_emsg[ret]); */
 
     *local_errno = errno;
     }

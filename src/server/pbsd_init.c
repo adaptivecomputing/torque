@@ -243,7 +243,7 @@ void          on_job_exit_task(struct work_task *);
 /* Private functions in this file */
 
 void  init_abt_job(job *);
-char *build_path(char *, char *, char *);
+char *build_path(char *, const char *, const char *);
 void  catch_abort(int);
 void  change_logs();
 void  change_logs_handler(int);
@@ -348,7 +348,7 @@ int DArrayAppend(
 
     memcpy(tmp, Array->Data, sizeof(Array->Data[0]) * Array->Length);
     free(Array->Data);
-    Array->Data = tmp;
+    Array->Data = &tmp;
     Array->Length = newLength;
     }
 
@@ -614,7 +614,7 @@ int handle_level(
 
   {
   char            log_buf[LOCAL_LOG_BUF_SIZE];
-  char           *delims = ",";
+  const char           *delims = ",";
   char           *host_tok;
   dynamic_string *level_buf;
 
@@ -799,7 +799,7 @@ dynamic_string *parse_mom_hierarchy(
         log_err( -1, __func__, log_buf);
         }
 
-      unlock_node(pnode, __func__, NULL, LOGLEVEL);
+      unlock_node(pnode, __func__, (char *)NULL, LOGLEVEL);
       }
 
     if (first_missing_node == FALSE)
@@ -901,7 +901,7 @@ void add_all_nodes_to_hello_container()
         add_hello_after(&hellos, node_name_dup, level_indices[pnode->nd_hierarchy_level]);
       }
 
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+    unlock_node(pnode, __func__, (char *)NULL, LOGLEVEL);
     }
 
   return;
@@ -1112,8 +1112,8 @@ int initialize_paths()
 
   {
   int          rc = PBSE_NONE;
-  char        *suffix_slash = "/";
-  char        *new_tag = ".new";
+  const char        *suffix_slash = "/";
+  const char        *new_tag = ".new";
   struct stat  statbuf;
   char         log_buf[LOCAL_LOG_BUF_SIZE];
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
@@ -1212,7 +1212,7 @@ int initialize_paths()
   rc |= chk_file_sec(path_spool, 1, 1, S_IWOTH,        0, EMsg);
   rc |= chk_file_sec(path_acct,  1, 0, S_IWGRP | S_IWOTH, 0, EMsg);
   rc |= chk_file_sec(path_credentials,  1, 0, S_IWGRP | S_IWOTH, 0, EMsg);
-  rc |= chk_file_sec(PBS_ENVIRON, 0, 0, S_IWGRP | S_IWOTH, 1, EMsg);
+  rc |= chk_file_sec((char *)PBS_ENVIRON, 0, 0, S_IWGRP | S_IWOTH, 1, EMsg);
 
   if (rc != PBSE_NONE)
     {
@@ -1230,22 +1230,22 @@ int initialize_data_structures_and_mutexes()
   {
   long cray_enabled = FALSE;
 
-  svr_do_schedule_mutex = calloc(1, sizeof(pthread_mutex_t));
+  svr_do_schedule_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(svr_do_schedule_mutex, NULL);
 
-  check_tasks_mutex = calloc(1, sizeof(pthread_mutex_t));
+  check_tasks_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(check_tasks_mutex, NULL);
 
-  listener_command_mutex = calloc(1, sizeof(pthread_mutex_t));
+  listener_command_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(listener_command_mutex, NULL);
 
-  node_state_mutex = calloc(1, sizeof(pthread_mutex_t));
+  node_state_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(node_state_mutex, NULL);
 
-  scheduler_sock_jobct_mutex = calloc(1, sizeof(pthread_mutex_t));
+  scheduler_sock_jobct_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(scheduler_sock_jobct_mutex, NULL);
 
-  reroute_job_mutex = calloc(1, sizeof(pthread_mutex_t));
+  reroute_job_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(reroute_job_mutex, NULL);
 
   pthread_mutex_lock(scheduler_sock_jobct_mutex);
@@ -1288,7 +1288,7 @@ int initialize_data_structures_and_mutexes()
     initialize_alps_reservations();
     }
   
-  acctfile_mutex = calloc(1, sizeof(pthread_mutex_t));
+  acctfile_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(acctfile_mutex, NULL);
 
   return(PBSE_NONE);
@@ -1620,7 +1620,7 @@ int handle_job_recovery(
   int               baselen = 0;
   char             *psuffix;
   int               job_count = 0; /* Count of recovered jobs */
-  char             *job_suffix = JOB_FILE_SUFFIX;
+  const char       *job_suffix = JOB_FILE_SUFFIX;
   int               job_suf_len = strlen(job_suffix);
   char              basen[MAXPATHLEN+1];
   int               Index;
@@ -1992,7 +1992,7 @@ int handle_tracking_records()
   if (server.sv_tracksize < PBS_TRACK_MINSIZE)
     server.sv_tracksize = PBS_TRACK_MINSIZE;
 
-  if ((server.sv_track = calloc(server.sv_tracksize, sizeof(struct tracking))) == NULL)
+  if ((server.sv_track = (struct tracking *)calloc(server.sv_tracksize, sizeof(struct tracking))) == NULL)
     {
     /* FAILURE - cannot alloc memory */
     log_err(errno, "pbs_init", (char *)"calloc failure");
@@ -2154,8 +2154,8 @@ int pbsd_init(
 char *build_path(
 
   char *parent,  /* parent directory name (dirname) */
-  char *name,  /* sub directory name */
-  char *suffix)  /* suffix string to append */
+  const char *name,  /* sub directory name */
+  const char *suffix)  /* suffix string to append */
 
   {
   int   prefixslash;
@@ -2176,7 +2176,7 @@ char *build_path(
   if (suffix != NULL)
     len += strlen(suffix);
 
-  ppath = calloc(1, PATH_MAX);
+  ppath = (char *)calloc(1, PATH_MAX);
 
   if (ppath != NULL)
     {
@@ -2786,7 +2786,7 @@ void resume_net_move(
   struct work_task *ptask)
 
   {
-  char *jobid = ptask->wt_parm1;
+  char *jobid = (char *)ptask->wt_parm1;
   job  *pjob;
 
   if (jobid != NULL)
@@ -2827,15 +2827,15 @@ void rm_files(
 
   /* list of directories in which files are removed */
 
-  static char *byebye[] =
+  static const char *byebye[] =
     {
-    "acl_groups",
-    "acl_hosts",
-    "acl_svr",
-    "acl_users",
-    "hostlist",
-    "queues",
-    NULL
+      "acl_groups",
+      "acl_hosts",
+      "acl_svr",
+      "acl_users",
+      "hostlist",
+      "queues",
+      NULL
     };      /* keep as last entry */
 
   dir = opendir(dirname);
@@ -2912,7 +2912,7 @@ int recov_svr_attr(
 
   {
   int	 rc;
-  char	*suffix_slash = "/";
+  const char	*suffix_slash = "/";
 
   if (type != RECOV_CREATE)
     {

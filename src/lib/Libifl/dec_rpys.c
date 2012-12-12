@@ -100,7 +100,6 @@
 #include "dis.h"
 #include "batch_request.h"
 #include "tcp.h" /* tcp_chan */
-#include "../Liblog/pbs_log.h"
 #include "log.h"
 
 int decode_DIS_replySvr(

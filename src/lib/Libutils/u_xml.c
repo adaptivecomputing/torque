@@ -114,7 +114,7 @@ int get_parent_and_child(
 
   if (ptr == NULL)
     {
-    log_err(-1, __func__ ,(char *)"No parent tag found\n");
+    log_err(-1, __func__ ,"No parent tag found\n");
 
     return(-1);
     }
@@ -158,7 +158,7 @@ int get_parent_and_child(
 
   if (child_end == NULL)
     {
-    log_err(-1, __func__, (char *)"Cannot find closing tag\n");
+    log_err(-1, __func__, "Cannot find closing tag\n");
 
     return(-1);
     }

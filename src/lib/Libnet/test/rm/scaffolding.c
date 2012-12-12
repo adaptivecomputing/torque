@@ -7,7 +7,7 @@
 int pbs_errno;
 const char *dis_emsg[10];
 
-unsigned int get_svrport(char *service_name, char *ptype, unsigned int pdefault)
+unsigned int get_svrport(const char *service_name, const char *ptype, unsigned int pdefault)
   { 
   fprintf(stderr, "The call to get_svrport needs to be mocked!!\n");
   exit(1);

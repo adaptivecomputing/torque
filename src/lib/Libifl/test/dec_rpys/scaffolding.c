@@ -41,7 +41,7 @@ int disrsi(int stream, int *retval)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, const char *objname, char *text)
+void log_record(int eventtype, int objclass, const char *objname, const char *text)
   {
   }
 

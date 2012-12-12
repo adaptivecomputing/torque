@@ -147,7 +147,7 @@ int check_and_resize(
 
     if ((tmp = (slot *)realloc(ra->slots,size)) == NULL)
       {
-      log_err(ENOMEM,__func__,(char *)"No memory left to resize the array");
+      log_err(ENOMEM,__func__,"No memory left to resize the array");
       return(ENOMEM);
       }
 

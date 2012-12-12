@@ -1079,7 +1079,6 @@ dir so that job can be restarted */
 #define JOB_EXEC_STDOUTFAIL -9 /* could not create/open stdout stderr files */
 #define JOB_EXEC_OVERLIMIT  -10
 
-extern void  add_dest(job *);
 extern void  depend_clrrdy(job *);
 extern int   depend_on_que(pbs_attribute *, void *, int);
 extern int   depend_on_exec(job *);

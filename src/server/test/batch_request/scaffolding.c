@@ -60,7 +60,7 @@ hash_table_t *create_hash(
   return(NULL);
   }
 
-void log_err(int errnum, const char *routine, char *text) {}
+void log_err(int errnum, const char *routine, const char *text) {}
 
 int remove_hash(
     

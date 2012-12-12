@@ -139,6 +139,7 @@
 #include "ji_mutex.h"
 #include "job_route.h" /* queue_route */
 #include "exiting_jobs.h"
+#include "svr_task.h"
 
 #define TASK_CHECK_INTERVAL    10
 #define HELLO_WAIT_TIME        600
@@ -219,7 +220,7 @@ int                     high_availability_mode = FALSE;
 char                   *acct_file = NULL;
 char                   *log_file  = NULL;
 char                   *job_log_file = NULL;
-char                   *path_home = PBS_SERVER_HOME;
+char                   *path_home = (char *)PBS_SERVER_HOME;
 char                   *path_acct;
 char                    path_log[MAXPATHLEN + 1];
 char                   *path_priv = NULL;
@@ -243,7 +244,7 @@ char                   *path_jobinfo_log;
 char                   *ArgV[MAX_CMD_ARGS];
 extern char            *msg_daemonname;
 extern char            *msg_info_server; /* Server information message   */
-char                   *pbs_o_host = "PBS_O_HOST";
+const char             *pbs_o_host = "PBS_O_HOST";
 pbs_net_t               pbs_mom_addr;
 unsigned int            pbs_mom_port = 0;
 unsigned int            pbs_rm_port;
@@ -590,7 +591,7 @@ int add_listener(
 
 int PBSShowUsage(
 
-  char *EMsg)  /* I (optional) */
+  const char *EMsg)  /* I (optional) */
 
   {
   fprintf(stderr, "Usage: %s\n",
@@ -652,7 +653,7 @@ void parse_command_line(
 
   static struct
     {
-    char *it_name;
+    const char *it_name;
     int   it_type;
     } init_name_type[] =
 
@@ -1192,7 +1193,7 @@ void *handle_scheduler_contact(
 
 
 
-void *start_accept_listener()
+void *start_accept_listener(void *vp)
 
   {
   char server_name_trimmed[PBS_MAXSERVERNAME + 1];

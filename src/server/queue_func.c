@@ -234,7 +234,7 @@ pbs_queue *que_alloc(
 
   pq->qu_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pq->qu_jobs = (struct all_jobs *)calloc(1, sizeof(struct all_jobs));
-  pq->qu_jobs_array_sum = calloc(1, sizeof(struct all_jobs));
+  pq->qu_jobs_array_sum = (struct all_jobs *)calloc(1, sizeof(struct all_jobs));
   
   if ((pq->qu_mutex == NULL) ||
       (pq->qu_jobs == NULL) ||
@@ -592,6 +592,7 @@ int get_parent_dest_queues(
   int        rc = PBSE_NONE;
 
   strcpy(jobid, pjob->ji_qs.ji_jobid);
+  *dest   = NULL;
 
   if ((queue_parent_name != NULL) && (queue_dest_name != NULL))
     {
@@ -615,7 +616,6 @@ int get_parent_dest_queues(
   unlock_queue(*parent, __func__, (char *)NULL, 0);
 
   *parent = NULL;
-  *dest   = NULL;
 
   pthread_mutex_lock(svr_queues.allques_mutex);
 
