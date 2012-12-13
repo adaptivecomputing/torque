@@ -1759,12 +1759,10 @@ int svr_job_purge(
     {
     int need_deque = !pjob->ji_cold_restart;
 
-    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
-
     /* jobs that are being deleted after a cold restart
      * haven't been queued */
     if (need_deque == TRUE)
-      rc = svr_dequejob(job_id, FALSE);
+      rc = svr_dequejob(pjob, FALSE);
 
     if (rc != PBSE_JOBNOTFOUND)
       {

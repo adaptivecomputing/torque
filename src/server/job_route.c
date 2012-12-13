@@ -119,7 +119,7 @@
 #define ROUTE_RETRY_TIME 10
 
 /* External functions called */
-int svr_movejob(job *, char *, int *, struct batch_request *, int);
+int svr_movejob(job *, char *, int *, struct batch_request *);
 long count_proc(char *spec);
 
 /* Local Functions */
@@ -270,7 +270,7 @@ int default_router(
     if (is_bad_dest(jobp, destination))
       continue;
 
-    switch (svr_movejob(jobp, destination, &local_errno, NULL, TRUE))
+    switch (svr_movejob(jobp, destination, &local_errno, NULL))
       {
       case ROUTE_PERM_FAILURE: /* permanent failure */
 

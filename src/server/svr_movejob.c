@@ -140,7 +140,7 @@ extern struct pbsnode *PGetNodeFromAddr(pbs_net_t);
 
 /* Private Functions local to this file */
 
-int  local_move(job *, int *, struct batch_request *, int);
+int  local_move(job *, int *, struct batch_request *);
 int should_retry_route(int err);
 
 /* Global Data */
@@ -186,8 +186,7 @@ int svr_movejob(
   job                  *jobp,
   char                 *destination,
   int                  *my_err,
-  struct batch_request *req,
-  int                   parent_queue_mutex_held)
+  struct batch_request *req)
 
   {
   pbs_net_t     destaddr;
@@ -208,7 +207,7 @@ int svr_movejob(
       destination,
       PBS_MAXROUTEDEST);
 
-    log_err(-1, "svr_movejob", log_buf);
+    log_err(-1, __func__, log_buf);
 
     *my_err = PBSE_QUENBIG;
 
@@ -238,7 +237,7 @@ int svr_movejob(
 
   if (local != 0)
     {
-    return(local_move(jobp, my_err, req, parent_queue_mutex_held));
+    return(local_move(jobp, my_err, req));
     }
 
   return(net_move(jobp, req));
@@ -262,13 +261,10 @@ int local_move(
 
   job                  *pjob,
   int                  *my_err,
-  struct batch_request *req,
-  int                   parent_queue_mutex_held)
+  struct batch_request *req)
 
   {
-  pbs_queue *routing_que;
   pbs_queue *dest_que = NULL;
-  pbs_queue *tmp_que;
   char      *destination = pjob->ji_qs.ji_destin;
   int        mtype;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
@@ -279,56 +275,12 @@ int local_move(
    * by making sure that the destionation queue and the current queue are different. 
    * If they are the same then consider it done correctly */
   if (!strcmp(pjob->ji_qs.ji_queue, pjob->ji_qs.ji_destin))
-    {
     return(PBSE_NONE);
-    }
 
   if (LOGLEVEL >= 7)
     {
     sprintf(log_buf, "%s", pjob->ji_qs.ji_jobid);
-    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-    }
-
-  /* search for destination queue */
-  /* CAUTION!!! This code is very complex - be very careful editing */
-  if (parent_queue_mutex_held == TRUE)
-    routing_que = pjob->ji_qhdr;
-  else
-    {
-    routing_que = get_jobs_queue(&pjob);
-
-    if (pjob == NULL)
-      {
-      log_err(PBSE_JOBNOTFOUND, __func__, (char *)"Job lost while acquiring queue 14");
-      return(PBSE_JOBNOTFOUND);
-      }
-    }
-
-  if (routing_que == NULL)
-    {
-    sprintf(log_buf, "queue %s does not exist\n", pjob->ji_qs.ji_queue);
-
-    log_err(-1, __func__, log_buf);
-
-    *my_err = PBSE_UNKQUE;
-
-    return(-1);
-    }
-   
-
-  if (get_parent_dest_queues(pjob->ji_qs.ji_queue, destination, &routing_que, &dest_que, &pjob) != PBSE_NONE)
-    {
-    if (dest_que != NULL)
-      unlock_queue(dest_que, __func__, (char *)NULL, 0);
-
-    if ((parent_queue_mutex_held == FALSE) &&
-        (routing_que != NULL))
-      unlock_queue(routing_que, __func__, (char *)NULL, 0);
-
-    if (pjob == NULL)
-      return(-10);
-    else
-      return(-1);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
 
   /*
@@ -336,7 +288,6 @@ int local_move(
    * checks on queue availability, etc. are skipped;
    * otherwise all checks are enforced.
    */
-
   if (req == 0)
     {
     mtype = MOVE_TYPE_Route; /* route */
@@ -350,29 +301,44 @@ int local_move(
     mtype = MOVE_TYPE_Move; /* non-privileged move */
     }
 
+  strcpy(job_id, pjob->ji_qs.ji_jobid);
+  unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+
+  dest_que = find_queuebyname(destination);
+
+  if ((pjob = svr_find_job(job_id, TRUE)) == NULL)
+    {
+    /* job disappeared while locking queue */
+    if (dest_que != NULL)
+      unlock_queue(dest_que, __func__, NULL, LOGLEVEL);
+    
+    return(PBSE_JOB_RECYCLED);
+    }
+
+  if (dest_que == NULL)
+    {
+    /* this should never happen */
+    sprintf(log_buf, "queue %s does not exist\n", pjob->ji_qs.ji_queue);
+    log_err(-1, __func__, log_buf);
+
+    *my_err = PBSE_UNKQUE;
+    return(-1);
+    }
+
   /* check the destination */
-  if ((*my_err = svr_chkque(
-                     pjob,
-                     dest_que,
-                     get_variable(pjob, pbs_o_host), mtype, NULL)))
+  if ((*my_err = svr_chkque(pjob, dest_que, get_variable(pjob, pbs_o_host), mtype, NULL)))
     {
     unlock_queue(dest_que, __func__, (char *)NULL, 0);
 
     /* should this queue be retried? */
-    if (parent_queue_mutex_held == FALSE)
-      unlock_queue(routing_que, __func__, (char *)"retry", LOGLEVEL);
-
     return(should_retry_route(*my_err));
     }
 
+  unlock_queue(dest_que, __func__, (char *)NULL, 0);
+
   /* dequeue job from present queue, update destination and */
   /* queue_rank for new queue and enqueue into destination  */
-
-  strcpy(job_id, pjob->ji_qs.ji_jobid);
-  unlock_ji_mutex(pjob, __func__,(char *)"1", LOGLEVEL);
-  
-  /* if we come out of svr_dequejob successfully pjob->ji_mutex will be locked */
-  rc = svr_dequejob(job_id, TRUE); 
+  rc = svr_dequejob(pjob, FALSE); 
   if (rc)
     return(rc);
 
@@ -380,20 +346,8 @@ int local_move(
 
   pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
     
-  unlock_queue(dest_que, __func__, (char *)NULL, 0);
-  unlock_queue(routing_que, __func__, (char *)"success", LOGLEVEL);
-
   if ((*my_err = svr_enquejob(pjob, FALSE, -1)) == PBSE_JOB_RECYCLED)
     return(-1);
-
-  if (parent_queue_mutex_held == TRUE)
-    {
-    /* re-lock the routing queue */
-    if ((tmp_que = lock_queue_with_job_held(routing_que, &pjob)) == NULL)
-      lock_queue(routing_que, __func__, (char *)NULL, 0);
-    else
-      routing_que = tmp_que;
-    }
 
   if (*my_err != PBSE_NONE)
     {
@@ -749,8 +703,7 @@ int send_job_work(
     encode_type = ATR_ENCODE_SVR;
 
     /* clear default resource settings */
-    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
-    ret = svr_dequejob(job_id, FALSE);
+    ret = svr_dequejob(pjob, FALSE);
     if (ret)
       return(ret);
     }
