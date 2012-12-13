@@ -133,6 +133,7 @@ extern int  job_route(job *);
 extern int svr_job_purge(job *);
 int PBSD_commit_get_sid(int ,long *,char *);
 int get_job_file_path(job *,enum job_file, char *, int);
+void add_dest(job *jobp);
 
 extern struct pbsnode *PGetNodeFromAddr(pbs_net_t);
 

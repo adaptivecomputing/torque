@@ -5556,6 +5556,8 @@ int tcp_read_proto_version(
 
   tmpT = pbs_tcp_timeout;
 
+  pbs_tcp_timeout = 0;
+
   *proto = disrsi(chan, &rc);
 
   if (tmpT > 0)
