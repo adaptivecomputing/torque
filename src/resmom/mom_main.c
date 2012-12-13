@@ -6750,7 +6750,7 @@ void parse_command_line(
         else if (!strcmp(optarg, "version"))
           {
           printf("Version: %s\nRevision: %s\n",
-            PACKAGE_VERSION, SVN_VERSION);
+            PACKAGE_VERSION, GIT_HASH);
 
           exit(0);
           }
