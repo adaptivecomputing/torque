@@ -15,6 +15,7 @@ int   is_joined(job *pjob, enum job_atr ati);
 batch_request *return_stdfile(batch_request *preq, job *pjob, enum job_atr ati);
 void rel_resc(job *pjob);
 int handle_exiting_or_abort_substate(job *pjob);
+int setrerun(job *pjob);
 
 extern pthread_mutex_t *svr_do_schedule_mutex;
 extern pthread_mutex_t *listener_command_mutex;
@@ -129,6 +130,22 @@ END_TEST
 
 
 
+START_TEST(setrerun_test)
+  {
+  job pjob;
+
+  memset(&pjob, 0, sizeof(pjob));
+
+  fail_unless(setrerun(&pjob) != PBSE_NONE);
+  pjob.ji_wattr[JOB_ATR_rerunable].at_val.at_long = 1;
+  fail_unless(setrerun(&pjob) == PBSE_NONE);
+  fail_unless(pjob.ji_qs.ji_substate == JOB_SUBSTATE_RERUN);
+  }
+END_TEST
+
+
+
+
 Suite *req_jobobit_suite(void)
   {
   Suite *s = suite_create("req_jobobit_suite methods");
@@ -150,6 +167,10 @@ Suite *req_jobobit_suite(void)
 
   tc_core = tcase_create("handle_exiting_or_abort_substate_test");
   tcase_add_test(tc_core, handle_exiting_or_abort_substate_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("setrerun_test");
+  tcase_add_test(tc_core, setrerun_test);
   suite_add_tcase(s, tc_core);
 
   return(s);

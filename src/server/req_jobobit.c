@@ -2483,7 +2483,7 @@ int setrerun(
 
     /* SUCCESS */
 
-    return(0);
+    return(PBSE_NONE);
     }
 
   /* FAILURE */
