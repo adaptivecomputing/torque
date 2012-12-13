@@ -42,7 +42,7 @@ void svr_mailowner(job *pjob, int mailpoint, int force, char *text)
   exit(1);
   }
 
-svrattrl *attrlist_create(char *aname, char *rname, int vsize)
+svrattrl *attrlist_create(const char *aname, const char *rname, int vsize)
   {
   svrattrl *pal;
   size_t    asz;
@@ -110,7 +110,7 @@ job_array *get_array(char *id)
   exit(1);
   }
 
-void req_reject(int code, int aux, struct batch_request *preq, char *HostName, char *Msg) {}
+void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg) {}
 
 int svr_chk_owner(struct batch_request *preq, job *pjob)
   {

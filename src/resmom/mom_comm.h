@@ -40,7 +40,7 @@ void im_eof(int stream, int ret);
 
 int check_ms(struct tcp_chan *chan, job *pjob);
 
-u_long resc_used(job *pjob, char *name, u_long(*func)(resource *));
+u_long resc_used(job *pjob, const char *name, u_long(*func)(resource *));
 
 infoent *task_findinfo(task *ptask, char *name);
 

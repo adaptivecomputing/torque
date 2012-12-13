@@ -174,14 +174,14 @@ static char *all_quename = "_All_";
 static char *all_nodes_str = "_All_";
 
 /*
- * check_que_attr - check if attributes in request are consistant with
+ * check_que_attr - check if attributes in request are consistent with
  * the current queue type.  This is called when creating or setting
  * the attributes of a queue.
  *
  * Returns: NULL if all ok or name of bad pbs_attribute if not ok
  */
 
-static char *check_que_attr(
+static const char *check_que_attr(
     
   pbs_queue *pque)
 
@@ -958,7 +958,7 @@ void mgr_queue_create(
 
   {
   int        bad;
-  char      *badattr;
+  const char      *badattr;
   svrattrl  *plist;
   pbs_queue *pque;
   int        rc;
@@ -1412,7 +1412,7 @@ void mgr_queue_set(
   {
   int        allques;
   int        bad = 0;
-  char      *badattr;
+  const char  *badattr;
   svrattrl  *plist;
   pbs_queue *pque;
   char      *qname;

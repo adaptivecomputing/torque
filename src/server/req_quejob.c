@@ -210,7 +210,7 @@ int set_nodes_attr(
   resource *pres;
 	int       nodect_set = 0;
   int       rc = 0;
-  char     *pname;
+  const char  *pname;
 
   if (pjob->ji_wattr[JOB_ATR_resource].at_flags & ATR_VFLAG_SET)
     {
@@ -428,7 +428,7 @@ int set_node_attr(
   resource *pres;
 	int  nodect_set = 0;
   int  rc = 0;
-  char *pname;
+  const char *pname;
 
   if (pjob->ji_wattr[JOB_ATR_resource].at_flags & ATR_VFLAG_SET)
     {

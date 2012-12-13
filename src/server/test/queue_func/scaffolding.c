@@ -35,7 +35,7 @@ void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
   exit(1);
   }
 
-int save_acl(pbs_attribute *attr, attribute_def *pdef, char *subdir, char *name)
+int save_acl(pbs_attribute *attr, attribute_def *pdef, const char *subdir, const char *name)
   {
   fprintf(stderr, "The call to save_acl needs to be mocked!!\n");
   exit(1);

@@ -7,15 +7,15 @@
 ** these resources.
 */
 
-char *cput(struct rm_attribute *attrib);
-char *mem(struct rm_attribute *attrib);
-char *sessions(struct rm_attribute *attrib);
-char *pids(struct rm_attribute *attrib);
-char *nsessions(struct rm_attribute *attrib);
-char *nusers(struct rm_attribute *attrib);
-char *size(struct rm_attribute *attrib);
-char *idletime(struct rm_attribute *attrib);
-char *nullproc(struct rm_attribute *attrib);
+const char *cput(struct rm_attribute *attrib);
+const char *mem(struct rm_attribute *attrib);
+const char *sessions(struct rm_attribute *attrib);
+const char *pids(struct rm_attribute *attrib);
+const char *nsessions(struct rm_attribute *attrib);
+const char *nusers(struct rm_attribute *attrib);
+const char *size(struct rm_attribute *attrib);
+const char *idletime(struct rm_attribute *attrib);
+const char *nullproc(struct rm_attribute *attrib);
 
 struct  config  standard_config[] =
   {

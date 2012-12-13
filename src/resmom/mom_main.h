@@ -24,13 +24,13 @@
 #define MAX_LINE 1024
 #endif
 
-char *nullproc(struct rm_attribute *attrib);
+const char *nullproc(struct rm_attribute *attrib);
 
 /* static char *arch(struct rm_attribute *attrib); */
 
 /* static char *opsys(struct rm_attribute *attrib); */
 
-char * getuname(void);
+const char * getuname(void);
 
 /* static char *reqmsg(struct rm_attribute *attrib); */
 
@@ -38,7 +38,7 @@ char * getuname(void);
 
 /* static char *reqvarattr(struct rm_attribute *attrib); */
 
-char *reqgres(struct rm_attribute *attrib);
+const char *reqgres(struct rm_attribute *attrib);
 
 /* static char *reqstate(struct rm_attribute *attrib); */
 
@@ -46,11 +46,11 @@ char *reqgres(struct rm_attribute *attrib);
 
 /* static char *validuser(struct rm_attribute *attrib); */
 
-char *loadave(struct rm_attribute *attrib);
+const char *loadave(struct rm_attribute *attrib);
 
-struct config *rm_search(struct config *where, char *what);
+struct config *rm_search(struct config *where, const char *what);
 
-char *dependent(char *res, struct rm_attribute *attr);
+const char *dependent(const char *res, struct rm_attribute *attr);
 
 void initialize(void);
 
@@ -58,7 +58,7 @@ void cleanup(void);
 
 void die(int sig);
 
-void memcheck(char *buf);
+void memcheck(const char *buf);
 
 void checkret(char **spot, long len);
 
@@ -70,7 +70,7 @@ void rmnl(char *str);
 
 /* static int setbool(char *value); */
 
-u_long addclient(char *name);
+u_long addclient(const char *name);
 
 /* static u_long setpbsclient(char *value); */
 
@@ -168,11 +168,11 @@ u_long addclient(char *name);
 
 /* static unsigned long setnospooldirlist(char *value); */
 
-unsigned long aliasservername(char *value);
+unsigned long aliasservername(const char *value);
 
 /* static unsigned long setspoolasfinalname(char *value); */
 
-unsigned long jobstarter(char *value);
+unsigned long jobstarter(const char *value);
 
 /* static unsigned long setremchkptdirlist(char *value); */
 
@@ -210,9 +210,9 @@ int do_tcp(int socket);
 
 void *tcp_request(void *sock_num);
 
-char *find_signal_name(int sig);
+const char *find_signal_name(int sig);
 
-int kill_job(job *pjob, int sig, const char *killer_id_name, char *why_killed_reason);
+int kill_job(job *pjob, int sig, const char *killer_id_name, const char *why_killed_reason);
 
 unsigned long getsize(resource *pres);
 
@@ -234,7 +234,7 @@ void initialize_globals(void);
 
 /* static void PBSAdjustLogLevel(int sig); */
 
-char *mk_dirs(char *base);
+char *mk_dirs(const char *base);
 
 void parse_command_line(int argc, char *argv[]);
 

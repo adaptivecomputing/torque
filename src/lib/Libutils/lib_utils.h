@@ -104,9 +104,9 @@ int read_tcp_reply(struct tcp_chan *chan, int protocol, int version, int command
 /* u_mu.c */
 int is_whitespace(char c);
  
-int MUSNPrintF(char **BPtr, int *BSpace, char *Format, ...);
+int MUSNPrintF(char **BPtr, int *BSpace, const char *Format, ...);
 
-int MUStrNCat(char **BPtr, int *BSpace, char *Src);
+int MUStrNCat(char **BPtr, int *BSpace, const char *Src);
 
 int MUSleep(long SleepDuration);
 

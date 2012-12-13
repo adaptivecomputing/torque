@@ -77,7 +77,7 @@ int recov_tmsock(
   job *pjob) /* I */   /* pathname to job save file */
 
   {
-  char *id = "recov_tmsock";
+  const char *id = "recov_tmsock";
 
   static int sizeofint = sizeof(int);
 

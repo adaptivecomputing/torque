@@ -497,7 +497,7 @@ struct batch_request *alloc_br(
 
   struct batch_request *req = NULL;
 
-  req = calloc(1, sizeof(struct batch_request));
+  req = (struct batch_request *)calloc(1, sizeof(struct batch_request));
 
   if (req == NULL)
     {
@@ -543,7 +543,7 @@ static void close_quejob(
 
   while (pjob != NULL)
     {
-    npjob = GET_NEXT(pjob->ji_alljobs);
+    npjob = (job *)GET_NEXT(pjob->ji_alljobs);
 
     if (pjob->ji_qs.ji_un.ji_newt.ji_fromsock == sfds)
       {

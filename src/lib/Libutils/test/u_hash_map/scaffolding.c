@@ -61,7 +61,7 @@ hash_table_t *create_hash(int size)
 
 void free_resizable_array(resizable_array *ra) {}
 
-void log_err(int errnum, const char *routine, char *text) {}
+void log_err(int errnum, const char *routine, const char *text) {}
 
 int remove_hash(hash_table_t *ht, char *key) 
   {

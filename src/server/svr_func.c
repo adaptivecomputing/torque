@@ -139,8 +139,8 @@ int encode_svrstate(
 
   pbs_attribute  *pattr,   /* ptr to pbs_attribute */
   tlist_head     *phead,   /* head of attrlist list */
-  char           *atname,  /* pbs_attribute name */
-  char           *rsname,  /* null */
+  const char    *atname,  /* pbs_attribute name */
+  const char    *rsname,  /* null */
   int             mode,    /* encode mode */
   int             perm)    /* only used for resources */
 
@@ -422,7 +422,7 @@ int ck_checkpoint(
  * and queue ) attributes.  It just returns 0.
  */
 
-int decode_null(pbs_attribute *patr, char *name, char *rn, char *val, int perm)
+int decode_null(pbs_attribute *patr, const char *name, char *rn, char *val, int perm)
   {
   return 0;
   }

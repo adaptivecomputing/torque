@@ -175,7 +175,7 @@ void *get_next(list_link pl, char *file, int line)
   exit(1);
   }
 
-char *threadsafe_tokenizer(char **str, char *delims)
+char *threadsafe_tokenizer(char **str, const char *delims)
   {
   char *current_char;
   char *start;

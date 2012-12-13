@@ -126,7 +126,7 @@ int timeval_subtract( struct timeval *result, struct timeval *x, struct timeval 
 int decode_tv(
 
   pbs_attribute *patr,
-  char          *name,  /* pbs_attribute name */
+  const char   *name,  /* pbs_attribute name */
   char          *rescn, /* resource name*/
   char          *val,   /* pbs_attribute value */
   int            perm)  /* only used for resources */
@@ -209,8 +209,8 @@ int encode_tv(
 
   pbs_attribute  *attr,   /* ptr to pbs_attribute (value in attr->at_val.at_long) */
   tlist_head     *phead,  /* head of attrlist list (optional) */
-  char           *atname, /* pbs_attribute name */
-  char           *rsname, /* resource name (optional) */
+  const char    *atname, /* pbs_attribute name */
+  const char    *rsname, /* resource name (optional) */
   int             mode,   /* endcode mode (not used) */
   int             perm)   /* only used for resources */
 
@@ -223,7 +223,7 @@ int encode_tv(
   svrattrl 		 *pal;
 
 
-  if ( attr == NULL )
+  if (( attr == NULL )||(phead == NULL))
 		{
 		/* FAILURE */
 		return(-1);
@@ -242,27 +242,19 @@ int encode_tv(
 
   ct = strlen(cvnbuf);
 
-  if (phead != NULL)
-		{
-		pal = attrlist_create(atname, rsname, ct+1);
-	
-		if (pal == NULL)
-		  {
-			/* FAILURE */
-			return(-1);
-		  }
-	
-		memcpy(pal->al_value, cvnbuf, ct);
-	
-		pal->al_flags = attr->at_flags;
-	
-		append_link(phead, &pal->al_link, pal);
-		}
-  else
-	  {
-    /* Is this right? time to attr name? */
-	  snprintf(atname, strlen(atname) - 1, "%s", cvnbuf);
-	  }
+  pal = attrlist_create(atname, rsname, ct+1);
+
+  if (pal == NULL)
+    {
+      /* FAILURE */
+      return(-1);
+    }
+
+  memcpy(pal->al_value, cvnbuf, ct);
+
+  pal->al_flags = attr->at_flags;
+
+  append_link(phead, &pal->al_link, pal);
 
   return(1);
   }

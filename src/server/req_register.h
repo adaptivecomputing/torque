@@ -50,7 +50,7 @@ void depend_clrrdy(job *pjob);
 
 /* static struct depend_job *make_dependjob(struct depend *pdep, char *jobid, char *host); */
 
-int decode_depend(pbs_attribute *patr, char *name, char *rescn, char *val, int perm);
+int decode_depend(pbs_attribute *patr, const char *name, char *rescn, char *val, int perm);
 
 /* static void cat_jobsvr(char **Dest, char *Src); */
 
@@ -58,7 +58,7 @@ int decode_depend(pbs_attribute *patr, char *name, char *rescn, char *val, int p
 
 /* static int dup_depend(pbs_attribute *pattr, struct depend *pd); */
 
-int encode_depend(pbs_attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int perm);
+int encode_depend(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm);
 
 int set_depend(struct pbs_attribute *attr, struct pbs_attribute *new, enum batch_op op);
 

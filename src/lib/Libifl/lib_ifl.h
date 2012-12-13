@@ -212,6 +212,9 @@ int encode_DIS_reply(struct tcp_chan *chan, struct batch_reply *reply);
 /* enc_svrattrl.c */
 int encode_DIS_svrattrl(struct tcp_chan *chan, svrattrl *psattl);
 
+/* get_svrport.c */
+unsigned int get_svrport(const char *service_name, const char *ptype, unsigned int pdefault);
+
 /* list_link.c */
 void insert_link(struct list_link *old, struct list_link *new_link, void *pobj, int position); 
 void append_link(tlist_head *head, list_link *new_link, void *pobj); 

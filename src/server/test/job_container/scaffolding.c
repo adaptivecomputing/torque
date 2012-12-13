@@ -10,7 +10,7 @@ char                   server_name[PBS_MAXSERVERNAME + 1]; /* host_name[:service
 struct all_jobs        alljobs;
 int                    LOGLEVEL;
 
-void log_err(int errno, const char *ident, char *msg) {}
+void log_err(int errno, const char *ident, const char *msg) {}
 void log_event(int type, int class, const char *ident, char *msg) {}
 
 

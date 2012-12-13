@@ -82,7 +82,7 @@ void log_record(int eventtype, int objclass, const char *objname, const char *te
   exit(1);
   }
 
-int decode_arst_merge(struct pbs_attribute *patr, char *name, char *rescn, char *val)
+int decode_arst_merge(struct pbs_attribute *patr, const char *name, char *rescn, char *val)
   {
   fprintf(stderr, "The call to decode_arst_merge needs to be mocked!!\n");
   exit(1);
@@ -100,7 +100,7 @@ int find_attr(struct attribute_def *attr_def, char *name, int limit)
   exit(1);
   }
 
-void req_reject(int code, int aux, struct batch_request *preq, char *HostName, char *Msg)
+void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
   {
   fprintf(stderr, "The call to req_reject needs to be mocked!!\n");
   exit(1);
@@ -136,7 +136,7 @@ int open_std_file(job *pjob, enum job_file which, int mode, gid_t exgid)
   exit(1);
   }
 
-resource_def *find_resc_def(resource_def *rscdf, char *name, int limit)
+resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
   {
   fprintf(stderr, "The call to find_resc_def needs to be mocked!!\n");
   exit(1);

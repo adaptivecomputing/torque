@@ -104,7 +104,7 @@ struct work_task *set_task(enum work_type type, long event_id, void (*func)(), v
   exit(1);
   }
 
-void req_reject(int code, int aux, struct batch_request *preq, char *HostName, char *Msg)
+void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
   {
   fprintf(stderr, "The call to req_reject needs to be mocked!!\n");
   exit(1);
@@ -201,7 +201,7 @@ int insert_task(all_tasks *at, work_task *wt)
   }
 
 
-char *threadsafe_tokenizer(char **str, char *delims)
+char *threadsafe_tokenizer(char **str, const char *delims)
   {
   fprintf(stderr, "The call to threadsafe_tokenizer needs to be mocked!!\n");
   exit(1);

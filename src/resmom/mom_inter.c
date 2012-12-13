@@ -115,7 +115,7 @@ extern int mom_reader_go;
 static int IPv4or6 = AF_UNSPEC;
 #endif
 
-extern int conn_qsub(char *, int, char *);
+extern int conn_qsub(char *, long, char *);
 extern char xauth_path[];
 extern int DEBUGMODE;
 
@@ -541,7 +541,7 @@ int x11_create_display(
 
   *display = '\0';
 
-  if ((socks = calloc(sizeof(struct pfwdsock), NUM_SOCKS)) == NULL)
+  if ((socks = (struct pfwdsock *)calloc(sizeof(struct pfwdsock), NUM_SOCKS)) == NULL)
     {
     /* FAILURE - cannot alloc memory */
 
@@ -550,7 +550,7 @@ int x11_create_display(
     return(-1);
     }
 
-  if ((homeenv = calloc(1, strlen("HOME=") + strlen(homedir) + 2)) == NULL)
+  if ((homeenv = (char *)calloc(1, strlen("HOME=") + strlen(homedir) + 2)) == NULL)
     {
     /* FAILURE - cannot alloc memory */
     free(socks);

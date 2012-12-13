@@ -265,7 +265,7 @@ int decode_arst_direct(
 int decode_arst(
 
   pbs_attribute *patr,    /* O (modified) */
-  char          *name,    /* I pbs_attribute name (notused) */
+  const char   *name,    /* I pbs_attribute name (notused) */
   char          *rescn,   /* I resource name (notused) */
   char          *val,     /* I pbs_attribute value */
   int            perm) /* only used for resources */
@@ -330,7 +330,7 @@ int decode_arst(
 int decode_arst_merge(
 
   pbs_attribute *patr,    /* O (modified) */
-  char          *name,    /* I pbs_attribute name (notused) */
+  const char   *name,    /* I pbs_attribute name (notused) */
   char          *rescn,   /* I resource name (notused) */
   char          *val)     /* I pbs_attribute value */
 
@@ -418,8 +418,8 @@ int encode_arst(
 
   pbs_attribute  *attr,   /* I ptr to pbs_attribute to encode */
   tlist_head     *phead,  /* O ptr to head of attrlist list */
-  char           *atname, /* I pbs_attribute name */
-  char           *rsname, /* I resource name or NULL (optional) */
+  const char   *atname, /* I pbs_attribute name */
+  const char   *rsname, /* I resource name or NULL (optional) */
   int             mode,   /* I encode mode */
   int             perm)   /* only used for resources */
 
@@ -992,7 +992,7 @@ void free_arst(
 
 char *arst_string(
 
-  char          *str,
+  const char   *str,
   pbs_attribute *pattr)
 
   {

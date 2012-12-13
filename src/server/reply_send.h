@@ -18,7 +18,7 @@ void reply_ack(struct batch_request *preq);
 
 void reply_free(struct batch_reply *prep);
 
-void req_reject(int code, int aux, struct batch_request *preq, char *HostName, char *Msg);
+void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg);
 
 void reply_badattr(int code, int aux, svrattrl *pal, struct batch_request *preq);
 

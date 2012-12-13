@@ -2478,7 +2478,7 @@ struct dependnames
 int decode_depend(
 
   pbs_attribute *patr,
-  char          *name,  /* attribute name */
+  const char   *name,  /* attribute name */
   char          *rescn, /* resource name, unused here */
   char          *val,   /* attribute value */
   int            perm)  /* only used for resources */
@@ -2687,8 +2687,8 @@ int encode_depend(
 
   pbs_attribute *attr,   /* ptr to attribute to encode */
   tlist_head    *phead,  /* ptr to head of attrlist list */
-  char	        *atname, /* attribute name */
-  char	        *rsname, /* resource name or null */
+  const char   *atname, /* attribute name */
+  const char   *rsname, /* resource name or null */
   int            mode,   /* encode mode, unused here */
   int            perm)   /* only used for resources */
 

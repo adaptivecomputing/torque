@@ -113,6 +113,7 @@
 #include "utils.h"
 #include "svr_func.h" /* get_svr_attr_* */
 #include "job_func.h" /* svr_job_purge */
+#include "svr_task.h"
 #include "ji_mutex.h"
 #include "threadpool.h"
 #include "svr_task.h"

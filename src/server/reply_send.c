@@ -329,8 +329,8 @@ void req_reject(
   int                   code,      /* I */
   int                   aux,       /* I */
   struct batch_request *preq,      /* I */
-  char                 *HostName,  /* I (optional) */
-  char                 *Msg)       /* I (optional) */
+  const char          *HostName,  /* I (optional) */
+  const char          *Msg)       /* I (optional) */
 
   {
   char msgbuf[ERR_MSG_SIZE + 256 + 1];

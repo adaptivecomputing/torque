@@ -118,9 +118,9 @@ typedef struct resource
 
 typedef struct resource_def
   {
-  char   *rs_name;
-  int     (*rs_decode)(pbs_attribute *, char *, char *, char *, int);
-  int     (*rs_encode)(pbs_attribute *, tlist_head *, char *, char *, int, int);
+  const char  *rs_name;
+  int     (*rs_decode)(pbs_attribute *, const char *, char *, char *, int);
+  int     (*rs_encode)(pbs_attribute *, tlist_head *, const char *, const char *, int, int);
   int     (*rs_set)(pbs_attribute *, pbs_attribute *, enum batch_op);
   int     (*rs_comp)(pbs_attribute *, pbs_attribute *);
   void    (*rs_free)(pbs_attribute *);
@@ -143,7 +143,7 @@ extern resource_def *svr_resc_def;
 extern int         svr_resc_size;
 
 extern resource     *add_resource_entry(pbs_attribute *, resource_def *);
-extern resource_def *find_resc_def(resource_def *, char *, int);
+extern resource_def *find_resc_def(resource_def *, const char *, int);
 extern resource     *find_resc_entry(pbs_attribute *, resource_def *);
 
 /* END resource.h */

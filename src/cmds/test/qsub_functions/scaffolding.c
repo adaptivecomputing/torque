@@ -65,7 +65,7 @@ int locate_job(char *job_id, char *parent_server, char *located_server)
   exit(1);
   }
 
-void port_forwarder( struct pfwdsock *socks, int (*connfunc)(char *, int, char *), char *phost, int pport, char *EMsg) 
+void port_forwarder( struct pfwdsock *socks, int (*connfunc)(char *, long, char *), char *phost, int pport, char *EMsg)
   {
   fprintf(stderr, "The call to port_forwarder to be mocked!!\n");
   exit(1);
@@ -77,7 +77,7 @@ int cnt2server(char *SpecServer)
   exit(1);
   }
 
-int x11_connect_display( char *display, int alsounused, char *EMsg) 
+int x11_connect_display( char *display, long alsounused, char *EMsg)
   {
   fprintf(stderr, "The call to x11_connect_display to be mocked!!\n");
   exit(1);

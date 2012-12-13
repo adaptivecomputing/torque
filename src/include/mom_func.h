@@ -103,8 +103,8 @@ struct var_table
 
 struct sig_tbl
   {
-  char *sig_name;
-  int   sig_val;
+  const char *sig_name;
+  int          sig_val;
   };
 
 #define NUM_LCL_ENV_VAR  10
@@ -198,13 +198,13 @@ extern void  post_resume(job *, int);
 
 #endif /* _CRAY */
 
-extern void  bld_env_variables(struct var_table *, char *, char *);
+extern void  bld_env_variables(struct var_table *, const char *, const char *);
 extern int   expand_path(job *,char *,int,char *);
 extern pid_t fork_me(int sock);
 extern int   get_la(double *);
 extern void  init_abort_jobs(int);
 extern int   init_groups(char *, int, int, int *);
-int   kill_job(job *, int sig, const char *killer_id_name, char *why_killed_reason);
+int   kill_job(job *, int sig, const char *killer_id_name, const char *why_killed_reason);
 extern void  mom_deljob(job *);
 extern void  mom_freenodes(job *);
 extern void  scan_for_exiting();
@@ -242,7 +242,7 @@ extern struct passwd *check_pwd(job *);
 extern int   task_save(task *) ;
 extern void  DIS_rpp_reset(void);
 extern void  checkret(char **, long);
-extern char *get_job_envvar(job *, char *);
+extern char *get_job_envvar(job *, const char *);
 extern int   mom_open_socket_to_jobs_server(job* pjob, const char *id, void *(*message_hander)(void *));
 void         clear_servers();
 

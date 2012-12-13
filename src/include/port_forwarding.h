@@ -33,10 +33,10 @@ struct pfwdsock
   char buff[BUF_SIZE];
   };
 
-void port_forwarder(struct pfwdsock *, int(*connfunc)(char *phost, int pport, char *), char*, int, char *);
+void port_forwarder(struct pfwdsock *, int(*connfunc)(char *phost, long pport, char *), char*, int, char *);
 void set_nodelay(int);
 int connect_local_xsocket(u_int);
-int x11_connect_display(char *, int, char *);
+int x11_connect_display(char *, long, char *);
 
 
 #endif /* END PORT_FORWARDING_H */
