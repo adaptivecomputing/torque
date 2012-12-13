@@ -97,7 +97,7 @@
 
 #define MAX_UPDATES_BEFORE_SENDING  20
 #define PMOMTCPTIMEOUT 60  /* duration in seconds mom TCP requests will block */
-
+#define TCP_READ_PROTO_TIMEOUT  2
 /* Global Data Items */
 
 char  *program_name;
@@ -5573,7 +5573,7 @@ int tcp_read_proto_version(
 
   tmpT = pbs_tcp_timeout;
 
-  pbs_tcp_timeout = 0;
+  pbs_tcp_timeout = TCP_READ_PROTO_TIMEOUT;
 
   *proto = disrsi(chan, &rc);
 
