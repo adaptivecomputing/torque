@@ -155,7 +155,7 @@ struct work_task *set_task(enum work_type type, long event_id, void (*func)(), v
   exit(1);
   }
 
-int svr_dequejob(char *job_id, int val)
+int svr_dequejob(job *pjob, int val)
   {
   fprintf(stderr, "The call to svr_dequejob needs to be mocked!!\n");
   exit(1);
