@@ -97,7 +97,7 @@
 
 #define MAX_UPDATES_BEFORE_SENDING  20
 #define PMOMTCPTIMEOUT 60  /* duration in seconds mom TCP requests will block */
-#define TCP_READ_PROTO_TIMEOUT  6
+#define TCP_READ_PROTO_TIMEOUT  2
 /* Global Data Items */
 
 char  *program_name;
