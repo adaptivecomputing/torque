@@ -4032,7 +4032,7 @@ void process_early_opts(
         TShowAbout_exit();
       else if (strcmp(name, "version") == 0)
         {
-        fprintf(stderr, "Version: %sRevision: %s\n", PACKAGE_VERSION, GIT_HASH);
+        fprintf(stderr, "Version: %s\nRevision: %s\n", PACKAGE_VERSION, GIT_HASH);
         exit(0);
         }
       }
