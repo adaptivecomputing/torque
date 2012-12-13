@@ -170,8 +170,10 @@ static event_info *event_hash[EVENT_HASH];
 /*
 ** Find an event number or return a NULL.
 */
-static event_info *
-find_event(tm_event_t x)
+event_info *find_event(
+    
+  tm_event_t x)
+
   {
   event_info *ep;
 
@@ -187,10 +189,11 @@ find_event(tm_event_t x)
 /*
 ** Delete an event.
 */
-static void
-del_event(event_info *ep)
-  {
+void del_event(
+    
+  event_info *ep)
 
+  {
   /* unlink event from hash list */
   if (ep->e_prev)
     ep->e_prev->e_next = ep->e_next;
@@ -245,8 +248,8 @@ del_event(event_info *ep)
 /*
 ** Create a new event number.
 */
-static tm_event_t
-new_event(void)
+tm_event_t new_event(void)
+
   {
   static tm_event_t next_event = TM_NULL_EVENT + 1;
   event_info  *ep;
@@ -275,8 +278,12 @@ new_event(void)
 /*
 ** Link new event number into the above hash table.
 */
-static void
-add_event(tm_event_t event, tm_node_id node, int type, void *info)
+void add_event(
+    
+  tm_event_t  event,
+  tm_node_id  node,
+  int         type,
+  void       *info)
   {
   event_info  *ep, **head;
 
@@ -322,8 +329,10 @@ static task_info *task_hash[TASK_HASH];
 /*
 ** Find a task table entry for a given task number or return a NULL.
 */
-static task_info *
-find_task(tm_task_id x)
+task_info *find_task(
+    
+  tm_task_id x)
+
   {
   task_info *tp;
 
@@ -340,8 +349,12 @@ find_task(tm_task_id x)
 ** Create a new task entry and link it into the above hash
 ** table.
 */
-static tm_task_id
-new_task(char *jobid, tm_node_id node, tm_task_id task)
+tm_task_id new_task(
+    
+  char       *jobid,
+  tm_node_id  node,
+  tm_task_id  task)
+
   {
   task_info  *tp, **head;
 
@@ -559,8 +572,8 @@ static int localmom(void)
 
 static int startcom(
 
-  int        com,
-  tm_event_t event,
+  int               com,
+  tm_event_t        event,
   struct tcp_chan **pchan)
 
   {
@@ -943,6 +956,7 @@ int tm_obit(
   tm_task_id  tid,  /* in  */
   int        *obitval, /* out */
   tm_event_t *event)  /* out */
+
   {
   int rc = TM_SUCCESS;
   task_info *tp;
@@ -1002,14 +1016,14 @@ struct taskhold
 ** is a valid node number, it returns the event that the list of
 ** tasks on <node> is available.
 */
-int
-tm_taskinfo(
-  tm_node_id node,  /* in  */
+int tm_taskinfo(
+
+  tm_node_id  node,  /* in  */
   tm_task_id *tid_list, /* out */
-  int list_size, /* in  */
-  int *ntasks, /* out */
-  tm_event_t *event  /* out */
-)
+  int         list_size, /* in  */
+  int        *ntasks, /* out */
+  tm_event_t *event)  /* out */
+
   {
   struct taskhold *thold;
   struct tcp_chan *chan = NULL;
@@ -1053,11 +1067,11 @@ tm_taskinfo(
 ** Returns the job-relative node number that holds or held <tid>.  In
 ** case of an error, it returns TM_ERROR_NODE.
 */
-int
-tm_atnode(
-  tm_task_id tid,  /* in  */
-  tm_node_id *node  /* out */
-)
+int tm_atnode(
+
+  tm_task_id  tid,  /* in  */
+  tm_node_id *node)  /* out */
+
   {
   task_info *tp;
 
@@ -1085,12 +1099,13 @@ struct reschold
 ** <node> is available.  It returns ERROR_EVENT otherwise.
 */
 int tm_rescinfo(
-  tm_node_id node,  /* in  */
-  char *resource, /* out */
-  int len,  /* in  */
-  tm_event_t *event)  /* out */
-  {
 
+  tm_node_id  node,  /* in  */
+  char       *resource, /* out */
+  int         len,  /* in  */
+  tm_event_t *event)  /* out */
+
+  {
   struct reschold *rhold;
   struct tcp_chan *chan = NULL;
 
@@ -1125,7 +1140,10 @@ int tm_rescinfo(
   add_event(*event, node, TM_RESOURCES, (void *)rhold);
 
   return TM_SUCCESS;
-  }
+  } /* END tm_rescinfo() */
+
+
+
 
 /*
 ** Posts the first <nbytes> of a copy of *<info> within MOM on
@@ -1133,13 +1151,13 @@ int tm_rescinfo(
 ** non-NULL, it returns the event that the effort to post *<info>
 ** is complete.  It returns ERROR_EVENT otherwise.
 */
-int
-tm_publish(
-  char *name,  /* in  */
-  void *info,  /* in  */
-  int len,  /* in  */
-  tm_event_t *event  /* out */
-)
+int tm_publish(
+  
+  char       *name,  /* in  */
+  void       *info,  /* in  */
+  int         len,  /* in  */
+  tm_event_t *event)  /* out */
+
   {
   int rc = TM_SUCCESS;
   struct tcp_chan *chan = NULL;
@@ -1173,7 +1191,7 @@ tm_publish_cleanup:
     DIS_tcp_cleanup(chan);
 
   return rc;
-  }
+  } /* tm_publish() */
 
 struct infohold
   {
@@ -1187,18 +1205,18 @@ struct infohold
 ** <tid> is a valid task, it returns the event that the
 ** string specifying the info posted by <tid> is available.
 */
-int
-tm_subscribe(
-  tm_task_id tid,  /* in  */
-  char *name,  /* in  */
-  void *info,  /* out */
-  int len,  /* in  */
-  int *info_len, /* out */
-  tm_event_t *event  /* out */
-)
+int tm_subscribe(
+  
+  tm_task_id  tid,     /* in  */
+  char       *name,    /* in  */
+  void       *info,    /* out */
+  int         len,     /* in  */
+  int        *info_len,/* out */
+  tm_event_t *event)    /* out */
+  
   {
-  int rc = TM_SUCCESS;
-  task_info  *tp;
+  int              rc = TM_SUCCESS;
+  task_info       *tp;
   struct tcp_chan *chan = NULL;
 
   struct infohold *ihold;
