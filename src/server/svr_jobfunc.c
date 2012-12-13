@@ -123,6 +123,7 @@
 #include "resource.h"
 #include "server.h"
 #include "queue.h"
+#include "dynamic_string.h"
 #include "pbs_job.h"
 #include "work_task.h"
 #include "pbs_error.h"
@@ -140,13 +141,15 @@
 #include "ji_mutex.h"
 #include "user_info.h"
 #include "svr_jobfunc.h"
+#include "job_func.h"
 
 #define MSG_LEN_LONG 160
 
 /* Private Functions */
 
-void default_std(job *, int key, dynamic_string *ds);
-void eval_checkpoint(pbs_attribute *j, pbs_attribute *q);
+static void default_std(job *, int key, dynamic_string *ds);
+static void eval_checkpoint(pbs_attribute *j, pbs_attribute *q);
+static int count_queued_jobs(pbs_queue *pque, char *user);
 
 /* Global Data Items: */
 
@@ -181,7 +184,7 @@ extern int procs_requested(char *spec);
 /* Private Functions */
 
 #ifndef NDEBUG
-void correct_ct();
+static void correct_ct();
 #endif  /* NDEBUG */
 
 /* sync w/#define JOB_STATE_XXX */
@@ -285,7 +288,7 @@ const char *PJobSubState[] =
 
 
 
-int insert_into_alljobs_by_rank(
+static int insert_into_alljobs_by_rank(
 
   struct all_jobs *aj,
   job             *pjob,
@@ -357,7 +360,7 @@ int svr_enquejob(
   pbs_attribute *pattrjb;
   attribute_def *pdef;
   pbs_queue     *pque;
-  int            rc;
+  int            rc = -1;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
   time_t         time_now = time(NULL);
   char           job_id[PBS_MAXSVRJOBID+1];
@@ -365,6 +368,12 @@ int svr_enquejob(
   int            total_jobs = 0;
   int            user_jobs = 0;
   int            array_jobs = 0;
+
+  if (pjob == NULL)
+    {
+    log_err(rc, __func__, "NULL job pointer input");
+    return(rc);
+    }
 
   /* make sure queue is still there, there exists a small window ... */
   strcpy(job_id, pjob->ji_qs.ji_jobid);
@@ -440,7 +449,9 @@ int svr_enquejob(
       insert_job_after_index(&alljobs, prev_job_index, pjob);
 
     if (has_sv_qs_mutex == FALSE)
+      {
       lock_sv_qs_mutex(server.sv_qs_mutex, __func__);
+      }
 
     server.sv_qs.sv_numjobs++;
     
@@ -477,7 +488,9 @@ int svr_enquejob(
       {
       unlock_queue(pque, __func__, "not array_template check", LOGLEVEL);
       if (rc == ALREADY_IN_LIST)
+        {
         rc = PBSE_NONE;
+        }
 
       return(rc);
       }
@@ -823,6 +836,12 @@ int svr_setjobstate(
   char         log_buf[LOCAL_LOG_BUF_SIZE];
   time_t       time_now = time(NULL);
 
+  if (pjob == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input job pointer");
+    return(PBSE_BAD_PARAMETER);
+    }
+
   if (LOGLEVEL >= 2)
     {
     sprintf(log_buf, "%s: setting job %s state from %s-%s to %s-%s (%d-%d)\n",
@@ -967,6 +986,22 @@ void svr_evaljobstate(
   int  forceeval)
 
   {
+  if (pjob == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input job pointer");
+    return;
+    }
+  if (newstate == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input newstate pointer");
+    return;
+    }
+  if (newsub == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input newsub pointer");
+    return;
+    }
+
   if ((forceeval == 0) &&
       ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) ||
        (pjob->ji_qs.ji_state == JOB_STATE_TRANSIT)))
@@ -1054,7 +1089,7 @@ char *get_variable(
  * Returns: pointer to struct resource or NULL
  */
 
-resource *get_resource(
+static resource *get_resource(
 
   pbs_attribute *p_queattr,  /* I */
   pbs_attribute *p_svrattr,  /* I */
@@ -1098,7 +1133,7 @@ resource *get_resource(
  * does not make use of comp_resc_eq or comp_resc_nc
  */
 
-int chk_svr_resc_limit(
+static int chk_svr_resc_limit(
 
   pbs_attribute *jobatr, /* I */
   pbs_queue     *pque,   /* I */
@@ -1541,7 +1576,7 @@ int chk_svr_resc_limit(
  * @return the number of jobs, or -1 on error
  */
 
-int count_queued_jobs(
+static int count_queued_jobs(
 
   pbs_queue *pque, /* I */
   char      *user) /* I */
@@ -1577,6 +1612,17 @@ int chk_resc_limits(
   {
   int resc_lt;
   int resc_gt;
+
+  if (pattr == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input pbs_attribute pointer");
+    return(PBSE_BAD_PARAMETER);
+    }
+  if (pque == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input pbs_queue pointer");
+    return(PBSE_BAD_PARAMETER);
+    }
 
   if (EMsg != NULL)
     EMsg[0] = '\0';
@@ -1647,6 +1693,17 @@ int svr_chkque(
   struct array_strings *pas;
   int j = 0;
   char jobid[PBS_MAXSVRJOBID+1];
+
+  if (pjob == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input job pointer");
+    return PBSE_BAD_PARAMETER;
+    }
+  if (pque == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input pbs_queue pointer");
+    return PBSE_BAD_PARAMETER;
+    }
 
   strcpy(jobid, pjob->ji_qs.ji_jobid);
 
@@ -1952,10 +2009,12 @@ int svr_chkque(
     if (pque->qu_attr[QA_ATR_Enabled].at_val.at_long == 0)
       {
       if (EMsg)
+        {
         snprintf(EMsg, 1024,
           "queue is disabled: user %s, queue %s",
           pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
           pque->qu_qs.qu_name);
+        }
 
       return(PBSE_QUNOENB);
       }
@@ -1976,11 +2035,13 @@ int svr_chkque(
       if ((total_jobs + array_jobs) >= pque->qu_attr[QA_ATR_MaxJobs].at_val.at_long)
         {
         if (EMsg)
+          {
           snprintf(EMsg, 1024,
             "total number of jobs in queue exceeds the queue limit: "
             "user %s, queue %s",
             pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
             pque->qu_qs.qu_name);
+          }
 
         return(PBSE_MAXQUED);
         }
@@ -2115,6 +2176,12 @@ int svr_chkque(
       }
     else
       {
+
+      if (pque->qu_attr->at_val.at_str == NULL)
+        {
+          log_err(PBSE_BAD_PARAMETER, __func__, "pque->qu_attr->at_val.at_str uninitialized");
+          return PBSE_BAD_PARAMETER;
+        }
       if (strcmp(pque->qu_attr->at_val.at_str, "Execution") == 0)
         {
         /* job routed to Execution queue successfully */
@@ -2144,7 +2211,7 @@ int svr_chkque(
  * If indeed the case, re-evaluate and set the job state.
  */
 
-void job_wait_over(
+static void job_wait_over(
 
   struct work_task *pwt)
 
@@ -2228,6 +2295,17 @@ int job_set_wait(
   long       when;
   job       *pjob = (job *)j;
 
+  if (pattr == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input pbs_attribute pointer");
+    return PBSE_BAD_PARAMETER;
+    }
+  if (pjob == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input job pointer");
+    return PBSE_BAD_PARAMETER;
+    }
+
   if ((pattr->at_flags & ATR_VFLAG_SET) == 0)
     {
     return(PBSE_NONE);
@@ -2254,7 +2332,7 @@ int job_set_wait(
  * "job_name".[e|o]job_sequence_number
  */
 
-void default_std(
+static void default_std(
 
   job            *pjob,
   int             key,  /* 'e' for stderr, 'o' for stdout */
@@ -2320,6 +2398,17 @@ char *prefix_std_file(
   int   len;
   char *qsubhost;
   char *wdir;
+
+  if (pjob == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input job pointer");
+    return(NULL);
+    }
+  if (ds == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input dynamic_string pointer");
+    return(NULL);
+    }
 
   qsubhost = get_variable(pjob, pbs_o_host);
   wdir     = get_variable(pjob, "PBS_O_WORKDIR");
@@ -2391,6 +2480,22 @@ char *add_std_filename(
   dynamic_string *ds)
 
   {
+  if (pjob == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input job pointer");
+    return(NULL);
+    }
+  if (path == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input path pointer");
+    return(NULL);
+    }
+  if (ds == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input dynamic_string pointer");
+    return(NULL);
+    }
+
   append_dynamic_string(ds, path);
   append_char_to_dynamic_string(ds, '/');
   
@@ -2450,7 +2555,7 @@ void get_jobowner(
  * @param *dflt
  */
 
-void set_deflt_resc(
+static void set_deflt_resc(
 
   pbs_attribute *jb,
   pbs_attribute *dflt)
@@ -2622,6 +2727,17 @@ void set_resc_deflt(
   {
     char log_buf[LOCAL_LOG_BUF_SIZE];
 
+    if (pjob == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input job pointer");
+    return;
+    }
+    if (pque == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input pbs_queue pointer");
+    return;
+    }
+
     /* If execution queue has checkpoint defaults specified, but job does not have
      * checkpoint values, then set defaults on the job.
      */
@@ -2669,6 +2785,12 @@ void set_statechar(
   static char *statechar = "TQHWREC";
   static char suspend    = 'S';
   
+  if (pjob == NULL)
+  {
+  log_err(PBSE_BAD_PARAMETER, __func__, "NULL input job pointer");
+  return;
+  }
+  
   if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
       (pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend))
     {
@@ -2701,7 +2823,7 @@ void set_statechar(
  * to the queue min time.
  */
 
-void eval_checkpoint(
+static void eval_checkpoint(
     
   pbs_attribute *jobckp, /* job's checkpoint pbs_attribute */
   pbs_attribute *queckp) /* queue's checkpoint pbs_attribute */
@@ -2753,7 +2875,7 @@ void eval_checkpoint(
  * all of the counts and log a message.
  */
 
-void correct_ct()
+static void correct_ct()
   
   {
   int           i;
@@ -2862,6 +2984,8 @@ int lock_ji_mutex(
     log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
     }
 
+  if (pjob->ji_mutex != NULL)
+    {
   if (pthread_mutex_lock(pjob->ji_mutex) != 0)
     {
     if (logging >= 20)
@@ -2871,6 +2995,12 @@ int lock_ji_mutex(
       log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
       }
     rc = PBSE_MUTEX;
+    }
+    }
+  else
+    {
+    rc = -1;
+    log_err(rc, __func__, "Uninitialized mutex pass to pthread_mutex_lock!");
     }
 
   if (err_msg != NULL)
@@ -2901,15 +3031,23 @@ int unlock_ji_mutex(
     log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
     }
 
-  if (pthread_mutex_unlock(pjob->ji_mutex) != 0)
+  if (pjob->ji_mutex != NULL)
     {
-    if (logging >= 20)
+    if (pthread_mutex_unlock(pjob->ji_mutex) != 0)
       {
-      snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot unlock job %s mutex in method %s",
-                                          pjob->ji_qs.ji_jobid, id);
-      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+    if (logging >= 20)
+        {
+        snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot unlock job %s mutex in method %s",
+                                            pjob->ji_qs.ji_jobid, id);
+        log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+        }
+      rc = PBSE_MUTEX;
       }
-    rc = PBSE_MUTEX;
+    }
+  else
+    {
+    rc = -1;
+    log_err(rc, __func__, "Uninitialized mutex pass to pthread_mutex_unlock!");
     }
 
    if (err_msg != NULL)
