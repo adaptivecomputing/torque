@@ -370,9 +370,9 @@ int  decode_uacl(pbs_attribute *patr, const char *name, char *rn, char *val, int
 int  decode_unkn(pbs_attribute *patr, const char *name, char *rn, char *val, int);
 int  decode_tv(pbs_attribute *patr, const char *name,  char *rescn,	char *val, int);
  
-int  encode_b(pbs_attribute *attr, tlist_head *phead, const char *atname,
+int encode_b(pbs_attribute *attr, tlist_head *phead, const char *atname,
                            const char *rsname, int mode, int perm);
-int  encode_c(pbs_attribute *attr, tlist_head *phead, const char *atname,
+int encode_c(pbs_attribute *attr, tlist_head *phead, const char *atname,
                            const char *rsname, int mode, int perm);
 int encode_l(pbs_attribute *attr, tlist_head *phead, const char *atname,
                            const char *rsname, int mode, int perm);

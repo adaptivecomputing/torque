@@ -2478,9 +2478,9 @@ struct dependnames
 int decode_depend(
 
   pbs_attribute *patr,
-  const char   *name,  /* attribute name */
-  char          *rescn, /* resource name, unused here */
-  char          *val,   /* attribute value */
+  const char    *name,  /* attribute name */
+  char    *rescn, /* resource name, unused here */
+  char    *val,   /* attribute value */
   int            perm)  /* only used for resources */
 
   {
