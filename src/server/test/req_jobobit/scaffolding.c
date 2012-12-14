@@ -335,3 +335,8 @@ int remove_job_from_exiting_list(job *pjob)
   {
   return(0);
   }
+
+void log_event(int eventtype, int objclass, const char *objname, const char *text)
+  {
+  }
+
