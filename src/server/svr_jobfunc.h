@@ -2,12 +2,6 @@
 #define _SVR_JOBFUNC_H
 #include "license_pbs.h" /* See here for the software license */
 
-//#include "pbs_job.h" /* struct job */
-//#include "attribute.h" /* struct pbs_attribute */
-//#include "resource.h" /* struct resource_def */
-//#include "queue.h" /* struct pbs_queue */
-//#include "dynamic_string.h"
-
 /*Forward declarations*/
 struct job;
 struct pbs_attribute;
