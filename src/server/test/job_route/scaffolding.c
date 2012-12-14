@@ -34,11 +34,30 @@ job *next_job(struct all_jobs *aj, int *iter)
   exit(1);
   }
 
-void *get_next(list_link pl, char *file, int line)
+#ifndef NDEBUG
+
+void *get_next(
+
+  list_link  pl,   /* I */
+  char     *file, /* I */
+  int      line) /* I */
+
   {
-  fprintf(stderr, "The call to get_next needs to be mocked!!\n");
-  exit(1);
-  }
+  if ((pl.ll_next == NULL) ||
+      ((pl.ll_next == &pl) && (pl.ll_struct != NULL)))
+    {
+    fprintf(stderr, "Assertion failed, bad pointer in link: file \"%s\", line %d\n",
+            file,
+            line);
+
+    return NULL;
+    }
+
+  return(pl.ll_next->ll_struct);
+  }  /* END get_next() */
+
+#else
+#endif
 
 int site_alt_router(job *jobp, pbs_queue *qp, long retry_time)
   {
@@ -54,8 +73,60 @@ int site_alt_router(job *jobp, pbs_queue *qp, long retry_time)
 
 void append_link(tlist_head *head, list_link *new_link, void *pobj)
   {
-  fprintf(stderr, "The call to append_link needs to be mocked!!\n");
-  exit(1);
+#ifndef NDEBUG
+  /* first make sure unlinked entries are pointing to themselves     */
+
+  if ((pobj == NULL) ||
+      (head->ll_prior == NULL) ||
+      (head->ll_next  == NULL) ||
+      (new_link->ll_prior  != (list_link *)new_link) ||
+      (new_link->ll_next   != (list_link *)new_link))
+    {
+    if (pobj == NULL)
+      fprintf(stderr, "ERROR:  bad pobj pointer in append_link\n");
+
+    if (head->ll_prior == NULL)
+      fprintf(stderr, "ERROR:  bad head->ll_prior pointer in append_link\n");
+
+    if (head->ll_next == NULL)
+      fprintf(stderr, "ERROR:  bad head->ll_next pointer in append_link\n");
+
+    if (new_link->ll_prior == NULL)
+      fprintf(stderr, "ERROR:  bad new->ll_prior pointer in append_link\n");
+
+    if (new_link->ll_next == NULL)
+      fprintf(stderr, "ERROR:  bad new->ll_next pointer in append_link\n");
+
+    abort();
+    }  /* END if ((pobj == NULL) || ...) */
+
+
+#endif  /* NDEBUG */
+
+  /*
+   * its big trouble if ll_struct is null, it would make this
+   * entry appear to be the head, so we never let that happen
+   */
+
+  if (pobj != NULL)
+    {
+    new_link->ll_struct = pobj;
+    }
+  else
+    {
+    /* WARNING: This mixes list_link pointers and ll_struct
+         pointers, and may break if the list_link we are operating
+         on is not the first embeded list_link in the surrounding
+         structure, e.g. work_task.wt_link_obj */
+
+    new_link->ll_struct = (void *)new_link;
+    }
+
+  new_link->ll_prior = head->ll_prior;
+
+  new_link->ll_next  = head;
+  head->ll_prior = new_link;
+  new_link->ll_prior->ll_next = new_link; /* now visible to forward iteration */
   }
 
 resource *add_resource_entry(pbs_attribute *pattr, resource_def *prdef)
@@ -113,3 +184,8 @@ pbs_queue *find_queuebyname(char *quename)
   {
   return(NULL);
   }
+
+void log_err(int errnum, const char *routine, const char *text)
+  {
+  }
+
