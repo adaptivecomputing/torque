@@ -21,7 +21,7 @@ struct connection svr_conn[PBS_NET_MAX_CONNECTIONS];
 char *msg_request = "Type %s request received from %s@%s, sock=%d";
 struct server server;
 char *server_host;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
 
 
@@ -169,7 +169,7 @@ void req_rdytocommit(struct batch_request *preq)
   exit(1);
   }
 
-void req_reject(int code, int aux, struct batch_request *preq, char *HostName, char *Msg)
+void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
   {
   fprintf(stderr, "The call to req_reject needs to be mocked!!\n");
   exit(1);

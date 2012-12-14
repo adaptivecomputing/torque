@@ -16,7 +16,7 @@
 char *path_arrays;
 char *pbs_o_host = "PBS_O_HOST";
 struct server server;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 int array_259_upgrade = 0;
 
 int insert_thing(resizable_array *ra, void *thing)
@@ -175,7 +175,7 @@ void *get_next(list_link pl, char *file, int line)
   exit(1);
   }
 
-char *threadsafe_tokenizer(char **str, char *delims)
+char *threadsafe_tokenizer(char **str, const char *delims)
   {
   char *current_char;
   char *start;

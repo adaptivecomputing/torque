@@ -95,7 +95,6 @@
 #include "pbs_nodes.h"
 #include "pbs_error.h"
 #include "log.h"
-#include "../Liblog/pbs_log.h"
 #if SYSLOG
 #include <syslog.h>
 #endif
@@ -149,16 +148,16 @@ static int set_nodeflag(char*, short*);
 static struct node_state
   {
   short  bit;
-  char  *name;
+  const char  *name;
   } ns[] =
 
   {
-    {INUSE_UNKNOWN, (char *)ND_state_unknown},
-    {INUSE_DOWN,    (char *)ND_down},
-    {INUSE_OFFLINE, (char *)ND_offline},
-    {INUSE_RESERVE, (char *)ND_reserve},
-    {INUSE_JOB,     (char *)ND_job_exclusive},
-    {INUSE_BUSY,    (char *)ND_busy},
+    {INUSE_UNKNOWN, ND_state_unknown},
+    {INUSE_DOWN,    ND_down},
+    {INUSE_OFFLINE, ND_offline},
+    {INUSE_RESERVE, ND_reserve},
+    {INUSE_JOB,     ND_job_exclusive},
+    {INUSE_BUSY,    ND_busy},
     {0,             NULL}
   };
 
@@ -300,8 +299,8 @@ int encode_state(
   pbs_attribute *pattr, /*struct pbs_attribute being encoded  */
   tlist_head    *ph, /*head of a list of  "svrattrl" structs 
                        which are to be returned*/
-  char          *aname, /*pbs_attribute's name    */
-  char          *rname, /*resource's name (null if none)  */
+  const char   *aname, /*pbs_attribute's name    */
+  const char   *rname, /*resource's name (null if none)  */
   int            mode, /*mode code, unused here   */
   int            perm) /* only used for resources */
 
@@ -381,8 +380,8 @@ int encode_ntype(
   
   pbs_attribute  *pattr, /*struct pbs_attribute being encoded  */
   tlist_head     *ph,    /*head of a list of  "svrattrl"   */
-  char           *aname, /*pbs_attribute's name    */
-  char           *rname, /*resource's name (null if none)  */
+  const char    *aname, /*pbs_attribute's name    */
+  const char    *rname, /*resource's name (null if none)  */
   int             mode,  /*mode code, unused here   */
   int             perm)  /* only used for resources */
 
@@ -443,8 +442,8 @@ int encode_jobs(
   pbs_attribute  *pattr, /*struct pbs_attribute being encoded  */
   tlist_head     *ph,    /*head of a  list of "svrattrl" structs 
                            which are to be returned*/
-  char           *aname, /*pbs_attribute's name    */
-  char           *rname, /*resource's name (null if none)  */
+  const char    *aname, /*pbs_attribute's name    */
+  const char    *rname, /*resource's name (null if none)  */
   int             mode,  /*mode code, unused here   */
   int             perm)  /* only used for resources */
 
@@ -554,7 +553,7 @@ int encode_jobs(
 int decode_state(
 
   pbs_attribute *pattr,   /* I (modified) */
-  char          *name,    /* pbs_attribute name */
+  const char   *name,    /* pbs_attribute name */
   char          *rescn,   /* resource name, unused here */
   char          *val,     /* pbs_attribute value */
   int            perm)    /* only used for resources */
@@ -664,7 +663,7 @@ int decode_state(
 int decode_ntype(
 
   pbs_attribute *pattr,
-  char          *name,   /* pbs_attribute name */
+  const char   *name,   /* pbs_attribute name */
   char          *rescn,  /* resource name, unused here */
   char          *val,    /* pbs_attribute value */
   int            perm)   /* only used for resources */

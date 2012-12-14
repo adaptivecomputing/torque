@@ -17,13 +17,13 @@ int reduceprologchecks;
 resource_def *svr_resc_def;
 char PBSNodeMsgBuf[1024];
 int MOMPrologFailureCount;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 char log_buffer[LOG_BUF_SIZE];
 int MOMPrologTimeoutCount;
 uid_t pbsuser;
 gid_t pbsgroup;
 
-int encode_resc(pbs_attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int ac_perm)
+int encode_resc(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int ac_perm)
   {
   fprintf(stderr, "The call to encode_resc needs to be mocked!!\n");
   exit(1);
@@ -35,7 +35,7 @@ char *get_job_envvar(job *pjob, char *variable)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, const char *objname, char *text)
+void log_record(int eventtype, int objclass, const char *objname, const char *text)
   {
   fprintf(stderr, "The call to log_record needs to be mocked!!\n");
   exit(1);
@@ -65,7 +65,7 @@ void net_close(int but)
   exit(1);
   }
 
-void log_ext(int errnum, const char *routine, char *text, int severity)
+void log_ext(int errnum, const char *routine, const char *text, int severity)
   {
   fprintf(stderr, "The call to log_ext needs to be mocked!!\n");
   exit(1);
@@ -95,7 +95,7 @@ int open_std_file(job *pjob, enum job_file which, int mode, gid_t exgid)
   exit(1);
   }
 
-resource_def *find_resc_def(resource_def *rscdf, char *name, int limit)
+resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
   {
   fprintf(stderr, "The call to find_resc_def needs to be mocked!!\n");
   exit(1);
@@ -113,7 +113,7 @@ int is_joined(job *pjob)
   exit(1);
   }
 
-void log_err(int errnum, const char *routine, char *text)
+void log_err(int errnum, const char *routine, const char *text)
   {
   fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);

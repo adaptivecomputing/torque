@@ -20,9 +20,11 @@
 #include "pbs_nodes.h" /* pbsnode */
 #include "queue.h" /* pbs_queue */
 
+
+
 char *msg_momnoexec2 = "Job cannot be executed\nSee job standard error file";
 char *msg_job_end_sig = "Terminated on signal %d";
-  char *msg_obitnojob  = "Job Obit notice received from %s has error %d";
+char *msg_obitnojob  = "Job Obit notice received from %s has error %d";
 attribute_def job_attr_def[10];
 char *msg_obitnocpy = "Post job file processing error; job %s on host %s";
 int   server_init_type = RECOV_WARM;
@@ -33,7 +35,7 @@ const char *PJobState[] = {"hi", "hello"};
 struct server server;
 int  svr_do_schedule = SCH_SCHEDULE_NULL;
 int listener_command = SCH_SCHEDULE_NULL;
-int LOGLEVEL = 0;
+int LOGLEVEL = 10;
 char *msg_obitnodel = "Unable to delete files for job %s, on host %s";
 char *msg_momnoexec1 = "Job cannot be executed\nSee Administrator for help";
 char *msg_job_end_stat = "Exit_status=%d";
@@ -46,8 +48,9 @@ pthread_mutex_t *listener_command_mutex;
 
 struct batch_request *alloc_br(int type)
   {
-  fprintf(stderr, "The call to alloc_br to be mocked!!\n");
-  exit(1);
+  batch_request *preq = calloc(1, sizeof(batch_request));
+  preq->rq_type = type;
+  return(preq);
   }
 
 job_array *get_jobs_array(job **pjob)
@@ -74,11 +77,7 @@ int svr_job_purge(job *pjob)
   exit(1);
   }
 
-void svr_mailowner(job *pjob, int mailpoint, int force, char *text)
-  {
-  fprintf(stderr, "The call to svr_mailowner to be mocked!!\n");
-  exit(1);
-  }
+void svr_mailowner(job *pjob, int mailpoint, int force, char *text) {}
 
 int modify_job_attr(job *pjob, svrattrl *plist, int perm, int *bad)
   {
@@ -122,11 +121,7 @@ void release_req(struct work_task *pwt)
   exit(1);
   }
 
-void free_nodes(node_info **ninfo_arr)
-  {
-  fprintf(stderr, "The call to free_nodes to be mocked!!\n");
-  exit(1);
-  }
+void free_nodes(node_info **ninfo_arr) {}
 
 void free_br(struct batch_request *preq)
   {
@@ -158,7 +153,7 @@ void svr_disconnect(int handle)
   exit(1);
   }
 
-void req_reject(int code, int aux, struct batch_request *preq, char *HostName, char *Msg)
+void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
   {
   fprintf(stderr, "The call to req_reject to be mocked!!\n");
   exit(1);
@@ -166,8 +161,7 @@ void req_reject(int code, int aux, struct batch_request *preq, char *HostName, c
 
 int depend_on_term(char *job_id)
   {
-  fprintf(stderr, "The call to depend_on_term to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void *get_next(list_link pl, char *file, int line)
@@ -182,11 +176,7 @@ int issue_Drequest(int conn, struct batch_request *request, void (*func)(struct 
   exit(1);
   }
 
-void set_resc_assigned(job *pjob, enum batch_op op)
-  {
-  fprintf(stderr, "The call to set_resc_assigned to be mocked!!\n");
-  exit(1);
-  }
+void set_resc_assigned(job *pjob, enum batch_op op) {}
 
 void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum event, char *job_id, long job_atr_hold, int job_exit_status)
   {
@@ -214,14 +204,14 @@ void issue_track(job *pjob)
 
 int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mute)
   {
-  fprintf(stderr, "The call to svr_setjobstate to be mocked!!\n");
-  exit(1);
+  pjob->ji_qs.ji_state = newstate;
+  pjob->ji_qs.ji_substate = newsubstate;
+  return(0);
   }
 
 job *svr_find_job(char *jobid, int get_subjob)
   {
-  fprintf(stderr, "The call to find_job to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 int timeval_subtract(struct timeval *result, struct timeval *x, struct timeval *y)
@@ -255,7 +245,7 @@ void get_jobowner(char *from, char *to)
   }
 
 
-char *threadsafe_tokenizer(char **str, char *delims)
+char *threadsafe_tokenizer(char **str, const char *delims)
   {
   fprintf(stderr, "The call to threadsafe_tokenizer needs to be mocked!!\n");
   exit(1);
@@ -345,3 +335,8 @@ int remove_job_from_exiting_list(job *pjob)
   {
   return(0);
   }
+
+void log_event(int eventtype, int objclass, const char *objname, const char *text)
+  {
+  }
+

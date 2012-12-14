@@ -93,8 +93,8 @@
 
 unsigned int get_svrport(
 
-  char         *service_name,
-  char         *ptype,
+  const char   *service_name,
+  const char   *ptype,
   unsigned int  pdefault) /* in host byte order */
 
   {

@@ -86,7 +86,7 @@ int open_std_file(job *pjob, enum job_file which, int mode, gid_t exgid);
 
 /* static int find_env_slot(struct var_table *ptbl, char *pstr); */
 
-void bld_env_variables(struct var_table *vtable, char *name, char *value);
+void bld_env_variables(struct var_table *vtable, const char *name, const char *value);
 
 #ifndef __TOLDGROUP
 int init_groups(char *pwname, int pwgrp, int groupsize, int *groups);

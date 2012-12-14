@@ -2,5 +2,5 @@
 
 #include "attribute.h" /* pbs_attribute */
 
-int decode_tokens(pbs_attribute *patr, char *name, char *rescn, char *val, int perm); 
+int decode_tokens(pbs_attribute *patr, const char *name, char *rescn, char *val, int perm);
 

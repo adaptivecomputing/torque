@@ -9,7 +9,7 @@
 #include "list_link.h" /* list_link */
 #include "work_task.h" /* work_task */
 
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 attribute_def job_attr_def[10];
 char *msg_jobholdrel = "Holds %s released at request of %s@%s";
 char *msg_mombadhold = "MOM rejected hold request: %d";
@@ -106,7 +106,7 @@ int first_job_index(job_array *pa)
   exit(1);
   }
 
-void req_reject(int code, int aux, struct batch_request *preq, char *HostName, char *Msg)
+void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
   {
   fprintf(stderr, "The call to req_reject to be mocked!!\n");
   exit(1);

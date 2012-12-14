@@ -10,7 +10,7 @@
 char *path_track;
 char server_name[PBS_MAXSERVERNAME + 1];
 struct server server;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
 
 struct batch_request *alloc_br(int type) 
@@ -37,7 +37,7 @@ ssize_t write_nonblocking_socket( int fd, const void *buf, ssize_t count)
   exit(1);
   }
 
-void req_reject(int code, int aux, struct batch_request *preq, char *HostName, char *Msg) 
+void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
   {
   fprintf(stderr, "The call to req_reject to be mocked!!\n");
   exit(1);

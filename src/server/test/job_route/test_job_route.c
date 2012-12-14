@@ -8,39 +8,49 @@
 
 START_TEST(test_add_dest_null)
   {
-  // This used to cause a seg fault. If it executes without
-  // crashing, the test passes.
-  add_dest(NULL);
+  /* This used to cause a seg fault. If it executes without
+     crashing, the test passes. */
+  add_dest(NULL); 
   }
 END_TEST
 
-
-
-START_TEST(test_one)
+START_TEST(test_add_dest)
   {
-
-
+  struct job j;
+  CLEAR_HEAD(j.ji_rejectdest);
+  strcpy(j.ji_qs.ji_destin, "test");
+  add_dest(&j);
   }
 END_TEST
 
-START_TEST(test_two)
+START_TEST(test_queue_route_null)
   {
+  fail_unless(NULL == queue_route(NULL), "expected queue_route(NULL) to return NULL");
+  }
+END_TEST
 
-
+START_TEST(test_is_bad_dest)
+  {
+  struct job j;
+  CLEAR_HEAD(j.ji_rejectdest);
+  strcpy(j.ji_qs.ji_destin, "test");
+  add_dest(&j);
+  fail_unless(NULL == is_bad_dest(&j, "random"));
+  fail_unless(NULL != is_bad_dest(&j, "test"));
   }
 END_TEST
 
 Suite *job_route_suite(void)
   {
   Suite *s = suite_create("job_route_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
-  suite_add_tcase(s, tc_core);
+  TCase * tc = tcase_create("job_route");
 
-  tc_core = tcase_create("test_two");
-  tcase_add_test(tc_core, test_two);
-  suite_add_tcase(s, tc_core);
-
+  tcase_add_test(tc, test_add_dest_null);
+  tcase_add_test(tc, test_add_dest);
+  tcase_add_test(tc, test_queue_route_null);
+  tcase_add_test(tc, test_is_bad_dest);
+  
+  suite_add_tcase(s, tc);
   return s;
   }
 

@@ -30,7 +30,7 @@ int scheduler_jobct = 0;
 struct server server;
 int scheduler_sock = -1;
 pbs_net_t pbs_mom_addr;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 char *msg_manager = "%s at request of %s@%s";
 int svr_totnodes = 0;
 
@@ -136,7 +136,7 @@ int unlock_node(struct pbsnode *the_node, const char *id, char *msg, int logging
   exit(1);
   }
 
-void req_reject(int code, int aux, struct batch_request *preq, char *HostName, char *Msg)
+void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
   {
   fprintf(stderr, "The call to req_reject to be mocked!!\n");
   exit(1);
@@ -178,7 +178,7 @@ int job_set_wait(pbs_attribute *pattr, void *pjob, int mode)
   exit(1);
   }
 
- resource_def *find_resc_def(resource_def *rscdf, char *name, int limit)
+ resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
   {
   fprintf(stderr, "The call to find_resc_def to be mocked!!\n");
   exit(1);
@@ -264,7 +264,7 @@ int insert_task(all_tasks *at, work_task *wt)
   exit(1);
   }
 
-char *threadsafe_tokenizer(char **str, char *delims)
+char *threadsafe_tokenizer(char **str, const char *delims)
   {
   fprintf(stderr, "The call to threadsafe_tokenizer needs to be mocked!!\n");
   exit(1);

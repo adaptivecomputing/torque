@@ -34,8 +34,10 @@ AvlTree okclients; /* mom_main.c */
 tlist_head mom_polljobs; /* mom_main.c */
 char *path_prologp; /* mom_main.c */
 tlist_head svr_alljobs; /* mom_main.c */
-int LOGLEVEL = 0; /* mom_main.c/pbsd_main.c */
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */ /* mom_main.c/pbsd_main.c */
 int maxupdatesbeforesending = 0;
+int    ServerStatUpdateInterval = DEFAULT_SERVER_STAT_UPDATES;
+time_t          LastServerUpdateTime = 0;  /* NOTE: all servers updated together */
 
 int insert_thing(resizable_array *ra, void *thing)
   {
@@ -140,7 +142,7 @@ int add_hash(hash_table_t *ht, int value, void *key)
   exit(1);
   }
 
-char *get_job_envvar(job *pjob, char *variable)
+char *get_job_envvar(job *pjob, const char *variable)
   {
   fprintf(stderr, "The call to get_job_envvar needs to be mocked!!\n");
   exit(1);
@@ -183,7 +185,7 @@ unsigned long disrul(int stream, int *retval)
   exit(1);
   }
 
-char * getuname(void )
+const char * getuname(void )
   {
   fprintf(stderr, "The call to getuname needs to be mocked!!\n");
   exit(1);
@@ -310,7 +312,7 @@ void attrl_fixlink(tlist_head *phead)
   exit(1);
   }
 
-resource_def *find_resc_def(resource_def *rscdf, char *name, int limit)
+resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
   {
   fprintf(stderr, "The call to find_resc_def needs to be mocked!!\n");
   exit(1);
@@ -425,7 +427,7 @@ int allocate_demux_sockets(job *pjob, int flag)
   exit(1);
   }
 
-int kill_job(job *pjob, int sig, const char *killer_id_name, char *why_killed_reason)
+int kill_job(job *pjob, int sig, const char *killer_id_name, const char *why_killed_reason)
   {
   fprintf(stderr, "The call to kill_job needs to be mocked!!\n");
   exit(1);

@@ -77,10 +77,10 @@ extern char  *PMOMCommand[];
 
 /* external prototypes */
 
-u_long resc_used(job *, char *, u_long(*f) (resource *));
+u_long resc_used(job *, const char *, u_long(*f) (resource *));
 void *preobit_reply (void *);
 void *obit_reply (void *);
-extern u_long addclient (char *);
+extern u_long addclient (const char *);
 extern void encode_used (job *, int, tlist_head *);
 extern void encode_flagged_attrs (job *, int, tlist_head *);
 extern void job_nodes (job *);
@@ -827,7 +827,7 @@ int run_epilogues(
           {
           if (run_pelog(PE_EPILOGUSERJOB, path_epiloguserjob, pjob, io_type) != 0)
             {
-            log_err(-1, __func__, (char *)"user local epilog failed");
+            log_err(-1, __func__, "user local epilog failed");
             }
           
           free(path_epiloguserjob);
@@ -836,7 +836,7 @@ int run_epilogues(
       }
   
     if (run_pelog(PE_EPILOGUSER, path_epiloguser, pjob, io_type) != 0)
-      log_err(-1, __func__, (char *)"user epilog failed - interactive job");
+      log_err(-1, __func__, "user epilog failed - interactive job");
     
     if ((rc = run_pelog(PE_EPILOG, path_epilog, pjob, io_type)) != 0)
       {
@@ -848,11 +848,11 @@ int run_epilogues(
   else
     {
     if (run_pelog(PE_EPILOGUSER, path_epiloguserp, pjob, io_type) != 0)
-      log_err(-1, __func__, (char *)"user epilog failed - interactive job");
+      log_err(-1, __func__, "user epilog failed - interactive job");
   
     if (run_pelog(PE_EPILOG, path_epilogp, pjob, PE_IO_TYPE_STD) != 0)
       {
-      log_err(-1, __func__, (char *)"parallel epilog failed");
+      log_err(-1, __func__, "parallel epilog failed");
       }
     }
 
@@ -1136,7 +1136,7 @@ void *preobit_reply(
   else
     {
     log_record( PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, __func__,
-      "DIS_reply_read/decode_DIS_replySvr worked, top of while loop");
+        "DIS_reply_read/decode_DIS_replySvr worked, top of while loop");
     }
 
   /* find the job that triggered this req */
@@ -1295,7 +1295,7 @@ void *preobit_reply(
     /* parent - mark that job epilog subtask has been launched */
 
     /* NOTE:  pjob->ji_mompost will be executed in scan_for_terminated() */
-    eji = calloc(1, sizeof(exiting_job_info));
+    eji = (exiting_job_info *)calloc(1, sizeof(exiting_job_info));
     strcpy(eji->jobid, pjob->ji_qs.ji_jobid);
     eji->obit_sent = time(NULL);
     insert_thing(exiting_job_list, eji);
@@ -1653,7 +1653,7 @@ void init_abort_jobs(
 
   struct dirent *pdirent;
   job           *pj;
-  char          *job_suffix = JOB_FILE_SUFFIX;
+  const char  *job_suffix = JOB_FILE_SUFFIX;
   int            job_suf_len = strlen(job_suffix);
   char          *psuffix;
   unsigned int   momport = 0;
@@ -2136,8 +2136,8 @@ int send_job_obit_to_ms(
   /* If I cannot contact mother superior, kill this job */
   if (rc != PBSE_NONE)
     {
-    resend_momcomm     *mc = calloc(1, sizeof(resend_momcomm));
-    killjob_reply_info *kj = calloc(1, sizeof(killjob_reply_info));
+    resend_momcomm     *mc = (resend_momcomm *)calloc(1, sizeof(resend_momcomm));
+    killjob_reply_info *kj = (killjob_reply_info *)calloc(1, sizeof(killjob_reply_info));
 
     if (mc == NULL)
       {

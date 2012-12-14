@@ -188,7 +188,7 @@ static gid_t  usergid;
 static int    ngroup;
 static int   *groups;
 #if NO_SPOOL_OUTPUT == 0
-static char  *output_retained = "Output retained on that host in: ";
+static char  *output_retained = (char *)"Output retained on that host in: ";
 #endif /* !NO_SPOOL_OUTPUT */
 
 static char   rcperr[MAXPATHLEN]; /* file to contain rcp error */
@@ -199,7 +199,7 @@ extern int  LOGLEVEL;
 
 /* prototypes */
 
-char *get_job_envvar(job *, char *);
+char *get_job_envvar(job *, const char *);
 int replace_checkpoint_path(char *);
 int in_remote_checkpoint_dir(char *);
 
@@ -211,7 +211,7 @@ int in_remote_checkpoint_dir(char *);
 char *get_job_envvar(
 
   job  *pjob,     /* I */
-  char *variable) /* I */
+  const char *variable) /* I */
 
   {
   char *pc;
@@ -283,7 +283,7 @@ static pid_t fork_to_user(
     ngroup  = pjob->ji_grpcache->gc_ngroup;
     groups  = pjob->ji_grpcache->gc_groups;
 
-    if ((idir = get_job_envvar(pjob, "PBS_O_INITDIR")) != NULL)
+    if ((idir = get_job_envvar(pjob, (char *)"PBS_O_INITDIR")) != NULL)
       {
       hdir = idir;
       }
@@ -343,7 +343,7 @@ static pid_t fork_to_user(
 
     /* determine user`s home directory */
 
-    if ((pjob != NULL) && ((idir = get_job_envvar(pjob, "PBS_O_INITDIR")) != NULL))
+    if ((pjob != NULL) && ((idir = get_job_envvar(pjob, (char *)"PBS_O_INITDIR")) != NULL))
       {
       hdir = idir;
       }
@@ -357,7 +357,7 @@ static pid_t fork_to_user(
     {
     /* FAILURE */
 
-    log_err(PBSE_UNKRESC, __func__, "cannot determine home directory");
+    log_err(PBSE_UNKRESC, __func__, (char *)"cannot determine home directory");
 
     if (EMsg != NULL)
       snprintf(EMsg, 1024, "%s", "cannot determine home directory");
@@ -500,7 +500,7 @@ static pid_t fork_to_user(
 
     char *envstr;
 
-    envstr = calloc((strlen("HOME=") + strlen(hdir) + 1), sizeof(char));
+    envstr = (char *)calloc((strlen("HOME=") + strlen(hdir) + 1), sizeof(char));
 
     if (envstr == NULL)
       {
@@ -522,7 +522,7 @@ static pid_t fork_to_user(
 
     putenv(envstr);
 
-    envstr = calloc((strlen("PBS_JOBID=") + strlen(preq->rq_ind.rq_cpyfile.rq_jobid) + 1), sizeof(char));
+    envstr = (char *)calloc((strlen("PBS_JOBID=") + strlen(preq->rq_ind.rq_cpyfile.rq_jobid) + 1), sizeof(char));
 
     if (envstr == NULL)
       {
@@ -571,13 +571,13 @@ static void add_bad_list(
     {
     needed += strlen(*pbl) + strlen(newtext) + nl + 1;
 
-    pnew = realloc(*pbl, needed);
+    pnew = (char *)realloc(*pbl, needed);
     }
   else
     {
     needed += strlen(newtext) + nl + 1;
 
-    pnew = calloc(1, needed);
+    pnew = (char *)calloc(1, needed);
 
     if (pnew != NULL)
       *pnew = '\0';
@@ -1129,7 +1129,7 @@ void req_deletejob(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
         pjob->ji_qs.ji_jobid,
-        "deleting job");
+        (char *)"deleting job");
       }
 
     /*
@@ -1152,7 +1152,7 @@ void req_deletejob(
     }
   else
     {
-    req_reject(PBSE_UNKJOBID, 0, preq, mom_host, "cannot locate job to delete");
+    req_reject(PBSE_UNKJOBID, 0, preq, mom_host, (char *)"cannot locate job to delete");
     }
 
   return;
@@ -1200,7 +1200,7 @@ void mom_req_holdjob(
       }
 
     if ((rc = start_checkpoint(pjob,1,preq)) != PBSE_NONE)
-      req_reject(rc,0,preq,mom_host,"cannot checkpoint job");    /* unable to start checkpoint */
+      req_reject(rc,0,preq,mom_host,(char *)"cannot checkpoint job");    /* unable to start checkpoint */
     }
 
   return;
@@ -1230,12 +1230,12 @@ void req_checkpointjob(
   if (pjob == NULL)
     {
     rc = PBSE_UNKJOBID;
-    req_reject(rc, 0, preq, mom_host, "job does not exist on mom");
+    req_reject(rc, 0, preq, mom_host, (char *)"job does not exist on mom");
     }
   else
     {
     if ((rc = start_checkpoint(pjob, 0, preq)) != PBSE_NONE)
-      req_reject(rc, 0, preq, mom_host, "cannot checkpoint job");    /* unable to start checkpoint */
+      req_reject(rc, 0, preq, mom_host, (char *)"cannot checkpoint job");    /* unable to start checkpoint */
     }
 
   /* note, normally the reply to the server is in start_checkpoint() */
@@ -1300,7 +1300,7 @@ int message_job(
 
   if (text[len - 1] != '\n')
     {
-    if ((pstr = calloc(1, len + 2)) == NULL)
+    if ((pstr = (char *)calloc(1, len + 2)) == NULL)
       {
       close(fds);
 
@@ -1378,7 +1378,7 @@ void req_messagejob(
     }
   else
     {
-    req_reject(ret, 0, preq, mom_host, "cannot add message to job output/error buffer");
+    req_reject(ret, 0, preq, mom_host, (char *)"cannot add message to job output/error buffer");
     }
   }  /* END req_messagejob() */
 
@@ -1505,7 +1505,7 @@ void req_modifyjob(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
       pjob->ji_qs.ji_jobid,
-      "modifying job");
+      (char *)"modifying job");
     }
 
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_modify.rq_attr);
@@ -1550,7 +1550,7 @@ void req_modifyjob(
 
     /* cannot set attributes, return FAILURE */
 
-    req_reject(rc, 0, preq, mom_host, "cannot set attributes");
+    req_reject(rc, 0, preq, mom_host, (char *)"cannot set attributes");
 
     return;
     }
@@ -1597,7 +1597,7 @@ void req_modifyjob(
           tmpLine[0] = '\0';
 
           tmpPtr = arst_string(
-                     "",
+              (char *)"",
                      &newattr[i]);
 
           if (tmpPtr != NULL)
@@ -1660,7 +1660,7 @@ void req_modifyjob(
 
   if (rc != 0)
     {
-    req_reject(rc, bad, preq, mom_host, "cannot set limits");
+    req_reject(rc, bad, preq, mom_host, (char *)"cannot set limits");
 
     return;
     }
@@ -2034,7 +2034,7 @@ static void resume_suspend(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
         pjob->ji_qs.ji_jobid,
-        "job suspended - adjusted job state");
+        (char *)"job suspended - adjusted job state");
       }
     }
   else
@@ -2062,7 +2062,7 @@ static void resume_suspend(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
         pjob->ji_qs.ji_jobid,
-        "job resumed - adjusted job state");
+        (char *)"job resumed - adjusted job state");
       }
     }    /* END else (susp != 0) */
 
@@ -2163,7 +2163,7 @@ void req_signaljob(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
         pjob->ji_qs.ji_jobid,
-        "resume request on job that is not suspended");
+        (char *)"resume request on job that is not suspended");
       }
 
 #ifdef _CRAY
@@ -2521,11 +2521,11 @@ static int del_files(
   wordexp_t pathexp;
 #endif
 
-  path = calloc((MAXPATHLEN + 1), sizeof(char));
+  path = (char *)calloc((MAXPATHLEN + 1), sizeof(char));
 
   if (path==NULL)
     {
-    add_bad_list(pbadfile,"calloc failed",1);
+    add_bad_list(pbadfile,(char *)"calloc failed",1);
 
     return(-1);
     }
@@ -2844,7 +2844,7 @@ void req_rerunjob(
 
   if (LOGLEVEL >= 3)
     {
-    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "rerunning job");
+    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, (char *)"rerunning job");
     }
 
   /* fork to send files back */
@@ -2894,7 +2894,7 @@ void req_rerunjob(
       PBSEVENT_ERROR,
       PBS_EVENTCLASS_REQUEST,
       __func__,
-      "cannot move output files to server");
+      (char *)"cannot move output files to server");
 
     req_reject(rc, 0, preq, NULL, NULL);
     
@@ -2933,7 +2933,7 @@ void req_returnfiles(
       {
       if (retry_attempts++ >= 10)
         {
-        req_reject(PBSE_NOSERVER, 0, preq, NULL, "Unable to open socket to pbs_server");
+        req_reject(PBSE_NOSERVER, 0, preq, NULL, (char *)"Unable to open socket to pbs_server");
 
         break;
         }
@@ -2965,7 +2965,7 @@ void req_returnfiles(
     }
   else
     {
-    req_reject(PBSE_UNKJOBID, 0, preq, mom_host, "cannot locate job");
+    req_reject(PBSE_UNKJOBID, 0, preq, mom_host, (char *)"cannot locate job");
     }
 
   return;
@@ -3000,8 +3000,8 @@ static int sys_copy(
     {
     /* local copy */
 
-    ag0 = "/bin/cp";
-    ag1 = "-rp";
+    ag0 = (char *)"/bin/cp";
+    ag1 = (char *)"-rp";
     }
   else
     {
@@ -3308,7 +3308,7 @@ void req_cpyfile(
       }
     else
       {
-      wdir = get_job_envvar(pjob, "PBS_O_WORKDIR");
+      wdir = get_job_envvar(pjob, (char *)"PBS_O_WORKDIR");
       }
 
     if (wdir != NULL)
@@ -3377,7 +3377,7 @@ void req_cpyfile(
         {
         char *envstr;
 
-        envstr = calloc((strlen("TMPDIR=") + strlen(faketmpdir) + 1), sizeof(char));
+        envstr = (char *)calloc((strlen("TMPDIR=") + strlen(faketmpdir) + 1), sizeof(char));
 
         if (envstr == NULL)
           {
@@ -3415,8 +3415,8 @@ void req_cpyfile(
 
   /* build up cp/rcp command(s), one per file pair */
 
-  arg2 = calloc((MAXPATHLEN + 1), sizeof(char));
-  arg3 = calloc((MAXPATHLEN + 1), sizeof(char));
+  arg2 = (char *)calloc((MAXPATHLEN + 1), sizeof(char));
+  arg3 = (char *)calloc((MAXPATHLEN + 1), sizeof(char));
 
   if ((arg2==NULL) || (arg3==NULL))
     {
@@ -3810,7 +3810,7 @@ nextword:
 
       if ((fp = fopen(rcperr, "r")) != NULL)
         {
-        add_bad_list(&bad_list, "*** error from copy", 1);
+        add_bad_list(&bad_list, (char *)"*** error from copy", 1);
 
         while (fgets(log_buffer, LOG_BUF_SIZE, fp) != NULL)
           {
@@ -3824,7 +3824,7 @@ nextword:
 
         fclose(fp);
 
-        add_bad_list(&bad_list, "*** end error output", 1);
+        add_bad_list(&bad_list, (char *)"*** end error output", 1);
         }
 
 

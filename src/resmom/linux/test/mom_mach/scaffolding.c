@@ -27,7 +27,7 @@ resource_def *svr_resc_def;
 int ignvmem = 0;
 char *msg_momsetlim = "Job start failed. Can't set \"%s\" limit: %s.\n";
 tlist_head svr_alljobs;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 int ignwalltime = 0;
 int rm_errno;
 
@@ -46,7 +46,7 @@ void checkret(char **spot, long len)
   exit(1);
   }
 
-char *nullproc(struct rm_attribute *attrib)
+const char *nullproc(struct rm_attribute *attrib)
   {
   fprintf(stderr, "The call to nullproc needs to be mocked!!\n");
   exit(1);
@@ -70,7 +70,7 @@ void free_pidlist(struct pidl *pl)
   exit(1);
   }
 
-resource_def *find_resc_def(resource_def *rscdf, char *name, int limit)
+resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
   {
   fprintf(stderr, "The call to find_resc_def needs to be mocked!!\n");
   exit(1);
@@ -100,7 +100,7 @@ resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   exit(1);
   }
 
-char *loadave(struct rm_attribute *attrib)
+const char *loadave(struct rm_attribute *attrib)
   {
   fprintf(stderr, "The call to loadave needs to be mocked!!\n");
   exit(1);

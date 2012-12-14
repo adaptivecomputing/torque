@@ -41,7 +41,7 @@ const char *PMOMCommand[] =
   NULL
   };
 int termin_child = 0; /* mom_main.c */
-int LOGLEVEL = 0; /* mom_main.c/pbsd_main.c */
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */ /* mom_main.c/pbsd_main.c */
 tlist_head svr_alljobs; /* mom_main.c */
 char log_buffer[LOG_BUF_SIZE]; /* pbs_log.c */
 int    multi_mom = 1; /* mom_main.c */ /* 1 to trigger conditions */
@@ -75,7 +75,7 @@ void exit_test(int num)
   exit_called = num;
   }
 
-void log_record(int eventtype, int objclass, const char *objname, char *text)
+void log_record(int eventtype, int objclass, const char *objname, const char *text)
   {
   }
 
@@ -617,7 +617,7 @@ void checkpoint_partial(job *pjob)
   {
   }
 
-void log_event(int eventtype, int objclass, const char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, const char *text)
   {
   }
 
@@ -777,7 +777,7 @@ const char *PJobSubState[] =
   NULL
   };
 
-int kill_job(job *pjob, int sig, const char *killer_id_name, char *why_killed_reason)
+int kill_job(job *pjob, int sig, const char *killer_id_name, const char *why_killed_reason)
   {
   if (func_num == INIT_ABORT_JOBS)
     {
@@ -1067,7 +1067,7 @@ int DIS_reply_read(struct tcp_chan *chan, struct batch_reply *preply)
   return rc;
   }
 
-void log_err(int errnum, const char *routine, char *text)
+void log_err(int errnum, const char *routine, const char *text)
   {
   }
 
@@ -1112,7 +1112,7 @@ resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   return presc;
   }
 
-resource_def *find_resc_def(resource_def *rscdf, char *name, int limit)
+resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
   {
   return NULL;
   }
@@ -1129,7 +1129,7 @@ int run_pelog(int which, char *specpelog, job *pjog, int pe_io_type)
   return 1;
   }
 
-void log_ext(int errnum, const char *routine, char *text, int severity)
+void log_ext(int errnum, const char *routine, const char *text, int severity)
   {
   }
 
@@ -1230,7 +1230,7 @@ void mom_checkpoint_recover(job *pjob)
     }
   }
 
-u_long addclient(char *name)
+u_long addclient(const char *name)
   {
   return 0;
   }

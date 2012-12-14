@@ -9,7 +9,7 @@
 char *pbs_o_host = "PBS_O_HOST";
 char *msg_movejob = "Job moved to ";
 char *msg_manager = "%s at request of %s@%s";
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
 int job_save(job *pjob, int updatetype, int mom_port)
   {
@@ -41,13 +41,13 @@ char *get_variable(job *pjob, char *variable)
   exit(1);
   }
 
-int svr_dequejob(char *job_id, int val)
+int svr_dequejob(job *pjob, int val)
   {
   fprintf(stderr, "The call to svr_dequejob to be mocked!!\n");
   exit(1);
   }
 
-void req_reject(int code, int aux, struct batch_request *preq, char *HostName, char *Msg)
+void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
   {
   fprintf(stderr, "The call to req_reject to be mocked!!\n");
   exit(1);

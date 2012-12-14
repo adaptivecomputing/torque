@@ -21,7 +21,7 @@
 int decode_tokens(
 
   pbs_attribute *patr,
-  char          *name,  /* pbs_attribute name */
+  const char   *name,  /* pbs_attribute name */
   char          *rescn, /* resource name, unused here */
   char          *val,   /* pbs_attribute value */
   int            perm)  /* only used for resources */

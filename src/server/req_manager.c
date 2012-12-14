@@ -136,6 +136,7 @@
 #include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
 #include "queue_func.h" /* find_queuebyname, que_alloc, que_free */
 #include "queue_recov.h" /* que_save */
+#include "svr_task.h"
 
 
 #define PERM_MANAGER (ATR_DFLAG_MGWR | ATR_DFLAG_MGRD)
@@ -173,14 +174,14 @@ static char *all_quename = "_All_";
 static char *all_nodes_str = "_All_";
 
 /*
- * check_que_attr - check if attributes in request are consistant with
+ * check_que_attr - check if attributes in request are consistent with
  * the current queue type.  This is called when creating or setting
  * the attributes of a queue.
  *
  * Returns: NULL if all ok or name of bad pbs_attribute if not ok
  */
 
-static char *check_que_attr(
+static const char *check_que_attr(
     
   pbs_queue *pque)
 
@@ -957,7 +958,7 @@ void mgr_queue_create(
 
   {
   int        bad;
-  char      *badattr;
+  const char      *badattr;
   svrattrl  *plist;
   pbs_queue *pque;
   int        rc;
@@ -1411,7 +1412,7 @@ void mgr_queue_set(
   {
   int        allques;
   int        bad = 0;
-  char      *badattr;
+  const char  *badattr;
   svrattrl  *plist;
   pbs_queue *pque;
   char      *qname;
@@ -1783,7 +1784,7 @@ void mgr_node_set(
           break;
         }
 
-      unlock_node(pnode, "mgr_node_set", "error", LOGLEVEL);
+      unlock_node(pnode, "mgr_node_set", (char *)"error", LOGLEVEL);
       
       return;
       } /* END if (rc != 0) */ 
@@ -1795,7 +1796,7 @@ void mgr_node_set(
       mgr_log_attr(msg_man_set, plist, PBS_EVENTCLASS_NODE, pnode->nd_name);
       }
 
-    unlock_node(pnode, "mgr_node_set", "single_node", LOGLEVEL);
+    unlock_node(pnode, "mgr_node_set", (char *)"single_node", LOGLEVEL);
     } /* END single node case */
 
   if (need_todo & WRITENODE_STATE)

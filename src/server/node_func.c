@@ -54,11 +54,13 @@
 #include "work_task.h"
 #include "net_cache.h"
 #include "ji_mutex.h"
+#include "svr_task.h" /* set_task */
 
 #if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
-extern int h_errno;
+/*extern int h_errno;*/
 #endif
 
+#define NULLSTR static_cast <const char *>(0);
 /* Global Data */
 
 extern hello_container  failures;
@@ -129,7 +131,7 @@ struct pbsnode *PGetNodeFromAddr(
         }
       }    /* END for (aindex) */
 
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+    unlock_node(pnode, __func__, 0, LOGLEVEL);
     } /* END for each node */
 
   return(NULL);
@@ -174,7 +176,7 @@ void bad_node_warning(
    
     /* only release the mutex if we obtained it in this function */
     if (node_possessed == NULL)
-      unlock_node(pnode, "bad_node_warning", "attained in function", LOGLEVEL);
+      unlock_node(pnode, __func__, (char *)"attained in function", LOGLEVEL);
     }
 
   } /* END bad_node_warning() */
@@ -246,7 +248,7 @@ int addr_ok(
     }
 
   if (release_mutex == TRUE)
-    unlock_node(pnode, __func__, "release_mutex = TRUE", LOGLEVEL);
+    unlock_node(pnode, __func__, (char *)"release_mutex = TRUE", LOGLEVEL);
 
   return(status);
   }  /* END addr_ok() */
@@ -272,7 +274,7 @@ struct pbsnode *find_node_in_allnodes(
     pnode = (struct pbsnode *)an->ra->slots[index].item;
 
     if (pnode != NULL)
-      lock_node(pnode, __func__, NULL, 0);
+      lock_node(pnode, __func__, 0, 0);
     }
 
   pthread_mutex_unlock(an->allnodes_mutex);
@@ -527,7 +529,7 @@ int login_encode_jobs(
       }
     }
 
-  if ((pal = attrlist_create(ATTR_NODE_jobs, NULL, strlen(job_str->str) + 1)) == NULL)
+  if ((pal = attrlist_create((char *)ATTR_NODE_jobs, (char *)NULL, strlen(job_str->str) + 1)) == NULL)
     {
     log_err(ENOMEM, __func__, (char *)"");
     return(ENOMEM);
@@ -1147,7 +1149,7 @@ int update_nodes_file(
       PBSEVENT_ADMIN,
       PBS_EVENTCLASS_SERVER,
       "nodes",
-      "Node description file update failed");
+      (char *)"Node description file update failed");
 
     return(-1);
     }
@@ -1158,7 +1160,7 @@ int update_nodes_file(
       PBSEVENT_ADMIN,
       PBS_EVENTCLASS_SERVER,
       "nodes",
-      "Server has empty nodes list");
+      (char *)"Server has empty nodes list");
 
     fclose(nin);
 
@@ -1228,18 +1230,18 @@ int update_nodes_file(
         PBSEVENT_ADMIN,
         PBS_EVENTCLASS_SERVER,
         "nodes",
-        "Node description file update failed");
+        (char *)"Node description file update failed");
 
       fclose(nin);
     
       if (held != np)
-        unlock_node(np, __func__, "error", LOGLEVEL);
+        unlock_node(np, __func__, (char *)"error", LOGLEVEL);
 
       return(-1);
       }
     
     if (held != np)
-      unlock_node(np, __func__, "loop", LOGLEVEL);
+      unlock_node(np, __func__, (char *)"loop", LOGLEVEL);
     } /* for each node */
 
   fclose(nin);
@@ -1250,7 +1252,7 @@ int update_nodes_file(
       PBSEVENT_ADMIN,
       PBS_EVENTCLASS_SERVER,
       "nodes",
-      "replacing old nodes file failed");
+      (char *)"replacing old nodes file failed");
 
     return(-1);
     }
@@ -1376,7 +1378,7 @@ int create_a_gpusubnode(
 
   {
   int rc = PBSE_NONE;
-  struct gpusubn *tmp = calloc((1 + pnode->nd_ngpus), sizeof(struct gpusubn));
+  struct gpusubn *tmp = (struct gpusubn *)calloc((1 + pnode->nd_ngpus), sizeof(struct gpusubn));
 
   if (tmp == NULL)
     {
@@ -1674,7 +1676,7 @@ void recheck_for_node(
   int        rc;
   int        bad;
 
-  if ((host_info = ptask->wt_parm1) == NULL)
+  if ((host_info = (node_info *)ptask->wt_parm1) == NULL)
     {
     free(ptask->wt_mutex);
     free(ptask);
@@ -1766,10 +1768,10 @@ int create_pbs_node(
       pattrl->al_flags = SET;
 
       append_link(&host_info->atrlist, &pattrl->al_link, pattrl);
-      pal = GET_NEXT(pal->al_link);
+      pal = (svrattrl *)GET_NEXT(pal->al_link);
       }
 
-    pattrl = GET_NEXT(host_info->atrlist);
+    pattrl = (svrattrl *)GET_NEXT(host_info->atrlist);
     host_info->plist = pattrl;
 
     if (objname != NULL)
@@ -2148,7 +2150,7 @@ int setup_nodes(void)
     /* if any properties, create property attr and add to list */
     if (propstr[0] != '\0')
       {
-      pal = attrlist_create(ATTR_NODE_properties, 0, strlen(propstr) + 1);
+      pal = (svrattrl *)attrlist_create((char *)ATTR_NODE_properties, 0, strlen(propstr) + 1);
       
       if (pal == NULL)
         {
@@ -2168,7 +2170,7 @@ int setup_nodes(void)
       }
 
     /* now create node and subnodes */
-    pal = GET_NEXT(atrlist);
+    pal = (svrattrl *)GET_NEXT(atrlist);
 
     if ((open_bracket = strchr(nodename,'[')) != NULL)
       {
@@ -2328,12 +2330,12 @@ int setup_nodes(void)
           /* exclusive bits are calculated later in set_old_nodes() */
           np->nd_state &= ~INUSE_JOB;
 
-          unlock_node(np, __func__, "match", LOGLEVEL);
+          unlock_node(np, __func__, (char *)"match", LOGLEVEL);
 
           break;
           }
 
-        unlock_node(np, __func__, "no match", LOGLEVEL);
+        unlock_node(np, __func__, (char *)"no match", LOGLEVEL);
         }
       }
 
@@ -2361,7 +2363,7 @@ int setup_nodes(void)
           log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
           }
         
-        unlock_node(np, __func__, "init - no note", LOGLEVEL);
+        unlock_node(np, __func__, (char *)"init - no note", LOGLEVEL);
         }
       }
 
@@ -2626,12 +2628,12 @@ int node_gpus_action(
 
         if (new_gp < old_gp)
           {
-          delete_a_gpusubnode(pnode);
+          delete_a_gpusubnode((struct pbsnode *)pnode);
           old_gp--;
           }
         else
           {
-          create_a_gpusubnode(pnode);
+          create_a_gpusubnode((struct pbsnode *)pnode);
           old_gp++;
           }
         }
@@ -2685,7 +2687,7 @@ int node_mics_action(
 
         if (new_mics > np->nd_nmics_alloced)
           {
-          struct jobinfo *tmp = calloc(new_mics, sizeof(struct jobinfo));
+          struct jobinfo *tmp = (struct jobinfo *)calloc(new_mics, sizeof(struct jobinfo));
 
           if (tmp == NULL)
             return(ENOMEM);
@@ -2879,7 +2881,7 @@ int create_partial_pbs_node(
     }
 
   ntype = NTYPE_CLUSTER;
-  pul = calloc(2, sizeof(u_long));
+  pul = (u_long *)calloc(2, sizeof(u_long));
   if (!pul)
     {
     free(pnode);
@@ -2993,9 +2995,9 @@ struct pbsnode *get_my_next_node_board(
   iter->numa_index++;
   numa = AVL_find(iter->numa_index, pnode->nd_mom_port, pnode->node_boards);
   
-  unlock_node(pnode, __func__, "pnode", LOGLEVEL);
+  unlock_node(pnode, __func__, (char *)"pnode", LOGLEVEL);
   if (numa != NULL)
-    lock_node(numa, __func__, "numa", LOGLEVEL);
+    lock_node(numa, __func__, (char *)"numa", LOGLEVEL);
 
   return(numa);
   } /* END get_my_next_node_board() */
@@ -3011,7 +3013,7 @@ struct pbsnode *get_my_next_alps_node(
   {
   struct pbsnode *alps_node = next_host(&(pnode->alps_subnodes), &(iter->alps_index), NULL);
 
-  unlock_node(pnode, __func__, NULL, 0);
+  unlock_node(pnode, __func__, (char *)NULL, 0);
 
   return(alps_node);
   } /* END get_my_next_alps_node() */
@@ -3037,7 +3039,7 @@ struct pbsnode *next_node(
     pthread_mutex_lock(an->allnodes_mutex);
 
     /* the first call to next_node */
-    next = next_thing(an->ra, &iter->node_index);
+    next = (struct pbsnode *)next_thing(an->ra, &iter->node_index);
     if (next != NULL)
       lock_node(next, __func__, "next != NULL", LOGLEVEL);
 
@@ -3082,7 +3084,7 @@ struct pbsnode *next_node(
           iter->alps_index = -1;
           
           pthread_mutex_lock(an->allnodes_mutex);
-          next = next_thing(an->ra, &iter->node_index);
+          next = (struct pbsnode *)next_thing(an->ra, &iter->node_index);
           pthread_mutex_unlock(an->allnodes_mutex);
           
           if (next != NULL)
@@ -3100,7 +3102,7 @@ struct pbsnode *next_node(
         iter->alps_index = -1;
         
         pthread_mutex_lock(an->allnodes_mutex);
-        next = next_thing(an->ra, &iter->node_index);
+        next = (struct pbsnode *)next_thing(an->ra, &iter->node_index);
         pthread_mutex_unlock(an->allnodes_mutex);
         
         if (next != NULL)
@@ -3121,7 +3123,7 @@ struct pbsnode *next_node(
       unlock_node(current, __func__, "next == NULL && numa_index+1", LOGLEVEL);
       pthread_mutex_lock(an->allnodes_mutex);
 
-      next = next_thing(an->ra, &iter->node_index);
+      next = (struct pbsnode *)next_thing(an->ra, &iter->node_index);
 
       pthread_mutex_unlock(an->allnodes_mutex);
 
@@ -3155,7 +3157,7 @@ void initialize_all_nodes_array(
   an->ra = initialize_resizable_array(INITIAL_NODE_SIZE);
   an->ht = create_hash(INITIAL_HASH_SIZE);
 
-  an->allnodes_mutex = calloc(1, sizeof(pthread_mutex_t));
+  an->allnodes_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(an->allnodes_mutex,NULL);
   } /* END initialize_all_nodes_array() */
 
@@ -3251,7 +3253,7 @@ struct pbsnode *next_host(
     pthread_mutex_lock(an->allnodes_mutex);
     }
 
-  pnode = next_thing(an->ra,iter);
+  pnode = (struct pbsnode *)next_thing(an->ra,iter);
   if ((pnode != NULL) &&
       ((pnode != held) && 
        (name == NULL)))
@@ -3417,7 +3419,7 @@ void initialize_hello_container(
   {
   hc->ra = initialize_resizable_array(INITIAL_NODE_SIZE);
 
-  hc->hello_mutex = calloc(1, sizeof(pthread_mutex_t));
+  hc->hello_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(hc->hello_mutex, NULL);
   } /* END initialize_hello_container() */
 
@@ -3449,7 +3451,7 @@ int add_hello(
 
   {
   int         rc;
-  hello_info *hi = calloc(1, sizeof(hello_info));
+  hello_info *hi = (hello_info *)calloc(1, sizeof(hello_info));
   hi->name = node_name;
 
   pthread_mutex_lock(hc->hello_mutex);
@@ -3476,7 +3478,7 @@ int add_hello_after(
   int              index)
 
   {
-  hello_info *hi = calloc(1, sizeof(hello_info));
+  hello_info *hi = (hello_info *)calloc(1, sizeof(hello_info));
   int         rc;
 
   hi->name = node_name;

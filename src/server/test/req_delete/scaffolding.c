@@ -16,7 +16,7 @@ char *msg_deletejob = "Job deleted";
 struct all_jobs alljobs;
 char *msg_delrunjobsig = "Job sent signal %s on delete";
 struct server server;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 char *msg_manager = "%s at request of %s@%s";
 
 
@@ -104,7 +104,7 @@ struct work_task *set_task(enum work_type type, long event_id, void (*func)(), v
   exit(1);
   }
 
-void req_reject(int code, int aux, struct batch_request *preq, char *HostName, char *Msg)
+void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
   {
   fprintf(stderr, "The call to req_reject needs to be mocked!!\n");
   exit(1);
@@ -201,7 +201,7 @@ int insert_task(all_tasks *at, work_task *wt)
   }
 
 
-char *threadsafe_tokenizer(char **str, char *delims)
+char *threadsafe_tokenizer(char **str, const char *delims)
   {
   fprintf(stderr, "The call to threadsafe_tokenizer needs to be mocked!!\n");
   exit(1);

@@ -22,7 +22,7 @@ char *path_spool;
 char *msg_movejob = "Job moved to ";
 pbs_net_t pbs_server_addr;
 unsigned int pbs_server_port_dis;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 char *msg_manager = "%s at request of %s@%s";
 
 
@@ -117,7 +117,7 @@ void remove_checkpoint(job *pjob)
   exit(1);
   }
 
-int svr_dequejob(char *job_id, int val)
+int svr_dequejob(job *pjob, int val)
   {
   fprintf(stderr, "The call to svr_dequejob to be mocked!!\n");
   exit(1);
@@ -135,7 +135,7 @@ void svr_disconnect(int handle)
   exit(1);
   }
 
-void req_reject(int code, int aux, struct batch_request *preq, char *HostName, char *Msg)
+void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
   {
   fprintf(stderr, "The call to req_reject to be mocked!!\n");
   exit(1);

@@ -31,7 +31,7 @@ attribute_def node_attr_def[2];
 int svr_clnodes = 0; 
 struct server server;
 AvlTree ipaddrs = NULL;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 int svr_totnodes = 0; 
 const char *dis_emsg[] = {"No error",
   "Input value too large to convert to this type",
@@ -56,7 +56,7 @@ int insert_thing(resizable_array *ra, void *thing)
   exit(1);
   }
 
-svrattrl *attrlist_create(char *aname, char *rname, int vsize)
+svrattrl *attrlist_create(const char *aname, const char *rname, int vsize)
   {
   fprintf(stderr, "The call to attrlist_create needs to be mocked!!\n");
   exit(1);

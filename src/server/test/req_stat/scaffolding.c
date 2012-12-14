@@ -26,7 +26,7 @@ struct server server;
 struct all_jobs array_summary;
 attribute_def svr_attr_def[10];
 int svr_totnodes = 0;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
 struct batch_request *alloc_br(int type)
   {
@@ -52,7 +52,7 @@ void svr_mailowner(job *pjob, int mailpoint, int force, char *text)
   exit(1);
   }
 
-svrattrl *attrlist_create(char *aname, char *rname, int vsize)
+svrattrl *attrlist_create(const char *aname, const char *rname, int vsize)
   {
   fprintf(stderr, "The call to attrlist_create to be mocked!!\n");
   exit(1);
@@ -130,7 +130,7 @@ struct pbsnode *next_host(all_nodes *an, int *iter, struct pbsnode *held)
   exit(1);
   }
 
-void req_reject(int code, int aux, struct batch_request *preq, char *HostName, char *Msg)
+void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
   {
   fprintf(stderr, "The call to req_reject to be mocked!!\n");
   exit(1);

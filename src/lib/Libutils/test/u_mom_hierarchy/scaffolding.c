@@ -64,7 +64,7 @@ long disrsl(int stream, int *retval)
   exit(1);
   }
 
-void log_err(int errnum, const char *routine, char *text)
+void log_err(int errnum, const char *routine, const char *text)
   { 
   fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);
@@ -82,7 +82,7 @@ int socket_get_tcp_priv()
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, const char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, const char *text)
   {
   }
 

@@ -98,11 +98,13 @@
 #include "pbs_job.h"
 #include "pbs_error.h"
 #include "work_task.h"
+#include "svr_task.h"
 #include "tracking.h"
 #include "svrfunc.h"
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
+#include "svr_task.h"
 
 /* External functions */
 

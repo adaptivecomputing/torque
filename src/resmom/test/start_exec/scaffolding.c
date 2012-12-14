@@ -52,7 +52,7 @@ char DEFAULT_UMASK[1024];
 tlist_head mom_polljobs;
 long TJobStartBlockTime = 5;
 char *TNoSpoolDirList[TMAX_NSDCOUNT];
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 char *submithost_suffix = NULL;
 int num_var_env;
 char jobstarter_exe_name[MAXPATHLEN + 1];
@@ -83,7 +83,7 @@ int mom_checkpoint_start_restart(job *pjob)
   exit(1);
   }
 
-char *arst_string(char *str, pbs_attribute *pattr)
+char *arst_string(const char *str, pbs_attribute *pattr)
   {
   fprintf(stderr, "The call to arst_string needs to be mocked!!\n");
   exit(1);
@@ -161,7 +161,7 @@ void delete_link(struct list_link *old)
   exit(1);
   }
 
-char *get_job_envvar(job *pjob, char *variable)
+char *get_job_envvar(job *pjob, const char *variable)
   {
   fprintf(stderr, "The call to get_job_envvar needs to be mocked!!\n");
   exit(1);
@@ -323,7 +323,7 @@ int site_mom_chkuser(job *pjob)
   exit(1);
   }
 
-resource_def *find_resc_def(resource_def *rscdf, char *name, int limit)
+resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
   {
   fprintf(stderr, "The call to find_resc_def needs to be mocked!!\n");
   exit(1);

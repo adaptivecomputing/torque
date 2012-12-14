@@ -403,13 +403,13 @@ int IamRoot()
 
 	if (!load_netapi (hNetapi,hAdvapi))
 	{
-		log_err(-1, "IamRoot", (char *)"Cann`t load netapi32.dll and advapi32.dll libraries\n");          				
+		log_err(-1, "IamRoot", "Cann`t load netapi32.dll and advapi32.dll libraries\n");          				
 		return 0;
 	}
 
 	if (netgetdcname (NULL, NULL, (void *) &servername) != ERROR_SUCCESS)
 	{
-		log_err(-1, "IamRoot",(char *)"Cann`t get the name of the primary domain controller\n");
+		log_err(-1, "IamRoot","Cann`t get the name of the primary domain controller\n");
 	}
 
 	uid=getuid();
@@ -419,14 +419,14 @@ int IamRoot()
 
 	if ((p = getpwuid(uid))==NULL)
 	{
-		log_err(-1, "IamRoot", (char *)"WARNING!!! No password entry for currient user. Check your /etc/passwd file.\n");
+		log_err(-1, "IamRoot", "WARNING!!! No password entry for currient user. Check your /etc/passwd file.\n");
   		return 0;
 	}
 
 	if (check_local_user_privileges(p->pw_name,0) || check_domain_user_privileges(servername,p->pw_name,0))
         return 1;  
   
-	log_err(-1, "IamRoot", (char *)"WARNING!!! Must be run with Administrator privileges.\n");
+	log_err(-1, "IamRoot", "WARNING!!! Must be run with Administrator privileges.\n");
 	return 0;
 }
 
@@ -458,7 +458,7 @@ int IamUser()
 			return 1;
     }
 
-	log_err(-1, "IamUser", (char *)"WARNING!!! Check your /etc/group and /etc/passwd files.\n");
+	log_err(-1, "IamUser", "WARNING!!! Check your /etc/group and /etc/passwd files.\n");
 	return 0;
 }  /* END IamUser() */
 
@@ -481,11 +481,11 @@ int IamUserByName(char *userName)
 		if (IamAdminByName(userName))
 		{
 			sprintf(buff, "WARNING!!! Can`t run job with Administrator privileges. Your should limit preveleges for \"%s\"!",userName);
-			log_err(-1, "IamUserByName", (char *)buff);
+			log_err(-1, "IamUserByName", buff);
 			return 0;
 		}
 	sprintf(buff, "WARNING!!! Can`t find user \"%s\"!",userName);
-	log_err(-1, "IamUserByName", (char *)buff);
+	log_err(-1, "IamUserByName", buff);
     return 0;
 } 
 
@@ -525,7 +525,7 @@ int IamRoot()
 
 int chk_file_sec(
 
-  char *path,   /* path to check */
+  const char *path,   /* path to check */
   int   isdir,   /* 1 = path is directory, 0 = file */
   int   sticky,   /* allow write on directory if sticky set */
   int   disallow, /* perm bits to disallow */
@@ -763,7 +763,7 @@ chkerr:
         }
       else
         {
-        log_err(rc, "chk_file_sec", (char *)"calloc failed");
+        log_err(rc, "chk_file_sec", "calloc failed");
         }
       }
     else

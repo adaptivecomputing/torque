@@ -30,7 +30,7 @@ attribute_def node_attr_def[2];
 struct server server;
 char *array_disallowed_types[] = {"hi", "hello"};
 attribute_def svr_attr_def[10];
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 int svr_chngNodesfile = 0;
 int svr_totnodes = 0;
 
@@ -137,7 +137,7 @@ struct pbsnode *next_host(all_nodes *an, int *iter, struct pbsnode *held)
   exit(1);
   }
 
-void req_reject(int code, int aux, struct batch_request *preq, char *HostName, char *Msg)
+void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
   {
   fprintf(stderr, "The call to req_reject to be mocked!!\n");
   exit(1);
@@ -179,7 +179,7 @@ void que_free(pbs_queue *pq, int sv_qs_mutex_held)
   exit(1);
   }
 
-resource_def *find_resc_def(resource_def *rscdf, char *name, int limit)
+resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
   {
   fprintf(stderr, "The call to find_resc_def to be mocked!!\n");
   exit(1);

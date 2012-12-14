@@ -111,6 +111,7 @@
 #include "svr_func.h" /* get_svr_attr_* */
 #include "ji_mutex.h"
 #include "threadpool.h"
+#include "svr_task.h"
 
 #define CHK_HOLD 1
 #define CHK_CONT 2

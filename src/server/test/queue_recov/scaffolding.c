@@ -11,7 +11,7 @@ pthread_mutex_t *setup_save_mutex = NULL;
 char *path_queues;
 attribute_def que_attr_def[10];
 
-void recov_acl(pbs_attribute *pattr, attribute_def *pdef, char *subdir, char *name)
+void recov_acl(pbs_attribute *pattr, attribute_def *pdef, const char *subdir, const char *name)
   {
   fprintf(stderr, "The call to recov_acl needs to be mocked!!\n");
   exit(1);

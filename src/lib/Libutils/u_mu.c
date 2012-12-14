@@ -80,7 +80,7 @@ int MUSNPrintF(
 
   char **BPtr,   /* I */
   int   *BSpace, /* I */
-  char  *Format, /* I */
+  const char  *Format, /* I */
   ...)           /* I */
 
   {
@@ -128,7 +128,7 @@ int MUSNPrintF(
 char *threadsafe_tokenizer(
 
   char **str,    /* M */
-  char  *delims) /* I */
+  const char  *delims) /* I */
 
   {
   char *current_char;
@@ -178,7 +178,7 @@ char *threadsafe_tokenizer(
 int safe_strncat(
 
   char   *str,
-  char   *to_append,
+  const char   *to_append,
   size_t  space_remaining)
 
   {
@@ -205,7 +205,7 @@ int MUStrNCat(
 
   char **BPtr,   /* I (modified) */
   int   *BSpace, /* I (modified) */
-  char  *Src)    /* I */
+  const char  *Src)    /* I */
 
   {
   int index;
@@ -353,7 +353,7 @@ int write_buffer(
       }
     else
       {
-      log_err(errno,__func__,(char *)"Unable to write to file or socket");
+      log_err(errno,__func__,"Unable to write to file or socket");
       
       return(-1);
       }

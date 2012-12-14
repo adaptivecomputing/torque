@@ -301,11 +301,11 @@ extern unsigned int        ssa_index;
 extern resizable_array    *received_statuses;
 dynamic_string            *mom_status = NULL;
 
-extern struct config *rm_search(struct config *where, char *what);
+extern struct config *rm_search(struct config *where, const char *what);
 
 extern struct rm_attribute *momgetattr(char *str);
 extern char *conf_res(char *resline, struct rm_attribute *attr);
-extern char *dependent(char *res, struct rm_attribute *attr);
+extern char *dependent(const char *res, struct rm_attribute *attr);
 extern char *reqgres(struct rm_attribute *);
 extern void send_update_soon();
 
@@ -315,7 +315,7 @@ extern int  use_nvidia_gpu;
 
 void check_state(int);
 void state_to_server(int, int);
-void node_comm_error(node_comm_t *, char *);
+void node_comm_error(node_comm_t *, const char *);
 
 
 /* clear servers */
@@ -370,7 +370,7 @@ void mom_server_all_init(void)
 
 mom_server *mom_server_find_by_name(
 
-  char *name)
+  const char *name)
 
   {
   mom_server *pms;
@@ -475,7 +475,7 @@ mom_server *mom_server_find_empty_slot(void)
 
 int mom_server_add(
 
-  char *value)
+  const char *value)
 
   {
   mom_server      *pms;
@@ -584,7 +584,7 @@ void mom_server_stream_error(
   int   stream,
   char *name,
   const char *id,
-  char *message)
+  const char *message)
 
   {
   sprintf(log_buffer, "error %s to server %s", message, name);
@@ -615,7 +615,7 @@ int mom_server_flush_io(
 
   struct tcp_chan *chan,
   const char      *id,
-  char            *message)
+  const char      *message)
 
   {
   if (DIS_tcp_wflush(chan) == -1)
@@ -649,7 +649,7 @@ int is_compose(
   int   command)
 
   {
-  static char *id = "is_compose";
+  static const char *id = "is_compose";
   int ret;
 
   if (chan->sock < 0)
@@ -731,7 +731,7 @@ extern struct config *config_array;
 
 void gen_size(
 
-  char  *name,
+  const char  *name,
   char **BPtr,
   int   *BSpace)
 
@@ -772,7 +772,7 @@ void gen_size(
 
 void gen_arch(
 
-  char  *name,
+  const char  *name,
   char **BPtr,
   int   *BSpace)
 
@@ -800,7 +800,7 @@ void gen_arch(
 
 void gen_opsys(
 
-  char  *name,
+  const char  *name,
   char **BPtr,
   int   *BSpace)
 
@@ -828,7 +828,7 @@ void gen_opsys(
 
 void gen_jdata(
 
-  char  *name,
+  const char  *name,
   char **BPtr,
   int   *BSpace)
 
@@ -851,7 +851,7 @@ void gen_jdata(
 
 void gen_gres(
 
-  char  *name,
+  const char  *name,
   char **BPtr,
   int   *BSpace)
 
@@ -880,7 +880,7 @@ void gen_gres(
 
 void gen_gen(
 
-  char  *name,
+  const char  *name,
   char **BPtr,
   int   *BSpace)
 
@@ -937,11 +937,11 @@ void gen_gen(
   return;
   }   /* END gen_gen() */
 
-typedef void (*gen_func_ptr)(char *, char **, int *);
+typedef void (*gen_func_ptr)(const char *, char **, int *);
 
 typedef struct stat_record
   {
-  char *name;
+  const char *name;
   gen_func_ptr func;
   } stat_record;
 
@@ -1339,11 +1339,11 @@ int mom_server_update_stat(
 void node_comm_error(
  
   node_comm_t *nc,
-  char        *message)
+  const char *message)
  
   {
   snprintf(log_buffer,sizeof(log_buffer), "%s %s", message, nc->name);
-  log_err(-1, (char *)"Node communication process",log_buffer);
+  log_err(-1, "Node communication process",log_buffer);
   
   close(nc->stream);
   nc->stream = -1;
@@ -1560,7 +1560,7 @@ void mom_server_all_update_stat(void)
         }
 
       if (rc == COULD_NOT_CONTACT_SERVER)
-        log_err(-1, __func__, (char *)"Could not contact any of the servers to send an update");
+        log_err(-1, __func__, "Could not contact any of the servers to send an update");
       }
     else
       close(nc->stream);
@@ -1834,7 +1834,7 @@ void mom_server_update_receive_time(
 void mom_server_update_receive_time_by_ip(
 
   u_long  ipaddr,
-  char   *command_name)
+  const char   *command_name)
 
   {
   mom_server *pms;
@@ -1980,7 +1980,7 @@ int process_host_name(
   int  *something_added)
 
   {
-  static char        *id = "process_host_name";
+  static const char        *id = "process_host_name";
   char               *colon;
   unsigned short      rm_port;
   unsigned long       ipaddr;
@@ -2070,7 +2070,7 @@ int process_level_string(
   int  *something_added)
 
   {
-  char *delims = ",";
+  const char *delims = ",";
   char *host_tok;
   int   rc = PBSE_NONE;
   int   temp_rc;
@@ -2234,7 +2234,7 @@ int read_cluster_addresses(
 
     /* log the hierrarchy */
     list_size = MAXLINE * 2;
-    if ((okclients_list = calloc(1, list_size)) != NULL)
+    if ((okclients_list = (char *)calloc(1, list_size)) != NULL)
       {
       AVL_list(okclients, &okclients_list, &list_len, &list_size);
       snprintf(log_buffer, sizeof(log_buffer),
@@ -2669,7 +2669,7 @@ void check_state(
 
   static char tmpPBSNodeMsgBuf[1024];
 
-  char *id = "check_state";
+  const char *id = "check_state";
 
   if (Force)
     {
@@ -2935,7 +2935,7 @@ void state_to_server(
     }
   else
     {
-    mom_server_stream_error(-1, pms->pbs_servername, __func__, "Coudln't open stream to server");
+    mom_server_stream_error(-1, pms->pbs_servername, __func__, "Couldn't open stream to server");
     }
 
   return;

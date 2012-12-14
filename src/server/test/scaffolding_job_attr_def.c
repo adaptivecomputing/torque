@@ -24,13 +24,13 @@ void free_arst(struct pbs_attribute *attr)
   exit(1);
   }
 
-int encode_arst(pbs_attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int perm)
+int encode_arst(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm)
   {
   fprintf(stderr, "The call to encode_arst needs to be mocked!!\n");
   exit(1);
   }
 
-int decode_arst(struct pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_arst(struct pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
   {
   fprintf(stderr, "The call to decode_arst needs to be mocked!!\n");
   exit(1);
@@ -54,13 +54,13 @@ void free_str(struct pbs_attribute *attr)
   exit(1);
   }
 
-int encode_str(pbs_attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int perm)
+int encode_str(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm)
   {
   fprintf(stderr, "The call to encode_str needs to be mocked!!\n");
   exit(1);
   }
 
-int decode_str(pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_str(pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
   {
   fprintf(stderr, "The call to decode_str needs to be mocked!!\n");
   exit(1);
@@ -84,13 +84,13 @@ void free_resc(pbs_attribute *pattr)
   exit(1);
   }
 
-int encode_resc(pbs_attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int ac_perm)
+int encode_resc(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int ac_perm)
   {
   fprintf(stderr, "The call to encode_resc needs to be mocked!!\n");
   exit(1);
   }
 
-int decode_resc(struct pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_resc(struct pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
   {
   fprintf(stderr, "The call to decode_resc needs to be mocked!!\n");
   exit(1);
@@ -120,13 +120,13 @@ void free_unkn(pbs_attribute *pattr)
   exit(1);
   }
 
-int encode_unkn(pbs_attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int perm)
+int encode_unkn(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm)
   {
   fprintf(stderr, "The call to encode_unkn needs to be mocked!!\n");
   exit(1);
   }
 
-int decode_unkn(pbs_attribute *patr, char *name, char *rescn, char *value, int perm)
+int decode_unkn(pbs_attribute *patr, const char *name, char *rescn, char *value, int perm)
   {
   fprintf(stderr, "The call to decode_unkn needs to be mocked!!\n");
   exit(1);
@@ -150,13 +150,13 @@ void free_depend(struct pbs_attribute *attr)
   exit(1);
   }
 
-int encode_depend(pbs_attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int perm)
+int encode_depend(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm)
   {
   fprintf(stderr, "The call to encode_depend needs to be mocked!!\n");
   exit(1);
   }
 
-int decode_depend(pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_depend(pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
   {
   fprintf(stderr, "The call to decode_depend needs to be mocked!!\n");
   exit(1);
@@ -168,13 +168,13 @@ int comp_hold(struct pbs_attribute *attr, struct pbs_attribute *with)
   exit(1);
   }
 
-int encode_hold(pbs_attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int perm)
+int encode_hold(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm)
   {
   fprintf(stderr, "The call to encode_hold needs to be mocked!!\n");
   exit(1);
   }
 
-int decode_hold(pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_hold(pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
   {
   fprintf(stderr, "The call to decode_hold needs to be mocked!!\n");
   exit(1);
@@ -192,13 +192,13 @@ int comp_l(struct pbs_attribute *attr, struct pbs_attribute *with)
   exit(1);
   }
 
-int encode_l(pbs_attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int perm)
+int encode_l(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm)
   {
   fprintf(stderr, "The call to encode_l needs to be mocked!!\n");
   exit(1);
   }
 
-int decode_l(pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_l(pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
   {
   fprintf(stderr, "The call to decode_l needs to be mocked!!\n");
   exit(1);
@@ -216,13 +216,13 @@ int comp_b(struct pbs_attribute *attr, struct pbs_attribute *with)
   exit(1);
   }
 
-int encode_b(pbs_attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int perm)
+int encode_b(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm)
   {
   fprintf(stderr, "The call to encode_b needs to be mocked!!\n");
   exit(1);
   }
 
-int decode_b(pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_b(pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
   {
   fprintf(stderr, "The call to decode_b needs to be mocked!!\n");
   exit(1);
@@ -240,13 +240,13 @@ int comp_c(struct pbs_attribute *attr, struct pbs_attribute *with)
   exit(1);
   }
 
-int encode_c(pbs_attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int perm)
+int encode_c(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm)
   {
   fprintf(stderr, "The call to encode_c needs to be mocked!!\n");
   exit(1);
   }
 
-int decode_c(pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_c(pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
   {
   fprintf(stderr, "The call to decode_c needs to be mocked!!\n");
   exit(1);
@@ -264,19 +264,19 @@ int comp_tv(struct pbs_attribute *attr, struct pbs_attribute *with)
   exit(1);
   }
 
-int encode_tv(pbs_attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int perm)
+int encode_tv(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm)
   {
   fprintf(stderr, "The call to encode_tv needs to be mocked!!\n");
   exit(1);
   }
 
-int decode_tv(pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_tv(pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
   {
   fprintf(stderr, "The call to decode_tv needs to be mocked!!\n");
   exit(1);
   }
 
-int encode_inter(pbs_attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int perm)
+int encode_inter(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm)
   {
   fprintf(stderr, "The call to encode_inter needs to be mocked!!\n");
   exit(1);

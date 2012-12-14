@@ -16,7 +16,7 @@ int svr_resc_size = 0;
 attribute_def job_attr_def[10];
 struct all_jobs alljobs;
 resource_def *svr_resc_def;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 struct server server;
 struct all_jobs array_summary;
 
@@ -39,7 +39,7 @@ int reply_send_svr(struct batch_request *request)
   exit(1);
   }
 
-int encode_str(pbs_attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int perm)
+int encode_str(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm)
   {
   fprintf(stderr, "The call to encode_str to be mocked!!\n");
   exit(1);
@@ -51,7 +51,7 @@ int svr_authorize_jobreq(struct batch_request *preq, job *pjob)
   exit(1);
   }
 
-int decode_str(pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_str(pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
   {
   fprintf(stderr, "The call to decode_str to be mocked!!\n");
   exit(1);
@@ -69,7 +69,7 @@ int set_str(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum bat
   exit(1);
   }
 
-void req_reject(int code, int aux, struct batch_request *preq, char *HostName, char *Msg)
+void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
   {
   fprintf(stderr, "The call to req_reject to be mocked!!\n");
   exit(1);
@@ -99,7 +99,7 @@ void *get_next(list_link pl, char *file, int line)
   exit(1);
   }
 
-resource_def *find_resc_def(resource_def *rscdf, char *name, int limit)
+resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
   {
   fprintf(stderr, "The call to find_resc_def to be mocked!!\n");
   exit(1);

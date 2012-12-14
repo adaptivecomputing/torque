@@ -9,7 +9,7 @@
 int pbs_errno;
 pthread_mutex_t *log_mutex;
 
-void log_event(int eventtype, int objclass, const char *objname, char *text)
+void log_event(int eventtype, int objclass, const char *objname, const char *text)
   {
   fprintf(stderr, "The call to log_event needs to be mocked!!\n");
   exit(1);

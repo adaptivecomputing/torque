@@ -12,7 +12,7 @@
 
 char *msg_permlog = "Unauthorized Request, request type: %d, Object: %s, Name: %s, request from: %s@%s";
 struct server server;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
 int svr_authorize_req(struct batch_request *preq, char *owner, char *submit_host)
   {
@@ -80,7 +80,7 @@ job_array *get_array(char *id)
   exit(1);
   }
 
-void req_reject(int code, int aux, struct batch_request *preq, char *HostName, char *Msg)
+void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
   {
   fprintf(stderr, "The call to req_reject needs to be mocked!!\n");
   exit(1);

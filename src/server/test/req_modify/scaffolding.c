@@ -22,7 +22,7 @@ attribute_def job_attr_def[10];
 resource_def *svr_resc_def;
 const char *PJobState[] = {"hi", "hello"};
 struct server server;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
 struct batch_request *alloc_br(int type)
   {
@@ -90,7 +90,7 @@ void svr_disconnect(int handle)
   exit(1);
   }
  
-void req_reject(int code, int aux, struct batch_request *preq, char *HostName, char *Msg)
+void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
   {
   fprintf(stderr, "The call to req_reject to be mocked!!\n");
   exit(1);
@@ -132,7 +132,7 @@ int comp_resc2(struct pbs_attribute *attr, struct pbs_attribute *with, int IsQue
   exit(1);
   }
 
-resource_def *find_resc_def(resource_def *rscdf, char *name, int limit)
+resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
   {
   fprintf(stderr, "The call to find_resc_def to be mocked!!\n");
   exit(1);

@@ -27,7 +27,7 @@ char mom_host[PBS_MAXHOSTNAME + 1];
 unsigned int pbs_rm_port = 0;
 int internal_state = 0;
 tlist_head svr_alljobs;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 int PBSNodeCheckProlog = 0;
 char log_buffer[LOG_BUF_SIZE];
 int reject_job_submit = 0;
@@ -76,13 +76,13 @@ void delete_link(struct list_link *old)
   exit(1);
   }
 
-void log_record(int eventtype, int objclass, const char *objname, char *text)
+void log_record(int eventtype, int objclass, const char *objname, const char *text)
   {
   fprintf(stderr, "The call to log_record needs to be mocked!!\n");
   exit(1);
   }
 
-int decode_arst_merge(struct pbs_attribute *patr, char *name, char *rescn, char *val)
+int decode_arst_merge(struct pbs_attribute *patr, const char *name, char *rescn, char *val)
   {
   fprintf(stderr, "The call to decode_arst_merge needs to be mocked!!\n");
   exit(1);
@@ -100,7 +100,7 @@ int find_attr(struct attribute_def *attr_def, char *name, int limit)
   exit(1);
   }
 
-void req_reject(int code, int aux, struct batch_request *preq, char *HostName, char *Msg)
+void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
   {
   fprintf(stderr, "The call to req_reject needs to be mocked!!\n");
   exit(1);
@@ -136,7 +136,7 @@ int open_std_file(job *pjob, enum job_file which, int mode, gid_t exgid)
   exit(1);
   }
 
-resource_def *find_resc_def(resource_def *rscdf, char *name, int limit)
+resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
   {
   fprintf(stderr, "The call to find_resc_def needs to be mocked!!\n");
   exit(1);
@@ -166,7 +166,7 @@ int reply_jobid(struct batch_request *preq, char *jobid, int which)
   exit(1);
   }
 
-void log_err(int errnum, const char *routine, char *text)
+void log_err(int errnum, const char *routine, const char *text)
   {
   fprintf(stderr, "The call to log_err needs to be mocked!!\n");
   exit(1);

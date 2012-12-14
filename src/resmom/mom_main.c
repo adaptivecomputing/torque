@@ -93,8 +93,13 @@
 #include <sys/mman.h>
 #endif /* _POSIX_MEMLOCK */
 
+#ifdef HAVE_SYS_STATVFS_H
+#include <sys/statvfs.h>
+#endif
+
 #define MAX_UPDATES_BEFORE_SENDING  20
 #define PMOMTCPTIMEOUT 60  /* duration in seconds mom TCP requests will block */
+#define TCP_READ_PROTO_TIMEOUT  2
 
 /* Global Data Items */
 
@@ -165,7 +170,7 @@ char        *path_mom_hierarchy;
 char        *path_spool;
 char        *path_undeliv;
 char        *path_aux;
-char        *path_home = PBS_SERVER_HOME;
+char        *path_home = (char *)PBS_SERVER_HOME;
 char        *mom_home;
 
 extern dynamic_string *mom_status;
@@ -275,12 +280,12 @@ extern void     mom_server_all_init(void);
 extern void     mom_server_all_update_stat(void);
 extern void     mom_server_all_update_gpustat(void);
 extern int      mark_for_resend(job *);
-extern int      mom_server_add(char *name);
+extern int      mom_server_add(const char *name);
 extern int      mom_server_count;
 extern int      post_epilogue(job *, int);
 extern int      mom_checkpoint_init(void);
 extern void     mom_checkpoint_check_periodic_timer(job *pjob);
-extern void     mom_checkpoint_set_directory_path(char *str);
+extern void     mom_checkpoint_set_directory_path(const char *str);
 
 #ifdef NVIDIA_GPUS
 #ifdef NVML_API
@@ -331,80 +336,80 @@ struct config_list
 /* NOTE:  must adjust RM_NPARM in resmom.h to be larger than number of parameters
           specified below */
 
-static unsigned long setxauthpath(char *);
-static unsigned long setrcpcmd(char *);
-static unsigned long setpbsclient(char *);
-static unsigned long configversion(char *);
-static unsigned long cputmult(char *);
-static unsigned long setallocparcmd(char *);
-static unsigned long setidealload(char *);
-static unsigned long setignwalltime(char *);
-static unsigned long setignmem(char *);
-static unsigned long setigncput(char *);
-static unsigned long setignvmem(char *);
-static unsigned long setlogevent(char *);
-static unsigned long setloglevel(char *);
-static unsigned long setumask(char *);
-static unsigned long setpreexec(char *);
-static unsigned long setmaxload(char *);
-static unsigned long setenablemomrestart(char *);
-static unsigned long prologalarm(char *);
-static unsigned long restricted(char *);
-static unsigned long jobstartblocktime(char *);
-static unsigned long usecp(char *);
-static unsigned long wallmult(char *);
-static unsigned long setpbsserver(char *);
-static unsigned long setnodecheckscript(char *);
-unsigned long setnodecheckinterval(char *);
-static unsigned long settimeout(char *);
-extern unsigned long mom_checkpoint_set_checkpoint_interval(char *);
-extern unsigned long mom_checkpoint_set_checkpoint_script(char *);
-extern unsigned long mom_checkpoint_set_restart_script(char *);
-extern unsigned long mom_checkpoint_set_checkpoint_run_exe_name(char *);
-static unsigned long setdownonerror(char *);
-static unsigned long setstatusupdatetime(char *);
-static unsigned long setcheckpolltime(char *);
-static unsigned long settmpdir(char *);
-static unsigned long setlogfilemaxsize(char *);
-static unsigned long setlogfilerolldepth(char *);
-static unsigned long setlogfilesuffix(char *);
-static unsigned long setlogdirectory(char *);
-static unsigned long setlogkeepdays(char *);
-static unsigned long setvarattr(char *);
-static unsigned long setautoidealload(char *);
-static unsigned long setautomaxload(char *);
-static unsigned long setnodefilesuffix(char *);
-static unsigned long setnospooldirlist(char *);
-static unsigned long setmomhost(char *);
-static unsigned long setrreconfig(char *);
-static unsigned long setsourceloginbatch(char *);
-static unsigned long setsourcelogininteractive(char *);
-static unsigned long setspoolasfinalname(char *);
-static unsigned long setattempttomakedir(char *);
-static unsigned long setremchkptdirlist(char *);
-static unsigned long setmaxconnecttimeout(char *);
-unsigned long aliasservername(char *);
-unsigned long jobstarter(char *value);
+static unsigned long setxauthpath(const char *);
+static unsigned long setrcpcmd(const char *);
+static unsigned long setpbsclient(const char *);
+static unsigned long configversion(const char *);
+static unsigned long cputmult(const char *);
+static unsigned long setallocparcmd(const char *);
+static unsigned long setidealload(const char *);
+static unsigned long setignwalltime(const char *);
+static unsigned long setignmem(const char *);
+static unsigned long setigncput(const char *);
+static unsigned long setignvmem(const char *);
+static unsigned long setlogevent(const char *);
+static unsigned long setloglevel(const char *);
+static unsigned long setumask(const char *);
+static unsigned long setpreexec(const char *);
+static unsigned long setmaxload(const char *);
+static unsigned long setenablemomrestart(const char *);
+static unsigned long prologalarm(const char *);
+static unsigned long restricted(const char *);
+static unsigned long jobstartblocktime(const char *);
+static unsigned long usecp(const char *);
+static unsigned long wallmult(const char *);
+static unsigned long setpbsserver(const char *);
+static unsigned long setnodecheckscript(const char *);
+unsigned long setnodecheckinterval(const char *);
+static unsigned long settimeout(const char *);
+extern unsigned long mom_checkpoint_set_checkpoint_interval(const char *);
+extern unsigned long mom_checkpoint_set_checkpoint_script(const char *);
+extern unsigned long mom_checkpoint_set_restart_script(const char *);
+extern unsigned long mom_checkpoint_set_checkpoint_run_exe_name(const char *);
+static unsigned long setdownonerror(const char *);
+static unsigned long setstatusupdatetime(const char *);
+static unsigned long setcheckpolltime(const char *);
+static unsigned long settmpdir(const char *);
+static unsigned long setlogfilemaxsize(const char *);
+static unsigned long setlogfilerolldepth(const char *);
+static unsigned long setlogfilesuffix(const char *);
+static unsigned long setlogdirectory(const char *);
+static unsigned long setlogkeepdays(const char *);
+static unsigned long setvarattr(const char *);
+static unsigned long setautoidealload(const char *);
+static unsigned long setautomaxload(const char *);
+static unsigned long setnodefilesuffix(const char *);
+static unsigned long setnospooldirlist(const char *);
+static unsigned long setmomhost(const char *);
+static unsigned long setrreconfig(const char *);
+static unsigned long setsourceloginbatch(const char *);
+static unsigned long setsourcelogininteractive(const char *);
+static unsigned long setspoolasfinalname(const char *);
+static unsigned long setattempttomakedir(const char *);
+static unsigned long setremchkptdirlist(const char *);
+static unsigned long setmaxconnecttimeout(const char *);
+unsigned long aliasservername(const char *);
+unsigned long jobstarter(const char *value);
 #ifdef PENABLE_LINUX26_CPUSETS
-static unsigned long setusesmt(char *);
-static unsigned long setmempressthr(char *);
-static unsigned long setmempressdur(char *);
+static unsigned long setusesmt(const char *);
+static unsigned long setmempressthr(const char *);
+static unsigned long setmempressdur(const char *);
 #endif
-static unsigned long setreduceprologchecks(char *);
-static unsigned long setextpwdretry(char *);
-static unsigned long setexecwithexec(char *);
-static unsigned long setmaxupdatesbeforesending(char *);
-static unsigned long setthreadunlinkcalls(char *);
-static unsigned long setapbasilpath(char *);
-static unsigned long setapbasilprotocol(char *);
-static unsigned long setreportermom(char *);
-static unsigned long setloginnode(char *);
-static unsigned long setrejectjobsubmission(char *);
+static unsigned long setreduceprologchecks(const char *);
+static unsigned long setextpwdretry(const char *);
+static unsigned long setexecwithexec(const char *);
+static unsigned long setmaxupdatesbeforesending(const char *);
+static unsigned long setthreadunlinkcalls(const char *);
+static unsigned long setapbasilpath(const char *);
+static unsigned long setapbasilprotocol(const char *);
+static unsigned long setreportermom(const char *);
+static unsigned long setloginnode(const char *);
+static unsigned long setrejectjobsubmission(const char *);
 
 static struct specials
   {
-  char            *name;
-  u_long(*handler)();
+  const char     *name;
+  u_long(*handler)(const char *);
   } special[] = {
   { "alloc_par_cmd",       setallocparcmd },
   { "auto_ideal_load",     setautoidealload },
@@ -481,16 +486,16 @@ static struct specials
   };
 
 
-static char *arch(struct rm_attribute *);
-static char *opsys(struct rm_attribute *);
-static char *requname(struct rm_attribute *);
-static char *validuser(struct rm_attribute *);
-static char *reqmsg(struct rm_attribute *);
-char        *reqgres(struct rm_attribute *);
-static char *reqstate(struct rm_attribute *);
-static char *getjoblist(struct rm_attribute *);
-static char *reqvarattr(struct rm_attribute *);
-/* static char *nullproc(struct rm_attribute *); */
+static const char *arch(struct rm_attribute *);
+static const char *opsys(struct rm_attribute *);
+static const char *requname(struct rm_attribute *);
+static const char *validuser(struct rm_attribute *);
+static const char *reqmsg(struct rm_attribute *);
+const char         *reqgres(struct rm_attribute *);
+static const char *reqstate(struct rm_attribute *);
+static const char *getjoblist(struct rm_attribute *);
+static const char *reqvarattr(struct rm_attribute *);
+/* static const char *nullproc(struct rm_attribute *); */
 
 
 struct config common_config[] =
@@ -682,12 +687,12 @@ void check_log(void);
 
 
 
-char *nullproc(
+const char *nullproc(
 
   struct rm_attribute *attrib)
 
   {
-  log_err(-1, __func__, (char *)"should not be called");
+  log_err(-1, __func__, "should not be called");
 
   return(NULL);
   }  /* END nullproc() */
@@ -695,7 +700,7 @@ char *nullproc(
 
 
 
-static char *arch(
+static const char *arch(
 
   struct rm_attribute *attrib)  /* I */
 
@@ -735,7 +740,7 @@ static char *arch(
 
 
 
-static char *opsys(
+static const char *opsys(
 
   struct rm_attribute *attrib)  /* I */
 
@@ -776,7 +781,7 @@ static char *opsys(
 
 
 
-char *
+const char *
 getuname(void)
 
   {
@@ -808,7 +813,7 @@ getuname(void)
 
 
 
-static char *reqmsg(
+static const char *reqmsg(
 
   struct rm_attribute *attrib)
 
@@ -828,7 +833,7 @@ static char *reqmsg(
 
 
 
-static char *getjoblist(
+static const char *getjoblist(
 
   struct rm_attribute *attrib) /* I */
 
@@ -845,7 +850,7 @@ static char *getjoblist(
 
   if (list == NULL)
     {
-    if ((list = calloc(BUFSIZ + 50, sizeof(char)))==NULL)
+    if ((list = (char *)calloc(BUFSIZ + 50, sizeof(char)))==NULL)
       {
       /* FAILURE - cannot alloc memory */
 
@@ -895,7 +900,7 @@ static char *getjoblist(
       int   new_list_len = listlen + BUFSIZ;
       char *tmpList;
 
-      tmpList = realloc(list, new_list_len);
+      tmpList = (char *)realloc(list, new_list_len);
 
       if (tmpList == NULL)
       	{
@@ -932,7 +937,7 @@ static char *getjoblist(
 
 #define TMAX_VARBUF   65536
 
-static char *reqvarattr(
+static const char *reqvarattr(
 
   struct rm_attribute *attrib)  /* I */
 
@@ -953,15 +958,15 @@ static char *reqvarattr(
 
   if (list == NULL)
     {
-    list = calloc(BUFSIZ + 1024, sizeof(char));
+    list = (char *)calloc(BUFSIZ + 1024, sizeof(char));
 
     if (list == NULL)
       {
       /* FAILURE - cannot alloc memory */
 
-      log_err(errno, __func__, (char *)"cannot alloc memory");
+      log_err(errno, __func__, "cannot alloc memory");
 
-      return(" ");
+      return((char *)" ");
       }
 
     listlen = BUFSIZ;
@@ -971,7 +976,7 @@ static char *reqvarattr(
 
   if ((pva = (struct varattr *)GET_NEXT(mom_varattrs)) == NULL)
     {
-    return(" ");
+    return((char *)" ");
     }
 
   for (;pva != NULL;pva = (struct varattr *)GET_NEXT(pva->va_link))
@@ -994,13 +999,13 @@ static char *reqvarattr(
           {
           listlen += BUFSIZ;
 
-          list = realloc(list, listlen);
+          list = (char *)realloc(list, listlen);
 
           if (list == NULL)
             {
-            log_err(errno, __func__, (char *)"cannot alloc memory");
+            log_err(errno, __func__, "cannot alloc memory");
 
-            return(" ");
+            return((char *)" ");
             }
           }
 
@@ -1012,7 +1017,7 @@ static char *reqvarattr(
       pva->va_lasttime = time_now;
 
       if (pva->va_value == NULL)
-        pva->va_value = calloc(TMAX_VARBUF, sizeof(char));
+        pva->va_value = (char *)calloc(TMAX_VARBUF, sizeof(char));
 
       /* execute script and get a new value */
 
@@ -1047,7 +1052,7 @@ static char *reqvarattr(
         if (len == -1)
           {
           /* FAILURE - cannot read var script output */
-          log_err(errno, __func__, (char *)"pipe read");
+          log_err(errno, __func__, "pipe read");
 
           sprintf(pva->va_value, "? %d",
             RM_ERR_SYSTEM);
@@ -1103,13 +1108,13 @@ static char *reqvarattr(
     if ((int)strlen(list) >= listlen)
       {
       listlen += BUFSIZ;
-      list = realloc(list, listlen);
+      list = (char *)realloc(list, listlen);
 
       if (list == NULL)
         {
-        log_err(errno, __func__, (char *)"cannot alloc memory");
+        log_err(errno, __func__, "cannot alloc memory");
 
-        return(" ");
+        return((char *)" ");
         }
       }
     }    /* END for (pva) */
@@ -1124,7 +1129,7 @@ static char *reqvarattr(
 
 
 
-char *reqgres(
+const char *reqgres(
 
   struct rm_attribute *attrib)  /* I (ignored) */
 
@@ -1222,7 +1227,7 @@ char *reqgres(
 
 
 
-static char *reqstate(
+static const char *reqstate(
 
   struct rm_attribute *attrib)  /* I (ignored) */
 
@@ -1242,12 +1247,12 @@ static char *reqstate(
 
 
 
-static char *requname(
+static const char *requname(
 
   struct rm_attribute *attrib)
 
   {
-  char *cp;
+  const char *cp;
 
   if (attrib != NULL)
     {
@@ -1267,7 +1272,7 @@ static char *requname(
 
 
 
-static char *validuser(
+static const char *validuser(
 
   struct rm_attribute *attrib)
 
@@ -1293,7 +1298,7 @@ static char *validuser(
   }    /* END validuser() */
 
 
-char *loadave(
+const char *loadave(
 
   struct rm_attribute *attrib)
 
@@ -1338,7 +1343,7 @@ char *loadave(
 struct config *rm_search(
 
         struct config *where,  /* I */
-        char          *what)   /* I */
+        const char    *what)   /* I */
 
   {
 
@@ -1368,9 +1373,9 @@ struct config *rm_search(
 ** Search the various resource lists.
 */
 
-char *dependent(
+const char *dependent(
 
-  char               *res,  /* I */
+  const char         *res,  /* I */
   struct rm_attribute *attr) /* I */
 
   {
@@ -1480,7 +1485,7 @@ void die(
 
 void memcheck(
 
-  char *buf)
+  const char *buf)
 
   {
   if (buf != NULL)
@@ -1488,7 +1493,7 @@ void memcheck(
     return;
     }
 
-  log_err(-1, "memcheck", (char *)"memory allocation failed");
+  log_err(-1, "memcheck", "memory allocation failed");
 
   die(0);
 
@@ -1527,7 +1532,7 @@ void checkret(
 
   log_record(PBSEVENT_SYSTEM, 0, __func__, log_buffer);
 
-  hold = realloc(ret_string, ret_size); /* new buf */
+  hold = (char *)realloc(ret_string, ret_size); /* new buf */
 
   memcheck(hold);
 
@@ -1607,7 +1612,7 @@ void rmnl(
 
 static int setbool(
 
-  char *value) /* I */
+  const char *value) /* I */
 
   {
   int enable = -1;
@@ -1653,7 +1658,7 @@ static int setbool(
 
 u_long addclient(
 
-  char *name)  /* I */
+  const char *name)  /* I */
 
   {
   struct addrinfo *addr_info;
@@ -1688,7 +1693,7 @@ u_long addclient(
 
 static u_long setpbsclient(
 
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   u_long rc;
@@ -1719,7 +1724,7 @@ static u_long setpbsclient(
 
 static u_long setpbsserver(
 
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   if ((value == NULL) || (*value == '\0'))
@@ -1738,14 +1743,14 @@ static u_long setpbsserver(
 
 static u_long settmpdir(
 
-  char *Value)
+  const char *Value)
 
   {
   log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, Value);
 
   if (*Value != '/')
     {
-    log_err(-1, __func__, (char *)"tmpdir must be a full path");
+    log_err(-1, __func__, "tmpdir must be a full path");
 
     return(0);
     }
@@ -1760,10 +1765,10 @@ static u_long settmpdir(
 
 static u_long setexecwithexec(
 
-  char *value)
+  const char *value)
 
   {
-  static char *id = "setexecwithexec";
+  static const char *id = "setexecwithexec";
 
   log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, value);
 
@@ -1780,14 +1785,14 @@ static u_long setexecwithexec(
 
 static u_long setxauthpath(
 
-  char *Value)
+  const char *Value)
 
   {
   log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, Value);
 
   if (*Value != '/')
     {
-    log_err(-1, __func__, (char *)"xauthpath must be a full path");
+    log_err(-1, __func__, "xauthpath must be a full path");
 
     return(0);
     }
@@ -1802,7 +1807,7 @@ static u_long setxauthpath(
 
 static u_long setrcpcmd(
 
-  char *Value)  /* I */
+  const char *Value)  /* I */
 
   {
   static char *ptr;
@@ -1811,7 +1816,7 @@ static u_long setrcpcmd(
 
   if (*Value != '/')
     {
-    log_err(-1, __func__, (char *)"rcpcmd must be a full path");
+    log_err(-1, __func__, "rcpcmd must be a full path");
 
     /* FAILURE */
 
@@ -1843,7 +1848,7 @@ static u_long setrcpcmd(
 
 static u_long setlogevent(
 
-  char *value)
+  const char *value)
 
   {
   char *bad;
@@ -1866,7 +1871,7 @@ static u_long setlogevent(
 
 static u_long restricted(
 
-  char *name)
+  const char *name)
 
   {
   char **tmpMaskClient;
@@ -1879,7 +1884,7 @@ static u_long restricted(
       {
       /* FAILURE - cannot alloc memory */
 
-      log_err(errno, __func__, (char *)"cannot alloc memory");
+      log_err(errno, __func__, "cannot alloc memory");
 
       return(-1);
       }
@@ -1893,7 +1898,7 @@ static u_long restricted(
     {
     /* FAILURE - cannot alloc memory */
 
-    log_err(errno, __func__, (char *)"cannot alloc memory");
+    log_err(errno, __func__, "cannot alloc memory");
 
     return(-1);
     }
@@ -1912,7 +1917,7 @@ static u_long restricted(
       {
       /* FAILURE - cannot alloc memory */
 
-      log_err(errno, __func__, (char *)"cannot alloc memory");
+      log_err(errno, __func__, "cannot alloc memory");
 
       return(-1);
       }
@@ -1931,7 +1936,7 @@ static u_long restricted(
 
 static u_long configversion(
 
-  char *Value)  /* I */
+  const char *Value)  /* I */
 
   {
   log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, Value);
@@ -1956,7 +1961,7 @@ static u_long configversion(
 
 static u_long setdownonerror(
 
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   int enable;
@@ -1973,7 +1978,7 @@ static u_long setdownonerror(
 
 static u_long setenablemomrestart(
 
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   int enable;
@@ -1991,7 +1996,7 @@ static u_long setenablemomrestart(
 
 static u_long cputmult(
 
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
@@ -2010,7 +2015,7 @@ static u_long cputmult(
 
 static u_long wallmult(
 
-  char *value)
+  const char *value)
 
   {
   double tmpD;
@@ -2045,7 +2050,7 @@ static u_long wallmult(
 
 static u_long usecp(
 
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   char        *pnxt;
@@ -2063,7 +2068,7 @@ static u_long usecp(
 
   if (cphosts_max == 0)
     {
-    pcphosts = calloc(2, sizeof(struct cphosts));
+    pcphosts = (struct cphosts *)calloc(2, sizeof(struct cphosts));
 
     if (pcphosts == NULL)
       {
@@ -2079,7 +2084,7 @@ static u_long usecp(
     }
   else if (cphosts_max == cphosts_num)
     {
-    newp = realloc(
+    newp = (struct cphosts *)realloc(
       pcphosts,
       (cphosts_max + 2) * sizeof(struct cphosts));
 
@@ -2100,7 +2105,7 @@ static u_long usecp(
     cphosts_max += 2;
     }
 
-  pnxt = strchr(value, (int)':');
+  pnxt = strchr((char *)value, (int)':');
 
   if (pnxt == NULL)
     {
@@ -2192,7 +2197,7 @@ static u_long usecp(
 
 static unsigned long prologalarm(
 
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   int i;
@@ -2221,7 +2226,7 @@ static unsigned long prologalarm(
 
 static unsigned long setloglevel(
 
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   int i;
@@ -2245,7 +2250,7 @@ static unsigned long setloglevel(
 
 static unsigned long setmaxupdatesbeforesending(
     
-  char *value)
+  const char *value)
 
   {
   int i;
@@ -2269,7 +2274,7 @@ static unsigned long setmaxupdatesbeforesending(
 
 static unsigned long setumask(
 
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   log_record(
@@ -2288,7 +2293,7 @@ static unsigned long setumask(
 
 static unsigned long setpreexec(
 
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   log_record(
@@ -2300,7 +2305,7 @@ static unsigned long setpreexec(
   snprintf(PRE_EXEC, sizeof(PRE_EXEC), "%s", value);
 
 #if SHELL_USE_ARGV == 0
-  log_err(0, __func__, (char *)"pbs_mom not configured with enable-shell-user-argv option");
+  log_err(0, __func__, "pbs_mom not configured with enable-shell-user-argv option");
 #endif
 
   return(1);
@@ -2309,7 +2314,7 @@ static unsigned long setpreexec(
 
 static unsigned long setsourceloginbatch(
 
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   int enable;
@@ -2325,7 +2330,7 @@ static unsigned long setsourceloginbatch(
 
 static unsigned long setsourcelogininteractive(
 
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   int enable;
@@ -2342,7 +2347,7 @@ static unsigned long setsourcelogininteractive(
 
 static unsigned long jobstartblocktime(
 
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   int i;
@@ -2371,7 +2376,7 @@ static unsigned long jobstartblocktime(
 
 static unsigned long setstatusupdatetime(
 
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   int i;
@@ -2400,7 +2405,7 @@ static unsigned long setstatusupdatetime(
 
 static unsigned long setcheckpolltime(
 
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   int i;
@@ -2502,7 +2507,7 @@ static void add_static(
 
 static unsigned long setidealload(
 
-  char *value)
+  const char *value)
 
   {
   char  newstr[50] = "ideal_load ";
@@ -2536,7 +2541,7 @@ static unsigned long setidealload(
 
 static unsigned long setignwalltime(
 
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   int enable;
@@ -2553,7 +2558,7 @@ static unsigned long setignwalltime(
 
 static unsigned long setignmem(
 
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   int enable;
@@ -2570,7 +2575,7 @@ static unsigned long setignmem(
 
 static unsigned long setigncput(
 
-  char *value) /* I */
+  const char *value) /* I */
 
   {
   int enable;
@@ -2586,7 +2591,7 @@ static unsigned long setigncput(
 
 static unsigned long setignvmem(
 
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   int enable;
@@ -2602,7 +2607,7 @@ static unsigned long setignvmem(
 
 static unsigned long setautoidealload(
 
-  char *value)
+  const char *value)
 
   {
   log_record(
@@ -2628,7 +2633,7 @@ static unsigned long setautoidealload(
 
 static unsigned long setallocparcmd(
 
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   log_record(
@@ -2648,7 +2653,7 @@ static unsigned long setallocparcmd(
 
 static unsigned long setautomaxload(
 
-  char *value)
+  const char *value)
 
   {
   log_record(
@@ -2674,7 +2679,7 @@ static unsigned long setautomaxload(
 
 static unsigned long setmaxconnecttimeout(
 
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   MaxConnectTimeout = strtol(value, NULL, 10);
@@ -2693,7 +2698,7 @@ static unsigned long setmaxconnecttimeout(
 
 static unsigned long setreduceprologchecks(
 
-  char *value)
+  const char *value)
 
   {
   log_record(
@@ -2714,7 +2719,7 @@ static unsigned long setreduceprologchecks(
 
 static unsigned long setnodecheckscript(
 
-  char *value)
+  const char *value)
 
   {
   char   newstr[1024] = "node_check_script ";
@@ -2751,7 +2756,7 @@ static unsigned long setnodecheckscript(
 
 unsigned long setnodecheckinterval(
 
-  char *value)
+  const char *value)
 
   {
   char newstr[1024] = "node_check_interval ";
@@ -2779,7 +2784,7 @@ unsigned long setnodecheckinterval(
 
 static unsigned long settimeout(
 
-  char *value)
+  const char *value)
 
   {
   char newstr[1024];
@@ -2805,7 +2810,7 @@ static unsigned long settimeout(
 
 static unsigned long setmaxload(
 
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   char  newstr[50] = "max_load ";
@@ -2836,7 +2841,7 @@ static unsigned long setmaxload(
 
 static unsigned long setlogfilemaxsize(
 
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   log_file_max_size = strtol(value, NULL, 10);
@@ -2856,7 +2861,7 @@ static unsigned long setlogfilemaxsize(
 
 static unsigned long setlogfilerolldepth(
 
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   log_file_roll_depth = strtol(value, NULL, 10);
@@ -2875,7 +2880,7 @@ static unsigned long setlogfilerolldepth(
 
 static unsigned long setlogdirectory(
 
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   path_log = strdup(value);
@@ -2888,7 +2893,7 @@ static unsigned long setlogdirectory(
 
 static unsigned long setlogfilesuffix(
 
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   log_init(value, NULL);
@@ -2900,7 +2905,7 @@ static unsigned long setlogfilesuffix(
 
 static unsigned long setlogkeepdays(
 
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   int i;
@@ -2920,7 +2925,7 @@ static unsigned long setlogkeepdays(
 
 static unsigned long setextpwdretry(
 
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   int i;
@@ -2941,19 +2946,19 @@ static unsigned long setextpwdretry(
 
 static u_long setvarattr(
 
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   struct varattr *pva;
-  char           *ptr;
+  const char    *ptr;
 
-  pva = calloc(1, sizeof(struct varattr));
+  pva = (struct varattr *)calloc(1, sizeof(struct varattr));
 
   if (pva == NULL)
     {
     /* FAILURE */
 
-    log_err(errno, __func__, (char *)"no memory");
+    log_err(errno, __func__, "no memory");
 
     return(0);
     }
@@ -3007,7 +3012,7 @@ static u_long setvarattr(
 
 static unsigned long setthreadunlinkcalls(
 
-  char *value) /* I */
+  const char *value) /* I */
 
   {
   log_record(
@@ -3030,12 +3035,12 @@ static unsigned long setthreadunlinkcalls(
 
 static unsigned long setnodefilesuffix(
 
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   char *ptr;
 
-  ptr = strtok(value, ",");
+  ptr = strtok((char *)value, ",");
 
   nodefile_suffix = strdup(ptr);
 
@@ -3054,7 +3059,7 @@ static unsigned long setnodefilesuffix(
 
 static unsigned long setmomhost(
 
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   hostname_specified = 1;
@@ -3069,7 +3074,7 @@ static unsigned long setmomhost(
 
 static u_long setrreconfig(
 
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   int enable;
@@ -3085,7 +3090,7 @@ static u_long setrreconfig(
 
 static unsigned long setnospooldirlist(
 
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   char *TokPtr;
@@ -3095,7 +3100,7 @@ static unsigned long setnospooldirlist(
 
   char  tmpLine[1024];
 
-  ptr = strtok_r(value, " \t\n:,", &TokPtr);
+  ptr = strtok_r((char *)value, " \t\n:,", &TokPtr);
 
   while (ptr != NULL)
     {
@@ -3125,7 +3130,7 @@ static unsigned long setnospooldirlist(
   }  /* END setnospooldirlist() */
 
 
-unsigned long aliasservername( char *value)
+unsigned long aliasservername(const char *value)
   {
   log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
 
@@ -3146,7 +3151,7 @@ unsigned long aliasservername( char *value)
 
 static unsigned long setspoolasfinalname(
 
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   int enable;
@@ -3163,7 +3168,7 @@ static unsigned long setspoolasfinalname(
 
 static unsigned long setapbasilpath(
 
-  char *value)
+  const char *value)
 
   {
   log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "apbasil_path", value);
@@ -3187,7 +3192,7 @@ static unsigned long setapbasilpath(
 
 static unsigned long setapbasilprotocol(
 
-  char *value)
+  const char *value)
 
   {
   log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "apbasil_protocol", value);
@@ -3219,7 +3224,7 @@ static unsigned long setapbasilprotocol(
 
 static unsigned long setreportermom(
 
-  char *value)
+  const char *value)
 
   {
   log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
@@ -3243,7 +3248,7 @@ static unsigned long setreportermom(
 
 static unsigned long setloginnode(
 
-  char *value)
+  const char *value)
 
   {
   log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
@@ -3267,7 +3272,7 @@ static unsigned long setloginnode(
 
 static unsigned long setrejectjobsubmission(
 
-  char *value)
+  const char *value)
 
   {
   log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
@@ -3287,7 +3292,7 @@ static unsigned long setrejectjobsubmission(
 
 static unsigned long setattempttomakedir(
 
-  char *value)
+  const char *value)
 
   {
   log_record(
@@ -3312,7 +3317,7 @@ static unsigned long setattempttomakedir(
  *  Return: 1 success
  *          0 file named by value does not exist. fail
  *******************************************************/
-unsigned long jobstarter(char *value)  /* I */
+unsigned long jobstarter(const char *value)  /* I */
   {
   struct stat sbuf;
 
@@ -3341,7 +3346,7 @@ unsigned long jobstarter(char *value)  /* I */
 
 static unsigned long setremchkptdirlist(
 
-  char *value)  /* I */
+  const char *value)  /* I */
 
   {
   char *TokPtr;
@@ -3358,7 +3363,7 @@ static unsigned long setremchkptdirlist(
   if (index >= TMAX_RCDCOUNT)
     return (1);
 
-  ptr = strtok_r(value, " \t\n:,", &TokPtr);
+  ptr = strtok_r((char *)value, " \t\n:,", &TokPtr);
 
   while (ptr != NULL)
     {
@@ -3422,7 +3427,7 @@ void check_log(void)
 
     if (log_remove_old(path_log,(LOGKEEPDAYS * SECS_PER_DAY)) != 0)
       {
-      log_err(-1,"check_log", (char *)"failure occurred when checking for old pbs_mom logs");
+      log_err(-1,"check_log", "failure occurred when checking for old pbs_mom logs");
       }
     }
 
@@ -3692,8 +3697,8 @@ int read_config(
       {
       for (ap = config_array;ap->c_name != NULL;ap++)
         {
-        free(ap->c_name);
-        free(ap->c_u.c_value);
+        free((void *)ap->c_name);
+        free((void *)ap->c_u.c_value);
         }
 
       free(config_array);
@@ -3701,7 +3706,7 @@ int read_config(
 
     config_array = (struct config *)calloc(nconfig + 1, sizeof(struct config));
 
-    memcheck((char *)config_array);
+    memcheck((const char *)config_array);
 
     /*
     ** Copy in the new information saved from the file.
@@ -3750,7 +3755,7 @@ int read_config(
 #ifdef PENABLE_LINUX26_CPUSETS
 static u_long setusesmt(
 
-    char *value)  /* I */
+    const char *value)  /* I */
 
   {
   int enable;
@@ -3766,7 +3771,7 @@ static u_long setusesmt(
 
 static u_long setmempressthr(
 
-  char *value)
+  const char *value)
 
   {
   long long val;
@@ -3786,7 +3791,7 @@ static u_long setmempressthr(
 
 static u_long setmempressdur(
 
-  char *value)
+  const char *value)
 
   {
   int val;
@@ -3940,7 +3945,7 @@ char *conf_res(
 
   if (resline == NULL)
     {
-    return("");
+    return((char *)"");
     }
 
   if (resline[0] != '!')
@@ -3991,7 +3996,7 @@ char *conf_res(
   if (attr != NULL)
     {
     /* too many params */
-    log_err(-1, __func__, (char *)"too many params");
+    log_err(-1, __func__, "too many params");
 
     sprintf(ret_string, "? %d", RM_ERR_BADPARAM);
 
@@ -4049,7 +4054,7 @@ char *conf_res(
     if (!used[i])
       {
       /* parameter sent but not used */
-      log_err(-1, __func__, (char *)"unused parameters");
+      log_err(-1, __func__, "unused parameters");
 
       sprintf(ret_string, "? %d", RM_ERR_BADPARAM);
 
@@ -4064,7 +4069,7 @@ char *conf_res(
 
   if ((child = popen(ret_string, "r")) == NULL)
     {
-    log_err(errno, __func__, (char *)"popen");
+    log_err(errno, __func__, "popen");
 
     sprintf(ret_string, "? %d", RM_ERR_SYSTEM);
 
@@ -4110,7 +4115,7 @@ retryread:
       goto retryread;
       }
 
-    log_err(errno, __func__, (char *)"pipe read");
+    log_err(errno, __func__, "pipe read");
 
     sprintf(ret_string, "? %d", RM_ERR_SYSTEM);
 
@@ -4491,7 +4496,7 @@ int rm_request(
   int                  ret;
   int                  restrictrm = 0;
   char                *curr;
-  char                *value;
+  const char         *value;
   char                *cp;
   char                *body;
   int                  sindex;
@@ -4858,12 +4863,11 @@ int rm_request(
             MUStrNCat(&BPtr, &BSpace, tmpLine);
 
 #ifdef HAVE_SYS_STATVFS_H
-              {
-#include <sys/statvfs.h>
+             {
 
               struct statvfs VFSStat;
 
-              if (statvfs(path_spool, &VFSStat) < 0)
+              if (statvfs((const char *)path_spool, &VFSStat) < 0)
                 {
                 MUSNPrintF(&BPtr, &BSpace, "ALERT:  cannot stat stdout/stderr spool directory '%s' (errno=%d) %s\n",
                            path_spool,
@@ -5063,7 +5067,7 @@ int rm_request(
 
               long max_len = 1024;
               long final_len = 0;
-              char *tmp_line = calloc(1, max_len + 1);
+              char *tmp_line = (char *)calloc(1, max_len + 1);
               if (tmp_line != NULL)
                 {
                 ret = AVL_list(okclients, &tmp_line, &final_len, &max_len);
@@ -5100,7 +5104,7 @@ int rm_request(
               {
               int            numvnodes = 0;
               resource      *pres;
-              char          *resname;
+              const char   *resname;
               unsigned long  resvalue;
               char           SIDList[1024];
               task          *ptask;
@@ -5323,7 +5327,7 @@ int rm_request(
 
         if (DIS_tcp_wflush(chan) == -1)
           {
-          log_err(errno, __func__, (char *)"flush");
+          log_err(errno, __func__, "flush");
 
           goto bad;
           }
@@ -5340,14 +5344,14 @@ int rm_request(
       if (MOMConfigRReconfig == FALSE)
         {
         log_err(-1, __func__,
-          (char *)"remote reconfiguration disabled, ignoring request");
+          "remote reconfiguration disabled, ignoring request");
 
         goto bad;
         }
 
       if (restrictrm)
         {
-        log_err(-1, __func__, (char *)"restricted configure attempt");
+        log_err(-1, __func__, "restricted configure attempt");
 
         goto bad;
         }
@@ -5424,7 +5428,7 @@ int rm_request(
 
       if (DIS_tcp_wflush(chan) == -1)
         {
-        log_err(errno, __func__, (char *)"flush");
+        log_err(errno, __func__, "flush");
 
         goto bad;
         }
@@ -5437,7 +5441,7 @@ int rm_request(
 
       if (restrictrm)
         {
-        log_err(-1, __func__, (char *)"restricted shutdown attempt");
+        log_err(-1, __func__, "restricted shutdown attempt");
 
         goto bad;
         }
@@ -5552,6 +5556,8 @@ int tcp_read_proto_version(
   time_t tmpT;
 
   tmpT = pbs_tcp_timeout;
+
+  pbs_tcp_timeout = TCP_READ_PROTO_TIMEOUT;
 
   *proto = disrsi(chan, &rc);
 
@@ -5805,7 +5811,7 @@ void *tcp_request(
 
 
 
-char *find_signal_name(
+const char *find_signal_name(
 
   int sig)
 
@@ -5844,7 +5850,7 @@ int kill_job(
   job        *pjob,              /* I */
   int         sig,               /* I */
   const char *killer_id_name,    /* I - process name of calling routine */
-  char       *why_killed_reason) /* I - reason for killing */
+  const char *why_killed_reason) /* I - reason for killing */
 
   {
   task *ptask;
@@ -5883,7 +5889,7 @@ int kill_job(
     {
     if (run_pelog(PE_EPILOGUSER, path_epilogpdel, pjob, PE_IO_TYPE_NULL) != 0)
       {
-      log_err(-1, __func__, (char *)"precancel epilog failed");
+      log_err(-1, __func__, "precancel epilog failed");
 
       sprintf(PBSNodeMsgBuf, "ERROR:  precancel epilog failed");
       }
@@ -6180,7 +6186,7 @@ int job_over_limit(
     return(0);
     }
 
-  units = index == 0 ? "secs" : "kb";
+  units = index == 0 ? (char *)"secs" : (char *)"kb";
 
   sprintf(log_buffer, "%s job total %lu %s exceeded limit %lu %s",
           rd->rs_name,
@@ -6253,7 +6259,7 @@ char *MOMFindMyExe(
   char *path;
 
 
-  link = calloc(MAXPATHLEN + 1, sizeof(char));
+  link = (char *)calloc(MAXPATHLEN + 1, sizeof(char));
 
   if (link == NULL)
     {
@@ -6430,6 +6436,9 @@ void MOMCheckRestart(void)
   {
   time_t newmtime;
 
+  /* make sure we're not making a mess in the aux dir */
+  cleanup_aux();
+
   if ((MOMConfigRestart <= 0) || (MOMExeTime <= 0))
     {
     return;
@@ -6457,9 +6466,6 @@ void MOMCheckRestart(void)
 
     DBPRT(("%s\n", log_buffer));
     }
-
-  /* make sure we're not making a mess in the aux dir */
-  cleanup_aux();
   }  /* END MOMCheckRestart() */
 
 
@@ -6531,9 +6537,9 @@ void initialize_globals(void)
   if (pbs_mom_port <= 0)
     {
     pbs_mom_port = get_svrport(
-                     PBS_MOM_SERVICE_NAME,
-                     "tcp",
-                     PBS_MOM_SERVICE_PORT);
+        PBS_MOM_SERVICE_NAME,
+        "tcp",
+        PBS_MOM_SERVICE_PORT);
     }
 
   ptr = getenv("PBS_BATCH_SERVICE_PORT");
@@ -6546,9 +6552,9 @@ void initialize_globals(void)
   if (default_server_port <= 0)
     {
     default_server_port = get_svrport(
-                            PBS_BATCH_SERVICE_NAME,
-                            "tcp",
-                            PBS_BATCH_SERVICE_PORT);
+        PBS_BATCH_SERVICE_NAME,
+        "tcp",
+        PBS_BATCH_SERVICE_PORT);
     }
 
   ptr = getenv("PBS_MANAGER_SERVICE_PORT");
@@ -6561,9 +6567,9 @@ void initialize_globals(void)
   if (pbs_rm_port <= 0)
     {
     pbs_rm_port = get_svrport(
-                    PBS_MANAGER_SERVICE_NAME,
-                    "tcp",
-                    PBS_MANAGER_SERVICE_PORT);
+        PBS_MANAGER_SERVICE_NAME,
+        "tcp",
+        PBS_MANAGER_SERVICE_PORT);
     }
 
   /* set timeout values for MOM */
@@ -6658,13 +6664,13 @@ static void PBSAdjustLogLevel(
 
 char *mk_dirs(
 
-  char *base)  /* I */
+  const char *base)  /* I */
 
   {
   char *pn;
   int   ltop = strlen(path_home);
 
-  pn = calloc(1, ltop + strlen(base) + 2);
+  pn = (char *)calloc(1, ltop + strlen(base) + 2);
 
   if (pn == NULL)
     {
@@ -6730,7 +6736,7 @@ void parse_command_line(
         else if (!strcmp(optarg, "version"))
           {
           printf("Version: %s\nRevision: %s\n",
-            PACKAGE_VERSION, SVN_VERSION);
+            PACKAGE_VERSION, GIT_HASH);
 
           exit(0);
           }
@@ -7257,19 +7263,19 @@ int setup_program_environment(void)
   /* load system topology */
   if ((hwloc_topology_init(&topology) == -1))
     {
-    log_err(-1, msg_daemonname, (char *)"Unable to init machine topology");
+    log_err(-1, msg_daemonname, "Unable to init machine topology");
     return(-1);
     }
 
   if ((hwloc_topology_set_flags(topology, HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM) != 0))
     {
-    log_err(-1, msg_daemonname, (char *)"Unable to configure machine topology");
+    log_err(-1, msg_daemonname, "Unable to configure machine topology");
     return(-1);
     }
 
   if ((hwloc_topology_load(topology) == -1))
     {
-    log_err(-1, msg_daemonname, (char *)"Unable to load machine topology");
+    log_err(-1, msg_daemonname, "Unable to load machine topology");
     return(-1);
     }
 
@@ -7310,7 +7316,7 @@ int setup_program_environment(void)
 
     if (setsid() == -1)
       {
-      log_err(errno, msg_daemonname, (char *)"setsid failed");
+      log_err(errno, msg_daemonname, "setsid failed");
 
       return(2);
       }
@@ -7362,7 +7368,7 @@ int setup_program_environment(void)
 
   if (ftruncate(lockfds, (off_t)0) != 0)
     {
-    log_err(errno, msg_daemonname, (char *)"failed to truncate lockfile");
+    log_err(errno, msg_daemonname, "failed to truncate lockfile");
 
     return(2);
     }
@@ -7372,7 +7378,7 @@ int setup_program_environment(void)
   if (write(lockfds, log_buffer, strlen(log_buffer) + 1) !=
       (ssize_t)(strlen(log_buffer) + 1))
     {
-    log_err(errno, msg_daemonname, (char *)"failed to write to lockfile");
+    log_err(errno, msg_daemonname, "failed to write to lockfile");
 
     return(2);
     }
@@ -7384,7 +7390,7 @@ int setup_program_environment(void)
 
   if (plock(PROCLOCK) == -1)
     {
-    log_err(errno, msg_daemonname, (char *)"failed to lock mom into memory with plock");
+    log_err(errno, msg_daemonname, "failed to lock mom into memory with plock");
     }
   else
     {
@@ -7564,7 +7570,7 @@ int setup_program_environment(void)
 
   if (c == -1)
     {
-    log_err(-1, msg_daemonname, (char *)"Unable to get my host name");
+    log_err(-1, msg_daemonname, "Unable to get my host name");
 
     return(-1);
     }
@@ -7573,7 +7579,7 @@ int setup_program_environment(void)
 
   ret_size = RETURN_STRING_SIZE;
 
-  if ((ret_string = calloc(1, ret_size)) == NULL)
+  if ((ret_string = (char *)calloc(1, ret_size)) == NULL)
     {
     perror("calloc");
 
@@ -7611,14 +7617,14 @@ int setup_program_environment(void)
   /* initialize machine-dependent polling routines */
   if ((c = mom_open_poll()) != PBSE_NONE)
     {
-    log_err(c, msg_daemonname, (char *)"pre_poll failed");
+    log_err(c, msg_daemonname, "pre_poll failed");
 
     return(3);
     }
 
   if (mom_get_sample() != PBSE_NONE)
     {
-    log_err(c, msg_daemonname, (char *)"mom_get_sample failed after mom_open_poll");
+    log_err(c, msg_daemonname, "mom_get_sample failed after mom_open_poll");
 
     return(3);
     }
@@ -7701,7 +7707,7 @@ int setup_program_environment(void)
   if ((received_statuses == NULL) ||
       (received_table == NULL))
     {
-    log_err(ENOMEM, __func__, (char *)"No memory!!!");
+    log_err(ENOMEM, __func__, "No memory!!!");
     return(-1);
     }
 
@@ -7968,7 +7974,7 @@ void examine_all_polled_jobs(void)
         {
         char *kill_msg;
 
-        kill_msg = calloc(1, 80 + strlen(log_buffer));
+        kill_msg = (char *)calloc(1, 80 + strlen(log_buffer));
 
         if (kill_msg != NULL)
           {
@@ -8263,14 +8269,14 @@ int mark_for_resend(
 void prepare_child_tasks_for_delete()
 
   {
-  job *job;
+  job *pJob;
 
 
-  for (job = GET_NEXT(svr_alljobs);job != NULL;job = GET_NEXT(job->ji_alljobs))
+  for (pJob = (job *)GET_NEXT(svr_alljobs);pJob != NULL;pJob = (job *)GET_NEXT(pJob->ji_alljobs))
     {
-    task *task;
+    task *pTask;
 
-    for (task = GET_NEXT(job->ji_tasks);task != NULL;task = GET_NEXT(task->ti_jobtask))
+    for (pTask = (task *)GET_NEXT(pJob->ji_tasks);pTask != NULL;pTask = (task *)GET_NEXT(pTask->ti_jobtask))
       {
 
       char buf[128];
@@ -8278,16 +8284,16 @@ void prepare_child_tasks_for_delete()
       extern int exiting_tasks;
 
       sprintf(buf, "preparing exited session %d for task %d in job %s for deletion",
-              (int)task->ti_qs.ti_sid,
-              task->ti_qs.ti_task,
-              job->ji_qs.ji_jobid);
+              (int)pTask->ti_qs.ti_sid,
+              pTask->ti_qs.ti_task,
+              pJob->ji_qs.ji_jobid);
 
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
 
-      task->ti_qs.ti_exitstat = 0;  /* actually unknown */
-      task->ti_qs.ti_status = TI_STATE_EXITED;
+      pTask->ti_qs.ti_exitstat = 0;  /* actually unknown */
+      pTask->ti_qs.ti_status = TI_STATE_EXITED;
 
-      task_save(task);
+      task_save(pTask);
 
       exiting_tasks = 1;
       }
@@ -8411,7 +8417,7 @@ void main_loop(void)
     /* unblock signals */
 
     if (sigprocmask(SIG_UNBLOCK, &allsigs, NULL) == -1)
-      log_err(errno, __func__, (char *)"sigprocmask(UNBLOCK)");
+      log_err(errno, __func__, "sigprocmask(UNBLOCK)");
 
     time_now = time((time_t *)0);
 
@@ -8438,13 +8444,13 @@ void main_loop(void)
         init_network(pbs_rm_port, tcp_request);
         }
 
-      log_err(-1, msg_daemonname, (char *)"wait_request failed");
+      log_err(-1, msg_daemonname, "wait_request failed");
       }
 
     /* block signals while we do things */
 
     if (sigprocmask(SIG_BLOCK, &allsigs, NULL) == -1)
-      log_err(errno, __func__, (char *)"sigprocmask(BLOCK)");
+      log_err(errno, __func__, "sigprocmask(BLOCK)");
 
 
     if ((pjob = (job *)GET_NEXT(svr_alljobs)) == NULL)
@@ -8472,7 +8478,7 @@ void restart_mom(
   {
   char *envstr;
 
-  envstr = calloc(1, (strlen("PATH") + strlen(orig_path) + 2) * sizeof(char));
+  envstr = (char *)calloc(1, (strlen("PATH") + strlen(orig_path) + 2) * sizeof(char));
 
   if (!envstr)
     {
@@ -8569,7 +8575,7 @@ int read_layout_file()
         /* Allocate temp nodeset */
         if ((nodeset = hwloc_bitmap_alloc()) == NULL)
           {
-          log_err(errno, __func__, (char *)"failed to allocate nodeset");
+          log_err(errno, __func__, "failed to allocate nodeset");
           return(-1);
           }
 
@@ -8615,7 +8621,7 @@ int read_layout_file()
         /* Store nodeset of node_boards[i], may be empty */
         if ((node_boards[i].nodeset = hwloc_bitmap_dup(nodeset)) == NULL)
           {
-          log_err(errno, __func__, (char *)"failed to duplicate nodeset");      
+          log_err(errno, __func__, "failed to duplicate nodeset");      
           return(-1);
           }
 
@@ -8690,7 +8696,7 @@ int setup_nodeboards()
   /* Read mom.layout, init nodesets */
   if ((rc = read_layout_file()) != PBSE_NONE)
     {
-    log_err(-1, __func__, (char *)"Could not read layout file!\n");
+    log_err(-1, __func__, "Could not read layout file!\n");
     
     exit(rc);
     } 
@@ -8705,7 +8711,7 @@ int setup_nodeboards()
     /* Allocate cpuset for this nodeboard */
     if ((node_boards[i].cpuset = hwloc_bitmap_alloc()) == NULL)
       {
-      log_err(errno, __func__, (char *)"failed to allocate cpuset");
+      log_err(errno, __func__, "failed to allocate cpuset");
 
       exit(-1);
       }
@@ -8752,7 +8758,7 @@ int setup_nodeboards()
       {
       if ((node_boards[i].path_meminfo = (char **)calloc(node_boards[i].num_nodes, sizeof(char *))) == NULL)
         {
-        log_err(errno, __func__, (char *)"failed to allocate memory");   
+        log_err(errno, __func__, "failed to allocate memory");   
         exit(-1);
         }
 
@@ -8761,7 +8767,7 @@ int setup_nodeboards()
         {
         if ((node_boards[i].path_meminfo[k] = (char *)calloc(1, mempath_len)) == NULL)
           {
-          log_err(errno, __func__, (char *)"failed to allocate memory");   
+          log_err(errno, __func__, "failed to allocate memory");   
           exit(-1);
           }
 
@@ -8910,7 +8916,7 @@ im_compose_info *create_compose_reply_info(
   tm_task_id  taskid)
 
   {
-  im_compose_info *ici = calloc(1, sizeof(im_compose_info));
+  im_compose_info *ici = (im_compose_info *)calloc(1, sizeof(im_compose_info));
 
   if (ici != NULL)
     {
@@ -8922,7 +8928,7 @@ im_compose_info *create_compose_reply_info(
     ici->taskid  = taskid;
     }
   else
-    log_err(ENOMEM, __func__, (char *)"Cannot allocate memory!");
+    log_err(ENOMEM, __func__, "Cannot allocate memory!");
 
   return(ici);
   } /* END create_compose_reply_info() */

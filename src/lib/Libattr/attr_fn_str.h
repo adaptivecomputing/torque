@@ -4,9 +4,9 @@
 #include "list_link.h" /* tlist_head */
 #include "pbs_ifl.h" /* batch_op */
 
-int decode_str(pbs_attribute *patr, char *name, char *rescn, char *val, int perm); 
+int decode_str(pbs_attribute *patr, const char *name, char *rescn, char *val, int perm);
 
-int encode_str(pbs_attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int perm); 
+int encode_str(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm);
 
 int set_str(struct pbs_attribute *attr, struct pbs_attribute *new, enum batch_op op);
 

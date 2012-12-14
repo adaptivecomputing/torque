@@ -137,7 +137,7 @@ int lock_queue(
   int               logging)
 
   {
-  int rc = PBSE_NONE;
+  int   rc = PBSE_NONE;
   char *err_msg = NULL;
 
   if (logging >= 10)
@@ -148,15 +148,15 @@ int lock_queue(
     }
 
   if (pthread_mutex_lock(the_queue->qu_mutex) != 0)
-    { 
-    if (logging >= 10) 
+    {
+    if (logging >= 10)
       {
       snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot lock queue %s mutex in method %s",
           the_queue->qu_qs.qu_name, id);
       log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, err_msg);
       }
     rc = PBSE_MUTEX;
-    } 
+    }
 
   if (err_msg != NULL)
     free(err_msg);
@@ -234,7 +234,7 @@ pbs_queue *que_alloc(
 
   pq->qu_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pq->qu_jobs = (struct all_jobs *)calloc(1, sizeof(struct all_jobs));
-  pq->qu_jobs_array_sum = calloc(1, sizeof(struct all_jobs));
+  pq->qu_jobs_array_sum = (struct all_jobs *)calloc(1, sizeof(struct all_jobs));
   
   if ((pq->qu_mutex == NULL) ||
       (pq->qu_jobs == NULL) ||
@@ -562,102 +562,6 @@ pbs_queue *next_queue(
 
   return(pque);
   } /* END next_queue() */
-
-
-
-
-/* 
- * gets the locks on both queues without releasing the all_queues mutex lock.
- * Doing this another way can cause deadlock.
- *
- * @return PBSE_NONE on success
- */
-
-int get_parent_dest_queues(
-
-  char       *queue_parent_name,
-  char       *queue_dest_name,
-  pbs_queue **parent,
-  pbs_queue **dest,
-  job       **pjob_ptr)
-
-  {
-  pbs_queue *pque_parent;
-  pbs_queue *pque_dest;
-  char       jobid[PBS_MAXSVRJOBID + 1];
-  char       log_buf[LOCAL_LOG_BUF_SIZE + 1];
-  job       *pjob = *pjob_ptr;
-  int        index_parent;
-  int        index_dest;
-  int        rc = PBSE_NONE;
-
-  strcpy(jobid, pjob->ji_qs.ji_jobid);
-
-  if ((queue_parent_name != NULL) && (queue_dest_name != NULL))
-    {
-    if (!strcmp(queue_parent_name, queue_dest_name))
-      {
-      /* parent and destination are the same. 
-         Job is already in destnation queue. return */
-      snprintf(log_buf, sizeof(log_buf), "parent and destination queues are the same: parent %s - dest %s. jobid: %s",
-          queue_parent_name,
-          queue_dest_name,
-          jobid);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-      return(-1); 
-      }
-    }
-  else
-    return(-1);
-
-  unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
-
-  unlock_queue(*parent, __func__, (char *)NULL, 0);
-
-  *parent = NULL;
-  *dest   = NULL;
-
-  pthread_mutex_lock(svr_queues.allques_mutex);
-
-  index_parent = get_value_hash(svr_queues.ht, queue_parent_name);
-  index_dest   = get_value_hash(svr_queues.ht, queue_dest_name);
-
-  if ((index_parent < 0) ||
-      (index_dest < 0))
-    {
-    rc = -1;
-    }
-  else
-    {
-    /* good path */
-    pque_parent = svr_queues.ra->slots[index_parent].item;
-    pque_dest   = svr_queues.ra->slots[index_dest].item;
-
-    if ((pque_parent == NULL) ||
-        (pque_dest == NULL))
-      {
-      rc = -1;
-      }
-    else
-      {
-      /* SUCCESS! */
-      lock_queue(pque_parent, __func__, (char *)NULL, 0);
-      lock_queue(pque_dest,   __func__, (char *)NULL, 0);
-      *parent = pque_parent;
-      *dest = pque_dest;
-
-      rc = PBSE_NONE;
-      }
-    }
-
-  pthread_mutex_unlock(svr_queues.allques_mutex);
-
-  if ((*pjob_ptr = svr_find_job(jobid, TRUE)) == NULL)
-    rc = -1;
-
-  return(rc);
-  } /* END get_parent_dest_queues() */
-
 
 
 

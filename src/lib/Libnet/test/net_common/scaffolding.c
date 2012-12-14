@@ -33,6 +33,6 @@ struct sockaddr_in *get_cached_addrinfo(
 
 time_t pbs_tcp_timeout;
 
-void log_record(int eventtype, int eventclass, const char *caller, char *msg)
+void log_record(int eventtype, int eventclass, const char *caller, const char *msg)
   {
   }

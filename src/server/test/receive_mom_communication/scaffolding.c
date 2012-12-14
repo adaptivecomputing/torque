@@ -55,7 +55,7 @@ void log_record(
   int         eventtype,  /* I */
   int         objclass,   /* I */
   const char *objname,    /* I */
-  char       *text)       /* I */ {}
+  const char *text)       /* I */ {}
 
 int insert_addr_name_info(
     
@@ -191,8 +191,8 @@ long disrsl(
   return(0);
   }
 
-void log_event(int eventtype, int objclass, const char *objname, char *text) {}
-void log_err(int errnum, const char *routine, char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_err(int errnum, const char *routine, const char *text) {}
 void close_conn(int sd, int has_mutex) {}
 
 int copy_to_end_of_dynamic_string(dynamic_string *ds, const char *to_copy) 

@@ -14,7 +14,7 @@ int unlock_node(struct pbsnode *the_node, const char *method_name, char *msg, in
   return(0);
   }
 
-void log_err(int errnum, const char *routine, char *text) {}
+void log_err(int errnum, const char *routine, const char *text) {}
 
 void free_resizable_array(
 
@@ -362,7 +362,7 @@ hash_table_t *create_hash(
 char *threadsafe_tokenizer(
 
   char **str,    /* M */
-  char  *delims) /* I */
+  const char  *delims) /* I */
 
   {
   char *current_char;

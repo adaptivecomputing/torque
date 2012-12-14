@@ -14,7 +14,7 @@ char pbs_current_user[PBS_MAXUSER];
 struct connection svr_conn[PBS_NET_MAX_CONNECTIONS];
 pbs_net_t pbs_server_addr;
 unsigned int pbs_server_port_dis;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
 
 

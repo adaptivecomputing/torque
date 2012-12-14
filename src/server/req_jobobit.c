@@ -114,43 +114,45 @@
 #include "issue_request.h" /* issue_request */
 #include "utils.h"
 #include "svr_func.h" /* get_svr_attr_* */
+#include "svr_task.h"
 #include "req_jobobit.h" /* req_jobobit */
 #include "svr_connect.h" /* svr_connect */
 #include "job_func.h" /* svr_job_purge */
 #include "ji_mutex.h"
 #include "../lib/Libutils/u_lock_ctl.h"
 #include "exiting_jobs.h"
+#include "svr_task.h" /* set_task */
 
 #define RESC_USED_BUF 2048
 #define JOBMUSTREPORTDEFAULTKEEP 30
 
 /* External Global Data Items */
 
-extern struct         all_jobs alljobs;
-extern unsigned int   pbs_mom_port;
-extern unsigned int   pbs_rm_port;
-extern char *path_spool;
-extern int   server_init_type;
-extern pbs_net_t pbs_server_addr;
-extern char *msg_init_abt;
-extern char *msg_job_end;
-extern char *msg_job_end_sig;
-extern char *msg_job_end_stat;
-extern char *msg_momnoexec1;
-extern char *msg_momnoexec2;
-extern char *msg_momjoboverlimit;
-extern char *msg_obitnojob;
-extern char *msg_obitnocpy;
-extern char *msg_obitnodel;
-extern char  server_host[];
-extern int   svr_do_schedule;
+extern struct all_jobs  alljobs;
+extern unsigned int     pbs_mom_port;
+extern unsigned int     pbs_rm_port;
+extern char            *path_spool;
+extern int              server_init_type;
+extern pbs_net_t        pbs_server_addr;
+extern char            *msg_init_abt;
+extern char            *msg_job_end;
+extern char            *msg_job_end_sig;
+extern char            *msg_job_end_stat;
+extern char            *msg_momnoexec1;
+extern char            *msg_momnoexec2;
+extern char            *msg_momjoboverlimit;
+extern char            *msg_obitnojob;
+extern char            *msg_obitnocpy;
+extern char            *msg_obitnodel;
+extern char             server_host[];
+extern int              svr_do_schedule;
 extern pthread_mutex_t *svr_do_schedule_mutex;
 extern pthread_mutex_t *listener_command_mutex;
-extern int   listener_command;
+extern int              listener_command;
 
-extern int   LOGLEVEL;
+extern int              LOGLEVEL;
 
-extern const char *PJobState[];
+extern const char      *PJobState[];
 
 /* External Functions called */
 
@@ -167,7 +169,7 @@ void       *on_job_exit_task(void *vp);
  * output, error, or checkpoint
  */
 
-static char *setup_from(
+char *setup_from(
 
   job  *pjob,   /* I */
   char *suffix) /* I */
@@ -300,7 +302,7 @@ struct batch_request *setup_cpyfiles(
 
 
 
-static int is_joined(
+int is_joined(
 
   job          *pjob,  /* I */
   enum job_atr  ati)   /* I */
@@ -325,11 +327,13 @@ static int is_joined(
     {
     pd = pattr->at_val.at_str;
 
-    if ((pd != NULL) && (*pd != '\0') && (*pd != 'n'))
+    if ((pd != NULL) &&
+        (*pd != '\0') &&
+        (*pd != 'n'))
       {
       /* if not the first letter, and in list - is joined */
-
-      if ((*pd != key) && (strchr(pd + 1, (int)key)))
+      if ((*pd != key) &&
+          (strchr(pd + 1, (int)key)))
         {
         return(1); /* being joined */
         }
@@ -340,14 +344,13 @@ static int is_joined(
   }
 
 
-static struct batch_request *return_stdfile(
+struct batch_request *return_stdfile(
 
   struct batch_request *preq,
   job                  *pjob,
   enum job_atr          ati)
 
   {
-
   if ((pjob->ji_wattr[JOB_ATR_interactive].at_flags) &&
       (pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long))
     {
@@ -358,7 +361,6 @@ static struct batch_request *return_stdfile(
     {
     return(NULL);
     }
-
 
   /* if this file is joined to another then it doesn't have to get copied back */
   if (is_joined(pjob, ati))
@@ -383,7 +385,9 @@ static struct batch_request *return_stdfile(
     }
 
   return(preq);
-  }
+  } /* END return_stdfile() */
+
+
 
 
 /*
@@ -2451,7 +2455,7 @@ void on_job_rerun(
  * child that sent the job to MOM.
  */
 
-static void wait_for_send(
+void wait_for_send(
 
   struct work_task *ptask)
 
@@ -2467,7 +2471,7 @@ static void wait_for_send(
 
 
 
-static int setrerun(
+int setrerun(
 
   job *pjob)
 
@@ -2480,7 +2484,7 @@ static int setrerun(
 
     /* SUCCESS */
 
-    return(0);
+    return(PBSE_NONE);
     }
 
   /* FAILURE */
@@ -2712,7 +2716,7 @@ int handle_subjob_exit_status(
         log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, other_jobid, log_buf);
         
         kill_job_on_mom(other_jobid, pnode);
-        unlock_node(pnode, __func__, NULL, 0);
+        unlock_node(pnode, __func__, (char *)NULL, 0);
         }
       }
     else

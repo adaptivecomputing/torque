@@ -6,7 +6,7 @@
 #include "pbs_job.h" /* job */
 #include "node_func.h" /* node_info */
 
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
 
 struct batch_request *alloc_br(int type)
@@ -51,7 +51,7 @@ void svr_disconnect(int handle)
   exit(1);
   }
 
-void req_reject(int code, int aux, struct batch_request *preq, char *HostName, char *Msg)
+void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
   {
   fprintf(stderr, "The call to req_reject to be mocked!!\n");
   exit(1);

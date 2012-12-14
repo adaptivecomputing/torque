@@ -29,7 +29,7 @@ resource_def *svr_resc_def;
 attribute_def node_attr_def[2];
 char *path_nodenote_new;
 struct server server;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 hello_container hellos;
 struct pbsnode reporter;
 struct pbsnode *alps_reporter = &reporter;
@@ -195,13 +195,13 @@ node_iterator *get_node_iterator()
   exit(1);
   }
 
-resource_def *find_resc_def(resource_def *rscdf, char *name, int limit)
+resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
   {
   fprintf(stderr, "The call to find_resc_def needs to be mocked!!\n");
   exit(1);
   }
 
-int decode_arst(struct pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_arst(struct pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
   {
   fprintf(stderr, "The call to decode_arst needs to be mocked!!\n");
   exit(1);
@@ -351,7 +351,7 @@ void free_dynamic_string(dynamic_string *ds)
 
 
 
-char *threadsafe_tokenizer(char **str, char *delims)
+char *threadsafe_tokenizer(char **str, const char *delims)
   {
   fprintf(stderr, "The call to threadsafe_tokenizer needs to be mocked!!\n");
   exit(1);

@@ -17,7 +17,7 @@ int comp_null(struct pbs_attribute *attr, struct pbs_attribute *with);
 
 svrattrl *attrlist_alloc(int szname, int szresc, int szval); 
 
-svrattrl *attrlist_create(char *aname, char *rname, int vsize); 
+svrattrl *attrlist_create(const char *aname, const char *rname, int vsize);
 
 void free_attrlist(tlist_head *pattrlisthead);
 

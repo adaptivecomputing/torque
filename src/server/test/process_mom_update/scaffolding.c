@@ -33,16 +33,16 @@ attribute_def node_attr_def[1];
 
 
 
-void log_record(int eventtype, int objclass, const char *objname, char *text) {}
-void log_event(int eventtype, int objclass, const char *objname, char *text) {}
-void log_err(int errnum, const char *routine, char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_err(int errnum, const char *routine, const char *text) {}
 void close_conn(int sd, int has_mutex) {}
 hello_container         hellos;
 
 char *threadsafe_tokenizer(
 
   char **str,    /* M */
-  char  *delims) /* I */
+  const char  *delims) /* I */
 
   {
   return(NULL);
@@ -198,7 +198,7 @@ struct pbsnode *AVL_find(
 int decode_arst(
 
   pbs_attribute *patr,    /* O (modified) */
-  char          *name,    /* I pbs_attribute name (notused) */
+  const char   *name,    /* I pbs_attribute name (notused) */
   char          *rescn,   /* I resource name (notused) */
   char          *val,     /* I pbs_attribute value */
   int            perm) /* only used for resources */

@@ -7,7 +7,7 @@
 #include "work_task.h" /* work_task */
 
 char *msg_messagejob = "Message request to job status %d";
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
 void reply_ack(struct batch_request *preq)
   {
@@ -21,7 +21,7 @@ void svr_disconnect(int handle)
   exit(1);
   }
 
-void req_reject(int code, int aux, struct batch_request *preq, char *HostName, char *Msg)
+void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
   {
   fprintf(stderr, "The call to req_reject to be mocked!!\n");
   exit(1);

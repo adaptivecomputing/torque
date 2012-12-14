@@ -14,7 +14,7 @@ char *msg_err_unlink = "Unlink of %s file %s failed";
 all_queues svr_queues;
 attribute_def que_attr_def[10];
 struct server server;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 char *path_queues;
 
 int insert_thing(resizable_array *ra, void *thing)
@@ -35,7 +35,7 @@ void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
   exit(1);
   }
 
-int save_acl(pbs_attribute *attr, attribute_def *pdef, char *subdir, char *name)
+int save_acl(pbs_attribute *attr, attribute_def *pdef, const char *subdir, const char *name)
   {
   fprintf(stderr, "The call to save_acl needs to be mocked!!\n");
   exit(1);

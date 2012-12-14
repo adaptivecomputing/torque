@@ -92,11 +92,11 @@ struct rm_attribute
 ** for the name in question.
 */
 
-typedef char *(*confunc)(struct rm_attribute *);
+typedef const char *(*confunc)(struct rm_attribute *);
 
 struct config
   {
-  char *c_name;
+  const char *c_name;
   union
     {
     confunc c_func;

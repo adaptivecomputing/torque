@@ -122,6 +122,7 @@
 #include "node_manager.h" /* tfind_addr */
 #include "ji_mutex.h"
 #include "unistd.h"
+#include "svr_task.h"
 
 /* Global Data Items: */
 
@@ -936,14 +937,14 @@ int stat_to_mom(
       log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_JOB,job_id,log_buf);
       }
 
-    unlock_node(node, __func__, "no rely mom", LOGLEVEL);
+    unlock_node(node, __func__, (char *)"no rely mom", LOGLEVEL);
     free_br(newrq);
 
     return PBSE_NORELYMOM;
     }
 
   /* get connection to MOM */
-  unlock_node(node, __func__, "before svr_connect", LOGLEVEL);
+  unlock_node(node, __func__, (char *)"before svr_connect", LOGLEVEL);
   handle = svr_connect(job_momaddr, job_momport, &rc, NULL, NULL, ToServerDIS);
 
   /* Unlock job here */
@@ -986,6 +987,7 @@ void stat_update(
   int                   oldsid;
   int                   bad = 0;
   time_t                time_now = time(NULL);
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   preply = &preq->rq_reply;
 
@@ -1051,10 +1053,15 @@ void stat_update(
 
         }
       }
+    else
+      {
+      snprintf(log_buf, sizeof(log_buf),
+        "Poll job request failed for job %s", preq->rq_ind.rq_status.rq_id);
+      log_err(preply->brp_code, __func__, log_buf);
+      }
     }
   cntl->sc_conn = -1;
 
-  /* MUTSU - Unlock job here? */
   if (cntl->sc_post)
     cntl->sc_post(cntl); /* continue where we left off */
 
@@ -1126,7 +1133,7 @@ void poll_job_task(
   job       *pjob;
   time_t     time_now = time(NULL);
   long       poll_jobs = 0;
-  int job_state = -1;
+  int        job_state = -1;
 
   if (job_id != NULL)
     {
@@ -1379,9 +1386,9 @@ int get_numa_statuses(
     if (pn == NULL)
       continue;
 
-    lock_node(pn, __func__, NULL, LOGLEVEL);
+    lock_node(pn, __func__, (char *)NULL, LOGLEVEL);
     rc = status_node(pn, preq, bad, pstathd);
-    unlock_node(pn, __func__, NULL, LOGLEVEL);
+    unlock_node(pn, __func__, (char *)NULL, LOGLEVEL);
 
     if (rc != PBSE_NONE)
       {
@@ -1482,7 +1489,7 @@ int req_stat_node(
     else
       rc = get_numa_statuses(pnode, preq, &bad, &preply->brp_un.brp_status);
 
-    unlock_node(pnode, __func__, "type == 0", LOGLEVEL);
+    unlock_node(pnode, __func__, (char *)"type == 0", LOGLEVEL);
     }
   else
     {
@@ -1494,7 +1501,7 @@ int req_stat_node(
       if ((type == 2) && 
           (!hasprop(pnode, &props)))
         {
-        unlock_node(pnode, __func__, "type != 0, next_host", LOGLEVEL);
+        unlock_node(pnode, __func__, (char *)"type != 0, next_host", LOGLEVEL);
         continue;
         }
 
@@ -1506,11 +1513,11 @@ int req_stat_node(
       
       if (rc != PBSE_NONE)
         {
-        unlock_node(pnode, __func__, "type != 0, rc != 0, get_numa_statuses", LOGLEVEL);
+        unlock_node(pnode, __func__, (char *)"type != 0, rc != 0, get_numa_statuses", LOGLEVEL);
         break;
         }
 
-      unlock_node(pnode, __func__, "type != 0, rc == 0, get_numa_statuses", LOGLEVEL);
+      unlock_node(pnode, __func__, (char *)"type != 0, rc == 0, get_numa_statuses", LOGLEVEL);
       }
     }
 

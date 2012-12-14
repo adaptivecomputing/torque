@@ -3,5 +3,5 @@
 #include "attribute.h" /* pbs_attribute */
 #include "list_link.h" /* tlist_head */
 
-int encode_inter( pbs_attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int perm); 
+int encode_inter( pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm);
 
