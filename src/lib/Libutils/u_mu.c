@@ -80,7 +80,7 @@ int MUSNPrintF(
 
   char **BPtr,   /* I */
   int   *BSpace, /* I */
-  char  *Format, /* I */
+  const char  *Format, /* I */
   ...)           /* I */
 
   {
@@ -178,7 +178,7 @@ char *threadsafe_tokenizer(
 int safe_strncat(
 
   char   *str,
-  char   *to_append,
+  const char   *to_append,
   size_t  space_remaining)
 
   {
@@ -205,7 +205,7 @@ int MUStrNCat(
 
   char **BPtr,   /* I (modified) */
   int   *BSpace, /* I (modified) */
-  char  *Src)    /* I */
+  const char  *Src)    /* I */
 
   {
   int index;

@@ -147,8 +147,8 @@ void clear_attr(
 
 static int str_nc_cmp(
 
-  char *s1,  /* I */
-  char *s2)  /* I */
+  const char *s1,  /* I */
+  const char *s2)  /* I */
 
   {
   do
@@ -362,9 +362,9 @@ svrattrl *attrlist_alloc(
 
 svrattrl *attrlist_create(
 
-  char  *aname, /* I - pbs_attribute name */
-  char  *rname, /* I - resource name if needed or null */
-  int    vsize) /* I - size of resource value         */
+  const char  *aname, /* I - pbs_attribute name */
+  const char  *rname, /* I - resource name if needed or null */
+  int           vsize) /* I - size of resource value         */
 
   {
   svrattrl *pal;

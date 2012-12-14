@@ -503,7 +503,7 @@ int open_master(
 
   if (status < 0)
     {
-    log_err(errno, "open_master", (char *)"failed in openpty()");
+    log_err(errno, "open_master", "failed in openpty()");
 
     return(-1);
     }
@@ -609,5 +609,5 @@ struct sig_tbl sig_tbl[] =
   { "WINCH", SIGWINCH },
   { "USR1", SIGUSR1 },
   { "USR2", SIGUSR2 },
-  {(char *)0, -1 }
+  { NULL, -1 }
   };

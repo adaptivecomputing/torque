@@ -68,7 +68,7 @@ node_comm_t *update_current_path(mom_hierarchy_t *nt)
   exit(1);
   }
 
-char *dependent(char *res, struct rm_attribute *attr)
+const char *dependent(const char *res, struct rm_attribute *attr)
   {
   fprintf(stderr, "The call to dependent needs to be mocked!!\n");
   exit(1);
@@ -86,7 +86,7 @@ int MUStrNCat(char **BPtr, int *BSpace, char *Src)
   exit(1);
   }
 
-char *reqgres(struct rm_attribute *attrib)
+const char *reqgres(struct rm_attribute *attrib)
   {
   fprintf(stderr, "The call to reqgres needs to be mocked!!\n");
   exit(1);
@@ -230,7 +230,7 @@ AvlTree AVL_insert(u_long key, uint16_t port, struct pbsnode *node, AvlTree tree
   exit(1);
   }
 
-struct config *rm_search(struct config *where, char *what)
+struct config *rm_search(struct config *where, const char *what)
   {
   fprintf(stderr, "The call to rm_search needs to be mocked!!\n");
   exit(1);

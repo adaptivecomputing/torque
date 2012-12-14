@@ -23,7 +23,7 @@ int MOMPrologTimeoutCount;
 uid_t pbsuser;
 gid_t pbsgroup;
 
-int encode_resc(pbs_attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int ac_perm)
+int encode_resc(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int ac_perm)
   {
   fprintf(stderr, "The call to encode_resc needs to be mocked!!\n");
   exit(1);
@@ -95,7 +95,7 @@ int open_std_file(job *pjob, enum job_file which, int mode, gid_t exgid)
   exit(1);
   }
 
-resource_def *find_resc_def(resource_def *rscdf, char *name, int limit)
+resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
   {
   fprintf(stderr, "The call to find_resc_def needs to be mocked!!\n");
   exit(1);

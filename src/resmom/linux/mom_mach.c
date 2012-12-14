@@ -141,16 +141,16 @@ extern char  path_meminfo[MAX_LINE];
 /*
 ** local functions and data
 */
-static char *resi     (struct rm_attribute *);
-static char *totmem   (struct rm_attribute *);
-static char *availmem (struct rm_attribute *);
-static char *physmem  (struct rm_attribute *);
-static char *ncpus    (struct rm_attribute *);
-static char *walltime (struct rm_attribute *);
-static char *quota    (struct rm_attribute *);
-static char *netload  (struct rm_attribute *);
+static const char *resi     (struct rm_attribute *);
+static const char *totmem   (struct rm_attribute *);
+static const char *availmem (struct rm_attribute *);
+static const char *physmem  (struct rm_attribute *);
+static const char *ncpus    (struct rm_attribute *);
+static const char *walltime (struct rm_attribute *);
+static const char *quota    (struct rm_attribute *);
+static const char *netload  (struct rm_attribute *);
 #ifdef NUMA_SUPPORT
-static char *cpuact   (struct rm_attribute *);
+static const char *cpuact   (struct rm_attribute *);
 #endif
 #ifdef USELIBMEMACCT
 long long   get_memacct_resi(pid_t pid);
@@ -163,8 +163,8 @@ extern long get_weighted_memory_size(pid_t);
 
 mbool_t ProcIsChild(char *,pid_t,char *);
 
-extern char *loadave(struct rm_attribute *);
-extern char *nullproc(struct rm_attribute *);
+extern const char *loadave(struct rm_attribute *);
+extern const char *nullproc(struct rm_attribute *);
 
 time_t wait_time = 10;
 
@@ -301,7 +301,7 @@ proc_stat_t *get_proc_stat(
       /* FAILURE */
 
       if (!Hertz_errored)
-        log_err(errno, "get_proc_stat", (char *)"sysconf(_SC_CLK_TCK) failed, unable to monitor processes");
+        log_err(errno, "get_proc_stat", "sysconf(_SC_CLK_TCK) failed, unable to monitor processes");
 
       Hertz_errored = 1;
 
@@ -687,13 +687,13 @@ proc_mem_t *get_proc_mem(void)
 void dep_initialize(void)
 
   {
-  char *id = "dep_initialize";
+  const char *id = "dep_initialize";
 
   pagesize = getpagesize();
 
   if ((pdir = opendir(procfs)) == NULL)
     {
-    log_err(errno, id, (char *)"opendir");
+    log_err(errno, id, "opendir");
 
     return;
     }
@@ -867,7 +867,7 @@ static unsigned long cput_sum(
   job *pjob)  /* I */
 
   {
-  char          *id = "cput_sum";
+  const char   *id = "cput_sum";
   ulong          cputime;
   int            nps = 0;
   int            i;
@@ -939,7 +939,7 @@ static int overcpu_proc(
   unsigned long  limit)  /* I */
 
   {
-  char          *id = "overcpu_proc";
+  const char   *id = "overcpu_proc";
   ulong          cputime;
   pid_t          pid;
 
@@ -1029,7 +1029,7 @@ static unsigned long long mem_sum(
   job *pjob)
 
   {
-  char               *id = "mem_sum";
+  const char               *id = "mem_sum";
   int                 i;
   unsigned long long  segadd;
   proc_stat_t        *ps;
@@ -1083,7 +1083,7 @@ static unsigned long long resi_sum(
   job *pjob)
 
   {
-  char               *id = "resi_sum";
+  const char        *id = "resi_sum";
   int                 i;
   unsigned long long  resisize;
   proc_stat_t        *ps;
@@ -1165,7 +1165,7 @@ static int overmem_proc(
   unsigned long long  limit) /* I */
 
   {
-  char               *id = "overmem_proc";
+  const char        *id = "overmem_proc";
   int                 i;
   proc_stat_t        *ps;
 
@@ -1204,7 +1204,7 @@ extern char *msg_momsetlim;
 
 int error(
 
-  char *string,
+  const char *string,
   int   value)
 
   {
@@ -1257,9 +1257,9 @@ int mom_set_limits(
   int  set_mode) /* SET_LIMIT_SET or SET_LIMIT_ALTER */
 
   {
-  char  *id = "mom_set_limits";
+  const char  *id = "mom_set_limits";
 
-  char  *pname = NULL;
+  const char  *pname = NULL;
   int  retval;
   unsigned long value; /* place in which to build resource value */
   resource *pres;
@@ -1708,7 +1708,7 @@ int mom_do_poll(
   job *pjob) /* I */
 
   {
-  char  *pname;
+  const char  *pname;
   resource *pres;
 
   assert(pjob != NULL);
@@ -1766,7 +1766,7 @@ int mom_do_poll(
 int mom_open_poll(void)
 
   {
-  char *id = "mom_open_poll";
+  const char *id = "mom_open_poll";
 
   if (LOGLEVEL >= 6)
     {
@@ -1779,7 +1779,7 @@ int mom_open_poll(void)
 
   if (proc_array == NULL)
     {
-    log_err(errno, id, (char *)"calloc");
+    log_err(errno, id, "calloc");
 
     return(PBSE_SYSTEM);
     }
@@ -1821,7 +1821,7 @@ int mom_open_poll(void)
 int mom_get_sample(void)
 
   {
-  char                  *id = "mom_get_sample";
+  const char           *id = "mom_get_sample";
  
   proc_stat_t           *pi;
   proc_stat_t           *ps;
@@ -1899,7 +1899,7 @@ int mom_get_sample(void)
 
       if (hold == NULL)
         {
-        log_err(errno, id, (char *)"unable to realloc space for proc_array sample");
+        log_err(errno, id, "unable to realloc space for proc_array sample");
 
         return(PBSE_SYSTEM);
         }
@@ -1948,7 +1948,7 @@ int mom_over_limit(
 #ifdef PENABLE_LINUX26_CPUSETS
   static char       *id = "mom_over_limit";
 #endif
-  char              *pname;
+  const char       *pname;
   int                retval;
   unsigned long      value;
   unsigned long      num;
@@ -2317,7 +2317,7 @@ int kill_task(
   int   pg)     /* I (1=signal process group, 0=signal master process only) */
 
   {
-  char          *id = "kill_task";
+  const char   *id = "kill_task";
 
   int            ct = 0;  /* num of processes killed */
   int            NumProcessesFound = 0; /* number of processes found with session ID */
@@ -2664,7 +2664,7 @@ int kill_task(
 int mom_close_poll(void)
 
   {
-  char *id = "mom_close_poll";
+  const char *id = "mom_close_poll";
 
   if (LOGLEVEL >= 6)
     {
@@ -2679,7 +2679,7 @@ int mom_close_poll(void)
     {
     if (closedir(pdir) != 0)
       {
-      log_err(errno, id, (char *)"closedir");
+      log_err(errno, id, "closedir");
 
       return(PBSE_SYSTEM);
       }
@@ -2755,7 +2755,7 @@ char *cput_job(
   pid_t jobid)
 
   {
-  char         *id = "cput_job";
+  const char  *id = "cput_job";
   int           found = 0;
   int           i;
 
@@ -2820,7 +2820,7 @@ char *cput_proc(
   pid_t pid)
 
   {
-  char  *id = "cput_proc";
+  const char  *id = "cput_proc";
   double cputime;
   proc_stat_t *ps;
 
@@ -2853,12 +2853,12 @@ char *cput_proc(
 
 
 
-char *cput(
+const char *cput(
 
   struct rm_attribute *attrib)
 
   {
-  char *id = "cput";
+  const char *id = "cput";
   int value;
 
   if (attrib == NULL)
@@ -2964,7 +2964,7 @@ char *mem_proc(
   pid_t pid)
 
   {
-  char   *id = "mem_proc";
+  const char  *id = "mem_proc";
   proc_stat_t  *ps;
 
   if ((ps = get_proc_stat(pid)) == NULL)
@@ -2993,12 +2993,12 @@ char *mem_proc(
 
 
 
-char *mem(
+const char *mem(
 
   struct rm_attribute *attrib)
 
   {
-  char *id = "mem";
+  const char *id = "mem";
   int value;
 
   if (attrib == NULL)
@@ -3057,7 +3057,7 @@ static char *resi_job(
   pid_t jobid)
 
   {
-  char               *id = "resi_job";
+  const char        *id = "resi_job";
   int                 i;
   int                 found = 0; 
   unsigned long long  resisize;
@@ -3129,7 +3129,7 @@ static char *resi_proc(
   pid_t pid)
 
   {
-  char        *id = "resi_proc";
+  const char *id = "resi_proc";
   proc_stat_t *ps;
 
 #ifdef USELIBMEMACCT
@@ -3172,12 +3172,12 @@ static char *resi_proc(
 
 
 
-static char *resi(
+static const char *resi(
 
   struct rm_attribute *attrib)
 
   {
-  char *id = "resi";
+  const char *id = "resi";
   int   value;
 
   if (attrib == NULL)
@@ -3227,12 +3227,12 @@ static char *resi(
 
 
 
-char *sessions(
+const char *sessions(
 
   struct rm_attribute *attrib) /* I */
 
   {
-  char              *id    = "sessions";
+  const char       *id    = "sessions";
   int                nsids = 0;
   pid_t              sid;
   char              *s;
@@ -3344,7 +3344,7 @@ char *sessions(
     /* not found */
     if ((sp = (struct pidl *)calloc(1, sizeof(struct pidl))) == NULL)
       {
-      log_err(errno, id, (char *)"no memory");
+      log_err(errno, id, "no memory");
       rm_errno = RM_ERR_SYSTEM;
       if (sids)
         free_pidlist(sids);
@@ -3403,12 +3403,13 @@ char *sessions(
 
 
 
-char *nsessions(
+const char *nsessions(
 
   struct rm_attribute *attrib)
 
   {
-  char *result, *ch;
+  const char *result;
+  const char *ch;
   int    num;
 
   if ((result = sessions(attrib)) == NULL)
@@ -3436,12 +3437,12 @@ char *nsessions(
 
 
 
-char *pids(
+const char *pids(
 
   struct rm_attribute *attrib)  /* I */
 
   {
-  char         *id = "pids";
+  const char  *id = "pids";
   pid_t         jobid;
   proc_stat_t  *ps;
   char         *fmt;
@@ -3527,12 +3528,12 @@ char *pids(
 
 
 
-char *nusers(
+const char *nusers(
 
   struct rm_attribute *attrib)
 
   {
-  char              *id = "nusers";
+  const char       *id = "nusers";
   int                j;
   int                nuids = 0;
   uid_t             *uids, *hold;
@@ -3640,7 +3641,7 @@ char *nusers(
 
         if (hold == NULL)
           {
-          log_err(errno, id, (char *)"realloc");
+          log_err(errno, id, "realloc");
 
           rm_errno = RM_ERR_SYSTEM;
 
@@ -3684,12 +3685,12 @@ char *nusers(
 
 
 
-static char *totmem(
+const char *totmem(
 
   struct rm_attribute *attrib)
 
   {
-  char *id = "totmem";
+  const char *id = "totmem";
   proc_mem_t *mm;
 
   if (attrib)
@@ -3703,7 +3704,7 @@ static char *totmem(
 
   if ((mm = get_proc_mem()) == NULL)
     {
-    log_err(errno, id, (char *)"get_proc_mem");
+    log_err(errno, id, "get_proc_mem");
 
     rm_errno = RM_ERR_SYSTEM;
 
@@ -3730,12 +3731,12 @@ static char *totmem(
 
 
 
-static char *availmem(
+const char *availmem(
 
   struct rm_attribute *attrib)
 
   {
-  char *id = "availmem";
+  const char *id = "availmem";
   proc_mem_t *mm;
 
   if (attrib != NULL)
@@ -3749,7 +3750,7 @@ static char *availmem(
 
   if ((mm = get_proc_mem()) == NULL)
     {
-    log_err(errno, id, (char *)"get_proc_mem");
+    log_err(errno, id, "get_proc_mem");
 
     rm_errno = RM_ERR_SYSTEM;
 
@@ -3775,7 +3776,7 @@ static char *availmem(
 
 
 
-static char *ncpus(
+const char *ncpus(
 
   struct rm_attribute *attrib)
 
@@ -3784,7 +3785,7 @@ static char *ncpus(
   /* report the configured ncpus for this numa node */
   sprintf(ret_string,"%d",node_boards[numa_index].num_cpus);
 #else
-  char  *id = "ncpus";
+  const char  *id = "ncpus";
   char   label[128];
   FILE  *fp;
   int    procs;
@@ -3905,12 +3906,12 @@ int find_file(
 
 
 
-static char *physmem(
+static const char *physmem(
 
   struct rm_attribute *attrib)
 
   {
-  char *id = "physmem";
+  const char *id = "physmem";
   char tmpBuf[PMEMBUF_SIZE];
 
   char *BPtr;
@@ -4022,7 +4023,7 @@ char *size_fs(
   char *param)
 
   {
-  char *id = "size_fs";
+  const char *id = "size_fs";
 
   struct statfs fsbuf;
 
@@ -4041,7 +4042,7 @@ char *size_fs(
 
   if (statfs(param, &fsbuf) == -1)
     {
-    log_err(errno, id, (char *)"statfs");
+    log_err(errno, id, "statfs");
 
     rm_errno = RM_ERR_BADPARAM;
 
@@ -4069,7 +4070,7 @@ char *size_file(
   char *param)
 
   {
-  char *id = "size_file";
+  const char *id = "size_file";
 
   struct stat sbuf;
 
@@ -4087,7 +4088,7 @@ char *size_file(
 
   if (stat(param, &sbuf) == -1)
     {
-    log_err(errno, id, (char *)"stat");
+    log_err(errno, id, "stat");
 
     rm_errno = RM_ERR_BADPARAM;
 
@@ -4104,12 +4105,12 @@ char *size_file(
 
 
 
-char *size(
+const char *size(
 
   struct rm_attribute *attrib)
 
   {
-  char *id = "size";
+  const char *id = "size";
   char *param;
 
   if (attrib == NULL)
@@ -4158,22 +4159,23 @@ char *size(
 void scan_non_child_tasks(void)
 
   {
-  char *id = "scan_non_child_tasks";
+  const char *id = "scan_non_child_tasks";
 
-  job *job;
+  job *pJob;
   static int first_time = TRUE;
 
   DIR *pdir;  /* use local pdir to prevent race conditions associated w/global pdir (VPAC) */
 
   pdir = opendir("/proc");
 
-  for (job = GET_NEXT(svr_alljobs);job != NULL;job = GET_NEXT(job->ji_alljobs))
+  for (pJob = (job *)(GET_NEXT(svr_alljobs));
+      pJob != (job *)NULL;pJob = (job *)(GET_NEXT(pJob->ji_alljobs)))
     {
-    task *task;
+    task *pTask;
 
-    for (task = GET_NEXT(job->ji_tasks);
-         task != NULL;
-         task = GET_NEXT(task->ti_jobtask))
+    for (pTask = (task *)(GET_NEXT(pJob->ji_tasks));
+        pTask != NULL;
+         pTask = (task *)(GET_NEXT(pTask->ti_jobtask)))
       {
 #ifdef PENABLE_LINUX26_CPUSETS
       struct pidl   *pids = NULL;
@@ -4189,25 +4191,25 @@ void scan_non_child_tasks(void)
        * Check for tasks that were exiting when mom went down, set back to
        * running so we can reprocess them and send the obit
        */
-      if ((first_time) && (task->ti_qs.ti_sid != 0) &&
-         ((task->ti_qs.ti_status == TI_STATE_EXITED) ||
-         (task->ti_qs.ti_status == TI_STATE_DEAD)))
+      if ((first_time) && (pTask->ti_qs.ti_sid != 0) &&
+         ((pTask->ti_qs.ti_status == TI_STATE_EXITED) ||
+         (pTask->ti_qs.ti_status == TI_STATE_DEAD)))
         {
 
         if (LOGLEVEL >= 7)
           {
           sprintf(log_buffer, "marking task %d as TI_STATE_RUNNING was %d",
-            task->ti_qs.ti_task,
-            task->ti_qs.ti_status);
+              pTask->ti_qs.ti_task,
+              pTask->ti_qs.ti_status);
 
-          log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, job->ji_qs.ji_jobid, log_buffer);
+          log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pJob->ji_qs.ji_jobid, log_buffer);
           }
-        task->ti_qs.ti_status = TI_STATE_RUNNING;
+        pTask->ti_qs.ti_status = TI_STATE_RUNNING;
         }
 
       /* only check on tasks that we think should still be around */
 
-      if (task->ti_qs.ti_status != TI_STATE_RUNNING)
+      if (pTask->ti_qs.ti_status != TI_STATE_RUNNING)
         continue;
 
       /* look for processes with this session id */
@@ -4216,7 +4218,7 @@ void scan_non_child_tasks(void)
 
       /* NOTE:  on linux systems, the session master should have pid == sessionid */
 
-      if (kill(task->ti_qs.ti_sid, 0) != -1)
+      if (kill(pTask->ti_qs.ti_sid, 0) != -1)
         {
         found = 1;
         }
@@ -4224,7 +4226,7 @@ void scan_non_child_tasks(void)
         {
         /* session master cannot be found, look for other pid in session */
 #ifdef PENABLE_LINUX26_CPUSETS
-        pids = get_cpuset_pidlist(job->ji_qs.ji_jobid, pids);
+        pids = get_cpuset_pidlist(pJob->ji_qs.ji_jobid, pids);
         pp   = pids;
         while (pp != NULL)
           {
@@ -4245,7 +4247,7 @@ void scan_non_child_tasks(void)
           if ((ps = get_proc_stat(pid)) == NULL)
             continue;
 
-          if (ps->session == task->ti_qs.ti_sid)
+          if (ps->session == pTask->ti_qs.ti_sid)
             {
             found = 1;
 
@@ -4264,28 +4266,28 @@ void scan_non_child_tasks(void)
         extern int exiting_tasks;
 
         sprintf(buf, "found exited session %d for task %d in job %s",
-          task->ti_qs.ti_sid,
-          task->ti_qs.ti_task,
-          job->ji_qs.ji_jobid);
+            pTask->ti_qs.ti_sid,
+            pTask->ti_qs.ti_task,
+            pJob->ji_qs.ji_jobid);
 
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, buf);
 
-        task->ti_qs.ti_exitstat = 0;  /* actually unknown */
-        task->ti_qs.ti_status = TI_STATE_EXITED;
+        pTask->ti_qs.ti_exitstat = 0;  /* actually unknown */
+        pTask->ti_qs.ti_status = TI_STATE_EXITED;
 
-        task_save(task);
+        task_save(pTask);
 
 #ifdef USESAVEDRESOURCES
         if (first_time)
           {
-          job->ji_flags |= MOM_JOB_RECOVERY;
+          pJob->ji_flags |= MOM_JOB_RECOVERY;
 
           if (LOGLEVEL >= 7)
             {
             sprintf(buf, "marking job as MOM_JOB_RECOVERY for task %d",
-              task->ti_qs.ti_task);
+                pTask->ti_qs.ti_task);
 
-            log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, job->ji_qs.ji_jobid, buf);
+            log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pJob->ji_qs.ji_jobid, buf);
             }
           }
 #endif    /* USESAVEDRESOURCES */
@@ -4311,7 +4313,7 @@ time_t maxtm;
 
 void setmax(
 
-  char *dev)
+  const char *dev)
 
   {
 
@@ -4331,12 +4333,12 @@ void setmax(
 
 
 
-char *idletime(
+const char *idletime(
 
   struct rm_attribute *attrib)
 
   {
-  char         *id = "idletime";
+  const char *id = "idletime";
   DIR         *dp;
 
   struct dirent *de;
@@ -4354,7 +4356,7 @@ char *idletime(
 
   if ((dp = opendir("/dev")) == NULL)
     {
-    log_err(errno, id, (char *)"opendir /dev");
+    log_err(errno, id, "opendir /dev");
 
     rm_errno = RM_ERR_SYSTEM;
 
@@ -4392,12 +4394,12 @@ char *idletime(
 
 
 
-static char *walltime(
+static const char *walltime(
 
   struct rm_attribute *attrib)
 
   {
-  char         *id = "walltime";
+  const char *id = "walltime";
   int  value, job, found = 0;
   time_t now, start;
   proc_stat_t  *ps;
@@ -4451,7 +4453,7 @@ static char *walltime(
 
   if ((now = time(NULL)) <= 0)
     {
-    log_err(errno, id, (char *)"time");
+    log_err(errno, id, "time");
 
     rm_errno = RM_ERR_SYSTEM;
 
@@ -4503,7 +4505,7 @@ int get_la(
 
   {
   FILE *fp;
-  char *id = "get_la";
+  const char *id = "get_la";
   float load;
 
   if ((fp = fopen("/proc/loadavg", "r")) == NULL)
@@ -4516,7 +4518,7 @@ int get_la(
   if (fscanf(fp, "%f",
              &load) != 1)
     {
-    log_err(errno, id, (char *)"fscanf of load in /proc/loadavg");
+    log_err(errno, id, "fscanf of load in /proc/loadavg");
 
     fclose(fp);
 
@@ -4593,7 +4595,7 @@ void collect_cpuact(void)
       {
       if ((cpu_array = (proc_cpu_t *)calloc(system_ncpus, sizeof(proc_cpu_t))) == NULL)
         {
-        log_err(errno, id, (char *)"failed to allocate memory");
+        log_err(errno, id, "failed to allocate memory");
         return;
         }
       }
@@ -4716,12 +4718,12 @@ u_long gracetime(
 
 
 
-static char *quota(
+static const char *quota(
 
   struct rm_attribute *attrib)
 
   {
-  char *id = "quota";
+  const char *id = "quota";
   int  type;
   dev_t  dirdev;
   uid_t  uid;
@@ -4735,16 +4737,16 @@ static char *quota(
 
   struct passwd *pw;
 
-  static char *type_array[] =
+  static const char *type_array[] =
     {
-    "harddata",
-    "softdata",
-    "currdata",
-    "hardfile",
-    "softfile",
-    "currfile",
-    "timedata",
-    "timefile",
+        "harddata",
+        "softdata",
+        "currdata",
+        "hardfile",
+        "softfile",
+        "currfile",
+        "timedata",
+        "timefile",
     NULL
     };
 
@@ -4848,7 +4850,7 @@ static char *quota(
 
   if ((m = setmntent(MOUNTED, "r")) == NULL)
     {
-    log_err(errno, id, (char *)"setmntent");
+    log_err(errno, id, "setmntent");
     rm_errno = RM_ERR_SYSTEM;
     return NULL;
     }
@@ -4932,7 +4934,7 @@ static char *quota(
         uid,
         (caddr_t)&qi) == -1)
     {
-    log_err(errno, id, (char *)"quotactl");
+    log_err(errno, id, "quotactl");
 
     rm_errno = RM_ERR_SYSTEM;
 
@@ -5019,7 +5021,7 @@ static char *quota(
 #define HEADER_STR "%*[^\n]\n%*[^\n]\n"
 #define INTERFACE_STR "%[^:]:%lu %*d %*d %*d %*d %*d %*d %*d %lu %*d %*d %*d %*d %*d %*d %*d\n"
 
-static char *netload(
+static const char *netload(
 
   struct rm_attribute *attrib)
 
@@ -5037,7 +5039,7 @@ static char *netload(
 
   int interface = 0;
   /* int ethNum = 0; */
-  char  *id = "netload";
+  const char  *id = "netload";
 
   if ((fp = fopen("/proc/net/dev", "r")) == NULL)
     {
@@ -5050,7 +5052,7 @@ static char *netload(
 
   if (rc < 0)
     {
-    log_err(errno, id, (char *)"fscanf of header lines in /proc/net/dev");
+    log_err(errno, id, "fscanf of header lines in /proc/net/dev");
 
     fclose(fp);
 

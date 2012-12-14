@@ -77,11 +77,7 @@ int svr_job_purge(job *pjob)
   exit(1);
   }
 
-void svr_mailowner(job *pjob, int mailpoint, int force, char *text)
-  {
-  fprintf(stderr, "The call to svr_mailowner to be mocked!!\n");
-  exit(1);
-  }
+void svr_mailowner(job *pjob, int mailpoint, int force, char *text) {}
 
 int modify_job_attr(job *pjob, svrattrl *plist, int perm, int *bad)
   {
@@ -157,7 +153,7 @@ void svr_disconnect(int handle)
   exit(1);
   }
 
-void req_reject(int code, int aux, struct batch_request *preq, char *HostName, char *Msg)
+void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
   {
   fprintf(stderr, "The call to req_reject to be mocked!!\n");
   exit(1);

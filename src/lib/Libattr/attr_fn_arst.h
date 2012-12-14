@@ -6,11 +6,11 @@
 
 int decode_arst_direct( struct pbs_attribute *patr, char *val); 
 
-int decode_arst( struct pbs_attribute *patr, char *name, char *rescn, char *val, int perm); 
+int decode_arst( struct pbs_attribute *patr, const char *name, char *rescn, char *val, int perm);
 
-int decode_arst_merge( struct pbs_attribute *patr, char *name, char *rescn, char *val); 
+int decode_arst_merge( struct pbs_attribute *patr, const char *name, char *rescn, char *val);
 
-int encode_arst( pbs_attribute *attr, tlist_head *phead, char *atname, char *rsname, int mode, int perm); 
+int encode_arst( pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm);
 
 int set_arst( struct pbs_attribute *attr, struct pbs_attribute *new, enum batch_op op); 
 
@@ -18,4 +18,4 @@ int comp_arst( struct pbs_attribute *attr, struct pbs_attribute *with);
 
 void free_arst( struct pbs_attribute *attr);
 
-char *arst_string( char *str, pbs_attribute *pattr);
+char *arst_string( const char *str, pbs_attribute *pattr);

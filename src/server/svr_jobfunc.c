@@ -125,6 +125,7 @@
 #include "queue.h"
 #include "pbs_job.h"
 #include "work_task.h"
+#include "svr_task.h"
 #include "pbs_error.h"
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
@@ -625,25 +626,20 @@ int svr_enquejob(
 
 int svr_dequejob(
 
-  char *job_id,                  /* I, M */
-  int   parent_queue_mutex_held) /* I */
+  job *pjob,                    /* I, M */
+  int  parent_queue_mutex_held) /* I */
 
   {
   int            bad_ct = 0;
   int            rc = PBSE_NONE;
-  job           *pjob = NULL;
   pbs_attribute *pattr;
   pbs_queue     *pque;
   resource      *presc;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* remove job from server's all job list and reduce server counts */
-
-  if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
-    return(PBSE_JOBNOTFOUND);
-
-  if (LOGLEVEL >= 10)
-    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
+  if (LOGLEVEL >= 7)
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
 
   if (parent_queue_mutex_held == FALSE)
     {
@@ -709,11 +705,14 @@ int svr_dequejob(
     pque ? pque->qu_qs.qu_name : "unknown queue",
     PJobState[pjob->ji_qs.ji_state]);
 
-  log_event(PBSEVENT_DEBUG2,PBS_EVENTCLASS_JOB,job_id,log_buf);
+  log_event(PBSEVENT_DEBUG2, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
 
   if (bad_ct)   /* state counts are all messed up */
     {
     char queue_name[PBS_MAXQUEUENAME];
+    char           job_id[PBS_MAXSVRJOBID+1];
+
+    strcpy(job_id, pjob->ji_qs.ji_jobid);
 
     /* this function will lock queues and jobs */
     unlock_ji_mutex(pjob, __func__, (char *)NULL, 0);
@@ -1117,7 +1116,7 @@ int chk_svr_resc_limit(
   resource     *cmpwith;
 
   int           LimitIsFromQueue = FALSE;
-  char         *LimitName;
+  const char  *LimitName;
 
   /* NOTE:  support Cray-specific evaluation */
 

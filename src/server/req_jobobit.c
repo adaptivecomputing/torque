@@ -114,6 +114,7 @@
 #include "issue_request.h" /* issue_request */
 #include "utils.h"
 #include "svr_func.h" /* get_svr_attr_* */
+#include "svr_task.h"
 #include "req_jobobit.h" /* req_jobobit */
 #include "svr_connect.h" /* svr_connect */
 #include "job_func.h" /* svr_job_purge */
@@ -2483,7 +2484,7 @@ int setrerun(
 
     /* SUCCESS */
 
-    return(0);
+    return(PBSE_NONE);
     }
 
   /* FAILURE */

@@ -617,7 +617,7 @@ struct job
   time_t  ji_checkpoint_next; /* next checkpoint time */
   time_t  ji_sampletim;       /* last usage sample time, irix only */
   pid_t  ji_momsubt;          /* pid of mom subtask   */
-  int (*ji_mompost)();        /* ptr to post processing func  */
+  int (*ji_mompost)(struct job *pJob,int exitVal);        /* ptr to post processing func  */
 
   struct batch_request *ji_preq; /* hold request until finish_exec */
   int            ji_numnodes; /* number of nodes (at least 1) */
@@ -757,6 +757,22 @@ void  garbage_collect_recycling();
 ** nodes assigned to the job.
 */
 
+
+typedef struct taskfix
+  {
+  char     ti_parentjobid[PBS_MAXSVRJOBID+1];
+  tm_node_id ti_parentnode;
+  tm_task_id ti_parenttask;
+  tm_task_id ti_task; /* task's taskid */
+  int  ti_status; /* status of task */
+  pid_t  ti_sid;  /* session id */
+  int  ti_exitstat; /* exit status */
+  union
+    {
+    int ti_hold[16]; /* reserved space */
+    } ti_u;
+  } taskfix;
+
 typedef struct task
   {
   job  *ti_job; /* pointer to owning job */
@@ -767,20 +783,7 @@ typedef struct task
   tlist_head ti_obits; /* list of obit events */
   tlist_head ti_info; /* list of named info */
 
-  struct taskfix
-    {
-    char     ti_parentjobid[PBS_MAXSVRJOBID+1];
-    tm_node_id ti_parentnode;
-    tm_task_id ti_parenttask;
-    tm_task_id ti_task; /* task's taskid */
-    int  ti_status; /* status of task */
-    pid_t  ti_sid;  /* session id */
-    int  ti_exitstat; /* exit status */
-    union
-      {
-      int ti_hold[16]; /* reserved space */
-      } ti_u;
-    } ti_qs;
+  taskfix ti_qs;
   } task;
 
 
@@ -1102,7 +1105,7 @@ extern char *prefix_std_file(job *, dynamic_string *, int);
 extern char *add_std_filename(job *, char *, int, dynamic_string *);
 extern int   set_jobexid(job *, pbs_attribute *, char *);
 extern int   site_check_user_map(job *, char *, char *, int);
-int  svr_dequejob(char *, int);
+int  svr_dequejob(job *, int);
 extern int   svr_enquejob(job *, int, int);
 extern void  svr_evaljobstate(job *, int *, int *, int);
 extern void  svr_mailowner(job *, int, int, char *);

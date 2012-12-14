@@ -137,7 +137,7 @@ int comp_resc_nc; /* count of resources not compared */
 int decode_resc(
 
   pbs_attribute *patr,  /* Modified on Return */
-  char          *name,  /* pbs_attribute name */
+  const char   *name,  /* pbs_attribute name */
   char          *rescn, /* I resource name - is used here */
   char          *val,   /* resource value */
   int            perm)  /* access permissions */
@@ -240,8 +240,8 @@ int encode_resc(
 
   pbs_attribute  *attr,    /* ptr to pbs_attribute to encode */
   tlist_head     *phead,   /* head of attrlist list */
-  char           *atname,  /* pbs_attribute name */
-  char           *rsname,  /* resource name, null on call */
+  const char    *atname,  /* pbs_attribute name */
+  const char    *rsname,  /* resource name, null on call */
   int             mode,    /* encode mode */
   int             ac_perm) /* access permissions */
 
@@ -512,7 +512,7 @@ int comp_resc2(
   resource *wiresc;
   int       rc;
   int       comp_ret = 0;
-  char     *LimitName;
+  const char     *LimitName;
 
   comp_resc_gt = 0;
   comp_resc_eq = 0;
@@ -718,7 +718,7 @@ void free_resc(
 resource_def *find_resc_def(
 
   resource_def *rscdf, /* address of array of resource_def structs */
-  char         *name, /* name of resource */
+  const char  *name, /* name of resource */
   int           limit) /* number of members in resource_def array */
 
   {

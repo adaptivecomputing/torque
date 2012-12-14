@@ -199,7 +199,7 @@ int add_walltime_remaining(
   {
   int            len = 0;
   char           buf[MAXPATHLEN+1];
-  char          *pname;
+  const char   *pname;
   svrattrl      *pal;
   resource      *pres;
   

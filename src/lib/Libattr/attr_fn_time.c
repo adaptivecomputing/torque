@@ -125,7 +125,7 @@
 int decode_time(
 
   pbs_attribute *patr,  /* I/O (modified) */
-  char          *name,  /* I - pbs_attribute name (not used) */
+  const char   *name,  /* I - pbs_attribute name (not used) */
   char          *rescn, /* I - resource name (not used) */
   char          *val,   /* I - pbs_attribute value */
   int            perm)  /* only used for resources */
@@ -268,8 +268,8 @@ int encode_time(
 
   pbs_attribute  *attr,   /* ptr to pbs_attribute (value in attr->at_val.at_long) */
   tlist_head     *phead,  /* head of attrlist list (optional) */
-  char           *atname, /* pbs_attribute name */
-  char           *rsname, /* resource name (optional) */
+  const char    *atname, /* pbs_attribute name */
+  const char    *rsname, /* resource name (optional) */
   int             mode,   /* encode mode (not used) */
   int             perm)  /* only used for resources */
 
@@ -283,7 +283,7 @@ int encode_time(
   int   sec;
   char  *pv;
 
-  if (attr == NULL)
+  if ((attr == NULL)||(phead == NULL))
     {
     /* FAILURE */
 
@@ -313,29 +313,20 @@ int encode_time(
 
   ct = strlen(cvnbuf);
 
-  if (phead != NULL)
+  pal = attrlist_create(atname, rsname, ct+1);
+
+  if (pal == NULL)
     {
-    pal = attrlist_create(atname, rsname, ct+1);
+    /* FAILURE */
 
-    if (pal == NULL)
-      {
-      /* FAILURE */
-
-      return(-1);
-      }
-
-    memcpy(pal->al_value, cvnbuf, ct);
-
-    pal->al_flags = attr->at_flags;
-
-    append_link(phead, &pal->al_link, pal);
-    }
-  else
-    {
-    /* Is this right? Copy time to the name of the attr? */
-    snprintf(atname, strlen(atname), "%s", cvnbuf);
+    return(-1);
     }
 
+  memcpy(pal->al_value, cvnbuf, ct);
+
+  pal->al_flags = attr->at_flags;
+
+  append_link(phead, &pal->al_link, pal);
   /* SUCCESS */
 
   return(1);

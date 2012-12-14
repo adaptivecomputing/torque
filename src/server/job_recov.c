@@ -185,7 +185,7 @@ int job_save(
   char    namebuf1[MAXPATHLEN];
   char    namebuf2[MAXPATHLEN];
   char    save_buf[SAVEJOB_BUF_SIZE];
-  char   *tmp_ptr = NULL;
+  const char   *tmp_ptr = NULL;
   size_t  buf_remaining = sizeof(save_buf);
 
   int     openflags;

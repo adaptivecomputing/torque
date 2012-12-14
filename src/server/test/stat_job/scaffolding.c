@@ -12,7 +12,7 @@ struct server server;
 
 
 
-svrattrl *attrlist_create(char *aname, char *rname, int vsize)
+svrattrl *attrlist_create(const char *aname, const char *rname, int vsize)
   {
   fprintf(stderr, "The call to attrlist_create to be mocked!!\n");
   exit(1);

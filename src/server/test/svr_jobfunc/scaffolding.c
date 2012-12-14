@@ -51,7 +51,7 @@ void account_record(int acctype, job *pjob, char *text)
   exit(1);
   }
 
-char *arst_string(char *str, pbs_attribute *pattr)
+char *arst_string(const char *str, pbs_attribute *pattr)
   {
   fprintf(stderr, "The call to arst_string to be mocked!!\n");
   exit(1);
@@ -81,7 +81,7 @@ int procs_available(int proc_ct)
   exit(1);
   }
 
-int decode_str(pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_str(pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
   {
   fprintf(stderr, "The call to decode_str to be mocked!!\n");
   exit(1);
@@ -147,7 +147,7 @@ int comp_resc2(struct pbs_attribute *attr, struct pbs_attribute *with, int IsQue
   exit(1);
   }
 
-resource_def *find_resc_def(resource_def *rscdf, char *name, int limit)
+resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
   {
   fprintf(stderr, "The call to find_resc_def to be mocked!!\n");
   exit(1);

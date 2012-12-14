@@ -170,7 +170,7 @@ static struct resource_cost *add_cost_entry(
 int decode_rcost(
 
   pbs_attribute *patr,
-  char          *name,  /* pbs_attribute name */
+  const char   *name,  /* pbs_attribute name */
   char          *rescn, /* resource name, unused here */
   char          *val,   /* pbs_attribute value */
   int            perm)  /* used only with resources */
@@ -245,8 +245,8 @@ int encode_rcost(
 
   pbs_attribute *attr,   /* ptr to pbs_attribute */
   tlist_head    *phead,   /* head of attrlist list */
-  char          *atname,  /* pbs_attribute name */
-  char          *rsname,  /* resource name or null */
+  const char   *atname,  /* pbs_attribute name */
+  const char   *rsname,  /* resource name or null */
   int            mode,   /* encode mode, unused here */
   int            perm)  /* used only with resources */
 

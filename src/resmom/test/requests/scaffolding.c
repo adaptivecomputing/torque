@@ -50,7 +50,7 @@ struct batch_request *alloc_br(int type)
   exit(1);
   }
 
-char *arst_string(char *str, pbs_attribute *pattr)
+char *arst_string(const char *str, pbs_attribute *pattr)
   {
   fprintf(stderr, "The call to arst_string needs to be mocked!!\n");
   exit(1);
@@ -164,7 +164,7 @@ int mom_open_socket_to_jobs_server(job *pjob, const char *caller_id, void *(*mes
   exit(1);
   }
 
-void req_reject(int code, int aux, struct batch_request *preq, char *HostName, char *Msg)
+void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
   {
   fprintf(stderr, "The call to req_reject needs to be mocked!!\n");
   exit(1);
@@ -326,7 +326,7 @@ job *job_alloc(void)
   exit(1);
   }
 
-int kill_job(job *pjob, int sig, const char *killer_id_name, char *why_killed_reason)
+int kill_job(job *pjob, int sig, const char *killer_id_name, const char *why_killed_reason)
   {
   fprintf(stderr, "The call to kill_job needs to be mocked!!\n");
   exit(1);

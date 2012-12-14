@@ -167,7 +167,7 @@ int conn_qsub(char *, long, char *);
 extern void cleanup_restart_file(job *);
 extern struct batch_request *setup_cpyfiles(struct batch_request *,job *,char*,char *,int,int);
 extern int job_log_open(char *, char *);
-extern int log_job_record(char *buf);
+extern int log_job_record(const char *buf);
 extern void check_job_log(struct work_task *ptask);
 int issue_signal(job **, char *, void(*)(batch_request *), void *);
 
@@ -1759,12 +1759,10 @@ int svr_job_purge(
     {
     int need_deque = !pjob->ji_cold_restart;
 
-    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
-
     /* jobs that are being deleted after a cold restart
      * haven't been queued */
     if (need_deque == TRUE)
-      rc = svr_dequejob(job_id, FALSE);
+      rc = svr_dequejob(pjob, FALSE);
 
     if (rc != PBSE_JOBNOTFOUND)
       {

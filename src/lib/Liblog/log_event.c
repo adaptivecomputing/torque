@@ -129,7 +129,7 @@ void log_event(
   int         eventtype,
   int         objclass,
   const char *objname,
-  const char       *text)
+  const char *text)
 
   {
   if (((eventtype & PBSEVENT_FORCE) == 0) &&

@@ -198,7 +198,7 @@ struct pbsnode *AVL_find(
 int decode_arst(
 
   pbs_attribute *patr,    /* O (modified) */
-  char          *name,    /* I pbs_attribute name (notused) */
+  const char   *name,    /* I pbs_attribute name (notused) */
   char          *rescn,   /* I resource name (notused) */
   char          *val,     /* I pbs_attribute value */
   int            perm) /* only used for resources */

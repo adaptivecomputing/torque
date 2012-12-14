@@ -814,7 +814,7 @@ void mom_job_purge(
   {
   job_file_delete_info *jfdi;
 
-  jfdi = calloc(1, sizeof(job_file_delete_info));
+  jfdi = (job_file_delete_info *)calloc(1, sizeof(job_file_delete_info));
 
   if (jfdi == NULL)
     {

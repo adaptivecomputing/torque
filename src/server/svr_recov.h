@@ -19,8 +19,8 @@ int svr_save_xml(struct server *ps, int mode);
 
 int svr_save(struct server *ps, int mode);
 
-int save_acl(pbs_attribute *attr, attribute_def *pdef, char *subdir, char *name);
+int save_acl(pbs_attribute *attr, attribute_def *pdef, const char *subdir, const char *name);
 
-void recov_acl(pbs_attribute *pattr, attribute_def *pdef, char *subdir, char *name);
+void recov_acl(pbs_attribute *pattr, attribute_def *pdef, const char *subdir, const char *name);
 
 #endif /* _SVR_RECOV_H */

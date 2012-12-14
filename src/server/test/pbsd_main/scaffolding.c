@@ -75,7 +75,7 @@ char * netaddr(struct sockaddr_in *ap)
   exit(1);
   }
 
-int decode_b(pbs_attribute *patr, char *name, char *rescn, char *val, int perm)
+int decode_b(pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
   {
   fprintf(stderr, "The call to decode_b needs to be mocked!!\n");
   exit(1);

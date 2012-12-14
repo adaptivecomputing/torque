@@ -159,7 +159,7 @@ extern int    reject_job_submit;
 
 extern  char *msg_daemonname;
 
-extern int decode_arst_merge(struct pbs_attribute *,char *,char *,char *);
+extern int decode_arst_merge(struct pbs_attribute *,const char *,char *,char *);
 
 
 /* Private Functions in this file */
