@@ -40,11 +40,6 @@ START_TEST(test_is_bad_dest)
   }
 END_TEST
 
-#define LINK_TEST(name) \
-  tc_core = tcase_create(#name); \
-  tcase_add_test(tc_core, name); \
-  suite_add_tcase(s, tc_core)
-
 Suite *job_route_suite(void)
   {
   Suite *s = suite_create("job_route_suite methods");

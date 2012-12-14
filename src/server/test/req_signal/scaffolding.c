@@ -6,7 +6,7 @@
 #include "pbs_job.h" /* job */
 #include "node_func.h" /* node_info */
 
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
 
 struct batch_request *alloc_br(int type)

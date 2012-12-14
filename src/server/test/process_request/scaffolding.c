@@ -21,7 +21,7 @@ struct connection svr_conn[PBS_NET_MAX_CONNECTIONS];
 char *msg_request = "Type %s request received from %s@%s, sock=%d";
 struct server server;
 char *server_host;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
 
 

@@ -22,7 +22,7 @@ char *path_spool;
 char *msg_movejob = "Job moved to ";
 pbs_net_t pbs_server_addr;
 unsigned int pbs_server_port_dis;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 char *msg_manager = "%s at request of %s@%s";
 
 

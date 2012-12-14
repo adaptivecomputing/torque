@@ -4,7 +4,7 @@
 
 #include "batch_request.h" /* batch_request */
 
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
 void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
   {

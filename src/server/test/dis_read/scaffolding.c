@@ -5,7 +5,7 @@
 #include "batch_request.h" /* batch_request */
 #include "libpbs.h" /* batch_reply */
 const char *dis_emsg[10];
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
 
 int decode_DIS_JobId(struct tcp_chan *chan, char *jobid)

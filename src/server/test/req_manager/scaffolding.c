@@ -30,7 +30,7 @@ attribute_def node_attr_def[2];
 struct server server;
 char *array_disallowed_types[] = {"hi", "hello"};
 attribute_def svr_attr_def[10];
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 int svr_chngNodesfile = 0;
 int svr_totnodes = 0;
 

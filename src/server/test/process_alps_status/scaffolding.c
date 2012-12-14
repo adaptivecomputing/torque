@@ -33,7 +33,7 @@
   c ^= b; c -= rot(b,24); \
   }
 
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 all_nodes allnodes;
 struct node_state
   {

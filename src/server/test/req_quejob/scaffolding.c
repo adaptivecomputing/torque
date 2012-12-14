@@ -28,7 +28,7 @@ resource_def *svr_resc_def;
 int queue_rank = 0;
 char *path_spool;
 struct server server;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 char *msg_daemonname = "unset";
 user_info_holder users;
 

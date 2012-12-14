@@ -12,7 +12,7 @@ char *msg_err_noqueue = "Unable to requeue job, queue is not defined";
 char *msg_err_malloc = "malloc failed";
 char *msg_routexceed = "Route queue lifetime exceeded";
 int svr_resc_size = 0;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 resource_def *svr_resc_def;
 pthread_mutex_t *reroute_job_mutex;
 

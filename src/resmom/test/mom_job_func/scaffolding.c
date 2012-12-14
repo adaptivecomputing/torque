@@ -25,7 +25,7 @@ char tmpdir_basename[MAXPATHLEN]; /* mom_main.c */
 char *msg_err_purgejob; /* pbs_messages.c */
 int pbs_rm_port; /* mom_main.c */
 tlist_head svr_alljobs; /* mom_main.c */
-int LOGLEVEL = 0; /* mom_main.c/pbsd_main.c */
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */ /* mom_main.c/pbsd_main.c */
 char log_buffer[LOG_BUF_SIZE]; /* pbs_log.c */
 
 

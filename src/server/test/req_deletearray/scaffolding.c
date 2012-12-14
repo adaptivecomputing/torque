@@ -12,7 +12,7 @@
 
 char *msg_permlog = "Unauthorized Request, request type: %d, Object: %s, Name: %s, request from: %s@%s";
 struct server server;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
 int svr_authorize_req(struct batch_request *preq, char *owner, char *submit_host)
   {

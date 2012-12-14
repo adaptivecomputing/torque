@@ -14,7 +14,7 @@ char *msg_err_unlink = "Unlink of %s file %s failed";
 all_queues svr_queues;
 attribute_def que_attr_def[10];
 struct server server;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 char *path_queues;
 
 int insert_thing(resizable_array *ra, void *thing)

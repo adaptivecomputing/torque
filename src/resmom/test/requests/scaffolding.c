@@ -38,7 +38,7 @@ unsigned int pbs_rm_port = 0;
 unsigned int alarm_time = 10;
 char *TNoSpoolDirList[TMAX_NSDCOUNT];
 tlist_head svr_alljobs;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 char *msg_manager = "%s at request of %s@%s";
 int multi_mom = 1;
 char MOMUNameMissing[64];

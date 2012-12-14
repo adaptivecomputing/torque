@@ -16,7 +16,7 @@ char *msg_deletejob = "Job deleted";
 struct all_jobs alljobs;
 char *msg_delrunjobsig = "Job sent signal %s on delete";
 struct server server;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 char *msg_manager = "%s at request of %s@%s";
 
 

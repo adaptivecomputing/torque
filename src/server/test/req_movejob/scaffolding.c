@@ -9,7 +9,7 @@
 char *pbs_o_host = "PBS_O_HOST";
 char *msg_movejob = "Job moved to ";
 char *msg_manager = "%s at request of %s@%s";
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
 int job_save(job *pjob, int updatetype, int mom_port)
   {
