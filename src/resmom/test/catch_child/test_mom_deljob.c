@@ -4,8 +4,8 @@
 
 START_TEST(test_mom_deljob_1)
   {
-  job *pjob = NULL;
-  mom_deljob(pjob);
+  /*job *pjob = NULL;
+  mom_deljob(pjob);*/
   }
 END_TEST
 

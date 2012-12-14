@@ -8,9 +8,9 @@
 
 START_TEST(test_add_dest_null)
   {
-  // This used to cause a seg fault. If it executes without
-  // crashing, the test passes.
-  add_dest(NULL);
+  /* This used to cause a seg fault. If it executes without
+     crashing, the test passes. */
+  add_dest(NULL); 
   }
 END_TEST
 
