@@ -179,6 +179,7 @@ START_TEST(svr_chkque_test)
   {
   struct job test_job;
   struct pbs_queue test_queue;
+  struct array_strings disallowed_types_array_strings;
   char* hostname = "hostname";
   int result = -1;
 
@@ -214,6 +215,45 @@ START_TEST(svr_chkque_test)
   test_queue.qu_attr[QA_ATR_AclGroupEnabled].at_val.at_long = 1;
   result = svr_chkque(&test_job, &test_queue, hostname, 0, NULL);
   fail_unless(result != PBSE_NONE, "svr_chkque fail");
+
+
+  /* several test cases for check_queue_disallowed_types (not all)*/
+  memset(&test_job, 0, sizeof(test_job));
+  memset(&test_queue, 0, sizeof(test_queue));
+  memset(&disallowed_types_array_strings,
+         0,
+         sizeof(disallowed_types_array_strings));
+
+  test_queue.qu_qs.qu_type = QTYPE_Execution;
+  test_queue.qu_attr[QA_ATR_DisallowedTypes].at_flags = ATR_VFLAG_SET;
+  test_queue.qu_attr[QA_ATR_DisallowedTypes].at_val.at_arst = &disallowed_types_array_strings;
+  char* some_string = "some_string";
+  disallowed_types_array_strings.as_string[0] = some_string;
+  disallowed_types_array_strings.as_usedptr = 1;
+
+  result = svr_chkque(&test_job, &test_queue, hostname, 0, NULL);
+  fail_unless(result == PBSE_QUNOENB, "svr_chkque some_string fail");
+
+  disallowed_types_array_strings.as_string[0] = Q_DT_batch;
+  result = svr_chkque(&test_job, &test_queue, hostname, 0, NULL);
+  fail_unless(result == PBSE_NOBATCH, "svr_chkque PBSE_NOBATCH fail");
+
+  disallowed_types_array_strings.as_string[0] = Q_DT_rerunable;
+  test_job.ji_wattr[JOB_ATR_rerunable].at_flags = ATR_VFLAG_SET;
+  test_job.ji_wattr[JOB_ATR_rerunable].at_val.at_long = 1;
+  result = svr_chkque(&test_job, &test_queue, hostname, 0, NULL);
+  fail_unless(result == PBSE_NORERUNABLE, "svr_chkque PBSE_NORERUNABLE fail");
+
+  disallowed_types_array_strings.as_string[0] = Q_DT_nonrerunable;
+  test_job.ji_wattr[JOB_ATR_rerunable].at_val.at_long = 0;
+  result = svr_chkque(&test_job, &test_queue, hostname, 0, NULL);
+  fail_unless(result == PBSE_NONONRERUNABLE, "svr_chkque PBSE_NONONRERUNABLE fail");
+
+  disallowed_types_array_strings.as_usedptr = 2;
+  disallowed_types_array_strings.as_string[0] = some_string;
+  disallowed_types_array_strings.as_string[1] = Q_DT_fault_intolerant;
+  result = svr_chkque(&test_job, &test_queue, hostname, 0, NULL);
+  fail_unless(result == PBSE_NOFAULTINTOLERANT, "svr_chkque PBSE_NOFAULTINTOLERANT fail");
   }
 END_TEST
 
