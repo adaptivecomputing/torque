@@ -445,3 +445,4 @@ src/tools/test/tracejob/test_tracejob
 cscope.out
 *.orig
 *.rej
+*.patch
