@@ -6452,6 +6452,9 @@ void MOMCheckRestart(void)
   {
   time_t newmtime;
 
+  /* make sure we're not making a mess in the aux dir */
+  cleanup_aux();
+
   if ((MOMConfigRestart <= 0) || (MOMExeTime <= 0))
     {
     return;
@@ -6479,9 +6482,6 @@ void MOMCheckRestart(void)
 
     DBPRT(("%s\n", log_buffer));
     }
-
-  /* make sure we're not making a mess in the aux dir */
-  cleanup_aux();
   }  /* END MOMCheckRestart() */
 
 
