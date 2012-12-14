@@ -446,3 +446,4 @@ cscope.out
 *.orig
 *.rej
 *.patch
+coverage_results.file
