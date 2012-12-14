@@ -1,6 +1,7 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h>
+#include <pthread.h>
 
 #include "pbs_job.h"
 #include "req_jobobit.h"
@@ -8,6 +9,7 @@
 #include "pbs_error.h"
 #include "batch_request.h"
 #include "sched_cmds.h"
+#include "server.h"
 
 
 char *setup_from(job *pjob, char *suffix);
@@ -16,12 +18,21 @@ batch_request *return_stdfile(batch_request *preq, job *pjob, enum job_atr ati);
 void rel_resc(job *pjob);
 int handle_exiting_or_abort_substate(job *pjob);
 int setrerun(job *pjob);
+batch_request *setup_cpyfiles(batch_request *preq, job *pjob, char *from, char *to, int direction, int tflag);
+int handle_returnstd(job *pjob, batch_request *preq, int type);
 
 extern pthread_mutex_t *svr_do_schedule_mutex;
 extern pthread_mutex_t *listener_command_mutex;
 extern int svr_do_schedule;
 extern int listener_command;
+int alloc_br_null;
+extern struct server server;
 
+void init_server()
+  {
+  server.sv_attr_mutex = calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(server.sv_attr_mutex, NULL);
+  }
 
 
 START_TEST(setup_from_test)
@@ -146,6 +157,52 @@ END_TEST
 
 
 
+START_TEST(setup_cpyfiles_test)
+  {
+  job           *pjob = calloc(1, sizeof(job));
+  batch_request *preq;
+  alloc_br_null = 1;
+  fail_unless(setup_cpyfiles(NULL, pjob, strdup("from"), strdup("to"), 1, 1) == NULL);
+  alloc_br_null = 0;
+
+  strcpy(pjob->ji_qs.ji_jobid, "1.napali");
+  preq = setup_cpyfiles(NULL, pjob, strdup("from"), strdup("to"), 1, 1);
+  fail_unless(preq != NULL);
+
+  pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str = strdup("dbeer");
+  preq = setup_cpyfiles(NULL, pjob, strdup("from"), strdup("to"), 1, 1);
+
+  preq = setup_cpyfiles(preq, pjob, strdup("from"), strdup("to"), 1, 1);
+  fail_unless(preq != NULL);
+  }
+END_TEST
+
+
+
+
+START_TEST(handle_returnstd_test)
+  {
+  batch_request *preq;
+  job           *pjob;
+
+  pjob = calloc(1, sizeof(job));
+  preq = calloc(1, sizeof(batch_request));
+
+  strcpy(pjob->ji_qs.ji_jobid, "1.napali");
+  strcpy(pjob->ji_qs.ji_fileprefix, "1.napali");
+  
+  fail_unless(handle_returnstd(pjob, preq, WORK_Immed) == PBSE_JOB_FILE_CORRUPT);
+  
+  pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("napali/0");
+  fail_unless(handle_returnstd(pjob, preq, WORK_Deferred_Reply) == PBSE_NONE);
+  
+  fail_unless(handle_returnstd(pjob, preq, WORK_Immed) == PBSE_NONE);
+  }
+END_TEST
+
+
+
+
 Suite *req_jobobit_suite(void)
   {
   Suite *s = suite_create("req_jobobit_suite methods");
@@ -173,6 +230,14 @@ Suite *req_jobobit_suite(void)
   tcase_add_test(tc_core, setrerun_test);
   suite_add_tcase(s, tc_core);
 
+  tc_core = tcase_create("setup_cpyfiles_test");
+  tcase_add_test(tc_core, setup_cpyfiles_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("handle_returnstd_test");
+  tcase_add_test(tc_core, handle_returnstd_test);
+  suite_add_tcase(s, tc_core);
+
   return(s);
   }
 
@@ -184,6 +249,7 @@ int main(void)
   {
   int number_failed = 0;
   SRunner *sr = NULL;
+  init_server();
   rundebug();
   sr = srunner_create(req_jobobit_suite());
   srunner_set_log(sr, "req_jobobit_suite.log");
