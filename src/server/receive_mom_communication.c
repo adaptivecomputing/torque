@@ -458,6 +458,11 @@ int svr_is_request(
 
       update_node_state(node, i);
 
+      if (node->nd_state == INUSE_DOWN)
+        {
+        node->nd_mom_reported_down = TRUE;
+        }
+
       break;
 
     case IS_STATUS:
@@ -475,7 +480,6 @@ int svr_is_request(
       unlock_node(node, __func__, "before is_stat_get", LOGLEVEL);
 
       ret = is_stat_get(node_name, chan);
-/*      socket_read_flush(chan->sock); */
 
       node = find_nodebyname(node_name);
 
