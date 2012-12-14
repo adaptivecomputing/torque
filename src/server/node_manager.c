@@ -1594,7 +1594,22 @@ int process_status_info(
       if ((current = get_node_from_str(str, name, current)) == NULL)
         break;
       else
+        {
+        /* There is a race condition if using a mom hierarchy and manually
+         * shutting down a non-level 1 mom: if its message that the mom is
+         * shutting down gets there before its last status update, the node
+         * can incorrectly be set as free again. For that reason, only set
+         * a mom back up if its reporting for itself. */
+        if ((strcmp(name, str + strlen("node=")) != 0) &&
+            (current->nd_mom_reported_down == TRUE))
+          {
+          dont_change_state = TRUE;
+          }
+          
+        current->nd_mom_reported_down = FALSE;
+
         continue;
+        }
       }
 
     /* add the info to the "temp" pbs_attribute */
@@ -2529,6 +2544,11 @@ int svr_is_request(
 
       update_node_state(node, i);
 
+      if (node->nd_state == INUSE_DOWN)
+        {
+        node->nd_mom_reported_down = TRUE;
+        }
+
       break;
 
     case IS_STATUS:
@@ -2546,7 +2566,6 @@ int svr_is_request(
       unlock_node(node, __func__, "before is_stat_get", LOGLEVEL);
 
       ret = is_stat_get(node_name, chan);
-/*      socket_read_flush(chan->sock); */
 
       node = find_nodebyname(node_name);
 
