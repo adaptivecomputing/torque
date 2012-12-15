@@ -458,7 +458,7 @@ int svr_is_request(
 
       update_node_state(node, i);
 
-      if (node->nd_state == INUSE_DOWN)
+      if ((node->nd_state & INUSE_DOWN) != 0)
         {
         node->nd_mom_reported_down = TRUE;
         }
