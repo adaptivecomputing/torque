@@ -184,7 +184,7 @@ AC_CHECK_MEMBER(struct stat64.st_mode,
 #include <unistd.h>])
 
 AC_MSG_CHECKING([if largefile compiles (looking at you, OSX)])
-AC_COMPILE_IFELSE([ 
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([ 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -197,7 +197,7 @@ int main(void) {
                ],[
                   AC_MSG_RESULT([yes])
                   AC_DEFINE([LARGEFILE_WORKS],1,[Define if open64, stat64, and friends work])
-               ],[AC_MSG_RESULT([no])])
+               ],[AC_MSG_RESULT([no])])])
 ])
 
 
