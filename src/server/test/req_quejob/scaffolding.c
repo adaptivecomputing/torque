@@ -360,3 +360,8 @@ int  increment_queued_jobs(user_info_holder *uih, char *user_name, job *pjob)
   {
   return(0);
   }
+
+ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
+  {
+  return(0);
+  }

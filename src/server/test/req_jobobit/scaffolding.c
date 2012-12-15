@@ -82,11 +82,7 @@ int svr_job_purge(job *pjob)
   exit(1);
   }
 
-void svr_mailowner(job *pjob, int mailpoint, int force, const char *text)
-  {
-  fprintf(stderr, "The call to svr_mailowner to be mocked!!\n");
-  exit(1);
-  }
+void svr_mailowner(job *pjob, int mailpoint, int force, const char *text) {}
 
 int modify_job_attr(job *pjob, svrattrl *plist, int perm, int *bad)
   {

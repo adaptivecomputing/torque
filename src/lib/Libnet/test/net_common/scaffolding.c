@@ -36,3 +36,9 @@ time_t pbs_tcp_timeout;
 void log_record(int eventtype, int eventclass, const char *caller, const char *msg)
   {
   }
+
+ssize_t read_ac_socket(int fd, void *buf, ssize_t count) 
+  {
+  return(0);
+  }
+

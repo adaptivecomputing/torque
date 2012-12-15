@@ -20,3 +20,13 @@ int save_struct(char *pobj, unsigned int objsize, int fds, char *buf, size_t *bu
   fprintf(stderr, "The call to save_struct needs to be mocked!!\n");
   exit(1);
   }
+
+ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
+  {
+  return(0);
+  }
+
+ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
+  {
+  return(0);
+  }

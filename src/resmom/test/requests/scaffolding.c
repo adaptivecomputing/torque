@@ -68,7 +68,7 @@ int job_save(job *pjob, int updatetype, int mom_port)
   exit(1);
   }
 
-ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
+ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   {
   fprintf(stderr, "The call to read_nonblocking_socket needs to be mocked!!\n");
   exit(1);
@@ -134,7 +134,7 @@ int InitUserEnv(job *pjob, task *ptask, char **envp, struct passwd *pwdp, char *
   exit(1);
   }
 
-ssize_t write_nonblocking_socket(int fd, const void *buf, ssize_t count)
+ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
   {
   fprintf(stderr, "The call to write_nonblocking_socket needs to be mocked!!\n");
   exit(1);

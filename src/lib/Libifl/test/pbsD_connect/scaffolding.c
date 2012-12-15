@@ -114,3 +114,8 @@ int socket_close(int sock)
   {
   return(0);
   }
+
+size_t read_ac_socket(int fd, void *buf, ssize_t count)
+  {
+  return(0);
+  }

@@ -219,7 +219,7 @@ START_TEST(execute_reservation_test)
 
   snprintf(cmdbuf, sizeof(cmdbuf), "%s %d", cmd, rid);
   rc = execute_reservation(cmdbuf, &rsv_id);
-  snprintf(buf, sizeof(buf), "Failed to execute the command '%s'", cmdbuf);
+  snprintf(buf, sizeof(buf), "Failed to execute the command '%s', rc=%d", cmdbuf, rc);
   fail_unless(rc == 0, buf);
   snprintf(buf, sizeof(buf), "Reservation id should be 30 but is '%s'", rsv_id);
   fail_unless(!strcmp(rsv_id, "30"), buf);

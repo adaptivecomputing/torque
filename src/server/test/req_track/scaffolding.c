@@ -56,3 +56,8 @@ int issue_to_svr(char *servern, struct batch_request *preq, void (*replyfunc)(st
   }
 
 void free_br(batch_request *preq) {}
+
+ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
+  {
+  return(0);
+  }

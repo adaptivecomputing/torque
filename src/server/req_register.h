@@ -24,30 +24,6 @@ int depend_on_term(char *job_id);
 
 void depend_clrrdy(job *pjob);
 
-/* static struct depend *find_depend(int type, pbs_attribute *pattr); */
-
-/* static struct depend *make_depend(int type, pbs_attribute *pattr); */
-
-/* static int register_sync(struct depend *pdep, char *child, char *host, long cost); */
-
-/* static int register_dep(pbs_attribute *pattr, struct batch_request *preq, int type, int *made); */
-
-/* static int unregister_dep(pbs_attribute *pattr, struct batch_request *preq); */
-
-/* static int unregister_sync(pbs_attribute *pattr, struct batch_request *preq); */
-
-/* static struct depend_job *find_dependjob(struct depend *pdep, char *name); */
-
-/* static struct depend_job *make_dependjob(struct depend *pdep, char *jobid, char *host); */
-
-int decode_depend(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm);
-
-/* static void cat_jobsvr(char **Dest, char *Src); */
-
-/* static void fast_strcat(char **Dest, char *Src); */
-
-/* static int dup_depend(pbs_attribute *pattr, struct depend *pd); */
-
 int encode_depend(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm);
 
 int set_depend(struct pbs_attribute *attr, struct pbs_attribute *newAttr, enum batch_op op);

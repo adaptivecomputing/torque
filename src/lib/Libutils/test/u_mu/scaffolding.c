@@ -8,3 +8,7 @@ void log_err(int errnum, const char *routine, const char *text)
   exit(1);
   }
 
+ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
+  {
+  return(0);
+  }

@@ -33,3 +33,13 @@ void req_reject(int code, int aux, struct batch_request *preq, const char *HostN
   fprintf(stderr, "The call to req_reject needs to be mocked!!\n");
   exit(1);
   }
+
+ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
+  {
+  return(0);
+  }
+
+ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
+  {
+  return(0);
+  }

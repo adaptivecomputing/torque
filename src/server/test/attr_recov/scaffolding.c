@@ -67,3 +67,7 @@ void free_dynamic_string(dynamic_string *ds)
   exit(1);
   }
 
+ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
+  {
+  return(0);
+  }

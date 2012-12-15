@@ -682,3 +682,13 @@ int insert_thing_after(resizable_array *ra, void *thing, int i)
   {
   return(0);
   }
+
+ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
+  {
+  return(0);
+  }
+
+ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
+  {
+  return(0);
+  }

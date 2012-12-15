@@ -113,8 +113,8 @@ extern int              listener_command;
 /*
  * the following array of strings is used in decoding/encoding the server state
  */
-const static char *svr_idle   = "Idle";
-const static char *svr_sched  = "Scheduling";
+static const char *svr_idle   = "Idle";
+static const char *svr_sched  = "Scheduling";
 static const char *svr_state_names[] =
   {
   "",   /* SV_STATE_DOWN */

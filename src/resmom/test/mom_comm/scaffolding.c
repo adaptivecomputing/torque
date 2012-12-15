@@ -461,3 +461,13 @@ void DIS_tcp_close(struct tcp_chan *chan) {}
 void DIS_tcp_cleanup(struct tcp_chan *chan) {}
 
 void free_dynamic_string(dynamic_string *ds) {}
+
+ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
+  {
+  return(0);
+  }
+
+ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
+  {
+  return(0);
+  }

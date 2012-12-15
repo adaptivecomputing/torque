@@ -499,3 +499,8 @@ void *inspect_exiting_jobs(void *vp)
   {
   return(NULL);
   }
+
+ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
+  {
+  return(0);
+  }

@@ -200,7 +200,7 @@ extern int    recov_svr_attr (int);
 extern void  change_logs_handler(int);
 extern void  change_logs();
 
-//ssize_t write_neverblocking_socket(int, const void *, ssize_t);
+/* ssize_t write_neverblocking_socket(int, const void *, ssize_t); */
 
 /* Local Private Functions */
 
