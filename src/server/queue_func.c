@@ -566,7 +566,6 @@ pbs_queue *next_queue(
 
 
 
-<<<<<<< HEAD
 /* 
  * gets the locks on both queues without releasing the all_queues mutex lock.
  * Doing this another way can cause deadlock.
