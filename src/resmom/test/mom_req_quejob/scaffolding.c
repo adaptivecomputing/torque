@@ -27,7 +27,7 @@ char mom_host[PBS_MAXHOSTNAME + 1];
 unsigned int pbs_rm_port = 0;
 int internal_state = 0;
 tlist_head svr_alljobs;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 int PBSNodeCheckProlog = 0;
 char log_buffer[LOG_BUF_SIZE];
 int reject_job_submit = 0;

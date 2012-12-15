@@ -37,7 +37,7 @@ const char *msg_err_purgejob = "Unlink of job file failed";
 struct server server;
 struct all_jobs array_summary;
 char *path_jobinfo_log;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 pthread_mutex_t *job_log_mutex;
 
 user_info_holder users;
@@ -155,7 +155,7 @@ struct work_task *set_task(enum work_type type, long event_id, void (*func)(), v
   exit(1);
   }
 
-int svr_dequejob(char *job_id, int val)
+int svr_dequejob(job *pjob, int val)
   {
   fprintf(stderr, "The call to svr_dequejob needs to be mocked!!\n");
   exit(1);

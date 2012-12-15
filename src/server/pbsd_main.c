@@ -687,7 +687,7 @@ void parse_command_line(
         if (!strcmp(optarg, "version"))
           {
           fprintf(stderr, "Version: %s\nRevision: %s \n",
-            PACKAGE_VERSION, SVN_VERSION);
+            PACKAGE_VERSION, GIT_HASH);
 
           exit(0);
           }
@@ -705,6 +705,7 @@ void parse_command_line(
           printf("installdir:  %s\n", PBS_INSTALL_DIR);
           printf("serverhome:  %s\n", PBS_SERVER_HOME);
           printf("version:     %s\n", PACKAGE_VERSION);
+          printf("Revision:    %s\n", GIT_HASH);
 
           exit(0);
           }

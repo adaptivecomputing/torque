@@ -9,7 +9,7 @@
 #include "list_link.h" /* list_link */
 #include "work_task.h" /* work_task */
 
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 attribute_def job_attr_def[10];
 const char *msg_jobholdrel = "Holds %s released at request of %s@%s";
 const char *msg_mombadhold = "MOM rejected hold request: %d";

@@ -17,7 +17,7 @@ int comp_resc2(struct pbs_attribute *attr, struct pbs_attribute *with, int IsQue
 
 void free_resc(pbs_attribute *pattr);
 
-resource_def *find_resc_def(resource_def *rscdf, char *name, int limit); 
+resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit); 
 
 resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf); 
 

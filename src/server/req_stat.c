@@ -987,6 +987,7 @@ void stat_update(
   int                   oldsid;
   int                   bad = 0;
   time_t                time_now = time(NULL);
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   preply = &preq->rq_reply;
 
@@ -1052,10 +1053,15 @@ void stat_update(
 
         }
       }
+    else
+      {
+      snprintf(log_buf, sizeof(log_buf),
+        "Poll job request failed for job %s", preq->rq_ind.rq_status.rq_id);
+      log_err(preply->brp_code, __func__, log_buf);
+      }
     }
   cntl->sc_conn = -1;
 
-  /* MUTSU - Unlock job here? */
   if (cntl->sc_post)
     cntl->sc_post(cntl); /* continue where we left off */
 
@@ -1127,7 +1133,7 @@ void poll_job_task(
   job       *pjob;
   time_t     time_now = time(NULL);
   long       poll_jobs = 0;
-  int job_state = -1;
+  int        job_state = -1;
 
   if (job_id != NULL)
     {

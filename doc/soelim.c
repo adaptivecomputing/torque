@@ -146,8 +146,7 @@ main(int argc, char *argv[])
   return (0);
   }
 
-int dofile(filein)
-FILE *filein;
+int dofile(FILE *filein)
   {
   char buf[256];
   int  dirindex;

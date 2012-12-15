@@ -5,7 +5,7 @@
 #include "server.h" /* server mail_info*/
 
 struct server server;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
 int enqueue_threadpool_request(void *(*func)(void *),void *arg)
   {

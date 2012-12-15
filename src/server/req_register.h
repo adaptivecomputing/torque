@@ -16,21 +16,11 @@ int register_array_depend(job_array *pa, struct batch_request *preq, int type, i
 
 void set_array_depend_holds(job_array *pa);
 
-/* static void post_doq(struct work_task *pwt); */
-
-/* static void alter_unreg(job *pjob, pbs_attribute *old, pbs_attribute *new); */
-
 int depend_on_que(pbs_attribute *pattr, void *pjob, int mode);
-
-/* static void post_doe(struct work_task *pwt); */
 
 int depend_on_exec(job *pjob);
 
 int depend_on_term(char *job_id);
-
-/* static void release_cheapest(job *pjob, struct depend *pdep); */
-
-/* static void set_depend_hold(job *pjob, pbs_attribute *pattr); */
 
 void depend_clrrdy(job *pjob);
 
@@ -65,13 +55,5 @@ int set_depend(struct pbs_attribute *attr, struct pbs_attribute *newAttr, enum b
 int comp_depend(struct pbs_attribute *attr, struct pbs_attribute *with);
 
 void free_depend(struct pbs_attribute *attr);
-
-/* static int build_depend(pbs_attribute *pattr, char *value); */
-
-/* static void clear_depend(struct depend *pd, int type, int exist); */
-
-/* static void del_depend(struct depend *pd); */
-
-/* static void del_depend_job(struct depend_job *pdj); */
 
 #endif /* _REQ_REGISTER_H */

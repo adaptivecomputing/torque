@@ -348,6 +348,8 @@ struct pbsnode
   struct AvlNode       *node_boards;         /* private tree of numa nodes */
   char                 *numa_str;            /* comma-delimited string of processor values */
   char                 *gpu_str;             /* comma-delimited string of the number of gpus for each nodeboard */
+
+  unsigned char         nd_mom_reported_down;/* notes that the mom reported its own shutdown */
   
   unsigned char         nd_is_alps_reporter;
   unsigned char         nd_is_alps_login;

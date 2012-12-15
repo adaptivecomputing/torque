@@ -16,7 +16,7 @@ int svr_resc_size = 0;
 attribute_def job_attr_def[10];
 struct all_jobs alljobs;
 resource_def *svr_resc_def;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 struct server server;
 struct all_jobs array_summary;
 

@@ -443,3 +443,7 @@ src/tools/test/tracejob/test_tracejob
 .project
 .cproject
 cscope.out
+*.orig
+*.rej
+*.patch
+coverage_results.file

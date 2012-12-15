@@ -18,7 +18,7 @@ char mom_host[PBS_MAXHOSTNAME + 1];
 unsigned int pbs_rm_port = 0;
 tlist_head svr_alljobs;
 char noglobid[] = "none";
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 char *AllocParCmd = NULL;
 
 

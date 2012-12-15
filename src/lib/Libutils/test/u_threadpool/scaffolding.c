@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
 void log_err(int errnum, const char *routine, const char *text)
   { 

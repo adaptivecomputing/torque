@@ -8,7 +8,7 @@
 
 char server_name[PBS_MAXSERVERNAME + 1];
 struct server server;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
 int reply_send_svr(struct batch_request *request)
   {

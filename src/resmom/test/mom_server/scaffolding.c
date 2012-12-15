@@ -46,7 +46,7 @@ char PBSNodeMsgBuf[1024];
 int alarm_time;
 tlist_head svr_alljobs;
 char mom_alias[PBS_MAXHOSTNAME + 1];
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 int rm_errno;
 int needs_cluster_addrs;
 time_t LastServerUpdateTime;

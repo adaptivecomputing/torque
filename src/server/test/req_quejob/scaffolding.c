@@ -28,8 +28,8 @@ resource_def *svr_resc_def;
 int queue_rank = 0;
 char *path_spool;
 struct server server;
-int LOGLEVEL = 0;
 const char *msg_daemonname = "unset";
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 user_info_holder users;
 
 

@@ -16,7 +16,7 @@ struct connect_handle connection[10];
 struct connection svr_conn[PBS_NET_MAX_CONNECTIONS];
 const char *msg_norelytomom = "Server could not connect to MOM";
 unsigned int pbs_server_port_dis;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 all_tasks task_list_event;
 const char *msg_issuebad = "attempt to issue invalid request of type %d";
 

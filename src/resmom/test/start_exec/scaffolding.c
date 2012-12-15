@@ -52,7 +52,7 @@ char DEFAULT_UMASK[1024];
 tlist_head mom_polljobs;
 long TJobStartBlockTime = 5;
 char *TNoSpoolDirList[TMAX_NSDCOUNT];
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 char *submithost_suffix = NULL;
 int num_var_env;
 char jobstarter_exe_name[MAXPATHLEN + 1];

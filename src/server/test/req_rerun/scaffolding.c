@@ -10,7 +10,7 @@
 const char *msg_jobrerun = "Job Rerun";
 attribute_def job_attr_def[10];
 const char *msg_manager = "%s at request of %s@%s";
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
 
 void account_record(int acctype, job *pjob, char *text)

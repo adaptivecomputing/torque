@@ -31,7 +31,7 @@ attribute_def node_attr_def[2];
 int svr_clnodes = 0; 
 struct server server;
 AvlTree ipaddrs = NULL;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 int svr_totnodes = 0; 
 const char *dis_emsg[] = {"No error",
   "Input value too large to convert to this type",

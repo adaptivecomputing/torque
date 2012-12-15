@@ -41,7 +41,7 @@ const char *PMOMCommand[] =
   NULL
   };
 int termin_child = 0; /* mom_main.c */
-int LOGLEVEL = 0; /* mom_main.c/pbsd_main.c */
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */ /* mom_main.c/pbsd_main.c */
 tlist_head svr_alljobs; /* mom_main.c */
 char log_buffer[LOG_BUF_SIZE]; /* pbs_log.c */
 int    multi_mom = 1; /* mom_main.c */ /* 1 to trigger conditions */

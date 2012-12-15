@@ -82,7 +82,7 @@ attribute_def svr_attr_def[10];
 int a_opt_init = -1;
 all_tasks task_list_timed;
 char *path_jobinfo_log;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 pthread_mutex_t *svr_requests_mutex = NULL;
 all_tasks task_list_event;
 char *path_svrdb_new;

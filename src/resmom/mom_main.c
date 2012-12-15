@@ -100,6 +100,7 @@
 
 #define MAX_UPDATES_BEFORE_SENDING  20
 #define PMOMTCPTIMEOUT 60  /* duration in seconds mom TCP requests will block */
+#define TCP_READ_PROTO_TIMEOUT  2
 
 /* Global Data Items */
 
@@ -5557,6 +5558,8 @@ int tcp_read_proto_version(
 
   tmpT = pbs_tcp_timeout;
 
+  pbs_tcp_timeout = TCP_READ_PROTO_TIMEOUT;
+
   *proto = disrsi(chan, &rc);
 
   if (tmpT > 0)
@@ -6434,6 +6437,9 @@ void MOMCheckRestart(void)
   {
   time_t newmtime;
 
+  /* make sure we're not making a mess in the aux dir */
+  cleanup_aux();
+
   if ((MOMConfigRestart <= 0) || (MOMExeTime <= 0))
     {
     return;
@@ -6461,9 +6467,6 @@ void MOMCheckRestart(void)
 
     DBPRT(("%s\n", log_buffer));
     }
-
-  /* make sure we're not making a mess in the aux dir */
-  cleanup_aux();
   }  /* END MOMCheckRestart() */
 
 
@@ -6734,7 +6737,7 @@ void parse_command_line(
         else if (!strcmp(optarg, "version"))
           {
           printf("Version: %s\nRevision: %s\n",
-            PACKAGE_VERSION, SVN_VERSION);
+            PACKAGE_VERSION, GIT_HASH);
 
           exit(0);
           }

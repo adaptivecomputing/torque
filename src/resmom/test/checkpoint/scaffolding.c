@@ -22,7 +22,7 @@ int exiting_tasks; /* mom_main.c */
 resource_def *svr_resc_def; /* resc_def_all.c */
 char *path_spool; /* mom_main.c */
 int pbs_rm_port; /* mom_main.c */
-int LOGLEVEL = 0; /* mom_main.c/pbsd_main.c */
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */ /* mom_main.c/pbsd_main.c */
 
 
 int job_save(job *pjob, int updatetype, int mom_port)

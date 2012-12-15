@@ -251,7 +251,7 @@ struct batch_request *setup_cpyfiles(
       pcf->rq_user);
 
     if (((pjob->ji_wattr[JOB_ATR_egroup].at_flags & ATR_VFLAG_DEFLT) == 0) &&
-        (pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str != 0))
+        (pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str != NULL))
       {
       snprintf(pcf->rq_group, sizeof(pcf->rq_group), "%s", pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str);
       }
@@ -1067,7 +1067,7 @@ handle_returnstd_cleanup:
    if (job_momname != NULL)
     free(job_momname); 
 
-  return rc;
+  return(rc);
   } /* END handle_returnstd() */
 
 
@@ -2484,7 +2484,7 @@ int setrerun(
 
     /* SUCCESS */
 
-    return(0);
+    return(PBSE_NONE);
     }
 
   /* FAILURE */

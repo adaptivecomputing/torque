@@ -9,7 +9,7 @@
 const char *pbs_o_host = "PBS_O_HOST";
 const char *msg_movejob = "Job moved to ";
 const char *msg_manager = "%s at request of %s@%s";
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
 int job_save(job *pjob, int updatetype, int mom_port)
   {
@@ -41,7 +41,7 @@ char *get_variable(job *pjob, char *variable)
   exit(1);
   }
 
-int svr_dequejob(char *job_id, int val)
+int svr_dequejob(job *pjob, int val)
   {
   fprintf(stderr, "The call to svr_dequejob to be mocked!!\n");
   exit(1);

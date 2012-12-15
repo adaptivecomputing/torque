@@ -34,8 +34,10 @@ AvlTree okclients; /* mom_main.c */
 tlist_head mom_polljobs; /* mom_main.c */
 char *path_prologp; /* mom_main.c */
 tlist_head svr_alljobs; /* mom_main.c */
-int LOGLEVEL = 0; /* mom_main.c/pbsd_main.c */
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */ /* mom_main.c/pbsd_main.c */
 int maxupdatesbeforesending = 0;
+int    ServerStatUpdateInterval = DEFAULT_SERVER_STAT_UPDATES;
+time_t          LastServerUpdateTime = 0;  /* NOTE: all servers updated together */
 
 int insert_thing(resizable_array *ra, void *thing)
   {

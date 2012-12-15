@@ -3685,7 +3685,7 @@ const char *nusers(
 
 
 
-const static char *totmem(
+const char *totmem(
 
   struct rm_attribute *attrib)
 
@@ -3731,7 +3731,7 @@ const static char *totmem(
 
 
 
-const static char *availmem(
+const char *availmem(
 
   struct rm_attribute *attrib)
 
@@ -3776,7 +3776,7 @@ const static char *availmem(
 
 
 
-const static char *ncpus(
+const char *ncpus(
 
   struct rm_attribute *attrib)
 

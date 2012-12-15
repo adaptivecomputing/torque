@@ -27,7 +27,7 @@ void fast_strcat(char **Dest, const char *Src);
 int dup_depend(pbs_attribute *pattr, struct depend *pd);
 void cat_jobsvr(char **Dest, char *Src);
 int decode_depend(pbs_attribute *pattr, char *name, const char *rescn, const char *val, int perm);
-int encode_depend(pbs_attribute *pattr, tlist_head *phead, char *atname, char *rsname, int mode, int perm);
+int encode_depend(pbs_attribute *pattr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm);
 int set_depend(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op op);
 int unregister_sync(pbs_attribute *attr, batch_request *preq);
 int register_before_dep(batch_request *preq, job *pjob, int type);

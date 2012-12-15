@@ -2205,7 +2205,7 @@ int main(
         if ((optarg != NULL) && !strcmp(optarg, "version"))
           {
           fprintf(stderr, "Version: %s\nRevision: %s\n",
-            PACKAGE_VERSION, SVN_VERSION);
+            PACKAGE_VERSION, GIT_HASH);
 
           exit(0);
           }

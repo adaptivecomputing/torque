@@ -119,13 +119,12 @@
 #define ROUTE_RETRY_TIME 10
 
 /* External functions called */
-int svr_movejob(job *, char *, int *, struct batch_request *, int);
+int svr_movejob(job *, char *, int *, struct batch_request *);
 long count_proc(char *spec);
 
 /* Local Functions */
 
 int  job_route(job *);
-void *queue_route(void *);
 
 /* Global Data */
 extern char *msg_routexceed;
@@ -136,8 +135,6 @@ extern pthread_mutex_t *reroute_job_mutex;
 
 /*
  * Add an entry to the list of bad destinations for a job.
- *
- * Return: pointer to the new entry if it is added, NULL if not.
  */
 
 void add_dest(
@@ -146,8 +143,14 @@ void add_dest(
 
   {
   badplace  *bp;
-  char      *baddest = jobp->ji_qs.ji_destin;
+  char      *baddest;
+  if (jobp == NULL)
+    {
+    log_err(-1, __func__, "add_dest called with null jobp");
+    return;
+    }
 
+  baddest = jobp->ji_qs.ji_destin;
   bp = (badplace *)calloc(1, sizeof(badplace));
   if (bp == NULL)
     {
@@ -178,7 +181,6 @@ badplace *is_bad_dest(
   /* ji_rejectdest is set in add_dest if approved in ??? */
 
   badplace *bp;
-
   bp = (badplace *)GET_NEXT(jobp->ji_rejectdest);
 
   while (bp != NULL)
@@ -270,7 +272,7 @@ int default_router(
     if (is_bad_dest(jobp, destination))
       continue;
 
-    switch (svr_movejob(jobp, destination, &local_errno, NULL, TRUE))
+    switch (svr_movejob(jobp, destination, &local_errno, NULL))
       {
       case ROUTE_PERM_FAILURE: /* permanent failure */
 

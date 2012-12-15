@@ -10,7 +10,7 @@
 char *path_track;
 char server_name[PBS_MAXSERVERNAME + 1];
 struct server server;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
 
 struct batch_request *alloc_br(int type) 

@@ -17,7 +17,7 @@ int reduceprologchecks;
 resource_def *svr_resc_def;
 char PBSNodeMsgBuf[1024];
 int MOMPrologFailureCount;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 char log_buffer[LOG_BUF_SIZE];
 int MOMPrologTimeoutCount;
 uid_t pbsuser;

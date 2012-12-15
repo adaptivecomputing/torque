@@ -27,7 +27,7 @@ resource_def *svr_resc_def;
 int ignvmem = 0;
 const char *msg_momsetlim = "Job start failed. Can't set \"%s\" limit: %s.\n";
 tlist_head svr_alljobs;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 int ignwalltime = 0;
 int rm_errno;
 

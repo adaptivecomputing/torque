@@ -7,7 +7,7 @@
 #include "work_task.h" /* work_task */
 
 const char *msg_messagejob = "Message request to job status %d";
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
 void reply_ack(struct batch_request *preq)
   {

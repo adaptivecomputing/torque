@@ -678,7 +678,22 @@ int process_status_info(
       if ((current = get_node_from_str(str, name, current)) == NULL)
         break;
       else
+        {
+        /* There is a race condition if using a mom hierarchy and manually
+         * shutting down a non-level 1 mom: if its message that the mom is
+         * shutting down gets there before its last status update, the node
+         * can incorrectly be set as free again. For that reason, only set
+         * a mom back up if its reporting for itself. */
+        if ((strcmp(name, str + strlen("node=")) != 0) &&
+            (current->nd_mom_reported_down == TRUE))
+          {
+          dont_change_state = TRUE;
+          }
+          
+        current->nd_mom_reported_down = FALSE;
+
         continue;
+        }
       }
 
     /* add the info to the "temp" pbs_attribute */

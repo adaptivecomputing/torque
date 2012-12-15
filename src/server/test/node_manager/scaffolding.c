@@ -29,7 +29,7 @@ resource_def *svr_resc_def;
 attribute_def node_attr_def[2];
 char *path_nodenote_new;
 struct server server;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 hello_container hellos;
 struct pbsnode reporter;
 struct pbsnode *alps_reporter = &reporter;

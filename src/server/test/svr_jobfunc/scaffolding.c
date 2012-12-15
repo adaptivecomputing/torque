@@ -28,7 +28,7 @@ struct server server;
 struct all_jobs array_summary;
 int svr_do_schedule = SCH_SCHEDULE_NULL;
 int listener_command = SCH_SCHEDULE_NULL;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 pthread_mutex_t *svr_do_schedule_mutex;
 pthread_mutex_t *listener_command_mutex;
 

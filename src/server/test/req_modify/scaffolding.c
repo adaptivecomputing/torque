@@ -22,7 +22,7 @@ attribute_def job_attr_def[10];
 resource_def *svr_resc_def;
 const char *PJobState[] = {"hi", "hello"};
 struct server server;
-int LOGLEVEL = 0;
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
 struct batch_request *alloc_br(int type)
   {

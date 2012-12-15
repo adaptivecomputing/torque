@@ -137,7 +137,7 @@ int lock_queue(
   int               logging)
 
   {
-  int rc = PBSE_NONE;
+  int   rc = PBSE_NONE;
   char *err_msg = NULL;
 
   if (logging >= 10)
@@ -148,15 +148,15 @@ int lock_queue(
     }
 
   if (pthread_mutex_lock(the_queue->qu_mutex) != 0)
-    { 
-    if (logging >= 10) 
+    {
+    if (logging >= 10)
       {
       snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot lock queue %s mutex in method %s",
           the_queue->qu_qs.qu_name, id);
       log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, err_msg);
       }
     rc = PBSE_MUTEX;
-    } 
+    }
 
   if (err_msg != NULL)
     free(err_msg);
@@ -566,6 +566,7 @@ pbs_queue *next_queue(
 
 
 
+<<<<<<< HEAD
 /* 
  * gets the locks on both queues without releasing the all_queues mutex lock.
  * Doing this another way can cause deadlock.

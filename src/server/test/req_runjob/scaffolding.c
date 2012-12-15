@@ -30,8 +30,8 @@ int scheduler_jobct = 0;
 struct server server;
 int scheduler_sock = -1;
 pbs_net_t pbs_mom_addr;
-int LOGLEVEL = 0;
 const char *msg_manager = "%s at request of %s@%s";
+int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 int svr_totnodes = 0;
 
 
