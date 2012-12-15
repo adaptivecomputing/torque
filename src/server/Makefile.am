@@ -51,5 +51,5 @@ install-exec-hook:
 	   $(DESTDIR)$(sbindir)/$(program_prefix)qserverd$(program_suffix)$(EXEEXT)
 
 uninstall-hook:
-	rm -f $(DESTDIR)$(PBS_ENVIRON)
+	rm -f $(DESTDIR)$(PBS_ENVIRON) $(DESTDIR)$(PBS_SERVER_HOME)/server_priv/nodes
 	rm -f $(DESTDIR)$(sbindir)/$(program_prefix)qserverd$(program_suffix)$(EXEEXT)

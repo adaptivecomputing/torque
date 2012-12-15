@@ -7,12 +7,12 @@ EXTRA_DIST = acinclude.m4 \
   autogen.sh \
   CHANGELOG \
   configure.ac \
-  cov_file_results.py \
+  cov_file_results.pl \
   Doxyfile \
   INSTALL \
 	INSTALL.GNU \
   Makefile.am \
-  parse_cov_results.py \
+  parse_cov_results.pl \
   PBS_License.txt \
 	README.array_changes \
   README.coding_notes \
@@ -23,7 +23,7 @@ EXTRA_DIST = acinclude.m4 \
   README.trqauthd \
 	README.building_40 \
 	Release_Notes \
-  run_report.py \
+  run_report.pl \
 	torque.setup \
 	torque.spec \
 	buildutils/config.mk \
