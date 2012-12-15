@@ -35,7 +35,7 @@ char *sample_start24 = "<Label name='MOAB:FEATURE=regmem' type='SOFT' dispositio
 int search_dynamic_string_status(dynamic_string *status, char *str);
 int generate_alps_status(dynamic_string *status, const char *path, const char *protocol);
 
-/*
+
 START_TEST(parse_alps_output_test)
   {
   dynamic_string *output = get_dynamic_string(-1, NULL);
@@ -92,21 +92,21 @@ START_TEST(full_generate_test)
   fail_unless(search_dynamic_string_status(status, "GPU") == 1, "Couldn't find the GPUs reported in the status");
   fail_unless(search_dynamic_string_status(status, "cheeseburger") == 1, "Couldn't find the feature cheeseburger in the status");
   }
-END_TEST */
+END_TEST 
 
 Suite *node_func_suite(void)
   {
   Suite *s = suite_create("alps helper suite methods");
-  /*TCase *tc_core;*/
+  TCase *tc_core;
  
-  /*
+  
   tc_core = tcase_create("parse_alps_output_test");
   tcase_add_test(tc_core, parse_alps_output_test);
   suite_add_tcase(s, tc_core);
   
   tc_core = tcase_create("full_generate_test");
   tcase_add_test(tc_core, full_generate_test);
-  suite_add_tcase(s, tc_core); */
+  suite_add_tcase(s, tc_core); 
   
   return s;
   }
