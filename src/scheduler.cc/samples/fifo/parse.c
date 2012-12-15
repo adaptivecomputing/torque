@@ -361,7 +361,7 @@ init_config(void)
   memset(&conf, 0, sizeof(struct config));
   memset(&cstat, 0, sizeof(struct status));
 
-  if ((conf.prime_sort = malloc((num_sorts + 1) * sizeof(struct sort_info)))
+  if ((conf.prime_sort = (struct sort_info *)malloc((num_sorts + 1) * sizeof(struct sort_info)))
       == NULL)
     {
     perror("Error Allocating Memory");
@@ -370,7 +370,7 @@ init_config(void)
 
   memset(conf.prime_sort, 0, (num_sorts + 1) * sizeof(struct sort_info));
 
-  if ((conf.non_prime_sort = malloc((num_sorts + 1) * sizeof(struct sort_info)
+  if ((conf.non_prime_sort = (struct sort_info *)malloc((num_sorts + 1) * sizeof(struct sort_info)
                                    )) == NULL)
     {
     perror("Error Allocating Memory");

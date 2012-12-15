@@ -11,14 +11,14 @@
 #include "list_link.h" /* tlist_head, list_link */
 
 int pbs_errno = 0;
-char *msg_daemonname = "unset";
+const char *msg_daemonname = "unset";
 struct connect_handle connection[10];
 struct connection svr_conn[PBS_NET_MAX_CONNECTIONS];
-char *msg_norelytomom = "Server could not connect to MOM";
+const char *msg_norelytomom = "Server could not connect to MOM";
 unsigned int pbs_server_port_dis;
 int LOGLEVEL = 0;
 all_tasks task_list_event;
-char *msg_issuebad = "attempt to issue invalid request of type %d";
+const char *msg_issuebad = "attempt to issue invalid request of type %d";
 
 char *parse_servername(char *name, unsigned int *service)
   {

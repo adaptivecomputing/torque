@@ -110,6 +110,7 @@
 #include "svrfunc.h"
 #include "mcom.h"
 #include "array.h"
+#include "job_route.h"
 #include "threadpool.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
 #include "queue_func.h" /* find_queuebyname */
@@ -452,7 +453,7 @@ void finish_routing_processing(
         /* job delete in progress, just set to queued status */
         svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_ABORT, FALSE);
         
-        svr_mailowner(pjob, 'a', TRUE, "Coudln't route job to remote server");
+        svr_mailowner(pjob, 'a', TRUE, "Couldn't route job to remote server");
 
         unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
 
@@ -465,7 +466,7 @@ void finish_routing_processing(
 
     default: /* try routing again */
        
-      svr_mailowner(pjob, 'a', TRUE, "Coudln't route job to remote server");
+      svr_mailowner(pjob, 'a', TRUE, "Couldn't route job to remote server");
 
       /* force re-eval of job state out of Transit */
 
@@ -641,7 +642,7 @@ void free_server_attrs(
 
   while (pal != NULL)
     {
-    tmp = GET_NEXT(pal->al_link);
+    tmp = (svrattrl *)GET_NEXT(pal->al_link);
     delete_link(&pal->al_link);
     free(pal);
 
@@ -1185,7 +1186,7 @@ int net_move(
 
   svr_setjobstate(jobp, JOB_STATE_TRANSIT, JOB_SUBSTATE_TRNOUT, TRUE);
 
-  args = calloc(1, sizeof(send_job_request));
+  args = (send_job_request *)calloc(1, sizeof(send_job_request));
 
   if (args != NULL)
     {

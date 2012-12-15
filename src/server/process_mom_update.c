@@ -196,7 +196,7 @@ int process_mic_status(
 
     if (mic_count > pnode->nd_nmics_alloced)
       {
-      struct jobinfo *tmp = calloc(mic_count, sizeof(struct jobinfo));
+      struct jobinfo *tmp = (struct jobinfo *)calloc(mic_count, sizeof(struct jobinfo));
       
       if (tmp == NULL)
         return(ENOMEM);
@@ -442,7 +442,7 @@ void update_job_data(
           memset(&tA, 0, sizeof(tA));
 
           tA.al_name  = attr_name;
-          tA.al_resc  = "";
+          tA.al_resc  = (char *)"";
           tA.al_value = attr_value;
           tA.al_op    = SET;
 
@@ -741,8 +741,8 @@ int process_status_info(
       {
       /* walk job list reported by mom */
       size_t         len = strlen(str) + strlen(current->nd_name) + 2;
-      char          *jobstr = calloc(1, len);
-      sync_job_info *sji = calloc(1, sizeof(sync_job_info));
+      char          *jobstr = (char *)calloc(1, len);
+      sync_job_info *sji = (sync_job_info *)calloc(1, sizeof(sync_job_info));
 
       if ((jobstr != NULL)&&(sji != NULL))
         {

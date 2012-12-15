@@ -758,7 +758,7 @@ SystemInit(int argc, char *argv[])
 
   /* write schedulers pid into lockfile */
   (void)sprintf(log_buffer, "%ld\n", pid);
-  (void)write(lockfds, log_buffer, strlen(log_buffer) + 1);
+  (void)write_ac_socket(lockfds, log_buffer, strlen(log_buffer) + 1);
 
 #if (PLOCK_DAEMONS & 2)
   (void)plock(PROCLOCK);  /* lock daemon into memory */

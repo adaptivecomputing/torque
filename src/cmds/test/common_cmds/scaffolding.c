@@ -12,7 +12,7 @@ int env_del_call = 0;
 int env_find_call = 0;
 int tc_num = 0;
 
-int hash_add_item(memmgr **mm, job_data **head, char *name, char *value, int var_type, int op_type)
+int hash_add_item(memmgr **mm, job_data **head, const char *name, const char *value, int var_type, int op_type)
   {
   if ((strcmp(name, "ONE_VAR") == 0)
       && (strcmp(value, "ONE_VAL") == 0)
@@ -47,7 +47,7 @@ int hash_add_item(memmgr **mm, job_data **head, char *name, char *value, int var
   return 0;
   }
 
-int hash_del_item(memmgr **mm, job_data **head, char *name)
+int hash_del_item(memmgr **mm, job_data **head, const char *name)
   {
   if (strcmp(name, "_") == 0)
     {
@@ -56,7 +56,7 @@ int hash_del_item(memmgr **mm, job_data **head, char *name)
   return 0;
   }
 
-int hash_find(job_data *head, char *name, job_data **env_var)
+int hash_find(job_data *head, const char *name, job_data **env_var)
   {
   if (tc_num == 1)
     {
@@ -78,7 +78,7 @@ int hash_find(job_data *head, char *name, job_data **env_var)
   return 1;
   }
 
-void hash_add_or_exit(memmgr **mm, job_data **head, char *name, char *value, int var_type)
+void hash_add_or_exit(memmgr **mm, job_data **head, const char *name, const char *value, int var_type)
   {
   if (tc_num == 2)
     {
@@ -109,8 +109,8 @@ int append_dynamic_string(dynamic_string *ds, const char *str)
 
 dynamic_string *get_dynamic_string(int size, const char *str)
   {
-  dynamic_string *ds = calloc(1, sizeof(dynamic_string));
-  ds->str = calloc(1, 1024*10);
+  dynamic_string *ds = (dynamic_string *)calloc(1, sizeof(dynamic_string));
+  ds->str = (char *)calloc(1, 1024*10);
   return(ds);
   }
 

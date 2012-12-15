@@ -22,24 +22,24 @@
 
 
 
-char *msg_momnoexec2 = "Job cannot be executed\nSee job standard error file";
-char *msg_job_end_sig = "Terminated on signal %d";
-char *msg_obitnojob  = "Job Obit notice received from %s has error %d";
+const char *msg_momnoexec2 = "Job cannot be executed\nSee job standard error file";
+const char *msg_job_end_sig = "Terminated on signal %d";
+const char *msg_obitnojob  = "Job Obit notice received from %s has error %d";
 attribute_def job_attr_def[10];
-char *msg_obitnocpy = "Post job file processing error; job %s on host %s";
+const char *msg_obitnocpy = "Post job file processing error; job %s on host %s";
 int   server_init_type = RECOV_WARM;
 char *path_spool;
-char *msg_init_abt = "Job aborted on PBS Server initialization";
+const char *msg_init_abt = "Job aborted on PBS Server initialization";
 pbs_net_t pbs_server_addr;
 const char *PJobState[] = {"hi", "hello"};
 struct server server;
 int  svr_do_schedule = SCH_SCHEDULE_NULL;
 int listener_command = SCH_SCHEDULE_NULL;
 int LOGLEVEL = 10;
-char *msg_obitnodel = "Unable to delete files for job %s, on host %s";
-char *msg_momnoexec1 = "Job cannot be executed\nSee Administrator for help";
-char *msg_job_end_stat = "Exit_status=%d";
-char *msg_momjoboverlimit = "Job exceeded some resource limit (walltime, mem, etc.). Job was aborted\nSee Administrator for help";
+const char *msg_obitnodel = "Unable to delete files for job %s, on host %s";
+const char *msg_momnoexec1 = "Job cannot be executed\nSee Administrator for help";
+const char *msg_job_end_stat = "Exit_status=%d";
+const char *msg_momjoboverlimit = "Job exceeded some resource limit (walltime, mem, etc.). Job was aborted\nSee Administrator for help";
 pthread_mutex_t *svr_do_schedule_mutex;
 pthread_mutex_t *listener_command_mutex;
 
@@ -48,7 +48,7 @@ pthread_mutex_t *listener_command_mutex;
 
 struct batch_request *alloc_br(int type)
   {
-  batch_request *preq = calloc(1, sizeof(batch_request));
+  batch_request *preq = (batch_request *)calloc(1, sizeof(batch_request));
   preq->rq_type = type;
   return(preq);
   }
@@ -77,7 +77,7 @@ int svr_job_purge(job *pjob)
   exit(1);
   }
 
-void svr_mailowner(job *pjob, int mailpoint, int force, char *text)
+void svr_mailowner(job *pjob, int mailpoint, int force, const char *text)
   {
   fprintf(stderr, "The call to svr_mailowner to be mocked!!\n");
   exit(1);
@@ -299,7 +299,7 @@ int lock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
 
 struct pbsnode *find_nodebyname(
 
-  char *nodename) /* I */
+  const char *nodename) /* I */
 
   {
   return(NULL);

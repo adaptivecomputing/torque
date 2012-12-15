@@ -565,7 +565,7 @@ extern int update_nodes_file(struct pbsnode *);
 
 extern void bad_node_warning(pbs_net_t, struct pbsnode *);
 
-struct pbsnode  *find_nodebyname(char *);
+struct pbsnode  *find_nodebyname(const char *);
 struct pbsnode  *find_node_in_allnodes(all_nodes *an, char *nodename);
 int              create_partial_pbs_node(char *, unsigned long, int);
 struct pbssubn  *create_subnode(struct pbsnode *pnode);

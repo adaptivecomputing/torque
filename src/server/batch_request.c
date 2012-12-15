@@ -113,7 +113,7 @@ void initialize_batch_request_holder()
   {
   brh.brh_ra = initialize_resizable_array(INITIAL_REQUEST_HOLDER_SIZE);
 
-  brh.brh_mutex = calloc(1, sizeof(pthread_mutex_t));
+  brh.brh_mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(brh.brh_mutex, NULL);
 
   brh.brh_ht = create_hash(INITIAL_HASH_SIZE);

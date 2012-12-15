@@ -20,7 +20,7 @@
 #include "ji_mutex.h"
 
 extern int chk_hold_priv(long val, int perm);
-extern int get_hold(tlist_head *, char **, pbs_attribute *);
+extern int get_hold(tlist_head *, const char **, pbs_attribute *);
 extern int svr_authorize_req(struct batch_request *preq, char *owner,
                                char *submit_host);
 
@@ -80,7 +80,7 @@ void hold_job(
 
 int req_holdarray(
     
-  void *vp) /* I */
+    struct batch_request *vp) /* I */
 
   {
   int                   i;
@@ -120,7 +120,7 @@ int req_holdarray(
     }
 
 
-  if ((rc = get_hold(&preq->rq_ind.rq_hold.rq_orig.rq_attr, &pset,
+  if ((rc = get_hold(&preq->rq_ind.rq_hold.rq_orig.rq_attr, (const char **)&pset,
                      &temphold)) != 0)
     {
     unlock_ai_mutex(pa, __func__, (char *)"2", LOGLEVEL);

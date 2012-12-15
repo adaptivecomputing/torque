@@ -7,8 +7,8 @@
 #include "batch_request.h" /* batch_request */
 #include "server.h" /* server */
 
-char *pbs_o_host = "PBS_O_HOST";
-char *msg_permlog = "Unauthorized Request, request type: %d, Object: %s, Name: %s, request from: %s@%s";
+const char *pbs_o_host = "PBS_O_HOST";
+const char *msg_permlog = "Unauthorized Request, request type: %d, Object: %s, Name: %s, request from: %s@%s";
 const char *PJobState[] = {"hi", "hello"};
 struct server server;
 char *server_host;

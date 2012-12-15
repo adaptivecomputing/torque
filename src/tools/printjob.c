@@ -90,6 +90,8 @@
 #include "server_limits.h"
 #include "pbs_job.h"
 #include "tm.h"
+#include "../lib/Libifl/lib_ifl.h"
+
 
 void prt_job_struct(
 
@@ -201,7 +203,7 @@ int read_attr(
   svrattrl *pal;
   svrattrl  tempal;
 
-  i = read(fd, (char *) & tempal, sizeof(tempal));
+  i = read_ac_socket(fd, (char *) & tempal, sizeof(tempal));
 
   if (i != sizeof(tempal))
     {
@@ -234,7 +236,7 @@ int read_attr(
 
   amt = pal->al_tsize - sizeof(svrattrl);
 
-  i = read(fd, (char *)pal + sizeof(svrattrl), amt - 1);
+  i = read_ac_socket(fd, (char *)pal + sizeof(svrattrl), amt - 1);
 
   if (i != amt)
     {
@@ -292,25 +294,25 @@ int read_tm_info(
   tm_task_id taskid;
   tm_task_id nodeid;
 
-  if (read(fds, (char *)&outport, sizeof(int)) != sizeof(int))
+  if (read_ac_socket(fds, (char *)&outport, sizeof(int)) != sizeof(int))
     {
     fprintf(stderr, "short read of TM output info\n");
     exit(2);
     }
 
-  if (read(fds, (char *)&errport, sizeof(int)) != sizeof(int))
+  if (read_ac_socket(fds, (char *)&errport, sizeof(int)) != sizeof(int))
     {
     fprintf(stderr, "short read of TM error info\n");
     exit(2);
     }
 
-  if (read(fds, (char *)&taskid, sizeof(tm_task_id)) != sizeof(tm_task_id))
+  if (read_ac_socket(fds, (char *)&taskid, sizeof(tm_task_id)) != sizeof(tm_task_id))
     {
     fprintf(stderr, "short read of TM task info\n");
     exit(2);
     }
 
-  if (read(fds, (char *)&nodeid, sizeof(tm_node_id)) != sizeof(tm_node_id))
+  if (read_ac_socket(fds, (char *)&nodeid, sizeof(tm_node_id)) != sizeof(tm_node_id))
     {
     fprintf(stderr, "short read of TM nodeid info\n");
     exit(2);
@@ -385,7 +387,7 @@ int main(
       exit(1);
       }
 
-    amt = read(fp, &xjob.ji_qs, sizeof(xjob.ji_qs));
+    amt = read_ac_socket(fp, &xjob.ji_qs, sizeof(xjob.ji_qs));
 
     if (amt != sizeof(xjob.ji_qs))
       {

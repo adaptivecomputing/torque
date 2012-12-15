@@ -88,6 +88,8 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <fcntl.h>
+#include "../lib/Libifl/lib_ifl.h" /* DIS_tcp_setup, DIS_tcp_cleanup */
+
 
 #if defined(FD_SET_IN_SYS_SELECT_H)
 #  include <sys/select.h>
@@ -325,7 +327,7 @@ int DIS_tcp_wflush(
   if (rc != PBSE_NONE)
     return(-1);
  
-  while ((i = write(chan->sock, pb, ct)) != (ssize_t)ct)
+  while ((i = write_ac_socket(chan->sock, pb, ct)) != (ssize_t)ct)
     {
     if (i == -1)
       {

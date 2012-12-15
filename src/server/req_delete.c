@@ -134,7 +134,7 @@ extern struct server server;
 extern int   LOGLEVEL;
 extern struct all_jobs alljobs;
 
-int issue_signal(job **, char *, void (*)(batch_request *), void *);
+int issue_signal(job **, const char *, void (*)(batch_request *), void *);
 
 /* Private Functions in this file */
 
@@ -153,9 +153,9 @@ void change_restart_comment_if_needed(struct job *);
 
 /* Private Data Items */
 
-static char *deldelaystr = DELDELAY;
-static char *delpurgestr = DELPURGE;
-static char *delasyncstr = DELASYNC;
+static const char *deldelaystr = DELDELAY;
+static const char *delpurgestr = DELPURGE;
+static const char *delasyncstr = DELASYNC;
 
 /* Extern Functions */
 
@@ -267,7 +267,7 @@ void ensure_deleted(
   job                  *pjob;
   char                 *jobid;
 
-  jobid = ptask->wt_parm1;
+  jobid = (char *)ptask->wt_parm1;
 
   if (jobid != NULL)
     {
@@ -296,7 +296,7 @@ int execute_job_delete(
   struct work_task *pwtnew;
 
   int               rc;
-  char             *sigt = "SIGTERM";
+  const char      *sigt = "SIGTERM";
 
   int               has_mutex = TRUE;
   char              log_buf[LOCAL_LOG_BUF_SIZE];
@@ -1056,7 +1056,7 @@ void post_delete_mom1(
     return;
 
   rc          = preq_sig->rq_reply.brp_code;
-  preq_clt_id = preq_sig->rq_extra;
+  preq_clt_id = (char *)preq_sig->rq_extra;
 
   free_br(preq_sig);
 
@@ -1163,7 +1163,7 @@ static void post_delete_mom2(
 
   {
   char        *jobid;
-  char        *sigk = "SIGKILL";
+  const char *sigk = "SIGKILL";
   char         log_buf[LOCAL_LOG_BUF_SIZE];
   job         *pjob;
 
@@ -1325,7 +1325,7 @@ static void job_delete_nanny(
 
   {
   job                  *pjob;
-  char                 *sigk = "SIGKILL";
+  const char          *sigk = "SIGKILL";
   char                 *jobid;
 
   struct batch_request *newreq;

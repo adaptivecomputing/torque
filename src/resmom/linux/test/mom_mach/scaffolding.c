@@ -13,19 +13,19 @@
 
 int svr_resc_size = 0;
 char path_meminfo[MAX_LINE];
-char no_parm[] = "required parameter not found";
+const char *no_parm = "required parameter not found";
 long system_ncpus = 0;
 time_t time_now = 0;
 int ignmem = 0;
 double wallfactor = 1.00;
 double cputfactor = 1.00;
 int exiting_tasks = 0;
-char extra_parm[] = "extra parameter(s)";
+const char *extra_parm = "extra parameter(s)";
 int igncput = 0;
 char *ret_string;
 resource_def *svr_resc_def;
 int ignvmem = 0;
-char *msg_momsetlim = "Job start failed. Can't set \"%s\" limit: %s.\n";
+const char *msg_momsetlim = "Job start failed. Can't set \"%s\" limit: %s.\n";
 tlist_head svr_alljobs;
 int LOGLEVEL = 0;
 int ignwalltime = 0;

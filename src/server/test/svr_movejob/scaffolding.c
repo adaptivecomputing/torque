@@ -15,15 +15,15 @@
 char *path_jobs;
 struct connect_handle connection[10];
 attribute_def job_attr_def[10];
-char *pbs_o_host = "PBS_O_HOST";
-char *msg_routexceed = "Route queue lifetime exceeded";
+const char *pbs_o_host = "PBS_O_HOST";
+const char *msg_routexceed = "Route queue lifetime exceeded";
 int queue_rank = 0;
 char *path_spool;
-char *msg_movejob = "Job moved to ";
+const char *msg_movejob = "Job moved to ";
 pbs_net_t pbs_server_addr;
 unsigned int pbs_server_port_dis;
 int LOGLEVEL = 0;
-char *msg_manager = "%s at request of %s@%s";
+const char *msg_manager = "%s at request of %s@%s";
 
 
 
@@ -268,7 +268,7 @@ struct pbs_queue *lock_queue_with_job_held(
   return(NULL);
   }
 
-void svr_mailowner(job *pjob, int mailpoint, int force, char *text) {}
+void svr_mailowner(job *pjob, int mailpoint, int force, const char *text) {}
 
 int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
   {

@@ -96,7 +96,6 @@
 #define CONFIRM_BASIL_REQ           "echo \"<?xml version='1.0'?><BasilRequest protocol='%s' method='CONFIRM' reservation_id='%s' %s='%lld'/>\" | %s"
 #define DELETE_BASIL_REQ            "echo \"<?xml version='1.0'?><BasilRequest protocol='%s' method='RELEASE' reservation_id='%s'/>\" | %s"
 
-
 extern const int   apbasil_fail_transient;
 extern const int   apbasil_fail_permanent;
 extern const char *message;
@@ -130,7 +129,7 @@ extern const char *text_name;
 extern const char *memory_mb;
 extern const char *family;
 extern const char *cproc_eq;
-extern const int   cproc_eq_len;
+extern const int   ac_cproc_eq_len;
 extern const char *CRAY_GPU_STATUS_START;
 extern const char *CRAY_GPU_STATUS_END;
 extern const char *alps_reporter_feature;

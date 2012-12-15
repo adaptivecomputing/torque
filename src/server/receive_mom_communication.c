@@ -481,7 +481,7 @@ int svr_is_request(
 
       if (ret == SEND_HELLO)
         {
-        struct hello_info *hi = calloc(1, sizeof(struct hello_info));
+        struct hello_info *hi = (struct hello_info *)calloc(1, sizeof(struct hello_info));
         write_tcp_reply(chan, IS_PROTOCOL, IS_PROTOCOL_VER, IS_STATUS, DIS_SUCCESS);
 
         hi->name = strdup(node_name);

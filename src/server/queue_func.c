@@ -372,7 +372,7 @@ int que_purge(
 
 pbs_queue *find_queuebyname(
 
-  char *quename) /* I */
+  const char *quename) /* I */
 
   {
   char  *pc;
@@ -630,8 +630,8 @@ int get_parent_dest_queues(
   else
     {
     /* good path */
-    pque_parent = svr_queues.ra->slots[index_parent].item;
-    pque_dest   = svr_queues.ra->slots[index_dest].item;
+    pque_parent = (pbs_queue *)svr_queues.ra->slots[index_parent].item;
+    pque_dest   = (pbs_queue *)svr_queues.ra->slots[index_dest].item;
 
     if ((pque_parent == NULL) ||
         (pque_dest == NULL))

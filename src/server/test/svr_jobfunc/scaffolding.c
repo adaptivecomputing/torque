@@ -16,11 +16,11 @@
 
 int svr_resc_size = 0;
 all_queues svr_queues;
-char *msg_daemonname = "unset";
+const char *msg_daemonname = "unset";
 attribute_def job_attr_def[10];
-char *msg_badwait = "Invalid time in work task for waiting, job = %s";
+const char *msg_badwait = "Invalid time in work task for waiting, job = %s";
 struct all_jobs alljobs;
-char *pbs_o_host = "PBS_O_HOST";
+const char *pbs_o_host = "PBS_O_HOST";
 resource_def *svr_resc_def;
 int svr_clnodes = 0;
 int comp_resc_gt; 
@@ -81,7 +81,7 @@ int procs_available(int proc_ct)
   exit(1);
   }
 
-int decode_str(pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
+int decode_str(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm)
   {
   fprintf(stderr, "The call to decode_str to be mocked!!\n");
   exit(1);
@@ -153,7 +153,7 @@ resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
   exit(1);
   }
 
-char * csv_find_string(char *csv_str, char *search_str)
+char * csv_find_string(const char *csv_str, const char *search_str)
   {
   fprintf(stderr, "The call to csv_find_string to be mocked!!\n");
   exit(1);

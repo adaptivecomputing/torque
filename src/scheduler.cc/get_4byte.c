@@ -83,15 +83,7 @@
 #if defined(NTOHL_NEEDS_ARPA_INET_H) && defined(HAVE_ARPA_INET_H)
 #include <arpa/inet.h>
 #endif
-
-
-
-/* FIXME: needs to move to a header file */
-#ifndef NEED_BLOCKING_CONNECTIONS
-extern ssize_t read_nonblocking_socket(int, void *, ssize_t);
-#endif
-
-
+#include "../lib/Libifl/lib_ifl.h"
 
 
 /*
@@ -122,7 +114,7 @@ int get_4byte(
 
   un.unl = 0;
 
-  amt = read(sock, (char *)(un.unc + sizeof(unsigned int) - 4), 4);
+  amt = read_ac_socket(sock, (char *)(un.unc + sizeof(unsigned int) - 4), 4);
 
   if (amt == 4)
     {

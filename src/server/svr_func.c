@@ -113,9 +113,9 @@ extern int              listener_command;
 /*
  * the following array of strings is used in decoding/encoding the server state
  */
-static char *svr_idle   = "Idle";
-static char *svr_sched  = "Scheduling";
-static char *svr_state_names[] =
+const static char *svr_idle   = "Idle";
+const static char *svr_sched  = "Scheduling";
+static const char *svr_state_names[] =
   {
   "",   /* SV_STATE_DOWN */
   "",   /* SV_STATE_INIT */
@@ -146,7 +146,7 @@ int encode_svrstate(
 
   {
   svrattrl *pal;
-  char *psname;
+  const char *psname;
 
   if (pattr == NULL)
     {
@@ -422,7 +422,7 @@ int ck_checkpoint(
  * and queue ) attributes.  It just returns 0.
  */
 
-int decode_null(pbs_attribute *patr, const char *name, char *rn, char *val, int perm)
+int decode_null(pbs_attribute *patr, const char *name, const char *rn, const char *val, int perm)
   {
   return 0;
   }

@@ -24,7 +24,7 @@ void initialize_queue_recycler()
   initialize_allques_array(&q_recycler.queues);
   q_recycler.iter = -1;
 
-  q_recycler.mutex = calloc(1, sizeof(pthread_mutex_t));
+  q_recycler.mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(q_recycler.mutex,&t_attr);
   } /* END initialize_recycler() */
 
@@ -40,7 +40,7 @@ pbs_queue *next_queue_from_recycler(
   pbs_queue *pq;
 
   pthread_mutex_lock(aq->allques_mutex);
-  pq = next_thing(aq->ra, iter);
+  pq = (pbs_queue *)next_thing(aq->ra, iter);
   if (pq != NULL)
     lock_queue(pq, __func__, (char *)NULL, LOGLEVEL);
   pthread_mutex_unlock(aq->allques_mutex);

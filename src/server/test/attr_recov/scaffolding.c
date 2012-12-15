@@ -31,7 +31,7 @@ ssize_t write_nonblocking_socket(int fd, const void *buf, ssize_t count)
   exit(1);
   }
 
-int find_attr(struct attribute_def *attr_def, char *name, int limit)
+int find_attr(struct attribute_def *attr_def, const char *name, int limit)
   {
   fprintf(stderr, "The call to find_attr needs to be mocked!!\n");
   exit(1);

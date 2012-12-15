@@ -179,7 +179,7 @@ static int str_nc_cmp(
 int find_attr(
 
   struct attribute_def *attr_def, /* ptr to pbs_attribute definitions */
-  char                 *name,     /* pbs_attribute name to find */
+  const char          *name,     /* pbs_attribute name to find */
   int                   limit)    /* limit on size of def array */
 
   {

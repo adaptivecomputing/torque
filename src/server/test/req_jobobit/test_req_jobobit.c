@@ -10,7 +10,7 @@
 #include "sched_cmds.h"
 
 
-char *setup_from(job *pjob, char *suffix);
+char *setup_from(job *pjob, const char *suffix);
 int   is_joined(job *pjob, enum job_atr ati);
 batch_request *return_stdfile(batch_request *preq, job *pjob, enum job_atr ati);
 void rel_resc(job *pjob);

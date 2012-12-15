@@ -5,7 +5,7 @@
 
 void clear_attr(pbs_attribute *pattr, attribute_def *pdef); 
 
-int find_attr(struct attribute_def *attr_def, char *name, int limit); 
+int find_attr(struct attribute_def *attr_def, const char *name, int limit);
 
 long attr_ifelse_long(pbs_attribute *attr1, pbs_attribute *attr2, long deflong);
 

@@ -9,8 +9,8 @@
 char *server_host;
 struct server server;
 
-char *pbs_o_host = "PBS_O_HOST";
-char *msg_orighost = "Job missing PBS_O_HOST value";
+const char *pbs_o_host = "PBS_O_HOST";
+const char *msg_orighost = "Job missing PBS_O_HOST value";
 
 char *get_variable(job *pjob, char *variable) 
   { 
@@ -19,7 +19,7 @@ char *get_variable(job *pjob, char *variable)
   }
 
 
-struct pbsnode *find_nodebyname( char *nodename) 
+struct pbsnode *find_nodebyname(const char *nodename)
   { 
   fprintf(stderr, "The call to find_nodebyname needs to be mocked!!\n");
   exit(1);

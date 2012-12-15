@@ -28,13 +28,13 @@ int socket_get_tcp()
   exit(1);
   }
 
-int csv_length(char *csv_str)
+int csv_length(const char *csv_str)
   {
   fprintf(stderr, "The call to csv_length needs to be mocked!!\n");
   exit(1);
   }
 
-char *csv_nth(char *csv_str, int n)
+char *csv_nth(const char *csv_str, int n)
   {
   fprintf(stderr, "The call to csv_nth needs to be mocked!!\n");
   exit(1);

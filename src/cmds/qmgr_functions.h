@@ -35,13 +35,13 @@ struct objname * commalist2objname(char *names, int type);
 
 int get_request(char *request); 
 
-int is_attr(int object, char *name, int attr_type);
+int is_attr(int object, const char *name, int attr_type);
 
 void show_help(char *str);
 
 int parse(char *request, int *oper, int *type, char **names, struct attropl **attr);
 
-void pstderr_big(char *svrname, char *objname, char *errmesg);
+void pstderr_big(const char *svrname, const char *objname, const char *errmesg);
 
 void free_objname_list(struct objname *list);
 

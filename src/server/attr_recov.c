@@ -101,6 +101,7 @@
 #include "attribute.h"
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
+#include "../lib/Libifl/lib_ifl.h"
 #include "svrfunc.h"
 #include "utils.h"
 #include "server.h"
@@ -381,7 +382,7 @@ int recov_attr(
 
   while (1)
     {
-    i = read(fd, (char *) & tempal, sizeof(tempal));
+    i = read_ac_socket(fd, (char *) & tempal, sizeof(tempal));
 
     if (i != sizeof(tempal))
       {
@@ -421,7 +422,7 @@ int recov_attr(
 
     amt = pal->al_tsize - sizeof(svrattrl);
 
-    i = read(fd, (char *)pal + sizeof(svrattrl), amt);
+    i = read_ac_socket(fd, (char *)pal + sizeof(svrattrl), amt);
 
     if (i != amt)
       {

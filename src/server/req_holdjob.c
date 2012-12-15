@@ -122,7 +122,7 @@ extern char *msg_postmomnojob;
 extern int LOGLEVEL;
 
 int chk_hold_priv(long val, int perm);
-int get_hold(tlist_head *, char **, pbs_attribute *);
+int get_hold(tlist_head *, const char **, pbs_attribute *);
 
 /* external functions */
 extern int svr_authorize_jobreq(struct batch_request *,job *);
@@ -163,7 +163,7 @@ int chk_hold_priv(
 
 int req_holdjob(
 
-  void *vp) /* I */
+    struct batch_request *vp) /* I */
 
   {
   long                 *hold_val;
@@ -188,7 +188,7 @@ int req_holdjob(
 
   /* cannot do anything until we decode the holds to be set */
 
-  if ((rc = get_hold(&preq->rq_ind.rq_hold.rq_orig.rq_attr, &pset,
+  if ((rc = get_hold(&preq->rq_ind.rq_hold.rq_orig.rq_attr, (const char **)&pset,
                      &temphold)) != 0)
     {
     req_reject(rc, 0, preq, NULL, NULL);
@@ -310,7 +310,7 @@ int req_holdjob(
 
 void *req_checkpointjob(
 
-  void *vp)
+   struct batch_request *vp) /* I */
 
   {
   struct batch_request *preq = (struct batch_request *)vp;
@@ -402,7 +402,7 @@ int release_job(
 
   /* cannot do anything until we decode the holds to be set */
 
-  if ((rc = get_hold(&preq->rq_ind.rq_hold.rq_orig.rq_attr, &pset, &temphold)) != 0)
+  if ((rc = get_hold(&preq->rq_ind.rq_hold.rq_orig.rq_attr, (const char **)&pset, &temphold)) != 0)
     {
     return(rc);
     }
@@ -456,7 +456,7 @@ int release_job(
 
 int req_releasejob(
 
-  void *vp) /* ptr to the decoded request   */
+    struct batch_request *vp) /* I */
 
   {
   job  *pjob;
@@ -526,7 +526,7 @@ int release_whole_array(
 
 int req_releasearray(
 
-  void *vp) /* I */
+    struct batch_request *vp) /* I */
 
   {
   job                  *pjob;
@@ -619,7 +619,7 @@ int req_releasearray(
 int get_hold(
 
   tlist_head     *phead,
-  char          **pset,     /* O - ptr to hold value */
+  const char   **pset,     /* O - ptr to hold value */
   pbs_attribute  *temphold)   /* O - ptr to pbs_attribute to decode value into  */
 
 
@@ -710,7 +710,7 @@ void process_hold_reply(
   else if (preq->rq_reply.brp_code != 0)
     {
 
-    rc = get_hold(&preq->rq_ind.rq_hold.rq_orig.rq_attr, &pset, &temphold);
+    rc = get_hold(&preq->rq_ind.rq_hold.rq_orig.rq_attr, (const char **)&pset, &temphold);
 
     if (rc == 0)
       {

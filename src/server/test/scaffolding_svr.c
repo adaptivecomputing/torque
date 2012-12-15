@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 #include "pbs_job.h" /* job */
-#include "batch_request.h" /* batch_request */
 #include "work_task.h" /* work_task */
+#include "batch_request.h" /* batch_request */
 
 int relay_to_mom(job **pjob, struct batch_request *request, void (*func)(struct work_task *))
   {

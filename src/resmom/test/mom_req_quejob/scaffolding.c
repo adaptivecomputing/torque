@@ -15,12 +15,12 @@
 
 const char *PJobSubState[10];
 char *path_jobs;
-char *msg_script_write = "Unable to write script file";
+const char *msg_script_write = "Unable to write script file";
 int svr_resc_size = 0;
 int multi_mom = 0;
 time_t time_now;
 attribute_def job_attr_def[10];
-char *msg_script_open = "Unable to open script file";
+const char *msg_script_open = "Unable to open script file";
 tlist_head svr_newjobs;
 resource_def *svr_resc_def;
 char mom_host[PBS_MAXHOSTNAME + 1];
@@ -82,7 +82,7 @@ void log_record(int eventtype, int objclass, const char *objname, const char *te
   exit(1);
   }
 
-int decode_arst_merge(struct pbs_attribute *patr, const char *name, char *rescn, char *val)
+int decode_arst_merge(struct pbs_attribute *patr, const char *name, const char *rescn, const char *val)
   {
   fprintf(stderr, "The call to decode_arst_merge needs to be mocked!!\n");
   exit(1);
@@ -94,7 +94,7 @@ ssize_t write_nonblocking_socket(int fd, const void *buf, ssize_t count)
   exit(1);
   }
 
-int find_attr(struct attribute_def *attr_def, char *name, int limit)
+int find_attr(struct attribute_def *attr_def, const char *name, int limit)
   {
   fprintf(stderr, "The call to find_attr needs to be mocked!!\n");
   exit(1);

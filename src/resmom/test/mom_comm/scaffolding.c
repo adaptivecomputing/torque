@@ -201,7 +201,7 @@ void DIS_tcp_setup(int fd)
   exit(1);
   }
 
-int find_attr(struct attribute_def *attr_def, char *name, int limit)
+int find_attr(struct attribute_def *attr_def, const char *name, int limit)
   {
   fprintf(stderr, "The call to find_attr needs to be mocked!!\n");
   exit(1);

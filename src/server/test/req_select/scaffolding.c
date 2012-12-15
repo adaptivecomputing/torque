@@ -51,13 +51,13 @@ int svr_authorize_jobreq(struct batch_request *preq, job *pjob)
   exit(1);
   }
 
-int decode_str(pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
+int decode_str(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm)
   {
   fprintf(stderr, "The call to decode_str to be mocked!!\n");
   exit(1);
   }
 
-int find_attr(struct attribute_def *attr_def, char *name, int limit)
+int find_attr(struct attribute_def *attr_def, const char *name, int limit)
   {
   fprintf(stderr, "The call to find_attr to be mocked!!\n");
   exit(1);

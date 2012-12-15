@@ -11,7 +11,7 @@ void *memmgr_calloc(memmgr **mgr, int qty, int size)
   exit(1);
   }
 
-void hash_add_or_exit(memmgr **mm, job_data **head, char *name, char *value, int var_type)
+void hash_add_or_exit(memmgr **mm, job_data **head, const char *name, const char *value, int var_type)
   {
   fprintf(stderr, "The call to hash_add_or_exit needs to be mocked!!\n");
   exit(1);

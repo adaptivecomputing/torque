@@ -88,6 +88,7 @@
 #include "list_link.h"
 #include "work_task.h"
 #include "tracking.h"
+#include "../lib/Libifl/lib_ifl.h"
 
 /*
 struct tracking {
@@ -145,7 +146,7 @@ main(int argc, char *argv[])
       exit(1);
       }
 
-    while ((amt = read(fp, &track, sizeof(track))) == sizeof(track))
+    while ((amt = read_ac_socket(fp, &track, sizeof(track))) == sizeof(track))
       {
       prt_track_struct(&track);
       }

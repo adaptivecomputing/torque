@@ -120,7 +120,7 @@ job  *chk_job_request(char *, struct batch_request *);
 
 int req_movejob(
 
-  void *vp) /* I */
+    struct batch_request *vp) /* I */
 
   {
   job *jobp;
@@ -231,7 +231,7 @@ int req_movejob(
 
 int req_orderjob(
 
-  void *vp) /* I */
+  struct batch_request *vp) /* I */
 
   {
   job                  *pjob;

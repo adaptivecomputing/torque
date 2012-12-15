@@ -20,6 +20,8 @@
 #include "pbs_job.h"
 #include "array.h"
 #include "../lib/Liblog/pbs_log.h"
+#include "../lib/Libifl/lib_ifl.h"
+
 
 extern char *path_jobs;
 extern char *path_arrays;
@@ -342,7 +344,7 @@ int upgrade_v1(
   ji_qs_v1 qs_old;
 
 
-  if (read(fds, (char*)&qs_old, sizeof(qs_old)) != sizeof(qs_old))
+  if (read_ac_socket(fds, (char*)&qs_old, sizeof(qs_old)) != sizeof(qs_old))
     {
     return (-1);
     }
@@ -382,7 +384,7 @@ int upgrade_2_3_X(
   ji_qs_2_3_X qs_old;
 
 
-  if (read(fds, (char*)&qs_old, sizeof(qs_old)) != sizeof(qs_old))
+  if (read_ac_socket(fds, (char*)&qs_old, sizeof(qs_old)) != sizeof(qs_old))
     {
     return (-1);
     }
@@ -427,7 +429,7 @@ int upgrade_2_2_X(
 
 
 
-  if (read(fds, (char*)&qs_old, sizeof(qs_old)) != sizeof(qs_old))
+  if (read_ac_socket(fds, (char*)&qs_old, sizeof(qs_old)) != sizeof(qs_old))
     {
     return (-1);
     }
@@ -467,7 +469,7 @@ int upgrade_2_1_X(
   ji_qs_2_1_X qs_old;
 
 
-  if (read(fds, (char*)&qs_old, sizeof(qs_old)) != sizeof(qs_old))
+  if (read_ac_socket(fds, (char*)&qs_old, sizeof(qs_old)) != sizeof(qs_old))
     {
     return (-1);
     }

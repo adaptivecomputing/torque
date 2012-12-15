@@ -474,7 +474,7 @@ resource *new_resource()
   {
   resource *resp;  /* the new resource */
 
-  if ((resp = malloc(sizeof(resource))) == NULL)
+  if ((resp = (resource *)malloc(sizeof(resource))) == NULL)
     return NULL;
 
   resp -> next = NULL;

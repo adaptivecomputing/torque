@@ -22,8 +22,8 @@ int decode_tokens(
 
   pbs_attribute *patr,
   const char   *name,  /* pbs_attribute name */
-  char          *rescn, /* resource name, unused here */
-  char          *val,   /* pbs_attribute value */
+  const char *rescn, /* resource name, unused here */
+  const char    *val,   /* pbs_attribute value */
   int            perm)  /* only used for resources */
 
 
@@ -35,7 +35,7 @@ int decode_tokens(
   if (val != NULL)
     {
     ret = PBSE_BADATVAL; /* Assume bad until proven otherwise */
-    colon = strstr(val, ":");
+    colon = strstr((char *)val, ":");
 
     if (colon != NULL)
       {

@@ -108,6 +108,7 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
+#include "../lib/Libifl/lib_ifl.h"
 #include "svrfunc.h"
 #include "server.h"
 #if __STDC__ != 1
@@ -251,7 +252,7 @@ int job_save(
 
     /* just write the "critical" base structure to the file */
 
-    while ((i = write(fds, (char *)&pjob->ji_qs, sizeof(pjob->ji_qs))) != sizeof(pjob->ji_qs))
+    while ((i = write_ac_socket(fds, (char *)&pjob->ji_qs, sizeof(pjob->ji_qs))) != sizeof(pjob->ji_qs))
       {
       if ((i < 0) && (errno == EINTR))
         {
@@ -463,7 +464,7 @@ job *job_recov(
 
   /* read in job quick save sub-structure */
 
-  if (read(fds, (char *)&pj->ji_qs, sizeof(pj->ji_qs)) != sizeof(pj->ji_qs) &&
+  if (read_ac_socket(fds, (char *)&pj->ji_qs, sizeof(pj->ji_qs)) != sizeof(pj->ji_qs) &&
       pj->ji_qs.qs_version == PBS_QS_VERSION)
     {
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Unable to read %s", namebuf);

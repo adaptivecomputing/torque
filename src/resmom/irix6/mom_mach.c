@@ -2288,7 +2288,7 @@ physmem(struct rm_attribute *attrib)
     return NULL;
     }
 
-  if (read(kfd, (char *)&pmem, sizeof(pmem)) != sizeof(pmem))
+  if (read_ac_socket(kfd, (char *)&pmem, sizeof(pmem)) != sizeof(pmem))
     {
     log_err(errno, id, "read");
     rm_errno = PBSE_RMSYSTEM;
@@ -2566,7 +2566,7 @@ get_la(double *rv)
     return (rm_errno = PBSE_RMSYSTEM);
     }
 
-  if (read(kfd, (char *)&load, sizeof(load)) != sizeof(load))
+  if (read_ac_socket(kfd, (char *)&load, sizeof(load)) != sizeof(load))
     {
     log_err(errno, id, "read");
     return (rm_errno = PBSE_RMSYSTEM);

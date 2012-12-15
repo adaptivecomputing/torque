@@ -10,7 +10,7 @@
 #include "queue.h" /* pbs_queue */
 #include "array.h" /* job_array */
 
-char *msg_permlog = "Unauthorized Request, request type: %d, Object: %s, Name: %s, request from: %s@%s";
+const char *msg_permlog = "Unauthorized Request, request type: %d, Object: %s, Name: %s, request from: %s@%s";
 struct server server;
 int LOGLEVEL = 0;
 

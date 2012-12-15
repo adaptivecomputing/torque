@@ -208,18 +208,21 @@ enum srv_atr
   };
 extern attribute_def svr_attr_def[];
 
+typedef struct _server_qs
+  {
+  int  sv_numjobs; /* number of job owned by server    */
+  int  sv_numque;  /* nuber of queues managed          */
+  int  sv_jobidnumber; /* next number to use in new jobid  */
+  /* the server struct must be saved  */
+  /* whenever this value is updated   */
+  time_t sv_savetm; /* time of server db update         */
+  } server_qs;
+
+
 struct server
   {
 
-  struct server_qs
-    {
-    int  sv_numjobs; /* number of job owned by server    */
-    int  sv_numque;  /* nuber of queues managed          */
-    int  sv_jobidnumber; /* next number to use in new jobid  */
-    /* the server struct must be saved  */
-    /* whenever this value is updated   */
-    time_t sv_savetm; /* time of server db update         */
-    } sv_qs;
+  server_qs sv_qs;
 
   pthread_mutex_t *sv_qs_mutex;
   pthread_mutex_t *sv_attr_mutex;

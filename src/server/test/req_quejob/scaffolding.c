@@ -16,20 +16,20 @@
 
 const char *PJobSubState[10];
 char *path_jobs;
-char *msg_script_write = "Unable to write script file";
+const char *msg_script_write = "Unable to write script file";
 int svr_resc_size = 0;
 attribute_def job_attr_def[10];
-char *msg_script_open = "Unable to open script file";
-char *msg_jobnew = "Job Queued at request of %s@%s, owner = %s, job name = %s, queue = %s";
+const char *msg_script_open = "Unable to open script file";
+const char *msg_jobnew = "Job Queued at request of %s@%s, owner = %s, job name = %s, queue = %s";
 struct all_jobs newjobs;
 char server_name[PBS_MAXSERVERNAME + 1];
-char *pbs_o_host = "PBS_O_HOST";
+const char *pbs_o_host = "PBS_O_HOST";
 resource_def *svr_resc_def;
 int queue_rank = 0;
 char *path_spool;
 struct server server;
 int LOGLEVEL = 0;
-char *msg_daemonname = "unset";
+const char *msg_daemonname = "unset";
 user_info_holder users;
 
 
@@ -105,7 +105,7 @@ struct work_task *set_task(enum work_type type, long event_id, void (*func)(), v
   exit(1);
   }
 
-char * csv_find_value(char *csv_str, char *search_str)
+char * csv_find_value(const char *csv_str, char *search_str)
   {
   fprintf(stderr, "The call to csv_find_value to be mocked!!\n");
   exit(1);
@@ -123,13 +123,13 @@ int insert_job(struct all_jobs *aj, job *pjob)
   exit(1);
   }
 
-int find_attr(struct attribute_def *attr_def, char *name, int limit)
+int find_attr(struct attribute_def *attr_def, const char *name, int limit)
   {
   fprintf(stderr, "The call to find_attr to be mocked!!\n");
   exit(1);
   }
 
-int decode_resc(struct pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
+int decode_resc(struct pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm)
   {
   fprintf(stderr, "The call to decode_resc to be mocked!!\n");
   exit(1);

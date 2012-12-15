@@ -10,7 +10,7 @@ int acct_open(char *filename);
 
 void acct_close(void);
 
-void account_record(int acctype, job *pjob, char *text);
+void account_record(int acctype, job *pjob, const char *text);
 
 void account_jobstr(job *pjob);
 

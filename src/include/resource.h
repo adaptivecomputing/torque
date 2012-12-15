@@ -119,7 +119,7 @@ typedef struct resource
 typedef struct resource_def
   {
   const char  *rs_name;
-  int     (*rs_decode)(pbs_attribute *, const char *, char *, char *, int);
+  int     (*rs_decode)(pbs_attribute *, const char *, const char *, const char *, int);
   int     (*rs_encode)(pbs_attribute *, tlist_head *, const char *, const char *, int, int);
   int     (*rs_set)(pbs_attribute *, pbs_attribute *, enum batch_op);
   int     (*rs_comp)(pbs_attribute *, pbs_attribute *);

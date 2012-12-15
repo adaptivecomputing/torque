@@ -123,7 +123,7 @@ int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq,
 
 void *req_messagejob(
     
-  void *vp)
+    struct batch_request *vp) /* I */
 
   {
   struct batch_request *preq = (struct batch_request *)vp;

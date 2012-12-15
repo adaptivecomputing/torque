@@ -394,7 +394,7 @@ start_tcl(void)
     die(0);
     }
 
-  for (tot = 0; (len = read(fd, buf, sizeof(buf))) > 0; tot += len)
+  for (tot = 0; (len = read_ac_socket(fd, buf, sizeof(buf))) > 0; tot += len)
     {
     if ((body = realloc(body, tot + len + 1)) == NULL)
       {
@@ -1112,7 +1112,7 @@ char *argv[];
 
   /* write schedulers pid into lockfile */
   (void)sprintf(log_buffer, "%d\n", pid);
-  (void)write(lockfds, log_buffer, strlen(log_buffer) + 1);
+  (void)write_ac_socket(lockfds, log_buffer, strlen(log_buffer) + 1);
 
 #if (PLOCK_DAEMONS & 2)
   (void)plock(PROCLOCK); /* lock daemon into memory */

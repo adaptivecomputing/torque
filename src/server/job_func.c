@@ -134,6 +134,7 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
+#include "../lib/Libifl/lib_ifl.h"
 #include "pbs_error.h"
 #include "svrfunc.h"
 #include "acct.h"
@@ -169,7 +170,7 @@ extern struct batch_request *setup_cpyfiles(struct batch_request *,job *,char*,c
 extern int job_log_open(char *, char *);
 extern int log_job_record(const char *buf);
 extern void check_job_log(struct work_task *ptask);
-int issue_signal(job **, char *, void(*)(batch_request *), void *);
+int issue_signal(job **, const char *, void(*)(batch_request *), void *);
 
 /* Local Private Functions */
 
@@ -223,12 +224,12 @@ void send_qsub_delmsg(
     return;
     }
 
-  if (write(qsub_sock, "PBS: ", 5) == -1)
+  if (write_ac_socket(qsub_sock, "PBS: ", 5) == -1)
     {
     return;
     }
 
-  if (write(qsub_sock, text, strlen(text)) == -1)
+  if (write_ac_socket(qsub_sock, text, strlen(text)) == -1)
     {
     return;
     }
@@ -440,7 +441,7 @@ int job_abt(
     {
     /* req_delete sends own mail and acct record */
 
-    account_record(PBS_ACCT_ABT, pjob, (char *)"");
+    account_record(PBS_ACCT_ABT, pjob, "");
     svr_mailowner(pjob, MAIL_ABORT, MAIL_NORMAL, text);
 
     if ((pjob->ji_qs.ji_state == JOB_STATE_QUEUED) &&
@@ -457,7 +458,7 @@ int job_abt(
     {
     svr_setjobstate(pjob, JOB_STATE_RUNNING, JOB_SUBSTATE_ABORT, FALSE);
 
-    if ((rc = issue_signal(&pjob, (char *)"SIGKILL", free_br, NULL)) != 0)
+    if ((rc = issue_signal(&pjob, "SIGKILL", free_br, NULL)) != 0)
       {
       if (pjob != NULL)
         {
@@ -1606,7 +1607,7 @@ int record_jobinfo(
       {
       memset(job_script_buf, 0, sizeof(job_script_buf));
 
-      while ((bytes_read = read(fd, job_script_buf, sizeof(job_script_buf) - 1)) > 0)
+      while ((bytes_read = read_ac_socket(fd, job_script_buf, sizeof(job_script_buf) - 1)) > 0)
         {
         rc = append_dynamic_string(buffer, job_script_buf);
         memset(job_script_buf, 0, sizeof(job_script_buf));

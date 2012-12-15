@@ -152,7 +152,7 @@ int status_job(
     }
 
   /* allocate reply structure and fill in header portion */
-  if ((pstat = calloc(1, sizeof(struct brp_status))) == NULL)
+  if ((pstat = (struct brp_status *)calloc(1, sizeof(struct brp_status))) == NULL)
     {
     return(PBSE_SYSTEM);
     }

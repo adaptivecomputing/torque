@@ -162,7 +162,7 @@ extern void cleanup_restart_file(job *);
 void        on_job_exit(batch_request *preq, char *jobid);
 int         kill_job_on_mom(char *jobid, struct pbsnode *pnode);
 void        handle_complete_second_time(struct work_task *ptask);
-void       *on_job_exit_task(void *vp);
+void       *on_job_exit_task(struct work_task *vp);
 
 /*
  * setup_from - setup the "from" name for a standard job file:
@@ -171,13 +171,13 @@ void       *on_job_exit_task(void *vp);
 
 char *setup_from(
 
-  job  *pjob,   /* I */
-  char *suffix) /* I */
+  job         *pjob,   /* I */
+  const char *suffix) /* I */
 
   {
   char *from;
 
-  from = calloc(1, strlen(pjob->ji_qs.ji_fileprefix) + strlen(suffix) + 1);
+  from = (char *)calloc(1, strlen(pjob->ji_qs.ji_fileprefix) + strlen(suffix) + 1);
 
   if (from != NULL)
     {
@@ -408,7 +408,7 @@ struct batch_request *cpy_stdfile(
   pbs_attribute *jkpattr;
   pbs_attribute *pathattr = &pjob->ji_wattr[ati];
 
-  char          *suffix;
+  const char   *suffix;
   char          *to = NULL;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -583,7 +583,7 @@ struct batch_request *cpy_stage(
         {
         *prmt = '\0';
 
-        from = calloc(1, strlen(plocal) + 1);
+        from = (char *)calloc(1, strlen(plocal) + 1);
 
         if (from == NULL)
           {
@@ -600,7 +600,7 @@ struct batch_request *cpy_stage(
 
         *prmt = '@'; /* restore the @ */
 
-        to = calloc(1, strlen(prmt + 1) + 1);
+        to = (char *)calloc(1, strlen(prmt + 1) + 1);
 
         if (to == NULL)
           {
@@ -641,7 +641,7 @@ struct batch_request *cpy_stage(
 int mom_comm(
 
   job *pjob,
-  void *(*func)(void *))
+  void *(*func)(struct work_task *vp))
 
   {
   unsigned int      dummy;
@@ -699,7 +699,7 @@ int mom_comm(
           "cannot establish connection with mom for clean-up - will retry later");
       }
 
-    set_task(WORK_Timed, time_now + PBS_NET_RETRY_TIME, (void (*)())func, strdup(jobid), FALSE);
+    set_task(WORK_Timed, time_now + PBS_NET_RETRY_TIME, (void (*)(struct work_task *))func, strdup(jobid), FALSE);
 
     return(-1);
     }
@@ -931,7 +931,7 @@ int handle_returnstd(
         path_spool, job_fileprefix, JOB_STDOUT_SUFFIX);
       
       /* allocate space for the string name plus ".SAV" */
-      namebuf2 = calloc((strlen(namebuf) + 5), sizeof(char));
+      namebuf2 = (char *)calloc((strlen(namebuf) + 5), sizeof(char));
       
       if (job_momaddr != pbs_server_addr)
         {
@@ -1223,8 +1223,8 @@ int handle_stageout(
       
       memset(&tA, 0, sizeof(tA));
       
-      tA.al_name  = "sched_hint";
-      tA.al_resc  = "";
+      tA.al_name  = (char *)"sched_hint";
+      tA.al_resc  = (char *)"";
       tA.al_value = log_buf;
       tA.al_op    = SET;
 
@@ -1250,7 +1250,7 @@ int handle_stageout(
     snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_spool, job_fileprefix, JOB_STDOUT_SUFFIX);
     
     /* allocate space for the string name plus ".SAV" */
-    namebuf2 = calloc((strlen(namebuf) + 5), sizeof(char));
+    namebuf2 = (char *)calloc((strlen(namebuf) + 5), sizeof(char));
     
     strcpy(namebuf2, namebuf);
     strcat(namebuf2, ".SAV");
@@ -2001,7 +2001,7 @@ void on_job_exit(
 
 void *on_job_exit_task(
 
-  void *vp)
+  struct work_task *vp)
 
   {
   struct work_task *ptask = (struct work_task *)vp;
@@ -2022,7 +2022,7 @@ void *on_job_exit_task(
 
 void *on_job_rerun_task(
 
-  void *vp)
+  struct work_task *vp)
 
   {
   struct work_task *ptask = (struct work_task *)vp;
@@ -2460,7 +2460,7 @@ void wait_for_send(
   struct work_task *ptask)
 
   {
-  batch_request *preq = (batch_request *)get_remove_batch_request(ptask->wt_parm1);
+  batch_request *preq = (batch_request *)get_remove_batch_request((char *)ptask->wt_parm1);
 
   if (preq != NULL)
     req_jobobit(preq);
@@ -2772,7 +2772,7 @@ int rerun_job(
   
   svr_setjobstate(pjob, JOB_STATE_EXITING, pjob->ji_qs.ji_substate, FALSE);
   
-  set_task(WORK_Immed, 0, (void (*)())on_job_rerun_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
+  set_task(WORK_Immed, 0, (void (*)(struct work_task *))on_job_rerun_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
   
   if (LOGLEVEL >= 4)
     {
@@ -3380,7 +3380,7 @@ int req_jobobit(
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, log_buf);
       }
     
-    set_task(WORK_Immed, 0, (void (*)())on_job_exit_task, strdup(job_id), 0);
+    set_task(WORK_Immed, 0, (void (*)(struct work_task *))on_job_exit_task, strdup(job_id), 0);
     }
 
   return(PBSE_NONE);

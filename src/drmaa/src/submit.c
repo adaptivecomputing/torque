@@ -824,7 +824,7 @@ drmaa_write_tmpfile(
 
   while (len > 0)
     {
-    size_t written = write(fd, content, len);
+    size_t written = write_ac_socket(fd, content, len);
 
     if (written != (size_t) - 1)
       {

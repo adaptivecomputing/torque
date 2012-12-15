@@ -111,6 +111,7 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
+#include "../lib/Libifl/lib_ifl.h"
 #include "net_connect.h"
 #include "dis.h"
 #include "dis_init.h"
@@ -328,7 +329,7 @@ int task_save(
 
   /* just write the "critical" base structure to the file */
 
-  while ((i = write(fds,&ptask->ti_qs,sizeof(ptask->ti_qs)) ) != sizeof(ptask->ti_qs))
+  while ((i = write_ac_socket(fds,&ptask->ti_qs,sizeof(ptask->ti_qs)) ) != sizeof(ptask->ti_qs))
     {
     if ((i < 0) && (errno == EINTR))
       {
@@ -629,7 +630,7 @@ int task_recov(
 
   /* read in task quick save sub-structure */
 
-  while (read(fds, (char *)&task_save, sizeof(task_save)) == sizeof(task_save))
+  while (read_ac_socket(fds, (char *)&task_save, sizeof(task_save)) == sizeof(task_save))
     {
     tid = TM_NULL_TASK;
 
@@ -8148,7 +8149,7 @@ void fork_demux(
     else
       {
       /* read the pipe and then continue */
-      while ((read(pipes[0], &buf, sizeof(buf) - 1) == -1) &&
+      while ((read_ac_socket(pipes[0], &buf, sizeof(buf) - 1) == -1) &&
              (errno == EINTR))
         ;
 
@@ -8180,7 +8181,7 @@ void fork_demux(
     close(im_mom_stdout);
     close(im_mom_stderr);
 
-    if (write(pipes[1], "fail", strlen("fail")) < 0)
+    if (write_ac_socket(pipes[1], "fail", strlen("fail")) < 0)
       perror(__func__);
 
     close(pipes[1]);
@@ -8194,7 +8195,7 @@ void fork_demux(
     close(im_mom_stdout);
     close(im_mom_stderr);
 
-    if (write(pipes[1], "fail", strlen("fail")) < 0)
+    if (write_ac_socket(pipes[1], "fail", strlen("fail")) < 0)
       perror(__func__);
 
     close(pipes[1]);
@@ -8221,7 +8222,7 @@ void fork_demux(
     close(im_mom_stdout);
     close(im_mom_stderr);
     
-    if (write(pipes[1], "fail", strlen("fail")) < 0)
+    if (write_ac_socket(pipes[1], "fail", strlen("fail")) < 0)
       perror(__func__);
 
     close(pipes[1]);
@@ -8238,7 +8239,7 @@ void fork_demux(
     close(im_mom_stderr);
     close(fd1);
 
-    if (write(pipes[1], "fail", strlen("fail")) < 0)
+    if (write_ac_socket(pipes[1], "fail", strlen("fail")) < 0)
       perror(__func__);
 
     close(pipes[1]);
@@ -8246,7 +8247,7 @@ void fork_demux(
     _exit(5);
     }
 
-  if (write(pipes[1], "success", strlen("success")) < 0)
+  if (write_ac_socket(pipes[1], "success", strlen("success")) < 0)
     perror(__func__);
 
   close(pipes[1]);

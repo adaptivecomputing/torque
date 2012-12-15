@@ -175,6 +175,16 @@ extern attribute_def que_attr_def[];
 
 /* at last we come to the queue definition itself */
 
+typedef struct _queuefix
+  {
+  int    qu_modified; /* != 0 => update disk file */
+  int    qu_type;     /* queue type: exec, route */
+  time_t qu_ctime;    /* time queue created */
+  time_t qu_mtime;    /* time queue last modified */
+  char   qu_name[PBS_MAXQUEUENAME]; /* queue name */
+  } queuefix;
+
+
 typedef struct pbs_queue
   {
   int              q_being_recycled;
@@ -186,14 +196,7 @@ typedef struct pbs_queue
   tlist_head       qu_jobs_array_sum; /* jobs with job arrays summarized */
 #endif
 
-  struct queuefix
-    {
-    int    qu_modified; /* != 0 => update disk file */
-    int    qu_type;     /* queue type: exec, route */
-    time_t qu_ctime;    /* time queue created */
-    time_t qu_mtime;    /* time queue last modified */
-    char   qu_name[PBS_MAXQUEUENAME]; /* queue name */
-    } qu_qs;
+  queuefix qu_qs;
 
   pthread_mutex_t *qu_mutex; /* this queue's mutex */
 

@@ -4,6 +4,6 @@
 #include <stdio.h> /* FILE */
 #include "server.h" /* mail_info */
 
-void svr_format_job(FILE *fh, mail_info *mi, char *fmt);
+void svr_format_job(FILE *fh, mail_info *mi, const char *fmt);
 
 #endif /* _SVR_FORMAT_JOB_H */

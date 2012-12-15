@@ -127,8 +127,8 @@ int decode_tv(
 
   pbs_attribute *patr,
   const char   *name,  /* pbs_attribute name */
-  char          *rescn, /* resource name*/
-  char          *val,   /* pbs_attribute value */
+  const char *rescn, /* resource name*/
+  const char    *val,   /* pbs_attribute value */
   int            perm)  /* only used for resources */
    
   {

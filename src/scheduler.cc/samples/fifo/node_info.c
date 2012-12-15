@@ -546,7 +546,7 @@ node_info **node_filter(node_info **nodes, int size,
     free(new_nodes);
     new_nodes = NULL;
     }
-  else if ((tmp = realloc(new_nodes, (j + 1) * sizeof(node_info *))) == NULL)
+  else if ((tmp = (node_info **)realloc(new_nodes, (j + 1) * sizeof(node_info *))) == NULL)
     {
     perror("Memory Allocation Error");
     free(new_nodes);

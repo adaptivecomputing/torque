@@ -102,6 +102,7 @@
 #if defined(FD_SET_IN_SYS_SELECT_H)
 #  include <sys/select.h>
 #endif
+#include "../lib/Libifl/lib_ifl.h"
 
 
 enum rwhere {invalid, new_out, new_err, old_out, old_err};
@@ -134,7 +135,7 @@ void readit(
 
   i = 0;
 
-  if ((amt = read(sock, buf, 256)) > 0)
+  if ((amt = read_ac_socket(sock, buf, 256)) > 0)
     {
     /* disable cookie search PW - mpiexec patch */
 

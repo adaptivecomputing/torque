@@ -141,7 +141,7 @@ struct pbsnode *create_alps_subnode(
   char           *node_id)
 
   {
-  struct pbsnode *subnode = calloc(1, sizeof(struct pbsnode));
+  struct pbsnode *subnode = (struct pbsnode *)calloc(1, sizeof(struct pbsnode));
   svrattrl       *plist = NULL;
   int             bad;
   int             rc;
@@ -303,7 +303,7 @@ int set_ncpus(
   if (current == NULL)
     return(PBSE_BAD_PARAMETER);
   
-  ncpus = atoi(str + cproc_eq_len);
+  ncpus = atoi(str + ac_cproc_eq_len);
   difference = ncpus - current->nd_nsn;
 
   for (i = 0; i < difference; i++)
@@ -657,7 +657,7 @@ int process_alps_status(
       }
 
     /* perform any special processing */
-    if (!strncmp(str, cproc_eq, cproc_eq_len))
+    if (!strncmp(str, cproc_eq, ac_cproc_eq_len))
       {
       set_ncpus(current, str);
       }

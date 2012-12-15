@@ -112,8 +112,8 @@
  * -------------------------------------------------------
  */
 
-static char true_val[]  = ATR_TRUE;
-static char false_val[] = ATR_FALSE;
+static const char *true_val  = ATR_TRUE;
+static const char *false_val = ATR_FALSE;
 
 /*
  * decode_b - decode string into boolean pbs_attribute
@@ -128,8 +128,8 @@ int decode_b(
 
   pbs_attribute *patr,
   const char    *name,  /* pbs_attribute name */
-  char          *rescn,  /* resource name, unused here */
-  char          *val,  /* pbs_attribute value */
+  const char *rescn,  /* resource name, unused here */
+  const char    *val,  /* pbs_attribute value */
   int            perm) /* only used for resources */
 
   {
@@ -143,7 +143,7 @@ int decode_b(
     }
   else
     {
-    for (pc = val; *pc; pc++)
+    for (pc = (char *)val; *pc; pc++)
       *pc = (char)toupper((int) * pc);
 
     if ((strcmp(val, true_val) == 0) ||
@@ -194,7 +194,7 @@ int encode_b(
   {
   size_t   ct;
   svrattrl *pal;
-  char  *value;
+  const char  *value;
 
   if (!attr)
     return (-1);

@@ -111,12 +111,12 @@ int decode_hold(
 
   pbs_attribute *patr,
   const char   *name,  /* pbs_attribute name */
-  char          *rescn,  /* resource name - unused here */
-  char          *val,  /* pbs_attribute value */
+  const char *rescn,  /* resource name - unused here */
+  const char    *val,  /* pbs_attribute value */
   int            perm) /* only used for resources */
 
   {
-  char  *pc;
+  const char  *pc;
 
   patr->at_val.at_long = 0;
 

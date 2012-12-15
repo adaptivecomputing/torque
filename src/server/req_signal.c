@@ -128,7 +128,7 @@ int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq,
 
 int req_signaljob(
 
-  void *vp)  /* I */
+    struct batch_request *vp) /* I */
 
   {
   struct batch_request *preq = (struct batch_request *)vp;
@@ -248,8 +248,8 @@ int req_signaljob(
 int issue_signal(
 
   job  **pjob_ptr,
-  char  *signame, /* name of the signal to send */
-  void  (*func)(batch_request *),
+  const char  *signame, /* name of the signal to send */
+  void  (*func)(struct batch_request *),
   void  *extra) /* extra parameter to be stored in sig request */
 
   {
@@ -335,7 +335,7 @@ void post_signal_req(
     }
   else
     {
-    if ((jobid = preq->rq_extra) == NULL)
+    if ((jobid = (char *)preq->rq_extra) == NULL)
       {
       log_err(ENOMEM, __func__, (char *)"Cannot allocate memory! FAILURE");
       return;

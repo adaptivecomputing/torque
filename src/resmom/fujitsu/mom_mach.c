@@ -1925,7 +1925,7 @@ get_la(double *rv)
     return (rm_errno = RM_ERR_SYSTEM);
     }
 
-  if (read(kd, (char *)&load, sizeof(load)) != sizeof(load))
+  if (read_ac_socket(kd, (char *)&load, sizeof(load)) != sizeof(load))
     {
     log_err(errno, id, "read");
     return (rm_errno = RM_ERR_SYSTEM);
@@ -1967,7 +1967,7 @@ getanon(char *id)
     return NULL;
     }
 
-  if (read(kd, (char *)&ai, sizeof(struct anoninfo)) !=
+  if (read_ac_socket(kd, (char *)&ai, sizeof(struct anoninfo)) !=
       sizeof(struct anoninfo))
     {
     log_err(errno, id, "read");
@@ -2055,7 +2055,7 @@ physmem(struct rm_attribute *attrib)
     return NULL;
     }
 
-  if (read(kd, (char *)&pmem, sizeof(pmem)) != sizeof(pmem))
+  if (read_ac_socket(kd, (char *)&pmem, sizeof(pmem)) != sizeof(pmem))
     {
     log_err(errno, id, "read");
     rm_errno = RM_ERR_SYSTEM;

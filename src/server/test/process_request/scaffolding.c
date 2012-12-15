@@ -13,12 +13,12 @@
 #include "pbs_nodes.h" /* pbsnode */
 #include "attribute.h" /* pbs_attribute */
 
-char *msg_err_noqueue = "Unable to requeue job, queue is not defined";
+const char *msg_err_noqueue = "Unable to requeue job, queue is not defined";
 struct credential conn_credent[PBS_NET_MAX_CONNECTIONS];
 char server_name[PBS_MAXSERVERNAME + 1];
-char *msg_err_malloc = "malloc failed";
+const char *msg_err_malloc = "malloc failed";
 struct connection svr_conn[PBS_NET_MAX_CONNECTIONS];
-char *msg_request = "Type %s request received from %s@%s, sock=%d";
+const char *msg_request = "Type %s request received from %s@%s, sock=%d";
 struct server server;
 char *server_host;
 int LOGLEVEL = 0;
@@ -277,7 +277,7 @@ void *req_locatejob(void *vp)
   exit(1);
   }
 
-char * csv_find_string(char *csv_str, char *search_str)
+char * csv_find_string(const char *csv_str, const char *search_str)
   {
   fprintf(stderr, "The call to csv_find_string needs to be mocked!!\n");
   exit(1);

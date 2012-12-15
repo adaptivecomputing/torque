@@ -2017,52 +2017,52 @@ int get_request(
 int is_attr(
 
   int   object,
-  char *name,
+  const char *name,
   int   attr_type)
 
   {
-  static char *svr_public_attrs[] =
+  static const char *svr_public_attrs[] =
     {
 #include "qmgr_svr_public.h"
 #include "site_qmgr_svr_print.h"
     NULL
     };
 
-  static char *svr_readonly_attrs[] =
+  static const char *svr_readonly_attrs[] =
     {
 #include "qmgr_svr_readonly.h"
     NULL
     };
 
-  static char *que_public_attrs[] =
+  static const char *que_public_attrs[] =
     {
 #include "qmgr_que_public.h"
 #include "site_qmgr_que_print.h"
     NULL
     };
 
-  static char *que_readonly_attrs[] =
+  static const char *que_readonly_attrs[] =
     {
 #include "qmgr_que_readonly.h"
     NULL
     };
 
-  static char *node_public_attrs[] =
+  static const char *node_public_attrs[] =
     {
 #include "qmgr_node_public.h"
 #include "site_qmgr_node_print.h"
     NULL
     };
 
-  static char *node_readonly_attrs[] =
+  static const char *node_readonly_attrs[] =
     {
 #include "qmgr_node_readonly.h"
     NULL
     };
 
   /* DIAGTODO: need a list of public and read-only diag attrs */
-  char **attr_public = NULL;
-  char **attr_readonly = NULL;
+  const char **attr_public = NULL;
+  const char **attr_readonly = NULL;
 
   char  *dupname  = NULL;
   char  *name_ptr = NULL;
@@ -2404,9 +2404,9 @@ int parse(
 
 void pstderr_big(
 
-  char *svrname,
-  char *objname,
-  char *errmesg)
+  const char *svrname,
+  const char *objname,
+  const char *errmesg)
 
   {
   if (! zopt)
@@ -2675,12 +2675,12 @@ int is_valid_object(
 
   static struct attrl attrq =
     {
-    NULL, ATTR_qtype, "", "", 0
+    NULL, (char *)ATTR_qtype, (char *)"", (char *)"", EQ
     };
 
   static struct attrl attrn =
     {
-    NULL, ATTR_NODE_state, "", "", 0
+    NULL, (char *)ATTR_NODE_state, (char *)"", (char *)"", EQ
     };
 
   int   local_errno = 0;

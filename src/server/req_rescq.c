@@ -118,7 +118,7 @@ resource_t next_resource_tag;
 
 int req_rescq(
     
-  void *vp)
+    struct batch_request *vp) /* I */
 
   {
   struct batch_request *preq = (struct batch_request *)vp;
@@ -211,7 +211,7 @@ int req_rescq(
 
 int req_rescreserve(
     
-  void *vp)
+  struct batch_request *vp) /* I */
 
   {
   struct batch_request *preq = (struct batch_request *)vp;
@@ -315,7 +315,7 @@ int req_rescreserve(
 
 int req_rescfree(
     
-  void *vp)
+   struct batch_request *vp) /* I */
 
   {
   struct batch_request *preq = (struct batch_request *)vp;

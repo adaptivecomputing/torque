@@ -421,7 +421,7 @@ void account_record(
 
   int   acctype, /* accounting record type */
   job  *pjob,
-  char *text)  /* text to log, may be null */
+  const char *text)  /* text to log, may be null */
 
   {
   time_t     time_now = time(NULL);

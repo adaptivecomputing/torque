@@ -112,7 +112,7 @@ job_info **query_jobs(int pbs_sd, queue_info *qinfo)
 
   struct attropl opl =
     {
-    NULL, ATTR_q, NULL, NULL, EQ
+    NULL, (char *)ATTR_q, NULL, NULL, EQ
     };
 
   /* linked list of jobs returned from pbs_selstat() */
@@ -684,7 +684,7 @@ int update_job_comment(int pbs_sd, job_info *jinfo, char *comment)
 
   struct attrl attr =
     {
-    NULL, ATTR_comment, NULL, NULL, 0
+    NULL, ATTR_comment, NULL, NULL, SET
     };
 
   int         local_errno = 0;
@@ -789,7 +789,7 @@ job_info **job_filter(job_info** jobs, int size,
   job_info **tmp = NULL;
   int i, j = 0;
 
-  if ((new_jobs = malloc((size + 1) * sizeof(job_info *))) == NULL)
+  if ((new_jobs = (job_info **)malloc((size + 1) * sizeof(job_info *))) == NULL)
     {
     perror("Memory allocation error");
     return NULL;
@@ -804,7 +804,7 @@ job_info **job_filter(job_info** jobs, int size,
       }
     }
 
-  if ((tmp = realloc(new_jobs, (j + 1) * sizeof(job_info *))) == NULL)
+  if ((tmp = (job_info **)realloc(new_jobs, (j + 1) * sizeof(job_info *))) == NULL)
     {
     free(new_jobs);
     perror("Memory Allocation Error");

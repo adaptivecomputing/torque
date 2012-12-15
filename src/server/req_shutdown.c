@@ -109,7 +109,7 @@
 
 
 
-int          issue_signal(job **, char *, void(*)(batch_request *), void *);
+int          issue_signal(job **, const char *, void(*)(batch_request *), void *);
 
 /* Private Fuctions Local to this File */
 

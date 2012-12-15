@@ -603,7 +603,7 @@ static void sel_step3(
           {
           /* Select Jobs */
 
-          pselect = calloc(1, sizeof(struct brp_select));
+          pselect = (struct brp_select *)calloc(1, sizeof(struct brp_select));
 
           if (pselect == NULL)
             {

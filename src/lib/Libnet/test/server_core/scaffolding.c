@@ -6,7 +6,7 @@
 #include "net_connect.h"
 #include "log.h"
 
-char *msg_daemonname = "unset";
+const char *msg_daemonname = "unset";
 
 void log_get_set_eventclass(int *objclass, SGetter action) {}
 

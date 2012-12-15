@@ -5,7 +5,7 @@
 #include "pbs_ifl.h" /* batch_op */
 #include "resource.h" /* resource_def */
 
-int decode_resc(struct pbs_attribute *patr, const char *name, char *rescn, char *val, int perm);
+int decode_resc(struct pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm);
 
 int encode_resc(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int ac_perm);
 

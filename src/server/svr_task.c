@@ -172,7 +172,7 @@ struct work_task *set_task(
     }
   else
     {
-    if ((pnew->wt_mutex = calloc(1, sizeof(pthread_mutex_t))) == NULL)
+    if ((pnew->wt_mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t))) == NULL)
       {
       free(pnew);
       return(NULL);
@@ -309,7 +309,7 @@ void initialize_all_tasks_array(
     log_err(ENOMEM, __func__, (char *)"Cannot allocate space for array...FAILURE");
     }
   
-  at->alltasks_mutex = calloc(1, sizeof(pthread_mutex_t));
+  at->alltasks_mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));
 
   if (at->alltasks_mutex == NULL)
     {
@@ -337,7 +337,7 @@ work_task *next_task(
 
   pthread_mutex_lock(at->alltasks_mutex);
 
-  wt = next_thing(at->ra,iter);
+  wt = (work_task *)next_thing(at->ra,iter);
   if (wt != NULL)
     pthread_mutex_lock(wt->wt_mutex);
 
@@ -537,7 +537,7 @@ void initialize_task_recycler()
   initialize_all_tasks_array(&tr.tasks);
   tr.iter = -1;
 
-  tr.mutex = calloc(1, sizeof(pthread_mutex_t));
+  tr.mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(tr.mutex, NULL);
   } /* END initialize_task_recycler() */
 
@@ -553,7 +553,7 @@ work_task *next_task_from_recycler(
   work_task *wt = NULL;
 
   pthread_mutex_lock(at->alltasks_mutex);
-  wt = next_thing(at->ra,iter);
+  wt = (work_task *)next_thing(at->ra,iter);
   if (wt != NULL)
     pthread_mutex_lock(wt->wt_mutex);
   pthread_mutex_unlock(at->alltasks_mutex);

@@ -116,7 +116,7 @@ void clean_up();
 void clean_up_and_exit(int);
 void freeattrl(struct attrl *);
 void freeattropl(struct attropl *);
-void pstderr_big(char *, char*, char *);
+void pstderr_big(const char *, const char*, const char *);
 void free_objname_list(struct objname *);
 void free_server(struct server *);
 void free_objname(struct objname *);
@@ -126,7 +126,7 @@ int set_active(int, struct objname *);
 int get_request(char *);
 int parse(char *, int *, int *, char **, struct attropl **);
 int execute(int, int, int, char *, struct attropl *);
-int is_attr(int, char *, int);
+int is_attr(int, const char *, int);
 int is_valid_object(struct objname *, int);
 void disconnect_from_server();
 

@@ -224,7 +224,7 @@ get_4byte(
     } un;
 
   un.unl = 0;
-  amt = read(sock, (char *)(un.unc + sizeof(unsigned long) - 4), 4);
+  amt = read_ac_socket(sock, (char *)(un.unc + sizeof(unsigned long) - 4), 4);
 
   if (amt == 4)
     {

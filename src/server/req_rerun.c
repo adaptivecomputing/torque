@@ -113,7 +113,7 @@ extern char *msg_jobrerun;
 extern void rel_resc(job *);
 
 extern job  *chk_job_request(char *, struct batch_request *);
-int          issue_signal(job **, char *, void(*)(batch_request *), void *);
+int          issue_signal(job **, const char *, void(*)(batch_request *), void *);
 
 /*
  * post_rerun - handler for reply from mom on signal_job sent in req_rerunjob
@@ -255,7 +255,7 @@ int req_rerunjob(
   if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
     {
     /* ask MOM to kill off the job if it is running */
-    static char *rerun = "rerun";
+    static const char *rerun = "rerun";
     char        *extra = strdup(rerun);
 
     rc = issue_signal(&pjob, "SIGKILL", post_rerun, extra);

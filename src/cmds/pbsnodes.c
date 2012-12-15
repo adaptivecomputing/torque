@@ -157,7 +157,7 @@ static int set_note(
   int             rc;
   int             local_errno = 0;
 
-  new_attr.name     = ATTR_NODE_note;
+  new_attr.name     = (char *)ATTR_NODE_note;
   new_attr.resource = NULL;
   new_attr.value    = msg;
   new_attr.op       = SET;
@@ -234,7 +234,7 @@ static char *get_nstate(
       }
     }
 
-  return("");
+  return((char *)"");
   }
 
 
@@ -265,10 +265,10 @@ static char *get_note(
 static int marknode(
 
   int            con,
-  char          *name,
-  char          *state1,
+  const char   *name,
+  const char   *state1,
   enum batch_op  op1,
-  char          *state2,
+  const char   *state2,
   enum batch_op  op2)
 
   {
@@ -278,9 +278,9 @@ static int marknode(
   int             rc;
   int             local_errno = 0;
 
-  new_attr[0].name     = ATTR_NODE_state;
+  new_attr[0].name     = (char *)ATTR_NODE_state;
   new_attr[0].resource = NULL;
-  new_attr[0].value    = state1;
+  new_attr[0].value    = (char *)state1;
   new_attr[0].op       = op1;
 
   if (state2 == NULL)
@@ -291,9 +291,9 @@ static int marknode(
     {
     new_attr[0].next     = &new_attr[1];
     new_attr[1].next     = NULL;
-    new_attr[1].name     = ATTR_NODE_state;
+    new_attr[1].name     = (char *)ATTR_NODE_state;
     new_attr[1].resource = NULL;
-    new_attr[1].value    = state2;
+    new_attr[1].value    = (char *)state2;
     new_attr[1].op     = op2;
     }
 
@@ -301,7 +301,7 @@ static int marknode(
          con,
          MGR_CMD_SET,
          MGR_OBJ_NODE,
-         name,
+         (char *)name,
          new_attr,
          NULL,
          &local_errno);
@@ -796,7 +796,7 @@ int main(
             {
             if (!strcasecmp(NState[lindex], argv[optind]))
               {
-              ListType = lindex;
+              ListType = (enum NStateEnum)lindex;
 
               optind++;
 
@@ -814,7 +814,7 @@ int main(
         }
       else
         {
-        nodeargs = calloc(2, sizeof(char **));
+        nodeargs = (char **)calloc(2, sizeof(char **));
         nodeargs[0] = strdup("");
         nodeargs[1] = '\0';
         }

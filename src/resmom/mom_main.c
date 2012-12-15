@@ -62,6 +62,7 @@
 #include "../lib/Liblog/chk_file_sec.h"
 #include "../lib/Liblog/setup_env.h"
 #include "../lib/Libnet/lib_net.h" /* socket_avail_bytes_on_descriptor */
+#include "../lib/Libifl/lib_ifl.h"
 #include "net_connect.h"
 #include "dis.h"
 #include "dis_init.h"
@@ -1036,7 +1037,7 @@ static const char *reqvarattr(
 
         while (child_len < TMAX_VARBUF)
           {
-          len = read(fd, child_spot, TMAX_VARBUF - child_len);
+          len = read_ac_socket(fd, child_spot, TMAX_VARBUF - child_len);
 
           if ((len <= 0) &&
               (errno != EINTR))
@@ -4083,7 +4084,7 @@ char *conf_res(
 
 retryread:
 
-  while ((len = read(fd, child_spot, ret_size - child_len)) > 0)
+  while ((len = read_ac_socket(fd, child_spot, ret_size - child_len)) > 0)
     {
     for (i = 0;i < len;i++)
       {
@@ -7372,7 +7373,7 @@ int setup_program_environment(void)
 
   sprintf(log_buffer, "%ld\n", (long)getpid());
 
-  if (write(lockfds, log_buffer, strlen(log_buffer) + 1) !=
+  if (write_ac_socket(lockfds, log_buffer, strlen(log_buffer) + 1) !=
       (ssize_t)(strlen(log_buffer) + 1))
     {
     log_err(errno, msg_daemonname, "failed to write to lockfile");
@@ -8522,7 +8523,7 @@ int read_layout_file()
   char           line[MAX_LINE];
   char          *delims = " \t\n\r=";
   char          *tok = NULL;
-  char          *val = NULL;
+  const char    *val = NULL;
   int            i = 0;
   int            empty_line;
   hwloc_bitmap_t nodeset = NULL;

@@ -33,7 +33,7 @@ char *sample_start24 = "<Label name='MOAB:FEATURE=regmem' type='SOFT' dispositio
 
 
 int search_dynamic_string_status(dynamic_string *status, char *str);
-int generate_alps_status(dynamic_string *status, char *path, char *protocol);
+int generate_alps_status(dynamic_string *status, const char *path, const char *protocol);
 
 /*
 START_TEST(parse_alps_output_test)

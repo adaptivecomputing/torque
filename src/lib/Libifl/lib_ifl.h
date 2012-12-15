@@ -232,6 +232,9 @@ void free_pidlist(struct pidl *pl);
 /* nonblock.c */
 /* ssize_t write_nonblocking_socket(int fd, const void *buf, ssize_t count);  */
 /* ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count); */
+extern ssize_t write_ac_socket(int, const void *, ssize_t);
+extern ssize_t read_ac_socket(int, void *, ssize_t);
+
 ssize_t read_blocking_socket(int fd, void *buf, ssize_t count);
 
 /* pbsD_alterjo.c */
@@ -427,7 +430,7 @@ int rpp_get_stream_state(int index);
 /* tcp_dis.c */
 void DIS_tcp_settimeout(long timeout); 
 /* static void tcp_pack_buff(struct tcpdisbuf *tp); */
-int tcp_read(struct tcp_chan *chan, long *read_len, long *avail_len); 
+int tcp_read(struct tcp_chan *chan, long long *read_len, long long *avail_len);
 int DIS_tcp_wflush(struct tcp_chan *chan); 
 /* static void DIS_tcp_clear(struct tcpdisbuf *tp); */
 void DIS_tcp_reset(struct tcp_chan *chan, int i);

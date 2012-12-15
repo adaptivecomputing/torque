@@ -126,8 +126,8 @@ int decode_time(
 
   pbs_attribute *patr,  /* I/O (modified) */
   const char   *name,  /* I - pbs_attribute name (not used) */
-  char          *rescn, /* I - resource name (not used) */
-  char          *val,   /* I - pbs_attribute value */
+  const char *rescn, /* I - resource name (not used) */
+  const char    *val,   /* I - pbs_attribute value */
   int            perm)  /* only used for resources */
 
   {

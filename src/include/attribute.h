@@ -210,7 +210,7 @@ typedef struct pbs_attribute pbs_attribute;
 struct attribute_def
   {
   const char *at_name;
-  int (*at_decode)(pbs_attribute *patr, const char *name, char *rn, char *val, int perm);
+  int (*at_decode)(pbs_attribute *patr, const char *name, const char *rn, const char *val, int perm);
   int (*at_encode)(pbs_attribute *pattr, tlist_head *phead,
                       const char *aname, const char *rsname, int mode, int perm);
   int (*at_set)(pbs_attribute *pattr, pbs_attribute *new_attr, enum batch_op);
@@ -336,7 +336,7 @@ struct array_strings
  */
 
 extern void clear_attr(pbs_attribute *pattr, attribute_def *pdef);
-extern int  find_attr(attribute_def *attrdef, char *name, int limit);
+extern int  find_attr(attribute_def *attrdef, const char *name, int limit);
 extern int  recov_attr(int fd, void *parent, attribute_def *padef,
 			   pbs_attribute *pattr, int limit, int unknown, int do_actions);
 extern long attr_ifelse_long(pbs_attribute *, pbs_attribute *, long);
@@ -353,22 +353,22 @@ extern int  attr_atomic_node_set(svrattrl *plist, pbs_attribute *old,
                                        int unkn, int privil, int *badattr);
 extern void attr_atomic_kill(pbs_attribute *temp, attribute_def *pdef, int);
 
-int  decode_b(pbs_attribute *patr, const char *name, char *rn, char *val, int);
-int  decode_c(pbs_attribute *patr, const char *name, char *rn, char *val, int);
-int  decode_l(pbs_attribute *patr, const char *name, char *rn, char *val, int);
-int  decode_ll(pbs_attribute *patr, const char *name, char *rn, char *val, int);
-int  decode_size(pbs_attribute *patr, const char *name, char *rn, char *val, int);
-int  decode_str(pbs_attribute *patr, const char *name, char *rn, char *val, int);
-int  decode_time(pbs_attribute *patr, const char *name, char *rn, char *val, int);
-int  decode_arst(pbs_attribute *patr, const char *name, char *rn, char *val, int);
-int  decode_arst_direct(pbs_attribute *patr, char *val);
-int  decode_arst_merge(pbs_attribute *,const char *,char *,char *);
-int  decode_resc(pbs_attribute *patr, const char *name, char *rn, char *val, int);
-int  decode_depend(pbs_attribute *patr, const char *name, char *rn, char *val, int);
-int  decode_hold(pbs_attribute *patr, const char *name, char *rn, char *val, int);
-int  decode_uacl(pbs_attribute *patr, const char *name, char *rn, char *val, int);
-int  decode_unkn(pbs_attribute *patr, const char *name, char *rn, char *val, int);
-int  decode_tv(pbs_attribute *patr, const char *name,  char *rescn,	char *val, int);
+int  decode_b(pbs_attribute *patr, const char *name, const char *rn, const char *val, int);
+int  decode_c(pbs_attribute *patr, const char *name, const char *rn, const char *val, int);
+int  decode_l(pbs_attribute *patr, const char *name, const char *rn, const char *val, int);
+int  decode_ll(pbs_attribute *patr, const char *name, const char *rn, const char *val, int);
+int  decode_size(pbs_attribute *patr, const char *name, const char *rn, const char *val, int);
+int  decode_str(pbs_attribute *patr, const char *name, const char *rn, const char *val, int);
+int  decode_time(pbs_attribute *patr, const char *name, const char *rn, const char *val, int);
+int  decode_arst(pbs_attribute *patr, const char *name, const char *rn, const char *val, int);
+int  decode_arst_direct(pbs_attribute *patr, const char *val);
+int  decode_arst_merge(pbs_attribute *,const char *,const char *,const char *);
+int  decode_resc(pbs_attribute *patr, const char *name, const char *rn, const char *val, int);
+int  decode_depend(pbs_attribute *patr, const char *name, const char *rn, const char *val, int);
+int  decode_hold(pbs_attribute *patr, const char *name, const char *rn, const char *val, int);
+int  decode_uacl(pbs_attribute *patr, const char *name, const char *rn, const char *val, int);
+int  decode_unkn(pbs_attribute *patr, const char *name, const char *rn, const char *val, int);
+int  decode_tv(pbs_attribute *patr, const char *name,  const char *rescn, const char *val, int);
  
 int  encode_b(pbs_attribute *attr, tlist_head *phead, const char *atname,
                            const char *rsname, int mode, int perm);
@@ -462,10 +462,10 @@ extern int      encode_state(pbs_attribute *, tlist_head *, const char *, const 
 extern int      encode_props(pbs_attribute*, tlist_head*, const char*, const char*, int, int);
 extern int      encode_jobs(pbs_attribute*, tlist_head*, const char*, const char*, int, int);
 extern int      encode_ntype(pbs_attribute*, tlist_head*, const char*, const char*, int, int);
-extern int      decode_state(pbs_attribute*, const char*, char*, char*, int);
-extern int      decode_props(pbs_attribute*, const char*, char*, char*, int);
-extern int      decode_ntype(pbs_attribute*, const char*, char*, char*, int);
-extern int      decode_null(pbs_attribute*, const char*, char*, char*, int);
+extern int      decode_state(pbs_attribute*, const char*, const char*, const char*, int);
+extern int      decode_props(pbs_attribute*, const char*, const char*, const char*, int);
+extern int      decode_ntype(pbs_attribute*, const char*, const char*, const char*, int);
+extern int      decode_null(pbs_attribute*, const char*, const char*, const char*, int);
 extern int      comp_null(pbs_attribute*, pbs_attribute*);
 extern int      count_substrings(char*, int*);
 extern int      set_node_state(pbs_attribute*, pbs_attribute*, enum batch_op);
@@ -495,7 +495,7 @@ extern int 		job_radix_action (pbs_attribute *new_attr, void *pobj, int actmode)
 
 /* Token manipulation functions */
 
-extern int  decode_tokens(pbs_attribute *, const char *, char *, char *, int);
+extern int  decode_tokens(pbs_attribute *, const char *, const char *, const char *, int);
 
 int timeval_subtract(struct timeval *result, struct timeval *x, struct timeval *y);
 

@@ -61,9 +61,7 @@ mbool_t DisplayXML = FALSE;
 #define maxlinesize 65536
 int   linesize = 77;
 
-int   tasksize;
-
-static char *summarize_arrays_extend_opt = "summarize_arrays";
+static const char *summarize_arrays_extend_opt = "summarize_arrays";
 
 /* END globals */
 
@@ -214,7 +212,7 @@ void prt_attr(
 
   {
   char *c;
-  char *comma = ",";
+  const char *comma = ",";
   int   first = 1;
   int   l;
   int   start;
@@ -341,11 +339,11 @@ static char *findattrl(
 
 static void prt_nodes(
 
-  char *nodes)   /* I */
+  const char *nodes)   /* I */
 
   {
   int   i;
-  char *stp;
+  const char *stp;
 
   char  linebuf[65536];
 
@@ -439,7 +437,7 @@ static char *cnv_size(
   int sft;
   unsigned long nval;
   char *pc;
-  char *suffix;
+  const char *suffix;
   static char outbuf[25];
 
   if (opt & ALT_DISPLAY_Mb)
@@ -516,23 +514,23 @@ static void altdsp_statjob(
   int                  alt_opt)   /* I */
 
   {
-  char *comment;
+  const char *comment;
   char *pc;
 
   struct attrl *pat;
-  char *exechost;
+  const char *exechost;
   char *usern = NULL;
   char *queuen = NULL;
   char *jobn = NULL;
-  char *sess;
-  char *tasks;
+  const char *sess;
+  const char *tasks;
   char  calcTasks[64];
-  char *nodect;
-  char *rqtimecpu;
-  char *rqtimewal;
-  char *jstate;
-  char *eltimecpu;
-  char *eltimewal;
+  const char *nodect;
+  const char *rqtimecpu;
+  const char *rqtimewal;
+  const char *jstate;
+  const char *eltimecpu;
+  const char *eltimewal;
   char tmpLine[MAX_LINE_LEN];
 
   int   usecput;
@@ -540,14 +538,14 @@ static void altdsp_statjob(
   static char  rqmem[SIZEL];
   static char  srfsbig[SIZEL];
   static char  srfsfast[SIZEL];
-  static char *blank = " -- ";
+  static const char *blank = " -- ";
 
   if (prtheader)
     {
     printf("\n%s: ",
            prtheader->name);
 
-    if ((pc = findattrl(prtheader->attribs, ATTR_comment, NULL)) != NULL)
+    if ((pc = findattrl(prtheader->attribs, (char *)ATTR_comment, NULL)) != NULL)
       {
       printf("%s",
              pc);
@@ -827,11 +825,11 @@ static void altdsp_statque(
 
   {
   char  rmem[SIZEL];
-  char *cput;
-  char *wallt;
-  char *jmax;
-  char *nodect;
-  char *blank = "--   ";
+  const char *cput;
+  const char *wallt;
+  const char *jmax;
+  const char *nodect;
+  const char *blank = "--   ";
   int   jrun;
   int   jque;
   char  qenabled = '\0';
@@ -995,7 +993,7 @@ void display_statjob(
   char *jid;
   char *name;
   char *owner;
-  char *timeu;
+  const char *timeu;
   char *state;
   char *location;
   char format[80];
@@ -1127,7 +1125,7 @@ void display_statjob(
             else
               {
               if ((!strcmp(a->name, "Walltime")) && (a->value[0] == '-'))
-                prt_attr(a->name, "Exceeded", a->value);
+                prt_attr(a->name, (char *)"Exceeded", a->value);
               else
                 prt_attr(a->name, a->resource, a->value);
 
@@ -1363,8 +1361,8 @@ void display_statque(
   int                  l;
   char                *c;
   char                *name;
-  char                *max;
-  char                *tot;
+  const char         *max;
+  const char         *tot;
   char                 ena[MAXNUML + 1];
   char                 str[MAXNUML + 1];
   char                 que[MAXNUML + 1];
@@ -1374,7 +1372,7 @@ void display_statque(
   char                 trn[MAXNUML + 1];
   char                 ext[MAXNUML + 1];
   char                 dne[MAXNUML + 1];
-  char                *type;
+  const char         *type;
   char                 format[80];
 
   int                  NUML = 5;
@@ -1509,7 +1507,7 @@ void display_statque(
             {
             type = a->value;
 
-            *(type + 1) = '\0';
+            *((char *)type + 1) = '\0';
             }
           }
 
@@ -1559,8 +1557,8 @@ void display_statserver(
   int l;
   char *c;
   char *name;
-  char *max;
-  char *tot;
+  const char *max;
+  const char *tot;
   char que[MAXNUML + 1];
   char run[MAXNUML + 1];
   char hld[MAXNUML + 1];
@@ -1568,7 +1566,7 @@ void display_statserver(
   char trn[MAXNUML + 1];
   char ext[MAXNUML + 1];
   char dne[MAXNUML + 1];
-  char *stats;
+  const char *stats;
   char format[80];
 
   int  NUML;
@@ -1958,7 +1956,7 @@ int main(
   int errflg = 0;
   int any_failed = 0;
   extern char *optarg;
-  char *conflict = "qstat: conflicting options.\n";
+  const char *conflict = "qstat: conflicting options.\n";
 #if (TCL_QSTAT == 0)
   char *pc;
 #else
@@ -1974,12 +1972,12 @@ int main(
   char server_old[MAXSERVERNAME] = "";
   char rmt_server[MAXSERVERNAME];
   char destination[PBS_MAXDEST + 1];
-  char *def_server;
+  const char *def_server;
 
   char *queue_name_out;
   char *server_name_out;
 
-  char *ExtendOpt = NULL;
+  const char *ExtendOpt = NULL;
 
   char operand[PBS_MAXCLTJOBID + 1];
   int alt_opt;
@@ -2079,7 +2077,7 @@ int main(
 
         alt_opt |= ALT_DISPLAY_i;
 
-        add_atropl(&p_atropl, ATTR_state, NULL, "EHQTW", EQ);
+        add_atropl(&p_atropl, (char *)ATTR_state, NULL, (char *)"EHQTW", EQ);
 
         break;
 
@@ -2101,7 +2099,7 @@ int main(
 
         alt_opt |= ALT_DISPLAY_r;
 
-        add_atropl(&p_atropl, ATTR_state, NULL, "RS", EQ);
+        add_atropl(&p_atropl, (char *)ATTR_state, NULL, (char *)"RS", EQ);
 
         break;
 
@@ -2121,7 +2119,7 @@ int main(
 
         alt_opt |= ALT_DISPLAY_u;
 
-        add_atropl(&p_atropl, ATTR_u, NULL, optarg, EQ);
+        add_atropl(&p_atropl, (char *)ATTR_u, NULL, optarg, EQ);
 
         break;
 
@@ -2241,12 +2239,12 @@ int main(
 
             case 'i':
               alt_opt |= ALT_DISPLAY_i;
-              add_atropl(&p_atropl, ATTR_state, (char *)0, "EHQTW", EQ);
+              add_atropl(&p_atropl, (char *)ATTR_state, (char *)0, (char *)"EHQTW", EQ);
               break;
 
             case 'r':
               alt_opt |= ALT_DISPLAY_r;
-              add_atropl(&p_atropl, ATTR_state, (char *)0, "RS", EQ);
+              add_atropl(&p_atropl, (char *)ATTR_state, (char *)0, (char *)"RS", EQ);
               break;
 
             case 'u':
@@ -2256,7 +2254,7 @@ int main(
 
               while (*++pc == ' ');
 
-              add_atropl(&p_atropl, ATTR_u, (char *)0, pc, EQ);
+              add_atropl(&p_atropl, (char *)ATTR_u, (char *)0, pc, EQ);
 
               pc = pc + strlen(pc) - 1; /* for the later incr */
 
@@ -2522,7 +2520,7 @@ int main(
 
           if (*queue_name_out != '\0')
             {
-            add_atropl(&p_atropl, ATTR_q, NULL, queue_name_out, EQ);
+            add_atropl(&p_atropl, (char *)ATTR_q, NULL, queue_name_out, EQ);
             }
           }    /* END else */
 
@@ -2571,18 +2569,18 @@ job_no_args:
                        connect,
                        job_id_out,
                        NULL,
-                       exec_only ? EXECQUEONLY : ExtendOpt,
+                       exec_only ? (char *)EXECQUEONLY : (char *)ExtendOpt,
                        &any_failed);
           }
         else
           {
           if (t_opt)
             {
-            p_status = pbs_selstat_err(connect, p_atropl, exec_only ? EXECQUEONLY : NULL, &any_failed);
+            p_status = pbs_selstat_err(connect, p_atropl, exec_only ? (char *)EXECQUEONLY : NULL, &any_failed);
             }
           else
             {
-            p_status = pbs_selstat_err(connect, p_atropl, exec_only ? EXECQUEONLY : summarize_arrays_extend_opt, &any_failed);
+            p_status = pbs_selstat_err(connect, p_atropl, exec_only ? (char *)EXECQUEONLY : (char *)summarize_arrays_extend_opt, &any_failed);
             }
           }
 
@@ -2603,7 +2601,7 @@ job_no_args:
 
             tcl_stat("job", NULL, f_opt);
 
-            prt_job_err("qstat", connect, job_id_out);
+            prt_job_err((char *)"qstat", connect, job_id_out);
             }
           else
             {
@@ -2611,7 +2609,7 @@ job_no_args:
 
             if (any_failed != PBSE_NONE)
               {
-              prt_job_err("qstat", connect, job_id_out);
+              prt_job_err((char *)"qstat", connect, job_id_out);
               }
             }
           }

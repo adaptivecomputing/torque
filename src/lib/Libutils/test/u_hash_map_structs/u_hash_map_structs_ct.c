@@ -14,7 +14,7 @@ void initVars()
   calloc_fail = 0;
   }
 
-void callocVal(char **dest, char *src)
+void callocVal(char **dest, const char *src)
   {
   *dest = (char *)calloc(1, strlen(src)+1);
   if (!dest)
@@ -145,8 +145,8 @@ START_TEST(test_add_or_exit)
   {
   job_data *the_map = NULL;
   memmgr *mm = NULL;
-  char *name = "simple_val";
-  char value[] = "should fail";
+  const char *name = "simple_val";
+  const char *value = "should fail";
   int var_type = 4;
   initVars();
   calloc_fail = 1;
@@ -218,7 +218,7 @@ void rundebug()
   {
   job_data *the_map = NULL;
   memmgr *mm = NULL;
-  char *name = "simple_val";
+  const char *name = "simple_val";
   char value[] = "should fail";
   int var_type = 4;
   memmgr_init(&mm, 0);

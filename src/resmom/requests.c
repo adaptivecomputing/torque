@@ -109,6 +109,7 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
+#include "../lib/Libifl/lib_ifl.h"
 #include "checkpoint.h" /* start_checkpoint */
 #include "resmon.h"
 #include "net_connect.h"
@@ -658,7 +659,7 @@ int return_file(
 
   strcpy(prq->rq_ind.rq_jobfile.rq_jobid, pjob->ji_qs.ji_jobid);
 
-  while ((amt = read(fds, buf, RT_BLK_SZ)) > 0)
+  while ((amt = read_ac_socket(fds, buf, RT_BLK_SZ)) > 0)
     {
     /* prq->rq_ind.rq_jobfile.rq_sequence = seq++; */
     /* prq->rq_ind.rq_jobfile.rq_type = (int)which; */
@@ -1317,7 +1318,7 @@ int message_job(
   rc = PBSE_NONE;
 
   alarm(alarm_time);
-  if (write(fds, text, len) != len)
+  if (write_ac_socket(fds, text, len) != len)
     {
     log_err(errno, "message_job", (char *)"unable to write message to job");
 

@@ -22,7 +22,7 @@ void bad_node_warning(pbs_net_t addr, struct pbsnode *);
 
 int addr_ok(pbs_net_t addr, struct pbsnode *pnode);
 
-struct pbsnode *find_nodebyname(char *nodename);
+struct pbsnode *find_nodebyname(const char *nodename);
 
 struct pbssubn *find_subnodebyname(char *nodename);
 

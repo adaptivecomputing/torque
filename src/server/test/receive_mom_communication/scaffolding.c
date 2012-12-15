@@ -115,7 +115,7 @@ unsigned long disrul(
 
 struct pbsnode *find_nodebyname(
 
-  char *nodename) /* I */
+  const char *nodename) /* I */
 
   {
   return(NULL);

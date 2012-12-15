@@ -104,7 +104,7 @@
 /* External Functions Called */
 
 extern void net_close (int);
-extern void svr_format_job (FILE *, mail_info *, char *);
+extern void svr_format_job (FILE *, mail_info *, const char *);
 
 /* Global Data */
 
@@ -145,16 +145,16 @@ void *send_the_mail(
   {
   mail_info *mi = (mail_info *)vp;
 
-  int        i;
-  char      *mailfrom = NULL;
-  char      *subjectfmt = NULL;
-  char      *bodyfmt = NULL;
-  char      *cmdbuf = NULL;
-  char       bodyfmtbuf[MAXLINE];
-  FILE      *outmail;
+  int         i;
+  const char *mailfrom = NULL;
+  const char *subjectfmt = NULL;
+  char       *bodyfmt = NULL;
+  char       *cmdbuf = NULL;
+  char        bodyfmtbuf[MAXLINE];
+  FILE       *outmail;
   
   /* Who is mail from, if SRV_ATR_mailfrom not set use default */
-  get_svr_attr_str(SRV_ATR_mailfrom, &mailfrom);
+  get_svr_attr_str(SRV_ATR_mailfrom, (char **)&mailfrom);
   if (mailfrom == NULL)
     {
     if (LOGLEVEL >= 5)
@@ -174,7 +174,7 @@ void *send_the_mail(
     }
 
   /* mail subject line formating statement */
-  get_svr_attr_str(SRV_ATR_MailSubjectFmt, &subjectfmt);
+  get_svr_attr_str(SRV_ATR_MailSubjectFmt, (char **)subjectfmt);
   if (subjectfmt == NULL)
     {
     subjectfmt = "PBS JOB %i";
@@ -202,7 +202,7 @@ void *send_the_mail(
   /* setup sendmail command line with -f from_whom */
   i = strlen(SENDMAIL_CMD) + strlen(mailfrom) + strlen(mi->mailto) + 6;
 
-  if ((cmdbuf = calloc(1, i + 1)) == NULL)
+  if ((cmdbuf = (char *)calloc(1, i + 1)) == NULL)
     {
     char tmpBuf[LOG_BUF_SIZE];
 
@@ -302,10 +302,10 @@ void svr_mailowner(
   job   *pjob,      /* I */
   int    mailpoint, /* note, single character  */
   int    force,     /* if set to MAIL_FORCE, force mail delivery */
-  char  *text)      /* (optional) additional message text */
+  const char  *text)      /* (optional) additional message text */
 
   {
-  static char          *memory_err = "Cannot allocate memory to send email";
+  static const char   *memory_err = "Cannot allocate memory to send email";
 
   char                  mailto[1024];
   char                 *domain = NULL;
@@ -395,7 +395,7 @@ void svr_mailowner(
       }
     }
 
-  mi = calloc(1, sizeof(mail_info));
+  mi = (mail_info *)calloc(1, sizeof(mail_info));
 
   if (mi == NULL)
     {

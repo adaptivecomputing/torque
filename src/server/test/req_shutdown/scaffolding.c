@@ -11,13 +11,13 @@
 
 all_queues              svr_queues;
 int lockfds=0;
-char *msg_daemonname = "unset";
-char *msg_shutdown_start = "Starting to shutdown the server, type is ";
-char *msg_init_queued = "Requeued in queue: ";
-char *msg_on_shutdown = " on Server shutdown";
-char *msg_leftrunning = "job running on at Server shutdown";
-char *msg_shutdown_op = "Shutdown request from %s@%s ";
-char *msg_job_abort = "Aborted by PBS Server ";
+const char *msg_daemonname = "unset";
+const char *msg_shutdown_start = "Starting to shutdown the server, type is ";
+const char *msg_init_queued = "Requeued in queue: ";
+const char *msg_on_shutdown = " on Server shutdown";
+const char *msg_leftrunning = "job running on at Server shutdown";
+const char *msg_shutdown_op = "Shutdown request from %s@%s ";
+const char *msg_job_abort = "Aborted by PBS Server ";
 attribute_def job_attr_def[10];
 struct all_jobs alljobs;
 struct server server;
@@ -66,7 +66,7 @@ int issue_signal(job *pjob, char *signame, void (*func)(struct work_task *), voi
   exit(1);
   }
 
-char * csv_find_string(char *csv_str, char *search_str)
+char * csv_find_string(const char *csv_str, const char *search_str)
   {
   fprintf(stderr, "The call to csv_find_string to be mocked!!\n");
   exit(1);

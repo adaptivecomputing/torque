@@ -102,6 +102,7 @@
 #include "pbs_error.h"
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
+#include "../lib/Libifl/lib_ifl.h"
 #include "svrfunc.h"
 #include "mom_job_func.h" /* mom_job_purge */
 
@@ -159,7 +160,7 @@ extern int    reject_job_submit;
 
 extern  char *msg_daemonname;
 
-extern int decode_arst_merge(struct pbs_attribute *,const char *,char *,char *);
+extern int decode_arst_merge(struct pbs_attribute *,const char *,const char *,const char *);
 
 
 /* Private Functions in this file */
@@ -669,7 +670,7 @@ void req_jobscript(
     return;
     }
 
-  if (write(
+  if (write_ac_socket(
         fds,
         preq->rq_ind.rq_jobfile.rq_data,
         (unsigned)preq->rq_ind.rq_jobfile.rq_size) != preq->rq_ind.rq_jobfile.rq_size)
@@ -778,7 +779,7 @@ void req_mvjobfile(
     return;
     }
 
-  if (write(
+  if (write_ac_socket(
         fds,
         preq->rq_ind.rq_jobfile.rq_data,
         preq->rq_ind.rq_jobfile.rq_size) != preq->rq_ind.rq_jobfile.rq_size)

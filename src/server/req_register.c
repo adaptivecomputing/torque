@@ -135,7 +135,7 @@ struct depend_job *find_dependjob(struct depend *, char *name);
 
 struct depend_job *make_dependjob(struct depend *, char *jobid, char *host);
 void   del_depend_job(struct depend_job *pdj);
-int    build_depend(pbs_attribute *, char *);
+int    build_depend(pbs_attribute *, const char *);
 void   clear_depend(struct depend *, int type, int exists);
 void   del_depend(struct depend *);
 void   release_cheapest(job *, struct depend *);
@@ -990,7 +990,7 @@ int register_array_depend(
   /* make dependency of none exists */
   if (pdep == NULL)
     {
-    pdep = calloc(1, sizeof(struct array_depend));
+    pdep = (struct array_depend *)calloc(1, sizeof(struct array_depend));
 
     if (pdep != NULL)
       {
@@ -2436,7 +2436,7 @@ int send_depend_req(
 struct dependnames
   {
   int   type;
-  char *name;
+  const char *name;
   } dependnames[] =
 
   {
@@ -2479,8 +2479,8 @@ int decode_depend(
 
   pbs_attribute *patr,
   const char   *name,  /* attribute name */
-  char          *rescn, /* resource name, unused here */
-  char          *val,   /* attribute value */
+  const char *rescn, /* resource name, unused here */
+  const char    *val,   /* attribute value */
   int            perm)  /* only used for resources */
 
   {
@@ -2502,7 +2502,7 @@ int decode_depend(
    * add a depend or depend_child structure.
    */
 
-  valwd = parse_comma_string(val,&ptr);
+  valwd = parse_comma_string((char *)val,&ptr);
 
   while (valwd != NULL)
     {
@@ -2602,7 +2602,7 @@ void cat_jobsvr(
 void fast_strcat(
 
   char **Dest,
-  char  *Src)
+  const char  *Src)
 
   {
   char *d;
@@ -2944,7 +2944,7 @@ void free_depend(
 int build_depend(
 
   pbs_attribute *pattr,
-  char          *value)
+  const char    *value)
 
   {
   struct depend      *have[JOB_DEPEND_NUMBER_TYPES];
@@ -2967,7 +2967,7 @@ int build_depend(
    * struct;  set_depend will "remove" any of that kind.
    */
 
-  if ((nxwrd = strchr(value, (int)':')) != NULL)
+  if ((nxwrd = strchr((char *)value, (int)':')) != NULL)
     *nxwrd++ = '\0';
 
   for (pname = dependnames; pname->type != -1; pname++)

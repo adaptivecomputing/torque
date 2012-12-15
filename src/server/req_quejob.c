@@ -116,6 +116,7 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
+#include "../lib/Libifl/lib_ifl.h"
 #include "svrfunc.h"
 #include "csv.h"
 #include "array.h"
@@ -189,7 +190,7 @@ static char *user_account_default(char *);
 static int user_account_read_user(char *);
 #endif /* PNOT */
 
-static char *pbs_o_que = "PBS_O_QUEUE=";
+static const char *pbs_o_que = "PBS_O_QUEUE=";
 
 /****************************************************************** 
  * set_nodes_attr - Check to see is the node resource was requested
@@ -1586,7 +1587,7 @@ int req_jobscript(
     return rc;
     }
 
-  if (write(
+  if (write_ac_socket(
         fds,
         preq->rq_ind.rq_jobfile.rq_data,
         (unsigned)preq->rq_ind.rq_jobfile.rq_size) != preq->rq_ind.rq_jobfile.rq_size)
@@ -1718,7 +1719,7 @@ int req_mvjobfile(
     return(rc);
     }
 
-  if (write(
+  if (write_ac_socket(
         fds,
         preq->rq_ind.rq_jobfile.rq_data,
         (unsigned)preq->rq_ind.rq_jobfile.rq_size) != preq->rq_ind.rq_jobfile.rq_size)
@@ -2518,7 +2519,7 @@ int user_account_read_user(
     return(0);
     }
 
-  readsize = read(fd, s_buf, sizeof(s_buf));
+  readsize = read_ac_socket(fd, s_buf, sizeof(s_buf));
 
   close(fd);
 

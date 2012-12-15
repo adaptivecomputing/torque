@@ -12,10 +12,10 @@
 
 unsigned int pbs_scheduler_port;
 listener_connection listener_conns[MAXLISTENERS];
-char *msg_sched_called = "Scheduler was sent the command %s";
-char *msg_listnr_nocall = "Could not contact Listener";
-char *msg_listnr_called = "Listener %d sent event %s";
-char *msg_sched_nocall = "Could not contact Scheduler";
+const char *msg_sched_called = "Scheduler was sent the command %s";
+const char *msg_listnr_nocall = "Could not contact Listener";
+const char *msg_listnr_called = "Listener %d sent event %s";
+const char *msg_sched_nocall = "Could not contact Scheduler";
 char server_name[PBS_MAXSERVERNAME + 1];
 struct connection svr_conn[PBS_NET_MAX_CONNECTIONS];
 pbs_net_t pbs_scheduler_addr;

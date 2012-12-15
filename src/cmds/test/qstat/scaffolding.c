@@ -109,7 +109,7 @@ int MXMLAddE(mxml_t *E, mxml_t *C)
   exit(1);
   }
 
-int MXMLCreateE(mxml_t **E, char *Name)
+int MXMLCreateE(mxml_t **E, const char *Name)
   { 
   fprintf(stderr, "The call to MXMLCreateE needs to be mocked!!\n");
   exit(1);

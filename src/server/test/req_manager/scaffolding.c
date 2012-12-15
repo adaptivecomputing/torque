@@ -16,19 +16,19 @@ all_nodes allnodes;
 int svr_resc_size = 0;
 int disable_timeout_check = 1;
 all_queues svr_queues;
-char *msg_daemonname = "unset";
-char *msg_man_del = "deleted";
-char *msg_attrtype = "Warning: type of queue %s incompatible with attribute %s";
-char *msg_man_cre = "created";
-char *msg_man_set = "attributes set: ";
-char *msg_manager = "%s at request of %s@%s";
-char *msg_man_uns = "attributes unset: ";
+const char *msg_daemonname = "unset";
+const char *msg_man_del = "deleted";
+const char *msg_attrtype = "Warning: type of queue %s incompatible with attribute %s";
+const char *msg_man_cre = "created";
+const char *msg_man_set = "attributes set: ";
+const char *msg_manager = "%s at request of %s@%s";
+const char *msg_man_uns = "attributes unset: ";
 char server_name[PBS_MAXSERVERNAME + 1];
 resource_def *svr_resc_def;
 attribute_def que_attr_def[10];
 attribute_def node_attr_def[2];
 struct server server;
-char *array_disallowed_types[] = {"hi", "hello"};
+const char *array_disallowed_types[] = {"hi", "hello"};
 attribute_def svr_attr_def[10];
 int LOGLEVEL = 0;
 int svr_chngNodesfile = 0;
@@ -83,7 +83,7 @@ int chk_characteristic(struct pbsnode *pnode, node_check_info *nci, int *pneed_t
   exit(1);
   }
 
-struct pbsnode *find_nodebyname(char *nodename)
+struct pbsnode *find_nodebyname(const char *nodename)
   {
   fprintf(stderr, "The call to find_nodebyname to be mocked!!\n");
   exit(1);
@@ -113,7 +113,7 @@ int unlock_node(struct pbsnode *the_node, const char *id, char *msg, int logging
   exit(1);
   }
 
-int find_attr(struct attribute_def *attr_def, char *name, int limit)
+int find_attr(struct attribute_def *attr_def, const char *name, int limit)
   {
   fprintf(stderr, "The call to find_attr to be mocked!!\n");
   exit(1);

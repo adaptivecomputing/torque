@@ -106,6 +106,7 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
+#include "../lib/Libifl/lib_ifl.h"
 #include "utils.h"
 #include <pthread.h>
 #include "queue_func.h" /* que_alloc, que_free */
@@ -137,7 +138,7 @@ int que_save(
   {
   int fds;
   int rc;
-  char   *myid = "que_save_xml";
+  const char   *myid = "que_save_xml";
   char namebuf1[MAXPATHLEN];
   char namebuf2[MAXPATHLEN];
   char buf[MAXLINE<<8];
@@ -255,7 +256,7 @@ pbs_queue *que_recov_xml(
     }
 
   /* read in queue save sub-structure */
-  if (read(fds,buf,sizeof(buf)) < 0)
+  if (read_ac_socket(fds,buf,sizeof(buf)) < 0)
     {
     snprintf(log_buf,sizeof(log_buf),
       "Unable to read from queue file %s",
@@ -429,8 +430,8 @@ pbs_queue *que_recov(
 
   /* read in queue save sub-structure */
 
-  if (read(fds, (char *)&pq->qu_qs, sizeof(struct queuefix)) !=
-      sizeof(struct queuefix))
+  if (read_ac_socket(fds, (char *)&pq->qu_qs, sizeof(queuefix)) !=
+      sizeof(queuefix))
     {
     log_err(errno, __func__, (char *)"read error");
     que_free(pq, TRUE);

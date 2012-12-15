@@ -33,6 +33,7 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
+#include "../lib/Libifl/lib_ifl.h"
 #include "list_link.h"
 #include "attribute.h"
 #include "server_limits.h"
@@ -47,6 +48,7 @@
 #include "svr_func.h"
 #include "job_func.h" /* svr_job_purge */
 #include "ji_mutex.h"
+#include "batch_request.h"
 
 extern int array_upgrade(job_array *, int, int, int *);
 extern char *get_correct_jobname(const char *jobid);
@@ -191,7 +193,7 @@ int array_save(
     return -1;
     }
 
-  if (write(fds,  &(pa->ai_qs), sizeof(struct array_info)) == -1)
+  if (write_ac_socket(fds,  &(pa->ai_qs), sizeof(struct array_info)) == -1)
     {
     unlink(namebuf);
     close(fds);
@@ -204,7 +206,7 @@ int array_save(
        rn = (array_request_node*)GET_NEXT(rn->request_tokens_link), num_tokens++);
 
 
-  if (write(fds, &num_tokens, sizeof(num_tokens)) == -1)
+  if (write_ac_socket(fds, &num_tokens, sizeof(num_tokens)) == -1)
     {
     unlink(namebuf);
     close(fds);
@@ -217,7 +219,7 @@ int array_save(
     for (rn = (array_request_node*)GET_NEXT(pa->request_tokens); rn != NULL;
          rn = (array_request_node*)GET_NEXT(rn->request_tokens_link))
       {
-      if (write(fds, rn, sizeof(array_request_node)) == -1)
+      if (write_ac_socket(fds, rn, sizeof(array_request_node)) == -1)
         {
         unlink(namebuf);
         close(fds);
@@ -298,7 +300,7 @@ int read_and_convert_259_array(
     return PBSE_SYSTEM;
     }
 
-  len = read(fd, &(pa_259->ai_qs), sizeof(pa_259->ai_qs));
+  len = read_ac_socket(fd, &(pa_259->ai_qs), sizeof(pa_259->ai_qs));
   if (len < 0) 
     {
     sprintf(log_buf, "error reading %s", path);
@@ -413,7 +415,7 @@ int array_recov(
     /* read the file into the struct previously allocated.
      */
 
-    len = read(fd, &(pa->ai_qs), sizeof(pa->ai_qs));
+    len = read_ac_socket(fd, &(pa->ai_qs), sizeof(pa->ai_qs));
     if ((len < 0) || ((len < (int)sizeof(pa->ai_qs)) && (pa->ai_qs.struct_version == ARRAY_QS_STRUCT_VERSION)))
       {
       sprintf(log_buf, "error reading %s", path);
@@ -445,7 +447,7 @@ int array_recov(
 
   if (old_version > 1)
     {
-    if (read(fd, &num_tokens, sizeof(int)) != sizeof(int))
+    if (read_ac_socket(fd, &num_tokens, sizeof(int)) != sizeof(int))
       {
       sprintf(log_buf, "error reading token count from %s", path);
       log_err(errno, __func__, log_buf);
@@ -459,7 +461,7 @@ int array_recov(
       {
       rn = (array_request_node *)calloc(1, sizeof(array_request_node));
 
-      if (read(fd, rn, sizeof(array_request_node)) != sizeof(array_request_node))
+      if (read_ac_socket(fd, rn, sizeof(array_request_node)) != sizeof(array_request_node))
         {
         sprintf(log_buf, "error reading array_request_node from %s", path);
         log_err(errno, __func__, log_buf);

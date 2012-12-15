@@ -1733,7 +1733,7 @@ static void update_state_ct(
   char          *buf)
 
   {
-  static char *statename[] = { "Transit", "Queued", "Held",
+  static const char *statename[] = { "Transit", "Queued", "Held",
                                "Waiting", "Running", "Exiting", "Complete"
                              };
   int  index;

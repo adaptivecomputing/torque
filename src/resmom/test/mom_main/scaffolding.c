@@ -23,10 +23,10 @@
 mom_server     mom_servers[PBS_MAXSERVER];
 resizable_array *received_statuses;
 int mom_server_count = 0;
-char *msg_daemonname = "unset";
+const char *msg_daemonname = "unset";
 struct sig_tbl sig_tbl[2];
 char pbs_current_user[PBS_MAXUSER];
-char *server_alias;
+extern char *server_alias;
 const char *dis_emsg[10];
 long *log_event_mask = NULL;
 int rpp_dbprt = 0;
@@ -36,7 +36,7 @@ struct config standard_config[2];
 struct config dependent_config[2];
 long MaxConnectTimeout = 5000000;
 tlist_head svr_requests;
-char *msg_info_mom = "Torque Mom Version = %s, loglevel = %d";
+const char *msg_info_mom = "Torque Mom Version = %s, loglevel = %d";
 hash_table_t *received_table;
 threadpool_t *request_pool;
 AvlTree okclients;
@@ -232,13 +232,13 @@ int tm_request(struct tcp_chan *chan, int version)
   exit(1);
   }
 
-int csv_length(char *csv_str)
+int csv_length(const char *csv_str)
   {
   fprintf(stderr, "The call to csv_length needs to be mocked!!\n");
   exit(1);
   }
 
-char *csv_nth(char *csv_str, int n)
+char *csv_nth(const char *csv_str, int n)
   {
   fprintf(stderr, "The call to csv_nth needs to be mocked!!\n");
   exit(1);

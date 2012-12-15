@@ -7,7 +7,7 @@
 
 int timeval_subtract(struct timeval *result, struct timeval *x, struct timeval *y);
 
-int decode_tv(pbs_attribute *patr, const char *name, char *rescn, char *val, int perm);
+int decode_tv(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm);
 
 int encode_tv(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm);
 

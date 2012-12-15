@@ -12,15 +12,15 @@
 #include "work_task.h" /* work_task */
 #include "queue.h"
 
-char *msg_illregister = "Illegal op in register request received for job %s";
-char *msg_registerdel = "Job deleted as result of dependency on job %s";
+const char *msg_illregister = "Illegal op in register request received for job %s";
+const char *msg_registerdel = "Job deleted as result of dependency on job %s";
 char server_name[PBS_MAXSERVERNAME + 1];
-char *msg_err_malloc = "malloc failed";
+const char *msg_err_malloc = "malloc failed";
 const char *PJobState[] = {"hi", "hello"};
 struct server server;
 int LOGLEVEL = 10;
-char *msg_regrej = "Dependency request for job rejected by ";
-char *msg_registerrel = "Dependency on job %s released.";
+const char *msg_regrej = "Dependency request for job rejected by ";
+const char *msg_registerrel = "Dependency on job %s released.";
 int   i = 2;
 int   svr = 2;
 
@@ -36,7 +36,7 @@ int job_save(job *pjob, int updatetype, int mom_port)
   return(0);
   }
 
-void svr_mailowner(job *pjob, int mailpoint, int force, char *text)
+void svr_mailowner(job *pjob, int mailpoint, int force, const char *text)
   {
   fprintf(stderr, "The call to svr_mailowner to be mocked!!\n");
   exit(1);
@@ -55,7 +55,7 @@ svrattrl *attrlist_create(const char *aname, const char *rname, int vsize)
   else
     rsz = strlen(rname) + 1;
 
-  pal = calloc(1, sizeof(svrattrl) + asz + rsz + vsize);
+  pal = (svrattrl *)calloc(1, sizeof(svrattrl) + asz + rsz + vsize);
 
   CLEAR_LINK(pal->al_link); /* clear link */
 
@@ -145,7 +145,7 @@ void release_req(struct work_task *pwt)
 
 char *pbse_to_txt(int err)
   {
-  return("");
+  return((char *)"");
   }
 
 void append_link(tlist_head *head, list_link *new_link, void *pobj)
@@ -181,7 +181,7 @@ int svr_setjobstate(job *pjob, int newstate, int newsubstate, int has_queue_mute
 
 job *svr_find_job(char *jobid, int get_subjob)
   {
-  job *pjob = calloc(1, sizeof(job));
+  job *pjob = (job *)calloc(1, sizeof(job));
   strcpy(pjob->ji_qs.ji_jobid, jobid);
   CLEAR_HEAD(pjob->ji_wattr[JOB_ATR_depend].at_val.at_list);
 

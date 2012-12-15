@@ -185,7 +185,7 @@ void *check_and_run_job(
   {
   batch_request   *preq = (batch_request *)vp;
   job             *pjob;
-  int             *rc_ptr = calloc(1, sizeof(int));
+  int             *rc_ptr = (int *)calloc(1, sizeof(int));
   char             failhost[MAXLINE];
   char             emsg[MAXLINE];
   long             job_atr_hold;
@@ -273,7 +273,7 @@ void *check_and_run_job(
 
     /* if the job has a non-empty rejectdest list, pass the first host into req_reject() */
 
-    if ((bp = GET_NEXT(pjob->ji_rejectdest)) != NULL)
+    if ((bp = (badplace *)GET_NEXT(pjob->ji_rejectdest)) != NULL)
       {
       req_reject(*rc_ptr, 0, preq, bp->bp_dest, "could not contact host");
       }
@@ -413,7 +413,7 @@ void post_checkpointsend(
     return;
 
   code = preq->rq_reply.brp_code;
-  pjob = svr_find_job(preq->rq_extra, FALSE);
+  pjob = svr_find_job((char *)preq->rq_extra, FALSE);
 
   free(preq->rq_extra);
 
@@ -651,7 +651,7 @@ void post_stagein(
     return;
 
   code = preq->rq_reply.brp_code;
-  pjob = svr_find_job(preq->rq_extra, FALSE);
+  pjob = svr_find_job((char *)preq->rq_extra, FALSE);
 
   free(preq->rq_extra);
 
@@ -2051,7 +2051,7 @@ int assign_hosts(
   unsigned int  dummy;
   char         *list = NULL;
   char         *portlist = NULL;
-  char         *hosttoalloc = NULL;
+  const char  *hosttoalloc = NULL;
   resource     *pres;
   int           rc = 0;
   int           procs=0;
@@ -2157,7 +2157,7 @@ int assign_hosts(
 
   if (svr_totnodes != 0)
     {
-    rc = set_nodes(pjob, hosttoalloc, procs, &list, &portlist, FailHost, EMsg);
+    rc = set_nodes(pjob, (char *)hosttoalloc, procs, &list, &portlist, FailHost, EMsg);
     
     set_exec_host = 1; /* maybe new VPs, must set */
     
@@ -2205,7 +2205,7 @@ int assign_hosts(
         (pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str != NULL))
       tmp = parse_servername(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str, &dummy);
     else
-      tmp = parse_servername(hosttoalloc, &dummy);
+      tmp = parse_servername((char *)hosttoalloc, &dummy);
     
     snprintf(pjob->ji_qs.ji_destin, sizeof(pjob->ji_qs.ji_destin), "%s", tmp);
     

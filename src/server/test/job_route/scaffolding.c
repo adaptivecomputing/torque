@@ -8,9 +8,9 @@
 #include "batch_request.h" /* batach_request */
 #include "resource.h"
 
-char *msg_err_noqueue = "Unable to requeue job, queue is not defined";
-char *msg_err_malloc = "malloc failed";
-char *msg_routexceed = "Route queue lifetime exceeded";
+const char *msg_err_noqueue = "Unable to requeue job, queue is not defined";
+const char *msg_err_malloc = "malloc failed";
+const char *msg_routexceed = "Route queue lifetime exceeded";
 int svr_resc_size = 0;
 int LOGLEVEL = 0;
 resource_def *svr_resc_def;

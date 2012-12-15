@@ -17,7 +17,7 @@ char *pbs_geterrmsg(int connect)
   exit(1);
   }
 
-int hash_find(job_data *head, char *name, job_data **env_var)
+int hash_find(job_data *head, const char *name, job_data **env_var)
   {
   fprintf(stderr, "The call to hash_find to be mocked!!\n");
   exit(1);
@@ -89,19 +89,19 @@ int prepare_path( char *path_in,  char *path_out,  char *host)
   exit(1);
   }
 
-int hash_del_item(memmgr **mm, job_data **head, char *name)
+int hash_del_item(memmgr **mm, job_data **head, const char *name)
   {
   fprintf(stderr, "The call to hash_del_item to be mocked!!\n");
   exit(1);
   }
 
-int csv_length(char *csv_str)
+int csv_length(const char *csv_str)
   {
   fprintf(stderr, "The call to csv_length to be mocked!!\n");
   exit(1);
   }
 
-char *csv_nth(char *csv_str, int n)
+char *csv_nth(const char *csv_str, int n)
   {
   fprintf(stderr, "The call to csv_nth to be mocked!!\n");
   exit(1);
@@ -143,7 +143,7 @@ int parse_at_list(char *list, int use_count, int abs_path)
   exit(1);
   }
 
-char * csv_find_string(char *csv_str, char *search_str)
+char * csv_find_string(const char *csv_str, const char *search_str)
   {
   fprintf(stderr, "The call to csv_find_string to be mocked!!\n");
   exit(1);
@@ -167,7 +167,7 @@ int pbs_deljob_err( int c, char *jobid, char *extend, int *local_errno)
   exit(1);
   }
 
-void calloc_or_fail( char **dest, int alloc_size, char *err_msg)
+void calloc_or_fail( char **dest, int alloc_size, const char *err_msg)
   {
   fprintf(stderr, "The call to calloc_or_fail to be mocked!!\n");
   exit(1);
@@ -197,7 +197,7 @@ char *pbs_strerror(int err)
   exit(1);
   }
 
-void hash_add_or_exit(memmgr **mm, job_data **head, char *name, char *value, int var_type)
+void hash_add_or_exit(memmgr **mm, job_data **head, const char *name, const char *value, int var_type)
   {
   fprintf(stderr, "The call to hash_add_or_exit to be mocked!!\n");
   exit(1);

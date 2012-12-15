@@ -108,6 +108,7 @@
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
 #include "../lib/Liblog/chk_file_sec.h"
+#include "../lib/Libifl/lib_ifl.h"
 #include "server_limits.h"
 #include "attribute.h"
 #include "pbs_job.h"
@@ -157,7 +158,7 @@ extern int  schedule_jobs(void);
 extern int  notify_listeners(void);
 extern void svr_shutdown(int);
 extern void acct_close(void);
-extern int  svr_startjob(job *, struct batch_request *, char *, char *);
+extern int  svr_startjob(job *, struct batch_request **, char *, char *);
 extern int RPPConfigure(int, int);
 extern void acct_cleanup(long);
 void stream_eof(int, u_long, uint16_t, int);
@@ -198,6 +199,8 @@ extern int max_poll_job_tasks;
 extern int    recov_svr_attr (int);
 extern void  change_logs_handler(int);
 extern void  change_logs();
+
+//ssize_t write_neverblocking_socket(int, const void *, ssize_t);
 
 /* Local Private Functions */
 
@@ -1045,7 +1048,7 @@ pthread_t      route_retry_thread_id = -1;
  * Returns: amount of time till next task
  */
 
-void *check_tasks()
+void *check_tasks(void *notUsed)
 
   {
   work_task *ptask;
@@ -1565,9 +1568,9 @@ void initialize_globals(void)
 
   msg_daemonname = strdup(pbs_current_user);
 
-  server.sv_qs_mutex = calloc(1, sizeof(pthread_mutex_t));
-  server.sv_attr_mutex = calloc(1, sizeof(pthread_mutex_t));
-  server.sv_jobstates_mutex = calloc(1, sizeof(pthread_mutex_t));
+  server.sv_qs_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  server.sv_attr_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  server.sv_jobstates_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
 
   pthread_mutex_init(server.sv_qs_mutex,NULL);
   pthread_mutex_init(server.sv_attr_mutex,NULL);
@@ -1875,7 +1878,7 @@ int main(
 
   if (!high_availability_mode)
     {
-    if (write(lockfds, log_buf, strlen(log_buf)) !=
+    if (write_ac_socket(lockfds, log_buf, strlen(log_buf)) !=
         (ssize_t)strlen(log_buf))
       {
       log_err(errno, msg_daemonname, (char *)"failed to write pid to lockfile");
@@ -2639,7 +2642,7 @@ int start_update_ha_lock_thread()
     }
 
   snprintf(smallBuf,sizeof(smallBuf),"%ld\n",(long)sid);
-  if (write(fds,smallBuf,strlen(smallBuf)) != (ssize_t)strlen(smallBuf))
+  if (write_ac_socket(fds,smallBuf,strlen(smallBuf)) != (ssize_t)strlen(smallBuf))
     {
     log_err(-1, __func__, (char *)"Couldn't write the pid to the lockfile\n");
     close(fds);

@@ -115,7 +115,7 @@ extern struct server server;
 
 /* sync w/job_attr_def.c */
 
-int decode_nodes(struct pbs_attribute *, const char *, char *, char *, int);
+int decode_nodes(struct pbs_attribute *, const char *, const char *, const char *, int);
 int set_node_ct(resource *, pbs_attribute *, int actmode);
 int set_proc_ct(resource *, pbs_attribute *, int actmode);
 int set_tokens_nodect(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op actmode);
@@ -127,7 +127,6 @@ resource_def *svr_resc_def;
 
 resource_def svr_resc_def_const[] =
   {
-
     { "arch",    /* system architecture type */
     decode_str,
     encode_str,
@@ -612,7 +611,6 @@ resource_def svr_resc_def_const[] =
     READ_WRITE,
     ATR_TYPE_STR
   },
-
   /* Cray XT */
   { "size", decode_l, encode_l, set_l, comp_l, free_null, NULL_FUNC, READ_WRITE | ATR_DFLAG_MOM, ATR_TYPE_LONG },
   { "cpapartitionid", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
@@ -772,7 +770,6 @@ resource_def svr_resc_def_const[] =
   /* the definition for the "unknown" resource MUST be last */
 
   { "|unknown|", decode_unkn, encode_unkn, set_unkn, comp_unkn, free_unkn, NULL_FUNC, READ_WRITE, ATR_TYPE_LIST }
-
   /* DO NOT ADD DEFINITIONS AFTER "unknown", ONLY BEFORE */
   };
 
@@ -801,7 +798,7 @@ int init_resc_defs(void)
   if (get_svr_attr_arst(SRV_ATR_ExtraResc, &resc_arst) == PBSE_NONE)
     {
 
-    tmpresc = calloc(resc_arst->as_usedptr + 1, sizeof(resource_def));
+    tmpresc = (resource_def *)calloc(resc_arst->as_usedptr + 1, sizeof(resource_def));
 
     if (tmpresc == NULL)
       {
@@ -885,12 +882,12 @@ int decode_nodes(
 
   pbs_attribute *patr,
   const char   *name,   /* pbs_attribute name */
-  char          *rescn,  /* resource name - unused here */
-  char          *val,    /* pbs_attribute value */
+  const char *rescn,  /* resource name - unused here */
+  const char    *val,    /* pbs_attribute value */
   int            perm)   /* replaces resc_access_perm */
 
   {
-  char *pc;
+  const char *pc;
 
   pc = val;
 

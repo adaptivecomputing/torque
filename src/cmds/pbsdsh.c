@@ -40,7 +40,7 @@ extern int event_count;
 struct tm_errcode
   {
   int trc_code;
-  char   *trc_name;
+  const char   *trc_name;
   } tm_errcode[] =
 
   {
@@ -69,7 +69,7 @@ fd_set permrfsd;
 int grabstdio = 0;
 
 
-char *get_ecname(
+const char *get_ecname(
 
   int rc)
 
@@ -283,7 +283,7 @@ getstdout(void)
         {
         if (FD_ISSET(i, &rfsd))
           {
-          if ((bytes = read(i, &buf, 1023)) > 0)
+          if ((bytes = read_ac_socket(i, &buf, 1023)) > 0)
             {
             buf[bytes] = '\0';
             fprintf(stdout, "%s", buf);
@@ -504,9 +504,9 @@ char *gethostnames(
   char *hoststart;
   int rc, tm_errno, i, j;
 
-  allnodes = calloc(numnodes, PBS_MAXNODENAME + 1 + sizeof(char));
-  rescinfo = calloc(numnodes, RESCSTRLEN + 1 + sizeof(char));
-  rescevent = calloc(numnodes, sizeof(tm_event_t));
+  allnodes = (char *)calloc(numnodes, PBS_MAXNODENAME + 1 + sizeof(char));
+  rescinfo = (char *)calloc(numnodes, RESCSTRLEN + 1 + sizeof(char));
+  rescevent = (tm_event_t*)calloc(numnodes, sizeof(tm_event_t));
 
   if (!allnodes || !rescinfo || !rescevent)
     {
@@ -711,7 +711,7 @@ int main(
   int posixly_correct_set_by_caller = 0;
   char *envstr;
 
-  id = calloc(60, sizeof(char));
+  id = (char *)calloc(60, sizeof(char));
 
   if (id == NULL)
     {
@@ -830,7 +830,7 @@ int main(
 #ifdef __GNUC__
   if (!posixly_correct_set_by_caller)
     {
-    putenv("POSIXLY_CORRECT");
+    putenv((char *)"POSIXLY_CORRECT");
     free(envstr);
     }
 
@@ -991,7 +991,7 @@ int main(
     stop  = numnodes;
     }
 
-  if ((ioenv = calloc(2, sizeof(char **))) == NULL)
+  if ((ioenv = (char **)calloc(2, sizeof(char **))) == NULL)
     {
     /* FAILURE - cannot alloc memory */
 
@@ -1005,7 +1005,7 @@ int main(
     {
     stdoutfd = build_listener(&stdoutport);
 
-    if ((*ioenv = calloc(50, sizeof(char *))) == NULL)
+    if ((*ioenv = (char *)calloc(50, sizeof(char *))) == NULL)
       {
       /* FAILURE - cannot alloc memory */
 

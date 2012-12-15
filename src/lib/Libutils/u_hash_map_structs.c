@@ -101,8 +101,8 @@ int hash_add_item(
 
   memmgr   **mm,                /* M - memory manager */
   job_data **head,            /* M - hashmap */
-  char      *name,                 /* key for the item */
-  char      *value,                /* value for the item */
+  const char      *name,                 /* key for the item */
+  const char      *value,                /* value for the item */
   int        var_type,               /* type of variable */
   int        op_type)                /* operation of variable */
 
@@ -179,8 +179,8 @@ void hash_add_or_exit(
 
   memmgr   **mm,              /* M - memory manager */
   job_data **head,          /* M - hashmap */
-  char      *name,               /* I - The item being added to the hashmap */
-  char      *val,                /* I - Sets the value of variable */
+  const char      *name,               /* I - The item being added to the hashmap */
+  const char      *val,                /* I - Sets the value of variable */
   int        var_type)             /* I - Sets the type of the variable */
   {
   if (hash_add_item(mm, head, name, val, var_type, SET) == FALSE)
@@ -196,7 +196,7 @@ void hash_add_or_exit(
 int hash_del_item(
     memmgr **mm,              /* M - memory manager */
     job_data **head,          /* M - hashmap */
-    char *name)               /* I - entry to delete */
+    const char *name)               /* I - entry to delete */
   {
   int rc = FALSE;
   char *tmp_name = NULL;
@@ -248,9 +248,9 @@ int hash_clear(
  */
 int hash_find(
     
-  job_data  *head,           /* I - hashmap */
-  char      *name,               /* I - name to find */
-  job_data **env_var)       /* O - return value when found */
+  job_data     *head,           /* I - hashmap */
+  const char  *name,               /* I - name to find */
+  job_data     **env_var)       /* O - return value when found */
 
   {
   int rc = TRUE;

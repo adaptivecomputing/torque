@@ -528,7 +528,7 @@ int main(
           if (strcmp(keyword, ATTR_depend) == 0)
             {
             int rtn = 0;
-            pdepend = calloc(1, PBS_DEPEND_LEN);
+            pdepend = (char *)calloc(1, PBS_DEPEND_LEN);
 
             if ((pdepend == NULL) ||
                  (rtn = parse_depend_list(valuewd,pdepend,PBS_DEPEND_LEN)))
@@ -684,7 +684,7 @@ cnt:
     if ((stat != 0) &&
         (any_failed != PBSE_UNKJOBID))
       {
-      prt_job_err("qalter", connect, job_id_out);
+      prt_job_err((char *)"qalter", connect, job_id_out);
       }
     else if ((stat != 0) && 
              (any_failed != PBSE_UNKJOBID) &&
@@ -701,7 +701,7 @@ cnt:
         goto cnt;
         }
 
-      prt_job_err("qalter", connect, job_id_out);
+      prt_job_err((char *)"qalter", connect, job_id_out);
       }  /* END else if (stat && ...) */
 
     pbs_disconnect(connect);

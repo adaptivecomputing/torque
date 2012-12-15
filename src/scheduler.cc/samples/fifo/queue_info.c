@@ -355,7 +355,7 @@ queue_info *new_queue_info()
   {
   queue_info *qinfo;
 
-  if ((qinfo = malloc(sizeof(queue_info))) == NULL)
+  if ((qinfo = (queue_info *)malloc(sizeof(queue_info))) == NULL)
     return NULL;
 
   qinfo -> is_started  = 0;

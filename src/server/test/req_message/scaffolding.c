@@ -6,7 +6,7 @@
 #include "pbs_job.h" /* job */
 #include "work_task.h" /* work_task */
 
-char *msg_messagejob = "Message request to job status %d";
+const char *msg_messagejob = "Message request to job status %d";
 int LOGLEVEL = 0;
 
 void reply_ack(struct batch_request *preq)

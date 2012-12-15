@@ -2668,8 +2668,8 @@ void set_statechar(
   job *pjob) /* *I* (modified) */
 
   {
-  static char *statechar = "TQHWREC";
-  static char suspend    = 'S';
+  static const char *statechar = "TQHWREC";
+  static const char suspend    = 'S';
   
   if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
       (pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend))

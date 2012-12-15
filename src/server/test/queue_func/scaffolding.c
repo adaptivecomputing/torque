@@ -10,7 +10,7 @@
 #include "pbs_job.h" /* job */
 #include "user_info.h"
 
-char *msg_err_unlink = "Unlink of %s file %s failed";
+const char *msg_err_unlink = "Unlink of %s file %s failed";
 all_queues svr_queues;
 attribute_def que_attr_def[10];
 struct server server;

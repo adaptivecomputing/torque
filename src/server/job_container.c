@@ -136,7 +136,7 @@ char *get_correct_jobname(
   if (display_suffix == FALSE)
     server_suffix = FALSE;
 
-  if ((dot = strchr(jobid,'.')) != NULL)
+  if ((dot = strchr((char *)jobid,'.')) != NULL)
     {
     first_suffix = dot + 1;
 
@@ -172,7 +172,7 @@ char *get_correct_jobname(
       {
       /* alloc memory and sprint, add 3 for 2 '.' and NULL terminator */
       len = strlen(jobid) + strlen(server_name) + strlen(alias) + 3;
-      correct = calloc(1, len);
+      correct = (char *)calloc(1, len);
 
       if (correct == NULL)
         {
@@ -188,7 +188,7 @@ char *get_correct_jobname(
       /* add 2 for null terminator and '.' */
       len = strlen(alias) + 2 + strlen(jobid);
 
-      correct = calloc(1, len);
+      correct = (char *)calloc(1, len);
 
       if (correct == NULL)
         {
@@ -211,7 +211,7 @@ char *get_correct_jobname(
 
       len = strlen(jobid) + 1 ;
 
-      correct = calloc(1, len);
+      correct = (char *)calloc(1, len);
 
       if (correct == NULL)
         {
@@ -236,7 +236,7 @@ char *get_correct_jobname(
       {
       len = strlen(jobid) + strlen(server_name) + 2;
 
-      correct = calloc(1, len);
+      correct = (char *)calloc(1, len);
 
       if (correct == NULL)
         {
@@ -256,7 +256,7 @@ char *get_correct_jobname(
       {
       len = strlen(jobid) + strlen(alias) + 2;
 
-      correct = calloc(1, len);
+      correct = (char *)calloc(1, len);
 
       if (correct == NULL)
         {
@@ -274,7 +274,7 @@ char *get_correct_jobname(
       *dot = '\0';
 
       len += strlen(jobid);
-      correct = calloc(1, len);
+      correct = (char *)calloc(1, len);
 
       if (correct == NULL)
         {
@@ -299,7 +299,7 @@ char *get_correct_jobname(
       }
 
     len = strlen(jobid) + 1;
-    correct = calloc(1, len);
+    correct = (char *)calloc(1, len);
 
     if (correct == NULL)
       {
@@ -502,7 +502,7 @@ void initialize_all_jobs_array(
   aj->ra = initialize_resizable_array(INITIAL_JOB_SIZE);
   aj->ht = create_hash(INITIAL_HASH_SIZE);
 
-  aj->alljobs_mutex = calloc(1, sizeof(pthread_mutex_t));
+  aj->alljobs_mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(aj->alljobs_mutex, NULL);
   } /* END initialize_all_jobs_array() */
 

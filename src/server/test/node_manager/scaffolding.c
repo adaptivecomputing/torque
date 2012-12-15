@@ -99,7 +99,7 @@ int enqueue_threadpool_request(void *(*func)(void *), void *arg)
   exit(1);
   }
 
-struct pbsnode *find_nodebyname(char *nodename)
+struct pbsnode *find_nodebyname(const char *nodename)
   {
   static struct pbsnode bob;
 
@@ -201,7 +201,7 @@ resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
   exit(1);
   }
 
-int decode_arst(struct pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
+int decode_arst(struct pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm)
   {
   fprintf(stderr, "The call to decode_arst needs to be mocked!!\n");
   exit(1);
@@ -260,7 +260,7 @@ job *svr_find_job(char *jobid, int get_subjob)
   static job pjob;
 
   memset(&pjob, 0, sizeof(pjob));
-  pjob.ji_mutex = calloc(1, sizeof(pthread_mutex_t));
+  pjob.ji_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   strcpy(pjob.ji_qs.ji_jobid, jobid);
 
   if ((!strcmp(jobid, "1")) ||

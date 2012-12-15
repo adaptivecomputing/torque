@@ -130,8 +130,8 @@ int decode_unkn(
 
   pbs_attribute *patr,  /* May be Modified on Return */
   const char   *name,
-  char          *rescn,
-  char          *value,
+  const char *rescn,
+  const char    *value,
   int            perm)  /* only used for resources */
 
   {

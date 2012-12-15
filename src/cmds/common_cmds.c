@@ -189,7 +189,7 @@ void calloc_or_fail(
   memmgr **mm,            /* memory manager */
   char   **dest,
   int      alloc_size,
-  char    *err_msg)
+  const char    *err_msg)
 
   {
   *dest = (char *)memmgr_calloc(mm, 1, alloc_size);

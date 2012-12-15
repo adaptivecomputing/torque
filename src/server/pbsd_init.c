@@ -98,6 +98,7 @@
 #include "../lib/Liblog/log_event.h"
 #include "../lib/Liblog/setup_env.h"
 #include "../lib/Liblog/chk_file_sec.h"
+#include "../lib/Libifl/lib_ifl.h"
 #include "list_link.h"
 #include "attribute.h"
 #include "server_limits.h"
@@ -732,7 +733,7 @@ dynamic_string *parse_mom_hierarchy(
 
   memset(&buffer, 0, sizeof(buffer));
 
-  if ((bytes_read = read(fds, buffer, sizeof(buffer) - 1)) < 0)
+  if ((bytes_read = read_ac_socket(fds, buffer, sizeof(buffer) - 1)) < 0)
     {
     snprintf(log_buf, sizeof(log_buf),
       "Unable to read from %s", path_mom_hierarchy);
@@ -2005,7 +2006,7 @@ int handle_tracking_records()
     (server.sv_track + i)->tk_mtime = 0;
 
   /* NOTE:  tracking file records are optional */
-  if (read(fd, (char *)server.sv_track, server.sv_tracksize * sizeof(struct tracking)) < 0)
+  if (read_ac_socket(fd, (char *)server.sv_track, server.sv_tracksize * sizeof(struct tracking)) < 0)
     {
     log_err(errno, "pbs_init", "unable to read tracksize from tracking file");
     }

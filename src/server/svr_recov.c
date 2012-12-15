@@ -107,6 +107,7 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
+#include "../lib/Libifl/lib_ifl.h"
 #include "pbs_error.h"
 #include "resource.h"
 #include "utils.h"
@@ -173,9 +174,9 @@ int svr_recov(
   /* read in server structure */
   lock_sv_qs_mutex(server.sv_qs_mutex, __func__);
 
-  i = read(sdb, (char *) & server.sv_qs, sizeof(struct server_qs));
+  i = read_ac_socket(sdb, (char *) & server.sv_qs, sizeof(server_qs));
 
-  if (i != sizeof(struct server_qs))
+  if (i != sizeof(server_qs))
     {
     unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
 
@@ -238,7 +239,7 @@ int svr_recov(
         PBS_SVRACL,
         svr_attr_def[i].at_name);
 
-      if ((!read_only) && (svr_attr_def[i].at_action != (int (*)())0))
+      if ((!read_only) && (svr_attr_def[i].at_action != (int (*)(pbs_attribute*, void*, int))0))
         {
         svr_attr_def[i].at_action(
           &server.sv_attr[i],
@@ -732,7 +733,7 @@ int svr_recov_xml(
     return(-1);
     }
 
-  bytes_read = read(sdb,buffer,sizeof(buffer));
+  bytes_read = read_ac_socket(sdb,buffer,sizeof(buffer));
 
   if (bytes_read < 0)
     {
@@ -889,7 +890,7 @@ int svr_save_xml(
   char log_buf[LOCAL_LOG_BUF_SIZE + 1];
 
   tmp_file_len = strlen(path_svrdb) + 5;
-  if ((tmp_file = calloc(sizeof(char), tmp_file_len)) == NULL)
+  if ((tmp_file = (char *)calloc(sizeof(char), tmp_file_len)) == NULL)
     {
     rc = PBSE_MEM_MALLOC;
     return(rc);
@@ -1008,7 +1009,7 @@ int save_acl(
   const char   *name)  /* parent object name = file name */
 
   {
-  static char *this_function_name = "save_acl";
+  static const char *this_function_name = "save_acl";
   int          fds;
   char         filename1[MAXPATHLEN];
   char         filename2[MAXPATHLEN];
@@ -1071,7 +1072,7 @@ int save_acl(
     {
     /* write entry, but without terminating null */
 
-    while ((i = write(fds, pentry->al_value, pentry->al_valln - 1)) != pentry->al_valln - 1)
+    while ((i = write_ac_socket(fds, pentry->al_value, pentry->al_valln - 1)) != pentry->al_valln - 1)
       {
       if ((i == -1) && (errno == EINTR))
         continue;
@@ -1127,7 +1128,7 @@ void recov_acl(
   const char  *name) /* parent object name = file name */
 
   {
-  static char   *this_function_name = "recov_acl";
+  static const char   *this_function_name = "recov_acl";
   char          *buf;
   int            fds;
   char           filename1[MAXPATHLEN];
@@ -1171,7 +1172,7 @@ void recov_acl(
     return;  /* no data */
     }
 
-  buf = calloc(1, (size_t)sb.st_size + 1); /* 1 extra for added null */
+  buf = (char *)calloc(1, (size_t)sb.st_size + 1); /* 1 extra for added null */
 
   if (buf == NULL)
     {
@@ -1180,7 +1181,7 @@ void recov_acl(
     return;
     }
 
-  if (read(fds, buf, (unsigned int)sb.st_size) != (int)sb.st_size)
+  if (read_ac_socket(fds, buf, (unsigned int)sb.st_size) != (int)sb.st_size)
     {
     log_err(errno, this_function_name, (char *)"unable to read acl file");
 

@@ -308,8 +308,8 @@ do {                                                                            
 #define HASH_EMIT_KEY(hh,head,keyptr,fieldlen)                                   \
 do {                                                                             \
     unsigned _klen = fieldlen;                                                   \
-    write(HASH_EMIT_KEYS, &_klen, sizeof(_klen));                                \
-    write(HASH_EMIT_KEYS, keyptr, fieldlen);                                     \
+    write_ac_socket(HASH_EMIT_KEYS, &_klen, sizeof(_klen));                                \
+    write_ac_socket(HASH_EMIT_KEYS, keyptr, fieldlen);                                     \
 } while (0)
 #else 
 #define HASH_EMIT_KEY(hh,head,keyptr,fieldlen)                    

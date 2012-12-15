@@ -143,7 +143,7 @@ alps_reservation *populate_alps_reservation(
   {
   alps_reservation *ar = NULL;
   
-  if ((ar = calloc(1, sizeof(alps_reservation))) != NULL)
+  if ((ar = (alps_reservation *)calloc(1, sizeof(alps_reservation))) != NULL)
     {
     ar->job_id = strdup(pjob->ji_qs.ji_jobid);
     ar->rsv_id = strdup(pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str);
@@ -244,7 +244,7 @@ int is_orphaned(
   pthread_mutex_lock(alps_reservations.rh_mutex);
   index = get_value_hash(alps_reservations.rh_ht, rsv_id);
   if (index != -1)
-    ar = alps_reservations.rh_alps_rsvs->slots[index].item;
+    ar = (alps_reservation *)alps_reservations.rh_alps_rsvs->slots[index].item;
   pthread_mutex_unlock(alps_reservations.rh_mutex);
 
   if (ar != NULL)
@@ -302,7 +302,7 @@ int remove_alps_reservation(
     rc = THING_NOT_FOUND;
   else
     {
-    ar = alps_reservations.rh_alps_rsvs->slots[index].item;
+    ar = (alps_reservation *)alps_reservations.rh_alps_rsvs->slots[index].item;
     remove_thing_from_index(alps_reservations.rh_alps_rsvs, index);
     remove_hash(alps_reservations.rh_ht, rsv_id);
     }
@@ -320,7 +320,7 @@ int remove_alps_reservation(
 void initialize_alps_reservations()
 
   {
-  alps_reservations.rh_mutex = calloc(1, sizeof(pthread_mutex_t));
+  alps_reservations.rh_mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(alps_reservations.rh_mutex, NULL);
 
   alps_reservations.rh_alps_rsvs = initialize_resizable_array(INITIAL_RESERVATION_HOLDER_SIZE);

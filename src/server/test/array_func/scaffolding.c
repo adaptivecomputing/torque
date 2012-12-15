@@ -14,7 +14,7 @@
 
 
 char *path_arrays;
-char *pbs_o_host = "PBS_O_HOST";
+const char *pbs_o_host = "PBS_O_HOST";
 struct server server;
 int LOGLEVEL = 0;
 int array_259_upgrade = 0;

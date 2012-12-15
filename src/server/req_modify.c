@@ -779,14 +779,14 @@ int copy_batchrequest(
           newpal->al_nameln = pal->al_nameln;
           newpal->al_flags  = pal->al_flags;
           newpal->al_atopl.name = (char *)newpal + sizeof(svrattrl);
-          strcpy(newpal->al_atopl.name, pal->al_atopl.name);
+          strcpy((char *)newpal->al_atopl.name, pal->al_atopl.name);
           newpal->al_nameln = pal->al_nameln;
           newpal->al_atopl.resource = newpal->al_atopl.name + newpal->al_nameln;
           if (pal->al_atopl.resource != NULL)
-            strcpy(newpal->al_atopl.resource, pal->al_atopl.resource);
+            strcpy((char *)newpal->al_atopl.resource, pal->al_atopl.resource);
           newpal->al_rescln = pal->al_rescln;
           newpal->al_atopl.value = newpal->al_atopl.name + newpal->al_nameln + newpal->al_rescln;
-          strcpy(newpal->al_atopl.value, pal->al_atopl.value);
+          strcpy((char *)newpal->al_atopl.value, pal->al_atopl.value);
           newpal->al_valln = pal->al_valln;
           newpal->al_atopl.op = pal->al_atopl.op;
           
@@ -800,7 +800,7 @@ int copy_batchrequest(
 
         strcpy(request->rq_ind.rq_signal.rq_jid, preq->rq_ind.rq_signal.rq_jid);
         strcpy(request->rq_ind.rq_signal.rq_signame, preq->rq_ind.rq_signal.rq_signame);
-        request->rq_extra = strdup(preq->rq_extra);
+        request->rq_extra = strdup((char *)preq->rq_extra);
 
         break;
 
@@ -1092,7 +1092,7 @@ void *modify_array_work(
 
 void *req_modifyarray(
 
-  void *vp) /* I */
+    struct batch_request *vp) /* I */
 
   {
   job_array            *pa;
@@ -1126,7 +1126,7 @@ void *req_modifyarray(
 
 void *modify_job_work(
 
-  void *vp)
+    struct batch_request *vp) /* I */
 
   {
   job           *pjob;
@@ -1195,7 +1195,7 @@ void *modify_job_work(
 
 void *req_modifyjob(
 
-  void *vp) /* I */
+    struct batch_request *vp) /* I */
 
   {
   job                  *pjob;
@@ -1231,7 +1231,7 @@ void *req_modifyjob(
 
     preq->rq_noreply = TRUE; /* set for no more replies */
 
-    enqueue_threadpool_request(modify_job_work, preq);
+    enqueue_threadpool_request((void *(*)(void *))modify_job_work, preq);
     }
   else
     modify_job_work(preq);
@@ -1511,7 +1511,7 @@ void post_modify_arrayreq(
   if (preq == NULL)
     return;
 
-  parent_req = preq->rq_extra; /* This is the original batch_request allocated by process_request */
+  parent_req = (struct batch_request *)preq->rq_extra; /* This is the original batch_request allocated by process_request */
 
   preq->rq_conn = preq->rq_orgconn;  /* restore socket to client */
 

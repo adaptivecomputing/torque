@@ -1679,7 +1679,7 @@ kvm_read(int fd, long addr, char *buf, int size)
   if (lseek(fd, addr, SEEK_SET) != addr)
     return -1;
 
-  if ((ret = read(fd, buf, size)) == -1)
+  if ((ret = read_ac_socket(fd, buf, size)) == -1)
     return -1;
 
   return ret;

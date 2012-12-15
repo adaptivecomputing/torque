@@ -15,9 +15,9 @@
 
 const char *PJobSubState[10];
 int svr_resc_size = 0;
-char *msg_mombadmodify = "MOM rejected modify request, error: %d";
-char *msg_jobmod = "Job Modified";
-char *msg_manager = "%s at request of %s@%s";
+const char *msg_mombadmodify = "MOM rejected modify request, error: %d";
+const char *msg_jobmod = "Job Modified";
+const char *msg_manager = "%s at request of %s@%s";
 attribute_def job_attr_def[10];
 resource_def *svr_resc_def;
 const char *PJobState[] = {"hi", "hello"};
@@ -72,7 +72,7 @@ struct work_task *set_task(enum work_type type, long event_id, void (*func)(), v
   exit(1);
   }
 
-int find_attr(struct attribute_def *attr_def, char *name, int limit)
+int find_attr(struct attribute_def *attr_def, const char *name, int limit)
   {
   fprintf(stderr, "The call to find_attr to be mocked!!\n");
   exit(1);
