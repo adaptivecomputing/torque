@@ -49,5 +49,5 @@ install-data-hook:
 	chmod 644 tclIndex
 
 uninstall-hook:
-	rm -f $(DESTDIR)$(XPBS_DIR)/buildindex
+	rm -f $(DESTDIR)$(XPBSMON_DIR)/buildindex
 
