@@ -141,7 +141,7 @@ static tm_node_id tm_jobndid = TM_ERROR_NODE;
 static int  tm_momport = 0;
 static int  local_conn = -1;
 static struct tcp_chan *static_chan = NULL;
-static int  init_done = 0;
+int  init_done = 0;
 int *tm_conn = &local_conn;
 int  event_count = 0;
 
@@ -265,7 +265,7 @@ tm_event_t new_event(void)
     for (ep = event_hash[ret % EVENT_HASH]; ep; ep = ep->e_next)
       {
       if (ep->e_event == ret)
-        break; /* innter loop: this number is in use */
+        break; /* inner loop: this number is in use */
       }
 
     if (ep == NULL)
@@ -659,11 +659,13 @@ int tm_init(
   int   nerr = 0;
   struct tcp_chan *chan = NULL;
 
+printf("got to line %d\n", __LINE__);
   if (init_done)
     {
     return(TM_BADINIT);
     }
 
+printf("got to line %d\n", __LINE__);
   if ((tm_jobid = getenv("PBS_JOBID")) == NULL)
     {
     return(TM_EBADENVIRONMENT);
@@ -674,6 +676,7 @@ int tm_init(
   if ((tm_jobcookie = getenv("PBS_JOBCOOKIE")) == NULL)
     return TM_EBADENVIRONMENT;
 
+printf("got to line %d\n", __LINE__);
   tm_jobcookie_len = strlen(tm_jobcookie);
 
   if ((env = getenv("PBS_NODENUM")) == NULL)
@@ -681,6 +684,7 @@ int tm_init(
 
   tm_jobndid = (tm_node_id)strtol(env, &hold, 10);
 
+printf("got to line %d\n", __LINE__);
   if (env == hold)
     return TM_EBADENVIRONMENT;
 
@@ -696,6 +700,7 @@ int tm_init(
   if ((tm_momport = atoi(env)) == 0)
     return TM_EBADENVIRONMENT;
 
+printf("got to line %d\n", __LINE__);
   init_done = 1;
 
   nevent = new_event();
@@ -1386,7 +1391,7 @@ tm_register(tm_whattodo_t *what, tm_event_t *event)
 #define FOREVER 2592000
 
 /*
-** tm_poll - poll to see if an event has be completed.
+** tm_poll - poll to see if an event has been completed.
 **
 ** If "poll_event" is a valid event handle, see if it is completed;
 ** else if "poll_event" is the null event, check for the first event that

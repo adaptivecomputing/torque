@@ -8518,6 +8518,10 @@ int read_status_strings(
   char           *str;
   received_node  *rn = NULL;
  
+  if (chan == NULL) 
+    {
+    return DIS_INVALID;
+    }
   /* was mom_port but storage unnecessary */ 
   disrsi(chan,&rc);
 
