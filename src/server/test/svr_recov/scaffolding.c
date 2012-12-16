@@ -7,7 +7,7 @@
 #include "dynamic_string.h" /* dynamic_string */
 
 char *path_priv = NULL;
-char *msg_svdbopen = "Unable to open server data base";
+const char *msg_svdbopen = "Unable to open server data base";
 char *path_svrdb = NULL;
 struct server server;
 attribute_def svr_attr_def[10];
@@ -45,13 +45,13 @@ ssize_t write_nonblocking_socket(int fd, const void *buf, ssize_t count)
  exit(1);
  }
 
-int find_attr(struct attribute_def *attr_def, char *name, int limit)
+int find_attr(struct attribute_def *attr_def, const char *name, int limit)
  {
  fprintf(stderr, "The call to find_attr to be mocked!!\n");
  exit(1);
  }
 
-int decode_resc(struct pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
+int decode_resc(struct pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm)
  {
  fprintf(stderr, "The call to decode_resc to be mocked!!\n");
  exit(1);
@@ -75,7 +75,7 @@ void *get_next(list_link pl, char *file, int line)
  exit(1);
  }
 
-int decode_arst(struct pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
+int decode_arst(struct pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm)
  {
  fprintf(stderr, "The call to decode_arst to be mocked!!\n");
  exit(1);
@@ -117,6 +117,16 @@ int unlock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string)
   }
 
 int lock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string)
+  {
+  return(0);
+  }
+
+ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
+  {
+  return(0);
+  }
+
+ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   {
   return(0);
   }

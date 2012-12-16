@@ -25,14 +25,14 @@ int scheduler_jobct = 0;
 pthread_mutex_t *job_log_mutex;
 pthread_mutex_t *reroute_job_mutex;
 pthread_mutex_t *log_mutex;
-char *msg_init_chdir = "unable to change to directory %s";
+const char *msg_init_chdir = "unable to change to directory %s";
 char *path_jobs;
-char *msg_err_noqueue = "Unable to requeue job, queue is not defined";
+const char *msg_err_noqueue = "Unable to requeue job, queue is not defined";
 all_nodes allnodes;
 char *path_nodestate;
 char *path_priv = NULL;
-char *msg_init_exptjobs = "Expected %d, recovered %d jobs";
-char *msg_daemonname = "unset";
+const char *msg_init_exptjobs = "Expected %d, recovered %d jobs";
+const char *msg_daemonname = "unset";
 char *path_track;
 char *path_checkpoint;
 char *job_log_file = NULL;
@@ -40,43 +40,43 @@ char *plogenv = NULL;
 pthread_mutex_t *node_state_mutex = NULL;
 pthread_mutex_t *acctfile_mutex = NULL;
 pthread_mutex_t *check_tasks_mutex = NULL;
-char *msg_init_queued = "Requeued in queue: ";
+const char *msg_init_queued = "Requeued in queue: ";
 char *path_svrlog;
 char path_acct[_POSIX_PATH_MAX];
 char *path_nodes;
-char *msg_init_recovque = "Recovered queue %s";
+const char *msg_init_recovque = "Recovered queue %s";
 attribute_def job_attr_def[10];
-char *msg_init_expctq = "Expected %d, recovered %d queues";
+const char *msg_init_expctq = "Expected %d, recovered %d queues";
 char *path_arrays;
 char *log_file = NULL;
-char *msg_script_open = "Unable to open script file";
+const char *msg_script_open = "Unable to open script file";
 struct all_jobs newjobs;
 char server_name[PBS_MAXSERVERNAME + 1];
 char *path_nodenote;
 struct all_jobs alljobs;
 char *path_queues;
 char path_log[MAXPATHLEN + 1];
-char *msg_init_nojobs = "No jobs to open";
+const char *msg_init_nojobs = "No jobs to open";
 tlist_head svr_newnodes;
-char *msg_err_malloc = "malloc failed";
+const char *msg_err_malloc = "malloc failed";
 int rpp_dbprt = 0;
 char *path_credentials;
-char *msg_init_badjob = "Recover of job %s failed";
+const char *msg_init_badjob = "Recover of job %s failed";
 char *path_nodes_new;
 resource_def *svr_resc_def;
 tlist_head svr_requests;
 attribute_def que_attr_def[10];
 int queue_rank = 0;
 char *path_spool;
-char *msg_init_abt = "Job aborted on PBS Server initialization";
-char *msg_init_noqueues = "No queues to open";
+const char *msg_init_abt = "Job aborted on PBS Server initialization";
+const char *msg_init_noqueues = "No queues to open";
 char *path_nodenote_new;
 char *path_svrdb = NULL;
 threadpool_t *request_pool;
-char *msg_init_baddb = "Unable to read server database";
+const char *msg_init_baddb = "Unable to read server database";
 struct server server;
-char *msg_init_substate = "Requeueing job, substate: %d ";
-char *msg_init_unkstate = "Unable to recover job in strange substate: %d";
+const char *msg_init_substate = "Requeueing job, substate: %d ";
+const char *msg_init_unkstate = "Unable to recover job in strange substate: %d";
 struct all_jobs array_summary;
 attribute_def svr_attr_def[10];
 int a_opt_init = -1;
@@ -86,13 +86,11 @@ int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 pthread_mutex_t *svr_requests_mutex = NULL;
 all_tasks task_list_event;
 char *path_svrdb_new;
-char *path_home = PBS_SERVER_HOME;
+const char *path_home = PBS_SERVER_HOME;
 char *acct_file = NULL;
-char *path_mom_hierarchy = "/dev/null";
+const char *path_mom_hierarchy = "/dev/null";
 pthread_mutex_t *svr_do_schedule_mutex;
 pthread_mutex_t *listener_command_mutex;
-pthread_mutex_t *acctfile_mutex;
-pthread_mutex_t *check_tasks_mutex;
 pthread_mutex_t *retry_routing_mutex;
 user_info_holder users;
 
@@ -139,7 +137,7 @@ int net_move(job *jobp, struct batch_request *req)
   exit(1);
   }
 
-void svr_mailowner(job *pjob, int mailpoint, int force, char *text)
+void svr_mailowner(job *pjob, int mailpoint, int force, const char *text)
   {
   fprintf(stderr, "The call to svr_mailowner needs to be mocked!!\n");
   exit(1);
@@ -209,7 +207,7 @@ char *pbs_get_server_list(void)
   exit(1);
   }
 
-int csv_length(char *csv_str)
+int csv_length(const char *csv_str)
   {
   fprintf(stderr, "The call to csv_length needs to be mocked!!\n");
   exit(1);
@@ -221,7 +219,7 @@ struct work_task *set_task(enum work_type type, long event_id, void (*func)(), v
   exit(1);
   }
 
-char *csv_nth(char *csv_str, int n)
+char *csv_nth(const char *csv_str, int n)
   {
   fprintf(stderr, "The call to csv_nth needs to be mocked!!\n");
   exit(1);
@@ -401,7 +399,7 @@ void free_arst(struct pbs_attribute *attr)
   exit(1);
   }
 
-int decode_arst_direct(struct pbs_attribute *patr,  char *val)
+int decode_arst_direct(struct pbs_attribute *patr,  const char *val)
   {
   fprintf(stderr, "The call to decode_arst_direct needs to be mocked!!\n");
   exit(1);
@@ -504,7 +502,7 @@ dynamic_string *get_dynamic_string(int initial_size, const char *str)
   return(NULL);
   }
 
-struct pbsnode *find_nodebyname(char *name)
+struct pbsnode *find_nodebyname(const char *name)
   {
   return(NULL);
   }
@@ -597,7 +595,7 @@ int insert_addr_name_info(
   return(0);
   }
 
-int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }
@@ -631,3 +629,9 @@ job_array *get_array(
   {
   return(NULL);
   }
+
+ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
+  {
+  return(0);
+  }
+

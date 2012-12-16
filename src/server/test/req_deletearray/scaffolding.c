@@ -10,7 +10,7 @@
 #include "queue.h" /* pbs_queue */
 #include "array.h" /* job_array */
 
-char *msg_permlog = "Unauthorized Request, request type: %d, Object: %s, Name: %s, request from: %s@%s";
+const char *msg_permlog = "Unauthorized Request, request type: %d, Object: %s, Name: %s, request from: %s@%s";
 struct server server;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
@@ -169,7 +169,7 @@ int get_batch_request_id(
   return(0);
   }
 
-int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }

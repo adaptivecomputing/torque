@@ -12,12 +12,12 @@
 #include "node_func.h" /* node_info */
 
 
-char *msg_deletejob = "Job deleted";
+const char *msg_deletejob = "Job deleted";
 struct all_jobs alljobs;
-char *msg_delrunjobsig = "Job sent signal %s on delete";
+const char *msg_delrunjobsig = "Job sent signal %s on delete";
 struct server server;
+const char *msg_manager = "%s at request of %s@%s";
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
-char *msg_manager = "%s at request of %s@%s";
 
 
 struct batch_request *alloc_br(int type)
@@ -56,7 +56,7 @@ void chk_job_req_permissions(job **pjob_ptr, struct batch_request *preq)
   exit(1);
   }
 
-void svr_mailowner(job *pjob, int mailpoint, int force, char *text)
+void svr_mailowner(job *pjob, int mailpoint, int force, const char *text)
   {
   fprintf(stderr, "The call to svr_mailowner needs to be mocked!!\n");
   exit(1);
@@ -228,7 +228,7 @@ int get_batch_request_id(
   return(0);
   }
 
-int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }

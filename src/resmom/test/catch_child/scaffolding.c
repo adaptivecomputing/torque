@@ -54,7 +54,7 @@ resource_def *svr_resc_def; /* resc_def_all.c */
 char        *path_epiloguser; /* mom_main.c */
 char        *path_epilog; /* mom_main.c */
 int PBSNodeCheckEpilog = 1; /* mom_main.c */ /* 1 to trigger conditions */
-char *msg_daemonname = "unset"; /* pbs_log.c */
+const char *msg_daemonname = "unset"; /* pbs_log.c */
 char *path_jobs; /* mom_main.c */
 tlist_head mom_polljobs; /* mom_main.c */
 char        *path_epiloguserp; /* mom_main.c */
@@ -1235,7 +1235,7 @@ u_long addclient(const char *name)
   return 0;
   }
 
-int find_attr(struct attribute_def *attr_def, char *name, int limit)
+int find_attr(struct attribute_def *attr_def, const char *name, int limit)
   {
   int rc = 0;
   if (func_num == INIT_ABORT_JOBS)

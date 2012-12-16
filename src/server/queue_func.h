@@ -15,7 +15,7 @@ void que_free(pbs_queue *pq, int sv_qs_mutex_held);
 
 int que_purge(pbs_queue *pque);
 
-pbs_queue *find_queuebyname(char *quename);
+pbs_queue *find_queuebyname(const char *quename);
 
 pbs_queue *get_dfltque(void);
 

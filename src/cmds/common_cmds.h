@@ -90,7 +90,7 @@ int parse_env_line(memmgr **mm, char *one_var, char **name, char **value);
 
 void set_env_opts(memmgr **mm, job_data **env_attr, char **envp);
 
-void calloc_or_fail(memmgr **mm, char **dest, int alloc_size, char *err_msg);
+void calloc_or_fail(memmgr **mm, char **dest, int alloc_size, const char *err_msg);
 
 int parse_variable_list(memmgr **mm, job_data **dest_hash, job_data *user_env, int var_type, int op_type, char *the_list);
 

@@ -238,14 +238,14 @@ int gpu_has_job(
               found_str = strstr (gpu_str, tmp_str);
               if (found_str != NULL)
                 {
-                unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+                unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
                 return(TRUE);
                 }
               }
             }
           
           /* done with job, unlock the mutex */
-          unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
+          unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
           }
         }
       } /* END for each job on the subnode */
@@ -458,6 +458,11 @@ int svr_is_request(
 
       update_node_state(node, i);
 
+      if ((node->nd_state & INUSE_DOWN) != 0)
+        {
+        node->nd_mom_reported_down = TRUE;
+        }
+
       break;
 
     case IS_STATUS:
@@ -475,13 +480,12 @@ int svr_is_request(
       unlock_node(node, __func__, "before is_stat_get", LOGLEVEL);
 
       ret = is_stat_get(node_name, chan);
-/*      socket_read_flush(chan->sock); */
 
       node = find_nodebyname(node_name);
 
       if (ret == SEND_HELLO)
         {
-        struct hello_info *hi = calloc(1, sizeof(struct hello_info));
+        struct hello_info *hi = (struct hello_info *)calloc(1, sizeof(struct hello_info));
         write_tcp_reply(chan, IS_PROTOCOL, IS_PROTOCOL_VER, IS_STATUS, DIS_SUCCESS);
 
         hi->name = strdup(node_name);

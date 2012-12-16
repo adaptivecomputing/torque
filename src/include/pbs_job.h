@@ -1108,7 +1108,7 @@ extern int   site_check_user_map(job *, char *, char *, int);
 int  svr_dequejob(job *, int);
 extern int   svr_enquejob(job *, int, int);
 extern void  svr_evaljobstate(job *, int *, int *, int);
-extern void  svr_mailowner(job *, int, int, char *);
+extern void  svr_mailowner(job *, int, int, const char *);
 extern void  set_resc_deflt(job *, pbs_attribute *, int);
 extern void  set_statechar(job *);
 extern int   svr_setjobstate(job *, int, int, int);
@@ -1122,7 +1122,7 @@ extern int   svr_chk_owner(struct batch_request *, job *);
 extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_atr, int);
 extern struct batch_request *setup_cpyfiles(struct batch_request *, job *, char *, char *, int, int);
 extern struct batch_request *cpy_checkpoint(struct batch_request *, job *, enum job_atr, int);
-int   issue_signal(job **, char *, void(*)(struct work_task *), void *);
+int   issue_signal(job **, const char *, void(*)(struct batch_request *), void *);
 #endif /* BATCH_REQUEST_H */
 
 

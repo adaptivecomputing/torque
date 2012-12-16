@@ -112,15 +112,15 @@ typedef struct job_data
     UT_hash_handle hh;
   } job_data;
 
-int hash_add_item(memmgr **mm, job_data **head, char *name, char *value, int var_type, int op_type);
+int hash_add_item(memmgr **mm, job_data **head, const char *name, const char *value, int var_type, int op_type);
 
-void hash_add_or_exit(memmgr **mm, job_data **head, char *name, char *value, int var_type);
+void hash_add_or_exit(memmgr **mm, job_data **head, const char *name, const char *value, int var_type);
 
-int hash_del_item(memmgr **mm, job_data **head, char *name);
+int hash_del_item(memmgr **mm, job_data **head, const char *name);
 
 int hash_clear(memmgr **mm, job_data **head);
 
-int hash_find(job_data *head, char *name, job_data **env_var);
+int hash_find(job_data *head, const char *name, job_data **env_var);
 
 int hash_count(job_data *head);
 

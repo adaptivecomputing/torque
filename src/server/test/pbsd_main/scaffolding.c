@@ -20,17 +20,17 @@ hello_container failures;
 pthread_mutex_t *job_log_mutex;
 pthread_mutex_t *log_mutex;
 all_queues svr_queues;
-char *msg_daemonname = "unset";
-char *msg_startup2 = "Server Ready, pid = %d, loglevel=%d";
+const char *msg_daemonname = "unset";
+const char *msg_startup2 = "Server Ready, pid = %d, loglevel=%d";
 char pbs_current_user[PBS_MAXUSER];
-char *msg_svrdown = "Server shutdown completed";
-char *msg_info_server = "Torque Server Version = %s, loglevel = %d";
+const char *msg_svrdown = "Server shutdown completed";
+const char *msg_info_server = "Torque Server Version = %s, loglevel = %d";
 struct all_jobs alljobs;
 long *log_event_mask = NULL;
-char *msg_startup3 = "%s %s: %s mode and %s exist, \ndo you wish to continue y/(n)?";
+const char *msg_startup3 = "%s %s: %s mode and %s exist, \ndo you wish to continue y/(n)?";
 pbs_net_t pbs_server_addr;
 int listener_command = SCH_SCHEDULE_NULL;
-char *msg_startup1 = "Server %s started, initialization type = %d";
+const char *msg_startup1 = "Server %s started, initialization type = %d";
 int svr_chngNodesfile = 0; /* 1 signals want nodes file update */
 int svr_totnodes = 0; /* total number nodes defined */
 hello_container hellos;
@@ -75,7 +75,7 @@ char * netaddr(struct sockaddr_in *ap)
   exit(1);
   }
 
-int decode_b(pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
+int decode_b(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm)
   {
   fprintf(stderr, "The call to decode_b needs to be mocked!!\n");
   exit(1);
@@ -356,7 +356,7 @@ int unlock_node(struct pbsnode *pnode, const char *id, char *msg, int log_level)
   exit(1);
   }
 
-struct pbsnode *find_nodebyname(char *name)
+struct pbsnode *find_nodebyname(const char *name)
   {
   fprintf(stderr, "The call to find_nodebyname needs to be mocked!\n");
   exit(1);
@@ -486,7 +486,7 @@ void DIS_tcp_cleanup(struct tcp_chan *chan) {}
 
 void scheduler_close() {}
 
-int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }
@@ -498,4 +498,9 @@ void change_logs() {}
 void *inspect_exiting_jobs(void *vp) 
   {
   return(NULL);
+  }
+
+ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
+  {
+  return(0);
   }

@@ -6,7 +6,7 @@ int MXMLExtractE(mxml_t *E, mxml_t *C, mxml_t **CP);
 
 int MXMLSetChild(mxml_t *E, char *CName, mxml_t **CE); 
 
-int MXMLCreateE(mxml_t **E, char *Name); 
+int MXMLCreateE(mxml_t **E, const char *Name);
 
 int MXMLDestroyE(mxml_t **EP); 
 

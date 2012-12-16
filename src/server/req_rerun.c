@@ -113,7 +113,7 @@ extern char *msg_jobrerun;
 extern void rel_resc(job *);
 
 extern job  *chk_job_request(char *, struct batch_request *);
-int          issue_signal(job **, char *, void(*)(batch_request *), void *);
+int          issue_signal(job **, const char *, void(*)(batch_request *), void *);
 
 /*
  * post_rerun - handler for reply from mom on signal_job sent in req_rerunjob
@@ -147,7 +147,7 @@ void post_rerun(
 
       svr_setjobstate(pjob, newstate, newsub, FALSE);
 
-      unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       }
     }
 
@@ -218,7 +218,7 @@ int req_rerunjob(
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "job %s is in a bad state",
         preq->rq_ind.rq_rerun);
     req_reject(rc, 0, preq, NULL, log_buf);
-    unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
     return rc;
     }
 
@@ -231,7 +231,7 @@ int req_rerunjob(
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
         "additional permissions required (ATR_DFLAG_MGWR | ATR_DFLAG_OPWR)");
     req_reject(rc, 0, preq, NULL, log_buf);
-    unlock_ji_mutex(pjob, __func__, (char *)"3", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
     return rc;
     }
 
@@ -248,14 +248,14 @@ int req_rerunjob(
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "job %s not rerunnable",
         preq->rq_ind.rq_rerun);
     req_reject(rc, 0, preq, NULL, log_buf);
-    unlock_ji_mutex(pjob, __func__, (char *)"4", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
     return rc;
     }
 
   if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
     {
     /* ask MOM to kill off the job if it is running */
-    static char *rerun = "rerun";
+    static const char *rerun = "rerun";
     char        *extra = strdup(rerun);
 
     rc = issue_signal(&pjob, "SIGKILL", post_rerun, extra);
@@ -320,7 +320,7 @@ int req_rerunjob(
         snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Rejected by mom");
         req_reject(rc, 0, preq, NULL, log_buf);
         if (pjob != NULL)
-          unlock_ji_mutex(pjob, __func__, (char *)"5", LOGLEVEL);
+          unlock_ji_mutex(pjob, __func__, "5", LOGLEVEL);
         return rc;
         }
       else
@@ -408,7 +408,7 @@ int req_rerunjob(
   
     /* note in accounting file */
     account_record(PBS_ACCT_RERUN, pjob, NULL);
-    unlock_ji_mutex(pjob, __func__, (char *)"6", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "6", LOGLEVEL);
     }
 
   return rc;

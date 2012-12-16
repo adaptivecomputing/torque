@@ -33,14 +33,14 @@ extern char *msg_job_otherfail;
 
 void svr_format_job(
      
-  FILE      *fh,  /* output file handle */
-  mail_info *mi,  /* I */
-  char      *fmt) /* printf-like format description */
+  FILE        *fh,  /* output file handle */
+  mail_info   *mi,  /* I */
+  const char *fmt) /* printf-like format description */
 
   {
   int   mailpoint = mi->mail_point;
   char *text = mi->text;
-  char *p;
+  const char *p;
   char *stdmessage = NULL;
   char *reason = NULL;
   

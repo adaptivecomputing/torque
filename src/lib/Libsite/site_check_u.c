@@ -114,7 +114,7 @@ extern char  server_host[];
 extern char *msg_orighost; /* error message: no PBS_O_HOST */
 
 /* This is in the server code? */
-extern struct pbsnode *find_nodebyname(char *);
+extern struct pbsnode *find_nodebyname(const char *);
 
 /*
  * site_check_u - site_check_user_map()

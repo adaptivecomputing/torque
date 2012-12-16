@@ -96,7 +96,7 @@ void initialize_recycler()
   initialize_all_jobs_array(&recycler.rc_jobs);
   recycler.rc_iter = -1;
 
-  recycler.rc_mutex = calloc(1, sizeof(pthread_mutex_t));
+  recycler.rc_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(recycler.rc_mutex,NULL);
   } /* END initialize_recycler() */
 
@@ -112,11 +112,11 @@ job *next_job_from_recycler(
   job *pjob;
 
   pthread_mutex_lock(aj->alljobs_mutex);
-  pjob = next_thing(aj->ra, iter);
+  pjob = (job *)next_thing(aj->ra, iter);
   pthread_mutex_unlock(aj->alljobs_mutex);
 
   if (pjob != NULL)
-    lock_ji_mutex(pjob, __func__, (char *)NULL, LOGLEVEL);
+    lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
   return(pjob);
   } /* END next_job_from_recycler() */
@@ -146,7 +146,7 @@ void *remove_some_recycle_jobs(
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
 
     remove_job(&recycler.rc_jobs, pjob);
-    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     free(pjob->ji_mutex);
     memset(pjob, 255, sizeof(job));
     free(pjob);

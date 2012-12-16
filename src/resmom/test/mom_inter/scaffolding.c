@@ -7,7 +7,7 @@ int mom_reader_go;
 int DEBUGMODE;
 char *xauth_path;
 
-ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
+ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   {
   fprintf(stderr, "The call to read_nonblocking_socket needs to be mocked!!\n");
   exit(1);
@@ -15,8 +15,7 @@ ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
 
 ssize_t read_blocking_socket(int fd, void *buf, ssize_t count)
   {
-  fprintf(stderr, "The call to read_blocking_socket needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void port_forwarder( struct pfwdsock *socks, int (*connfunc)(char *, long, char *), char *phost, int pport, char *EMsg)
@@ -25,7 +24,7 @@ void port_forwarder( struct pfwdsock *socks, int (*connfunc)(char *, long, char 
   exit(1);
   }
 
-ssize_t write_nonblocking_socket(int fd, const void *buf, ssize_t count)
+ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
   {
   fprintf(stderr, "The call to write_nonblocking_socket needs to be mocked!!\n");
   exit(1);

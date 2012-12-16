@@ -97,6 +97,7 @@
 #include "pbs_job.h"
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
+#include "../lib/Libifl/lib_ifl.h"
 #include "mom_mach.h"
 #include "mom_func.h"
 #include "resource.h"
@@ -906,7 +907,7 @@ int run_pelog(
           strerror(errno),
           which == PE_PROLOGUSER ? "prologue" : "epilogue");
 
-        if (write(2, log_buffer, strlen(log_buffer)) == -1) {}
+        if (write_ac_socket(2, log_buffer, strlen(log_buffer)) == -1) {}
 
         fsync(2);
         }
@@ -1270,7 +1271,7 @@ int run_pelog(
       pelog,
       strerror(errno));
 
-    if (write(2, log_buffer, strlen(log_buffer)) == -1) 
+    if (write_ac_socket(2, log_buffer, strlen(log_buffer)) == -1)
       {
       /* cannot write message to stderr */
 

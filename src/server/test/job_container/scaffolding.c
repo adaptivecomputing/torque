@@ -11,7 +11,7 @@ struct all_jobs        alljobs;
 int                    LOGLEVEL;
 
 void log_err(int errno, const char *ident, const char *msg) {}
-void log_event(int type, int class, const char *ident, char *msg) {}
+void log_event(int type, int cls, const char *ident, const char *msg) {}
 
 
 int insert_thing(resizable_array *ra, void *thing)
@@ -34,7 +34,7 @@ int lock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
   return(0);
   }
 
-int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }

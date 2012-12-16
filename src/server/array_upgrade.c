@@ -105,7 +105,7 @@ int array_upgrade_v1(job_array *pa, int fds, int version, int *old_version)
   struct array_info_v1 old_array_info;
   array_request_node *rn;
 
-  if (read(fds, (char*)&old_array_info,
+  if (read_ac_socket(fds, (char*)&old_array_info,
            sizeof(old_array_info)) != sizeof(old_array_info))
     {
     return -1;

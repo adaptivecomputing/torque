@@ -170,8 +170,8 @@ extern int PNodeStateToString(int, char *, int);
 
 /* private data */
 
-static char *all_quename = "_All_";
-static char *all_nodes_str = "_All_";
+static const char *all_quename = "_All_";
+static const char *all_nodes_str = "_All_";
 
 /*
  * check_que_attr - check if attributes in request are consistent with
@@ -274,13 +274,13 @@ int set_queue_type(
   {
   int   i;
   char *pca;
-  char *pcv;
+  const char *pcv;
   int   spectype;
 
   static struct
     {
     int   type;
-    char *name;
+    const char *name;
     } qt[2] =
 
     {
@@ -316,7 +316,7 @@ int set_queue_type(
       {
       ((pbs_queue *)pque)->qu_qs.qu_type = spectype;
       free(pattr->at_val.at_str);
-      pattr->at_val.at_str = calloc(1, strlen(qt[i].name) + 1);
+      pattr->at_val.at_str = (char *)calloc(1, strlen(qt[i].name) + 1);
 
       if (pattr->at_val.at_str == (char *)0)
         return (PBSE_SYSTEM);
@@ -345,7 +345,7 @@ static void mgr_log_attr(
   char *objname)          /* object being modified */
 
   {
-  char *pstr;
+  const char *pstr;
   char  log_buf[LOCAL_LOG_BUF_SIZE];
 
   while (plist)
@@ -1071,7 +1071,7 @@ void mgr_queue_delete(
   if ((rc = que_purge(pque)) != PBSE_NONE)
     {
     /* FAILURE */
-    unlock_queue(pque, __func__, (char *)"", LOGLEVEL);
+    unlock_queue(pque, __func__, "", LOGLEVEL);
     req_reject(rc, 0, preq, NULL, NULL);
     return;
     }
@@ -1222,7 +1222,7 @@ void mgr_server_set(
     int       bhstrlen;
 
     bhstrlen = PBS_MAXHOSTNAME + 17;
-    bad_host = calloc(sizeof(char), (bhstrlen + 1));
+    bad_host = (char *)calloc(sizeof(char), (bhstrlen + 1));
 
     if (bad_host == NULL)
       {
@@ -1415,7 +1415,7 @@ void mgr_queue_set(
   const char  *badattr;
   svrattrl  *plist;
   pbs_queue *pque;
-  char      *qname;
+  const char      *qname;
   int        rc;
   int        iter = -1;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
@@ -1534,7 +1534,7 @@ void mgr_queue_unset(
   int    bad_attr = 0;
   svrattrl  *plist;
   pbs_queue *pque;
-  char      *qname;
+  const char      *qname;
   int    rc;
   int    iter = -1;
   char   log_buf[LOCAL_LOG_BUF_SIZE];
@@ -1628,7 +1628,7 @@ void mgr_node_set(
   int               len;
   int               problem_cnt = 0;
 
-  char             *nodename = NULL;
+  const char       *nodename = NULL;
   char             *problem_names;
   char              log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -1657,7 +1657,7 @@ void mgr_node_set(
         {
         propnodes = 1;
         nodename = preq->rq_ind.rq_manager.rq_objname;
-        props.name = nodename + 1;
+        props.name = (char *)nodename + 1;
         props.mark = 1;
         props.next = NULL;
         }
@@ -1834,7 +1834,7 @@ void mgr_node_set(
 
       len += strlen(pbse_to_txt(PBSE_GMODERR));
 
-      if ((problem_names = calloc(1, len)))
+      if ((problem_names = (char *)calloc(1, len)))
         {
         strcpy(problem_names, pbse_to_txt(PBSE_GMODERR));
 
@@ -1898,7 +1898,7 @@ static void mgr_node_delete(
   int             iter;
 
   struct pbsnode *pnode;
-  char           *nodename = NULL;
+  const char    *nodename = NULL;
 
 
   svrattrl       *plist;

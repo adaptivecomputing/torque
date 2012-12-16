@@ -105,7 +105,7 @@ int record_job_as_exiting(
   job *pjob)
 
   {
-  job_exiting_retry_info *jeri = calloc(1, sizeof(job_exiting_retry_info));
+  job_exiting_retry_info *jeri = (job_exiting_retry_info*)calloc(1, sizeof(job_exiting_retry_info));
 
   if (jeri == NULL)
     return(ENOMEM);
@@ -124,7 +124,7 @@ int remove_job_from_exiting_list(
   job *pjob)
 
   {
-  job_exiting_retry_info *jeri = get_remove_from_hash_map(exiting_jobs_info, pjob->ji_qs.ji_jobid);
+  job_exiting_retry_info *jeri = (job_exiting_retry_info*)get_remove_from_hash_map(exiting_jobs_info, pjob->ji_qs.ji_jobid);
 
   if (jeri != NULL)
     {
@@ -209,11 +209,11 @@ int check_exiting_jobs()
         if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
           {
           remove_entry_from_exiting_list(jeri);
-          unlock_ji_mutex(pjob, __func__, (char *)NULL, LOGLEVEL);
+          unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
           }
         else
           {
-          unlock_ji_mutex(pjob, __func__, (char *)NULL, LOGLEVEL);
+          unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
           retry_job_exit(jeri);
           }
         }

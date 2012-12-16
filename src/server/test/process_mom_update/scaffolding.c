@@ -70,7 +70,7 @@ int unlock_ji_mutex(
 
   job        *pjob,
   const char *id,
-  char       *msg,
+  const char *msg,
   int        logging)
   
   {
@@ -135,7 +135,7 @@ void update_node_state(
 
 struct pbsnode *find_nodebyname(
 
-  char *nodename) /* I */
+  const char *nodename) /* I */
 
   {
   return(NULL);
@@ -199,8 +199,8 @@ int decode_arst(
 
   pbs_attribute *patr,    /* O (modified) */
   const char   *name,    /* I pbs_attribute name (notused) */
-  char          *rescn,   /* I resource name (notused) */
-  char          *val,     /* I pbs_attribute value */
+  const char *rescn,   /* I resource name (notused) */
+  const char    *val,     /* I pbs_attribute value */
   int            perm) /* only used for resources */
 
   {

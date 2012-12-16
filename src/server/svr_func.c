@@ -113,9 +113,9 @@ extern int              listener_command;
 /*
  * the following array of strings is used in decoding/encoding the server state
  */
-static char *svr_idle   = "Idle";
-static char *svr_sched  = "Scheduling";
-static char *svr_state_names[] =
+static const char *svr_idle   = "Idle";
+static const char *svr_sched  = "Scheduling";
+static const char *svr_state_names[] =
   {
   "",   /* SV_STATE_DOWN */
   "",   /* SV_STATE_INIT */
@@ -146,7 +146,7 @@ int encode_svrstate(
 
   {
   svrattrl *pal;
-  char *psname;
+  const char *psname;
 
   if (pattr == NULL)
     {
@@ -244,7 +244,7 @@ void set_resc_assigned(
         pque->qu_qs.qu_name);
       log_err(-1, __func__, log_buf);
     
-      unlock_queue(pque, __func__, (char *)NULL, LOGLEVEL);
+      unlock_queue(pque, __func__, NULL, LOGLEVEL);
       return;
       }
   
@@ -252,7 +252,7 @@ void set_resc_assigned(
       {
       if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_RescAssn)
         {
-        unlock_queue(pque, __func__, (char *)NULL, LOGLEVEL);
+        unlock_queue(pque, __func__, NULL, LOGLEVEL);
         return;  /* already added in */
         }
       
@@ -262,7 +262,7 @@ void set_resc_assigned(
       {
       if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_RescAssn) == 0)
         {
-        unlock_queue(pque, __func__, (char *)NULL, LOGLEVEL);
+        unlock_queue(pque, __func__, NULL, LOGLEVEL);
         return;  /* not currently included */
         }
       
@@ -270,7 +270,7 @@ void set_resc_assigned(
       }
     else
       {
-      unlock_queue(pque, __func__, (char *)NULL, LOGLEVEL);
+      unlock_queue(pque, __func__, NULL, LOGLEVEL);
       return;   /* invalid op */
       }
     
@@ -298,7 +298,7 @@ void set_resc_assigned(
 
           if (pr == NULL)
             {
-            unlock_queue(pque, __func__, (char *)"sysru", LOGLEVEL);
+            unlock_queue(pque, __func__, "sysru", LOGLEVEL);
             return;
             }
           }
@@ -315,7 +315,7 @@ void set_resc_assigned(
 
           if (pr == NULL)
             {
-            unlock_queue(pque, __func__, (char *)"queru", LOGLEVEL);
+            unlock_queue(pque, __func__, "queru", LOGLEVEL);
             return;
             }
           }
@@ -326,7 +326,7 @@ void set_resc_assigned(
       jobrsc = (resource *)GET_NEXT(jobrsc->rs_link);
       }  /* END while (jobrsc != NULL) */
 
-    unlock_queue(pque, __func__, (char *)"success", LOGLEVEL);
+    unlock_queue(pque, __func__, "success", LOGLEVEL);
     }
   else if (pjob == NULL)
     {
@@ -422,7 +422,7 @@ int ck_checkpoint(
  * and queue ) attributes.  It just returns 0.
  */
 
-int decode_null(pbs_attribute *patr, const char *name, char *rn, char *val, int perm)
+int decode_null(pbs_attribute *patr, const char *name, const char *rn, const char *val, int perm)
   {
   return 0;
   }

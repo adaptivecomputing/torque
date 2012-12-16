@@ -460,7 +460,7 @@ static void sel_step2(
         strcpy(job_id, pjob->ji_qs.ji_jobid);
         job_substate = pjob->ji_qs.ji_substate;
         job_momstattime = pjob->ji_momstat;
-        unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
         if ((job_substate == JOB_SUBSTATE_RUNNING) &&
             ((time_now - job_momstattime) > JobStatRate))
@@ -482,10 +482,10 @@ static void sel_step2(
           }
         }
       else
-        unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
       }
     else
-      unlock_ji_mutex(pjob, __func__, (char *)"3", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
     }
 
   sel_step3(cntl);
@@ -603,13 +603,13 @@ static void sel_step3(
           {
           /* Select Jobs */
 
-          pselect = calloc(1, sizeof(struct brp_select));
+          pselect = (struct brp_select *)calloc(1, sizeof(struct brp_select));
 
           if (pselect == NULL)
             {
             rc = PBSE_SYSTEM;
 
-            unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+            unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
             
             break;
             }
@@ -630,7 +630,7 @@ static void sel_step3(
 
           if (rc && (rc != PBSE_PERM))
             {
-            unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
+            unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
             
             break;
             }
@@ -640,7 +640,7 @@ static void sel_step3(
 
 nextjob:
     
-    unlock_ji_mutex(pjob, __func__, (char *)"3", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
 
     if (summarize_arrays)
       {
@@ -973,7 +973,7 @@ static int build_selist(
           if (*pque == (pbs_queue *)0)
             return (PBSE_UNKQUE);
           
-          unlock_queue(*pque, __func__, (char *)NULL, LOGLEVEL);
+          unlock_queue(*pque, __func__, NULL, LOGLEVEL);
           }
         }
       }

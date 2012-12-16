@@ -176,7 +176,7 @@ void bad_node_warning(
    
     /* only release the mutex if we obtained it in this function */
     if (node_possessed == NULL)
-      unlock_node(pnode, __func__, (char *)"attained in function", LOGLEVEL);
+      unlock_node(pnode, __func__, "attained in function", LOGLEVEL);
     }
 
   } /* END bad_node_warning() */
@@ -248,7 +248,7 @@ int addr_ok(
     }
 
   if (release_mutex == TRUE)
-    unlock_node(pnode, __func__, (char *)"release_mutex = TRUE", LOGLEVEL);
+    unlock_node(pnode, __func__, "release_mutex = TRUE", LOGLEVEL);
 
   return(status);
   }  /* END addr_ok() */
@@ -291,7 +291,7 @@ struct pbsnode *find_node_in_allnodes(
 
 struct pbsnode *find_nodebyname(
 
-  char *nodename) /* I */
+  const char *nodename) /* I */
 
   {
   char           *pslash;
@@ -305,12 +305,12 @@ struct pbsnode *find_nodebyname(
   int             numa_index;
   long            cray_enabled = FALSE;
 
-  if ((pslash = strchr(nodename, (int)'/')) != NULL)
+  if ((pslash = strchr((char *)nodename, (int)'/')) != NULL)
     *pslash = '\0';
 
   pthread_mutex_lock(allnodes.allnodes_mutex);
 
-  i = get_value_hash(allnodes.ht, nodename);
+  i = get_value_hash(allnodes.ht, (void *)nodename);
 
   if (i >= 0)
     pnode = (struct pbsnode *)allnodes.ra->slots[i].item;
@@ -326,7 +326,7 @@ struct pbsnode *find_nodebyname(
         {
         lock_node(alps_reporter, __func__, NULL, 0);
         
-        if ((i = get_value_hash(alps_reporter->alps_subnodes.ht, nodename)) >= 0)
+        if ((i = get_value_hash(alps_reporter->alps_subnodes.ht, (void *)nodename)) >= 0)
           {
           if ((pnode = (struct pbsnode *)alps_reporter->alps_subnodes.ra->slots[i].item) != NULL)
             {
@@ -340,7 +340,7 @@ struct pbsnode *find_nodebyname(
     else
       {
       /* check if it was a numa node */
-      tmp = nodename;
+      tmp = (char *)nodename;
       while ((tmp = strchr(tmp, '-')) != NULL)
         {
         dash = tmp;
@@ -352,7 +352,7 @@ struct pbsnode *find_nodebyname(
         *dash = '\0';
         numa_index = atoi(dash + 1);
         
-        if ((i = get_value_hash(allnodes.ht, nodename)) >= 0)
+        if ((i = get_value_hash(allnodes.ht, (void *)nodename)) >= 0)
           {
           if ((pnode = (struct pbsnode *)allnodes.ra->slots[i].item) != NULL)
             {
@@ -513,7 +513,7 @@ int login_encode_jobs(
       if (pjob != NULL)
         {
         login_id = pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str;
-        unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         }
 
       if ((login_id == NULL) ||
@@ -531,11 +531,11 @@ int login_encode_jobs(
 
   if ((pal = attrlist_create((char *)ATTR_NODE_jobs, (char *)NULL, strlen(job_str->str) + 1)) == NULL)
     {
-    log_err(ENOMEM, __func__, (char *)"");
+    log_err(ENOMEM, __func__, "");
     return(ENOMEM);
     }
 
-  strcpy(pal->al_value, job_str->str);
+  strcpy((char *)pal->al_value, job_str->str);
   pal->al_flags = ATR_VFLAG_SET;
 
   free_dynamic_string(job_str);
@@ -788,7 +788,7 @@ int initialize_pbsnode(
   pnode->nd_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   if (pnode->nd_mutex == NULL)
     {
-    log_err(ENOMEM, __func__, (char *)"Could not allocate memory for the node's mutex");
+    log_err(ENOMEM, __func__, "Could not allocate memory for the node's mutex");
     
     return(ENOMEM);
     }
@@ -1235,13 +1235,13 @@ int update_nodes_file(
       fclose(nin);
     
       if (held != np)
-        unlock_node(np, __func__, (char *)"error", LOGLEVEL);
+        unlock_node(np, __func__, "error", LOGLEVEL);
 
       return(-1);
       }
     
     if (held != np)
-      unlock_node(np, __func__, (char *)"loop", LOGLEVEL);
+      unlock_node(np, __func__, "loop", LOGLEVEL);
     } /* for each node */
 
   fclose(nin);
@@ -1403,7 +1403,7 @@ int create_a_gpusubnode(
   pnode->nd_gpusn[pnode->nd_ngpus].inuse = FALSE;
   pnode->nd_gpusn[pnode->nd_ngpus].mode = gpu_normal;
   pnode->nd_gpusn[pnode->nd_ngpus].state = gpu_unallocated;
-  pnode->nd_gpusn[pnode->nd_ngpus].flag = 0;
+  pnode->nd_gpusn[pnode->nd_ngpus].flag = okay;
   pnode->nd_gpusn[pnode->nd_ngpus].index = pnode->nd_ngpus;
   pnode->nd_gpusn[pnode->nd_ngpus].gpuid = NULL;
 
@@ -1587,7 +1587,7 @@ int setup_node_boards(
     if (allocd_name == NULL)
       {
       /* no memory error */
-      log_err(PBSE_SYSTEM, __func__, (char *)"Cannot allocate memory for node name\n");
+      log_err(PBSE_SYSTEM, __func__, "Cannot allocate memory for node name\n");
 
       return(PBSE_SYSTEM);
       }
@@ -1742,7 +1742,7 @@ int create_pbs_node(
 
     if (host_info == NULL)
       {
-      log_err(-1, __func__, (char *)"create_pbs_node calloc failed");
+      log_err(-1, __func__, "create_pbs_node calloc failed");
       return(PBSE_MEM_MALLOC);
       }
 
@@ -1757,14 +1757,14 @@ int create_pbs_node(
       pattrl = attrlist_create(pal->al_atopl.name, 0, strlen(pal->al_atopl.value) + 1);
       if (pattrl == NULL)
         {
-        log_err(-1, __func__, (char *)"cannot create node attribute");
+        log_err(-1, __func__, "cannot create node attribute");
         free(host_info);
         if (pul != NULL)
           free(pul);
         return(PBSE_MEM_MALLOC);
         }
 
-      strcpy(pattrl->al_value, pal->al_atopl.value);
+      strcpy((char *)pattrl->al_value, pal->al_atopl.value);
       pattrl->al_flags = SET;
 
       append_link(&host_info->atrlist, &pattrl->al_link, pattrl);
@@ -1783,7 +1783,7 @@ int create_pbs_node(
         free(host_info);
         if (pul != NULL)
           free(pul);
-        log_err(-1, __func__, (char *)"create_pbs_node calloc failed");
+        log_err(-1, __func__, "create_pbs_node calloc failed");
         return(PBSE_MEM_MALLOC);
         }
 
@@ -2116,7 +2116,7 @@ int setup_nodes(void)
           goto errtoken2;
           }
 
-        strcpy(pal->al_value, val);
+        strcpy((char *)pal->al_value, val);
 
         pal->al_flags = SET;
 
@@ -2162,7 +2162,7 @@ int setup_nodes(void)
         return(-1);
         }
       
-      strcpy(pal->al_value, propstr);
+      strcpy((char *)pal->al_value, propstr);
       
       pal->al_flags = SET;
       
@@ -2330,12 +2330,12 @@ int setup_nodes(void)
           /* exclusive bits are calculated later in set_old_nodes() */
           np->nd_state &= ~INUSE_JOB;
 
-          unlock_node(np, __func__, (char *)"match", LOGLEVEL);
+          unlock_node(np, __func__, "match", LOGLEVEL);
 
           break;
           }
 
-        unlock_node(np, __func__, (char *)"no match", LOGLEVEL);
+        unlock_node(np, __func__, "no match", LOGLEVEL);
         }
       }
 
@@ -2363,7 +2363,7 @@ int setup_nodes(void)
           log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
           }
         
-        unlock_node(np, __func__, (char *)"init - no note", LOGLEVEL);
+        unlock_node(np, __func__, "init - no note", LOGLEVEL);
         }
       }
 
@@ -2995,9 +2995,9 @@ struct pbsnode *get_my_next_node_board(
   iter->numa_index++;
   numa = AVL_find(iter->numa_index, pnode->nd_mom_port, pnode->node_boards);
   
-  unlock_node(pnode, __func__, (char *)"pnode", LOGLEVEL);
+  unlock_node(pnode, __func__, "pnode", LOGLEVEL);
   if (numa != NULL)
-    lock_node(numa, __func__, (char *)"numa", LOGLEVEL);
+    lock_node(numa, __func__, "numa", LOGLEVEL);
 
   return(numa);
   } /* END get_my_next_node_board() */
@@ -3013,7 +3013,7 @@ struct pbsnode *get_my_next_alps_node(
   {
   struct pbsnode *alps_node = next_host(&(pnode->alps_subnodes), &(iter->alps_index), NULL);
 
-  unlock_node(pnode, __func__, (char *)NULL, 0);
+  unlock_node(pnode, __func__, NULL, 0);
 
   return(alps_node);
   } /* END get_my_next_alps_node() */
@@ -3184,7 +3184,7 @@ int insert_node(
   if ((rc = insert_thing(an->ra,pnode)) == -1)
     {
     rc = ENOMEM;
-    log_err(rc, __func__, (char *)"No memory to resize the array...SYSTEM FAILURE");
+    log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE");
     }
   else
     {

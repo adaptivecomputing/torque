@@ -77,9 +77,6 @@
 * without reference to its choice of law rules.
 */
 
-
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -91,6 +88,7 @@
 #include "resizable_array.h"
 #include "dynamic_string.h"
 #include "utils.h"
+#include "../lib/Libifl/lib_ifl.h"
 
 
 extern char mom_alias[];
@@ -621,7 +619,7 @@ int confirm_reservation(
   ptr = output;
   memset(output, 0, sizeof(output));
 
-  while ((bytes_read = read(fd, ptr, sizeof(output) - total_bytes_read - 1)) > 0)
+  while ((bytes_read = read_ac_socket(fd, ptr, sizeof(output) - total_bytes_read - 1)) > 0)
     {
     total_bytes_read += bytes_read;
     ptr += bytes_read;

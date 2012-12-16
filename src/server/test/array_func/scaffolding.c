@@ -14,7 +14,7 @@
 
 
 char *path_arrays;
-char *pbs_o_host = "PBS_O_HOST";
+const char *pbs_o_host = "PBS_O_HOST";
 struct server server;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 int array_259_upgrade = 0;
@@ -247,7 +247,7 @@ int svr_job_purge(job *pjob)
   return(0);
   }
 
-int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }
@@ -327,3 +327,12 @@ void *next_from_hash_map(
   return(NULL);
   }
 
+ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
+  {
+  return(0);
+  }
+
+ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
+  {
+  return(0);
+  }

@@ -244,7 +244,7 @@ enum MSocketAttrEnum
   };
 
 
-extern int MXMLCreateE(mxml_t **, char *);
+extern int MXMLCreateE(mxml_t **, const char *);
 extern int MXMLAddE(mxml_t *, mxml_t *);
 extern int MXMLSetVal(mxml_t *, void *, enum MDataFormatEnum);
 extern int MXMLDestroyE(mxml_t **);

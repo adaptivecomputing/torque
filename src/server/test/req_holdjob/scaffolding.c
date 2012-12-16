@@ -11,10 +11,10 @@
 
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 attribute_def job_attr_def[10];
-char *msg_jobholdrel = "Holds %s released at request of %s@%s";
-char *msg_mombadhold = "MOM rejected hold request: %d";
-char *msg_postmomnojob = "Job not found after hold reply from MOM";
-char *msg_jobholdset = "Holds %s set at request of %s@%s";
+const char *msg_jobholdrel = "Holds %s released at request of %s@%s";
+const char *msg_mombadhold = "MOM rejected hold request: %d";
+const char *msg_postmomnojob = "Job not found after hold reply from MOM";
+const char *msg_jobholdset = "Holds %s set at request of %s@%s";
 
 void account_record(int acctype, job *pjob, char *text)
   {
@@ -70,7 +70,7 @@ void *get_next(list_link pl, char *file, int line)
   exit(1);
   }
 
-char * csv_find_string(char *csv_str, char *search_str)
+char * csv_find_string(const char *csv_str, const char *search_str)
   {
   fprintf(stderr, "The call to csv_find_string to be mocked!!\n");
   exit(1);
@@ -133,7 +133,7 @@ int get_batch_request_id(
   return(0);
   }
 
-int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }

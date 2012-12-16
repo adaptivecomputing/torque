@@ -24,7 +24,9 @@ int depend_on_term(char *job_id);
 
 void depend_clrrdy(job *pjob);
 
-int set_depend(struct pbs_attribute *attr, struct pbs_attribute *new, enum batch_op op);
+int encode_depend(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm);
+
+int set_depend(struct pbs_attribute *attr, struct pbs_attribute *newAttr, enum batch_op op);
 
 int comp_depend(struct pbs_attribute *attr, struct pbs_attribute *with);
 

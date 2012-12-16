@@ -12,6 +12,8 @@
 #include "attribute.h"
 #include "server_limits.h"
 #include "server.h"
+#include "../lib/Libifl/lib_ifl.h"
+
 
 int no_attributes = 0;
 
@@ -51,7 +53,7 @@ int read_attr(
   svrattrl *pal;
   svrattrl  tempal;
 
-  i = read(fd, (char *) & tempal, sizeof(tempal));
+  i = read_ac_socket(fd, (char *) & tempal, sizeof(tempal));
 
   if (i != sizeof(tempal))
     {
@@ -84,7 +86,7 @@ int read_attr(
 
   amt = pal->al_tsize - sizeof(svrattrl);
 
-  i = read(fd, (char *)pal + sizeof(svrattrl) - 1, amt);
+  i = read_ac_socket(fd, (char *)pal + sizeof(svrattrl) - 1, amt);
 
   if (i != amt)
     {
@@ -149,7 +151,7 @@ void dumpdb(char *file)
     exit(1);
     }
 
-  amt = read(fp, &xserver.sv_qs, sizeof(xserver.sv_qs));
+  amt = read_ac_socket(fp, &xserver.sv_qs, sizeof(xserver.sv_qs));
 
   if (amt != sizeof(xserver.sv_qs))
     {

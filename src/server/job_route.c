@@ -531,37 +531,36 @@ void *queue_route(
     return(NULL);
     }
 
+  /* Before we attempt to service this queue, make sure we can find it. */
+  pque = find_queuebyname(queue_name);
+  if (pque == NULL)
+    {
+    sprintf(log_buf, "Could not find queue %s", queue_name);
+    log_err(-1, __func__, log_buf);
+    free(queue_name);
+    return(NULL);
+    }
+  
   while (1)
     {
     if (LOGLEVEL >= 7)
       {
-      snprintf(log_buf, sizeof(log_buf), "queue name: %s", queue_name);
+      snprintf(log_buf, sizeof(log_buf), "routing any ready jobs in queue: %s", queue_name);
       log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_QUEUE, __func__, log_buf);
       }
-    
-    pque = find_queuebyname(queue_name);
-    if (pque == NULL)
-      {
-      sprintf(log_buf, "Could not find queue %s", queue_name);
-      log_err(-1, __func__, log_buf);
-      free(queue_name);
-      pthread_mutex_unlock(reroute_job_mutex);
-      return(NULL);
-      }
-
     pthread_mutex_lock(reroute_job_mutex);
     while ((pjob = next_job(pque->qu_jobs,&iter)) != NULL)
       {
-      /* the second condition says we only want to try if routing
-       * has been tried once - this is to let req_commit have the 
-       * first crack at routing always */
-      unlock_queue(pque, __func__, (char *)NULL, 0);
-      if ((pjob->ji_qs.ji_un.ji_routet.ji_rteretry <= time_now - ROUTE_RETRY_TIME) &&
-          (pjob->ji_qs.ji_un.ji_routet.ji_rteretry != 0))
+      /* We only want to try if routing has been tried at least once - this is to let
+       * req_commit have the first crack at routing always. */
+      int has_been_tried_once = (pjob->ji_qs.ji_un.ji_routet.ji_rteretry != 0) ? 1 : 0;
+      int retry_time_has_passed = (pjob->ji_qs.ji_un.ji_routet.ji_rteretry <= time_now - ROUTE_RETRY_TIME) ? 1 : 0;
+      unlock_queue(pque, __func__, NULL, 0);
+      if (retry_time_has_passed && has_been_tried_once)
         {
         reroute_job(pjob, pque);
         }
-      unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       }
 
     unlock_queue(pque, __func__, (char *)NULL, 0);

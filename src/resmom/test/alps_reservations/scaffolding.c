@@ -64,7 +64,7 @@ int resize_if_needed(
     /* need to resize */
     difference = new_size - ds->size;
 
-    if ((tmp = realloc(ds->str, new_size)) == NULL)
+    if ((tmp = (char *)realloc(ds->str, new_size)) == NULL)
       return(ENOMEM);
 
     ds->str = tmp;
@@ -293,7 +293,7 @@ dynamic_string *get_dynamic_string(
   const char *str)          /* I (optional) */
 
   {
-  dynamic_string *ds = calloc(1, sizeof(dynamic_string));
+  dynamic_string *ds = (dynamic_string *)calloc(1, sizeof(dynamic_string));
 
   if (ds == NULL)
     return(ds);
@@ -303,7 +303,7 @@ dynamic_string *get_dynamic_string(
   else
     ds->size = DS_INITIAL_SIZE;
     
-  ds->str = calloc(1, ds->size);
+  ds->str = (char *)calloc(1, ds->size);
 
   if (ds->str == NULL)
     {
@@ -514,7 +514,7 @@ int check_and_resize(
     /* double the size if we're out of space */
     size = (ra->max * 2) * sizeof(slot);
 
-    if ((tmp = realloc(ra->slots,size)) == NULL)
+    if ((tmp = (slot *)realloc(ra->slots,size)) == NULL)
       {
       return(ENOMEM);
       }
@@ -888,7 +888,7 @@ resizable_array *initialize_resizable_array(
     int               size)
 
   {
-  resizable_array *ra = calloc(1, sizeof(resizable_array));
+  resizable_array *ra = (resizable_array *)calloc(1, sizeof(resizable_array));
   size_t           amount = sizeof(slot) * size;
 
   ra->max       = size;
@@ -896,7 +896,7 @@ resizable_array *initialize_resizable_array(
   ra->next_slot = 1;
   ra->last      = 0;
 
-  ra->slots = calloc(1, amount);
+  ra->slots = (slot *)calloc(1, amount);
 
   return(ra);
   } /* END initialize_resizable_array() */
@@ -1029,3 +1029,13 @@ void *get_thing_from_index(
   } /* END get_thing_from_index() */
 
 
+
+ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
+  {
+  return(0);
+  }
+
+ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
+  {
+  return(0);
+  }

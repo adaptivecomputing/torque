@@ -77,6 +77,7 @@
 * without reference to its choice of law rules.
 */
 
+#include "alps_constants.h"
 
 
 const int   apbasil_fail_transient = -10;
@@ -112,7 +113,7 @@ const char *text_name              = "text";
 const char *memory_mb              = "memory_mb";
 const char *family                 = "family";
 const char *cproc_eq               = "CPROC=";
-const int   cproc_eq_len           = 6;
+const int   ac_cproc_eq_len           = 6;
 const char *CRAY_GPU_STATUS_START  = "<cray_gpu_status>";
 const char *CRAY_GPU_STATUS_END    = "</cray_gpu_status>";
 const char *alps_reporter_feature  = "alps_reporter";

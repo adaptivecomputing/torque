@@ -8,7 +8,7 @@
 #include "attribute.h" /* pbs_attribute */
 #include "pbs_job.h" /* job */
 
-char *msg_permlog = "Unauthorized Request, request type: %d, Object: %s, Name: %s, request from: %s@%s";
+const char *msg_permlog = "Unauthorized Request, request type: %d, Object: %s, Name: %s, request from: %s@%s";
 int LOGLEVEL=0;
 
 int svr_authorize_req(struct batch_request *preq, char *owner, char *submit_host)
@@ -53,7 +53,7 @@ int chk_hold_priv(long val, int perm)
   exit(1);
   }
 
-char * csv_find_string(char *csv_str, char *search_str)
+char * csv_find_string(const char *csv_str, const char *search_str)
   {
   fprintf(stderr, "The call to csv_find_string to be mocked!!\n");
   exit(1);
@@ -82,7 +82,7 @@ job *svr_find_job(char *jobid, int get_subjob)
   return(NULL);
   }
 
-int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }

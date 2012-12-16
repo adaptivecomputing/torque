@@ -139,7 +139,7 @@ void add_unknown(group_info *ginfo)
  * returns the found group_info or NULL
  *
  */
-group_info *find_group_info(char *name, group_info *root)
+group_info *find_group_info(const char *name, group_info *root)
   {
   group_info *ginfo;  /* the found group */
 
@@ -197,7 +197,7 @@ group_info *new_group_info()
   {
   group_info *new_group_info;  /* the new group */
 
-  if ((new_group_info = malloc(sizeof(group_info))) == NULL)
+  if ((new_group_info = (group_info *)malloc(sizeof(group_info))) == NULL)
     {
     perror("Error allocating memory");
     return NULL ;
@@ -358,7 +358,7 @@ preload_tree(void)
   if ((unknown = new_group_info()) == NULL)
     return 0;
 
-  if ((conf.group_root -> name = malloc(5 * sizeof(char))) == NULL)
+  if ((conf.group_root -> name = (char *)malloc(5 * sizeof(char))) == NULL)
     {
     perror("Memory allocation error");
     return 0;

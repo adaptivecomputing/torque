@@ -221,7 +221,7 @@ void DIS_tcp_setup(int fd)
   exit(1);
   }
 
-int find_attr(struct attribute_def *attr_def, char *name, int limit)
+int find_attr(struct attribute_def *attr_def, const char *name, int limit)
   {
   fprintf(stderr, "The call to find_attr needs to be mocked!!\n");
   exit(1);
@@ -347,7 +347,7 @@ int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size)
   exit(1);
   }
 
-void append_link(tlist_head *head, list_link *new, void *pobj)
+void append_link(tlist_head *head, list_link *newLink, void *pobj)
   {
   fprintf(stderr, "The call to append_link needs to be mocked!!\n");
   exit(1);
@@ -467,6 +467,16 @@ int create_alps_reservation(
   long long   pagg_id_value,
   char      **reservation_id)
 
+  {
+  return(0);
+  }
+
+ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
+  {
+  return(0);
+  }
+
+ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   {
   return(0);
   }

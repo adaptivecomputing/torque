@@ -196,7 +196,7 @@ void post_modify_req(
           log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
           }
         
-        unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         }
       }
 
@@ -234,7 +234,7 @@ void mom_cleanup_checkpoint_hold(
 
   if (jobid == NULL)
     {
-    log_err(ENOMEM, __func__, (char *)"Cannot allocate memory");
+    log_err(ENOMEM, __func__, "Cannot allocate memory");
     return;
     }
 
@@ -273,7 +273,7 @@ void mom_cleanup_checkpoint_hold(
     {
     if ((preq = alloc_br(PBS_BATCH_DeleteJob)) == NULL)
       {
-      log_err(-1, __func__, (char *)"unable to allocate DeleteJob request - big trouble!");
+      log_err(-1, __func__, "unable to allocate DeleteJob request - big trouble!");
       }
     else
       {
@@ -290,7 +290,7 @@ void mom_cleanup_checkpoint_hold(
           
           log_err(rc, __func__, log_buf);
           
-          unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+          unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
           }
 
         free_br(preq);
@@ -317,7 +317,7 @@ void mom_cleanup_checkpoint_hold(
     }
 
   if (pjob != NULL)
-    unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
   } /* END mom_cleanup_checkpoint_hold() */
 
 
@@ -619,7 +619,7 @@ int modify_job(
         if (pjob != NULL)
           {
           strcpy(jobid, pjob->ji_qs.ji_jobid);
-          unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
+          unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
           }
 
         post_modify_req(dup_req);
@@ -668,7 +668,7 @@ int modify_job(
       }
     else
       {
-      log_err(-1, __func__, (char *)"Failed to get batch request");
+      log_err(-1, __func__, "Failed to get batch request");
       }
     }
 
@@ -779,14 +779,14 @@ int copy_batchrequest(
           newpal->al_nameln = pal->al_nameln;
           newpal->al_flags  = pal->al_flags;
           newpal->al_atopl.name = (char *)newpal + sizeof(svrattrl);
-          strcpy(newpal->al_atopl.name, pal->al_atopl.name);
+          strcpy((char *)newpal->al_atopl.name, pal->al_atopl.name);
           newpal->al_nameln = pal->al_nameln;
           newpal->al_atopl.resource = newpal->al_atopl.name + newpal->al_nameln;
           if (pal->al_atopl.resource != NULL)
-            strcpy(newpal->al_atopl.resource, pal->al_atopl.resource);
+            strcpy((char *)newpal->al_atopl.resource, pal->al_atopl.resource);
           newpal->al_rescln = pal->al_rescln;
           newpal->al_atopl.value = newpal->al_atopl.name + newpal->al_nameln + newpal->al_rescln;
-          strcpy(newpal->al_atopl.value, pal->al_atopl.value);
+          strcpy((char *)newpal->al_atopl.value, pal->al_atopl.value);
           newpal->al_valln = pal->al_valln;
           newpal->al_atopl.op = pal->al_atopl.op;
           
@@ -800,7 +800,7 @@ int copy_batchrequest(
 
         strcpy(request->rq_ind.rq_signal.rq_jid, preq->rq_ind.rq_signal.rq_jid);
         strcpy(request->rq_ind.rq_signal.rq_signame, preq->rq_ind.rq_signal.rq_signame);
-        request->rq_extra = strdup(preq->rq_extra);
+        request->rq_extra = strdup((char *)preq->rq_extra);
 
         break;
 
@@ -887,7 +887,7 @@ int modify_whole_array(
         rc = copy_batchrequest(&array_req, preq, 0, i);
         if (rc != 0)
           {
-          unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+          unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
           return(rc);
           }
 
@@ -909,7 +909,7 @@ int modify_whole_array(
               "Unable to relay information to mom for job '%s'\n",
               pjob->ji_qs.ji_jobid);
             log_err(rc, __func__, log_buf);
-            unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
+            unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
             }
 
           return(rc); /* unable to get to MOM */
@@ -918,7 +918,7 @@ int modify_whole_array(
           {
           if (pjob != NULL)
             {
-            unlock_ji_mutex(pjob, __func__, (char *)"3", LOGLEVEL);
+            unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
             pjob = NULL;
             }
 
@@ -927,7 +927,7 @@ int modify_whole_array(
         }
 
       if (pjob != NULL)
-        unlock_ji_mutex(pjob, __func__, (char *)"3", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
       }
     } /* END foreach job in array */
 
@@ -1015,7 +1015,7 @@ void *modify_array_work(
     if ((rc != 0) && 
        (rc != PBSE_RELAYED_TO_MOM))
       {
-      unlock_ai_mutex(pa, __func__, (char *)"1", LOGLEVEL);
+      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
       req_reject(PBSE_IVALREQ,0,preq,NULL,"Error reading array range");
       return(NULL);
       }
@@ -1025,7 +1025,7 @@ void *modify_array_work(
 
     if (rc == PBSE_RELAYED_TO_MOM)
       {
-      unlock_ai_mutex(pa, __func__, (char *)"2", LOGLEVEL);
+      unlock_ai_mutex(pa, __func__, "2", LOGLEVEL);
       return(NULL);
       }
     }
@@ -1036,7 +1036,7 @@ void *modify_array_work(
     if ((rc != 0) && 
         (rc != PBSE_RELAYED_TO_MOM))
       {
-      unlock_ai_mutex(pa, __func__, (char *)"1", LOGLEVEL);
+      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
       req_reject(PBSE_IVALREQ,0,preq,NULL,"Error altering the array");
       return(NULL);
       }
@@ -1055,8 +1055,8 @@ void *modify_array_work(
          If either of these fail, return the error. This makes it
          so some elements fo the array will be updated but others are
          not. But at least the user will know something went wrong.*/
-      unlock_ai_mutex(pa, __func__, (char *)"1", LOGLEVEL);
-      unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
       req_reject(rc,0,preq,NULL,NULL);
       return(NULL);
@@ -1064,17 +1064,17 @@ void *modify_array_work(
 
     if (rc == PBSE_RELAYED_TO_MOM)
       {
-      unlock_ai_mutex(pa, __func__, (char *)"1", LOGLEVEL);
-      unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
+      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
       
       return(NULL);
       }
 
-    unlock_ji_mutex(pjob, __func__, (char *)"3", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
     }
 
   /* SUCCESS */
-  unlock_ai_mutex(pa, __func__, (char *)"4", LOGLEVEL);
+  unlock_ai_mutex(pa, __func__, "4", LOGLEVEL);
 
   reply_ack(preq);
 
@@ -1092,7 +1092,7 @@ void *modify_array_work(
 
 void *req_modifyarray(
 
-  void *vp) /* I */
+    struct batch_request *vp) /* I */
 
   {
   job_array            *pa;
@@ -1106,7 +1106,7 @@ void *req_modifyarray(
     return(NULL);
     }
 
-  unlock_ai_mutex(pa, __func__, (char *)"4", LOGLEVEL);
+  unlock_ai_mutex(pa, __func__, "4", LOGLEVEL);
 
   /* If async modify, reply now; otherwise reply is handled later */
   if (preq->rq_type == PBS_BATCH_AsyModifyJob)
@@ -1126,7 +1126,7 @@ void *req_modifyarray(
 
 void *modify_job_work(
 
-  void *vp)
+    struct batch_request *vp) /* I */
 
   {
   job           *pjob;
@@ -1167,7 +1167,7 @@ void *modify_job_work(
       }
     else if ( rc == PBSE_RELAYED_TO_MOM )
       {
-      unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
       
       return(NULL);
       }
@@ -1177,7 +1177,7 @@ void *modify_job_work(
   else
     reply_ack(preq);
 
-  unlock_ji_mutex(pjob, __func__, (char *)"3", LOGLEVEL);
+  unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
 
   return(NULL);
   } /* END modify_job_work() */
@@ -1195,7 +1195,7 @@ void *modify_job_work(
 
 void *req_modifyjob(
 
-  void *vp) /* I */
+    struct batch_request *vp) /* I */
 
   {
   job                  *pjob;
@@ -1217,12 +1217,12 @@ void *req_modifyjob(
     reply_ack(preq);
 
     /* SUCCESS */
-    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
     return(NULL);
     }
     
-  unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
+  unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
 
   /* If async modify, reply now; otherwise reply is handled later */
   if (preq->rq_type == PBS_BATCH_AsyModifyJob)
@@ -1231,7 +1231,7 @@ void *req_modifyjob(
 
     preq->rq_noreply = TRUE; /* set for no more replies */
 
-    enqueue_threadpool_request(modify_job_work, preq);
+    enqueue_threadpool_request((void *(*)(void *))modify_job_work, preq);
     }
   else
     modify_job_work(preq);
@@ -1270,7 +1270,7 @@ int modify_job_attr(
     if (pque->qu_qs.qu_type != QTYPE_Execution)
       allow_unkn = JOB_ATR_UNKN;
 
-    unlock_queue(pque, __func__, (char *)NULL, LOGLEVEL);
+    unlock_queue(pque, __func__, NULL, LOGLEVEL);
     }
   else if (pjob->ji_parent_job != NULL)
     {
@@ -1278,7 +1278,7 @@ int modify_job_attr(
     }
   else
     {
-    log_err(PBSE_JOBNOTFOUND, __func__, (char *)"Job lost while acquiring queue 5");
+    log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 5");
     return(PBSE_JOBNOTFOUND);
     }
 
@@ -1330,11 +1330,11 @@ int modify_job_attr(
         if ((pque = get_jobs_queue(&pjob)) != NULL)
           {
           rc = chk_resc_limits( &newattr[JOB_ATR_resource], pque, NULL);
-          unlock_queue(pque, __func__, (char *)NULL, LOGLEVEL);
+          unlock_queue(pque, __func__, NULL, LOGLEVEL);
           }
         else if (pjob == NULL)
           {
-          log_err(PBSE_JOBNOTFOUND, __func__, (char *)"Job lost while acquiring queue 6");
+          log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 6");
           return(PBSE_JOBNOTFOUND);
           }
         else
@@ -1511,7 +1511,7 @@ void post_modify_arrayreq(
   if (preq == NULL)
     return;
 
-  parent_req = preq->rq_extra; /* This is the original batch_request allocated by process_request */
+  parent_req = (struct batch_request *)preq->rq_extra; /* This is the original batch_request allocated by process_request */
 
   preq->rq_conn = preq->rq_orgconn;  /* restore socket to client */
 
@@ -1563,7 +1563,7 @@ void post_modify_arrayreq(
           log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
           }
         
-        unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         }
       }
 

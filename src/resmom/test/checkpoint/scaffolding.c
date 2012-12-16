@@ -97,7 +97,7 @@ int mom_does_checkpoint()
  exit(1);
  }
 
-int decode_str(pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
+int decode_str(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm)
  {
  fprintf(stderr, "The call to decode_str needs to be mocked!!\n");
  exit(1);
@@ -121,7 +121,7 @@ int pbs_alterjob(int c, char *jobid, struct attrl *attrib, char *extend)
  exit(1);
  }
 
-char * csv_find_value(char *csv_str, char *search_str)
+char * csv_find_value(const char *csv_str, char *search_str)
  {
  fprintf(stderr, "The call to csv_find_value needs to be mocked!!\n");
  exit(1);
@@ -187,7 +187,7 @@ int remtree(char *dirname)
  exit(1);
  }
 
-char * csv_find_string(char *csv_str, char *search_str)
+char * csv_find_string(const char *csv_str, char *search_str)
  {
  fprintf(stderr, "The call to csv_find_string needs to be mocked!!\n");
  exit(1);

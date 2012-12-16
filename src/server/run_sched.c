@@ -93,6 +93,7 @@
 #include "sched_cmds.h"
 #include "pbs_error.h"
 #include "../lib/Libdis/lib_dis.h" /* DIS_tcp_setup */
+#include "../lib/Libifl/lib_ifl.h" /* get_port_from_server_name_file */
 #include "pbsd_main.h" /* process_pbs_server_port */
 #include "process_request.h" /*process_request */
 
@@ -280,14 +281,14 @@ int schedule_jobs(void)
       {
       /* Can not init thread attribute structure */
       perror("could not create listener thread for scheduler");
-      log_err(-1, __func__, (char *)"Failed to create listener thread for scheduler");
+      log_err(-1, __func__, "Failed to create listener thread for scheduler");
       }
     else if (pthread_attr_setdetachstate(&t_attr, PTHREAD_CREATE_DETACHED) != 0)
       {
       /* Can not set thread initial state as detached */
       pthread_attr_destroy(&t_attr);
       perror("could not detach listener thread for scheduler");
-      log_err(-1, __func__, (char *)"Failed to detach listener thread for scheduler");
+      log_err(-1, __func__, "Failed to detach listener thread for scheduler");
       }
     else
       {
@@ -298,7 +299,7 @@ int schedule_jobs(void)
    != 0)
         {
         perror("could not start listener thread for scheduler");
-        log_err(-1, __func__, (char *)"Failed to start listener thread for scheduler");
+        log_err(-1, __func__, "Failed to start listener thread for scheduler");
       return(-1);
         }
       }
@@ -543,7 +544,7 @@ static int put_4byte(
 
   un.unl = htonl(val);
 
-  amt = write(sock, (char *)(un.unc + sizeof(unsigned int) - 4), 4);
+  amt = write_ac_socket(sock, (char *)(un.unc + sizeof(unsigned int) - 4), 4);
 
   if (amt != 4)
     {

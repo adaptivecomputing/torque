@@ -13,7 +13,7 @@ int enqueue_threadpool_request(void *(*func)(void *),void *arg)
   exit(1);
   }
 
-void svr_format_job(FILE *fh, mail_info *mi, char *fmt)
+void svr_format_job(FILE *fh, mail_info *mi, const char *fmt)
   {
   fprintf(stderr, "The call to svr_format_job to be mocked!!\n");
   exit(1);

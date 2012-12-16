@@ -106,6 +106,7 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Libnet/lib_net.h" /* global_sock_add */
+#include "../lib/Libifl/lib_ifl.h"
 #include "req_getcred.h" /* req_altauthenuser */
 
 #define SPACE 32 /* ASCII space character */
@@ -268,7 +269,7 @@ int write_munge_temp_file(
     return(-1);
     }
 
-  bytes_written = write(fd, preq->rq_ind.rq_authen.rq_cred, cred_size);
+  bytes_written = write_ac_socket(fd, preq->rq_ind.rq_authen.rq_cred, cred_size);
 
   if ((bytes_written == -1) || 
       (bytes_written != cred_size))
@@ -332,7 +333,7 @@ int pipe_and_read_unmunge(
   
   fd = fileno(munge_pipe);
   
-  while ((bytes_read = read(fd, ptr, MUNGE_SIZE)) > 0)
+  while ((bytes_read = read_ac_socket(fd, ptr, MUNGE_SIZE)) > 0)
     {
     total_bytes_read += bytes_read;
     ptr += bytes_read;

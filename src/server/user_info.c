@@ -95,7 +95,7 @@ void initialize_user_info_holder(
   uih->ui_ra = initialize_resizable_array(INITIAL_USER_INFO_COUNT);
   uih->ui_ht = create_hash(INITIAL_HASH_SIZE);
 
-  uih->ui_mutex = calloc(1, sizeof(pthread_mutex_t));
+  uih->ui_mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(uih->ui_mutex, NULL);
   } /* END initialize_user_info_holder() */
 
@@ -115,7 +115,7 @@ unsigned int get_num_queued(
 
   if ((index = get_value_hash(uih->ui_ht, user_name)) > 0)
     {
-    ui = uih->ui_ra->slots[index].item;
+    ui = (user_info *)uih->ui_ra->slots[index].item;
     num_queued = ui->num_jobs_queued;
     }
 
@@ -189,20 +189,20 @@ int  increment_queued_jobs(
   /* get the user if there is one */
   if ((index = get_value_hash(uih->ui_ht, user_name)) > 0)
     {
-    ui = uih->ui_ra->slots[index].item;
+    ui = (user_info *)uih->ui_ra->slots[index].item;
     ui->num_jobs_queued += num_submitted;
     }
   else
     {
     /* user doesn't exist, create a new one and insert */
-    ui = calloc(1, sizeof(user_info));
+    ui = (user_info *)calloc(1, sizeof(user_info));
     ui->user_name = strdup(user_name);
     ui->num_jobs_queued = num_submitted;
 
     if ((index = insert_thing(uih->ui_ra, ui)) == -1)
       {
       rc = ENOMEM;
-      log_err(rc, __func__, (char *)"Can't resize the user info array");
+      log_err(rc, __func__, "Can't resize the user info array");
       }
     else
       {
@@ -232,7 +232,7 @@ int  decrement_queued_jobs(
 
   if ((index = get_value_hash(uih->ui_ht, user_name)) > 0)
     {
-    ui = uih->ui_ra->slots[index].item;
+    ui = (user_info *)uih->ui_ra->slots[index].item;
     ui->num_jobs_queued -= 1;
     rc = PBSE_NONE;
     }

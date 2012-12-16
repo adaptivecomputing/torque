@@ -20,7 +20,7 @@
 #include "ji_mutex.h"
 
 extern int chk_hold_priv(long val, int perm);
-extern int get_hold(tlist_head *, char **, pbs_attribute *);
+extern int get_hold(tlist_head *, const char **, pbs_attribute *);
 extern int svr_authorize_req(struct batch_request *preq, char *owner,
                                char *submit_host);
 
@@ -80,7 +80,7 @@ void hold_job(
 
 int req_holdarray(
     
-  void *vp) /* I */
+    struct batch_request *vp) /* I */
 
   {
   int                   i;
@@ -113,17 +113,17 @@ int req_holdarray(
 
     log_event(PBSEVENT_SECURITY, PBS_EVENTCLASS_JOB, preq->rq_ind.rq_delete.rq_objname, log_buf);
 
-    unlock_ai_mutex(pa, __func__, (char *)"1", LOGLEVEL);
+    unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
 
     req_reject(PBSE_PERM, 0, preq, NULL, "operation not permitted");
     return(PBSE_NONE);
     }
 
 
-  if ((rc = get_hold(&preq->rq_ind.rq_hold.rq_orig.rq_attr, &pset,
+  if ((rc = get_hold(&preq->rq_ind.rq_hold.rq_orig.rq_attr, (const char **)&pset,
                      &temphold)) != 0)
     {
-    unlock_ai_mutex(pa, __func__, (char *)"2", LOGLEVEL);
+    unlock_ai_mutex(pa, __func__, "2", LOGLEVEL);
 
     req_reject(rc, 0, preq, NULL, NULL);
     return(PBSE_NONE);
@@ -133,7 +133,7 @@ int req_holdarray(
 
   if ((rc = chk_hold_priv(temphold.at_val.at_long, preq->rq_perm)) != 0)
     {
-    unlock_ai_mutex(pa, __func__, (char *)"3", LOGLEVEL);
+    unlock_ai_mutex(pa, __func__, "3", LOGLEVEL);
 
     req_reject(rc, 0, preq, NULL, NULL);
     return(PBSE_NONE);
@@ -146,7 +146,7 @@ int req_holdarray(
     {
     if ((rc = hold_array_range(pa,range_str,&temphold)) != 0)
       {
-      unlock_ai_mutex(pa, __func__, (char *)"4", LOGLEVEL);
+      unlock_ai_mutex(pa, __func__, "4", LOGLEVEL);
 
       req_reject(rc,0,preq,NULL,
         "Error in specified array range");
@@ -169,12 +169,12 @@ int req_holdarray(
       else
         {
         hold_job(&temphold,pjob);
-        unlock_ji_mutex(pjob, __func__, (char *)"5", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, "5", LOGLEVEL);
         }
       }
     }
 
-  unlock_ai_mutex(pa, __func__, (char *)"6", LOGLEVEL);
+  unlock_ai_mutex(pa, __func__, "6", LOGLEVEL);
 
   reply_ack(preq);
 

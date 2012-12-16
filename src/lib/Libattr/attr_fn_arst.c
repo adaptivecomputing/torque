@@ -119,7 +119,7 @@
 int decode_arst_direct(
 
   pbs_attribute *patr,  /* I (modified) */
-  char          *val)   /* I */
+  const char    *val)   /* I */
 
   {
   unsigned long bksize;
@@ -266,8 +266,8 @@ int decode_arst(
 
   pbs_attribute *patr,    /* O (modified) */
   const char   *name,    /* I pbs_attribute name (notused) */
-  char          *rescn,   /* I resource name (notused) */
-  char          *val,     /* I pbs_attribute value */
+  const char *rescn,   /* I resource name (notused) */
+  const char    *val,     /* I pbs_attribute value */
   int            perm) /* only used for resources */
 
   {
@@ -331,8 +331,8 @@ int decode_arst_merge(
 
   pbs_attribute *patr,    /* O (modified) */
   const char   *name,    /* I pbs_attribute name (notused) */
-  char          *rescn,   /* I resource name (notused) */
-  char          *val)     /* I pbs_attribute value */
+  const char *rescn,   /* I resource name (notused) */
+  const char    *val)     /* I pbs_attribute value */
 
   {
   int           rc;

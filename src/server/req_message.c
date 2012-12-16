@@ -123,7 +123,7 @@ int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq,
 
 void *req_messagejob(
     
-  void *vp)
+    struct batch_request *vp) /* I */
 
   {
   struct batch_request *preq = (struct batch_request *)vp;
@@ -140,7 +140,7 @@ void *req_messagejob(
     {
     req_reject(PBSE_BADSTATE, 0, preq, NULL, NULL);
 
-    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     
     return(NULL);
     }
@@ -165,7 +165,7 @@ void *req_messagejob(
 
   /* After MOM acts and replies to us, we pick up in post_message_req() */
   if (pjob != NULL)
-    unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
 
   return(NULL);
   } /* END req_messagejob() */

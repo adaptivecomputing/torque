@@ -8,9 +8,9 @@
 #include "batch_request.h" /* batach_request */
 #include "resource.h"
 
-char *msg_err_noqueue = "Unable to requeue job, queue is not defined";
-char *msg_err_malloc = "malloc failed";
-char *msg_routexceed = "Route queue lifetime exceeded";
+const char *msg_err_noqueue = "Unable to requeue job, queue is not defined";
+const char *msg_err_malloc = "malloc failed";
+const char *msg_routexceed = "Route queue lifetime exceeded";
 int svr_resc_size = 0;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 resource_def *svr_resc_def;
@@ -175,7 +175,7 @@ job *svr_find_job(char *jobid, int get_subjob)
   exit(1);
   }
 
-int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }

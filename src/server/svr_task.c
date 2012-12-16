@@ -172,7 +172,7 @@ struct work_task *set_task(
     }
   else
     {
-    if ((pnew->wt_mutex = calloc(1, sizeof(pthread_mutex_t))) == NULL)
+    if ((pnew->wt_mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t))) == NULL)
       {
       free(pnew);
       return(NULL);
@@ -306,14 +306,14 @@ void initialize_all_tasks_array(
 
   if (at->ra == NULL)
     {
-    log_err(ENOMEM, __func__, (char *)"Cannot allocate space for array...FAILURE");
+    log_err(ENOMEM, __func__, "Cannot allocate space for array...FAILURE");
     }
   
-  at->alltasks_mutex = calloc(1, sizeof(pthread_mutex_t));
+  at->alltasks_mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));
 
   if (at->alltasks_mutex == NULL)
     {
-    log_err(ENOMEM, __func__, (char *)"Cannot allocate space for mutex...FAILURE");
+    log_err(ENOMEM, __func__, "Cannot allocate space for mutex...FAILURE");
     }
   else
     {
@@ -337,7 +337,7 @@ work_task *next_task(
 
   pthread_mutex_lock(at->alltasks_mutex);
 
-  wt = next_thing(at->ra,iter);
+  wt = (work_task *)next_thing(at->ra,iter);
   if (wt != NULL)
     pthread_mutex_lock(wt->wt_mutex);
 
@@ -376,7 +376,7 @@ int insert_task(
   if ((rc = insert_thing(at->ra,wt)) == -1)
     {
     rc = ENOMEM;
-    log_err(rc, __func__, (char *)"Cannot allocate space to resize the array");
+    log_err(rc, __func__, "Cannot allocate space to resize the array");
     }
 
   wt->wt_tasklist = at;
@@ -430,7 +430,7 @@ int insert_task_before(
     if ((rc = insert_thing_before(at->ra,before,i)) == -1)
       {
       rc = ENOMEM;
-      log_err(rc, __func__, (char *)"Cannot allocate space to resize the array");
+      log_err(rc, __func__, "Cannot allocate space to resize the array");
       }
     else
       rc = PBSE_NONE;
@@ -460,7 +460,7 @@ int insert_task_first(
   if ((rc = insert_thing_after(at->ra,wt,ALWAYS_EMPTY_INDEX)) == -1)
     {
     rc = ENOMEM;
-    log_err(rc, __func__, (char *)"Cannot allocate space to resize the array");
+    log_err(rc, __func__, "Cannot allocate space to resize the array");
     }
 
   wt->wt_tasklist = at;
@@ -537,7 +537,7 @@ void initialize_task_recycler()
   initialize_all_tasks_array(&tr.tasks);
   tr.iter = -1;
 
-  tr.mutex = calloc(1, sizeof(pthread_mutex_t));
+  tr.mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(tr.mutex, NULL);
   } /* END initialize_task_recycler() */
 
@@ -553,7 +553,7 @@ work_task *next_task_from_recycler(
   work_task *wt = NULL;
 
   pthread_mutex_lock(at->alltasks_mutex);
-  wt = next_thing(at->ra,iter);
+  wt = (work_task *)next_thing(at->ra,iter);
   if (wt != NULL)
     pthread_mutex_lock(wt->wt_mutex);
   pthread_mutex_unlock(at->alltasks_mutex);

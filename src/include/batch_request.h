@@ -106,6 +106,7 @@
 #include "u_memmgr.h" /* memmgr */
 #include "resizable_array.h"
 #include "hash_table.h"
+#include "work_task.h"
 
 #define  INITIAL_REQUEST_HOLDER_SIZE 20
 
@@ -439,7 +440,7 @@ extern void  req_delete_reservation(struct batch_request *preq);
 #endif
 
 #ifdef SERVER_LIMITS_H
-int relay_to_mom (job **, struct batch_request *, void (*func)());
+int relay_to_mom (job **, struct batch_request *, void (*func)(struct work_task *));
 #endif  /* SERVER_LIMITS_H */
 
 /* PBS Batch Request Decode/Encode routines */

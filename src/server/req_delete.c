@@ -134,7 +134,7 @@ extern struct server server;
 extern int   LOGLEVEL;
 extern struct all_jobs alljobs;
 
-int issue_signal(job **, char *, void (*)(batch_request *), void *);
+int issue_signal(job **, const char *, void (*)(batch_request *), void *);
 
 /* Private Functions in this file */
 
@@ -153,9 +153,9 @@ void change_restart_comment_if_needed(struct job *);
 
 /* Private Data Items */
 
-static char *deldelaystr = DELDELAY;
-static char *delpurgestr = DELPURGE;
-static char *delasyncstr = DELASYNC;
+static const char *deldelaystr = DELDELAY;
+static const char *delpurgestr = DELPURGE;
+static const char *delasyncstr = DELASYNC;
 
 /* Extern Functions */
 
@@ -244,11 +244,11 @@ void force_purge_work(
     {
     if (pjob->ji_qhdr->qu_qs.qu_type == QTYPE_Execution)
       {
-      unlock_queue(pque, __func__, (char *)NULL, LOGLEVEL);
+      unlock_queue(pque, __func__, NULL, LOGLEVEL);
       set_resc_assigned(pjob, DECR);
       }
     else
-      unlock_queue(pque, __func__, (char *)NULL, LOGLEVEL);
+      unlock_queue(pque, __func__, NULL, LOGLEVEL);
     }
   
   if (pjob != NULL)
@@ -267,7 +267,7 @@ void ensure_deleted(
   job                  *pjob;
   char                 *jobid;
 
-  jobid = ptask->wt_parm1;
+  jobid = (char *)ptask->wt_parm1;
 
   if (jobid != NULL)
     {
@@ -296,7 +296,7 @@ int execute_job_delete(
   struct work_task *pwtnew;
 
   int               rc;
-  char             *sigt = "SIGTERM";
+  const char      *sigt = "SIGTERM";
 
   int               has_mutex = TRUE;
   char              log_buf[LOCAL_LOG_BUF_SIZE];
@@ -317,7 +317,7 @@ int execute_job_delete(
     /* see note in req_delete - not sure this is possible still,
      * but the deleted code is irrelevant now. I will leave this
      * part --dbeer */
-    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
     return(-1);
     }
@@ -374,7 +374,7 @@ int execute_job_delete(
 
     pwtnew = set_task(WORK_Timed,time_now + 1,post_delete_route,preq,FALSE);
     
-    unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
 
     if (pwtnew == NULL)
       {
@@ -448,7 +448,7 @@ jump:
 
     if (pjob->ji_has_delete_nanny == TRUE)
       {
-      unlock_ji_mutex(pjob, __func__, (char *)"3", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
 
       req_reject(PBSE_IVALREQ, 0, preq, NULL, "job cancel in progress");
 
@@ -476,7 +476,7 @@ jump:
       sprintf(log_buf, msg_delrunjobsig, sigt);
       log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
   
-      unlock_ji_mutex(pjob, __func__, (char *)"4", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
       }
 
     return(-1);
@@ -537,16 +537,16 @@ jump:
             svr_setjobstate(tmp, newstate, newsub, FALSE);
             job_save(tmp, SAVEJOB_FULL, 0);
 
-            unlock_ji_mutex(tmp, __func__, (char *)"5", LOGLEVEL);
+            unlock_ji_mutex(tmp, __func__, "5", LOGLEVEL);
             
             break;
             }
 
-          unlock_ji_mutex(tmp, __func__, (char *)"6", LOGLEVEL);
+          unlock_ji_mutex(tmp, __func__, "6", LOGLEVEL);
           }
         }
 
-      unlock_ai_mutex(pa, __func__, (char *)"1", LOGLEVEL);
+      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
       }
     } /* END MoabArrayCompatible check */
 
@@ -592,7 +592,7 @@ jump:
       {
       pque->qu_numcompleted++;
 
-      unlock_queue(pque, __func__, (char *)NULL, LOGLEVEL);
+      unlock_queue(pque, __func__, NULL, LOGLEVEL);
       
       if (LOGLEVEL >= 7)
         {
@@ -619,7 +619,7 @@ jump:
     }  /* END else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0) */
 
   if (has_mutex == TRUE)
-    unlock_ji_mutex(pjob, __func__, (char *)"7", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "7", LOGLEVEL);
 
   return(PBSE_NONE);
   } /* END execute_job_delete() */
@@ -687,7 +687,7 @@ void *delete_all_work(
 
     if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
       {
-      unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       
       continue;
       }
@@ -828,7 +828,7 @@ int handle_single_delete(
     }
   else
     {
-    unlock_ji_mutex(pjob, __func__, (char *)NULL, 0);
+    unlock_ji_mutex(pjob, __func__, NULL, 0);
 
     /* send the asynchronous reply if needed */
     if (preq_tmp != NULL)
@@ -1056,7 +1056,7 @@ void post_delete_mom1(
     return;
 
   rc          = preq_sig->rq_reply.brp_code;
-  preq_clt_id = preq_sig->rq_extra;
+  preq_clt_id = (char *)preq_sig->rq_extra;
 
   free_br(preq_sig);
 
@@ -1107,7 +1107,7 @@ void post_delete_mom1(
       {
       req_reject(rc, 0, preq_clt, NULL, NULL);
 
-      unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       }
 
     return;
@@ -1136,7 +1136,7 @@ void post_delete_mom1(
                              &server.sv_attr[SRV_ATR_KillDelay],
                              2);
       pthread_mutex_unlock(server.sv_attr_mutex);
-      unlock_queue(pque, __func__, (char *)NULL, LOGLEVEL);
+      unlock_queue(pque, __func__, NULL, LOGLEVEL);
       }
     else if (pjob == NULL)
       return;
@@ -1150,7 +1150,7 @@ void post_delete_mom1(
    */
   apply_job_delete_nanny(pjob, time_now + delay + 60);
 
-  unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
+  unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
   }  /* END post_delete_mom1() */
 
 
@@ -1163,7 +1163,7 @@ static void post_delete_mom2(
 
   {
   char        *jobid;
-  char        *sigk = "SIGKILL";
+  const char *sigk = "SIGKILL";
   char         log_buf[LOCAL_LOG_BUF_SIZE];
   job         *pjob;
 
@@ -1173,7 +1173,7 @@ static void post_delete_mom2(
   
   if (jobid == NULL)
     {
-    log_err(ENOMEM, __func__, (char *)"Cannot allocate memory");
+    log_err(ENOMEM, __func__, "Cannot allocate memory");
     return;
     }
 
@@ -1194,7 +1194,7 @@ static void post_delete_mom2(
       }
     
     if (pjob != NULL)
-      unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     }
   }  /* END post_delete_mom2() */
 
@@ -1235,7 +1235,7 @@ int forced_jobpurge(
         /* FAILURE */
         req_reject(PBSE_PERM, 0, preq, NULL, NULL);
 
-        unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
         return(-1);
         }
@@ -1282,7 +1282,7 @@ int apply_job_delete_nanny(
     }
   else
     {
-    log_err(-1, __func__, (char *)"negative delay requested for nanny");
+    log_err(-1, __func__, "negative delay requested for nanny");
 
     return(-1);
     }
@@ -1325,7 +1325,7 @@ static void job_delete_nanny(
 
   {
   job                  *pjob;
-  char                 *sigk = "SIGKILL";
+  const char          *sigk = "SIGKILL";
   char                 *jobid;
 
   struct batch_request *newreq;
@@ -1361,13 +1361,13 @@ static void job_delete_nanny(
           {
           apply_job_delete_nanny(pjob, time_now + 60);
   
-          unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+          unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
           }
         }
       }
     else
       {
-      log_err(ENOMEM, __func__, (char *)"Cannot allocate memory");
+      log_err(ENOMEM, __func__, "Cannot allocate memory");
       }
     }
   
@@ -1439,7 +1439,7 @@ void post_job_delete_nanny(
     return;
     }
   
-  unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+  unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
   /* free task */
   free_br(preq_sig);
@@ -1517,7 +1517,7 @@ void purge_completed_jobs(
       job_save(pjob, SAVEJOB_FULL, 0); 
       }
 
-    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     }
 
 

@@ -30,10 +30,10 @@ char *path_jobs;
 char path_checkpoint[MAXPATHLEN + 1];
 char *job_log_file = NULL;
 char server_name[PBS_MAXSERVERNAME + 1];
-char *msg_abt_err = "Unable to abort Job %s which was in substate %d";
+const char *msg_abt_err = "Unable to abort Job %s which was in substate %d";
 int queue_rank = 0;
 char *path_spool;
-char *msg_err_purgejob = "Unlink of job file failed";
+const char *msg_err_purgejob = "Unlink of job file failed";
 struct server server;
 struct all_jobs array_summary;
 char *path_jobinfo_log;
@@ -72,7 +72,7 @@ int job_save(job *pjob, int updatetype, int mom_port)
   exit(1);
   }
 
-void svr_mailowner(job *pjob, int mailpoint, int force, char *text)
+void svr_mailowner(job *pjob, int mailpoint, int force, const char *text)
   {
   fprintf(stderr, "The call to svr_mailowner needs to be mocked!!\n");
   exit(1);
@@ -405,7 +405,7 @@ int resize_if_needed(
     /* need to resize */
     difference = new_size - ds->size;
 
-    if ((tmp = realloc(ds->str, new_size)) == NULL)
+    if ((tmp = (char *)realloc(ds->str, new_size)) == NULL)
       return(-1);
 
     ds->str = tmp;
@@ -447,7 +447,7 @@ void clear_dynamic_string(dynamic_string *ds)
 
 dynamic_string *get_dynamic_string(int initial_size, const char *str)
   {
-  dynamic_string *ds = calloc(1, sizeof(dynamic_string));
+  dynamic_string *ds = (dynamic_string *)calloc(1, sizeof(dynamic_string));
 
   if (ds == NULL)
     return(ds);
@@ -457,7 +457,7 @@ dynamic_string *get_dynamic_string(int initial_size, const char *str)
   else
     ds->size = DS_INITIAL_SIZE;
     
-  ds->str = calloc(1, ds->size);
+  ds->str = (char *)calloc(1, ds->size);
 
   if (ds->str == NULL)
     {
@@ -516,8 +516,8 @@ int decode_ll(
 
   pbs_attribute *patr,
   const char   *name,  /* pbs_attribute name */
-  char          *rescn, /* resource name, unused here */
-  char          *val,   /* pbs_attribute value */
+  const char *rescn, /* resource name, unused here */
+  const char    *val,   /* pbs_attribute value */
   int            perm)  /* only used for resources */
 
   {
@@ -564,7 +564,7 @@ int remove_alps_reservation(
   return(0);
   }
 
-int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }
@@ -600,7 +600,7 @@ int set_str(
 
     case SET: /* set is replace old string with new */
 
-      if ((new_value = calloc(1, nsize)) == NULL)
+      if ((new_value = (char *)calloc(1, nsize)) == NULL)
         return (PBSE_SYSTEM);
 
       if (attr->at_val.at_str)
@@ -614,7 +614,7 @@ int set_str(
     case INCR: /* INCR is concatenate new to old string */
 
       nsize += strlen(attr->at_val.at_str);
-      new_value = calloc(1, nsize + 1);
+      new_value = (char *)calloc(1, nsize + 1);
 
       if (new_value == NULL)
         return (PBSE_SYSTEM);
@@ -687,6 +687,16 @@ int remove_job(struct all_jobs *aj, job             *pjob)
   }
 
 int get_jobs_index(struct all_jobs *aj, job             *pjob)
+  {
+  return(0);
+  }
+
+ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
+  {
+  return(0);
+  }
+
+ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   {
   return(0);
   }

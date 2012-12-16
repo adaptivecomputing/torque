@@ -20,7 +20,7 @@ char *apbasil_protocol;
 char *apbasil_path;
 struct cphosts *pcphosts = NULL;
 char *path_undeliv;
-char *msg_err_unlink = "Unlink of %s file %s failed";
+const char *msg_err_unlink = "Unlink of %s file %s failed";
 time_t time_now;
 struct sig_tbl sig_tbl[5];
 attribute_def job_attr_def[10];
@@ -28,7 +28,7 @@ int exiting_tasks = 0;
 char pbs_current_user[PBS_MAXUSER];
 char rcp_path[MAXPATHLEN];
 char rcp_args[MAXPATHLEN];
-char *msg_jobmod = "Job Modified";
+const char *msg_jobmod = "Job Modified";
 int cphosts_num = 0;
 struct var_table vtable; 
 char mom_host[PBS_MAXHOSTNAME + 1];
@@ -39,7 +39,7 @@ unsigned int alarm_time = 10;
 char *TNoSpoolDirList[TMAX_NSDCOUNT];
 tlist_head svr_alljobs;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
-char *msg_manager = "%s at request of %s@%s";
+const char *msg_manager = "%s at request of %s@%s";
 int multi_mom = 1;
 char MOMUNameMissing[64];
 
@@ -68,7 +68,7 @@ int job_save(job *pjob, int updatetype, int mom_port)
   exit(1);
   }
 
-ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
+ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   {
   fprintf(stderr, "The call to read_nonblocking_socket needs to be mocked!!\n");
   exit(1);
@@ -134,7 +134,7 @@ int InitUserEnv(job *pjob, task *ptask, char **envp, struct passwd *pwdp, char *
   exit(1);
   }
 
-ssize_t write_nonblocking_socket(int fd, const void *buf, ssize_t count)
+ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
   {
   fprintf(stderr, "The call to write_nonblocking_socket needs to be mocked!!\n");
   exit(1);

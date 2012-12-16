@@ -235,7 +235,7 @@ struct pbsnode *tfind_addr(
   if (pn == NULL)
     return(NULL);
 
-  lock_node(pn, __func__, (char *)"pn", LOGLEVEL);
+  lock_node(pn, __func__, "pn", LOGLEVEL);
 
   if (pn->num_node_boards == 0)
     return(pn);
@@ -263,7 +263,7 @@ struct pbsnode *tfind_addr(
     if (dash == NULL)
       {
       /* node has numa nodes but no dashes in exec host?? */
-      log_err(-1, __func__, (char *)"Numa node but there's no dash in exec_host?");
+      log_err(-1, __func__, "Numa node but there's no dash in exec_host?");
 
       return(pn);
       }
@@ -272,8 +272,8 @@ struct pbsnode *tfind_addr(
 
     numa = AVL_find(index, pn->nd_mom_port, pn->node_boards);
 
-    unlock_node(pn, __func__, (char *)"pn->numa", LOGLEVEL);
-    lock_node(numa, __func__, (char *)"numa", LOGLEVEL);
+    unlock_node(pn, __func__, "pn->numa", LOGLEVEL);
+    lock_node(numa, __func__, "numa", LOGLEVEL);
 
     if (plus != NULL)
       *plus = '+';
@@ -622,9 +622,9 @@ int is_job_on_node(
       {
       numa = AVL_find(i,pnode->nd_mom_port,pnode->node_boards);
 
-      lock_node(numa, __func__, (char *)"before check_node_for_job numa", LOGLEVEL);
+      lock_node(numa, __func__, "before check_node_for_job numa", LOGLEVEL);
       present = check_node_for_job(pnode,jobid);
-      unlock_node(numa, __func__, (char *)"after check_node_for_job numa", LOGLEVEL);
+      unlock_node(numa, __func__, "after check_node_for_job numa", LOGLEVEL);
 
       /* leave loop if we found the job */
       if (present != FALSE)
@@ -717,7 +717,7 @@ int kill_job_on_mom(
     {
     if ((preq = alloc_br(PBS_BATCH_SignalJob)) == NULL)
       {
-      log_err(-1, __func__, (char *)"unable to allocate SignalJob request-trouble!");
+      log_err(-1, __func__, "unable to allocate SignalJob request-trouble!");
       svr_disconnect(conn);
       }
     else
@@ -725,10 +725,10 @@ int kill_job_on_mom(
       strcpy(preq->rq_ind.rq_signal.rq_jid, jobid);
       strcpy(preq->rq_ind.rq_signal.rq_signame, "SIGKILL");
       
-      unlock_node(pnode, __func__, (char *)NULL, 0);
+      unlock_node(pnode, __func__, NULL, 0);
       rc = issue_Drequest(conn, preq);
       free_br(preq);
-      lock_node(pnode, __func__, (char *)NULL, 0);
+      lock_node(pnode, __func__, NULL, 0);
       }
     }
 
@@ -752,9 +752,9 @@ int job_should_be_on_node(
     if ((is_job_on_node(pnode, jobid)) == FALSE)
       {
       /* must lock the job before the node */
-      unlock_node(pnode, __func__, (char *)NULL, 0);
+      unlock_node(pnode, __func__, NULL, 0);
       pjob = svr_find_job(jobid, TRUE);
-      lock_node(pnode, __func__, (char *)NULL, 0);
+      lock_node(pnode, __func__, NULL, 0);
       
       if (pjob != NULL)
         {
@@ -764,18 +764,18 @@ int job_should_be_on_node(
          * of data staging, suspend, or rerun */            
         if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL)
           {
-          unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+          unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
           
           should_be_on_node = FALSE;
           }
         else if (node_in_exechostlist(pnode->nd_name, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str) == FALSE)
           {
-          unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
+          unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
           
           should_be_on_node = FALSE;
           }
         else
-          unlock_ji_mutex(pjob, __func__, (char *)"3", LOGLEVEL);
+          unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
         }
       else
         should_be_on_node = FALSE;
@@ -835,9 +835,9 @@ int remove_jobs_that_have_disappeared(
     job *pjob;
 
     /* locking priority is job before node */
-    unlock_node(pnode, __func__, (char *)NULL, 0);
+    unlock_node(pnode, __func__, NULL, 0);
     pjob = svr_find_job(jobid, TRUE);
-    lock_node(pnode, __func__, (char *)NULL, 0);
+    lock_node(pnode, __func__, NULL, 0);
 
     if (pjob == NULL)
       {
@@ -855,11 +855,11 @@ int remove_jobs_that_have_disappeared(
       {
       free(jobid);
 
-      unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       continue;
       }
 
-    unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
     /* mom didn't report this job - it has exited unexpectedly */
     snprintf(log_buf, sizeof(log_buf),
       "Server thinks job %s is on node %s, but the mom doesn't. Terminating job",
@@ -968,7 +968,7 @@ void *sync_node_jobs(
 
   /*free_resizable_array(ms_jobs);*/
 
-  unlock_node(np, __func__, (char *)NULL, 0);
+  unlock_node(np, __func__, NULL, 0);
 
   return(NULL);
   }  /* END sync_node_jobs() */
@@ -1003,7 +1003,7 @@ void setup_notification(
       
       if (nnew == NULL)
         {
-        unlock_node(pnode, __func__, (char *)"nnew == NULL", LOGLEVEL);
+        unlock_node(pnode, __func__, "nnew == NULL", LOGLEVEL);
         return;
         }
       
@@ -1013,7 +1013,7 @@ void setup_notification(
       
       append_link(&svr_newnodes, &nnew->nn_link, nnew);
       
-      unlock_node(pnode, __func__, (char *)"nnew != NULL", LOGLEVEL);
+      unlock_node(pnode, __func__, "nnew != NULL", LOGLEVEL);
       }
     }
 
@@ -1066,7 +1066,7 @@ void clear_nvidia_gpus(
 
     if (decode_arst(&temp, NULL, NULL, NULL, 0))
       {
-      log_err(-1, __func__, (char *)"clear_nvidia_gpus:  cannot initialize attribute\n");
+      log_err(-1, __func__, "clear_nvidia_gpus:  cannot initialize attribute\n");
 
       return;
       }
@@ -1120,11 +1120,11 @@ void stream_eof(
     }
 
   /* Before we mark this node down see if we can connect */
-  lock_node(np, __func__, (char *)"parent", LOGLEVEL);
+  lock_node(np, __func__, "parent", LOGLEVEL);
   conn = svr_connect(addr, port, &my_err, np, NULL, cntype);
   if(conn >= 0)
     {
-    unlock_node(np, __func__, (char *)"parent", LOGLEVEL);
+    unlock_node(np, __func__, "parent", LOGLEVEL);
     svr_disconnect(conn);
     return;
     }
@@ -1148,15 +1148,15 @@ void stream_eof(
       {
       pnode = AVL_find(i,np->nd_mom_port,np->node_boards);
 
-      lock_node(pnode, __func__, (char *)"subs", LOGLEVEL);
+      lock_node(pnode, __func__, "subs", LOGLEVEL);
       update_node_state(pnode,INUSE_DOWN);
-      unlock_node(pnode, __func__, (char *)"subs", LOGLEVEL);
+      unlock_node(pnode, __func__, "subs", LOGLEVEL);
       }
     }
   else
     update_node_state(np, INUSE_DOWN);
 
-  unlock_node(np, __func__, (char *)"parent", LOGLEVEL);
+  unlock_node(np, __func__, "parent", LOGLEVEL);
 
   return;
   }  /* END stream_eof() */
@@ -1244,7 +1244,7 @@ void check_nodes(
 
   if (rc)
     {
-    log_err(rc, __func__, (char *)"Unable to enqueue check nodes task into the threadpool");
+    log_err(rc, __func__, "Unable to enqueue check nodes task into the threadpool");
     }
   }  /* END check_nodes() */
 
@@ -1283,7 +1283,7 @@ void *write_node_state_work(
 
     if (ftruncate(fileno(nstatef), (off_t)0) != 0)
       {
-      log_err(errno, __func__, (char *)"could not truncate file");
+      log_err(errno, __func__, "could not truncate file");
 
       pthread_mutex_unlock(node_state_mutex);
       
@@ -1296,7 +1296,7 @@ void *write_node_state_work(
 
     if ((nstatef = fopen(path_nodestate, "w+")) == NULL)
       {
-      log_err(errno, __func__, (char *)"could not open file");
+      log_err(errno, __func__, "could not open file");
 
       pthread_mutex_unlock(node_state_mutex);
       
@@ -1316,12 +1316,12 @@ void *write_node_state_work(
       fprintf(nstatef, fmt, np->nd_name, np->nd_state & savemask);
       }
 
-    unlock_node(np, __func__, (char *)NULL, LOGLEVEL);
+    unlock_node(np, __func__, NULL, LOGLEVEL);
     } /* END for each node */
 
   if (fflush(nstatef) != 0)
     {
-    log_err(errno, __func__, (char *)"failed saving node state to disk");
+    log_err(errno, __func__, "failed saving node state to disk");
     }
 
   fclose(nstatef);
@@ -1343,7 +1343,7 @@ void write_node_state(void)
 
   if (rc)
     {
-    log_err(rc, __func__, (char *)"Unable to enqueue write_node_state_work task into the threadpool");
+    log_err(rc, __func__, "Unable to enqueue write_node_state_work task into the threadpool");
     }
   }  /* END write_node_state() */
 
@@ -1372,7 +1372,7 @@ int write_node_note(void)
   if ((svr_totnodes == 0))
     {
     log_event(
-      PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, (char *)"Server has empty nodes list");
+      PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, "Server has empty nodes list");
 
     fclose(nin);
 
@@ -1389,7 +1389,7 @@ int write_node_note(void)
       fprintf(nin, "%s %s\n", np->nd_name, np->nd_note);
       }
     
-    unlock_node(np, __func__, (char *)NULL, LOGLEVEL);
+    unlock_node(np, __func__, NULL, LOGLEVEL);
     }
 
   fflush(nin);
@@ -1501,7 +1501,7 @@ void node_unreserve(
 
   if (rc)
     {
-    log_err(rc, __func__, (char *)"Unable to enqueue node_unreserve task into the threadpool");
+    log_err(rc, __func__, "Unable to enqueue node_unreserve task into the threadpool");
     }
   }  /* END node_unreserve() */
 
@@ -2374,7 +2374,7 @@ int save_node_for_adding(
     /* second */
     if ((to_add = (node_job_add_info *)calloc(1, sizeof(node_job_add_info))) == NULL)
       {
-      log_err(ENOMEM, __func__, (char *)"Cannot allocate memory!");
+      log_err(ENOMEM, __func__, "Cannot allocate memory!");
 
       return(ENOMEM);
       }
@@ -2497,7 +2497,7 @@ int is_compute_node(
   if ((pnode = find_nodebyname(node_id)) != NULL)
     {
     rc = TRUE;
-    unlock_node(pnode, __func__, (char *)NULL, 0);
+    unlock_node(pnode, __func__, NULL, 0);
     }
 
   if (colon != NULL)
@@ -2528,7 +2528,7 @@ void release_node_allocation(
       pnode->nd_np_to_be_used    -= current->ppn_needed;
       pnode->nd_ngpus_to_be_used -= current->gpu_needed;
       pnode->nd_nmics_to_be_used -= current->mic_needed;
-      unlock_node(pnode, __func__, (char *)NULL, LOGLEVEL);
+      unlock_node(pnode, __func__, NULL, LOGLEVEL);
       }
     current = current->next;
     }
@@ -2553,7 +2553,7 @@ int check_for_node_type(
   if (reporter == NULL)
     {
     /* this shouldn't be possible */
-    log_err(-1, __func__, (char *)"Checking for node types with a non-cray enabled pbs_server??");
+    log_err(-1, __func__, "Checking for node types with a non-cray enabled pbs_server??");
     return(-1);
     }
 
@@ -2568,13 +2568,13 @@ int check_for_node_type(
           (!strcmp(p->name, alps_starter_feature)))
         continue;
 
-      lock_node(reporter, __func__, (char *)NULL, 0);
+      lock_node(reporter, __func__, NULL, 0);
       pnode = find_node_in_allnodes(&(reporter->alps_subnodes), p->name);
-      unlock_node(reporter, __func__, (char *)NULL, 0);
+      unlock_node(reporter, __func__, NULL, 0);
 
       if (pnode != NULL)
         {
-        unlock_node(pnode, __func__, (char *)NULL, 0);
+        unlock_node(pnode, __func__, NULL, 0);
 
         if (nt == ND_TYPE_CRAY)
           {
@@ -2594,7 +2594,7 @@ int check_for_node_type(
           if (pnode->nd_is_alps_login == TRUE)
             login = TRUE;
 
-          unlock_node(pnode, __func__, (char *)NULL, 0);
+          unlock_node(pnode, __func__, NULL, 0);
 
           if (nt == ND_TYPE_EXTERNAL)
             {
@@ -2671,7 +2671,7 @@ int add_login_node_if_needed(
     if (login->nd_is_alps_login == FALSE)
       need_to_add_login = TRUE;
 
-    unlock_node(login, __func__, (char *)NULL, 0);
+    unlock_node(login, __func__, NULL, 0);
     }
 
   if (need_to_add_login == TRUE)
@@ -2698,7 +2698,7 @@ int add_login_node_if_needed(
       
       rc = PBSE_NONE;
 
-      unlock_node(login, __func__, (char *)NULL, 0);
+      unlock_node(login, __func__, NULL, 0);
       }
 
     if (prop != NULL)
@@ -2864,7 +2864,7 @@ int node_spec(
     else if (all_reqs.req_start != NULL)
       free(all_reqs.req_start);
 
-    log_err(ENOMEM, __func__, (char *)"Cannot allocate memory!");
+    log_err(ENOMEM, __func__, "Cannot allocate memory!");
     free(spec);
     return(-1);
     }
@@ -3782,7 +3782,7 @@ int translate_howl_to_string(
 
   if ((str = (char *)calloc(1, len + 1)) == NULL)
     {
-    log_err(ENOMEM, __func__, (char *)"Cannot allocate memory!");
+    log_err(ENOMEM, __func__, "Cannot allocate memory!");
 
     if (EMsg != NULL)
       sprintf(EMsg,"no nodes can be allocated to job");
@@ -3797,7 +3797,7 @@ int translate_howl_to_string(
     /* port list will have a string of sister port addresses */
     if ((portlist = (char *)calloc(1, (count * PBS_MAXPORTNUM) + count)) == NULL)
       {
-      log_err(ENOMEM, __func__, (char *)"Cannot allocate memory!");
+      log_err(ENOMEM, __func__, "Cannot allocate memory!");
       
       if (EMsg != NULL)
         sprintf(EMsg,"no nodes can be allocated to job");
@@ -3969,7 +3969,7 @@ int build_hostlist_nodes_req(
           }
         }
 
-      unlock_node(pnode, __func__, (char *)NULL, LOGLEVEL);
+      unlock_node(pnode, __func__, NULL, LOGLEVEL);
       }
 
     current = current->next;
@@ -4075,7 +4075,7 @@ int add_to_ms_list(
     {
     insert_thing(pnode->nd_ms_jobs, strdup(pjob->ji_qs.ji_jobid));
 
-    unlock_node(pnode, __func__, (char *)NULL, 0);
+    unlock_node(pnode, __func__, NULL, 0);
     }
 
   return(PBSE_NONE);
@@ -4228,7 +4228,7 @@ int set_nodes(
   else if (i < 0)
     {
     /* request failed, corrupt request */
-    log_err(PBSE_UNKNODE, __func__, (char *)"request failed, corrupt request");
+    log_err(PBSE_UNKNODE, __func__, "request failed, corrupt request");
     free_naji(naji);
     free_alps_req_data_array(ard_array, num_reqs);
     return(PBSE_UNKNODE);
@@ -4574,7 +4574,7 @@ int node_avail(
 
   if (spec == NULL)
     {
-    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, (char *)"no spec");
+    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, "no spec");
 
     return(RM_ERR_NOPARAM);
     }
@@ -4693,7 +4693,7 @@ int node_reserve(
 
   if ((nspec == NULL) || (*nspec == '\0'))
     {
-    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, (char *)"no spec");
+    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, "no spec");
 
     return(-1);
     }
@@ -4991,7 +4991,7 @@ void free_nodes(
       remove_job_from_node(pnode, pjob);
       remove_job_from_nodes_gpus(pnode, pjob);
       remove_job_from_nodes_mics(pnode, pjob);
-      unlock_node(pnode, __func__, (char *)NULL, 0);
+      unlock_node(pnode, __func__, NULL, 0);
       }
     }
 
@@ -5002,7 +5002,7 @@ void free_nodes(
     if ((pnode = find_nodebyname(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str)) != NULL)
       {
       remove_job_from_node(pnode, pjob);
-      unlock_node(pnode, __func__, (char *)NULL, 0);
+      unlock_node(pnode, __func__, NULL, 0);
       }
     }
 
@@ -5033,9 +5033,9 @@ struct pbsnode *get_compute_node(
       }
     }
 
-  lock_node(ar, __func__, (char *)NULL, 0);
+  lock_node(ar, __func__, NULL, 0);
   compute_node = create_alps_subnode(ar, node_name);
-  unlock_node(ar, __func__, (char *)NULL, 0);
+  unlock_node(ar, __func__, NULL, 0);
 
   return(compute_node);
   } /* END get_compute_node() */
@@ -5125,7 +5125,7 @@ void set_one_old(
         }    /* END for (snp) */
       }
 
-    unlock_node(pnode, __func__, (char *)NULL, LOGLEVEL);
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
     }
 
   return;
@@ -5194,9 +5194,9 @@ job *get_job_from_jobinfo(
   {
   job *pjob;
 
-  unlock_node(pnode, __func__, (char *)NULL, LOGLEVEL);
+  unlock_node(pnode, __func__, NULL, LOGLEVEL);
   pjob = svr_find_job(jp->jobid, TRUE);
-  lock_node(pnode, __func__, (char *)NULL, LOGLEVEL);
+  lock_node(pnode, __func__, NULL, LOGLEVEL);
 
   return(pjob);
   } /* END get_job_from_jobinfo() */

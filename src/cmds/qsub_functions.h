@@ -114,7 +114,7 @@ char *x11_get_proto(
 
 char *smart_strtok(
     char  *line,          /* I */
-    char  *delims,        /* I */
+    const char  *delims,        /* I */
     char **ptrPtr,        /* O */
     int    ign_backslash);/* I */
 
@@ -220,8 +220,8 @@ int load_config(
   int   BufSize);                 /* I */
 
 char *get_param(
-    char *param,                  /* I */
-    char *config_buf);            /* I */
+    const char *param,                  /* I */
+    const char *config_buf);            /* I */
 
 void set_client_attr_defaults(
     memmgr **mm,                  /* M */
@@ -233,7 +233,7 @@ void process_config_file(
     job_info *ji);                /* M */
 
 void print_qsub_usage_exit(
-    char *error_msg);             /* I */
+    const char *error_msg);             /* I */
 
 void add_submit_args_to_job(memmgr **mm, job_data **job_attr, int argc, char **argv);
 

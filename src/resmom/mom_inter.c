@@ -97,6 +97,7 @@
 
 #include "portability.h"
 #include "pbs_ifl.h"
+#include "../lib/Libifl/lib_ifl.h"
 #include "server_limits.h"
 #include "net_connect.h"
 #include "log.h"
@@ -138,7 +139,7 @@ static int read_net(
 
   while (amt > 0)
     {
-    got = read(sock, buf, amt);
+    got = read_ac_socket(sock, buf, amt);
 
     if (got == 0)
       {
@@ -367,7 +368,7 @@ int mom_reader(
 
       while (c > 0)
         {
-        if ((wc = write(ptc, p, c)) < 0)
+        if ((wc = write_ac_socket(ptc, p, c)) < 0)
           {
           if (errno == EINTR)
             {
@@ -439,7 +440,7 @@ int mom_writer(
 
   while (1)
     {
-    c = read(ptc, buf, sizeof(buf));
+    c = read_ac_socket(ptc, buf, sizeof(buf));
 
     if (c > 0)
       {
@@ -448,7 +449,7 @@ int mom_writer(
 
       while (c > 0)
         {
-        if ((wc = write(s, p, c)) < 0)
+        if ((wc = write_ac_socket(s, p, c)) < 0)
           {
           if (errno == EINTR)
             {

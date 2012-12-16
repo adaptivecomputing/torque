@@ -37,16 +37,16 @@ job *svr_find_job(
     return(NULL);
   else if (count <= 3)
     {
-    pjob = calloc(1, sizeof(job));
+    pjob = (job *)calloc(1, sizeof(job));
     pjob->ji_qs.ji_state = JOB_STATE_RUNNING;
-    pjob->ji_mutex = calloc(1, sizeof(pthread_mutex_t));
+    pjob->ji_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
     return(pjob);
     }
   else
     {
-    pjob = calloc(1, sizeof(job));
+    pjob = (job *)calloc(1, sizeof(job));
     pjob->ji_qs.ji_state = JOB_STATE_COMPLETE;
-    pjob->ji_mutex = calloc(1, sizeof(pthread_mutex_t));
+    pjob->ji_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
     return(pjob);
     }
   }
@@ -57,7 +57,7 @@ int check_and_resize(
   resizable_array *ra)
 
   {
-  static char *id = "check_and_resize";
+  static const char *id = "check_and_resize";
   slot        *tmp;
   size_t       remaining;
   size_t       size;
@@ -67,7 +67,7 @@ int check_and_resize(
     /* double the size if we're out of space */
     size = (ra->max * 2) * sizeof(slot);
 
-    if ((tmp = realloc(ra->slots,size)) == NULL)
+    if ((tmp = (slot *)realloc(ra->slots,size)) == NULL)
       {
       log_err(ENOMEM,id, (char *)"No memory left to resize the array");
       return(ENOMEM);
@@ -143,7 +143,7 @@ resizable_array *initialize_resizable_array(
   int               size)
 
   {
-  resizable_array *ra = calloc(1, sizeof(resizable_array));
+  resizable_array *ra = (resizable_array *)calloc(1, sizeof(resizable_array));
   size_t           amount = sizeof(slot) * size;
 
   ra->max       = size;
@@ -151,7 +151,7 @@ resizable_array *initialize_resizable_array(
   ra->next_slot = 1;
   ra->last      = 0;
 
-  ra->slots = calloc(1, amount);
+  ra->slots = (slot *)calloc(1, amount);
 
   return(ra);
   } /* END initialize_resizable_array() */
@@ -189,7 +189,7 @@ void add_to_bucket(
   if (buckets[index] == NULL)
     {
     /* empty bucket, just add it here */
-    buckets[index] = calloc(1, sizeof(bucket));
+    buckets[index] = (bucket *)calloc(1, sizeof(bucket));
     buckets[index]->value = value;
     buckets[index]->key   = key;
     buckets[index]->next  = NULL;
@@ -202,7 +202,7 @@ void add_to_bucket(
     while (b->next != NULL)
       b = b->next;
 
-    b->next = calloc(1, sizeof(bucket));
+    b->next = (bucket *)calloc(1, sizeof(bucket));
     b->next->value = value;
     b->next->key   = key;
     b->next->next  = NULL;
@@ -282,7 +282,7 @@ int add_hash(
     int      old_bucket_size = ht->size;
     int      new_bucket_size = ht->size * 2;
     size_t   amount = new_bucket_size * sizeof(bucket *);
-    bucket **tmp = calloc(1, amount);
+    bucket **tmp = (bucket **)calloc(1, amount);
     int      i;
     int      new_index;
       
@@ -312,7 +312,7 @@ int add_hash(
 
   index = get_hash(ht,key);
 
-  add_to_bucket(ht->buckets,index,key,value);
+  add_to_bucket(ht->buckets,index,(char *)key,value);
 
   ht->num++;
 
@@ -330,7 +330,7 @@ int get_value_hash(
 
   while (b != NULL)
     {
-    if (!strcmp(b->key,key))
+    if (!strcmp(b->key,(char *)key))
       {
       value = b->value;
       break;
@@ -349,12 +349,12 @@ hash_table_t *create_hash(
   int size)
 
   {
-  hash_table_t *ht = calloc(1, sizeof(hash_table_t));
+  hash_table_t *ht = (hash_table_t *)calloc(1, sizeof(hash_table_t));
   size_t        amount = sizeof(bucket *) * size;
 
   ht->size = size;
   ht->num  = 0;
-  ht->buckets = calloc(1, amount);
+  ht->buckets = (bucket **)calloc(1, amount);
 
   return(ht);
   } /* END create_hash() */
@@ -455,7 +455,7 @@ int remove_hash(
   } /* END remove_hash() */
 
 
-int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }

@@ -109,7 +109,7 @@ int MXMLSetChild(
 int MXMLCreateE(
 
   mxml_t **E,    /* O */
-  char    *Name) /* I (optional) */
+  const char  *Name) /* I (optional) */
 
   {
   /* NOTE:  should 'Name' be mandatory? */

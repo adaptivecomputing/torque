@@ -71,7 +71,7 @@ resizable_array *initialize_resizable_array(
   int               size)
 
   {
-  resizable_array *ra = calloc(1, sizeof(resizable_array));
+  resizable_array *ra = (resizable_array *)calloc(1, sizeof(resizable_array));
   size_t           amount = sizeof(slot) * size;
 
   ra->max       = size;
@@ -79,7 +79,7 @@ resizable_array *initialize_resizable_array(
   ra->next_slot = 1;
   ra->last      = 0;
 
-  ra->slots = calloc(1, amount);
+  ra->slots = (slot *)calloc(1, amount);
 
   return(ra);
   } /* END initialize_resizable_array() */
@@ -104,7 +104,7 @@ int check_and_resize(
     /* double the size if we're out of space */
     size = (ra->max * 2) * sizeof(slot);
 
-    if ((tmp = realloc(ra->slots,size)) == NULL)
+    if ((tmp = (slot *)realloc(ra->slots,size)) == NULL)
       {
       return(ENOMEM);
       }

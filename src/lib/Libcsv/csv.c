@@ -16,10 +16,10 @@
  * @param csv_str  The string list.
  * @return The number of items in the list.
  */
-int csv_length(char *csv_str)
+int csv_length(const char *csv_str)
   {
   int  length = 0;
-  char *cp;
+  const char *cp;
 
   if (!csv_str || *csv_str == 0)
     return(0);
@@ -47,10 +47,10 @@ int csv_length(char *csv_str)
  *     otherwise, a pointer to a local buffer containing the nth item.
  */
 #define NBUFFERS        32
-char *csv_nth(char *csv_str, int n)
+char *csv_nth(const char *csv_str, int n)
   {
   int  i;
-  char *cp;
+  const char *cp;
   char *tp;
   static char buffer[NBUFFERS][128];
   static  int     buffer_index;
@@ -77,7 +77,7 @@ char *csv_nth(char *csv_str, int n)
 
   memset(buffer[buffer_index], 0, sizeof(buffer[buffer_index]));
 
-  if ((tp = strchr(cp, ',')))
+  if ((tp = strchr((char *)cp, ',')))
     {
     if ((tp - cp) > 128)
       return 0;
@@ -100,7 +100,7 @@ char *csv_nth(char *csv_str, int n)
  * Search a csv list for an entry that matches a specified search string.
  */
 char *
-csv_find_string(char *csv_str, const char *search_str)
+csv_find_string(const char *csv_str, const char *search_str)
   {
   int  i;
   int  nitems;
@@ -144,7 +144,7 @@ csv_find_string(char *csv_str, const char *search_str)
  * pointer to the start of the value string.
  */
 char *
-csv_find_value(char *csv_str, const char *search_str)
+csv_find_value(const char *csv_str, const char *search_str)
   {
   char *cp;
   char *vp;

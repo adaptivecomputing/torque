@@ -105,6 +105,7 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
+#include "../lib/Libifl/lib_ifl.h"
 #include "mom_mach.h"
 #include "mom_func.h"
 #include "pbs_error.h"
@@ -616,7 +617,7 @@ int become_the_user(
       (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
       strerror(errno));
 
-    if (write(2, log_buffer, strlen(log_buffer)) == -1)
+    if (write_ac_socket(2, log_buffer, strlen(log_buffer)) == -1)
       {
       }
     
@@ -635,7 +636,7 @@ int become_the_user(
       (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
       strerror(errno));
 
-    if (write(2, log_buffer, strlen(log_buffer)) == -1)
+    if (write_ac_socket(2, log_buffer, strlen(log_buffer)) == -1)
       {
       }
     
@@ -653,7 +654,7 @@ int become_the_user(
       (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
       strerror(errno));
 
-    if (write(2, log_buffer, strlen(log_buffer)) == -1)
+    if (write_ac_socket(2, log_buffer, strlen(log_buffer)) == -1)
       {
       }
     
@@ -2372,7 +2373,7 @@ int TMomFinalizeJob2(
     
     while (j < i)
       {
-      if ((k = write(TJE->pipe_script[1], buf + j, i - j)) < 0)
+      if ((k = write_ac_socket(TJE->pipe_script[1], buf + j, i - j)) < 0)
         {
         if (errno == EINTR)
           continue;
@@ -3103,7 +3104,7 @@ int start_interactive_session(
   
   /* send jobid as validation to qsub */
   if ((*qsub_sock_ptr < 0)||
-      (write(*qsub_sock_ptr, pjob->ji_qs.ji_jobid, PBS_MAXSVRJOBID + 1) != PBS_MAXSVRJOBID + 1))
+      (write_ac_socket(*qsub_sock_ptr, pjob->ji_qs.ji_jobid, PBS_MAXSVRJOBID + 1) != PBS_MAXSVRJOBID + 1))
     {
     log_err(errno, __func__, "cannot write jobid");
     
@@ -3457,7 +3458,7 @@ void attempt_to_set_limits(
       {
       /* report error to user via stderr file */
 
-      if (write(2, log_buffer, strlen(log_buffer)) == -1)
+      if (write_ac_socket(2, log_buffer, strlen(log_buffer)) == -1)
         {
         }
 
@@ -3516,7 +3517,7 @@ void go_to_init_dir(
       idir,
       strerror(errno));
     
-    if (write(2, log_buffer, strlen(log_buffer)) == -1)
+    if (write_ac_socket(2, log_buffer, strlen(log_buffer)) == -1)
       {
       }
     
@@ -3560,7 +3561,7 @@ int setup_x11_forwarding(
       {
       sprintf(log_buffer, "PBS: X11 forwarding init failed\n");
 
-      if (write(2, log_buffer, strlen(log_buffer)) == -1)
+      if (write_ac_socket(2, log_buffer, strlen(log_buffer)) == -1)
         {
         }
 
@@ -4022,7 +4023,7 @@ int TMomFinalizeChild(
 
     sprintf(log_buffer, "PBS: site specific job setup failed\n");
 
-    if (write(2, log_buffer, strlen(log_buffer)) == -1)
+    if (write_ac_socket(2, log_buffer, strlen(log_buffer)) == -1)
       {
       }
 
@@ -4055,7 +4056,7 @@ int TMomFinalizeChild(
         idir,
         strerror(errno));
 
-      if (write(2, log_buffer, strlen(log_buffer)) == -1)
+      if (write_ac_socket(2, log_buffer, strlen(log_buffer)) == -1)
         {
         }
 
@@ -4225,7 +4226,7 @@ int TMomFinalizeChild(
 
   sprintf(log_buffer, "PBS: exec of shell '%.256s' failed\n", shell);
 
-  if (write(2, log_buffer, strlen(log_buffer)) == -1)
+  if (write_ac_socket(2, log_buffer, strlen(log_buffer)) == -1)
     {
     }
 
@@ -4340,7 +4341,7 @@ int TMomFinalizeJob3(
 
   /* send back as an acknowledgement that MOM got it */
 
-  if (write(TJE->mjspipe[1], &sjr, sizeof(sjr)) == -1)
+  if (write_ac_socket(TJE->mjspipe[1], &sjr, sizeof(sjr)) == -1)
     {
     }
 
@@ -4665,7 +4666,7 @@ int start_process(
 
     for (;;)
       {
-      i = read(parent_read, (char *) & sjr, sizeof(sjr));
+      i = read_ac_socket(parent_read, (char *) & sjr, sizeof(sjr));
 
       if ((i == -1) && (errno == EINTR))
         continue;
@@ -4674,7 +4675,7 @@ int start_process(
         {
         gotsuccess = 1;
 
-        if (write(parent_write, &sjr, sizeof(sjr)) == -1)
+        if (write_ac_socket(parent_write, &sjr, sizeof(sjr)) == -1)
           {
           }
 
@@ -5058,10 +5059,10 @@ int start_process(
     /* never send cookie - PW mpiexec patch */
 
     /*
-    if (write(1,pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str,
+    if (write_ac_socket(1,pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str,
       strlen(pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str)) == -1) {}
 
-    if (write(2,pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str,
+    if (write_ac_socket(2,pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str,
       strlen(pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str)) == -1) {}
     */
     }
@@ -5159,7 +5160,7 @@ int start_process(
     if (log_buffer[0] != '\0')
       {
       /* report error to user via stderr file */
-      if (write(2, log_buffer, strlen(log_buffer)) == -1)
+      if (write_ac_socket(2, log_buffer, strlen(log_buffer)) == -1)
         {
         }
 
@@ -5170,7 +5171,7 @@ int start_process(
 
             i);
 
-    if (write(2, log_buffer, strlen(log_buffer)) == -1)
+    if (write_ac_socket(2, log_buffer, strlen(log_buffer)) == -1)
       {
       }
 
@@ -5194,7 +5195,7 @@ int start_process(
         idir,
         strerror(errno));
       
-      if (write(2, log_buffer, strlen(log_buffer)) == -1)
+      if (write_ac_socket(2, log_buffer, strlen(log_buffer)) == -1)
         {
         }
 
@@ -5223,7 +5224,7 @@ int start_process(
         idir,
         strerror(errno));
 
-      if (write(2, log_buffer, strlen(log_buffer)) == -1)
+      if (write_ac_socket(2, log_buffer, strlen(log_buffer)) == -1)
         {
         }
 
@@ -5244,7 +5245,7 @@ int start_process(
         pjob->ji_grpcache->gc_homedir,
         strerror(errno));
 
-      if (write(2, log_buffer, strlen(log_buffer)) == -1)
+      if (write_ac_socket(2, log_buffer, strlen(log_buffer)) == -1)
         {
         }
 
@@ -5277,7 +5278,7 @@ int start_process(
     argv[0],
     strerror(errno));
 
-  if (write(2, log_buffer, strlen(log_buffer)) == -1)
+  if (write_ac_socket(2, log_buffer, strlen(log_buffer)) == -1)
     {
     }
 
@@ -6418,7 +6419,7 @@ static void starter_return(
 
   sjrtn->sj_code = code;
 
-  if (write(upfds, (char *)sjrtn, sizeof(*sjrtn)) == -1)
+  if (write_ac_socket(upfds, (char *)sjrtn, sizeof(*sjrtn)) == -1)
     {
     }
 
@@ -6439,7 +6440,7 @@ static void starter_return(
   do
     {
     alarm(120);
-    i = read(downfds, &ack, sizeof(ack));
+    i = read_ac_socket(downfds, &ack, sizeof(ack));
     alarmsecs = alarm(0);
 
     if ((i == -1) && (errno != EINTR))
@@ -7681,7 +7682,7 @@ int TMomCheckJobChild(
 
   for (;;)
     {
-    i = read(TJE->jsmpipe[0], (char *) &TJE->sjr, read_size);
+    i = read_ac_socket(TJE->jsmpipe[0], (char *) &TJE->sjr, read_size);
 
     if ((i == -1) && (errno == EINTR))
       continue;

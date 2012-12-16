@@ -77,8 +77,6 @@
 * without reference to its choice of law rules.
 */
 
-
-
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -90,6 +88,7 @@
 #include "alps_constants.h"
 #include "utils.h"
 
+#include "../lib/Libifl/lib_ifl.h"
 
 
 

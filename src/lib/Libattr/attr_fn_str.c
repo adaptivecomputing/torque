@@ -126,8 +126,8 @@ int decode_str(
 
   pbs_attribute *patr,   /* (I modified, allocated ) */
   const char  *name,   /* (I - optional) pbs_attribute name */
-  char          *rescn,  /* resource name - unused here */
-  char          *val,    /* pbs_attribute value */
+  const char *rescn,  /* resource name - unused here */
+  const char    *val,    /* pbs_attribute value */
   int            perm)   /* only used for resources */
 
   {

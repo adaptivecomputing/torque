@@ -104,6 +104,7 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
+#include "../lib/Libifl/lib_ifl.h"
 #include "svr_task.h"
 
 /* External functions */
@@ -124,7 +125,7 @@ extern int           LOGLEVEL;
 
 int req_track(
 
-  void *vp)
+  struct batch_request *vp) /* I */
 
   {
   struct batch_request *preq = (struct batch_request *)vp;
@@ -202,7 +203,7 @@ int req_track(
 
       need = server.sv_tracksize * 3 / 2;
 
-      new_track = calloc(need, sizeof(struct tracking));
+      new_track = (struct tracking *)calloc(need, sizeof(struct tracking));
 
       if (new_track == NULL)
         {
@@ -269,7 +270,7 @@ void track_save(
 
   {
   int        fd;
-  char      *myid = "save_track";
+  const char *myid = "save_track";
   time_t     time_now = time(NULL);
   work_task *wt;
 
@@ -297,7 +298,7 @@ void track_save(
     return;
     }
 
-  if (write(fd, (char *)server.sv_track, server.sv_tracksize * sizeof(struct tracking)) !=
+  if (write_ac_socket(fd, (char *)server.sv_track, server.sv_tracksize * sizeof(struct tracking)) !=
       (ssize_t)(server.sv_tracksize * sizeof(struct tracking)))
     {
     log_err(errno, myid, (char *)"failed to write to track file");

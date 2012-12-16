@@ -108,6 +108,7 @@
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
 #include "../lib/Liblog/chk_file_sec.h"
+#include "../lib/Libifl/lib_ifl.h"
 #include "server_limits.h"
 #include "attribute.h"
 #include "pbs_job.h"
@@ -157,7 +158,7 @@ extern int  schedule_jobs(void);
 extern int  notify_listeners(void);
 extern void svr_shutdown(int);
 extern void acct_close(void);
-extern int  svr_startjob(job *, struct batch_request *, char *, char *);
+extern int  svr_startjob(job *, struct batch_request **, char *, char *);
 extern int RPPConfigure(int, int);
 extern void acct_cleanup(long);
 void stream_eof(int, u_long, uint16_t, int);
@@ -198,6 +199,8 @@ extern int max_poll_job_tasks;
 extern int    recov_svr_attr (int);
 extern void  change_logs_handler(int);
 extern void  change_logs();
+
+/* ssize_t write_neverblocking_socket(int, const void *, ssize_t); */
 
 /* Local Private Functions */
 
@@ -806,7 +809,7 @@ void parse_command_line(
             }
           else
             {
-            log_err(-1, __func__, (char *)"unable to determine full server hostname");
+            log_err(-1, __func__, "unable to determine full server hostname");
             }
 
           exit(1);
@@ -1045,7 +1048,7 @@ pthread_t      route_retry_thread_id = -1;
  * Returns: amount of time till next task
  */
 
-void *check_tasks()
+void *check_tasks(void *notUsed)
 
   {
   work_task *ptask;
@@ -1123,7 +1126,7 @@ static int start_hot_jobs(void)
       ct++;
       }
 
-    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     }
 
   return(ct);
@@ -1166,10 +1169,8 @@ void *handle_queue_routing_retries(
       queuename = strdup(pque->qu_qs.qu_name); /* make sure this gets freed inside queue_route */
       enqueue_threadpool_request(queue_route, queuename);
       }
-
-    unlock_queue(pque, __func__, (char *)NULL, 0);
+    unlock_queue(pque, __func__, NULL, 0);
     }
-
   return(NULL);
   } /* END handle_queue_routing_retries() */
 
@@ -1533,7 +1534,7 @@ void main_loop(void)
     if (pjob->ji_modified)
       job_save(pjob, SAVEJOB_FULL, 0);
 
-    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     }
 
   if (svr_chngNodesfile)
@@ -1561,9 +1562,9 @@ void initialize_globals(void)
 
   msg_daemonname = strdup(pbs_current_user);
 
-  server.sv_qs_mutex = calloc(1, sizeof(pthread_mutex_t));
-  server.sv_attr_mutex = calloc(1, sizeof(pthread_mutex_t));
-  server.sv_jobstates_mutex = calloc(1, sizeof(pthread_mutex_t));
+  server.sv_qs_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  server.sv_attr_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  server.sv_jobstates_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
 
   pthread_mutex_init(server.sv_qs_mutex,NULL);
   pthread_mutex_init(server.sv_attr_mutex,NULL);
@@ -1871,7 +1872,7 @@ int main(
 
   if (!high_availability_mode)
     {
-    if (write(lockfds, log_buf, strlen(log_buf)) !=
+    if (write_ac_socket(lockfds, log_buf, strlen(log_buf)) !=
         (ssize_t)strlen(log_buf))
       {
       log_err(errno, msg_daemonname, (char *)"failed to write pid to lockfile");
@@ -2337,7 +2338,7 @@ int is_ha_lock_file_valid(
 
   if (GoodPermissions == FALSE)
     {
-    log_err(-1, __func__, (char *)"could not obtain the needed permissions for the lock file");
+    log_err(-1, __func__, "could not obtain the needed permissions for the lock file");
     }
 
   return(GoodPermissions);
@@ -2629,15 +2630,15 @@ int start_update_ha_lock_thread()
 
   if (fds < 0)
     {
-    log_err(-1, __func__, (char *)"Couldn't write the pid to the lockfile\n");
+    log_err(-1, __func__, "Couldn't write the pid to the lockfile\n");
 
     return(FAILURE);
     }
 
   snprintf(smallBuf,sizeof(smallBuf),"%ld\n",(long)sid);
-  if (write(fds,smallBuf,strlen(smallBuf)) != (ssize_t)strlen(smallBuf))
+  if (write_ac_socket(fds,smallBuf,strlen(smallBuf)) != (ssize_t)strlen(smallBuf))
     {
-    log_err(-1, __func__, (char *)"Couldn't write the pid to the lockfile\n");
+    log_err(-1, __func__, "Couldn't write the pid to the lockfile\n");
     close(fds);
 
     return(FAILURE);
@@ -2659,7 +2660,7 @@ int start_update_ha_lock_thread()
     {
     /* error creating thread */
 
-    log_err(-1, __func__, (char *)"Could not create HA Lock Thread\n");
+    log_err(-1, __func__, "Could not create HA Lock Thread\n");
 
     return(FAILURE);
     }
@@ -2878,7 +2879,7 @@ static int daemonize_server(
 
   if ((pid = fork()) == -1)
     {
-    log_err(errno, __func__, (char *)"cannot fork into background");
+    log_err(errno, __func__, "cannot fork into background");
 
     return(FAILURE);
    }
@@ -2901,7 +2902,7 @@ static int daemonize_server(
 
   if ((*sid = setsid()) == -1)
     {
-    log_err(errno, __func__, (char *)"Could not disconnect from controlling terminal");
+    log_err(errno, __func__, "Could not disconnect from controlling terminal");
 
     return(FAILURE);
     }
@@ -2923,7 +2924,7 @@ static int daemonize_server(
 
   if ((pid = fork()) == -1)
     {
-    log_err(errno, __func__, (char *)"cannot fork into background");
+    log_err(errno, __func__, "cannot fork into background");
 
     return(FAILURE);
     }
@@ -3183,7 +3184,7 @@ int svr_restart()
       {
       /* could not calloc */
 
-      log_err(errno, __func__, (char *)"ERROR:   (char *)  cannot allocate memory for full command, cannot restart\n");
+      log_err(errno, __func__, "ERROR:   (char *)  cannot allocate memory for full command, cannot restart\n");
 
       exit(-10);
       }

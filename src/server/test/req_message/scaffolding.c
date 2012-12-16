@@ -6,7 +6,7 @@
 #include "pbs_job.h" /* job */
 #include "work_task.h" /* work_task */
 
-char *msg_messagejob = "Message request to job status %d";
+const char *msg_messagejob = "Message request to job status %d";
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
 void reply_ack(struct batch_request *preq)
@@ -56,7 +56,7 @@ int get_batch_request_id(
   return(0);
   }
 
-int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }

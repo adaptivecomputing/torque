@@ -86,7 +86,7 @@ struct work_task *set_task(enum work_type type, long event_id, void (*func)(), v
   exit(1);
   }
 
-int find_attr(struct attribute_def *attr_def, char *name, int limit)
+int find_attr(struct attribute_def *attr_def, const char *name, int limit)
   {
   fprintf(stderr, "The call to find_attr needs to be mocked!!\n");
   exit(1);
@@ -352,7 +352,7 @@ int insert_addr_name_info(
   return(0);
   }
 
-int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }

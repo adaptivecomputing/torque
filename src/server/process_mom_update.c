@@ -131,7 +131,7 @@ int save_single_mic_status(
     {
     if ((rc = decode_arst(temp, NULL, NULL, single_mic_status->str, 0)) != PBSE_NONE)
       {
-      log_err(ENOMEM, __func__, (char *)"");
+      log_err(ENOMEM, __func__, "");
       free_arst(temp);
       }
     
@@ -196,7 +196,7 @@ int process_mic_status(
 
     if (mic_count > pnode->nd_nmics_alloced)
       {
-      struct jobinfo *tmp = calloc(mic_count, sizeof(struct jobinfo));
+      struct jobinfo *tmp = (struct jobinfo *)calloc(mic_count, sizeof(struct jobinfo));
       
       if (tmp == NULL)
         return(ENOMEM);
@@ -243,7 +243,7 @@ struct pbsnode *get_numa_from_str(
       np->nd_name);
     log_err(-1, __func__, log_buf);
   
-    unlock_node(np, __func__, (char *)"np numa update", LOGLEVEL);
+    unlock_node(np, __func__, "np numa update", LOGLEVEL);
     
     return(NULL);
     }
@@ -262,14 +262,14 @@ struct pbsnode *get_numa_from_str(
       np->nd_name);
     log_err(-1, __func__, log_buf);
     
-    unlock_node(np, __func__, (char *)"np numa update", LOGLEVEL);
+    unlock_node(np, __func__, "np numa update", LOGLEVEL);
     
     return(NULL);
     }
  
   /* SUCCESS */
-  unlock_node(np, __func__, (char *)"np numa update", LOGLEVEL);
-  lock_node(numa, __func__, (char *)"numa numa update", LOGLEVEL);
+  unlock_node(np, __func__, "np numa update", LOGLEVEL);
+  lock_node(numa, __func__, "numa numa update", LOGLEVEL);
   
   numa->nd_lastupdate = time(NULL);
   
@@ -297,7 +297,7 @@ struct pbsnode *get_node_from_str(
   /* don't do anything if the name is the same as this node's name */
   if (strcmp(node_id, np->nd_name))
     {
-    unlock_node(np, __func__, (char *)"np not numa update", LOGLEVEL);
+    unlock_node(np, __func__, "np not numa update", LOGLEVEL);
     
     next = find_nodebyname(node_id);
     
@@ -442,7 +442,7 @@ void update_job_data(
           memset(&tA, 0, sizeof(tA));
 
           tA.al_name  = attr_name;
-          tA.al_resc  = "";
+          tA.al_resc  = (char *)"";
           tA.al_value = attr_value;
           tA.al_op    = SET;
 
@@ -455,7 +455,7 @@ void update_job_data(
           attr_name = threadsafe_tokenizer(&jobdata_ptr, "=");
           }
         
-        unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         }
       
       if (on_node == FALSE)
@@ -678,7 +678,22 @@ int process_status_info(
       if ((current = get_node_from_str(str, name, current)) == NULL)
         break;
       else
+        {
+        /* There is a race condition if using a mom hierarchy and manually
+         * shutting down a non-level 1 mom: if its message that the mom is
+         * shutting down gets there before its last status update, the node
+         * can incorrectly be set as free again. For that reason, only set
+         * a mom back up if its reporting for itself. */
+        if ((strcmp(name, str + strlen("node=")) != 0) &&
+            (current->nd_mom_reported_down == TRUE))
+          {
+          dont_change_state = TRUE;
+          }
+          
+        current->nd_mom_reported_down = FALSE;
+
         continue;
+        }
       }
 
     /* add the info to the "temp" pbs_attribute */
@@ -741,8 +756,8 @@ int process_status_info(
       {
       /* walk job list reported by mom */
       size_t         len = strlen(str) + strlen(current->nd_name) + 2;
-      char          *jobstr = calloc(1, len);
-      sync_job_info *sji = calloc(1, sizeof(sync_job_info));
+      char          *jobstr = (char *)calloc(1, len);
+      sync_job_info *sji = (sync_job_info *)calloc(1, sizeof(sync_job_info));
 
       if ((jobstr != NULL)&&(sji != NULL))
         {
@@ -777,7 +792,7 @@ int process_status_info(
   if (current != NULL)
     {
     save_node_status(current, &temp);
-    unlock_node(current, __func__, (char *)NULL, 0);
+    unlock_node(current, __func__, NULL, 0);
     }
   
   if ((rc == PBSE_NONE) &&

@@ -113,7 +113,7 @@
  */
 
 
-int to_size(char *, struct size_value *);
+int to_size(const char *, struct size_value *);
 void from_size(struct size_value *, char *);
 int normalize_size(struct size_value *a, struct size_value *b,
                        struct size_value *c, struct size_value *d);
@@ -130,8 +130,8 @@ int decode_size(
 
   pbs_attribute *patr,
   const char   *name, /* pbs_attribute name */
-  char          *rescn, /* resource name, unused here */
-  char          *val, /* pbs_attribute value */
+  const char *rescn, /* resource name, unused here */
+  const char    *val, /* pbs_attribute value */
   int            perm)  /* only used for resources */
 
   {
@@ -423,7 +423,7 @@ normalize_size(struct size_value *a, struct size_value *b, struct size_value *ta
 
 int to_size(
 
-  char              *val,   /* I */
+  const char        *val,   /* I */
   struct size_value *psize) /* O */
 
   {

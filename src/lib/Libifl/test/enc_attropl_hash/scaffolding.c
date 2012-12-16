@@ -29,7 +29,7 @@ int hash_count(job_data *head)
  exit(1);
  }
 
-int hash_del_item(memmgr **mm, job_data **head, char *name)
+int hash_del_item(memmgr **mm, job_data **head, const char *name)
  {
  fprintf(stderr, "The call to hash_del_item needs to be mocked!!\n");
  exit(1);

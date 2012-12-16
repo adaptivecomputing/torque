@@ -34,7 +34,7 @@
 #define XPDBX_PATH         "/usr/lpp/ppe.poe/bin/xpdbx"
 #define INTERACTIVE_FILE   "/usr/local/pbs/etc/interactive"
 
-void   set_if_undefined(char *name, char *val);
+void   set_if_undefined(const char *name, const char *val);
 void   check_environment();
 int    is_pbs_job();
 char **pbs_setup(char *command, int argc, char **argv);
@@ -68,7 +68,7 @@ is_pbs_job(void)
   return(1);
   }
 
-void set_if_undefined(char *name, char *val)
+void set_if_undefined(const char *name, const char *val)
   {
   char *ret;
   int result;
@@ -76,7 +76,7 @@ void set_if_undefined(char *name, char *val)
 
   if (ret != NULL) return;
 
-  result = putenv(val);
+  result = putenv((char *)val);
 
   if (result != 0)
     {
@@ -272,7 +272,7 @@ char **pbs_setup(
 
   /* make an argument list */
 
-  newargs = calloc((argc + 8), sizeof(char *));
+  newargs = (char **)calloc((argc + 8), sizeof(char *));
 
   if (newargs == NULL)
     {
@@ -351,7 +351,7 @@ char **pbs_setup(
 
   if (ocmdfile == 0)
     {
-    newargs[j++] = PBSPD;
+    newargs[j++] = (char *)PBSPD;
     newargs[j++] = pbsjobkey;
     }
 
@@ -422,7 +422,7 @@ char **pbs_setup(
       exit(1);
       }
 
-    newargs[j++] = "-cmdfile";
+    newargs[j++] = (char *)"-cmdfile";
 
     newargs[j++] = ncmdfname;
 
@@ -432,7 +432,7 @@ char **pbs_setup(
     {
     fprintf(stderr, "%s: Warning, (number of host nodes) < (number of procs)\n\t-- assigning multiple processes per node\n\t-- not using high-performance switch mode\n", mcn);
 
-    putenv("MP_EUILIB=ip");
+    putenv((char *)"MP_EUILIB=ip");
 
     sprintf(hostfile, "/tmp/pbsHtemp.%s", getenv("PBS_JOBID"));
 
@@ -526,7 +526,7 @@ char **pbs_setup(
 
   free(hfile_mem);
 
-  newargs[j++]   = "-hostfile";
+  newargs[j++]   = (char *)"-hostfile";
 
   newargs[j++]   = hostfile;
 
@@ -644,15 +644,15 @@ char *get_real_command(
   else
     command_name = argv0;
 
-  if (!strcmp(command_name, "poe")) return(POE_PATH);
+  if (!strcmp(command_name, (char *)"poe")) return(POE_PATH);
 
-  if (!strcmp(command_name, "pbspoe")) return(POE_PATH);
+  if (!strcmp(command_name, (char *)"pbspoe")) return(POE_PATH);
 
-  if (!strcmp(command_name, "pdbx")) return(PDBX_PATH);
+  if (!strcmp(command_name, (char *)"pdbx")) return(PDBX_PATH);
 
-  if (!strcmp(command_name, "xpdbx")) return XPDBX_PATH;
+  if (!strcmp(command_name, (char *)"xpdbx")) return XPDBX_PATH;
 
-  if (!strcmp(command_name, "newpoe")) return(POE_PATH);
+  if (!strcmp(command_name, (char *)"newpoe")) return(POE_PATH);
 
   fprintf(stderr, "\"%s\" unknown to the PBS front end.\n", argv0);
 

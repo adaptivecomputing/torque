@@ -87,7 +87,7 @@ int pbs_manager_err(int c, int command, int objtype, char *objname, struct attro
   exit(1);
   }
 
-int MXMLCreateE(mxml_t **E, char *Name)
+int MXMLCreateE(mxml_t **E, const char *Name)
   { 
   fprintf(stderr, "The call to MXMLCreateE needs to be mocked!!\n");
   exit(1);

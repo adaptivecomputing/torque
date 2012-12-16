@@ -94,7 +94,7 @@ void initialize_login_holder()
   {
   logins.ra = initialize_resizable_array(LOGIN_INITIAL_SIZE);
   logins.next_node = 0;
-  logins.ln_mutex = calloc(1, sizeof(pthread_mutex_t));
+  logins.ln_mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(logins.ln_mutex, NULL);
   }
 
@@ -105,7 +105,7 @@ int add_to_login_holder(
   struct pbsnode *pnode)
 
   {
-  login_node *ln = calloc(1, sizeof(login_node));
+  login_node *ln = (login_node *)calloc(1, sizeof(login_node));
   int         rc;
 
   ln->pnode = pnode;
@@ -132,7 +132,7 @@ struct pbsnode *check_node(
   {
   struct pbsnode *pnode = ln->pnode;
 
-  lock_node(pnode, __func__, (char *)NULL, 20);
+  lock_node(pnode, __func__, NULL, 20);
 
   if ((hasprop(pnode, needed) == TRUE) &&
       (pnode->nd_nsn - pnode->nd_np_to_be_used >= 1) &&
@@ -141,7 +141,7 @@ struct pbsnode *check_node(
     return(pnode);
   else
     {
-    unlock_node(pnode, __func__, (char *)NULL, 20);
+    unlock_node(pnode, __func__, NULL, 20);
     return(NULL);
     }
   } /* END check_node() */
@@ -163,7 +163,7 @@ struct pbsnode *find_fitting_node(
   resizable_array *ordered = initialize_resizable_array(logins.ra->num + 1);
 
   /* create a sorted list of the logins */
-  while ((ln = next_thing(logins.ra, &iter)) != NULL)
+  while ((ln = (login_node *)next_thing(logins.ra, &iter)) != NULL)
     {
     /* if ordered is empty just insert without attempting to sort */
     if (ordered->num == 0)
@@ -173,7 +173,7 @@ struct pbsnode *find_fitting_node(
       ordered_iter = -1;
       index = ordered->slots[ALWAYS_EMPTY_INDEX].next;
 
-      while ((ordered_ln = next_thing(ordered, &ordered_iter)) != NULL)
+      while ((ordered_ln = (login_node *)next_thing(ordered, &ordered_iter)) != NULL)
         {
         if (ln->times_used <= ordered_ln->times_used)
           {
@@ -192,7 +192,7 @@ struct pbsnode *find_fitting_node(
 
   iter = -1;
 
-  while ((ln = next_thing(ordered, &iter)) != NULL)
+  while ((ln = (login_node *)next_thing(ordered, &iter)) != NULL)
     {
     if ((pnode = check_node(ln, needed)) != NULL)
       {
@@ -219,7 +219,7 @@ void update_next_node_index(
   int         prev_index = logins.ra->slots[ALWAYS_EMPTY_INDEX].next;
   login_node *ln;
 
-  while ((ln = next_thing(logins.ra, &iter)) != NULL)
+  while ((ln = (login_node *)next_thing(logins.ra, &iter)) != NULL)
     {
     if (ln->times_used < to_beat)
       {
@@ -252,7 +252,7 @@ struct pbsnode *get_next_login_node(
   if (ln != NULL)
     {
     pnode = ln->pnode;
-    lock_node(pnode, __func__, (char *)NULL, 0);
+    lock_node(pnode, __func__, NULL, 0);
     
     if (needed != NULL)
       {
@@ -272,7 +272,7 @@ struct pbsnode *get_next_login_node(
     
     if (node_fits == FALSE)
       {
-      unlock_node(pnode, __func__, (char *)NULL, 0);
+      unlock_node(pnode, __func__, NULL, 0);
       pnode = find_fitting_node(needed);
       }
     else

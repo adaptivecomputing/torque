@@ -21,6 +21,7 @@
 #include <pbs_error.h>    /* all static defines,  message & error codes */
 #include "qsub_functions.h"
 #include "common_cmds.h"
+#include "../lib/Libifl/lib_ifl.h"
 
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -83,7 +84,7 @@ char *host_name_suffix = NULL;
 int    J_opt = FALSE;
 int    P_opt = FALSE;
 
-char *checkpoint_strings = "n,c,s,u,none,shutdown,periodic,enabled,interval,depth,dir";
+const char *checkpoint_strings = "n,c,s,u,none,shutdown,periodic,enabled,interval,depth,dir";
 
 /* adapted from openssh */
 /* The parameter was EMsg, but was never used.
@@ -209,7 +210,7 @@ char *x11_get_proto(
     return(NULL);
     }
 
-  authstring = calloc(1, strlen(proto) + strlen(data) + strlen(screen) + 4);
+  authstring = (char *)calloc(1, strlen(proto) + strlen(data) + strlen(screen) + 4);
 
   if (authstring == NULL)
     {
@@ -294,7 +295,7 @@ int find_job_script_index(
 char *smart_strtok(
 
   char  *line,          /* I */
-  char  *delims,        /* I */
+  const char  *delims,        /* I */
   char **ptrPtr,        /* O */
   int    ign_backslash) /* I */
 
@@ -526,10 +527,10 @@ char *smart_strtok(
 
 
 
-int get_name_value(start, name, value)
-char  *start;
-char **name;
-char **value;
+int get_name_value(
+    char  *start,
+    char **name,
+    char **value)
   {
   static char *tok_ptr;
   char *curr_ptr;
@@ -705,7 +706,7 @@ int validate_submit_filter(
   int rc = 0;
   job_data *filter_info = NULL;
   struct stat  sfilter;
-  char *DefaultFilterPath = "/usr/local/sbin/torque_submitfilter";
+  const char *DefaultFilterPath = "/usr/local/sbin/torque_submitfilter";
 
   hash_find(*a_hash, ATTR_pbs_o_submit_filter, &filter_info);
   if ((filter_info != NULL) && (filter_info->var_type == CONFIG_DATA))
@@ -1170,7 +1171,7 @@ void make_argv(
   int len;
   char quote;
 
-  buffer = calloc(1, strlen(line) + 1);
+  buffer = (char *)calloc(1, strlen(line) + 1);
 
   if (buffer == NULL)
     {
@@ -1181,7 +1182,7 @@ void make_argv(
 
   *argc = 0;
 
-  argv[(*argc)++] = "qsub";
+  argv[(*argc)++] = (char *)"qsub";
 
   l = line;
   b = buffer;
@@ -1440,7 +1441,7 @@ int reader(
 
   while (1)
     {
-    c = read(s, buf, sizeof(buf));
+    c = read_ac_socket(s, buf, sizeof(buf));
 
     if (c > 0)
       {
@@ -1448,7 +1449,7 @@ int reader(
 
       while (c)
         {
-        if ((wc = write(d, p, c)) < 0)
+        if ((wc = write_ac_socket(d, p, c)) < 0)
           {
           if (errno == EINTR)
             {
@@ -1510,7 +1511,7 @@ void writer(
 
   while (1)
     {
-    i = read(d, &c, 1);
+    i = read_ac_socket(d, &c, 1);
 
     if (i > 0)
       {
@@ -1524,7 +1525,7 @@ void writer(
 
           /* read next character to check */
 
-          while ((i = read(d, &c, 1)) != 1)
+          while ((i = read_ac_socket(d, &c, 1)) != 1)
             {
             if ((i == -1) && (errno == EINTR))
               continue;
@@ -1556,7 +1557,7 @@ void writer(
             {
             /* not escape, write out tilde */
 
-            while ((wi = write(s, &tilde, 1)) != 1)
+            while ((wi = write_ac_socket(s, &tilde, 1)) != 1)
               {
               if ((wi == -1) && (errno == EINTR))
                 continue;
@@ -1581,7 +1582,7 @@ void writer(
                   (c == '\r');
         }
 
-      while ((wi = write(s, &c, 1)) != 1)
+      while ((wi = write_ac_socket(s, &c, 1)) != 1)
         {
         /* write out character */
 
@@ -1665,7 +1666,7 @@ void send_winsize(
           wsz->ws_xpixel,
           wsz->ws_ypixel);
 
-  if (write(sock, buf, PBS_TERM_BUF_SZ) != PBS_TERM_BUF_SZ)
+  if (write_ac_socket(sock, buf, PBS_TERM_BUF_SZ) != PBS_TERM_BUF_SZ)
     print_qsub_usage_exit("qsub: sending winsize");
 /*    {
     perror("sending winsize");
@@ -1701,7 +1702,7 @@ void send_term(
   else
     safe_strncat(buf, term, PBS_TERM_BUF_SZ - 5);
 
-  if (write(sock, buf, PBS_TERM_BUF_SZ) != PBS_TERM_BUF_SZ)
+  if (write_ac_socket(sock, buf, PBS_TERM_BUF_SZ) != PBS_TERM_BUF_SZ)
     print_qsub_usage_exit("qsub: sending term type");
 /*    {
     perror("sending term type");
@@ -1718,7 +1719,7 @@ void send_term(
   cc_array[4] = oldtio.c_cc[VEOF];
   cc_array[5] = oldtio.c_cc[VSUSP];
 
-  if (write(sock, cc_array, PBS_TERM_CCA) != PBS_TERM_CCA)
+  if (write_ac_socket(sock, cc_array, PBS_TERM_CCA) != PBS_TERM_CCA)
     print_qsub_usage_exit("qsub: sending term options");
 /*    {
     perror("sending term options");
@@ -2114,7 +2115,7 @@ void interactive(
 
   while (amt > 0)
     {
-    fromlen = read(news, pc, amt);
+    fromlen = read_ac_socket(news, pc, amt);
 
     if (fromlen <= 0)
       break;
@@ -2265,7 +2266,7 @@ int validate_group_list(
   /* check each group to determine if it is a valid group that the user can be a part of.
    * group list is of the form group[@host][,group[@host]...] */
   char          *groups = strdup(glist);
-  char          *delims = ",";
+  const char   *delims = ",";
   char          *tmp_group = strtok(groups, delims); 
   char          *at;
   char          *u_name;
@@ -2919,7 +2920,7 @@ void process_opts(
               Depend_opt = passet;
               */
 
-              pdepend = calloc(1, PBS_DEPEND_LEN);
+              pdepend = (char *)calloc(1, PBS_DEPEND_LEN);
 
               if ((pdepend == NULL) ||
                    (rc = parse_depend_list(valuewd,pdepend,PBS_DEPEND_LEN)))
@@ -3576,7 +3577,7 @@ void process_opts(
           /* Duplicate code */
 /* #ifdef linux */
           aindex = 1;  /* prime getopt's starting point */
-          tmpArgV[0] = "";
+          tmpArgV[0] = (char *)"";
 /* #else */
 /*           aindex = 1;  prime getopt's starting point */
 /*           tmpArgV[0] = ""; */
@@ -3706,8 +3707,8 @@ void set_job_defaults(
 
 char *get_param(
 
-  char *param,      /* I */
-  char *config_buf) /* I */
+  const char *param,      /* I */
+  const char *config_buf) /* I */
 
   {
   char tmpLine[1024];
@@ -3723,7 +3724,7 @@ char *get_param(
 
   /* NOTE: currently case-sensitive (FIXME) */
 
-  if ((param_val = strstr(config_buf, param)) == NULL)
+  if ((param_val = strstr((char *)config_buf, param)) == NULL)
     {
     return(NULL);
     }
@@ -3879,7 +3880,7 @@ void process_config_file(
  * display the qsub usage information
  * exit
  */
-void print_qsub_usage_exit(char *error_msg)
+void print_qsub_usage_exit(const char *error_msg)
   {
   static char usage[] =
     "usage: qsub [-a date_time] [-A account_string] [-b secs]\n\
@@ -3970,7 +3971,7 @@ void set_minwclimit(
 void add_variable_list(
 
   job_info *ji,
-  char     *var_name,
+  const char     *var_name,
   job_data *src_hash)
 
   {
@@ -3991,7 +3992,7 @@ void add_variable_list(
   total_len += hash_strlen(ji->user_attr);
   count = hash_count(ji->user_attr);
   total_len += count*2;
-  var_list = memmgr_calloc(&ji->mm, 1, total_len);
+  var_list = (char *)memmgr_calloc(&ji->mm, 1, total_len);
 
   if (v_value != NULL)
     {
@@ -4000,7 +4001,7 @@ void add_variable_list(
       strcat(var_list, ",");
     }
 
-  for (en=src_hash; en != NULL; en=en->hh.next)
+  for (en=src_hash; en != NULL; en=(job_data *)en->hh.next)
     {
     pos++;
     strcat(var_list, en->name);

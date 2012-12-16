@@ -7,7 +7,7 @@
 
 int init_resc_defs(void);
 
-/* static int decode_nodes(pbs_attribute *patr, char *name, char *rescn, char *val, int perm); */
+/* static int decode_nodes(pbs_attribute *patr, char *name, const char *rescn, const char *val, int perm); */
 
 int ctnodes(char *spec);
 

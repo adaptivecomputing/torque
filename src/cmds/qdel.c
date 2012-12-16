@@ -204,7 +204,7 @@ int main(
   for (;optind < argc;optind++)
     {
     int connect;
-    int stat = 0;
+    int stat;
 
     /* check to see if user specified 'all' to delete all jobs */
 
@@ -247,7 +247,7 @@ cnt:
     if (stat &&
         (any_failed != PBSE_UNKJOBID))
       {
-      prt_job_err("qdel", connect, job_id_out);
+      prt_job_err((char *)"qdel", connect, job_id_out);
       }
     else if (stat && 
              (any_failed != PBSE_UNKJOBID) &&
@@ -264,7 +264,7 @@ cnt:
         goto cnt;
         }
 
-      prt_job_err("qdel", connect, job_id_out);
+      prt_job_err((char *)"qdel", connect, job_id_out);
       }
 
     pbs_disconnect(connect);

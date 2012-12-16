@@ -6,9 +6,9 @@
 #include "batch_request.h" /* batch_request */
 #include "queue.h" /* pbs_queue */
 
-char *pbs_o_host = "PBS_O_HOST";
-char *msg_movejob = "Job moved to ";
-char *msg_manager = "%s at request of %s@%s";
+const char *pbs_o_host = "PBS_O_HOST";
+const char *msg_movejob = "Job moved to ";
+const char *msg_manager = "%s at request of %s@%s";
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
 int job_save(job *pjob, int updatetype, int mom_port)
@@ -97,7 +97,7 @@ job *svr_find_job(
   return(NULL);
   }
 
-int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }

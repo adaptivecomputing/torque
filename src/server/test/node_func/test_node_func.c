@@ -9,7 +9,7 @@
 #include "resizable_array.h"
 
 
-struct pbsnode *find_nodebyname(char *nodeid);
+struct pbsnode *find_nodebyname(const char *nodeid);
 int cray_enabled;
 
 

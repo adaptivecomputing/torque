@@ -118,6 +118,7 @@
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/setup_env.h"
 #include "../lib/Liblog/chk_file_sec.h"
+#include "../lib/Libifl/lib_ifl.h"
 #include "resmon.h"
 #include "sched_cmds.h"
 #include "server_limits.h"
@@ -162,7 +163,7 @@ void die(
   int sig)
 
   {
-  char *id = "die";
+  const char *id = "die";
 
   if (sig > 0)
     {
@@ -265,7 +266,7 @@ void toolong(
   int sig)
 
   {
-  char *id = "toolong";
+  const char *id = "toolong";
 
   struct stat sb;
   pid_t cpid;
@@ -363,7 +364,7 @@ socket_to_conn(int sock)
 
 int restricted(
 
-  char  *name)
+  const char  *name)
 
   {
   static  char    id[] = "restricted";
@@ -385,11 +386,11 @@ int restricted(
 
   if (mask_num > 0)
     {
-    newclients = realloc(maskclient, sizeof(pbs_net_t) * (mask_num + 1));
+    newclients = (pbs_net_t*)realloc(maskclient, sizeof(pbs_net_t) * (mask_num + 1));
     }
   else
     {
-    newclients = malloc(sizeof(pbs_net_t));
+    newclients = (pbs_net_t*)malloc(sizeof(pbs_net_t));
     }
 
   if (newclients == NULL)
@@ -412,7 +413,7 @@ int restricted(
 
 int addclient(
 
-  char *name)
+  const char *name)
 
   {
   static char     id[] = "addclient";
@@ -435,7 +436,7 @@ int addclient(
     {
     pbs_net_t *newclients;
 
-    newclients = realloc(okclients,
+    newclients = (pbs_net_t*)realloc(okclients,
                          sizeof(pbs_net_t) * (numclients + 1));
 
     if (newclients == NULL)
@@ -472,7 +473,7 @@ static int read_config(
   char *file)
 
   {
-  static char *id = "read_config";
+  static const char *id = "read_config";
 
   FILE *conf;
   int i;
@@ -481,8 +482,8 @@ static int read_config(
 
   struct specialconfig
     {
-    char *name;
-    int (*handler)();
+    const char *name;
+    int (*handler)(const char *name);
     } special[] =
 
     {
@@ -521,7 +522,7 @@ static int read_config(
       {
 
       if ((token = strtok(line, " \t")) == NULL)
-        token = "";
+        token = (char *)"";
 
       for (i = 0; special[i].name; i++)
         {
@@ -569,7 +570,7 @@ static int read_config(
 void
 restart(int sig)
   {
-  char    *id = "restart";
+  const char *id = "restart";
 
   if (sig)
     {
@@ -594,7 +595,7 @@ restart(int sig)
   }
 
 void
-badconn(char *msg)
+badconn(const char *msg)
   {
   static char id[] = "badconn";
 
@@ -648,7 +649,7 @@ int
 server_command(void)
 
   {
-  char *id = "server_command";
+  const char *id = "server_command";
 
   int           new_socket;
   torque_socklen_t slen;
@@ -759,7 +760,7 @@ int main(
   char *argv[])
 
   {
-  char  *id = "main";
+  const char  *id = "main";
 
   struct hostent *hp;
   int  go, c, errflg = 0;
@@ -767,9 +768,9 @@ int main(
   int  t = 1;
   pid_t  pid;
   char  host[100];
-  char  *homedir = PBS_SERVER_HOME;
+  const char  *homedir = PBS_SERVER_HOME;
   unsigned int port;
-  char  *dbfile = "sched_out";
+  const char  *dbfile = "sched_out";
 
   struct sigaction act;
   sigset_t oldsigs;
@@ -1173,7 +1174,7 @@ int main(
 
   (void)sprintf(log_buffer, "%ld\n", (long)pid);
 
-  if (write(lockfds, log_buffer, strlen(log_buffer) + 1) != (ssize_t)(strlen(log_buffer) + 1))
+  if (write_ac_socket(lockfds, log_buffer, strlen(log_buffer) + 1) != (ssize_t)(strlen(log_buffer) + 1))
     {
     perror("writing to lockfile");
 

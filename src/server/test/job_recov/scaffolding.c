@@ -102,12 +102,22 @@ int add_to_ms_list(char *node_id, job *pjob)
   return(0);
   }
 
-int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }
 
 int unlock_ai_mutex(job_array *pa, const char *func_id, char *msg, int logging)
+  {
+  return(0);
+  }
+
+ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
+  {
+  return(0);
+  }
+
+ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   {
   return(0);
   }

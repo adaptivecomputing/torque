@@ -836,7 +836,7 @@ int log_path(
           tm_ptr->tm_mon + 1,
           tm_ptr->tm_mday);
 
-  filenames[filecount] = malloc(strlen(buf)+1);
+  filenames[filecount] = (char *)malloc(strlen(buf)+1);
 
   if(!filenames[filecount])
   {
@@ -854,7 +854,7 @@ int log_path(
     {
     while (fgets(pbuf, 512, fp) != NULL)
       {
-      filenames[filecount] = malloc(strlen(pbuf)+1);
+      filenames[filecount] = (char *)malloc(strlen(pbuf)+1);
 
       if (filenames[filecount] == NULL)
         {
@@ -905,7 +905,7 @@ alloc_more_space(void)
   else
     ll_max_amm *= 2;
 
-  if ((log_lines = realloc(log_lines, ll_max_amm * sizeof(struct log_entry))) == NULL)
+  if ((log_lines = (struct log_entry *)realloc(log_lines, ll_max_amm * sizeof(struct log_entry))) == NULL)
     {
     perror("Error allocating memory");
     exit(1);

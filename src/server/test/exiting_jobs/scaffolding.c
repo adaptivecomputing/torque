@@ -61,7 +61,7 @@ void *next_from_hash_map(hash_map *hm, int *iter)
     
   if (*iter < 2)
     {
-    jeri = calloc(1, sizeof(job_exiting_retry_info));
+    jeri = (job_exiting_retry_info*)calloc(1, sizeof(job_exiting_retry_info));
 
     if (*iter == -1)
       snprintf(jeri->jobid, sizeof(jeri->jobid), "1.napali");
@@ -77,7 +77,7 @@ void *next_from_hash_map(hash_map *hm, int *iter)
     return(NULL);
   }
 
-int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }

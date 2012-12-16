@@ -90,7 +90,7 @@ set_attrop(struct attropl **list, char *a_name, char *r_name, char *v_name, enum
 #define OPSTRING_LEN 4
 #define OP_LEN 2
 #define OP_ENUM_LEN 6
-static char *opstring_vals[] = { "eq", "ne", "ge", "gt", "le", "lt" };
+static const char *opstring_vals[] = { "eq", "ne", "ge", "gt", "le", "lt" };
 static enum batch_op opstring_enums[] = { EQ, NE, GE, GT, LE, LT };
 
 
@@ -267,7 +267,7 @@ int main(
 
         sprintf(a_value, "%ld", (long)after);
 
-        set_attrop(&select_list, ATTR_a, NULL, a_value, op);
+        set_attrop(&select_list, (char *)ATTR_a, NULL, a_value, op);
         break;
 
       case 'e':
@@ -329,7 +329,7 @@ int main(
             }
           }
 
-        set_attrop(&select_list, ATTR_c, NULL, optargout, op);
+        set_attrop(&select_list, (char *)ATTR_c, NULL, optargout, op);
 
         break;
 
@@ -375,7 +375,7 @@ int main(
           break;
           }
 
-        set_attrop(&select_list, ATTR_h, NULL, optargout, op);
+        set_attrop(&select_list, (char *)ATTR_h, NULL, optargout, op);
 
         break;
 
@@ -390,20 +390,20 @@ int main(
             break;
             }
 
-          set_attrop(&select_list, ATTR_l, resource_name, optargout, op);
+          set_attrop(&select_list, (char *)ATTR_l, resource_name, optargout, op);
           }
 
         break;
 
       case 'p':
         check_op(optarg, pop, optargout);
-        set_attrop(&select_list, ATTR_p, NULL, optargout, op);
+        set_attrop(&select_list, (char *)ATTR_p, NULL, optargout, op);
         break;
 
       case 'q':
         strncpy(destination, optarg, PBS_MAXROUTEDEST);
         check_op(optarg, pop, optargout);
-        set_attrop(&select_list, ATTR_q, NULL, optargout, op);
+        set_attrop(&select_list, (char *)ATTR_q, NULL, optargout, op);
         break;
 
       case 'r':
@@ -426,7 +426,7 @@ int main(
           break;
           }
 
-        set_attrop(&select_list, ATTR_r, NULL, pc, op);
+        set_attrop(&select_list, (char *)ATTR_r, NULL, pc, op);
 
         break;
 
@@ -457,7 +457,7 @@ int main(
           pc++;
           }
 
-        set_attrop(&select_list, ATTR_state, NULL, optargout, op);
+        set_attrop(&select_list, (char *)ATTR_state, NULL, optargout, op);
 
         break;
 
@@ -471,18 +471,18 @@ int main(
           break;
           }
 
-        set_attrop(&select_list, ATTR_u, NULL, optarg, op);
+        set_attrop(&select_list, (char *)ATTR_u, NULL, optarg, op);
 
         break;
 
       case 'A':
         op = EQ;
-        set_attrop(&select_list, ATTR_A, NULL, optarg, op);
+        set_attrop(&select_list, (char *)ATTR_A, NULL, optarg, op);
         break;
 
       case 'N':
         op = EQ;
-        set_attrop(&select_list, ATTR_N, NULL, optarg, op);
+        set_attrop(&select_list, (char *)ATTR_N, NULL, optarg, op);
         break;
 
       default :
@@ -531,7 +531,7 @@ int main(
     exit(any_failed);
     }
 
-  selectjob_list = pbs_selectjob_err(connect, select_list, exec_only ? EXECQUEONLY : NULL, &any_failed);
+  selectjob_list = pbs_selectjob_err(connect, select_list, exec_only ? (char *)EXECQUEONLY : NULL, &any_failed);
 
   if (selectjob_list == NULL)
     {

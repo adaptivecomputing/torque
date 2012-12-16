@@ -7,9 +7,9 @@
 #include "batch_request.h" /* batch_request.h */
 #include "work_task.h" /* work_task, all_tasks */
 
-char *msg_jobrerun = "Job Rerun";
+const char *msg_jobrerun = "Job Rerun";
 attribute_def job_attr_def[10];
-char *msg_manager = "%s at request of %s@%s";
+const char *msg_manager = "%s at request of %s@%s";
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
 
@@ -25,7 +25,7 @@ char *parse_servername(char *name, unsigned int *service)
   exit(1);
   }
 
-void svr_mailowner(job *pjob, int mailpoint, int force, char *text)
+void svr_mailowner(job *pjob, int mailpoint, int force, const char *text)
   {
   fprintf(stderr, "The call to svr_mailowner to be mocked!!\n");
   exit(1);
@@ -121,7 +121,7 @@ int get_batch_request_id(
 
 void free_br(batch_request *preq) {} 
 
-int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }

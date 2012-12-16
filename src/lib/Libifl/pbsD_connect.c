@@ -417,7 +417,7 @@ int PBSD_munge_authenticate(
 
   fd = fileno(munge_pipe);
 
-  while ((bytes_read = read(fd, ptr, MUNGE_SIZE - total_bytes_read)) > 0)
+  while ((bytes_read = read_ac_socket(fd, ptr, MUNGE_SIZE - total_bytes_read)) > 0)
     {
     total_bytes_read += bytes_read;
     ptr += bytes_read;
@@ -1405,7 +1405,7 @@ int pbs_disconnect_socket(
       /* wait for server to close connection */
       /* NOTE:  if read of 'sock' is blocking, request below may hang forever
          -- hence the signal handler above */
-      if (read(sock, &tmp_buf, sizeof(tmp_buf)) < 1)
+      if (read_ac_socket(sock, &tmp_buf, sizeof(tmp_buf)) < 1)
         break;
       }
 

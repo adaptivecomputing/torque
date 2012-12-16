@@ -38,7 +38,7 @@ all_nodes allnodes;
 struct node_state
   {
   short  bit;
-  char  *name;
+  const char  *name;
   } ns[] =
 
 {
@@ -97,7 +97,7 @@ int resize_if_needed(
     /* need to resize */
     difference = new_size - ds->size;
 
-    if ((tmp = realloc(ds->str, new_size)) == NULL)
+    if ((tmp = (char *)realloc(ds->str, new_size)) == NULL)
       return(ENOMEM);
 
     ds->str = tmp;
@@ -159,7 +159,7 @@ dynamic_string *get_dynamic_string(
   const char *str)          /* I (optional) */
 
   {
-  dynamic_string *ds = calloc(1, sizeof(dynamic_string));
+  dynamic_string *ds = (dynamic_string *)calloc(1, sizeof(dynamic_string));
 
   if (ds == NULL)
     return(ds);
@@ -169,7 +169,7 @@ dynamic_string *get_dynamic_string(
   else
     ds->size = DS_INITIAL_SIZE;
     
-  ds->str = calloc(1, ds->size);
+  ds->str = (char *)calloc(1, ds->size);
 
   if (ds->str == NULL)
     {
@@ -272,7 +272,7 @@ void update_node_state(
 
 struct pbsnode *find_nodebyname(
 
-  char *nodename) /* I */
+  const char *nodename) /* I */
 
   {
   static struct pbsnode pnode;
@@ -282,7 +282,7 @@ struct pbsnode *find_nodebyname(
     {
     memset(&pnode, 0, sizeof(struct pbsnode));
     pnode.nd_name = strdup("george");
-    pnode.alps_subnodes.allnodes_mutex = calloc(1, sizeof(pthread_mutex_t));
+    pnode.alps_subnodes.allnodes_mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));
     pthread_mutex_init(pnode.alps_subnodes.allnodes_mutex, NULL);
     }
 
@@ -517,7 +517,7 @@ int mgr_set_node_attr(
 
 
 /* nothing needed for this function */
-int decode_arst(pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
+int decode_arst(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm)
   {
   return(0);
   }  /* END decode_arst() */
@@ -696,7 +696,7 @@ int str_nc_cmp(
 int find_attr(
 
     struct attribute_def *attr_def, /* ptr to pbs_attribute definitions */
-    char                 *name,     /* pbs_attribute name to find */
+    const char          *name,     /* pbs_attribute name to find */
     int                   limit)    /* limit on size of def array */
 
   {
@@ -911,7 +911,7 @@ int set_arst(
 
         nsize += nsize / 2;   /* alloc extra space */
 
-        if (!(pas->as_buf = calloc(1, (size_t)nsize)))
+        if (!(pas->as_buf = (char *)calloc(1, (size_t)nsize)))
           {
           pas->as_bufsize = 0;
 
@@ -942,12 +942,12 @@ int set_arst(
 
         if (pas->as_buf)
           {
-          pc = realloc(pas->as_buf, (size_t)need);
+          pc = (char *)realloc(pas->as_buf, (size_t)need);
           if (pc != NULL)
             memset(pc + pas->as_bufsize, 0, need - pas->as_bufsize);
           }
         else
-          pc = calloc(1, (size_t)need);
+          pc = (char *)calloc(1, (size_t)need);
 
         if (pc == NULL)
           {
@@ -1044,7 +1044,7 @@ int set_arst(
       tmp_arst->as_bufsize = need;
 
       /* calloc the buffer size */
-      pc = calloc(1, need);
+      pc = (char *)calloc(1, need);
 
       if (pc == NULL)
         return(PBSE_SYSTEM);
@@ -1516,7 +1516,7 @@ int initialize_pbsnode(
   pnode->nd_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   if (pnode->nd_mutex == NULL)
     {
-    log_err(ENOMEM, __func__, (char *)"Could not allocate memory for the node's mutex");
+    log_err(ENOMEM, __func__, "Could not allocate memory for the node's mutex");
 
     return(ENOMEM);
     }
@@ -1551,7 +1551,7 @@ int check_and_resize(
   resizable_array *ra)
 
   {
-  static char *id = "check_and_resize";
+  static const char *id = "check_and_resize";
   slot        *tmp;
   size_t       remaining;
   size_t       size;
@@ -1561,7 +1561,7 @@ int check_and_resize(
     /* double the size if we're out of space */
     size = (ra->max * 2) * sizeof(slot);
 
-    if ((tmp = realloc(ra->slots,size)) == NULL)
+    if ((tmp = (slot *)realloc(ra->slots,size)) == NULL)
       {
       log_err(ENOMEM,id, (char *)"No memory left to resize the array");
       return(ENOMEM);
@@ -1646,7 +1646,7 @@ int comp_null(struct pbs_attribute *attr, struct pbs_attribute *with)
   return(0);
   }
 
-int decode_ntype(pbs_attribute *pattr, const char *name, char *rescn, char *val, int perm)
+int decode_ntype(pbs_attribute *pattr, const char *name, const char *rescn, const char *val, int perm)
   {
   return(0);
   }
@@ -1661,7 +1661,7 @@ int encode_str(pbs_attribute *attr, tlist_head *phead, const char *atname, const
   return(0);
   }
 
-int decode_null(pbs_attribute *patr, const char *name, char *rn, char *val, int perm)
+int decode_null(pbs_attribute *patr, const char *name, const char *rn, const char *val, int perm)
   {
   return(0);
   }
@@ -1807,7 +1807,7 @@ int get_hash(
 
   {
   /* since key is a job name, just get the numbers from the front */
-  size_t   len = strlen(key);
+  size_t   len = strlen((char *)key);
   uint32_t hash;
   uint32_t mask = 0;
   uint32_t counter = ht->size >> 1;
@@ -1832,7 +1832,7 @@ void add_to_bucket(
   if (buckets[index] == NULL)
     {
     /* empty bucket, just add it here */
-    buckets[index] = calloc(1, sizeof(bucket));
+    buckets[index] = (bucket *)calloc(1, sizeof(bucket));
     buckets[index]->value = value;
     buckets[index]->key   = key;
     buckets[index]->next  = NULL;
@@ -1845,7 +1845,7 @@ void add_to_bucket(
     while (b->next != NULL)
       b = b->next;
 
-    b->next = calloc(1, sizeof(bucket));
+    b->next = (bucket *)calloc(1, sizeof(bucket));
     b->next->value = value;
     b->next->key   = key;
     b->next->next  = NULL;
@@ -1894,7 +1894,7 @@ int add_hash(hash_table_t *ht, int value, void *key)
     int      old_bucket_size = ht->size;
     int      new_bucket_size = ht->size * 2;
     size_t   amount = new_bucket_size * sizeof(bucket *);
-    bucket **tmp = calloc(1, amount);
+    bucket **tmp = (bucket **)calloc(1, amount);
     int      i;
     int      new_index;
 
@@ -1924,7 +1924,7 @@ int add_hash(hash_table_t *ht, int value, void *key)
 
   index = get_hash(ht,key);
 
-  add_to_bucket(ht->buckets,index,key,value);
+  add_to_bucket(ht->buckets,index,(char *)key,value);
 
   ht->num++;
 
@@ -2006,7 +2006,7 @@ char *parse_comma_string(
   return(rv);
   }  /* END parse_comma_string() */
 
-int decode_str(pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
+int decode_str(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm)
   {
   return(0);
   }
@@ -2031,7 +2031,7 @@ int set_note_str(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enu
   return(0);
   }
 
-int decode_state(pbs_attribute *pattr, const char *name, char *rescn, char *val, int perm)
+int decode_state(pbs_attribute *pattr, const char *name, const char *rescn, const char *val, int perm)
   {
   return(0);
   }
@@ -2103,7 +2103,7 @@ int node_numa_action(pbs_attribute *new_attr, void *pnode, int actmode)
   return(0);
   }
 
-int decode_l( pbs_attribute *patr, const char *name, char *rescn, char *val, int perm)
+int decode_l( pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm)
   {
   return(0);
   }
@@ -2150,7 +2150,7 @@ job *svr_find_job(char *jobid, int get_subjob)
 
   if (i == 0)
     {
-    pjob.ji_mutex = calloc(1, sizeof(pthread_mutex_t));
+    pjob.ji_mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));
     }
   i++;
 
@@ -2254,7 +2254,7 @@ int enqueue_threadpool_request(
   return(0);
   }
 
-int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }

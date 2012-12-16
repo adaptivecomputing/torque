@@ -19,7 +19,7 @@ int tm_poll(tm_event_t poll_event, tm_event_t *result_event, int wait, int *tm_e
   exit(1);
   }
 
-ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
+ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   { 
   fprintf(stderr, "The call to read_nonblocking_socket needs to be mocked!!\n");
   exit(1);

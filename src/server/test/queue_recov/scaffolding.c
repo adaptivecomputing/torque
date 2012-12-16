@@ -64,3 +64,8 @@ int save_attr_xml(struct attribute_def *padef, struct pbs_attribute *pattr, int 
   fprintf(stderr, "The call to save_attr_xml needs to be mocked!!\n");
   exit(1);
   }
+
+ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
+  {
+  return(0);
+  }

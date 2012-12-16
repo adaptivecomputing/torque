@@ -36,7 +36,6 @@ float max_load_val = -1.0;
 char TMOMRejectConn[MAXLINE];
 int PBSNodeCheckInterval;
 int UpdateFailCount = 0;
-time_t first_update_time;
 char *auto_ideal_load = NULL;
 char *path_spool;
 char *auto_max_load = NULL;

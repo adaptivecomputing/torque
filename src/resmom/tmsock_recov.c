@@ -20,6 +20,7 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
+#include "../lib/Libifl/lib_ifl.h"
 #include "svrfunc.h"
 
 
@@ -81,28 +82,28 @@ int recov_tmsock(
 
   static int sizeofint = sizeof(int);
 
-  if (read(fds, (char *)&pjob->ji_stdout, sizeofint) != sizeofint)
+  if (read_ac_socket(fds, (char *)&pjob->ji_stdout, sizeofint) != sizeofint)
     {
     log_err(errno, id, (char *)"read");
 
     return(1);
     }
 
-  if (read(fds, (char *)&pjob->ji_stderr, sizeofint) != sizeofint)
+  if (read_ac_socket(fds, (char *)&pjob->ji_stderr, sizeofint) != sizeofint)
     {
     log_err(errno, id, (char *)"read");
 
     return(1);
     }
 
-  if (read(fds, (char *)&pjob->ji_taskid, sizeof(tm_task_id)) != sizeof(tm_task_id))
+  if (read_ac_socket(fds, (char *)&pjob->ji_taskid, sizeof(tm_task_id)) != sizeof(tm_task_id))
     {
     log_err(errno, id, (char *)"read");
 
     return(1);
     }
 
-  if (read(fds, (char *)&pjob->ji_nodeid, sizeof(tm_node_id)) != sizeof(tm_node_id))
+  if (read_ac_socket(fds, (char *)&pjob->ji_nodeid, sizeof(tm_node_id)) != sizeof(tm_node_id))
     {
     log_err(errno, id, (char *)"read");
 

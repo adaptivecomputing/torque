@@ -46,7 +46,7 @@ int job_save(job *pjob, int updatetype, int mom_port)
   exit(1);
   }
 
-void svr_mailowner(job *pjob, int mailpoint, int force, char *text)
+void svr_mailowner(job *pjob, int mailpoint, int force, const char *text)
   {
   fprintf(stderr, "The call to svr_mailowner to be mocked!!\n");
   exit(1);
@@ -94,7 +94,7 @@ int lock_node(struct pbsnode *the_node, const char *id, char *msg, int logging)
   exit(1);
   }
 
-struct pbsnode *find_nodebyname(char *nodename)
+struct pbsnode *find_nodebyname(const char *nodename)
   {
   fprintf(stderr, "The call to find_nodebyname to be mocked!!\n");
   exit(1);
@@ -312,7 +312,7 @@ int lock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string)
   }
 
 
-int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }

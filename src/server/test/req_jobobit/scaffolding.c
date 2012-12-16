@@ -22,34 +22,40 @@
 
 
 
-char *msg_momnoexec2 = "Job cannot be executed\nSee job standard error file";
-char *msg_job_end_sig = "Terminated on signal %d";
-char *msg_obitnojob  = "Job Obit notice received from %s has error %d";
+const char *msg_momnoexec2 = "Job cannot be executed\nSee job standard error file";
+const char *msg_job_end_sig = "Terminated on signal %d";
+const char *msg_obitnojob  = "Job Obit notice received from %s has error %d";
 attribute_def job_attr_def[10];
-char *msg_obitnocpy = "Post job file processing error; job %s on host %s";
+const char *msg_obitnocpy = "Post job file processing error; job %s on host %s";
 int   server_init_type = RECOV_WARM;
 char *path_spool;
-char *msg_init_abt = "Job aborted on PBS Server initialization";
+const char *msg_init_abt = "Job aborted on PBS Server initialization";
 pbs_net_t pbs_server_addr;
 const char *PJobState[] = {"hi", "hello"};
 struct server server;
 int  svr_do_schedule = SCH_SCHEDULE_NULL;
 int listener_command = SCH_SCHEDULE_NULL;
 int LOGLEVEL = 10;
-char *msg_obitnodel = "Unable to delete files for job %s, on host %s";
-char *msg_momnoexec1 = "Job cannot be executed\nSee Administrator for help";
-char *msg_job_end_stat = "Exit_status=%d";
-char *msg_momjoboverlimit = "Job exceeded some resource limit (walltime, mem, etc.). Job was aborted\nSee Administrator for help";
+const char *msg_obitnodel = "Unable to delete files for job %s, on host %s";
+const char *msg_momnoexec1 = "Job cannot be executed\nSee Administrator for help";
+const char *msg_job_end_stat = "Exit_status=%d";
+const char *msg_momjoboverlimit = "Job exceeded some resource limit (walltime, mem, etc.). Job was aborted\nSee Administrator for help";
 pthread_mutex_t *svr_do_schedule_mutex;
 pthread_mutex_t *listener_command_mutex;
+extern int alloc_br_null;
 
 
 
 
 struct batch_request *alloc_br(int type)
   {
-  batch_request *preq = calloc(1, sizeof(batch_request));
+  batch_request *preq;
+  if (alloc_br_null)
+    return(NULL);
+
+  preq = (batch_request *)calloc(1, sizeof(batch_request));
   preq->rq_type = type;
+
   return(preq);
   }
 
@@ -61,8 +67,7 @@ job_array *get_jobs_array(job **pjob)
 
 char *parse_servername(char *name, unsigned int *service)
   {
-  fprintf(stderr, "The call to parse_servername to be mocked!!\n");
-  exit(1);
+  return(strdup(name));
   }
 
 int job_save(job *pjob, int updatetype, int mom_port)
@@ -77,7 +82,7 @@ int svr_job_purge(job *pjob)
   exit(1);
   }
 
-void svr_mailowner(job *pjob, int mailpoint, int force, char *text) {}
+void svr_mailowner(job *pjob, int mailpoint, int force, const char *text) {}
 
 int modify_job_attr(job *pjob, svrattrl *plist, int perm, int *bad)
   {
@@ -87,20 +92,18 @@ int modify_job_attr(job *pjob, svrattrl *plist, int perm, int *bad)
 
 pbs_net_t get_hostaddr(int *local_errno, char *hostname)
   {
-  fprintf(stderr, "The call to get_hostaddr to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 long attr_ifelse_long(pbs_attribute *attr1, pbs_attribute *attr2, long deflong)
   {
-  fprintf(stderr, "The call to attr_ifelse_long to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 pbs_queue *get_jobs_queue(job **pjob)
   {
-  fprintf(stderr, "The call to get_jobs_queue to be mocked!!\n");
-  exit(1);
+  static pbs_queue bob;
+  return(&bob);
   }
 
 void reply_ack(struct batch_request *preq)
@@ -123,11 +126,7 @@ void release_req(struct work_task *pwt)
 
 void free_nodes(node_info **ninfo_arr) {}
 
-void free_br(struct batch_request *preq)
-  {
-  fprintf(stderr, "The call to free_br to be mocked!!\n");
-  exit(1);
-  }
+void free_br(struct batch_request *preq) {}
 
 void remove_job_delete_nanny( struct job *pjob)
   {
@@ -172,8 +171,7 @@ void *get_next(list_link pl, char *file, int line)
 
 int issue_Drequest(int conn, struct batch_request *request, void (*func)(struct work_task *), struct work_task **ppwt)
   {
-  fprintf(stderr, "The call to issue_Drequest to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void set_resc_assigned(job *pjob, enum batch_op op) {}
@@ -186,14 +184,30 @@ void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum even
 
 void append_link(tlist_head *head, list_link *new_link, void *pobj)
   {
-  fprintf(stderr, "The call to append_link to be mocked!!\n");
-  exit(1);
+  if (pobj != NULL)
+    {
+    new_link->ll_struct = pobj;
+    }
+  else
+    {
+    /* WARNING: This mixes list_link pointers and ll_struct
+         pointers, and may break if the list_link we are operating
+         on is not the first embeded list_link in the surrounding
+         structure, e.g. work_task.wt_link_obj */
+
+    new_link->ll_struct = (void *)new_link;
+    }
+
+  new_link->ll_prior = head->ll_prior;
+
+  new_link->ll_next  = head;
+  head->ll_prior = new_link;
+  new_link->ll_prior->ll_next = new_link; /* now visible to forward iteration */
   }
 
 int svr_connect(pbs_net_t hostaddr, unsigned int port, struct pbsnode *pnode, void *(*func)(void *), enum conn_type cntype)
   {
-  fprintf(stderr, "The call to svr_connect to be mocked!!\n");
-  exit(1);
+  return(1);
   }
 
 void issue_track(job *pjob)
@@ -222,8 +236,7 @@ int timeval_subtract(struct timeval *result, struct timeval *x, struct timeval *
 
 int unlock_queue(struct pbs_queue *the_queue, const char *method_name, char *msg, int logging)
   {
-  fprintf(stderr, "The call to unlock_queue to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void svr_evaljobstate(job *pjob, int *newstate, int *newsub, int forceeval)
@@ -240,8 +253,7 @@ int insert_task(all_tasks *at, work_task *wt)
 
 void get_jobowner(char *from, char *to)
   {
-  fprintf(stderr, "The call to get_jobowner to be mocked!!\n");
-  exit(1);
+  strcpy(to, "dbeer");
   }
 
 
@@ -283,7 +295,7 @@ int get_batch_request_id(
   return(0);
   }
 
-int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }
@@ -295,7 +307,7 @@ int lock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
 
 struct pbsnode *find_nodebyname(
 
-  char *nodename) /* I */
+  const char *nodename) /* I */
 
   {
   return(NULL);

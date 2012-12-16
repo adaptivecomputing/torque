@@ -104,7 +104,7 @@
 #define PBS_ACCT_ABT (int)'A' /* Job Abort by server */
 
 extern int  acct_open (char *filename);
-extern void account_record (int acctype, job *pjob, char *text);
+extern void account_record (int acctype, job *pjob, const char *text);
 extern void account_jobstr (job *pjob);
 extern void account_jobend (job *pjob, char * used);
 

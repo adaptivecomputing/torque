@@ -7,7 +7,7 @@
 #include "batch_request.h" /* batach_request */
 #include "list_link.h" /* list_link */
 
-char *msg_daemonname = "unset";
+const char *msg_daemonname = "unset";
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 all_tasks task_list_event;
 

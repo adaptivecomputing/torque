@@ -12,10 +12,10 @@
 #include "pbs_job.h" /* job */
 
 time_t time_now;
-char *msg_err_malloc = "malloc failed";
+const char *msg_err_malloc = "malloc failed";
 struct connection svr_conn[PBS_NET_MAX_CONNECTIONS];
 tlist_head svr_newjobs;
-char *msg_request = "Type %s request received from %s@%s, sock=%d";
+const char *msg_request = "Type %s request received from %s@%s, sock=%d";
 AvlTree okclients = NULL;
 int LOGLEVEL = 1;
 

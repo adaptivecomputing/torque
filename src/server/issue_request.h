@@ -3,8 +3,8 @@
 #include "license_pbs.h" /* See here for the software license */
 
 #include "pbs_job.h" /* job */
-#include "batch_request.h" /* batch_request */
 #include "work_task.h" /* work_task */
+#include "batch_request.h" /* batch_request */
 
 /* static void reissue_to_svr(struct work_task *pwt); */
 

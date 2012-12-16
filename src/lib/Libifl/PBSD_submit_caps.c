@@ -87,6 +87,7 @@
 #include "dis.h"
 #include "u_hash_map_structs.h"
 #include "u_memmgr.h"
+#include "../lib/Libifl/lib_ifl.h"
 
 /* PBSD_submit.c
 
@@ -382,12 +383,12 @@ int PBSD_jscript(
 
   i = 0;
 
-  cc = read(fd, s_buf, SCRIPT_CHUNK_Z);
+  cc = read_ac_socket(fd, s_buf, SCRIPT_CHUNK_Z);
 
   while ((cc > 0) && (PBSD_scbuf(c, PBS_BATCH_jobscript, i, s_buf, cc, jobid, JScript) == 0))
     {
     i++;
-    cc = read(fd, s_buf, SCRIPT_CHUNK_Z);
+    cc = read_ac_socket(fd, s_buf, SCRIPT_CHUNK_Z);
     }
 
   close(fd);
@@ -441,14 +442,14 @@ int PBSD_jobfile(
 
   i = 0;
 
-  cc = read(fd, s_buf, SCRIPT_CHUNK_Z);
+  cc = read_ac_socket(fd, s_buf, SCRIPT_CHUNK_Z);
 
   while ((cc > 0) &&
          (PBSD_scbuf(c, req_type, i, s_buf, cc, jobid, which) == 0))
     {
     i++;
 
-    cc = read(fd, s_buf, SCRIPT_CHUNK_Z);
+    cc = read_ac_socket(fd, s_buf, SCRIPT_CHUNK_Z);
     }
 
   close(fd);

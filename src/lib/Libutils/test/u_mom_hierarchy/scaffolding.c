@@ -12,7 +12,7 @@ int pbs_errno;
 time_t time_now;
 int   LOGLEVEL=0;
 char log_buffer[LOG_BUF_SIZE];
-char *dis_emsg[] = 
+const char *dis_emsg[] =
   {
   "No error",
   "Input value too large to convert to this type",

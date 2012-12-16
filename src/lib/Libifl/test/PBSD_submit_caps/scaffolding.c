@@ -88,3 +88,8 @@ int encode_DIS_ReqHdr(struct tcp_chan *chan, int reqt, char *user)
 void DIS_tcp_cleanup(struct tcp_chan *chan)
   {
   }
+
+ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
+  {
+  return(0);
+  }

@@ -4,7 +4,7 @@
 #include "list_link.h" /* tlist_head */
 #include "pbs_ifl.h" /* batch_op */
 
-int decode_size(pbs_attribute *patr, const char *name, char *rescn, char *val, int perm);
+int decode_size(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm);
 
 int encode_size(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm);
 

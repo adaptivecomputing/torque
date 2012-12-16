@@ -16,6 +16,8 @@
 #include <termios.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include "../lib/Libifl/lib_ifl.h"
+
 
 #include "port_forwarding.h"
 
@@ -142,7 +144,7 @@ void port_forwarder(
           {
           /* non-listening socket to be read */
 
-          rc = read(
+          rc = read_ac_socket(
                  (socks + n)->sock,
                  (socks + n)->buff + (socks + n)->bufavail,
                  BUF_SIZE - (socks + n)->bufavail);
@@ -170,7 +172,7 @@ void port_forwarder(
         {
         int peer = (socks + n)->peer;
 
-        rc = write(
+        rc = write_ac_socket(
                (socks + n)->sock,
                (socks + peer)->buff + (socks + peer)->bufwritten,
                (socks + peer)->bufavail - (socks + peer)->bufwritten);

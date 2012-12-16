@@ -115,7 +115,7 @@ int MXMLSetChild(
 int MXMLCreateE(
 
   mxml_t **E,    /* O */
-  char    *Name) /* I (optional) */
+  const char    *Name) /* I (optional) */
 
   {
   /* NOTE:  should 'Name' be mandatory? */
@@ -457,7 +457,7 @@ int MXMLAppendAttr(
 
     len = strlen(E->AVal[ATok]) + strlen(AVal) + 2;
 
-    tmpAVal = realloc(E->AVal[ATok], len);
+    tmpAVal = (char *)realloc(E->AVal[ATok], len);
 
     if (tmpAVal == NULL)
       {
@@ -527,7 +527,7 @@ int MXMLSetVal(
       ptr = (char *)V;
       Vlen = strlen(ptr);
     
-      outbuf = calloc(buf_size, (sizeof(char)));
+      outbuf = (char *)calloc(buf_size, (sizeof(char)));
       
       if (outbuf == NULL)
         {
@@ -751,7 +751,7 @@ int MXMLToXString(
     {
     NewSize = MMAX_BUFFER;
 
-    if ((*Buf = calloc(1, NewSize)) == NULL)
+    if ((*Buf = (char *)calloc(1, NewSize)) == NULL)
       {
       /* cannot allocate buffer */
 

@@ -128,7 +128,7 @@ int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq,
 
 int req_signaljob(
 
-  void *vp)  /* I */
+    struct batch_request *vp) /* I */
 
   {
   struct batch_request *preq = (struct batch_request *)vp;
@@ -149,7 +149,7 @@ int req_signaljob(
     {
     req_reject(PBSE_BADSTATE, 0, preq, NULL, NULL);
 
-    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     return(PBSE_NONE);
     }
 
@@ -163,7 +163,7 @@ int req_signaljob(
       /* for suspend/resume, must be mgr/op */
       req_reject(PBSE_PERM, 0, preq, NULL, NULL);
       
-      unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
       return(PBSE_NONE);
       }
   
@@ -184,7 +184,7 @@ int req_signaljob(
     {
     req_reject(PBSE_JOBTYPE, 0, preq, NULL, NULL);
 
-    unlock_ji_mutex(pjob, __func__, (char *)"3", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
     return(PBSE_NONE);
     }
 
@@ -209,7 +209,7 @@ int req_signaljob(
   if ((rc = copy_batchrequest(&dup_req, preq, 0, -1)) != 0)
     {
     req_reject(rc, 0, preq, NULL, "can not allocate memory");
-    unlock_ji_mutex(pjob, __func__, (char *)"4", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
     }
   /* The dup_req is freed in relay_to_mom (failure)
    * or in issue_Drequest (success) */
@@ -218,7 +218,7 @@ int req_signaljob(
     rc = relay_to_mom(&pjob, dup_req, NULL);
 
     if (pjob != NULL)
-      unlock_ji_mutex(pjob, __func__, (char *)"4", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
 
     if (rc != PBSE_NONE)
       {
@@ -248,8 +248,8 @@ int req_signaljob(
 int issue_signal(
 
   job  **pjob_ptr,
-  char  *signame, /* name of the signal to send */
-  void  (*func)(batch_request *),
+  const char  *signame, /* name of the signal to send */
+  void  (*func)(struct batch_request *),
   void  *extra) /* extra parameter to be stored in sig request */
 
   {
@@ -335,9 +335,9 @@ void post_signal_req(
     }
   else
     {
-    if ((jobid = preq->rq_extra) == NULL)
+    if ((jobid = (char *)preq->rq_extra) == NULL)
       {
-      log_err(ENOMEM, __func__, (char *)"Cannot allocate memory! FAILURE");
+      log_err(ENOMEM, __func__, "Cannot allocate memory! FAILURE");
       return;
       }
 
@@ -374,7 +374,7 @@ void post_signal_req(
           }
         }
     
-      unlock_ji_mutex(pjob, __func__, (char *)"5", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, "5", LOGLEVEL);
       }
     else
       {

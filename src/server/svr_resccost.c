@@ -140,7 +140,7 @@ static struct resource_cost *add_cost_entry(
   {
   struct resource_cost *pcost;
 
-  pcost = calloc(1, sizeof(struct resource_cost));
+  pcost = (struct resource_cost *)calloc(1, sizeof(struct resource_cost));
 
   if (pcost != NULL)
     {
@@ -171,8 +171,8 @@ int decode_rcost(
 
   pbs_attribute *patr,
   const char   *name,  /* pbs_attribute name */
-  char          *rescn, /* resource name, unused here */
-  char          *val,   /* pbs_attribute value */
+  const char *rescn, /* resource name, unused here */
+  const char    *val,   /* pbs_attribute value */
   int            perm)  /* used only with resources */
 
   {

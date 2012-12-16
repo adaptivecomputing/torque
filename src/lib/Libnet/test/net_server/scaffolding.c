@@ -5,7 +5,7 @@
 
 #include "net_connect.h"
 
-char *msg_daemonname = "unset";
+const char *msg_daemonname = "unset";
 
 void disiui_() {}
 

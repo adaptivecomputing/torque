@@ -640,7 +640,7 @@ int set_jobexid(
       }
     else
       {
-      log_err(errno, __func__, (char *)"getpwnam failed");
+      log_err(errno, __func__, "getpwnam failed");
 
       if (EMsg != NULL)
         snprintf(EMsg, 1024, "user does not exist in server password file");

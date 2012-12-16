@@ -808,7 +808,7 @@ mom_get_sample(void)
     if ((fd = open(procname, O_RDONLY)) == -1)
       continue;
 
-    if (read(fd, pi, sizeof(psinfo_t)) != sizeof(psinfo_t))
+    if (read_ac_socket(fd, pi, sizeof(psinfo_t)) != sizeof(psinfo_t))
       {
       sprintf(log_buffer, "read of %s failed", procname);
       log_err(errno, id, log_buffer);

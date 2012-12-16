@@ -31,9 +31,9 @@ extern char *optarg;
 
 #define MAX_QUERY  128
 
-char *LocalHost = "localhost";
+const char *LocalHost = "localhost";
 
-char *DiagPtr  = "diag";
+const char *DiagPtr  = "diag";
 
 char *Query[MAX_QUERY];
 int   QueryI   = 0;
@@ -63,7 +63,7 @@ enum MOMCmdEnum CmdIndex = momNONE;
 
 /* prototypes */
 
-void MCShowUsage(char *);
+void MCShowUsage(const char *);
 int do_mom(char *, int, int);
 
 /* END prototypes */
@@ -136,7 +136,7 @@ int main(
 
         CmdIndex = momQuery;
 
-        if ((Query[QueryI] = calloc(strlen(DiagPtr) + 3, sizeof(char))) == NULL)
+        if ((Query[QueryI] = (char *)calloc(strlen(DiagPtr) + 3, sizeof(char))) == NULL)
       	  {
           fprintf(stderr,"ERROR:    could not calloc %d bytes!\n",
             (int)strlen(DiagPtr) + 3);
@@ -894,7 +894,7 @@ int do_mom(
 
 void MCShowUsage(
 
-  char *Msg)  /* I (optional) */
+  const char *Msg)  /* I (optional) */
 
   {
   if (Msg != NULL)
