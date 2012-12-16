@@ -4,34 +4,41 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
+#include "dis.h"
 #include "pbs_error.h"
 
-START_TEST(test_one)
+START_TEST(test_read_status_strings_null_chan_doesnt_crash)
   {
-
-
+  fail_unless(DIS_INVALID == read_status_strings(NULL, 1));
   }
 END_TEST
 
-START_TEST(test_two)
+extern int disrst_count;
+
+START_TEST(test_read_status_strings_loop)
   {
+  disrst_count = 5;
+  struct tcp_chan chan;
+  read_status_strings(&chan, 1);
+  }
+END_TEST
 
-
+START_TEST(test_get_received_node_entry)
+  {
+  fail_unless(get_received_node_entry("pickle") != NULL);
   }
 END_TEST
 
 Suite *mom_comm_suite(void)
   {
   Suite *s = suite_create("mom_comm_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
-  suite_add_tcase(s, tc_core);
+  TCase * tc = tcase_create("mom_comm");
 
-  tc_core = tcase_create("test_two");
-  tcase_add_test(tc_core, test_two);
-  suite_add_tcase(s, tc_core);
+  tcase_add_test(tc, test_read_status_strings_null_chan_doesnt_crash);
+  tcase_add_test(tc, test_read_status_strings_loop);
+  tcase_add_test(tc, test_get_received_node_entry);
 
+  suite_add_tcase(s, tc);
   return s;
   }
 

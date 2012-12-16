@@ -14,6 +14,7 @@
 #include "resizable_array.h" /* resizable_array */
 #include "pbs_job.h" /* job */
 #include "mom_func.h" /* radix_buf */
+#include "dis.h"
 
 char *path_jobs; /* mom_main.c */
 int multi_mom = 1; /* mom_main.c */
@@ -39,10 +40,14 @@ int maxupdatesbeforesending = 0;
 int    ServerStatUpdateInterval = DEFAULT_SERVER_STAT_UPDATES;
 time_t          LastServerUpdateTime = 0;  /* NOTE: all servers updated together */
 
-int insert_thing(resizable_array *ra, void *thing)
+/*
+ *  * inserts an item, resizing the array if necessary
+ *   *
+ *    * @return the index in the array or -1 on failure
+ *     */
+int insert_thing(resizable_array *ra, void *thing) 
   {
-  fprintf(stderr, "The call to insert_thing needs to be mocked!!\n");
-  exit(1);
+  return -1;
   }
 
 #undef disrus
@@ -148,11 +153,52 @@ char *get_job_envvar(job *pjob, const char *variable)
   exit(1);
   }
 
-dynamic_string *get_dynamic_string(int initial_size, const char *str)
+/*
+ *  * initializes a dynamic string and returns it, or NULL if there is no memory
+ *   *
+ *    * @param initial_size - the initial size of the string, use default if -1
+ *     * @param str - the initial string to place in the dynamic string if not NULL
+ *      * @return - the dynamic string object or NULL if no memory
+ *       */
+dynamic_string *get_dynamic_string(
+
+  int         initial_size, /* I (-1 means default) */
+  const char *str)          /* I (optional) */
+
   {
-  fprintf(stderr, "The call to get_dynamic_string needs to be mocked!!\n");
-  exit(1);
-  }
+  dynamic_string *ds = (dynamic_string *)calloc(1, sizeof(dynamic_string));
+
+  if (ds == NULL)
+    return(ds);
+
+  if (initial_size > 0)
+    ds->size = initial_size;
+  else
+    ds->size = DS_INITIAL_SIZE;
+
+  ds->str = (char *)calloc(1, ds->size);
+
+  if (ds->str == NULL)
+    {
+    free(ds);
+    return(NULL);
+    }
+
+  /* initialize empty str */
+  ds->used = 0;
+
+  /* add the string if it exists */
+  if (str != NULL)
+    {
+    if (append_dynamic_string(ds,str) != PBSE_NONE)
+      {
+      free_dynamic_string(ds);
+      return(NULL);
+      }
+    }
+
+  return(ds);
+  } /* END get_dynamic_string() */
 
 int open_tcp_stream_to_sisters(job *pjob, int com, tm_event_t parent_event, int mom_radix, hnodent *hosts, struct radix_buf **sister_list, tlist_head *phead, int flag)
   {
@@ -179,7 +225,7 @@ int run_pelog(int which, char *specpelog, job *pjog, int pe_io_type)
   }
 
 #undef disrul
-unsigned long disrul(int stream, int *retval)
+unsigned long disrul(struct tcp_chan * chan, int *retval)
   {
   fprintf(stderr, "The call to disrul needs to be mocked!!\n");
   exit(1);
@@ -197,7 +243,7 @@ size_t write_nonblocking_socket(int fd, const void *buf, ssize_t count)
   exit(1);
   }
 
-void DIS_tcp_setup(int fd)
+struct tcp_chan *DIS_tcp_setup(int fd)
   {
   fprintf(stderr, "The call to DIS_tcp_setup needs to be mocked!!\n");
   exit(1);
@@ -210,7 +256,7 @@ int find_attr(struct attribute_def *attr_def, const char *name, int limit)
   }
 
 #undef disrui
-unsigned disrui(int stream, int *retval)
+unsigned disrui(struct tcp_chan *chan, int *retval)
   {
   fprintf(stderr, "The call to disrui needs to be mocked!!\n");
   exit(1);
@@ -230,17 +276,16 @@ int kill_task(struct task *task, int sig, int pg)
 
 int get_value_hash(hash_table_t *ht, void *key)
   {
-  fprintf(stderr, "The call to get_value_hash needs to be mocked!!\n");
-  exit(1);
+  return -1;
   }
 
-int DIS_tcp_wflush(int fd)
+int DIS_tcp_wflush(struct tcp_chan * chan)
   {
   fprintf(stderr, "The call to DIS_tcp_wflush needs to be mocked!!\n");
   exit(1);
   }
 
-int diswcs(int stream, const char *value, size_t nchars)
+int diswcs(struct tcp_chan * chan, const char *value, size_t nchars)
   {
   fprintf(stderr, "The call to diswcs needs to be mocked!!\n");
   exit(1);
@@ -264,13 +309,7 @@ int add_host_to_sister_list(char *hostname, unsigned short port, struct radix_bu
   exit(1);
   }
 
-int diswui(int stream, unsigned value)
-  {
-  fprintf(stderr, "The call to diswui needs to be mocked!!\n");
-  exit(1);
-  }
-
-char *disrcs(int stream, size_t *nchars, int *retval)
+char *disrcs(struct tcp_chan * chan, size_t *nchars, int *retval)
   {
   fprintf(stderr, "The call to disrcs needs to be mocked!!\n");
   exit(1);
@@ -279,6 +318,13 @@ char *disrcs(int stream, size_t *nchars, int *retval)
 int start_process(task *tsk, char **argv, char **envp)
   {
   fprintf(stderr, "The call to start_process needs to be mocked!!\n");
+  exit(1);
+  }
+
+#undef diswui
+int diswui(struct tcp_chan * chan, unsigned value)
+  {
+  fprintf(stderr, "The call to diswui needs to be mocked!!\n");
   exit(1);
   }
 
@@ -324,10 +370,16 @@ struct radix_buf **allocate_sister_list(int radix)
   exit(1);
   }
 
-char *disrst(int stream, int *retval)
+int disrst_count = 0;
+char *disrst(struct tcp_chan * chan, int *retval)
   {
-  fprintf(stderr, "The call to disrst needs to be mocked!!\n");
-  exit(1);
+  if (--disrst_count > 0)
+    {
+    retval = DIS_SUCCESS;
+    return strdup("hi");
+    }
+  *retval = DIS_EOF;
+  return NULL;
   }
 
 int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size)
@@ -372,7 +424,7 @@ int copy_to_end_of_dynamic_string(dynamic_string *ds, const char *to_copy)
   exit(1);
   }
 
-int diswul(int stream, unsigned long value)
+int diswul(struct tcp_chan * chan, unsigned long value)
   {
   fprintf(stderr, "The call to diswul needs to be mocked!!\n");
   exit(1);
@@ -409,10 +461,11 @@ job *job_alloc(void )
   exit(1);
   }
 
-int disrsi(int stream, int *retval)
+#undef disrsi
+int disrsi(struct tcp_chan * chan, int *retval)
   {
-  fprintf(stderr, "The call to disrsi needs to be mocked!!\n");
-  exit(1);
+  *retval = 1;
+  return 0;
   }
 
 int timeval_subtract(struct timeval *result, struct timeval *x, struct timeval *y)
