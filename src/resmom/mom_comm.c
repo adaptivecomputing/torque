@@ -867,6 +867,7 @@ int send_sisters(
       /* we need to record the addresses of sister nodes for later */
       get_hostaddr_hostent_af(&local_errno, np->hn_host, &af_family, &host_addr, &addr_len);
       memmove(&np->sock_addr.sin_addr, host_addr, addr_len);
+      free(host_addr);
       np->sock_addr.sin_port = htons(np->hn_port);
       np->sock_addr.sin_family = af_family;
      
@@ -1776,7 +1777,6 @@ int contact_sisters(
   np = &pjob->ji_sisters[0];
   ret = get_hostaddr_hostent_af(&local_errno, np->hn_host, &af_family, &host_addr, &addr_len);
   memmove(&np->sock_addr.sin_addr, host_addr, addr_len);
-  free(host_addr);
   np->sock_addr.sin_port = htons(np->hn_port);
   np->sock_addr.sin_family = af_family;
 
@@ -1795,6 +1795,7 @@ int contact_sisters(
     index++;
     }
 
+  free(host_addr);
   free_sisterlist(sister_list, mom_radix+1);
 
   sister_list = allocate_sister_list(mom_radix);
@@ -2721,7 +2722,10 @@ int im_spawn_task(
       tmpArgV = (char **)realloc(argv,num * sizeof(char **));
       
       if (tmpArgV == NULL)
+        {
+        free(cp);
         return(IM_FAILURE);
+        }
       
       argv = tmpArgV;
       }

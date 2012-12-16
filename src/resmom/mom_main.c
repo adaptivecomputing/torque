@@ -1188,6 +1188,11 @@ const char *reqgres(
       }
 
     /* verify parameter is not common */
+    /* Coverity reports (correctly) that RM_NPARM == 32, but common_config
+     * only has 10 elements, so this loop's upper bound is dangerous.
+     * However, the final element in common_config has c_name == NULL,
+     * so the first test inside this loop safely breaks.
+     */
     for (sindex = 0;sindex < RM_NPARM;sindex++)
       {
       if (common_config[sindex].c_name == NULL)
@@ -6258,7 +6263,7 @@ char *MOMFindMyExe(
   char *p;
   char *p_next;
   char *path;
-
+  int link_len;
 
   link = (char *)calloc(MAXPATHLEN + 1, sizeof(char));
 
@@ -6270,9 +6275,11 @@ char *MOMFindMyExe(
     }
 
   /* Linux has a handy symlink, so try that first */
-
-  if (readlink("/proc/self/exe", link, MAXPATHLEN) > 0)
+  memset(link, 0, MAXPATHLEN);
+  link_len = readlink("/proc/self/exe", link, MAXPATHLEN);
+  if (link_len > 0)
     {
+    link[link_len] = 0;
     if (link[0] != '\0' && link[0] != '[')
       {
       return(link);

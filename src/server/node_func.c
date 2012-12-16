@@ -1588,7 +1588,7 @@ int setup_node_boards(
       {
       /* no memory error */
       log_err(PBSE_SYSTEM, __func__, "Cannot allocate memory for node name\n");
-
+      free(pn);
       return(PBSE_SYSTEM);
       }
 
@@ -1743,6 +1743,8 @@ int create_pbs_node(
     if (host_info == NULL)
       {
       log_err(-1, __func__, "create_pbs_node calloc failed");
+      if (pul != NULL)
+        free(pul);
       return(PBSE_MEM_MALLOC);
       }
 
