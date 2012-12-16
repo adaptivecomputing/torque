@@ -1516,7 +1516,7 @@ int initialize_pbsnode(
   pnode->nd_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   if (pnode->nd_mutex == NULL)
     {
-    log_err(ENOMEM, __func__, (char *)"Could not allocate memory for the node's mutex");
+    log_err(ENOMEM, __func__, "Could not allocate memory for the node's mutex");
 
     return(ENOMEM);
     }
@@ -2254,7 +2254,7 @@ int enqueue_threadpool_request(
   return(0);
   }
 
-int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }

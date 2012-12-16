@@ -176,7 +176,7 @@ void bad_node_warning(
    
     /* only release the mutex if we obtained it in this function */
     if (node_possessed == NULL)
-      unlock_node(pnode, __func__, (char *)"attained in function", LOGLEVEL);
+      unlock_node(pnode, __func__, "attained in function", LOGLEVEL);
     }
 
   } /* END bad_node_warning() */
@@ -248,7 +248,7 @@ int addr_ok(
     }
 
   if (release_mutex == TRUE)
-    unlock_node(pnode, __func__, (char *)"release_mutex = TRUE", LOGLEVEL);
+    unlock_node(pnode, __func__, "release_mutex = TRUE", LOGLEVEL);
 
   return(status);
   }  /* END addr_ok() */
@@ -513,7 +513,7 @@ int login_encode_jobs(
       if (pjob != NULL)
         {
         login_id = pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str;
-        unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         }
 
       if ((login_id == NULL) ||
@@ -531,7 +531,7 @@ int login_encode_jobs(
 
   if ((pal = attrlist_create((char *)ATTR_NODE_jobs, (char *)NULL, strlen(job_str->str) + 1)) == NULL)
     {
-    log_err(ENOMEM, __func__, (char *)"");
+    log_err(ENOMEM, __func__, "");
     return(ENOMEM);
     }
 
@@ -788,7 +788,7 @@ int initialize_pbsnode(
   pnode->nd_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   if (pnode->nd_mutex == NULL)
     {
-    log_err(ENOMEM, __func__, (char *)"Could not allocate memory for the node's mutex");
+    log_err(ENOMEM, __func__, "Could not allocate memory for the node's mutex");
     
     return(ENOMEM);
     }
@@ -1235,13 +1235,13 @@ int update_nodes_file(
       fclose(nin);
     
       if (held != np)
-        unlock_node(np, __func__, (char *)"error", LOGLEVEL);
+        unlock_node(np, __func__, "error", LOGLEVEL);
 
       return(-1);
       }
     
     if (held != np)
-      unlock_node(np, __func__, (char *)"loop", LOGLEVEL);
+      unlock_node(np, __func__, "loop", LOGLEVEL);
     } /* for each node */
 
   fclose(nin);
@@ -1587,7 +1587,7 @@ int setup_node_boards(
     if (allocd_name == NULL)
       {
       /* no memory error */
-      log_err(PBSE_SYSTEM, __func__, (char *)"Cannot allocate memory for node name\n");
+      log_err(PBSE_SYSTEM, __func__, "Cannot allocate memory for node name\n");
 
       return(PBSE_SYSTEM);
       }
@@ -1742,7 +1742,7 @@ int create_pbs_node(
 
     if (host_info == NULL)
       {
-      log_err(-1, __func__, (char *)"create_pbs_node calloc failed");
+      log_err(-1, __func__, "create_pbs_node calloc failed");
       return(PBSE_MEM_MALLOC);
       }
 
@@ -1757,7 +1757,7 @@ int create_pbs_node(
       pattrl = attrlist_create(pal->al_atopl.name, 0, strlen(pal->al_atopl.value) + 1);
       if (pattrl == NULL)
         {
-        log_err(-1, __func__, (char *)"cannot create node attribute");
+        log_err(-1, __func__, "cannot create node attribute");
         free(host_info);
         if (pul != NULL)
           free(pul);
@@ -1783,7 +1783,7 @@ int create_pbs_node(
         free(host_info);
         if (pul != NULL)
           free(pul);
-        log_err(-1, __func__, (char *)"create_pbs_node calloc failed");
+        log_err(-1, __func__, "create_pbs_node calloc failed");
         return(PBSE_MEM_MALLOC);
         }
 
@@ -2330,12 +2330,12 @@ int setup_nodes(void)
           /* exclusive bits are calculated later in set_old_nodes() */
           np->nd_state &= ~INUSE_JOB;
 
-          unlock_node(np, __func__, (char *)"match", LOGLEVEL);
+          unlock_node(np, __func__, "match", LOGLEVEL);
 
           break;
           }
 
-        unlock_node(np, __func__, (char *)"no match", LOGLEVEL);
+        unlock_node(np, __func__, "no match", LOGLEVEL);
         }
       }
 
@@ -2363,7 +2363,7 @@ int setup_nodes(void)
           log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
           }
         
-        unlock_node(np, __func__, (char *)"init - no note", LOGLEVEL);
+        unlock_node(np, __func__, "init - no note", LOGLEVEL);
         }
       }
 
@@ -2995,9 +2995,9 @@ struct pbsnode *get_my_next_node_board(
   iter->numa_index++;
   numa = AVL_find(iter->numa_index, pnode->nd_mom_port, pnode->node_boards);
   
-  unlock_node(pnode, __func__, (char *)"pnode", LOGLEVEL);
+  unlock_node(pnode, __func__, "pnode", LOGLEVEL);
   if (numa != NULL)
-    lock_node(numa, __func__, (char *)"numa", LOGLEVEL);
+    lock_node(numa, __func__, "numa", LOGLEVEL);
 
   return(numa);
   } /* END get_my_next_node_board() */
@@ -3013,7 +3013,7 @@ struct pbsnode *get_my_next_alps_node(
   {
   struct pbsnode *alps_node = next_host(&(pnode->alps_subnodes), &(iter->alps_index), NULL);
 
-  unlock_node(pnode, __func__, (char *)NULL, 0);
+  unlock_node(pnode, __func__, NULL, 0);
 
   return(alps_node);
   } /* END get_my_next_alps_node() */
@@ -3184,7 +3184,7 @@ int insert_node(
   if ((rc = insert_thing(an->ra,pnode)) == -1)
     {
     rc = ENOMEM;
-    log_err(rc, __func__, (char *)"No memory to resize the array...SYSTEM FAILURE");
+    log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE");
     }
   else
     {

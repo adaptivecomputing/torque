@@ -131,7 +131,7 @@ int save_single_mic_status(
     {
     if ((rc = decode_arst(temp, NULL, NULL, single_mic_status->str, 0)) != PBSE_NONE)
       {
-      log_err(ENOMEM, __func__, (char *)"");
+      log_err(ENOMEM, __func__, "");
       free_arst(temp);
       }
     
@@ -243,7 +243,7 @@ struct pbsnode *get_numa_from_str(
       np->nd_name);
     log_err(-1, __func__, log_buf);
   
-    unlock_node(np, __func__, (char *)"np numa update", LOGLEVEL);
+    unlock_node(np, __func__, "np numa update", LOGLEVEL);
     
     return(NULL);
     }
@@ -262,14 +262,14 @@ struct pbsnode *get_numa_from_str(
       np->nd_name);
     log_err(-1, __func__, log_buf);
     
-    unlock_node(np, __func__, (char *)"np numa update", LOGLEVEL);
+    unlock_node(np, __func__, "np numa update", LOGLEVEL);
     
     return(NULL);
     }
  
   /* SUCCESS */
-  unlock_node(np, __func__, (char *)"np numa update", LOGLEVEL);
-  lock_node(numa, __func__, (char *)"numa numa update", LOGLEVEL);
+  unlock_node(np, __func__, "np numa update", LOGLEVEL);
+  lock_node(numa, __func__, "numa numa update", LOGLEVEL);
   
   numa->nd_lastupdate = time(NULL);
   
@@ -297,7 +297,7 @@ struct pbsnode *get_node_from_str(
   /* don't do anything if the name is the same as this node's name */
   if (strcmp(node_id, np->nd_name))
     {
-    unlock_node(np, __func__, (char *)"np not numa update", LOGLEVEL);
+    unlock_node(np, __func__, "np not numa update", LOGLEVEL);
     
     next = find_nodebyname(node_id);
     
@@ -455,7 +455,7 @@ void update_job_data(
           attr_name = threadsafe_tokenizer(&jobdata_ptr, "=");
           }
         
-        unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         }
       
       if (on_node == FALSE)
@@ -792,7 +792,7 @@ int process_status_info(
   if (current != NULL)
     {
     save_node_status(current, &temp);
-    unlock_node(current, __func__, (char *)NULL, 0);
+    unlock_node(current, __func__, NULL, 0);
     }
   
   if ((rc == PBSE_NONE) &&

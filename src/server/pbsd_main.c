@@ -810,7 +810,7 @@ void parse_command_line(
             }
           else
             {
-            log_err(-1, __func__, (char *)"unable to determine full server hostname");
+            log_err(-1, __func__, "unable to determine full server hostname");
             }
 
           exit(1);
@@ -1127,7 +1127,7 @@ static int start_hot_jobs(void)
       ct++;
       }
 
-    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     }
 
   return(ct);
@@ -1174,7 +1174,7 @@ void *handle_queue_routing_retries(
         enqueue_threadpool_request(queue_route, queuename);
         }
 
-      unlock_queue(pque, __func__, (char *)NULL, 0);
+      unlock_queue(pque, __func__, NULL, 0);
       }
     }
 
@@ -1541,7 +1541,7 @@ void main_loop(void)
     if (pjob->ji_modified)
       job_save(pjob, SAVEJOB_FULL, 0);
 
-    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     }
 
   if (svr_chngNodesfile)
@@ -2345,7 +2345,7 @@ int is_ha_lock_file_valid(
 
   if (GoodPermissions == FALSE)
     {
-    log_err(-1, __func__, (char *)"could not obtain the needed permissions for the lock file");
+    log_err(-1, __func__, "could not obtain the needed permissions for the lock file");
     }
 
   return(GoodPermissions);
@@ -2637,7 +2637,7 @@ int start_update_ha_lock_thread()
 
   if (fds < 0)
     {
-    log_err(-1, __func__, (char *)"Couldn't write the pid to the lockfile\n");
+    log_err(-1, __func__, "Couldn't write the pid to the lockfile\n");
 
     return(FAILURE);
     }
@@ -2645,7 +2645,7 @@ int start_update_ha_lock_thread()
   snprintf(smallBuf,sizeof(smallBuf),"%ld\n",(long)sid);
   if (write_ac_socket(fds,smallBuf,strlen(smallBuf)) != (ssize_t)strlen(smallBuf))
     {
-    log_err(-1, __func__, (char *)"Couldn't write the pid to the lockfile\n");
+    log_err(-1, __func__, "Couldn't write the pid to the lockfile\n");
     close(fds);
 
     return(FAILURE);
@@ -2667,7 +2667,7 @@ int start_update_ha_lock_thread()
     {
     /* error creating thread */
 
-    log_err(-1, __func__, (char *)"Could not create HA Lock Thread\n");
+    log_err(-1, __func__, "Could not create HA Lock Thread\n");
 
     return(FAILURE);
     }
@@ -2886,7 +2886,7 @@ static int daemonize_server(
 
   if ((pid = fork()) == -1)
     {
-    log_err(errno, __func__, (char *)"cannot fork into background");
+    log_err(errno, __func__, "cannot fork into background");
 
     return(FAILURE);
    }
@@ -2909,7 +2909,7 @@ static int daemonize_server(
 
   if ((*sid = setsid()) == -1)
     {
-    log_err(errno, __func__, (char *)"Could not disconnect from controlling terminal");
+    log_err(errno, __func__, "Could not disconnect from controlling terminal");
 
     return(FAILURE);
     }
@@ -2931,7 +2931,7 @@ static int daemonize_server(
 
   if ((pid = fork()) == -1)
     {
-    log_err(errno, __func__, (char *)"cannot fork into background");
+    log_err(errno, __func__, "cannot fork into background");
 
     return(FAILURE);
     }
@@ -3191,7 +3191,7 @@ int svr_restart()
       {
       /* could not calloc */
 
-      log_err(errno, __func__, (char *)"ERROR:   (char *)  cannot allocate memory for full command, cannot restart\n");
+      log_err(errno, __func__, "ERROR:   (char *)  cannot allocate memory for full command, cannot restart\n");
 
       exit(-10);
       }

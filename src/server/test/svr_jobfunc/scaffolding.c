@@ -11,16 +11,15 @@
 #include "work_task.h" /* work_task */
 #include "sched_cmds.h" /* SCH_SCHEDULE_NULL */
 #include "list_link.h" /* list_link */
-#include "user_info.h"
 
 
 int svr_resc_size = 0;
 all_queues svr_queues;
-const char *msg_daemonname = "unset";
+char *msg_daemonname = "unset";
 attribute_def job_attr_def[10];
-const char *msg_badwait = "Invalid time in work task for waiting, job = %s";
+char *msg_badwait = "Invalid time in work task for waiting, job = %s";
 struct all_jobs alljobs;
-const char *pbs_o_host = "PBS_O_HOST";
+char *pbs_o_host = "PBS_O_HOST";
 resource_def *svr_resc_def;
 int svr_clnodes = 0;
 int comp_resc_gt; 
@@ -28,7 +27,7 @@ struct server server;
 struct all_jobs array_summary;
 int svr_do_schedule = SCH_SCHEDULE_NULL;
 int listener_command = SCH_SCHEDULE_NULL;
-int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
+int LOGLEVEL = 0;
 pthread_mutex_t *svr_do_schedule_mutex;
 pthread_mutex_t *listener_command_mutex;
 
@@ -41,8 +40,20 @@ resource *add_resource_entry(pbs_attribute *pattr, resource_def *prdef)
 
 pbs_queue *find_queuebyname(char *quename)
   {
-  fprintf(stderr, "The call to find_queuebyname to be mocked!!\n");
-  exit(1);
+  pbs_queue *pq = (pbs_queue *)calloc(1, sizeof(pbs_queue));
+
+  pq->qu_qs.qu_type = QTYPE_Unset;
+
+  pq->qu_mutex = calloc(1, sizeof(pthread_mutex_t));
+  pq->qu_jobs = calloc(1, sizeof(struct all_jobs));
+  pq->qu_jobs_array_sum = calloc(1, sizeof(struct all_jobs));
+
+  snprintf(pq->qu_qs.qu_name, sizeof(pq->qu_qs.qu_name), "%s", quename);
+
+  /* set up the user info struct */
+  pq->qu_uih = calloc(1, sizeof(user_info_holder));
+
+  return(pq);
   }
 
 void account_record(int acctype, job *pjob, char *text)
@@ -53,26 +64,35 @@ void account_record(int acctype, job *pjob, char *text)
 
 char *arst_string(const char *str, pbs_attribute *pattr)
   {
-  fprintf(stderr, "The call to arst_string to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 int job_save(job *pjob, int updatetype, int mom_port)
   {
-  fprintf(stderr, "The call to job_save to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 long attr_ifelse_long(pbs_attribute *attr1, pbs_attribute *attr2, long deflong)
   {
-  fprintf(stderr, "The call to attr_ifelse_long to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 pbs_queue *get_jobs_queue(job **pjob)
   {
-  fprintf(stderr, "The call to get_jobs_queue to be mocked!!\n");
-  exit(1);
+  pbs_queue *pq = (pbs_queue *)calloc(1, sizeof(pbs_queue));
+
+  pq->qu_qs.qu_type = QTYPE_Unset;
+
+  pq->qu_mutex = calloc(1, sizeof(pthread_mutex_t));
+  pq->qu_jobs = calloc(1, sizeof(struct all_jobs));
+  pq->qu_jobs_array_sum = calloc(1, sizeof(struct all_jobs));
+
+  snprintf(pq->qu_qs.qu_name, sizeof(pq->qu_qs.qu_name), "%s", "qu_name");
+
+  /* set up the user info struct */
+  pq->qu_uih = calloc(1, sizeof(user_info_holder));
+
+  return(pq);
   }
 
 int procs_available(int proc_ct)
@@ -101,8 +121,7 @@ int insert_job_after(struct all_jobs *aj, job *already_in, job *pjob)
 
 int has_job(struct all_jobs *aj, job *pjob)
   {
-  fprintf(stderr, "The call to has_job to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 struct work_task *set_task(enum work_type type, long event_id, void (*func)(), void *parm, int get_lock)
@@ -113,8 +132,7 @@ struct work_task *set_task(enum work_type type, long event_id, void (*func)(), v
 
 int insert_job(struct all_jobs *aj, job *pjob)
   {
-  fprintf(stderr, "The call to insert_job to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 int procs_requested(char *spec)
@@ -137,23 +155,20 @@ job *next_job(struct all_jobs *aj, int *iter)
 
 job *next_job_from_back(struct all_jobs *aj, int *iter)
   {
-  fprintf(stderr, "The call to next_job_from_back to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 int comp_resc2(struct pbs_attribute *attr, struct pbs_attribute *with, int IsQueueCentric, char *EMsg, enum compare_types type)
   {
-  fprintf(stderr, "The call to comp_resc2 to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
   {
-  fprintf(stderr, "The call to find_resc_def to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
-char * csv_find_string(const char *csv_str, const char *search_str)
+char * csv_find_string(char *csv_str, char *search_str)
   {
   fprintf(stderr, "The call to csv_find_string to be mocked!!\n");
   exit(1);
@@ -173,38 +188,44 @@ work_task *next_task(all_tasks *at, int *iter)
 
 pbs_queue *next_queue(all_queues *aq, int *iter)
   {
-  fprintf(stderr, "The call to next_queue to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 int remove_job(struct all_jobs *aj, job *pjob)
   {
-  fprintf(stderr, "The call to remove_job to be mocked!!\n");
-  exit(1);
+  return(PBSE_JOB_RECYCLED);
   }
 
 int set_jobexid(job *pjob, pbs_attribute *attrry, char *EMsg)
   {
-  fprintf(stderr, "The call to set_jobexid to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 int site_acl_check(job *pjob, pbs_queue *pque)
   {
-  fprintf(stderr, "The call to site_acl_check to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   {
-  fprintf(stderr, "The call to find_resc_entry to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 job *svr_find_job(char *jobid, int get_subjob)
   {
-  fprintf(stderr, "The call to find_job to be mocked!!\n");
-  exit(1);
+  char *job_id = "job_id";
+
+  if (jobid != NULL)
+  {
+    if (strcmp(job_id,jobid) == 0)
+      {
+      static struct job job_id_job;
+      memset(&job_id_job, 0, sizeof(job_id_job));
+      return(&job_id_job);
+      }
+  }
+
+  return(NULL);
   }
 
 int insert_job_first(struct all_jobs *aj, job *pjob)
@@ -215,14 +236,12 @@ int insert_job_first(struct all_jobs *aj, job *pjob)
 
 int unlock_queue(struct pbs_queue *the_queue, const char *id, char *msg, int logging)
   {
-  fprintf(stderr, "The call to unlock_queue to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 int acl_check(pbs_attribute *pattr, char *name, int type)
   {
-  fprintf(stderr, "The call to acl_check to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 int insert_task(all_tasks *at, work_task *wt)
@@ -239,8 +258,7 @@ void free_str(struct pbs_attribute *attr)
 
 void *get_next(list_link pl, char *file, int line)
   {
-  fprintf(stderr, "The call to get_next to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 int append_dynamic_string (dynamic_string *ds, const char *str)
@@ -302,11 +320,11 @@ int decrement_queued_jobs(
   return(0);
   }
 
-int get_jobs_index(
-
-  struct all_jobs *aj,
-  job             *pjob)
-
+int get_jobs_index(struct all_jobs *aj, struct job *pjob)
   {
   return(0);
   }
+
+void log_err(int error, const char *func_id, char *msg) {}
+
+void log_event(int eventtype, int objclass, const char *objname, char *text) {}

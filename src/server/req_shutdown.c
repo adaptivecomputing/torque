@@ -154,7 +154,7 @@ void save_queues()
   while ((pque = next_queue(&svr_queues, &iter)) != NULL)
     {
     que_save(pque);
-    unlock_queue(pque, __func__, (char *)NULL, 0);
+    unlock_queue(pque, __func__, NULL, 0);
     }
   } /* END save_queues() */
 
@@ -267,7 +267,7 @@ void svr_shutdown(
         if (shutdown_checkpoint(&pjob) == 0)
           {
           if (pjob != NULL)
-            unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+            unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
           continue;
           }
@@ -280,7 +280,7 @@ void svr_shutdown(
       }
 
     if (pjob != NULL)
-      unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
     }
 
   return;
@@ -426,7 +426,7 @@ static int shutdown_checkpoint(
   
     job_save(pjob, SAVEJOB_QUICK, 0);
     strcpy(jobid, pjob->ji_qs.ji_jobid);
-    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     }
   
   if (rc == PBSE_NONE)
@@ -491,7 +491,7 @@ void post_checkpoint(
   free_br(preq);
 
   if (pjob != NULL)
-    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
   }  /* END post_checkpoint() */
 
 
@@ -525,7 +525,7 @@ void rerun_or_kill(
         {
         snprintf(log_buf, sizeof(log_buf), "%s%s%s", msg_init_queued, pque->qu_qs.qu_name, text);
 
-        unlock_queue(pque, __func__, (char *)NULL, LOGLEVEL);
+        unlock_queue(pque, __func__, NULL, LOGLEVEL);
         }
       }
     }

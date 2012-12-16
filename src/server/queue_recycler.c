@@ -42,7 +42,7 @@ pbs_queue *next_queue_from_recycler(
   pthread_mutex_lock(aq->allques_mutex);
   pq = (pbs_queue *)next_thing(aq->ra, iter);
   if (pq != NULL)
-    lock_queue(pq, __func__, (char *)NULL, LOGLEVEL);
+    lock_queue(pq, __func__, NULL, LOGLEVEL);
   pthread_mutex_unlock(aq->allques_mutex);
 
   return(pq);
@@ -67,7 +67,7 @@ void *remove_some_recycle_queues(
     return NULL;
 
   remove_queue(&q_recycler.queues,pq);
-  unlock_queue(pq, __func__, (char *)NULL, LOGLEVEL);
+  unlock_queue(pq, __func__, NULL, LOGLEVEL);
   free(pq->qu_mutex);
   free_alljobs_array(pq->qu_jobs);
   free_alljobs_array(pq->qu_jobs_array_sum);

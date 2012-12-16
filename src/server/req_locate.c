@@ -137,7 +137,7 @@ int  req_locatejob(
 
   if (pjob)
     {
-    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
     location = server_name;
     }

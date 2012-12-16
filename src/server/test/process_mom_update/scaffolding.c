@@ -70,7 +70,7 @@ int unlock_ji_mutex(
 
   job        *pjob,
   const char *id,
-  char       *msg,
+  const char *msg,
   int        logging)
   
   {

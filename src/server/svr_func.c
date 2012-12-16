@@ -244,7 +244,7 @@ void set_resc_assigned(
         pque->qu_qs.qu_name);
       log_err(-1, __func__, log_buf);
     
-      unlock_queue(pque, __func__, (char *)NULL, LOGLEVEL);
+      unlock_queue(pque, __func__, NULL, LOGLEVEL);
       return;
       }
   
@@ -252,7 +252,7 @@ void set_resc_assigned(
       {
       if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_RescAssn)
         {
-        unlock_queue(pque, __func__, (char *)NULL, LOGLEVEL);
+        unlock_queue(pque, __func__, NULL, LOGLEVEL);
         return;  /* already added in */
         }
       
@@ -262,7 +262,7 @@ void set_resc_assigned(
       {
       if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_RescAssn) == 0)
         {
-        unlock_queue(pque, __func__, (char *)NULL, LOGLEVEL);
+        unlock_queue(pque, __func__, NULL, LOGLEVEL);
         return;  /* not currently included */
         }
       
@@ -270,7 +270,7 @@ void set_resc_assigned(
       }
     else
       {
-      unlock_queue(pque, __func__, (char *)NULL, LOGLEVEL);
+      unlock_queue(pque, __func__, NULL, LOGLEVEL);
       return;   /* invalid op */
       }
     
@@ -298,7 +298,7 @@ void set_resc_assigned(
 
           if (pr == NULL)
             {
-            unlock_queue(pque, __func__, (char *)"sysru", LOGLEVEL);
+            unlock_queue(pque, __func__, "sysru", LOGLEVEL);
             return;
             }
           }
@@ -315,7 +315,7 @@ void set_resc_assigned(
 
           if (pr == NULL)
             {
-            unlock_queue(pque, __func__, (char *)"queru", LOGLEVEL);
+            unlock_queue(pque, __func__, "queru", LOGLEVEL);
             return;
             }
           }
@@ -326,7 +326,7 @@ void set_resc_assigned(
       jobrsc = (resource *)GET_NEXT(jobrsc->rs_link);
       }  /* END while (jobrsc != NULL) */
 
-    unlock_queue(pque, __func__, (char *)"success", LOGLEVEL);
+    unlock_queue(pque, __func__, "success", LOGLEVEL);
     }
   else if (pjob == NULL)
     {

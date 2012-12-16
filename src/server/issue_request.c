@@ -184,7 +184,7 @@ int relay_to_mom(
   if ((node != NULL) &&
       (node->nd_state & INUSE_DOWN))
     {
-    unlock_node(node, __func__, (char *)"no rely mom", LOGLEVEL);
+    unlock_node(node, __func__, "no rely mom", LOGLEVEL);
     return(PBSE_NORELYMOM);
     }
 
@@ -198,7 +198,7 @@ int relay_to_mom(
     free(tmp);
     }
 
-  unlock_node(node, __func__, (char *)"after svr_connect", LOGLEVEL);
+  unlock_node(node, __func__, "after svr_connect", LOGLEVEL);
   handle = svr_connect(
            pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
            pjob->ji_qs.ji_un.ji_exect.ji_momport,
@@ -216,7 +216,7 @@ int relay_to_mom(
     }
 
   strcpy(jobid, pjob->ji_qs.ji_jobid);
-  unlock_ji_mutex(pjob, __func__, (char *)NULL, LOGLEVEL);
+  unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
   request->rq_orgconn = request->rq_conn; /* save client socket */
 

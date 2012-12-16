@@ -451,7 +451,7 @@ job *job_recov(
     log_err(errno, __func__, log_buf);
 
 #ifndef PBS_MOM
-    unlock_ji_mutex(pj, __func__, (char *)"1", LOGLEVEL);
+    unlock_ji_mutex(pj, __func__, "1", LOGLEVEL);
     free(pj->ji_mutex);
 #endif
 
@@ -472,7 +472,7 @@ job *job_recov(
     log_err(errno, __func__, log_buf);
 
 #ifndef PBS_MOM
-    unlock_ji_mutex(pj, __func__, (char *)"2", LOGLEVEL);
+    unlock_ji_mutex(pj, __func__, "2", LOGLEVEL);
     free(pj->ji_mutex);
 #endif
 
@@ -501,7 +501,7 @@ job *job_recov(
       log_err(-1, __func__, log_buf);
 
 #ifndef PBS_MOM
-      unlock_ji_mutex(pj, __func__, (char *)"3", LOGLEVEL);
+      unlock_ji_mutex(pj, __func__, "3", LOGLEVEL);
       free(pj->ji_mutex);
 #endif
 
@@ -530,7 +530,7 @@ job *job_recov(
     log_err(-1, __func__, log_buf);
 
 #ifndef PBS_MOM
-    unlock_ji_mutex(pj, __func__, (char *)"4", LOGLEVEL);
+    unlock_ji_mutex(pj, __func__, "4", LOGLEVEL);
     free(pj->ji_mutex);
 #endif
 
@@ -557,7 +557,7 @@ job *job_recov(
     log_err(-1, __func__, log_buf);
 
 #ifndef PBS_MOM
-    unlock_ji_mutex(pj, __func__, (char *)"5", LOGLEVEL);
+    unlock_ji_mutex(pj, __func__, "5", LOGLEVEL);
     job_free(pj, FALSE);
 #else
     mom_job_free(pj);
@@ -644,7 +644,7 @@ job *job_recov(
 
     if (pa != NULL)
       {
-      unlock_ai_mutex(pa, __func__, (char *)"1", LOGLEVEL);
+      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
       }
     }
 

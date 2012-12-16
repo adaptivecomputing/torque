@@ -237,7 +237,7 @@ pbs_queue *que_recov_xml(
 
   if (pq == NULL)
     {
-    log_err(-1, __func__, (char *)"que_alloc failed");
+    log_err(-1, __func__, "que_alloc failed");
 
     return(NULL);
     }
@@ -248,7 +248,7 @@ pbs_queue *que_recov_xml(
 
   if (fds < 0)
     {
-    log_err(errno, __func__, (char *)"open error");
+    log_err(errno, __func__, "open error");
 
     que_free(pq, TRUE);
 
@@ -289,7 +289,7 @@ pbs_queue *que_recov_xml(
 
   if (end == NULL)
     {
-    log_err(-1, __func__, (char *)"No queue tag found in the queue file???");
+    log_err(-1, __func__, "No queue tag found in the queue file???");
     que_free(pq, TRUE);
     close(fds);
     return(NULL);
@@ -410,7 +410,7 @@ pbs_queue *que_recov(
 
   if (pq == NULL)
     {
-    log_err(-1, __func__, (char *)"que_alloc failed");
+    log_err(-1, __func__, "que_alloc failed");
 
     return(NULL);
     }
@@ -421,7 +421,7 @@ pbs_queue *que_recov(
 
   if (fds < 0)
     {
-    log_err(errno, __func__, (char *)"open error");
+    log_err(errno, __func__, "open error");
 
     que_free(pq, TRUE);
 
@@ -433,7 +433,7 @@ pbs_queue *que_recov(
   if (read_ac_socket(fds, (char *)&pq->qu_qs, sizeof(queuefix)) !=
       sizeof(queuefix))
     {
-    log_err(errno, __func__, (char *)"read error");
+    log_err(errno, __func__, "read error");
     que_free(pq, TRUE);
     close(fds);
     return ((pbs_queue *)0);
@@ -444,7 +444,7 @@ pbs_queue *que_recov(
   if (recov_attr(fds, pq, que_attr_def, pq->qu_attr,
 	               QA_ATR_LAST, 0, TRUE) != 0)
     {
-    log_err(-1, __func__, (char *)"recov_attr[common] failed");
+    log_err(-1, __func__, "recov_attr[common] failed");
     que_free(pq, TRUE);
     close(fds);
     return ((pbs_queue *)0);

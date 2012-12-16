@@ -181,9 +181,9 @@ int svr_recov(
     unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
 
     if (i < 0)
-      log_err(errno, __func__, (char *)"read of serverdb failed");
+      log_err(errno, __func__, "read of serverdb failed");
     else
-      log_err(errno, __func__, (char *)"short read of serverdb");
+      log_err(errno, __func__, "short read of serverdb");
 
     close(sdb);
 
@@ -205,7 +205,7 @@ int svr_recov(
         !read_only) != 0 ) 
     {
     unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
-    log_err(errno, __func__, (char *)"error on recovering server attr");
+    log_err(errno, __func__, "error on recovering server attr");
 
     close(sdb);
 
@@ -512,7 +512,7 @@ int str_to_attr(
       (val  == NULL) ||
       (attr == NULL))
     {
-    log_err(-1, __func__, (char *)"Illegal NULL pointer argument");
+    log_err(-1, __func__, "Illegal NULL pointer argument");
 
     return(-10);
     }
@@ -555,7 +555,7 @@ int str_to_attr(
 
       if (attr[index].at_val.at_str == NULL)
         {
-        log_err(PBSE_SYSTEM, __func__, (char *)"Cannot allocate memory\n");
+        log_err(PBSE_SYSTEM, __func__, "Cannot allocate memory\n");
 
         return(PBSE_SYSTEM);
         }
@@ -770,7 +770,7 @@ int svr_recov_xml(
   if (end == NULL)
     {
     /* no server tag???? */
-    log_err(-1, __func__, (char *)"No server tag found in the database file???");
+    log_err(-1, __func__, "No server tag found in the database file???");
     close(sdb);
 
     return(-1);

@@ -77,7 +77,7 @@ void *next_from_hash_map(hash_map *hm, int *iter)
     return(NULL);
   }
 
-int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }

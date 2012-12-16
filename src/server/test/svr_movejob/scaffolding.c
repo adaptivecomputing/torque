@@ -270,7 +270,7 @@ struct pbs_queue *lock_queue_with_job_held(
 
 void svr_mailowner(job *pjob, int mailpoint, int force, const char *text) {}
 
-int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }

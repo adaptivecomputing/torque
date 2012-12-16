@@ -152,7 +152,7 @@ int req_movejob(
 
     req_reject(PBSE_BADSTATE, 0, req, NULL, NULL);
 
-    unlock_ji_mutex(jobp, __func__, (char *)"1", LOGLEVEL);
+    unlock_ji_mutex(jobp, __func__, "1", LOGLEVEL);
 
     return(PBSE_NONE);
     }
@@ -172,7 +172,7 @@ int req_movejob(
       {
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
       }
-    unlock_ji_mutex(jobp, __func__, (char *)"2", LOGLEVEL);
+    unlock_ji_mutex(jobp, __func__, "2", LOGLEVEL);
     req_reject(PBSE_JOB_ALREADY_IN_QUEUE, 0, req, NULL, log_buf);
     return(PBSE_NONE);
     }
@@ -215,7 +215,7 @@ int req_movejob(
       break;
     }  /* END switch (svr_movejob(jobp,req->rq_ind.rq_move.rq_destin,req)) */
 
-  unlock_ji_mutex(jobp, __func__, (char *)"1", LOGLEVEL);
+  unlock_ji_mutex(jobp, __func__, "1", LOGLEVEL);
 
   return(PBSE_NONE);
   }  /* END req_movejob() */
@@ -274,8 +274,8 @@ int req_orderjob(
 
     req_reject(PBSE_BADSTATE, 0, req, NULL, NULL);
 
-    unlock_ji_mutex(pjob1, __func__, (char *)"1", LOGLEVEL);
-    unlock_ji_mutex(pjob2, __func__, (char *)"2", LOGLEVEL);
+    unlock_ji_mutex(pjob1, __func__, "1", LOGLEVEL);
+    unlock_ji_mutex(pjob2, __func__, "2", LOGLEVEL);
 
     return(PBSE_NONE);
     }
@@ -318,9 +318,9 @@ int req_orderjob(
       req_reject(rc, 0, req, NULL, NULL);
 
       if (pjob1 != NULL)
-        unlock_ji_mutex(pjob1, __func__, (char *)"3", LOGLEVEL);
+        unlock_ji_mutex(pjob1, __func__, "3", LOGLEVEL);
       if (pjob2 != NULL)
-        unlock_ji_mutex(pjob2, __func__, (char *)"4", LOGLEVEL);
+        unlock_ji_mutex(pjob2, __func__, "4", LOGLEVEL);
 
       return(PBSE_NONE);
       }
@@ -364,13 +364,13 @@ int req_orderjob(
   if (pjob1 != NULL)
     {
     job_save(pjob1, SAVEJOB_FULL, 0);
-    unlock_ji_mutex(pjob1, __func__, (char *)"7", LOGLEVEL);
+    unlock_ji_mutex(pjob1, __func__, "7", LOGLEVEL);
     }
 
   if (pjob2 != NULL)
     {
     job_save(pjob2, SAVEJOB_FULL, 0);
-    unlock_ji_mutex(pjob2, __func__, (char *)"8", LOGLEVEL);
+    unlock_ji_mutex(pjob2, __func__, "8", LOGLEVEL);
     }
 
   /* SUCCESS */

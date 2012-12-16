@@ -238,14 +238,14 @@ int gpu_has_job(
               found_str = strstr (gpu_str, tmp_str);
               if (found_str != NULL)
                 {
-                unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+                unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
                 return(TRUE);
                 }
               }
             }
           
           /* done with job, unlock the mutex */
-          unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
+          unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
           }
         }
       } /* END for each job on the subnode */

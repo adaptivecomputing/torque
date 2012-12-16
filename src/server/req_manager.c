@@ -1071,7 +1071,7 @@ void mgr_queue_delete(
   if ((rc = que_purge(pque)) != PBSE_NONE)
     {
     /* FAILURE */
-    unlock_queue(pque, __func__, (char *)"", LOGLEVEL);
+    unlock_queue(pque, __func__, "", LOGLEVEL);
     req_reject(rc, 0, preq, NULL, NULL);
     return;
     }

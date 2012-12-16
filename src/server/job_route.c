@@ -552,17 +552,17 @@ void *queue_route(
     /* the second condition says we only want to try if routing
      * has been tried once - this is to let req_commit have the 
      * first crack at routing always */
-    unlock_queue(pque, __func__, (char *)NULL, 0);
+    unlock_queue(pque, __func__, NULL, 0);
     if ((pjob->ji_qs.ji_un.ji_routet.ji_rteretry <= time_now - ROUTE_RETRY_TIME) &&
         (pjob->ji_qs.ji_un.ji_routet.ji_rteretry != 0))
       {
       reroute_job(pjob, pque);
       }
-    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     }
 
   free(queue_name);
-  unlock_queue(pque, __func__, (char *)NULL, 0);
+  unlock_queue(pque, __func__, NULL, 0);
   pthread_mutex_unlock(reroute_job_mutex);
   return(NULL);
   } /* END queue_route() */

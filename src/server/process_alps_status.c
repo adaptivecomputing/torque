@@ -149,14 +149,14 @@ struct pbsnode *create_alps_subnode(
   if (initialize_pbsnode(subnode, strdup(node_id), NULL, NTYPE_CLUSTER) != PBSE_NONE)
     {
     free(subnode);
-    log_err(ENOMEM, __func__, (char *)"");
+    log_err(ENOMEM, __func__, "");
     return(NULL);
     }
 
   if (create_subnode(subnode) == NULL)
     {
     free(subnode);
-    log_err(ENOMEM, __func__, (char *)"");
+    log_err(ENOMEM, __func__, "");
     return(NULL);
     }
 
@@ -175,7 +175,7 @@ struct pbsnode *create_alps_subnode(
   if (rc != PBSE_NONE)
     {
     free(subnode);
-    log_err(rc, __func__, (char *)"Couldn't set node attributes");
+    log_err(rc, __func__, "Couldn't set node attributes");
     return(NULL);
     }
 
@@ -310,7 +310,7 @@ int set_ncpus(
     {
     if (create_subnode(current) == NULL)
       {
-      log_err(ENOMEM, __func__, (char *)"");
+      log_err(ENOMEM, __func__, "");
       return(PBSE_SYSTEM);
       }
 
@@ -380,7 +380,7 @@ int set_ngpus(
     {
     if (create_a_gpusubnode(pnode) != PBSE_NONE)
       {
-      log_err(ENOMEM, __func__, (char *)"");
+      log_err(ENOMEM, __func__, "");
       return(PBSE_SYSTEM);
       }
     }
@@ -497,7 +497,7 @@ int record_reservation(
         create_alps_reservation(pjob);
         found_job = TRUE;
 
-        unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         lock_node(pnode, __func__, NULL, 0);
         break;
         }
@@ -621,7 +621,7 @@ int process_alps_status(
         if ((parent = find_nodebyname(nd_name)) == NULL)
           {
           /* reporter node disappeared - this shouldn't be possible */
-          log_err(PBSE_UNKNODE, __func__, (char *)"Alps reporter node disappeared while recording a reservation");
+          log_err(PBSE_UNKNODE, __func__, "Alps reporter node disappeared while recording a reservation");
           free_arst(&temp);
           free_all_keys(rsv_ht);
           free_hash(rsv_ht);

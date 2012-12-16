@@ -163,7 +163,7 @@ char *get_correct_jobname(
         correct = strdup(jobid);
 
         if (correct == NULL)
-          log_err(-1, __func__, (char *)"ERROR:    Fatal - Cannot allocate memory\n");
+          log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
 
         return(correct);
         }
@@ -176,7 +176,7 @@ char *get_correct_jobname(
 
       if (correct == NULL)
         {
-        log_err(-1, __func__, (char *)"ERROR:    Fatal - Cannot allocate memory\n");
+        log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
         return(NULL);
         }
 
@@ -192,7 +192,7 @@ char *get_correct_jobname(
 
       if (correct == NULL)
         {
-        log_err(-1, __func__, (char *)"ERROR:    Fatal - Cannot allocate memory\n");
+        log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
         return(NULL);
         }
 
@@ -215,7 +215,7 @@ char *get_correct_jobname(
 
       if (correct == NULL)
         {
-        log_err(-1, __func__, (char *)"ERROR:    Fatal - Cannot allocate memory\n");
+        log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
         return(NULL);
         }
 
@@ -228,7 +228,7 @@ char *get_correct_jobname(
 
       if (correct == NULL)
         {
-        log_err(-1, __func__, (char *)"ERROR:    Fatal - Cannot allocate memory\n");
+        log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
         return(NULL);
         }
       }
@@ -240,7 +240,7 @@ char *get_correct_jobname(
 
       if (correct == NULL)
         {
-        log_err(-1, __func__, (char *)"ERROR:    Fatal - Cannot allocate memory\n");
+        log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
         return(NULL);
         }
 
@@ -260,7 +260,7 @@ char *get_correct_jobname(
 
       if (correct == NULL)
         {
-        log_err(-1, __func__, (char *)"ERROR:    Fatal - Cannot allocate memory\n");
+        log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
         return(NULL);
         }
 
@@ -278,7 +278,7 @@ char *get_correct_jobname(
 
       if (correct == NULL)
         {
-        log_err(-1, __func__, (char *)"ERROR:    Fatal - Cannot allocate memory\n");
+        log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
         return(NULL);
         }
 
@@ -303,7 +303,7 @@ char *get_correct_jobname(
 
     if (correct == NULL)
       {
-      log_err(-1, __func__, (char *)"ERROR:    Fatal - Cannot allocate memory\n");
+      log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
       return(NULL);
       }
 
@@ -342,7 +342,7 @@ job *find_job_by_array(
   if (i >= 0)
     pj = (job *)aj->ra->slots[i].item;
   if (pj != NULL)
-    lock_ji_mutex(pj, __func__, (char *)NULL, LOGLEVEL);
+    lock_ji_mutex(pj, __func__, NULL, LOGLEVEL);
   
   pthread_mutex_unlock(aj->alljobs_mutex);
   
@@ -353,14 +353,14 @@ job *find_job_by_array(
       if (pj->ji_cray_clone != NULL)
         {
         pj = pj->ji_cray_clone;
-        unlock_ji_mutex(pj->ji_parent_job, __func__, (char *)NULL, LOGLEVEL);
-        lock_ji_mutex(pj, __func__, (char *)NULL, LOGLEVEL);
+        unlock_ji_mutex(pj->ji_parent_job, __func__, NULL, LOGLEVEL);
+        lock_ji_mutex(pj, __func__, NULL, LOGLEVEL);
         }
       }
 
     if (pj->ji_being_recycled == TRUE)
       {
-      unlock_ji_mutex(pj, __func__, (char *)"1", LOGLEVEL);
+      unlock_ji_mutex(pj, __func__, "1", LOGLEVEL);
       pj = NULL;
       }
     }
@@ -467,18 +467,18 @@ job *svr_find_job(
         {
         pj = pj->ji_external_clone;
         
-        lock_ji_mutex(pj, __func__, (char *)NULL, 0);
-        unlock_ji_mutex(pj->ji_parent_job, __func__, (char *)NULL, 0);
+        lock_ji_mutex(pj, __func__, NULL, 0);
+        unlock_ji_mutex(pj->ji_parent_job, __func__, NULL, 0);
 
         if (pj->ji_being_recycled == TRUE)
           {
-          unlock_ji_mutex(pj, __func__, (char *)NULL, 0);
+          unlock_ji_mutex(pj, __func__, NULL, 0);
           pj = NULL;
           }
         }
       else
         {
-        unlock_ji_mutex(pj, __func__, (char *)NULL, 0);
+        unlock_ji_mutex(pj, __func__, NULL, 0);
         pj = NULL;
         }
       }
@@ -528,7 +528,7 @@ int insert_job(
   if ((rc = insert_thing(aj->ra,pjob)) == -1)
     {
     rc = ENOMEM;
-    log_err(rc, __func__, (char *)"No memory to resize the array...SYSTEM FAILURE\n");
+    log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE\n");
     }
   else
     {
@@ -574,7 +574,7 @@ int insert_job_after(
     if ((rc = insert_thing_after(aj->ra,pjob,i)) == -1)
       {
       rc = ENOMEM;
-      log_err(rc, __func__, (char *)"No memory to resize the array...SYSTEM FAILURE");
+      log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE");
       }
     else
       {
@@ -605,7 +605,7 @@ int insert_job_after_index(
   if ((rc = insert_thing_after(aj->ra, pjob, index)) == -1)
     {
     rc = ENOMEM;
-    log_err(rc, __func__, (char *)"No memory to resize the array...SYSTEM FAILURE");
+    log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE");
     }
   else
     {
@@ -637,7 +637,7 @@ int insert_job_first(
   if ((rc = insert_thing_after(aj->ra,pjob,ALWAYS_EMPTY_INDEX)) == -1)
     {
     rc = ENOMEM;
-    log_err(rc, __func__, (char *)"No memory to resize the array...SYSTEM FAILURE");
+    log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE");
     }
   else
     {
@@ -667,14 +667,14 @@ int get_jobs_index(
 
   if (pthread_mutex_trylock(aj->alljobs_mutex))
     {
-    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     pthread_mutex_lock(aj->alljobs_mutex);
-    lock_ji_mutex(pjob, __func__, (char *)NULL, LOGLEVEL);
+    lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
     if (pjob->ji_being_recycled == TRUE)
       {
       pthread_mutex_unlock(aj->alljobs_mutex);
-      unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
       return(-1);
       }
     }
@@ -705,14 +705,14 @@ int has_job(
 
   if (pthread_mutex_trylock(aj->alljobs_mutex))
     {
-    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     pthread_mutex_lock(aj->alljobs_mutex);
-    lock_ji_mutex(pjob, __func__, (char *)NULL, LOGLEVEL);
+    lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
     if (pjob->ji_being_recycled == TRUE)
       {
       pthread_mutex_unlock(aj->alljobs_mutex);
-      unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
       return(PBSE_JOB_RECYCLED);
       }
@@ -752,14 +752,14 @@ int  remove_job(
     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
   if (pthread_mutex_trylock(aj->alljobs_mutex))
     {
-    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     pthread_mutex_lock(aj->alljobs_mutex);
-    lock_ji_mutex(pjob, __func__, (char *)NULL, LOGLEVEL);
+    lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
     if (pjob->ji_being_recycled == TRUE)
       {
       pthread_mutex_unlock(aj->alljobs_mutex);
-      unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       return(PBSE_JOB_RECYCLED);
       }
     }
@@ -797,11 +797,11 @@ job *next_job(
 
   if (pjob != NULL)
     {
-    lock_ji_mutex(pjob, __func__, (char *)NULL, LOGLEVEL);
+    lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
     if (pjob->ji_being_recycled == TRUE)
       {
-      unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
       pjob = next_job(aj,iter);
       }
@@ -826,7 +826,7 @@ job *next_job_from_back(
 
   pjob = (job *)next_thing_from_back(aj->ra,iter);
   if (pjob != NULL)
-    lock_ji_mutex(pjob, __func__, (char *)NULL, LOGLEVEL);
+    lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
   pthread_mutex_unlock(aj->alljobs_mutex);
 
@@ -834,7 +834,7 @@ job *next_job_from_back(
     {
     if (pjob->ji_being_recycled == TRUE)
       {
-      unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
       pjob = next_job_from_back(aj,iter);
       }

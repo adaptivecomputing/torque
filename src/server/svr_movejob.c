@@ -330,13 +330,13 @@ int local_move(
   /* check the destination */
   if ((*my_err = svr_chkque(pjob, dest_que, get_variable(pjob, pbs_o_host), mtype, NULL)))
     {
-    unlock_queue(dest_que, __func__, (char *)NULL, 0);
+    unlock_queue(dest_que, __func__, NULL, 0);
 
     /* should this queue be retried? */
     return(should_retry_route(*my_err));
     }
 
-  unlock_queue(dest_que, __func__, (char *)NULL, 0);
+  unlock_queue(dest_que, __func__, NULL, 0);
 
   /* dequeue job from present queue, update destination and */
   /* queue_rank for new queue and enqueue into destination  */
@@ -410,7 +410,7 @@ void finish_routing_processing(
         
         svr_mailowner(pjob, 'a', TRUE, "Couldn't route job to remote server");
 
-        unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
         return;
         }
@@ -436,9 +436,9 @@ void finish_routing_processing(
         else if (status != 0)
           job_abt(&pjob, msg_routexceed);
         else
-          unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
+          unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
 
-        unlock_queue(pque, __func__, (char *)NULL, LOGLEVEL);
+        unlock_queue(pque, __func__, NULL, LOGLEVEL);
         }
       else if (pjob != NULL)
         {
@@ -513,7 +513,7 @@ void finish_moving_processing(
         svr_evaljobstate(pjob, &newstate, &newsub, 1);
         svr_setjobstate(pjob, newstate, newsub, FALSE);
    
-        unlock_ji_mutex(pjob, __func__, (char *)"3", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
         }
 
       req_reject(status, 0, req, NULL, NULL);
@@ -569,7 +569,7 @@ void finish_move_process(
         
       case MOVE_TYPE_Exec:
 
-        unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         pjob = NULL;
         finish_sendmom(job_id, preq, time, node_name, status, mom_err);
         
@@ -578,7 +578,7 @@ void finish_move_process(
     }
 
   if (pjob != NULL)
-    unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
   } /* END finish_move_process() */
 
 
@@ -739,7 +739,7 @@ int send_job_work(
       {
       snprintf(script_name, sizeof(script_name), "%s%s%s",
         path_jobs, pa->ai_qs.fileprefix, JOB_SCRIPT_SUFFIX);
-      unlock_ai_mutex(pa, __func__, (char *)NULL, LOGLEVEL);
+      unlock_ai_mutex(pa, __func__, NULL, LOGLEVEL);
       }
     else if (pjob == NULL)
       return(PBSE_JOB_RECYCLED);
@@ -756,7 +756,7 @@ int send_job_work(
         (get_job_file_path(pjob ,StdErr, stderr_path, sizeof(stderr_path)) != 0) ||
         (get_job_file_path(pjob, Checkpoint, chkpt_path, sizeof(chkpt_path)) != 0))
       {
-      unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
       goto send_job_work_end;
       }
     }
@@ -772,7 +772,7 @@ int send_job_work(
       change_substate_on_attempt_to_queue = TRUE;
     }
   
-  unlock_ji_mutex(pjob, __func__, (char *)"3", LOGLEVEL);
+  unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
 
   for (NumRetries = 0;NumRetries < RETRY;NumRetries++)
     {
@@ -818,7 +818,7 @@ int send_job_work(
 
     if (con == PBS_LOCAL_CONNECTION)
       {
-      log_err(-1, __func__, (char *)"attempting to run the job on pbs_server???");
+      log_err(-1, __func__, "attempting to run the job on pbs_server???");
       return(PBSE_SYSTEM);
       }
 
@@ -833,7 +833,7 @@ int send_job_work(
           {
           pjob->ji_qs.ji_substate = JOB_SUBSTATE_TRNOUT;
           job_save(pjob, SAVEJOB_QUICK, 0);
-          unlock_ji_mutex(pjob, __func__, (char *)"4", LOGLEVEL);
+          unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
           }
         else
           break;
@@ -897,7 +897,7 @@ int send_job_work(
         {
         pjob->ji_qs.ji_substate = JOB_SUBSTATE_TRNOUTCM;      
         job_save(pjob, SAVEJOB_QUICK, 0);
-        unlock_ji_mutex(pjob, __func__, (char *)"5", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, "5", LOGLEVEL);
         }
       else
         break;
@@ -975,7 +975,7 @@ int send_job_work(
         {
         pjob->ji_wattr[JOB_ATR_session_id].at_val.at_long = sid;
         pjob->ji_wattr[JOB_ATR_session_id].at_flags |= ATR_VFLAG_SET;
-        unlock_ji_mutex(pjob, __func__, (char *)"6", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, "6", LOGLEVEL);
         }
       else
         {
@@ -1062,7 +1062,7 @@ void *send_job(
   if (pjob != NULL)
     {
     job_momaddr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
-    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
     if (LOGLEVEL >= 6)
       {

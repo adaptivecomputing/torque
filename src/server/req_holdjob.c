@@ -193,7 +193,7 @@ int req_holdjob(
     {
     req_reject(rc, 0, preq, NULL, NULL);
 
-    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
     return(PBSE_NONE);
     }
@@ -204,7 +204,7 @@ int req_holdjob(
     {
     req_reject(rc, 0, preq, NULL, NULL);
 
-    unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
 
     return(PBSE_NONE);
     }
@@ -251,7 +251,7 @@ int req_holdjob(
         sprintf(log_buf, msg_jobholdset, pset, preq->rq_user, preq->rq_host);
         
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
-        unlock_ji_mutex(pjob, __func__, (char *)"3", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
         pjob = NULL;
         req_reject(rc, 0, preq, NULL, "relay to mom failed");
         }
@@ -295,7 +295,7 @@ int req_holdjob(
     }
 
   if (pjob != NULL)
-    unlock_ji_mutex(pjob, __func__, (char *)"3", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
 
   return(PBSE_NONE);
   }  /* END req_holdjob() */
@@ -354,7 +354,7 @@ void *req_checkpointjob(
         
         job_save(pjob, SAVEJOB_QUICK, 0);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
-        unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         pjob = NULL;
         }
 
@@ -371,7 +371,7 @@ void *req_checkpointjob(
     }
 
   if (pjob != NULL)
-    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
   return(NULL);
   }  /* END req_checkpointjob() */
@@ -479,7 +479,7 @@ int req_releasejob(
     reply_ack(preq);
     }
 
-  unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+  unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
   return(PBSE_NONE);
   }  /* END req_releasejob() */
@@ -510,11 +510,11 @@ int release_whole_array(
       {
       if ((rc = release_job(preq, pjob)) != 0)
         {
-        unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         return(rc);
         }
   
-      unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
       }
     }
 
@@ -548,7 +548,7 @@ int req_releasearray(
     if (((index = first_job_index(pa)) == -1) ||
         (pa->job_ids[index] == NULL))
       {
-      unlock_ai_mutex(pa, __func__, (char *)"1", LOGLEVEL);
+      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
 
       return(PBSE_NONE);
       }
@@ -566,13 +566,13 @@ int req_releasearray(
     {
     req_reject(PBSE_PERM,0,preq,NULL,NULL);
 
-    unlock_ai_mutex(pa, __func__, (char *)"2", LOGLEVEL);
-    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+    unlock_ai_mutex(pa, __func__, "2", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
     return(PBSE_NONE);
     }
 
-  unlock_ji_mutex(pjob, __func__, (char *)"2", LOGLEVEL);
+  unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
 
   range = preq->rq_extend;
   if ((range != NULL) &&
@@ -581,7 +581,7 @@ int req_releasearray(
     /* parse the array range */
     if ((rc = release_array_range(pa,preq,range)) != 0)
       {
-      unlock_ai_mutex(pa, __func__, (char *)"3", LOGLEVEL);
+      unlock_ai_mutex(pa, __func__, "3", LOGLEVEL);
 
       req_reject(rc,0,preq,NULL,NULL);
 
@@ -590,14 +590,14 @@ int req_releasearray(
     }
   else if ((rc = release_whole_array(pa,preq)) != 0)
     {
-    unlock_ai_mutex(pa, __func__, (char *)"4", LOGLEVEL);
+    unlock_ai_mutex(pa, __func__, "4", LOGLEVEL);
 
     req_reject(rc,0,preq,NULL,NULL);
 
     return(PBSE_NONE);
     }
   
-  unlock_ai_mutex(pa, __func__, (char *)"5", LOGLEVEL);
+  unlock_ai_mutex(pa, __func__, "5", LOGLEVEL);
 
   reply_ack(preq);
 
@@ -761,7 +761,7 @@ void process_hold_reply(
     reply_ack(preq);
     }
 
-  unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+  unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
   } /* END process_hold_reply() */
 
@@ -801,7 +801,7 @@ void process_checkpoint_reply(
     account_record(PBS_ACCT_CHKPNT, pjob, "Checkpointed"); /* note in accounting file */
     reply_ack(preq);
 
-    unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     }
   } /* END process_checkpoint_reply() */
 

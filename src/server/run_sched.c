@@ -281,14 +281,14 @@ int schedule_jobs(void)
       {
       /* Can not init thread attribute structure */
       perror("could not create listener thread for scheduler");
-      log_err(-1, __func__, (char *)"Failed to create listener thread for scheduler");
+      log_err(-1, __func__, "Failed to create listener thread for scheduler");
       }
     else if (pthread_attr_setdetachstate(&t_attr, PTHREAD_CREATE_DETACHED) != 0)
       {
       /* Can not set thread initial state as detached */
       pthread_attr_destroy(&t_attr);
       perror("could not detach listener thread for scheduler");
-      log_err(-1, __func__, (char *)"Failed to detach listener thread for scheduler");
+      log_err(-1, __func__, "Failed to detach listener thread for scheduler");
       }
     else
       {
@@ -299,7 +299,7 @@ int schedule_jobs(void)
    != 0)
         {
         perror("could not start listener thread for scheduler");
-        log_err(-1, __func__, (char *)"Failed to start listener thread for scheduler");
+        log_err(-1, __func__, "Failed to start listener thread for scheduler");
       return(-1);
         }
       }
