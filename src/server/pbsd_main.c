@@ -261,6 +261,7 @@ int                     queue_rank = 0;
 int                     a_opt_init = -1;
 int                     wait_for_moms_hierarchy = FALSE;
 
+int                     route_retry_interval = 5; /* time in seconds to check routing queues */
 /* HA global data items */
 long                    HALockCheckTime = 0;
 long                    HALockUpdateTime = 0;

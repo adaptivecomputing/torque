@@ -133,7 +133,7 @@ extern char *msg_err_noqueue;
 extern int LOGLEVEL;
 extern pthread_mutex_t *reroute_job_mutex;
 
-int route_retry_interval = 5; /* time in seconds to check routing queues */
+extern int route_retry_interval;
 
 /*
  * Add an entry to the list of bad destinations for a job.
@@ -510,9 +510,7 @@ int reroute_job(
  */
 
 void *queue_route(
-
   void *vp)
-
   {
   pbs_queue *pque;
   job       *pjob = NULL;
@@ -570,5 +568,4 @@ void *queue_route(
   free(queue_name);
   return(NULL);
   } /* END queue_route() */
-
 

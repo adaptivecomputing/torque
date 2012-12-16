@@ -475,6 +475,7 @@ void svr_mailowner(
   if ((mi->mailto = strdup(mailto)) == NULL)
     {
     log_err(ENOMEM, __func__, memory_err);
+    free(mi);
     return;
     }
 
@@ -487,6 +488,7 @@ void svr_mailowner(
     if (mi->exec_host == NULL)
       {
       log_err(ENOMEM, __func__, memory_err);
+      free(mi);
       return;
       }
     }
@@ -496,6 +498,7 @@ void svr_mailowner(
   if ((mi->jobid = strdup(pjob->ji_qs.ji_jobid)) == NULL)
     {
     log_err(ENOMEM, __func__, memory_err);
+    free(mi);
     return;
     }
 
