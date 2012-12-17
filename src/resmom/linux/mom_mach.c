@@ -2692,7 +2692,7 @@ int mom_close_poll(void)
     free(proc_array);
     proc_array = NULL;
     nproc = 0;
-    max_proc = TCL_INC;
+    max_proc = TBL_INC;
     }
 
   return(PBSE_NONE);

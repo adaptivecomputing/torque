@@ -1349,7 +1349,7 @@ long log_size(void)
   struct stat64 file_stat = {0};
 #else
 
-  struct stat file_stat = {0};
+  struct stat file_stat;
 #endif
   
   pthread_mutex_lock(log_mutex);

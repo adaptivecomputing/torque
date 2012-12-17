@@ -25,6 +25,8 @@ int mom_comm(job *pjob, void *(*func)(struct work_task *vp));
 int handle_complete_first_time(job *pjob);
 int handle_complete_second_time(struct work_task *ptask);
 int handle_complete_subjob(job *pjob);
+int handle_exited(job *pjob);
+
 
 extern pthread_mutex_t *svr_do_schedule_mutex;
 extern pthread_mutex_t *listener_command_mutex;
@@ -37,6 +39,7 @@ extern int bad_job;
 extern int cray_enabled;
 extern int double_bad;
 extern int reported;
+extern int bad_drequest;
 
 void init_server()
   {
@@ -319,8 +322,36 @@ START_TEST(handle_complete_subjob_test)
   double_bad = 1;
   cray->ji_qs.ji_state = JOB_STATE_COMPLETE;
   fail_unless(handle_complete_subjob(external) == PBSE_NONE);
-  /*fail_unless(parent->ji_qs.ji_state == JOB_STATE_COMPLETE);*/
-  /*fail_unless(handle_complete_subjob(external) == PBSE_NONE);*/
+  fail_unless(parent->ji_qs.ji_state == JOB_STATE_COMPLETE);
+  fail_unless(handle_complete_subjob(external) == PBSE_NONE);
+  }
+END_TEST
+
+
+
+
+START_TEST(handle_exited_test)
+  {
+  job *pjob = calloc(1, sizeof(job));
+
+  strcpy(pjob->ji_qs.ji_jobid, "1.napali");
+  pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("napali/0+napali/1");
+  svr_do_schedule_mutex = calloc(1, sizeof(pthread_mutex_t));
+  listener_command_mutex = calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(svr_do_schedule_mutex, NULL);
+  pthread_mutex_init(listener_command_mutex, NULL);
+
+  fail_unless(handle_exited(pjob) == PBSE_NONE);
+
+  double_bad = 1;
+  fail_unless(handle_exited(pjob) == PBSE_JOBNOTFOUND);
+  double_bad = 0;
+
+  bad_job = TRUE;
+  fail_unless(handle_exited(pjob) == PBSE_CONNECT);
+  bad_drequest = TRUE;
+  fail_unless(handle_exited(pjob) == PBSE_CONNECT);
+  alloc_br_null = TRUE;
   }
 END_TEST
 
@@ -376,6 +407,10 @@ Suite *req_jobobit_suite(void)
 
   tc_core = tcase_create("handle_complete_subjob_test");
   tcase_add_test(tc_core, handle_complete_subjob_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("handle_exited_test");
+  tcase_add_test(tc_core, handle_exited_test);
   suite_add_tcase(s, tc_core);
 
   return(s);

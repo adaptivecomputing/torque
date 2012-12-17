@@ -49,6 +49,7 @@ int bad_queue;
 int double_bad;
 int cray_enabled;
 int reported;
+int bad_drequest;
 
 
 struct batch_request *alloc_br(int type)
@@ -183,6 +184,9 @@ void *get_next(list_link pl, char *file, int line)
 
 int issue_Drequest(int conn, struct batch_request *request, void (*func)(struct work_task *), struct work_task **ppwt)
   {
+  if (bad_drequest)
+    return(-1);
+
   return(0);
   }
 
@@ -225,11 +229,7 @@ int svr_connect(pbs_net_t hostaddr, unsigned int port, struct pbsnode *pnode, vo
   return(1);
   }
 
-void issue_track(job *pjob)
-  {
-  fprintf(stderr, "The call to issue_track to be mocked!!\n");
-  exit(1);
-  }
+void issue_track(job *pjob) {}
 
 int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mute)
   {
