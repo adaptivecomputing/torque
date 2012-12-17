@@ -1086,10 +1086,10 @@ extern int   depend_on_term(char *);
 job         *find_job_regular_jobs(char *);
 job         *find_job_array_jobs(char *);
 extern char *get_egroup(job *);
-extern char *get_variable(job *, char *);
+extern char *get_variable(job *, const char *);
 extern int   init_chkmom(job *);
 extern void  issue_track(job *);
-extern int   job_abt(job **, char *);
+extern int   job_abt(job **, const char *);
 extern job  *job_alloc();
 extern int   job_unlink_file(job *pjob, const char *name);
 #ifndef PBS_MOM

@@ -148,13 +148,13 @@ void update_job_on_run(int pbs_sd, job_info *jinfo);
 /*
  *      update_job_comment - update a jobs comment attribute
  */
-int update_job_comment(int pbs_sd, job_info *jinfo, char *comment);
+int update_job_comment(int pbs_sd, job_info *jinfo, const char *comment);
 
 /*
  *      update_jobs_cant_run - update an array of jobs which can not run
  */
 void update_jobs_cant_run(int pbs_sd, job_info **jinfo_arr, job_info *start,
-                          char *comment, int start_where);
+                          const char *comment, int start_where);
 
 /*
  * job_filter - filters jobs on specified argument

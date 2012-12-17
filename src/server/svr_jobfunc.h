@@ -16,7 +16,7 @@ int svr_setjobstate(struct job *pjob, int newstate, int newsubstate, int);
 
 void svr_evaljobstate(struct job *pjob, int *newstate, int *newsub, int forceeval);
 
-char *get_variable(struct job *pjob, char *variable);
+char *get_variable(struct job *pjob, const char *variable);
 
 int chk_resc_limits(struct pbs_attribute *pattr, struct pbs_queue *pque, char *EMsg);
 

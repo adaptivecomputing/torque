@@ -20,9 +20,9 @@ extern char *msg_daemonname;
 /* Note, in extremely high load cases, the alloc value in /proc/net/sockstat can exceed the max value. This will substantially slow down throughput and generate connection failures (accept gets a EMFILE error). As the client is designed to run on each submit host, that issue shouldn't occur. The client must be restarted to clear out this issue. */
 int start_listener(
     
-  char   *server_ip,
-  int     server_port,
-  void *(*process_meth)(void *))
+  const char   *server_ip,
+  int            server_port,
+  void          *(*process_meth)(void *))
 
   {
   struct sockaddr_in  adr_svr;

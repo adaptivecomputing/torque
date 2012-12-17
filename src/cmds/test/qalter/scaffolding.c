@@ -85,7 +85,7 @@ int parse_depend_list(char *list, char *rtn_list, int rtn_size)
   exit(1);
   }
 
-void prt_job_err(char *cmd, int connect, char *id)
+void prt_job_err(const char *cmd, int connect, const char *id)
   { 
   fprintf(stderr, "The call to prt_job_err needs to be mocked!!\n");
   exit(1);

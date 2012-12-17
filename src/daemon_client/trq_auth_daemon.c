@@ -90,7 +90,7 @@ void clean_log_init_mutex(void)
   free(job_log_mutex);
   }
 
-int daemonize_trqauthd(char *server_ip, int server_port, void *(*process_meth)(void *))
+int daemonize_trqauthd(const char *server_ip, int server_port, void *(*process_meth)(void *))
   {
   int gid;
   pid_t pid;
@@ -100,7 +100,7 @@ int daemonize_trqauthd(char *server_ip, int server_port, void *(*process_meth)(v
   char path_log[MAXPATHLEN + 1];
   char *log_file=NULL;
   int eventclass = PBS_EVENTCLASS_TRQAUTHD;
-  char *path_home = PBS_SERVER_HOME;
+  const char *path_home = PBS_SERVER_HOME;
 
   umask(022);
 
@@ -205,8 +205,6 @@ int daemonize_trqauthd(char *server_ip, int server_port, void *(*process_meth)(v
 
 void parse_command_line(int argc, char **argv)
   {
-  extern int   optind;
-  extern char *optarg;
   int c;
 
   while ((c = getopt(argc, argv, "D")) != -1)

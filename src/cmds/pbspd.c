@@ -56,7 +56,7 @@ int main(int argc, char **argv)
   char     *mpchild;
   char     winid;
 
-  static char *job_key = "MP_PARTITION=";
+  static const char *job_key = "MP_PARTITION=";
   static char job_win[15+SWLINELEN] = "MP_MPI_NETWORK=";
 
   /* Check that calling args are correct */

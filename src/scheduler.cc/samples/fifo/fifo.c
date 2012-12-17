@@ -498,7 +498,7 @@ int scheduling_cycle(
           jinfo->name,
           "Job Deleted because it would never run");
 
-        pbs_deljob_err(sd, jinfo->name, "Job could never run", &local_errno);
+        pbs_deljob_err(sd, jinfo->name, (char *)"Job could never run", &local_errno);
         }
 
       jinfo->can_not_run = 1;

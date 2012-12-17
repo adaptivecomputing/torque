@@ -1059,8 +1059,8 @@ void svr_evaljobstate(
 
 char *get_variable(
 
-  job  *pjob,     /* I */
-  char *variable) /* I */
+  job           *pjob,     /* I */
+  const char   *variable) /* I */
 
   {
   char *pc;

@@ -532,7 +532,7 @@ char **pbs_setup(
 
   if (! nprocs_specified)
     {
-    newargs[j++] = "-procs";
+    newargs[j++] = (char *)"-procs";
     newargs[j++] = nhoststring;
     };
 
@@ -644,15 +644,15 @@ char *get_real_command(
   else
     command_name = argv0;
 
-  if (!strcmp(command_name, (char *)"poe")) return(POE_PATH);
+  if (!strcmp(command_name, (char *)"poe")) return((char *)POE_PATH);
 
-  if (!strcmp(command_name, (char *)"pbspoe")) return(POE_PATH);
+  if (!strcmp(command_name, (char *)"pbspoe")) return((char *)POE_PATH);
 
-  if (!strcmp(command_name, (char *)"pdbx")) return(PDBX_PATH);
+  if (!strcmp(command_name, (char *)"pdbx")) return((char *)PDBX_PATH);
 
-  if (!strcmp(command_name, (char *)"xpdbx")) return XPDBX_PATH;
+  if (!strcmp(command_name, (char *)"xpdbx")) return (char *)XPDBX_PATH;
 
-  if (!strcmp(command_name, (char *)"newpoe")) return(POE_PATH);
+  if (!strcmp(command_name, (char *)"newpoe")) return((char *)POE_PATH);
 
   fprintf(stderr, "\"%s\" unknown to the PBS front end.\n", argv0);
 
@@ -685,7 +685,7 @@ int is_interactive_ok(void)
 void refuse_interactive(void)
 
   {
-  char *nasty_gram =
+  const char *nasty_gram =
     {
     "\n"
     "                           WARNING !\n"

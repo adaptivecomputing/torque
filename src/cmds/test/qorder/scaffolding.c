@@ -41,7 +41,7 @@ int pbs_orderjob_err(int c, char *job1, char *job2, char *extend, int *local_err
   exit(1);
   }
 
-void prt_job_err(char *cmd, int connect, char *id)
+void prt_job_err(const char *cmd, int connect, const char *id)
   { 
   fprintf(stderr, "The call to prt_job_err needs to be mocked!!\n");
   exit(1);

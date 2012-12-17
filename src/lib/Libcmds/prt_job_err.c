@@ -92,9 +92,9 @@
 
 void prt_job_err(
 
-  char *cmd,
+  const char *cmd,
   int   connect,
-  char *id)
+  const char *id)
 
   {
   char *errmsg;

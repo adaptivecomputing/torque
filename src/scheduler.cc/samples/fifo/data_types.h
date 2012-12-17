@@ -395,7 +395,7 @@ unsigned all  :
 struct sort_info
   {
   enum sort_type sort;
-  char *config_name;
+  const char *config_name;
   int (*cmp_func)(const void *, const void*);
   };
 
@@ -530,9 +530,9 @@ unsigned is_ded_time:
 
 struct rescheck
   {
-  char *name;
-  char *comment_msg;
-  char *debug_msg;
+  const char *name;
+  const char *comment_msg;
+  const char *debug_msg;
   };
 
 #endif

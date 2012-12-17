@@ -35,7 +35,7 @@ void reply_ack(struct batch_request *preq)
   exit(1);
   }
 
-char *get_variable(job *pjob, char *variable)
+char *get_variable(job *pjob, const char *variable)
   {
   fprintf(stderr, "The call to get_variable to be mocked!!\n");
   exit(1);
@@ -77,7 +77,7 @@ int svr_chkque(job *pjob, pbs_queue *pque, char *hostname, int mtype, char *EMsg
   exit(1);
   }
 
-int unlock_queue(struct pbs_queue *the_queue, const char *id, char *msg, int logging)
+int unlock_queue(struct pbs_queue *the_queue, const char *id, const char *msg, int logging)
   {
   fprintf(stderr, "The call to unlock_queue to be mocked!!\n");
   exit(1);
