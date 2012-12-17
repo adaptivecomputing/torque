@@ -3615,6 +3615,7 @@ int read_config(
     linenum = 0;
 
     memset(line, 0, sizeof(line));
+    memset(name, 0, sizeof(name));
 
     while (fgets(line, sizeof(line) - 1, conf))
       {

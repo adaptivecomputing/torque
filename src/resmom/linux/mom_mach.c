@@ -2690,6 +2690,9 @@ int mom_close_poll(void)
   if (proc_array != NULL)
     {
     free(proc_array);
+    proc_array = NULL;
+    nproc = 0;
+    max_proc = TCL_INC;
     }
 
   return(PBSE_NONE);
