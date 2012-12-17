@@ -237,7 +237,8 @@ int get_UID(
 	  ptr++;
 	  }
 
-	strcpy(conn_credent[s].username, user_name);
+	strncpy(conn_credent[s].username, user_name, sizeof(conn_credent[s].username) - 1);
+        conn_credent[s].username[sizeof(conn_credent[s].username) - 1] = 0;
 	
   return(PBSE_NONE);
   } /* END get_UID() */
