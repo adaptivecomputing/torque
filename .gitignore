@@ -443,9 +443,9 @@ src/tools/test/tracejob/test_tracejob
 .project
 .cproject
 cscope.out
-<<<<<<< HEAD
 *.orig
 *.rej
 *.patch
-=======
->>>>>>> 7245c5e5a8f552e11b97bb61f4e0f469838989db
+tmpdiff
+tmporig
+tmpfile

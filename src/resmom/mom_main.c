@@ -3504,7 +3504,6 @@ int read_config(
   char *server_list_ptr;
   char *tp;
 
-
   if (LOGLEVEL >= 3)
     {
     sprintf(log_buffer, "updating configuration using file '%s'",
@@ -3620,6 +3619,7 @@ int read_config(
     while (fgets(line, sizeof(line) - 1, conf))
       {
       linenum++;
+      memset(name, 0, sizeof(name));
 
       if (line[0] == '#') /* comment */
         {
