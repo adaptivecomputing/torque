@@ -446,3 +446,6 @@ cscope.out
 *.orig
 *.rej
 *.patch
+tmpdiff
+tmpfile
+tmporig

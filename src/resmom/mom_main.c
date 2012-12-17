@@ -3627,6 +3627,8 @@ int read_config(
         continue;
         }
 
+      memset(name, 0, sizeof(name));
+
       if ((ptr = strchr(line, '#')) != NULL)
         {
         /* allow inline comments */
