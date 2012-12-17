@@ -1346,10 +1346,10 @@ long log_size(void)
   {
 #if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64) && defined(LARGEFILE_WORKS)
 
-  struct stat64 file_stat;
+  struct stat64 file_stat = {0};
 #else
 
-  struct stat file_stat;
+  struct stat file_stat = {0};
 #endif
   
   pthread_mutex_lock(log_mutex);
