@@ -94,6 +94,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
+
 #include "libpbs.h"
 #include "pbs_error.h"
 #include "list_link.h"
