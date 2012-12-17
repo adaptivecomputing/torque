@@ -107,7 +107,7 @@
  *
  * EX: sort_by: shortest_job_first prime
  */
-int parse_config(char *fname)
+int parse_config(const char *fname)
   {
   FILE *fp;   /* file pointer to config file */
   char buf[256];  /* used to read in lines from the file */

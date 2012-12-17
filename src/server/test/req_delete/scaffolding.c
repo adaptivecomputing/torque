@@ -128,7 +128,7 @@ int svr_chk_owner(struct batch_request *preq, job *pjob)
   exit(1);
   }
 
-int job_abt(job **pjobp, char *text)
+int job_abt(job **pjobp, const char *text)
   {
   fprintf(stderr, "The call to job_abt needs to be mocked!!\n");
   exit(1);
@@ -182,7 +182,7 @@ job *svr_find_job(char *jobid, int get_subjob)
   exit(1);
   }
 
-int unlock_queue(struct pbs_queue *the_queue, const char *id, char *msg, int logging)
+int unlock_queue(struct pbs_queue *the_queue, const char *id, const char *msg, int logging)
   {
   fprintf(stderr, "The call to unlock_queue needs to be mocked!!\n");
   exit(1);

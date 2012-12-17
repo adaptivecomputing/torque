@@ -676,7 +676,7 @@ void update_job_on_run(int pbs_sd, job_info *jinfo)
 
 #define UDC_CLONEBUFSIZ 256
 
-int update_job_comment(int pbs_sd, job_info *jinfo, char *comment)
+int update_job_comment(int pbs_sd, job_info *jinfo, const char *comment)
   {
   /* the pbs_alterjob() call takes a linked list of attrl structures to alter
    * a job.  All we are interested in doing is changing the comment.
@@ -684,7 +684,7 @@ int update_job_comment(int pbs_sd, job_info *jinfo, char *comment)
 
   struct attrl attr =
     {
-    NULL, ATTR_comment, NULL, NULL, SET
+    NULL, (char *)ATTR_comment, NULL, NULL, SET
     };
 
   int         local_errno = 0;
@@ -699,7 +699,7 @@ int update_job_comment(int pbs_sd, job_info *jinfo, char *comment)
     if (jinfo -> comment != NULL)
       free(jinfo -> comment);
 
-    jinfo -> comment = string_dup(comment);
+    jinfo -> comment = string_dup((char *)comment);
 
     /* Assign new, copied version of "comment" to a pointer we can guarantee
        pbs_alterjob() can't mangle anything important. */
@@ -731,7 +731,7 @@ int update_job_comment(int pbs_sd, job_info *jinfo, char *comment)
  *
  */
 void update_jobs_cant_run(int pbs_sd, job_info **jinfo_arr, job_info *start,
-                          char *comment, int start_where)
+                          const char *comment, int start_where)
   {
   int i = 0;
 

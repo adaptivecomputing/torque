@@ -300,13 +300,17 @@ void update_node_state(
 
   struct pbssubn *sp;
 
+  /* No need to do anything if newstate == oldstate */
+  if (np->nd_state == newstate)
+    return;
+
   /*
    * LOGLEVEL >= 4 logs all state changes
    *          >= 2 logs down->(busy|free) changes
    *          (busy|free)->down changes are always logged
    */
 
-  if (LOGLEVEL >= 3)
+  if (LOGLEVEL >= 4)
     {
     sprintf(log_buf, "adjusting state for node %s - state=%d, newstate=%d",
       (np->nd_name != NULL) ? np->nd_name : "NULL",

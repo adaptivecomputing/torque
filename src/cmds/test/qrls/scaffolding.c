@@ -41,7 +41,7 @@ int get_server(char *job_id_in, char *job_id_out, char *server_out)
   exit(1);
   }
 
-void prt_job_err(char *cmd, int connect, char *id)
+void prt_job_err(const char *cmd, int connect, const char *id)
   { 
   fprintf(stderr, "The call to prt_job_err needs to be mocked!!\n");
   exit(1);

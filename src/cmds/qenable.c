@@ -107,7 +107,7 @@ static void execute(
 
   static struct attropl attr =
     {
-    NULL, "enabled", NULL, "TRUE", SET
+    NULL, (char *)"enabled", NULL, (char *)"TRUE", SET
     };
 
   if ((ct = cnt2server(server)) > 0)

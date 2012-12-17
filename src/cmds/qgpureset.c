@@ -15,7 +15,7 @@
 int pbs_gpureset_err(int c, char *node, char *gpuid, int permanent, int vol, int *);
 int exitstatus = 0; /* Exit Status */
 
-static void execute(char *, char *, int, int, char *);
+static void execute(char *, char *, int, int, const char *);
 
 /*  qgpureset */
 
@@ -136,7 +136,7 @@ static void execute(
   char *gpuid,
   int   ecc_perm,
   int   ecc_vol,
-  char *server)
+  const char *server)
 
   {
   int local_errno = 0;

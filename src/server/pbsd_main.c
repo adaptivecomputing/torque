@@ -1163,21 +1163,15 @@ void *handle_queue_routing_retries(
   char       *queuename;
   int        iter = -1;
 
-  while(1)
+  while ((pque = next_queue(&svr_queues, &iter)) != NULL)
     {
-    sleep(route_retry_interval);
-    while ((pque = next_queue(&svr_queues, &iter)) != NULL)
+    if (pque->qu_qs.qu_type == QTYPE_RoutePush)
       {
-      if (pque->qu_qs.qu_type == QTYPE_RoutePush)
-        {
-        queuename = strdup(pque->qu_qs.qu_name); /* make sure this gets freed inside queue_route */
-        enqueue_threadpool_request(queue_route, queuename);
-        }
-
-      unlock_queue(pque, __func__, NULL, 0);
+      queuename = strdup(pque->qu_qs.qu_name); /* make sure this gets freed inside queue_route */
+      enqueue_threadpool_request(queue_route, queuename);
       }
+    unlock_queue(pque, __func__, NULL, 0);
     }
-
   return(NULL);
   } /* END handle_queue_routing_retries() */
 

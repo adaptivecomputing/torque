@@ -51,7 +51,7 @@ int recov_attr(int fd, void *parent, struct attribute_def *padef, struct pbs_att
   exit(1);
   }
 
-int job_abt(job **pjobp, char *text)
+int job_abt(job **pjobp, const char *text)
   {
   fprintf(stderr, "The call to job_abt needs to be mocked!!\n");
   exit(1);

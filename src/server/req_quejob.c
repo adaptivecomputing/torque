@@ -2368,14 +2368,16 @@ static job *locate_new_job(
 
 #define UserAcctMax  12
 
-struct
+typedef struct _UserAcct
   {
   int  ActCnt;                          /* How many projects */
   int  ActMax;                          /* Max allowed in this struct */
   char ActRaw[80];                      /* The raw project data */
   char ActDat[80];                      /* ActRaw with \0 as necessary */
   char *ActAdr[UserAcctMax];            /* Pointers to ActDat items */
-  } UserAcct =
+  } UserAcct_t;
+
+  UserAcct_t UserAcct =
 
   {
   0, UserAcctMax,

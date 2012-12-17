@@ -6756,7 +6756,7 @@ char *std_file_name(
       /* if it's not a directory, just use $HOME us usual */
       snprintf(path_alt, sizeof(path_alt), "%s", path);
 
-      strncat(path_alt, "/.pbs_spool/", sizeof(path_alt));
+      strncat(path_alt, "/.pbs_spool/", sizeof(path_alt)i - 1);
 
       if (seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) == -1)
         {
@@ -6770,7 +6770,7 @@ char *std_file_name(
       if ((rcstat == 0) && (S_ISDIR(myspooldir.st_mode)))
         snprintf(path, sizeof(path), "%s", path_alt);
       else
-        strncat(path, "/", sizeof(path));
+        strncat(path, "/", sizeof(path) - 1);
 
       *keeping = 1;
 

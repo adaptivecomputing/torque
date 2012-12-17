@@ -235,7 +235,7 @@ group_info *new_group_info()
  *   shares  - the amount of shares the user/group has in its resgroup
  *
  */
-int parse_group(char *fname)
+int parse_group(const char *fname)
   {
   group_info *ginfo;  /* ptr to parent group */
   group_info *new_ginfo; /* used to add each new group */

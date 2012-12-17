@@ -201,7 +201,7 @@ extern char *job_log_file;
 void send_qsub_delmsg(
 
   job  *pjob,  /* I */
-  char *text)  /* I */
+  const char *text)  /* I */
 
   {
   char          *phost;
@@ -411,8 +411,8 @@ int remtree(
 
 int job_abt(
 
-  job  **pjobp, /* I (modified/freed) */
-  char  *text)  /* I (optional) */
+  job         **pjobp, /* I (modified/freed) */
+  const char *text)  /* I (optional) */
 
   {
   char  log_buf[LOCAL_LOG_BUF_SIZE];

@@ -14,7 +14,7 @@ void *process_svr_conn(void *sock)
   exit(1);
   }
 
-int start_listener(char *server_ip, int server_port, void *(*process_meth)(void *))
+int start_listener(const char *server_ip, int server_port, void *(*process_meth)(void *))
   {
   fprintf(stderr, "The call to start_listener needs to be mocked!!\n");
   exit(1);

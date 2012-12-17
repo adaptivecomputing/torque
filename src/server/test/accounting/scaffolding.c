@@ -49,7 +49,7 @@ void free_dynamic_string(dynamic_string *ds)
   exit(1);
   }
 
-int unlock_queue(pbs_queue *the_queue, const char *id, char *msg, int logging)
+int unlock_queue(pbs_queue *the_queue, const char *id, const char *msg, int logging)
   {
   return(0);
   }

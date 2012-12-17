@@ -95,7 +95,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-
 #include "libpbs.h"
 #include "pbs_error.h"
 #include "list_link.h"
@@ -540,7 +539,7 @@ void *queue_route(
     free(queue_name);
     return(NULL);
     }
-
+  
   while (1)
     {
     if (LOGLEVEL >= 7)
@@ -552,7 +551,7 @@ void *queue_route(
     while ((pjob = next_job(pque->qu_jobs,&iter)) != NULL)
       {
       /* We only want to try if routing has been tried at least once - this is to let
- *        * req_commit have the first crack at routing always. */
+       * req_commit have the first crack at routing always. */
       int has_been_tried_once = (pjob->ji_qs.ji_un.ji_routet.ji_rteretry != 0) ? 1 : 0;
       int retry_time_has_passed = (pjob->ji_qs.ji_un.ji_routet.ji_rteretry <= time_now - ROUTE_RETRY_TIME) ? 1 : 0;
       unlock_queue(pque, __func__, NULL, 0);

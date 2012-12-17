@@ -152,7 +152,7 @@ main(int argc, char *argv[], char *env[])
       {
       printf("%s\n", env[i]);
 
-      env[i] = "";
+      env[i] = (char *)"";
 
       break;
       }
@@ -255,7 +255,7 @@ main(int argc, char *argv[], char *env[])
 void
 prt_herrno(void)
   {
-  char *txt;
+  const char *txt;
 
   switch (h_errno)
     {
