@@ -8,8 +8,8 @@
 
 #include "pbs_error.h"
 
-typedef int tm_event_t;
-
+tm_event_t new_event(void);
+void add_event(tm_event_t event, tm_node_id node, int type, void *info);
 extern int init_done;
 
 int fake_tm_init(
@@ -19,10 +19,10 @@ int fake_tm_init(
 
   {
   tm_event_t  nevent, revent;
-  char   *env, *hold;
-  int   err;
+  /*char   *env, *hold;*/
+  /*int   err;*/
   int   nerr = 0;
-  struct tcp_chan *chan = NULL;
+  /*struct tcp_chan *chan = NULL;*/
 
   init_done = 1;
 
@@ -30,6 +30,7 @@ int fake_tm_init(
 
   add_event(nevent, TM_ERROR_NODE, TM_INIT, (void *)roots);
   tm_poll(TM_NULL_EVENT, &revent, 1, &nerr);
+  return(0);
   }
 
 
