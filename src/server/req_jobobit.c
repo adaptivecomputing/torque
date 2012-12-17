@@ -683,7 +683,7 @@ int mom_comm(
 
   if ((pjob = svr_find_job(jobid, TRUE)) == NULL)
     {
-    return(PBSE_JOB_RECYCLED);
+    return(-1 * PBSE_JOB_RECYCLED);
     }
 
   if (handle < 0)

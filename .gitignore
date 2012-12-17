@@ -447,3 +447,6 @@ cscope.out
 *.rej
 *.patch
 coverage_results.file
+tmpdiff
+tmporig
+tmpfile

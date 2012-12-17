@@ -10,6 +10,7 @@
 #include "batch_request.h"
 #include "sched_cmds.h"
 #include "server.h"
+#include "work_task.h"
 
 
 char *setup_from(job *pjob, const char *suffix);
@@ -20,6 +21,10 @@ int handle_exiting_or_abort_substate(job *pjob);
 int setrerun(job *pjob);
 batch_request *setup_cpyfiles(batch_request *preq, job *pjob, char *from, char *to, int direction, int tflag);
 int handle_returnstd(job *pjob, batch_request *preq, int type);
+int mom_comm(job *pjob, void *(*func)(struct work_task *vp));
+int handle_complete_first_time(job *pjob);
+int handle_complete_second_time(struct work_task *ptask);
+int handle_complete_subjob(job *pjob);
 
 extern pthread_mutex_t *svr_do_schedule_mutex;
 extern pthread_mutex_t *listener_command_mutex;
@@ -27,6 +32,11 @@ extern int svr_do_schedule;
 extern int listener_command;
 int alloc_br_null;
 extern struct server server;
+extern int bad_connect;
+extern int bad_job;
+extern int cray_enabled;
+extern int double_bad;
+extern int reported;
 
 void init_server()
   {
@@ -203,6 +213,120 @@ END_TEST
 
 
 
+START_TEST(mom_comm_test)
+  {
+  job pjob;
+
+  memset(&pjob, 0, sizeof(pjob));
+  strcpy(pjob.ji_qs.ji_jobid, "1.napali");
+  pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("napali/0+napali/1");
+
+  fail_unless(mom_comm(&pjob, NULL) >= 0);
+  
+  /* set some variables for error cases */
+  bad_connect = 1;
+  cray_enabled = 1;
+  fail_unless(mom_comm(&pjob, NULL) == -1);
+  bad_job = 1;
+  fail_unless(mom_comm(&pjob, NULL) == -1 * PBSE_JOB_RECYCLED);
+
+  bad_connect = 0;
+  cray_enabled = 0;
+  bad_job = 0;
+  }
+END_TEST
+
+
+
+
+START_TEST(handle_complete_first_time_test)
+  {
+  job pjob;
+
+  memset(&pjob, 0, sizeof(pjob));
+  strcpy(pjob.ji_qs.ji_jobid, "1.napali");
+
+  fail_unless(handle_complete_first_time(&pjob) == 0);
+  cray_enabled = 1;
+  double_bad = 1;
+
+  fail_unless(handle_complete_first_time(&pjob) == PBSE_JOBNOTFOUND);
+
+  double_bad = 0;
+  fail_unless(handle_complete_first_time(&pjob) == 0);
+
+  pjob.ji_qs.ji_substate = JOB_SUBSTATE_COMPLETE;
+  pjob.ji_wattr[JOB_ATR_comp_time].at_flags = ATR_VFLAG_SET;
+  fail_unless(handle_complete_first_time(&pjob) == 0);
+  }
+END_TEST
+
+
+
+
+START_TEST(handle_complete_second_time_test)
+  {
+  struct work_task *ptask;
+  ptask = calloc(1, sizeof(*ptask));
+  ptask->wt_mutex = calloc(1, sizeof(pthread_mutex_t));
+  handle_complete_second_time(ptask);
+  
+  ptask = calloc(1, sizeof(*ptask));
+  ptask->wt_mutex = calloc(1, sizeof(pthread_mutex_t));
+  ptask->wt_parm1 = strdup("1.napali");
+  handle_complete_second_time(ptask);
+
+  bad_job = 1;
+  ptask = calloc(1, sizeof(*ptask));
+  ptask->wt_mutex = calloc(1, sizeof(pthread_mutex_t));
+  ptask->wt_parm1 = strdup("1.napali");
+  handle_complete_second_time(ptask);
+
+  bad_job = 0;
+  reported = 1;
+  ptask = calloc(1, sizeof(*ptask));
+  ptask->wt_mutex = calloc(1, sizeof(pthread_mutex_t));
+  ptask->wt_parm1 = strdup("1.napali");
+  handle_complete_second_time(ptask);
+  }
+END_TEST
+
+
+
+
+START_TEST(handle_complete_subjob_test)
+  {
+  job *parent   = calloc(1, sizeof(job));
+  job *cray     = calloc(1, sizeof(job));
+  job *external = calloc(1, sizeof(job));
+
+  strcpy(parent->ji_qs.ji_jobid, "1.napali");
+  svr_do_schedule_mutex = calloc(1, sizeof(pthread_mutex_t));
+  listener_command_mutex = calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(svr_do_schedule_mutex, NULL);
+  pthread_mutex_init(listener_command_mutex, NULL);
+
+  cray->ji_parent_job = parent;
+  external->ji_parent_job = parent;
+  parent->ji_cray_clone = cray;
+  parent->ji_external_clone = external;
+
+  fail_unless(handle_complete_subjob(cray) == PBSE_NONE);
+  fail_unless(parent->ji_qs.ji_state != JOB_STATE_COMPLETE);
+
+  printf("final\n");
+
+  double_bad = 1;
+  cray->ji_qs.ji_state = JOB_STATE_COMPLETE;
+  fail_unless(handle_complete_subjob(external) == PBSE_NONE);
+  /*fail_unless(parent->ji_qs.ji_state == JOB_STATE_COMPLETE);*/
+  /*fail_unless(handle_complete_subjob(external) == PBSE_NONE);*/
+  }
+END_TEST
+
+
+
+
 Suite *req_jobobit_suite(void)
   {
   Suite *s = suite_create("req_jobobit_suite methods");
@@ -236,6 +360,22 @@ Suite *req_jobobit_suite(void)
 
   tc_core = tcase_create("handle_returnstd_test");
   tcase_add_test(tc_core, handle_returnstd_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("mom_comm_test");
+  tcase_add_test(tc_core, mom_comm_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("handle_complete_first_time_test");
+  tcase_add_test(tc_core, handle_complete_first_time_test);
+  suite_add_tcase(s, tc_core);
+  
+  tc_core = tcase_create("handle_complete_second_time_test");
+  tcase_add_test(tc_core, handle_complete_second_time_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("handle_complete_subjob_test");
+  tcase_add_test(tc_core, handle_complete_subjob_test);
   suite_add_tcase(s, tc_core);
 
   return(s);

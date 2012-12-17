@@ -43,8 +43,12 @@ const char *msg_momjoboverlimit = "Job exceeded some resource limit (walltime, m
 pthread_mutex_t *svr_do_schedule_mutex;
 pthread_mutex_t *listener_command_mutex;
 extern int alloc_br_null;
-
-
+int bad_connect;
+int bad_job;
+int bad_queue;
+int double_bad;
+int cray_enabled;
+int reported;
 
 
 struct batch_request *alloc_br(int type)
@@ -72,14 +76,12 @@ char *parse_servername(char *name, unsigned int *service)
 
 int job_save(job *pjob, int updatetype, int mom_port)
   {
-  fprintf(stderr, "The call to job_save to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 int svr_job_purge(job *pjob)
   {
-  fprintf(stderr, "The call to job_purge to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void svr_mailowner(job *pjob, int mailpoint, int force, const char *text) {}
@@ -103,6 +105,17 @@ long attr_ifelse_long(pbs_attribute *attr1, pbs_attribute *attr2, long deflong)
 pbs_queue *get_jobs_queue(job **pjob)
   {
   static pbs_queue bob;
+
+  if (bad_queue)
+    {
+    return(NULL);
+    }
+  else if (double_bad)
+    {
+    *pjob = NULL;
+    return(NULL);
+    }
+
   return(&bob);
   }
 
@@ -142,8 +155,7 @@ void account_jobend( job *pjob, char *used)
 
 struct work_task *set_task(enum work_type type, long event_id, void (*func)(), void *parm, int get_lock)
   {
-  fprintf(stderr, "The call to set_task to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 void svr_disconnect(int handle)
@@ -207,6 +219,9 @@ void append_link(tlist_head *head, list_link *new_link, void *pobj)
 
 int svr_connect(pbs_net_t hostaddr, unsigned int port, struct pbsnode *pnode, void *(*func)(void *), enum conn_type cntype)
   {
+  if (bad_connect)
+    return(-1);
+
   return(1);
   }
 
@@ -225,13 +240,24 @@ int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mut
 
 job *svr_find_job(char *jobid, int get_subjob)
   {
-  return(NULL);
+  job *pjob = NULL;
+
+  if (bad_job == 0)
+    {
+    pjob = calloc(1, sizeof(pjob));
+    strcpy(pjob->ji_qs.ji_jobid, jobid);
+    pjob->ji_wattr[JOB_ATR_reported].at_flags = ATR_VFLAG_SET;
+  
+    if (reported)
+      pjob->ji_wattr[JOB_ATR_reported].at_val.at_long = 1;
+    }
+
+  return(pjob);
   }
 
 int timeval_subtract(struct timeval *result, struct timeval *x, struct timeval *y)
   {
-  fprintf(stderr, "The call to timeval_subtract to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 int unlock_queue(struct pbs_queue *the_queue, const char *method_name, char *msg, int logging)
@@ -265,6 +291,9 @@ char *threadsafe_tokenizer(char **str, const char *delims)
 
 int get_svr_attr_l(int index, long *l)
   {
+  if (cray_enabled)
+    *l = 1;
+
   return(0);
   }
 
