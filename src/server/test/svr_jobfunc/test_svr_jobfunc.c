@@ -38,11 +38,11 @@ END_TEST
 START_TEST(svr_dequejob_test)
   {
   int result = PBSE_NONE;
+  struct job j;
 
   result = svr_dequejob(NULL, 0);
   fail_unless(result != PBSE_NONE, "NULL input pointer fail");
 
-  struct job j;
   result = svr_dequejob(&j, 0);
   fail_unless(result == PBSE_JOBNOTFOUND, "svr_dequejob fail");
   }
@@ -179,6 +179,7 @@ START_TEST(svr_chkque_test)
   struct array_strings disallowed_types_array_strings;
   char* hostname = "hostname";
   int result = -1;
+  char* some_string = "some_string";
 
   /*initialize_globals*/
   server.sv_qs_mutex = calloc(1, sizeof(pthread_mutex_t));
@@ -226,7 +227,6 @@ START_TEST(svr_chkque_test)
   test_queue.qu_qs.qu_type = QTYPE_Execution;
   test_queue.qu_attr[QA_ATR_DisallowedTypes].at_flags = ATR_VFLAG_SET;
   test_queue.qu_attr[QA_ATR_DisallowedTypes].at_val.at_arst = &disallowed_types_array_strings;
-  char* some_string = "some_string";
   disallowed_types_array_strings.as_string[0] = some_string;
   disallowed_types_array_strings.as_usedptr = 1;
 

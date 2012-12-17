@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <netinet/in.h> /* sockaddr_in */
+#include <errno.h>
 
 #include "mom_server.h" /* mom_server */
 #include "resmon.h" /* PBS_MAXSERVER */
@@ -199,6 +200,84 @@ dynamic_string *get_dynamic_string(
 
   return(ds);
   } /* END get_dynamic_string() */
+
+
+size_t need_to_grow(
+
+  dynamic_string *ds,
+  const char     *to_check)
+
+  {
+  size_t to_add = strlen(to_check) + 1;
+  size_t to_grow = 0;
+
+  if (ds->size < ds->used + to_add)
+    {
+    to_grow = to_add + ds->size;
+
+    if (to_grow < (ds->size * 4))
+      to_grow = ds->size * 4;
+    }
+
+  return(to_grow);
+  } /* END need_to_grow() */
+
+
+
+
+int resize_if_needed(
+
+  dynamic_string *ds,
+  const char     *to_check)
+
+  {
+  size_t  new_size = need_to_grow(ds, to_check);
+  size_t  difference;
+  char   *tmp;
+
+  if (new_size > 0)
+    {
+    /* need to resize */
+    difference = new_size - ds->size;
+
+    if ((tmp = (char *)realloc(ds->str, new_size)) == NULL)
+      return(ENOMEM);
+
+    ds->str = tmp;
+    /* zero out the new space as well */
+    memset(ds->str + ds->size, 0, difference);
+    ds->size = new_size;
+    }
+
+  return(PBSE_NONE);
+  } /* END resize_if_needed() */
+
+
+int append_dynamic_string(
+    
+  dynamic_string *ds,        /* M */
+  const char     *to_append) /* I */
+
+  {
+  int len = strlen(to_append);
+  int add_one = FALSE;
+  int offset = ds->used;
+
+  if (ds->used == 0)
+    add_one = TRUE;
+  else
+    offset -= 1;
+
+  resize_if_needed(ds, to_append);
+  strcat(ds->str + offset, to_append);
+    
+  ds->used += len;
+
+  if (add_one == TRUE)
+    ds->used += 1;
+
+  return(PBSE_NONE);
+  } /* END append_dynamic_string() */
 
 int open_tcp_stream_to_sisters(job *pjob, int com, tm_event_t parent_event, int mom_radix, hnodent *hosts, struct radix_buf **sister_list, tlist_head *phead, int flag)
   {

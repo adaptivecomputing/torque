@@ -6,6 +6,9 @@
 
 #include "dis.h"
 #include "pbs_error.h"
+#include "pbs_nodes.h"
+
+received_node *get_received_node_entry(char *str);
 
 START_TEST(test_read_status_strings_null_chan_doesnt_crash)
   {
@@ -17,8 +20,8 @@ extern int disrst_count;
 
 START_TEST(test_read_status_strings_loop)
   {
-  disrst_count = 5;
   struct tcp_chan chan;
+  disrst_count = 5;
   read_status_strings(&chan, 1);
   }
 END_TEST
