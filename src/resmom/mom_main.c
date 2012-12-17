@@ -3045,8 +3045,14 @@ static unsigned long setnodefilesuffix(
 
   {
   char *ptr;
+  char *cpy = strdup(value);
+  
+  if(cpy == NULL)
+  {
+  return (-1);
+  }
 
-  ptr = strtok((char *)value, ",");
+  ptr = strtok(cpy, ",");
 
   nodefile_suffix = strdup(ptr);
 
@@ -3057,6 +3063,7 @@ static unsigned long setnodefilesuffix(
 
   /* SUCCESS */
 
+  free(cpy);
   return(1);
   }  /* END setnodexfilesuffix() */
 
