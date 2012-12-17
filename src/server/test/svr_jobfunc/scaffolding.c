@@ -15,11 +15,11 @@
 
 int svr_resc_size = 0;
 all_queues svr_queues;
-char *msg_daemonname = "unset";
+const char *msg_daemonname = "unset";
 attribute_def job_attr_def[10];
-char *msg_badwait = "Invalid time in work task for waiting, job = %s";
+const char *msg_badwait = "Invalid time in work task for waiting, job = %s";
 struct all_jobs alljobs;
-char *pbs_o_host = "PBS_O_HOST";
+const char *pbs_o_host = "PBS_O_HOST";
 resource_def *svr_resc_def;
 int svr_clnodes = 0;
 int comp_resc_gt; 
@@ -44,14 +44,14 @@ pbs_queue *find_queuebyname(char *quename)
 
   pq->qu_qs.qu_type = QTYPE_Unset;
 
-  pq->qu_mutex = calloc(1, sizeof(pthread_mutex_t));
-  pq->qu_jobs = calloc(1, sizeof(struct all_jobs));
-  pq->qu_jobs_array_sum = calloc(1, sizeof(struct all_jobs));
+  pq->qu_mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));
+  pq->qu_jobs = (all_jobs *)calloc(1, sizeof(struct all_jobs));
+  pq->qu_jobs_array_sum = (all_jobs *)calloc(1, sizeof(struct all_jobs));
 
   snprintf(pq->qu_qs.qu_name, sizeof(pq->qu_qs.qu_name), "%s", quename);
 
   /* set up the user info struct */
-  pq->qu_uih = calloc(1, sizeof(user_info_holder));
+  pq->qu_uih = (user_info_holder *)calloc(1, sizeof(user_info_holder));
 
   return(pq);
   }
@@ -83,14 +83,14 @@ pbs_queue *get_jobs_queue(job **pjob)
 
   pq->qu_qs.qu_type = QTYPE_Unset;
 
-  pq->qu_mutex = calloc(1, sizeof(pthread_mutex_t));
-  pq->qu_jobs = calloc(1, sizeof(struct all_jobs));
-  pq->qu_jobs_array_sum = calloc(1, sizeof(struct all_jobs));
+  pq->qu_mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));
+  pq->qu_jobs = (all_jobs *)calloc(1, sizeof(struct all_jobs));
+  pq->qu_jobs_array_sum = (all_jobs *)calloc(1, sizeof(struct all_jobs));
 
   snprintf(pq->qu_qs.qu_name, sizeof(pq->qu_qs.qu_name), "%s", "qu_name");
 
   /* set up the user info struct */
-  pq->qu_uih = calloc(1, sizeof(user_info_holder));
+  pq->qu_uih = (user_info_holder *)calloc(1, sizeof(user_info_holder));
 
   return(pq);
   }
@@ -213,7 +213,7 @@ resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
 
 job *svr_find_job(char *jobid, int get_subjob)
   {
-  char *job_id = "job_id";
+  const char *job_id = "job_id";
 
   if (jobid != NULL)
   {
@@ -234,7 +234,7 @@ int insert_job_first(struct all_jobs *aj, job *pjob)
   exit(1);
   }
 
-int unlock_queue(struct pbs_queue *the_queue, const char *id, char *msg, int logging)
+int unlock_queue(struct pbs_queue *the_queue, const char *id, const char *msg, int logging)
   {
   return(0);
   }

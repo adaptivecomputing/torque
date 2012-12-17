@@ -104,7 +104,7 @@ int load_day(enum days d, enum prime_time pr, char *tok);
  *      parse_holidays - parse the holidays file.  It should be in UNICOS 8
  *                       format.
  */
-int parse_holidays(char *fname);
+int parse_holidays(const char *fname);
 
 /*
  *      init_prime_time - do any initializations that need to happen at the

@@ -46,7 +46,7 @@ int main(
   char *location = NULL;          /* Where to run the job */
 
   static char opts[] = "aH:";     /* See man getopt */
-  static char *usage = "Usage: qrun [-a] [-H host] job_id ...\n";
+  static const char *usage = "Usage: qrun [-a] [-H host] job_id ...\n";
   int s;
   int errflg = 0;
   int runAsync = FALSE;

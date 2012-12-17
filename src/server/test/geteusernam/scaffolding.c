@@ -19,7 +19,7 @@ char *site_map_user(char *uname,  char *host)
   exit(1);
   }
 
-char *get_variable(job *pjob, char *variable)
+char *get_variable(job *pjob, const char *variable)
   {
   fprintf(stderr, "The call to get_variable needs to be mocked!!\n");
   exit(1);

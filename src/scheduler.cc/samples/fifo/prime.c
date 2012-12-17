@@ -263,7 +263,7 @@ int is_holiday(int jdate)
  * returns success/failure
  *
  */
-int parse_holidays(char *fname)
+int parse_holidays(const char *fname)
   {
   FILE *fp;  /* file pointer to holidays file */
   char buf[256]; /* buffer to read lines of the file into */
@@ -463,14 +463,14 @@ int load_day(enum days d, enum prime_time pr, char *tok)
     if (!strcmp(tok, "all") || !strcmp(tok, "ALL"))
       {
       conf.prime[d][pr].all = TRUE;
-      conf.prime[d][pr].hour = UNSPECIFIED;
-      conf.prime[d][pr].min = UNSPECIFIED;
+      conf.prime[d][pr].hour = ((unsigned)UNSPECIFIED)&0x1f;
+      conf.prime[d][pr].min = ((unsigned)UNSPECIFIED)&0x3f;
       }
     else if (!strcmp(tok, "none") || !strcmp(tok, "NONE"))
       {
       conf.prime[d][pr].none = TRUE;
-      conf.prime[d][pr].hour = UNSPECIFIED;
-      conf.prime[d][pr].min = UNSPECIFIED;
+      conf.prime[d][pr].hour = ((unsigned)UNSPECIFIED)&0x1f;
+      conf.prime[d][pr].min = ((unsigned)UNSPECIFIED)&0x3f;
       }
     else
       {

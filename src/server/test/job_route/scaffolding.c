@@ -28,7 +28,7 @@ job *next_job(struct all_jobs *aj, int *iter)
   exit(1);
   }
 
- int job_abt(job **pjobp, char *text)
+ int job_abt(job **pjobp, const char *text)
   {
   fprintf(stderr, "The call to job_abt needs to be mocked!!\n");
   exit(1);
@@ -163,7 +163,7 @@ pbs_queue *get_jobs_queue(job **pjob)
   }
 
 
-int unlock_queue(struct pbs_queue *the_queue, const char *method_name, char *msg, int logging)
+int unlock_queue(struct pbs_queue *the_queue, const char *method_name, const char *msg, int logging)
   {
   fprintf(stderr, "The call to unlock_queue needs to be mocked!!\n");
   exit(1);

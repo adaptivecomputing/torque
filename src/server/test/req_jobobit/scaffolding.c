@@ -234,7 +234,7 @@ int timeval_subtract(struct timeval *result, struct timeval *x, struct timeval *
   exit(1);
   }
 
-int unlock_queue(struct pbs_queue *the_queue, const char *method_name, char *msg, int logging)
+int unlock_queue(struct pbs_queue *the_queue, const char *method_name, const char *msg, int logging)
   {
   return(0);
   }

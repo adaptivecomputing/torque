@@ -5,9 +5,9 @@
 #include "queue.h" /* pbs_queue, all_queues */
 #include "pbs_job.h" /* all_jobs */
 
-int lock_queue( struct pbs_queue *the_queue, const char *id, char *msg, int logging);
+int lock_queue( struct pbs_queue *the_queue, const char *id, const char *msg, int logging);
 
-int unlock_queue( struct pbs_queue *the_queue, const char *id, char *msg, int logging);
+int unlock_queue( struct pbs_queue *the_queue, const char *id, const char *msg, int logging);
 
 pbs_queue *que_alloc(char *name, int sv_qs_mutex_held);
 

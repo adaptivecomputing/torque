@@ -108,7 +108,7 @@ group_info * new_group_info();
 /*
  *      parse_group - parse the resource group file
  */
-int parse_group(char *fname);
+int parse_group(const char *fname);
 
 /*
  *      preload_tree -  load the "root" group into the fair share tree

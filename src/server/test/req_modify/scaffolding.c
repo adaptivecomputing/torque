@@ -198,7 +198,7 @@ char *add_std_filename(job *pjob, char * path, int key, dynamic_string *ds)
   exit(1);
   }
 
-int unlock_queue(struct pbs_queue *the_queue, const char *method_name, char *msg, int logging)
+int unlock_queue(struct pbs_queue *the_queue, const char *method_name, const char *msg, int logging)
   {
   fprintf(stderr, "The call to unlock_queue to be mocked!!\n");
   exit(1);

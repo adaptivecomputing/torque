@@ -12,7 +12,7 @@ struct server server;
 const char *pbs_o_host = "PBS_O_HOST";
 const char *msg_orighost = "Job missing PBS_O_HOST value";
 
-char *get_variable(job *pjob, char *variable) 
+char *get_variable(job *pjob, const char *variable)
   { 
   fprintf(stderr, "The call to get_variable needs to be mocked!!\n");
   exit(1);

@@ -86,7 +86,7 @@ resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   exit(1);
   }
 
-int unlock_queue(struct pbs_queue *the_queue, const char *id, char *msg, int logging)
+int unlock_queue(struct pbs_queue *the_queue, const char *id, const char *msg, int logging)
   {
   fprintf(stderr, "The call to unlock_queue to be mocked!!\n");
   exit(1);

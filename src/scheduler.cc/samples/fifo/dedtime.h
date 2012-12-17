@@ -85,7 +85,7 @@
  *      FORMAT: start - finish
  *              MM/DD/YYYY HH:MM MM/DD/YYYY HH:MM
  */
-int parse_ded_file(char *filename);
+int parse_ded_file(const char *filename);
 
 /*
  *

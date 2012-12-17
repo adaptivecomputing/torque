@@ -50,7 +50,7 @@ int socket_close(int socket);
 int get_addr_info(char *name, struct sockaddr_in *sa_info, int retry);
 
 /* from file server_core.c */
-int start_listener(char *server_ip, int server_port, void *(*process_meth)(void *));
+int start_listener(const char *server_ip, int server_port, void *(*process_meth)(void *));
 int start_listener_addrinfo(char *host_name, int server_port, void *(*process_meth)(void *));
 
 /* from file net_client.c */

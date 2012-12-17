@@ -37,7 +37,7 @@
 
 int exitstatus = 0; /* Exit Status */
 
-static void execute(int, char *);
+static void execute(int, const char *);
 
 int main(
 
@@ -167,7 +167,7 @@ int main(
 static void execute(
 
   int   manner,  /* I */
-  char *server)  /* I */
+  const char *server)  /* I */
 
   {
   int ct;         /* Connection to the server */

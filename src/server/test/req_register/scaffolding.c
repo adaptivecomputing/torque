@@ -117,7 +117,7 @@ int svr_chk_owner(struct batch_request *preq, job *pjob)
   return(0);
   }
 
-int job_abt(job **pjobp, char *text)
+int job_abt(job **pjobp, const char *text)
   {
   *pjobp = NULL;
   return(0);
@@ -279,7 +279,7 @@ pbs_queue *get_jobs_queue(job **pjob)
   return((*pjob)->ji_qhdr);
   }
 
-int unlock_queue(struct pbs_queue *the_queue, const char *id, char *msg, int logging)
+int unlock_queue(struct pbs_queue *the_queue, const char *id, const char *msg, int logging)
   {
   return(0);
   }

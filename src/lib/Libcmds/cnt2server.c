@@ -84,7 +84,7 @@
  *
  * Synopsis:
  *
- * int cnt2server(char *server)
+ * int cnt2server(const char *server)
  *
  * server The name of the server to connect to. A NULL or null string
  *  for the default server.
@@ -129,7 +129,7 @@ int cnt2server_conf(
 
 int cnt2server(
 
-  char *SpecServer)    /* I (optional) */
+  const char *SpecServer)    /* I (optional) */
 
   {
   int connect;

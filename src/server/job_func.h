@@ -7,11 +7,11 @@
 #include "work_task.h" /* work_task */
 #include "batch_request.h" /* batch_request */
 
-void send_qsub_delmsg(job *pjob, char *text);
+void send_qsub_delmsg(job *pjob, const char *text);
 
 int remtree(char *dirname);
 
-int job_abt(job **pjobp, char *text);
+int job_abt(job **pjobp, const char *text);
 
 int conn_qsub(char *hostname, long port, char *EMsg);
 

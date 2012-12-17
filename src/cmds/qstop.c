@@ -102,7 +102,7 @@ static void execute(
 
   static struct attropl attr =
     {
-    NULL, "started", NULL, "FALSE", SET
+    NULL, (char *)"started", NULL, (char *)"FALSE", SET
     };
 
   if ((ct = cnt2server(server)) > 0)

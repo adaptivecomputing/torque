@@ -87,7 +87,7 @@ int svr_authorize_jobreq(struct batch_request *preq, job *pjob)
   exit(1);
   }
 
-char *get_variable(job *pjob, char *variable)
+char *get_variable(job *pjob, const char *variable)
   {
   fprintf(stderr, "The call to get_variable to be mocked!!\n");
   exit(1);
@@ -255,7 +255,7 @@ char *add_std_filename(job *pjob, char * path, int key, dynamic_string *ds)
   exit(1);
   }
 
-int unlock_queue(struct pbs_queue *the_queue, const char *method_name, char *msg, int logging)
+int unlock_queue(struct pbs_queue *the_queue, const char *method_name, const char *msg, int logging)
   {
   fprintf(stderr, "The call to unlock_queue to be mocked!!\n");
   exit(1);
@@ -339,7 +339,7 @@ int lock_queue(
 
   struct pbs_queue *the_queue,
   const char       *id,
-  char             *msg,
+  const char       *msg,
   int               logging)
 
   {

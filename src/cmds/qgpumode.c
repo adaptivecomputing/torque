@@ -14,7 +14,7 @@
 
 int exitstatus = 0; /* Exit Status */
 
-static void execute(char *, char *, int, char *);
+static void execute(char *, char *, int, const char *);
 
 /* qgpumode */
 
@@ -105,7 +105,7 @@ int main(
   }  /* END main() */
 
 /*
- * void execute( char *node, char *gpuid, int mode, char *server )
+ * void execute( char *node, char *gpuid, int mode, const char *server )
  *
  * node     The name of the MOM node.
  * gpuid    The id of the GPU
@@ -123,7 +123,7 @@ static void execute(
   char *node,
   char *gpuid,
   int   mode,
-  char *server)
+  const char *server)
 
   {
   int ct;         /* Connection to the server */
