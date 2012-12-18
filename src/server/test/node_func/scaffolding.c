@@ -52,20 +52,20 @@ extern int cray_enabled;
 
 int insert_thing(resizable_array *ra, void *thing)
   {
-  fprintf(stderr, "The call to insert_thing needs to be mocked!!\n");
-  exit(1);
+  fprintf(stderr, "This mock insert_thing always returns 0!!\n");
+  return(0);
   }
 
 svrattrl *attrlist_create(const char *aname, const char *rname, int vsize)
   {
-  fprintf(stderr, "The call to attrlist_create needs to be mocked!!\n");
-  exit(1);
+  fprintf(stderr, "This mock  attrlist_create always returns NULL!!\n");
+  return(NULL);
   }
 
 int remove_thing(resizable_array *ra, void *thing)
   {
-  fprintf(stderr, "The call to remove_thing needs to be mocked!!\n");
-  exit(1);
+  fprintf(stderr, "This mock remove_thing always returns 0!!\n");
+  return(0);
   }
 
 AvlTree AVL_delete_node(u_long key, uint16_t port, AvlTree tree)
@@ -76,32 +76,37 @@ AvlTree AVL_delete_node(u_long key, uint16_t port, AvlTree tree)
 
 int add_hash(hash_table_t *ht, int value, void *key)
   {
-  fprintf(stderr, "The call to add_hash needs to be mocked!!\n");
-  exit(1);
+  fprintf(stderr, "This mock add_hash always returns 0!!\n");
+  return(0);
   }
 
 struct work_task *set_task(enum work_type type, long event_id, void (*func)(), void *parm, int get_lock)
   {
-  fprintf(stderr, "The call to set_task needs to be mocked!!\n");
-  exit(1);
+  fprintf(stderr, "This mock set_task always returns NULL!!\n");
+  return(NULL);
   }
 
 int find_attr(struct attribute_def *attr_def, const char *name, int limit)
   {
-  fprintf(stderr, "The call to find_attr needs to be mocked!!\n");
-  exit(1);
+  fprintf(stderr, "This mock find_attr always returns 0!!\n");
+  return(0);
   }
 
 int mgr_set_node_attr(struct pbsnode *pnode, attribute_def *pdef, int limit, svrattrl *plist, int privil, int *bad, void *parent, int mode)
   {
-  fprintf(stderr, "The call to mgr_set_node_attr needs to be mocked!!\n");
-  exit(1);
+  fprintf(stderr, "This mock mgr_set_node_attr always returns 0!!\n");
+  return(0);
   }
 
 void free_prop_list(struct prop *prop)
   {
-  fprintf(stderr, "The call to free_prop_list needs to be mocked!!\n");
-  exit(1);
+  struct prop *pp;
+  while (prop)
+    {
+    pp = prop->next;
+    free(prop);
+    prop = pp;
+    }
   }
 
 int get_value_hash(hash_table_t *ht, void *key)
@@ -120,14 +125,24 @@ int get_value_hash(hash_table_t *ht, void *key)
 
 void *get_next(list_link pl, char *file, int line)
   {
-  fprintf(stderr, "The call to get_next needs to be mocked!!\n");
-  exit(1);
+  fprintf(stderr, "This mock get_next always returns NULL!!\n");
+  return(NULL);
   }
 
 resizable_array *initialize_resizable_array(int size)
   {
-  fprintf(stderr, "The call to initialize_resizable_array needs to be mocked!!\n");
-  exit(1);
+  size = 10;
+  resizable_array *ra = calloc(1, sizeof(resizable_array));
+  size_t           amount = sizeof(slot) * size;
+
+  ra->max       = size;
+  ra->num       = 0;
+  ra->next_slot = 1;
+  ra->last      = 0;
+
+  ra->slots = calloc(1, amount);
+
+  return(ra);
   }
 
 struct pbsnode *AVL_find(u_long key, uint16_t port, AvlTree tree)
@@ -153,8 +168,7 @@ void free_attrlist(tlist_head *pattrlisthead)
 
 void *next_thing(resizable_array *ra, int *iter)
   {
-  fprintf(stderr, "The call to next_thing needs to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 void append_link(tlist_head *head, list_link *new_link, void *pobj)
@@ -165,8 +179,14 @@ void append_link(tlist_head *head, list_link *new_link, void *pobj)
 
 hash_table_t *create_hash(int size)
   {
-  fprintf(stderr, "The call to create_hash needs to be mocked!!\n");
-  exit(1);
+  hash_table_t *ht = calloc(1, sizeof(hash_table_t));
+  size_t        amount = sizeof(bucket *) * size;
+
+  ht->size = size;
+  ht->num  = 0;
+  ht->buckets = calloc(1, amount);
+
+  return(ht);
   }
 
 char *pbs_strerror(int err)
@@ -177,13 +197,13 @@ char *pbs_strerror(int err)
 
 AvlTree AVL_insert(u_long key, uint16_t port, struct pbsnode *node, AvlTree tree)
   {
-  fprintf(stderr, "The call to AVL_insert needs to be mocked!!\n");
-  exit(1);
+  fprintf(stderr, "This mock  AVL_insert is always returns 0!!\n");
+  return(NULL);
   }
 
 int unlock_node(struct pbsnode *the_node, const char *id, char *msg, int logging)
   {
-  return(0); 
+  return(0);
   }                           
 
 int lock_node(struct pbsnode *the_node, const char *id, char *msg, int logging)
@@ -204,10 +224,10 @@ int is_present(resizable_array *ra, void *thing)
   }
 
 
-void DIS_tcp_setup(int sock)
+struct tcp_chan* DIS_tcp_setup(int sock)
   {
-  fprintf(stderr, "The call to DIS_tcp_setup needs to be mocked!!\n");
-  exit(1);                    
+  fprintf(stderr, "This mock DIS_tcp_setup always returns NULL!!\n");
+  return(NULL);
   }
 
 
@@ -228,8 +248,8 @@ int diswcs (int stream, const char *value, int len)
 
 int tcp_connect_sockaddr(struct sockaddr *sa, size_t s)
   {
-  fprintf(stderr, "The call to tcp_connect_sockaddr needs to be mocked!!\n");
-  exit(1);                    
+  fprintf(stderr, "This mock tcp_connect_sockaddr always returns 0!!\n");
+  return(0);
   }
 
 int diswsi(int sock, int value)
@@ -262,14 +282,14 @@ int get_svr_attr_str(int index, char **str)
 
 int remove_thing_from_index(resizable_array *ra, int index)
   {
-  fprintf(stderr, "The call to remove_thing_from_index needs to be mocked!!\n");
-  exit(1);
+  fprintf(stderr, "This mock remove_thing_from_index always returns 0!!\n");
+  return(0);
   }
 
 int insert_thing_after(resizable_array *ra, void *thing, int index)
   {
-  fprintf(stderr, "The call to insert_thing_after needs to be mocked!!\n");
-  exit(1);
+  fprintf(stderr, "This mock insert_thing_after always returns 0!!\n");
+  return(0);
   }
 
 int get_addr_info(char *name, struct sockaddr_in *sa_info, int retry)
@@ -308,14 +328,42 @@ int append_dynamic_string(
   return(0);
   }
 
-dynamic_string *get_dynamic_string(
-
-  int         size,
-  const char *str)
-
+dynamic_string *get_dynamic_string(int initial_size, const char *str)
   {
-  return(NULL);
+  dynamic_string *ds = calloc(1, sizeof(dynamic_string));
+
+  if (ds == NULL)
+    return(ds);
+
+  if (initial_size > 0)
+    ds->size = initial_size;
+  else
+    ds->size = DS_INITIAL_SIZE;
+
+  ds->str = calloc(1, ds->size);
+
+  if (ds->str == NULL)
+    {
+    free(ds);
+    return(NULL);
+    }
+
+  /* initialize empty str */
+  ds->used = 0;
+
+  /* add the string if it exists */
+  if (str != NULL)
+    {
+    if (append_dynamic_string(ds,str) != PBSE_NONE)
+      {
+      free_dynamic_string(ds);
+      return(NULL);
+      }
+    }
+
+  return(ds);
   }
+
 
 int login_node_count() 
 
@@ -359,3 +407,15 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
 
 const char *alps_reporter_feature  = "alps_reporter";
 const char *alps_starter_feature   = "alps_starter";
+
+void log_event(int eventtype, int objclass, const char *objname, char *text)
+  {
+  return;
+  }
+
+void log_err(int errnum, const char *routine, char *text) {}
+
+void log_record(int eventtype, int objclass, const char *objname, char *text)
+  {
+  return;
+  }

@@ -265,6 +265,17 @@ struct pbsnode *find_node_in_allnodes(
   struct pbsnode *pnode = NULL;
   int             index;
 
+  if (an == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input all_nodes pointer");
+    return(NULL);
+    }
+  if (nodename == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input nodename");
+    return(NULL);
+    }
+
   pthread_mutex_lock(an->allnodes_mutex);
 
   index = get_value_hash(an->ht, nodename);
@@ -304,6 +315,12 @@ struct pbsnode *find_nodebyname(
   int             i;
   int             numa_index;
   long            cray_enabled = FALSE;
+  
+  if (nodename == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "allnodes is not initialized");
+    return(NULL);
+    }
 
   if ((pslash = strchr((char *)nodename, (int)'/')) != NULL)
     *pslash = '\0';
@@ -313,10 +330,20 @@ struct pbsnode *find_nodebyname(
   i = get_value_hash(allnodes.ht, (void *)nodename);
 
   if (i >= 0)
+    {
+
+    if (allnodes.ra == NULL)
+      {
+      log_err(PBSE_BAD_PARAMETER, __func__, "allnodes is not initialized");
+      return(NULL);
+      }
     pnode = (struct pbsnode *)allnodes.ra->slots[i].item;
+    }
 
   if (pnode != NULL)
+    {
     lock_node(pnode, __func__, NULL, LOGLEVEL);
+    }
   else
     {
     get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
@@ -395,6 +422,17 @@ void save_characteristic(
   node_check_info *nci)
 
   {
+  if (pnode == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER,__func__, "NULL input pbsnode pointer");
+    return;
+    }
+  if (nci == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER,__func__, "NULL input node_check_info pointer");
+    return;
+    }
+
   nci->state        = pnode->nd_state;
   nci->ntype        = pnode->nd_ntype;
   nci->nprops       = pnode->nd_nprops;
@@ -432,6 +470,22 @@ int chk_characteristic(
   {
   char  tmpLine[1024];
   char  log_buf[LOCAL_LOG_BUF_SIZE+1];
+
+  if (pnode == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input pbsnode pointer");
+    return(PBSE_BAD_PARAMETER);
+    }
+  if (nci == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input node_check_info pointer");
+    return(PBSE_BAD_PARAMETER);
+    }
+  if (pneed_todo == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input mask pointer");
+    return(PBSE_BAD_PARAMETER);
+    }
 
   tmpLine[0] = '\0';
 
@@ -503,6 +557,22 @@ int login_encode_jobs(
   char            str_buf[MAXLINE*2];
   svrattrl       *pal;
 
+  if (pnode == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input pbsnode pointer");
+    return(PBSE_BAD_PARAMETER);
+    }
+  if (phead == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input tlist_head pointer");
+    return(PBSE_BAD_PARAMETER);
+    }
+  if (job_str == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "job_str was not allocated");
+    return(PBSE_BAD_PARAMETER);
+    }
+
   for (psubn = pnode->nd_psn; psubn != NULL; psubn = psubn->next)
     {
     for (jip = psubn->jobs; jip != NULL; jip = jip->next)
@@ -527,6 +597,12 @@ int login_encode_jobs(
         append_dynamic_string(job_str, str_buf);
         }
       }
+    }
+
+  if ((job_str->str) == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "job_str value was not initialized");
+    return(PBSE_BAD_PARAMETER);
     }
 
   if ((pal = attrlist_create((char *)ATTR_NODE_jobs, (char *)NULL, strlen(job_str->str) + 1)) == NULL)
@@ -578,6 +654,26 @@ int status_nodeattrib(
   int   nth;  /*tracks list position (ordinal tacker)   */
 
   pbs_attribute atemp[ND_ATR_LAST]; /*temporary array of attributes   */
+
+  if (padef == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc, __func__, "input defined node attributes pointer is NULL");
+    return(rc);
+    }
+  if (pnode == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc, __func__, "input pbsnode pointer is NULL");
+    return(rc);
+    }
+  if (bad == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc, __func__, "input result mask pointer is NULL");
+    return(rc);
+    }
+
   memset(&atemp, 0, sizeof(atemp));
 
   priv &= ATR_DFLAG_RDACC;    /* user-client privilege          */
@@ -585,7 +681,6 @@ int status_nodeattrib(
   for (i = 0;i < ND_ATR_LAST;i++)
     {
     /*set up attributes using data from node*/
-
     if (i == ND_ATR_state)
       atemp[i].at_val.at_short = pnode->nd_state;
     else if (i == ND_ATR_properties)
@@ -620,19 +715,21 @@ int status_nodeattrib(
 
       atemp[i].at_val.at_long  = pnode->nd_ngpus;
       }
-    else if (!strcmp((padef + i)->at_name, ATTR_NODE_mics))
+      else if ((padef + i)->at_name != NULL)
       {
-      if (pnode->nd_nmics == 0)
-        continue;
+      if (!strcmp((padef + i)->at_name, ATTR_NODE_mics))
+        {
+        if (pnode->nd_nmics == 0)
+          continue;
 
-      atemp[i].at_val.at_long  = pnode->nd_nmics;
+        atemp[i].at_val.at_long  = pnode->nd_nmics;
+        }
+      else if (!strcmp((padef + i)->at_name, ATTR_NODE_micstatus))
+        atemp[i].at_val.at_arst = pnode->nd_micstatus;
       }
-    else if (!strcmp((padef + i)->at_name, ATTR_NODE_micstatus))
-      atemp[i].at_val.at_arst = pnode->nd_micstatus;
     else
       {
       /*we don't ever expect this*/
-
       *bad = 0;
 
       return(PBSE_UNKNODEATR);
@@ -700,7 +797,6 @@ int status_nodeattrib(
   else
     {
     /* non-specific request, return all readable attributes */
-
     for (index = 0; index < limit; index++)
       {
       if ((index == ND_ATR_jobs) &&
@@ -756,6 +852,12 @@ int initialize_pbsnode(
   int             ntype) /* time-shared or cluster */
 
   {
+  if (pnode == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL pointer was passed for initialization");
+    return(PBSE_BAD_PARAMETER);
+    }
+
   memset(pnode, 0, sizeof(struct pbsnode));
 
   pnode->nd_name            = pname;
@@ -811,6 +913,11 @@ static void subnode_delete(
   struct pbssubn *psubn)
 
   {
+  if (psubn == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL subnode pointer delete call");
+    return;
+    }
 
   struct jobinfo *jip, *jipt;
 
@@ -833,7 +940,7 @@ static void subnode_delete(
 
 void effective_node_delete(
 
-  struct pbsnode *pnode)
+  struct pbsnode **ppnode)
 
   {
 
@@ -841,6 +948,20 @@ void effective_node_delete(
 
   struct pbssubn  *pnxt;
   u_long          *up;
+  struct pbsnode* pnode = NULL;
+
+  if (ppnode == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL node pointer to pointer delete call");
+    return;
+    }
+
+  pnode = *ppnode;
+  if (pnode == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL node pointer delete call");
+    return;
+    }
 
   remove_node(&allnodes,pnode);
   unlock_node(pnode, __func__, NULL, LOGLEVEL);
@@ -885,6 +1006,7 @@ void effective_node_delete(
   free(pnode->nd_name);
 
   free(pnode);
+  *ppnode = NULL;
 
   return;
   }  /* END effective_node_delete() */
@@ -1337,6 +1459,12 @@ struct pbssubn *create_subnode(
   struct pbssubn *nxtsn = NULL;
   struct pbssubn *lastsn = NULL;
 
+  if (pnode == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL pbsnode pointer input");
+    return(NULL);
+    }
+
   psubn = (struct pbssubn *)calloc(1, sizeof(struct pbssubn));
 
   if (psubn == NULL)
@@ -1378,7 +1506,16 @@ int create_a_gpusubnode(
 
   {
   int rc = PBSE_NONE;
-  struct gpusubn *tmp = (struct gpusubn *)calloc((1 + pnode->nd_ngpus), sizeof(struct gpusubn));
+  struct gpusubn *tmp = NULL;
+
+  if (pnode == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc, __func__, "NULL pbsnode pointer input");
+    return(rc);
+    }
+  
+  tmp = (struct gpusubn *)calloc((1 + pnode->nd_ngpus), sizeof(struct gpusubn));
 
   if (tmp == NULL)
     {
@@ -1438,6 +1575,17 @@ int copy_properties(
   struct array_strings  *sub;
   struct array_strings  *main_node;
 
+  if (dest == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL destanation pointer input");
+    return(PBSE_BAD_PARAMETER);
+    }
+  if (src == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL source pointer input");
+    return(PBSE_BAD_PARAMETER);
+    }
+
   /* copy features/properties */
   if (src->nd_prop == NULL)
     return(PBSE_NONE);
@@ -1493,7 +1641,7 @@ int copy_properties(
  * number in val and advances the string to the next number past the comma
  */
 
-int read_val_and_advance(
+static int read_val_and_advance(
 
   int   *val,
   char **str)
@@ -1503,7 +1651,7 @@ int read_val_and_advance(
 
   if ((*str == NULL) ||
       (val == NULL))
-    return(-1);
+    return(PBSE_BAD_PARAMETER);
 
   *val = atoi(*str);
 
@@ -1525,7 +1673,7 @@ int read_val_and_advance(
  *
  * @return 0 on success, -1 on failure
  */
-int setup_node_boards(
+static int setup_node_boards(
 
   struct pbsnode *pnode,
   u_long         *pul)
@@ -1545,7 +1693,11 @@ int setup_node_boards(
   char            log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (pnode == NULL)
-    return(-1);
+  {
+  rc = PBSE_BAD_PARAMETER;
+  log_err(rc, __func__, "NULL input pbsnode poiner");
+  return(rc);
+  }
 
   pnode->parent = NULL;
 
@@ -1667,7 +1819,7 @@ int setup_node_boards(
  * periodically to see if the node is now resolvable and if so
  * add it to the list of available MOM nodes. */
 
-void recheck_for_node(
+static void recheck_for_node(
    
   struct work_task *ptask)
 
@@ -1862,7 +2014,7 @@ int create_pbs_node(
 
   if (rc != 0)
     {
-    effective_node_delete(pnode);
+    effective_node_delete(&pnode);
     
     return(rc);
     }
@@ -2494,6 +2646,18 @@ int node_np_action(
   short  old_np;
   short  new_np;
 
+  if (new_attr == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER,__func__, "NULL input attributes");
+    return(PBSE_BAD_PARAMETER);
+    }
+
+  if (pobj == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER,__func__, "NULL input node");
+    return(PBSE_BAD_PARAMETER);
+    }
+
   switch (actmode)
     {
 
@@ -2526,6 +2690,9 @@ int node_np_action(
       pnode->nd_nsn = old_np;
 
       break;
+    default:
+      log_err(-1,__func__, "unexpected action mode");
+      return(-1);
     }
 
   return 0;
@@ -2545,6 +2712,20 @@ int node_mom_port_action(
   {
   struct pbsnode *pnode = (struct pbsnode *)pobj;
   int rc = 0;
+
+  if (new_attr == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc,__func__, "NULL input attributes");
+    return(rc);
+    }
+
+  if (pobj == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc,__func__, "NULL input node");
+    return(rc);
+    }
 
   switch (actmode)
     {
@@ -2579,6 +2760,20 @@ int node_mom_rm_port_action(
   struct pbsnode *pnode = (struct pbsnode *)pobj;
   int rc = 0;
 
+  if (new_attr == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc,__func__, "NULL input attributes");
+    return(rc);
+    }
+
+  if (pobj == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc,__func__, "NULL input node");
+    return(rc);
+    }
+
   switch (actmode)
     {
 
@@ -2611,6 +2806,20 @@ int node_gpus_action(
   int             old_gp;
   int             new_gp;
   int             rc = 0;
+
+  if (new_attr == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc,__func__, "NULL input attributes");
+    return(rc);
+    }
+
+  if (pnode == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc,__func__, "NULL input node");
+    return(rc);
+    }
 
   switch (actmode)
     {
@@ -2725,6 +2934,20 @@ int node_numa_action(
   struct pbsnode *np = (struct pbsnode *)pnode;
   int rc = 0;
 
+  if (new_attr == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc,__func__, "NULL input attributes");
+    return(rc);
+    }
+
+  if (pnode == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc,__func__, "NULL input node");
+    return(rc);
+    }
+
   switch (actmode)
     {
     case ATR_ACTION_NEW:
@@ -2753,7 +2976,19 @@ int numa_str_action(
 
   {
   struct pbsnode *np = (struct pbsnode *)pnode;
-  int len;
+  int len = 0;
+
+  if (new_attr == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER,__func__, "NULL input attributes");
+    return(PBSE_BAD_PARAMETER);
+    }
+
+  if (pnode == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER,__func__, "NULL input node");
+    return(PBSE_BAD_PARAMETER);
+    }
 
   switch (actmode)
     {
@@ -2810,6 +3045,18 @@ int gpu_str_action(
   {
   struct pbsnode *np = (struct pbsnode *)pnode;
   int             len;
+
+  if (new_attr == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER,__func__, "NULL input attributes");
+    return(PBSE_BAD_PARAMETER);
+    }
+
+  if (pnode == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER,__func__, "NULL input node");
+    return(PBSE_BAD_PARAMETER);
+    }
 
   switch (actmode)
     {
@@ -2875,6 +3122,12 @@ int create_partial_pbs_node(
   u_long          *pul = NULL;
   char            *pname = NULL;
 
+  if (nodename == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER,__func__, "NULL input name");
+    return(PBSE_BAD_PARAMETER);
+    }
+
   pnode = (struct pbsnode *)calloc(1, sizeof(struct pbsnode));
   
   if (pnode == NULL)
@@ -2928,7 +3181,7 @@ int create_partial_pbs_node(
   if (rc != 0)
     {
     lock_node(pnode, __func__, NULL, LOGLEVEL);
-    effective_node_delete(pnode);
+    effective_node_delete(&pnode);
 
     return(rc);
     }
@@ -2949,7 +3202,7 @@ int create_partial_pbs_node(
 /*
  * @return a pointer to an initialized node iterator 
  */
-node_iterator *get_node_iterator()
+static node_iterator *get_node_iterator()
 
   {
   node_iterator *iter = (node_iterator *)calloc(1, sizeof(node_iterator));
@@ -2986,7 +3239,7 @@ void reinitialize_node_iterator(
 
 
 
-struct pbsnode *get_my_next_node_board(
+static struct pbsnode *get_my_next_node_board(
 
   node_iterator  *iter,
   struct pbsnode *pnode)
@@ -3007,7 +3260,7 @@ struct pbsnode *get_my_next_node_board(
 
 
 
-struct pbsnode *get_my_next_alps_node(
+static struct pbsnode *get_my_next_alps_node(
 
   node_iterator  *iter,
   struct pbsnode *pnode)
@@ -3035,6 +3288,17 @@ struct pbsnode *next_node(
   {
   struct pbsnode *next;
   struct pbsnode *tmp;
+
+  if (an == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER,__func__, "NULL input all_nodes pointer");
+    return(NULL);
+    }
+  if (iter == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER,__func__, "NULL input iter pointer");
+    return(NULL);
+    }
 
   if (current == NULL)
     {
@@ -3070,6 +3334,11 @@ struct pbsnode *next_node(
       {
       tmp = current->parent;
       unlock_node(current, __func__, "current == NULL && numa_index > 0", LOGLEVEL);
+      if (tmp == NULL) /* TODO: think about this check and apropriate return*/
+        {
+        log_err(-1, __func__, "current->parent == NULL");
+        return(NULL);
+        }
       lock_node(tmp, __func__, "tmp && numa_index > 0", LOGLEVEL);
       current = tmp;
       }
@@ -3156,6 +3425,12 @@ void initialize_all_nodes_array(
   all_nodes *an)
 
   {
+  if (an == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input pointer");
+    return;
+    }
+
   an->ra = initialize_resizable_array(INITIAL_NODE_SIZE);
   an->ht = create_hash(INITIAL_HASH_SIZE);
 
@@ -3179,7 +3454,20 @@ int insert_node(
   struct pbsnode *pnode) /* I */
 
   {
-  int          rc;
+  int          rc = 0;
+
+  if (an == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc, __func__, "NULL input all_nodes pointer");
+    return(rc);
+    }
+  if (pnode == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc, __func__, "NULL input node pointer");
+    return(rc);
+    }
 
   pthread_mutex_lock(an->allnodes_mutex);
 
@@ -3216,7 +3504,20 @@ int remove_node(
   struct pbsnode *pnode)
 
   {
-  int rc = PBSE_NONE;
+  int rc = 0;
+
+  if (an == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc, __func__, "NULL input all_nodes pointer");
+    return(rc);
+    }
+  if (pnode == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc, __func__, "NULL input node pointer");
+    return(rc);
+    }
 
   if (pthread_mutex_trylock(an->allnodes_mutex))
     {
@@ -3245,6 +3546,17 @@ struct pbsnode *next_host(
   struct pbsnode *pnode;
   char           *name = NULL;
 
+  if (an == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input all_nodes pointer");
+    return(NULL);
+    }
+  if (iter == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input iter pointer");
+    return(NULL);
+    }
+
   if (pthread_mutex_trylock(an->allnodes_mutex))
     {
     if (held != NULL)
@@ -3259,7 +3571,9 @@ struct pbsnode *next_host(
   if ((pnode != NULL) &&
       ((pnode != held) && 
        (name == NULL)))
+    {
     lock_node(pnode, __func__, NULL, LOGLEVEL);
+    }
 
   pthread_mutex_unlock(an->allnodes_mutex);
 
@@ -3282,9 +3596,21 @@ void *send_hierarchy_threadtask(
 
   {
   hello_info     *hi = (hello_info *)vp;
-  struct pbsnode *pnode = find_nodebyname(hi->name);
+  struct pbsnode *pnode = NULL;
   char            log_buf[LOCAL_LOG_BUF_SIZE+1];
   unsigned short  port;
+
+  if (hi == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input pointer");
+    return(NULL);
+    }
+  if (hi->name == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL hello_info->name pointer");
+    return(NULL);
+    }
+  pnode = find_nodebyname(hi->name);
 
   if (pnode != NULL)
     {
@@ -3293,7 +3619,7 @@ void *send_hierarchy_threadtask(
 
     if (send_hierarchy(hi->name, port) != PBSE_NONE)
       {
-      if (hi->num_retries < 3)
+      if (hi->num_retries < 3) /*TODO: why 3? remove magic number*/
         {
         hi->num_retries++;
         hi->last_retry = time(NULL);
@@ -3406,7 +3732,10 @@ int send_hierarchy(
 
   close_conn(sock, FALSE);
   if (chan != NULL)
+    {
+
     DIS_tcp_cleanup(chan);
+    }
 
   return(ret);
   } /* END send_hierarchy() */
@@ -3414,15 +3743,23 @@ int send_hierarchy(
 
 
 
-void initialize_hello_container(
+struct hello_container* initialize_hello_container(
 
   hello_container *hc)
 
   {
-  hc->ra = initialize_resizable_array(INITIAL_NODE_SIZE);
+  if (hc != NULL)
+    {
+    hc->ra = initialize_resizable_array(INITIAL_NODE_SIZE);
 
-  hc->hello_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(hc->hello_mutex, NULL);
+    hc->hello_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+    pthread_mutex_init(hc->hello_mutex, NULL);
+    }
+  else
+  {
+  log_err(PBSE_BAD_PARAMETER, __func__, "NULL input container pointer was passed for initialization");
+  }
+  return hc;
   } /* END initialize_hello_container() */
 
 
@@ -3480,9 +3817,16 @@ int add_hello_after(
   int              index)
 
   {
-  hello_info *hi = (hello_info *)calloc(1, sizeof(hello_info));
-  int         rc;
+  hello_info *hi = NULL;
+  int         rc = -1;
 
+  if (hc == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input container pointer");
+    return(PBSE_BAD_PARAMETER);
+    }
+
+  hi = (hello_info *)calloc(1, sizeof(hello_info));
   hi->name = node_name;
 
   pthread_mutex_lock(hc->hello_mutex);
@@ -3504,11 +3848,16 @@ int add_hello_after(
 
 int add_hello_info(
 
-  hello_container *hc,
-  hello_info      *hi)
+  struct hello_container *hc,
+  struct hello_info      *hi)
 
   {
-  int rc;
+  int rc = -1;
+  if (hc == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input container pointer");
+    return(PBSE_BAD_PARAMETER);
+    }
 
   pthread_mutex_lock(hc->hello_mutex);
   if ((rc = insert_thing(hc->ra, hi)) == -1)
@@ -3528,6 +3877,11 @@ hello_info *pop_hello(
   {
   hello_info *hi = NULL;
   int         index;
+  if (hc == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input container pointer");
+    return(NULL);
+    }
 
   pthread_mutex_lock(hc->hello_mutex);
   index = hc->ra->slots[ALWAYS_EMPTY_INDEX].next;
@@ -3557,6 +3911,19 @@ int remove_hello(
   int         iter = -1;
   int         prev_index = -1;
   hello_info *hi;
+
+  if (hc == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc, __func__, "NULL input container pointer");
+    return(rc);
+    }
+  if (node_name == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc, __func__, "NULL input name pointer");
+    return(rc);
+    }
 
   pthread_mutex_lock(hc->hello_mutex);
   while ((hi = (hello_info *)next_thing(hc->ra, &iter)) != NULL)
