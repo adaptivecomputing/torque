@@ -1542,6 +1542,9 @@ void checkret(
   return;
   }  /* END checkret() */
 
+
+
+
 char *skipwhite(
 
   char *str)
@@ -2988,7 +2991,8 @@ static u_long setvarattr(
 
   /* step forward to end of TTL */
 
-  while (!isspace(*ptr))
+  while ((!isspace(*ptr)) &&
+         (*ptr != '\0'))
     ptr++;
 
   if (*ptr == '\0')
@@ -3619,6 +3623,7 @@ int read_config(
     while (fgets(line, sizeof(line) - 1, conf))
       {
       linenum++;
+
       memset(name, 0, sizeof(name));
 
       if (line[0] == '#') /* comment */
@@ -3644,8 +3649,7 @@ int read_config(
 
       if (LOGLEVEL >= 6)
         {
-        sprintf(log_buffer, "processing config line '%.64s'",
-                str);
+        sprintf(log_buffer, "processing config line '%.64s'", str);
 
         log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
         }
@@ -3690,7 +3694,7 @@ int read_config(
 
           log_err(-1, __func__, log_buffer);
           }
-    
+
         memset(line, 0, sizeof(line));
 
         continue;
@@ -3699,7 +3703,7 @@ int read_config(
       add_static(str, file, linenum);
 
       nconfig++;
-    
+
       memset(line, 0, sizeof(line));
       }  /* END while (fgets()) */
 
