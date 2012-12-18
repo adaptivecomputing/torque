@@ -1429,6 +1429,8 @@ int req_quejob(
     svr_job_purge(pj);
     return rc;
     }
+  
+  job_save(pj, SAVEJOB_NEW, 0);
 
   /* link job into server's new jobs list request  */
   insert_job(&newjobs,pj);
@@ -1849,7 +1851,7 @@ int req_rdytocommit(
     unlink(namebuf);
     }
 
-  if (job_save(pj, SAVEJOB_NEW, 0) == -1)
+  if (job_save(pj, SAVEJOB_FULL, 0) == -1)
     {
     rc = PBSE_CAN_NOT_WRITE_FILE;
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
