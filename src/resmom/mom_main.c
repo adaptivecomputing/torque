@@ -2988,7 +2988,8 @@ static u_long setvarattr(
 
   /* step forward to end of TTL */
 
-  while (!isspace(*ptr))
+  while ((!isspace(*ptr)) &&
+         (*ptr != '\0'))
     ptr++;
 
   if (*ptr == '\0')
@@ -3646,8 +3647,7 @@ int read_config(
 
       if (LOGLEVEL >= 6)
         {
-        sprintf(log_buffer, "processing config line '%.64s'",
-                str);
+        sprintf(log_buffer, "processing config line '%.64s'", str);
 
         log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
         }
