@@ -2053,9 +2053,9 @@ int register_sync(
     /* existing regist., just update the location of the child */
 
     if (server_name[0] != '\0')
-      strcpy(pdj->dc_svr, server_name);
+      strncpy(pdj->dc_svr, server_name, sizeof(pdj->dc_svr) - 1);
     else
-      strcpy(pdj->dc_svr, host);
+      strncpy(pdj->dc_svr, host, sizeof(pdj->dc_svr) - 1);
 
     return(PBSE_NONE);
     }
