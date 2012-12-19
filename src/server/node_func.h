@@ -1,17 +1,24 @@
 #ifndef _NODE_FUNC_H
 #define _NODE_FUNC_H
 #include "license_pbs.h" /* See here for the software license */
-
-#include "server_limits.h" /* pbs_net_t. Also defined in net_connect.h */
-#include "pbs_nodes.h" /* pbs_nodes, node_check_info, node_iterator, all_nodes */
-#include "attribute.h" /* svrattrl, pbs_attribute */
 #include "list_link.h" /* tlist_head */
-#include "work_task.h" /* work_task */
+
+/* Forward declarations. */
+typedef unsigned long pbs_net_t;
+struct pbsnode;
+struct node_check_info;
+struct node_iterator;
+struct all_nodes;
+struct svrattrl;
+struct pbs_attribute;
+struct attribute_def;
+struct hello_info;
+struct hello_container;
 
 typedef struct _node_info_
   {
   char     *nodename;
-  svrattrl *plist;
+  struct svrattrl *plist;
   int      perms;
   tlist_head atrlist;
   } node_info;
@@ -26,15 +33,15 @@ struct pbsnode *find_nodebyname(const char *nodename);
 
 struct pbssubn *find_subnodebyname(char *nodename);
 
-void save_characteristic(struct pbsnode *pnode, node_check_info *nci);
+void save_characteristic(struct pbsnode *pnode, struct node_check_info *nci);
 
-int chk_characteristic(struct pbsnode *pnode, node_check_info *nci, int *pneed_todo);
+int chk_characteristic(struct pbsnode *pnode, struct node_check_info *nci, int *pneed_todo);
 
-int status_nodeattrib(svrattrl *pal, attribute_def *padef, struct pbsnode *pnode, int limit, int priv, tlist_head *phead, int *bad);
+int status_nodeattrib(struct svrattrl *pal, struct attribute_def *padef, struct pbsnode *pnode, int limit, int priv, tlist_head *phead, int *bad);
 
 /* static void subnode_delete(struct pbssubn *psubn); */
 
-void effective_node_delete(struct pbsnode *pnode);
+void effective_node_delete(struct pbsnode **pnode);
 
 /* static int process_host_name_part(char *objname, u_long **pul, char **pname, int *ntype); */
 
@@ -48,13 +55,13 @@ int create_a_gpusubnode(struct pbsnode *pnode);
 
 int copy_properties(struct pbsnode *dest, struct pbsnode *src);
 
-int read_val_and_advance(int *val, char **str);
+/*static int read_val_and_advance(int *val, char **str);*/
 
-int setup_node_boards(struct pbsnode *pnode, u_long *pul);
+/*static int setup_node_boards(struct pbsnode *pnode, u_long *pul);*/
 
-void recheck_for_node(struct work_task *ptask);
+/*static void recheck_for_node(struct work_task *ptask);*/
 
-int create_pbs_node(char *objname, svrattrl *plist, int perms, int *bad);
+int create_pbs_node(char *objname, struct svrattrl *plist, int perms, int *bad);
 
 /* static char *parse_node_token(char *start, int cok, int comma, int *err, char *term); */
 
@@ -64,36 +71,54 @@ int setup_nodes(void);
 
 /* static void delete_a_gpusubnode(struct pbsnode *pnode); */
 
-int node_np_action(pbs_attribute *new_attr, void *pobj, int actmode);
+int node_np_action(struct pbs_attribute *new_attr, void *pobj, int actmode);
 
-int node_mom_port_action(pbs_attribute *new_attr, void *pobj, int actmode);
+int node_mom_port_action(struct pbs_attribute *new_attr, void *pobj, int actmode);
 
-int node_mom_rm_port_action(pbs_attribute *new_attr, void *pobj, int actmode);
+int node_mom_rm_port_action(struct pbs_attribute *new_attr, void *pobj, int actmode);
 
-int node_gpus_action(pbs_attribute *new_attr, void *pnode, int actmode);
+int node_gpus_action(struct pbs_attribute *new_attr, void *pnode, int actmode);
 
-int node_numa_action(pbs_attribute *new_attr, void *pnode, int actmode);
+int node_numa_action(struct pbs_attribute *new_attr, void *pnode, int actmode);
 
-int numa_str_action(pbs_attribute *new_attr, void *pnode, int actmode);
+int numa_str_action(struct pbs_attribute *new_attr, void *pnode, int actmode);
 
-int gpu_str_action(pbs_attribute *new_attr, void *pnode, int actmode);
+int gpu_str_action(struct pbs_attribute *new_attr, void *pnode, int actmode);
 
 int create_partial_pbs_node(char *nodename, unsigned long addr, int perms);
 
-node_iterator *get_node_iterator();
+/*static node_iterator *get_node_iterator();*/
 
-void reinitialize_node_iterator(node_iterator *iter);
+void reinitialize_node_iterator(struct node_iterator *iter);
 
-struct pbsnode *get_my_next_node_board(node_iterator *iter, struct pbsnode *np);
+/*static struct pbsnode *get_my_next_node_board(node_iterator *iter, struct pbsnode *np);*/
 
-struct pbsnode *next_node(all_nodes *an, struct pbsnode *current, node_iterator *iter);
+struct pbsnode *next_node(struct all_nodes *an, struct pbsnode *current, struct node_iterator *iter);
 
-void initialize_all_nodes_array(all_nodes *an);
+void initialize_all_nodes_array(struct all_nodes *an);
 
-int insert_node(all_nodes *an, struct pbsnode *pnode);
+int insert_node(struct all_nodes *an, struct pbsnode *pnode);
 
-int remove_node(all_nodes *an, struct pbsnode *pnode);
+int remove_node(struct all_nodes *an, struct pbsnode *pnode);
 
-struct pbsnode *next_host(all_nodes *an, int *iter, struct pbsnode *held);
+struct pbsnode *next_host(struct all_nodes *an, int *iter, struct pbsnode *held);
+
+void *send_hierarchy_threadtask(void *vp);
+
+int send_hierarchy(char *name, unsigned short  port);
+
+struct hello_container* initialize_hello_container(struct hello_container *);
+
+int needs_hello(struct hello_container *hc, char *node_name);
+
+int add_hello(struct hello_container *hc, char *node_name);
+
+int add_hello_after(struct hello_container *hc, char *node_name, int index);
+
+int add_hello_info(struct hello_container *hc, struct hello_info *hi);
+
+struct hello_info *pop_hello(struct hello_container *hc);
+
+int remove_hello(struct hello_container *hc, char *node_name);
 
 #endif /* _NODE_FUNC_H */
