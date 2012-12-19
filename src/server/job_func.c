@@ -2190,7 +2190,7 @@ struct pbs_queue *get_jobs_queue(
 
 
 
-/*static int*/ fix_cray_exec_hosts(
+/*static*/ int fix_cray_exec_hosts(
 
   job *pjob)
 
