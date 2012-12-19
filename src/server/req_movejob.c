@@ -110,7 +110,7 @@ extern char *msg_manager;
 extern char *msg_movejob;
 extern char *pbs_o_host;
 
-int   svr_movejob(job *, char *, int *, struct batch_request *, int);
+int   svr_movejob(job *, char *, int *, struct batch_request *);
 int   svr_chkque(job *, pbs_queue *, char *, int, char *);
 job  *chk_job_request(char *, struct batch_request *);
 
@@ -177,7 +177,7 @@ int req_movejob(
     return(PBSE_NONE);
     }
 
-  switch (svr_movejob(jobp, req->rq_ind.rq_move.rq_destin, &local_errno, req, FALSE))
+  switch (svr_movejob(jobp, req->rq_ind.rq_move.rq_destin, &local_errno, req))
     {
 
     case 0:
@@ -242,8 +242,6 @@ int req_orderjob(
   char                  tmpqn[PBS_MAXQUEUENAME+1];
   struct batch_request *req = (struct batch_request *)vp;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
-  char                  job_id1[PBS_MAXSVRJOBID+1];
-  char                  job_id2[PBS_MAXSVRJOBID+1];
   pbs_queue            *pque1;
   pbs_queue            *pque2;
 
@@ -342,13 +340,9 @@ int req_orderjob(
     strcpy(tmpqn, pjob1->ji_qs.ji_queue);
     strcpy(pjob1->ji_qs.ji_queue, pjob2->ji_qs.ji_queue);
     strcpy(pjob2->ji_qs.ji_queue, tmpqn);
-    strcpy(job_id1, pjob1->ji_qs.ji_jobid);
-    strcpy(job_id2, pjob2->ji_qs.ji_jobid);
-    unlock_ji_mutex(pjob1, __func__, "5", LOGLEVEL);
-    unlock_ji_mutex(pjob2, __func__, "6", LOGLEVEL);
 
-    svr_dequejob(job_id1, FALSE);
-    svr_dequejob(job_id2, FALSE);
+    svr_dequejob(pjob1, FALSE);
+    svr_dequejob(pjob2, FALSE);
 
     if (svr_enquejob(pjob1, FALSE, -1) == PBSE_JOB_RECYCLED)
       pjob1 = NULL;

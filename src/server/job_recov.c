@@ -176,7 +176,7 @@ int add_to_ms_list(char *node_name, job *pjob);
 int job_save(
 
   job *pjob,  /* pointer to job structure */
-  int  updatetype, /* 0=quick, 1=full     */
+  int  updatetype, /* 0=quick, 1=full, 2=new     */
   int  mom_port)   /* if 0 ignore otherwise append to end of job name. this is for multi-mom mode */
 
   {
