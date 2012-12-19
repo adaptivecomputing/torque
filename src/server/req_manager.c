@@ -1955,7 +1955,7 @@ static void mgr_node_delete(
       {
       snprintf(log_buf,sizeof(log_buf),"%s",pnode->nd_name);
 
-      effective_node_delete(pnode);
+      effective_node_delete(&pnode);
 
       mgr_log_attr(msg_man_set, plist, PBS_EVENTCLASS_NODE, log_buf);
       } /* end loop ( all nodes ) */
@@ -1965,7 +1965,7 @@ static void mgr_node_delete(
     /* handle single nodes */
     snprintf(log_buf,sizeof(log_buf),"%s",pnode->nd_name);
 
-    effective_node_delete(pnode);
+    effective_node_delete(&pnode);
 
     mgr_log_attr(msg_man_set, plist, PBS_EVENTCLASS_NODE, log_buf);
     }
