@@ -392,7 +392,7 @@ typedef struct hello_container
   } hello_container;
 
 
-void        initialize_hello_container(hello_container *);
+hello_container * initialize_hello_container(hello_container *);
 int         needs_hello(hello_container *, char *);
 int         add_hello(hello_container *, char *);
 int         add_hello_after(hello_container *, char *, int);
