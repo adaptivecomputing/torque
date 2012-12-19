@@ -8,6 +8,7 @@ EXTRA_DIST = acinclude.m4 \
   CHANGELOG \
   configure.ac \
   cov_file_results.pl \
+	current_hash \
   Doxyfile \
   INSTALL \
 	INSTALL.GNU \

@@ -85,6 +85,7 @@
 
 #include <errno.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <unistd.h>
 #include "libpbs.h"
 #include <fcntl.h>
@@ -325,13 +326,36 @@ void issue_track(
   job *pjob)
 
   {
+  struct batch_request *preq;
+  char                 *pc;
+  char                 *sname;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
-  struct batch_request   *preq;
-  char         *pc;
+  if ((pc = strchr(pjob->ji_qs.ji_jobid, '.')) == NULL)
+    {
+    snprintf(log_buf, sizeof(log_buf),
+      "Remote job routing is not compatible with display_job_server_suffix set to false. Cannot track %s",
+      pjob->ji_qs.ji_jobid);
+    log_err(-1, __func__, log_buf);
+
+    return;
+    }
+
+  sname = pc + 1;
+
+  /* do not issue track requests to ourselves */
+  if (!strcmp(sname, server_name))
+    {
+    snprintf(log_buf, sizeof(log_buf),
+      "%s erroneously called for local job %s",
+      __func__, pjob->ji_qs.ji_jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    return;
+    }
 
   preq = alloc_br(PBS_BATCH_TrackJob);
 
-  if (preq == (struct batch_request *)0)
+  if (preq == NULL)
     return;
 
   preq->rq_ind.rq_track.rq_hopcount = pjob->ji_wattr[JOB_ATR_hopcount].at_val.at_long;
