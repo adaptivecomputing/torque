@@ -2,9 +2,9 @@
 #define _NODE_FUNC_H
 #include "license_pbs.h" /* See here for the software license */
 #include "list_link.h" /* tlist_head */
+#include "net_connect.h"
 
 /* Forward declarations. */
-typedef unsigned long pbs_net_t;
 struct pbsnode;
 struct node_check_info;
 struct node_iterator;

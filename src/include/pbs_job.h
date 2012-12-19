@@ -100,6 +100,7 @@
 #include "mom_hierarchy.h"
 #include "dynamic_string.h"
 #include "tcp.h" /* tcp_chan */
+#include "net_connect.h"
 
 #define SAVEJOB_BUF_SIZE 8192
 

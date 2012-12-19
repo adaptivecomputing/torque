@@ -182,11 +182,6 @@
 
 /* "simplified" network address structure */
 
-#ifndef PBS_NET_TYPE
-typedef unsigned long pbs_net_t; /* for holding host addresses */
-#define PBS_NET_TYPE
-#endif /* PBS_NET_TYPE */
-
 /* defines for job moving (see net_move() ) */
 
 #define MOVE_TYPE_Move  1 /* Move by user request */
