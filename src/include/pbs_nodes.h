@@ -238,15 +238,17 @@ struct gpusubn
 #ifdef NUMA_SUPPORT
 typedef struct nodeboard_t
   {
-  int                index;        /* the node's index */
-  int                num_cpus;     /* count of cpus */
-  int                num_nodes;    /* count of NUMA nodes */
-  hwloc_bitmap_t     cpuset;       /* bitmap containing CPU IDs of this nodeboard */
-  hwloc_bitmap_t     nodeset;      /* bitmap containing NUMA node IDs of this nodeboard */
+  int                index;           /* the node's index */
+  int                num_cpus;        /* count of cpus */
+  int                num_nodes;       /* count of NUMA nodes */
+  hwloc_bitmap_t     cpuset;          /* bitmap containing CPU IDs of this nodeboard */
+  hwloc_bitmap_t     nodeset;         /* bitmap containing NUMA node IDs of this nodeboard */
   unsigned long      memsize;
-  char             **path_meminfo; /* path to meminfo file for each NUMA node */
+  char             **path_meminfo;    /* path to meminfo file for each NUMA node */
   unsigned long long pstat_busy;
   unsigned long long pstat_idle;
+  int                mic_start_index; /* index of first mic for this board */
+  int                mic_end_index;   /* index of last mic for this board */
   float              cpuact;
   } nodeboard;
 #endif /* NUMA_SUPPORT */
