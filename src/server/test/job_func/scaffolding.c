@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 #include <pthread.h>
+#include <errno.h>
 
 #include "pbs_ifl.h" /* MAXPATHLEN, PBS_MAXSERVERNAME */
 #include "server.h" /* server, NO_BUFFER_SPACE */
@@ -50,8 +51,7 @@ int array_save(job_array *pa)
 
 int insert_thing(resizable_array *ra, void *thing)
   {
-  fprintf(stderr, "The call to insert_thing needs to be mocked!!\n");
-  exit(1);
+  return 0;
   }
 
 void account_record(int acctype, job *pjob, char *text)
@@ -68,8 +68,7 @@ char *arst_string(const char *str, pbs_attribute *pattr)
 
 int job_save(job *pjob, int updatetype, int mom_port)
   {
-  fprintf(stderr, "The call to job_save needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void svr_mailowner(job *pjob, int mailpoint, int force, const char *text)
@@ -105,8 +104,8 @@ void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
 
 pbs_net_t get_hostaddr(int *local_errno, char *hostname)
   {
-  fprintf(stderr, "The call to get_hostaddr needs to be mocked!!\n");
-  exit(1);
+  pbs_net_t loopback = ntohl(INADDR_LOOPBACK);
+  return(loopback);
   }
 
 int log_job_record(char *buf)
@@ -139,8 +138,7 @@ void delete_link(struct list_link *old)
 
 int add_hash(hash_table_t *ht, int value, void *key)
   {
-  fprintf(stderr, "The call to add_hash needs to be mocked!!\n");
-  exit(1);
+  return 0;
   }
 
 void free_br(struct batch_request *preq)
@@ -187,8 +185,7 @@ job *get_recycled_job()
 
 int get_value_hash(hash_table_t *ht, void *key)
   {
-  fprintf(stderr, "The call to get_value_hash needs to be mocked!!\n");
-  exit(1);
+  return(-1);
   }
 
 void delete_task(struct work_task *ptask)
@@ -205,14 +202,13 @@ int depend_on_term(char *job_id)
 
 int client_to_svr(pbs_net_t hostaddr, unsigned int port, int local_port, char *EMsg)
   {
-  fprintf(stderr, "The call to client_to_svr needs to be mocked!!\n");
-  exit(1);
+  fprintf(stderr, "The call to client_to_svr mock always return 0!\n");
+  return(0);
   }
 
 void *get_next(list_link pl, char *file, int line)
   {
-  fprintf(stderr, "The call to get_next needs to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 int issue_signal(job *pjob, char *signame, void (*func)(struct work_task *), void *extra)
@@ -223,8 +219,18 @@ int issue_signal(job *pjob, char *signame, void (*func)(struct work_task *), voi
 
 resizable_array *initialize_resizable_array(int size)
   {
-  fprintf(stderr, "The call to initialize_resizable_array needs to be mocked!!\n");
-  exit(1);
+  size = 10;
+  resizable_array *ra = calloc(1, sizeof(resizable_array));
+  size_t           amount = sizeof(slot) * size;
+
+  ra->max       = size;
+  ra->num       = 0;
+  ra->next_slot = 1;
+  ra->last      = 0;
+
+  ra->slots = calloc(1, amount);
+
+  return(ra);
   }
 
 int svr_enquejob(job *pjob, int has_sv_qs_mutex, int prev_index)
@@ -259,8 +265,7 @@ void release_req(struct work_task *pwt)
 
 hash_table_t *create_hash(int size)
   {
-  fprintf(stderr, "The call to create_hash needs to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 work_task *next_task(all_tasks *at, int *iter)
@@ -277,8 +282,7 @@ int swap_things(resizable_array *ra, void *thing1, void *thing2)
 
 int insert_thing_after(resizable_array *ra, void *thing, int index)
   {
-  fprintf(stderr, "The call to insert_thing_after needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void issue_track(job *pjob)
@@ -301,8 +305,7 @@ struct batch_request *setup_cpyfiles(struct batch_request *preq, job *pjob, char
 
 int insert_into_recycler(job *pjob)
   {
-  fprintf(stderr, "The call to insert_into_recycler needs to be mocked!!\n");
-  exit(1);
+  return 0;
   }
 
 int attr_to_str(struct dynamic_string *ds, attribute_def *attr_def,struct pbs_attribute attr,int XML)
@@ -700,4 +703,105 @@ ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   {
   return(0);
   }
-  
+
+struct batch_request *alloc_br(int type)
+  {
+  struct batch_request *request = NULL;
+  request = calloc(1, sizeof(struct batch_request));
+  request->rq_type = type;
+  return request;
+  }
+
+void free_str(struct pbs_attribute *attr) {}
+void free_resc(pbs_attribute *pattr) {}
+void free_null(struct pbs_attribute *attr) {}
+void free_depend(struct pbs_attribute *attr) {}
+void free_arst( struct pbs_attribute *attr) {}
+void free_unkn(pbs_attribute *pattr) {}
+
+int pthread_mutex_lock(pthread_mutex_t *mock_mutex)
+{
+  return 0;
+}
+
+int pthread_mutex_unlock(pthread_mutex_t *mock_mutex)
+{
+  return 0;
+}
+
+int pthread_mutex_trylock(pthread_mutex_t *mock_mutex)
+{
+  return 0;
+}
+
+
+/* copied from job_container.c */
+
+void initialize_all_jobs_array(struct all_jobs *aj)
+  {
+  if (aj == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER,__func__,"null input job array");
+    return;
+    }
+
+  aj->ra = initialize_resizable_array(INITIAL_JOB_SIZE);
+  aj->ht = create_hash(INITIAL_HASH_SIZE);
+
+  aj->alljobs_mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(aj->alljobs_mutex, NULL);
+  }
+
+job *find_job_by_array(
+
+  struct all_jobs *aj,
+  char            *job_id,
+  int              get_subjob)
+
+  {
+  job *pj = NULL;
+  int  i;
+
+  if (aj == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "null struct all_jobs pointer fail");
+    return(NULL);
+    }
+  if (job_id == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "null job_id pointer fail");
+    return(NULL);
+    }
+
+  pthread_mutex_lock(aj->alljobs_mutex);
+
+  i = get_value_hash(aj->ht, job_id);
+
+  if (i >= 0)
+    pj = (job *)aj->ra->slots[i].item;
+  if (pj != NULL)
+    lock_ji_mutex(pj, __func__, NULL, LOGLEVEL);
+
+  pthread_mutex_unlock(aj->alljobs_mutex);
+
+  if (pj != NULL)
+    {
+    if (get_subjob == TRUE)
+      {
+      if (pj->ji_cray_clone != NULL)
+        {
+        pj = pj->ji_cray_clone;
+        unlock_ji_mutex(pj->ji_parent_job, __func__, NULL, LOGLEVEL);
+        lock_ji_mutex(pj, __func__, NULL, LOGLEVEL);
+        }
+      }
+
+    if (pj->ji_being_recycled == TRUE)
+      {
+      unlock_ji_mutex(pj, __func__, "1", LOGLEVEL);
+      pj = NULL;
+      }
+    }
+
+  return(pj);
+  } /* END find_job_by_array() */
