@@ -382,6 +382,7 @@ mom_server *mom_server_find_by_name(
 
     if (!strcmp(pms->pbs_servername, name))
       {
+      /* Found one */
       return(pms);
       }
     }
