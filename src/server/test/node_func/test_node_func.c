@@ -7,6 +7,7 @@
 #include "pbs_nodes.h" /* pbs_nodes, node_check_info, node_iterator, all_nodes */
 #include "attribute.h" /* svrattrl, struct  */
 
+int login_encode_jobs(struct pbsnode *pnode, tlist_head *phead);
 int cray_enabled;
 
 void initialize_allnodes(all_nodes *an, struct pbsnode *n1, struct pbsnode *n2)
@@ -23,12 +24,13 @@ void initialize_allnodes(all_nodes *an, struct pbsnode *n1, struct pbsnode *n2)
 START_TEST(PGetNodeFromAddr_test)
   {
   pbs_net_t address = 0;
-  //alloc mutex, use, restore
+  struct pbsnode *result;
+  /* alloc mutex, use, restore */
   pthread_mutex_t *mutex = allnodes.allnodes_mutex;
   allnodes.allnodes_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(allnodes.allnodes_mutex, NULL);
+  result = PGetNodeFromAddr(address);
 
-  struct pbsnode *result = PGetNodeFromAddr(address);
 
   free((void*)allnodes.allnodes_mutex);
   allnodes.allnodes_mutex = mutex;
@@ -41,17 +43,16 @@ START_TEST(bad_node_warning_test)
   {
   pbs_net_t address = 0;
   struct pbsnode node;
+  pthread_mutex_t *mutex = allnodes.allnodes_mutex;
   initialize_pbsnode(&node, NULL, NULL, 0);
 
-  //alloc mutex, use, restore
-  pthread_mutex_t *mutex = allnodes.allnodes_mutex;
+  /* alloc mutex, use, restore */
   allnodes.allnodes_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(allnodes.allnodes_mutex, NULL);
 
   bad_node_warning(address, NULL);
   bad_node_warning(address, &node);
 
-  //free((void*)allnodes.allnodes_mutex);
   allnodes.allnodes_mutex = mutex;
   }
 END_TEST
@@ -60,14 +61,15 @@ START_TEST(addr_ok_test)
   {
   pbs_net_t address = 0;
   struct pbsnode node;
+  pthread_mutex_t *mutex = allnodes.allnodes_mutex;
+  int result;
   initialize_pbsnode(&node, NULL, NULL, 0);
 
-  //alloc mutex, use, restore
-  pthread_mutex_t *mutex = allnodes.allnodes_mutex;
+  /* alloc mutex, use, restore */
   allnodes.allnodes_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(allnodes.allnodes_mutex, NULL);
 
-  int result = addr_ok(address, NULL);
+  result = addr_ok(address, NULL);
   fail_unless(result == 1, "NULL node input fail: %d", result);
 
   result = addr_ok(address, &node);
@@ -198,10 +200,10 @@ START_TEST(chk_characteristic_test)
   {
   struct pbsnode node;
   struct node_check_info node_info;
-  initialize_pbsnode(&node, NULL, NULL, 0);
-  memset(&node_info, 0, sizeof(node_info));
   int result = 0;
   int mask = 0;
+  initialize_pbsnode(&node, NULL, NULL, 0);
+  memset(&node_info, 0, sizeof(node_info));
 
   result = chk_characteristic(NULL, &node_info, &mask);
   fail_unless(result != PBSE_NONE, "NULL input node pointer fail");
@@ -219,12 +221,13 @@ END_TEST
 
 START_TEST(login_encode_jobs_test)
   {
-  struct pbsnode node;
+  struct pbsnode   node;
   struct list_link list;
+  int              result;
   initialize_pbsnode(&node, NULL, NULL, 0);
   memset(&list, 0, sizeof(list));
 
-  int result = login_encode_jobs(NULL, &list);
+  result = login_encode_jobs(NULL, &list);
   fail_unless(result != PBSE_NONE, "NULL input node pointer fail");
 
   result = login_encode_jobs(&node, NULL);
@@ -293,7 +296,7 @@ START_TEST(status_nodeattrib_test)
                              &list,
                              &result_mask);
   /*FIXME: NOTE: this is probably a correct set of input parameters, but still returns -1*/
- //   fail_unless(result != PBSE_NONE, "NULL input svrattrl pointer fail: %d" ,result);
+ /*   fail_unless(result != PBSE_NONE, "NULL input svrattrl pointer fail: %d" ,result); */
 
   result = status_nodeattrib(&attributes,
                              &node_attributes,
@@ -323,10 +326,11 @@ END_TEST
 START_TEST(effective_node_delete_test)
   {
   struct pbsnode *node = NULL;
+  pthread_mutex_t *mutex;
 
   initialize_all_nodes_array(&allnodes);
-  //alloc mutex, use, restore
-  pthread_mutex_t *mutex = allnodes.allnodes_mutex;
+  /* alloc mutex, use, restore */
+  mutex = allnodes.allnodes_mutex;
   allnodes.allnodes_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(allnodes.allnodes_mutex, NULL);
 
@@ -334,7 +338,7 @@ START_TEST(effective_node_delete_test)
   effective_node_delete(NULL);
   effective_node_delete(&node);
 
-  //pthread_mutex_init(allnodes.allnodes_mutex, NULL);
+  /* pthread_mutex_init(allnodes.allnodes_mutex, NULL); */
   node = (struct pbsnode *)malloc(sizeof(struct pbsnode));
   initialize_pbsnode(node, NULL, NULL, 0);
   effective_node_delete(&node);
@@ -645,9 +649,10 @@ START_TEST(create_partial_pbs_node_test)
   {
   int result = -1;
   char name[] = "name";
+  pthread_mutex_t *mutex;
   initialize_all_nodes_array(&allnodes);
-  //alloc mutex, use, restore
-  pthread_mutex_t *mutex = allnodes.allnodes_mutex;
+  /* alloc mutex, use, restore */
+  mutex = allnodes.allnodes_mutex;
   allnodes.allnodes_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(allnodes.allnodes_mutex, NULL);
 
@@ -665,15 +670,16 @@ END_TEST
 START_TEST(next_node_test)
   {
   struct pbsnode *result = NULL;
-  char name[] = "name";
+  /*char name[] = "name";*/
   struct pbsnode node;
   struct node_iterator it;
+  pthread_mutex_t *mutex;
   initialize_pbsnode(&node, NULL, NULL, 0);
   memset(&it, 0, sizeof(it));
 
   initialize_all_nodes_array(&allnodes);
-  //alloc mutex, use, restore
-  pthread_mutex_t *mutex = allnodes.allnodes_mutex;
+  /* alloc mutex, use, restore */
+  mutex = allnodes.allnodes_mutex;
   allnodes.allnodes_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(allnodes.allnodes_mutex, NULL);
 

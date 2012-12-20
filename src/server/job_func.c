@@ -431,14 +431,14 @@ int job_abt(
     return(rc);
     }
 
+  pjob = *pjobp;
+
   if (pjob == NULL)
     {
     rc = PBSE_BAD_PARAMETER;
     log_err(rc, __func__, "NULL input pointer to job");
     return(rc);
     }
-
-  pjob = *pjobp;
 
   strcpy(job_id, pjob->ji_qs.ji_jobid);
 

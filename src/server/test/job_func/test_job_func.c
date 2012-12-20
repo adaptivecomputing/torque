@@ -163,11 +163,11 @@ END_TEST
 START_TEST(job_abt_test)
   {
   int result = 0;
+  struct job *null_job = NULL;
 
   result = job_abt(NULL, NULL);
   fail_unless(result != 0, "NULL input check fail");
 
-  struct job *null_job = NULL;
   result = job_abt(&null_job, NULL);
   fail_unless(result != 0, "NULL input check fail");
   }
@@ -209,10 +209,10 @@ END_TEST
 START_TEST(copy_job_test)
   {
   struct job* result = copy_job(NULL);
-  fail_unless(result == NULL, "NULL input check fail");
-
   struct job *parent = job_alloc();
   struct job *child = NULL;
+  fail_unless(result == NULL, "NULL input check fail");
+
   child = copy_job(parent);
   fail_unless(child != NULL, "job was not copied");
   /* TODO: add check for correctness of the copy */
@@ -222,11 +222,11 @@ END_TEST
 START_TEST(job_clone_test)
   {
   struct job_array array;
+  struct job* template_job = job_alloc();
 
   struct job* result = job_clone(NULL, &array, 0);
   fail_unless(result == NULL, "NULL job to clone check fail");
 
-  struct job* template_job = job_alloc();
   result = job_clone(template_job, NULL, 0);
   fail_unless(result == ((job*)1), "NULL job array check fail"); /*TODO: change this ugly cast and magic*/
 
@@ -250,9 +250,9 @@ START_TEST(cpy_checkpoint_test)
                                          test_job,
                                          JOB_ATR_checkpoint_name,
                                          CKPT_DIR_IN);
+  struct batch_request *initial = alloc_br(/*PBS_BATCH_CheckpointJob*/0);
   fail_unless(result == NULL, "NULL batch_request input fail");
 
-  struct batch_request *initial = alloc_br(/*PBS_BATCH_CheckpointJob*/0);
   result = cpy_checkpoint(initial,
                           NULL,
                           JOB_ATR_checkpoint_name,
@@ -311,9 +311,9 @@ END_TEST
 START_TEST(find_job_by_array_test)
   {
   struct all_jobs alljobs;
+  struct job* result = find_job_by_array(NULL,"",0);
   initialize_all_jobs_array(&alljobs);
 
-  struct job* result = find_job_by_array(NULL,"",0);
   fail_unless(result == NULL, "NULL all jobs input fail");
 
   result = find_job_by_array(&alljobs,NULL,0);
@@ -451,6 +451,10 @@ Suite *job_func_suite(void)
 
   tc_core = tcase_create("get_jobs_array_test");
   tcase_add_test(tc_core, get_jobs_array_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("get_jobs_queue_test");
+  tcase_add_test(tc_core, get_jobs_queue_test);
   suite_add_tcase(s, tc_core);
 
   return(s);
