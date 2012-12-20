@@ -128,7 +128,7 @@ int svr_chk_owner(struct batch_request *preq, job *pjob)
   exit(1);
   }
 
-int job_abt(job **pjobp, const char *text)
+int job_abt(struct job **pjobp, const char *text)
   {
   fprintf(stderr, "The call to job_abt needs to be mocked!!\n");
   exit(1);

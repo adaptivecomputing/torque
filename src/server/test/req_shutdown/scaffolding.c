@@ -54,7 +54,7 @@ job *next_job(struct all_jobs *aj, int *iter)
   exit(1);
   }
 
-int job_abt(job **pjobp, const char *text)
+int job_abt(struct job **pjobp, const char *text)
   {
   fprintf(stderr, "The call to job_abt to be mocked!!\n");
   exit(1);

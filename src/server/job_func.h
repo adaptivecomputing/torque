@@ -1,61 +1,51 @@
 #ifndef _JOB_FUNC_H
 #define _JOB_FUNC_H
 #include "license_pbs.h" /* See here for the software license */
+#include "pbs_job.h"
 
-#include "pbs_job.h" /* job, job_atr, all_jobs */
-#include "array.h" /* job_array */
-#include "work_task.h" /* work_task */
-#include "batch_request.h" /* batch_request */
+struct job_array;
+struct batch_request;
 
-void send_qsub_delmsg(job *pjob, const char *text);
-
-int remtree(char *dirname);
-
-int job_abt(job **pjobp, const char *text);
+int job_abt(struct job **pjobp, const char *text);
 
 int conn_qsub(char *hostname, long port, char *EMsg);
 
-job *job_alloc(void);
+struct job *job_alloc(void);
 
-void job_free(job *pj, int use_recycle);
+void job_free(struct job *pj, int use_recycle);
 
-job *job_clone(job *template_job, job_array *pa, int taskid);
+/*static */ struct job *copy_job(struct job *parent);
+
+/*static*/ struct job *job_clone(struct job *template_job, struct job_array *pa, int taskid);
 
 void *job_clone_wt(void *vp);
 
-/* static void job_init_wattr(job *pj); */
+struct batch_request *cpy_checkpoint(struct batch_request *preq, struct job *pjob, enum job_atr ati, int direction);
 
-struct batch_request *cpy_checkpoint(struct batch_request *preq, job *pjob, enum job_atr ati, int direction);
+void remove_checkpoint(struct job **pjob);
 
-void remove_checkpoint(job **pjob);
+void cleanup_restart_file(struct job *pjob);
 
-void cleanup_restart_file(job *pjob);
+int record_jobinfo(struct job *pjob);
 
-int record_jobinfo(job *pjob);
+int svr_job_purge(struct job *pjob);
 
-int svr_job_purge(job *pjob);
+/*static*/ struct job *find_job_by_array(struct all_jobs *aj, char *job_id, int get_subjob);
 
-char *get_correct_jobname(const char *jobid);
+struct job *svr_find_job(char *jobid, int get_subjob);
 
-#ifndef PBS_MOM
-void initialize_all_jobs_array(struct all_jobs *aj);
+int get_jobs_index(struct all_jobs *aj, struct job *pjob);
 
-int insert_job(struct all_jobs *aj, job *pjob);
+struct job_array *get_jobs_array(struct job **pjob);
 
-int insert_job_after(struct all_jobs *aj, job *already_in, job *pjob);
+struct pbs_queue *get_jobs_queue(struct job **pjob_ptr);
 
-int insert_job_first(struct all_jobs *aj, job *pjob);
+/*static*/ int hostname_in_externals(char *hostname, char *externals);
 
-int has_job(struct all_jobs *aj, job *pjob);
+/*static*/ int fix_external_exec_hosts(struct job *pjob);
 
-int remove_job(struct all_jobs *aj, job *pjob);
+/*static*/ int fix_cray_exec_hosts(struct job *pjob);
 
-job *next_job(struct all_jobs *aj, int *iter);
-
-job *next_job_from_back(struct all_jobs *aj, int *iter);
-
-int swap_jobs(struct all_jobs *aj, job *job1, job *job2);
-#endif
-job_array *get_jobs_array(job **pjob);
+/*static*/ int change_external_job_name(struct job *pjob);
 
 #endif /* _JOB_FUNC_H */

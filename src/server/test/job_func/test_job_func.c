@@ -1,6 +1,9 @@
 #include "license_pbs.h" /* See here for the software license */
 #include "job_func.h"
+#include "array.h"
+#include "pbs_job.h"
 #include "test_job_func.h"
+#include "batch_request.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include "pbs_error.h"
@@ -89,7 +92,7 @@ START_TEST(fix_external_exec_hosts_test)
 
   memset(&pjob, 0, sizeof(pjob));
 
-  fail_unless(fix_external_exec_hosts(&pjob) == -2, "error codes not correctly checked");
+  fail_unless(fix_external_exec_hosts(&pjob) == PBSE_BAD_PARAMETER, "error codes not correctly checked");
 
   pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup(exec1);
   pjob.ji_wattr[JOB_ATR_external_nodes].at_val.at_str = strdup(externals);
@@ -157,8 +160,211 @@ START_TEST(split_job_test)
   }
 END_TEST
 
+START_TEST(job_abt_test)
+  {
+  int result = 0;
 
+  result = job_abt(NULL, NULL);
+  fail_unless(result != 0, "NULL input check fail");
 
+  struct job *null_job = NULL;
+  result = job_abt(&null_job, NULL);
+  fail_unless(result != 0, "NULL input check fail");
+  }
+END_TEST
+
+START_TEST(conn_qsub_test)
+  {
+  int result = 0;
+
+  result = conn_qsub(NULL, 0, NULL);
+  fail_unless(result != 0, "NULL input check fail");
+  }
+END_TEST
+
+START_TEST(job_alloc_test)
+  {
+  struct job *result = NULL;
+
+  result = job_alloc();
+  fail_unless(result != NULL, "job was not allocated");
+  }
+END_TEST
+
+START_TEST(job_free_test)
+  {
+  struct job *result = NULL;
+  /* NULL value test */
+  job_free(result,0);
+
+  result = job_alloc();
+  job_free(result,0);
+  /* TODO: add some check for the free operation
+     or refactor function interface, suggestions:
+     1) pointer to pointer pass, then null the actual pointer
+     2) return value, could be a code or the actual ptr from 1*/
+  }
+END_TEST
+
+START_TEST(copy_job_test)
+  {
+  struct job* result = copy_job(NULL);
+  fail_unless(result == NULL, "NULL input check fail");
+
+  struct job *parent = job_alloc();
+  struct job *child = NULL;
+  child = copy_job(parent);
+  fail_unless(child != NULL, "job was not copied");
+  /* TODO: add check for correctness of the copy */
+  }
+END_TEST
+
+START_TEST(job_clone_test)
+  {
+  struct job_array array;
+
+  struct job* result = job_clone(NULL, &array, 0);
+  fail_unless(result == NULL, "NULL job to clone check fail");
+
+  struct job* template_job = job_alloc();
+  result = job_clone(template_job, NULL, 0);
+  fail_unless(result == ((job*)1), "NULL job array check fail"); /*TODO: change this ugly cast and magic*/
+
+  result = job_clone(template_job, &array, 0);
+  /* TODO: add test that compares template and cloned jobs*/
+  /*fail_unless(template-> == result->, "job clone fail");*/
+  }
+END_TEST
+
+START_TEST(job_clone_wt_test)
+  {
+  void *result = job_clone_wt(NULL);
+  fail_unless(result == NULL, "NULL input check fail");
+  }
+END_TEST
+
+START_TEST(cpy_checkpoint_test)
+  {
+  struct job *test_job = job_alloc();
+  struct batch_request *result = cpy_checkpoint(NULL,
+                                         test_job,
+                                         JOB_ATR_checkpoint_name,
+                                         CKPT_DIR_IN);
+  fail_unless(result == NULL, "NULL batch_request input fail");
+
+  struct batch_request *initial = alloc_br(/*PBS_BATCH_CheckpointJob*/0);
+  result = cpy_checkpoint(initial,
+                          NULL,
+                          JOB_ATR_checkpoint_name,
+                          CKPT_DIR_IN);
+  fail_unless(result == NULL, "NULL job input fail");
+
+  /*TODO: add test for valid input, invalid dir value*/
+  }
+END_TEST
+
+START_TEST(remove_checkpoint_test)
+  {
+  struct job* test_job = NULL;
+  remove_checkpoint(NULL); /*TODO: add a kind of assert*/
+  remove_checkpoint(&test_job);
+
+  test_job = job_alloc();
+  remove_checkpoint(&test_job);
+  }
+END_TEST
+
+START_TEST(cleanup_restart_file_test)
+  {
+  struct job* test_job = NULL;
+  cleanup_restart_file(test_job); /*TODO: add a kind of assert*/
+
+  test_job = job_alloc();
+  cleanup_restart_file(test_job);
+  }
+END_TEST
+
+START_TEST(record_jobinfo_test)
+  {
+  struct job* test_job = NULL;
+  int result = record_jobinfo(test_job);
+  fail_unless(result == PBSE_BAD_PARAMETER, "NULL job input fail");
+
+  test_job = job_alloc();
+  record_jobinfo(test_job);
+  fail_unless(result >= -1, "empty job input fail: %d", result);/*TODO: fix -1 via log_job_record mock*/
+  }
+END_TEST
+
+START_TEST(svr_job_purge_test)
+  {
+  struct job* test_job = NULL;
+  int result = svr_job_purge(test_job);
+  fail_unless(result != 0, "NULL job input fail");
+
+  test_job = job_alloc();
+  svr_job_purge(test_job);
+  fail_unless(result >= -1, "empty job input fail: %d", result);/*TODO: fix -1 via log_job_record mock*/
+  }
+END_TEST
+
+START_TEST(find_job_by_array_test)
+  {
+  struct all_jobs alljobs;
+  initialize_all_jobs_array(&alljobs);
+
+  struct job* result = find_job_by_array(NULL,"",0);
+  fail_unless(result == NULL, "NULL all jobs input fail");
+
+  result = find_job_by_array(&alljobs,NULL,0);
+  fail_unless(result == NULL, "NULL job id input fail");
+
+  result = find_job_by_array(&alljobs,"",0);
+  fail_unless(result == NULL, "empty job id input fail");
+  }
+END_TEST
+
+START_TEST(svr_find_job_test)
+  {
+  struct job* result = svr_find_job(NULL,0);
+  fail_unless(result == NULL, "NULL job id input fail");
+
+  result = svr_find_job("",0);
+  fail_unless(result == NULL, "empty job id input fail");
+  }
+END_TEST
+
+START_TEST(get_jobs_array_test)
+  {
+  struct job *test_job = NULL;
+
+  struct job_array *result = get_jobs_array(NULL);
+  fail_unless(result == NULL, "NULL input pointer to pointer to job fail");
+
+  result = get_jobs_array(&test_job);
+  fail_unless(result == NULL, "NULL input pointer to job fail");
+
+  test_job = job_alloc();
+  result = get_jobs_array(&test_job);
+  fail_unless(result == NULL, "get job array fail");
+  }
+END_TEST
+
+START_TEST(get_jobs_queue_test)
+  {
+  struct job *test_job = NULL;
+
+  struct pbs_queue *result = get_jobs_queue(NULL);
+  fail_unless(result == NULL, "NULL input pointer to pointer to job fail");
+
+  result = get_jobs_queue(&test_job);
+  fail_unless(result == NULL, "NULL input pointer to job fail");
+
+  test_job = job_alloc();
+  result = get_jobs_queue(&test_job);
+  fail_unless(result == NULL, "get job queue fail");
+  }
+END_TEST
 
 Suite *job_func_suite(void)
   {
@@ -181,6 +387,70 @@ Suite *job_func_suite(void)
 
   tc_core = tcase_create("split_job_test");
   tcase_add_test(tc_core, split_job_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("job_abt_test");
+  tcase_add_test(tc_core, job_abt_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("conn_qsub_test");
+  tcase_add_test(tc_core, conn_qsub_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("job_alloc_test");
+  tcase_add_test(tc_core, job_alloc_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("job_free_test");
+  tcase_add_test(tc_core, job_free_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("copy_job_test");
+  tcase_add_test(tc_core, copy_job_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("job_clone_test");
+  tcase_add_test(tc_core, job_clone_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("job_clone_wt_test");
+  tcase_add_test(tc_core, job_clone_wt_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("cpy_checkpoint_test");
+  tcase_add_test(tc_core, cpy_checkpoint_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("remove_checkpoint_test");
+  tcase_add_test(tc_core, remove_checkpoint_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("cleanup_restart_file_test");
+  tcase_add_test(tc_core, cleanup_restart_file_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("record_jobinfo_test");
+  tcase_add_test(tc_core, record_jobinfo_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("svr_job_purge_test");
+  tcase_add_test(tc_core, svr_job_purge_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("find_job_by_array_test");
+  tcase_add_test(tc_core, find_job_by_array_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("svr_find_job_test");
+  tcase_add_test(tc_core, svr_find_job_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("get_jobs_array_test");
+  tcase_add_test(tc_core, get_jobs_array_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("get_jobs_array_test");
+  tcase_add_test(tc_core, get_jobs_array_test);
   suite_add_tcase(s, tc_core);
 
   return(s);

@@ -95,3 +95,26 @@ void *next_thing_from_back(resizable_array *ra, int  *iter)
   }
 
 void change_value_hash(hash_table_t *ht, char *key, int new_value) {}
+
+job *job_alloc(void)
+  {
+  job *pj = (job *)calloc(1, sizeof(job));
+
+  if (pj == NULL)
+    {
+    return(NULL);
+    }
+
+  pj->ji_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(pj->ji_mutex,NULL);
+  lock_ji_mutex(pj, __func__, NULL, LOGLEVEL);
+
+  pj->ji_qs.qs_version = PBS_QS_VERSION;
+
+  CLEAR_HEAD(pj->ji_rejectdest);
+  pj->ji_is_array_template = FALSE;
+
+  pj->ji_momhandle = -1;
+
+  return(pj);
+  }

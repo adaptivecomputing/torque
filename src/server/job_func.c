@@ -198,7 +198,7 @@ extern char *log_file;
 extern char *job_log_file;
 
 
-void send_qsub_delmsg(
+static void send_qsub_delmsg(
 
   job  *pjob,  /* I */
   const char *text)  /* I */
@@ -248,7 +248,7 @@ void send_qsub_delmsg(
  *  -1 on failure
  */
 
-int remtree(
+static int remtree(
 
   char *dirname)
 
@@ -411,7 +411,7 @@ int remtree(
 
 int job_abt(
 
-  job         **pjobp, /* I (modified/freed) */
+  struct job         **pjobp, /* I (modified/freed) */
   const char *text)  /* I (optional) */
 
   {
@@ -423,7 +423,22 @@ int job_abt(
   long  job_atr_hold;
   int   job_exit_status;
 
+  if (pjobp == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc, __func__, "NULL input pointer to pointer to job");
+    return(rc);
+    }
+
   job  *pjob = *pjobp;
+
+  if (pjob == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc, __func__, "NULL input pointer to job");
+    return(rc);
+    }
+
   strcpy(job_id, pjob->ji_qs.ji_jobid);
 
   /* save old state and update state to Exiting */
@@ -590,6 +605,12 @@ int conn_qsub(
   int flags;
   int local_errno = 0;
 
+  if (hostname == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input hostname pointer");
+    return(PBSE_BAD_PARAMETER);
+    }
+
   if (EMsg != NULL)
     EMsg[0] = '\0';
 
@@ -697,6 +718,11 @@ void job_free(
   badplace         *bp;
   char              log_buf[LOCAL_LOG_BUF_SIZE];
 
+  if (pj == NULL)
+    {
+    return;
+    }
+
   if (LOGLEVEL >= 8)
     {
     sprintf(log_buf, "freeing job");
@@ -755,7 +781,7 @@ void job_free(
     sprintf(log_buf, "2: jobid = %s", pj->ji_qs.ji_jobid);
     unlock_ji_mutex(pj, __func__, log_buf, LOGLEVEL);
     pthread_mutex_destroy(pj->ji_mutex);
-    memset(pj, 254, sizeof(job));
+    memset(pj, 254, sizeof(job)); /* TODO: remove magic number */
     free(pj);
     }
 
@@ -764,7 +790,7 @@ void job_free(
 
 
 
-job *copy_job(
+/*static*/ job *copy_job(
 
   job       *parent)
 
@@ -772,6 +798,13 @@ job *copy_job(
   job           *pnewjob;
 
   int            i;
+
+  if (parent == NULL)
+    {
+    log_err(errno, __func__, "null parent to copy");
+
+    return(NULL);
+    }
 
   if ((pnewjob = job_alloc()) == NULL)
     {
@@ -813,7 +846,7 @@ job *copy_job(
  * job_clone - create a clone of a job for use with job arrays
  */
 
-job *job_clone(
+/*static*/ job *job_clone(
 
   job       *template_job, /* I */  /* job to clone */
   job_array *pa,           /* I */  /* array which the job is a part of */
@@ -851,6 +884,12 @@ job *job_clone(
     return(NULL);
     }
 
+  if (template_job == NULL)
+    {
+      log_err(PBSE_BAD_PARAMETER, __func__, "template_job* is NULL");
+      return(NULL);
+    }
+
   if ((pnewjob = job_alloc()) == NULL)
     {
     log_err(errno, __func__, "no memory");
@@ -880,7 +919,11 @@ job *job_clone(
   bracket = index(oldid,'[');
   hostname = index(oldid, '.');
 
-  *bracket = '\0';
+  if (bracket != NULL)
+    {
+    *bracket = '\0';
+    }
+
   if (hostname != NULL)
     {
     hostname++;
@@ -889,9 +932,11 @@ job *job_clone(
       oldid, taskid, hostname);
     }
   else
+    {
     snprintf(pnewjob->ji_qs.ji_jobid, sizeof(pnewjob->ji_qs.ji_jobid),
       "%s[%d]",
       oldid, taskid);
+    }
 
   /* update the job filename
    * We could optimize the sub-jobs to all use the same file. We would need a
@@ -922,7 +967,7 @@ job *job_clone(
       if (errno == EEXIST)
         {
         job_free(pnewjob, FALSE);
-        return((job *)1);
+        return((job *)1); /* TODO: what is this magic for */
         }
       else
         {
@@ -1286,6 +1331,12 @@ struct batch_request *cpy_checkpoint(
   pbs_attribute  *pattr;
   mode_t          saveumask = 0;
   
+  if (pjob == NULL)
+  {
+  log_err(PBSE_BAD_PARAMETER, __func__, "null input job pointer");
+  return(NULL);
+  }
+
   pattr = &pjob->ji_wattr[ati];
 
   if ((pattr->at_flags & ATR_VFLAG_SET) == 0)
@@ -1431,7 +1482,21 @@ void remove_checkpoint(
   {
   struct batch_request *preq = NULL;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
-  job                  *pjob = *pjob_ptr;
+  job                  *pjob = NULL;
+
+  if (pjob_ptr == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "null input pointer to job pointer");
+    return;
+    }
+
+  pjob = *pjob_ptr;
+
+  if (pjob == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "null input job pointer");
+    return;
+    }
 
   preq = cpy_checkpoint(preq, pjob, JOB_ATR_checkpoint_name, CKPT_DIR_IN);
 
@@ -1486,6 +1551,11 @@ void cleanup_restart_file(
   job *pjob)  /* I */
 
   {
+  if (pjob == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "null input job pointer");
+    return;
+    }
     /* checkpoint restart file cleanup was successful */
 
 /*    pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_COPIED; */
@@ -1520,6 +1590,13 @@ int record_jobinfo(
   extern pthread_mutex_t *job_log_mutex; 
   long                    record_job_script = FALSE;
   
+  if (pjob == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc, __func__, "null input job pointer");
+    return(rc);
+    }
+
   pthread_mutex_lock(job_log_mutex);
   if ((rc = job_log_open(job_log_file, path_jobinfo_log)) < 0)
     {
@@ -1534,12 +1611,12 @@ int record_jobinfo(
     log_err(ENOMEM, __func__, "Can't allocate memory");
     return(-1);
     }
- 
+
   append_dynamic_string(buffer, "<Jobinfo>\n");
   append_dynamic_string(buffer, "\t<Job_Id>");
   append_dynamic_string(buffer, pjob->ji_qs.ji_jobid);
   append_dynamic_string(buffer, "</JobId>\n");
- 
+
  #if 0
   if ((rc = log_job_record(buffer->str)) != PBSE_NONE)
     {
@@ -1564,14 +1641,14 @@ int record_jobinfo(
            The dependecies will show on the submit_args pbs_attribute */
         continue;
         }
-      
+
       append_dynamic_string(buffer, "\t<");
       append_dynamic_string(buffer, job_attr_def[i].at_name);
       append_dynamic_string(buffer, ">");
 
       if (pattr->at_type == ATR_TYPE_RESC)
         append_dynamic_string(buffer, "\n");
-      
+
       rc = attr_to_str(buffer, job_attr_def+i, pjob->ji_wattr[i], 1);
       
       if (pattr->at_type == ATR_TYPE_RESC)
@@ -1681,6 +1758,14 @@ int svr_job_purge(
   int           do_delete_array = FALSE;
   job_array     *pa = NULL;
   char          array_id[PBS_MAXSVRJOBID+1];
+  
+  if (pjob == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc, __func__, "null input job pointer fail");
+    return(rc);
+    }
+
  
   strcpy(job_id, pjob->ji_qs.ji_jobid);
   strcpy(job_fileprefix, pjob->ji_qs.ji_fileprefix);
@@ -1731,11 +1816,13 @@ int svr_job_purge(
       {
       if (pa != NULL)
         {
-        /* erase the pointer to this job in the job array */
-        free(pa->job_ids[pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long]);
-        pa->job_ids[pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long] = NULL;
+        if (pa->job_ids != NULL)
+          {
+          free(pa->job_ids[pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long]);
+          pa->job_ids[pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long] = NULL;
+          }
         
-        /* if there are no more jobs in the arry,
+        /* if there are no more jobs in the array,
          * then we can clean that up too */
         pa->ai_qs.num_purged++;
         if (pa->ai_qs.num_purged == pa->ai_qs.num_jobs)
@@ -1919,8 +2006,21 @@ job_array *get_jobs_array(
   char       log_buf[LOCAL_LOG_BUF_SIZE];
   char       jobid[PBS_MAXSVRJOBID + 1];
   char       arrayid[PBS_MAXSVRJOBID + 1];
-  job       *pjob = *pjob_ptr;
+  job       *pjob = NULL;
   job_array *pa = NULL;
+
+  if (pjob_ptr == NULL)
+    {
+      log_err(PBSE_BAD_PARAMETER, __func__, "NULL input pointer to pointer");
+      return(NULL);
+    }
+    pjob = *pjob_ptr;
+
+  if (pjob == NULL)
+    {
+      log_err(PBSE_BAD_PARAMETER, __func__, "NULL input job pointer");
+      return(NULL);
+    }
 
   strcpy(jobid, pjob->ji_qs.ji_jobid);
 
@@ -1950,13 +2050,26 @@ job_array *get_jobs_array(
 
 
 
-pbs_queue *get_jobs_queue(
+struct pbs_queue *get_jobs_queue(
 
   job **pjob_ptr)
 
   {
-  job       *pjob = *pjob_ptr;
+  job       *pjob = NULL;
   pbs_queue *pque;
+
+  if (pjob_ptr == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input pointer to pointer");
+    return(NULL);
+    }
+  pjob = *pjob_ptr;
+
+  if (pjob == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input job pointer");
+    return(NULL);
+    }
 
   pque = lock_queue_with_job_held(pjob->ji_qhdr, pjob_ptr);
 
@@ -1966,7 +2079,7 @@ pbs_queue *get_jobs_queue(
 
 
 
-int hostname_in_externals(
+/*static*/ int hostname_in_externals(
 
   char *hostname,
   char *externals)
@@ -1996,7 +2109,7 @@ int hostname_in_externals(
 
 
 
-int fix_external_exec_hosts(
+/*static*/ int fix_external_exec_hosts(
 
   job *pjob) /* the external sub-job */
 
@@ -2010,7 +2123,7 @@ int fix_external_exec_hosts(
 
   if ((exec_host == NULL) ||
       (externals == NULL))
-    return(-2);
+    return(PBSE_BAD_PARAMETER);
 
   /* wipe out the current destination */
   pjob->ji_qs.ji_destin[0] = '\0';
@@ -2077,7 +2190,7 @@ int fix_external_exec_hosts(
 
 
 
-int fix_cray_exec_hosts(
+/*static*/ int fix_cray_exec_hosts(
 
   job *pjob)
 
@@ -2124,7 +2237,7 @@ int fix_cray_exec_hosts(
 
 
 
-int change_external_job_name(
+/*static*/ int change_external_job_name(
 
   job *pjob)
 
