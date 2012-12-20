@@ -335,6 +335,17 @@ job *find_job_by_array(
   job *pj = NULL;
   int  i;
 
+  if (aj == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "null struct all_jobs pointer fail");
+    return(NULL);
+    }
+  if (job_id == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "null job_id pointer fail");
+    return(NULL);
+    }
+
   pthread_mutex_lock(aj->alljobs_mutex);
   
   i = get_value_hash(aj->ht, job_id);
@@ -499,6 +510,12 @@ void initialize_all_jobs_array(
   struct all_jobs *aj)
 
   {
+  if (aj == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER,__func__,"null input job array");
+    return;
+    }
+
   aj->ra = initialize_resizable_array(INITIAL_JOB_SIZE);
   aj->ht = create_hash(INITIAL_HASH_SIZE);
 
@@ -521,11 +538,25 @@ int insert_job(
   job             *pjob)
 
   {
-  int           rc;
+  int rc = -1;
+
+  if (aj == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc,__func__,"null job array input");
+    return(rc);
+    }
+  if (pjob == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc,__func__,"null job input");
+    return(rc);
+    }
 
   pthread_mutex_lock(aj->alljobs_mutex);
 
-  if ((rc = insert_thing(aj->ra,pjob)) == -1)
+  rc = insert_thing(aj->ra,pjob);
+  if (rc == -1)
     {
     rc = ENOMEM;
     log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE\n");
@@ -533,7 +564,6 @@ int insert_job(
   else
     {
     add_hash(aj->ht, rc, pjob->ji_qs.ji_jobid);
-
     rc = PBSE_NONE;
     }
 
@@ -560,8 +590,27 @@ int insert_job_after(
   job             *pjob)
 
   {
-  int rc;
-  int i;
+  int rc = -1;
+  int i = 0;
+
+  if (aj == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc, __func__, "null job array input");
+    return(rc);
+    }
+  if (already_in == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc, __func__, "null job after input");
+    return(rc);
+    }
+  if (pjob == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc, __func__, "null job input");
+    return(rc);
+    }
 
   pthread_mutex_lock(aj->alljobs_mutex);
 
@@ -571,7 +620,8 @@ int insert_job_after(
     rc = THING_NOT_FOUND;
   else
     {
-    if ((rc = insert_thing_after(aj->ra,pjob,i)) == -1)
+    rc = insert_thing_after(aj->ra,pjob,i);
+    if (rc == -1)
       {
       rc = ENOMEM;
       log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE");
@@ -598,11 +648,25 @@ int insert_job_after_index(
   job             *pjob)
 
   {
-  int rc;
+  int rc = -1;
+
+  if (aj == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc, __func__, "null job array input");
+    return(rc);
+    }
+  if (pjob == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc, __func__, "null job input");
+    return(rc);
+    }
 
   pthread_mutex_lock(aj->alljobs_mutex);
 
-  if ((rc = insert_thing_after(aj->ra, pjob, index)) == -1)
+  rc = insert_thing_after(aj->ra, pjob, index);
+  if (rc == -1)
     {
     rc = ENOMEM;
     log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE");
@@ -622,19 +686,31 @@ int insert_job_after_index(
 
 
 
-/*
- */
 int insert_job_first(
 
   struct all_jobs *aj,
   job             *pjob)
 
   {
-  int          rc;
+  int rc = -1;
+
+  if (aj == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc, __func__, "null job array input");
+    return(rc);
+    }
+  if (pjob == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc, __func__, "null job input");
+    return(rc);
+    }
 
   pthread_mutex_lock(aj->alljobs_mutex);
 
-  if ((rc = insert_thing_after(aj->ra,pjob,ALWAYS_EMPTY_INDEX)) == -1)
+  rc = insert_thing_after(aj->ra,pjob,ALWAYS_EMPTY_INDEX);
+  if (rc == -1)
     {
     rc = ENOMEM;
     log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE");
@@ -663,7 +739,18 @@ int get_jobs_index(
   job             *pjob)
 
   {
-  int  index;
+  int index = -1;
+
+  if (aj == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "null job array input");
+    return(PBSE_BAD_PARAMETER);
+    }
+  if (pjob == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "null job input");
+    return(PBSE_BAD_PARAMETER);
+    }
 
   if (pthread_mutex_trylock(aj->alljobs_mutex))
     {
@@ -698,8 +785,21 @@ int has_job(
   job             *pjob)
 
   {
-  int  rc;
+  int  rc = -1;
   char jobid[PBS_MAXSVRJOBID + 1];
+
+  if (aj == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc,__func__,"null job array input");
+    return(rc);
+    }
+  if (pjob == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc,__func__,"null job input");
+    return(rc);
+    }
 
   strcpy(jobid, pjob->ji_qs.ji_jobid);
 
@@ -748,6 +848,19 @@ int  remove_job(
   int rc = PBSE_NONE;
   int index;
 
+  if (pjob == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc,__func__,"null input job pointer fail");
+    return(rc);
+    }
+  if (aj == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc,__func__,"null input array pointer fail");
+    return(rc);
+    }
+
   if (LOGLEVEL >= 10)
     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
   if (pthread_mutex_trylock(aj->alljobs_mutex))
@@ -789,6 +902,17 @@ job *next_job(
   {
   job *pjob;
 
+  if (aj == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "null input pointer to all_jobs struct");
+    return(NULL);
+    }
+  if (iter == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "null input iterator");
+    return(NULL);
+    }
+
   pthread_mutex_lock(aj->alljobs_mutex);
 
   pjob = (job *)next_thing(aj->ra,iter);
@@ -822,6 +946,17 @@ job *next_job_from_back(
   {
   job *pjob;
 
+  if (aj == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "null input pointer to all_jobs struct");
+    return(NULL);
+    }
+  if (iter == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "null input iterator");
+    return(NULL);
+    }
+
   pthread_mutex_lock(aj->alljobs_mutex);
 
   pjob = (job *)next_thing_from_back(aj->ra,iter);
@@ -854,9 +989,22 @@ int swap_jobs(
   job             *job2)
 
   {
-  int rc;
+  int rc = -1;
   int new1;
   int new2;
+
+  if (job1 == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc,__func__,"null input pointer to job1");
+    return(rc);
+    }
+  if (job2 == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc,__func__,"null input pointer to job2");
+    return(rc);
+    }
 
   if (aj == NULL)
     {

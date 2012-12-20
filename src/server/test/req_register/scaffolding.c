@@ -117,7 +117,7 @@ int svr_chk_owner(struct batch_request *preq, job *pjob)
   return(0);
   }
 
-int job_abt(job **pjobp, const char *text)
+int job_abt(struct job **pjobp, const char *text)
   {
   *pjobp = NULL;
   return(0);

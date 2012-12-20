@@ -141,7 +141,7 @@ void req_reject(int code, int aux, struct batch_request *preq, const char *HostN
   exit(1);
   }
 
-int job_abt(job **pjobp, const char *text)
+int job_abt(struct job **pjobp, const char *text)
   {
   fprintf(stderr, "The call to job_abt to be mocked!!\n");
   exit(1);
