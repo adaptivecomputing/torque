@@ -509,7 +509,7 @@ struct pbsnode *find_nodebyname(const char *name)
 
 hello_container *initialize_hello_container(hello_container *hc)
   {
-  retunr(NULL);
+  return(NULL);
   }
 
 void free_dynamic_string(dynamic_string *ds)

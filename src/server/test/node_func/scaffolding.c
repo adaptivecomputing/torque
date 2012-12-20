@@ -132,7 +132,7 @@ void *get_next(list_link pl, char *file, int line)
 resizable_array *initialize_resizable_array(int size)
   {
   size = 10;
-  resizable_array *ra = calloc(1, sizeof(resizable_array));
+  resizable_array *ra = (resizable_array *)calloc(1, sizeof(resizable_array));
   size_t           amount = sizeof(slot) * size;
 
   ra->max       = size;
@@ -140,7 +140,7 @@ resizable_array *initialize_resizable_array(int size)
   ra->next_slot = 1;
   ra->last      = 0;
 
-  ra->slots = calloc(1, amount);
+  ra->slots = (slot *)calloc(1, amount);
 
   return(ra);
   }
@@ -179,12 +179,12 @@ void append_link(tlist_head *head, list_link *new_link, void *pobj)
 
 hash_table_t *create_hash(int size)
   {
-  hash_table_t *ht = calloc(1, sizeof(hash_table_t));
+  hash_table_t *ht = (hash_table_t *)calloc(1, sizeof(hash_table_t));
   size_t        amount = sizeof(bucket *) * size;
 
   ht->size = size;
   ht->num  = 0;
-  ht->buckets = calloc(1, amount);
+  ht->buckets = (bucket **)calloc(1, amount);
 
   return(ht);
   }
@@ -330,7 +330,7 @@ int append_dynamic_string(
 
 dynamic_string *get_dynamic_string(int initial_size, const char *str)
   {
-  dynamic_string *ds = calloc(1, sizeof(dynamic_string));
+  dynamic_string *ds = (dynamic_string *)calloc(1, sizeof(dynamic_string));
 
   if (ds == NULL)
     return(ds);
@@ -340,7 +340,7 @@ dynamic_string *get_dynamic_string(int initial_size, const char *str)
   else
     ds->size = DS_INITIAL_SIZE;
 
-  ds->str = calloc(1, ds->size);
+  ds->str = (char *)calloc(1, ds->size);
 
   if (ds->str == NULL)
     {

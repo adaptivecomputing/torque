@@ -220,7 +220,7 @@ int issue_signal(job *pjob, char *signame, void (*func)(struct work_task *), voi
 resizable_array *initialize_resizable_array(int size)
   {
   size = 10;
-  resizable_array *ra = calloc(1, sizeof(resizable_array));
+  resizable_array *ra = (resizable_array *)calloc(1, sizeof(resizable_array));
   size_t           amount = sizeof(slot) * size;
 
   ra->max       = size;
@@ -228,7 +228,7 @@ resizable_array *initialize_resizable_array(int size)
   ra->next_slot = 1;
   ra->last      = 0;
 
-  ra->slots = calloc(1, amount);
+  ra->slots = (slot *)calloc(1, amount);
 
   return(ra);
   }
@@ -707,7 +707,7 @@ ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
 struct batch_request *alloc_br(int type)
   {
   struct batch_request *request = NULL;
-  request = calloc(1, sizeof(struct batch_request));
+  request = (batch_request *)calloc(1, sizeof(struct batch_request));
   request->rq_type = type;
   return request;
   }
