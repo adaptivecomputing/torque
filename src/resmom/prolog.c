@@ -865,7 +865,13 @@ int run_pelog(
       }
 
     if((fds1 < 0)||(fds2 < 0))
+      {
+      if(fds1 >= 0)
+        close(fds1);
+      if(fds2 >= 0)
+        close(fds2);
       return -1;
+      }
 
     if (pe_io_type != PE_IO_TYPE_ASIS)
       {

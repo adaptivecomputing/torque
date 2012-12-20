@@ -328,7 +328,7 @@ int DArrayAppend(
   void     *Item)  /* I */
 
   {
-  void *tmp = NULL;
+  void **tmp = NULL;
 
   if (Array->AppendIndex >= Array->Length)
     {
@@ -337,7 +337,7 @@ int DArrayAppend(
     if (newLength <= 10)
       newLength = 10;
 
-    tmp = calloc(newLength, sizeof(Array->Data[0]));
+    tmp = (void **)calloc(newLength, sizeof(Array->Data[0]));
 
     if (tmp == NULL)
       {
@@ -349,7 +349,7 @@ int DArrayAppend(
 
     memcpy(tmp, Array->Data, sizeof(Array->Data[0]) * Array->Length);
     free(Array->Data);
-    Array->Data = &tmp;
+    Array->Data = tmp;
     Array->Length = newLength;
     }
 
