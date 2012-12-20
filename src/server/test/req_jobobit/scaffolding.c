@@ -244,8 +244,11 @@ job *svr_find_job(char *jobid, int get_subjob)
 
   if (bad_job == 0)
     {
-    pjob = calloc(1, sizeof(pjob));
-    strcpy(pjob->ji_qs.ji_jobid, jobid);
+    pjob = calloc(1, sizeof(*pjob));
+    if (jobid != NULL)
+      {
+      strncpy(pjob->ji_qs.ji_jobid, jobid, sizeof(pjob->ji_qs.ji_jobid)-1);
+      }
     pjob->ji_wattr[JOB_ATR_reported].at_flags = ATR_VFLAG_SET;
   
     if (reported)
