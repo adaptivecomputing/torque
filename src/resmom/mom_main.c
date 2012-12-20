@@ -2980,7 +2980,8 @@ static u_long setvarattr(
 
   /* step forward to end of TTL */
 
-  while (!isspace(*ptr))
+  while ((!isspace(*ptr)) &&
+         (*ptr != '\0'))
     ptr++;
 
   if (*ptr == '\0')
@@ -3644,8 +3645,7 @@ int read_config(
 
       if (LOGLEVEL >= 6)
         {
-        sprintf(log_buffer, "processing config line '%.64s'",
-                str);
+        sprintf(log_buffer, "processing config line '%.64s'", str);
 
         log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
         }
@@ -8562,6 +8562,10 @@ int read_layout_file()
   while (fgets(line, sizeof(line), layout) != NULL)
     {
     empty_line = TRUE;
+    /* initialize the end to -1 while start defaults to zero
+     * so that add_mic_status() skips over the nodeboard if not 
+     * configured */
+    node_boards[i].mic_end_index = -1;
 
     /* Strip off comments */
     if ((tok = strchr(line, '#')) != NULL)
@@ -8603,7 +8607,21 @@ int read_layout_file()
           }
 
         }
+      else if (strcmp(tok, "mic") == 0)
+        {
+        /* read the mics specified for this node board. This is in the form
+         * index1[-index2] specifying a range*/
+        char *micval = strdup(val);
+        char *start  = strtok(micval, "-");
+        char *end    = strtok(NULL, "-");
+        node_boards[i].mic_start_index = strtol(start, NULL, 10);
+        node_boards[i].mic_end_index = node_boards[i].mic_start_index;
 
+        if (end != NULL)
+          node_boards[i].mic_end_index = strtol(end, NULL, 10);
+
+        free(micval);
+        }
       else if (strcmp(tok,"memsize") == 0)
         {
         node_boards[i].memsize = atoi(val);

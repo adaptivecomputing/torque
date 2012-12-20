@@ -303,7 +303,7 @@ void initialize_all_jobs_array(struct all_jobs *aj)
   exit(1);
   }
 
-int job_abt(job **pjobp, const char *text)
+int job_abt(struct job **pjobp, const char *text)
   {
   fprintf(stderr, "The call to job_abt needs to be mocked!!\n");
   exit(1);
@@ -507,8 +507,9 @@ struct pbsnode *find_nodebyname(const char *name)
   return(NULL);
   }
 
-void initialize_hello_container(hello_container *hc)
+hello_container *initialize_hello_container(hello_container *hc)
   {
+  retunr(NULL);
   }
 
 void free_dynamic_string(dynamic_string *ds)
