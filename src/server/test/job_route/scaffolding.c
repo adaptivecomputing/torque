@@ -17,7 +17,7 @@ resource_def *svr_resc_def;
 pthread_mutex_t *reroute_job_mutex;
 int                     route_retry_interval = 5; /* time in seconds to check routing queues */
 
-int svr_movejob(job *jobp, char *destination, struct batch_request *req)
+int svr_movejob(job *jobp, char *destination, int *i, struct batch_request *req)
   {
   fprintf(stderr, "The call to svr_movejob needs to be mocked!!\n");
   exit(1);
@@ -181,7 +181,7 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   return(0);
   }
 
-pbs_queue *find_queuebyname(char *quename)
+pbs_queue *find_queuebyname(const char *quename)
   {
   return(NULL);
   }

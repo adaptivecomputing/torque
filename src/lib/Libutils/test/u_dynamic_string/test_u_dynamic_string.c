@@ -10,19 +10,19 @@
 
 char  buf[4096];
 
-char *strings[] = {"tom", "george", "bart", "da bears", "glockenspiel", "frijoles" };
+char *strings[] = {(char *)"tom", (char *)"george", (char *)"bart", (char *)"da bears", (char *)"glockenspiel", (char *)"frijoles" };
 int   strings_len = 6; /* number of strings in strings */
 
-char *sentence[] = {"I ", "am ", "going ", "to ", "fly ", "to ", "the ", "moon ", "alsdkjfasdl;jkfasdlkj ",
-                     "'tiki' ", "slartibartfast & ", "<jimbo> ", " says I\""};
+char *sentence[] = {(char *)"I ", (char *)"am ", (char *)"going ", (char *)"to ", (char *)"fly ", (char *)"to ", (char *)"the ", (char *)"moon ", (char *)"alsdkjfasdl;jkfasdlkj ",
+    (char *)"'tiki' ", (char *)"slartibartfast & ", (char *)"<jimbo> ", (char *)" says I\""};
 int   num_words = 13; /* number of strings in sentence */
-char *sentence_concat = "I am going to fly to the moon alsdkjfasdl;jkfasdlkj 'tiki' slartibartfast & <jimbo>  says I\"";
-char *sentence_zero_to_six = "I am going to fly to the ";
-char *sentence_seven_to_end = "moon alsdkjfasdl;jkfasdlkj 'tiki' slartibartfast & <jimbo>  says I\"";
-char *sentence_three_to_ten = "to fly to the moon alsdkjfasdl;jkfasdlkj 'tiki' slartibartfast & ";
-char *sentence_escaped = "I am going to fly to the moon alsdkjfasdl;jkfasdlkj &apos;tiki&apos; slartibartfast &amp; &lt;jimbo&gt;  says I&quot;";
-char *sentence_seven_end_escaped = "moon alsdkjfasdl;jkfasdlkj &apos;tiki&apos; slartibartfast &amp; &lt;jimbo&gt;  says I&quot;";
-char *sentence_three_ten_escaped = "to fly to the moon alsdkjfasdl;jkfasdlkj &apos;tiki&apos; slartibartfast &amp; ";
+char *sentence_concat = (char *)"I am going to fly to the moon alsdkjfasdl;jkfasdlkj 'tiki' slartibartfast & <jimbo>  says I\"";
+char *sentence_zero_to_six = (char *)"I am going to fly to the ";
+char *sentence_seven_to_end = (char *)"moon alsdkjfasdl;jkfasdlkj 'tiki' slartibartfast & <jimbo>  says I\"";
+char *sentence_three_to_ten = (char *)"to fly to the moon alsdkjfasdl;jkfasdlkj 'tiki' slartibartfast & ";
+char *sentence_escaped = (char *)"I am going to fly to the moon alsdkjfasdl;jkfasdlkj &apos;tiki&apos; slartibartfast &amp; &lt;jimbo&gt;  says I&quot;";
+char *sentence_seven_end_escaped = (char *)"moon alsdkjfasdl;jkfasdlkj &apos;tiki&apos; slartibartfast &amp; &lt;jimbo&gt;  says I&quot;";
+char *sentence_three_ten_escaped = (char *)"to fly to the moon alsdkjfasdl;jkfasdlkj &apos;tiki&apos; slartibartfast &amp; ";
 
 
 START_TEST(initialize)
@@ -323,7 +323,7 @@ END_TEST
 START_TEST(char_size_test)
   {
   dynamic_string    *ds = get_dynamic_string(-1, NULL);
-  char              *str = "a monday";
+  char              *str = (char *)"a monday";
   int                num_chars = 8;
   int                i;
   struct size_value  sz;

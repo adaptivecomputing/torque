@@ -176,8 +176,8 @@ START_TEST(prop_test)
   int                   n2_rtd = 0;
   int                   n3_rtd = 0;
   int                   n4_rtd = 0;
-  char                 *feature = "tom";
-  char                 *feature2 = "bob";
+  char                 *feature = (char *)"tom";
+  char                 *feature2 = (char *)"bob";
   struct prop          *props = NULL;
   struct prop          *props2 = NULL;
 

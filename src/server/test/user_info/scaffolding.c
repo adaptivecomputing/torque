@@ -28,7 +28,7 @@ int add_hash(hash_table_t *ht, int index, void *thing)
   return(0);
   }
 
-int num_array_jobs(char *array_req)
+int num_array_jobs(const char *array_req)
   {
   return(11);
   }

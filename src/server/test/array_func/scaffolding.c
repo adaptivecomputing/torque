@@ -61,7 +61,7 @@ int release_job(struct batch_request *preq, void *j)
   exit(1);
   }
 
-void post_modify_arrayreq(struct work_task *pwt)
+void post_modify_arrayreq(batch_request *br)
   {
   fprintf(stderr, "The call to post_modify_arrayreq needs to be mocked!!\n");
   exit(1);
@@ -256,7 +256,7 @@ int unlock_ai_mutex(
 
   job_array  *pa,
   const char *id,
-  char       *msg,
+  const char       *msg,
   int        logging)
 
   {
@@ -275,7 +275,7 @@ int lock_ai_mutex(
 
   job_array  *pa,
   const char *id,
-  char       *msg,
+  const char       *msg,
   int        logging)
 
   {

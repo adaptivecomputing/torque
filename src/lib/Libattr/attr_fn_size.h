@@ -8,7 +8,7 @@ int decode_size(pbs_attribute *patr, const char *name, const char *rescn, const 
 
 int encode_size(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm);
 
-int set_size(struct pbs_attribute *attr, struct pbs_attribute *new, enum batch_op op);
+int set_size(struct pbs_attribute *attr, struct pbs_attribute *newAttr, enum batch_op op);
 
 int comp_size(struct pbs_attribute *attr, struct pbs_attribute *with);
 

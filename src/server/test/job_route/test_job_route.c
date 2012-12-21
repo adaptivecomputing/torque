@@ -35,8 +35,8 @@ START_TEST(test_is_bad_dest)
   CLEAR_HEAD(j.ji_rejectdest);
   strcpy(j.ji_qs.ji_destin, "test");
   add_dest(&j);
-  fail_unless(NULL == is_bad_dest(&j, "random"));
-  fail_unless(NULL != is_bad_dest(&j, "test"));
+  fail_unless(NULL == is_bad_dest(&j, (char *)"random"));
+  fail_unless(NULL != is_bad_dest(&j, (char *)"test"));
   }
 END_TEST
 

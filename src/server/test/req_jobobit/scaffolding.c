@@ -138,7 +138,7 @@ void release_req(struct work_task *pwt)
   exit(1);
   }
 
-void free_nodes(node_info **ninfo_arr) {}
+void free_nodes(job *) {}
 
 void free_br(struct batch_request *preq) {}
 
@@ -154,7 +154,7 @@ void account_jobend( job *pjob, char *used)
   exit(1);
   }
 
-struct work_task *set_task(enum work_type type, long event_id, void (*func)(), void *parm, int get_lock)
+struct work_task *set_task(enum work_type type, long event_id, void (*func)(work_task *), void *parm, int get_lock)
   {
   return(NULL);
   }
@@ -182,7 +182,7 @@ void *get_next(list_link pl, char *file, int line)
   exit(1);
   }
 
-int issue_Drequest(int conn, struct batch_request *request, void (*func)(struct work_task *), struct work_task **ppwt)
+int issue_Drequest(int conn, batch_request *request)
   {
   if (bad_drequest)
     return(-1);
@@ -221,7 +221,7 @@ void append_link(tlist_head *head, list_link *new_link, void *pobj)
   new_link->ll_prior->ll_next = new_link; /* now visible to forward iteration */
   }
 
-int svr_connect(pbs_net_t hostaddr, unsigned int port, struct pbsnode *pnode, void *(*func)(void *), enum conn_type cntype)
+int svr_connect(unsigned long, unsigned int, int*, pbsnode*, void* (*)(void*), conn_type)
   {
   if (bad_connect)
     return(-1);
@@ -244,7 +244,7 @@ job *svr_find_job(char *jobid, int get_subjob)
 
   if (bad_job == 0)
     {
-    pjob = (job *)calloc(1, sizeof(pjob));
+    pjob = (job *)calloc(1, sizeof(job));
     strcpy(pjob->ji_qs.ji_jobid, jobid);
     pjob->ji_wattr[JOB_ATR_reported].at_flags = ATR_VFLAG_SET;
   
@@ -297,7 +297,7 @@ int get_svr_attr_l(int index, long *l)
   return(0);
   }
 
-int safe_strncat(char *str, char *to_append, size_t space_remaining)
+int safe_strncat(char *str, const char *to_append, size_t space_remaining)
   {
   return(0);
   }
@@ -329,7 +329,7 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   return(0);
   }
 
-int lock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }
@@ -355,14 +355,14 @@ int unlock_node(
     
   struct pbsnode *the_node,
   const char     *id,
-  char           *msg,
+  const char           *msg,
   int             logging)
 
   {
   return(0);
   }
 
-int unlock_ai_mutex(job_array *pa, const char *id, char *msg, int logging)
+int unlock_ai_mutex(job_array *pa, const char *id, const char *msg, int logging)
   {
   return(0);
   }

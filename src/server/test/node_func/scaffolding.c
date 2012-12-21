@@ -80,7 +80,7 @@ int add_hash(hash_table_t *ht, int value, void *key)
   return(0);
   }
 
-struct work_task *set_task(enum work_type type, long event_id, void (*func)(), void *parm, int get_lock)
+struct work_task *set_task(enum work_type type, long event_id, void (*func)(work_task *), void *parm, int get_lock)
   {
   fprintf(stderr, "This mock set_task always returns NULL!!\n");
   return(NULL);
@@ -201,12 +201,12 @@ AvlTree AVL_insert(u_long key, uint16_t port, struct pbsnode *node, AvlTree tree
   return(NULL);
   }
 
-int unlock_node(struct pbsnode *the_node, const char *id, char *msg, int logging)
+int unlock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
   {
   return(0);
   }                           
 
-int lock_node(struct pbsnode *the_node, const char *id, char *msg, int logging)
+int lock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
   { 
   return(0); 
   }                           
@@ -232,14 +232,14 @@ struct tcp_chan* DIS_tcp_setup(int sock)
 
 
 
-int DIS_tcp_wflush(int sock)
+int DIS_tcp_wflush(tcp_chan *c)
   {
   fprintf(stderr, "The call to DIS_tcp_wflush needs to be mocked!!\n");
   exit(1);                    
   }
 
 
-int diswcs (int stream, const char *value, int len)
+int diswcs (tcp_chan* c, char const* a, unsigned long l)
   {
   fprintf(stderr, "The call to diswcs needs to be mocked!!\n");
   exit(1);                    
@@ -300,7 +300,6 @@ int get_addr_info(char *name, struct sockaddr_in *sa_info, int retry)
 int is_compose(
 
   struct tcp_chan *chan,
-  char *server_name,
   int   command)
 
   {

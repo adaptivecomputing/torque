@@ -71,7 +71,7 @@ void port_forwarder( struct pfwdsock *socks, int (*connfunc)(char *, long, char 
   exit(1);
   }
 
-int cnt2server(char *SpecServer)
+int cnt2server(const char *SpecServer)
   {
   fprintf(stderr, "The call to cnt2server to be mocked!!\n");
   exit(1);
@@ -167,7 +167,7 @@ int pbs_deljob_err( int c, char *jobid, char *extend, int *local_errno)
   exit(1);
   }
 
-void calloc_or_fail( char **dest, int alloc_size, const char *err_msg)
+void calloc_or_fail(memmgr ** mgr, char **dest, int alloc_size, const char *err_msg)
   {
   fprintf(stderr, "The call to calloc_or_fail to be mocked!!\n");
   exit(1);
@@ -179,7 +179,7 @@ int parse_depend_list( char *list, char *rtn_list,  int rtn_size )
   exit(1);
   }
 
-void parse_variable_list(job_data **dest_hash, job_data *user_env, int var_type,  int op_type,  char *the_list) 
+void parse_variable_list(memmgr **mgr, job_data **dest_hash, job_data *user_env, int var_type,  int op_type,  char *the_list)
   {
   fprintf(stderr, "The call to parse_variable_list to be mocked!!\n");
   exit(1);
@@ -203,7 +203,7 @@ void hash_add_or_exit(memmgr **mm, job_data **head, const char *name, const char
   exit(1);
   }
 
-void set_env_opts(job_data **env_attr, char **envp) 
+void set_env_opts(memmgr **mgr, job_data **env_attr, char **envp)
   {
   fprintf(stderr, "The call to set_env_opts to be mocked!!\n");
   exit(1);
@@ -251,7 +251,7 @@ int hash_strlen(job_data *src)
   exit(1);
   }
 
-int safe_strncat(char *str, char *to_append, size_t space_remaining)
+int safe_strncat(char *str, const char *to_append, size_t space_remaining)
   {
   fprintf(stderr, "The call to safe_strncat to be mocked!!\n");
   exit(1);

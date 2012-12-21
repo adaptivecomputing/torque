@@ -9,12 +9,12 @@
 #include "pbs_error.h"
 
 char  buf[4096];
-char *strings[] = { "one", "two", "three", "four" };
+char *strings[] = { (char *)"one", (char *)"two", (char *)"three", (char *)"four" };
 
 START_TEST(threadsafe_tokenizer_test)
   {
   char  my_str[] = "one,two,three,four";
-  char *delim = ",";
+  char *delim = (char *)",";
   char *tok;
   char *str_ptr = my_str;
   int   i = 0;
@@ -38,7 +38,7 @@ END_TEST
 
 START_TEST(safe_strncat_test)
   {
-  char *names[] = { "slartibartfast", "arthur dent", "trillian", "zaphod beeblebrox", "ford prefect", "marvin the robot" };
+  char *names[] = { (char *)"slartibartfast", (char *)"arthur dent", (char *)"trillian", (char *)"zaphod beeblebrox", (char *)"ford prefect", (char *)"marvin the robot" };
   /*int   name_lens[] = {15, 12, 9, 18, 13, 17};*/
   char  small_buf[32];
   int   ret;
@@ -62,7 +62,7 @@ END_TEST
 
 START_TEST(trim_whitespace_test)
   {
-  char *strs[] = { "   one ", " \ntwo", "three   ", " four", "five ", " six ", "\t" };
+  char *strs[] = { (char *)"   one ", (char *)" \ntwo", (char *)"three   ", (char *)" four", (char *)"five ", (char *)" six ", (char *)"\t" };
   char  firsts[] = { 'o', 't', 't', 'f', 'f', 's', '\0' };
   char  lasts[] = { 'e', 'o', 'e', 'r', 'e', 'x' };
   int   num_strs = 7;

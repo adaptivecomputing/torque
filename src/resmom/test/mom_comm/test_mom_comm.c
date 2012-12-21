@@ -28,7 +28,7 @@ END_TEST
 
 START_TEST(test_get_received_node_entry)
   {
-  fail_unless(get_received_node_entry("pickle") != NULL);
+  fail_unless(get_received_node_entry((char *)"pickle") != NULL);
   }
 END_TEST
 

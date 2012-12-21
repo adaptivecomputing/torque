@@ -54,8 +54,8 @@ struct node_state
 void log_record(int eventtype, int objclass, const char *objname, const char *msg) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_err(int errnum, const char *routine, const char *text) {}
-int lock_node(struct pbsnode *pnode, const char *method, char *msg, int log_level) {return(0);}
-int unlock_node(struct pbsnode *pnode, const char *method, char *msg, int log_level) {return(0);}
+int lock_node(struct pbsnode *pnode, const char *method, const char *msg, int log_level) {return(0);}
+int unlock_node(struct pbsnode *pnode, const char *method, const char *msg, int log_level) {return(0);}
 
 
 
@@ -2162,9 +2162,7 @@ void free_br(struct batch_request *preq) {}
 int issue_Drequest(
 
   int                    conn,
-  struct batch_request  *request,
-  void                 (*func) (struct work_task *),
-  struct work_task     **ppwt)
+  struct batch_request  *request)
 
   {
   return(0);
@@ -2179,16 +2177,7 @@ pbs_net_t get_hostaddr(
   return(0);
   }
 
-int create_alps_reservation(
-
-  char       *exec_hosts,
-  char       *username,
-  char       *jobid,
-  char       *apbasil_path,
-  char       *apbasil_protocol,
-  long long   pagg_id_value,
-  char      **reservation_id)
-
+int create_alps_reservation(job *)
   {
   return(0);
   }

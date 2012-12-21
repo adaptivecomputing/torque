@@ -11,9 +11,9 @@ int decode_tv(pbs_attribute *patr, const char *name, const char *rescn, const ch
 
 int encode_tv(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm);
 
-int set_tv(struct pbs_attribute *attr, struct pbs_attribute *new, enum batch_op op);
+int set_tv(struct pbs_attribute *attr, struct pbs_attribute *newAttr, enum batch_op op);
 
 int comp_tv(struct pbs_attribute *attr, struct pbs_attribute *with);
 
-int job_radix_action (pbs_attribute *new, void *pobj, int actmode);
+int job_radix_action (pbs_attribute *newAttr, void *pobj, int actmode);
 

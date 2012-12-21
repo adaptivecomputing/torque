@@ -42,7 +42,7 @@ job_array *get_jobs_array(job **pjob)
   exit(1);
   }
 
-void account_record(int acctype, job *pjob, char *text)
+void account_record(int acctype, job *pjob, const char *text)
   {
   fprintf(stderr, "The call to account_record to be mocked!!\n");
   exit(1);
@@ -96,7 +96,7 @@ void reply_ack(struct batch_request *preq)
   exit(1);
   }
 
-void free_nodes(node_info **ninfo_arr)
+void free_nodes(job *)
   {
   fprintf(stderr, "The call to free_nodes to be mocked!!\n");
   exit(1);
@@ -118,7 +118,7 @@ struct pbsnode *find_nodebyname(const char *nodename)
     return(NULL);
   }
 
-struct work_task *set_task(enum work_type type, long event_id, void (*func)(), void *parm, int get_lock)
+struct work_task *set_task(enum work_type type, long event_id, void (*func)(work_task *), void *parm, int get_lock)
   {
   fprintf(stderr, "The call to set_task to be mocked!!\n");
   exit(1);
@@ -130,7 +130,7 @@ int depend_on_exec(job *pjob)
   exit(1);
   }
 
-int unlock_node(struct pbsnode *the_node, const char *id, char *msg, int logging)
+int unlock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
   {
   fprintf(stderr, "The call to unlock_node to be mocked!!\n");
   exit(1);
@@ -323,7 +323,7 @@ int kill_job_on_mom(char *jobid, struct pbsnode *pnode)
   return(0);
   }
 
-int lock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }
@@ -333,7 +333,7 @@ batch_request *duplicate_request(struct batch_request *preq)
   return(NULL);
   }
 
-int unlock_ai_mutex(job_array *pa, const char *id, char *msg, int logging)
+int unlock_ai_mutex(job_array *pa, const char *id, const char *msg, int logging)
   {
   return(0);
   }

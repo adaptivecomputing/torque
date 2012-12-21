@@ -29,7 +29,7 @@ int remove_thing_from_index(resizable_array *ra, int index)
   return(0);
   }
 
-int lock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }

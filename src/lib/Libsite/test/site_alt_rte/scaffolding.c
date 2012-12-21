@@ -23,5 +23,5 @@ void log_event(
   int         eventtype,
   int         objclass,
   const char *objname,
-  char       *text) {}
+  const char       *text) {}
 

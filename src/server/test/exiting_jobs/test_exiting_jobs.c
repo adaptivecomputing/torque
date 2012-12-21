@@ -44,11 +44,11 @@ END_TEST
 
 START_TEST(remove_entry_from_exiting_list_test)
   {
-  job_exiting_retry_info *jeri = calloc(1, sizeof(job_exiting_retry_info));
+  job_exiting_retry_info *jeri = (job_exiting_retry_info *)calloc(1, sizeof(job_exiting_retry_info));
   strcpy(jeri->jobid, "3.napali");
   fail_unless(remove_entry_from_exiting_list(jeri) == 0, "Couldn't remove entry");
   
-  jeri = calloc(1, sizeof(job_exiting_retry_info));
+  jeri = (job_exiting_retry_info *)calloc(1, sizeof(job_exiting_retry_info));
   strcpy(jeri->jobid, "1.napali");
   fail_unless(remove_entry_from_exiting_list(jeri) == KEY_NOT_FOUND, "Removed entry that wasn't there");
 
@@ -60,7 +60,7 @@ END_TEST
 
 START_TEST(retry_job_exit_test)
   {
-  job_exiting_retry_info *jeri = calloc(1, sizeof(job_exiting_retry_info));
+  job_exiting_retry_info *jeri = (job_exiting_retry_info *)calloc(1, sizeof(job_exiting_retry_info));
 
   strcpy(jeri->jobid, "1.napali");
 

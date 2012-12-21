@@ -54,7 +54,7 @@ int insert_thing(resizable_array *ra, void *thing)
   return 0;
   }
 
-void account_record(int acctype, job *pjob, char *text)
+void account_record(int acctype, job *pjob, const char *text)
   {
   fprintf(stderr, "The call to account_record needs to be mocked!!\n");
   exit(1);
@@ -108,7 +108,7 @@ pbs_net_t get_hostaddr(int *local_errno, char *hostname)
   return(loopback);
   }
 
-int log_job_record(char *buf)
+int log_job_record(const char *buf)
   {
   int rc = 0;
   if ((func_num == RECORD_JOBINFO_SUITE) && (tc == 2))
@@ -147,7 +147,7 @@ void free_br(struct batch_request *preq)
   exit(1);
   }
 
-struct work_task *set_task(enum work_type type, long event_id, void (*func)(), void *parm, int get_lock)
+struct work_task *set_task(enum work_type type, long event_id, void (*func)(work_task *), void *parm, int get_lock)
   {
   fprintf(stderr, "The call to work_task needs to be mocked!!\n");
   exit(1);
@@ -211,7 +211,7 @@ void *get_next(list_link pl, char *file, int line)
   return(NULL);
   }
 
-int issue_signal(job *pjob, char *signame, void (*func)(struct work_task *), void *extra)
+int issue_signal(job **pjob, const char *signame, void (*func)(batch_request *), void *extra)
   {
   fprintf(stderr, "The call to issue_signal needs to be mocked!!\n");
   exit(1);
@@ -572,7 +572,7 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   return(0);
   }
 
-int lock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }
@@ -674,7 +674,7 @@ int lock_ai_mutex(job_array *pa, const char *func_id, char *msg, int logging)
   return(0);
   }
 
-int unlock_ai_mutex(job_array *pa, const char *func_id, char *msg, int logging)
+int unlock_ai_mutex(job_array *pa, const char *func_id, const char *msg, int logging)
   {
   return(0);
   }

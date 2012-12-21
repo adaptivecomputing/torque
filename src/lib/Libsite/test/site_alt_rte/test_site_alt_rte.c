@@ -18,8 +18,8 @@ START_TEST(test_one)
    * The return value is a call to default_router so this just
    * makes sure that the parameters aren't corrupted */
   int rc = -1;
-  job *pjob = calloc(1, sizeof(job));
-  pbs_queue *qp = calloc(1, sizeof(pbs_queue));
+  job *pjob = (job *)calloc(1, sizeof(job));
+  pbs_queue *qp = (pbs_queue *)calloc(1, sizeof(pbs_queue));
   int retry_time = 3;
   rc = site_alt_router(pjob, qp, retry_time);
   if (rc)
