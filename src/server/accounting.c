@@ -157,6 +157,9 @@ int acct_job(
 
   CLEAR_HEAD(attrlist);
 
+  if (LOGLEVEL >= 10)
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
+
   /* user */
 
 	/* acct_job is only called from account_jobstr and account_jobend. BufSize should be

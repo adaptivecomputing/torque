@@ -646,7 +646,10 @@ done:
 /*
 ** Initialize the Task Manager interface.
 */
-
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 int tm_init(
 
   void             *info,  /* in, currently unused */
@@ -730,7 +733,6 @@ printf("got to line %d\n", __LINE__);
 
   return nerr;
   }
-
 
 
 
@@ -1956,3 +1958,7 @@ tm_adopt_cleanup:
     DIS_tcp_cleanup(chan);
   return rc;
   }
+
+#ifdef __cplusplus
+}
+#endif

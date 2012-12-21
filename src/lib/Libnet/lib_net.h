@@ -94,24 +94,5 @@ void set_nodelay(int fd);
 int connect_local_xsocket(u_int dnr);
 int x11_connect_display(char *display, long alsounused, char *EMsg);
 
-/* from file rm.c */
-/* static int addrm(int stream); */
-int openrm(char *host, unsigned int port);
-/* static int delrm(int stream); */
-/* static struct out *findout(int stream); */
-/* static int startcom(int stream, int com);  */
-/* static int simplecom(int stream, int com); */
-/* static int simpleget(int stream); */
-int closerm(int stream);
-int downrm(int stream);
-int configrm(int stream, char *file);
-/* static int doreq(struct out *op, char *line); */
-int addreq(int stream, char *line);
-int allreq(char *line);
-char *getreq(int stream);
-int flushreq(void);
-int activereq(void);
-void fullresp(int flag);
-
 char * netaddr_long(long ap, char *out);
 char * netaddr(struct sockaddr_in *ap);

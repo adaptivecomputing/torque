@@ -6553,8 +6553,8 @@ void initialize_globals(void)
   if (pbs_mom_port <= 0)
     {
     pbs_mom_port = get_svrport(
-        PBS_MOM_SERVICE_NAME,
-        "tcp",
+        (char *)PBS_MOM_SERVICE_NAME,
+        (char *)"tcp",
         PBS_MOM_SERVICE_PORT);
     }
 
@@ -6568,8 +6568,8 @@ void initialize_globals(void)
   if (default_server_port <= 0)
     {
     default_server_port = get_svrport(
-        PBS_BATCH_SERVICE_NAME,
-        "tcp",
+        (char *)PBS_BATCH_SERVICE_NAME,
+        (char *)"tcp",
         PBS_BATCH_SERVICE_PORT);
     }
 
@@ -6583,8 +6583,8 @@ void initialize_globals(void)
   if (pbs_rm_port <= 0)
     {
     pbs_rm_port = get_svrport(
-        PBS_MANAGER_SERVICE_NAME,
-        "tcp",
+        (char *)PBS_MANAGER_SERVICE_NAME,
+        (char *)"tcp",
         PBS_MANAGER_SERVICE_PORT);
     }
 

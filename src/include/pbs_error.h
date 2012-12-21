@@ -119,9 +119,16 @@ PBSE_TOTAL_CEILING
 #define NULL (char *)0
 #endif /* NULL */
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 extern char *pbse_to_txt(int);
 
 extern char *pbs_strerror(int);
+#ifdef __cplusplus
+}
+#endif
 
 extern int pbs_errno;
 

@@ -583,120 +583,93 @@ typedef int resource_t;  /* resource reservation handle */
 #define RESOURCE_T_ALL  (resource_t)-1
 
 extern char *pbs_server; /* server attempted to connect | connected to */
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 /* see pbs_connect(3B)         */
 
-extern char *avail(int connect, char *resc);
-extern int pbs_asyrunjob(int c, char *jobid, char *location, char *extend);
-extern int pbs_asyrunjob_err(int c, char *jobid, char *location, char *extend, int *);
-extern int pbs_alterjob_async(int connect, char *job_id, struct attrl *attrib, char *extend);
-extern int pbs_alterjob_async_err(int connect, char *job_id, struct attrl *attrib, char *extend, int *);
-extern int pbs_alterjob(int connect, char *job_id, struct attrl *attrib, char *extend);
-extern int pbs_alterjob_err(int connect, char *job_id, struct attrl *attrib, char *extend, int *);
-extern int pbs_connect(char *server);
-extern int pbs_query_max_connections();
-extern char *pbs_default(void);
-extern char *pbs_fbserver(void);
-extern char *pbs_get_server_list(void);
+char *avail(int connect, char *resc);
+int pbs_asyrunjob(int c, char *jobid, char *location, char *extend);
+int pbs_alterjob_async(int connect, char *job_id, struct attrl *attrib, char *extend);
+int pbs_alterjob(int connect, char *job_id, struct attrl *attrib, char *extend);
+int pbs_connect(char *server);
+int pbs_query_max_connections();
+char *pbs_default(void);
+char *pbs_fbserver(void);
+char *pbs_get_server_list(void);
 
-extern int pbs_deljob(int connect, char *job_id, char *extend);
-extern int pbs_deljob_err(int connect, char *job_id, char *extend, int *);
-extern int pbs_disconnect(int connect);
-extern char *pbs_geterrmsg(int connect);
-extern int pbs_holdjob(int connect, char *job_id, char *hold_type, char *extend);
-extern int pbs_holdjob_err(int connect, char *job_id, char *hold_type, char *extend, int *);
-extern int pbs_checkpointjob(int connect, char *job_id, char *extend);
-extern int pbs_checkpointjob_err(int connect, char *job_id, char *extend, int *);
-extern char *pbs_locjob(int connect, char *job_id, char *extend);
-extern char *pbs_locjob_err(int connect, char *job_id, char *extend, int *);
+int pbs_deljob(int connect, char *job_id, char *extend);
+int pbs_disconnect(int connect);
+char *pbs_geterrmsg(int connect);
+int pbs_holdjob(int connect, char *job_id, char *hold_type, char *extend);
+int pbs_checkpointjob(int connect, char *job_id, char *extend);
+char *pbs_locjob(int connect, char *job_id, char *extend);
 
 int pbs_manager(int connect, int command, int obj_type, char *obj_name, struct attropl *attrib, char *extend);
-int pbs_manager_err(int connect, int command, int obj_type, char *obj_name, struct attropl *attrib, char *extend, int *);
 
 int pbs_movejob(int connect, char *job_id, char *destination, char *extend);
-int pbs_movejob_err(int connect, char *job_id, char *destination, char *extend, int *);
 
 int pbs_msgjob(int connect, char *job_id, int file, char *message, char *extend);
-int pbs_msgjob_err(int connect, char *job_id, int file, char *message, char *extend, int *);
 
 int pbs_orderjob(int connect, char *job1, char *job2, char *extend);
-int pbs_orderjob_err(int connect, char *job1, char *job2, char *extend, int *);
 
-extern int
-  pbs_rescquery(int connect, char **rlist, int nresc, int *avail,
+int pbs_rescquery(int connect, char **rlist, int nresc, int *avail,
                     int *alloc, int *resv, int *down);
 
-extern int
-  pbs_rescreserve(int connect, char **rlist, int nresc, resource_t *phandle);
+int pbs_rescreserve(int connect, char **rlist, int nresc, resource_t *phandle);
 
-extern int
-  pbs_rescrelease(int connect, resource_t rhandle);
+int pbs_rescrelease(int connect, resource_t rhandle);
 
 int pbs_rerunjob(int connect, char *job_id, char *extend);
-int pbs_rerunjob_err(int connect, char *job_id, char *extend, int *);
 
 int pbs_rlsjob(int connect, char *job_id, char *hold_type, char *extend);
-int pbs_rlsjob_err(int connect, char *job_id, char *hold_type, char *extend, int *);
 
 int pbs_runjob(int connect, char *jobid, char *loc, char *extend);
-int pbs_runjob_err(int connect, char *jobid, char *loc, char *extend, int *);
 
 char **pbs_selectjob(int connect, struct attropl *select_list, char *extend);
-char **pbs_selectjob_err(int connect, struct attropl *select_list, char *extend, int *);
 
 int pbs_sigjob(int connect, char *job_id, char *signal, char *extend);
-int pbs_sigjob_err(int connect, char *job_id, char *signal, char *extend, int *);
 
 int pbs_sigjobasync(int connect, char *job_id, char *signal, char *extend);
-int pbs_sigjobasync_err(int connect, char *job_id, char *signal, char *extend, int *);
 
-extern void
-  pbs_statfree(struct batch_status *stat);
+void pbs_statfree(struct batch_status *stat);
 
-extern struct batch_status *
-        pbs_statdest(int connect, char *id, char *extend);
+struct batch_status * pbs_statdest(int connect, char *id, char *extend);
 
 struct batch_status *pbs_statjob(int connect, char *id, struct attrl *attrib, char *extend);
-struct batch_status *pbs_statjob_err(int connect, char *id, struct attrl *attrib, char *extend, int *);
 
 struct batch_status *pbs_selstat(int connect, struct attropl *select_list, char *extend);
-struct batch_status *pbs_selstat_err(int connect, struct attropl *select_list, char *extend, int *);
 
 struct batch_status *pbs_statque(int connect, char *id, struct attrl *attrib, char *extend);
-struct batch_status *pbs_statque_err(int connect, char *id, struct attrl *attrib, char *extend, int *);
 
 struct batch_status *pbs_statserver(int connect, struct attrl *attrib, char *extend);
-struct batch_status *pbs_statserver_err(int connect, struct attrl *attrib, char *extend, int *);
 
 struct batch_status *pbs_statnode(int connect, char *id, struct attrl *attrib, char *extend);
-struct batch_status *pbs_statnode_err(int connect, char *id, struct attrl *attrib, char *extend, int *);
 
 char *pbs_submit(int connect, struct attropl *attrib, char *script, char *destination, char *extend);
-char *pbs_submit_err(int connect, struct attropl *attrib, char *script, char *destination, char *extend, int *);
 
 int pbs_submit_hash(int connect, memmgr **mm, job_data *job_attr, job_data *res_attr, char *script, char *destination, char *extend, char **job_id, char **msg);
 
 int pbs_terminate(int connect, int manner, char *extend);
-int pbs_terminate_err(int connect, int manner, char *extend, int *);
 
 int totpool(int connect, int update);
 
 int usepool(int connect, int update);
 
 int pbs_gpumode(int connect, char *node, char *gpuid, int gpumode);
-int pbs_gpumode_err(int connect, char *node, char *gpuid, int gpumode, int *);
 
 int trq_set_preferred_network_interface(char *if_name, struct sockaddr *preferred_addr);
 char *trq_get_if_name(void);
 
 /* used by Moab */
-int closerm(int);
-char *getreq(int);
-unsigned int get_svrport(const char *, const char *, unsigned int);
-int openrm(char *, unsigned int);
-int addreq(int, char *);
 int pbs_stagein(int, char *, char *, char *);
 int pbs_stageout(int, char *, char *, char *);
 
+#ifdef __cplusplus
+}
+#endif
 #endif /* _PBS_IFL_DEF */
 
 /*  end of pbs_ifl.h  */

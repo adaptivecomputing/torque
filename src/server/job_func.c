@@ -1853,7 +1853,7 @@ int svr_job_purge(
     /* jobs that are being deleted after a cold restart
      * haven't been queued */
     if (need_deque == TRUE)
-      rc = svr_dequejob(pjob, FALSE);
+      rc = svr_dequejob(pjob, TRUE);
 
     if (rc != PBSE_JOBNOTFOUND)
       {
@@ -2056,6 +2056,9 @@ struct pbs_queue *get_jobs_queue(
   job       *pjob = NULL;
   pbs_queue *pque;
 
+  if (LOGLEVEL >= 10)
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "enter");
+
   if (pjob_ptr == NULL)
     {
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL input pointer to pointer");
@@ -2070,6 +2073,9 @@ struct pbs_queue *get_jobs_queue(
     }
 
   pque = lock_queue_with_job_held(pjob->ji_qhdr, pjob_ptr);
+
+  if (LOGLEVEL >= 10)
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "exit");
 
   return(pque);
   } /* END get_jobs_queue() */

@@ -210,6 +210,7 @@ typedef struct pbs_queue
   pbs_attribute qu_attr[QA_ATR_LAST];
 
   user_info_holder *qu_uih;
+  pthread_t        route_retry_thread_id;
   } pbs_queue;
 
 

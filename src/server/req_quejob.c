@@ -2192,6 +2192,7 @@ int req_commit(
         (pque->qu_qs.qu_type == QTYPE_RoutePush) &&
         (pque->qu_attr[QA_ATR_Started].at_val.at_long != 0))
       {
+      unlock_queue(pque, __func__, log_buf, LOGLEVEL);
       if ((rc = job_route(pj)))
         {
         snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "can not route job %s",
@@ -2209,6 +2210,10 @@ int req_commit(
         }
       }
 
+    /* this needs to be done if there are routing queues. queue_route checks to see if req_commit 
+       is done routing the job with this flag */
+    pj->ji_commit_done = 1;
+
     /* need to format message first, before request goes away - moved here because we have the mutex */
     snprintf(log_buf, sizeof(log_buf),
       msg_jobnew,
@@ -2217,7 +2222,6 @@ int req_commit(
       pj->ji_wattr[JOB_ATR_jobname].at_val.at_str,
       pque->qu_qs.qu_name);
 
-    unlock_queue(pque, __func__, "route success", LOGLEVEL);
     }
 
 #ifdef AUTORUN_JOBS

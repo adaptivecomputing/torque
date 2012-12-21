@@ -270,6 +270,9 @@ pbs_queue *que_alloc(
     clear_attr(&pq->qu_attr[i], &que_attr_def[i]);
     }
 
+  /* Set route_retry_thread_id in case this is a routing queue */
+  pq->route_retry_thread_id = -1;
+
   return(pq);
   }  /* END que_alloc() */
 
@@ -670,6 +673,7 @@ pbs_queue *lock_queue_with_job_held(
   {
   char       jobid[PBS_MAXSVRJOBID + 1];
   job       *pjob = *pjob_ptr;
+  char      log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (pque != NULL)
     {
@@ -686,6 +690,12 @@ pbs_queue *lock_queue_with_job_held(
         pque = NULL;
         *pjob_ptr = NULL;
         }
+      }
+    else
+      {
+      if (LOGLEVEL >= 10)
+        snprintf(log_buf, sizeof(log_buf), "try lock succeeded for queue %s on job %s", pque->qu_qs.qu_name, pjob->ji_qs.ji_jobid);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
       }
     }
 

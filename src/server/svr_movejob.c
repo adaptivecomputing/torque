@@ -431,6 +431,7 @@ void finish_routing_processing(
       /* need to have queue's mutex when entering job_route */
       if ((pque = get_jobs_queue(&pjob)) != NULL)
         {
+        unlock_queue(pque, __func__, NULL, LOGLEVEL);
         if ((status = job_route(pjob)) == PBSE_ROUTEREJ)
           job_abt(&pjob, pbse_to_txt(PBSE_ROUTEREJ));
         else if (status != 0)
@@ -438,7 +439,6 @@ void finish_routing_processing(
         else
           unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
 
-        unlock_queue(pque, __func__, NULL, LOGLEVEL);
         }
       else if (pjob != NULL)
         {
