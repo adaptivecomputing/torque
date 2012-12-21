@@ -44,7 +44,7 @@ extern attribute_def job_attr_def[];
 
 void test_iaj_nodir_setup()
   {
-  path_jobs = malloc(2);
+  path_jobs = (char *)malloc(2);
   path_jobs[0] = '\0';
   path_jobs[1] = '\0';
   }
@@ -59,7 +59,7 @@ END_TEST
 
 void test_iaj_pathdot()
   {
-  path_jobs = malloc(2);
+  path_jobs = (char *)malloc(2);
   path_jobs[0] = '.';
   path_jobs[1] = '\0';
   }
@@ -251,7 +251,7 @@ Suite *init_abort_jobs_suite(void)
 
 void test_iaj_pathdotdot()
   {
-  path_jobs = malloc(3);
+  path_jobs = (char *)malloc(3);
   path_jobs[0] = '.';
   path_jobs[1] = '.';
   path_jobs[2] = '\0';

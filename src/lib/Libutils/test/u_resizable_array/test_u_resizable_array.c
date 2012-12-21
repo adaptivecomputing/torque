@@ -7,7 +7,7 @@
 #include "pbs_error.h"
   
 char  buf[4096];
-char *a[] = {"a", "b", "c", "d", "e", "f", "g", "h", "i" };
+char *a[] = {(char *)"a", (char *)"b", (char *)"c", (char *)"d", (char *)"e", (char *)"f", (char *)"g", (char *)"h", (char *)"i" };
 int   num_elements = 9;
 
 /* check that arrays are initialized and resized correctly */
@@ -341,8 +341,8 @@ START_TEST(error_cases)
   int              i;
   int              old_last;
   int              rc;
-  char            *tom = "tom";
-  char            *bob = "bob";
+  char            *tom = (char *)"tom";
+  char            *bob = (char *)"bob";
   void            *thing;
   int              index = -1;
 

@@ -8,7 +8,7 @@ int decode_c( pbs_attribute *patr, const char *name, const char *rescn, const ch
 
 int encode_c( pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm);
 
-int set_c(struct pbs_attribute *attr, struct pbs_attribute *new, enum batch_op op);
+int set_c(struct pbs_attribute *attr, struct pbs_attribute *newAttr, enum batch_op op);
 
 int comp_c(struct pbs_attribute *attr, struct pbs_attribute *with);
 

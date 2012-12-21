@@ -665,7 +665,7 @@ task *task_find(job *pjob, tm_task_id taskid)
   return tp;
   }
 
-int tm_reply(int stream, int com, tm_event_t event)
+int tm_reply(tcp_chan *, int com, int i)
   {
   return 0;
   }
@@ -937,11 +937,11 @@ struct batch_request *alloc_br(int type)
   return br;
   }
 
-void encode_used(job *pjob, tlist_head *phead)
+void encode_used(job *pjob, int i, list_link *l)
   {
   }
 
-void encode_flagged_attrs(job *pjob, tlist_head *phead)
+void encode_flagged_attrs(job *pjob, int i, list_link *l)
   {
   }
 
@@ -1291,7 +1291,7 @@ int diswul(struct tcp_chan *chan, unsigned long value)
   return 0;
   }
 
-u_long resc_used(job *pjob, char *name, u_long(*f) (resource *))
+u_long resc_used(job *pjob, const char *name, u_long(*f) (resource *))
   {
   return 1;
   }

@@ -21,20 +21,20 @@ START_TEST(hostname_in_externals_test)
   {
   char *externals = strdup("one+two+three");
   
-  fail_unless(hostname_in_externals("one", externals) == TRUE, "couldn't find entry");
-  fail_unless(hostname_in_externals("two", externals) == TRUE, "couldn't find entry");
-  fail_unless(hostname_in_externals("three", externals) == TRUE, "couldn't find entry");
+  fail_unless(hostname_in_externals((char *)"one", externals) == TRUE, "couldn't find entry");
+  fail_unless(hostname_in_externals((char *)"two", externals) == TRUE, "couldn't find entry");
+  fail_unless(hostname_in_externals((char *)"three", externals) == TRUE, "couldn't find entry");
 
   /* corner cases */
-  fail_unless(hostname_in_externals("thre", externals) == FALSE, "false positive");
-  fail_unless(hostname_in_externals("tw", externals) == FALSE, "false positive");
-  fail_unless(hostname_in_externals("on", externals) == FALSE, "false positive");
-  fail_unless(hostname_in_externals("wo", externals) == FALSE, "false positive");
-  fail_unless(hostname_in_externals("ne", externals) == FALSE, "false positive");
-  fail_unless(hostname_in_externals("hree", externals) == FALSE, "false positive");
-  fail_unless(hostname_in_externals("tthree", externals) == FALSE, "false positive");
-  fail_unless(hostname_in_externals("ttwo", externals) == FALSE, "false positive");
-  fail_unless(hostname_in_externals("oone", externals) == FALSE, "false positive");
+  fail_unless(hostname_in_externals((char *)"thre", externals) == FALSE, "false positive");
+  fail_unless(hostname_in_externals((char *)"tw", externals) == FALSE, "false positive");
+  fail_unless(hostname_in_externals((char *)"on", externals) == FALSE, "false positive");
+  fail_unless(hostname_in_externals((char *)"wo", externals) == FALSE, "false positive");
+  fail_unless(hostname_in_externals((char *)"ne", externals) == FALSE, "false positive");
+  fail_unless(hostname_in_externals((char *)"hree", externals) == FALSE, "false positive");
+  fail_unless(hostname_in_externals((char *)"tthree", externals) == FALSE, "false positive");
+  fail_unless(hostname_in_externals((char *)"ttwo", externals) == FALSE, "false positive");
+  fail_unless(hostname_in_externals((char *)"oone", externals) == FALSE, "false positive");
   }
 END_TEST
 
@@ -43,10 +43,10 @@ END_TEST
 
 START_TEST(fix_cray_exec_hosts_test)
   {
-  char *externals = "one+two+three";
-  char *exec1 = "one/0+one/1+napali/0+napali/1+napali/2+napali/3+a1/0+a1/1+a1/2+a1/3";
-  char *exec2 = "napali/0+napali/1+napali/2+napali/3+a1/0+a1/1+a1/2+a1/3+two/0+two/1";
-  char *exec3 = "napali/0+napali/1+napali/2+napali/3+three/0+three/1+a1/0+a1/1+a1/2+a1/3";
+  char *externals = (char *)"one+two+three";
+  char *exec1 = (char *)"one/0+one/1+napali/0+napali/1+napali/2+napali/3+a1/0+a1/1+a1/2+a1/3";
+  char *exec2 = (char *)"napali/0+napali/1+napali/2+napali/3+a1/0+a1/1+a1/2+a1/3+two/0+two/1";
+  char *exec3 = (char *)"napali/0+napali/1+napali/2+napali/3+three/0+three/1+a1/0+a1/1+a1/2+a1/3";
   job   pjob;
 
   memset(&pjob, 0, sizeof(pjob));
@@ -84,10 +84,10 @@ END_TEST
 
 START_TEST(fix_external_exec_hosts_test)
   {
-  char *externals = "one+two+three";
-  char *exec1 = "one/0+one/1+napali/0+napali/1+napali/2+napali/3+a1/0+a1/1+a1/2+a1/3";
-  char *exec2 = "napali/0+napali/1+napali/2+napali/3+a1/0+a1/1+a1/2+a1/3+two/0+two/1";
-  char *exec3 = "napali/0+napali/1+napali/2+napali/3+three/0+three/1+a1/0+a1/1+a1/2+a1/3";
+  char *externals = (char *)"one+two+three";
+  char *exec1 = (char *)"one/0+one/1+napali/0+napali/1+napali/2+napali/3+a1/0+a1/1+a1/2+a1/3";
+  char *exec2 = (char *)"napali/0+napali/1+napali/2+napali/3+a1/0+a1/1+a1/2+a1/3+two/0+two/1";
+  char *exec3 = (char *)"napali/0+napali/1+napali/2+napali/3+three/0+three/1+a1/0+a1/1+a1/2+a1/3";
   job   pjob;
 
   memset(&pjob, 0, sizeof(pjob));
@@ -138,8 +138,8 @@ START_TEST(split_job_test)
   job   pjob;
   job  *external;
   job  *cray;
-  char *externals = "one+two+three";
-  char *exec1 = "one/0+one/1+napali/0+napali/1+napali/2+napali/3+a1/0+a1/1+a1/2+a1/3";
+  char *externals = (char *)"one+two+three";
+  char *exec1 = (char *)"one/0+one/1+napali/0+napali/1+napali/2+napali/3+a1/0+a1/1+a1/2+a1/3";
 
   memset(&pjob, 0, sizeof(pjob));
 
@@ -313,13 +313,13 @@ START_TEST(find_job_by_array_test)
   struct all_jobs alljobs;
   initialize_all_jobs_array(&alljobs);
 
-  struct job* result = find_job_by_array(NULL,"",0);
+  struct job* result = find_job_by_array(NULL,(char *)"",0);
   fail_unless(result == NULL, "NULL all jobs input fail");
 
   result = find_job_by_array(&alljobs,NULL,0);
   fail_unless(result == NULL, "NULL job id input fail");
 
-  result = find_job_by_array(&alljobs,"",0);
+  result = find_job_by_array(&alljobs,(char *)"",0);
   fail_unless(result == NULL, "empty job id input fail");
   }
 END_TEST
@@ -329,7 +329,7 @@ START_TEST(svr_find_job_test)
   struct job* result = svr_find_job(NULL,0);
   fail_unless(result == NULL, "NULL job id input fail");
 
-  result = svr_find_job("",0);
+  result = svr_find_job((char *)"",0);
   fail_unless(result == NULL, "empty job id input fail");
   }
 END_TEST

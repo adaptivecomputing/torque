@@ -37,43 +37,43 @@ int tcp_chan_has_data(struct tcp_chan *chan)
   exit(1);
   }
 
-int DIS_tcp_wflush(int fd)
+int DIS_tcp_wflush(tcp_chan *c)
   {
   fprintf(stderr, "The call to DIS_tcp_wflush needs to be mocked!!\n");
   exit(1);
   }
 
-int diswcs(int stream, const char *value, size_t nchars)
+int diswcs(tcp_chan*, char const*, unsigned long)
   {
   fprintf(stderr, "The call to diswcs needs to be mocked!!\n");
   exit(1);
   }
 
-int diswui(int stream, unsigned value)
+int diswui(tcp_chan* c, unsigned int i)
   {
   fprintf(stderr, "The call to diswui needs to be mocked!!\n");
   exit(1);
   }
 
-char *disrcs(int stream, size_t *nchars, int *retval)
+char *disrcs(tcp_chan* c, unsigned long* ul, int* i)
   {
   fprintf(stderr, "The call to disrcs needs to be mocked!!\n");
   exit(1);
   }
 
-char *disrst(int stream, int *retval)
+char *disrst(tcp_chan* c, int* i)
   {
   fprintf(stderr, "The call to disrst needs to be mocked!!\n");
   exit(1);
   }
 
-int diswsi(int stream, int value)
+int diswsi(tcp_chan *c,int val)
   {
   fprintf(stderr, "The call to diswsi needs to be mocked!!\n");
   exit(1);
   }
 
-int disrsi(int stream, int *retval)
+int disrsi(tcp_chan* c, int* i)
   {
   fprintf(stderr, "The call to disrsi needs to be mocked!!\n");
   exit(1);

@@ -38,7 +38,7 @@ resource *add_resource_entry(pbs_attribute *pattr, resource_def *prdef)
   exit(1);
   }
 
-pbs_queue *find_queuebyname(char *quename)
+pbs_queue *find_queuebyname(const char *quename)
   {
   pbs_queue *pq = (pbs_queue *)calloc(1, sizeof(pbs_queue));
 
@@ -56,7 +56,7 @@ pbs_queue *find_queuebyname(char *quename)
   return(pq);
   }
 
-void account_record(int acctype, job *pjob, char *text)
+void account_record(int acctype, job *pjob, const char *text)
   {
   fprintf(stderr, "The call to account_record to be mocked!!\n");
   exit(1);
@@ -124,7 +124,7 @@ int has_job(struct all_jobs *aj, job *pjob)
   return(0);
   }
 
-struct work_task *set_task(enum work_type type, long event_id, void (*func)(), void *parm, int get_lock)
+struct work_task *set_task(enum work_type type, long event_id, void (*func)(work_task *), void *parm, int get_lock)
   {
   fprintf(stderr, "The call to set_task to be mocked!!\n");
   exit(1);
@@ -141,7 +141,7 @@ int procs_requested(char *spec)
   exit(1);
   }
 
-int num_array_jobs(char *req_str)
+int num_array_jobs(const char *req_str)
   {
   fprintf(stderr, "The call to num_array_jobs to be mocked!!\n");
   exit(1);
@@ -168,7 +168,7 @@ resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
   return(NULL);
   }
 
-char * csv_find_string(char *csv_str, char *search_str)
+char * csv_find_string(const char *csv_str, const char *search_str)
   {
   fprintf(stderr, "The call to csv_find_string to be mocked!!\n");
   exit(1);

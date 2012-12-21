@@ -13,13 +13,13 @@ char *finish_gpu_status(char *str);
 struct pbsnode *create_alps_subnode(struct pbsnode *parent, char *node_id);
 struct pbsnode *find_alpsnode_by_name(struct pbsnode *parent, char *node_id);
 struct pbsnode *determine_node_from_str(char *str, struct pbsnode *parent, struct pbsnode *current);
-int check_if_orphaned(char *str);
+int check_if_orphaned(void *str);
 int process_alps_status(char *, dynamic_string *);
 int process_reservation_id(struct pbsnode *pnode, char *rsv_id_str);
 
 char buf[4096];
 
-char *alps_status = "node=1\0CPROC=12\0state=UP\0reservation_id=12\0<cray_gpu_status>\0gpu_id=0\0clock_mhz=2600\0gpu_id=1\0clock_mhz=2600\0</cray_gpu_status>\0\0";
+char *alps_status = (char *)"node=1\0CPROC=12\0state=UP\0reservation_id=12\0<cray_gpu_status>\0gpu_id=0\0clock_mhz=2600\0gpu_id=1\0clock_mhz=2600\0</cray_gpu_status>\0\0";
 /*node=2\0CPROC=12\0state=UP\0<cray_gpu_status>\0gpu_id=0\0clock_mhz=2600\0gpu_id=1\0clock_mhz=2600\0</cray_gpu_status>\0node=3\0CPROC=12\0state=UP\0<cray_gpu_status>\0gpu_id=0\0clock_mhz=2600\0gpu_id=1\0clock_mhz=2600\0</cray_gpu_status>\0\0";*/
 
 
@@ -27,9 +27,9 @@ char *alps_status = "node=1\0CPROC=12\0state=UP\0reservation_id=12\0<cray_gpu_st
 START_TEST(set_ncpus_test)
   {
   struct pbsnode  pnode;
-  char           *proc1 = "CPROC=2";
-  char           *proc2 = "CPROC=4";
-  char           *proc3 = "CPROC=8";
+  char           *proc1 = (char *)"CPROC=2";
+  char           *proc2 = (char *)"CPROC=4";
+  char           *proc3 = (char *)"CPROC=8";
 
   pnode.nd_nsn = 0;
   fail_unless(set_ncpus(&pnode, proc1) == 0, "Couldn't set ncpus to 2");
@@ -80,8 +80,8 @@ END_TEST
 START_TEST(set_state_test)
   {
   struct pbsnode  pnode;
-  char           *up_str   = "state=UP";
-  char           *down_str = "state=DOWN";
+  char           *up_str   = (char *)"state=UP";
+  char           *down_str = (char *)"state=DOWN";
 
   memset(&pnode, 0, sizeof(pnode));
 
@@ -128,10 +128,10 @@ END_TEST
 START_TEST(find_alpsnode_test)
   {
   struct pbsnode  parent;
-  char           *node_id = "tom";
+  char           *node_id = (char *)"tom";
   struct pbsnode *alpsnode;
 
-  parent.alps_subnodes.allnodes_mutex = calloc(1, sizeof(pthread_mutex_t));
+  parent.alps_subnodes.allnodes_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(parent.alps_subnodes.allnodes_mutex, NULL);
 
   alpsnode = find_alpsnode_by_name(&parent, node_id);
@@ -146,13 +146,13 @@ END_TEST
 START_TEST(determine_node_from_str_test)
   {
   struct pbsnode  parent;
-  char           *node_str1 = "node=tom";
-  char           *node_str2 = "node=george";
+  char           *node_str1 = (char *)"node=tom";
+  char           *node_str2 = (char *)"node=george";
   struct pbsnode *new_node;
 
   memset(&parent, 0, sizeof(parent));
   parent.nd_name = strdup("george");
-  parent.alps_subnodes.allnodes_mutex = calloc(1, sizeof(pthread_mutex_t));
+  parent.alps_subnodes.allnodes_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(parent.alps_subnodes.allnodes_mutex, NULL);
 
   new_node = determine_node_from_str(node_str1, &parent, &parent);
@@ -170,9 +170,9 @@ END_TEST
 
 START_TEST(check_orphaned_test)
   {
-  char *rsv_id = "tom";
+  const char *rsv_id = "tom";
 
-  fail_unless(check_if_orphaned(rsv_id) == 0, "bad return code");
+  fail_unless(check_if_orphaned((void *)rsv_id) == 0, "bad return code");
   }
 END_TEST
 
@@ -182,7 +182,7 @@ END_TEST
 START_TEST(create_alps_subnode_test)
   {
   struct pbsnode  parent;
-  char           *node_id = "tom";
+  char           *node_id = (char *)"tom";
   struct pbsnode *subnode;
 
   memset(&parent, 0, sizeof(struct pbsnode));
@@ -207,7 +207,7 @@ START_TEST(whole_test)
   
   ds->str = strdup(alps_status);
  
-  rc = process_alps_status("tom", ds);
+  rc = process_alps_status((char *)"tom", ds);
   fail_unless(rc == 0, "didn't process alps status");
   }
 END_TEST
@@ -221,13 +221,13 @@ START_TEST(process_reservation_id_test)
 
   memset(&pnode, 0, sizeof(struct pbsnode));
   memset(&sub, 0, sizeof(struct pbssubn));
-  sub.jobs = calloc(1, sizeof(struct jobinfo));
+  sub.jobs = (jobinfo *)calloc(1, sizeof(struct jobinfo));
   strcpy(sub.jobs->jobid, "bob");
   pnode.nd_psn = &sub;
 
-  fail_unless(process_reservation_id(&pnode, "12") == 0, "couldn't process reservation");
-  fail_unless(process_reservation_id(&pnode, "13") == 0, "couldn't process reservation");
-  fail_unless(process_reservation_id(&pnode, "14") == 0, "couldn't process reservation");
+  fail_unless(process_reservation_id(&pnode, (char *)"12") == 0, "couldn't process reservation");
+  fail_unless(process_reservation_id(&pnode, (char *)"13") == 0, "couldn't process reservation");
+  fail_unless(process_reservation_id(&pnode, (char *)"14") == 0, "couldn't process reservation");
   }
 END_TEST
 

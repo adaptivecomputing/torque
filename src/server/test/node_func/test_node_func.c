@@ -7,13 +7,19 @@
 #include "pbs_nodes.h" /* pbs_nodes, node_check_info, node_iterator, all_nodes */
 #include "attribute.h" /* svrattrl, struct  */
 
+extern int login_encode_jobs(
+
+  struct pbsnode *pnode,
+  tlist_head     *phead);
+
+
 int cray_enabled;
 
 void initialize_allnodes(all_nodes *an, struct pbsnode *n1, struct pbsnode *n2)
   {
-  an->allnodes_mutex = calloc(1, sizeof(pthread_mutex_t));
-  an->ra = calloc(1, sizeof(resizable_array));
-  an->ra->slots = calloc(3, sizeof(slot));
+  an->allnodes_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  an->ra = (resizable_array *)calloc(1, sizeof(resizable_array));
+  an->ra->slots = (slot *)calloc(3, sizeof(slot));
 
   an->ra->slots[0].item = NULL;
   an->ra->slots[1].item = n1;
@@ -94,20 +100,20 @@ START_TEST(find_node_in_allnodes_test)
   struct pbsnode *result = NULL;
   struct all_nodes allnodes;
   struct pbsnode test_node;
-  char *test_node_name = "test_node";
-  test_node.nd_name = test_node_name;
+  const char *test_node_name = "test_node";
+  test_node.nd_name = (char *)test_node_name;
 
   initialize_pbsnode(&test_node, NULL, NULL, 0);
   memset(&allnodes, 0, sizeof(allnodes));
   initialize_all_nodes_array(&allnodes);
 
-  result = find_node_in_allnodes(NULL, "nodename");
+  result = find_node_in_allnodes(NULL, (char *)"nodename");
   fail_unless(result == NULL, "NULL input all_nodes struct pointer fail");
 
   result = find_node_in_allnodes(&allnodes, NULL);
   fail_unless(result == NULL, "NULL input nodename fail");
 
-  result = find_node_in_allnodes(&allnodes, "nodename");
+  result = find_node_in_allnodes(&allnodes, (char *)"nodename");
   fail_unless(result == NULL, "find unexpected node fail");
 
 /* TODO: think about apropriate mocking for the test below
@@ -130,8 +136,8 @@ START_TEST(find_nodebyname_test)
   memset(&node1, 0, sizeof(node1));
   memset(&node2, 0, sizeof(node2));
 
-  node1.nd_name = "bob";
-  node2.nd_name = "tom";
+  node1.nd_name = (char *)"bob";
+  node2.nd_name = (char *)"tom";
   initialize_allnodes(&allnodes, &node1, &node2);
   initialize_allnodes(&alps_reporter->alps_subnodes, &node1, &node2);
 
@@ -224,7 +230,7 @@ START_TEST(login_encode_jobs_test)
   initialize_pbsnode(&node, NULL, NULL, 0);
   memset(&list, 0, sizeof(list));
 
-  int result = login_encode_jobs(NULL, &list);
+  int result = login_encode_jobs((struct pbsnode *)NULL, (tlist_head *)&list);
   fail_unless(result != PBSE_NONE, "NULL input node pointer fail");
 
   result = login_encode_jobs(&node, NULL);
@@ -775,12 +781,12 @@ END_TEST
 START_TEST(send_hierarchy_test)
   {
   int result = -1;
-  char* name = "name";
+  const char* name = "name";
 
   result = send_hierarchy(NULL, 0);
   fail_unless(result != PBSE_NONE, "NULL input name fail");
 
-  result = send_hierarchy(name, 0);
+  result = send_hierarchy((char *)name, 0);
   fail_unless(result != PBSE_NONE, "send_hierarchy fail");
   }
 END_TEST
@@ -807,18 +813,18 @@ END_TEST
 START_TEST(add_hello_after_test)
   {
   struct hello_container container;
-  char* node_name = "node_name";
+  const char* node_name = "node_name";
   int result = -1;
   memset(&container, 0, sizeof(container));
   initialize_hello_container(&container);
 
-  result = add_hello_after(NULL, node_name, 0);
+  result = add_hello_after(NULL, (char *)node_name, 0);
   fail_unless(result != PBSE_NONE, "NULL input container pointer fail");
 
   result = add_hello_after(&container, NULL, 0);
   fail_unless(result == PBSE_NONE, "NULL input name pointer fail");
 
-  result = add_hello_after(&container, node_name, 0);
+  result = add_hello_after(&container, (char *)node_name, 0);
   fail_unless(result == PBSE_NONE, "add_hello_after fail");
 
   }
@@ -863,18 +869,18 @@ END_TEST
 START_TEST(remove_hello_test)
   {
   struct hello_container container;
-  char* node_name = "node_name";
+  const char* node_name = "node_name";
   int result = -1;
   memset(&container, 0, sizeof(container));
   initialize_hello_container(&container);
 
-  result = remove_hello(NULL, node_name);
+  result = remove_hello(NULL, (char *)node_name);
   fail_unless(result != PBSE_NONE, "NULL input container pointer fail");
 
   result = remove_hello(&container, NULL);
   fail_unless(result != PBSE_NONE, "NULL input name pointer fail");
 
-  result = remove_hello(&container, node_name);
+  result = remove_hello(&container, (char *)node_name);
   fail_unless(result == PBSE_NONE, "add_hello_after fail");
 
   }

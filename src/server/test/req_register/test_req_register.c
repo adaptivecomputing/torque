@@ -22,7 +22,7 @@ int unregister_dep(pbs_attribute *pattr, batch_request *preq);
 void del_depend(struct depend *pd);
 int comp_depend(pbs_attribute *a1, pbs_attribute *a2);
 void free_depend(pbs_attribute *pattr);
-int build_depend(pbs_attribute *pattr, char *value);
+int build_depend(pbs_attribute *pattr, const char *value);
 void fast_strcat(char **Dest, const char *Src);
 int dup_depend(pbs_attribute *pattr, struct depend *pd);
 void cat_jobsvr(char **Dest, char *Src);
@@ -42,9 +42,9 @@ extern char server_name[];
 extern int i;
 extern int svr;
 
-char          *job1 = "1.napali";
-char          *job2 = "2.napali";
-char          *host = "napali";
+char          *job1 = (char *)"1.napali";
+char          *job2 = (char *)"2.napali";
+char          *host = (char *)"napali";
 
 
 void initialize_depend_attr(
@@ -73,15 +73,15 @@ START_TEST(check_dependency_job_test)
   fail_unless(check_dependency_job(jobid, &preq, &pjob) == PBSE_NONE, "error?");
   fail_unless(pjob != NULL, "didn't get a valid job?");
 
-  fail_unless(check_dependency_job("bob", &preq, &pjob) == PBSE_UNKJOBID, "found unknown?");
+  fail_unless(check_dependency_job((char *)"bob", &preq, &pjob) == PBSE_UNKJOBID, "found unknown?");
   fail_unless(pjob == NULL, "didn't set job to NULL");
 
   svr = 1;
-  fail_unless(check_dependency_job("bob", &preq, &pjob) == PBSE_JOBNOTFOUND, "wrong rc");
+  fail_unless(check_dependency_job((char *)"bob", &preq, &pjob) == PBSE_JOBNOTFOUND, "wrong rc");
   fail_unless(pjob == NULL, "didn't set job to NULL");
   svr = 2;
   
-  fail_unless(check_dependency_job("2.napali", &preq, &pjob) == PBSE_BADSTATE, "wrong rc");
+  fail_unless(check_dependency_job((char *)"2.napali", &preq, &pjob) == PBSE_BADSTATE, "wrong rc");
   }
 END_TEST
 
@@ -179,11 +179,11 @@ START_TEST(find_dependjob_test)
   fail_unless((d2 = make_dependjob(&pdep, job2, host)) != NULL, "didn't create dep 2");
   fail_unless(d1 == find_dependjob(&pdep, job1), "didn't find job1");
   fail_unless(d2 == find_dependjob(&pdep, job2), "didn't find job2");
-  fail_unless(find_dependjob(&pdep, "bob") == NULL, "found bob?");
+  fail_unless(find_dependjob(&pdep, (char *)"bob") == NULL, "found bob?");
 
   svr = 10; /* will make display server suffix false, see scaffolding */
-  fail_unless(d1 == find_dependjob(&pdep, "1"), "didn't find job1 without suffix");
-  fail_unless(d2 == find_dependjob(&pdep, "2"), "didn't find job2 without suffix");
+  fail_unless(d1 == find_dependjob(&pdep, (char *)"1"), "didn't find job1 without suffix");
+  fail_unless(d2 == find_dependjob(&pdep, (char *)"2"), "didn't find job2 without suffix");
   }
 END_TEST
 
@@ -277,7 +277,7 @@ END_TEST
 
 START_TEST(del_depend_test)
   {
-  struct depend    *pdep = calloc(1, sizeof(struct depend));
+  struct depend    *pdep = (depend *)calloc(1, sizeof(struct depend));
 
   CLEAR_HEAD(pdep->dp_jobs);
   CLEAR_HEAD(pdep->dp_link);
@@ -387,8 +387,8 @@ START_TEST(cat_jobsvr_test)
   char *b = buf;
 
   memset(buf, 0, sizeof(buf));
-  cat_jobsvr(NULL, "a");
-  cat_jobsvr(&b, "bobby:14003");
+  cat_jobsvr(NULL, (char *)"a");
+  cat_jobsvr(&b, (char *)"bobby:14003");
   fail_unless(strcmp(buf, "bobby\\:14003") == 0, "fail");
   }
 END_TEST
@@ -672,7 +672,7 @@ END_TEST
 
 START_TEST(req_register_test)
   {
-  batch_request *preq = calloc(1, sizeof(batch_request));
+  batch_request *preq = (batch_request *)calloc(1, sizeof(batch_request));
 
   strcpy(preq->rq_ind.rq_register.rq_parent, job1);
   preq->rq_fromsvr = 1;

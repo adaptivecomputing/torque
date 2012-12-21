@@ -9,7 +9,7 @@ extern int the_sock;
 
 START_TEST(test_preobit_reply_first)
   {
-  int *socket_ref = malloc(sizeof(int));
+  int *socket_ref = (int *)malloc(sizeof(int));
   *socket_ref = 1;
   func_num = PREOBIT_REPLY;
   tc = 1;
@@ -20,7 +20,7 @@ END_TEST
 
 START_TEST(test_preobit_reply_irtn0)
   {
-  int *socket_ref = malloc(sizeof(int));
+  int *socket_ref = (int *)malloc(sizeof(int));
   *socket_ref = 1;
   func_num = PREOBIT_REPLY;
   tc = 2;
@@ -31,7 +31,7 @@ END_TEST
 
 START_TEST(test_preobit_reply_pjobnull)
   {
-  int *socket_ref = malloc(sizeof(int));
+  int *socket_ref = (int *)malloc(sizeof(int));
   *socket_ref = 1;
   func_num = PREOBIT_REPLY;
   tc = 3;
@@ -42,7 +42,7 @@ END_TEST
 
 START_TEST(test_preobit_reply_cleanedout)
   {
-  int *socket_ref = malloc(sizeof(int));
+  int *socket_ref = (int *)malloc(sizeof(int));
   *socket_ref = 1;
   func_num = PREOBIT_REPLY;
   tc = 4;
@@ -53,7 +53,7 @@ END_TEST
 
 START_TEST(test_preobit_reply_pbsenone)
   {
-  int *socket_ref = malloc(sizeof(int));
+  int *socket_ref = (int *)malloc(sizeof(int));
   *socket_ref = 1;
   func_num = PREOBIT_REPLY;
   tc = 5;
@@ -64,7 +64,7 @@ END_TEST
 
 START_TEST(test_preobit_reply_pbsedefault)
   {
-  int *socket_ref = malloc(sizeof(int));
+  int *socket_ref = (int *)malloc(sizeof(int));
   *socket_ref = 1;
   func_num = PREOBIT_REPLY;
   tc = 6;
@@ -75,7 +75,7 @@ END_TEST
 
 START_TEST(test_preobit_reply_brcstatus)
   {
-  int *socket_ref = malloc(sizeof(int));
+  int *socket_ref = (int *)malloc(sizeof(int));
   *socket_ref = 1;
   func_num = PREOBIT_REPLY;
   tc = 7;
@@ -86,7 +86,7 @@ END_TEST
 
 START_TEST(test_preobit_reply_pstatusnull)
   {
-  int *socket_ref = malloc(sizeof(int));
+  int *socket_ref = (int *)malloc(sizeof(int));
   *socket_ref = 1;
   func_num = PREOBIT_REPLY;
   tc = 8;
@@ -97,7 +97,7 @@ END_TEST
 
 START_TEST(test_preobit_reply_objname)
   {
-  int *socket_ref = malloc(sizeof(int));
+  int *socket_ref = (int *)malloc(sizeof(int));
   *socket_ref = 1;
   func_num = PREOBIT_REPLY;
   tc = 9;
@@ -108,7 +108,7 @@ END_TEST
 
 START_TEST(test_preobit_reply_sattrl)
   {
-  int *socket_ref = malloc(sizeof(int));
+  int *socket_ref = (int *)malloc(sizeof(int));
   *socket_ref = 1;
   func_num = PREOBIT_REPLY;
   tc = 10;
@@ -119,7 +119,7 @@ END_TEST
 
 START_TEST(test_preobit_reply_sattrlnohost)
   {
-  int *socket_ref = malloc(sizeof(int));
+  int *socket_ref = (int *)malloc(sizeof(int));
   *socket_ref = 1;
   func_num = PREOBIT_REPLY;
   tc = 11;
@@ -130,7 +130,7 @@ END_TEST
 
 START_TEST(test_preobit_reply_negcpid)
   {
-  int *socket_ref = malloc(sizeof(int));
+  int *socket_ref = (int *)malloc(sizeof(int));
   *socket_ref = 1;
   func_num = PREOBIT_REPLY;
   tc = 12;
@@ -141,7 +141,7 @@ END_TEST
 
 START_TEST(test_preobit_reply_atflags)
   {
-  int *socket_ref = malloc(sizeof(int));
+  int *socket_ref = (int *)malloc(sizeof(int));
   *socket_ref = 1;
   func_num = PREOBIT_REPLY;
   tc = 13;
@@ -152,7 +152,7 @@ END_TEST
 
 START_TEST(test_preobit_reply_atflagsneg)
   {
-  int *socket_ref = malloc(sizeof(int));
+  int *socket_ref = (int *)malloc(sizeof(int));
   *socket_ref = 1;
   func_num = PREOBIT_REPLY;
   tc = 14;
@@ -185,7 +185,7 @@ Suite *preobit_reply_suite(void)
 
 void rundebug()
   {
-  int *socket_ref = malloc(sizeof(int));
+  int *socket_ref = (int *)malloc(sizeof(int));
   *socket_ref = 1;
   func_num = PREOBIT_REPLY;
   tc = 13;

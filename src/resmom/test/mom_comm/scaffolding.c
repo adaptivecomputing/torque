@@ -52,7 +52,7 @@ int insert_thing(resizable_array *ra, void *thing)
   }
 
 #undef disrus
-unsigned short disrus(int stream, int *retval)
+unsigned short disrus(tcp_chan *c, int *retval)
   {
   fprintf(stderr, "The call to disrus needs to be mocked!!\n");
   exit(1);
@@ -528,7 +528,7 @@ job *mom_find_job(char *jobid)
   }
 
 #undef diswsi
-int diswsi(int stream, int value)
+int diswsi(tcp_chan *c, int value)
   {
   fprintf(stderr, "The call to diswsi needs to be mocked!!\n");
   exit(1);

@@ -9,7 +9,7 @@ int decode_resc(struct pbs_attribute *patr, const char *name, const char *rescn,
 
 int encode_resc(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int ac_perm);
 
-int set_resc(struct pbs_attribute *old, struct pbs_attribute *new, enum batch_op op);
+int set_resc(struct pbs_attribute *old, struct pbs_attribute *newAttr, enum batch_op op);
 
 int comp_resc(struct pbs_attribute *attr, struct pbs_attribute *with); 
 

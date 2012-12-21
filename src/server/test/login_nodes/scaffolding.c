@@ -7,8 +7,8 @@
 #include "resizable_array.h"
 
 
-int lock_node(struct pbsnode *pnode, const char *caller, char *msg, int level) {return(0);}
-int unlock_node(struct pbsnode *pnode, const char *caller, char *msg, int level) {return(0);}
+int lock_node(struct pbsnode *pnode, const char *caller, const char *msg, int level) {return(0);}
+int unlock_node(struct pbsnode *pnode, const char *caller, const char *msg, int level) {return(0);}
 
 void *next_thing(
 
