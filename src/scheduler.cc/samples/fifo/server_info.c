@@ -654,6 +654,9 @@ token** get_token_array(char* tokenlist)
 
   token_array = (token **)malloc(sizeof(token *) * (count + 1));
 
+  if (token_array == NULL)
+    return NULL;
+
   for (i = 0;  i < count; i++)
     {
     token_array[i] = get_token(list[i]);
