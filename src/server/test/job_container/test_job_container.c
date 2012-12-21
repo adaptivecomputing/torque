@@ -14,12 +14,16 @@ END_TEST
 START_TEST(swap_jobs_test)
   {
   struct all_jobs alljobs;
+  struct job *test_job;
+  struct job *second_test_job;
+
+  int result;
   initialize_all_jobs_array(&alljobs);
 
-  struct job *test_job = job_alloc();
-  struct job *second_test_job = job_alloc();
+  test_job = job_alloc();
+  second_test_job = job_alloc();
 
-  int result = swap_jobs(&alljobs,NULL,test_job);
+  result = swap_jobs(&alljobs,NULL,test_job);
   fail_unless(result != PBSE_NONE, "NULL first input job fail");
 
   result = insert_job_after(&alljobs,test_job,NULL);
@@ -35,11 +39,14 @@ END_TEST
 START_TEST(insert_job_test)
   {
   struct all_jobs alljobs;
+  struct job *test_job;
+
+  int result;
   initialize_all_jobs_array(&alljobs);
 
-  struct job *test_job = job_alloc();
+  test_job = job_alloc();
 
-  int result = insert_job(NULL, test_job);
+  result = insert_job(NULL, test_job);
   fail_unless(result != PBSE_NONE, "insert into null array fail");
 
   result = insert_job(&alljobs, NULL);
@@ -53,11 +60,14 @@ END_TEST
 START_TEST(insert_job_after_test)
   {
   struct all_jobs alljobs;
+  struct job *test_job;
+
+  int result;
   initialize_all_jobs_array(&alljobs);
 
-  struct job *test_job = job_alloc();
+  test_job = job_alloc();
 
-  int result = insert_job_after(NULL,test_job,test_job);
+  result = insert_job_after(NULL,test_job,test_job);
   fail_unless(result != PBSE_NONE, "insert into null array fail");
 
   result = insert_job_after(&alljobs,NULL,test_job);
@@ -75,11 +85,14 @@ END_TEST
 START_TEST(insert_job_after_index_test)
   {
   struct all_jobs alljobs;
+  struct job *test_job;
+
+  int result;
   initialize_all_jobs_array(&alljobs);
 
-  struct job *test_job = job_alloc();
+  test_job = job_alloc();
 
-  int result = insert_job_after_index(NULL,0,test_job);
+  result = insert_job_after_index(NULL,0,test_job);
   fail_unless(result != PBSE_NONE, "insert into null array fail");
 
   result = insert_job_after_index(&alljobs,0,NULL);
@@ -93,11 +106,12 @@ END_TEST
 START_TEST(insert_job_first_test)
   {
   struct all_jobs alljobs;
-  initialize_all_jobs_array(&alljobs);
-
   struct job *test_job = job_alloc();
 
-  int result = insert_job_first(NULL,test_job);
+  int result;
+  initialize_all_jobs_array(&alljobs);
+
+  result = insert_job_first(NULL,test_job);
   fail_unless(result != PBSE_NONE, "insert into null array fail");
 
   result = insert_job_first(&alljobs,NULL);
@@ -111,11 +125,11 @@ END_TEST
 START_TEST(get_jobs_index_test)
   {
   struct all_jobs alljobs;
+  struct job *test_job = job_alloc();
+  int result;
   initialize_all_jobs_array(&alljobs);
 
-  struct job *test_job = job_alloc();
-
-  int result = get_jobs_index(NULL,test_job);
+  result = get_jobs_index(NULL,test_job);
   fail_unless(result == PBSE_BAD_PARAMETER, "null input array fail");
 
   result = get_jobs_index(&alljobs,NULL);
@@ -130,11 +144,12 @@ END_TEST
 START_TEST(has_job_test)
   {
   struct all_jobs alljobs;
+  struct job *test_job = job_alloc();
+  int result;
   initialize_all_jobs_array(&alljobs);
 
-  struct job *test_job = job_alloc();
 
-  int result = has_job(NULL,test_job);
+  result = has_job(NULL,test_job);
   fail_unless(result != PBSE_NONE, "null input array fail");
 
   result = has_job(&alljobs,NULL);
@@ -149,11 +164,11 @@ END_TEST
 START_TEST(remove_job_test)
   {
   struct all_jobs alljobs;
+  int result;
+  struct job *test_job = job_alloc();
   initialize_all_jobs_array(&alljobs);
 
-  struct job *test_job = job_alloc();
-
-  int result = remove_job(NULL,test_job);
+  result = remove_job(NULL,test_job);
   fail_unless(result != PBSE_NONE, "remove from null array fail");
 
   result = remove_job(&alljobs,NULL);
@@ -168,9 +183,10 @@ END_TEST
 START_TEST(next_job_test)
   {
   struct all_jobs alljobs;
+  struct job *result;
   initialize_all_jobs_array(&alljobs);
+  result = next_job(NULL,NULL);
 
-  struct job *result = next_job(NULL,NULL);
   fail_unless(result == NULL, "null input parameters fail");
 
   result = next_job(&alljobs,NULL);
@@ -181,9 +197,10 @@ END_TEST
 START_TEST(next_job_from_back_test)
   {
   struct all_jobs alljobs;
+  struct job *result;
   initialize_all_jobs_array(&alljobs);
 
-  struct job *result = next_job_from_back(NULL,NULL);
+  result = next_job_from_back(NULL,NULL);
   fail_unless(result == NULL, "null input parameters fail");
 
   result = next_job_from_back(&alljobs,NULL);

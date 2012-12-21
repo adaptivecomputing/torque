@@ -411,8 +411,8 @@ static int remtree(
 
 int job_abt(
 
-  struct job         **pjobp, /* I (modified/freed) */
-  const char *text)  /* I (optional) */
+  struct job **pjobp, /* I (modified/freed) */
+  const char  *text)  /* I (optional) */
 
   {
   char  log_buf[LOCAL_LOG_BUF_SIZE];
@@ -422,6 +422,7 @@ int job_abt(
   char  job_id[PBS_MAXSVRJOBID+1];
   long  job_atr_hold;
   int   job_exit_status;
+  job  *pjob;
 
   if (pjobp == NULL)
     {
@@ -430,7 +431,7 @@ int job_abt(
     return(rc);
     }
 
-  job  *pjob = *pjobp;
+  pjob = *pjobp;
 
   if (pjob == NULL)
     {
@@ -442,11 +443,8 @@ int job_abt(
   strcpy(job_id, pjob->ji_qs.ji_jobid);
 
   /* save old state and update state to Exiting */
-
   old_state = pjob->ji_qs.ji_state;
   old_substate = pjob->ji_qs.ji_substate;
-
-
 
   if (LOGLEVEL >= 6)
     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);

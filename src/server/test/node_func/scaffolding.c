@@ -131,9 +131,9 @@ void *get_next(list_link pl, char *file, int line)
 
 resizable_array *initialize_resizable_array(int size)
   {
-  size = 10;
   resizable_array *ra = (resizable_array *)calloc(1, sizeof(resizable_array));
   size_t           amount = sizeof(slot) * size;
+  size = 10;
 
   ra->max       = size;
   ra->num       = 0;
