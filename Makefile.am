@@ -194,3 +194,8 @@ uninstall-hook:
 	rmdir $(DESTDIR)$(MODULEFILES_DIR)/$(PACKAGE_NAME)
 endif
 
+CHECK_DIRS = src
+
+.PHONY: cleancheck
+cleancheck:
+	$(MAKE) -C $(CHECK_DIRS) $(MAKECMDGOALS)
