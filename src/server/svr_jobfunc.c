@@ -643,10 +643,15 @@ int svr_dequejob(
     {
     pque = get_jobs_queue(&pjob);
 
-    if ((pjob == NULL) ||
-        (pque == NULL))
+    if (pjob == NULL)
       {
       log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 10");
+      return(PBSE_JOBNOTFOUND);
+      }
+    if (pque == NULL)
+      {
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+      log_err(PBSE_JOBNOTFOUND, __func__, "Job has no queue");
       return(PBSE_JOBNOTFOUND);
       }
     }
