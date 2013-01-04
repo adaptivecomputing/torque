@@ -4,7 +4,10 @@
 #include "list_link.h" /* tlist_head */
 
 /* Forward declarations. */
-typedef unsigned long pbs_net_t;
+#ifndef PBS_NET_TYPE
+typedef unsigned long pbs_net_t;        /* for holding host addresses */
+#define PBS_NET_TYPE
+#endif
 struct pbsnode;
 struct node_check_info;
 struct node_iterator;
