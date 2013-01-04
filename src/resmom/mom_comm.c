@@ -5632,7 +5632,7 @@ void im_request(
       errcode = disrsi(chan, &ret);
 
       snprintf(log_buffer, LOCAL_LOG_BUF_SIZE,
-        "Response recieved from client %s (%d) jobid %s",
+        "Response received from client %s (%d) jobid %s",
         netaddr(addr), sender_port, jobid);
       log_err(-1, __func__, log_buffer);
      
