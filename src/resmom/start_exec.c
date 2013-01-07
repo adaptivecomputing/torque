@@ -1301,11 +1301,7 @@ int InitUserEnv(
   vtable.v_bsize = ebsize + EXTRA_VARIABLE_SPACE +
                      (vstrs != NULL ? (vstrs->as_next - vstrs->as_buf) : 0);
 
-<<<<<<< HEAD
-  vtable.v_block_start = calloc(1, vtable.v_bsize);
-=======
-  vtable.v_block = (char *)calloc(1, vtable.v_bsize);
->>>>>>> ba92cf137a6ab58ca48b488081878896894c8acc
+  vtable.v_block_start = (char *)calloc(1, vtable.v_bsize);
 
   if (vtable.v_block_start == NULL)
     {
@@ -7399,7 +7395,7 @@ int expand_vtable(
       else
         tmp_vtable.v_ensize = vtable->v_ensize; /* tmp holder for data copying */
 
-      tmp_vtable.v_envp = calloc(tmp_vtable.v_ensize, sizeof(char *));
+      tmp_vtable.v_envp = (char **)calloc(tmp_vtable.v_ensize, sizeof(char *));
       if (!tmp_vtable.v_envp)
         {
         sprintf(log_buffer, "PBS: failed to allocate memory for v_envp: %s\n",
@@ -7413,7 +7409,7 @@ int expand_vtable(
       if (expand_bsize)
         {
         amt = EXTRA_VARIABLE_SPACE + (vtable->v_block - vtable->v_block_start) + vtable->v_bsize;
-        tmp_vtable.v_block_start = calloc(1, amt);
+        tmp_vtable.v_block_start = (char *)calloc(1, amt);
         tmp_vtable.v_block = tmp_vtable.v_block_start;
         tmp_vtable.v_bsize = amt;
         if (!tmp_vtable.v_block_start) 

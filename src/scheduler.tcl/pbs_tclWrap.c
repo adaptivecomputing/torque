@@ -105,16 +105,32 @@ Tcl_Obj *pbserr;
 
 int connector = -1;
 
+char *getreq_err(int *local_errno, int  stream);
+struct batch_status *pbs_statserver_err(int c, struct attrl *attrib, char *extend, int *local_errno);
+struct batch_status *pbs_statjob_err(int c, char *id, struct attrl *attrib, char *extend, int *local_errno);
+struct batch_status *pbs_selstat_err(int c, struct attropl *attrib, char *extend, int *local_errno);
+struct batch_status *pbs_statnode_err(int c, char *id, struct attrl *attrib, char *extend, int *local_errno);
+struct batch_status *pbs_statque_err(int c, char *id, struct attrl *attrib, char *extend, int *local_errno);
+int pbs_rerunjob_err(int c, char *jobid, char *extend, int *local_errno);
+int pbs_movejob_err(int c, char *jobid, char *destin, char *extend, int *local_errno);
+int pbs_asyrunjob_err(int c, char *jobid, char *location, char *extend, int *local_errno);
+int pbs_runjob_err(int c, char *jobid, char *location, char *extend, int *rc);
+int pbs_deljob_err(int c, char *jobid, char *extend, int *local_errno);
+int pbs_holdjob_err(int c, char *jobid, char *holdtype, char *extend, int *local_errno);
+int pbs_manager_err(int c, int command, int objtype, char *objname, struct attropl *attrib, char *extend, int *local_errno);
+int pbs_alterjob_err(int c, char *jobid, struct attrl *attrib, char *extend, int *local_errno);
+
 #define SET_PBSERR(value) \
   (void)Tcl_ObjSetVar2(interp, pbserr, NULL, \
                        Tcl_NewIntObj((value)), TCL_GLOBAL_ONLY | TCL_LEAVE_ERR_MSG)
 
-int
-OpenRM(clientData, interp, objc, objv)
-ClientData clientData;
-Tcl_Interp *interp;
-int  objc;
-Tcl_Obj *CONST objv[];
+int OpenRM(
+    
+  ClientData     clientData,
+  Tcl_Interp    *interp,
+  int            objc, 
+  Tcl_Obj *CONST objv[])
+
   {
   int     port = 0;
   int fd;
@@ -143,12 +159,13 @@ Tcl_Obj *CONST objv[];
   return TCL_OK;
   }
 
-int
-CloseRM(clientData, interp, objc, objv)
-ClientData clientData;
-Tcl_Interp *interp;
-int  objc;
-Tcl_Obj *CONST objv[];
+int CloseRM(
+    
+  ClientData     clientData,
+  Tcl_Interp    *interp,
+  int            objc,
+  Tcl_Obj *CONST objv[])
+  
   {
   int fd, ret;
   char *cmd;
@@ -176,12 +193,13 @@ Tcl_Obj *CONST objv[];
   return TCL_OK;
   }
 
-int
-DownRM(clientData, interp, objc, objv)
-ClientData clientData;
-Tcl_Interp *interp;
-int  objc;
-Tcl_Obj *CONST objv[];
+int DownRM(
+    
+  ClientData     clientData,
+  Tcl_Interp    *interp,
+  int            objc,
+  Tcl_Obj *CONST objv[])
+
   {
   int fd, ret;
   char *cmd;
@@ -209,12 +227,13 @@ Tcl_Obj *CONST objv[];
   return TCL_OK;
   }
 
-int
-ConfigRM(clientData, interp, objc, objv)
-ClientData clientData;
-Tcl_Interp *interp;
-int  objc;
-Tcl_Obj *CONST objv[];
+int ConfigRM(
+    
+  ClientData     clientData,
+  Tcl_Interp    *interp,
+  int            objc,
+  Tcl_Obj *CONST objv[])
+  
   {
   int fd, ret;
   int local_errno = 0;
@@ -247,12 +266,13 @@ Tcl_Obj *CONST objv[];
   return TCL_OK;
   }
 
-int
-AddREQ(clientData, interp, objc, objv)
-ClientData clientData;
-Tcl_Interp *interp;
-int  objc;
-Tcl_Obj *CONST objv[];
+int AddREQ(
+    
+  ClientData    clientData,
+  Tcl_Interp   *interp,
+  int           objc,
+  Tcl_Obj *CONST objv[])
+  
   {
   int fd, ret;
   int local_errno = 0;
@@ -285,12 +305,13 @@ Tcl_Obj *CONST objv[];
   return TCL_OK;
   }
 
-int
-AllREQ(clientData, interp, argc, argv)
-ClientData clientData;
-Tcl_Interp *interp;
-int  argc;
-char *argv[];
+int AllREQ(
+    
+  ClientData     clientData,
+  Tcl_Interp    *interp,
+  int            argc,
+  const char    *argv[])
+  
   {
   int ret;
 
@@ -301,22 +322,23 @@ char *argv[];
     return TCL_ERROR;
     }
 
-  ret = allreq(argv[1]);
+  ret = allreq(strdup(argv[1]));
 
   Tcl_SetObjResult(interp, Tcl_NewIntObj(ret));
   return TCL_OK;
   }
 
-int
-GetREQ(clientData, interp, objc, objv)
-ClientData clientData;
-Tcl_Interp *interp;
-int  objc;
-Tcl_Obj *CONST objv[];
+int GetREQ(
+  
+  ClientData     clientData,
+  Tcl_Interp    *interp,
+  int            objc,
+  Tcl_Obj *CONST objv[])
+  
   {
   int fd;
   int local_errno = 0;
-  char *ret, *getreq_err();
+  char *ret;
   char *cmd;
 
   cmd = Tcl_GetStringFromObj(objv[0], NULL);
@@ -360,12 +382,13 @@ Tcl_Obj *CONST objv[];
   return TCL_OK;
   }
 
-int
-FlushREQ(clientData, interp, argc, argv)
-ClientData clientData;
-Tcl_Interp *interp;
-int  argc;
-char *argv[];
+int FlushREQ(
+
+  ClientData     clientData,
+  Tcl_Interp    *interp,
+  int            argc,
+  const char    *argv[])
+  
   {
   if (argc != 1)
     {
@@ -379,12 +402,13 @@ char *argv[];
   return TCL_OK;
   }
 
-int
-ActiveREQ(clientData, interp, argc, argv)
-ClientData clientData;
-Tcl_Interp *interp;
-int  argc;
-char *argv[];
+int ActiveREQ(
+
+  ClientData     clientData,
+  Tcl_Interp    *interp,
+  int            argc,
+  const char    *argv[])
+  
   {
   int ret;
 
@@ -408,12 +432,13 @@ char *argv[];
   return TCL_OK;
   }
 
-int
-FullResp(clientData, interp, argc, argv)
-ClientData clientData;
-Tcl_Interp *interp;
-int  argc;
-char *argv[];
+int FullResp(
+
+  ClientData     clientData,
+  Tcl_Interp    *interp,
+  int            argc,
+  const char    *argv[])
+  
   {
   int flag;
 
@@ -434,17 +459,18 @@ char *argv[];
   return TCL_OK;
   }
 
-int
-PBS_Connect(clientData, interp, argc, argv)
-ClientData clientData;
-Tcl_Interp *interp;
-int  argc;
-char *argv[];
+int PBS_Connect(
+
+  ClientData     clientData,
+  Tcl_Interp    *interp,
+  int            argc,
+  const char    *argv[])
+  
   {
   char *server = NULL;
 
   if (argc == 2)
-    server = argv[1];
+    server = strdup(argv[1]);
   else if (argc != 1)
     {
     sprintf(log_buffer, "%s: wrong # args: ?server?", argv[0]);
@@ -469,12 +495,13 @@ char *argv[];
   return TCL_OK;
   }
 
-int
-PBS_Disconnect(clientData, interp, argc, argv)
-ClientData clientData;
-Tcl_Interp *interp;
-int  argc;
-char *argv[];
+int PBS_Disconnect(
+
+  ClientData     clientData,
+  Tcl_Interp    *interp,
+  int            argc,
+  const char    *argv[])
+  
   {
   char *msg;
 
@@ -501,11 +528,11 @@ char *argv[];
   return TCL_OK;
   }
 
-Tcl_Obj *
-attrlist(interp, ap)
-Tcl_Interp *interp;
-
-struct attrl *ap;
+Tcl_Obj *attrlist(
+    
+  Tcl_Interp   *interp,
+  struct attrl *ap)
+  
   {
   Tcl_Obj *ret;
 
@@ -533,11 +560,11 @@ struct attrl *ap;
   return (ret);
   }
 
-void
-batresult(interp, bs)
-Tcl_Interp *interp;
-
-struct batch_status *bs;
+void batresult(
+    
+  Tcl_Interp          *interp,
+  struct batch_status *bs)
+  
   {
   Tcl_Obj *batchl;
 
@@ -563,12 +590,13 @@ struct batch_status *bs;
   pbs_statfree(bs);
   }
 
-int
-PBS_StatServ(clientData, interp, argc, argv)
-ClientData clientData;
-Tcl_Interp *interp;
-int  argc;
-char *argv[];
+int PBS_StatServ(
+
+  ClientData     clientData,
+  Tcl_Interp    *interp,
+  int            argc,
+  const char    *argv[])
+  
   {
   char *msg;
   int   local_errno = 0;
@@ -614,12 +642,13 @@ char *argv[];
   return TCL_OK;
   }
 
-int
-PBS_StatJob(clientData, interp, argc, argv)
-ClientData clientData;
-Tcl_Interp *interp;
-int  argc;
-char *argv[];
+int PBS_StatJob(
+
+  ClientData     clientData,
+  Tcl_Interp    *interp,
+  int            argc,
+  const char    *argv[])
+  
   {
   char *msg;
   int   local_errno = 0;
@@ -656,12 +685,13 @@ char *argv[];
   return TCL_OK;
   }
 
-int
-PBS_SelStat(clientData, interp, argc, argv)
-ClientData clientData;
-Tcl_Interp *interp;
-int  argc;
-char *argv[];
+int PBS_SelStat(
+
+  ClientData     clientData,
+  Tcl_Interp    *interp,
+  int            argc,
+  const char    *argv[])
+  
   {
   char *msg;
 
@@ -671,18 +701,18 @@ char *argv[];
   static struct attropl att1 =
     {
     NULL,
-    "queue_type",
+    strdup("queue_type"),
     NULL,
-    "E",
+    strdup("E"),
     EQ
     };
 
   static struct attropl att2 =
     {
     &att1,
-    "job_state",
+    strdup("job_state"),
     NULL,
-    "Q",
+    strdup("Q"),
     EQ
     };
 
@@ -716,12 +746,13 @@ char *argv[];
   return TCL_OK;
   }
 
-int
-PBS_StatQue(clientData, interp, argc, argv)
-ClientData clientData;
-Tcl_Interp *interp;
-int  argc;
-char *argv[];
+int PBS_StatQue(
+
+  ClientData     clientData,
+  Tcl_Interp    *interp,
+  int            argc,
+  const char    *argv[])
+  
   {
   char *msg;
   int   local_errno = 0;
@@ -758,12 +789,13 @@ char *argv[];
   return TCL_OK;
   }
 
-int
-PBS_StatNode(clientData, interp, objc, objv)
-ClientData clientData;
-Tcl_Interp *interp;
-int  objc;
-Tcl_Obj *CONST objv[];
+int PBS_StatNode(
+    
+  ClientData    clientData,
+  Tcl_Interp   *interp,
+  int           objc,
+  Tcl_Obj *CONST objv[])
+  
   {
   char *msg, *cmd;
   char *node = NULL;
@@ -804,19 +836,20 @@ Tcl_Obj *CONST objv[];
   return TCL_OK;
   }
 
-int
-PBS_AsyRunJob(clientData, interp, argc, argv)
-ClientData clientData;
-Tcl_Interp *interp;
-int  argc;
-char *argv[];
+int PBS_AsyRunJob(
+
+  ClientData     clientData,
+  Tcl_Interp    *interp,
+  int            argc,
+  const char    *argv[])
+  
   {
   char *msg;
   char *location = NULL;
   int   local_errno = 0;
 
   if (argc == 3)
-    location = argv[2];
+    location = strdup(argv[2]);
   else if (argc != 2)
     {
     sprintf(log_buffer,
@@ -834,7 +867,7 @@ char *argv[];
 
   Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
 
-  if (pbs_asyrunjob_err(connector, argv[1], location, NULL, &local_errno))
+  if (pbs_asyrunjob_err(connector, strdup(argv[1]), location, NULL, &local_errno))
     {
     Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
     msg = pbs_geterrmsg(connector);
@@ -846,19 +879,20 @@ char *argv[];
   }
 
 
-int
-PBS_RunJob(clientData, interp, argc, argv)
-ClientData clientData;
-Tcl_Interp *interp;
-int  argc;
-char *argv[];
+int PBS_RunJob(
+
+  ClientData     clientData,
+  Tcl_Interp    *interp,
+  int            argc,
+  const char    *argv[])
+  
   {
   char *msg;
   char *location = NULL;
   int   local_errno = 0;
 
   if (argc == 3)
-    location = argv[2];
+    location = strdup(argv[2]);
   else if (argc != 2)
     {
     sprintf(log_buffer,
@@ -874,7 +908,7 @@ char *argv[];
     return TCL_OK;
     }
 
-  if (pbs_runjob_err(connector, argv[1], location, NULL, &local_errno))
+  if (pbs_runjob_err(connector, strdup(argv[1]), location, NULL, &local_errno))
     {
     msg = pbs_geterrmsg(connector);
     sprintf(log_buffer, "%s (%d)", msg ? msg : fail, local_errno);
@@ -887,15 +921,16 @@ char *argv[];
   return TCL_OK;
   }
 
-int
-PBS_ReRun(clientData, interp, argc, argv)
-ClientData clientData;
-Tcl_Interp *interp;
-int argc;
-char *argv[];
+int PBS_ReRun(
+
+  ClientData     clientData,
+  Tcl_Interp    *interp,
+  int            argc,
+  const char    *argv[])
+  
   {
   char *msg;
-  char *extend = "0";
+  char *extend = strdup("0");
   int   local_errno = 0;
 
   if (argc != 2)
@@ -912,11 +947,11 @@ char *argv[];
     return TCL_OK;
     }
 
-  interp->result = "0";
+  interp->result = strdup("0");
 
-  if (pbs_rerunjob_err(connector, argv[1], extend, &local_errno))
+  if (pbs_rerunjob_err(connector, strdup(argv[1]), extend, &local_errno))
     {
-    interp->result = "-1";
+    interp->result = strdup("-1");
     msg = pbs_geterrmsg(connector);
     sprintf(log_buffer, "%s (%d)", msg ? msg : fail, local_errno);
     log_err(-1, argv[0], log_buffer);
@@ -932,12 +967,13 @@ char *argv[];
   }
 
 
-int
-PBS_MoveJob(clientData, interp, argc, argv)
-ClientData clientData;
-Tcl_Interp *interp;
-int  argc;
-char *argv[];
+int PBS_MoveJob(
+
+  ClientData     clientData,
+  Tcl_Interp    *interp,
+  int            argc,
+  const char    *argv[])
+  
   {
   char *msg;
   char *location = NULL;
@@ -946,7 +982,7 @@ char *argv[];
   int   local_errno = 0;
 
   if (argc == 3)
-    location = argv[2];
+    location = strdup(argv[2]);
   else if (argc != 2)
     {
     sprintf(log_buffer,
@@ -983,19 +1019,20 @@ char *argv[];
   return TCL_OK;
   }
 
-int
-PBS_DelJob(clientData, interp, argc, argv)
-ClientData clientData;
-Tcl_Interp *interp;
-int  argc;
-char *argv[];
+int PBS_DelJob(
+
+  ClientData     clientData,
+  Tcl_Interp    *interp,
+  int            argc,
+  const char    *argv[])
+  
   {
   char *msg;
   char *message = NULL;
   int   local_errno = 0;
 
   if (argc == 3)
-    message = argv[2];
+    message = strdup(argv[2]);
   else if (argc != 2)
     {
     sprintf(log_buffer,
@@ -1011,7 +1048,7 @@ char *argv[];
     return TCL_OK;
     }
 
-  if (pbs_deljob_err(connector, argv[1], message, &local_errno))
+  if (pbs_deljob_err(connector, strdup(argv[1]), message, &local_errno))
     {
     msg = pbs_geterrmsg(connector);
     sprintf(log_buffer, "%s (%d)", msg ? msg : fail, local_errno);
@@ -1025,12 +1062,13 @@ char *argv[];
   }
 
 
-int
-PBS_HoldJob(clientData, interp, argc, argv)
-ClientData clientData;
-Tcl_Interp *interp;
-int  argc;
-char *argv[];
+int PBS_HoldJob(
+
+  ClientData     clientData,
+  Tcl_Interp    *interp,
+  int            argc,
+  const char    *argv[])
+  
   {
   char *msg;
   int   local_errno = 0;
@@ -1050,7 +1088,7 @@ char *argv[];
     return TCL_OK;
     }
 
-  if (pbs_holdjob_err(connector, argv[1], SYSTEM_HOLD, NULL, &local_errno))
+  if (pbs_holdjob_err(connector, strdup(argv[1]), strdup(SYSTEM_HOLD), NULL, &local_errno))
     {
     msg = pbs_geterrmsg(connector);
     sprintf(log_buffer, "%s (%d)", msg ? msg : fail, local_errno);
@@ -1063,14 +1101,14 @@ char *argv[];
   return TCL_OK;
   }
 
-int
-PBS_QueueOp(clientData, interp, argc, argv, attr)
-ClientData  clientData;
-Tcl_Interp  *interp;
-int   argc;
-char  *argv[];
+int PBS_QueueOp(
 
-struct attropl *attr;
+  ClientData      clientData,
+  Tcl_Interp     *interp,
+  int             argc,
+  const char     *argv[],
+  struct attropl *attr)
+  
   {
   int merr;
   int   local_errno = 0;
@@ -1090,7 +1128,7 @@ struct attropl *attr;
     return TCL_OK;
     }
 
-  merr = pbs_manager_err(connector, MGR_CMD_SET, MGR_OBJ_QUEUE, argv[1], attr, NULL, &local_errno);
+  merr = pbs_manager_err(connector, MGR_CMD_SET, MGR_OBJ_QUEUE, strdup(argv[1]), attr, NULL, &local_errno);
 
   if (merr != 0)
     {
@@ -1104,76 +1142,81 @@ struct attropl *attr;
   return TCL_OK;
   }
 
-int
-PBS_EnableQueue(clientData, interp, argc, argv)
-ClientData clientData;
-Tcl_Interp *interp;
-int  argc;
-char *argv[];
+int PBS_EnableQueue(
+
+  ClientData      clientData,
+  Tcl_Interp     *interp,
+  int             argc,
+  const char     *argv[])
+  
   {
 
   static struct attropl attr =
     {
-    NULL, "enabled", NULL, "TRUE", SET
+    NULL, strdup("enabled"), NULL, strdup("TRUE"), SET
     };
 
   return PBS_QueueOp(clientData, interp, argc, argv, &attr);
   }
 
-int
-PBS_DisableQueue(clientData, interp, argc, argv)
-ClientData clientData;
-Tcl_Interp *interp;
-int  argc;
-char *argv[];
+int PBS_DisableQueue(
+
+  ClientData      clientData,
+  Tcl_Interp     *interp,
+  int             argc,
+  const char     *argv[])
+  
   {
 
   static struct attropl attr =
     {
-    NULL, "enabled", NULL, "FALSE", SET
+    NULL, strdup("enabled"), NULL, strdup("FALSE"), SET
     };
 
   return PBS_QueueOp(clientData, interp, argc, argv, &attr);
   }
 
-int
-PBS_StartQueue(clientData, interp, argc, argv)
-ClientData clientData;
-Tcl_Interp *interp;
-int  argc;
-char *argv[];
+int PBS_StartQueue(
+
+  ClientData      clientData,
+  Tcl_Interp     *interp,
+  int             argc,
+  const char     *argv[])
+
   {
 
   static struct attropl attr =
     {
-    NULL, "started", NULL, "TRUE", SET
+    NULL, strdup("started"), NULL, strdup("TRUE"), SET
     };
 
   return PBS_QueueOp(clientData, interp, argc, argv, &attr);
   }
 
-int
-PBS_StopQueue(clientData, interp, argc, argv)
-ClientData clientData;
-Tcl_Interp *interp;
-int  argc;
-char *argv[];
+int PBS_StopQueue(
+
+  ClientData      clientData,
+  Tcl_Interp     *interp,
+  int             argc,
+  const char     *argv[])
+
   {
 
   static struct attropl attr =
     {
-    NULL, "started", NULL, "FALSE", SET
+    NULL, strdup("started"), NULL, strdup("FALSE"), SET
     };
 
   return PBS_QueueOp(clientData, interp, argc, argv, &attr);
   }
 
-int
-PBS_AlterJob(clientData, interp, objc, objv)
-ClientData clientData;
-Tcl_Interp *interp;
-int  objc;
-Tcl_Obj *CONST objv[];
+int PBS_AlterJob(
+
+  ClientData      clientData,
+  Tcl_Interp     *interp,
+  int             objc,
+  Tcl_Obj *CONST  objv[])
+  
   {
   char *msg;
   int i, num, tre, ret;
@@ -1254,12 +1297,13 @@ done:
   return ret;
   }
 
-int
-PBS_RescQuery(clientData, interp, objc, objv)
-ClientData clientData;
-Tcl_Interp *interp;
-int  objc;
-Tcl_Obj *CONST objv[];
+int PBS_RescQuery(
+    
+  ClientData    clientData,
+  Tcl_Interp   *interp,
+  int           objc,
+  Tcl_Obj *CONST objv[])
+  
   {
   char *msg;
   int i, num, ret;
@@ -1331,12 +1375,13 @@ Tcl_Obj *CONST objv[];
   return TCL_OK;
   }
 
-int
-PBS_RescReserve(clientData, interp, objc, objv)
-ClientData clientData;
-Tcl_Interp *interp;
-int  objc;
-Tcl_Obj *CONST objv[];
+int PBS_RescReserve(
+    
+  ClientData    clientData,
+  Tcl_Interp   *interp,
+  int           objc,
+  Tcl_Obj *CONST objv[])
+
   {
   char *msg;
   int i, num, ret;
@@ -1385,12 +1430,13 @@ Tcl_Obj *CONST objv[];
   return TCL_OK;
   }
 
-int
-PBS_RescRelease(clientData, interp, objc, objv)
-ClientData clientData;
-Tcl_Interp *interp;
-int  objc;
-Tcl_Obj *CONST objv[];
+int PBS_RescRelease(
+    
+  ClientData    clientData,
+  Tcl_Interp   *interp,
+  int           objc,
+  Tcl_Obj *CONST objv[])
+
   {
   char *msg;
   int ret;
@@ -1427,19 +1473,20 @@ Tcl_Obj *CONST objv[];
   return TCL_OK;
   }
 
-int
-DateTime(clientData, interp, argc, argv)
-ClientData clientData;
-Tcl_Interp *interp;
-int  argc;
-char *argv[];
+int DateTime(
+
+  ClientData      clientData,
+  Tcl_Interp     *interp,
+  int             argc,
+  const char     *argv[])
+
   {
   time_t  when;
 
   struct tm tm, *t = NULL;
   int  i, yyy, len;
   char  rtime[64], hold[8];
-  static char *wkday[] = { "Sun", "Mon", "Tue", "Wed",
+  static const char *wkday[] = { "Sun", "Mon", "Tue", "Wed",
                            "Thu", "Fri", "Sat", NULL
                          };
 
@@ -1591,12 +1638,13 @@ char *argv[];
   return TCL_OK;
   }
 
-int
-StrFtime(clientData, interp, objc, objv)
-ClientData clientData;
-Tcl_Interp *interp;
-int  objc;
-Tcl_Obj *CONST objv[];
+int StrFtime(
+    
+  ClientData    clientData,
+  Tcl_Interp   *interp,
+  int           objc,
+  Tcl_Obj *CONST objv[])
+
   {
 
   struct tm *t;
@@ -1627,9 +1675,10 @@ Tcl_Obj *CONST objv[];
   return TCL_OK;
   }
 
-void
-add_cmds(interp)
-Tcl_Interp *interp;
+void add_cmds(
+
+  Tcl_Interp *interp)
+
   {
   Tcl_CreateObjCommand(interp, "openrm", OpenRM, NULL, NULL);
   Tcl_CreateObjCommand(interp, "closerm", CloseRM, NULL, NULL);

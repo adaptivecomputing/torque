@@ -99,8 +99,11 @@ char *csv_nth(const char *csv_str, int n)
  *
  * Search a csv list for an entry that matches a specified search string.
  */
-char *
-csv_find_string(const char *csv_str, const char *search_str)
+char *csv_find_string(
+    
+  const char *csv_str,
+  const char *search_str)
+
   {
   int  i;
   int  nitems;

@@ -87,13 +87,11 @@
 ** This is a site dependent routine provided as a place holder
 ** for whatever C code which may be required for your scheduler.
 */
-void
-site_cmds(interp)
-Tcl_Interp *interp;
+void site_cmds(
+    
+  Tcl_Interp *interp)
+  
   {
-#ifndef NDEBUG
-  char *id = "site_cmds";
-#endif
-  DBPRT(("%s: entered\n", id))
+  DBPRT(("%s: entered\n", __func__))
   return;
   }
