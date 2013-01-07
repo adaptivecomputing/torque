@@ -245,6 +245,7 @@ int req_orderjob(
   pbs_queue            *pque1;
   pbs_queue            *pque2;
 
+
   if ((pjob1 = chk_job_request(req->rq_ind.rq_move.rq_jid, req)) == NULL)
     {
     return(PBSE_NONE);

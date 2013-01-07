@@ -91,10 +91,14 @@
  * Returns 0 on an error.
  */
 
+#ifdef __cplusplus
+extern "C"
+  {
+#endif
 unsigned int get_svrport(
 
-  const char   *service_name,
-  const char   *ptype,
+  char   *service_name,
+  char   *ptype,
   unsigned int  pdefault) /* in host byte order */
 
   {
@@ -110,3 +114,6 @@ unsigned int get_svrport(
 
   return(pdefault);
   }
+#ifdef __cplusplus
+  }
+#endif

@@ -312,6 +312,9 @@ int execute_job_delete(
     return(-1);
     }
 
+  if (LOGLEVEL >= 10)
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_QUEUE, __func__, pjob->ji_qs.ji_jobid);
+
   if (pjob->ji_qs.ji_state == JOB_STATE_TRANSIT)
     {
     /* see note in req_delete - not sure this is possible still,
@@ -1054,6 +1057,7 @@ void post_delete_mom1(
 
   if (preq_sig == NULL)
     return;
+
 
   rc          = preq_sig->rq_reply.brp_code;
   preq_clt_id = (char *)preq_sig->rq_extra;

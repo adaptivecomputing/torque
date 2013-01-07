@@ -31,9 +31,20 @@
 #include "utils.h"
 #include "libcmds.h" /* TShowAbout_exit */
 #include "net_cache.h"
+#include "../lib/Libifl/lib_ifl.h"
 
 
-static void states();
+static void states(  
+  char *string, /* I */
+  char *queued,      /* O */
+  char *running,      /* O */
+  char *held,      /* O */
+  char *waiting,      /* O */
+  char *transit,      /* O */
+  char *exiting,      /* O */
+  char *complete,      /* O */
+  int   len);    /* I */
+
 
 #if !defined(PBS_NO_POSIX_VIOLATION)
 /* defines for alternative display formats */

@@ -97,7 +97,7 @@ END_TEST
 
 START_TEST(test_memmgr_calloc_shuffle_shuffle_extend)
   {
-  int rc = 0;
+  int  rc = 0;
   char *ptr = NULL;
   char *data_ptr1 = NULL;
   char *data_ptr2 = NULL;
@@ -113,6 +113,10 @@ START_TEST(test_memmgr_calloc_shuffle_shuffle_extend)
   fail_unless(ptr == NULL, "zero memory request should generate NULL ptr response");
   
   rc = memmgr_init(&mm, 48);
+  if (rc)
+    {
+    ; /* what does rc return */
+    }
   data_ptr1 = (char *)memmgr_calloc(&mm, 1, 5);
   strcpy(data_ptr1, "11111");
   data_ptr2 = (char *)memmgr_calloc(&mm, 1, 6);
@@ -190,8 +194,13 @@ START_TEST(test_memmgr_free_remove)
   memmgr *mptr4 = NULL;
   int size = 0;
   memmgr *mm = NULL;
+
   init_globals();
   rc = memmgr_init(&mm, 48);
+  if (rc)
+    {
+    ;
+    }
   data_ptr1 = (char *)memmgr_calloc(&mm, 1, 5);
   strcpy(data_ptr1, "11111");
   data_ptr2 = (char *)memmgr_calloc(&mm, 1, 6);
@@ -209,6 +218,10 @@ START_TEST(test_memmgr_free_remove)
   mptr3 = mm->next_mgr->next_mgr;
   mptr4 = mm->next_mgr->next_mgr->next_mgr;
 
+  if (mptr2 == NULL)
+    {
+    ; /* mptr2 set but not used. */
+    }
   memmgr_free(&mm, data_ptr1);
   fail_unless(mptr3->ref_count == 2, "ref_count after free should be 2 but is:%d", mm->ref_count);
   memcpy(&size, mptr3->the_mem, sizeof(int));
@@ -249,7 +262,7 @@ END_TEST
 
 START_TEST(test_memmgr_realloc)
   {
-  int rc = 0;
+  int  rc = 0;
   char *ptr = NULL;
   char *data_ptr1 = NULL;
   char *data_ptr2 = NULL;
@@ -257,6 +270,7 @@ START_TEST(test_memmgr_realloc)
   char *data_ptr4 = NULL;
   char *data_ptr5 = NULL;
   char *data_ptr6 = NULL;
+
   memmgr *mm = NULL;
   init_globals();
   fail_unless(memmgr_realloc(NULL, NULL, 5) == NULL, "NULL memmgr should result in NULL ptr");
@@ -266,6 +280,10 @@ START_TEST(test_memmgr_realloc)
   fail_unless(memmgr_realloc(&mm, NULL, 5) != NULL, "NULL ptr with valid size should result in valid ptr");
   memmgr_destroy(&mm);
   rc = memmgr_init(&mm, 48);
+  if (rc)
+    {
+    ; /* this makes the compiler happy */
+    }
   data_ptr1 = (char *)memmgr_calloc(&mm, 1, 11);
   strcpy(data_ptr1, "11111111111");
   ptr = (char *)mm->current_pos;
@@ -332,16 +350,21 @@ Suite *u_memmgr_suite(void)
 
 void rundebug()
   {
-  int rc = 0;
+  int  rc = 0;
   char *data_ptr1 = NULL;
   char *data_ptr2 = NULL;
   char *data_ptr3 = NULL;
   char *data_ptr4 = NULL;
   char *data_ptr5 = NULL;
   char *data_ptr6 = NULL;
+
   memmgr *mm = NULL;
   init_globals();
   rc = memmgr_init(&mm, 48);
+  if (rc)
+    {
+    ; /* this make the compiler happy */
+    }
   data_ptr1 = (char *)memmgr_calloc(&mm, 1, 11);
   strcpy(data_ptr1, "11111111111");
   data_ptr2 = (char *)memmgr_realloc(&mm, data_ptr1, 4);
@@ -355,6 +378,7 @@ void rundebug()
   data_ptr5 = (char *)memmgr_realloc(&mm, data_ptr4, 20);
   memset(data_ptr5, '5', 6);
   data_ptr6 = (char *)memmgr_realloc(&mm, data_ptr2, 50);
+  memset(data_ptr6, '5', 6);
   memmgr_destroy(&mm);
   }
 

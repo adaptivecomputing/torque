@@ -519,7 +519,6 @@ void *queue_route(
   char      log_buf[LOCAL_LOG_BUF_SIZE];
 
   int       iter = -1;
-  time_t    time_now = time(NULL);
 
   queue_name = (char *)vp;
 
@@ -552,14 +551,15 @@ void *queue_route(
       {
       /* We only want to try if routing has been tried at least once - this is to let
        * req_commit have the first crack at routing always. */
-      int has_been_tried_once = (pjob->ji_qs.ji_un.ji_routet.ji_rteretry != 0) ? 1 : 0;
-      int retry_time_has_passed = (pjob->ji_qs.ji_un.ji_routet.ji_rteretry <= time_now - ROUTE_RETRY_TIME) ? 1 : 0;
-      unlock_queue(pque, __func__, NULL, 0);
-      if (retry_time_has_passed && has_been_tried_once)
+      if (pjob->ji_commit_done == 0) /* when req_commit is done it will set ji_commit_done to 1 */
         {
-        reroute_job(pjob, pque);
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+        continue;
         }
+      unlock_queue(pque, __func__, NULL, 0);
+      reroute_job(pjob, pque);
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+      lock_queue(pque, __func__, NULL, 0);
       }
 
     unlock_queue(pque, __func__, (char *)NULL, 0);

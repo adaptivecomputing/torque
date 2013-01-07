@@ -928,7 +928,10 @@ int add_connection(
  *
  * NOTE:  This routine cannot fail.
  */
-
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 int add_conn(
 
   int            sock,    /* socket associated with connection */
@@ -941,6 +944,9 @@ int add_conn(
   {
   return(add_connection(sock, type, addr, port, socktype, func, TRUE));
   }  /* END add_conn() */
+#ifdef __cplusplus
+}
+#endif
 
 
 

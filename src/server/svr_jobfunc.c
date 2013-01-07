@@ -2790,6 +2790,10 @@ void set_resc_deflt(
   else
     ja = &pjob->ji_wattr[JOB_ATR_resource];
 
+
+  if (LOGLEVEL >= 10)
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
+
   if (has_queue_mutex == FALSE)
     {
     pque = get_jobs_queue(&pjob);
@@ -3123,7 +3127,7 @@ int lock_ji_mutex(
   char *err_msg = NULL;
   char stub_msg[] = "no pos";
 
-  if (logging >= 20)
+  if (logging >= 10)
     {
     err_msg = (char *)calloc(1, MSG_LEN_LONG);
     if (msg == NULL)
@@ -3170,7 +3174,7 @@ int unlock_ji_mutex(
   char *err_msg = NULL;
   char stub_msg[] = "no pos";
 
-  if (logging >= 20)
+  if (logging >= 10)
     {
     err_msg = (char *)calloc(1, MSG_LEN_LONG);
     if (msg == NULL)

@@ -74,6 +74,8 @@ void rundebug()
   char *user_name = strdup("root");
   struct passwd *ret_user = NULL;
   ret_user = getpwnam_ext(user_name);
+  fail_if(ret_user == NULL, "unknown_user ");
+  free(user_name);
   }
 
 int main(void)

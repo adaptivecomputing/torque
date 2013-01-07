@@ -48,6 +48,8 @@ m4_ifdef([HAVE_CHECK],
   [AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.9.6 color-tests])],
   [AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.9.6])])
 
+AC_PROG_CXX
+CC="$CXX"
 AM_MAINTAINER_MODE
 
 if test "$program_prefix" = "NONE";then
@@ -594,8 +596,8 @@ dnl  user_choosed_cc_set=${CC+set}
 dnl  user_choosed_cflags_set=${CFLAGS+set}
 dnl  SPECIFIED_CFLAGS=$CFLAGS
 dnl  look for the C-Compiler
-AC_PROG_CC
-AC_PROG_GCC_TRADITIONAL
+#AC_PROG_CC
+#AC_PROG_GCC_TRADITIONAL
 
 dnl
 dnl  ######################################################################

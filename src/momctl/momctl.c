@@ -28,6 +28,7 @@ extern char *optarg;
 #include "rm.h"
 #include "log.h"
 #include "../lib/Liblog/chk_file_sec.h"
+#include "../lib/Libifl/lib_ifl.h"
 
 #define MAX_QUERY  128
 

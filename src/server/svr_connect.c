@@ -124,8 +124,6 @@
 /* global data */
 
 
-extern int   errno;
-
 extern unsigned int  pbs_server_port_dis;
 
 extern struct connection svr_conn[];

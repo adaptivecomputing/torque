@@ -261,7 +261,8 @@ void get_port_from_server_name_file(unsigned int *server_name_file_port)
  * @return A pointer to the default server name.
  * @see pbs_fbserver()
  */
-
+extern "C"
+{
 char *pbs_default(void)
 
   {
@@ -279,6 +280,7 @@ char *pbs_default(void)
 
   return(server_name);
   } /* END pbs_default() */
+}
 
 
 
@@ -334,8 +336,8 @@ char *PBS_get_server(
   if (dflt_port == 0)
     {
     dflt_port = get_svrport(
-                  PBS_BATCH_SERVICE_NAME,
-                  "tcp",
+                  (char *)PBS_BATCH_SERVICE_NAME,
+                  (char *)"tcp",
                   PBS_BATCH_SERVICE_PORT);
     }
 

@@ -82,6 +82,10 @@
 ** to the resource monitor.
 */
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 int openrm(char *, unsigned int);
 int closerm_err(int *, int);
 int closerm(int);
@@ -95,5 +99,7 @@ char* getreq(int);
 int flushreq(void);
 int activereq(void);
 void fullresp(int);
-
+#ifdef __cplusplus
+}
+#endif
 

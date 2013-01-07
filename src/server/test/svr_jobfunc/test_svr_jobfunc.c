@@ -389,6 +389,26 @@ START_TEST(set_statechar_test)
   }
 END_TEST
 
+START_TEST(lock_ji_mutex_test)
+  {
+  int        rc;
+  job        pjob;
+  const char *id;
+  const char *msg;
+  int        logging;
+
+  pjob.ji_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(pjob.ji_mutex);
+  id = "lock unit test";
+  msg = "locking";
+  logging = 10;
+
+  rc = lock_ji_mutex(&pjob, id, msg, logging);
+  fail_unless(rc == NULL, "did not lock mutex");
+
+  }
+END_TEST
+
 Suite *svr_jobfunc_suite(void)
   {
   Suite *s = suite_create("svr_jobfunc_suite methods");
@@ -446,6 +466,10 @@ Suite *svr_jobfunc_suite(void)
 
   tc_core = tcase_create("set_statechar_test");
   tcase_add_test(tc_core, set_statechar_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("lock_ji_mutex_test");
+  tcase_add_test(tc_core, lock_ji_mutex_test);
   suite_add_tcase(s, tc_core);
 
   return s;
