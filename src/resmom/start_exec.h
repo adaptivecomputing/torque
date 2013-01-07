@@ -89,13 +89,9 @@ int open_std_file(job *pjob, enum job_file which, int mode, gid_t exgid);
 
 /* static int find_env_slot(struct var_table *ptbl, char *pstr); */
 
-<<<<<<< HEAD
-int bld_env_variables(struct var_table *vtable, char *name, char *value);
+int bld_env_variables(struct var_table *vtable, const char *name, const char *value);
 int expand_vtable(struct var_table *vtable);
 int copy_data(struct var_table *tmp_vtable, struct var_table *vtable, int expand_bsize, int expand_ensize);
-=======
-void bld_env_variables(struct var_table *vtable, const char *name, const char *value);
->>>>>>> ba92cf137a6ab58ca48b488081878896894c8acc
 
 #ifndef __TOLDGROUP
 int init_groups(char *pwname, int pwgrp, int groupsize, int *groups);
