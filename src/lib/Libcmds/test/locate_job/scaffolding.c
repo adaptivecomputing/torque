@@ -8,7 +8,7 @@ int pbs_connect(char *server_name_ptr)
   exit(1);
   }
 
-char * pbs_locjob_err(int c, char *jobid, char *extend, int *local_errno)
+char *pbs_locjob_err(int c, char *jobid, char *extend, int *local_errno)
   {
   fprintf(stderr, "The call to pbs_locjob needs to be mocked!!\n");
   exit(1);

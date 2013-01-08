@@ -10,7 +10,7 @@ void *get_next(list_link pl, char *file, int line)
   exit(1);
   }
 
-void delete_link(struct list_link *old)
+void delete_link(list_link *old)
   {
   fprintf(stderr, "The call to delete_link needs to be mocked!!\n");
   exit(1);

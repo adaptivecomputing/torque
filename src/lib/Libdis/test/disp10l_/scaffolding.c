@@ -6,7 +6,7 @@
 unsigned dis_lmx10 = 0;
 dis_long_double_t *dis_lp10 = NULL;
 
-void disi10l_(void)
+void disi10l_()
   {
   fprintf(stderr, "The call to disi10l_ needs to be mocked!!\n");
   exit(1);
