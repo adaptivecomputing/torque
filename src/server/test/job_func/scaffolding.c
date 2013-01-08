@@ -719,7 +719,7 @@ void free_depend(struct pbs_attribute *attr) {}
 void free_arst( struct pbs_attribute *attr) {}
 void free_unkn(pbs_attribute *pattr) {}
 
-int pthread_mutex_lock(pthread_mutex_t *mock_mutex)
+/*int pthread_mutex_lock(pthread_mutex_t *mock_mutex)
 {
   return 0;
 }
@@ -733,6 +733,7 @@ int pthread_mutex_trylock(pthread_mutex_t *mock_mutex)
 {
   return 0;
 }
+*/
 
 
 /* copied from job_container.c */

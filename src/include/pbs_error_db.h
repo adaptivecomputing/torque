@@ -251,6 +251,9 @@ PbsErrClient(PBSE_JOBSUBSTATE, (char *)"Current sub state does not allow trasact
 PbsErrClient(PBSE_CAN_NOT_MOVE_FILE, (char *)"Error moving file")
 PbsErrClient(PBSE_JOB_RECYCLED,      (char *)"Job is being recycled")
 PbsErrClient(PBSE_JOB_ALREADY_IN_QUEUE, (char *)"Job is already in destination queue.")
+PbsErrClient(PBSE_INVALID_MUTEX, (char *)"Mutex is NULL or otherwise invalid")
+PbsErrClient(PBSE_MUTEX_ALREADY_LOCKED, (char *)"The mutex is already locked by this object")
+PbsErrClient(PBSE_MUTEX_ALREADY_UNLOCKED, (char *)"The mutex has already been unlocked by this object")
 
 
 /* pbs client errors ceiling (max_client_err + 1) */

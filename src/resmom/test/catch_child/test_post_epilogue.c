@@ -5,7 +5,6 @@
 
 extern int tc;
 extern int func_num;
-extern int errno;
 extern int LOGLEVEL;
 
 START_TEST(test_pe_negsock)
@@ -19,7 +18,7 @@ START_TEST(test_pe_negsock)
   errno = EINTR;
   LOGLEVEL = 2;
   res = post_epilogue(pjob, ev);
-  /*fail_unless(res == 1, "This didn't return correctly");*/
+  fail_unless(res == 1, "This didn't return correctly");
   free(pjob);
   }
 END_TEST
@@ -34,7 +33,7 @@ START_TEST(test_pe_negpostsock)
   tc = 2;
   errno = ETIMEDOUT;
   res = post_epilogue(pjob, ev);
-  /*fail_unless(res == 1, "This didn't return correctly");*/
+  fail_unless(res == 1, "This didn't return correctly");
   free(pjob);
   }
 END_TEST
@@ -49,6 +48,7 @@ START_TEST(test_pe_prnull)
   tc = 3;
   errno = EINPROGRESS;
   res = post_epilogue(pjob, ev);
+  fail_unless(res == 0, "This didn't return correctly");
   free(pjob);
   }
 END_TEST
@@ -135,6 +135,7 @@ void rundebug()
   errno = EINTR;
   LOGLEVEL = 7;
   res = post_epilogue(pjob, ev);
+  fail_unless(res==0, "debug");
   }
 
 int main(void)

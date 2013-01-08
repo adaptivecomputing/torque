@@ -1106,7 +1106,6 @@ void *job_clone_wt(
   job                *pjob;
   job                *pjobclone;
   char               *jobid;
-
   int                 i;
   int                 prev_index = -1;
   int                 actual_job_count = 0;

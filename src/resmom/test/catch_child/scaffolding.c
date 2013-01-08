@@ -59,7 +59,6 @@ char *path_jobs; /* mom_main.c */
 tlist_head mom_polljobs; /* mom_main.c */
 char        *path_epiloguserp; /* mom_main.c */
 char        *path_epilogp; /* mom_main.c */
-extern int errno;
 attribute_def job_attr_def[10]; /* src/server/job_attr_def.c */
 
 int tc = 0; /* Used for test routining */

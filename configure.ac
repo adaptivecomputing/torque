@@ -373,6 +373,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/lib/Libutils/test/u_tree/Makefile
     src/lib/Libutils/test/u_users/Makefile
     src/lib/Libutils/test/u_xml/Makefile
+    src/lib/Libutils/test/u_mutex_mgr/Makefile
     src/lib/test/Makefile
     src/momctl/test/Makefile
     src/momctl/test/momctl/Makefile

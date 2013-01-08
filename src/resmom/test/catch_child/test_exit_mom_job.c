@@ -8,7 +8,6 @@ extern int func_num;
 extern int ran_one;
 extern int multi_mom;
 extern int LOGLEVEL;
-extern void *calloc(size_t __nmemb, size_t __size);
 
 START_TEST(test_exit_mom_job_nojihost)
   {
