@@ -192,7 +192,7 @@ typedef struct pbs_queue
     int    qu_type;     /* queue type: exec, route */
     time_t qu_ctime;    /* time queue created */
     time_t qu_mtime;    /* time queue last modified */
-    char   qu_name[PBS_MAXQUEUENAME]; /* queue name */
+    char   qu_name[PBS_MAXQUEUENAME+1]; /* queue name */
     } qu_qs;
 
   pthread_mutex_t *qu_mutex; /* this queue's mutex */
