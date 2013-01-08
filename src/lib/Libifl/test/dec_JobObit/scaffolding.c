@@ -11,13 +11,13 @@ int decode_DIS_svrattrl(struct tcp_chan *chan, tlist_head *phead)
   exit(1);
   }
 
-int disrfst(int stream, size_t achars, char *value)
+int disrfst(tcp_chan *chan, size_t achars, char *value)
   {
   fprintf(stderr, "The call to disrfst needs to be mocked!!\n");
   exit(1);
   }
 
-int disrsi(int stream, int *retval)
+int disrsi(tcp_chan *chan, int *retval)
   {
   fprintf(stderr, "The call to disrsi needs to be mocked!!\n");
   exit(1);

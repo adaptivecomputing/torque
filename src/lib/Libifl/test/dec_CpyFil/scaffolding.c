@@ -3,20 +3,21 @@
 #include <stdio.h> /* fprintf */
 
 #include "list_link.h" /* tlist_head, list_link */
+#include "tcp.h"
 
-int disrfst(int stream, size_t achars, char *value)
+int disrfst(tcp_chan *chan, size_t  achars, char   *value)
   {
   fprintf(stderr, "The call to disrfst needs to be mocked!!\n");
   exit(1);
   }
 
-unsigned disrui(int stream, int *retval)
+unsigned disrui(tcp_chan *chan, int *retval)
   {
   fprintf(stderr, "The call to disrui needs to be mocked!!\n");
   exit(1);
   }
 
-char *disrst(int stream, int *retval)
+char *disrst(tcp_chan *chan, int *retval)
   {
   fprintf(stderr, "The call to disrst needs to be mocked!!\n");
   exit(1);

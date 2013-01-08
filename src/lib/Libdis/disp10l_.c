@@ -81,7 +81,7 @@
 #include <math.h>
 
 #include "dis.h"
-#include "lib_dis.h"
+#include "dis_internal.h"
 
 void disi10l_();
 

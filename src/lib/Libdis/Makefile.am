@@ -4,7 +4,6 @@ CHECK_DIR = test
 
 DIST_SUBDIRS =
 
-include_HEADERS = lib_dis.h
 # all compilation happens in lib/Libpbs
 
 check:

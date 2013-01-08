@@ -14,13 +14,13 @@ dis_long_double_t *dis_lp10 = NULL;
 dis_long_double_t *dis_ln10 = NULL;
 
 
-int tcp_puts(struct tcp_chan *chan, const char *str, size_t ct)
+int tcp_puts(tcp_chan *chan, const char *str, size_t ct)
   {
   fprintf(stderr, "The call to tcp_puts needs to be mocked!!\n");
   exit(1);
   }
 
-int tcp_wcommit(struct tcp_chan *chan, int commit_flag)
+int tcp_wcommit(tcp_chan *chan, int commit_flag)
   {
   fprintf(stderr, "The call to tcp_wcommit needs to be mocked!!\n");
   exit(1);
@@ -33,7 +33,7 @@ char *discui_(char *cp, unsigned value, unsigned *ndigs)
   }
 
 #undef diswsi
-int diswsi(int stream, int value)
+int diswsi(tcp_chan *chan, int value)
   {
   fprintf(stderr, "The call to diswsi needs to be mocked!!\n");
   exit(1);
@@ -45,9 +45,5 @@ dis_long_double_t disp10l_(int expon)
   exit(1);
   }
 
-void disi10l_(void)
-  {
-  fprintf(stderr, "The call to disi10l_ needs to be mocked!!\n");
-  exit(1);
-  }
+void disi10l_() {}
 

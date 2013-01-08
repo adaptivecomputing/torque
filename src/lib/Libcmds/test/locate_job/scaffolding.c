@@ -2,12 +2,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-int pbs_connect(char *server_name_ptr)
-  {
-  fprintf(stderr, "The call to pbs_connect needs to be mocked!!\n");
-  exit(1);
-  }
-
 char *pbs_locjob_err(int c, char *jobid, char *extend, int *local_errno)
   {
   fprintf(stderr, "The call to pbs_locjob needs to be mocked!!\n");
@@ -20,10 +14,16 @@ char * pbs_locjob(int c, char *jobid, char *extend)
   exit(1);
   }
 
+extern "C"
+{
 int pbs_disconnect(int connect)
   {
-  fprintf(stderr, "The call to pbs_disconnect needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
+int pbs_connect(char *server_name_ptr)
+  {
+  return(1);
+  }
+}
 

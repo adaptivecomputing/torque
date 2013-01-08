@@ -8,15 +8,14 @@ int parse_jobid(const char *job_id, char **arg_seq_number, char **arg_parent_ser
   exit(1);
   }
 
+extern "C"
+{
 int get_fullhostname(char *shortname, char *namebuf, int bufsize, char *EMsg)
   {
   fprintf(stderr, "The call to get_fullhostname needs to be mocked!!\n");
   exit(1);
   }
 
-
-extern "C"
-{
 char *pbs_default()
   {
   fprintf(stderr, "The call to pbs_default needs to be mocked!!\n");

@@ -5,19 +5,15 @@
 
 unsigned dis_umaxd = 0;
 
-void disiui_(void)
-  { 
-  fprintf(stderr, "The call to disiui_ needs to be mocked!!\n");
-  exit(1);
-  }
+void disiui_() {}
 
-int tcp_gets(struct tcp_chan *chan, char *str, size_t ct)
+int tcp_gets(tcp_chan *chan, char *str, size_t ct)
   { 
   fprintf(stderr, "The call to tcp_gets needs to be mocked!!\n");
   exit(1);
   }
 
-int tcp_getc(struct tcp_chan *chan)
+int tcp_getc(tcp_chan *chan)
   { 
   fprintf(stderr, "The call to tcp_getc needs to be mocked!!\n");
   exit(1);
