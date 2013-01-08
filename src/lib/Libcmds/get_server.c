@@ -63,7 +63,7 @@
 
 #define notNULL(x) (((x)!=NULL) && (strlen(x)>(size_t)0))
 
-extern int parse_jobid(char *, char **, char **, char **);
+extern int parse_jobid(const char *, char **, char **, char **);
 
 
 
@@ -115,11 +115,11 @@ int TShowAbout_exit(void)
  */
 int get_server(
 
-  char *job_id_in,       /* read only */
-  char *job_id_out,      /* write only */
-  int   job_id_out_size, /* sizeof the out buffer */
-  char *server_out,      /* write only */
-  int   server_out_size) /* sizeof the out buffer */
+  const char *job_id_in,       /* read only */
+  char       *job_id_out,      /* write only */
+  int         job_id_out_size, /* sizeof the out buffer */
+  char       *server_out,      /* write only */
+  int         server_out_size) /* sizeof the out buffer */
 
   {
   char *seq_number;

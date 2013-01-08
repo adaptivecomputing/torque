@@ -107,14 +107,14 @@ static int c_pos;
 
 int parse_jobid(
     
-  char *job_id, 
+  const char *job_id, 
   char **arg_seq_number, 
   char **arg_parent_server, 
   char **arg_current_server)
 
   {
   int i;
-  char *c;
+  const char *c;
 
   /* initialize static data for this parsing call */
 

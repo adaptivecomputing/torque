@@ -1,8 +1,6 @@
 include $(top_srcdir)/buildutils/config.mk
 
-if HAVE_CHECK
-SUBDIRS = test
-endif
+CHECK_DIR = test
 
 CLEANFILES = *.gcda *.gcno *.gcov
 
@@ -54,3 +52,10 @@ install-exec-hook:
 uninstall-hook:
 	rm -f $(DESTDIR)$(PBS_ENVIRON) $(DESTDIR)$(PBS_SERVER_HOME)/server_priv/nodes
 	rm -f $(DESTDIR)$(sbindir)/$(program_prefix)qserverd$(program_suffix)$(EXEEXT)
+
+check:
+	$(MAKE) -C $(CHECK_DIR) $(MAKECMDGOALS)
+
+.PHONY: cleancheck
+cleancheck:
+	cd test && $(MAKE) cleancheck

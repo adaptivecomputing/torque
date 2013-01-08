@@ -381,3 +381,6 @@ void log_event(int eventtype, int objclass, const char *objname, const char *tex
   {
   }
 
+void log_err(int error, const char *func_id, const char *msg) {}
+
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
