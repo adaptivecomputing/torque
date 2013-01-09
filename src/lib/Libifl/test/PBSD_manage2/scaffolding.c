@@ -4,6 +4,7 @@
 
 #include "libpbs.h" /* connect_handle */
 #include "pbs_ifl.h" /* PBS_MAXUSER, attropl */
+#include "tcp.h"
 
 struct connect_handle connection[10];
 char pbs_current_user[PBS_MAXUSER];
@@ -16,10 +17,9 @@ struct tcp_chan *DIS_tcp_setup(int fd)
   exit(1);
   }
 
-int DIS_tcp_wflush(int fd)
+int DIS_tcp_wflush(tcp_chan *chan)
   {
-  fprintf(stderr, "The call to DIS_tcp_wflush needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 int encode_DIS_ReqHdr(struct tcp_chan *chan, int reqt, char *user)

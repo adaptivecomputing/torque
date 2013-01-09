@@ -4,7 +4,7 @@
 #include <sys/socket.h> /* struct sockaddr */
 #include <netinet/in.h> /* in_addr_t */
 
-
+#include "tcp.h"
 #include "log.h" /* LOG_BUF_SIZE */
 #include "resizable_array.h" /* resizable_array */
 
@@ -40,13 +40,13 @@ void DIS_tcp_reset(int fd, int i)
   exit(1);
   }
 
-int diswsl(int stream, long value)
+int diswsl(tcp_chan *chan, long value)
   { 
   fprintf(stderr, "The call to diswsl needs to be mocked!!\n");
   exit(1);
   }
 
-int DIS_tcp_wflush(int fd)
+int DIS_tcp_wflush(tcp_chan *chan)
   { 
   fprintf(stderr, "The call to DIS_tcp_wflush needs to be mocked!!\n");
   exit(1);
@@ -58,7 +58,7 @@ resizable_array *initialize_resizable_array(int size)
   exit(1);
   }
 
-long disrsl(int stream, int *retval)
+long disrsl(tcp_chan *chan, int *retval)
   { 
   fprintf(stderr, "The call to disrsl needs to be mocked!!\n");
   exit(1);

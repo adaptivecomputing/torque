@@ -17,7 +17,7 @@ int svr_authorize_req(struct batch_request *preq, char *owner, char *submit_host
   exit(1);
   }
 
-int get_hold(tlist_head *phead, char **pset, pbs_attribute *temphold)
+int get_hold(tlist_head *phead, const char **pset, pbs_attribute *temphold)
   {
   fprintf(stderr, "The call to get_hold to be mocked!!\n");
   exit(1);
@@ -87,7 +87,9 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   return(0);
   }
 
-int unlock_ai_mutex(job_array *pa, const char *id, char *msg, int logging)
+int unlock_ai_mutex(job_array *pa, const char *id, const char *msg, int logging)
   {
   return(0);
   }
+
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}

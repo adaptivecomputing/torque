@@ -83,7 +83,7 @@
 #include <stdlib.h>
 
 #include "dis.h"
-#include "lib_dis.h"
+#include "dis_internal.h"
 
 /* these variables are read-only once initialized so they don't need to be 
  * mutex protected */

@@ -1018,8 +1018,8 @@ int close_quejob_by_jobid(
   char *job_id)
 
   {
-  int  rc = PBSE_NONE;
-  job *pjob = NULL;
+  int    rc = PBSE_NONE;
+  job   *pjob = NULL;
 
   if (LOGLEVEL >= 10)
     {

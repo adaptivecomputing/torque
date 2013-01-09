@@ -39,7 +39,7 @@ int setup_array_struct(job *pjob)
   exit(1);
   }
 
-pbs_queue *find_queuebyname(char *quename)
+pbs_queue *find_queuebyname(const char *quename)
   {
   fprintf(stderr, "The call to find_queuebyname to be mocked!!\n");
   exit(1);
@@ -93,7 +93,7 @@ char *get_variable(job *pjob, const char *variable)
   exit(1);
   }
 
-void job_clone_wt(struct work_task *ptask)
+void job_clone_wt(void *cloned_id)
   {
   fprintf(stderr, "The call to job_clone_wt to be mocked!!\n");
   exit(1);
@@ -105,7 +105,7 @@ struct work_task *set_task(enum work_type type, long event_id, void (*func)(), v
   exit(1);
   }
 
-char * csv_find_value(const char *csv_str, char *search_str)
+char * csv_find_value(const char *csv_str, const char *search_str)
   {
   fprintf(stderr, "The call to csv_find_value to be mocked!!\n");
   exit(1);
@@ -327,13 +327,13 @@ int lock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string)
 
 struct pbsnode *find_nodebyname(
 
-  char *nodename) /* I */
+  const char *nodename) /* I */
 
   {
   return(NULL);
   }
 
-void unlock_node(struct pbsnode *pnode, const char *func_id, char *msg, int logging) {} 
+void unlock_node(struct pbsnode *pnode, const char *func_id, const char *msg, int logging) {} 
 
 int lock_queue(
 
@@ -365,3 +365,7 @@ ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
   {
   return(0);
   }
+
+void log_err(int errnum, const char *routine, const char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}

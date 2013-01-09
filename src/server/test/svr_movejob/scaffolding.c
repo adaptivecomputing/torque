@@ -27,7 +27,7 @@ int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
 
 
-void finish_sendmom(char *job_id, struct batch_request *preq, long start_time, char *node_name, int status)
+void finish_sendmom(char *job_id, batch_request *preq, long start_time, char *node_name, int status, int o)
   {
   fprintf(stderr, "The call to finish_sendmom to be mocked!!\n");
   exit(1);
@@ -39,7 +39,7 @@ int PBSD_commit_get_sid(int connect, long *sid, char *jobid)
   exit(1);
   }
 
-pbs_queue *find_queuebyname(char *quename)
+pbs_queue *find_queuebyname(const char *quename)
   {
   fprintf(stderr, "The call to find_queuebyname to be mocked!!\n");
   exit(1);
@@ -81,7 +81,7 @@ pbs_net_t get_hostaddr(int *local_errno, char *hostname)
   exit(1);
   }
 
-void remove_stagein(job *pjob)
+void remove_stagein(job **pjob_ptr)
   {
   fprintf(stderr, "The call to remove_stagein to be mocked!!\n");
   exit(1);
@@ -111,7 +111,7 @@ int enqueue_threadpool_request(void *(*func)(void *),void *arg)
   exit(1);
   }
 
-void remove_checkpoint(job *pjob)
+void remove_checkpoint(job **pjob_ptr)
   {
   fprintf(stderr, "The call to remove_checkpoint to be mocked!!\n");
   exit(1);
@@ -123,7 +123,7 @@ int svr_dequejob(job *pjob, int val)
   exit(1);
   }
 
-int unlock_node(struct pbsnode *the_node, const char *id, char *msg, int logging)
+int unlock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
   {
   fprintf(stderr, "The call to unlock_node to be mocked!!\n");
   exit(1);
@@ -171,7 +171,7 @@ void attrl_fixlink(tlist_head *phead)
   exit(1);
   }
 
-int svr_connect(pbs_net_t hostaddr, unsigned int port, struct pbsnode *pnode, void *(*func)(void *), enum conn_type cntype)
+int svr_connect(pbs_net_t hostaddr, unsigned int port, int *err, struct pbsnode *pnode, void *(*func)(void *), enum conn_type cntype)
   {
   fprintf(stderr, "The call to svr_connect to be mocked!!\n");
   exit(1);
@@ -287,9 +287,14 @@ int unlock_ai_mutex(
 
   job_array  *pa,
   const char *id,
-  char       *msg,
+  const char *msg,
   int        logging)
 
   {
   return(0);
   }
+
+void log_err(int errnum, const char *routine, const char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_ext(int type, const char *func_name, const char *msg, int o) {}

@@ -16,7 +16,7 @@ const char *msg_mombadhold = "MOM rejected hold request: %d";
 const char *msg_postmomnojob = "Job not found after hold reply from MOM";
 const char *msg_jobholdset = "Holds %s set at request of %s@%s";
 
-void account_record(int acctype, job *pjob, char *text)
+void account_record(int acctype, job *pjob, const char *text)
   {
   fprintf(stderr, "The call to account_record to be mocked!!\n");
   exit(1);
@@ -138,9 +138,11 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   return(0);
   }
 
-int unlock_ai_mutex(job_array *pa, const char *id, char *msg, int logging)
+int unlock_ai_mutex(job_array *pa, const char *id, const char *msg, int logging)
   {
   return(0);
   }
 
 void free_br(batch_request *preq) {}
+
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}

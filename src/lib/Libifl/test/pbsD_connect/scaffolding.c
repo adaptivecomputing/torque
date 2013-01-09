@@ -1,7 +1,7 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
-
+#include "tcp.h"
 #include "libpbs.h" /* connect_handle */
 #include "pbs_ifl.h" /* PBS_MAXUSER */
 
@@ -9,12 +9,14 @@ struct connect_handle connection[10];
 char pbs_current_user[PBS_MAXUSER];
 time_t pbs_tcp_timeout = 20;
 
-
+extern "C"
+{
 unsigned int get_svrport(const char *service_name, const char *ptype, unsigned int pdefault)
   {
   fprintf(stderr, "The call to get_svrport needs to be mocked!!\n");
   exit(1);
   }
+}
 
 ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
   {
@@ -40,13 +42,13 @@ char *csv_nth(const char *csv_str, int n)
   exit(1);
   }
 
-void DIS_tcp_setup(int fd)
+tcp_chan *DIS_tcp_setup(int fd)
   {
   fprintf(stderr, "The call to DIS_tcp_setup needs to be mocked!!\n");
   exit(1);
   }
 
-int DIS_tcp_wflush(int fd)
+int DIS_tcp_wflush(tcp_chan *chan)
   {
   fprintf(stderr, "The call to DIS_tcp_wflush needs to be mocked!!\n");
   exit(1);

@@ -1,8 +1,11 @@
+
 #include "test_catch_child.h"
-#include "catch_child.h"
+
+void catch_child(int sig);
+
 extern int termin_child;
 
-START_TEST (test_catch_child_1)
+START_TEST(test_catch_child_1)
   {
   termin_child = 0;
   catch_child(2);

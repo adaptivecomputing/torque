@@ -656,10 +656,15 @@ int svr_dequejob(
     {
     pque = get_jobs_queue(&pjob);
 
-    if ((pjob == NULL) ||
-        (pque == NULL))
+    if (pjob == NULL)
       {
       log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 10");
+      return(PBSE_JOBNOTFOUND);
+      }
+    if (pque == NULL)
+      {
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+      log_err(PBSE_JOBNOTFOUND, __func__, "Job has no queue");
       return(PBSE_JOBNOTFOUND);
       }
     }
@@ -720,7 +725,7 @@ int svr_dequejob(
 
   if (bad_ct)   /* state counts are all messed up */
     {
-    char queue_name[PBS_MAXQUEUENAME];
+    char queue_name[PBS_MAXQUEUENAME+1];
     char           job_id[PBS_MAXSVRJOBID+1];
 
     strcpy(job_id, pjob->ji_qs.ji_jobid);

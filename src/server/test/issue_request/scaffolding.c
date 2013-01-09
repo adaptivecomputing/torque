@@ -80,7 +80,7 @@ int encode_DIS_ReturnFiles(struct tcp_chan *chan, struct batch_request *preq)
   exit(1);
   }
 
-struct work_task *set_task(enum work_type type, long event_id, void (*func)(), void *parm, int get_lock)
+struct work_task *set_task(enum work_type type, long event_id, void (*func)(struct work_task *), void *parm, int get_lock)
   {
   fprintf(stderr, "The call to set_task needs to be mocked!!\n");
   exit(1);
@@ -104,7 +104,7 @@ void svr_disconnect(int handle)
   exit(1);
   }
 
-int DIS_tcp_wflush(int fd)
+int DIS_tcp_wflush(tcp_chan *chan)
   {
   fprintf(stderr, "The call to DIS_tcp_wflush needs to be mocked!!\n");
   exit(1);
@@ -152,7 +152,7 @@ work_task *next_task(all_tasks *at, int *iter)
   exit(1);
   }
 
-int svr_connect(pbs_net_t hostaddr, unsigned int port, struct pbsnode *pnode, void *(*func)(void *), enum conn_type cntype)
+int svr_connect(pbs_net_t hostaddr, unsigned int port, int *my_err, struct pbsnode  *pnode, void *(*func)(void *), enum conn_type   cntype)
   {
   fprintf(stderr, "The call to svr_connect needs to be mocked!!\n");
   exit(1);
@@ -182,7 +182,7 @@ void close_conn(int sd, int has_mutex)
   exit(1);
   }
 
-struct pbsnode *tfind_addr(const u_long key, uint16_t port, job *pjob)
+struct pbsnode *tfind_addr(const u_long key, uint16_t port, char *job_momname)
   {
   fprintf(stderr, "The call to tfind_addr needs to be mocked!!\n");
   exit(1);
@@ -200,7 +200,7 @@ int PBSD_sig_put(int c, char *jobid, char *signal, char *extend)
   exit(1);
   }
 
-int unlock_node(struct pbsnode *the_node, char *id, char *msg, int logging)
+int unlock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
   { 
   fprintf(stderr, "The call to unlock_node needs to be mocked!!\n");
   exit(1);                    
@@ -235,3 +235,7 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }
+
+void log_err(int errnum, const char *routine, const char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}

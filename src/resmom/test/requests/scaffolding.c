@@ -176,7 +176,7 @@ int kill_task(struct task *task, int sig, int pg)
   exit(1);
   }
 
-int DIS_tcp_wflush(int fd)
+int DIS_tcp_wflush(tcp_chan *chan)
   {
   fprintf(stderr, "The call to DIS_tcp_wflush needs to be mocked!!\n");
   exit(1);
@@ -296,7 +296,7 @@ job *mom_find_job(char *jobid)
   exit(1);
   }
 
-int im_compose(int stream, char *jobid, char *cookie, int command, tm_event_t event, tm_task_id taskid)
+int im_compose(tcp_chan *chan, char *jobid, char *cookie, int command, tm_event_t event, tm_task_id taskid)
   {
   fprintf(stderr, "The call to im_compose needs to be mocked!!\n");
   exit(1);
@@ -314,7 +314,7 @@ void list_move(tlist_head *from, tlist_head *to)
   exit(1);
   }
 
-int diswsi(int stream, int value)
+int diswsi(tcp_chan *chan, int value)
   {
   fprintf(stderr, "The call to diswsi needs to be mocked!!\n");
   exit(1);
@@ -358,3 +358,8 @@ int destroy_alps_reservation(
   {
   return(0);
   }
+
+void log_err(int errnum, const char *routine, const char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_ext(int type, const char *func_name, const char *msg, int o) {}

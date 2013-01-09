@@ -25,19 +25,19 @@ int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
 
 
-void *req_releasejob(void *vp)
+int req_releasejob(batch_request *preq)
   {
   fprintf(stderr, "The call to req_releasejob needs to be mocked!!\n");
   exit(1);
   }
 
-void *req_rerunjob(void *vp)
+int req_rerunjob(batch_request *preq)
   {
   fprintf(stderr, "The call to req_rerunjob needs to be mocked!!\n");
   exit(1);
   }
 
-void *req_stat_svr(void *vp)
+int req_stat_svr(batch_request *preq)
   {
   fprintf(stderr, "The call to req_stat_svr needs to be mocked!!\n");
   exit(1);
@@ -49,7 +49,7 @@ void req_shutdown(struct batch_request *preq)
   exit(1);
   }
 
-void *req_rescq(void *vp)
+int req_rescq(batch_request *preq)
   {
   fprintf(stderr, "The call to req_rescq needs to be mocked!!\n");
   exit(1);
@@ -79,13 +79,13 @@ int get_connecthost(int sock, char *namebuf, int size)
   exit(1);
   }
 
-void *req_holdjob(void *vp)
+int req_holdjob(batch_request *preq)
   {
   fprintf(stderr, "The call to req_holdjob needs to be mocked!!\n");
   exit(1);
   }
 
-void *req_registerarray(void *vp)
+int req_registerarray(batch_request *preq)
   {
   fprintf(stderr, "The call to req_registerarray needs to be mocked!!\n");
   exit(1);
@@ -115,7 +115,7 @@ int enqueue_threadpool_request(void *(*func)(void *),void *arg)
   exit(1);
   }
 
-void *req_jobobit(void *vp)
+int req_jobobit(batch_request *preq)
   {
   fprintf(stderr, "The call to req_jobobit needs to be mocked!!\n");
   exit(1);
@@ -133,7 +133,7 @@ int dis_request_read(struct tcp_chan *chan, struct batch_request *request)
   exit(1);
   }
 
-void *req_stat_que(void *vp)
+int req_stat_que(batch_request *preq)
   {
   fprintf(stderr, "The call to req_stat_que needs to be mocked!!\n");
   exit(1);
@@ -145,19 +145,19 @@ void req_track(struct batch_request *preq)
   exit(1);
   }
 
-void *req_holdarray(void *vp)
+int req_holdarray(batch_request *preq)
   {
   fprintf(stderr, "The call to req_holdarray needs to be mocked!!\n");
   exit(1);
   }
 
-void *req_movejob(void *vp)
+int req_movejob(batch_request *preq)
   {
   fprintf(stderr, "The call to req_movejob needs to be mocked!!\n");
   exit(1);
   }
 
-int unlock_node(struct pbsnode *the_node, const char *id, char *msg, int logging)
+int unlock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
   {
   fprintf(stderr, "The call to unlock_node needs to be mocked!!\n");
   exit(1);
@@ -181,7 +181,7 @@ job *next_job(struct all_jobs *aj, int *iter)
   exit(1);
   }
 
-void *req_releasearray(void *vp)
+int req_releasearray(batch_request *preq)
   {
   fprintf(stderr, "The call to req_releasearray needs to be mocked!!\n");
   exit(1);
@@ -247,7 +247,7 @@ void req_signaljob(struct batch_request *preq)
   exit(1);
   }
 
-void *req_register(void *vp)
+int req_register(batch_request *preq)
   {
   fprintf(stderr, "The call to req_register needs to be mocked!!\n");
   exit(1);
@@ -271,7 +271,7 @@ void req_deletearray(struct batch_request *preq)
   exit(1);
   }
 
-void *req_locatejob(void *vp)
+int req_locatejob(batch_request *preq)
   {
   fprintf(stderr, "The call to req_locatejob needs to be mocked!!\n");
   exit(1);
@@ -289,13 +289,13 @@ char *pbse_to_txt(int err)
   exit(1);
   }
 
-void *req_stagein(void *vp)
+int req_stagein(batch_request *preq)
   {
   fprintf(stderr, "The call to req_stagein needs to be mocked!!\n");
   exit(1);
   }
 
-void *req_modifyarray(void *vp)
+int req_modifyarray(batch_request *preq)
   {
   fprintf(stderr, "The call to req_modifyarray needs to be mocked!!\n");
   exit(1);
@@ -331,7 +331,7 @@ struct pbsnode *PGetNodeFromAddr(pbs_net_t addr)
   exit(1);
   }
 
-void *req_manager(void *vp)
+int req_manager(batch_request *preq)
   {
   fprintf(stderr, "The call to req_manager needs to be mocked!!\n");
   exit(1);
@@ -349,13 +349,13 @@ void req_deletejob(struct batch_request *preq)
   exit(1);
   }
 
-void *req_runjob(void *vp)
+int req_runjob(batch_request *preq)
   {
   fprintf(stderr, "The call to req_runjob needs to be mocked!!\n");
   exit(1);
   }
 
-void *req_jobcredential(void *vp)
+int req_jobcredential(batch_request *preq)
   {
   fprintf(stderr, "The call to req_jobcredential needs to be mocked!!\n");
   exit(1);
@@ -379,7 +379,7 @@ const char *reqtype_to_txt(int reqtype)
   exit(1);
   }
 
-void *req_orderjob(void *vp)
+int req_orderjob(batch_request *preq)
   {
   fprintf(stderr, "The call to req_orderjob needs to be mocked!!\n");
   exit(1);
@@ -391,13 +391,13 @@ void req_messagejob(struct batch_request *preq)
   exit(1);
   }
 
-void *req_gpuctrl_svr(void *vp)
+int req_gpuctrl_svr(batch_request *preq)
   {
   fprintf(stderr, "The call to req_gpuctrl needs to be mocked!!\n");
   exit(1);
   }
 
-void *req_stat_node(void *vp)
+int req_stat_node(batch_request *preq)
   {
   fprintf(stderr, "The call to req_stat_node needs to be mocked!!\n");
   exit(1);
@@ -421,13 +421,13 @@ pbs_net_t get_connectaddr(int sock, int mutex)
   exit(1);
   }
 
-void *req_authenuser(void *vp)
+int req_authenuser(batch_request *preq)
   {
   fprintf(stderr, "The call to req_authenuser needs to be mocked!!\n");
   exit(1);
   }
 
-void *req_selectjobs(void *vp)
+int req_selectjobs(batch_request *preq)
   {
   fprintf(stderr, "The call to req_selectjobs needs to be mocked!!\n");
   exit(1);
@@ -479,3 +479,7 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }
+
+void log_err(int errnum, const char *routine, const char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}

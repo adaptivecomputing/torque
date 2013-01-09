@@ -79,7 +79,7 @@ char * netaddr(struct sockaddr_in *ap)
   exit(1);
   }
 
-int MUStrNCat(char **BPtr, int *BSpace, char *Src)
+int MUStrNCat(char **BPtr, int *BSpace, const char *Src)
   {
   fprintf(stderr, "The call to MUStrNCat needs to be mocked!!\n");
   exit(1);
@@ -121,13 +121,13 @@ void DIS_tcp_setup(int fd)
   exit(1);
   }
 
-int MUSNPrintF(char **BPtr, int *BSpace, char *Format, ...)
+int MUSNPrintF(char **BPtr, int *BSpace, const char *Format, ...)
   {
   fprintf(stderr, "The call to MUSNPrintF needs to be mocked!!\n");
   exit(1);
   }
 
-int read_status_strings(int fds, int version)
+int read_status_strings(tcp_chan *chan, int version)
   {
   fprintf(stderr, "The call to read_status_strings needs to be mocked!!\n");
   exit(1);
@@ -139,13 +139,13 @@ int AVL_is_in_tree_no_port_compare(u_long key, uint16_t port, AvlTree tree)
   exit(1);
   }
 
-int DIS_tcp_wflush(int fd)
+int DIS_tcp_wflush(tcp_chan *chan)
   {
   fprintf(stderr, "The call to DIS_tcp_wflush needs to be mocked!!\n");
   exit(1);
   }
 
-int diswcs(int stream, const char *value, size_t nchars)
+int diswcs(tcp_chan *chan, const char *value, size_t nchars)
   {
   fprintf(stderr, "The call to diswcs needs to be mocked!!\n");
   exit(1);
@@ -175,7 +175,7 @@ void *get_next(list_link pl, char *file, int line)
   exit(1);
   }
 
-int diswui(int stream, unsigned value)
+int diswui(tcp_chan *chan, unsigned value)
   {
   fprintf(stderr, "The call to diswui needs to be mocked!!\n");
   exit(1);
@@ -235,13 +235,13 @@ struct config *rm_search(struct config *where, const char *what)
   exit(1);
   }
 
-int diswsi(int stream, int value)
+int diswsi(tcp_chan *chan, int value)
   {
   fprintf(stderr, "The call to diswsi needs to be mocked!!\n");
   exit(1);
   }
 
-int disrsi(int stream, int *retval)
+int disrsi(tcp_chan *chan, int *retval)
   {
   fprintf(stderr, "The call to disrsi needs to be mocked!!\n");
   exit(1);
@@ -265,7 +265,7 @@ int swap_things(resizable_array *ra, void *obj1, void *obj2)
   exit(1);
   }
 
-char *disrst(int sock, int *ret)
+char *disrst(tcp_chan *chan, int *ret)
   {
   fprintf(stderr, "The call to disrst needs to be mocked!!\n");
   exit(1);
@@ -338,3 +338,8 @@ int generate_alps_status(
   }
 
 void free_mom_hierarchy(mom_hierarchy_t *mh) {}
+
+void log_err(int errnum, const char *routine, const char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_ext(int type, const char *func_name, const char *msg, int o) {}

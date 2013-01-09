@@ -21,7 +21,7 @@ struct server server;
 struct all_jobs array_summary;
 
 
-pbs_queue *find_queuebyname(char *quename)
+pbs_queue *find_queuebyname(const char *quename)
   {
   fprintf(stderr, "The call to find_queuebyname to be mocked!!\n");
   exit(1);
@@ -105,7 +105,7 @@ resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
   exit(1);
   }
 
-int stat_to_mom(job *pjob, struct stat_cntl *cntl)
+int stat_to_mom(char *jobid, struct stat_cntl *cntl)
   {
   fprintf(stderr, "The call to stat_to_mom to be mocked!!\n");
   exit(1);
@@ -151,3 +151,7 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }
+
+void log_err(int errnum, const char *routine, const char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}

@@ -189,7 +189,7 @@ struct work_task *apply_job_delete_nanny(struct job *pjob, int delay)
   exit(1);
   }
 
-void job_clone_wt(struct work_task *ptask)
+void job_clone_wt(void *cloned_id)
   {
   fprintf(stderr, "The call to job_clone_wt needs to be mocked!!\n");
   exit(1);
@@ -213,7 +213,7 @@ int csv_length(const char *csv_str)
   exit(1);
   }
 
-struct work_task *set_task(enum work_type type, long event_id, void (*func)(), void *parm, int get_lock)
+struct work_task *set_task(enum work_type type, long event_id, void (*func)(struct work_task *), void *parm, int get_lock)
   {
   fprintf(stderr, "The call to set_task needs to be mocked!!\n");
   exit(1);
@@ -249,7 +249,7 @@ int insert_job(struct all_jobs *aj, job *pjob)
   exit(1);
   }
 
-int unlock_node(struct pbsnode *the_node, const char *id, char *msg, int logging)
+int unlock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
   {
   fprintf(stderr, "The call to unlock_node needs to be mocked!!\n");
   exit(1);
@@ -273,7 +273,7 @@ job *next_job(struct all_jobs *aj, int *iter)
   exit(1);
   }
 
-int chk_file_sec(char *path, int isdir, int sticky, int disallow, int fullpath, char *SEMsg)
+int chk_file_sec(const char *path, int isdir, int sticky, int disallow, int fullpath, char *SEMsg)
   {
   fprintf(stderr, "The call to chk_file_sec needs to be mocked!!\n");
   exit(1);
@@ -405,7 +405,7 @@ int decode_arst_direct(struct pbs_attribute *patr,  const char *val)
   exit(1);
   }
 
-int setup_env(char *filen)
+int setup_env(const char *filen)
   {
   fprintf(stderr, "The call to setup_env needs to be mocked!!\n");
   exit(1);
@@ -603,17 +603,17 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
 
 
 
-int lock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }
 
-int lock_ai_mutex(job_array *pa, const char *func_id, char *msg, int logging)
+int lock_ai_mutex(job_array *pa, const char *func_id, const char *msg, int logging)
   {
   return(0);
   }
 
-int unlock_ai_mutex(job_array *pa, const char *func_id, char *msg, int logging)
+int unlock_ai_mutex(job_array *pa, const char *func_id, const char *msg, int logging)
   {
   return(0);
   }
@@ -636,3 +636,8 @@ ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   return(0);
   }
 
+
+void log_err(int errnum, const char *routine, const char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_ext(int eventtype, const char *func_name, const char *msg, int level) {}

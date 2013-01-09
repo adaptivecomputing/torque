@@ -13,7 +13,7 @@ const char *msg_manager = "%s at request of %s@%s";
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
 
-void account_record(int acctype, job *pjob, char *text)
+void account_record(int acctype, job *pjob, const char *text)
   {
   fprintf(stderr, "The call to account_record to be mocked!!\n");
   exit(1);
@@ -61,7 +61,7 @@ void delete_task(struct work_task *ptask)
   exit(1);
   }
 
-int issue_signal(job *pjob, char *signame, void (*func)(struct work_task *), void *extra)
+int issue_signal(job **pjob_ptr, const char *signame, void (*func)(batch_request *), void *extra)
   {
   fprintf(stderr, "The call to issue_signal to be mocked!!\n");
   exit(1);
@@ -130,3 +130,7 @@ int get_svr_attr_l(int index, long *l)
   {
   return(0);
   }
+
+void log_err(int errnum, const char *routine, const char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}

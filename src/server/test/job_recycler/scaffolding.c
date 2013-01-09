@@ -49,7 +49,7 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   return(0);
   }
 
-int lock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }
@@ -63,3 +63,5 @@ int unlock_alljobs_mutex(struct all_jobs *aj, const char *id, char *msg, int log
   {
   return(0);
   }
+
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}

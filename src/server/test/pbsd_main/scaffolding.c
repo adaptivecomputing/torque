@@ -63,11 +63,14 @@ int job_save(job *pjob, int updatetype, int mom_port)
   exit(1);
   }
 
-unsigned int get_svrport(const char *service_name, const char *ptype, unsigned int pdefault)
+extern "C"
+{
+unsigned int get_svrport(char *service_name, char *ptype, unsigned int pdefault)
   {
   fprintf(stderr, "The call to get_svrport needs to be mocked!!\n");
   exit(1);
   }
+}
 
 char * netaddr(struct sockaddr_in *ap)
   {
@@ -105,7 +108,7 @@ void svr_shutdown(int type)
   exit(1);
   }
 
-struct work_task *set_task(enum work_type wt, long event, void (*func)(), void *param, int hmm)
+struct work_task *set_task(enum work_type wt, long event, void (*func)(struct work_task *), void *param, int hmm)
   {
   fprintf(stderr, "The call to set_task needs to be mocked!!\n");
   exit(1);
@@ -171,7 +174,7 @@ job *next_job(struct all_jobs *aj, int *iter)
   exit(1);
   }
 
-int svr_is_request(int stream, int version)
+int svr_is_request(tcp_chan *chan, int version)
   {
   fprintf(stderr, "The call to svr_is_request needs to be mocked!!\n");
   exit(1);
@@ -195,7 +198,7 @@ void check_nodes(struct work_task *ptask)
   exit(1);
   }
 
-int process_request(int sock)
+int process_request(tcp_chan *chan)
   {
   fprintf(stderr, "The call to process_request needs to be mocked!!\n");
   exit(1);
@@ -249,7 +252,7 @@ int lock_init()
   exit(1);
   }
 
-unsigned disrui_peek(int stream, int *retval)
+unsigned disrui_peek(tcp_chan *chan, int *retval)
   {
   fprintf(stderr, "The call to disrui_peek needs to be mocked!!\n");
   exit(1);
@@ -315,7 +318,7 @@ int pbsd_init(int type)
   exit(1);
   }
 
-int disrsi(int stream, int *retval)
+int disrsi(tcp_chan *chan, int *retval)
   {
   fprintf(stderr, "The call to disrsi needs to be mocked!!\n");
   exit(1);
@@ -397,7 +400,7 @@ void *send_hierarchy_threadtask(void *vp)
   return(NULL);
   }
 
-void log_init(char *suffix, char *hostname) {}
+void log_init(const char *suffix, const char *hostname) {}
 
 int enqueue_threadpool_request(void *(*func)(void *), void *arg)
   {
@@ -504,3 +507,8 @@ ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
   {
   return(0);
   }
+
+void log_err(int errnum, const char *routine, const char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_ext(int eventtype, const char *func_name, const char *msg, int level) {}

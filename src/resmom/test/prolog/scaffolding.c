@@ -29,7 +29,7 @@ int encode_resc(pbs_attribute *attr, tlist_head *phead, const char *atname, cons
   exit(1);
   }
 
-char *get_job_envvar(job *pjob, char *variable)
+char *get_job_envvar(job *pjob, const char *variable)
   {
   fprintf(stderr, "The call to get_job_envvar needs to be mocked!!\n");
   exit(1);
@@ -41,7 +41,7 @@ void log_record(int eventtype, int objclass, const char *objname, const char *te
   exit(1);
   }
 
-void encode_used(job *pjob, tlist_head *phead)
+void encode_used(job *pjob, int perm, tlist_head *phead)
   {
   fprintf(stderr, "The call to encode_used needs to be mocked!!\n");
   exit(1);
@@ -101,7 +101,7 @@ resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
   exit(1);
   }
 
-int TTmpDirName(job *pjob, char *tmpdir)
+int TTmpDirName(job *pjob, char *tmpdir, int size)
   {
   fprintf(stderr, "The call to TTmpDirName needs to be mocked!!\n");
   exit(1);

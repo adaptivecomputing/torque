@@ -40,7 +40,7 @@ int add_env_variables(
 
   {
   char *buf;
-  char *alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghigjklmnopqrstuvwxyz";
+  char *alphabet = strdup("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghigjklmnopqrstuvwxyz");
   char *p, *bp, *ptest_block;
   int n = n_mem_to_use/n_env_vars;
   int m = n_mem_to_use % n_env_vars;
@@ -70,7 +70,7 @@ int add_env_variables(
     varNval = (char *) calloc(len, sizeof(char));
     sprintf(varNval, "%s%s", varname, buf);
     *(penv + i) = ptest_block;
-    strcpy(*(penv + i), varNval);
+    strcpy((*(penv + i)), varNval);
     ptest_block += strlen(varNval) + 1;
     if (bld_env_variables(vtable, varNval, NULL) != PBSE_NONE)
       {

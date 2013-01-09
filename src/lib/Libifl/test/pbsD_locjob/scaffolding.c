@@ -1,7 +1,7 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
-
+#include "tcp.h"
 #include "libpbs.h" /* connect_handle, batch_reply */
 #include "pbs_ifl.h" /* PBS_MAXUSER */
 
@@ -16,13 +16,13 @@ int encode_DIS_JobId(struct tcp_chan *chan, char *jobid)
   exit(1);
   }
 
-void DIS_tcp_setup(int fd)
+tcp_chan *DIS_tcp_setup(int fd)
   {
   fprintf(stderr, "The call to DIS_tcp_setup needs to be mocked!!\n");
   exit(1);
   }
 
-int DIS_tcp_wflush(int fd)
+int DIS_tcp_wflush(tcp_chan *chan)
   {
   fprintf(stderr, "The call to DIS_tcp_wflush needs to be mocked!!\n");
   exit(1);

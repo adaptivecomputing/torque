@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include "pbs_error.h"
 
+int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging);
+
 START_TEST(svr_enquejob_test)
   {
   struct job test_job;
@@ -398,13 +400,13 @@ START_TEST(lock_ji_mutex_test)
   int        logging;
 
   pjob.ji_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(pjob.ji_mutex);
+  pthread_mutex_init(pjob.ji_mutex, NULL);
   id = "lock unit test";
   msg = "locking";
   logging = 10;
 
   rc = lock_ji_mutex(&pjob, id, msg, logging);
-  fail_unless(rc == NULL, "did not lock mutex");
+  fail_unless(rc == 0, "did not lock mutex");
 
   }
 END_TEST

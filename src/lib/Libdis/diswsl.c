@@ -106,7 +106,7 @@
 #include <stdio.h>
 
 #include "dis.h"
-#include "lib_dis.h"
+#include "dis_internal.h"
 #include "tcp.h"
 
 int diswsl(

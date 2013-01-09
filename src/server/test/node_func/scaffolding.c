@@ -407,14 +407,6 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
 const char *alps_reporter_feature  = "alps_reporter";
 const char *alps_starter_feature   = "alps_starter";
 
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  return;
-  }
-
-void log_err(int errnum, const char *routine, char *text) {}
-
-void log_record(int eventtype, int objclass, const char *objname, char *text)
-  {
-  return;
-  }
+void log_err(int errnum, const char *routine, const char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}

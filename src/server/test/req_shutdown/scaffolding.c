@@ -60,7 +60,7 @@ int job_abt(struct job **pjobp, const char *text)
   exit(1);
   }
 
-int issue_signal(job *pjob, char *signame, void (*func)(struct work_task *), void *extra)
+int issue_signal(job **pjob_ptr, const char *signame, void (*func)(batch_request *), void *extra)
   {
   fprintf(stderr, "The call to issue_signal to be mocked!!\n");
   exit(1);
@@ -144,3 +144,4 @@ pbs_queue *next_queue(all_queues *aq, int        *iter)
   return(NULL);
   }
 
+void log_event(int type, int otype, const char *func_name, const char *msg) {}

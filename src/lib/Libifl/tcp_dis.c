@@ -96,7 +96,7 @@
 #endif
 
 #include "dis.h"
-#include "../Libdis/lib_dis.h"
+#include "dis_internal.h"
 #include "dis_init.h"
 #include "log.h"
 #include "../Libutils/u_lock_ctl.h"

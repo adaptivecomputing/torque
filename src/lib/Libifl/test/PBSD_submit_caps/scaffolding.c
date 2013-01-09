@@ -48,7 +48,7 @@ int encode_DIS_QueueJob(struct tcp_chan *chan, char *jobid, char *destin, struct
   exit(1);
   }
 
-int DIS_tcp_wflush(int fd)
+int DIS_tcp_wflush(tcp_chan *chan)
   {
   fprintf(stderr, "The call to DIS_tcp_wflush needs to be mocked!!\n");
   exit(1);

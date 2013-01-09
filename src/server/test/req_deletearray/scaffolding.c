@@ -38,7 +38,7 @@ void on_job_exit(struct work_task *ptask)
   exit(1);
   }
 
-void remove_stagein(job *pjob)
+void remove_stagein(job **pjob_ptr)
   {
   fprintf(stderr, "The call to remove_stagein needs to be mocked!!\n");
   exit(1);
@@ -68,7 +68,7 @@ struct work_task *apply_job_delete_nanny(struct job *pjob, int delay)
   exit(1);
   }
 
-struct work_task *set_task(enum work_type type, long event_id, void (*func)(), void *parm, int get_lock)
+struct work_task *set_task(enum work_type type, long event_id, void (*func)(struct work_task *), void *parm, int get_lock)
   {
   fprintf(stderr, "The call to set_task needs to be mocked!!\n");
   exit(1);
@@ -92,7 +92,7 @@ int job_abt(struct job **pjobp, const char *text)
   exit(1);
   }
 
-int issue_signal(job *pjob, char *signame, void (*func)(struct work_task *), void *extra)
+int issue_signal(job **pjob_ptr, const char *signame, void (*func)(batch_request *), void *extra)
   {
   fprintf(stderr, "The call to issue_signal needs to be mocked!!\n");
   exit(1);
@@ -174,7 +174,7 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   return(0);
   }
 
-int unlock_ai_mutex(job_array *pa, const char *id, char *msg, int logging)
+int unlock_ai_mutex(job_array *pa, const char *id, const char *msg, int logging)
   {
   return(0);
   }
@@ -187,3 +187,9 @@ int lock_ai_mutex(job_array *pa, const char *id, char *msg, int logging)
 void free_br(struct batch_request *preq) {}
 
 void on_job_exit_task(struct work_task *ptask) {} 
+
+void log_err(int errnum, const char *routine, const char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+
+

@@ -765,6 +765,7 @@ int pbs_original_connect(
   struct addrinfo     *addr_info;
   int                  out;
   int                  i;
+  int                  opt_value = 1;
   int                  rc = PBSE_NONE;
   int                  local_errno;
 
@@ -819,6 +820,7 @@ int pbs_original_connect(
       connection[out].ch_errtxt = NULL;
 
       break;
+
       }
 
     pthread_mutex_unlock(connection[i].ch_mutex);
@@ -992,6 +994,8 @@ int pbs_original_connect(
           continue;
           }
         }
+
+      setsockopt(connection[out].ch_socket, SOL_SOCKET, SO_REUSEADDR, &opt_value, sizeof(opt_value));
 
       /* This is probably an IPv4 solution for the if_name and preferred_addr
          We need to see what ioctl call we need for IPv6 */

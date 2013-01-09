@@ -105,3 +105,7 @@ const char *loadave(struct rm_attribute *attrib)
   fprintf(stderr, "The call to loadave needs to be mocked!!\n");
   exit(1);
   }
+
+void log_err(int errnum, const char *routine, const char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
