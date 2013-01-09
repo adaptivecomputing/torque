@@ -17,7 +17,7 @@ int job_save(job *pjob, int updatetype, int mom_port)
   exit(1);
   }
 
-int svr_movejob(job *jobp, char *destination, struct batch_request *req)
+int svr_movejob(job *jobp, char *destination, int *err, struct batch_request *req)
   {
   fprintf(stderr, "The call to svr_movejob to be mocked!!\n");
   exit(1);
@@ -101,3 +101,5 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }
+
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}

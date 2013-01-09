@@ -43,6 +43,11 @@ pthread_mutex_t *job_log_mutex;
 
 user_info_holder users;
 
+void log_err(int errnum, const char *routine, const char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_ext(int errnum, const char *routine, const char *text, int severity) {}
+
 int array_save(job_array *pa)
   {
   fprintf(stderr, "The call to array_save needs to be mocked!!\n");
@@ -718,22 +723,6 @@ void free_null(struct pbs_attribute *attr) {}
 void free_depend(struct pbs_attribute *attr) {}
 void free_arst( struct pbs_attribute *attr) {}
 void free_unkn(pbs_attribute *pattr) {}
-
-int pthread_mutex_lock(pthread_mutex_t *mock_mutex)
-{
-  return 0;
-}
-
-int pthread_mutex_unlock(pthread_mutex_t *mock_mutex)
-{
-  return 0;
-}
-
-int pthread_mutex_trylock(pthread_mutex_t *mock_mutex)
-{
-  return 0;
-}
-
 
 /* copied from job_container.c */
 

@@ -27,3 +27,5 @@ int get_batch_request_id(
   {
   return(0);
   }
+
+void log_ext(int errnum, const char *routine, const char *text, int l) {}

@@ -17,7 +17,7 @@ void *get_next(list_link pl, char *file, int line)
   exit(1);
   }
 
-int encode_DIS_svrattrl(int sock, svrattrl *psattl)
+int encode_DIS_svrattrl(tcp_chan *chan, svrattrl *psattl)
   {
   fprintf(stderr, "The call to encode_DIS_svrattrl needs to be mocked!!\n");
   exit(1);

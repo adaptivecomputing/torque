@@ -41,7 +41,7 @@ int write_node_note(void)
   exit(1);
   }
 
-pbs_queue *find_queuebyname(char *quename)
+pbs_queue *find_queuebyname(const char *quename)
   {
   fprintf(stderr, "The call to find_queuebyname to be mocked!!\n");
   exit(1);
@@ -95,19 +95,19 @@ pbs_queue *que_alloc(char *name, int sv_qs_mutex_held)
   exit(1);
   }
 
-struct work_task *set_task(enum work_type type, long event_id, void (*func)(), void *parm, int get_lock)
+struct work_task *set_task(enum work_type type, long event_id, void (*func)(struct work_task *), void *parm, int get_lock)
   {
   fprintf(stderr, "The call to set_task to be mocked!!\n");
   exit(1);
   }
 
-void effective_node_delete(struct pbsnode *pnode)
+void effective_node_delete(struct pbsnode **pnode)
   {
   fprintf(stderr, "The call to effective_node_delete to be mocked!!\n");
   exit(1);
   }
 
-int unlock_node(struct pbsnode *the_node, const char *id, char *msg, int logging)
+int unlock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
   {
   fprintf(stderr, "The call to unlock_node to be mocked!!\n");
   exit(1);
@@ -305,7 +305,7 @@ void reply_text(struct batch_request *preq, int code, char *text)
   exit(1);
   }
 
-int safe_strncat(char *str, char *to_append, size_t space_remaining)
+int safe_strncat(char *str, const char *to_append, size_t space_remaining)
   {
   return(0);
   }
@@ -319,3 +319,7 @@ int lock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string)
   {
   return(0);
   }
+
+void log_err(int errnum, const char *routine, const char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}

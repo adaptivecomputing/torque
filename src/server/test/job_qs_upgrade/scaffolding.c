@@ -12,3 +12,5 @@ ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   {
   return(0);
   }
+
+void log_err(int l, const char *func_name, const char *msg) {}

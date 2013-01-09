@@ -16,7 +16,7 @@ int diswui(tcp_chan *chan, unsigned value)
   exit(1);
   }
 
-int encode_DIS_ReqExtend(int sock, char *extend)
+int encode_DIS_ReqExtend(tcp_chan *chan, char *extend)
   {
   fprintf(stderr, "The call to encode_DIS_ReqExtend needs to be mocked!!\n");
   exit(1);

@@ -64,7 +64,7 @@ void init_abort_jobs(int recover)
   exit(1);
   }
 
-int mom_server_add(char *value)
+int mom_server_add(const char *value)
   {
   fprintf(stderr, "The call to mom_server_add needs to be mocked!!\n");
   exit(1);
@@ -88,11 +88,14 @@ void scan_non_child_tasks(void)
   exit(1);
   }
 
-unsigned int get_svrport(const char *service_name, const char *ptype, unsigned int pdefault)
+extern "C"
+{
+unsigned int get_svrport(char *service_name, char *ptype, unsigned int pdefault)
   {
   fprintf(stderr, "The call to get_svrport needs to be mocked!!\n");
   exit(1);
   }
+}
 
 int get_la(double *rv)
   {
@@ -112,7 +115,7 @@ int get_parent_and_child(char *start, char **parent, char **child, char **end)
   exit(1);
   }
 
-int MUStrNCat(char **BPtr, int *BSpace, char *Src)
+int MUStrNCat(char **BPtr, int *BSpace, const char *Src)
   {
   fprintf(stderr, "The call to MUStrNCat needs to be mocked!!\n");
   exit(1);
@@ -124,7 +127,7 @@ void scan_for_exiting(void)
   exit(1);
   }
 
-void mom_checkpoint_set_directory_path(char *str)
+void mom_checkpoint_set_directory_path(const char *str)
   {
   fprintf(stderr, "The call to mom_checkpoint_set_directory_path needs to be mocked!!\n");
   exit(1);
@@ -142,7 +145,7 @@ int AVL_list(AvlTree tree, char **Buf, long *current_len, long *max_len)
   exit(1);
   }
 
-unsigned long mom_checkpoint_set_checkpoint_interval(char *value)
+unsigned long mom_checkpoint_set_checkpoint_interval(const char *value)
   {
   fprintf(stderr, "The call to mom_checkpoint_set_checkpoint_interval needs to be mocked!!\n");
   exit(1);
@@ -196,7 +199,7 @@ char *netaddr_pbs_net_t(pbs_net_t ipadd)
   exit(1);
   }
 
-unsigned long mom_checkpoint_set_checkpoint_script(char *value)
+unsigned long mom_checkpoint_set_checkpoint_script(const char *value)
   {
   fprintf(stderr, "The call to mom_checkpoint_set_checkpoint_script needs to be mocked!!\n");
   exit(1);
@@ -262,7 +265,7 @@ void DIS_tcp_setup(int fd)
   exit(1);
   }
 
-int MUSNPrintF(char **BPtr, int *BSpace, char *Format, ...)
+int MUSNPrintF(char **BPtr, int *BSpace, const char *Format, ...)
   {
   fprintf(stderr, "The call to MUSNPrintF needs to be mocked!!\n");
   exit(1);
@@ -304,13 +307,13 @@ void mom_server_all_init(void)
   exit(1);
   }
 
-int DIS_tcp_wflush(int fd)
+int DIS_tcp_wflush(tcp_chan *chan)
   {
   fprintf(stderr, "The call to DIS_tcp_wflush needs to be mocked!!\n");
   exit(1);
   }
 
-int diswcs(int stream, const char *value, size_t nchars)
+int diswcs(tcp_chan *chan, const char *value, size_t nchars)
   {
   fprintf(stderr, "The call to diswcs needs to be mocked!!\n");
   exit(1);
@@ -322,7 +325,7 @@ void mom_checkpoint_check_periodic_timer(job *pjob)
   exit(1);
   }
 
-int chk_file_sec(char *path, int isdir, int sticky, int disallow, int fullpath, char *SEMsg)
+int chk_file_sec(const char *path, int isdir, int sticky, int disallow, int fullpath, char *SEMsg)
   {
   fprintf(stderr, "The call to chk_file_sec needs to be mocked!!\n");
   exit(1);
@@ -424,7 +427,7 @@ struct passwd * getpwnam_ext(char * user_name)
   exit(1);
   }
 
-char *disrst(int stream, int *retval)
+char *disrst(tcp_chan *chan, int *retval)
   {
   fprintf(stderr, "The call to disrst needs to be mocked!!\n");
   exit(1);
@@ -514,7 +517,7 @@ void *mom_process_request(void *sock_num)
   exit(1);
   }
 
-int setup_env(char *filen)
+int setup_env(const char *filen)
   {
   fprintf(stderr, "The call to setup_env needs to be mocked!!\n");
   exit(1);
@@ -562,7 +565,7 @@ mom_hierarchy_t *initialize_mom_hierarchy(void)
   exit(1);
   }
 
-int diswsi(int stream, int value)
+int diswsi(tcp_chan *chan, int value)
   {
   fprintf(stderr, "The call to diswsi needs to be mocked!!\n");
   exit(1);
@@ -574,7 +577,7 @@ void mom_server_all_diag(char **BPtr, int *BSpace)
   exit(1);
   }
 
-int disrsi(int stream, int *retval)
+int disrsi(tcp_chan *chan, int *retval)
   {
   fprintf(stderr, "The call to disrsi needs to be mocked!!\n");
   exit(1);
@@ -628,7 +631,7 @@ void clear_servers()
   exit(1);
   }
 
-int diswul(int stream, unsigned long value)
+int diswul(tcp_chan *chan, unsigned long value)
   {
   fprintf(stderr, "The call to diswul needs to be mocked!!\n");
   exit(1);
@@ -640,7 +643,7 @@ void *next_thing(resizable_array *ra, int *iter)
   exit(1);
   }
 
-int im_compose(int stream, char *jobid, char *cookie, int command, tm_event_t event, tm_task_id taskid)
+int im_compose(tcp_chan *chan, char *jobid, char *cookie, int command, tm_event_t event, tm_task_id taskid)
   {
   fprintf(stderr, "The call to im_compose needs to be mocked!!\n");
   exit(1);
@@ -692,3 +695,8 @@ ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   {
   return(0);
   }
+
+void log_err(int errnum, const char *routine, const char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_ext(int type, const char *func_name, const char *msg, int o) {}

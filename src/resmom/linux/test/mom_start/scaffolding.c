@@ -4,7 +4,6 @@
 #include <sys/ioctl.h> /* winsize */
 #include <termios.h> /* termios */
 
-
 #include "pbs_ifl.h" /* PBS_MAXHOSTNAME */
 #include "log.h" /* LOG_BUF_SIZE */
 #include "pbs_job.h" /* job, task */
@@ -64,12 +63,6 @@ int mom_set_use(job *pjob)
   exit(1);
   }
 
-int openpty (int *__amaster, int *__aslave, char *__name, const struct termios *__termp, const struct winsize *__winp)
-  {
-  fprintf(stderr, "The call to openpty needs to be mocked!!\n");
-  exit(1);
-  }
-
 int task_save(task *ptask)
   {
   fprintf(stderr, "The call to task_save needs to be mocked!!\n");
@@ -77,3 +70,18 @@ int task_save(task *ptask)
   }
 
 void check_partition_confirm_script(char *path, char *msg) {}
+
+void log_err(int errnum, const char *routine, const char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+
+#ifndef USEOLDTTY
+extern "C"
+{
+int openpty (int *__amaster, int *__aslave, char *__name, const struct termios *__termp, const struct winsize *__winp)
+  {
+  fprintf(stderr, "The call to openpty needs to be mocked!!\n");
+  exit(1);
+  }
+}
+#endif

@@ -32,7 +32,7 @@ job_array *get_jobs_array(job **pjob)
   exit(1);
   }
 
-void account_record(int acctype, job *pjob, char *text)
+void account_record(int acctype, job *pjob, const char *text)
   {
   fprintf(stderr, "The call to acctype needs to be mocked!!\n");
   exit(1);
@@ -86,7 +86,7 @@ void reply_ack(struct batch_request *preq)
   exit(1);
   }
 
-void free_nodes(node_info **ninfo_arr)
+void free_nodes(job *pjob)
   {
   fprintf(stderr, "The call to free_nodes needs to be mocked!!\n");
   exit(1);
@@ -98,7 +98,7 @@ void free_br(struct batch_request *preq)
   exit(1);
   }
 
-struct work_task *set_task(enum work_type type, long event_id, void (*func)(), void *parm, int get_lock)
+struct work_task *set_task(enum work_type type, long event_id, void (*func)(struct work_task *), void *parm, int get_lock)
   {
   fprintf(stderr, "The call to set_task needs to be mocked!!\n");
   exit(1);
@@ -134,7 +134,7 @@ int job_abt(struct job **pjobp, const char *text)
   exit(1);
   }
 
-int issue_signal(job *pjob, char *signame, void (*func)(struct work_task *), void *extra)
+int issue_signal(job **pjob_ptr, const char *signame, void (*func)(struct batch_request *), void *extra)
   {
   fprintf(stderr, "The call to issue_signal needs to be mocked!!\n");
   exit(1);
@@ -233,7 +233,7 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   return(0);
   }
 
-int unlock_ai_mutex(job_array *pa, const char *id, char *msg, int logging)
+int unlock_ai_mutex(job_array *pa, const char *id, const char *msg, int logging)
   {
   return(0);
   }
@@ -244,3 +244,6 @@ int enqueue_threadpool_request(void *(*func)(void *), void *arg)
   {
   return(0);
   }
+
+void log_err(int l, const char *func_name, const char *msg) {}
+void log_event(int type, int otype, const char *func_name, const char *msg) {}

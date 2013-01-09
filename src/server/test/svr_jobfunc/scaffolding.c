@@ -325,6 +325,6 @@ int get_jobs_index(struct all_jobs *aj, struct job *pjob)
   return(0);
   }
 
-void log_err(int error, const char *func_id, char *msg) {}
-
-void log_event(int eventtype, int objclass, const char *objname, char *text) {}
+void log_err(int errnum, const char *routine, const char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}

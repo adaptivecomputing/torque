@@ -27,11 +27,7 @@ int unlock_tcp_table()
   exit(1);
   }
 
-void log_err(int errnum, const char *routine, const char *text) 
-  {
-  fprintf(stderr, "The call to log_err needs to be mocked!!\n");
-  exit(1);
-  }
+void log_err(int errnum, const char *routine, const char *text) {}
 
 int socket_read(int socket, char **the_str, long long *str_len)
   {

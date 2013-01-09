@@ -16,7 +16,7 @@ int diswui(tcp_chan *chan, unsigned value)
  exit(1);
  }
 
-int encode_DIS_attropl(int sock, struct attropl *pattropl)
+int encode_DIS_attropl(tcp_chan *chan, struct attropl *pattropl)
  {
  fprintf(stderr, "The call to encode_DIS_attropl needs to be mocked!!\n");
  exit(1);

@@ -5,25 +5,25 @@
 #include "tcp.h"
 #include "list_link.h" /* tlist_head, list_link */
 
-int decode_DIS_svrattrl(struct tcp_chan *chan, tlist_head *phead)
+int decode_DIS_svrattrl(tcp_chan *chan, tlist_head *phead)
   {
   fprintf(stderr, "The call to decode_DIS_svrattrl needs to be mocked!!\n");
   exit(1);
   }
 
-int disrfst(int stream, size_t achars, char *value)
+int disrfst(tcp_chan *chan, size_t achars, char *value)
   {
   fprintf(stderr, "The call to disrfst needs to be mocked!!\n");
   exit(1);
   }
 
-unsigned disrui(int stream, int *retval)
+unsigned disrui(tcp_chan *chan, int *retval)
   {
   fprintf(stderr, "The call to disrui needs to be mocked!!\n");
   exit(1);
   }
 
-char *disrcs(int stream, size_t *nchars, int *retval)
+char *disrcs(tcp_chan *chan, size_t *nchars, int *retval)
   {
   fprintf(stderr, "The call to disrcs needs to be mocked!!\n");
   exit(1);
@@ -35,7 +35,7 @@ void append_link(tlist_head *head, list_link *newLink, void *pobj)
   exit(1);
   }
 
-int disrsi(int stream, int *retval)
+int disrsi(tcp_chan *chan, int *retval)
   {
   fprintf(stderr, "The call to disrsi needs to be mocked!!\n");
   exit(1);

@@ -66,7 +66,7 @@ void free_br(struct batch_request *preq)
   exit(1);
   }
 
-struct work_task *set_task(enum work_type type, long event_id, void (*func)(), void *parm, int get_lock)
+struct work_task *set_task(enum work_type type, long event_id, void (*func)(struct work_task *), void *parm, int get_lock)
   {
   fprintf(stderr, "The call to set_task to be mocked!!\n");
   exit(1);
@@ -253,7 +253,7 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   return(0);
   }
 
-int unlock_ai_mutex(job_array *pa, const char *id, char *msg, int logging)
+int unlock_ai_mutex(job_array *pa, const char *id, const char *msg, int logging)
   {
   return(0);
   }
@@ -268,3 +268,7 @@ int enqueue_threadpool_request(void *(*func)(void *), void *arg)
   {
   return(0);
   }
+
+void log_err(int errnum, const char *routine, const char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}

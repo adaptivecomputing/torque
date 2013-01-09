@@ -39,11 +39,7 @@ void reply_ack(struct batch_request *preq)
   exit(1);
   }
 
-void free_nodes(node_info **ninfo_arr)
-  {
-  fprintf(stderr, "The call to free_nodes to be mocked!!\n");
-  exit(1);
-  }
+void free_nodes(job *pjob) { }
 
 void svr_disconnect(int handle)
   {
@@ -102,3 +98,8 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }
+
+void log_err(int errnum, const char *routine, const char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+

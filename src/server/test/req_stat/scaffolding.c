@@ -34,7 +34,7 @@ struct batch_request *alloc_br(int type)
   exit(1);
   }
 
-pbs_queue *find_queuebyname(char *quename)
+pbs_queue *find_queuebyname(const char *quename)
   {
   fprintf(stderr, "The call to find_queuebyname to be mocked!!\n");
   exit(1);
@@ -88,7 +88,7 @@ job *find_array_template(char *arrayid)
   exit(1);
   }
 
-int lock_node(struct pbsnode *the_node, const char *id, char *msg, int logging)
+int lock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
   {
   fprintf(stderr, "The call to lock_node to be mocked!!\n");
   exit(1);
@@ -100,13 +100,13 @@ struct pbsnode *find_nodebyname(const char *nodename)
   exit(1);
   }
 
-struct work_task *set_task(enum work_type type, long event_id, void (*func)(), void *parm, int get_lock)
+struct work_task *set_task(enum work_type type, long event_id, void (*func)(struct work_task *), void *parm, int get_lock)
   {
   fprintf(stderr, "The call to set_task to be mocked!!\n");
   exit(1);
   }
 
-int unlock_node(struct pbsnode *the_node, const char *id, char *msg, int logging)
+int unlock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
   {
   fprintf(stderr, "The call to unlock_node to be mocked!!\n");
   exit(1);
@@ -172,7 +172,7 @@ void *get_next(list_link pl, char *file, int line)
   exit(1);
   }
 
-int issue_Drequest(int conn, struct batch_request *request, void (*func)(struct work_task *), struct work_task **ppwt)
+int issue_Drequest(int conn, struct batch_request *request)
   {
   fprintf(stderr, "The call to issue_Drequest to be mocked!!\n");
   exit(1);
@@ -220,7 +220,7 @@ pbs_queue *next_queue(all_queues *aq, int *iter)
   exit(1);
   }
 
-int svr_connect(pbs_net_t hostaddr, unsigned int port, struct pbsnode *pnode, void *(*func)(void *), enum conn_type cntype)
+int svr_connect(pbs_net_t hostaddr, unsigned int port, int *err, struct pbsnode *pnode, void *(*func)(void *), enum conn_type cntype)
   {
   fprintf(stderr, "The call to svr_connect to be mocked!!\n");
   exit(1);
@@ -232,13 +232,13 @@ int is_array(char *id)
   exit(1);
   }
 
-void update_array_statuses(job_array *owned)
+void update_array_statuses()
   {
   fprintf(stderr, "The call to update_array_statuses to be mocked!!\n");
   exit(1);
   }
 
-struct pbsnode *tfind_addr(const u_long key, uint16_t port, job *pjob)
+struct pbsnode *tfind_addr(u_long key, uint16_t port, char *pjob_id)
   {
   fprintf(stderr, "The call to tfind_addr to be mocked!!\n");
   exit(1);
@@ -317,7 +317,11 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   return(0);
   }
 
-int unlock_ai_mutex(job_array *pa, const char *id, char *msg, int logging)
+int unlock_ai_mutex(job_array *pa, const char *id, const char *msg, int logging)
   {
   return(0);
   }
+
+void log_err(int errnum, const char *routine, const char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}

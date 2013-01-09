@@ -170,6 +170,11 @@ int unlock_queue(struct pbs_queue *the_queue, const char *method_name, const cha
   exit(1);
   }
 
+int lock_queue(struct pbs_queue *the_queue, const char *method_name, const char *msg, int logging)
+  {
+  return(0);
+  }
+
 job *svr_find_job(char *jobid, int get_subjob)
   {
   fprintf(stderr, "The call to find_job needs to be mocked!!\n");
@@ -190,3 +195,4 @@ void log_err(int errnum, const char *routine, const char *text)
   {
   }
 
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}

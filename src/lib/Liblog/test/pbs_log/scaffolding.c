@@ -2,8 +2,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+extern "C"
+{
 char *pbse_to_txt(int err)
   { 
   fprintf(stderr, "The call to pbse_to_txt needs to be mocked!!\n");
   exit(1);
   }
+}
