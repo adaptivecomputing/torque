@@ -149,6 +149,7 @@ src/lib/Libattr/test/attr_fn_tokens/test_attr_fn_tokens
 src/lib/Libattr/test/attr_fn_tv/test_attr_fn_tv
 src/lib/Libattr/test/attr_fn_unkn/test_attr_fn_unkn
 src/lib/Libattr/test/attr_func/test_attr_func
+src/lib/Libattr/test/attr_func/test_uut
 src/lib/Libattr/test/attr_node_func/test_attr_node_func
 src/lib/Libcmds/test/add_verify_resources/test_add_verify_resources
 src/lib/Libcmds/test/ck_job_name/test_ck_job_name
