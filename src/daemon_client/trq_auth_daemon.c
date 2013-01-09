@@ -223,10 +223,15 @@ void parse_command_line(int argc, char **argv)
     }
   }
 
+
+extern "C"
+{
 int trq_main(
-    int argc,
-    char **argv,
-    char **envp)
+
+  int    argc,
+  char **argv,
+  char **envp)
+
   {
   int rc = PBSE_NONE;
   char *trq_server_ip = NULL;
@@ -236,7 +241,7 @@ int trq_main(
   int daemon_port = 0;
   void *(*process_method)(void *) = process_svr_conn;
 
-  if(IamRoot() == 0)
+  if (IamRoot() == 0)
     {
     printf("This program must be run as root!!!\n");
     return(PBSE_IVALREQ);
@@ -264,3 +269,4 @@ int trq_main(
     free(the_key);
   return rc;
   }
+}
