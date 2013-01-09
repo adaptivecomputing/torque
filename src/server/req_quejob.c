@@ -131,6 +131,7 @@
 #include "user_info.h"
 #include "work_task.h"
 #include "req_runjob.h"
+#include "mutex_mgr.hpp"
 
 
 /* External Functions Called: */
@@ -2035,6 +2036,7 @@ int req_commit(
   if (LOGLEVEL >= 10)
     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pj->ji_qs.ji_jobid);
 
+  mutex_mgr job_mutex = mutex_mgr(pj->ji_mutex, true); 
 #ifdef QUICKCOMMIT
   if (pj->ji_qs.ji_substate != JOB_SUBSTATE_TRANSIN)
     {
@@ -2044,7 +2046,7 @@ int req_commit(
         errno, strerror(errno));
     log_err(rc, __func__, log_buf);
     req_reject(PBSE_IVALREQ, 0, preq, NULL, log_buf);
-    unlock_ji_mutex(pj, __func__, "5", LOGLEVEL);
+    job_mutex.unlock();
     return(rc);
     }
 
@@ -2077,7 +2079,7 @@ int req_commit(
         errno, strerror(errno));
     log_err(rc, __func__, "cannot commit job in unexpected state");
     req_reject(rc, 0, preq, NULL, NULL);
-    unlock_ji_mutex(pj, __func__, "6", LOGLEVEL);
+    job_mutex.unlock();
     return(rc);
     }
 
@@ -2089,7 +2091,7 @@ int req_commit(
     req_reject(rc, 0, preq, NULL, log_buf);
     if (LOGLEVEL >= 6)
       log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, log_buf);
-    unlock_ji_mutex(pj, __func__, "7", LOGLEVEL);
+    job_mutex.unlock();
     return(rc);
     }
 
@@ -2129,7 +2131,7 @@ int req_commit(
         req_reject(rc, 0, preq, NULL, NULL);
         }
 
-      unlock_ji_mutex(pj, __func__, "8", LOGLEVEL);
+      job_mutex.unlock();
 
       return(rc);
       }
@@ -2274,7 +2276,7 @@ int req_commit(
     issue_track(pj);
     }
 
-  unlock_ji_mutex(pj, __func__, "9", LOGLEVEL);
+  job_mutex.unlock();
 
 #ifdef AUTORUN_JOBS
   /* If we are auto running jobs with start_count = 0 then the
