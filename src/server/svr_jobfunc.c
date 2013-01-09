@@ -725,7 +725,7 @@ int svr_dequejob(
 
   if (bad_ct)   /* state counts are all messed up */
     {
-    char queue_name[PBS_MAXQUEUENAME];
+    char queue_name[PBS_MAXQUEUENAME+1];
     char           job_id[PBS_MAXSVRJOBID+1];
 
     strcpy(job_id, pjob->ji_qs.ji_jobid);
