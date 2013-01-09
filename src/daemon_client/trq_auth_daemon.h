@@ -6,7 +6,10 @@ int load_config(char **ip, int *t_port, int *d_port);
 
 int load_ssh_key(char **ssh_key);
 
+extern "C"
+{
 int trq_main(int argc, char **argv, char **envp);
+}
 
 void clean_log_init_mutex(void);
 

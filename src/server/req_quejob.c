@@ -2190,16 +2190,17 @@ int req_commit(
 
   if ((pque = get_jobs_queue(&pj)) != NULL)
     {
+    mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex,true);
     if ((preq->rq_fromsvr == 0) &&
         (pque->qu_qs.qu_type == QTYPE_RoutePush) &&
         (pque->qu_attr[QA_ATR_Started].at_val.at_long != 0))
       {
-      unlock_queue(pque, __func__, log_buf, LOGLEVEL);
+      pque_mutex.unlock();
       if ((rc = job_route(pj)))
         {
         snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "can not route job %s",
             pj->ji_qs.ji_jobid);
-        unlock_queue(pque, __func__, log_buf, LOGLEVEL);
+        pque_mutex.unlock();
 
         if (LOGLEVEL >= 6)
           {
