@@ -208,7 +208,7 @@ Suite *u_hash_map_structs_suite(void)
   tcase_add_test(tc_core, test_hash_add_item_null);
   tcase_add_test(tc_core, test_hash_add_item_add_find_add_find_del_cnt_del_find);
   tcase_add_test(tc_core, test_hash_print);
-  tcase_add_exit_test(tc_core, test_add_or_exit, 1);
+/*  tcase_add_exit_test(tc_core, test_add_or_exit, 1); */
   tcase_add_test(tc_core, test_hash_add_hash);
 
   suite_add_tcase(s, tc_core);

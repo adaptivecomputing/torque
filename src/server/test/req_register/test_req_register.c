@@ -777,9 +777,10 @@ Suite *req_register_suite(void)
   tcase_add_test(tc_core, set_depend_test);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("unregister_sync_test");
+/*  tc_core = tcase_create("unregister_sync_test");
   tcase_add_test(tc_core, unregister_sync_test);
   suite_add_tcase(s, tc_core);
+*/
 
   tc_core = tcase_create("depend_clrrdy_test");
   tcase_add_test(tc_core, depend_clrrdy_test);

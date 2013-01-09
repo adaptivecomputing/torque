@@ -135,6 +135,7 @@
 #include "threadpool.h"
 #include "alps_functions.h"
 #include "dis.h"
+#include "pbs_cpuset.h"
 
 #ifndef TRUE
 #define TRUE 1
@@ -142,6 +143,7 @@
 #endif
 
 int conn_qsub(char *, long, char *);
+
 void mom_job_purge(job *);
 
 /* External functions */
@@ -182,7 +184,6 @@ void nodes_free(job *);
 extern int thread_unlink_calls;
 
 extern void MOMCheckRestart(void);
-extern int delete_cpuset(char *);
 void       send_update_soon();
 
 

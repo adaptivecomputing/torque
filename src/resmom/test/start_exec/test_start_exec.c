@@ -9,7 +9,7 @@
 #define MAX_TEST_ENVP 150
 #define MAX_TEST_BLOCK 8096
 
-char **penv[MAX_TEST_ENVP]; /* max pointers a bld_env_variables will create */
+char *penv[MAX_TEST_ENVP]; /* max number of pointers bld_env_variables will create */
 char *envBuffer = NULL; /* points to the max block that bld_env_variables would ever need in this test suite */
 
 void setup_vtable(
@@ -22,7 +22,7 @@ void setup_vtable(
 
   memset(vtable, 0, sizeof(struct var_table));
   vtable->v_ensize = v_envpsz;
-  *vtable->v_envp = (char *)calloc(vtable->v_ensize, sizeof(char *));
+  vtable->v_envp = (char **)calloc(vtable->v_ensize, sizeof(char *));
   vtable->v_bsize = v_blocksz;
   vtable->v_block_start = (char *)calloc(1, vtable->v_bsize);
   vtable->v_block = vtable->v_block_start;
@@ -69,8 +69,8 @@ int add_env_variables(
     len = strlen(varname) + strlen(buf) + 1;
     varNval = (char *) calloc(len, sizeof(char));
     sprintf(varNval, "%s%s", varname, buf);
-    *(penv + i) = ptest_block;
-    strcpy((*(penv + i)), varNval);
+    penv[i] = ptest_block;
+    strcpy(penv[i], varNval);
     ptest_block += strlen(varNval) + 1;
     if (bld_env_variables(vtable, varNval, NULL) != PBSE_NONE)
       {
