@@ -13,7 +13,7 @@ int pbs_disconnect(int connect)
   exit(1);
   }
 
-void set_attr(struct attrl **attrib, char *attrib_name, char *attrib_value)
+void set_attr(struct attrl **attrib, const char *attrib_name, const char *attrib_value)
   { 
   fprintf(stderr, "The call to set_attr needs to be mocked!!\n");
   exit(1);
@@ -37,7 +37,7 @@ int locate_job(char *job_id, char *parent_server, char *located_server)
   exit(1);
   }
 
-int cnt2server(char *SpecServer)
+int cnt2server(const char *SpecServer)
   { 
   fprintf(stderr, "The call to cnt2server needs to be mocked!!\n");
   exit(1);
@@ -73,7 +73,7 @@ int parse_stage_list(char *list)
   exit(1);
   }
 
-int get_server(char *job_id_in, char *job_id_out, char *server_out)
+int get_server(const char *job_id_in, char *job_id_out, int job_size, char *server_out, int server_size)
   { 
   fprintf(stderr, "The call to get_server needs to be mocked!!\n");
   exit(1);
