@@ -256,11 +256,9 @@ Suite *node_func_suite(void)
   tcase_add_test(tc_core, find_alpsnode_test);
   suite_add_tcase(s, tc_core);
 
-  /* Failed unit test 
   tc_core = tcase_create("determine_node_from_str_test");
   tcase_add_test(tc_core, determine_node_from_str_test);
   suite_add_tcase(s, tc_core);
-  */
 
   tc_core = tcase_create("check_orphaned_test");
   tcase_add_test(tc_core, check_orphaned_test);

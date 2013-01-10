@@ -140,12 +140,6 @@ Suite *obit_reply_suite(void)
 
 void rundebug()
   {
-  int *socket_ref = (int *)malloc(sizeof(int));
-  *socket_ref = 1;
-  the_sock = 1;
-  func_num = OBIT_REPLY;
-  tc = 5;
-  obit_reply(socket_ref);
   }
 
 void mom_deljob(job *pjob)

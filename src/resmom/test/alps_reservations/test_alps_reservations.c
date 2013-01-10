@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
 
 #include "resizable_array.h"
 #include "dynamic_string.h"
@@ -139,14 +141,10 @@ START_TEST(get_reservation_command_test)
   char            *nppn;
   int              ppn;
 
-  printf("getting the command\n");
   apbasil_command = get_reservation_command(hrl, uname, jobids[0], NULL, apbasil_protocol, NULL,0);
-  printf("checking for the username\n");
 
   snprintf(buf, sizeof(buf), "Username '%s' not found in command '%s'", uname, apbasil_command->str);
   fail_unless(strstr(apbasil_command->str, uname) != NULL, buf);
-
-  printf("got the command\n");
 
   reserve_param = strstr(apbasil_command->str, "ReserveParam ");
   fail_unless(reserve_param != NULL, "Couldn't find a ReserveParam element in the request");
@@ -245,16 +243,20 @@ START_TEST(confirm_reservation_test)
   long long  pagg = 20;
   int        rc;
 
-  rc = confirm_reservation(jobids[0], rsv_id, pagg, NULL, apbasil_protocol);
-  /*fail_unless(rc == 0, "Couldn't execute the reservation");*/
-  snprintf(buf, sizeof(buf), "Reservation id should be 20 but was %s", rsv_id);
-  fail_unless(!strcmp(rsv_id, "20"), buf);
-
-  rc = confirm_reservation(jobids[1], rsv_id, pagg, blank_cmd, apbasil_protocol);
-  fail_unless(rc != 0, "Somehow parsed the blank command's output?");
-
-  rc = parse_confirmation_output((char *)"tom");
-  fail_unless(rc == ALPS_PARSING_ERROR, "We parsed non-xml?");
+  /* this test only works if you're root */
+  if (getuid() == 0)
+    {
+    rc = confirm_reservation(jobids[0], rsv_id, pagg, NULL, apbasil_protocol);
+    /*fail_unless(rc == 0, "Couldn't execute the reservation");*/
+    snprintf(buf, sizeof(buf), "Reservation id should be 20 but was %s", rsv_id);
+    fail_unless(!strcmp(rsv_id, "20"), buf);
+    
+    rc = confirm_reservation(jobids[1], rsv_id, pagg, blank_cmd, apbasil_protocol);
+    fail_unless(rc != 0, "Somehow parsed the blank command's output?");
+    
+    rc = parse_confirmation_output((char *)"tom");
+    fail_unless(rc == ALPS_PARSING_ERROR, "We parsed non-xml?");
+    }
   }
 END_TEST
 

@@ -196,6 +196,9 @@ endif
 
 CHECK_DIRS = src
 
+clean:
+	$(MAKE) -C $(CHECK_DIRS) $(MAKECMDGOALS) 
+
 .PHONY: cleancheck
 cleancheck:
 	$(MAKE) -C $(CHECK_DIRS) $(MAKECMDGOALS)

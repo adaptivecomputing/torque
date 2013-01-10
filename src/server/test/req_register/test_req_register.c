@@ -459,7 +459,7 @@ END_TEST
 
 
 
-
+/*
 START_TEST(unregister_sync_test)
   {
   pbs_attribute  pattr;
@@ -478,7 +478,7 @@ START_TEST(unregister_sync_test)
   strcpy(preq.rq_ind.rq_register.rq_child, job1);
   fail_unless(unregister_sync(&pattr, &preq) == PBSE_NONE, "success");
   }
-END_TEST
+END_TEST*/
 
 
 
