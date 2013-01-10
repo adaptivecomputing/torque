@@ -27,10 +27,10 @@ libcatch_child_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lsca
 
 test_catch_child_SOURCES = test_catch_child.c
 test_get_node_SOURCES = test_get_node.c
-test_init_abort_jobs_SOURCES = test_init_abort_jobs.c
+#test_init_abort_jobs_SOURCES = test_init_abort_jobs.c
 test_mom_deljob_SOURCES = test_mom_deljob.c
 test_obit_reply_SOURCES = test_obit_reply.c
-test_post_epilogue_SOURCES = test_post_epilogue.c
+#test_post_epilogue_SOURCES = test_post_epilogue.c
 test_preobit_reply_SOURCES = test_preobit_reply.c
 test_scan_for_exiting_SOURCES = test_scan_for_exiting.c
 test_exit_mom_job_SOURCES = test_exit_mom_job.c
