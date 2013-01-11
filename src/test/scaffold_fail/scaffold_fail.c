@@ -168,3 +168,9 @@ void close_conn(int sd, int mutex)
   exit(1);
   }
 
+int remove_alps_reservation(char *rsv_id)
+   {
+   fprintf(stderr,"Function %s needs to be mocked.\n",__func__);
+   exit(1);
+   }
+
