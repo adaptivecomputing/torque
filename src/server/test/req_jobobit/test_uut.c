@@ -5,7 +5,7 @@
 
 #include "pbs_job.h"
 #include "req_jobobit.h"
-#include "test_req_jobobit.h"
+#include "test_uut.h"
 #include "pbs_error.h"
 #include "batch_request.h"
 #include "sched_cmds.h"

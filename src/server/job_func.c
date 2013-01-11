@@ -1852,7 +1852,7 @@ int svr_job_purge(
     /* jobs that are being deleted after a cold restart
      * haven't been queued */
     if (need_deque == TRUE)
-      rc = svr_dequejob(pjob, TRUE);
+      rc = svr_dequejob(pjob, FALSE);
 
     if (rc != PBSE_JOBNOTFOUND)
       {

@@ -20,7 +20,7 @@ AvlTree okclients = NULL;
 int LOGLEVEL = 1;
 
 
-void *req_rerunjob(void *vp)
+void req_rerunjob(batch_request *preq)
   {
   fprintf(stderr, "The call to req_rerunjob needs to be mocked!!\n");
   exit(1);

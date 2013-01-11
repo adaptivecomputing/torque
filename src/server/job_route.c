@@ -115,6 +115,7 @@
 #include <memory.h>
 #endif
 #include "ji_mutex.h"
+#include "mutex_mgr.hpp"
 #include "queue_func.h" /*find_queuebyname */
 
 #define ROUTE_RETRY_TIME 10
@@ -348,6 +349,7 @@ int job_route(
     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
 
+  mutex_mgr qp_mutex = mutex_mgr(qp->qu_mutex);
   /* see if the job is able to be routed */
   switch (jobp->ji_qs.ji_state)
     {
@@ -451,11 +453,15 @@ int job_route(
     return(PBSE_NONE);
     }
 
+  /* default_router and site_alt_router expect the queue to 
+     be unlocked. */
   if (qp->qu_attr[QR_ATR_AltRouter].at_val.at_long == 0)
     {
+    qp_mutex.unlock();
     return(default_router(jobp, qp, retry_time));
     }
 
+  qp_mutex.unlock();
   return(site_alt_router(jobp, qp, retry_time));
   }  /* END job_route() */
 
@@ -539,6 +545,7 @@ void *queue_route(
     return(NULL);
     }
   
+  mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
   while (1)
     {
     if (LOGLEVEL >= 7)
@@ -556,15 +563,21 @@ void *queue_route(
         unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         continue;
         }
-      unlock_queue(pque, __func__, NULL, 0);
+      /* queue must be unlocked when calling reroute_job */
+      pque_mutex.unlock();
       reroute_job(pjob, pque);
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-      lock_queue(pque, __func__, NULL, 0);
+      /* need to relock queue when we go to call next_job */
+      pque_mutex.lock();
       }
 
-    unlock_queue(pque, __func__, (char *)NULL, 0);
+    /* we come out of the while loop with the queue locked.
+       We don't want it locked while we sleep */
+    pque_mutex.unlock();
     pthread_mutex_unlock(reroute_job_mutex);
     sleep(route_retry_interval);
+    /* starting the loop again. the queue must be locked */
+    pque_mutex.lock();
     }
   free(queue_name);
   return(NULL);

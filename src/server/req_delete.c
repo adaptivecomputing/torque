@@ -115,6 +115,7 @@
 #include "job_func.h" /* svr_job_purge */
 #include "svr_task.h"
 #include "ji_mutex.h"
+#include "mutex_mgr.hpp"
 #include "threadpool.h"
 #include "svr_task.h"
 
@@ -242,13 +243,12 @@ void force_purge_work(
 
   if ((pque = get_jobs_queue(&pjob)) != NULL)
     {
+    mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
     if (pjob->ji_qhdr->qu_qs.qu_type == QTYPE_Execution)
       {
-      unlock_queue(pque, __func__, NULL, LOGLEVEL);
+      pque_mutex.unlock();
       set_resc_assigned(pjob, DECR);
       }
-    else
-      unlock_queue(pque, __func__, NULL, LOGLEVEL);
     }
   
   if (pjob != NULL)
@@ -1135,12 +1135,12 @@ void post_delete_mom1(
     {
     if ((pque = get_jobs_queue(&pjob)) != NULL)
       {
+      mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
       pthread_mutex_lock(server.sv_attr_mutex);
       delay = attr_ifelse_long(&pque->qu_attr[QE_ATR_KillDelay],
                              &server.sv_attr[SRV_ATR_KillDelay],
                              2);
       pthread_mutex_unlock(server.sv_attr_mutex);
-      unlock_queue(pque, __func__, NULL, LOGLEVEL);
       }
     else if (pjob == NULL)
       return;

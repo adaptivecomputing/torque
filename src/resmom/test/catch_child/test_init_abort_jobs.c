@@ -49,13 +49,14 @@ void test_iaj_nodir_setup()
   path_jobs[1] = '\0';
   }
 
+/*
 START_TEST(test_iaj_nodir) 
   {
   test_iaj_nodir_setup();
   init_abort_jobs(JOB_RECOV_RUNNING);
   fail_unless(exit_called == 1, "This call should have exited because of a null path");
-}
-END_TEST
+  }
+END_TEST*/
 
 void test_iaj_pathdot()
   {

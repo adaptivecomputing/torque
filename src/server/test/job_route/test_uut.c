@@ -1,9 +1,10 @@
 #include "license_pbs.h" /* See here for the software license */
 #include "job_route.h"
-#include "test_job_route.h"
+#include "test_uut.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include "pbs_error.h"
+#include "mutex_mgr.hpp"
 
 
 START_TEST(test_add_dest_null)

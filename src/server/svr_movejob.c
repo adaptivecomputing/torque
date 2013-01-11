@@ -375,7 +375,6 @@ void finish_routing_processing(
   int  status)
 
   {
-  pbs_queue   *pque;
   int          newstate;
   int          newsub;
 
@@ -428,24 +427,13 @@ void finish_routing_processing(
       svr_evaljobstate(pjob, &newstate, &newsub, 1);
       svr_setjobstate(pjob, newstate, newsub, FALSE);
 
-      /* need to have queue's mutex when entering job_route */
-      if ((pque = get_jobs_queue(&pjob)) != NULL)
-        {
-        unlock_queue(pque, __func__, NULL, LOGLEVEL);
-        if ((status = job_route(pjob)) == PBSE_ROUTEREJ)
-          job_abt(&pjob, pbse_to_txt(PBSE_ROUTEREJ));
-        else if (status != 0)
-          job_abt(&pjob, msg_routexceed);
-        else
-          unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
-
-        }
-      else if (pjob != NULL)
-        {
-        /* Currently, abort if the job has no queue.
-         * Should a queue be assigned in this case? */
+      if ((status = job_route(pjob)) == PBSE_ROUTEREJ)
+        job_abt(&pjob, pbse_to_txt(PBSE_ROUTEREJ));
+      else if (status != 0)
         job_abt(&pjob, msg_routexceed);
-        }
+      else
+        unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+
 
       break;
     }  /* END switch (status) */

@@ -117,6 +117,7 @@
 #include "svr_func.h" /* get_svr_attr_* */
 #include "req_stat.h" /* stat_mom_job */
 #include "ji_mutex.h"
+#include "mutex_mgr.hpp"
 #include "svr_task.h"
 
 #ifdef HAVE_NETINET_IN_H
@@ -1658,6 +1659,7 @@ job *chk_job_torun(
 
   if ((pque = get_jobs_queue(&pjob)) != NULL)
     {
+    mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
     if (pque->qu_qs.qu_type != QTYPE_Execution)
       {
       /* FAILURE - job must be in execution queue */
@@ -1665,13 +1667,10 @@ job *chk_job_torun(
   
       req_reject(PBSE_IVALREQ, 0, preq, NULL, "job not in execution queue");
   
-      unlock_queue(pque, __func__, NULL, LOGLEVEL);
       unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
   
       return(NULL);
       }
-
-    unlock_queue(pque, __func__, NULL, LOGLEVEL);
     }
   else if (pjob == NULL)
     {
