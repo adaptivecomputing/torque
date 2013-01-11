@@ -2,16 +2,17 @@ PROG_ROOT = ../..
 
 AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
 
-lib_LTLIBRARIES = libreq_jobobit.la
+lib_LTLIBRARIES = libuut.la
 
 AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 
-check_PROGRAMS = test_req_jobobit
+check_PROGRAMS = test_uut
 
-libreq_jobobit_la_SOURCES = scaffolding.c ${PROG_ROOT}/req_jobobit.c
-libreq_jobobit_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib
+libuut_la_SOURCES =  ${PROG_ROOT}/req_jobobit.c  scaffolding.c
+libuut_la_LDFLAGS = @CHECK_LIBS@
+test_uut_LDADD = ../../../test/torque_test_lib/libtorque_test.la ../../../test/scaffold_fail/libscaffold_fail.la
 
-test_req_jobobit_SOURCES = test_req_jobobit.c
+test_uut_SOURCES = test_uut.c 
 
 check_SCRIPTS = coverage_run.sh
 

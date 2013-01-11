@@ -121,6 +121,7 @@
 #include "alps_functions.h"
 #include "node_manager.h" /* tfind_addr */
 #include "ji_mutex.h"
+#include "mutex_mgr.hpp"
 #include "unistd.h"
 #include "svr_task.h"
 
@@ -773,14 +774,11 @@ static void req_stat_job_step2(
             (pque == NULL))
           goto nextjob;
         
+        mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
         if (pque->qu_qs.qu_type != QTYPE_Execution)
           {
-          unlock_queue(pque, __func__, "not exec", LOGLEVEL);
-        
           goto nextjob;
           }
-
-        unlock_queue(pque, __func__, "exec", LOGLEVEL);
         }
       }
 

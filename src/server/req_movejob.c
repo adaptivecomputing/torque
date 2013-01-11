@@ -101,6 +101,7 @@
 #include "pbs_error.h"
 #include "queue.h"
 #include "ji_mutex.h"
+#include "mutex_mgr.hpp"
 
 /* Global Data Items: */
 
@@ -294,24 +295,23 @@ int req_orderjob(
       rc = PBSE_BADSTATE;
     else
       {
+      mutex_mgr pque2_mutex = mutex_mgr(pque2->qu_mutex, true);
       if ((rc = svr_chkque(pjob1, pque2, get_variable(pjob1, pbs_o_host), MOVE_TYPE_Order, NULL)) == PBSE_NONE)
         {
-        unlock_queue(pque2, "req_orderjob", (char *)"pque2 svr_chkque pass", LOGLEVEL);
+        pque2_mutex.unlock();
         if ((pque1 = get_jobs_queue(&pjob1)) == NULL)
           {
           rc = PBSE_BADSTATE;
           }
         else if (pjob1 != NULL)
           {
+          mutex_mgr pque1_mutex = mutex_mgr(pque1->qu_mutex, true);
           if ((rc = svr_chkque(pjob2, pque1, get_variable(pjob2, pbs_o_host), MOVE_TYPE_Order, NULL)) == PBSE_NONE)
             {
             ok = TRUE;
             }
-          unlock_queue(pque1, "req_orderjob", (char *)"pque1", LOGLEVEL);
           }
         }
-      else
-        unlock_queue(pque2, "req_orderjob", (char *)"pque2 svr_chkque fail", LOGLEVEL);
       }
 
     if (ok == FALSE)
@@ -355,9 +355,9 @@ int req_orderjob(
     {
     if ((pque1 = get_jobs_queue(&pjob1)) != NULL)
       {
+      mutex_mgr pque1_mutex = mutex_mgr(pque1->qu_mutex, true);
       swap_jobs(pque1->qu_jobs,pjob1,pjob2);
       swap_jobs(NULL,pjob1,pjob2);
-      unlock_queue(pque1, "req_orderjob", (char *)"pque1 after swap", LOGLEVEL);
       }
     }
 

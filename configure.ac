@@ -130,7 +130,10 @@ AM_CONDITIONAL(HAVE_CHECK, test x"$have_check" = "xyes")
 m4_ifdef([AM_SILENT_RULES],[
   if test "x$have_check" = "xyes"; then
     AM_SILENT_RULES(no)
-    AC_CONFIG_FILES(src/cmds/test/Makefile
+    AC_CONFIG_FILES(src/test/Makefile
+    src/test/scaffold_fail/Makefile
+    src/test/torque_test_lib/Makefile
+    src/cmds/test/Makefile
     src/cmds/test/MXML/Makefile
     src/cmds/test/common_cmds/Makefile
     src/cmds/test/pbs_track/Makefile
@@ -2168,11 +2171,6 @@ AH_BOTTOM([
 
 
 dnl  Include the Cplant Fault Recovery Patch jugglery
-AH_VERBATIM([NEED_BLOCKING_CONNECTIONS],
-[#ifndef NEED_BLOCKING_CONNECTIONS
-#define write(a,b,c) write_nonblocking_socket(a,b,c)
-#define read(a,b,c) read_nonblocking_socket(a,b,c)
-#endif])
 
 pbs_build_host=`uname -n`
 pbs_build_date=`date`

@@ -2195,12 +2195,12 @@ int req_commit(
         (pque->qu_qs.qu_type == QTYPE_RoutePush) &&
         (pque->qu_attr[QA_ATR_Started].at_val.at_long != 0))
       {
+      /* job_route expects the queue to be unlocked */
       pque_mutex.unlock();
       if ((rc = job_route(pj)))
         {
         snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "can not route job %s",
             pj->ji_qs.ji_jobid);
-        pque_mutex.unlock();
 
         if (LOGLEVEL >= 6)
           {
