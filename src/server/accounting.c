@@ -561,7 +561,7 @@ void account_jobend(
   if (pattr->at_flags & ATR_VFLAG_SET)
     {
     resource *pres;
-    char     *pname;
+    const char     *pname;
 
     pres = (resource *)GET_NEXT(pattr->at_val.at_list);
     
