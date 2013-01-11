@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 #include "req_register.h"
-#include "test_req_register.h"
+#include "test_uut.h"
 #include "pbs_error.h"
 #include "pbs_job.h"
 #include "batch_request.h"
