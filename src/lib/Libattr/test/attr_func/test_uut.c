@@ -39,9 +39,6 @@ START_TEST(test_one)
   fail_unless(strcmp(str,"Let's , test \\, count,substrings.") == 0);
 
   free(str);
-
-  im_dying();
-
   }
 END_TEST
 
