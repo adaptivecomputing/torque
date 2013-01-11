@@ -110,6 +110,7 @@
 #include "array.h"
 #include "svr_func.h" /* get_svr_attr_* */
 #include "ji_mutex.h"
+#include "mutex_mgr.hpp"
 #include "threadpool.h"
 #include "svr_task.h"
 
@@ -1267,10 +1268,10 @@ int modify_job_attr(
 
   if ((pque = get_jobs_queue(&pjob)) != NULL)
     {
+    mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
     if (pque->qu_qs.qu_type != QTYPE_Execution)
       allow_unkn = JOB_ATR_UNKN;
 
-    unlock_queue(pque, __func__, NULL, LOGLEVEL);
     }
   else if (pjob->ji_parent_job != NULL)
     {
@@ -1329,8 +1330,8 @@ int modify_job_attr(
         {
         if ((pque = get_jobs_queue(&pjob)) != NULL)
           {
+          mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
           rc = chk_resc_limits( &newattr[JOB_ATR_resource], pque, NULL);
-          unlock_queue(pque, __func__, NULL, LOGLEVEL);
           }
         else if (pjob == NULL)
           {

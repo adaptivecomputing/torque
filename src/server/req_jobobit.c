@@ -119,6 +119,7 @@
 #include "svr_connect.h" /* svr_connect */
 #include "job_func.h" /* svr_job_purge */
 #include "ji_mutex.h"
+#include "mutex_mgr.hpp"
 #include "../lib/Libutils/u_lock_ctl.h"
 #include "exiting_jobs.h"
 #include "svr_task.h" /* set_task */
@@ -909,14 +910,13 @@ int handle_returnstd(
 
     if (pque != NULL)
       {
+      mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
       pthread_mutex_lock(server.sv_attr_mutex);
       KeepSeconds = attr_ifelse_long(
         &pque->qu_attr[QE_ATR_KeepCompleted],
         &server.sv_attr[SRV_ATR_KeepCompleted],
         0);
       pthread_mutex_unlock(server.sv_attr_mutex);
-
-      unlock_queue(pque, __func__, NULL, LOGLEVEL);
       }
     else if (pjob == NULL)
       {
@@ -1652,14 +1652,13 @@ int handle_complete_first_time(
   
   if (pque != NULL)
     {
+    mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
     pthread_mutex_lock(server.sv_attr_mutex);
     KeepSeconds = attr_ifelse_long(
       &pque->qu_attr[QE_ATR_KeepCompleted],
       &server.sv_attr[SRV_ATR_KeepCompleted],
       0);
     pthread_mutex_unlock(server.sv_attr_mutex);
-
-    unlock_queue(pque, __func__, NULL, LOGLEVEL);
     }
   else if (pjob == NULL)
     {

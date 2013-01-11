@@ -103,6 +103,7 @@
 #include "array.h"
 #include "svr_func.h" /* get_svr_attr_* */
 #include "ji_mutex.h"
+#include "mutex_mgr.hpp"
 
 #define SYNC_SCHED_HINT_NULL 0
 #define SYNC_SCHED_HINT_FIRST 1
@@ -1349,15 +1350,15 @@ int depend_on_que(
     else
       return(PBSE_NONE);
     }
-  else if (((mode != ATR_ACTION_ALTER) && 
-            (mode != ATR_ACTION_NOOP)) ||
-           (pque->qu_qs.qu_type != QTYPE_Execution))
+
+  mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
+  if (((mode != ATR_ACTION_ALTER) && 
+       (mode != ATR_ACTION_NOOP)) ||
+       (pque->qu_qs.qu_type != QTYPE_Execution))
     {
-    unlock_queue(pque, __func__, NULL, LOGLEVEL);
     return(PBSE_NONE);
     }
-  else
-    unlock_queue(pque, __func__, NULL, LOGLEVEL);
+  pque_mutex.unlock();
 
   if (mode == ATR_ACTION_ALTER)
     {
