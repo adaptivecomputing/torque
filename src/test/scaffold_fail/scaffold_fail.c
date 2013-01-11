@@ -9,6 +9,21 @@
 #include "queue.h"
 #include "batch_request.h"
 #include "resource.h"
+#include <time.h> /* timeval */
+#include <pthread.h> /* pthread_mutex_t */
+#include "attribute.h" /* attribute_def, svrattrl, pbs_attribute */
+#include "net_connect.h" /* pbs_net_t, conn_type */
+#include "server_limits.h" /* RECOV_WARM */
+#include "work_task.h" /* work _task, work_type, all_tasks */
+#include "server.h" /* server */
+#include "sched_cmds.h" /* SCH_SCHEDULE_NULL */
+#include "array.h" /* job_array */
+#include "node_func.h" /* node_info */
+#include "pbs_ifl.h" /* batch_op */
+#include "array.h" /* ArrayEventsEnum */
+#include "pbs_nodes.h" /* pbsnode */
+#include "queue.h" /* pbs_queue */
+
 
 
 int svr_movejob(job *jobp, char *destination, int *i, struct batch_request *req)
@@ -47,11 +62,13 @@ int enqueue_threadpool_request(void *(*func)(void *), void *arg)
   exit(1);
   }
 
+/*
 pbs_queue *get_jobs_queue(job **pjob)
   {
   fprintf(stderr, "The call to get_jobs_queue needs to be mocked!!\n");
   exit(1);
   }
+*/
 
 
 int unlock_queue(struct pbs_queue *the_queue, const char *method_name, const char *msg, int logging)
@@ -60,10 +77,95 @@ int unlock_queue(struct pbs_queue *the_queue, const char *method_name, const cha
   exit(1);
   }
 
-
+/*
 job *svr_find_job(char *jobid, int get_subjob)
   {
   fprintf(stderr, "The call to find_job needs to be mocked!!\n");
+  exit(1);
+  }
+*/
+
+job_array *get_jobs_array(job **pjob)
+  {
+  fprintf(stderr, "The call to get_jobs_array to be mocked!!\n");
+  exit(1);
+  }
+
+int modify_job_attr(job *pjob, svrattrl *plist, int perm, int *bad)
+  {
+  fprintf(stderr, "The call to modify_job_attr to be mocked!!\n");
+  exit(1);
+  }
+
+void reply_ack(struct batch_request *preq)
+  {
+  fprintf(stderr, "The call to reply_ack to be mocked!!\n");
+  exit(1);
+  }
+
+void cleanup_restart_file( job *pjob)
+  {
+  fprintf(stderr, "The call to cleanup_restart_file to be mocked!!\n");
+  exit(1);
+  }
+
+void release_req(struct work_task *pwt)
+  {
+  fprintf(stderr, "The call to release_req to be mocked!!\n");
+  exit(1);
+  }
+
+void remove_job_delete_nanny( struct job *pjob)
+  {
+  fprintf(stderr, "The call to remove_job_delete_nanny to be mocked!!\n");
+  exit(1);
+  }
+
+void account_jobend( job *pjob, char *used)
+  {
+  fprintf(stderr, "The call to account_jobend to be mocked!!\n");
+  exit(1);
+  }
+
+void svr_disconnect(int handle)
+  {
+  fprintf(stderr, "The call to svr_disconnect to be mocked!!\n");
+  exit(1);
+  }
+
+void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
+  {
+  fprintf(stderr, "The call to req_reject to be mocked!!\n");
+  exit(1);
+  }
+
+void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum event, char *job_id, long job_atr_hold, int job_exit_status)
+  {
+  fprintf(stderr, "The call to update_array_values to be mocked!!\n");
+  exit(1);
+  }
+
+void svr_evaljobstate(job *pjob, int *newstate, int *newsub, int forceeval)
+  {
+  fprintf(stderr, "The call to svr_evaljobstate to be mocked!!\n");
+  exit(1);
+  }
+
+int insert_task(all_tasks *at, work_task *wt)
+  {
+  fprintf(stderr, "The call to insert_task to be mocked!!\n");
+  exit(1);
+  }
+
+char *threadsafe_tokenizer(char **str, const char *delims)
+  {
+  fprintf(stderr, "The call to threadsafe_tokenizer needs to be mocked!!\n");
+  exit(1);
+  }
+
+void close_conn(int sd, int mutex)
+  {
+  fprintf(stderr, "The call to close_conn needs to be mocked!!\n");
   exit(1);
   }
 
