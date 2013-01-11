@@ -337,7 +337,7 @@ int TMomFinalizeJob3(pjobexec_t *TJE, int ReadSize, int ReadErrno, int *SC)
   exit(1);
   }
 
-unsigned long mom_checkpoint_set_restart_script(char *value)
+unsigned long mom_checkpoint_set_restart_script(const char *value)
   {
   fprintf(stderr, "The call to mom_checkpoint_set_restart_script needs to be mocked!!\n");
   exit(1);
@@ -583,7 +583,7 @@ int disrsi(tcp_chan *chan, int *retval)
   exit(1);
   }
 
-unsigned long mom_checkpoint_set_checkpoint_run_exe_name(char *value)
+unsigned long mom_checkpoint_set_checkpoint_run_exe_name(const char *value)
   {
   fprintf(stderr, "The call to mom_checkpoint_set_checkpoint_run_exe_name needs to be mocked!!\n");
   exit(1);
