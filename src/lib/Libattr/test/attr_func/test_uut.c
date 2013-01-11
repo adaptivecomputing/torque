@@ -96,7 +96,7 @@ START_TEST(test_three)
   fail_unless(attrA.at_flags == 0);
   free_noop(&attrA);
   comp_null(&attrA,&attrB);
-    }
+  }
 END_TEST
 
 
