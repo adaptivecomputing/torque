@@ -18,7 +18,6 @@
 #include "server.h" /* server */
 #include "sched_cmds.h" /* SCH_SCHEDULE_NULL */
 #include "array.h" /* job_array */
-#include "node_func.h" /* node_info */
 #include "pbs_ifl.h" /* batch_op */
 #include "array.h" /* ArrayEventsEnum */
 #include "pbs_nodes.h" /* pbsnode */
