@@ -145,7 +145,6 @@
 #include "resizable_array.h"
 #include "dynamic_string.h"
 #include "svr_func.h" /* get_svr_attr_* */
-#include "track_alps_reservations.h"
 #include "issue_request.h" /* release_req */
 #include "ji_mutex.h"
 #include "user_info.h"
@@ -1745,7 +1744,6 @@ int svr_job_purge(
   extern char  *msg_err_purgejob;
   time_t        time_now = time(NULL);
   long          record_job_info = FALSE;
-  long          cray_enabled = FALSE;
   char          job_id[PBS_MAXSVRJOBID+1];
   char          job_fileprefix[PBS_JOBBASE+1];
   int           job_substate;
@@ -1772,7 +1770,7 @@ int svr_job_purge(
   job_has_checkpoint_file = pjob->ji_wattr[JOB_ATR_checkpoint_name].at_flags;
 
   if (LOGLEVEL >= 10)
-    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
 
   /* check to see if we are keeping a log of all jobs completed */
   get_svr_attr_l(SRV_ATR_RecordJobInfo, &record_job_info);
@@ -1788,11 +1786,6 @@ int svr_job_purge(
       check_job_log_started = 1;
       }
     }
-  
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
-  if ((cray_enabled == TRUE) &&
-      (pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str != NULL))
-    remove_alps_reservation(pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str);
 
   if ((job_has_arraystruct == FALSE) || (job_is_array_template == TRUE))
     if (remove_job(&array_summary,pjob) == PBSE_JOB_RECYCLED)
