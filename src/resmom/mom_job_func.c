@@ -135,7 +135,9 @@
 #include "threadpool.h"
 #include "alps_functions.h"
 #include "dis.h"
+#ifdef PENABLE_LINUX26_CPUSETS
 #include "pbs_cpuset.h"
+#endif
 
 #ifndef TRUE
 #define TRUE 1
