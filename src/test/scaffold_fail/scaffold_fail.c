@@ -5,70 +5,65 @@
 #include "license_pbs.h"
 #include "list_link.h"
 #include "portability.h"
+#include "pbs_job.h"
+#include "queue.h"
+#include "batch_request.h"
+#include "resource.h"
 
-void im_dying()
-   {
-   fprintf(stderr,"The function %s needs to be mocked.\n",__func__);
-   exit(1);
-   }
 
-void *get_next(list_link, char *file, int ln)
-   {
-   fprintf(stderr,"The function %s needs to be mocked.\n",__func__);
-   exit(1);
-   }
+int svr_movejob(job *jobp, char *destination, int *i, struct batch_request *req)
+  {
+  fprintf(stderr, "The call to svr_movejob needs to be mocked!!\n");
+  exit(1);
+  }
 
-void insert_link(struct list_link *old, struct list_link *new_link, void *pobj, int position)
-   {
-   fprintf(stderr,"The function %s needs to be mocked.\n",__func__);
-   exit(1);
-   }
+job *next_job(struct all_jobs *aj, int *iter)
+  {
+  fprintf(stderr, "The call to next_job needs to be mocked!!\n");
+  exit(1);
+  }
 
-void append_link(tlist_head *head, list_link *new_link, void *pobj)
-   {
-   fprintf(stderr,"The function %s needs to be mocked.\n",__func__);
-   exit(1);
-   }
+ int job_abt(struct job **pjobp, const char *text)
+  {
+  fprintf(stderr, "The call to job_abt needs to be mocked!!\n");
+  exit(1);
+  }
 
-int is_linked(list_link *head, list_link *entry)
-   {
-   fprintf(stderr,"The function %s needs to be mocked.\n",__func__);
-   exit(1);
-   }
+int site_alt_router(job *jobp, pbs_queue *qp, long retry_time)
+  {
+  fprintf(stderr, "The call to site_alt_router needs to be mocked!!\n");
+  exit(1);
+  }
 
-int is_link_initialized(list_link *head)
-   {
-   fprintf(stderr,"The function %s needs to be mocked.\n",__func__);
-   exit(1);
-   }
+ char *pbse_to_txt(int err)
+  {
+  fprintf(stderr, "The call to pbse_to_txt needs to be mocked!!\n");
+  exit(1);
+  }
 
-void *get_prior(list_link pl, char *file, int line)
-   {
-   fprintf(stderr,"The function %s needs to be mocked.\n",__func__);
-   exit(1);
-   }
+int enqueue_threadpool_request(void *(*func)(void *), void *arg)
+  {
+  fprintf(stderr, "The call to enqueue_threadpool_request needs to be mocked!!\n");
+  exit(1);
+  }
 
-void list_move(tlist_head *from, tlist_head *to)
-   {
-   fprintf(stderr,"The function %s needs to be mocked.\n",__func__);
-   exit(1);
-   }
+pbs_queue *get_jobs_queue(job **pjob)
+  {
+  fprintf(stderr, "The call to get_jobs_queue needs to be mocked!!\n");
+  exit(1);
+  }
 
-void free_pidlist(struct pidl *pl)
-   {
-   fprintf(stderr,"The function %s needs to be mocked.\n",__func__);
-   exit(1);
-   }
 
-void delete_link(struct list_link *old)
-   {
-   fprintf(stderr,"The function %s needs to be mocked.\n",__func__);
-   exit(1);
-   }
+int unlock_queue(struct pbs_queue *the_queue, const char *method_name, const char *msg, int logging)
+  {
+  fprintf(stderr, "The call to unlock_queue needs to be mocked!!\n");
+  exit(1);
+  }
 
-void swap_link(list_link *pone, list_link *ptwo)
-   {
-   fprintf(stderr,"The function %s needs to be mocked.\n",__func__);
-   exit(1);
-   }
+
+job *svr_find_job(char *jobid, int get_subjob)
+  {
+  fprintf(stderr, "The call to find_job needs to be mocked!!\n");
+  exit(1);
+  }
 
