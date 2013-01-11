@@ -174,3 +174,8 @@ int remove_alps_reservation(char *rsv_id)
    exit(1);
    }
 
+int destroy_alps_reservation(char *reservation_id, char *apbasil_path, char *apbasil_protocol)
+   {
+   fprintf(stderr,"Function %s needs to be mocked.\n",__func__);
+   exit(1);
+   }

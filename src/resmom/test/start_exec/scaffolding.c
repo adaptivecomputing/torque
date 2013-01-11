@@ -57,6 +57,7 @@ int num_var_env;
 char jobstarter_exe_name[MAXPATHLEN + 1];
 int    attempttomakedir = 0;
 int EXTPWDRETRY = 3;
+char log_buffer[LOG_BUF_SIZE];
 
 int diswcs (struct tcp_chan *chan, const char *value,size_t nchars) 
   { return 0; }
