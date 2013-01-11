@@ -1154,7 +1154,7 @@ int initialize_paths()
   else
     {
     int len = strlen(SERVER_CHKPTDIR) + strlen(suffix_slash) + 1;
-    path_checkpoint = calloc(1, len);
+    path_checkpoint = (char *) calloc(1, len);
     snprintf(path_checkpoint, len, "%s%s", SERVER_CHKPTDIR, suffix_slash);
     }
 
