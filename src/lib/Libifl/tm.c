@@ -662,13 +662,11 @@ int tm_init(
   int   nerr = 0;
   struct tcp_chan *chan = NULL;
 
-printf("got to line %d\n", __LINE__);
   if (init_done)
     {
     return(TM_BADINIT);
     }
 
-printf("got to line %d\n", __LINE__);
   if ((tm_jobid = getenv("PBS_JOBID")) == NULL)
     {
     return(TM_EBADENVIRONMENT);
@@ -679,7 +677,6 @@ printf("got to line %d\n", __LINE__);
   if ((tm_jobcookie = getenv("PBS_JOBCOOKIE")) == NULL)
     return TM_EBADENVIRONMENT;
 
-printf("got to line %d\n", __LINE__);
   tm_jobcookie_len = strlen(tm_jobcookie);
 
   if ((env = getenv("PBS_NODENUM")) == NULL)
@@ -687,7 +684,6 @@ printf("got to line %d\n", __LINE__);
 
   tm_jobndid = (tm_node_id)strtol(env, &hold, 10);
 
-printf("got to line %d\n", __LINE__);
   if (env == hold)
     return TM_EBADENVIRONMENT;
 
@@ -703,7 +699,6 @@ printf("got to line %d\n", __LINE__);
   if ((tm_momport = atoi(env)) == 0)
     return TM_EBADENVIRONMENT;
 
-printf("got to line %d\n", __LINE__);
   init_done = 1;
 
   nevent = new_event();
