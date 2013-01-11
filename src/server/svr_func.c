@@ -101,6 +101,7 @@
 #include "csv.h"
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
+#include "mutex_mgr.hpp"
 
 extern int              LOGLEVEL;
 extern int              scheduler_sock;
@@ -228,6 +229,7 @@ void set_resc_assigned(
 
   if ((pque = get_jobs_queue(&pjob)) != NULL)
     {
+    mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
     if (pque->qu_qs.qu_type == QTYPE_Execution)
       {
       if (op == DECR)
@@ -243,8 +245,6 @@ void set_resc_assigned(
         pjob->ji_qs.ji_jobid,
         pque->qu_qs.qu_name);
       log_err(-1, __func__, log_buf);
-    
-      unlock_queue(pque, __func__, NULL, LOGLEVEL);
       return;
       }
   
@@ -252,7 +252,6 @@ void set_resc_assigned(
       {
       if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_RescAssn)
         {
-        unlock_queue(pque, __func__, NULL, LOGLEVEL);
         return;  /* already added in */
         }
       
@@ -262,7 +261,6 @@ void set_resc_assigned(
       {
       if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_RescAssn) == 0)
         {
-        unlock_queue(pque, __func__, NULL, LOGLEVEL);
         return;  /* not currently included */
         }
       
@@ -270,7 +268,6 @@ void set_resc_assigned(
       }
     else
       {
-      unlock_queue(pque, __func__, NULL, LOGLEVEL);
       return;   /* invalid op */
       }
     
@@ -298,7 +295,6 @@ void set_resc_assigned(
 
           if (pr == NULL)
             {
-            unlock_queue(pque, __func__, "sysru", LOGLEVEL);
             return;
             }
           }
@@ -315,7 +311,6 @@ void set_resc_assigned(
 
           if (pr == NULL)
             {
-            unlock_queue(pque, __func__, "queru", LOGLEVEL);
             return;
             }
           }
@@ -326,7 +321,6 @@ void set_resc_assigned(
       jobrsc = (resource *)GET_NEXT(jobrsc->rs_link);
       }  /* END while (jobrsc != NULL) */
 
-    unlock_queue(pque, __func__, "success", LOGLEVEL);
     }
   else if (pjob == NULL)
     {

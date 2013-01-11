@@ -103,8 +103,8 @@
 #include <stdlib.h>
 
 #include "dis.h"
-#include "lib_dis.h"
 #include "tcp.h"
+#include "dis_internal.h"
 
 char *disrcs(
     

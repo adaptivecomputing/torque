@@ -7,6 +7,7 @@
 #include "queue.h" /* pbs_queue */
 #include "batch_request.h" /* batach_request */
 #include "resource.h"
+#include "mutex_mgr.hpp"
 
 const char *msg_err_noqueue = "Unable to requeue job, queue is not defined";
 const char *msg_err_malloc = "malloc failed";

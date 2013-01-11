@@ -459,7 +459,7 @@ END_TEST
 
 
 
-
+/*
 START_TEST(unregister_sync_test)
   {
   pbs_attribute  pattr;
@@ -478,7 +478,7 @@ START_TEST(unregister_sync_test)
   strcpy(preq.rq_ind.rq_register.rq_child, job1);
   fail_unless(unregister_sync(&pattr, &preq) == PBSE_NONE, "success");
   }
-END_TEST
+END_TEST*/
 
 
 
@@ -777,9 +777,10 @@ Suite *req_register_suite(void)
   tcase_add_test(tc_core, set_depend_test);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("unregister_sync_test");
+/*  tc_core = tcase_create("unregister_sync_test");
   tcase_add_test(tc_core, unregister_sync_test);
   suite_add_tcase(s, tc_core);
+*/
 
   tc_core = tcase_create("depend_clrrdy_test");
   tcase_add_test(tc_core, depend_clrrdy_test);

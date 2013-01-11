@@ -5408,7 +5408,9 @@ int add_host_to_sister_list(
   list->count++;
 
   return(0);
-  }
+  } /* END add_host_to_sister_list() */
+
+
 
 
 /**
@@ -6515,6 +6517,7 @@ int remove_leading_hostname(
 
 
 
+
 /*
  * std_file_name - generate the fully qualified path/name for a
  *     job standard stream
@@ -7376,134 +7379,141 @@ int expand_vtable(
   struct var_table *vtable)
 
   {
-      int expand_ensize = 0; /* boolean to check on array of pointers */
-      int expand_bsize = 0;  /* boolean to check on the block of memory storage */
-      int amt = 0;
-      struct var_table tmp_vtable;
-      int rc = PBSE_NONE;
+  int              expand_ensize = 0; /* boolean to check on array of pointers */
+  int              expand_bsize = 0;  /* boolean to check on the block of memory storage */
+  int              amt = 0;
+  struct var_table tmp_vtable;
+  int              rc = PBSE_NONE;
+  
+  if (vtable->v_ensize - vtable->v_used < EN_THRESHOLD)
+    expand_ensize = 1;
+  
+  if (vtable->v_bsize < B_THRESHOLD)
+    expand_bsize = 1;
+  
+  memset(&tmp_vtable, 0, sizeof(struct var_table));
+  
+  if (expand_ensize)
+    tmp_vtable.v_ensize = vtable->v_ensize + EN_THRESHOLD;
+  else
+    tmp_vtable.v_ensize = vtable->v_ensize; /* tmp holder for data copying */
+  
+  tmp_vtable.v_envp = (char **)calloc(tmp_vtable.v_ensize, sizeof(char *));
+  if (!tmp_vtable.v_envp)
+    {
+    sprintf(log_buffer, "PBS: failed to allocate memory for v_envp: %s\n",
+      strerror(errno));
+    log_err(errno, __func__, log_buffer);
+    return -1;
+    }
+  
+  tmp_vtable.v_used = vtable->v_used;
+  
+  if (expand_bsize)
+    {
+    amt = EXTRA_VARIABLE_SPACE + (vtable->v_block - vtable->v_block_start) + vtable->v_bsize;
+    tmp_vtable.v_block_start = (char *)calloc(1, amt);
+    tmp_vtable.v_block = tmp_vtable.v_block_start;
+    tmp_vtable.v_bsize = amt;
 
-      if (vtable->v_ensize - vtable->v_used < EN_THRESHOLD)
-        expand_ensize = 1;
-
-      if (vtable->v_bsize < B_THRESHOLD)
-        expand_bsize = 1;
-
-      memset(&tmp_vtable, 0, sizeof(struct var_table));
-
-      if (expand_ensize)
-        tmp_vtable.v_ensize = vtable->v_ensize + EN_THRESHOLD;
-      else
-        tmp_vtable.v_ensize = vtable->v_ensize; /* tmp holder for data copying */
-
-      tmp_vtable.v_envp = (char **)calloc(tmp_vtable.v_ensize, sizeof(char *));
-      if (!tmp_vtable.v_envp)
-        {
-        sprintf(log_buffer, "PBS: failed to allocate memory for v_envp: %s\n",
+    if (!tmp_vtable.v_block_start) 
+      {
+      sprintf(log_buffer, "PBS: failed to allocate memory for v_bsize: %s\n",
         strerror(errno));
-        log_err(errno, __func__, log_buffer);
-        return -1;
-        }
+      log_err(errno, __func__, log_buffer);
+      return -1;
+      }
+    }
+  
+  if ((rc = copy_data(&tmp_vtable, vtable, expand_bsize, expand_ensize) != PBSE_NONE))
+    {
+    if (tmp_vtable.v_block_start)
+      free(tmp_vtable.v_block_start);
+    if (tmp_vtable.v_envp)
+      free(tmp_vtable.v_envp); 
+    }
+  
+  return(rc);
+  } /* END expand_vtable() */
 
-      tmp_vtable.v_used = vtable->v_used;
 
-      if (expand_bsize)
-        {
-        amt = EXTRA_VARIABLE_SPACE + (vtable->v_block - vtable->v_block_start) + vtable->v_bsize;
-        tmp_vtable.v_block_start = (char *)calloc(1, amt);
-        tmp_vtable.v_block = tmp_vtable.v_block_start;
-        tmp_vtable.v_bsize = amt;
-        if (!tmp_vtable.v_block_start) 
-          {
-          sprintf(log_buffer, "PBS: failed to allocate memory for v_bsize: %s\n",
-          strerror(errno));
-          log_err(errno, __func__, log_buffer);
-          return -1;
-          }
-        }
-
-      if ((rc = copy_data(&tmp_vtable, vtable, 
-                    expand_bsize, expand_ensize) != PBSE_NONE))
-       {
-         if (tmp_vtable.v_block_start)
-           free(tmp_vtable.v_block_start);
-         if (tmp_vtable.v_envp)
-           free(tmp_vtable.v_envp); 
-       }
-
-      return rc;
-  }
 
 int copy_data(
 
   struct var_table *tmp_vtable,
   struct var_table *vtable, 
-  int expand_bsize, 
-  int expand_ensize)
+  int               expand_bsize, 
+  int               expand_ensize)
   
   {
-      char *p_next_block;
-      int len_plus_one, i;
-
-      if (!expand_ensize && !expand_bsize )
-        return PBSE_NONE;
-
-      if (expand_ensize && (!expand_bsize))
-        { 
-        /* only the pointers have been expanded and therefore copy
-           the existing values to the new storage of pointers */
-        for (i = 0; i < vtable->v_used; ++i)
-          *(tmp_vtable->v_envp + i) = *(vtable->v_envp + i); 
-
-        /* free the old storage and assign the new one */
-        free(vtable->v_envp);
-        vtable->v_envp = tmp_vtable->v_envp;
-        vtable->v_ensize = tmp_vtable->v_ensize;
+  char *p_next_block;
+  int   len_plus_one;
+  int   i;
+  
+  if (!expand_ensize && !expand_bsize )
+    return(PBSE_NONE);
+  
+  if (expand_ensize && (!expand_bsize))
+    { 
+    /* only the pointers have been expanded and therefore copy
+       the existing values to the new storage of pointers */
+    for (i = 0; i < vtable->v_used; ++i)
+      *(tmp_vtable->v_envp + i) = *(vtable->v_envp + i); 
+    
+    /* free the old storage and assign the new one */
+    free(vtable->v_envp);
+    vtable->v_envp = tmp_vtable->v_envp;
+    vtable->v_ensize = tmp_vtable->v_ensize;
+    }
+  else if (expand_bsize)
+    { 
+    /* block of memory that contains the actual env. variables was reallocated */
+    p_next_block = tmp_vtable->v_block_start;
+    for (i = 0; i < vtable->v_used; ++i)
+      {
+      len_plus_one = strlen(*(vtable->v_envp + i)) + 1;
+      /* following condition is reached only for a non-null terminated variable */
+      if (len_plus_one > tmp_vtable->v_bsize) 
+        {
+        sprintf(log_buffer, "PBS: failed to copy env var, size: %d space left in buf: %d\n",
+          len_plus_one, tmp_vtable->v_bsize);
+        log_err(errno, __func__, log_buffer);
+        return(-1);
         }
-      else if (expand_bsize)
-        { 
-        /* block of memory that contains the actual env. variables was reallocated */
-        p_next_block = tmp_vtable->v_block_start;
-        for (i = 0; i < vtable->v_used; ++i)
-          {
-          len_plus_one = strlen(*(vtable->v_envp + i)) + 1;
-          /* following condition is reached only for a non-null terminated variable */
-          if (len_plus_one > tmp_vtable->v_bsize) 
-            {
-            sprintf(log_buffer, "PBS: failed to copy env var, size: %d space left in buf: %d\n",
-            len_plus_one, tmp_vtable->v_bsize);
-            log_err(errno, __func__, log_buffer);
-            return -1;
-            }
-          strcpy(p_next_block, *(vtable->v_envp + i));
-          *(tmp_vtable->v_envp + i) = p_next_block;
-          p_next_block += len_plus_one;
-          tmp_vtable->v_bsize -= len_plus_one;
-          }
-        /*free the old memory block */
-        vtable->v_bsize = tmp_vtable->v_bsize;
-        vtable->v_block = p_next_block;
-        free(vtable->v_block_start);
-        vtable->v_block_start = tmp_vtable->v_block_start; 
-        if (expand_ensize)
-          {
-          /* if the pointers to the env. variables were reallocated
-             adjust vtable->envp and free the old storage of those pointers
-          */
-          free(vtable->v_envp);
-          vtable->v_envp = tmp_vtable->v_envp;
-          vtable->v_ensize = tmp_vtable->v_ensize;
-          }
-        else
-          {
-          /* copy the new location. Note all memory that had been allocated to
-             tmp_vtable will be freed in the routine where they've been allocated
-          */
-          for (i = 0; i < vtable->v_used; ++i)
-            *(vtable->v_envp + i) = *(tmp_vtable->v_envp + i); 
-          }
-        }
-      return PBSE_NONE;
-  }
+
+      strcpy(p_next_block, *(vtable->v_envp + i));
+      *(tmp_vtable->v_envp + i) = p_next_block;
+      p_next_block += len_plus_one;
+      tmp_vtable->v_bsize -= len_plus_one;
+      }
+    /*free the old memory block */
+    vtable->v_bsize = tmp_vtable->v_bsize;
+    vtable->v_block = p_next_block;
+    free(vtable->v_block_start);
+    vtable->v_block_start = tmp_vtable->v_block_start; 
+
+    if (expand_ensize)
+      {
+      /* if the pointers to the env. variables were reallocated
+         adjust vtable->envp and free the old storage of those pointers */
+      free(vtable->v_envp);
+      vtable->v_envp = tmp_vtable->v_envp;
+      vtable->v_ensize = tmp_vtable->v_ensize;
+      }
+    else
+      {
+      /* copy the new location. Note all memory that had been allocated to
+         tmp_vtable will be freed in the routine where they've been allocated */
+      for (i = 0; i < vtable->v_used; ++i)
+        *(vtable->v_envp + i) = *(tmp_vtable->v_envp + i); 
+      }
+    }
+
+  return(PBSE_NONE);
+  } /* END copy_data() */
+
+
+
 
 #ifndef __TOLDGROUP
 

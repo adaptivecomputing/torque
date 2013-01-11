@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "pbs_error.h"
+#include "mutex_mgr.hpp"
 
 
 START_TEST(test_add_dest_null)

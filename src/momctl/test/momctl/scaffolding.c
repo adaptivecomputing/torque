@@ -7,12 +7,14 @@
 
 char TRMEMsg[1024]; /* global rm error message */
 
-
+extern "C"
+{
 int openrm(char  *host, unsigned int port)
   {
   fprintf(stderr, "The call to openrm needs to be mocked!!\n");
   exit(1);
   }
+}
 
 int pbs_connect(char *server_name_ptr)
   {
@@ -56,7 +58,7 @@ struct batch_status *pbs_statnode_err(int c, char *id, struct attrl *attrib, cha
   exit(1);
   }
 
-int DIS_tcp_wflush(int fd)
+int DIS_tcp_wflush(tcp_chan *chan)
   {
   fprintf(stderr, "The call to DIS_tcp_wflush needs to be mocked!!\n");
   exit(1);

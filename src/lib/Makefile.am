@@ -10,4 +10,4 @@ cleancheck:
 	@for dir in $(SUBDIRS) $(CHECK_DIR); do (cd $$dir && $(MAKE) cleancheck); done
 
 check:
-	@for dir in $(SUBDIRS) $(CHECK_DIR); do (cd $$dir && $(MAKE) check); done
+	@for dir in $(SUBDIRS) $(CHECK_DIR); do (cd $$dir && $(MAKE) $(MAKECMDGOALS)); done

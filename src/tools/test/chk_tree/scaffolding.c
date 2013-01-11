@@ -4,7 +4,7 @@
 
 int chk_file_sec_stderr;
 
-int chk_file_sec(char *path, int isdir, int sticky, int disallow, int fullpath, char *SEMsg)
+int chk_file_sec(const char *path, int isdir, int sticky, int disallow, int fullpath, char *SEMsg)
   { 
   fprintf(stderr, "The call to chk_file_sec needs to be mocked!!\n");
   exit(1);

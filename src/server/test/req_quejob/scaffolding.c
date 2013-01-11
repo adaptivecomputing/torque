@@ -13,6 +13,7 @@
 #include "work_task.h" /* work_task, work_type */
 #include "dynamic_string.h"
 #include "user_info.h"
+#include "mutex_mgr.hpp"
 
 const char *PJobSubState[10];
 char *path_jobs;
@@ -369,3 +370,12 @@ ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
 void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+
+mutex_mgr::mutex_mgr(pthread_mutex_t *mutex, bool locked) {}
+
+int mutex_mgr::unlock() 
+  {
+  return(0);
+  }
+
+mutex_mgr::~mutex_mgr() {}

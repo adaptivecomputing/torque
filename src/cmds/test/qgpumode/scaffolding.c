@@ -4,6 +4,8 @@
 
 int pbs_errno = 0;
 
+extern "C"
+{
 char *pbs_geterrmsg(int connect)
   { 
   fprintf(stderr, "The call to pbs_geterrmsg needs to be mocked!!\n");
@@ -16,15 +18,16 @@ int pbs_disconnect(int connect)
   exit(1);
   }
 
-int cnt2server(char *SpecServer)
-  { 
-  fprintf(stderr, "The call to cnt2server needs to be mocked!!\n");
-  exit(1);
-  }
-
 char *pbs_strerror(int err)
   { 
   fprintf(stderr, "The call to pbs_strerror needs to be mocked!!\n");
+  exit(1);
+  }
+}
+
+int cnt2server(const char *SpecServer)
+  { 
+  fprintf(stderr, "The call to cnt2server needs to be mocked!!\n");
   exit(1);
   }
 
@@ -34,7 +37,7 @@ int pbs_gpumode(int c, char *node, char *gpuid, int gpumode)
   exit(1);
   }
 
-int pbs_gpumode_err(int c, char *node, char *gpuid, int gpumode)
+int pbs_gpumode_err(int c, char *node, char *gpuid, int gpumode, int *err)
   { 
   fprintf(stderr, "The call to pbs_gpumode_err needs to be mocked!!\n");
   exit(1);

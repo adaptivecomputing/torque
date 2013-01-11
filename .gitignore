@@ -451,3 +451,4 @@ coverage_results.file
 tmpdiff
 tmporig
 tmpfile
+src/lib/Libutils/test/u_mutex_mgr/test_u_mutex_mgr

@@ -106,7 +106,7 @@
 #include "threadpool.h"
 #include "svr_func.h" /* get_svr_attr_* */
 #include "ji_mutex.h"
-
+#include "mutex_mgr.hpp"
 
 
 int          issue_signal(job **, const char *, void(*)(batch_request *), void *);
@@ -523,9 +523,8 @@ void rerun_or_kill(
       pjob->ji_qs.ji_substate  = JOB_SUBSTATE_RERUN;
       if ((pque = get_jobs_queue(&pjob)) != NULL)
         {
+        mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
         snprintf(log_buf, sizeof(log_buf), "%s%s%s", msg_init_queued, pque->qu_qs.qu_name, text);
-
-        unlock_queue(pque, __func__, NULL, LOGLEVEL);
         }
       }
     }

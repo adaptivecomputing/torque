@@ -17,6 +17,8 @@
 #include "mom_func.h" /* radix_buf */
 #include "dis.h"
 
+int create_job_cpuset(job *pj) { return 0; }
+int use_cpusets(job *pj) { return 0; }
 char *path_jobs; /* mom_main.c */
 int multi_mom = 1; /* mom_main.c */
 int svr_resc_size = 0; /* resc_def_all.c */
