@@ -6414,7 +6414,7 @@ pid_t fork_me(
  * exit if negative
  */
 
-static void starter_return(
+void starter_return(
 
   int                  upfds,     /* I */
   int                  downfds,   /* I */
@@ -6422,10 +6422,10 @@ static void starter_return(
   struct startjob_rtn *sjrtn)     /* I */
 
   {
-
   struct startjob_rtn ack;
   int                 i;
   int                 alarmsecs = 0;
+  char                rsv_id[MAXLINE];
 
   sjrtn->sj_code = code;
 
@@ -6471,6 +6471,14 @@ static void starter_return(
 
   if (code < 0)
     {
+    /* for login nodes, release the reservation if one has been made */
+    if ((is_login_node == TRUE) &&
+        (sjrtn->sj_rsvid != 0))
+      {
+      snprintf(rsv_id, sizeof(rsv_id), "%d", sjrtn->sj_rsvid);
+      destroy_alps_reservation(rsv_id, apbasil_path, apbasil_protocol);
+      }
+
     exit(254);
     }
 
