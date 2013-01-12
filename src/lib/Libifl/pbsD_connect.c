@@ -787,7 +787,7 @@ int pbs_original_connect(
   if ((ptr = getenv("PBSAPITIMEOUT")) != NULL)
     {
     pbs_tcp_timeout = strtol(ptr, NULL, 0);
-    if (pbs_tcp_timeout > 1)
+    if (pbs_tcp_timeout > 2)
        retry = 0;
 
     if (pbs_tcp_timeout <= 0)
