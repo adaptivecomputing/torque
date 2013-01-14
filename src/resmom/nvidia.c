@@ -131,9 +131,10 @@
 #endif  /* NVML_API */
 
 extern int find_file(char *, char *);
-extern char  mom_host[];
-extern int             MOMNvidiaDriverVersion;
-extern int  use_nvidia_gpu;
+extern char   mom_host[];
+extern int    MOMNvidiaDriverVersion;
+extern int    use_nvidia_gpu;
+extern time_t time_now;
 
 int    nvidia_gpu_modes[50];
 
@@ -238,8 +239,6 @@ void log_nvml_error(
 
 int init_nvidia_nvml()
   {
-  static char id[] = "init_nvidia_nvml";
-
   nvmlReturn_t  rc;
   unsigned int      device_count;
 
@@ -254,7 +253,7 @@ int init_nvidia_nvml()
         return (TRUE);
 
       sprintf(log_buffer,"No Nvidia gpus detected\n");
-      log_ext(-1, id, log_buffer, LOG_DEBUG);
+      log_ext(-1, __func__, log_buffer, LOG_DEBUG);
 
       /* since we detected no gpus, shut down nvml */
 
@@ -264,7 +263,7 @@ int init_nvidia_nvml()
       }
     }
 
-  log_nvml_error (rc, NULL, id);
+  log_nvml_error (rc, NULL, __func__);
 
   return (FALSE);
   }
@@ -275,8 +274,6 @@ int init_nvidia_nvml()
 
 int shut_nvidia_nvml()
   {
-  static char id[] = "shut_nvidia_nvml";
-
   nvmlReturn_t  rc;
 
   if (!use_nvidia_gpu)
@@ -287,7 +284,7 @@ int shut_nvidia_nvml()
   if (rc == NVML_SUCCESS)
     return (TRUE);
 
-  log_nvml_error (rc, NULL, id);
+  log_nvml_error (rc, NULL, __func__);
 
   return (FALSE);
   }
@@ -300,8 +297,6 @@ int shut_nvidia_nvml()
 nvmlDevice_t get_nvml_device_handle(
   char *gpuid)
   {
-  static char id[] = "get_nvml_device_handle";
-
   nvmlReturn_t      rc;
   nvmlDevice_t      device_hndl;
   char             *ptr;
@@ -325,7 +320,7 @@ nvmlDevice_t get_nvml_device_handle(
   if (rc == NVML_SUCCESS)
     return (device_hndl);
 
-  log_nvml_error (rc, gpuid, id);
+  log_nvml_error (rc, gpuid, __func__);
 
   return (NULL);
 
@@ -338,7 +333,6 @@ nvmlDevice_t get_nvml_device_handle(
  */
 static int check_nvidia_module_loaded()
   {
-  static char id[] = "check_nvidia_module_loaded";
   char line[4096];
   FILE *file;
 
@@ -349,8 +343,8 @@ static int check_nvidia_module_loaded()
       {
       log_err(
         errno,
-        id,
-        (char *)"Failed to read /proc/modules");
+        __func__,
+        "Failed to read /proc/modules");
       }
     return(FALSE);
     }
@@ -373,8 +367,8 @@ static int check_nvidia_module_loaded()
     {
     log_err(
       PBSE_RMSYSTEM,
-      id,
-      (char *)"No Nvidia driver loaded");
+      __func__,
+      "No Nvidia driver loaded");
     }
 
   fclose(file);
@@ -387,7 +381,6 @@ static int check_nvidia_module_loaded()
  */
 static int check_nvidia_version_file()
   {
-  static char id[] = "check_nvidia_version_file";
   char line[4096];
   FILE *file;
 
@@ -399,8 +392,8 @@ static int check_nvidia_version_file()
       {
       log_err(
         PBSE_RMSYSTEM,
-        id,
-        (char *)"No Nvidia driver info available. Driver not supported?");
+        __func__,
+        "No Nvidia driver info available. Driver not supported?");
       }
     return(FALSE);
     }
@@ -414,7 +407,7 @@ static int check_nvidia_version_file()
       if (LOGLEVEL >= 3)
         {
         sprintf(log_buffer,"Nvidia driver info: %s\n", line);
-        log_ext(-1, id, log_buffer, LOG_DEBUG);
+        log_ext(-1, __func__, log_buffer, LOG_DEBUG);
         }
       tok = strstr(line, "Kernel Module");
       if (tok)
@@ -593,11 +586,11 @@ static char *gpus(
  */
 
 static int gpumodes(
+
   int  buffer[],
   int  buffer_size)
-  {
-  static char id[] = "gpumodes";
 
+  {
   FILE *fd;
   char *ptr; /* pointer to the current place to copy data into buf */
   char buf[201];
@@ -619,8 +612,8 @@ static int gpumodes(
 
   if (LOGLEVEL >= 7)
     {
-    sprintf(log_buffer,"%s: GPU cmd issued: %s\n", id, "nvidia-smi -s 2>&1");
-    log_ext(-1, id, log_buffer, LOG_DEBUG);
+    sprintf(log_buffer,"%s: GPU cmd issued: %s\n", __func__, "nvidia-smi -s 2>&1");
+    log_ext(-1, __func__, log_buffer, LOG_DEBUG);
     }
 
 	if ((fd = popen("nvidia-smi -s 2>&1", "r")) != NULL)
@@ -654,10 +647,7 @@ static int gpumodes(
       {
       sprintf(log_buffer, "error %d (%s) on popen", errno, strerror(errno));
 
-      log_err(
-        PBSE_RMSYSTEM,
-        id,
-        log_buffer);
+      log_err(PBSE_RMSYSTEM, __func__, log_buffer);
       }
     return(FALSE);
     }
@@ -673,8 +663,6 @@ int setgpumode(
   char *gpuid,
   int   gpumode)
   {
-  static char id[] = "setgpumode";
-
 #ifdef NVML_API
   nvmlReturn_t      rc;
   nvmlComputeMode_t compute_mode;
@@ -704,10 +692,7 @@ int setgpumode(
         {
         sprintf(log_buffer, "Unexpected compute mode %d",
           rc);
-        log_err(
-          PBSE_RMSYSTEM,
-          id,
-          log_buffer);
+        log_err(PBSE_RMSYSTEM, __func__, log_buffer);
         }
       return (FALSE);
     }
@@ -724,7 +709,7 @@ int setgpumode(
 			        gpumode,
 			        gpuid);
 
-      log_ext(-1, id, log_buffer, LOG_DEBUG);
+      log_ext(-1, __func__, log_buffer, LOG_DEBUG);
 	    }
 
     rc = nvmlDeviceSetComputeMode(device_hndl, compute_mode);
@@ -732,7 +717,7 @@ int setgpumode(
     if (rc == NVML_SUCCESS)
       return (TRUE);
 
-    log_nvml_error (rc, gpuid, id);
+    log_nvml_error (rc, gpuid, __func__);
     }
 
   return(FALSE);
@@ -763,8 +748,8 @@ int setgpumode(
 
   if (LOGLEVEL >= 7)
     {
-    sprintf(log_buffer,"%s: GPU cmd issued: %s\n", id, buf);
-    log_ext(-1, id, log_buffer, LOG_DEBUG);
+    sprintf(log_buffer,"%s: GPU cmd issued: %s\n", __func__, buf);
+    log_ext(-1, __func__, log_buffer, LOG_DEBUG);
     }
 
 	if ((fd = popen(buf, "r")) != NULL)
@@ -794,7 +779,7 @@ int setgpumode(
             log_buffer,
             "nvidia-smi gpu change mode returned: %s",
             buf);
-          log_ext(-1, id, log_buffer, LOG_INFO);
+          log_ext(-1, __func__, log_buffer, LOG_INFO);
           }
         pclose(fd);
         return(FALSE);
@@ -808,10 +793,7 @@ int setgpumode(
       {
       sprintf(log_buffer, "error %d (%s) on popen", errno, strerror(errno));
 
-      log_err(
-        PBSE_RMSYSTEM,
-        id,
-        log_buffer);
+      log_err(PBSE_RMSYSTEM, __func__, log_buffer);
       }
     return(FALSE);
     }
@@ -833,9 +815,9 @@ int resetgpuecc(
 
   {
 #ifdef NVML_API
-  nvmlReturn_t      rc;
-  nvmlEccBitType_t  counter_type;
-  nvmlDevice_t      device_hndl;
+  nvmlReturn_t            rc;
+  nvmlEccCounterType_enum counter_type;
+  nvmlDevice_t            device_hndl;
 
   if (!check_nvidia_setup())
     {
@@ -995,8 +977,6 @@ int setup_gpus_for_job(
   job  *pjob) /* I */
 
   {
-  static char *id = "setup_gpus_for_job";
-
   char *gpu_str;
   char *ptr;
   char  tmp_str[PBS_MAXHOSTNAME + 10];
@@ -1031,7 +1011,7 @@ int setup_gpus_for_job(
 						gpu_str,
 						gpu_flags);
 
-	  log_ext(-1, id, log_buffer, LOG_DEBUG);
+	  log_ext(-1, __func__, log_buffer, LOG_DEBUG);
     }
 
   /* traverse the gpu_str to see what gpus we have assigned */
@@ -1070,7 +1050,7 @@ int setup_gpus_for_job(
 						  pjob->ji_qs.ji_jobid,
 						  gpu_id);
 
-	        log_ext(-1, id, log_buffer, LOG_DEBUG);
+	        log_ext(-1, __func__, log_buffer, LOG_DEBUG);
           }
 
         resetgpuecc(gpu_id, 0, 1);
@@ -1092,7 +1072,7 @@ int setup_gpus_for_job(
 					    gpu_mode,
 					    gpu_id);
 
-          log_ext(-1, id, log_buffer, LOG_DEBUG);
+          log_ext(-1, __func__, log_buffer, LOG_DEBUG);
           }
 
         setgpumode(gpu_id, gpu_mode);

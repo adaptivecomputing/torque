@@ -1981,7 +1981,7 @@ char *get_correct_spec_string(
 
           /* now using the actual length of requested gpu mode */
           len = strlen(given) + 1 + (num_gpu_reqs * strlen(mode));
-          if ((correct_spec = calloc(1, len)) != NULL)
+          if ((correct_spec = (char *)calloc(1, len)) != NULL)
             {
             one_req = given;
             
@@ -2050,7 +2050,7 @@ int assign_hosts(
   unsigned int  dummy;
   char         *list = NULL;
   char         *portlist = NULL;
-  const char  *hosttoalloc = NULL;
+  char         *hosttoalloc = NULL;
   resource     *pres;
   int           rc = 0;
   int           procs=0;
