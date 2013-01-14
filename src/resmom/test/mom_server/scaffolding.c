@@ -16,6 +16,7 @@
 #include "server_limits.h" /* pbs_net_t. Also defined in net_connect.h */
 #include "list_link.h" /* list_link, tlist_head */
 #include "pbs_nodes.h" /* pbsnode */
+#include "pbs_config.h"
 
 char *apbasil_protocol = NULL;
 char *apbasil_path = NULL;
@@ -54,6 +55,18 @@ int received_cluster_addrs;
 time_t       requested_cluster_addrs;
 time_t       first_update_time = 0;
 
+#ifdef NUMA_SUPPORT
+int       num_node_boards;
+nodeboard node_boards[MAX_NODE_BOARDS]; 
+int       numa_index;
+#endif
+
+#ifdef PENABLE_LINUX26_CPUSETS
+int              memory_pressure_threshold = 0; /* 0: off, >0: check and kill */
+short            memory_pressure_duration  = 0; /* 0: off, >0: check and kill */
+int              MOMConfigUseSMT           = 1; /* 0: off, 1: on */
+hwloc_topology_t topology;
+#endif
 
 int MUReadPipe(char *Command, char *Buffer, int BufSize)
   {

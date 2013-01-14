@@ -8539,7 +8539,7 @@ int read_layout_file()
   {
   FILE          *layout;
   char           line[MAX_LINE];
-  char          *delims = " \t\n\r=";
+  const char    *delims = " \t\n\r=";
   char          *tok = NULL;
   const char    *val = NULL;
   int            i = 0;
