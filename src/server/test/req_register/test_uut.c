@@ -570,7 +570,6 @@ START_TEST(release_before_dependency_test)
   job            pjob;
   pbs_attribute *pattr;
   struct depend *pdep;
-  int            rc = 0;
   
   memset(&preq, 0, sizeof(preq));
   memset(&pjob, 0, sizeof(pjob));
@@ -583,7 +582,7 @@ START_TEST(release_before_dependency_test)
   initialize_depend_attr(pattr);
   pdep = make_depend(1, pattr);
   make_dependjob(pdep, job1, host);
-  rc = register_dependency(&preq, &pjob, JOB_DEPEND_TYPE_BEFOREOK);
+  register_dependency(&preq, &pjob, JOB_DEPEND_TYPE_BEFOREOK);
 
   fail_unless(release_before_dependency(&preq, &pjob, JOB_DEPEND_TYPE_BEFOREOK) == PBSE_NONE);
   fail_unless(release_before_dependency(&preq, &pjob, JOB_DEPEND_TYPE_BEFOREOK) == PBSE_IVALREQ);
