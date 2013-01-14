@@ -453,3 +453,4 @@ tmpdiff
 tmporig
 tmpfile
 src/lib/Libutils/test/u_mutex_mgr/test_u_mutex_mgr
+src/resmom/linux/test/cpuset/test_cpuset
