@@ -2149,7 +2149,8 @@ int assign_hosts(
     {
     /* fall back to 1 cluster node */
 
-    hosttoalloc = PBS_DEFAULT_NODE;
+    hosttoalloc = strdup(PBS_DEFAULT_NODE);
+    to_free = hosttoalloc;
     }
 
   /* do we need to allocate the (cluster) node(s)? */
