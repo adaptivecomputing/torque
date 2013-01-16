@@ -116,6 +116,7 @@
 #include "queue_func.h" /* find_queuebyname */
 #include "req_runjob.h" /* finish_sendmom */
 #include "ji_mutex.h"
+#include "mutex_mgr.hpp"
 
 #if __STDC__ != 1
 #include <memory.h>
@@ -307,16 +308,6 @@ int local_move(
   unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
   dest_que = find_queuebyname(destination);
-
-  if ((pjob = svr_find_job(job_id, TRUE)) == NULL)
-    {
-    /* job disappeared while locking queue */
-    if (dest_que != NULL)
-      unlock_queue(dest_que, __func__, NULL, LOGLEVEL);
-    
-    return(PBSE_JOB_RECYCLED);
-    }
-
   if (dest_que == NULL)
     {
     /* this should never happen */
@@ -327,19 +318,23 @@ int local_move(
     return(-1);
     }
 
+  mutex_mgr dest_que_mutex = mutex_mgr(dest_que->qu_mutex, true);
+  if ((pjob = svr_find_job(job_id, TRUE)) == NULL)
+    {
+    /* job disappeared while locking queue */
+    return(PBSE_JOB_RECYCLED);
+    }
+
   /* check the destination */
   if ((*my_err = svr_chkque(pjob, dest_que, get_variable(pjob, pbs_o_host), mtype, NULL)))
     {
-    unlock_queue(dest_que, __func__, NULL, 0);
-
     /* should this queue be retried? */
     return(should_retry_route(*my_err));
     }
 
-  unlock_queue(dest_que, __func__, NULL, 0);
-
   /* dequeue job from present queue, update destination and */
   /* queue_rank for new queue and enqueue into destination  */
+  dest_que_mutex.unlock();
   rc = svr_dequejob(pjob, FALSE); 
   if (rc)
     return(rc);
