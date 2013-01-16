@@ -1030,7 +1030,9 @@ int close_quejob_by_jobid(
     {
     rc = PBSE_JOBNOTFOUND;
     }
-  else if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRANSICM)
+
+  mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
+  if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRANSICM)
     {
     remove_job(&newjobs,pjob);
     svr_job_purge(pjob);
@@ -1049,11 +1051,14 @@ int close_quejob_by_jobid(
       pjob = NULL;
       }
     else if (rc != PBSE_NONE)
+      {
       job_abt(&pjob, msg_err_noqueue);
+      pjob = NULL;
+      }
     }
 
-  if (pjob != NULL)
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+  if (pjob == NULL)
+    pjob_mutex.set_lock_on_exit(false);
 
   return(rc);
   } /* close_quejob_by_jobid() */
