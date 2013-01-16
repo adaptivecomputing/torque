@@ -1227,9 +1227,9 @@ int req_stat_que(
   if (type == 0)
     {
     /* get status of the named queue */
-
+    mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
     rc = status_que(pque, preq, &preply->brp_un.brp_status);
-    unlock_queue(pque, "req_stat_que", (char *)"type == 0", LOGLEVEL);
+    /* pque_qu_mutex will be unlocked in the destructor when we leave this scope */
     }
   else
     {
@@ -1239,20 +1239,19 @@ int req_stat_que(
     /* get status of all queues */
     while ((pque = next_queue(&svr_queues,&iter)) != NULL)
       {
+      mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
       rc = status_que(pque, preq, &preply->brp_un.brp_status);
 
       if (rc != 0)
         {
         if (rc != PBSE_PERM)
           {
-          unlock_queue(pque, "req_stat_que", (char *)"break", LOGLEVEL);
           break;
           }
 
         rc = 0;
         }
 
-      unlock_queue(pque, "req_stat_que", (char *)"end while", LOGLEVEL);
       }
     }
 
