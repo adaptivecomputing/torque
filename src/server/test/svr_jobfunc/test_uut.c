@@ -4,7 +4,7 @@
 #include "server.h"
 #include "queue.h"
 #include "attribute.h"
-#include "test_svr_jobfunc.h"
+#include "test_uut.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include "pbs_error.h"
