@@ -147,6 +147,7 @@
 #include "job_func.h" /* svr_job_purge */
 #include "tcp.h" /* tcp_chan */
 #include "ji_mutex.h"
+#include "mutex_mgr.hpp"
 
 /*
  * process_request - this function gets, checks, and invokes the proper
@@ -598,8 +599,9 @@ int process_request(
         *dptr = '\0';
         }
       
-      if ((pjob = svr_find_job(request->rq_ind.rq_modify.rq_objname, FALSE)) != (job *)0)
+      if ((pjob = svr_find_job(request->rq_ind.rq_modify.rq_objname, FALSE)) != NULL)
         {
+        mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
         if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
           {
 
@@ -612,9 +614,7 @@ int process_request(
             request->rq_perm = svr_get_privilege(request->rq_user, server_host);
             skip = TRUE;
             }
-
           }
-        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         }
       
       if (!skip)
