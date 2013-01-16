@@ -1595,7 +1595,10 @@ int move_to_job_cpuset(
 
 
 
-int get_cpuset_size(char *cpusetStr)
+int get_cpuset_size(
+    
+  char *cpusetStr)
+
   {
   int val1 = -1;
   int val2 = -2;
@@ -1639,9 +1642,9 @@ int get_cpuset_size(char *cpusetStr)
 
 void adjust_root_map(
 
-    char *cpusetStr, /* I */
-    int   cpusetMap[], /* I/O */
-    int   add)       /* I */
+  char *cpusetStr, /* I */
+  int   cpusetMap[], /* I/O */
+  int   add)       /* I */
 
   {
   int   val1 = -1;

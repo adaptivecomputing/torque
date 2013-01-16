@@ -184,6 +184,8 @@ pbs_net_t get_hostaddr(
   }
 
 
+
+
 int get_hostaddr_hostent(
 
   int             *rc,
@@ -195,6 +197,9 @@ int get_hostaddr_hostent(
   unsigned short af_family;
   return get_hostaddr_hostent_af(rc, hostname, &af_family, host_addr, host_addr_len);
   }
+
+
+
 
 int  get_hostaddr_hostent_af(
 
@@ -260,7 +265,7 @@ int  get_hostaddr_hostent_af(
       if (log_mutex == NULL)
         fprintf(stderr, "%s\n", log_buf);
       else
-        log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,"get_hostaddr_hostent",log_buf);
+        log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buf);
 
     if (h_errno == TRY_AGAIN)
       *rc = PBS_NET_RC_RETRY;
