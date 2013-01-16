@@ -137,6 +137,7 @@
 #include "queue_func.h" /* find_queuebyname, que_alloc, que_free */
 #include "queue_recov.h" /* que_save */
 #include "svr_task.h"
+#include "mutex_mgr.hpp"
 
 
 #define PERM_MANAGER (ATR_DFLAG_MGWR | ATR_DFLAG_MGRD)
@@ -982,6 +983,8 @@ void mgr_queue_create(
 
   pque = que_alloc(preq->rq_ind.rq_manager.rq_objname, FALSE);
 
+  mutex_mgr que_mgr(pque->qu_mutex);
+
   /* set the queue attributes */
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
 
@@ -1000,6 +1003,7 @@ void mgr_queue_create(
     reply_badattr(rc, bad, plist, preq);
 
     que_free(pque, FALSE);
+    que_mgr.set_lock_on_exit(false);
     }
   else
     {
@@ -1031,8 +1035,6 @@ void mgr_queue_create(
       {
       reply_ack(preq);
       }
-
-    unlock_queue(pque, "mgr_queue_create", (char *)"success", LOGLEVEL);
     }
 
   return;
@@ -1067,14 +1069,16 @@ void mgr_queue_delete(
 
     return;
     }
+  mutex_mgr pque_mutex(pque->qu_mutex);
 
   if ((rc = que_purge(pque)) != PBSE_NONE)
     {
     /* FAILURE */
-    unlock_queue(pque, __func__, "", LOGLEVEL);
+    pque_mutex.unlock();
     req_reject(rc, 0, preq, NULL, NULL);
     return;
     }
+  pque_mutex.set_lock_on_exit(false);
 
   svr_save(&server, SVR_SAVE_QUICK);
 
@@ -1447,7 +1451,6 @@ void mgr_queue_set(
 
     return;
     }
-
   /* set the attributes */
   sprintf(log_buf, msg_manager, msg_man_set, preq->rq_user, preq->rq_host);
 
@@ -1457,31 +1460,34 @@ void mgr_queue_set(
 
   while (pque != NULL)
     {
-    rc = mgr_set_attr(
-           pque->qu_attr,
-           que_attr_def,
-           QA_ATR_LAST,
-           plist,
-           preq->rq_perm,
-           &bad,
-           (void *)pque,
-           ATR_ACTION_ALTER);
-
-    if (rc != 0)
       {
-      unlock_queue(pque, "mgr_queue_set", (char *)"fail badattr", LOGLEVEL);
-      reply_badattr(rc, bad, plist, preq);
-      return;
+      mutex_mgr que_mutex(pque->qu_mutex);
+
+      rc = mgr_set_attr(
+             pque->qu_attr,
+             que_attr_def,
+             QA_ATR_LAST,
+             plist,
+             preq->rq_perm,
+             &bad,
+             (void *)pque,
+             ATR_ACTION_ALTER);
+
+      if (rc != 0)
+        {
+        que_mutex.unlock();
+        reply_badattr(rc, bad, plist, preq);
+        return;
+        }
+
+      que_save(pque);
+
+      mgr_log_attr(msg_man_set, plist, PBS_EVENTCLASS_QUEUE, pque->qu_qs.qu_name);
+
+      if (allques == FALSE)
+        break;
+
       }
-
-    que_save(pque);
-
-    mgr_log_attr(msg_man_set, plist, PBS_EVENTCLASS_QUEUE, pque->qu_qs.qu_name);
-
-    if (allques == FALSE)
-      break;
-    
-    unlock_queue(pque, "mgr_queue_set", (char *)"before next_queue call", LOGLEVEL);
 
     pque = next_queue(&svr_queues,&iter);
     }  /* END while (pque != NULL) */
@@ -1494,19 +1500,20 @@ void mgr_queue_set(
 
   while (pque != NULL)
     {
-    if ((badattr = check_que_attr(pque)) != NULL)
       {
-      sprintf(log_buf, msg_attrtype, pque->qu_qs.qu_name, badattr);
-      unlock_queue(pque, "mgr_queue_set", (char *)"attrtype", LOGLEVEL);
-      reply_text(preq, PBSE_ATTRTYPE, log_buf);
-      return;
+      mutex_mgr que_mutex(pque->qu_mutex);
+      if ((badattr = check_que_attr(pque)) != NULL)
+        {
+        sprintf(log_buf, msg_attrtype, pque->qu_qs.qu_name, badattr);
+        que_mutex.unlock();
+        reply_text(preq, PBSE_ATTRTYPE, log_buf);
+        return;
+        }
+
+      if (allques == FALSE)
+        break;
+
       }
-
-    unlock_queue(pque, "mgr_queue_set", (char *)"last loop before next_queue", LOGLEVEL);
-
-    if (allques == FALSE)
-      break;
-
     pque = next_queue(&svr_queues,&iter);
     }  /* END while (pque != NULL) */
 
@@ -1574,23 +1581,25 @@ void mgr_queue_unset(
 
   while (pque != NULL)
     {
-    rc = mgr_unset_attr(pque->qu_attr, que_attr_def, QA_ATR_LAST, plist, preq->rq_perm, &bad_attr);
-
-    if (rc != 0)
       {
-      unlock_queue(pque, "mgr_queue_unset", (char *)"badattr", LOGLEVEL);
-      reply_badattr(rc, bad_attr, plist, preq);
-      return;
+      mutex_mgr que_mutex(pque->qu_mutex);
+
+      rc = mgr_unset_attr(pque->qu_attr, que_attr_def, QA_ATR_LAST, plist, preq->rq_perm, &bad_attr);
+
+      if (rc != 0)
+        {
+        que_mutex.unlock();
+        reply_badattr(rc, bad_attr, plist, preq);
+        return;
+        }
+
+      que_save(pque);
+
+      mgr_log_attr(msg_man_uns, plist, PBS_EVENTCLASS_QUEUE, pque->qu_qs.qu_name);
+
+      if ((pque->qu_attr[QA_ATR_QType].at_flags & ATR_VFLAG_SET) == 0)
+        pque->qu_qs.qu_type = QTYPE_Unset;
       }
-
-    que_save(pque);
-
-    mgr_log_attr(msg_man_uns, plist, PBS_EVENTCLASS_QUEUE, pque->qu_qs.qu_name);
-
-    if ((pque->qu_attr[QA_ATR_QType].at_flags & ATR_VFLAG_SET) == 0)
-      pque->qu_qs.qu_type = QTYPE_Unset;
-
-    unlock_queue(pque, "mgr_queue_unset", (char *)"success", LOGLEVEL);
     if (allques == FALSE)
       break;
     

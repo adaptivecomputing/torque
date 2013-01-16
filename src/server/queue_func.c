@@ -115,6 +115,7 @@
 #include "svrfunc.h"
 #include "svr_func.h" /* get_svr_attr_* */
 #include "ji_mutex.h"
+#include "mutex_mgr.hpp"
 
 
 #define MSG_LEN_LONG 160
@@ -293,6 +294,8 @@ void que_free(
   pbs_attribute *pattr;
   attribute_def *pdef;
 
+  mutex_mgr pq_mutex(pq->qu_mutex);
+
   /* remove any calloc working pbs_attribute space */
   for (i = 0;i < QA_ATR_LAST;i++)
     {
@@ -323,8 +326,6 @@ void que_free(
   remove_queue(&svr_queues, pq);
   pq->q_being_recycled = TRUE;
   insert_into_queue_recycler(pq);
-  unlock_queue(pq, "que_free", (char *)NULL, LOGLEVEL);
-
   return;
   }  /* END que_free() */
 
