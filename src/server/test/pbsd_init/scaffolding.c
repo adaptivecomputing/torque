@@ -623,3 +623,5 @@ hash_map *get_hash_map(int size)
   {
   return(NULL);
   }
+
+void poll_job_task(struct work_task *wt) {}
