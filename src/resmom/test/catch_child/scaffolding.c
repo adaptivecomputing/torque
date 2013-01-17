@@ -68,6 +68,7 @@ int exit_called = 0;
 int ran_one = 0;
 int the_sock = 0;
 job *lastpjob = NULL;
+int is_login_node;
 
 
 void exit_test(int num)
