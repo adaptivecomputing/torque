@@ -26,6 +26,7 @@
 #include "array.h"
 
 #include "ji_mutex.h"
+#include "mutex_mgr.hpp"
 
 #include "svr_task.h"
 
@@ -55,6 +56,8 @@ extern int LOGLEVEL;
  *
  * @return TRUE if the job was deleted, FALSE if skipped
  * @param pjob - a pointer to the job being handled
+ * this functions starts with pjob->ji_mutex locked and
+ * exit with pjob->ji_mutex unlocked.
  */
 int attempt_delete(
 
@@ -62,7 +65,6 @@ int attempt_delete(
 
   {
   int        skipped = FALSE;
-  int        release_mutex = TRUE;
 
   job       *pjob;
   time_t     time_now = time(NULL);
@@ -73,6 +75,8 @@ int attempt_delete(
     return(TRUE);
 
   pjob = (job *)j;
+
+  mutex_mgr pjob_mutex(pjob->ji_mutex, true);
 
   if (pjob->ji_qs.ji_state == JOB_STATE_TRANSIT)
     {
@@ -110,8 +114,6 @@ int attempt_delete(
         /* job has restart file at mom, change restart comment if failed */
         change_restart_comment_if_needed(pjob);
         }
-
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       }
     
     return(!skipped);
@@ -145,7 +147,6 @@ int attempt_delete(
     if (pjob != NULL)
       job_abt(&pjob, NULL);
 
-    release_mutex = FALSE;
     }
   else
     {
@@ -182,12 +183,7 @@ int attempt_delete(
       
       set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
       }
-    else
-      release_mutex = FALSE;
     }
-
-  if (release_mutex == TRUE)
-    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
 
   return(!skipped);
   } /* END attempt_delete() */

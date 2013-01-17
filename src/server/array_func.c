@@ -1149,6 +1149,9 @@ int delete_array_range(
 
         pthread_mutex_unlock(pa->ai_mutex);
         deleted = attempt_delete(pjob);
+        /* we come out of attempt_delete unlocked */
+        pjob_mutex.set_lock_on_exit(false);
+
 
         if (deleted == FALSE)
           {
@@ -1238,12 +1241,12 @@ int delete_whole_array(
       }
     else
       {
+      mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
       num_jobs++;
 
       if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
         {
         /* invalid state for request,  skip */
-        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         continue;
         }
         
@@ -1251,12 +1254,12 @@ int delete_whole_array(
 
       pthread_mutex_unlock(pa->ai_mutex);
       deleted = attempt_delete(pjob);
+      pjob_mutex.set_lock_on_exit(false);
 
       if (deleted == FALSE)
         {
         /* if the job was deleted, this mutex would be taked care of elsewhere.
          * When it fails, release it here */
-        unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
         num_skipped++;
         }
       else if (running == FALSE)
