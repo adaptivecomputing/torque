@@ -141,9 +141,9 @@ int issue_signal(job **, const char *, void (*)(batch_request *), void *);
 
 static void post_delete_route(struct work_task *);
 void post_delete_mom1(batch_request *);
-static void post_delete_mom2(struct work_task *);
+void post_delete_mom2(struct work_task *);
 static int forced_jobpurge(job *,struct batch_request *);
-static void job_delete_nanny(struct work_task *);
+void job_delete_nanny(struct work_task *);
 void post_job_delete_nanny(batch_request *);
 void purge_completed_jobs(struct batch_request *);
 
@@ -298,7 +298,6 @@ int execute_job_delete(
   int               rc;
   const char      *sigt = "SIGTERM";
 
-  int               has_mutex = TRUE;
   char              log_buf[LOCAL_LOG_BUF_SIZE];
   time_t            time_now = time(NULL);
   long              force_cancel = FALSE;
@@ -312,6 +311,8 @@ int execute_job_delete(
     return(-1);
     }
 
+  mutex_mgr job_mutex(pjob->ji_mutex, true);
+
   if (LOGLEVEL >= 10)
     log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_QUEUE, __func__, pjob->ji_qs.ji_jobid);
 
@@ -320,8 +321,6 @@ int execute_job_delete(
     /* see note in req_delete - not sure this is possible still,
      * but the deleted code is irrelevant now. I will leave this
      * part --dbeer */
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-
     return(-1);
     }
 
@@ -376,8 +375,6 @@ int execute_job_delete(
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
     pwtnew = set_task(WORK_Timed,time_now + 1,post_delete_route,preq,FALSE);
-    
-    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
 
     if (pwtnew == NULL)
       {
@@ -451,8 +448,6 @@ jump:
 
     if (pjob->ji_has_delete_nanny == TRUE)
       {
-      unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
-
       req_reject(PBSE_IVALREQ, 0, preq, NULL, "job cancel in progress");
 
       return(-1);
@@ -478,9 +473,9 @@ jump:
       {
       sprintf(log_buf, msg_delrunjobsig, sigt);
       log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
-  
-      unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
       }
+    else
+      job_mutex.set_lock_on_exit(false);
 
     return(-1);
     }  /* END if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) */
@@ -510,7 +505,10 @@ jump:
       job_array *pa = get_jobs_array(&pjob);
 
       if (pjob == NULL)
+        {
+        job_mutex.set_lock_on_exit(false);
         return(-1);
+        }
 
       for (i = 0; i < pa->ai_qs.array_size; i++)
         {
@@ -572,13 +570,12 @@ jump:
   else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)
     {
     /* job has staged-in file, should remove them */
-
     remove_stagein(&pjob);
+
+    job_mutex.set_lock_on_exit(false);
 
     if (pjob != NULL)
       job_abt(&pjob, Msg);
-
-    has_mutex = FALSE;
     }
   else
     {
@@ -618,11 +615,8 @@ jump:
       set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
       }
     else
-      has_mutex = FALSE;
+      job_mutex.set_lock_on_exit(false);
     }  /* END else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0) */
-
-  if (has_mutex == TRUE)
-    unlock_ji_mutex(pjob, __func__, "7", LOGLEVEL);
 
   return(PBSE_NONE);
   } /* END execute_job_delete() */
@@ -1084,6 +1078,8 @@ void post_delete_mom1(
     return;
     }
 
+  mutex_mgr job_mutex(pjob->ji_mutex, true);
+
   if (rc)
     {
     /* mom rejected request */
@@ -1103,16 +1099,14 @@ void post_delete_mom1(
 
       set_resc_assigned(pjob, DECR);
 
+      job_mutex.set_lock_on_exit(false);
+
       svr_job_purge(pjob);
 
       reply_ack(preq_clt);
       }
     else
-      {
       req_reject(rc, 0, preq_clt, NULL, NULL);
-
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-      }
 
     return;
     }
@@ -1143,7 +1137,10 @@ void post_delete_mom1(
       pthread_mutex_unlock(server.sv_attr_mutex);
       }
     else if (pjob == NULL)
+      {
+      job_mutex.set_lock_on_exit(false);
       return;
+      }
     }
 
   set_task(WORK_Timed, delay + time_now, post_delete_mom2, strdup(pjob->ji_qs.ji_jobid), FALSE);
@@ -1153,15 +1150,13 @@ void post_delete_mom1(
    * nanny to be 1 minute after the second phase.
    */
   apply_job_delete_nanny(pjob, time_now + delay + 60);
-
-  unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
   }  /* END post_delete_mom1() */
 
 
 
 
 
-static void post_delete_mom2(
+void post_delete_mom2(
 
   struct work_task *pwt)
 
@@ -1186,6 +1181,8 @@ static void post_delete_mom2(
 
   if (pjob != NULL)
     {
+    mutex_mgr job_mutex(pjob->ji_mutex, true);
+
     if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
       {
       issue_signal(&pjob, sigk, free_br, NULL);
@@ -1197,8 +1194,8 @@ static void post_delete_mom2(
         }
       }
     
-    if (pjob != NULL)
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+    if (pjob == NULL)
+      job_mutex.set_lock_on_exit(false);
     }
   }  /* END post_delete_mom2() */
 
@@ -1323,7 +1320,7 @@ int apply_job_delete_nanny(
  * We are also called from pbsd_init_job() after recovering EXITING jobs.
  */
 
-static void job_delete_nanny(
+void job_delete_nanny(
 
   struct work_task *pwt)
 
@@ -1349,6 +1346,8 @@ static void job_delete_nanny(
       
       if (pjob != NULL)
         {
+        mutex_mgr job_mutex(pjob->ji_mutex, true);
+
         sprintf(log_buf, "exiting job '%s' still exists, sending a SIGKILL", pjob->ji_qs.ji_jobid);
         log_err(-1, "job nanny", log_buf);
         
@@ -1362,11 +1361,9 @@ static void job_delete_nanny(
         issue_signal(&pjob, sigk, post_job_delete_nanny, newreq);
         
         if (pjob != NULL)
-          {
           apply_job_delete_nanny(pjob, time_now + 60);
-  
-          unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-          }
+        else
+          job_mutex.set_lock_on_exit(false);
         }
       }
     else
@@ -1425,8 +1422,13 @@ void post_job_delete_nanny(
     sprintf(log_buf, "job delete nanny: the job disappeared (this is a BUG!)");
 
     log_event(PBSEVENT_ERROR,PBS_EVENTCLASS_JOB,preq_sig->rq_ind.rq_signal.rq_jid,log_buf);
+
+    return;
     }
-  else if (rc == PBSE_UNKJOBID)
+
+  mutex_mgr job_mutex(pjob->ji_mutex, true);
+  
+  if (rc == PBSE_UNKJOBID)
     {
     sprintf(log_buf, "job delete nanny returned, but does not exist on mom");
 
@@ -1438,12 +1440,12 @@ void post_job_delete_nanny(
   
     free_br(preq_sig);
 
+    job_mutex.set_lock_on_exit(false);
+
     svr_job_purge(pjob);
 
     return;
     }
-  
-  unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
   /* free task */
   free_br(preq_sig);

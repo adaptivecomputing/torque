@@ -149,6 +149,7 @@
 #include "ji_mutex.h"
 #include "user_info.h"
 #include "svr_task.h"
+#include "mutex_mgr.hpp"
 
 
 #ifndef TRUE
@@ -1761,6 +1762,7 @@ int svr_job_purge(
     return(rc);
     }
 
+  mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
  
   strcpy(job_id, pjob->ji_qs.ji_jobid);
   strcpy(job_fileprefix, pjob->ji_qs.ji_fileprefix);
@@ -1791,6 +1793,7 @@ int svr_job_purge(
     if (remove_job(&array_summary,pjob) == PBSE_JOB_RECYCLED)
       {
       /* PBSE_JOB_RECYCLED means the job is gone */
+      pjob_mutex.set_lock_on_exit(false);
       return(PBSE_NONE);
       }
 
@@ -1832,6 +1835,7 @@ int svr_job_purge(
       }
     else
       {
+      pjob_mutex.set_lock_on_exit(false);
       return(PBSE_JOBNOTFOUND);
       }
     }
@@ -1852,14 +1856,18 @@ int svr_job_purge(
       /* we came out of svr_dequejob with pjob locked. Our pointer is still good */
       /* job_free will unlock the mutex for us */
       if (pjob->ji_being_recycled == FALSE)
+        {
         job_free(pjob, TRUE);
+        pjob_mutex.set_lock_on_exit(false);
+        }
       else
-        unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+        pjob_mutex.unlock();
       }
     }
   else
     {
     job_free(pjob, TRUE);
+    pjob_mutex.set_lock_on_exit(false);
     }
  
   /* remove checkpoint restart file if there is one */

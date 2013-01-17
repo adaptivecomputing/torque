@@ -11,6 +11,7 @@ check_PROGRAMS = test_req_quejob
 libreq_quejob_la_SOURCES = scaffolding.c ${PROG_ROOT}/req_quejob.c
 libreq_quejob_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib
 
+test_req_quejob_LDADD = ../../../test/torque_test_lib/libtorque_test.la ../../../test/scaffold_fail/libscaffold_fail.la
 test_req_quejob_SOURCES = test_req_quejob.c
 
 check_SCRIPTS = coverage_run.sh

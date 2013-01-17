@@ -289,7 +289,7 @@ const char *PJobSubState[] =
 
 
 
-static int insert_into_alljobs_by_rank(
+int insert_into_alljobs_by_rank(
 
   struct all_jobs *aj,
   job             *pjob,
@@ -1135,7 +1135,7 @@ static resource *get_resource(
  * does not make use of comp_resc_eq or comp_resc_nc
  */
 
-static int chk_svr_resc_limit(
+int chk_svr_resc_limit(
 
   pbs_attribute *jobatr, /* I */
   pbs_queue     *pque,   /* I */
@@ -1678,6 +1678,9 @@ static int check_execution_uid_and_gid(
 
   return(return_code);
   }
+
+
+
 
 static int check_queue_disallowed_types(
 
@@ -2363,7 +2366,7 @@ int svr_chkque(
  * If indeed the case, re-evaluate and set the job state.
  */
 
-static void job_wait_over(
+void job_wait_over(
 
   struct work_task *pwt)
 
@@ -2388,6 +2391,8 @@ static void job_wait_over(
 
   if (pjob != NULL)
     {
+    mutex_mgr job_mutex(pjob->ji_mutex, true);
+
 #ifndef NDEBUG
       {
       time_t now = time((time_t *)0);
@@ -2401,8 +2406,6 @@ static void job_wait_over(
         
         /* recreate the work task entry */
         set_task(WORK_Timed, when, job_wait_over, strdup(pjob->ji_qs.ji_jobid), FALSE);
-        
-        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         
         return;
         }
@@ -2419,8 +2422,6 @@ static void job_wait_over(
     
     svr_evaljobstate(pjob, &newstate, &newsub, 0);
     svr_setjobstate(pjob, newstate, newsub, FALSE);
-    
-    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
     }
 
   return;
@@ -2875,53 +2876,54 @@ void set_resc_deflt(
    *
    */
 
-  void set_chkpt_deflt(
+void set_chkpt_deflt(
 
-      job       *pjob,     /* I (modified) */
-      pbs_queue *pque)     /* Input */
+  job       *pjob,     /* I (modified) */
+  pbs_queue *pque)     /* Input */
 
   {
-    char log_buf[LOCAL_LOG_BUF_SIZE];
-
-    if (pjob == NULL)
+  char log_buf[LOCAL_LOG_BUF_SIZE];
+  
+  if (pjob == NULL)
     {
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL input job pointer");
     return;
     }
-    if (pque == NULL)
+
+  if (pque == NULL)
     {
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL input pbs_queue pointer");
     return;
     }
-
-    /* If execution queue has checkpoint defaults specified, but job does not have
-     * checkpoint values, then set defaults on the job.
-     */
-
-    if ((pque->qu_qs.qu_type == QTYPE_Execution) &&
-        (pque->qu_attr[QE_ATR_checkpoint_defaults].at_flags & ATR_VFLAG_SET) &&
-        (pque->qu_attr[QE_ATR_checkpoint_defaults].at_val.at_str))
+  
+  /* If execution queue has checkpoint defaults specified, but job does not have
+   * checkpoint values, then set defaults on the job.
+   */
+  
+  if ((pque->qu_qs.qu_type == QTYPE_Execution) &&
+      (pque->qu_attr[QE_ATR_checkpoint_defaults].at_flags & ATR_VFLAG_SET) &&
+      (pque->qu_attr[QE_ATR_checkpoint_defaults].at_val.at_str))
     {
-      if ((!(pjob->ji_wattr[JOB_ATR_checkpoint].at_flags & ATR_VFLAG_SET)) ||
-          (csv_find_string(pjob->ji_wattr[JOB_ATR_checkpoint].at_val.at_str, "u") != NULL))
+    if ((!(pjob->ji_wattr[JOB_ATR_checkpoint].at_flags & ATR_VFLAG_SET)) ||
+        (csv_find_string(pjob->ji_wattr[JOB_ATR_checkpoint].at_val.at_str, "u") != NULL))
       {
-        job_attr_def[JOB_ATR_checkpoint].at_set(
-            &pjob->ji_wattr[JOB_ATR_checkpoint],
-            &pque->qu_attr[QE_ATR_checkpoint_defaults],
-            SET);
-
-        if (LOGLEVEL >= 7)
+      job_attr_def[JOB_ATR_checkpoint].at_set(
+          &pjob->ji_wattr[JOB_ATR_checkpoint],
+          &pque->qu_attr[QE_ATR_checkpoint_defaults],
+          SET);
+      
+      if (LOGLEVEL >= 7)
         {
-          sprintf(log_buf,"Applying queue (%s) checkpoint defaults (%s) to job",
-              pque->qu_qs.qu_name,
-              pque->qu_attr[QE_ATR_checkpoint_defaults].at_val.at_str);
-
-          log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+        sprintf(log_buf,"Applying queue (%s) checkpoint defaults (%s) to job",
+          pque->qu_qs.qu_name,
+          pque->qu_attr[QE_ATR_checkpoint_defaults].at_val.at_str);
+        
+        log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
         }
       }
     }
-
-    return;
+  
+  return;
   }  /* END set_chkpt_deflt() */
 
 
@@ -3068,6 +3070,7 @@ static void correct_ct()
   
   while ((pque = next_queue(&svr_queues,&queue_iter)) != NULL)
     {
+    mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "checking queue %s", pque->qu_qs.qu_name);
     log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
     pque->qu_numjobs = 0;
@@ -3101,7 +3104,6 @@ static void correct_ct()
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       }
     
-    unlock_queue(pque, __func__, NULL, LOGLEVEL);
     } /* END for each queue */
   
   sprintf(log_buf, "%s:2", __func__);

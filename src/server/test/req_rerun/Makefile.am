@@ -11,6 +11,7 @@ check_PROGRAMS = test_req_rerun
 libreq_rerun_la_SOURCES = scaffolding.c ${PROG_ROOT}/req_rerun.c
 libreq_rerun_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib
 
+test_req_rerun_LDADD = ../../../test/torque_test_lib/libtorque_test.la ../../../test/scaffold_fail/libscaffold_fail.la
 test_req_rerun_SOURCES = test_req_rerun.c
 
 check_SCRIPTS = coverage_run.sh
