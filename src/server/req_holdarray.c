@@ -18,6 +18,7 @@
 #include "array.h"
 #include "csv.h"
 #include "ji_mutex.h"
+#include "mutex_mgr.hpp"
 
 extern int chk_hold_priv(long val, int perm);
 extern int get_hold(tlist_head *, const char **, pbs_attribute *);
@@ -80,11 +81,10 @@ void hold_job(
 
 int req_holdarray(
     
-    struct batch_request *vp) /* I */
+  batch_request *preq) /* I */
 
   {
   int                   i;
-  struct batch_request *preq = (struct batch_request *)vp;
   char                 *pset;
   char                 *range_str;
   int                   rc;
@@ -104,6 +104,8 @@ int req_holdarray(
     return(PBSE_NONE);
     }
 
+  mutex_mgr array_mutex(pa->ai_mutex, true);
+
   get_jobowner(pa->ai_qs.owner, owner);
 
   if (svr_authorize_req(preq, owner, pa->ai_qs.submit_host) == -1)
@@ -113,8 +115,6 @@ int req_holdarray(
 
     log_event(PBSEVENT_SECURITY, PBS_EVENTCLASS_JOB, preq->rq_ind.rq_delete.rq_objname, log_buf);
 
-    unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
-
     req_reject(PBSE_PERM, 0, preq, NULL, "operation not permitted");
     return(PBSE_NONE);
     }
@@ -123,8 +123,6 @@ int req_holdarray(
   if ((rc = get_hold(&preq->rq_ind.rq_hold.rq_orig.rq_attr, (const char **)&pset,
                      &temphold)) != 0)
     {
-    unlock_ai_mutex(pa, __func__, "2", LOGLEVEL);
-
     req_reject(rc, 0, preq, NULL, NULL);
     return(PBSE_NONE);
     }
@@ -133,8 +131,6 @@ int req_holdarray(
 
   if ((rc = chk_hold_priv(temphold.at_val.at_long, preq->rq_perm)) != 0)
     {
-    unlock_ai_mutex(pa, __func__, "3", LOGLEVEL);
-
     req_reject(rc, 0, preq, NULL, NULL);
     return(PBSE_NONE);
     }
@@ -146,8 +142,6 @@ int req_holdarray(
     {
     if ((rc = hold_array_range(pa,range_str,&temphold)) != 0)
       {
-      unlock_ai_mutex(pa, __func__, "4", LOGLEVEL);
-
       req_reject(rc,0,preq,NULL,
         "Error in specified array range");
       return(PBSE_NONE);
@@ -168,13 +162,11 @@ int req_holdarray(
         }
       else
         {
-        hold_job(&temphold,pjob);
-        unlock_ji_mutex(pjob, __func__, "5", LOGLEVEL);
+        mutex_mgr job_mutex(pjob->ji_mutex, true);
+        hold_job(&temphold, pjob);
         }
       }
     }
-
-  unlock_ai_mutex(pa, __func__, "6", LOGLEVEL);
 
   reply_ack(preq);
 

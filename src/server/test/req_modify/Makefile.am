@@ -11,7 +11,7 @@ check_PROGRAMS = test_req_modify
 libreq_modify_la_SOURCES = scaffolding.c ${PROG_ROOT}/req_modify.c
 libreq_modify_la_LDFLAGS = @CHECK_LIBS@ -shared -L../.libs -lscaffolding_svr -L../../../lib/test/.libs -lscaffolding_lib
 
-
+test_req_modify_LDADD = ../../../test/torque_test_lib/libtorque_test.la ../../../test/scaffold_fail/libscaffold_fail.la
 test_req_modify_SOURCES = test_req_modify.c
 
 check_SCRIPTS = coverage_run.sh

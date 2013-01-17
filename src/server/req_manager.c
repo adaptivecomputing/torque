@@ -137,6 +137,7 @@
 #include "queue_func.h" /* find_queuebyname, que_alloc, que_free */
 #include "queue_recov.h" /* que_save */
 #include "svr_task.h"
+#include "mutex_mgr.hpp"
 
 
 #define PERM_MANAGER (ATR_DFLAG_MGWR | ATR_DFLAG_MGRD)
@@ -982,6 +983,8 @@ void mgr_queue_create(
 
   pque = que_alloc(preq->rq_ind.rq_manager.rq_objname, FALSE);
 
+  mutex_mgr queue_mutex(pque->qu_mutex, true);
+
   /* set the queue attributes */
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
 
@@ -1000,6 +1003,7 @@ void mgr_queue_create(
     reply_badattr(rc, bad, plist, preq);
 
     que_free(pque, FALSE);
+    queue_mutex.set_lock_on_exit(false);
     }
   else
     {
@@ -1031,8 +1035,6 @@ void mgr_queue_create(
       {
       reply_ack(preq);
       }
-
-    unlock_queue(pque, "mgr_queue_create", (char *)"success", LOGLEVEL);
     }
 
   return;

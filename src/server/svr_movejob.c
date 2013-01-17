@@ -116,6 +116,7 @@
 #include "queue_func.h" /* find_queuebyname */
 #include "req_runjob.h" /* finish_sendmom */
 #include "ji_mutex.h"
+#include "mutex_mgr.hpp"
 
 #if __STDC__ != 1
 #include <memory.h>
@@ -543,6 +544,8 @@ void finish_move_process(
     }
   else
     {
+    mutex_mgr job_mutex(pjob->ji_mutex, true);
+
     switch (type)
       {
       case MOVE_TYPE_Move:
@@ -557,16 +560,13 @@ void finish_move_process(
         
       case MOVE_TYPE_Exec:
 
-        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-        pjob = NULL;
+        job_mutex.unlock();
         finish_sendmom(job_id, preq, time, node_name, status, mom_err);
         
         break;
       } /* END switch (type) */
     }
 
-  if (pjob != NULL)
-    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
   } /* END finish_move_process() */
 
 
@@ -598,11 +598,11 @@ void free_server_attrs(
 
 int send_job_work(
 
-  char                  *job_id,
-  char                  *node_name, /* I */
-  int                    type,      /* I */
-  int                   *my_err,    /* O */
-  struct batch_request  *preq)      /* M */
+  char           *job_id,
+  char           *node_name, /* I */
+  int             type,      /* I */
+  int            *my_err,    /* O */
+  batch_request  *preq)      /* M */
 
   {
   int                   rc = LOCUTION_FAIL;
@@ -644,6 +644,8 @@ int send_job_work(
     req_reject(-1, 0, preq, NULL, NULL);
     return(PBSE_JOBNOTFOUND);
     }
+
+  mutex_mgr job_mutex(pjob->ji_mutex, true);
 
   if (strlen(pjob->ji_qs.ji_destin) != 0)
     strcpy(job_destin, pjob->ji_qs.ji_destin);
@@ -695,7 +697,10 @@ int send_job_work(
     /* clear default resource settings */
     ret = svr_dequejob(pjob, FALSE);
     if (ret)
+      {
+      job_mutex.set_lock_on_exit(false);
       return(ret);
+      }
     }
 
   pattr = pjob->ji_wattr;
@@ -730,7 +735,10 @@ int send_job_work(
       unlock_ai_mutex(pa, __func__, NULL, LOGLEVEL);
       }
     else if (pjob == NULL)
+      {
+      job_mutex.set_lock_on_exit(false);
       return(PBSE_JOB_RECYCLED);
+      }
     }
   else
     {
@@ -744,7 +752,7 @@ int send_job_work(
         (get_job_file_path(pjob ,StdErr, stderr_path, sizeof(stderr_path)) != 0) ||
         (get_job_file_path(pjob, Checkpoint, chkpt_path, sizeof(chkpt_path)) != 0))
       {
-      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+      job_mutex.unlock();
       goto send_job_work_end;
       }
     }
@@ -760,7 +768,7 @@ int send_job_work(
       change_substate_on_attempt_to_queue = TRUE;
     }
   
-  unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
+  job_mutex.unlock();
 
   for (NumRetries = 0;NumRetries < RETRY;NumRetries++)
     {

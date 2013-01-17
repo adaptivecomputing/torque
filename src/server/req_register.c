@@ -228,6 +228,8 @@ int check_dependency_job(
     return(rc);
     }
 
+  mutex_mgr job_mutex(pjob->ji_mutex, true);
+
   type = preq->rq_ind.rq_register.rq_dependtype;
 
   if (((pjob->ji_qs.ji_state == JOB_STATE_COMPLETE) ||
@@ -243,12 +245,11 @@ int check_dependency_job(
     
     rc = PBSE_BADSTATE;
     req_reject(rc, 0, preq, NULL, NULL);
-
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     
     return(rc);
     }
 
+  job_mutex.set_lock_on_exit(false);
   *job_ptr = pjob;
 
   return(PBSE_NONE);
@@ -1137,6 +1138,8 @@ void set_array_depend_holds(
 
       if (pjob != NULL)
         {
+        mutex_mgr job_mutex(pjob->ji_mutex, true);
+
         if (((compareNumber < pdj->dc_num) &&
              (pdep->dp_type < JOB_DEPEND_TYPE_BEFORESTARTARRAY)) ||
             ((compareNumber >= pdj->dc_num) && 
@@ -1164,8 +1167,6 @@ void set_array_depend_holds(
            * logged in set_depend_hold */
           set_depend_hold(pjob, &pjob->ji_wattr[JOB_ATR_depend]);
           }
-
-        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         }
 
       pdj = (struct array_depend_job *)GET_NEXT(pdj->dc_link);
@@ -1217,6 +1218,8 @@ void post_doq(
 
     if (pjob != NULL)
       {
+      mutex_mgr job_mutex(pjob->ji_mutex, true);
+
       strcat(log_buf, "\n");
       strcat(log_buf, "Job held for unknown job dep, use 'qrls' to release");
 
@@ -1240,8 +1243,6 @@ void post_doq(
           }
 
         set_depend_hold(pjob, pattr);
-
-        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         }
       }
     }
@@ -1453,6 +1454,8 @@ void post_doe(
 
   if (pjob != NULL)
     {
+    mutex_mgr job_mutex(pjob->ji_mutex, true);
+    
     pattr = &pjob->ji_wattr[JOB_ATR_depend];
     pdep  = find_depend(JOB_DEPEND_TYPE_BEFORESTART, pattr);
 
@@ -1468,8 +1471,6 @@ void post_doe(
         del_depend(pdep);
         }
       }
-    
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     }
 
   free_br(preq);
@@ -1592,7 +1593,7 @@ int depend_on_term(
   int                shouldkill = 0;
   int                type;
   int                job_unlocked = 0;
-  job                *pjob;
+  job               *pjob;
  
   pjob = svr_find_job(job_id, FALSE);
   if (pjob == NULL)
@@ -1692,7 +1693,6 @@ int depend_on_term(
 
       } /* END switch(type) */
 
-
     if (op != -1)
       {
       pparent = (struct depend_job *)GET_NEXT(pdep->dp_jobs);
@@ -1709,7 +1709,7 @@ int depend_on_term(
         /* "release" the job to execute */
         if ((rc = send_depend_req(pjob, pparent, type, op, SYNC_SCHED_HINT_NULL, free_br)) != PBSE_NONE)
           {
-          return (rc);
+          return(rc);
           }
 
         job_unlocked = 1;

@@ -251,6 +251,8 @@ void svr_shutdown(
 
   while ((pjob = next_job(&alljobs,&iter)) != NULL)
     {
+    mutex_mgr job_mutex(pjob->ji_mutex, true);
+
     if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
       {
       pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HOTSTART | JOB_SVFLG_HASRUN;
@@ -266,8 +268,8 @@ void svr_shutdown(
 
         if (shutdown_checkpoint(&pjob) == 0)
           {
-          if (pjob != NULL)
-            unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+          if (pjob == NULL)
+            job_mutex.set_lock_on_exit(false);
 
           continue;
           }
@@ -280,7 +282,7 @@ void svr_shutdown(
       }
 
     if (pjob != NULL)
-      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+      job_mutex.set_lock_on_exit(false);
     }
 
   return;
@@ -321,7 +323,7 @@ void shutdown_ack(void)
 
 void req_shutdown(
 
-  struct batch_request *preq)
+  batch_request *preq)
 
   {
   char  log_buf[LOCAL_LOG_BUF_SIZE];
@@ -463,35 +465,37 @@ void post_checkpoint(
 
   pjob = svr_find_job(preq->rq_ind.rq_hold.rq_orig.rq_objname, FALSE);
 
-  if (preq->rq_reply.brp_code == 0)
+  if (pjob != NULL)
     {
-    /* checkpointed ok */
-    if ((preq->rq_reply.brp_auxcode) && (pjob != NULL)) /* checkpoint can be moved */
-      {
-      pjob->ji_qs.ji_svrflags =
-        (pjob->ji_qs.ji_svrflags & ~JOB_SVFLG_CHECKPOINT_FILE) |
-        JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_MIGRATEABLE;
+    mutex_mgr job_mutex(pjob->ji_mutex, true);
 
+    if (preq->rq_reply.brp_code == PBSE_NONE)
+      {
+      /* checkpointed ok */
+      if (preq->rq_reply.brp_auxcode)
+        pjob->ji_qs.ji_svrflags =
+          (pjob->ji_qs.ji_svrflags & ~JOB_SVFLG_CHECKPOINT_FILE) |
+          JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_MIGRATEABLE;
       }
-    }
-  else
-    {
-    /* need to try rerun if possible or just abort the job */
-
-    if (pjob)
+    else
       {
+      /* need to try rerun if possible or just abort the job */
       pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_CHECKPOINT_FILE;
       pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
 
       if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
+        {
         rerun_or_kill(&pjob, msg_on_shutdown);
+
+        if (pjob == NULL)
+          job_mutex.set_lock_on_exit(false);
+        }
       }
     }
 
   free_br(preq);
 
-  if (pjob != NULL)
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+  return;
   }  /* END post_checkpoint() */
 
 

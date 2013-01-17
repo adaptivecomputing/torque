@@ -91,7 +91,7 @@
 #include "utils.h"
 #include "ji_mutex.h"
 #include "../lib/Libutils/u_lock_ctl.h"
-
+#include "mutex_mgr.hpp"
 
 
 extern attribute_def    node_attr_def[];   /* node attributes defs */
@@ -385,15 +385,15 @@ void update_job_data(
   char           *jobstring_in)  /* I (changed attributes sent by mom) */
 
   {
-  char       *jobdata;
-  char       *jobdata_ptr;
-  char       *jobidstr;
-  char       *attr_name;
-  char       *attr_value;
-  char        log_buf[LOCAL_LOG_BUF_SIZE];
+  char  *jobdata;
+  char  *jobdata_ptr;
+  char  *jobidstr;
+  char  *attr_name;
+  char  *attr_value;
+  char   log_buf[LOCAL_LOG_BUF_SIZE];
 
-  struct job *pjob = NULL;
-  int         on_node = FALSE;
+  job   *pjob = NULL;
+  int    on_node = FALSE;
 
   if ((jobstring_in == NULL) || (!isdigit(*jobstring_in)))
     {
@@ -419,8 +419,8 @@ void update_job_data(
       if (pjob != NULL)
         {
         int bad;
-
         svrattrl tA;
+        mutex_mgr job_mutex(pjob->ji_mutex, true);
         
         /* job exists, so get the attributes and update them */
         attr_name = threadsafe_tokenizer(&jobdata_ptr, "=");
@@ -454,8 +454,6 @@ void update_job_data(
 
           attr_name = threadsafe_tokenizer(&jobdata_ptr, "=");
           }
-        
-        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         }
       
       if (on_node == FALSE)

@@ -101,6 +101,7 @@
 #include "acct.h"
 #include "svrfunc.h"
 #include "ji_mutex.h"
+#include "mutex_mgr.hpp"
 
 /* Private Function local to this file */
 
@@ -143,11 +144,10 @@ void post_rerun(
 
     if ((pjob = svr_find_job(preq->rq_ind.rq_signal.rq_jid, FALSE)))
       {
+      mutex_mgr job_mutex(pjob->ji_mutex, true);
+      
       svr_evaljobstate(pjob, &newstate, &newsub, 1);
-
       svr_setjobstate(pjob, newstate, newsub, FALSE);
-
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       }
     }
 
