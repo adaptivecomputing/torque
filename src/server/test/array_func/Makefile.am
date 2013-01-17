@@ -2,16 +2,17 @@ PROG_ROOT = ../..
 
 AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
 
-lib_LTLIBRARIES = libarray_func.la
+lib_LTLIBRARIES = libuut.la
 
 AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 
-check_PROGRAMS = test_array_func
+check_PROGRAMS = test_uut
 
-libarray_func_la_SOURCES = scaffolding.c ${PROG_ROOT}/array_func.c
-libarray_func_la_LDFLAGS = @CHECK_LIBS@ -shared -L../.libs -lscaffolding_svr -L../../../lib/test/.libs -lscaffolding_lib
+libuut_la_SOURCES =  ${PROG_ROOT}/array_func.c  scaffolding.c
+libuut_la_LDFLAGS = @CHECK_LIBS@
+test_uut_LDADD = ../../../test/torque_test_lib/libtorque_test.la ../../../test/scaffold_fail/libscaffold_fail.la ../.libs/libscaffolding_svr.la
 
-test_array_func_SOURCES = test_array_func.c
+test_uut_SOURCES = test_uut.c 
 
 check_SCRIPTS = coverage_run.sh
 

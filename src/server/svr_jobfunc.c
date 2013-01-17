@@ -745,10 +745,8 @@ int svr_dequejob(
       }
 
     if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
-      {
-      unlock_queue(pque, __func__, NULL, LOGLEVEL);
       return(PBSE_JOBNOTFOUND);
-      }
+    }
 
 #endif /* NDEBUG */
 

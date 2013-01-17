@@ -1,6 +1,6 @@
 #include "license_pbs.h" /* See here for the software license */
 #include "array_func.h"
-#include "test_array_func.h"
+#include "test_uut.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include "pbs_error.h"
