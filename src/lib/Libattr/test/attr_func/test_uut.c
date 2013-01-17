@@ -63,18 +63,26 @@ END_TEST
 
 START_TEST(test_three)
   {
-  pbs_attribute attr = {~0};
-  attribute_def def = {0};
+  pbs_attribute attr;
+  attribute_def def;
 
-  pbs_attribute attrA = {0};
-  pbs_attribute attrB = {0};
+  pbs_attribute attrA;
+  pbs_attribute attrB;
+
+  memset(&attr,(unsigned)~0,sizeof(pbs_attribute));
+  memset(&def,0,sizeof(attribute_def));
+  memset(&attrA,0,sizeof(pbs_attribute));
+  memset(&attrB,0,sizeof(pbs_attribute));
+
 
   def.at_type = ATR_TYPE_LIST;
 
   clear_attr(&attr,&def);
   fail_unless(attr.at_type == ATR_TYPE_LIST);
 
-  attribute_def defa[3] = {0};
+  attribute_def defa[3];
+
+  memset(defa,0,sizeof(defa));
 
   defa[0].at_name = "Hello There.";
   defa[1].at_name = "Howdy Pard.";

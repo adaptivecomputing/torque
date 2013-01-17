@@ -3072,6 +3072,7 @@ static void correct_ct()
   
   while ((pque = next_queue(&svr_queues,&queue_iter)) != NULL)
     {
+    mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "checking queue %s", pque->qu_qs.qu_name);
     log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
     pque->qu_numjobs = 0;
@@ -3105,7 +3106,6 @@ static void correct_ct()
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       }
     
-    unlock_queue(pque, __func__, NULL, LOGLEVEL);
     } /* END for each queue */
   
   sprintf(log_buf, "%s:2", __func__);

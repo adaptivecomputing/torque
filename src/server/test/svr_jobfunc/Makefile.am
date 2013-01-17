@@ -2,14 +2,14 @@ PROG_ROOT = ../..
 
 AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
 
-lib_LTLIBRARIES = libsvr_jobfunc.la
+lib_LTLIBRARIES = libuut.la
 
 AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 
 check_PROGRAMS = test_svr_jobfunc
 
-libsvr_jobfunc_la_SOURCES = scaffolding.c ${PROG_ROOT}/svr_jobfunc.c
-libsvr_jobfunc_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib
+libsvr_jobfunc_la_SOURCES =  ${PROG_ROOT}/svr_jobfunc.c  scaffolding.c
+libsvr_jobfunc_la_LDFLAGS = @CHECK_LIBS@
 
 test_svr_jobfunc_LDADD = ../../../test/torque_test_lib/libtorque_test.la ../../../test/scaffold_fail/libscaffold_fail.la
 test_svr_jobfunc_SOURCES = test_svr_jobfunc.c

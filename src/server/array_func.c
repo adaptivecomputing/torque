@@ -48,6 +48,7 @@
 #include "svr_func.h"
 #include "job_func.h" /* svr_job_purge */
 #include "ji_mutex.h"
+#include "mutex_mgr.hpp"
 #include "batch_request.h"
 
 extern int array_upgrade(job_array *, int, int, int *);
@@ -1137,10 +1138,10 @@ int delete_array_range(
         }
       else
         {
+        mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
         if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
           {
           /* invalid state for request,  skip */
-          unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
           continue;
           }
 
@@ -1153,8 +1154,6 @@ int delete_array_range(
           {
           /* if the job was deleted, this mutex would be taked care of elsewhere. When it fails,
            * release it here */
-          unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-
           num_skipped++;
           }
         else if (running == FALSE)
