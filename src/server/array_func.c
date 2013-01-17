@@ -1477,6 +1477,7 @@ int modify_array_range(
           }
         else
           {
+          mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
           pthread_mutex_unlock(pa->ai_mutex);
           rc = modify_job((void **)&pjob, plist, preq, checkpoint_req, NO_MOM_RELAY);
           pa = get_jobs_array(&pjob);
@@ -1510,18 +1511,13 @@ int modify_array_range(
                   pjob->ji_qs.ji_jobid);
                 log_err(rc, __func__, log_buf);
                 
-                unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-                
                 return(rc); /* unable to get to MOM */
                 }
               else
                 {
-                unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
                 post_modify_arrayreq(array_req);
                 }
               }
-            else
-              unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
             }
           else
             pa->job_ids[i] = NULL;
