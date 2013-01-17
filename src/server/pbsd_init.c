@@ -233,6 +233,7 @@ extern struct server server;
 
 /* External Functions Called */
 
+void          poll_job_task(work_task *);
 extern void   on_job_rerun_task(struct work_task *);
 extern void   set_resc_assigned(job *, enum batch_op);
 extern void   set_old_nodes(job *);
@@ -1627,6 +1628,7 @@ int handle_job_recovery(
   char              basen[MAXPATHLEN+1];
   int               Index;
   int               iter = -1;
+  time_t            time_now = time(NULL);
 
   if (chdir(path_jobs) != 0)
     {
@@ -1771,6 +1773,7 @@ int handle_job_recovery(
         continue;
         }
 
+
       if ((type != RECOV_COLD) &&
           (type != RECOV_CREATE) &&
           (pjob->ji_arraystructid[0] == '\0') &&
@@ -1790,11 +1793,19 @@ int handle_job_recovery(
           }
         else
           {
+          /* set up the poll_task for this recovered job  - 
+           * only do up to 10 per second to not overwhelm pbs_server*/
+          set_task(WORK_Timed, time_now + 10 + (Index % 10), poll_job_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
           unlock_ji_mutex(pjob, __func__, "5", LOGLEVEL);
           }
         }
       else
+        {
+        /* set up the poll_task for this recovered job  - 
+         * only do up to 10 per second to not overwhelm pbs_server*/
+        set_task(WORK_Timed, time_now + 10 + (Index % 10), poll_job_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
         unlock_ji_mutex(pjob, __func__, "6", LOGLEVEL);
+        }
       }
 
     DArrayFree(&Array);
@@ -2250,8 +2261,6 @@ int pbsd_init_job(
 
   if ((type == RECOV_COLD) || (type == RECOV_CREATE))
     {
-/*    need_y_response(type);*/
-
     init_abt_job(pjob);
 
     return(PBSE_BAD_PARAMETER);
