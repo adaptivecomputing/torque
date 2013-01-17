@@ -130,8 +130,7 @@ AM_CONDITIONAL(HAVE_CHECK, test x"$have_check" = "xyes")
 m4_ifdef([AM_SILENT_RULES],[
   if test "x$have_check" = "xyes"; then
     AM_SILENT_RULES(no)
-    AC_CONFIG_FILES(src/test/Makefile
-    src/test/scaffold_fail/Makefile
+    AC_CONFIG_FILES(src/test/scaffold_fail/Makefile
     src/test/torque_test_lib/Makefile
     src/cmds/test/Makefile
     src/cmds/test/MXML/Makefile
@@ -2258,6 +2257,8 @@ AC_OUTPUT(buildutils/pbs_mkdirs
 	  src/drmaa/test/Makefile
 	  src/drmaa/Doxyfile
 	  src/pam/Makefile
+    src/test/Makefile
+
 )
 
 echo
