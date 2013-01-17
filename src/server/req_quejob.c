@@ -665,7 +665,7 @@ int req_quejob(
     return rc;
     }
 
-  mutex_mgr que_mgr(pque->qu_mutex);
+  mutex_mgr que_mgr(pque->qu_mutex, true);
 
   /* unlock the queue. We validated that it was there, now let someone else
      use it until we need it */

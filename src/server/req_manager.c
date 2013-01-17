@@ -983,7 +983,7 @@ void mgr_queue_create(
 
   pque = que_alloc(preq->rq_ind.rq_manager.rq_objname, FALSE);
 
-  mutex_mgr que_mgr(pque->qu_mutex);
+  mutex_mgr que_mgr(pque->qu_mutex, true);
 
   /* set the queue attributes */
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
@@ -1069,7 +1069,7 @@ void mgr_queue_delete(
 
     return;
     }
-  mutex_mgr pque_mutex(pque->qu_mutex);
+  mutex_mgr pque_mutex(pque->qu_mutex, true);
 
   if ((rc = que_purge(pque)) != PBSE_NONE)
     {
@@ -1461,7 +1461,7 @@ void mgr_queue_set(
   while (pque != NULL)
     {
       {
-      mutex_mgr que_mutex(pque->qu_mutex);
+      mutex_mgr que_mutex(pque->qu_mutex, true);
 
       rc = mgr_set_attr(
              pque->qu_attr,
@@ -1501,7 +1501,7 @@ void mgr_queue_set(
   while (pque != NULL)
     {
       {
-      mutex_mgr que_mutex(pque->qu_mutex);
+      mutex_mgr que_mutex(pque->qu_mutex, true);
       if ((badattr = check_que_attr(pque)) != NULL)
         {
         sprintf(log_buf, msg_attrtype, pque->qu_qs.qu_name, badattr);
@@ -1582,7 +1582,7 @@ void mgr_queue_unset(
   while (pque != NULL)
     {
       {
-      mutex_mgr que_mutex(pque->qu_mutex);
+      mutex_mgr que_mutex(pque->qu_mutex, true);
 
       rc = mgr_unset_attr(pque->qu_attr, que_attr_def, QA_ATR_LAST, plist, preq->rq_perm, &bad_attr);
 

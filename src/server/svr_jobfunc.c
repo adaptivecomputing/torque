@@ -387,7 +387,8 @@ int svr_enquejob(
     {
     return(PBSE_UNKQUE);
     }
-  mutex_mgr que_mgr(pque->qu_mutex);
+
+  mutex_mgr que_mgr(pque->qu_mutex, true);
 
   /* This is called when a job is not yet in the queue,
    * so svr_find_job can not be used.... */

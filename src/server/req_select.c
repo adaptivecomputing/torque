@@ -441,7 +441,7 @@ static void sel_step2(
         {
         pque = find_queuebyname(pjob->ji_qs.ji_queue);
         
-        mutex_mgr que_mgr(pque->qu_mutex);
+        mutex_mgr que_mgr(pque->qu_mutex, true);
 
         if (pque->qu_qs.qu_type != QTYPE_Execution)
           {
@@ -586,7 +586,7 @@ static void sel_step3(
         else
           {
           pque = find_queuebyname(pjob->ji_qs.ji_queue);
-          mutex_mgr que_mgr(pque->qu_mutex);
+          mutex_mgr que_mgr(pque->qu_mutex, true);
           
           if (pque->qu_qs.qu_type != QTYPE_Execution)
             {
@@ -973,7 +973,7 @@ static int build_selist(
           if (*pque == (pbs_queue *)0)
             return (PBSE_UNKQUE);
           
-          mutex_mgr que_mgr((*pque)->qu_mutex);
+          mutex_mgr que_mgr((*pque)->qu_mutex, true);
           }
         }
       }

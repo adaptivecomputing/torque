@@ -294,7 +294,7 @@ void que_free(
   pbs_attribute *pattr;
   attribute_def *pdef;
 
-  mutex_mgr pq_mutex(pq->qu_mutex);
+  mutex_mgr pq_mutex(pq->qu_mutex, true);
 
   /* remove any calloc working pbs_attribute space */
   for (i = 0;i < QA_ATR_LAST;i++)
