@@ -1410,12 +1410,11 @@ int release_array_range(
         }
       else
         {
+        mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
         if ((rc = release_job(preq,pjob)))
           {
-          unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
           return(rc);
           }
-        unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
         }
       }
     
