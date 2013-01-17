@@ -594,6 +594,8 @@ int chk_file_sec(
 
   if (S_ISLNK(sbuf.st_mode) != 0)
     {
+    memset(&symlink, 0, sizeof(symlink));
+
     i = readlink(path, symlink, sizeof(symlink) - 1);
 
     if (i < 0)
@@ -609,11 +611,6 @@ int chk_file_sec(
 
       goto chkerr;
       }
-
-    if (i == sizeof(symlink) - 1)
-      symlink[i] = '\0';
-    else
-      symlink[i + 1] = '\0';
 
     if (symlink[0] == '/')
       {
@@ -632,7 +629,6 @@ int chk_file_sec(
       }
 
     /* now figure out how to follow the symlink */
-
     if (stat(path, &sbuf) == -1)
       {
       rc = errno;
