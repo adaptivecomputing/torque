@@ -845,13 +845,17 @@ int handle_exiting_or_abort_substate(
   /* see if job has any dependencies */
   if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
     {
+    job_mutex.unlock();
     depend_on_term(job_id); /* pjob locked on entry, unlocked on exit */
     pjob = NULL;
     }
  
   if ((pjob != NULL) ||
       ((pjob = svr_find_job(job_id, TRUE)) != NULL))
+    {
+    job_mutex.mark_as_locked();
     svr_setjobstate(pjob,JOB_STATE_EXITING,JOB_SUBSTATE_RETURNSTD, FALSE);
+    }
   else
     job_mutex.set_lock_on_exit(false);
 
