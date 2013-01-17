@@ -1638,6 +1638,7 @@ void update_array_values(
               }
             else
               {
+              mutex_mgr pj_mutex = mutex_mgr(pj->ji_mutex, true);
               if (pj->ji_wattr[JOB_ATR_hold].at_val.at_long & HOLD_l)
                 {
                 pj->ji_wattr[JOB_ATR_hold].at_val.at_long &= ~HOLD_l;
@@ -1650,12 +1651,10 @@ void update_array_values(
                 svr_evaljobstate(pj, &newstate, &newsub, 1);
                 svr_setjobstate(pj, newstate, newsub, FALSE);
                 job_save(pj, SAVEJOB_FULL, 0);
-                unlock_ji_mutex(pj, __func__, "1", LOGLEVEL);
                 
                 break;
                 }
 
-              unlock_ji_mutex(pj, __func__, "2", LOGLEVEL);
               }
             }
           }
