@@ -129,6 +129,7 @@
 #include "ji_mutex.h"
 #include "alps_constants.h"
 #include "svr_task.h"
+#include "mutex_mgr.hpp"
 
 #define IS_VALID_STR(STR)  (((STR) != NULL) && ((STR)[0] != '\0'))
 
@@ -766,20 +767,15 @@ int job_should_be_on_node(
          * to this node double check the job struct because we
          * could be in the middle of moving the job around because
          * of data staging, suspend, or rerun */            
+        mutex_mgr job_mgr(pjob->ji_mutex,true);
         if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL)
           {
-          unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-          
           should_be_on_node = FALSE;
           }
         else if (node_in_exechostlist(pnode->nd_name, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str) == FALSE)
           {
-          unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
-          
           should_be_on_node = FALSE;
           }
-        else
-          unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
         }
       else
         should_be_on_node = FALSE;
@@ -808,6 +804,8 @@ void *finish_job(
 
     return(NULL);
     }
+  mutex_mgr job_mgr(pjob->ji_mutex,true);
+  job_mgr.set_lock_on_exit(false);
 
   free(jobid);
 
@@ -849,6 +847,7 @@ int remove_jobs_that_have_disappeared(
 
       continue;
       }
+    mutex_mgr job_mgr(pjob->ji_mutex,true);
 
     /* 45 seconds is typically the time between intervals for each update 
      * from the mom. Add this in case a stale update is processed and the job
@@ -859,11 +858,11 @@ int remove_jobs_that_have_disappeared(
       {
       free(jobid);
 
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+      job_mgr.unlock();
       continue;
       }
 
-    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+    job_mgr.unlock();
     /* mom didn't report this job - it has exited unexpectedly */
     snprintf(log_buf, sizeof(log_buf),
       "Server thinks job %s is on node %s, but the mom doesn't. Terminating job",

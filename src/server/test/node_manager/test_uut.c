@@ -1,6 +1,6 @@
 #include "license_pbs.h" /* See here for the software license */
 #include "node_manager.h"
-#include "test_node_manager.h"
+#include "test_uut.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include "pbs_error.h"

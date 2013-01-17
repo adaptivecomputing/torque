@@ -130,6 +130,7 @@
 #include "ji_mutex.h"
 #include "user_info.h"
 #include "hash_map.h"
+#include "mutex_mgr.hpp"
 
 /*#ifndef SIGKILL*/
 /* there is some weird stuff in gcc include files signal.h & sys/params.h */
@@ -1855,8 +1856,8 @@ int cleanup_recovered_arrays()
      
     if ((pjob = svr_find_job(pa->ai_qs.parent_id, FALSE)) != NULL)
       {
+      mutex_mgr job_mgr(pjob->ji_mutex,true);
       job_template_exists = TRUE;
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       }
 
     /* if no jobs were recovered, delete this array */
@@ -2794,10 +2795,10 @@ void resume_net_move(
     {
     if((pjob = svr_find_job(jobid, FALSE)) == NULL)
       return;
+
+    mutex_mgr job_mgr(pjob->ji_mutex,true);
   
     net_move(pjob, 0);
-    
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
     free(jobid);
     }
