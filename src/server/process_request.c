@@ -1029,6 +1029,7 @@ int close_quejob_by_jobid(
   if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
     {
     rc = PBSE_JOBNOTFOUND;
+    return(rc);
     }
 
   mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
