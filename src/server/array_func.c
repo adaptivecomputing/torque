@@ -1711,6 +1711,7 @@ void update_array_statuses()
     
     if ((pjob = svr_find_job(jobid, TRUE)) != NULL)
       {
+      mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
       if (running > 0)
         {
         svr_setjobstate(pjob, JOB_STATE_RUNNING, pjob->ji_qs.ji_substate, FALSE);
@@ -1725,8 +1726,6 @@ void update_array_statuses()
         /* default to just calling the array queued */
         svr_setjobstate(pjob, JOB_STATE_QUEUED, pjob->ji_qs.ji_substate, FALSE);
         }
-
-      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
       }
     } /* END for each array */
 
