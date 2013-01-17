@@ -108,6 +108,7 @@
 #include "svr_func.h" /* get_svr_attr_* */
 #include "req_stat.h" /* stat_mom_job */
 #include "ji_mutex.h"
+#include "mutex_mgr.hpp"
 
 /* Private Data */
 
@@ -440,12 +441,12 @@ static void sel_step2(
         {
         pque = find_queuebyname(pjob->ji_qs.ji_queue);
         
+        mutex_mgr que_mgr(pque->qu_mutex);
+
         if (pque->qu_qs.qu_type != QTYPE_Execution)
           {
-          unlock_queue(pque, "sel_step2", (char *)"not exec queue", LOGLEVEL);
           continue;
           }
-        unlock_queue(pque, "sel_step2", (char *)"exec queue", LOGLEVEL);
         }
       }
 
@@ -585,13 +586,12 @@ static void sel_step3(
         else
           {
           pque = find_queuebyname(pjob->ji_qs.ji_queue);
+          mutex_mgr que_mgr(pque->qu_mutex);
           
           if (pque->qu_qs.qu_type != QTYPE_Execution)
             {
-            unlock_queue(pque, "sel_step3", (char *)"not exec queue", LOGLEVEL);
             goto nextjob;
             }
-          unlock_queue(pque, "sel_step3", (char *)"exec queue", LOGLEVEL);
           }
         }
 
@@ -973,7 +973,7 @@ static int build_selist(
           if (*pque == (pbs_queue *)0)
             return (PBSE_UNKQUE);
           
-          unlock_queue(*pque, __func__, NULL, LOGLEVEL);
+          mutex_mgr que_mgr((*pque)->qu_mutex);
           }
         }
       }

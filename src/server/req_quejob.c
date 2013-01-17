@@ -665,10 +665,13 @@ int req_quejob(
     return rc;
     }
 
+  mutex_mgr que_mgr(pque->qu_mutex);
+
   /* unlock the queue. We validated that it was there, now let someone else
      use it until we need it */
   sprintf(log_buf, "Just validated queue");
-  unlock_queue(pque, __func__, log_buf, LOGLEVEL);
+
+  que_mgr.unlock();
 
   /*
    * make up job file name, it is based on the jobid, however the
@@ -1196,9 +1199,9 @@ int req_quejob(
      * set any "unspecified" checkpoint with queue default values, if any
      */
 
-    lock_queue(pque, __func__, "locking for set_chkpt_deflt", LOGLEVEL);
+    que_mgr.lock();
     set_chkpt_deflt(pj, pque);
-    unlock_queue(pque, __func__, "unlocking for set_chkpt_deflt", LOGLEVEL);
+    que_mgr.unlock();
 
     /* If queue has checkpoint directory name specified, propagate it to the job. */
 
@@ -1391,15 +1394,15 @@ int req_quejob(
     free(oldid);    
     }
 
-  lock_queue(pque, __func__, "lock for svr_chkque", LOGLEVEL);
+  que_mgr.lock();
   if ((rc = svr_chkque(pj, pque, preq->rq_host, MOVE_TYPE_Move, EMsg)))
     {
-    unlock_queue(pque, __func__, "can not move", LOGLEVEL);
+    que_mgr.unlock();
     svr_job_purge(pj);
     req_reject(rc, 0, preq, NULL, EMsg);
     return(rc);
     }
-  unlock_queue(pque, __func__, "unlock for svr_chkque", LOGLEVEL);
+  que_mgr.unlock();
 
   /* FIXME: if EMsg[0] != '\0', send a warning email to the user */
 

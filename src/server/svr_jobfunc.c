@@ -142,6 +142,7 @@
 #include "user_info.h"
 #include "svr_jobfunc.h"
 #include "svr_task.h"
+#include "mutex_mgr.hpp"
 
 #define MSG_LEN_LONG 160
 
@@ -386,6 +387,7 @@ int svr_enquejob(
     {
     return(PBSE_UNKQUE);
     }
+  mutex_mgr que_mgr(pque->qu_mutex);
 
   /* This is called when a job is not yet in the queue,
    * so svr_find_job can not be used.... */
@@ -393,7 +395,7 @@ int svr_enquejob(
 
   if (pjob->ji_being_recycled == TRUE)
     {
-    unlock_queue(pque, __func__, NULL, 0);
+    que_mgr.unlock();
     unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
     return(PBSE_JOB_RECYCLED);
     }
@@ -411,7 +413,7 @@ int svr_enquejob(
     total_jobs = count_queued_jobs(pque, NULL);
     if (total_jobs + array_jobs >= pque->qu_attr[QA_ATR_MaxJobs].at_val.at_long)
       {
-      unlock_queue(pque, __func__, "1", LOGLEVEL);
+      que_mgr.unlock();
       unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
       return(PBSE_MAXQUED);
       }
@@ -423,7 +425,7 @@ int svr_enquejob(
     user_jobs = count_queued_jobs(pque, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
     if (user_jobs >= pque->qu_attr[QA_ATR_MaxUserJobs].at_val.at_long)
       {
-      unlock_queue(pque, __func__, "1", LOGLEVEL);
+      que_mgr.unlock();
       unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
       return(PBSE_MAXUSERQUED);
       }
@@ -486,7 +488,6 @@ int svr_enquejob(
     if ((rc == ALREADY_IN_LIST) ||
         (rc == PBSE_JOBNOTFOUND))
       {
-      unlock_queue(pque, __func__, "not array_template check", LOGLEVEL);
       if (rc == ALREADY_IN_LIST)
         {
         rc = PBSE_NONE;
@@ -511,7 +512,6 @@ int svr_enquejob(
     if ((rc == ALREADY_IN_LIST) ||
         (rc == PBSE_JOBNOTFOUND))
       {
-      unlock_queue(pque, __func__, "not array_template check", LOGLEVEL);
       if (rc == ALREADY_IN_LIST)
         rc = PBSE_NONE;
 
@@ -579,7 +579,7 @@ int svr_enquejob(
       &pque->qu_attr[QE_ATR_checkpoint_min]);
 
     /* do anything needed doing regarding job dependencies */
-    unlock_queue(pque, __func__, "anything", LOGLEVEL);
+    que_mgr.unlock();
 
     if ((pjob->ji_qs.ji_state != JOB_STATE_COMPLETE) && 
         (pjob->ji_qs.ji_substate != JOB_SUBSTATE_COMPLETE) && 
@@ -618,10 +618,7 @@ int svr_enquejob(
     /* must be set to 1 so that routing is attempted */
     pjob->ji_qs.ji_un.ji_routet.ji_rteretry = 1;
     
-    unlock_queue(pque, __func__, "route job", LOGLEVEL);
     }
-  else
-    unlock_queue(pque, __func__, "pull queue", LOGLEVEL);
 
   return(PBSE_NONE);
   }  /* END svr_enquejob() */
@@ -748,8 +745,10 @@ int svr_dequejob(
       }
 
     if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
+      {
+      unlock_queue(pque, __func__, NULL, LOGLEVEL);
       return(PBSE_JOBNOTFOUND);
-    }
+      }
 
 #endif /* NDEBUG */
 
