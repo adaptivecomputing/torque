@@ -837,9 +837,6 @@ void mom_job_purge(
     }
 #endif  /* NVIDIA_GPUS */
 
-  if (is_login_node == TRUE)
-    release_job_reservation(pjob);
-
   /* initialize struct information */
   if (pjob->ji_flags & MOM_HAS_TMPDIR)
     {
