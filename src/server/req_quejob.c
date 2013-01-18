@@ -2266,6 +2266,9 @@ int req_commit(
     issue_track(pj);
     }
 
+  /* this says that we're finished queuing the job, others can now try to route it */
+  pj->ji_commit_done = TRUE;
+
   unlock_ji_mutex(pj, __func__, "9", LOGLEVEL);
 
 #ifdef AUTORUN_JOBS

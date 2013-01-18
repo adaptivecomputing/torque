@@ -533,13 +533,12 @@ void *queue_route(
     pthread_exit(0);
     }
 
-   if (LOGLEVEL>=7)
-     {
-     snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "queue name: %s ", queue_name);
-     log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_QUEUE, __func__, log_buf);
-     }
+  if (LOGLEVEL>=7)
+    {
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "queue name: %s ", queue_name);
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_QUEUE, __func__, log_buf);
+    }
    
-  
   pthread_mutex_lock(reroute_job_mutex);
 
   pque = find_queuebyname(queue_name);
@@ -559,7 +558,7 @@ void *queue_route(
      * first crack at routing always */
     unlock_queue(pque, __func__, NULL, LOGLEVEL);
     if ((pjob->ji_qs.ji_un.ji_routet.ji_rteretry <= time_now) &&
-        (pjob->ji_qs.ji_un.ji_routet.ji_rteretry != 0))
+        (pjob->ji_commit_done == TRUE))
       {
       reroute_job(pjob, pque);
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);

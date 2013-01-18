@@ -654,8 +654,9 @@ pbs_queue *lock_queue_with_job_held(
 
   if (pque != NULL)
     {
-    if (LOGLEVEL >= 10 )
+    if (LOGLEVEL >= 10)
       log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_QUEUE, __func__, pque->qu_qs.qu_name);
+
     rc = pthread_mutex_trylock(pque->qu_mutex);
     if (rc != 0)
       {
