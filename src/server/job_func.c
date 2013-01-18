@@ -440,6 +440,7 @@ int job_abt(
     return(rc);
     }
 
+  mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
   strcpy(job_id, pjob->ji_qs.ji_jobid);
 
   /* save old state and update state to Exiting */
@@ -490,9 +491,10 @@ int job_abt(
         
         if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
           {
-          unlock_ji_mutex(pjob, __func__, "1a",LOGLEVEL);
+          pjob_mutex.unlock();
           depend_on_term(job_id);
           pjob = svr_find_job(job_id, TRUE);
+          /* pjob_mutex.managed_mutex already points to pjob->ji_mutex. Nothing to do */
           }
         
         /* update internal array bookeeping values */
@@ -506,7 +508,7 @@ int job_abt(
             {
             job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
             job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
-            unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+            pjob_mutex.unlock();
             update_array_values(pa,old_state,aeTerminate,
                 job_id, job_atr_hold, job_exit_status);
             
@@ -516,7 +518,10 @@ int job_abt(
           }
       
         if (pjob != NULL)
+          {
           svr_job_purge(pjob);
+          pjob = NULL;
+          }
 
         *pjobp = NULL;
         }
@@ -531,7 +536,6 @@ int job_abt(
       pjob->ji_qs.ji_jobid,
       old_substate);
     log_err(-1, __func__, log_buf);
-    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
     }
   else
     {
@@ -547,9 +551,10 @@ int job_abt(
     if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
       {
       strcpy(job_id, pjob->ji_qs.ji_jobid);
-      unlock_ji_mutex(pjob, __func__, "1b", LOGLEVEL);
+      pjob_mutex.unlock();
       depend_on_term(job_id);
       pjob = svr_find_job(job_id, TRUE);
+      /* pjob_mutex managed mutex already points to pjob->ji_mutex. Nothing to do */
       }
 
     /* update internal array bookeeping values */
@@ -563,7 +568,7 @@ int job_abt(
         {
         job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
         job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
-        unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
+        pjob_mutex.unlock();
         update_array_values(pa,old_state,aeTerminate,
             job_id, job_atr_hold, job_exit_status);
         
@@ -573,10 +578,16 @@ int job_abt(
       }
 
     if (pjob != NULL)
+      {
       svr_job_purge(pjob);
+      pjob = NULL;
+      }
 
     *pjobp = NULL;
     }
+
+  if (pjob == NULL)
+    pjob_mutex.set_lock_on_exit(false);
 
   return(rc);
   }  /* END job_abt() */
