@@ -541,7 +541,7 @@ int req_releasearray(
     return(PBSE_NONE);
     }
 
-  mutex_mgr array_mutex(pa->ai_mutex, true);
+  mutex_mgr pa_mutex = mutex_mgr(pa->ai_mutex, true);
 
   while (TRUE)
     {
@@ -560,22 +560,23 @@ int req_releasearray(
       break;
     }
 
+  mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
+
   if (svr_authorize_jobreq(preq, pjob) == -1)
     {
     req_reject(PBSE_PERM,0,preq,NULL,NULL);
-
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-
     return(PBSE_NONE);
     }
 
-  unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+  pjob_mutex.unlock();
 
   range = preq->rq_extend;
   if ((range != NULL) &&
       (strstr(range,ARRAY_RANGE) != NULL))
     {
     /* parse the array range */
+    /* ai_mutex is locked going into release_array_range and 
+       returns locked as well */
     if ((rc = release_array_range(pa,preq,range)) != 0)
       {
       req_reject(rc,0,preq,NULL,NULL);
@@ -583,6 +584,7 @@ int req_releasearray(
       return(PBSE_NONE);
       }
     }
+  /* pa->ai_mutex remains locked in and out of release_whole_array */
   else if ((rc = release_whole_array(pa,preq)) != 0)
     {
     req_reject(rc,0,preq,NULL,NULL);
