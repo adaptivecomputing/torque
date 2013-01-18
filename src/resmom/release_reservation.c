@@ -208,12 +208,17 @@ int destroy_alps_reservation(
     reservation_id,
     (apbasil_path != NULL) ? apbasil_path : DEFAULT_APBASIL_PATH);
 
-  while ((rc != PBSE_NONE) &&
-         (rc != apbasil_fail_permanent) &&
+  /* Wait until a permanent failure - success only means that ALPS has received
+   * the request to release. Cray advised us to wait for a permanent failure, which
+   * means that the reservation is gone. (unless you have some other problem) */
+  while ((rc != apbasil_fail_permanent) &&
          (retry_count < APBASIL_RETRIES))
     {
     rc = execute_alps_release(command_buf);
     retry_count++;
+
+    if (rc != apbasil_fail_permanent)
+      sleep(1);
     }
 
   return(rc);

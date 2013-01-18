@@ -1,17 +1,18 @@
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
+AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage `xml2-config --cflags`
 
-lib_LTLIBRARIES = libsvr_task.la
+lib_LTLIBRARIES = libuut.la
 
 AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 
-check_PROGRAMS = test_svr_task
+check_PROGRAMS = test_uut
 
-libsvr_task_la_SOURCES = scaffolding.c ${PROG_ROOT}/svr_task.c
-libsvr_task_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib
+libuut_la_SOURCES =  ${PROG_ROOT}/svr_task.c  scaffolding.c
+libuut_la_LDFLAGS = @CHECK_LIBS@
+test_uut_LDADD = ../../../test/torque_test_lib/libtorque_test.la ../../../test/scaffold_fail/libscaffold_fail.la ../.libs/libscaffolding_svr.la
 
-test_svr_task_SOURCES = test_svr_task.c
+test_uut_SOURCES = test_uut.c 
 
 check_SCRIPTS = coverage_run.sh
 
