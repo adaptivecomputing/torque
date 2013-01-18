@@ -287,7 +287,9 @@ int req_deletearray(
     if ((pa = get_array(preq->rq_ind.rq_delete.rq_objname)) != NULL)
       {
       /* if pa is not null this is the same mutex we had before */
-      pa_mutex.unlock();
+      /* ai_mutex comes out of get_array locked so we need to
+         set the locked state to true */
+      pa_mutex.set_lock_state(true);
       
       /* some jobs were not deleted.  They must have been running or had
          JOB_SUBSTATE_TRANSIT */
