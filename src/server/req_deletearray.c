@@ -218,6 +218,7 @@ int req_deletearray(
     return(PBSE_NONE);
     }
 
+  mutex_mgr pa_mutex = mutex_mgr(pa->ai_mutex, true);
   /* check authorization */
   get_jobowner(pa->ai_qs.owner, owner);
 
@@ -231,8 +232,6 @@ int req_deletearray(
       preq->rq_host);
 
     log_event(PBSEVENT_SECURITY,PBS_EVENTCLASS_JOB,preq->rq_ind.rq_delete.rq_objname,log_buf);
-
-    unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
 
     req_reject(PBSE_PERM, 0, preq, NULL, "operation not permitted");
     return(PBSE_NONE);
@@ -260,8 +259,6 @@ int req_deletearray(
     if (num_skipped < 0)
       {
       /* ERROR */
-      unlock_ai_mutex(pa, __func__, "2", LOGLEVEL);
-
       req_reject(PBSE_IVALREQ,0,preq,NULL,"Error in specified array range");
       return(PBSE_NONE);
       }
@@ -284,12 +281,13 @@ int req_deletearray(
 
   if (num_skipped != NO_JOBS_IN_ARRAY)
     {
-    unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+    pa_mutex.unlock();
     
     /* check if the array is gone */
     if ((pa = get_array(preq->rq_ind.rq_delete.rq_objname)) != NULL)
       {
-      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+      /* if pa is not null this is the same mutex we had before */
+      pa_mutex.unlock();
       
       /* some jobs were not deleted.  They must have been running or had
          JOB_SUBSTATE_TRANSIT */

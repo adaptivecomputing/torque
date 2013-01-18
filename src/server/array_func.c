@@ -694,12 +694,12 @@ int setup_array_struct(
 
   pa->ai_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(pa->ai_mutex, NULL);
-  lock_ai_mutex(pa, __func__, NULL, LOGLEVEL);
+  mutex_mgr pa_mutex = mutex_mgr(pa->ai_mutex);
 
   if (job_save(pjob, SAVEJOB_FULL, 0) != 0)
     {
     /* the array is deleted in svr_job_purge */
-    unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+    pa_mutex.unlock();
     /* Does job array need to be removed? */
 
     if (LOGLEVEL >= 6)
@@ -722,6 +722,7 @@ int setup_array_struct(
     get_svr_attr_l(SRV_ATR_MaxSlotLimit, &max_limit);
     array_delete(pa);
 
+    pa_mutex.set_lock_on_exit(false);
     snprintf(log_buf,sizeof(log_buf),
       "Array %s requested a slot limit above the max limit %ld, rejecting\n",
       pa->ai_qs.parent_id,
@@ -763,6 +764,7 @@ int setup_array_struct(
     if (max_array_size < pa->ai_qs.num_jobs)
       {
       array_delete(pa);
+      pa_mutex.set_lock_on_exit(false);
 
       return(ARRAY_TOO_LARGE);
       }
@@ -787,14 +789,13 @@ int setup_array_struct(
   if (bad_token_count > 0)
     {
     array_delete(pa);
+    pa_mutex.set_lock_on_exit(false);
     return 2;
     }
 
   strcpy(pjob->ji_arraystructid, pa->ai_qs.parent_id);
 
   insert_array(pa);
-
-  unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
 
   return(PBSE_NONE);
   } /* END setup_array_struct() */
