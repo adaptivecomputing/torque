@@ -7,6 +7,7 @@
 
 batch_request_holder    brh;
 
+#if 0
 int insert_thing(
     
   resizable_array *ra,
@@ -59,9 +60,11 @@ hash_table_t *create_hash(
   {
   return(NULL);
   }
+#endif
 
 void log_err(int errnum, const char *routine, const char *text) {}
 
+#if 0
 int remove_hash(
     
   hash_table_t *ht,
@@ -70,3 +73,4 @@ int remove_hash(
   {
   return(0);
   }
+#endif
