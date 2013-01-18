@@ -29,8 +29,7 @@ int remove_thing(resizable_array *ra, void *thing)
 
 int enqueue_threadpool_request(void *(*func)(void *),void *arg)
   {
-  fprintf(stderr, "The call to enqueue_threadpool_request to be mocked!!\n");
-  exit(1);
+  return 5;
   }
 
 void check_nodes(struct work_task *ptask)
@@ -39,29 +38,6 @@ void check_nodes(struct work_task *ptask)
   exit(1);
   }
 
-resizable_array *initialize_resizable_array(int size)
-  {
-  fprintf(stderr, "The call to initialize_resizable_array to be mocked!!\n");
-  exit(1);
-  }
-
-void *next_thing(resizable_array *ra, int *iter)
-  {
-  fprintf(stderr, "The call to next_thing to be mocked!!\n");
-  exit(1);
-  }
-
-int insert_thing_after(resizable_array *ra, void *thing, int index)
-  {
-  fprintf(stderr, "The call to insert_thing_after to be mocked!!\n");
-  exit(1);
-  }
-
-int get_index(resizable_array *ra, void *thing)
-  {
-  fprintf(stderr, "The call to get_index to be mocked!!\n");
-  exit(1);
-  }
 
 void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
