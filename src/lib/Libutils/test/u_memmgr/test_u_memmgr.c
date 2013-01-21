@@ -113,6 +113,7 @@ START_TEST(test_memmgr_calloc_shuffle_shuffle_extend)
   fail_unless(ptr == NULL, "zero memory request should generate NULL ptr response");
   
   rc = memmgr_init(&mm, 48);
+  fail_unless(rc == 0);
   data_ptr1 = (char *)memmgr_calloc(&mm, 1, 5);
   strcpy(data_ptr1, "11111");
   data_ptr2 = (char *)memmgr_calloc(&mm, 1, 6);
@@ -192,6 +193,7 @@ START_TEST(test_memmgr_free_remove)
   memmgr *mm = NULL;
   init_globals();
   rc = memmgr_init(&mm, 48);
+  fail_unless(rc == 0);
   data_ptr1 = (char *)memmgr_calloc(&mm, 1, 5);
   strcpy(data_ptr1, "11111");
   data_ptr2 = (char *)memmgr_calloc(&mm, 1, 6);
@@ -209,6 +211,7 @@ START_TEST(test_memmgr_free_remove)
   mptr3 = mm->next_mgr->next_mgr;
   mptr4 = mm->next_mgr->next_mgr->next_mgr;
 
+  fail_unless(mptr2 == mm->next_mgr);
   memmgr_free(&mm, data_ptr1);
   fail_unless(mptr3->ref_count == 2, "ref_count after free should be 2 but is:%d", mm->ref_count);
   memcpy(&size, mptr3->the_mem, sizeof(int));
@@ -262,10 +265,12 @@ START_TEST(test_memmgr_realloc)
   fail_unless(memmgr_realloc(NULL, NULL, 5) == NULL, "NULL memmgr should result in NULL ptr");
   fail_unless(memmgr_realloc(&mm, NULL, 5) == NULL, "NULL memmgr should result in NULL ptr");
   rc = memmgr_init(&mm, 48);
+  fail_unless(rc == 0);
   fail_unless(memmgr_realloc(&mm, NULL, -1) == NULL, "negative size should result in NULL ptr");
   fail_unless(memmgr_realloc(&mm, NULL, 5) != NULL, "NULL ptr with valid size should result in valid ptr");
   memmgr_destroy(&mm);
   rc = memmgr_init(&mm, 48);
+  fail_unless(rc == 0);
   data_ptr1 = (char *)memmgr_calloc(&mm, 1, 11);
   strcpy(data_ptr1, "11111111111");
   ptr = (char *)mm->current_pos;
@@ -342,6 +347,7 @@ void rundebug()
   memmgr *mm = NULL;
   init_globals();
   rc = memmgr_init(&mm, 48);
+  fail_unless(rc == 0);
   data_ptr1 = (char *)memmgr_calloc(&mm, 1, 11);
   strcpy(data_ptr1, "11111111111");
   data_ptr2 = (char *)memmgr_realloc(&mm, data_ptr1, 4);
@@ -355,6 +361,7 @@ void rundebug()
   data_ptr5 = (char *)memmgr_realloc(&mm, data_ptr4, 20);
   memset(data_ptr5, '5', 6);
   data_ptr6 = (char *)memmgr_realloc(&mm, data_ptr2, 50);
+  fail_unless(data_ptr6 != NULL);
   memmgr_destroy(&mm);
   }
 

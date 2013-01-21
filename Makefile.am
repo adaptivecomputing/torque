@@ -13,7 +13,7 @@ EXTRA_DIST = acinclude.m4 \
   INSTALL \
 	INSTALL.GNU \
   Makefile.am \
-  parse_cov_results.pl \
+  parse_cov_results.py \
   PBS_License.txt \
 	README.array_changes \
   README.coding_notes \
@@ -24,7 +24,7 @@ EXTRA_DIST = acinclude.m4 \
   README.trqauthd \
 	README.building_40 \
 	Release_Notes \
-  run_report.pl \
+  run_report.py \
 	torque.setup \
 	torque.spec \
 	buildutils/config.mk \

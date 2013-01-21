@@ -22,6 +22,7 @@ START_TEST(test_parse_env_line_nospace)
   fail_unless(val != NULL, "val should have a value");
   fail_unless(strcmp("ONE_VAR", name) == 0, "[ONE_VAR] != [%s]", name);
   fail_unless(strcmp("THE_VAL", val) == 0, "[THE_VAL] != [%s]", val);
+  fail_unless(rc == 0);
   }
 END_TEST
 
@@ -36,6 +37,7 @@ START_TEST(test_parse_env_line_space)
   fail_unless(val != NULL, "val should have a value");
   fail_unless(strcmp("ONE_VAR", name) == 0, "[ONE_VAR] != [%s]", name);
   fail_unless(strcmp("THE_VAL", val) == 0, "[THE_VAL] != [%s]", val);
+  fail_unless(rc == 0);
   }
 END_TEST
 
@@ -50,12 +52,13 @@ START_TEST(test_parse_env_line_allspace)
   fail_unless(val != NULL, "val should have a value");
   fail_unless(strcmp("ONE_VAR", name) == 0, "[ONE_VAR] != [%s]", name);
   fail_unless(strcmp("   ", val) == 0, "[   ] != [%s]", val);
+  fail_unless(rc == 0);
   }
 END_TEST
 
 START_TEST(test_set_env_opts)
   {
-  char *env_var[4];
+  char *env_var[5];
   job_data *env_hash = NULL;
   memmgr *mm;
   tc_num = 1;
@@ -157,7 +160,7 @@ void rundebug()
 /*   strcpy(env_var[2], "FOUR_VAR="); */
 /*   strcpy(env_var[3], "_=CMD"); */
 /*   set_env_opts(&env_hash, env_var); */
-  char *env_var[4];
+  char *env_var[5];
   job_data *env_hash = NULL;
   memmgr *mm;
   tc_num = 1;

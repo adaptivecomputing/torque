@@ -4055,8 +4055,8 @@ void main_func(
 
   {
 
-  int               errflg;                         /* option error */
-  char              script[MAXPATHLEN + 1] = ""; /* name of script file */
+  int               errflg;                       /* option error */
+  char              script[MAXPATHLEN + 1] = "";  /* name of script file */
   char              script_tmp[MAXPATHLEN + 1] = "";    /* name of script file copy */
   int               script_index;
   char             *bnp;

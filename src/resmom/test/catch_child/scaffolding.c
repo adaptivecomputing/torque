@@ -1327,3 +1327,9 @@ int insert_thing(resizable_array *ra, void *thing)
   {
   return(0);
   }
+
+int release_job_reservation(job *pjob)
+  {
+  return (0);
+  }
+
