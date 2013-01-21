@@ -17,6 +17,9 @@ enum csa_chk_cmd
   };
 #endif /* ENABLE_CSA */
 
+#define EN_THRESHOLD 100
+#define B_THRESHOLD 2048
+#define EXTRA_VARIABLE_SPACE 5120
 
 /* static void no_hang(int sig); */
 
@@ -87,7 +90,11 @@ int open_std_file(job *pjob, enum job_file which, int mode, gid_t exgid);
 
 /* static int find_env_slot(struct var_table *ptbl, char *pstr); */
 
-void bld_env_variables(struct var_table *vtable, char *name, char *value);
+int bld_env_variables(struct var_table *vtable, char *name, char *value);
+
+int expand_vtable(struct var_table *vtable);
+
+int copy_data(struct var_table *tmp_vtable, struct var_table *vtable, int expand_bsize, int expand_ensize);
 
 #ifndef __TOLDGROUP
 int init_groups(char *pwname, int pwgrp, int groupsize, int *groups);

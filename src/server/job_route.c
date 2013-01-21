@@ -119,7 +119,7 @@
 #define ROUTE_RETRY_TIME 10
 
 /* External functions called */
-int svr_movejob(job *, char *, int *, struct batch_request *, int);
+int svr_movejob(job *, char *, int *, struct batch_request *);
 long count_proc(char *spec);
 
 /* Local Functions */
@@ -133,8 +133,6 @@ extern char *msg_err_malloc;
 extern char *msg_err_noqueue;
 extern int LOGLEVEL;
 extern pthread_mutex_t *reroute_job_mutex;
-
-int route_retry_interval = 5; /* time in seconds to check routing queues */
 
 /*
  * Add an entry to the list of bad destinations for a job.
@@ -167,7 +165,6 @@ void add_dest(
 
   return;
   }  /* END add_dest() */
-
 
 
 
@@ -278,7 +275,7 @@ int default_router(
     if (is_bad_dest(jobp, destination))
       continue;
 
-    switch (svr_movejob(jobp, destination, &local_errno, NULL, TRUE))
+    switch (svr_movejob(jobp, destination, &local_errno, NULL))
       {
       case ROUTE_PERM_FAILURE: /* permanent failure */
 
@@ -491,6 +488,7 @@ int reroute_job(
       job_abt(&pjob, msg_routexceed);
     else if (rc == PBSE_QUENOEN)
       job_abt(&pjob, msg_err_noqueue);
+
     }
 
   return(rc);      
@@ -532,50 +530,47 @@ void *queue_route(
     {
     sprintf(log_buf, "NULL queue name");
     log_err(-1, __func__, log_buf);
-    return(NULL);
+    pthread_exit(0);
     }
 
-  while (1)
+  if (LOGLEVEL>=7)
     {
-    if (LOGLEVEL >= 7)
-      {
-      snprintf(log_buf, sizeof(log_buf), "queue name: %s", queue_name);
-      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_QUEUE, __func__, log_buf);
-      }
-    
-    pque = find_queuebyname(queue_name);
-    if (pque == NULL)
-      {
-      sprintf(log_buf, "Could not find queue %s", queue_name);
-      log_err(-1, __func__, log_buf);
-      free(queue_name);
-      pthread_mutex_unlock(reroute_job_mutex);
-      return(NULL);
-      }
-
-    pthread_mutex_lock(reroute_job_mutex);
-    while ((pjob = next_job(pque->qu_jobs,&iter)) != NULL)
-      {
-      /* the second condition says we only want to try if routing
-       * has been tried once - this is to let req_commit have the 
-       * first crack at routing always */
-      unlock_queue(pque, __func__, (char *)NULL, 0);
-      if ((pjob->ji_qs.ji_un.ji_routet.ji_rteretry <= time_now - ROUTE_RETRY_TIME) &&
-          (pjob->ji_qs.ji_un.ji_routet.ji_rteretry != 0))
-        {
-        reroute_job(pjob, pque);
-        unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
-        }
-      else
-        unlock_ji_mutex(pjob, __func__, (char *)"1", LOGLEVEL);
-      }
-
-    unlock_queue(pque, __func__, (char *)NULL, 0);
-    pthread_mutex_unlock(reroute_job_mutex);
-    sleep(route_retry_interval);
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "queue name: %s ", queue_name);
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_QUEUE, __func__, log_buf);
     }
+   
+  pthread_mutex_lock(reroute_job_mutex);
+
+  pque = find_queuebyname(queue_name);
+  if (pque == NULL)
+    {
+    sprintf(log_buf, "Could not find queue %s", queue_name);
+    log_err(-1, __func__, log_buf);
+    free(queue_name);
+    pthread_mutex_unlock(reroute_job_mutex);
+    pthread_exit(0);
+    }
+
+  while ((pjob = next_job(pque->qu_jobs,&iter)) != NULL)
+    {
+    /* the second condition says we only want to try if routing
+     * has been tried once - this is to let req_commit have the 
+     * first crack at routing always */
+    unlock_queue(pque, __func__, NULL, LOGLEVEL);
+    if ((pjob->ji_qs.ji_un.ji_routet.ji_rteretry <= time_now) &&
+        (pjob->ji_commit_done == TRUE))
+      {
+      reroute_job(pjob, pque);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+      }
+    else
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+    }
+
   free(queue_name);
-  return(NULL);
+  unlock_queue(pque, __func__, NULL, LOGLEVEL);
+  pthread_mutex_unlock(reroute_job_mutex);
+  pthread_exit(0);
   } /* END queue_route() */
 
 

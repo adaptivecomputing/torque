@@ -97,7 +97,7 @@
 
 #define MAX_UPDATES_BEFORE_SENDING  20
 #define PMOMTCPTIMEOUT 60  /* duration in seconds mom TCP requests will block */
-
+#define TCP_READ_PROTO_TIMEOUT  2
 /* Global Data Items */
 
 char  *program_name;
@@ -2988,7 +2988,8 @@ static u_long setvarattr(
 
   /* step forward to end of TTL */
 
-  while (!isspace(*ptr))
+  while ((!isspace(*ptr)) &&
+         (*ptr != '\0'))
     ptr++;
 
   if (*ptr == '\0')
@@ -3627,6 +3628,8 @@ int read_config(
         continue;
         }
 
+      memset(name, 0, sizeof(name));
+
       if ((ptr = strchr(line, '#')) != NULL)
         {
         /* allow inline comments */
@@ -3644,8 +3647,7 @@ int read_config(
 
       if (LOGLEVEL >= 6)
         {
-        sprintf(log_buffer, "processing config line '%.64s'",
-                str);
+        sprintf(log_buffer, "processing config line '%.64s'", str);
 
         log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
         }
@@ -4486,6 +4488,7 @@ void cleanup_aux()
           }
         }
       }
+    closedir(auxdir);
     }
 
   } /* END cleanup_aux() */
@@ -5573,6 +5576,8 @@ int tcp_read_proto_version(
 
   tmpT = pbs_tcp_timeout;
 
+  pbs_tcp_timeout = TCP_READ_PROTO_TIMEOUT;
+
   *proto = disrsi(chan, &rc);
 
   if (tmpT > 0)
@@ -6450,6 +6455,9 @@ void MOMCheckRestart(void)
   {
   time_t newmtime;
 
+  /* make sure we're not making a mess in the aux dir */
+  cleanup_aux();
+
   if ((MOMConfigRestart <= 0) || (MOMExeTime <= 0))
     {
     return;
@@ -6477,9 +6485,6 @@ void MOMCheckRestart(void)
 
     DBPRT(("%s\n", log_buffer));
     }
-
-  /* make sure we're not making a mess in the aux dir */
-  cleanup_aux();
   }  /* END MOMCheckRestart() */
 
 
@@ -6750,7 +6755,7 @@ void parse_command_line(
         else if (!strcmp(optarg, "version"))
           {
           printf("Version: %s\nRevision: %s\n",
-            PACKAGE_VERSION, SVN_VERSION);
+            PACKAGE_VERSION, GIT_HASH);
 
           exit(0);
           }

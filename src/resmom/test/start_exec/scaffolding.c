@@ -275,6 +275,10 @@ int mom_checkpoint_execute_job(job *pjob, char *shell, char *arg[], struct var_t
   exit(1);
   }
 
+void log_ext(int errnum, const char *routine, char *text, int severity)
+  {
+  }
+
 void log_close(int msg)
   {
   fprintf(stderr, "The call to log_close needs to be mocked!!\n");
@@ -469,4 +473,9 @@ int create_alps_reservation(
 
   {
   return(0);
+  }
+
+int destroy_alps_reservation(char *reservation_id, char *apbasil_path, char *apbasil_protocol)
+  {
+  return (0);
   }

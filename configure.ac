@@ -69,13 +69,16 @@ dnl  be created in the include directory.
 AM_CONFIG_HEADER([src/include/pbs_config.h])
 
 dnl
-dnl Find our svn revision number for program outputs
+dnl Find our git revision hash for program outputs
 dnl
-AC_PATH_PROG(svnversioncommand, svnversion)
-if test "X$svnversioncommand" != "X" && test `$svnversioncommand -n '.'` != "exported"; then
-  AC_DEFINE_UNQUOTED(SVN_VERSION, ["`svnversion -n`"], [repository svn version])
+githash="`git rev-parse HEAD`"
+success=$?
+if test "X$success" != "X0" ; then
+  AC_DEFINE_UNQUOTED(GIT_HASH, ["$githash"], [repository svn version])
 else
-  AC_DEFINE_UNQUOTED(SVN_VERSION, ["unknown"], [repository svn version])
+  dnl current hash is a file checked in to the git repo in the base directory
+  dnl containing the most recent hash
+  AC_DEFINE_UNQUOTED(GIT_HASH, ["`cat current_hash`"], [repository svn version])
 fi
 
 
@@ -715,10 +718,10 @@ AC_CHECK_LIB(crypto, BN_init,
 dnl
 dnl we need libxml2
 dnl 
-xmlLib=`xml2-config --libs`
+xmlLib=`xml2-config --libs | sed 's/-L@<:@^@<:@:space:@:>@@:>@* //g;s/-l//'`
 
 dnl skip the first two chars because its -l<libname>
-AC_CHECK_LIB(${xmlLib:2}, xmlGetProp,
+AC_CHECK_LIB(${xmlLib}, xmlGetProp,
   [],
   [AC_MSG_ERROR([TORQUE needs libxml2-devel in order to build]) ])
 

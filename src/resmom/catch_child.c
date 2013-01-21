@@ -77,6 +77,7 @@ extern char  *PMOMCommand[];
 
 /* external prototypes */
 
+int release_job_reservation(job *pjob);
 u_long resc_used(job *, char *, u_long(*f) (resource *));
 void *preobit_reply (void *);
 void *obit_reply (void *);
@@ -1318,6 +1319,13 @@ void *preobit_reply(
 
   /* child - just run epilogues */
   run_epilogues(pjob, TRUE);
+
+  /* for cray, release the reservation now so that the job isn't reported
+   * as finished until the reservation is kaput. This is important for the
+   * cray because nodes are job exclusive so a lingering reservation causes
+   * a job failure. */
+  if (is_login_node == TRUE)
+    release_job_reservation(pjob);
 
   exit(0);
   }  /* END preobit_reply() */

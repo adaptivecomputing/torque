@@ -144,7 +144,6 @@
 #include "resizable_array.h"
 #include "dynamic_string.h"
 #include "svr_func.h" /* get_svr_attr_* */
-#include "track_alps_reservations.h"
 #include "issue_request.h" /* release_req */
 #include "ji_mutex.h"
 #include "user_info.h"
@@ -1673,13 +1672,15 @@ int svr_job_purge(
   extern char  *msg_err_purgejob;
   time_t        time_now = time(NULL);
   long          record_job_info = FALSE;
-  long          cray_enabled = FALSE;
   char          job_id[PBS_MAXSVRJOBID+1];
   char          job_fileprefix[PBS_JOBBASE+1];
   int           job_substate;
   int           job_is_array_template;
   unsigned int  job_has_checkpoint_file;
   int           job_has_arraystruct;
+  int           do_delete_array = FALSE;
+  job_array     *pa = NULL;
+  char          array_id[PBS_MAXSVRJOBID+1];
  
   strcpy(job_id, pjob->ji_qs.ji_jobid);
   strcpy(job_fileprefix, pjob->ji_qs.ji_fileprefix);
@@ -1689,7 +1690,7 @@ int svr_job_purge(
   job_has_checkpoint_file = pjob->ji_wattr[JOB_ATR_checkpoint_name].at_flags;
 
   if (LOGLEVEL >= 10)
-    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
 
   /* check to see if we are keeping a log of all jobs completed */
   get_svr_attr_l(SRV_ATR_RecordJobInfo, &record_job_info);
@@ -1705,11 +1706,6 @@ int svr_job_purge(
       check_job_log_started = 1;
       }
     }
-  
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
-  if ((cray_enabled == TRUE) &&
-      (pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str != NULL))
-    remove_alps_reservation(pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str);
 
   if ((job_has_arraystruct == FALSE) || (job_is_array_template == TRUE))
     if (remove_job(&array_summary,pjob) == PBSE_JOB_RECYCLED)
@@ -1724,7 +1720,7 @@ int svr_job_purge(
     {
     /* pa->ai_mutex will come out locked after 
        the call to get_jobs_array */
-    job_array *pa = get_jobs_array(&pjob);
+    pa = get_jobs_array(&pjob);
 
     if (pjob != NULL)
       {
@@ -1743,7 +1739,9 @@ int svr_job_purge(
         if (pa->ai_qs.num_purged == pa->ai_qs.num_jobs)
           {
           /* array_delete will unlock pa->ai_mutex */
-          array_delete(pa);
+          strcpy(array_id, pjob->ji_arraystructid);
+          do_delete_array = TRUE;
+          unlock_ai_mutex(pa, __func__, "1a", LOGLEVEL);
           }
         else
           {
@@ -1765,12 +1763,10 @@ int svr_job_purge(
     {
     int need_deque = !pjob->ji_cold_restart;
 
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-
     /* jobs that are being deleted after a cold restart
      * haven't been queued */
     if (need_deque == TRUE)
-      rc = svr_dequejob(job_id, FALSE);
+      rc = svr_dequejob(pjob, FALSE);
 
     if (rc != PBSE_JOBNOTFOUND)
       {
@@ -1888,6 +1884,13 @@ int svr_job_purge(
     sprintf(log_buf, "removed job file");
 
     log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, job_id, log_buf);
+    }
+
+  if (do_delete_array == TRUE)
+    {
+    pa = get_array(array_id);
+    if (pa != NULL)
+      array_delete(pa);
     }
 
   return(PBSE_NONE);

@@ -120,6 +120,7 @@
 #include "ji_mutex.h"
 #include "../lib/Libutils/u_lock_ctl.h"
 #include "exiting_jobs.h"
+#include "track_alps_reservations.h"
 
 #define RESC_USED_BUF 2048
 #define JOBMUSTREPORTDEFAULTKEEP 30
@@ -715,10 +716,21 @@ void rel_resc(
   job *pjob)  /* I (modified) */
 
   {
+  long cray_enabled = FALSE;
+
+  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
+
+  if ((cray_enabled == TRUE) &&
+      (pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str != NULL))
+    {
+    remove_alps_reservation(pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str);
+    free(pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str);
+    pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str = NULL;
+    }
+
   free_nodes(pjob);
 
   /* removed the resources used by the job from the used svr/que attr  */
-
   set_resc_assigned(pjob, DECR);
 
   /* mark that scheduler should be called */

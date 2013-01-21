@@ -108,6 +108,7 @@ START_TEST(retrieval_test)
   rc = add_to_login_holder(&n2);
   rc = add_to_login_holder(&n3);
   rc = add_to_login_holder(&n4);
+  fail_unless(rc == 0);
 
   rtd = get_next_login_node(NULL);
   increment_counts(&n1, &n2, &n3, &n4, rtd, &n1_rtd, &n2_rtd, &n3_rtd, &n4_rtd);
@@ -197,6 +198,7 @@ START_TEST(prop_test)
   rc = add_to_login_holder(&n2);
   rc = add_to_login_holder(&n3);
   rc = add_to_login_holder(&n4);
+  fail_unless(rc == 0);
 
   rtd = get_next_login_node(props);
   increment_counts(&n1, &n2, &n3, &n4, rtd, &n1_rtd, &n2_rtd, &n3_rtd, &n4_rtd);

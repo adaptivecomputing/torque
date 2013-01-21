@@ -19,7 +19,7 @@ START_TEST(test_pe_negsock)
   errno = EINTR;
   LOGLEVEL = 2;
   res = post_epilogue(pjob, ev);
-  /*fail_unless(res == 1, "This didn't return correctly");*/
+  fail_unless(res == 1, "This didn't return correctly");
   free(pjob);
   }
 END_TEST
@@ -34,7 +34,7 @@ START_TEST(test_pe_negpostsock)
   tc = 2;
   errno = ETIMEDOUT;
   res = post_epilogue(pjob, ev);
-  /*fail_unless(res == 1, "This didn't return correctly");*/
+  fail_unless(res == 1, "This didn't return correctly");
   free(pjob);
   }
 END_TEST
@@ -49,6 +49,7 @@ START_TEST(test_pe_prnull)
   tc = 3;
   errno = EINPROGRESS;
   res = post_epilogue(pjob, ev);
+  fail_unless(res == 1, "This didn't return correctly");
   free(pjob);
   }
 END_TEST
@@ -126,6 +127,7 @@ Suite *post_epilogue_suite(void)
 
 void rundebug()
   {
+  /*
   job *pjob = (job *)calloc(1, sizeof(job));
   int ev = 0;
   int res = 0;
@@ -135,6 +137,8 @@ void rundebug()
   errno = EINTR;
   LOGLEVEL = 7;
   res = post_epilogue(pjob, ev);
+  fail_unless(res == 1, "This didn't return correctly");
+  */
   }
 
 int main(void)

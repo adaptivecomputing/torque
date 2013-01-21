@@ -1914,94 +1914,104 @@ char *get_correct_spec_string(
           }
 
         mode_string = gpu_req + strlen(":gpus=");
-        while (isdigit(*mode_string))
-          mode_string++;
-
-        if (*mode_string == ':')
+        if (mode_string)
           {
-          if (LOGLEVEL >= 7)
-            {
-            sprintf(log_buffer, "%s: job has %d gpu requests in node spec '%s'",
-              __func__,
-              num_gpu_reqs,
-              given);
+          while (isdigit(*mode_string))
+            mode_string++;
 
-            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
-            }
-
-          if ((outer_plus = strchr(mode_string, '+')) != NULL)
-            *outer_plus = '\0';
-
-          /* 
-           * The neednodes original value may have non gpu things in it, so we
-           * can not rely on the requested gpu mode being the first item in the
-           * the string after the gpus=x:.
-           */
-
-          if (strstr(mode_string, "exclusive_thread"))
+          if (*mode_string == ':')
             {
-            strcpy(mode, ":exclusive_thread");
-            }
-          else if (strstr(mode_string, "exclusive_process"))
-            {
-            strcpy(mode, ":exclusive_process");
-            }
-          else if (strstr(mode_string, "exclusive"))
-            {
-            strcpy(mode, ":exclusive");
-            }
-          else if (strstr(mode_string, "default"))
-            {
-            strcpy(mode, ":default");
-            }
-          else if (strstr(mode_string, "shared"))
-            {
-            strcpy(mode, ":shared");
-            }
-          else
-            {
-            strcpy(mode, "");
-            }
-
-          if (outer_plus != NULL)
-            *outer_plus = '+';
-
-          /* now using the actual length of requested gpu mode */
-          len = strlen(given) + 1 + (num_gpu_reqs * strlen(mode));
-          if ((correct_spec = calloc(1, len)) != NULL)
-            {
-            one_req = given;
-            
-            while (one_req != NULL)
+            if (LOGLEVEL >= 7)
               {
-              if ((plus = strchr(one_req, '+')) != NULL)
+              sprintf(log_buffer, "%s: job has %d gpu requests in node spec '%s'",
+                __func__,
+                num_gpu_reqs,
+                given);
+
+              log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+              }
+
+            if ((outer_plus = strchr(mode_string, '+')) != NULL)
+              *outer_plus = '\0';
+
+            /* 
+             * The neednodes original value may have non gpu things in it, so we
+             * can not rely on the requested gpu mode being the first item in the
+             * the string after the gpus=x:.
+             */
+
+            if (strstr(mode_string, "exclusive_thread"))
+              {
+              strcpy(mode, ":exclusive_thread");
+              }
+            else if (strstr(mode_string, "exclusive_process"))
+              {
+              strcpy(mode, ":exclusive_process");
+              }
+            else if (strstr(mode_string, "exclusive"))
+              {
+              strcpy(mode, ":exclusive");
+              }
+            else if (strstr(mode_string, "default"))
+              {
+              strcpy(mode, ":default");
+              }
+            else if (strstr(mode_string, "shared"))
+              {
+              strcpy(mode, ":shared");
+              }
+            else
+              {
+              strcpy(mode, "");
+              }
+
+            if (outer_plus != NULL)
+              *outer_plus = '+';
+
+            /* now using the actual length of requested gpu mode */
+            len = strlen(given) + 1 + (num_gpu_reqs * strlen(mode));
+            if ((correct_spec = calloc(1, len)) != NULL)
+              {
+              one_req = given;
+            
+              while (one_req != NULL)
                 {
-                *plus = '\0';
-                }
+                if ((plus = strchr(one_req, '+')) != NULL)
+                  {
+                  *plus = '\0';
+                  }
               
-              strcat(correct_spec, one_req);
-              if (strstr(one_req, ":gpus") != NULL)
-                strcat(correct_spec, mode);
+                strcat(correct_spec, one_req);
+                if (strstr(one_req, ":gpus") != NULL)
+                  strcat(correct_spec, mode);
               
-              if (plus != NULL)
-                {
-                strcat(correct_spec, "+");
-                one_req = plus + 1;
+                if (plus != NULL)
+                  {
+                  strcat(correct_spec, "+");
+                  one_req = plus + 1;
+                  }
+                else
+                  one_req = NULL;
                 }
-              else
-                one_req = NULL;
+              }
+            if ((LOGLEVEL >= 7) && (correct_spec != NULL) && (correct_spec[0] != '\0'))
+              {
+              sprintf(log_buffer, "%s: job gets adjusted gpu node spec of '%s'",
+                __func__,
+                correct_spec);
+
+              log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
               }
             }
-          if ((LOGLEVEL >= 7) && (correct_spec != NULL) && (correct_spec[0] != '\0'))
-            {
-            sprintf(log_buffer, "%s: job gets adjusted gpu node spec of '%s'",
-              __func__,
-              correct_spec);
-
-            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
-            }
           }
-        }
+        else
+          {
+          sprintf(log_buffer, "job request with gnup option is missing the actual number of gnup '%s'",
+            __func__,
+            given);
+            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+          }
+        } 
       }
     }
 

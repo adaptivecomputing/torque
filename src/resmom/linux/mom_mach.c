@@ -1741,6 +1741,7 @@ int mom_do_poll(
     if (strcmp(pname, "walltime") == 0 ||
         strcmp(pname, "cput") == 0 ||
         strcmp(pname, "pcput") == 0 ||
+        strcmp(pname, "mem") == 0 ||
         strcmp(pname, "pvmem") == 0 ||
         strcmp(pname, "vmem") == 0)
       {
@@ -2690,6 +2691,9 @@ int mom_close_poll(void)
   if (proc_array != NULL)
     {
     free(proc_array);
+    proc_array = NULL;
+    nproc = 0;
+    max_proc = TBL_INC;
     }
 
   return(PBSE_NONE);

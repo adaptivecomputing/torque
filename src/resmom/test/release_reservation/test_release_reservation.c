@@ -32,6 +32,7 @@ Suite *node_func_suite(void)
   Suite *s = suite_create("alps helper suite methods");
   TCase *tc_core = tcase_create("destroy_alps_reservation_test");
   tcase_add_test(tc_core, destroy_alps_reservation_test);
+  tcase_set_timeout(tc_core, 30);
   suite_add_tcase(s, tc_core);
   
   tc_core = tcase_create("test_two");
