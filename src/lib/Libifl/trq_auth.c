@@ -229,24 +229,24 @@ void *process_svr_conn(
   void *sock)
 
   {
-  char *className = (char *)"trqauthd";
-  int   rc = PBSE_NONE;
-  char *server_name = NULL;
-  int   server_port = 0;
-  int   auth_type = 0;
-  char *user_name = NULL;
-  int   user_sock = 0;
-  char *error_msg = NULL;
-  char *send_message = NULL;
-  int   send_len = 0;
-  char *trq_server_addr = NULL;
-  int   trq_server_addr_len = 0;
-  int   disconnect_svr = TRUE;
-  int   svr_sock = 0;
-  int   msg_len = 0;
-  int   debug_mark = 0;
-  int   local_socket = *(int *)sock;
-  char  msg_buf[1024];
+  const char *className = "trqauthd";
+  int         rc = PBSE_NONE;
+  char       *server_name = NULL;
+  int         server_port = 0;
+  int         auth_type = 0;
+  char       *user_name = NULL;
+  int         user_sock = 0;
+  char       *error_msg = NULL;
+  char       *send_message = NULL;
+  int         send_len = 0;
+  char       *trq_server_addr = NULL;
+  int         trq_server_addr_len = 0;
+  int         disconnect_svr = TRUE;
+  int         svr_sock = 0;
+  int         msg_len = 0;
+  int         debug_mark = 0;
+  int         local_socket = *(int *)sock;
+  char        msg_buf[1024];
 
   /* incoming message format is:
    * trq_system_len|trq_system|trq_port|Validation_type|user_len|user|psock|

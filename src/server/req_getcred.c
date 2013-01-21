@@ -419,14 +419,16 @@ int unmunge_request(
  */
 
 int req_authenuser(
-    struct batch_request *preq)
+   
+  batch_request *preq)
+
   {
-  int                   s;
-  int                   debug = 0;
-  int                   delay_cntr = 0;
-  char                  log_buf[LOCAL_LOG_BUF_SIZE];
-  unsigned short        conn_port;
-  unsigned short        conn_authen;
+  int             s;
+  int             debug = 0;
+  int             delay_cntr = 0;
+  char            log_buf[LOCAL_LOG_BUF_SIZE];
+  unsigned short  conn_port;
+  unsigned short  conn_authen;
 
   /*
    * find the socket whose client side is bound to the port named
@@ -437,9 +439,10 @@ int req_authenuser(
     {
     debug = 1;
     }
+
   for (delay_cntr = 0; delay_cntr < 5;delay_cntr++)
     {
-    for (s = 0;s < PBS_NET_MAX_CONNECTIONS;++s)
+    for (s = 0; s < PBS_NET_MAX_CONNECTIONS; s++)
       {
       pthread_mutex_lock(svr_conn[s].cn_mutex);
       conn_port = svr_conn[s].cn_port;
@@ -470,11 +473,15 @@ int req_authenuser(
       reply_ack(preq);
 
       /* SUCCESS */
-      if (debug) printf("(FOUND_PROCESSED) unlock %d (port %d)\n", s,conn_port);
+      if (debug)
+        printf("(FOUND_PROCESSED) unlock %d (port %d)\n", s,conn_port);
 
-      return PBSE_NONE;
+      return(PBSE_NONE);
       }  /* END for (s) */
-    if (debug) fprintf(stderr, "sock not found, sleeping (%d)\n", delay_cntr);
+
+    if (debug) 
+      fprintf(stderr, "sock not found, sleeping (%d)\n", delay_cntr);
+
     usleep(10);
     }
 
@@ -486,7 +493,7 @@ int req_authenuser(
 
   /* FAILURE */
 
-  return PBSE_BADCRED;
+  return(PBSE_BADCRED);
   }  /* END req_authenuser() */
 
 
