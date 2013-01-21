@@ -102,6 +102,7 @@
 #include "../lib/Liblog/log_event.h"
 #include "svrfunc.h"
 #include "ji_mutex.h"
+#include "mutex_mgr.hpp"
 
 /* Private Function local to this file */
 
@@ -128,14 +129,13 @@ int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq,
 
 int req_signaljob(
 
-    struct batch_request *vp) /* I */
+  batch_request *preq) /* I */
 
   {
-  struct batch_request *preq = (struct batch_request *)vp;
-  job                  *pjob;
-  int                   rc;
-  char                  log_buf[LOCAL_LOG_BUF_SIZE];
-  struct batch_request *dup_req = NULL;
+  job           *pjob;
+  int            rc;
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
+  batch_request *dup_req = NULL;
 
   /* preq free'd in error cases */
   if ((pjob = chk_job_request(preq->rq_ind.rq_signal.rq_jid, preq)) == 0)
@@ -143,13 +143,14 @@ int req_signaljob(
     return(PBSE_NONE);
     }
 
+  mutex_mgr job_mutex(pjob->ji_mutex, true);
+
   /* the job must be running */
 
   if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
     {
     req_reject(PBSE_BADSTATE, 0, preq, NULL, NULL);
 
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     return(PBSE_NONE);
     }
 
@@ -163,7 +164,6 @@ int req_signaljob(
       /* for suspend/resume, must be mgr/op */
       req_reject(PBSE_PERM, 0, preq, NULL, NULL);
       
-      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
       return(PBSE_NONE);
       }
   
@@ -184,7 +184,6 @@ int req_signaljob(
     {
     req_reject(PBSE_JOBTYPE, 0, preq, NULL, NULL);
 
-    unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
     return(PBSE_NONE);
     }
 
@@ -209,7 +208,6 @@ int req_signaljob(
   if ((rc = copy_batchrequest(&dup_req, preq, 0, -1)) != 0)
     {
     req_reject(rc, 0, preq, NULL, "can not allocate memory");
-    unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
     }
   /* The dup_req is freed in relay_to_mom (failure)
    * or in issue_Drequest (success) */
@@ -218,7 +216,9 @@ int req_signaljob(
     rc = relay_to_mom(&pjob, dup_req, NULL);
 
     if (pjob != NULL)
-      unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
+      job_mutex.unlock();
+    else
+      job_mutex.set_lock_on_exit(false);
 
     if (rc != PBSE_NONE)
       {
@@ -343,6 +343,8 @@ void post_signal_req(
 
     if ((pjob = svr_find_job(jobid, FALSE)) != NULL)
       {
+      mutex_mgr job_mutex(pjob->ji_mutex, true);
+
       if (strcmp(preq->rq_ind.rq_signal.rq_signame, SIG_SUSPEND) == 0)
         {
         if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend) == 0)
@@ -373,8 +375,6 @@ void post_signal_req(
           job_save(pjob, SAVEJOB_QUICK, 0);
           }
         }
-    
-      unlock_ji_mutex(pjob, __func__, "5", LOGLEVEL);
       }
     else
       {

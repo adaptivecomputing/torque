@@ -43,6 +43,11 @@ pthread_mutex_t *job_log_mutex;
 
 user_info_holder users;
 
+void log_err(int errnum, const char *routine, const char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_ext(int errnum, const char *routine, const char *text, int severity) {}
+
 int array_save(job_array *pa)
   {
   fprintf(stderr, "The call to array_save needs to be mocked!!\n");
@@ -54,7 +59,7 @@ int insert_thing(resizable_array *ra, void *thing)
   return 0;
   }
 
-void account_record(int acctype, job *pjob, char *text)
+void account_record(int acctype, job *pjob, const char *text)
   {
   fprintf(stderr, "The call to account_record needs to be mocked!!\n");
   exit(1);
@@ -108,7 +113,7 @@ pbs_net_t get_hostaddr(int *local_errno, char *hostname)
   return(loopback);
   }
 
-int log_job_record(char *buf)
+int log_job_record(const char *buf)
   {
   int rc = 0;
   if ((func_num == RECORD_JOBINFO_SUITE) && (tc == 2))
@@ -147,7 +152,7 @@ void free_br(struct batch_request *preq)
   exit(1);
   }
 
-struct work_task *set_task(enum work_type type, long event_id, void (*func)(), void *parm, int get_lock)
+struct work_task *set_task(enum work_type type, long event_id, void (*func)(work_task *), void *parm, int get_lock)
   {
   fprintf(stderr, "The call to work_task needs to be mocked!!\n");
   exit(1);
@@ -211,7 +216,7 @@ void *get_next(list_link pl, char *file, int line)
   return(NULL);
   }
 
-int issue_signal(job *pjob, char *signame, void (*func)(struct work_task *), void *extra)
+int issue_signal(job **pjob, const char *signame, void (*func)(batch_request *), void *extra)
   {
   fprintf(stderr, "The call to issue_signal needs to be mocked!!\n");
   exit(1);
@@ -219,16 +224,16 @@ int issue_signal(job *pjob, char *signame, void (*func)(struct work_task *), voi
 
 resizable_array *initialize_resizable_array(int size)
   {
-  size = 10;
-  resizable_array *ra = calloc(1, sizeof(resizable_array));
+  resizable_array *ra = (resizable_array *)calloc(1, sizeof(resizable_array));
   size_t           amount = sizeof(slot) * size;
+  size = 10;
 
   ra->max       = size;
   ra->num       = 0;
   ra->next_slot = 1;
   ra->last      = 0;
 
-  ra->slots = calloc(1, amount);
+  ra->slots = (slot *)calloc(1, amount);
 
   return(ra);
   }
@@ -572,7 +577,7 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   return(0);
   }
 
-int lock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }
@@ -674,7 +679,7 @@ int lock_ai_mutex(job_array *pa, const char *func_id, char *msg, int logging)
   return(0);
   }
 
-int unlock_ai_mutex(job_array *pa, const char *func_id, char *msg, int logging)
+int unlock_ai_mutex(job_array *pa, const char *func_id, const char *msg, int logging)
   {
   return(0);
   }
@@ -707,7 +712,7 @@ ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
 struct batch_request *alloc_br(int type)
   {
   struct batch_request *request = NULL;
-  request = calloc(1, sizeof(struct batch_request));
+  request = (batch_request *)calloc(1, sizeof(struct batch_request));
   request->rq_type = type;
   return request;
   }
@@ -718,22 +723,6 @@ void free_null(struct pbs_attribute *attr) {}
 void free_depend(struct pbs_attribute *attr) {}
 void free_arst( struct pbs_attribute *attr) {}
 void free_unkn(pbs_attribute *pattr) {}
-
-int pthread_mutex_lock(pthread_mutex_t *mock_mutex)
-{
-  return 0;
-}
-
-int pthread_mutex_unlock(pthread_mutex_t *mock_mutex)
-{
-  return 0;
-}
-
-int pthread_mutex_trylock(pthread_mutex_t *mock_mutex)
-{
-  return 0;
-}
-
 
 /* copied from job_container.c */
 

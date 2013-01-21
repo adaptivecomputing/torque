@@ -2,35 +2,37 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
 
 #include "resizable_array.h"
 #include "dynamic_string.h"
 #include "alps_constants.h"
 #include "alps_functions.h"
 
-char *hostname = "napali";
-char *eh1 = "napali/0+napali/1+l11/0+l11/1";
-char *eh2 = "napali/0+napali/1+l11/0+l11/1+l11/2";
-char *eh3 = "napali/0+napali/1+l11/0+l11/1+lihue/0+lihue/1+lihue/2+waimea/0+waimea/1+waimea/2";
+char *hostname = (char *)"napali";
+char *eh1 = (char *)"napali/0+napali/1+l11/0+l11/1";
+char *eh2 = (char *)"napali/0+napali/1+l11/0+l11/1+l11/2";
+char *eh3 = (char *)"napali/0+napali/1+l11/0+l11/1+lihue/0+lihue/1+lihue/2+waimea/0+waimea/1+waimea/2";
 char  buf[4096];
-char *uname = "dbeer";
-char *jobids[] = {"0.napali", "1.napali"} ;
-char *apbasil_path = "/usr/local/bin/apbasil";
-char *apbasil_protocol = "1.0";
-char *blank_cmd = "../../../test/test_scripts/blank_script.sh";
+char *uname = (char *)"dbeer";
+char *jobids[] = {(char *)"0.napali", (char *)"1.napali"} ;
+char *apbasil_path = (char *)"/usr/local/bin/apbasil";
+char *apbasil_protocol = (char *)"1.0";
+char *blank_cmd = (char *)"../../../test/test_scripts/blank_script.sh";
 
 char *alps_rsv_outputs[] = {
-  "<?xml version='1.0'?><BasilResponse protocol='1.0'> <ResponseData status='SUCCESS' method='RESERVE'><Reserved reservation_id='777' admin_cookie='0' alloc_cookie='0'/></ResponseData></BasilResponse>",
-  "<?xml version='1.0'?><BasilResponse protocol='1.0'> <ResponseData status='SUCCESS' method='RESERVE'><Reserved reservation_id='123' admin_cookie='0' alloc_cookie='0'/></ResponseData></BasilResponse>",
-  "<?xml version='1.0'?><BasilResponse protocol='1.0'> <ResponseData status='SUCCESS' method='RESERVE'><Reserved reservation_id='456' admin_cookie='0' alloc_cookie='0'/></ResponseData></BasilResponse>",
-  "<?xml version='1.0'?><BasilResponse protocol='1.0'> <ResponseData status='FAILURE' method='RESERVE'/></BasilResponse>",
-  "tom"};
+    (char *)"<?xml version='1.0'?><BasilResponse protocol='1.0'> <ResponseData status='SUCCESS' method='RESERVE'><Reserved reservation_id='777' admin_cookie='0' alloc_cookie='0'/></ResponseData></BasilResponse>",
+    (char *)"<?xml version='1.0'?><BasilResponse protocol='1.0'> <ResponseData status='SUCCESS' method='RESERVE'><Reserved reservation_id='123' admin_cookie='0' alloc_cookie='0'/></ResponseData></BasilResponse>",
+    (char *)"<?xml version='1.0'?><BasilResponse protocol='1.0'> <ResponseData status='SUCCESS' method='RESERVE'><Reserved reservation_id='456' admin_cookie='0' alloc_cookie='0'/></ResponseData></BasilResponse>",
+    (char *)"<?xml version='1.0'?><BasilResponse protocol='1.0'> <ResponseData status='FAILURE' method='RESERVE'/></BasilResponse>",
+    (char *)"tom"};
 
 resizable_array *parse_exec_hosts(char *exec_hosts);
-dynamic_string  *get_reservation_command(resizable_array *, char *, char *, char *, char *, char *);
+dynamic_string  *get_reservation_command(resizable_array *, char *, char *, char *, char *, char *, int);
 int              parse_reservation_output(char *, char **);
 int              execute_reservation(char *, char **);
-int              confirm_reservation(char *, char **, long long, char *, char *);
+int              confirm_reservation(char *, char *, long long, char *, char *);
 int              parse_confirmation_output(char *);
 
 START_TEST(host_req_tests)
@@ -139,14 +141,10 @@ START_TEST(get_reservation_command_test)
   char            *nppn;
   int              ppn;
 
-  printf("getting the command\n");
-  apbasil_command = get_reservation_command(hrl, uname, jobids[0], NULL, apbasil_protocol, NULL);
-  printf("checking for the username\n");
+  apbasil_command = get_reservation_command(hrl, uname, jobids[0], NULL, apbasil_protocol, NULL,0);
 
   snprintf(buf, sizeof(buf), "Username '%s' not found in command '%s'", uname, apbasil_command->str);
   fail_unless(strstr(apbasil_command->str, uname) != NULL, buf);
-
-  printf("got the command\n");
 
   reserve_param = strstr(apbasil_command->str, "ReserveParam ");
   fail_unless(reserve_param != NULL, "Couldn't find a ReserveParam element in the request");
@@ -159,7 +157,7 @@ START_TEST(get_reservation_command_test)
   free_dynamic_string(apbasil_command);
 
   hrl = parse_exec_hosts(eh3);
-  apbasil_command = get_reservation_command(hrl, uname, jobids[1], apbasil_path, apbasil_protocol, NULL);
+  apbasil_command = get_reservation_command(hrl, uname, jobids[1], apbasil_path, apbasil_protocol, NULL,1);
 
   reserve_param = strstr(apbasil_command->str, "ReserveParam ");
   reserve_param2 = strstr(reserve_param + 1, "ReserveParam ");
@@ -214,7 +212,7 @@ START_TEST(execute_reservation_test)
   char *rsv_id;
   int   rc;
   int   rid = 30;
-  char *cmd = "../../../test/test_scripts/execute_reservation.sh";
+  char *cmd = (char *)"../../../test/test_scripts/execute_reservation.sh";
   char  cmdbuf[1024];
 
   snprintf(cmdbuf, sizeof(cmdbuf), "%s %d", cmd, rid);
@@ -241,20 +239,24 @@ END_TEST
 
 START_TEST(confirm_reservation_test)
   {
-  char      *rsv_id = "20";
+  char      *rsv_id = (char *)"20";
   long long  pagg = 20;
   int        rc;
 
-  rc = confirm_reservation(jobids[0], &rsv_id, pagg, NULL, apbasil_protocol);
-  /*fail_unless(rc == 0, "Couldn't execute the reservation");*/
-  snprintf(buf, sizeof(buf), "Reservation id should be 20 but was %s", rsv_id);
-  fail_unless(!strcmp(rsv_id, "20"), buf);
-
-  rc = confirm_reservation(jobids[1], &rsv_id, pagg, blank_cmd, apbasil_protocol);
-  fail_unless(rc != 0, "Somehow parsed the blank command's output?");
-
-  rc = parse_confirmation_output("tom");
-  fail_unless(rc == ALPS_PARSING_ERROR, "We parsed non-xml?");
+  /* this test only works if you're root */
+  if (getuid() == 0)
+    {
+    rc = confirm_reservation(jobids[0], rsv_id, pagg, NULL, apbasil_protocol);
+    /*fail_unless(rc == 0, "Couldn't execute the reservation");*/
+    snprintf(buf, sizeof(buf), "Reservation id should be 20 but was %s", rsv_id);
+    fail_unless(!strcmp(rsv_id, "20"), buf);
+    
+    rc = confirm_reservation(jobids[1], rsv_id, pagg, blank_cmd, apbasil_protocol);
+    fail_unless(rc != 0, "Somehow parsed the blank command's output?");
+    
+    rc = parse_confirmation_output((char *)"tom");
+    fail_unless(rc == ALPS_PARSING_ERROR, "We parsed non-xml?");
+    }
   }
 END_TEST
 

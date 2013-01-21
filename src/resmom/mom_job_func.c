@@ -135,6 +135,9 @@
 #include "threadpool.h"
 #include "alps_functions.h"
 #include "dis.h"
+#ifdef PENABLE_LINUX26_CPUSETS
+#include "pbs_cpuset.h"
+#endif
 
 #ifndef TRUE
 #define TRUE 1
@@ -142,6 +145,7 @@
 #endif
 
 int conn_qsub(char *, long, char *);
+
 void mom_job_purge(job *);
 
 /* External functions */
@@ -182,7 +186,6 @@ void nodes_free(job *);
 extern int thread_unlink_calls;
 
 extern void MOMCheckRestart(void);
-extern int delete_cpuset(char *);
 void       send_update_soon();
 
 
@@ -833,9 +836,6 @@ void mom_job_purge(
     send_update_soon();
     }
 #endif  /* NVIDIA_GPUS */
-
-  if (is_login_node == TRUE)
-    release_job_reservation(pjob);
 
   /* initialize struct information */
   if (pjob->ji_flags & MOM_HAS_TMPDIR)

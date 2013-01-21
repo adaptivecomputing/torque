@@ -6553,8 +6553,8 @@ void initialize_globals(void)
   if (pbs_mom_port <= 0)
     {
     pbs_mom_port = get_svrport(
-        PBS_MOM_SERVICE_NAME,
-        "tcp",
+        (char *)PBS_MOM_SERVICE_NAME,
+        (char *)"tcp",
         PBS_MOM_SERVICE_PORT);
     }
 
@@ -6568,8 +6568,8 @@ void initialize_globals(void)
   if (default_server_port <= 0)
     {
     default_server_port = get_svrport(
-        PBS_BATCH_SERVICE_NAME,
-        "tcp",
+        (char *)PBS_BATCH_SERVICE_NAME,
+        (char *)"tcp",
         PBS_BATCH_SERVICE_PORT);
     }
 
@@ -6583,8 +6583,8 @@ void initialize_globals(void)
   if (pbs_rm_port <= 0)
     {
     pbs_rm_port = get_svrport(
-        PBS_MANAGER_SERVICE_NAME,
-        "tcp",
+        (char *)PBS_MANAGER_SERVICE_NAME,
+        (char *)"tcp",
         PBS_MANAGER_SERVICE_PORT);
     }
 
@@ -8539,7 +8539,7 @@ int read_layout_file()
   {
   FILE          *layout;
   char           line[MAX_LINE];
-  char          *delims = " \t\n\r=";
+  const char    *delims = " \t\n\r=";
   char          *tok = NULL;
   const char    *val = NULL;
   int            i = 0;
@@ -8562,6 +8562,10 @@ int read_layout_file()
   while (fgets(line, sizeof(line), layout) != NULL)
     {
     empty_line = TRUE;
+    /* initialize the end to -1 while start defaults to zero
+     * so that add_mic_status() skips over the nodeboard if not 
+     * configured */
+    node_boards[i].mic_end_index = -1;
 
     /* Strip off comments */
     if ((tok = strchr(line, '#')) != NULL)
@@ -8603,7 +8607,21 @@ int read_layout_file()
           }
 
         }
+      else if (strcmp(tok, "mic") == 0)
+        {
+        /* read the mics specified for this node board. This is in the form
+         * index1[-index2] specifying a range*/
+        char *micval = strdup(val);
+        char *start  = strtok(micval, "-");
+        char *end    = strtok(NULL, "-");
+        node_boards[i].mic_start_index = strtol(start, NULL, 10);
+        node_boards[i].mic_end_index = node_boards[i].mic_start_index;
 
+        if (end != NULL)
+          node_boards[i].mic_end_index = strtol(end, NULL, 10);
+
+        free(micval);
+        }
       else if (strcmp(tok,"memsize") == 0)
         {
         node_boards[i].memsize = atoi(val);

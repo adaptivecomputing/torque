@@ -10,6 +10,8 @@
 #include "attribute.h" /* pbs_attribute */
 #include "resmon.h" /* rm_attribute */
 #include "pbs_job.h" /* task */
+#include "pbs_nodes.h"
+#include "pbs_config.h"
 
 int svr_resc_size = 0;
 char path_meminfo[MAX_LINE];
@@ -30,9 +32,20 @@ tlist_head svr_alljobs;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 int ignwalltime = 0;
 int rm_errno;
+char         mom_host[PBS_MAXHOSTNAME + 1];
+#ifdef NUMA_SUPPORT
+int       num_node_boards;
+nodeboard node_boards[MAX_NODE_BOARDS]; 
+int       numa_index;
+#endif
 
+#ifdef PENABLE_LINUX26_CPUSETS
+hwloc_topology_t topology = NULL;       /* system topology */
 
-
+int      memory_pressure_threshold = 0; /* 0: off, >0: check and kill */
+short    memory_pressure_duration  = 0; /* 0: off, >0: check and kill */
+int      MOMConfigUseSMT           = 1; /* 0: off, 1: on */
+#endif
 
 resource *add_resource_entry(pbs_attribute *pattr, resource_def *prdef)
   {
@@ -105,3 +118,7 @@ const char *loadave(struct rm_attribute *attrib)
   fprintf(stderr, "The call to loadave needs to be mocked!!\n");
   exit(1);
   }
+
+void log_err(int errnum, const char *routine, const char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}

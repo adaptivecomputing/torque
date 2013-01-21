@@ -123,7 +123,7 @@ struct pbsnode *find_node_in_allnodes(struct all_nodes *an, char *nodename)
     return(NULL);
   }
 
-struct work_task *set_task(enum work_type type, long event_id, void (*func)(), void *parm, int get_lock)
+struct work_task *set_task(enum work_type type, long event_id, void (*func)(work_task *), void *parm, int get_lock)
   {
   fprintf(stderr, "The call to set_task needs to be mocked!!\n");
   exit(1);
@@ -177,7 +177,7 @@ int write_tcp_reply(struct tcp_chan *chan, int protocol, int version, int comman
   exit(1);
   }
 
-int issue_Drequest(int conn, struct batch_request *request, void (*func)(struct work_task *), struct work_task **ppwt)
+int issue_Drequest(int conn, batch_request *br)
   {
   fprintf(stderr, "The call to issue_Drequest needs to be mocked!!\n");
   exit(1);
@@ -231,7 +231,7 @@ void free_arst(struct pbs_attribute *attr)
   exit(1);
   }
 
-int svr_connect(pbs_net_t hostaddr, unsigned int port, struct pbsnode *pnode, void *(*func)(void *), enum conn_type cntype)
+int svr_connect(unsigned long, unsigned int, int*, pbsnode*, void* (*)(void*), conn_type)
   {
   fprintf(stderr, "The call to svr_connect needs to be mocked!!\n");
   exit(1);
@@ -306,12 +306,12 @@ void reinitialize_node_iterator(node_iterator *iter)
   exit(1);
   }
 
-int unlock_node(struct pbsnode *the_node, const char *id, char *msg, int logging)
+int unlock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
   {
   return(0);
   }        
 
-int lock_node(struct pbsnode *the_node, const char *id, char *msg, int logging)
+int lock_node(pbsnode *the_node, const char *id,const char *msg, int logging)
   {
   return(0);
   }        
@@ -463,3 +463,8 @@ int append_char_to_dynamic_string(dynamic_string *ds, char c)
   {
   return(0);
   }
+
+void log_err(int errnum, const char *routine, const char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_ext(int eventtype, const char *func_name, const char *msg, int level) {}

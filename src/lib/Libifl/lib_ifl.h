@@ -11,6 +11,8 @@
 /* trq_auth.c */
 #define AUTH_TYPE_IFF 1
 #define AUTH_TYPE_KEY 2
+
+
 int parse_request_client(int sock, char **server_name, int *server_port, int *auth_type, char **user, int *user_sock);
 int build_request_svr(int auth_type, char *user, int sock, char **send_message);
 int parse_response_svr(int sock, char **msg);
@@ -212,9 +214,6 @@ int encode_DIS_reply(struct tcp_chan *chan, struct batch_reply *reply);
 /* enc_svrattrl.c */
 int encode_DIS_svrattrl(struct tcp_chan *chan, svrattrl *psattl);
 
-/* get_svrport.c */
-unsigned int get_svrport(const char *service_name, const char *ptype, unsigned int pdefault);
-
 /* list_link.c */
 void insert_link(struct list_link *old, struct list_link *new_link, void *pobj, int position); 
 void append_link(tlist_head *head, list_link *new_link, void *pobj); 
@@ -240,9 +239,7 @@ ssize_t read_blocking_socket(int fd, void *buf, ssize_t count);
 /* pbsD_alterjo.c */
 int pbs_alterjob_asyncflag(int c, char *jobid, struct attrl *attrib, char *extend, int asyncFlag); 
 int pbs_alterjob_asyncflag_err(int c, char *jobid, struct attrl *attrib, char *extend, int asyncFlag, int *); 
-int pbs_alterjob_async(int c, char *jobid, struct attrl *attrib, char *extend); 
 int pbs_alterjob_async_err(int c, char *jobid, struct attrl *attrib, char *extend, int *); 
-int pbs_alterjob(int c, char *jobid, struct attrl *attrib, char *extend); 
 int pbs_alterjob_err(int c, char *jobid, struct attrl *attrib, char *extend, int *); 
 
 /* pbsD_asyrun.c */
@@ -250,14 +247,10 @@ int pbs_asyrunjob(int c, char *jobid, char *location, char *extend);
 int pbs_asyrunjob_err(int c, char *jobid, char *location, char *extend, int *);
 
 /* pbsD_chkptjob.c */
-int pbs_checkpointjob(int c, char *jobid, char *extend);
 int pbs_checkpointjob_err(int c, char *jobid, char *extend, int *);
 
 /* pbsD_connect.c */
 void empty_alarm_handler(int signo);
-char *pbs_get_server_list(void);
-char *pbs_default(void);
-char *pbs_fbserver(void);
 char *PBS_get_server(char *server, unsigned int *port);
 void get_port_from_server_name_file(unsigned int *server_name_file_port);
 #ifdef MUNGE_AUTH
@@ -271,115 +264,78 @@ int validate_socket(int psock);
 ssize_t send_unix_creds(int sd);
 #endif 
 int pbs_original_connect(char *server); 
-int pbs_disconnect(int connect); 
 int pbs_disconnect_socket(int socket);
-int pbs_connect(char *server_name_ptr); 
 int pbs_connect_with_retry(char *server_name_ptr, int retry_seconds); 
-int pbs_query_max_connections(void);
 void initialize_connections_table();
 
 /* pbsD_deljob.c */
-int pbs_deljob(int c, char *jobid, char *extend);
 int pbs_deljob_err(int c, char *jobid, char *extend, int *);
 
 /* pbsD_gpuctrl.c */
-int pbs_gpumode(int c, char *node, char *gpuid, int gpumode);
 int pbs_gpumode_err(int c, char *node, char *gpuid, int gpumode, int *);
 int pbs_gpureset(int c, char *node, char *gpuid, int permanent, int vol);
 int pbs_gpureset_err(int c, char *node, char *gpuid, int permanent, int vol, int *);
 
 /* pbsD_holdjob.c */
-int pbs_holdjob(int c, char *jobid, char *holdtype, char *extend);
 int pbs_holdjob_err(int c, char *jobid, char *holdtype, char *extend, int *);
 
 /* pbsD_locjob.c */
-char * pbs_locjob(int c, char *jobid, char *extend);
 char * pbs_locjob_err(int c, char *jobid, char *extend, int *);
 
 /* pbsD_manager.c */
-int pbs_manager(int c, int command, int objtype, char *objname, struct attropl *attrib, char *extend);
 int pbs_manager_err(int c, int command, int objtype, char *objname, struct attropl *attrib, char *extend, int *);
 
 /* pbsD_movejob.c */
-int pbs_movejob(int c, char *jobid, char *destin, char *extend); 
 int pbs_movejob_err(int c, char *jobid, char *destin, char *extend, int *); 
 
 /* pbsD_msgjob.c */
-int pbs_msgjob(int c, char *jobid, int fileopt, char *msg, char *extend);
 int pbs_msgjob_err(int c, char *jobid, int fileopt, char *msg, char *extend, int *);
 
 /* pbsD_orderjo.c */
-int pbs_orderjob(int c, char *job1, char *job2, char *extend);
 int pbs_orderjob_err(int c, char *job1, char *job2, char *extend, int *);
 
 /* pbsD_rerunjo.c */
-int pbs_rerunjob(int c, char *jobid, char *extend);
 int pbs_rerunjob_err(int c, char *jobid, char *extend, int *);
 
 /* pbsD_resc.c */
 /* static int encode_DIS_Resc(int sock, char **rlist, int ct, resource_t rh); */
 /* static int PBS_resc(int c, int reqtype, char **rescl, int ct, resource_t rh); */
-int pbs_rescquery(int c, char **resclist, int num_resc, int *available, int *allocated, int *reserved, int *down); 
-int pbs_rescreserve(int c, char **rl, int num_resc, resource_t *prh); 
-int pbs_rescrelease(int c, resource_t rh);
-int totpool(int con, int update); 
-int usepool(int con, int update);
 char *avail(int con, char *resc);
 
 /* pbsD_rlsjob.c */
-int pbs_rlsjob(int c, char *jobid, char *holdtype, char *extend);
 int pbs_rlsjob_err(int c, char *jobid, char *holdtype, char *extend, int *);
 
 /* pbsD_runjob.c */
-int pbs_runjob(int c, char *jobid, char *location, char *extend);
 int pbs_runjob_err(int c, char *jobid, char *location, char *extend, int *);
 
 /* pbsD_selectj.c */
-char ** pbs_selectjob(int c, struct attropl *attrib, char *extend);
 char ** pbs_selectjob_err(int c, struct attropl *attrib, char *extend, int *);
-struct batch_status * pbs_selstat(int c, struct attropl *attrib, char *extend);
 struct batch_status * pbs_selstat_err(int c, struct attropl *attrib, char *extend, int *);
 /* static int PBSD_select_put(int c, int type, struct attropl *attrib, char *extend); */
 /* static char **PBSD_select_get(int c); */
 
 /* pbsD_sigjob.c */
-int pbs_sigjob(int c, char *jobid, char *signal, char *extend);
 int pbs_sigjob_err(int c, char *jobid, char *signal, char *extend, int *);
-int pbs_sigjobasync(int c, char *jobid, char *signal, char *extend);
 int pbs_sigjobasync_err(int c, char *jobid, char *signal, char *extend, int *);
-
-/* pbsD_stagein.c */
-int pbs_stagein(int c, char *jobid, char *location, char *extend);
 
 /* pbsD_statjob.c */
 struct batch_status *pbs_statjob_err(int c, char *id, struct attrl *attrib, char *extend, int *); 
-struct batch_status *pbs_statjob(int c, char *id, struct attrl *attrib, char *extend); 
 
 /* pbsD_statnode.c */
-struct batch_status *pbs_statnode(int c, char *id, struct attrl *attrib, char *extend);
 struct batch_status *pbs_statnode_err(int c, char *id, struct attrl *attrib, char *extend, int *);
 
 /* pbsD_statque.c */
-struct batch_status *pbs_statque(int c, char *id, struct attrl *attrib, char *extend); 
 struct batch_status *pbs_statque_err(int c, char *id, struct attrl *attrib, char *extend, int *); 
 
 /* pbsD_statsrv.c */
-struct batch_status *pbs_statserver(int c, struct attrl *attrib, char *extend); 
 struct batch_status *pbs_statserver_err(int c, struct attrl *attrib, char *extend, int *); 
 
 /* pbsD_submit.c */
-char *pbs_submit(int c, struct attropl *attrib, char *script, char *destination, char *extend); 
 char *pbs_submit_err(int c, struct attropl *attrib, char *script, char *destination, char *extend, int *); 
 
 /* pbsD_termin.c */
-int pbs_terminate(int c, int manner, char *extend);
 int pbs_terminate_err(int c, int manner, char *extend, int *);
 
-/* pbs_geterrmg.c */
-char *pbs_geterrmsg(int connect); 
-
-/* pbs_statfree.c */
-void pbs_statfree(struct batch_status *bsp);
 
 /* rpp.c */
 void blog_init(char *s, int len);
@@ -445,31 +401,4 @@ int unlock_all_channels();
 struct tcp_chan * DIS_tcp_setup(int fd);
 void DIS_tcp_cleanup(struct tcp_chan *chan);
 
-/* tm.c */
-/* static event_info * find_event(tm_event_t x); */
-/* static void del_event(event_info *ep); */
-/* static tm_event_t new_event(void); */
-/* static void add_event(tm_event_t event, tm_node_id node, int type, void *info); */
-/* static task_info * find_task(tm_task_id x); */
-/* static tm_task_id new_task(char *jobid, tm_node_id node, tm_task_id task); */
-/* static int localmom(void); */
-/* static int startcom(int com, tm_event_t event); */
-int tm_init(void *info, struct tm_roots *roots); 
-int tm_nodeinfo(tm_node_id **list, int *nnodes);
-int tm_spawn(int argc, char **argv, char **envp, tm_node_id where, tm_task_id *tid, tm_event_t *event); 
-int tm_kill(tm_task_id tid, int sig, tm_event_t *event);
-int tm_obit(tm_task_id tid, int *obitval, tm_event_t *event);
-int tm_taskinfo(tm_node_id node, tm_task_id *tid_list, int list_size, int *ntasks, tm_event_t *event);
-int tm_atnode(tm_task_id tid, tm_node_id *node);
-int tm_rescinfo(tm_node_id node, char *resource, int len, tm_event_t *event);
-int tm_publish(char *name, void *info, int len, tm_event_t *event);
-int tm_subscribe(tm_task_id tid, char *name, void *info, int len, int *info_len, tm_event_t *event);
-int tm_finalize(void);
-int tm_notify(int tm_signal); 
-int tm_alloc(char *resources, tm_event_t *event); 
-int tm_dealloc(tm_node_id node, tm_event_t *event);
-int tm_create_event(tm_event_t *event);
-int tm_destroy_event(tm_event_t *event);
-int tm_register(tm_whattodo_t *what, tm_event_t *event);
-int tm_poll(tm_event_t poll_event, tm_event_t *result_event, int wait, int *tm_errno);
-int tm_adopt(char *id, int adoptCmd, pid_t pid);
+

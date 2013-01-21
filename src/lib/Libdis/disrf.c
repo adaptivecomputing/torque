@@ -101,7 +101,7 @@
 #include <stddef.h>
 
 #include "dis.h"
-#include "lib_dis.h"
+#include "dis_internal.h"
 #include "tcp.h"
 #undef disrf
 

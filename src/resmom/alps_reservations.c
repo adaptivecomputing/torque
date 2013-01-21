@@ -619,7 +619,7 @@ int confirm_reservation(
   ptr = output;
   memset(output, 0, sizeof(output));
 
-  while ((bytes_read = read_ac_socket(fd, ptr, sizeof(output) - total_bytes_read - 1)) > 0)
+  while ((bytes_read = read(fd, ptr, sizeof(output) - total_bytes_read - 1)) > 0)
     {
     total_bytes_read += bytes_read;
     ptr += bytes_read;

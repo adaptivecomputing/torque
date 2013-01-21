@@ -20,7 +20,7 @@ AvlTree okclients = NULL;
 int LOGLEVEL = 1;
 
 
-void *req_rerunjob(void *vp)
+void req_rerunjob(batch_request *preq)
   {
   fprintf(stderr, "The call to req_rerunjob needs to be mocked!!\n");
   exit(1);
@@ -38,7 +38,7 @@ void mom_job_purge(job *pjob)
   exit(1);
   }
 
-void mom_server_update_receive_time_by_ip(u_long ipaddr, char *command_name)
+void mom_server_update_receive_time_by_ip(u_long ipaddr, const char *command_name)
   {
   fprintf(stderr, "The call to mom_server_update_receive_time_by_ip needs to be mocked!!\n");
   exit(1);
@@ -240,7 +240,9 @@ int mom_req_stat_job(
   return(0);
   }
 
-void req_delete_reservation(
-    
-  struct batch_request *request) {}
+void req_delete_reservation(struct batch_request *request) {}
 
+void log_err(int errnum, const char *routine, const char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_ext(int type, const char *func_name, const char *msg, int o) {}

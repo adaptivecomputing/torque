@@ -117,6 +117,7 @@
 #include "svr_func.h" /* get_svr_attr_* */
 #include "req_stat.h" /* stat_mom_job */
 #include "ji_mutex.h"
+#include "mutex_mgr.hpp"
 #include "svr_task.h"
 
 #ifdef HAVE_NETINET_IN_H
@@ -205,6 +206,8 @@ void *check_and_run_job(
     return(rc_ptr);
     }
 
+  mutex_mgr job_mutex(pjob->ji_mutex, true);
+
   strcpy(job_id, pjob->ji_qs.ji_jobid);
 
   /* if the job is part of an array, check the slot limit */
@@ -212,11 +215,11 @@ void *check_and_run_job(
       (pjob->ji_is_array_template == FALSE))
     {
     job_array *pa = get_jobs_array(&pjob);
+    mutex_mgr array_mutex(pa->ai_mutex, true);
 
     if (pjob == NULL)
       {
       req_reject(PBSE_JOBNOTFOUND, 0, preq, NULL, "Job unexpectedly deleted");
-      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
       *rc_ptr = PBSE_JOBNOTFOUND;
       return(rc_ptr);
       }
@@ -228,7 +231,7 @@ void *check_and_run_job(
       job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
       job_state = pjob->ji_qs.ji_state;
 
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+      job_mutex.unlock();
 
       update_array_values(pa,job_state,aeRun,
           job_id, job_atr_hold, job_exit_status);
@@ -237,10 +240,11 @@ void *check_and_run_job(
         {
         req_reject(PBSE_JOBNOTFOUND, 0, preq, NULL,
           "Job deleted while updating array values");
-        unlock_ai_mutex(pa, __func__, "2", LOGLEVEL);
         *rc_ptr = PBSE_JOBNOTFOUND;
         return(rc_ptr);
         }
+      else
+        job_mutex.mark_as_locked();
       }
     else
       {
@@ -251,15 +255,10 @@ void *check_and_run_job(
      
       req_reject(PBSE_IVALREQ, 0, preq, NULL, log_buf);
       
-      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
-      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
-
       *rc_ptr = PBSE_IVALREQ;
 
       return(rc_ptr);
       }
-    
-    unlock_ai_mutex(pa, (char *)__func__, "1", LOGLEVEL);
     }
 
   /* NOTE:  nodes assigned to job in svr_startjob() */
@@ -283,8 +282,6 @@ void *check_and_run_job(
       }
     }
 
-  unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
-
   return(rc_ptr);
   } /* END check_and_run_job() */
 
@@ -300,7 +297,7 @@ void *check_and_run_job(
 
 int req_runjob(
 
-  struct batch_request *preq)  /* I (modified) */
+  batch_request *preq)  /* I (modified) */
 
   {
   job                  *pjob;
@@ -310,8 +307,7 @@ int req_runjob(
   char                  log_buf[LOCAL_LOG_BUF_SIZE + 1];
 
   /* chk_job_torun will extract job id and assign hostlist if specified */
-
-  if(preq == NULL)
+  if (preq == NULL)
     return(PBSE_UNKJOBID);
 
   if (getenv("TORQUEAUTONN"))
@@ -419,6 +415,8 @@ void post_checkpointsend(
 
   if (pjob != NULL)
     {
+    mutex_mgr job_mutex(pjob->ji_mutex, true);
+
     if (code != 0)
       {
       /* copy failed - hold job */
@@ -476,8 +474,8 @@ void post_checkpointsend(
       svr_strtjob2(&pjob, NULL);
       }
 
-    if (pjob != NULL)
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+    if (pjob == NULL)
+      job_mutex.set_lock_on_exit(false);
     }    /* END if (pjob != NULL) */
 
   free_br(preq); /* close connection and release request */
@@ -657,6 +655,8 @@ void post_stagein(
 
   if (pjob != NULL)
     {
+    mutex_mgr job_mutex(pjob->ji_mutex, true);
+
     if (code != 0)
       {
       /* stage in failed - hold job */
@@ -721,8 +721,8 @@ void post_stagein(
         }
       }
 
-    if (pjob != NULL)
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+    if (pjob == NULL)
+      job_mutex.set_lock_on_exit(false);
     }    /* END if (pjob != NULL) */
 
   free_br(preq); /* close connection and release request */
@@ -1397,7 +1397,7 @@ void finish_sendmom(
   int        newsub;
   char       log_buf[LOCAL_LOG_BUF_SIZE+1];
   time_t     time_now = time(NULL);
-  job *pjob;
+  job       *pjob;
 
   if ((pjob = svr_find_job(job_id, TRUE)) == NULL)
     {
@@ -1406,6 +1406,8 @@ void finish_sendmom(
 
     return;
     }
+
+  mutex_mgr job_mutex(pjob->ji_mutex, true);
 
   if (LOGLEVEL >= 6)
     {
@@ -1577,7 +1579,6 @@ void finish_sendmom(
       }
     }  /* END switch (status) */
 
-  unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
   } /* END finish_sendmom() */
 
 
@@ -1592,8 +1593,8 @@ void finish_sendmom(
 
 job *chk_job_torun(
 
-  struct batch_request *preq,  /* I */
-  int                   setnn) /* I */
+  batch_request *preq,  /* I */
+  int            setnn) /* I */
 
   {
   job              *pjob;
@@ -1616,6 +1617,8 @@ job *chk_job_torun(
     return(NULL);
     }
 
+  mutex_mgr job_mutex(pjob->ji_mutex, true);
+
   if ((pjob->ji_qs.ji_state == JOB_STATE_TRANSIT) ||
       (pjob->ji_qs.ji_state == JOB_STATE_EXITING) ||
       (pjob->ji_qs.ji_substate == JOB_SUBSTATE_STAGEGO) ||
@@ -1623,10 +1626,7 @@ job *chk_job_torun(
       (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING))
     {
     /* FAILURE - job already started */
-
     req_reject(PBSE_BADSTATE, 0, preq, NULL, "job already running");
-
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
     return(NULL);
     }
@@ -1636,10 +1636,7 @@ job *chk_job_torun(
     if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_STAGEIN)
       {
       /* FAILURE */
-
       req_reject(PBSE_BADSTATE, 0, preq, NULL, NULL);
-
-      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
 
       return(NULL);
       }
@@ -1648,16 +1645,14 @@ job *chk_job_torun(
   if ((preq->rq_perm & (ATR_DFLAG_MGWR | ATR_DFLAG_OPWR)) == 0)
     {
     /* FAILURE - run request not authorized */
-
     req_reject(PBSE_PERM, 0, preq, NULL, NULL);
-
-    unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
 
     return(NULL);
     }
 
   if ((pque = get_jobs_queue(&pjob)) != NULL)
     {
+    mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
     if (pque->qu_qs.qu_type != QTYPE_Execution)
       {
       /* FAILURE - job must be in execution queue */
@@ -1665,13 +1660,8 @@ job *chk_job_torun(
   
       req_reject(PBSE_IVALREQ, 0, preq, NULL, "job not in execution queue");
   
-      unlock_queue(pque, __func__, NULL, LOGLEVEL);
-      unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
-  
       return(NULL);
       }
-
-    unlock_queue(pque, __func__, NULL, LOGLEVEL);
     }
   else if (pjob == NULL)
     {
@@ -1695,7 +1685,6 @@ job *chk_job_torun(
       if ((exec_host = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str)) == NULL)
         {
         req_reject(PBSE_RMSYSTEM, 0, preq, NULL, "Cannot allocate memory");
-        unlock_ji_mutex(pjob, __func__, "5", LOGLEVEL);
         return(NULL);
         }
 
@@ -1711,8 +1700,6 @@ job *chk_job_torun(
           req_reject(PBSE_EXECTHERE, 0, preq, NULL, "allocated nodes must match checkpoint location");
         else
           req_reject(PBSE_EXECTHERE, 0, preq, NULL, "allocated nodes must match input file stagein location");
-
-        unlock_ji_mutex(pjob, __func__, "6", LOGLEVEL);
         
         return(NULL);
         }
@@ -1732,8 +1719,6 @@ job *chk_job_torun(
                   EMsg)) != 0)   /* O */
         {
         req_reject(PBSE_EXECTHERE, 0, preq, FailHost, EMsg);
-
-        unlock_ji_mutex(pjob, __func__, "7", LOGLEVEL);
         
         return(NULL);
         }
@@ -1768,8 +1753,6 @@ job *chk_job_torun(
       /* FAILURE - cannot assign correct hosts */
 
       req_reject(rc, 0, preq, FailHost, EMsg);
-
-      unlock_ji_mutex(pjob, __func__, "8", LOGLEVEL);
 
       return(NULL);
       }
@@ -1816,6 +1799,8 @@ job *chk_job_torun(
 
 #endif /* TDEV */
     }    /* END if (setnn == 1) */
+
+  job_mutex.set_lock_on_exit(false);
 
   return(pjob);
   }  /* END chk_job_torun() */
@@ -1982,7 +1967,7 @@ char *get_correct_spec_string(
 
           /* now using the actual length of requested gpu mode */
           len = strlen(given) + 1 + (num_gpu_reqs * strlen(mode));
-          if ((correct_spec = calloc(1, len)) != NULL)
+          if ((correct_spec = (char *)calloc(1, len)) != NULL)
             {
             one_req = given;
             
@@ -2051,7 +2036,7 @@ int assign_hosts(
   unsigned int  dummy;
   char         *list = NULL;
   char         *portlist = NULL;
-  const char  *hosttoalloc = NULL;
+  char         *hosttoalloc = NULL;
   resource     *pres;
   int           rc = 0;
   int           procs=0;
@@ -2150,7 +2135,8 @@ int assign_hosts(
     {
     /* fall back to 1 cluster node */
 
-    hosttoalloc = PBS_DEFAULT_NODE;
+    hosttoalloc = strdup(PBS_DEFAULT_NODE);
+    to_free = hosttoalloc;
     }
 
   /* do we need to allocate the (cluster) node(s)? */

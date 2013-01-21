@@ -11,7 +11,7 @@ libscaffolding_svr_la_LDFLAGS = @CHECK_LIBS@ -shared
 
 CLEANFILES = *.gcno *.gcda *.gcov core *.lo
 
-SUBDIRS = . accounting array_func array_upgrade attr_recov dis_read geteusernam issue_request job_func \
+CHECK_DIRS = accounting array_func array_upgrade attr_recov dis_read geteusernam issue_request job_func \
 					job_qs_upgrade job_recov job_recycler job_route node_func node_manager pbsd_init pbsd_main \
 					process_request queue_func queue_recov reply_send req_delete req_deletearray req_getcred \
 					req_gpuctrl req_holdarray req_holdjob req_jobobit req_locate req_manager req_message \
@@ -22,5 +22,10 @@ SUBDIRS = . accounting array_func array_upgrade attr_recov dis_read geteusernam 
 					track_alps_reservations user_info exiting_jobs job_container receive_mom_communication \
 					process_mom_update batch_request 
 
-$(SUBDIRS)::
+$(CHECK_DIRS)::
 	$(MAKE) -C $@ $(MAKECMDGOALS)
+
+check: $(CHECK_DIRS)
+
+cleancheck:
+	@for dir in $(CHECK_DIRS); do (cd $$dir && $(MAKE) clean); done

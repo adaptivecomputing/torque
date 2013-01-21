@@ -8,7 +8,6 @@ extern int ran_one;
 /*extern char *getenv(char *); */
 extern int multi_mom;
 extern int LOGLEVEL;
-extern void *calloc(size_t __nmemb, size_t __size);
 
 START_TEST(test_scan_for_exiting_momdown)
   {

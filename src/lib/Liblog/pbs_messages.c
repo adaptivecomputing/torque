@@ -226,6 +226,10 @@ static char * pbs_err_rm_txt[] =
  * if it exists
  */
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 char *pbse_to_txt(
 
   int err)  /* I */
@@ -261,6 +265,9 @@ char *pbs_strerror(
   return (strerror(err));
   }  /* END pbs_strerror() */
 
+#ifdef __cplusplus
+}
+#endif
 
 /*
  * rqtype_to_txt() - Return the printable name of a request type

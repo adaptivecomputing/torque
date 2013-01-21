@@ -1,14 +1,14 @@
 #include "license_pbs.h" /* See here for the software license */
 #include "node_manager.h"
-#include "test_node_manager.h"
+#include "test_uut.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include "pbs_error.h"
 
-char *exec_hosts = "napali/0+napali/1+napali/2+napali/50+napali/4+l11/0+l11/1+l11/2+l11/3";
+const char *exec_hosts = "napali/0+napali/1+napali/2+napali/50+napali/4+l11/0+l11/1+l11/2+l11/3";
 char  buf[4096];
-char *napali = "napali";
-char *l11 =    "l11";
+const char *napali = "napali";
+const char *l11 =    "l11";
 
 int   node_in_exechostlist(char *, char *);
 char *get_next_exec_host(char **);
@@ -61,16 +61,16 @@ START_TEST(job_should_be_on_node_test)
   memset(&jinfo, 0, sizeof(jinfo));
   memset(&subnode, 0, sizeof(subnode));
 
-  pnode.nd_name = "tom";
+  pnode.nd_name = (char *)"tom";
   pnode.nd_psn = &subnode;
   subnode.jobs = &jinfo;
   strcpy(jinfo.jobid, "1");
 
-  fail_unless(job_should_be_on_node("2", &pnode) == FALSE, "non-existent job shouldn't be on node");
-  fail_unless(job_should_be_on_node("3", &pnode) == FALSE, "non-existent job shouldn't be on node");
-  fail_unless(job_should_be_on_node("4", &pnode) == FALSE, "non-existent job shouldn't be on node");
-  fail_unless(job_should_be_on_node("1", &pnode) == TRUE, "false positive");
-  fail_unless(job_should_be_on_node("5", &pnode) == TRUE, "false positive");
+  fail_unless(job_should_be_on_node((char *)"2", &pnode) == FALSE, "non-existent job shouldn't be on node");
+  fail_unless(job_should_be_on_node((char *)"3", &pnode) == FALSE, "non-existent job shouldn't be on node");
+  fail_unless(job_should_be_on_node((char *)"4", &pnode) == FALSE, "non-existent job shouldn't be on node");
+  fail_unless(job_should_be_on_node((char *)"1", &pnode) == TRUE, "false positive");
+  fail_unless(job_should_be_on_node((char *)"5", &pnode) == TRUE, "false positive");
   }
 END_TEST
 
@@ -79,13 +79,13 @@ END_TEST
 
 START_TEST(node_in_exechostlist_test)
   {
-  char *eh1 = "tom/0+bob/0";
-  char *eh2 = "mytom/0+tommy/0+tom1/0";
-  char *node1 = "tom";
-  char *node2 = "bob";
-  char *node3 = "mytom";
-  char *node4 = "tommy";
-  char *node5 = "tom1";
+  char *eh1 = (char *)"tom/0+bob/0";
+  char *eh2 = (char *)"mytom/0+tommy/0+tom1/0";
+  char *node1 = (char *)"tom";
+  char *node2 = (char *)"bob";
+  char *node3 = (char *)"mytom";
+  char *node4 = (char *)"tommy";
+  char *node5 = (char *)"tom1";
 
   fail_unless(node_in_exechostlist(node1, eh1) == TRUE, "blah1");
   fail_unless(node_in_exechostlist(node2, eh1) == TRUE, "blah2");
@@ -122,14 +122,14 @@ START_TEST(check_for_node_type_test)
   nt = ND_TYPE_EXTERNAL;
   fail_unless(check_for_node_type(&all_reqs, nt) == FALSE, "empty prop should always return false");
 
-  p.name = "bob";
+  p.name = (char *)"bob";
   req.prop = &p;
 
   fail_unless(check_for_node_type(&all_reqs, nt) == TRUE, "didn't find the external node");
   nt = ND_TYPE_CRAY;
   fail_unless(check_for_node_type(&all_reqs, nt) == FALSE, "found a cray when only the external was requested");
 
-  p.name = "cray";
+  p.name = (char *)"cray";
   fail_unless(check_for_node_type(&all_reqs, nt) == TRUE, "found a cray when only the external was requested");
   nt = ND_TYPE_EXTERNAL;
   fail_unless(check_for_node_type(&all_reqs, nt) == FALSE, "found a cray when only the external was requested");
@@ -153,9 +153,9 @@ START_TEST(record_external_node_test)
   memset(&pnode2, 0, sizeof(pnode2));
   memset(&pnode3, 0, sizeof(pnode3));
 
-  pnode1.nd_name = "tom";
-  pnode2.nd_name = "bob";
-  pnode3.nd_name = "jim";
+  pnode1.nd_name = (char *)"tom";
+  pnode2.nd_name = (char *)"bob";
+  pnode3.nd_name = (char *)"jim";
 
   record_external_node(&pjob, &pnode1);
   snprintf(buf, sizeof(buf), "attr should be tom but is %s",

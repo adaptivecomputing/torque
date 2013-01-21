@@ -33,3 +33,5 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }
+
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}

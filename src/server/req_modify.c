@@ -110,8 +110,10 @@
 #include "array.h"
 #include "svr_func.h" /* get_svr_attr_* */
 #include "ji_mutex.h"
+#include "mutex_mgr.hpp"
 #include "threadpool.h"
 #include "svr_task.h"
+#include "mutex_mgr.hpp"
 
 #define CHK_HOLD 1
 #define CHK_CONT 2
@@ -185,6 +187,8 @@ void post_modify_req(
         }
       else
         {
+        mutex_mgr job_mutex(pjob->ji_mutex, true);
+
         if (LOGLEVEL >= 0)
           {
           sprintf(log_buf, "post_modify_req: PBSE_UNKJOBID for job %s in state %s-%s, dest = %s",
@@ -195,8 +199,6 @@ void post_modify_req(
 
           log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
           }
-        
-        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         }
       }
 
@@ -220,13 +222,13 @@ void mom_cleanup_checkpoint_hold(
   struct work_task *ptask)
 
   {
-  int                   rc = 0;
-  job                  *pjob;
-  char                 *jobid;
+  int            rc = 0;
+  job           *pjob;
+  char          *jobid;
 
-  struct batch_request *preq;
-  char                  log_buf[LOCAL_LOG_BUF_SIZE];
-  time_t                time_now = time(NULL);
+  batch_request *preq;
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
+  time_t         time_now = time(NULL);
 
   jobid = (char *)ptask->wt_parm1;
   free(ptask->wt_mutex);
@@ -253,6 +255,8 @@ void mom_cleanup_checkpoint_hold(
     return;
     }
   free(jobid);
+
+  mutex_mgr job_mutex(pjob->ji_mutex, true);
 
   if (LOGLEVEL >= 7)
     {
@@ -289,9 +293,9 @@ void mom_cleanup_checkpoint_hold(
             pjob->ji_qs.ji_jobid);
           
           log_err(rc, __func__, log_buf);
-          
-          unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
           }
+        else
+          job_mutex.set_lock_on_exit(false);
 
         free_br(preq);
 
@@ -316,8 +320,8 @@ void mom_cleanup_checkpoint_hold(
     set_task(WORK_Timed, time_now + 1, mom_cleanup_checkpoint_hold, strdup(pjob->ji_qs.ji_jobid), FALSE);
     }
 
-  if (pjob != NULL)
-    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+  if (pjob == NULL)
+    job_mutex.set_lock_on_exit(false);
   } /* END mom_cleanup_checkpoint_hold() */
 
 
@@ -571,7 +575,6 @@ int modify_job(
   if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
     {
     svr_evaljobstate(pjob, &newstate, &newsubstate, 0);
-
     svr_setjobstate(pjob, newstate, newsubstate, FALSE);
     }
   else
@@ -864,6 +867,7 @@ int modify_whole_array(
     else
       {
       /* NO_MOM_RELAY will prevent modify_job from calling relay_to_mom */
+      mutex_mgr job_mutex(pjob->ji_mutex, true);
       pthread_mutex_unlock(pa->ai_mutex);
       rc = modify_job((void **)&pjob, plist, preq, checkpoint_req, NO_MOM_RELAY);
       pa = get_jobs_array(&pjob);
@@ -874,7 +878,10 @@ int modify_whole_array(
         pa->job_ids[i] = NULL;
         continue;
         }
-      else if (pa == NULL)
+      else if (pjob == NULL)
+        job_mutex.set_lock_on_exit(false);
+      
+      if (pa == NULL)
         {
         return(PBSE_JOB_RECYCLED);
         }
@@ -887,7 +894,6 @@ int modify_whole_array(
         rc = copy_batchrequest(&array_req, preq, 0, i);
         if (rc != 0)
           {
-          unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
           return(rc);
           }
 
@@ -909,8 +915,9 @@ int modify_whole_array(
               "Unable to relay information to mom for job '%s'\n",
               pjob->ji_qs.ji_jobid);
             log_err(rc, __func__, log_buf);
-            unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
             }
+          else
+            job_mutex.set_lock_on_exit(false);
 
           return(rc); /* unable to get to MOM */
           }
@@ -918,16 +925,13 @@ int modify_whole_array(
           {
           if (pjob != NULL)
             {
-            unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
+            job_mutex.unlock();
             pjob = NULL;
             }
 
           post_modify_arrayreq(array_req);
           }
         }
-
-      if (pjob != NULL)
-        unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
       }
     } /* END foreach job in array */
 
@@ -969,6 +973,8 @@ void *modify_array_work(
     req_reject(PBSE_UNKARRAYID, 0, preq, NULL, "unable to find array");
     return(NULL);
     }
+
+  mutex_mgr array_mutex(pa->ai_mutex, true);
 
   /* pbs_mom sets the extend string to trigger copying of checkpoint files */
   if (preq->rq_extend != NULL)
@@ -1015,7 +1021,6 @@ void *modify_array_work(
     if ((rc != 0) && 
        (rc != PBSE_RELAYED_TO_MOM))
       {
-      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
       req_reject(PBSE_IVALREQ,0,preq,NULL,"Error reading array range");
       return(NULL);
       }
@@ -1025,7 +1030,6 @@ void *modify_array_work(
 
     if (rc == PBSE_RELAYED_TO_MOM)
       {
-      unlock_ai_mutex(pa, __func__, "2", LOGLEVEL);
       return(NULL);
       }
     }
@@ -1036,7 +1040,6 @@ void *modify_array_work(
     if ((rc != 0) && 
         (rc != PBSE_RELAYED_TO_MOM))
       {
-      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
       req_reject(PBSE_IVALREQ,0,preq,NULL,"Error altering the array");
       return(NULL);
       }
@@ -1044,6 +1047,8 @@ void *modify_array_work(
     /* we modified the job array. We now need to update the job */
     if ((pjob = chk_job_request(preq->rq_ind.rq_modify.rq_objname, preq)) == NULL)
       return(NULL);
+
+    mutex_mgr job_mutex = mutex_mgr(pjob->ji_mutex, true);
 
     rc2 = modify_job((void **)&pjob, plist, preq, checkpoint_req, NO_MOM_RELAY);
 
@@ -1055,26 +1060,16 @@ void *modify_array_work(
          If either of these fail, return the error. This makes it
          so some elements fo the array will be updated but others are
          not. But at least the user will know something went wrong.*/
-      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
       req_reject(rc,0,preq,NULL,NULL);
       return(NULL);
       }
 
     if (rc == PBSE_RELAYED_TO_MOM)
-      {
-      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
-      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
-      
       return(NULL);
-      }
-
-    unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
     }
 
   /* SUCCESS */
-  unlock_ai_mutex(pa, __func__, "4", LOGLEVEL);
 
   reply_ack(preq);
 
@@ -1092,7 +1087,7 @@ void *modify_array_work(
 
 void *req_modifyarray(
 
-    struct batch_request *vp) /* I */
+  batch_request *vp) /* I */
 
   {
   job_array            *pa;
@@ -1126,7 +1121,7 @@ void *req_modifyarray(
 
 void *modify_job_work(
 
-    struct batch_request *vp) /* I */
+  batch_request *vp) /* I */
 
   {
   job           *pjob;
@@ -1142,6 +1137,8 @@ void *modify_job_work(
     req_reject(PBSE_JOBNOTFOUND, 0, preq, NULL, "Job unexpectedly deleted");
     return(NULL);
     }
+
+  mutex_mgr job_mutex(pjob->ji_mutex, true);
   
   /* pbs_mom sets the extend string to trigger copying of checkpoint files */
   if (preq->rq_extend != NULL)
@@ -1167,8 +1164,6 @@ void *modify_job_work(
       }
     else if ( rc == PBSE_RELAYED_TO_MOM )
       {
-      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
-      
       return(NULL);
       }
     else
@@ -1176,8 +1171,6 @@ void *modify_job_work(
     }
   else
     reply_ack(preq);
-
-  unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
 
   return(NULL);
   } /* END modify_job_work() */
@@ -1195,12 +1188,11 @@ void *modify_job_work(
 
 void *req_modifyjob(
 
-    struct batch_request *vp) /* I */
+  batch_request *preq) /* I */
 
   {
-  job                  *pjob;
-  svrattrl             *plist;
-  struct batch_request *preq = (struct batch_request *)vp;
+  job       *pjob;
+  svrattrl  *plist;
 
   pjob = chk_job_request(preq->rq_ind.rq_modify.rq_objname, preq);
 
@@ -1208,6 +1200,8 @@ void *req_modifyjob(
     {
     return(NULL);
     }
+
+  mutex_mgr job_mutex(pjob->ji_mutex, true);
 
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_modify.rq_attr);
 
@@ -1217,12 +1211,10 @@ void *req_modifyjob(
     reply_ack(preq);
 
     /* SUCCESS */
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-
     return(NULL);
     }
-    
-  unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+
+  job_mutex.unlock();
 
   /* If async modify, reply now; otherwise reply is handled later */
   if (preq->rq_type == PBS_BATCH_AsyModifyJob)
@@ -1267,10 +1259,10 @@ int modify_job_attr(
 
   if ((pque = get_jobs_queue(&pjob)) != NULL)
     {
+    mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
     if (pque->qu_qs.qu_type != QTYPE_Execution)
       allow_unkn = JOB_ATR_UNKN;
 
-    unlock_queue(pque, __func__, NULL, LOGLEVEL);
     }
   else if (pjob->ji_parent_job != NULL)
     {
@@ -1329,8 +1321,8 @@ int modify_job_attr(
         {
         if ((pque = get_jobs_queue(&pjob)) != NULL)
           {
+          mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
           rc = chk_resc_limits( &newattr[JOB_ATR_resource], pque, NULL);
-          unlock_queue(pque, __func__, NULL, LOGLEVEL);
           }
         else if (pjob == NULL)
           {
@@ -1504,14 +1496,15 @@ void post_modify_arrayreq(
   batch_request *preq)
 
   {
-  struct batch_request *parent_req;
-  job                  *pjob;
-  char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  batch_request *parent_req;
+  job           *pjob;
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (preq == NULL)
     return;
 
-  parent_req = (struct batch_request *)preq->rq_extra; /* This is the original batch_request allocated by process_request */
+  /* This is the original batch_request allocated by process_request */
+  parent_req = (struct batch_request *)preq->rq_extra;
 
   preq->rq_conn = preq->rq_orgconn;  /* restore socket to client */
 
@@ -1552,6 +1545,8 @@ void post_modify_arrayreq(
         }
       else
         {
+        mutex_mgr job_mutex = mutex_mgr(pjob->ji_mutex, true);
+
         if (LOGLEVEL >= 0)
           {
           sprintf(log_buf, "post_modify_req: PBSE_UNKJOBID for job %s in state %s-%s, dest = %s",
@@ -1562,8 +1557,6 @@ void post_modify_arrayreq(
 
           log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
           }
-        
-        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         }
       }
 

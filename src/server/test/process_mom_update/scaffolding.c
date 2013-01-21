@@ -118,7 +118,7 @@ int lock_node(
     
   struct pbsnode *the_node,
   const char     *id,
-  char           *msg,
+  const char     *msg,
   int             logging)
 
   {
@@ -145,7 +145,7 @@ int unlock_node(
     
   struct pbsnode *the_node,
   const char     *id,
-  char           *msg,
+  const char     *msg,
   int             logging)
 
   {

@@ -81,6 +81,7 @@
 #include "svrfunc.h"
 #include "pbs_ifl.h"
 #include "alps_functions.h"
+#include "../lib/Libifl/lib_ifl.h"
 
 extern int exiting_tasks;
 extern int LOGLEVEL;

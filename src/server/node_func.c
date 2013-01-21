@@ -913,13 +913,14 @@ static void subnode_delete(
   struct pbssubn *psubn)
 
   {
+  struct jobinfo *jip;
+  struct jobinfo *jipt;
+
   if (psubn == NULL)
     {
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL subnode pointer delete call");
     return;
     }
-
-  struct jobinfo *jip, *jipt;
 
   for (jip = psubn->jobs;jip;jip = jipt)
     {
@@ -3194,27 +3195,6 @@ int create_partial_pbs_node(
 
   return(PBSE_NONE);     /*create completely successful*/
   } /* END create_partial_pbs_node */
-
-
-
-
-
-/*
- * @return a pointer to an initialized node iterator 
- */
-static node_iterator *get_node_iterator()
-
-  {
-  node_iterator *iter = (node_iterator *)calloc(1, sizeof(node_iterator));
-
-  if (iter != NULL)
-    {
-    iter->node_index = -1;
-    iter->numa_index = -1;
-    }
-
-  return(iter);
-  } /* END get_node_iterator() */
 
 
 

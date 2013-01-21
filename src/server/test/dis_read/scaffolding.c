@@ -157,3 +157,7 @@ int decode_DIS_ShutDown(struct tcp_chan *chan, struct batch_request *preq)
   fprintf(stderr, "The call to decode_DIS_ShutDown needs to be mocked!!\n");
   exit(1);
   }
+
+void log_err(int errnum, const char *routine, const char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}

@@ -61,7 +61,7 @@ int client_to_svr(pbs_net_t hostaddr, unsigned int port, int local_port, char *E
   exit(1);
   }
 
-int process_request(int new_sock)
+int process_request(tcp_chan *chan)
   {
   fprintf(stderr, "The call to process_request to be mocked!!\n");
   exit(1);
@@ -81,7 +81,7 @@ void net_add_close_func(int sd, void (*func)(int))
 
 void DIS_tcp_cleanup(struct tcp_chan *chan) {}
 
-void process_pbs_server_port_scheduler(int sock)
+void process_pbs_server_port_scheduler(int *sock)
   {
   }
 
@@ -102,3 +102,8 @@ ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
   {
   return(0);
   }
+
+void log_err(int errnum, const char *routine, const char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_ext(int l, const char *func_name, const char *msg, int o) {}

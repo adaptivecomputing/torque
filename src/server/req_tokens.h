@@ -10,6 +10,6 @@ int compare_tokens(char *token1, char *token2);
 
 /* static int chk_dup_token(struct array_strings *old, struct array_strings *new); */
 
-int set_tokens(pbs_attribute *attr, pbs_attribute *new, enum batch_op op);
+int set_tokens(pbs_attribute *attr, pbs_attribute *newAttr, enum batch_op op);
 
 #endif /* _REQ_TOKENS_H */

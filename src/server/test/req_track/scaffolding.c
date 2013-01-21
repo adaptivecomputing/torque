@@ -25,7 +25,7 @@ void reply_ack(struct batch_request *preq)
   exit(1);
   }
 
-struct work_task *set_task(enum work_type type, long event_id, void (*func)(), void *parm, int get_lock)
+struct work_task *set_task(enum work_type type, long event_id, void (*func)(struct work_task *), void *parm, int get_lock)
   {
   fprintf(stderr, "The call to set_task to be mocked!!\n");
   exit(1);
@@ -61,3 +61,7 @@ ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
   {
   return(0);
   }
+
+void log_err(int errnum, const char *routine, const char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}

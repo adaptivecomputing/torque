@@ -98,3 +98,5 @@ int comp_l(struct pbs_attribute *attr, struct pbs_attribute *with)
   {
   return(0);
   }
+
+void log_err(int errnum, const char *routine, const char *text) {}

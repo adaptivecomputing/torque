@@ -1,9 +1,14 @@
 include $(top_srcdir)/buildutils/config.mk
 
-if HAVE_CHECK
-SUBDIRS = test
-endif
+CHECK_DIR = test
 
 DIST_SUBDIRS =
 
 # all compilation happens in lib/Libpbs
+
+check:
+	$(MAKE) -C $(CHECK_DIR) $(MAKECMDGOALS)
+
+.PHONY: cleancheck
+cleancheck:
+	cd test && $(MAKE) cleancheck

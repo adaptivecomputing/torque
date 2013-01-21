@@ -101,6 +101,7 @@
 #include "pbs_error.h"
 #include "queue.h"
 #include "ji_mutex.h"
+#include "mutex_mgr.hpp"
 
 /* Global Data Items: */
 
@@ -120,13 +121,12 @@ job  *chk_job_request(char *, struct batch_request *);
 
 int req_movejob(
 
-    struct batch_request *vp) /* I */
+  batch_request *req) /* I */
 
   {
-  job *jobp;
-  struct batch_request *req = (struct batch_request *)vp;
-  char                  log_buf[LOCAL_LOG_BUF_SIZE];
-  int                   local_errno = 0;
+  job       *jobp;
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
+  int        local_errno = 0;
 
   jobp = chk_job_request(req->rq_ind.rq_move.rq_jid, req);
 
@@ -134,6 +134,9 @@ int req_movejob(
     {
     return(PBSE_NONE);
     }
+
+  mutex_mgr job_mutex(jobp->ji_mutex, true);
+
   if (LOGLEVEL >= 7)
     {
     sprintf(log_buf, "%s", jobp->ji_qs.ji_jobid);
@@ -151,8 +154,6 @@ int req_movejob(
 #endif /* NDEBUG */
 
     req_reject(PBSE_BADSTATE, 0, req, NULL, NULL);
-
-    unlock_ji_mutex(jobp, __func__, "1", LOGLEVEL);
 
     return(PBSE_NONE);
     }
@@ -172,7 +173,7 @@ int req_movejob(
       {
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
       }
-    unlock_ji_mutex(jobp, __func__, "2", LOGLEVEL);
+    
     req_reject(PBSE_JOB_ALREADY_IN_QUEUE, 0, req, NULL, log_buf);
     return(PBSE_NONE);
     }
@@ -215,8 +216,6 @@ int req_movejob(
       break;
     }  /* END switch (svr_movejob(jobp,req->rq_ind.rq_move.rq_destin,req)) */
 
-  unlock_ji_mutex(jobp, __func__, "1", LOGLEVEL);
-
   return(PBSE_NONE);
   }  /* END req_movejob() */
 
@@ -250,10 +249,14 @@ int req_orderjob(
     return(PBSE_NONE);
     }
 
+  mutex_mgr job1_mutex(pjob1->ji_mutex, true);
+
   if ((pjob2 = chk_job_request(req->rq_ind.rq_move.rq_destin, req)) == NULL)
     {
     return(PBSE_NONE);
     }
+
+  mutex_mgr job2_mutex(pjob1->ji_mutex, true);
 
   if (((pjob = pjob1)->ji_qs.ji_state == JOB_STATE_RUNNING) ||
       ((pjob = pjob2)->ji_qs.ji_state == JOB_STATE_RUNNING))
@@ -274,9 +277,6 @@ int req_orderjob(
 
     req_reject(PBSE_BADSTATE, 0, req, NULL, NULL);
 
-    unlock_ji_mutex(pjob1, __func__, "1", LOGLEVEL);
-    unlock_ji_mutex(pjob2, __func__, "2", LOGLEVEL);
-
     return(PBSE_NONE);
     }
   else if ((pjob1->ji_qhdr == NULL) || (pjob2->ji_qhdr == NULL))
@@ -290,44 +290,42 @@ int req_orderjob(
     int ok = FALSE;
 
     if ((pque2 = get_jobs_queue(&pjob2)) == NULL)
+      {
       rc = PBSE_BADSTATE;
+      job2_mutex.set_lock_on_exit(false);
+      }
     else
       {
+      mutex_mgr pque2_mutex = mutex_mgr(pque2->qu_mutex, true);
       if ((rc = svr_chkque(pjob1, pque2, get_variable(pjob1, pbs_o_host), MOVE_TYPE_Order, NULL)) == PBSE_NONE)
         {
-        unlock_queue(pque2, "req_orderjob", (char *)"pque2 svr_chkque pass", LOGLEVEL);
+        pque2_mutex.unlock();
+
         if ((pque1 = get_jobs_queue(&pjob1)) == NULL)
           {
           rc = PBSE_BADSTATE;
+          job1_mutex.set_lock_on_exit(false);
           }
         else if (pjob1 != NULL)
           {
+          mutex_mgr pque1_mutex = mutex_mgr(pque1->qu_mutex, true);
           if ((rc = svr_chkque(pjob2, pque1, get_variable(pjob2, pbs_o_host), MOVE_TYPE_Order, NULL)) == PBSE_NONE)
             {
             ok = TRUE;
             }
-          unlock_queue(pque1, "req_orderjob", (char *)"pque1", LOGLEVEL);
           }
         }
-      else
-        unlock_queue(pque2, "req_orderjob", (char *)"pque2 svr_chkque fail", LOGLEVEL);
       }
 
     if (ok == FALSE)
       {
       req_reject(rc, 0, req, NULL, NULL);
 
-      if (pjob1 != NULL)
-        unlock_ji_mutex(pjob1, __func__, "3", LOGLEVEL);
-      if (pjob2 != NULL)
-        unlock_ji_mutex(pjob2, __func__, "4", LOGLEVEL);
-
       return(PBSE_NONE);
       }
     }
 
   /* now swap the order of the two jobs in the queue lists */
-
   rank = pjob1->ji_wattr[JOB_ATR_qrank].at_val.at_long;
 
   pjob1->ji_wattr[JOB_ATR_qrank].at_val.at_long =
@@ -345,18 +343,24 @@ int req_orderjob(
     svr_dequejob(pjob2, FALSE);
 
     if (svr_enquejob(pjob1, FALSE, -1) == PBSE_JOB_RECYCLED)
+      {
       pjob1 = NULL;
+      job1_mutex.set_lock_on_exit(false);
+      }
 
     if (svr_enquejob(pjob2, FALSE, -1) == PBSE_JOB_RECYCLED)
+      {
       pjob2 = NULL;
+      job2_mutex.set_lock_on_exit(false);
+      }
     }
   else
     {
     if ((pque1 = get_jobs_queue(&pjob1)) != NULL)
       {
+      mutex_mgr pque1_mutex = mutex_mgr(pque1->qu_mutex, true);
       swap_jobs(pque1->qu_jobs,pjob1,pjob2);
       swap_jobs(NULL,pjob1,pjob2);
-      unlock_queue(pque1, "req_orderjob", (char *)"pque1 after swap", LOGLEVEL);
       }
     }
 
@@ -364,13 +368,11 @@ int req_orderjob(
   if (pjob1 != NULL)
     {
     job_save(pjob1, SAVEJOB_FULL, 0);
-    unlock_ji_mutex(pjob1, __func__, "7", LOGLEVEL);
     }
 
   if (pjob2 != NULL)
     {
     job_save(pjob2, SAVEJOB_FULL, 0);
-    unlock_ji_mutex(pjob2, __func__, "8", LOGLEVEL);
     }
 
   /* SUCCESS */

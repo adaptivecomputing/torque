@@ -106,6 +106,7 @@
 #include "csv.h"
 #include "array.h"
 #include "ji_mutex.h"
+#include "mutex_mgr.hpp"
 
 /* Private Functions Local to this file */
 
@@ -163,21 +164,21 @@ int chk_hold_priv(
 
 int req_holdjob(
 
-    struct batch_request *vp) /* I */
+  batch_request *vp) /* I */
 
   {
-  long                 *hold_val;
-  int                   newstate;
-  int                   newsub;
-  long                  old_hold;
-  job                  *pjob;
-  char                 *pset;
-  int                   rc;
-  pbs_attribute         temphold;
-  pbs_attribute        *pattr;
-  struct batch_request *preq = (struct batch_request *)vp;
-  char                  log_buf[LOCAL_LOG_BUF_SIZE];
-  struct batch_request *dup_req = NULL;
+  long          *hold_val;
+  int            newstate;
+  int            newsub;
+  long           old_hold;
+  job           *pjob;
+  char          *pset;
+  int            rc;
+  pbs_attribute  temphold;
+  pbs_attribute *pattr;
+  batch_request *preq = (struct batch_request *)vp;
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
+  batch_request *dup_req = NULL;
 
   pjob = chk_job_request(preq->rq_ind.rq_hold.rq_orig.rq_objname, preq);
 
@@ -186,14 +187,13 @@ int req_holdjob(
     return(PBSE_NONE);
     }
 
-  /* cannot do anything until we decode the holds to be set */
+  mutex_mgr job_mutex(pjob->ji_mutex, true);
 
+  /* cannot do anything until we decode the holds to be set */
   if ((rc = get_hold(&preq->rq_ind.rq_hold.rq_orig.rq_attr, (const char **)&pset,
                      &temphold)) != 0)
     {
     req_reject(rc, 0, preq, NULL, NULL);
-
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
     return(PBSE_NONE);
     }
@@ -203,8 +203,6 @@ int req_holdjob(
   if ((rc = chk_hold_priv(temphold.at_val.at_long, preq->rq_perm)) != 0)
     {
     req_reject(rc, 0, preq, NULL, NULL);
-
-    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
 
     return(PBSE_NONE);
     }
@@ -238,6 +236,9 @@ int req_holdjob(
       free_br(dup_req);
       *hold_val = old_hold;  /* reset to the old value */
       req_reject(rc, 0, preq, NULL, NULL);
+
+      if (pjob == NULL)
+        job_mutex.set_lock_on_exit(false);
       }
     else
       {
@@ -255,6 +256,8 @@ int req_holdjob(
         pjob = NULL;
         req_reject(rc, 0, preq, NULL, "relay to mom failed");
         }
+      else
+        job_mutex.set_lock_on_exit(false);
 
       process_hold_reply(dup_req);
       }
@@ -277,13 +280,11 @@ int req_holdjob(
   else
     {
     /* everything went well, may need to update the job state */
-
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
     if (old_hold != *hold_val)
       {
       /* indicate attributes changed     */
-
       pjob->ji_modified = 1;
 
       svr_evaljobstate(pjob, &newstate, &newsub, 0);
@@ -293,9 +294,6 @@ int req_holdjob(
 
     reply_ack(preq);
     }
-
-  if (pjob != NULL)
-    unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
 
   return(PBSE_NONE);
   }  /* END req_holdjob() */
@@ -310,20 +308,21 @@ int req_holdjob(
 
 void *req_checkpointjob(
 
-   struct batch_request *vp) /* I */
+  batch_request *preq) /* I */
 
   {
-  struct batch_request *preq = (struct batch_request *)vp;
-  job                  *pjob;
-  int                   rc;
-  pbs_attribute        *pattr;
-  char                  log_buf[LOCAL_LOG_BUF_SIZE];
-  struct batch_request *dup_req = NULL;
+  job           *pjob;
+  int            rc;
+  pbs_attribute *pattr;
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
+  batch_request *dup_req = NULL;
 
   if ((pjob = chk_job_request(preq->rq_ind.rq_manager.rq_objname, preq)) == NULL)
     {
     return(NULL);
     }
+
+  mutex_mgr job_mutex(pjob->ji_mutex, true);
 
   pattr = &pjob->ji_wattr[JOB_ATR_checkpoint];
 
@@ -339,12 +338,16 @@ void *req_checkpointjob(
       {
       req_reject(rc, 0, preq, NULL, "failure to allocate memory");
       }
+
     /* The dup_req is freed in relay_to_mom (failure)
      * or in issue_Drequest (success) */
     else if ((rc = relay_to_mom(&pjob, dup_req, NULL)) != PBSE_NONE)
       {
       req_reject(rc, 0, preq, NULL, NULL);
       free_br(dup_req);
+
+      if (pjob == NULL)
+        job_mutex.set_lock_on_exit(false);
       }
     else
       {
@@ -357,6 +360,8 @@ void *req_checkpointjob(
         unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         pjob = NULL;
         }
+      else
+        job_mutex.set_lock_on_exit(false);
 
       process_checkpoint_reply(dup_req);
       }
@@ -369,9 +374,6 @@ void *req_checkpointjob(
 
     req_reject(PBSE_IVALREQ, 0, preq, NULL, "job is not checkpointable");
     }
-
-  if (pjob != NULL)
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
   return(NULL);
   }  /* END req_checkpointjob() */
@@ -456,12 +458,12 @@ int release_job(
 
 int req_releasejob(
 
-    struct batch_request *vp) /* I */
+  batch_request *vp) /* I */
 
   {
-  job  *pjob;
-  int   rc;
-  struct batch_request *preq = (struct batch_request *)vp; 
+  job           *pjob;
+  int            rc;
+  batch_request *preq = (batch_request *)vp;
 
   pjob = chk_job_request(preq->rq_ind.rq_release.rq_objname, preq);
 
@@ -470,7 +472,9 @@ int req_releasejob(
     return(PBSE_NONE);
     }
 
-  if ((rc = release_job(preq,pjob)) != 0)
+  mutex_mgr job_mutex(pjob->ji_mutex, true);
+
+  if ((rc = release_job(preq, pjob)) != 0)
     {
     req_reject(rc,0,preq,NULL,NULL);
     }
@@ -478,8 +482,6 @@ int req_releasejob(
     {
     reply_ack(preq);
     }
-
-  unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
   return(PBSE_NONE);
   }  /* END req_releasejob() */
@@ -508,13 +510,10 @@ int release_whole_array(
       }
     else
       {
+      mutex_mgr job_mutex(pjob->ji_mutex, true);
+
       if ((rc = release_job(preq, pjob)) != 0)
-        {
-        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         return(rc);
-        }
-  
-      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
       }
     }
 
@@ -526,15 +525,14 @@ int release_whole_array(
 
 int req_releasearray(
 
-    struct batch_request *vp) /* I */
+  batch_request *preq) /* I */
 
   {
-  job                  *pjob;
-  job_array            *pa;
-  char                 *range;
-  int                   rc;
-  int                   index;
-  struct batch_request *preq = (struct batch_request *)vp;
+  job       *pjob;
+  job_array *pa;
+  char      *range;
+  int        rc;
+  int        index;
 
   pa = get_array(preq->rq_ind.rq_release.rq_objname);
   if (pa == NULL)
@@ -543,13 +541,13 @@ int req_releasearray(
     return(PBSE_NONE);
     }
 
+  mutex_mgr pa_mutex = mutex_mgr(pa->ai_mutex, true);
+
   while (TRUE)
     {
     if (((index = first_job_index(pa)) == -1) ||
         (pa->job_ids[index] == NULL))
       {
-      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
-
       return(PBSE_NONE);
       }
 
@@ -562,42 +560,37 @@ int req_releasearray(
       break;
     }
 
+  mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
+
   if (svr_authorize_jobreq(preq, pjob) == -1)
     {
     req_reject(PBSE_PERM,0,preq,NULL,NULL);
-
-    unlock_ai_mutex(pa, __func__, "2", LOGLEVEL);
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-
     return(PBSE_NONE);
     }
 
-  unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+  pjob_mutex.unlock();
 
   range = preq->rq_extend;
   if ((range != NULL) &&
       (strstr(range,ARRAY_RANGE) != NULL))
     {
     /* parse the array range */
+    /* ai_mutex is locked going into release_array_range and 
+       returns locked as well */
     if ((rc = release_array_range(pa,preq,range)) != 0)
       {
-      unlock_ai_mutex(pa, __func__, "3", LOGLEVEL);
-
       req_reject(rc,0,preq,NULL,NULL);
 
       return(PBSE_NONE);
       }
     }
+  /* pa->ai_mutex remains locked in and out of release_whole_array */
   else if ((rc = release_whole_array(pa,preq)) != 0)
     {
-    unlock_ai_mutex(pa, __func__, "4", LOGLEVEL);
-
     req_reject(rc,0,preq,NULL,NULL);
 
     return(PBSE_NONE);
     }
-  
-  unlock_ai_mutex(pa, __func__, "5", LOGLEVEL);
 
   reply_ack(preq);
 
@@ -704,64 +697,63 @@ void process_hold_reply(
               preq->rq_ind.rq_hold.rq_orig.rq_objname,
               msg_postmomnojob);
     req_reject(PBSE_UNKJOBID, 0, preq, NULL, msg_postmomnojob);
-
-    return;
-    }
-  else if (preq->rq_reply.brp_code != 0)
-    {
-
-    rc = get_hold(&preq->rq_ind.rq_hold.rq_orig.rq_attr, (const char **)&pset, &temphold);
-
-    if (rc == 0)
-      {
-      rc = job_attr_def[JOB_ATR_hold].at_set(&pjob->ji_wattr[JOB_ATR_hold],
-           &temphold, DECR);
-      }
-
-    pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;  /* reset it */
-
-    pjob->ji_modified = 1;    /* indicate attributes changed */
-    svr_evaljobstate(pjob, &newstate, &newsub, 0);
-    svr_setjobstate(pjob, newstate, newsub, FALSE); /* saves job */
-
-    if (preq->rq_reply.brp_code != PBSE_NOSUP)
-      {
-      sprintf(log_buf, msg_mombadhold, preq->rq_reply.brp_code);
-      log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
-      req_reject(preq->rq_reply.brp_code, 0, preq, NULL, log_buf);
-      }
-    else
-      {
-      reply_ack(preq);
-      }
     }
   else
     {
-    /* record that MOM has a checkpoint file */
+    mutex_mgr job_mutex(pjob->ji_mutex, true);
 
-    /* PBS_CHECKPOINT_MIGRATEABLE is defined as zero therefore this code will never fire.
-     * And if these flags are not set, start_exec will not try to run the job from
-     * the checkpoint image file.
-     */
-
-    pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
-
-    if (preq->rq_reply.brp_auxcode)  /* checkpoint can be moved */
+    if (preq->rq_reply.brp_code != 0)
       {
-      pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_CHECKPOINT_FILE;
-      pjob->ji_qs.ji_svrflags |=  JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_MIGRATEABLE;
+      rc = get_hold(&preq->rq_ind.rq_hold.rq_orig.rq_attr, (const char **)&pset, &temphold);
+      
+      if (rc == 0)
+        {
+        rc = job_attr_def[JOB_ATR_hold].at_set(&pjob->ji_wattr[JOB_ATR_hold],
+            &temphold, DECR);
+        }
+      
+      pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;  /* reset it */
+      
+      pjob->ji_modified = 1;    /* indicate attributes changed */
+      svr_evaljobstate(pjob, &newstate, &newsub, 0);
+      svr_setjobstate(pjob, newstate, newsub, FALSE); /* saves job */
+      
+      if (preq->rq_reply.brp_code != PBSE_NOSUP)
+        {
+        sprintf(log_buf, msg_mombadhold, preq->rq_reply.brp_code);
+        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        req_reject(preq->rq_reply.brp_code, 0, preq, NULL, log_buf);
+        }
+      else
+        {
+        reply_ack(preq);
+        }
       }
+    else
+      {
+      /* record that MOM has a checkpoint file */
+      
+      /* PBS_CHECKPOINT_MIGRATEABLE is defined as zero therefore this code will never fire.
+       * And if these flags are not set, start_exec will not try to run the job from
+       * the checkpoint image file.
+       */
+      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
+      
+      if (preq->rq_reply.brp_auxcode)  /* checkpoint can be moved */
+        {
+        pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_CHECKPOINT_FILE;
+        pjob->ji_qs.ji_svrflags |=  JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_MIGRATEABLE;
+        }
 
-    pjob->ji_modified = 1;    /* indicate attributes changed     */
-
-    svr_evaljobstate(pjob, &newstate, &newsub, 0);
-    svr_setjobstate(pjob, newstate, newsub, FALSE); /* saves job */
-
-    account_record(PBS_ACCT_CHKPNT, pjob, "Checkpointed and held"); /* note in accounting file */
-    reply_ack(preq);
+      pjob->ji_modified = 1;    /* indicate attributes changed     */
+      
+      svr_evaljobstate(pjob, &newstate, &newsub, 0);
+      svr_setjobstate(pjob, newstate, newsub, FALSE); /* saves job */
+      
+      account_record(PBS_ACCT_CHKPNT, pjob, "Checkpointed and held"); /* note in accounting file */
+      reply_ack(preq);
+      }
     }
-
-  unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
   } /* END process_hold_reply() */
 
@@ -796,12 +788,11 @@ void process_checkpoint_reply(
     }
   else
     {
-    /* record that MOM has a checkpoint file */
+    mutex_mgr job_mutex = mutex_mgr(pjob->ji_mutex, true);
 
+    /* record that MOM has a checkpoint file */
     account_record(PBS_ACCT_CHKPNT, pjob, "Checkpointed"); /* note in accounting file */
     reply_ack(preq);
-
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     }
   } /* END process_checkpoint_reply() */
 

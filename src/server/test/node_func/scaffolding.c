@@ -80,7 +80,7 @@ int add_hash(hash_table_t *ht, int value, void *key)
   return(0);
   }
 
-struct work_task *set_task(enum work_type type, long event_id, void (*func)(), void *parm, int get_lock)
+struct work_task *set_task(enum work_type type, long event_id, void (*func)(work_task *), void *parm, int get_lock)
   {
   fprintf(stderr, "This mock set_task always returns NULL!!\n");
   return(NULL);
@@ -131,16 +131,16 @@ void *get_next(list_link pl, char *file, int line)
 
 resizable_array *initialize_resizable_array(int size)
   {
-  size = 10;
-  resizable_array *ra = calloc(1, sizeof(resizable_array));
+  resizable_array *ra = (resizable_array *)calloc(1, sizeof(resizable_array));
   size_t           amount = sizeof(slot) * size;
+  size = 10;
 
   ra->max       = size;
   ra->num       = 0;
   ra->next_slot = 1;
   ra->last      = 0;
 
-  ra->slots = calloc(1, amount);
+  ra->slots = (slot *)calloc(1, amount);
 
   return(ra);
   }
@@ -179,12 +179,12 @@ void append_link(tlist_head *head, list_link *new_link, void *pobj)
 
 hash_table_t *create_hash(int size)
   {
-  hash_table_t *ht = calloc(1, sizeof(hash_table_t));
+  hash_table_t *ht = (hash_table_t *)calloc(1, sizeof(hash_table_t));
   size_t        amount = sizeof(bucket *) * size;
 
   ht->size = size;
   ht->num  = 0;
-  ht->buckets = calloc(1, amount);
+  ht->buckets = (bucket **)calloc(1, amount);
 
   return(ht);
   }
@@ -201,12 +201,12 @@ AvlTree AVL_insert(u_long key, uint16_t port, struct pbsnode *node, AvlTree tree
   return(NULL);
   }
 
-int unlock_node(struct pbsnode *the_node, const char *id, char *msg, int logging)
+int unlock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
   {
   return(0);
   }                           
 
-int lock_node(struct pbsnode *the_node, const char *id, char *msg, int logging)
+int lock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
   { 
   return(0); 
   }                           
@@ -232,14 +232,14 @@ struct tcp_chan* DIS_tcp_setup(int sock)
 
 
 
-int DIS_tcp_wflush(int sock)
+int DIS_tcp_wflush(tcp_chan *c)
   {
   fprintf(stderr, "The call to DIS_tcp_wflush needs to be mocked!!\n");
   exit(1);                    
   }
 
 
-int diswcs (int stream, const char *value, int len)
+int diswcs (tcp_chan* c, char const* a, unsigned long l)
   {
   fprintf(stderr, "The call to diswcs needs to be mocked!!\n");
   exit(1);                    
@@ -300,7 +300,6 @@ int get_addr_info(char *name, struct sockaddr_in *sa_info, int retry)
 int is_compose(
 
   struct tcp_chan *chan,
-  char *server_name,
   int   command)
 
   {
@@ -330,7 +329,7 @@ int append_dynamic_string(
 
 dynamic_string *get_dynamic_string(int initial_size, const char *str)
   {
-  dynamic_string *ds = calloc(1, sizeof(dynamic_string));
+  dynamic_string *ds = (dynamic_string *)calloc(1, sizeof(dynamic_string));
 
   if (ds == NULL)
     return(ds);
@@ -340,7 +339,7 @@ dynamic_string *get_dynamic_string(int initial_size, const char *str)
   else
     ds->size = DS_INITIAL_SIZE;
 
-  ds->str = calloc(1, ds->size);
+  ds->str = (char *)calloc(1, ds->size);
 
   if (ds->str == NULL)
     {
@@ -408,14 +407,6 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
 const char *alps_reporter_feature  = "alps_reporter";
 const char *alps_starter_feature   = "alps_starter";
 
-void log_event(int eventtype, int objclass, const char *objname, char *text)
-  {
-  return;
-  }
-
-void log_err(int errnum, const char *routine, char *text) {}
-
-void log_record(int eventtype, int objclass, const char *objname, char *text)
-  {
-  return;
-  }
+void log_err(int errnum, const char *routine, const char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}

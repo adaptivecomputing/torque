@@ -121,6 +121,7 @@
 #include "alps_functions.h"
 #include "node_manager.h" /* tfind_addr */
 #include "ji_mutex.h"
+#include "mutex_mgr.hpp"
 #include "unistd.h"
 #include "svr_task.h"
 
@@ -773,14 +774,11 @@ static void req_stat_job_step2(
             (pque == NULL))
           goto nextjob;
         
+        mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
         if (pque->qu_qs.qu_type != QTYPE_Execution)
           {
-          unlock_queue(pque, __func__, "not exec", LOGLEVEL);
-        
           goto nextjob;
           }
-
-        unlock_queue(pque, __func__, "exec", LOGLEVEL);
         }
       }
 
@@ -800,6 +798,7 @@ static void req_stat_job_step2(
         {
         unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
         }
+
       unlock_ji_mutex(pjob, __func__, "9", LOGLEVEL);
 
       req_reject(rc, bad, preq, NULL, NULL);
@@ -888,19 +887,21 @@ int stat_to_mom(
   unsigned long         addr;
   char                  log_buf[LOCAL_LOG_BUF_SIZE+1];
   struct pbsnode       *node;
-  int handle = -1;
-  unsigned long job_momaddr = -1;
-  unsigned short job_momport = -1;
-  char *job_momname = NULL;
-  job *pjob = NULL;
+  int                   handle = -1;
+  unsigned long         job_momaddr = -1;
+  unsigned short        job_momport = -1;
+  char                 *job_momname = NULL;
+  job                  *pjob = NULL;
 
   if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
-    return PBSE_JOBNOTFOUND;
+    return(PBSE_JOBNOTFOUND);
+
+  mutex_mgr job_mutex(pjob->ji_mutex, true);
 
   job_momaddr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
   job_momport = pjob->ji_qs.ji_un.ji_exect.ji_momport;
   job_momname = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
-  unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+  job_mutex.unlock();
 
   if (job_momname == NULL)
     return PBSE_MEM_MALLOC;
@@ -999,6 +1000,8 @@ void stat_update(
       {
       if ((pjob = svr_find_job(pstatus->brp_objname, FALSE)) != NULL)
         {
+        mutex_mgr job_mutex(pjob->ji_mutex, true);
+
         sattrl = (svrattrl *)GET_NEXT(pstatus->brp_attr);
 
         oldsid = pjob->ji_wattr[JOB_ATR_session_id].at_val.at_long;
@@ -1026,8 +1029,6 @@ void stat_update(
 #endif    /* USESAVEDRESOURCES */
 
         pjob->ji_momstat = time_now;
-
-        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         }
 
       pstatus = (struct brp_status *)GET_NEXT(pstatus->brp_stlink);
@@ -1045,8 +1046,10 @@ void stat_update(
            this can happen if a diskless node reboots and the mom_priv/jobs
            directory is cleared, set its state to queued so job_abt doesn't
            think it is still running */
+        mutex_mgr job_mutex(pjob->ji_mutex, true);
         svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_ABORT, FALSE);
         rel_resc(pjob);
+        job_mutex.set_lock_on_exit(false);
         job_abt(&pjob, "Job does not exist on node");
 
         /* TODO, if the job is rerunnable we should set its state back to queued */
@@ -1141,8 +1144,11 @@ void poll_job_task(
     
     if (pjob != NULL)
       {
+      mutex_mgr job_mutex(pjob->ji_mutex, true);
+
       job_state = pjob->ji_qs.ji_state;
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+      job_mutex.unlock();
+
       get_svr_attr_l(SRV_ATR_PollJobs, &poll_jobs);
       if ((poll_jobs) && (job_state == JOB_STATE_RUNNING))
         {
@@ -1229,9 +1235,9 @@ int req_stat_que(
   if (type == 0)
     {
     /* get status of the named queue */
-
+    mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
     rc = status_que(pque, preq, &preply->brp_un.brp_status);
-    unlock_queue(pque, "req_stat_que", (char *)"type == 0", LOGLEVEL);
+    /* pque_qu_mutex will be unlocked in the destructor when we leave this scope */
     }
   else
     {
@@ -1241,20 +1247,19 @@ int req_stat_que(
     /* get status of all queues */
     while ((pque = next_queue(&svr_queues,&iter)) != NULL)
       {
+      mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
       rc = status_que(pque, preq, &preply->brp_un.brp_status);
 
       if (rc != 0)
         {
         if (rc != PBSE_PERM)
           {
-          unlock_queue(pque, "req_stat_que", (char *)"break", LOGLEVEL);
           break;
           }
 
         rc = 0;
         }
 
-      unlock_queue(pque, "req_stat_que", (char *)"end while", LOGLEVEL);
       }
     }
 

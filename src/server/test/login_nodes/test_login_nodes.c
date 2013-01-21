@@ -105,9 +105,13 @@ START_TEST(retrieval_test)
   initialize_node_for_testing(&n3);
   initialize_node_for_testing(&n4);
   rc = add_to_login_holder(&n1);
+  fail_unless(rc == 0);
   rc = add_to_login_holder(&n2);
+  fail_unless(rc == 0);
   rc = add_to_login_holder(&n3);
+  fail_unless(rc == 0);
   rc = add_to_login_holder(&n4);
+  fail_unless(rc == 0);
 
   rtd = get_next_login_node(NULL);
   increment_counts(&n1, &n2, &n3, &n4, rtd, &n1_rtd, &n2_rtd, &n3_rtd, &n4_rtd);
@@ -176,8 +180,8 @@ START_TEST(prop_test)
   int                   n2_rtd = 0;
   int                   n3_rtd = 0;
   int                   n4_rtd = 0;
-  char                 *feature = "tom";
-  char                 *feature2 = "bob";
+  char                 *feature = (char *)"tom";
+  char                 *feature2 = (char *)"bob";
   struct prop          *props = NULL;
   struct prop          *props2 = NULL;
 
@@ -194,9 +198,13 @@ START_TEST(prop_test)
 
   initialize_login_holder();
   rc = add_to_login_holder(&n1);
+  fail_unless(rc == 0);
   rc = add_to_login_holder(&n2);
+  fail_unless(rc == 0);
   rc = add_to_login_holder(&n3);
+  fail_unless(rc == 0);
   rc = add_to_login_holder(&n4);
+  fail_unless(rc == 0);
 
   rtd = get_next_login_node(props);
   increment_counts(&n1, &n2, &n3, &n4, rtd, &n1_rtd, &n2_rtd, &n3_rtd, &n4_rtd);

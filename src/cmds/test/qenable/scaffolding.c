@@ -24,7 +24,7 @@ int parse_destination_id(char *destination_in, char **queue_name_out, char **ser
   exit(1);
   }
 
-int cnt2server(char *SpecServer)
+int cnt2server(const char *SpecServer)
   { 
   fprintf(stderr, "The call to cnt2server needs to be mocked!!\n");
   exit(1);

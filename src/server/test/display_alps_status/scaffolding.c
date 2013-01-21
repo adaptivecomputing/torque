@@ -20,7 +20,7 @@ struct pbsnode *next_host(all_nodes *an, int *iter, struct pbsnode *pnode)
   return((struct pbsnode *)iter);
   }
 
-int unlock_node(struct pbsnode *the_node, const char *method_name, char *msg, int logging)
+int unlock_node(struct pbsnode *the_node, const char *method_name, const char *msg, int logging)
   {
   return(0);
   }

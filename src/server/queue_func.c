@@ -115,6 +115,7 @@
 #include "svrfunc.h"
 #include "svr_func.h" /* get_svr_attr_* */
 #include "ji_mutex.h"
+#include "mutex_mgr.hpp"
 
 
 #define MSG_LEN_LONG 160
@@ -270,6 +271,9 @@ pbs_queue *que_alloc(
     clear_attr(&pq->qu_attr[i], &que_attr_def[i]);
     }
 
+  /* Set route_retry_thread_id in case this is a routing queue */
+  pq->route_retry_thread_id = -1;
+
   return(pq);
   }  /* END que_alloc() */
 
@@ -289,6 +293,8 @@ void que_free(
   int            i;
   pbs_attribute *pattr;
   attribute_def *pdef;
+
+  mutex_mgr pq_mutex(pq->qu_mutex, true);
 
   /* remove any calloc working pbs_attribute space */
   for (i = 0;i < QA_ATR_LAST;i++)
@@ -320,8 +326,6 @@ void que_free(
   remove_queue(&svr_queues, pq);
   pq->q_being_recycled = TRUE;
   insert_into_queue_recycler(pq);
-  unlock_queue(pq, "que_free", (char *)NULL, LOGLEVEL);
-
   return;
   }  /* END que_free() */
 
@@ -670,6 +674,7 @@ pbs_queue *lock_queue_with_job_held(
   {
   char       jobid[PBS_MAXSVRJOBID + 1];
   job       *pjob = *pjob_ptr;
+  char      log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (pque != NULL)
     {
@@ -686,6 +691,12 @@ pbs_queue *lock_queue_with_job_held(
         pque = NULL;
         *pjob_ptr = NULL;
         }
+      }
+    else
+      {
+      if (LOGLEVEL >= 10)
+        snprintf(log_buf, sizeof(log_buf), "try lock succeeded for queue %s on job %s", pque->qu_qs.qu_name, pjob->ji_qs.ji_jobid);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
       }
     }
 

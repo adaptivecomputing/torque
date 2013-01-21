@@ -17,7 +17,9 @@
 #include "mom_func.h" /* radix_buf */
 #include "dis.h"
 
-char *path_jobs = "mom_priv/jobs/"; /* mom_main.c */
+int create_job_cpuset(job *pj) { return 0; }
+int use_cpusets(job *pj) { return 0; }
+const char *path_jobs = "some path to nowhere."; /* mom_main.c */
 int multi_mom = 1; /* mom_main.c */
 int svr_resc_size = 0; /* resc_def_all.c */
 u_long localaddr = 0; /* mom_main.c */
@@ -52,7 +54,7 @@ int insert_thing(resizable_array *ra, void *thing)
   }
 
 #undef disrus
-unsigned short disrus(int stream, int *retval)
+unsigned short disrus(tcp_chan *c, int *retval)
   {
   *retval = DIS_SUCCESS;
   return(0);
@@ -109,7 +111,7 @@ struct passwd *check_pwd(job *pjob)
   {
   if(check_pwd_return == NULL)
     {
-    check_pwd_return = calloc(1,sizeof(*check_pwd_return));
+    check_pwd_return = (struct passwd *)calloc(1,sizeof(*check_pwd_return));
     }
   return(check_pwd_return);
   }
@@ -420,7 +422,7 @@ resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
   {
   if (find_resc_def_return == NULL)
     {
-    find_resc_def_return = calloc(1, sizeof(*find_resc_def_return));
+    find_resc_def_return = (struct resource_def *)calloc(1, sizeof(*find_resc_def_return));
     }
   if (find_resc_def_return->rs_name != NULL)
     {
@@ -492,7 +494,7 @@ job *mom_find_job(char *jobid)
     }
   if (mock_mom_find_job_return == NULL)
     {
-      mock_mom_find_job_return = calloc(1, sizeof(*mock_mom_find_job_return));
+      mock_mom_find_job_return = (job *)calloc(1, sizeof(*mock_mom_find_job_return));
       mock_mom_find_job_return->ji_wattr[JOB_ATR_Cookie].at_flags |= ATR_VFLAG_SET;
       mock_mom_find_job_return->ji_wattr[JOB_ATR_Cookie].at_val.at_str = strdup("cookie");
     }
@@ -500,7 +502,7 @@ job *mom_find_job(char *jobid)
   }
 
 #undef diswsi
-int diswsi(int stream, int value)
+int diswsi(tcp_chan *c, int value)
   {
   fprintf(stderr, "This mock diswsi always returns 0!!\n");
   return(0);
@@ -511,7 +513,7 @@ job *job_alloc(void )
   {
   if (mock_job_alloc_return == NULL)
     {
-    mock_job_alloc_return = calloc(1, sizeof(*mock_job_alloc_return));
+    mock_job_alloc_return = (job *)calloc(1, sizeof(*mock_job_alloc_return));
     }
   return(mock_job_alloc_return);
   }
@@ -573,7 +575,7 @@ ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   return(0);
   }
 
-int getpeername(int __fd, __SOCKADDR_ARG __addr, socklen_t *__restrict __len)
+int getpeername(int __fd, __SOCKADDR_ARG __addr, socklen_t *__restrict __len)  __THROW
   {
   memset(__addr, 0, sizeof(*__addr));
   return(0);
@@ -644,4 +646,7 @@ int disrsi(struct tcp_chan *chan, int *retval)
   return disrsi_array[disrsi_return_index++];
   }
 
-
+void log_err(int errnum, const char *routine, const char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_ext(int type, const char *func_name, const char *msg, int o) {}

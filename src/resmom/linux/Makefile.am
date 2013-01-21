@@ -1,9 +1,7 @@
 include $(top_srcdir)/buildutils/config.mk
 
+CHECK_DIR = test
 
-if HAVE_CHECK
-SUBDIRS = test
-endif
 DIST_SUBDIRS =
 
 include_HEADERS = lib_mom.h
@@ -16,3 +14,10 @@ libmommach_a_SOURCES = mom_mach.c mom_mach.h mom_start.c pe_input.c
 if BUILD_L26_CPUSETS
 libmommach_a_SOURCES += cpuset.c
 endif
+
+check:
+	$(MAKE) -C $(CHECK_DIR) $(MAKECMDGOALS)
+
+.PHONY: cleancheck
+cleancheck:
+	cd $(CHECK_DIR) && $(MAKE) cleancheck

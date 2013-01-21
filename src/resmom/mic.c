@@ -90,6 +90,11 @@
 
 #define  MAX_ENGINES 32
 
+#ifdef NUMA_SUPPORT
+extern int       numa_index;
+extern int       num_node_boards;
+extern nodeboard node_boards[];
+#endif
 
 
 int add_isa(
@@ -224,13 +229,28 @@ int add_mic_status(
 
   if (COIEngineGetCount(COI_ISA_MIC, &num_engines) != COI_SUCCESS)
     {
-    log_err(-1, __func__, (char *)"Mics are present but apparently not configured correctly - can't get count");
+    log_err(-1, __func__, "Mics are present but apparently not configured correctly - can't get count");
     return(PBSE_SYSTEM);
     }
 
   copy_to_end_of_dynamic_string(status, START_MIC_STATUS);
 
+#ifdef NUMA_SUPPORT
+  if ((num_engines < node_boards[numa_index].mic_start_index) ||
+      (num_engines < node_boards[numa_index].mic_end_index))
+    {
+    snprintf(log_buffer, sizeof(log_buffer),
+      "node board %d is supposed to have mic range %d-%d but there are only %d mics",
+      numa_index, node_boards[numa_index].mic_start_index,
+      node_boards[numa_index].mic_end_index, num_engines);
+    log_err(-1, __func__, log_buffer);
+    return(PBSE_SYSTEM);
+    }
+
+  for (i = node_boards[numa_index].mic_start_index; i <= node_boards[numa_index].mic_end_index; i++)
+#else
   for (i = 0; i < num_engines; i++)
+#endif
     {
     if (COIEngineGetHandle(COI_ISA_MIC, i, &engine[i]) != COI_SUCCESS)
       {

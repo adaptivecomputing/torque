@@ -99,6 +99,7 @@
 #include "issue_request.h"
 #include "threadpool.h"
 #include "ji_mutex.h"
+#include "mutex_mgr.hpp"
 
 /* Global Data */
 extern int LOGLEVEL;
@@ -491,13 +492,14 @@ int record_reservation(
 
       if ((pjob = svr_find_job(jobid, TRUE)) != NULL)
         {
+        mutex_mgr job_mutex(pjob->ji_mutex, true);
         pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str = strdup(rsv_id);
         pjob->ji_wattr[JOB_ATR_reservation_id].at_flags = ATR_VFLAG_SET;
 
         create_alps_reservation(pjob);
         found_job = TRUE;
 
-        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+        job_mutex.unlock();
         lock_node(pnode, __func__, NULL, 0);
         break;
         }

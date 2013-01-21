@@ -1,6 +1,6 @@
-#include "license_pbs.h" /* See here for the software license */
 #ifndef _CATCH_CHILD_CT_H
 #define _CATCH_CHILD_CT_H
+#include <errno.h>
 #include <check.h>
 #define PBS_MOM
 

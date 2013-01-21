@@ -100,6 +100,7 @@
 #include "../lib/Liblog/log_event.h"
 #include "svrfunc.h"
 #include "ji_mutex.h"
+#include "mutex_mgr.hpp"
 
 
 /* Private Function local to this file */
@@ -123,24 +124,23 @@ int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq,
 
 void *req_messagejob(
     
-    struct batch_request *vp) /* I */
+  batch_request *preq) /* I */
 
   {
-  struct batch_request *preq = (struct batch_request *)vp;
-  job                  *pjob;
-  int                   rc;
-  struct batch_request *dup_req = NULL;
+  job           *pjob;
+  int            rc;
+  batch_request *dup_req = NULL;
 
   if ((pjob = chk_job_request(preq->rq_ind.rq_message.rq_jid, preq)) == NULL)
     return(NULL);
+
+  mutex_mgr job_mutex(pjob->ji_mutex, true);
 
   /* the job must be running */
 
   if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
     {
     req_reject(PBSE_BADSTATE, 0, preq, NULL, NULL);
-
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     
     return(NULL);
     }
@@ -164,8 +164,8 @@ void *req_messagejob(
     }
 
   /* After MOM acts and replies to us, we pick up in post_message_req() */
-  if (pjob != NULL)
-    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+  if (pjob == NULL)
+    job_mutex.set_lock_on_exit(false);
 
   return(NULL);
   } /* END req_messagejob() */
@@ -182,7 +182,7 @@ void post_message_req(
   batch_request *preq)
 
   {
-  char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  char log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* preq has been hadnled previously */
   if (preq == NULL)

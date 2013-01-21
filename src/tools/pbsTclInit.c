@@ -116,7 +116,9 @@ int pbsTcl_Init(
 
 #endif  /* TCLX */
 
+#ifndef __cplusplus
   fullresp(0);
+#endif
 
   add_cmds(interp);
 
@@ -125,14 +127,11 @@ int pbsTcl_Init(
   return TCL_OK;
   }
 
-int
-
-main(argc, argv)
-int  argc;
-char *argv[];
+int main(int argc, char *argv[])
+  
   {
   chk_file_sec_stderr = 1;
 
   Tcl_Main(argc, argv, pbsTcl_Init);
   return 0;
-  }
+  } /* END main() */

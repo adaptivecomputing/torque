@@ -10,9 +10,12 @@ const char *msg_job_otherfail = "An error has occurred processing your job, see 
 const char *msg_job_abort = "Aborted by PBS Server ";
 const char *msg_job_del       = "job deleted";
 
+extern "C"
+{
 char *pbse_to_txt(int err)
   {
   fprintf(stderr, "The call to pbse_to_txt to be mocked!!\n");
   exit(1);
   }
+}
 

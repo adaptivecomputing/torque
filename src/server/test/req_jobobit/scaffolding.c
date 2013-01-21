@@ -64,12 +64,6 @@ struct batch_request *alloc_br(int type)
   return(preq);
   }
 
-job_array *get_jobs_array(job **pjob)
-  {
-  fprintf(stderr, "The call to get_jobs_array to be mocked!!\n");
-  exit(1);
-  }
-
 char *parse_servername(char *name, unsigned int *service)
   {
   return(strdup(name));
@@ -86,12 +80,6 @@ int svr_job_purge(job *pjob)
   }
 
 void svr_mailowner(job *pjob, int mailpoint, int force, const char *text) {}
-
-int modify_job_attr(job *pjob, svrattrl *plist, int perm, int *bad)
-  {
-  fprintf(stderr, "The call to modify_job_attr to be mocked!!\n");
-  exit(1);
-  }
 
 pbs_net_t get_hostaddr(int *local_errno, char *hostname)
   {
@@ -120,55 +108,13 @@ pbs_queue *get_jobs_queue(job **pjob)
   return(&bob);
   }
 
-void reply_ack(struct batch_request *preq)
-  {
-  fprintf(stderr, "The call to reply_ack to be mocked!!\n");
-  exit(1);
-  }
-
-void cleanup_restart_file( job *pjob)  
-  {
-  fprintf(stderr, "The call to cleanup_restart_file to be mocked!!\n");
-  exit(1);
-  }
-
-void release_req(struct work_task *pwt)
-  {
-  fprintf(stderr, "The call to release_req to be mocked!!\n");
-  exit(1);
-  }
-
-void free_nodes(node_info **ninfo_arr) {}
+void free_nodes(job *) {}
 
 void free_br(struct batch_request *preq) {}
 
-void remove_job_delete_nanny( struct job *pjob)
-  {
-  fprintf(stderr, "The call to remove_job_delete_nanny to be mocked!!\n");
-  exit(1);
-  }
-
-void account_jobend( job *pjob, char *used) 
-  {
-  fprintf(stderr, "The call to account_jobend to be mocked!!\n");
-  exit(1);
-  }
-
-struct work_task *set_task(enum work_type type, long event_id, void (*func)(), void *parm, int get_lock)
+struct work_task *set_task(enum work_type type, long event_id, void (*func)(work_task *), void *parm, int get_lock)
   {
   return(NULL);
-  }
-
-void svr_disconnect(int handle)
-  {
-  fprintf(stderr, "The call to svr_disconnect to be mocked!!\n");
-  exit(1);
-  }
-
-void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
-  {
-  fprintf(stderr, "The call to req_reject to be mocked!!\n");
-  exit(1);
   }
 
 int depend_on_term(char *job_id)
@@ -176,13 +122,7 @@ int depend_on_term(char *job_id)
   return(0);
   }
 
-void *get_next(list_link pl, char *file, int line)
-  {
-  fprintf(stderr, "The call to get_next to be mocked!!\n");
-  exit(1);
-  }
-
-int issue_Drequest(int conn, struct batch_request *request, void (*func)(struct work_task *), struct work_task **ppwt)
+int issue_Drequest(int conn, batch_request *request)
   {
   if (bad_drequest)
     return(-1);
@@ -191,12 +131,6 @@ int issue_Drequest(int conn, struct batch_request *request, void (*func)(struct 
   }
 
 void set_resc_assigned(job *pjob, enum batch_op op) {}
-
-void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum event, char *job_id, long job_atr_hold, int job_exit_status)
-  {
-  fprintf(stderr, "The call to update_array_values to be mocked!!\n");
-  exit(1);
-  }
 
 void append_link(tlist_head *head, list_link *new_link, void *pobj)
   {
@@ -221,7 +155,7 @@ void append_link(tlist_head *head, list_link *new_link, void *pobj)
   new_link->ll_prior->ll_next = new_link; /* now visible to forward iteration */
   }
 
-int svr_connect(pbs_net_t hostaddr, unsigned int port, struct pbsnode *pnode, void *(*func)(void *), enum conn_type cntype)
+int svr_connect(unsigned long, unsigned int, int*, pbsnode*, void* (*)(void*), conn_type)
   {
   if (bad_connect)
     return(-1);
@@ -244,11 +178,8 @@ job *svr_find_job(char *jobid, int get_subjob)
 
   if (bad_job == 0)
     {
-    pjob = calloc(1, sizeof(*pjob));
-    if (jobid != NULL)
-      {
-      strncpy(pjob->ji_qs.ji_jobid, jobid, sizeof(pjob->ji_qs.ji_jobid)-1);
-      }
+    pjob = (job *)calloc(1, sizeof(job));
+    strcpy(pjob->ji_qs.ji_jobid, jobid);
     pjob->ji_wattr[JOB_ATR_reported].at_flags = ATR_VFLAG_SET;
   
     if (reported)
@@ -268,29 +199,11 @@ int unlock_queue(struct pbs_queue *the_queue, const char *method_name, const cha
   return(0);
   }
 
-void svr_evaljobstate(job *pjob, int *newstate, int *newsub, int forceeval)
-  {
-  fprintf(stderr, "The call to svr_evaljobstate to be mocked!!\n");
-  exit(1);
-  }
-
-int insert_task(all_tasks *at, work_task *wt) 
-  {
-  fprintf(stderr, "The call to insert_task to be mocked!!\n");
-  exit(1);
-  }
-
 void get_jobowner(char *from, char *to)
   {
   strcpy(to, "dbeer");
   }
 
-
-char *threadsafe_tokenizer(char **str, const char *delims)
-  {
-  fprintf(stderr, "The call to threadsafe_tokenizer needs to be mocked!!\n");
-  exit(1);
-  }
 
 int get_svr_attr_l(int index, long *l)
   {
@@ -300,15 +213,9 @@ int get_svr_attr_l(int index, long *l)
   return(0);
   }
 
-int safe_strncat(char *str, char *to_append, size_t space_remaining)
+int safe_strncat(char *str, const char *to_append, size_t space_remaining)
   {
   return(0);
-  }
-
-void close_conn(int sd, int mutex)
-  {
-  fprintf(stderr, "The call to close_conn needs to be mocked!!\n");
-  exit(1);
   }
 
 batch_request *get_remove_batch_request(
@@ -332,7 +239,7 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   return(0);
   }
 
-int lock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
+int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }
@@ -358,14 +265,14 @@ int unlock_node(
     
   struct pbsnode *the_node,
   const char     *id,
-  char           *msg,
+  const char           *msg,
   int             logging)
 
   {
   return(0);
   }
 
-int unlock_ai_mutex(job_array *pa, const char *id, char *msg, int logging)
+int unlock_ai_mutex(job_array *pa, const char *id, const char *msg, int logging)
   {
   return(0);
   }
@@ -384,3 +291,6 @@ void log_event(int eventtype, int objclass, const char *objname, const char *tex
   {
   }
 
+void log_err(int error, const char *func_id, const char *msg) {}
+
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}

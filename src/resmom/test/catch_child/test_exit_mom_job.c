@@ -1,12 +1,13 @@
 #include "test_catch_child.h"
 #include "catch_child.h"
+
+#include <stdlib.h>
+
 extern int tc;
 extern int func_num;
 extern int ran_one;
-extern char *getenv(char *);
 extern int multi_mom;
 extern int LOGLEVEL;
-extern void *calloc(size_t __nmemb, size_t __size);
 
 START_TEST(test_exit_mom_job_nojihost)
   {

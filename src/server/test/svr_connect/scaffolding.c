@@ -54,7 +54,7 @@ int get_num_connections()
   exit(1);
   }
 
-int DIS_tcp_wflush(int fd)
+int DIS_tcp_wflush(tcp_chan *chan)
   {
   fprintf(stderr, "The call to DIS_tcp_wflush to be mocked!!\n");
   exit(1);
@@ -96,7 +96,7 @@ int lock_node(
     
   struct pbsnode *the_node,
   const char     *id,
-  char           *msg,
+  const char     *msg,
   int             logging)
 
   {
@@ -107,9 +107,14 @@ int unlock_node(
     
   struct pbsnode *the_node,
   const char     *id,
-  char           *msg,
+  const char     *msg,
   int             logging)
 
   {
   return(0);
   }
+
+void log_err(int errnum, const char *routine, const char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_ext(int l, const char *func_name, const char *msg, int o) {}

@@ -92,7 +92,7 @@
 #include "svrfunc.h"
 #include "sched_cmds.h"
 #include "pbs_error.h"
-#include "../lib/Libdis/lib_dis.h" /* DIS_tcp_setup */
+#include "dis_internal.h" /* DIS_tcp_setup */
 #include "../lib/Libifl/lib_ifl.h" /* get_port_from_server_name_file */
 #include "pbsd_main.h" /* process_pbs_server_port */
 #include "process_request.h" /*process_request */

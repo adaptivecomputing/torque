@@ -593,6 +593,8 @@ int chk_file_sec(
 
   if (S_ISLNK(sbuf.st_mode) != 0)
     {
+    memset(&symlink, 0, sizeof(symlink));
+
     i = readlink(path, symlink, sizeof(symlink) - 1);
 
     if (i < 0)
@@ -609,11 +611,6 @@ int chk_file_sec(
       goto chkerr;
       }
 
-    if (i == sizeof(symlink) - 1)
-      symlink[i] = '\0';
-    else
-      symlink[i + 1] = '\0';
-
     if (symlink[0] == '/')
       {
       return(chk_file_sec(symlink, isdir, sticky, disallow, fullpath, EMsg));
@@ -622,7 +619,6 @@ int chk_file_sec(
     snprintf(shorter, _POSIX_PATH_MAX, "%s", path);
 
     /* terminate string after final directory delimiter */
-
     pc = strrchr(shorter, '/');
 
     if (pc != NULL)

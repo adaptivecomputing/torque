@@ -48,6 +48,8 @@ m4_ifdef([HAVE_CHECK],
   [AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.9.6 color-tests])],
   [AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.9.6])])
 
+AC_PROG_CXX
+CC="$CXX"
 AM_MAINTAINER_MODE
 
 if test "$program_prefix" = "NONE";then
@@ -128,7 +130,9 @@ AM_CONDITIONAL(HAVE_CHECK, test x"$have_check" = "xyes")
 m4_ifdef([AM_SILENT_RULES],[
   if test "x$have_check" = "xyes"; then
     AM_SILENT_RULES(no)
-    AC_CONFIG_FILES(src/cmds/test/Makefile
+    AC_CONFIG_FILES(src/test/scaffold_fail/Makefile
+    src/test/torque_test_lib/Makefile
+    src/cmds/test/Makefile
     src/cmds/test/MXML/Makefile
     src/cmds/test/common_cmds/Makefile
     src/cmds/test/pbs_track/Makefile
@@ -371,6 +375,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/lib/Libutils/test/u_tree/Makefile
     src/lib/Libutils/test/u_users/Makefile
     src/lib/Libutils/test/u_xml/Makefile
+    src/lib/Libutils/test/u_mutex_mgr/Makefile
     src/lib/test/Makefile
     src/momctl/test/Makefile
     src/momctl/test/momctl/Makefile
@@ -594,8 +599,8 @@ dnl  user_choosed_cc_set=${CC+set}
 dnl  user_choosed_cflags_set=${CFLAGS+set}
 dnl  SPECIFIED_CFLAGS=$CFLAGS
 dnl  look for the C-Compiler
-AC_PROG_CC
-AC_PROG_GCC_TRADITIONAL
+#AC_PROG_CC
+#AC_PROG_GCC_TRADITIONAL
 
 dnl
 dnl  ######################################################################
@@ -2165,11 +2170,6 @@ AH_BOTTOM([
 
 
 dnl  Include the Cplant Fault Recovery Patch jugglery
-AH_VERBATIM([NEED_BLOCKING_CONNECTIONS],
-[#ifndef NEED_BLOCKING_CONNECTIONS
-#define write(a,b,c) write_nonblocking_socket(a,b,c)
-#define read(a,b,c) read_nonblocking_socket(a,b,c)
-#endif])
 
 pbs_build_host=`uname -n`
 pbs_build_date=`date`
@@ -2257,6 +2257,8 @@ AC_OUTPUT(buildutils/pbs_mkdirs
 	  src/drmaa/test/Makefile
 	  src/drmaa/Doxyfile
 	  src/pam/Makefile
+    src/test/Makefile
+
 )
 
 echo

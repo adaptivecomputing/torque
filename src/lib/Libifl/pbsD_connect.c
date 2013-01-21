@@ -149,6 +149,7 @@ static const char *pbs_destn_file = PBS_DEFAULT_FILE;
 
 char *pbs_server = NULL;
 
+int rpp_fd = -1; /* This is for backward compatibility. rpp is no longer part of TORQUE 4.x */
 
 /* empty_alarm_handler -- this routine was added to help fix bug 76.
    blocking reads would not timeout on a SIG_IGN so this routine
@@ -261,7 +262,8 @@ void get_port_from_server_name_file(unsigned int *server_name_file_port)
  * @return A pointer to the default server name.
  * @see pbs_fbserver()
  */
-
+extern "C"
+{
 char *pbs_default(void)
 
   {
@@ -279,6 +281,7 @@ char *pbs_default(void)
 
   return(server_name);
   } /* END pbs_default() */
+}
 
 
 
@@ -334,8 +337,8 @@ char *PBS_get_server(
   if (dflt_port == 0)
     {
     dflt_port = get_svrport(
-                  PBS_BATCH_SERVICE_NAME,
-                  "tcp",
+                  (char *)PBS_BATCH_SERVICE_NAME,
+                  (char *)"tcp",
                   PBS_BATCH_SERVICE_PORT);
     }
 
@@ -763,6 +766,7 @@ int pbs_original_connect(
   struct addrinfo     *addr_info;
   int                  out;
   int                  i;
+  int                  opt_value = 1;
   int                  rc = PBSE_NONE;
   int                  local_errno;
 
@@ -817,6 +821,7 @@ int pbs_original_connect(
       connection[out].ch_errtxt = NULL;
 
       break;
+
       }
 
     pthread_mutex_unlock(connection[i].ch_mutex);
@@ -990,6 +995,8 @@ int pbs_original_connect(
           continue;
           }
         }
+
+      setsockopt(connection[out].ch_socket, SOL_SOCKET, SO_REUSEADDR, &opt_value, sizeof(opt_value));
 
       /* This is probably an IPv4 solution for the if_name and preferred_addr
          We need to see what ioctl call we need for IPv6 */

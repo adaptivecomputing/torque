@@ -73,7 +73,7 @@ int MXMLToXString(mxml_t *E, char **Buf, int *BufSize, int MaxBufSize, char **Ta
   exit(1);
   }
 
-int cnt2server(char *SpecServer)
+int cnt2server(const char *SpecServer)
   { 
   fprintf(stderr, "The call to cnt2server needs to be mocked!!\n");
   exit(1);
@@ -115,7 +115,7 @@ int MXMLCreateE(mxml_t **E, const char *Name)
   exit(1);
   }
 
-int get_server(char *job_id_in, char *job_id_out, char *server_out)
+int get_server(const char *job_id_in, char *job_id_out, int jobid_size, char *server_out, int server_size)
   { 
   fprintf(stderr, "The call to get_server needs to be mocked!!\n");
   exit(1);

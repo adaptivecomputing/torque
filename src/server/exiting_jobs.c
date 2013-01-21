@@ -90,6 +90,7 @@
 #include "log.h"
 #include "batch_request.h"
 #include "ji_mutex.h"
+#include "mutex_mgr.hpp"
 
 
 
@@ -206,14 +207,13 @@ int check_exiting_jobs()
         }
       else
         {
+        mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
         if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
           {
           remove_entry_from_exiting_list(jeri);
-          unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
           }
         else
           {
-          unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
           retry_job_exit(jeri);
           }
         }

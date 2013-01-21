@@ -5,11 +5,20 @@
 int pbs_errno = 0;
 char *pbs_server = NULL;
 
+extern "C"
+{
 int pbs_disconnect(int connect)
   { 
   fprintf(stderr, "The call to pbs_disconnect needs to be mocked!!\n");
   exit(1);
   }
+
+char *pbs_strerror(int err)
+  { 
+  fprintf(stderr, "The call to pbs_strerror needs to be mocked!!\n");
+  exit(1);
+  }
+}
 
 int locate_job(char *job_id, char *parent_server, char *located_server)
   { 
@@ -17,7 +26,7 @@ int locate_job(char *job_id, char *parent_server, char *located_server)
   exit(1);
   }
 
-int cnt2server(char *SpecServer)
+int cnt2server(const char *SpecServer)
   { 
   fprintf(stderr, "The call to cnt2server needs to be mocked!!\n");
   exit(1);
@@ -35,7 +44,7 @@ int pbs_holdjob_err(int c, char *jobid, char *holdtype, char *extend, int *local
   exit(1);
   }
 
-int get_server(char *job_id_in, char *job_id_out, char *server_out)
+int get_server(const char *job_id_in, char *job_id_out, int job_size, char *server_out, int server_size)
   {
   fprintf(stderr, "The call to get_server needs to be mocked!!\n");
   exit(1);
@@ -44,12 +53,6 @@ int get_server(char *job_id_in, char *job_id_out, char *server_out)
 void prt_job_err(const char *cmd, int connect, const char *id)
   { 
   fprintf(stderr, "The call to prt_job_err needs to be mocked!!\n");
-  exit(1);
-  }
-
-char *pbs_strerror(int err)
-  { 
-  fprintf(stderr, "The call to pbs_strerror needs to be mocked!!\n");
   exit(1);
   }
 

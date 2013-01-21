@@ -49,6 +49,10 @@ typedef  struct tm_whattodo
 /*
 ** Prototypes for all the TM API calls.
 */
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 int tm_init(void *info,
             struct tm_roots *roots);
 
@@ -127,5 +131,8 @@ int tm_register(tm_whattodo_t *what,
  *  or some altid (adoptCmd = TM_ADOPT_ALTID)
  */
 int tm_adopt(char *id, int adoptCmd, pid_t pid);
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* TM_H */

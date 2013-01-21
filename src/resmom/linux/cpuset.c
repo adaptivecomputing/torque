@@ -16,6 +16,7 @@
 #  include <cpuset.h>
 #endif
 
+#define PBS_MOM 1
 #include "libpbs.h"
 #include "attribute.h"
 #include "resource.h"
@@ -23,6 +24,7 @@
 #include "pbs_job.h"
 #include "pbs_nodes.h"
 #include "log.h"
+#include "pbs_cpuset.h"
 
 /* NOTE: move these three things to utils when lib is checked in */
 #ifndef MAXPATHLEN
@@ -34,6 +36,7 @@
 #ifndef SUCCESS
 #define SUCCESS 1
 #endif /* SUCCESS */
+
 
 extern hwloc_topology_t topology;
 extern int              MOMConfigUseSMT;
@@ -1592,7 +1595,10 @@ int move_to_job_cpuset(
 
 
 
-int get_cpuset_size(char *cpusetStr)
+int get_cpuset_size(
+    
+  char *cpusetStr)
+
   {
   int val1 = -1;
   int val2 = -2;
@@ -1636,9 +1642,9 @@ int get_cpuset_size(char *cpusetStr)
 
 void adjust_root_map(
 
-    char *cpusetStr, /* I */
-    int   cpusetMap[], /* I/O */
-    int   add)       /* I */
+  char *cpusetStr, /* I */
+  int   cpusetMap[], /* I/O */
+  int   add)       /* I */
 
   {
   int   val1 = -1;

@@ -100,6 +100,7 @@
 #include "mom_hierarchy.h"
 #include "dynamic_string.h"
 #include "tcp.h" /* tcp_chan */
+#include "net_connect.h"
 
 #define SAVEJOB_BUF_SIZE 8192
 
@@ -673,6 +674,7 @@ struct job
 
   pthread_mutex_t  *ji_mutex;
   char              ji_being_recycled;
+  int               ji_commit_done;   /* req_commit has completed. If in routing queue job can now be routed */
 #endif/* PBS_MOM */   /* END SERVER ONLY */
 
   /*

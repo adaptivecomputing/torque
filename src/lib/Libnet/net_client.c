@@ -372,12 +372,12 @@ retry:  /* retry goto added (rentec) */
     for (bind_retry = 0; bind_retry < 3; bind_retry++)
       {
 		  errorsock = bindresvport(sock, &local);
-      if(errorsock == 0)
+      if (errorsock == 0)
         break;
       usleep(1000);
       }
 
-    if(errorsock != 0)
+    if (errorsock != 0)
       {
       /* bindresvport could not get a privileged port */
       if (EMsg != NULL)

@@ -3540,7 +3540,7 @@ int im_poll_job_as_sister(
       close(local_socket);
       return(IM_DONE);
       }
-    else if ((ret = im_compose(local_chan,jobid,cookie,IM_ALL_OKAY,event,fromtask)) != SUCCESS)
+    else if ((ret = im_compose(local_chan,jobid,cookie,IM_ALL_OKAY,event,fromtask)) != DIS_SUCCESS)
       {
       DIS_tcp_close(local_chan);
       return(IM_DONE);
@@ -8468,7 +8468,7 @@ received_node *get_received_node_entry(
     
     /* initialize the received node struct */
     rn->statuses = get_dynamic_string(MAXLINE,NULL);
-    strcpy(rn->hostname, hostname);
+    strncpy(rn->hostname, hostname, sizeof(rn->hostname) - 1);
     
     if (rn->statuses == NULL)
       {

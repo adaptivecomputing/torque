@@ -181,7 +181,7 @@ typedef struct _queuefix
   int    qu_type;     /* queue type: exec, route */
   time_t qu_ctime;    /* time queue created */
   time_t qu_mtime;    /* time queue last modified */
-  char   qu_name[PBS_MAXQUEUENAME]; /* queue name */
+  char   qu_name[PBS_MAXQUEUENAME+1]; /* queue name */
   } queuefix;
 
 
@@ -210,6 +210,7 @@ typedef struct pbs_queue
   pbs_attribute qu_attr[QA_ATR_LAST];
 
   user_info_holder *qu_uih;
+  pthread_t        route_retry_thread_id;
   } pbs_queue;
 
 

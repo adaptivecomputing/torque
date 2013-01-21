@@ -130,6 +130,7 @@
 #include "ji_mutex.h"
 #include "user_info.h"
 #include "hash_map.h"
+#include "mutex_mgr.hpp"
 
 /*#ifndef SIGKILL*/
 /* there is some weird stuff in gcc include files signal.h & sys/params.h */
@@ -232,6 +233,7 @@ extern struct server server;
 
 /* External Functions Called */
 
+void          poll_job_task(work_task *);
 extern void   on_job_rerun_task(struct work_task *);
 extern void   set_resc_assigned(job *, enum batch_op);
 extern void   set_old_nodes(job *);
@@ -328,7 +330,7 @@ int DArrayAppend(
   void     *Item)  /* I */
 
   {
-  void *tmp = NULL;
+  void **tmp = NULL;
 
   if (Array->AppendIndex >= Array->Length)
     {
@@ -337,7 +339,7 @@ int DArrayAppend(
     if (newLength <= 10)
       newLength = 10;
 
-    tmp = calloc(newLength, sizeof(Array->Data[0]));
+    tmp = (void **)calloc(newLength, sizeof(Array->Data[0]));
 
     if (tmp == NULL)
       {
@@ -349,7 +351,7 @@ int DArrayAppend(
 
     memcpy(tmp, Array->Data, sizeof(Array->Data[0]) * Array->Length);
     free(Array->Data);
-    Array->Data = &tmp;
+    Array->Data = tmp;
     Array->Length = newLength;
     }
 
@@ -1154,7 +1156,7 @@ int initialize_paths()
   else
     {
     int len = strlen(SERVER_CHKPTDIR) + strlen(suffix_slash) + 1;
-    path_checkpoint = calloc(1, len);
+    path_checkpoint = (char *) calloc(1, len);
     snprintf(path_checkpoint, len, "%s%s", SERVER_CHKPTDIR, suffix_slash);
     }
 
@@ -1626,6 +1628,7 @@ int handle_job_recovery(
   char              basen[MAXPATHLEN+1];
   int               Index;
   int               iter = -1;
+  time_t            time_now = time(NULL);
 
   if (chdir(path_jobs) != 0)
     {
@@ -1770,6 +1773,7 @@ int handle_job_recovery(
         continue;
         }
 
+
       if ((type != RECOV_COLD) &&
           (type != RECOV_CREATE) &&
           (pjob->ji_arraystructid[0] == '\0') &&
@@ -1789,11 +1793,19 @@ int handle_job_recovery(
           }
         else
           {
+          /* set up the poll_task for this recovered job  - 
+           * only do up to 10 per second to not overwhelm pbs_server*/
+          set_task(WORK_Timed, time_now + 10 + (Index % 10), poll_job_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
           unlock_ji_mutex(pjob, __func__, "5", LOGLEVEL);
           }
         }
       else
+        {
+        /* set up the poll_task for this recovered job  - 
+         * only do up to 10 per second to not overwhelm pbs_server*/
+        set_task(WORK_Timed, time_now + 10 + (Index % 10), poll_job_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
         unlock_ji_mutex(pjob, __func__, "6", LOGLEVEL);
+        }
       }
 
     DArrayFree(&Array);
@@ -1855,8 +1867,8 @@ int cleanup_recovered_arrays()
      
     if ((pjob = svr_find_job(pa->ai_qs.parent_id, FALSE)) != NULL)
       {
+      mutex_mgr job_mgr(pjob->ji_mutex,true);
       job_template_exists = TRUE;
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       }
 
     /* if no jobs were recovered, delete this array */
@@ -2249,8 +2261,6 @@ int pbsd_init_job(
 
   if ((type == RECOV_COLD) || (type == RECOV_CREATE))
     {
-/*    need_y_response(type);*/
-
     init_abt_job(pjob);
 
     return(PBSE_BAD_PARAMETER);
@@ -2794,10 +2804,10 @@ void resume_net_move(
     {
     if((pjob = svr_find_job(jobid, FALSE)) == NULL)
       return;
+
+    mutex_mgr job_mgr(pjob->ji_mutex,true);
   
     net_move(pjob, 0);
-    
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
     free(jobid);
     }

@@ -48,6 +48,7 @@
 #include "svr_func.h"
 #include "job_func.h" /* svr_job_purge */
 #include "ji_mutex.h"
+#include "mutex_mgr.hpp"
 #include "batch_request.h"
 
 extern int array_upgrade(job_array *, int, int, int *);
@@ -693,12 +694,12 @@ int setup_array_struct(
 
   pa->ai_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(pa->ai_mutex, NULL);
-  lock_ai_mutex(pa, __func__, NULL, LOGLEVEL);
+  mutex_mgr pa_mutex = mutex_mgr(pa->ai_mutex);
 
   if (job_save(pjob, SAVEJOB_FULL, 0) != 0)
     {
     /* the array is deleted in svr_job_purge */
-    unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+    pa_mutex.unlock();
     /* Does job array need to be removed? */
 
     if (LOGLEVEL >= 6)
@@ -721,6 +722,7 @@ int setup_array_struct(
     get_svr_attr_l(SRV_ATR_MaxSlotLimit, &max_limit);
     array_delete(pa);
 
+    pa_mutex.set_lock_on_exit(false);
     snprintf(log_buf,sizeof(log_buf),
       "Array %s requested a slot limit above the max limit %ld, rejecting\n",
       pa->ai_qs.parent_id,
@@ -762,6 +764,7 @@ int setup_array_struct(
     if (max_array_size < pa->ai_qs.num_jobs)
       {
       array_delete(pa);
+      pa_mutex.set_lock_on_exit(false);
 
       return(ARRAY_TOO_LARGE);
       }
@@ -786,14 +789,13 @@ int setup_array_struct(
   if (bad_token_count > 0)
     {
     array_delete(pa);
+    pa_mutex.set_lock_on_exit(false);
     return 2;
     }
 
   strcpy(pjob->ji_arraystructid, pa->ai_qs.parent_id);
 
   insert_array(pa);
-
-  unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
 
   return(PBSE_NONE);
   } /* END setup_array_struct() */
@@ -1137,10 +1139,10 @@ int delete_array_range(
         }
       else
         {
+        mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
         if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
           {
           /* invalid state for request,  skip */
-          unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
           continue;
           }
 
@@ -1148,13 +1150,14 @@ int delete_array_range(
 
         pthread_mutex_unlock(pa->ai_mutex);
         deleted = attempt_delete(pjob);
+        /* we come out of attempt_delete unlocked */
+        pjob_mutex.set_lock_on_exit(false);
+
 
         if (deleted == FALSE)
           {
           /* if the job was deleted, this mutex would be taked care of elsewhere. When it fails,
            * release it here */
-          unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-
           num_skipped++;
           }
         else if (running == FALSE)
@@ -1239,12 +1242,12 @@ int delete_whole_array(
       }
     else
       {
+      mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
       num_jobs++;
 
       if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
         {
         /* invalid state for request,  skip */
-        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         continue;
         }
         
@@ -1252,12 +1255,12 @@ int delete_whole_array(
 
       pthread_mutex_unlock(pa->ai_mutex);
       deleted = attempt_delete(pjob);
+      pjob_mutex.set_lock_on_exit(false);
 
       if (deleted == FALSE)
         {
         /* if the job was deleted, this mutex would be taked care of elsewhere.
          * When it fails, release it here */
-        unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
         num_skipped++;
         }
       else if (running == FALSE)
@@ -1408,12 +1411,11 @@ int release_array_range(
         }
       else
         {
+        mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
         if ((rc = release_job(preq,pjob)))
           {
-          unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
           return(rc);
           }
-        unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
         }
       }
     
@@ -1476,6 +1478,7 @@ int modify_array_range(
           }
         else
           {
+          mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
           pthread_mutex_unlock(pa->ai_mutex);
           rc = modify_job((void **)&pjob, plist, preq, checkpoint_req, NO_MOM_RELAY);
           pa = get_jobs_array(&pjob);
@@ -1509,18 +1512,13 @@ int modify_array_range(
                   pjob->ji_qs.ji_jobid);
                 log_err(rc, __func__, log_buf);
                 
-                unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-                
                 return(rc); /* unable to get to MOM */
                 }
               else
                 {
-                unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
                 post_modify_arrayreq(array_req);
                 }
               }
-            else
-              unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
             }
           else
             pa->job_ids[i] = NULL;
@@ -1641,6 +1639,7 @@ void update_array_values(
               }
             else
               {
+              mutex_mgr pj_mutex = mutex_mgr(pj->ji_mutex, true);
               if (pj->ji_wattr[JOB_ATR_hold].at_val.at_long & HOLD_l)
                 {
                 pj->ji_wattr[JOB_ATR_hold].at_val.at_long &= ~HOLD_l;
@@ -1653,12 +1652,10 @@ void update_array_values(
                 svr_evaljobstate(pj, &newstate, &newsub, 1);
                 svr_setjobstate(pj, newstate, newsub, FALSE);
                 job_save(pj, SAVEJOB_FULL, 0);
-                unlock_ji_mutex(pj, __func__, "1", LOGLEVEL);
                 
                 break;
                 }
 
-              unlock_ji_mutex(pj, __func__, "2", LOGLEVEL);
               }
             }
           }
@@ -1715,6 +1712,7 @@ void update_array_statuses()
     
     if ((pjob = svr_find_job(jobid, TRUE)) != NULL)
       {
+      mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
       if (running > 0)
         {
         svr_setjobstate(pjob, JOB_STATE_RUNNING, pjob->ji_qs.ji_substate, FALSE);
@@ -1729,8 +1727,6 @@ void update_array_statuses()
         /* default to just calling the array queued */
         svr_setjobstate(pjob, JOB_STATE_QUEUED, pjob->ji_qs.ji_substate, FALSE);
         }
-
-      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
       }
     } /* END for each array */
 

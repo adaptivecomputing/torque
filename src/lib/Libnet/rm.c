@@ -173,7 +173,10 @@ char TRMEMsg[1024];  /* global rm error message */
 ** Returns the stream handle (>i= 0) on success.
 ** Returns value < 0 on error.
 */
-
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 int openrm(
 
   char         *host,  /* I */
@@ -190,7 +193,7 @@ int openrm(
     {
     if (gotport == 0)
       {
-      gotport = get_svrport(PBS_MANAGER_SERVICE_NAME, "tcp",
+      gotport = get_svrport((char *)PBS_MANAGER_SERVICE_NAME, (char *)"tcp",
                             PBS_MANAGER_SERVICE_PORT);
       }  /* END if (gotport == 0) */
 
@@ -263,6 +266,9 @@ int openrm(
   return(stream);
   }  /* END openrm() */
 
+#ifdef __cplusplus
+}
+#endif
 
 
 
@@ -507,7 +513,10 @@ int closerm(
 ** Shutdown the resource monitor.  Return result 0 if
 ** all is ok or -1 if not.
 */
-
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 int downrm(
 
   int *local_errno,
@@ -535,7 +544,9 @@ int downrm(
 
   return(0);
   }  /* END downrm() */
-
+#ifdef __cplusplus
+}
+#endif
 
 
 
@@ -543,7 +554,10 @@ int downrm(
 ** Cause the resource monitor to read the file named.
 ** Return the result 0 if all is ok or -1 if not.
 */
-
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 int configrm(
 
   int   stream,      /* I */
@@ -611,7 +625,9 @@ int configrm(
 
   return(0);
   }  /* END configrm() */
-
+#ifdef __cplusplus
+}
+#endif
 
 
 
@@ -703,7 +719,10 @@ int addreq_err(
 
 
 
-
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 int addreq(
 
   int   stream,
@@ -712,7 +731,9 @@ int addreq(
   {
   return(addreq_err(stream, &pbs_errno, line));
   } /* END addreq() */
-
+#ifdef __cplusplus
+}
+#endif
 
 
 
@@ -721,7 +742,10 @@ int addreq(
 ** Add a request to every stream.
 ** Return the number of streams acted upon.
 */
-
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 int allreq(
 
   char *line)
@@ -768,7 +792,9 @@ int allreq(
 
   return(num);
   }  /* END allreq() */
-
+#ifdef __cplusplus
+}
+#endif
 
 
 
@@ -877,7 +903,10 @@ char *getreq_err(
 
 
 
-
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 char *getreq(
 
   int stream)
@@ -885,7 +914,9 @@ char *getreq(
   {
   return(getreq_err(&pbs_errno, stream));
   } /* END getreq() */
-
+#ifdef __cplusplus
+}
+#endif
 
 
 
@@ -893,7 +924,10 @@ char *getreq(
 ** Finish and send any outstanding messages to all resource monitors.
 ** Return the number of messages flushed.
 */
-
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 int flushreq(void)
 
   {
@@ -968,7 +1002,9 @@ int flushreq(void)
 
   return(did);
   }  /* END flushreq() */
-
+#ifdef __cplusplus
+}
+#endif
 
 
 
@@ -978,7 +1014,10 @@ int flushreq(void)
 ** to read or a negative number (the return from rpp_poll)
 ** if there is no stream to read.
 */
-
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 int activereq(void)
 
   {
@@ -1054,7 +1093,9 @@ int activereq(void)
 
   return(-2);
   }  /* END activereq() */
-
+#ifdef __cplusplus
+}
+#endif
 
 
 
@@ -1065,6 +1106,10 @@ int activereq(void)
 ** This makes it possible to examine the entire line rather
 ** than just the answer following the equal sign.
 */
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 void fullresp(
     
   int flag)
@@ -1074,3 +1119,6 @@ void fullresp(
 
   return;
   }
+#ifdef __cplusplus
+}
+#endif

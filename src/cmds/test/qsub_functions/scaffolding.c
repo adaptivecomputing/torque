@@ -35,12 +35,6 @@ ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
   exit(1);
   }
 
-int pbs_disconnect(int connect)
-  {
-  fprintf(stderr, "The call to pbs_disconnect to be mocked!!\n");
-  exit(1);
-  }
-
 int parse_destination_id(char *destination_in, char **queue_name_out, char **server_name_out)
   {
   fprintf(stderr, "The call to parse_destination_id to be mocked!!\n");
@@ -71,7 +65,7 @@ void port_forwarder( struct pfwdsock *socks, int (*connfunc)(char *, long, char 
   exit(1);
   }
 
-int cnt2server(char *SpecServer)
+int cnt2server(const char *SpecServer)
   {
   fprintf(stderr, "The call to cnt2server to be mocked!!\n");
   exit(1);
@@ -131,12 +125,6 @@ int add_verify_resources(memmgr **mm, job_data **res_attr, char *resources, int 
   exit(1);
   }
 
-int pbs_submit_hash(int c, memmgr **mm, job_data *job_attr, job_data *res_attr, char *script, char *destination, char *extend, char **job_id, char **msg)
-  {
-  fprintf(stderr, "The call to pbs_submit_hash to be mocked!!\n");
-  exit(1);
-  }
-
 int parse_at_list(char *list, int use_count, int abs_path)
   {
   fprintf(stderr, "The call to parse_at_list to be mocked!!\n");
@@ -146,12 +134,6 @@ int parse_at_list(char *list, int use_count, int abs_path)
 char * csv_find_string(const char *csv_str, const char *search_str)
   {
   fprintf(stderr, "The call to csv_find_string to be mocked!!\n");
-  exit(1);
-  }
-
-int get_fullhostname( char *shortname,  char *namebuf,  int bufsize,  char *EMsg) 
-  {
-  fprintf(stderr, "The call to get_fullhostname to be mocked!!\n");
   exit(1);
   }
 
@@ -167,7 +149,7 @@ int pbs_deljob_err( int c, char *jobid, char *extend, int *local_errno)
   exit(1);
   }
 
-void calloc_or_fail( char **dest, int alloc_size, const char *err_msg)
+void calloc_or_fail(memmgr ** mgr, char **dest, int alloc_size, const char *err_msg)
   {
   fprintf(stderr, "The call to calloc_or_fail to be mocked!!\n");
   exit(1);
@@ -179,7 +161,7 @@ int parse_depend_list( char *list, char *rtn_list,  int rtn_size )
   exit(1);
   }
 
-void parse_variable_list(job_data **dest_hash, job_data *user_env, int var_type,  int op_type,  char *the_list) 
+void parse_variable_list(memmgr **mgr, job_data **dest_hash, job_data *user_env, int var_type,  int op_type,  char *the_list)
   {
   fprintf(stderr, "The call to parse_variable_list to be mocked!!\n");
   exit(1);
@@ -203,17 +185,38 @@ void hash_add_or_exit(memmgr **mm, job_data **head, const char *name, const char
   exit(1);
   }
 
-void set_env_opts(job_data **env_attr, char **envp) 
+void set_env_opts(memmgr **mgr, job_data **env_attr, char **envp)
   {
   fprintf(stderr, "The call to set_env_opts to be mocked!!\n");
   exit(1);
   }
 
+extern "C"
+{
 char *pbs_default(void)
   {
   fprintf(stderr, "The call to pbs_default to be mocked!!\n");
   exit(1);
   }
+
+int pbs_submit_hash(int c, memmgr **mm, job_data *job_attr, job_data *res_attr, char *script, char *destination, char *extend, char **job_id, char **msg)
+  {
+  fprintf(stderr, "The call to pbs_submit_hash to be mocked!!\n");
+  exit(1);
+  }
+
+int get_fullhostname( char *shortname,  char *namebuf,  int bufsize,  char *EMsg) 
+  {
+  fprintf(stderr, "The call to get_fullhostname to be mocked!!\n");
+  exit(1);
+  }
+
+int pbs_disconnect(int connect)
+  {
+  fprintf(stderr, "The call to pbs_disconnect to be mocked!!\n");
+  exit(1);
+  }
+}
 
 void memmgr_destroy(memmgr **mgr)
   {
@@ -251,7 +254,7 @@ int hash_strlen(job_data *src)
   exit(1);
   }
 
-int safe_strncat(char *str, char *to_append, size_t space_remaining)
+int safe_strncat(char *str, const char *to_append, size_t space_remaining)
   {
   fprintf(stderr, "The call to safe_strncat to be mocked!!\n");
   exit(1);

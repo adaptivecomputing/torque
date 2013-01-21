@@ -17,7 +17,6 @@
 #include "tm_.h" /* tm_task_id, tm_event_t */
 #include "mom_mach.h" /* startjob_rtn */
 #include "mom_func.h" /* var_table */
-
 int exec_with_exec;
 int is_login_node = 0;
 char *apbasil_protocol = NULL;
@@ -58,7 +57,17 @@ int num_var_env;
 char jobstarter_exe_name[MAXPATHLEN + 1];
 int    attempttomakedir = 0;
 int EXTPWDRETRY = 3;
+char log_buffer[LOG_BUF_SIZE];
 
+int diswcs (struct tcp_chan *chan, const char *value,size_t nchars) 
+  { return 0; }
+int create_job_cpuset(job * pj) { return 0; }
+int DIS_tcp_wflush (struct tcp_chan *chan) { return 0; }
+int move_to_job_cpuset(pid_t, job *) { return 0; }
+int diswsi(tcp_chan *chan, int i) { return 0; }
+int encode_DIS_svrattrl(tcp_chan *chan, svrattrl *s) { return 0; }
+int im_compose(tcp_chan *chan, char *arg2, char *a3, int a4, int a5, unsigned int a6) { return 0; }
+int create_alps_reservation(char *a1, char *a2, char *a3, char *a4, char *a5, long long a6, int a7, char **a8) { return 0; }
 int mom_close_poll(void)
   {
   fprintf(stderr, "The call to mom_close_poll needs to be mocked!!\n");
@@ -275,6 +284,16 @@ int mom_checkpoint_execute_job(job *pjob, char *shell, char *arg[], struct var_t
   exit(1);
   }
 
+void log_ext(int errnum, const char *routine, const char *text, int severity)
+  {
+  }
+
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+
+void log_err(int errnum, const char *routine, const char *text) {}
+
 void log_close(int msg)
   {
   fprintf(stderr, "The call to log_close needs to be mocked!!\n");
@@ -456,20 +475,6 @@ int get_hostaddr_hostent_af(int *local_errno, char *hostname, unsigned short *af
   }
 
 void DIS_tcp_cleanup(struct tcp_chan *chan) {}
-
-int create_alps_reservation(
-
-  char       *exec_hosts,
-  char       *username,
-  char       *jobid,
-  char       *apbasil_path,
-  char       *apbasil_protocol,
-  long long   pagg_id_value,
-  char      **reservation_id)
-
-  {
-  return(0);
-  }
 
 ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
   {

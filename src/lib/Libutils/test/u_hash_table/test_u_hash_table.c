@@ -10,8 +10,8 @@
 #define DEFAULT_HASH_SIZE 101
 
 char  buf[4096];
-char *keys[] = {"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m"};
-char *more_keys[] = {"nostradamus", "slartibartfast", "zapphod beeblebrox", "arthur dent", "ford prefect", "trillian", "antidisestablishmentarianism", "highway", "horcamer", "a vowel", "a towel", "martin the robot", "mostly harmless"};
+char *keys[] = {(char *)"a", (char *)"b", (char *)"c", (char *)"d", (char *)"e", (char *)"f", (char *)"g", (char *)"h", (char *)"i", (char *)"j", (char *)"k", (char *)"l", (char *)"m"};
+char *more_keys[] = {(char *)"nostradamus", (char *)"slartibartfast", (char *)"zapphod beeblebrox", (char *)"arthur dent", (char *)"ford prefect", (char *)"trillian", (char *)"antidisestablishmentarianism", (char *)"highway", (char *)"horcamer", (char *)"a vowel", (char *)"a towel", (char *)"martin the robot", (char *)"mostly harmless"};
 int   num_keys = 13;
 int   vals[] = { 0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,   11,  12};
 

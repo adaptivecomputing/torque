@@ -3,10 +3,10 @@
 #include "track_alps_reservations.h"
 
 
-char *eh1 = "napali+l11+tom";
-char *eh2 = "napali/0+napali/1+l11/0+l11/1";
-char *jobids[] = { "1.napali", "2.napali", "3.napali", "4.napali" };
-char *rsvids[] = {"1234", "1235", "1236", "1237" };
+char *eh1 = (char *)"napali+l11+tom";
+char *eh2 = (char *)"napali/0+napali/1+l11/0+l11/1";
+char *jobids[] = { (char *)"1.napali", (char *)"2.napali", (char *)"3.napali", (char *)"4.napali" };
+char *rsvids[] = {(char *)"1234", (char *)"1235", (char *)"1236", (char *)"1237" };
 
 reservation_holder alps_reservations;
 
@@ -96,15 +96,15 @@ START_TEST(insert_create_inspect_test)
   fail_unless(already_recorded(rsvids[1]) == 1, "rsv_id 0 not found");
   fail_unless(already_recorded(rsvids[2]) == 1, "rsv_id 0 not found");
   fail_unless(already_recorded(rsvids[3]) == 1, "rsv_id 0 not found");
-  fail_unless(already_recorded("tom") == 0,     "missing rsv_id somehow found");
-  fail_unless(already_recorded("tommy") == 0,   "missing rsv_id somehow found");
+  fail_unless(already_recorded((char *)"tom") == 0,     "missing rsv_id somehow found");
+  fail_unless(already_recorded((char *)"tommy") == 0,   "missing rsv_id somehow found");
 
   fail_unless(is_orphaned(rsvids[0]) == 1, "no job but not orphaned?");
   fail_unless(is_orphaned(rsvids[1]) == 0, "job 1 returned but orphaned?");
   fail_unless(is_orphaned(rsvids[2]) == 0, "job 2 returned but orphaned?");
   fail_unless(is_orphaned(rsvids[3]) == 1, "completed job but not orphaned?");
 
-  fail_unless(remove_alps_reservation("00") == THING_NOT_FOUND, "found something that doesn't exist");
+  fail_unless(remove_alps_reservation((char *)"00") == THING_NOT_FOUND, "found something that doesn't exist");
   fail_unless(remove_alps_reservation(rsvids[0]) == 0, "couldn't remove reservation 1");
   fail_unless(remove_alps_reservation(rsvids[1]) == 0, "couldn't remove reservation 2");
   fail_unless(remove_alps_reservation(rsvids[2]) == 0, "couldn't remove reservation 3");

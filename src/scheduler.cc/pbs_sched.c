@@ -777,7 +777,7 @@ int main(
   caddr_t curr_brk = 0;
   caddr_t next_brk;
   extern char *optarg;
-  extern int optind, opterr;
+  extern int opterr;
   fd_set fdset;
 
   int  schedinit(int argc, char **argv);
@@ -795,10 +795,10 @@ int main(
   while (--c > 2)
     (void)close(c); /* close any file desc left open by parent */
 
-  port = get_svrport(PBS_SCHEDULER_SERVICE_NAME, "tcp",
+  port = get_svrport((char *)PBS_SCHEDULER_SERVICE_NAME, (char *)"tcp",
                      PBS_SCHEDULER_SERVICE_PORT);
 
-  pbs_rm_port = get_svrport(PBS_MANAGER_SERVICE_NAME, "tcp",
+  pbs_rm_port = get_svrport((char *)PBS_MANAGER_SERVICE_NAME, (char *)"tcp",
                             PBS_MANAGER_SERVICE_PORT);
 
   strcpy(pbs_current_user, "Scheduler");

@@ -1,6 +1,7 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 /* declarations/includes for Global Vars */
 #define PBS_MOM
 #include "list_link.h" /* tlist_head, list_link */
@@ -59,7 +60,6 @@ char *path_jobs; /* mom_main.c */
 tlist_head mom_polljobs; /* mom_main.c */
 char        *path_epiloguserp; /* mom_main.c */
 char        *path_epilogp; /* mom_main.c */
-extern int errno;
 attribute_def job_attr_def[10]; /* src/server/job_attr_def.c */
 
 int tc = 0; /* Used for test routining */
@@ -68,6 +68,7 @@ int exit_called = 0;
 int ran_one = 0;
 int the_sock = 0;
 job *lastpjob = NULL;
+int is_login_node;
 
 
 void exit_test(int num)
@@ -665,7 +666,7 @@ task *task_find(job *pjob, tm_task_id taskid)
   return tp;
   }
 
-int tm_reply(int stream, int com, tm_event_t event)
+int tm_reply(tcp_chan *, int com, int i)
   {
   return 0;
   }
@@ -937,11 +938,11 @@ struct batch_request *alloc_br(int type)
   return br;
   }
 
-void encode_used(job *pjob, tlist_head *phead)
+void encode_used(job *pjob, int i, list_link *l)
   {
   }
 
-void encode_flagged_attrs(job *pjob, tlist_head *phead)
+void encode_flagged_attrs(job *pjob, int i, list_link *l)
   {
   }
 
@@ -1291,7 +1292,7 @@ int diswul(struct tcp_chan *chan, unsigned long value)
   return 0;
   }
 
-u_long resc_used(job *pjob, char *name, u_long(*f) (resource *))
+u_long resc_used(job *pjob, const char *name, u_long(*f) (resource *))
   {
   return 1;
   }
@@ -1326,3 +1327,10 @@ int insert_thing(resizable_array *ra, void *thing)
   {
   return(0);
   }
+
+int release_job_reservation(job *pjob)
+  {
+  fprintf(stderr, "The call to getsize needs to be mocked!!\n");
+  exit(1);
+  }
+

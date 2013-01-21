@@ -622,7 +622,7 @@ int insert_task_into_recycler(
 
 
 
-
+#if 0
 
 work_task *get_recycled_task()
 
@@ -643,3 +643,4 @@ work_task *get_recycled_task()
   } /* END get_recycled_task() */
 
 
+#endif

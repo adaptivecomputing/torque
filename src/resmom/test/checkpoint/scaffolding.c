@@ -61,7 +61,7 @@ pid_t fork_me(int conn)
  exit(1);
  }
 
-void set_attr(struct attrl **attrib, char *attrib_name, char *attrib_value)
+void set_attr(struct attrl **attrib, const char *attrib_name, const char *attrib_value)
  {
  fprintf(stderr, "The call to set_attr needs to be mocked!!\n");
  exit(1);
@@ -121,7 +121,7 @@ int pbs_alterjob(int c, char *jobid, struct attrl *attrib, char *extend)
  exit(1);
  }
 
-char * csv_find_value(const char *csv_str, char *search_str)
+char * csv_find_value(const char *csv_str, const char *search_str)
  {
  fprintf(stderr, "The call to csv_find_value needs to be mocked!!\n");
  exit(1);
@@ -151,7 +151,7 @@ void req_reject(int code, int aux, struct batch_request *preq, const char *HostN
  exit(1);
  }
 
-int chk_file_sec(char *path, int isdir, int sticky, int disallow, int fullpath, char *SEMsg)
+int chk_file_sec(const char *path, int isdir, int sticky, int disallow, int fullpath, char *SEMsg)
  {
  fprintf(stderr, "The call to chk_file_sec needs to be mocked!!\n");
  exit(1);
@@ -187,7 +187,7 @@ int remtree(char *dirname)
  exit(1);
  }
 
-char * csv_find_string(const char *csv_str, char *search_str)
+char * csv_find_string(const char *csv_str, const char *search_str)
  {
  fprintf(stderr, "The call to csv_find_string needs to be mocked!!\n");
  exit(1);
@@ -257,6 +257,7 @@ int create_alps_reservation(
   char       *apbasil_path,
   char       *apbasil_protocol,
   long long   pagg_id_value,
+  int         use_nppn,
   char      **reservation_id)
 
   {
@@ -267,8 +268,13 @@ int write_attr_to_file(
 
   job  *pjob,
   int   index,
-  char *suffix)
+  const char *suffix)
 
   {
   return(0);
   }
+
+void log_err(int errnum, const char *routine, const char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_ext(int type, const char *func_name, const char *msg, int o) {}

@@ -115,6 +115,7 @@
 #include <memory.h>
 #endif
 #include "ji_mutex.h"
+#include "mutex_mgr.hpp"
 #include "queue_func.h" /*find_queuebyname */
 
 #define ROUTE_RETRY_TIME 10
@@ -348,6 +349,7 @@ int job_route(
     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
 
+  mutex_mgr qp_mutex = mutex_mgr(qp->qu_mutex);
   /* see if the job is able to be routed */
   switch (jobp->ji_qs.ji_state)
     {
@@ -451,11 +453,15 @@ int job_route(
     return(PBSE_NONE);
     }
 
+  /* default_router and site_alt_router expect the queue to 
+     be unlocked. */
   if (qp->qu_attr[QR_ATR_AltRouter].at_val.at_long == 0)
     {
+    qp_mutex.unlock();
     return(default_router(jobp, qp, retry_time));
     }
 
+  qp_mutex.unlock();
   return(site_alt_router(jobp, qp, retry_time));
   }  /* END job_route() */
 
@@ -519,7 +525,6 @@ void *queue_route(
   char      log_buf[LOCAL_LOG_BUF_SIZE];
 
   int       iter = -1;
-  time_t    time_now = time(NULL);
 
   queue_name = (char *)vp;
 
@@ -540,6 +545,7 @@ void *queue_route(
     return(NULL);
     }
   
+  mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
   while (1)
     {
     if (LOGLEVEL >= 7)
@@ -552,19 +558,26 @@ void *queue_route(
       {
       /* We only want to try if routing has been tried at least once - this is to let
        * req_commit have the first crack at routing always. */
-      int has_been_tried_once = (pjob->ji_qs.ji_un.ji_routet.ji_rteretry != 0) ? 1 : 0;
-      int retry_time_has_passed = (pjob->ji_qs.ji_un.ji_routet.ji_rteretry <= time_now - ROUTE_RETRY_TIME) ? 1 : 0;
-      unlock_queue(pque, __func__, NULL, 0);
-      if (retry_time_has_passed && has_been_tried_once)
+      if (pjob->ji_commit_done == 0) /* when req_commit is done it will set ji_commit_done to 1 */
         {
-        reroute_job(pjob, pque);
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+        continue;
         }
+      /* queue must be unlocked when calling reroute_job */
+      pque_mutex.unlock();
+      reroute_job(pjob, pque);
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+      /* need to relock queue when we go to call next_job */
+      pque_mutex.lock();
       }
 
-    unlock_queue(pque, __func__, (char *)NULL, 0);
+    /* we come out of the while loop with the queue locked.
+       We don't want it locked while we sleep */
+    pque_mutex.unlock();
     pthread_mutex_unlock(reroute_job_mutex);
     sleep(route_retry_interval);
+    /* starting the loop again. the queue must be locked */
+    pque_mutex.lock();
     }
   free(queue_name);
   return(NULL);

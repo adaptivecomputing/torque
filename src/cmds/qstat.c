@@ -31,9 +31,20 @@
 #include "utils.h"
 #include "libcmds.h" /* TShowAbout_exit */
 #include "net_cache.h"
+#include "../lib/Libifl/lib_ifl.h"
 
 
-static void states();
+static void states(  
+  char *string, /* I */
+  char *queued,      /* O */
+  char *running,      /* O */
+  char *held,      /* O */
+  char *waiting,      /* O */
+  char *transit,      /* O */
+  char *exiting,      /* O */
+  char *complete,      /* O */
+  int   len);    /* I */
+
 
 #if !defined(PBS_NO_POSIX_VIOLATION)
 /* defines for alternative display formats */
@@ -1814,11 +1825,11 @@ tcl_init(void)
   return;
   }
 
-void
+void tcl_addarg(
+    
+  const char *name, 
+  const char *arg)
 
-tcl_addarg(name, arg)
-char *name;
-char *arg;
   {
   if (interp == NULL)
     return;
@@ -1830,25 +1841,27 @@ char *arg;
              TCL_GLOBAL_ONLY |
              TCL_LIST_ELEMENT |
              TCL_APPEND_VALUE);
-  }
-
+  } /* END tcl_addarg() */
 
 
 
 
 int tcl_stat(
 
-  char                *type,
+  const char          *type,
   struct batch_status *bs,
   int                  f_opt)
 
   {
 
   struct batch_status *bp;
-  char *twol[2];
-  char *argv[ARGNUM];
-  int i, num = 0;
-  char *result;
+  const char          *twol[2];
+  const char          *word_one;
+  char                *word_two;
+  char                *argv[ARGNUM];
+  int                  i;
+  int                  num = 0;
+  char                *result;
 
   if (interp == NULL)
     {
@@ -1860,7 +1873,7 @@ int tcl_stat(
     return(1);
     }
 
-  twol[0] = type;
+  word_one = type;
 
   for (bp = bs;bp != NULL;bp = bp->next)
     {
@@ -1878,12 +1891,15 @@ int tcl_stat(
       break;
     }
 
-  twol[1] = Tcl_Merge(num, (const char **)argv);
+  word_two = Tcl_Merge(num, (const char **)argv);
 
   for (i = 0;i < num;i++)
     free(argv[i]);
 
-  result = Tcl_Merge(2, (const char **)twol);
+  twol[0] = word_one;
+  twol[1] = word_two;
+
+  result = Tcl_Merge(2, twol);
 
   Tcl_SetVar(
     interp,
@@ -1891,7 +1907,7 @@ int tcl_stat(
     result,
     TCL_GLOBAL_ONLY | TCL_LIST_ELEMENT | TCL_APPEND_VALUE);
 
-  free(twol[1]);
+  free(word_two);
 
   free(result);
 

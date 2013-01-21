@@ -1,10 +1,15 @@
 include $(top_srcdir)/buildutils/config.mk
 
-if HAVE_CHECK
-SUBDIRS = test
-endif
+CHECK_DIR = test
 
 DIST_SUBDIRS =
 include_HEADERS = chk_file_sec.h log_event.h setup_env.h pbs_log.h
 
 # all compilation happens in lib/Libpbs
+
+check:
+	$(MAKE) -C $(CHECK_DIR) $(MAKECMDGOALS)
+
+.PHONY: cleancheck
+cleancheck:
+	cd test && $(MAKE) cleancheck

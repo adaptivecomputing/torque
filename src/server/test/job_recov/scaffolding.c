@@ -107,7 +107,7 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   return(0);
   }
 
-int unlock_ai_mutex(job_array *pa, const char *func_id, char *msg, int logging)
+int unlock_ai_mutex(job_array *pa, const char *func_id, const char *msg, int logging)
   {
   return(0);
   }
@@ -121,3 +121,7 @@ ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   {
   return(0);
   }
+
+void log_err(int errnum, const char *routine, const char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}

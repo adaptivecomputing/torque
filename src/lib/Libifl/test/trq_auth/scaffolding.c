@@ -1,8 +1,9 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
-
+#include "tcp.h"
 #include "libpbs.h" /* batch_reply */
+
 int socket_close(int socket)
   {
   fprintf(stderr, "The call to socket_close needs to be mocked!!\n");
@@ -63,7 +64,7 @@ char *pbs_strerror(int err)
   exit(1);
   }
 
-void DIS_tcp_cleanup(int fd)
+void DIS_tcp_cleanup(tcp_chan *chan)
   {
   fprintf(stderr, "The call to DIS_tcp_cleanup needs to be mocked!!\n");
   exit(1);

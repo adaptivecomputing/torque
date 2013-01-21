@@ -1,6 +1,6 @@
 #include "license_pbs.h" /* See here for the software license */
 #include "array_func.h"
-#include "test_array_func.h"
+#include "test_uut.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include "pbs_error.h"
@@ -68,8 +68,8 @@ START_TEST(array_request_parse_token_test)
 
   /* test for bad parameters */
   fail_unless(array_request_parse_token(NULL,  &left, &right) == 0, "unhandled bad parameter (NULL str)");
-  fail_unless(array_request_parse_token("1-2", NULL,  &right) == 0, "unhandled bad parameter (NULL left)");
-  fail_unless(array_request_parse_token("1-2", &left, NULL)   == 0, "unhandled bad parameter (NULL right)");
+  fail_unless(array_request_parse_token((char *)"1-2", NULL,  &right) == 0, "unhandled bad parameter (NULL left)");
+  fail_unless(array_request_parse_token((char *)"1-2", &left, NULL)   == 0, "unhandled bad parameter (NULL right)");
 
   fail_unless(array_request_parse_token(strdup("--"), &left, &right) == 0, "bad range fail");
   fail_unless(left == -1, "start set incorrectly with bad range");
@@ -103,17 +103,17 @@ START_TEST(first_job_index_test)
   char buf[4096];
 
   memset(&pa, 0, sizeof(pa));
-  pa.job_ids = calloc(10, sizeof(char *));
+  pa.job_ids = (char **)calloc(10, sizeof(char *));
   pa.ai_qs.array_size = 10;
 
   fail_unless(first_job_index(&pa) == -1, "no jobs fail");
   
-  pa.job_ids[8] = "bob";
+  pa.job_ids[8] = (char *)"bob";
   index = first_job_index(&pa);
   snprintf(buf, sizeof(buf), "first job index should be 8 but is %d", index);
   fail_unless(index == 8, buf);
 
-  pa.job_ids[4] = "tom";
+  pa.job_ids[4] = (char *)"tom";
   index = first_job_index(&pa);
   snprintf(buf, sizeof(buf), "first job index should be 4 but is %d", index);
   fail_unless(index == 4, buf);

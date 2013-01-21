@@ -11,6 +11,7 @@ check_PROGRAMS = test_req_delete
 libreq_delete_la_SOURCES = scaffolding.c ${PROG_ROOT}/req_delete.c
 libreq_delete_la_LDFLAGS = @CHECK_LIBS@ -shared -L../.libs -lscaffolding_svr -L../../../lib/test/.libs -lscaffolding_lib
 
+test_req_delete_LDADD = ../../../test/torque_test_lib/libtorque_test.la ../../../test/scaffold_fail/libscaffold_fail.la
 test_req_delete_SOURCES = test_req_delete.c
 
 check_SCRIPTS = coverage_run.sh
