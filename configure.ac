@@ -718,10 +718,10 @@ AC_CHECK_LIB(crypto, BN_init,
 dnl
 dnl we need libxml2
 dnl 
-xmlLib=`xml2-config --libs`
+xmlLib=`xml2-config --libs | sed 's/-L@<:@^@<:@:space:@:>@@:>@* //g;s/-l//'`
 
 dnl skip the first two chars because its -l<libname>
-AC_CHECK_LIB(${xmlLib:2}, xmlGetProp,
+AC_CHECK_LIB(${xmlLib}, xmlGetProp,
   [],
   [AC_MSG_ERROR([TORQUE needs libxml2-devel in order to build]) ])
 

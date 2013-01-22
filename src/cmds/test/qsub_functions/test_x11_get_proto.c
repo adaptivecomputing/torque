@@ -8,6 +8,7 @@ START_TEST(test_x11_get_proto_1)
   char *resp = NULL;
   int debug = 1;
   resp = x11_get_proto(param1, debug);
+  fail_unless(resp == NULL);
   }
 END_TEST
 

@@ -474,3 +474,8 @@ int create_alps_reservation(
   {
   return(0);
   }
+
+int destroy_alps_reservation(char *reservation_id, char *apbasil_path, char *apbasil_protocol)
+  {
+  return (0);
+  }

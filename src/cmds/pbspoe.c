@@ -551,7 +551,6 @@ void run_command(
   char *argv[])
 
   {
-  int junk = 0;
   int   i;
   char *psyscmd;
   int   syssz;
@@ -599,7 +598,10 @@ void run_command(
       strcat(psyscmd, argv[i++]);
       }
 
-    junk = system(psyscmd);
+    if(system(psyscmd) == -1)
+      {
+      fprintf(stderr, "Error, system of %s failed\n",psyscmd);
+      }
 
     clean_up(0);
     }

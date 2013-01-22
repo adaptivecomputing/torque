@@ -25,6 +25,7 @@ START_TEST(test_one)
   fail_unless(pjob == scaf_pjob, "job ptr changed in the function!!!!");
   fail_unless(qp == scaf_qp, "queue ptr changed in the function!!!!");
   fail_unless(retry_time == scaf_retry_time, "retry value changed in the function!!!!");
+  fail_unless(rc != 0);
   free(pjob);
   free(qp);
   }

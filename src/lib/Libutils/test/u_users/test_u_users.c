@@ -71,9 +71,11 @@ Suite *u_users_suite(void)
 
 void rundebug()
   {
+  /*
   char *user_name = strdup("root");
   struct passwd *ret_user = NULL;
   ret_user = getpwnam_ext(user_name);
+  */
   }
 
 int main(void)
