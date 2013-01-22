@@ -777,6 +777,7 @@ int pbs_original_connect(
   long                 sockflags;
   fd_set               fdset;
   socklen_t            socklen;
+  int                  retry = 1;
 
 #ifdef ENABLE_UNIX_SOCKETS
   struct sockaddr_un  unserver_addr;
@@ -792,6 +793,9 @@ int pbs_original_connect(
 
     if (pbs_tcp_timeout <= 0)
       pbs_tcp_timeout = 10800;
+
+    if (pbs_tcp_timeout > 2)
+      retry = 0;
     }
   else
     pbs_tcp_timeout = 10800;
@@ -972,7 +976,7 @@ int pbs_original_connect(
         {
         if (getenv("PBSDEBUG"))
           {
-          if (retries >= MAX_RETRIES)
+          if (!retry || retries >= MAX_RETRIES)
             fprintf(stderr, "ERROR:  cannot connect to server \"%s\", errno=%d (%s)\n",
                   server,
                   errno,
