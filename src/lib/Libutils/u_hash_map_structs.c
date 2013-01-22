@@ -182,6 +182,7 @@ void hash_add_or_exit(
   const char      *name,               /* I - The item being added to the hashmap */
   const char      *val,                /* I - Sets the value of variable */
   int        var_type)             /* I - Sets the type of the variable */
+
   {
   if (hash_add_item(mm, head, name, val, var_type, SET) == FALSE)
     {

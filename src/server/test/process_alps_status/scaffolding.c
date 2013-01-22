@@ -34,6 +34,7 @@
   c ^= b; c -= rot(b,24); \
   }
 
+int count;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 all_nodes allnodes;
 struct node_state
@@ -505,8 +506,6 @@ int mgr_set_node_attr(
                              this func at this time*/
 
   {
-  static int count = 0;
-
   count++;
 
   if (count < 2)

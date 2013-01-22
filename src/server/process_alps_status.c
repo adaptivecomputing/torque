@@ -145,7 +145,7 @@ struct pbsnode *create_alps_subnode(
   struct pbsnode *subnode = (struct pbsnode *)calloc(1, sizeof(struct pbsnode));
   svrattrl       *plist = NULL;
   int             bad;
-  int             rc;
+  int             rc = PBSE_NONE;
 
   if (initialize_pbsnode(subnode, strdup(node_id), NULL, NTYPE_CLUSTER) != PBSE_NONE)
     {
