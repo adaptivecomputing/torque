@@ -984,7 +984,7 @@ int pbs_original_connect(
                   strerror(errno));
           }
 
-        if (retries >= MAX_RETRIES)
+        if (!retry || retries >= MAX_RETRIES)
           {
           rc = PBSE_PROTOCOL * -1;
           goto cleanup_conn;
