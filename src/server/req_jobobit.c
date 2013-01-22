@@ -834,7 +834,13 @@ int handle_exiting_or_abort_substate(
   char      log_buf[LOCAL_LOG_BUF_SIZE+1];
   mutex_mgr job_mutex(pjob->ji_mutex, true);
 
-  strcpy(job_id, pjob->ji_qs.ji_jobid);
+  if (pjob == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input job pointer");
+    return(PBSE_BAD_PARAMETER);
+    }
+  strncpy(job_id, pjob->ji_qs.ji_jobid, sizeof(job_id) - 1);
+  job_id[sizeof(job_id) - 1] = '\0';
 
   if (LOGLEVEL >= 2)
     {

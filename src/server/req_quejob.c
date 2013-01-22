@@ -734,7 +734,7 @@ int req_quejob(
     /* FAILURE */
     rc = PBSE_MEM_MALLOC;
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-        "can not alloc memory for new job %s - (%d - %s)",
+        "cannot alloc memory for new job %s - (%d - %s)",
         namebuf, errno, strerror(errno));
     log_err(rc, __func__, log_buf);
     unlink(namebuf);
@@ -1534,7 +1534,7 @@ int req_jobscript(
   if (pj == NULL)
     {
     rc = PBSE_IVALREQ;
-    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "can not locate new job %s (%d - %s)",
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot locate new job %s (%d - %s)",
         preq->rq_ind.rq_jobfile.rq_jobid, errno, strerror(errno));
     log_err(rc, __func__, log_buf);
     req_reject(rc, 0, preq, NULL, log_buf);
@@ -1572,7 +1572,7 @@ int req_jobscript(
     {
     rc = PBSE_PERM;
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-        "can not authorize request %s (%d-%s)",
+        "cannot authorize request %s (%d-%s)",
         preq->rq_ind.rq_jobfile.rq_jobid, errno, strerror(errno));
     log_err(rc, __func__, log_buf);
     req_reject(rc, 0, preq, NULL, log_buf);
@@ -1613,7 +1613,7 @@ int req_jobscript(
         (unsigned)preq->rq_ind.rq_jobfile.rq_size) != preq->rq_ind.rq_jobfile.rq_size)
     {
     rc = PBSE_CAN_NOT_WRITE_FILE;
-    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "can not write to file %s (%d-%s) %s",
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot write to file %s (%d-%s) %s",
         namebuf,
         errno,
         strerror(errno),
@@ -1733,7 +1733,7 @@ int req_mvjobfile(
     {
     rc = PBSE_CAN_NOT_OPEN_FILE;
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-        "can not open file %s for %s - (%d-%s) - %s",
+        "cannot open file %s for %s - (%d-%s) - %s",
         namebuf, pj->ji_qs.ji_jobid, errno, strerror(errno), msg_script_open);
     log_err(errno, __func__, log_buf);
     req_reject(rc, 0, preq, NULL, log_buf);
@@ -1747,7 +1747,7 @@ int req_mvjobfile(
     {
     rc = PBSE_CAN_NOT_WRITE_FILE;
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-        "can not write to file %s for %s - (%d-%s) - %s",
+        "cannot write to file %s for %s - (%d-%s) - %s",
         namebuf, pj->ji_qs.ji_jobid, errno, strerror(errno), msg_script_write);
     log_err(rc, "req_jobfile", log_buf);
     req_reject(PBSE_SYSTEM, 0, preq, NULL, log_buf);
@@ -1832,7 +1832,7 @@ int req_rdytocommit(
     {
     rc = PBSE_IVALREQ;
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-        "can not commit job in unexpected state %s (%d-%s)",
+        "cannot commit job in unexpected state %s (%d-%s)",
         preq->rq_ind.rq_rdytocommit, errno, strerror(errno));
     log_err(rc, __func__, log_buf);
     req_reject(rc, 0, preq, NULL, log_buf);
@@ -1842,7 +1842,7 @@ int req_rdytocommit(
   if (svr_authorize_jobreq(preq, pj) == -1)
     {
     rc = PBSE_PERM;
-    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "can not authorize job req %s",
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot authorize job req %s",
         preq->rq_ind.rq_rdytocommit);
     req_reject(rc, 0, preq, NULL, log_buf);
     return(rc);
@@ -2166,7 +2166,7 @@ int req_commit(
       {
       if (LOGLEVEL >= 6)
         {
-        snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "can not queue job %s",
+        snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot queue job %s",
           pj->ji_qs.ji_jobid);
         
         log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, log_buf);
@@ -2185,7 +2185,7 @@ int req_commit(
     rc = PBSE_CAN_NOT_SAVE_FILE;
     if (LOGLEVEL >= 6)
       {
-      snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "can not save job %s",
+      snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot save job %s",
         pj->ji_qs.ji_jobid);
 
       log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, log_buf);
@@ -2213,7 +2213,7 @@ int req_commit(
       pque_mutex.unlock();
       if ((rc = job_route(pj)))
         {
-        snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "can not route job %s",
+        snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot route job %s",
             pj->ji_qs.ji_jobid);
 
         if (LOGLEVEL >= 6)

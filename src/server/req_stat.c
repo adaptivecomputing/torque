@@ -1220,7 +1220,7 @@ int req_stat_que(
     if (pque == NULL)
       {
       rc = PBSE_UNKQUE;
-      snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "can not locate queue %s", name);
+      snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot locate queue %s", name);
       req_reject(rc, 0, preq, NULL, log_buf);
       return rc;
       }
