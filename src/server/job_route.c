@@ -350,6 +350,7 @@ int job_route(
     }
 
   mutex_mgr qp_mutex = mutex_mgr(qp->qu_mutex);
+  
   /* see if the job is able to be routed */
   switch (jobp->ji_qs.ji_state)
     {
@@ -470,8 +471,7 @@ int job_route(
 
 int reroute_job(
 
-  job *pjob,
-  pbs_queue *pque)
+  job *pjob)
 
   {
   int        rc = PBSE_NONE;
@@ -482,19 +482,15 @@ int reroute_job(
     sprintf(log_buf, "%s", pjob->ji_qs.ji_jobid);
     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
+    
+  rc = job_route(pjob);
 
-  if ((pque != NULL) &&
-      (pque->qu_qs.qu_type == QTYPE_RoutePush))
-    {
-    rc = job_route(pjob);
-
-    if (rc == PBSE_ROUTEREJ)
-      job_abt(&pjob, pbse_to_txt(PBSE_ROUTEREJ));
-    else if (rc == PBSE_ROUTEEXPD)
-      job_abt(&pjob, msg_routexceed);
-    else if (rc == PBSE_QUENOEN)
-      job_abt(&pjob, msg_err_noqueue);
-    }
+  if (rc == PBSE_ROUTEREJ)
+    job_abt(&pjob, pbse_to_txt(PBSE_ROUTEREJ));
+  else if (rc == PBSE_ROUTEEXPD)
+    job_abt(&pjob, msg_routexceed);
+  else if (rc == PBSE_QUENOEN)
+    job_abt(&pjob, msg_err_noqueue);
 
   return(rc);      
   } /* END reroute_job() */
@@ -517,12 +513,14 @@ int reroute_job(
  */
 
 void *queue_route(
+
   void *vp)
+
   {
   pbs_queue *pque;
   job       *pjob = NULL;
   char      *queue_name;
-  char      log_buf[LOCAL_LOG_BUF_SIZE];
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
 
   int       iter = -1;
 
@@ -553,20 +551,24 @@ void *queue_route(
       snprintf(log_buf, sizeof(log_buf), "routing any ready jobs in queue: %s", queue_name);
       log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_QUEUE, __func__, log_buf);
       }
+
     pthread_mutex_lock(reroute_job_mutex);
     while ((pjob = next_job(pque->qu_jobs,&iter)) != NULL)
       {
+      mutex_mgr job_mutex(pjob->ji_mutex, true);
+
       /* We only want to try if routing has been tried at least once - this is to let
        * req_commit have the first crack at routing always. */
       if (pjob->ji_commit_done == 0) /* when req_commit is done it will set ji_commit_done to 1 */
-        {
-        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         continue;
-        }
+      
       /* queue must be unlocked when calling reroute_job */
       pque_mutex.unlock();
-      reroute_job(pjob, pque);
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+      reroute_job(pjob);
+
+      /* must unlock this job before re-acquiring the queue */
+      job_mutex.unlock();
+
       /* need to relock queue when we go to call next_job */
       pque_mutex.lock();
       }
