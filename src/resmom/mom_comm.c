@@ -257,7 +257,7 @@ int task_save(
   task *ptask)  /* I */
 
   {
-  job  *pjob = ptask->ti_job;
+  job  *pjob;
   int   fds;
   int   i;
   int   TaskID = 0;
@@ -8468,7 +8468,7 @@ received_node *get_received_node_entry(
     
     /* initialize the received node struct */
     rn->statuses = get_dynamic_string(MAXLINE,NULL);
-    strncpy(rn->hostname, hostname, sizeof(rn->hostname) - 1);
+    snprintf(rn->hostname, sizeof(rn->hostname), "%s", hostname);
     
     if (rn->statuses == NULL)
       {
