@@ -121,7 +121,6 @@
 #include "../lib/Libnet/lib_net.h" /* socket_avail_bytes_on_descriptor */
 #include "alps_functions.h"
 #include "tcp.h" /* tcp_chan */
-#include "start_exec.h" 
 
 #ifdef ENABLE_CPA
   #include "pbs_cpa.h"
@@ -171,6 +170,13 @@ typedef enum
 #define WM_TERM_MIGRATE 5 /* Request will be migrated */
 #endif /* CSAFAKE */
 #endif /* ENABLE_CSA */
+
+#define EN_THRESHOLD 100
+#define B_THRESHOLD 2048
+#define EXTRA_VARIABLE_SPACE 5120
+
+int expand_vtable(struct var_table *vtable);
+int copy_data(struct var_table *tmp_vtable, struct var_table *vtable, int expand_bsize, int expand_ensize);
 
 #ifdef NOPOSIXMEMLOCK
   #undef _POSIX_MEMLOCK
