@@ -493,7 +493,7 @@ int record_reservation(
         pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str = strdup(rsv_id);
         pjob->ji_wattr[JOB_ATR_reservation_id].at_flags = ATR_VFLAG_SET;
 
-        create_alps_reservation(pjob);
+        track_alps_reservation(pjob);
         found_job = TRUE;
 
         unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);

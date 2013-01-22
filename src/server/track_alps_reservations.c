@@ -96,7 +96,7 @@ extern int LOGLEVEL;
  * adds the node names from pjob's exec hosts to ar
  * @param ar - the alps reservation we're populating
  * @param pjob - the job whose reservation we're examining
- * @see create_alps_reservation() - parent
+ * @see track_alps_reservation() - parent
  */
 
 int add_node_names(
@@ -163,11 +163,11 @@ alps_reservation *populate_alps_reservation(
 
 
 /* 
- * create_alps_reservation
+ * track_alps_reservation
  * creates an alps reservation based 
  */
 
-int create_alps_reservation(
+int track_alps_reservation(
     
   job *pjob)
 
@@ -185,7 +185,7 @@ int create_alps_reservation(
     rc = ENOMEM;
 
   return(rc);
-  } /* create_alps_reservation() */
+  } /* track_alps_reservation() */
 
 
 

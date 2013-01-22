@@ -7,7 +7,7 @@ EXTRA_DIST = acinclude.m4 \
   autogen.sh \
   CHANGELOG \
   configure.ac \
-  cov_file_results.pl \
+  cov_file_results.py \
 	current_hash \
   Doxyfile \
   INSTALL \
