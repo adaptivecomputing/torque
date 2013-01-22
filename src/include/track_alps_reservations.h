@@ -107,7 +107,7 @@ extern reservation_holder alps_reservations;
 
 void initialize_alps_reservations();
 
-int create_alps_reservation(job *pjob);
+int track_alps_reservation(job *pjob);
 int remove_alps_reservation(char *rsv_id);
 int is_orphaned(char *rsv_id);
 int already_recorded(char *rsv_id);

@@ -2196,16 +2196,7 @@ pbs_net_t get_hostaddr(
   return(0);
   }
 
-int create_alps_reservation(
-
-  char       *exec_hosts,
-  char       *username,
-  char       *jobid,
-  char       *apbasil_path,
-  char       *apbasil_protocol,
-  long long   pagg_id_value,
-  char      **reservation_id)
-
+int track_alps_reservation(job *pjob)
   {
   return(0);
   }
