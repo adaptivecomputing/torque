@@ -2884,6 +2884,7 @@ void handle_reservation(
   if (is_login_node == TRUE)
     {
     char *exec_str;
+    int   mppdepth = 0;
 
     if (pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str != NULL)
       exec_str = pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str;
@@ -2898,6 +2899,14 @@ void handle_reservation(
         (pres->rs_value.at_val.at_long != 0))
       use_nppn = FALSE;
 
+    pres = find_resc_entry(
+             &pjob->ji_wattr[JOB_ATR_resource],
+             find_resc_def(svr_resc_def, "mppdepth", svr_resc_size));
+    
+    if ((pres != NULL) &&
+        (pres->rs_value.at_val.at_long != 0))
+      mppdepth = pres->rs_value.at_val.at_long;
+
     j = create_alps_reservation(exec_str,
           pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
           pjob->ji_qs.ji_jobid,
@@ -2905,6 +2914,7 @@ void handle_reservation(
           apbasil_protocol,
           pagg,
           use_nppn,
+          mppdepth,
           &rsv_id);
     
     if (rsv_id != NULL)

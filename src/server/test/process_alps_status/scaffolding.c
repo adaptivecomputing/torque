@@ -2177,7 +2177,7 @@ pbs_net_t get_hostaddr(
   return(0);
   }
 
-int create_alps_reservation(job *)
+int track_alps_reservation(job *pjob)
   {
   return(0);
   }
