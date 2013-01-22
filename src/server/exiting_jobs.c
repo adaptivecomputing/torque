@@ -214,7 +214,7 @@ int check_exiting_jobs()
           }
         else
           {
-          mutex_mgr.unlock();
+          pjob_mutex.unlock();
           retry_job_exit(jeri);
           }
         }
