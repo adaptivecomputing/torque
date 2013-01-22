@@ -13,6 +13,7 @@ check_PROGRAMS = test_exiting_jobs
 libtest_exiting_jobs_la_SOURCES = scaffolding.c $(PROG_ROOT)/exiting_jobs.c
 libtest_exiting_jobs_la_LDFLAGS = @CHECK_LIBS@ $(AM_LIBS) -shared
 
+test_exiting_jobs_LDADD = ../../../test/torque_test_lib/libtorque_test.la ../../../test/scaffold_fail/libscaffold_fail.la
 test_exiting_jobs_SOURCES = test_exiting_jobs.c
 
 check_SCRIPTS = coverage_run.sh

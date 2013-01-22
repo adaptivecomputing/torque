@@ -193,6 +193,12 @@ using namespace std;
       }
     }
 
+
+  void  mutex_mgr::set_lock_state(bool val)
+    {
+    locked = val;
+    }
+
   /* allows user to request a mutes not be
    * unlocked by the destructor
    */

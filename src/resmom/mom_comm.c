@@ -261,20 +261,36 @@ int task_save(
   int   fds;
   int   i;
   int   TaskID = 0;
-  char  namebuf[MAXPATHLEN];
-  char  portname[MAXPATHLEN];
+  char  namebuf[MAXPATHLEN + 1];
+  char  portname[MAXPATHLEN + 1];
   int   openflags;
 
-  strcpy(namebuf, path_jobs);     /* job directory path */
-  strcat(namebuf, pjob->ji_qs.ji_fileprefix);
+  if (ptask == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input pointer");
+    return(PBSE_BAD_PARAMETER);
+    }
+
+  pjob = ptask->ti_job;
+
+  if (pjob == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL pointer to owning job");
+    return(PBSE_BAD_PARAMETER);
+    }
+
+  strncpy(namebuf, path_jobs, sizeof(namebuf) - 1);     /* job directory path */
+  strncat(namebuf, pjob->ji_qs.ji_fileprefix, sizeof(namebuf) - 1); /*TODO: think about stncats third arguments*/
 
   if (multi_mom)
     {
     sprintf(portname, "%d", pbs_rm_port);
-    strcat(namebuf, portname);
+    /*TODO: do we have actually snprintf*/
+    /*snprintf(portname, sizeof(portname), "%d", pbs_rm_port);*/
+    strncat(namebuf, portname, sizeof(namebuf) - 1);
     }
 
-  strcat(namebuf, JOB_TASKDIR_SUFFIX);
+  strncat(namebuf, JOB_TASKDIR_SUFFIX, sizeof(namebuf) - 1);
 
   openflags = O_WRONLY | O_CREAT | O_Sync;
 
@@ -1457,6 +1473,11 @@ int check_ms(
     }
   
   np = pjob->ji_hosts;
+  if (pjob->ji_hosts == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL ptr to job host management stuff");
+    return(PBSE_BAD_PARAMETER);
+    }
   ipaddr_ms = ntohl(((struct sockaddr_in *)(&np->sock_addr))->sin_addr.s_addr);
 
   /* make sure the ip addresses match */
@@ -2131,7 +2152,9 @@ int im_join_job_as_sister(
       return(IM_FAILURE);
       }
     else 
+      {
       return(IM_DONE);
+      }
     }
   
   pjob->ji_numnodes = nodenum;  /* XXX */
@@ -4896,7 +4919,9 @@ void im_request(
     case IM_KILL_JOB:
       {
       if (check_ms(chan, pjob) == FALSE)
+        {
         im_kill_job_as_sister(pjob,event,momport,FALSE);
+        }
       close_conn(chan->sock, FALSE);
       svr_conn[chan->sock].cn_stay_open = FALSE;
       chan->sock = -1;
@@ -5607,7 +5632,7 @@ void im_request(
       errcode = disrsi(chan, &ret);
 
       snprintf(log_buffer, LOCAL_LOG_BUF_SIZE,
-        "Response recieved from client %s (%d) jobid %s",
+        "Response received from client %s (%d) jobid %s",
         netaddr(addr), sender_port, jobid);
       log_err(-1, __func__, log_buffer);
      
@@ -7089,8 +7114,6 @@ int tm_request(
   extern u_long  localaddr;
  
   extern struct connection svr_conn[];
- 
-  int start_process(task *ptask, char **argv, char **envp);
  
   if (svr_conn[chan->sock].cn_addr != localaddr)
     {

@@ -19,7 +19,7 @@
 
 int create_job_cpuset(job *pj) { return 0; }
 int use_cpusets(job *pj) { return 0; }
-char *path_jobs; /* mom_main.c */
+const char *path_jobs = "some path to nowhere."; /* mom_main.c */
 int multi_mom = 1; /* mom_main.c */
 int svr_resc_size = 0; /* resc_def_all.c */
 u_long localaddr = 0; /* mom_main.c */
@@ -56,37 +56,27 @@ int insert_thing(resizable_array *ra, void *thing)
 #undef disrus
 unsigned short disrus(tcp_chan *c, int *retval)
   {
-  fprintf(stderr, "The call to disrus needs to be mocked!!\n");
-  exit(1);
+  *retval = DIS_SUCCESS;
+  return(0);
   }
 
 int job_save(job *pjob, int updatetype, int mom_port)
   {
-  fprintf(stderr, "The call to job_save needs to be mocked!!\n");
-  exit(1);
+  fprintf(stderr, "This mock job_save always returns 0!!\n");
+  return(0);
   }
 
-void mom_job_purge(job *pjob)
-  {
-  fprintf(stderr, "The call to job_purge needs to be mocked!!\n");
-  exit(1);
-  }
+void mom_job_purge(job *pjob) {}
 
 int decode_DIS_svrattrl(struct tcp_chan *chan, tlist_head *phead)
   {
-  fprintf(stderr, "The call to decode_DIS_svrattrl needs to be mocked!!\n");
-  exit(1);
+  fprintf(stderr, "This mock decode_DIS_svrattrl always returns 0!!\n");
+  return(0);
   }
 
 ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
   {
   fprintf(stderr, "The call to read_nonblocking_socket needs to be mocked!!\n");
-  exit(1);
-  }
-
-char * netaddr(struct sockaddr_in *ap)
-  {
-  fprintf(stderr, "The call to netaddr needs to be mocked!!\n");
   exit(1);
   }
 
@@ -102,11 +92,7 @@ unsigned long gettime(resource *pres)
   exit(1);
   }
 
-void exec_bail(job *pjob, int code)
-  {
-  fprintf(stderr, "The call to exec_bail needs to be mocked!!\n");
-  exit(1);
-  }
+void exec_bail(job *pjob, int code) {}
 
 int AVL_list(AvlTree tree, char **Buf, long *current_len, long *max_len)
   {
@@ -120,16 +106,19 @@ int exec_job_on_ms(job *pjob)
   exit(1);
   }
 
+struct passwd *check_pwd_return;
 struct passwd *check_pwd(job *pjob)
   {
-  fprintf(stderr, "The call to check_pwd needs to be mocked!!\n");
-  exit(1);
+  if(check_pwd_return == NULL)
+    {
+    check_pwd_return = (struct passwd *)calloc(1,sizeof(*check_pwd_return));
+    }
+  return(check_pwd_return);
   }
 
 int mom_do_poll(job *pjob)
   {
-  fprintf(stderr, "The call to mom_do_poll needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void delete_link(struct list_link *old)
@@ -301,8 +290,7 @@ int mom_get_sample()
 
 int run_pelog(int which, char *specpelog, job *pjog, int pe_io_type)
   {
-  fprintf(stderr, "The call to run_pelog needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 #undef disrul
@@ -326,8 +314,8 @@ size_t write_nonblocking_socket(int fd, const void *buf, ssize_t count)
 
 struct tcp_chan *DIS_tcp_setup(int fd)
   {
-  fprintf(stderr, "The call to DIS_tcp_setup needs to be mocked!!\n");
-  exit(1);
+  fprintf(stderr, "This mock DIS_tcp_setup always returns NULL!!\n");
+  return(NULL);
   }
 
 int find_attr(struct attribute_def *attr_def, const char *name, int limit)
@@ -339,14 +327,8 @@ int find_attr(struct attribute_def *attr_def, const char *name, int limit)
 #undef disrui
 unsigned disrui(struct tcp_chan *chan, int *retval)
   {
-  fprintf(stderr, "The call to disrui needs to be mocked!!\n");
-  exit(1);
-  }
-
-int AVL_is_in_tree_no_port_compare(u_long key, uint16_t port, AvlTree tree)
-  {
-  fprintf(stderr, "The call to AVL_is_in_tree_no_port_compare needs to be mocked!!\n");
-  exit(1);
+  *retval = DIS_SUCCESS;
+  return(0);
   }
 
 int kill_task(struct task *task, int sig, int pg)
@@ -380,8 +362,8 @@ unsigned long getsize(resource *pres)
 
 void *get_next(list_link pl, char *file, int line)
   {
-  fprintf(stderr, "The call to get_next needs to be mocked!!\n");
-  exit(1);
+  fprintf(stderr, "This mock get_next always returns NULL!!\n");
+  return(NULL);
   }
 
 int add_host_to_sister_list(char *hostname, unsigned short port, struct radix_buf *rb)
@@ -417,8 +399,8 @@ void free_sisterlist(struct radix_buf **list, int radix)
 
 int write_tcp_reply(struct tcp_chan *chan, int protocol, int version, int command, int exit_code)
   {
-  fprintf(stderr, "The call to write_tcp_reply needs to be mocked!!\n");
-  exit(1);
+  fprintf(stderr, "This mock write_tcp_reply always returns 0!!\n");
+  return(0);
   }
 
 int mom_set_use(job *pjob)
@@ -427,11 +409,7 @@ int mom_set_use(job *pjob)
   exit(1);
   }
 
-void free_attrlist(tlist_head *pattrlisthead)
-  {
-  fprintf(stderr, "The call to free_attrlist needs to be mocked!!\n");
-  exit(1);
-  }
+void free_attrlist(tlist_head *pattrlisthead) {}
 
 void attrl_fixlink(tlist_head *phead)
   {
@@ -439,10 +417,19 @@ void attrl_fixlink(tlist_head *phead)
   exit(1);
   }
 
+struct resource_def *find_resc_def_return = NULL;
 resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
   {
-  fprintf(stderr, "The call to find_resc_def needs to be mocked!!\n");
-  exit(1);
+  if (find_resc_def_return == NULL)
+    {
+    find_resc_def_return = (struct resource_def *)calloc(1, sizeof(*find_resc_def_return));
+    }
+  if (find_resc_def_return->rs_name != NULL)
+    {
+    free((void*)find_resc_def_return->rs_name);
+    }
+  find_resc_def_return->rs_name = strdup(name);
+  return(find_resc_def_return);
   }
 
 struct radix_buf **allocate_sister_list(int radix)
@@ -451,29 +438,13 @@ struct radix_buf **allocate_sister_list(int radix)
   exit(1);
   }
 
-int disrst_count = 0;
-char *disrst(struct tcp_chan * chan, int *retval)
-  {
-  if (--disrst_count > 0)
-    {
-    retval = DIS_SUCCESS;
-    return strdup("hi");
-    }
-  *retval = DIS_EOF;
-  return NULL;
-  }
-
 int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size)
   {
-  fprintf(stderr, "The call to tcp_connect_sockaddr needs to be mocked!!\n");
-  exit(1);
+  fprintf(stderr, "This mock tcp_connect_sockaddr always returns 0!!\n");
+  return(0);
   }
 
-void append_link(tlist_head *head, list_link *new_link, void *pobj)
-  {
-  fprintf(stderr, "The call to append_link needs to be mocked!!\n");
-  exit(1);
-  }
+void append_link(tlist_head *head, list_link *new_link, void *pobj) {}
 
 void sister_job_nodes(job *pjob, char *radix_hosts, char *radix_ports )
   {
@@ -483,21 +454,12 @@ void sister_job_nodes(job *pjob, char *radix_hosts, char *radix_ports )
 
 int TTmpDirName(job *pjob, char *tmpdir, int tmdir_size)
   {
-  fprintf(stderr, "The call to TTmpDirName needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
-void job_nodes(job *pjob)
-  {
-  fprintf(stderr, "The call to job_nodes needs to be mocked!!\n");
-  exit(1);
-  }
+void job_nodes(job *pjob) {}
 
-void close_conn(int sd, int has_mutex)
-  {
-  fprintf(stderr, "The call to close_conn needs to be mocked!!\n");
-  exit(1);
-  }
+void close_conn(int sd, int has_mutex) {}
 
 int copy_to_end_of_dynamic_string(dynamic_string *ds, const char *to_copy)
   {
@@ -519,34 +481,41 @@ int rpp_eom(int index)
 
 resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   {
-  fprintf(stderr, "The call to find_resc_entry needs to be mocked!!\n");
-  exit(1);
+  fprintf(stderr, "This mock find_resc_entry always returns NULL!!\n");
+  return(NULL);
   }
 
+job *mock_mom_find_job_return = NULL;
 job *mom_find_job(char *jobid)
   {
-  fprintf(stderr, "The call to find_job needs to be mocked!!\n");
-  exit(1);
+  if (strcmp("jobid", jobid) != 0)
+    {
+    return(NULL);
+    }
+  if (mock_mom_find_job_return == NULL)
+    {
+      mock_mom_find_job_return = (job *)calloc(1, sizeof(*mock_mom_find_job_return));
+      mock_mom_find_job_return->ji_wattr[JOB_ATR_Cookie].at_flags |= ATR_VFLAG_SET;
+      mock_mom_find_job_return->ji_wattr[JOB_ATR_Cookie].at_val.at_str = strdup("cookie");
+    }
+  return(mock_mom_find_job_return);
   }
 
 #undef diswsi
 int diswsi(tcp_chan *c, int value)
   {
-  fprintf(stderr, "The call to diswsi needs to be mocked!!\n");
-  exit(1);
+  fprintf(stderr, "This mock diswsi always returns 0!!\n");
+  return(0);
   }
 
+job *mock_job_alloc_return = NULL;
 job *job_alloc(void )
   {
-  fprintf(stderr, "The call to job_alloc needs to be mocked!!\n");
-  exit(1);
-  }
-
-#undef disrsi
-int disrsi(struct tcp_chan * chan, int *retval)
-  {
-  *retval = 1;
-  return 0;
+  if (mock_job_alloc_return == NULL)
+    {
+    mock_job_alloc_return = (job *)calloc(1, sizeof(*mock_job_alloc_return));
+    }
+  return(mock_job_alloc_return);
   }
 
 int timeval_subtract(struct timeval *result, struct timeval *x, struct timeval *y)
@@ -563,8 +532,8 @@ int allocate_demux_sockets(job *pjob, int flag)
 
 int kill_job(job *pjob, int sig, const char *killer_id_name, const char *why_killed_reason)
   {
-  fprintf(stderr, "The call to kill_job needs to be mocked!!\n");
-  exit(1);
+  fprintf(stderr, "This mock kill_job always returns 0!!\n");
+  return(0);
   }
 
 int add_to_resend_things(resend_momcomm *mc)
@@ -604,6 +573,77 @@ ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
 ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   {
   return(0);
+  }
+
+int getpeername(int __fd, __SOCKADDR_ARG __addr, socklen_t *__restrict __len)  __THROW
+  {
+  memset(__addr, 0, sizeof(*__addr));
+  return(0);
+  }
+
+char * netaddr_long(long ap, char *out)
+  {
+  u_long  ipadd;
+
+  ipadd = ap;
+
+  sprintf(out, "%ld.%ld.%ld.%ld",
+           (ipadd & 0xff000000) >> 24,
+           (ipadd & 0x00ff0000) >> 16,
+           (ipadd & 0x0000ff00) >> 8,
+           (ipadd & 0x000000ff));
+
+  return out;
+  }
+
+char * netaddr(struct sockaddr_in *ap)
+  {
+  static char out[80];
+  char tmp[80];
+
+  if (ap == NULL)
+    return (char *)"unknown";
+
+  netaddr_long( ntohl(ap->sin_addr.s_addr), tmp);
+
+  sprintf(out, "%s:%d", tmp, ntohs(ap->sin_port));
+
+  return out;
+  }
+
+int AVL_is_in_tree_no_port_compare(u_long key, uint16_t port, AvlTree tree)
+  {
+  return(1);
+  }
+
+int disrst_return_index = 0;
+#define disrst_array_size 10
+char *disrst_array[disrst_array_size];
+char *disrst(struct tcp_chan *chan, int *retval)
+  {
+  if (disrst_return_index >= disrst_array_size)
+    {
+    *retval = -1;
+    return(NULL);
+    }
+    *retval = DIS_SUCCESS;
+    return(disrst_array[disrst_return_index++]);
+  }
+
+int disrsi_return_index = 0;
+const int disrsi_array_size = 10;
+#define disrsi_array_size 10
+int disrsi_array[disrsi_array_size];
+#undef disrsi
+int disrsi(struct tcp_chan *chan, int *retval)
+  {
+  if (disrsi_return_index >= disrsi_array_size)
+    {
+    *retval = -1;
+    return(-1);
+    }
+  *retval = DIS_SUCCESS;
+  return disrsi_array[disrsi_return_index++];
   }
 
 void log_err(int errnum, const char *routine, const char *text) {}

@@ -440,6 +440,7 @@ int job_abt(
     return(rc);
     }
 
+  mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
   strcpy(job_id, pjob->ji_qs.ji_jobid);
 
   /* save old state and update state to Exiting */
@@ -490,9 +491,10 @@ int job_abt(
         
         if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
           {
-          unlock_ji_mutex(pjob, __func__, "1a",LOGLEVEL);
+          pjob_mutex.unlock();
           depend_on_term(job_id);
           pjob = svr_find_job(job_id, TRUE);
+          /* pjob_mutex.managed_mutex already points to pjob->ji_mutex. Nothing to do */
           }
         
         /* update internal array bookeeping values */
@@ -506,7 +508,7 @@ int job_abt(
             {
             job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
             job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
-            unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+            pjob_mutex.unlock();
             update_array_values(pa,old_state,aeTerminate,
                 job_id, job_atr_hold, job_exit_status);
             
@@ -516,7 +518,10 @@ int job_abt(
           }
       
         if (pjob != NULL)
+          {
           svr_job_purge(pjob);
+          pjob = NULL;
+          }
 
         *pjobp = NULL;
         }
@@ -531,7 +536,6 @@ int job_abt(
       pjob->ji_qs.ji_jobid,
       old_substate);
     log_err(-1, __func__, log_buf);
-    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
     }
   else
     {
@@ -547,9 +551,10 @@ int job_abt(
     if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
       {
       strcpy(job_id, pjob->ji_qs.ji_jobid);
-      unlock_ji_mutex(pjob, __func__, "1b", LOGLEVEL);
+      pjob_mutex.unlock();
       depend_on_term(job_id);
       pjob = svr_find_job(job_id, TRUE);
+      /* pjob_mutex managed mutex already points to pjob->ji_mutex. Nothing to do */
       }
 
     /* update internal array bookeeping values */
@@ -563,7 +568,7 @@ int job_abt(
         {
         job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
         job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
-        unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
+        pjob_mutex.unlock();
         update_array_values(pa,old_state,aeTerminate,
             job_id, job_atr_hold, job_exit_status);
         
@@ -573,10 +578,16 @@ int job_abt(
       }
 
     if (pjob != NULL)
+      {
       svr_job_purge(pjob);
+      pjob = NULL;
+      }
 
     *pjobp = NULL;
     }
+
+  if (pjob == NULL)
+    pjob_mutex.set_lock_on_exit(false);
 
   return(rc);
   }  /* END job_abt() */
@@ -1139,13 +1150,15 @@ void *job_clone_wt(
     return(NULL);
     }
 
+  mutex_mgr template_job_mgr(template_job->ji_mutex,true);
+
   strcpy(arrayid, pa->ai_qs.parent_id);
 
   free(jobid);
 
   snprintf(namebuf, sizeof(namebuf), "%s%s.AR",
     path_jobs, template_job->ji_qs.ji_fileprefix);
-  unlock_ji_mutex(template_job, __func__, "2", LOGLEVEL);
+  template_job_mgr.unlock();
 
   while ((rn = (array_request_node *)GET_NEXT(pa->request_tokens)) != NULL)
     {
@@ -1162,9 +1175,9 @@ void *job_clone_wt(
         continue;
         }
 
-      lock_ji_mutex(template_job, __func__, NULL, LOGLEVEL);
+      template_job_mgr.lock();
       pjobclone = job_clone(template_job, pa, i);
-      unlock_ji_mutex(template_job, __func__, "3", LOGLEVEL);
+      template_job_mgr.unlock();
 
       if (pjobclone == NULL)
         {
@@ -1240,13 +1253,16 @@ void *job_clone_wt(
     
     actual_job_count++;
     
-    if ((pjob = svr_find_job(pa->job_ids[i], TRUE)) == NULL)
+    pjob = svr_find_job(pa->job_ids[i], TRUE);
+
+    if (pjob == NULL)
       {
       free(pa->job_ids[i]);
       pa->job_ids[i] = NULL;
       }
     else
       {
+      mutex_mgr job_mutex(pjob->ji_mutex,true);
       long moab_compatible = FALSE;;
       get_svr_attr_l(SRV_ATR_MoabArrayCompatible, &moab_compatible);
       pjob->ji_wattr[JOB_ATR_hold].at_val.at_long &= ~HOLD_a;
@@ -1275,7 +1291,6 @@ void *job_clone_wt(
       svr_evaljobstate(pjob, &newstate, &newsub, 1);
       svr_setjobstate(pjob, newstate, newsub, FALSE);
       
-      unlock_ji_mutex(pjob, __func__, "5", LOGLEVEL);
       }
     }
 
@@ -2019,13 +2034,16 @@ job_array *get_jobs_array(
       log_err(PBSE_BAD_PARAMETER, __func__, "NULL input job pointer");
       return(NULL);
     }
+  mutex_mgr job_mutex(pjob->ji_mutex,true);
+  job_mutex.set_lock_on_exit(false);
 
   strcpy(jobid, pjob->ji_qs.ji_jobid);
+
 
   if (pjob->ji_arraystructid[0] != '\0')
     {
     strcpy(arrayid, pjob->ji_arraystructid);
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+    job_mutex.unlock();
   
     if (LOGLEVEL >= 7)
       {
@@ -2035,12 +2053,15 @@ job_array *get_jobs_array(
 
     pa = get_array(arrayid);
 
-    if ((pjob = svr_find_job(jobid, TRUE)) == NULL)
+    pjob = svr_find_job(jobid, TRUE);
+    if (pjob == NULL)
       {
       unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
       pa = NULL;
       *pjob_ptr = NULL;
       }
+    mutex_mgr job_mutex2(pjob->ji_mutex,true);
+    job_mutex2.set_lock_on_exit(false);
     }
 
   return(pa);

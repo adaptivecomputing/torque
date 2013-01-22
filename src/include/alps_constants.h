@@ -78,7 +78,7 @@
 */
 
 
-#define APBASIL_RETRIES             5
+#define APBASIL_RETRIES             10
 #define WRITING_PIPE_ERROR          -1
 #define READING_PIPE_ERROR          -2
 #define ALPS_PARSING_ERROR          -3

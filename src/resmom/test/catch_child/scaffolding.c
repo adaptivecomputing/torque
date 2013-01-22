@@ -68,6 +68,7 @@ int exit_called = 0;
 int ran_one = 0;
 int the_sock = 0;
 job *lastpjob = NULL;
+int is_login_node;
 
 
 void exit_test(int num)
@@ -1326,3 +1327,10 @@ int insert_thing(resizable_array *ra, void *thing)
   {
   return(0);
   }
+
+int release_job_reservation(job *pjob)
+  {
+  fprintf(stderr, "The call to getsize needs to be mocked!!\n");
+  exit(1);
+  }
+

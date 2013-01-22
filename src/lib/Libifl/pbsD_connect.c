@@ -149,6 +149,7 @@ static const char *pbs_destn_file = PBS_DEFAULT_FILE;
 
 char *pbs_server = NULL;
 
+int rpp_fd = -1; /* This is for backward compatibility. rpp is no longer part of TORQUE 4.x */
 
 /* empty_alarm_handler -- this routine was added to help fix bug 76.
    blocking reads would not timeout on a SIG_IGN so this routine
