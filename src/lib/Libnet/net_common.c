@@ -74,8 +74,6 @@ int socket_get_tcp()
   int local_socket = 0;
   struct linger l_delay;
   int on = 1;
-  int ka_val = 1;
-  int ka_timeout = 10;
 
   (void) signal(SIGPIPE, SIG_IGN);
   memset(&l_delay, 0, sizeof(struct linger));
@@ -94,17 +92,6 @@ int socket_get_tcp()
     close(local_socket);
     local_socket = -4;
     }
-  else if (setsockopt(local_socket, SOL_SOCKET, SO_KEEPALIVE, &ka_val, sizeof(int)) < 0)
-    {
-    close(local_socket);
-    local_socket = -5;
-    }
-  else if (setsockopt(local_socket, SOL_TCP, TCP_KEEPIDLE, &ka_timeout, sizeof(int)) < 0)
-    {
-    close(local_socket);
-    local_socket = -6;
-    }
-
   return local_socket;
   } /* END socket_get_tcp() */
 
@@ -172,10 +159,6 @@ int socket_get_tcp_priv()
   {
   int priv_port = 0, local_socket = 0;
   int cntr = 0;
-#ifdef HAVE_RRESVPORT
-  int on = 1;
-  struct linger l_delay;
-#endif
   int rc = PBSE_NONE;
   struct sockaddr_in local;
   int flags;
@@ -184,93 +167,75 @@ int socket_get_tcp_priv()
 
   /* If any of the following 2 succeed (negative conditions) jump to else below
    * else run the default */
-#ifdef HAVE_RRESVPORT
-  memset(&l_delay, 0, sizeof(struct linger));
-  l_delay.l_onoff = 0;
-  if ((local_socket = rresvport(&priv_port)) != -1)
+  if ((local_socket = socket_get_tcp()) >= 0)
     {
-    if (setsockopt(local_socket, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(int)) == -1)
+    if ((rc = bindresvport(local_socket, &local)) == 0)
       {
-      rc = PBSE_SOCKET_FAULT;
+      priv_port = ntohs(local.sin_port);
       }
-    else if (setsockopt(local_socket, SOL_SOCKET, SO_LINGER, &l_delay, sizeof(struct linger)) == -1)
+    else
       {
       rc = PBSE_SOCKET_FAULT;
       }
     }
+  else
+    {
+    rc = PBSE_SOCKET_FAULT;
+    }
+
   if (rc == PBSE_NONE)
     {
     /* Success case */
     priv_port = local_socket;
     }
   else if ((local_socket = socket_get_tcp()) > 0)
-#else
-#ifdef HAVE_BINDRESVPORT
-    if ((local_socket = socket_get_tcp()) > 0)
+    {
+    /* According to the notes in the previous code:
+     * bindresvport seems to cause connect() failures in some odd corner case
+     * when talking to a local daemon.  So we'll only try this once and
+     * fallback to the slow loop around bind() if connect() fails
+     * with EADDRINUSE or EADDRNOTAVAIL.
+     * http://www.supercluster.org/pipermail/torqueusers/2006-June/003740.html
+     */
+
+    flags = fcntl(local_socket, F_GETFL);
+    flags |= O_NONBLOCK;
+    fcntl(local_socket, F_SETFL, flags);
+
+    priv_port = get_random_reserved_port();
+    while (cntr < RES_PORT_RETRY)
       {
-      if ((rc = bindresvport(local_socket, &local)) == 0)
+      if (++priv_port >= RES_PORT_END)
+        priv_port = RES_PORT_START;
+      local.sin_port = htons(priv_port);
+      if (((rc = bind(local_socket, (struct sockaddr *)&local, sizeof(struct sockaddr))) < 0) &&
+          ((rc == EADDRINUSE) ||
+           (errno == EADDRNOTAVAIL) ||
+           (errno == EINVAL) ||
+           (rc == EINPROGRESS)))
         {
-        /* Success case */
-        priv_port = ntohs(local.sin_port);
+        cntr++;
         }
       else
         {
-        rc = PBSE_SOCKET_FAULT;
+        rc = PBSE_NONE;
+        break;
         }
       }
-    else
+    if (cntr >= RES_PORT_RETRY)
+      {
+      close(local_socket);
       rc = PBSE_SOCKET_FAULT;
-  if (rc != PBSE_NONE)
-#else /* Default */
-    if ((local_socket = socket_get_tcp()) > 0)
-#endif
-#endif
-      {
-      /* According to the notes in the previous code:
-       * bindresvport seems to cause connect() failures in some odd corner case
-       * when talking to a local daemon.  So we'll only try this once and
-       * fallback to the slow loop around bind() if connect() fails
-       * with EADDRINUSE or EADDRNOTAVAIL.
-       * http://www.supercluster.org/pipermail/torqueusers/2006-June/003740.html
-       */
-
-      flags = fcntl(local_socket, F_GETFL);
-      flags |= O_NONBLOCK;
-      fcntl(local_socket, F_SETFL, flags);
-
-      priv_port = get_random_reserved_port();
-      while (cntr < RES_PORT_RETRY)
-        {
-        if (++priv_port >= RES_PORT_END)
-          priv_port = RES_PORT_START;
-        local.sin_port = htons(priv_port);
-        if (((rc = bind(local_socket, (struct sockaddr *)&local, sizeof(struct sockaddr))) < 0) &&
-            ((rc == EADDRINUSE) ||
-             (errno == EADDRNOTAVAIL) ||
-             (errno == EINVAL) ||
-             (rc == EINPROGRESS)))
-          {
-          cntr++;
-          }
-        else
-          {
-          rc = PBSE_NONE;
-          break;
-          }
-        }
-      if (cntr >= RES_PORT_RETRY)
-        {
-        close(local_socket);
-        rc = PBSE_SOCKET_FAULT;
-        errno = PBSE_SOCKET_FAULT;
-        local_socket = -1;
-        }
+      errno = PBSE_SOCKET_FAULT;
+      local_socket = -1;
       }
-    else
-      {
-      /* If something worked the first time you end up here */
-      rc = PBSE_NONE;
-      }
+    }
+  else
+    {
+    /* If something worked the first time you end up here */
+    rc = PBSE_SOCKET_FAULT;
+    }
+
   if (rc != PBSE_NONE)
     {
     local_socket = -1;

@@ -332,9 +332,18 @@ void *process_svr_conn(
     /* Failure case */
     if (send_message != NULL)
       free(send_message);
+    
     msg_len = 6 + 1 + 6 + 1 + 1;
+    
     if (error_msg == NULL)
-      error_msg = strdup(pbse_to_txt(rc));
+      {
+      char *tmp_err = pbse_to_txt(rc);
+      if (tmp_err != NULL)
+        error_msg = strdup(tmp_err);
+      else
+        error_msg = strdup("");
+      }
+
     msg_len += strlen(error_msg);
     send_message = (char *)calloc(1, msg_len);
     if(send_message != NULL)
