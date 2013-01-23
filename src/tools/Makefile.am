@@ -6,10 +6,7 @@ XPBSMON = xpbsmon
 endif
 endif
 
-CHECK_DIR = test
-
 SUBDIRS = . $(XPBSMON)
-
 
 DIST_SUBDIRS = . xpbsmon
 
@@ -54,10 +51,3 @@ pbs_wish_SOURCES = pbsTkInit.c ../scheduler.tcl/pbs_tclWrap.c \
 
 install_gui:
 	for dir in $(XPBSMON) ;do (cd $$dir && $(MAKE) install);done
-
-check:
-	$(MAKE) -C $(CHECK_DIR) $(MAKECMDGOALS)
-
-.PHONY: cleancheck
-cleancheck:
-	cd test && $(MAKE) cleancheck

@@ -11,6 +11,7 @@ check_PROGRAMS = test_queue_func
 libqueue_func_la_SOURCES = scaffolding.c ${PROG_ROOT}/queue_func.c
 libqueue_func_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib
 
+test_queue_func_LDADD = ../../../test/torque_test_lib/libtorque_test.la ../../../test/scaffold_fail/libscaffold_fail.la
 test_queue_func_SOURCES = test_queue_func.c
 
 check_SCRIPTS = coverage_run.sh
