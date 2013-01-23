@@ -1217,7 +1217,7 @@ void *handle_queue_routing_retries(
             }
           }
         }
-      unlock_queue(pque, __func__, NULL, 0);
+      unlock_queue(pque, __func__, NULL, LOGLEVEL);
       }
     sleep(route_retry_interval);
     }

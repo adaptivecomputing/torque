@@ -151,7 +151,7 @@ int is_reporter_node(
   if (pnode != NULL)
     {
     rc = pnode->nd_is_alps_reporter;
-    unlock_node(pnode, __func__, NULL, 0);
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
     }
 
   return(rc);

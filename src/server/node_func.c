@@ -285,7 +285,7 @@ struct pbsnode *find_node_in_allnodes(
     pnode = (struct pbsnode *)an->ra->slots[index].item;
 
     if (pnode != NULL)
-      lock_node(pnode, __func__, 0, 0);
+      lock_node(pnode, __func__, 0, LOGLEVEL);
     }
 
   pthread_mutex_unlock(an->allnodes_mutex);
@@ -351,17 +351,17 @@ struct pbsnode *find_nodebyname(
       {
       if (alps_reporter != NULL)
         {
-        lock_node(alps_reporter, __func__, NULL, 0);
+        lock_node(alps_reporter, __func__, NULL, LOGLEVEL);
         
         if ((i = get_value_hash(alps_reporter->alps_subnodes.ht, (void *)nodename)) >= 0)
           {
           if ((pnode = (struct pbsnode *)alps_reporter->alps_subnodes.ra->slots[i].item) != NULL)
             {
-            lock_node(pnode, __func__, NULL, 0);
+            lock_node(pnode, __func__, NULL, LOGLEVEL);
             }
           }
         
-        unlock_node(alps_reporter, __func__, NULL, 0);
+        unlock_node(alps_reporter, __func__, NULL, LOGLEVEL);
         }
       }
     else
@@ -2427,7 +2427,7 @@ int setup_nodes(void)
         np->nd_is_alps_reporter = TRUE;
         alps_reporter = np;
         initialize_all_nodes_array(&(np->alps_subnodes));
-        unlock_node(np, __func__, NULL, 0);
+        unlock_node(np, __func__, NULL, LOGLEVEL);
         }
       else if (is_alps_starter == TRUE)
         {
@@ -2435,7 +2435,7 @@ int setup_nodes(void)
         np->nd_is_alps_login = TRUE;
         add_to_login_holder(np);
         /* NYI: add to login node list */
-        unlock_node(np, __func__, NULL, 0);
+        unlock_node(np, __func__, NULL, LOGLEVEL);
         }
       }
 
@@ -3248,7 +3248,7 @@ static struct pbsnode *get_my_next_alps_node(
   {
   struct pbsnode *alps_node = next_host(&(pnode->alps_subnodes), &(iter->alps_index), NULL);
 
-  unlock_node(pnode, __func__, NULL, 0);
+  unlock_node(pnode, __func__, NULL, LOGLEVEL);
 
   return(alps_node);
   } /* END get_my_next_alps_node() */
@@ -3340,7 +3340,7 @@ struct pbsnode *next_node(
           
           if (next != NULL)
             {
-            lock_node(next, __func__, NULL, 0);
+            lock_node(next, __func__, NULL, LOGLEVEL);
             
             if (next->nd_is_alps_reporter)
               next = get_my_next_alps_node(iter, next);
@@ -3349,7 +3349,7 @@ struct pbsnode *next_node(
         }
       else
         {
-        unlock_node(current, __func__, NULL, 0);
+        unlock_node(current, __func__, NULL, LOGLEVEL);
         iter->alps_index = -1;
         
         pthread_mutex_lock(an->allnodes_mutex);
@@ -3358,7 +3358,7 @@ struct pbsnode *next_node(
         
         if (next != NULL)
           {
-          lock_node(next, __func__, NULL, 0);
+          lock_node(next, __func__, NULL, LOGLEVEL);
           
           if (next->nd_is_alps_reporter)
             next = get_my_next_alps_node(iter, next);
@@ -3542,7 +3542,7 @@ struct pbsnode *next_host(
     if (held != NULL)
       {
       name = strdup(held->nd_name);
-      unlock_node(held, __func__, NULL, 0);
+      unlock_node(held, __func__, NULL, LOGLEVEL);
       }
     pthread_mutex_lock(an->allnodes_mutex);
     }
@@ -3595,7 +3595,7 @@ void *send_hierarchy_threadtask(
   if (pnode != NULL)
     {
     port = pnode->nd_mom_rm_port;
-    unlock_node(pnode, __func__, NULL, 0);
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
 
     if (send_hierarchy(hi->name, port) != PBSE_NONE)
       {
