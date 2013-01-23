@@ -121,7 +121,6 @@
 #include "../lib/Libnet/lib_net.h" /* socket_avail_bytes_on_descriptor */
 #include "alps_functions.h"
 #include "tcp.h" /* tcp_chan */
-#include "start_exec.h" 
 
 #ifdef ENABLE_CPA
   #include "pbs_cpa.h"
@@ -171,6 +170,13 @@ typedef enum
 #define WM_TERM_MIGRATE 5 /* Request will be migrated */
 #endif /* CSAFAKE */
 #endif /* ENABLE_CSA */
+
+#define EN_THRESHOLD 100
+#define B_THRESHOLD 2048
+#define EXTRA_VARIABLE_SPACE 5120
+
+int expand_vtable(struct var_table *vtable);
+int copy_data(struct var_table *tmp_vtable, struct var_table *vtable, int expand_bsize, int expand_ensize);
 
 #ifdef NOPOSIXMEMLOCK
   #undef _POSIX_MEMLOCK
@@ -2880,6 +2886,7 @@ void handle_reservation(
   if (is_login_node == TRUE)
     {
     char *exec_str;
+    int   mppdepth = 0;
 
     if (pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str != NULL)
       exec_str = pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str;
@@ -2894,6 +2901,14 @@ void handle_reservation(
         (pres->rs_value.at_val.at_long != 0))
       use_nppn = FALSE;
 
+    pres = find_resc_entry(
+             &pjob->ji_wattr[JOB_ATR_resource],
+             find_resc_def(svr_resc_def, "mppdepth", svr_resc_size));
+    
+    if ((pres != NULL) &&
+        (pres->rs_value.at_val.at_long != 0))
+      mppdepth = pres->rs_value.at_val.at_long;
+
     j = create_alps_reservation(exec_str,
           pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
           pjob->ji_qs.ji_jobid,
@@ -2901,6 +2916,7 @@ void handle_reservation(
           apbasil_protocol,
           pagg,
           use_nppn,
+          mppdepth,
           &rsv_id);
     
     if (rsv_id != NULL)

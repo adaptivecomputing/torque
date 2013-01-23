@@ -71,26 +71,26 @@ START_TEST(insert_create_inspect_test)
 
   initialize_alps_reservations();
 
-  fail_unless(create_alps_reservation(&pjob) == 0, "couldn't create the reservation");
+  fail_unless(track_alps_reservation(&pjob) == 0, "couldn't create the reservation");
   fail_unless(alps_reservations.rh_alps_rsvs->num == 1, "incorrect count of reservations");
   pjob.ji_wattr[JOB_ATR_reservation_id].at_val.at_str = NULL;
-  fail_unless(create_alps_reservation(&pjob) == 0, "create_alps_reservation failed with empty job");
+  fail_unless(track_alps_reservation(&pjob) == 0, "track_alps_reservation failed with empty job");
   fail_unless(alps_reservations.rh_alps_rsvs->num == 1, "incorrect count after empty job");
 
   strcpy(pjob.ji_qs.ji_jobid, jobids[0]);
   pjob.ji_wattr[JOB_ATR_reservation_id].at_val.at_str = rsvids[1];
   pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = eh1;
-  fail_unless(create_alps_reservation(&pjob) == 0, "couldn't create the reservation");
+  fail_unless(track_alps_reservation(&pjob) == 0, "couldn't create the reservation");
 
   strcpy(pjob.ji_qs.ji_jobid, jobids[0]);
   pjob.ji_wattr[JOB_ATR_reservation_id].at_val.at_str = rsvids[2];
   pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = eh1;
-  fail_unless(create_alps_reservation(&pjob) == 0, "couldn't create the reservation");
+  fail_unless(track_alps_reservation(&pjob) == 0, "couldn't create the reservation");
 
   strcpy(pjob.ji_qs.ji_jobid, jobids[0]);
   pjob.ji_wattr[JOB_ATR_reservation_id].at_val.at_str = rsvids[3];
   pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = eh1;
-  fail_unless(create_alps_reservation(&pjob) == 0, "couldn't create the reservation");
+  fail_unless(track_alps_reservation(&pjob) == 0, "couldn't create the reservation");
 
   fail_unless(already_recorded(rsvids[0]) == 1, "rsv_id 0 not found");
   fail_unless(already_recorded(rsvids[1]) == 1, "rsv_id 0 not found");
