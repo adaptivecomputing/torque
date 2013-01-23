@@ -2064,8 +2064,7 @@ job_array *get_jobs_array(
 
       *pjob_ptr = NULL;
       }
-    mutex_mgr job_mutex2(pjob->ji_mutex,true);
-    job_mutex2.set_lock_on_exit(false);
+
     }
 
   return(pa);
