@@ -113,7 +113,6 @@ decode_DIS_attrl(int sock, struct attrl **ppatt)
   {
   int   hasresc;
   unsigned int  i;
-  unsigned int  name_len;
   unsigned int  numpat;
 
   struct attrl  *pat = NULL;
@@ -129,7 +128,7 @@ decode_DIS_attrl(int sock, struct attrl **ppatt)
   for (i = 0; i < numpat; ++i)
     {
 
-    name_len = disrui(sock, &rc); /* name_len is unusued here */
+    disrui(sock, &rc); 
 
     if (rc) break;
 

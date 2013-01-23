@@ -462,8 +462,6 @@ int pbsd_init(
   struct sigaction act;
 
   struct sigaction oact;
-
-
   struct work_task *wt;
   job_array *pa;
 
@@ -1327,9 +1325,12 @@ int pbsd_init(
            we might need to validate that the last job was fully initialized
            before continuing the cloning process. */
         wt = set_task(WORK_Timed, time_now + 1, job_clone_wt, (void*)pa->template_job);
-
+        if (wt == NULL)
+          {
+          sprintf(log_buffer, "could not set task");
+          log_err(-1, id, log_buffer);
+          }
         }
-
       }
     else if (pa->ai_qs.jobs_done == pa->ai_qs.num_jobs && pa->template_job == NULL)
       {

@@ -390,13 +390,11 @@ job *job_recov(
   job *pj;
   char *pn;
   char  namebuf[MAXPATHLEN];
-  int    qs_upgrade;
 #ifndef PBS_MOM
   char   parent_id[PBS_MAXSVRJOBID + 1];
   job_array *pa;
 #endif
 
-  qs_upgrade = FALSE;
 
   pj = job_alloc(); /* allocate & initialize job structure space */
 
@@ -467,7 +465,6 @@ job *job_recov(
       return(NULL);
       }
 
-    qs_upgrade = TRUE;
     }  /* END if (pj->ji_qs.qs_version != PBS_QS_VERSION) */
 
   /* Does file name match the internal name? */

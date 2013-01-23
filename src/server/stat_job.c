@@ -214,7 +214,6 @@ int add_walltime_remaining(
   
   int            found = 0;
   unsigned long  remaining = 0;
-  unsigned long  upperBound = 0;
 
   /* encode walltime remaining, this is custom because walltime 
    * remaining isn't an attribute */
@@ -228,11 +227,6 @@ int add_walltime_remaining(
       ((pattr + JOB_ATR_resource)->at_flags & ATR_VFLAG_SET))
     {
     pres = (resource *)GET_NEXT((pattr + JOB_ATR_resource)->at_val.at_list);
-    
-    if ((pattr + JOB_ATR_comp_time)->at_flags & ATR_VFLAG_SET)
-      upperBound = (pattr + JOB_ATR_comp_time)->at_val.at_long;
-    else
-      upperBound = (unsigned long)time_now;
     
     /* find the walltime resource */
     for (;pres != NULL;pres = (resource *)GET_NEXT(pres->rs_link))

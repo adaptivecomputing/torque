@@ -172,6 +172,7 @@ char *msg_startup3 = "%s %s: %s mode and %s exists, \ndo you wish to continue y/
 char *msg_svdbopen = "Unable to open server data base";
 char *msg_svdbnosv = "Unable to save server data base";
 char *msg_svrdown = "Server shutdown completed";
+char *msg_no_tasks = "No more tasks";
 
 /* This construct pulls the text parts from the batch types definitions
  *
