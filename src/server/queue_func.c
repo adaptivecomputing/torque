@@ -645,6 +645,13 @@ int get_parent_dest_queues(
     else
       {
       /* SUCCESS! */
+      if (LOGLEVEL >= 6)
+        {
+        snprintf(log_buf, sizeof(log_buf), "Job %s successfully routed:  %s (%0p, %d) -> %s (%0p, %d)",
+                 jobid, queue_parent_name, pque_parent, index_parent, queue_dest_name, pque_dest,
+                 index_dest);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+        }
       lock_queue(pque_parent, __func__, NULL, 0);
       lock_queue(pque_dest,   __func__, (char *)NULL, 0);
       *parent = pque_parent;
