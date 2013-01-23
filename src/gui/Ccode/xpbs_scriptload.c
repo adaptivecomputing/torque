@@ -186,7 +186,7 @@ set_dir_prefix(char *prefix, int diropt)
   if (notNULL(prefix))
     return(prefix);
   else if (diropt == TRUE)
-    return("");
+    return((char *) "");
   else if ((s = getenv("PBS_DPREFIX")) != NULL)
     return(s);
   else
@@ -236,7 +236,7 @@ make_argv(int *argc, char *argv[], char *line)
   char quote;
 
   *argc = 0;
-  argv[(*argc)++] = "scriptload";
+  argv[(*argc)++] = strdup("scriptload");
   l = line;
   b = buffer;
 
@@ -809,7 +809,7 @@ int process_opts(
               {
               Depend_opt = passet;
 
-              pdepend = malloc(PBS_DEPEND_LEN);
+              pdepend = (char *) malloc(PBS_DEPEND_LEN);
 
               if ((pdepend == NULL) ||
                    parse_depend_list(valuewd,pdepend,PBS_DEPEND_LEN))
