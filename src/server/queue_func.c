@@ -400,17 +400,17 @@ pbs_queue *find_queuebyname(
     pque = (pbs_queue *)svr_queues.ra->slots[i].item;
     }
   
-  if (pque != NULL)
-    lock_queue(pque, __func__, NULL, LOGLEVEL);
-
   pthread_mutex_unlock(svr_queues.allques_mutex);
   
   if (pque != NULL)
     {
-    if (pque->q_being_recycled != FALSE)
+    if (pque->q_being_recycled)
       {
-      unlock_queue(pque, __func__, "recycled queue", LOGLEVEL);
       pque = NULL;
+      }
+    else
+      {
+      lock_queue(pque, __func__, NULL, LOGLEVEL);
       }
     }
 
