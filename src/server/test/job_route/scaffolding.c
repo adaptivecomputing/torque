@@ -143,3 +143,8 @@ void log_err(int errnum, const char *routine, const char *text)
   }
 
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+
+pbs_queue *get_jobs_queue(job **pjob_ptr)
+  {
+  return(NULL);
+  }
