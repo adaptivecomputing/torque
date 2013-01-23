@@ -647,7 +647,7 @@ int get_parent_dest_queues(
       /* SUCCESS! */
       if (LOGLEVEL >= 6)
         {
-        snprintf(log_buf, sizeof(log_buf), "Job %s successfully routed:  %s (%0p, %d) -> %s (%0p, %d)",
+        snprintf(log_buf, sizeof(log_buf), "Job %s successfully routed:  %s (%p, %d) -> %s (%p, %d)",
                  jobid, queue_parent_name, pque_parent, index_parent, queue_dest_name, pque_dest,
                  index_dest);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
