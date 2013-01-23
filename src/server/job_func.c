@@ -2056,8 +2056,12 @@ job_array *get_jobs_array(
     pjob = svr_find_job(jobid, TRUE);
     if (pjob == NULL)
       {
-      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
-      pa = NULL;
+      if (pa != NULL)
+        {
+        unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+        pa = NULL;
+        }
+
       *pjob_ptr = NULL;
       }
     mutex_mgr job_mutex2(pjob->ji_mutex,true);
