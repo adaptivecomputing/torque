@@ -3,6 +3,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 4.1.5
   b - For cray: make sure that reservations are released when jobs are requeued. TRQ-1572.
   b - For cray: support the mppdepth directive. Bugzilla #225.
+  c - If the job is no long valid after attempting to lock the array in get_jobs_array(),
+      make sure the array is valid before attempting to unlock it. TRQ-1598.
 
 4.1.4
   e - When in cray mode, write physmem and availmem in addition to totmem so that 
