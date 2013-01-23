@@ -535,7 +535,6 @@ void *queue_route(
     return(NULL);
     }
 
-  mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
   while (1)
     {
     /* Make sure the queue is (still) valid.  If the user deleted it, we
@@ -567,20 +566,18 @@ void *queue_route(
         continue;
         }
       /* queue must be unlocked when calling reroute_job */
-      pque_mutex.unlock();
+      unlock_queue(pque, __func__, (char *)NULL, 0);
       reroute_job(pjob, pque);
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       /* need to relock queue when we go to call next_job */
-      pque_mutex.lock();
+      lock_queue(pque, __func__, (char *)NULL, 0);
       }
 
     /* we come out of the while loop with the queue locked.
        We don't want it locked while we sleep */
-    pque_mutex.unlock();
+    unlock_queue(pque, __func__, (char *)NULL, 0);
     pthread_mutex_unlock(reroute_job_mutex);
     sleep(route_retry_interval);
-    /* starting the loop again. the queue must be locked */
-    pque_mutex.lock();
     }
 
   /* NOTREACHED */
