@@ -535,24 +535,27 @@ void *queue_route(
     return(NULL);
     }
 
-  /* Before we attempt to service this queue, make sure we can find it. */
-  pque = find_queuebyname(queue_name);
-  if (pque == NULL)
-    {
-    sprintf(log_buf, "Could not find queue %s", queue_name);
-    log_err(-1, __func__, log_buf);
-    free(queue_name);
-    return(NULL);
-    }
-  
   mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
   while (1)
     {
+    /* Make sure the queue is (still) valid.  If the user deleted it, we
+       must catch that here and terminate the thread appropriately! */
+    pque = find_queuebyname(queue_name);
+    if (pque == NULL)
+      {
+      sprintf(log_buf, "Queue %s has disappeared or been deleted.  queue_route() thread exiting.", queue_name);
+      log_err(-1, __func__, log_buf);
+      free(queue_name);
+      pthread_mutex_unlock(reroute_job_mutex);
+      return(NULL);
+      }
+
     if (LOGLEVEL >= 7)
       {
       snprintf(log_buf, sizeof(log_buf), "routing any ready jobs in queue: %s", queue_name);
       log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_QUEUE, __func__, log_buf);
       }
+
     pthread_mutex_lock(reroute_job_mutex);
     while ((pjob = next_job(pque->qu_jobs,&iter)) != NULL)
       {
@@ -579,6 +582,10 @@ void *queue_route(
     /* starting the loop again. the queue must be locked */
     pque_mutex.lock();
     }
+
+  /* NOTREACHED */
+  sprintf(log_buf, "queue_route(%s) thread terminated impossibly?!", queue_name);
+  log_err(-1, __func__, log_buf);
   free(queue_name);
   return(NULL);
   } /* END queue_route() */
