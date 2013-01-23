@@ -674,7 +674,7 @@ pbs_queue *lock_queue_with_job_held(
   {
   char       jobid[PBS_MAXSVRJOBID + 1];
   job       *pjob = *pjob_ptr;
-  char      log_buf[LOCAL_LOG_BUF_SIZE];
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (pque != NULL)
     {
@@ -695,8 +695,10 @@ pbs_queue *lock_queue_with_job_held(
     else
       {
       if (LOGLEVEL >= 10)
+        {
         snprintf(log_buf, sizeof(log_buf), "try lock succeeded for queue %s on job %s", pque->qu_qs.qu_name, pjob->ji_qs.ji_jobid);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+        }
       }
     }
 
