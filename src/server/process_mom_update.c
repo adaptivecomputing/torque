@@ -790,7 +790,7 @@ int process_status_info(
   if (current != NULL)
     {
     save_node_status(current, &temp);
-    unlock_node(current, __func__, NULL, 0);
+    unlock_node(current, __func__, NULL, LOGLEVEL);
     }
   
   if ((rc == PBSE_NONE) &&

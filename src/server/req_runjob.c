@@ -1271,9 +1271,9 @@ int handle_heterogeneous_job_launch(
   batch_request *external_preq;
   batch_request *cray_preq;
   
-  unlock_ji_mutex(pjob, __func__, NULL, 0);
-  lock_ji_mutex(external_clone, __func__, NULL, 0);
-  lock_ji_mutex(cray_clone, __func__, NULL, 0);
+  unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+  lock_ji_mutex(external_clone, __func__, NULL, LOGLEVEL);
+  lock_ji_mutex(cray_clone, __func__, NULL, LOGLEVEL);
   
   /* clone the batch requests to avoid double frees */
   external_preq = duplicate_request(preq);
@@ -1297,12 +1297,12 @@ int handle_heterogeneous_job_launch(
     free_br(cray_preq);
   
   if (cray_clone != NULL)
-    unlock_ji_mutex(cray_clone, __func__, NULL, 0);
+    unlock_ji_mutex(cray_clone, __func__, NULL, LOGLEVEL);
   
   if (external_clone != NULL)
-    unlock_ji_mutex(external_clone, __func__, NULL, 0);
+    unlock_ji_mutex(external_clone, __func__, NULL, LOGLEVEL);
   
-  lock_ji_mutex(pjob, __func__, NULL, 0);
+  lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
   
   if (both_running == TRUE)
     {

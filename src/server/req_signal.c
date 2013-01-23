@@ -281,7 +281,7 @@ int issue_signal(
       (pjob != NULL))
     {
     strcpy(jobid, pjob->ji_qs.ji_jobid);
-    unlock_ji_mutex(pjob, __func__, NULL, 0);
+    unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
     func(newreq);
 
     *pjob_ptr = svr_find_job((char *)jobid, TRUE);

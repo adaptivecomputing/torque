@@ -741,13 +741,13 @@ void job_free(
 
   if (pj->ji_cray_clone != NULL)
     {
-    lock_ji_mutex(pj->ji_cray_clone, __func__, NULL, 0);
+    lock_ji_mutex(pj->ji_cray_clone, __func__, NULL, LOGLEVEL);
     job_free(pj->ji_cray_clone, TRUE);
     }
 
   if (pj->ji_external_clone != NULL)
     {
-    lock_ji_mutex(pj->ji_external_clone, __func__, NULL, 0);
+    lock_ji_mutex(pj->ji_external_clone, __func__, NULL, LOGLEVEL);
     job_free(pj->ji_external_clone, TRUE);
     }
 
@@ -2301,7 +2301,7 @@ int split_job(
     change_external_job_name(external);
     external->ji_parent_job = pjob;
     pjob->ji_external_clone = external;
-    unlock_ji_mutex(external, __func__, NULL, 0);
+    unlock_ji_mutex(external, __func__, NULL, LOGLEVEL);
     }
 
   if (pjob->ji_cray_clone == NULL)
@@ -2310,7 +2310,7 @@ int split_job(
     fix_cray_exec_hosts(cray);
     cray->ji_parent_job     = pjob;
     pjob->ji_cray_clone     = cray;
-    unlock_ji_mutex(cray, __func__, NULL, 0);
+    unlock_ji_mutex(cray, __func__, NULL, LOGLEVEL);
     }
 
   return(PBSE_NONE);
