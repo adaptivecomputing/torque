@@ -481,7 +481,6 @@ int svr_enquejob(
   /* place into queue in order of queue rank starting at end */
   pjob->ji_qhdr = pque;
 
-    
   if (!pjob->ji_is_array_template)
     {
     rc = insert_into_alljobs_by_rank(pque->qu_jobs, pjob, job_id);
@@ -521,7 +520,6 @@ int svr_enquejob(
     }
 
   /* update the current location and type pbs_attribute */
-
   pdef    = &job_attr_def[JOB_ATR_in_queue];
 
   pattrjb = &pjob->ji_wattr[JOB_ATR_in_queue];
@@ -551,17 +549,12 @@ int svr_enquejob(
    * set any "unspecified" resources which have default values,
    * first with queue defaults, then with server defaults
    */
-
   set_resc_deflt(pjob, NULL, TRUE);
 
-  /*
-   * set any "unspecified" checkpoint with queue default values, if any
-   */
-
+  /* set any "unspecified" checkpoint with queue default values, if any */
   set_chkpt_deflt(pjob, pque);
 
   /* See if we need to do anything special based on type of queue */
-
   if (pque->qu_qs.qu_type == QTYPE_Execution)
     {
     /* set union to "EXEC" and clear mom's address */
@@ -574,7 +567,6 @@ int svr_enquejob(
       }
 
     /* check the job checkpoint against the queue's min */
-
     eval_checkpoint(
       &pjob->ji_wattr[JOB_ATR_checkpoint],
       &pque->qu_attr[QE_ATR_checkpoint_min]);
@@ -616,8 +608,6 @@ int svr_enquejob(
     /* start attempts to route job */
     pjob->ji_qs.ji_un_type = JOB_UNION_TYPE_ROUTE;
     pjob->ji_qs.ji_un.ji_routet.ji_quetime = time_now;
-    /* must be set to 1 so that routing is attempted */
-    pjob->ji_qs.ji_un.ji_routet.ji_rteretry = 1;
     
     }
 
@@ -715,7 +705,7 @@ int svr_dequejob(
 
 #ifndef NDEBUG
 
-  snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "dequeuing from %s, state %s",
+  snprintf(log_buf, sizeof(log_buf), "dequeuing from %s, state %s",
     pque ? pque->qu_qs.qu_name : "unknown queue",
     PJobState[pjob->ji_qs.ji_state]);
 
