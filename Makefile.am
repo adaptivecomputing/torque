@@ -194,7 +194,12 @@ uninstall-hook:
 	rmdir $(DESTDIR)$(MODULEFILES_DIR)/$(PACKAGE_NAME)
 endif
 
+if HAVE_CHECK
 CHECK_DIRS = src
+else
+check-recursive:
+
+endif
 
 .PHONY: cleancheck
 cleancheck:

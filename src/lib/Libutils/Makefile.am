@@ -15,9 +15,11 @@ libutils_a_SOURCES = u_groups.c u_tree.c u_mu.c u_MXML.c u_xml.c \
                      u_hash_map_structs.c u_memmgr.c u_users.c \
 										 u_constants.c u_hash_map.c u_mutex_mgr.cpp
 
+if HAVE_CHECK
 check:
 	$(MAKE) -C $(CHECK_DIR) $(MAKECMDGOALS)
 
 .PHONY: cleancheck
 cleancheck:
 	cd test && $(MAKE) cleancheck
+endif
