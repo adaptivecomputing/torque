@@ -719,7 +719,7 @@ int svr_dequejob(
     strcpy(job_id, pjob->ji_qs.ji_jobid);
 
     /* this function will lock queues and jobs */
-    unlock_ji_mutex(pjob, __func__, NULL, 0);
+    unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
     if (parent_queue_mutex_held == TRUE)
       {
@@ -2043,7 +2043,7 @@ static int check_queue_job_limit(
     int user_jobs = 0;
 
     /* count number of jobs user has in queue */
-    unlock_ji_mutex(pjob, __func__, NULL, 0);
+    unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
     user_jobs = count_queued_jobs(pque,
         pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);

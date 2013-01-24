@@ -6,6 +6,7 @@
 #include "../lib/Libutils/u_lock_ctl.h"
 
 
+
 int status_node(struct pbsnode *, struct batch_request *, int *, tlist_head *);
 
 
@@ -24,7 +25,7 @@ int get_alps_statuses(
   while ((alps_node = next_host(&(parent->alps_subnodes), &iter, NULL)) != NULL)
     {
     rc = status_node(alps_node, preq, bad, pstathd);
-    unlock_node(alps_node, __func__, NULL, 0);
+    unlock_node(alps_node, __func__, NULL, 10);
 
     if (rc != PBSE_NONE)
       break;

@@ -673,7 +673,7 @@ int mom_comm(
 
   strcpy(jobid, pjob->ji_qs.ji_jobid);
 
-  unlock_ji_mutex(pjob, __func__, NULL, 0);
+  unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
   handle = svr_connect(
       pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
@@ -1587,8 +1587,8 @@ int handle_complete_subjob(
   int  rc = PBSE_NONE;
   int  complete_parent = FALSE;
 
-  unlock_ji_mutex(pjob, __func__, NULL, 0);
-  lock_ji_mutex(parent_job, __func__, NULL, 0);
+  unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+  lock_ji_mutex(parent_job, __func__, NULL, LOGLEVEL);
 
   if (parent_job->ji_being_recycled == FALSE)
     {
@@ -1597,13 +1597,13 @@ int handle_complete_subjob(
     else
       other_subjob = parent_job->ji_cray_clone;
 
-    lock_ji_mutex(other_subjob, __func__, NULL, 0);
+    lock_ji_mutex(other_subjob, __func__, NULL, LOGLEVEL);
     
     if ((other_subjob->ji_being_recycled == TRUE) ||
         (other_subjob->ji_qs.ji_state == JOB_STATE_COMPLETE))
       complete_parent = TRUE;
 
-    unlock_ji_mutex(other_subjob, __func__, NULL, 0);
+    unlock_ji_mutex(other_subjob, __func__, NULL, LOGLEVEL);
 
     if (complete_parent == TRUE)
       {
@@ -1624,7 +1624,7 @@ int handle_complete_subjob(
       }
     }
 
-  unlock_ji_mutex(parent_job, __func__, NULL, 0);
+  unlock_ji_mutex(parent_job, __func__, NULL, LOGLEVEL);
 
   return(rc);
   } /* END handle_complete_subjob() */
@@ -2683,8 +2683,8 @@ int handle_subjob_exit_status(
 
   parent_job = pjob->ji_parent_job;
 
-  unlock_ji_mutex(pjob, __func__, NULL, 0);
-  lock_ji_mutex(parent_job, __func__, NULL, 0);
+  unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+  lock_ji_mutex(parent_job, __func__, NULL, LOGLEVEL);
 
   if (parent_job->ji_qs.ji_un.ji_exect.ji_exitstat == 0)
     {
@@ -2704,8 +2704,8 @@ int handle_subjob_exit_status(
         
       add_comment_to_parent(parent_job, cray_exited_nonzero, exit_status);
     
-      unlock_ji_mutex(parent_job, __func__, NULL, 0);
-      lock_ji_mutex(other_subjob, __func__, NULL, 0);
+      unlock_ji_mutex(parent_job, __func__, NULL, LOGLEVEL);
+      lock_ji_mutex(other_subjob, __func__, NULL, LOGLEVEL);
 
       if (other_subjob->ji_qs.ji_state <= JOB_STATE_RUNNING)
         {
@@ -2713,7 +2713,7 @@ int handle_subjob_exit_status(
         pnode = find_nodebyname(other_subjob->ji_qs.ji_destin);
         }
 
-      unlock_ji_mutex(other_subjob, __func__, NULL, 0);
+      unlock_ji_mutex(other_subjob, __func__, NULL, LOGLEVEL);
 
       if (pnode != NULL)
         {
@@ -2723,14 +2723,14 @@ int handle_subjob_exit_status(
         log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, other_jobid, log_buf);
         
         kill_job_on_mom(other_jobid, pnode);
-        unlock_node(pnode, __func__, NULL, 0);
+        unlock_node(pnode, __func__, NULL, LOGLEVEL);
         }
       }
     else
-      unlock_ji_mutex(parent_job, __func__, NULL, 0);
+      unlock_ji_mutex(parent_job, __func__, NULL, LOGLEVEL);
     }
   else
-    unlock_ji_mutex(parent_job, __func__, NULL, 0);
+    unlock_ji_mutex(parent_job, __func__, NULL, LOGLEVEL);
 
   return(rc);
   } /* END handle_subjob_exit_status() */
@@ -2831,24 +2831,24 @@ int handle_rerunning_heterogeneous_jobs(
   
   if ((rc = rerun_job(pjob, newstate, newsubst, acctbuf)) == PBSE_NONE)
     {
-    unlock_ji_mutex(pjob, __func__, NULL, 0);
-    lock_ji_mutex(parent_job, __func__, NULL, 0);
+    unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+    lock_ji_mutex(parent_job, __func__, NULL, LOGLEVEL);
     
     if (parent_job->ji_external_clone == pjob)
       other_subjob = parent_job->ji_cray_clone;
     else
       other_subjob = parent_job->ji_external_clone;
     
-    unlock_ji_mutex(parent_job, __func__, NULL, 0);
-    lock_ji_mutex(other_subjob, __func__, NULL, 0);
+    unlock_ji_mutex(parent_job, __func__, NULL, LOGLEVEL);
+    lock_ji_mutex(other_subjob, __func__, NULL, LOGLEVEL);
     
     if ((rc = rerun_job(other_subjob, newstate, newsubst, acctbuf)) == PBSE_NONE)
       {
-      unlock_ji_mutex(other_subjob, __func__, NULL, 0);
-      lock_ji_mutex(parent_job, __func__, NULL, 0);
+      unlock_ji_mutex(other_subjob, __func__, NULL, LOGLEVEL);
+      lock_ji_mutex(parent_job, __func__, NULL, LOGLEVEL);
       
       if ((rc = rerun_job(parent_job, newstate, newsubst, acctbuf)) == PBSE_NONE)
-        unlock_ji_mutex(parent_job, __func__, NULL, 0);
+        unlock_ji_mutex(parent_job, __func__, NULL, LOGLEVEL);
       }
     }
   
