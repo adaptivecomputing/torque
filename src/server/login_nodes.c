@@ -84,6 +84,7 @@
 #include "login_nodes.h"
 #include "../lib/Libutils/u_lock_ctl.h"
 
+extern int LOGLEVEL;
 
 login_holder logins;
 
@@ -132,7 +133,7 @@ struct pbsnode *check_node(
   {
   struct pbsnode *pnode = ln->pnode;
 
-  lock_node(pnode, __func__, NULL, 20);
+  lock_node(pnode, __func__, NULL, LOGLEVEL);
 
   if ((hasprop(pnode, needed) == TRUE) &&
       (pnode->nd_nsn - pnode->nd_np_to_be_used >= 1) &&
@@ -141,7 +142,7 @@ struct pbsnode *check_node(
     return(pnode);
   else
     {
-    unlock_node(pnode, __func__, NULL, 20);
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
     return(NULL);
     }
   } /* END check_node() */
@@ -252,7 +253,7 @@ struct pbsnode *get_next_login_node(
   if (ln != NULL)
     {
     pnode = ln->pnode;
-    lock_node(pnode, __func__, NULL, 0);
+    lock_node(pnode, __func__, NULL, LOGLEVEL);
     
     if (needed != NULL)
       {
@@ -272,7 +273,7 @@ struct pbsnode *get_next_login_node(
     
     if (node_fits == FALSE)
       {
-      unlock_node(pnode, __func__, NULL, 0);
+      unlock_node(pnode, __func__, NULL, LOGLEVEL);
       pnode = find_fitting_node(needed);
       }
     else

@@ -730,10 +730,10 @@ int kill_job_on_mom(
       strcpy(preq->rq_ind.rq_signal.rq_jid, jobid);
       strcpy(preq->rq_ind.rq_signal.rq_signame, "SIGKILL");
       
-      unlock_node(pnode, __func__, NULL, 0);
+      unlock_node(pnode, __func__, NULL, LOGLEVEL);
       rc = issue_Drequest(conn, preq);
       free_br(preq);
-      lock_node(pnode, __func__, NULL, 0);
+      lock_node(pnode, __func__, NULL, LOGLEVEL);
       }
     }
 
@@ -757,9 +757,9 @@ int job_should_be_on_node(
     if ((is_job_on_node(pnode, jobid)) == FALSE)
       {
       /* must lock the job before the node */
-      unlock_node(pnode, __func__, NULL, 0);
+      unlock_node(pnode, __func__, NULL, LOGLEVEL);
       pjob = svr_find_job(jobid, TRUE);
-      lock_node(pnode, __func__, NULL, 0);
+      lock_node(pnode, __func__, NULL, LOGLEVEL);
       
       if (pjob != NULL)
         {
@@ -837,9 +837,9 @@ int remove_jobs_that_have_disappeared(
     job *pjob;
 
     /* locking priority is job before node */
-    unlock_node(pnode, __func__, NULL, 0);
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
     pjob = svr_find_job(jobid, TRUE);
-    lock_node(pnode, __func__, NULL, 0);
+    lock_node(pnode, __func__, NULL, LOGLEVEL);
 
     if (pjob == NULL)
       {
@@ -971,7 +971,7 @@ void *sync_node_jobs(
 
   /*free_resizable_array(ms_jobs);*/
 
-  unlock_node(np, __func__, NULL, 0);
+  unlock_node(np, __func__, NULL, LOGLEVEL);
 
   return(NULL);
   }  /* END sync_node_jobs() */
@@ -2500,7 +2500,7 @@ int is_compute_node(
   if ((pnode = find_nodebyname(node_id)) != NULL)
     {
     rc = TRUE;
-    unlock_node(pnode, __func__, NULL, 0);
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
     }
 
   if (colon != NULL)
@@ -2571,13 +2571,13 @@ int check_for_node_type(
           (!strcmp(p->name, alps_starter_feature)))
         continue;
 
-      lock_node(reporter, __func__, NULL, 0);
+      lock_node(reporter, __func__, NULL, LOGLEVEL);
       pnode = find_node_in_allnodes(&(reporter->alps_subnodes), p->name);
-      unlock_node(reporter, __func__, NULL, 0);
+      unlock_node(reporter, __func__, NULL, LOGLEVEL);
 
       if (pnode != NULL)
         {
-        unlock_node(pnode, __func__, NULL, 0);
+        unlock_node(pnode, __func__, NULL, LOGLEVEL);
 
         if (nt == ND_TYPE_CRAY)
           {
@@ -2597,7 +2597,7 @@ int check_for_node_type(
           if (pnode->nd_is_alps_login == TRUE)
             login = TRUE;
 
-          unlock_node(pnode, __func__, NULL, 0);
+          unlock_node(pnode, __func__, NULL, LOGLEVEL);
 
           if (nt == ND_TYPE_EXTERNAL)
             {
@@ -2674,7 +2674,7 @@ int add_login_node_if_needed(
     if (login->nd_is_alps_login == FALSE)
       need_to_add_login = TRUE;
 
-    unlock_node(login, __func__, NULL, 0);
+    unlock_node(login, __func__, NULL, LOGLEVEL);
     }
 
   if (need_to_add_login == TRUE)
@@ -2701,7 +2701,7 @@ int add_login_node_if_needed(
       
       rc = PBSE_NONE;
 
-      unlock_node(login, __func__, NULL, 0);
+      unlock_node(login, __func__, NULL, LOGLEVEL);
       }
 
     if (prop != NULL)
@@ -4078,7 +4078,7 @@ int add_to_ms_list(
     {
     insert_thing(pnode->nd_ms_jobs, strdup(pjob->ji_qs.ji_jobid));
 
-    unlock_node(pnode, __func__, NULL, 0);
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
     }
 
   return(PBSE_NONE);
@@ -4994,7 +4994,7 @@ void free_nodes(
       remove_job_from_node(pnode, pjob);
       remove_job_from_nodes_gpus(pnode, pjob);
       remove_job_from_nodes_mics(pnode, pjob);
-      unlock_node(pnode, __func__, NULL, 0);
+      unlock_node(pnode, __func__, NULL, LOGLEVEL);
       }
     }
 
@@ -5005,7 +5005,7 @@ void free_nodes(
     if ((pnode = find_nodebyname(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str)) != NULL)
       {
       remove_job_from_node(pnode, pjob);
-      unlock_node(pnode, __func__, NULL, 0);
+      unlock_node(pnode, __func__, NULL, LOGLEVEL);
       }
     }
 
@@ -5036,9 +5036,9 @@ struct pbsnode *get_compute_node(
       }
     }
 
-  lock_node(ar, __func__, NULL, 0);
+  lock_node(ar, __func__, NULL, LOGLEVEL);
   compute_node = create_alps_subnode(ar, node_name);
-  unlock_node(ar, __func__, NULL, 0);
+  unlock_node(ar, __func__, NULL, LOGLEVEL);
 
   return(compute_node);
   } /* END get_compute_node() */
