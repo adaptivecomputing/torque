@@ -19,6 +19,7 @@
 #include "portability.h"
 #include "list_link.h"
 #include "pbs_ifl.h"
+#include "../lib/Libifl/lib_ifl.h"
 #include "attribute.h"
 #include "server_limits.h"
 #include "pbs_job.h"
@@ -104,7 +105,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     }
 
   /* get the username and passwd, allow uid 0 */
-  retval = pam_get_user(pamh, &username, NULL);
+  retval = pam_get_user(pamh, (const pam_get_user_2nd_arg_t **) &username, NULL);
 
 #if defined(PAM_CONV_AGAIN) && defined(PAM_INCOMPLETE)
   if (retval == PAM_CONV_AGAIN)
