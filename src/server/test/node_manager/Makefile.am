@@ -1,6 +1,6 @@
 include ../Makefile.ut
 
-libuut_la_SOURCES =  ${PROG_ROOT}/node_manager.c  scaffolding.c
+libuut_la_SOURCES =  ${PROG_ROOT}/node_manager.c
 
 coverage_run.sh:
 	echo 'cp -p .libs/node_manager.gc* . >/dev/null 2>&1' > $@

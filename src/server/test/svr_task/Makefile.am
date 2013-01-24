@@ -1,6 +1,6 @@
 include ../Makefile.ut
 
-libuut_la_SOURCES =  ${PROG_ROOT}/svr_task.c  scaffolding.c
+libuut_la_SOURCES =  ${PROG_ROOT}/svr_task.c
 
 coverage_run.sh:
 	echo 'cp -p .libs/svr_task.gc* . >/dev/null 2>&1' > $@
