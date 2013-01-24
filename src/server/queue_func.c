@@ -617,7 +617,7 @@ int get_parent_dest_queues(
 
   unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
-  unlock_queue(*parent, __func__, NULL, 0);
+  unlock_queue(*parent, __func__, NULL, LOGLEVEL);
 
   *parent = NULL;
 
@@ -645,8 +645,8 @@ int get_parent_dest_queues(
     else
       {
       /* SUCCESS! */
-      lock_queue(pque_parent, __func__, NULL, 0);
-      lock_queue(pque_dest,   __func__, (char *)NULL, 0);
+      lock_queue(pque_parent, __func__, NULL, LOGLEVEL);
+      lock_queue(pque_dest,   __func__, (char *)NULL,LOGLEVEL);
       *parent = pque_parent;
       *dest = pque_dest;
 
@@ -674,7 +674,7 @@ pbs_queue *lock_queue_with_job_held(
   {
   char       jobid[PBS_MAXSVRJOBID + 1];
   job       *pjob = *pjob_ptr;
-  char      log_buf[LOCAL_LOG_BUF_SIZE];
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (pque != NULL)
     {
@@ -687,7 +687,7 @@ pbs_queue *lock_queue_with_job_held(
 
       if ((pjob = svr_find_job(jobid, TRUE)) == NULL)
         {
-        unlock_queue(pque, __func__, NULL, 0);
+        unlock_queue(pque, __func__, NULL, LOGLEVEL);
         pque = NULL;
         *pjob_ptr = NULL;
         }
@@ -695,8 +695,10 @@ pbs_queue *lock_queue_with_job_held(
     else
       {
       if (LOGLEVEL >= 10)
+        {
         snprintf(log_buf, sizeof(log_buf), "try lock succeeded for queue %s on job %s", pque->qu_qs.qu_name, pjob->ji_qs.ji_jobid);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+        }
       }
     }
 

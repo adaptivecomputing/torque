@@ -825,7 +825,7 @@ int handle_single_delete(
     }
   else
     {
-    unlock_ji_mutex(pjob, __func__, NULL, 0);
+    unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
     /* send the asynchronous reply if needed */
     if (preq_tmp != NULL)
