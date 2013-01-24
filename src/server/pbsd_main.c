@@ -1456,11 +1456,7 @@ void main_loop(void)
     time_now = time(NULL);
 
     monitor_accept_thread();
-    /* FIXME:  As currently implemented, this would start dozens
-       of threads per routing queue.  This needs to be rewritten
-       to monitor the new scheme of 1 thread per routing queue
-       instead of the old single-routing-thread method. */
-    /*monitor_route_retry_thread();*/
+    monitor_route_retry_thread();
 
     if (run_change_logs == TRUE)
       change_logs();
