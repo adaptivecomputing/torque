@@ -215,49 +215,54 @@ void *check_and_run_job(
       (pjob->ji_is_array_template == FALSE))
     {
     job_array *pa = get_jobs_array(&pjob);
-    mutex_mgr array_mutex(pa->ai_mutex, true);
 
     if (pjob == NULL)
       {
+      job_mutex.set_lock_on_exit(false);
       req_reject(PBSE_JOBNOTFOUND, 0, preq, NULL, "Job unexpectedly deleted");
       *rc_ptr = PBSE_JOBNOTFOUND;
       return(rc_ptr);
       }
-    
-    if ((pa->ai_qs.slot_limit < 0) ||
-        (pa->ai_qs.slot_limit > pa->ai_qs.jobs_running))
+   
+    if (pa != NULL)
       {
-      job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
-      job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
-      job_state = pjob->ji_qs.ji_state;
-
-      job_mutex.unlock();
-
-      update_array_values(pa,job_state,aeRun,
-          job_id, job_atr_hold, job_exit_status);
-
-      if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
+      mutex_mgr array_mutex(pa->ai_mutex, true);
+      
+      if ((pa->ai_qs.slot_limit < 0) ||
+          (pa->ai_qs.slot_limit > pa->ai_qs.jobs_running))
         {
-        req_reject(PBSE_JOBNOTFOUND, 0, preq, NULL,
-          "Job deleted while updating array values");
-        *rc_ptr = PBSE_JOBNOTFOUND;
-        return(rc_ptr);
+        job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
+        job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
+        job_state = pjob->ji_qs.ji_state;
+
+        job_mutex.unlock();
+
+        update_array_values(pa,job_state,aeRun,
+            job_id, job_atr_hold, job_exit_status);
+
+        if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
+          {
+          req_reject(PBSE_JOBNOTFOUND, 0, preq, NULL,
+            "Job deleted while updating array values");
+          *rc_ptr = PBSE_JOBNOTFOUND;
+          return(rc_ptr);
+          }
+        else
+          job_mutex.mark_as_locked();
         }
       else
-        job_mutex.mark_as_locked();
-      }
-    else
-      {
-      snprintf(log_buf,sizeof(log_buf),
-        "Cannot run job. Array slot limit is %d and there are already %d jobs running\n",
-        pa->ai_qs.slot_limit,
-        pa->ai_qs.jobs_running);
-     
-      req_reject(PBSE_IVALREQ, 0, preq, NULL, log_buf);
-      
-      *rc_ptr = PBSE_IVALREQ;
+        {
+        snprintf(log_buf,sizeof(log_buf),
+          "Cannot run job. Array slot limit is %d and there are already %d jobs running\n",
+          pa->ai_qs.slot_limit,
+          pa->ai_qs.jobs_running);
+       
+        req_reject(PBSE_IVALREQ, 0, preq, NULL, log_buf);
+        
+        *rc_ptr = PBSE_IVALREQ;
 
-      return(rc_ptr);
+        return(rc_ptr);
+        }
       }
     }
 
