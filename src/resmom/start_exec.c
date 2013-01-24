@@ -4157,7 +4157,7 @@ int TMomFinalizeChild(
     /* Put the script's arguments on the command line (see configure option --enable-shell-use-argv). */
     if (TJE->is_interactive == FALSE)
       {
-      arg[aindex] = calloc(1,
+      arg[aindex] = (char *)calloc(1,
                           strlen(path_jobs) +
                           strlen(pjob->ji_qs.ji_fileprefix) +
                           strlen(JOB_SCRIPT_SUFFIX) + 6);
