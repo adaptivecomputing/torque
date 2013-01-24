@@ -53,9 +53,11 @@ uninstall-hook:
 	rm -f $(DESTDIR)$(PBS_ENVIRON) $(DESTDIR)$(PBS_SERVER_HOME)/server_priv/nodes
 	rm -f $(DESTDIR)$(sbindir)/$(program_prefix)qserverd$(program_suffix)$(EXEEXT)
 
+if HAVE_CHECK
 check:
 	$(MAKE) -C $(CHECK_DIR) $(MAKECMDGOALS)
 
 .PHONY: cleancheck
 cleancheck:
 	cd test && $(MAKE) cleancheck
+endif

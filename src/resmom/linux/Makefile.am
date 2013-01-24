@@ -15,9 +15,11 @@ if BUILD_L26_CPUSETS
 libmommach_a_SOURCES += cpuset.c
 endif
 
+if HAVE_CHECK
 check:
 	$(MAKE) -C $(CHECK_DIR) $(MAKECMDGOALS)
 
 .PHONY: cleancheck
 cleancheck:
 	cd $(CHECK_DIR) && $(MAKE) cleancheck
+endif
