@@ -5,6 +5,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - For cray: support the mppdepth directive. Bugzilla #225.
   c - If the job is no long valid after attempting to lock the array in get_jobs_array(),
       make sure the array is valid before attempting to unlock it. TRQ-1598.
+  e - For cray: make it so you can continue to submit jobs to pbs_server even if you have
+      restarted it while the cray is offline. TRQ-1595
 
 4.1.4
   e - When in cray mode, write physmem and availmem in addition to totmem so that 
