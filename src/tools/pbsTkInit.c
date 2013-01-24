@@ -84,8 +84,9 @@
 
 #include <pbs_config.h>
 
-#include        "libpbs.h"
+#include "libpbs.h"
 #include "log.h"
+#include "rm.h"
 #include "tk.h"
 #include <string.h>
 #if     TCLX
@@ -97,8 +98,7 @@ extern void fullresp(int);
 extern void add_cmds(Tcl_Interp *);
 
 int
-pbsTcl_Init(interp)
-Tcl_Interp *interp;  /* Interpreter for application. */
+pbsTcl_Init(Tcl_Interp *interp)
   {
   if (Tcl_Init(interp) == TCL_ERROR)
     return TCL_ERROR;
@@ -137,10 +137,7 @@ Tcl_Interp *interp;  /* Interpreter for application. */
   }
 
 int
-
-main(argc, argv)
-int  argc;
-char *argv[];
+main(int argc, char *argv[])
   {
   chk_file_sec_stderr = 1;
   Tk_Main(argc, argv, pbsTcl_Init);

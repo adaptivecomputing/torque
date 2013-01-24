@@ -6769,9 +6769,7 @@ char *std_file_name(
 
       /* check for $HOME/.pbs_spool */
       /* if it's not a directory, just use $HOME us usual */
-      snprintf(path_alt, sizeof(path_alt), "%s", path);
-
-      strncat(path_alt, "/.pbs_spool/", sizeof(path_alt)i - 1);
+      snprintf(path_alt, sizeof(path_alt), "%s/.pbs_spool/", path);
 
       if (seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) == -1)
         {
