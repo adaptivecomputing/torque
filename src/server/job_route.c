@@ -337,19 +337,29 @@ int job_route(
   time_t            time_now = time(NULL);
   char              log_buf[LOCAL_LOG_BUF_SIZE];
 
-  struct pbs_queue *qp = jobp->ji_qhdr;
+  struct pbs_queue *qp;
   long              retry_time;
-
-  if (qp == NULL)
-    return(PBSE_QUENOEN);
   
   if (LOGLEVEL >= 7)
     {
     sprintf(log_buf, "%s", jobp->ji_qs.ji_jobid);
-    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
+  
+  qp = get_jobs_queue(&jobp);
+  
+  if (jobp == NULL)
+    {
+    return(PBSE_JOB_RECYCLED);
     }
 
-  mutex_mgr qp_mutex = mutex_mgr(qp->qu_mutex);
+  if (qp == NULL)
+    {
+    return(PBSE_BADSTATE);
+    }
+
+  mutex_mgr qp_mutex = mutex_mgr(qp->qu_mutex, true);
+
   /* see if the job is able to be routed */
   switch (jobp->ji_qs.ji_state)
     {
