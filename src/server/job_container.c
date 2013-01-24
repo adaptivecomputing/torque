@@ -478,18 +478,18 @@ job *svr_find_job(
         {
         pj = pj->ji_external_clone;
         
-        lock_ji_mutex(pj, __func__, NULL, 0);
-        unlock_ji_mutex(pj->ji_parent_job, __func__, NULL, 0);
+        lock_ji_mutex(pj, __func__, NULL, LOGLEVEL);
+        unlock_ji_mutex(pj->ji_parent_job, __func__, NULL, LOGLEVEL);
 
         if (pj->ji_being_recycled == TRUE)
           {
-          unlock_ji_mutex(pj, __func__, NULL, 0);
+          unlock_ji_mutex(pj, __func__, NULL, LOGLEVEL);
           pj = NULL;
           }
         }
       else
         {
-        unlock_ji_mutex(pj, __func__, NULL, 0);
+        unlock_ji_mutex(pj, __func__, NULL, LOGLEVEL);
         pj = NULL;
         }
       }
