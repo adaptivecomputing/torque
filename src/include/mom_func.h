@@ -90,6 +90,7 @@ struct var_table
   {
   char  *v_block;
   char **v_envp;
+  char  *v_block_start;
   int    v_bsize;
   int    v_ensize;
   int    v_used;
@@ -138,7 +139,7 @@ extern void  post_resume(job *, int);
 
 #endif /* _CRAY */
 
-extern void  bld_env_variables(struct var_table *, char *, char *);
+extern int bld_env_variables(struct var_table *, char *, char *);
 extern int   expand_path(job *,char *,int,char *);
 extern pid_t fork_me(int sock);
 extern int   get_la(double *);

@@ -441,14 +441,13 @@ struct passwd *check_pwd(
 
   pjob->ji_qs.ji_un.ji_momt.ji_exuid = pwdp->pw_uid;
 
-  pjob->ji_grpcache = malloc(
-                            sizeof(struct grpcache) + strlen(pwdp->pw_dir) + 1);
+  pjob->ji_grpcache = calloc(1, sizeof(struct grpcache) + strlen(pwdp->pw_dir) + 1);
 
   if (pjob->ji_grpcache == NULL)
     {
     /* FAILURE */
 
-    sprintf(log_buffer, "malloc failed");
+    sprintf(log_buffer, "calloc failed");
 
     return(NULL);
     }
@@ -1033,6 +1032,9 @@ int TMakeTmpDir(
     }
   else
     {
+    /* log the first error */
+    log_err(errno, __func__, strerror(errno));
+
     rc = stat(tmpdir, &sb);
 
     if (rc)
@@ -1047,6 +1049,7 @@ int TMakeTmpDir(
                 "Unable to make job transient directory: %s",
                 tmpdir);
 
+        retval = -1;
         break;
 
       case 0:
@@ -1084,7 +1087,7 @@ int TMakeTmpDir(
                 "Cannot name job tmp directory %s (on stat)",
                 tmpdir);
 
-        return(0);
+       return(0);
 
         break;
       }
@@ -1160,11 +1163,11 @@ int InitUserEnv(
   vtable.v_bsize = ebsize + EXTRA_VARIABLE_SPACE +
                      (vstrs != NULL ? (vstrs->as_next - vstrs->as_buf) : 0);
 
-  vtable.v_block = malloc(vtable.v_bsize);
+  vtable.v_block_start = calloc(1, vtable.v_bsize);
 
-  if (vtable.v_block == NULL)
+  if (vtable.v_block_start == NULL)
     {
-    sprintf(log_buffer, "PBS: failed to init env, malloc: %s\n",
+    sprintf(log_buffer, "PBS: failed to init env, calloc: %s\n",
             strerror(errno));
 
     log_err(errno, id, log_buffer);
@@ -1172,6 +1175,7 @@ int InitUserEnv(
     return(-1);
     }
 
+  vtable.v_block = vtable.v_block_start;
   vtable.v_ensize =
 
   num_var_else +
@@ -1182,11 +1186,11 @@ int InitUserEnv(
 
   vtable.v_used = 0;
 
-  vtable.v_envp = malloc(vtable.v_ensize * sizeof(char *));
+  vtable.v_envp = calloc(vtable.v_ensize, sizeof(char *));
 
   if (vtable.v_envp == NULL)
     {
-    sprintf(log_buffer, "PBS: failed to init env, malloc: %s\n",
+    sprintf(log_buffer, "PBS: failed to init env, calloc: %s\n",
             strerror(errno));
 
     log_err(errno, id, log_buffer);
@@ -6663,8 +6667,7 @@ static int find_env_slot(
  *
  * Value may be null if total string (name=value) is included in "name".
  */
-
-void bld_env_variables(
+int bld_env_variables(
   struct var_table *vtable,   /* I (modified) */
   char             *name,     /* I (required) */
   char             *value)   /* I (optional) */
@@ -6672,12 +6675,22 @@ void bld_env_variables(
   {
   int amt;
   int i;
+  int rc = PBSE_NONE;
 
   if (vtable->v_used == vtable->v_ensize)
     {
-    /* FAILURE - no room for pointer */
-
-    return;
+    /* no room for pointer */
+    if ((rc = expand_vtable(vtable)) == PBSE_NONE) 
+      {
+      snprintf(log_buffer, sizeof(log_buffer), "Successfully expanded environment variables table");
+      log_ext(-1, __func__, log_buffer, LOG_INFO);
+      }
+    else 
+      {
+      snprintf(log_buffer, sizeof(log_buffer), "Error in expanding environment variables table of pointers; err: %d", rc);
+      log_err(-1, __func__, log_buffer);
+      return rc;
+      }
     }
 
   if ((name == NULL) || (name[0] == '\0'))
@@ -6688,6 +6701,7 @@ void bld_env_variables(
       {
       log_err(-1, "bld_env_variables", "invalid name passed");
       }
+      return PBSE_BAD_PARAMETER;
     }
 
   if (LOGLEVEL >= 6)
@@ -6709,7 +6723,7 @@ void bld_env_variables(
 
   if (memcmp(name,"BATCH_PARTITION_ID",strlen("BATCH_PARTITION_ID")) == 0)
     {
-    return;
+    return -1;
     }
 
   amt = strlen(name) + 1;
@@ -6719,9 +6733,18 @@ void bld_env_variables(
 
   if (amt > vtable->v_bsize)
     {
-    /* FAILURE - no room for string */
-
-    return;
+    /* no room for string */
+    if ((rc = expand_vtable(vtable)) == PBSE_NONE)
+      {
+      snprintf(log_buffer, sizeof(log_buffer), "Successfully expanded environment variables table");
+      log_ext(-1, __func__, log_buffer, LOG_INFO);
+      }
+    else 
+      {
+      snprintf(log_buffer, sizeof(log_buffer), "Error in expanding environment variables table; err: %d", rc);
+      log_err(-1, __func__, log_buffer);
+      return rc;
+      }
     }
 
   strcpy(vtable->v_block, name);
@@ -6745,11 +6768,147 @@ void bld_env_variables(
 
   vtable->v_bsize -= amt;
 
-  return;
+  return rc;
   }   /* END bld_env_variables() */
 
 
+/* expand_vtable is called when either the array of character pointers in vtable was filled or
+   the block of memory used to store the env. variables was full. While in this function, it
+   checks to see if either one of the other does require the reallocation by checking its threshold
+*/
+int expand_vtable(
 
+  struct var_table *vtable)
+
+  {
+      int expand_ensize = 0; /* boolean to check on array of pointers */
+      int expand_bsize = 0;  /* boolean to check on the block of memory storage */
+      int amt = 0;
+      struct var_table tmp_vtable;
+      int rc = PBSE_NONE;
+
+      if (vtable->v_ensize - vtable->v_used < EN_THRESHOLD)
+        expand_ensize = 1;
+
+      if (vtable->v_bsize < B_THRESHOLD)
+        expand_bsize = 1;
+
+      memset(&tmp_vtable, 0, sizeof(struct var_table));
+
+      if (expand_ensize)
+        tmp_vtable.v_ensize = vtable->v_ensize + EN_THRESHOLD;
+      else
+        tmp_vtable.v_ensize = vtable->v_ensize; /* tmp holder for data copying */
+
+      tmp_vtable.v_envp = calloc(tmp_vtable.v_ensize, sizeof(char *));
+      if (!tmp_vtable.v_envp)
+        {
+        sprintf(log_buffer, "PBS: failed to allocate memory for v_envp: %s\n",
+        strerror(errno));
+        log_err(errno, __func__, log_buffer);
+        return -1;
+        }
+
+      tmp_vtable.v_used = vtable->v_used;
+
+      if (expand_bsize)
+        {
+        amt = EXTRA_VARIABLE_SPACE + (vtable->v_block - vtable->v_block_start) + vtable->v_bsize;
+        tmp_vtable.v_block_start = calloc(1, amt);
+        tmp_vtable.v_block = tmp_vtable.v_block_start;
+        tmp_vtable.v_bsize = amt;
+        if (!tmp_vtable.v_block_start) 
+          {
+          sprintf(log_buffer, "PBS: failed to allocate memory for v_bsize: %s\n",
+          strerror(errno));
+          log_err(errno, __func__, log_buffer);
+          return -1;
+          }
+        }
+
+      if ((rc = copy_data(&tmp_vtable, vtable, 
+                    expand_bsize, expand_ensize) != PBSE_NONE))
+       {
+         if (tmp_vtable.v_block_start)
+           free(tmp_vtable.v_block_start);
+         if (tmp_vtable.v_envp)
+           free(tmp_vtable.v_envp); 
+       }
+
+      return rc;
+  }
+
+int copy_data(
+
+  struct var_table *tmp_vtable,
+  struct var_table *vtable, 
+  int expand_bsize, 
+  int expand_ensize)
+  
+  {
+      char *p_next_block;
+      int len_plus_one, i;
+
+      if (!expand_ensize && !expand_bsize )
+        return PBSE_NONE;
+
+      if (expand_ensize && (!expand_bsize))
+        { 
+        /* only the pointers have been expanded and therefore copy
+           the existing values to the new storage of pointers */
+        for (i = 0; i < vtable->v_used; ++i)
+          *(tmp_vtable->v_envp + i) = *(vtable->v_envp + i); 
+
+        /* free the old storage and assign the new one */
+        free(vtable->v_envp);
+        vtable->v_envp = tmp_vtable->v_envp;
+        vtable->v_ensize = tmp_vtable->v_ensize;
+        }
+      else if (expand_bsize)
+        { 
+        /* block of memory that contains the actual env. variables was reallocated */
+        p_next_block = tmp_vtable->v_block_start;
+        for (i = 0; i < vtable->v_used; ++i)
+          {
+          len_plus_one = strlen(*(vtable->v_envp + i)) + 1;
+          /* following condition is reached only for a non-null terminated variable */
+          if (len_plus_one > tmp_vtable->v_bsize) 
+            {
+            sprintf(log_buffer, "PBS: failed to copy env var, size: %d space left in buf: %d\n",
+            len_plus_one, tmp_vtable->v_bsize);
+            log_err(errno, __func__, log_buffer);
+            return -1;
+            }
+          strcpy(p_next_block, *(vtable->v_envp + i));
+          *(tmp_vtable->v_envp + i) = p_next_block;
+          p_next_block += len_plus_one;
+          tmp_vtable->v_bsize -= len_plus_one;
+          }
+        /*free the old memory block */
+        vtable->v_bsize = tmp_vtable->v_bsize;
+        vtable->v_block = p_next_block;
+        free(vtable->v_block_start);
+        vtable->v_block_start = tmp_vtable->v_block_start; 
+        if (expand_ensize)
+          {
+          /* if the pointers to the env. variables were reallocated
+             adjust vtable->envp and free the old storage of those pointers
+          */
+          free(vtable->v_envp);
+          vtable->v_envp = tmp_vtable->v_envp;
+          vtable->v_ensize = tmp_vtable->v_ensize;
+          }
+        else
+          {
+          /* copy the new location. Note all memory that had been allocated to
+             tmp_vtable will be freed in the routine where they've been allocated
+          */
+          for (i = 0; i < vtable->v_used; ++i)
+            *(vtable->v_envp + i) = *(tmp_vtable->v_envp + i); 
+          }
+        }
+      return PBSE_NONE;
+  }
 
 #ifndef __TOLDGROUP
 
