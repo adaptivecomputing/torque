@@ -381,7 +381,7 @@ START_TEST(end_of_job_accounting_test)
   {
   char *str = strdup("bob\ntom");
   int   accttail = 5;
-  job  *pjob = (job *)calloc(1, sizeof(pjob));
+  job  *pjob = (job *)calloc(1, sizeof(job));
   strcpy(pjob->ji_qs.ji_jobid, "1.napali");
 
   fail_unless(end_of_job_accounting(pjob, str, accttail) == PBSE_NONE);
@@ -397,7 +397,7 @@ END_TEST
 
 START_TEST(handle_terminating_array_subjob_test)
   {
-  job  *pjob = (job *)calloc(1, sizeof(pjob));
+  job  *pjob = (job *)calloc(1, sizeof(job));
   strcpy(pjob->ji_qs.ji_jobid, "1[1].napali");
   strcpy(pjob->ji_arraystructid, "1[].napali");
 
