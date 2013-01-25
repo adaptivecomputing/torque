@@ -652,6 +652,8 @@ job *job_recov(
 
   close(fds);
 
+  pj->ji_commit_done = 1;
+
   /* all done recovering the job */
 
   job_save(pj, SAVEJOB_FULL, 0);
