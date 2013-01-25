@@ -29,6 +29,8 @@ int handle_exited(job *pjob);
 int add_comment_to_parent(job *parent_job, int cray_subjob_exited_nonzero, int exit_status);
 int end_of_job_accounting(job *pjob, char *acctbuf, int accttail);
 int handle_terminating_array_subjob(job *pjob);
+int handle_terminating_job(job *pjob, int alreadymailed, const char *mailbuf);
+int update_substate_from_exit_status(job *pjob, int *alreadymailed);
 
 
 extern pthread_mutex_t *svr_do_schedule_mutex;
@@ -126,10 +128,6 @@ END_TEST
 START_TEST(rel_resc_test)
   {
   job pjob;
-  svr_do_schedule_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  listener_command_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(svr_do_schedule_mutex, NULL);
-  pthread_mutex_init(listener_command_mutex, NULL);
 
   rel_resc(&pjob);
   fail_unless(svr_do_schedule == SCH_SCHEDULE_TERM);
@@ -411,6 +409,91 @@ START_TEST(handle_terminating_array_subjob_test)
   bad_job = 1;
   fail_unless(handle_terminating_array_subjob(pjob) == PBSE_UNKJOBID);
   bad_job = 0;
+  }
+END_TEST
+
+
+
+
+START_TEST(handle_terminating_job_test)
+  {
+  job  *pjob = (job *)calloc(1, sizeof(job));
+
+  strcpy(pjob->ji_qs.ji_jobid, "1.napali");
+  pjob->ji_wattr[JOB_ATR_restart_name].at_flags |= ATR_VFLAG_SET;
+  fail_unless(handle_terminating_job(pjob, 0, "bob") == PBSE_NONE);
+  }
+END_TEST
+
+
+
+
+START_TEST(update_substate_from_exit_status_test)
+  {
+  job  *pjob = (job *)calloc(1, sizeof(job));
+  int   alreadymailed = 0;
+
+  pjob->ji_wattr[JOB_ATR_rerunable].at_val.at_long = 1;
+  strcpy(pjob->ji_qs.ji_jobid, "1.napali");
+
+  pjob->ji_qs.ji_un.ji_exect.ji_exitstat = -1000;
+  cray_enabled = 0;
+  usage = 0;
+  fail_unless(update_substate_from_exit_status(pjob, &alreadymailed) == PBSE_NONE);
+  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN1);
+  fail_unless(alreadymailed == 0);
+
+  pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
+  pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_OVERLIMIT;
+  fail_unless(update_substate_from_exit_status(pjob, &alreadymailed) == PBSE_NONE);
+  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING);
+  fail_unless(alreadymailed == 1);
+
+  alreadymailed = 0;
+  pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
+  pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_FAIL1;
+  fail_unless(update_substate_from_exit_status(pjob, &alreadymailed) == PBSE_NONE);
+  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING);
+  fail_unless(alreadymailed == 1);
+
+  alreadymailed = 0;
+  pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
+  pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_INITABT;
+  fail_unless(update_substate_from_exit_status(pjob, &alreadymailed) == PBSE_NONE);
+  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN);
+  fail_unless((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HASRUN) != 0);
+
+  alreadymailed = 0;
+  pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
+  pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_RETRY;
+  fail_unless(update_substate_from_exit_status(pjob, &alreadymailed) == PBSE_NONE);
+  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN);
+  pjob->ji_qs.ji_svrflags = 0;
+  fail_unless(update_substate_from_exit_status(pjob, &alreadymailed) == PBSE_NONE);
+  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN1);
+
+  alreadymailed = 0;
+  pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
+  pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_BADRESRT;
+  pjob->ji_qs.ji_svrflags = JOB_SVFLG_CHECKPOINT_FILE;
+  fail_unless(update_substate_from_exit_status(pjob, &alreadymailed) == PBSE_NONE);
+  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN);
+  fail_unless((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) == 0);
+
+  alreadymailed = 0;
+  pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
+  pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_INITRST;
+  fail_unless(update_substate_from_exit_status(pjob, &alreadymailed) == PBSE_SYSTEM);
+  fail_unless(pjob->ji_momhandle == -1);
+  fail_unless((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HASRUN) != 0);
+  fail_unless((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0);
+
+  alreadymailed = 0;
+  pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
+  pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_INITRMG;
+  fail_unless(update_substate_from_exit_status(pjob, &alreadymailed) == PBSE_NONE);
+  fail_unless((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HASRUN) != 0);
+  fail_unless((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_MIGRATEABLE) != 0);
 
   }
 END_TEST
@@ -421,68 +504,25 @@ END_TEST
 Suite *req_jobobit_suite(void)
   {
   Suite *s = suite_create("req_jobobit_suite methods");
-  TCase *tc_core = tcase_create("setup_from_test");
+  TCase *tc_core = tcase_create("req_jobobit_tests");
   tcase_add_test(tc_core, setup_from_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("is_joined_test");
   tcase_add_test(tc_core, is_joined_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("return_stdfile_test");
   tcase_add_test(tc_core, return_stdfile_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("rel_resc_test");
   tcase_add_test(tc_core, rel_resc_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("handle_exiting_or_abort_substate_test");
   tcase_add_test(tc_core, handle_exiting_or_abort_substate_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("setrerun_test");
   tcase_add_test(tc_core, setrerun_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("setup_cpyfiles_test");
   tcase_add_test(tc_core, setup_cpyfiles_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("handle_returnstd_test");
   tcase_add_test(tc_core, handle_returnstd_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("mom_comm_test");
   tcase_add_test(tc_core, mom_comm_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("handle_complete_first_time_test");
   tcase_add_test(tc_core, handle_complete_first_time_test);
-  suite_add_tcase(s, tc_core);
-  
-  tc_core = tcase_create("handle_complete_second_time_test");
   tcase_add_test(tc_core, handle_complete_second_time_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("handle_complete_subjob_test");
   tcase_add_test(tc_core, handle_complete_subjob_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("handle_exited_test");
   tcase_add_test(tc_core, handle_exited_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("add_comment_to_parent_test");
   tcase_add_test(tc_core, add_comment_to_parent_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("end_of_job_accounting_test");
   tcase_add_test(tc_core, end_of_job_accounting_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("handle_terminating_array_subjob_test");
   tcase_add_test(tc_core, handle_terminating_array_subjob_test);
+  tcase_add_test(tc_core, handle_terminating_job_test);
+  tcase_add_test(tc_core, update_substate_from_exit_status_test);
   suite_add_tcase(s, tc_core);
 
   return(s);
@@ -495,6 +535,10 @@ void rundebug()
 int main(void)
   {
   int number_failed = 0;
+  svr_do_schedule_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  listener_command_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(svr_do_schedule_mutex, NULL);
+  pthread_mutex_init(listener_command_mutex, NULL);
   SRunner *sr = NULL;
   init_server();
   rundebug();

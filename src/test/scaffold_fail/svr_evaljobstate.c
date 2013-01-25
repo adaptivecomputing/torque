@@ -8,7 +8,5 @@
 
 void svr_evaljobstate(job *pjob, int *newstate, int *newsub, int forceeval)
   {
-  fprintf(stderr, "The call to svr_evaljobstate to be mocked!!\n");
-  exit(1);
   }
 
