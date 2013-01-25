@@ -563,7 +563,23 @@ void *queue_route(
       snprintf(log_buf, sizeof(log_buf), "routing any ready jobs in queue: %s", queue_name);
       log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_QUEUE, __func__, log_buf);
       }
+
+    /* must lock the reroute_job_mutex before having the queue locked */
+    pque_mutex.unlock();
     pthread_mutex_lock(reroute_job_mutex);
+
+    pque = find_queuebyname(queue_name);
+
+    if (pque == NULL)
+      {
+      sprintf(log_buf, "Could not find queue %s", queue_name);
+      log_err(-1, __func__, log_buf);
+      free(queue_name);
+      return(NULL);
+      }
+
+    pque_mutex.mark_as_locked();
+
     while ((pjob = next_job(pque->qu_jobs,&iter)) != NULL)
       {
       /* We only want to try if routing has been tried at least once - this is to let
@@ -586,9 +602,21 @@ void *queue_route(
     pque_mutex.unlock();
     pthread_mutex_unlock(reroute_job_mutex);
     sleep(route_retry_interval);
+
     /* starting the loop again. the queue must be locked */
-    pque_mutex.lock();
-    }
+    pque = find_queuebyname(queue_name);
+
+    if (pque == NULL)
+      {
+      sprintf(log_buf, "Could not find queue %s", queue_name);
+      log_err(-1, __func__, log_buf);
+      free(queue_name);
+      return(NULL);
+      }
+    
+    pque_mutex.mark_as_locked();
+    } /* END while (1) */
+
   free(queue_name);
   return(NULL);
   } /* END queue_route() */
