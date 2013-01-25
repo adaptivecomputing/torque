@@ -1,6 +1,6 @@
 include ../Makefile.ut
 
-libuut_la_SOURCES =  ${PROG_ROOT}/req_register.c  scaffolding.c
+libuut_la_SOURCES =  ${PROG_ROOT}/req_register.c
 
 coverage_run.sh:
 	echo 'cp -p .libs/req_register.gc* . >/dev/null 2>&1' > $@

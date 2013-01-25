@@ -6,6 +6,8 @@
 #include "pbs_nodes.h"
 #include "resizable_array.h"
 
+int LOGLEVEL = 5;
+
 
 int lock_node(struct pbsnode *pnode, const char *caller, const char *msg, int level) {return(0);}
 int unlock_node(struct pbsnode *pnode, const char *caller, const char *msg, int level) {return(0);}

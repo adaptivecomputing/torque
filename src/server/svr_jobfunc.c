@@ -1155,6 +1155,7 @@ int chk_svr_resc_limit(
   long          mpp_nodect = 0;
   resource     *mppnodect_resource = NULL;
   long          proc_ct = 0;
+  long          cray_enabled = FALSE;
 
   resource_def *noderesc     = NULL;
   resource_def *needresc     = NULL;
@@ -1507,38 +1508,46 @@ int chk_svr_resc_limit(
       }
     }    /* END if (jbrc_nodes != NULL) */
 
-  if (proc_ct > 0)
+  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
+  /* If we restart pbs_server while the cray is down, pbs_server won't know about
+   * the computes. Don't perform this check for this case. */
+  if ((cray_enabled != TRUE) || 
+      (alps_reporter == NULL) ||
+      (alps_reporter->alps_subnodes.ra->num != 0))
     {
-    if (procs_available(proc_ct) == -1)
+    if (proc_ct > 0)
       {
-      /* only record if:
-       * is_transit flag is not set
-       * or  is_transit is set, but not to true
-       */
+      if (procs_available(proc_ct) == -1)
+        {
+        /* only record if:
+         * is_transit flag is not set
+         * or  is_transit is set, but not to true
+         */
+        if ((!(pque->qu_attr[QE_ATR_is_transit].at_flags & ATR_VFLAG_SET)) ||
+            (!pque->qu_attr[QE_ATR_is_transit].at_val.at_long))
+          {
+          if ((EMsg != NULL) && (EMsg[0] == '\0'))
+            strcpy(EMsg, "cannot locate feasible nodes (nodes file is empty or requested nodes exceed system)");
+          
+          comp_resc_lt++;
+          }
+        }
+      }
+
+#ifndef CRAY_MOAB_PASSTHRU
+    if ((proc_ct + req_procs) > svr_clnodes) 
+      {
       if ((!(pque->qu_attr[QE_ATR_is_transit].at_flags & ATR_VFLAG_SET)) ||
           (!pque->qu_attr[QE_ATR_is_transit].at_val.at_long))
         {
         if ((EMsg != NULL) && (EMsg[0] == '\0'))
-          strcpy(EMsg, "cannot locate feasible nodes (nodes file is empty or requested nodes exceed system)");
+          strcpy(EMsg, "cannot locate feasible nodes (nodes file is empty or requested nodes exceed all systems)");
         
         comp_resc_lt++;
         }
-      }    
-    }
-
-#ifndef CRAY_MOAB_PASSTHRU
-  if ((proc_ct + req_procs) > svr_clnodes) 
-    {
-    if ((!(pque->qu_attr[QE_ATR_is_transit].at_flags & ATR_VFLAG_SET)) ||
-        (!pque->qu_attr[QE_ATR_is_transit].at_val.at_long))
-      {
-      if ((EMsg != NULL) && (EMsg[0] == '\0'))
-        strcpy(EMsg, "cannot locate feasible nodes (nodes file is empty or requested nodes exceed all systems)");
-      
-      comp_resc_lt++;
       }
-    }
 #endif
+    }
 
   if (MPPWidth > 0)
     {

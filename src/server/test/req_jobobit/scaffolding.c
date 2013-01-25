@@ -50,6 +50,7 @@ int double_bad;
 int cray_enabled;
 int reported;
 int bad_drequest;
+int usage;
 
 
 struct batch_request *alloc_br(int type)
@@ -107,6 +108,20 @@ pbs_queue *get_jobs_queue(job **pjob)
 
   return(&bob);
   }
+
+job_array *get_jobs_array(job **pjob)
+  {
+  static job_array pa;
+
+  if (double_bad)
+    {
+    *pjob = NULL;
+    return(NULL);
+    }
+
+  return(&pa);
+  }
+
 
 void free_nodes(job *) {}
 
@@ -209,6 +224,8 @@ int get_svr_attr_l(int index, long *l)
   {
   if (cray_enabled)
     *l = 1;
+  else if (usage)
+    *l = 0x0010;
 
   return(0);
   }
@@ -294,3 +311,7 @@ void log_event(int eventtype, int objclass, const char *objname, const char *tex
 void log_err(int error, const char *func_id, const char *msg) {}
 
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+
+void account_jobend(job *pjob, char *used) {}
+
+void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum event, char *job_id, long job_atr_hold, int job_exit_status) {}

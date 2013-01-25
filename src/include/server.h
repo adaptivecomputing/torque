@@ -201,6 +201,7 @@ enum srv_atr
   SRV_ATR_CrayEnabled,
   SRV_ATR_InteractiveJobsCanRoam,
   SRV_ATR_MaxUserQueuable,
+  SRV_ATR_AutomaticRequeueExitCode,
 
 #include "site_svr_attr_enum.h"
   /* This must be last */
