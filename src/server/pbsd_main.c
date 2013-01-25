@@ -1517,7 +1517,7 @@ void main_loop(void)
     pthread_mutex_unlock(server.sv_jobstates_mutex);
 
     get_svr_attr_l(SRV_ATR_State, &state);
-    usleep(100);
+    usleep(1000000);
     }    /* END while (*state != SV_STATE_DOWN) */
 
   pthread_cancel(accept_thread_id);
