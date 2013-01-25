@@ -26,6 +26,9 @@ int handle_complete_first_time(job *pjob);
 int handle_complete_second_time(struct work_task *ptask);
 int handle_complete_subjob(job *pjob);
 int handle_exited(job *pjob);
+int add_comment_to_parent(job *parent_job, int cray_subjob_exited_nonzero, int exit_status);
+int end_of_job_accounting(job *pjob, char *acctbuf, int accttail);
+int handle_terminating_array_subjob(job *pjob);
 
 
 extern pthread_mutex_t *svr_do_schedule_mutex;
@@ -40,6 +43,7 @@ extern int cray_enabled;
 extern int double_bad;
 extern int reported;
 extern int bad_drequest;
+extern int usage;
 
 void init_server()
   {
@@ -332,7 +336,6 @@ END_TEST
 
 START_TEST(handle_exited_test)
   {
-#if 0
   job *pjob = (job *)calloc(1, sizeof(job));
 
   strcpy(pjob->ji_qs.ji_jobid, "1.napali");
@@ -342,6 +345,7 @@ START_TEST(handle_exited_test)
   pthread_mutex_init(svr_do_schedule_mutex, NULL);
   pthread_mutex_init(listener_command_mutex, NULL);
 
+  double_bad = 0;
   fail_unless(handle_exited(pjob) == PBSE_NONE);
 
   double_bad = 1;
@@ -353,7 +357,61 @@ START_TEST(handle_exited_test)
   bad_drequest = TRUE;
   fail_unless(handle_exited(pjob) == PBSE_CONNECT);
   alloc_br_null = TRUE;
-#endif
+  }
+END_TEST
+
+
+
+
+START_TEST(add_comment_to_parent_test)
+  {
+  job *pjob = (job *)calloc(1, sizeof(job));
+
+  strcpy(pjob->ji_qs.ji_jobid, "1.napali");
+  pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str = strdup("napali/0+napali/1");
+  fail_unless(add_comment_to_parent(pjob, TRUE, 12) == PBSE_NONE);
+  fail_unless(add_comment_to_parent(pjob, FALSE, 12) == PBSE_NONE);
+  }
+END_TEST
+
+
+
+
+START_TEST(end_of_job_accounting_test)
+  {
+  char *str = strdup("bob\ntom");
+  int   accttail = 5;
+  job  *pjob = (job *)calloc(1, sizeof(pjob));
+  strcpy(pjob->ji_qs.ji_jobid, "1.napali");
+
+  fail_unless(end_of_job_accounting(pjob, str, accttail) == PBSE_NONE);
+  fail_unless(strchr(str, '\n') == NULL);
+  usage = 1;
+  fail_unless(end_of_job_accounting(pjob, str, accttail) == PBSE_NONE);
+  usage = 0;
+  }
+END_TEST
+
+
+
+
+START_TEST(handle_terminating_array_subjob_test)
+  {
+  job  *pjob = (job *)calloc(1, sizeof(pjob));
+  strcpy(pjob->ji_qs.ji_jobid, "1[1].napali");
+  strcpy(pjob->ji_arraystructid, "1[].napali");
+
+  double_bad = 1;
+  fail_unless(handle_terminating_array_subjob(pjob) == PBSE_UNKJOBID);
+
+  double_bad = 0;
+  bad_job = 0;
+  fail_unless(handle_terminating_array_subjob(pjob) == PBSE_NONE);
+
+  bad_job = 1;
+  fail_unless(handle_terminating_array_subjob(pjob) == PBSE_UNKJOBID);
+  bad_job = 0;
+
   }
 END_TEST
 
@@ -413,6 +471,18 @@ Suite *req_jobobit_suite(void)
 
   tc_core = tcase_create("handle_exited_test");
   tcase_add_test(tc_core, handle_exited_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("add_comment_to_parent_test");
+  tcase_add_test(tc_core, add_comment_to_parent_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("end_of_job_accounting_test");
+  tcase_add_test(tc_core, end_of_job_accounting_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("handle_terminating_array_subjob_test");
+  tcase_add_test(tc_core, handle_terminating_array_subjob_test);
   suite_add_tcase(s, tc_core);
 
   return(s);
