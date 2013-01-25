@@ -9,5 +9,7 @@ DIST_SUBDIRS = Libattr Libcmds Libcsv Libdis Libifl Liblog Libnet Libpbs Libsite
 cleancheck:
 	@for dir in $(SUBDIRS) $(CHECK_DIR); do (cd $$dir && $(MAKE) cleancheck); done
 
+if HAVE_CHECK
 check:
 	@for dir in $(SUBDIRS) $(CHECK_DIR); do (cd $$dir && $(MAKE) $(MAKECMDGOALS)); done
+endif

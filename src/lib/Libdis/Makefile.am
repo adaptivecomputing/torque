@@ -6,9 +6,11 @@ DIST_SUBDIRS =
 
 # all compilation happens in lib/Libpbs
 
+if HAVE_CHECK
 check:
 	$(MAKE) -C $(CHECK_DIR) $(MAKECMDGOALS)
 
 PHONY: cleancheck
 cleancheck:
 	cd test && $(MAKE) cleancheck
+endif
