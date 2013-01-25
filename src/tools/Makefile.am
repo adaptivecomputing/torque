@@ -51,3 +51,12 @@ pbs_wish_SOURCES = pbsTkInit.c ../scheduler.tcl/pbs_tclWrap.c \
 
 install_gui:
 	for dir in $(XPBSMON) ;do (cd $$dir && $(MAKE) install);done
+
+if HAVE_CHECK
+check:
+	$(MAKE) -C $(CHECK_DIR) $(MAKECMDGOALS)
+
+.PHONY: cleancheck
+cleancheck:
+	cd test && $(MAKE) cleancheck
+endif

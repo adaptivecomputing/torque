@@ -16,9 +16,11 @@ libattr_a_SOURCES = attr_atomic.c attr_fn_acl.c attr_fn_arst.c attr_fn_b.c \
 		     attr_fn_str.c attr_fn_time.c attr_fn_unkn.c \
 		     attr_func.c attr_node_func.c attr_fn_tokens.c attr_fn_tv.c
 
+if HAVE_CHECK
 check:
 	$(MAKE) -C $(CHECK_DIR) $(MAKECMDGOALS)
 
 .PHONY: cleancheck
 cleancheck:
 	cd test && $(MAKE) cleancheck
+endif
