@@ -12,6 +12,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       make sure the array is valid before attempting to unlock it. TRQ-1598.
   e - For cray: make it so you can continue to submit jobs to pbs_server even if you have
       restarted it while the cray is offline. TRQ-1595.
+  b - Don't log an invalid connection message when close_conn() is called on 65535
+      (PBS_LOCAL_CONNECTION). TRQ-1557.
 
 4.1.4
   e - When in cray mode, write physmem and availmem in addition to totmem so that 
