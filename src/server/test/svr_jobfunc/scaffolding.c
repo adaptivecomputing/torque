@@ -11,6 +11,7 @@
 #include "work_task.h" /* work_task */
 #include "sched_cmds.h" /* SCH_SCHEDULE_NULL */
 #include "list_link.h" /* list_link */
+#include "pbs_nodes.h"
 
 
 int svr_resc_size = 0;
@@ -30,7 +31,7 @@ int listener_command = SCH_SCHEDULE_NULL;
 int LOGLEVEL = 0;
 pthread_mutex_t *svr_do_schedule_mutex;
 pthread_mutex_t *listener_command_mutex;
-
+struct pbsnode *alps_reporter;
 
 resource *add_resource_entry(pbs_attribute *pattr, resource_def *prdef)
   {
@@ -301,26 +302,22 @@ unsigned int get_num_queued(user_info_holder *uih, char *user_name)
   return(0);
   }
 
-int  increment_queued_jobs(
-   
-  user_info_holder *uih,
-  char             *user_name,
-  job              *pjob)
-
+int increment_queued_jobs(user_info_holder *uih, char *user_name, job *pjob)
   {
   return(0);
   }
 
-int decrement_queued_jobs(
-  
-  user_info_holder *uih,
-  char             *user_name)
-
+int decrement_queued_jobs(user_info_holder *uih, char *user_name)
   {
   return(0);
   }
 
 int get_jobs_index(struct all_jobs *aj, struct job *pjob)
+  {
+  return(0);
+  }
+
+int get_svr_attr_l(int attr_index, long *l)
   {
   return(0);
   }

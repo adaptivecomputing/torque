@@ -1,6 +1,7 @@
 include ../Makefile.ut
 
-libuut_la_SOURCES =  ${PROG_ROOT}/req_jobobit.c  scaffolding.c
+
+libuut_la_SOURCES =  ${PROG_ROOT}/req_jobobit.c
 
 coverage_run.sh:
 	echo 'cp -p .libs/req_jobobit.gc* . >/dev/null 2>&1' > $@

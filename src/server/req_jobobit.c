@@ -2858,6 +2858,135 @@ int handle_rerunning_heterogeneous_jobs(
 
 
 
+int end_of_job_accounting(
+
+  job  *pjob,
+  char *acctbuf,
+  int   accttail)
+
+  {
+  char *pc;
+  long  events = 0;
+
+  /* replace new-lines with blanks for log message */
+  for (pc = acctbuf; *pc; ++pc)
+    {
+    if (*pc == '\n')
+      *pc = ' ';
+    }
+
+  /* record accounting and maybe in log */
+  account_jobend(pjob, acctbuf);
+
+  get_svr_attr_l(SRV_ATR_log_events, &events);
+  if (events & PBSEVENT_JOB_USAGE)
+    {
+    /* log events set to record usage */
+    log_event(PBSEVENT_JOB_USAGE | PBSEVENT_JOB_USAGE,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      acctbuf);
+    }
+  else
+    {
+    /* no usage in log, truncate message */
+    *(acctbuf + accttail) = '\0';
+
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, acctbuf);
+    }
+
+  return(PBSE_NONE);
+  } /* END end_of_job_accounting() */
+
+
+
+
+int handle_terminating_array_subjob(
+
+  job *pjob)
+
+  {
+  job_array *pa;
+  long       job_atr_hold;
+  int        job_exit_status;
+  char       job_id[PBS_MAXSVRJOBID+1];
+
+  /* decrease array running job count */
+  if ((pjob->ji_arraystructid[0] != '\0') &&
+      (pjob->ji_is_array_template == FALSE))
+    {
+    pa = get_jobs_array(&pjob);
+
+    if (pjob == NULL)
+      return(PBSE_UNKJOBID);
+    
+    if (pa != NULL)
+      {
+      job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
+      job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
+      
+      snprintf(job_id, sizeof(job_id), "%s", pjob->ji_qs.ji_jobid);
+      unlock_ji_mutex(pjob, __func__, "7", LOGLEVEL);
+
+      update_array_values(pa, JOB_STATE_RUNNING, aeTerminate,
+          job_id, job_atr_hold, job_exit_status);
+        
+      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+      pjob = svr_find_job(job_id, TRUE);
+
+      if (pjob == NULL)
+        return(PBSE_UNKJOBID);
+      }
+    }
+
+  return(PBSE_NONE);
+  } /* END handle_terminating_array_subjob() */
+
+
+
+
+int handle_terminating_job(
+
+  job  *pjob,
+  int   alreadymailed,
+  char *mailbuf)
+
+  {
+  int rc = PBSE_NONE;
+
+  /* If job is terminating (not rerun), */
+  /*  update state and send mail        */
+  svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITING, FALSE);
+
+  record_job_as_exiting(pjob);
+
+  if (alreadymailed == 0)
+    svr_mailowner(pjob, MAIL_END, MAIL_NORMAL, mailbuf);
+
+  if ((rc = handle_terminating_array_subjob(pjob)) != PBSE_NONE)
+    return(rc);
+
+  if (LOGLEVEL >= 4)
+    {
+    log_event(
+      PBSEVENT_ERROR | PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      "on_job_exit task assigned to job");
+    }
+
+  /* remove checkpoint restart file if there is one */
+  if (pjob->ji_wattr[JOB_ATR_restart_name].at_flags & ATR_VFLAG_SET)
+    {
+    cleanup_restart_file(pjob);
+    }
+
+  return(rc);
+  } /* END handle_terminating_job() */
+
+
+
+
 /*
  * req_jobobit - process the Job Obituary Notice (request) from MOM.
  * This notice is sent from MOM when a job terminates.
@@ -2877,22 +3006,19 @@ int req_jobobit(
   int                   newstate;
   int                   newsubst;
   int                   local_errno = 0;
-  char                 *pc;
   char                 *tmp = NULL;
   job                  *pjob;
   char                  job_id[PBS_MAXSVRJOBID+1];
-  long                  job_atr_hold;
-  int                   job_exit_status;
 
   struct work_task     *ptask;
   svrattrl             *patlist;
   unsigned int          dummy;
   char                  log_buf[LOCAL_LOG_BUF_SIZE+1];
   time_t                time_now = time(NULL);
-  long                  events = 0;
   pbs_net_t             mom_addr;
   int                   rerunning_job = FALSE;
   int                   have_resc_used = FALSE;
+  long                  automatic_requeue = -1000;
 
   /* This will be needed later for logging after preq is freed. */
   strcpy(job_id, preq->rq_ind.rq_jobobit.rq_jid);
@@ -3093,7 +3219,7 @@ int req_jobobit(
      }
 #endif    /* USESAVEDRESOURCES */
 
-  safe_strncat(mailbuf, (acctbuf + accttail), sizeof(mailbuf) - strlen(mailbuf) - 1);
+  safe_strncat(mailbuf, (acctbuf + strlen(acctbuf)), sizeof(mailbuf) - strlen(mailbuf) - 1);
 
   reply_ack(preq);
 
@@ -3101,8 +3227,13 @@ int req_jobobit(
   pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_Suspend;
 
   /* Was there a special exit status from MOM ? */
-
-  if (exitstatus < 0)
+  get_svr_attr_l(SRV_ATR_AutomaticRequeueExitCode, &automatic_requeue);
+        
+  if (exitstatus == automatic_requeue)
+    {
+    pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN1;
+    }
+  else if (exitstatus < 0)
     {
     /* negative exit status is special */
 
@@ -3122,7 +3253,6 @@ int req_jobobit(
       default:
 
         /* MOM rejected job with fatal error, abort job */
-
         svr_mailowner(pjob, MAIL_ABORT, MAIL_FORCE, msg_momnoexec1);
 
         alreadymailed = 1;
@@ -3163,26 +3293,9 @@ int req_jobobit(
           {
           /* have mom remove job files, not saving them, and requeue job */
 
+          /* transient failure detected */
           pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN1;
 
-          /* transient failure detected */
-
-          /* load session id info from prq->rq_ind.rq_jobobit->rq_attr->Session */
-
-          /*
-          memset(&tA,0,sizeof(tA));
-
-          tA.al_name  = "sched_hint";
-          tA.al_resc  = "";
-          tA.al_value = log_buf;
-          tA.al_op    = SET;
-
-          modify_job_attr(
-            pjob,
-            &tA,
-            ATR_DFLAG_MGWR | ATR_DFLAG_SvWR,
-            &bad);
-          */
           }
 
         break;
@@ -3256,95 +3369,10 @@ int req_jobobit(
   if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_RERUN) &&
       (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RERUN1))
     {
-    /* If job is terminating (not rerun), */
-    /*  update state and send mail        */
-
-    svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITING, FALSE);
-
-    record_job_as_exiting(pjob);
-
-    if (alreadymailed == 0)
-      svr_mailowner(pjob, MAIL_END, MAIL_NORMAL, mailbuf);
-
-    /* replace new-lines with blanks for log message */
-
-    for (pc = acctbuf; *pc; ++pc)
-      {
-      if (*pc == '\n')
-        *pc = ' ';
-      }
-
-    /* record accounting and maybe in log */
-
-    account_jobend(pjob, acctbuf);
-
-    get_svr_attr_l(SRV_ATR_log_events, &events);
-    if (events & PBSEVENT_JOB_USAGE)
-      {
-      /* log events set to record usage */
-
-      log_event(PBSEVENT_JOB_USAGE | PBSEVENT_JOB_USAGE,
-        PBS_EVENTCLASS_JOB,
-        job_id,
-        acctbuf);
-      }
-    else
-      {
-      /* no usage in log, truncate message */
-
-      *(acctbuf + accttail) = '\0';
-
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, acctbuf);
-      }
-
-    /* decrease array running job count */
-    if ((pjob->ji_arraystructid[0] != '\0') &&
-        (pjob->ji_is_array_template == FALSE))
-      {
-      job_array *pa = get_jobs_array(&pjob);
-
-      if (pjob == NULL)
-        {
-        job_mutex.set_lock_on_exit(false);
-        return(PBSE_UNKJOBID);
-        }
-      
-      if (pa != NULL)
-        {
-        job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
-        job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
-        
-        job_mutex.unlock();
-
-        update_array_values(pa, JOB_STATE_RUNNING, aeTerminate,
-            job_id, job_atr_hold, job_exit_status);
-          
-        unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
-        
-        pjob = svr_find_job(job_id, TRUE);
-        if (pjob == NULL)
-          return(PBSE_UNKJOBID);
-        else
-          job_mutex.mark_as_locked();
-        }
-      }
-
-    if (LOGLEVEL >= 4)
-      {
-      log_event(
-        PBSEVENT_ERROR | PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        job_id,
-        "on_job_exit task assigned to job");
-      }
-
-    /* remove checkpoint restart file if there is one */
-    if (pjob->ji_wattr[JOB_ATR_restart_name].at_flags & ATR_VFLAG_SET)
-      {
-      cleanup_restart_file(pjob);
-      }
-
-    /* "on_job_exit()" will be dispatched out of the main loop */
+    end_of_job_accounting(pjob, acctbuf, accttail);
+    
+    if ((rc = handle_terminating_job(pjob, alreadymailed, mailbuf)) != PBSE_NONE)
+      return(rc);
     }
   else
     {

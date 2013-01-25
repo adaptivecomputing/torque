@@ -1232,7 +1232,7 @@ attribute_def svr_attr_def[] =
 #endif
 
   /* SRV_ATR_minthreads */
-  {(char *)ATTR_minthreads,               /* "min_threads" */
+  {ATTR_minthreads,               /* "min_threads" */
    decode_l,
    encode_l,
    set_l,
@@ -1245,7 +1245,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_maxthreads */
-  {(char *)ATTR_maxthreads,               /* "max_threads" */
+  {ATTR_maxthreads,               /* "max_threads" */
    decode_l,
    encode_l,
    set_l,
@@ -1258,7 +1258,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_threadidleseconds */
-  {(char *)ATTR_threadidleseconds,        /* "thread_idle_seconds" */
+  {ATTR_threadidleseconds,        /* "thread_idle_seconds" */
    decode_l,
    encode_l,
    set_l,
@@ -1271,7 +1271,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_MoabArrayCompatible */
-  {(char *)ATTR_moabarraycompatible,
+  {ATTR_moabarraycompatible,
    decode_b,
    encode_b,
    set_b,
@@ -1284,7 +1284,7 @@ attribute_def svr_attr_def[] =
   },
 
   /* SRV_ATR_NoMailForce */
-  {(char *)ATTR_nomailforce,		/* "no_mail_force" */
+  {ATTR_nomailforce, /* "no_mail_force" */
    decode_b,
    encode_b,
    set_b,
@@ -1296,7 +1296,7 @@ attribute_def svr_attr_def[] =
    PARENT_TYPE_SERVER},
 
   /* SRV_ATR_CrayEnabled */
-  {(char *)ATTR_crayenabled,   /* "cray_enabled" */
+  {ATTR_crayenabled,   /* "cray_enabled" */
    decode_b,
    encode_b,
    set_b,
@@ -1308,7 +1308,7 @@ attribute_def svr_attr_def[] =
    PARENT_TYPE_SERVER},
 
   /* SRV_ATR_InteractiveJobsCanRoam */ /* NOTE: this only has effect if pbs_server is cray enabled */
-  {(char *)ATTR_interactivejobscanroam, /* "interactive_jobs_can_roam" */
+  {ATTR_interactivejobscanroam, /* "interactive_jobs_can_roam" */
    decode_b,
    encode_b,
    set_b,
@@ -1320,7 +1320,19 @@ attribute_def svr_attr_def[] =
    PARENT_TYPE_SERVER},
 
   /* SRV_ATR_MaxUserQueuable */
-  {(char *)ATTR_maxuserqueuable, /* "max_user_queuable" */
+  {ATTR_maxuserqueuable, /* "max_user_queuable" */
+   decode_l,
+   encode_l,
+   set_l,
+   comp_l,
+   free_null,
+   NULL_FUNC,
+   MGR_ONLY_SET,
+   ATR_TYPE_LONG,
+   PARENT_TYPE_SERVER},
+
+  /* SRV_ATR_AutomaticRequeueExitCode */
+  {ATTR_automaticrequeueexitcode, /* automatic_requeue_exit_code */
    decode_l,
    encode_l,
    set_l,
