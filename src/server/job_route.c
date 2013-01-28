@@ -557,6 +557,8 @@ void *queue_route(
       free(queue_name);
       return(NULL);
       }
+
+    mutex_mgr que_mutex(pque->qu_mutex, true);
   
     if (LOGLEVEL >= 7)
       {
@@ -568,23 +570,32 @@ void *queue_route(
       {
       /* We only want to try if routing has been tried at least once - this is to let
        * req_commit have the first crack at routing always. */
+
       if (pjob->ji_commit_done == 0) /* when req_commit is done it will set ji_commit_done to 1 */
         {
         unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         continue;
         }
+
       /* queue must be unlocked when calling reroute_job */
-      unlock_queue(pque, __func__, 0, LOGLEVEL);
-      pque_mutex.unlock();
+      que_mutex.unlock();
       reroute_job(pjob, pque);
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+
       /* need to relock queue when we go to call next_job */
-      lock_queue(pque, __fund__, 0, LOGLEVEL);
+      pque = find_queuebyname(queue_name);
+      if (pque == NULL)
+        {
+        sprintf(log_buf, "Could not find queue %s", queue_name);
+        log_err(-1, __func__, log_buf);
+        free(queue_name);
+        return(NULL);
+        }
       }
 
     /* we come out of the while loop with the queue locked.
        We don't want it locked while we sleep */
-    unlock_queue(pque, __func__, "Big Loop", LOGLEVEL);
+    que_mutex.unlock();
     pthread_mutex_unlock(reroute_job_mutex);
     sleep(route_retry_interval);
 
