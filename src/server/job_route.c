@@ -572,7 +572,7 @@ void *queue_route(
       
       /* queue must be unlocked when calling reroute_job */
       unlock_queue(pque, __func__, (char *)NULL, 0);
-      reroute_job(pjob, pque);
+      reroute_job(pjob);
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       /* need to relock queue when we go to call next_job */
       lock_queue(pque, __func__, (char *)NULL, 0);
