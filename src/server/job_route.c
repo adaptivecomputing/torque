@@ -545,31 +545,11 @@ void *queue_route(
     return(NULL);
     }
 
-  /* Before we attempt to service this queue, make sure we can find it. */
-  pque = find_queuebyname(queue_name);
-  if (pque == NULL)
-    {
-    sprintf(log_buf, "Could not find queue %s", queue_name);
-    log_err(-1, __func__, log_buf);
-    free(queue_name);
-    return(NULL);
-    }
-  
-  mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
   while (1)
     {
-    if (LOGLEVEL >= 7)
-      {
-      snprintf(log_buf, sizeof(log_buf), "routing any ready jobs in queue: %s", queue_name);
-      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_QUEUE, __func__, log_buf);
-      }
-
-    /* must lock the reroute_job_mutex before having the queue locked */
-    pque_mutex.unlock();
     pthread_mutex_lock(reroute_job_mutex);
-
+    /* Before we attempt to service this queue, make sure we can find it. */
     pque = find_queuebyname(queue_name);
-
     if (pque == NULL)
       {
       sprintf(log_buf, "Could not find queue %s", queue_name);
@@ -577,8 +557,12 @@ void *queue_route(
       free(queue_name);
       return(NULL);
       }
-
-    pque_mutex.mark_as_locked();
+  
+    if (LOGLEVEL >= 7)
+      {
+      snprintf(log_buf, sizeof(log_buf), "routing any ready jobs in queue: %s", queue_name);
+      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_QUEUE, __func__, log_buf);
+      }
 
     while ((pjob = next_job(pque->qu_jobs,&iter)) != NULL)
       {
@@ -590,31 +574,20 @@ void *queue_route(
         continue;
         }
       /* queue must be unlocked when calling reroute_job */
+      unlock_queue(pque, __func__, 0, LOGLEVEL);
       pque_mutex.unlock();
       reroute_job(pjob, pque);
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       /* need to relock queue when we go to call next_job */
-      pque_mutex.lock();
+      lock_queue(pque, __fund__, 0, LOGLEVEL);
       }
 
     /* we come out of the while loop with the queue locked.
        We don't want it locked while we sleep */
-    pque_mutex.unlock();
+    unlock_queue(pque, __func__, "Big Loop", LOGLEVEL);
     pthread_mutex_unlock(reroute_job_mutex);
     sleep(route_retry_interval);
 
-    /* starting the loop again. the queue must be locked */
-    pque = find_queuebyname(queue_name);
-
-    if (pque == NULL)
-      {
-      sprintf(log_buf, "Could not find queue %s", queue_name);
-      log_err(-1, __func__, log_buf);
-      free(queue_name);
-      return(NULL);
-      }
-    
-    pque_mutex.mark_as_locked();
     } /* END while (1) */
 
   free(queue_name);
