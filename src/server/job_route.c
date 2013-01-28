@@ -544,6 +544,7 @@ void *queue_route(
 
   while (1)
     {
+    pthread_mutex_lock(reroute_job_mutex);
     /* Make sure the queue is (still) valid.  If the user deleted it, we
        must catch that here and terminate the thread appropriately! */
     pque = find_queuebyname(queue_name);
@@ -562,7 +563,7 @@ void *queue_route(
       log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_QUEUE, __func__, log_buf);
       }
 
-    pthread_mutex_lock(reroute_job_mutex);
+    /* must lock the reroute_job_mutex before having the queue locked */
     while ((pjob = next_job(pque->qu_jobs,&iter)) != NULL)
       {
       /* We only want to try if routing has been tried at least once - this is to let

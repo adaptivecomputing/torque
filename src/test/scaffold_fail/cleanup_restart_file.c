@@ -8,7 +8,5 @@
 
 void cleanup_restart_file( job *pjob)
   {
-  fprintf(stderr, "The call to cleanup_restart_file to be mocked!!\n");
-  exit(1);
   }
 
