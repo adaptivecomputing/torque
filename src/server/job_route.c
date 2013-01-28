@@ -548,8 +548,7 @@ void *queue_route(
   while (1)
     {
     pthread_mutex_lock(reroute_job_mutex);
-    /* Make sure the queue is (still) valid.  If the user deleted it, we
-       must catch that here and terminate the thread appropriately! */
+    /* Before we attempt to service this queue, make sure we can find it. */
     pque = find_queuebyname(queue_name);
     if (pque == NULL)
       {
@@ -560,33 +559,36 @@ void *queue_route(
       return(NULL);
       }
 
+    mutex_mgr que_mutex(pque->qu_mutex, true);
+  
     if (LOGLEVEL >= 7)
       {
       snprintf(log_buf, sizeof(log_buf), "routing any ready jobs in queue: %s", queue_name);
       log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_QUEUE, __func__, log_buf);
       }
 
-
     while ((pjob = next_job(pque->qu_jobs,&iter)) != NULL)
       {
       /* We only want to try if routing has been tried at least once - this is to let
        * req_commit have the first crack at routing always. */
+
       if (pjob->ji_commit_done == 0) /* when req_commit is done it will set ji_commit_done to 1 */
         {
         unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         continue;
         }
+
       /* queue must be unlocked when calling reroute_job */
-      unlock_queue(pque, __func__, (char *)NULL, 0);
+      que_mutex.unlock();
       reroute_job(pjob, pque);
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+
       /* need to relock queue when we go to call next_job */
-      lock_queue(pque, __func__, (char *)NULL, 0);
       }
 
     /* we come out of the while loop with the queue locked.
        We don't want it locked while we sleep */
-    unlock_queue(pque, __func__, (char *)NULL, 0);
+    que_mutex.unlock();
     pthread_mutex_unlock(reroute_job_mutex);
     sleep(route_retry_interval);
     }
@@ -594,6 +596,7 @@ void *queue_route(
   /* NOTREACHED */
   sprintf(log_buf, "queue_route(%s) thread terminated improbably?!", queue_name);
   log_err(-1, __func__, log_buf);
+  unlock_queue(pque, __func__, "", LOGLEVEL);
   free(queue_name);
   return(NULL);
   } /* END queue_route() */
