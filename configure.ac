@@ -38,6 +38,8 @@ AC_CANONICAL_HOST
 AC_CONFIG_MACRO_DIR([buildutils])
 
 LT_INIT
+LT_LANG([C++])
+AC_SUBST([LIBTOOL_DEPS])
 
 AC_CHECK_PROGS(MAKE,$MAKE make gmake,error)
 if test "x$MAKE" = "xerror" ;then
@@ -50,6 +52,10 @@ m4_ifdef([HAVE_CHECK],
 
 AC_PROG_CXX
 CC="$CXX"
+CCLD="$CXX"
+AC_SUBST([CCLD])
+LIBTOOLFLAGS="--tag=CXX"
+AC_SUBST([LIBTOOLFLAGS])
 AM_MAINTAINER_MODE
 
 if test "$program_prefix" = "NONE";then
