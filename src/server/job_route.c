@@ -584,6 +584,7 @@ void *queue_route(
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
       /* need to relock queue when we go to call next_job */
+      que_mutex.lock();
       }
 
     /* we come out of the while loop with the queue locked.
@@ -596,7 +597,6 @@ void *queue_route(
   /* NOTREACHED */
   sprintf(log_buf, "queue_route(%s) thread terminated improbably?!", queue_name);
   log_err(-1, __func__, log_buf);
-  unlock_queue(pque, __func__, "", LOGLEVEL);
   free(queue_name);
   return(NULL);
   } /* END queue_route() */
