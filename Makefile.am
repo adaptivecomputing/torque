@@ -64,6 +64,10 @@ MOSTLYCLEANFILES = *.gcda *.gcno *.gcov
 
 DISTCHECK_CONFIGURE_FLAGS=--with-server-home=$$dc_install_base/spool
 
+LIBTOOL_DEPS = @LIBTOOL_DEPS@
+libtool: $(LIBTOOL_DEPS)
+	$(SHELL) ./config.status --recheck
+
 snap:
 	$(MAKE) VERSION=$(VERSION)-snap.$${snapstamp:-`date +%Y%m%d%H%M`} dist
 
@@ -194,7 +198,12 @@ uninstall-hook:
 	rmdir $(DESTDIR)$(MODULEFILES_DIR)/$(PACKAGE_NAME)
 endif
 
+if HAVE_CHECK
 CHECK_DIRS = src
+else
+check-recursive:
+
+endif
 
 .PHONY: cleancheck
 cleancheck:

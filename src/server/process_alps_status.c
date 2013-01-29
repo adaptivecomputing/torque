@@ -145,7 +145,7 @@ struct pbsnode *create_alps_subnode(
   struct pbsnode *subnode = (struct pbsnode *)calloc(1, sizeof(struct pbsnode));
   svrattrl       *plist = NULL;
   int             bad;
-  int             rc;
+  int             rc = PBSE_NONE;
 
   if (initialize_pbsnode(subnode, strdup(node_id), NULL, NTYPE_CLUSTER) != PBSE_NONE)
     {
@@ -496,7 +496,7 @@ int record_reservation(
         pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str = strdup(rsv_id);
         pjob->ji_wattr[JOB_ATR_reservation_id].at_flags = ATR_VFLAG_SET;
 
-        create_alps_reservation(pjob);
+        track_alps_reservation(pjob);
         found_job = TRUE;
 
         job_mutex.unlock();

@@ -480,8 +480,7 @@ int job_route(
 
 int reroute_job(
 
-  job *pjob,
-  pbs_queue *pque)
+  job *pjob)
 
   {
   int        rc = PBSE_NONE;
@@ -492,19 +491,15 @@ int reroute_job(
     sprintf(log_buf, "%s", pjob->ji_qs.ji_jobid);
     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
+    
+  rc = job_route(pjob);
 
-  if ((pque != NULL) &&
-      (pque->qu_qs.qu_type == QTYPE_RoutePush))
-    {
-    rc = job_route(pjob);
-
-    if (rc == PBSE_ROUTEREJ)
-      job_abt(&pjob, pbse_to_txt(PBSE_ROUTEREJ));
-    else if (rc == PBSE_ROUTEEXPD)
-      job_abt(&pjob, msg_routexceed);
-    else if (rc == PBSE_QUENOEN)
-      job_abt(&pjob, msg_err_noqueue);
-    }
+  if (rc == PBSE_ROUTEREJ)
+    job_abt(&pjob, pbse_to_txt(PBSE_ROUTEREJ));
+  else if (rc == PBSE_ROUTEEXPD)
+    job_abt(&pjob, msg_routexceed);
+  else if (rc == PBSE_QUENOEN)
+    job_abt(&pjob, msg_err_noqueue);
 
   return(rc);      
   } /* END reroute_job() */
@@ -527,12 +522,14 @@ int reroute_job(
  */
 
 void *queue_route(
+
   void *vp)
+
   {
   pbs_queue *pque;
   job       *pjob = NULL;
   char      *queue_name;
-  char      log_buf[LOCAL_LOG_BUF_SIZE];
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
 
   int       iter = -1;
 
@@ -572,14 +569,11 @@ void *queue_route(
        * req_commit have the first crack at routing always. */
 
       if (pjob->ji_commit_done == 0) /* when req_commit is done it will set ji_commit_done to 1 */
-        {
-        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         continue;
-        }
 
       /* queue must be unlocked when calling reroute_job */
       que_mutex.unlock();
-      reroute_job(pjob, pque);
+      reroute_job(pjob);
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
       /* need to relock queue when we go to call next_job */
@@ -591,6 +585,8 @@ void *queue_route(
         free(queue_name);
         return(NULL);
         }
+
+      que_mutex.mark_as_locked();
       }
 
     /* we come out of the while loop with the queue locked.
@@ -598,7 +594,6 @@ void *queue_route(
     que_mutex.unlock();
     pthread_mutex_unlock(reroute_job_mutex);
     sleep(route_retry_interval);
-
     } /* END while (1) */
 
   free(queue_name);

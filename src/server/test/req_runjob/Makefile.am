@@ -1,6 +1,6 @@
 include ../Makefile.ut
 
-libuut_la_SOURCES =  ${PROG_ROOT}/req_runjob.c  scaffolding.c
+libuut_la_SOURCES =  ${PROG_ROOT}/req_runjob.c
 
 coverage_run.sh:
 	echo 'cp -p .libs/req_runjob.gc* . >/dev/null 2>&1' > $@

@@ -2889,6 +2889,7 @@ void handle_reservation(
   if (is_login_node == TRUE)
     {
     char *exec_str;
+    int   mppdepth = 0;
 
     if (pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str != NULL)
       exec_str = pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str;
@@ -2903,6 +2904,14 @@ void handle_reservation(
         (pres->rs_value.at_val.at_long != 0))
       use_nppn = FALSE;
 
+    pres = find_resc_entry(
+             &pjob->ji_wattr[JOB_ATR_resource],
+             find_resc_def(svr_resc_def, "mppdepth", svr_resc_size));
+    
+    if ((pres != NULL) &&
+        (pres->rs_value.at_val.at_long != 0))
+      mppdepth = pres->rs_value.at_val.at_long;
+
     j = create_alps_reservation(exec_str,
           pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
           pjob->ji_qs.ji_jobid,
@@ -2910,6 +2919,7 @@ void handle_reservation(
           apbasil_protocol,
           pagg,
           use_nppn,
+          mppdepth,
           &rsv_id);
     
     if (rsv_id != NULL)
@@ -6774,9 +6784,7 @@ char *std_file_name(
 
       /* check for $HOME/.pbs_spool */
       /* if it's not a directory, just use $HOME us usual */
-      snprintf(path_alt, sizeof(path_alt), "%s", path);
-
-      strncat(path_alt, "/.pbs_spool/", sizeof(path_alt)i - 1);
+      snprintf(path_alt, sizeof(path_alt), "%s/.pbs_spool/", path);
 
       if (seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) == -1)
         {

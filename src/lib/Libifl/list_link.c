@@ -198,35 +198,6 @@ void append_link(
   void       *pobj) /* ptr to object to link in */
 
   {
-#ifndef NDEBUG
-  /* first make sure unlinked entries are pointing to themselves     */
-
-  if ((pobj == NULL) ||
-      (head->ll_prior == NULL) ||
-      (head->ll_next  == NULL) ||
-      (new_link->ll_prior  != (list_link *)new_link) ||
-      (new_link->ll_next   != (list_link *)new_link))
-    {
-    if (pobj == NULL)
-      fprintf(stderr, "ERROR:  bad pobj pointer in append_link\n");
-
-    if (head->ll_prior == NULL)
-      fprintf(stderr, "ERROR:  bad head->ll_prior pointer in append_link\n");
-
-    if (head->ll_next == NULL)
-      fprintf(stderr, "ERROR:  bad head->ll_next pointer in append_link\n");
-
-    if (new_link->ll_prior == NULL)
-      fprintf(stderr, "ERROR:  bad new->ll_prior pointer in append_link\n");
-
-    if (new_link->ll_next == NULL)
-      fprintf(stderr, "ERROR:  bad new->ll_next pointer in append_link\n");
-
-    abort();
-    }  /* END if ((pobj == NULL) || ...) */
-
-
-#endif  /* NDEBUG */
 
   /*
    * its big trouble if ll_struct is null, it would make this

@@ -38,7 +38,7 @@ END_TEST
 
 START_TEST(test_get_received_node_entry)
   {
-  fail_unless(get_received_node_entry((char *)"pickle") != NULL);
+  fail_unless(get_received_node_entry(strdup("pickle")) != NULL);
   }
 END_TEST
 
@@ -62,10 +62,9 @@ START_TEST(task_save_test)
   strncpy(test_job.ji_qs.ji_fileprefix,
           file_prefix,
           sizeof(test_job.ji_qs.ji_fileprefix) - 1);
-  /*
+  
   result = task_save(&test_task);
   fail_unless(result == -1, "task_save fail");
-  */
   }
 END_TEST
 
@@ -229,8 +228,8 @@ END_TEST
 START_TEST(im_join_job_as_sister_test)
   {
   int result = -1;
-  const char *test_job_id = "not_jobid";
-  const char *test_cookie = "cookie";
+  char *test_job_id = strdup("not_jobid");
+  char *test_cookie = strdup("cookie");
   struct tcp_chan test_chan;
   struct sockaddr_in test_sock_addr;
 
@@ -238,9 +237,9 @@ START_TEST(im_join_job_as_sister_test)
   memset(&test_sock_addr, 0, sizeof(test_sock_addr));
 
   result = im_join_job_as_sister(&test_chan,
-                                 (char *)test_job_id,
+                                 test_job_id,
                                  &test_sock_addr,
-                                 (char *)test_cookie,
+                                 test_cookie,
                                  0,
                                  0,
                                  0,
@@ -254,7 +253,7 @@ START_TEST(tm_spawn_request_test)
   struct tcp_chan test_chan;
   struct job test_job;
   struct hnodent test_hnodent;
-  const char *test_cookie = "cookie";
+  char *test_cookie = strdup("cookie");
   int reply = 0;
   int ret = 0;
   int result = 0;

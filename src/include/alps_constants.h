@@ -86,6 +86,8 @@
 #define DEFAULT_APBASIL_PATH        "/usr/bin/apbasil"
 #define DEFAULT_APBASIL_PROTOCOL    "1.0"
 #define APBASIL_QUERY               "echo \"<?xml version='1.0'?><BasilRequest protocol='%s' method='QUERY' type='INVENTORY'></BasilRequest>\" | %s"
+#define APBASIL_RESERVE_PARAM_BEGIN_DEPTH "<ReserveParam architecture='XT' width='%d' nppn='%d' mppdepth='%d'><NodeParamArray><NodeParam>"
+#define APBASIL_RESERVE_PARAM_BEGIN_DEPTH_SANS_NPPN "<ReserveParam architecture='XT' width='%d' mppdepth='%d'><NodeParamArray><NodeParam>"
 #define APBASIL_RESERVE_PARAM_BEGIN "<ReserveParam architecture='XT' width='%d' nppn='%d'><NodeParamArray><NodeParam>"
 #define APBASIL_RESERVE_PARAM_BEGIN_SANS_NPPN "<ReserveParam architecture='XT' width='%d'><NodeParamArray><NodeParam>"
 #define APBASIL_RESERVE_PARAM_END   "</NodeParam></NodeParamArray></ReserveParam>"

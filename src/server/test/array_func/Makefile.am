@@ -1,6 +1,6 @@
 include ../Makefile.ut
 
-libuut_la_SOURCES =  ${PROG_ROOT}/array_func.c  scaffolding.c
+libuut_la_SOURCES =  ${PROG_ROOT}/array_func.c
 
 coverage_run.sh:
 	echo 'cp -p .libs/array_func.gc* . >/dev/null 2>&1' > $@

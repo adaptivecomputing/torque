@@ -1568,16 +1568,17 @@ void cleanup_restart_file(
     log_err(PBSE_BAD_PARAMETER, __func__, "null input job pointer");
     return;
     }
-    /* checkpoint restart file cleanup was successful */
+  
+  /* checkpoint restart file cleanup was successful */
 
 /*    pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_COPIED; */
 
-    /* clear restart_name pbs_attribute since purging job will clean it up */
+  /* clear restart_name pbs_attribute since purging job will clean it up */
 
-    pjob->ji_wattr[JOB_ATR_restart_name].at_flags &= ~ATR_VFLAG_SET;
-    pjob->ji_modified = 1;
-
-    job_save(pjob, SAVEJOB_FULL, 0);
+  pjob->ji_wattr[JOB_ATR_restart_name].at_flags &= ~ATR_VFLAG_SET;
+  pjob->ji_modified = 1;
+  
+  job_save(pjob, SAVEJOB_FULL, 0);
 
   return;
   }  /* END cleanup_restart_file() */
@@ -2064,7 +2065,6 @@ job_array *get_jobs_array(
 
       *pjob_ptr = NULL;
       }
-
     }
 
   return(pa);

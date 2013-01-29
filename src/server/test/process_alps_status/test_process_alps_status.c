@@ -22,7 +22,7 @@ char buf[4096];
 char *alps_status = (char *)"node=1\0CPROC=12\0state=UP\0reservation_id=12\0<cray_gpu_status>\0gpu_id=0\0clock_mhz=2600\0gpu_id=1\0clock_mhz=2600\0</cray_gpu_status>\0\0";
 /*node=2\0CPROC=12\0state=UP\0<cray_gpu_status>\0gpu_id=0\0clock_mhz=2600\0gpu_id=1\0clock_mhz=2600\0</cray_gpu_status>\0node=3\0CPROC=12\0state=UP\0<cray_gpu_status>\0gpu_id=0\0clock_mhz=2600\0gpu_id=1\0clock_mhz=2600\0</cray_gpu_status>\0\0";*/
 
-
+extern int count;
 
 START_TEST(set_ncpus_test)
   {
@@ -155,10 +155,12 @@ START_TEST(determine_node_from_str_test)
   parent.alps_subnodes.allnodes_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(parent.alps_subnodes.allnodes_mutex, NULL);
 
+  count = 0; // set so that create_alps_subnode doesn't fail
   new_node = determine_node_from_str(node_str1, &parent, &parent);
   fail_unless(new_node != NULL, "new node is NULL?");
   fail_unless(new_node->nd_lastupdate != 0, "update time not set");
 
+  count = 0; // set so that create_alps_subnode doesn't fail
   new_node = determine_node_from_str(node_str2, &parent, &parent);
   fail_unless(new_node == &parent, "advanced current when current should've remained the same");
 
