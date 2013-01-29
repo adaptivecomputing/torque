@@ -11,6 +11,7 @@ check_PROGRAMS = test_req_holdarray
 libreq_holdarray_la_SOURCES = scaffolding.c ${PROG_ROOT}/req_holdarray.c
 libreq_holdarray_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib
 
+test_req_holdarray_LDADD = ../../../test/torque_test_lib/libtorque_test.la ../../../test/scaffold_fail/libscaffold_fail.la
 test_req_holdarray_SOURCES = test_req_holdarray.c
 
 check_SCRIPTS = coverage_run.sh

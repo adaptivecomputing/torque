@@ -1,6 +1,6 @@
 include ../Makefile.ut
 
-libuut_la_SOURCES =  ${PROG_ROOT}/batch_request.c  scaffolding.c
+libuut_la_SOURCES =  ${PROG_ROOT}/batch_request.c
 
 coverage_run.sh:
 	echo 'cp -p .libs/batch_request.gc* . >/dev/null 2>&1' > $@

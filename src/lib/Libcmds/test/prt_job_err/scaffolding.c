@@ -4,8 +4,11 @@
 
 int pbs_errno = 0;
 
+extern "C"
+{
 char *pbs_geterrmsg(int connect)
   {
   fprintf(stderr, "The call to get_server needs to be mocked!!\n");
   exit(1);
   }
+}

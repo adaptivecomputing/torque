@@ -6,10 +6,7 @@ XPBSMON = xpbsmon
 endif
 endif
 
-CHECK_DIR = test
-
 SUBDIRS = . $(XPBSMON)
-
 
 DIST_SUBDIRS = . xpbsmon
 

@@ -4,6 +4,8 @@
 
 int pbs_errno = 0;
 
+extern "C"
+{
 int pbs_connect(char *server_name_ptr)
   {
   fprintf(stderr, "The call to pbs_connect needs to be mocked!!\n");
@@ -29,3 +31,4 @@ char *pbs_strerror(
   {
   return(NULL);
   }
+}

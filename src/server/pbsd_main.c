@@ -1223,6 +1223,7 @@ void *handle_queue_routing_retries(
     }
 
   pthread_attr_destroy(&routing_attr); /* we don't care if the succeeds or fails */
+
   return(NULL);
   } /* END handle_queue_routing_retries() */
 
@@ -1290,17 +1291,17 @@ void start_routing_retry_thread()
   if ((pthread_attr_init(&routing_attr)) != 0)
     {
     perror("pthread_attr_init failed. Could not start accept thread");
-    log_err(-1, msg_daemonname,(char *)"pthread_attr_init failed. Could not start handle_queue_routing_retries");
+    log_err(-1, msg_daemonname, "pthread_attr_init failed. Could not start handle_queue_routing_retries");
     }
   else if ((pthread_attr_setdetachstate(&routing_attr, PTHREAD_CREATE_DETACHED) != 0))
     {
     perror("pthread_attr_setdetatchedstate failed. Could not start accept thread");
-    log_err(-1, msg_daemonname,(char *)"pthread_attr_setdetachedstate failed. Could not start handle_queue_routing_retries");
+    log_err(-1, msg_daemonname, "pthread_attr_setdetachedstate failed. Could not start handle_queue_routing_retries");
     }
   else if ((pthread_create(&route_retry_thread_id, &routing_attr, handle_queue_routing_retries, NULL)) != 0)
     {
     perror("could not start listener for pbs_server");
-    log_err(-1, msg_daemonname, (char *)"Failed to start handle_queue_routing_retries");
+    log_err(-1, msg_daemonname, "Failed to start handle_queue_routing_retries");
     }
   } /* END start_routing_retry_thread() */
 

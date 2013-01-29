@@ -13,6 +13,7 @@ libjob_func_la_LDFLAGS = @CHECK_LIBS@ -shared -L../.libs -lscaffolding_svr  -L..
 
 test_job_func_LDADD = ../../../test/torque_test_lib/libtorque_test.la ../../../test/scaffold_fail/libscaffold_fail.la
 test_job_func_SOURCES = test_job_func.c
+test_record_jobinfo_LDADD = ../../../test/torque_test_lib/libtorque_test.la ../../../test/scaffold_fail/libscaffold_fail.la
 test_record_jobinfo_SOURCES = test_record_jobinfo.c
 
 check_SCRIPTS = coverage_run.sh

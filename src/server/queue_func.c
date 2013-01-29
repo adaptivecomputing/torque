@@ -653,7 +653,7 @@ int get_parent_dest_queues(
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
         }
       lock_queue(pque_parent, __func__, NULL, LOGLEVEL);
-      lock_queue(pque_dest,   __func__, (char *)NULL,LOGLEVEL);
+      lock_queue(pque_dest,   __func__, (char *)NULL, LOGLEVEL);
       *parent = pque_parent;
       *dest = pque_dest;
 
@@ -681,7 +681,7 @@ pbs_queue *lock_queue_with_job_held(
   {
   char       jobid[PBS_MAXSVRJOBID + 1];
   job       *pjob = *pjob_ptr;
-  char      log_buf[LOCAL_LOG_BUF_SIZE];
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (pque != NULL)
     {
