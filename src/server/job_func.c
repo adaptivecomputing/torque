@@ -1215,6 +1215,8 @@ void *job_clone_wt(
         continue;
         }
 
+      pjobclone->ji_commit_done = 1;
+
       if (job_save(pjobclone, SAVEJOB_FULL, 0) != 0)
         {
         /* XXX need more robust error handling */
