@@ -982,6 +982,10 @@ void close_conn(
 
   {
   char log_message[LOG_BUF_SIZE];
+
+  /* close conn shouldn't be called on local connections */
+  if (sd == PBS_LOCAL_CONNECTION)
+    return;
   
   if ((sd < 0) ||
       (max_connection <= sd))

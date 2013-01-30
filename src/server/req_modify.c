@@ -952,7 +952,7 @@ void *modify_array_work(
 
   {
   batch_request *preq = (batch_request *)vp;
-  svrattrl      *plist;
+  svrattrl      *plist = NULL;
   int            rc = 0;
   int            rc2 = 0;
   char          *pcnt = NULL;

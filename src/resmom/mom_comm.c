@@ -1942,7 +1942,10 @@ int reply_to_join_job_as_sister(
   int              command;
   struct tcp_chan *local_chan = NULL;
 
-  command = IM_RADIX_ALL_OK;
+  if (job_radix)
+    command = IM_RADIX_ALL_OK;
+  else
+    command = IM_ALL_OKAY;
 
   for (retry_count = 0; retry_count < 5; retry_count++)
     {
@@ -2506,13 +2509,13 @@ int im_join_job_as_sister(
   append_link(&svr_alljobs, &pjob->ji_alljobs, pjob);
   
   /* establish a connection and write the reply back */
-  if (job_radix)
-    {
+  /*if (job_radix)
+    {*/
     if ((reply_to_join_job_as_sister(pjob, addr, cookie, event, fromtask, job_radix)) == DIS_SUCCESS)
       ret = IM_DONE;
-    else
+   /* else
       ret = IM_FAILURE;
-    }
+    }*/
 
   if (radix_ports != NULL)
     free(radix_ports);
@@ -3511,7 +3514,7 @@ int im_poll_job_as_sister(
       close(local_socket);
       return(IM_DONE);
       }
-    else if ((ret = im_compose(local_chan,jobid,cookie,IM_ALL_OKAY,event,fromtask)) != DIS_SUCCESS)
+    else if ((ret = im_compose(local_chan,jobid,cookie,IM_ALL_OKAY,event,fromtask)) != SUCCESS)
       {
       DIS_tcp_close(local_chan);
       return(IM_DONE);

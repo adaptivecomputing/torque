@@ -2739,8 +2739,12 @@ job_array *get_jobs_array(
       
     if ((pjob = svr_find_job(jobid, TRUE)) == NULL)
       {
-      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
-      pa = NULL;
+      if (pa != NULL)
+        {
+        unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+        pa = NULL;
+        }
+
       *pjob_ptr = NULL;
       }
     }

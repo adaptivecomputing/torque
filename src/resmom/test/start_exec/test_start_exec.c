@@ -9,6 +9,9 @@
 #define MAX_TEST_ENVP 150
 #define MAX_TEST_BLOCK 8096
 
+#define EN_THRESHOLD 100
+#define EXTRA_VARIABLE_SPACE 5120
+
 char *penv[MAX_TEST_ENVP]; /* max pointers a bld_env_variables will create */
 char *envBuffer = NULL; /* points to the max block that bld_env_variables would ever need in this test suite */
 
