@@ -6283,7 +6283,7 @@ int start_exec(
       }
     
     free_attrlist(&phead);
-    exec_job_on_ms(pjob);
+    /* The job will execute on mother superior when all sister nodes have replied */
     
     }   /* END if (nodenum > 1) */
   else
