@@ -179,6 +179,9 @@ typedef enum
 #define EXTRA_ENV_PTRS        32
 
 #define MAX_JOB_ARGS          64
+#define EN_THRESHOLD          100
+#define B_THRESHOLD           2048
+#define EXTRA_VARIABLE_SPACE  5120
 
 
 /* Global Variables */
@@ -305,6 +308,8 @@ int TMomCheckJobChild(pjobexec_t *, int, int *, int *);
 int InitUserEnv(job *,task *,char **,struct passwd *pwdp,char *);
 int mkdirtree(char *,mode_t);
 int TTmpDirName(job*, char *);
+int expand_vtable(struct var_table *vtable);
+int copy_data(struct var_table *tmp_vtable, struct var_table *vtable, int expand_bsize, int expand_ensize);
 
 static int search_env_and_open(const char *, u_long);
 extern int TMOMJobGetStartInfo(job *, pjobexec_t **);
@@ -1033,7 +1038,7 @@ int TMakeTmpDir(
   else
     {
     /* log the first error */
-    log_err(errno, __func__, strerror(errno));
+    log_err(errno, id, strerror(errno));
 
     rc = stat(tmpdir, &sb);
 
@@ -6676,6 +6681,7 @@ int bld_env_variables(
   int amt;
   int i;
   int rc = PBSE_NONE;
+  char *id = "bld_env_variables";
 
   if (vtable->v_used == vtable->v_ensize)
     {
@@ -6683,12 +6689,12 @@ int bld_env_variables(
     if ((rc = expand_vtable(vtable)) == PBSE_NONE) 
       {
       snprintf(log_buffer, sizeof(log_buffer), "Successfully expanded environment variables table");
-      log_ext(-1, __func__, log_buffer, LOG_INFO);
+      log_ext(-1, id, log_buffer, LOG_INFO);
       }
     else 
       {
       snprintf(log_buffer, sizeof(log_buffer), "Error in expanding environment variables table of pointers; err: %d", rc);
-      log_err(-1, __func__, log_buffer);
+      log_err(-1, id, log_buffer);
       return rc;
       }
     }
@@ -6701,7 +6707,8 @@ int bld_env_variables(
       {
       log_err(-1, "bld_env_variables", "invalid name passed");
       }
-      return PBSE_BAD_PARAMETER;
+
+    return(-1);
     }
 
   if (LOGLEVEL >= 6)
@@ -6737,12 +6744,12 @@ int bld_env_variables(
     if ((rc = expand_vtable(vtable)) == PBSE_NONE)
       {
       snprintf(log_buffer, sizeof(log_buffer), "Successfully expanded environment variables table");
-      log_ext(-1, __func__, log_buffer, LOG_INFO);
+      log_ext(-1, id, log_buffer, LOG_INFO);
       }
     else 
       {
       snprintf(log_buffer, sizeof(log_buffer), "Error in expanding environment variables table; err: %d", rc);
-      log_err(-1, __func__, log_buffer);
+      log_err(-1, id, log_buffer);
       return rc;
       }
     }
@@ -6786,6 +6793,7 @@ int expand_vtable(
       int amt = 0;
       struct var_table tmp_vtable;
       int rc = PBSE_NONE;
+      char *id = "expand_vtable";
 
       if (vtable->v_ensize - vtable->v_used < EN_THRESHOLD)
         expand_ensize = 1;
@@ -6805,7 +6813,7 @@ int expand_vtable(
         {
         sprintf(log_buffer, "PBS: failed to allocate memory for v_envp: %s\n",
         strerror(errno));
-        log_err(errno, __func__, log_buffer);
+        log_err(errno, id, log_buffer);
         return -1;
         }
 
@@ -6821,7 +6829,7 @@ int expand_vtable(
           {
           sprintf(log_buffer, "PBS: failed to allocate memory for v_bsize: %s\n",
           strerror(errno));
-          log_err(errno, __func__, log_buffer);
+          log_err(errno, id, log_buffer);
           return -1;
           }
         }
@@ -6848,6 +6856,7 @@ int copy_data(
   {
       char *p_next_block;
       int len_plus_one, i;
+      char *id = "copy_data";
 
       if (!expand_ensize && !expand_bsize )
         return PBSE_NONE;
@@ -6876,7 +6885,7 @@ int copy_data(
             {
             sprintf(log_buffer, "PBS: failed to copy env var, size: %d space left in buf: %d\n",
             len_plus_one, tmp_vtable->v_bsize);
-            log_err(errno, __func__, log_buffer);
+            log_err(errno, id, log_buffer);
             return -1;
             }
           strcpy(p_next_block, *(vtable->v_envp + i));
