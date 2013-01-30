@@ -1261,11 +1261,10 @@ void *preobit_reply(
 
     mom_deljob(pjob);
 
-    return NULL;
+    return(NULL);
     }
 
   /* at this point, server gave us a valid response so we can run epilogue */
-
   if (LOGLEVEL >= 2)
     {
     log_record(
@@ -1287,7 +1286,7 @@ void *preobit_reply(
       pjob->ji_qs.ji_jobid,
       "fork failed in preobit_reply");
 
-    return NULL;
+    return(NULL);
     }
 
   if (cpid > 0)
@@ -1314,7 +1313,7 @@ void *preobit_reply(
       log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
       }
 
-    return NULL;
+    return(NULL);
     }
 
   /* child - just run epilogues */

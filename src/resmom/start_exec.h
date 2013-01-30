@@ -118,8 +118,6 @@ void add_wkm_start(uint64_t job_id, char* pbs_jobid);
 void add_wkm_end(uint64_t job_id, int64_t comp_code, char *pbs_jobid);
 #endif /* ENABLE_CSA */
 
-int expand_path(job *pjob, char *path_in, int pathlen, char *path);
-
 int exec_job_on_ms(job *pjob);
 
 int allocate_demux_sockets(job *pjob, int flag);
