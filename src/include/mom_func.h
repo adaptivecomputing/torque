@@ -199,7 +199,6 @@ extern void  post_resume(job *, int);
 
 #endif /* _CRAY */
 
-extern int   bld_env_variables(struct var_table *, char *, char *);
 extern int   expand_path(job *,char *,int,char *);
 extern pid_t fork_me(int sock);
 extern int   get_la(double *);

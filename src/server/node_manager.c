@@ -4319,27 +4319,34 @@ int node_spec(
   num = all_reqs.total_nodes;
 
 #ifndef CRAY_MOAB_PASSTHRU
-  if (num > svr_clnodes)
+  /* If we restart pbs_server while the cray is down, pbs_server won't know about
+   * the computes. Don't perform this check for this case. */
+  if ((cray_enabled != TRUE) || 
+      (alps_reporter == NULL) ||
+      (alps_reporter->alps_subnodes.ra->num != 0))
     {
-    /* FAILURE */
-
-    free(spec);
-
-    sprintf(log_buf, "job allocation request exceeds available cluster nodes, %d requested, %d available",
-      num,
-      svr_clnodes);
-
-    if (LOGLEVEL >= 6)
+    if (num > svr_clnodes)
       {
-      log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
-      }
+      /* FAILURE */
 
-    if (EMsg != NULL)
-      {
-      snprintf(EMsg, 1024, "%s", log_buf);
-      }
+      free(spec);
 
-    return(-1);
+      sprintf(log_buf, "job allocation request exceeds available cluster nodes, %d requested, %d available",
+        num,
+        svr_clnodes);
+
+      if (LOGLEVEL >= 6)
+        {
+        log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
+        }
+
+      if (EMsg != NULL)
+        {
+        snprintf(EMsg, 1024, "%s", log_buf);
+        }
+
+      return(-1);
+      }
     }
 #endif
 
@@ -4459,26 +4466,33 @@ int node_spec(
 
   free(spec);
 
-#ifndef CRAY_MOAB_PASSTHRU
-  if (eligible_nodes < num)
+  /* If we restart pbs_server while the cray is down, pbs_server won't know about
+   * the computes. Don't perform this check for this case. */
+  if ((cray_enabled != TRUE) || 
+      (alps_reporter == NULL) ||
+      (alps_reporter->alps_subnodes.ra->num != 0))
     {
-    /* sufficient eligible nodes do not exist */
-    /* FAILURE */
-    sprintf(log_buf,
-      "job requesting nodes that will never be available - spec = %s",
-      spec_param);
+#ifndef CRAY_MOAB_PASSTHRU
+    if (eligible_nodes < num)
+      {
+      /* sufficient eligible nodes do not exist */
+      /* FAILURE */
+      sprintf(log_buf,
+        "job requesting nodes that will never be available - spec = %s",
+        spec_param);
 
-    log_err(-1, __func__, log_buf);
-    if (naji != NULL)
-      release_node_allocation(naji);
+      log_err(-1, __func__, log_buf);
+      if (naji != NULL)
+        release_node_allocation(naji);
 
-    return(-1);
-    }
+      return(-1);
+      }
 #endif
+    }
 
   if (all_reqs.total_nodes > 0)
     {
-    /* nodes no currently available */
+    /* nodes not currently available */
     /* FAILURE */
     sprintf(log_buf,
       "job allocation request exceeds currently available cluster nodes, %d requested, %d available",
