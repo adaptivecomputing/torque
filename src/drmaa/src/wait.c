@@ -44,6 +44,7 @@ __attribute__((unused))
 = "$Id: wait.c,v 1.13 2006/09/05 07:49:36 ciesnik Exp $";
 #endif
 
+struct batch_status *pbs_statjob_err(int c, char *id, struct attrl *attrib, char *extend, int *local_errno);
 
 int
 drmaa_synchronize(
@@ -394,9 +395,9 @@ drmaa_job_wait(
 
     if (l != NULL)
       {
-      l[0].name     = "exit_status";
+      l[0].name     = strdup("exit_status");
       l[0].next = &l[1];
-      l[1].name     = "job_state";
+      l[1].name     = strdup("job_state");
       l[1].next = NULL;
       attribs = l;
       }
@@ -554,6 +555,8 @@ drmaa_job_wait(
     }
   while (!(rc  ||  terminated));
 
+  free(attribs[0].name);
+  free(attribs[1].name);
   free(attribs);
 
   RELEASE_DRMAA_SESSION(c);

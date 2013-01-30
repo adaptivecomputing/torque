@@ -27,7 +27,7 @@ PBS_LIBS = ../../lib/Libpbs/libtorque.la
 AM_CFLAGS  = @PTHREAD_CFLAGS@
 
 GPERF       = @GPERF@
-GPERFFLAGS  = --language=ANSI-C --struct-type --readonly-tables --includes --pic
+GPERFFLAGS  = -L C++ --struct-type --readonly-tables --includes 
 
 lib_LTLIBRARIES     = libdrmaa.la
 libdrmaa_la_SOURCES = \
