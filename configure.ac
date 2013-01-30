@@ -38,6 +38,8 @@ AC_CANONICAL_HOST
 AC_CONFIG_MACRO_DIR([buildutils])
 
 LT_INIT
+LT_LANG([C++])
+AC_SUBST([LIBTOOL_DEPS])
 
 AC_CHECK_PROGS(MAKE,$MAKE make gmake,error)
 if test "x$MAKE" = "xerror" ;then
@@ -50,6 +52,10 @@ m4_ifdef([HAVE_CHECK],
 
 AC_PROG_CXX
 CC="$CXX"
+CCLD="$CXX"
+AC_SUBST([CCLD])
+LIBTOOLFLAGS="--tag=CXX"
+AC_SUBST([LIBTOOLFLAGS])
 AM_MAINTAINER_MODE
 
 if test "$program_prefix" = "NONE";then
@@ -83,7 +89,7 @@ else
   AC_DEFINE_UNQUOTED(GIT_HASH, ["`cat current_hash`"], [repository svn version])
 fi
 
-
+PKG_PROG_PKG_CONFIG
 
 dnl
 dnl  ######################################################################
@@ -132,6 +138,7 @@ m4_ifdef([AM_SILENT_RULES],[
     AM_SILENT_RULES(no)
     AC_CONFIG_FILES(src/test/scaffold_fail/Makefile
     src/test/torque_test_lib/Makefile
+    src/test/Makefile
     src/cmds/test/Makefile
     src/cmds/test/MXML/Makefile
     src/cmds/test/common_cmds/Makefile
@@ -2257,7 +2264,6 @@ AC_OUTPUT(buildutils/pbs_mkdirs
 	  src/drmaa/test/Makefile
 	  src/drmaa/Doxyfile
 	  src/pam/Makefile
-    src/test/Makefile
 
 )
 
