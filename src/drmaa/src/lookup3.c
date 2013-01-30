@@ -271,7 +271,7 @@ uint32 hashlittle(const void *key, size_t length, uint32 initval)
 
   if (HASH_LITTLE_ENDIAN && !((((uint8 *)key) - (uint8 *)0) & 0x3))
     {
-    const uint32 *k = key;                                 /* read 32-bit chunks */
+    const uint32 *k = (const uint32 *)key;          /* read 32-bit chunks */
 
     /*------ all but last block: aligned reads and affect 32 bits of (a,b,c) */
 
@@ -356,7 +356,7 @@ uint32 hashlittle(const void *key, size_t length, uint32 initval)
     }
   else if (HASH_LITTLE_ENDIAN && !((((uint8 *)key) - (uint8 *)0) & 0x1))
     {
-    const uint16 *k = key;                                   /* read 16-bit chunks */
+    const uint16 *k = (const uint16 *)key;              /* read 16-bit chunks */
 
     /*--------------- all but last block: aligned reads and different mixing */
 
@@ -430,7 +430,7 @@ uint32 hashlittle(const void *key, size_t length, uint32 initval)
     }
   else                          /* need to read the key one byte at a time */
     {
-    const uint8 *k = key;
+    const uint8 *k = (const uint8 *)key;
 
     /*--------------- all but the last block: affect some 32 bits of (a,b,c) */
 
@@ -521,7 +521,7 @@ uint32 hashbig(const void *key, size_t length, uint32 initval)
 
   if (HASH_BIG_ENDIAN && !((((uint8 *)key) - (uint8 *)0) & 0x3))
     {
-    const uint32 *k = key;                                 /* read 32-bit chunks */
+    const uint32 *k = (const uint32 *)key;             /* read 32-bit chunks */
 
     /*------ all but last block: aligned reads and affect 32 bits of (a,b,c) */
 
@@ -606,7 +606,7 @@ uint32 hashbig(const void *key, size_t length, uint32 initval)
     }
   else                          /* need to read the key one byte at a time */
     {
-    const uint8 *k = key;
+    const uint8 *k = (const uint8 *)key;
 
     /*--------------- all but the last block: affect some 32 bits of (a,b,c) */
 
