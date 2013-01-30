@@ -121,6 +121,7 @@
 #include "../lib/Libnet/lib_net.h" /* socket_avail_bytes_on_descriptor */
 #include "alps_functions.h"
 #include "tcp.h" /* tcp_chan */
+#include "start_exec.h"
 
 #ifdef ENABLE_CPA
   #include "pbs_cpa.h"
@@ -171,20 +172,15 @@ typedef enum
 #endif /* CSAFAKE */
 #endif /* ENABLE_CSA */
 
-#define EN_THRESHOLD 100
-#define B_THRESHOLD 2048
-#define EXTRA_VARIABLE_SPACE 5120
-
-int expand_vtable(struct var_table *vtable);
-int copy_data(struct var_table *tmp_vtable, struct var_table *vtable, int expand_bsize, int expand_ensize);
-
 #ifdef NOPOSIXMEMLOCK
   #undef _POSIX_MEMLOCK
 #endif /* NOPOSIXMEMLOCK */
 
+#define EXTRA_VARIABLE_SPACE 5120
 #define EXTRA_ENV_PTRS        32
 
 #define MAX_JOB_ARGS          64
+
 
 /* Global Variables */
 
@@ -1297,9 +1293,9 @@ int InitUserEnv(
   vtable.v_bsize = ebsize + EXTRA_VARIABLE_SPACE +
                      (vstrs != NULL ? (vstrs->as_next - vstrs->as_buf) : 0);
 
-  vtable.v_block_start = calloc(1, vtable.v_bsize);
+  vtable.v_block = calloc(1, vtable.v_bsize);
 
-  if (vtable.v_block_start == NULL)
+  if (vtable.v_block == NULL)
     {
     sprintf(log_buffer, "PBS: failed to init env, calloc: %s\n",
             strerror(errno));
@@ -1308,8 +1304,6 @@ int InitUserEnv(
 
     return(-1);
     }
-
-  vtable.v_block = vtable.v_block_start;
 
   vtable.v_ensize = num_var_else + num_var_env + j + EXTRA_ENV_PTRS + (vstrs != NULL ? vstrs->as_usedptr : 0);
   
@@ -1330,8 +1324,7 @@ int InitUserEnv(
   /* First variables from the local environment */
 
   for (j = 0;j < num_var_env;++j)
-    if (bld_env_variables(&vtable, environ[j], NULL) != PBSE_NONE)
-      return -1;
+    bld_env_variables(&vtable, environ[j], NULL);
 
   if (LOGLEVEL >= 10)
     {
@@ -1347,8 +1340,7 @@ int InitUserEnv(
     {
     for (j = 0;j < vstrs->as_usedptr;++j)
       {
-      if (bld_env_variables(&vtable, vstrs->as_string[j], NULL) != PBSE_NONE)
-        return -1;
+      bld_env_variables(&vtable, vstrs->as_string[j], NULL);
 
       if (!strncmp(
             vstrs->as_string[j],
@@ -1368,60 +1360,50 @@ int InitUserEnv(
   /* HOME */
   
   if (pjob->ji_grpcache != NULL)
-    if (bld_env_variables(&vtable, variables_else[tveHome], 
-                          pjob->ji_grpcache->gc_homedir) != PBSE_NONE)
-      return -1;
+    bld_env_variables(&vtable, variables_else[tveHome], pjob->ji_grpcache->gc_homedir);
   
   /* LOGNAME */
 
   if (pwdp != NULL)
-    if (bld_env_variables(&vtable, variables_else[tveLogName], pwdp->pw_name) != PBSE_NONE)
-      return -1;
+    bld_env_variables(&vtable, variables_else[tveLogName], pwdp->pw_name);
   
   /* PBS_JOBNAME */
 
-  if (bld_env_variables(&vtable,
+  bld_env_variables(&vtable,
       variables_else[tveJobName],
-      pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str) != PBSE_NONE)
-      return -1;
+      pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str);
 
   /* PBS_JOBID */
 
-  if (bld_env_variables(&vtable, variables_else[tveJobID], pjob->ji_qs.ji_jobid) != PBSE_NONE)
-    return -1;
+  bld_env_variables(&vtable, variables_else[tveJobID], pjob->ji_qs.ji_jobid);
   
   /* PBS_QUEUE */
   
-  if (bld_env_variables(&vtable,
+  bld_env_variables(&vtable,
       variables_else[tveQueue],
-      pjob->ji_wattr[JOB_ATR_in_queue].at_val.at_str) != PBSE_NONE)
-      return -1;
+      pjob->ji_wattr[JOB_ATR_in_queue].at_val.at_str);
   
   /* SHELL */
 
   if (shell != NULL)
-    if (bld_env_variables(&vtable, variables_else[tveShell], shell) != PBSE_NONE)
-      return -1;
+    bld_env_variables(&vtable, variables_else[tveShell], shell);
 
   /* USER, for compatability */
 
   if (pwdp != NULL)
-    if (bld_env_variables(&vtable, variables_else[tveUser], pwdp->pw_name) != PBSE_NONE)
-      return -1;
+    bld_env_variables(&vtable, variables_else[tveUser], pwdp->pw_name);
 
   /* PBS_JOBCOOKIE */
 
-  if (bld_env_variables(&vtable,
+  bld_env_variables(&vtable,
       variables_else[tveJobCookie],
-      pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str) != PBSE_NONE)
-      return -1;
+      pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str);
   
   /* PBS_NODENUM */
   
   sprintf(buf, "%d", pjob->ji_nodeid);
 
-  if (bld_env_variables(&vtable, variables_else[tveNodeNum], buf) != PBSE_NONE)
-    return -1;
+  bld_env_variables(&vtable, variables_else[tveNodeNum], buf);
 
   /* PBS_TASKNUM */
 
@@ -1429,16 +1411,14 @@ int InitUserEnv(
     {
     sprintf(buf, "%d", ptask->ti_qs.ti_task);
 
-    if (bld_env_variables(&vtable, variables_else[tveTaskNum], buf) != PBSE_NONE)
-      return -1;
+    bld_env_variables(&vtable, variables_else[tveTaskNum], buf);
     }
 
   /* PBS_MOMPORT */
 
   sprintf(buf, "%d", pbs_rm_port);
 
-  if (bld_env_variables(&vtable, variables_else[tveMOMPort], buf) != PBSE_NONE)
-    return -1;
+  bld_env_variables(&vtable, variables_else[tveMOMPort], buf);
 
   /* PBS_NODEFILE */
 
@@ -1446,14 +1426,12 @@ int InitUserEnv(
     {
     sprintf(buf, "%s/%s",  path_aux, pjob->ji_qs.ji_jobid);
 
-    if (bld_env_variables(&vtable, variables_else[tveNodeFile], buf) != PBSE_NONE)
-      return -1;
+    bld_env_variables(&vtable, variables_else[tveNodeFile], buf);
 
     /* add the gpu file as well */
     sprintf(buf, "%s/%sgpu", path_aux, pjob->ji_qs.ji_jobid);
 
-    if (bld_env_variables(&vtable, variables_else[tveGpuFile], buf) != PBSE_NONE)
-      return -1;
+    bld_env_variables(&vtable, variables_else[tveGpuFile], buf);
     }
 
   /* PBS_WALLTIME */
@@ -1465,8 +1443,7 @@ int InitUserEnv(
     {
     sprintf(buf, "%ld", presc->rs_value.at_val.at_long);
 
-    if (bld_env_variables(&vtable, variables_else[tveWallTime], buf) != PBSE_NONE)
-      return -1;
+    bld_env_variables(&vtable, variables_else[tveWallTime], buf);
     }
 
   /* PBS_NNODES */
@@ -1481,8 +1458,7 @@ int InitUserEnv(
     {
     sprintf(buf, "%ld", presc->rs_value.at_val.at_long);
     
-    if (bld_env_variables(&vtable, variables_else[tveNumNodes], buf) != PBSE_NONE)
-      return -1;
+    bld_env_variables(&vtable, variables_else[tveNumNodes], buf);
     }
 
   /* PBS_NUM_NODES and PBS_NPPN */
@@ -1513,8 +1489,7 @@ int InitUserEnv(
   /* these values have been initialized to 1, and will always be in the
    * environment */
   sprintf(buf,"%d",num_nodes);
-  if (bld_env_variables(&vtable,variables_else[tveNumNodesStr],buf) != PBSE_NONE)
-    return -1;
+  bld_env_variables(&vtable,variables_else[tveNumNodesStr],buf);
 
   if (LOGLEVEL >= 3)
     {
@@ -1525,8 +1500,7 @@ int InitUserEnv(
     }
    
   sprintf(buf,"%d",num_ppn);
-  if (bld_env_variables(&vtable,variables_else[tveNumPpn],buf) != PBSE_NONE)
-    return -1;
+  bld_env_variables(&vtable,variables_else[tveNumPpn],buf);
 
   if (LOGLEVEL >= 3)
     {
@@ -1540,23 +1514,20 @@ int InitUserEnv(
 
   if ((!usertmpdir) && 
       (TTmpDirName(pjob, buf, sizeof(buf))))
-    if (bld_env_variables(&vtable, variables_else[tveTmpDir], buf) != PBSE_NONE)
-      return -1;
+    bld_env_variables(&vtable, variables_else[tveTmpDir], buf);
 
   /* PBS_VERSION */
 
   sprintf(buf, "TORQUE-%s", PACKAGE_VERSION);
   
-  if (bld_env_variables(&vtable, variables_else[tveVerID], buf) != PBSE_NONE)
-    return -1;
+  bld_env_variables(&vtable, variables_else[tveVerID], buf);
   
   /* passed-in environment for tasks */
   
   if (envp != NULL)
     {
     for (j = 0;envp[j];j++)
-      if (bld_env_variables(&vtable, envp[j], NULL) != PBSE_NONE)
-        return -1;
+      bld_env_variables(&vtable, envp[j], NULL);
     }
 
   return(PBSE_NONE);
@@ -2867,6 +2838,7 @@ void handle_reservation(
   char      *rsv_id = NULL;
   resource  *pres;
   int        use_nppn = TRUE;
+  int        mppdepth = 0;
   
   sjr->sj_session = setsid();
 
@@ -2890,7 +2862,6 @@ void handle_reservation(
   if (is_login_node == TRUE)
     {
     char *exec_str;
-    int   mppdepth = 0;
 
     if (pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str != NULL)
       exec_str = pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str;
@@ -2908,7 +2879,7 @@ void handle_reservation(
     pres = find_resc_entry(
              &pjob->ji_wattr[JOB_ATR_resource],
              find_resc_def(svr_resc_def, "mppdepth", svr_resc_size));
-    
+
     if ((pres != NULL) &&
         (pres->rs_value.at_val.at_long != 0))
       mppdepth = pres->rs_value.at_val.at_long;
@@ -3080,8 +3051,7 @@ int start_interactive_session(
   sigaction(SIGINT, &act, (struct sigaction *)0);
   
   /* Set environment to reflect interactive */
-  if (bld_env_variables(&vtable, "PBS_ENVIRONMENT", "PBS_INTERACTIVE") != PBSE_NONE)
-    return -1;
+  bld_env_variables(&vtable, "PBS_ENVIRONMENT", "PBS_INTERACTIVE");
   
   /* get host where qsub resides */
   phost = arst_string("PBS_O_HOST", &pjob->ji_wattr[JOB_ATR_variables]);
@@ -3139,12 +3109,7 @@ int start_interactive_session(
     starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, sjr);
     }
   
-  if (bld_env_variables(&vtable, termtype, NULL) != PBSE_NONE)
-    {
-    log_err(errno, __func__, "call to bld_env_variables failed");
-    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, sjr);
-    }
-
+  bld_env_variables(&vtable, termtype, NULL);
   *(vtable.v_envp + vtable.v_used) = NULL; /* null term */
   
   if (rcvwinsize(*qsub_sock_ptr) == -1)
@@ -3430,11 +3395,8 @@ void setup_batch_job(
   
   /* set Environment to reflect batch */
   
-  if (bld_env_variables(&vtable, "PBS_ENVIRONMENT", "PBS_BATCH") != PBSE_NONE)
-    {
-    log_err(-1, __func__, "bld_env_variables failed for PBS_BATCH");
-    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_STDOUTFAIL, sjr);
-    }
+  bld_env_variables(&vtable, "PBS_ENVIRONMENT", "PBS_BATCH");
+  bld_env_variables(&vtable, "ENVIRONMENT", "BATCH");
 
   set_job_script_as_stdin(pjob, sjr, TJE);
   
@@ -3576,8 +3538,7 @@ int setup_x11_forwarding(
                           pjob->ji_grpcache->gc_homedir,
                           pjob->ji_wattr[JOB_ATR_forwardx11].at_val.at_str) >= 0)
       {
-      if (bld_env_variables(&vtable, "DISPLAY", display) != PBSE_NONE)
-        return -1;
+      bld_env_variables(&vtable, "DISPLAY", display);
       }
     else
       {
@@ -3960,19 +3921,11 @@ int TMomFinalizeChild(
   sprintf(buf, "%d", 0);
 
   /* Set PBS_VNODENUM */
-  if (bld_env_variables(&vtable, "PBS_VNODENUM", buf) != PBSE_NONE)
-    {
-    log_err(-1, __func__, "failed to set env. PBS_VNODENUM");
-    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, &sjr);
-    }
+  bld_env_variables(&vtable, "PBS_VNODENUM", buf);
 
   /* PBS_NP */
   sprintf(buf, "%d", vnodenum);
-  if (bld_env_variables(&vtable, variables_else[tveNprocs], buf) != PBSE_NONE)
-    {
-    log_err(-1, __func__, "failed to set env. PBS_NPROCS");
-    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, &sjr);
-    }
+  bld_env_variables(&vtable, variables_else[tveNprocs], buf);
 
   handle_cpuset_creation(pjob, &sjr, TJE);
 
@@ -4891,17 +4844,9 @@ int start_process(
 
   /* set environment to reflect batch */
 
-  if (bld_env_variables(&vtable, "PBS_ENVIRONMENT", "PBS_BATCH") != PBSE_NONE)
-    {
-    log_err(errno, __func__, "failed to set PBS_BATCH env. var.");
-    starter_return(kid_write, kid_read, JOB_EXEC_RETRY, &sjr);
-    }
+  bld_env_variables(&vtable, "PBS_ENVIRONMENT", "PBS_BATCH");
 
-  if (bld_env_variables(&vtable, "ENVIRONMENT",    "BATCH") != PBSE_NONE)
-    {
-    log_err(errno, __func__, "failed to set BATCH env. var.");
-    starter_return(kid_write, kid_read, JOB_EXEC_RETRY, &sjr);
-    }
+  bld_env_variables(&vtable, "ENVIRONMENT",    "BATCH");
 
   /* Set limits for the child */
     if (mom_set_limits(pjob, SET_LIMIT_SET) != PBSE_NONE)
@@ -6297,7 +6242,7 @@ int start_exec(
       }
     
     free_attrlist(&phead);
-    exec_job_on_ms(pjob);
+    /* When all the sisters call in we will start the job */
     
     }   /* END if (nodenum > 1) */
   else
@@ -6434,7 +6379,7 @@ pid_t fork_me(
  * exit if negative
  */
 
-void starter_return(
+static void starter_return(
 
   int                  upfds,     /* I */
   int                  downfds,   /* I */
@@ -6442,10 +6387,10 @@ void starter_return(
   struct startjob_rtn *sjrtn)     /* I */
 
   {
+
   struct startjob_rtn ack;
   int                 i;
   int                 alarmsecs = 0;
-  char                rsv_id[MAXLINE];
 
   sjrtn->sj_code = code;
 
@@ -6491,14 +6436,6 @@ void starter_return(
 
   if (code < 0)
     {
-    /* for login nodes, release the reservation if one has been made */
-    if ((is_login_node == TRUE) &&
-        (sjrtn->sj_rsvid != 0))
-      {
-      snprintf(rsv_id, sizeof(rsv_id), "%d", sjrtn->sj_rsvid);
-      destroy_alps_reservation(rsv_id, apbasil_path, apbasil_protocol);
-      }
-
     exit(254);
     }
 
@@ -7307,22 +7244,12 @@ int bld_env_variables(
   {
   int amt;
   int i;
-  int rc = PBSE_NONE;
 
   if (vtable->v_used == vtable->v_ensize)
     {
-    /* no room for pointers to the strings */
-    if ((rc = expand_vtable(vtable)) == PBSE_NONE) 
-      {
-      snprintf(log_buffer, sizeof(log_buffer), "Successfully expanded environment variables table");
-      log_ext(-1, __func__, log_buffer, LOG_INFO);
-      }
-    else 
-      {
-      snprintf(log_buffer, sizeof(log_buffer), "Error in expanding environment variables table of pointers; err: %d", rc);
-      log_err(-1, __func__, log_buffer);
-      return rc;
-      }
+    /* FAILURE - no room for pointer */
+
+    return(PBSE_SYSTEM);
     }
 
   if ((name == NULL) || (name[0] == '\0'))
@@ -7333,7 +7260,6 @@ int bld_env_variables(
       {
       log_err(-1, "bld_env_variables", "invalid name passed");
       }
-      return PBSE_BAD_PARAMETER;
     }
 
   if (LOGLEVEL >= 6)
@@ -7355,7 +7281,7 @@ int bld_env_variables(
 
   if (memcmp(name,"BATCH_PARTITION_ID",strlen("BATCH_PARTITION_ID")) == 0)
     {
-    return rc;
+    return(PBSE_NONE);
     }
 
   amt = strlen(name) + 1;
@@ -7365,18 +7291,8 @@ int bld_env_variables(
 
   if (amt > vtable->v_bsize)
     {
-    /* no room for string */
-    if ((rc = expand_vtable(vtable)) == PBSE_NONE)
-      {
-      snprintf(log_buffer, sizeof(log_buffer), "Successfully expanded environment variables table");
-      log_ext(-1, __func__, log_buffer, LOG_INFO);
-      }
-    else 
-      {
-      snprintf(log_buffer, sizeof(log_buffer), "Error in expanding environment variables table; err: %d", rc);
-      log_err(-1, __func__, log_buffer);
-      return rc;
-      }
+    /* FAILURE - no room for string */
+    return(PBSE_SYSTEM);
     }
 
   strcpy(vtable->v_block, name);
@@ -7400,147 +7316,11 @@ int bld_env_variables(
 
   vtable->v_bsize -= amt;
 
-  return rc;
+  return(PBSE_NONE);
   }   /* END bld_env_variables() */
 
 
-/* expand_vtable is called when either the array of character pointers in vtable was filled or
-   the block of memory used to store the env. variables was full. While in this function, it
-   checks to see if either one of the other does require the reallocation by checking its threshold
-*/
-int expand_vtable(
 
-  struct var_table *vtable)
-
-  {
-      int expand_ensize = 0; /* boolean to check on array of pointers */
-      int expand_bsize = 0;  /* boolean to check on the block of memory storage */
-      int amt = 0;
-      struct var_table tmp_vtable;
-      int rc = PBSE_NONE;
-
-      if (vtable->v_ensize - vtable->v_used < EN_THRESHOLD)
-        expand_ensize = 1;
-
-      if (vtable->v_bsize < B_THRESHOLD)
-        expand_bsize = 1;
-
-      memset(&tmp_vtable, 0, sizeof(struct var_table));
-
-      if (expand_ensize)
-        tmp_vtable.v_ensize = vtable->v_ensize + EN_THRESHOLD;
-      else
-        tmp_vtable.v_ensize = vtable->v_ensize; /* tmp holder for data copying */
-
-      tmp_vtable.v_envp = calloc(tmp_vtable.v_ensize, sizeof(char *));
-      if (!tmp_vtable.v_envp)
-        {
-        sprintf(log_buffer, "PBS: failed to allocate memory for v_envp: %s\n",
-        strerror(errno));
-        log_err(errno, __func__, log_buffer);
-        return -1;
-        }
-
-      tmp_vtable.v_used = vtable->v_used;
-
-      if (expand_bsize)
-        {
-        amt = EXTRA_VARIABLE_SPACE + (vtable->v_block - vtable->v_block_start) + vtable->v_bsize;
-        tmp_vtable.v_block_start = calloc(1, amt);
-        tmp_vtable.v_block = tmp_vtable.v_block_start;
-        tmp_vtable.v_bsize = amt;
-        if (!tmp_vtable.v_block_start) 
-          {
-          sprintf(log_buffer, "PBS: failed to allocate memory for v_bsize: %s\n",
-          strerror(errno));
-          log_err(errno, __func__, log_buffer);
-          return -1;
-          }
-        }
-
-      if ((rc = copy_data(&tmp_vtable, vtable, 
-                    expand_bsize, expand_ensize) != PBSE_NONE))
-       {
-         if (tmp_vtable.v_block_start)
-           free(tmp_vtable.v_block_start);
-         if (tmp_vtable.v_envp)
-           free(tmp_vtable.v_envp); 
-       }
-
-      return rc;
-  }
-
-int copy_data(
-
-  struct var_table *tmp_vtable,
-  struct var_table *vtable, 
-  int expand_bsize, 
-  int expand_ensize)
-  
-  {
-      char *p_next_block;
-      int len_plus_one, i;
-
-      if (!expand_ensize && !expand_bsize )
-        return PBSE_NONE;
-
-      if (expand_ensize && (!expand_bsize))
-        { 
-        /* only the pointers have been expanded and therefore copy
-           the existing values to the new storage of pointers */
-        for (i = 0; i < vtable->v_used; ++i)
-          *(tmp_vtable->v_envp + i) = *(vtable->v_envp + i); 
-
-        /* free the old storage and assign the new one */
-        free(vtable->v_envp);
-        vtable->v_envp = tmp_vtable->v_envp;
-        vtable->v_ensize = tmp_vtable->v_ensize;
-        }
-      else if (expand_bsize)
-        { 
-        /* block of memory that contains the actual env. variables was reallocated */
-        p_next_block = tmp_vtable->v_block_start;
-        for (i = 0; i < vtable->v_used; ++i)
-          {
-          len_plus_one = strlen(*(vtable->v_envp + i)) + 1;
-          /* following condition is reached only for a non-null terminated variable */
-          if (len_plus_one > tmp_vtable->v_bsize) 
-            {
-            sprintf(log_buffer, "PBS: failed to copy env var, size: %d space left in buf: %d\n",
-            len_plus_one, tmp_vtable->v_bsize);
-            log_err(errno, __func__, log_buffer);
-            return -1;
-            }
-          strcpy(p_next_block, *(vtable->v_envp + i));
-          *(tmp_vtable->v_envp + i) = p_next_block;
-          p_next_block += len_plus_one;
-          tmp_vtable->v_bsize -= len_plus_one;
-          }
-        /*free the old memory block */
-        vtable->v_bsize = tmp_vtable->v_bsize;
-        vtable->v_block = p_next_block;
-        free(vtable->v_block_start);
-        vtable->v_block_start = tmp_vtable->v_block_start; 
-        if (expand_ensize)
-          {
-          /* if the pointers to the env. variables were reallocated
-             adjust vtable->envp and free the old storage of those pointers
-          */
-          free(vtable->v_envp);
-          vtable->v_envp = tmp_vtable->v_envp;
-          vtable->v_ensize = tmp_vtable->v_ensize;
-          }
-        else
-          {
-          /* copy the new location. Note all memory that had been allocated to
-             tmp_vtable will be freed in the routine where they've been allocated
-          */
-          for (i = 0; i < vtable->v_used; ++i)
-            *(vtable->v_envp + i) = *(tmp_vtable->v_envp + i); 
-          }
-        }
-      return PBSE_NONE;
-  }
 
 #ifndef __TOLDGROUP
 
