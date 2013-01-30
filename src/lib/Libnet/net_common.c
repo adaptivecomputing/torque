@@ -53,7 +53,6 @@ unsigned availBytesOnDescriptor(
 
 
 
-
 int socket_avail_bytes_on_descriptor(
     
   int socket)
@@ -67,12 +66,13 @@ int socket_avail_bytes_on_descriptor(
 
 
 
+int socket_get_tcp_base(
 
-int socket_get_tcp()
-
+  int reuseAddr)
   {
   int local_socket = 0;
   struct linger l_delay;
+  int on = 1;
 
   (void) signal(SIGPIPE, SIG_IGN);
   memset(&l_delay, 0, sizeof(struct linger));
@@ -86,7 +86,33 @@ int socket_get_tcp()
     close(local_socket);
     local_socket = -4;
     }
+  else 
+    {
+    if (reuseAddr)
+      if (setsockopt(local_socket, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on))) 
+      {
+      close(local_socket);
+      local_socket = -3;
+      }
+    }
+
   return local_socket;
+  }
+
+
+
+int socket_get_tcp()
+
+  {
+  return socket_get_tcp_base(1);
+  } /* END socket_get_tcp() */
+
+
+
+int socket_get_tcp_client()
+
+  {
+  return socket_get_tcp_base(0);
   } /* END socket_get_tcp() */
 
 
@@ -147,7 +173,6 @@ int get_random_reserved_port()
 
 
 
-
 int socket_get_tcp_priv()
 
   {
@@ -161,7 +186,7 @@ int socket_get_tcp_priv()
 
   /* If any of the following 2 succeed (negative conditions) jump to else below
    * else run the default */
-  if ((local_socket = socket_get_tcp()) >= 0)
+  if ((local_socket = socket_get_tcp_client()) >= 0)
     {
     if ((rc = bindresvport(local_socket, &local)) == 0)
       {
