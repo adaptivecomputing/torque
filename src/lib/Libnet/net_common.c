@@ -73,7 +73,6 @@ int socket_get_tcp()
   {
   int local_socket = 0;
   struct linger l_delay;
-  int on = 1;
 
   (void) signal(SIGPIPE, SIG_IGN);
   memset(&l_delay, 0, sizeof(struct linger));
@@ -81,11 +80,6 @@ int socket_get_tcp()
   if ((local_socket = socket(PF_INET, SOCK_STREAM, TCP_PROTO_NUM)) == -1)
     {
     local_socket = -2;
-    }
-  else if (setsockopt(local_socket, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) == -1)
-    {
-    close(local_socket);
-    local_socket = -3;
     }
   else if (setsockopt(local_socket, SOL_SOCKET, SO_LINGER, &l_delay, sizeof(struct linger)) == -1)
     {
