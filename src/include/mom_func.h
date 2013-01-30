@@ -188,6 +188,8 @@ extern int   mom_open_socket_to_jobs_server(job* pjob, char *id, void (*message_
 void         clear_servers();
 void remove_defunct_cpusets();
 
+int become_the_user(job *pjob);
+
 /* defined in mach-dependant mom_mach.c */
 extern int kill_task(struct task *, int, int);
 

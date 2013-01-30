@@ -590,6 +590,57 @@ void exec_bail(
 
 
 
+/* 
+ * becomes the user for pjob 
+ *
+ * @param pjob - the job whose user we should become
+ * @return PBSE_BADUSER on failure
+ */
+
+int become_the_user(
+
+  job *pjob)
+
+  {
+  log_buffer[0] = '\0';
+
+  if (setgroups(pjob->ji_grpcache->gc_ngroup,
+                (gid_t *)pjob->ji_grpcache->gc_groups) != PBSE_NONE)
+    {
+    snprintf(log_buffer,sizeof(log_buffer),
+      "PBS: setgroups for UID = %lu failed: %s\n",
+      (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+      strerror(errno));
+    }
+  else if (setgid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) != PBSE_NONE)
+    {
+    snprintf(log_buffer,sizeof(log_buffer),
+      "PBS: setgid to %lu for UID = %lu failed: %s\n",
+      (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exgid,
+      (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+      strerror(errno));
+    }
+  else if (setuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) < 0)
+    {
+    snprintf(log_buffer,sizeof(log_buffer),
+      "PBS: setuid to %lu failed: %s\n",
+      (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+      strerror(errno));
+    }
+
+  if (log_buffer[0] != '\0')
+    return(PBSE_BADUSER);
+  else
+    return(PBSE_NONE);
+  } /* END become_the_user() */
+
+
+
+
+
+
+
+
 
 #define RETRY 3
 
@@ -7819,7 +7870,7 @@ int expand_path(
 
   return(SUCCESS);
 #else
-
+  char      **environ_old = environ;
   wordexp_t  exp;
 
   if ((path_in == NULL) ||
@@ -7865,6 +7916,7 @@ int expand_path(
         snprintf(path,pathlen,"%s",exp.we_wordv[0]);
 
         wordfree(&exp);
+        environ = environ_old;
 
         return(SUCCESS);
         }
@@ -7878,12 +7930,15 @@ int expand_path(
       /* fall through */
 
     default:
+        
+      environ = environ_old;
 
       return(FAILURE);
 
     }  /* END switch () */
 
   /* not reached */
+  environ = environ_old;
 
   return(FAILURE);
 
