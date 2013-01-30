@@ -1,5 +1,5 @@
-/* ANSI-C code produced by gperf version 3.0.1 */
-/* Command-line: gperf --language=ANSI-C --struct-type --readonly-tables --includes --pic --hash-function-name=drmaa_attrib_hash --lookup-function-name=drmaa_attrib_lookup drmaa_attrib.gperf  */
+/* C++ code produced by gperf version 3.0.3 */
+/* Command-line: /usr/bin/gperf -L C++ --struct-type --readonly-tables --includes --hash-function-name=drmaa_attrib_hash --lookup-function-name=drmaa_attrib_lookup drmaa_attrib.gperf  */
 /* Computed positions: -k'11,16' */
 
 #if !((' ' == 32) && ('!' == 33) && ('"' == 34) && ('#' == 35) \
@@ -52,26 +52,20 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 #ifdef HAVE_CONFIG_H
-# include <pbs_config.h>
+#	include <pbs_config.h>
 #endif
 
 #include <attrib.h>
 
 #ifndef lint
 static char rcsid[]
-# ifdef __GNUC__
-__attribute__((unused))
-# endif
-= "$Id: drmaa_attrib.gperf,v 1.4 2006/06/05 23:27:17 ciesnik Exp $";
+#	ifdef __GNUC__
+		__attribute__ ((unused))
+#	endif
+	= "$Id: drmaa_attrib.gperf,v 1.4 2006/06/05 23:27:17 ciesnik Exp $";
 #endif
 #line 36 "drmaa_attrib.gperf"
-
-struct drmaa_attrib
-  {
-  const char *name;
-  int code;
-  };
-
+struct drmaa_attrib { const char *name; int code; };
 #include <string.h>
 
 #define TOTAL_KEYWORDS 21
@@ -81,211 +75,138 @@ struct drmaa_attrib
 #define MAX_HASH_VALUE 46
 /* maximum key range = 39, duplicates = 0 */
 
-#ifdef __GNUC__
-__inline
-#else
-#ifdef __cplusplus
-inline
-#endif
-#endif
-static unsigned int
-drmaa_attrib_hash(register const char *str, register unsigned int len)
-  {
+class Perfect_Hash
+{
+private:
+  static inline unsigned int drmaa_attrib_hash (const char *str, unsigned int len);
+public:
+  static const struct drmaa_attrib *drmaa_attrib_lookup (const char *str, unsigned int len);
+};
+
+inline unsigned int
+Perfect_Hash::drmaa_attrib_hash (register const char *str, register unsigned int len)
+{
   static const unsigned char asso_values[] =
     {
-    47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
-    47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
-    47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
-    47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
-    47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
-    47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
-    47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
-    47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
-    47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
-    47, 47, 47, 47, 47, 18, 47,  0, 47,  0,
-    47, 47, 20,  0, 13, 10,  5,  0,  5, 47,
-    5, 47,  0, 47, 15,  0,  0,  0,  0, 47,
-    47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
-    47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
-    47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
-    47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
-    47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
-    47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
-    47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
-    47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
-    47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
-    47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
-    47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
-    47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
-    47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
-    47, 47, 47, 47, 47, 47, 47
+      47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
+      47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
+      47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
+      47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
+      47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
+      47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
+      47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
+      47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
+      47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
+      47, 47, 47, 47, 47, 18, 47,  0, 47,  0,
+      47, 47, 20,  0, 13, 10,  5,  0,  5, 47,
+       5, 47,  0, 47, 15,  0,  0,  0,  0, 47,
+      47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
+      47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
+      47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
+      47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
+      47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
+      47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
+      47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
+      47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
+      47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
+      47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
+      47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
+      47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
+      47, 47, 47, 47, 47, 47, 47, 47, 47, 47,
+      47, 47, 47, 47, 47, 47, 47
     };
   register int hval = len;
 
   switch (hval)
     {
-
-    default:
-      hval += asso_values[(unsigned char)str[15] + 1];
+      default:
+        hval += asso_values[(unsigned char)str[15]+1];
       /*FALLTHROUGH*/
-
-    case 15:
-
-    case 14:
-
-    case 13:
-
-    case 12:
-
-    case 11:
-      hval += asso_values[(unsigned char)str[10]];
+      case 15:
+      case 14:
+      case 13:
+      case 12:
+      case 11:
+        hval += asso_values[(unsigned char)str[10]];
       /*FALLTHROUGH*/
-
-    case 10:
-
-    case 9:
-
-    case 8:
-      break;
+      case 10:
+      case 9:
+      case 8:
+        break;
     }
-
   return hval;
-  }
-
-struct stringpool_t
-  {
-  char stringpool_str8[sizeof("drmaa_wd")];
-  char stringpool_str11[sizeof("drmaa_v_env")];
-  char stringpool_str12[sizeof("drmaa_v_argv")];
-  char stringpool_str13[sizeof("drmaa_v_email")];
-  char stringpool_str14[sizeof("drmaa_js_state")];
-  char stringpool_str16[sizeof("drmaa_wct_slimit")];
-  char stringpool_str17[sizeof("drmaa_output_path")];
-  char stringpool_str18[sizeof("drmaa_job_category")];
-  char stringpool_str19[sizeof("drmaa_job_name")];
-  char stringpool_str20[sizeof("drmaa_transfer_files")];
-  char stringpool_str21[sizeof("drmaa_duration_slimit")];
-  char stringpool_str22[sizeof("drmaa_block_email")];
-  char stringpool_str24[sizeof("drmaa_deadline_time")];
-  char stringpool_str25[sizeof("drmaa_remote_command")];
-  char stringpool_str26[sizeof("drmaa_input_path")];
-  char stringpool_str29[sizeof("drmaa_wct_hlimit")];
-  char stringpool_str31[sizeof("drmaa_duration_hlimit")];
-  char stringpool_str34[sizeof("drmaa_join_files")];
-  char stringpool_str36[sizeof("drmaa_start_time")];
-  char stringpool_str41[sizeof("drmaa_error_path")];
-  char stringpool_str46[sizeof("drmaa_native_specification")];
-  };
-
-static const struct stringpool_t stringpool_contents =
-  {
-  "drmaa_wd",
-  "drmaa_v_env",
-  "drmaa_v_argv",
-  "drmaa_v_email",
-  "drmaa_js_state",
-  "drmaa_wct_slimit",
-  "drmaa_output_path",
-  "drmaa_job_category",
-  "drmaa_job_name",
-  "drmaa_transfer_files",
-  "drmaa_duration_slimit",
-  "drmaa_block_email",
-  "drmaa_deadline_time",
-  "drmaa_remote_command",
-  "drmaa_input_path",
-  "drmaa_wct_hlimit",
-  "drmaa_duration_hlimit",
-  "drmaa_join_files",
-  "drmaa_start_time",
-  "drmaa_error_path",
-  "drmaa_native_specification"
-  };
-
-#define stringpool ((const char *) &stringpool_contents)
-#ifdef __GNUC__
-__inline
-#endif
+}
 
 const struct drmaa_attrib *
-      drmaa_attrib_lookup(register const char *str, register unsigned int len)
-  {
-
+Perfect_Hash::drmaa_attrib_lookup (register const char *str, register unsigned int len)
+{
   static const struct drmaa_attrib wordlist[] =
     {
-      {
-      -1
-      }, { -1}, { -1}, { -1}, { -1}, { -1}, { -1}, { -1},
+      {""}, {""}, {""}, {""}, {""}, {""}, {""}, {""},
 #line 47 "drmaa_attrib.gperf"
-    {(int)(long)&((struct stringpool_t *)0)->stringpool_str8,                    ATTR_JOB_WORKING_DIR},
-    { -1}, { -1},
+      {"drmaa_wd",                    ATTR_JOB_WORKING_DIR},
+      {""}, {""},
 #line 41 "drmaa_attrib.gperf"
-    {(int)(long)&((struct stringpool_t *)0)->stringpool_str11,                 ATTR_ENV},
+      {"drmaa_v_env",                 ATTR_ENV},
 #line 40 "drmaa_attrib.gperf"
-    {(int)(long)&((struct stringpool_t *)0)->stringpool_str12,                ATTR_ARGV},
+      {"drmaa_v_argv",                ATTR_ARGV},
 #line 48 "drmaa_attrib.gperf"
-    {(int)(long)&((struct stringpool_t *)0)->stringpool_str13,               ATTR_EMAIL},
+      {"drmaa_v_email",               ATTR_EMAIL},
 #line 51 "drmaa_attrib.gperf"
-    {(int)(long)&((struct stringpool_t *)0)->stringpool_str14,              ATTR_JOB_SUBMIT_STATE},
-    { -1},
+      {"drmaa_js_state",              ATTR_JOB_SUBMIT_STATE},
+      {""},
 #line 55 "drmaa_attrib.gperf"
-    {(int)(long)&((struct stringpool_t *)0)->stringpool_str16,            ATTR_SOFT_WCT_LIMIT},
+      {"drmaa_wct_slimit",            ATTR_SOFT_WCT_LIMIT},
 #line 43 "drmaa_attrib.gperf"
-    {(int)(long)&((struct stringpool_t *)0)->stringpool_str17,           ATTR_OUTPUT_PATH},
+      {"drmaa_output_path",           ATTR_OUTPUT_PATH},
 #line 57 "drmaa_attrib.gperf"
-    {(int)(long)&((struct stringpool_t *)0)->stringpool_str18,          ATTR_JOB_CATEGORY},
+      {"drmaa_job_category",          ATTR_JOB_CATEGORY},
 #line 38 "drmaa_attrib.gperf"
-    {(int)(long)&((struct stringpool_t *)0)->stringpool_str19,              ATTR_JOB_NAME},
+      {"drmaa_job_name",              ATTR_JOB_NAME},
 #line 46 "drmaa_attrib.gperf"
-    {(int)(long)&((struct stringpool_t *)0)->stringpool_str20,        ATTR_TRANSFER_FILES},
+      {"drmaa_transfer_files",        ATTR_TRANSFER_FILES},
 #line 53 "drmaa_attrib.gperf"
-    {(int)(long)&((struct stringpool_t *)0)->stringpool_str21,       ATTR_SOFT_CPU_TIME_LIMIT},
+      {"drmaa_duration_slimit",       ATTR_SOFT_CPU_TIME_LIMIT},
 #line 49 "drmaa_attrib.gperf"
-    {(int)(long)&((struct stringpool_t *)0)->stringpool_str22,           ATTR_BLOCK_EMAIL},
-    { -1},
+      {"drmaa_block_email",           ATTR_BLOCK_EMAIL},
+      {""},
 #line 56 "drmaa_attrib.gperf"
-    {(int)(long)&((struct stringpool_t *)0)->stringpool_str24,         ATTR_DEADLINE_TIME},
+      {"drmaa_deadline_time",         ATTR_DEADLINE_TIME},
 #line 39 "drmaa_attrib.gperf"
-    {(int)(long)&((struct stringpool_t *)0)->stringpool_str25,        ATTR_JOB_PATH},
+      {"drmaa_remote_command",        ATTR_JOB_PATH},
 #line 42 "drmaa_attrib.gperf"
-    {(int)(long)&((struct stringpool_t *)0)->stringpool_str26,            ATTR_INPUT_PATH},
-    { -1}, { -1},
+      {"drmaa_input_path",            ATTR_INPUT_PATH},
+      {""}, {""},
 #line 54 "drmaa_attrib.gperf"
-    {(int)(long)&((struct stringpool_t *)0)->stringpool_str29,            ATTR_HARD_WCT_LIMIT},
-    { -1},
+      {"drmaa_wct_hlimit",            ATTR_HARD_WCT_LIMIT},
+      {""},
 #line 52 "drmaa_attrib.gperf"
-    {(int)(long)&((struct stringpool_t *)0)->stringpool_str31,       ATTR_HARD_CPU_TIME_LIMIT},
-    { -1}, { -1},
+      {"drmaa_duration_hlimit",       ATTR_HARD_CPU_TIME_LIMIT},
+      {""}, {""},
 #line 45 "drmaa_attrib.gperf"
-    {(int)(long)&((struct stringpool_t *)0)->stringpool_str34,            ATTR_JOIN_FILES},
-    { -1},
+      {"drmaa_join_files",            ATTR_JOIN_FILES},
+      {""},
 #line 50 "drmaa_attrib.gperf"
-    {(int)(long)&((struct stringpool_t *)0)->stringpool_str36,            ATTR_START_TIME},
-    { -1}, { -1}, { -1}, { -1},
+      {"drmaa_start_time",            ATTR_START_TIME},
+      {""}, {""}, {""}, {""},
 #line 44 "drmaa_attrib.gperf"
-    {(int)(long)&((struct stringpool_t *)0)->stringpool_str41,            ATTR_ERROR_PATH},
-    { -1}, { -1}, { -1}, { -1},
+      {"drmaa_error_path",            ATTR_ERROR_PATH},
+      {""}, {""}, {""}, {""},
 #line 58 "drmaa_attrib.gperf"
-    {(int)(long)&((struct stringpool_t *)0)->stringpool_str46,  ATTR_NATIVE}
+      {"drmaa_native_specification",  ATTR_NATIVE}
     };
 
   if (len <= MAX_WORD_LENGTH && len >= MIN_WORD_LENGTH)
     {
-    register int key = drmaa_attrib_hash(str, len);
+      register int key = drmaa_attrib_hash (str, len);
 
-    if (key <= MAX_HASH_VALUE && key >= 0)
-      {
-      register int o = wordlist[key].name;
-
-      if (o >= 0)
+      if (key <= MAX_HASH_VALUE && key >= 0)
         {
-        register const char *s = o + stringpool;
+          register const char *s = wordlist[key].name;
 
-        if (*str == *s && !strcmp(str + 1, s + 1))
-          return &wordlist[key];
+          if (*str == *s && !strcmp (str + 1, s + 1))
+            return &wordlist[key];
         }
-      }
     }
-
   return 0;
-  }
+}
