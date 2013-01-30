@@ -41,6 +41,7 @@ __attribute__((unused))
 
 pthread_mutex_t drmaa_session_mutex = PTHREAD_MUTEX_INITIALIZER;
 drmaa_session_t *drmaa_session = NULL;
+struct batch_status *pbs_statjob_err(int c, char *id, struct attrl *attrib, char *extend, int *local_errno);
 
 int
 drmaa_init(const char *contact, char *errmsg, size_t errlen)
@@ -91,7 +92,7 @@ drmaa_create(drmaa_session_t **pc, const char *contact, char *errmsg, size_t err
   {
   drmaa_session_t *c;
 
-  c = malloc(sizeof(drmaa_session_t));
+  c = (drmaa_session_t *)malloc(sizeof(drmaa_session_t));
 
   if (c == NULL)
     RAISE_NO_MEMORY();
@@ -265,7 +266,7 @@ drmaa_delete_async_job_template(drmaa_job_template_t *jt)
 
     for (i = 0;  i < N_DRMAA_ATTRIBS;  i++)
       if (drmaa_is_vector(&drmaa_attr_table[i]))
-        drmaa_free_vector(jt->attrib[i]);
+        drmaa_free_vector((char **)jt->attrib[i]);
       else free(jt->attrib[i]);
 
     free(jt->attrib);
@@ -306,12 +307,15 @@ drmaa_set_attribute(
   }
 
 
-int
-drmaa_get_attribute(
+int drmaa_get_attribute(
+
   drmaa_job_template_t *jt,
-  const char *name, char *value, size_t value_len,
-  char *errmsg, size_t errlen
-)
+  const char           *name,
+  char                 *value,
+  size_t                value_len,
+  char                 *errmsg,
+  size_t                errlen)
+
   {
   const drmaa_attrib_info_t *attr;
   int attr_no;
@@ -325,7 +329,7 @@ drmaa_get_attribute(
   pthread_mutex_lock(&jt->mutex);
 
   if (jt->attrib[attr_no] != NULL)
-    strlcpy(value, jt->attrib[attr_no], value_len);
+    strlcpy(value, (const char *)jt->attrib[attr_no], value_len);
   else
     strlcpy(value, "", value_len);
 
@@ -437,18 +441,27 @@ drmaa_get_vector_attribute(
 
   v[n_values] = NULL;
 
-  *out_values = malloc(sizeof(drmaa_attr_values_t));
+  *out_values = (drmaa_attr_values_t *)malloc(sizeof(drmaa_attr_values_t));
   (*out_values)->list = (*out_values)->iter = v;
   return DRMAA_ERRNO_SUCCESS;
   }
 
 
 
-int
-drmaa_control(const char *job_id, int action, char *errmsg, size_t errlen)
+int drmaa_control(
+    
+  const char *job_id,
+  int         action,
+  char       *errmsg,
+  size_t      errlen)
+
   {
-  drmaa_session_t *c = NULL;
-  int rc = 0;
+  static char *sigstop = strdup("SIGSTOP");
+  static char *sigcont = strdup("SIGCONT");
+  static char *user_hold = strdup(USER_HOLD);
+  drmaa_session_t   *c = NULL;
+  int                rc = 0;
+  char              *job_id_cpy = strdup(job_id);
 
   DEBUG(("-> drmaa_control(job_id=%s,action=%d)", job_id, action));
   GET_DRMAA_SESSION(c);
@@ -456,34 +469,36 @@ drmaa_control(const char *job_id, int action, char *errmsg, size_t errlen)
 
   switch (action)
     {
-      /*
-       * We cannot know whether we did suspend job
-       * in other way than remembering this inside DRMAA session.
-       */
+    /*
+     * We cannot know whether we did suspend job
+     * in other way than remembering this inside DRMAA session.
+     */
 
     case DRMAA_CONTROL_SUSPEND:
       drmaa_find_job(c, job_id, NULL, DRMAA_JOB_SUSPENDED);
-      rc = pbs_sigjob(c->pbs_conn, (char*)job_id, "SIGSTOP", NULL);
+      rc = pbs_sigjob(c->pbs_conn, job_id_cpy, sigstop, NULL);
       break;
 
     case DRMAA_CONTROL_RESUME:
       drmaa_find_job(c, job_id, NULL, DRMAA_JOB_RESUMED);
-      rc = pbs_sigjob(c->pbs_conn, (char*)job_id, "SIGCONT", NULL);
+      rc = pbs_sigjob(c->pbs_conn, job_id_cpy, sigcont, NULL);
       break;
 
     case DRMAA_CONTROL_HOLD:
-      rc = pbs_holdjob(c->pbs_conn, (char*)job_id, USER_HOLD, NULL);
+      rc = pbs_holdjob(c->pbs_conn, job_id_cpy, user_hold, NULL);
       break;
 
     case DRMAA_CONTROL_RELEASE:
-      rc = pbs_rlsjob(c->pbs_conn, (char*)job_id, USER_HOLD, NULL);
+      rc = pbs_rlsjob(c->pbs_conn, job_id_cpy, user_hold, NULL);
       break;
 
     case DRMAA_CONTROL_TERMINATE:
-      rc = pbs_deljob(c->pbs_conn, (char*)job_id, NULL); /* deldelay=N
+      rc = pbs_deljob(c->pbs_conn, job_id_cpy, NULL); /* deldelay=N
              -- delay between SIGTERM and SIGKILL (default 0)*/
       break;
     }
+
+  free(job_id_cpy);
 
   pthread_mutex_unlock(&c->conn_mutex);
 
@@ -496,8 +511,28 @@ drmaa_control(const char *job_id, int action, char *errmsg, size_t errlen)
   }
 
 
-int
-drmaa_job_ps(const char *job_id, int *remote_ps, char *errmsg, size_t errlen)
+
+void init_attribs(
+
+  struct attropl *attribs)
+
+  {
+  memset(attribs, 0, sizeof(attribs));
+  attribs[0].name = strdup("job_state");
+  attribs[1].name = strdup("exit_status");
+  attribs[0].next = & attribs[1];
+  }
+
+
+
+
+int drmaa_job_ps(
+    
+  const char *job_id,
+  int        *remote_ps,
+  char       *errmsg,
+  size_t      errlen)
+
   {
   drmaa_session_t *c = NULL;
   int rc = DRMAA_ERRNO_SUCCESS;
@@ -509,11 +544,10 @@ drmaa_job_ps(const char *job_id, int *remote_ps, char *errmsg, size_t errlen)
 
   struct attropl *i;
 
-  struct attropl attribs[2];
-  memset(attribs, 0, sizeof(attribs));
-  attribs[0].name = "job_state";
-  attribs[1].name = "exit_status";
-  attribs[0].next = & attribs[1];
+  static struct attropl attribs[2];
+
+  if (strcmp(attribs[0].name, "job_state"))
+    init_attribs(attribs);
 #if 0
     { NULL, "exit_status", NULL, NULL, 0 }
     { attribs + 1, "exit_status", NULL, NULL, 0 },
