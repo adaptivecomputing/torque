@@ -213,8 +213,7 @@ drmaa_run_job_impl(
 
   pthread_mutex_lock(&c->conn_mutex);
 
-  pbs_job_id = pbs_submit(c->pbs_conn, sc->pbs_attribs, sc->script_filename,
-                          "", NULL);
+  pbs_job_id = pbs_submit(c->pbs_conn, sc->pbs_attribs, sc->script_filename, NULL, NULL);
 
   pthread_mutex_unlock(&c->conn_mutex);
 
@@ -260,7 +259,7 @@ drmaa_create_submission_context(
   sc->home_directory    = strdup(getenv("HOME"));
 
   if (jt->attrib[ATTR_JOB_WORKING_DIR] != NULL)
-    sc->working_directory = strdup(jt->attrib[ATTR_JOB_WORKING_DIR]);
+    sc->working_directory = strdup((const char *)jt->attrib[ATTR_JOB_WORKING_DIR]);
   else
     sc->working_directory = strdup(sc->home_directory);
 
@@ -322,11 +321,11 @@ drmaa_set_job_std_attribs(
   const char *job_name;
   int rc;
 
-  job_name = attrib[ATTR_JOB_NAME];
+  job_name = (const char *)attrib[ATTR_JOB_NAME];
 
   if (job_name != NULL)
     {
-    rc = drmaa_add_pbs_attr(c, ATTR_JOB_NAME, strdup(attrib[ATTR_JOB_NAME]),
+    rc = drmaa_add_pbs_attr(c, ATTR_JOB_NAME, strdup((const char *)attrib[ATTR_JOB_NAME]),
                             DRMAA_PLACEHOLDER_MASK_INCR, errmsg, errlen);
 
     if (rc)  return rc;
@@ -362,7 +361,7 @@ drmaa_create_job_script(
   job         = (const char*) attrib[ ATTR_JOB_PATH        ];
   wd          = (const char*) attrib[ ATTR_JOB_WORKING_DIR ];
   argv        = (const char**)attrib[ ATTR_ARGV            ];
-  input_path  =               attrib[ ATTR_INPUT_PATH      ];
+  input_path  = (char *)      attrib[ ATTR_INPUT_PATH      ];
 
   if (job == NULL)
     RAISE_DRMAA(DRMAA_ERRNO_INVALID_ATTRIBUTE_VALUE);
@@ -434,7 +433,7 @@ drmaa_set_job_files(
 )
   {
   void **attrib = c->jt->attrib;
-  const char *join_files = attrib[ATTR_JOIN_FILES];
+  const char *join_files = (const char *)attrib[ATTR_JOIN_FILES];
   bool b_join_files;
   int i;
   int rc;
@@ -492,7 +491,7 @@ drmaa_set_job_environment(
 
   if (attrib[ATTR_ENV] != NULL)
     {
-    char *value = drmaa_explode(attrib[ATTR_ENV], ',');
+    char *value = drmaa_explode((const char **)attrib[ATTR_ENV], ',');
 
     if (value == NULL)
       {
@@ -500,7 +499,7 @@ drmaa_set_job_environment(
       RAISE_NO_MEMORY();
       }
 
-    tmp = realloc(env, s + strlen(value) + 1);
+    tmp = (char *)realloc(env, s + strlen(value) + 1);
     if (tmp == NULL)
       {
       free(env);
@@ -583,7 +582,7 @@ drmaa_set_job_submit_state(
   char *errmsg, size_t errlen
 )
   {
-  const char *submit_state = c->jt->attrib[ATTR_JOB_SUBMIT_STATE];
+  const char *submit_state = (const char *)c->jt->attrib[ATTR_JOB_SUBMIT_STATE];
   const char *hold_types;
   int rc = DRMAA_ERRNO_SUCCESS;
 
@@ -608,8 +607,9 @@ drmaa_translate_staging(const char *stage)
   {
   char hostname[ HOST_NAME_MAX+1 ];
   const char *host = NULL, *filename = NULL;
-  size_t hostlen = 0;
-  char *result, *p;
+  int    hostlen = 0;
+  char *result;
+  const char *p;
 
   p = strchr(stage, ':');
 
@@ -824,7 +824,7 @@ drmaa_write_tmpfile(
 
   while (len > 0)
     {
-    size_t written = write_ac_socket(fd, content, len);
+    size_t written = write(fd, content, len);
 
     if (written != (size_t) - 1)
       {
