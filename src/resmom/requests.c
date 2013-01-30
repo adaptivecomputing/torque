@@ -1251,14 +1251,14 @@ void req_checkpointjob(
 int message_job(
 
   job            *pjob,
-  enum job_file  jft,  /* I */
+  enum job_file   jft,  /* I */
   char           *text)
 
   {
   char  *pstr = NULL;
-  int  len;
-  int  fds;
-  int   rc;
+  int    len;
+  int    fds;
+  int    rc;
 
   if (pjob == NULL)
     {
@@ -1266,12 +1266,33 @@ int message_job(
     }
 
   /* must be Mother Superior for this to make sense */
-
   if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
     {
-    log_err(errno, "message_job", (char *)"cannot message job, not mother superior");
+    log_err(errno, __func__, "cannot message job, not mother superior");
 
     return(PBSE_MOMREJECT);
+    }
+
+  /* to prevent a security issue and also handle root-squashing slightly better,
+   * fork and become the user before doing this. */
+  if ((rc = fork_me(-1)) == -1)
+    {
+    /* ERROR */
+    log_err(errno, __func__, "cannot fork child");
+    return(PBSE_SYSTEM);
+    }
+  else if (rc > 0)
+    {
+    /* parent */
+    return(PBSE_NONE);
+    }
+
+  /* only the child reaches here, become the user for root-squashing as well */
+  if (become_the_user(pjob) != PBSE_NONE)
+    {
+    /* log_buffer is populated by become_the_user */
+    log_err(errno, __func__, log_buffer);
+    exit(PBSE_BADUSER);
     }
 
   len = is_joined(pjob);
@@ -1292,9 +1313,9 @@ int message_job(
             pjob->ji_qs.ji_jobid,
             text);
 
-    log_err(errno, "message_job", log_buffer);
+    log_err(errno, __func__, log_buffer);
 
-    return(PBSE_MOMREJECT);
+    exit(PBSE_MOMREJECT);
     }
 
   len = strlen(text);
@@ -1305,7 +1326,7 @@ int message_job(
       {
       close(fds);
 
-      return(PBSE_INTERNAL);
+      exit(PBSE_INTERNAL);
       }
 
     strcpy(pstr, text);
@@ -1320,7 +1341,7 @@ int message_job(
   alarm(alarm_time);
   if (write_ac_socket(fds, text, len) != len)
     {
-    log_err(errno, "message_job", (char *)"unable to write message to job");
+    log_err(errno, __func__, "unable to write message to job");
 
     rc = PBSE_INTERNAL;
     }
@@ -1328,7 +1349,7 @@ int message_job(
 
   if (close(fds) != 0)
     {
-    log_err(errno, "message_job", (char *)"unable to write message to job");
+    log_err(errno, __func__, "unable to write message to job");
 
     rc = PBSE_INTERNAL;
     }
@@ -1337,8 +1358,7 @@ int message_job(
     free(pstr);
 
   /* SUCCESS */
-
-  return(rc);
+  exit(0);
   }  /* END message_job() */
 
 
@@ -1379,7 +1399,7 @@ void req_messagejob(
     }
   else
     {
-    req_reject(ret, 0, preq, mom_host, (char *)"cannot add message to job output/error buffer");
+    req_reject(ret, 0, preq, mom_host, "cannot add message to job output/error buffer");
     }
   }  /* END req_messagejob() */
 
@@ -2491,7 +2511,7 @@ int req_stat_job(
  * fork_to_user() must be called first so that useruid/gid is set up
  */
 
-static int del_files(
+int del_files(
 
   struct batch_request *preq,      /* I */
   char                 *HDir,      /* I (home directory) */

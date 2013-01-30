@@ -455,3 +455,7 @@ tmpfile
 src/lib/Libutils/test/u_mutex_mgr/test_u_mutex_mgr
 src/resmom/linux/test/cpuset/test_cpuset
 STDIN.*
+src/drmaa/test/exit_job
+src/drmaa/test/sleeper_job
+src/drmaa/test/suicide_job
+src/drmaa/test/worker_job
