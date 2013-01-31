@@ -8472,14 +8472,11 @@ int expand_path(
       /* fall through */
 
     default:
-        
-      environ = environ_old;
 
-      return(FAILURE);
+      break;
 
     }  /* END switch () */
         
-  /* not reached */
   environ = environ_old;
 
   return(FAILURE);

@@ -1674,7 +1674,7 @@ void set_globals_from_environment(void)
     LOGLEVEL = (int)strtol(plogenv, NULL, 10);
     }
 
-  if ((ptr = getenv("PBSDEBUG")) != NULL)
+  if (getenv("PBSDEBUG") != NULL)
     {
     DEBUGMODE = 1;
     TDoBackground = 0;

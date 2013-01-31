@@ -1562,9 +1562,8 @@ void finish_sendmom(
           pjob->ji_momstat = 0;
           
           /* update mom-based job status */
-          unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+          job_mutex.unlock();
           stat_mom_job(job_id);
-          pjob = svr_find_job(job_id, TRUE);
           }
         else
           {

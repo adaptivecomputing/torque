@@ -3819,7 +3819,7 @@ void process_config_file(
       hash_add_or_exit(&ji->mm, &ji->client_attr, ATTR_pbs_o_uid, param_val, ENV_DATA);
       }
 
-    if ((param_val = get_param("QSUBSENDGROUPLIST", config_buf)) != NULL)
+    if (get_param("QSUBSENDGROUPLIST", config_buf) != NULL)
       {
       gid_t group_id = getgid();
       struct group *gpent = getgrgid(group_id);

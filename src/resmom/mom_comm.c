@@ -2647,7 +2647,6 @@ int im_spawn_task(
   int                  i;
   int                  local_socket;
   struct tcp_chan     *local_chan = NULL;
-  hnodent             *np;
   tm_node_id           nodeid;
   char                *globid = NULL;
   char                *cp;
@@ -2660,7 +2659,7 @@ int im_spawn_task(
   
   if (ret == DIS_SUCCESS)
     {
-    if ((np = find_node(pjob, chan->sock, nodeid)) == NULL)
+    if (find_node(pjob, chan->sock, nodeid) == NULL)
       {
       send_im_error(PBSE_BADHOST,1,pjob,cookie,event,fromtask);
       
@@ -2992,7 +2991,6 @@ int im_signal_task(
   struct tcp_chan *local_chan = NULL;
   char            *jobid = pjob->ji_qs.ji_jobid;
   task            *ptask = NULL;
-  hnodent         *np;
 
   /* first read all of the data */
   nodeid = disrsi(chan, &ret);
@@ -3010,7 +3008,7 @@ int im_signal_task(
   if (ret != DIS_SUCCESS)
     return(IM_FAILURE);
 
-  if ((np = find_node(pjob, chan->sock, nodeid)) == NULL)
+  if (find_node(pjob, chan->sock, nodeid) == NULL)
     {
     send_im_error(PBSE_BADHOST,1,pjob,cookie,event,fromtask);
       
@@ -3136,7 +3134,6 @@ int im_obit_task(
   struct tcp_chan *local_chan = NULL;
   char            *jobid = pjob->ji_qs.ji_jobid;
   task            *ptask = NULL;
-  hnodent         *np;
 
   nodeid = disrsi(chan, &ret);
 
@@ -3148,7 +3145,7 @@ int im_obit_task(
   if (ret != DIS_SUCCESS)
     return(IM_FAILURE);
 
-  if ((np = find_node(pjob, chan->sock, nodeid)) == NULL)
+  if (find_node(pjob, chan->sock, nodeid) == NULL)
     { 
     send_im_error(PBSE_BADHOST,1,pjob,cookie,event,fromtask);
       
@@ -3280,7 +3277,6 @@ int im_get_info(
   char            *jobid = pjob->ji_qs.ji_jobid;
   char            *name = NULL;
   task            *ptask = NULL;
-  hnodent         *np;
   infoent         *ip;
 
   nodeid = disrsi(chan, &ret);
@@ -3301,7 +3297,7 @@ int im_get_info(
     return(IM_FAILURE);
     }
 
-  if ((np = find_node(pjob, chan->sock, nodeid)) == NULL)
+  if (find_node(pjob, chan->sock, nodeid) == NULL)
     {
     send_im_error(PBSE_BADHOST,1,pjob,cookie,event,fromtask);
 
@@ -6372,7 +6368,7 @@ int tm_spawn_request(
   
   taskid = (pjob->ji_nodeid == 0) ? pjob->ji_taskid++ : TM_NULL_TASK;
   
-  ep = event_alloc(IM_SPAWN_TASK, phost, event, fromtask);
+  event_alloc(IM_SPAWN_TASK, phost, event, fromtask);
   
   if (multi_mom)
     {

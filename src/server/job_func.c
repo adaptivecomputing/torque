@@ -1211,7 +1211,9 @@ void *job_clone_wt(
         if (rc != PBSE_JOB_RECYCLED)
           svr_job_purge(pjobclone);
 
-        pa = get_array(arrayid);
+        if ((pa = get_array(arrayid)) == NULL)
+          return(NULL);
+
         continue;
         }
 
@@ -1223,7 +1225,8 @@ void *job_clone_wt(
         unlock_ai_mutex(pa, __func__, "2", LOGLEVEL);
         svr_job_purge(pjobclone);
        
-        pa = get_array(arrayid);
+        if ((pa = get_array(arrayid)) == NULL)
+          return(NULL);
         
         continue;
         }

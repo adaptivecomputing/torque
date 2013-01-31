@@ -1336,10 +1336,11 @@ int depend_on_que(
   int                rc;
   int                type;
   job               *pjob = (job *)pj;
-  pbs_queue         *pque = get_jobs_queue(&pjob);
+  pbs_queue         *pque;
   char job_id[PBS_MAXSVRJOBID+1];
 
   strcpy(job_id, pjob->ji_qs.ji_jobid);
+  pque = get_jobs_queue(&pjob);
 
   if (pque == NULL)
     {
@@ -2128,10 +2129,10 @@ int register_dep(
     return(PBSE_NONE);
     }
 
-  if ((pdj = make_dependjob(
+  if (make_dependjob(
                pdep,
                preq->rq_ind.rq_register.rq_child,
-               preq->rq_ind.rq_register.rq_svr)) == NULL)
+               preq->rq_ind.rq_register.rq_svr) == NULL)
     {
     return(PBSE_SYSTEM);
     }

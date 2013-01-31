@@ -111,6 +111,11 @@ using namespace std;
     {
     int rc;
 
+    unlock_on_exit = true;
+    locked = true;
+    mutex_valid = true;
+    locked = is_locked;
+
     /* validate the mutex */
     if (mutex == NULL)
       {
@@ -119,8 +124,6 @@ using namespace std;
       }
 
     managed_mutex = mutex;
-    mutex_valid = true;
-    locked = false;
     if (is_locked == false)
       {
       rc = lock();
@@ -131,9 +134,6 @@ using namespace std;
         return;
         }
       }
-
-    unlock_on_exit = true;
-    locked = true;
     }
 
   /* The destructor checks for a valid mutex 
@@ -219,6 +219,6 @@ using namespace std;
 
   void mutex_mgr::mark_as_locked()
     {
-	locked = true;
+    locked = true;
     }
 
