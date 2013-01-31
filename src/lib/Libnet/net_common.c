@@ -186,7 +186,7 @@ int socket_get_tcp_priv()
 
   /* If any of the following 2 succeed (negative conditions) jump to else below
    * else run the default */
-  if ((local_socket = socket_get_tcp_client()) >= 0)
+  if ((local_socket = socket_get_tcp()) >= 0)
     {
     if ((rc = bindresvport(local_socket, &local)) == 0)
       {
