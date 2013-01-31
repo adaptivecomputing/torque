@@ -6383,7 +6383,12 @@ int tm_spawn_request(
   local_socket = tcp_connect_sockaddr((struct sockaddr *)&phost->sock_addr,sizeof(phost->sock_addr));
   
   if (IS_VALID_STREAM(local_socket) == FALSE)
+    {
+    arrayfree(argv);
+    arrayfree(envp);
+
     return(TM_DONE);
+    }
   
   if ((local_chan = DIS_tcp_setup(local_socket)) == NULL)
     {
@@ -8184,6 +8189,8 @@ void fork_demux(
       }
 
     free(routem);
+
+    close(im_mom_stderr);
 
     return;
     }

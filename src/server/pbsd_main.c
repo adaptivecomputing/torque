@@ -1160,7 +1160,7 @@ void *handle_queue_routing_retries(
 
   {
   pbs_queue *pque;
-  char       *queuename;
+  char       *queuename = NULL;
   int        iter = -1;
   int        rc;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
@@ -1210,8 +1210,10 @@ void *handle_queue_routing_retries(
             rc = pthread_create(&pque->route_retry_thread_id, &routing_attr, queue_route, queuename);
             if (rc != 0)
               {
-              snprintf(log_buf, sizeof(log_buf), "pthread_attr_init failed: %d  in %s. Will try next iteration", rc,  __func__);
+              snprintf(log_buf, sizeof(log_buf), "pthread_attr_init failed: %d  in %s. Will try next iteration",
+                rc,  __func__);
               log_err(-1, msg_daemonname, log_buf);
+              free(queuename);
               /* Just go on to the next queue. do not return NULL here */
               }
             }

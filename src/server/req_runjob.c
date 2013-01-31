@@ -2240,6 +2240,9 @@ int assign_hosts(
   if (portlist != NULL)
     free(portlist);
 
+  if (to_free != NULL)
+    free(to_free);
+
   return(rc);
   }  /* END assign_hosts() */
 

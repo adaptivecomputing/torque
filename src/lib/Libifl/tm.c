@@ -462,6 +462,8 @@ static int localmom(void)
     return(local_conn); /* already have open connection */
     }
 
+  memset(&remote, 0, sizeof(remote));
+
   if (have_addr == 0)
     {
     /* lookup "localhost" and save address */

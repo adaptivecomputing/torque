@@ -535,7 +535,10 @@ int chk_characteristic(
     }
 
   if (nci->note != NULL)
+    {
     free(nci->note);
+    nci->note = NULL;
+    }
 
   return(PBSE_NONE);
   }  /* END chk_characteristic() */
@@ -2620,7 +2623,7 @@ static void delete_a_gpusubnode(
     pnode->nd_ngpus_free--;
 
   /* decrement the number of gpu subnodes */
-  pnode->nd_gpusn--;
+  pnode->nd_ngpus--;
 
   /* free the gpu subnode */
   free(tmp);

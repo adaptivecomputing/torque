@@ -6283,7 +6283,6 @@ char *MOMFindMyExe(
     }
 
   /* Linux has a handy symlink, so try that first */
-  memset(link, 0, MAXPATHLEN);
   link_len = readlink("/proc/self/exe", link, MAXPATHLEN);
   if (link_len > 0)
     {

@@ -787,6 +787,8 @@ int pbs_original_connect(
 
   char               *ptr;
 
+  memset(&server_addr, 0, sizeof(server_addr));
+
   /* Read the timeout from the environment */
   if ((ptr = getenv("PBSAPITIMEOUT")) != NULL)
     {

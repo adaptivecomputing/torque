@@ -1242,8 +1242,8 @@ int run_pelog(
       (which == PE_PROLOGUSERJOB) || 
       (which == PE_EPILOGUSERJOB))
     {
-      seteuid(pbsuser);
-      setegid(pbsgroup);
+    seteuid(pbsuser);
+    setegid(pbsgroup);
 
     if (setgid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) != 0)
       {

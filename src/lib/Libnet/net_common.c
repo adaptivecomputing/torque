@@ -207,7 +207,7 @@ int socket_get_tcp_priv()
     /* Success case */
     priv_port = local_socket;
     }
-  else if ((local_socket = socket_get_tcp()) > 0)
+  else if ((local_socket = socket_get_tcp()) >= 0)
     {
     /* According to the notes in the previous code:
      * bindresvport seems to cause connect() failures in some odd corner case

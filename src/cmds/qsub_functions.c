@@ -1329,9 +1329,9 @@ char *interactive_port(
 
   namelen = sizeof(myaddr);
 
+  memset(&myaddr, 0, sizeof(myaddr));
   myaddr.sin_family = AF_INET;
   myaddr.sin_addr.s_addr = INADDR_ANY;
-  myaddr.sin_port = 0;
 
   if (bind(*sock, (struct sockaddr *)&myaddr, namelen) < 0)
     print_qsub_usage_exit("qsub: unable to bind to socket");

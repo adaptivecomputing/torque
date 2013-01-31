@@ -696,6 +696,7 @@ int open_demux(
   torque_socklen_t slen;
   unsigned short local_port;
 
+  memset(&remote, 0, sizeof(remote));
   remote.sin_addr.s_addr = addr;
   remote.sin_port = htons((unsigned short)port);
   remote.sin_family = AF_INET;
