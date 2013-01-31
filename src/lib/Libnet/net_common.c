@@ -195,6 +195,7 @@ int socket_get_tcp_priv()
     else
       {
       rc = PBSE_SOCKET_FAULT;
+      close(local_socket);
       }
     }
   else

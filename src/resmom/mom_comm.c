@@ -6181,6 +6181,7 @@ int tm_spawn_request(
   if (envp == NULL)
     {
     log_err(ENOMEM, __func__, "No memory available, cannot calloc!");
+    arrayfree(argv);
     
     return(TM_ERROR);
     }
@@ -8191,6 +8192,7 @@ void fork_demux(
     free(routem);
 
     close(im_mom_stderr);
+    close(im_mom_stdout);
 
     return;
     }

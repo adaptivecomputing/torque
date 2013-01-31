@@ -1187,9 +1187,9 @@ void *handle_queue_routing_retries(
       if (pque->qu_qs.qu_type == QTYPE_RoutePush)
         {
         /* NYI. What happens if a queue is deleted */
-        queuename = strdup(pque->qu_qs.qu_name); /* make sure this gets freed inside queue_route */
         if (pque->route_retry_thread_id == (pthread_t)-1)
           {
+          queuename = strdup(pque->qu_qs.qu_name); /* make sure this gets freed inside queue_route */
           /* thread not yet started. Let's start the route retry thread for this routing queue */
           
           rc = pthread_create(&pque->route_retry_thread_id, &routing_attr, queue_route, queuename);
@@ -1197,6 +1197,8 @@ void *handle_queue_routing_retries(
             {
             snprintf(log_buf, sizeof(log_buf), "pthread_attr_init failed: %d  in %s. Will try next iteration", rc,  __func__);
             log_err(-1, msg_daemonname, log_buf);
+
+            free(queuename);
             /* Just go on to the next queue. do not return NULL here */
             }
           }
@@ -1207,12 +1209,15 @@ void *handle_queue_routing_retries(
              the thread is running. It does not kill the thread */
           if (pthread_kill(pque->route_retry_thread_id, 0) == ESRCH)
             {
+            queuename = strdup(pque->qu_qs.qu_name); /* make sure this gets freed inside queue_route */
+
             rc = pthread_create(&pque->route_retry_thread_id, &routing_attr, queue_route, queuename);
             if (rc != 0)
               {
               snprintf(log_buf, sizeof(log_buf), "pthread_attr_init failed: %d  in %s. Will try next iteration",
                 rc,  __func__);
               log_err(-1, msg_daemonname, log_buf);
+              
               free(queuename);
               /* Just go on to the next queue. do not return NULL here */
               }

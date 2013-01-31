@@ -2625,9 +2625,6 @@ static void delete_a_gpusubnode(
   /* decrement the number of gpu subnodes */
   pnode->nd_ngpus--;
 
-  /* free the gpu subnode */
-  free(tmp);
-
   /* DONE */
   } /* END delete_a_gpusubnode() */
 
