@@ -121,7 +121,6 @@
 #include "../lib/Libnet/lib_net.h" /* socket_avail_bytes_on_descriptor */
 #include "alps_functions.h"
 #include "tcp.h" /* tcp_chan */
-#include "start_exec.h"
 
 #ifdef ENABLE_CPA
   #include "pbs_cpa.h"
@@ -181,6 +180,7 @@ typedef enum
 
 #define MAX_JOB_ARGS          64
 
+int bld_env_variables(struct var_table *vtable, char *name, char *value);
 
 /* Global Variables */
 
@@ -7258,7 +7258,7 @@ int bld_env_variables(
 
     if (LOGLEVEL >= 7)
       {
-      log_err(-1, "bld_env_variables", "invalid name passed");
+      log_err(-1, __func__, "invalid name passed");
       }
     }
 
@@ -7270,7 +7270,7 @@ int bld_env_variables(
              name,
              (value != NULL) ? value : "NULL");
 
-    log_ext(-1, "bld_env_variables", tmpLine, LOG_DEBUG);
+    log_ext(-1, __func__, tmpLine, LOG_DEBUG);
     }
 
   /*
