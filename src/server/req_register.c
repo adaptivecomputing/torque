@@ -104,6 +104,7 @@
 #include "svr_func.h" /* get_svr_attr_* */
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
+#include "utils.h"
 
 #define SYNC_SCHED_HINT_NULL 0
 #define SYNC_SCHED_HINT_FIRST 1
@@ -870,7 +871,7 @@ int req_registerarray(
 
         if ((dot_server = strchr(bracket_ptr+1,'.')) != NULL)
           {
-          strcat(array_name,dot_server);
+          safe_strncat(array_name, dot_server, sizeof(array_name) - strlen(array_name) - 1);
           }
         else 
           {
@@ -1212,16 +1213,17 @@ void post_doq(
 
     if ((msg = pbse_to_txt(preq->rq_reply.brp_code)) != NULL)
       {
-      strcat(log_buf, "\n");
-      strcat(log_buf, msg);
+      safe_strncat(log_buf, "\n", sizeof(log_buf) - strlen(log_buf) - 1);
+      safe_strncat(log_buf, msg, sizeof(log_buf) - strlen(log_buf) - 1);
       }
 
     if (pjob != NULL)
       {
       mutex_mgr job_mutex(pjob->ji_mutex, true);
 
-      strcat(log_buf, "\n");
-      strcat(log_buf, "Job held for unknown job dep, use 'qrls' to release");
+      safe_strncat(log_buf,
+        "\nJob held for unknown job dep, use 'qrls' to release",
+        sizeof(log_buf) - strlen(log_buf) - 1);
 
       if (preq->rq_reply.brp_code != PBSE_BADSTATE)
         {
@@ -2284,7 +2286,7 @@ struct depend_job *make_dependjob(
     if (server_name[0] != '\0')
       strcpy(pdj->dc_svr, server_name);
     else
-      strcpy(pdj->dc_svr, host);
+      snprintf(pdj->dc_svr, sizeof(pdj->dc_svr), "%s", host);
 
     append_link(&pdep->dp_jobs, &pdj->dc_link, pdj);
     }
@@ -2384,7 +2386,7 @@ int send_depend_req(
   unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
 
   get_batch_request_id(preq);
-  strcpy(br_id, preq->rq_id);
+  snprintf(br_id, sizeof(br_id), "%s", preq->rq_id);
 
   if ((rc = issue_to_svr(pparent->dc_svr, preq, NULL)) != PBSE_NONE)
     {
@@ -3145,9 +3147,9 @@ int build_depend(
           if (pwhere)
             {
             if (server_name[0] != '\0')
-              strcpy(pdjb->dc_svr, server_name);
+              snprintf(pdjb->dc_svr, sizeof(pdjb->dc_svr), "%s", server_name);
             else
-              strcpy(pdjb->dc_svr, pwhere + 1);
+              snprintf(pdjb->dc_svr, sizeof(pdjb->dc_svr), "%s", pwhere + 1);
             }
           else
             {

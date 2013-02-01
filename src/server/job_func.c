@@ -1380,8 +1380,12 @@ struct batch_request *cpy_checkpoint(
     }
   umask(saveumask);
 
-  strcat(serverfile, "/");
-  strcat(serverfile, pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
+  if (sizeof(serverfile) - strlen(serverfile) > 
+        strlen(pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str) + 1)
+    {
+    strcat(serverfile, "/");
+    strcat(serverfile, pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
+    }
 
   /* build up the name used for MOM file */
 

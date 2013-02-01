@@ -913,7 +913,7 @@ int stat_to_mom(
     }
 
   if (cntl->sc_type == 1)
-    strcpy(newrq->rq_ind.rq_status.rq_id, job_id);
+    snprintf(newrq->rq_ind.rq_status.rq_id, sizeof(newrq->rq_ind.rq_status.rq_id), "%s", job_id);
   else
     newrq->rq_ind.rq_status.rq_id[0] = '\0';  /* get stat of all */
 

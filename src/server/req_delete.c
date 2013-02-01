@@ -409,8 +409,8 @@ jump:
   if (Msg != NULL)
     {
     /* have text message in request extension, add it */
-    strcat(log_buf, "\n");
-    strcat(log_buf, Msg);
+    int len = strlen(log_buf);
+    snprintf(log_buf + len, sizeof(log_buf) - len, "\n%s", Msg);
     }
 
   if ((svr_chk_owner(preq, pjob) != 0) &&

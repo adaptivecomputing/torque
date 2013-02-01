@@ -1810,7 +1810,7 @@ void mom_server_update_receive_time(
     if ((pms = mom_server_find_by_ip(ipaddr)) != NULL)
       {
       pms->MOMLastRecvFromServerTime = time_now;
-      strcpy(pms->MOMLastRecvFromServerCmd, command_name);
+      snprintf(pms->MOMLastRecvFromServerCmd, sizeof(pms->MOMLastRecvFromServerCmd), "%s", command_name);
       }
     }
   } /* END mom_server_update_receive_time() */
@@ -1844,7 +1844,7 @@ void mom_server_update_receive_time_by_ip(
     {
     pms->MOMLastRecvFromServerTime = time_now;
 
-    strcpy(pms->MOMLastRecvFromServerCmd, command_name);
+    snprintf(pms->MOMLastRecvFromServerCmd, sizeof(pms->MOMLastRecvFromServerCmd), "%s", command_name);
     }
 
   return;

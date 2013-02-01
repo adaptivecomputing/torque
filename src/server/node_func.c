@@ -2290,17 +2290,23 @@ int setup_nodes(void)
           {
           is_alps_reporter = TRUE;
 
-          if (propstr[0] != '\0')
-            strcat(propstr, ",");
-
-          strcat(propstr, "cray_compute");
+          if (sizeof(propstr) - strlen(propstr) > strlen("cray_compute") + 1)
+            {
+            if (propstr[0] != '\0')
+              strcat(propstr, ",");
+            
+            strcat(propstr, "cray_compute");
+            }
           }
         else
           {
-          if (propstr[0] != '\0')
-            strcat(propstr, ",");
-          
-          strcat(propstr, token);
+          if (sizeof(propstr) - strlen(propstr) > strlen(token) + 1)
+            {
+            if (propstr[0] != '\0')
+              strcat(propstr, ",");
+   
+            strcat(propstr, token);
+            }
           }
         }
       }    /* END while(1) */

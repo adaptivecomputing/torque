@@ -1067,7 +1067,7 @@ static int is_file_going_to_dir(
       return(0);
       }
 
-    strcpy(filename,file);
+    snprintf(filename, sizeof(filename), "%s", file);
 
     /* Does directory match the files path? */
 
@@ -3776,7 +3776,7 @@ nextword:
 
     if (dir == STAGE_DIR_OUT)
       {
-      strcpy(localname, arg2);
+      snprintf(localname, sizeof(localname), "%s", arg2);
       }
 
     /* if we made a fake TMPDIR, and we are using it, don't delete after stagein */
