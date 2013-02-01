@@ -31,8 +31,6 @@ void MD5Final(MD5_CTX *mdContext);
 unsigned availBytesOnDescriptor(int pLocalSocket);
 int socket_avail_bytes_on_descriptor(int socket);
 int socket_get_tcp();
-int socket_get_tcp_base();
-int socket_get_tcp_client();
 int get_listen_socket(struct addrinfo *);
 int get_random_reserved_port();
 int socket_get_tcp_priv();
