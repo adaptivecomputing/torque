@@ -1637,11 +1637,7 @@ void req_modifyjob(
               (i <= JOB_ATR_checkpoint_name) ? TJobAttr[i] : "Unkn",
               tmpLine);
 
-      log_record(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        (pjob != NULL) ? pjob->ji_qs.ji_jobid : "N/A",
-        log_buffer);
+      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
       }  /* END if (LOGLEVEL >= 5) */
 
     if (job_attr_def[i].at_action != NULL)

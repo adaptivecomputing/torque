@@ -7583,13 +7583,6 @@ int setup_program_environment(void)
       }
     }
 
-  if (c == -1)
-    {
-    log_err(-1, msg_daemonname, "Unable to get my host name");
-
-    return(-1);
-    }
-
   time_now = time((time_t *)0);
 
   ret_size = RETURN_STRING_SIZE;

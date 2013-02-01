@@ -3047,13 +3047,6 @@ int im_signal_task(
     }
   else
     {
-    if (ptask == NULL)
-      {
-      send_im_error(PBSE_JOBEXIST,1,pjob,cookie,event,fromtask);
-        
-      return(IM_DONE);
-      }
-
     snprintf(log_buffer,sizeof(log_buffer),
       "%s: SIGNAL_TASK %s from node %d task %d signal %d\n",
       __func__,

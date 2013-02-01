@@ -347,8 +347,10 @@ int svr_get_privilege(
   pthread_mutex_lock(server.sv_attr_mutex);
   if (!(server.sv_attr[SRV_ATR_managers].at_flags & ATR_VFLAG_SET))
     {
+#ifndef PBS_ROOT_ALWAYS_ADMIN
     if (is_root)
       priv |= (ATR_DFLAG_MGRD | ATR_DFLAG_MGWR);
+#endif
     }
   else if (acl_check(&server.sv_attr[SRV_ATR_managers], uh, ACL_User))
     {
@@ -357,8 +359,10 @@ int svr_get_privilege(
 
   if (!(server.sv_attr[SRV_ATR_operators].at_flags & ATR_VFLAG_SET))
     {
+#ifndef PBS_ROOT_ALWAYS_ADMIN
     if (is_root)
       priv |= (ATR_DFLAG_OPRD | ATR_DFLAG_OPWR);
+#endif
     }
   else if (acl_check(&server.sv_attr[SRV_ATR_operators], uh, ACL_User))
     {
