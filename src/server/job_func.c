@@ -150,7 +150,7 @@
 #include "user_info.h"
 #include "svr_task.h"
 #include "mutex_mgr.hpp"
-
+#include "job_route.h" /* job_route */
 
 #ifndef TRUE
 #define TRUE 1
@@ -1126,6 +1126,8 @@ void *job_clone_wt(
   char                namebuf[MAXPATHLEN];
   char                arrayid[PBS_MAXSVRJOBID + 1];
   job_array          *pa;
+  struct pbs_queue   *pque;
+  char               log_buf[LOCAL_LOG_BUF_SIZE];
 
   array_request_node *rn;
   int                 start;
@@ -1290,9 +1292,40 @@ void *job_clone_wt(
       pjob->ji_modified = TRUE;
       svr_evaljobstate(pjob, &newstate, &newsub, 1);
       svr_setjobstate(pjob, newstate, newsub, FALSE);
-      
+
+       /*
+       * if the job went into a Route (push) queue that has been started,
+       * try once to route it to give immediate feedback as a courtsey
+       * to the user.
+       */
+
+     if ((pque = get_jobs_queue(&pjob)) != NULL)
+       {
+       mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex,true);
+       if ((pque->qu_qs.qu_type == QTYPE_RoutePush) &&
+           (pque->qu_attr[QA_ATR_Started].at_val.at_long != 0))
+         { 
+         /* job_route expects the queue to be unlocked */
+         pque_mutex.unlock();
+         if ((rc = job_route(pjob)))
+           {
+           if (LOGLEVEL >= 6)
+             {
+             snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot route job %s", pjob->ji_qs.ji_jobid);
+             log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+             }
+           svr_job_purge(pjob);
+           pque_mutex.unlock();
+           continue;
+           }
+         }
+       }
+
+      pjob->ji_commit_done = 1;
+     
       }
     }
+  
 
   unlock_ai_mutex(pa, __func__, "3", LOGLEVEL);
   return(NULL);

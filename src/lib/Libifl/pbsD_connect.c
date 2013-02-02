@@ -1339,7 +1339,7 @@ int pbs_original_connect(
       if ((ENABLE_TRUSTED_AUTH == FALSE) &&
           ((rc = validate_socket(connection[out].ch_socket)) != PBSE_NONE))
         {
-        if (retries >= MAX_RETRIES)
+        if (!retry || retries >= MAX_RETRIES)
           {
           if (getenv("PBSDEBUG"))
             {

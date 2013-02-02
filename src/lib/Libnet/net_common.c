@@ -165,6 +165,8 @@ int socket_get_tcp_priv()
   memset(&local, 0, sizeof(struct sockaddr_in));
   local.sin_family = AF_INET;
 
+#if 0
+#if defined(HAVE_BINDRESVPORT) || defined(HAVE_RRESVPORT)
   /* If any of the following 2 succeed (negative conditions) jump to else below
    * else run the default */
   if ((local_socket = socket_get_tcp()) >= 0)
@@ -182,13 +184,12 @@ int socket_get_tcp_priv()
     {
     rc = PBSE_SOCKET_FAULT;
     }
-
-  if (rc == PBSE_NONE)
-    {
-    /* Success case */
-    priv_port = local_socket;
-    }
-  else if ((local_socket = socket_get_tcp()) > 0)
+  if (rc != PBSE_NONE) 
+#else /* Default */
+    if ((local_socket = socket_get_tcp()) > 0)
+#endif
+#endif
+  if ((local_socket = socket_get_tcp()) > 0)
     {
     /* According to the notes in the previous code:
      * bindresvport seems to cause connect() failures in some odd corner case
@@ -233,13 +234,14 @@ int socket_get_tcp_priv()
   else
     {
     /* If something worked the first time you end up here */
-    rc = PBSE_SOCKET_FAULT;
+    rc = PBSE_NONE;
     }
 
   if (rc != PBSE_NONE)
     {
     local_socket = -1;
     }
+  priv_port = local_socket; /* make compiler doesn't complain var. set but not used error */
   return local_socket;
   } /* END socket_get_tcp_priv() */
 
