@@ -100,7 +100,6 @@
 #define TCP_READ_PROTO_TIMEOUT  2
 /* Global Data Items */
 
-char  *program_name;
 int    MOMIsLocked = 0;
 int    MOMIsPLocked = 0;
 int    ServerStatUpdateInterval = DEFAULT_SERVER_STAT_UPDATES;
@@ -558,7 +557,6 @@ char                    PBSNodeCheckPath[1024];
 int                     PBSNodeCheckInterval = 1;
 int                     PBSNodeCheckProlog = 0;
 int                     PBSNodeCheckEpilog = 0;
-static char            *MOMExePath = NULL;
 static time_t           MOMExeTime = 0;
 
 
@@ -6257,161 +6255,6 @@ void usage(
   }  /* END usage() */
 
 
-
-
-/*
- * MOMFindMyExe - attempt to find my running executable file.
- *                returns alloc'd memory that is never freed.
- */
-
-static char *orig_path;
-
-char *MOMFindMyExe(
-
-  char *argv0)  /* I */
-
-  {
-  char *link;
-  int  has_slash = 0;
-  char *p;
-  char *p_next;
-  char *path;
-
-
-  link = calloc(MAXPATHLEN + 1, sizeof(char));
-
-  if (link == NULL)
-    {
-    /* FAILURE */
-
-    return(NULL);
-    }
-
-  /* Linux has a handy symlink, so try that first */
-
-  if (readlink("/proc/self/exe", link, MAXPATHLEN) > 0)
-    {
-    if (link[0] != '\0' && link[0] != '[')
-      {
-      return(link);
-      }
-    }
-
-  /* if argv0 has a /, then it should exist relative to $PWD */
-
-  for (p = argv0; *p; p++)
-    {
-    if (*p == '/')
-      {
-      has_slash = 1;
-
-      break;
-      }
-    }
-
-  if (has_slash)
-    {
-    char resolvedpath[MAXPATHLEN+1];
-
-    if (argv0[0] == '/')
-      {
-      strcpy(link, argv0);
-      }
-    else
-      {
-      if (getcwd(link, MAXPATHLEN) == NULL)
-        {
-        free(link);
-
-        return(NULL);
-        }
-
-      strcat(link, "/");
-
-      strcat(link, argv0);
-      }
-
-    if (realpath(link, resolvedpath) == NULL)
-      {
-      free(link);
-
-      return(NULL);
-      }
-
-    strcpy(link, resolvedpath);
-
-    if (access(link, X_OK) == 0)
-      {
-      return(link);
-      }
-
-    free(link);
-
-    return(NULL);
-    }
-
-  /* argv0 doesn't have a /, so search $PATH */
-
-  path = getenv("PATH");
-
-  if (path != NULL)
-    {
-    for (p = path; *p; p = p_next)
-      {
-      char *q;
-      size_t p_len;
-
-      for (q = p;*q;q++)
-        {
-        if (*q == ':')
-          break;
-        }
-
-      p_len = q - p;
-
-      p_next = (*q == '\0' ? q : q + 1);
-
-      /* We have a path item at p, of length p_len.
-         Now concatenate the path item and argv0.  */
-
-      if (p_len == 0)
-        {
-        /* An empty PATH element designates the current directory.  */
-
-        if (getcwd(link, MAXPATHLEN) == NULL)
-          {
-          free(link);
-
-          return(NULL);
-          }
-
-        strcat(link, "/");
-
-        strcat(link, argv0);
-        }
-      else
-        {
-        snprintf(link, MAXPATHLEN + 1, "%s", p);
-        *(link + p_len) = '\0';
-        strcat(link, "/");
-        strcat(link, argv0);
-        }
-
-      if (access(link, X_OK) == 0)
-        {
-        return(link);
-        }
-      }  /* END for (p = path; *p; p = p_next) */
-    }
-
-  free(link);
-
-  return(NULL);
-  }  /* END MOMFindMyExe() */
-
-
-
-
 /*
  * MOMGetFileMtime - return the mtime of a file
  */
@@ -6463,7 +6306,7 @@ void MOMCheckRestart(void)
     return;
     }
 
-  newmtime = MOMGetFileMtime(MOMExePath);
+  newmtime = MOMGetFileMtime(ArgV[0]);
 
   if ((newmtime > 0) && 
       (newmtime != MOMExeTime))
@@ -6474,7 +6317,7 @@ void MOMCheckRestart(void)
     sprintf(
       log_buffer,
       "%s has changed, initiating re-exec (now: %ld, was: %ld)",
-      MOMExePath,
+      ArgV[0],
       (long int)newmtime,
       (long int)MOMExeTime);
 
@@ -6524,8 +6367,7 @@ void initialize_globals(void)
   pbsuser  = getuid();
   loopcnt  = time(NULL);
 
-  MOMExePath = MOMFindMyExe(program_name);
-  MOMExeTime = MOMGetFileMtime(MOMExePath);
+  MOMExeTime = MOMGetFileMtime(ArgV[0]);
 
   strcpy(xauth_path, XAUTH_PATH);
   strcpy(rcp_path, RCP_PATH);
@@ -6536,13 +6378,6 @@ void initialize_globals(void)
 #ifdef DEFAULT_MOMLOGSUFFIX
   log_init(DEFAULT_MOMLOGSUFFIX, NULL);
 #endif
-
-  /* PATH is restored before a restart */
-
-  if (getenv("PATH") != NULL)
-    {
-    orig_path = strdup(getenv("PATH"));
-    }
 
   /* get default service port */
 
@@ -7618,8 +7453,7 @@ int setup_program_environment(void)
 
   if (read_config(NULL))
     {
-    fprintf(stderr, "%s: cannot load config file '%s'\n",
-            program_name,
+    fprintf(stderr, "pbs_mom: cannot load config file '%s'\n",
             config_file);
 
     exit(1);
@@ -7697,7 +7531,7 @@ int setup_program_environment(void)
   DBPRT(("MOM is up\n"));
 
   sprintf(log_buffer, "MOM executable path and mtime at launch: %s %ld",
-    MOMExePath == NULL ? "NULL" : MOMExePath,
+    ArgV[0] == NULL ? "NULL" : ArgV[0],
     (long int)MOMExeTime);
 
   log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
@@ -8497,7 +8331,7 @@ void restart_mom(
   {
   char *envstr;
 
-  envstr = calloc(1, (strlen("PATH") + strlen(orig_path) + 2) * sizeof(char));
+  envstr = calloc(1, (strlen("PATH") + strlen(OriginalPath) + 2) * sizeof(char));
 
   if (!envstr)
     {
@@ -8511,12 +8345,12 @@ void restart_mom(
     }
 
   strcpy(envstr, "PATH=");
-  strcat(envstr, orig_path);
+  strcat(envstr, OriginalPath);
   putenv(envstr);
 
   DBPRT(("Re-execing myself now...\n"));
 
-  execvp(MOMExePath, argv);
+  execv(ArgV[0], argv);
 
   sprintf(log_buffer, "execing myself failed: %s (%d)",
           strerror(errno),
@@ -8848,7 +8682,7 @@ int main(
   while (--tmpFD > 2)
     close(tmpFD);
 
-  program_name = argv[0];
+  save_args(argc, argv);
 
   initialize_globals();
 
@@ -8900,7 +8734,7 @@ int main(
   if (mom_run_state == MOM_RUN_STATE_RESTART)
     {
     sprintf(log_buffer, "Will be restarting: %s",
-            MOMExePath);
+            ArgV[0]);
 
     log_record(PBSEVENT_SYSTEM | PBSEVENT_FORCE, PBS_EVENTCLASS_SERVER,
                msg_daemonname,
