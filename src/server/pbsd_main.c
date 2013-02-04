@@ -142,9 +142,12 @@
 #include "exiting_jobs.h"
 #include "svr_task.h"
 
-#define TASK_CHECK_INTERVAL    10
-#define HELLO_WAIT_TIME        600
-#define TSERVER_HA_CHECK_TIME  1  /* 1 second sleep time between checks on the lock file for high availability */
+#define TASK_CHECK_INTERVAL      10
+#define HELLO_WAIT_TIME          600
+#define HELLO_INTERVAL           10
+#define TSERVER_HA_CHECK_TIME    1  /* 1 second sleep time between checks on the lock file for high availability */
+#define UPDATE_TIMEOUT_INTERVAL  10
+#define UPDATE_LOGLEVEL_INTERVAL 10
 
 /* external functions called */
 
@@ -1373,6 +1376,8 @@ void main_loop(void)
   long          sched_iteration = 0;
   time_t        time_now = time(NULL);
   time_t        try_hellos = 0;
+  time_t        update_timeout = 0;
+  time_t        update_loglevel = 0;
 
   extern char  *msg_startup2; /* log message   */
   char          log_buf[LOCAL_LOG_BUF_SIZE];
@@ -1463,13 +1468,17 @@ void main_loop(void)
       change_logs();
 
     if (try_hellos <= time_now)
+      {
+      try_hellos = time_now + HELLO_INTERVAL;
       send_any_hellos_needed();
+      }
 
     if (time_now - last_task_check_time > TASK_CHECK_INTERVAL)
       enqueue_threadpool_request(check_tasks, NULL);
 
-    if (disable_timeout_check == FALSE)
+    if ((disable_timeout_check == FALSE) && (time_now > update_timeout))
       {
+      update_timeout = time_now + UPDATE_TIMEOUT_INTERVAL;
       get_svr_attr_l(SRV_ATR_tcp_timeout, &timeout);
 
       /* don't allow timeouts to go below 300 seconds - this is a safety
@@ -1535,14 +1544,19 @@ void main_loop(void)
       }
 
 
-    if (plogenv == NULL)
+    /* qmgr can dynamically set the loglevel specification
+     * we use the new value if PBSLOGLEVEL was not specified
+     */
+    if ((plogenv == NULL) && (time_now > update_loglevel))
       {
+      update_loglevel = time_now + UPDATE_LOGLEVEL_INTERVAL;
       get_svr_attr_l(SRV_ATR_LogLevel, &log);
       LOGLEVEL = log;
       }
 
-    /* qmgr can dynamically set the loglevel specification
-     * we use the new value if PBSLOGLEVEL was not specified
+    /* 
+     * Can we comment this out? Would anything above change the
+     * server state without setting the 'state' variable? 
      */
     get_svr_attr_l(SRV_ATR_State, &state);
     if (state == SV_STATE_SHUTSIG)
@@ -1552,25 +1566,25 @@ void main_loop(void)
      * if in process of shuting down and all running jobs
      * and all children are done, change state to DOWN
      */
-
-    pthread_mutex_lock(server.sv_jobstates_mutex);
-
-    if ((state > SV_STATE_RUN) &&
-        (server.sv_jobstates[JOB_STATE_RUNNING] == 0) &&
-        (server.sv_jobstates[JOB_STATE_EXITING] == 0) &&
-        (has_task(&task_list_event) == FALSE))
+    if (state > SV_STATE_RUN)
       {
-      state = SV_STATE_DOWN;
-      set_svr_attr(SRV_ATR_State, &state);
+      pthread_mutex_lock(server.sv_jobstates_mutex);
+      if ((server.sv_jobstates[JOB_STATE_RUNNING] == 0) &&
+          (server.sv_jobstates[JOB_STATE_EXITING] == 0) &&
+          (has_task(&task_list_event) == FALSE))
+        {
+        state = SV_STATE_DOWN;
+        set_svr_attr(SRV_ATR_State, &state);
 
-      /* at this point kill the threadpool */
-      destroy_request_pool();
+        /* at this point kill the threadpool */
+        destroy_request_pool();
+        }
+      pthread_mutex_unlock(server.sv_jobstates_mutex);
       }
 
-    pthread_mutex_unlock(server.sv_jobstates_mutex);
-
+    /* Sleep 1/4 of a second. Could probably be increased */
+    usleep(250000);
     get_svr_attr_l(SRV_ATR_State, &state);
-    usleep(100);
     }    /* END while (*state != SV_STATE_DOWN) */
 
   pthread_cancel(accept_thread_id);
