@@ -327,7 +327,6 @@ int svr_get_privilege(
 #ifdef __CYGWIN__
   if (IamAdminByName(user) && !strcasecmp(host_no_port, server_host))
     {
-    is_root = 1;
     return(priv | ATR_DFLAG_MGRD | ATR_DFLAG_MGWR | ATR_DFLAG_OPRD | ATR_DFLAG_OPWR);
     }
 #else /* __CYGWIN__ */
@@ -339,6 +338,12 @@ int svr_get_privilege(
     is_root = 1;
 
 #ifdef PBS_ROOT_ALWAYS_ADMIN
+    if (is_root)
+      {
+      /* This statement allows us to compile with gcc-warnings */
+      /* if PBS_ROOT_ALWAYS_ADMIN is true is_root is assigned but never used */
+      ;
+      }
     return(priv | ATR_DFLAG_MGRD | ATR_DFLAG_MGWR | ATR_DFLAG_OPRD | ATR_DFLAG_OPWR);
 #endif
     }
