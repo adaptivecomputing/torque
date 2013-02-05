@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_site_map_usr
 
 libsite_map_usr_la_SOURCES = scaffolding.c ${PROG_ROOT}/site_map_usr.c
-libsite_map_usr_la_LDFLAGS = @CHECK_LIBS@ -shared
+libsite_map_usr_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_site_map_usr_SOURCES = test_site_map_usr.c
 

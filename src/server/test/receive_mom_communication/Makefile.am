@@ -11,7 +11,7 @@ AM_LDFLAGS = @CHECK_LIBS@ $(lib_LTLIBRARIES) $(AM_LIBS)
 check_PROGRAMS = test_receive_mom_communication
 
 libtest_receive_mom_communication_la_SOURCES = scaffolding.c $(PROG_ROOT)/receive_mom_communication.c
-libtest_receive_mom_communication_la_LDFLAGS = @CHECK_LIBS@ $(AM_LIBS) -shared
+libtest_receive_mom_communication_la_LDFLAGS = @CHECK_LIBS@ $(AM_LIBS) -shared -lgcov
 
 test_receive_mom_communication_SOURCES = test_receive_mom_communication.c
 

@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_port_forwarding
 
 libport_forwarding_la_SOURCES = scaffolding.c ${PROG_ROOT}/port_forwarding.c
-libport_forwarding_la_LDFLAGS = @CHECK_LIBS@ -shared
+libport_forwarding_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_port_forwarding_SOURCES = test_port_forwarding.c
 

@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_uut
 
 libuut_la_SOURCES =  ${PROG_ROOT}/attr_func.c  scaffolding.c
-libuut_la_LDFLAGS = @CHECK_LIBS@
+libuut_la_LDFLAGS = @CHECK_LIBS@ -lgcov
 test_uut_LDADD = ../../../../test/torque_test_lib/libtorque_test.la ../../../../test/scaffold_fail/libscaffold_fail.la
 
 test_uut_SOURCES = test_uut.c 

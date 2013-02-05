@@ -11,7 +11,7 @@ AM_LDFLAGS = @CHECK_LIBS@ $(lib_LTLIBRARIES) $(AM_LIBS)
 check_PROGRAMS = test_mic
 
 libtest_mic_la_SOURCES = scaffolding.c $(PROG_ROOT)/mic.c
-libtest_mic_la_LDFLAGS = @CHECK_LIBS@ $(AM_LIBS) -shared
+libtest_mic_la_LDFLAGS = @CHECK_LIBS@ $(AM_LIBS) -shared -lgcov
 
 test_mic_SOURCES = test_mic.c
 

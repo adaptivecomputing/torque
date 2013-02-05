@@ -11,7 +11,7 @@ AM_LDFLAGS = @CHECK_LIBS@ $(lib_LTLIBRARIES) $(AM_LIBS)
 check_PROGRAMS = test_user_info
 
 libtest_user_info_la_SOURCES = scaffolding.c $(PROG_ROOT)/user_info.c
-libtest_user_info_la_LDFLAGS = @CHECK_LIBS@ $(AM_LIBS) -shared
+libtest_user_info_la_LDFLAGS = @CHECK_LIBS@ $(AM_LIBS) -shared -lgcov
 
 test_user_info_SOURCES = test_user_info.c
 

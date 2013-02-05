@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_qgpumode
 
 libqgpumode_la_SOURCES = scaffolding.c ${PROG_ROOT}/qgpumode.c
-libqgpumode_la_LDFLAGS = @CHECK_LIBS@ -shared
+libqgpumode_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_qgpumode_SOURCES = test_qgpumode.c
 

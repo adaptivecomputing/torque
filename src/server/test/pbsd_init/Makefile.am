@@ -11,7 +11,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_pbsd_init
 
 libpbsd_init_la_SOURCES = scaffolding.c ${PROG_ROOT}/pbsd_init.c
-libpbsd_init_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib
+libpbsd_init_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib -lgcov
 
 test_pbsd_init_LDADD = ../../../test/torque_test_lib/libtorque_test.la ../../../test/scaffold_fail/libscaffold_fail.la
 test_pbsd_init_SOURCES = test_pbsd_init.c

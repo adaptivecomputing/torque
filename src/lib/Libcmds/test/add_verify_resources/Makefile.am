@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_add_verify_resources
 
 libadd_verify_resources_la_SOURCES = scaffolding.c ${PROG_ROOT}/add_verify_resources.c
-libadd_verify_resources_la_LDFLAGS = @CHECK_LIBS@ -shared
+libadd_verify_resources_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_add_verify_resources_SOURCES = test_add_verify_resources.c
 

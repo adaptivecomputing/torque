@@ -11,7 +11,7 @@ AM_LDFLAGS = @CHECK_LIBS@ $(lib_LTLIBRARIES) $(AM_LIBS)
 check_PROGRAMS = test_process_mom_update
 
 libtest_process_mom_update_la_SOURCES = scaffolding.c $(PROG_ROOT)/process_mom_update.c
-libtest_process_mom_update_la_LDFLAGS = @CHECK_LIBS@ $(AM_LIBS) -shared
+libtest_process_mom_update_la_LDFLAGS = @CHECK_LIBS@ $(AM_LIBS) -shared -lgcov
 
 test_process_mom_update_LDADD = ../../../test/torque_test_lib/libtorque_test.la ../../../test/scaffold_fail/libscaffold_fail.la
 test_process_mom_update_SOURCES = test_process_mom_update.c
