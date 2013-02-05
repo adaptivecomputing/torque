@@ -570,9 +570,9 @@ int validate_socket(
      * total_length|val
      */
     write_buf_len = strlen(write_buf);
-    if ((local_socket = socket_get_tcp()) <= 0)
+    if ((local_socket = socket_get_tcp_client()) <= 0)
       {
-      fprintf(stderr, "socket_get_tcp error\n");
+      fprintf(stderr, "socket_get_tcp_client error\n");
       rc = PBSE_SOCKET_FAULT;
       }
     else if ((rc = socket_connect(&local_socket, l_server, l_server_len, AUTH_PORT, AF_INET, 0, &err_msg)) != PBSE_NONE)
@@ -786,6 +786,8 @@ int pbs_original_connect(
 #endif
 
   char               *ptr;
+
+  memset(&server_addr, 0, sizeof(server_addr));
 
   /* Read the timeout from the environment */
   if ((ptr = getenv("PBSAPITIMEOUT")) != NULL)
@@ -1339,7 +1341,7 @@ int pbs_original_connect(
       if ((ENABLE_TRUSTED_AUTH == FALSE) &&
           ((rc = validate_socket(connection[out].ch_socket)) != PBSE_NONE))
         {
-        if (retries >= MAX_RETRIES)
+        if (!retry || retries >= MAX_RETRIES)
           {
           if (getenv("PBSDEBUG"))
             {

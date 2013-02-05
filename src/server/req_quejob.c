@@ -2121,7 +2121,6 @@ int req_commit(
 
     if ((rc = setup_array_struct(pj)))
       {
-      rc = PBSE_BAD_ARRAY_REQ;
       if (rc == ARRAY_TOO_LARGE)
         {
         get_svr_attr_l(SRV_ATR_MaxArraySize, &max_size);
@@ -2129,7 +2128,7 @@ int req_commit(
           "Requested array size too large, limit is %ld",
            max_size);
 
-        req_reject(rc, 0, preq, NULL, log_buf);
+        req_reject(PBSE_BAD_ARRAY_REQ, 0, preq, NULL, log_buf);
         }
       else if (rc == INVALID_SLOT_LIMIT)
         {
@@ -2138,16 +2137,16 @@ int req_commit(
           "Requested slot limit invalid, limit is %ld",
           max_slot);
 
-        req_reject(rc, 0, preq, NULL, log_buf);
+        req_reject(PBSE_BAD_ARRAY_REQ, 0, preq, NULL, log_buf);
         }
       else
         {
-        req_reject(rc, 0, preq, NULL, NULL);
+        req_reject(PBSE_BAD_ARRAY_REQ, 0, preq, NULL, NULL);
         }
 
       job_mutex.unlock();
 
-      return(rc);
+      return(PBSE_BAD_ARRAY_REQ);
       }
     }  /* end if (pj->ji_is_array_template) */
 
@@ -2180,22 +2179,6 @@ int req_commit(
     return(rc);
     }
 
-  if (job_save(pj, SAVEJOB_FULL, 0) != 0)
-    {
-    rc = PBSE_CAN_NOT_SAVE_FILE;
-    if (LOGLEVEL >= 6)
-      {
-      snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot save job %s",
-        pj->ji_qs.ji_jobid);
-
-      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, log_buf);
-      }
-
-    svr_job_purge(pj);
-    req_reject(rc, 0, preq, NULL, log_buf);
-    return(rc);
-    }
-
   /*
    * if the job went into a Route (push) queue that has been started,
    * try once to route it to give immediate feedback as a courtsey
@@ -2213,11 +2196,11 @@ int req_commit(
       pque_mutex.unlock();
       if ((rc = job_route(pj)))
         {
-        snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot route job %s",
-            pj->ji_qs.ji_jobid);
-
         if (LOGLEVEL >= 6)
           {
+          snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot route job %s",
+              pj->ji_qs.ji_jobid);
+
           log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid,
             log_buf);
           }
@@ -2226,6 +2209,22 @@ int req_commit(
         return(rc);
         }
       }
+
+  if (job_save(pj, SAVEJOB_FULL, 0) != 0)
+    {
+    rc = PBSE_CAN_NOT_SAVE_FILE;
+    if (LOGLEVEL >= 6)
+      {
+      snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot save job %s",
+        pj->ji_qs.ji_jobid);
+
+      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, log_buf);
+      }
+
+    svr_job_purge(pj);
+    req_reject(rc, 0, preq, NULL, log_buf);
+    return(rc);
+    }
 
     /* this needs to be done if there are routing queues. queue_route checks to see if req_commit 
        is done routing the job with this flag */

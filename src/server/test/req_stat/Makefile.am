@@ -10,7 +10,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_req_stat
 
 libreq_stat_la_SOURCES = scaffolding.c ${PROG_ROOT}/req_stat.c
-libreq_stat_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib
+libreq_stat_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib -lgcov
 
 test_req_stat_LDADD = ../../../test/torque_test_lib/libtorque_test.la ../../../test/scaffold_fail/libscaffold_fail.la
 test_req_stat_SOURCES = test_req_stat.c

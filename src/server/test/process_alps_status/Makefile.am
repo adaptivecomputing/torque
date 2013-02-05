@@ -11,7 +11,7 @@ AM_LDFLAGS = @CHECK_LIBS@ $(lib_LTLIBRARIES) $(AM_LIBS)
 check_PROGRAMS = test_process_alps_status
 
 libtest_process_alps_status_la_SOURCES = scaffolding.c $(PROG_ROOT)/process_alps_status.c $(PROG_ROOT)/../lib/Libutils/u_constants.c
-libtest_process_alps_status_la_LDFLAGS = @CHECK_LIBS@ $(AM_LIBS) -shared
+libtest_process_alps_status_la_LDFLAGS = @CHECK_LIBS@ $(AM_LIBS) -shared -lgcov
 
 test_process_alps_status_LDADD = ../../../test/torque_test_lib/libtorque_test.la ../../../test/scaffold_fail/libscaffold_fail.la
 test_process_alps_status_SOURCES = test_process_alps_status.c

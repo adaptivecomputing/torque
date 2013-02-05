@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_qstart
 
 libqstart_la_SOURCES = scaffolding.c ${PROG_ROOT}/qstart.c
-libqstart_la_LDFLAGS = @CHECK_LIBS@ -shared
+libqstart_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_qstart_SOURCES = test_qstart.c
 

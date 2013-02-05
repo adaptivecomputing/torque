@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_disrui
 
 libdisrui_la_SOURCES = scaffolding.c ${PROG_ROOT}/disrui.c
-libdisrui_la_LDFLAGS = @CHECK_LIBS@ -shared
+libdisrui_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_disrui_SOURCES = test_disrui.c
 

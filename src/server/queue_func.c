@@ -242,6 +242,7 @@ pbs_queue *que_alloc(
       (pq->qu_jobs_array_sum == NULL))
     {
     log_err(ENOMEM, __func__, mem_err);
+    free(pq);
     return(NULL);
     }
 

@@ -1658,13 +1658,12 @@ struct objname *
 
   struct objname *prev_obj = NULL; /* the previous name object */
   int len;    /* length of segment of string */
-  char error = 0;   /* error flag */
 
   if (names != NULL)
     {
     foreptr = backptr = names;
 
-    while (!EOL(*foreptr) && !error)
+    while (!EOL(*foreptr))
       {
       while (White(*foreptr)) foreptr++;
 
@@ -1743,12 +1742,6 @@ struct objname *
         prev_obj = cur_obj;
         }
       }
-    }
-
-  if (error)
-    {
-    free_objname_list(objs);
-    return NULL;
     }
 
   return objs;

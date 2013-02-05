@@ -4,12 +4,12 @@ AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --cove
 
 lib_LTLIBRARIES = libaccounting.la
 
-AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
+AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES} -shared -lgcov
 
 check_PROGRAMS = test_accounting
 
 libaccounting_la_SOURCES = scaffolding.c ${PROG_ROOT}/accounting.c
-libaccounting_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib
+libaccounting_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib -lgcov
 
 test_accounting_SOURCES = test_accounting.c
 

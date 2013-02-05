@@ -675,16 +675,9 @@ int set_jobexid(
 
     if (gpent == NULL)
       {
-      if (CheckID == 0)
-        {
-        strcpy(gname, "???");
-
-        pgrpn = gname;
-        }
-      else
-        if (EMsg != NULL)
-          snprintf(EMsg, 1024, "cannot locate group %s in server group file",
-                   pgrpn);
+      if (EMsg != NULL)
+        snprintf(EMsg, 1024, "cannot locate group %s in server group file",
+          pgrpn);
 
       if (free_puser == TRUE)
         free(puser);

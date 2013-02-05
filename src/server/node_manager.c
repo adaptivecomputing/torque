@@ -727,8 +727,8 @@ int kill_job_on_mom(
       }
     else
       {
-      strcpy(preq->rq_ind.rq_signal.rq_jid, jobid);
-      strcpy(preq->rq_ind.rq_signal.rq_signame, "SIGKILL");
+      snprintf(preq->rq_ind.rq_signal.rq_jid, sizeof(preq->rq_ind.rq_signal.rq_jid), "%s", jobid);
+      snprintf(preq->rq_ind.rq_signal.rq_signame, sizeof(preq->rq_ind.rq_signal.rq_signame), "SIGKILL");
       
       unlock_node(pnode, __func__, NULL, LOGLEVEL);
       rc = issue_Drequest(conn, preq);
@@ -2383,7 +2383,7 @@ int save_node_for_adding(
       }
     
     /* initialize to_add */
-    strcpy(to_add->node_name, pnode->nd_name);
+    snprintf(to_add->node_name, sizeof(to_add->node_name), "%s", pnode->nd_name);
     to_add->ppn_needed = req->ppn;
     to_add->gpu_needed = req->gpu;
     to_add->mic_needed = req->mic;

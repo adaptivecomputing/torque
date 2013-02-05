@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_qselect
 
 libqselect_la_SOURCES = scaffolding.c ${PROG_ROOT}/qselect.c
-libqselect_la_LDFLAGS = @CHECK_LIBS@ -shared
+libqselect_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_qselect_SOURCES = test_qselect.c
 

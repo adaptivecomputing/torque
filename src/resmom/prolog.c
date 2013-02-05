@@ -572,7 +572,7 @@ int run_pelog(
         sprintf(log_buffer, "%s script '%s' for job %s does not exist (cwd: %s,pid: %d)",
           PPEType[which],
           (pelog != NULL) ? pelog : "NULL",
-          (pjob != NULL) ? pjob->ji_qs.ji_jobid : "NULL",
+          pjob->ji_qs.ji_jobid,
           getcwd(tmpBuf, sizeof(tmpBuf)),
           getpid());
 
@@ -1242,8 +1242,8 @@ int run_pelog(
       (which == PE_PROLOGUSERJOB) || 
       (which == PE_EPILOGUSERJOB))
     {
-      seteuid(pbsuser);
-      setegid(pbsgroup);
+    seteuid(pbsuser);
+    setegid(pbsgroup);
 
     if (setgid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) != 0)
       {

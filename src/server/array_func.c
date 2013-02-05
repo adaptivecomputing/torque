@@ -712,6 +712,7 @@ int setup_array_struct(
       }
 
     svr_job_purge(pjob);
+    free(pa);
 
     return(1);
     }
@@ -720,15 +721,16 @@ int setup_array_struct(
     {
     long max_limit = 0;
     get_svr_attr_l(SRV_ATR_MaxSlotLimit, &max_limit);
-    array_delete(pa);
-
-    pa_mutex.set_lock_on_exit(false);
     snprintf(log_buf,sizeof(log_buf),
       "Array %s requested a slot limit above the max limit %ld, rejecting\n",
       pa->ai_qs.parent_id,
       max_limit);
 
     log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_JOB,pa->ai_qs.parent_id,log_buf);
+    
+    array_delete(pa);
+
+    pa_mutex.set_lock_on_exit(false);
 
     return(INVALID_SLOT_LIMIT);
     }
@@ -776,6 +778,7 @@ int setup_array_struct(
     {
     sprintf(log_buf, "Failed to alloc job_ids: job %s", pjob->ji_qs.ji_jobid);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    array_delete(pa);
     return(PBSE_MEM_MALLOC);
     }
 
