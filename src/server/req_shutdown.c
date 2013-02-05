@@ -183,7 +183,7 @@ void svr_shutdown(
   /* Lets start by logging shutdown and saving everything */
   get_svr_attr_l(SRV_ATR_State, &state);
 
-  strcpy(log_buf, msg_shutdown_start);
+  snprintf(log_buf, sizeof(log_buf), "%s", msg_shutdown_start);
 
   if (state == SV_STATE_SHUTIMM)
     {

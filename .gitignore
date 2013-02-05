@@ -76,6 +76,10 @@ src/cmds/qsub
 src/cmds/qterm
 src/daemon_client/trqauthd
 src/drmaa/Doxyfile
+src/drmaa/test/exit_job
+src/drmaa/test/sleeper_job
+src/drmaa/test/suicide_job
+src/drmaa/test/worker_job
 src/include/pbs_config.h*
 src/include/site_job_attr_def.h
 src/include/site_job_attr_enum.h
@@ -91,6 +95,9 @@ src/momctl/momctl
 src/resmom/pbs_demux
 src/resmom/pbs_mom
 src/scheduler.cc/pbs_sched
+src/scheduler.basl/Lexer.c
+src/scheduler.basl/Parser.c
+src/scheduler.basl/y.tab.h
 *.swp
 src/server/pbs_server
 src/tools/chk_tree
@@ -455,3 +462,10 @@ tmpfile
 src/lib/Libutils/test/u_mutex_mgr/test_u_mutex_mgr
 src/resmom/linux/test/cpuset/test_cpuset
 STDIN.*
+src/drmaa/test/exit_job
+src/drmaa/test/sleeper_job
+src/drmaa/test/suicide_job
+src/drmaa/test/worker_job
+src/scheduler.basl/Lexer.c
+src/scheduler.basl/Parser.c
+src/scheduler.basl/y.tab.h

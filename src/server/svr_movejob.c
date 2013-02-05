@@ -373,9 +373,11 @@ void finish_routing_processing(
   int          newstate;
   int          newsub;
 
+  if (pjob == NULL)
+    return;
 
   if (LOGLEVEL >= 10)
-    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
 
   switch (status)
     {
@@ -461,6 +463,9 @@ void finish_moving_processing(
     return;
     }
 
+  if (pjob == NULL)
+    return;
+
   switch (status)
     {
     case LOCUTION_SUCCESS:
@@ -500,6 +505,8 @@ void finish_moving_processing(
         }
 
       req_reject(status, 0, req, NULL, NULL);
+
+      break;
     } /* END switch (status) */
   
   } /* END finish_moving_processing() */

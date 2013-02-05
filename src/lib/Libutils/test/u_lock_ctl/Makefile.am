@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_u_lock_ctl
 
 libu_lock_ctl_la_SOURCES = scaffolding.c ${PROG_ROOT}/u_lock_ctl.c
-libu_lock_ctl_la_LDFLAGS = @CHECK_LIBS@ -shared
+libu_lock_ctl_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_u_lock_ctl_SOURCES = test_u_lock_ctl.c
 

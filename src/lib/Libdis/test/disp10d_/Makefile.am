@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_disp10d_
 
 libdisp10d__la_SOURCES = scaffolding.c ${PROG_ROOT}/disp10d_.c
-libdisp10d__la_LDFLAGS = @CHECK_LIBS@ -shared
+libdisp10d__la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_disp10d__SOURCES = test_disp10d_.c
 

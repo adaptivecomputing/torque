@@ -30,7 +30,7 @@ dnl added library functionality to testing
 dnl by John Rosenquist (jrosenquist@adaptivecomputing.com)
 
 AC_PREREQ(2.53)
-AC_INIT([torque], [4.2.0], [torqueusers@supercluster.org])
+AC_INIT([torque], [4.2.1], [torqueusers@supercluster.org])
 AC_REVISION($Revision$)
 AC_CONFIG_SRCDIR([src/cmds/qrun.c])
 AC_CONFIG_AUX_DIR([buildutils])
@@ -70,6 +70,7 @@ AC_SUBST(program_suffix)
 
 m4_pattern_allow([RPM_AC_OPTS])
 RPM_AC_OPTS=""
+gccwarnings=yes
 
 dnl  Instead of putting a long list of defines on the command line
 dnl  for each compile, use a file called "pbs_config.h" that will
@@ -692,18 +693,13 @@ fi
 
 dnl if using gcc, we can be very strict
 AC_ARG_ENABLE(gcc_warnings, [
-  --enable-gcc-warnings  Enable gcc strictness and warnings.  If using
+  --disable-gcc-warnings  Disable gcc strictness and warnings.  If using
                           gcc, default is to not error on any warnings])
 if test "x$GCC" = "xyes" ;then
-  AC_MSG_CHECKING([whether to use strict gcc warnings])
-  if test "${enable_gcc_warnings}" == "yes" ; then
-    if test "x$build_drmaa" = "xyes" ;then
-      AC_MSG_RESULT([no... because DRMAA is being built])
-    else
-      AC_MSG_RESULT([yes])
-      AX_CFLAGS_GCC_OPTION([-W -Wall -Wno-unused-parameter -Wno-long-long -pedantic -Werror])
-      gccwarnings=yes
-    fi
+  AC_MSG_CHECKING([whether to disable strict gcc warnings])
+  if test "${disable_gcc_warnings}" == "yes" ; then
+    AC_MSG_RESULT([yes])
+    gccwarnings=no
   else
     AC_MSG_RESULT([no])
   fi
@@ -997,6 +993,7 @@ AM_CONDITIONAL([MIC], test "$MIC" = yes)
 if test "$MIC" = "yes" ; then
   MOMLIBS="$MOMLIBS -lcoi_host"
   CPPFLAGS="$CPPFLAGS $CFLAGS"
+  gccwarnings=no
   AC_CHECK_HEADERS([source/COIPipeline_source.h],
     [],
     [AC_MSG_ERROR(MIC COI LLAPI headers not found)],
@@ -1240,6 +1237,7 @@ AC_ARG_WITH(nvml_lib,
 if test "x$nvmlinclude" != "xnone" && test "x$nvmllib" != "xnone" ;then
   CPPFLAGS="$CPPFLAGS -I$nvmlinclude"
   MOMLIBS="$MOMLIBS -L$nvmllib -lnvidia-ml"
+  gccwarnings=no
   AC_DEFINE([NVML_API], 1, [Define to enable Nvidia NVML api support])
 fi
 
@@ -1251,6 +1249,13 @@ if test "x$nvmllib" != "xnone" && test "x$nvmlinclude" == "xnone" ;then
   AC_MSG_ERROR([--with-nvml-include needs to be specified])
 fi
 
+
+dnl 
+dnl if we're running from a tarball (not checked out) automatically turn off
+dnl the warnings
+dnl
+AC_CHECK_FILE(src/server/test/req_jobobit/scaffolding.c,
+  TOM=bob,gccwarnings=no)
 
 
 dnl
@@ -2085,6 +2090,7 @@ dnl  ######################################################################
 dnl Checks needed to build DRMAA
 dnl
 if test "$build_drmaa" = "yes" ;then
+gccwarnings=no
 AC_MSG_NOTICE([Configuring DRMAA ...])
 AC_PATH_PROG(GPERF, "gperf")
 AX_PROG_DOT
@@ -2143,6 +2149,10 @@ AM_CONDITIONAL(DRMAA_DOCS, [test "$DOXYGEN" != "none"])
 AC_SUBST(build_drmaa_docs)
 drmaadocdir=$datadir/doc/$PACKAGE-drmaa
 AC_SUBST(drmaadocdir)
+    
+if test "x$gccwarnings" = "xyes" ;then
+  AX_CFLAGS_GCC_OPTION([-W -Wall -Wno-unused-parameter -Wno-long-long -pedantic -Werror])
+fi
 
 
 dnl

@@ -217,7 +217,7 @@ parse_depend_item(
           char *open_square_bracket;
 
           /* only do this if the server isn't already there */
-          if ((dot = strchr(rtn_list,'.')) == NULL)
+          if (strchr(rtn_list,'.') == NULL)
             {
             /* fix open_square_bracket for server search */
             open_square_bracket = strchr(s,'[');

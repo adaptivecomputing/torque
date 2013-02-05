@@ -1449,6 +1449,8 @@ void display_statque(
       }
     else
       {
+      a = p->attribs;
+
       if (p->name != NULL)
         {
         l = strlen(p->name);
@@ -1463,8 +1465,6 @@ void display_statque(
 
         name = p->name;
         }
-
-      a = p->attribs;
 
       while (a != NULL)
         {

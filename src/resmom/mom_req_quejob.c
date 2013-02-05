@@ -797,7 +797,7 @@ void req_mvjobfile(
       log_record(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
+        pj->ji_qs.ji_jobid,
         log_buffer);
       }
 
@@ -929,7 +929,7 @@ void req_rdytocommit(
     log_record(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
+      pj->ji_qs.ji_jobid,
       "ready to commit job completed");
     }
 
@@ -1052,7 +1052,7 @@ void req_commit(
     log_record(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
+      pj->ji_qs.ji_jobid,
       "req_commit:job execution started");
     }
 

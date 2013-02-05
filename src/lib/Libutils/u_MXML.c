@@ -236,7 +236,7 @@ int MXMLSetAttr(
 
   char tmpLine[MMAX_LINE];
 
-  char *ptr;
+  char *ptr = NULL;
 
   /* NOTE:  overwrite existing attr if found */
 
@@ -366,13 +366,6 @@ int MXMLSetAttr(
       E->ASize <<= 1;
       }  /* END if (aindex >= E->ASize) */
     }    /* END if (aindex >= E->ACount) */
-
-  if ((ptr == NULL) && (aindex >= E->ACount))
-    {
-    /* no action required for empty attribute */
-
-    return(SUCCESS);
-    }
 
   /* prepare insertion point */
 

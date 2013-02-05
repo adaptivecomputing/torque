@@ -1810,7 +1810,7 @@ void mom_server_update_receive_time(
     if ((pms = mom_server_find_by_ip(ipaddr)) != NULL)
       {
       pms->MOMLastRecvFromServerTime = time_now;
-      strcpy(pms->MOMLastRecvFromServerCmd, command_name);
+      snprintf(pms->MOMLastRecvFromServerCmd, sizeof(pms->MOMLastRecvFromServerCmd), "%s", command_name);
       }
     }
   } /* END mom_server_update_receive_time() */
@@ -1844,7 +1844,7 @@ void mom_server_update_receive_time_by_ip(
     {
     pms->MOMLastRecvFromServerTime = time_now;
 
-    strcpy(pms->MOMLastRecvFromServerCmd, command_name);
+    snprintf(pms->MOMLastRecvFromServerCmd, sizeof(pms->MOMLastRecvFromServerCmd), "%s", command_name);
     }
 
   return;
@@ -2278,7 +2278,6 @@ void mom_is_request(
   {
   int                 command = 0;
   int                 ret = DIS_SUCCESS;
-  mom_server         *pms;
  
   char                hostname[MAXLINE];
   char               *err_msg = NULL;
@@ -2314,7 +2313,7 @@ void mom_is_request(
     }
 
   /* check that machine is okay to be a server */
-  if ((pms = mom_server_valid_message_source(chan, &err_msg)) == NULL)
+  if (mom_server_valid_message_source(chan, &err_msg) == NULL)
     {
     if (getpeername(chan->sock, &s_addr, &len) == 0)
       {

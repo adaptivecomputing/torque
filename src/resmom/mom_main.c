@@ -6283,7 +6283,6 @@ char *MOMFindMyExe(
     }
 
   /* Linux has a handy symlink, so try that first */
-  memset(link, 0, MAXPATHLEN);
   link_len = readlink("/proc/self/exe", link, MAXPATHLEN);
   if (link_len > 0)
     {
@@ -7584,13 +7583,6 @@ int setup_program_environment(void)
       }
     }
 
-  if (c == -1)
-    {
-    log_err(-1, msg_daemonname, "Unable to get my host name");
-
-    return(-1);
-    }
-
   time_now = time((time_t *)0);
 
   ret_size = RETURN_STRING_SIZE;
@@ -8330,7 +8322,6 @@ void main_loop(void)
   {
   extern time_t wait_time;
   double        myla;
-  job          *pjob;
   time_t        tmpTime;
 #ifdef USESAVEDRESOURCES
   int           check_dead = TRUE;
@@ -8469,7 +8460,7 @@ void main_loop(void)
       log_err(errno, __func__, "sigprocmask(BLOCK)");
 
 
-    if ((pjob = (job *)GET_NEXT(svr_alljobs)) == NULL)
+    if (GET_NEXT(svr_alljobs) == NULL)
       {
       MOMCheckRestart();  /* There are no jobs, see if the server needs to be restarted. */
       }

@@ -355,8 +355,8 @@ static void mgr_log_attr(
 
     if (plist->al_rescln)
       {
-      (void)strcat(log_buf, ".");
-      (void)strcat(log_buf, plist->al_resc);
+      int len = strlen(log_buf);
+      snprintf(log_buf + len, sizeof(log_buf) - len, ".%s", plist->al_resc);
       }
 
     if (plist->al_op == INCR)
@@ -366,7 +366,7 @@ static void mgr_log_attr(
     else
       pstr = " = ";
 
-    (void)strcat(log_buf, pstr);
+    safe_strncat(log_buf, pstr, sizeof(log_buf) - strlen(log_buf) - 1);
 
     if (plist->al_valln)
       safe_strncat(log_buf, plist->al_value, sizeof(log_buf) - strlen(log_buf) - 1);
@@ -1157,7 +1157,7 @@ int hostname_check(
 
     if (close_bracket < host_end)
       {
-      strcpy(extension,close_bracket+1);
+      snprintf(extension, sizeof(extension), "%s", close_bracket+1);
       }
 
     /* now check each hostname */

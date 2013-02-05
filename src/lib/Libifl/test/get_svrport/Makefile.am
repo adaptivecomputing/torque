@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_get_svrport
 
 libget_svrport_la_SOURCES = scaffolding.c ${PROG_ROOT}/get_svrport.c
-libget_svrport_la_LDFLAGS = @CHECK_LIBS@ -shared
+libget_svrport_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_get_svrport_SOURCES = test_get_svrport.c
 

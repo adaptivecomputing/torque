@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_setup_env
 
 libsetup_env_la_SOURCES = scaffolding.c ${PROG_ROOT}/setup_env.c
-libsetup_env_la_LDFLAGS = @CHECK_LIBS@ -shared
+libsetup_env_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_setup_env_SOURCES = test_setup_env.c
 

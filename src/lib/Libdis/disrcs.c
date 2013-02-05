@@ -126,22 +126,17 @@ char *disrcs(
 
   if (locret == DIS_SUCCESS)
     {
-    if (negate)
-      locret = DIS_BADSIGN;
+    value = (char *)calloc(1, (size_t)count + 1);
+
+    if (value == NULL)
+      locret = DIS_NOMALLOC;
     else
       {
-      value = (char *)calloc(1, (size_t)count + 1);
-
-      if (value == NULL)
-        locret = DIS_NOMALLOC;
+      if (tcp_gets(chan, value,
+                      (size_t)count) != (int)count)
+        locret = DIS_PROTO;
       else
-        {
-        if (tcp_gets(chan, value,
-                        (size_t)count) != (int)count)
-          locret = DIS_PROTO;
-        else
-          value[count] = '\0';
-        }
+        value[count] = '\0';
       }
     }
 

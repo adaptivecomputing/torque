@@ -385,7 +385,7 @@ int attr_atomic_node_set(
     clear_attr(&temp, pdef + index);
 
     if ((rc = (pdef + index)->at_decode(&temp, plist->al_name,
-                                        plist->al_resc, plist->al_value,0) != 0))
+                                        plist->al_resc, plist->al_value,0)) != 0)
       {
       if ((rc == PBSE_UNKRESC) && (unkn > 0))
         rc = 0;              /*ignore the "error"*/

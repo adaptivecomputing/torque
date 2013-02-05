@@ -53,7 +53,6 @@ unsigned availBytesOnDescriptor(
 
 
 
-
 int socket_avail_bytes_on_descriptor(
     
   int socket)
@@ -67,9 +66,9 @@ int socket_avail_bytes_on_descriptor(
 
 
 
+int socket_get_tcp_base(
 
-int socket_get_tcp()
-
+  int reuseAddr)
   {
   int local_socket = 0;
   struct linger l_delay;
@@ -82,17 +81,38 @@ int socket_get_tcp()
     {
     local_socket = -2;
     }
-  else if (setsockopt(local_socket, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) == -1)
-    {
-    close(local_socket);
-    local_socket = -3;
-    }
   else if (setsockopt(local_socket, SOL_SOCKET, SO_LINGER, &l_delay, sizeof(struct linger)) == -1)
     {
     close(local_socket);
     local_socket = -4;
     }
+  else 
+    {
+    if (reuseAddr)
+      if (setsockopt(local_socket, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on))) 
+      {
+      close(local_socket);
+      local_socket = -3;
+      }
+    }
+
   return local_socket;
+  }
+
+
+
+int socket_get_tcp()
+
+  {
+  return socket_get_tcp_base(1);
+  } /* END socket_get_tcp() */
+
+
+
+int socket_get_tcp_client()
+
+  {
+  return socket_get_tcp_base(0);
   } /* END socket_get_tcp() */
 
 
@@ -153,7 +173,6 @@ int get_random_reserved_port()
 
 
 
-
 int socket_get_tcp_priv()
 
   {
@@ -176,6 +195,7 @@ int socket_get_tcp_priv()
     else
       {
       rc = PBSE_SOCKET_FAULT;
+      close(local_socket);
       }
     }
   else
@@ -188,7 +208,7 @@ int socket_get_tcp_priv()
     /* Success case */
     priv_port = local_socket;
     }
-  else if ((local_socket = socket_get_tcp()) > 0)
+  else if ((local_socket = socket_get_tcp()) >= 0)
     {
     /* According to the notes in the previous code:
      * bindresvport seems to cause connect() failures in some odd corner case
