@@ -1602,7 +1602,7 @@ int copy_properties(
   main_node = src->nd_prop;
  
   /* allocate the properties for the numa node */
-  need = sizeof(struct array_strings) + main_node->as_npointers - 1;
+  need = sizeof(struct array_strings) + ((main_node->as_npointers - 1) * sizeof(char *));
   dest->nd_prop = (struct array_strings *)calloc(1, need);
   sub  = dest->nd_prop;
 
