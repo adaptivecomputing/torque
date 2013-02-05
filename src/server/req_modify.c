@@ -399,20 +399,21 @@ int modify_job(
   int                    flag)            /* I */
 
   {
-  int                   bad = 0;
-  int                   i;
-  int                   newstate;
-  int                   newsubstate;
-  resource_def         *prsd;
-  int                   rc;
-  int                   sendmom = 0;
-  int                   copy_checkpoint_files = FALSE;
+  int                    bad = 0;
+  int                    i;
+  int                    newstate;
+  int                    newsubstate;
+  resource_def          *prsd;
+  int                    rc;
+  int                    sendmom = 0;
+  int                    copy_checkpoint_files = FALSE;
 
-  char                  jobid[PBS_MAXSVRJOBID + 1];
-  char                  log_buf[LOCAL_LOG_BUF_SIZE];
-  struct batch_request *dup_req = NULL;
+  char                   jobid[PBS_MAXSVRJOBID + 1];
+  char                   log_buf[LOCAL_LOG_BUF_SIZE];
+  struct batch_request  *dup_req = NULL;
 
-  job *pjob = (job *)*j;
+  job                  **pjob_ptr = (job **)j;
+  job                   *pjob = *pjob_ptr;
   
   if (pjob == NULL)
     {
@@ -629,6 +630,9 @@ int modify_job(
 
         if (jobid[0] != '\0')
           pjob = svr_find_job(jobid, TRUE);
+
+        if (pjob == NULL)
+          *pjob_ptr = NULL;
         }
       }
 

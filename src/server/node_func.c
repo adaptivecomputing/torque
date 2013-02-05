@@ -535,7 +535,10 @@ int chk_characteristic(
     }
 
   if (nci->note != NULL)
+    {
     free(nci->note);
+    nci->note = NULL;
+    }
 
   return(PBSE_NONE);
   }  /* END chk_characteristic() */
@@ -1622,7 +1625,7 @@ int copy_properties(
 
   plink = &dest->nd_first;
 
-  for (i = 0; i < src->nd_nprops-1; i++)
+  for (i = 0; i < main_node->as_npointers - 1; i++)
     {
     sub->as_string[i] = sub->as_buf + (main_node->as_string[i] - main_node->as_buf);
 
@@ -2293,17 +2296,23 @@ int setup_nodes(void)
           {
           is_alps_reporter = TRUE;
 
-          if (propstr[0] != '\0')
-            strcat(propstr, ",");
-
-          strcat(propstr, "cray_compute");
+          if (sizeof(propstr) - strlen(propstr) > strlen("cray_compute") + 1)
+            {
+            if (propstr[0] != '\0')
+              strcat(propstr, ",");
+            
+            strcat(propstr, "cray_compute");
+            }
           }
         else
           {
-          if (propstr[0] != '\0')
-            strcat(propstr, ",");
-          
-          strcat(propstr, token);
+          if (sizeof(propstr) - strlen(propstr) > strlen(token) + 1)
+            {
+            if (propstr[0] != '\0')
+              strcat(propstr, ",");
+   
+            strcat(propstr, token);
+            }
           }
         }
       }    /* END while(1) */
@@ -2626,10 +2635,7 @@ static void delete_a_gpusubnode(
     pnode->nd_ngpus_free--;
 
   /* decrement the number of gpu subnodes */
-  pnode->nd_gpusn--;
-
-  /* free the gpu subnode */
-  free(tmp);
+  pnode->nd_ngpus--;
 
   /* DONE */
   } /* END delete_a_gpusubnode() */

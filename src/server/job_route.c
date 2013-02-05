@@ -569,12 +569,15 @@ void *queue_route(
       /* We only want to try if routing has been tried at least once - this is to let
        * req_commit have the first crack at routing always. */
       if (pjob->ji_commit_done == 0) /* when req_commit is done it will set ji_commit_done to 1 */
+        {
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         continue;
+        }
       
       /* queue must be unlocked when calling reroute_job */
       unlock_queue(pque, __func__, (char *)NULL, 0);
       reroute_job(pjob);
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
       /* need to relock queue when we go to call next_job */
       lock_queue(pque, __func__, (char *)NULL, 0);
       }
