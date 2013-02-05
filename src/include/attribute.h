@@ -323,12 +323,14 @@ typedef struct attribute_def attribute_def;
 
 struct array_strings
   {
-  int as_npointers; /* number of pointer slots in this block */
-  int as_usedptr; /* number of used pointer slots */
-  int as_bufsize; /* size of buffer holding strings */
-  char   *as_buf;  /* address of buffer */
-  char   *as_next; /* first available byte in buffer */
-  char   *as_string[1]; /* first string pointer */
+  int   as_npointers; /* number of pointer slots in this block */
+  int   as_usedptr;   /* number of used pointer slots */
+  int   as_bufsize;   /* size of buffer holding strings */
+  char *as_buf;       /* address of buffer */
+  char *as_next;      /* first available byte in buffer */
+  char *as_string[1]; /* first string pointer */
+  /* The space after this is often used to store additional pointers */
+  /* Don't add additional members to the end of this struct */
   };
 
 /*
