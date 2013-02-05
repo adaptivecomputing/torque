@@ -3057,9 +3057,8 @@ int im_signal_task(
 
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
 
-    ptask = task_find(pjob, taskid);
-
-    kill_task(ptask, sig, 0);
+    if ((ptask = task_find(pjob, taskid)))
+        kill_task(ptask, sig, 0);
     }
 
   if ((socket = get_reply_stream(pjob)) < 0)
