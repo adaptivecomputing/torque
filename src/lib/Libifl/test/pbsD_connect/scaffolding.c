@@ -121,3 +121,8 @@ size_t read_ac_socket(int fd, void *buf, ssize_t count)
   {
   return(0);
   }
+
+int socket_get_tcp_client()
+  {
+  return(0);
+  }
