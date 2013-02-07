@@ -9,12 +9,12 @@ AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --cove
 
 lib_LTLIBRARIES = libqstat.la
 
-AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES} ${TCLQSTATLIBS} -lgcov
+AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES} ${TCLQSTATLIBS}
 
 check_PROGRAMS = test_qstat
 
 libqstat_la_SOURCES = scaffolding.c ${PROG_ROOT}/qstat.c
-libqstat_la_LDFLAGS = @CHECK_LIBS@ -shared
+libqstat_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_qstat_SOURCES = test_qstat.c
 
