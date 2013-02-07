@@ -1,6 +1,6 @@
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I$(PROG_ROOT)/ -I$(PROG_ROOT)/../include/ --coverage
+AM_CFLAGS = -g -DTEST_FUNCTION -I$(PROG_ROOT)/ -I$(PROG_ROOT)/../include/ --coverage 
 
 lib_LTLIBRARIES = libaccounting.la
 
@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ $(lib_LTLIBRARIES)
 check_PROGRAMS = test_accounting
 
 libaccounting_la_SOURCES = scaffolding.c $(PROG_ROOT)/accounting.c
-libaccounting_la_LDFLAGS = @CHECK_LIBS@ -lscaffolding_lib -shared -lgcov -L../../../lib/test/.libs
+libaccounting_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov  
 
 test_accounting_SOURCES = test_accounting.c
 

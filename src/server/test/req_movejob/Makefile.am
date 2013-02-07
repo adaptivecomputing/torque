@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_req_movejob
 
 libreq_movejob_la_SOURCES = scaffolding.c ${PROG_ROOT}/req_movejob.c
-libreq_movejob_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib -lgcov
+libreq_movejob_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_req_movejob_LDADD = ../../../test/torque_test_lib/libtorque_test.la ../../../test/scaffold_fail/libscaffold_fail.la
 test_req_movejob_SOURCES = test_req_movejob.c

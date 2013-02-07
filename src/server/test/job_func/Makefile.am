@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_record_jobinfo test_job_func
 
 libjob_func_la_SOURCES = ${PROG_ROOT}/job_attr_def.c scaffolding.c ${PROG_ROOT}/job_func.c
-libjob_func_la_LDFLAGS = @CHECK_LIBS@ -shared -L../.libs -lscaffolding_svr  -L../../../lib/test/.libs -lscaffolding_lib -lgcov
+libjob_func_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_job_func_LDADD = ../../../test/torque_test_lib/libtorque_test.la ../../../test/scaffold_fail/libscaffold_fail.la
 test_job_func_SOURCES = test_job_func.c

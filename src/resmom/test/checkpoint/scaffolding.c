@@ -10,6 +10,7 @@
 #include "mom_func.h" /* startjob_rtn */
 
 
+char log_buffer[LOG_BUF_SIZE];
 int is_login_node = FALSE;
 char *apbasil_path = NULL;
 char *apbasil_protocol = NULL;
