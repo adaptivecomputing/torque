@@ -5,6 +5,7 @@
 #include "batch_request.h"
 #include "list_link.h"
 
+int LOGLEVEL = 10;
 int num_nodes = 10;
 
 struct pbsnode *next_host(all_nodes *an, int *iter, struct pbsnode *pnode)

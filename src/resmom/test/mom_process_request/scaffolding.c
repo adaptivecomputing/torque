@@ -18,6 +18,7 @@ tlist_head svr_newjobs;
 const char *msg_request = "Type %s request received from %s@%s, sock=%d";
 AvlTree okclients = NULL;
 int LOGLEVEL = 1;
+char log_buffer[LOG_BUF_SIZE];
 
 
 void req_rerunjob(batch_request *preq)

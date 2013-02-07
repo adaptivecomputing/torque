@@ -18,6 +18,7 @@
 #include "pbs_nodes.h" /* pbsnode */
 #include "pbs_config.h"
 
+char log_buffer[LOG_BUF_SIZE];
 char *apbasil_protocol = NULL;
 char *apbasil_path = NULL;
 int is_reporter_mom = 0;

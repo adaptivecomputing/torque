@@ -1,6 +1,6 @@
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
+AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ --coverage
 
 lib_LTLIBRARIES = libreq_modify.la
 
@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_req_modify
 
 libreq_modify_la_SOURCES = scaffolding.c ${PROG_ROOT}/req_modify.c
-libreq_modify_la_LDFLAGS = @CHECK_LIBS@ -shared -L../.libs -lscaffolding_svr -L../../../lib/test/.libs -lscaffolding_lib -lgcov
+libreq_modify_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_req_modify_LDADD = ../../../test/torque_test_lib/libtorque_test.la ../../../test/scaffold_fail/libscaffold_fail.la
 test_req_modify_SOURCES = test_req_modify.c

@@ -42,7 +42,13 @@ int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 const char *msg_manager = "%s at request of %s@%s";
 int multi_mom = 1;
 char MOMUNameMissing[64];
+char log_buffer[LOG_BUF_SIZE];
 
+
+int become_the_user(job *pjob)
+  {
+  return(0);
+  }
 
 struct batch_request *alloc_br(int type)
   {
