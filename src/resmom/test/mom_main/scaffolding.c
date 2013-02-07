@@ -43,6 +43,7 @@ AvlTree okclients;
 time_t wait_time = 10;
 pthread_mutex_t *log_mutex;
 dynamic_string  *mom_status;
+char log_buffer[LOG_BUF_SIZE];
 
 
 

@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_parse_stage
 
 libparse_stage_la_SOURCES = scaffolding.c ${PROG_ROOT}/parse_stage.c
-libparse_stage_la_LDFLAGS = @CHECK_LIBS@ -shared
+libparse_stage_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_parse_stage_SOURCES = test_parse_stage.c
 

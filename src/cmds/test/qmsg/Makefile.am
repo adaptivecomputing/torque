@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_qmsg
 
 libqmsg_la_SOURCES = scaffolding.c ${PROG_ROOT}/qmsg.c
-libqmsg_la_LDFLAGS = @CHECK_LIBS@ -shared
+libqmsg_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_qmsg_SOURCES = test_qmsg.c
 

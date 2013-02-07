@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_qsig
 
 libqsig_la_SOURCES = scaffolding.c ${PROG_ROOT}/qsig.c
-libqsig_la_LDFLAGS = @CHECK_LIBS@ -shared
+libqsig_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_qsig_SOURCES = test_qsig.c
 

@@ -1,7 +1,7 @@
 
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} -I$(PROG_ROOT)/../include --coverage
+AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I$(PROG_ROOT)/../include --coverage
 
 lib_LTLIBRARIES = libtest_login_nodes.la
 
@@ -10,7 +10,7 @@ AM_LDFLAGS = @CHECK_LIBS@ $(lib_LTLIBRARIES)
 check_PROGRAMS = test_login_nodes
 
 libtest_login_nodes_la_SOURCES = scaffolding.c $(PROG_ROOT)/login_nodes.c
-libtest_login_nodes_la_LDFLAGS = @CHECK_LIBS@ $(AM_LIBS) -shared
+libtest_login_nodes_la_LDFLAGS = @CHECK_LIBS@ $(AM_LIBS) -shared -lgcov
 
 test_login_nodes_SOURCES = test_login_nodes.c
 

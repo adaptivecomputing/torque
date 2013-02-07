@@ -1,6 +1,6 @@
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
+AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ --coverage
 
 lib_LTLIBRARIES = libnode_func.la
 
@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_node_func
 
 libnode_func_la_SOURCES = scaffolding.c ${PROG_ROOT}/node_func.c
-libnode_func_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib
+libnode_func_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_node_func_SOURCES = test_node_func.c
 

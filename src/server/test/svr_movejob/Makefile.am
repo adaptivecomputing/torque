@@ -1,6 +1,6 @@
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
+AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ --coverage
 
 lib_LTLIBRARIES = libsvr_movejob.la
 
@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_svr_movejob
 
 libsvr_movejob_la_SOURCES = scaffolding.c ${PROG_ROOT}/svr_movejob.c
-libsvr_movejob_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib
+libsvr_movejob_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_svr_movejob_LDADD = ../../../test/torque_test_lib/libtorque_test.la ../../../test/scaffold_fail/libscaffold_fail.la
 test_svr_movejob_SOURCES = test_svr_movejob.c

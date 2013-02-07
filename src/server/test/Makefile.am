@@ -7,7 +7,7 @@ lib_LTLIBRARIES = libscaffolding_svr.la
 AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 
 libscaffolding_svr_la_SOURCES = scaffolding_job_attr_def.c scaffolding_svr.c
-libscaffolding_svr_la_LDFLAGS = @CHECK_LIBS@ -shared
+libscaffolding_svr_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 CLEANFILES = *.gcno *.gcda *.gcov core *.lo
 
@@ -25,7 +25,7 @@ CHECK_DIRS = accounting array_func array_upgrade attr_recov dis_read geteusernam
 $(CHECK_DIRS)::
 	$(MAKE) -C $@ $(MAKECMDGOALS)
 
-check: $(CHECK_DIRS)
+check: $(lib_LTLIBRARIES) $(CHECK_DIRS)
 
 cleancheck:
 	@for dir in $(CHECK_DIRS); do (cd $$dir && $(MAKE) clean); done

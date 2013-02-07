@@ -1,6 +1,6 @@
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
+AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ --coverage
 
 lib_LTLIBRARIES = libreply_send.la
 
@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_reply_send
 
 libreply_send_la_SOURCES = scaffolding.c ${PROG_ROOT}/reply_send.c
-libreply_send_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib
+libreply_send_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_reply_send_SOURCES = test_reply_send.c
 

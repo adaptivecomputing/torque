@@ -12,7 +12,7 @@ LIBS+= -lgcov
 check_PROGRAMS = test_u_mutex_mgr
 
 libu_mutex_mgr_la_SOURCES = scaffolding.c ${PROG_ROOT}/u_mutex_mgr.cpp
-libu_mutex_mgr_la_LDFLAGS = @CHECK_LIBS@ -shared
+libu_mutex_mgr_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_u_mutex_mgr_SOURCES = test_u_mutex_mgr.c
 
