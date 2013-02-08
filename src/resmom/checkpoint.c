@@ -118,7 +118,10 @@ char       checkpoint_run_exe_name[MAXPATHLEN + 1];
 int        default_checkpoint_interval = 10; /* minutes */
 
 extern char *mk_dirs(const char *);
+extern "C"
+{
 extern void set_attr(struct attrl **, const char *, const char *);
+}
 extern int write_nodes_to_file(job *);
 extern int write_attr_to_file(job *, int, const char *);
 

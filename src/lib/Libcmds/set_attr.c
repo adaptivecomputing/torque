@@ -91,7 +91,8 @@
 #include <string.h>
 #include "pbs_ifl.h"
 
-
+extern "C"
+{
 void set_attr(
 
   struct attrl **attrib,        /* I */
@@ -169,5 +170,5 @@ void set_attr(
 
   return;
   }  /* END set_attr() */
-
+}
 
