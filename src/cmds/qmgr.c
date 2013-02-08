@@ -2201,6 +2201,38 @@ void show_help(
 
 
 
+int is_valid_qsyntax_number(
+  
+  struct attropl **attrib)
+
+  {
+  struct attropl *attr = *attrib;
+  if ((!strncmp("resources_max", attr->name, strlen("resources_max"))) ||
+      (!strncmp("resources_min", attr->name, strlen("resources_min"))))
+    {
+    if ((!strncmp("nodes", attr->resource, strlen("nodes"))) ||
+        (!strncmp("nodect", attr->resource, strlen("nodect"))) ||
+        (!strncmp("procct", attr->resource, strlen("procct"))))
+      {
+      char *s = attr->value;
+      if (s)
+        {
+        while(*s)
+          {
+          if (!isdigit(*s))
+            return 0;
+          s++;
+          }
+        }
+      }
+    }
+  return 1;
+  }
+
+
+
+
+
 /*
  *  parse - parse the qmgr request
  *
@@ -2244,6 +2276,7 @@ int parse(
   int         len;      /* ammount parsed by parse_request */
   int         i;        /* loop var */
   static char req[MAX_REQ_WORDS][MAX_REQ_WORD_LEN] = { {'\0'} };
+  char *c;
 
   /* clear old data in req */
 
@@ -2361,6 +2394,22 @@ int parse(
 
       return(4);
       }
+
+    if ((*oper == MGR_CMD_SET) && (*type == MGR_OBJ_QUEUE) && ((*attr)->op == SET))
+      {
+      if (!is_valid_qsyntax_number(attr))
+        {
+          if ((c = strchr(request, '=')))
+            len = c - request + 1;
+          
+          if (! zopt) fprintf(stderr, "qmgr: Syntax error - attribute value for %s.%s must be a number\n", (*attr)->name, (*attr)->resource); 
+
+          CaretErr(request, len);
+
+          return(4);
+
+        }
+     }
 
     if ((*oper == MGR_CMD_ACTIVE) && (*attr != NULL))
       {
