@@ -54,8 +54,5 @@ int prepare_path(char *path_in, char *path_out, char *host);
 /* from file prt_job_err.c */
 void prt_job_err(const char *cmd, int connect, const char *id);
 
-/* from file set_attr.c */
-void set_attr(struct attrl **attrib, const char *attrib_name, const char *attrib_value);
-
 /* from file set_resource.c */
 int set_resources(struct attrl **attrib, char *resources, int add);
