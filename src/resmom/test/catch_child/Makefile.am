@@ -8,7 +8,7 @@ AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --cove
 lib_LTLIBRARIES = libcatch_child.la
 
 #This defines the ldflags for all the test harness compiles
-AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
+AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES} -lgcov
 
 #These are the binaries built for a check test run
 check_PROGRAMS = test_catch_child test_get_node test_init_abort_jobs test_mom_deljob test_obit_reply test_post_epilogue test_preobit_reply test_scan_for_exiting test_exit_mom_job
@@ -19,7 +19,7 @@ check_PROGRAMS = test_catch_child test_get_node test_init_abort_jobs test_mom_de
 #scaffolding & actual unit(file) under test
 libcatch_child_la_SOURCES = scaffolding.c ${PROG_ROOT}/catch_child.c
 #This overrides the default AM_LDFLAGS defined above, otherwise we get a cyclic compile
-libcatch_child_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib
+libcatch_child_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 #Each entry in check_PROGRAMS has a matching _SOURCES
 #{name}_SOURCES is a list of the .c files needed for the individual test run

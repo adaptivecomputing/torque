@@ -124,9 +124,12 @@ int parse_equal_string(char *, char **, char **);
 int parse_jobid(char *, char **, char **, char **);
 int prepare_path(char *, char*,char *);
 void prt_error(char *, char *, int);
+extern "C"
+{
 void set_attr(struct attrl **, const char *, const char *);
-int set_resources(struct attrl **, char *, int);
 int cnt2server(const char *server);
+}
+int set_resources(struct attrl **, char *, int);
 void prt_job_err(const char *, int, const char *);
 int parse_at_list(char *, int, int);
 int parse_depend_list(char *, char *, int);

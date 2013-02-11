@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_enc_attropl
 
 libenc_attropl_la_SOURCES = scaffolding.c ${PROG_ROOT}/enc_attropl.c
-libenc_attropl_la_LDFLAGS = @CHECK_LIBS@ -shared
+libenc_attropl_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_enc_attropl_SOURCES = test_enc_attropl.c
 

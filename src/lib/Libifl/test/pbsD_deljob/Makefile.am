@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_pbsD_deljob
 
 libpbsD_deljob_la_SOURCES = scaffolding.c ${PROG_ROOT}/pbsD_deljob.c
-libpbsD_deljob_la_LDFLAGS = @CHECK_LIBS@ -shared
+libpbsD_deljob_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_pbsD_deljob_SOURCES = test_pbsD_deljob.c
 

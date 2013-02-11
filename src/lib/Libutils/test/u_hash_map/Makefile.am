@@ -11,7 +11,7 @@ AM_LDFLAGS = @CHECK_LIBS@ $(lib_LTLIBRARIES) $(AM_LIBS)
 check_PROGRAMS = test_u_hash_map
 
 libtest_u_hash_map_la_SOURCES = scaffolding.c $(PROG_ROOT)/u_hash_map.c
-libtest_u_hash_map_la_LDFLAGS = @CHECK_LIBS@ $(AM_LIBS) -shared
+libtest_u_hash_map_la_LDFLAGS = @CHECK_LIBS@ $(AM_LIBS) -shared -lgcov
 
 test_u_hash_map_SOURCES = test_u_hash_map.c
 

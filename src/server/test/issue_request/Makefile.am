@@ -1,6 +1,6 @@
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
+AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ --coverage
 
 lib_LTLIBRARIES = libissue_request.la
 
@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_issue_request
 
 libissue_request_la_SOURCES = scaffolding.c ${PROG_ROOT}/issue_request.c
-libissue_request_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib
+libissue_request_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_issue_request_SOURCES = test_issue_request.c
 

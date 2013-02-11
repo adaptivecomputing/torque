@@ -72,7 +72,10 @@
 #include <unistd.h>
 #ifdef USEJOBCREATE
 #ifndef JOBFAKE
+extern "C"
+{
 #include <job.h>
+}
 #endif /* JOBFAKE */
 #endif /* USEJOBCREATE */
 #include <errno.h>
@@ -5576,7 +5579,7 @@ void job_nodes(
 
     if (j == nhosts)
       {
-      /* need to add host to tn_host */
+      /* need to add host to hn_host */
 
       hp->hn_node = nhosts++;
       hp->hn_sister = SISTER_OKAY;
