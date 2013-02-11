@@ -256,7 +256,7 @@ int req_orderjob(
     return(PBSE_NONE);
     }
 
-  mutex_mgr job2_mutex(pjob1->ji_mutex, true);
+  mutex_mgr job2_mutex(pjob2->ji_mutex, true);
 
   if (((pjob = pjob1)->ji_qs.ji_state == JOB_STATE_RUNNING) ||
       ((pjob = pjob2)->ji_qs.ji_state == JOB_STATE_RUNNING))
