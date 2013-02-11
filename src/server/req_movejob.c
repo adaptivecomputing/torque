@@ -252,6 +252,7 @@ int req_orderjob(
 
   if ((pjob2 = chk_job_request(req->rq_ind.rq_move.rq_destin, req)) == NULL)
     {
+    unlock_ji_mutex(pjob1, __func__, "pjob2 not found", LOGLEVEL);
     return(PBSE_NONE);
     }
 
