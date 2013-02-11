@@ -72,7 +72,10 @@
 #include <unistd.h>
 #ifdef USEJOBCREATE
 #ifndef JOBFAKE
+extern "C"
+{
 #include <job.h>
+}
 #endif /* JOBFAKE */
 #endif /* USEJOBCREATE */
 #include <errno.h>
