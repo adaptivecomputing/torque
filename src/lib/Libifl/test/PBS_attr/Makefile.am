@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_PBS_attr
 
 libPBS_attr_la_SOURCES = scaffolding.c ${PROG_ROOT}/PBS_attr.c
-libPBS_attr_la_LDFLAGS = @CHECK_LIBS@ -shared
+libPBS_attr_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_PBS_attr_SOURCES = test_PBS_attr.c
 

@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_pbsD_locjob
 
 libpbsD_locjob_la_SOURCES = scaffolding.c ${PROG_ROOT}/pbsD_locjob.c
-libpbsD_locjob_la_LDFLAGS = @CHECK_LIBS@ -shared
+libpbsD_locjob_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_pbsD_locjob_SOURCES = test_pbsD_locjob.c
 

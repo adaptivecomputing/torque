@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_enc_ReqHdr
 
 libenc_ReqHdr_la_SOURCES = scaffolding.c ${PROG_ROOT}/enc_ReqHdr.c
-libenc_ReqHdr_la_LDFLAGS = @CHECK_LIBS@ -shared
+libenc_ReqHdr_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_enc_ReqHdr_SOURCES = test_enc_ReqHdr.c
 

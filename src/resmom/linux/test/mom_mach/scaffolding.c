@@ -13,6 +13,7 @@
 #include "pbs_nodes.h"
 #include "pbs_config.h"
 
+char log_buffer[LOG_BUF_SIZE];
 int svr_resc_size = 0;
 char path_meminfo[MAX_LINE];
 const char *no_parm = "required parameter not found";

@@ -12,7 +12,7 @@ AM_LDFLAGS = @CHECK_LIBS@ $(lib_LTLIBRARIES) $(AM_LIBS)
 check_PROGRAMS = test_release_reservation
 
 libtest_release_reservation_la_SOURCES = scaffolding.c $(PROG_ROOT)/release_reservation.c $(PROG_ROOT)/../lib/Libutils/u_constants.c
-libtest_release_reservation_la_LDFLAGS = @CHECK_LIBS@ $(AM_LIBS) -shared
+libtest_release_reservation_la_LDFLAGS = @CHECK_LIBS@ $(AM_LIBS) -shared -lgcov
 
 test_release_reservation_SOURCES = test_release_reservation.c
 

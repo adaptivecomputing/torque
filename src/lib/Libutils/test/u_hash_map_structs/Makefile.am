@@ -1,7 +1,7 @@
 
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
+AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage -lgcov
 
 TPROGS = ct_u_hash_map_structs
 
@@ -16,6 +16,7 @@ BASE_SOURCE = scaffolding.c ${PROG_ROOT}/u_hash_map_structs.c
 METHOD_SOURCES = u_hash_map_structs_ct.c
 
 libu_hash_map_structs_la_SOURCES = ${BASE_SOURCE} ${METHOD_SOURCES}
+libu_hash_map_structs_la_LDFLAGS = -lgcov
 
 #u_hash_map_structs_cov_SOURCES = ${BASE_SOURCE} ${METHOD_SOURCES} u_hash_map_structs_cov.c
 #u_hash_map_structs_cov_LDADD = @CHECK_LIBS@

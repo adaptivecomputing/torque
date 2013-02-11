@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_parse_destid
 
 libparse_destid_la_SOURCES = scaffolding.c ${PROG_ROOT}/parse_destid.c
-libparse_destid_la_LDFLAGS = @CHECK_LIBS@ -shared
+libparse_destid_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_parse_destid_SOURCES = test_parse_destid.c
 
