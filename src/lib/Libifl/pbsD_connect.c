@@ -556,9 +556,11 @@ int validate_socket(
     }
   else if ((rc = get_hostaddr_hostent_af(&local_errno, (char *)AUTH_IP, &af_family, &l_server, &l_server_len)) != PBSE_NONE)
     {
+    fprintf(stderr, "get_hostaddr_hostend_af failed: %d", rc);
     }
   else if ((rc = get_parent_client_socket(psock, &parent_client_socket)) != PBSE_NONE)
     {
+    fprintf(stderr, "get_parent_client_socket failed: %d", rc);
     }
   else
     {
@@ -594,7 +596,7 @@ int validate_socket(
       }
     else if ((rc = parse_daemon_response(code, read_buf_len, read_buf)) != PBSE_NONE)
       {
-      /*fprintf(stderr, "parse_daemon_response error\n");*/
+      fprintf(stderr, "parse_daemon_response error %lld\n", code);
       }
     else
       {
@@ -793,13 +795,13 @@ int pbs_original_connect(
     pbs_tcp_timeout = strtol(ptr, NULL, 0);
 
     if (pbs_tcp_timeout <= 0)
-      pbs_tcp_timeout = 10800;
+      pbs_tcp_timeout = 300;
 
     if (pbs_tcp_timeout > 2)
       retry = 0;
     }
   else
-    pbs_tcp_timeout = 10800;
+    pbs_tcp_timeout = 300;
 
   /* reserve a connection state record */
 
