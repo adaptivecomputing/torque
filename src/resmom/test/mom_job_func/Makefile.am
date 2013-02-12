@@ -10,7 +10,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_mom_job_func
 
 libmom_job_func_la_SOURCES = scaffolding.c ${PROG_ROOT}/mom_job_func.c
-libmom_job_func_la_LDFLAGS = @CHECK_LIBS@ -shared -L../../../lib/test/.libs -lscaffolding_lib -lgcov
+libmom_job_func_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 
 test_mom_job_func_SOURCES = test_mom_job_func.c

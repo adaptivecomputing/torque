@@ -1820,6 +1820,9 @@ int mom_get_sample(void)
   struct dirent         *dent;
 #endif
 
+  if (proc_array == NULL)
+    mom_open_poll();
+
   nproc = 0;
 
   pi = proc_array;
@@ -1847,6 +1850,12 @@ int mom_get_sample(void)
     pid = pp->pid;
     pp  = pp->next;
 #else
+  if (pdir == NULL)
+    {
+    if ((pdir = opendir(procfs)) == NULL)
+      return(PBSE_SYSTEM);
+    }
+    
   rewinddir(pdir);
 
   while ((dent = readdir(pdir)) != NULL)
@@ -1882,7 +1891,7 @@ int mom_get_sample(void)
 
       max_proc *= 2;
 
-      hold = (proc_stat_t *)realloc(proc_array, (max_proc + 1) * sizeof(proc_stat_t));
+      hold = (proc_stat_t *)calloc(1, max_proc * sizeof(proc_stat_t));
 
       if (hold == NULL)
         {
@@ -1891,9 +1900,10 @@ int mom_get_sample(void)
         return(PBSE_SYSTEM);
         }
 
-      proc_array = hold;
+      memcpy(hold, proc_array, sizeof(proc_stat_t) * max_proc / 2);
+      free(proc_array);
 
-      memset(&proc_array[(nproc+1)], '\0', sizeof(proc_stat_t) * (max_proc >> 1));
+      proc_array = hold;
       }  /* END if ((nproc+1) == max_proc) */
 
     pi = &proc_array[nproc++];
@@ -2370,6 +2380,11 @@ int kill_task(
     pid = pp->pid;
     pp  = pp->next;
 #else
+  if (pdir == NULL)
+    {
+    if ((pdir = opendir(procfs)) == NULL)
+      return(PBSE_SYSTEM);
+    }
 
   /* pdir is global */
   rewinddir(pdir);
@@ -4119,7 +4134,7 @@ void scan_non_child_tasks(void)
 
   DIR *pdir;  /* use local pdir to prevent race conditions associated w/global pdir (VPAC) */
 
-  pdir = opendir("/proc");
+  pdir = opendir(procfs);
 
   for (pJob = (job *)(GET_NEXT(svr_alljobs));
       pJob != (job *)NULL;pJob = (job *)(GET_NEXT(pJob->ji_alljobs)))
@@ -4186,11 +4201,15 @@ void scan_non_child_tasks(void)
           pid = pp->pid;
           pp  = pp->next;
 #else
+        if (pdir == NULL)
+          {
+          if ((pdir = opendir(procfs)) == NULL)
+            return;
+          }
           
-        if(pdir != NULL)
-          rewinddir(pdir);
+        rewinddir(pdir);
 
-        while ((dent = ((pdir == NULL)?NULL:readdir(pdir))) != NULL)
+        while ((dent = readdir(pdir)) != NULL)
           {
           if (!isdigit(dent->d_name[0]))
             continue;
@@ -4250,7 +4269,7 @@ void scan_non_child_tasks(void)
       }
     }    /* END for (job = GET_NEXT(svr_alljobs)) */
 
-  if(pdir != NULL)
+  if (pdir != NULL)
     closedir(pdir);
 
   first_time = FALSE;

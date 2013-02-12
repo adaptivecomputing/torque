@@ -247,3 +247,8 @@ int enqueue_threadpool_request(void *(*func)(void *), void *arg)
 
 void log_err(int l, const char *func_name, const char *msg) {}
 void log_event(int type, int otype, const char *func_name, const char *msg) {}
+
+int relay_to_mom(job **pjob_ptr, batch_request   *request, void (*func)(struct work_task *))
+  {
+  return(0);
+  }
