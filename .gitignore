@@ -451,3 +451,6 @@ tmpdiff
 tmpfile
 tmporig
 STDIN.*
+src/scheduler.basl/Lexer.c
+src/scheduler.basl/Parser.c
+src/scheduler.basl/y.tab.h
