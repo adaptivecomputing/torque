@@ -8026,7 +8026,23 @@ void examine_all_running_jobs(void)
        pjob = (job *)GET_NEXT(pjob->ji_alljobs))
     {
     if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RUNNING)
+      {
+      if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)
+        {
+        if (pjob->ji_examined == 0)
+          {
+          pjob->ji_examined = 1;
+          }
+        else
+          {
+          /* This is the second time through examine_all_running_jobs for
+             this job while in a PRERUN state. Something is wrong. 
+             kill the job. */
+          exec_bail(pjob, JOB_EXEC_INITABT);
+          }
+        }
       continue; /* This job is not running, skip it. */
+      }
 
     if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
       continue; /* We are not the Mother Superior for this job, skip it. */

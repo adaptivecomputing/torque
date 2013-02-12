@@ -146,3 +146,8 @@ int unlock_ai_mutex(job_array *pa, const char *id, const char *msg, int logging)
 void free_br(batch_request *preq) {}
 
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+
+int relay_to_mom(job **pjob_ptr, batch_request   *request, void (*func)(struct work_task *))
+  {
+  return(0);
+  }

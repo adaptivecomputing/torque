@@ -127,6 +127,8 @@ int cnt2server_conf(
 
 
 
+extern "C"
+{
 int cnt2server(
 
   const char *SpecServer)    /* I (optional) */
@@ -314,6 +316,7 @@ retry:
 
   goto start;
   }  /* END cnt2server() */
+}
 
 
 /* END cnt2server.c */

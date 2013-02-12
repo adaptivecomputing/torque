@@ -145,3 +145,8 @@ pbs_queue *next_queue(all_queues *aq, int        *iter)
   }
 
 void log_event(int type, int otype, const char *func_name, const char *msg) {}
+
+int relay_to_mom(job **pjob_ptr, batch_request   *request, void (*func)(struct work_task *))
+  {
+  return(0);
+  }

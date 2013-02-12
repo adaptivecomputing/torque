@@ -32,7 +32,11 @@ if INCLUDE_DRMAA
 DRMAA_DIRS = drmaa
 endif
 
+if HAVE_CHECK
+SUBDIRS = include test lib $(SERVER_DIRS) $(MOM_DIRS) $(CLIENTS_DIRS) $(GUI_DIRS) $(PAM_DIRS) $(DRMAA_DIRS)
+else
 SUBDIRS = include lib $(SERVER_DIRS) $(MOM_DIRS) $(CLIENTS_DIRS) $(GUI_DIRS) $(PAM_DIRS) $(DRMAA_DIRS)
+endif
 
 install_mom:
 	for dir in $(MOM_DIRS) lib ;do (cd $$dir && $(MAKE) install);done
@@ -58,7 +62,10 @@ install_pam:
 install_drmaa:
 	for dir in $(DRMAA_DIRS) ;do (cd $$dir && $(MAKE) install);done
 
-CHECK_DIRS = test server resmom momctl lib cmds tools
+CHECK_DIRS = test server resmom momctl lib cmds 
+
+check:
+	@for dir in $(CHECK_DIRS); do (cd $$dir && $(MAKE) $(MAKECMDGOALS)); done
 
 .PHONY: cleancheck
 cleancheck:

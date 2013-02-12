@@ -3705,7 +3705,7 @@ int handle_im_join_job_response(
    
   struct tcp_chan *chan,
   job                *pjob,   /* M */
-  struct sockaddr_in *addr)   /* I */
+  struct sockaddr_in *addr)
 
   {
   int       i;

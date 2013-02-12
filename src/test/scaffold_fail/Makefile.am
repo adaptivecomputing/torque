@@ -27,3 +27,5 @@ libscaffold_fail_la_SOURCES = 	account_jobend.c \
 								threadsafe_tokenizer.c \
 								unlock_queue.c \
 								update_array_values.c
+
+libscaffold_fail_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov

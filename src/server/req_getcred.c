@@ -428,7 +428,9 @@ int req_authenuser(
   int             delay_cntr = 0;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
   unsigned short  conn_port;
+#ifndef NOPRIVPORTS
   unsigned short  conn_authen;
+#endif
 
   /*
    * find the socket whose client side is bound to the port named
@@ -446,7 +448,9 @@ int req_authenuser(
       {
       pthread_mutex_lock(svr_conn[s].cn_mutex);
       conn_port = svr_conn[s].cn_port;
+#ifndef NOPRIVPORTS
       conn_authen = svr_conn[s].cn_authen;
+#endif
       pthread_mutex_unlock(svr_conn[s].cn_mutex);
   
       if (preq->rq_ind.rq_authen.rq_port != conn_port)

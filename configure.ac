@@ -952,7 +952,7 @@ if test "x$GCC" = "xyes" ;then
   AC_MSG_CHECKING([whether to compile with coverage])
   if test "${enable_coverage}" = "yes" ; then
     AC_MSG_RESULT([yes])
-    CFLAGS="$CFLAGS --coverage"
+    CFLAGS="$CFLAGS --coverage -lgcov"
   else
     AC_MSG_RESULT([no])
   fi

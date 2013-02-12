@@ -10,6 +10,7 @@
 #include "list_link.h" /* list_link */
 
 
+char log_buffer[LOG_BUF_SIZE];
 int termin_child = 0;
 int multi_mom = 0;
 int exiting_tasks = 0;
