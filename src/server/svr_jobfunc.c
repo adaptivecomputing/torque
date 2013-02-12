@@ -916,7 +916,7 @@ resource *get_resource(
  * does not make use of comp_resc_eq or comp_resc_nc
  */
 
-static void chk_svr_resc_limit(
+static int chk_svr_resc_limit(
 
   attribute *jobatr, /* I */
   pbs_queue *pque,   /* I */
@@ -1282,6 +1282,20 @@ static void chk_svr_resc_limit(
       {
       /* how many processors does this spec want */
       req_procs += procs_requested(jbrc_nodes->rs_value.at_val.at_str);
+      if (req_procs < 0)
+        {
+        if (req_procs == -2)
+          {
+          if ((EMsg != NULL) && (EMsg[0] == '\0'))
+            strcpy(EMsg, "Memory allocation failed");
+          }
+        else
+          {
+          if ((EMsg != NULL) && (EMsg[0] == '\0'))
+            strcpy(EMsg, "Invalid Syntax");
+          }
+        return(PBSE_INVALID_SYNTAX);
+        }
 
       if (node_avail_complex(
             jbrc_nodes->rs_value.at_val.at_str,
@@ -1350,7 +1364,7 @@ static void chk_svr_resc_limit(
       }
     }
 
-  return;
+  return(PBSE_NONE);
   }  /* END chk_svr_resc_limit() */
 
 
@@ -1456,6 +1470,7 @@ int chk_resc_limits(
   char      *EMsg)   /* O (optional,minsize=1024) */
 
   {
+  int rc;
   /* NOTE:  comp_resc_gt and comp_resc_lt are global ints */
 
   if (EMsg != NULL)
@@ -1478,11 +1493,14 @@ int chk_resc_limits(
 
   /* now check against queue or server maximum */
 
-  chk_svr_resc_limit(
+  rc = chk_svr_resc_limit(
     pattr,
     pque,
     pque->qu_qs.qu_type,
     EMsg);
+
+  if (rc != PBSE_NONE)
+    return(rc);
 
   if (comp_resc_lt > 0)
     {
@@ -1494,7 +1512,7 @@ int chk_resc_limits(
 
   /* SUCCESS */
 
-  return(0);
+  return(PBSE_NONE);
   }  /* END chk_resc_limits() */
 
 
