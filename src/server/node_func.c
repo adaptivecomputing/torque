@@ -1206,7 +1206,13 @@ int update_nodes_file(
 
     /* write out properties */
     for (j = 0;j < np->nd_nprops - 1;++j)
-      fprintf(nin, " %s", np->nd_prop->as_string[j]);
+      {
+      /* Don't write out the cray_enabled features here */
+      if (strcmp(np->nd_prop->as_string[j], "cray_compute") &&
+          strcmp(np->nd_prop->as_string[j], alps_reporter_feature) &&
+          strcmp(np->nd_prop->as_string[j], alps_starter_feature))
+        fprintf(nin, " %s", np->nd_prop->as_string[j]);
+      }
 
     if (np->nd_is_alps_reporter == TRUE)
       fprintf(nin, " %s", alps_reporter_feature);
