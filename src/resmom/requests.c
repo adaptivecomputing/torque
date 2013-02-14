@@ -2453,10 +2453,16 @@ int req_stat_job(
       {
       req_reject(PBSE_UNKJOBID, 0, preq, NULL, NULL);
 
+      snprintf(log_buffer, sizeof(log_buffer),
+        "Received job status request for job %s, unknown to me",
+        name);
+      log_err(PBSE_UNKJOBID, __func__, log_buffer);
+
       return(PBSE_UNKJOBID);
       }
     }
 
+  preply->brp_code = PBSE_NONE;
   preply->brp_choice = BATCH_REPLY_CHOICE_Status;
 
   CLEAR_HEAD(preply->brp_un.brp_status);

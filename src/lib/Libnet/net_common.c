@@ -143,25 +143,67 @@ int get_listen_socket(
    
 
 
-int get_random_reserved_port(int local_socket, sockaddr_in *local)
+int get_random_reserved_port()
 
   {
-  int cntr = 0;
   int res_port = 0;
-  int rc = PBSE_NONE;
+  res_port = (rand() % RES_PORT_RANGE) + RES_PORT_START;
+  return res_port;
+  } /* END get_random_reserved_port() */
+
+
+
+
+int socket_get_tcp_priv()
+
+  {
+  int                priv_port = 0;
+  int                local_socket = 0;
+  int                cntr = 0;
+  int                rc = PBSE_NONE;
+  struct sockaddr_in local;
+  int                flags;
+  
+  memset(&local, 0, sizeof(struct sockaddr_in));
+  local.sin_family = AF_INET;
+  
+  if ((local_socket = socket_get_tcp()) < 0)
+    return(-1);
 
 #ifndef NOPRIVPORTS
-  res_port = (rand() % RES_PORT_RANGE) + RES_PORT_START;
+  /* According to the notes in the previous code:
+   * bindresvport seems to cause connect() failures in some odd corner case
+   * when talking to a local daemon.  So we'll only try this once and
+   * fallback to the slow loop around bind() if connect() fails
+   * with EADDRINUSE or EADDRNOTAVAIL.
+   * http://www.supercluster.org/pipermail/torqueusers/2006-June/003740.html
+   */
 
+  flags = fcntl(local_socket, F_GETFL);
+  flags |= O_NONBLOCK;
+  fcntl(local_socket, F_SETFL, flags);
+
+  priv_port = get_random_reserved_port();
   while (cntr < RES_PORT_RETRY)
     {
-    if (++res_port >= RES_PORT_END)
-      res_port = RES_PORT_START;
-    local->sin_port = htons(res_port);
-    rc = bind(local_socket, (struct sockaddr *)local, sizeof(struct sockaddr));
-    if (rc != 0)
+    if (++priv_port >= RES_PORT_END)
+      priv_port = RES_PORT_START;
+    local.sin_port = htons(priv_port);
+    if ((rc = bind(local_socket, (struct sockaddr *)&local, sizeof(struct sockaddr))) < 0)
       {
-      cntr++;
+      if ((errno == EADDRINUSE) ||
+           (errno == EADDRNOTAVAIL) ||
+           (errno == EINVAL) ||
+           (errno == EINPROGRESS))
+        {
+        cntr++;
+        }
+      else
+        {
+        cntr = RES_PORT_RETRY;
+        break;
+        }
+
       }
     else
       {
@@ -170,74 +212,33 @@ int get_random_reserved_port(int local_socket, sockaddr_in *local)
       }
     }
 
-
   if (cntr >= RES_PORT_RETRY)
     {
+    close(local_socket);
     rc = PBSE_SOCKET_FAULT;
-    }
-#else
-  memset(local, 0, sizeof(sockaddr_in));
-  local->sin_family = AF_INET;
-  rc = bind(local_socket, (struct sockaddr *)local, sizeof(struct sockaddr));
-#endif  
-    
-  return rc;
-  } /* END get_random_reserved_port() */
-
-int socket_get_tcp_priv()
-
-  { 
-  int local_socket = 0;
-  int rc = PBSE_NONE;
-  struct sockaddr_in local;
-  int flags;  
-
-  memset(&local, 0, sizeof(struct sockaddr_in));
-  local.sin_family = AF_INET;
-  
-  local_socket = socket_get_tcp();
-  if (local_socket < 0)
-    return(-1);
-
-#ifndef NOPRIVPORTS
-
-#if defined(HAVE_BINDRESVPORT)
-  if ((rc = bindresvport(local_socket, &local)) != 0)
-    {
-    close(local_socket);
-    local_socket = -1;
-    }                                                               
-#else
-  /* No library with bindresvport available. Find our own privileged port */
-  if ((rc = get_random_reserved_port(local_socket, &local) != 0))
-    {
-    close(local_socket);
+    errno = PBSE_SOCKET_FAULT;
     local_socket = -1;
     }
-#endif /* defined(HAVE_BINDRESVPORT)*/
-
-#else /* No privilege ports enabled */
-
-  /* local has already been set to 0's. This will get us a dynamic port */
+#else
   rc = bind(local_socket, (struct sockaddr *)&local, sizeof(struct sockaddr));
+
   if (rc != 0)
     {
     close(local_socket);
     local_socket = -1;
     }
+#endif
 
-#endif /* ifndef NOPRIVPORTS */
-
-  if (local_socket != -1)
+  if (rc != PBSE_NONE)
     {
-    /* Make this a non-blocking socket */
-    flags = fcntl(local_socket, F_GETFL);
-    flags |= O_NONBLOCK;
-    fcntl(local_socket, F_SETFL, flags);
+    local_socket = -1;
     }
-                                      
+
+  priv_port = local_socket; /* make compiler doesn't complain var. set but not used error */
   return(local_socket);
-  }
+  } /* END socket_get_tcp_priv() */
+
+
 
 
 int socket_connect(
@@ -275,8 +276,6 @@ int socket_connect_addr(
   char tmp_buf[LOCAL_LOG_BUF_SIZE+1];
   const char id[] = "socket_connect_addr";
   int local_socket = *socket;
-  struct sockaddr_in local_addr;
-  int flags;
 
   while (((rc = connect(local_socket, remote, remote_size)) != 0) && (cntr < RES_PORT_RETRY))
     {
@@ -304,42 +303,9 @@ int socket_connect_addr(
           break;
           }
         /* socket not ready for writing after 5 timeout */
+      case EINVAL:    /* Invalid argument */
       case EADDRINUSE:    /* Address already in use */
       case EADDRNOTAVAIL:   /* Cannot assign requested address */
-          {
-          if (is_privileged)
-            {
-            rc = PBSE_SOCKET_FAULT;
-            /* 3 connect attempts are made to each socket */
-            /* Fail on RES_PORT_RETRY */
-            close(local_socket);
-            if (cntr < RES_PORT_RETRY)
-              {
-              local_socket = socket_get_tcp();
-              if (local_socket >= 0)
-                {
-                memset(&local_addr, 0, sizeof(struct sockaddr_in));
-                local_addr.sin_family = AF_INET;
-                rc = get_random_reserved_port(local_socket, &local_addr);
-                if (rc != 0)
-                  rc = PBSE_SOCKET_FAULT;
-                else
-                  {
-                  /* Make this a non-blocking socket */
-                  flags = fcntl(local_socket, F_GETFL);
-                  flags |= O_NONBLOCK;
-                  fcntl(local_socket, F_SETFL, flags);
-
-                  rc = PBSE_NONE;
-                  continue;
-                  }
-                }
-              }
-            }
-          break;
-          }
-
-      case EINVAL:    /* Invalid argument */
         if (is_privileged)
           {
           rc = PBSE_SOCKET_FAULT;
