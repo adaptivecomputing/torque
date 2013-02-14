@@ -218,7 +218,7 @@ int req_stat_job(
   if (LOGLEVEL >= 7)
     {
     sprintf(log_buf, "note");
-    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
 
 
@@ -1047,6 +1047,12 @@ void stat_update(
            directory is cleared, set its state to queued so job_abt doesn't
            think it is still running */
         mutex_mgr job_mutex(pjob->ji_mutex, true);
+        
+        snprintf(log_buf, sizeof(log_buf),
+          "mother superior no longer recognizes %s as a valid job, aborting",
+          preq->rq_ind.rq_status.rq_id);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+        
         svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_ABORT, FALSE);
         rel_resc(pjob);
 

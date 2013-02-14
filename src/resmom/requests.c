@@ -2456,7 +2456,7 @@ int req_stat_job(
       snprintf(log_buffer, sizeof(log_buffer),
         "Received job status request for job %s, unknown to me",
         name);
-      log_err(PBSE_UNKJOBID, __func__, log_buffer);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
       return(PBSE_UNKJOBID);
       }
