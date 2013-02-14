@@ -254,6 +254,7 @@ PbsErrClient(PBSE_JOB_ALREADY_IN_QUEUE, (char *)"Job is already in destination q
 PbsErrClient(PBSE_INVALID_MUTEX, (char *)"Mutex is NULL or otherwise invalid")
 PbsErrClient(PBSE_MUTEX_ALREADY_LOCKED, (char *)"The mutex is already locked by this object")
 PbsErrClient(PBSE_MUTEX_ALREADY_UNLOCKED, (char *)"The mutex has already been unlocked by this object")
+PbsErrClient(PBSE_INVALID_SYNTAX, (char *)"Command syntax invalid")
 
 
 /* pbs client errors ceiling (max_client_err + 1) */

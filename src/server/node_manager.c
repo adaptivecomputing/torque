@@ -4436,7 +4436,7 @@ int procs_requested(
       log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
       }
 
-    return(-1);
+    return(-2);
     }
 
   /* Check to see if we have a global modifier */
