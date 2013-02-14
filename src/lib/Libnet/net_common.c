@@ -34,7 +34,7 @@ extern time_t pbs_tcp_timeout; /* located in tcp_dis.c. Move here later */
 #define RES_PORT_START 144
 #define RES_PORT_END (IPPORT_RESERVED - 1)
 #define RES_PORT_RANGE (RES_PORT_END - RES_PORT_START + 1)
-#define RES_PORT_RETRY 3
+#define RES_PORT_RETRY 50 /* This need to be large enough to guarantee we get a privilege port that is not in use */
 #define PBS_NET_RC_RETRY -2
 #define TCP_PROTO_NUM 0
 #define MAX_NUM_LEN 21
