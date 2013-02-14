@@ -9,6 +9,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       restarted it while the cray is offline. TRQ-1595
   b - Don't log an invalid connection message when close_conn() is called on 65535
       (PBS_LOCAL_CONNECTION). TRQ-1557.
+  b - Don't strip quotes from values in scripts before specific processing. TRQ-1632
 
 4.1.4
   e - When in cray mode, write physmem and availmem in addition to totmem so that 

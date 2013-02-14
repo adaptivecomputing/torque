@@ -1185,7 +1185,8 @@ void make_argv(
     if ((*c == '"') || (*c == '\''))
       {
       quote = *c;
-      c++;
+      /* we need to include the quotes in what is passed on */
+      *b++ = *c++;
 
       while ((*c != quote) && *c)
         *b++ = *c++;
@@ -1198,7 +1199,7 @@ void make_argv(
         exit(1);
         }
 
-      c++;
+      *b++ = *c++;
       }
     else if (*c == '\\')
       {
