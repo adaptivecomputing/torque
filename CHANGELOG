@@ -4,6 +4,11 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   f - Support the MIC architecture. This was co-developed with Doug Johnson at 
       Ohio Supercomputer Center (OSC) and provides support for the Intel® MIC 
       architecture similar to GPU support in TORQUE.
+  b - Fix a queue deadlock. TRQ-1435
+  b - Fix an issue with multi-node jobs not reporting resources completely. TRQ-1222.
+  b - Make the API not retry for 5 consecutive timeouts. TRQ-1425
+  b - Fix a deadlock when no files can be copied from compute nodes to pbs_server.
+      TRQ-1447.
 
 4.1.5
   b - For cray: make sure that reservations are released when jobs are requeued. TRQ-1572.
