@@ -864,7 +864,6 @@ nextjob:
 
 
 
-
 /*
  * stat_to_mom - send a Job Status to MOM to obtain latest status.
  * Used by req_stat_job()/stat_step_2()
@@ -948,7 +947,6 @@ int stat_to_mom(
   unlock_node(node, __func__, "before svr_connect", LOGLEVEL);
   handle = svr_connect(job_momaddr, job_momport, &rc, NULL, NULL, ToServerDIS);
 
-  /* Unlock job here */
   if (handle >= 0)
     {
     if ((rc = issue_Drequest(handle, newrq)) == PBSE_NONE)

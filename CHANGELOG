@@ -9,6 +9,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Make the API not retry for 5 consecutive timeouts. TRQ-1425
   b - Fix a deadlock when no files can be copied from compute nodes to pbs_server.
       TRQ-1447.
+  b - Don't strip quotes from values in scripts before specific processing. TRQ-1632
 
 4.1.5
   b - For cray: make sure that reservations are released when jobs are requeued. TRQ-1572.
