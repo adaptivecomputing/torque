@@ -1484,6 +1484,21 @@ int chk_svr_resc_limit(
       {
       /* how many processors does this spec want */
       req_procs += procs_requested(jbrc_nodes->rs_value.at_val.at_str);
+      if (req_procs <= 0)
+        {
+       if (req_procs == -2)
+         {
+         if ((EMsg != NULL) && (EMsg[0] == '\0'))
+         strcpy(EMsg, "Memory allocation failed");
+         }
+       else
+         {
+         if ((EMsg != NULL) && (EMsg[0] == '\0'))
+         strcpy(EMsg, "Invalid Syntax");
+         }
+       return(PBSE_INVALID_SYNTAX);
+       }
+
 
       if (node_avail_complex(
             jbrc_nodes->rs_value.at_val.at_str,
@@ -1646,6 +1661,10 @@ int chk_resc_limits(
 
   /* now check against queue or server maximum */
   resc_lt = chk_svr_resc_limit(pattr,pque,pque->qu_qs.qu_type,EMsg);
+  if (resc_lt == PBSE_INVALID_SYNTAX)
+    {
+    return(resc_lt);
+    }
 
   if (resc_lt > 0)
     {
