@@ -201,6 +201,7 @@ PbsErrClient(PBSE_NOFAULTINTOLERANT, "Queue does not allow fault intolerant jobs
 PbsErrClient(PBSE_NOJOBARRAYS, "Queue does not allow job arrays")
 PbsErrClient(PBSE_RELAYED_TO_MOM, "request was relayed to a MOM") /* */
 PbsErrClient(PBSE_READ_REPLY_TIMEOUT, "Timed out wating for a reply") /* */
+PbsErrClient(PBSE_INVALID_SYNTAX, "Command syntax invalid")
 /* pbs client errors ceiling (max_client_err + 1) */
 PbsErrClient(PBSE_CEILING,           (char*)0)
 #endif

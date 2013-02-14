@@ -178,13 +178,8 @@ static int await_connect(
 
   {
   int n, val, rc;
-
-  int MaxNumDescriptors = 0;
-
   fd_set *BigFDSet = NULL;
-
   struct timeval tv;
-
   torque_socklen_t len;
 
   /* 
@@ -197,8 +192,6 @@ static int await_connect(
   tv.tv_usec = timeout % 1000000;
 
   /* calculate needed size for fd_set in select() */
-
-  MaxNumDescriptors = get_max_num_descriptors();
 
   BigFDSet = (fd_set *)calloc(1,sizeof(char) * get_fdset_size());
 
@@ -272,301 +265,98 @@ int client_to_svr(
 
   struct sockaddr_in remote;
   int                sock;
-  unsigned short     tryport = 777;
-
-#ifndef NOPRIVPORTS
-  int                errorsock;
+  int                rc;
   int                flags;
-#endif
   int                one = 1;
-  int         	     trycount = 0;
-  struct timespec    rem;
-
-#define STARTPORT 144
-#define ENDPORT (IPPORT_RESERVED - 1)
-#define NPORTS  (ENDPORT - STARTPORT + 1)
-#define SHUFFLE_COUNT 3
-
-  if (EMsg != NULL)
-    EMsg[0] = '\0';
-
-  errno = 0;
-
-  /* In case we can't connect go to sleep for 1 millisecond and try again */
-  rem.tv_sec = 0;
-  rem.tv_nsec = 1000000;
 
   memset(&local, 0, sizeof(local));
-  memset(&remote, 0, sizeof(remote));
-
-  local.sin_family      = AF_INET;
-
-  local.sin_addr.s_addr = 0;
-
-  local.sin_port        = 0;
-
-retry:  /* retry goto added (rentec) */
-
-  /* get socket */
+  local.sin_family = AF_INET;
 
   sock = socket(AF_INET, SOCK_STREAM, 0);
-
   if (sock < 0)
     {
     if (EMsg != NULL)
-      sprintf(EMsg, "cannot create socket in %s - errno: %d %s",
-              id,
-              errno,
-              strerror(errno));
-
+      sprintf(EMsg, "cannot create socket in %s - errno: %d %s", id, errno, strerror(errno));
     return(PBS_NET_RC_FATAL);
     }
 
+  /* We use our own connection table to track our sockets.
+     sock is the index. We can't exceed the table size.
+   */
   if (sock >= PBS_NET_MAX_CONNECTIONS)
-    {
+    {  
     if (EMsg != NULL)
-      sprintf(EMsg, "PBS_NET_MAX_CONNECTIONS exceeded in %s",
-              id);
-
+      sprintf(EMsg, "PBS_NET_MAX_CONNECTIONS exceeded in %s", id);
     close(sock);  /* too many connections */
-
     return(PBS_NET_RC_RETRY);
     }
 
-#ifndef NOPRIVPORTS
+  /* we are going to go non-blocking */
   flags = fcntl(sock, F_GETFL);
-
   flags |= O_NONBLOCK;
-
   fcntl(sock, F_SETFL, flags);
 
-#endif /* !NOPRIVPORTS */
-
-  /* If local privilege port requested, bind to one */
-  /* must be root privileged to do this */
-
-  if (local_port != FALSE)
+  /* we want to be able to reuse the socket address */
+  rc = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
+  if (rc != 0)
     {
-    /* set REUSEADDR (rentec) */
-
-    setsockopt(
-      sock,
-      SOL_SOCKET,
-      SO_REUSEADDR,
-      (void *)&one,
-      sizeof(one));
-
-#ifndef NOPRIVPORTS
-
-	if (trycount < SHUFFLE_COUNT)
-	{
-		errorsock = -1;
-
-#ifdef HAVE_BINDRESVPORT
-		/*
-		* bindresvport seems to cause connect() failures in some odd corner case when
-		* talking to a local daemon.  So we'll only try this once and fallback to
-		* the slow loop around bind() if connect() fails with EADDRINUSE
-		* or EADDRNOTAVAIL.
-		* http://www.supercluster.org/pipermail/torqueusers/2006-June/003740.html
-		*/
-
-		errorsock = bindresvport(sock, &local);
-
-		tryport = ntohs(local.sin_port);
-
-		goto jump_to_check;
-
-#else /* HAVE_BINDRESVPORT */
-
-		/* Pseudo-casual shuffling of tryport */
-		
-		srand((unsigned int)getpid() + (unsigned int)time(NULL) + (unsigned int)trycount);
-
-		tryport = (rand() % NPORTS) + STARTPORT;
-	
-#endif     /* HAVE_BINDRESVPORT */
-	}
-	else
-	{
-	/* A simple port search after SHUFFLE_COUNT shuffling */
-	
-		if (tryport > ENDPORT)
-		{
-			tryport = STARTPORT;
-		}
-	}
-
-retry_bind:
-
-	local.sin_port = htons(tryport);
-	
-	errorsock = bind(sock, (struct sockaddr *)&local, sizeof(local));
-
-#ifdef HAVE_BINDRESVPORT
-
-jump_to_check:
-
-#endif /* HAVE_BINDRESVPORT */
-
-        if (errorsock < 0)
-        {
-#ifdef NDEBUG2
-            fprintf(stderr, "INFO:  cannot bind to port %d, errno: %d - %s\n",
-                    tryport,
-                    errno,
-                    strerror(errno));
-#endif /* NDEBUG2 */
-
-	    /* Terminate on errors, except "address already in use" */
-	    if ((errno == EADDRINUSE) || (errno == EINVAL) || (errno == EADDRNOTAVAIL))
-	    {
-		if (tryport++ <  ENDPORT)	
-		    goto retry_bind;
-	    }		
-
-    	    if (EMsg != NULL)
-        	sprintf(EMsg, "cannot bind to reserved port in %s - errno: %d %s",
-                    id,
-                    errno,
-                    strerror(errno));
-
-    	    close(sock);
-
-    	    return(PBS_NET_RC_RETRY);
-        }
-
-#endif     /* !NOPRIVPORTS */
-
-    }      /* END if (local_port != FALSE) */
-
-  /* bind successful!!! */
-
-  /* connect to specified server host and port */
-
-  remote.sin_addr.s_addr = htonl(hostaddr);
-
-  remote.sin_port = htons((unsigned short)port);
-
-  remote.sin_family = AF_INET;
-
-  if (connect(sock, (struct sockaddr *)&remote, sizeof(remote)) >= 0)
-    {
-    /* SUCCESS */
-
-    return(sock);
+    if (EMsg != NULL)
+      sprintf(EMsg, "could not set socket option SO_REUSEADDR in %s -- errno: %d %s", id, errno, strerror(errno));
+    close(sock);
+    return(PBS_NET_RC_RETRY);
     }
 
-  /* process failure */
-
-  if (errno == EINPROGRESS)
-        if (await_connect(MaxConnectTimeout, sock) == 0)
-        {
-          return(sock);
-        }
-
-#ifdef NDEBUG2
-  fprintf(stderr, "INFO:  cannot connect to port %d, errno=%d - %s\n",
-          tryport,
-          errno,
-          strerror(errno));
-#endif /* NDEBUG2 */
-
-  switch (errno)
+#ifndef NOPRIVPORTS 
+  /* privileged ports are on. */
+  rc = bindresvport(sock, &local);
+  if (rc != 0)
     {
+    if (EMsg != NULL)
+      sprintf(EMsg, "could not bind a reserve port in %s -- errno: %d %s", id, errno, strerror(errno));
+    close(sock);
+    return(PBS_NET_RC_RETRY);
+    }
+#else
+  /* we will just get a dynamic port */
+  rc = bind(sock, &local, sizeof(local));
+  if (rc != 0)
+    {
+    if (EMsg != NULL)
+      sprintf(EMsg, "could not bind a port in %s -- errno: %d %s", id, errno, strerror(errno));
+    close(sock);
+    return(PBS_NET_RC_RETRY);
+    }
+#endif
 
-    case ECONNREFUSED:		/* Connection refused */
+  /* time to connect to the remote target */
+  remote.sin_addr.s_addr = htonl(hostaddr);
+  remote.sin_port = htons((unsigned short)port);
+  remote.sin_family = AF_INET;
 
-        if (EMsg != NULL)
-          sprintf(EMsg, "cannot connect to port %d in %s - connection refused",
-                tryport,
-                id);
-
-        close(sock);
-
-        return(PBS_NET_RC_RETRY);
-
-        /*NOTREACHED*/
-
-    case EINPROGRESS:		/* Operation now in progress */
-
-    case EALREADY:		/* Operation already in progress */
-
-    case EISCONN:		/* Transport endpoint is already connected */
-    
-    case ETIMEDOUT:		/* Connection timed out */
-
-    case EAGAIN:		/* Operation would block */
-    
-    case EINTR:			/* Interrupted system call */	
-
-        if (await_connect(MaxConnectTimeout, sock) == 0)
-        {
-          /* socket not ready for writing after MaxConnectTimeout microseconds timeout */
-          /* no network failures detected */
-
-          break;
-        }/* Interrupted system call */
-
-      /* fall through to next case */
-
-    case EINVAL:		/* Invalid argument */
-    
-    case EADDRINUSE:		/* Address already in use */
-
-    case EADDRNOTAVAIL:		/* Cannot assign requested address */
-
-        /* TCP is not ready for us. Sleep for a millisecond and see if
-           that will change anything before the next retry */
-        nanosleep(&rem, &rem);
-
-        if (local_port != FALSE)
+  rc = connect(sock, (struct sockaddr *)&remote, sizeof(remote));
+  if (rc != 0)
+    {
+    switch(errno)
+      {
+      case EINPROGRESS:
+      case EALREADY:
           {
-          if (trycount++ > (NPORTS))
+          if (await_connect(MaxConnectTimeout, sock) == 0)
             {
-            close(sock);
-            
-            return(PBS_NET_RC_RETRY);
+            break;
             }
-#if TCP_RETRY_LIMIT != 0
-          else if (trycount > TCP_RETRY_LIMIT)
-            {       
-            if (EMsg != NULL)
-              sprintf(EMsg, "cannot connect to port %d in %s - errno:%d %s",
-                tryport,
-                id,
-                errno,
-                strerror(errno));
-            
-            close(sock);
-            
-            return(PBS_NET_RC_FATAL);
-            }
-#endif /* def TCP_RETRY_LIMIT */
-          
-          /* continue port search (rentec) */
-          
-          tryport++;
-          
+
           close(sock);
-          
-          goto retry;
+          sock = PBS_NET_RC_RETRY;
           }
-
-    default:
-
-        if (EMsg != NULL)
-          sprintf(EMsg, "cannot connect to port %d in %s - errno:%d %s",
-                tryport,
-                id,
-                errno,
-                strerror(errno));
-
+      default:
+        {
         close(sock);
+        sock = PBS_NET_RC_RETRY;
+        }
+      }
+    }
 
-        return(PBS_NET_RC_FATAL);
-
-    }  /* END switch (errno) */
 
   return(sock);
 

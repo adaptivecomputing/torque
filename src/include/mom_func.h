@@ -90,6 +90,7 @@ struct var_table
   {
   char  *v_block;
   char **v_envp;
+  char  *v_block_start;
   int    v_bsize;
   int    v_ensize;
   int    v_used;
@@ -138,7 +139,7 @@ extern void  post_resume(job *, int);
 
 #endif /* _CRAY */
 
-extern void  bld_env_variables(struct var_table *, char *, char *);
+extern int bld_env_variables(struct var_table *, char *, char *);
 extern int   expand_path(job *,char *,int,char *);
 extern pid_t fork_me(int sock);
 extern int   get_la(double *);
@@ -186,6 +187,8 @@ extern char *get_job_envvar(job *, char *);
 extern int   mom_open_socket_to_jobs_server(job* pjob, char *id, void (*message_hander)(int));
 void         clear_servers();
 void remove_defunct_cpusets();
+
+int become_the_user(job *pjob);
 
 /* defined in mach-dependant mom_mach.c */
 extern int kill_task(struct task *, int, int);

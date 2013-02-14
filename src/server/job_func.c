@@ -1070,6 +1070,10 @@ void job_clone_wt(
   if (rn != NULL)
     {
     new_task = set_task(WORK_Timed, time_now + clone_delay, job_clone_wt, ptask->wt_parm1);
+    if (new_task == NULL)
+      {
+      log_err(-1, id, "new_task not created");
+      }
     }
   else
     {
