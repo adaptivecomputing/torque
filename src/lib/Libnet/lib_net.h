@@ -32,7 +32,7 @@ unsigned availBytesOnDescriptor(int pLocalSocket);
 int socket_avail_bytes_on_descriptor(int socket);
 int socket_get_tcp();
 int get_listen_socket(struct addrinfo *);
-int get_random_reserved_port(int local_socket, sockaddr_in *local);
+int get_random_reserved_port();
 int socket_get_tcp_priv();
 int socket_connect(int *local_socket, char *dest_addr, int dest_addr_len, int dest_port, int family, int is_privileged, char **err_msg);
 int socket_connect_addr(int *local_socket, struct sockaddr *remote, size_t remote_size, int is_privileged, char **err_msg);
