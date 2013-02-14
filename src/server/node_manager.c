@@ -5531,7 +5531,7 @@ int procs_requested(char *spec)
         log_buffer);
       }
 
-    return(-1);
+    return(-2);
     }
 
   /* Check to see if we have a global modifier */

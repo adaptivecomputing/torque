@@ -2422,7 +2422,6 @@ int encode_depend(
   struct dependnames *pn;
 
   char *BPtr = 0;
-  int   BSpace = -1;
 
   if (!attr)
     return (-1);
@@ -2465,7 +2464,6 @@ int encode_depend(
   *pal->al_value = '\0';
 
   BPtr = pal->al_value;
-  BSpace = pal->al_tsize;  /* this is actually a little larger than the actual buffer */
 
 	for (nxdp = pdp; nxdp; nxdp = (struct depend *)GET_NEXT(nxdp->dp_link))
     {

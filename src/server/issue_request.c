@@ -117,6 +117,7 @@ extern char *msg_daemonname;
 extern char *msg_issuebad;
 extern char     *msg_norelytomom;
 extern char *msg_err_malloc;
+extern char *msg_no_tasks;
 extern unsigned int pbs_mom_port;
 extern unsigned int pbs_server_port_dis;
 
@@ -717,7 +718,7 @@ void process_Dreply(
 
   if (ptask == NULL)
     {
-    log_err(-1, "process_Dreply", msg_err_malloc);
+    log_err(-1, "process_Dreply", msg_no_tasks);
 
     close_conn(sock);
 

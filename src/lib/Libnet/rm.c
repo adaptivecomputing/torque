@@ -1066,13 +1066,14 @@ int activereq(void)
 
   fd_set *FDSet;
 
+#ifndef RPP
   int MaxNumDescriptors = 0;
+#endif
 
   pbs_errno = 0;
 
   flushreq();
 
-  MaxNumDescriptors = get_max_num_descriptors();
   FDSet = (fd_set *)calloc(1,sizeof(char) * get_fdset_size());
 
 #if RPP
@@ -1140,6 +1141,7 @@ int activereq(void)
   return i;
 
 #else
+  MaxNumDescriptors = get_max_num_descriptors();
   pbs_errno = 0;
 
   for (i = 0; i < HASHOUT; i++)

@@ -200,7 +200,6 @@ static void *work_thread(
   {
   char         *id = "work_thread";
 
-  int           expired;
   int           rc;
 
   void         *(*func)(void *);
@@ -229,7 +228,6 @@ static void *work_thread(
     pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED,NULL);
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,NULL);
 
-    expired = FALSE;
     request_pool->tp_idle_threads++;
 
     while ((request_pool->tp_first == NULL) &&
@@ -249,7 +247,6 @@ static void *work_thread(
 
         if (rc == ETIMEDOUT)
           {
-          expired = TRUE;
           break;
           }
         }
@@ -263,8 +260,6 @@ static void *work_thread(
 
     if ((mywork = request_pool->tp_first) != NULL)
       {
-      expired = FALSE;
-
       func = mywork->work_func;
       arg  = mywork->work_arg;
 
