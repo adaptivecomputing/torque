@@ -1148,18 +1148,24 @@ void *job_clone_wt(
 
       pjobclone->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
       pjobclone->ji_wattr[JOB_ATR_qrank].at_flags |= ATR_VFLAG_SET;
+        
+      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
 
       if ((rc = svr_enquejob(pjobclone, FALSE, prev_index)))
         {
         /* XXX need more robust error handling */
-        unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
 
         if (rc != PBSE_JOB_RECYCLED)
           svr_job_purge(pjobclone);
 
-        pa = get_array(arrayid);
+        if ((pa = get_array(arrayid)) == NULL)
+          return(NULL);
+
         continue;
         }
+        
+      if ((pa = get_array(arrayid)) == NULL)
+        return(NULL);
 
       if (job_save(pjobclone, SAVEJOB_FULL, 0) != 0)
         {

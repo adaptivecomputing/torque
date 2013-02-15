@@ -10,6 +10,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Don't log an invalid connection message when close_conn() is called on 65535
       (PBS_LOCAL_CONNECTION). TRQ-1557.
   b - Don't strip quotes from values in scripts before specific processing. TRQ-1632
+  b - Fix a deadlock when submitting two large arrays consecutively, the second
+      depending on the first. TRQ-1646 (reported by Jorg Blank, 4.2.1).
 
 4.1.4
   e - When in cray mode, write physmem and availmem in addition to totmem so that 

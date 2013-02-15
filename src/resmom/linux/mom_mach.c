@@ -1946,9 +1946,6 @@ int mom_over_limit(
   job *pjob)  /* I */
 
   {
-#ifdef PENABLE_LINUX26_CPUSETS
-  static char       *id = "mom_over_limit";
-#endif
   char              *pname;
   int                retval;
   unsigned long      value;
@@ -2074,28 +2071,28 @@ int mom_over_limit(
      * If duration is enabled, throw over_limit if counter reaches duration.
      */
 
-      if (pjob->ji_mempressure_curr < memory_pressure_threshold)
+    if (pjob->ji_mempressure_curr < memory_pressure_threshold)
+      {
+      pjob->ji_mempressure_cnt = 0; /* reset */
+      }
+    else
+      {
+      pjob->ji_mempressure_cnt++;   /* count */
+      
+      sprintf(log_buffer, "job %s memory_pressure is over %d for %d (%d) cycles",
+        pjob->ji_qs.ji_jobid,
+        memory_pressure_threshold,
+        pjob->ji_mempressure_cnt,
+        memory_pressure_duration);
+      log_ext(-1, __func__, log_buffer,LOG_ALERT);
+      
+      if (memory_pressure_duration && (pjob->ji_mempressure_cnt >= memory_pressure_duration))
         {
-        pjob->ji_mempressure_cnt = 0; /* reset */
+        sprintf(log_buffer, "swap rate due to memory oversubscription is too high");
+        return(TRUE);
         }
-      else
-        {
-        pjob->ji_mempressure_cnt++;   /* count */
-
-        sprintf(log_buffer, "job %s memory_pressure is over %d for %d (%d) cycles",
-          pjob->ji_qs.ji_jobid,
-          memory_pressure_threshold,
-          pjob->ji_mempressure_cnt,
-          memory_pressure_duration);
-        log_ext(-1, id, log_buffer,LOG_ALERT);
-
-        if (memory_pressure_duration && (pjob->ji_mempressure_cnt >= memory_pressure_duration))
-          {
-          sprintf(log_buffer, "swap rate due to memory oversubscription is too high");
-          return(TRUE);
-          }
-
-        }
+      
+      }
 
     }
 #endif
