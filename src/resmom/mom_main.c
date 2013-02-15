@@ -5899,7 +5899,7 @@ int kill_job(
   /* NOTE:  if path_epilogpdel is not set, kill_task should be called
    * immediately (NYI) */
 
-  if(sig == SIGTERM)
+  if (sig == SIGTERM)
     {
     if (run_pelog(PE_EPILOGUSER, path_epilogpdel, pjob, PE_IO_TYPE_NULL) != 0)
       {
