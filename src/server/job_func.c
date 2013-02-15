@@ -1152,6 +1152,7 @@ void *job_clone_wt(
     return(NULL);
     }
 
+  mutex_mgr array_mgr(pa->ai_mutex, true);
   mutex_mgr template_job_mgr(template_job->ji_mutex,true);
 
   strcpy(arrayid, pa->ai_qs.parent_id);
@@ -1193,6 +1194,8 @@ void *job_clone_wt(
         continue;
         }
 
+      mutex_mgr clone_mgr(pjobclone->ji_mutex, true);
+
       svr_evaljobstate(pjobclone, &newstate, &newsub, 1);
 
       /* do this so that  svr_setjobstate() doesn't alter sv_jobstates,
@@ -1205,28 +1208,42 @@ void *job_clone_wt(
       pjobclone->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
       pjobclone->ji_wattr[JOB_ATR_qrank].at_flags |= ATR_VFLAG_SET;
 
+      array_mgr.unlock();
+
       if ((rc = svr_enquejob(pjobclone, FALSE, prev_index)))
         {
         /* XXX need more robust error handling */
-        unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
 
         if (rc != PBSE_JOB_RECYCLED)
           svr_job_purge(pjobclone);
 
+        clone_mgr.set_lock_on_exit(false);
+
         if ((pa = get_array(arrayid)) == NULL)
           return(NULL);
+
+        array_mgr.mark_as_locked();
 
         continue;
         }
 
+      if ((pa = get_array(arrayid)) == NULL)
+        return(NULL);
+      
+      array_mgr.mark_as_locked();
+
       if (job_save(pjobclone, SAVEJOB_FULL, 0) != 0)
         {
         /* XXX need more robust error handling */
-        unlock_ai_mutex(pa, __func__, "2", LOGLEVEL);
+        array_mgr.unlock();
         svr_job_purge(pjobclone);
+        
+        clone_mgr.set_lock_on_exit(false);
        
         if ((pa = get_array(arrayid)) == NULL)
           return(NULL);
+
+        array_mgr.mark_as_locked();
         
         continue;
         }
@@ -1237,8 +1254,8 @@ void *job_clone_wt(
       
       rn->start++;
       
-      if (prev_index != -1)
-        unlock_ji_mutex(pjobclone, __func__, "4", LOGLEVEL);
+      if (prev_index == -1)
+        clone_mgr.set_lock_on_exit(false);
       }  /* END for (i) */
 
     if (rn->start > rn->end)
