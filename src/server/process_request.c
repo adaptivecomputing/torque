@@ -543,6 +543,7 @@ void process_request(
 
     if (ENABLE_TRUSTED_AUTH == TRUE )
       rc = 0;  /* bypass the authentication of the user--trust the client completely */
+#ifdef MUNGE_AUTH
     else if(munge_on)
       {
       /* If munge_on is true we will validate the connection now */
@@ -564,6 +565,7 @@ void process_request(
         rc = authenticate_user(request, &conn_credent[sfds], &auth_err);
         }
       }
+#endif
     else if (svr_conn[sfds].cn_authen != PBS_NET_CONN_AUTHENTICATED)
       rc = PBSE_BADCRED;
     else

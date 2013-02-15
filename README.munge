@@ -1,0 +1,153 @@
+===========================================================
+
+ MUNGE Authentication
+
+===========================================================
+
+
+MUNGE is an authentication service that creates and validates user credentials. 
+It was developed by Lawrence Livermore National Laboratoy (LLNL) to be highly 
+scalable so it can be used in large environments such as HPC clusters. 
+
+To learn more about MUNGE visit: http://code.google.com/p/munge/
+
+MUNGE library was initialy released as GPLv2 licensed code what implied
+that **TORQUE couldn't be linked against the library**
+
+MUNGE library has recently been relicensed to LGPLv3. 
+Starting with munge-5.0.9 it became possible to use munge functions
+by linking to the libraries.
+
+
+NOTE: MUNGE support in TORQUE is a compile time operation. 
+
+========================================
+ How to enable MUNGE
+========================================
+
+MUNGE Authentication for TORQUE can be built by specifying one of two 
+configure options:
+
+  --enable-munge-auth         - (NEW) Authentication with munge library API calls
+  --enable-munge-exec         - (LEGACY) Previous implementation based on munge executable. 
+
+
+TIP:  The dominant factor of the munge authentication performance is the hostname resolution.
+      Assure that all hosts involved in communication with server have entires 
+      in the /etc/hosts or use some other caching solution (like nscd).
+
+IMPORTANT: both munge auth methods are fully compatible with each other. 
+           you can use munge-library enabled server with munge-auth clients 
+           and so on.
+
+=========================================
+ (LEGACY) --enable-munge-exec:
+=========================================
+
+Provides stable and well tested method of communicating with munge server.
+This option does not require munge libraries and development files to be present on a build host.
+Major drawback of such method is overhead of expensive popen and related calls with 
+piped communication. This can result in significant server slowdowns for big clusters.
+
+ Pros:
+  - stable and tested
+  - does not require linking to libmunge (GPL restriction)
+  
+ Cons:
+  - slower than API (popen,exec,fsync calls penalty)
+ 
+
+========================================
+ (NEW) --enable-munge-auth:
+========================================
+
+Library support patch was provided by:
+
+ Mariusz Mamonski (PSNC) <mamonski@man.poznan.pl> - idea and initial version
+ Lukasz Flis  (CYFRONET) <l.flis@cyfronet.pl>     - integration, fixes and testing
+
+This option enables torque to direct use of API for MUNGE authentication on clients and pbs_server.
+No more popen/fork calls are needed during authentication process.
+Option implies linking library libmunge to TORQUE so additional dependencies are needed during build time.
+
+Make sure that you have development libraries and headers for MUNGE:
+
+   munge-libs and munge-devel for RHEL based distrubutions
+   libmunge-dev libmunge2     for Debian/Ubuntu distributions
+
+LEGAL notice:
+Remember that only munge-0.5.9 or newer allows for linking with non-GPLed code.
+
+ Pros:
+  - faster: no fork/popen overhead resulting in more req/s processed
+  - no need for temporary files on disk - no fsync() call penalty
+  - less code
+  - linking directly to libmunge
+  - better error handling 
+
+ Cons:
+  - requires linking to libmunge
+
+IMPORTANT: API based munge authetication mechanism tries to mimic the exec based implementation
+           (--enable-munge-exec) behavior for compatibility reasons.
+           It implies that user which is unknown to the server is allowed to query for 
+           jobs and nodes (qstat,pbsnodes).
+
+           If you require more strict behaviour please add 
+
+             PBS_MUNGE_STRICT_UID_CHECK=yes
+
+           to /var/torque/pbs_environment and restart pbs_server process
+           This will deny access to all users not present in the server passwd database.
+           
+
+
+========================================
+ MUNGE Troubleshooting 
+========================================
+
+This list addresses most of the problems you may encounter:
+
+1. In case of problems review server log - /var/torque/server_logs
+2. Make sure that clocks on servers and clients are in sync
+3. Keep your username<->uid mapping consistent around the cluster
+4. Make sure that munge server is running on server and clients
+5. Make sure that munge keys are the same around the cluster
+
+
+========================================
+ MUNGE FAQ
+========================================
+
+ Q: how to check if my pbs:server is using munge library?
+ A: Use ldd to check if it is linked to libmunge.so:
+
+    ldd /usr/sbin/pbs_server 
+        linux-vdso.so.1 =>  (0x00007fff15bfd000)
+        libtorque.so.2 => /usr/lib64/libtorque.so.2 (0x00002b7926079000)
+        libmunge.so.2 => /usr/lib64/libmunge.so.2 (0x0000003d46c00000)
+        libc.so.6 => /lib64/libc.so.6 (0x00000035d2a00000)
+        /lib64/ld-linux-x86-64.so.2 (0x00000035d2600000)
+
+    If you see libmunge.so.2 it means the you have library enabled version
+    of TORQUE.
+
+ 
+ Q: I'm geting "Invalid Credential" message during qsub/qstat/qdel/qmgr
+    How to tell what is happening?
+ A: Some of TORQUE client tools need better error reporting. 
+    Check your logs on server for relevant messages.
+    You can try using strace to get some additional information on client:
+
+    $> qstat
+    qstat: Invalid credential 
+
+    $> strace -e trace=read -s512 qstat 
+    ...
+    read(4, "", 256)                        = 0
+    read(3, "+2+15+15021+0+72+46Invalid credential MSG=Credentials from future", 262144) = 65
+    read(3, "+2+15+15021+0+72+18Invalid credential", 262144) = 37
+    qstat: Invalid credential 
+
+    In this particular example problem is caused by significant clock difference.
+
