@@ -741,6 +741,7 @@ int kill_job_on_mom(
       {
       strcpy(preq->rq_ind.rq_signal.rq_jid, jobid);
       strcpy(preq->rq_ind.rq_signal.rq_signame, "SIGKILL");
+      preq->rq_extra = strdup(SYNC_KILL);
       
       unlock_node(pnode, __func__, NULL, 0);
       rc = issue_Drequest(conn, preq);
