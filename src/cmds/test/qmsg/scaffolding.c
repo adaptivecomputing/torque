@@ -18,13 +18,13 @@ char *pbs_strerror(int err)
   fprintf(stderr, "The call to pbs_strerror needs to be mocked!!\n");
   exit(1);
   }
-}
 
 int cnt2server(const char *SpecServer)
   { 
   fprintf(stderr, "The call to cnt2server needs to be mocked!!\n");
   exit(1);
   }
+}
 
 int locate_job(char *job_id, char *parent_server, char *located_server)
   { 

@@ -39,11 +39,14 @@ int MXMLToXString(mxml_t *E, char **Buf, int *BufSize, int MaxBufSize, char **Ta
   exit(1);
   }
 
+extern "C"
+{
 int cnt2server(const char *SpecServer)
   { 
   fprintf(stderr, "The call to cnt2server needs to be mocked!!\n");
   exit(1);
   }
+}
 
 struct batch_status *pbs_statnode(int c, char *id, struct attrl *attrib, char *extend)
   { 
