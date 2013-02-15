@@ -1381,8 +1381,10 @@ if test "x$GCC" = "xyes" ;then
   if test "${enable_munge_auth}" = "yes" ; then
     AC_MSG_RESULT([yes])
     CFLAGS="$CFLAGS -DMUNGE_AUTH"
+    RPM_AC_OPTS="$RPM_AC_OPTS --with munge"
   else
     AC_MSG_RESULT([no])
+    RPM_AC_OPTS="$RPM_AC_OPTS --without munge"
   fi
 fi
 
