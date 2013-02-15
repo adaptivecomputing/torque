@@ -65,12 +65,6 @@ void port_forwarder( struct pfwdsock *socks, int (*connfunc)(char *, long, char 
   exit(1);
   }
 
-int cnt2server(const char *SpecServer)
-  {
-  fprintf(stderr, "The call to cnt2server to be mocked!!\n");
-  exit(1);
-  }
-
 int x11_connect_display( char *display, long alsounused, char *EMsg)
   {
   fprintf(stderr, "The call to x11_connect_display to be mocked!!\n");
@@ -214,6 +208,12 @@ int get_fullhostname( char *shortname,  char *namebuf,  int bufsize,  char *EMsg
 int pbs_disconnect(int connect)
   {
   fprintf(stderr, "The call to pbs_disconnect to be mocked!!\n");
+  exit(1);
+  }
+
+int cnt2server(const char *SpecServer)
+  {
+  fprintf(stderr, "The call to cnt2server to be mocked!!\n");
   exit(1);
   }
 }

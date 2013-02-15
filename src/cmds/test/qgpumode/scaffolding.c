@@ -23,13 +23,13 @@ char *pbs_strerror(int err)
   fprintf(stderr, "The call to pbs_strerror needs to be mocked!!\n");
   exit(1);
   }
-}
 
 int cnt2server(const char *SpecServer)
   { 
   fprintf(stderr, "The call to cnt2server needs to be mocked!!\n");
   exit(1);
   }
+}
 
 int pbs_gpumode(int c, char *node, char *gpuid, int gpumode)
   { 
