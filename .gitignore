@@ -469,3 +469,4 @@ src/drmaa/test/worker_job
 src/scheduler.basl/Lexer.c
 src/scheduler.basl/Parser.c
 src/scheduler.basl/y.tab.h
+src/resmom/test/mom_comm/some\ path\ to\ nowhere.prefix0.TK
