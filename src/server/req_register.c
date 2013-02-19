@@ -468,12 +468,7 @@ int release_before_dependency(
         /* no more dependencies of this type */
         del_depend(pdep);
         
-        /*snprintf(job_id, sizeof(job_id), "%s", pjob->ji_qs.ji_jobid);*/
-        /*unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);*/
         set_depend_hold(pjob, pattr);
-/*        pjob = svr_find_job(job_id, TRUE);
-        if (pjob == NULL)
-          rc = PBSE_JOBNOTFOUND;*/
         }
       
       return(rc);
@@ -509,25 +504,15 @@ int release_syncwith_dependency(
     {
     pdep->dp_released = 1;
     
-/*    snprintf(job_id, sizeof(job_id), "%s", pjob->ji_qs.ji_jobid);
-    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);*/
     set_depend_hold(pjob, pattr);
-/*    pjob = svr_find_job(job_id, TRUE);
+    
+    sprintf(tmpcoststr, "%ld", preq->rq_ind.rq_register.rq_cost);
 
-    if (pjob == NULL)
-      {
-      rc = PBSE_JOBNOTFOUND;
-      }
-    else
-      {*/
-      sprintf(tmpcoststr, "%ld", preq->rq_ind.rq_register.rq_cost);
+    if (pjob->ji_wattr[JOB_ATR_sched_hint].at_val.at_str != NULL)
+      free(pjob->ji_wattr[JOB_ATR_sched_hint].at_val.at_str);
 
-      if (pjob->ji_wattr[JOB_ATR_sched_hint].at_val.at_str != NULL)
-        free(pjob->ji_wattr[JOB_ATR_sched_hint].at_val.at_str);
-
-      pjob->ji_wattr[JOB_ATR_sched_hint].at_val.at_str = strdup(tmpcoststr);
-      pjob->ji_wattr[JOB_ATR_sched_hint].at_flags |= ATR_VFLAG_SET;
-      /*}*/
+    pjob->ji_wattr[JOB_ATR_sched_hint].at_val.at_str = strdup(tmpcoststr);
+    pjob->ji_wattr[JOB_ATR_sched_hint].at_flags |= ATR_VFLAG_SET;
     }
   else
     {
@@ -677,12 +662,7 @@ int unregister_dependency(
     unregister_dep(pattr, preq);
     }
   
-/*  snprintf(job_id, sizeof(job_id), "%s", pjob->ji_qs.ji_jobid);
-  unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);*/
   set_depend_hold(pjob, pattr);
-/*  pjob = svr_find_job(job_id, TRUE);
-  if (pjob == NULL)
-    rc = PBSE_JOBNOTFOUND;*/
 
   return(rc);
   } /* END unregister_dependency() */
@@ -1021,7 +1001,7 @@ int register_array_depend(
 
   /* assume success if the job is there */
   if (pdj != NULL)
-    return(0);
+    return(PBSE_NONE);
 
   /* try to create the job */
   pdj = (struct array_depend_job *)calloc(1, sizeof(struct array_depend_job));
@@ -1056,7 +1036,7 @@ int register_array_depend(
 
   /* SUCCESS */
 
-  return(0);
+  return(PBSE_NONE);
   } /* END register_array_depend */
 
 
@@ -1264,7 +1244,7 @@ void post_doq(
  * routine for the dependency pbs_attribute.
  */
 
-void alter_unreg(
+int alter_unreg(
 
   job           *pjob,
   pbs_attribute *old,  /* current job dependency attribure */
@@ -1276,11 +1256,6 @@ void alter_unreg(
   struct depend_job *oldjd;
 
   int                type;
-  char               job_id[PBS_MAXSVRJOBID+1];
-
-  strcpy(job_id, pjob->ji_qs.ji_jobid);
-  unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-  pjob = NULL;
 
   for (poldd = (struct depend *)GET_NEXT(old->at_val.at_list);
        poldd;
@@ -1299,14 +1274,10 @@ void alter_unreg(
         if ((pnewd == 0) || 
             (find_dependjob(pnewd, oldjd->dc_child) == 0))
           {
-          if ((pjob = svr_find_job(job_id, TRUE)) == NULL)
-              return;
+          int rc = send_depend_req(pjob, oldjd, type, JOB_DEPEND_OP_UNREG, SYNC_SCHED_HINT_NULL, free_br);
 
-          mutex_mgr job_mutex(pjob->ji_mutex, true);
-
-          send_depend_req(pjob, oldjd, type, JOB_DEPEND_OP_UNREG, SYNC_SCHED_HINT_NULL, free_br);
-
-          job_mutex.unlock();
+          if (rc == PBSE_JOBNOTFOUND)
+            return(rc);
           }
 
         oldjd = (struct depend_job *)GET_NEXT(oldjd->dc_link);
@@ -1314,8 +1285,8 @@ void alter_unreg(
       }
     }
 
-  return;
-  }  /* END alter_unreq() */
+  return(PBSE_NONE);
+  }  /* END alter_unreg() */
 
 
 
@@ -1372,17 +1343,14 @@ int depend_on_que(
     {
     /* if there are dependencies being removed, unregister them */
 
-    alter_unreg(pjob, &(pjob)->ji_wattr[JOB_ATR_depend], pattr);
-    if ((pjob = svr_find_job(job_id, TRUE)) == NULL)
-      return PBSE_JOBNOTFOUND;
+    if (alter_unreg(pjob, &(pjob)->ji_wattr[JOB_ATR_depend], pattr) == PBSE_JOBNOTFOUND)
+      return(PBSE_JOBNOTFOUND);
     }
 
   /* First set a System hold if required */
 
   unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
   set_depend_hold(pjob, pattr);
-/*  if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
-    return PBSE_JOBNOTFOUND;*/
 
   /* Check if there are dependencies that require registering */
 
@@ -1579,7 +1547,7 @@ int depend_on_exec(
     release_cheapest(pjob, pdep);
     }
 
-  return(0);
+  return(PBSE_NONE);
   }  /* END depend_on_exec() */
 
 
@@ -1747,7 +1715,7 @@ int depend_on_term(
   if (!job_unlocked)
     unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
-  return(0);
+  return(PBSE_NONE);
   }  /* END depend_on_term() */
 
 
@@ -2200,7 +2168,7 @@ int unregister_dep(
 
   del_depend_job(pdjb);
 
-  return(0);
+  return(PBSE_NONE);
   }  /* END unregister_dep() */
 
 
@@ -2528,7 +2496,7 @@ int decode_depend(
 
     patr->at_flags |= ATR_VFLAG_MODIFY;
 
-    return(0);
+    return(PBSE_NONE);
     }
 
   /*
@@ -2552,7 +2520,7 @@ int decode_depend(
 
   patr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
 
-  return(0);
+  return(PBSE_NONE);
   }  /* END decode_depend() */
 
 
@@ -2912,7 +2880,7 @@ int set_depend(
 
   attr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
 
-  return(0);
+  return(PBSE_NONE);
   }  /* END set_depend() */
 
 
@@ -3200,7 +3168,7 @@ int build_depend(
 
   /* SUCCESS */
 
-  return(0);
+  return(PBSE_NONE);
   }  /* END build_depend() */
 
 
