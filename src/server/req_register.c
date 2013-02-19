@@ -1296,13 +1296,17 @@ void alter_unreg(
 
       while (oldjd)
         {
-        if ((pnewd == 0) || (find_dependjob(pnewd, oldjd->dc_child) == 0))
+        if ((pnewd == 0) || 
+            (find_dependjob(pnewd, oldjd->dc_child) == 0))
           {
           if ((pjob = svr_find_job(job_id, TRUE)) == NULL)
               return;
 
+          mutex_mgr job_mutex(pjob->ji_mutex, true);
+
           send_depend_req(pjob, oldjd, type, JOB_DEPEND_OP_UNREG, SYNC_SCHED_HINT_NULL, free_br);
-          pjob = NULL;
+
+          job_mutex.unlock();
           }
 
         oldjd = (struct depend_job *)GET_NEXT(oldjd->dc_link);
@@ -1411,11 +1415,16 @@ int depend_on_que(
           return(PBSE_JOBNOTFOUND);
           }
 
+        mutex_mgr job_mutex(pjob->ji_mutex, true);
+
         if ((rc = send_depend_req(pjob, pparent, type, JOB_DEPEND_OP_REGISTER, SYNC_SCHED_HINT_NULL, post_doq)) != PBSE_NONE)
           {
-          pjob = svr_find_job(job_id, TRUE);
+          if (rc == PBSE_JOBNOTFOUND)
+            job_mutex.set_lock_on_exit(false);
+
           return(rc);
           }
+
         pjob = NULL;
 
         pparent = (struct depend_job *)GET_NEXT(pparent->dc_link);
@@ -1512,16 +1521,15 @@ int depend_on_exec(
 
     while (pdj != NULL)
       {
-      send_depend_req(
-        pjob,
-        pdj,
-        pdep->dp_type,
-        JOB_DEPEND_OP_RELEASE,
-        SYNC_SCHED_HINT_NULL,
-        post_doe);
-
-      if ((pjob = svr_find_job(jobid, TRUE)) == NULL)
-        return PBSE_JOBNOTFOUND;
+      if (send_depend_req(pjob,
+            pdj,
+            pdep->dp_type,
+            JOB_DEPEND_OP_RELEASE,
+            SYNC_SCHED_HINT_NULL,
+            post_doe) == PBSE_JOBNOTFOUND)
+        {
+        return(PBSE_JOBNOTFOUND);
+        }
 
       pdj = (struct depend_job *)GET_NEXT(pdj->dc_link);
       }
@@ -1540,7 +1548,15 @@ int depend_on_exec(
 
     if (pdj != NULL)
       {
-      send_depend_req(pjob, pdj, pdep->dp_type, JOB_DEPEND_OP_READY, SYNC_SCHED_HINT_NULL, free_br);
+      if (send_depend_req(pjob,
+            pdj,
+            pdep->dp_type,
+            JOB_DEPEND_OP_READY,
+            SYNC_SCHED_HINT_NULL,
+            free_br) == PBSE_JOBNOTFOUND)
+        {
+        return(PBSE_JOBNOTFOUND);
+        }
       }
     }
 
@@ -1685,8 +1701,11 @@ int depend_on_term(
 
             rc = send_depend_req(pjob, pparent, type, JOB_DEPEND_OP_DELETE, SYNC_SCHED_HINT_NULL, free_br);
 
-            pjob = NULL;
-            job_unlocked = 1;
+            if (rc == PBSE_JOBNOTFOUND)
+              {
+              pjob = NULL;
+              job_unlocked = 1;
+              }
 
             pparent = (struct depend_job *)GET_NEXT(pparent->dc_link);
             }
@@ -1712,10 +1731,11 @@ int depend_on_term(
         /* "release" the job to execute */
         if ((rc = send_depend_req(pjob, pparent, type, op, SYNC_SCHED_HINT_NULL, free_br)) != PBSE_NONE)
           {
+          if (rc != PBSE_JOBNOTFOUND)
+            unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+
           return(rc);
           }
-
-        job_unlocked = 1;
 
         pparent = (struct depend_job *)GET_NEXT(pparent->dc_link);
         }
@@ -1785,7 +1805,7 @@ void release_cheapest(
       {
       cheapest->dc_state = JOB_DEPEND_OP_RELEASE;
       }
-    pjob = svr_find_job(job_id, TRUE);
+
     }
 
   return;
@@ -2325,7 +2345,6 @@ int send_depend_req(
   if (preq == NULL)
     {
     log_err(errno, __func__, msg_err_malloc);
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     return(PBSE_SYSTEM);
     }
 
@@ -2333,10 +2352,10 @@ int send_depend_req(
     {
     if (pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str == NULL)
       {
-      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
       free_br(preq);
       return(PBSE_BADATVAL);
       }
+
     preq->rq_ind.rq_register.rq_owner[i] =
       pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str[i];
 
@@ -2396,14 +2415,25 @@ int send_depend_req(
       }
 
     sprintf(log_buf, "Unable to perform dependency with job %s\n", pparent->dc_child);
+    log_err(rc, __func__, log_buf);
 
     if ((preq = get_remove_batch_request(br_id)) != NULL)
       free_br(preq);
+
+    if ((pjob = svr_find_job(job_id, TRUE)) == NULL)
+      {
+      return(PBSE_JOBNOTFOUND);
+      }
 
     return(rc);
     }
   else if (strcmp(pparent->dc_svr, server_name))
     postfunc(preq);
+
+  if ((pjob = svr_find_job(job_id, TRUE)) == NULL)
+    {
+    return(PBSE_JOBNOTFOUND);
+    }
 
   return(PBSE_NONE);
   }  /* END send_depend_req() */
