@@ -1662,9 +1662,6 @@ int depend_on_term(
         /* "release" the job to execute */
         if ((rc = send_depend_req(pjob, pparent, type, op, SYNC_SCHED_HINT_NULL, free_br)) != PBSE_NONE)
           {
-          if (rc != PBSE_JOBNOTFOUND)
-            unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
-
           return(rc);
           }
 

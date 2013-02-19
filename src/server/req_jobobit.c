@@ -830,7 +830,6 @@ int handle_exiting_or_abort_substate(
   job *pjob)
 
   {
-  char      job_id[PBS_MAXSVRJOBID+1];
   char      log_buf[LOCAL_LOG_BUF_SIZE+1];
 
   if (pjob == NULL)
@@ -840,11 +839,10 @@ int handle_exiting_or_abort_substate(
     }
 
   mutex_mgr job_mutex(pjob->ji_mutex, true);
-  strcpy(job_id, pjob->ji_qs.ji_jobid);
 
   if (LOGLEVEL >= 2)
     {
-    sprintf(log_buf, "%s; JOB_SUBSTATE_EXITING", job_id);
+    sprintf(log_buf, "%s; JOB_SUBSTATE_EXITING", pjob->ji_qs.ji_jobid);
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,__func__,log_buf);
     }
 
@@ -854,19 +852,11 @@ int handle_exiting_or_abort_substate(
     if (depend_on_term(pjob) == PBSE_JOBNOTFOUND)
       {
       job_mutex.set_lock_on_exit(false);
-      pjob = NULL;
       return(PBSE_JOBNOTFOUND);
       }
     }
  
-  if ((pjob != NULL) ||
-      ((pjob = svr_find_job(job_id, TRUE)) != NULL))
-    {
-    job_mutex.mark_as_locked();
-    svr_setjobstate(pjob,JOB_STATE_EXITING,JOB_SUBSTATE_RETURNSTD, FALSE);
-    }
-  else
-    job_mutex.set_lock_on_exit(false);
+  svr_setjobstate(pjob,JOB_STATE_EXITING,JOB_SUBSTATE_RETURNSTD, FALSE);
 
   return(PBSE_NONE);
   } /* END handle_exiting_or_abort_substate() */
