@@ -140,7 +140,7 @@ void   del_depend_job(struct depend_job *pdj);
 int    build_depend(pbs_attribute *, const char *);
 void   clear_depend(struct depend *, int type, int exists);
 void   del_depend(struct depend *);
-void   release_cheapest(job *, struct depend *);
+int    release_cheapest(job *, struct depend *);
 int           send_depend_req(job *, struct depend_job *pparent, int, int, int, void (*postfunc)(batch_request *));
 
 /* External Global Data Items */
@@ -644,7 +644,6 @@ int unregister_dependency(
   {
   pbs_attribute *pattr = &pjob->ji_wattr[JOB_ATR_depend];
   int            rc = PBSE_NONE;
-  /*char           job_id[PBS_MAXSVRJOBID+1];*/
  
   if (type == JOB_DEPEND_TYPE_SYNCWITH)
     {
@@ -1688,20 +1687,18 @@ int depend_on_term(
  * sync set.
  */
 
-void release_cheapest(
+int release_cheapest(
 
   job           *pjob,
   struct depend *pdep)
 
   {
-  char job_id[PBS_MAXSVRJOBID+1];
-  long     lowestcost = 0;
-  struct depend_job *cheapest = (struct depend_job *)0;
-  int     hint = SYNC_SCHED_HINT_OTHER;
-  int     nreleased = 0;
+  long               lowestcost = 0;
+  struct depend_job *cheapest = NULL;
+  int                hint = SYNC_SCHED_HINT_OTHER;
+  int                nreleased = 0;
   struct depend_job *pdj;
-
-  strcpy(job_id, pjob->ji_qs.ji_jobid);
+  int                rc = PBSE_NONE;
 
   pdj = (struct depend_job *)GET_NEXT(pdep->dp_jobs);
 
@@ -1729,16 +1726,18 @@ void release_cheapest(
     if (nreleased == 0)
       hint = SYNC_SCHED_HINT_FIRST;
 
-    if (send_depend_req(pjob, cheapest, JOB_DEPEND_TYPE_SYNCWITH,
-          JOB_DEPEND_OP_RELEASE, hint, free_br) == PBSE_NONE)
+    if ((rc = send_depend_req(pjob, cheapest, JOB_DEPEND_TYPE_SYNCWITH,
+          JOB_DEPEND_OP_RELEASE, hint, free_br)) == PBSE_NONE)
       {
       cheapest->dc_state = JOB_DEPEND_OP_RELEASE;
       }
+    else if (rc == PBSE_JOBNOTFOUND)
+      return(rc);
 
     }
 
-  return;
-  }  /* END release_cheapest() */
+  return(PBSE_NONE);
+  } /* END release_cheapest() */
 
 
 

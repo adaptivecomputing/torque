@@ -132,7 +132,7 @@ struct work_task *set_task(enum work_type type, long event_id, void (*func)(work
   return(NULL);
   }
 
-int depend_on_term(char *job_id)
+int depend_on_term(job *pjob)
   {
   return(0);
   }
