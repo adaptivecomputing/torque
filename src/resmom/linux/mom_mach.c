@@ -1221,8 +1221,8 @@ int mom_set_limits(
   memset(&reslim, 0, sizeof(reslim));
 
   /* set oom_adj score for the starting job */
-  
-  if ( (set_mode == SET_LIMIT_SET) )
+  /* if immunize mode is set to on, we have to set child score to 0 */
+  if ( (set_mode == SET_LIMIT_SET) && ( job_oom_score_adjust != 0 || mom_oom_immunize != 0 ) )
     {
     retval = oom_adj(job_oom_score_adjust);
 
