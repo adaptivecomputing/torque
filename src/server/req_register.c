@@ -1314,7 +1314,7 @@ int depend_on_que(
   int                type;
   job               *pjob = (job *)pj;
   pbs_queue         *pque;
-  char job_id[PBS_MAXSVRJOBID+1];
+  char               job_id[PBS_MAXSVRJOBID+1];
 
   strcpy(job_id, pjob->ji_qs.ji_jobid);
   pque = get_jobs_queue(&pjob);
@@ -1348,8 +1348,6 @@ int depend_on_que(
     }
 
   /* First set a System hold if required */
-
-  unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
   set_depend_hold(pjob, pattr);
 
   /* Check if there are dependencies that require registering */
@@ -1377,23 +1375,10 @@ int depend_on_que(
 
       while (pparent)
         {
-        if ((pjob == NULL) &&
-            ((pjob = svr_find_job(job_id, TRUE)) == NULL))
-          {
-          return(PBSE_JOBNOTFOUND);
-          }
-
-        mutex_mgr job_mutex(pjob->ji_mutex, true);
-
         if ((rc = send_depend_req(pjob, pparent, type, JOB_DEPEND_OP_REGISTER, SYNC_SCHED_HINT_NULL, post_doq)) != PBSE_NONE)
           {
-          if (rc == PBSE_JOBNOTFOUND)
-            job_mutex.set_lock_on_exit(false);
-
           return(rc);
           }
-
-        pjob = NULL;
 
         pparent = (struct depend_job *)GET_NEXT(pparent->dc_link);
         }
