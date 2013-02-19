@@ -1551,7 +1551,7 @@ int depend_on_exec(
 
 int depend_on_term(
 
-  char *job_id)
+  job *pjob)
 
   {
   int                exitstat;
@@ -1564,13 +1564,7 @@ int depend_on_term(
   int                rc;
   int                shouldkill = 0;
   int                type;
-  int                job_unlocked = 0;
-  job               *pjob;
  
-  pjob = svr_find_job(job_id, FALSE);
-  if (pjob == NULL)
-    return(PBSE_JOBNOTFOUND);
-
   exitstat = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
   pattr = &pjob->ji_wattr[JOB_ATR_depend];
 
@@ -1645,19 +1639,11 @@ int depend_on_term(
 
           while (pparent)
             {
-            if (job_unlocked == 1)
-              {
-              pjob = svr_find_job(job_id, TRUE);
-              if (pjob == NULL)
-                return(PBSE_JOBNOTFOUND);
-              }
-
             rc = send_depend_req(pjob, pparent, type, JOB_DEPEND_OP_DELETE, SYNC_SCHED_HINT_NULL, free_br);
 
             if (rc == PBSE_JOBNOTFOUND)
               {
-              pjob = NULL;
-              job_unlocked = 1;
+              return(rc);
               }
 
             pparent = (struct depend_job *)GET_NEXT(pparent->dc_link);
@@ -1674,13 +1660,6 @@ int depend_on_term(
 
       while (pparent)
         {
-        if (job_unlocked == 1)
-          {
-          pjob = svr_find_job(job_id, TRUE);
-          if (pjob == NULL)
-            return(PBSE_JOBNOTFOUND);
-          }
-
         /* "release" the job to execute */
         if ((rc = send_depend_req(pjob, pparent, type, op, SYNC_SCHED_HINT_NULL, free_br)) != PBSE_NONE)
           {
@@ -1696,9 +1675,6 @@ int depend_on_term(
 
     pdep = (struct depend *)GET_NEXT(pdep->dp_link);
     } /* END loop over each dependency */
-
-  if (!job_unlocked)
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
   return(PBSE_NONE);
   }  /* END depend_on_term() */

@@ -491,10 +491,11 @@ int job_abt(
         
         if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
           {
-          pjob_mutex.unlock();
-          depend_on_term(job_id);
-          pjob = svr_find_job(job_id, TRUE);
-          /* pjob_mutex.managed_mutex already points to pjob->ji_mutex. Nothing to do */
+          if (depend_on_term(pjob) == PBSE_JOBNOTFOUND)
+            {
+            pjob = NULL;
+            pjob_mutex.set_lock_on_exit(false);
+            }
           }
         
         /* update internal array bookeeping values */
@@ -551,9 +552,11 @@ int job_abt(
     if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
       {
       strcpy(job_id, pjob->ji_qs.ji_jobid);
-      pjob_mutex.unlock();
-      depend_on_term(job_id);
-      pjob = svr_find_job(job_id, TRUE);
+      if (depend_on_term(pjob) == PBSE_JOBNOTFOUND)
+        {
+        pjob = NULL;
+        pjob_mutex.set_lock_on_exit(false);
+        }
       /* pjob_mutex managed mutex already points to pjob->ji_mutex. Nothing to do */
       }
 

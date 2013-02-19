@@ -851,9 +851,12 @@ int handle_exiting_or_abort_substate(
   /* see if job has any dependencies */
   if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
     {
-    job_mutex.unlock();
-    depend_on_term(job_id); /* pjob locked on entry, unlocked on exit */
-    pjob = NULL;
+    if (depend_on_term(pjob) == PBSE_JOBNOTFOUND)
+      {
+      job_mutex.set_lock_on_exit(false);
+      pjob = NULL;
+      return(PBSE_JOBNOTFOUND);
+      }
     }
  
   if ((pjob != NULL) ||
