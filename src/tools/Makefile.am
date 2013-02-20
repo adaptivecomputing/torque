@@ -54,7 +54,6 @@ install_gui:
 
 if HAVE_CHECK
 check:
-	$(MAKE) -C $(CHECK_DIR) $(MAKECMDGOALS)
 
 .PHONY: cleancheck
 cleancheck:
