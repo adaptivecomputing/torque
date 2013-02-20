@@ -1228,6 +1228,8 @@ void start_routing_retry_thread()
 
   {
   pthread_attr_t routing_attr;
+  route_retry_thread_id = -1;
+
   if ((pthread_attr_init(&routing_attr)) != 0)
     {
     perror("pthread_attr_init failed. Could not start accept thread");
@@ -1289,7 +1291,9 @@ void monitor_accept_thread()
 
 void monitor_route_retry_thread()
   {
-  if (pthread_kill(route_retry_thread_id, 0) == ESRCH)
+  if (route_retry_thread_id == (pthread_t)-1)
+    start_routing_retry_thread();
+  else if (pthread_kill(route_retry_thread_id, 0) == ESRCH)
     {
     start_routing_retry_thread();
     }
