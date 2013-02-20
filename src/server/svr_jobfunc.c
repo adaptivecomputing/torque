@@ -608,6 +608,7 @@ int svr_enquejob(
     /* start attempts to route job */
     pjob->ji_qs.ji_un_type = JOB_UNION_TYPE_ROUTE;
     pjob->ji_qs.ji_un.ji_routet.ji_quetime = time_now;
+    
     }
 
   return(PBSE_NONE);
@@ -1549,17 +1550,22 @@ int chk_svr_resc_limit(
       }
 
 #ifndef CRAY_MOAB_PASSTHRU
-    if ((proc_ct + req_procs) > svr_clnodes) 
+    if ((cray_enabled != TRUE) ||
+      (alps_reporter == NULL) ||
+      (alps_reporter->alps_subnodes.ra->num != 0))
       {
-      if ((!(pque->qu_attr[QE_ATR_is_transit].at_flags & ATR_VFLAG_SET)) ||
-          (!pque->qu_attr[QE_ATR_is_transit].at_val.at_long))
+      if ((proc_ct + req_procs) > svr_clnodes) 
         {
-        if ((EMsg != NULL) && (EMsg[0] == '\0'))
-          strcpy(EMsg, "cannot locate feasible nodes (nodes file is empty or requested nodes exceed all systems)");
+        if ((!(pque->qu_attr[QE_ATR_is_transit].at_flags & ATR_VFLAG_SET)) ||
+            (!pque->qu_attr[QE_ATR_is_transit].at_val.at_long))
+          {
+          if ((EMsg != NULL) && (EMsg[0] == '\0'))
+            strcpy(EMsg, "cannot locate feasible nodes (nodes file is empty or requested nodes exceed all systems)");
         
-        comp_resc_lt++;
+          comp_resc_lt++;
+          }
         }
-      }
+      }  
 #endif
     }
 
