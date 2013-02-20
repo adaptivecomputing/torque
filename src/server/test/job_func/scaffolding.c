@@ -210,10 +210,9 @@ void delete_task(struct work_task *ptask)
   exit(1);
   }
 
-int depend_on_term(char *job_id)
+int depend_on_term(job *pjob)
   {
-  fprintf(stderr, "The call to depend_on_term needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 int client_to_svr(pbs_net_t hostaddr, unsigned int port, int local_port, char *EMsg)

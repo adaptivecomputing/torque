@@ -62,11 +62,14 @@ pid_t fork_me(int conn)
  exit(1);
  }
 
+extern "C"
+{
 void set_attr(struct attrl **attrib, const char *attrib_name, const char *attrib_value)
  {
  fprintf(stderr, "The call to set_attr needs to be mocked!!\n");
  exit(1);
  }
+}
 
 int mach_checkpoint(struct task *tsk, char *path, int abt)
  {
