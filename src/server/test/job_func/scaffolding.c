@@ -54,6 +54,17 @@ int array_save(job_array *pa)
   exit(1);
   }
 
+int job_route(job *jobp)
+  {
+  fprintf(stderr, "The call to job_route to be mocked!!\n");
+  exit(1);
+  }
+
+int relay_to_mom(job **pjob_ptr, batch_request   *request, void (*func)(struct work_task *))
+  {
+  return(0);
+  }
+
 int insert_thing(resizable_array *ra, void *thing)
   {
   return 0;

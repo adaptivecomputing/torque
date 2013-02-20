@@ -314,3 +314,9 @@ int unlock_ai_mutex(job_array *pa, const char *id, const char *msg, int logging)
 
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_err(int errnum, const char *routine, const char *text) {}
+
+int safe_strncat(char *str, const char *to_append, size_t space_remaining)
+  {
+  return(0);
+  }
+
