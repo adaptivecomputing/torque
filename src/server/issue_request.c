@@ -671,7 +671,7 @@ int send_request_to_remote_server(
     log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     request->rq_reply.brp_code = tmp_rc;
     request->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
-    }  
+    }
 
   DIS_tcp_cleanup(chan);
   svr_disconnect(conn);
