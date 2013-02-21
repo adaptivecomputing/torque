@@ -339,6 +339,9 @@ pbs_queue *que_alloc(
     clear_attr(&pq->qu_attr[i], &que_attr_def[i]);
     }
 
+  /* Set route_retry_thread_id in case this is a routing queue */
+  pq->route_retry_thread_id = -1;
+
   return(pq);
   }  /* END que_alloc() */
 

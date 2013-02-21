@@ -250,6 +250,7 @@ listener_connection     listener_conns[MAXLISTENERS];
 int                     queue_rank = 0;
 int                     a_opt_init = -1;
 int                     wait_for_moms_hierarchy = FALSE;
+int                     route_retry_interval = 10; /* time in seconds to check routing queues */
 
 /* HA global data items */
 long                    HALockCheckTime = 0;
@@ -1148,19 +1149,71 @@ void *handle_queue_routing_retries(
 
   {
   pbs_queue *pque;
-  char       *queuename;
+  char      *queuename;
   int        iter = -1;
+  int        rc;
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
+  pthread_attr_t  routing_attr;
 
-  while ((pque = next_queue(&svr_queues, &iter)) != NULL)
+  if (pthread_attr_init(&routing_attr) != 0)
     {
-    if (pque->qu_qs.qu_type == QTYPE_RoutePush)
-      {
-      queuename = strdup(pque->qu_qs.qu_name); /* make sure this gets freed inside queue_route */
-      enqueue_threadpool_request(queue_route, queuename);
-      }
-
-    unlock_queue(pque, __func__, (char *)NULL, 0);
+    snprintf(log_buf, sizeof(log_buf), "pthread_attr_init failed in %s. Will try next iteration",  __func__);
+    log_err(-1, msg_daemonname, log_buf);
+    return(NULL);
     }
+  else if (pthread_attr_setdetachstate(&routing_attr, PTHREAD_CREATE_DETACHED) != 0)
+    {
+    snprintf(log_buf, sizeof(log_buf), "pthread_attr_setdetachstate failed in %s. Will try next iteration", __func__);
+    log_err(-1, msg_daemonname, log_buf);
+    pthread_attr_destroy(&routing_attr); /* we don't care if the succeeds or fails */
+    return(NULL);
+    }
+
+  while(1)
+    {
+    while ((pque = next_queue(&svr_queues, &iter)) != NULL)
+      {
+      if (pque->qu_qs.qu_type == QTYPE_RoutePush)
+        {
+        /* NYI. What happens if a queue is deleted */
+        queuename = strdup(pque->qu_qs.qu_name); /* make sure this gets freed inside queue_route */
+        if (pque->route_retry_thread_id == (pthread_t)-1)
+          {
+          /* thread not yet started. Let's start the route retry thread for this routing queue */
+          
+          rc = pthread_create(&pque->route_retry_thread_id, &routing_attr, queue_route, queuename);
+          if (rc != 0)
+            {
+            snprintf(log_buf, sizeof(log_buf), "pthread_attr_init failed: %d  in %s. Will try next iteration", rc,  __func__);
+            log_err(-1, msg_daemonname, log_buf);
+            /* Just go on to the next queue. do not return NULL here */
+            }
+          }
+        else
+          {
+          /* the thread was started. Check to see if it is still running */
+          /* Yes, calling pthread_kill with a 0 signal just let's us know if
+             the thread is running. It does not kill the thread */
+          if (pthread_kill(pque->route_retry_thread_id, 0) == ESRCH)
+            {
+            rc = pthread_create(&pque->route_retry_thread_id, &routing_attr, queue_route, queuename);
+            if (rc != 0)
+              {
+              snprintf(log_buf, sizeof(log_buf), "pthread_attr_init failed: %d  in %s. Will try next iteration", rc,  __func__);
+              log_err(-1, msg_daemonname, log_buf);
+              /* Just go on to the next queue. do not return NULL here */
+              }
+            }
+          }
+        }
+      
+      unlock_queue(pque, __func__, NULL, 0);
+  
+      sleep(route_retry_interval);
+      }
+    }
+
+  pthread_attr_destroy(&routing_attr); /* we don't care if the succeeds or fails */
 
   return(NULL);
   } /* END handle_queue_routing_retries() */
