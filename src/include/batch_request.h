@@ -413,7 +413,7 @@ batch_request *alloc_br (int type);
 extern void    reply_ack (struct batch_request *);
 extern void    req_reject (int code, int aux, struct batch_request *, const char *, const char *);
 extern void    reply_badattr (int code, int aux, svrattrl *, struct batch_request *);
-extern void    reply_text (struct batch_request *, int code, char *text);
+extern void    reply_text (struct batch_request *, int code, const char *text);
 extern int     reply_jobid (struct batch_request *, char *, int);
 extern void    reply_free (struct batch_reply *);
 extern int     authenticate_user (struct batch_request *, struct credential *, char **);

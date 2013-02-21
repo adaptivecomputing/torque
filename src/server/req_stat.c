@@ -962,7 +962,7 @@ int stat_to_mom(
 
   free_br(newrq);
 
-  return rc;
+  return(rc);
   }  /* END stat_to_mom() */
 
 
@@ -1032,42 +1032,42 @@ void stat_update(
       pstatus = (struct brp_status *)GET_NEXT(pstatus->brp_stlink);
       }  /* END while (pstatus != NULL) */
     }    /* END if (preply->brp_choice == BATCH_REPLY_CHOICE_Status) */
-  else
+  else if ((preply->brp_choice == BATCH_REPLY_CHOICE_Text) &&
+           (preply->brp_code == PBSE_UNKJOBID) &&
+           (!strcmp(preply->brp_un.brp_txt.brp_str, preq->rq_ind.rq_status.rq_id)))
     {
-    if (preply->brp_code == PBSE_UNKJOBID)
+    /* we sent a stat request, but mom says it doesn't know anything about
+       the job */
+    if ((pjob = svr_find_job(preq->rq_ind.rq_status.rq_id, FALSE)) != NULL)
       {
-      /* we sent a stat request, but mom says it doesn't know anything about
-         the job */
-      if ((pjob = svr_find_job(preq->rq_ind.rq_status.rq_id, FALSE)) != NULL)
-        {
-        /* job really isn't running any more - mom doesn't know anything about it
-           this can happen if a diskless node reboots and the mom_priv/jobs
-           directory is cleared, set its state to queued so job_abt doesn't
-           think it is still running */
-        mutex_mgr job_mutex(pjob->ji_mutex, true);
-        
-        snprintf(log_buf, sizeof(log_buf),
-          "mother superior no longer recognizes %s as a valid job, aborting",
-          preq->rq_ind.rq_status.rq_id);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-        
-        svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_ABORT, FALSE);
-        rel_resc(pjob);
-
-        job_mutex.set_lock_on_exit(false);
-        job_abt(&pjob, "Job does not exist on node");
-
-        /* TODO, if the job is rerunnable we should set its state back to queued */
-
-        }
-      }
-    else
-      {
+      /* job really isn't running any more - mom doesn't know anything about it
+         this can happen if a diskless node reboots and the mom_priv/jobs
+         directory is cleared, set its state to queued so job_abt doesn't
+         think it is still running */
+      mutex_mgr job_mutex(pjob->ji_mutex, true);
+      
       snprintf(log_buf, sizeof(log_buf),
-        "Poll job request failed for job %s", preq->rq_ind.rq_status.rq_id);
-      log_err(preply->brp_code, __func__, log_buf);
+        "mother superior no longer recognizes %s as a valid job, aborting",
+        preq->rq_ind.rq_status.rq_id);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+      
+      svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_ABORT, FALSE);
+      rel_resc(pjob);
+
+      job_mutex.set_lock_on_exit(false);
+      job_abt(&pjob, "Job does not exist on node");
+
+      /* TODO, if the job is rerunnable we should set its state back to queued */
+
       }
     }
+  else
+    {
+    snprintf(log_buf, sizeof(log_buf),
+      "Poll job request failed for job %s", preq->rq_ind.rq_status.rq_id);
+    log_err(preply->brp_code, __func__, log_buf);
+    }
+  
   cntl->sc_conn = -1;
 
   if (cntl->sc_post)

@@ -430,9 +430,9 @@ void reply_badattr(
 
 void reply_text(
 
-  struct batch_request *preq,
-  int                   code,
-  char                 *text) /* I */
+  batch_request *preq,
+  int            code,
+  const char    *text) /* I */
 
   {
   if (preq->rq_reply.brp_choice != BATCH_REPLY_CHOICE_NULL)
