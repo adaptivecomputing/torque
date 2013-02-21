@@ -13,7 +13,7 @@
 #define AUTH_TYPE_KEY 2
 
 
-int parse_request_client(int sock, char **server_name, int *server_port, int *auth_type, char **user, int *user_sock);
+int parse_request_client(int sock, char **server_name, int *server_port, int *auth_type, char **user, int *user_pid, int *user_sock);
 int build_request_svr(int auth_type, char *user, int sock, char **send_message);
 int parse_response_svr(int sock, char **msg);
 int build_response_client(int code, char *msg, char **send_message);

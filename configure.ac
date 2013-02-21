@@ -715,6 +715,12 @@ AC_CHECK_LIB(pthread, pthread_create,
     [AC_MSG_ERROR([TORQUE needs pthreads in order to build]) ])
 LIBS="$LIBS $PTHREAD_LIBS"
 
+dnl We need the proc library
+AC_CHECK_LIB(proc, get_proc_stats, 
+    PROC_LIBS="$PROC_LIBS -lproc",
+    [AC_MSG_ERROR([TORQUE needs libproc-dev in order to build]) ])
+LIBS="$LIBS $PROC_LIBS"
+
 
 dnl we need -lssl and -lcrypto, lets make sure they exist
 AC_CHECK_LIB(ssl, SSL_accept,
