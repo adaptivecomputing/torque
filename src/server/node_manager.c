@@ -2564,11 +2564,18 @@ int svr_is_request(
 
       if ((node_name = strdup(node->nd_name)) == NULL)
         goto err;
+
       unlock_node(node, __func__, "before is_stat_get", LOGLEVEL);
 
       ret = is_stat_get(node_name, chan);
 
-      node = find_nodebyname(node_name);
+      if ((node = find_nodebyname(node_name)) == NULL)
+        {
+        /* the node was deleted mid-execution. This is not an error, but we are done. */
+        free(node_name);
+        close_conn(chan->sock, FALSE);
+        return(PBSE_NONE);
+        }
 
       if (ret == SEND_HELLO)
         {
@@ -2597,6 +2604,7 @@ int svr_is_request(
 
         goto err;
         }
+
       free(node_name);
 
       break;
