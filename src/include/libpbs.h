@@ -220,20 +220,20 @@ struct batch_reply
   int brp_choice; /* the union discriminator */
   union
     {
-    char   brp_jid[PBS_MAXSVRJOBID+1];
+    char                brp_jid[PBS_MAXSVRJOBID+1];
 
-    struct brp_select *brp_select; /* select replies */
-    tlist_head     brp_status; /* status (svr) replies */
+    struct brp_select  *brp_select; /* select replies */
+    tlist_head          brp_status; /* status (svr) replies */
 
     struct brp_cmdstat *brp_statc;  /* status (cmd) replies) */
 
     struct
       {
       size_t   brp_txtlen;
-      char *brp_str;
+      char    *brp_str;
       } brp_txt;  /* text and credential reply */
 
-    char   brp_locate[PBS_MAXDEST+1];
+    char             brp_locate[PBS_MAXDEST+1];
 
     struct brp_rescq brp_rescq; /* query resource reply */
     } brp_un;

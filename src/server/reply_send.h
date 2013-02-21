@@ -22,8 +22,6 @@ void req_reject(int code, int aux, struct batch_request *preq, const char *HostN
 
 void reply_badattr(int code, int aux, svrattrl *pal, struct batch_request *preq);
 
-void reply_text(struct batch_request *preq, int code, char *text);
-
 int  reply_jobid(struct batch_request *preq, char *jobid, int which);
 
 #endif /* _REPLY_SEND_H */
