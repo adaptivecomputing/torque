@@ -543,6 +543,8 @@ int validate_socket(
   long long      code = -1;
   int            write_buf_len = 0;
   int            local_errno;
+  pid_t          mypid;
+  char           unix_sockname[MAXPATHLEN + 1];
 
   myrealuid = getuid();
 
@@ -559,20 +561,22 @@ int validate_socket(
     }
   else
     {
+    snprintf(unix_sockname, sizeof(unix_sockname), "%s/%s", PBS_SERVER_HOME, TRQAUTHD_SOCK_NAME);
     /* format is:
-     * trq_system|trq_port|Validation_type|user|psock|
+     * trq_system|trq_port|Validation_type|user|pid|psock|
      */
-    sprintf(write_buf, "%d|%s|%d|%d|%d|%s|%d|", (int)strlen(server_name), server_name, server_port, AUTH_TYPE_IFF, (int)strlen(pwent->pw_name), pwent->pw_name, parent_client_socket);
+    mypid = getpid();
+    sprintf(write_buf, "%d|%s|%d|%d|%d|%s|%d|%d|", (int)strlen(server_name), server_name, server_port, AUTH_TYPE_IFF, (int)strlen(pwent->pw_name), pwent->pw_name, mypid, parent_client_socket);
     /*
      * total_length|val
      */
     write_buf_len = strlen(write_buf);
-    if ((local_socket = socket_get_tcp()) <= 0)
+    if ((local_socket = socket_get_unix()) <= 0)
       {
-      fprintf(stderr, "socket_get_tcp error\n");
+      fprintf(stderr, "socket_get_unix error\n");
       rc = PBSE_SOCKET_FAULT;
       }
-    else if ((rc = socket_connect(&local_socket, l_server, l_server_len, AUTH_PORT, AF_INET, 0, &err_msg)) != PBSE_NONE)
+    else if ((rc = socket_connect_unix(local_socket, unix_sockname, &err_msg)) != PBSE_NONE)
       {
       fprintf(stderr, "socket_connect error (VERIFY THAT trqauthd IS RUNNING)\n");
       }
@@ -591,7 +595,7 @@ int validate_socket(
       }
     else if ((rc = parse_daemon_response(code, read_buf_len, read_buf)) != PBSE_NONE)
       {
-      /*fprintf(stderr, "parse_daemon_response error\n");*/
+      fprintf(stderr, "parse_daemon_response error %lld %s\n", code, pbse_to_txt(code));
       }
     else
       {

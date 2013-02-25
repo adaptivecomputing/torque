@@ -9,6 +9,7 @@
 #include <signal.h> /* Signals SIGPIPE, etc */
 #include <sys/types.h>
 #include <sys/socket.h> /* Socket communication */
+#include <sys/un.h>
 #include <netdb.h> /* struct addrinfo */
 #include <netinet/in.h> /* Internet domain sockets */
 #include <arpa/inet.h> /* in_addr_t */
@@ -59,6 +60,17 @@ int socket_avail_bytes_on_descriptor(
   return(0);
   } /* END socket_avail_bytes_on_descriptor() */
 
+
+int socket_get_unix()
+  {
+  int fd;
+
+  fd = socket(AF_UNIX, SOCK_STREAM, 0);
+  if (fd < 0)
+    return(PBSE_SOCKET_FAULT);
+
+  return(fd);
+  }
 
 
 
@@ -225,7 +237,31 @@ int socket_get_tcp_priv()
   return local_socket;
   } /* END socket_get_tcp_priv() */
 
+int socket_connect_unix(
 
+  int   local_socket,
+  const char *sock_name,
+  char **error_msg)
+
+  {
+  int rc;
+  struct sockaddr_un addr;
+  char tmp_buf[LOCAL_LOG_BUF_SIZE+1];
+
+  memset(&addr, 0, sizeof(addr));
+  addr.sun_family = AF_UNIX;
+  snprintf(addr.sun_path, sizeof(addr.sun_path), "%s", sock_name);
+
+  rc = connect(local_socket, (struct sockaddr *)&addr, sizeof(addr));
+  if (rc < 0)
+    {
+    snprintf(tmp_buf, sizeof(tmp_buf), "could not connect to unix socket %s: %d", sock_name, errno);
+    *error_msg = strdup(tmp_buf);
+    rc = PBSE_SOCKET_FAULT;
+    }
+
+  return(rc);
+  }
 
 int socket_connect(
 
