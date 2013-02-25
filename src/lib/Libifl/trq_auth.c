@@ -5,8 +5,9 @@
 #include <netinet/in.h> /* in_addr_t */
 #include <stdio.h> /* sprintf */
 #include <arpa/inet.h> /* inet_addr */
-#include <proc/readproc.h>
-#include <pwd.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <pwd.h>  /* getpwuid */
 #include "../Libnet/lib_net.h" /* get_hostaddr, socket_* */
 #include "../../include/log.h" /* log event types */
 
@@ -103,12 +104,14 @@ int build_request_svr(
   }
 
 int validate_user(
+    int sock,
     const char *user_name, 
     int user_pid,
     char *msg)
   {
-  proc_t  process_info;
-  struct passwd *uidpw;
+  struct ucred cr;
+  socklen_t cr_size;
+  struct passwd *user_pwd;
 
   if (msg == NULL)
     return(PBSE_BAD_PARAMETER);
@@ -119,19 +122,30 @@ int validate_user(
     return(PBSE_BAD_PARAMETER);
     }
 
-  memset(&process_info, 0, sizeof(proc_t));
-  get_proc_stats(user_pid, &process_info);
-  uidpw = getpwuid((uid_t)process_info.euid);
-  if (uidpw == NULL)
+  cr_size = sizeof(struct ucred);
+  if (getsockopt(sock, SOL_SOCKET, SO_PEERCRED, &cr, &cr_size) < 0)
     {
-    sprintf(msg, "%s: getpwuid failed", __func__);
-    return(PBSE_SYSTEM);
+    sprintf(msg, "getsockopt for SO_PEERDRED failed: %d", errno);
+    return(PBSE_SOCKET_FAULT);
     }
 
-  if (strcmp(user_name, uidpw->pw_name))
+  user_pwd = getpwuid(cr.uid);
+  if (user_pwd == NULL)
     {
-    sprintf(msg, "%s: submitted user and owner do not match. %s:%s", __func__, user_name, uidpw->pw_name);
-    return(PBSE_PERM);
+    sprintf(msg, "UID %d returned NULL from getpwuid", cr.uid);
+    return(PBSE_IFF_NOT_FOUND);
+    }
+
+  if (strcmp(user_pwd->pw_name, user_name))
+    {
+    sprintf(msg, "User names do not match: submitted: %s, expected: %s", user_name, user_pwd->pw_name);
+    return(PBSE_IFF_NOT_FOUND);
+    }
+
+  if (cr.pid != user_pid)
+    {
+    sprintf(msg, "invalid pid: submitted: %d, expected: %d", user_pid, cr.pid);
+    return(PBSE_IFF_NOT_FOUND);
     }
 
   return(PBSE_NONE);
@@ -315,7 +329,7 @@ void *process_svr_conn(
     disconnect_svr = FALSE;
     debug_mark = 1;
     }
-  else if ((rc = validate_user(user_name, user_pid, msg_buf)) != PBSE_NONE)
+  else if ((rc = validate_user(local_socket, user_name, user_pid, msg_buf)) != PBSE_NONE)
     {
     log_record(PBSEVENT_CLIENTAUTH | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD, __func__, msg_buf);
     disconnect_svr = FALSE;

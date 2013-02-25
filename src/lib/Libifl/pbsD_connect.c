@@ -547,6 +547,7 @@ int validate_socket(
   int            write_buf_len = 0;
   int            local_errno;
   pid_t          mypid;
+  char     unix_sockname[MAXPATHLEN + 1];
 
   myrealuid = getuid();
 
@@ -565,6 +566,7 @@ int validate_socket(
     }
   else
     {
+    snprintf(unix_sockname, sizeof(unix_sockname), "%s/%s", PBS_SERVER_HOME, TRQAUTHD_SOCK_NAME);
     /* format is:
      * trq_system|trq_port|Validation_type|user|pid|psock|
      */
@@ -574,12 +576,12 @@ int validate_socket(
      * total_length|val
      */
     write_buf_len = strlen(write_buf);
-    if ((local_socket = socket_get_tcp()) <= 0)
+    if ((local_socket = socket_get_unix()) <= 0)
       {
-      fprintf(stderr, "socket_get_tcp_client error\n");
+      fprintf(stderr, "socket_get_unix error\n");
       rc = PBSE_SOCKET_FAULT;
       }
-    else if ((rc = socket_connect(&local_socket, l_server, l_server_len, AUTH_PORT, AF_INET, 0, &err_msg)) != PBSE_NONE)
+    else if ((rc = socket_connect_unix(local_socket, unix_sockname, &err_msg)) != PBSE_NONE)
       {
       fprintf(stderr, "socket_connect error (VERIFY THAT trqauthd IS RUNNING)\n");
       }
