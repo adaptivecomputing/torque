@@ -7363,7 +7363,7 @@ int bld_env_variables(
 
   if (memcmp(name,"BATCH_PARTITION_ID",strlen("BATCH_PARTITION_ID")) == 0)
     {
-    return -1;
+    return(PBSE_NONE);
     }
 
   amt = strlen(name) + 1;
