@@ -25,15 +25,15 @@ void setup_vtable(
 
   memset(vtable, 0, sizeof(struct var_table));
   vtable->v_ensize = v_envpsz;
-  vtable->v_envp = calloc(vtable->v_ensize, sizeof(char *));
+  vtable->v_envp = (char **)calloc(vtable->v_ensize, sizeof(char *));
   vtable->v_bsize = v_blocksz;
-  vtable->v_block_start = calloc(1, vtable->v_bsize);
+  vtable->v_block_start = (char *)calloc(1, vtable->v_bsize);
   vtable->v_block = vtable->v_block_start;
 
   for (i = 0; i < MAX_TEST_ENVP; ++i)
-    penv[i] = NULL;
+    *(penv + i) = NULL;
 
-  envBuffer = calloc(MAX_TEST_BLOCK, sizeof(char));
+  envBuffer = (char *)calloc(MAX_TEST_BLOCK, sizeof(char)); 
   }
 
 int add_env_variables(
@@ -58,7 +58,7 @@ ptest_block = envBuffer;
       siz = n;
     else
       siz = n + m;
-    buf = calloc(siz, sizeof(char));
+    buf = (char *)calloc(siz, sizeof(char));
     p = alphabet;
     bp = buf;
     for(j=0; j < (siz - 1); ++j)
