@@ -196,6 +196,7 @@
 #define ATTR_exec_gpus   "exec_gpus"
 #define ATTR_J           "job_id"
 #define ATTR_pagg         "pagg_id"
+#define ATTR_system_start_time "system_start_time"
 
 
 #ifdef NVIDIA_GPUS
