@@ -1197,6 +1197,19 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB,
   },
 
+  /* JOB_ATR_system_start_time */
+  {ATTR_system_start_time, /* start time as encoded in the proc/pid directory */
+   decode_l,
+   encode_l,
+   set_l,
+   comp_l,
+   free_null,
+   NULL_FUNC,
+   READ_ONLY | ATR_DFLAG_MOM,
+   ATR_TYPE_LONG,
+   PARENT_TYPE_JOB},
+
+
 /* Site defined attributes if any, see site_job_attr_*.h  */
 #include "site_job_attr_def.h"
 
