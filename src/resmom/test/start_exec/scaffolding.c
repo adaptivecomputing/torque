@@ -479,3 +479,9 @@ int destroy_alps_reservation(char *reservation_id, char *apbasil_path, char *apb
   {
   return (0);
   }
+
+proc_stat_t *get_proc_stat(int pid)
+  {
+  return NULL;
+  }
+
