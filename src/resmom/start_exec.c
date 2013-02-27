@@ -124,7 +124,6 @@ extern "C"
 #include "../lib/Libnet/lib_net.h" /* socket_avail_bytes_on_descriptor */
 #include "alps_functions.h"
 #include "tcp.h" /* tcp_chan */
-#include "start_exec.h"
 
 #ifdef ENABLE_CPA
   #include "pbs_cpa.h"
@@ -304,6 +303,12 @@ static int num_var_else = tveLAST;
 
 static void starter_return(int, int, int, struct startjob_rtn *);
 static void catchinter(int);
+int expand_vtable(struct var_table *vtable);
+int copy_data(struct var_table *tmp_vtable, struct var_table *vtable, int expand_bsize, int expand_ensize);
+
+#define EN_THRESHOLD 100
+#define B_THRESHOLD 2048
+#define EXTRA_VARIABLE_SPACE 5120
 
 #ifdef PENABLE_LINUX26_CPUSETS
 extern int use_cpusets(job *);
@@ -8492,11 +8497,14 @@ int expand_path(
       /* fall through */
 
     default:
+        
+      environ = environ_old;
 
       break;
 
     }  /* END switch () */
         
+  /* not reached */
   environ = environ_old;
 
   return(FAILURE);
