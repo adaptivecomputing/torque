@@ -173,7 +173,7 @@ void *mom_process_request(
     return NULL;
     }
 
-  if (rc > 0)
+  if (rc != PBSE_NONE)
     {
     /* FAILURE */
 

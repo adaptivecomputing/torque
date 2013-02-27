@@ -5,6 +5,9 @@
 #include <netinet/in.h> /* in_addr_t */
 #include <stdio.h> /* sprintf */
 #include <arpa/inet.h> /* inet_addr */
+#include <errno.h>
+#include <sys/types.h>
+#include <pwd.h>  /* getpwuid */
 #include "../Libnet/lib_net.h" /* get_hostaddr, socket_* */
 #include "../../include/log.h" /* log event types */
 
@@ -20,10 +23,12 @@ int parse_request_client(
     int *server_port,
     int *auth_type,
     char **user,
+    int *user_pid,
     int *user_sock)
   {
   int rc = PBSE_NONE;
-  long long tmp_val = 0, tmp_port = 0, tmp_auth_type = 0, tmp_sock = 0;
+  long long tmp_val = 0, tmp_port = 0, tmp_auth_type = 0, tmp_sock = 0, tmp_pid = 0;
+  
   if ((rc = socket_read_str(sock, server_name, &tmp_val)) != PBSE_NONE)
     {
     }
@@ -36,6 +41,9 @@ int parse_request_client(
   else if ((rc = socket_read_str(sock, user, &tmp_val)) != PBSE_NONE)
     {
     }
+  else if ((rc = socket_read_num(sock, &tmp_pid)) != PBSE_NONE)
+    {
+    }
   else if ((rc = socket_read_num(sock, &tmp_sock)) != PBSE_NONE)
     {
     }
@@ -43,6 +51,7 @@ int parse_request_client(
     {
     *server_port = (int)tmp_port;
     *auth_type = (int)tmp_auth_type;
+    *user_pid = (int)tmp_pid;
     *user_sock = (int)tmp_sock;
     }
   return rc;
@@ -93,6 +102,56 @@ int build_request_svr(
     }
   return rc;
   }
+
+int validate_user(
+    int sock,
+    const char *user_name, 
+    int user_pid,
+    char *msg)
+  {
+  struct ucred cr;
+  socklen_t cr_size;
+  struct passwd *user_pwd;
+
+  if (msg == NULL)
+    return(PBSE_BAD_PARAMETER);
+
+  if (user_name == NULL)
+    {
+    sprintf(msg, "%s: user_name is NULL", __func__);
+    return(PBSE_BAD_PARAMETER);
+    }
+
+  cr_size = sizeof(struct ucred);
+  if (getsockopt(sock, SOL_SOCKET, SO_PEERCRED, &cr, &cr_size) < 0)
+    {
+    sprintf(msg, "getsockopt for SO_PEERDRED failed: %d", errno);
+    return(PBSE_SOCKET_FAULT);
+    }
+
+  user_pwd = getpwuid(cr.uid);
+  if (user_pwd == NULL)
+    {
+    sprintf(msg, "UID %d returned NULL from getpwuid", cr.uid);
+    return(PBSE_IFF_NOT_FOUND);
+    }
+
+  if (strcmp(user_pwd->pw_name, user_name))
+    {
+    sprintf(msg, "User names do not match: submitted: %s, expected: %s", user_name, user_pwd->pw_name);
+    return(PBSE_IFF_NOT_FOUND);
+    }
+
+  if (cr.pid != user_pid)
+    {
+    sprintf(msg, "invalid pid: submitted: %d, expected: %d", user_pid, cr.pid);
+    return(PBSE_IFF_NOT_FOUND);
+    }
+
+  return(PBSE_NONE);
+  }
+
+
 
 int parse_response_svr(
     int sock,
@@ -235,6 +294,7 @@ void *process_svr_conn(
   int         server_port = 0;
   int         auth_type = 0;
   char       *user_name = NULL;
+  int         user_pid = 0;
   int         user_sock = 0;
   char       *error_msg = NULL;
   char       *send_message = NULL;
@@ -249,7 +309,7 @@ void *process_svr_conn(
   char        msg_buf[1024];
 
   /* incoming message format is:
-   * trq_system_len|trq_system|trq_port|Validation_type|user_len|user|psock|
+   * trq_system_len|trq_system|trq_port|Validation_type|user_len|user|pid|psock|
    * message format to pbs_server is:
    * +2+22+492+user+sock+0
    * format from pbs_server is:
@@ -264,8 +324,14 @@ void *process_svr_conn(
    * 0|0||
    */
 
-  if ((rc = parse_request_client(local_socket, &server_name, &server_port, &auth_type, &user_name, &user_sock)) != PBSE_NONE)
+  if ((rc = parse_request_client(local_socket, &server_name, &server_port, &auth_type, &user_name, &user_pid, &user_sock)) != PBSE_NONE)
     {
+    disconnect_svr = FALSE;
+    debug_mark = 1;
+    }
+  else if ((rc = validate_user(local_socket, user_name, user_pid, msg_buf)) != PBSE_NONE)
+    {
+    log_record(PBSEVENT_CLIENTAUTH | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD, __func__, msg_buf);
     disconnect_svr = FALSE;
     debug_mark = 1;
     }
@@ -323,7 +389,7 @@ void *process_svr_conn(
 
     snprintf(msg_buf, sizeof(msg_buf),
       "User %s at IP:port %s:%d logged in", user_name, server_name, server_port);
-    log_record(PBSEVENT_CLIENTAUTH, PBS_EVENTCLASS_TRQAUTHD,
+    log_record(PBSEVENT_CLIENTAUTH | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD,
       className, msg_buf);
     }
 
@@ -355,7 +421,7 @@ void *process_svr_conn(
 
     snprintf(msg_buf, sizeof(msg_buf),
       "User %s at IP:port %s:%d login attempt failed --%s", user_name, server_name, server_port, error_msg);
-    log_record(PBSEVENT_CLIENTAUTH, PBS_EVENTCLASS_TRQAUTHD,
+    log_record(PBSEVENT_CLIENTAUTH | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD,
       className, msg_buf);
     }
 

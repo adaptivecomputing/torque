@@ -31,13 +31,12 @@ char *pbs_default(void)
   exit(1);
   }
 
-}
-
 int cnt2server(const char *SpecServer)
   { 
   fprintf(stderr, "The call to cnt2server needs to be mocked!!\n");
   exit(1);
   }
+}
 
 int get_server(const char *job_id_in, char *job_id_out, int jobid_size, char *server_out, int server_size)
   {

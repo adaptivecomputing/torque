@@ -54,6 +54,17 @@ int array_save(job_array *pa)
   exit(1);
   }
 
+int job_route(job *jobp)
+  {
+  fprintf(stderr, "The call to job_route to be mocked!!\n");
+  exit(1);
+  }
+
+int relay_to_mom(job **pjob_ptr, batch_request   *request, void (*func)(struct work_task *))
+  {
+  return(0);
+  }
+
 int insert_thing(resizable_array *ra, void *thing)
   {
   return 0;
@@ -199,10 +210,9 @@ void delete_task(struct work_task *ptask)
   exit(1);
   }
 
-int depend_on_term(char *job_id)
+int depend_on_term(job *pjob)
   {
-  fprintf(stderr, "The call to depend_on_term needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 int client_to_svr(pbs_net_t hostaddr, unsigned int port, int local_port, char *EMsg)

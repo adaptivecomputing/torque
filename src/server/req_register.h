@@ -16,11 +16,7 @@ int register_array_depend(job_array *pa, struct batch_request *preq, int type, i
 
 void set_array_depend_holds(job_array *pa);
 
-int depend_on_que(pbs_attribute *pattr, void *pjob, int mode);
-
 int depend_on_exec(job *pjob);
-
-int depend_on_term(char *job_id);
 
 void depend_clrrdy(job *pjob);
 

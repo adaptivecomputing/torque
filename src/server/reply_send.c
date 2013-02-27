@@ -388,7 +388,7 @@ void reply_badattr(
 
   int                   code,
   int                   aux,
-  svrattrl        *pal,
+  svrattrl             *pal,
   struct batch_request *preq)
 
   {
@@ -401,14 +401,12 @@ void reply_badattr(
     {
     if (i == aux)
       {
-      strcat(msgbuf, " ");
-      strcat(msgbuf, pal->al_name);
+      int len = strlen(msgbuf);
 
       if (pal->al_resc)
-        {
-        strcat(msgbuf, ".");
-        strcat(msgbuf, pal->al_resc);
-        }
+        snprintf(msgbuf + len, sizeof(msgbuf) - len, " %s.%s", pal->al_name, pal->al_resc);
+      else
+        snprintf(msgbuf + len, sizeof(msgbuf) - len, " %s", pal->al_name);
 
       break;
       }

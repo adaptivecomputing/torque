@@ -30,11 +30,14 @@ int pbs_disconnect(int connect)
   exit(1);
   }
 
+extern "C"
+{
 int cnt2server(const char *SpecServer)
   { 
   fprintf(stderr, "The call to cnt2server needs to be mocked!!\n");
   exit(1);
   }
+}
 
 int pbs_query_max_connections(void)
   { 

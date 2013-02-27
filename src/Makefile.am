@@ -62,8 +62,10 @@ install_pam:
 install_drmaa:
 	for dir in $(DRMAA_DIRS) ;do (cd $$dir && $(MAKE) install);done
 
-if HAVE_CHECK
-CHECK_DIRS = test server resmom momctl lib cmds tools
+CHECK_DIRS = test server resmom momctl lib cmds 
+
+check:
+	@for dir in $(CHECK_DIRS); do (cd $$dir && $(MAKE) $(MAKECMDGOALS)); done
 
 .PHONY: cleancheck
 cleancheck:

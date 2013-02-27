@@ -1800,7 +1800,6 @@ int handle_job_recovery(
             {
             set_task(WORK_Timed, time_now + 10 + (Index % 10), poll_job_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
             }
-       
           unlock_ji_mutex(pjob, __func__, "5", LOGLEVEL);
           }
         }
@@ -1813,7 +1812,6 @@ int handle_job_recovery(
           {
           set_task(WORK_Timed, time_now + 10 + (Index % 10), poll_job_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
           }
-       
         unlock_ji_mutex(pjob, __func__, "6", LOGLEVEL);
         }
       }
@@ -2528,14 +2526,10 @@ int pbsd_init_reque(
   int  change_state) /* I */
 
   {
-  char logbuf[265];
   int  newstate;
   int  newsubstate;
   int  rc;
   char log_buf[LOCAL_LOG_BUF_SIZE];
-
-  sprintf(logbuf, msg_init_substate,
-    pjob->ji_qs.ji_substate);
 
   /* re-enqueue the job into the queue it was in */
 
@@ -2556,14 +2550,18 @@ int pbsd_init_reque(
   lock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
   if ((rc = svr_enquejob(pjob, TRUE, -1)) == PBSE_NONE)
     {
-    strcat(logbuf, msg_init_queued);
-    strcat(logbuf, pjob->ji_qs.ji_queue);
+    int len;
+    snprintf(log_buf, sizeof(log_buf), msg_init_substate,
+      pjob->ji_qs.ji_substate);
+    len = strlen(log_buf);
+    snprintf(log_buf + len, sizeof(log_buf) - len, "%s%s",
+      msg_init_queued, pjob->ji_qs.ji_queue);
 
     log_event(
       PBSEVENT_SYSTEM | PBSEVENT_ADMIN | PBSEVENT_DEBUG,
       PBS_EVENTCLASS_JOB,
       pjob->ji_qs.ji_jobid,
-      logbuf);
+      log_buf);
     }
   else
     {
@@ -2571,26 +2569,26 @@ int pbsd_init_reque(
     if ((rc != PBSE_JOB_RECYCLED) &&
         (rc != PBSE_BADDEPEND))
       {
-      sprintf(logbuf, "%s; job %s queue %s",
+      snprintf(log_buf, sizeof(log_buf), "%s; job %s queue %s",
         msg_err_noqueue,
         pjob->ji_qs.ji_jobid,
         pjob->ji_qs.ji_queue);
     
-      log_err(rc, __func__, logbuf);
+      log_err(rc, __func__, log_buf);
       }
 
     unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
 
     if ((rc != PBSE_JOB_RECYCLED) &&
         (rc != PBSE_BADDEPEND))
-      job_abt(&pjob, logbuf);
+      job_abt(&pjob, log_buf);
 
     lock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
 
     /* NOTE:  pjob freed but dangling pointer remains */
     }
 
-  sprintf(log_buf, "%s:1", __func__);
+  snprintf(log_buf, sizeof(log_buf), "%s:1", __func__);
   unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
   return(rc);
   }  /* END pbsd_init_reque() */

@@ -218,7 +218,7 @@ int req_stat_job(
   if (LOGLEVEL >= 7)
     {
     sprintf(log_buf, "note");
-    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
 
 
@@ -864,7 +864,6 @@ nextjob:
 
 
 
-
 /*
  * stat_to_mom - send a Job Status to MOM to obtain latest status.
  * Used by req_stat_job()/stat_step_2()
@@ -913,7 +912,7 @@ int stat_to_mom(
     }
 
   if (cntl->sc_type == 1)
-    strcpy(newrq->rq_ind.rq_status.rq_id, job_id);
+    snprintf(newrq->rq_ind.rq_status.rq_id, sizeof(newrq->rq_ind.rq_status.rq_id), "%s", job_id);
   else
     newrq->rq_ind.rq_status.rq_id[0] = '\0';  /* get stat of all */
 
@@ -948,7 +947,6 @@ int stat_to_mom(
   unlock_node(node, __func__, "before svr_connect", LOGLEVEL);
   handle = svr_connect(job_momaddr, job_momport, &rc, NULL, NULL, ToServerDIS);
 
-  /* Unlock job here */
   if (handle >= 0)
     {
     if ((rc = issue_Drequest(handle, newrq)) == PBSE_NONE)

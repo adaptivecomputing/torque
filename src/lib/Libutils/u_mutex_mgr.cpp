@@ -107,9 +107,13 @@ using namespace std;
   /* This constructor saves the given mutex and 
    * locks it  based on the value of is_locked
    */
-  mutex_mgr::mutex_mgr(pthread_mutex_t *mutex, bool is_locked)
+  mutex_mgr::mutex_mgr(pthread_mutex_t *mutex, bool is_locked) : managed_mutex(mutex), locked(is_locked)
     {
     int rc;
+
+    unlock_on_exit = true;
+    locked = true;
+    mutex_valid = true;
 
     /* validate the mutex */
     if (mutex == NULL)
@@ -118,9 +122,6 @@ using namespace std;
       return;
       }
 
-    managed_mutex = mutex;
-    mutex_valid = true;
-    locked = false;
     if (is_locked == false)
       {
       rc = lock();
@@ -131,9 +132,6 @@ using namespace std;
         return;
         }
       }
-
-    unlock_on_exit = true;
-    locked = true;
     }
 
   /* The destructor checks for a valid mutex 
@@ -219,6 +217,6 @@ using namespace std;
 
   void mutex_mgr::mark_as_locked()
     {
-	locked = true;
+    locked = true;
     }
 

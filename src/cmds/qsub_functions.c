@@ -1197,7 +1197,8 @@ void make_argv(
     if ((*c == '"') || (*c == '\''))
       {
       quote = *c;
-      c++;
+      /* we need to include the quotes in what is passed on */
+      *b++ = *c++;
 
       while ((*c != quote) && *c)
         *b++ = *c++;
@@ -1210,7 +1211,7 @@ void make_argv(
         exit(1);
         }
 
-      c++;
+      *b++ = *c++;
       }
     else if (*c == '\\')
       {
@@ -1329,9 +1330,9 @@ char *interactive_port(
 
   namelen = sizeof(myaddr);
 
+  memset(&myaddr, 0, sizeof(myaddr));
   myaddr.sin_family = AF_INET;
   myaddr.sin_addr.s_addr = INADDR_ANY;
-  myaddr.sin_port = 0;
 
   if (bind(*sock, (struct sockaddr *)&myaddr, namelen) < 0)
     print_qsub_usage_exit("qsub: unable to bind to socket");
@@ -3819,7 +3820,7 @@ void process_config_file(
       hash_add_or_exit(&ji->mm, &ji->client_attr, ATTR_pbs_o_uid, param_val, ENV_DATA);
       }
 
-    if ((param_val = get_param("QSUBSENDGROUPLIST", config_buf)) != NULL)
+    if (get_param("QSUBSENDGROUPLIST", config_buf) != NULL)
       {
       gid_t group_id = getgid();
       struct group *gpent = getgrgid(group_id);

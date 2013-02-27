@@ -573,12 +573,10 @@ void *queue_route(
         unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         continue;
         }
-
       /* queue must be unlocked when calling reroute_job */
       que_mutex.unlock();
       reroute_job(pjob);
       unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
-
       /* need to relock queue when we go to call next_job */
       pque = find_queuebyname(queue_name);
       if (pque == NULL)

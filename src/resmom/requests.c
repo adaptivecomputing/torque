@@ -1067,7 +1067,7 @@ static int is_file_going_to_dir(
       return(0);
       }
 
-    strcpy(filename,file);
+    snprintf(filename, sizeof(filename), "%s", file);
 
     /* Does directory match the files path? */
 
@@ -1637,11 +1637,7 @@ void req_modifyjob(
               (i <= JOB_ATR_checkpoint_name) ? TJobAttr[i] : "Unkn",
               tmpLine);
 
-      log_record(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        (pjob != NULL) ? pjob->ji_qs.ji_jobid : "N/A",
-        log_buffer);
+      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
       }  /* END if (LOGLEVEL >= 5) */
 
     if (job_attr_def[i].at_action != NULL)
@@ -2119,6 +2115,7 @@ void req_signaljob(
   {
   job            *pjob;
   int             sig;
+  int             sync_kill = FALSE;
   int             numprocs=0;
   char           *sname;
   unsigned int   momport = 0;
@@ -2156,6 +2153,8 @@ void req_signaljob(
       {
       pjob->ji_job_is_being_rerun = TRUE;
       }
+    else if (!strcasecmp(preq->rq_extend, SYNC_KILL))
+      sync_kill = TRUE;
     }
 
   if (!strcasecmp(sname, SIG_SUSPEND))
@@ -2238,35 +2237,43 @@ void req_signaljob(
     sleep(1);
     }
 
-  /*
-   * When kill_job is launched, processes are killed and waitpid() should harvest the process
-   * and takes action to send an obit. If no matching process exists, then an obit may never be
-   * sent due to the current way that TORQUE's state machine works.
-   */
-
-  numprocs = kill_job(pjob, sig, __func__, "killing job");
-
-  if ((numprocs == 0) && ((sig == 0)||(sig == SIGKILL)) &&
-      (pjob->ji_qs.ji_substate != JOB_SUBSTATE_OBIT))
+  if ((pjob->ji_qs.ji_state != JOB_STATE_RUNNING) &&
+      (sync_kill == TRUE))
     {
-    /* SIGNUL and no procs found, force job to exiting */
-    /* force issue of (another) job obit */
+    mom_deljob(pjob);
+    }
+  else
+    {
+    /*
+     * When kill_job is launched, processes are killed and waitpid() should harvest the process
+     * and takes action to send an obit. If no matching process exists, then an obit may never be
+     * sent due to the current way that TORQUE's state machine works.
+     */
 
-    sprintf(log_buffer, "job recycled into exiting on SIGNULL/KILL from substate %d",
-      pjob->ji_qs.ji_substate);
+    numprocs = kill_job(pjob, sig, __func__, "killing job");
 
-    log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
-
-    pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
-
-    if (multi_mom)
+    if ((numprocs == 0) && ((sig == 0)||(sig == SIGKILL)) &&
+        (pjob->ji_qs.ji_substate != JOB_SUBSTATE_OBIT))
       {
-      momport = pbs_rm_port;
-      }
-    
-    job_save(pjob, SAVEJOB_QUICK, momport);
+      /* SIGNUL and no procs found, force job to exiting */
+      /* force issue of (another) job obit */
 
-    exiting_tasks = 1;
+      sprintf(log_buffer, "job recycled into exiting on SIGNULL/KILL from substate %d",
+        pjob->ji_qs.ji_substate);
+
+      log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+
+      pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+
+      if (multi_mom)
+        {
+        momport = pbs_rm_port;
+        }
+      
+      job_save(pjob, SAVEJOB_QUICK, momport);
+
+      exiting_tasks = 1;
+      }
     }
 
   reply_ack(preq);
@@ -2466,6 +2473,7 @@ int req_stat_job(
       }
     }
 
+  preply->brp_code = PBSE_NONE;
   preply->brp_choice = BATCH_REPLY_CHOICE_Status;
 
   CLEAR_HEAD(preply->brp_un.brp_status);
@@ -3785,7 +3793,7 @@ nextword:
 
     if (dir == STAGE_DIR_OUT)
       {
-      strcpy(localname, arg2);
+      snprintf(localname, sizeof(localname), "%s", arg2);
       }
 
     /* if we made a fake TMPDIR, and we are using it, don't delete after stagein */

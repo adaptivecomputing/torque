@@ -284,9 +284,9 @@ int req_deletearray(
     pa_mutex.unlock();
     
     /* check if the array is gone */
-    if ((pa = get_array(preq->rq_ind.rq_delete.rq_objname)) != NULL)
+    if (get_array(preq->rq_ind.rq_delete.rq_objname) != NULL)
       {
-      /* if pa is not null this is the same mutex we had before */
+      /* if get_array() returns non null this is the same mutex we had before */
       /* ai_mutex comes out of get_array locked so we need to
          set the locked state to true */
       pa_mutex.set_lock_state(true);

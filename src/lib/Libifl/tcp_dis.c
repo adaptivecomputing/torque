@@ -314,7 +314,6 @@ int DIS_tcp_wflush(
   int               i;
   char             *pb = NULL;
   char             *pbs_debug = NULL;
-  int               rc = PBSE_NONE;
 
   struct tcpdisbuf *tp;
 
@@ -324,9 +323,6 @@ int DIS_tcp_wflush(
   pb = tp->tdis_thebuf;
   ct = tp->tdis_trailp - tp->tdis_thebuf;
 
-  if (rc != PBSE_NONE)
-    return(-1);
- 
   while ((i = write_ac_socket(chan->sock, pb, ct)) != (ssize_t)ct)
     {
     if (i == -1)

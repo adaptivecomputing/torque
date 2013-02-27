@@ -535,7 +535,10 @@ int chk_characteristic(
     }
 
   if (nci->note != NULL)
+    {
     free(nci->note);
+    nci->note = NULL;
+    }
 
   return(PBSE_NONE);
   }  /* END chk_characteristic() */
@@ -1334,7 +1337,13 @@ int update_nodes_file(
 
     /* write out properties */
     for (j = 0;j < np->nd_nprops - 1;++j)
-      fprintf(nin, " %s", np->nd_prop->as_string[j]);
+      {
+      /* Don't write out the cray_enabled features here */
+      if (strcmp(np->nd_prop->as_string[j], "cray_compute") &&
+          strcmp(np->nd_prop->as_string[j], alps_reporter_feature) &&
+          strcmp(np->nd_prop->as_string[j], alps_starter_feature))
+        fprintf(nin, " %s", np->nd_prop->as_string[j]);
+      }
 
     if (np->nd_is_alps_reporter == TRUE)
       fprintf(nin, " %s", alps_reporter_feature);
@@ -2287,17 +2296,23 @@ int setup_nodes(void)
           {
           is_alps_reporter = TRUE;
 
-          if (propstr[0] != '\0')
-            strcat(propstr, ",");
-
-          strcat(propstr, "cray_compute");
+          if (sizeof(propstr) - strlen(propstr) > strlen("cray_compute") + 1)
+            {
+            if (propstr[0] != '\0')
+              strcat(propstr, ",");
+            
+            strcat(propstr, "cray_compute");
+            }
           }
         else
           {
-          if (propstr[0] != '\0')
-            strcat(propstr, ",");
-          
-          strcat(propstr, token);
+          if (sizeof(propstr) - strlen(propstr) > strlen(token) + 1)
+            {
+            if (propstr[0] != '\0')
+              strcat(propstr, ",");
+   
+            strcat(propstr, token);
+            }
           }
         }
       }    /* END while(1) */
@@ -2620,10 +2635,7 @@ static void delete_a_gpusubnode(
     pnode->nd_ngpus_free--;
 
   /* decrement the number of gpu subnodes */
-  pnode->nd_gpusn--;
-
-  /* free the gpu subnode */
-  free(tmp);
+  pnode->nd_ngpus--;
 
   /* DONE */
   } /* END delete_a_gpusubnode() */

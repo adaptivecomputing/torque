@@ -2121,7 +2121,6 @@ int req_commit(
 
     if ((rc = setup_array_struct(pj)))
       {
-      rc = PBSE_BAD_ARRAY_REQ;
       if (rc == ARRAY_TOO_LARGE)
         {
         get_svr_attr_l(SRV_ATR_MaxArraySize, &max_size);
@@ -2129,7 +2128,7 @@ int req_commit(
           "Requested array size too large, limit is %ld",
            max_size);
 
-        req_reject(rc, 0, preq, NULL, log_buf);
+        req_reject(PBSE_BAD_ARRAY_REQ, 0, preq, NULL, log_buf);
         }
       else if (rc == INVALID_SLOT_LIMIT)
         {
@@ -2138,16 +2137,16 @@ int req_commit(
           "Requested slot limit invalid, limit is %ld",
           max_slot);
 
-        req_reject(rc, 0, preq, NULL, log_buf);
+        req_reject(PBSE_BAD_ARRAY_REQ, 0, preq, NULL, log_buf);
         }
       else
         {
-        req_reject(rc, 0, preq, NULL, NULL);
+        req_reject(PBSE_BAD_ARRAY_REQ, 0, preq, NULL, NULL);
         }
 
       job_mutex.unlock();
 
-      return(rc);
+      return(PBSE_BAD_ARRAY_REQ);
       }
     }  /* end if (pj->ji_is_array_template) */
 

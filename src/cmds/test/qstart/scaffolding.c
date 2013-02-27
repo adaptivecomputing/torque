@@ -31,11 +31,14 @@ int locate_job(char *job_id, char *parent_server, char *located_server)
   exit(1);
   }
 
+extern "C"
+{
 int cnt2server(const char *SpecServer)
   { 
   fprintf(stderr, "The call to cnt2server needs to be mocked!!\n");
   exit(1);
   }
+}
 
 int pbs_manager(int c, int command, int objtype, char *objname, struct attropl *attrib, char *extend)
   {

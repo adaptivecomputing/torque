@@ -112,6 +112,7 @@ struct objname *default_server_name();
 
 struct objname *temp_objname(char *, char *, struct server *);
 int parse_request(char *, char [][MAX_REQ_WORD_LEN]);
+int is_valid_qsyntax_number(struct attropl **attr);
 void clean_up();
 void clean_up_and_exit(int);
 void freeattrl(struct attrl *);

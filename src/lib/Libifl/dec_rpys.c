@@ -272,7 +272,7 @@ int decode_DIS_replySvr(
     }
 
   return rc;
-  }
+  } /* END decode_DIS_replySvr() */
 
 
 

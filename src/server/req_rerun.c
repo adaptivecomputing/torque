@@ -256,7 +256,7 @@ int req_rerunjob(
     {
     /* ask MOM to kill off the job if it is running */
     static const char *rerun = "rerun";
-    char        *extra = strdup(rerun);
+    char              *extra = strdup(rerun);
 
     rc = issue_signal(&pjob, "SIGKILL", post_rerun, extra);
     }

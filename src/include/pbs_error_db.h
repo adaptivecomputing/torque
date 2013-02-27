@@ -40,7 +40,7 @@ PbsErrClient(PBSE_TOOMANY,           (char *)"Too many submit retries")
 /* No permission */
 PbsErrClient(PBSE_PERM,              (char *)"Unauthorized Request ")
 /* pbs_iff not found */
-PbsErrClient(PBSE_IFF_NOT_FOUND,     (char *)"pbs_iff command not found, unable to authenticate")
+PbsErrClient(PBSE_IFF_NOT_FOUND,     (char *)"trqauthd unable to authenticate")
 /* munge not found */
 PbsErrClient(PBSE_MUNGE_NOT_FOUND,   (char *)"munge executable not found, unable to authenticate")
 /* 15010 */
@@ -254,6 +254,7 @@ PbsErrClient(PBSE_JOB_ALREADY_IN_QUEUE, (char *)"Job is already in destination q
 PbsErrClient(PBSE_INVALID_MUTEX, (char *)"Mutex is NULL or otherwise invalid")
 PbsErrClient(PBSE_MUTEX_ALREADY_LOCKED, (char *)"The mutex is already locked by this object")
 PbsErrClient(PBSE_MUTEX_ALREADY_UNLOCKED, (char *)"The mutex has already been unlocked by this object")
+PbsErrClient(PBSE_INVALID_SYNTAX, (char *)"Command syntax invalid")
 
 
 /* pbs client errors ceiling (max_client_err + 1) */

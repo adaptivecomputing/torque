@@ -1484,6 +1484,21 @@ int chk_svr_resc_limit(
       {
       /* how many processors does this spec want */
       req_procs += procs_requested(jbrc_nodes->rs_value.at_val.at_str);
+      if (req_procs <= 0)
+        {
+       if (req_procs == -2)
+         {
+         if ((EMsg != NULL) && (EMsg[0] == '\0'))
+         strcpy(EMsg, "Memory allocation failed");
+         }
+       else
+         {
+         if ((EMsg != NULL) && (EMsg[0] == '\0'))
+         strcpy(EMsg, "Invalid Syntax");
+         }
+       return(PBSE_INVALID_SYNTAX);
+       }
+
 
       if (node_avail_complex(
             jbrc_nodes->rs_value.at_val.at_str,
@@ -1535,17 +1550,22 @@ int chk_svr_resc_limit(
       }
 
 #ifndef CRAY_MOAB_PASSTHRU
-    if ((proc_ct + req_procs) > svr_clnodes) 
+    if ((cray_enabled != TRUE) ||
+      (alps_reporter == NULL) ||
+      (alps_reporter->alps_subnodes.ra->num != 0))
       {
-      if ((!(pque->qu_attr[QE_ATR_is_transit].at_flags & ATR_VFLAG_SET)) ||
-          (!pque->qu_attr[QE_ATR_is_transit].at_val.at_long))
+      if ((proc_ct + req_procs) > svr_clnodes) 
         {
-        if ((EMsg != NULL) && (EMsg[0] == '\0'))
-          strcpy(EMsg, "cannot locate feasible nodes (nodes file is empty or requested nodes exceed all systems)");
+        if ((!(pque->qu_attr[QE_ATR_is_transit].at_flags & ATR_VFLAG_SET)) ||
+            (!pque->qu_attr[QE_ATR_is_transit].at_val.at_long))
+          {
+          if ((EMsg != NULL) && (EMsg[0] == '\0'))
+            strcpy(EMsg, "cannot locate feasible nodes (nodes file is empty or requested nodes exceed all systems)");
         
-        comp_resc_lt++;
+          comp_resc_lt++;
+          }
         }
-      }
+      }  
 #endif
     }
 
@@ -1646,6 +1666,10 @@ int chk_resc_limits(
 
   /* now check against queue or server maximum */
   resc_lt = chk_svr_resc_limit(pattr,pque,pque->qu_qs.qu_type,EMsg);
+  if (resc_lt == PBSE_INVALID_SYNTAX)
+    {
+    return(resc_lt);
+    }
 
   if (resc_lt > 0)
     {

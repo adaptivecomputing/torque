@@ -379,6 +379,37 @@ enum csa_chk_cmd
     }
 
 
+int create_command(
+
+  char  *cmdbuf,
+  int    cmdbuf_size,
+  char **argv)
+
+  {
+  int i;
+  
+  snprintf(cmdbuf, cmdbuf_size, "%s", argv[0]);
+
+  for (i = 1; argv[i] != NULL; i++)
+    {
+    if (cmdbuf_size - strlen(cmdbuf) > strlen(argv[i]) + 1)
+      {
+      strcat(cmdbuf, " ");
+      strcat(cmdbuf, argv[i]);
+      }
+    else
+      return(-1);
+    }
+
+  if (cmdbuf_size - strlen(cmdbuf) > 1)
+    strcat(cmdbuf, ")");
+  else
+    return(-1);
+
+  return(PBSE_NONE);
+  } /* END create_command() */
+
+
 
 
 /*
@@ -704,6 +735,7 @@ int open_demux(
   torque_socklen_t slen;
   unsigned short local_port;
 
+  memset(&remote, 0, sizeof(remote));
   remote.sin_addr.s_addr = addr;
   remote.sin_port = htons((unsigned short)port);
   remote.sin_family = AF_INET;
@@ -1605,15 +1637,7 @@ int mom_jobstarter_execute_job(
   if (LOGLEVEL >= 10)
     {
     char cmd[MAXPATHLEN + 1];
-    int i;
-    
-    strcpy(cmd,arg[0]);
-    for (i = 1; arg[i] != NULL; i++)
-      {
-      strcat(cmd," ");
-      strcat(cmd,arg[i]);
-      }
-    strcat(cmd,")");
+    create_command(cmd, sizeof(cmd), arg);
     
     sprintf(log_buffer, "execing jobstarter command (%s)\n", cmd);
     log_ext(-1, __func__, log_buffer, LOG_DEBUG);
@@ -2017,9 +2041,13 @@ int TMomFinalizeJob1(
       /* check time on the file not the directory */
       
       get_chkpt_dir_to_use(pjob, buf);
-      strcat(buf, "/");
-      strcat(buf, pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
-      
+      if (sizeof(buf) - strlen(buf) > 
+            strlen(pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str) + 1)
+        {
+        strcat(buf, "/");
+        strcat(buf, pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
+        }
+
       stat(buf, &sb);
 
       if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend) == 0)
@@ -2277,7 +2305,6 @@ int TMomFinalizeJob2(
 
   {
   char                  buf[MAXPATHLEN + 2];
-  char                  portname[MAXPATHLEN];
   pid_t                 cpid;
 #if SHELL_USE_ARGV == 0
   #if SHELL_INVOKE == 1
@@ -2335,18 +2362,15 @@ int TMomFinalizeJob2(
 
   if (TJE->ptc >= 0)
     close(TJE->ptc);
-  
-  strcpy(buf, path_jobs);
-  
-  strcat(buf, pjob->ji_qs.ji_fileprefix);
-  
+ 
   if (multi_mom)
     {
-    sprintf(portname,"%d",pbs_rm_port);
-    strcat(buf,portname);
+    snprintf(buf, sizeof(buf), "%s%s%d%s",
+      path_jobs, pjob->ji_qs.ji_fileprefix, pbs_rm_port, JOB_SCRIPT_SUFFIX);
     }
-  
-  strcat(buf, JOB_SCRIPT_SUFFIX);
+  else
+    snprintf(buf, sizeof(buf), "%s%s%s",
+      path_jobs, pjob->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
   
   if (chown(
         buf,
@@ -2364,7 +2388,7 @@ int TMomFinalizeJob2(
 
     if (exec_with_exec)
       {
-      if (strlen(buf)+5 <= MAXPATHLEN) 
+      if (strlen(buf)+5 <= sizeof(buf))
         {
         memmove(buf + 5, buf, strlen(buf) + 1);
         strncpy(buf, "exec ", 5);
@@ -2378,11 +2402,15 @@ int TMomFinalizeJob2(
     /* Did the user submit arguments with the -F option in qsub? */
     if (pjob->ji_wattr[JOB_ATR_arguments].at_flags & ATR_VFLAG_SET)
       {
-      strcat(buf, " ");
-      strcat(buf, pjob->ji_wattr[JOB_ATR_arguments].at_val.at_str);
+      if (sizeof(buf) - strlen(buf) > strlen(pjob->ji_wattr[JOB_ATR_arguments].at_val.at_str) + 1)
+        {
+        strcat(buf, " ");
+        strcat(buf, pjob->ji_wattr[JOB_ATR_arguments].at_val.at_str);
+        }
       }
-    
-    strcat(buf, "\n");  /* setup above */
+
+    if (sizeof(buf) - strlen(buf) > 1)
+      strcat(buf, "\n");  /* setup above */
     
     i = strlen(buf);
     j = 0;
@@ -3692,18 +3720,8 @@ void launch_the_job_normally(
   if (LOGLEVEL >= 10)
     {
     char cmd[MAXLINE];
-    int  i;
-    
-    strcpy(cmd, arg[0]);
-    strcat(cmd, ",");
-
-    for (i = 1; arg[i] != NULL; i++)
-      {
-      strcat(cmd, " ");
-      strcat(cmd, arg[i]);
-      strcat(cmd, ",");
-      }
-    strcat(cmd, ")");
+   
+    create_command(cmd, sizeof(cmd), arg);
     
     sprintf(log_buffer, "execing command (%s) args (%s)\n", shell, cmd);
     log_ext(-1, __func__, log_buffer, LOG_DEBUG);
@@ -7357,7 +7375,7 @@ int bld_env_variables(
 
   if (memcmp(name,"BATCH_PARTITION_ID",strlen("BATCH_PARTITION_ID")) == 0)
     {
-    return -1;
+    return(PBSE_NONE);
     }
 
   amt = strlen(name) + 1;
@@ -8489,7 +8507,7 @@ int expand_path(
         
       environ = environ_old;
 
-      return(FAILURE);
+      break;
 
     }  /* END switch () */
         

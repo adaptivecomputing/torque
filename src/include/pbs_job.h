@@ -209,6 +209,8 @@ struct array_depend_job
 #define JOB_RECOV_RUNNING     2  /* -p option */
 #define JOB_RECOV_DELETE      3  /* -P option */
 
+#define SYNC_KILL "sync_kill"
+
 /* These are flags to distinguish Mother Superior from intermediate moms
    for a job_radix */
 #define MOTHER_SUPERIOR       0
@@ -1086,7 +1088,7 @@ dir so that job can be restarted */
 extern void  depend_clrrdy(job *);
 extern int   depend_on_que(pbs_attribute *, void *, int);
 extern int   depend_on_exec(job *);
-extern int   depend_on_term(char *);
+extern int   depend_on_term(job *);
 job         *find_job_regular_jobs(char *);
 job         *find_job_array_jobs(char *);
 extern char *get_egroup(job *);
