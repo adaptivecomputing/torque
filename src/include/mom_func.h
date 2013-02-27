@@ -236,6 +236,8 @@ extern void  check_busy(double);
 extern void  state_to_server(int, int);
 extern void  dep_main_loop_cycle(void);
 extern int   message_job(job *, enum job_file, char *);
+extern proc_stat_t *get_proc_stat(int pid);
+
 extern void  term_job(job *);
 int          TTmpDirName(job *, char *, int);
 
