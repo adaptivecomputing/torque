@@ -29,7 +29,7 @@ extern time_t pbs_tcp_timeout; /* located in tcp_dis.c. Move here later */
 #define RES_PORT_START 144
 #define RES_PORT_END (IPPORT_RESERVED - 1)
 #define RES_PORT_RANGE (RES_PORT_END - RES_PORT_START + 1)
-#define RES_PORT_RETRY 3
+#define RES_PORT_RETRY 50
 #define PBS_NET_RC_RETRY -2
 #define TCP_PROTO_NUM 0
 #define MAX_NUM_LEN 21
@@ -151,91 +151,88 @@ int get_random_reserved_port()
 int socket_get_tcp_priv()
 
   {
-  int priv_port = 0, local_socket = 0;
-  int cntr = 0;
-  int rc = PBSE_NONE;
+  int                priv_port = 0;
+  int                local_socket = 0;
+  int                cntr = 0;
+  int                rc = PBSE_NONE;
   struct sockaddr_in local;
-  int flags;
+  int                flags;
+  
   memset(&local, 0, sizeof(struct sockaddr_in));
   local.sin_family = AF_INET;
+  
+  if ((local_socket = socket_get_tcp()) < 0)
+    return(-1);
 
-  /* If any of the following 2 succeed (negative conditions) jump to else below
-   * else run the default */
-  if ((local_socket = socket_get_tcp()) >= 0)
+#ifndef NOPRIVPORTS
+  /* According to the notes in the previous code:
+   * bindresvport seems to cause connect() failures in some odd corner case
+   * when talking to a local daemon.  So we'll only try this once and
+   * fallback to the slow loop around bind() if connect() fails
+   * with EADDRINUSE or EADDRNOTAVAIL.
+   * http://www.supercluster.org/pipermail/torqueusers/2006-June/003740.html
+   */
+
+  flags = fcntl(local_socket, F_GETFL);
+  flags |= O_NONBLOCK;
+  fcntl(local_socket, F_SETFL, flags);
+
+  priv_port = get_random_reserved_port();
+  while (cntr < RES_PORT_RETRY)
     {
-    if ((rc = bindresvport(local_socket, &local)) == 0)
+    if (++priv_port >= RES_PORT_END)
+      priv_port = RES_PORT_START;
+    local.sin_port = htons(priv_port);
+    if ((rc = bind(local_socket, (struct sockaddr *)&local, sizeof(struct sockaddr))) < 0)
       {
-      priv_port = ntohs(local.sin_port);
-      }
-    else
-      {
-      rc = PBSE_SOCKET_FAULT;
-      }
-    }
-  else
-    {
-    rc = PBSE_SOCKET_FAULT;
-    }
-
-  if (rc == PBSE_NONE)
-    {
-    /* Success case */
-    priv_port = local_socket;
-    }
-  else if ((local_socket = socket_get_tcp()) > 0)
-    {
-    /* According to the notes in the previous code:
-     * bindresvport seems to cause connect() failures in some odd corner case
-     * when talking to a local daemon.  So we'll only try this once and
-     * fallback to the slow loop around bind() if connect() fails
-     * with EADDRINUSE or EADDRNOTAVAIL.
-     * http://www.supercluster.org/pipermail/torqueusers/2006-June/003740.html
-     */
-
-    flags = fcntl(local_socket, F_GETFL);
-    flags |= O_NONBLOCK;
-    fcntl(local_socket, F_SETFL, flags);
-
-    priv_port = get_random_reserved_port();
-    while (cntr < RES_PORT_RETRY)
-      {
-      if (++priv_port >= RES_PORT_END)
-        priv_port = RES_PORT_START;
-      local.sin_port = htons(priv_port);
-      if (((rc = bind(local_socket, (struct sockaddr *)&local, sizeof(struct sockaddr))) < 0) &&
-          ((rc == EADDRINUSE) ||
+      if ((errno == EADDRINUSE) ||
            (errno == EADDRNOTAVAIL) ||
            (errno == EINVAL) ||
-           (rc == EINPROGRESS)))
+           (errno == EINPROGRESS))
         {
         cntr++;
         }
       else
         {
-        rc = PBSE_NONE;
+        cntr = RES_PORT_RETRY;
         break;
         }
+
       }
-    if (cntr >= RES_PORT_RETRY)
+    else
       {
-      close(local_socket);
-      rc = PBSE_SOCKET_FAULT;
-      errno = PBSE_SOCKET_FAULT;
-      local_socket = -1;
+      rc = PBSE_NONE;
+      break;
       }
     }
-  else
+
+  if (cntr >= RES_PORT_RETRY)
     {
-    /* If something worked the first time you end up here */
+    close(local_socket);
     rc = PBSE_SOCKET_FAULT;
+    errno = PBSE_SOCKET_FAULT;
+    local_socket = -1;
     }
+#else
+  rc = bind(local_socket, (struct sockaddr *)&local, sizeof(struct sockaddr));
+
+  if (rc != 0)
+    {
+    close(local_socket);
+    local_socket = -1;
+    }
+#endif
 
   if (rc != PBSE_NONE)
     {
     local_socket = -1;
     }
-  return local_socket;
+
+  priv_port = local_socket; /* make compiler doesn't complain var. set but not used error */
+  return(local_socket);
   } /* END socket_get_tcp_priv() */
+
+
 
 int socket_connect_unix(
 
