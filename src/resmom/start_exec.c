@@ -4551,6 +4551,7 @@ int start_process(
   int           fd2;
   u_long        ipaddr;
   unsigned int  momport = 0;
+  proc_stat_t *ps = NULL;
 
   struct  startjob_rtn sjr =
     {
@@ -5131,7 +5132,7 @@ int start_process(
 
   ptask->ti_qs.ti_sid = sjr.sj_session;
 
-  proc_stat_t *ps = get_proc_stat((int)sjr.sj_session);
+  ps = get_proc_stat((int)sjr.sj_session);
   if(ps != NULL)
     {
     pjob->ji_wattr[JOB_ATR_system_start_time].at_val.at_long = ps->start_time;
