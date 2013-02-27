@@ -14,6 +14,7 @@
 #include "pbs_error.h" /* PBSE_NONE */
 #include "pbs_constants.h" /* AUTH_IP */
 #include "pbs_ifl.h" /* pbs_default, PBS_BATCH_SERVICE_PORT, TRQ_AUTHD_SERVICE_PORT */
+#include "net_connect.h" /* TRQAUTHD_SOCK_NAME */
 #include "../lib/Libnet/lib_net.h" /* start_listener */
 #include "../lib/Libifl/lib_ifl.h" /* process_svr_conn */
 #include "../lib/Liblog/chk_file_sec.h" /* IamRoot */
@@ -98,6 +99,7 @@ int daemonize_trqauthd(char *server_ip, int server_port, void *(*process_meth)(v
   char  error_buf[MAX_BUF];
   char msg_trqauthddown[MAX_BUF];
   char path_log[MAXPATHLEN + 1];
+  char unix_socket_name[MAXPATHLEN + 1];
   char *log_file=NULL;
   int eventclass = PBS_EVENTCLASS_TRQAUTHD;
   char *path_home = PBS_SERVER_HOME;
@@ -172,7 +174,8 @@ int daemonize_trqauthd(char *server_ip, int server_port, void *(*process_meth)(v
     pthread_mutex_unlock(log_mutex);
 
     /* start the listener */
-    rc = start_listener(server_ip, server_port, process_meth);
+    snprintf(unix_socket_name, sizeof(unix_socket_name), "%s/%s", path_home, TRQAUTHD_SOCK_NAME);
+    rc = start_domainsocket_listener(unix_socket_name, process_meth);
     if(rc != PBSE_NONE)
       {
       openlog("daemonize_trqauthd", LOG_PID | LOG_NOWAIT, LOG_DAEMON);

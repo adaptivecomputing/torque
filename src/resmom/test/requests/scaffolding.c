@@ -338,7 +338,7 @@ int kill_job(job *pjob, int sig, const char *killer_id_name, char *why_killed_re
   exit(1);
   }
 
-void reply_text(struct batch_request *preq, int code, char *text)
+void reply_text(struct batch_request *preq, int code, const char *text)
   {
   fprintf(stderr, "The call to reply_text needs to be mocked!!\n");
   exit(1);

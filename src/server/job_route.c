@@ -94,6 +94,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include "libpbs.h"
 #include "pbs_error.h"
 #include "list_link.h"
@@ -133,6 +134,8 @@ extern char *msg_err_malloc;
 extern char *msg_err_noqueue;
 extern int LOGLEVEL;
 extern pthread_mutex_t *reroute_job_mutex;
+
+extern int route_retry_interval;
 
 /*
  * Add an entry to the list of bad destinations for a job.
@@ -461,11 +464,9 @@ int job_route(
 
 
 
-
 int reroute_job(
 
-  job *pjob,
-  pbs_queue *pque)
+  job *pjob)
 
   {
   int        rc = PBSE_NONE;
@@ -476,20 +477,15 @@ int reroute_job(
     sprintf(log_buf, "%s", pjob->ji_qs.ji_jobid);
     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
+    
+  rc = job_route(pjob);
 
-  if ((pque != NULL) &&
-      (pque->qu_qs.qu_type == QTYPE_RoutePush))
-    {
-    rc = job_route(pjob);
-
-    if (rc == PBSE_ROUTEREJ)
-      job_abt(&pjob, pbse_to_txt(PBSE_ROUTEREJ));
-    else if (rc == PBSE_ROUTEEXPD)
-      job_abt(&pjob, msg_routexceed);
-    else if (rc == PBSE_QUENOEN)
-      job_abt(&pjob, msg_err_noqueue);
-
-    }
+  if (rc == PBSE_ROUTEREJ)
+    job_abt(&pjob, pbse_to_txt(PBSE_ROUTEREJ));
+  else if (rc == PBSE_ROUTEEXPD)
+    job_abt(&pjob, msg_routexceed);
+  else if (rc == PBSE_QUENOEN)
+    job_abt(&pjob, msg_err_noqueue);
 
   return(rc);      
   } /* END reroute_job() */
@@ -519,10 +515,9 @@ void *queue_route(
   pbs_queue *pque;
   job       *pjob = NULL;
   char      *queue_name;
-  char      log_buf[LOCAL_LOG_BUF_SIZE];
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
 
   int       iter = -1;
-  time_t    time_now = time(NULL);
 
   queue_name = (char *)vp;
 
@@ -530,47 +525,63 @@ void *queue_route(
     {
     sprintf(log_buf, "NULL queue name");
     log_err(-1, __func__, log_buf);
-    pthread_exit(0);
+    return(NULL);
     }
 
-  if (LOGLEVEL>=7)
+  while (1)
     {
-    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "queue name: %s ", queue_name);
-    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_QUEUE, __func__, log_buf);
-    }
-   
-  pthread_mutex_lock(reroute_job_mutex);
-
-  pque = find_queuebyname(queue_name);
-  if (pque == NULL)
-    {
-    sprintf(log_buf, "Could not find queue %s", queue_name);
-    log_err(-1, __func__, log_buf);
-    free(queue_name);
-    pthread_mutex_unlock(reroute_job_mutex);
-    pthread_exit(0);
-    }
-
-  while ((pjob = next_job(pque->qu_jobs,&iter)) != NULL)
-    {
-    /* the second condition says we only want to try if routing
-     * has been tried once - this is to let req_commit have the 
-     * first crack at routing always */
-    unlock_queue(pque, __func__, NULL, LOGLEVEL);
-    if ((pjob->ji_qs.ji_un.ji_routet.ji_rteretry <= time_now) &&
-        (pjob->ji_commit_done == TRUE))
+    pthread_mutex_lock(reroute_job_mutex);
+    /* Make sure the queue is (still) valid.  If the user deleted it, we
+       must catch that here and terminate the thread appropriately! */
+    pque = find_queuebyname(queue_name);
+    if (pque == NULL)
       {
-      reroute_job(pjob, pque);
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+      sprintf(log_buf, "Queue %s has disappeared or been deleted.  queue_route() thread exiting.", queue_name);
+      log_err(-1, __func__, log_buf);
+      free(queue_name);
+      pthread_mutex_unlock(reroute_job_mutex);
+      return(NULL);
       }
-    else
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+
+    if (LOGLEVEL >= 7)
+      {
+      snprintf(log_buf, sizeof(log_buf), "routing any ready jobs in queue: %s", queue_name);
+      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_QUEUE, __func__, log_buf);
+      }
+
+    /* must lock the reroute_job_mutex before having the queue locked */
+    while ((pjob = next_job(pque->qu_jobs,&iter)) != NULL)
+      {
+      /* We only want to try if routing has been tried at least once - this is to let
+       * req_commit have the first crack at routing always. */
+      if (pjob->ji_commit_done == 0) /* when req_commit is done it will set ji_commit_done to 1 */
+        {
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+        continue;
+        }
+      
+      /* queue must be unlocked when calling reroute_job */
+      unlock_queue(pque, __func__, (char *)NULL, 0);
+      reroute_job(pjob);
+      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+      /* need to relock queue when we go to call next_job */
+      lock_queue(pque, __func__, (char *)NULL, 0);
+      }
+
+    /* we come out of the while loop with the queue locked.
+       We don't want it locked while we sleep */
+    unlock_queue(pque, __func__, (char *)NULL, 0);
+    pthread_mutex_unlock(reroute_job_mutex);
+    sleep(route_retry_interval);
     }
 
+  /* NOTREACHED */
+  sprintf(log_buf, "queue_route(%s) thread terminated impossibly?!", queue_name);
+  log_err(-1, __func__, log_buf);
   free(queue_name);
-  unlock_queue(pque, __func__, NULL, LOGLEVEL);
-  pthread_mutex_unlock(reroute_job_mutex);
-  pthread_exit(0);
+  return(NULL);
   } /* END queue_route() */
+
+
 
 
