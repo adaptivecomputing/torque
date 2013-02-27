@@ -4226,7 +4226,7 @@ void scan_non_child_tasks(void)
               proc_stat_t *ts = get_proc_stat(ps->session);
               if(ts == NULL)
                 continue;
-              if(ts->start_time == pJob->ji_wattr[JOB_ATR_system_start_time].at_val.at_long)
+              if(ts->start_time == (unsigned long)pJob->ji_wattr[JOB_ATR_system_start_time].at_val.at_long)
                 {
                 found = 1;
                 break;

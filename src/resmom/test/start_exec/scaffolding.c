@@ -485,3 +485,8 @@ ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   {
   return(0);
   }
+
+proc_stat_t *get_proc_stat(int pid)
+  {
+  return(NULL);
+  }
