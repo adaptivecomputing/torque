@@ -5179,6 +5179,13 @@ int start_process(
 
   ptask->ti_qs.ti_sid = sjr.sj_session;
 
+  proc_stat_t *ps = get_proc_stat((int)sjr.sj_session);
+  if(ps != NULL)
+    {
+    pjob->ji_wattr[JOB_ATR_system_start_time].at_val.at_long = ps->start_time;
+    pjob->ji_wattr[JOB_ATR_system_start_time].at_flags |= ATR_VFLAG_SET;
+    }
+
   log_buffer[0] = '\0';
 
   if ((i = mom_set_limits(pjob, SET_LIMIT_SET)) != PBSE_NONE)

@@ -4221,9 +4221,22 @@ void scan_non_child_tasks(void)
 
           if (ps->session == pTask->ti_qs.ti_sid)
             {
-            found = 1;
-
-            break;
+            if(pJob->ji_wattr[JOB_ATR_system_start_time].at_flags&ATR_VFLAG_SET)
+              {
+              proc_stat_t *ts = get_proc_stat(ps->session);
+              if(ts == NULL)
+                continue;
+              if(ts->start_time == pJob->ji_wattr[JOB_ATR_system_start_time].at_val.at_long)
+                {
+                found = 1;
+                break;
+                }
+              }
+            else
+              {
+              found = 1;
+              break;
+              }
             }
           }    /* END while ((dent) != NULL) */
 #ifdef PENABLE_LINUX26_CPUSETS
