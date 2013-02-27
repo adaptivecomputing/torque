@@ -1797,7 +1797,9 @@ int handle_job_recovery(
            * only do up to 10 per second to not overwhelm pbs_server*/
           if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
               (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL))
+            {
             set_task(WORK_Timed, time_now + 10 + (Index % 10), poll_job_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
+            }
           unlock_ji_mutex(pjob, __func__, "5", LOGLEVEL);
           }
         }
@@ -1807,7 +1809,9 @@ int handle_job_recovery(
          * only do up to 10 per second to not overwhelm pbs_server*/
         if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
             (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL))
+          {
           set_task(WORK_Timed, time_now + 10 + (Index % 10), poll_job_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
+          }
         unlock_ji_mutex(pjob, __func__, "6", LOGLEVEL);
         }
       }

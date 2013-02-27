@@ -70,3 +70,4 @@ check:
 .PHONY: cleancheck
 cleancheck:
 	@for dir in $(CHECK_DIRS); do (cd $$dir && $(MAKE) cleancheck); done
+endif

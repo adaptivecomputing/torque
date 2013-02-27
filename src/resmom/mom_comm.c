@@ -4209,7 +4209,6 @@ int handle_im_get_resc_response(
     {
     tm_reply(ptask->ti_chan, TM_OKAY, event);
     
-    diswst(ptask->ti_chan, info);
     if ((ret = diswst(ptask->ti_chan, info)) == DIS_SUCCESS)
       {
       DIS_tcp_wflush(ptask->ti_chan);

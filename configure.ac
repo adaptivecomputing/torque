@@ -139,7 +139,6 @@ m4_ifdef([AM_SILENT_RULES],[
     AM_SILENT_RULES(no)
     AC_CONFIG_FILES(src/test/scaffold_fail/Makefile
     src/test/torque_test_lib/Makefile
-    src/test/Makefile
     src/cmds/test/Makefile
     src/cmds/test/MXML/Makefile
     src/cmds/test/common_cmds/Makefile
@@ -172,6 +171,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/cmds/test/qterm/Makefile
     src/daemon_client/test/Makefile
     src/daemon_client/test/trq_auth_daemon/Makefile
+	  src/drmaa/test/Makefile
     src/lib/Libattr/test/Makefile
     src/lib/Libattr/test/attr_atomic/Makefile
     src/lib/Libattr/test/attr_fn_acl/Makefile
@@ -478,6 +478,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/server/test/svr_task/Makefile
     src/server/test/track_alps_reservations/Makefile
     src/server/test/user_info/Makefile
+    src/test/Makefile
     src/tools/test/Makefile
     src/tools/test/chk_tree/Makefile
     src/tools/test/hostn/Makefile
@@ -2273,7 +2274,6 @@ AC_OUTPUT(buildutils/pbs_mkdirs
 	  src/tools/xpbsmon/Makefile
 	  src/drmaa/Makefile
 	  src/drmaa/src/Makefile
-	  src/drmaa/test/Makefile
 	  src/drmaa/Doxyfile
 	  src/pam/Makefile
 
