@@ -352,8 +352,9 @@ void req_reject(
 
   if ((Msg != NULL) && (*Msg != '\0'))
     {
-    snprintf(msgbuf, sizeof(msgbuf), "%s MSG=%s",
+    snprintf(msgbuf, sizeof(msgbuf), "%s %s%s",
       msgbuf2,
+      PBS_MSG_EQUAL,
       Msg);
 
     /* NOTE: Don't need this last snprintf() unless another message is concatenated. */
