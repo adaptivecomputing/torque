@@ -986,9 +986,16 @@ void stat_update(
   int                   oldsid;
   int                   bad = 0;
   time_t                time_now = time(NULL);
+  char                 *msg_ptr = NULL;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   preply = &preq->rq_reply;
+
+  msg_ptr = strstr(preply->brp_un.brp_txt.brp_str, PBS_MSG_EQUAL);
+  if (msg_ptr != NULL)
+    {
+    msg_ptr += strlen(PBS_MSG_EQUAL);
+    }
 
   if (preply->brp_choice == BATCH_REPLY_CHOICE_Status)
     {
@@ -1034,7 +1041,8 @@ void stat_update(
     }    /* END if (preply->brp_choice == BATCH_REPLY_CHOICE_Status) */
   else if ((preply->brp_choice == BATCH_REPLY_CHOICE_Text) &&
            (preply->brp_code == PBSE_UNKJOBID) &&
-           (!strcmp(preply->brp_un.brp_txt.brp_str, preq->rq_ind.rq_status.rq_id)))
+           (msg_ptr != NULL) &&
+           (!strcmp(msg_ptr,  preq->rq_ind.rq_status.rq_id)))
     {
     /* we sent a stat request, but mom says it doesn't know anything about
        the job */
