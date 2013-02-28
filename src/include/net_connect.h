@@ -142,6 +142,8 @@ typedef unsigned long pbs_net_t;        /* for holding host addresses */
 #define PBS_NET_RC_RETRY -2
 #define PBS_NET_RC_UNSET -3
 
+/* trqauthd's unix socket name */
+#define TRQAUTHD_SOCK_NAME  "trqauthd-unix"
 
 /* defines for unix sockets and creds */
 #ifndef TSOCK_PATH

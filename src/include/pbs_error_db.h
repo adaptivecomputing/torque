@@ -40,7 +40,7 @@ PbsErrClient(PBSE_TOOMANY,           (char *)"Too many submit retries")
 /* No permission */
 PbsErrClient(PBSE_PERM,              (char *)"Unauthorized Request ")
 /* pbs_iff not found */
-PbsErrClient(PBSE_IFF_NOT_FOUND,     (char *)"pbs_iff command not found, unable to authenticate")
+PbsErrClient(PBSE_IFF_NOT_FOUND,     (char *)"trqauthd unable to authenticate")
 /* munge not found */
 PbsErrClient(PBSE_MUNGE_NOT_FOUND,   (char *)"munge executable not found, unable to authenticate")
 /* 15010 */
