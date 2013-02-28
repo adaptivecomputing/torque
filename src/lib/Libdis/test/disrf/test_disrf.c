@@ -1,5 +1,5 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "lib_dis.h"
+#include "dis_internal.h"
 #include "test_disrf.h"
 #include <stdlib.h>
 #include <stdio.h>
