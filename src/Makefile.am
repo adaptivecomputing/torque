@@ -68,7 +68,6 @@ CHECK_DIRS = test server resmom momctl lib cmds
 check:
 	@for dir in $(CHECK_DIRS); do (cd $$dir && $(MAKE) $(MAKECMDGOALS)); done
 
-if HAVE_CHECK
 .PHONY: cleancheck
 cleancheck:
 	@for dir in $(CHECK_DIRS); do (cd $$dir && $(MAKE) cleancheck); done
