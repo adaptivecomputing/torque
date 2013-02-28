@@ -121,7 +121,9 @@
 #include "net_connect.h"
 #include "log.h"
 
-
+#if defined(MUNGE_AUTH_LIB)
+#include <munge.h>
+#endif
 
 #define CNTRETRYDELAY 5
 #define MUNGE_SIZE 256 /* I do not know what the proper size of this should be. My 
@@ -362,7 +364,7 @@ static char *PBS_get_server(
  * PBSD_munge_authenticate - This function will use munge to authenticate 
  * a user connection with the server. 
  */
-#ifdef MUNGE_AUTH
+#if defined(MUNGE_AUTH) && defined(MUNGE_AUTH_EXEC)
 int PBSD_munge_authenticate(
 
   int psock,  /* I */
@@ -456,7 +458,120 @@ int PBSD_munge_authenticate(
     return(PBSE_NONE);
     }
   }
-#endif /* ifdef MUNGE_AUTH */
+#endif /* if defined(MUNGE_AUTH) && defined(MUNGE_AUTH_EXEC) */
+
+
+
+/* MUNGE library supported authentication
+ * PBSD_munge_authenticate - This function will use munge to authenticate 
+ * a user connection with the server. 
+ */
+#if defined(MUNGE_AUTH) && defined(MUNGE_AUTH_LIB)
+int PBSD_munge_cred_destroy(
+	char ** cred) /* I */
+
+  {
+  volatile char *ptr = NULL;
+
+  if (cred == NULL || *cred == NULL)
+    return (-1);
+
+  ptr = *cred;
+
+  while (*ptr != '\0')
+    {
+    *ptr++ = 0; /* Munge memburn replacement */
+    }
+
+  free(*cred);
+  *cred = NULL;
+
+  return 0;
+  }
+
+int PBSD_munge_authenticate(
+
+  int psock,  /* I */
+  int handle) /* I */
+
+  {
+  static char        *id = "PBSD_munge_authenticate";
+  int                 rc;
+
+  munge_ctx_t         mctx = NULL;
+  munge_err_t         mret = EMUNGE_SNAFU;
+  char               *mcred = NULL;
+
+
+  /* user id and name stuff */
+  struct passwd      *pwent;
+  uid_t               myrealuid;
+  struct batch_reply *reply;
+  unsigned short      user_port = 0;
+  struct sockaddr_in  sockname;
+  socklen_t           socknamelen = sizeof(sockname);
+
+  if ((mctx = munge_ctx_create()) == NULL)
+    {
+	return(-1);
+    }
+
+  if ((mret = munge_encode (&mcred, mctx, NULL, 0)) != EMUNGE_SUCCESS)
+    {
+      const char *merrmsg = NULL;
+      if (!(merrmsg = munge_ctx_strerror(mctx)))
+        {
+        merrmsg = munge_strerror(mret);
+        }
+      fprintf(stderr, "munge_encode failed: %s (%d)\n", merrmsg, mret);
+      munge_ctx_destroy(mctx);
+      return(PBSE_MUNGE_NOT_FOUND); /*TODO more fine-grained error codes? */
+    }
+  
+  munge_ctx_destroy(mctx);
+
+  /* We got the certificate. Now make the PBS_BATCH_AltAuthenUser request */
+  myrealuid = getuid();
+  pwent = getpwuid(myrealuid);
+  
+  rc = getsockname(psock, (struct sockaddr *)&sockname, &socknamelen);
+  
+  if (rc == -1)
+    {
+    fprintf(stderr, "getsockname failed: %d\n", errno);
+    return(-1);
+    }
+  
+  user_port = ntohs(sockname.sin_port);
+  
+  DIS_tcp_setup(psock);
+  
+  if ((rc = encode_DIS_ReqHdr(psock, PBS_BATCH_AltAuthenUser, pwent->pw_name)) ||
+      (rc = diswui(psock, user_port)) ||
+      (rc = diswst(psock, mcred)) ||
+      (rc = encode_DIS_ReqExtend(psock, NULL)) ||
+      (rc = DIS_tcp_wflush(psock)))
+    {
+    PBSD_munge_cred_destroy(&mcred);
+    /* ERROR */
+    return(rc);
+    }
+  else
+    {
+    PBSD_munge_cred_destroy(&mcred);
+    /* read the reply */
+    if ((reply = PBSD_rdrpy(handle)) != NULL)
+      free(reply);
+    
+    return(PBSE_NONE);
+    }
+  }
+#endif /* if defined(MUNGE_AUTH) && defined(MUNGE_AUTH_LIB) */
+
+
+
+
+
 
 
 /*
