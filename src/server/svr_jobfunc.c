@@ -1486,19 +1486,18 @@ int chk_svr_resc_limit(
       req_procs += procs_requested(jbrc_nodes->rs_value.at_val.at_str);
       if (req_procs <= 0)
         {
-       if (req_procs == -2)
-         {
-         if ((EMsg != NULL) && (EMsg[0] == '\0'))
-         strcpy(EMsg, "Memory allocation failed");
-         }
-       else
-         {
-         if ((EMsg != NULL) && (EMsg[0] == '\0'))
-         strcpy(EMsg, "Invalid Syntax");
-         }
-       return(PBSE_INVALID_SYNTAX);
-       }
-
+        if (req_procs == -2)
+          {
+          if ((EMsg != NULL) && (EMsg[0] == '\0'))
+            strcpy(EMsg, "Memory allocation failed");
+          }
+        else
+          {
+          if ((EMsg != NULL) && (EMsg[0] == '\0'))
+            strcpy(EMsg, "Invalid Syntax");
+          }
+        return(PBSE_INVALID_SYNTAX);
+        }
 
       if (node_avail_complex(
             jbrc_nodes->rs_value.at_val.at_str,
