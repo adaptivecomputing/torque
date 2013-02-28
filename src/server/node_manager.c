@@ -4415,7 +4415,7 @@ int procs_requested(
   char        *cp;
   char        *hold;
   int          num_nodes = 0;
-  int          num_procs = 0;
+  int          num_procs = 1;
   int          total_procs = 0;
   int          num_gpus = 0;
   int          num_mics = 0;
@@ -4471,7 +4471,7 @@ int procs_requested(
 
   do
     {
-    if ((i = number(&str, &num_nodes)) == -1 )
+    if ((i = number(&str, &num_nodes)) == -1)
       {
       free(tmp_spec);
       /* Bad string syntax. Fail */
