@@ -96,6 +96,9 @@
 #include <string.h>
 #include <csv.h>
 
+/* needed for oom_adj */
+#include <linux/limits.h>
+
 #ifdef Q_6_5_QUOTAON
 /* remap dqblk for SUSE 9.0 */
 #define dqblk if_dqblk
@@ -184,6 +187,8 @@ extern int      ignwalltime;
 extern int      igncput;
 extern int      ignvmem;
 extern int      ignmem;
+extern int	job_oom_score_adjust;
+extern int	mom_oom_immunize;
 
 /*
 ** local functions and data
@@ -621,6 +626,40 @@ get_proc_mem(void)
 
 #endif /* PNOT */
 
+/*
+ * sets oom_adj score for current process 
+ * requires root privileges or CAP_SYS_RESOURCE to succeed
+ */
+
+static int oom_adj(int score)
+{
+
+   pid_t pid;
+   int rc,fd;
+
+   char oom_adj_path[PATH_MAX] = "";
+   char adj_value[128] = "";
+   /* valid values are -17 to 15 */
+   if ( score > 15 || score < -17 )
+      return -1;
+
+   pid = getpid();
+
+   if ( snprintf(oom_adj_path, sizeof(oom_adj_path), "/proc/%d/oom_adj", pid) < 0 )
+      return -1;
+
+   if ( ( fd = open(oom_adj_path,O_RDWR) ) == -1 )
+      return -1;
+
+   if (snprintf(adj_value,sizeof(adj_value),"%d",score) < 0)
+      return -1;
+
+   rc = write(fd,adj_value,strlen(adj_value));
+
+   close(fd);
+   return rc;
+
+}
 
 
 void dep_initialize(void)
@@ -636,6 +675,30 @@ void dep_initialize(void)
 
     return;
     }
+
+
+  /* NOTE:  /proc/<pid>/oom_adj tunable is linux specific */
+  /* LKF: make pbs_mom processes immune to oom killer's killing frenzy if requested*/
+  if (mom_oom_immunize !=0)
+  {
+    if (oom_adj(-17) < 0)
+    {
+      log_record(
+        PBSEVENT_SYSTEM,
+        PBS_EVENTCLASS_SERVER,
+        id,
+        "failed to make pbs_mom oom-killer immune");
+    } else
+    {
+
+      log_record(
+        PBSEVENT_SYSTEM,
+        PBS_EVENTCLASS_SERVER,
+        id,
+        "mom is now oom-killer safe");
+    }
+  }
+
 
   proc_get_btime();
 
@@ -1091,9 +1154,6 @@ int error(
   }  /* END error() */
 
 
-
-
-
 /*
  * Establish system-enforced limits for the job.
  *
@@ -1159,6 +1219,22 @@ int mom_set_limits(
    */
 
   memset(&reslim, 0, sizeof(reslim));
+
+  /* set oom_adj score for the starting job */
+  /* if immunize mode is set to on, we have to set child score to 0 */
+  if ( (set_mode == SET_LIMIT_SET) && ( job_oom_score_adjust != 0 || mom_oom_immunize != 0 ) )
+    {
+    retval = oom_adj(job_oom_score_adjust);
+
+    if ( LOGLEVEL >= 2 ) 
+      {
+        sprintf(log_buffer, "setting oom_adj '%s'",
+              (retval != -1) ? "succeeded" : "failed");
+        log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
+      }
+
+    };
+
 
   while (pres != NULL)
     {
