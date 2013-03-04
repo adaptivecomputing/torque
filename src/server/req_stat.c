@@ -895,6 +895,10 @@ int stat_to_mom(
   if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
     return PBSE_JOBNOTFOUND;
 
+  /* must return non-zero so that cntl is cleaned up */
+  if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL)
+    return(-1);
+
   job_momaddr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
   job_momport = pjob->ji_qs.ji_un.ji_exect.ji_momport;
   job_momname = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
