@@ -5669,6 +5669,9 @@ int do_tcp(
 
         pbs_tcp_timeout = PMOMTCPTIMEOUT;
         }
+
+      if (rc == PBSE_NONE)
+        rc = RM_PROTOCOL * -1;
       }    /* END BLOCK (case RM_PROTOCOL) */
 
     break;
@@ -5732,7 +5735,7 @@ int do_tcp(
   if (svr_conn[chan->sock].cn_stay_open == FALSE)
     DIS_tcp_cleanup(chan);
 
-  return rc;
+  return(rc);
 
 do_tcp_cleanup:
   
@@ -5740,7 +5743,7 @@ do_tcp_cleanup:
       (svr_conn[chan->sock].cn_stay_open == FALSE))
     DIS_tcp_cleanup(chan);
 
-  return DIS_INVALID;
+  return(DIS_INVALID);
   }  /* END do_tcp() */
 
 
@@ -5794,36 +5797,42 @@ void *tcp_request(
 
   log_buffer[0] = '\0';
 
-  for (c = 0;;c++)
-    {
+  rc = RM_PROTOCOL * -1;
+
+  while (rc == RM_PROTOCOL * -1)
     rc = do_tcp(socket);
-    switch (rc)
-      {
-      case PBSE_NONE:
-        continue;
-        break;
+  
+  switch (rc)
+    {
+    case PBSE_NONE:
 
-      case DIS_EOF:
-        DBPRT(("Closing socket %d twice...\n", socket))
-      case PBSE_MEM_MALLOC:
-      case DIS_EOD:
-      case DIS_INVALID:
-        if (svr_conn[socket].cn_stay_open == FALSE)
-          close_conn(socket, FALSE);
-        break;
-
-      default:
+      if (svr_conn[socket].cn_stay_open == FALSE)
         close_conn(socket, FALSE);
-        DBPRT(("Error in connection. Closing %d\n", socket))
-        break;
-      }
-
+      
       break;
-    }  /* END for (c = 0) */
+
+    case DIS_EOF:
+
+      DBPRT(("Closing socket %d twice...\n", socket))
+
+    case PBSE_MEM_MALLOC:
+    case DIS_EOD:
+    case DIS_INVALID:
+
+      if (svr_conn[socket].cn_stay_open == FALSE)
+        close_conn(socket, FALSE);
+      break;
+
+    default:
+
+      close_conn(socket, FALSE);
+      DBPRT(("Error in connection. Closing %d\n", socket))
+      break;
+    }
 
   DBPRT(("%s:(exit loop for socket %d) processed %d\n", __func__, socket, c))
 
-  return NULL;
+  return(NULL);
   }  /* END tcp_request() */
 
 
