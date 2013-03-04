@@ -4171,6 +4171,22 @@ void scan_non_child_tasks(void)
   for (job = GET_NEXT(svr_alljobs);job != NULL;job = GET_NEXT(job->ji_alljobs))
     {
     task *task;
+    long job_start_time = 0;
+    long job_session_id = 0;
+    long session_start_time = 0;
+    proc_stat_t *ps = NULL;
+    if(job->ji_wattr[JOB_ATR_system_start_time].at_flags&ATR_VFLAG_SET)
+      {
+      job_start_time = job->ji_wattr[JOB_ATR_system_start_time].at_val.at_long;
+      }
+    if(job->ji_wattr[JOB_ATR_session_id].at_flags&ATR_VFLAG_SET)
+      {
+      job_session_id = job->ji_wattr[JOB_ATR_session_id].at_val.at_long;
+      }
+    if((ps = get_proc_stat(job_session_id)) != NULL)
+      {
+      session_start_time = (long)ps->start_time;
+      }
 
     for (task = GET_NEXT(job->ji_tasks);
          task != NULL;
@@ -4183,7 +4199,6 @@ void scan_non_child_tasks(void)
       struct dirent *dent;
 #endif
       pid_t          pid;
-      proc_stat_t   *ps;
       int            found;
 
       /*
@@ -4219,9 +4234,20 @@ void scan_non_child_tasks(void)
 
       if (kill(task->ti_qs.ti_sid, 0) != -1)
         {
-        found = 1;
+        if((job_start_time != 0)&&
+            (session_start_time != 0))
+          {
+          if(job_start_time == session_start_time)
+            {
+            found = 1;
+            }
+          }
+        else
+          {
+          found = 1;
+          }
         }
-      else
+      if(!found)
         {
         /* session master cannot be found, look for other pid in session */
 #ifdef PENABLE_LINUX26_CPUSETS
@@ -4247,15 +4273,10 @@ void scan_non_child_tasks(void)
 
           if (ps->session == task->ti_qs.ti_sid)
             {
-            if(job->ji_wattr[JOB_ATR_system_start_time].at_flags&ATR_VFLAG_SET)
+            if((job_start_time != 0)&&
+                (session_start_time != 0))
               {
-              long ts_start_time;
-              proc_stat_t *ts = get_proc_stat(ps->session);
-              if(ts == NULL)
-                continue;
-
-              ts_start_time = (long)ts->start_time;
-              if(ts_start_time == job->ji_wattr[JOB_ATR_system_start_time].at_val.at_long)
+              if(job_start_time == session_start_time)
                 {
                 found = 1;
                 break;
