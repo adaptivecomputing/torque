@@ -1,5 +1,9 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
+4.2.1 
+  b - Changed communication infrastructure to use only unix domain sockets when
+      communicating from client commands to trqauthd
+
 4.2.0
   f - Support the MIC architecture. This was co-developed with Doug Johnson at 
       Ohio Supercomputer Center (OSC) and provides support for the Intel® MIC 
