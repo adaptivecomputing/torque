@@ -1011,6 +1011,13 @@ hnodent *find_node(
     log_err(errno, __func__, "Couldn't find connecting information for this stream");
     return(NULL);
     }
+  if(connecting_stack_addr.sa_family != AF_INET)
+    {
+    char log_buffer[100];
+    sprintf(log_buffer,"Calling getpeername() returned non AF_INET address. Address family = %d.",connecting_stack_addr.sa_family);
+    log_err(0,__func__,log_buffer);
+    return NULL;
+    }
 
   connecting_addr = (struct sockaddr_in *)&connecting_stack_addr;
 
@@ -1433,7 +1440,18 @@ int check_ms(
   hnodent            *np;
   unsigned long       ipaddr_ms;
  
-  getpeername(chan->sock,&s_addr,&len);
+  if (getpeername(chan->sock,&s_addr,&len) != 0)
+    {
+    log_err(errno, __func__, "Calling getpeername() gave error.");
+    return(FALSE);
+    }
+  if(s_addr.sa_family != AF_INET)
+    {
+    char log_buffer[100];
+    sprintf(log_buffer,"Calling getpeername() returned non AF_INET address. Address family = %d.",s_addr.sa_family);
+    log_err(0,__func__,log_buffer);
+    return FALSE;
+    }
   addr = (struct sockaddr_in *)&s_addr;
   ipaddr_connect = ntohl(addr->sin_addr.s_addr);
 
@@ -4604,7 +4622,17 @@ void im_request(
     }
 
   /* check that machine is known */  
-  getpeername(chan->sock,&stack_addr,&addr_len);
+  if (getpeername(chan->sock,&stack_addr,&addr_len) != 0)
+    {
+    log_err(errno, __func__, "Calling getpeername() gave error.");
+    goto im_req_finish;
+    }
+  if(stack_addr.sa_family != AF_INET)
+    {
+    sprintf(log_buffer,"Calling getpeername() returned non AF_INET address. Address family = %d.",stack_addr.sa_family);
+    log_err(0,__func__,log_buffer);
+    goto im_req_finish;
+    }
   addr = (struct sockaddr_in *)&stack_addr;
   
   ipaddr = ntohl(addr->sin_addr.s_addr);
