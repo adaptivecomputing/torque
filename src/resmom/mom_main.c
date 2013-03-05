@@ -5755,7 +5755,6 @@ void *tcp_request(
   void *new_sock)
 
   {
-  int  c;
   long  ipadd;
   char  address[80];
   char *tmp;
@@ -5830,7 +5829,7 @@ void *tcp_request(
       break;
     }
 
-  DBPRT(("%s:(exit loop for socket %d) processed %d\n", __func__, socket, c))
+  DBPRT(("%s:(exit loop for socket %d) processed \n", __func__, socket))
 
   return(NULL);
   }  /* END tcp_request() */
