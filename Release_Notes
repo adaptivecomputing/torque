@@ -33,6 +33,12 @@ OVERVIEW
 ---------------------------------------------------------------------------
 WHAT'S NEW
 
+== New in 4.2.1 ==
+   
+   Communication between client utilities and trqauthd have been changed from
+   using tcp to unix domain sockets. When upgrading to 4.2.1 from earlier versions
+   of TORQUE 4.x.x you will need to replace and restart all the trqauthd daemons.
+   You will also need to make sure you replace all of your client utilities.
 
     pbs_server is now multi-threaded so that it will respond to user commands 
     much faster, and most importantly, one user command doesn't tie up the 
