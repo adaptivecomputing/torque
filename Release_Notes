@@ -1,15 +1,13 @@
-                                                                     
-                                                                     
-                                                                     
                                              
-TORQUE Resource Manager 4.1.1 Release Notes
+TORQUE Resource Manager 4.1.5 Release Notes
 
-We have left the 4.1.0 release notes in place to make it easier for the user to know what were 
-the major changes in the TORQUE 4.1.x branch.
+We have left the 4.1.0 release notes in place to make it easier for the user to know what are 
+the major changes in the TORQUE 4.1.x branch. We have also left notes for versions between 
+4.1.0 and 4.1.5 in place for the same reasons
 
-Changes specific to 4.1.1 will be designated as 4.1.1 changes.
+Changes specific to 4.1.5 will be designated as 4.1.5
 
-August 2012
+March 2013
 
 
 ****************************************************************
@@ -26,6 +24,10 @@ The release notes file contains the following sections:
 
 
 === Overview ===
+
+TORQUE 4.1.5 has changed the communication model between TORQUE client commands and trqauthd. TCP communication has been replaced
+with unix domain sockets. When upgrading to TORQUE 4.1.5 from an earlier version of TORQUE 4.x.x the trqauthd daemon will need to 
+be replaced and restarted. All other changes to 4.1.5 have been big fixes only. Please see the CHANGELOG for a complete list.
 
 TORQUE 4.1.0 ehnaces support for Cray. With this release, all apbasil commands are executed by the pbs_mom daemons inside the Cray network. TORQUE 4.1.0 scales to newer, larger systems and can handle larger numbers of jobs, nodes, and commands per second.
 
@@ -51,7 +53,7 @@ pbs_server now only looks up a hostname one time. All information is cached and 
 
 === System Requirements  ===
 
-The following software is required to run TORQUE 4.1.1:
+The following software is required to run TORQUE 4.1.5:
 
 - libxml2-devel package
 - openssl-devel package
@@ -63,41 +65,45 @@ The following software is required to run TORQUE 4.1.1:
 
 === Installation Information ===
 
-The directions to install and configure TORQUE are in chapter 1 of the TORQUE 4.1.0 Administrator Guide [http://www.adaptivecomputing.com/resources/docs/torque/4-1-0/help.htm]. Also note additional instructions in the PBS Administrators Guide and README.building_40.
+The directions to install and configure TORQUE are in chapter 1 of the TORQUE 4.1.4 Administrator Guide [http://docs.adaptivecomputing.com/torque/4-1-4/help.htm#topics/1-installConfig/overview.htm]. Also note additional instructions in the PBS Administrators Guide and README.building_40.
 
 Note that you may need to install libssl-dev in order for the source to make successfully. Specifically, the build system is looking for libssl.so and libcrypto.so. For non-RPM setups, you may need to make a symbolic link from the ssl and crypto libraries to the respective .so names.
 
 
-=== Upgrading to TORQUE 4.1.1 and Backward Compatibility ===
+=== Upgrading to TORQUE 4.1.5 and Backward Compatibility ===
 
-TORQUE 4.1.1 is not backward compatible with versions of TORQUE prior to 4.0. When you upgrade to TORQUE 4.1.1, all MOM and server daemons must be upgraded at the same time. 
+TORQUE 4.1.5 is not backward compatible with versions of TORQUE prior to 4.0. When you upgrade to TORQUE 4.1.5, all MOM and server daemons must be upgraded at the same time. 
 
-The job format is compatible between 4.1.1 and previous versions of TORQUE. Any queued jobs will upgrade to the new version with the exception of job arrays in TORQUE 2.4 and earlier. It is not recommended to upgrade TORQUE while jobs are in a running state.
+The job format is compatible between 4.1.5 and previous versions of TORQUE. Any queued jobs will upgrade to the new version with the exception of job arrays in TORQUE 2.4 and earlier. It is not recommended to upgrade TORQUE while jobs are in a running state.
 
-Because TORQUE 4.1.1 has removed all use of UDP/IP and moved all communication to use TCP/IP, previous versions of TORQUE will not be able to communicate with the components of TORQUE 4.1.1. However, all files in the /var/spool/torque ($TORQUE_HOME) directory and all subdirectories are forwardly compatible.
+Because starting in TORQUE 4.0.0 all use of UDP/IP has been removed and moved all communication now uses TCP/IP, versions of TORQUE previous to 4.0.0 will not be able to communicate with the components of TORQUE 4.1.5. However, all files in the /var/spool/torque ($TORQUE_HOME) directory and all subdirectories are forwardly compatible.
 
 ++ Job Arrays ++
 
-Job arrays from TORQUE version 2.5 and 3.0 are compatible with TORQUE 4.1.1. Job arrays were introduced in TORQUE version 2.4 but modified in 2.5. If upgrading from TORQUE 2.4, you will need to make sure all job arrays are complete before upgrading.
+Job arrays from TORQUE version 2.5 and 3.0 are compatible with TORQUE 4.1.5. Job arrays were introduced in TORQUE version 2.4 but modified in 2.5. If upgrading from TORQUE 2.4, you will need to make sure all job arrays are complete before upgrading.
 
 ++ serverdb ++
 
-The pbs_server configuration is saved in the file $TORQUE_HOME/server_priv/serverdb. When running TORQUE 4.1.1 for the first time, this file converts from a binary file to an XML-like format. This format can be used by TORQUE versions 2.5 and 3.0, but not earlier versions. Back up the $TORQUE_HOME/server_priv/serverdb file before moving to TORQUE 4.1.1.
+The pbs_server configuration is saved in the file $TORQUE_HOME/server_priv/serverdb. When running TORQUE 4.1.5 for the first time, this file converts from a binary file to an XML-like format. This format can be used by TORQUE versions 2.5 and 3.0, but not earlier versions. Back up the $TORQUE_HOME/server_priv/serverdb file before moving to TORQUE 4.1.5.
 
 ++ Upgrading ++
 
-Because TORQUE 4.1.0 will not communicate with versions of TORQUE prior to 4.0.x, it is not possible to upgrade one component and not upgrade the others. Rolling upgrades will not work.
+Because TORQUE 4.1.5 will not communicate with versions of TORQUE prior to 4.0.x, it is not possible to upgrade one component and not upgrade the others. Rolling upgrades will not work.
 
 Before upgrading the system, all running jobs must complete. To prevent queued jobs from starting, nodes can be set to offline or all queues can be disabled. Once all running jobs are complete, the upgrade can be made. Remember to allow any job arrays in version 2.4 to complete before upgrading. Queued array jobs will be lost.
 
 == Cray ==
 
-For upgrading TORQUE to 4.1.0 on a Cray system, refer to the Installation Notes for Moab and TORQUE on a Cray System [http://www.adaptivecomputing.com/resources/docs/mwm/7-1-0/help.htm#xtinstall.html] in Appendix G of the Moab Workload Manager Administrator Guide.
+For upgrading TORQUE to 4.1.0 on a Cray system, refer to the Installation Notes for Moab and TORQUE on a Cray System [http://docs.adaptivecomputing.com/mwm/7-1-3/help.htm#xtinstall.html] in Appendix G of the Moab Workload Manager Administrator Guide.
 
 
 === Documentation ===
 
-The online help for TORQUE 4.1.0 is available in HTML [http://www.adaptivecomputing.com/resources/docs/torque/4-1-0/help.htm] and PDF [http://www.adaptivecomputing.com/resources/docs/torque/4-1-0/torqueAdminGuide-4.1.0.pdf] format.
+The online help for TORQUE 4.1.5 is available in HTML [http://docs.adaptivecomputing.com/torque/4-1-4/help.htm] and PDF [http://docs.adaptivecomputing.com/torque/4-1-4/torqueAdminGuide-4.1.4.pdf] format.
+
+=== What's new in 4.1.5 ===
+
+The socket communication used between client utilities and trqauthd has been changed from using TCP to unix domain sockets. Because of this all client utilities and all trqauthd instances should be changed and restarted. 
 
 === What's new in 4.1.1 ===
 
@@ -107,20 +113,5 @@ x11Forwarding was broken in 4.1.0 and has now been fixed in 4.1.1.
 
 For a complete list of bugs fixed for this version of TORQUE please see the CHANGELOG.
 
-=== Known Issues ===
-
--------------------------------------------------------------------------------
-Jobs will occasionally get stuck in an exiting state. 
-
-Elapsed time as displayed in qstat -r is garbage. 
-
-Multi-req jobs with MPMD alps reservations currently not implemented
-
-pbs_connect will use the default server list even if a specific server is requested.
-
-TORQUE does not keep nodes offline after reboot
--------------------------------------------------------------------------------------
-
-Each of these issues will be fixed in TORQUE 4.1.2.
 
 © Copyright 2012, Adaptive Computing Enterprises, Inc.
