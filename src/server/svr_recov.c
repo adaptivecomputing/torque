@@ -952,7 +952,15 @@ int svr_save_xml(
     return(rc);
     }
 
-  close(fds);
+  /* Some write() errors may not show up until the close() */
+  if ((rc = close(fds)) != 0)
+    {
+    log_err(rc, __func__, "PBS got an error closing the serverdb file");
+    sprintf(log_buf, "%s:5", __func__);
+    unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
+    free(tmp_file);
+    return(rc);
+    }
 
   if ((rc = rename(tmp_file, path_svrdb)) == -1)
     {
