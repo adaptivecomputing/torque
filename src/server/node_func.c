@@ -1376,7 +1376,16 @@ int update_nodes_file(
       unlock_node(np, __func__, "loop", LOGLEVEL);
     } /* for each node */
 
-  fclose(nin);
+  if((fclose(nin)) != 0)
+    {
+    log_event(
+      PBSEVENT_ADMIN,
+      PBS_EVENTCLASS_SERVER,
+      "nodes",
+      (char *)"fclose of nodes file failed");
+
+    return(-1);
+    }
 
   if (rename(path_nodes_new, path_nodes) != 0)
     {
