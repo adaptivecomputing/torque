@@ -654,7 +654,7 @@ dnl
 AC_MSG_CHECKING([whether to compile with debugging symbols])
 AC_ARG_WITH([debug],
   AC_HELP_STRING([--with-debug], [compile with debugging symbols]),
-  DEBUG_SYMBOLS=$withval, DEBUG_SYMBOLS="no")
+  DEBUG_SYMBOLS=$withval, DEBUG_SYMBOLS="yes")
 AC_MSG_RESULT([DEBUG_SYMBOLS=$DEBUG_SYMBOLS])
 dnl  remove -O* and add -g
 if test "$DEBUG_SYMBOLS" = 'yes'; then
