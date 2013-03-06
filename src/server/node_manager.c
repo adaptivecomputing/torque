@@ -1547,6 +1547,8 @@ int process_status_info(
   pbs_attribute   temp;
   int             rc = PBSE_NONE;
   int             send_hello = FALSE;
+  size_t          ch_processed;
+  int             n_iteration;
 
   get_svr_attr_l(SRV_ATR_MomJobSync, &mom_job_sync);
   get_svr_attr_l(SRV_ATR_AutoNodeNP, &auto_np);
@@ -1568,8 +1570,17 @@ int process_status_info(
     return(PBSE_NONE);
 
   /* loop over each string */
-  for (str = status_info->str; str != NULL && *str; str += strlen(str) + 1)
+  ch_processed = n_iteration = 0;
+  for (str = status_info->str; ch_processed < status_info->used;
+         ch_processed += strlen(str) + 1, ++n_iteration)
     {
+    if (n_iteration > 0)
+       /* str still points to the previous iteration str */
+       str += strlen(str) + 1;
+
+    if ( str == NULL || *str == '\0' )
+      break;
+
     /* these two options are for switching nodes */
     if (!strncmp(str, NUMA_KEYWORD, strlen(NUMA_KEYWORD)))
       {
