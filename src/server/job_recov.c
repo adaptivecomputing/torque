@@ -363,7 +363,14 @@ int job_save(
         }
       }  /* END for (i) */
 
-    close(fds);
+    /* Some write() errors may not show up until the close() */
+    if((close(fds)) != 0)
+      {
+      if (updatetype == SAVEJOB_FULL)
+        unlink(namebuf2);
+
+      return(-1);
+      }
 
     if (i >= MAX_SAVE_TRIES)
       {
