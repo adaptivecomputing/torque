@@ -316,6 +316,7 @@ extern int  use_nvidia_gpu;
 void check_state(int);
 void state_to_server(int, int);
 void node_comm_error(node_comm_t *, const char *);
+int  add_mic_status(dynamic_string *status);
 
 
 /* clear servers */

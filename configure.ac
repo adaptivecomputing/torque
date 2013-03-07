@@ -987,7 +987,7 @@ AC_MSG_RESULT($MIC)
 case "$MIC" in
   yes) AC_DEFINE([MIC], 1, [Define to enable MIC support]) ;;
   no) : ;;
-  *) AC_MSG_ERROR([--enable-mic-gpus should be yes or no]) ;;
+  *) AC_MSG_ERROR([--enable-mic should be yes or no]) ;;
 esac
 AM_CONDITIONAL([MIC], test "$MIC" = yes)
 
