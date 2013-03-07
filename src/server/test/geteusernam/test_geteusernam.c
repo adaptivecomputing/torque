@@ -1,5 +1,4 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "geteusernam.h"
 #include "test_geteusernam.h"
 #include <stdlib.h>
 #include <stdio.h>
