@@ -1423,59 +1423,6 @@ int chk_svr_resc_limit(
       }
     }  /* END if (mppnodect_resource != NULL) */
 
-  if (jbrc_nodes != NULL)
-    {
-    int tmpI;
-
-    char *ptr;
-
-    int IgnTest = 0;
-
-    /* the DREADED special case ...         */
-    /* check nodes using special function   */
-
-    /* NOTE:  if 'nodes' is simple nodect specification AND server nodect *
-              is set, and requested nodes < server nodect, ignore special *
-              case test */
-
-    ptr = jbrc_nodes->rs_value.at_val.at_str;
-
-    if (isdigit(*ptr) && !strchr(ptr, ':') && !strchr(ptr, '+'))
-      {
-      tmpI = (int)strtol(ptr, NULL, 10);
-
-      if ((SvrNodeCt > 0) && (tmpI <= SvrNodeCt))
-        IgnTest = 1;
-      }
-
-    if (IgnTest == 0)
-      {
-      /* how many processors does this spec want */
-      req_procs += procs_requested(jbrc_nodes->rs_value.at_val.at_str);
-
-      if (node_avail_complex(
-            jbrc_nodes->rs_value.at_val.at_str,
-            &dummy,
-            &dummy,
-            &dummy,
-            &dummy) == -1)
-        {
-        /* only record if:
-         *     is_transit flag is not set
-         * or  is_transit is set, but not to true
-         */
-        if ((!(pque->qu_attr[QE_ATR_is_transit].at_flags & ATR_VFLAG_SET)) ||
-            (!pque->qu_attr[QE_ATR_is_transit].at_val.at_long))
-          {
-          if ((EMsg != NULL) && (EMsg[0] == '\0'))
-            strcpy(EMsg, "cannot locate feasible nodes (nodes file is empty or all systems are busy)");
-        
-          comp_resc_lt++;
-          }
-        }
-      }
-    }    /* END if (jbrc_nodes != NULL) */
-
   get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
   /* If we restart pbs_server while the cray is down, pbs_server won't know about
    * the computes. Don't perform this check for this case. */
@@ -1483,6 +1430,59 @@ int chk_svr_resc_limit(
       (alps_reporter == NULL) ||
       (alps_reporter->alps_subnodes.ra->num != 0))
     {
+    if (jbrc_nodes != NULL)
+      {
+      int tmpI;
+
+      char *ptr;
+
+      int IgnTest = 0;
+
+      /* the DREADED special case ...         */
+      /* check nodes using special function   */
+
+      /* NOTE:  if 'nodes' is simple nodect specification AND server nodect *
+                is set, and requested nodes < server nodect, ignore special *
+                case test */
+
+      ptr = jbrc_nodes->rs_value.at_val.at_str;
+
+      if (isdigit(*ptr) && !strchr(ptr, ':') && !strchr(ptr, '+'))
+        {
+        tmpI = (int)strtol(ptr, NULL, 10);
+
+        if ((SvrNodeCt > 0) && (tmpI <= SvrNodeCt))
+          IgnTest = 1;
+        }
+
+      if (IgnTest == 0)
+        {
+        /* how many processors does this spec want */
+        req_procs += procs_requested(jbrc_nodes->rs_value.at_val.at_str);
+
+        if (node_avail_complex(
+              jbrc_nodes->rs_value.at_val.at_str,
+              &dummy,
+              &dummy,
+              &dummy,
+              &dummy) == -1)
+          {
+          /* only record if:
+           *     is_transit flag is not set
+           * or  is_transit is set, but not to true
+           */
+          if ((!(pque->qu_attr[QE_ATR_is_transit].at_flags & ATR_VFLAG_SET)) ||
+              (!pque->qu_attr[QE_ATR_is_transit].at_val.at_long))
+            {
+            if ((EMsg != NULL) && (EMsg[0] == '\0'))
+              strcpy(EMsg, "cannot locate feasible nodes (nodes file is empty or all systems are busy)");
+          
+            comp_resc_lt++;
+            }
+          }
+        }
+      }    /* END if (jbrc_nodes != NULL) */
+    
     if (proc_ct > 0)
       {
       if (procs_available(proc_ct) == -1)
@@ -1503,10 +1503,6 @@ int chk_svr_resc_limit(
       }
 
 #ifndef CRAY_MOAB_PASSTHRU
-  if ((cray_enabled != TRUE) ||
-      (alps_reporter == NULL) ||
-      (alps_reporter->alps_subnodes.ra->num != 0))
-    {
       if ((proc_ct + req_procs) > svr_clnodes) 
         {
         if ((!(pque->qu_attr[QE_ATR_is_transit].at_flags & ATR_VFLAG_SET)) ||
@@ -1518,9 +1514,8 @@ int chk_svr_resc_limit(
           comp_resc_lt++;
           }
         }
-      }
 #endif
-    }
+    } /* END if cray and reporter hasn't reported yet */
 
   if (MPPWidth > 0)
     {
