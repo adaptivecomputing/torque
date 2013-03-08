@@ -3,6 +3,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 4.2.2
   b - Make job_starter work for parallel jobs as well as serial. (TRQ-1577 - thanks
       to NERSC for the patch)
+  b - Make job_starter work for parallel jobs as well as serial. (TRQ-1577 - thanks
 
 4.2.1
   b - Fix a deadlock when submitting two large arrays consecutively, the second
@@ -18,6 +19,12 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Fix a deadlock when no files can be copied from compute nodes to pbs_server.
       TRQ-1447.
   b - Don't strip quotes from values in scripts before specific processing. TRQ-1632
+
+4.1.6
+  b - Make job_starter work for parallel jobs as well as serial. (TRQ-1577 - thanks
+      to NERSC for the patch, backported from 4.2.2)
+  b - Fix one issue with being able to submit jobs to the cray while offline. TRQ-1595.
+      backported from 4.2.2
 
 4.1.5
   b - For cray: make sure that reservations are released when jobs are requeued. TRQ-1572.
