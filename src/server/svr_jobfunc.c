@@ -1560,8 +1560,8 @@ int chk_svr_resc_limit(
         comp_resc_lt++;
         }
       }
-    }  
 #endif
+    } /* END not cray or cray and reporter is up */
 
   if (MPPWidth > 0)
     {
