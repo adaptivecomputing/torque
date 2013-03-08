@@ -29,11 +29,7 @@ void exec_bail(job *pjob, int code);
 
 int open_demux(u_long addr, int port);
 
-/* static int open_pty(job *pjob); */
-
 int is_joined(job *pjob);
-
-/* static int open_std_out_err(job *pjob, int timeout); */
 
 int mkdirtree(char *dirpath, mode_t mode);
 
@@ -65,8 +61,6 @@ int TMomFinalizeChild(pjobexec_t *TJE);
 
 int TMomFinalizeJob3(pjobexec_t *TJE, int ReadSize, int ReadErrno, int *SC);
 
-int start_process(task *ptask, char **argv, char **envp);
-
 void nodes_free(job *pj);
 
 int add_host_to_sister_list(char *hostname, unsigned short port, struct radix_buf *list);
@@ -79,15 +73,11 @@ int  start_exec(job *pjob);
 
 pid_t fork_me(int conn);
 
-/* static void starter_return(int upfds, int downfds, int code, struct startjob_rtn *sjrtn); */
-
 int remove_leading_hostname(char **jobpath);
 
 char *std_file_name(job *pjob, enum job_file which, int *keeping);
 
 int open_std_file(job *pjob, enum job_file which, int mode, gid_t exgid);
-
-/* static int find_env_slot(struct var_table *ptbl, char *pstr); */
 
 int expand_vtable(struct var_table *vtable);
 int copy_data(struct var_table *tmp_vtable, struct var_table *vtable, int expand_bsize, int expand_ensize);
@@ -97,10 +87,6 @@ int init_groups(char *pwname, int pwgrp, int groupsize, int *groups);
 #else /* !__TOLDGROUP */
 int init_groups(char *pwname, int pwgrp, int groupsize, int *groups);
 #endif /* !__TOLDGROUP */
-
-/* static void catchinter(int sig); */
-
-/* static int search_env_and_open(const char *envname, u_long ipaddr); */
 
 int TMomCheckJobChild(pjobexec_t *TJE, int Timeout, int *Count, int *RC);
 

@@ -1,5 +1,9 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
+4.2.2
+  b - Make job_starter work for parallel jobs as well as serial. (TRQ-1577 - thanks
+      to NERSC for the patch)
+
 4.2.1
   b - Fix a deadlock when submitting two large arrays consecutively, the second
       depending on the first. TRQ-1646 (reported by Jorg Blank).

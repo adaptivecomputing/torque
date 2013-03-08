@@ -1605,9 +1605,9 @@ int InitUserEnv(
  */
 int mom_jobstarter_execute_job(
 
-  job *pjob,
-  char *shell,
-  char *arg[],
+  job              *pjob,
+  char             *shell,
+  char             *arg[],
   struct var_table *vtable)
 
   {
@@ -4588,7 +4588,7 @@ int TMomFinalizeJob3(
 
 int start_process(
 
-  task  *ptask,  /* I */
+  task  *ptask,   /* I */
   char **argv,    /* I */
   char **envp)    /* I */
 
@@ -5321,7 +5321,33 @@ int start_process(
 
   environ = vtable.v_envp;
 
-  execvp(argv[0], argv);
+  if (jobstarter_set)
+    {
+    char **argv_jobstarter;
+    int    argc = 0;
+    int    i;
+
+    /* count argc - argv is always null terminated */
+    while (argv[argc] != NULL)
+      argc++;
+
+    /* add one for the jobstarter argument and one for NULL */
+    argc += 2;
+
+    argv_jobstarter = (char **)calloc(argc, sizeof(char **));
+
+    argv_jobstarter[0] = jobstarter_exe_name;
+
+    for (i = 1; i < argc - 1; i++)
+      argv_jobstarter[i] = argv[i-1];
+
+    execvp(jobstarter_exe_name, argv_jobstarter);
+
+    /* only reached on failure */
+    free(argv_jobstarter);
+    }
+  else
+    execvp(argv[0], argv);
 
   /* only reached if execvp() fails */
 
