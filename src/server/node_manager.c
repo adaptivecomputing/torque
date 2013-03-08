@@ -4495,17 +4495,20 @@ int node_spec(
 #ifndef CRAY_MOAB_PASSTHRU
     if (eligible_nodes < num)
       {
-      /* sufficient eligible nodes do not exist */
-      /* FAILURE */
-      sprintf(log_buf,
-        "job requesting nodes that will never be available - spec = %s",
-        spec_param);
+      if ((SvrNodeCt == 0) || (SvrNodeCt < num))
+        {
+        /* sufficient eligible nodes do not exist */
+        /* FAILURE */
+        sprintf(log_buf,
+          "job requesting nodes that will never be available - spec = %s",
+          spec_param);
 
-      log_err(-1, __func__, log_buf);
-      if (naji != NULL)
-        release_node_allocation(naji);
+        log_err(-1, __func__, log_buf);
+        if (naji != NULL)
+          release_node_allocation(naji);
 
-      return(-1);
+        return(-1);
+        }
       }
 #endif
     }

@@ -87,6 +87,9 @@
  interface library
 
 */
+#ifndef LIBPBS_H
+#define LIBPBS_H
+
 #ifndef _STDLIB_H
 #include <stdlib.h>
 #endif /* _STDLIB_H */
@@ -104,8 +107,6 @@
 #include "u_memmgr.h"
 #include "tcp.h" /* tcp_chan */
 
-#ifndef LIBPBS_H
-#define LIBPBS_H
 
 #define PBS_BATCH_PROT_TYPE 2
 #define PBS_BATCH_PROT_VER 2
@@ -122,6 +123,7 @@
 
 #define MUNGE_SIZE 256 /* I do not know what the proper size of this should be. My 
                           testing with munge shows it creates a string of 128 bytes */
+
 
 /* enums for standard job files (sync w/TJobFileType[]) */
 
