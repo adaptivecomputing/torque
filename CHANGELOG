@@ -12,6 +12,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Don't strip quotes from values in scripts before specific processing. TRQ-1632
   b - Fix a deadlock when submitting two large arrays consecutively, the second
       depending on the first. TRQ-1646 (reported by Jorg Blank, 4.2.1).
+  b - Make job_starter work for parallel jobs as well as serial. (TRQ-1577 - thanks
+      to NERSC for the patch, backported from 4.2.2)
 
 4.1.4
   e - When in cray mode, write physmem and availmem in addition to totmem so that 
