@@ -5612,7 +5612,7 @@ int tcp_read_proto_version(
       }
     }
 
-  return rc;
+  return(rc);
 
   }
 
@@ -5667,7 +5667,8 @@ int do_tcp(
         pbs_tcp_timeout = PMOMTCPTIMEOUT;
         }
 
-      rc = RM_PROTOCOL;
+      if (rc == PBSE_NONE)
+        rc = RM_PROTOCOL * -1;
       }    /* END BLOCK (case RM_PROTOCOL) */
 
     break;
@@ -5730,6 +5731,8 @@ int do_tcp(
    * the tasks for MPI jobs */
   if (svr_conn[chan->sock].cn_stay_open == FALSE)
     DIS_tcp_cleanup(chan);
+  else
+    DBPRT(("%s:%d", __func__, proto));
 
   return(rc);
 
@@ -5792,9 +5795,9 @@ void *tcp_request(
 
   log_buffer[0] = '\0';
 
-  rc = RM_PROTOCOL;
+  rc = RM_PROTOCOL * -1;
 
-  while (rc == RM_PROTOCOL)
+  while (rc == RM_PROTOCOL * -1)
     rc = do_tcp(socket);
   
   switch (rc)
