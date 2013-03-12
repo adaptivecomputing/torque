@@ -126,3 +126,21 @@ int socket_get_tcp_client()
   {
   return(0);
   }
+
+int socket_get_unix()
+  {
+  return(0);
+  }
+
+int socket_connect_unix(int local_socket, const char *sock_name, char **error_msg)
+  {
+  return(0);
+  }
+
+extern "C"
+{
+char *pbse_to_txt(int err)
+  {
+  return(NULL);
+  }
+}
