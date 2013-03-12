@@ -1788,12 +1788,14 @@ static u_long setjoboomscoreadjust(
   if( v >= -17 && v <= 15 ) 
     {
     job_oom_score_adjust = v;
-    return 1; // ok
+    /* ok */
+    return 1; 
     }
   else 
     {
-      log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, "value is out of valid range <-17,15>. Using defaults");
-      return 0;  // error
+    log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, "value is out of valid range <-17,15>. Using defaults");
+    /* error */
+    return 0;
     }
   }  /* END setjoboomscoreadjust() */
 
