@@ -1937,8 +1937,9 @@ int mom_get_sample(void)
 /*
  * Measure job resource usage and compare with its limits.
  *
- * If it has exceeded any well-formed polled limit return TRUE.
- * Otherwise, return FALSE.  log_buffer is populated with failure.
+ * If it has exceeded any well-formed polled limit return the limit that 
+ * it exceeded.
+ * Otherwise, return PBSE_NONE.  log_buffer is populated with failure.
  */
 
 int mom_over_limit(
@@ -1982,7 +1983,7 @@ int mom_over_limit(
                 num,
                 value);
 
-        return(TRUE);
+        return(JOB_EXEC_OVERLIMIT_CPUT);
         }
       }
     else if ((igncput == FALSE) && (strcmp(pname, "pcput") == 0))
@@ -1997,7 +1998,7 @@ int mom_over_limit(
         sprintf(log_buffer, "pcput exceeded limit %lu",
                 value);
 
-        return(TRUE);
+        return(JOB_EXEC_OVERLIMIT_CPUT);
         }
       }
     else if (strcmp(pname, "vmem") == 0)
@@ -2013,7 +2014,7 @@ int mom_over_limit(
                 numll,
                 value);
 
-        return(TRUE);
+        return(JOB_EXEC_OVERLIMIT_MEM);
         }
       }
     else if (strcmp(pname, "pvmem") == 0)
@@ -2032,7 +2033,7 @@ int mom_over_limit(
         sprintf(log_buffer, "pvmem exceeded limit %llu",
                 valuell);
 
-        return(TRUE);
+        return(JOB_EXEC_OVERLIMIT_MEM);
         }
       }
     else if (ignwalltime == 0 && strcmp(pname, "walltime") == 0)
@@ -2056,7 +2057,7 @@ int mom_over_limit(
                 num,
                 value);
 
-        return(TRUE);
+        return(JOB_EXEC_OVERLIMIT_WT);
         }
       }
     }  /* END for (pres) */
@@ -2089,7 +2090,7 @@ int mom_over_limit(
       if (memory_pressure_duration && (pjob->ji_mempressure_cnt >= memory_pressure_duration))
         {
         sprintf(log_buffer, "swap rate due to memory oversubscription is too high");
-        return(TRUE);
+        return(JOB_EXEC_OVERLIMIT_MEM);
         }
       
       }
@@ -2097,7 +2098,7 @@ int mom_over_limit(
     }
 #endif
 
-  return(FALSE);
+  return(PBSE_NONE);
   }  /* END mom_over_limit() */
 
 
