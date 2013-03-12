@@ -8,6 +8,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       for going over a limit. TRQ-1076.
   e - Add mom parameter mom_oom_immunize, making the mom immune to being killed in out
       of memory conditions. Default is now true. (thanks to Lukasz Flis for this work)
+  b - Don't count completed jobs against max_user_queuable. TRQ-1420. 
 
 4.2.1
   b - Fix a deadlock when submitting two large arrays consecutively, the second
