@@ -231,7 +231,8 @@ int diswl_(
   while (--ndigs);
 
   /* Eliminate trailing zeros.      */
-  while (*--ocp == '0');
+  while (*--ocp == '0')
+    /* NO-OP */;
 
   /* The decimal point is at the low order end of the coefficient  */
   /* integer, so adjust the exponent for the number of digits in the */
