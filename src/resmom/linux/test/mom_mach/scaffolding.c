@@ -30,7 +30,8 @@ tlist_head svr_alljobs;
 int LOGLEVEL = 0;
 int ignwalltime = 0;
 int rm_errno;
-
+int   job_oom_score_adjust = 0;  /* no oom score adjust by default */
+int   mom_oom_immunize = 0;  /* make pbs_mom processes immune? no by default */
 
 
 
