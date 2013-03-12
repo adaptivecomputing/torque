@@ -754,9 +754,6 @@ void job_free(
     job_free(pj->ji_external_clone, TRUE);
     }
 
-  if (pj->ji_qs.ji_state != JOB_STATE_TRANSIT)
-    decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
-
   /* remove any calloc working pbs_attribute space */
   for (i = 0;i < JOB_ATR_LAST;i++)
     {

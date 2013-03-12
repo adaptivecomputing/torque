@@ -682,10 +682,6 @@ int svr_dequejob(
         bad_ct = 1;
         }
 
-      if (pjob->ji_is_array_template == FALSE)
-        {
-        decrement_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
-        }
       }
     else if (rc == PBSE_JOB_RECYCLED)
       {
@@ -823,7 +819,7 @@ int svr_setjobstate(
   int          changed = 0;
   int          oldstate;
 
-  pbs_queue   *pque;
+  pbs_queue   *pque = NULL;
   char         log_buf[LOCAL_LOG_BUF_SIZE];
   time_t       time_now = time(NULL);
 
@@ -897,6 +893,14 @@ int svr_setjobstate(
           {
           pque->qu_njstate[oldstate]--;
           pque->qu_njstate[newstate]++;
+          
+          /* decrement queued job count if we're completing */
+          if ((pjob->ji_qs.ji_state != JOB_STATE_TRANSIT) &&
+              (pjob->ji_qs.ji_state != JOB_STATE_COMPLETE) &&
+              (newstate == JOB_STATE_COMPLETE))
+            {
+            decrement_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+            }
           }
 
         /* if execution queue, and eligibility to run has improved, */
@@ -933,10 +937,17 @@ int svr_setjobstate(
       }
     }    /* END if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRANSICM) */
 
+  /* decrement queued job count if we're completing */
+  if ((pjob->ji_is_array_template == FALSE) &&
+      (pjob->ji_qs.ji_state != JOB_STATE_TRANSIT) &&
+      (pjob->ji_qs.ji_state != JOB_STATE_COMPLETE) &&
+      (newstate == JOB_STATE_COMPLETE))
+    {
+    decrement_queued_jobs(&users, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+    }
+
   /* set the states accordingly */
-
   pjob->ji_qs.ji_state = newstate;
-
   pjob->ji_qs.ji_substate = newsubstate;
 
   pjob->ji_wattr[JOB_ATR_substate].at_val.at_long = newsubstate;
