@@ -417,7 +417,8 @@ int main(
       {
       printf("--attributes--\n");
 
-      while (read_attr(fp));
+      while (read_attr(fp))
+        /* NO-OP, reading */;
       }
 
     if (xjob.ji_qs.ji_un_type == JOB_UNION_TYPE_MOM)

@@ -462,7 +462,8 @@ task *pbs_task_create(
 
   for (ptask = (task *)GET_NEXT(pjob->ji_tasks), tasks = 0;
        ptask != NULL;
-       ptask = (task *)GET_NEXT(ptask->ti_jobtask), tasks++);
+       ptask = (task *)GET_NEXT(ptask->ti_jobtask), tasks++)
+    /* NO-OP, counting */;
 
   at = &pjob->ji_wattr[JOB_ATR_resource];
 
