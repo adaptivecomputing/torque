@@ -198,6 +198,8 @@ extern struct var_table vtable; /* see start_exec.c */
 double  wallfactor = 1.00;
 long  log_file_max_size = 0;
 long  log_file_roll_depth = 1;
+int   job_oom_score_adjust = 0;  /* no oom score adjust by default */
+int   mom_oom_immunize = 0;  /* make pbs_mom processes immune? no by default */
 
 time_t          last_log_check;
 char           *nodefile_suffix = NULL;    /* suffix to append to each host listed in job host file */
@@ -406,6 +408,8 @@ static unsigned long setapbasilprotocol(const char *);
 static unsigned long setreportermom(const char *);
 static unsigned long setloginnode(const char *);
 static unsigned long setrejectjobsubmission(const char *);
+static unsigned long setjoboomscoreadjust(const char *);
+static unsigned long setmomoomimmunize(const char *);
 
 static struct specials
   {
@@ -480,9 +484,11 @@ static struct specials
   { "max_updates_before_sending", setmaxupdatesbeforesending },
   { "apbasil_path",        setapbasilpath },
   { "reject_job_submission", setrejectjobsubmission },
-  { "apbasil_protocol",    setapbasilprotocol },
-  { "reporter_mom",        setreportermom },
-  { "login_node",          setloginnode },
+  { "apbasil_protocol",      setapbasilprotocol },
+  { "reporter_mom",          setreportermom },
+  { "login_node",            setloginnode },
+  { "job_oom_score_adjust",  setjoboomscoreadjust },
+  { "mom_oom_immunize",      setmomoomimmunize },
   { NULL,                  NULL }
   };
 
@@ -904,7 +910,7 @@ static const char *getjoblist(
       tmpList = (char *)realloc(list, new_list_len);
 
       if (tmpList == NULL)
-      	{
+        {
         /* FAILURE - cannot alloc memory */
 
         fprintf(stderr,"ERROR: could not realloc!\n");
@@ -912,7 +918,7 @@ static const char *getjoblist(
         /* since memory cannot be allocated, report no jobs */
 
         return(" ");
-      	}
+        }
 
       memset(tmpList + listlen, 0, new_list_len - listlen);
 
@@ -1723,6 +1729,95 @@ static u_long setpbsclient(
   return(0);
   }  /* END setpbsclient() */
 
+
+
+static u_long setjoboomscoreadjust(
+
+  const char *value)  /* I */
+
+  {
+  int v = 0;
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
+
+  v = atoi(value);
+
+  /* check for allowed value range */
+  if( v >= -17 && v <= 15 ) 
+    {
+    job_oom_score_adjust = v;
+    /* ok */
+    return 1; 
+    }
+  else 
+    {
+    log_record(PBSEVENT_SYSTEM,
+      PBS_EVENTCLASS_SERVER,
+      __func__,
+      "value is out of valid range <-17,15>. Using defaults");
+    /* error */
+    return 0;
+    }
+  }  /* END setjoboomscoreadjust() */
+
+
+
+static u_long setmomoomimmunize(
+
+  const char *Value)  /* I */
+
+  {
+  int           enable = -1;
+
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, Value);
+
+  if (Value == NULL)
+    {
+    /* FAILURE */
+
+    return(0);
+    }
+
+  /* accept various forms of "true", "yes", and "1" */
+  switch (Value[0])
+    {
+
+    case 't':
+
+    case 'T':
+
+    case 'y':
+
+    case 'Y':
+
+    case '1':
+
+      enable = 1;
+
+      break;
+
+    case 'f':
+
+    case 'F':
+
+    case 'n':
+
+    case 'N':
+
+    case '0':
+
+      enable = 0;
+
+      break;
+
+    }
+
+  if (enable != -1)
+    {
+    mom_oom_immunize = enable;
+    }
+
+  return(1);
+  }  /* END setmomoomimmunize() */
 
 
 
@@ -7324,6 +7419,7 @@ int setup_program_environment(void)
     return(rc);
 #endif
 
+
   /* go into the background and become own session/process group */
 
 #if !defined(DEBUG) && !defined(DISABLE_DAEMONS)
@@ -7467,7 +7563,7 @@ int setup_program_environment(void)
 #ifdef NOSIGCHLDMOM
   act.sa_handler = SIG_DFL;
 #else
-  act.sa_handler = catch_child;	/* set up to catch death of child */
+  act.sa_handler = catch_child; /* set up to catch death of child */
 #endif
 
   sigaction(SIGCHLD, &act, NULL);

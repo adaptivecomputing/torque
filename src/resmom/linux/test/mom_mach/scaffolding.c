@@ -39,6 +39,8 @@ int       num_node_boards;
 nodeboard node_boards[MAX_NODE_BOARDS]; 
 int       numa_index;
 #endif
+int   job_oom_score_adjust = 0;  /* no oom score adjust by default */
+int   mom_oom_immunize = 0;  /* make pbs_mom processes immune? no by default */
 
 #ifdef PENABLE_LINUX26_CPUSETS
 hwloc_topology_t topology = NULL;       /* system topology */
