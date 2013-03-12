@@ -1114,7 +1114,8 @@ void *preobit_reply(
     }
 
   while ((irtn = DIS_reply_read(chan, &preq->rq_reply)) &&
-         (errno == EINTR));
+         (errno == EINTR))
+    /* NO-OP, just retry for EINTR */;
 
   pbs_disconnect_socket(sock);
   DIS_tcp_cleanup(chan);
@@ -1381,7 +1382,8 @@ void *obit_reply(
     }
 
   while ((irtn = DIS_reply_read(chan, &preq->rq_reply)) &&
-         (errno == EINTR));
+         (errno == EINTR))
+    /* NO-OP, just retry for EINTR */;
 
   DIS_tcp_cleanup(chan);
 

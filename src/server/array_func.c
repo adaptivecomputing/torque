@@ -204,7 +204,8 @@ int array_save(
   /* count number of request tokens left */
   for (rn = (array_request_node*)GET_NEXT(pa->request_tokens), num_tokens = 0;
        rn != NULL;
-       rn = (array_request_node*)GET_NEXT(rn->request_tokens_link), num_tokens++);
+       rn = (array_request_node*)GET_NEXT(rn->request_tokens_link), num_tokens++)
+    /* NO-OP, just counting */;
 
 
   if (write_ac_socket(fds, &num_tokens, sizeof(num_tokens)) == -1)

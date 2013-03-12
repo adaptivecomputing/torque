@@ -1118,11 +1118,13 @@ void log_roll(
   /* find out how many characters the suffix could be. (save in suffix_size)
      start at 1 to account for the "."  */
 
-  for (i = max_depth, suffix_size = 1;i > 0;suffix_size++, i /= 10);
+  for (i = max_depth, suffix_size = 1;i > 0;suffix_size++, i /= 10)
+    /* NO-OP */;
 
   /* allocate memory for rolling */
 
-  file_buf_len = sizeof(char) * (strlen(logpath) + suffix_size + 1);
+  file_buf_len = sizeof(char) * (strlen(logpath) + suffix_size + 1)
+    /* NO-OP */;
 
   source = (char*)calloc(1, file_buf_len);
 
@@ -1239,7 +1241,8 @@ void job_log_roll(
   /* find out how many characters the suffix could be. (save in suffix_size)
      start at 1 to account for the "."  */
 
-  for (i = max_depth, suffix_size = 1;i > 0;suffix_size++, i /= 10);
+  for (i = max_depth, suffix_size = 1;i > 0;suffix_size++, i /= 10)
+    /* NO-OP */;
 
   /* allocate memory for rolling */
 

@@ -2268,7 +2268,8 @@ int main(
               /* string and all remaining is the name list */
               alt_opt |= ALT_DISPLAY_u;
 
-              while (*++pc == ' ');
+              while (*++pc == ' ')
+                /* NO-OP, moving pointer */;
 
               add_atropl(&p_atropl, (char *)ATTR_u, (char *)0, pc, EQ);
 
