@@ -139,7 +139,9 @@ extern char *msg_job_end_sig;
 extern char *msg_job_end_stat;
 extern char *msg_momnoexec1;
 extern char *msg_momnoexec2;
-extern char *msg_momjoboverlimit;
+extern char      *msg_momjobovermemlimit;
+extern char      *msg_momjoboverwalltimelimit;
+extern char      *msg_momjobovercputlimit;
 extern char *msg_obitnojob;
 extern char *msg_obitnocpy;
 extern char *msg_obitnodel;
@@ -3133,10 +3135,26 @@ int req_jobobit(
     switch (exitstatus)
       {
 
-      case JOB_EXEC_OVERLIMIT:
+      case JOB_EXEC_OVERLIMIT_MEM:
 
-        /* the job exceeded some resource limit such as walltime, mem, pmem, cput, etc */
-        svr_mailowner(pjob, MAIL_ABORT, MAIL_FORCE, msg_momjoboverlimit);
+        /* the job exceeded a memory resource limit */
+        svr_mailowner(pjob, MAIL_ABORT, MAIL_FORCE, msg_momjobovermemlimit);
+        alreadymailed = 1;
+
+        break;
+
+      case JOB_EXEC_OVERLIMIT_WT:
+
+        /* the job exceeded its  walltime limit */
+        svr_mailowner(pjob, MAIL_ABORT, MAIL_FORCE, msg_momjoboverwalltimelimit);
+        alreadymailed = 1;
+
+        break;
+
+      case JOB_EXEC_OVERLIMIT_CPUT:
+
+        /* the job exceeded its cpu time limit */
+        svr_mailowner(pjob, MAIL_ABORT, MAIL_FORCE, msg_momjobovercputlimit);
         alreadymailed = 1;
 
         break;
