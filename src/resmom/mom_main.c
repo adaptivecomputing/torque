@@ -6054,19 +6054,20 @@ int job_over_limit(
   int                  index;
   unsigned long        limit;
   char                *units;
+  int                  rc;
 
 #ifndef NUMA_SUPPORT
   int                  i;
 #endif /* ndef NUMA_SUPPORT */
 
-  if (mom_over_limit(pjob))
+  if ((rc = mom_over_limit(pjob)) != PBSE_NONE)
     {
     /* mom limits violated, log_buffer populated */
 
     /* no more POLL's */
 
     pjob->ji_nodekill = pjob->ji_nodeid;
-    pjob->ji_qs.ji_un.ji_momt.ji_exitstat = JOB_EXEC_OVERLIMIT;
+    pjob->ji_qs.ji_un.ji_momt.ji_exitstat = rc;
 
     return(1);
     }

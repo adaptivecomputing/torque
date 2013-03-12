@@ -170,7 +170,8 @@ void dumpdb(char *file)
     {
     printf("--attributes--\n");
 
-    while (read_attr(fp));
+    while (read_attr(fp))
+      /* NO-OP, reading */;
     }
 
   close(fp);

@@ -434,7 +434,9 @@ void scan_for_exiting(void)
       if (ptask->ti_qs.ti_parenttask == TM_NULL_TASK)
         {
         /* master task is in state TI_STATE_EXITED */
-        if (pjob->ji_qs.ji_un.ji_momt.ji_exitstat != JOB_EXEC_OVERLIMIT)
+        if ((pjob->ji_qs.ji_un.ji_momt.ji_exitstat != JOB_EXEC_OVERLIMIT_MEM) &&
+            (pjob->ji_qs.ji_un.ji_momt.ji_exitstat != JOB_EXEC_OVERLIMIT_WT) &&
+            (pjob->ji_qs.ji_un.ji_momt.ji_exitstat != JOB_EXEC_OVERLIMIT_CPUT)) 
           {
           /* do not over-write JOB_EXEC_OVERLIMIT */
           pjob->ji_qs.ji_un.ji_momt.ji_exitstat = ptask->ti_qs.ti_exitstat;
@@ -1114,7 +1116,8 @@ void *preobit_reply(
     }
 
   while ((irtn = DIS_reply_read(chan, &preq->rq_reply)) &&
-         (errno == EINTR));
+         (errno == EINTR))
+    /* NO-OP, just retry for EINTR */;
 
   pbs_disconnect_socket(sock);
   DIS_tcp_cleanup(chan);
@@ -1381,7 +1384,8 @@ void *obit_reply(
     }
 
   while ((irtn = DIS_reply_read(chan, &preq->rq_reply)) &&
-         (errno == EINTR));
+         (errno == EINTR))
+    /* NO-OP, just retry for EINTR */;
 
   DIS_tcp_cleanup(chan);
 
