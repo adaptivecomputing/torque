@@ -318,7 +318,11 @@ void update_node_state(
    *          (busy|free)->down changes are always logged
    */
 
-  if (LOGLEVEL >= 3)
+  /* nothing to do if the state didn't change */
+  if (newstate == np->nd_state)
+    return;
+
+  if (LOGLEVEL >= 4)
     {
     sprintf(log_buf, "adjusting state for node %s - state=%d, newstate=%d",
       (np->nd_name != NULL) ? np->nd_name : "NULL",
