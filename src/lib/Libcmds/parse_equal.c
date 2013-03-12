@@ -194,7 +194,8 @@ int parse_equal_string(
 
   if (*pc == '\0')
     {
-    while (isspace((int)*--pc));
+    while (isspace((int)*--pc))
+      /* NO-OP */;
 
     if (*pc == ',')   /* trailing comma is a no no */
       return (-1);

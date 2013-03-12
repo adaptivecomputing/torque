@@ -3060,7 +3060,8 @@ static int sys_copy(
       {
       /* Parent - wait for copy to complete */
 
-      while (((i = wait(&rc)) < 0) && (errno == EINTR));
+      while (((i = wait(&rc)) < 0) && (errno == EINTR))
+        /* NO-OP, retry for EINTR */;
 
       if (i == -1)
         {

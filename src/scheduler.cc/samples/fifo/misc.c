@@ -320,7 +320,8 @@ char **dup_string_array(char **ostrs)
 
   if (ostrs != NULL)
     {
-    for (i = 0; ostrs[i] != NULL; i++);
+    for (i = 0; ostrs[i] != NULL; i++)
+      /* NO-OP, counting */;
 
     if ((nstrs = (char **)malloc((i + 1) * sizeof(char**))) == NULL)
       {
