@@ -11,6 +11,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - Add mom parameter mom_oom_immunize, making the mom immune to being killed in out
       of memory conditions. Default is now true. (backported from 4.2.2, thanks to 
       Lukasz Flis for this work)
+  b - Don't count completed jobs against max_user_queuable. TRQ-1420. (backported from
+      4.2.2)
 
 4.1.5
   b - For cray: make sure that reservations are released when jobs are requeued. TRQ-1572.
