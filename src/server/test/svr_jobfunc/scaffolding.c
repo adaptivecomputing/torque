@@ -32,6 +32,7 @@ int LOGLEVEL = 0;
 pthread_mutex_t *svr_do_schedule_mutex;
 pthread_mutex_t *listener_command_mutex;
 struct pbsnode *alps_reporter;
+user_info_holder users;
 
 
 resource *add_resource_entry(pbs_attribute *pattr, resource_def *prdef)

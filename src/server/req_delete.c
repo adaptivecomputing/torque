@@ -248,6 +248,8 @@ void force_purge_work(
     else
       unlock_queue(pque, __func__, NULL, LOGLEVEL);
     }
+
+  svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
   
   if (pjob != NULL)
     svr_job_purge(pjob);

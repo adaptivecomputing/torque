@@ -1564,7 +1564,7 @@ int count_queued_jobs(
   int num_jobs = 0;
 
   if (user == NULL)
-    num_jobs = pque->qu_numjobs;
+    num_jobs = pque->qu_numjobs - pque->qu_numcompleted;
   else
     num_jobs = get_num_queued(pque->qu_uih, user);
 
