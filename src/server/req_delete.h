@@ -18,23 +18,9 @@ int req_deletejob(struct batch_request *preq);
 
 void change_restart_comment_if_needed(struct job *pjob);
 
-/* static void post_delete_route(struct work_task *pwt); */
-
-/* static void post_delete_mom1(struct work_task *pwt); */
-
-/* static void post_delete_mom2(struct work_task *pwt); */
-
-/* static int forced_jobpurge(job *pjob, struct batch_request *preq); */
-
 int has_job_delete_nanny(struct job *pjob);
 
 void remove_job_delete_nanny(struct job *pjob);
-
-struct work_task *apply_job_delete_nanny(struct job *pjob, int delay);
-
-/* static void job_delete_nanny(struct work_task *pwt); */
-
-/* static void post_job_delete_nanny(struct work_task *pwt); */
 
 void purge_completed_jobs(struct batch_request *preq);
 

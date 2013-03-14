@@ -997,7 +997,7 @@ void stat_update(
   
     if (msg_ptr != NULL)
       msg_ptr += strlen(PBS_MSG_EQUAL);
-    }   
+    }
 
   if (preply->brp_choice == BATCH_REPLY_CHOICE_Status)
     {
