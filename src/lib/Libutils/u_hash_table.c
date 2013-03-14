@@ -767,6 +767,9 @@ int add_hash(
   {
   int index;
 
+  if (key == NULL)
+    return(-1);
+
   /* check if we need to rehash */
   if (ht->size == ht->num)
     {
