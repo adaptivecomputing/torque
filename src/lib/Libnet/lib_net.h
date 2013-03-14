@@ -78,7 +78,7 @@ int check_network_port(unsigned int port);
 int thread_func(int active_sockets, fd_set *select_set);
 int wait_request(time_t waittime, long *SState);
 /* static void accept_conn(void *new_conn); */
-void globalset_add_sock(int sock);
+void globalset_add_sock(int sock,u_long addr,u_long port);
 void globalset_del_sock(int sock);
 int add_conn(int, enum conn_type, pbs_net_t, unsigned int, unsigned int, void *(*func)(void *));
 int add_scheduler_conn(int, enum conn_type, pbs_net_t, unsigned int, unsigned int, void *(*func)(void *));

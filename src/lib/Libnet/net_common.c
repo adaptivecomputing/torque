@@ -34,6 +34,10 @@ extern time_t pbs_tcp_timeout; /* located in tcp_dis.c. Move here later */
 #define TCP_PROTO_NUM 0
 #define MAX_NUM_LEN 21
 
+#define MAX_USED_PRIV_PORTS 15
+int used_priv_ports[MAX_USED_PRIV_PORTS];
+int used_index;
+
 unsigned availBytesOnDescriptor(
     
   int pLocalSocket)
@@ -142,7 +146,30 @@ int get_random_reserved_port()
 
   {
   int res_port = 0;
-  res_port = (rand() % RES_PORT_RANGE) + RES_PORT_START;
+  int i;
+  int done = 0;
+  int found;
+
+  do
+    {
+    found = 0;
+    res_port = (rand() % RES_PORT_RANGE) + RES_PORT_START;
+    for(i = 0; i < MAX_USED_PRIV_PORTS; i++)
+      {
+      if (res_port == used_priv_ports[i])
+        found = 1;
+      }
+    if (!found)
+      {
+      used_priv_ports[used_index++] = res_port;
+      if (used_index >= MAX_USED_PRIV_PORTS)
+        used_index = 0;
+      done = 1;
+      }
+    else
+      usleep(50000);
+    }while(!done);
+
   return res_port;
   } /* END get_random_reserved_port() */
 

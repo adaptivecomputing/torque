@@ -208,7 +208,7 @@ int bad_restrict(u_long ipadd);
 
 int rm_request(struct tcp_chan *chan, int version);
 
-int do_tcp(int socket);
+int do_tcp(int socket,struct sockaddr_in *pSockAddr);
 
 void *tcp_request(void *sock_num);
 
