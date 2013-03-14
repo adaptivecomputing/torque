@@ -1625,6 +1625,14 @@ if test "x$ENABLE_UNIX_SOCKETS" = "xyes" ;then
 fi
 AC_MSG_RESULT([$ENABLE_UNIX_SOCKETS])
 
+AC_ARG_WITH(trqauthd_sock_dir, [
+  --with-trqauthd-sock-dir=DIR  set trqauthd directory for unix domain socket file
+                          defaults to /tmp],
+    [TRQAUTHD_SOCK_DIR="${withval}" ; RPM_AC_OPTS="$RPM_AC_OPTS --define \"torque_auth_sock_dir ${withval}\"" ],
+    [TRQAUTHD_SOCK_DIR="/tmp"])
+AC_DEFINE_UNQUOTED(TRQAUTHD_SOCK_DIR, "${TRQAUTHD_SOCK_DIR}", "trqauthd unix domain file")
+
+
 
 AC_ARG_WITH(server_home, [
   --with-server-home=DIR  set the server home/spool directory for PBS use
