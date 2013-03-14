@@ -5616,10 +5616,7 @@ int tcp_read_proto_version(
 
   }
 
-int do_tcp(
-    
-  int socket)
-
+int do_tcp(int socket,struct sockaddr_in *pSockAddr)
   {
   int                       rc = PBSE_NONE;
   int                       proto = -1;
@@ -5697,7 +5694,7 @@ int do_tcp(
 
     case IM_PROTOCOL:
 
-      im_request(chan,version);
+      im_request(chan,version,pSockAddr);
 
       break;
 
@@ -5760,6 +5757,9 @@ void *tcp_request(
   int rc = PBSE_NONE;
   int avail_bytes = -1;
   int socket = *(int *)new_sock;
+  int addr = *((int *)new_sock + 1);
+  int port = *((int *)new_sock + 2);
+  struct sockaddr_in sockAddr;
 
   extern struct connection svr_conn[];
   if ((avail_bytes = socket_avail_bytes_on_descriptor(socket)) == 0)
@@ -5767,6 +5767,11 @@ void *tcp_request(
     close_conn(socket, FALSE);
     return NULL;
     }
+
+  memset(&sockAddr,0,sizeof(sockAddr));
+  sockAddr.sin_addr.s_addr = htonl(addr);
+  sockAddr.sin_family = AF_INET;
+  sockAddr.sin_port = htons(port);
 
   ipadd = svr_conn[socket].cn_addr;
 
@@ -5798,7 +5803,7 @@ void *tcp_request(
   rc = RM_PROTOCOL * -1;
 
   while (rc == RM_PROTOCOL * -1)
-    rc = do_tcp(socket);
+    rc = do_tcp(socket,&sockAddr);
   
   switch (rc)
     {

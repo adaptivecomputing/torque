@@ -155,6 +155,8 @@ static int       max_connection = PBS_NET_MAX_CONNECTIONS;
 static int       num_connections = 0;
 pthread_mutex_t *num_connections_mutex = NULL;
 static fd_set   *GlobalSocketReadSet = NULL;
+static u_long   *GlobalSocketAddrSet = NULL;
+static u_long   *GlobalSocketPortSet = NULL;
 pthread_mutex_t *global_sock_read_mutex = NULL;
 
 void *(*read_func[2])(void *);
@@ -338,6 +340,8 @@ int init_network(
     
     /* initialize global "read" socket FD bitmap */
     GlobalSocketReadSet = (fd_set *)calloc(1,sizeof(char) * get_fdset_size());
+    GlobalSocketAddrSet = (u_long *)calloc(sizeof(ulong),get_max_num_descriptors());
+    GlobalSocketPortSet = (u_long *)calloc(sizeof(ulong),get_max_num_descriptors());
 
     global_sock_read_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
     pthread_mutex_init(global_sock_read_mutex,&t_attr);
@@ -560,9 +564,13 @@ int wait_request(
   int             n;
   time_t          now;
 
-  fd_set         *SelectSet = NULL;
+  fd_set          *SelectSet = NULL;
   int             SelectSetSize = 0;
   int             MaxNumDescriptors = 0;
+  int             SetSize = 0;
+  u_long   		  *SocketAddrSet = NULL;
+  u_long          *SocketPortSet = NULL;
+
 
   char            tmpLine[1024];
   struct timeval  timeout;
@@ -583,6 +591,12 @@ int wait_request(
 
   /* selset = readset;*/  /* readset is global */
   MaxNumDescriptors = get_max_num_descriptors();
+  SetSize = MaxNumDescriptors*sizeof(u_long);
+
+  SocketAddrSet = (u_long *)malloc(SetSize);
+  SocketPortSet = (u_long *)malloc(SetSize);
+  memcpy(SocketAddrSet,GlobalSocketAddrSet,SetSize);
+  memcpy(SocketPortSet,GlobalSocketPortSet,SetSize);
 
   pthread_mutex_unlock(global_sock_read_mutex);
   n = select(MaxNumDescriptors, SelectSet, (fd_set *)0, (fd_set *)0, &timeout);
@@ -617,6 +631,8 @@ int wait_request(
         } /* END for each socket in global read set */
 
       free(SelectSet);
+      free(SocketAddrSet);
+      free(SocketPortSet);
 
       log_err(errno, __func__, "Unable to select sockets to read requests");
 
@@ -643,7 +659,14 @@ int wait_request(
         pthread_mutex_unlock(svr_conn[i].cn_mutex);
 
         if (func != NULL)
-          func((void *)&i);
+          {
+          int args[3];
+
+          args[0] = i;
+          args[1] = (int)SocketAddrSet[i];
+          args[2] = (int)SocketPortSet[i];
+          func((void *)args);
+          }
 
         /* NOTE:  breakout if state changed (probably received shutdown request) */
 
@@ -671,6 +694,8 @@ int wait_request(
     } /* END for i */
 
   free(SelectSet);
+  free(SocketAddrSet);
+  free(SocketPortSet);
 
   /* NOTE:  break out if shutdown request received */
 
@@ -817,11 +842,15 @@ void *accept_conn(
 
 void globalset_add_sock(
 
-  int sock)
+  int sock,
+  u_long addr,
+  u_long port)
 
   {
   pthread_mutex_lock(global_sock_read_mutex);
   FD_SET(sock, GlobalSocketReadSet);
+  GlobalSocketAddrSet[sock] = addr;
+  GlobalSocketPortSet[sock] = port;
   pthread_mutex_unlock(global_sock_read_mutex);
   } /* END globalset_add_sock() */
 
@@ -835,6 +864,8 @@ void globalset_del_sock(
   {
   pthread_mutex_lock(global_sock_read_mutex);
   FD_CLR(sock, GlobalSocketReadSet);
+  GlobalSocketAddrSet[sock] = 0;
+  GlobalSocketPortSet[sock] = 0;
   pthread_mutex_unlock(global_sock_read_mutex);
   } /* END globalset_del_sock() */
 
@@ -870,7 +901,7 @@ int add_connection(
 
   if (add_wait_request)
     {
-    globalset_add_sock(sock);
+    globalset_add_sock(sock,(u_long)addr,port);
     }
   else
     {
