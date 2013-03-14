@@ -379,6 +379,12 @@ int log_open(
 
   logfile = fdopen(fds, "a");
 
+  if (logfile == NULL)
+    {
+    log_opened = -1;
+    return(-1);
+    }
+
   setvbuf(logfile, NULL, _IOLBF, 0); /* set line buffering */
 
   log_opened = 1;   /* note that file is open */
