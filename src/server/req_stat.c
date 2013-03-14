@@ -991,11 +991,13 @@ void stat_update(
 
   preply = &preq->rq_reply;
 
-  msg_ptr = strstr(preply->brp_un.brp_txt.brp_str, PBS_MSG_EQUAL);
-  if (msg_ptr != NULL)
+  if (preply->brp_un.brp_txt.brp_str != NULL)
     {
-    msg_ptr += strlen(PBS_MSG_EQUAL);
-    }
+    msg_ptr = strstr(preply->brp_un.brp_txt.brp_str, PBS_MSG_EQUAL);
+  
+    if (msg_ptr != NULL)
+      msg_ptr += strlen(PBS_MSG_EQUAL);
+    }   
 
   if (preply->brp_choice == BATCH_REPLY_CHOICE_Status)
     {

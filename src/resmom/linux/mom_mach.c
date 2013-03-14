@@ -26,6 +26,10 @@
 #include <ctype.h>
 #include <string.h>
 #include <csv.h>
+#include <fcntl.h>
+
+/* needed for oom_adj */
+#include <linux/limits.h>
 
 #ifdef Q_6_5_QUOTAON
 /* remap dqblk for SUSE 9.0 */
@@ -126,6 +130,8 @@ extern int      ignwalltime;
 extern int      igncput;
 extern int      ignvmem;
 extern int      ignmem;
+extern int      job_oom_score_adjust;
+extern int      mom_oom_immunize;
 #ifdef PENABLE_LINUX26_CPUSETS
 extern int      memory_pressure_threshold;
 extern short    memory_pressure_duration;
@@ -681,6 +687,40 @@ proc_mem_t *get_proc_mem(void)
 
 #endif /* PNOT */
 
+/*
+ * sets oom_adj score for current process 
+ * requires root privileges or CAP_SYS_RESOURCE to succeed
+ */
+
+static int oom_adj(int score)
+{
+
+   pid_t pid;
+   int rc,fd;
+
+   char oom_adj_path[PATH_MAX] = "";
+   char adj_value[128] = "";
+   /* valid values are -17 to 15 */
+   if ( score > 15 || score < -17 )
+      return -1;
+
+   pid = getpid();
+
+   if ( snprintf(oom_adj_path, sizeof(oom_adj_path), "/proc/%d/oom_adj", pid) < 0 )
+      return -1;
+
+   if ( ( fd = open(oom_adj_path, O_RDWR) ) == -1 )
+      return -1;
+
+   if (snprintf(adj_value,sizeof(adj_value),"%d",score) < 0)
+      return -1;
+
+   rc = write(fd,adj_value,strlen(adj_value));
+
+   close(fd);
+   return rc;
+
+}
 
 
 void dep_initialize(void)
@@ -693,6 +733,30 @@ void dep_initialize(void)
     log_err(errno, __func__, "opendir");
     
     return;
+    }
+
+
+  /* NOTE:  /proc/<pid>/oom_adj tunable is linux specific */
+  /* LKF: make pbs_mom processes immune to oom killer's killing frenzy if requested*/
+  if (mom_oom_immunize != 0)
+    {
+    
+    if (oom_adj(-17) < 0)
+      {
+      log_record(
+        PBSEVENT_SYSTEM,
+        PBS_EVENTCLASS_SERVER,
+        __func__,
+        "failed to make pbs_mom oom-killer immune");
+      }
+    else
+      {
+      log_record(
+        PBSEVENT_SYSTEM,
+        PBS_EVENTCLASS_SERVER,
+        __func__,
+        "mom is now oom-killer safe");
+      }
     }
 
   proc_get_btime();
@@ -1218,9 +1282,6 @@ int error(
   }  /* END error() */
 
 
-
-
-
 /*
  * Establish system-enforced limits for the job.
  *
@@ -1284,6 +1345,22 @@ int mom_set_limits(
    */
 
   memset(&reslim, 0, sizeof(reslim));
+
+  /* set oom_adj score for the starting job */
+  /* if immunize mode is set to on, we have to set child score to 0 */
+  if ( (set_mode == SET_LIMIT_SET) && ( job_oom_score_adjust != 0 || mom_oom_immunize != 0 ) )
+    {
+    retval = oom_adj(job_oom_score_adjust);
+
+    if ( LOGLEVEL >= 2 ) 
+      {
+      sprintf(log_buffer, "setting oom_adj '%s'",
+        (retval != -1) ? "succeeded" : "failed");
+      log_record(PBSEVENT_SYSTEM, 0, __func__, log_buffer);
+      }
+
+    };
+
 
   while (pres != NULL)
     {
@@ -1933,8 +2010,9 @@ int mom_get_sample(void)
 /*
  * Measure job resource usage and compare with its limits.
  *
- * If it has exceeded any well-formed polled limit return TRUE.
- * Otherwise, return FALSE.  log_buffer is populated with failure.
+ * If it has exceeded any well-formed polled limit return the limit that 
+ * it exceeded.
+ * Otherwise, return PBSE_NONE.  log_buffer is populated with failure.
  */
 
 int mom_over_limit(
@@ -1978,7 +2056,7 @@ int mom_over_limit(
                 num,
                 value);
 
-        return(TRUE);
+        return(JOB_EXEC_OVERLIMIT_CPUT);
         }
       }
     else if ((igncput == FALSE) && (strcmp(pname, "pcput") == 0))
@@ -1993,7 +2071,7 @@ int mom_over_limit(
         sprintf(log_buffer, "pcput exceeded limit %lu",
                 value);
 
-        return(TRUE);
+        return(JOB_EXEC_OVERLIMIT_CPUT);
         }
       }
     else if (strcmp(pname, "vmem") == 0)
@@ -2009,7 +2087,7 @@ int mom_over_limit(
                 numll,
                 value);
 
-        return(TRUE);
+        return(JOB_EXEC_OVERLIMIT_MEM);
         }
       }
     else if (strcmp(pname, "pvmem") == 0)
@@ -2028,7 +2106,7 @@ int mom_over_limit(
         sprintf(log_buffer, "pvmem exceeded limit %llu",
                 valuell);
 
-        return(TRUE);
+        return(JOB_EXEC_OVERLIMIT_MEM);
         }
       }
     else if (ignwalltime == 0 && strcmp(pname, "walltime") == 0)
@@ -2052,7 +2130,7 @@ int mom_over_limit(
                 num,
                 value);
 
-        return(TRUE);
+        return(JOB_EXEC_OVERLIMIT_WT);
         }
       }
     }  /* END for (pres) */
@@ -2085,7 +2163,7 @@ int mom_over_limit(
         if (memory_pressure_duration && (pjob->ji_mempressure_cnt >= memory_pressure_duration))
           {
           sprintf(log_buffer, "swap rate due to memory oversubscription is too high");
-          return(TRUE);
+          return(JOB_EXEC_OVERLIMIT_MEM);
           }
 
         }
@@ -2093,7 +2171,7 @@ int mom_over_limit(
     }
 #endif
 
-  return(FALSE);
+  return(PBSE_NONE);
   }  /* END mom_over_limit() */
 
 

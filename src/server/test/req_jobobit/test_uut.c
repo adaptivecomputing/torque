@@ -444,7 +444,7 @@ START_TEST(update_substate_from_exit_status_test)
   fail_unless(alreadymailed == 0);
 
   pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
-  pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_OVERLIMIT;
+  pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_OVERLIMIT_MEM;
   fail_unless(update_substate_from_exit_status(pjob, &alreadymailed) == PBSE_NONE);
   fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING);
   fail_unless(alreadymailed == 1);

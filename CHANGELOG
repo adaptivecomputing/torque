@@ -4,6 +4,11 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Make job_starter work for parallel jobs as well as serial. (TRQ-1577 - thanks
       to NERSC for the patch)
   b - Fix one issue with being able to submit jobs to the cray while offline. TRQ-1595.
+  e - Make the abort and email messages for jobs more specific when they are killed 
+      for going over a limit. TRQ-1076.
+  e - Add mom parameter mom_oom_immunize, making the mom immune to being killed in out
+      of memory conditions. Default is now true. (thanks to Lukasz Flis for this work)
+  b - Don't count completed jobs against max_user_queuable. TRQ-1420. 
 
 4.2.1
   b - Fix a deadlock when submitting two large arrays consecutively, the second

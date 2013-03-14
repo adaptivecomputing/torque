@@ -434,7 +434,9 @@ void scan_for_exiting(void)
       if (ptask->ti_qs.ti_parenttask == TM_NULL_TASK)
         {
         /* master task is in state TI_STATE_EXITED */
-        if (pjob->ji_qs.ji_un.ji_momt.ji_exitstat != JOB_EXEC_OVERLIMIT)
+        if ((pjob->ji_qs.ji_un.ji_momt.ji_exitstat != JOB_EXEC_OVERLIMIT_MEM) &&
+            (pjob->ji_qs.ji_un.ji_momt.ji_exitstat != JOB_EXEC_OVERLIMIT_WT) &&
+            (pjob->ji_qs.ji_un.ji_momt.ji_exitstat != JOB_EXEC_OVERLIMIT_CPUT)) 
           {
           /* do not over-write JOB_EXEC_OVERLIMIT */
           pjob->ji_qs.ji_un.ji_momt.ji_exitstat = ptask->ti_qs.ti_exitstat;
@@ -1937,7 +1939,7 @@ void init_abort_jobs(
         pj->ji_resources = (noderes *)calloc(sisters, sizeof(noderes));
 #endif /* ndef NUMA_SUPPORT */
 
-      if (mom_do_poll(pj) && (recover == JOB_RECOV_RUNNING))
+      if ((sisters > 0) && (recover == JOB_RECOV_RUNNING))
         append_link(&mom_polljobs, &pj->ji_jobque, pj);
       }
     }    /* while ((pdirent = readdir(dir)) != NULL) */
