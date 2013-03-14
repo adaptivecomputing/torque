@@ -3365,7 +3365,8 @@ int add_job_to_node(
     pnode->nd_nsnfree--;
 
     /* if no free VPs, set node state */
-    if (pnode->nd_nsnfree <= 0)
+    if ((pnode->nd_nsnfree <= 0) ||
+        (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long == TRUE))
       pnode->nd_state = newstate;
 
     if (snp->inuse == INUSE_FREE)
