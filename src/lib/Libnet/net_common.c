@@ -310,17 +310,17 @@ int socket_connect_addr(
   int cntr = 0;
   int rc = PBSE_NONE;
   char tmp_buf[LOCAL_LOG_BUF_SIZE+1];
-  const char id[] = "socket_connect_addr";
   int local_socket = *socket;
 
   while (((rc = connect(local_socket, remote, remote_size)) != 0) && (cntr < RES_PORT_RETRY))
     {
     cntr++;
-/*    fprintf(stdout, "rc != 0 (%d)-(%d) (port_number=%d)\n", rc, errno, *local_socket); */
+    
     switch (errno)
       {
       case ECONNREFUSED:    /* Connection refused */
-        snprintf(tmp_buf, LOCAL_LOG_BUF_SIZE, "cannot connect to port %d in %s - connection refused", local_socket, id);
+        snprintf(tmp_buf, LOCAL_LOG_BUF_SIZE, "cannot connect to port %d in %s - connection refused",
+          local_socket, __func__);
         *error_msg = strdup(tmp_buf);
         rc = PBS_NET_RC_RETRY;
         close(local_socket);
@@ -333,15 +333,18 @@ int socket_connect_addr(
       case ETIMEDOUT:   /* Connection timed out */
       case EAGAIN:    /* Operation would block */
       case EINTR:     /* Interrupted system call */
+
         if ((rc = socket_wait_for_write(local_socket)) == PBSE_NONE)
           {
           /* no network failures detected, socket available */
           break;
           }
-        /* socket not ready for writing after 5 timeout */
+
+      /* socket not ready for writing after 5 timeout */
       case EINVAL:    /* Invalid argument */
       case EADDRINUSE:    /* Address already in use */
       case EADDRNOTAVAIL:   /* Cannot assign requested address */
+
         if (is_privileged)
           {
           rc = PBSE_SOCKET_FAULT;
@@ -367,7 +370,8 @@ int socket_connect_addr(
         break;
 
       default:
-        snprintf(tmp_buf, LOCAL_LOG_BUF_SIZE, "cannot connect to port %d in %s - errno:%d %s", local_socket, id, errno, strerror(errno));
+        snprintf(tmp_buf, LOCAL_LOG_BUF_SIZE, "cannot connect to port %d in %s - errno:%d %s",
+          local_socket, __func__, errno, strerror(errno));
         *error_msg = strdup(tmp_buf);
         close(local_socket);
         rc = PBSE_SOCKET_FAULT;
@@ -375,8 +379,10 @@ int socket_connect_addr(
         break;
       }
     }
+
   if (rc == PBSE_NONE)
     *socket = local_socket;
+
   return rc;
   } /* END socket_connect() */
 
