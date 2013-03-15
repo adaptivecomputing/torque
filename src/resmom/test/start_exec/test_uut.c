@@ -5,6 +5,13 @@
 #include <stdio.h>
 
 #include "pbs_error.h"
+#include "pbs_nodes.h"
+
+void get_mic_indices(job *pjob, char *buf, int buf_size);
+
+#ifdef NUMA_SUPPORT
+extern nodeboard node_boards[];
+#endif
 
 #define MAX_TEST_ENVP 150
 #define MAX_TEST_BLOCK 8096
@@ -191,6 +198,21 @@ START_TEST(test_bld_env_variables_realloc_all)
   }
 END_TEST
 
+START_TEST(test_get_mic_indices)
+  {
+  job  *pjob = (job *)calloc(1, sizeof(job));
+  char  buf[1024];
+
+  pjob->ji_wattr[JOB_ATR_exec_mics].at_val.at_str = strdup("slesmic-0-mic/1+slesmic-0-mic/0");
+
+  get_mic_indices(pjob, NULL, 0);
+  get_mic_indices(pjob, buf, sizeof(buf));
+  fail_unless(strstr(buf, "1") != NULL);
+  fail_unless(strstr(buf, "0") != NULL);
+  fail_unless(strstr(buf, ",") != NULL);
+  }
+END_TEST
+
 Suite *start_exec_suite(void)
   {
   Suite *s = suite_create("start_exec_suite methods");
@@ -211,6 +233,10 @@ Suite *start_exec_suite(void)
   tcase_add_test(tc_core, test_bld_env_variables_realloc_all);
   suite_add_tcase(s, tc_core);
 
+  tc_core = tcase_create("test_get_mic_indices");
+  tcase_add_test(tc_core, test_get_mic_indices);
+  suite_add_tcase(s, tc_core);
+
   return s;
   }
 
@@ -222,6 +248,13 @@ int main(void)
   {
   int number_failed = 0;
   SRunner *sr = NULL;
+
+#ifdef NUMA_SUPPORT
+  node_boards[0].mic_start_index = 0;
+  node_boards[1].mic_start_index = 2;
+  node_boards[2].mic_start_index = 4;
+#endif
+
   rundebug();
   sr = srunner_create(start_exec_suite());
   srunner_set_log(sr, "start_exec_suite.log");
