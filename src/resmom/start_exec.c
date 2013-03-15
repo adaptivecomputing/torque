@@ -1326,7 +1326,8 @@ void get_mic_indices(
   char *tok;
   char *slash;
 #ifdef NUMA_SUPPORT
-  char *dash;
+  char *dash1;
+  char *dash2;
   int   numa_index = -1;
 #endif
   int   numa_offset = 0;
@@ -1348,19 +1349,22 @@ void get_mic_indices(
       numa_offset = 0;
 
 #ifdef NUMA_SUPPORT
-      dash = strrchr(tok, '-');
+      dash1 = strrchr(tok, '-');
 
-      if (dash != NULL)
+      if (dash1 != NULL)
         {
-        dash = strrchr(dash-1, '-');
+        *dash1 = '\0';
+        dash2 = strrchr(tok, '-');
 
-        if (dash != NULL)
+        if (dash2 != NULL)
           {
-          numa_index = strtol(dash+1, NULL, 10);
+          numa_index = strtol(dash2+1, NULL, 10);
 
           if (numa_index < num_node_boards)
             numa_offset = node_boards[numa_index].mic_start_index;
           }
+
+        *dash1 = '-';
         }
 #endif
 
