@@ -561,7 +561,7 @@ int validate_socket(
     }
   else
     {
-    snprintf(unix_sockname, sizeof(unix_sockname), "%s/%s", PBS_SERVER_HOME, TRQAUTHD_SOCK_NAME);
+    snprintf(unix_sockname, sizeof(unix_sockname), "%s/%s", TRQAUTHD_SOCK_DIR, TRQAUTHD_SOCK_NAME);
     /* format is:
      * trq_system|trq_port|Validation_type|user|pid|psock|
      */

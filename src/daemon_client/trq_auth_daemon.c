@@ -174,7 +174,7 @@ int daemonize_trqauthd(char *server_ip, int server_port, void *(*process_meth)(v
     pthread_mutex_unlock(log_mutex);
 
     /* start the listener */
-    snprintf(unix_socket_name, sizeof(unix_socket_name), "%s/%s", path_home, TRQAUTHD_SOCK_NAME);
+    snprintf(unix_socket_name, sizeof(unix_socket_name), "%s/%s", TRQAUTHD_SOCK_DIR, TRQAUTHD_SOCK_NAME);
     rc = start_domainsocket_listener(unix_socket_name, process_meth);
     if(rc != PBSE_NONE)
       {
