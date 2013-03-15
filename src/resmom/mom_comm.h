@@ -102,7 +102,7 @@ int handle_im_poll_job_response(struct tcp_chan *chan, struct job *pjob, int nod
 
 int handle_im_get_tid_response(struct tcp_chan *chan, struct job *pjob, char *cookie, char **argv, char **envp, struct fwdevent *efwd);
 
-void im_request(struct tcp_chan *chan, int version);
+void im_request(struct tcp_chan *chan, int version,struct sockaddr_in *pSockAddr);
 
 void tm_eof(int fd);
 

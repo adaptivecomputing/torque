@@ -30,7 +30,7 @@ dnl added library functionality to testing
 dnl by John Rosenquist (jrosenquist@adaptivecomputing.com)
 
 AC_PREREQ(2.53)
-AC_INIT([torque], [4.2.2], [torqueusers@supercluster.org])
+AC_INIT([torque], [4.2.3], [torqueusers@supercluster.org])
 AC_REVISION($Revision$)
 AC_CONFIG_SRCDIR([src/cmds/qrun.c])
 AC_CONFIG_AUX_DIR([buildutils])
@@ -1691,6 +1691,14 @@ if test "x$ENABLE_UNIX_SOCKETS" = "xyes" ;then
    AC_DEFINE(ENABLE_UNIX_SOCKETS, 1, [Define to enable unix domain sockets])
 fi
 AC_MSG_RESULT([$ENABLE_UNIX_SOCKETS])
+
+
+AC_ARG_WITH(trqauthd_sock_dir, [
+  --with-trqauthd-sock-dir=DIR  set trqauthd directory for unix domain socket file
+                          defaults to /tmp],
+    [TRQAUTHD_SOCK_DIR="${withval}" ; RPM_AC_OPTS="$RPM_AC_OPTS --define \"torque_auth_sock_dir ${withval}\"" ],
+    [TRQAUTHD_SOCK_DIR="/tmp"])
+AC_DEFINE_UNQUOTED(TRQAUTHD_SOCK_DIR, "${TRQAUTHD_SOCK_DIR}", "trqauthd unix domain file")
 
 
 AC_ARG_WITH(server_home, [

@@ -71,9 +71,12 @@ END_TEST
 START_TEST(im_request_test)
   {
   struct tcp_chan test_chan;
-  memset(&test_chan, 0, sizeof(test_chan));
+  struct sockaddr_in sockaddr;
 
-  im_request(&test_chan, 0);
+  memset(&test_chan, 0, sizeof(test_chan));
+  memset(&sockaddr,0,sizeof(sockaddr));
+
+  im_request(&test_chan, 0,&sockaddr);
 
   memset(&test_chan, 0, sizeof(test_chan));
   disrsi_return_index = 0;
@@ -83,7 +86,7 @@ START_TEST(im_request_test)
   disrsi_array[0] = IM_KILL_JOB;
   disrsi_array[0] = 0;
   disrsi_array[1] = 0;
-  im_request(&test_chan, IM_PROTOCOL_VER);
+  im_request(&test_chan, IM_PROTOCOL_VER,&sockaddr);
 
   memset(&test_chan, 0, sizeof(test_chan));
   disrsi_return_index = 0;
@@ -93,7 +96,7 @@ START_TEST(im_request_test)
   disrsi_array[0] = IM_ALL_OKAY;
   disrsi_array[0] = 0;
   disrsi_array[1] = 0;
-  im_request(&test_chan, IM_PROTOCOL_VER);
+  im_request(&test_chan, IM_PROTOCOL_VER,&sockaddr);
 
   memset(&test_chan, 0, sizeof(test_chan));
   disrsi_return_index = 0;
@@ -101,7 +104,7 @@ START_TEST(im_request_test)
   disrst_array[0] = strdup("jobid");
   disrst_array[1] = strdup("cookie");
   disrsi_array[0] = IM_JOIN_JOB;
-  im_request(&test_chan, IM_PROTOCOL_VER);
+  im_request(&test_chan, IM_PROTOCOL_VER,&sockaddr);
 
   memset(&test_chan, 0, sizeof(test_chan));
   disrsi_return_index = 0;
@@ -109,7 +112,7 @@ START_TEST(im_request_test)
   disrst_array[0] = strdup("jobid");
   disrst_array[1] = strdup("cookie");
   disrsi_array[0] = IM_KILL_JOB;
-  im_request(&test_chan, IM_PROTOCOL_VER);
+  im_request(&test_chan, IM_PROTOCOL_VER,&sockaddr);
 
   memset(&test_chan, 0, sizeof(test_chan));
   disrsi_return_index = 0;
@@ -117,7 +120,7 @@ START_TEST(im_request_test)
   disrst_array[0] = strdup("jobid");
   disrst_array[1] = strdup("cookie");
   disrsi_array[0] = IM_SPAWN_TASK;
-  im_request(&test_chan, IM_PROTOCOL_VER);
+  im_request(&test_chan, IM_PROTOCOL_VER,&sockaddr);
 
   memset(&test_chan, 0, sizeof(test_chan));
   disrsi_return_index = 0;
@@ -125,7 +128,7 @@ START_TEST(im_request_test)
   disrst_array[0] = strdup("jobid");
   disrst_array[1] = strdup("cookie");
   disrsi_array[0] = IM_GET_TASKS;
-  im_request(&test_chan, IM_PROTOCOL_VER);
+  im_request(&test_chan, IM_PROTOCOL_VER,&sockaddr);
 
   memset(&test_chan, 0, sizeof(test_chan));
   disrsi_return_index = 0;
@@ -133,7 +136,7 @@ START_TEST(im_request_test)
   disrst_array[0] = strdup("jobid");
   disrst_array[1] = strdup("cookie");
   disrsi_array[0] = IM_SIGNAL_TASK;
-  im_request(&test_chan, IM_PROTOCOL_VER);
+  im_request(&test_chan, IM_PROTOCOL_VER,&sockaddr);
 
   memset(&test_chan, 0, sizeof(test_chan));
   disrsi_return_index = 0;
@@ -141,7 +144,7 @@ START_TEST(im_request_test)
   disrst_array[0] = strdup("jobid");
   disrst_array[1] = strdup("cookie");
   disrsi_array[0] = IM_OBIT_TASK;
-  im_request(&test_chan, IM_PROTOCOL_VER);
+  im_request(&test_chan, IM_PROTOCOL_VER,&sockaddr);
 
   memset(&test_chan, 0, sizeof(test_chan));
   disrsi_return_index = 0;
@@ -149,7 +152,7 @@ START_TEST(im_request_test)
   disrst_array[0] = strdup("jobid");
   disrst_array[1] = strdup("cookie");
   disrsi_array[0] = IM_POLL_JOB;
-  im_request(&test_chan, IM_PROTOCOL_VER);
+  im_request(&test_chan, IM_PROTOCOL_VER,&sockaddr);
 
   memset(&test_chan, 0, sizeof(test_chan));
   disrsi_return_index = 0;
@@ -157,7 +160,7 @@ START_TEST(im_request_test)
   disrst_array[0] = strdup("jobid");
   disrst_array[1] = strdup("cookie");
   disrsi_array[0] = IM_GET_INFO;
-  im_request(&test_chan, IM_PROTOCOL_VER);
+  im_request(&test_chan, IM_PROTOCOL_VER,&sockaddr);
 
   memset(&test_chan, 0, sizeof(test_chan));
   disrsi_return_index = 0;
@@ -165,7 +168,7 @@ START_TEST(im_request_test)
   disrst_array[0] = strdup("jobid");
   disrst_array[1] = strdup("cookie");
   disrsi_array[0] = IM_GET_RESC;
-  im_request(&test_chan, IM_PROTOCOL_VER);
+  im_request(&test_chan, IM_PROTOCOL_VER,&sockaddr);
 
   memset(&test_chan, 0, sizeof(test_chan));
   disrsi_return_index = 0;
@@ -173,7 +176,7 @@ START_TEST(im_request_test)
   disrst_array[0] = strdup("jobid");
   disrst_array[1] = strdup("cookie");
   disrsi_array[0] = IM_ABORT_JOB;
-  im_request(&test_chan, IM_PROTOCOL_VER);
+  im_request(&test_chan, IM_PROTOCOL_VER,&sockaddr);
 
   memset(&test_chan, 0, sizeof(test_chan));
   disrsi_return_index = 0;
@@ -181,7 +184,7 @@ START_TEST(im_request_test)
   disrst_array[0] = strdup("jobid");
   disrst_array[1] = strdup("cookie");
   disrsi_array[0] = IM_GET_TID;
-  im_request(&test_chan, IM_PROTOCOL_VER);
+  im_request(&test_chan, IM_PROTOCOL_VER,&sockaddr);
 
   memset(&test_chan, 0, sizeof(test_chan));
   disrsi_return_index = 0;
@@ -189,7 +192,7 @@ START_TEST(im_request_test)
   disrst_array[0] = strdup("jobid");
   disrst_array[1] = strdup("cookie");
   disrsi_array[0] = IM_RADIX_ALL_OK;
-  im_request(&test_chan, IM_PROTOCOL_VER);
+  im_request(&test_chan, IM_PROTOCOL_VER,&sockaddr);
 
   memset(&test_chan, 0, sizeof(test_chan));
   disrsi_return_index = 0;
@@ -197,7 +200,7 @@ START_TEST(im_request_test)
   disrst_array[0] = strdup("jobid");
   disrst_array[1] = strdup("cookie");
   disrsi_array[0] = IM_JOIN_JOB_RADIX;
-  im_request(&test_chan, IM_PROTOCOL_VER);
+  im_request(&test_chan, IM_PROTOCOL_VER,&sockaddr);
 
   memset(&test_chan, 0, sizeof(test_chan));
   disrsi_return_index = 0;
@@ -205,7 +208,7 @@ START_TEST(im_request_test)
   disrst_array[0] = strdup("jobid");
   disrst_array[1] = strdup("cookie");
   disrsi_array[0] = IM_KILL_JOB_RADIX;
-  im_request(&test_chan, IM_PROTOCOL_VER);
+  im_request(&test_chan, IM_PROTOCOL_VER,&sockaddr);
 
   memset(&test_chan, 0, sizeof(test_chan));
   disrsi_return_index = 0;
@@ -213,7 +216,7 @@ START_TEST(im_request_test)
   disrst_array[0] = strdup("jobid");
   disrst_array[1] = strdup("cookie");
   disrsi_array[0] = IM_MAX;
-  im_request(&test_chan, IM_PROTOCOL_VER);
+  im_request(&test_chan, IM_PROTOCOL_VER,&sockaddr);
 
   memset(&test_chan, 0, sizeof(test_chan));
   disrsi_return_index = 0;
@@ -221,7 +224,7 @@ START_TEST(im_request_test)
   disrst_array[0] = strdup("jobid");
   disrst_array[1] = strdup("cookie");
   disrsi_array[0] = IM_ERROR;
-  im_request(&test_chan, IM_PROTOCOL_VER);
+  im_request(&test_chan, IM_PROTOCOL_VER,&sockaddr);
   }
 END_TEST
 
