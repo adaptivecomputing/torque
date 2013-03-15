@@ -117,7 +117,8 @@ int encode_exec_host(
   if (attr->at_val.at_str == NULL)
     return(PBSE_NONE);
 
-  export_str = strdup(attr->at_val.at_str);
+  if ((export_str = strdup(attr->at_val.at_str)) == NULL)
+    return(PBSE_SYSTEM);
 
   while ((pipe = strchr(export_str, '|')) != NULL)
     *pipe = '+';

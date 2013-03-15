@@ -227,6 +227,12 @@ int add_mic_status(
 
   struct COI_ENGINE_INFO   mic_stat[MAX_ENGINES];
 
+#ifdef NUMA_SUPPORT
+  /* does this node board have mics configured? */
+  if (node_boards[numa_index].mic_end_index < 0)
+    return(PBSE_NONE);
+#endif
+
   if (COIEngineGetCount(COI_ISA_MIC, &num_engines) != COI_SUCCESS)
     {
     log_err(-1, __func__, "Mics are present but apparently not configured correctly - can't get count");
@@ -236,8 +242,7 @@ int add_mic_status(
   copy_to_end_of_dynamic_string(status, START_MIC_STATUS);
 
 #ifdef NUMA_SUPPORT
-  if ((num_engines < node_boards[numa_index].mic_start_index) ||
-      (num_engines < node_boards[numa_index].mic_end_index))
+  if (num_engines < node_boards[numa_index].mic_end_index)
     {
     snprintf(log_buffer, sizeof(log_buffer),
       "node board %d is supposed to have mic range %d-%d but there are only %d mics",

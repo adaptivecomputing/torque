@@ -1937,10 +1937,10 @@ void init_abort_jobs(
 
       if (sisters > 0)
         pj->ji_resources = (noderes *)calloc(sisters, sizeof(noderes));
-#endif /* ndef NUMA_SUPPORT */
 
       if ((sisters > 0) && (recover == JOB_RECOV_RUNNING))
         append_link(&mom_polljobs, &pj->ji_jobque, pj);
+#endif /* ndef NUMA_SUPPORT */
       }
     }    /* while ((pdirent = readdir(dir)) != NULL) */
 
