@@ -108,6 +108,9 @@ int diswcs(
   {
   int retval;
 
+  if (value == NULL)
+    return(DIS_NOMALLOC);
+
   retval = diswui_(chan, (unsigned)nchars);
 
   if ((retval == DIS_SUCCESS) &&

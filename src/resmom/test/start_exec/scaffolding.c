@@ -17,6 +17,8 @@
 #include "tm_.h" /* tm_task_id, tm_event_t */
 #include "mom_mach.h" /* startjob_rtn */
 #include "mom_func.h" /* var_table */
+#include "pbs_nodes.h"
+
 int exec_with_exec;
 int is_login_node = 0;
 char *apbasil_protocol = NULL;
@@ -58,6 +60,12 @@ char jobstarter_exe_name[MAXPATHLEN + 1];
 int    attempttomakedir = 0;
 int EXTPWDRETRY = 3;
 char log_buffer[LOG_BUF_SIZE];
+
+#ifdef NUMA_SUPPORT
+nodeboard node_boards[MAX_NODE_BOARDS];
+int       num_node_boards = 10;
+#endif
+
 
 int diswcs (struct tcp_chan *chan, const char *value,size_t nchars) 
   { return 0; }
