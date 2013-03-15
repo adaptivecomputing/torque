@@ -1,5 +1,16 @@
                                              
-TORQUE Resource Manager 4.1.5 Release Notes
+TORQUE Resource Manager 4.1.5.1 Release Notes
+
+4.1.5.1 has been created because of a problem with a fix for trqauthd to switch
+to using unix domain sockets. The file needed by trqauthd for the unix domain socket
+was put in the $TORQUE_HOME directory which makes it unable to work in an
+environment where nodes used a shared file system. The file is now stored in /tmp 
+by default. There is a new configuration option named --with-trqauthd-sock-dir
+which allows the user to designate where the file goes if the default is not
+suitable.
+
+This is the only fix that has been made to the 4.1.5 code. We are releasing the 
+4.1.5.1 version because most users will have problems running the 4.1.5 version.
 
 We have left the 4.1.0 release notes in place to make it easier for the user to know what are 
 the major changes in the TORQUE 4.1.x branch. We have also left notes for versions between 
