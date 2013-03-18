@@ -13,6 +13,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       Lukasz Flis for this work)
   b - Don't count completed jobs against max_user_queuable. TRQ-1420. (backported from
       4.2.2)
+  b - make pbs_track compatible with display_job_server_suffix = false. The user
+      has to set NO_SERVER_SUFFIX in the environment. TRQ-1389 (backported from 4.2.2)
 
 4.1.5
   b - For cray: make sure that reservations are released when jobs are requeued. TRQ-1572.
