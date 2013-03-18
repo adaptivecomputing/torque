@@ -1,8 +1,6 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 4.2.3
-  b - make pbs_track compatible with display_job_server_suffix = false. The user
-      has to set NO_SERVER_SUFFIX in the environment. TRQ-1389
 
 4.2.2
   b - Make job_starter work for parallel jobs as well as serial. (TRQ-1577 - thanks
@@ -16,6 +14,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Don't count completed jobs against max_user_queuable. TRQ-1420. 
   e - For mics, set the variable $OFFLOAD_DEVICES with a list of MICs to use for the 
       job.
+  b - make pbs_track compatible with display_job_server_suffix = false. The user
+      has to set NO_SERVER_SUFFIX in the environment. TRQ-1389
 
 4.2.1
   b - Fix a deadlock when submitting two large arrays consecutively, the second
