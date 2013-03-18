@@ -4550,10 +4550,12 @@ int send_im_error_addr(
  *
  * @see im_eof() - child - called if failure occurs
  */
+
 void im_request(
 
   struct tcp_chan *chan,
-  int version)  /* I */
+  int version,  /* I */
+  struct sockaddr_in *pSockAddr) /* I */
 
   {
   int                  command = 0;
@@ -4567,9 +4569,6 @@ void im_request(
   hnodent             *np = NULL;
   eventent            *ep = NULL;
 
-  struct sockaddr_in  *addr;
-  struct sockaddr      stack_addr;
-  unsigned int         addr_len = sizeof(stack_addr);
   u_long               ipaddr;
   int                  i;
   int                  errcode;
@@ -4607,16 +4606,13 @@ void im_request(
     }
 
   /* check that machine is known */  
-  getpeername(chan->sock,&stack_addr,&addr_len);
-  addr = (struct sockaddr_in *)&stack_addr;
-  
-  ipaddr = ntohl(addr->sin_addr.s_addr);
+  ipaddr = ntohl(pSockAddr->sin_addr.s_addr);
   
   /* NYI: check that this connection comes from a privileged port */ 
 
   if (LOGLEVEL >= 3)
     {
-    sprintf(log_buffer, "connect from %s", netaddr(addr));
+    sprintf(log_buffer, "connect from %s", netaddr(pSockAddr));
  
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
     }
@@ -4638,13 +4634,13 @@ void im_request(
       {
       snprintf(log_buffer, LOCAL_LOG_BUF_SIZE,
         "bad connect from %s - unauthorized (okclients: %s)",
-        netaddr(addr),
+        netaddr(pSockAddr),
         tmp_line);
       }
     else
       snprintf(log_buffer, LOCAL_LOG_BUF_SIZE,
         "bad connect from %s - unauthorized (could not get ok clients %d)",
-        netaddr(addr),
+        netaddr(pSockAddr),
         ret);
     
     if (tmp_line != NULL)
@@ -4694,7 +4690,7 @@ void im_request(
         PMOMCommand[MIN(command,IM_MAX)],
         command,
         jobid,
-        netaddr(addr),
+        netaddr(pSockAddr),
         event,
         fromtask,
         cookie);
@@ -4706,7 +4702,7 @@ void im_request(
     {
     case IM_JOIN_JOB:
       {
-      ret = im_join_job_as_sister(chan,jobid,addr,cookie,event,fromtask,command,FALSE);
+      ret = im_join_job_as_sister(chan,jobid,pSockAddr,cookie,event,fromtask,command,FALSE);
       close_conn(chan->sock, FALSE);
       svr_conn[chan->sock].cn_stay_open = FALSE;
       chan->sock = -1;
@@ -4721,7 +4717,7 @@ void im_request(
  
     case IM_JOIN_JOB_RADIX:
       {
-      ret = im_join_job_as_sister(chan,jobid,addr,cookie,event,fromtask,command,TRUE);
+      ret = im_join_job_as_sister(chan,jobid,pSockAddr,cookie,event,fromtask,command,TRUE);
       close_conn(chan->sock, FALSE);
       svr_conn[chan->sock].cn_stay_open = FALSE;
       chan->sock = -1;
@@ -4750,17 +4746,17 @@ void im_request(
       {
       sprintf(log_buffer, "ERROR: received request '%s' from %s for job '%s' (job does not exist locally). No response (no ping pong)",
         PMOMCommand[MIN(command,IM_MAX)],
-        netaddr(addr),
+        netaddr(pSockAddr),
         jobid);
       close_conn(chan->sock, FALSE);
       svr_conn[chan->sock].cn_stay_open = FALSE;
       chan->sock = -1;
       goto err;
       }
-    send_im_error_addr(PBSE_UNKJOBID,addr,sender_port,jobid,cookie,event,fromtask);
+    send_im_error_addr(PBSE_UNKJOBID,pSockAddr,sender_port,jobid,cookie,event,fromtask);
     sprintf(log_buffer, "ERROR: received request '%s' from %s for job '%s' cookie '%s' event '%d' (job does not exist locally).",
       PMOMCommand[MIN(command,IM_MAX)],
-      netaddr(addr),
+      netaddr(pSockAddr),
       jobid,
       cookie,
       event);
@@ -4776,7 +4772,7 @@ void im_request(
     {
     sprintf(log_buffer, "ERROR:    received request '%s' from %s for job '%s' (job has no cookie)",
      PMOMCommand[MIN(command,IM_MAX)],
-      netaddr(addr),
+      netaddr(pSockAddr),
       jobid);
 
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buffer);
@@ -4801,7 +4797,7 @@ void im_request(
       snprintf(log_buffer, LOCAL_LOG_BUF_SIZE,
         "ERROR:    received request '%s' from %s for job '%s' (job has corrupt cookie - '%s' != '%s')",
         PMOMCommand[MIN(command,IM_MAX)],
-        netaddr(addr),
+        netaddr(pSockAddr),
         jobid,
         oreo,
         cookie);
@@ -4908,7 +4904,7 @@ void im_request(
  
     case IM_SPAWN_TASK:
       {
-      ret = im_spawn_task(chan,cookie,event,addr,fromtask,pjob);
+      ret = im_spawn_task(chan,cookie,event,pSockAddr,fromtask,pjob);
       close_conn(chan->sock, FALSE);
       svr_conn[chan->sock].cn_stay_open = FALSE;
       chan->sock = -1;
@@ -5007,7 +5003,7 @@ void im_request(
         goto err;
         }
       
-      im_abort_job(pjob,addr,cookie,event,fromtask);
+      im_abort_job(pjob,pSockAddr,cookie,event,fromtask);
 
       break;
       }
@@ -5035,7 +5031,7 @@ void im_request(
         {
         case IM_JOIN_JOB:
           {
-          ret = handle_im_join_job_response(chan, pjob, addr);
+          ret = handle_im_join_job_response(chan, pjob, pSockAddr);
           close_conn(chan->sock, FALSE);
           chan->sock = -1;
           if (ret == IM_FAILURE)
@@ -5351,7 +5347,7 @@ void im_request(
                 {
                 sprintf(log_buffer, "%s:joinjob response received from node %s",
                   __func__,
-                  netaddr(addr));
+                  netaddr(pSockAddr));
                 
                 log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
                 }
@@ -5364,7 +5360,7 @@ void im_request(
               snprintf(log_buffer,LOCAL_LOG_BUF_SIZE,
                 "ERROR: received request '%s' from %s for job '%s' (job does not exist locally):IM_RADIX_ALL_OK",
                 PMOMCommand[MIN(command,IM_MAX)],
-                netaddr(addr),
+                netaddr(pSockAddr),
                 jobid);
               
               log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buffer);
@@ -5598,7 +5594,7 @@ void im_request(
 
       snprintf(log_buffer, LOCAL_LOG_BUF_SIZE,
         "Response recieved from client %s (%d) jobid %s",
-        netaddr(addr), sender_port, jobid);
+        netaddr(pSockAddr), sender_port, jobid);
       log_err(-1, __func__, log_buffer);
      
       if ((errcode == PBSE_UNKJOBID) && (event_com == TM_NULL_EVENT))
@@ -5648,7 +5644,7 @@ void im_request(
             goto err;
             }
           
-          job_start_error(pjob, errcode, netaddr(addr));
+          job_start_error(pjob, errcode, netaddr(pSockAddr));
           break;
           
         case IM_ABORT_JOB:
@@ -5671,7 +5667,7 @@ void im_request(
               "KILL/ABORT (job %s) request returned error %d from %s (%d total nodes)\n",
               jobid,
               errcode,
-              netaddr(addr),
+              netaddr(pSockAddr),
               pjob->ji_numnodes);
           log_err(errcode, __func__, log_buffer);
           
@@ -5860,7 +5856,7 @@ err:
   
   snprintf(log_buffer, LOCAL_LOG_BUF_SIZE,
       "error processing command %d event_com %d for job %s from %s:(%d)",
-    command, event_com, jobid ? jobid : "unknown", netaddr(addr), sender_port);
+    command, event_com, jobid ? jobid : "unknown", netaddr(pSockAddr), sender_port);
   
   log_err(-1, __func__, log_buffer);
   

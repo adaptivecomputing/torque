@@ -125,10 +125,7 @@ int socket_connect_unix(int local_socket, const char *sock_name, char **error_ms
   return(0);
   }
 
-extern "C"
-{
 char *pbse_to_txt(int err)
   {
   return(NULL);
   }
-}
