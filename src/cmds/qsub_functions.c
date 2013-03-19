@@ -528,9 +528,11 @@ char *smart_strtok(
 
 
 int get_name_value(
-    char  *start,
-    char **name,
-    char **value)
+
+  char  *start,
+  char **name,
+  char **value)
+
   {
   static char *tok_ptr;
   char *curr_ptr;
@@ -542,7 +544,7 @@ int get_name_value(
     return(0);
 
   if (start != NULL)
-    strcpy(tmpLine, start);
+    snprintf(tmpLine, sizeof(tmpLine), "%s", start);
 
   curr_ptr = smart_strtok(tmpLine,"",&tok_ptr,FALSE);
 
@@ -2274,9 +2276,10 @@ int validate_group_list(
   char         **pmem;
   struct group  *grent;
   struct passwd *pwent;
-  /*int            is_member = FALSE;*/
 
-  pwent = getpwuid(getuid());
+  if ((pwent = getpwuid(getuid())) == NULL)
+    return(FALSE);
+
   u_name = pwent->pw_name;
   
   while (tmp_group != NULL)
@@ -2511,7 +2514,7 @@ void process_opts(
             {
             if ((ptr = csv_nth(optarg, i)) != NULL)
               {
-              strcpy(search_string, ptr);
+              snprintf(search_string, sizeof(search_string), "%s", ptr);
               ptr = strchr(search_string, '=');
 
               if (ptr)
@@ -3362,46 +3365,6 @@ void process_opts(
       }
     fclose(fP);
 
-/*    if ((tmpfd = mkstemp(tmp_name)) < 1)
-      {
-      fprintf(stderr,
-              "qsub: could not create tmp job file %s\n",
-              tmp_name);
-
-      errflg++;
-
-      goto err;
-      }
-
-    if ((fP = fdopen(tmpfd, "w+")) == NULL)
-      {
-      fprintf(stderr, "qsub: could not create tmp job file %s\n",
-              tmp_name);
-
-      unlink(tmp_name);
-
-      errflg++;
-
-      goto err;
-      }
-
-    if (fprintf(fP, "%s\n\n", tmpResources) < 0)
-      {
-      fprintf(stderr, "qsub: unable to write to tmp job file %s\n",
-              tmp_name);
-
-      fclose(fP);
-
-      unlink(tmp_name);
-
-      errflg++;
-
-      goto err;
-      }
-      */
-
-
-/*     if (stat(PBS_Filter, &sfilter) != -1) */
     if (hash_find(ji->job_attr, ATTR_pbs_o_submit_filter, &tmp_job_info))
       {
       int index;
@@ -3413,13 +3376,6 @@ void process_opts(
         snprintf(err_msg, alloc_len, "qsub: could not create tmp job file %s", tmp_name2);
         unlink(tmp_name);
         print_qsub_usage_exit(err_msg);
-/*         fprintf(stderr, */
-/*                 "qsub: could not create tmp job file %s\n", */
-/*                 tmp_name2); */
-
-/*         errflg++; */
-
-/*         goto err; */
         }
 
       close(tmpfd);
@@ -4168,8 +4124,8 @@ void main_func(
     {
     for (idx = 1; idx < script_idx; idx++)
       {
-      strcat(script," ");
-      strcat(script, argv[optind + idx]);
+      int len = strlen(script);
+      snprintf(script + len, sizeof(script) - len, " %s", argv[optind + idx]);
       }
     }
 

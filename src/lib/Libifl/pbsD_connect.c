@@ -883,7 +883,7 @@ int pbs_original_connect(
     goto cleanup_conn_lite;
     }
 
-  strcpy(pbs_current_user, pw->pw_name);
+  snprintf(pbs_current_user, PBS_MAXUSER, "%s", pw->pw_name);
 
   pbs_server = server;    /* set for error messages from commands */
 
@@ -1008,7 +1008,8 @@ int pbs_original_connect(
           }
         }
 
-      setsockopt(connection[out].ch_socket, SOL_SOCKET, SO_REUSEADDR, &opt_value, sizeof(opt_value));
+      if (setsockopt(connection[out].ch_socket, SOL_SOCKET, SO_REUSEADDR, &opt_value, sizeof(opt_value)))
+        perror("Couldn't set socket option");
 
       /* This is probably an IPv4 solution for the if_name and preferred_addr
          We need to see what ioctl call we need for IPv6 */

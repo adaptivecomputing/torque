@@ -592,10 +592,10 @@ static void altdsp_statjob(
     eltimewal = blank;
     jstate    = blank;
     comment   = blank;
-    strcpy(pfs, blank);
-    strcpy(rqmem, blank);
-    strcpy(srfsbig, blank);
-    strcpy(srfsfast, blank);
+    snprintf(pfs, sizeof(pfs), "%s", blank);
+    snprintf(rqmem, sizeof(rqmem), "%s", blank);
+    snprintf(srfsbig, sizeof(srfsbig), "%s", blank);
+    snprintf(srfsfast, sizeof(srfsfast), "%s", blank);
     usecput = 0;
 
     pat = pstat->attribs;
@@ -1228,9 +1228,7 @@ void display_statjob(
               if (*c == '\0')
                 c = a->value + l;
 
-              strcpy(long_name, "...");
-
-              strcat(long_name, c);
+              snprintf(long_name, sizeof(long_name), "...%s", c);
 
               c = long_name;
               }

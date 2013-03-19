@@ -3932,6 +3932,7 @@ int find_file(
         ptr2++;
         *ptr2 = '/';
         }
+
       strcat(buf, filename);
 
       rc = stat(buf, &statBuf);

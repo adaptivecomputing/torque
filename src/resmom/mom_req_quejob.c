@@ -265,7 +265,7 @@ void req_quejob(
     {
     if (!strcmp(psatl->al_name,ATTR_hashname))
       {
-      strcpy(basename,psatl->al_value);
+      snprintf(basename, sizeof(basename), "%s", psatl->al_value);
 
       break;
       }
@@ -575,7 +575,6 @@ void req_jobscript(
   {
   int          fds;
   char         namebuf[MAXPATHLEN];
-  char         portname[MAXPATHLEN];
   job         *pj;
   int          filemode = 0700;
   extern char  mom_host[];
@@ -630,16 +629,16 @@ void req_jobscript(
     return;
     }
 
-  strcpy(namebuf, path_jobs);
-
-  strcat(namebuf, pj->ji_qs.ji_fileprefix);
   if (multi_mom)
     {
-    sprintf(portname, "%d", pbs_rm_port);
-    strcat(namebuf, portname);
+    snprintf(namebuf, sizeof(namebuf), "%s%s%d%s",
+      path_jobs, pj->ji_qs.ji_fileprefix, pbs_rm_port, JOB_SCRIPT_SUFFIX);
     }
-
-  strcat(namebuf, JOB_SCRIPT_SUFFIX);
+  else
+    {
+    snprintf(namebuf, sizeof(namebuf), "%s%s%s",
+      path_jobs, pj->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
+    }
 
   if (pj->ji_qs.ji_un.ji_newt.ji_scriptsz == 0)
     {

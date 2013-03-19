@@ -614,21 +614,20 @@ int task_recov(
   int   fds;
   task *pt;
   char  namebuf[MAXPATHLEN];
-  char  portname[MAXPATHLEN];
 
   taskfix task_save;
   tm_task_id tid;
 
-  strcpy(namebuf, path_jobs);     /* job directory path */
-  strcat(namebuf, pjob->ji_qs.ji_fileprefix);
-
   if (multi_mom)
     {
-    sprintf(portname, "%d", pbs_rm_port);
-    strcat(namebuf, portname);
+    snprintf(namebuf, sizeof(namebuf), "%s%s%d%s",
+      path_jobs, pjob->ji_qs.ji_fileprefix, pbs_rm_port, JOB_TASKDIR_SUFFIX);
     }
-
-  strcat(namebuf, JOB_TASKDIR_SUFFIX);
+  else
+    {
+    snprintf(namebuf, sizeof(namebuf), "%s%s%s",
+      path_jobs, pjob->ji_qs.ji_fileprefix, JOB_TASKDIR_SUFFIX);
+    }
 
 #if defined(HAVE_OPEN64) && defined(LARGEFILE_WORKS)
   fds = open64(namebuf, O_RDONLY, 0);
@@ -1005,7 +1004,7 @@ int send_sisters(
 hnodent *find_node(
 
   job         *pjob,
-  int        stream,
+  int          stream,
   tm_node_id   nodeid)
 
   {
@@ -1991,7 +1990,8 @@ int reply_to_join_job_as_sister(
     else
       ret = DIS_tcp_wflush(local_chan);
 
-    close(socket);
+    if (socket >= 0)
+      close(socket);
 
     if (local_chan != NULL)
       {
@@ -2259,9 +2259,8 @@ int im_join_job_as_sister(
     psatl = (svrattrl *)GET_NEXT(psatl->al_link);
     }
 
-  strcpy(pjob->ji_qs.ji_jobid, jobid);
-  
-  strcpy(pjob->ji_qs.ji_fileprefix, basename);
+  snprintf(pjob->ji_qs.ji_jobid, sizeof(pjob->ji_qs.ji_jobid), "%s", jobid);
+  snprintf(pjob->ji_qs.ji_fileprefix, sizeof(pjob->ji_qs.ji_fileprefix), "%s", basename);
   
   pjob->ji_modified       = 1;
   pjob->ji_nodeid         = nodeid;
@@ -2714,7 +2713,7 @@ int im_spawn_task(
   
   num = 4;
   
-  argv = (char **)calloc(sizeof(char **), num);
+  argv = (char **)calloc(sizeof(char *), num);
  
   if (argv == NULL)
     return(IM_FAILURE);
@@ -2740,7 +2739,7 @@ int im_spawn_task(
       
       num *= 2;
       
-      tmpArgV = (char **)realloc(argv,num * sizeof(char **));
+      tmpArgV = (char **)realloc(argv,num * sizeof(char *));
       
       if (tmpArgV == NULL)
         {
@@ -2765,7 +2764,7 @@ int im_spawn_task(
   
   num = 8;
   
-  envp = (char **)calloc(sizeof(char **), num);
+  envp = (char **)calloc(sizeof(char *), num);
   
   assert(envp);
   
@@ -2786,7 +2785,7 @@ int im_spawn_task(
     
     if (i == num - 1)
       {
-      char **tmp = (char **)calloc(num * 2, sizeof(char **));
+      char **tmp = (char **)calloc(num * 2, sizeof(char *));
 
       if (tmp == NULL)
         {
@@ -2800,7 +2799,7 @@ int im_spawn_task(
         }
       else
         {
-        memcpy(tmp, envp, sizeof(char **) * num);
+        memcpy(tmp, envp, sizeof(char *) * num);
         free(envp);
         envp = tmp;
         num *= 2;
@@ -6130,7 +6129,7 @@ int tm_spawn_request(
   if (*ret != DIS_SUCCESS)
     return(TM_DONE);
   
-  argv = (char **)calloc(numele + 1, sizeof(char **));
+  argv = (char **)calloc(numele + 1, sizeof(char *));
   
   if (argv == NULL)
     {
@@ -6155,7 +6154,7 @@ int tm_spawn_request(
   
   numele = 4;
   
-  envp = (char **)calloc(numele, sizeof(char **));
+  envp = (char **)calloc(numele, sizeof(char *));
   
   if (envp == NULL)
     {
@@ -6201,7 +6200,7 @@ int tm_spawn_request(
       {
       numele *= 2;
  
-      envp = (char **)realloc(envp, numele * sizeof(char **));
+      envp = (char **)realloc(envp, numele * sizeof(char *));
       
       assert(envp);
       }
@@ -7293,8 +7292,8 @@ int tm_request(
  
     if (ptask == NULL)
       goto err;
- 
-    strcpy(ptask->ti_qs.ti_parentjobid, jobid);
+
+    snprintf(ptask->ti_qs.ti_parentjobid, sizeof(ptask->ti_qs.ti_parentjobid), "%s", jobid);
  
     ptask->ti_qs.ti_parentnode = pjob->ji_nodeid;
  

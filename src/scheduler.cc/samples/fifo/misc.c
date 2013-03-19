@@ -323,7 +323,7 @@ char **dup_string_array(char **ostrs)
     for (i = 0; ostrs[i] != NULL; i++)
       /* NO-OP, counting */;
 
-    if ((nstrs = (char **)malloc((i + 1) * sizeof(char**))) == NULL)
+    if ((nstrs = (char **)malloc((i + 1) * sizeof(char*))) == NULL)
       {
       fprintf(stderr, "Memory Allocation Error for char **\n");
       return NULL;

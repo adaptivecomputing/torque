@@ -1579,10 +1579,15 @@ void main_loop(void)
      */
     if (state > SV_STATE_RUN)
       {
+      bool change_state = false;
       pthread_mutex_lock(server.sv_jobstates_mutex);
-      if ((server.sv_jobstates[JOB_STATE_RUNNING] == 0) &&
-          (server.sv_jobstates[JOB_STATE_EXITING] == 0) &&
-          (has_task(&task_list_event) == FALSE))
+      change_state = ((server.sv_jobstates[JOB_STATE_RUNNING] == 0) &&
+                      (server.sv_jobstates[JOB_STATE_EXITING] == 0) &&
+                      (has_task(&task_list_event) == FALSE));
+
+      pthread_mutex_unlock(server.sv_jobstates_mutex);
+
+      if (change_state == true)
         {
         state = SV_STATE_DOWN;
         set_svr_attr(SRV_ATR_State, &state);
@@ -1590,7 +1595,6 @@ void main_loop(void)
         /* at this point kill the threadpool */
         destroy_request_pool();
         }
-      pthread_mutex_unlock(server.sv_jobstates_mutex);
       }
 
     /* Sleep 1/4 of a second. Could probably be increased */
