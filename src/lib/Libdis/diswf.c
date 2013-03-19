@@ -193,7 +193,7 @@ int diswf(
 
   do
     {
-    c = dval;
+    c = (int)dval;
     dval = (dval - c) * 10.0;
     *ocp++ = c + '0';
     }

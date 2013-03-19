@@ -181,10 +181,10 @@ enum prime_time check_prime(enum days d, struct tm *t)
      * the current hour is between the start hour of primetime and the start
      * hour of non-primetime
      */
-    if (t -> tm_hour > conf.prime[d][PRIME].hour &&
-        t -> tm_hour < conf.prime[d][NON_PRIME].hour)
+    if (t -> tm_hour > (int)conf.prime[d][PRIME].hour &&
+        t -> tm_hour < (int)conf.prime[d][NON_PRIME].hour)
       prime  = PRIME;
-    else if (t -> tm_hour == conf.prime[d][PRIME].hour)
+    else if (t -> tm_hour == (int)conf.prime[d][PRIME].hour)
       {
       /* prime time is less then 1 hour */
       if (conf.prime[d][PRIME].hour == conf.prime[d][NON_PRIME].hour)
@@ -193,8 +193,8 @@ enum prime_time check_prime(enum days d, struct tm *t)
          * and primetime is less then one hour in length.  Current minute is
          * between the start of primetime and the start of nonprimetime
          */
-        if (t -> tm_min >= conf.prime[d][PRIME].min &&
-            t -> tm_min < conf.prime[d][NON_PRIME].min)
+        if ((t -> tm_min >= (int)conf.prime[d][PRIME].min) &&
+            (t -> tm_min <  (int)conf.prime[d][NON_PRIME].min))
           prime = PRIME;
         else /* Case 7: !case 6 */
           prime = NON_PRIME;
@@ -203,7 +203,7 @@ enum prime_time check_prime(enum days d, struct tm *t)
       /* Case 8: The current hour is equal to the start of primetime hour.
        * The current minute is after the start of primetime minute
        */
-      else if (t -> tm_min > conf.prime[d][PRIME].min)
+      else if (t -> tm_min > (int)conf.prime[d][PRIME].min)
         prime = PRIME;
       else /* Case 9: !case 8 */
         prime = NON_PRIME;
@@ -220,8 +220,8 @@ enum prime_time check_prime(enum days d, struct tm *t)
      * the start of primetime i.e. 11:00PM or less start of nonprime time
      * i.e. 1AM
      */
-    if (t -> tm_hour > conf.prime[d][PRIME].hour ||
-        t -> tm_hour < conf.prime[d][NON_PRIME].hour)
+    if (t -> tm_hour > (int)conf.prime[d][PRIME].hour ||
+        t -> tm_hour < (int)conf.prime[d][NON_PRIME].hour)
       prime = PRIME;
     else /* Case 12: !case 11 */
       prime = NON_PRIME;

@@ -224,7 +224,7 @@ int diswl_(
 
   do
     {
-    c = ldval;
+    c = (int)ldval;
     ldval = (ldval - c) * 10.0L;
     *ocp++ = c + '0';
     }
