@@ -762,7 +762,7 @@ int set_arst(
 
     case INCR:
 
-      j = 1.5 * (pas->as_usedptr + newpas->as_usedptr);
+      j = (int)(1.5 * (pas->as_usedptr + newpas->as_usedptr));
 
       /* calloc the tmp array strings */
       need = sizeof(struct array_strings) + (j-1) * sizeof(char *);
