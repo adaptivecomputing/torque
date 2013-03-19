@@ -1744,7 +1744,6 @@ int blcr_restart_job(
   char           namebuf[MAXPATHLEN + 1];
   char           restartfile[MAXPATHLEN + 1];
   char           script_buf[MAXPATHLEN + 1];
-  char         **ap;
 #ifdef USEJOBCREATE
 	uint64_t       job_id;
 #endif /* USEJOBCREATE */
