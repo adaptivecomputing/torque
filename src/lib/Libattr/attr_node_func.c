@@ -338,9 +338,12 @@ int encode_state(
       if (state & ns[i].bit)
         {
         if (state_str[0] != '\0')
-          strcat(state_str, ",");
-
-        strcat(state_str, ns[i].name);
+          {
+          int len = strlen(state_str);
+          snprintf(state_str + len, sizeof(state_str) - len, ",%s", ns[i].name);
+          }
+        else
+          snprintf(state_str, sizeof(state_str), "%s", ns[i].name);
         }
       }
     }

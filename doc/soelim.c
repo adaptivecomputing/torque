@@ -177,9 +177,7 @@ int dofile(FILE *filein)
 
       while ((pdir = sodir[dirindex]) != NULL)
         {
-        (void)strcpy(newfile, pdir);
-        (void)strcat(newfile, "/");
-        (void)strcat(newfile, pso);
+        snprintf(newfile, sizeof(newfile), "%s/%s", pdir, pso);
 
         if ((newin = fopen(newfile, "r")) != NULL)
           {
@@ -194,8 +192,7 @@ int dofile(FILE *filein)
       if (found == 0)
         {
         /* try local directory */
-
-        (void)strcpy(newfile, pso);
+        snprintf(newfile, sizeof(newfile), "%s", pso);
 
         if ((newin = fopen(newfile, "r")) != NULL)
           {

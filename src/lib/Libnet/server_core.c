@@ -240,8 +240,9 @@ int start_domainsocket_listener(
           printf("error in accept %s\n", strerror(errno));
           break;
           }
+        
         errno = 0;
-        close(*new_conn_port);
+
         free(new_conn_port);
         new_conn_port = NULL;
         }
@@ -265,16 +266,19 @@ int start_domainsocket_listener(
         total_cntr++;
         }
       }
+
     if (new_conn_port != NULL)
       {
       free(new_conn_port);
       }
+
     pthread_attr_destroy(&t_attr);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, "net_srvr",
                 "Socket close of network listener requested");
     }
 
-  close(listen_socket);
+  if (listen_socket != -1)
+    close(listen_socket);
 
   return(rc);
   } /* END start_listener() */

@@ -212,14 +212,18 @@ int mom_checkpoint_execute_job(
     {
     char cmd[MAXPATHLEN + 1];
     int i;
+    int len;
 
-    strcpy(cmd,arg[0]);
+    snprintf(cmd, sizeof(cmd), "%s", arg[0]);
+    
     for (i = 1; arg[i] != NULL; i++)
       {
-      strcat(cmd," ");
-      strcat(cmd,arg[i]);
+      len = strlen(cmd);
+      snprintf(cmd + len, sizeof(cmd) - len, " %s", arg[i]);
       }
-    strcat(cmd,")");
+
+    len = strlen(cmd);
+    snprintf(cmd + len, sizeof(cmd) - len, ")");
 
     log_buffer[0] = '\0';
     sprintf(log_buffer, "execing checkpoint command (%s)\n", cmd);
@@ -293,16 +297,12 @@ void mom_checkpoint_set_directory_path(
   const char *str)
 
   {
-  char *cp;
+  int   len = strlen(str);
 
-  strcpy(path_checkpoint, str);
-  cp = &path_checkpoint[strlen(path_checkpoint)];
-
-  if (*cp != '/')
-    {
-    *cp++ = '/';
-    *cp++ = 0;
-    }
+  if (str[len - 1] == '/')
+    snprintf(path_checkpoint, sizeof(path_checkpoint), "%s", str);
+  else
+    snprintf(path_checkpoint, sizeof(path_checkpoint), "%s/", str);
   }
 
 
@@ -417,13 +417,12 @@ unsigned long mom_checkpoint_set_checkpoint_run_exe_name(
 void get_jobs_default_checkpoint_dir(
     
   char *prefix,      /* I */
-  char *defaultpath) /* O */
+  char *defaultpath, /* O */
+  int   size)        /* I - max writtable to defaultpath */
 
   {
-
-  strcpy(defaultpath, path_checkpoint);
-  strcat(defaultpath, prefix);
-  strcat(defaultpath, JOB_CHECKPOINT_SUFFIX);
+  snprintf(defaultpath, size, "%s%s%s", 
+    path_checkpoint, prefix, JOB_CHECKPOINT_SUFFIX);
 
   return;
   }  /* END get_jobs_default_checkpoint_dir() */
@@ -437,7 +436,8 @@ void get_jobs_default_checkpoint_dir(
 void get_chkpt_dir_to_use(
 
   job  *pjob,
-  char *chkpt_dir)
+  char *chkpt_dir,
+  int   chkpt_dir_size)
 
   {
   /*
@@ -453,27 +453,36 @@ void get_chkpt_dir_to_use(
     /* No dir specified, use the default job checkpoint directory
        e.g.  /var/spool/torque/checkpoint/42.host.domain.CK */
 
-    get_jobs_default_checkpoint_dir(pjob->ji_qs.ji_fileprefix, chkpt_dir);
+    get_jobs_default_checkpoint_dir(pjob->ji_qs.ji_fileprefix, chkpt_dir, chkpt_dir_size);
     }
   else
     {
+    bool need_slash = false;
+    int len;
+
     sprintf(job_dir,"%s%s",
       pjob->ji_qs.ji_fileprefix, JOB_CHECKPOINT_SUFFIX);
 
-    strcpy(chkpt_dir, pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str);
+    len = strlen(pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str);
+    if (pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str[len-1] != '/')
+      need_slash = true;
+
 
     if ((strlen(pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str) <=
       strlen(job_dir)) ||
       (strcmp(job_dir, &pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str[strlen(pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str) - strlen(job_dir)])))
       {
-
-      if (chkpt_dir[strlen(chkpt_dir) - 1] != '/')
+      if (need_slash == true)
         {
-        strcat(chkpt_dir, "/");
+        snprintf(chkpt_dir, chkpt_dir_size, "%s/%s",
+          pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str, job_dir);
         }
-
-      strcat(chkpt_dir, job_dir);
+      else
+        snprintf(chkpt_dir, chkpt_dir_size, "%s%s",
+          pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str, job_dir);
       }
+    else
+      snprintf(chkpt_dir, chkpt_dir_size, "%s", pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str);
     }
 
   return;
@@ -612,7 +621,7 @@ void delete_blcr_checkpoint_files(
     /*
     * Get jobs checkpoint directory.
     */
-    get_chkpt_dir_to_use(pjob, namebuf);
+    get_chkpt_dir_to_use(pjob, namebuf, sizeof(namebuf));
 
     /*
      * we need to clean up the checkpoint job directory
@@ -728,7 +737,7 @@ void mom_checkpoint_delete_files(
     {
     /* delete any checkpoint file */
 
-    get_jobs_default_checkpoint_dir(jfdi->prefix, namebuf);
+    get_jobs_default_checkpoint_dir(jfdi->prefix, namebuf, sizeof(namebuf));
 
     remtree(namebuf);
     }
@@ -777,7 +786,7 @@ void mom_checkpoint_recover(
     ** and rename the old to the regular name.
     */
 
-    get_jobs_default_checkpoint_dir(pjob->ji_qs.ji_fileprefix, path);
+    get_jobs_default_checkpoint_dir(pjob->ji_qs.ji_fileprefix, path, sizeof(path));
     snprintf(oldp, sizeof(oldp), "%s", path);
     strncat(oldp, ".old", sizeof(oldp) - strlen(oldp) - 1);
 
@@ -890,6 +899,7 @@ int blcr_checkpoint_job(
   char             sid[20];
   char            *arg[20];
   char             buf[1024];
+  int              len;
   char           **ap;
   FILE            *fs;
   char            *cmd;
@@ -912,7 +922,7 @@ int blcr_checkpoint_job(
   /*
   * Get jobs checkpoint directory.
   */
-  get_chkpt_dir_to_use(pjob, namebuf);
+  get_chkpt_dir_to_use(pjob, namebuf, sizeof(namebuf));
 
   /* Make sure that the specified directory exists. */
 
@@ -976,15 +986,17 @@ int blcr_checkpoint_job(
   arg[9] = NULL;
 
   /* XXX this should be fixed to make sure there is no chance of a buffer overrun */
-  strcpy(buf,"checkpoint args:");
+  snprintf(buf, sizeof(buf), "checkpoint args:");
   cmd = buf + strlen("checkpoint args: "); /* this extra space compared to above is intentional... */
+
   for (ap = arg; *ap; ap++)
     {
-    strcat(buf, " ");
-    strcat(buf, *ap);
+    len = strlen(buf);
+    snprintf(buf + len, sizeof(buf) - len, " %s", *ap);
     }
 
-  strcat(buf, " 2>&1 1>/dev/null");
+  len = strlen(buf);
+  snprintf(buf + len, sizeof(buf) - len, "  2>&1 1>/dev/null");
 
   log_ext(-1, __func__, buf, LOG_DEBUG);
   if (preq != NULL)
@@ -1225,7 +1237,7 @@ int mom_checkpoint_job(
 
   assert(pjob != NULL);
 
-  get_jobs_default_checkpoint_dir(pjob->ji_qs.ji_fileprefix, path);
+  get_jobs_default_checkpoint_dir(pjob->ji_qs.ji_fileprefix, path, sizeof(path));
 
   if (stat(path, &statbuf) == 0)
     {
@@ -1435,7 +1447,7 @@ void post_checkpoint(
   ** was checkpointed and aborted.
   */
 
-  get_chkpt_dir_to_use(pjob, path);
+  get_chkpt_dir_to_use(pjob, path, sizeof(path));
 
   dir = opendir(path);
 
@@ -1533,7 +1545,7 @@ int start_checkpoint(
         /* No dir specified, use the default job checkpoint directory
            e.g.  /var/spool/torque/checkpoint/42.host.domain.CK */
 
-        get_jobs_default_checkpoint_dir(pjob->ji_qs.ji_fileprefix, name_buffer);
+        get_jobs_default_checkpoint_dir(pjob->ji_qs.ji_fileprefix, name_buffer, sizeof(name_buffer));
 
         decode_str(&pjob->ji_wattr[JOB_ATR_checkpoint_dir],NULL,NULL,name_buffer,0);
         }
@@ -1639,7 +1651,7 @@ void checkpoint_partial(
 
   assert(pjob != NULL);
 
-  get_jobs_default_checkpoint_dir(pjob->ji_qs.ji_fileprefix, namebuf);
+  get_jobs_default_checkpoint_dir(pjob->ji_qs.ji_fileprefix, namebuf, sizeof(namebuf));
 
   for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
        ptask != NULL;
@@ -1819,7 +1831,7 @@ int blcr_restart_job(
     /*
     * Get jobs checkpoint directory.
     */
-    get_chkpt_dir_to_use(pjob, namebuf);
+    get_chkpt_dir_to_use(pjob, namebuf, sizeof(namebuf));
 
     /* Change the owner of the .SC to be the user */
     strcpy(script_buf, path_jobs);
@@ -1859,13 +1871,12 @@ int blcr_restart_job(
     arg[6] = SET_ARG(pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
     arg[7] = NULL;
 
-    strcpy(buf, "restart args:");
-
-    for (ap = arg;*ap;ap++)
-      {
-      strcat(buf, " ");
-      strcat(buf, *ap);
-      }
+    snprintf(buf, sizeof(buf), "restart args: %s %s %s %s %s %s %s",
+      restart_script_name, sid, pjob->ji_qs.ji_jobid,
+      SET_ARG(pjob->ji_wattr[JOB_ATR_euser].at_val.at_str),
+      SET_ARG(pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str),
+      namebuf,
+      SET_ARG(pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str));
 
     log_ext(-1, __func__, buf, LOG_DEBUG);
 
@@ -1975,7 +1986,7 @@ int mom_restart_job(
     return(PBSE_RMEXIST);
     }
 
-  get_jobs_default_checkpoint_dir(pjob->ji_qs.ji_fileprefix, namebuf);
+  get_jobs_default_checkpoint_dir(pjob->ji_qs.ji_fileprefix, namebuf, sizeof(namebuf));
 
   if ((dir = opendir(path)) == NULL)
     {
@@ -2149,13 +2160,13 @@ int mom_checkpoint_job_has_checkpoint(
         if (pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET)
           {
           /* The job has a checkpoint directory specified, use it. */
-          strcpy(buf, pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str);
+          snprintf(buf, sizeof(buf), "%s", pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str);
           }
         else
           {
           /* Otherwise, use the default job checkpoint directory /var/spool/torque/checkpoint/42.host.domain.CK */
 
-          get_jobs_default_checkpoint_dir(pjob->ji_qs.ji_fileprefix, buf);
+          get_jobs_default_checkpoint_dir(pjob->ji_qs.ji_fileprefix, buf, sizeof(buf));
           }
 
         if (stat(buf, &sb) != 0) /* stat(buf) tests if the checkpoint directory exists */
