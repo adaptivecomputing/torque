@@ -64,7 +64,14 @@ void proc_get_btime(void);
 proc_stat_t *get_proc_stat(int pid);
 
 #ifdef USELIBMEMACCT
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 long long get_memacct_resi(pid_t pid);
+#ifdef __cplusplus
+}
+#endif
 #endif
 
 #ifdef PNOT
