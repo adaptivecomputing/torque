@@ -137,7 +137,14 @@ extern int mach_checkpoint(struct task *, char *, int);
 extern long mach_restart(struct task *, char *); /* Restart checkpointed job */
 #endif
 #ifdef USEMEMACCTD
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 extern long get_weighted_memory_size(pid_t pid); /* Return the weighted memory (RSS) size for a pid, in bytes */
+#ifdef __cplusplus
+}
+#endif
 #endif
 
 

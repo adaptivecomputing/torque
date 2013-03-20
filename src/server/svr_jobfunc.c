@@ -501,6 +501,11 @@ int svr_enquejob(
     pque->qu_njstate[pjob->ji_qs.ji_state]++;
     
     /* increment this user's job count for this queue */
+    if (LOGLEVEL >= 6)
+      {
+      snprintf(log_buf, sizeof(log_buf), "jobs queued job id %s for %s", pjob->ji_qs.ji_jobid, pque->qu_qs.qu_name);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+      }
     increment_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob);
     }
 
@@ -661,6 +666,17 @@ int svr_dequejob(
 
   if (pque != NULL)
     {
+    if (pque->qu_qs.qu_type == QTYPE_RoutePush)
+      {
+      rc = decrement_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+      if (rc != PBSE_NONE)
+        {
+        snprintf(log_buf, sizeof(log_buf), "failed to decrement user job count: %s. %s", 
+            pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pbse_to_txt(rc));
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_QUEUE, __func__, log_buf);
+        }
+      }
+
     if ((rc = remove_job(pque->qu_jobs, pjob)) == PBSE_NONE)
       {
       if (--pque->qu_numjobs < 0)
@@ -818,7 +834,6 @@ int svr_setjobstate(
   {
   int          changed = 0;
   int          oldstate;
-
   pbs_queue   *pque = NULL;
   char         log_buf[LOCAL_LOG_BUF_SIZE];
   time_t       time_now = time(NULL);
@@ -899,6 +914,11 @@ int svr_setjobstate(
               (pjob->ji_qs.ji_state != JOB_STATE_COMPLETE) &&
               (newstate == JOB_STATE_COMPLETE))
             {
+            if (LOGLEVEL >= 6)
+              {
+              sprintf(log_buf, "jobs queued job id %s for queue %s", pjob->ji_qs.ji_jobid, pque->qu_qs.qu_name);
+              log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+              }
             decrement_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
             }
           }
@@ -943,6 +963,11 @@ int svr_setjobstate(
       (pjob->ji_qs.ji_state != JOB_STATE_COMPLETE) &&
       (newstate == JOB_STATE_COMPLETE))
     {
+    if (LOGLEVEL >= 6)
+      {
+      sprintf(log_buf, "jobs queued job id %s for users", pjob->ji_qs.ji_jobid);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+      }
     decrement_queued_jobs(&users, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
     }
 
