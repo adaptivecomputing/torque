@@ -320,7 +320,6 @@ int socket_connect_addr(
   int cntr = 0;
   int rc = PBSE_NONE;
   char tmp_buf[LOCAL_LOG_BUF_SIZE+1];
-  const char id[] = "socket_connect_addr";
 
   while ((rc = connect(*local_socket, remote, remote_size)) != 0)
     {
@@ -328,7 +327,8 @@ int socket_connect_addr(
     switch (errno)
       {
       case ECONNREFUSED:    /* Connection refused */
-        snprintf(tmp_buf, LOCAL_LOG_BUF_SIZE, "cannot connect to port %d in %s - connection refused", *local_socket, id);
+        snprintf(tmp_buf, LOCAL_LOG_BUF_SIZE, "cannot connect to port %d in %s - connection refused",
+          *local_socket, __func__);
         *error_msg = strdup(tmp_buf);
         rc = PBS_NET_RC_RETRY;
         close(*local_socket);
@@ -378,7 +378,8 @@ int socket_connect_addr(
         break;
 
       default:
-        snprintf(tmp_buf, LOCAL_LOG_BUF_SIZE, "cannot connect to port %d in %s - errno:%d %s", *local_socket, id, errno, strerror(errno));
+        snprintf(tmp_buf, LOCAL_LOG_BUF_SIZE, "cannot connect to port %d in %s - errno:%d %s", 
+          *local_socket, __func__, errno, strerror(errno));
         *error_msg = strdup(tmp_buf);
         close(*local_socket);
         rc = PBSE_SOCKET_FAULT;

@@ -1633,7 +1633,6 @@ AC_ARG_WITH(trqauthd_sock_dir, [
 AC_DEFINE_UNQUOTED(TRQAUTHD_SOCK_DIR, "${TRQAUTHD_SOCK_DIR}", "trqauthd unix domain file")
 
 
-
 AC_ARG_WITH(server_home, [
   --with-server-home=DIR  set the server home/spool directory for PBS use
                           defaults to /var/spool/torque],
