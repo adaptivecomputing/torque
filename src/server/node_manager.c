@@ -4395,18 +4395,23 @@ int node_spec(
     if ((job_type == JOB_TYPE_cray) ||
         (job_type == JOB_TYPE_heterogeneous))
       {
-      if (add_login_node_if_needed(&first_name_ptr, login_prop, naji) != PBSE_NONE)
+      /* naji == NULL indicates that this is a qsub not a run command,
+       * we only need to assign the login when the job is run */
+      if (naji != NULL)
         {
-        snprintf(log_buf, sizeof(log_buf), 
-          "Couldn't find an acceptable login node for spec '%s' with feature request '%s'",
-          spec_param,
-          (login_prop != NULL) ? login_prop : "null");
-        
-        log_err(-1, __func__, log_buf);
-
-        free(spec);
-
-        return(-1);
+        if (add_login_node_if_needed(&first_name_ptr, login_prop, naji) != PBSE_NONE)
+          {
+          snprintf(log_buf, sizeof(log_buf), 
+            "Couldn't find an acceptable login node for spec '%s' with feature request '%s'",
+            spec_param,
+            (login_prop != NULL) ? login_prop : "null");
+          
+          log_err(-1, __func__, log_buf);
+          
+          free(spec);
+          
+          return(-1);
+          }
         }
       }
 
