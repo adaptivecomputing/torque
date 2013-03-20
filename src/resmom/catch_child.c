@@ -1246,26 +1246,6 @@ void *preobit_reply(
 
   free_br(preq);
 
-  if (deletejob == 1)
-    {
-    log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
-
-    if (!(pjob->ji_wattr[JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) ||
-        (pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long == 0))
-      {
-      int x; /* dummy */
-
-      /* do this if not interactive */
-      job_unlink_file(pjob, std_file_name(pjob, StdOut, &x));
-      job_unlink_file(pjob, std_file_name(pjob, StdErr, &x));
-      job_unlink_file(pjob, std_file_name(pjob, Checkpoint, &x));
-      }
-
-    mom_deljob(pjob);
-
-    return(NULL);
-    }
-
   /* at this point, server gave us a valid response so we can run epilogue */
   if (LOGLEVEL >= 2)
     {
@@ -1313,6 +1293,28 @@ void *preobit_reply(
         cpid);
 
       log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+      }
+
+    if (deletejob == 1)
+      {
+      log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+
+      if (!(pjob->ji_wattr[JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) ||
+          (pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long == 0))
+        {
+        int x; /* dummy */
+
+        /* do this if not interactive */
+        job_unlink_file(pjob, std_file_name(pjob, StdOut, &x));
+        job_unlink_file(pjob, std_file_name(pjob, StdErr, &x));
+        job_unlink_file(pjob, std_file_name(pjob, Checkpoint, &x));
+        }
+
+      snprintf(log_buffer, sizeof(log_buffer),
+        "deleting locally job %s", pjob->ji_qs.ji_jobid); 
+
+      log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+      mom_deljob(pjob);
       }
 
     return(NULL);
