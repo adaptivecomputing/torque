@@ -2268,17 +2268,20 @@ int validate_group_list(
   {
   /* check each group to determine if it is a valid group that the user can be a part of.
    * group list is of the form group[@host][,group[@host]...] */
-  char          *groups = strdup(glist);
-  const char   *delims = ",";
-  char          *tmp_group = strtok(groups, delims); 
-  char          *at;
-  char          *u_name;
-  char         **pmem;
-  struct group  *grent;
-  struct passwd *pwent;
+  char           *groups = strdup(glist);
+  const char     *delims = ",";
+  char           *tmp_group = strtok(groups, delims); 
+  char           *at;
+  char           *u_name;
+  char          **pmem;
+  struct group   *grent;
+  struct passwd  *pwent;
 
   if ((pwent = getpwuid(getuid())) == NULL)
+    {
+    free(groups);
     return(FALSE);
+    }
 
   u_name = pwent->pw_name;
   
