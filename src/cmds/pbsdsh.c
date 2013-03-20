@@ -661,17 +661,22 @@ static int build_listener(
 
   if ((s = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     fprintf(stderr, "%s: socket", id);
-
-  if (listen(s, 1024) < 0)
-    fprintf(stderr, "%s: listen", id);
-
-  if (getsockname(s, (struct sockaddr *)&addr, &len) < 0)
+  else
     {
-    fprintf(stderr, "%s: getsockname", 
-      id);
+    if (listen(s, 1024) < 0)
+      fprintf(stderr, "%s: listen", id);
+    else
+      {
+      if (getsockname(s, (struct sockaddr *)&addr, &len) < 0)
+        {
+        fprintf(stderr, "%s: getsockname", 
+          id);
+        }
+      else
+        *port = ntohs(addr.sin_port);
+      }
     }
 
-  *port = ntohs(addr.sin_port);
 
   return (s);
   }

@@ -92,11 +92,12 @@ int start_listener(
       }
     while (1)
       {
-      if((new_conn_port = (int *)calloc(1, sizeof(int))) == NULL)
+      if ((new_conn_port = (int *)calloc(1, sizeof(int))) == NULL)
         {
         printf("Error allocating new connection handle on accept.\n");
         break;
         }
+
       if ((*new_conn_port = accept(listen_socket, (struct sockaddr *)&adr_client, (socklen_t *)&len_inet)) == -1)
         {
         if (errno == EMFILE)
@@ -109,8 +110,8 @@ int start_listener(
           printf("error in accept %s\n", strerror(errno));
           break;
           }
+        
         errno = 0;
-        close(*new_conn_port);
         free(new_conn_port);
         new_conn_port = NULL;
         }
@@ -143,7 +144,8 @@ int start_listener(
                 "Socket close of network listener requested");
     }
 
-  close(listen_socket);
+  if (listen_socket != -1)
+    close(listen_socket);
 
   return(rc);
   } /* END start_listener() */
@@ -350,11 +352,12 @@ int start_listener_addrinfo(
     while (1)
       {
       len_inet = sizeof(struct sockaddr);
-      if((new_conn_port = (int *)calloc(1, sizeof(int))) == NULL)
+      if ((new_conn_port = (int *)calloc(1, sizeof(int))) == NULL)
         {
         printf("Error allocating new connection handle.\n");
         break;
         }
+
       if ((*new_conn_port = accept(listen_socket, (struct sockaddr *)&adr_client, (socklen_t *)&len_inet)) == -1)
         {
         if (errno == EMFILE)
@@ -367,8 +370,8 @@ int start_listener_addrinfo(
           printf("error in accept %s\n", strerror(errno));
           break;
           }
+
         errno = 0;
-        close(*new_conn_port);
         free(new_conn_port);
         new_conn_port = NULL;
         }
@@ -414,7 +417,8 @@ int start_listener_addrinfo(
                 "Socket close of network listener requested");
     }
 
-  close(listen_socket);
+  if (listen_socket != -1)
+    close(listen_socket);
 
   return(rc);
   } /* END start_listener_addrinfo() */

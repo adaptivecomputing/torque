@@ -837,7 +837,7 @@ int req_registerarray(
       *bracket_ptr = '\0';
       bracket_ptr++;
 
-      strcpy(range,bracket_ptr);
+      snprintf(range, sizeof(range), "%s", bracket_ptr);
       if ((bracket_ptr = strchr(range,']')) != NULL)
         {
         *bracket_ptr = '\0';
@@ -2232,7 +2232,8 @@ struct depend_job *make_dependjob(
     pdj->dc_state = 0;
     pdj->dc_cost  = 0;
 
-    strcpy(pdj->dc_child, jobid);
+    snprintf(pdj->dc_child, sizeof(pdj->dc_child), "%s", jobid);
+    
     if (server_name[0] != '\0')
       strcpy(pdj->dc_svr, server_name);
     else

@@ -272,8 +272,7 @@ int remtree(
 
   struct dirent *pdir;
   char           namebuf[MAXPATHLEN];
-  char          *filnam;
-  int            i;
+  int            len;
   int            rtnv = 0;
 #if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64) && defined(LARGEFILE_WORKS)
 
@@ -307,13 +306,9 @@ int remtree(
       return(-1);
       }
 
-    strcpy(namebuf, dirname);
+    snprintf(namebuf, sizeof(namebuf), "%s/", dirname);
 
-    strcat(namebuf, "/");
-
-    i = strlen(namebuf);
-
-    filnam = &namebuf[i];
+    len = strlen(namebuf);
 
     while ((pdir = readdir(dir)) != NULL)
       {
@@ -321,7 +316,7 @@ int remtree(
           ((pdir->d_name[1] == '\0') || (pdir->d_name[1] == '.')))
         continue;
 
-      strcpy(filnam, pdir->d_name);
+      snprintf(namebuf + len, sizeof(namebuf) - len, "%s", pdir->d_name);
 
 #if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64) && defined(LARGEFILE_WORKS)
       if (lstat64(namebuf, &sb) == -1)

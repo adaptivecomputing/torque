@@ -2367,7 +2367,7 @@ int save_node_for_adding(
   if (naji->node_name[0] == '\0')
     {
     /* first */
-    strcpy(naji->node_name, pnode->nd_name);
+    snprintf(naji->node_name, sizeof(naji->node_name), "%s", pnode->nd_name);
     naji->ppn_needed = req->ppn;
     naji->gpu_needed = req->gpu;
     naji->mic_needed = req->mic;

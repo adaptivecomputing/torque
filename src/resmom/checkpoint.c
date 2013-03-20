@@ -1833,9 +1833,8 @@ int blcr_restart_job(
     get_chkpt_dir_to_use(pjob, namebuf, sizeof(namebuf));
 
     /* Change the owner of the .SC to be the user */
-    strcpy(script_buf, path_jobs);
-    strcat(script_buf, pjob->ji_qs.ji_fileprefix);
-    strcat(script_buf, JOB_SCRIPT_SUFFIX);
+    snprintf(script_buf, sizeof(script_buf), "%s%s%s",
+      path_jobs, pjob->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
 
     if (chown(script_buf,
           pjob->ji_qs.ji_un.ji_momt.ji_exuid,
@@ -1845,9 +1844,8 @@ int blcr_restart_job(
       log_err(errno, __func__, log_buffer);
       }
 
-    strcpy(restartfile, namebuf);
-    strcat(restartfile, "/");
-    strcat(restartfile, pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
+    snprintf(restartfile, sizeof(restartfile), "%s/%s",
+      namebuf, pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
    
     /* Change the owner of the checkpoint restart file to be the user */
     if (chown(restartfile,
