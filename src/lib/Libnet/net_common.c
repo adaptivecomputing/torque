@@ -339,7 +339,8 @@ int socket_connect_addr(
   char tmp_buf[LOCAL_LOG_BUF_SIZE+1];
   int local_socket = *socket;
 
-  while (((rc = connect(local_socket, remote, remote_size)) != 0) && (cntr < RES_PORT_RETRY))
+  while (((rc = connect(local_socket, remote, remote_size)) != 0) &&
+         (cntr < RES_PORT_RETRY))
     {
     cntr++;
     
@@ -405,6 +406,9 @@ int socket_connect_addr(
         local_socket = -1;
         break;
       }
+
+    if (local_socket == -1)
+      break;
     }
 
   if (rc == PBSE_NONE)

@@ -3612,7 +3612,7 @@ void req_cpyfile(
 
 #endif /* SRFS */
 
-      strcpy(arg2, localname);
+      snprintf(arg2, MAXPATHLEN+1, "%s", localname);
 
       /* take (remote) destination name from request */
 
@@ -3621,12 +3621,11 @@ void req_cpyfile(
       if (rmtflag)
         {
         /* using rcp, need to prepend the owner name */
-
-        strcat(arg3, preq->rq_ind.rq_cpyfile.rq_owner);
-        strcat(arg3, "@");
+        snprintf(arg3, MAXPATHLEN+1, "%s@%s",
+          preq->rq_ind.rq_cpyfile.rq_owner, prmt);
         }
-
-      strcat(arg3, prmt);
+      else
+        snprintf(arg3, MAXPATHLEN+1, "%s", prmt);
       }  /* END if (dir == STAGE_DIR_OUT) */
     else
       {
@@ -3634,7 +3633,7 @@ void req_cpyfile(
 
       /* take (remote) source name from request */
 
-      strcpy(arg3, pair->fp_local);
+      snprintf(arg3, MAXPATHLEN+1, "%s", pair->fp_local);
 
       if (pair->fp_flag == JOBCKPFILE)
         {
@@ -3660,12 +3659,12 @@ void req_cpyfile(
          * create it.
          */
 
-        strcpy(needdir,arg3);
+        snprintf(needdir, sizeof(needdir), "%s", arg3);
         ptr = strrchr(needdir,'/');
         if (ptr != NULL)
-        {
-        ptr[0] = '\0';
-        }
+          {
+          ptr[0] = '\0';
+          }
 
         saveumask = umask(0000);
 
@@ -3677,17 +3676,14 @@ void req_cpyfile(
         umask(saveumask);
         }  /* END if (pair->fp_flag == JOBCKPFILE) */
 
-      *arg2 = '\0';
-
       if (rmtflag)
         {
         /* using rcp, need to prepend the owner name */
-
-        strcat(arg2, preq->rq_ind.rq_cpyfile.rq_owner);
-        strcat(arg2, "@");
+        snprintf(arg2, MAXPATHLEN+1, "%s@%s",
+          preq->rq_ind.rq_cpyfile.rq_owner, prmt);
         }
-
-      strcat(arg2, prmt);
+      else
+        snprintf(arg2, MAXPATHLEN+1, "%s", prmt);
 
       }  /* END else (dir == STAGE_DIR_OUT) */
 

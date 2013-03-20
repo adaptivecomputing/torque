@@ -4111,7 +4111,7 @@ void main_func(
 
   if (script_index != -1)
     {
-    strcpy(script, argv[script_index]);
+    snprintf(script, sizeof(script), "%s", argv[script_index]);
     /* store the script so it can be used later (e.g. '-x' option) */
     hash_add_or_exit(&ji.mm, &ji.client_attr, "cmdline_script", script, CMDLINE_DATA);
     }

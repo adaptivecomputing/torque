@@ -9053,7 +9053,7 @@ im_compose_info *create_compose_reply_info(
 
   if (ici != NULL)
     {
-    strcpy(ici->jobid, jobid);
+    snprintf(ici->jobid, sizeof(ici->jobid), "%s", jobid);
     snprintf(ici->cookie, sizeof(ici->cookie), "%s", cookie);
     memcpy(&(ici->np), np, sizeof(ici->np));
     ici->command = command;
