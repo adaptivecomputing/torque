@@ -1263,7 +1263,9 @@ void *start_accept_listener(void *vp)
     strcpy(server_name_trimmed, server_name);
   else
     strncpy(server_name_trimmed, server_name, colon_pos - server_name);
+
   start_listener_addrinfo(server_name_trimmed, pbs_server_port_dis, start_process_pbs_server_port);
+
   return(NULL);
   } /* END start_accept_listener() */
 
@@ -1290,6 +1292,7 @@ void start_accept_thread()
     perror("could not start listener for pbs_server");
     log_err(-1, msg_daemonname, (char *)"Failed to start listener for pbs_server");
     }
+
   } /* END start_accept_thread() */
 
 
