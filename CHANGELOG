@@ -15,6 +15,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       job.
   b - make pbs_track compatible with display_job_server_suffix = false. The user
       has to set NO_SERVER_SUFFIX in the environment. TRQ-1389
+  b - Fix the way we monitor if a thread is active. Before we used the id, but if the 
+      thread has exited, the id is no longer valid and this will cause a crash. Use
+      pthread_cleanup functionality instead. TRQ-1745.
 
 4.2.1
   b - Fix a deadlock when submitting two large arrays consecutively, the second
