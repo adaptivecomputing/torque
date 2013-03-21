@@ -124,6 +124,8 @@ static const char *false_val = ATR_FALSE;
  *  *patr elements set
  */
 
+#define MAX_VAL_LEN 10
+
 int decode_b(
 
   pbs_attribute *patr,
@@ -133,7 +135,9 @@ int decode_b(
   int            perm) /* only used for resources */
 
   {
-  char *pc;
+  const char *src;
+  char *dst;
+  char ucVal[MAX_VAL_LEN+1];
 
   if ((val == (char *)0) || (strlen(val) == 0))
     {
@@ -143,26 +147,27 @@ int decode_b(
     }
   else
     {
-    for (pc = (char *)val; *pc; pc++)
-      *pc = (char)toupper((int) * pc);
+    for (src = val,dst = ucVal; *src && (dst < (ucVal + MAX_VAL_LEN)); src++,dst++)
+      *dst = (char)toupper((int) * src);
+    *dst='\0';
 
-    if ((strcmp(val, true_val) == 0) ||
-        (strcmp(val, "TRUE") == 0)   ||
-        (strcmp(val, "true") == 0)   ||
-        (strcmp(val, "t") == 0)  ||
-        (strcmp(val, "T") == 0)  ||
-        (strcmp(val, "1") == 0)  ||
-        (strcmp(val, "y") == 0)  ||
-        (strcmp(val, "Y") == 0))
+    if ((strcmp(ucVal, true_val) == 0) ||
+        (strcmp(ucVal, "TRUE") == 0)   ||
+        (strcmp(ucVal, "true") == 0)   ||
+        (strcmp(ucVal, "t") == 0)  ||
+        (strcmp(ucVal, "T") == 0)  ||
+        (strcmp(ucVal, "1") == 0)  ||
+        (strcmp(ucVal, "y") == 0)  ||
+        (strcmp(ucVal, "Y") == 0))
       patr->at_val.at_long = 1; /* true */
-    else if ((strcmp(val, false_val) == 0) ||
-             (strcmp(val, "FALSE") == 0)   ||
-             (strcmp(val, "false") == 0)   ||
-             (strcmp(val, "f") == 0)       ||
-             (strcmp(val, "F") == 0)       ||
-             (strcmp(val, "0") == 0)       ||
-             (strcmp(val, "n") == 0)       ||
-             (strcmp(val, "N") == 0))
+    else if ((strcmp(ucVal, false_val) == 0) ||
+             (strcmp(ucVal, "FALSE") == 0)   ||
+             (strcmp(ucVal, "false") == 0)   ||
+             (strcmp(ucVal, "f") == 0)       ||
+             (strcmp(ucVal, "F") == 0)       ||
+             (strcmp(ucVal, "0") == 0)       ||
+             (strcmp(ucVal, "n") == 0)       ||
+             (strcmp(ucVal, "N") == 0))
       patr->at_val.at_long = 0; /* false */
     else
       return (PBSE_BADATVAL);
