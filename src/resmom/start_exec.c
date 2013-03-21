@@ -4019,6 +4019,7 @@ int TMomFinalizeChild(
   job                   *pjob;
   task                  *ptask;
   struct passwd         *pwdp;
+  proc_stat_t           *ps = NULL;
 
   pjob  = (job *)TJE->pjob;
   ptask = (task *)TJE->ptask;
@@ -4147,6 +4148,13 @@ int TMomFinalizeChild(
 
   pjob->ji_wattr[JOB_ATR_session_id].at_val.at_long = sjr.sj_session;
   pjob->ji_wattr[JOB_ATR_session_id].at_flags = ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND;
+
+  ps = get_proc_stat((int)sjr.sj_session);
+  if(ps != NULL)
+    {
+    pjob->ji_wattr[JOB_ATR_system_start_time].at_val.at_long = ps->start_time;
+    pjob->ji_wattr[JOB_ATR_system_start_time].at_flags |= ATR_VFLAG_SET;
+    }
 
 #ifdef PENABLE_LINUX26_CPUSETS
   /* Move this mom process into the cpuset so the job will start in it. */
@@ -4448,6 +4456,8 @@ int TMomFinalizeJob3(
   job                 *pjob;
   task                *ptask;
   unsigned int         momport = 0;
+  proc_stat_t           *ps = NULL;
+
 
   pjob = (job *)TJE->pjob;
   ptask = (task *)TJE->ptask;
@@ -4632,6 +4642,13 @@ int TMomFinalizeJob3(
 
   pjob->ji_wattr[JOB_ATR_session_id].at_flags =
   ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND;
+
+  ps = get_proc_stat((int)sjr.sj_session);
+  if(ps != NULL)
+    {
+    pjob->ji_wattr[JOB_ATR_system_start_time].at_val.at_long = ps->start_time;
+    pjob->ji_wattr[JOB_ATR_system_start_time].at_flags |= ATR_VFLAG_SET;
+    }
 
   if (is_login_node == TRUE)
     {

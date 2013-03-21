@@ -4226,6 +4226,24 @@ void scan_non_child_tasks(void)
     {
     task *pTask;
 
+    long job_start_time = 0;
+    long job_session_id = 0;
+    long session_start_time = 0;
+    proc_stat_t *ps = NULL;
+    if(pJob->ji_wattr[JOB_ATR_system_start_time].at_flags&ATR_VFLAG_SET)
+      {
+      job_start_time = pJob->ji_wattr[JOB_ATR_system_start_time].at_val.at_long;
+      }
+    if(pJob->ji_wattr[JOB_ATR_session_id].at_flags&ATR_VFLAG_SET)
+      {
+      job_session_id = pJob->ji_wattr[JOB_ATR_session_id].at_val.at_long;
+      }
+    if((ps = get_proc_stat(job_session_id)) != NULL)
+      {
+      session_start_time = (long)ps->start_time;
+      }
+
+
     for (pTask = (task *)(GET_NEXT(pJob->ji_tasks));
         pTask != NULL;
          pTask = (task *)(GET_NEXT(pTask->ti_jobtask)))
@@ -4237,7 +4255,6 @@ void scan_non_child_tasks(void)
       struct dirent *dent;
 #endif
       pid_t          pid;
-      proc_stat_t   *ps;
       int            found;
 
       /*
@@ -4273,9 +4290,20 @@ void scan_non_child_tasks(void)
 
       if (kill(pTask->ti_qs.ti_sid, 0) != -1)
         {
-        found = 1;
+        if((job_start_time != 0)&&
+            (session_start_time != 0))
+          {
+          if(job_start_time == session_start_time)
+            {
+            found = 1;
+            }
+          }
+        else
+          {
+          found = 1;
+          }
         }
-      else
+      if(!found)
         {
         /* session master cannot be found, look for other pid in session */
 #ifdef PENABLE_LINUX26_CPUSETS
