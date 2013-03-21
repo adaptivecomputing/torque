@@ -2016,7 +2016,7 @@ int req_commit(
   pbs_attribute        *pattr;
   int                   nodes_avail = -1;
   int                   dummy;
-  char                 *spec = NULL;
+  char                  spec[MAXPATHLEN];
   char                  *rq_destin = NULL;
 #endif /* AUTORUN_JOBS */
 
@@ -2247,7 +2247,7 @@ int req_commit(
   */
   pattr = &pj->ji_wattr[JOB_ATR_start_count];
 
-  spec = PBS_DEFAULT_NODE;
+  snprintf(spec, sizeof(spec), PBS_DEFAULT_NODE);
 
   node_avail_complex(spec, &nodes_avail, &dummy, &dummy, &dummy);
 
