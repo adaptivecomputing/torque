@@ -16,6 +16,8 @@
 #include "threadpool.h"
 #include "../Liblog/pbs_log.h"
 
+#define NUM_ACCEPT_RETRIES 5
+
 extern int debug_mode;
 extern void *(*read_func[])(void *);
 extern char *msg_daemonname;
@@ -297,6 +299,7 @@ int start_listener_addrinfo(
   int                 total_cntr = 0;
   unsigned short      port_net_byte_order;
   pthread_attr_t      t_attr;
+  char                err_msg[MAXPATHLEN];
 
   if (!(getaddrinfo(host_name, NULL, NULL, &adr_svr) == 0))
     {
@@ -338,23 +341,49 @@ int start_listener_addrinfo(
     }
   else
     {
+    int exit_loop = FALSE;
+    int retry_tolerance = NUM_ACCEPT_RETRIES;
     freeaddrinfo(adr_svr);
+
     while (1)
       {
       len_inet = sizeof(struct sockaddr);
-      new_conn_port = (int *)calloc(1, sizeof(int));
+
+      if ((new_conn_port = (int *)calloc(1, sizeof(int))) == NULL)
+        {
+        snprintf(err_msg, sizeof(err_msg), "Error allocating new connection handle - stopping accept loop.");
+        break;
+        }
+      
       if ((*new_conn_port = accept(listen_socket, (struct sockaddr *)&adr_client, (socklen_t *)&len_inet)) == -1)
         {
-        if (errno == EMFILE)
+        switch (errno)
           {
-          sleep(1);
-          printf("Temporary pause\n");
+          case EMFILE:
+          case ENFILE:
+          case EINTR:
+
+            /* transient error, try again */
+            if (retry_tolerance-- <= 0)
+              {
+              exit_loop = TRUE;
+              snprintf(err_msg, sizeof(err_msg), "Exiting loop because we passed our retry tolerance");
+              }
+            else
+              sleep(1);
+
+            break;
+
+          default:
+        
+            snprintf(err_msg, sizeof(err_msg), "error in accept %s - stopping accept loop", strerror(errno));
+            exit_loop = TRUE;
+            break;
           }
-        else
-          {
-          printf("error in accept %s\n", strerror(errno));
-          break;
-          }
+
+        if (exit_loop == TRUE)
+          break;        
+        
         errno = 0;
         close(*new_conn_port);
         free(new_conn_port);
@@ -362,8 +391,10 @@ int start_listener_addrinfo(
         }
       else
         {
+        retry_tolerance = NUM_ACCEPT_RETRIES;
         sockoptval = 1;
         setsockopt(*new_conn_port, SOL_SOCKET, SO_REUSEADDR, (void *)&sockoptval, sizeof(sockoptval));
+        
         if (debug_mode == TRUE)
           {
           process_meth((void *)new_conn_port);
@@ -384,6 +415,7 @@ int start_listener_addrinfo(
           /*pthread_create(&tid, &t_attr, process_meth, (void *)new_conn_port);*/
           }
         }
+
       if (debug_mode == TRUE)
         {
         if (total_cntr % 1000 == 0)
@@ -392,14 +424,17 @@ int start_listener_addrinfo(
           }
         total_cntr++;
         }
-      }
+      } /* END infinite_loop() */
+
     if (new_conn_port != NULL)
       {
       free(new_conn_port);
       }
+
     pthread_attr_destroy(&t_attr);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, "net_srvr",
-                "Socket close of network listener requested");
+
+    /* all conditions for exiting the loop must populate err_msg */
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, err_msg);
     }
 
   close(listen_socket);

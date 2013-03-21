@@ -1027,6 +1027,8 @@ void parse_command_line(
 
 /* Globals to thread the accept port */
 pthread_t      accept_thread_id = -1;
+int            accept_thread_active = FALSE;
+int            route_thread_active = FALSE;
 pthread_t      route_retry_thread_id = -1;
 
 
@@ -1142,6 +1144,17 @@ void send_any_hellos_needed()
 
 
 
+void route_listener_cleanup(
+
+  void *vp)
+
+  {
+  route_thread_active = FALSE;
+  } /* END route_listener_cleanup() */
+
+
+
+
 void *handle_queue_routing_retries(
 
   void *vp)
@@ -1153,6 +1166,9 @@ void *handle_queue_routing_retries(
   int        rc;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
   pthread_attr_t  routing_attr;
+ 
+  route_thread_active = TRUE;
+  pthread_cleanup_push(route_listener_cleanup, vp);
 
   if (pthread_attr_init(&routing_attr) != 0)
     {
@@ -1219,6 +1235,8 @@ void *handle_queue_routing_retries(
 
   pthread_attr_destroy(&routing_attr); /* we don't care if the succeeds or fails */
 
+  pthread_cleanup_pop(1);
+
   return(NULL);
   } /* END handle_queue_routing_retries() */
 
@@ -1237,17 +1255,41 @@ void *handle_scheduler_contact(
 
 
 
+/*
+ * accept_listener_cleanup() 
+ */
+
+void accept_listener_cleanup(
+
+  void *vp)
+
+  {
+  accept_thread_active = FALSE;
+  } /* END accept_listener_cleanup() */
+
+
+
+
 void *start_accept_listener()
 
   {
   char server_name_trimmed[PBS_MAXSERVERNAME + 1];
   char *colon_pos = NULL;
+
   colon_pos = strchr(server_name, ':');
+
   if (colon_pos == NULL)
     strcpy(server_name_trimmed, server_name);
   else
     strncpy(server_name_trimmed, server_name, colon_pos - server_name);
+
+  accept_thread_active = TRUE;
+  pthread_cleanup_push(accept_listener_cleanup, NULL);
+
   start_listener_addrinfo(server_name_trimmed, pbs_server_port_dis, start_process_pbs_server_port);
+
+  pthread_cleanup_pop(1);
+
   return(NULL);
   } /* END start_accept_listener() */
 
@@ -1274,6 +1316,7 @@ void start_accept_thread()
     perror("could not start listener for pbs_server");
     log_err(-1, msg_daemonname, (char *)"Failed to start listener for pbs_server");
     }
+
   } /* END start_accept_thread() */
 
 
@@ -1332,12 +1375,8 @@ void start_exiting_retry_thread()
 
 void monitor_accept_thread()
   {
-  if (accept_thread_id == (pthread_t)-1)
+  if (accept_thread_active == FALSE)
     start_accept_thread();
-  else if (pthread_kill(accept_thread_id, 0) == ESRCH)
-    {
-    start_accept_thread();
-    }
   } /* END monitor_accept_thread() */
 
 
@@ -1345,12 +1384,8 @@ void monitor_accept_thread()
 
 void monitor_route_retry_thread()
   {
-  if (route_retry_thread_id == (pthread_t)-1)
+  if (route_thread_active == FALSE)
     start_routing_retry_thread();
-  else if (pthread_kill(route_retry_thread_id, 0) == ESRCH)
-    {
-    start_routing_retry_thread();
-    }
   } /* END monitor_route_retry_thread() */
 
 
