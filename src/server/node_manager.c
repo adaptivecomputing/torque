@@ -1220,7 +1220,7 @@ void *check_nodes_work(
 
   if (ptask->wt_parm1 == NULL)
     {
-    set_task(WORK_Timed,time_now + chk_len,check_nodes, (char *)NULL,FALSE);
+    set_task(WORK_Timed, time_now + chk_len, check_nodes, (char *)NULL,FALSE);
     }
 
   /* since this is done via threading, we now free the task here */
