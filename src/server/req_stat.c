@@ -897,6 +897,15 @@ int stat_to_mom(
 
   mutex_mgr job_mutex(pjob->ji_mutex, true);
 
+  if ((pjob->ji_qs.ji_un.ji_exect.ji_momaddr == 0) || 
+      (!pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str))
+    {
+    job_mutex.unlock();
+    sprintf(log_buffer, "Job %s missing MOM's information. Skipping statting on this job", pjob->ji_qs.ji_jobid);
+    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+    return PBSE_BAD_PARAMETER;
+    }
+
   job_momaddr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
   job_momport = pjob->ji_qs.ji_un.ji_exect.ji_momport;
   job_momname = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
@@ -1172,13 +1181,23 @@ void poll_job_task(
         pthread_mutex_lock(poll_job_task_mutex);
         if (current_poll_job_tasks < max_poll_job_tasks)
           {
-          current_poll_job_tasks++;
-          pthread_mutex_unlock(poll_job_task_mutex);
+          if ((pjob->ji_qs.ji_un.ji_exect.ji_momaddr == 0) ||
+              (!pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str))
+            {
+            pthread_mutex_unlock(poll_job_task_mutex);
+            sprintf(log_buffer, "Job %s missing MOM's information. Skipping polling on this job", pjob->ji_qs.ji_jobid);
+            log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+            } 
+          else
+            {
+            current_poll_job_tasks++;
+            pthread_mutex_unlock(poll_job_task_mutex);
 
-          stat_mom_job(job_id);
+            stat_mom_job(job_id);
 
-          pthread_mutex_lock(poll_job_task_mutex);
-          current_poll_job_tasks--;
+            pthread_mutex_lock(poll_job_task_mutex);
+            current_poll_job_tasks--;
+            }
           }
         pthread_mutex_unlock(poll_job_task_mutex);
 
