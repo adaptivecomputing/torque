@@ -4,6 +4,7 @@
 
 #include "attribute.h" /* svrattrl */
 
+#if 0
 svrattrl *attrlist_create(const char *aname, const char *rname, int vsize)
   {
   fprintf(stderr, "The call to attrlist_create needs to be mocked!!\n");
@@ -21,4 +22,5 @@ char *parse_comma_string(char *start, char **ptr)
   fprintf(stderr, "The call to parse_comma_string needs to be mocked!!\n");
   exit(1);
   }
+#endif
 

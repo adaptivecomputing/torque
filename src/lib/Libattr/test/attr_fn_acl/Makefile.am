@@ -1,17 +1,18 @@
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${top_srcdir}/include -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
+AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
 
-lib_LTLIBRARIES = libattr_fn_acl.la
+lib_LTLIBRARIES = libuut.la
 
 AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 
-check_PROGRAMS = test_attr_fn_acl
+check_PROGRAMS = test_uut
 
-libattr_fn_acl_la_SOURCES = scaffolding.c ${PROG_ROOT}/attr_fn_acl.c
-libattr_fn_acl_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
+libuut_la_SOURCES =  ${PROG_ROOT}/attr_fn_acl.c  scaffolding.c
+libuut_la_LDFLAGS = @CHECK_LIBS@ -lgcov
+test_uut_LDADD = ../../../../test/torque_test_lib/libtorque_test.la ../../../../test/scaffold_fail/libscaffold_fail.la
 
-test_attr_fn_acl_SOURCES = test_attr_fn_acl.c
+test_uut_SOURCES = test_uut.c 
 
 check_SCRIPTS = coverage_run.sh
 

@@ -729,8 +729,8 @@ int set_arst(
 
       for (i = 0;i < newpas->as_usedptr;i++)
         {
-        char *tail;
-        int   len;
+        char *tail,*tail2;
+        int   len,len2;
         int   MatchFound; /* boolean */
 
         if ((op == MERGE) && (tail = strchr(newpas->as_string[i],'=')))
@@ -740,7 +740,9 @@ int set_arst(
 
           for (j = 0;j < pas->as_usedptr;j++)
             {
-            if (!strncmp(pas->as_string[j],newpas->as_string[i],len))
+            tail2 = strchr(pas->as_string[j],'=');
+            len2 = (tail2 == NULL)?0:tail2 - pas->as_string[j];
+            if (!strncmp(pas->as_string[j],newpas->as_string[i],len) && (len == len2))
               {
               MatchFound = 1;
 
@@ -810,6 +812,8 @@ int set_arst(
         {
         char *tail;
         int   len;
+        char  *tail2;
+        int   len2;
         int   MatchFound = 0; /* boolean */
 
         if ((tail = strchr(pas->as_string[i],'=')))
@@ -818,7 +822,9 @@ int set_arst(
 
           for (j = 0;j < newpas->as_usedptr;j++)
             {
-            if (!strncmp(pas->as_string[i],newpas->as_string[j],len))
+            tail2 = strchr(newpas->as_string[j],'=');
+            len2 = (tail2 == NULL)?0:tail2 - newpas->as_string[j];
+            if (!strncmp(pas->as_string[i],newpas->as_string[j],len) && (len == len2))
               {
               MatchFound = 1;
 
@@ -940,12 +946,18 @@ int comp_arst(
 
   for (j = 0;j < bpb->as_usedptr;j++)
     {
-    for (i = 0;i < apa->as_usedptr;i++)
+    int found = FALSE;
+
+    for (i = 0;(i < apa->as_usedptr)&&(!found);i++)
       {
-      if (strcmp(bpb->as_string[j], apa->as_string[i]))
+      if (!strcmp(bpb->as_string[j], apa->as_string[i]))
         {
-        return(1);
+        found = TRUE;
         }
+      }
+    if(!found)
+      {
+      return(1);
       }
     }
 
