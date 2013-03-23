@@ -123,7 +123,7 @@ int get_listen_socket(
   struct linger l_delay;
   int on = 1;
   int ka_val = 1;
-  int ka_timeout = 10;
+  int ka_timeout = 59;
   
   (void) signal(SIGPIPE, SIG_IGN);
   memset(&l_delay, 0, sizeof(struct linger));
