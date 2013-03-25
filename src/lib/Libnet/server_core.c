@@ -94,11 +94,12 @@ int start_listener(
       }
     while (1)
       {
-      if((new_conn_port = (int *)calloc(1, sizeof(int))) == NULL)
+      if ((new_conn_port = (int *)calloc(1, sizeof(int))) == NULL)
         {
         printf("Error allocating new connection handle on accept.\n");
         break;
         }
+
       if ((*new_conn_port = accept(listen_socket, (struct sockaddr *)&adr_client, (socklen_t *)&len_inet)) == -1)
         {
         if (errno == EMFILE)
@@ -111,8 +112,8 @@ int start_listener(
           printf("error in accept %s\n", strerror(errno));
           break;
           }
+        
         errno = 0;
-        close(*new_conn_port);
         free(new_conn_port);
         new_conn_port = NULL;
         }
@@ -145,7 +146,8 @@ int start_listener(
                 "Socket close of network listener requested");
     }
 
-  close(listen_socket);
+  if (listen_socket != -1)
+    close(listen_socket);
 
   return(rc);
   } /* END start_listener() */
@@ -242,8 +244,9 @@ int start_domainsocket_listener(
           printf("error in accept %s\n", strerror(errno));
           break;
           }
+        
         errno = 0;
-        close(*new_conn_port);
+
         free(new_conn_port);
         new_conn_port = NULL;
         }
@@ -267,16 +270,19 @@ int start_domainsocket_listener(
         total_cntr++;
         }
       }
+
     if (new_conn_port != NULL)
       {
       free(new_conn_port);
       }
+
     pthread_attr_destroy(&t_attr);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, "net_srvr",
                 "Socket close of network listener requested");
     }
 
-  close(listen_socket);
+  if (listen_socket != -1)
+    close(listen_socket);
 
   return(rc);
   } /* END start_listener() */
@@ -352,7 +358,6 @@ int start_listener_addrinfo(
     while (1)
       {
       len_inet = sizeof(struct sockaddr);
-
       if ((new_conn_port = (int *)calloc(1, sizeof(int))) == NULL)
         {
         snprintf(err_msg, sizeof(err_msg), "Error allocating new connection handle - stopping accept loop.");
@@ -383,13 +388,12 @@ int start_listener_addrinfo(
             snprintf(err_msg, sizeof(err_msg), "error in accept %s - stopping accept loop", strerror(errno));
             exit_loop = TRUE;
             break;
-           }
+          }
 
         if (exit_loop == TRUE)
           break;
 
         errno = 0;
-        close(*new_conn_port);
         free(new_conn_port);
         new_conn_port = NULL;
         }
@@ -441,7 +445,8 @@ int start_listener_addrinfo(
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, err_msg);
     }
 
-  close(listen_socket);
+  if (listen_socket != -1)
+    close(listen_socket);
 
   return(rc);
   } /* END start_listener_addrinfo() */

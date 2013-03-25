@@ -571,7 +571,7 @@ int run_pelog(
 
         sprintf(log_buffer, "%s script '%s' for job %s does not exist (cwd: %s,pid: %d)",
           PPEType[which],
-          (pelog != NULL) ? pelog : "NULL",
+          (pelog[0] != '\0') ? pelog : "NULL",
           pjob->ji_qs.ji_jobid,
           getcwd(tmpBuf, sizeof(tmpBuf)),
           getpid());

@@ -433,10 +433,11 @@ int send_request_to_remote_server(
   if ((chan = DIS_tcp_setup(sock)) == NULL)
     {
     log_err(PBSE_MEM_MALLOC, __func__,
-      (char *)"Could not allocate memory for socket buffer");
+      "Could not allocate memory for socket buffer");
     close_conn(sock, FALSE);
     return(PBSE_MEM_MALLOC);
     }
+
   /* the request is bound to another server, encode/send the request */
   switch (request->rq_type)
     {
@@ -665,13 +666,14 @@ int send_request_to_remote_server(
       break;
     }  /* END switch (request->rq_type) */
 
-  if ((tmp_rc = DIS_reply_read(chan, &request->rq_reply)) != 0)
+  if ((tmp_rc = DIS_reply_read(chan, &request->rq_reply)) != PBSE_NONE)
     {
     sprintf(log_buf, "DIS_reply_read failed: %d", tmp_rc);
     log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     request->rq_reply.brp_code = tmp_rc;
     request->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
-    }  
+    }
+
   DIS_tcp_cleanup(chan);
   svr_disconnect(conn);
 

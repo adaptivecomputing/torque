@@ -719,7 +719,7 @@ int req_register(
     /* We ignore what qsub sent us for the host. We need to use the 
      * server_name so we know we can connect to the active server.
      * This is an high availability consideration */
-    if (server_name != NULL)
+    if (server_name[0] != '\0')
       strcpy(preq->rq_ind.rq_register.rq_svr, server_name);
     else
       strcpy(preq->rq_ind.rq_register.rq_svr, preq->rq_host);
@@ -837,7 +837,7 @@ int req_registerarray(
       *bracket_ptr = '\0';
       bracket_ptr++;
 
-      strcpy(range,bracket_ptr);
+      snprintf(range, sizeof(range), "%s", bracket_ptr);
       if ((bracket_ptr = strchr(range,']')) != NULL)
         {
         *bracket_ptr = '\0';
@@ -1563,6 +1563,9 @@ int depend_on_term(
   int                rc;
   int                shouldkill = 0;
   int                type;
+
+  if (pjob == NULL)
+    return(PBSE_BAD_PARAMETER);
  
   exitstat = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
   pattr = &pjob->ji_wattr[JOB_ATR_depend];
@@ -1633,19 +1636,21 @@ int depend_on_term(
           pparent = (struct depend_job *)GET_NEXT(pdep->dp_jobs);
 
           /* skip first, its this job */
-
-          pparent = (struct depend_job *)GET_NEXT(pparent->dc_link);
-
-          while (pparent)
+          if (pparent != NULL)
             {
-            rc = send_depend_req(pjob, pparent, type, JOB_DEPEND_OP_DELETE, SYNC_SCHED_HINT_NULL, free_br);
-
-            if (rc == PBSE_JOBNOTFOUND)
-              {
-              return(rc);
-              }
-
             pparent = (struct depend_job *)GET_NEXT(pparent->dc_link);
+            
+            while (pparent)
+              {
+              rc = send_depend_req(pjob, pparent, type, JOB_DEPEND_OP_DELETE, SYNC_SCHED_HINT_NULL, free_br);
+              
+              if (rc == PBSE_JOBNOTFOUND)
+                {
+                return(rc);
+                }
+              
+              pparent = (struct depend_job *)GET_NEXT(pparent->dc_link);
+              }
             }
           }
 
@@ -1800,7 +1805,28 @@ void set_depend_hold(
 
         if (djob)
           {
-          djp = svr_find_job(djob->dc_child, TRUE);
+          int jobids_match = 0;
+          long displayServerName = 1;
+          char *svrName = NULL;
+
+          if(!get_svr_attr_l(SRV_ATR_display_job_server_suffix, &displayServerName) &&
+            !displayServerName &&
+            (pjob->ji_wattr[JOB_ATR_at_server].at_flags&ATR_VFLAG_SET) &&
+            (svrName = pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str) != NULL &&
+            !strcmp(svrName,djob->dc_svr) &&
+            !strncmp(djob->dc_child,pjob->ji_qs.ji_jobid,strlen(pjob->ji_qs.ji_jobid)))
+            {
+            jobids_match = 1;
+            }
+          /* if dc_child is the same job id as pjob don't
+             lock the job. It is already locked */
+          if(!jobids_match)
+            {
+            if (strcmp(djob->dc_child, pjob->ji_qs.ji_jobid))
+              djp = svr_find_job(djob->dc_child, TRUE);
+            else
+              jobids_match = 1;
+            }
 
           if (!djp ||
               ((pdp->dp_type == JOB_DEPEND_TYPE_AFTERSTART) &&
@@ -2227,7 +2253,8 @@ struct depend_job *make_dependjob(
     pdj->dc_state = 0;
     pdj->dc_cost  = 0;
 
-    strcpy(pdj->dc_child, jobid);
+    snprintf(pdj->dc_child, sizeof(pdj->dc_child), "%s", jobid);
+    
     if (server_name[0] != '\0')
       strcpy(pdj->dc_svr, server_name);
     else

@@ -1115,7 +1115,7 @@ int hostname_check(
   else if (strchr(hostname,'*') != NULL)
     return(SUCCESS);
 
-  strcpy(myhost,hostname);
+  snprintf(myhost, sizeof(myhost), "%s", hostname);
   open_bracket = strchr(myhost,'[');
 
   ret_hostname[0] = '\0';

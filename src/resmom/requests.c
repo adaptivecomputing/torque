@@ -3612,7 +3612,7 @@ void req_cpyfile(
 
 #endif /* SRFS */
 
-      strcpy(arg2, localname);
+      snprintf(arg2, MAXPATHLEN+1, "%s", localname);
 
       /* take (remote) destination name from request */
 
@@ -3621,12 +3621,11 @@ void req_cpyfile(
       if (rmtflag)
         {
         /* using rcp, need to prepend the owner name */
-
-        strcat(arg3, preq->rq_ind.rq_cpyfile.rq_owner);
-        strcat(arg3, "@");
+        snprintf(arg3, MAXPATHLEN+1, "%s@%s",
+          preq->rq_ind.rq_cpyfile.rq_owner, prmt);
         }
-
-      strcat(arg3, prmt);
+      else
+        snprintf(arg3, MAXPATHLEN+1, "%s", prmt);
       }  /* END if (dir == STAGE_DIR_OUT) */
     else
       {
@@ -3634,7 +3633,7 @@ void req_cpyfile(
 
       /* take (remote) source name from request */
 
-      strcpy(arg3, pair->fp_local);
+      snprintf(arg3, MAXPATHLEN+1, "%s", pair->fp_local);
 
       if (pair->fp_flag == JOBCKPFILE)
         {
@@ -3660,12 +3659,12 @@ void req_cpyfile(
          * create it.
          */
 
-        strcpy(needdir,arg3);
+        snprintf(needdir, sizeof(needdir), "%s", arg3);
         ptr = strrchr(needdir,'/');
         if (ptr != NULL)
-        {
-        ptr[0] = '\0';
-        }
+          {
+          ptr[0] = '\0';
+          }
 
         saveumask = umask(0000);
 
@@ -3677,17 +3676,14 @@ void req_cpyfile(
         umask(saveumask);
         }  /* END if (pair->fp_flag == JOBCKPFILE) */
 
-      *arg2 = '\0';
-
       if (rmtflag)
         {
         /* using rcp, need to prepend the owner name */
-
-        strcat(arg2, preq->rq_ind.rq_cpyfile.rq_owner);
-        strcat(arg2, "@");
+        snprintf(arg2, MAXPATHLEN+1, "%s@%s",
+          preq->rq_ind.rq_cpyfile.rq_owner, prmt);
         }
-
-      strcat(arg2, prmt);
+      else
+        snprintf(arg2, MAXPATHLEN+1, "%s", prmt);
 
       }  /* END else (dir == STAGE_DIR_OUT) */
 
@@ -4079,6 +4075,27 @@ void req_delfile(
   }  /* END req_delfile() */
 
 
+job *job_with_reservation_id(
+
+  const char *rsv_id)
+
+  {
+  job *pjob, *nxjob;
+
+  for (pjob = (job *)GET_NEXT(svr_alljobs); pjob != NULL; pjob = nxjob)
+    {
+    nxjob = (job *)GET_NEXT(pjob->ji_alljobs);
+    if ((pjob->ji_wattr[JOB_ATR_reservation_id].at_flags & ATR_VFLAG_SET) &&
+        (pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str != NULL))
+      {
+      if (!strcmp(rsv_id, pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str))
+        {
+        break;
+        }
+      }
+    }
+    return pjob;
+  }
 
 
 void req_delete_reservation(
@@ -4088,14 +4105,24 @@ void req_delete_reservation(
   {
   char *rsv_id = request->rq_extend;
   int   rc = PBSE_NONE;
+  job *pjob = NULL;
 
   if (rsv_id != NULL)
     {
-    if ((rc = destroy_alps_reservation(rsv_id, apbasil_path, apbasil_protocol)) != PBSE_NONE)
+    if ((pjob=job_with_reservation_id(rsv_id)) == NULL) 
       {
-      snprintf(log_buffer, sizeof(log_buffer), "Couldn't release reservation id %s",
-        rsv_id);
-      log_err(-1, __func__, log_buffer);
+      if ((rc = destroy_alps_reservation(rsv_id, apbasil_path, apbasil_protocol)) != PBSE_NONE)
+        {
+        snprintf(log_buffer, sizeof(log_buffer), "Couldn't release reservation id %s",
+          rsv_id);
+        log_err(-1, __func__, log_buffer);
+        }
+      }
+    else
+      {
+      snprintf(log_buffer, sizeof(log_buffer), "Ignored release reservation request from server for reservation id %s because of job %s", 
+        rsv_id, pjob->ji_qs.ji_jobid);
+      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
       }
     }
 
