@@ -452,7 +452,7 @@ int diswsi(int stream, int value)
   exit(1);
   }
 
-void get_chkpt_dir_to_use(job *pjob, char *chkpt_dir)
+void get_chkpt_dir_to_use(job *pjob, char *chkpt_dir, int size)
   {
   fprintf(stderr, "The call to get_chkpt_dir_to_use needs to be mocked!!\n");
   exit(1);

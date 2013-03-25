@@ -348,7 +348,7 @@ extern int  mom_checkpoint_job_has_checkpoint(job *pjob);
 extern int mom_checkpoint_execute_job(job *pjob, char *shell, char *arg[], struct var_table *vtable);
 extern void mom_checkpoint_init_job_periodic_timer(job *pjob);
 extern int  mom_checkpoint_start_restart(job *pjob);
-extern void get_chkpt_dir_to_use(job *pjob, char *chkpt_dir);
+extern void get_chkpt_dir_to_use(job *pjob, char *chkpt_dir, int chkpt_dir_size);
 extern char *cat_dirs(char *root, char *base);
 extern char *get_local_script_path(job *pjob, char *base);
 #ifdef NVIDIA_GPUS
@@ -2149,7 +2149,7 @@ int TMomFinalizeJob1(
       
       /* check time on the file not the directory */
       
-      get_chkpt_dir_to_use(pjob, buf);
+      get_chkpt_dir_to_use(pjob, buf, sizeof(buf));
       if (sizeof(buf) - strlen(buf) > 
             strlen(pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str) + 1)
         {
@@ -5477,7 +5477,7 @@ int start_process(
     /* add one for the jobstarter argument and one for NULL */
     argc += 2;
 
-    argv_jobstarter = (char **)calloc(argc, sizeof(char **));
+    argv_jobstarter = (char **)calloc(argc, sizeof(char *));
 
     argv_jobstarter[0] = jobstarter_exe_name;
 

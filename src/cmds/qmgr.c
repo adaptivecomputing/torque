@@ -1738,7 +1738,7 @@ struct objname *
 
       if (prev_obj == NULL)
         prev_obj = cur_obj;
-      else if (cur_obj != NULL)
+      else 
         {
         prev_obj -> next = cur_obj;
         prev_obj = cur_obj;

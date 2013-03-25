@@ -1,6 +1,6 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "attr_fn_b.h"
-#include "test_attr_fn_b.h"
+#include "attr_fn_acl.h"
+#include "test_uut.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -21,9 +21,9 @@ START_TEST(test_two)
   }
 END_TEST
 
-Suite *attr_fn_b_suite(void)
+Suite *attr_fn_acl_suite(void)
   {
-  Suite *s = suite_create("attr_fn_b_suite methods");
+  Suite *s = suite_create("attr_fn_acl_suite methods");
   TCase *tc_core = tcase_create("test_one");
   tcase_add_test(tc_core, test_one);
   suite_add_tcase(s, tc_core);
@@ -44,8 +44,8 @@ int main(void)
   int number_failed = 0;
   SRunner *sr = NULL;
   rundebug();
-  sr = srunner_create(attr_fn_b_suite());
-  srunner_set_log(sr, "attr_fn_b_suite.log");
+  sr = srunner_create(attr_fn_acl_suite());
+  srunner_set_log(sr, "attr_fn_acl_suite.log");
   srunner_run_all(sr, CK_NORMAL);
   number_failed = srunner_ntests_failed(sr);
   srunner_free(sr);
