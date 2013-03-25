@@ -4921,7 +4921,7 @@ int remove_job_from_node(
       if (strcmp(jp->jobid, pjob->ji_qs.ji_jobid))
         continue;
       
-      if (LOGLEVEL >= 4)
+      if (LOGLEVEL >= 8)
         {
         sprintf(log_buf, "freeing node %s/%d from job %s (nsnfree=%d)",
           pnode->nd_name,
@@ -4940,8 +4940,8 @@ int remove_job_from_node(
       free(jp);
       
       pnode->nd_nsnfree++; /* up count of free */
-      
-      if (LOGLEVEL >= 6)
+     
+      if (LOGLEVEL >= 8)
         {
         sprintf(log_buf, "increased sub-node free count to %d of %d\n",
           pnode->nd_nsnfree,
