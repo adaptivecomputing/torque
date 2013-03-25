@@ -30,7 +30,7 @@ dnl added library functionality to testing
 dnl by John Rosenquist (jrosenquist@adaptivecomputing.com)
 
 AC_PREREQ(2.53)
-AC_INIT([torque], [4.2.2], [torqueusers@supercluster.org])
+AC_INIT([torque], [4.2.3], [torqueusers@supercluster.org])
 AC_REVISION($Revision$)
 AC_CONFIG_SRCDIR([src/cmds/qrun.c])
 AC_CONFIG_AUX_DIR([buildutils])
@@ -1186,7 +1186,7 @@ case "$BLCR" in
     AC_SUBST([BLCR_LDFLAGS])
 
     AS_IF([test "x$blcrinclude" != xnone], [
-      BLCR_CPPFLAGS="-I$blcrinclude -std=gnu99"
+      BLCR_CPPFLAGS="-I$blcrinclude"
     ],[
       BLCR_CPPFLAGS=""
     ])
@@ -1207,6 +1207,7 @@ case "$BLCR" in
     AC_CHECK_PROGS([HAVE_CR_RESTART], [cr_restart], [no],
       [PATH=$PATH$BLCR_PATH])
     AC_SUBST([BLCR_BINDIR])
+    gccwarnings=no
     ;;
   no) : ;;
   *) AC_MSG_ERROR([--enable-blcr should be yes or no]) ;;
