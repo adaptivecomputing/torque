@@ -162,10 +162,20 @@ int relay_to_mom(
   unsigned short  port;
   job            *pjob = *pjob_ptr;
   char            jobid[PBS_MAXSVRJOBID + 1];
-  char *job_momname = NULL;
+  char           *job_momname = NULL;
 
   struct pbsnode *node;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
+ 
+  if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL)
+    {
+    snprintf(log_buf, sizeof(log_buf),
+      "attempting to send a request to %s's mom but no exec_host list?",
+      pjob->ji_qs.ji_jobid);
+    log_err(PBSE_BADSTATE, __func__, log_buf);
+
+    return(PBSE_BADSTATE);
+    }
 
   /* if MOM is down don't try to connect */
   addr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
