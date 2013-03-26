@@ -946,6 +946,7 @@ typedef struct send_job_request
 #define JOB_SVFLG_CHECKPOINT_MIGRATEABLE 0x100 /* job has migratable checkpoint */
 #define JOB_SVFLG_Suspend  0x200 /* job suspended (signal suspend) */
 #define JOB_SVFLG_StagedIn 0x400 /* job has files that have been staged in */
+#define JOB_SVFLG_JOB_ABORTED 0x800 /* Job has been aborted for some reason */
 #define JOB_SVFLG_HasNodes 0x1000 /* job has nodes allocated to it */
 #define JOB_SVFLG_RescAssn 0x2000 /* job resources accumulated in server/que */
 #define JOB_SVFLG_CHECKPOINT_COPIED 0x4000 /* job checkpoint file that has been copied */

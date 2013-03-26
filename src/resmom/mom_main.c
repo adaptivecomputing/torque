@@ -7909,7 +7909,7 @@ int TMOMScanForStarting(void)
         log_record(
           PBSEVENT_ERROR,
           PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
+          __func__,
           log_buffer);
 
         exec_bail(pjob, JOB_EXEC_RETRY);
@@ -7950,7 +7950,7 @@ int TMOMScanForStarting(void)
           log_record(
             PBSEVENT_ERROR,
             PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
+            __func__,
             log_buffer);
 
           memset(TJE, 0, sizeof(pjobexec_t));
@@ -7965,6 +7965,12 @@ int TMOMScanForStarting(void)
         if (TMomFinalizeJob3(TJE, Count, RC, &SC) == FAILURE)
           {
           /* no need to log this, TMomFinalizeJob3() already did */
+          sprintf(log_buffer, "job %s failed after TMomFinalizeJob3", pjob->ji_qs.ji_jobid);
+          log_record(
+            PBSEVENT_ERROR,
+            PBS_EVENTCLASS_JOB,
+            __func__,
+            log_buffer);
 
           memset(TJE, 0, sizeof(pjobexec_t));
 
@@ -8009,6 +8015,7 @@ void examine_all_polled_jobs(void)
   {
   job         *pjob;
   int         c;
+  char        log_buffer[LOG_BUF_SIZE];
 
 
   for (pjob = (job *)GET_NEXT(mom_polljobs);pjob;
@@ -8057,6 +8064,12 @@ void examine_all_polled_jobs(void)
 
       pjob->ji_qs.ji_svrflags |= JOB_SVFLG_OVERLMT2;
 
+      continue;
+      }
+
+    if (c & JOB_SVFLG_JOB_ABORTED)
+      {
+      kill_job(pjob, SIGTERM, __func__, "job has been aborted");
       continue;
       }
 
@@ -8112,6 +8125,7 @@ void examine_all_running_jobs(void)
   int         c;
 #endif
   task         *ptask;
+  char         log_buffer[LOG_BUF_SIZE];
 
   for (pjob = (job *)GET_NEXT(svr_alljobs);
        pjob != NULL;
@@ -8119,14 +8133,17 @@ void examine_all_running_jobs(void)
     {
     if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RUNNING)
       {
-      if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)
+      if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN))
         {
-        if (pjob->ji_examined == 0)
+        if (pjob->ji_examined <= 10)
           {
-          pjob->ji_examined = 1;
+          pjob->ji_examined++;
           }
         else
           {
+          sprintf(log_buffer, "job %s already examined. substate=%d",
+                  pjob->ji_qs.ji_jobid, pjob->ji_qs.ji_substate);
+          log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
           /* This is the second time through examine_all_running_jobs for
              this job while in a PRERUN state. Something is wrong. 
              kill the job. */

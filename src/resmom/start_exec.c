@@ -609,6 +609,10 @@ void exec_bail(
   {
   int            nodecount;
   unsigned short momport = 0;
+  char           log_buffer[LOG_BUF_SIZE];
+
+  sprintf(log_buffer, "bailing on job %s code %d", pjob->ji_qs.ji_jobid, code);
+  log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
   nodecount = send_sisters(pjob, IM_ABORT_JOB, FALSE);
 
@@ -1803,10 +1807,11 @@ int open_tcp_stream_to_sisters(
       
       if (log_buffer[0] != '\0')
         {
-        sprintf(log_buffer, "tcp_connect_sockaddr failed on %s", np->hn_host);
+        sprintf(log_buffer, "tcp_connect_sockaddr failed on %s - job id %s", np->hn_host, pjob->ji_qs.ji_jobid);
         }
       
       log_err(errno, __func__, log_buffer);
+      log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
       
       exec_bail(pjob, JOB_EXEC_FAIL1);
       
@@ -1822,6 +1827,8 @@ int open_tcp_stream_to_sisters(
     if ((chan = DIS_tcp_setup(stream)) == NULL)
       {
       close(stream);
+      sprintf(log_buffer, "failed to allocate channel: %s", pjob->ji_qs.ji_jobid);
+      log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
       exec_bail(pjob, JOB_EXEC_FAIL1);
       return(PBSE_SISCOMM);
       }
@@ -4010,6 +4017,7 @@ int TMomFinalizeChild(
   int                    j;
   int                    vnodenum;
   char                   qsubhostname[MAXLINE];
+  char                   log_buf[LOG_BUF_SIZE];
   int                    pts;
   int                    qsub_sock;
   char                  *shell;
@@ -4028,7 +4036,8 @@ int TMomFinalizeChild(
 
   if (pwdp == NULL)
     {
-    log_err(PBSE_BADUSER, __func__, "Running job with no password entry?");
+    snprintf(log_buf, sizeof(log_buf), "TMomFinalizeChild - Running job with no password entry? job id %s", pjob->ji_qs.ji_jobid);
+    log_err(PBSE_BADUSER, __func__, log_buf);
 
     starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, &sjr);
 
@@ -4045,7 +4054,7 @@ int TMomFinalizeChild(
             It does not have access to stdout/stderr, failure
             messages will route to syslog via log_err() */
 
-  if (LOGLEVEL >= 10)
+  if (LOGLEVEL >= 6)
     log_ext(-1, __func__, "starting", LOG_DEBUG);
 
   if (lockfds >= 0)
@@ -4063,18 +4072,19 @@ int TMomFinalizeChild(
 
   shell = set_shell(pjob, pwdp); /* in the machine dependent section */
 
-  if (LOGLEVEL >= 10)
+  if (LOGLEVEL >= 6)
     log_ext(-1, __func__, "shell initialized", LOG_DEBUG);
 
   /* Setup user env */
   if (InitUserEnv(pjob, ptask, NULL, pwdp, shell) < 0)
     {
-    log_err(-1, __func__, "failed to setup user env");
+    snprintf(log_buf, sizeof(log_buf),"TMomFinalizeChild - failed to setup user env. job id %s", pjob->ji_qs.ji_jobid);
+    log_err(-1, __func__, log_buf);
 
     starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, &sjr);
     }
 
-  if (LOGLEVEL >= 10)
+  if (LOGLEVEL >= 6)
     log_ext(-1, __func__, "env initialized", LOG_DEBUG);
 
   /* Create the job's nodefile */
@@ -4098,7 +4108,8 @@ int TMomFinalizeChild(
 
   if ((j = CPACreatePartition(pjob, &vtable)) != 0)
     {
-    log_err(-1, __func__, "CPACreatePartition failed");
+    snprintf(log_buf, sizeof(log_buf),"TMomFinalizeChild - CPACreatePartition failed. job id %s", pjob->ji_qs.ji_jobid);
+    log_err(-1, __func__, log_buf);
 
     starter_return(TJE->upfds, TJE->downfds, j, &sjr); /* exits */
 
@@ -4115,7 +4126,8 @@ int TMomFinalizeChild(
 
   if (j != 0)
     {
-    log_err(-1, __func__, "failed to set mach vars");
+    snprintf(log_buf, sizeof(log_buf),"TMomFinalizeChild - failed to set mach vars. job id %s", pjob->ji_qs.ji_jobid);
+    log_err(-1, __func__, log_buf);
 
     starter_return(TJE->upfds, TJE->downfds, j, &sjr); /* exits */
 
@@ -4124,7 +4136,7 @@ int TMomFinalizeChild(
     exit(1);
     }
 
-  if (LOGLEVEL >= 10)
+  if (LOGLEVEL >= 6)
     log_ext(-1, __func__, "system vars set", LOG_DEBUG);
 
   umask(determine_umask(pjob->ji_qs.ji_un.ji_momt.ji_exuid));
@@ -4190,8 +4202,11 @@ int TMomFinalizeChild(
     /*NOTREACHED*/
     }
 
-  if (LOGLEVEL >= 10)
-    log_ext(-1, __func__, "setting system limits", LOG_DEBUG);
+  if (LOGLEVEL >= 6)
+    {
+    snprintf(log_buf, sizeof(log_buf),"setting system limits. job id %s", pjob->ji_qs.ji_jobid);
+    log_err(-1, __func__, log_buf);
+    }
 
   log_buffer[0] = '\0';
 
@@ -4199,14 +4214,17 @@ int TMomFinalizeChild(
 
   endpwent();
 
-  if (LOGLEVEL >= 10)
-    log_ext(-1, __func__, "system limits set", LOG_DEBUG);
+  if (LOGLEVEL >= 6)
+    {
+    snprintf(log_buf, sizeof(log_buf),"system limits set. job id %s", pjob->ji_qs.ji_jobid);
+    log_err(-1, __func__, log_buf);
+    }
 
   if ((idir = get_job_envvar(pjob, "PBS_O_ROOTDIR")) != NULL)
     {
     if (chroot(idir) == -1)
       {
-      sprintf(log_buffer, "PBS: chroot to '%.256s' failed: %s\n",
+      sprintf(log_buffer, "TMomFinalizeChild - PBS: chroot to '%.256s' failed: %s\n",
         idir,
         strerror(errno));
 
@@ -4227,13 +4245,14 @@ int TMomFinalizeChild(
     }
 
   /* become the user, execv the shell and become the real job */
-  if (LOGLEVEL >= 10)
+  if (LOGLEVEL >= 6)
     {
-    sprintf(log_buffer, "setting user/group credentials to %d/%d",
+    snprintf(log_buf, sizeof(log_buf), "setting user/group credentials to %d/%d, job id %s",
       pjob->ji_qs.ji_un.ji_momt.ji_exuid,
-      pjob->ji_qs.ji_un.ji_momt.ji_exgid);
+      pjob->ji_qs.ji_un.ji_momt.ji_exgid,
+      pjob->ji_qs.ji_jobid);
 
-    log_ext(-1, __func__, log_buffer, LOG_DEBUG);
+    log_err(-1, __func__, log_buf );
     }
 
   /* NOTE: must set groups before setting the user because not all users can
@@ -4242,12 +4261,13 @@ int TMomFinalizeChild(
 
   go_to_init_dir(pjob, &sjr, TJE, pwdp);
 
-  if (LOGLEVEL >= 10)
+  if (LOGLEVEL >= 6)
     {
-    sprintf(log_buffer, "initial directory set to %s\n",
+    snprintf(log_buf, sizeof(log_buf), "job id %s: initial directory set to %s\n",
+            pjob->ji_qs.ji_jobid,
             idir != NULL ? idir : pwdp->pw_dir);
 
-    log_ext(-1, __func__, log_buffer, LOG_DEBUG);
+    log_err(-1, __func__, log_buf);
     }
 
   /* X11 forwarding init */
@@ -4257,8 +4277,11 @@ int TMomFinalizeChild(
   *(vtable.v_envp + vtable.v_used) = NULL;
 
   /* tell mom we are going */
-  if (LOGLEVEL >= 10)
-    log_ext(-1, __func__, "forking child", LOG_DEBUG);
+  if (LOGLEVEL >= 6)
+    {
+    snprintf(log_buf, sizeof(log_buf), "forking child: job id %s", pjob->ji_qs.ji_jobid);
+    log_err(-1, __func__, log_buf);
+    }
 
   starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_OK, &sjr);
 
@@ -4304,7 +4327,8 @@ int TMomFinalizeChild(
 
       if (arg[aindex] == NULL)
         {
-        log_err(errno, __func__, "cannot alloc env");
+        snprintf(log_buf, sizeof(log_buf), "cannot alloc env. job id %s", pjob->ji_qs.ji_jobid);
+        log_err(errno, __func__, log_buf);
 
         starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr);
 
@@ -4980,7 +5004,7 @@ int start_process(
   /* The child process - will become the TASK   */
   /************************************************/
 
-  if (LOGLEVEL >= 10)
+  if (LOGLEVEL >= 6)
     log_ext(-1, __func__, "child starting", LOG_DEBUG);
 
   if (lockfds >= 0)
@@ -6099,10 +6123,11 @@ int send_join_job_to_sisters(
     
     if (log_buffer[0] != '\0')
       {
-      sprintf(log_buffer, "tcp_connect_sockaddr failed on %s", np->hn_host);
+      sprintf(log_buffer, "tcp_connect_sockaddr failed on %s - jobid %s", np->hn_host, pjob->ji_qs.ji_jobid);
       }
     
     log_err(errno, __func__, log_buffer);
+    log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
     
     exec_bail(pjob, JOB_EXEC_FAIL1);
    
@@ -6117,6 +6142,7 @@ int send_join_job_to_sisters(
       pjob->ji_qs.ji_jobid);
     
     log_err(-1, __func__, log_buffer);
+    log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
     
     exec_bail(pjob,JOB_EXEC_FAIL1);
     
@@ -6138,12 +6164,15 @@ int generate_cookie(
   extern time_t  loopcnt;
   MD5_CTX        c;
   int            i;
+  char           log_buffer[LOG_BUF_SIZE];
 
   if (!(pjob->ji_wattr[JOB_ATR_Cookie].at_flags & ATR_VFLAG_SET))
     {
     if ((tt = (char *)calloc(1, JOB_COOKIE_SIZE)) == NULL)
       {
       log_err(ENOMEM, __func__, "cannot alloc memory");
+      sprintf(log_buffer, "memory allocation failure. job id %s", pjob->ji_qs.ji_jobid);
+      log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
       exec_bail(pjob, JOB_EXEC_FAIL1);
 
@@ -6240,7 +6269,9 @@ int start_exec(
   /* check creds early because we need the uid/gid for TMakeTmpDir() */
   if (!check_pwd(pjob))
     {
+    sprintf(log_buffer, "bad credentials: job id %s", pjob->ji_qs.ji_jobid);
     log_err(-1, __func__, log_buffer);
+    log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
     exec_bail(pjob, JOB_EXEC_FAIL1);
 
@@ -6253,9 +6284,10 @@ int start_exec(
     {
     if ((ret = TMakeTmpDir(pjob, tmpdir)) != PBSE_NONE)
       {
-      snprintf(log_buffer, sizeof(log_buffer), "cannot create temp dir '%s'", tmpdir);
+      snprintf(log_buffer, sizeof(log_buffer), "cannot create temp dir '%s', job id %s", tmpdir, pjob->ji_qs.ji_jobid);
 
       log_err(-1, __func__, log_buffer);
+      log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
       exec_bail(pjob, JOB_EXEC_FAIL1);
 
@@ -8679,6 +8711,7 @@ int exec_job_on_ms(
   int          Count;
   int          RC;
   int          SC;
+  char         log_buffer[LOG_BUF_SIZE];
 
   TMOMJobGetStartInfo(NULL, &TJE);
 
@@ -8689,6 +8722,8 @@ int exec_job_on_ms(
     if (SC != 0)
       {
       memset(TJE, 0, sizeof(pjobexec_t));
+      sprintf(log_buffer, "job %s failed after TMomFinalizeJob1", pjob->ji_qs.ji_jobid);
+      log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
       exec_bail(pjob, SC);
       }
@@ -8704,6 +8739,8 @@ int exec_job_on_ms(
       {
       memset(TJE, 0, sizeof(pjobexec_t));
 
+      sprintf(log_buffer, "job %s failed after TMomFinalizeJob2", pjob->ji_qs.ji_jobid);
+      log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
       exec_bail(pjob, SC);
       }
 
@@ -8729,9 +8766,9 @@ int exec_job_on_ms(
 
   if (TMomFinalizeJob3(TJE, Count, RC, &SC) == FAILURE)
     {
-    sprintf(log_buffer, "ALERT:  job failed phase 3 start");
+    sprintf(log_buffer, "ALERT:  job failed phase 3 start - jobid %s", pjob->ji_qs.ji_jobid);
 
-    log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+    log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
     memset(TJE, 0, sizeof(pjobexec_t));
 
@@ -8769,6 +8806,7 @@ int allocate_demux_sockets(
   int                 ports[2];
   struct sockaddr_in  saddr;
   torque_socklen_t    slen;
+  char                log_buffer[LOG_BUF_SIZE];
 
   /* Open two sockets for use by demux program later. */
 
@@ -8810,6 +8848,8 @@ int allocate_demux_sockets(
      /* command sisters to abort job and continue */
 
     log_err(errno, __func__, "stdout/err socket");
+    sprintf(log_buffer, "failed to open stdout/stderr - job id %s", pjob->ji_qs.ji_jobid);
+    log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
     exec_bail(pjob, JOB_EXEC_FAIL1);
 

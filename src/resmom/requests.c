@@ -4075,6 +4075,27 @@ void req_delfile(
   }  /* END req_delfile() */
 
 
+job *job_with_reservation_id(
+
+  const char *rsv_id)
+
+  {
+  job *pjob, *nxjob;
+
+  for (pjob = (job *)GET_NEXT(svr_alljobs); pjob != NULL; pjob = nxjob)
+    {
+    nxjob = (job *)GET_NEXT(pjob->ji_alljobs);
+    if ((pjob->ji_wattr[JOB_ATR_reservation_id].at_flags & ATR_VFLAG_SET) &&
+        (pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str != NULL))
+      {
+      if (!strcmp(rsv_id, pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str))
+        {
+        break;
+        }
+      }
+    }
+    return pjob;
+  }
 
 
 void req_delete_reservation(
@@ -4084,14 +4105,24 @@ void req_delete_reservation(
   {
   char *rsv_id = request->rq_extend;
   int   rc = PBSE_NONE;
+  job *pjob = NULL;
 
   if (rsv_id != NULL)
     {
-    if ((rc = destroy_alps_reservation(rsv_id, apbasil_path, apbasil_protocol)) != PBSE_NONE)
+    if ((pjob=job_with_reservation_id(rsv_id)) == NULL) 
       {
-      snprintf(log_buffer, sizeof(log_buffer), "Couldn't release reservation id %s",
-        rsv_id);
-      log_err(-1, __func__, log_buffer);
+      if ((rc = destroy_alps_reservation(rsv_id, apbasil_path, apbasil_protocol)) != PBSE_NONE)
+        {
+        snprintf(log_buffer, sizeof(log_buffer), "Couldn't release reservation id %s",
+          rsv_id);
+        log_err(-1, __func__, log_buffer);
+        }
+      }
+    else
+      {
+      snprintf(log_buffer, sizeof(log_buffer), "Ignored release reservation request from server for reservation id %s because of job %s", 
+        rsv_id, pjob->ji_qs.ji_jobid);
+      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
       }
     }
 
