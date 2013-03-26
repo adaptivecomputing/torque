@@ -2352,7 +2352,7 @@ int pbsd_init_job(
           pjob->ji_qs.ji_jobid);
         log_event(PBSEVENT_ERROR,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
         
-        if (pjob->ji_wattr[JOB_ATR_comment].at_val.at_str != NULL)
+        if (pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str != NULL)
           {
           free(pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str);
           pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str = strdup(log_buf);
