@@ -19,6 +19,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - Fix the way we monitor if a thread is active. Before we used the id, but if the 
       thread has exited, the id is no longer valid and this will cause a crash. Use
       pthread_cleanup functionality instead. TRQ-1745.
+  b - TRQ-1751. Add some code to handle a corrupted job file where the job file says it
+      is running but there is no exec host list. These jobs now will receive a system
+      hold.
 
 4.2.1
   b - Fix a deadlock when submitting two large arrays consecutively, the second
