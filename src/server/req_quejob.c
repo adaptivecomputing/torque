@@ -2152,6 +2152,8 @@ int req_commit(
 
       svr_job_purge(pj);
       }
+    else
+      unlock_ji_mutex(pj, __func__, "8", LOGLEVEL);
 
     req_reject(rc, 0, preq, NULL, log_buf);
 
