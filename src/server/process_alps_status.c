@@ -299,23 +299,38 @@ int set_ncpus(
   {
   int ncpus;
   int difference;
-  int i;
+  int i, orig_svr_clnodes;
 
   if (current == NULL)
     return(PBSE_BAD_PARAMETER);
   
   ncpus = atoi(str + ac_cproc_eq_len);
   difference = ncpus - current->nd_nsn;
+  orig_svr_clnodes = svr_clnodes;
 
-  for (i = 0; i < difference; i++)
+  for (i = 0; i < abs(difference); i++)
     {
-    if (create_subnode(current) == NULL)
+    if (difference > 0)
       {
-      log_err(ENOMEM, __func__, "");
-      return(PBSE_SYSTEM);
-      }
+      if (create_subnode(current) == NULL)
+        {
+        log_err(ENOMEM, __func__, "");
+        return(PBSE_SYSTEM);
+        }
 
-    svr_clnodes++;
+      svr_clnodes++;
+      }
+    else if (difference < 0)
+      {
+      delete_a_subnode(current);
+      svr_clnodes--;
+      }
+    }
+   
+  if (difference < 0)
+    {
+    snprintf(log_buffer, sizeof(log_buffer), "ncpus was reduced from %d to %d", orig_svr_clnodes, svr_clnodes);
+    log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
     }
 
   return(PBSE_NONE);

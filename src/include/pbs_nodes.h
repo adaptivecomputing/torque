@@ -573,6 +573,7 @@ struct pbsnode  *find_nodebyname(const char *);
 struct pbsnode  *find_node_in_allnodes(all_nodes *an, char *nodename);
 int              create_partial_pbs_node(char *, unsigned long, int);
 struct pbssubn  *create_subnode(struct pbsnode *pnode);
+extern void      delete_a_subnode(struct pbsnode *pnode);
 
 #ifdef BATCH_REQUEST_H 
 void             initialize_pbssubn(struct pbsnode *, struct pbssubn *, struct prop *);

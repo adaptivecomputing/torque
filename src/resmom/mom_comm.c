@@ -785,9 +785,6 @@ int im_compose(
   }  /* END im_compose() */
 
 
-
-
-
 /**
  * Send a message (command = com) to all the other MOMs in the job -> pjob.
  *
@@ -995,6 +992,152 @@ int send_sisters(
   return(num);
   }  /* END send_sisters() */
 
+
+/**
+ * Send a message (command = com) to Mother Superior in the job -> pjob.
+ *
+ * @see examine_all_polled_jobs() - parent - poll job status info
+ * @see exec_bail() - parent - abort parallel job
+ *
+ * @see start_exec() - peer - opens connections to sisters at parallel job start
+ *
+ * @return 0 on FAILURE or number of sister mom's successfully contacted on SUCCESS
+ */
+
+int send_ms(
+
+  job *pjob,         /* I */
+  int  com)          /* I (command to send to all sisters) */
+
+  {
+  int              num;
+  int              ret = PBSE_NONE;
+  int              local_socket;
+  struct tcp_chan *local_chan = NULL;
+  char            *cookie;
+  resend_momcomm  *mc;
+  hnodent        *np;
+
+  if (LOGLEVEL >= 4)
+    {
+    sprintf(log_buffer, "sending command %s for job %s (%d)",
+            PMOMCommand[com],
+            pjob->ji_qs.ji_jobid,
+            com);
+
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_REQUEST, __func__, log_buffer);
+    }
+
+  if (!(pjob->ji_wattr[JOB_ATR_Cookie].at_flags & ATR_VFLAG_SET))
+    {
+    /* cookie not set - return FAILURE */
+    snprintf(log_buffer, sizeof(log_buffer),
+      "cookie not set in send_ms for job %s",
+      pjob->ji_qs.ji_jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_REQUEST, __func__, log_buffer);
+    return(0);
+    }
+
+  cookie = pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str;
+
+  num = 0;
+
+  if (com == IM_ABORT_JOB)
+    {
+    snprintf(log_buffer, sizeof(log_buffer),
+      "sending ABORT to mother superior for job %s",
+      pjob->ji_qs.ji_jobid);
+
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_REQUEST, __func__, log_buffer);
+    }
+
+  /* walk thru node list, contact each mom */
+
+  np = &pjob->ji_hosts[0];
+
+  if (np->hn_node == pjob->ji_nodeid) /* this is me*/
+    return(1);
+
+  if (np->hn_sister != SISTER_OKAY) /* sister is gone? */
+    {
+    snprintf(log_buffer, 1024, "%s:  sister (%s) is not ok (%d)",
+      __func__,
+      (np->hn_host != NULL) ? np->hn_host : "NULL",
+      np->hn_sister);
+
+    log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+
+    return(0);
+    }
+
+  local_socket = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
+
+  if (IS_VALID_STREAM(local_socket) == FALSE)
+    {
+    if ((mc = (resend_momcomm *)calloc(1, sizeof(resend_momcomm))) != NULL)
+      {
+      mc->mc_type = COMPOSE_REPLY;
+      mc->mc_struct = create_compose_reply_info(pjob->ji_qs.ji_jobid, cookie, np, com, TM_NULL_EVENT, TM_NULL_TASK);
+
+      if (mc->mc_struct == NULL)
+        free(mc);
+      else
+        add_to_resend_things(mc);
+      }
+
+    snprintf(log_buffer, sizeof(log_buffer), "%s:  cannot open tcp connection to sister (%s)",
+      __func__,
+      (np->hn_host != NULL) ? np->hn_host : "NULL");
+
+    log_record(PBSEVENT_ERROR,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+
+    return(0);
+    }
+
+  if ((local_chan = DIS_tcp_setup(local_socket)) == NULL)
+    {
+    }
+  else if ((ret = im_compose(local_chan,pjob->ji_qs.ji_jobid,cookie,com,0,TM_NULL_TASK)) == DIS_SUCCESS)
+    {
+    if ((ret = DIS_tcp_wflush(local_chan)) != DIS_SUCCESS)
+      {
+      sprintf(log_buffer, "%s:DIS_tcp_wflush failed", __func__);
+      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,log_buffer);
+      }
+    }
+  close(local_socket);
+  if (local_chan != NULL)
+    DIS_tcp_cleanup(local_chan);
+
+  if (ret != DIS_SUCCESS)
+    {
+    if ((mc = (resend_momcomm *)calloc(1, sizeof(resend_momcomm))) != NULL)
+      {
+      mc->mc_type = COMPOSE_REPLY;
+      mc->mc_struct = create_compose_reply_info(pjob->ji_qs.ji_jobid, cookie, np, com, TM_NULL_EVENT, TM_NULL_TASK);
+
+      if (mc->mc_struct == NULL)
+        free(mc);
+      else
+        add_to_resend_things(mc);
+      }
+
+    snprintf(log_buffer, sizeof(log_buffer),
+      "%s:  cannot compose message to sister (%s) - %d",
+      __func__,(np->hn_host != NULL) ? np->hn_host : "NULL", ret);
+
+    log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+
+    np->hn_sister = SISTER_EOF;
+    }
+  else
+    {
+    np->hn_sister = SISTER_OKAY;
+    num++;
+    }
+
+  return(num);
+  }  /* END send_ms() */
 
 /**
  * Check to see which node a stream is coming from.  Return a NULL
