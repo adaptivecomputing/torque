@@ -2573,7 +2573,7 @@ int pbsd_init_reque(
 
   sprintf(log_buf, "%s:1", __func__);
   lock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
-  if ((rc = svr_enquejob(pjob, TRUE, -1)) == PBSE_NONE)
+  if ((rc = svr_enquejob(pjob, TRUE, -1, false)) == PBSE_NONE)
     {
     int len;
     snprintf(log_buf, sizeof(log_buf), msg_init_substate,
