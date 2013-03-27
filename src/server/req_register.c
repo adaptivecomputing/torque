@@ -1805,7 +1805,28 @@ void set_depend_hold(
 
         if (djob)
           {
-          djp = svr_find_job(djob->dc_child, TRUE);
+          int jobids_match = 0;
+          long displayServerName = 1;
+          char *svrName = NULL;
+
+          if(!get_svr_attr_l(SRV_ATR_display_job_server_suffix, &displayServerName) &&
+            !displayServerName &&
+            (pjob->ji_wattr[JOB_ATR_at_server].at_flags&ATR_VFLAG_SET) &&
+            (svrName = pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str) != NULL &&
+            !strcmp(svrName,djob->dc_svr) &&
+            !strncmp(djob->dc_child,pjob->ji_qs.ji_jobid,strlen(pjob->ji_qs.ji_jobid)))
+            {
+            jobids_match = 1;
+            }
+          /* if dc_child is the same job id as pjob don't
+             lock the job. It is already locked */
+          if(!jobids_match)
+            {
+            if (strcmp(djob->dc_child, pjob->ji_qs.ji_jobid))
+              djp = svr_find_job(djob->dc_child, TRUE);
+            else
+              jobids_match = 1;
+            }
 
           if (!djp ||
               ((pdp->dp_type == JOB_DEPEND_TYPE_AFTERSTART) &&

@@ -1029,7 +1029,7 @@ char *arst_string(
 
   parst = pattr->at_val.at_arst;
 
-  for (i = 0;i < parst->as_usedptr;i++)
+  for (i = 0; i < parst->as_usedptr; i++)
     {
     if (!strncmp(str, parst->as_string[i], len))
       {
