@@ -697,7 +697,7 @@ int main(
   int rc;
 
   int  nspawned = 0;
-  tm_node_id *nodelist;
+  tm_node_id *nodelist = NULL;
   int start;
   int stop;
   int sync = 0;
@@ -901,10 +901,12 @@ int main(
 
   if ((rc = tm_nodeinfo(&nodelist, &numnodes)) != TM_SUCCESS)
     {
-    fprintf(stderr, "%s: tm_nodeinfo failed, rc = %s (%d)\n",
+   fprintf(stderr, "%s: tm_nodeinfo failed, rc = %s (%d) nodelist= %d numnodes= %d\n",
       id,
       get_ecname(rc),
-      rc);
+      rc,
+      (nodelist==NULL) ? -1 : *nodelist,
+      numnodes);
 
     return(1);
     }
