@@ -304,6 +304,7 @@ int set_ncpus(
   
   ncpus = atoi(str + cproc_eq_len);
   difference = ncpus - current->nd_nsn;
+  orig_svr_clnodes = svr_clnodes;
 
   for (i = 0; i < abs(difference); i++)
     {
@@ -327,6 +328,7 @@ int set_ncpus(
   if (difference < 0)
     {
     snprintf(log_buffer, sizeof(log_buffer), "ncpus was reduced from %d to %d",
+      orig_svr_clnodes, svr_clnodes);
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
     }
 
