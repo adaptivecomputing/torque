@@ -355,7 +355,8 @@ int svr_enquejob(
 
   job *pjob,            /* I */
   int  has_sv_qs_mutex, /* I */
-  int  prev_job_index)  /* I */
+  int  prev_job_index,  /* I */
+  bool have_reservation)
 
   {
   pbs_attribute *pattrjb;
@@ -389,6 +390,15 @@ int svr_enquejob(
     }
 
   mutex_mgr que_mgr(pque->qu_mutex, true);
+  if (have_reservation)
+    {
+    if (LOGLEVEL >= 6)
+      {
+      sprintf(log_buf, "reserved jobs: %d - job id %s", pque->qu_reserved_jobs, pjob->ji_qs.ji_jobid);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+      }
+    pque->qu_reserved_jobs--;
+    }
 
   /* This is called when a job is not yet in the queue,
    * so svr_find_job can not be used.... */
@@ -412,7 +422,7 @@ int svr_enquejob(
   if ((pque->qu_attr[QA_ATR_MaxJobs].at_flags & ATR_VFLAG_SET))
     {
     total_jobs = count_queued_jobs(pque, NULL);
-    if (total_jobs + array_jobs >= pque->qu_attr[QA_ATR_MaxJobs].at_val.at_long)
+    if ((total_jobs + array_jobs + pque->qu_reserved_jobs) >= pque->qu_attr[QA_ATR_MaxJobs].at_val.at_long)
       {
       que_mgr.unlock();
       unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
@@ -424,7 +434,7 @@ int svr_enquejob(
   if ((pque->qu_attr[QA_ATR_MaxUserJobs].at_flags & ATR_VFLAG_SET))
     {
     user_jobs = count_queued_jobs(pque, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
-    if (user_jobs >= pque->qu_attr[QA_ATR_MaxUserJobs].at_val.at_long)
+    if ((user_jobs + pque->qu_reserved_jobs) >= pque->qu_attr[QA_ATR_MaxUserJobs].at_val.at_long)
       {
       que_mgr.unlock();
       unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
@@ -2084,7 +2094,7 @@ static int check_queue_job_limit(
       return(PBSE_JOB_RECYCLED);
       }
 
-    if ((total_jobs + array_jobs) >= pque->qu_attr[QA_ATR_MaxJobs].at_val.at_long)
+    if ((total_jobs + array_jobs + pque->qu_reserved_jobs) >= pque->qu_attr[QA_ATR_MaxJobs].at_val.at_long)
       {
       if (EMsg)
         {
@@ -2117,7 +2127,7 @@ static int check_queue_job_limit(
       return(PBSE_JOB_RECYCLED);
       }
 
-    if ((user_jobs + array_jobs) >= pque->qu_attr[QA_ATR_MaxUserJobs].at_val.at_long)
+    if ((user_jobs + array_jobs + pque->qu_reserved_jobs) >= pque->qu_attr[QA_ATR_MaxUserJobs].at_val.at_long)
       {
       if (EMsg)
         snprintf(EMsg, 1024,

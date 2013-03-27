@@ -171,6 +171,33 @@ extern int               LOGLEVEL;
 
 int net_move(job *, struct batch_request *);
 
+/* have_reservation - See if we have queue restrictions on max_queuable or 
+   max_user_queuable. 
+   Return true if have max queuable or max user queuable.
+   It is assumed the queue is locked coming in and going out.
+   */
+bool have_reservation(
+    
+    job *pjob, 
+    struct pbs_queue *pque)
+
+  {
+  if (pque->qu_attr[QA_ATR_MaxJobs].at_flags & ATR_VFLAG_SET)
+    {
+    pque->qu_reserved_jobs++;
+    return(true);
+    }
+
+  if (pque->qu_attr[QA_ATR_MaxUserJobs].at_flags & ATR_VFLAG_SET)
+    {
+    pque->qu_reserved_jobs++;
+    return(true);
+    }
+
+  return(false); 
+  }
+
+
 /*
  * svr_movejob
  *
@@ -273,6 +300,7 @@ int local_move(
   char       log_buf[LOCAL_LOG_BUF_SIZE];
   char       job_id[PBS_MAXSVRJOBID+1];
   int        rc;
+  bool       reservation = false;
 
   /* Sometimes multiple threads are trying to route the same job. Protect against this
    * by making sure that the destionation queue and the current queue are different. 
@@ -332,6 +360,7 @@ int local_move(
     return(should_retry_route(*my_err));
     }
 
+  reservation = have_reservation(pjob, dest_que);
   /* dequeue job from present queue, update destination and */
   /* queue_rank for new queue and enqueue into destination  */
   dest_que_mutex.unlock();
@@ -343,7 +372,7 @@ int local_move(
 
   pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
     
-  if ((*my_err = svr_enquejob(pjob, FALSE, -1)) == PBSE_JOB_RECYCLED)
+  if ((*my_err = svr_enquejob(pjob, FALSE, -1, reservation)) == PBSE_JOB_RECYCLED)
     return(-1);
 
   if (*my_err != PBSE_NONE)

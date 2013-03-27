@@ -1115,7 +1115,7 @@ extern char *add_std_filename(job *, char *, int, dynamic_string *);
 extern int   set_jobexid(job *, pbs_attribute *, char *);
 extern int   site_check_user_map(job *, char *, char *, int);
 int  svr_dequejob(job *, int);
-extern int   svr_enquejob(job *, int, int);
+extern int   svr_enquejob(job *, int, int, bool);
 extern void  svr_evaljobstate(job *, int *, int *, int);
 extern void  svr_mailowner(job *, int, int, const char *);
 extern void  set_resc_deflt(job *, pbs_attribute *, int);
@@ -1123,6 +1123,7 @@ extern void  set_statechar(job *);
 extern int   svr_setjobstate(job *, int, int, int);
 int          split_job(job *);
 
+bool   have_reservation(job *, struct pbs_queue *);
 #ifdef BATCH_REQUEST_H
 extern job  *chk_job_request(char *, struct batch_request *);
 extern int   net_move(job *, struct batch_request *);

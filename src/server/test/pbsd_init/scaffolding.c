@@ -321,7 +321,7 @@ int log_open(char *filename, char *directory)
   exit(1);
   }
 
-int svr_enquejob(job *pjob, int has_sv_qs_mutex, int prev_index)
+int svr_enquejob(job *pjob, int has_sv_qs_mutex, int prev_index, bool reservation)
   {
   fprintf(stderr, "The call to svr_enquejob needs to be mocked!!\n");
   exit(1);
