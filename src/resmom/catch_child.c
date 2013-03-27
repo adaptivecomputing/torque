@@ -44,6 +44,7 @@
 #include "pbs_cpuset.h"
 #endif
 
+#define DIS_REPLY_READ_RETRY 10
 
 
 /* External Functions */
@@ -1366,6 +1367,7 @@ void *obit_reply(
   int                   x; /* dummy */
   int                   sock = *(int *)new_sock;
   struct tcp_chan      *chan = NULL;
+  int                   count = 0;
 
   /* read and decode the reply */
 
@@ -1380,9 +1382,13 @@ void *obit_reply(
     return(NULL);
     }
 
+  /* make sure errno isn't stale */
+  errno = 0;
+
   while ((irtn = DIS_reply_read(chan, &preq->rq_reply)) &&
-         (errno == EINTR))
-    /* NO-OP, just retry for EINTR */;
+         (errno == EINTR) &&
+         (count < DIS_REPLY_READ_RETRY))
+    count++;
 
   DIS_tcp_cleanup(chan);
 

@@ -433,7 +433,7 @@ int socket_wait_for_write(
   fd_set         wfd;
   struct timeval timeout;
 
-  timeout.tv_sec = pbs_tcp_timeout;
+  timeout.tv_sec = pbs_tcp_timeout / RES_PORT_RETRY;
   timeout.tv_usec = 0;
 
   FD_ZERO(&wfd);
