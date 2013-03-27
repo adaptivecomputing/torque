@@ -166,7 +166,7 @@ int job_route(job *jobp)
   exit(1);
   }
 
-int svr_enquejob(job *pjob, int has_sv_qs_mutex, int prev_index)
+int svr_enquejob(job *pjob, int has_sv_qs_mutex, int prev_index, bool reservation)
   {
   fprintf(stderr, "The call to svr_enquejob to be mocked!!\n");
   exit(1);
