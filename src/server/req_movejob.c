@@ -243,6 +243,8 @@ int req_orderjob(
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
   pbs_queue            *pque1;
   pbs_queue            *pque2;
+  bool                  reservation1;
+  bool                  reservation2;
 
   if ((pjob1 = chk_job_request(req->rq_ind.rq_move.rq_jid, req)) == NULL)
     {
@@ -299,6 +301,7 @@ int req_orderjob(
       mutex_mgr pque2_mutex = mutex_mgr(pque2->qu_mutex, true);
       if ((rc = svr_chkque(pjob1, pque2, get_variable(pjob1, pbs_o_host), MOVE_TYPE_Order, NULL)) == PBSE_NONE)
         {
+        reservation1 = have_reservation(pjob1, pque2);
         pque2_mutex.unlock();
 
         if ((pque1 = get_jobs_queue(&pjob1)) == NULL)
@@ -311,6 +314,7 @@ int req_orderjob(
           mutex_mgr pque1_mutex = mutex_mgr(pque1->qu_mutex, true);
           if ((rc = svr_chkque(pjob2, pque1, get_variable(pjob2, pbs_o_host), MOVE_TYPE_Order, NULL)) == PBSE_NONE)
             {
+            reservation2 = have_reservation(pjob2, pque1);
             ok = TRUE;
             }
           }
@@ -342,13 +346,13 @@ int req_orderjob(
     svr_dequejob(pjob1, FALSE);
     svr_dequejob(pjob2, FALSE);
 
-    if (svr_enquejob(pjob1, FALSE, -1) == PBSE_JOB_RECYCLED)
+    if (svr_enquejob(pjob1, FALSE, -1, reservation1) == PBSE_JOB_RECYCLED)
       {
       pjob1 = NULL;
       job1_mutex.set_lock_on_exit(false);
       }
 
-    if (svr_enquejob(pjob2, FALSE, -1) == PBSE_JOB_RECYCLED)
+    if (svr_enquejob(pjob2, FALSE, -1, reservation2) == PBSE_JOB_RECYCLED)
       {
       pjob2 = NULL;
       job2_mutex.set_lock_on_exit(false);

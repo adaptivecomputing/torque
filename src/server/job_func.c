@@ -1208,7 +1208,7 @@ void *job_clone_wt(
 
       array_mgr.unlock();
 
-      if ((rc = svr_enquejob(pjobclone, FALSE, prev_index)))
+      if ((rc = svr_enquejob(pjobclone, FALSE, prev_index, false)))
         {
         /* XXX need more robust error handling */
 

@@ -2159,7 +2159,7 @@ int req_commit(
   pj->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
   pj->ji_wattr[JOB_ATR_qrank].at_flags |= ATR_VFLAG_SET;
 
-  if ((rc = svr_enquejob(pj, FALSE, -1)) != PBSE_NONE)
+  if ((rc = svr_enquejob(pj, FALSE, -1, false)) != PBSE_NONE)
     {
     if (rc != PBSE_JOB_RECYCLED)
       {
@@ -2173,6 +2173,8 @@ int req_commit(
 
       svr_job_purge(pj);
       }
+    else
+      job_mutex.unlock();
 
     req_reject(rc, 0, preq, NULL, log_buf);
 

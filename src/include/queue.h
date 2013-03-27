@@ -211,6 +211,11 @@ typedef struct pbs_queue
 
   user_info_holder *qu_uih;
   pthread_t        route_retry_thread_id;
+  int              qu_reserved_jobs; /* When moving a job from one queue to another this 
+                                      * allows us to set a count against max_queuable
+                                      * or max_user_queuable so we don't get bumped 
+                                      * out after we unlock the queue when dequeing 
+                                      * from the source queue and enqueing to the destination */
   } pbs_queue;
 
 
