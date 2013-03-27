@@ -33,6 +33,7 @@
   c ^= b; c -= rot(b,24); \
   }
 
+char log_buffer[LOG_BUF_SIZE];
 int LOGLEVEL = 0;
 all_nodes allnodes;
 struct node_state
@@ -2284,5 +2285,12 @@ void free_all_keys(hash_table_t *ht) {}
 struct pbsnode *find_node_in_allnodes(all_nodes *an, char *nodename)
   {
   return(NULL);
+  }
+
+void delete_a_subnode(
+
+  struct pbsnode *pnode)
+
+  {
   }
 
