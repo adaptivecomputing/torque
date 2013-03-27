@@ -2173,6 +2173,8 @@ int req_commit(
 
       svr_job_purge(pj);
       }
+    else
+      job_mutex.unlock();
 
     req_reject(rc, 0, preq, NULL, log_buf);
 
