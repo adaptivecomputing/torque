@@ -21,6 +21,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - TRQ-1751. Add some code to handle a corrupted job file where the job file says it
       is running but there is no exec host list. These jobs now will receive a system
       hold.
+  b - Fixed problem where max_queuable and max_user_queuable would fail incorrectly. 
+      TRQ-1494
 
 4.2.1
   b - Fix a deadlock when submitting two large arrays consecutively, the second

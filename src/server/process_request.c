@@ -1044,7 +1044,7 @@ int close_quejob_by_jobid(
     remove_job(&newjobs,pjob);
     pjob->ji_qs.ji_state = JOB_STATE_QUEUED;
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_QUEUED;
-    rc = svr_enquejob(pjob, FALSE, -1);
+    rc = svr_enquejob(pjob, FALSE, -1, false);
 
     if ((rc == PBSE_JOBNOTFOUND) ||
         (rc == PBSE_JOB_RECYCLED))
