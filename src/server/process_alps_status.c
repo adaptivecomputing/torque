@@ -307,15 +307,23 @@ int set_ncpus(
   ncpus = atoi(str + ac_cproc_eq_len);
   difference = ncpus - current->nd_nsn;
 
-  for (i = 0; i < difference; i++)
+  for (i = 0; i < abs(difference); i++)
     {
-    if (create_subnode(current) == NULL)
+    if (difference > 0)
       {
-      log_err(ENOMEM, __func__, "");
-      return(PBSE_SYSTEM);
-      }
+      if (create_subnode(current) == NULL)
+        {
+        log_err(ENOMEM, __func__, "");
+        return(PBSE_SYSTEM);
+        }
 
-    svr_clnodes++;
+      svr_clnodes++;
+      }
+    else
+      {
+      delete_a_subnode(current);
+      svr_clnodes--;
+      }
     }
 
   return(PBSE_NONE);
