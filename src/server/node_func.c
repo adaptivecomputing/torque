@@ -2418,7 +2418,7 @@ errtoken2:
  * delete_a_subnode - mark a (last) single subnode entry as deleted
  */
 
-static void delete_a_subnode(
+void delete_a_subnode(
 
   struct pbsnode *pnode)
 
