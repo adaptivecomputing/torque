@@ -326,7 +326,7 @@ int set_ncpus(
 
   if (difference < 0)
     {
-    snprintf(log_buffer, sizeof(log_buffer), "ncpus was reduced from %d to %d",
+    snprintf(log_buffer, sizeof(log_buffer), "ncpus was reduced from %d to %d",current->nd_nsn,ncpus);
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
     }
 
