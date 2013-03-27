@@ -157,7 +157,7 @@ START_TEST(get_reservation_command_test)
   free_dynamic_string(apbasil_command);
 
   hrl = parse_exec_hosts(eh3);
-  apbasil_command = get_reservation_command(hrl, uname, jobids[1], apbasil_path, apbasil_protocol, NULL, 0, 1);
+  apbasil_command = get_reservation_command(hrl, uname, jobids[1], apbasil_path, apbasil_protocol, NULL, 1, 0);
 
   reserve_param = strstr(apbasil_command->str, "ReserveParam ");
   reserve_param2 = strstr(reserve_param + 1, "ReserveParam ");
