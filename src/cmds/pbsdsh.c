@@ -896,10 +896,12 @@ int main(
 
   if ((rc = tm_nodeinfo(&nodelist, &numnodes)) != TM_SUCCESS)
     {
-    fprintf(stderr, "%s: tm_nodeinfo failed, rc = %s (%d)\n",
+    fprintf(stderr, "%s: tm_nodeinfo failed, rc = %s (%d) nodelist= %u numnodes= %d\n",
       id,
       get_ecname(rc),
-      rc);
+      rc,
+      *nodelist,
+      numnodes);
 
     return(1);
     }
