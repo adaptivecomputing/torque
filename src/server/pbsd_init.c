@@ -2339,21 +2339,46 @@ int pbsd_init_job(
 
     case JOB_SUBSTATE_RUNNING:
 
-      rc = pbsd_init_reque(pjob, KEEP_STATE);
-
-      pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_RescAssn;
-
-      set_resc_assigned(pjob, INCR);
-
-      /* suspended jobs don't get reassigned to nodes */
-
-      if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend) == 0)
+      if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL)
         {
-        set_old_nodes(pjob);
-        }
+        /* corrupt job file. job is in running state without exec_host list */
+        pjob->ji_wattr[JOB_ATR_hold].at_val.at_long |= HOLD_s;
+        pjob->ji_wattr[JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
+        pjob->ji_qs.ji_state = JOB_STATE_QUEUED;
+        pjob->ji_qs.ji_substate = JOB_SUBSTATE_QUEUED;
 
-      if (type == RECOV_HOT)
-        pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HOTSTART;
+        snprintf(log_buf, sizeof(log_buf), 
+          "Job %s file says it is in a running state but has no exec host list, adding system hold",
+          pjob->ji_qs.ji_jobid);
+        log_event(PBSEVENT_ERROR,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+        
+        if (pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str != NULL)
+          {
+          free(pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str);
+          pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str = strdup(log_buf);
+          pjob->ji_wattr[JOB_ATR_Comment].at_flags |= ATR_VFLAG_SET;
+          }
+
+        rc = pbsd_init_reque(pjob, CHANGE_STATE);
+        }
+      else
+        {
+        rc = pbsd_init_reque(pjob, KEEP_STATE);
+        
+        pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_RescAssn;
+        
+        set_resc_assigned(pjob, INCR);
+        
+        /* suspended jobs don't get reassigned to nodes */
+        
+        if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend) == 0)
+          {
+          set_old_nodes(pjob);
+          }
+        
+        if (type == RECOV_HOT)
+          pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HOTSTART;
+        }
 
       break;
 
