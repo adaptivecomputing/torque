@@ -24,6 +24,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       hold.
   b - Fixed problem where max_queuable and max_user_queuable would fail incorrectly. 
       TRQ-1494
+  b - Cray: nppn wasn't being specified in reservations. Fix this. TRQ-1660.
 
 4.2.1
   b - Fix a deadlock when submitting two large arrays consecutively, the second

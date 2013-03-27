@@ -305,8 +305,8 @@ dynamic_string *get_reservation_command(
   char            *apbasil_path,
   char            *apbasil_protocol,
   char            *multi_req_list,
-  int              mppdepth,
-  int              use_nppn)
+  int              use_nppn,
+  int              mppdepth)
 
   {
   dynamic_string *command = get_dynamic_string(-1, NULL);
