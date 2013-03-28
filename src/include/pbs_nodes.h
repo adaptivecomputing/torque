@@ -499,8 +499,8 @@ enum nodeattr
   ND_ATR_num_node_boards,
   ND_ATR_numa_str,
   ND_ATR_gpus,
-  ND_ATR_gpustatus,
   ND_ATR_gpus_str,
+  ND_ATR_gpustatus,
   ND_ATR_LAST
   }; /* WARNING: Must be the highest valued enum */
 
