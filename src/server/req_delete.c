@@ -590,8 +590,6 @@ jump:
 
     if ((pque = get_jobs_queue(&pjob)) != NULL)
       {
-      pque->qu_numcompleted++;
-
       unlock_queue(pque, __func__, NULL, LOGLEVEL);
       
       if (LOGLEVEL >= 7)
