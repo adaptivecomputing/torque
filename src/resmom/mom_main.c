@@ -207,7 +207,7 @@ char           *submithost_suffix = NULL;  /* suffix to append to submithost for
 char           *TNoSpoolDirList[TMAX_NSDCOUNT];
 char           *TRemChkptDirList[TMAX_RCDCOUNT];
 
-job            *JobsToResend[MAX_RESEND_JOBS];
+char            JobsToResend[MAX_RESEND_JOBS][PBS_MAXSVRJOBID+1];
 
 resizable_array  *exiting_job_list;
 resizable_array  *things_to_resend;
@@ -8233,33 +8233,34 @@ void examine_all_running_jobs(void)
 void examine_all_jobs_to_resend(void)
 
   {
-  int jindex;
+  int  jindex;
+  job *pjob;
 
   for (jindex=0;jindex < MAX_RESEND_JOBS;jindex++)
     {
     /* no job ptrs are stored after a NULL value */
-    if (JobsToResend[jindex] == NULL)
+    if (JobsToResend[jindex][0] == '\0')
       break;
 
     /* skip dummy job */
-    if (JobsToResend[jindex] == (job *)DUMMY_JOB_PTR)
+    if (JobsToResend[jindex][0] == (char)DUMMY_JOB_PTR)
       continue;
 
-    if (!post_epilogue(JobsToResend[jindex], MOM_OBIT_RETRY))
+    if ((pjob = mom_find_job(JobsToResend[jindex])) == NULL)
+      {
+      /* job no longer exists, remove from re-send array */
+      JobsToResend[jindex][0] = (char)DUMMY_JOB_PTR;
+      JobsToResend[jindex][1] = '\0';
+      }
+    else if (!post_epilogue(pjob, MOM_OBIT_RETRY))
       {
 
       if (LOGLEVEL >= 7)
-        {
-        log_record(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          JobsToResend[jindex]->ji_qs.ji_jobid,
-          "job obit resent");
-        }
+        log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "job obit resent");
 
       /* sent successfully, make this slot the dummy pointer */
-
-      JobsToResend[jindex] = (job *)DUMMY_JOB_PTR;
+      JobsToResend[jindex][0] = (char)DUMMY_JOB_PTR;
+      JobsToResend[jindex][1] = '\0';
       }
     }
   }  /* END examine_all_jobs_to_resend() */
@@ -8368,10 +8369,10 @@ int mark_for_resend(
 
   for (jindex = 0;jindex < MAX_RESEND_JOBS;jindex++)
     {
-    if ((JobsToResend[jindex] == NULL) ||
-        (JobsToResend[jindex] == (job *)DUMMY_JOB_PTR))
+    if ((JobsToResend[jindex][0] == '\0') ||
+        (JobsToResend[jindex][0] == (char)DUMMY_JOB_PTR))
       {
-      JobsToResend[jindex] = pjob;
+      strcpy(JobsToResend[jindex], pjob->ji_qs.ji_jobid);
 
       if (LOGLEVEL >= 7)
         {
