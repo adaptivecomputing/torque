@@ -663,14 +663,6 @@ int svr_dequejob(
         bad_ct = 1;
         log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, __func__, "qu_njstate < 0. Recount required.");
         }
-
-      if ((pjob->ji_qs.ji_state == JOB_STATE_COMPLETE) &&
-          (--pque->qu_numcompleted < 0))
-        {
-        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, __func__, "qu_numcompleted < 0. Recount required.");
-        bad_ct = 1;
-        }
-
       }
     else if (rc == PBSE_JOB_RECYCLED)
       {
@@ -1564,7 +1556,7 @@ int count_queued_jobs(
   int num_jobs = 0;
 
   if (user == NULL)
-    num_jobs = pque->qu_numjobs - pque->qu_numcompleted;
+    num_jobs = pque->qu_numjobs - pque->qu_njstate[JOB_STATE_COMPLETE];
   else
     num_jobs = get_num_queued(pque->qu_uih, user);
 
@@ -2807,7 +2799,6 @@ void correct_ct()
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "checking queue %s", pque->qu_qs.qu_name);
     log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
     pque->qu_numjobs = 0;
-    pque->qu_numcompleted = 0;
     
     for (i = 0;i < PBS_NUMJOBSTATE;++i)
       pque->qu_njstate[i] = 0;
@@ -2830,9 +2821,6 @@ void correct_ct()
       
       pque->qu_numjobs++;
       pque->qu_njstate[pjob->ji_qs.ji_state]++;
-      
-      if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
-        pque->qu_numcompleted++;
       
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       }

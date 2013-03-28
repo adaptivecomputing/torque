@@ -1561,8 +1561,6 @@ int handle_exited(
   
   if (pque != NULL)
     {
-    pque->qu_numcompleted++;
-
     unlock_queue(pque, __func__, NULL, LOGLEVEL);
     }
   else if (pjob == NULL)

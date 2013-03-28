@@ -44,6 +44,7 @@
 #include "pbs_cpuset.h"
 #endif
 
+#define DIS_REPLY_READ_RETRY 10
 
 
 /* External Functions */
@@ -1099,6 +1100,7 @@ void *preobit_reply(
 
   int                   sock = *(int *)new_sock;
   struct tcp_chan      *chan = NULL;
+  int                   count = 0;
 
   log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, __func__, "top of preobit_reply");
 
@@ -1114,8 +1116,13 @@ void *preobit_reply(
     return NULL;
     }
 
+  /* make sure errno isn't stale */
+  errno = 0;
+
   while ((irtn = DIS_reply_read(chan, &preq->rq_reply)) &&
-         (errno == EINTR));
+         (errno == EINTR) &&
+         (count < DIS_REPLY_READ_RETRY))
+    count++;
 
   pbs_disconnect_socket(sock);
   DIS_tcp_cleanup(chan);
@@ -1369,6 +1376,7 @@ void *obit_reply(
   int                   x; /* dummy */
   int                   sock = *(int *)new_sock;
   struct tcp_chan      *chan = NULL;
+  int                   count = 0;
 
   /* read and decode the reply */
 
@@ -1383,8 +1391,13 @@ void *obit_reply(
     return(NULL);
     }
 
+  /* make sure errno isn't stale */
+  errno = 0;
+
   while ((irtn = DIS_reply_read(chan, &preq->rq_reply)) &&
-         (errno == EINTR));
+         (errno == EINTR) &&
+         (count < DIS_REPLY_READ_RETRY))
+    count++;
 
   DIS_tcp_cleanup(chan);
 

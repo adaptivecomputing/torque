@@ -198,7 +198,6 @@ typedef struct pbs_queue
   pthread_mutex_t *qu_mutex; /* this queue's mutex */
 
   int              qu_numjobs;  /* current numb jobs in queue */
-  int              qu_numcompleted;  /* current numb completed jobs in queue */
   int              qu_njstate[PBS_NUMJOBSTATE]; /* # of jobs per state */
   char             qu_jobstbuf[100];
 
