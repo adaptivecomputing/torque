@@ -1,6 +1,7 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 4.2.3
+  b - TRQ-1653. Arrays depending on non-array jobs was broken. Fix this.
 
 4.2.2
   b - Make job_starter work for parallel jobs as well as serial. (TRQ-1577 - thanks
