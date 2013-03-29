@@ -23,6 +23,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       hold (backported from 4.2.2).
   b - Cray: nppn wasn't being specified in reservations. Fix this. TRQ-1660.
       (backported from 4.2.2)
+  b - TRQ-1653. Arrays depending on non-array jobs were broken. Fix this. (backported 
+      from 4.2.2)
 
 4.1.5
   b - For cray: make sure that reservations are released when jobs are requeued. TRQ-1572.

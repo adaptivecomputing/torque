@@ -745,16 +745,6 @@ int req_registerarray(
 
   type = preq->rq_ind.rq_register.rq_dependtype;
 
-  if (type < JOB_DEPEND_TYPE_AFTERSTARTARRAY)
-    {
-    unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
-    rc = PBSE_IVALREQ;
-    req_reject(rc,0,preq,NULL,
-      "Arrays may only be given array dependencies");
-
-    return(rc);
-    }
-
   /* register the dependency on the array */
 
   switch (preq->rq_ind.rq_register.rq_op)
