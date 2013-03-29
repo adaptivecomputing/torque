@@ -136,6 +136,7 @@
 #include "net_connect.h"
 #include "portability.h"
 #include "threadpool.h"
+#include "utils.h"
 
 
 #ifndef TRUE
@@ -578,7 +579,7 @@ int job_unlink_file(
 
   if ((setegid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1))
     return -1;
-  if ((seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) == -1))
+  if ((setuid_ext(pjob->ji_qs.ji_un.ji_momt.ji_exuid, TRUE) == -1))
     {
     saved_errno = errno;
     setegid(gid);
@@ -588,7 +589,7 @@ int job_unlink_file(
   result = unlink(name);
   saved_errno = errno;
 
-  seteuid(uid);
+  setuid_ext(uid, TRUE);
   setegid(gid);
 
   errno = saved_errno;
@@ -641,7 +642,7 @@ void *delete_job_files(
       log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,jfdi->jobid,log_buffer);
 
       if ((setegid(jfdi->gid) == -1) ||
-          (seteuid(jfdi->uid) == -1))
+          (setuid_ext(jfdi->uid, TRUE) == -1))
         {
         /* FAILURE */
         rc = -1;
@@ -650,7 +651,7 @@ void *delete_job_files(
         {
         rc = remtree(namebuf);
         
-        seteuid(pbsuser);
+        setuid_ext(pbsuser, TRUE);
         setegid(pbsgroup);
         }
       }

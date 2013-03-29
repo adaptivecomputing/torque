@@ -620,7 +620,7 @@ int become_the_user(
       (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
       strerror(errno));
     }
-  else if (setuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) < 0)
+  else if (setuid_ext(pjob->ji_qs.ji_un.ji_momt.ji_exuid, FALSE) < 0)
     {
     snprintf(log_buffer,sizeof(log_buffer),
       "PBS: setuid to %lu failed: %s\n",
@@ -633,11 +633,6 @@ int become_the_user(
   else
     return(PBSE_NONE);
   } /* END become_the_user() */
-
-
-
-
-
 
 
 
@@ -1073,7 +1068,7 @@ int TMakeTmpDir(
   struct stat  sb;
 
   if ((setegid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1) ||
-        (seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) == -1))
+      (setuid_ext(pjob->ji_qs.ji_un.ji_momt.ji_exuid, TRUE) == -1))
     {
     return(0);
     }
@@ -1149,7 +1144,7 @@ int TMakeTmpDir(
       }
     }     /* END if (retval == 0) */
 
-  seteuid(pbsuser);
+  setuid_ext(pbsuser, TRUE);
 
   setegid(pbsgroup);
 
@@ -3469,7 +3464,7 @@ int TMomFinalizeChild(
     starter_return(TJE->upfds,TJE->downfds,JOB_EXEC_FAIL2,&sjr);
     }
 
-  if (setuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) < 0)
+  if (setuid_ext(pjob->ji_qs.ji_un.ji_momt.ji_exuid, FALSE) < 0)
     {
     snprintf(log_buffer,sizeof(log_buffer),
              "PBS: setuid to %lu failed: %s\n",
@@ -3488,7 +3483,7 @@ int TMomFinalizeChild(
     }
 
 #ifdef _CRAY
-  seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid); /* cray kludge */
+  setuid_ext(pjob->ji_qs.ji_un.ji_momt.ji_exuid, TRUE); /* cray kludge */
 
 #endif /* CRAY */
 
@@ -4997,7 +4992,7 @@ int start_process(
     starter_return(kid_write,kid_read,JOB_EXEC_FAIL2,&sjr);
     }
 
-  if (setuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) < 0)
+  if (setuid_ext(pjob->ji_qs.ji_un.ji_momt.ji_exuid, FALSE) < 0)
     {
     snprintf(log_buffer,sizeof(log_buffer),
              "PBS: setuid to %lu failed: %s\n",
@@ -5016,7 +5011,7 @@ int start_process(
     }
 
 #ifdef _CRAY
-  seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid); /* cray kludge */
+  setuid_ext(pjob->ji_qs.ji_un.ji_momt.ji_exuid, TRUE); /* cray kludge */
 
 #endif /* CRAY */
 
@@ -6228,14 +6223,14 @@ char *std_file_name(
 
       strncat(path_alt, "/.pbs_spool/", sizeof(path_alt));
 
-      if (seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) == -1)
+      if (setuid_ext(pjob->ji_qs.ji_un.ji_momt.ji_exuid, TRUE) == -1)
         {
         return(NULL);
         }
 
       rcstat = stat(path_alt, &myspooldir);
 
-      seteuid(pbsuser);
+      setuid_ext(pbsuser, TRUE);
 
       if ((rcstat == 0) && (S_ISDIR(myspooldir.st_mode)))
         strncpy(path, path_alt, sizeof(path));
@@ -6426,7 +6421,7 @@ int open_std_file(
       return(-1);
       }
 
-    if (seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) != 0)
+    if (setuid_ext(pjob->ji_qs.ji_un.ji_momt.ji_exuid, TRUE) != 0)
       {
       snprintf(log_buffer,sizeof(log_buffer),
         "seteuid(%lu) failed, error: %s\n",
@@ -6628,7 +6623,7 @@ int open_std_file(
 
   if (changed_to_user)
     {
-    rc = seteuid(pbsuser);
+    rc = setuid_ext(pbsuser, TRUE);
     if (rc != 0)
     {
     snprintf(log_buffer,sizeof(log_buffer),
@@ -6669,14 +6664,14 @@ int open_std_file(
 reset_ids_fail:
     if (changed_to_user)
       {
-      seteuid(pbsuser);
+      setuid_ext(pbsuser, TRUE);
       setegid(pbsgroup);
       }
     return(-1);
 reset_ids_timeout:
     if (changed_to_user)
       {
-      seteuid(pbsuser);
+      setuid_ext(pbsuser, TRUE);
       setegid(pbsgroup);
       }
     return(-2);

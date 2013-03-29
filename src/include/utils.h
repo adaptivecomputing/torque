@@ -138,6 +138,7 @@ extern struct group *getgrnam_ext (char *);
 
 /* user functions in u_users.c */
 extern struct passwd *getpwnam_ext (char *);
+int                   setuid_ext(uid_t uid, int set_euid);
 
 /* tree functions in u_tree.c */
 extern void tinsert (const u_long, struct pbsnode *, tree **);
