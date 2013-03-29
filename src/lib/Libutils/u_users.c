@@ -1,9 +1,17 @@
 #include "license_pbs.h" /* See here for the software license */
+
 #include <pwd.h>
+#include <sys/types.h>
+#include <unistd.h>
+
 #include "utils.h"
 #include "errno.h"
 #include "log.h"
 #include "../Liblog/pbs_log.h"
+
+#define LDAP_RETRIES 5
+
+
 
 
 /**
@@ -12,7 +20,6 @@
  * @param user_name (I) - a string containing either the user's name or id
  * @return a pointer to the group, or NULL if the string is not a valid user id.
 **/
-
 
 struct passwd *getpwnam_ext( 
 
@@ -28,7 +35,7 @@ struct passwd *getpwnam_ext(
 
   errno = 0;
 
-  while ((pwent == NULL) && (retrycnt != -1) && (retrycnt < 5))
+  while ((pwent == NULL) && (retrycnt != -1) && (retrycnt < LDAP_RETRIES))
     {
     pwent = getpwnam( user_name );
 
@@ -60,3 +67,58 @@ struct passwd *getpwnam_ext(
 
   return(pwent);
   } /* END getpwnam_ext() */
+
+
+
+
+/*
+ * @param uid - the uid to set
+ * @param set_euid - if TRUE, call seteuid instead of setuid
+ */
+
+int setuid_ext(
+
+  uid_t uid,      /* I */
+  int   set_euid) /* I */
+
+  {
+  int count = 0;
+  int rc;
+
+  errno = 0;
+
+  while (count < LDAP_RETRIES)
+    {
+    if (set_euid == TRUE)
+      rc = seteuid(uid);
+    else
+      rc = setuid(uid);
+
+    if (rc == 0)
+      break;
+    else
+      {
+      switch (errno)
+        {
+        case EAGAIN:
+        case EINTR:
+
+          /* transient failure */
+          usleep(200);
+          count++;
+
+          break;
+
+        default:
+
+          /* permanent failure */
+          count += LDAP_RETRIES;
+          break;
+
+        }
+      }
+    } /* end retry loop */
+
+  return(rc);
+  } /* END setuid_ext() */
+
