@@ -4,6 +4,7 @@
 #include <pwd.h> /* struct passwd, gid_t */
 #include <sys/socket.h> /* sockaddr */
 #include <sys/types.h> /* pid_t */
+#include <pwd.h> /* gid_t, uid_t */
 
 #include "attribute.h" /* attribute_def, pbs_attribute, svrattrl */
 #include "pbs_ifl.h" /* PBS_MAXUSER, MAXPATHLEN */
@@ -361,6 +362,11 @@ int destroy_alps_reservation(
   char *apbasil_path,
   char *apbasil_protocol)
 
+  {
+  return(0);
+  }
+
+int setuid_ext(uid_t uid, int set_euid)
   {
   return(0);
   }

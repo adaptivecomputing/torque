@@ -146,3 +146,8 @@ int is_present(
   {
   return(0);
   }
+
+int setuid_ext(uid_t uid, int set_euid)
+  {
+  return(0);
+  }

@@ -6,6 +6,19 @@
 #include "hash_table.h"
 #include "user_info.h"
 
+int LOGLEVEL = 0;
+
+void log_event(
+
+    int eventtype,
+    int objclass,
+    const char *objname,
+    const char *text)
+
+  {
+  return;
+  }
+
 int insert_thing(resizable_array *ra, void *thing)
   {
   static int count = 0;

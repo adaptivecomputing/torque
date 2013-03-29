@@ -586,6 +586,10 @@ int wait_request(
   SelectSetSize = sizeof(char) * get_fdset_size();
   SelectSet = (fd_set *)calloc(1,SelectSetSize);
   
+  if(SelectSet == NULL)
+    {
+    return(-1);
+    }
   pthread_mutex_lock(global_sock_read_mutex);
   
   memcpy(SelectSet,GlobalSocketReadSet,SelectSetSize);
@@ -596,6 +600,14 @@ int wait_request(
 
   SocketAddrSet = (u_long *)malloc(SetSize);
   SocketPortSet = (u_long *)malloc(SetSize);
+  if((SocketAddrSet == NULL) || (SocketPortSet == NULL))
+    {
+    free(SelectSet);
+    if(SocketAddrSet != NULL) free(SocketAddrSet);
+    if(SocketPortSet != NULL) free(SocketPortSet);
+    pthread_mutex_unlock(global_sock_read_mutex);
+    return (-1);
+    }
   memcpy(SocketAddrSet,GlobalSocketAddrSet,SetSize);
   memcpy(SocketPortSet,GlobalSocketPortSet,SetSize);
 
