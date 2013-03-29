@@ -7,12 +7,12 @@
 
 struct AvlNode
   {
-  u_long	 	  key;
-  unsigned short  port;
-  struct pbsnode *pbsnode;
+  u_long           key;
+  unsigned short   port;
+  struct pbsnode  *pbsnode;
   struct AvlNode  *left;
   struct AvlNode  *right;
-  int			  height;
+  int              height;
   };
 
 typedef struct AvlNode *AvlTree;

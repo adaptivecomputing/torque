@@ -1,14 +1,13 @@
 #include "utils.h"
 #include "u_tree.h"
 
-
 /* height - returns the height of the given node */
-static int height(NodeEntry node)
+int height(NodeEntry n)
   {
-	if ( node == NULL )
-		return( -1 );
-	else
-		return( node->height );
+  if (n == NULL)
+    return(-1);
+  else
+    return(n->height);
   }
 
 static int Max( int right_side, int left_side )
@@ -33,8 +32,8 @@ static NodeEntry single_rotate_with_left( NodeEntry K2 )
   K2->left = K1->right;
   K1->right = K2;
   
-  K2->height = Max( height( K2->left ), height( K2->right ) ) + 1;
-  K1->height = Max( height( K1->left ), K2->height ) + 1;
+  K2->height = Max(height(K2->left), height(K2->right)) + 1;
+  K1->height = Max(height(K1->left), height(K1->right)) + 1;
   
   return K1;  /* New root */
   }
@@ -51,8 +50,8 @@ static NodeEntry single_rotate_with_right( NodeEntry K1 )
   K1->right = K2->left;
   K2->left = K1;
   
-  K1->height = Max( height( K1->left ), height( K1->right ) ) + 1;
-  K2->height = Max( height( K2->right ), K1->height ) + 1;
+  K1->height = Max(height(K1->left), height(K1->right)) + 1;
+  K2->height = Max(height(K2->left), height(K2->right)) + 1;
   
   return K2;  /* New root */
   }
@@ -87,13 +86,6 @@ static NodeEntry double_rotate_with_right( NodeEntry K1 )
 
 AvlTree AVL_insert( u_long key, uint16_t port, struct pbsnode *node, AvlTree tree )
   {
-
-	/* If this key is already in the tree do nothing */
-	if (AVL_is_in_tree( key, port, tree ))
-	  {
-	  return( tree );
-	  }
-
 	if (tree == NULL)
     {
     /* Create and return a node */
@@ -116,7 +108,7 @@ AvlTree AVL_insert( u_long key, uint16_t port, struct pbsnode *node, AvlTree tre
 	if (key < tree->key)
 		{
 		tree->left = AVL_insert( key, port, node, tree->left );
-		if (height( tree->left ) - height( tree->right ) == 2 )
+		if (height(tree->left) - height(tree->right) >= 2 )
 			{
 			if (key <= tree->left->key )
 				tree = single_rotate_with_left( tree );
@@ -127,7 +119,7 @@ AvlTree AVL_insert( u_long key, uint16_t port, struct pbsnode *node, AvlTree tre
 	else if (key > tree->key )
 		{
 		tree->right = AVL_insert( key, port, node, tree->right );
-		if ((height( tree->right ) - height( tree->left )) == 2 )
+		if (height(tree->right) - height(tree->left) >= 2 )
 		  {
 		  if (key >= tree->right->key)
         tree = single_rotate_with_right( tree );
@@ -138,13 +130,17 @@ AvlTree AVL_insert( u_long key, uint16_t port, struct pbsnode *node, AvlTree tre
     }
 	else
 		{
+    /* if it is in the tree, do not add it again */
+    if (port == tree->port)
+      return(tree);
+
 		/* the keys are equal. sort by port */
 		if (port != 0)
 			{
 			if (port < tree->port)
 			  {
 			  tree->left = AVL_insert( key, port, node, tree->left );
-			  if (height( tree->left ) - height( tree->right ) == 2)
+			  if (height(tree->left) - height(tree->right) >= 2)
 			  	{
 			  	if (port <= tree->left->port)
 			  		tree = single_rotate_with_left( tree );
@@ -155,7 +151,7 @@ AvlTree AVL_insert( u_long key, uint16_t port, struct pbsnode *node, AvlTree tre
 			else if (port > tree->port )
 			  {
 			  tree->right = AVL_insert( key, port, node, tree->right );
-			  if (height( tree->right ) - height( tree->left ) == 2)
+			  if (height(tree->right) - height(tree->left) >= 2)
 			  	{
 			  	if (port >= tree->right->port)
 			  		tree = single_rotate_with_right( tree );
@@ -163,12 +159,13 @@ AvlTree AVL_insert( u_long key, uint16_t port, struct pbsnode *node, AvlTree tre
 			  		tree = double_rotate_with_right( tree );
 			  	}
 			  }
-			}									  
+      }
 		}
 
 
-	tree->height = Max( height( tree->left ), height( tree->right )) + 1;
-	return( tree );
+	tree->height = Max(height(tree->left), height(tree->right)) + 1;
+
+	return(tree);
   } /* End AVL_insert */
 
 /* return a pbsnode with the corresponding key and port */
@@ -202,24 +199,19 @@ struct pbsnode *AVL_find(
 /* If the key and port are found return 1 otherwise return 0 */
 int AVL_is_in_tree(u_long key, uint16_t port, AvlTree tree)
   {
-	if (tree == NULL)
-		{
-		return( 0 );
-		}
+  AvlTree current = tree;
 
-	if (key < tree->key)
-		return( AVL_is_in_tree( key, port, tree->left ));
-	else if ( key > tree->key )
-		return( AVL_is_in_tree( key, port, tree->right ));
-	else
-		{
-		if (port < tree->port)
-			return( AVL_is_in_tree( key, port, tree->left ) );
-		else if ( port > tree->port )
-			return( AVL_is_in_tree( key, port, tree->right ));
-		}
+  while (current != NULL)
+    {
+    if (key < current->key)
+      current = current->left;
+    else if (key > current->key)
+      current = current->right;
+    else
+      return(1);
+    }
 
-		return( 1 );
+  return(0);
   } /* end AVL_is_in_tree */
 
 

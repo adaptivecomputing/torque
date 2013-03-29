@@ -744,7 +744,7 @@ int create_alps_reservation(
     log_err(-1, __func__, log_buffer);
 
     }
-  else if (LOGLEVEL >= 7)
+  else
     {
     snprintf(log_buffer, sizeof(log_buffer),
       "Failed reservation command is: %s", command->str);
