@@ -480,7 +480,7 @@ static pid_t fork_to_user(
       return(-PBSE_BADGRP);
       }
 
-    if (setuid(useruid) == -1)
+    if (setuid_ext(useruid, FALSE) == -1)
       {
       /* cannot run as the user */
 
@@ -2764,7 +2764,7 @@ int del_files(
         }
 
       /* run as the user */
-      if (setuid(useruid) != 0 && EUID0 == TRUE)
+      if (setuid_ext(useruid, FALSE) != 0 && EUID0 == TRUE)
         {
         snprintf(log_buffer,sizeof(log_buffer),
           "%s: setuid(%lu) failed: %s",

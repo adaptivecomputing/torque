@@ -320,7 +320,7 @@ int undo_set_euid_egid(
       (which == PE_PROLOGUSERJOB) || 
       (which == PE_EPILOGUSERJOB))
     {
-    if ((seteuid(real_uid) != 0) ||
+    if ((setuid_ext(real_uid, TRUE) != 0) ||
         (setegid(real_gid) != 0) ||
         (setgroups(num_gids,real_gids) != 0))
       {
@@ -517,7 +517,7 @@ int run_pelog(
       return(-1);
       }
     
-    if (seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) != 0)
+    if (setuid_ext(pjob->ji_qs.ji_un.ji_momt.ji_exuid, TRUE) != 0)
       {
       snprintf(log_buffer,sizeof(log_buffer),
         "seteuid(%lu) failed: %s\n",
@@ -1188,8 +1188,8 @@ int run_pelog(
       (which == PE_PROLOGUSERJOB) || 
       (which == PE_EPILOGUSERJOB))
     {
-      seteuid(pbsuser);
-      setegid(pbsgroup);
+    setuid_ext(pbsuser, TRUE);
+    setegid(pbsgroup);
 
     if (setgid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) != 0)
       {
@@ -1204,7 +1204,7 @@ int run_pelog(
       return(-1);
       }
     
-    if (setuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) != 0)
+    if (setuid_ext(pjob->ji_qs.ji_un.ji_momt.ji_exuid, FALSE) != 0)
       {
       snprintf(log_buffer,sizeof(log_buffer),
         "setuid(%lu) failed: %s\n",
