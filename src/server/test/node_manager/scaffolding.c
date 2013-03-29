@@ -37,7 +37,13 @@ const char *alps_reporter_feature  = "alps_reporter";
 const char *alps_starter_feature   = "alps_login";
 
 
+pbs_net_t get_hostaddr(
 
+    int *local_errno,
+    char *hostname)
+  {
+  return(0);
+  }
 
 struct batch_request *alloc_br(int type)
   {
