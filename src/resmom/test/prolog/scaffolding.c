@@ -1,6 +1,7 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
+#include <pwd.h> /* gid_t, uid_t */
 
 #include "resource.h" /* resource_def */
 #include "log.h" /* LOG_BUF_SIZE */
@@ -131,6 +132,11 @@ ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
   }
 
 ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
+  {
+  return(0);
+  }
+
+int setuid_ext(uid_t uid, int set_euid)
   {
   return(0);
   }
