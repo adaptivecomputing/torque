@@ -474,3 +474,13 @@ void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_ext(int eventtype, const char *func_name, const char *msg, int level) {}
+
+pbs_net_t get_hostaddr(
+
+  int  *local_errno, /* O */
+  char *hostname)    /* I */
+  {
+  fprintf(stderr,"ERROR: %s is mocked.\n",__func__);
+  return 0;
+  }
+
