@@ -32,6 +32,8 @@ int im_compose(struct tcp_chan *chan, char *jobid, char *cookie, int command, tm
 
 int send_sisters(struct job *pjob, int com, int using_radix);
 
+int send_ms(struct job *pjob, int com);
+
 struct hnodent *find_node(struct job *pjob, int stream, tm_node_id nodeid);
 
 void job_start_error(struct job *pjob, int code, char *nodename);
