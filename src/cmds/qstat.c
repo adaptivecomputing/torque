@@ -35,6 +35,7 @@
 
 
 static void states(  
+
   char *string, /* I */
   char *queued,      /* O */
   char *running,      /* O */
@@ -230,15 +231,13 @@ void prt_attr(
 
   start = strlen(n) + 7; /* 4 spaces + ' = ' is 7 */
 
-  printf("    %s",
-         n);
+  printf("    %s", n);
 
   if (r != NULL)
     {
     start += strlen(r) + 1;
 
-    printf(".%s",
-           r);
+    printf(".%s", r);
     }
 
   printf(" = ");
@@ -986,36 +985,98 @@ static void add_atropl(
 
 
 
+/*
+ * is_the_user
+ * determine whether or not this job is owned by the specified user
+ *
+ * @param user - the user to check against
+ * @param a - the attribute list for this job
+ */
+
+int is_the_user(
+
+  char         *user,
+  struct attrl *a)
+
+  {
+  char *at_user;
+  char *at_owner;
+  int   is_the_user = FALSE;
+
+  if ((user == NULL) ||
+      (user[0] == '\0'))
+    return(TRUE);
+
+  at_user = strchr(user, '@');
+
+  for (; a != NULL; a = a->next)
+    {
+    if (!strcmp(a->name, ATTR_owner))
+      {
+      if (at_user == NULL)
+        {
+        if ((at_owner = strchr(a->value, '@')) != NULL)
+          {
+          *at_owner = '\0';
+
+          if (!strcmp(a->value, user))
+            is_the_user = TRUE;
+
+          *at_owner = '@';
+
+          return(is_the_user);
+          }
+        else
+          {
+          if (!strcmp(a->value, user))
+            return(TRUE);
+          else
+            return(FALSE);
+          }
+        }
+      else if (!strcmp(a->value, user))
+        return(TRUE);
+      else
+        return(FALSE);
+      }
+    }
+
+  return(FALSE);
+  } /* END is_the_user() */
+
+
+
+
 /* display when a normal "qstat" is executed */
 
 void display_statjob(
 
   struct batch_status *status,    /* I (data) */
   int                  prtheader, /* I (boolean) */
-  int                  full)      /* I (boolean) */
+  int                  full,      /* I (boolean) */
+  char                *user)
 
   {
-
   struct batch_status *p;
 
-  struct attrl *a;
-  int l;
-  char *c;
-  char *jid;
-  char *name;
-  char *owner;
-  const char *timeu;
-  char *state;
-  char *location;
-  char format[80];
-  char long_name[17];
-  time_t epoch;
+  struct attrl        *a;
+  int                  l;
+  char                *c;
+  char                *jid;
+  char                *name;
+  char                *owner;
+  const char          *timeu;
+  char                *state;
+  char                *location;
+  char                 format[80];
+  char                 long_name[17];
+  time_t               epoch;
 
-  mxml_t *DE;
-  mxml_t *JE;
-  mxml_t *AE;
-  mxml_t *RE1;
-  mxml_t *JI;
+  mxml_t              *DE;
+  mxml_t              *JE;
+  mxml_t              *AE;
+  mxml_t              *RE1;
+  mxml_t              *JI;
 
   /* XML only support for full output */
 
@@ -1059,6 +1120,11 @@ void display_statjob(
     state = NULL;
     location = NULL;
 
+    if (is_the_user(user, p->attribs) == FALSE)
+      {
+      continue;
+      }
+
     if (full)
       {
       if (DisplayXML == TRUE)
@@ -1079,8 +1145,7 @@ void display_statjob(
         }
       else
         {
-        printf("Job Id: %s\n",
-               p->name);
+        printf("Job Id: %s\n", p->name);
         }
 
       a = p->attribs;
@@ -1966,47 +2031,53 @@ int main(
   char **argv)  /* I */
 
   {
-  int c;
-  int errflg = 0;
-  int any_failed = 0;
-  extern char *optarg;
-  const char *conflict = "qstat: conflicting options.\n";
+  int                  c;
+  int                  errflg = 0;
+  int                  any_failed = 0;
+  extern char         *optarg;
+  const char          *conflict = "qstat: conflicting options.\n";
 #if (TCL_QSTAT == 0)
-  char *pc;
+  char                *pc;
 #else
-  char option[3];
+  char                 option[3];
 #endif
-  int located = FALSE;
+  int                  located = FALSE;
 
 
-  char job_id[PBS_MAXCLTJOBID];
+  char                 job_id[PBS_MAXCLTJOBID];
 
-  char job_id_out[PBS_MAXCLTJOBID];
-  char server_out[MAXSERVERNAME] = "";
-  char server_old[MAXSERVERNAME] = "";
-  char rmt_server[MAXSERVERNAME];
-  char destination[PBS_MAXDEST + 1];
-  const char *def_server;
+  char                 job_id_out[PBS_MAXCLTJOBID];
+  char                 server_out[MAXSERVERNAME] = "";
+  char                 server_old[MAXSERVERNAME] = "";
+  char                 rmt_server[MAXSERVERNAME];
+  char                 user[MAXPATHLEN];
+  char                 destination[PBS_MAXDEST + 1];
+  const char          *def_server;
 
-  char *queue_name_out;
-  char *server_name_out;
+  char                *queue_name_out;
+  char                *server_name_out;
 
-  const char *ExtendOpt = NULL;
+  const char          *ExtendOpt = NULL;
 
-  char operand[PBS_MAXCLTJOBID + 1];
-  int alt_opt;
-  int f_opt, B_opt, Q_opt, t_opt, E_opt;
-  int p_header = TRUE;
-  int stat_single_job = 0;
-  enum { JOBS, QUEUES, SERVERS } mode;
+  char                 operand[PBS_MAXCLTJOBID + 1];
+  int                  alt_opt;
+  int                  f_opt;
+  int                  B_opt;
+  int                  Q_opt;
+  int                  t_opt;
+  int                  E_opt;
+  int                  p_header = TRUE;
+  int                  stat_single_job = 0;
 
   struct batch_status *p_status;
 
   struct batch_status *p_server;
 
-  struct attropl *p_atropl = 0;
-  char *errmsg;
-  int exec_only = 0;
+  struct attropl      *p_atropl = 0;
+  char                *errmsg;
+  int                  exec_only = 0;
+  
+  enum { JOBS, QUEUES, SERVERS } mode;
 
 #ifndef mbool
 #define mbool char
@@ -2025,6 +2096,8 @@ int main(
 #else
 #define GETOPT_ARGS "flQBW:"
 #endif /* PBS_NO_POSIX_VIOLATION */
+
+  user[0] = '\0';
 
   mode = JOBS; /* default */
   alt_opt = 0;
@@ -2132,8 +2205,7 @@ int main(
       case 'u':
 
         alt_opt |= ALT_DISPLAY_u;
-
-        add_atropl(&p_atropl, (char *)ATTR_u, NULL, optarg, EQ);
+        snprintf(user, sizeof(user), "%s", optarg);
 
         break;
 
@@ -2159,7 +2231,8 @@ int main(
 
       case 'f':
 
-        if (alt_opt != 0)
+        if ((alt_opt != 0) &&
+            (alt_opt != ALT_DISPLAY_u))
           {
           fprintf(stderr, "%s", conflict);
 
@@ -2269,7 +2342,7 @@ int main(
               while (*++pc == ' ')
                 /* NO-OP, moving pointer */;
 
-              add_atropl(&p_atropl, (char *)ATTR_u, (char *)0, pc, EQ);
+              snprintf(user, sizeof(user), "%s", pc);
 
               pc = pc + strlen(pc) - 1; /* for the later incr */
 
@@ -2404,6 +2477,14 @@ int main(
 
   if (def_server == NULL)
     def_server = "";
+
+  if (alt_opt & ALT_DISPLAY_u)
+    {
+    if (f_opt == 0)
+      add_atropl(&p_atropl, (char *)ATTR_u, NULL, optarg, EQ);
+    else
+      alt_opt &= ~ALT_DISPLAY_u;
+    }
 
   if (optind >= argc)
     {
@@ -2642,7 +2723,7 @@ job_no_args:
           else if ((f_opt == 0) ||
                    (condition)) 
             {
-            display_statjob(p_status, p_header, f_opt);
+            display_statjob(p_status, p_header, f_opt, user);
             }
 
           p_header = FALSE;
