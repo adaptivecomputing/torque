@@ -311,7 +311,9 @@ int socket_connect(
   memcpy(&remote.sin_addr, dest_addr, dest_addr_len);
   remote.sin_port = htons((unsigned short)dest_port);
   return socket_connect_addr(local_socket, (struct sockaddr *)&remote, r_size, is_privileged, error_msg);
-  }
+  } /* END socket_connect() */
+
+
 
 int socket_connect_addr(
     
@@ -405,7 +407,7 @@ int socket_connect_addr(
     close(local_socket);
 
   return(rc);
-  } /* END socket_connect() */
+  } /* END socket_connect_addr() */
 
 
 
