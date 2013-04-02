@@ -1,8 +1,6 @@
 #ifndef _CATCH_CHILD_H
 #define _CATCH_CHILD_H
-#ifdef TEST_FUNCTION
-#define PBS_MOM
-#endif
+
 #include "pbs_job.h"
 #include "tm_.h"
 

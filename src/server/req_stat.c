@@ -901,8 +901,9 @@ int stat_to_mom(
       (!pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str))
     {
     job_mutex.unlock();
-    sprintf(log_buffer, "Job %s missing MOM's information. Skipping statting on this job", pjob->ji_qs.ji_jobid);
-    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+    snprintf(log_buf, sizeof(log_buf),
+      "Job %s missing MOM's information. Skipping statting on this job", pjob->ji_qs.ji_jobid);
+    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     return PBSE_BAD_PARAMETER;
     }
 
@@ -1160,6 +1161,7 @@ void poll_job_task(
   time_t     time_now = time(NULL);
   long       poll_jobs = 0;
   int        job_state = -1;
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (job_id != NULL)
     {
@@ -1185,8 +1187,9 @@ void poll_job_task(
               (!pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str))
             {
             pthread_mutex_unlock(poll_job_task_mutex);
-            sprintf(log_buffer, "Job %s missing MOM's information. Skipping polling on this job", pjob->ji_qs.ji_jobid);
-            log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+            snprintf(log_buf, sizeof(log_buf),
+              "Job %s missing MOM's information. Skipping polling on this job", pjob->ji_qs.ji_jobid);
+            log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
             } 
           else
             {
