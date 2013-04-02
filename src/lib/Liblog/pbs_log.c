@@ -290,14 +290,21 @@ int log_init(
   char *hostname)  /* I (optional) */
 
   {
+  pthread_mutexattr_t log_mutex_attr;
+
   if (suffix != NULL)
     snprintf(log_suffix, sizeof(log_suffix), "%s", suffix);
 
   if (hostname != NULL)
     snprintf(log_host, sizeof(log_host), "%s", hostname);
 
+  /* Making log_mutex recursive because of signal handler like alarm
+     and may be others interrupting log_record trq-1763 */
+  pthread_mutexattr_init(&log_mutex_attr);
+  pthread_mutexattr_settype(&log_mutex_attr, PTHREAD_MUTEX_RECURSIVE);
+
   log_mutex = calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(log_mutex, NULL);
+  pthread_mutex_init(log_mutex, &log_mutex_attr);
 
   job_log_mutex = calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(job_log_mutex, NULL);
