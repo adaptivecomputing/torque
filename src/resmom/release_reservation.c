@@ -211,14 +211,33 @@ int destroy_alps_reservation(
   /* Wait until a permanent failure - success only means that ALPS has received
    * the request to release. Cray advised us to wait for a permanent failure, which
    * means that the reservation is gone. (unless you have some other problem) */
-  while ((rc != apbasil_fail_permanent) &&
-         (retry_count < APBASIL_RETRIES))
+  while (retry_count < APBASIL_RETRIES)
     {
     rc = execute_alps_release(command_buf);
     retry_count++;
 
     if (rc != apbasil_fail_permanent)
       sleep(1);
+    else
+      retry_count += APBASIL_RETRIES;
+    }
+
+  if (rc != apbasil_fail_permanent)
+    {
+    snprintf(log_buffer, sizeof(log_buffer),
+      "Failed release command is: %s", command_buf);
+    log_err(-1, __func__, log_buffer);
+    }
+  else
+    {
+    rc = PBSE_NONE;
+
+    if (LOGLEVEL >= 3)
+      {
+      snprintf(log_buffer, sizeof(log_buffer),
+        "Successful release command is: %s", command_buf);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+      }
     }
 
   return(rc);

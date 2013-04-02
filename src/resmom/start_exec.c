@@ -614,7 +614,7 @@ void exec_bail(
   sprintf(log_buffer, "bailing on job %s code %d", pjob->ji_qs.ji_jobid, code);
   log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
-  if(pjob->ji_hosts[0].hn_node == pjob->ji_nodeid) //only call send_sisters if I'm mother superior
+  if (pjob->ji_hosts[0].hn_node == pjob->ji_nodeid) //only call send_sisters if I'm mother superior
     {
     nodecount = send_sisters(pjob, IM_ABORT_JOB, FALSE);
 
