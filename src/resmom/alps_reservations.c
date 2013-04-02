@@ -600,11 +600,12 @@ int confirm_reservation(
   char       *reservation_id,
   long long   pagg_id_value,
   char       *apbasil_path,
-  char       *apbasil_protocol)
+  char       *apbasil_protocol,
+  char       *command_buf,
+  int         command_buf_size)
 
   {
   int       rc;
-  char      command_buf[MAXLINE * 2];
   FILE     *alps_pipe;
   int       fd;
   char      output[MAXLINE * 4];
@@ -617,7 +618,7 @@ int confirm_reservation(
     apbasil_protocol,
     apbasil_path,
     command_buf,
-    sizeof(command_buf));
+    command_buf_size);
 
   if ((alps_pipe = popen(command_buf, "r")) == NULL)
     {
@@ -726,6 +727,15 @@ int create_alps_reservation(
 
   if (rc == PBSE_NONE)
     {
+    char confirm_command_buf[MAXLINE * 2];
+
+    if (LOGLEVEL >= 3)
+      {
+      snprintf(log_buffer, sizeof(log_buffer),
+        "Successful reservation command is: %s", command->str);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+      }
+
     rc = 1;
     retry_count = 0;
   
@@ -733,16 +743,25 @@ int create_alps_reservation(
            (rc != apbasil_fail_permanent) &&
            (rc != PBSE_NONE))
       {
-      rc = confirm_reservation(jobid, *reservation_id, pagg_id_value, apbasil_path, apbasil_protocol);
+      rc = confirm_reservation(jobid, *reservation_id, pagg_id_value, apbasil_path, apbasil_protocol,
+                               confirm_command_buf, sizeof(confirm_command_buf));
 
       if (rc != PBSE_NONE)
         usleep(100);
       }
 
-    snprintf(log_buffer, sizeof(log_buffer),
-      "Successful reservation command is: %s", command->str);
-    log_err(-1, __func__, log_buffer);
-
+    if (rc != PBSE_NONE)
+      {
+      snprintf(log_buffer, sizeof(log_buffer),
+        "Failed confirmation command is: %s", confirm_command_buf);
+      log_err(-1, __func__, confirm_command_buf);
+      }
+    else if (LOGLEVEL >= 3)
+      {
+      snprintf(log_buffer, sizeof(log_buffer),
+        "Successful confirmation command is: %s", confirm_command_buf);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+      }
     }
   else
     {
