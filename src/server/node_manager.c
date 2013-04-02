@@ -2275,6 +2275,33 @@ void stream_eof(
   }  /* END stream_eof() */
 
 
+int contact_node(
+    
+  struct pbsnode *np)
+
+  {
+  int conn;
+  int my_err = 0;
+  char local_buf[LOCAL_LOG_BUF_SIZE];
+  pbs_net_t addr;
+  enum conn_type cntype = ToServerDIS;
+
+  /* the node is locked coming in. */
+  addr = get_hostaddr(&my_err, np->nd_name);
+  conn = svr_connect(addr, np->nd_mom_port, &my_err, np, NULL, cntype);
+  if (conn < 0)
+    {
+    snprintf(local_buf, sizeof(local_buf), "node %s is unresponsive. Check both the node and MOM", np->nd_name);  
+    log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, __func__, local_buf);
+    return(PBSE_NODE_DOWN);
+    }
+  unlock_node(np, __func__, "1", LOGLEVEL);
+  svr_disconnect(conn);
+  lock_node(np, __func__, "1", LOGLEVEL);
+
+  return(PBSE_NONE);
+
+  }
 
 
 /*
@@ -2291,6 +2318,7 @@ void *check_nodes_work(
   long              chk_len = 300;
   char              log_buf[LOCAL_LOG_BUF_SIZE];
   time_t            time_now = time(NULL);
+  int               rc;
 
   node_iterator     iter;
   
@@ -2313,16 +2341,40 @@ void *check_nodes_work(
       {
       if (np->nd_lastupdate < (time_now - chk_len)) 
         {
-        if (LOGLEVEL >= 0)
+        if (LOGLEVEL >= 6)
           {
-          sprintf(log_buf, "node %s not detected in %ld seconds, marking node down",
-            np->nd_name,
-            (long int)(time_now - np->nd_lastupdate));
+          sprintf(log_buf, "node %s not detected in %ld seconds, contacting mom",
+          np->nd_name,
+          (long int)(time_now - np->nd_lastupdate));
           
           log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
           }
-        
-        update_node_state(np, (INUSE_DOWN));    
+          
+        rc = contact_node(np);
+        if (rc != PBSE_NONE)
+          {
+          if (LOGLEVEL >= 0)
+            {
+            sprintf(log_buf, "node %s not detected in %ld seconds, marking node down",
+              np->nd_name,
+              (long int)(time_now - np->nd_lastupdate));
+            
+            log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
+            }
+          
+          update_node_state(np, (INUSE_DOWN));    
+          }
+        else
+          
+        if (LOGLEVEL >= 6)
+          {
+          sprintf(log_buf, "MOM on node %s has responded and is still up",
+          np->nd_name);
+          
+          log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
+          }
+          
+        /* The node is up. Do not mark the node down, but schedule a check_nodes */
         }
       }
     } /* END for each node */
