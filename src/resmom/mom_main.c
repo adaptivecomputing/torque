@@ -8035,8 +8035,6 @@ void examine_all_polled_jobs(void)
   {
   job         *pjob;
   int         c;
-  char        log_buffer[LOG_BUF_SIZE];
-
 
   for (pjob = (job *)GET_NEXT(mom_polljobs);pjob;
        pjob = (job *)GET_NEXT(pjob->ji_jobque))
@@ -8145,7 +8143,6 @@ void examine_all_running_jobs(void)
   int         c;
 #endif
   task         *ptask;
-  char         log_buffer[LOG_BUF_SIZE];
 
   for (pjob = (job *)GET_NEXT(svr_alljobs);
        pjob != NULL;
