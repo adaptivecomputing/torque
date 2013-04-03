@@ -5858,37 +5858,24 @@ void im_request(
             if (pjob->ji_hosts[i].hn_sister == SISTER_OKAY)
               {
               snprintf(log_buffer, sizeof(log_buffer),
-                  "KILL (job %s) still awaiting response from %s(%s)",
+                  "KILL (job %s) still awaiting response from at least %s(%s)",
                   jobid,
                   pjob->ji_hosts[i].hn_host,
                   netaddr(&pjob->ji_hosts[i].sock_addr));
-              log_err(errcode, __func__, log_buffer);
+              log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+
               awaiting_replies += 1;
-              }
-            else
-              {
-              snprintf(log_buffer, sizeof(log_buffer),
-                  "KILL (job %s)received response from %s(%s)",
-                  jobid,
-                  pjob->ji_hosts[i].hn_host,
-                  netaddr(&pjob->ji_hosts[i].sock_addr));
-              log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
+              break;
               }
             }
-          if (awaiting_replies > 0)
+
+          if (awaiting_replies == 0)
             {
             snprintf(log_buffer, LOCAL_LOG_BUF_SIZE,
-                "Still awaiting replies from %d systems", awaiting_replies);
-            log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
-            }
-          else
-            {
-            snprintf(log_buffer, LOCAL_LOG_BUF_SIZE,
-                "Job %s has received replies from all mom's", jobid);
-            }
-          
-          if (i == pjob->ji_numnodes)
-            {
+              "Job %s has received replies from all moms, setting substate to exiting",
+              jobid);
+            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+            
             /* all dead */            
             pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
             
