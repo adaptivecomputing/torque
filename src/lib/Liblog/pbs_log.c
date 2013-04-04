@@ -300,7 +300,6 @@ int log_init(
 
   /* Making log_mutex recursive because of signal handler like alarm
      and may be others interrupting log_record trq-1763 */
-
   pthread_mutexattr_init(&log_mutex_attr);
   pthread_mutexattr_settype(&log_mutex_attr, PTHREAD_MUTEX_RECURSIVE);
 

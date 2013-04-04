@@ -86,7 +86,6 @@
 #include "utils.h"
 #include "log.h"
 #include "../Liblog/pbs_log.h"
-#include "../Liblog/log_event.h"
 
 
 
@@ -220,10 +219,8 @@ static void *work_thread(
   void             *arg;
   tp_work_t        *mywork;
   tp_working_t      working;
-  /*char             *tid = (char *)pthread_self();*/
 
   struct timespec   ts;
-  /*char              log_buf[LOCAL_LOG_BUF_SIZE];*/
 
   if (request_pool == NULL)
     {
@@ -301,21 +298,8 @@ static void *work_thread(
       pthread_cleanup_push(work_cleanup,NULL);
       free(mywork);
 
-/*      if (LOGLEVEL >= 7)
-        {
-        sprintf(log_buf,"starting work from thread %s", tid);
-        log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,log_buf);
-        }*/
-
       /* do the work */
       func(arg);
-
-      /*
-      if (LOGLEVEL >= 7)
-        {
-        sprintf(log_buf,"finished work from thread %s", tid);
-        log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER,id,log_buf);
-        }*/
 
       /* cleanup the work */
       pthread_cleanup_pop(1); /* calls work_cleanup(NULL) */

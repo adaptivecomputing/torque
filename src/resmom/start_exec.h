@@ -21,8 +21,6 @@ enum csa_chk_cmd
 #define B_THRESHOLD 2048
 #define EXTRA_VARIABLE_SPACE 5120
 
-/* static void no_hang(int sig); */
-
 struct passwd *check_pwd(job *pjob);
 
 void exec_bail(job *pjob, int code);
