@@ -84,6 +84,7 @@
 
 #include <pwd.h>
 #include <limits.h>
+#include <string.h>
 
 #if TCL_QSTAT
 #include <sys/stat.h>
@@ -182,6 +183,94 @@ int istrue(
   }  /* END istrue() */
 
 
+int time_to_string(
+
+    char *time_string, 
+    int    time_to_convert)
+
+  {
+  int seconds = 0;
+  int total_minutes = 0;
+  int minutes = 0;
+  int hours = 0;
+  int mytime = 0;
+
+  mytime = time_to_convert;
+  /* Get the number of seconds in the job */
+  seconds = mytime % 60;
+  mytime -= seconds;
+
+  /* Calculate the total minutes and then get the minutes less than an hour */
+  total_minutes = mytime/60;
+  minutes = total_minutes % 60;
+  total_minutes -= minutes;
+
+  sprintf(time_string, "%.2d:%.2d:%.2d", hours, minutes, seconds);
+
+  /* Calculate hours */
+  hours = total_minutes/60;
+
+  return(PBSE_NONE);
+  }
+
+int timestring_to_int(
+    
+    char *timestring,
+    int  *req_walltime)
+
+  {
+  char *ptr_string;
+  char *ptr;
+  char *number;
+  int   hours;
+  int   minutes;
+  int   seconds;
+
+  ptr_string = (char *)malloc(strlen(timestring)+1);
+  if (ptr_string == NULL)
+    return(PBSE_MEM_MALLOC);
+
+  strcpy(ptr_string, timestring);
+  number = ptr_string;
+  ptr = strstr(ptr_string, ":");
+  if (ptr == NULL)
+    {
+    free(ptr_string);
+    return (PBSE_BAD_PARAMETER);
+    }
+  
+  *ptr = 0; 
+  ptr++;
+  hours = atoi(number);
+  hours = hours * 3600;
+  number = ptr;
+
+  ptr = strstr(ptr, ":");
+  if (ptr == NULL)
+    {
+    free(ptr_string);
+    return (PBSE_BAD_PARAMETER);
+    }
+
+  *ptr = 0; 
+  ptr++;
+  minutes = atoi(number);
+  minutes = minutes * 60;
+  number = ptr;
+
+  if (number == NULL)
+    {
+    free(ptr_string);
+    return(PBSE_BAD_PARAMETER);
+    }
+
+  seconds = atoi(number);
+  
+  *req_walltime = hours + minutes + seconds;
+
+  free(ptr_string);
+  return(PBSE_NONE);
+  }
 
 
 
@@ -594,6 +683,11 @@ static void altdsp_statjob(
   char *jstate;
   char *eltimecpu;
   char *eltimewal;
+  char *walltime_remaining = "0";
+  int  rem_walltime = 0;
+  int  req_walltime = 0;
+  int  elap_time = 0;
+  char elap_time_string[100];
   char tmpLine[MAX_LINE_LEN+1];
 
   int   usecput;
@@ -616,19 +710,17 @@ static void altdsp_statjob(
 
     if (alt_opt & ALT_DISPLAY_R)
       {
-      printf("\n                                                 Req'd  Req'd   Elap \n");
+      printf("\n                                                       Req'd  Req'd       Elap \n");
 
-      printf("Job ID               Username    Queue    NDS   TSK    Memory Time  S Time   BIG  FAST   PFS\n");
-
-      printf("-------------------- ----------- -------- ----- ------ ------ ----- - ----- ----- ----- -----\n");
+      printf("Job ID               Username    Queue    NDS   TSK    Memory Time      S Time       BIG  FAST   PFS\n");
+      printf("-------------------- ----------- -------- ----- ------ ------ --------- - --------- ----- ----- -----\n");
       }
     else
       {
-      printf("\n                                                                         Req'd  Req'd   Elap\n");
+       printf("\n                                                                               Req'd    Req'd       Elap\n");
 
-      printf("Job ID               Username    Queue    Jobname          SessID NDS   TSK    Memory Time  S Time\n");
-
-      printf("-------------------- ----------- -------- ---------------- ------ ----- ------ ------ ----- - -----\n");
+       printf("Job ID               Username    Queue    Jobname          SessID NDS   TSK    Memory   Time    S   Time\n");
+       printf("-------------------- ----------- -------- ---------------- ------ ----- ------ ------ --------- - ---------\n");
       }
     }
 
@@ -644,6 +736,7 @@ static void altdsp_statjob(
     eltimewal = blank;
     jstate    = blank;
     comment   = blank;
+    strcpy(elap_time_string, blank);
     /* *pfs      = *blank;  */
     strcpy(pfs, blank);
     /* *rqmem    = *blank;  */
@@ -653,6 +746,9 @@ static void altdsp_statjob(
     /* *srfsfast = *blank;  */
     strcpy(srfsfast, blank);
     usecput = 0;
+    elap_time = 0;
+    req_walltime = 0;
+    rem_walltime = 0;
 
     pat = pstat->attribs;
 
@@ -728,6 +824,7 @@ static void altdsp_statjob(
         else if (!strcmp(pat->resource, "walltime"))
           {
           rqtimewal = pat->value;
+          timestring_to_int(pat->value, &req_walltime);
           }
         else if (!strcmp(pat->resource, "cput"))
           {
@@ -766,9 +863,22 @@ static void altdsp_statjob(
         {
         comment = pat->value;
         }
+      else if (!strcmp(pat->name, "Walltime"))
+        {
+        walltime_remaining = pat->value;
+        rem_walltime = atoi(walltime_remaining);
+        }
+
 
       pat = pat->next;
       }
+
+    if ((*jstate != 'Q') && (*jstate != 'C'))
+      {
+      elap_time = req_walltime - rem_walltime;
+      time_to_string(elap_time_string, elap_time);
+      }
+
 
     snprintf(tmpLine, MAX_LINE_LEN, "%%-20.%ds %%-11.11s %%-8.8s ",
 
@@ -781,7 +891,7 @@ static void altdsp_statjob(
 
     if (alt_opt & ALT_DISPLAY_R)
       {
-      printf("%5.5s %*.*s %6.6s %5.5s %1.1s %5.5s %5.5s %5.5s %5.5s",
+      printf("%5.5s %*.*s %6.6s %9.9s %1.1s %9.9s %5.5s %5.5s %5.5s",
              nodect,
              tasksize,
              tasksize,
@@ -789,14 +899,14 @@ static void altdsp_statjob(
              rqmem,
              usecput ? rqtimecpu : rqtimewal,
              jstate,
-             usecput ? eltimecpu : eltimewal,
+             usecput ? eltimecpu : elap_time_string,
              srfsbig,
              srfsfast,
              pfs);
       }
     else
       {
-      snprintf(tmpLine, MAX_LINE_LEN, "%%-%d.%ds %%6.6s %%5.5s %%*.*s %%6.6s %%5.5s %%1.1s %%5.5s",
+      snprintf(tmpLine, MAX_LINE_LEN, "%%-%d.%ds %%6.6s %%5.5s %%*.*s %%6.6s %%9.9s %%1.1s %%9.9s",
                PBS_NAMELEN, PBS_NAMELEN);
 
       printf(tmpLine,
@@ -809,7 +919,7 @@ static void altdsp_statjob(
              rqmem,
              usecput ? rqtimecpu : rqtimewal,
              jstate,
-             usecput ? eltimecpu : eltimewal);
+             usecput ? eltimecpu : elap_time_string);
       }
 
     if (linesize < maxlinesize)
@@ -827,8 +937,16 @@ static void altdsp_statjob(
       /* print (scheduler) comment */
 
       if (*comment != '\0')
-        printf("   %s\n",
-               comment);
+        printf("   %s\n", comment);
+      }
+
+    /* This makes the compiler happy because this value is now
+       set but not used. It was replaced by elap_time_string.
+       I am leaving it here as an artifact incase we need to 
+       still use it. */
+    if (eltimewal)
+      {
+      ;
       }
 
     pstat = pstat->next;
@@ -1097,7 +1215,7 @@ void display_statjob(
       {
       /* display summary header TODO - the sizes of these fields should be determined from
          #defines in pbs_ifl.h */
-      printf("Job id                    Name             User            Time Use S Queue\n");
+      printf("Job ID                    Name             User            Time Use S Queue\n");
       printf("------------------------- ---------------- --------------- -------- - -----\n");
       }
     }    /* END if (!full) */
