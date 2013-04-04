@@ -446,6 +446,12 @@ static void req_stat_job_step2(
           if ((type == tjstTruncatedServer) || (type == tjstTruncatedQueue))
             IsTruncated = TRUE;
 
+          if (IsTruncated == TRUE)
+            {
+            /* This makes the compiler happy. Nothing else */
+            ;
+            }
+
           pjob = (job *)GET_NEXT(svr_alljobs);
           }
         }    /* END if (pjob == NULL) */

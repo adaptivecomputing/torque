@@ -318,6 +318,8 @@ void chkpt_xfr_hold(
   release_req(ptask);
 
   ptasknew = set_task(WORK_Immed, 0, mom_cleanup_checkpoint_hold, (void*)pjob);
+  if (ptasknew == NULL)
+    log_err(-1, (char *)__func__, "set_task failed");
 
   return;
   }  /* END chkpt_xfr_hold() */
@@ -341,6 +343,9 @@ void chkpt_xfr_done(
 
   preq = (struct batch_request *)ptask->wt_parm1;
   pjob = (job *)preq->rq_extra;
+
+  if (pjob == NULL)
+    log_err(-1, (char *)__func__, "preq->rq_extra is NULL");
   
   release_req(ptask);
 

@@ -981,6 +981,12 @@ static int chk_svr_resc_limit(
     procresc     = find_resc_def(svr_resc_def, "procs",   svr_resc_size);
     gpuresc      = find_resc_def(svr_resc_def, "gpus",   svr_resc_size);
 
+    if (gpuresc == NULL)
+      {
+      /* this keeps the compiler happy. We may use gpuresc in the future but for now it does nothing */
+      ;
+      }
+
     SvrNodeCt = 0;
 
     if (nodectresc != NULL)

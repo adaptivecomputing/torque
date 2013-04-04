@@ -2237,7 +2237,9 @@ void req_jobobit(
   char   acctbuf[RESC_USED_BUF];
   int    accttail;
   int    exitstatus;
+#ifdef USESAVEDRESOURCES
   int    have_resc_used = FALSE;
+#endif
   char   mailbuf[RESC_USED_BUF];
   int    newstate;
   int    newsubst;
@@ -2399,10 +2401,10 @@ void req_jobobit(
 
   accttail = strlen(acctbuf);
 
-  have_resc_used = get_used(patlist, acctbuf);
 
 #ifdef USESAVEDRESOURCES
 
+  have_resc_used = get_used(patlist, acctbuf);
   /* if we don't have resources from the obit, use what the job already had */
 
   if (!have_resc_used)
