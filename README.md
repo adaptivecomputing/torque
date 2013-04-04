@@ -2,8 +2,8 @@
 # TORQUE master branch README (major changes and updates go into this branch)
 #
 
-Homepage:                     http://adaptivecomputing.com/torque/
-Documentation:                http://adaptivecomputing.com/documentation/
+Homepage:                     http://www.adaptivecomputing.com/products/open-source/torque/
+Documentation:                http://docs.adaptivecomputing.com/
 Mailing list:                 torqueusers@supercluster.org
 
 OVERVIEW --------------------
@@ -26,7 +26,7 @@ INSTALL ----------------------
 
   Install directions are available at 
 
-  http://adaptivecomputing.com/documentation/
+  http://docs.adaptivecomputing.com/
   
   Additional information concerning TORQUE is available in the 
   PBS Administrator's Guide available in the admin_guide.ps found in
