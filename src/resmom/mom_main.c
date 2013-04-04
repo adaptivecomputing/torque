@@ -243,6 +243,8 @@ extern struct var_table vtable; /* see start_exec.c */
 double  wallfactor = 1.00;
 long  log_file_max_size = 0;
 long  log_file_roll_depth = 1;
+int   job_oom_score_adjust = 0;  /* no oom score adjust by default */
+int   mom_oom_immunize = 0;  /* make pbs_mom processes immune? no by default */
 
 time_t  last_log_check;
 char    *nodefile_suffix = NULL;    /* suffix to append to each host listed in job host file */
@@ -421,6 +423,8 @@ unsigned long rppthrottle(char *value);
 static unsigned long setreduceprologchecks(char *);
 static unsigned long setextpwdretry(char *);
 static unsigned long setexecwithexec(char *);
+static unsigned long setjoboomscoreadjust(char *);
+static unsigned long setmomoomimmunize(char *);
 
 static struct specials
   {
@@ -488,6 +492,8 @@ static struct specials
   { "reduce_prolog_checks",         setreduceprologchecks},
   { "ext_pwd_retry",       setextpwdretry },
   { "exec_with_exec",      setexecwithexec },
+  { "job_oom_score_adjust", setjoboomscoreadjust },
+  { "mom_oom_immunize", setmomoomimmunize },
   { NULL,                  NULL }
   };
 
@@ -1766,6 +1772,92 @@ static u_long setexecwithexec(
 
   return(1);
   } /* END setexecwithexec() */
+
+static u_long setjoboomscoreadjust(
+
+  char *value)  /* I */
+
+  {
+  static char id[] = "setjoboomscoreadjust";
+  int v = 0;
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, value);
+
+  v = atoi(value);
+
+  /* check for allowed value range */
+  if( v >= -17 && v <= 15 ) 
+    {
+    job_oom_score_adjust = v;
+    /* ok */
+    return 1; 
+    }
+  else 
+    {
+    log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, "value is out of valid range <-17,15>. Using defaults");
+    /* error */
+    return 0;
+    }
+  }  /* END setjoboomscoreadjust() */
+
+static u_long setmomoomimmunize(
+
+  char *Value)  /* I */
+
+  {
+  static char   id[] = "mom_oom_immuniuze";
+  int           enable = -1;
+
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id, Value);
+
+  if (Value == NULL)
+    {
+    /* FAILURE */
+
+    return(0);
+    }
+
+  /* accept various forms of "true", "yes", and "1" */
+  switch (Value[0])
+    {
+
+    case 't':
+
+    case 'T':
+
+    case 'y':
+
+    case 'Y':
+
+    case '1':
+
+      enable = 1;
+
+      break;
+
+    case 'f':
+
+    case 'F':
+
+    case 'n':
+
+    case 'N':
+
+    case '0':
+
+      enable = 0;
+
+      break;
+
+    }
+
+  if (enable != -1)
+    {
+    mom_oom_immunize = enable;
+    }
+
+  return(1);
+  }  /* END setmomoomimmunize() */
+
 
 
 static u_long setxauthpath(
@@ -7268,6 +7360,7 @@ int setup_program_environment(void)
   /* Create the top level torque cpuset if it doesn't already exist. */
   initialize_root_cpuset();
 #endif
+
 
   /* go into the background and become own session/process group */
 

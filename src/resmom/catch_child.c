@@ -2018,7 +2018,7 @@ void init_abort_jobs(
       if (sisters > 0)
         pj->ji_resources = (noderes *)calloc(sisters, sizeof(noderes));
 
-      if (mom_do_poll(pj) && (recover == JOB_RECOV_RUNNING))
+      if ((sisters > 0) && (recover == JOB_RECOV_RUNNING))
         append_link(&mom_polljobs, &pj->ji_jobque, pj);
       }
     }    /* while ((pdirent = readdir(dir)) != NULL) */

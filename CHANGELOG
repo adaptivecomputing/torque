@@ -16,6 +16,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - backported fix for TRQ-1088 from 4.1-fixes. max_user_queuable value is ignored. 
   c - Setting display_job_server_suffix=false crashed with job arrays. Fixed. bugzilla #216
       Backported from 4.1.3.
+  b - Add retries on transient failures to setuid and seteuid calls. TRQ-1541.
 
 2.5.12
   b - Fix so child pbs_mom does not remain running after qdel on slow starting job.
