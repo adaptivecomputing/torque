@@ -1,9 +1,16 @@
-
+#include "pbs_job.h"
 #include "test_catch_child.h"
+#include "utils.h"
 
 void catch_child(int sig);
+bool eligible_for_exiting_check(job *pjob);
+void check_jobs_main_process(job *pjob, task *ptask);
+bool non_mother_superior_cleanup(job *pjob);
+bool mother_superior_cleanup(job *pjob, int limit, int *found);
 
 extern int termin_child;
+extern int server_down;
+extern int exiting_tasks;
 
 START_TEST(test_catch_child_1)
   {
@@ -13,11 +20,88 @@ START_TEST(test_catch_child_1)
   }
 END_TEST
 
+START_TEST(test_eligible_for_exiting_check)
+  {
+  job *pjob = (job *)calloc(1, sizeof(job));
+  server_down = TRUE;
+
+  fail_unless(eligible_for_exiting_check(pjob) == false);
+  server_down = FALSE;
+  fail_unless(eligible_for_exiting_check(pjob) == false);
+  pjob->ji_wattr[JOB_ATR_Cookie].at_flags |= ATR_VFLAG_SET;
+  fail_unless(eligible_for_exiting_check(pjob) == true);
+
+  pjob->ji_flags |= MOM_CHECKPOINT_POST;
+  fail_unless(eligible_for_exiting_check(pjob) == false);
+  
+  pjob->ji_flags |= MOM_CHECKPOINT_ACTIVE;
+  fail_unless(eligible_for_exiting_check(pjob) == false);
+
+  pjob->ji_flags = 0;
+  fail_unless(eligible_for_exiting_check(pjob) == true);
+  }
+END_TEST
+
+START_TEST(test_jobs_main_process)
+  {
+  job *pjob = (job *)calloc(1, sizeof(job));
+  task ptask;
+
+  pjob->ji_wattr[JOB_ATR_job_radix].at_val.at_long = 2;
+  check_jobs_main_process(pjob, &ptask);
+  fail_unless(pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXITING);
+  
+  pjob->ji_sampletim -= 500;
+  check_jobs_main_process(pjob, &ptask);
+  fail_unless(pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXITING);
+  }
+END_TEST
+
+START_TEST(test_non_mother_superior_cleanup)
+  {
+  job *pjob = (job *)calloc(1, sizeof(job));
+
+  pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HERE;
+
+  fail_unless(non_mother_superior_cleanup(pjob) == false);
+
+  pjob->ji_qs.ji_svrflags = 0;
+  pjob->ji_qs.ji_svrflags |= JOB_SVFLG_INTERMEDIATE_MOM;
+  fail_unless(non_mother_superior_cleanup(pjob) == true);
+
+  pjob->ji_qs.ji_substate = JOB_SUBSTATE_NOTERM_REQUE;
+  fail_unless(non_mother_superior_cleanup(pjob) == true);
+  fail_unless(exiting_tasks == 1);
+  
+  pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+  fail_unless(non_mother_superior_cleanup(pjob) == true);
+  
+  pjob->ji_qs.ji_svrflags = 0;
+  fail_unless(non_mother_superior_cleanup(pjob) == true);
+  }
+END_TEST
+
+START_TEST(test_mother_superior_cleanup)
+  {
+  job *pjob = (job *)calloc(1, sizeof(job));
+  int  found_one = 1;
+
+  fail_unless(mother_superior_cleanup(pjob, 10, &found_one) == false);
+
+  pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXIT_WAIT;
+  fail_unless(mother_superior_cleanup(pjob, 1, &found_one) == true);
+  }
+END_TEST
+
 Suite *catch_child_suite(void)
   {
   Suite *s = suite_create("catch_child methods");
   TCase *tc_core = tcase_create("Core");
   tcase_add_test(tc_core, test_catch_child_1);
+  tcase_add_test(tc_core, test_eligible_for_exiting_check);
+  tcase_add_test(tc_core, test_jobs_main_process);
+  tcase_add_test(tc_core, test_non_mother_superior_cleanup);
+  tcase_add_test(tc_core, test_mother_superior_cleanup);
   suite_add_tcase(s, tc_core);
   return s;
   }

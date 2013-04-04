@@ -348,7 +348,7 @@ extern int  mom_checkpoint_job_has_checkpoint(job *pjob);
 extern int mom_checkpoint_execute_job(job *pjob, char *shell, char *arg[], struct var_table *vtable);
 extern void mom_checkpoint_init_job_periodic_timer(job *pjob);
 extern int  mom_checkpoint_start_restart(job *pjob);
-extern void get_chkpt_dir_to_use(job *pjob, char *chkpt_dir);
+extern void get_chkpt_dir_to_use(job *pjob, char *chkpt_dir, int chkpt_dir_size);
 extern char *cat_dirs(char *root, char *base);
 extern char *get_local_script_path(job *pjob, char *base);
 #ifdef NVIDIA_GPUS
@@ -690,7 +690,7 @@ int become_the_user(
       (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
       strerror(errno));
     }
-  else if (setuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) < 0)
+  else if (setuid_ext(pjob->ji_qs.ji_un.ji_momt.ji_exuid, FALSE) < 0)
     {
     snprintf(log_buffer,sizeof(log_buffer),
       "PBS: setuid to %lu failed: %s\n",
@@ -729,7 +729,7 @@ int become_the_user_sjr(
     }
 
 #ifdef _CRAY
-  seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid); /* cray kludge */
+  setuid_ext(pjob->ji_qs.ji_un.ji_momt.ji_exuid, TRUE); /* cray kludge */
 #endif /* CRAY */
 
   return(PBSE_NONE);
@@ -1205,7 +1205,7 @@ int TMakeTmpDir(
 #endif
 
   if ((setegid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1) ||
-      (seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) == -1))
+      (setuid_ext(pjob->ji_qs.ji_un.ji_momt.ji_exuid, TRUE) == -1))
     {
     return(PBSE_BADUSER);
     }
@@ -1296,7 +1296,7 @@ int TMakeTmpDir(
       }
     }     /* END if (retval == 0) */
 
-  seteuid(pbsuser);
+  setuid_ext(pbsuser, TRUE);
 
   setegid(pbsgroup);
 
@@ -2156,7 +2156,7 @@ int TMomFinalizeJob1(
       
       /* check time on the file not the directory */
       
-      get_chkpt_dir_to_use(pjob, buf);
+      get_chkpt_dir_to_use(pjob, buf, sizeof(buf));
       if (sizeof(buf) - strlen(buf) > 
             strlen(pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str) + 1)
         {
@@ -5484,7 +5484,7 @@ int start_process(
     /* add one for the jobstarter argument and one for NULL */
     argc += 2;
 
-    argv_jobstarter = (char **)calloc(argc, sizeof(char **));
+    argv_jobstarter = (char **)calloc(argc, sizeof(char *));
 
     argv_jobstarter[0] = jobstarter_exe_name;
 
@@ -7002,14 +7002,14 @@ char *std_file_name(
       /* if it's not a directory, just use $HOME us usual */
       snprintf(path_alt, sizeof(path_alt), "%s/.pbs_spool/", path);
 
-      if (seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) == -1)
+      if (setuid_ext(pjob->ji_qs.ji_un.ji_momt.ji_exuid, TRUE) == -1)
         {
         return(NULL);
         }
 
       rcstat = stat(path_alt, &myspooldir);
 
-      seteuid(pbsuser);
+      setuid_ext(pbsuser, TRUE);
 
       if ((rcstat == 0) && (S_ISDIR(myspooldir.st_mode)))
         snprintf(path, sizeof(path), "%s", path_alt);
@@ -7200,7 +7200,7 @@ int open_std_file(
       return(-1);
       }
 
-    if (seteuid(pjob->ji_qs.ji_un.ji_momt.ji_exuid) != PBSE_NONE)
+    if (setuid_ext(pjob->ji_qs.ji_un.ji_momt.ji_exuid, TRUE) != PBSE_NONE)
       {
       snprintf(log_buffer, sizeof(log_buffer),
         "seteuid(%lu) failed, error: %s\n",
@@ -7403,7 +7403,7 @@ int open_std_file(
 
   if (changed_to_user)
     {
-    rc = seteuid(pbsuser);
+    rc = setuid_ext(pbsuser, TRUE);
     if (rc != 0)
       {
       snprintf(log_buffer,sizeof(log_buffer),
@@ -7446,7 +7446,7 @@ reset_ids_fail:
 
   if (changed_to_user)
     {
-    seteuid(pbsuser);
+    setuid_ext(pbsuser, TRUE);
     setegid(pbsgroup);
     }
   return(-1);
@@ -7455,7 +7455,7 @@ reset_ids_timeout:
 
   if (changed_to_user)
     {
-    seteuid(pbsuser);
+    setuid_ext(pbsuser, TRUE);
     setegid(pbsgroup);
     }
   return(-2);

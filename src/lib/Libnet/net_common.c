@@ -311,7 +311,9 @@ int socket_connect(
   memcpy(&remote.sin_addr, dest_addr, dest_addr_len);
   remote.sin_port = htons((unsigned short)dest_port);
   return socket_connect_addr(local_socket, (struct sockaddr *)&remote, r_size, is_privileged, error_msg);
-  }
+  } /* END socket_connect() */
+
+
 
 int socket_connect_addr(
     
@@ -322,12 +324,13 @@ int socket_connect_addr(
   char            **error_msg)
 
   {
-  int cntr = 0;
-  int rc = PBSE_NONE;
-  char tmp_buf[LOCAL_LOG_BUF_SIZE+1];
-  int local_socket = *socket;
+  int   cntr = 0;
+  int   rc = PBSE_NONE;
+  char  tmp_buf[LOCAL_LOG_BUF_SIZE+1];
+  int   local_socket = *socket;
 
-  while (((rc = connect(local_socket, remote, remote_size)) != 0) && (cntr < RES_PORT_RETRY))
+  while (((rc = connect(local_socket, remote, remote_size)) != 0) &&
+         (cntr < RES_PORT_RETRY))
     {
     cntr++;
     
@@ -393,13 +396,18 @@ int socket_connect_addr(
         local_socket = -1;
         break;
       }
+
+    if (local_socket == -1)
+      break;
     }
 
   if (rc == PBSE_NONE)
     *socket = local_socket;
+  else if (local_socket != -1)
+    close(local_socket);
 
-  return rc;
-  } /* END socket_connect() */
+  return(rc);
+  } /* END socket_connect_addr() */
 
 
 

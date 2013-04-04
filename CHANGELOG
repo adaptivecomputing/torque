@@ -1,9 +1,16 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
+4.2.3
+  b - TRQ-1653. Arrays depending on non-array jobs was broken. Fix this.
+  b - Add retries on transient failures to setuid and seteuid calls. TRQ-1541. 
+  e - Add support for qstat -f -u <user>. This results in qstat -f output for only
+      the specified user.
+
 4.2.2
   b - Make job_starter work for parallel jobs as well as serial. (TRQ-1577 - thanks
       to NERSC for the patch)
   b - Fix one issue with being able to submit jobs to the cray while offline. TRQ-1595.
+  b - Make job_starter work for parallel jobs as well as serial. (TRQ-1577 - thanks
   e - Make the abort and email messages for jobs more specific when they are killed 
       for going over a limit. TRQ-1076.
   e - Add mom parameter mom_oom_immunize, making the mom immune to being killed in out
@@ -41,6 +48,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 4.1.6
   b - Make job_starter work for parallel jobs as well as serial. (TRQ-1577 - thanks
       to NERSC for the patch, backported from 4.2.2)
+  b - Fix one issue with being able to submit jobs to the cray while offline. TRQ-1595.
+      backported from 4.2.2
 
 4.1.5
   b - For cray: make sure that reservations are released when jobs are requeued. TRQ-1572.

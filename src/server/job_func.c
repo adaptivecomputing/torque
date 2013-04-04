@@ -292,9 +292,7 @@ static int remtree(
       return(-1);
       }
 
-    strcpy(namebuf, dirname);
-
-    strcat(namebuf, "/");
+    snprintf(namebuf, sizeof(namebuf), "%s/", dirname);
 
     i = strlen(namebuf);
 

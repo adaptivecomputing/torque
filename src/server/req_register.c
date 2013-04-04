@@ -719,7 +719,7 @@ int req_register(
     /* We ignore what qsub sent us for the host. We need to use the 
      * server_name so we know we can connect to the active server.
      * This is an high availability consideration */
-    if (server_name != NULL)
+    if (server_name[0] != '\0')
       strcpy(preq->rq_ind.rq_register.rq_svr, server_name);
     else
       strcpy(preq->rq_ind.rq_register.rq_svr, preq->rq_host);
@@ -837,7 +837,7 @@ int req_registerarray(
       *bracket_ptr = '\0';
       bracket_ptr++;
 
-      strcpy(range,bracket_ptr);
+      snprintf(range, sizeof(range), "%s", bracket_ptr);
       if ((bracket_ptr = strchr(range,']')) != NULL)
         {
         *bracket_ptr = '\0';
@@ -903,16 +903,6 @@ int req_registerarray(
     }
 
   type = preq->rq_ind.rq_register.rq_dependtype;
-
-  if (type < JOB_DEPEND_TYPE_AFTERSTARTARRAY)
-    {
-    unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
-    rc = PBSE_IVALREQ;
-    req_reject(rc,0,preq,NULL,
-      "Arrays may only be given array dependencies");
-
-    return(rc);
-    }
 
   /* register the dependency on the array */
 
@@ -1563,6 +1553,9 @@ int depend_on_term(
   int                rc;
   int                shouldkill = 0;
   int                type;
+
+  if (pjob == NULL)
+    return(PBSE_BAD_PARAMETER);
  
   exitstat = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
   pattr = &pjob->ji_wattr[JOB_ATR_depend];
@@ -1633,19 +1626,21 @@ int depend_on_term(
           pparent = (struct depend_job *)GET_NEXT(pdep->dp_jobs);
 
           /* skip first, its this job */
-
-          pparent = (struct depend_job *)GET_NEXT(pparent->dc_link);
-
-          while (pparent)
+          if (pparent != NULL)
             {
-            rc = send_depend_req(pjob, pparent, type, JOB_DEPEND_OP_DELETE, SYNC_SCHED_HINT_NULL, free_br);
-
-            if (rc == PBSE_JOBNOTFOUND)
-              {
-              return(rc);
-              }
-
             pparent = (struct depend_job *)GET_NEXT(pparent->dc_link);
+            
+            while (pparent)
+              {
+              rc = send_depend_req(pjob, pparent, type, JOB_DEPEND_OP_DELETE, SYNC_SCHED_HINT_NULL, free_br);
+              
+              if (rc == PBSE_JOBNOTFOUND)
+                {
+                return(rc);
+                }
+              
+              pparent = (struct depend_job *)GET_NEXT(pparent->dc_link);
+              }
             }
           }
 
@@ -2248,7 +2243,8 @@ struct depend_job *make_dependjob(
     pdj->dc_state = 0;
     pdj->dc_cost  = 0;
 
-    strcpy(pdj->dc_child, jobid);
+    snprintf(pdj->dc_child, sizeof(pdj->dc_child), "%s", jobid);
+    
     if (server_name[0] != '\0')
       strcpy(pdj->dc_svr, server_name);
     else

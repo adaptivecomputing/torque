@@ -2176,6 +2176,8 @@ int req_commit(
       decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
       svr_job_purge(pj);
       }
+    else
+      job_mutex.unlock();
 
     req_reject(rc, 0, preq, NULL, log_buf);
 

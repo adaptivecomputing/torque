@@ -2611,7 +2611,6 @@ static unsigned long setidealload(
   const char *value)
 
   {
-  char  newstr[50] = "ideal_load ";
   float  val;
 
   val = atof(value);
@@ -2631,8 +2630,6 @@ static unsigned long setidealload(
 
   if (max_load_val < 0.0)
     max_load_val = val; /* set a default */
-
-  strcat(newstr, value);
 
   return(1);
   }  /* END setidealload() */
@@ -2823,8 +2820,6 @@ static unsigned long setnodecheckscript(
   const char *value)
 
   {
-  char   newstr[1024] = "node_check_script ";
-
   struct stat sbuf;
 
   log_record(
@@ -2844,8 +2839,6 @@ static unsigned long setnodecheckscript(
 
   snprintf(PBSNodeCheckPath, sizeof(PBSNodeCheckPath), "%s", value);
 
-  strcat(newstr, value);
-
   /* SUCCESS */
 
   return(1);
@@ -2860,8 +2853,6 @@ unsigned long setnodecheckinterval(
   const char *value)
 
   {
-  char newstr[1024] = "node_check_interval ";
-
   log_record(
     PBSEVENT_SYSTEM,
     PBS_EVENTCLASS_SERVER,
@@ -2876,8 +2867,6 @@ unsigned long setnodecheckinterval(
   if (strstr(value, "jobend"))
     PBSNodeCheckEpilog = 1;
 
-  strcat(newstr, value);
-
   return(1);
   }  /* END setnodecheckinterval() */
 
@@ -2888,8 +2877,6 @@ static unsigned long settimeout(
   const char *value)
 
   {
-  char newstr[1024];
-
   log_record(
     PBSEVENT_SYSTEM,
     PBS_EVENTCLASS_SERVER,
@@ -2897,10 +2884,6 @@ static unsigned long settimeout(
     value);
 
   DIS_tcp_settimeout(strtol(value, NULL, 10));
-
-  snprintf(newstr, sizeof(newstr), "%s %s",
-           "timeout",
-           value);
 
   return(1);
   }  /* END settimeout() */
@@ -2914,7 +2897,6 @@ static unsigned long setmaxload(
   const char *value)  /* I */
 
   {
-  char  newstr[50] = "max_load ";
   float  val;
 
   val = atof(value);
@@ -2930,8 +2912,6 @@ static unsigned long setmaxload(
 
   if (ideal_load_val < 0.0)
     ideal_load_val = val;
-
-  strcat(newstr, value);
 
   return(1);
   }  /* END max_load() */
@@ -6905,7 +6885,7 @@ void parse_command_line(
 
         config_file_specified = 1;
 
-        strcpy(config_file, optarg); /* remember name */
+        snprintf(config_file, sizeof(config_file), "%s", optarg);
 
         break;
 
@@ -9091,8 +9071,8 @@ im_compose_info *create_compose_reply_info(
 
   if (ici != NULL)
     {
-    strcpy(ici->jobid, jobid);
-    strcpy(ici->cookie, cookie);
+    snprintf(ici->jobid, sizeof(ici->jobid), "%s", jobid);
+    snprintf(ici->cookie, sizeof(ici->cookie), "%s", cookie);
     memcpy(&(ici->np), np, sizeof(ici->np));
     ici->command = command;
     ici->event   = event;

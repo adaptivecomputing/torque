@@ -999,6 +999,45 @@ void cleanup_torque_cpuset(void)
 
 
 
+void remove_logical_processor_if_requested(
+
+  hwloc_bitmap_t *cpus)
+
+  {
+  hwloc_obj_t    obj;
+  hwloc_obj_t    pu;
+  int            i;
+
+  /*
+   * Handle SMT CPUs.
+   * If a system has SMT enabled, there are more than one logical CPU per physical core.
+   * If MOMConfigUseSMT is off, we only want the first logical CPU of a core in the cpuset.
+   * Thus we map the additional logical CPUs out of the cpuset.
+   * To be portable among architectures as much as possible, the only assumption that
+   * is made here is that the CPUs to become mapped out are HWLOC_OBJ_PU objects that
+   * are children of a HWLOC_OBJ_CORE object.
+   * If there are no HWLOC_OBJ_CORE objects in the cpuset, we cannot detect if cpuset members
+   * are physical or logical. Then the cpuset is left as-is.
+   */
+  if (!MOMConfigUseSMT && *cpus)
+    {
+    for (obj = hwloc_get_next_obj_inside_cpuset_by_type(topology, *cpus, HWLOC_OBJ_CORE, NULL);
+        obj;
+        obj = hwloc_get_next_obj_inside_cpuset_by_type(topology, *cpus, HWLOC_OBJ_CORE, obj))
+      {
+      i = 1;
+      while ((pu = hwloc_get_obj_inside_cpuset_by_type(topology, obj->cpuset, HWLOC_OBJ_PU, i++)) != NULL)
+        hwloc_bitmap_andnot(*cpus, *cpus, pu->cpuset);
+      }
+    }
+  }
+
+
+
+
+
+
+
 /**
  * Initializes the TORQUE cpuset.
  *
@@ -1091,7 +1130,8 @@ int init_torque_cpuset(void)
       }
     else
       {
-      /* Exists, tell what we have and return */
+      /* Exists, adjust and tell what we have and return */
+      remove_logical_processor_if_requested(&cpus);
       sprintf(log_buffer, "cpus = ");
       hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), cpus);
       log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
@@ -1115,29 +1155,7 @@ int init_torque_cpuset(void)
       goto finish;
       }
 
-  /*
-   * Handle SMT CPUs.
-   * If a system has SMT enabled, there are more than one logical CPU per physical core.
-   * If MOMConfigUseSMT is off, we only want the first logical CPU of a core in the cpuset.
-   * Thus we map the additional logical CPUs out of the cpuset.
-   * To be portable among architectures as much as possible, the only assumption that
-   * is made here is that the CPUs to become mapped out are HWLOC_OBJ_PU objects that
-   * are children of a HWLOC_OBJ_CORE object.
-   * If there are no HWLOC_OBJ_CORE objects in the cpuset, we cannot detect if cpuset members
-   * are physical or logical. Then the cpuset is left as-is.
-   */
-
-  if (!MOMConfigUseSMT)
-    {
-    for (obj = hwloc_get_next_obj_inside_cpuset_by_type(topology, cpus, HWLOC_OBJ_CORE, NULL);
-        obj;
-        obj = hwloc_get_next_obj_inside_cpuset_by_type(topology, cpus, HWLOC_OBJ_CORE, obj))
-      {
-      i = 1;
-      while ((pu = hwloc_get_obj_inside_cpuset_by_type(topology, obj->cpuset, HWLOC_OBJ_PU, i++)) != NULL)
-        hwloc_bitmap_andnot(cpus, cpus, pu->cpuset);
-      }
-    }
+  remove_logical_processor_if_requested(&cpus);
 
   /* Allocate bitmaps before querying boot cpuset */
   if ((bootcpus = hwloc_bitmap_alloc()) == NULL)

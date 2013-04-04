@@ -208,6 +208,547 @@ int send_task_obit_response(
 
 
 
+/* 
+ * Makes sure the job is in a state that makes sense to check if its obit
+ * is ready for sending.
+ *
+ * @param pjob - the job being checked
+ * @return true if the job should be checked, false otherwise
+ */
+
+bool eligible_for_exiting_check(
+
+  job *pjob)
+
+  {
+
+  /* Bypass job if it is for a server that we know is down */
+  if (is_mom_server_down(pjob->ji_qs.ji_un.ji_momt.ji_svraddr))
+    {
+    if (LOGLEVEL >= 3)
+      {
+      snprintf(log_buffer, sizeof(log_buffer),
+        "not checking job %s - server is down",
+        pjob->ji_qs.ji_jobid);
+
+      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
+      }
+
+    return(false);
+    }
+
+  /*
+  ** If a checkpoint with aborts is active,
+  ** skip it.  We don't want to report any obits
+  ** until we know that the whole thing worked.
+  */
+
+  if (pjob->ji_flags & MOM_CHECKPOINT_ACTIVE)
+    {
+    return(false);
+    }
+
+  /*
+  ** If the job has had an error doing a checkpoint with
+  ** abort, the MOM_CHECKPOINT_POST flag will be on.
+  */
+
+  if (pjob->ji_flags & MOM_CHECKPOINT_POST)
+    {
+    checkpoint_partial(pjob);
+
+    return(false);
+    }
+
+
+  if (!(pjob->ji_wattr[JOB_ATR_Cookie].at_flags & ATR_VFLAG_SET))
+    {
+    return(false);
+    }
+
+  return(true);
+  } /* END eligible_for_exiting_check() */
+
+
+
+
+/*
+ * check_jobs_main_process
+ * checks the main process for pjob and takes necessary action
+ */
+
+void check_jobs_main_process(
+
+  job   *pjob,
+  task  *ptask)
+
+  {
+  int           mom_radix;
+  int           NumSisters;
+  unsigned int  momport = 0;
+
+  /* master task is in state TI_STATE_EXITED */
+  if ((pjob->ji_qs.ji_un.ji_momt.ji_exitstat != JOB_EXEC_OVERLIMIT_MEM) &&
+      (pjob->ji_qs.ji_un.ji_momt.ji_exitstat != JOB_EXEC_OVERLIMIT_WT) &&
+      (pjob->ji_qs.ji_un.ji_momt.ji_exitstat != JOB_EXEC_OVERLIMIT_CPUT)) 
+    {
+    /* do not over-write JOB_EXEC_OVERLIMIT */
+    pjob->ji_qs.ji_un.ji_momt.ji_exitstat = ptask->ti_qs.ti_exitstat;
+    }
+
+  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "job was terminated");
+    
+  mom_radix = pjob->ji_wattr[JOB_ATR_job_radix].at_val.at_long;
+
+  if (mom_radix < 2)
+    {
+    NumSisters = send_sisters(pjob, IM_KILL_JOB, FALSE);
+    }
+  else
+    {
+    NumSisters = 1; /* We use this for later */
+
+    if (pjob->ji_sampletim == 0)
+      {
+      pjob->ji_sampletim = time(NULL);
+
+      if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) == 0)
+        {
+        /* only call send_sisters with radix == TRUE if this
+         * is mother superior intermediate moms already called
+         * this in im_request IM_KILL_JOB_RADIX */
+        NumSisters = send_sisters(pjob, IM_KILL_JOB_RADIX, TRUE);
+        pjob->ji_outstanding = NumSisters;
+        }
+      }
+    else
+      {
+      if (time(NULL) - pjob->ji_sampletim > 5)
+        {
+
+        if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) == 0)
+          {
+          /* only call send_sisters with radix == TRUE if this is
+           * mother superior intermediate moms already called this
+           * in im_request IM_KILL_JOB_RADIX */
+          NumSisters = send_sisters(pjob, IM_KILL_JOB_RADIX, TRUE);
+          pjob->ji_outstanding = NumSisters;
+          }
+        }
+      }
+    } 
+
+  if (NumSisters == 0)
+    {
+    /* no sisters contacted - should be a serial job */
+
+    if (LOGLEVEL >= 3)
+      {
+      log_event(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        "no sisters contacted - setting job substate to EXITING");
+      }
+
+    /* the job is now done executing and cleaned up, obit can be sent
+     * to pbs_server */
+    pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+
+    if (multi_mom)
+      {
+      momport = pbs_rm_port;
+      }
+
+    job_save(pjob, SAVEJOB_QUICK, momport);
+    }
+  else if (LOGLEVEL >= 3)
+    {
+    /* obit will get sent to pbs_server once sisters report in as cancelled */
+    snprintf(log_buffer, sizeof(log_buffer),
+      "%s: master task has exited - sent kill job request to %d sisters",
+      __func__, NumSisters);
+
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+    }
+  } /* END check_jobs_main_process() */
+
+
+
+
+/*
+ * process_tm_obits
+ * processes any obits for ptask. These obits would have come through the 
+ * task manager interface and notify mother superior that a remote process
+ * terminated for pjob.
+ *
+ * @param pjob - the job
+ * @param ptask - the task 
+ */
+
+void process_tm_obits(
+
+  job  *pjob,
+  task *ptask,
+  char *cookie)
+
+  {
+  obitent      *pobit;
+
+  while ((pobit = (obitent *)GET_NEXT(ptask->ti_obits)) != NULL)
+    {
+    hnodent *pnode;
+
+    pnode = get_node(pjob, pobit->oe_info.fe_node);
+
+    /* see if this is me or another MOM */
+
+#ifndef NUMA_SUPPORT
+    /* for NUMA, we are always the mother superior and the correct
+     * node for everything to happen */
+    if ((pnode != NULL) &&
+        (pjob->ji_nodeid == pnode->hn_node))
+#endif /* ndef NUMA_SUPPORT */
+      {
+      task *tmp_task;
+
+      /* send event to local child */
+
+      tmp_task = task_find(pjob, pobit->oe_info.fe_taskid);
+
+      if ((tmp_task != NULL) &&
+          (tmp_task->ti_chan != NULL))
+        {
+        tm_reply(tmp_task->ti_chan, IM_ALL_OKAY, pobit->oe_info.fe_event);
+
+        diswsi(tmp_task->ti_chan, ptask->ti_qs.ti_exitstat);
+
+        DIS_tcp_wflush(tmp_task->ti_chan);
+        }
+      }
+#ifndef NUMA_SUPPORT 
+    else
+      {
+      /*
+      ** Send a response over to MOM
+      ** whose child sent the request.
+      */
+      send_task_obit_response(pjob, pnode, cookie, pobit, ptask->ti_qs.ti_exitstat);
+      }
+#endif /* ndef NUMA_SUPPORT */
+
+    delete_link(&pobit->oe_next);
+
+    free(pobit);
+    }  /* END while (pobit) */
+  } /* END process_tm_obits() */
+
+
+
+
+/*
+ * cleanup_task 
+ *
+ * performs final cleanup on ptask
+ */
+void cleanup_task(
+
+  job  *pjob,   /* I */
+  task *ptask)  /* M */
+
+  {
+  if (ptask->ti_chan != NULL)
+    {
+    DIS_tcp_cleanup(ptask->ti_chan);
+    ptask->ti_chan = NULL;
+    }
+
+  ptask->ti_qs.ti_status = TI_STATE_DEAD;
+
+  if (LOGLEVEL >= 3)
+    {
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "task is dead");
+    }
+
+  task_save(ptask);
+  } /* END cleanup_task() */
+
+
+
+
+/*
+ * update_job_based_on_tasks
+ * Checks the status of pjob's tasks and updates pjob
+ * as needed
+ *
+ * @param job the job that is being updated
+ */
+
+void update_job_based_on_tasks(
+
+  job *pjob)
+
+  {
+  task         *ptask;
+
+  /* Check each EXITED task.  They transition to DEAD here. */
+  if (LOGLEVEL >= 6)
+    {
+    snprintf(log_buffer, sizeof(log_buffer),
+      "Checking tasks for '%s'", pjob->ji_qs.ji_jobid);
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
+    }
+
+  for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
+       ptask != NULL;
+       ptask = (task *)GET_NEXT(ptask->ti_jobtask))
+
+    {
+    if (ptask->ti_qs.ti_status != TI_STATE_EXITED)
+      continue;
+
+    /* Check if it is the main job process */
+    if (ptask->ti_qs.ti_parenttask == TM_NULL_TASK)
+      check_jobs_main_process(pjob, ptask);
+
+    process_tm_obits(pjob, ptask, pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str);
+
+    cleanup_task(pjob, ptask);
+    }  /* END for (ptask) */
+  } /* END update_job_based_on_tasks() */
+
+
+
+
+/*
+ * is_job_state_exiting
+ *
+ * checks if the job is in a valid state for 
+ */
+
+bool is_job_state_exiting(
+
+  job *pjob)
+
+  {
+  /*
+  ** Look to see if the job has terminated.  If it is
+  ** in any state other than EXITING continue on.
+  */
+
+  if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXITING) && 
+      (pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXIT_WAIT) &&
+      (pjob->ji_qs.ji_substate != JOB_SUBSTATE_NOTERM_REQUE))
+    {
+    if (LOGLEVEL >= 3)
+      {
+      snprintf(log_buffer, sizeof(log_buffer),
+        "%s:job is in non-exiting substate %s, no obit sent at this time",
+        __func__, PJobSubState[pjob->ji_qs.ji_substate]);
+  
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+      }
+
+    if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXITED)
+      {
+      /* This is quasi odd. If we are in an EXITED substate then we
+         already sent the obit to the server and it replied. But
+         we have not received a PBS_BATCH_DeleteJob request from the 
+         server. If we have tasks to complete continue. But if there
+         are no tasks left to run we need to delete the job.*/
+      if (GET_NEXT(pjob->ji_tasks) == NULL)
+        mom_deljob(pjob);
+      }
+
+    return(false);
+    }
+
+  return(true);
+  } /* END is_job_state_exiting() */
+
+
+
+
+/*
+ * non_mother_superior_cleanup() 
+ *
+ * performs cleanup for sister and intermediate sister moms
+ * @param pjob - the job we're cleaning up
+ * @return true if this mom is a sister or intermediate sister
+ */
+
+bool non_mother_superior_cleanup(
+
+  job *pjob)
+
+  {
+  if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM))
+    {
+    /* we are an intermediate mom */
+    if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXITING) &&
+        (pjob->ji_qs.ji_substate != JOB_SUBSTATE_NOTERM_REQUE))
+      {
+      /* not everyone has checked in */
+      if (LOGLEVEL >= 3)
+        {
+        snprintf(log_buffer, sizeof(log_buffer),
+          "%s:intermediate mom has not received reply from all siblings",
+          __func__);
+
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+        }
+      }
+    else if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXITING)
+      {
+      exit_mom_job(pjob, pjob->ji_wattr[JOB_ATR_job_radix].at_val.at_long);
+      }
+    else
+      {
+      kill_job(pjob, SIGKILL, __func__, "kill_job message received");
+      pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+
+      if (multi_mom)
+        job_save(pjob, SAVEJOB_QUICK, pbs_rm_port);
+      else
+        job_save(pjob, SAVEJOB_QUICK, 0);
+      
+      exiting_tasks = 1; /* Setting this to 1 will cause scan_for_exiting to execute */
+      }
+
+    return(true);
+    }
+  else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+    {
+    /* I am a regular sister.  Check to see if there is an obit event to
+     * send back to mother superior, otherwise wait for her to send a KILL_JOB
+     * so I can send the obit. */
+    exit_mom_job(pjob, pjob->ji_wattr[JOB_ATR_job_radix].at_val.at_long);
+  
+    return(true);
+    }
+  else
+    {
+    /* we are mother superior */
+    return(false);
+    }
+  } /* END non_mother_superior_cleanup() */
+
+
+
+
+/*
+ * mother_superior_cleanup
+ *
+ * we are mother superior of a job in exiting state. We are going to
+ * finish it off
+ *
+ * @param pjob - the job being finished off
+ * @return true if this is the last job we can process, false otherwise
+ */
+
+bool mother_superior_cleanup(
+
+  job *pjob,
+  int  ObitsAllowed,
+  int *found_one)
+
+  {
+  int   rc;
+  task *ptask;
+
+  pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_Suspend;
+
+  if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_NOTERM_REQUE) &&
+      (pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXIT_WAIT))
+    kill_job(pjob, SIGKILL, __func__, "local task termination detected");
+  else
+    {
+    ptask = (task *)GET_NEXT(pjob->ji_tasks);
+
+    while (ptask != NULL)
+      {
+      if (ptask->ti_qs.ti_status == TI_STATE_RUNNING)
+        {
+        if (LOGLEVEL >= 4)
+          {
+          log_record(
+            PBSEVENT_JOB,
+            PBS_EVENTCLASS_JOB,
+            pjob->ji_qs.ji_jobid,
+            "kill_job found a task to kill");
+          }
+
+        if (pjob->ji_qs.ji_un.ji_momt.ji_exitstat != 0)
+          ptask->ti_qs.ti_exitstat = pjob->ji_qs.ji_un.ji_momt.ji_exitstat;
+        else
+          ptask->ti_qs.ti_exitstat = 0;  /* assume successful completion */
+
+        ptask->ti_qs.ti_status = TI_STATE_EXITED;
+
+        task_save(ptask);
+        }
+
+      ptask = (task *)GET_NEXT(ptask->ti_jobtask);
+      }  /* END while (ptask != NULL) */
+
+    }
+
+#ifdef ENABLE_CPA
+  if (CPADestroyPartition(pjob) != 0)
+    return(false);
+#endif
+
+  delete_link(&pjob->ji_jobque); /* unlink for poll list */
+
+  /*
+   * +  Open connection to the Server (for the Job Obituary)
+   * +  Set the connection to call obit_reply when the reply
+   *    arrives.
+   * +  fork child process, parent looks for more terminated jobs.
+   * Child:
+   * +  Run the epilogue script (if one)
+   * +  Send the Job Obit Request (notice).
+   */
+
+  if (LOGLEVEL >= 6)
+    {
+    log_record(
+      PBSEVENT_DEBUG,
+      PBS_EVENTCLASS_SERVER,
+      __func__,
+      "calling mom_open_socket_to_jobs_server");
+    }
+
+  /* epilogues are now run by preobit reply, which happens after the fork */
+
+  pjob->ji_qs.ji_substate = JOB_SUBSTATE_PREOBIT;
+
+  rc = send_job_status(pjob);
+
+  if (rc != PBSE_NONE)
+    {
+    pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXIT_WAIT;
+    if (LOGLEVEL >= 4)
+      {
+      snprintf(log_buffer, LOCAL_LOG_BUF_SIZE, "could not contact server for job %s: error: %d", 
+        pjob->ji_qs.ji_jobid, rc);
+      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+      }
+    }
+
+  if (*found_one++ >= ObitsAllowed)
+    {
+    /* do not exceed max obits per iteration limit */
+
+    return(true);
+    }
+
+  return(false);
+  } /* END mother_superior_cleanup() */
+
+
+
+
 /**
  * For all jobs in MOM
  *   ignore job if job's pbs_server is down
@@ -290,22 +831,12 @@ int send_task_obit_response(
 void scan_for_exiting(void)
 
   {
-  int           found_one = 0;
   job          *nextjob;
   job          *pjob;
-  task         *ptask;
-  obitent      *pobit;
-  char         *cookie;
-  task         *task_find(job *, tm_task_id);
-  int          rc = PBSE_NONE;
+  int           found_one = 0;
 
-  unsigned int  momport = 0;
   static int    ForceObit    = -1;   /* boolean - if TRUE, ObitsAllowed will be enforced */
   static int    ObitsAllowed = 1;
-  int           mom_radix = 0;
-
-  int           NumSisters;
-  char          log_buf[LOCAL_LOG_BUF_SIZE];
 
   /*
   ** Look through the jobs.  Each one has it's tasks examined
@@ -315,11 +846,7 @@ void scan_for_exiting(void)
 
   if (LOGLEVEL >= 3)
     {
-    log_record(
-      PBSEVENT_DEBUG,
-      PBS_EVENTCLASS_SERVER,
-      __func__,
-      "searching for exiting jobs");
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, __func__, "searching for exiting jobs");
     }
 
   if (ForceObit == -1)
@@ -354,432 +881,24 @@ void scan_for_exiting(void)
     {
     nextjob = (job *)GET_NEXT(pjob->ji_alljobs);
 
-    /*
-     * Bypass job if it is for a server that we know is down
-     */
-
-    if (is_mom_server_down(pjob->ji_qs.ji_un.ji_momt.ji_svraddr))
-      {
-      if (LOGLEVEL >= 3)
-        {
-        snprintf(log_buffer, sizeof(log_buffer), "not checking job %s - server is down",
-                 pjob->ji_qs.ji_jobid);
-
-        log_record(
-          PBSEVENT_DEBUG,
-          PBS_EVENTCLASS_SERVER,
-          __func__,
-          log_buffer);
-        }
-
+    if (eligible_for_exiting_check(pjob) == false)
       continue;
-      }
 
-    /*
-    ** If a checkpoint with aborts is active,
-    ** skip it.  We don't want to report any obits
-    ** until we know that the whole thing worked.
-    */
+    update_job_based_on_tasks(pjob);
 
-    if (pjob->ji_flags & MOM_CHECKPOINT_ACTIVE)
-      {
+    if (is_job_state_exiting(pjob) == false)
       continue;
-      }
 
-    /*
-    ** If the job has had an error doing a checkpoint with
-    ** abort, the MOM_CHECKPOINT_POST flag will be on.
-    */
-
-    if (pjob->ji_flags & MOM_CHECKPOINT_POST)
+    if (non_mother_superior_cleanup(pjob) == false)
       {
-      checkpoint_partial(pjob);
-
-      continue;
-      }
-
-
-    if (!(pjob->ji_wattr[JOB_ATR_Cookie].at_flags & ATR_VFLAG_SET))
-      {
-      continue;
-      }
-
-    cookie = pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str;
-
-    /*
-    ** Check each EXITED task.  They transition to DEAD here.
-    */
-
-    if (LOGLEVEL >= 6)
-      {
-      log_record(
-        PBSEVENT_DEBUG,
-        PBS_EVENTCLASS_SERVER,
-        __func__,
-        "working on a job");
-      }
-
-
-    for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
-         ptask != NULL;
-         ptask = (task *)GET_NEXT(ptask->ti_jobtask))
-
-      {
-      if (ptask->ti_qs.ti_status != TI_STATE_EXITED)
-        continue;
-
-      /*
-      ** Check if it is the top shell.
-      */
-
-      if (ptask->ti_qs.ti_parenttask == TM_NULL_TASK)
+      /* returning false means we are mother superior */
+      if (mother_superior_cleanup(pjob, ObitsAllowed, &found_one) == true)
         {
-        /* master task is in state TI_STATE_EXITED */
-        if ((pjob->ji_qs.ji_un.ji_momt.ji_exitstat != JOB_EXEC_OVERLIMIT_MEM) &&
-            (pjob->ji_qs.ji_un.ji_momt.ji_exitstat != JOB_EXEC_OVERLIMIT_WT) &&
-            (pjob->ji_qs.ji_un.ji_momt.ji_exitstat != JOB_EXEC_OVERLIMIT_CPUT)) 
-          {
-          /* do not over-write JOB_EXEC_OVERLIMIT */
-          pjob->ji_qs.ji_un.ji_momt.ji_exitstat = ptask->ti_qs.ti_exitstat;
-          }
-
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "job was terminated");
-          
-        mom_radix = pjob->ji_wattr[JOB_ATR_job_radix].at_val.at_long;
-
-        if (mom_radix < 2)
-          {
-          NumSisters = send_sisters(pjob, IM_KILL_JOB, FALSE);
-          }
-        else
-          {
-          NumSisters = 1; /* We use this for later */
-
-          if (pjob->ji_sampletim == 0)
-            {
-            pjob->ji_sampletim = time(NULL);
-
-            if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) == 0)
-              {
-              /* only call send_sisters with radix == TRUE if this
-               * is mother superior intermediate moms already called
-               * this in im_request IM_KILL_JOB_RADIX */
-              NumSisters = send_sisters(pjob, IM_KILL_JOB_RADIX, TRUE);
-              pjob->ji_outstanding = NumSisters;
-              }
-            }
-          else
-            {
-            time_t time_now;
-
-            time_now = time(NULL);
-            if (time_now - pjob->ji_sampletim > 5)
-              {
-
-              if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) == 0)
-                {
-                /* only call send_sisters with radix == TRUE if this is
-                 * mother superior intermediate moms already called this
-                 * in im_request IM_KILL_JOB_RADIX */
-                NumSisters = send_sisters(pjob, IM_KILL_JOB_RADIX, TRUE);
-                pjob->ji_outstanding = NumSisters;
-                }
-              }
-            }
-          } 
-
-        if (NumSisters == 0)
-          {
-          /* no sisters contacted - should be a serial job */
-
-          if (LOGLEVEL >= 3)
-            {
-            log_event(
-              PBSEVENT_JOB,
-              PBS_EVENTCLASS_JOB,
-              pjob->ji_qs.ji_jobid,
-              "no sisters contacted - setting job substate to EXITING");
-            }
-
-          pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
-
-          if (multi_mom)
-            {
-            momport = pbs_rm_port;
-            }
-
-          job_save(pjob, SAVEJOB_QUICK, momport);
-          }
-        else if (LOGLEVEL >= 3)
-          {
-          snprintf(log_buffer, sizeof(log_buffer),
-            "%s: master task has exited - sent kill job request to %d sisters",
-            __func__, NumSisters);
-
-          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
-          }
-        }    /* END if (ptask->ti_qs.ti_parenttask == TM_NULL_TASK) */
-
-      /*
-      ** process any TM client obits waiting.
-      */
-
-      while ((pobit = (obitent *)GET_NEXT(ptask->ti_obits)) != NULL)
-        {
-        hnodent *pnode;
-
-        pnode = get_node(pjob, pobit->oe_info.fe_node);
-
-        /* see if this is me or another MOM */
-
-#ifndef NUMA_SUPPORT
-        /* for NUMA, we are always the mother superior and the correct
-         * node for everything to happen */
-        if ((pnode != NULL) &&
-            (pjob->ji_nodeid == pnode->hn_node))
-#endif /* ndef NUMA_SUPPORT */
-          {
-          task *tmp_task;
-
-          /* send event to local child */
-
-          tmp_task = task_find(pjob, pobit->oe_info.fe_taskid);
-
-          if ((tmp_task != NULL) &&
-              (tmp_task->ti_chan != NULL))
-            {
-            tm_reply(tmp_task->ti_chan, IM_ALL_OKAY, pobit->oe_info.fe_event);
-
-            diswsi(tmp_task->ti_chan, ptask->ti_qs.ti_exitstat);
-
-            DIS_tcp_wflush(tmp_task->ti_chan);
-            }
-          }
-#ifndef NUMA_SUPPORT 
-        else
-          {
-          /*
-          ** Send a response over to MOM
-          ** whose child sent the request.
-          */
-          send_task_obit_response(pjob, pnode, cookie, pobit, ptask->ti_qs.ti_exitstat);
-          }
-#endif /* ndef NUMA_SUPPORT */
-
-        delete_link(&pobit->oe_next);
-
-        free(pobit);
-        }  /* END while (pobit) */
-
-      if (ptask->ti_chan != NULL)
-        {
-        DIS_tcp_cleanup(ptask->ti_chan);
-        ptask->ti_chan = NULL;
-        }
-
-      ptask->ti_qs.ti_status = TI_STATE_DEAD;
-
-      if (LOGLEVEL >= 3)
-        {
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "task is dead");
-        }
-
-      task_save(ptask);
-      }  /* END for (ptask) */
-    
-    /* If we are an intermediate mom we need to see if everyone has checked in */
-	  if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM))
-	    {
-	    if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXITING) &&
-          (pjob->ji_qs.ji_substate != JOB_SUBSTATE_NOTERM_REQUE))
-	  	  {
-	  	  if (LOGLEVEL >= 3)
-	  	    {
-	  	    snprintf(log_buffer, sizeof(log_buffer),
-            "%s:intermediate mom has not received reply from all siblings",
-            __func__);
-
-	  	  	log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
-	  	    }
-        
-        continue;
+        /* returning true means we can't process any more jobs this iteration */
+        break;
         }
       }
 
-    /*
-    ** Look to see if the job has terminated.  If it is
-    ** in any state other than EXITING continue on.
-    */
-
-    if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXITING) && 
-        (pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXIT_WAIT) &&
-        (pjob->ji_qs.ji_substate != JOB_SUBSTATE_NOTERM_REQUE))
-      {
-      if (LOGLEVEL >= 3)
-        {
-        snprintf(log_buffer, sizeof(log_buffer),
-          "%s:job is in non-exiting substate %s, no obit sent at this time",
-          __func__, PJobSubState[pjob->ji_qs.ji_substate]);
-    
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
-        }
-
-      if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXITED)
-        {
-        /* This is quasi odd. If we are in an EXITED substate then we
-           already sent the obit to the server and it replied. But
-           we have not received a PBS_BATCH_DeleteJob request from the 
-           server. If we have tasks to complete continue. But if there
-           are no tasks left to run we need to delete the job.*/
-        ptask = (task *)GET_NEXT(pjob->ji_tasks);
-
-        if (ptask == NULL)
-          mom_deljob(pjob);
-        }
-
-      continue;
-      }
-
-    /*
-    ** Look to see if I am a regular sister.  If so,
-    ** check to see if there is an obit event to
-    ** send back to mother superior.
-    ** Otherwise, I need to wait for her to send a KILL_JOB
-    ** so I can send the obit (unless she died).
-    */
-
-#ifndef NUMA_SUPPORT
-    if (((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0) &&
-        ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) == 0))
-      {
-      mom_radix = pjob->ji_wattr[JOB_ATR_job_radix].at_val.at_long;
-      exit_mom_job(pjob, mom_radix);
-      continue;
-      }  /* END if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0) */
-
-
-    /* Are we an intermediate mom? If so kill our job
-       and tell the mom who called us */
-    if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM)
-      {
-      if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXITING)
-        {
-        mom_radix = pjob->ji_wattr[JOB_ATR_job_radix].at_val.at_long;
-        exit_mom_job(pjob, mom_radix);
-        }
-      else
-        {
-        kill_job(pjob, SIGKILL, __func__, "kill_job message received");
-        pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
-
-        /*pjob->ji_obit = event;*/
-        
-        if (multi_mom)
-          {
-          momport = pbs_rm_port;
-          }
-        job_save(pjob, SAVEJOB_QUICK, momport);
-        
-        exiting_tasks = 1; /* Setting this to 1 will cause scan_for_exiting to execute */
-        
-        }
-
-      continue;
-      }
-
-#endif /* NUMA_SUPPORT */
-
-    /*
-     * At this point, we know we are Mother Superior for this
-     * job which is EXITING.  Time for it to die.
-     */
-
-    pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_Suspend;
-
-    if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_NOTERM_REQUE) &&
-        (pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXIT_WAIT))
-      kill_job(pjob, SIGKILL, __func__, "local task termination detected");
-    else
-      {
-      ptask = (task *)GET_NEXT(pjob->ji_tasks);
-
-      while (ptask != NULL)
-        {
-        if (ptask->ti_qs.ti_status == TI_STATE_RUNNING)
-          {
-          if (LOGLEVEL >= 4)
-            {
-            log_record(
-              PBSEVENT_JOB,
-              PBS_EVENTCLASS_JOB,
-              pjob->ji_qs.ji_jobid,
-              "kill_job found a task to kill");
-            }
-
-          if (pjob->ji_qs.ji_un.ji_momt.ji_exitstat != 0)
-            ptask->ti_qs.ti_exitstat = pjob->ji_qs.ji_un.ji_momt.ji_exitstat;
-          else
-            ptask->ti_qs.ti_exitstat = 0;  /* assume successful completion */
-
-          ptask->ti_qs.ti_status = TI_STATE_EXITED;
-
-          task_save(ptask);
-          }
-
-        ptask = (task *)GET_NEXT(ptask->ti_jobtask);
-        }  /* END while (ptask != NULL) */
-
-      }
-
-#ifdef ENABLE_CPA
-    if (CPADestroyPartition(pjob) != 0)
-      continue;
-#endif
-
-    delete_link(&pjob->ji_jobque); /* unlink for poll list */
-
-    /*
-     * +  Open connection to the Server (for the Job Obituary)
-     * +  Set the connection to call obit_reply when the reply
-     *    arrives.
-     * +  fork child process, parent looks for more terminated jobs.
-     * Child:
-     * +  Run the epilogue script (if one)
-     * +  Send the Job Obit Request (notice).
-     */
-
-    if (LOGLEVEL >= 6)
-      {
-      log_record(
-        PBSEVENT_DEBUG,
-        PBS_EVENTCLASS_SERVER,
-        __func__,
-        "calling mom_open_socket_to_jobs_server");
-      }
-
-    /* epilogues are now run by preobit reply, which happens after the fork */
-
-    pjob->ji_qs.ji_substate = JOB_SUBSTATE_PREOBIT;
-
-    rc = send_job_status(pjob);
-
-    if (rc != PBSE_NONE)
-      {
-      pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXIT_WAIT;
-      if (LOGLEVEL >= 4)
-        {
-        snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "could not contact server for job %s: error: %d", 
-          pjob->ji_qs.ji_jobid, rc);
-        log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-        }
-      }
-
-    if (found_one++ >= ObitsAllowed)
-      {
-      /* do not exceed max obits per iteration limit */
-
-      break;
-      }
     }  /* END for (pjob) */
 
   if ((pjob == NULL) &&
@@ -789,8 +908,6 @@ void scan_for_exiting(void)
 
     exiting_tasks = 0; /* went through all jobs */
     }
-
-  /* FYI: this socket is closed in preobit_reply, the callback function */
 
   return;
   }  /* END scan_for_exiting() */
@@ -1249,26 +1366,6 @@ void *preobit_reply(
 
   free_br(preq);
 
-  if (deletejob == 1)
-    {
-    log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
-
-    if (!(pjob->ji_wattr[JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) ||
-        (pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long == 0))
-      {
-      int x; /* dummy */
-
-      /* do this if not interactive */
-      job_unlink_file(pjob, std_file_name(pjob, StdOut, &x));
-      job_unlink_file(pjob, std_file_name(pjob, StdErr, &x));
-      job_unlink_file(pjob, std_file_name(pjob, Checkpoint, &x));
-      }
-
-    mom_deljob(pjob);
-
-    return(NULL);
-    }
-
   /* at this point, server gave us a valid response so we can run epilogue */
   if (LOGLEVEL >= 2)
     {
@@ -1318,6 +1415,23 @@ void *preobit_reply(
       log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
       }
 
+    if (deletejob == 1)
+      {
+      log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+
+      if (!(pjob->ji_wattr[JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) ||
+          (pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long == 0))
+        {
+        int x; /* dummy */
+
+        /* do this if not interactive */
+        job_unlink_file(pjob, std_file_name(pjob, StdOut, &x));
+        job_unlink_file(pjob, std_file_name(pjob, StdErr, &x));
+        job_unlink_file(pjob, std_file_name(pjob, Checkpoint, &x));
+        }
+
+      mom_deljob(pjob);
+      }
     return(NULL);
     }
 

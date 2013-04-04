@@ -6,6 +6,7 @@
 #include <signal.h> /* sigset_t */
 #include <md5.h> /* MD5_CTX */
 #include <sys/socket.h> /* sockaddr_in, sockaddr */
+#include <pwd.h> /* gid_t, uid_t */
 
 #include "attribute.h" /* attribute_def, pbs_attribute, svrattrl */
 #include "resource.h" /* resource_def */
@@ -460,7 +461,7 @@ int diswsi(int stream, int value)
   exit(1);
   }
 
-void get_chkpt_dir_to_use(job *pjob, char *chkpt_dir)
+void get_chkpt_dir_to_use(job *pjob, char *chkpt_dir, int size)
   {
   fprintf(stderr, "The call to get_chkpt_dir_to_use needs to be mocked!!\n");
   exit(1);
@@ -505,4 +506,9 @@ ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
 proc_stat_t *get_proc_stat(int pid)
   {
   return(NULL);
+  }
+
+int setuid_ext(uid_t uid, int set_euid)
+  {
+  return(0);
   }

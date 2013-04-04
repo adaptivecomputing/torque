@@ -590,7 +590,7 @@ unsigned long mom_checkpoint_set_checkpoint_run_exe_name(const char *value)
   exit(1);
   }
 
-void im_request(struct tcp_chan *chan, int version)
+void im_request(struct tcp_chan *chan, int version,struct sockaddr_in *pSockAddr)
   {
   fprintf(stderr, "The call to im_request needs to be mocked!!\n");
   exit(1);
