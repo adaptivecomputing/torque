@@ -326,11 +326,10 @@ int set_ncpus(
       svr_clnodes--;
       }
     }
-
+   
   if (difference < 0)
     {
-    snprintf(log_buffer, sizeof(log_buffer), "ncpus was reduced from %d to %d",
-      orig_svr_clnodes, svr_clnodes);
+    snprintf(log_buffer, sizeof(log_buffer), "ncpus was reduced from %d to %d", orig_svr_clnodes, svr_clnodes);
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
     }
 

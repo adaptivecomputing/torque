@@ -1180,7 +1180,7 @@ int send_job_to_mom(
         }
       }
 
-    if(pjob != NULL)
+    if (pjob != NULL)
       {
       svr_mailowner(
           pjob,

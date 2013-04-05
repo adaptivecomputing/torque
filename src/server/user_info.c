@@ -227,13 +227,22 @@ int  decrement_queued_jobs(
   user_info *ui;
   int        index;
   int        rc = THING_NOT_FOUND;
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
 
   pthread_mutex_lock(uih->ui_mutex);
 
   if ((index = get_value_hash(uih->ui_ht, user_name)) > 0)
     {
     ui = (user_info *)uih->ui_ra->slots[index].item;
-    ui->num_jobs_queued -= 1;
+    if (ui->num_jobs_queued != 0)
+      {
+      ui->num_jobs_queued -= 1;
+      if (LOGLEVEL >= 6)
+        {
+        snprintf(log_buf, sizeof(log_buf), "decremented number of jobs queued when already at 0");
+        log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buf);
+        }
+      }
     rc = PBSE_NONE;
     }
 

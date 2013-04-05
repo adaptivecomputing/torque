@@ -321,6 +321,14 @@ int send_sisters(job *pjob, int com, int using_radix)
   exit(1);
   }
 
+int send_ms(job *pjob,int  com)
+  {
+  fprintf(stderr, "The call to send_ms needs to be mocked!!\n");
+  exit(1);
+  }
+
+
+
 int mom_set_use(job *pjob)
   {
   fprintf(stderr, "The call to mom_set_use needs to be mocked!!\n");

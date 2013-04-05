@@ -614,38 +614,45 @@ void exec_bail(
   sprintf(log_buffer, "bailing on job %s code %d", pjob->ji_qs.ji_jobid, code);
   log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
-  nodecount = send_sisters(pjob, IM_ABORT_JOB, FALSE);
-
-  if (nodecount != pjob->ji_numnodes - 1)
+  if (pjob->ji_hosts[0].hn_node == pjob->ji_nodeid) //only call send_sisters if I'm mother superior
     {
-    sprintf(log_buffer, "%s: sent %d ABORT requests, should be %d",
-      __func__,
-      nodecount,
-      pjob->ji_numnodes - 1);
+    nodecount = send_sisters(pjob, IM_ABORT_JOB, FALSE);
 
-    log_err(-1, __func__, log_buffer);
+    if (nodecount != pjob->ji_numnodes - 1)
+      {
+      sprintf(log_buffer, "%s: sent %d ABORT requests, should be %d",
+        __func__,
+        nodecount,
+        pjob->ji_numnodes - 1);
+
+      log_err(-1, __func__, log_buffer);
+      }
+
+    /* inform non-MS nodes that job is aborting */
+
+    pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+
+    pjob->ji_qs.ji_un.ji_momt.ji_exitstat = code;
+
+    if (multi_mom)
+      {
+      momport = pbs_rm_port;
+      }
+
+    job_save(pjob, SAVEJOB_QUICK, momport);
+
+    exiting_tasks = 1;
+
+    if (pjob->ji_stdout > 0)
+      close(pjob->ji_stdout);
+
+    if (pjob->ji_stderr > 0)
+      close(pjob->ji_stderr);
     }
-
-  /* inform non-MS nodes that job is aborting */
-
-  pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
-
-  pjob->ji_qs.ji_un.ji_momt.ji_exitstat = code;
-
-  if (multi_mom)
+  else
     {
-    momport = pbs_rm_port;
+    send_ms(pjob, IM_ABORT_JOB);
     }
-
-  job_save(pjob, SAVEJOB_QUICK, momport);
-
-  exiting_tasks = 1;
-
-  if (pjob->ji_stdout > 0)
-    close(pjob->ji_stdout);
-
-  if (pjob->ji_stderr > 0)
-    close(pjob->ji_stderr);
 
   return;
   } /* END exec_bail() */

@@ -178,7 +178,14 @@ int get_server(
          return(1);
          }
         
-        snprintf(job_id_out, job_id_out_size, "%s.%s", seq_number, host_server);
+        if (!strncmp(parent_server, host_server, strlen(parent_server)))
+          {
+          snprintf(job_id_out, job_id_out_size, "%s.%s", seq_number, host_server);
+          }
+        else
+          {
+          snprintf(job_id_out, job_id_out_size, "%s.%s", seq_number, parent_server);
+          }
         }
       
       if ((c = strchr(parent_server, ':')) != 0)
