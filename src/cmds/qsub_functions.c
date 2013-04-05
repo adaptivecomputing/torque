@@ -3947,6 +3947,8 @@ void add_variable_list(
     {
     /* add the length of this + 1 for the comma */
     total_len = v_value->value_len + 1;;
+    if ((v_value->value) && (!v_value->value_len))
+      total_len += strlen(v_value->value);
     }
 
   total_len += hash_strlen(ji->user_attr);
