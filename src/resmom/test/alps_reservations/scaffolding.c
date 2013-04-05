@@ -16,7 +16,7 @@
 char log_buffer[LOG_BUF_SIZE];
 char mom_host[1];
 char mom_alias[1];
-int  LOGLEVEL;
+int  LOGLEVEL = 10;
 
 
 /* dynamic string stuff */
@@ -1027,5 +1027,15 @@ void *get_thing_from_index(
   else
     return(ra->slots[index].item);
   } /* END get_thing_from_index() */
+
+void log_event(
+
+  int         eventtype,
+  int         objclass,
+  const char *objname,
+  char       *text)
+  {
+  }
+
 
 

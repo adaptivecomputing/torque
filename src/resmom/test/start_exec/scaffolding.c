@@ -485,3 +485,13 @@ proc_stat_t *get_proc_stat(int pid)
   return NULL;
   }
 
+int setuid_ext(
+
+  uid_t uid,      /* I */
+  int   set_euid) /* I */
+  {
+  fprintf(stderr, "The call to setuid_ext needs to be mocked!!\n");
+  return 0;
+  }
+
+
