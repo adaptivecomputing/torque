@@ -484,7 +484,7 @@ int check_nvidia_setup()
       }
 
     /* We have the PATH, now find the nvidia-smi executable */
-    rc = find_file(pathEnv, "nvidia-smi");
+    rc = find_file(pathEnv, (char *)"nvidia-smi");
     if (rc == FALSE)
       {
       if (LOGLEVEL >= 3)
