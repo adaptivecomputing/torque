@@ -23,6 +23,8 @@ to have included in this project, please send an email to our [mailing list](mai
 
 ## Installation Instructions
 
+The current build status is [![Build Status](https://travis-ci.org/adaptivecomputing/torque.png?branch=master)](https://travis-ci.org/adaptivecomputing/torque).
+
 Install directions are available on [the documentation website](http://docs.adaptivecomputing.com/)
   
 Additional information concerning TORQUE is available in the PBS
