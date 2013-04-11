@@ -6,6 +6,12 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - Add support for qstat -f -u <user>. This results in qstat -f output for only
       the specified user.
   e - TRQ-1798. Make pbs_server calculate mppmaxnodect more accurately for Cray.
+  e - Add a timeout for mother superior when cleaning up a job. Instead of waiting 
+      infinitely for sisters to confirm that a job has exited, consider the job dead
+      after 10 minutes. This time can be adjusted by setting $job_exit_wait_time in
+      the mom's config file (time in seconds). This prevents jobs from being stuck 
+      infinitely if a compute node crashes or if a mom daemon becomes unresponsive.
+      TRQ-1776.
 
 4.2.2
   b - Make job_starter work for parallel jobs as well as serial. (TRQ-1577 - thanks
