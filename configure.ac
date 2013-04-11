@@ -713,7 +713,7 @@ TAC_SYS_LARGEFILE
 dnl We need pthreads
 AC_CHECK_LIB(pthread, pthread_create, 
     PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lrt",
-    [AC_MSG_ERROR([TORQUE needs pthreads in order to build]) ])
+    [AC_MSG_ERROR([TORQUE needs pthreads in order to build, install gcc-g++]) ])
 LIBS="$LIBS $PTHREAD_LIBS"
 
 
