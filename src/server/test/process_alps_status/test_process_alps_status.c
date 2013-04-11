@@ -6,7 +6,7 @@
 #include "alps_constants.h"
 #include "pbs_nodes.h"
 
-int set_ncpus(struct pbsnode *, char *);
+int set_ncpus(struct pbsnode *,struct pbsnode *, char *);
 int set_ngpus(struct pbsnode *, int);
 int set_state(struct pbsnode *, char *);
 char *finish_gpu_status(char *str);
@@ -27,22 +27,24 @@ extern int count;
 START_TEST(set_ncpus_test)
   {
   struct pbsnode  pnode;
+  struct pbsnode  parent;
   char           *proc1 = (char *)"CPROC=2";
   char           *proc2 = (char *)"CPROC=4";
   char           *proc3 = (char *)"CPROC=8";
 
+  memset(&parent,0,sizeof(pbsnode));
   pnode.nd_nsn = 0;
-  fail_unless(set_ncpus(&pnode, proc1) == 0, "Couldn't set ncpus to 2");
+  fail_unless(set_ncpus(&pnode,&parent, proc1) == 0, "Couldn't set ncpus to 2");
   snprintf(buf, sizeof(buf), "ncpus should be 2 but is %d", pnode.nd_nsn);
   fail_unless(pnode.nd_nsn == 2, buf);
 
   pnode.nd_nsn = 0;
-  fail_unless(set_ncpus(&pnode, proc2) == 0, "Couldn't set ncpus to 4");
+  fail_unless(set_ncpus(&pnode,&parent, proc2) == 0, "Couldn't set ncpus to 4");
   snprintf(buf, sizeof(buf), "ncpus should be 4 but is %d", pnode.nd_nsn);
   fail_unless(pnode.nd_nsn == 4, buf);
 
   pnode.nd_nsn = 0;
-  fail_unless(set_ncpus(&pnode, proc3) == 0, "Couldn't set ncpus to 8");
+  fail_unless(set_ncpus(&pnode,&parent, proc3) == 0, "Couldn't set ncpus to 8");
   snprintf(buf, sizeof(buf), "ncpus should be 8 but is %d", pnode.nd_nsn);
   fail_unless(pnode.nd_nsn == 8, buf);
   }
