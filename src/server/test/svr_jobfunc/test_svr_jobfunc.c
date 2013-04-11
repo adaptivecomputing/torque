@@ -10,6 +10,12 @@
 #include "pbs_error.h"
 
 int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging);
+int chk_mppnodect(resource *mppnodect, pbs_queue *pque, long nppn, long mpp_width, char *EMsg);
+
+START_TEST(chk_mppnodect_test)
+  {
+  }
+END_TEST
 
 START_TEST(svr_enquejob_test)
   {
@@ -474,6 +480,7 @@ Suite *svr_jobfunc_suite(void)
 
   tc_core = tcase_create("lock_ji_mutex_test");
   tcase_add_test(tc_core, lock_ji_mutex_test);
+  tcase_add_test(tc_core, chk_mppnodect_test);
   suite_add_tcase(s, tc_core);
 
   return s;
