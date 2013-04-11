@@ -16,3 +16,12 @@ int find_error_type(
   {
   return(0);
   }
+
+void log_event(
+
+  int         eventtype,
+  int         objclass,
+  const char *objname,
+  char       *text)
+  {
+  }

@@ -1028,4 +1028,14 @@ void *get_thing_from_index(
     return(ra->slots[index].item);
   } /* END get_thing_from_index() */
 
+void log_event(
+
+  int         eventtype,
+  int         objclass,
+  const char *objname,
+  char       *text)
+  {
+  }
+
+
 

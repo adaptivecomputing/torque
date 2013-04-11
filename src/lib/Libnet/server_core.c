@@ -300,6 +300,7 @@ int start_listener_addrinfo(
   unsigned short      port_net_byte_order;
   pthread_attr_t      t_attr;
   char                err_msg[MAXPATHLEN];
+  char                log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (!(getaddrinfo(host_name, NULL, NULL, &adr_svr) == 0))
     {
@@ -401,18 +402,26 @@ int start_listener_addrinfo(
           }
         else
           {
-          /* add_conn is not protocol independent. We need to 
-             do some IPv4 stuff here */
-          in_addr = (struct sockaddr_in *)&adr_client;
-          add_conn(
-            *new_conn_port,
-            FromClientDIS,
-            (pbs_net_t)ntohl(in_addr->sin_addr.s_addr),
-            (unsigned int)htons(in_addr->sin_port),
-            PBS_SOCK_INET,
-            NULL);
-          enqueue_threadpool_request(process_meth, new_conn_port);
-          /*pthread_create(&tid, &t_attr, process_meth, (void *)new_conn_port);*/
+          if (*new_conn_port == PBS_LOCAL_CONNECTION)
+            {
+            snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Ignoring local incoming request %d", *new_conn_port);
+            log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
+            }
+          else
+            {
+            /* add_conn is not protocol independent. We need to 
+               do some IPv4 stuff here */
+            in_addr = (struct sockaddr_in *)&adr_client;
+            add_conn(
+              *new_conn_port,
+              FromClientDIS,
+              (pbs_net_t)ntohl(in_addr->sin_addr.s_addr),
+              (unsigned int)htons(in_addr->sin_port),
+              PBS_SOCK_INET,
+              NULL);
+            enqueue_threadpool_request(process_meth, new_conn_port);
+            /*pthread_create(&tid, &t_attr, process_meth, (void *)new_conn_port);*/
+            }
           }
         }
 

@@ -463,3 +463,9 @@ int append_char_to_dynamic_string(dynamic_string *ds, char c)
   {
   return(0);
   }
+
+pbs_net_t get_hostaddr(int  *local_errno,char *hostname)
+  {
+  fprintf(stderr,"%s needs to be mocked.\n",__func__);
+  return 0;
+  }
