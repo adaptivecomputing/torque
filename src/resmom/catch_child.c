@@ -519,6 +519,11 @@ void scan_for_exiting(void)
             __func__, NumSisters);
 
           log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+
+          /* job is waiting for the reply from other sisters 
+           * before it exits */
+          pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXIT_WAIT;
+          pjob->ji_kill_started = time(NULL);
           }
         }    /* END if (ptask->ti_qs.ti_parenttask == TM_NULL_TASK) */
 
@@ -1903,6 +1908,11 @@ void init_abort_jobs(
           {
           send_sisters(pj, IM_KILL_JOB, FALSE);
           }
+    
+        /* job is waiting for the reply from other sisters 
+         * before it exits */
+        pj->ji_qs.ji_substate = JOB_SUBSTATE_EXIT_WAIT;
+        pj->ji_kill_started = time(NULL);
 
         continue;
         }
