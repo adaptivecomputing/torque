@@ -27,6 +27,14 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       from 4.2.2)
   b - Add retries on transient failures to setuid and seteuid calls. TRQ-1541. 
       (backported from 4.2.2)
+  e - TRQ-1798. Make pbs_server calculate mppmaxnodect more accurately for Cray.
+      (backported from 4.2.3)
+  e - Add a timeout for mother superior when cleaning up a job. Instead of waiting 
+      infinitely for sisters to confirm that a job has exited, consider the job dead
+      after 10 minutes. This time can be adjusted by setting $job_exit_wait_time in
+      the mom's config file (time in seconds). This prevents jobs from being stuck 
+      infinitely if a compute node crashes or if a mom daemon becomes unresponsive.
+      TRQ-1776. (backported from 4.2.3)
 
 4.1.5
   b - For cray: make sure that reservations are released when jobs are requeued. TRQ-1572.
