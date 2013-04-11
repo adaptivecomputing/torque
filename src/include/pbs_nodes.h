@@ -338,7 +338,8 @@ struct pbsnode
   unsigned char         nd_is_alps_reporter;
   unsigned char         nd_is_alps_login;
   resizable_array      *nd_ms_jobs;          /* the jobs this node is mother superior for */
-  all_nodes             alps_subnodes;
+  all_nodes             alps_subnodes;       /* collection of alps subnodes */
+  int                   max_subnode_nppn;    /* maximum ppn of an alps subnode */
 
   pthread_mutex_t      *nd_mutex;            /* semaphore for accessing this node's data */
   };

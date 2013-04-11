@@ -292,6 +292,7 @@ struct pbsnode *determine_node_from_str(
 int set_ncpus(
 
   struct pbsnode *current,
+  struct pbsnode *parent,
   char           *str)
 
   {
@@ -331,6 +332,8 @@ int set_ncpus(
       orig_svr_clnodes, svr_clnodes);
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
     }
+  else if (current->nd_nsn > parent->max_subnode_nppn)
+    parent->max_subnode_nppn = current->nd_nsn;
 
   return(PBSE_NONE);
   } /* END set_ncpus() */
@@ -669,7 +672,7 @@ int process_alps_status(
     /* perform any special processing */
     if (!strncmp(str, cproc_eq, cproc_eq_len))
       {
-      set_ncpus(current, str);
+      set_ncpus(current, parent, str);
       }
     else if (!strncmp(str, state, strlen(state)))
       {
