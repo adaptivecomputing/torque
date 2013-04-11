@@ -167,6 +167,12 @@ int comp_resc2(struct pbs_attribute *attr, struct pbs_attribute *with, int IsQue
 
 resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
   {
+  if (!strcmp(name, "mppnppn") ||
+      !strcmp(name, "mppwidth"))
+    {
+    return((resource_def *)name);
+    }
+
   return(NULL);
   }
 
@@ -319,6 +325,16 @@ int get_jobs_index(struct all_jobs *aj, struct job *pjob)
   }
 
 int get_svr_attr_l(int attr_index, long *l)
+  {
+  return(0);
+  }
+
+int lock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
+  {
+  return(0);
+  }
+
+int unlock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
   {
   return(0);
   }
