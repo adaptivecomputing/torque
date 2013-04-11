@@ -458,7 +458,13 @@ int process_pbs_server_port(
               }
             }
 
-          rc = PBSE_SOCKET_CLOSE;
+          if (chan->IsTimeout)
+            {
+            chan->IsTimeout = 0;
+            rc = PBSE_TIMEOUT;
+            }
+          else
+	    rc = PBSE_SOCKET_CLOSE;
           }
         else
           {
