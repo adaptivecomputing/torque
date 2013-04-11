@@ -1647,12 +1647,17 @@ job *chk_job_torun(
 
   if ((pque = get_jobs_queue(&pjob)) != NULL)
     {
-    if (pque->qu_qs.qu_type != QTYPE_Execution)
+    if (pque->qu_qs.qu_type != QTYPE_Execution ||
+         pque->qu_attr[QA_ATR_Started].at_val.at_long == 0)
       {
-      /* FAILURE - job must be in execution queue */
-      log_err(-1, __func__, "attempt to start job in non-execution queue");
+      if (pque->qu_attr[QA_ATR_Started].at_val.at_long == 0)
+        snprintf(EMsg, sizeof(EMsg), "attempt to start job in non-started queue");
+      else
+        /* FAILURE - job must be in execution queue */
+        snprintf(EMsg, sizeof(EMsg), "attempt to start job in non-execution queue");
+      log_err(-1, __func__, EMsg);
   
-      req_reject(PBSE_IVALREQ, 0, preq, NULL, "job not in execution queue");
+      req_reject(PBSE_IVALREQ, 0, preq, NULL, EMsg);
   
       unlock_queue(pque, __func__, NULL, LOGLEVEL);
       unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
