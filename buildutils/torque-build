@@ -5,9 +5,6 @@ POSIXLY_CORRECT=1
 # If there are any errors at all, fail.
 set -e
 
-
-
-
 usage() {
     echo   "Usage:  torque-build [<options>]"
     echo   "  Where <options> can be one of:"
@@ -32,7 +29,6 @@ usage() {
     echo   ""
     exit 1
 }
-
 
 # Default values for options
 root_path="${PWD}"
@@ -163,8 +159,6 @@ then
     quiet_redirect=">/dev/null"
 fi
 
-
-
 epoch=`date +%s`
 print_build_date="`date --date="@$epoch"`"
 branch=`git branch | awk '/^[*]/ { print $2}'`
@@ -185,7 +179,7 @@ then
     usage
 fi
 
-
+sh autogen.sh
 
 # MOAB RPMs ####################################################################
 if [ ${adaptive_rpm} -ne 0 ]
@@ -201,16 +195,16 @@ then
     cp buildutils/torque.adaptive.spec \
         buildutils/rpmbuild/SPECS/torque.adaptive.spec
 
-
-    rm -rf moab-torque-$version
-    mkdir moab-torque-$version
-    ls -1A | grep -v -E "build|torque-${version}" | while read file
+    tar_base_dir=moab-torque-${version}
+    rm -rf ${tar_base_dir}
+    mkdir ${tar_base_dir}
+    ls -1A | grep -v -E "rpmbuild|${tar_base_dir}" | while read file
     do
-        cp -rf $file moab-torque-${version}
+        cp -rf $file ${tar_base_dir}
     done
-    tar czf buildutils/rpmbuild/SOURCES/moab-torque-$version.tar.gz moab-torque-${version}
+    tar czf buildutils/rpmbuild/SOURCES/${tar_base_dir}.tar.gz ${tar_base_dir}
 
-    source_file=moab-torque-$version.tar.gz
+    source_file=${tar_base_dir}.tar.gz
     verbose_option=
 
     if [ ${debug} -ne 0 ]
@@ -228,13 +222,11 @@ then
 
     rpmbuild_option="-bb"
 
-
-
     test ${quiet} -eq 0 && echo "Making adaptive rpm..."
 
     mkdir -p buildutils/rpmbuild/moab-workload-manager-${version}
     rpmbuild ${verbose_option} ${rpmbuild_option} ${with_option} \
-        buildutils/rpmbuild/SPECS/moab.spec \
+        buildutils/rpmbuild/SPECS/torque.adaptive.spec \
         --buildroot "%{_topdir}/moab-torque${version}" \
         --define "_topdir ${root_path}/buildutils/rpmbuild" \
         --define "_rpmdir ${root_path}/buildutils/rpmbuild/RPMS" \
@@ -243,13 +235,13 @@ then
         --define "_tmppath ${root_path}/buildutils/rpmbuild/tmp" \
         --define "version ${version}" \
         --define "release_number ${release_number}" \
-        --define "source_file ${source_file}"
+        --define "source_file ${source_file}" \
+        --define "base_name ${tar_base_dir}"
 fi
 
 
 if [ ${coverity} -ne 0 -o ${unit_tests} -ne 0 ]
 then
-    sh autogen.sh
     ./configure --with-debug --with-check
     make clean
 fi
