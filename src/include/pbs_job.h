@@ -657,7 +657,8 @@ struct job
   int            ji_mempressure_curr;  /* current memory_pressure value */
   int            ji_mempressure_cnt;   /* counts MOM cycles memory_pressure is over threshold */
 #endif
-  int               ji_examined; 
+  int            ji_examined;
+  time_t         ji_kill_started;      /* time since we've begun killing the job */
 
 #else     /* END MOM ONLY */
 
