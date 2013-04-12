@@ -101,6 +101,7 @@
 #define MAX_UPDATES_BEFORE_SENDING  20
 #define PMOMTCPTIMEOUT 60  /* duration in seconds mom TCP requests will block */
 #define TCP_READ_PROTO_TIMEOUT  2
+#define DEFAULT_JOB_EXIT_WAIT_TIME 600
 
 /* Global Data Items */
 
@@ -176,7 +177,6 @@ char        *mom_home;
 
 extern dynamic_string *mom_status;
 extern int  multi_mom;
-extern unsigned int pbs_rm_port;
 char        *path_layout;
 extern char *msg_daemonname;          /* for logs     */
 extern char *msg_info_mom; /* Mom information message   */
@@ -200,6 +200,7 @@ long  log_file_max_size = 0;
 long  log_file_roll_depth = 1;
 int   job_oom_score_adjust = 0;  /* no oom score adjust by default */
 int   mom_oom_immunize = 0;  /* make pbs_mom processes immune? no by default */
+int   job_exit_wait_time = DEFAULT_JOB_EXIT_WAIT_TIME;
 
 time_t          last_log_check;
 char           *nodefile_suffix = NULL;    /* suffix to append to each host listed in job host file */
@@ -410,6 +411,7 @@ static unsigned long setloginnode(const char *);
 static unsigned long setrejectjobsubmission(const char *);
 static unsigned long setjoboomscoreadjust(const char *);
 static unsigned long setmomoomimmunize(const char *);
+unsigned long        setjobexitwaittime(const char *);
 
 static struct specials
   {
@@ -489,6 +491,7 @@ static struct specials
   { "login_node",            setloginnode },
   { "job_oom_score_adjust",  setjoboomscoreadjust },
   { "mom_oom_immunize",      setmomoomimmunize },
+  { "job_exit_wait_time",    setjobexitwaittime },
   { NULL,                  NULL }
   };
 
@@ -3355,6 +3358,27 @@ static unsigned long setloginnode(
 
   return(1);
   } /* END setloginnode() */
+
+
+
+
+unsigned long setjobexitwaittime(
+    
+  const char *value)
+
+  {
+  int tmp;
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
+
+  if (value != NULL)
+    {
+    tmp = strtol(value, NULL, 10);
+    if (tmp != 0)
+      job_exit_wait_time = tmp;
+    }
+
+  return(1);
+  } /* END setjobexitwaittime() */
 
 
 
@@ -8265,6 +8289,44 @@ void examine_all_jobs_to_resend(void)
 
 
 
+void check_jobs_in_exit_wait()
+
+  {
+  time_t  time_now = time(NULL);
+  job    *pjob;
+
+  for (pjob = (job *)GET_NEXT(svr_alljobs);
+       pjob != NULL;
+       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+    {
+    if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXIT_WAIT)
+      {
+      if ((pjob->ji_kill_started != 0) &&
+          (time_now - pjob->ji_kill_started > job_exit_wait_time))
+        {
+        /* job has exceeded the time to wait for all sisters 
+         * to report that the job is killed. Go ahead and finish
+         * it anyway */
+        snprintf(log_buffer, sizeof(log_buffer),
+          "Job %s has exceeded %d seconds, the time to wait for sisters to confirm it is finished. Cleaning up.",
+          pjob->ji_qs.ji_jobid, job_exit_wait_time);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+
+        pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+
+        job_save(pjob, SAVEJOB_QUICK, pbs_rm_port);
+
+        exiting_tasks = 1;
+        }
+      }
+    
+    } /* END loop over all jobs */
+
+  } /* END check_jobs_in_exit_wait() */
+
+
+
+
 void check_exiting_jobs()
 
   {
@@ -8536,6 +8598,8 @@ void main_loop(void)
       /* we can only do this once so set recover back to the default */
       recover = JOB_RECOV_RUNNING;
       }
+
+    check_jobs_in_exit_wait();
 
     if (exiting_tasks)
       scan_for_exiting();

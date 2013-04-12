@@ -1074,12 +1074,11 @@ int init_torque_cpuset(void)
   hwloc_bitmap_t cpus = NULL;
   hwloc_bitmap_t mems = NULL;
   int            rc   = -1;
-  int            i;
 #ifndef NUMA_SUPPORT
-  hwloc_obj_t    obj;
-  hwloc_obj_t    pu;
   hwloc_bitmap_t bootcpus = NULL;
   hwloc_bitmap_t bootmems = NULL;
+#else
+  int            i;
 #endif
 
 #ifdef USELIBCPUSET

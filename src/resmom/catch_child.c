@@ -336,7 +336,12 @@ void check_jobs_main_process(
           }
         }
       }
-    } 
+        
+    /* job is waiting for the reply from other sisters 
+     * before it exits */
+    pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXIT_WAIT;
+    pjob->ji_kill_started = time(NULL);
+    }
 
   if (NumSisters == 0)
     {
@@ -728,6 +733,7 @@ bool mother_superior_cleanup(
   if (rc != PBSE_NONE)
     {
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXIT_WAIT;
+
     if (LOGLEVEL >= 4)
       {
       snprintf(log_buffer, LOCAL_LOG_BUF_SIZE, "could not contact server for job %s: error: %d", 
@@ -2011,6 +2017,11 @@ void init_abort_jobs(
           {
           send_sisters(pj, IM_KILL_JOB, FALSE);
           }
+    
+        /* job is waiting for the reply from other sisters 
+         * before it exits */
+        pj->ji_qs.ji_substate = JOB_SUBSTATE_EXIT_WAIT;
+        pj->ji_kill_started = time(NULL);
 
         continue;
         }
