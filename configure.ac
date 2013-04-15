@@ -87,7 +87,7 @@ if test "X$success" != "X0" ; then
 else
   dnl current hash is a file checked in to the git repo in the base directory
   dnl containing the most recent hash
-  AC_DEFINE_UNQUOTED(GIT_HASH, ["`cat current_hash`"], [repository svn version])
+  AC_DEFINE_UNQUOTED(GIT_HASH, ["`git rev-parse HEAD`"], [repository svn version])
 fi
 
 PKG_PROG_PKG_CONFIG
