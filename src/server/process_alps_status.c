@@ -214,6 +214,9 @@ void *check_if_orphaned(
       return NULL;
     preq->rq_extend = rsv_id;
 
+    /* Assume the request will be successful and remove the RSV from the hash table */
+    remove_alps_reservation(rsv_id);
+
     if ((pnode = get_next_login_node(NULL)) != NULL)
       {
       struct in_addr hostaddr;
