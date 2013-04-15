@@ -37,6 +37,10 @@ AC_CONFIG_AUX_DIR([buildutils])
 AC_CANONICAL_HOST
 AC_CONFIG_MACRO_DIR([buildutils])
 
+AC_PROG_CXX
+m4_ifdef([AM_PROG_AR], [
+    AM_PROG_AR
+])
 LT_INIT
 LT_LANG([C++])
 AC_SUBST([LIBTOOL_DEPS])
@@ -50,7 +54,7 @@ m4_ifdef([HAVE_CHECK],
   [AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.9.6 color-tests])],
   [AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.9.6])])
 
-AC_PROG_CXX
+AM_PROG_CC_C_O
 CC="$CXX"
 CCLD="$CXX"
 AC_SUBST([CCLD])
@@ -698,7 +702,7 @@ AC_ARG_ENABLE(gcc_warnings, [
                           gcc, default is to not error on any warnings])
 if test "x$GCC" = "xyes" ;then
   AC_MSG_CHECKING([whether to disable strict gcc warnings])
-  if test "${disable_gcc_warnings}" == "yes" ; then
+  if test "${enable_gcc_warnings}" = "no" ; then
     AC_MSG_RESULT([yes])
     gccwarnings=no
   else
