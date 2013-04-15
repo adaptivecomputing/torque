@@ -2,16 +2,17 @@ PROG_ROOT = ../..
 
 AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
 
-lib_LTLIBRARIES = libu_tree.la
+lib_LTLIBRARIES = libuut.la
 
 AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 
-check_PROGRAMS = test_u_tree
+check_PROGRAMS = test_uut
 
-libu_tree_la_SOURCES = scaffolding.c ${PROG_ROOT}/u_tree.c
-libu_tree_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
+libuut_la_SOURCES =  ${PROG_ROOT}/u_tree.c  scaffolding.c
+libuut_la_LDFLAGS = @CHECK_LIBS@ -lgcov
+test_uut_LDADD = ../../../../test/torque_test_lib/libtorque_test.la ../../../../test/scaffold_fail/libscaffold_fail.la
 
-test_u_tree_SOURCES = test_u_tree.c
+test_uut_SOURCES = test_uut.c 
 
 check_SCRIPTS = coverage_run.sh
 
