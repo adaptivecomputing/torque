@@ -1,0 +1,68 @@
+#!/bin/sh
+
+if [ -z "${1}" -o "${1}" = '-h' -o "${1}" = '--help' ]
+then
+    echo "Usage: snapshot-version <new-version>" >&2
+    exit 1
+fi
+
+if  [ ! -s "${PWD}/application.properties"  -o \
+      ! -d "${PWD}/build" ] || \
+        ! grep -q -E 'app\.name[[:blank:]]*=[[:blank:]]*mws' \
+        "${PWD}/application.properties"
+then
+    echo "It appears that the present working directory" >&2
+    echo "  '${PWD}' doesn't describe the root source" >&2
+    echo "  path." >&2
+    echo "  This script must be run from the root souce path." >&2
+    exit 1
+fi
+
+if [ -n "`git status --porcelain`" ]
+then
+    echo "It appears that the working directory is not clean." >&2
+    echo "  cannot continue." >&2
+    exit 1
+fi
+
+current_version="`build/determine-version`"
+
+echo "This script will cause additional commits to be made."
+printf "continue [y/N]? "
+read answer
+echo ""
+if ! echo "${answer}" | grep -i -q '^y'
+then
+    echo "You have not answered yes."
+    echo "Exiting."
+    exit 0
+fi
+
+set -x
+git add application.properties || :
+ed application.properties << ED
+/app\.version
+s@${current_version}@${1}@
+wq
+ED
+git commit -a -m "Snapshot version at '${1}' from '${current_version}'"
+git tag -a "${1}" -m "Snapshot version at '${1}' from '${current_version}'"
+ed application.properties << ED
+/app\.version
+s@${1}@${current_version}@
+wq
+ED
+git commit -a -m "Restore version from '${1}' to '${current_version}'"
+set +x
+
+echo "Successfully taken snapshot with version '${1}'."
+echo "To look at what was done, run:"
+echo "  git log -3"
+echo "  git tag -l | grep '${1}'"
+echo "If you like the changes, run:"
+echo "  git pull --rebase"
+echo "  git push"
+echo "  git push --tag"
+echo "If you don't like the changes, run:"
+echo "  git reset --hard HEAD^^"
+echo "  git tag -d '${1}'"
