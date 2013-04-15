@@ -166,6 +166,7 @@ enum queueattr
 #include "site_que_attr_enum.h"
   QA_ATR_Enabled, /* these are last for qmgr print function   */
   QA_ATR_Started,
+  QA_ATR_FeaturesRequired,
   QA_ATR_LAST};   /* WARNING: Must be the highest valued enum */
 
 extern attribute_def que_attr_def[];

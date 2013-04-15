@@ -12,6 +12,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       the mom's config file (time in seconds). This prevents jobs from being stuck 
       infinitely if a compute node crashes or if a mom daemon becomes unresponsive.
       TRQ-1776.
+  e - Add the parameter default_features to queues. TRQ-1794. The other way of adding
+      a feature to all jobs in a queue (setting resources_default.neednodes) is 
+      circumvented if a user requests a feature in the nodes request. Setting 
+      default_features overcomes this issue.
 
 4.2.2
   b - Make job_starter work for parallel jobs as well as serial. (TRQ-1577 - thanks
