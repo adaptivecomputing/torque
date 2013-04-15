@@ -100,6 +100,7 @@
 #include "threadpool.h"
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
+#include "server.h"
 
 /* Global Data */
 extern int LOGLEVEL;
@@ -577,8 +578,10 @@ int process_alps_status(
   pbs_attribute   temp;
   hash_table_t   *rsv_ht;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
+  long            cray_orphan_cleanup = TRUE;
 
   memset(&temp, 0, sizeof(temp));
+  get_svr_attr_l(SRV_ATR_CrayOrphanCleanup, &cray_orphan_cleanup);
 
   if ((rc = decode_arst(&temp, NULL, NULL, NULL, 0)) != PBSE_NONE)
     {
@@ -620,7 +623,7 @@ int process_alps_status(
       process_gpu_status(current, &str);
       continue;
       }
-    else if (!strncmp(reservation_id, str, strlen(reservation_id)))
+    else if ((!strncmp(reservation_id, str, strlen(reservation_id))) && (cray_orphan_cleanup == TRUE))
       {
       char *just_rsv_id = str + strlen(reservation_id);
 

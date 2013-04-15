@@ -330,9 +330,10 @@
 #define ATTR_moabarraycompatible "moab_array_compatible"
 #define ATTR_nomailforce             "no_mail_force"
 #define ATTR_interactivejobscanroam  "interactive_jobs_can_roam" 
-#define ATTR_crayenabled             "cray_enabled"
+#define ATTR_crayorphancleanup       "cray_orphan_cleanup"
 #define ATTR_maxuserqueuable         "max_user_queuable"
 #define ATTR_automaticrequeueexitcode "automatic_requeue_exit_code"
+#define ATTR_crayenabled              "cray_enabled"
 /* additional node "attributes" names */
 
 #define ATTR_NODE_state            "state"
