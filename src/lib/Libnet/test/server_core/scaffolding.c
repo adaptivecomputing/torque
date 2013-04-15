@@ -17,11 +17,9 @@ int socket_get_tcp()
   exit(1);
   }
 
-void log_event(int eventtype, int objclass, const char *objname, const char *text)
-  {
-  fprintf(stderr, "The call to log_event needs to be mocked!!\n");
-  exit(1);
-  }
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+
+void log_record(int a, int b, const char *c, const char *d) {}
 
 int get_listen_socket(struct addrinfo *addr_info)
   {

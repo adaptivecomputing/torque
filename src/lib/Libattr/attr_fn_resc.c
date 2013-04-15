@@ -137,8 +137,8 @@ int comp_resc_nc; /* count of resources not compared */
 int decode_resc(
 
   pbs_attribute *patr,  /* Modified on Return */
-  const char   *name,  /* pbs_attribute name */
-  const char *rescn, /* I resource name - is used here */
+  const char    *name,  /* pbs_attribute name */
+  const char    *rescn, /* I resource name - is used here */
   const char    *val,   /* resource value */
   int            perm)  /* access permissions */
 

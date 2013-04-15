@@ -2810,7 +2810,7 @@ void get_jobowner(
  * @param *dflt
  */
 
-static void set_deflt_resc(
+void set_deflt_resc(
 
   pbs_attribute *jb,
   pbs_attribute *dflt)
@@ -2862,6 +2862,54 @@ static void set_deflt_resc(
   }  /* END set_deflt_resc() */
 
 
+
+
+int add_required_features(
+
+  job       *pjob,
+  pbs_queue *pque)
+
+  {
+  int rc = PBSE_NONE;
+
+  if (pque->qu_attr[QA_ATR_FeaturesRequired].at_val.at_str != NULL)
+    {
+    resource_def *prd      = find_resc_def(svr_resc_def, "feature", svr_resc_size);
+    resource     *features = find_resc_entry(&pjob->ji_wattr[JOB_ATR_resource], prd);      
+    char         *current_features = NULL;
+    char         *output_features;
+    
+    if (features != NULL)
+      current_features = features->rs_value.at_val.at_str;
+    
+    if (current_features == NULL)
+      output_features = strdup(pque->qu_attr[QA_ATR_FeaturesRequired].at_val.at_str);
+    else
+      {
+      /* add +1 for the null terminator and +1 for a comma */
+      int len  = strlen(pque->qu_attr[QA_ATR_FeaturesRequired].at_val.at_str) + 1;
+      len     += strlen(current_features) + 1;
+      output_features = (char *)calloc(1, len);
+      snprintf(output_features, len, "%s,%s",
+        current_features, pque->qu_attr[QA_ATR_FeaturesRequired].at_val.at_str);
+      }
+
+    if (features != NULL)
+      {
+      features->rs_value.at_flags |= ATR_VFLAG_SET;
+      if (features->rs_value.at_val.at_str != NULL)
+        free(features->rs_value.at_val.at_str);
+      features->rs_value.at_val.at_str = output_features;
+      }
+    else
+      {
+      rc = decode_resc(&pjob->ji_wattr[JOB_ATR_resource], ATTR_l, "feature", output_features, ATR_DFLAG_ACCESS);
+      free(output_features);
+      }
+    }
+
+  return(PBSE_NONE);
+  } /* END add_required_features() */
 
 
 
@@ -2932,6 +2980,9 @@ void set_resc_deflt(
     set_deflt_resc(ja, &server.sv_attr[SRV_ATR_ResourceMax]);
 #endif
     pthread_mutex_unlock(server.sv_attr_mutex);
+
+    /* check for the required feature attribute */
+    add_required_features(pjob, pque);
 
     unlock_queue(pque, __func__, NULL, LOGLEVEL);
     }
