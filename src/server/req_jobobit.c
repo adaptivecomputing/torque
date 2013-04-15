@@ -3198,6 +3198,14 @@ int req_jobobit(
       rc = PBSE_CLEANEDOUT;
       req_reject(PBSE_CLEANEDOUT, 0, preq, NULL, NULL);
       }
+    else if (pjob != NULL)
+      {
+      snprintf(log_buf, sizeof(log_buf),
+        "Received obit for job %s from mom %s, but mom address doesn't match",
+        pjob->ji_qs.ji_jobid, preq->rq_host);
+
+      req_reject(PBSE_UNKJOBID, 0, preq, NULL, NULL);
+      }
     else
       {
       sprintf(log_buf, msg_obitnojob, preq->rq_host, PBSE_UNKJOBID);
