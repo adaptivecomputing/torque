@@ -64,6 +64,7 @@ END_TEST
 START_TEST(insert_create_inspect_test)
   {
   job               pjob;
+  char              job_id[PBS_MAXSVRJOBID];
 
   strcpy(pjob.ji_qs.ji_jobid, jobids[0]);
   pjob.ji_wattr[JOB_ATR_reservation_id].at_val.at_str = rsvids[0];
@@ -99,10 +100,10 @@ START_TEST(insert_create_inspect_test)
   fail_unless(already_recorded((char *)"tom") == 0,     "missing rsv_id somehow found");
   fail_unless(already_recorded((char *)"tommy") == 0,   "missing rsv_id somehow found");
 
-  fail_unless(is_orphaned(rsvids[0]) == 1, "no job but not orphaned?");
-  fail_unless(is_orphaned(rsvids[1]) == 0, "job 1 returned but orphaned?");
-  fail_unless(is_orphaned(rsvids[2]) == 0, "job 2 returned but orphaned?");
-  fail_unless(is_orphaned(rsvids[3]) == 1, "completed job but not orphaned?");
+  fail_unless(is_orphaned(rsvids[0], job_id) == 1, "no job but not orphaned?");
+  fail_unless(is_orphaned(rsvids[1], job_id) == 0, "job 1 returned but orphaned?");
+  fail_unless(is_orphaned(rsvids[2], job_id) == 0, "job 2 returned but orphaned?");
+  fail_unless(is_orphaned(rsvids[3], job_id) == 1, "completed job but not orphaned?");
 
   fail_unless(remove_alps_reservation((char *)"00") == THING_NOT_FOUND, "found something that doesn't exist");
   fail_unless(remove_alps_reservation(rsvids[0]) == 0, "couldn't remove reservation 1");
