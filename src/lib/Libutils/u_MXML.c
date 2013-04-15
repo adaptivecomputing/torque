@@ -1605,6 +1605,13 @@ int MXMLFromString(
 
     ptr++; /* ignore '/' */
 
+    if(strncmp(ptr,E->Name,strlen(E->Name)))
+      {
+      if ((EMsg != NULL) && (EMsg[0] == '\0'))
+        snprintf(EMsg, emsg_size, "mismatched tags.");
+
+      return(FAILURE);
+      }
     ptr += strlen(E->Name);
     }
 

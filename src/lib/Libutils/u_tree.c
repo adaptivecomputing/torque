@@ -208,9 +208,15 @@ int AVL_is_in_tree(u_long key, uint16_t port, AvlTree tree)
     else if (key > current->key)
       current = current->right;
     else
-      return(1);
+      {
+      if (port < current->port)
+        current = current->left;
+      else if(port > current->port)
+        current = current->right;
+      else
+        return(1);
+      }
     }
-
   return(0);
   } /* end AVL_is_in_tree */
 
@@ -387,8 +393,11 @@ int AVL_list_add_item(
     tmp_buf = (char *)calloc(1, *max_len + 1);
     if (tmp_buf == NULL)
       return PBSE_MEM_MALLOC;
-    memcpy(tmp_buf, *r_buf, *current_len);
-    free(*r_buf);
+    if(*r_buf != NULL)
+      {
+      memcpy(tmp_buf, *r_buf, *current_len);
+      free(*r_buf);
+      }
     *r_buf = tmp_buf;
     }
   current_buffer = *r_buf;
@@ -432,7 +441,7 @@ int AVL_list( AvlTree tree, char **Buf, long *current_len, long *max_len )
   {
 	int rc = PBSE_NONE;
 
-	if (Buf == NULL || *Buf == NULL || current_len == NULL || max_len == NULL)
+	if (Buf == NULL || current_len == NULL || max_len == NULL)
     {
     return PBSE_RMNOPARAM;
     }
