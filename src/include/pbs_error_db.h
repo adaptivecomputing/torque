@@ -252,7 +252,7 @@ PbsErrClient(PBSE_CAN_NOT_MOVE_FILE, "Error moving file")
 PbsErrClient(PBSE_JOB_RECYCLED,      "Job is being recycled")
 PbsErrClient(PBSE_JOB_ALREADY_IN_QUEUE, "Job is already in destination queue.")
 PbsErrClient(PBSE_NODE_DOWN, (char *)"A node is down. Check the MOM and host")
-
+PbsErrClient(PBSE_QUENOTSTARTED, "Queue is currently not started")
 
 /* pbs client errors ceiling (max_client_err + 1) */
 PbsErrClient(PBSE_CEILING,           (char*)0)

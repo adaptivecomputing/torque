@@ -3514,7 +3514,7 @@ int im_poll_job_as_sister(
       close(local_socket);
       return(IM_DONE);
       }
-    else if ((ret = im_compose(local_chan,jobid,cookie,IM_ALL_OKAY,event,fromtask)) != SUCCESS)
+    else if ((ret = im_compose(local_chan,jobid,cookie,IM_ALL_OKAY,event,fromtask)) != DIS_SUCCESS)
       {
       DIS_tcp_close(local_chan);
       return(IM_DONE);
