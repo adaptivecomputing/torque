@@ -3087,7 +3087,7 @@ void handle_reservation(
     
       log_err(-1, __func__, log_buffer);
       
-      starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, sjr);
+      starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, sjr);
       }
     }
   } /* END handle_reservation() */
@@ -6703,7 +6703,7 @@ void starter_return(
         (sjrtn->sj_rsvid != 0))
       {
       snprintf(rsv_id, sizeof(rsv_id), "%d", sjrtn->sj_rsvid);
-      destroy_alps_reservation(rsv_id, apbasil_path, apbasil_protocol);
+      destroy_alps_reservation(rsv_id, apbasil_path, apbasil_protocol, 1);
       }
 
     exit(254);

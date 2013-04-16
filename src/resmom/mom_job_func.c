@@ -134,6 +134,7 @@
 #include "portability.h"
 #include "threadpool.h"
 #include "alps_functions.h"
+#include "alps_constants.h"
 #include "dis.h"
 #ifdef PENABLE_LINUX26_CPUSETS
 #include "pbs_cpuset.h"
@@ -791,7 +792,7 @@ int release_job_reservation(
     {
     rsv_id = pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str;
 
-    if ((rc = destroy_alps_reservation(rsv_id, apbasil_path, apbasil_protocol)) != PBSE_NONE)
+    if ((rc = destroy_alps_reservation(rsv_id, apbasil_path, apbasil_protocol, APBASIL_RETRIES)) != PBSE_NONE)
       {
       snprintf(log_buffer, sizeof(log_buffer), "Couldn't release reservation for job %s",
         pjob->ji_qs.ji_jobid);
