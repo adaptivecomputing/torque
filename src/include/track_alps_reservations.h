@@ -109,7 +109,7 @@ void initialize_alps_reservations();
 
 int track_alps_reservation(job *pjob);
 int remove_alps_reservation(char *rsv_id);
-int is_orphaned(char *rsv_id);
+int is_orphaned(char *rsv_id, char *job_id);
 int already_recorded(char *rsv_id);
 int insert_alps_reservation(alps_reservation *ar);
 

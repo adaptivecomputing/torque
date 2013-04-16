@@ -35,6 +35,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       the mom's config file (time in seconds). This prevents jobs from being stuck 
       infinitely if a compute node crashes or if a mom daemon becomes unresponsive.
       TRQ-1776. (backported from 4.2.3)
+  b - If privileged ports are disabled, make pbs_moms not check if incoming connections
+      from mother superior are on privileged ports. TRQ-1669. (backported from 4.2.3)
 
 4.1.5
   b - For cray: make sure that reservations are released when jobs are requeued. TRQ-1572.

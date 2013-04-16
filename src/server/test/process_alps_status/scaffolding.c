@@ -2155,7 +2155,8 @@ void free_null(struct pbs_attribute *attr) {}
 
 int is_orphaned(
 
-  char *rsv_id)
+  char *rsv_id,
+  char *job_id)
 
   {
   return(1);

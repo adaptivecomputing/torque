@@ -201,16 +201,20 @@ void *check_if_orphaned(
 
   {
   char                 *rsv_id = (char *)vp;
+  char                  job_id[PBS_MAXSVRJOBID];
   struct batch_request *preq;
   int                   handle = -1;
   int                   retries = 0;
   struct pbsnode       *pnode;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
-  if (is_orphaned(rsv_id) == TRUE)
+  if (is_orphaned(rsv_id, job_id) == TRUE)
     {
     preq = alloc_br(PBS_BATCH_DeleteReservation);
     preq->rq_extend = rsv_id;
+
+    /* Assume the request will be successful and remove the RSV from the hash table */
+    remove_alps_reservation(rsv_id);
 
     if ((pnode = get_next_login_node(NULL)) != NULL)
       {
@@ -222,8 +226,9 @@ void *check_if_orphaned(
       momaddr = ntohl(hostaddr.s_addr);
 
       snprintf(log_buf, sizeof(log_buf),
-        "Found orphan ALPS reservation ID %s; asking %s to remove it",
+        "Found orphan ALPS reservation ID %s for job %s; asking %s to remove it",
         rsv_id,
+        job_id,
         pnode->nd_name);
       log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, __func__, log_buf);
 

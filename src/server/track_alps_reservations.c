@@ -233,7 +233,8 @@ int already_recorded(
 
 int is_orphaned(
 
-  char *rsv_id)
+  char *rsv_id,
+  char *job_id)
 
   {
   int               index;
@@ -249,6 +250,9 @@ int is_orphaned(
 
   if (ar != NULL)
     {
+    if (job_id != NULL)
+      strncpy(job_id, ar->job_id, PBS_MAXSVRJOBID);
+
     if ((pjob = svr_find_job(ar->job_id, TRUE)) != NULL)
       {
       if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
@@ -260,7 +264,11 @@ int is_orphaned(
       orphaned = TRUE;
     }
   else
+    {
+    if (job_id != NULL)
+      snprintf(job_id, PBS_MAXSVRJOBID, "unknown");
     orphaned = TRUE;
+    }
 
   return(orphaned);
   } /* END is_orphaned() */
