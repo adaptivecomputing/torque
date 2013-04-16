@@ -2909,7 +2909,7 @@ int add_required_features(
       }
     }
 
-  return(PBSE_NONE);
+  return(rc);
   } /* END add_required_features() */
 
 
