@@ -159,7 +159,7 @@ int get_random_reserved_port()
     {
     found = 0;
     res_port = (rand() % RES_PORT_RANGE) + RES_PORT_START;
-    for(i = 0; i < MAX_USED_PRIV_PORTS; i++)
+    for (i = 0; i < MAX_USED_PRIV_PORTS; i++)
       {
       if (res_port == used_priv_ports[i])
         found = 1;
@@ -173,7 +173,7 @@ int get_random_reserved_port()
       }
     else
       usleep(50000);
-    }while(!done);
+    } while(!done);
 
   return res_port;
   } /* END get_random_reserved_port() */

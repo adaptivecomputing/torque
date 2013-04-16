@@ -543,7 +543,11 @@ sigset_t  allsigs;
 int   rm_errno;
 unsigned int            reqnum = 0;  /* the packet number */
 
+#ifndef NOPRIVPORTS
 int   port_care = TRUE; /* secure connecting ports */
+#else
+int   port_care = FALSE; /* configured without priv ports, don't care about them */
+#endif
 uid_t   uid = 0;  /* uid we are running with */
 unsigned int   alarm_time = 10; /* time before alarm */
 
@@ -5886,7 +5890,7 @@ void *tcp_request(
     {
     sprintf(log_buffer, "%s: fd %d addr %s", __func__, socket, address);
 
-    log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,"tcp_request",log_buffer);
+    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
     }
 
   if (AVL_is_in_tree_no_port_compare(ipadd, 0, okclients) == 0)

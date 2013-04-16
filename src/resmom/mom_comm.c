@@ -1596,7 +1596,7 @@ int check_ms(
   addr = source_addr;
   ipaddr_connect = ntohl(addr->sin_addr.s_addr);
 
-  if ((port_care != 0) && 
+  if ((port_care != FALSE) && 
       (ntohs(addr->sin_port) >= IPPORT_RESERVED))
     {
     sprintf(log_buffer, "non-privileged connection from %s",

@@ -16,6 +16,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       a feature to all jobs in a queue (setting resources_default.neednodes) is 
       circumvented if a user requests a feature in the nodes request. Setting 
       default_features overcomes this issue.
+  b - If privileged ports are disabled, make pbs_moms not check if incoming connections
+      from mother superior are on privileged ports. TRQ-1669.
 
 4.2.2
   b - Make job_starter work for parallel jobs as well as serial. (TRQ-1577 - thanks
