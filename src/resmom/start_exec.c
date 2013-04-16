@@ -2911,7 +2911,7 @@ void handle_reservation(
     
       log_err(-1, __func__, log_buffer);
       
-      starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, sjr);
+      starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, sjr);
       }
     }
   } /* END handle_reservation() */
