@@ -4111,7 +4111,7 @@ void req_delete_reservation(
     {
     if ((pjob=job_with_reservation_id(rsv_id)) == NULL) 
       {
-      if ((rc = destroy_alps_reservation(rsv_id, apbasil_path, apbasil_protocol)) != PBSE_NONE)
+      if ((rc = destroy_alps_reservation(rsv_id, apbasil_path, apbasil_protocol, 1)) != PBSE_NONE)
         {
         snprintf(log_buffer, sizeof(log_buffer), "Couldn't release reservation id %s",
           rsv_id);
