@@ -137,6 +137,11 @@ int get_parent_and_child(
       closingTag[parent_len+2] = *ptr;
       parent_len++;
       }
+    if(*ptr == '\0')
+      {
+      log_err(-1,__func__,"Invalid xml\n");
+      return(-1);
+      }
     /* if attribute support becomes needed, start recording attribute strings 
      * in an else here */
     

@@ -160,6 +160,13 @@ job *next_job_from_back(struct all_jobs *aj, int *iter)
   return(NULL);
   }
 
+int decode_resc(pbs_attribute *,const char *,const char *,const char *,int)
+  {
+  fprintf(stderr,"Call to %s needs to be mocked.\n",__func__);
+  return 0;
+  }
+
+
 int comp_resc2(struct pbs_attribute *attr, struct pbs_attribute *with, int IsQueueCentric, char *EMsg, enum compare_types type)
   {
   return(0);
