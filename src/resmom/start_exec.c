@@ -6703,7 +6703,7 @@ void starter_return(
         (sjrtn->sj_rsvid != 0))
       {
       snprintf(rsv_id, sizeof(rsv_id), "%d", sjrtn->sj_rsvid);
-      destroy_alps_reservation(rsv_id, apbasil_path, apbasil_protocol);
+      destroy_alps_reservation(rsv_id, apbasil_path, apbasil_protocol, 1);
       }
 
     exit(254);
