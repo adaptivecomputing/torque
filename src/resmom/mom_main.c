@@ -543,7 +543,11 @@ sigset_t  allsigs;
 int   rm_errno;
 unsigned int            reqnum = 0;  /* the packet number */
 
+#ifndef NOPRIVPORTS
 int   port_care = TRUE; /* secure connecting ports */
+#else
+int   port_care = FALSE; /* configured without priv ports, don't care about them */
+#endif
 uid_t   uid = 0;  /* uid we are running with */
 unsigned int   alarm_time = 10; /* time before alarm */
 
