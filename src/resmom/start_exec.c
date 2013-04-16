@@ -6490,6 +6490,14 @@ static void starter_return(
 
   if (code < 0)
     {
+    /* for login nodes, release the reservation if one has been made */
+    if ((is_login_node == TRUE) &&
+        (sjrtn->sj_rsvid != 0))
+      {
+      snprintf(rsv_id, sizeof(rsv_id), "%d", sjrtn->sj_rsvid);
+      destroy_alps_reservation(rsv_id, apbasil_path, apbasil_protocol, 1);
+      }
+
     exit(254);
     }
 

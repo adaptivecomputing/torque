@@ -197,30 +197,50 @@ int destroy_alps_reservation(
 
   char *reservation_id,
   char *apbasil_path,
-  char *apbasil_protocol)
+  char *apbasil_protocol,
+  int   retries)
 
   {
   int       rc = 1;
   int       retry_count = 0;
+  int       sleeptime = 1;
   char      command_buf[MAXLINE * 2];
+  time_t    start_time;
+  time_t    cur_time;
 
   snprintf(command_buf, sizeof(command_buf), DELETE_BASIL_REQ,
     (apbasil_protocol != NULL) ? apbasil_protocol : DEFAULT_APBASIL_PROTOCOL,
     reservation_id,
     (apbasil_path != NULL) ? apbasil_path : DEFAULT_APBASIL_PATH);
 
+  time(&start_time);
+
   /* Wait until a permanent failure - success only means that ALPS has received
    * the request to release. Cray advised us to wait for a permanent failure, which
    * means that the reservation is gone. (unless you have some other problem) */
-  while (retry_count < APBASIL_RETRIES)
+  while (retry_count <= retries)
     {
     rc = execute_alps_release(command_buf);
-    retry_count++;
 
-    if (rc != apbasil_fail_permanent)
-      sleep(1);
+    if ((rc != apbasil_fail_permanent) && (retry_count != retries))
+      {
+      if ((retry_count !=0) && ((retry_count % 5) == 0))
+        {
+          time(&cur_time);
+          snprintf(log_buffer, sizeof(log_buffer),
+            "Unable to release ALPS reservation %s after %f seconds. Will retry %d more times",
+            reservation_id,
+            difftime(cur_time, start_time),
+            (retries - retry_count));
+          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+        }
+      sleep(sleeptime);
+      retry_count++;
+      if (sleeptime < 60)
+        sleeptime <<= 1;
+      }
     else
-      retry_count += APBASIL_RETRIES;
+      break;
     }
 
   if (rc != apbasil_fail_permanent)
@@ -228,6 +248,7 @@ int destroy_alps_reservation(
     snprintf(log_buffer, sizeof(log_buffer),
       "Failed release command is: %s", command_buf);
     log_err(-1, __func__, log_buffer);
+    rc = apbasil_fail_transient;
     }
   else
     {

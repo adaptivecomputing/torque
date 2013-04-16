@@ -92,7 +92,7 @@ int process_alps_status(char *nd_name, dynamic_string *status);
 
 int get_alps_statuses(struct pbsnode *parent, struct batch_request *preq, int *bad, tlist_head *pstathd);
 
-int destroy_alps_reservation(char *reservation_id, char *apbasil_path, char *apbasil_protocol);
+int destroy_alps_reservation(char *reservation_id, char *apbasil_path, char *apbasil_protocol, int retries);
 
 int create_alps_reservation(char *exec_hosts, char *username, char *jobid, char *apbasil_path, char *apbasil_protocol, long long pagg_id, int use_nppn, int mppdepth, char **reservation_id);
 

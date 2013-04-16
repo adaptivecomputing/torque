@@ -1,23 +1,30 @@
 #include <check.h>
+#include <stdio.h>
 
 #include "alps_constants.h"
 
-char *apbasil_protocol = "1.0";
-char *release_path = "../../../test/test_scripts/release_reservation.sh";
+char *apbasil_protocol = (char *)"1.0";
+char *release_path = (char *)"../../../test/test_scripts/release_reservation.sh test_input.txt";
+char *input_file = (char *)"test_input.txt";
 
-int destroy_alps_reservation(char *, char *, char *);
+int destroy_alps_reservation(char *, char *, char *, int);
+void create_input(char *, char *);
 
 START_TEST(destroy_alps_reservation_test)
   {
-  char *rsv1 = "12";
-  char *rsv2 = "34";
-  int rc;
-  
-  rc = destroy_alps_reservation(rsv1, release_path, apbasil_protocol);
+  char *rsv1 = (char *)"12";
+  char *rsv2 = (char *)"34";
+  char *inp1 = (char *)"s\nf";
+  char *inp2 = (char *)"s\ns";
+  int   rc;
+
+  create_input(input_file, inp1);
+  rc = destroy_alps_reservation(rsv1, release_path, apbasil_protocol, 1);
   fail_unless(rc == 0, "couldn't release rsv 1");
   
-  rc = destroy_alps_reservation(rsv2, release_path, apbasil_protocol);
-  fail_unless(rc == 0, "couldn't release rsv 2");
+  create_input(input_file, inp2);
+  rc = destroy_alps_reservation(rsv2, release_path, apbasil_protocol, 1);
+  fail_unless(rc != 0, "returned success but couldn't release rsv 2");
   }
 
 END_TEST
@@ -59,3 +66,10 @@ int main(void)
   return(number_failed);
   }
 
+void create_input(char *filename, char* contents)
+  {
+  FILE *file;
+  file = fopen(filename, "w");
+  fprintf(file, "%s", contents);
+  fclose(file);
+  }
