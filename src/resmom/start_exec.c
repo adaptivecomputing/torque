@@ -2911,7 +2911,7 @@ void handle_reservation(
     
       log_err(-1, __func__, log_buffer);
       
-      starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, sjr);
+      starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, sjr);
       }
     }
   } /* END handle_reservation() */
@@ -6445,6 +6445,7 @@ static void starter_return(
   struct startjob_rtn ack;
   int                 i;
   int                 alarmsecs = 0;
+  char                rsv_id[MAXLINE];
 
   sjrtn->sj_code = code;
 
@@ -6490,6 +6491,14 @@ static void starter_return(
 
   if (code < 0)
     {
+    /* for login nodes, release the reservation if one has been made */
+    if ((is_login_node == TRUE) &&
+        (sjrtn->sj_rsvid != 0))
+      {
+      snprintf(rsv_id, sizeof(rsv_id), "%d", sjrtn->sj_rsvid);
+      destroy_alps_reservation(rsv_id, apbasil_path, apbasil_protocol, 1);
+      }
+
     exit(254);
     }
 

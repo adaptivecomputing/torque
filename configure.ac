@@ -949,6 +949,50 @@ fi
 
 
 
+
+dnl
+dnl tell TORQUE where to find the MIC libs
+dnl
+AC_ARG_WITH(mic-path, [
+  --with-mic-path=PATH
+                     Specifies the path to the mic COI libraries and include files.
+                     Example: ./configure --with-mic-path=/opt/intel/mic/coi will
+                     specify that the include files are in /opt/intel/mic/coi/include
+                     and the libraries are in /opt/intel/mic/coi/host-linux-release/lib],
+  [MICLIBS="-L${withval}/host-linux-release/lib"; MICCFLAGS="-I${withval}/include"],
+  [MICLIBS="-L/opt/intel/mic/coi/host-linux-release/lib"; MICCFLAGS="-I/opt/intel/mic/coi/include"])
+
+
+dnl
+dnl enable mic support
+dnl
+AC_MSG_CHECKING([whether to compile with MIC support])
+AC_ARG_ENABLE(mic, [
+  --enable-mic   Builds TORQUE with mic support so that pbs_mom will auto-detect the mics and report a status for each mic on that host. If no mic exists, the pbs_mom will behave normally],
+  MIC=$enableval,MIC=no)
+AC_MSG_RESULT($MIC)
+
+case "$MIC" in
+  yes) AC_DEFINE([MIC], 1, [Define to enable MIC support]) ;;
+  no) : ;;
+  *) AC_MSG_ERROR([--enable-mic should be yes or no]) ;;
+esac
+AM_CONDITIONAL([MIC], test "$MIC" = yes)
+
+if test "$MIC" = "yes" ; then
+  MOMLIBS="$MOMLIBS $MICLIBS -lcoi_host"
+  CPPFLAGS="$CPPFLAGS $MICCFLAGS"
+  gccwarnings=no
+  AC_CHECK_HEADERS([source/COIPipeline_source.h],
+    [],
+    [AC_MSG_ERROR(MIC COI LLAPI headers not found)],
+    [])
+fi
+
+
+
+
+
 dnl
 dnl add an option to specify a different path where TORQUE should look for HWLOC 
 dnl lib and include files
