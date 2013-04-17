@@ -1543,6 +1543,7 @@ void main_loop(void)
         snprintf(log_buf, sizeof(log_buf), "tcp timeout was %ld resetting to 300",
           timeout);
         timeout = 300;
+        set_svr_attr(SRV_ATR_tcp_timeout, &timeout);
         log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
         }
       
