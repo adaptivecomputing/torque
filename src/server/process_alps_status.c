@@ -211,7 +211,7 @@ void *check_if_orphaned(
 
   if (is_orphaned(rsv_id, job_id) == TRUE)
     {
-    if((preq = alloc_br(PBS_BATCH_DeleteReservation)) == NULL)
+    if ((preq = alloc_br(PBS_BATCH_DeleteReservation)) == NULL)
       return NULL;
     preq->rq_extend = rsv_id;
 
