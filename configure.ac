@@ -975,8 +975,8 @@ AC_ARG_WITH(mic-path, [
                      Example: ./configure --with-mic-path=/opt/intel/mic/coi will
                      specify that the include files are in /opt/intel/mic/coi/include
                      and the libraries are in /opt/intel/mic/coi/host-linux-release/lib],
-  [MOMLIBS="$MOMLIBS -L${withval}/host-linux-release/lib"; CFLAGS="$CFLAGS -I${withval}/include"],
-  [MOMLIBS="$MOMLIBS -L/opt/intel/mic/coi/host-linux-release/lib"; CFLAGS="$CFLAGS -I/opt/intel/mic/coi/include"])
+  [MICLIBS="-L${withval}/host-linux-release/lib"; MICCFLAGS="-I${withval}/include"],
+  [MICLIBS="-L/opt/intel/mic/coi/host-linux-release/lib"; MICCFLAGS="-I/opt/intel/mic/coi/include"])
 
 
 dnl
@@ -996,8 +996,8 @@ esac
 AM_CONDITIONAL([MIC], test "$MIC" = yes)
 
 if test "$MIC" = "yes" ; then
-  MOMLIBS="$MOMLIBS -lcoi_host"
-  CPPFLAGS="$CPPFLAGS $CFLAGS"
+  MOMLIBS="$MOMLIBS $MICLIBS -lcoi_host"
+  CPPFLAGS="$CPPFLAGS $MICCFLAGS"
   gccwarnings=no
   AC_CHECK_HEADERS([source/COIPipeline_source.h],
     [],
