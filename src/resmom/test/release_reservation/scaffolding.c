@@ -49,11 +49,4 @@ int find_error_type(
   return(rc);
   }
 
-void log_event(
-
-  int         eventtype,
-  int         objclass,
-  const char *objname,
-  char       *text)
-  {
-  }
+void log_event(int eventtype, int objclass, const char *objname, char *text) {}
