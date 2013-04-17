@@ -109,6 +109,12 @@ int decode_str(pbs_attribute *patr, const char *name, const char *rescn, const c
   exit(1);
   }
 
+int decode_resc(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm)
+  {
+  fprintf(stderr, "The call to decode_str to be mocked!!\n");
+  exit(1);
+  }
+
 int depend_on_que(pbs_attribute *pattr, void *pjob, int mode)
   {
   fprintf(stderr, "The call to depend_on_que to be mocked!!\n");

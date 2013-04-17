@@ -179,6 +179,9 @@ then
     usage
 fi
 
+echo "Started ${0}, version ${version}, release ${release_number}." \
+    ${quiet_redirect}
+
 sh autogen.sh
 
 # MOAB RPMs ####################################################################
