@@ -194,7 +194,7 @@ double  wallfactor = 1.00;
 long  log_file_max_size = 0;
 long  log_file_roll_depth = 1;
 int   job_oom_score_adjust = 0;  /* no oom score adjust by default */
-int   mom_oom_immunize = 0;  /* make pbs_mom processes immune? no by default */
+int   mom_oom_immunize = 1;  /* make pbs_mom processes immune? no by default */
 int   job_exit_wait_time = DEFAULT_JOB_EXIT_WAIT_TIME;
 
 time_t          last_log_check;
