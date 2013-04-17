@@ -6445,6 +6445,7 @@ static void starter_return(
   struct startjob_rtn ack;
   int                 i;
   int                 alarmsecs = 0;
+  char                rsv_id[MAXLINE];
 
   sjrtn->sj_code = code;
 
