@@ -179,6 +179,7 @@ time_t  last_poll_time = 0;
 extern tlist_head svr_requests;
 
 extern struct var_table vtable; /* see start_exec.c */
+
 time_t          last_log_check;
 
 char            JobsToResend[MAX_RESEND_JOBS][PBS_MAXSVRJOBID+1];
