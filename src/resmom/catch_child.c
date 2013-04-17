@@ -43,6 +43,7 @@
 #ifdef PENABLE_LINUX26_CPUSETS
 #include "pbs_cpuset.h"
 #endif
+#include "mom_config.h"
 
 #define DIS_REPLY_READ_RETRY 10
 
@@ -67,13 +68,8 @@ extern char  *path_aux;
 
 extern int   multi_mom;
 extern int   pbs_rm_port;
-extern int   is_login_node;
-
-extern int   LOGLEVEL;
 
 extern char  *PJobSubState[];
-extern int   PBSNodeCheckProlog;
-extern int   PBSNodeCheckEpilog;
 extern char  *PMOMCommand[];
 
 /* external prototypes */

@@ -140,6 +140,7 @@
 #include "pbs_cpuset.h"
 #endif
 #include "utils.h"
+#include "mom_config.h"
 
 #ifndef TRUE
 #define TRUE 1
@@ -166,9 +167,6 @@ static void job_init_wattr(job *);
 
 /* Global Data items */
 
-extern char   *apbasil_path;
-extern char   *apbasil_protocol;
-extern char    tmpdir_basename[];	/* for TMPDIR */
 extern gid_t   pbsgroup;
 extern uid_t   pbsuser;
 extern char   *msg_abt_err;
@@ -178,14 +176,11 @@ extern char   *path_aux;
 extern char   *msg_err_purgejob;
 extern char    server_name[];
 extern time_t  time_now;
-extern int     LOGLEVEL;
-extern int     is_login_node;
 
 extern tlist_head svr_newjobs;
 extern tlist_head svr_alljobs;
 
 void nodes_free(job *);
-extern int thread_unlink_calls;
 
 extern void MOMCheckRestart(void);
 void       send_update_soon();

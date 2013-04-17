@@ -104,9 +104,9 @@
 #include "pbs_proto.h"
 #include "net_connect.h"
 #include "utils.h"
+#include "mom_config.h"
 
 
-extern char PBSNodeMsgBuf[];
 extern int  MOMPrologTimeoutCount;
 extern int  MOMPrologFailureCount;
 
@@ -116,11 +116,9 @@ extern int  DEBUGMODE;
 extern int  lockfds;
 extern char *path_aux;
 
-extern int  reduceprologchecks;
 extern gid_t   pbsgroup;
 extern uid_t   pbsuser;
 
-unsigned int pe_alarm_time = PBS_PROLOG_TIME;
 static pid_t child;
 static int   run_exit;
 

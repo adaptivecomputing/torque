@@ -98,17 +98,14 @@
 #include "pbs_job.h"
 #include "mom_mach.h"
 #include "mom_func.h"
+#include "mom_config.h"
 
 /* Global Variables */
 
 extern int  exiting_tasks;
-extern char  mom_host[];
 extern tlist_head svr_alljobs;
 extern int  termin_child;
 
-extern int       LOGLEVEL;
-
-extern char     *AllocParCmd;
 extern int      multi_mom;
 extern unsigned short pbs_rm_port;
 

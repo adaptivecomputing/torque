@@ -25,6 +25,7 @@
 #include "pbs_nodes.h"
 #include "log.h"
 #include "pbs_cpuset.h"
+#include "mom_config.h"
 
 /* NOTE: move these three things to utils when lib is checked in */
 #ifndef MAXPATHLEN
@@ -39,7 +40,6 @@
 
 
 extern hwloc_topology_t topology;
-extern int              MOMConfigUseSMT;
 #ifdef NUMA_SUPPORT
 extern nodeboard        node_boards[];
 extern int              num_node_boards;

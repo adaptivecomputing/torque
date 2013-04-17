@@ -124,6 +124,7 @@ extern "C"
 #include "../lib/Libnet/lib_net.h" /* socket_avail_bytes_on_descriptor */
 #include "alps_functions.h"
 #include "tcp.h" /* tcp_chan */
+#include "mom_config.h"
 
 #ifdef ENABLE_CPA
   #include "pbs_cpa.h"
@@ -187,9 +188,6 @@ typedef enum
 /* Global Variables */
 
 
-extern int            exec_with_exec;
-extern int            attempttomakedir;
-extern int            spoolasfinalname;
 extern int            num_var_env;
 extern char         **environ;
 extern int            exiting_tasks;
@@ -202,39 +200,20 @@ extern char          *path_prologp;
 extern char          *path_prologuserp;
 extern char          *path_spool;
 extern char          *path_aux;
-extern char          *apbasil_path;
-extern char          *apbasil_protocol;
 extern gid_t          pbsgroup;
 extern uid_t          pbsuser;
 extern time_t         time_now;
 extern unsigned int   pbs_rm_port;
 extern u_long         localaddr;
-extern  char          *nodefile_suffix;
-extern  char          *submithost_suffix;
-extern  char           DEFAULT_UMASK[];
-extern  char           PRE_EXEC[];
 
-extern int             LOGLEVEL;
-extern int             EXTPWDRETRY;
-extern long            TJobStartBlockTime;
+extern int            multi_mom;
+extern unsigned int   pbs_rm_port;
 
-extern int             multi_mom;
-extern unsigned int    pbs_rm_port;
+extern char           path_checkpoint[];
 
-extern char            path_checkpoint[];
-extern char            jobstarter_exe_name[];
-extern char            mom_host[];
-extern int             jobstarter_set;
+int                   mom_reader_go;   /* see catchinter() & mom_writer() */
 
-int                    mom_reader_go;   /* see catchinter() & mom_writer() */
-
-struct var_table       vtable;  /* for building up job's environ */
-
-extern char            tmpdir_basename[];  /* for TMPDIR */
-
-extern int             src_login_batch;
-extern int             src_login_interactive;
-extern int             is_login_node;
+struct var_table      vtable;  /* for building up job's environ */
 
 #ifdef NUMA_SUPPORT
 extern int            num_node_boards;
@@ -6791,7 +6770,6 @@ char *std_file_name(
 #if NO_SPOOL_OUTPUT == 0
   int          havehomespool = 0;
 
-  extern char *TNoSpoolDirList[];
 #else /* NO_SPOOL_OUTPUT */
 
   struct stat  myspooldir;

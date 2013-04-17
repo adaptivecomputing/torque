@@ -130,6 +130,7 @@
 #ifdef PENABLE_LINUX26_CPUSETS
 #include "pbs_cpuset.h"
 #endif
+#include "mom_config.h"
 
 
 #define IM_FINISHED                 1
@@ -155,7 +156,6 @@ extern int           port_care;
 extern char         *path_prologp;
 extern char         *path_prologuserp;
 extern int           multi_mom;
-extern int           maxupdatesbeforesending;
 char                *stat_string_aggregate = NULL;
 unsigned int         ssa_index;
 unsigned long        ssa_size;
@@ -163,7 +163,6 @@ resizable_array     *received_statuses; /* holds information on node's whose sta
 hash_table_t        *received_table;
 int                  updates_waiting_to_send = 0;
 extern time_t       LastServerUpdateTime;
-extern int         ServerStatUpdateInterval;
 extern struct connection svr_conn[];
 
 const char *PMOMCommand[] =
@@ -190,8 +189,6 @@ const char *PMOMCommand[] =
 char task_fmt[] = "/%010.10ld";
 char noglobid[] = "none";
 
-extern int    LOGLEVEL;
-extern long   TJobStartBlockTime;
 enum rwhich { invalid, listen_out, listen_err, new_out, new_err};
 struct routefd
   {
@@ -1583,8 +1580,8 @@ void term_job(
 
 int check_ms(
 
-  struct tcp_chan *chan,
-  job *pjob,
+  struct tcp_chan    *chan,
+  job                *pjob,
   struct sockaddr_in *source_addr)
 
   {

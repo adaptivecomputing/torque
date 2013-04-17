@@ -4,8 +4,6 @@
 
 #include "log.h"
 
-int log_init(const char *suffix, const char *hostname);
-
 int log_open(char *filename, char *directory); 
 
 int job_log_open(char *filename, char *directory); 
