@@ -1326,7 +1326,9 @@ void get_mic_indices(
 
   if (buf == NULL)
     return;
- 
+
+  fprintf(stderr,"in %s val = %d\n",__func__,JOB_ATR_exec_mics);
+
   mic_str = strdup(pjob->ji_wattr[JOB_ATR_exec_mics].at_val.at_str);
 
   buf[0] = '\0';

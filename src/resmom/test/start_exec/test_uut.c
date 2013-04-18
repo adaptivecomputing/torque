@@ -203,6 +203,8 @@ START_TEST(test_get_mic_indices)
   job  *pjob = (job *)calloc(1, sizeof(job));
   char  buf[1024];
 
+  fprintf(stderr,"in %s val = %d\n",__func__,JOB_ATR_exec_mics);
+
   pjob->ji_wattr[JOB_ATR_exec_mics].at_val.at_str = strdup("slesmic-0-mic/1+slesmic-0-mic/0");
 
   get_mic_indices(pjob, NULL, 0);
