@@ -66,7 +66,7 @@ int       numa_index;
 int              memory_pressure_threshold = 0; /* 0: off, >0: check and kill */
 short            memory_pressure_duration  = 0; /* 0: off, >0: check and kill */
 int              MOMConfigUseSMT           = 1; /* 0: off, 1: on */
-hwloc_topology_t topology;
+//hwloc_topology_t topology;
 #endif
 
 int MUReadPipe(char *Command, char *Buffer, int BufSize)
