@@ -347,3 +347,8 @@ int remove_job_from_exiting_list(job *pjob)
   {
   return(0);
   }
+
+int remove_alps_reservation(char *rsv_id)
+  {
+  return(0);
+  }

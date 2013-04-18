@@ -499,3 +499,7 @@ void *inspect_exiting_jobs(void *vp)
   {
   return(NULL);
   }
+
+void save_args(int argc, char **argv) {}
+
+char **ArgV;

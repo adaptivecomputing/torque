@@ -27,6 +27,7 @@ struct all_jobs array_summary;
 attribute_def svr_attr_def[10];
 int svr_totnodes = 0;
 int LOGLEVEL = 0;
+const char PBS_MSG_EQUAL[] = "MSG=";
 
 struct batch_request *alloc_br(int type)
   {

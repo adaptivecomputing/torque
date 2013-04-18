@@ -15,6 +15,7 @@ int svr_resc_size = 0;
 int LOGLEVEL = 0;
 resource_def *svr_resc_def;
 pthread_mutex_t *reroute_job_mutex;
+int                     route_retry_interval = 5; /* time in seconds to check routing queues */
 
 int svr_movejob(job *jobp, char *destination, struct batch_request *req)
   {
@@ -112,4 +113,9 @@ int unlock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
 pbs_queue *find_queuebyname(char *quename)
   {
   return(NULL);
+  }
+
+int lock_queue(struct pbs_queue *the_queue, const char *method_name, char *msg, int logging)
+  {
+  return(0);
   }

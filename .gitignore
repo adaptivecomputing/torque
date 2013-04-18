@@ -292,6 +292,7 @@ src/lib/Libifl/test/pbsD_submit_hash/test_pbsD_submit_hash
 src/lib/Libifl/test/pbsD_termin/test_pbsD_termin
 src/lib/Libifl/test/pbs_geterrmg/test_pbs_geterrmg
 src/lib/Libifl/test/pbs_statfree/test_pbs_statfree
+src/lib/Libifl/test/rpp/test_rpp
 src/lib/Libifl/test/tcp_dis/test_tcp_dis
 src/lib/Libifl/test/tm/test_tm
 src/lib/Libifl/test/torquecfg/test_torquecfg

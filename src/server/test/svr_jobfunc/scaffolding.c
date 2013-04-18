@@ -308,3 +308,18 @@ int get_svr_attr_l(int attr_index, long *l)
   {
   return(0);
   }
+
+int lock_node(struct pbsnode *the_node, const char *id, char *msg, int logging)
+  {
+  return(0);
+  }
+
+int unlock_node(struct pbsnode *the_node, const char *id, char *msg, int logging)
+  {
+  return(0);
+  }
+
+int get_jobs_index(struct all_jobs *aj, job *pjob)
+  {
+  return(0);
+  }
