@@ -2297,7 +2297,6 @@ void delete_a_subnode(
 
 int remove_alps_reservation(char *rsv_id)
   {
-  return 0;
+  return(0);
   }
-
 

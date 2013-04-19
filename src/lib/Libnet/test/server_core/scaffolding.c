@@ -23,6 +23,8 @@ void log_event(int eventtype, int objclass, const char *objname, char *text)
   exit(1);
   }
 
+void log_record(int a, int b, const char *c, const char *d) {}
+
 int get_listen_socket(struct addrinfo *addr_info)
   {
   return(0);
