@@ -178,8 +178,8 @@ int net_move(job *, struct batch_request *);
    */
 bool have_reservation(
     
-    job *pjob, 
-    struct pbs_queue *pque)
+  job              *pjob, 
+  struct pbs_queue *pque)
 
   {
   if (pque->qu_attr[QA_ATR_MaxJobs].at_flags & ATR_VFLAG_SET)

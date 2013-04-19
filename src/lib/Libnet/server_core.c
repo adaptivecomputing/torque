@@ -311,10 +311,14 @@ int start_listener_addrinfo(
   pthread_attr_t      t_attr;
   char                err_msg[MAXPATHLEN];
   char                log_buf[LOCAL_LOG_BUF_SIZE + 1];
+  int                 ret;
 
-  if (!(getaddrinfo(host_name, NULL, NULL, &adr_svr) == 0))
+  if (!(ret = getaddrinfo(host_name, NULL, NULL, &adr_svr) == 0))
     {
+	sprintf(err_msg,"Error with getaddrinfo on host name %s. Error code = %d.\n",host_name,ret);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, err_msg);
     rc = PBSE_SOCKET_FAULT;
+    return rc;
     }
 
   port_net_byte_order = htons(server_port);
