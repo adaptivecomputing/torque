@@ -587,7 +587,7 @@ int modify_job(
       /* The last number is unused unless this is an array */
       if ((rc = relay_to_mom(&pjob, preq, NULL)))
         {
-        req_reject(rc, NULL, NULL, preq);
+        req_reject(rc, 0, preq, NULL, NULL);
 
         if (pjob != NULL)
           {
