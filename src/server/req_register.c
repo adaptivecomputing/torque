@@ -754,8 +754,9 @@ int req_register(
  
     case JOB_DEPEND_OP_UNREG:
 
-     rc =  unregister_dependency(preq, pjob, type);
-       break;
+      rc =  unregister_dependency(preq, pjob, type);
+
+      break;
 
     default:
 

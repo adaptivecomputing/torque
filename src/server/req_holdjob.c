@@ -128,7 +128,6 @@ int get_hold(tlist_head *, const char **, pbs_attribute *);
 /* external functions */
 extern int svr_authorize_jobreq(struct batch_request *,job *);
 extern job *chk_job_request(char *,struct batch_request *);
-int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq, int type, int jobid);
 
 /*
  * chk_hold_priv - check that client has privilege to set/clear hold
@@ -225,7 +224,7 @@ int req_holdjob(
 
     /* have MOM attempt checkpointing */
 
-    if ((rc = copy_batchrequest(&dup_req, preq, 0, -1)) != 0)
+    if ((dup_req = duplicate_request(preq)) == NULL)
       {
       req_reject(rc, 0, preq, NULL, "memory allocation failure");
       }
@@ -334,9 +333,9 @@ void *req_checkpointjob(
     {
     /* have MOM attempt checkpointing */
 
-    if ((rc = copy_batchrequest(&dup_req, preq, 0, -1)) != 0)
+    if ((dup_req = duplicate_request(preq)) == NULL)
       {
-      req_reject(rc, 0, preq, NULL, "failure to allocate memory");
+      req_reject(PBSE_SYSTEM, 0, preq, NULL, "failure to allocate memory");
       }
 
     /* The dup_req is freed in relay_to_mom (failure)

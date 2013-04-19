@@ -1361,16 +1361,15 @@ const char *loadave(
 
 struct config *rm_search(
 
-        struct config *where,  /* I */
-        const char    *what)   /* I */
+  struct config *where,  /* I */
+  const char    *what)   /* I */
 
   {
-
   struct config *cp;
 
   if (where == NULL || what == NULL)
     {
-    return NULL;
+    return(NULL);
     }
 
   for (cp = where;cp->c_name != NULL;cp++)
@@ -1430,8 +1429,6 @@ const char *dependent(
 
   return(NULL);
   }  /* END dependent() */
-
-
 
 
 
@@ -1561,6 +1558,8 @@ void checkret(
 
   return;
   }  /* END checkret() */
+
+
 
 char *skipwhite(
 
@@ -3508,7 +3507,6 @@ static unsigned long setremchkptdirlist(
 
   return (1);
   }  /* END setremchkptdirlist() */
-
 
 
 
@@ -7844,11 +7842,6 @@ int setup_program_environment(void)
   return(PBSE_NONE);
   }  /* END setup_program_environment() */
 
-
-
-
-
-
 /*
  * TMOMJobGetStartInfo
  *
@@ -7875,8 +7868,6 @@ int TMOMJobGetStartInfo(
 
   return(FAILURE);
   }  /* END TMOMJobGetStartInfo() */
-
-
 
 /*
  * TMOMScanForStarting
@@ -8134,7 +8125,6 @@ void examine_all_polled_jobs(void)
 
   return;
   }      /* END examine_all_polled_jobs() */
-
 
 
 
