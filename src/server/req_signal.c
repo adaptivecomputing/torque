@@ -115,7 +115,6 @@ extern int   LOGLEVEL;
 extern void   set_old_nodes (job *);
 
 extern job  *chk_job_request(char *, struct batch_request *);
-int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq, int type, int jobid);
 
 /*
  * req_signaljob - service the Signal Job Request
@@ -204,10 +203,9 @@ int req_signaljob(
     }
 
   /* pass the request on to MOM */
-
-  if ((rc = copy_batchrequest(&dup_req, preq, 0, -1)) != 0)
+  if ((dup_req = duplicate_request(preq)) == NULL)
     {
-    req_reject(rc, 0, preq, NULL, "can not allocate memory");
+    req_reject(PBSE_SYSTEM, 0, preq, NULL, "can not allocate memory");
     }
   /* The dup_req is freed in relay_to_mom (failure)
    * or in issue_Drequest (success) */

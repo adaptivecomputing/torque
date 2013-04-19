@@ -18,6 +18,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       default_features overcomes this issue.
   b - If privileged ports are disabled, make pbs_moms not check if incoming connections
       from mother superior are on privileged ports. TRQ-1669.
+  c - TRQ-1784, bugzilla #231. Fix a crash for modifying arrays with qalter.
 
 4.2.2
   b - Make job_starter work for parallel jobs as well as serial. (TRQ-1577 - thanks

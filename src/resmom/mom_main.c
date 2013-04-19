@@ -516,16 +516,15 @@ const char *loadave(
 
 struct config *rm_search(
 
-        struct config *where,  /* I */
-        const char    *what)   /* I */
+  struct config *where,  /* I */
+  const char    *what)   /* I */
 
   {
-
   struct config *cp;
 
   if (where == NULL || what == NULL)
     {
-    return NULL;
+    return(NULL);
     }
 
   for (cp = where;cp->c_name != NULL;cp++)
@@ -585,8 +584,6 @@ const char *dependent(
 
   return(NULL);
   }  /* END dependent() */
-
-
 
 
 
@@ -717,6 +714,8 @@ void checkret(
   return;
   }  /* END checkret() */
 
+
+
 char *skipwhite(
 
   char *str)
@@ -730,12 +729,6 @@ char *skipwhite(
 
   return(str);
   }
-
-
-
-
-
-
 
 
 
@@ -758,7 +751,6 @@ void rmnl(
 
   return;
   }
-
 
 
 
@@ -815,11 +807,6 @@ void check_log(void)
 
   return;
   }  /* END check_log() */
-
-
-
-
-
 
 
 
@@ -922,8 +909,6 @@ struct rm_attribute *momgetattr(
 
   return(&attr);
   }  /* END momgetattr() */
-
-
 
 
 
@@ -1153,7 +1138,6 @@ done:
 
 
 
-
 static void catch_abort(
 
   int sig)
@@ -1193,22 +1177,19 @@ static void catch_abort(
 
 
 
-
-static void catch_hup(
+void catch_hup(
 
   int sig)
 
   {
-  sprintf(log_buffer, "caught signal %d",
-          sig);
+  sprintf(log_buffer, "caught signal %d", sig);
 
-  log_record(PBSEVENT_SYSTEM, 0, "catch_hup", "reset");
+  log_record(PBSEVENT_SYSTEM, 0, __func__, "reset");
 
   call_hup = 1;
 
   return;
   }  /* END catch_hup() */
-
 
 
 
@@ -1218,7 +1199,7 @@ static void catch_hup(
  * Clean up and reinit the dependent code.
  */
 
-static void process_hup(void)
+void process_hup(void)
 
   {
   call_hup = 0;
@@ -1246,7 +1227,6 @@ static void process_hup(void)
 
 
 
-
 /*
 ** Got an alarm call.
 ** Close all general network connections, clean up and reinit the
@@ -1268,17 +1248,13 @@ void toolong(
 
 
 
-
-
-
-
 #ifdef DEBUG
 
 void log_verbose(
 
   char *id,
   char *buf,
-  int  len)
+  int   len)
 
   {
   int i;
@@ -1327,7 +1303,6 @@ int bad_restrict(
   u_long ipadd)
 
   {
-
   struct hostent *host;
 
   struct in_addr in;
@@ -1376,13 +1351,17 @@ int bad_restrict(
   return(1);
   }  /* END bad_restrict() */
 
+
+
 /*
  * mom_lock - lock out other MOMs from this directory.
  */
 
-static void mom_lock(
+void mom_lock(
+
   int fds,
   int op)   /* F_WRLCK or F_UNLCK */
+
   {
   struct flock flock;
 
