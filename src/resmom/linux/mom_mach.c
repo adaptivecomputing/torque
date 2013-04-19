@@ -2674,6 +2674,7 @@ int kill_task(
 		}      /* END while (...) != NULL) */
 #ifdef PENABLE_LINUX26_CPUSETS
     free_pidlist(pids);
+    pids = NULL;
 #endif
     }while((ctThisIteration != 0)&&(loopCt++ < 20));
 

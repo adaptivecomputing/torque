@@ -898,7 +898,10 @@ int stat_to_mom(
 
   /* must return non-zero so that cntl is cleaned up */
   if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL)
+    {
+    unlock_ji_mutex(pjob, __func__, "exec host was null", LOGLEVEL);
     return(-1);
+    }
 
   if ((pjob->ji_qs.ji_un.ji_exect.ji_momaddr == 0) || 
       (!pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str))
