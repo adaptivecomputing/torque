@@ -113,7 +113,6 @@ extern char *msg_messagejob;
 extern int   LOGLEVEL;
 
 extern job  *chk_job_request(char *, struct batch_request *);
-int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq, int type, int jobid);
 
 /*
  * req_messagejob - service the Message Job Request
@@ -145,7 +144,7 @@ void *req_messagejob(
     return(NULL);
     }
 
-  if ((rc = copy_batchrequest(&dup_req, preq, 0, -1)) != 0)
+  if ((dup_req = duplicate_request(preq, -1)) == NULL)
     {
     req_reject(PBSE_MEM_MALLOC, 0, preq, NULL, NULL);
     }

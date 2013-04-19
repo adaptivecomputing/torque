@@ -1424,8 +1424,6 @@ char *dependent(
 
 
 
-
-
 /*
 ** Initialize standard resource array
 */
@@ -1552,6 +1550,8 @@ void checkret(
 
   return;
   }  /* END checkret() */
+
+
 
 char *skipwhite(
 
@@ -3524,7 +3524,6 @@ static unsigned long setremchkptdirlist(
 
   return (1);
   }  /* END setremchkptdirlist() */
-
 
 
 
@@ -7703,11 +7702,6 @@ int setup_program_environment(void)
   return(PBSE_NONE);
   }  /* END setup_program_environment() */
 
-
-
-
-
-
 /*
  * TMOMJobGetStartInfo
  *
@@ -7734,8 +7728,6 @@ int TMOMJobGetStartInfo(
 
   return(FAILURE);
   }  /* END TMOMJobGetStartInfo() */
-
-
 
 /*
  * TMOMScanForStarting
@@ -7982,7 +7974,6 @@ void examine_all_polled_jobs(void)
 
   return;
   }      /* END examine_all_polled_jobs() */
-
 
 
 

@@ -1265,8 +1265,8 @@ int handle_heterogeneous_job_launch(
   lock_ji_mutex(cray_clone, __func__, NULL, 0);
   
   /* clone the batch requests to avoid double frees */
-  external_preq = duplicate_request(preq);
-  cray_preq     = duplicate_request(preq);
+  external_preq = duplicate_request(preq, -1);
+  cray_preq     = duplicate_request(preq, -1);
   
   /* client doesn't need a response from these */
   external_preq->rq_noreply = TRUE;

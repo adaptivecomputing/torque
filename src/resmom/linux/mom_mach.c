@@ -2550,7 +2550,8 @@ int kill_task(
 
 			if((sig == SIGKILL)||(sig == SIGTERM))
 			  {
-	              ++ctThisIteration; //Only count for killing don't count for any other signal.
+        /* Only count for killing don't count for any other signal. */
+	      ++ctThisIteration;
 			  }
 			if (sig == SIGKILL)
 			  {
