@@ -413,13 +413,12 @@ int modify_job(
     sprintf(log_buf, "job structure is NULL");
     log_err(PBSE_IVALREQ, __func__, log_buf);
 
-    free_br(preq);
+    req_reject(PBSE_IVALREQ, 0, preq, NULL, NULL);
 
     return(PBSE_IVALREQ);
     }
 
   /* cannot be in exiting or transit, exiting has already been checked */
-
   if (pjob->ji_qs.ji_state == JOB_STATE_TRANSIT)
     {
     /* FAILURE */
@@ -429,7 +428,7 @@ int modify_job(
 
     log_err(PBSE_BADSTATE, __func__, log_buf);
     
-    free_br(preq);
+    req_reject(PBSE_BADSTATE, 0, preq, NULL, NULL);
 
     return(PBSE_BADSTATE);
     }
@@ -483,7 +482,7 @@ int modify_job(
           plist->al_name);
         log_err(PBSE_MODATRRUN, __func__, log_buf);
     
-        free_br(preq);
+        reply_badattr(PBSE_MODATRRUN, 1, plist, preq);
 
         return(PBSE_MODATRRUN);
         }
@@ -506,7 +505,7 @@ int modify_job(
 
           log_err(PBSE_UNKRESC, __func__, log_buf);
     
-          free_br(preq);
+          reply_badattr(PBSE_UNKRESC, 1, plist, preq);
 
           return(PBSE_UNKRESC);
           }
@@ -519,7 +518,7 @@ int modify_job(
             plist->al_name);
           log_err(PBSE_MODATRRUN, __func__, log_buf);
     
-          free_br(preq);
+          reply_badattr(PBSE_MODATRRUN, 1, plist, preq);
 
           return(PBSE_MODATRRUN);
           }
@@ -549,7 +548,7 @@ int modify_job(
     if (rc == PBSE_JOBNOTFOUND)
       *j = NULL;
     
-    free_br(preq);
+    req_reject(rc, 0, preq, NULL, NULL);
 
     return(rc);
     }
@@ -617,7 +616,7 @@ int modify_job(
     return(PBSE_RELAYED_TO_MOM);
     }
   else
-    free_br(preq);
+    reply_ack(preq);
 
   if (copy_checkpoint_files)
     {
@@ -636,6 +635,8 @@ int modify_job(
       if (rc != PBSE_NONE)
         {
         free_br(momreq);
+    
+        req_reject(rc, 0, preq, NULL, NULL);
 
         if (pjob != NULL)
           {
@@ -905,7 +906,6 @@ void *modify_job_work(
   {
   job           *pjob;
   svrattrl      *plist;
-  int            rc;
   int            checkpoint_req = FALSE;
   batch_request *preq = (struct batch_request *)vp;
   
@@ -932,24 +932,7 @@ void *modify_job_work(
 
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_modify.rq_attr);
 
-  if ((rc = modify_job((void **)&pjob, plist, preq, checkpoint_req, 0)) != 0)
-    {
-    if ((rc == PBSE_MODATRRUN) ||
-        (rc == PBSE_UNKRESC))
-      {
-      reply_badattr(rc,1,plist,preq);
-      }
-    else if ( rc == PBSE_RELAYED_TO_MOM )
-      {
-      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
-      
-      return(NULL);
-      }
-    else
-      req_reject(rc,0,preq,NULL,NULL);
-    }
-  else
-    reply_ack(preq);
+  modify_job((void **)&pjob, plist, preq, checkpoint_req, 0);
 
   unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
 
