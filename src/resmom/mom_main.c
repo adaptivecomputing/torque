@@ -99,6 +99,9 @@
 #define PMOMTCPTIMEOUT 60  /* duration in seconds mom TCP requests will block */
 #define TCP_READ_PROTO_TIMEOUT  2
 #define DEFAULT_JOB_EXIT_WAIT_TIME 600
+#define MAX_JOIN_WAIT_TIME          600
+#define RESEND_WAIT_TIME            300
+
 /* Global Data Items */
 
 int    MOMIsLocked = 0;
@@ -196,6 +199,8 @@ long  log_file_roll_depth = 1;
 int   job_oom_score_adjust = 0;  /* no oom score adjust by default */
 int   mom_oom_immunize = 1;  /* make pbs_mom processes immune? no by default */
 int   job_exit_wait_time = DEFAULT_JOB_EXIT_WAIT_TIME;
+int   max_join_job_wait_time = MAX_JOIN_WAIT_TIME;
+int   resend_join_job_wait_time = RESEND_WAIT_TIME;
 
 time_t          last_log_check;
 char           *nodefile_suffix = NULL;    /* suffix to append to each host listed in job host file */
@@ -294,6 +299,7 @@ extern int      shut_nvidia_nvml();
 extern int      check_nvidia_setup();
 #endif  /* NVIDIA_GPUS */
 
+int send_join_job_to_a_sister(job *pjob, int stream, eventent *ep, tlist_head phead, int node_id);
 void prepare_child_tasks_for_delete();
 static void mom_lock(int fds, int op);
 
@@ -407,6 +413,8 @@ static unsigned long setrejectjobsubmission(char *);
 static unsigned long setjoboomscoreadjust(char *);
 static unsigned long setmomoomimmunize(char *);
 unsigned long        setjobexitwaittime(char *);
+unsigned long setmaxjoinjobwaittime(char *);
+unsigned long setresendjoinjobwaittime(char *);
 unsigned long rppthrottle(char *value);
 
 static struct specials
@@ -489,6 +497,8 @@ static struct specials
   { "job_oom_score_adjust",  setjoboomscoreadjust },
   { "mom_oom_immunize",      setmomoomimmunize },
   { "job_exit_wait_time",    setjobexitwaittime },
+  { "max_join_job_wait_time", setmaxjoinjobwaittime},
+  { "resend_join_job_wait_time", setresendjoinjobwaittime},
   { NULL,                  NULL }
   };
 
@@ -3400,6 +3410,46 @@ unsigned long setjobexitwaittime(
   return(1);
   } /* END setjobexitwaittime() */
 
+
+
+
+unsigned long setmaxjoinjobwaittime(
+
+  char *value)
+
+  {
+  int tmp;
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
+
+  if (value != NULL)
+    {
+    tmp = strtol(value, NULL, 10);
+    if (tmp != 0)
+      max_join_job_wait_time = tmp;
+    }
+
+  return(1);
+  } /* END setmaxjoinjobwaittime() */
+
+
+
+unsigned long setresendjoinjobwaittime(
+
+  char *value)
+
+  {
+  int tmp;
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
+
+  if (value != NULL)
+    {
+    tmp = strtol(value, NULL, 10);
+    if (tmp != 0)
+      resend_join_job_wait_time = tmp;
+    }
+
+  return(1);
+  } /* END setresendjoinjobwaittime() */
 
 
 
@@ -8112,12 +8162,99 @@ void examine_all_jobs_to_resend(void)
 
 
 
+void resend_waiting_joins(
+
+  job *pjob)
+
+  {
+  hnodent    *np;
+  int         i;
+  int         stream;
+  eventent   *ep;
+  tlist_head  phead;
+
+  CLEAR_HEAD(phead);
+
+  for (i = 0; i < JOB_ATR_LAST; i++)
+    {
+    (job_attr_def + i)->at_encode(pjob->ji_wattr + i,
+       &phead,
+       (job_attr_def + i)->at_name,
+       NULL,
+       ATR_ENCODE_MOM,
+       ATR_DFLAG_ACCESS);
+    }
+
+  attrl_fixlink(&phead);
+
+  for (i = 1; i < pjob->ji_numnodes; i++)
+    {
+    np = &pjob->ji_hosts[i];
+
+    if ((ep = (eventent *)GET_NEXT(np->hn_events)) != NULL)
+      {
+      /* we haven't received the reply yet */
+      stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
+
+      if (IS_VALID_STREAM(stream))
+        {
+        if (send_join_job_to_a_sister(pjob, stream, ep, phead, i) == DIS_SUCCESS)
+          {
+          /* SUCCESS */
+          snprintf(log_buffer, sizeof(log_buffer), "Successfully re-sent join job request to %s",
+            np->hn_host);
+          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+          }
+
+        close(stream);
+        }
+      }
+    }
+
+  free_attrlist(&phead);
+  } /* END resend_waiting_joins() */
+
+
+
+void check_jobs_awaiting_join_job_reply()
+
+  {
+  job    *pjob;
+  time_now = time(NULL);
+
+  for (pjob = (job *)GET_NEXT(svr_alljobs);
+       pjob != NULL;
+       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+
+    {
+    if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN) &&
+        (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
+        (pjob->ji_hosts[0].hn_node == pjob->ji_nodeid)) /* am I mother superior? */
+      {
+      /* these jobs have sent out join requests but haven't received all replies */
+      if (pjob->ji_joins_sent - time_now > MAX_JOIN_WAIT_TIME)
+        {
+        exec_bail(pjob, JOB_EXEC_RETRY);
+        }
+      else if ((pjob->ji_joins_sent - time_now > RESEND_WAIT_TIME) &&
+               (pjob->ji_joins_resent == FALSE))
+        {
+        pjob->ji_joins_resent = TRUE;
+        resend_waiting_joins(pjob);
+        }
+      }
+    } /* END for each job */
+
+  } /* END check_jobs_awaiting_join_job_reply() */
+
+
+
 
 void check_jobs_in_exit_wait()
 
   {
-  time_t  time_now = time(NULL);
   job    *pjob;
+  time_now = time(NULL);
 
   for (pjob = (job *)GET_NEXT(svr_alljobs);
        pjob != NULL;
@@ -8423,6 +8560,8 @@ void main_loop(void)
       /* we can only do this once so set recover back to the default */
       recover = JOB_RECOV_RUNNING;
       }
+
+    check_jobs_awaiting_join_job_reply();
 
     check_jobs_in_exit_wait();
 
