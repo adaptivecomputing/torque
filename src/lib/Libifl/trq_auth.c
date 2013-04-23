@@ -420,7 +420,10 @@ void *process_svr_conn(
       }
 
     snprintf(msg_buf, sizeof(msg_buf),
-      "User %s at IP:port %s:%d login attempt failed --%s", user_name, server_name, server_port, error_msg);
+      "User %s at IP:port %s:%d login attempt failed --%s", 
+        (user_name) ? user_name : "null",
+        (server_name) ? server_name : "null", server_port, 
+        (error_msg) ? error_msg : "nullL");
     log_record(PBSEVENT_CLIENTAUTH | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD,
       className, msg_buf);
     }
