@@ -13,6 +13,6 @@ int trq_main(int argc, char **argv, char **envp);
 
 void clean_log_init_mutex(void);
 
-void initialize_globals_for_log(void);
+void initialize_globals_for_log(int server_port);
 
 #endif /* _TRQ_AUTH_DAEMON_H */
