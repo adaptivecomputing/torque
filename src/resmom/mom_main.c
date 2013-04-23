@@ -236,6 +236,7 @@ extern int      shut_nvidia_nvml();
 extern int      check_nvidia_setup();
 #endif  /* NVIDIA_GPUS */
 
+int send_join_job_to_a_sister(job *pjob, int stream, eventent *ep, tlist_head phead, int node_id);
 void prepare_child_tasks_for_delete();
 static void mom_lock(int fds, int op);
 
@@ -5163,12 +5164,100 @@ void examine_all_jobs_to_resend(void)
 
 
 
+void resend_waiting_joins(
+
+  job *pjob)
+
+  {
+  hnodent    *np;
+  int         i;
+  int         stream;
+  eventent   *ep;
+  tlist_head  phead;
+
+  /* first we have to encode the job attributes */
+  CLEAR_HEAD(phead);
+
+  for (i = 0; i < JOB_ATR_LAST; i++)
+    {
+    (job_attr_def + i)->at_encode(pjob->ji_wattr + i,
+       &phead,
+       (job_attr_def + i)->at_name,
+       NULL,
+       ATR_ENCODE_MOM,
+       ATR_DFLAG_ACCESS);
+    }
+
+  attrl_fixlink(&phead);
+
+  for (i = 1; i < pjob->ji_numnodes; i++)
+    {
+    np = &pjob->ji_hosts[i];
+
+    if ((ep = (eventent *)GET_NEXT(np->hn_events)) != NULL)
+      {
+      /* we haven't received the reply yet */
+      stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
+
+      if (IS_VALID_STREAM(stream))
+        {
+        if (send_join_job_to_a_sister(pjob, stream, ep, phead, i) == DIS_SUCCESS)
+          {
+          /* SUCCESS */
+          snprintf(log_buffer, sizeof(log_buffer), "Successfully re-sent join job request to %s",
+            np->hn_host);
+          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+          }
+
+        close(stream);
+        }
+      }
+    }
+
+  free_attrlist(&phead);
+  } /* END resend_waiting_joins() */
+
+
+
+void check_jobs_awaiting_join_job_reply()
+
+  {
+  job    *pjob;
+  time_now = time(NULL);
+
+  for (pjob = (job *)GET_NEXT(svr_alljobs);
+       pjob != NULL;
+       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+
+    {
+    if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN) &&
+        (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
+        (pjob->ji_hosts[0].hn_node == pjob->ji_nodeid)) /* am I mother superior? */
+      {
+      /* these jobs have sent out join requests but haven't received all replies */
+      if (pjob->ji_joins_sent - time_now > MAX_JOIN_WAIT_TIME)
+        {
+        exec_bail(pjob, JOB_EXEC_RETRY);
+        }
+      else if ((pjob->ji_joins_sent - time_now > RESEND_WAIT_TIME) &&
+               (pjob->ji_joins_resent == FALSE))
+        {
+        pjob->ji_joins_resent = TRUE;
+        resend_waiting_joins(pjob);
+        }
+      }
+    } /* END for each job */
+
+  } /* END check_jobs_awaiting_join_job_reply() */
+
+
+
 
 void check_jobs_in_exit_wait()
 
   {
-  time_t  time_now = time(NULL);
   job    *pjob;
+  time_now = time(NULL);
 
   for (pjob = (job *)GET_NEXT(svr_alljobs);
        pjob != NULL;
@@ -5473,6 +5562,8 @@ void main_loop(void)
       /* we can only do this once so set recover back to the default */
       recover = JOB_RECOV_RUNNING;
       }
+
+    check_jobs_awaiting_join_job_reply();
 
     check_jobs_in_exit_wait();
 

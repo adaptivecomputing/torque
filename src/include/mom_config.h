@@ -90,6 +90,9 @@
 #define DEFAULT_JOB_EXIT_WAIT_TIME  600
 #define DEFAULT_SERVER_STAT_UPDATES 45
 #define CHECK_POLL_TIME             45
+#define MAX_JOIN_WAIT_TIME          600
+#define RESEND_WAIT_TIME            300
+
 
 
 extern int              thread_unlink_calls;
@@ -164,6 +167,8 @@ extern char             PBSNodeMsgBuf[1024];
 extern int              MOMConfigUseSMT; /* 0: off, 1: on */
 extern int              memory_pressure_threshold;
 extern short            memory_pressure_duration;
+extern int              max_join_job_wait_time;
+extern int              resend_join_job_wait_time;
 
 struct specials
   {

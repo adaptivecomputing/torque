@@ -176,6 +176,8 @@ int              MOMConfigUseSMT = 1; /* 0: off, 1: on */
 int              memory_pressure_threshold = 0; /* 0: off, >0: check and kill */
 short            memory_pressure_duration  = 0; /* 0: off, >0: check and kill */
 #endif
+int              max_join_job_wait_time = MAX_JOIN_WAIT_TIME;
+int              resend_join_job_wait_time = RESEND_WAIT_TIME;
 
 
 
@@ -274,6 +276,8 @@ unsigned long setrejectjobsubmission(const char *);
 unsigned long setjoboomscoreadjust(const char *);
 unsigned long setmomoomimmunize(const char *);
 unsigned long setjobexitwaittime(const char *);
+unsigned long setmaxjoinjobwaittime(const char *);
+unsigned long setresendjoinjobwaittime(const char *);
 
 struct specials special[] = {
   { "alloc_par_cmd",       setallocparcmd },
@@ -350,6 +354,8 @@ struct specials special[] = {
   { "job_oom_score_adjust",  setjoboomscoreadjust },
   { "mom_oom_immunize",      setmomoomimmunize },
   { "job_exit_wait_time",    setjobexitwaittime },
+  { "max_join_job_wait_time", setmaxjoinjobwaittime},
+  { "resend_join_job_wait_time", setresendjoinjobwaittime},
   { NULL,                  NULL }
   };
 
@@ -2170,10 +2176,6 @@ void add_static(
 
 
 
-
-
-
-
 /*
 ** Open and read the config file.  Save information in a linked
 ** list.  After reading the file, create an array, copy the list
@@ -2531,6 +2533,46 @@ u_long setmempressdur(
   return(1);
   }
 #endif
+
+
+
+unsigned long setmaxjoinjobwaittime(
+
+  const char *value)
+
+  {
+  int tmp;
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
+
+  if (value != NULL)
+    {
+    tmp = strtol(value, NULL, 10);
+    if (tmp != 0)
+      max_join_job_wait_time = tmp;
+    }
+
+  return(1);
+  } /* END setmaxjoinjobwaittime() */
+
+
+
+unsigned long setresendjoinjobwaittime(
+
+  const char *value)
+
+  {
+  int tmp;
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
+
+  if (value != NULL)
+    {
+    tmp = strtol(value, NULL, 10);
+    if (tmp != 0)
+      resend_join_job_wait_time = tmp;
+    }
+
+  return(1);
+  } /* END setresendjoinjobwaittime() */
 
 
 

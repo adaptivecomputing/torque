@@ -3843,7 +3843,7 @@ int im_get_tid(
 
 int handle_im_join_job_response(
    
-  struct tcp_chan *chan,
+  struct tcp_chan    *chan,
   job                *pjob,   /* M */
   struct sockaddr_in *addr)
 
