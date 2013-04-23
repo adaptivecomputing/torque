@@ -165,6 +165,7 @@ int start_domainsocket_listener(
   pthread_t           tid;
   pthread_attr_t      t_attr;
   int objclass = 0;
+  char authd_host_port[1024];
 
   memset(&addr, 0, sizeof(addr));
   addr.sun_family = AF_UNIX;
@@ -214,8 +215,14 @@ int start_domainsocket_listener(
     log_get_set_eventclass(&objclass, GETV);
     if (objclass == PBS_EVENTCLASS_TRQAUTHD)
       {
-      snprintf(log_buf, sizeof(log_buf),
-        "TORQUE authd daemon started and listening unix socket %s", socket_name);
+      log_get_host_port(authd_host_port, sizeof(authd_host_port));
+      if (authd_host_port[0])
+        snprintf(log_buf, sizeof(log_buf),
+          "TORQUE authd daemon started and listening on %s (unix socket %s)", 
+            authd_host_port, socket_name);
+      else
+        snprintf(log_buf, sizeof(log_buf),
+          "TORQUE authd daemon started and listening unix socket %s", socket_name);
       log_event(PBSEVENT_SYSTEM | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD,
         msg_daemonname, log_buf);
       }

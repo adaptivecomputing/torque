@@ -126,6 +126,7 @@ void job_log_close(int msg);
 char log_buffer[LOG_BUF_SIZE];
 char log_directory[_POSIX_PATH_MAX/2];
 char job_log_directory[_POSIX_PATH_MAX/2];
+char log_host_port[1024];
 char log_host[1024];
 char log_suffix[1024];
 
@@ -330,6 +331,7 @@ int log_open(
 
   {
   char  buf[PATH_MAX];
+  char  buf2[1024];
   int   fds;
 
   if (log_opened > 0)
@@ -398,11 +400,16 @@ int log_open(
 
   pthread_mutex_unlock(log_mutex);
   
+  if (log_host_port[0])
+    snprintf(buf2, sizeof(buf2), "Log opened at %s", log_host_port);
+  else
+    snprintf(buf2, sizeof(buf2), "Log opened");
+
   log_record(
     PBSEVENT_SYSTEM,
     PBS_EVENTCLASS_SERVER,
     "Log",
-    "Log opened");
+    buf2);
 
   pthread_mutex_lock(log_mutex);
 
@@ -931,10 +938,15 @@ void log_close(
   int msg)  /* BOOLEAN - write close message */
 
   {
+  char buf[1024];
   if (log_opened == 1)
     {
     log_auto_switch = 0;
 
+    if (log_host_port[0])
+      snprintf(buf, sizeof(buf), "Log closed at %s", log_host_port);
+    else
+      snprintf(buf, sizeof(buf), "Log closed");
     if (msg)
       {
       pthread_mutex_unlock(log_mutex);
@@ -942,7 +954,7 @@ void log_close(
         PBSEVENT_SYSTEM,
         PBS_EVENTCLASS_SERVER,
         "Log",
-        "Log closed");
+        buf);
       pthread_mutex_lock(log_mutex);
       }
 
@@ -1492,4 +1504,28 @@ void log_format_trq_timestamp(
   milisec = tv.tv_usec/100;
   snprintf(time_formatted_str, buflen, "%s%04d", buffer, milisec);
   } /* end of log_format_trq_timestamp */
+
+void log_set_hostname_sharelogging(const char *server_name, int server_port)
+  {
+  char buf[64];
+  if (server_name)
+    {
+    snprintf(log_host_port, sizeof(log_host_port), "%s:%d", 
+      server_name, server_port);
+    }
+  else
+    {
+    if (gethostname(log_host_port, sizeof(log_host_port)) == 0) 
+      {
+      snprintf(buf, sizeof(buf), ":%d", server_port);
+      strncat(log_host_port, buf, sizeof(log_host_port) - 1);
+      log_host_port[sizeof(log_host_port) - 1] = '\0';
+      }
+    }
+  }
+
+void log_get_host_port(char *host_n_port, size_t s)
+{
+  snprintf(host_n_port, s, "%s", log_host_port);
+}
 /* END pbs_log.c */
