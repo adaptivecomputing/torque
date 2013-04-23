@@ -1445,6 +1445,7 @@ int modify_array_range(
   {
   tlist_head          tl;
   int                 i;
+  int                 rc = PBSE_NONE;
   job                *pjob;
 
   array_request_node *rn;
@@ -1513,7 +1514,7 @@ int modify_array_range(
       }
     }
 
-  return(PBSE_NONE);
+  return(rc);
   } /* END modify_array_range() */
 
 
