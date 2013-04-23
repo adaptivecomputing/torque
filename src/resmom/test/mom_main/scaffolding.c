@@ -682,3 +682,16 @@ int insert_thing_after(resizable_array *ra, void *thing, int i)
   {
   return(0);
   }
+
+void free_attrlist(list_link *l) {}
+
+void attrl_fixlink(list_link *l) {}
+
+int send_join_job_to_a_sister(job *pjob, int stream, eventent *ep, tlist_head phead, int node_id)
+  {
+  return(0);
+  }
+
+void im_request(struct tcp_chan *chan, int version,struct sockaddr_in *pSockAddr) {}
+
+attribute_def    job_attr_def[1];
