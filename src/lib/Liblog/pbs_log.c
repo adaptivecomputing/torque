@@ -126,6 +126,7 @@ void job_log_close(int msg);
 char log_buffer[LOG_BUF_SIZE];
 char log_directory[_POSIX_PATH_MAX/2];
 char job_log_directory[_POSIX_PATH_MAX/2];
+char log_hostname[1024];
 char log_host[1024];
 char log_suffix[1024];
 
@@ -330,6 +331,7 @@ int log_open(
 
   {
   char  buf[PATH_MAX];
+  char  buf2[1024];
   int   fds;
 
   if (log_opened > 0)
@@ -398,11 +400,16 @@ int log_open(
 
   pthread_mutex_unlock(log_mutex);
   
+  if (log_hostname[0])
+    snprintf(buf2, sizeof(buf2), "Log opened; host: %s", log_hostname);
+  else
+    snprintf(buf2, sizeof(buf2), "Log opened");
+
   log_record(
     PBSEVENT_SYSTEM,
     PBS_EVENTCLASS_SERVER,
     "Log",
-    "Log opened");
+    buf2);
 
   pthread_mutex_lock(log_mutex);
 
@@ -931,10 +938,15 @@ void log_close(
   int msg)  /* BOOLEAN - write close message */
 
   {
+  char buf[1024];
   if (log_opened == 1)
     {
     log_auto_switch = 0;
 
+    if (log_hostname[0])
+      snprintf(buf, sizeof(buf), "Log closed; host: %s", log_hostname);
+    else
+      snprintf(buf, sizeof(buf), "Log closed");
     if (msg)
       {
       pthread_mutex_unlock(log_mutex);
@@ -942,7 +954,7 @@ void log_close(
         PBSEVENT_SYSTEM,
         PBS_EVENTCLASS_SERVER,
         "Log",
-        "Log closed");
+        buf);
       pthread_mutex_lock(log_mutex);
       }
 
@@ -1492,4 +1504,9 @@ void log_format_trq_timestamp(
   milisec = tv.tv_usec/100;
   snprintf(time_formatted_str, buflen, "%s%04d", buffer, milisec);
   } /* end of log_format_trq_timestamp */
+
+void log_set_hostname_sharelogging(void)
+  {
+  gethostname(log_hostname, sizeof(log_hostname));
+  }
 /* END pbs_log.c */

@@ -81,6 +81,7 @@ void initialize_globals_for_log(void)
   strcpy(pbs_current_user, "trqauthd");   
   if ((msg_daemonname = strdup(pbs_current_user)))
     changed_msg_daem = 1;
+  log_set_hostname_sharelogging();
   }
 
 void clean_log_init_mutex(void)

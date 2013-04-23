@@ -36,4 +36,6 @@ void log_get_set_eventclass(int *objclass, SGetter action);
 
 void log_format_trq_timestamp(char *time_formatted_str, unsigned int buflen);
 
+void log_set_hostname_sharelogging(void);
+
 #endif /* _PBS_LOG_H */
