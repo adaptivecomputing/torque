@@ -37,6 +37,14 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       TRQ-1776. (backported from 4.2.3)
   b - If privileged ports are disabled, make pbs_moms not check if incoming connections
       from mother superior are on privileged ports. TRQ-1669. (backported from 4.2.3)
+  e - Add two mom config parameters: max_join_job_wait_time and resent_join_job_wait_time.
+      The first specifies how long pbs_mom should wait before deciding that join jobs
+      will never be received, and defaults to 10 minutes. The latter specifies how long
+      pbs_mom should wait before attempting to resend join jobs to moms that it hasn't
+      received replies from, and this defaults to 5 minutes. Both are specified in 
+      seconds. Prior to this functionality mother superior would wait indefinitely 
+      for the join job replies. Please carefully consider what these values should be
+      for your site and set them appropriately. (backported from 4.2.3) TRQ-1790.
 
 4.1.5
   b - For cray: make sure that reservations are released when jobs are requeued. TRQ-1572.
