@@ -516,8 +516,9 @@ int setuid_ext(uid_t uid, int set_euid)
 int pbs_getaddrinfo(const char *,struct addrinfo *,struct addrinfo **)
   {
   return -1;
+  }
 
-  void free_dynamic_string(dynamic_string *ds) {}
+void free_dynamic_string(dynamic_string *ds) {}
 
 dynamic_string *get_dynamic_string(int size, const char *init)
   {
