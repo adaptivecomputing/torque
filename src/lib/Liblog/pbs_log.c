@@ -119,6 +119,8 @@
 #endif
 
 #include <execinfo.h> /* backtrace information */
+#include<arpa/inet.h>
+#include<netdb.h>
 
 void job_log_close(int msg);
 
@@ -126,6 +128,7 @@ void job_log_close(int msg);
 char log_buffer[LOG_BUF_SIZE];
 char log_directory[_POSIX_PATH_MAX/2];
 char job_log_directory[_POSIX_PATH_MAX/2];
+char log_host_port[1024];
 char log_host[1024];
 char log_suffix[1024];
 
@@ -300,6 +303,7 @@ int log_init(
 
   /* Making log_mutex recursive because of signal handler like alarm
      and may be others interrupting log_record trq-1763 */
+
   pthread_mutexattr_init(&log_mutex_attr);
   pthread_mutexattr_settype(&log_mutex_attr, PTHREAD_MUTEX_RECURSIVE);
 
@@ -330,6 +334,7 @@ int log_open(
 
   {
   char  buf[PATH_MAX];
+  char  buf2[1024];
   int   fds;
 
   if (log_opened > 0)
@@ -398,11 +403,16 @@ int log_open(
 
   pthread_mutex_unlock(log_mutex);
   
+  if (log_host_port[0])
+    snprintf(buf2, sizeof(buf2), "Log opened at %s", log_host_port);
+  else
+    snprintf(buf2, sizeof(buf2), "Log opened");
+  
   log_record(
     PBSEVENT_SYSTEM,
     PBS_EVENTCLASS_SERVER,
     "Log",
-    "Log opened");
+    buf2);
 
   pthread_mutex_lock(log_mutex);
 
@@ -930,18 +940,24 @@ void log_close(
   int msg)  /* BOOLEAN - write close message */
 
   {
+  char buf[1024];
   if (log_opened == 1)
     {
     log_auto_switch = 0;
 
     if (msg)
       {
+      if (log_host_port[0])
+        snprintf(buf, sizeof(buf), "Log closed at %s", log_host_port);
+      else
+        snprintf(buf, sizeof(buf), "Log closed");
+       
       pthread_mutex_unlock(log_mutex);
       log_record(
         PBSEVENT_SYSTEM,
         PBS_EVENTCLASS_SERVER,
         "Log",
-        "Log closed");
+        buf);
       pthread_mutex_lock(log_mutex);
       }
 
@@ -1494,4 +1510,48 @@ void log_format_trq_timestamp(
   milisec = tv.tv_usec/100;
   snprintf(time_formatted_str, buflen, "%s%04d", buffer, milisec);
   } /* end of log_format_trq_timestamp */
+
+void log_set_hostname_sharelogging(const char *server_name, int server_port)
+  {
+  char ip[64];
+  char hostnm[1024];
+  char *hostname = NULL;
+  struct hostent *he;
+  struct in_addr **addr_list;
+         
+  if (server_name)
+     hostname = (char *)server_name;
+  else if (gethostname(hostnm, sizeof(hostnm)) == 0)
+     hostname = hostnm;
+
+  if (hostname) 
+    {
+    if ((he = gethostbyname(hostname)) == NULL) 
+      {
+      strcpy(ip, "null");
+      }
+    else
+      {
+      addr_list = (struct in_addr **) he->h_addr_list;
+      if (addr_list[0]) 
+        snprintf(ip , sizeof(ip), "%s", inet_ntoa(*addr_list[0]));
+      else
+        strcpy(ip, "null");
+      }
+    }
+  else
+    {
+    strcpy(ip, "null");
+    strcpy(hostnm, "null");
+    hostname = hostnm;
+    }
+
+  snprintf(log_host_port, sizeof(log_host_port), "%s:%d (host: %s)", 
+    ip, server_port, hostname);
+  }
+
+void log_get_host_port(char *host_n_port, size_t s)
+{
+  snprintf(host_n_port, s, "%s", log_host_port);
+}
 /* END pbs_log.c */

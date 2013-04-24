@@ -30,6 +30,7 @@ extern pthread_mutex_t *job_log_mutex;
 
 extern int debug_mode;
 static int changed_msg_daem = 0;
+static char *trq_server_ip = NULL;
 
 int load_config(
     char **ip,
@@ -76,11 +77,12 @@ int validate_server(
   return rc;
   }
 
-void initialize_globals_for_log(void)
+void initialize_globals_for_log(int port)
   {
   strcpy(pbs_current_user, "trqauthd");   
   if ((msg_daemonname = strdup(pbs_current_user)))
     changed_msg_daem = 1;
+  log_set_hostname_sharelogging(trq_server_ip, port);
   }
 
 void clean_log_init_mutex(void)
@@ -160,7 +162,7 @@ int daemonize_trqauthd(const char *server_ip, int server_port, void *(*process_m
 
     log_init(NULL, NULL);
     log_get_set_eventclass(&eventclass, SETV);
-    initialize_globals_for_log();
+    initialize_globals_for_log(server_port);
     sprintf(path_log, "%s/%s", path_home, TRQ_LOGFILES);
     if ((mkdir(path_log, 0755) == -1) && (errno != EEXIST))
       {
@@ -237,7 +239,6 @@ int trq_main(
 
   {
   int rc = PBSE_NONE;
-  char *trq_server_ip = NULL;
   char *the_key = NULL;
   char *sign_key = NULL;
   int trq_server_port = 0;
