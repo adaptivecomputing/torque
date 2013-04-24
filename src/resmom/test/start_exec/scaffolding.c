@@ -512,3 +512,9 @@ int setuid_ext(uid_t uid, int set_euid)
   {
   return(0);
   }
+
+int pbs_getaddrinfo(const char *,struct addrinfo *,struct addrinfo **)
+  {
+  return -1;
+  }
+

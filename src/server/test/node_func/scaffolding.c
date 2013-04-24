@@ -372,7 +372,7 @@ int login_node_count()
 
 struct sockaddr_in *get_cached_addrinfo(
     
-  char               *hostname)
+  const char *hostname)
 
   {
   return(NULL);
@@ -390,10 +390,9 @@ job *get_job_from_jobinfo(
   }
 
 int insert_addr_name_info(
-    
-  char               *hostname,
-  char               *full_hostname,
-  struct sockaddr_in *sai)
+    struct addrinfo *,
+    const char *
+)
 
   {
   return(0);
@@ -410,3 +409,8 @@ const char *alps_starter_feature   = "alps_starter";
 void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+
+int pbs_getaddrinfo(const char *,struct addrinfo *,struct addrinfo **)
+  {
+  return -1;
+  }

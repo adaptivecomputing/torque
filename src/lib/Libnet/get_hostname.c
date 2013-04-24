@@ -89,6 +89,8 @@
 #include "portability.h"
 #include "utils.h"
 #include "net_cache.h"
+#include "lib_net.h"
+
 
 /*
  * get_fullhostname - get the fully qualified name of a host
@@ -158,7 +160,7 @@ int get_fullhostname(
   memset(&hints,0,sizeof(hints));
   hints.ai_flags = AI_CANONNAME;
 
-  if (getaddrinfo(shortname, NULL, &hints, &addr_info) != 0)
+  if (pbs_getaddrinfo(shortname, &hints, &addr_info) != 0)
     {
     /* FAILURE - cannot getaddrinfo() */
 
@@ -204,10 +206,9 @@ int get_fullhostname(
     return(-1);
     }
 
-  insert_addr_name_info(shortname, addr_info->ai_canonname, (struct sockaddr_in *)addr_info->ai_addr);
+  insert_addr_name_info(addr_info,shortname);
 
   snprintf(namebuf, bufsize, "%s", addr_info->ai_canonname);
-  freeaddrinfo(addr_info);
 
   for (index = 0;index < bufsize;index++)
     {

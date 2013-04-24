@@ -506,7 +506,7 @@ int mom_server_add(
     else
       port = default_server_port;
 
-    if (getaddrinfo(tmp_server_name, NULL, NULL, &addr_info) != 0)
+    if (pbs_getaddrinfo(tmp_server_name, NULL,&addr_info) != 0)
       {
       sprintf(log_buffer, "Cannot resolve host %s for pbs_server", tmp_server_name);
       log_err(PBSE_BADHOST, __func__, log_buffer);
@@ -520,7 +520,6 @@ int mom_server_add(
     pms->sock_addr.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
     pms->sock_addr.sin_family = AF_INET;
     pms->sock_addr.sin_port = htons(port);
-    freeaddrinfo(addr_info);
 
     mom_server_count++;
 
@@ -552,7 +551,7 @@ int mom_server_add(
 
     /* FIXME: must be able to retry failed lookups later */
 
-    if (getaddrinfo(pms->pbs_servername, NULL, NULL, &addr_info) != 0)
+    if (pbs_getaddrinfo(pms->pbs_servername, NULL, &addr_info) != 0)
       {
       sprintf(log_buffer, "host %s not found", pms->pbs_servername);
 
@@ -561,7 +560,6 @@ int mom_server_add(
     else
       {
       saddr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
-      freeaddrinfo(addr_info);
 
       ipaddr = ntohl(saddr.s_addr);
 
@@ -1938,10 +1936,9 @@ mom_server *mom_server_valid_message_source(
           struct in_addr   saddr;
           u_long           server_ip;
 
-          if (getaddrinfo(pms->pbs_servername, NULL, NULL, &addr_info) == 0)
+          if (pbs_getaddrinfo(pms->pbs_servername, NULL, &addr_info) == 0)
             {
             saddr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
-            freeaddrinfo(addr_info);
 
             server_ip = ntohl(saddr.s_addr);
 
@@ -1996,7 +1993,7 @@ int process_host_name(
     rm_port = (unsigned short)atoi(colon+1);
     }
   
-  if (getaddrinfo(hostname, NULL, NULL, &addr_info) == 0)
+  if (pbs_getaddrinfo(hostname, NULL, &addr_info) == 0)
     {
     sa.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
     ipaddr      = ntohl(sa.sin_addr.s_addr);
@@ -2006,8 +2003,6 @@ int process_host_name(
       add_network_entry(mh, hostname, addr_info, rm_port, path, level);
       *something_added = TRUE;
       }
-
-    freeaddrinfo(addr_info);
 
     /* add to acceptable host tree */
     okclients = AVL_insert(ipaddr, rm_port, NULL, okclients);

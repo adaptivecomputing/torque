@@ -313,7 +313,7 @@ int start_listener_addrinfo(
   char                log_buf[LOCAL_LOG_BUF_SIZE + 1];
   int                 ret;
 
-  if (!(ret = getaddrinfo(host_name, NULL, NULL, &adr_svr) == 0))
+  if (!(ret = pbs_getaddrinfo(host_name, NULL, &adr_svr) == 0))
     {
 	sprintf(err_msg,"Error with getaddrinfo on host name %s. Error code = %d.\n",host_name,ret);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, err_msg);
@@ -356,7 +356,6 @@ int start_listener_addrinfo(
     }
   else
     {
-    freeaddrinfo(adr_svr);
     int exit_loop = FALSE;
     int retry_tolerance = NUM_ACCEPT_RETRIES;
 

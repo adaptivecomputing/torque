@@ -1078,7 +1078,7 @@ static int process_host_name_part(
 
   *pul = NULL;
 
-  if (getaddrinfo(phostname, NULL, &hints, &addr_info) != 0)
+  if (pbs_getaddrinfo(phostname, &hints, &addr_info) != 0)
     {
     snprintf(log_buf, sizeof(log_buf), "host %s not found", objname);
 
@@ -1108,11 +1108,12 @@ static int process_host_name_part(
   if (addr_info->ai_canonname == NULL)
     {
     free(phostname);
+    freeaddrinfo(addr_info);
     
     return(PBSE_SYSTEM);
     }
 
-  insert_addr_name_info(phostname, addr_info->ai_canonname, sai);
+  addr_info = insert_addr_name_info(addr_info,phostname);
   snprintf(hname, sizeof(hname), "%s", addr_info->ai_canonname);
   
   totalipcount = 0;
@@ -1169,7 +1170,7 @@ static int process_host_name_part(
       continue;
       }
     
-    if ((rc = getaddrinfo(hptr, NULL, NULL, &addr_iter)) != 0)
+    if ((rc = pbs_getaddrinfo(hptr, NULL, &addr_iter)) != 0)
       {
       snprintf(log_buf, sizeof(log_buf), "bad cname %s, h_errno=%d errno=%d (%s)",
         hptr,
@@ -1187,8 +1188,6 @@ static int process_host_name_part(
       
       return(PBSE_UNKNODE);
       }
-    
-    freeaddrinfo(addr_iter);
     
     /* count host ipaddrs */
     for (addr_iter = addr_info; addr_iter != NULL; addr_iter = addr_iter->ai_next)
@@ -1231,8 +1230,6 @@ static int process_host_name_part(
     
     (*pul)[totalipcount] = 0;  /* zero-term array ip addrs */
     }  /* END for (hindex) */
-  
-  freeaddrinfo(addr_info);
   
   *pname = phostname;   /* return node name     */
 
