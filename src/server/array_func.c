@@ -1445,7 +1445,6 @@ int modify_array_range(
   {
   tlist_head          tl;
   int                 i;
-  int                 rc;
   job                *pjob;
 
   array_request_node *rn;
@@ -1487,7 +1486,7 @@ int modify_array_range(
             mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
             pthread_mutex_unlock(pa->ai_mutex);
             array_req->rq_noreply = TRUE;
-            rc = modify_job((void **)&pjob, plist, array_req, checkpoint_req, NO_MOM_RELAY);
+            modify_job((void **)&pjob, plist, array_req, checkpoint_req, NO_MOM_RELAY);
             pa = get_jobs_array(&pjob);
 
             if (pa == NULL)
