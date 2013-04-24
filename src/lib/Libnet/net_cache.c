@@ -109,11 +109,13 @@ public:
         }
         pthread_mutex_lock(cacheMutex);
         int index = addrs.size();
+        /*
         if(pAddr->ai_next != NULL)
         {
             freeaddrinfo(pAddr->ai_next);
             pAddr->ai_next = NULL;
         }
+        */
         addrs.push_back(pAddr);
         hosts.push_back(strdup(host));
         add_hash(addrToName,index,key);
@@ -167,10 +169,12 @@ public:
         {
             freeaddrinfo(*i);
         }
+        addrs.clear();
         for(std::vector<char *>::iterator i = hosts.begin();i != hosts.end();i++)
           {
           free(*i);
           }
+        hosts.clear();
         free_hash(nameToAddr);
         free_hash(addrToName);
     }

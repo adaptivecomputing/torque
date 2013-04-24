@@ -206,8 +206,6 @@ int get_fullhostname(
     return(-1);
     }
 
-  insert_addr_name_info(addr_info,shortname);
-
   snprintf(namebuf, bufsize, "%s", addr_info->ai_canonname);
 
   for (index = 0;index < bufsize;index++)
