@@ -701,3 +701,16 @@ void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_ext(int type, const char *func_name, const char *msg, int o) {}
+
+void free_attrlist(list_link *l) {}
+
+void attrl_fixlink(list_link *l) {}
+
+int send_join_job_to_a_sister(job *pjob, int stream, eventent *ep, tlist_head phead, int node_id)
+  {
+  return(0);
+  }
+
+void im_request(struct tcp_chan *chan, int version,struct sockaddr_in *pSockAddr) {}
+
+attribute_def    job_attr_def[1];

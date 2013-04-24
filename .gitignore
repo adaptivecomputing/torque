@@ -13,6 +13,7 @@ coverage_run.sh
 .libs
 *.m4
 autom4te.cache/
+buildutils/compile
 buildutils/config.guess
 buildutils/config.sub
 buildutils/depcomp
