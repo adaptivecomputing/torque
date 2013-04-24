@@ -4257,8 +4257,6 @@ int setup_program_environment(void)
     return(1);
     }
 
-  initialize_network_info();
-
   /* The following is code to reduce security risks                */
   /* start out with standard umask, system resource limit infinite */
 

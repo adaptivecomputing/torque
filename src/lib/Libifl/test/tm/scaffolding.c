@@ -83,3 +83,8 @@ void DIS_tcp_cleanup(struct tcp_chan *chan)
   {
   }
 
+int pbs_getaddrinfo(const char *,struct addrinfo *,struct addrinfo **)
+  {
+  return -1;
+  }
+

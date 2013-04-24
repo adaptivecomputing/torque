@@ -107,6 +107,7 @@
 #include "tm.h"
 #include "net_connect.h"
 #include "pbs_ifl.h"
+#include "lib_net.h"
 #include "../Liblog/pbs_log.h" /* print_trace */
 
 
@@ -468,7 +469,7 @@ static int localmom(void)
     {
     /* lookup "localhost" and save address */
 
-    if (getaddrinfo("localhost", NULL, NULL, &addr_info) != 0)
+    if (pbs_getaddrinfo("localhost", NULL, &addr_info) != 0)
       {
       TM_DBPRT(("tm_init: localhost not found\n"))
 
@@ -479,7 +480,6 @@ static int localmom(void)
 
     have_addr = 1;
 
-    freeaddrinfo(addr_info);
     }
 
   for (i = 0;i < 5;i++)

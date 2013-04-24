@@ -61,8 +61,6 @@ int main(
   char *o_attr_value = NULL;
   char *e_attr_value = NULL;
 
-  initialize_network_info();
-
 #define GETOPT_ARGS "a:A:c:e:h:j:k:l:m:M:n:N:o:p:qr:S:t:u:v:W:x:"
 
   while ((c = getopt(argc, argv, GETOPT_ARGS)) != EOF)

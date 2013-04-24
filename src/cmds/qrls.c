@@ -41,8 +41,6 @@ int main(
 #define MAX_HOLD_TYPE_LEN 32
   char hold_type[MAX_HOLD_TYPE_LEN+1];
 
-  initialize_network_info();
-
 #define GETOPT_ARGS "h:t:"
 
   hold_type[0] = '\0';

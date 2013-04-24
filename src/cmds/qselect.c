@@ -248,8 +248,6 @@ int main(
   if (getenv("PBS_QSTAT_EXECONLY") != NULL)
     exec_only = 1;
   
-  initialize_network_info();
-
 #define GETOPT_ARGS "a:A:ec:h:l:N:p:q:r:s:u:"
 
   while ((c = getopt(argc, argv, GETOPT_ARGS)) != EOF)

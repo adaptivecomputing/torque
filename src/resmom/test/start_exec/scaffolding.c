@@ -529,4 +529,8 @@ int destroy_alps_reservation(char *reservation_id, char *apbasil_path, char *apb
   {
   return(0);
   }
+int pbs_getaddrinfo(const char *,struct addrinfo *,struct addrinfo **)
+  {
+  return -1;
+  }
 
