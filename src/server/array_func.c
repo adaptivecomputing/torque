@@ -54,7 +54,6 @@
 extern int array_upgrade(job_array *, int, int, int *);
 extern char *get_correct_jobname(const char *jobid);
 extern int count_user_queued_jobs(pbs_queue *,char *);
-extern int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq, int type, int jobid);
 extern void post_modify_arrayreq(batch_request *preq);
 
 /* global data items used */
@@ -1437,18 +1436,16 @@ int release_array_range(
 
 int modify_array_range(
 
-  job_array *pa,              /* I/O */
-  char      *range,           /* I */
-  svrattrl  *plist,           /* I */
-  struct batch_request *preq, /* I */
-  int        checkpoint_req)  /* I */
+  job_array     *pa,              /* I/O */
+  char          *range,           /* I */
+  svrattrl      *plist,           /* I */
+  batch_request *preq,            /* I */
+  int            checkpoint_req)  /* I */
 
   {
-  char                log_buf[LOCAL_LOG_BUF_SIZE];
   tlist_head          tl;
   int                 i;
-  int                 rc;
-  int                 mom_relay = 0;
+  int                 rc = PBSE_NONE;
   job                *pjob;
 
   array_request_node *rn;
@@ -1464,69 +1461,48 @@ int modify_array_range(
     }
   else 
     {
+    int array_gone = FALSE;
+
     /* hold just that range from the array */
     rn = (array_request_node*)GET_NEXT(tl);
     
     while (rn != NULL)
       {
-      for (i = rn->start; i <= rn->end; i++)
+      if (array_gone == FALSE)
         {
-        if ((i >= pa->ai_qs.array_size) ||
-            (pa->job_ids[i] == NULL))
-          continue;
+        for (i = rn->start; i <= rn->end; i++)
+          {
+          if ((i >= pa->ai_qs.array_size) ||
+              (pa->job_ids[i] == NULL))
+            continue;
 
-        if ((pjob = svr_find_job(pa->job_ids[i], FALSE)) == NULL)
-          {
-          free(pa->job_ids[i]);
-          pa->job_ids[i] = NULL;
-          }
-        else
-          {
-          mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
-          pthread_mutex_unlock(pa->ai_mutex);
-          rc = modify_job((void **)&pjob, plist, preq, checkpoint_req, NO_MOM_RELAY);
-          pa = get_jobs_array(&pjob);
-          
-          if (pjob != NULL)
+          if ((pjob = svr_find_job(pa->job_ids[i], FALSE)) == NULL)
             {
-            if (rc == PBSE_RELAYED_TO_MOM)
-              {
-              struct batch_request *array_req = NULL;
-              
-              /* We told modify_job not to call relay_to_mom so we need to contact the mom */
-              if ((rc = copy_batchrequest(&array_req, preq, 0, i)) != PBSE_NONE)
-                {
-                return(rc);
-                }
-              
-              preq->rq_refcount++;
-              if (mom_relay == 0)
-                {
-                preq->rq_refcount++;
-                }
-              mom_relay++;
-              
-              /* The array_req is freed in relay_to_mom (failure)
-               * or in issue_Drequest (success) */
-              
-              if ((rc = relay_to_mom(&pjob, array_req, NULL)))
-                {
-                snprintf(log_buf,sizeof(log_buf),
-                  "Unable to relay information to mom for job '%s'\n",
-                  pjob->ji_qs.ji_jobid);
-                log_err(rc, __func__, log_buf);
-                
-                return(rc); /* unable to get to MOM */
-                }
-              else
-                {
-                post_modify_arrayreq(array_req);
-                }
-              }
+            free(pa->job_ids[i]);
+            pa->job_ids[i] = NULL;
             }
           else
-            pa->job_ids[i] = NULL;
+            {
+            struct batch_request *array_req = duplicate_request(preq, i);
+            mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
+            pthread_mutex_unlock(pa->ai_mutex);
+            rc = modify_job((void **)&pjob, plist, array_req, checkpoint_req, NO_MOM_RELAY);
+            pa = get_jobs_array(&pjob);
 
+            if (pa == NULL)
+              {
+              array_gone = TRUE;
+              if (pjob == NULL)
+                pjob_mutex.set_lock_on_exit(false);
+              break;
+              }
+            
+            if (pjob == NULL)
+              {
+              pjob_mutex.set_lock_on_exit(false);
+              pa->job_ids[i] = NULL;
+              }
+            }
           }
         }
       
@@ -1537,17 +1513,7 @@ int modify_array_range(
       }
     }
 
-  if (mom_relay)
-    {
-    preq->rq_refcount--;
-    if (preq->rq_refcount == 0)
-      {
-      free_br(preq);
-      }
-    return(PBSE_RELAYED_TO_MOM);
-    }
-
-  return(PBSE_NONE);
+  return(rc);
   } /* END modify_array_range() */
 
 

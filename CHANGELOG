@@ -18,6 +18,14 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       default_features overcomes this issue.
   b - If privileged ports are disabled, make pbs_moms not check if incoming connections
       from mother superior are on privileged ports. TRQ-1669.
+  e - Add two mom config parameters: max_join_job_wait_time and resent_join_job_wait_time.
+      The first specifies how long pbs_mom should wait before deciding that join jobs
+      will never be received, and defaults to 10 minutes. The latter specifies how long
+      pbs_mom should wait before attempting to resend join jobs to moms that it hasn't
+      received replies from, and this defaults to 5 minutes. Both are specified in 
+      seconds. Prior to this functionality mother superior would wait indefinitely 
+      for the join job replies. Please carefully consider what these values should be
+      for your site and set them appropriately. TRQ-1790.
 
 4.2.2
   b - Make job_starter work for parallel jobs as well as serial. (TRQ-1577 - thanks

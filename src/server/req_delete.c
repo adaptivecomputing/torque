@@ -624,35 +624,166 @@ jump:
 
 
 
-struct batch_request *duplicate_request(
+int copy_attribute_list(
 
-  struct batch_request *preq)
+  batch_request *preq,
+  batch_request *preq_tmp)
 
   {
-  struct batch_request *preq_tmp = alloc_br(preq->rq_type);
+  svrattrl             *pal = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
+  tlist_head           *phead = &preq_tmp->rq_ind.rq_manager.rq_attr;
+  svrattrl             *newpal = NULL;
+  
+  while (pal != NULL)
+    {
+    newpal = (svrattrl *)calloc(1, pal->al_tsize + 1);
+    if (!newpal)
+      {
+      free_br(preq_tmp);
+      return(PBSE_SYSTEM);
+      }
 
-  if(preq_tmp == NULL)
-    return NULL;
+    CLEAR_LINK(newpal->al_link);
+    
+    newpal->al_atopl.next = 0;
+    newpal->al_tsize = pal->al_tsize + 1;
+    newpal->al_nameln = pal->al_nameln;
+    newpal->al_flags  = pal->al_flags;
+    newpal->al_atopl.name = (char *)newpal + sizeof(svrattrl);
+    strcpy((char *)newpal->al_atopl.name, pal->al_atopl.name);
+    newpal->al_nameln = pal->al_nameln;
+    newpal->al_atopl.resource = newpal->al_atopl.name + newpal->al_nameln;
+
+    if (pal->al_atopl.resource != NULL)
+      strcpy((char *)newpal->al_atopl.resource, pal->al_atopl.resource);
+
+    newpal->al_rescln = pal->al_rescln;
+    newpal->al_atopl.value = newpal->al_atopl.name + newpal->al_nameln + newpal->al_rescln;
+    strcpy((char *)newpal->al_atopl.value, pal->al_atopl.value);
+    newpal->al_valln = pal->al_valln;
+    newpal->al_atopl.op = pal->al_atopl.op;
+    
+    pal = (struct svrattrl *)GET_NEXT(pal->al_link);
+    }
+  
+  if ((phead != NULL) &&
+      (newpal != NULL))
+    append_link(phead, &newpal->al_link, newpal);
+
+  return(PBSE_NONE);
+  } /* END copy_attribute_list() */
+
+
+
+/*
+ * duplicate_request()
+ * duplicates preq and returns the duplicate request
+ * @param preq - the request to duplicate
+ * @param job_index - if desired, replace the job id with the sub job id. 
+ * The sub-job has the index job_index and this is only performed if this
+ * value isn't -1
+ */
+
+batch_request *duplicate_request(
+
+  batch_request *preq,
+  int            job_index)
+
+  {
+  batch_request *preq_tmp = alloc_br(preq->rq_type);
+  char          *ptr1;
+  char          *ptr2;
+  char           newjobname[PBS_MAXSVRJOBID+1];
+
+  if (preq_tmp == NULL)
+    return(NULL);
+
   preq_tmp->rq_perm = preq->rq_perm;
-  preq_tmp->rq_ind.rq_manager.rq_cmd = preq->rq_ind.rq_manager.rq_cmd;
-  preq_tmp->rq_ind.rq_manager.rq_objtype = preq->rq_ind.rq_manager.rq_objtype;
   preq_tmp->rq_fromsvr = preq->rq_fromsvr;
   preq_tmp->rq_extsz = preq->rq_extsz;
   preq_tmp->rq_conn = preq->rq_conn;
+  preq_tmp->rq_time = preq->rq_time;
+  preq_tmp->rq_orgconn = preq->rq_orgconn;
 
   memcpy(preq_tmp->rq_ind.rq_manager.rq_objname,
     preq->rq_ind.rq_manager.rq_objname, PBS_MAXSVRJOBID + 1);
 
-  memcpy(preq_tmp->rq_user, preq->rq_user, PBS_MAXUSER + 1);
-  memcpy(preq_tmp->rq_host, preq->rq_host, PBS_MAXHOSTNAME + 1);
+  strcpy(preq_tmp->rq_user, preq->rq_user);
+  strcpy(preq_tmp->rq_host, preq->rq_host);
 
   if (preq->rq_extend != NULL)
     preq_tmp->rq_extend = strdup(preq->rq_extend);
 
-  if (preq->rq_type == PBS_BATCH_RunJob)
+  switch (preq->rq_type)
     {
-    if (preq->rq_ind.rq_run.rq_destin)
-      preq_tmp->rq_ind.rq_run.rq_destin = strdup(preq->rq_ind.rq_run.rq_destin);
+    /* This function was created for a modify array request (PBS_BATCH_ModifyJob)
+       the preq->rq_ind structure was allocated in dis_request_read. If other
+       BATCH types are needed refer to that function to see how the rq_ind structure
+       was allocated and then copy it here. */
+    case PBS_BATCH_DeleteJob:
+    case PBS_BATCH_HoldJob:
+    case PBS_BATCH_CheckpointJob:
+    case PBS_BATCH_ModifyJob:
+    case PBS_BATCH_AsyModifyJob:
+      
+      /* based on how decode_DIS_Manage allocates data */
+      CLEAR_HEAD(preq_tmp->rq_ind.rq_manager.rq_attr);
+      
+      preq_tmp->rq_ind.rq_manager.rq_cmd = preq->rq_ind.rq_manager.rq_cmd;
+      preq_tmp->rq_ind.rq_manager.rq_objtype = preq->rq_ind.rq_manager.rq_objtype;
+      
+      if (job_index != -1)
+        {
+        /* If this is a job array it is possible we only have the array name
+           and not the individual job. We need to find out what we have and
+           modify the name if needed */
+        ptr1 = strstr(preq->rq_ind.rq_manager.rq_objname, "[]");
+        if (ptr1)
+          {
+          ptr1++;
+          strcpy(newjobname, preq->rq_ind.rq_manager.rq_objname);
+          ptr2 = strstr(newjobname, "[]");
+          ptr2++;
+          *ptr2 = 0;
+          sprintf(preq_tmp->rq_ind.rq_manager.rq_objname,"%s%d%s", 
+            newjobname, job_index, ptr1);
+          }
+        else
+          strcpy(preq_tmp->rq_ind.rq_manager.rq_objname, preq->rq_ind.rq_manager.rq_objname);
+        }
+
+      /* copy the attribute list */
+      if (copy_attribute_list(preq, preq_tmp) != PBSE_NONE)
+        return(NULL);
+      
+      break;
+
+    case PBS_BATCH_SignalJob:
+
+      strcpy(preq_tmp->rq_ind.rq_signal.rq_jid, preq->rq_ind.rq_signal.rq_jid);
+      strcpy(preq_tmp->rq_ind.rq_signal.rq_signame, preq->rq_ind.rq_signal.rq_signame);
+      preq_tmp->rq_extra = strdup((char *)preq->rq_extra);
+
+      break;
+
+    case PBS_BATCH_MessJob:
+
+      strcpy(preq_tmp->rq_ind.rq_message.rq_jid, preq->rq_ind.rq_message.rq_jid);
+      preq_tmp->rq_ind.rq_message.rq_file = preq->rq_ind.rq_message.rq_file;
+      strcpy(preq_tmp->rq_ind.rq_message.rq_text, preq->rq_ind.rq_message.rq_text);
+
+      break;
+
+    case PBS_BATCH_RunJob:
+  
+      if (preq->rq_ind.rq_run.rq_destin)
+        preq_tmp->rq_ind.rq_run.rq_destin = strdup(preq->rq_ind.rq_run.rq_destin);
+
+      break;
+      
+    default:
+
+      break;
     }
 
   return(preq_tmp);

@@ -171,6 +171,7 @@ int start_domainsocket_listener(
   pthread_t           tid;
   pthread_attr_t      t_attr;
   int objclass = 0;
+  char authd_host_port[1024];
 
   memset(&addr, 0, sizeof(addr));
   addr.sun_family = AF_UNIX;
@@ -220,8 +221,14 @@ int start_domainsocket_listener(
     log_get_set_eventclass(&objclass, GETV);
     if (objclass == PBS_EVENTCLASS_TRQAUTHD)
       {
-      snprintf(log_buf, sizeof(log_buf),
-        "TORQUE authd daemon started and listening unix socket %s", socket_name);
+      log_get_host_port(authd_host_port, sizeof(authd_host_port));
+      if (authd_host_port[0])
+        snprintf(log_buf, sizeof(log_buf),
+          "TORQUE authd daemon started and listening on %s (unix socket %s)", 
+            authd_host_port, socket_name);
+      else
+        snprintf(log_buf, sizeof(log_buf),
+          "TORQUE authd daemon started and listening unix socket %s", socket_name);
       log_event(PBSEVENT_SYSTEM | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD,
         msg_daemonname, log_buf);
       }
@@ -311,11 +318,12 @@ int start_listener_addrinfo(
   pthread_attr_t      t_attr;
   char                err_msg[MAXPATHLEN];
   char                log_buf[LOCAL_LOG_BUF_SIZE + 1];
-  int                 ret;
+  int                 ret = pbs_getaddrinfo(host_name, NULL, &adr_svr);
 
-  if (!(ret = pbs_getaddrinfo(host_name, NULL, &adr_svr) == 0))
+  if (ret != 0)
     {
-	sprintf(err_msg,"Error with getaddrinfo on host name %s. Error code = %d.\n",host_name,ret);
+    /* hostname didn't resolve */
+    sprintf(err_msg,"Error with getaddrinfo on host name %s. Error code = %d.\n",host_name,ret);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, err_msg);
     rc = PBSE_SOCKET_FAULT;
     return rc;

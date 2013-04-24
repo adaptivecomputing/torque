@@ -184,12 +184,14 @@ int get_random_reserved_port()
 int socket_get_tcp_priv()
 
   {
-  int                priv_port = 0;
   int                local_socket = 0;
-  int                cntr = 0;
   int                rc = PBSE_NONE;
   struct sockaddr_in local;
+#ifndef NOPRIVPORTS
+  int                cntr = 0;
+  int                priv_port = 0;
   int                flags;
+#endif
   
   memset(&local, 0, sizeof(struct sockaddr_in));
   local.sin_family = AF_INET;
@@ -261,7 +263,6 @@ int socket_get_tcp_priv()
     local_socket = -1;
     }
 
-  priv_port = local_socket; /* make compiler doesn't complain var. set but not used error */
   return(local_socket);
   } /* END socket_get_tcp_priv() */
 
