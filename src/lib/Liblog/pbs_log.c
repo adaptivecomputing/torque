@@ -119,6 +119,8 @@
 #endif
 
 #include <execinfo.h> /* backtrace information */
+#include<arpa/inet.h>
+#include<netdb.h>
 
 void job_log_close(int msg);
 
@@ -1511,21 +1513,41 @@ void log_format_trq_timestamp(
 
 void log_set_hostname_sharelogging(const char *server_name, int server_port)
   {
-  char buf[64];
+  char ip[64];
+  char hostnm[1024];
+  char *hostname = NULL;
+  struct hostent *he;
+  struct in_addr **addr_list;
+         
   if (server_name)
+     hostname = (char *)server_name;
+  else if (gethostname(hostnm, sizeof(hostnm)) == 0)
+     hostname = hostnm;
+
+  if (hostname) 
     {
-    snprintf(log_host_port, sizeof(log_host_port), "%s:%d", 
-      server_name, server_port);
+    if ((he = gethostbyname(hostname)) == NULL) 
+      {
+      strcpy(ip, "null");
+      }
+    else
+      {
+      addr_list = (struct in_addr **) he->h_addr_list;
+      if (addr_list[0]) 
+        snprintf(ip , sizeof(ip), "%s", inet_ntoa(*addr_list[0]));
+      else
+        strcpy(ip, "null");
+      }
     }
   else
     {
-    if (gethostname(log_host_port, sizeof(log_host_port)) == 0) 
-      {
-      snprintf(buf, sizeof(buf), ":%d", server_port);
-      strncat(log_host_port, buf, sizeof(log_host_port) - 1);
-      log_host_port[sizeof(log_host_port) - 1] = '\0';
-      }
+    strcpy(ip, "null");
+    strcpy(hostnm, "null");
+    hostname = hostnm;
     }
+
+  snprintf(log_host_port, sizeof(log_host_port), "%s:%d (host: %s)", 
+    ip, server_port, hostname);
   }
 
 void log_get_host_port(char *host_n_port, size_t s)
