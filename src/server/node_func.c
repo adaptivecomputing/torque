@@ -378,6 +378,7 @@ struct pbsnode *find_nodebyname(
   {
   int  i;
   char  *pslash;
+  char *dot;
 
   struct pbsnode *pnode;
 
@@ -401,6 +402,16 @@ struct pbsnode *find_nodebyname(
 
   if (pslash != NULL)
     *pslash = '/'; /* restore the slash */
+
+  if (!pnode)
+    {
+    if ((dot = strchr(nodename, '.')))
+      {
+      *dot = '\0';
+      pnode = find_nodebyname(nodename);
+      *dot = '.';
+      }
+    }
 
   return(pnode);
   }  /* END find_nodebyname() */
