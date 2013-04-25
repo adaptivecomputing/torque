@@ -8419,7 +8419,7 @@ void check_jobs_awaiting_join_job_reply()
 
 
 
-void check_jobs_in_exit_wait()
+void check_jobs_in_mom_wait()
 
   {
   job    *pjob;
@@ -8429,7 +8429,7 @@ void check_jobs_in_exit_wait()
        pjob != NULL;
        pjob = (job *)GET_NEXT(pjob->ji_alljobs))
     {
-    if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXIT_WAIT)
+    if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_MOM_WAIT)
       {
       if ((pjob->ji_kill_started != 0) &&
           (time_now - pjob->ji_kill_started > job_exit_wait_time))
@@ -8452,7 +8452,7 @@ void check_jobs_in_exit_wait()
     
     } /* END loop over all jobs */
 
-  } /* END check_jobs_in_exit_wait() */
+  } /* END check_jobs_in_mom_wait() */
 
 
 
@@ -8731,7 +8731,7 @@ void main_loop(void)
 
     check_jobs_awaiting_join_job_reply();
 
-    check_jobs_in_exit_wait();
+    check_jobs_in_mom_wait();
 
     if (exiting_tasks)
       scan_for_exiting();
