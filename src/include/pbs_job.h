@@ -1012,6 +1012,7 @@ typedef struct send_job_request
 #define JOB_SUBSTATE_EXITING 50 /* Start of job exiting processing */
 #define JOB_SUBSTATE_EXIT_WAIT 51 /* Waiting for response from other moms
                                      or from server */
+#define JOB_SUBSTATE_MOM_WAIT 510 /* waiting for kill confirm from sister moms */
 #define JOB_SUBSTATE_STAGEOUT 52 /* job staging out (other) files   */
 #define JOB_SUBSTATE_STAGEDEL 53 /* job deleteing staged out files  */
 #define JOB_SUBSTATE_EXITED 54 /* job exit processing completed   */
