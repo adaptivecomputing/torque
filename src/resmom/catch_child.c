@@ -299,6 +299,12 @@ void check_jobs_main_process(
   if (mom_radix < 2)
     {
     NumSisters = send_sisters(pjob, IM_KILL_JOB, FALSE);
+
+    if (NumSisters > 0)
+      {
+      pjob->ji_qs.ji_substate = JOB_SUBSTATE_MOM_WAIT;
+      pjob->ji_kill_started = time(NULL);
+      }
     }
   else
     {
@@ -335,7 +341,7 @@ void check_jobs_main_process(
         
     /* job is waiting for the reply from other sisters 
      * before it exits */
-    pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXIT_WAIT;
+    pjob->ji_qs.ji_substate = JOB_SUBSTATE_MOM_WAIT;
     pjob->ji_kill_started = time(NULL);
     }
 
@@ -2016,7 +2022,7 @@ void init_abort_jobs(
     
         /* job is waiting for the reply from other sisters 
          * before it exits */
-        pj->ji_qs.ji_substate = JOB_SUBSTATE_EXIT_WAIT;
+        pj->ji_qs.ji_substate = JOB_SUBSTATE_MOM_WAIT;
         pj->ji_kill_started = time(NULL);
 
         continue;
