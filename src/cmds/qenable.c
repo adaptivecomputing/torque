@@ -65,6 +65,8 @@ int main(
     exit(1);
     }
   
+  initialize_network_info();
+
   for (dest = 1; dest < argc; dest++)
     if (parse_destination_id(argv[dest], &queue, &server) == 0)
       execute(queue, server);

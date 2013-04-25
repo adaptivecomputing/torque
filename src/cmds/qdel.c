@@ -44,6 +44,7 @@ int main(
 
 #define GETOPT_ARGS "acm:pW:t:"
 
+  initialize_network_info();
   extend[0] = '\0';
 
   while ((c = getopt(argc, argv, GETOPT_ARGS)) != EOF)

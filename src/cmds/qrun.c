@@ -52,6 +52,8 @@ int main(
   int errflg = 0;
   int runAsync = FALSE;
 
+  initialize_network_info();
+
   /* Command line options */
 
   while ((s = getopt(argc, argv, opts)) != EOF)

@@ -47,6 +47,8 @@ int main(
 
   svrtmp[0] = '\0';
 
+  initialize_network_info();
+
   if (get_server(job_id1, job_id1_out, sizeof(job_id1_out), svrtmp, sizeof(svrtmp)))
     {
     fprintf(stderr, "qorder: illegally formed job identifier: %s\n",

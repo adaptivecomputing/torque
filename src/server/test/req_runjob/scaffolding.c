@@ -353,9 +353,3 @@ int relay_to_mom(job **pjob_ptr, batch_request   *request, void (*func)(struct w
   return(0);
   }
 
-batch_request *duplicate_request(batch_request *preq, int job_index)
-  {
-  return NULL;
-  }
-
-

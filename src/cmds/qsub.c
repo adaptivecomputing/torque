@@ -13,6 +13,8 @@ int main(
   char **envp)  /* I */
 
   {
+  initialize_network_info();
+
   main_func(argc, argv, envp);
 
   return(0);

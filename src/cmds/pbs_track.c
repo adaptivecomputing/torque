@@ -43,6 +43,8 @@ int main(
 
   tmpJobID[0] = '\0';
 
+  initialize_network_info();
+
   /* USAGE: pbs_track [-j <JOBID>] -- a.out arg1 arg2 ... argN */
 
 #define GETOPT_ARGS "bj:"

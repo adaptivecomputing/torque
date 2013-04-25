@@ -104,7 +104,6 @@
 #include "log.h"
 #include "dis.h"
 #include "dis_init.h"
-#include "lib_net.h"
 #include "rm.h"
 
 #define    MAX_RETRIES 5
@@ -207,7 +206,7 @@ int openrm(
     struct sockaddr_in  addr;
     struct addrinfo    *addr_info;
 
-    if (pbs_getaddrinfo(host, NULL, &addr_info) != 0)
+    if (getaddrinfo(host, NULL, NULL, &addr_info) != 0)
       {
       DBPRT(("host %s not found\n", host))
       close(stream);
@@ -241,6 +240,8 @@ int openrm(
     addr.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
     addr.sin_family = AF_INET;
     addr.sin_port = htons((unsigned short)port);
+
+    freeaddrinfo(addr_info);
 
     if (connect(stream, (struct sockaddr *)&addr, sizeof(addr)) == -1)
       {

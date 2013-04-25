@@ -838,48 +838,6 @@ int socket_close(
   } /* END socket_close() */
 
 
-int pbs_getaddrinfo(const char *pNode,struct addrinfo *pHints,struct addrinfo **ppAddrInfoOut)
-  {
-  int rc;
-  struct addrinfo hints;
-  int retryCount = 3;
-
-  if(ppAddrInfoOut == NULL)
-    {
-    return -1;
-    }
-  if((*ppAddrInfoOut = get_cached_addrinfo_full(pNode)) != NULL)
-    {
-    return 0;
-    }
-  if(pHints == NULL)
-    {
-    memset(&hints,0,sizeof(hints));
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_family = AF_INET;
-    hints.ai_flags = AI_CANONNAME;
-    pHints = &hints;
-    }
-  else
-    {
-    pHints->ai_family = AF_INET;
-    }
-
-  do
-    {
-    rc = getaddrinfo(pNode,NULL,pHints,ppAddrInfoOut);
-    if(rc == 0)
-      {
-      *ppAddrInfoOut = insert_addr_name_info(*ppAddrInfoOut,pNode);
-      return 0;
-      }
-    if(rc != EAI_AGAIN)
-      {
-      return rc;
-      }
-    }while(retryCount-- >= 0);
-  return EAI_FAIL;
-  }
 
 int get_addr_info(
     
@@ -906,7 +864,6 @@ int get_addr_info(
   memset(&hints, 0, sizeof(struct addrinfo));
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_family = PF_INET;
-  hints.ai_flags = AI_CANONNAME;
 
   while (cntr < retry)
     {
@@ -922,7 +879,8 @@ int get_addr_info(
       {
       sa_info->sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
       sa_info->sin_family = addr_info->ai_family;
-      insert_addr_name_info(addr_info,name);
+      insert_addr_name_info(name, addr_info->ai_canonname, sa_info);
+      freeaddrinfo(addr_info);
       gettimeofday(&end_time, 0);
 
       rc = PBSE_NONE;

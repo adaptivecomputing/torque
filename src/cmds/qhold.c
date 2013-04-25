@@ -47,6 +47,8 @@ int main(
   hold_type[0] = '\0';
   extend[0] = '\0';
 
+  initialize_network_info();
+
   while ((c = getopt(argc, argv, GETOPT_ARGS)) != EOF)
     switch (c)
       {

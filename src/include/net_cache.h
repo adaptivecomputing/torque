@@ -80,10 +80,20 @@
 #include <netinet/in.h>
 
 
-char               *get_cached_nameinfo(const struct sockaddr_in *sai);
-struct sockaddr_in *get_cached_addrinfo(const char *hostname);
-struct addrinfo    *get_cached_addrinfo_full(const char *hostname);
-char               *get_cached_fullhostname(const char *shortname, const struct sockaddr_in *sai);
-struct addrinfo    *insert_addr_name_info(struct addrinfo *pAddrInfo, const char *hostName);
+typedef struct network_info
+  {
+  char               *hostname;
+  char               *full_hostname;
+  struct sockaddr_in  sai;
+  } network_info;
+
+
+
+
+void                initialize_network_info();
+char               *get_cached_nameinfo(struct sockaddr_in *sai);
+struct sockaddr_in *get_cached_addrinfo(char *hostname);
+char               *get_cached_fullhostname(char *shortname, struct sockaddr_in *sai);
+int                 insert_addr_name_info(char *hostname, char *full_hostname, struct sockaddr_in *sai);
 
 

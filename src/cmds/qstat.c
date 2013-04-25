@@ -2233,6 +2233,8 @@ int main(
   option[2] = '\0';
 #endif
 
+  initialize_network_info();
+
   if (getenv("PBS_QSTAT_EXECONLY") != NULL)
     exec_only = 1;
     

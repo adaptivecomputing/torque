@@ -61,6 +61,8 @@ int main(
   int manner;             /* The type of termination */
   int errflg = 0;         /* Error flag */
 
+  initialize_network_info();
+
   /* Command line options */
 
   while ((s = getopt(argc, argv, opts)) != EOF)

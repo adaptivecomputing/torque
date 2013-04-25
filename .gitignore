@@ -26,8 +26,6 @@ buildutils/modulefiles.vers
 buildutils/pbs_mkdirs
 buildutils/self-extract-head-sh
 buildutils/ylwrap
-buildutils/ar-lib
-buildutils/compile
 config.log
 config.status
 configure

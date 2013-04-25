@@ -45,6 +45,8 @@ int main(
   msg_string[0] = '\0';
   to_file = 0;
 
+  initialize_network_info();
+
   while ((c = getopt(argc, argv, GETOPT_ARGS)) != EOF)
     switch (c)
       {
