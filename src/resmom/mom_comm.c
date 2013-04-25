@@ -900,9 +900,6 @@ int send_sisters(
         np->hn_sister);
 
       log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
-
-      /* garrick commented out continue statement below */
-      /* continue; */
       }
 
     ep = event_alloc(com, np, TM_NULL_EVENT, TM_NULL_TASK);
@@ -954,7 +951,9 @@ int send_sisters(
         log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,log_buffer);
         }
       }
+
     close(local_socket);
+
     if (local_chan != NULL)
       DIS_tcp_cleanup(local_chan);
 
@@ -1268,7 +1267,7 @@ void job_start_error(
   /* annotate job with failed node info */
 
   snprintf(tmpLine, sizeof(tmpLine), "REJHOST=%s",
-           nodename);
+    nodename);
 
   pattr = &pjob->ji_wattr[JOB_ATR_sched_hint];
 
@@ -3634,10 +3633,10 @@ int get_radix_reply_stream(
  */
 int im_poll_job_as_sister(
 
-    job        *pjob,     /* I */
-    char       *cookie,   /* I */
-    tm_event_t  event,    /* I */
-    tm_task_id  fromtask) /* I */
+  job        *pjob,     /* I */
+  char       *cookie,   /* I */
+  tm_event_t  event,    /* I */
+  tm_task_id  fromtask) /* I */
 
   {
   int              should_kill_job = FALSE;
@@ -5246,7 +5245,6 @@ int handle_im_join_job_radix_response(
     if (pjob->ji_im_nodeid == 1)
       {
       pass_joined_successfully_up_the_chain(pjob);
-      
       }
     else
       {

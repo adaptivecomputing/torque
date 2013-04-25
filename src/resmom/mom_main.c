@@ -5342,7 +5342,7 @@ void kill_all_running_jobs(void)
     {
     if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING)
       {
-      kill_job(pjob, SIGKILL, "kill_all_running_jobs", "mom is terminating with kill jobs flag");
+      kill_job(pjob, SIGKILL, __func__, "mom is terminating with kill jobs flag");
 
       pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
 
