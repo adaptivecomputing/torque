@@ -6243,9 +6243,6 @@ int resend_spawn_task_reply(
         {
         if ((ret = DIS_tcp_wflush(chan)) == DIS_SUCCESS)
           {
-/*          read_tcp_reply(chan, IM_PROTOCOL, IM_PROTOCOL_VER, st->ici->command, &ret);
- *          */
-
           if (ret == DIS_SUCCESS)
             {
             log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, st->ici->jobid, "Successfully re-sent spawn task reply");
@@ -6288,8 +6285,6 @@ int resend_obit_task_reply(
         {
         if ((ret = DIS_tcp_wflush(chan)) == DIS_SUCCESS)
           {
-/*          read_tcp_reply(chan, IM_PROTOCOL, IM_PROTOCOL_VER, IM_OBIT_TASK, &ret); */
-
           if (ret == DIS_SUCCESS)
             {
             log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ot->ici->jobid, "Successfully re-sent obit task reply");
@@ -6301,6 +6296,7 @@ int resend_obit_task_reply(
       }
 
     close(stream);
+
     if (chan != NULL)
       DIS_tcp_cleanup(chan);
     }
