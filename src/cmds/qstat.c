@@ -2279,6 +2279,10 @@ int main(
 
         alt_opt |= ALT_DISPLAY_a;
 
+        set_attr(&attrib, ATTR_session, NULL);
+        set_attr(&attrib, ATTR_used, NULL);
+        set_attr(&attrib, ATTR_l, NULL);
+
         break;
 
       case 'c':
