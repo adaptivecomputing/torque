@@ -28,6 +28,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       for your site and set them appropriately. TRQ-1790.
   e - If an error happens communicating with one MIC, attempt to communicate with the
       others instead of failing the entire routine.
+  e - Reintroduced the procct resource for queues which allows jobs to be managed based
+      on the number of procs requested.  TRQ-1623
 
 4.2.2
   b - Make job_starter work for parallel jobs as well as serial. (TRQ-1577 - thanks
