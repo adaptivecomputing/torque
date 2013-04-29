@@ -261,6 +261,9 @@ int main(
       }
     }
 
+  if (errflg)
+    clean_up_and_exit(2);
+
   clean_up_and_exit(0);
 
   return(0);
