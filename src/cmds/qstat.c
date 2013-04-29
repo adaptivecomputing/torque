@@ -2203,6 +2203,7 @@ int main(
   struct batch_status *p_server;
 
   struct attropl      *p_atropl = 0;
+  struct attrl        *attrib = NULL;
   char                *errmsg;
   int                  exec_only = 0;
   
@@ -2235,6 +2236,13 @@ int main(
   Q_opt = 0;
   t_opt = 0;
   E_opt = 0;
+
+  /* Attributes needed for default view */
+  set_attr(&attrib, ATTR_name, NULL);
+  set_attr(&attrib, ATTR_owner, NULL);
+  set_attr(&attrib, ATTR_used, NULL);
+  set_attr(&attrib, ATTR_state, NULL);
+  set_attr(&attrib, ATTR_queue, NULL);
 
   tcl_init();
   tcl_addarg(flags, argv[0]);
@@ -2269,6 +2277,10 @@ int main(
       case 'a':
 
         alt_opt |= ALT_DISPLAY_a;
+
+        set_attr(&attrib, ATTR_session, NULL);
+        set_attr(&attrib, ATTR_used, NULL);
+        set_attr(&attrib, ATTR_l, NULL);
 
         break;
 
@@ -2373,11 +2385,17 @@ int main(
 
         f_opt = 1;
 
+        /* We want to return all attributes */
+        attrib = NULL;
+
         break;
 
       case 'x':
 
         DisplayXML = TRUE;
+
+        /* We want to return all attributes */
+        attrib = NULL;
 
         break;
 
@@ -2796,7 +2814,7 @@ job_no_args:
           p_status = pbs_statjob_err(
                        connect,
                        job_id_out,
-                       NULL,
+                       attrib,
                        exec_only ? (char *)EXECQUEONLY : (char *)ExtendOpt,
                        &any_failed);
           }
