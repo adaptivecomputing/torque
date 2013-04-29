@@ -46,6 +46,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       others instead of failing the entire routine.
   b - TRQ-1639. Gpu status information wasn't being displayed correctly.
   b - TRQ-1826. mppdepth is now passed correctly to the ALPS reservation.
+  e - Reintroduced the procct resource for queues which allows jobs to be managed based
+      on the number of procs requested.  TRQ-1623
 
 4.2.2
   b - Make job_starter work for parallel jobs as well as serial. (TRQ-1577 - thanks
