@@ -293,6 +293,11 @@ int schedule_jobs(void)
     else
       {
       new_cmd = (int *)calloc(1, sizeof(int));
+      if (!new_cmd)
+        {
+        log_err(ENOMEM,__func__,"Could not allocate memory to set command");
+        retun(-1);
+        }
       *new_cmd = cmd;
 
       if (pthread_create(&tid, &t_attr, contact_sched, (void *)new_cmd)

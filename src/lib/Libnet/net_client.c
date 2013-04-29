@@ -200,6 +200,11 @@ static int await_connect(
   /* calculate needed size for fd_set in select() */
 
   BigFDSet = (fd_set *)calloc(1,sizeof(char) * get_fdset_size());
+  if (!BigFDSet)
+    {
+    log_err(ENOMEM,__func__,"Could not allocate memory to set file descriptor");
+    return -1;
+    }
 
   FD_SET(sockd, BigFDSet);
 
