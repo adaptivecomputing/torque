@@ -142,6 +142,7 @@
 #include "user_info.h"
 #include "svr_jobfunc.h"
 #include "svr_task.h"
+#include "job_route.h" /*remove_procct */
 #include "mutex_mgr.hpp"
 
 #define MSG_LEN_LONG 160
@@ -345,8 +346,6 @@ int insert_into_alljobs_by_rank(
   } /* END insert_into_alljobs_by_rank() */
 
 
-
-
 /*
  * svr_enquejob() - enqueue job into specified queue
  */
@@ -418,6 +417,7 @@ int svr_enquejob(
     return(PBSE_JOB_RECYCLED);
     }
 
+  remove_procct(pjob);
   /* Check again if there are any maximum queuable limits */
   if (pjob->ji_is_array_template)
     {
@@ -2236,10 +2236,11 @@ static int check_queue_enabled(
 
 static int check_local_route(
 
-    struct job       *const pjob,
-    struct pbs_queue *const pque,
-    const int               mtype, /* MOVE_TYPE_* type, see server_limits.h */
-    char             *const EMsg)
+  struct job       *const pjob,
+  struct pbs_queue *const pque,
+  const int               mtype, /* MOVE_TYPE_* type, see server_limits.h */
+  char             *const EMsg)
+
   {
   int return_code = PBSE_NONE; /* Optimistic assumption */
 
@@ -2265,24 +2266,31 @@ static int check_local_route(
 
 static int are_job_resources_in_limits_of_queue(
 
-    struct job       *const pjob,
-    struct pbs_queue *const pque,
-    char             *const EMsg)
+  struct job       *const pjob,
+  struct pbs_queue *const pque,
+  char             *const EMsg)
+
   {
   int return_code = PBSE_NONE; /* Optimistic assumption */
-  int check_limits = chk_resc_limits(&pjob->ji_wattr[JOB_ATR_resource], pque, EMsg);
+  int check_limits;
+
+  initialize_procct(pjob);
+    
+  check_limits = chk_resc_limits(&pjob->ji_wattr[JOB_ATR_resource], pque, EMsg);
 
   if (check_limits != 0)
     {
     /* FAILURE */
+    remove_procct(pjob);
     return(check_limits);
     }
   else
     {
     if (pque->qu_attr->at_val.at_str == NULL)
       {
+      remove_procct(pjob);
       log_err(PBSE_BAD_PARAMETER, __func__, "pque->qu_attr->at_val.at_str uninitialized");
-      return PBSE_BAD_PARAMETER;
+      return(PBSE_BAD_PARAMETER);
       }
     if (strcmp(pque->qu_attr->at_val.at_str, "Execution") == 0)
       {
@@ -2296,6 +2304,7 @@ static int are_job_resources_in_limits_of_queue(
       }
     }
 
+  remove_procct(pjob);
   return(return_code);
   }
 
