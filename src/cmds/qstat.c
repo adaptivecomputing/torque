@@ -2613,7 +2613,7 @@ int main(
   if (alt_opt & ALT_DISPLAY_u)
     {
     if (f_opt == 0)
-      add_atropl(&p_atropl, (char *)ATTR_u, NULL, optarg, EQ);
+      add_atropl(&p_atropl, (char *)ATTR_u, NULL, user, EQ);
     else
       alt_opt &= ~ALT_DISPLAY_u;
     }
