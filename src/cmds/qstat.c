@@ -2270,10 +2270,6 @@ int main(
 
         alt_opt |= ALT_DISPLAY_a;
 
-        set_attr(&attrib, ATTR_session, NULL);
-        set_attr(&attrib, ATTR_used, NULL);
-        set_attr(&attrib, ATTR_l, NULL);
-
         break;
 
       case 'e':
@@ -2303,6 +2299,9 @@ int main(
 
         alt_opt |= ALT_DISPLAY_n;
 
+        if (attrib != NULL)
+          set_attr(&attrib, ATTR_exechost, NULL);
+
         break;
 
       case 'q':
@@ -2324,6 +2323,9 @@ int main(
       case 's':
 
         alt_opt |= ALT_DISPLAY_s;
+
+        if (attrib != NULL)
+          set_attr(&attrib, ATTR_comment, NULL);
 
         break;
 
@@ -2615,6 +2617,14 @@ int main(
   if (def_server == NULL)
     def_server = "";
 
+  /* Alternate display requires a few extra attributes */
+  if (alt_opt && (attrib != NULL))
+    {
+    set_attr(&attrib, ATTR_session, NULL);
+    set_attr(&attrib, ATTR_used, NULL);
+    set_attr(&attrib, ATTR_l, NULL);
+    }
+
   if (alt_opt & ALT_DISPLAY_u)
     {
     if (f_opt == 0)
@@ -2809,11 +2819,15 @@ job_no_args:
           {
           if (t_opt)
             {
-            p_status = pbs_selstat_err(connect, p_atropl, exec_only ? (char *)EXECQUEONLY : NULL, &any_failed);
+            p_status = pbs_selstatattr_err(connect, p_atropl, attrib, exec_only ? (char *)EXECQUEONLY : NULL, &any_failed);
+            if (any_failed == PBSE_UNKREQ)
+              p_status = pbs_selstat_err(connect, p_atropl, exec_only ? (char *)EXECQUEONLY : NULL, &any_failed);
             }
           else
             {
-            p_status = pbs_selstat_err(connect, p_atropl, exec_only ? (char *)EXECQUEONLY : (char *)summarize_arrays_extend_opt, &any_failed);
+            p_status = pbs_selstatattr_err(connect, p_atropl, attrib, exec_only ? (char *)EXECQUEONLY : (char *)summarize_arrays_extend_opt, &any_failed);
+            if (any_failed == PBSE_UNKREQ)
+              p_status = pbs_selstat_err(connect, p_atropl, exec_only ? (char *)EXECQUEONLY : (char *)summarize_arrays_extend_opt, &any_failed);
             }
           }
 
