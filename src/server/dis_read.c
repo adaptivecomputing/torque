@@ -318,6 +318,16 @@ int dis_request_read(
 
       break;
 
+    case PBS_BATCH_SelStatAttr:
+
+      CLEAR_HEAD(request->rq_ind.rq_select);
+      CLEAR_HEAD(request->rq_ind.rq_status.rq_attr);
+
+      rc = decode_DIS_svrattrl(chan, &request->rq_ind.rq_select);
+      rc = decode_DIS_svrattrl(chan, &request->rq_ind.rq_status.rq_attr);
+
+      break;
+
     case PBS_BATCH_StatusNode:
 
     case PBS_BATCH_StatusQue:
