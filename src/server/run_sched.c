@@ -96,6 +96,7 @@
 #include "../lib/Libifl/lib_ifl.h" /* get_port_from_server_name_file */
 #include "pbsd_main.h" /* process_pbs_server_port */
 #include "process_request.h" /*process_request */
+#include "pbs_log.h"
 
 /* Global Data */
 
@@ -293,6 +294,11 @@ int schedule_jobs(void)
     else
       {
       new_cmd = (int *)calloc(1, sizeof(int));
+      if (!new_cmd)
+        {
+        log_err(ENOMEM,__func__,"Could not allocate memory to set command");
+        return(-1);
+        }
       *new_cmd = cmd;
 
       if (pthread_create(&tid, &t_attr, contact_sched, (void *)new_cmd)

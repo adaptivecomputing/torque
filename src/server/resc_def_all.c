@@ -120,6 +120,7 @@ int set_node_ct(resource *, pbs_attribute *, int actmode);
 int set_proc_ct(resource *, pbs_attribute *, int actmode);
 int set_tokens_nodect(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op actmode);
 int set_mppnodect(resource *, pbs_attribute *, int actmode);
+int decode_procct(pbs_attribute *, const char *, const char *, const char *, int);
 int encode_procct(pbs_attribute *, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm);
 
 
@@ -304,7 +305,7 @@ resource_def svr_resc_def_const[] =
 
     { 
     "procct",   /* count of number of processors requested */
-    decode_l,   /* read-only, set by server whenever       */
+    decode_procct,   /* read-only, set by server whenever       */
     encode_procct,   /* "nodes" and/or "procs" is set           */
     set_l,
     comp_l,
@@ -1044,7 +1045,7 @@ int set_node_ct(
   {
   resource *pnct;
   resource_def *pndef;
-  resource *ppct;
+  resource *ppct = NULL;
   resource_def *ppdef;
   resource *pprocsp;
   resource_def *pprocsdef;
@@ -1343,6 +1344,53 @@ int set_mppnodect(
   return(PBSE_NONE);
   } /* END set_mppnodect() */
 
+/*
+ * decode_procct - decode long integer into pbs_attribute structure
+ *
+ * Returns: 0 if ok
+ *  >0 error number if error
+ *  *patr elements set
+ */
+
+int decode_procct(
+
+  pbs_attribute *patr,
+  const char  *name,  /* pbs_attribute name */
+  const char *rescn,  /* resource name, unused here */
+  const char    *val,  /* pbs_attribute value */
+  int            perm) /* only used for resources */
+
+  {
+    const char *pc;
+
+  if ((val != (char *)0) && (strlen(val) != 0))
+    {
+
+    pc = val;
+    if ((*pc == '+') || (*pc == '-'))
+      pc++;
+
+    while (*pc != '\0')
+      {
+      if (isdigit((int)*pc) == 0)
+        return (PBSE_BADATVAL);  /* invalid string */
+
+      pc++;
+      }
+
+    patr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+
+    patr->at_val.at_long = atol(val);
+    }
+  else
+    {
+    patr->at_flags = (patr->at_flags & ~ATR_VFLAG_SET) |
+                       ATR_VFLAG_MODIFY;
+    patr->at_val.at_long = 0;
+    }
+
+  return (0);
+  }
 
 
 int encode_procct(
@@ -1355,6 +1403,31 @@ int encode_procct(
   int             perm)   /* only used for resources */
 
   {
-  return(0);
+  size_t   ct;
+  char   cvnbuf[32];
+  svrattrl *pal;
+
+  if (!attr)
+    return (-1);
+
+  if (!(attr->at_flags & ATR_VFLAG_SET))
+    return (0);
+
+  sprintf(cvnbuf, "%ld", attr->at_val.at_long);
+
+  ct = strlen(cvnbuf);
+
+  pal = attrlist_create(atname, rsname, ct + 1);
+
+  if (pal == (svrattrl *)0)
+    return (-1);
+
+  memcpy(pal->al_value, cvnbuf, ct);
+
+  pal->al_flags = attr->at_flags;
+
+  append_link(phead, &pal->al_link, pal);
+
+  return (1);
   }
 
