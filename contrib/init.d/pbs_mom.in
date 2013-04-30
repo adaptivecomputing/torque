@@ -2,7 +2,7 @@
 #
 # pbs_mom	This script will start and stop the PBS Mom
 #
-# chkconfig: 345 95 5
+# chkconfig: 345 95 05
 # description: TORQUE/PBS is a versatile batch system for SMPs and clusters
 #
 ulimit -n 32768
