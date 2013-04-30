@@ -595,10 +595,12 @@ int PBSShowUsage(
   fprintf(stderr, "Usage: %s\n",
           ProgName);
 
-  fprintf(stderr, "  -A <INT>  \\\\ Alarm Time\n");
+  fprintf(stderr, "  -A <PATH> \\\\ Path to accounting file\n");
   fprintf(stderr, "  -a <BOOL> \\\\ Scheduling\n");
-  fprintf(stderr, "  -d <PATH> \\\\ Homedir\n");
+  fprintf(stderr, "  -c        \\\\ Wait for mom hierarchy\n");
   fprintf(stderr, "  -D        \\\\ Debugmode\n");
+  fprintf(stderr, "  -d <PATH> \\\\ Homedir\n");
+  fprintf(stderr, "  -e        \\\\ Enable any mom\n");
   fprintf(stderr, "  -f        \\\\ Force Overwrite Serverdb\n");
   fprintf(stderr, "  -h        \\\\ Print Usage\n");
   fprintf(stderr, "  -H <HOST> \\\\ Daemon Hostname\n");
@@ -610,9 +612,10 @@ int PBSShowUsage(
   fprintf(stderr, "  -S <PORT> \\\\ Scheduler Port\n");
   fprintf(stderr, "  -t <TYPE> \\\\ Startup Type (hot, warm, cold, create)\n");
   fprintf(stderr, "  -v        \\\\ Version\n");
+  fprintf(stderr, "  --about   \\\\ Print information about pbs_server\n");
   fprintf(stderr, "  --ha      \\\\ High Availability MODE\n");
   fprintf(stderr, "  --help    \\\\ Print Usage\n");
-  fprintf(stderr, "  --version \\\\ Version\n");
+  fprintf(stderr, "  --version \\\\ Version and commit\n");
 
   if (EMsg != NULL)
     {
