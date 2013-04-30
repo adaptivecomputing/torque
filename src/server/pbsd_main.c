@@ -423,7 +423,7 @@ int process_pbs_server_port(
       
       if (rc != DIS_SUCCESS)
         {
-        log_err(-1,  __func__, (char *)"Cannot read version - skipping this request.\n");
+        log_err(-1,  __func__, "Cannot read version - skipping this request.\n");
         rc = PBSE_SOCKET_CLOSE; 
         break;
         }
