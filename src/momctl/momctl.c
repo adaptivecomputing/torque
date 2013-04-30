@@ -72,6 +72,52 @@ int do_mom(char *, int, int);
 
 
 
+int perform_communications_with_retry(
+
+  char *hostname,
+  int   MOMPort,
+  int  *fail_count)
+
+  {
+  int retries = 0;
+  int local_errno;
+  int rc = PBSE_NONE;
+
+  while (retries < 5)
+    {
+    rc = do_mom(hostname, MOMPort, CmdIndex);
+    if (rc >= 0)
+      break;
+
+    *fail_count = *fail_count + 1;
+    
+    local_errno = -1 * rc;
+
+    switch (local_errno)
+      {
+      case EACCES:
+      case EPERM:
+      case ECONNREFUSED:
+      case ENETUNREACH:
+      case EFAULT:
+      case EAFNOSUPPORT:
+
+        return(rc);
+
+        break;
+      }
+    
+    fprintf(stdout, "attempting command again\n");
+    retries++;
+    sleep(1);
+    continue;
+    }
+
+  return(rc);
+  } /* END perform_communications_with_retry() */
+
+
+
 
 int main(
 
@@ -396,19 +442,8 @@ int main(
               {
               if (!strstr(nodeattrs->value, ND_down))
                 {
-                int retries = 0;
-
-                while (retries < 5)
-                  {
-                  rc = do_mom(pbstat->name, MOMPort, CmdIndex) >= 0 ? HostCount++ : FailCount++;
-                  if (rc >= 0)
-                    break;
-                  fprintf(stdout, "attempting command again\n");
-                  retries++;
-                  sleep(1);
-                  continue;
-                  }
-
+                if (perform_communications_with_retry(pbstat->name, MOMPort, &FailCount) == PBSE_NONE)
+                  HostCount++;
                 }
               else
                 {
@@ -437,25 +472,8 @@ int main(
       }
     else
       {
-      int retries = 0;
-
-      while (retries < 5)
-        {
-        rc = do_mom(HPtr, MOMPort, CmdIndex);
-        if (rc >= 0)
-          {
-          HostCount++;
-          break;
-          }
-        else
-          {
-          FailCount++;
-          fprintf(stdout, "attempting command again\n");
-          retries++;
-          sleep(1);
-          continue;
-          }
-        }
+      if (perform_communications_with_retry(HPtr, MOMPort, &FailCount) == PBSE_NONE)
+        HostCount++;
       } /* END if (*HPtr == ':') */
 
     HPtr = strtok(NULL, ", \t\n");

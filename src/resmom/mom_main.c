@@ -6269,10 +6269,10 @@ int resend_obit_task_reply(
   obit_task_info *ot)
 
   {
-  int      ret = -1;
-  hnodent *np = &ot->ici->np;
+  int              ret = -1;
+  hnodent         *np = &ot->ici->np;
   struct tcp_chan *chan = NULL;
-  int      stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
+  int              stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
 
   if (IS_VALID_STREAM(stream))
     {
