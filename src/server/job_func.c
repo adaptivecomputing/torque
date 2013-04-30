@@ -1215,8 +1215,6 @@ void *job_clone_wt(
         if (rc != PBSE_JOB_RECYCLED)
           svr_job_purge(pjobclone);
 
-        clone_mgr.set_lock_on_exit(false);
-
         if ((pa = get_array(arrayid)) == NULL)
           return(NULL);
 
@@ -1225,6 +1223,7 @@ void *job_clone_wt(
         continue;
         }
 
+      clone_mgr.unlock();
       if ((pa = get_array(arrayid)) == NULL)
         return(NULL);
       
@@ -1236,8 +1235,6 @@ void *job_clone_wt(
         array_mgr.unlock();
         svr_job_purge(pjobclone);
         
-        clone_mgr.set_lock_on_exit(false);
-       
         if ((pa = get_array(arrayid)) == NULL)
           return(NULL);
 
@@ -1253,7 +1250,7 @@ void *job_clone_wt(
       rn->start++;
       
       if (prev_index == -1)
-        clone_mgr.set_lock_on_exit(false);
+        clone_mgr.unlock();
       }  /* END for (i) */
 
     if (rn->start > rn->end)
