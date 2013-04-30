@@ -99,7 +99,7 @@ int TShowAbout_exit(void)
 
   fprintf(stderr, "Version:   %s\n", PACKAGE_VERSION);
 
-  fprintf(stderr, "Revision:  %s\n", GIT_HASH);
+  fprintf(stderr, "Commit:  %s\n", GIT_HASH);
 
   exit(0);
   }  /* END TShowAbout_exit() */

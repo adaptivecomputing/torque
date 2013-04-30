@@ -681,7 +681,7 @@ void parse_command_line(
 
         if (!strcmp(optarg, "version"))
           {
-          fprintf(stderr, "Version: %s\nRevision: %s \n",
+          fprintf(stderr, "Version: %s\nCommit: %s \n",
             PACKAGE_VERSION, GIT_HASH);
 
           exit(0);
@@ -689,18 +689,18 @@ void parse_command_line(
 
         if (!strcmp(optarg, "about"))
           {
-          printf("package:     %s\n", PACKAGE_STRING);
-          printf("sourcedir:   %s\n", PBS_SOURCE_DIR);
-          printf("configure:   %s\n", PBS_CONFIG_ARGS);
-          printf("buildcflags: %s\n", PBS_CFLAGS);
-          printf("buildhost:   %s\n", PBS_BUILD_HOST);
-          printf("builddate:   %s\n", PBS_BUILD_DATE);
-          printf("builddir:    %s\n", PBS_BUILD_DIR);
-          printf("builduser:   %s\n", PBS_BUILD_USER);
-          printf("installdir:  %s\n", PBS_INSTALL_DIR);
-          printf("serverhome:  %s\n", PBS_SERVER_HOME);
-          printf("version:     %s\n", PACKAGE_VERSION);
-          printf("Revision:    %s\n", GIT_HASH);
+          printf("Package:     %s\n", PACKAGE_STRING);
+          printf("Sourcedir:   %s\n", PBS_SOURCE_DIR);
+          printf("Configure:   %s\n", PBS_CONFIG_ARGS);
+          printf("Buildcflags: %s\n", PBS_CFLAGS);
+          printf("Buildhost:   %s\n", PBS_BUILD_HOST);
+          printf("Builddate:   %s\n", PBS_BUILD_DATE);
+          printf("Builddir:    %s\n", PBS_BUILD_DIR);
+          printf("Builduser:   %s\n", PBS_BUILD_USER);
+          printf("Installdir:  %s\n", PBS_INSTALL_DIR);
+          printf("Serverhome:  %s\n", PBS_SERVER_HOME);
+          printf("Version:     %s\n", PACKAGE_VERSION);
+          printf("Commit:    %s\n", GIT_HASH);
 
           exit(0);
           }
