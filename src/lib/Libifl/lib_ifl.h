@@ -311,6 +311,7 @@ int pbs_runjob_err(int c, char *jobid, char *location, char *extend, int *);
 /* pbsD_selectj.c */
 char ** pbs_selectjob_err(int c, struct attropl *attrib, char *extend, int *);
 struct batch_status * pbs_selstat_err(int c, struct attropl *attrib, char *extend, int *);
+struct batch_status * pbs_selstatattr_err(int c, struct attropl *attropl, struct attrl *attrib, char *extend, int *);
 /* static int PBSD_select_put(int c, int type, struct attropl *attrib, char *extend); */
 /* static char **PBSD_select_get(int c); */
 
