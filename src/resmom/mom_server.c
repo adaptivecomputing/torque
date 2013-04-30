@@ -2266,7 +2266,6 @@ void mom_is_request(
   int                 command = 0;
   int                 ret = DIS_SUCCESS;
  
-  char                hostname[MAXLINE];
   char               *err_msg = NULL;
   struct sockaddr     s_addr;
   unsigned int        len = sizeof(s_addr);
@@ -2323,8 +2322,6 @@ void mom_is_request(
         chan->sock = -1;
         return;
         }
-    
-      getnameinfo(&s_addr,sizeof(s_addr),hostname,sizeof(hostname),NULL,0,0);
       }
     }
 
