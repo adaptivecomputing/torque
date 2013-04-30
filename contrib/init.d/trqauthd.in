@@ -2,7 +2,7 @@
 #
 # trqauthd	This script will start and stop the Torque Authorization Daemon
 #
-# chkconfig: 345 95 5
+# chkconfig: 345 95 05
 # description: PBS is a batch versatile batch system for SMPs and clusters
 #
 # Source the library functions
