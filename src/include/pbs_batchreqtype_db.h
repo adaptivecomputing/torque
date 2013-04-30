@@ -80,5 +80,6 @@ PbsBatchReqType(PBS_BATCH_AsySignalJob,         "AsyncSignalJob")     /* = 60 */
 PbsBatchReqType(PBS_BATCH_AltAuthenUser,        "AlternateUserAuthentication") 
 PbsBatchReqType(PBS_BATCH_GpuCtrl,              "GPUControl") 
 PbsBatchReqType(PBS_BATCH_DeleteReservation,    "DeleteAlpsReservation")
+PbsBatchReqType(PBS_BATCH_SelStatAttr,          "SelStatAttr")
 #endif
 #endif /* _PBS_BATCHREQTYPE_DB_H */

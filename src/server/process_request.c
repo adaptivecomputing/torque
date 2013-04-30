@@ -861,6 +861,8 @@ int dispatch_request(
 
     case PBS_BATCH_SelStat:
 
+    case PBS_BATCH_SelStatAttr:
+
       /* handle special 'truncated' keyword */
 
       if (!strncasecmp(request->rq_ind.rq_status.rq_id, "truncated", strlen("truncated")))
@@ -1200,6 +1202,13 @@ void free_br(
     case PBS_BATCH_SelStat:
 
       free_attrlist(&preq->rq_ind.rq_select);
+
+      break;
+
+    case PBS_BATCH_SelStatAttr:
+
+      free_attrlist(&preq->rq_ind.rq_select);
+      free_attrlist(&preq->rq_ind.rq_status.rq_attr);
 
       break;
 
