@@ -1161,6 +1161,7 @@ void *job_clone_wt(
         continue;
         }
         
+      unlock_ji_mutex(pjobclone, __func__, "4", LOGLEVEL);
       if ((pa = get_array(arrayid)) == NULL)
         return(NULL);
 
