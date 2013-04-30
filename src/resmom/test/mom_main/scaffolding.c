@@ -16,9 +16,9 @@
 #include "pbs_nodes.h" /* pbsnode */
 #include "attribute.h" /* pbs_attribute */
 #include "resource.h" /* resource_def */
-#include "prolog.h" /* PBS_PROLOG_TIME */
 #include "log.h" /* LOG_BUF_SIZE */
 #include "tcp.h"
+#include "mom_config.h"
 
 mom_server     mom_servers[PBS_MAXSERVER];
 resizable_array *received_statuses;
