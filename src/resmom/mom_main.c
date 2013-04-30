@@ -8401,11 +8401,11 @@ void check_jobs_awaiting_join_job_reply()
         (pjob->ji_hosts[0].hn_node == pjob->ji_nodeid)) /* am I mother superior? */
       {
       /* these jobs have sent out join requests but haven't received all replies */
-      if (pjob->ji_joins_sent - time_now > MAX_JOIN_WAIT_TIME)
+      if (time_now - pjob->ji_joins_sent > MAX_JOIN_WAIT_TIME)
         {
         exec_bail(pjob, JOB_EXEC_RETRY);
         }
-      else if ((pjob->ji_joins_sent - time_now > RESEND_WAIT_TIME) &&
+      else if ((time_now - pjob->ji_joins_sent > RESEND_WAIT_TIME) &&
                (pjob->ji_joins_resent == FALSE))
         {
         pjob->ji_joins_resent = TRUE;
