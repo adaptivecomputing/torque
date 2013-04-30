@@ -615,6 +615,7 @@ int process_request(
             skip = TRUE;
             }
           }
+          pjob_mutex.unlock();
         }
       
       if (!skip)
