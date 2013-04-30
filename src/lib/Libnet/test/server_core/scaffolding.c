@@ -47,3 +47,5 @@ int enqueue_threadpool_request(
   {
   return(0);
   }
+
+void log_get_host_port(char *output, unsigned long size) {}

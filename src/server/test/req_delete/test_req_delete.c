@@ -20,7 +20,6 @@ void job_delete_nanny(struct work_task *ptask);
 void post_job_delete_nanny(batch_request *preq_sig);
 int forced_jobpurge(job *pjob, batch_request *preq);
 void post_delete_mom2(struct work_task *pwt);
-batch_request *duplicate_request(batch_request *preq);
 int handle_delete_all(batch_request *preq, batch_request *preq_tmp, char *Msg);
 int handle_single_delete(batch_request *preq, batch_request *preq_tmp, char *Msg);
 

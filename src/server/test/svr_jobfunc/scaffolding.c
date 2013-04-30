@@ -348,3 +348,13 @@ int unlock_node(struct pbsnode *the_node, const char *id, const char *msg, int l
 void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+
+int remove_procct(job *pjob)
+  {
+  return(0);
+  }
+
+int initialize_procct(job *pjob)
+  {
+  return(0);
+  }
