@@ -96,6 +96,7 @@
 #include "tcp.h" /* tcp_chan */
 
 static int PBSD_select_put(int, int, struct attropl *, char *);
+static int PBSD_selectattr_put(int, int, struct attropl *, struct attrl *, char *);
 static char **PBSD_select_get(int *, int);
 
 char **pbs_selectjob_err(
@@ -171,6 +172,49 @@ struct batch_status * pbs_selstat(
 
 
 
+/*
+ *  pbs_selstatattr() - Selectable status with attribute request
+ *  Return selected status information for jobs that meet certain
+ *  selection criteria.  This is pbs_selstat() with the ability
+ *  to only request certain attributes.
+ */
+struct batch_status * pbs_selstatattr_err(
+
+  int             c,
+  struct attropl *attropl,
+  struct attrl   *attrib,
+  char           *extend,
+  int            *local_errno)
+
+  {
+  if (PBSD_selectattr_put(c, PBS_BATCH_SelStatAttr, attropl, attrib, extend) == 0)
+    return (PBSD_status_get(local_errno, c));
+  else
+    return ((struct batch_status *)0);
+  } /* END pbs_selstatattr_err() */
+
+
+
+
+struct batch_status * pbs_selstatattr(
+
+  int             c,
+  struct attropl *attropl,
+  struct attrl   *attrib,
+  char           *extend)
+
+  {
+  pbs_errno = 0;
+
+  if (PBSD_selectattr_put(c, PBS_BATCH_SelStatAttr, attropl, attrib, extend) == 0)
+    return (PBSD_status_get(&pbs_errno, c));
+  else
+    return ((struct batch_status *)0);
+  } /* END pbs_selstat() */
+
+
+
+
 static int PBSD_select_put(
 
   int             c,
@@ -217,7 +261,58 @@ static int PBSD_select_put(
 
   DIS_tcp_cleanup(chan);
   return rc;
-  } /* END pbs_selstat() */
+  } /* END PBSD_select_put() */
+
+
+static int PBSD_selectattr_put(
+
+  int             c,
+  int             type,
+  struct attropl *attropl,
+  struct attrl   *attrib,
+  char           *extend)
+
+  {
+  int rc = PBSE_NONE;
+  int sock;
+  struct tcp_chan *chan = NULL;
+
+  pthread_mutex_lock(connection[c].ch_mutex);
+
+  sock = connection[c].ch_socket;
+
+  /* setup DIS support routines for following DIS calls */
+
+  if ((chan = DIS_tcp_setup(sock)) == NULL)
+    {
+    pthread_mutex_unlock(connection[c].ch_mutex);
+    rc = PBSE_PROTOCOL;
+    return rc;
+    }
+  else if ((rc = encode_DIS_ReqHdr(chan, type, pbs_current_user)) ||
+      (rc = encode_DIS_attropl(chan, attropl)) ||
+      (rc = encode_DIS_attrl(chan, attrib)) ||
+      (rc = encode_DIS_ReqExtend(chan, extend)))
+    {
+    connection[c].ch_errtxt = strdup(dis_emsg[rc]);
+
+    pthread_mutex_unlock(connection[c].ch_mutex);
+    DIS_tcp_cleanup(chan);
+    return (PBSE_PROTOCOL);
+    }
+
+  pthread_mutex_unlock(connection[c].ch_mutex);
+
+  /* write data */
+
+  if (DIS_tcp_wflush(chan))
+    {
+    rc = PBSE_PROTOCOL;
+    }
+
+  DIS_tcp_cleanup(chan);
+  return rc;
+  } /* END PBSD_selectattr_put() */
 
 
 static char **PBSD_select_get(
