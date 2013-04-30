@@ -217,3 +217,10 @@ char *threadsafe_tokenizer(char **str, const char *delims)
   fprintf(stderr, "The call to threadsafe_tokenizer needs to be mocked!!\n");
   exit(1);
   }
+
+void append_link(tlist_head *head, list_link *new_link, void *pobj) {}
+
+svrattrl *attrlist_create(const char *aname, const char *rname, int vsize)
+  {
+  return(NULL);
+  }

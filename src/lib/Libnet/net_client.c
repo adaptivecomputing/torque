@@ -91,7 +91,7 @@
 #include "server_limits.h"
 #include "net_connect.h"
 #include "mcom.h"
-#include "pbs_log.h"
+#include "log.h"
 
 #include <unistd.h>
 #include <fcntl.h>

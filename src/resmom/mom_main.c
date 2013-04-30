@@ -8401,11 +8401,11 @@ void check_jobs_awaiting_join_job_reply()
         (pjob->ji_hosts[0].hn_node == pjob->ji_nodeid)) /* am I mother superior? */
       {
       /* these jobs have sent out join requests but haven't received all replies */
-      if (pjob->ji_joins_sent - time_now > MAX_JOIN_WAIT_TIME)
+      if (time_now - pjob->ji_joins_sent > max_join_job_wait_time)
         {
         exec_bail(pjob, JOB_EXEC_RETRY);
         }
-      else if ((pjob->ji_joins_sent - time_now > RESEND_WAIT_TIME) &&
+      else if ((time_now - pjob->ji_joins_sent > resend_join_job_wait_time) &&
                (pjob->ji_joins_resent == FALSE))
         {
         pjob->ji_joins_resent = TRUE;
@@ -9438,10 +9438,10 @@ int resend_obit_task_reply(
   obit_task_info *ot)
 
   {
-  int      ret = -1;
-  hnodent *np = &ot->ici->np;
+  int              ret = -1;
+  hnodent         *np = &ot->ici->np;
   struct tcp_chan *chan = NULL;
-  int      stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
+  int              stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
 
   if (IS_VALID_STREAM(stream))
     {
@@ -9454,8 +9454,6 @@ int resend_obit_task_reply(
         {
         if ((ret = DIS_tcp_wflush(chan)) == DIS_SUCCESS)
           {
-/*          read_tcp_reply(chan, IM_PROTOCOL, IM_PROTOCOL_VER, IM_OBIT_TASK, &ret); */
-
           if (ret == DIS_SUCCESS)
             {
             log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ot->ici->jobid, "Successfully re-sent obit task reply");
@@ -9467,6 +9465,7 @@ int resend_obit_task_reply(
       }
 
     close(stream);
+
     if (chan != NULL)
       DIS_tcp_cleanup(chan);
     }

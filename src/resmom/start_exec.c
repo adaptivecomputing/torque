@@ -6100,6 +6100,7 @@ int send_join_job_to_sisters(
 
   {
   int              i;
+  int              retry_count;
   int              stream;
   int              ret = PBSE_NONE;
   eventent        *ep;
@@ -6114,7 +6115,7 @@ int send_join_job_to_sisters(
   for (i = 1; i < nodenum; i++)
     send_failed[i] = i;
 
-  for (i = 0; i < 5; i++)
+  for (retry_count = 0; retry_count < 5; retry_count++)
     {
     if (unsent_count == 0)
       break;
