@@ -238,7 +238,8 @@ int add_verify_resources(
     if (gpugres)
       {
       len = 5;
-      vlen = strlen(r) + 1;
+      /* + 6 = 1 for null terminator and 5 for 'gpus:' */
+      vlen = (e - v) + 6; 
 
       name = (char *)memmgr_calloc(mm, 1, len);
       if (v)
@@ -247,7 +248,7 @@ int add_verify_resources(
     else
       {
       len++;
-      vlen = (e -v) + 1;
+      vlen = (e - v) + 1;
 
       name = (char *)memmgr_calloc(mm, 1, len);
       if (v)
