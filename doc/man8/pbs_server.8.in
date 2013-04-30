@@ -81,9 +81,10 @@
 .SH NAME
 pbs_server \- start a pbs batch server
 .SH SYNOPSIS
-pbs_server\ [\-a active] [\-d\ config_path\^]\ [\-p\ port\^] [\^\-A\ acctfile\^]
+pbs_server\ [\-a active] [\-c] [\-d\ config_path\^]\ [\-e] [\-f] [\-h] [\-l port\^]
+[\-p\ port\^] [\-t type\^] [\-v] [\^\-A\ acctfile\^] [\^\-D] [\-H\ hostname\^]
 [\^\-L\ logfile\^] [\-M\ mom_port\^] [\-R\ momRPP_port] [\-S\ scheduler_port\^]
-[\-H\ hostname\^] [\-t\ type\^]
+[\-\-about] [\-\-ha] [\-\-help] [\-\-version]
 .SH DESCRIPTION
 The
 .B pbs_server
@@ -115,6 +116,11 @@ and the scheduler will not be called and no jobs will be run.
 If this option is not specified, the server will retain the prior value of the 
 .At scheduling
 attribute.
+.IP "\-c" 15
+Wait 10 minutes before contacting moms. Any mom reporting in does not get pinged
+if starting
+.B pbs_server
+before moms.
 .IP "\-d config_path" 15
 Specifies the path of the directory which is home to the servers
 configuration files, PBS_HOME.  A host may have multiple servers.  Each server
@@ -122,16 +128,12 @@ must have a different configuration directory.
 The default configuration directory is given by the symbol $PBS_SERVER_HOME
 which is typically 
 .Ty /usr/spool/PBS .
-.IP "\-p port" 15
-Specifies the port number on which the server will
-listen for batch requests.
-If multiple servers are running on a
-single host, each must have its own unique port number.
-This option is for use in testing with multiple batch systems on a single host.
-.IP "\-A acctfile"
-Specifies an absolute path name of the file to use as the accounting file.
-If not specified, the file is named for the current date in the
-PBS_HOME/server_priv/accounting directory.
+.IP "\-e" 15
+Accept status update from any mom. Adds node to nodes file.
+.IP "\-f" 15
+Force overwrite of server database.
+.IP "\-h" 15
+Print help information.
 .IP "\-l scheduler_port"
 Specifies the host name and port number of listening schedulers. By default pbs_server
 communicates to the scheduler on the loop back address at port 15004. If the scheduler 
@@ -140,34 +142,12 @@ the scheduler.  When using TORQUE in high availability mode the -l option should
 used to let TORQUE know where all potential schedulers are located. If pbs_server and
 the scheduler are not on the same node the -l option or the -S option must be used
 in order for TORQUE to communicate with the scheduler.
-.IP "\-L logfile"
-Specifies an absolute path name of the file to use as the log file.
-If not specified, the file is one named for the current date in the
-PBS_HOME/server_logs directory, see the
-.At \-d
-option.
-.IP "\-M mom_port"
-Specifies the host name and/or port number on which the server should connect
-the job executor, MOM.  The option argument,
-.Ar mom_conn ,
-is one of the forms: host_name, [:]port_number, or host_name:port_number.
-If host_name not specified, the local host is assumed.   If port_number is not
-specified, the default port is assumed.  See the \-M option for pbs_mom(8).
-.IP "\-R mom_RPPport"
-Specifies the port number on which the the server should query the up/down
-status of Mom.    See the \-R option for pbs_mom(8).
-.IP "\-S scheduler_port" 15
-Specifies the port number to which the server should connect when
-contacting the Scheduler.  By default pbs_server looks for the scheduler
-on the loopback address at port 15004. The -S option changes the default to the value 
-given in the option argument. The option argument,
-.Ar scheduler_conn ,
-is of the same syntax as under the \-M option.
-.IP "\-H hostname"
-Causes the server to start under a different hostname as obtained from
-gethostname(2). Useful for servers with multiple network interfaces to support
-connections from clients over an interface that has a hostname assigned
-that differs from the one that is returned by gethostname(2).
+.IP "\-p port" 15
+Specifies the port number on which the server will
+listen for batch requests.
+If multiple servers are running on a
+single host, each must have its own unique port number.
+This option is for use in testing with multiple batch systems on a single host.
 .IP "\-t type"
 Specifies the impact on jobs which were in execution, running, when the server
 shut down.  If the running job is not rerunnable or restartable from a
@@ -201,6 +181,51 @@ The server will discard any existing configuration files, queues and jobs,
 and initialize configuration files to the default values.  The server is
 idled.
 .RE
+.IP "\-v" 15
+Shows version.
+.IP "\-A acctfile"
+Specifies an absolute path name of the file to use as the accounting file.
+If not specified, the file is named for the current date in the
+PBS_HOME/server_priv/accounting directory.
+.IP "\-D"
+Debug mode.
+.IP "\-H hostname"
+Causes the server to start under a different hostname as obtained from
+gethostname(2). Useful for servers with multiple network interfaces to support
+connections from clients over an interface that has a hostname assigned
+that differs from the one that is returned by gethostname(2).
+.IP "\-L logfile"
+Specifies an absolute path name of the file to use as the log file.
+If not specified, the file is one named for the current date in the
+PBS_HOME/server_logs directory, see the
+.At \-d
+option.
+.IP "\-M mom_port"
+Specifies the host name and/or port number on which the server should connect
+the job executor, MOM.  The option argument,
+.Ar mom_conn ,
+is one of the forms: host_name, [:]port_number, or host_name:port_number.
+If host_name not specified, the local host is assumed.   If port_number is not
+specified, the default port is assumed.  See the \-M option for pbs_mom(8).
+.IP "\-R mom_RPPport"
+Specifies the port number on which the the server should query the up/down
+status of Mom.    See the \-R option for pbs_mom(8).
+.IP "\-S scheduler_port" 15
+Specifies the port number to which the server should connect when
+contacting the Scheduler.  By default pbs_server looks for the scheduler
+on the loopback address at port 15004. The -S option changes the default to the value 
+given in the option argument. The option argument,
+.Ar scheduler_conn ,
+is of the same syntax as under the \-M option.
+.IP "\-\-about" 15
+Shows information about
+.B pbs_server.
+.IP "\-\-ha" 15
+Enables high availability mode.
+.IP "\-\-help" 15
+Prints help information.
+.IP "\-\-version" 15
+Shows version and commit information.
 .LP
 .SH FILES
 .IP $PBS_SERVER_HOME/server_priv 15
