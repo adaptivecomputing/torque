@@ -9438,10 +9438,10 @@ int resend_obit_task_reply(
   obit_task_info *ot)
 
   {
-  int      ret = -1;
-  hnodent *np = &ot->ici->np;
+  int              ret = -1;
+  hnodent         *np = &ot->ici->np;
   struct tcp_chan *chan = NULL;
-  int      stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
+  int              stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
 
   if (IS_VALID_STREAM(stream))
     {
@@ -9454,8 +9454,6 @@ int resend_obit_task_reply(
         {
         if ((ret = DIS_tcp_wflush(chan)) == DIS_SUCCESS)
           {
-/*          read_tcp_reply(chan, IM_PROTOCOL, IM_PROTOCOL_VER, IM_OBIT_TASK, &ret); */
-
           if (ret == DIS_SUCCESS)
             {
             log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ot->ici->jobid, "Successfully re-sent obit task reply");
@@ -9467,6 +9465,7 @@ int resend_obit_task_reply(
       }
 
     close(stream);
+
     if (chan != NULL)
       DIS_tcp_cleanup(chan);
     }
