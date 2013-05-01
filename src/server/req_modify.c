@@ -418,6 +418,12 @@ int modify_job(
     return(PBSE_IVALREQ);
     }
 
+  if (LOGLEVEL >= 7)
+    {
+    snprintf(log_buf, sizeof(log_buf), "%s", pjob->ji_qs.ji_jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
+
   /* cannot be in exiting or transit, exiting has already been checked */
   if (pjob->ji_qs.ji_state == JOB_STATE_TRANSIT)
     {
@@ -682,6 +688,13 @@ int modify_whole_array(
   int   i;
   int   rc = PBSE_NONE;
   job  *pjob;
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
+
+  if (LOGLEVEL >= 7)
+    {
+    snprintf(log_buf, sizeof(log_buf), "%s", pa->ai_qs.parent_id);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
 
   for (i = 0; i < pa->ai_qs.array_size; i++)
     {
@@ -697,7 +710,7 @@ int modify_whole_array(
       {
       /* NO_MOM_RELAY will prevent modify_job from calling relay_to_mom */
       batch_request *array_req = duplicate_request(preq, i);
-      pthread_mutex_unlock(pa->ai_mutex);
+      unlock_ai_mutex(pa, __func__, NULL, LOGLEVEL);
       array_req->rq_noreply = TRUE;
       rc = modify_job((void **)&pjob, plist, array_req, checkpoint_req, NO_MOM_RELAY);
       pa = get_jobs_array(&pjob);
@@ -738,6 +751,7 @@ void *modify_array_work(
   int            checkpoint_req = FALSE;
   job           *pjob = NULL;
   job_array     *pa;
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
 
   pa = get_array(preq->rq_ind.rq_modify.rq_objname);
 
@@ -745,6 +759,12 @@ void *modify_array_work(
     {
     req_reject(PBSE_UNKARRAYID, 0, preq, NULL, "unable to find array");
     return(NULL);
+    }
+
+  if (LOGLEVEL >= 7)
+    {
+    snprintf(log_buf, sizeof(log_buf), "%s", pa->ai_qs.parent_id);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
 
   /* pbs_mom sets the extend string to trigger copying of checkpoint files */
@@ -801,6 +821,7 @@ void *modify_array_work(
     else
       reply_ack(preq);
 
+    unlock_ai_mutex(pa, __func__, "range", LOGLEVEL);
     return(NULL);
     }
   else 
@@ -817,7 +838,10 @@ void *modify_array_work(
 
     /* we modified the job array. We now need to update the job */
     if ((pjob = chk_job_request(preq->rq_ind.rq_modify.rq_objname, preq)) == NULL)
+      {
+      unlock_ai_mutex(pa, __func__, "whole", LOGLEVEL);
       return(NULL);
+      }
 
     /* modify_job() will reply to preq and free it */
     rc2 = modify_job((void **)&pjob, plist, preq, checkpoint_req, NO_MOM_RELAY);
@@ -847,6 +871,13 @@ void *req_modifyarray(
   {
   job_array            *pa;
   struct batch_request *preq = (struct batch_request *)vp;
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
+  
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buf, "holder");
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
 
   pa = get_array(preq->rq_ind.rq_modify.rq_objname);
 
@@ -854,6 +885,12 @@ void *req_modifyarray(
     {
     req_reject(PBSE_UNKARRAYID, 0, preq, NULL, "unable to find array");
     return(NULL);
+    }
+
+  if (LOGLEVEL >= 7)
+    {
+    snprintf(log_buf, sizeof(log_buf), "%s", pa->ai_qs.parent_id);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
 
   unlock_ai_mutex(pa, __func__, "4", LOGLEVEL);
@@ -883,7 +920,16 @@ void *modify_job_work(
   svrattrl      *plist;
   int            checkpoint_req = FALSE;
   batch_request *preq = (struct batch_request *)vp;
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
   
+
+  if (LOGLEVEL >= 7)
+    {
+    snprintf(log_buf, sizeof(log_buf), "%s", pjob->ji_qs.ji_jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
+
+
   pjob = svr_find_job(preq->rq_ind.rq_modify.rq_objname, FALSE);
 
   if (pjob == NULL)
@@ -931,8 +977,16 @@ void *req_modifyjob(
 
   {
   job                  *pjob;
+  char                 log_buf[LOCAL_LOG_BUF_SIZE];
   svrattrl             *plist;
   struct batch_request *preq = (struct batch_request *)vp;
+
+
+  if (LOGLEVEL >= 7)
+    {
+    snprintf(log_buf, sizeof(log_buf), "%s", pjob->ji_qs.ji_jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
 
   pjob = chk_job_request(preq->rq_ind.rq_modify.rq_objname, preq);
 
@@ -996,6 +1050,13 @@ int modify_job_attr(
   int            rc;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
   pbs_queue     *pque;
+
+
+  if (LOGLEVEL >= 7)
+    {
+    snprintf(log_buf, sizeof(log_buf), "%s", pjob->ji_qs.ji_jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
 
   if ((pque = get_jobs_queue(&pjob)) != NULL)
     {

@@ -586,12 +586,6 @@ unsigned long mom_checkpoint_set_checkpoint_run_exe_name(char *value)
   exit(1);
   }
 
-void im_request(struct tcp_chan *chan, int version)
-  {
-  fprintf(stderr, "The call to im_request needs to be mocked!!\n");
-  exit(1);
-  }
-
 int lock_init()
   {
   fprintf(stderr, "The call to lock_init needs to be mocked!!\n");
