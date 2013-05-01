@@ -2903,22 +2903,22 @@ int lock_ji_mutex(
   char *err_msg = NULL;
   char stub_msg[] = "no pos";
 
-  if (logging >= 10)
+  if (logging >= 7)
     {
     err_msg = (char *)calloc(1, MSG_LEN_LONG);
     if (msg == NULL)
       msg = stub_msg;
     snprintf(err_msg, MSG_LEN_LONG, "locking %s in method %s-%s", pjob->ji_qs.ji_jobid, id, msg);
-    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, err_msg);
     }
 
   if (pthread_mutex_lock(pjob->ji_mutex) != 0)
     {
-    if (logging >= 10)
+    if (logging >= 7)
       {
       snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot lock job %s mutex in method %s",
                                    pjob->ji_qs.ji_jobid, id);
-      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, err_msg);
       }
     rc = PBSE_MUTEX;
     }
@@ -2942,22 +2942,22 @@ int unlock_ji_mutex(
   char *err_msg = NULL;
   char stub_msg[] = "no pos";
 
-  if (logging >= 10)
+  if (logging >= 7)
     {
     err_msg = (char *)calloc(1, MSG_LEN_LONG);
     if (msg == NULL)
       msg = stub_msg;
     snprintf(err_msg, MSG_LEN_LONG, "unlocking %s in method %s-%s", pjob->ji_qs.ji_jobid, id, msg);
-    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, err_msg);
     }
 
   if (pthread_mutex_unlock(pjob->ji_mutex) != 0)
     {
-    if (logging >= 10)
+    if (logging >= 7)
       {
       snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot unlock job %s mutex in method %s",
                                           pjob->ji_qs.ji_jobid, id);
-      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, err_msg);
       }
     rc = PBSE_MUTEX;
     }
@@ -2980,13 +2980,13 @@ int lock_ai_mutex(
   char *err_msg = NULL;
   char stub_msg[] = "no pos";
 
-  if (logging >= 10)
+  if (logging >= 6)
     {
     err_msg = (char *)calloc(1, MSG_LEN_LONG);
     if (msg == NULL)
       msg = stub_msg;
     snprintf(err_msg, MSG_LEN_LONG, "locking %s in method %s-%s", pa->ai_qs.parent_id, id, msg);
-    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, err_msg);
     }
 
   if (pthread_mutex_lock(pa->ai_mutex) != 0)
@@ -3019,13 +3019,13 @@ int unlock_ai_mutex(
   char *err_msg = NULL;
   char stub_msg[] = "no pos";
 
-  if (logging >= 10)
+  if (logging >= 6)
     {
     err_msg = (char *)calloc(1, MSG_LEN_LONG);
     if (msg == NULL)
       msg = stub_msg;
     snprintf(err_msg, MSG_LEN_LONG, "unlocking %s in method %s-%s", pa->ai_qs.parent_id, id, msg);
-    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, err_msg);
     }
 
   if (pthread_mutex_unlock(pa->ai_mutex) != 0)

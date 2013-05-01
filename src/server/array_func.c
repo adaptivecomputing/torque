@@ -154,7 +154,14 @@ job_array *get_array(
 
   {
   job_array *pa;
-  
+  char            log_buf[LOCAL_LOG_BUF_SIZE];
+
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buf, "%s", id);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
+
   pthread_mutex_lock(allarrays.allarrays_mutex);
 
   pa = (job_array *)get_from_hash_map(allarrays.hm, id);
@@ -1133,7 +1140,7 @@ int delete_array_range(
 
         running = (pjob->ji_qs.ji_state == JOB_STATE_RUNNING);
 
-        pthread_mutex_unlock(pa->ai_mutex);
+        unlock_ai_mutex(pa, __func__,NULL, LOGLEVEL);
         deleted = attempt_delete(pjob);
 
         if (deleted == FALSE)
@@ -1150,7 +1157,7 @@ int delete_array_range(
           num_deleted++;
           }
 
-        pthread_mutex_lock(pa->ai_mutex);
+        lock_ai_mutex(pa, __func__, "2", LOGLEVEL);
         }
       }
 
@@ -1237,7 +1244,7 @@ int delete_whole_array(
         
       running = (pjob->ji_qs.ji_state == JOB_STATE_RUNNING);
 
-      pthread_mutex_unlock(pa->ai_mutex);
+      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
       deleted = attempt_delete(pjob);
 
       if (deleted == FALSE)
@@ -1253,7 +1260,7 @@ int delete_whole_array(
         num_deleted++;
         }
 
-      pthread_mutex_lock(pa->ai_mutex);
+      lock_ai_mutex(pa, __func__, "2", LOGLEVEL);
       }
     }
 
@@ -1429,10 +1436,17 @@ int modify_array_range(
   int                 i;
   int                 rc = PBSE_NONE;
   job                *pjob;
+  char               log_buf[LOCAL_LOG_BUF_SIZE];
 
   array_request_node *rn;
   array_request_node *to_free;
   
+  if (LOGLEVEL >= 7)
+    {
+    snprintf(log_buf, sizeof(log_buf), "%s", pa->ai_qs.parent_id);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
+
   CLEAR_HEAD(tl);
   
   if (parse_array_request(range,&tl) > 0)
@@ -1465,7 +1479,7 @@ int modify_array_range(
           else
             {
             struct batch_request *array_req = duplicate_request(preq, i);
-            pthread_mutex_unlock(pa->ai_mutex);
+            unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
             rc = modify_job((void **)&pjob, plist, array_req, checkpoint_req, NO_MOM_RELAY);
             pa = get_jobs_array(&pjob);
 
@@ -1480,8 +1494,9 @@ int modify_array_range(
             if (pjob == NULL)
               {
               pa->job_ids[i] = NULL;
-              unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+              unlock_ai_mutex(pa, __func__, "2", LOGLEVEL);
               }
+            unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
             }
           }
         }
