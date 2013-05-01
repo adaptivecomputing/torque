@@ -353,7 +353,7 @@ const char *PJobSubState[] =
   "SUBSTATE46",
   "SUBSTATE47",
   "SUBSTATE48",
-  "SUBSTATE49",
+  "WAIT_SISTER_KILL_CONFIRM",
   "EXITING",   /* Start of job exiting processing */
   "EXIT_WAIT", /* Waiting for a response from other mom's */
   "STAGEOUT",  /* job staging out (other) files   */
