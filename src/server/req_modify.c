@@ -844,7 +844,7 @@ void *modify_array_work(
       }
 
     /* modify_job() will reply to preq and free it */
-    rc2 = modify_job((void **)&pjob, plist, preq, checkpoint_req, NO_MOM_RELAY);
+    modify_job((void **)&pjob, plist, preq, checkpoint_req, NO_MOM_RELAY);
 
     unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
     }
