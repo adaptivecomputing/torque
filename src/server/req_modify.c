@@ -742,7 +742,6 @@ void *modify_array_work(
   batch_request *preq = (batch_request *)vp;
   svrattrl      *plist;
   int            rc = 0;
-  int            rc2 = 0;
   char          *pcnt = NULL;
   char          *array_spec = NULL;
   int            checkpoint_req = FALSE;
@@ -832,28 +831,9 @@ void *modify_array_work(
 
     mutex_mgr job_mutex = mutex_mgr(pjob->ji_mutex, true);
 
-    rc2 = modify_job((void **)&pjob, plist, preq, checkpoint_req, NO_MOM_RELAY);
-
-    if ((rc2) && 
-        (rc2 != PBSE_RELAYED_TO_MOM))
-      {
-      /* there are two operations going on that give a return code:
-         one from modify_whole_array and one from modify_job_for_array.
-         If either of these fail, return the error. This makes it
-         so some elements fo the array will be updated but others are
-         not. But at least the user will know something went wrong.*/
-
-      req_reject(rc, 0, preq, NULL, NULL);
-      return(NULL);
-      }
-
-    if (rc == PBSE_RELAYED_TO_MOM)
-      return(NULL);
+    /* modify_job will reply to preq and free it */
+    modify_job((void **)&pjob, plist, preq, checkpoint_req, NO_MOM_RELAY);
     }
-
-  /* SUCCESS */
-
-  reply_ack(preq);
 
   return(NULL);
   } /* END modify_array_work() */
