@@ -332,6 +332,7 @@ static int tcp_read(
       {
       /* adjust the new values */
       tp->tdis_eod += ((char *)ptr) - tp->tdis_thebuf;
+      *tp->tdis_eod = '\0';
       tp->tdis_trailp += ((char *)ptr) - tp->tdis_thebuf;
       tp->tdis_leadp += ((char *)ptr) - tp->tdis_thebuf;
       tp->tdis_thebuf = (char *)ptr;
