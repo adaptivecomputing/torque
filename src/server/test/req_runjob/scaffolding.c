@@ -328,11 +328,6 @@ int lock_ji_mutex(job *pjob, const char *id, char *msg, int logging)
   return(0);
   }
 
-batch_request *duplicate_request(struct batch_request *preq)
-  {
-  return(NULL);
-  }
-
 int unlock_ai_mutex(job_array *pa, const char *id, char *msg, int logging)
   {
   return(0);
