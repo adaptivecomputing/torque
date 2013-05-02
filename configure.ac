@@ -37,8 +37,10 @@ AC_CONFIG_AUX_DIR([buildutils])
 AC_CANONICAL_HOST
 AC_CONFIG_MACRO_DIR([buildutils])
 
-LT_INIT
+m4_pattern_allow([AM_PROG_AR])
+AM_PROG_AR
 
+LT_INIT
 
 AC_CHECK_PROGS(MAKE,$MAKE make gmake,error)
 if test "x$MAKE" = "xerror" ;then
