@@ -2721,6 +2721,7 @@ int node_np_action(
   } /* END node_np_action */
 
 
+
 /*
  * node_mom_port_action - action routine for node's port pbs_attribute
  */
