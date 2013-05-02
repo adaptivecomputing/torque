@@ -246,7 +246,7 @@ fi
 if [ ${coverity} -ne 0 -o ${unit_tests} -ne 0 ]
 then
     ./configure --with-debug --with-check
-    make clean
+    make clean || :
 fi
 
 if [ ${coverity} -ne 0 ]
