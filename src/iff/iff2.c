@@ -148,16 +148,7 @@ int main(
 
   char  EMsg[1024];
 
-  char *ptr;
-
-  int PBSLOGLEVEL = 0;
-
   strcpy(pbs_current_user, "PBS_Server");
-
-  if ((ptr = getenv("PBSLOGLEVEL")) != NULL)
-    {
-    PBSLOGLEVEL = (int)strtol(ptr, NULL, 10);
-    }
 
   /* Need to unset LOCALDOMAIN if set, want local host name */
 

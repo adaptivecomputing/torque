@@ -2289,9 +2289,10 @@ int kill_task(
 			  continue;
 			  }  /* END if (ps->pid == mompid) */
 
-			if((sig == SIGKILL)||(sig == SIGTERM))
-			  {
-	              ++ctThisIteration; //Only count for killing don't count for any other signal.
+			if ((sig == SIGKILL) || (sig == SIGTERM))
+        {
+        /* Only count for killing don't count for any other signal. */
+        ++ctThisIteration;
 			  }
 
 			if (sig == SIGKILL)
