@@ -19,6 +19,11 @@ struct server server;
 int LOGLEVEL = 0;
 int array_259_upgrade = 0;
 
+struct batch_request *duplicate_request(struct batch_request *preq, int job_index)
+  {
+  return(NULL);
+  }
+
 int insert_thing(resizable_array *ra, void *thing)
   {
   fprintf(stderr, "The call to insert_thing needs to be mocked!!\n");

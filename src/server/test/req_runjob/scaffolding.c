@@ -35,6 +35,11 @@ char *msg_manager = "%s at request of %s@%s";
 int svr_totnodes = 0;
 
 
+struct batch_request *duplicate_request( struct batch_request *preq, int job_index)
+  {
+  return(NULL);
+  }
+
 
 job_array *get_jobs_array(job **pjob)
   {
