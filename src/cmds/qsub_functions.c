@@ -717,6 +717,8 @@ int validate_submit_filter(
       {
       rc = 1;
       }
+    else
+      rc = -1;
     }
   else if (stat(SUBMIT_FILTER_PATH, &sfilter) != -1)
     {
@@ -4102,7 +4104,15 @@ void main_func(
   process_config_file(&ji);
 
   /* check/set submit filter_path */
-  validate_submit_filter(&ji.mm, &ji.job_attr);
+  if (validate_submit_filter(&ji.mm, &ji.job_attr) == -1)
+  {
+     hash_find(ji.job_attr, ATTR_pbs_o_submit_filter, &tmp_job_info);
+     fprintf(stderr,
+             "qsub: invalid submit filter: \"%s\"\n",
+             tmp_job_info->value);
+
+     exit(1);
+  }
 
   /* NOTE:  load config before processing opts since config may modify how opts are handled */
 
