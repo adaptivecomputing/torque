@@ -1507,6 +1507,26 @@ int handle_queue_recovery(
 
 
 
+void mark_as_badjob(
+
+  const char *filename)
+
+  {
+  char basen[MAXPATHLEN+1];
+  snprintf(basen, sizeof(basen), "%s%s", filename, JOB_BAD_SUFFIX);
+  if (link(filename, basen) < 0)
+    {
+    log_err(errno, __func__, "failed to link corrupt .JB file to .BD");
+    }
+  else
+    {
+    unlink(filename);
+    }
+  }
+
+
+
+
 int handle_array_recovery(
     
   int type)
@@ -1516,6 +1536,7 @@ int handle_array_recovery(
   struct dirent    *pdirent;
   DIR              *dir;
   int               rc = PBSE_NONE;
+  int               rc2 = PBSE_NONE;
   job_array        *pa = NULL;
   int               baselen = 0;
   int               array_suf_len = strlen(ARRAY_FILE_SUFFIX);
@@ -1563,9 +1584,8 @@ int handle_array_recovery(
           sprintf(log_buf, "%s:3", __func__);
           unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
 
-          closedir(dir);
-
-          return(rc);
+          mark_as_badjob(pdirent->d_name);
+          rc2 = rc; /* rc2 captures the latest error in rc */
           }
 
         pa->jobs_recovered = 0;
@@ -1581,6 +1601,8 @@ int handle_array_recovery(
 
   closedir(dir);
 
+  if (rc2 != PBSE_NONE)
+    rc = rc2;
   return(rc);
   } /* handle_array_recovery() */
 
@@ -2107,8 +2129,7 @@ int pbsd_init(
   if ((ret = handle_queue_recovery(type)) != PBSE_NONE)
     return(ret);
 
-  if ((ret = handle_job_and_array_recovery(type)) != PBSE_NONE)
-    return(ret);
+  handle_job_and_array_recovery(type);
 
   /* Put us back in the Server's Private directory */
   if (chdir(path_priv) != 0)
