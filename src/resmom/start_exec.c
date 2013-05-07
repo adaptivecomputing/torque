@@ -6371,6 +6371,7 @@ int start_exec(
     pjob->ji_resources[0].nr_mem = 0;
     pjob->ji_resources[0].nr_vmem = 0;
     
+    pjob->ji_joins_sent = time(NULL);
     CLEAR_HEAD(phead);
     
     pattr = pjob->ji_wattr;
