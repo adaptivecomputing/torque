@@ -6187,6 +6187,8 @@ int start_exec(
     pjob->ji_sisters = NULL;
     pjob->ji_numsisternodes = 0;
     
+    pjob->ji_joins_sent = time(NULL);
+
     /* Parse nodes into the radix */
 
     /* First mother superior needs to keep track of the sisters that will
