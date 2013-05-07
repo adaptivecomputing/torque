@@ -1548,7 +1548,9 @@ int TMomFinalizeJob1(
 
   attribute          *pattr;
   attribute          *pattri;
+#ifndef MOM_FORCENODEFILE
   resource           *presc;
+#endif
   resource_def   *prd;
 
   struct sockaddr_in  saddr;
@@ -1632,12 +1634,14 @@ int TMomFinalizeJob1(
 
   prd = find_resc_def(svr_resc_def, "neednodes", svr_resc_size);
 
-  presc = find_resc_entry(pattr, prd);
-
 #ifdef MOM_FORCENODEFILE
+  find_resc_entry(pattr, prd);
+
   pjob->ji_flags |= MOM_HAS_NODEFILE;
 
 #else /* MOM_FORCENODEFILE */
+  presc = find_resc_entry(pattr, prd);
+
   if (presc != NULL)
     pjob->ji_flags |= MOM_HAS_NODEFILE;
 
@@ -1985,10 +1989,8 @@ int TMomFinalizeJob2(
 #endif  /* !SHELL_USE_ARGV */
 
   job                  *pjob;
-  task                 *ptask;
 
   pjob  = (job *)TJE->pjob;
-  ptask = (task *)TJE->ptask;
 
   if (LOGLEVEL >= 4)
     {
