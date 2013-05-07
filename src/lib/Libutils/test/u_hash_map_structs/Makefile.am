@@ -3,31 +3,20 @@ PROG_ROOT = ../..
 
 AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
 
-TPROGS = ct_u_hash_map_structs
-
-check_PROGRAMS = ${TPROGS}
-#check_PROGRAMS = u_hash_map_structs_cov ${TPROGS}
-
 lib_LTLIBRARIES = libu_hash_map_structs.la
-noinst_LIB = libu_hash_map_structs.la
 
-BASE_SOURCE = scaffolding.c ${PROG_ROOT}/u_hash_map_structs.c
+AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 
-METHOD_SOURCES = u_hash_map_structs_ct.c
+check_PROGRAMS = test_u_hash_map_structs
 
-libu_hash_map_structs_la_SOURCES = ${BASE_SOURCE} ${METHOD_SOURCES}
+libu_hash_map_structs_la_SOURCES = scaffolding.c ${PROG_ROOT}/u_hash_map_structs.c
+libu_hash_map_structs_la_LDFLAGS = @CHECK_LIBS@ -shared
 
-#u_hash_map_structs_cov_SOURCES = ${BASE_SOURCE} ${METHOD_SOURCES} u_hash_map_structs_cov.c
-#u_hash_map_structs_cov_LDADD = @CHECK_LIBS@
-#u_hash_map_structs_cov_CFLAGS = ${AM_CFLAGS}
-
-ct_u_hash_map_structs_SOURCES = scaffolding.c u_hash_map_structs_ct.c
-ct_u_hash_map_structs_LDADD = @CHECK_LIBS@ ${lib_LTLIBRARIES}
-ct_u_hash_map_structs_CFLAGS = ${AM_CFLAGS}
+test_u_hash_map_structs_SOURCES = test_u_hash_map_structs.c
 
 check_SCRIPTS = coverage_run.sh
 
-TESTS = ${TPROGS} coverage_run.sh
+TESTS = ${check_PROGRAMS} coverage_run.sh
 
 #	echo './u_hash_map_structs_cov >/dev/null 2>&1' > $@
 coverage_run.sh:

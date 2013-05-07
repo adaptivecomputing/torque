@@ -73,14 +73,18 @@ AM_CONFIG_HEADER([src/include/pbs_config.h])
 dnl
 dnl Find our git revision hash for program outputs
 dnl
+git_installed=`which git`
+success=$?
+if test "X$success" == "X0" ; then
 githash="`git rev-parse HEAD`"
 success=$?
-if test "X$success" != "X0" ; then
+fi
+if test "X$success" == "X0" ; then
   AC_DEFINE_UNQUOTED(GIT_HASH, ["$githash"], [repository svn version])
 else
   dnl current hash is a file checked in to the git repo in the base directory
   dnl containing the most recent hash
-  AC_DEFINE_UNQUOTED(GIT_HASH, ["`git rev-parse HEAD`"], [repository svn version])
+  AC_DEFINE_UNQUOTED(GIT_HASH, ["`cat current_hash`"], [repository svn version])
 fi
 
 
