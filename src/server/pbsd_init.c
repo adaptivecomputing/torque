@@ -1587,10 +1587,11 @@ int handle_array_recovery(
           mark_as_badjob(pdirent->d_name);
           rc2 = rc; /* rc2 captures the latest error in rc */
           }
-
-        pa->jobs_recovered = 0;
-
-        unlock_ai_mutex(pa, __func__, "2", LOGLEVEL);
+        else
+          {
+          pa->jobs_recovered = 0;
+          unlock_ai_mutex(pa, __func__, "2", LOGLEVEL);
+          }
         }
       else
         {
