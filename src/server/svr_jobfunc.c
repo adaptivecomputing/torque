@@ -3057,6 +3057,8 @@ void set_resc_deflt(
         {
         /* FIXME: return an actual error */
 
+        remove_procct(pjob);
+
         return;
         }
       }
@@ -3072,6 +3074,7 @@ void set_resc_deflt(
     log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 13");
     }
  
+  remove_procct(pjob);
   return;
   }  /* END set_resc_deflt() */
 
