@@ -4,7 +4,7 @@
 # USAGE:  torque.setup <USERNAME> [<HOSTNAME>]
 
 if [ "$1" = "" ] ; then
-  echo "USAGE:  torque.setup <USERNAME>"
+  echo "USAGE:  torque.setup <USERNAME> [<HOSTNAME.DOMAIN>]"
   exit 1
   fi
 
