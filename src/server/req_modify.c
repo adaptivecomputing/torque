@@ -539,26 +539,30 @@ int modify_job(
   /* modify the job's attributes */
   bad = 0;
 
+  /* if the job was running we need to reset plist */
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_modify.rq_attr);
-
-  rc = modify_job_attr(pjob, plist, preq->rq_perm, &bad);
-
-  if (rc)
+  while (plist != NULL)
     {
-    /* FAILURE */
-    snprintf(log_buf,sizeof(log_buf),
-      "Cannot set attributes for job '%s'\n",
-      pjob->ji_qs.ji_jobid);
-    log_err(rc, __func__, log_buf);
+    rc = modify_job_attr(pjob, plist, preq->rq_perm, &bad);
 
-    if (rc == PBSE_JOBNOTFOUND)
-      *j = NULL;
+    if (rc)
+      {
+      /* FAILURE */
+      snprintf(log_buf,sizeof(log_buf),
+        "Cannot set attributes for job '%s'\n",
+        pjob->ji_qs.ji_jobid);
+      log_err(rc, __func__, log_buf);
+
+      if (rc == PBSE_JOBNOTFOUND)
+        *j = NULL;
     
-    req_reject(rc, 0, preq, NULL, NULL);
+      req_reject(rc, 0, preq, NULL, NULL);
 
-    return(rc);
+      return(rc);
+      }
+
+    plist = (svrattrl *)GET_NEXT(plist->al_link);
     }
-
   /* Reset any defaults resource limit which might have been unset */
   set_resc_deflt(pjob, NULL, FALSE);
 
