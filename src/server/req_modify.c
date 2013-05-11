@@ -407,9 +407,9 @@ int modify_job(
   int                    rc;
   int                    sendmom = 0;
   int                    copy_checkpoint_files = FALSE;
-
   char                   jobid[PBS_MAXSVRJOBID + 1];
   char                   log_buf[LOCAL_LOG_BUF_SIZE];
+  svrattrl              *plist_hold;
 
   job                  **pjob_ptr = (job **)j;
   job                   *pjob = *pjob_ptr;
@@ -423,6 +423,8 @@ int modify_job(
 
     return(PBSE_IVALREQ);
     }
+  
+  plist_hold = plist;
 
   /* cannot be in exiting or transit, exiting has already been checked */
   if (pjob->ji_qs.ji_state == JOB_STATE_TRANSIT)
@@ -540,7 +542,7 @@ int modify_job(
   bad = 0;
 
   /* if the job was running we need to reset plist */
-  plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_modify.rq_attr);
+  plist = plist_hold;
   while (plist != NULL)
     {
     rc = modify_job_attr(pjob, plist, preq->rq_perm, &bad);
