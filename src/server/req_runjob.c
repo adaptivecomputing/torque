@@ -243,6 +243,7 @@ void *check_and_run_job(
           *rc_ptr = PBSE_JOBNOTFOUND;
           return(rc_ptr);
           }
+        unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
         }
       else
         {
@@ -261,8 +262,12 @@ void *check_and_run_job(
         return(rc_ptr);
         }
       }
+    else
+      {
+      snprintf(log_buf, sizeof(log_buf), "pa is null for %s", pjob->ji_qs.ji_jobid);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+      }
     
-    unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
     }
 
   /* NOTE:  nodes assigned to job in svr_startjob() */

@@ -3019,7 +3019,7 @@ int unlock_ai_mutex(
   char *err_msg = NULL;
   char stub_msg[] = "no pos";
 
-  if (logging >= 6)
+  if (logging >= 10)
     {
     err_msg = (char *)calloc(1, MSG_LEN_LONG);
     if (msg == NULL)
