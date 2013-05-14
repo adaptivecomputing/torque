@@ -602,6 +602,7 @@ int svr_enquejob(
                               pjob,
                               ATR_ACTION_NOOP)) != 0)
         {
+        unlock_ji_mutex(pjob, __func__, "7", LOGLEVEL);
         return(PBSE_BADDEPEND);
         }
       }
