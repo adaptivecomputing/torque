@@ -744,12 +744,12 @@ int get_jobs_index(
   if (aj == NULL)
     {
     log_err(PBSE_BAD_PARAMETER, __func__, "null job array input");
-    return(PBSE_BAD_PARAMETER);
+    return(-1 * PBSE_BAD_PARAMETER);
     }
   if (pjob == NULL)
     {
     log_err(PBSE_BAD_PARAMETER, __func__, "null job input");
-    return(PBSE_BAD_PARAMETER);
+    return(-1 * PBSE_BAD_PARAMETER);
     }
 
   if (pthread_mutex_trylock(aj->alljobs_mutex))
