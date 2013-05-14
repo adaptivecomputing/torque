@@ -427,6 +427,8 @@ batch_request *get_batch_request(char *br_id);
 batch_request *get_remove_batch_request(char *br_id);
 int            remove_batch_request(char *br_id);
 
+int req_gpuctrl_svr(struct batch_request *preq);
+
 #ifndef PBS_MOM
 extern void  req_connect (struct batch_request *req);
 /* DIAGTODO: declr req_stat_diag() */

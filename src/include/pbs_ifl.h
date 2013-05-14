@@ -198,12 +198,8 @@
 #define ATTR_J           "job_id"
 #define ATTR_pagg         "pagg_id"
 #define ATTR_system_start_time "system_start_time"
-
-
-#ifdef NVIDIA_GPUS
   /* JOB_ATR_gpu_flags */
 #define ATTR_gpu_flags		"gpu_flags"
-#endif  /* NVIDIA_GPUS */
 
 /* additional queue attributes names */
 

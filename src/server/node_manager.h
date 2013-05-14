@@ -21,10 +21,6 @@ void setup_notification(char *pname);
 
 int is_stat_get(char *node_name, struct tcp_chan *chan);
 
-#ifdef NVIDIA_GPUS
-int gpu_has_job(struct pbsnode *pnode, int gpuid);
-#endif /* NVIDIA_GPUS */
-
 int is_gpustat_get(struct pbsnode *np, char **str_ptr);
 
 int is_compose(struct tcp_chan *chan, int command);
@@ -43,39 +39,15 @@ void write_node_state(void);
 
 int write_node_note(void);
 
-/* static void free_prop(struct prop *prop); */
-
 void *node_unreserve_work(void *vp);
 
 void node_unreserve(resource_t handle);
 
 int hasprop(struct pbsnode *pnode, struct prop *props);
 
-/* static int hasppn(struct pbsnode *pnode, int node_req, int free); */
-
-/* static void mark(struct pbsnode *pnode, struct prop *props); */
-
-/* static int gpu_count(struct pbsnode *pnode, int freeonly); */
-
-#ifdef NVIDIA_GPUS
-int gpu_entry_by_id(struct pbsnode *pnode, char *gpuid, int get_empty);
-#endif /* NVIDIA_GPUS */
-
 int search_acceptable(struct pbsnode *pnode, struct prop *glorf, int skip, int vpreq, int gpureq);
 
 int can_reshuffle(struct pbsnode *pnode, struct prop *glorf, int skip, int vpreq, int gpureq, int pass);
-
-/* static int search(struct prop *glorf, int vpreq, int gpureq, int skip, int order, int depth); */
-
-/* static int number(char **ptr, int *num); */
-
-/* static int property(char **ptr, char **prop); */
-
-/* static int proplist(char **str, struct prop **plist, int *node_req, int *gpu_req); */
-
-/* static int listelem(char **str, int order); */
-
-/* static char *mod_spec(char *spec, char *global); */
 
 int MSNPrintF(char **BPtr, int *BSpace, char *Format, ...);
 

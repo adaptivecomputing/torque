@@ -1869,7 +1869,6 @@ int set_job_exec_info(
 
 
 
-#ifdef NVIDIA_GPUS
 char *get_correct_spec_string(
 
   char *given,
@@ -2018,7 +2017,6 @@ char *get_correct_spec_string(
 
   return(correct_spec);
   } /* get_correct_spec_string() */
-#endif
 
 
 
@@ -2073,12 +2071,8 @@ int assign_hosts(
 
   if ((given != NULL) && (given[0] != '\0'))
     {
-#ifdef NVIDIA_GPUS
     hosttoalloc = get_correct_spec_string(given, pjob);
     to_free = hosttoalloc;
-#else
-    hosttoalloc = given;
-#endif
     }
   else
     {

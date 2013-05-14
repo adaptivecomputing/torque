@@ -105,15 +105,11 @@
 
 /* External Functions */
 
-#ifdef NVIDIA_GPUS
 extern int gpu_entry_by_id(struct pbsnode *,char *, int);
-#endif  /* NVIDIA_GPUS */
 
 /* Private Functions Local to this file */
 
-#ifdef NVIDIA_GPUS
 static void process_gpu_request_reply(batch_request *preq);
-#endif
 
 /* Global Data Items: */
 
@@ -135,13 +131,10 @@ int req_gpuctrl_svr(
   int    reset_perm = -1;
   int    reset_vol = -1;
   char   log_buf[LOCAL_LOG_BUF_SIZE+1];
-#ifdef NVIDIA_GPUS
   int    local_errno = 0;
   struct pbsnode *pnode = NULL;
   int    gpuidx = -1;
   int    conn;
-#endif  /* NVIDIA_GPUS */
-
 
   if ((preq->rq_perm &
        (ATR_DFLAG_MGWR | ATR_DFLAG_MGRD | ATR_DFLAG_OPRD | ATR_DFLAG_OPWR)) == 0)
@@ -158,8 +151,6 @@ int req_gpuctrl_svr(
   gpumode = preq->rq_ind.rq_gpuctrl.rq_gpumode;
   reset_perm = preq->rq_ind.rq_gpuctrl.rq_reset_perm;
   reset_vol = preq->rq_ind.rq_gpuctrl.rq_reset_vol;
-
-#ifdef NVIDIA_GPUS
 
   if (LOGLEVEL >= 7)
     {
@@ -192,7 +183,7 @@ int req_gpuctrl_svr(
     rc = PBSE_UNKREQ;
     sprintf(log_buf,"Node %s is not available",pnode->nd_name);
     req_reject(rc, 0, preq, NULL, log_buf);
-    unlock_node(pnode, "req_gpuctrl", (char *)NULL, LOGLEVEL);
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
     return rc;
     }
 
@@ -202,7 +193,7 @@ int req_gpuctrl_svr(
     {
     rc = PBSE_UNKREQ;
     req_reject(rc, 0, preq, NULL, "Not allowed for virtual gpus");
-    unlock_node(pnode, "req_gpuctrl", (char *)NULL, LOGLEVEL);
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
     return rc;
     }
 
@@ -212,7 +203,7 @@ int req_gpuctrl_svr(
     {
     rc = PBSE_UNKREQ;
     req_reject(rc, 0, preq, NULL, "GPU ID does not exist on node");
-    unlock_node(pnode, "req_gpuctrl", (char *)NULL, LOGLEVEL);
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
     return rc;
     }
 
@@ -222,7 +213,7 @@ int req_gpuctrl_svr(
     {
     rc = PBSE_UNKREQ;
     req_reject(rc, 0, preq, NULL, "No action specified");
-    unlock_node(pnode, "req_gpuctrl", (char *)NULL, LOGLEVEL);
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
     return rc;
     }
 
@@ -232,7 +223,7 @@ int req_gpuctrl_svr(
     {
     rc = PBSE_UNKREQ;
     req_reject(rc, 0, preq, NULL, "GPU driver version does not support mode 3");
-    unlock_node(pnode, "req_gpuctrl", (char *)NULL, LOGLEVEL);
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
     return rc;
     }
 
@@ -241,7 +232,7 @@ int req_gpuctrl_svr(
 
   preq->rq_orgconn = preq->rq_conn;  /* restore client socket */
 
-  unlock_node(pnode, "req_gpuctrl", (char *)NULL, LOGLEVEL);
+  unlock_node(pnode, __func__, NULL, LOGLEVEL);
   conn = svr_connect(
            pnode->nd_addrs[0],
            pbs_mom_port,
@@ -263,25 +254,6 @@ int req_gpuctrl_svr(
     req_reject(PBSE_UNKREQ, 0, preq, NULL, "Failed to get connection to mom");
     }
 
-#else
-
-    sprintf(log_buf,
-      "GPU control request not supported: node %s gpuid %s mode %d reset_perm %d reset_vol %d",
-      nodename,
-      gpuid,
-      gpumode,
-      reset_perm,
-      reset_vol);
-
-  if (LOGLEVEL >= 3)
-    {
-    log_ext(-1, __func__, log_buf, LOG_INFO);
-    }
-
-  req_reject(PBSE_NOSUP, 0, preq, NULL, NULL);
-
-#endif  /* NVIDIA_GPUS */
-
   return rc;
   }
 
@@ -292,7 +264,6 @@ int req_gpuctrl_svr(
  * called when a gpu change request was sent to MOM and the answer
  * is received.  Completes the gpu request.
  */
-#ifdef NVIDIA_GPUS
 void process_gpu_request_reply(
 
   batch_request *preq)
@@ -334,4 +305,4 @@ void process_gpu_request_reply(
     reply_ack(preq);
     }
   } /* END process_gpu_request_reply() */
-#endif  /* NVIDIA_GPUS */
+
