@@ -31,7 +31,7 @@ void *check_nodes_work(void *vp);
 
 void check_nodes(struct work_task *ptask);
 
-int svr_is_request(struct tcp_chan *chan, int version);
+int svr_is_request(struct tcp_chan *chan, int version, long *args);
 
 void *write_node_state_work(void *vp);
 

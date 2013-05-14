@@ -25,7 +25,7 @@ pthread_mutex_t *scheduler_sock_jobct_mutex;
 pthread_mutex_t *listener_command_mutex;
 int LOGLEVEL = 10;
 
-int process_pbs_server_port(int sock, int is_scheduler_port)
+int process_pbs_server_port(int sock, int is_scheduler_port, long *args)
   {
   fprintf(stderr, "The call to process_pbs_server_port to be mocked!!\n");
   exit(1);
