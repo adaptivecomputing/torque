@@ -701,12 +701,10 @@ int process_status_info(
       }
 
     /* add the info to the "temp" pbs_attribute */
-#ifdef NVIDIA_GPUS
     else if (!strcmp(str, START_GPU_STATUS))
       {
       is_gpustat_get(current, &str);
       }
-#endif
     else if (!strcmp(str, START_MIC_STATUS))
       {
       process_mic_status(current, &str);
@@ -716,10 +714,9 @@ int process_status_info(
       /* mom is requesting that we send the mom hierarchy file to her */
       remove_hello(&hellos, current->nd_name);
       send_hello = TRUE;
-#ifdef NVIDIA_GPUS
+      
       /* reset gpu data in case mom reconnects with changed gpus */
       clear_nvidia_gpus(current);
-#endif  /* NVIDIA_GPUS */
       }
     else if ((rc = decode_arst(&temp, NULL, NULL, str, 0)) != PBSE_NONE)
       {
@@ -809,7 +806,6 @@ int process_status_info(
 
 
 
-#ifdef NVIDIA_GPUS
 char *move_past_gpu_status(
 
   char *str)
@@ -826,12 +822,10 @@ char *move_past_gpu_status(
 
   return(str);
   } /* END move_past_gpu_status() */
-#endif
 
 
 
 
-#ifdef NVIDIA_GPUS
 /*
  * Function to process gpu status messages received from the mom
  */
@@ -842,7 +836,6 @@ int is_gpustat_get(
   char           **str_ptr) /* I (modified) */
 
   {
-  int            rc;
   pbs_attribute  temp;
   char          *gpuid;
   char          *str = *str_ptr;
@@ -873,8 +866,6 @@ int is_gpustat_get(
 
   memset(&temp, 0, sizeof(temp));
   memset(gpuinfo, 0, 2048);
-
-  rc = DIS_SUCCESS;
 
   if (decode_arst(&temp, NULL, NULL, NULL, 0))
     {
@@ -1121,7 +1112,6 @@ int is_gpustat_get(
 
   return(DIS_SUCCESS);
   }  /* END is_gpustat_get() */
-#endif  /* NVIDIA_GPUS */
 
 
 
