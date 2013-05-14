@@ -122,7 +122,6 @@
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
 #include "../lib/Libnet/lib_net.h" /* globalset_del_sock */
 #include "svr_func.h" /* get_svr_attr_* */
-#include "req_gpuctrl.h" /* req_gpuctrl_svr */
 #include "req_getcred.h" /* req_altauthenuer */ 
 #include "req_quejob.h" /* req_quejob, req_jobcredential, req_mvjobfile */ 
 #include "req_holdjob.h" /* req_holdjob, req_checkpointjob */ 
