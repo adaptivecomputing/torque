@@ -94,7 +94,7 @@
 #include "threadpool.h"
 #include "../lib/Libnet/lib_net.h"
 #include "../lib/Libutils/u_lock_ctl.h"
-
+#include "mutex_mgr.hpp"
 
 
 
@@ -289,7 +289,8 @@ const char *PBSServerCmds2[] =
 int svr_is_request(
     
   struct tcp_chan *chan,
-  int              version)
+  int              version,
+  long             *args)
 
   {
   int                 command = 0;
@@ -304,9 +305,7 @@ int svr_is_request(
   unsigned short      rm_port;
   unsigned long       tmpaddr;
 
-  struct sockaddr_in *addr = NULL;
-  struct sockaddr     s_addr;
-  unsigned int        len = sizeof(s_addr);
+  struct sockaddr_in addr;
 
   struct pbsnode     *node = NULL;
   char               *node_name = NULL;
@@ -316,7 +315,12 @@ int svr_is_request(
   command = disrsi(chan, &ret);
 
   if (ret != DIS_SUCCESS)
-    goto err;
+    {
+    snprintf(log_buf, sizeof(log_buf), "could not read command: %d", ret);
+    log_err(-1, __func__, log_buf);
+    close_conn(chan->sock, FALSE);
+    return(PBSE_SOCKET_DATA);
+    }
 
   if (LOGLEVEL >= 4)
     {
@@ -328,20 +332,16 @@ int svr_is_request(
     log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,__func__,log_buf);
     }
 
-  if (getpeername(chan->sock, &s_addr, &len) != 0)
-    {
-    close_conn(chan->sock, FALSE);
-    log_err(errno,__func__, (char *)"Cannot get socket name using getpeername\n");
-    return(PBSE_SOCKET_CLOSE);
-    }
-
-  addr = (struct sockaddr_in *)&s_addr;
+  /* Just a note to let us know we only do IPv4 for now */
+  addr.sin_family = AF_INET;
+  memcpy((void *)&addr.sin_addr, &args[1], sizeof(args[1]));
+  addr.sin_port = args[2];
 
   if (version != IS_PROTOCOL_VER)
     {
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "protocol version %d unknown from %s",
       version,
-      netaddr(addr));
+      netaddr(&addr));
 
     log_err(-1, __func__, log_buf);
     close_conn(chan->sock, FALSE);
@@ -356,14 +356,14 @@ int svr_is_request(
     {
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
       "message received from addr %s: mom_port %d  - rm_port %d",
-      netaddr(addr),
+      netaddr(&addr),
       mom_port,
       rm_port);
 
     log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,__func__,log_buf);
     }
 
-  ipaddr = ntohl(addr->sin_addr.s_addr);
+  ipaddr = args[1];
   
   if ((node = AVL_find(ipaddr, mom_port, ipaddrs)) != NULL)
     {
@@ -371,17 +371,17 @@ int svr_is_request(
     } /* END if AVL_find != NULL) */
   else if (allow_any_mom)
     {
-    char *name = get_cached_nameinfo(addr);
+    char *name = get_cached_nameinfo(&addr);
 
     if (name != NULL)
       snprintf(nodename, sizeof(nodename), "%s", name);
-    else if (getnameinfo(&s_addr, len, nodename, sizeof(nodename)-1, NULL, 0, 0) != 0)
+    else if (getnameinfo((struct sockaddr *)&addr, sizeof(addr), nodename, sizeof(nodename)-1, NULL, 0, 0) != 0)
       {
-      tmpaddr = ntohl(addr->sin_addr.s_addr);
+      tmpaddr = ntohl(addr.sin_addr.s_addr);
       sprintf(nodename, "0x%lX", tmpaddr);
       }
     else
-      insert_addr_name_info(nodename, NULL, addr);
+      insert_addr_name_info(nodename, NULL, &addr);
 
     err = create_partial_pbs_node(nodename, ipaddr, perm);
 
@@ -399,7 +399,7 @@ int svr_is_request(
     
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
       "bad attempt to connect from %s (address not trusted - check entry in server_priv/nodes)",
-      netaddr(addr));
+      netaddr(&addr));
     
     if (LOGLEVEL >= 2)
       {
@@ -421,11 +421,13 @@ int svr_is_request(
       PBSServerCmds2[command],
       command,
       node->nd_name,
-      netaddr(addr),
+      netaddr(&addr),
       chan->sock);
 
     log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,__func__,log_buf);
     }
+
+  mutex_mgr node_mutex(node->nd_mutex, true);
 
   switch (command)
     {
@@ -477,7 +479,7 @@ int svr_is_request(
 
       if ((node_name = strdup(node->nd_name)) == NULL)
         goto err;
-      unlock_node(node, __func__, "before is_stat_get", LOGLEVEL);
+      node_mutex.unlock();
 
       ret = is_stat_get(node_name, chan);
 
@@ -496,7 +498,10 @@ int svr_is_request(
         write_tcp_reply(chan,IS_PROTOCOL,IS_PROTOCOL_VER,IS_STATUS,ret);
 
       if(node != NULL)
+        {
         node->nd_stream = -1;
+        node_mutex.mark_as_locked();
+        }
 
       if (ret != DIS_SUCCESS)
         {
@@ -532,10 +537,8 @@ int svr_is_request(
   /* must be closed because mom opens and closes this connection each time */
   close_conn(chan->sock, FALSE);
 
-  if(node != NULL)
-    unlock_node(node, __func__, "close", LOGLEVEL);
   
-  return PBSE_SOCKET_CLOSE;
+  return(PBSE_SOCKET_CLOSE);
 
 err:
 
@@ -553,9 +556,7 @@ err:
     sprintf(log_buf, "%s from %s(%s)",
       dis_emsg[ret],
       node->nd_name,
-      netaddr(addr));
-    
-    unlock_node(node, __func__, "err", LOGLEVEL);
+      netaddr(&addr));
     }
   else
     {
