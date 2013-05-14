@@ -1043,7 +1043,6 @@ void set_array_depend_holds(
   struct array_depend_job *pdj;
 
   struct array_depend     *pdep = (struct array_depend *)GET_NEXT(pa->ai_qs.deps);
-  char                     log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* loop through dependencies to update holds */
   while (pdep != NULL)
@@ -1134,28 +1133,6 @@ void set_array_depend_holds(
           }
         else 
           {
-          struct depend_job *job_pdj;
-          struct depend     *job_pdep = NULL;
-
-
-          /* remove the dependency from the job */
-          if ((job_pdep = find_depend(pdep->dp_type, &pjob->ji_wattr[JOB_ATR_depend])) != NULL)
-            {
-            if ((job_pdj = find_dependjob(job_pdep, pa->ai_qs.parent_id)) != NULL)
-              {
-              del_depend_job(job_pdj);
-              
-              snprintf(log_buf, sizeof(log_buf), msg_registerrel, pa->ai_qs.parent_id);
-              log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
-              
-              if (GET_NEXT(job_pdep->dp_jobs) == NULL)
-                {
-                /* no more dependencies of this type */
-                del_depend(job_pdep);
-                }
-              }
-            }
-          
           /* release the array's hold - set_depend_hold
            * will clear holds if there are no other dependencies
            * logged in set_depend_hold */

@@ -2108,6 +2108,7 @@ void req_signaljob(
   int             numprocs=0;
   char           *sname;
   unsigned int   momport = 0;
+  task           *ptask;
 
   struct sig_tbl *psigt;
 
@@ -2244,24 +2245,38 @@ void req_signaljob(
     if ((numprocs == 0) && ((sig == 0)||(sig == SIGKILL)) &&
         (pjob->ji_qs.ji_substate != JOB_SUBSTATE_OBIT))
       {
-      /* SIGNUL and no procs found, force job to exiting */
-      /* force issue of (another) job obit */
-
-      sprintf(log_buffer, "job recycled into exiting on SIGNULL/KILL from substate %d",
-        pjob->ji_qs.ji_substate);
-
-      log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
-
-      pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
-
-      if (multi_mom)
+      if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXITED)
         {
-        momport = pbs_rm_port;
+        ptask = (task *)GET_NEXT(pjob->ji_tasks);
+        if (ptask == NULL)
+          {
+          sprintf(log_buffer, "job recycled into exiting on SIGNULL/KILL from substate %d again. Terminating job now.",
+          pjob->ji_qs.ji_substate);
+          log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+          mom_deljob(pjob);
+          }
         }
-      
-      job_save(pjob, SAVEJOB_QUICK, momport);
+      else
+        {
+        /* SIGNUL and no procs found, force job to exiting */
+        /* force issue of (another) job obit */
 
-      exiting_tasks = 1;
+        sprintf(log_buffer, "job recycled into exiting on SIGNULL/KILL from substate %d",
+          pjob->ji_qs.ji_substate);
+
+        log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+
+        pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+
+        if (multi_mom)
+          {
+          momport = pbs_rm_port;
+          }
+      
+        job_save(pjob, SAVEJOB_QUICK, momport);
+
+        exiting_tasks = 1;
+        }
       }
     }
 
