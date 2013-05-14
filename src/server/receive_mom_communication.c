@@ -102,6 +102,8 @@ extern int              allow_any_mom;
 extern AvlTree          ipaddrs;
 
 
+job *get_job_from_jobinfo(struct jobinfo *jp, struct pbsnode *pnode);
+int  unlock_ji_mutex(job *, const char *, const char *, int);
 
 
 /* 
@@ -190,7 +192,6 @@ int is_stat_get(
 
 
 
-#ifdef NVIDIA_GPUS
 /*
  * Function to check if there is a job assigned to this gpu
  */
@@ -253,9 +254,6 @@ int gpu_has_job(
 
   return(FALSE);
   }
-#endif  /* NVIDIA_GPUS */
-
-
 
 
 
