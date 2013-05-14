@@ -76,8 +76,10 @@ int              rm_errno;
 int              config_file_specified = 0;
 char             MOMConfigVersion[64];
 struct config common_config[1];
-
-
+char           **ArgV;
+char            *OriginalPath;
+int              resend_join_job_wait_time = 45;
+int              max_join_job_wait_time = 90;
 
 int log_remove_old(char *DirPath, unsigned long ExpireTime)
   {
@@ -789,6 +791,11 @@ ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
   }
 
 ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
+  {
+  return(0);
+  }
+
+int save_args(int argc, char **argv)
   {
   return(0);
   }
