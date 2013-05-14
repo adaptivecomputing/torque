@@ -307,7 +307,7 @@ void check_state(int);
 void state_to_server(int, int);
 void node_comm_error(node_comm_t *, const char *);
 int  add_mic_status(dynamic_string *status);
-
+int  add_gpu_status(dynamic_string *status);
 
 /* clear servers */
 void clear_servers()
@@ -1503,7 +1503,7 @@ void mom_server_all_update_stat(void)
     if (is_reporter_mom == FALSE)
       {
       mom_status->used = generate_server_status(mom_status->str, mom_status->size);
-#ifdef NVIDIA_GPU
+#ifdef NVIDIA_GPUS
       add_gpu_status(mom_status);
 #endif /* NVIDIA_GPU */
 
