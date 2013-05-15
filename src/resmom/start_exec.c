@@ -3108,7 +3108,7 @@ void handle_prologs(
   int       rc;
   resource *presc;
 
-  if ((rc = run_pelog(PE_PROLOG, path_prolog, pjob, PE_IO_TYPE_ASIS)) != PBSE_NONE)
+  if ((rc = run_pelog(PE_PROLOG, path_prolog, pjob, PE_IO_TYPE_ASIS, FALSE)) != PBSE_NONE)
     {
     log_err(-1, __func__, "prolog failed");
 
@@ -3127,7 +3127,7 @@ void handle_prologs(
     log_ext(-1, __func__, "prolog complete", LOG_DEBUG);
 
   /* run user prolog */
-  if ((rc = run_pelog(PE_PROLOGUSER, path_prologuser, pjob, PE_IO_TYPE_ASIS)) != PBSE_NONE)
+  if ((rc = run_pelog(PE_PROLOGUSER, path_prologuser, pjob, PE_IO_TYPE_ASIS, FALSE)) != PBSE_NONE)
     {
     log_err(-1, __func__, "user prolog failed");
     
@@ -3158,7 +3158,7 @@ void handle_prologs(
       
       if (path_prologuserjob)
         {
-        if ((rc = run_pelog(PE_PROLOGUSERJOB, path_prologuserjob, pjob, PE_IO_TYPE_ASIS)) != PBSE_NONE)
+        if ((rc = run_pelog(PE_PROLOGUSERJOB, path_prologuserjob, pjob, PE_IO_TYPE_ASIS, FALSE)) != PBSE_NONE)
           {
           log_err(-1, __func__, "batch job local user prolog failed");
           free(path_prologuserjob);
