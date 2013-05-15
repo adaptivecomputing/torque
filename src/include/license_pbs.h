@@ -1,13 +1,11 @@
 #ifndef _LICENSE_PBS_H
 #define _LICENSE_PBS_H
-/*
- *                    TORQUE v2.5+ Software License v1.1 
- *                    
- * Copyright (c) 2010-2013 Adaptive Computing Enterprises, Inc.
- * All rights reserved. 
- * 
- * Use this license to use or redistribute the TORQUE software v2.5+ and later
- * versions. 
+
+/*                     TORQUE v2.5+ Software License v1.1 
+ *
+ * Copyright (c) 2010-2013 Adaptive Computing Enterprises, Inc. All rights reserved. 
+ *
+ * Use this license to use or redistribute the TORQUE software v2.5+ and later versions. 
  * 
  * -----------------------------------------------------------------------------
  * For free support for TORQUE users, questions should be emailed to the
@@ -79,16 +77,14 @@
  *      OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, 
  *      EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
  * 
- * This license will be governed by the laws of Utah,
- * without reference to its choice of law rules. 
+ * This license will be governed by the laws of Utah, without reference to its choice of law 
+ * rules. 
  * 
- * Note 1: TORQUE is developed from an earlier version v2.3 of OpenPBS.
- * TORQUE has been developed beyond OpenPBS v2.3. The OpenPBS v2.3 license
- * and OpenPBS software are included in this distribution.
+ * Note 1: TORQUE is developed from an earlier version v2.3 of OpenPBS. TORQUE has 
+ * been developed beyond OpenPBS v2.3. The OpenPBS v2.3 license and OpenPBS software
+ * are included in this distribution.
  * 
- * Users of TORQUE should comply with the TORQUE license as well as the
- * OpenPBS license.
- *
- * The contents are the same as PBS_License_2.5.txt with formatting changes
+ * Users of TORQUE should comply with the TORQUE license as well as the OpenPBS license.
+ * 
  */
 #endif /* _LICENSE_PBS_H */
