@@ -2195,10 +2195,10 @@ int send_job_obit_to_ms(
     np = pjob->ji_sisters;
   else
     np = pjob->ji_hosts;
+
   /* no entry for Mother Superior?? */
   if (np == NULL)
     return(-1);
-
 
   if (mom_radix < 2)
     {
@@ -2271,7 +2271,6 @@ int send_job_obit_to_ms(
             
       close(stream);
       } /* END work on a valid stream */
-    
     
     usleep(10);
     } /* END retry loop */
