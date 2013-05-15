@@ -503,10 +503,7 @@ void process_pbs_server_port_scheduler(
 
   {
   int rc = PBSE_NONE;
-  long *args = (long *)new_sock;
-  int sock;
-
-  sock = (int)args[0];
+  int sock = *new_sock;
 
   while ((rc != PBSE_SOCKET_DATA) && 
          (rc != PBSE_SOCKET_INFORMATION) &&
@@ -516,7 +513,7 @@ void process_pbs_server_port_scheduler(
          (rc != PBSE_SOCKET_CLOSE))
     {
     netcounter_incr();
-    rc = process_pbs_server_port(sock, TRUE, args);
+    rc = process_pbs_server_port(sock, TRUE, (long *)new_sock);
     }
 
   /* 
@@ -524,7 +521,6 @@ void process_pbs_server_port_scheduler(
    * but we still need to call close_conn() to clean up connections.
    */
 
-  free(new_sock);
   close_conn(sock, FALSE);
 
   scheduler_close();
