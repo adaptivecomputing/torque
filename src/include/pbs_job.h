@@ -372,9 +372,7 @@ enum job_atr
   JOB_ATR_submit_host,  /* host which submitted the job */
   JOB_ATR_init_work_dir,    /* initial working directory */
   JOB_ATR_pagg_id,
-#ifdef NVIDIA_GPUS
   JOB_ATR_gpu_flags,   /* gpu flags - mode and reset flags */
-#endif  /* NVIDIA_GPUS */
   JOB_ATR_job_id,
   JOB_ATR_arguments,
   JOB_ATR_reservation_id,

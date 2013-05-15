@@ -31,6 +31,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - Reintroduced the procct resource for queues which allows jobs to be managed based
       on the number of procs requested.  TRQ-1623
   b - TRQ-1709. Fix parsing of -l gpus=X,other_things parsing incorrectly.
+  b - TRQ-1639. Gpu status information wasn't being displayed correctly.
 
 4.2.2
   b - Make job_starter work for parallel jobs as well as serial. (TRQ-1577 - thanks

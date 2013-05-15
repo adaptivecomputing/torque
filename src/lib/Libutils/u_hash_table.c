@@ -690,7 +690,7 @@ void free_hash(
 int get_hash(
     
   hash_table_t *ht,
-  void         *key)
+  const void   *key)
 
   {
   size_t   len;
@@ -820,7 +820,7 @@ int add_hash(
 int remove_hash(
     
   hash_table_t *ht,
-  char         *key)
+  const char   *key)
 
   {
   int     rc = PBSE_NONE;
@@ -878,7 +878,7 @@ int remove_hash(
 int get_value_hash(
     
   hash_table_t *ht,
-  void         *key)
+  const void   *key)
 
   {
   int     value = -1;

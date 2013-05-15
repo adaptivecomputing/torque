@@ -165,10 +165,10 @@ struct hash_table_t
 
 typedef struct hash_table_t hash_table_t;
 
-int           get_value_hash(hash_table_t *, void *);
-int           get_hash(hash_table_t *, void *);
+int           get_value_hash(hash_table_t *, const void *);
+int           get_hash(hash_table_t *, const void *);
 int           add_hash(hash_table_t *, int, void *);
-int           remove_hash(hash_table_t *, char *);
+int           remove_hash(hash_table_t *, const char *);
 void          change_value_hash(hash_table_t *, char *, int);
 hash_table_t *create_hash(int);
 void          free_hash(hash_table_t *);

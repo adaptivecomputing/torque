@@ -386,7 +386,8 @@ static void need_y_response(
 int process_pbs_server_port(
      
   int sock,
-  int is_scheduler_port)
+  int is_scheduler_port,
+  long *args)
  
   {
   int              proto_type;
@@ -421,7 +422,7 @@ int process_pbs_server_port(
         break;
         }
       
-      rc = svr_is_request(chan, version);
+      rc = svr_is_request(chan, version, args);
       
       break;
 
@@ -507,7 +508,7 @@ void process_pbs_server_port_scheduler(
          (rc != PBSE_SOCKET_CLOSE))
     {
     netcounter_incr();
-    rc = process_pbs_server_port(sock, TRUE);
+    rc = process_pbs_server_port(sock, TRUE, (long *)new_sock);
     }
 
   /* 
@@ -529,10 +530,11 @@ void *start_process_pbs_server_port(
   void *new_sock)
 
   {
-  int sock = *(int *)new_sock;
+  long *args = (long *)new_sock;
+  int sock;
   int rc = PBSE_NONE;
  
-  free(new_sock);
+  sock = (int)args[0];
 
   while ((rc != PBSE_SOCKET_DATA) &&
          (rc != PBSE_SOCKET_INFORMATION) &&
@@ -543,9 +545,10 @@ void *start_process_pbs_server_port(
     {
     netcounter_incr();
 
-    rc = process_pbs_server_port(sock, FALSE);
+    rc = process_pbs_server_port(sock, FALSE, args);
     }
 
+  free(new_sock);
   close_conn(sock, FALSE);
 
   /* Thread exit */

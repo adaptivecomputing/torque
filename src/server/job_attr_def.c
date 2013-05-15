@@ -1087,7 +1087,6 @@ attribute_def job_attr_def[] =
     PARENT_TYPE_JOB
   },
 
-#ifdef NVIDIA_GPUS
   /* JOB_ATR_gpu_flags */
   {(char *)ATTR_gpu_flags,		/* "gpu_flags" - mode and reset flags */
    decode_l,
@@ -1099,7 +1098,6 @@ attribute_def job_attr_def[] =
    READ_ONLY | ATR_DFLAG_MOM,
    ATR_TYPE_LONG,
    PARENT_TYPE_JOB},
-#endif  /* NVIDIA_GPUS */
 
   /* JOB_ATR_job_id */
   {(char *)ATTR_J,      /* "job_id" */

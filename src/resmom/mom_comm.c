@@ -8716,7 +8716,7 @@ int read_status_strings(
       rn = get_received_node_entry(str);
 
     /* place each string into the buffer */
-    if(rn != NULL)
+    if (rn != NULL)
       {
       copy_to_end_of_dynamic_string(rn->statuses, str);
       }

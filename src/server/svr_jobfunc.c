@@ -306,18 +306,17 @@ int insert_into_alljobs_by_rank(
 
   while ((pjcur = next_job_from_back(aj, &iter)) != NULL)
     {
+    mutex_mgr pjcur_mgr(pjcur->ji_mutex, true);
     if (job_qrank > pjcur->ji_wattr[JOB_ATR_qrank].at_val.at_long)
       {
+      pjcur_mgr.set_lock_on_exit(false);
       break;
       }
     
     if (strcmp(jobid, pjcur->ji_qs.ji_jobid) == 0)
       {
-      unlock_ji_mutex(pjcur, __func__, "6", LOGLEVEL);
       return(ALREADY_IN_LIST);
       }
-
-    unlock_ji_mutex(pjcur, __func__, "7", LOGLEVEL);
     }
 
   if (pjcur != NULL)
@@ -385,6 +384,15 @@ int svr_enquejob(
 
   if (pque == NULL)
     {
+    /* job came in locked, so it must exit locked if possible */
+    lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+
+    if (pjob->ji_being_recycled == TRUE)
+      {
+      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+      return(PBSE_JOB_RECYCLED);
+      }
+
     return(PBSE_UNKQUE);
     }
 
@@ -393,7 +401,7 @@ int svr_enquejob(
     {
     if (LOGLEVEL >= 6)
       {
-      sprintf(log_buf, "reserved jobs: %d - job id %s", pque->qu_reserved_jobs, pjob->ji_qs.ji_jobid);
+      sprintf(log_buf, "reserved jobs: %d - job id %s", pque->qu_reserved_jobs, job_id);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
       }
     pque->qu_reserved_jobs--;
@@ -405,7 +413,6 @@ int svr_enquejob(
 
   if (pjob->ji_being_recycled == TRUE)
     {
-    que_mgr.unlock();
     unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
     return(PBSE_JOB_RECYCLED);
     }
@@ -424,8 +431,6 @@ int svr_enquejob(
     total_jobs = count_queued_jobs(pque, NULL);
     if ((total_jobs + array_jobs + pque->qu_reserved_jobs) >= pque->qu_attr[QA_ATR_MaxJobs].at_val.at_long)
       {
-      que_mgr.unlock();
-      unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
       return(PBSE_MAXQUED);
       }
     }
@@ -436,8 +441,6 @@ int svr_enquejob(
     user_jobs = count_queued_jobs(pque, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
     if ((user_jobs + pque->qu_reserved_jobs) >= pque->qu_attr[QA_ATR_MaxUserJobs].at_val.at_long)
       {
-      que_mgr.unlock();
-      unlock_ji_mutex(pjob, __func__, "5", LOGLEVEL);
       return(PBSE_MAXUSERQUED);
       }
     }
@@ -516,6 +519,7 @@ int svr_enquejob(
       snprintf(log_buf, sizeof(log_buf), "jobs queued job id %s for %s", pjob->ji_qs.ji_jobid, pque->qu_qs.qu_name);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
       }
+
     increment_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob);
     }
 
@@ -624,7 +628,6 @@ int svr_enquejob(
     /* start attempts to route job */
     pjob->ji_qs.ji_un_type = JOB_UNION_TYPE_ROUTE;
     pjob->ji_qs.ji_un.ji_routet.ji_quetime = time_now;
-    
     }
 
   return(PBSE_NONE);
