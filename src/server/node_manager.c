@@ -1417,7 +1417,7 @@ int write_node_note(void)
   if ((nin = fopen(path_nodenote_new, "w")) == NULL)
     goto err1;
 
-  if ((svr_totnodes == 0))
+  if (svr_totnodes == 0)
     {
     log_event(
       PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, "Server has empty nodes list");
