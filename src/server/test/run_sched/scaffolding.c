@@ -81,9 +81,6 @@ void net_add_close_func(int sd, void (*func)(int))
 
 void DIS_tcp_cleanup(struct tcp_chan *chan) {}
 
-void process_pbs_server_port_scheduler(int *sock)
-  {
-  }
 
 int add_scheduler_conn(
 
