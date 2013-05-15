@@ -230,7 +230,7 @@ extern int   site_mom_prerst(job *);
 extern int   reader(int, int);
 extern int   writer(int, int);
 extern int   conn_qsub(char *, long, char *);  /* NOTE:  should be moved out of here to job_func proto header */
-extern int   run_pelog(int, char *, job *, int);
+extern int   run_pelog(int, char *, job *, int, int);
 extern int   is_joined(job *);
 extern void  check_busy(double);
 extern void  state_to_server(int, int);

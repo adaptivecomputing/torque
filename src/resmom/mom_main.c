@@ -6064,7 +6064,7 @@ int kill_job(
 
   if (sig == SIGTERM)
     {
-    if (run_pelog(PE_EPILOGUSER, path_epilogpdel, pjob, PE_IO_TYPE_NULL) != 0)
+    if (run_pelog(PE_EPILOGUSER, path_epilogpdel, pjob, PE_IO_TYPE_NULL, FALSE) != 0)
       {
       log_err(-1, __func__, "precancel epilog failed");
 
