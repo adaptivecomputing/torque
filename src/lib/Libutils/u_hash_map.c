@@ -207,14 +207,16 @@ int add_to_hash_map(
 
 int remove_from_hash_map(
 
-  hash_map *hm,
-  char     *key)
+  hash_map   *hm,
+  const char *key,
+  bool        already_locked)
 
   {
   int index;
   int rc = PBSE_NONE;
 
-  pthread_mutex_lock(hm->hm_mutex);
+  if (already_locked == false)
+    pthread_mutex_lock(hm->hm_mutex);
 
   if ((index = get_value_hash(hm->hm_ht, key)) < 0)
     rc = KEY_NOT_FOUND;
@@ -224,7 +226,8 @@ int remove_from_hash_map(
     remove_hash(hm->hm_ht, key);
     }
 
-  pthread_mutex_unlock(hm->hm_mutex);
+  if (already_locked == false)
+    pthread_mutex_unlock(hm->hm_mutex);
 
   return(rc);
   } /* END remove_from_hash_map() */
@@ -234,14 +237,16 @@ int remove_from_hash_map(
 
 void *get_remove_from_hash_map(
 
-  hash_map *hm,
-  char     *key)
+  hash_map   *hm,
+  const char *key,
+  bool        already_locked)
 
   {
   void *obj = NULL;
   int   index;
 
-  pthread_mutex_lock(hm->hm_mutex);
+  if (already_locked == false)
+    pthread_mutex_lock(hm->hm_mutex);
 
   if ((index = get_value_hash(hm->hm_ht, key)) >= 0)
     {
@@ -250,7 +255,8 @@ void *get_remove_from_hash_map(
     remove_hash(hm->hm_ht, key);
     }
 
-  pthread_mutex_unlock(hm->hm_mutex);
+  if (already_locked == false)
+    pthread_mutex_unlock(hm->hm_mutex);
 
   return(obj);
   } /* END get_remove_from_hash_map() */
@@ -270,8 +276,8 @@ void *get_remove_from_hash_map(
 
 void *get_from_hash_map(
 
-  hash_map *hm,
-  char     *key)
+  hash_map   *hm,
+  const char *key)
 
   {
   int   index;
@@ -302,16 +308,19 @@ void *get_from_hash_map(
 void *next_from_hash_map(
 
   hash_map *hm,
-  int      *iter)
+  int      *iter,
+  bool      already_locked)
 
   {
   void *obj;
 
-  pthread_mutex_lock(hm->hm_mutex);
+  if (already_locked == false)
+    pthread_mutex_lock(hm->hm_mutex);
 
   obj = next_thing(hm->hm_ra, iter);
 
-  pthread_mutex_unlock(hm->hm_mutex);
+  if (already_locked == false)
+    pthread_mutex_unlock(hm->hm_mutex);
 
   return(obj);
   } /* END next_from_hash_map() */

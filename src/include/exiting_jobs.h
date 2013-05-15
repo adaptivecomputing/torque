@@ -101,9 +101,9 @@ extern hash_map *exiting_jobs_info;
 
 typedef struct job_exiting_retry_info
   {
-  time_t last_attempt;
-  int    attempts;
-  char   jobid[PBS_MAXSVRJOBID+1];
+  time_t          last_attempt;
+  int             attempts;
+  char            jobid[PBS_MAXSVRJOBID+1];
   } job_exiting_retry_info;
 
 
