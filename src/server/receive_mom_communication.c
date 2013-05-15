@@ -302,13 +302,12 @@ int svr_is_request(
   unsigned short      mom_port;
   unsigned short      rm_port;
   unsigned long       tmpaddr;
-
   struct sockaddr_in addr;
-
   struct pbsnode     *node = NULL;
   char               *node_name = NULL;
-
   char                log_buf[LOCAL_LOG_BUF_SIZE+1];
+  char                msg_buf[80];
+  char                tmp[80];
 
   command = disrsi(chan, &ret);
 
@@ -332,15 +331,17 @@ int svr_is_request(
 
   /* Just a note to let us know we only do IPv4 for now */
   addr.sin_family = AF_INET;
-  args[1] = htonl(args[1]);
   memcpy(&addr.sin_addr, (void *)&args[1], sizeof(long));
-  addr.sin_port = htons(args[2]);
+  addr.sin_port = args[2];
 
   if (version != IS_PROTOCOL_VER)
     {
+    netaddr_long(args[1], tmp);
+    sprintf(msg_buf, "%s:%ld", tmp, args[2]);
+    
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "protocol version %d unknown from %s",
       version,
-      netaddr(&addr));
+      msg_buf);
 
     log_err(-1, __func__, log_buf);
     close_conn(chan->sock, FALSE);
@@ -353,9 +354,11 @@ int svr_is_request(
 
   if (LOGLEVEL >= 3)
     {
+    netaddr_long(args[1], tmp);
+    sprintf(msg_buf, "%s:%ld", tmp, args[2]);
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
       "message received from addr %s: mom_port %d  - rm_port %d",
-      netaddr(&addr),
+      msg_buf,
       mom_port,
       rm_port);
 
@@ -395,10 +398,12 @@ int svr_is_request(
   if (node == NULL)
     {
     /* node not listed in trusted ipaddrs list */
+    netaddr_long(args[1], tmp);
+    sprintf(msg_buf, "%s:%ld", tmp, args[2]);
     
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
       "bad attempt to connect from %s (address not trusted - check entry in server_priv/nodes)",
-      netaddr(&addr));
+      msg_buf);
     
     if (LOGLEVEL >= 2)
       {
@@ -415,13 +420,16 @@ int svr_is_request(
 
   if (LOGLEVEL >= 3)
     {
+    netaddr_long(args[1], tmp);
+    sprintf(msg_buf, "%s:%ld", tmp, args[2]);
+
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-      "message %s (%d) received from mom on host %s (%s) (sock %d)",
-      PBSServerCmds2[command],
-      command,
-      node->nd_name,
-      netaddr(&addr),
-      chan->sock);
+     "message %s (%d) received from mom on host %s (%s) (sock %d)",
+     PBSServerCmds2[command],
+     command,
+     node->nd_name,
+     msg_buf,
+     chan->sock);
 
     log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,__func__,log_buf);
     }
@@ -552,10 +560,13 @@ err:
             node->nd_name))
       }
 
+    netaddr_long(args[1], tmp);
+    sprintf(msg_buf, "%s:%ld", tmp, args[2]);
+
     sprintf(log_buf, "%s from %s(%s)",
       dis_emsg[ret],
       node->nd_name,
-      netaddr(&addr));
+      msg_buf);
     }
   else
     {
