@@ -8143,7 +8143,7 @@ int run_prologue_scripts(
   int ret;
 
   /* run local prolog */
-  if ((j = run_pelog(PE_PROLOG, path_prologp, pjob, PE_IO_TYPE_ASIS)) != 0)
+  if ((j = run_pelog(PE_PROLOG, path_prologp, pjob, PE_IO_TYPE_ASIS, FALSE)) != 0)
     {
     snprintf(log_buffer,sizeof(log_buffer),
       "cannot run local prolog '%s': %s (rc: %d)\n",
@@ -8159,7 +8159,7 @@ int run_prologue_scripts(
 
   /* run user prolog */
 
-  if ((j = run_pelog(PE_PROLOGUSER, path_prologuserp, pjob, PE_IO_TYPE_ASIS)) != 0)
+  if ((j = run_pelog(PE_PROLOGUSER, path_prologuserp, pjob, PE_IO_TYPE_ASIS, FALSE)) != 0)
     {
     snprintf(log_buffer,sizeof(log_buffer),
       "cannot run local user prolog '%s': %s (rc: %d)\n",

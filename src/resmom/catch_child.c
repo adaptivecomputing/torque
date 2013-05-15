@@ -926,7 +926,8 @@ void scan_for_exiting(void)
 int run_epilogues(
     
   job *pjob,
-  int  i_am_ms)
+  int  i_am_ms,
+  int  deletejob)
 
   {
   char     *path_epiloguserjob;
@@ -954,7 +955,7 @@ int run_epilogues(
         
         if (path_epiloguserjob)
           {
-          if (run_pelog(PE_EPILOGUSERJOB, path_epiloguserjob, pjob, io_type) != 0)
+          if (run_pelog(PE_EPILOGUSERJOB, path_epiloguserjob, pjob, io_type, deletejob) != 0)
             {
             log_err(-1, __func__, "user local epilog failed");
             }
@@ -964,10 +965,10 @@ int run_epilogues(
         }
       }
   
-    if (run_pelog(PE_EPILOGUSER, path_epiloguser, pjob, io_type) != 0)
+    if (run_pelog(PE_EPILOGUSER, path_epiloguser, pjob, io_type, deletejob) != 0)
       log_err(-1, __func__, "user epilog failed - interactive job");
     
-    if ((rc = run_pelog(PE_EPILOG, path_epilog, pjob, io_type)) != 0)
+    if ((rc = run_pelog(PE_EPILOG, path_epilog, pjob, io_type, deletejob)) != 0)
       {
       sprintf(log_buffer, "system epilog failed w/rc=%d", rc);
       
@@ -976,10 +977,10 @@ int run_epilogues(
     }
   else
     {
-    if (run_pelog(PE_EPILOGUSER, path_epiloguserp, pjob, io_type) != 0)
+    if (run_pelog(PE_EPILOGUSER, path_epiloguserp, pjob, io_type, deletejob) != 0)
       log_err(-1, __func__, "user epilog failed - interactive job");
   
-    if (run_pelog(PE_EPILOG, path_epilogp, pjob, PE_IO_TYPE_STD) != 0)
+    if (run_pelog(PE_EPILOG, path_epilogp, pjob, PE_IO_TYPE_STD, deletejob) != 0)
       {
       log_err(-1, __func__, "parallel epilog failed");
       }
@@ -1445,7 +1446,7 @@ void *preobit_reply(
     }
 
   /* child - just run epilogues */
-  run_epilogues(pjob, TRUE);
+  run_epilogues(pjob, TRUE, deletejob);
 
   /* for cray, release the reservation now so that the job isn't reported
    * as finished until the reservation is kaput. This is important for the
@@ -2361,7 +2362,7 @@ void exit_mom_job(
   if (needs_and_ready_for_reply(pjob) == FALSE)
     return;
 
-  run_epilogues(pjob, FALSE);
+  run_epilogues(pjob, FALSE, FALSE);
 
   send_job_obit_to_ms(pjob, mom_radix);
   

@@ -215,7 +215,7 @@ void MD5Update(MD5_CTX *mdContext, unsigned char *inBuf, unsigned int inLen)
   exit(1);
   }
 
-int run_pelog(int which, char *specpelog, job *pjog, int pe_io_type)
+int run_pelog(int which, char *specpelog, job *pjog, int pe_io_type, int deletejob)
   {
   fprintf(stderr, "The call to run_pelog needs to be mocked!!\n");
   exit(1);
