@@ -4865,7 +4865,7 @@ void examine_all_running_jobs(void)
     {
     if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RUNNING)
       {
-      if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN))
+      if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)
         {
         if (pjob->ji_examined <= 10)
           {

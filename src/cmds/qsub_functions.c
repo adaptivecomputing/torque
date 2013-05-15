@@ -548,7 +548,7 @@ int get_name_value(
 
   curr_ptr = smart_strtok(tmpLine,"",&tok_ptr,FALSE);
 
-  if ((curr_ptr == NULL))
+  if (curr_ptr == NULL)
     return(0);
      
   if ((*curr_ptr == '=') || 

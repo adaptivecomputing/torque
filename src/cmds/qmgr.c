@@ -1436,7 +1436,7 @@ int execute(
 
       sp = sname -> svr;
 
-      if ((oper == MGR_CMD_LIST))
+      if (oper == MGR_CMD_LIST)
         {
         sa = attropl2attrl(attribs);
 
@@ -1467,7 +1467,7 @@ int execute(
 
         pbs_statfree(ss);
         }
-      else if ((oper == MGR_CMD_PRINT))
+      else if (oper == MGR_CMD_PRINT)
         {
         sa = attropl2attrl(attribs);
 
