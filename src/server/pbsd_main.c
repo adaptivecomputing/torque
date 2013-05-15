@@ -484,47 +484,6 @@ int process_pbs_server_port(
 
 
 
-/* 
- * process_pbs_server_port_scheduler
- * This function is a wrapper for process_pbs_server_port
- * whose signature has been changed to make torques
- * accept process fully multithreaded. 
- * This will be run from contact_sched
- */
-
-void process_pbs_server_port_scheduler(
-    
-  int *new_sock)
-
-  {
-  int rc = PBSE_NONE;
-  int sock = *new_sock;
-
-  while ((rc != PBSE_SOCKET_DATA) && 
-         (rc != PBSE_SOCKET_INFORMATION) &&
-         (rc != PBSE_INTERNAL) &&
-         (rc != PBSE_SYSTEM) &&
-         (rc != PBSE_MEM_MALLOC) &&
-         (rc != PBSE_SOCKET_CLOSE))
-    {
-    netcounter_incr();
-    rc = process_pbs_server_port(sock, TRUE, (long *)new_sock);
-    }
-
-  /* 
-   * Socket should have been closed by scheduler, except in error cases,
-   * but we still need to call close_conn() to clean up connections.
-   */
-
-  close_conn(sock, FALSE);
-
-  scheduler_close();
-  return;
-  }
-
-
-
-
 void *start_process_pbs_server_port(
     
   void *new_sock)

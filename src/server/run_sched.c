@@ -130,7 +130,7 @@ static void listener_close(int);
 extern void bad_node_warning(pbs_net_t, struct pbsnode *);
 extern ssize_t write_nonblocking_socket(int, const void *, ssize_t);
 
-
+extern void scheduler_close();
 
 
 /* sync w/sched_cmds.h */
@@ -174,6 +174,12 @@ void *contact_sched(
 
   free(new_cmd);
 
+  if (LOGLEVEL >= 10)
+    {
+    sprintf(log_buf, "command %d", cmd);
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, __func__, log_buf);
+    }
+
   /* connect to the Scheduler */
   sock = client_to_svr(pbs_scheduler_addr, pbs_scheduler_port, 1, EMsg);
 
@@ -216,17 +222,8 @@ void *contact_sched(
     return(NULL);
     }
 
-  /*
-   * call process_pbs_server_port_scheduler which will
-   * handle 1 or more batch requests that may be received
-   * from the scheduler.
-   */
-
-  process_pbs_server_port_scheduler(&sock);
-
-  sprintf(log_buf, msg_sched_called, (cmd != SCH_ERROR) ? PSchedCmdType[cmd] : "ERROR");
-
-  log_event(PBSEVENT_SCHED,PBS_EVENTCLASS_SERVER,server_name,log_buf);
+  close_conn(sock, FALSE);
+  scheduler_close();
 
   /* Thread exit */
   return(NULL);
