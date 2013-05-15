@@ -332,8 +332,9 @@ int svr_is_request(
 
   /* Just a note to let us know we only do IPv4 for now */
   addr.sin_family = AF_INET;
-  memcpy((void *)&addr.sin_addr, &args[1], sizeof(args[1]));
-  addr.sin_port = args[2];
+  args[1] = htonl(args[1]);
+  memcpy(&addr.sin_addr, (void *)&args[1], sizeof(long));
+  addr.sin_port = htons(args[2]);
 
   if (version != IS_PROTOCOL_VER)
     {
