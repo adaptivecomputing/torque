@@ -322,7 +322,7 @@ resource_def svr_resc_def_const[] =
     comp_str,
     free_str,
     NULL_FUNC,
-    READ_WRITE,
+    READ_WRITE | ATR_DFLAG_MOM,
     ATR_TYPE_STR
     },
     {
@@ -623,7 +623,7 @@ resource_def svr_resc_def_const[] =
       comp_l,
       free_null,
       set_mppnodect,
-      READ_WRITE,
+      READ_WRITE | ATR_DFLAG_MOM,
       ATR_TYPE_LONG
   },
   {   "mppdepth",    /* Number of threads per PE */
@@ -633,7 +633,7 @@ resource_def svr_resc_def_const[] =
       comp_l,
       free_null,
       NULL_FUNC,
-      READ_WRITE,
+      READ_WRITE | ATR_DFLAG_MOM,
       ATR_TYPE_LONG
   },
   {   "mppnppn",    /* number of PEs per Node */
@@ -643,7 +643,7 @@ resource_def svr_resc_def_const[] =
       comp_l,
       free_null,
       set_mppnodect,
-      READ_WRITE,
+      READ_WRITE | ATR_DFLAG_MOM,
       ATR_TYPE_LONG
   },
   {   "mppnodes",    /* node list (can be of the form 1,3-7) */
@@ -653,7 +653,7 @@ resource_def svr_resc_def_const[] =
       comp_str,
       free_str,
       NULL_FUNC,
-      READ_WRITE,
+      READ_WRITE | ATR_DFLAG_MOM,
       ATR_TYPE_STR
   },
   {   "mpplabels",    /* compute node features */
@@ -663,7 +663,7 @@ resource_def svr_resc_def_const[] =
       comp_str,
       free_str,
       NULL_FUNC,
-      READ_WRITE,
+      READ_WRITE | ATR_DFLAG_MOM,
       ATR_TYPE_STR
   },
   {   "mpptime",   /* NYI */
@@ -673,7 +673,7 @@ resource_def svr_resc_def_const[] =
       comp_l,
       free_null,
       NULL_FUNC,
-      READ_WRITE,
+      READ_WRITE | ATR_DFLAG_MOM,
       ATR_TYPE_LONG
   },
   {   "mpphost",
@@ -683,7 +683,7 @@ resource_def svr_resc_def_const[] =
       comp_str,
       free_str,
       NULL_FUNC,
-      READ_WRITE,
+      READ_WRITE | ATR_DFLAG_MOM,
       ATR_TYPE_STR
   },
   {   "mpparch",    /* node architecture (XT3, XT4, etc.) */
@@ -693,7 +693,7 @@ resource_def svr_resc_def_const[] =
       comp_str,
       free_str,
       NULL_FUNC,
-      READ_WRITE,
+      READ_WRITE | ATR_DFLAG_MOM,
       ATR_TYPE_STR
   },
   { "mppnodect", /* node count estimate for queueing purposes */
@@ -703,7 +703,7 @@ resource_def svr_resc_def_const[] =
       comp_l,
       free_null,
       NULL_FUNC,
-      NO_USER_SET,
+      NO_USER_SET | ATR_DFLAG_MOM,
       ATR_TYPE_LONG
   },
 

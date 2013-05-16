@@ -30,6 +30,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - If an error happens communicating with one MIC, attempt to communicate with the
       others instead of failing the entire routine.
   b - TRQ-1639. Gpu status information wasn't being displayed correctly.
+  b - TRQ-1826. mppdepth is now passed correctly to the ALPS reservation.
 
 4.2.2
   b - Make job_starter work for parallel jobs as well as serial. (TRQ-1577 - thanks
