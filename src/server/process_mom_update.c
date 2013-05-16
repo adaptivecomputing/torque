@@ -80,6 +80,7 @@
 #include <stdio.h>
 #include <ctype.h>
 
+#include "pbs_config.h"
 #include "pbs_nodes.h"
 #include "svrfunc.h"
 #include "log.h"
@@ -98,6 +99,11 @@ extern attribute_def    node_attr_def[];   /* node attributes defs */
 extern int              allow_any_mom;
 extern char             server_name[];
 
+
+int is_gpustat_get(struct pbsnode *np, char **str_ptr);
+void clear_nvidia_gpus(struct pbsnode *np);
+int  gpu_entry_by_id(struct pbsnode *pnode, char *gpuid, int get_empty);
+int gpu_has_job(struct pbsnode *pnode, int gpuid);
 
 
 char *move_past_mic_status(
