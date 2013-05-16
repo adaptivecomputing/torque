@@ -408,8 +408,6 @@ int start_listener_addrinfo(
         
             snprintf(err_msg, sizeof(err_msg), "error in accept %s - stopping accept loop", strerror(errno));
             exit_loop = TRUE;
-            if (args)
-              free(args);
             break;
           }
 
