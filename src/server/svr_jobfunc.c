@@ -3341,6 +3341,7 @@ int unlock_ji_mutex(
   const char *id,
   const char *msg,
   int        logging)
+
   {
   int rc = PBSE_NONE;
   char *err_msg = NULL;

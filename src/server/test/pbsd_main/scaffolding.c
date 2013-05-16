@@ -38,6 +38,7 @@ char pbs_server_name[1];
 pthread_mutex_t *poll_job_task_mutex;
 threadpool_t *request_pool;
 int              max_poll_job_tasks;
+char           **ArgV;
 
 int log_remove_old(char *DirPath, unsigned long ExpireTime)
   {
@@ -512,3 +513,8 @@ void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_ext(int eventtype, const char *func_name, const char *msg, int level) {}
+
+int save_args(int argc, char **argv)
+  {
+  return(0);
+  }

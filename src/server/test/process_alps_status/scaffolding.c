@@ -805,7 +805,7 @@ int node_gpustatus_list(
 int get_value_hash(
 
   hash_table_t *ht,
-  void         *key)
+  const void   *key)
   
   {
   if (((char *)key)[0] == 'n')

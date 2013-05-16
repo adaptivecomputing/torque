@@ -49,7 +49,7 @@ int is_svr_attr_set(int index)
   return(0);
   }
 
-int get_value_hash(hash_table_t *ht, void *key)
+int get_value_hash(hash_table_t *ht, const void *key)
   {
   return(0);
   }
@@ -84,7 +84,7 @@ int get_svr_attr_str(int index, char **str)
   return(0);
   }
 
-int remove_hash(hash_table_t *ht, char *key)
+int remove_hash(hash_table_t *ht, const char *key)
   {
   return(0);
   }

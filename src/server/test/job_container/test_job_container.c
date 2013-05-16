@@ -130,10 +130,10 @@ START_TEST(get_jobs_index_test)
   initialize_all_jobs_array(&alljobs);
 
   result = get_jobs_index(NULL,test_job);
-  fail_unless(result == PBSE_BAD_PARAMETER, "null input array fail");
+  fail_unless(result == -1 * PBSE_BAD_PARAMETER, "null input array fail");
 
   result = get_jobs_index(&alljobs,NULL);
-  fail_unless(result == PBSE_BAD_PARAMETER, "NULL input job fail");
+  fail_unless(result == -1 * PBSE_BAD_PARAMETER, "NULL input job fail");
 
   insert_job(&alljobs, test_job);
   result = get_jobs_index(&alljobs, test_job);

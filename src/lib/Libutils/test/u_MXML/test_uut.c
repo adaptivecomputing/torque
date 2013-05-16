@@ -117,7 +117,7 @@ START_TEST(test_two)
   long l;
   double d;
   char bf[10240];
-  char *buff;
+  char *buff = NULL;
 
   fail_unless(MXMLFromString(&pXml,(char *)sampleXML,NULL,NULL,0) == SUCCESS);
 
@@ -147,7 +147,7 @@ START_TEST(test_two)
 
   fail_unless(MXMLToString(pXml,bf,sizeof(bf),NULL,true) == SUCCESS);
   fail_unless(MXMLToXString(pXml,&buff,&i,sizeof(bf),NULL,true) == SUCCESS);
-  if(buff != NULL) free(buff);
+  if (buff != NULL) free(buff);
 
   fail_unless(MXMLDestroyE(&pXml) == SUCCESS);
 

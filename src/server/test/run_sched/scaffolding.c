@@ -23,7 +23,7 @@ int svr_do_schedule = SCH_SCHEDULE_NULL;
 pthread_mutex_t *svr_do_schedule_mutex;
 pthread_mutex_t *scheduler_sock_jobct_mutex;
 pthread_mutex_t *listener_command_mutex;
-
+int LOGLEVEL = 10;
 
 int process_pbs_server_port(int sock, int is_scheduler_port, long *args)
   {

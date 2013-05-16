@@ -255,3 +255,53 @@ int append_char_to_dynamic_string(
   }
 
 void clear_dynamic_string(dynamic_string *ds) {}
+
+int gpu_has_job(
+
+  struct pbsnode *pnode,
+  int  gpuid)
+
+  {
+  return(0);
+  }
+
+int gpu_entry_by_id(
+
+  struct pbsnode *pnode,  /* I */
+  char   *gpuid,
+  int    get_empty)
+
+  {
+  return(0);
+  }
+
+void log_ext(
+
+  int         errnum,   /* I (errno or PBSErrno) */
+  const char *routine,  /* I */
+  const char *text,     /* I */
+  int         severity) /* I */
+
+  {}
+
+int diswsi(
+
+  struct tcp_chan *chan,
+  int value)
+
+  {
+  return(0);
+  }
+
+int node_gpustatus_list(
+
+  pbs_attribute *new_attr,      /* derive status into this pbs_attribute*/
+  void          *pnode,    /* pointer to a pbsnode struct     */
+  int            actmode)  /* action mode; "NEW" or "ALTER"   */
+
+  {
+  return(0);
+  }
+
+void clear_nvidia_gpus(struct pbsnode *np) {}
+
