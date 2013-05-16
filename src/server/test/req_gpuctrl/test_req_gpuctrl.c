@@ -1,5 +1,4 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "req_gpuctrl.h"
 #include "test_req_gpuctrl.h"
 #include <stdlib.h>
 #include <stdio.h>
