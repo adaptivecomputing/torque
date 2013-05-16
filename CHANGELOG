@@ -47,6 +47,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       for your site and set them appropriately. (backported from 4.2.3) TRQ-1790.
   b - TRQ-1709. Fix parsing of -l gpus=X,other_things parsing incorrectly. (backported from
       4.2.3)
+  b - TRQ-1826. mppdepth is now passed correctly to the ALPS reservation. (backported from
+      4.2.3)
 
 4.1.5
   b - For cray: make sure that reservations are released when jobs are requeued. TRQ-1572.
