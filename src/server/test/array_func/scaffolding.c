@@ -284,8 +284,9 @@ int lock_ai_mutex(
 
 int remove_from_hash_map(
 
-  hash_map *hm,
-  char     *key)
+  hash_map   *hm,
+  const char *key,
+  bool        already_locked)
 
   {
   return(0);
@@ -311,8 +312,8 @@ hash_map *get_hash_map(
 
 void *get_from_hash_map(
 
-  hash_map *hm,
-  char     *key)
+  hash_map   *hm,
+  const char *key)
 
   {
   return(NULL);
@@ -321,7 +322,8 @@ void *get_from_hash_map(
 void *next_from_hash_map(
 
   hash_map *hm,
-  int      *iter)
+  int      *iter,
+  bool      already_locked)
 
   {
   return(NULL);

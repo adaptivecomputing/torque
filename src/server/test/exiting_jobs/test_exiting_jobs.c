@@ -1,15 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <check.h>
+#include <pthread.h>
 
 #include "exiting_jobs.h"
 #include "log.h"
 #include "hash_table.h"
 
-int remove_entry_from_exiting_list(job_exiting_retry_info *jeri);
-int retry_job_exit(job_exiting_retry_info *jeri);
+int retry_job_exit(char *jobid);
 int check_exiting_jobs();
-
 
 START_TEST(record_job_as_exiting_test)
   {
@@ -42,33 +41,9 @@ END_TEST
 
 
 
-START_TEST(remove_entry_from_exiting_list_test)
-  {
-  job_exiting_retry_info *jeri = (job_exiting_retry_info *)calloc(1, sizeof(job_exiting_retry_info));
-  strcpy(jeri->jobid, "3.napali");
-  fail_unless(remove_entry_from_exiting_list(jeri) == 0, "Couldn't remove entry");
-  
-  jeri = (job_exiting_retry_info *)calloc(1, sizeof(job_exiting_retry_info));
-  strcpy(jeri->jobid, "1.napali");
-  fail_unless(remove_entry_from_exiting_list(jeri) == KEY_NOT_FOUND, "Removed entry that wasn't there");
-
-  }
-END_TEST
-
-
-
-
 START_TEST(retry_job_exit_test)
   {
-  job_exiting_retry_info *jeri = (job_exiting_retry_info *)calloc(1, sizeof(job_exiting_retry_info));
-
-  strcpy(jeri->jobid, "1.napali");
-
-  fail_unless(retry_job_exit(jeri) == 0, "Didn't retry job");
-  fail_unless(jeri->attempts == 1, "Didn't increment attempt count");
-
-  jeri->attempts = 100;
-  fail_unless(retry_job_exit(jeri) == 0, "Didn't remove after max attempts");
+  fail_unless(retry_job_exit(strdup("1.napali")) == 0, "Didn't retry job");
   }
 END_TEST
 
@@ -95,10 +70,6 @@ Suite *exiting_jobs_suite(void)
   tcase_add_test(tc_core, remove_job_from_exiting_list_test);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("remove_entry_from_exiting_list_test");
-  tcase_add_test(tc_core, remove_entry_from_exiting_list_test);
-  suite_add_tcase(s, tc_core);
-
   tc_core = tcase_create("retry_job_exit_test");
   tcase_add_test(tc_core, retry_job_exit_test);
   suite_add_tcase(s, tc_core);
@@ -118,6 +89,8 @@ int main(void)
   {
   int number_failed = 0;
   SRunner *sr = NULL;
+  exiting_jobs_info = (hash_map *)calloc(1, sizeof(hash_map));
+  exiting_jobs_info->hm_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   rundebug();
   sr = srunner_create(exiting_jobs_suite());
   srunner_set_log(sr, "exiting_jobs_suite.log");

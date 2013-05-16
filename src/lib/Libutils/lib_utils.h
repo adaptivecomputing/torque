@@ -61,29 +61,6 @@ struct group * getgrnam_ext(char * grp_name );
 
 /* src/include/u_hash_map_structs.h */
 
-/* u_hash_table.c */
-uint32_t hashlittle(const void *key, size_t length, uint32_t initval);
-
-uint32_t hashbig(const void *key, size_t length, uint32_t initval);
-
-hash_table_t *create_hash(int size);
-
-int get_hash(hash_table_t *ht, void *key);
-
-void free_buckets(bucket **buckets, int size);
-
-void add_to_bucket(bucket **buckets, int index, char *key, int value);
-
-int add_hash(hash_table_t *ht, int value, void *key);
-
-int remove_hash(hash_table_t *ht, char *key);
-
-int get_value_hash(hash_table_t *ht, void *key);
-
-void change_value_hash(hash_table_t *ht, char *key, int new_value);
-
-/* src/include/u_memmgr.h */
-
 /* u_mom_hierarchy.c */
 mom_hierarchy_t *initialize_mom_hierarchy(void);
 

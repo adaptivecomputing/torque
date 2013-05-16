@@ -476,3 +476,12 @@ pbs_net_t get_hostaddr(
   return 0;
   }
 
+int create_a_gpusubnode(struct pbsnode *np)
+  {
+  return(0);
+  }
+
+int node_gpustatus_list(pbs_attribute *attr, void *a, int b)
+  {
+  return(0);
+  }

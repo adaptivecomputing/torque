@@ -1886,6 +1886,7 @@ char *get_correct_spec_string(
   char     *gpu_req;
   int       len;
   resource *pres = NULL;
+  char      log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* check to see if there is a gpus request. If so moab
    * sripted the mode request if it existed. We need to
@@ -1928,12 +1929,12 @@ char *get_correct_spec_string(
           {
           if (LOGLEVEL >= 7)
             {
-            sprintf(log_buffer, "%s: job has %d gpu requests in node spec '%s'",
+            sprintf(log_buf, "%s: job has %d gpu requests in node spec '%s'",
               __func__,
               num_gpu_reqs,
               given);
 
-            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
             }
 
           if ((outer_plus = strchr(mode_string, '+')) != NULL)
@@ -2001,11 +2002,11 @@ char *get_correct_spec_string(
             }
           if ((LOGLEVEL >= 7) && (correct_spec != NULL) && (correct_spec[0] != '\0'))
             {
-            sprintf(log_buffer, "%s: job gets adjusted gpu node spec of '%s'",
+            sprintf(log_buf, "%s: job gets adjusted gpu node spec of '%s'",
               __func__,
               correct_spec);
 
-            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
             }
           }
         }

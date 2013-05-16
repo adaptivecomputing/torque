@@ -46,7 +46,7 @@ int num_array_jobs(const char *array_req)
   return(11);
   }
 
-int get_value_hash(hash_table_t *ht, void *thing)
+int get_value_hash(hash_table_t *ht, const void *thing)
   {
   char *str = (char *)thing;
   if (!strcmp(str, "tom"))

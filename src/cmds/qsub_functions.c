@@ -3606,55 +3606,21 @@ void set_job_defaults(
   {
   job_data *tmp_job_info = NULL;
   hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_c, CHECKPOINT_UNSPECIFIED, STATIC_DATA);
-/*  if (c_opt == FALSE)
-    set_attr(&attrib, ATTR_c, default_ckpt);
-    */
 
   hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_h, NO_HOLD, STATIC_DATA);
-/*  if (h_opt == FALSE)
-    set_attr(&attrib, ATTR_h, NO_HOLD);
-    */
 
   hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_j, NO_JOIN, STATIC_DATA);
-/*  if (j_opt == FALSE)
-    set_attr(&attrib, ATTR_j, NO_JOIN);
-    */
 
   hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_k, NO_KEEP, STATIC_DATA);
-/*  if (k_opt == FALSE)
-    set_attr(&attrib, ATTR_k, NO_KEEP);
-    */
 
   hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_m, MAIL_AT_ABORT, STATIC_DATA);
-/*  if (m_opt == FALSE)
-    set_attr(&attrib, ATTR_m, MAIL_AT_ABORT);
-    */
 
   hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_p, DEFAULT_PRIORITY, STATIC_DATA);
-/*  if (p_opt == FALSE)
-    set_attr(&attrib, ATTR_p, "0");
-    */
 
-    /* rerunnable_by_default = true, if this changes later, that value will override this one */
+  /* rerunnable_by_default = true, if this changes later, that value will override this one */
   hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_r, "TRUE", STATIC_DATA);
-/*   if (r_opt == FALSE) */
-/*    {
-    if (rerunnable_by_default)
-      set_attr(&attrib, ATTR_r, "TRUE");
-    else
-      set_attr(&attrib, ATTR_r, "FALSE");
-    }
-    */
   hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_f, "FALSE", STATIC_DATA);
-/*   if (f_opt == FALSE) */
-    /* fault_tolerant_by_default = false, if this changes later, that value will override this one */
-/*    {
-    if (fault_tolerant_by_default)
-      set_attr(&attrib, ATTR_f, "TRUE");
-    else
-      set_attr(&attrib, ATTR_f, "FALSE");
-    }
-    */
+  
   hash_add_or_exit(&ji->mm, &ji->client_attr, "pbs_dprefix", "#PBS", STATIC_DATA);
   hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_job_radix, "0", STATIC_DATA);
   if (hash_find(ji->user_attr, "pbs_clientretry", &tmp_job_info))

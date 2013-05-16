@@ -109,7 +109,7 @@ void free_prop_list(struct prop *prop)
     }
   }
 
-int get_value_hash(hash_table_t *ht, void *key)
+int get_value_hash(hash_table_t *ht, const void *key)
   {
   char *str = (char *)key;
 

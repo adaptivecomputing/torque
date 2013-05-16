@@ -7,7 +7,8 @@
 #include "u_tree.h"
 #include "dynamic_string.h"
 #include "tcp.h"
-
+#include "pbs_job.h"
+#include "mutex_mgr.hpp"
 
 int         allow_any_mom;
 AvlTree     ipaddrs = NULL;
@@ -208,3 +209,43 @@ int process_status_info(
   {
   return(0);
   }
+
+job *get_job_from_jobinfo(
+    
+  struct jobinfo *jp,
+  struct pbsnode *pnode)
+
+  {
+  return(NULL);
+  }
+
+char * netaddr_long(long ap, char *out)
+
+  {
+  return(NULL);
+  }
+
+mutex_mgr::mutex_mgr(pthread_mutex_t *, bool a)
+  {
+  }
+
+int mutex_mgr::unlock() 
+  {
+  return(0);
+  }
+
+void mutex_mgr::mark_as_locked() {}
+
+int unlock_ji_mutex(
+
+  job        *pjob,
+  const char *id,
+  const char *msg,
+  int        logging)
+
+  {
+  return(0);
+  }
+
+
+mutex_mgr::~mutex_mgr() {}

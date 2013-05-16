@@ -339,7 +339,7 @@ int kill_task(struct task *task, int sig, int pg)
   exit(1);
   }
 
-int get_value_hash(hash_table_t *ht, void *key)
+int get_value_hash(hash_table_t *ht, const void *key)
   {
   return -1;
   }
