@@ -32,6 +32,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       on the number of procs requested.  TRQ-1623
   b - TRQ-1709. Fix parsing of -l gpus=X,other_things parsing incorrectly.
   b - TRQ-1639. Gpu status information wasn't being displayed correctly.
+  b - TRQ-1826. mppdepth is now passed correctly to the ALPS reservation.
 
 4.2.2
   b - Make job_starter work for parallel jobs as well as serial. (TRQ-1577 - thanks
