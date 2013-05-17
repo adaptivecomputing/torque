@@ -144,3 +144,8 @@ char *pbse_to_txt(int err)
   return(NULL);
   }
 }
+
+int pbs_getaddrinfo(const char *hostname, struct addrinfo *in, struct addrinfo **out)
+  {
+  return(0);
+  }
