@@ -352,3 +352,4 @@ batch_request *duplicate_request(batch_request *preq, int job_index)
   {
   return NULL;
   }
+
