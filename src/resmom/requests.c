@@ -2221,7 +2221,7 @@ static void resume_suspend(
 
 void req_signaljob(
 
-  struct batch_request *preq) /* I */
+  batch_request *preq) /* I */
 
   {
   job            *pjob;
@@ -2349,8 +2349,9 @@ void req_signaljob(
     sleep(1);
     }
 
-  if ((pjob->ji_qs.ji_state != JOB_STATE_RUNNING) &&
-      (sync_kill == TRUE))
+  if ((sync_kill == TRUE) &&
+      ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXITING) ||
+       (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)))
     {
     mom_deljob(pjob);
     }
@@ -2372,8 +2373,9 @@ void req_signaljob(
         ptask = (task *)GET_NEXT(pjob->ji_tasks);
         if (ptask == NULL)
           {
-          sprintf(log_buffer, "job recycled into exiting on SIGNULL/KILL from substate %d again. Terminating job now.",
-          pjob->ji_qs.ji_substate);
+          snprintf(log_buffer, sizeof(log_buffer),
+            "job recycled into exiting on SIGNULL/KILL from substate %d again. Terminating job now.",
+            pjob->ji_qs.ji_substate);
           log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
           mom_deljob(pjob);
           }

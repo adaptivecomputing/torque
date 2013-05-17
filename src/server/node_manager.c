@@ -722,11 +722,11 @@ int kill_job_on_mom(
   struct pbsnode *pnode)
 
   {
-  struct batch_request *preq;
-  int                   rc = -1;
-  int                   conn;
-  int                   local_errno = 0;
-  char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  batch_request *preq;
+  int            rc = -1;
+  int            conn;
+  int            local_errno = 0;
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* job is reported by mom but server has no record of job */
   sprintf(log_buf, "stray job %s found on %s", jobid, pnode->nd_name);
