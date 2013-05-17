@@ -32,8 +32,6 @@ int main(
 
   char *mom_node = NULL;
 
-  initialize_network_info();
-
 #define GETOPT_ARGS "H:g:m:"
 
   while ((c = getopt(argc, argv, GETOPT_ARGS)) != EOF)

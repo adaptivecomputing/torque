@@ -18,6 +18,7 @@
 #include "resource.h" /* resource_def */
 #include "log.h" /* LOG_BUF_SIZE */
 #include "tcp.h"
+#include "prolog.h" /* PBS_PROLOG_TIME */
 
 mom_server     mom_servers[PBS_MAXSERVER];
 resizable_array *received_statuses;
