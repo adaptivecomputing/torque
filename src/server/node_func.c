@@ -1108,7 +1108,6 @@ static int process_host_name_part(
   if (addr_info->ai_canonname == NULL)
     {
     free(phostname);
-    freeaddrinfo(addr_info);
     
     return(PBSE_SYSTEM);
     }
