@@ -246,8 +246,10 @@ START_TEST(status_nodeattrib_test)
   struct list_link list;
   int result_mask = 0;
   int result = 0;
+
   memset(&attributes, 0, sizeof(attributes));
   memset(&node_attributes, 0, sizeof(node_attributes));
+
   initialize_pbsnode(&node, NULL, NULL, 0);
   memset(&list, 0, sizeof(list));
 
