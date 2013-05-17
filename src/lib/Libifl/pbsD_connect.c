@@ -1076,7 +1076,7 @@ int pbs_original_connect(
 
       server_addr.sin_family = AF_INET;
 
-      if (getaddrinfo(server, NULL, NULL, &addr_info) != 0)
+      if (pbs_getaddrinfo(server, NULL, &addr_info) != 0)
         {
         if (getenv("PBSDEBUG"))
           {
@@ -1104,8 +1104,6 @@ int pbs_original_connect(
         }
 
       server_addr.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
-      freeaddrinfo(addr_info);
-
       server_addr.sin_port = htons(server_port);
 
       /* Set the socket to non-blocking mode so we can timeout */

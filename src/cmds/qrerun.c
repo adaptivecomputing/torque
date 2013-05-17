@@ -49,8 +49,6 @@ int main(
     exit(2);
     }
 
-  initialize_network_info();
-
 #define GETOPT_ARGS "m:f"
 
   extend[0] = '\0';

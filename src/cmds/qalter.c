@@ -51,8 +51,6 @@ int main(
   char extend[MAXPATHLEN] = "";
   char *extend_ptr = NULL; /* only give value if extend has value */
 
-  initialize_network_info();
-
 #define GETOPT_ARGS "a:A:c:e:h:j:k:l:m:M:n:N:o:p:qr:S:t:u:v:W:x:"
 
   while ((c = getopt(argc, argv, GETOPT_ARGS)) != EOF)

@@ -308,7 +308,7 @@ int init_network(
       struct addrinfo        *addr_info = NULL;
       char                    namebuf[MAXLINE*2];
 
-      if (getaddrinfo(pbs_server_name, NULL, NULL, &addr_info) == 0)
+      if (pbs_getaddrinfo(pbs_server_name, NULL, &addr_info) == 0)
         {
         if (getnameinfo(addr_info->ai_addr, addr_info->ai_addrlen, namebuf, sizeof(namebuf), NULL, 0, 0) == 0)
           {
@@ -317,9 +317,6 @@ int init_network(
 
         net_serveraddr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr; 
         }
-
-      if (addr_info != NULL)
-        freeaddrinfo(addr_info);
 
       if (net_server_name == NULL)
         net_server_name = strdup(inet_ntoa(net_serveraddr));
