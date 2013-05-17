@@ -118,9 +118,10 @@ class addrcache
       }
     */
     addrs.push_back(pAddr);
-    hosts.push_back(strdup(host));
-    add_hash(addrToName,index,key);
-    add_hash(nameToAddr,index,(void *)host);
+    char *priv_host = strdup(host);
+    hosts.push_back(priv_host);
+    add_hash(addrToName,index,strdup(key));
+    add_hash(nameToAddr,index,(void *)priv_host);
     pthread_mutex_unlock(cacheMutex);
     return pAddr;
     }
