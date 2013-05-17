@@ -103,9 +103,11 @@ class addrcache
     char key[65];
     sprintf(key,"%d",pINetAddr->sin_addr.s_addr);
     int i;
-    if((i = get_value_hash(addrToName,key)) >= 0)
+    if ((i = get_value_hash(addrToName,key)) >= 0)
       {
-      freeaddrinfo(pAddr);
+      if (addrs.at(i) != pAddr)
+        freeaddrinfo(pAddr);
+
       return addrs.at(i);
       }
     pthread_mutex_lock(cacheMutex);
