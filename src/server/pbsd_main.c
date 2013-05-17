@@ -1605,7 +1605,11 @@ void main_loop(void)
     get_svr_attr_l(SRV_ATR_State, &state);
     }    /* END while (*state != SV_STATE_DOWN) */
 
-  pthread_cancel(accept_thread_id);
+  if(accept_thread_id != (pthread_t)-1)
+    {
+    pthread_cancel(accept_thread_id);
+    accept_thread_id = (pthread_t)-1;
+    }
 
   svr_save(&server, SVR_SAVE_FULL); /* final recording of server */
 
