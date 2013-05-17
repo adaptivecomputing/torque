@@ -1687,6 +1687,17 @@ int mom_set_limits(
     else if (!strcmp(pname, "epilogue"))
       {
       }
+    else if ((!strcmp(pname, "mppdepth"))  ||
+             (!strcmp(pname, "mppnodect")) ||
+             (!strcmp(pname, "mppwidth")) ||
+             (!strcmp(pname, "mppnppn")) ||
+             (!strcmp(pname, "mppnodes")) ||
+             (!strcmp(pname, "mpplabels")) ||
+             (!strcmp(pname, "mpparch")) ||
+             (!strcmp(pname, "mpplabel")))
+      {
+      /* NO-OP */
+      }   
     else if ((pres->rs_defin->rs_flags & ATR_DFLAG_RMOMIG) == 0)
       {
       /* don't recognize and not marked as ignore by mom */
