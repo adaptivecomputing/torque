@@ -107,7 +107,7 @@
 #include "tm.h"
 #include "net_connect.h"
 #include "pbs_ifl.h"
-#include "lib_net.h"
+#include "../Libnet/lib_net.h"
 #include "../Liblog/pbs_log.h" /* print_trace */
 
 
