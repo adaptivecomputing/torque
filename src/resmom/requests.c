@@ -2242,6 +2242,9 @@ void req_signaljob(
       ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXITING) ||
        (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)))
     {
+    snprintf(log_buffer, sizeof(log_buffer),
+      "Job %s is being killed from pbs_server.", pjob->ji_qs.ji_jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
     mom_deljob(pjob);
     }
   else
