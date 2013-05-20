@@ -1693,7 +1693,7 @@ u_long addclient(
 
   /* FIXME: must be able to retry failed lookups later */
 
-  if (getaddrinfo(name, NULL, NULL, &addr_info) != 0)
+  if (pbs_getaddrinfo(name, NULL,&addr_info) != 0)
     {
     sprintf(log_buffer, "host %s not found",
             name);
@@ -1704,7 +1704,6 @@ u_long addclient(
     }
 
   saddr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
-  freeaddrinfo(addr_info);
 
   ipaddr = ntohl(saddr.s_addr);
 
@@ -7040,8 +7039,6 @@ int setup_program_environment(void)
     {
     return(1);
     }
-
-  initialize_network_info();
 
   /* The following is code to reduce security risks                */
   /* start out with standard umask, system resource limit infinite */

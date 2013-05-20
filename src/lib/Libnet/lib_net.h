@@ -52,6 +52,8 @@ int socket_read_num(int socket, long long *the_num);
 int socket_read_str(int socket, char **the_str, long long *str_len);
 int socket_close(int socket);
 int get_addr_info(char *name, struct sockaddr_in *sa_info, int retry);
+int pbs_getaddrinfo(const char *pNode,struct addrinfo *pHints,struct addrinfo **ppAddrInfoOut);
+
 
 /* from file server_core.c */
 int start_listener(const char *server_ip, int server_port, void *(*process_meth)(void *));

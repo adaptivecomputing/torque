@@ -99,6 +99,7 @@
 #include "utils.h"
 #include "svr_func.h" /* get_svr_attr_* */
 #include "net_cache.h"
+#include "../lib/Libnet/lib_net.h"
 #include "ji_mutex.h"
 
 /* Global Data */
@@ -454,17 +455,17 @@ int authenticate_user(
     sai2 = get_cached_addrinfo(pcred->hostname);
 
     if ((sai1 == NULL) &&
-        (getaddrinfo(preq->rq_host, NULL, NULL, &addr_info1) == PBSE_NONE))
+        (pbs_getaddrinfo(preq->rq_host, NULL, &addr_info1) == PBSE_NONE))
       {
       sai1 = (struct sockaddr_in *)addr_info1->ai_addr;
-      insert_addr_name_info(preq->rq_host, addr_info1->ai_canonname, sai1);
+      insert_addr_name_info(addr_info1,preq->rq_host);
       }
 
     if ((sai2 == NULL) &&
-        (getaddrinfo(pcred->hostname, NULL, NULL, &addr_info2) == PBSE_NONE))
+        (pbs_getaddrinfo(pcred->hostname, NULL, &addr_info2) == PBSE_NONE))
       {
       sai2 = (struct sockaddr_in *)addr_info2->ai_addr;
-      insert_addr_name_info(pcred->hostname, addr_info2->ai_canonname, sai2);
+      insert_addr_name_info(addr_info2,pcred->hostname);
       }
 
     if ((sai1 == NULL) ||
@@ -477,18 +478,8 @@ int authenticate_user(
         *autherr, preq->rq_host, pcred->hostname);
       log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, error_msg);
     
-      if (addr_info1 != NULL)
-        freeaddrinfo(addr_info1);
-      if (addr_info2 != NULL)
-        freeaddrinfo(addr_info2);
-      
       return(PBSE_BADCRED);
       }
-      
-    if (addr_info1 != NULL)
-      freeaddrinfo(addr_info1);
-    if (addr_info2 != NULL)
-      freeaddrinfo(addr_info2);
     }
 
   if (pcred->timestamp)

@@ -5793,12 +5793,11 @@ void job_nodes(
       CLEAR_HEAD(hp->hn_events);
 
       /* set up the socket address information */
-      if (getaddrinfo(nodename, NULL, NULL, &addr_info) == 0)
+      if (pbs_getaddrinfo(nodename, NULL, &addr_info) == 0)
         {
         hp->sock_addr.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
         hp->sock_addr.sin_family = AF_INET;
         hp->sock_addr.sin_port = htons(hp->hn_port);
-        freeaddrinfo(addr_info);
         }
       }
 

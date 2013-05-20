@@ -525,3 +525,8 @@ int append_dynamic_string(dynamic_string *ds, const char *str)
   return(0);
   }
 
+int pbs_getaddrinfo(const char *,struct addrinfo *,struct addrinfo **)
+  {
+  return -1;
+  }
+

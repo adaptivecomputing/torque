@@ -318,7 +318,7 @@ int start_listener_addrinfo(
   pthread_attr_t      t_attr;
   char                err_msg[MAXPATHLEN];
   char                log_buf[LOCAL_LOG_BUF_SIZE + 1];
-  int                 ret = getaddrinfo(host_name, NULL, NULL, &adr_svr);
+  int                 ret = pbs_getaddrinfo(host_name, NULL, &adr_svr);
 
   if (ret != 0)
     {
@@ -364,7 +364,6 @@ int start_listener_addrinfo(
     }
   else
     {
-    freeaddrinfo(adr_svr);
     int exit_loop = FALSE;
     int retry_tolerance = NUM_ACCEPT_RETRIES;
 
@@ -408,8 +407,6 @@ int start_listener_addrinfo(
         
             snprintf(err_msg, sizeof(err_msg), "error in accept %s - stopping accept loop", strerror(errno));
             exit_loop = TRUE;
-            if (args)
-              free(args);
             break;
           }
 
