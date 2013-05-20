@@ -5773,9 +5773,9 @@ void im_request(
       errcode = disrsi(chan, &ret);
 
       snprintf(log_buffer, LOCAL_LOG_BUF_SIZE,
-        "Response received from client %s (%d) jobid %s",
+        "Error response received from client %s (%d) jobid %s",
         netaddr(pSockAddr), sender_port, jobid);
-      log_err(-1, __func__, log_buffer);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buffer);
      
       if ((errcode == PBSE_UNKJOBID) && (event_com == TM_NULL_EVENT))
         event_com = IM_KILL_JOB;
