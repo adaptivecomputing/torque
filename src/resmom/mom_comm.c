@@ -4861,9 +4861,9 @@ int process_error_reply(
   errcode = disrsi(chan, &ret);
 
   snprintf(log_buffer, LOCAL_LOG_BUF_SIZE,
-    "Response received from client %s (%d) jobid %s",
+    "Error response received from client %s (%d) jobid %s",
     netaddr(pSockAddr), sender_port, pjob->ji_qs.ji_jobid);
-  log_err(-1, __func__, log_buffer);
+  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
  
   if ((errcode == PBSE_UNKJOBID) &&
       (event_com == TM_NULL_EVENT))
