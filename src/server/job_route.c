@@ -224,7 +224,7 @@ int default_router(
   int                   local_errno = 0;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
-    if (LOGLEVEL >= 7)
+    if (LOGLEVEL >= 8)
       {
       sprintf(log_buf, "%s", jobp->ji_qs.ji_jobid);
       LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
@@ -340,7 +340,7 @@ int job_route(
   struct pbs_queue *qp;
   long              retry_time;
   
-  if (LOGLEVEL >= 7)
+  if (LOGLEVEL >= 8)
     {
     sprintf(log_buf, "%s", jobp->ji_qs.ji_jobid);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
@@ -486,7 +486,7 @@ int reroute_job(
   int        rc = PBSE_NONE;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
 
-  if (LOGLEVEL >= 7)
+  if (LOGLEVEL >= 8)
     {
     sprintf(log_buf, "%s", pjob->ji_qs.ji_jobid);
     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
