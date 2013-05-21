@@ -3239,6 +3239,18 @@ void process_opts(
               }
             }
           else
+            {
+            job_data *pVal;
+            char tmpLine[65536];
+
+            //Append if there is already a value here.
+            if(hash_find(ji->job_attr,keyword,&pVal))
+              {
+              strcpy(tmpLine,pVal->value);
+              strcat(tmpLine,";");
+              strcat(tmpLine,valuewd);
+              valuewd = tmpLine;
+              }
             hash_add_or_exit(&ji->mm, &ji->job_attr, keyword, valuewd, data_type);
             /* generic job attribute specified */
 /*            {
@@ -3246,6 +3258,7 @@ void process_opts(
             set_attr(&attrib, keyword, valuewd);
             }
             */
+            }
 
           i = get_name_value(NULL, &keyword, &valuewd);
           }  /* END while (i == 1) */
