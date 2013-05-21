@@ -146,6 +146,7 @@ void *send_the_mail(
   mail_info *mi = (mail_info *)vp;
 
   int         i;
+  int         cmdbuf_len;
   const char *mailfrom = NULL;
   const char *subjectfmt = NULL;
   char       *bodyfmt = NULL;
@@ -200,9 +201,9 @@ void *send_the_mail(
     }
 
   /* setup sendmail command line with -f from_whom */
-  i = strlen(SENDMAIL_CMD) + strlen(mailfrom) + strlen(mi->mailto) + 6;
+  cmdbuf_len = strlen(SENDMAIL_CMD) + strlen(mailfrom) + strlen(mi->mailto) + 6;
 
-  if ((cmdbuf = (char *)calloc(1, i + 1)) == NULL)
+  if ((cmdbuf = (char *)calloc(1, cmdbuf_len)) == NULL)
     {
     char tmpBuf[LOG_BUF_SIZE];
 
@@ -221,10 +222,8 @@ void *send_the_mail(
     return(NULL);
     }
 
-  sprintf(cmdbuf, "%s -f %s %s",
-    SENDMAIL_CMD,
-    mailfrom,
-    mi->mailto);
+  snprintf(cmdbuf, cmdbuf_len, "%s -f %s %s",
+    SENDMAIL_CMD, mailfrom, mi->mailto);
 
   outmail = popen(cmdbuf, "w");
 
