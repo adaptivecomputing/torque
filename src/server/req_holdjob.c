@@ -234,7 +234,7 @@ int req_holdjob(
       {
       free_br(dup_req);
       *hold_val = old_hold;  /* reset to the old value */
-      req_reject(rc, 0, preq, NULL, NULL);
+      req_reject(rc, 0, preq, NULL, "relay to mom failed");
 
       if (pjob == NULL)
         job_mutex.set_lock_on_exit(false);
@@ -253,7 +253,7 @@ int req_holdjob(
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
         unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
         pjob = NULL;
-        req_reject(rc, 0, preq, NULL, "relay to mom failed");
+        reply_ack(preq);
         }
       else
         job_mutex.set_lock_on_exit(false);
