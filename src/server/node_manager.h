@@ -49,8 +49,6 @@ int search_acceptable(struct pbsnode *pnode, struct prop *glorf, int skip, int v
 
 int can_reshuffle(struct pbsnode *pnode, struct prop *glorf, int skip, int vpreq, int gpureq, int pass);
 
-int MSNPrintF(char **BPtr, int *BSpace, char *Format, ...);
-
 int procs_available(int proc_ct);
 
 #ifdef GEOMETRY_REQUESTS
