@@ -2141,61 +2141,6 @@ static char *mod_spec(
 
 
 
-
-
-int MSNPrintF(
-
-  char **BPtr,   /* I */
-  int   *BSpace, /* I */
-  char  *Format, /* I */
-  ...)           /* I */
-
-  {
-  int len;
-
-  va_list Args;
-
-  if ((BPtr == NULL) ||
-      (BSpace == NULL) ||
-      (Format == NULL) ||
-      (*BSpace <= 0))
-    {
-    return(FAILURE);
-    }
-
-  va_start(Args,Format);
-
-  len = vsnprintf(*BPtr,*BSpace,Format,Args);
-
-  va_end(Args);
-
-  if (len <= 0)
-    {
-    return(FAILURE);
-    }
-  
-  if (len >= *BSpace)
-    {
-    /* truncation occurred due to attempted
-     * overflow! */
-
-    /* do not place BPtr past the end of the buffer:
-     * it is too dangerous (calling function could derference it
-     * to check for empty string, etc.)! */
-
-    *BPtr += (*BSpace) - 1;
-    *BSpace = 0;
-
-    return(FAILURE);
-    }
-  
-  *BPtr += len;
-  *BSpace -= len;
-
-  return(SUCCESS);
-  }  /* END MSNPrintF() */
-
-
 /*
  * Test a procs specification.
  *
