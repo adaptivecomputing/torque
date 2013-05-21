@@ -153,9 +153,9 @@ class addrcache
   char * getHostName(in_addr_t addr)
     {
     char *p = NULL;
-    pthread_mutex_lock(cacheMutex);
     char key[65];
     sprintf(key,"%d",addr);
+    pthread_mutex_lock(cacheMutex);
     int index = get_value_hash(addrToName,key);
     if(index >= 0) p = hosts.at(index);
     pthread_mutex_unlock(cacheMutex);
