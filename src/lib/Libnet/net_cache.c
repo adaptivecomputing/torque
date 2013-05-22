@@ -91,6 +91,12 @@
 #include <vector>
 
 
+/****************************************
+  *
+  * Class containing the cache of network addresses
+  * used by torque.
+  *
+  ****************************************/
 
 class addrcache
   {
@@ -112,7 +118,14 @@ class addrcache
       }
     pthread_mutex_lock(cacheMutex);
     int index = addrs.size();
-    /*
+    /*  NOTE: Not sure this will work.
+        torque only uses the first entry
+        in the linked list and this
+        commented out code would free
+        any subsequent entries, but
+        its not documented that you can do
+        something like this.
+
     if(pAddr->ai_next != NULL)
       {
       freeaddrinfo(pAddr->ai_next);
@@ -199,11 +212,19 @@ private:
 
 addrcache cache;
 
+/*******************************************************
+  * Get the host name associated with an address.
+  *****************************************************/
 char *get_cached_nameinfo(const struct sockaddr_in  *sai)
   {
   return cache.getHostName(sai->sin_addr.s_addr);
   } /* END get_cached_nameinfo() */
 
+/*******************************************************
+  * Get the full host name from the cache using either 
+  * the host name or the address depending on what is 
+  * supplied.
+  *****************************************************/
 char *get_cached_fullhostname(const char *hostname,const struct sockaddr_in *sai)
   {
   struct addrinfo *pAddrInfo = NULL;
@@ -214,6 +235,9 @@ char *get_cached_fullhostname(const char *hostname,const struct sockaddr_in *sai
   return pAddrInfo->ai_canonname;
   } /* END get_cached_fullhostname() */
 
+/*************************************************************
+  * Get the address from the host name.
+  ***********************************************************/
 struct sockaddr_in *get_cached_addrinfo(const char *hostname)
   {
   struct addrinfo *pAddrInfo = NULL;
@@ -223,6 +247,10 @@ struct sockaddr_in *get_cached_addrinfo(const char *hostname)
   return (struct sockaddr_in *)pAddrInfo->ai_addr;
   } /* END get_cached_addrinfo() */
 
+/*************************************************************
+  * Get the full addrinfo structure returned by getaddrinfo
+  * from the cache.
+  ************************************************************/
 struct addrinfo *get_cached_addrinfo_full(const char *hostname)
   {
   struct addrinfo *pAddrInfo = NULL;
@@ -232,8 +260,10 @@ struct addrinfo *get_cached_addrinfo_full(const char *hostname)
   return pAddrInfo;
   } /* END get_cached_addrinfo() */
 
-
-
+/*****************************************************************************
+  * Add a new addrinfo struct to the cache along with the host name if its not
+  * already in the cache.
+  ***************************************************************************/
 struct addrinfo * insert_addr_name_info(struct addrinfo *pAddrInfo,const char *host)
   {
   if(pAddrInfo == NULL)
