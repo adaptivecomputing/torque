@@ -405,6 +405,7 @@ void post_checkpointsend(
   {
   int                   code;
   job                  *pjob;
+  bool                 preq_free_done = FALSE;
 
   pbs_attribute        *pwait;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
@@ -476,14 +477,16 @@ void post_checkpointsend(
       
       /* continue to start job running */
 
-      svr_strtjob2(&pjob, NULL);
+      svr_strtjob2(&pjob, preq);
+      preq_free_done = TRUE;
       }
 
     if (pjob == NULL)
       job_mutex.set_lock_on_exit(false);
     }    /* END if (pjob != NULL) */
 
-  free_br(preq); /* close connection and release request */
+  if (!preq_free_done)
+    free_br(preq); /* close connection and release request */
 
   return;
   }  /* END post_checkpointsend() */

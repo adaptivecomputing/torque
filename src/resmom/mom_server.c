@@ -1479,6 +1479,7 @@ void mom_server_all_update_stat(void)
   node_comm_t *nc = NULL;
   int          sindex;
   int          rc;
+  pid_t        pid;
 
   time_now = time(NULL);
 
@@ -1501,6 +1502,28 @@ void mom_server_all_update_stat(void)
   if (LOGLEVEL >= 6)
     {
     log_record(PBSEVENT_SYSTEM, 0, __func__, "composing status update for server");
+    }
+
+  /* It is possible that pbs_server may get busy and start queing incoming requests and not be able 
+     to process them right away. If pbs_mom is waiting for a reply to a statuys update that has 
+     been queued and at the same time the server makes a request to the mom we can get stuck
+     in a pseudo live-lock state. That is the server is waiting for a response from the mom and
+     the mom is waiting for a response from the server. neither of which will come until a request times out.
+     If we fork the status updates this alleviates the problem by making one less request from the
+     mom single threaded */
+  pid = fork();
+
+  if (pid < 0)
+    {
+    log_record(PBSEVENT_SYSTEM, 0, __func__, "Failed to fork stat update process");
+    return;
+    }
+
+  if (pid > 0)
+    {
+    /* We are the parent */
+    LastServerUpdateTime = time_now;
+    return;
     }
  
 #ifdef NUMA_SUPPORT
@@ -1565,7 +1588,7 @@ void mom_server_all_update_stat(void)
       close(nc->stream);
     }
  
-  return;
+  exit(0);
   }  /* END mom_server_all_update_stat() */
 
 
