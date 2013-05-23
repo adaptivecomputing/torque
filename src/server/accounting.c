@@ -230,48 +230,40 @@ static char *acct_job(
   /* user */
 
   sprintf(ptr, "owner=%s ",
-          pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str);
+    pjob->ji_wattr[(int)JOB_ATR_job_owner].at_val.at_str);
 
-
+  ptr += strlen(ptr);
  
   /* For large clusters strings can get pretty long. We need to see if there
      is a need to allocate a bigger buffer */
 
   runningBufSize -= strlen(*Buf);
 
-  newStringLen = strlen("exec_host=")+strlen(pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str);
-  if(runningBufSize <= newStringLen+1)
-  {
-    Len = AdjustAcctBufSize(Buf, BufSize, newStringLen, pjob);
-    if(Len == 0)
-      return(ptr);
-    runningBufSize += newStringLen+EXTRA_PAD;
-  }
-
-  ptr = *Buf;
-  ptr += strlen(*Buf);
-
-  /* execution host name */
-  snprintf(ptr, runningBufSize, "exec_host=%s ",
-           pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str);
-
-  Len = strlen(ptr);
-
-	runningBufSize -= Len;
-
-/*  if (BufSize <= 100)
+  if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
     {
-    char tmpLine[1024];
+    newStringLen = strlen("exec_host=")+strlen(pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str);
+    
+    if (runningBufSize <= newStringLen+1)
+      {
+      Len = AdjustAcctBufSize(Buf, BufSize, newStringLen, pjob);
+      if (Len == 0)
+        return(ptr);
+      runningBufSize += newStringLen+EXTRA_PAD;
+      }
+    
+    ptr = *Buf;
+    ptr += strlen(*Buf);
 
-    sprintf(tmpLine, "account record for job %s too long, not fully recorded - increase PBS_ACCT_MAX_RCD",
-            pjob->ji_qs.ji_jobid);
+    /* execution host name */
+    snprintf(ptr, runningBufSize, "exec_host=%s ",
+             pjob->ji_wattr[(int)JOB_ATR_exec_host].at_val.at_str);
 
-    log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "Act", tmpLine);
+    Len = strlen(ptr);
 
-    return(ptr);
-    }*/
+    runningBufSize -= Len;
 
-  ptr += Len;
+    ptr += Len;
+    }
 
   /* now encode the job's resource_list attribute */
 

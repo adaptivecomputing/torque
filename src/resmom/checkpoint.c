@@ -1203,7 +1203,6 @@ int mom_checkpoint_job(
   char  path[MAXPATHLEN + 1];
   char  oldp[MAXPATHLEN + 1];
   char  file[MAXPATHLEN + 1];
-  int  filelen;
   task         *ptask;
 
   assert(pjob != NULL);
@@ -1226,7 +1225,6 @@ int mom_checkpoint_job(
 
   mkdir(path, 0755);
 
-  filelen = strlen(path);
   strcpy(file, path);
 
 #ifdef _CRAY
