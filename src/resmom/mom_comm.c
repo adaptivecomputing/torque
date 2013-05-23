@@ -7729,7 +7729,7 @@ static int adoptSession(
 
   pid_t  sid,
   pid_t  pid,
-  char  *id,
+  char  *jobid,
   int    command,
   char  *cookie)
 
@@ -7758,12 +7758,28 @@ static int adoptSession(
 
     if (command == TM_ADOPT_JOBID)
       {
-      if (strcmp(id, pjob->ji_qs.ji_jobid) == 0)
+      if (strcmp(jobid, pjob->ji_qs.ji_jobid) == 0)
         break;
+      else if (strchr(pjob->ji_qs.ji_jobid, '.') == NULL)
+        {
+        char *dot = strchr(jobid, '.');
+
+        if (dot != NULL)
+          {
+          *dot = '\0';
+          if (strcmp(jobid, pjob->ji_qs.ji_jobid) == 0)
+            {
+            *dot = '.';
+            break;
+            }
+            
+          *dot = '.';
+          }
+        }
       }
     else
       {
-      if (strcmp(id, pjob->ji_altid) == 0)
+      if (strcmp(jobid, pjob->ji_altid) == 0)
         break;
       }
     }
@@ -7773,7 +7789,7 @@ static int adoptSession(
     /* Didn't find a job with this resource id. Complain. */
     (void)sprintf(log_buffer,
       "Adoption rejected: no job with id %1.30s",
-      id);
+      jobid);
     log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
                "adoptSession()", log_buffer);
     return TM_ERROR;
@@ -7901,7 +7917,7 @@ static int adoptSession(
 
   /* next_sample_time = 45; */
 
-  (void)sprintf(log_buffer, "Task adopted. id=%1.30s, sid = %d", id, sid);
+  (void)sprintf(log_buffer, "Task adopted. id=%1.30s, sid = %d", jobid, sid);
 
   DBPRT(("%s\n", log_buffer));
 
