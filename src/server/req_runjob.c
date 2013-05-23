@@ -718,7 +718,11 @@ void post_stagein(
           {
           /* continue to start job running */
 
-          svr_strtjob2(&pjob, NULL);
+          svr_strtjob2(&pjob, preq);
+          
+          /* svr_strjob2 would call finish_sendmom which would free preq 
+             in its reply_send_svr, set preq now to NULL to avoid double free */
+          preq = NULL;
           }
         }
       else
@@ -733,7 +737,8 @@ void post_stagein(
       job_mutex.set_lock_on_exit(false);
     }    /* END if (pjob != NULL) */
 
-  free_br(preq); /* close connection and release request */
+  if (preq)
+    free_br(preq); /* close connection and release request */
 
   return;
   }  /* END post_stagein() */
