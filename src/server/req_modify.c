@@ -694,7 +694,7 @@ int modify_whole_array(
   int   i;
   int   rc = PBSE_NONE;
   job  *pjob;
-  char           log_buf[LOCAL_LOG_BUF_SIZE];
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (LOGLEVEL >= 7)
     {
@@ -735,6 +735,8 @@ int modify_whole_array(
         unlock_ai_mutex(pa, __func__, NULL, 0);
         continue;
         }
+      else
+        unlock_ji_mutex(pjob, __func__, NULL, 0);
       }
     } /* END foreach job in array */
 
