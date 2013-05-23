@@ -302,7 +302,10 @@ int reply_send(
     }
 
 #ifndef PBS_MOM
-  if ((request->rq_type != PBS_BATCH_AsyModifyJob) || (request->rq_noreply == TRUE))
+  if ((request->rq_type != PBS_BATCH_AsyModifyJob) &&
+      (request->rq_type != PBS_BATCH_AsyrunJob) &&
+      (request->rq_type != PBS_BATCH_AsySignalJob)) ||
+      (request->rq_noreply == TRUE))
     {
 #endif
     free_br(request);
