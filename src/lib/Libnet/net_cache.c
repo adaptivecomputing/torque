@@ -108,13 +108,17 @@ class addrcache
     struct sockaddr_in *pINetAddr = (struct sockaddr_in *)pAddr->ai_addr;
     char key[65];
     sprintf(key,"%d",pINetAddr->sin_addr.s_addr);
-    int i;
-    if ((i = get_value_hash(addrToName,key)) >= 0)
+    pthread_mutex_lock(cacheMutex);
+    int i = get_value_hash(addrToName,key);
+    struct addrinfo *pTmpAddr = NULL;
+    if(i >= 0) pTmpAddr = addrs.at(i);
+    pthread_mutex_unlock(cacheMutex);
+    if (i >= 0)
       {
-      if (addrs.at(i) != pAddr)
+      if (pTmpAddr != pAddr)
         freeaddrinfo(pAddr);
 
-      return addrs.at(i);
+      return pTmpAddr;
       }
     pthread_mutex_lock(cacheMutex);
     int index = addrs.size();
@@ -132,11 +136,18 @@ class addrcache
       pAddr->ai_next = NULL;
       }
     */
-    addrs.push_back(pAddr);
-    char *priv_host = strdup(host);
-    hosts.push_back(priv_host);
-    add_hash(addrToName,index,strdup(key));
-    add_hash(nameToAddr,index,(void *)priv_host);
+    try
+      {
+      addrs.push_back(pAddr);
+      char *priv_host = strdup(host);
+      hosts.push_back(priv_host);
+      add_hash(addrToName,index,strdup(key));
+      add_hash(nameToAddr,index,(void *)priv_host);
+      }
+    catch(...)
+      {
+      pAddr = NULL;
+      }
     pthread_mutex_unlock(cacheMutex);
     return pAddr;
     }
