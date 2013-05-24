@@ -3243,7 +3243,7 @@ void process_opts(
             job_data *pVal;
             char tmpLine[65536];
 
-            //Append if there is already a value here.
+            /*Append if there is already a value here.*/
             if(hash_find(ji->job_attr,keyword,&pVal))
               {
               strcpy(tmpLine,pVal->value);
