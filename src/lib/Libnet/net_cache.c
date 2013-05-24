@@ -83,12 +83,13 @@
 #include <string.h>
 #include <stdio.h>
 #include <netdb.h> /* struct addrinfo */
+#include <vector>
+#include <stdexcept>
 
 #include "net_cache.h"
 #include "hash_table.h"
 #include "pbs_error.h"
 
-#include <vector>
 
 
 /****************************************
@@ -104,21 +105,34 @@ class addrcache
 
   struct addrinfo *addToCache(struct addrinfo *pAddr,const char *host)
     {
-    if(pAddr->ai_family != AF_INET) return NULL;
+    if (pAddr->ai_family != AF_INET)
+      return(NULL);
+
     struct sockaddr_in *pINetAddr = (struct sockaddr_in *)pAddr->ai_addr;
-    char key[65];
+    struct addrinfo    *pTmpAddr = NULL;
+    char                key[65];
+    int                 i;
+
     sprintf(key,"%d",pINetAddr->sin_addr.s_addr);
     pthread_mutex_lock(cacheMutex);
-    int i = get_value_hash(addrToName,key);
-    struct addrinfo *pTmpAddr = NULL;
-    if(i >= 0) pTmpAddr = addrs.at(i);
+    try 
+      {
+      i = get_value_hash(addrToName,key);
+      if (i >= 0) 
+        pTmpAddr = addrs.at(i);
+      }
+    catch (const std::out_of_range &oor)
+      {
+      remove_hash(addrToName, key);
+      }
+
     pthread_mutex_unlock(cacheMutex);
     if (i >= 0)
       {
       if (pTmpAddr != pAddr)
         freeaddrinfo(pAddr);
 
-      return pTmpAddr;
+      return(pTmpAddr);
       }
     pthread_mutex_lock(cacheMutex);
     int index = addrs.size();
@@ -147,7 +161,10 @@ class addrcache
     catch(...)
       {
       pAddr = NULL;
+      remove_hash(addrToName, key);
+      remove_hash(nameToAddr, host);
       }
+
     pthread_mutex_unlock(cacheMutex);
     return pAddr;
     }
