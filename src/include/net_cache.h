@@ -79,6 +79,9 @@
 
 #include <netinet/in.h>
 
+#define PERMANENT_SOCKET_FAIL -2
+#define TRANSIENT_SOCKET_FAIL -1
+
 
 char               *get_cached_nameinfo(const struct sockaddr_in *sai);
 struct sockaddr_in *get_cached_addrinfo(const char *hostname);

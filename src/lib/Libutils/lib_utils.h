@@ -68,8 +68,6 @@ int add_network_entry(mom_hierarchy_t *nt, char *name, struct addrinfo *ai, unsi
 
 int rm_establish_connection(node_comm_t *nc);
 
-int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size);
-
 node_comm_t *force_path_update(mom_hierarchy_t *nt);
 
 node_comm_t *update_current_path(mom_hierarchy_t *nt);
