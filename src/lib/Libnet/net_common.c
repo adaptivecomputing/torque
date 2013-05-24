@@ -308,6 +308,18 @@ int socket_connect(
   return socket_connect_addr(local_socket, (struct sockaddr *)&remote, r_size, is_privileged, error_msg);
   }
 
+/*
+ * socket_conenct_addr()
+ *
+ * connects socket to the remote address specified
+ * @param socket - the socket that will be connected. On failure, set to a permanent or transient
+ * failure code.
+ * @param remote - the address that socket should be connected to
+ * @param remote_size - the size of the memory remote points to
+ * @param is_privileged - indicates whether socket is bound to a privileged port or not
+ * @param error_msg - pointer to an error msg buffer
+ */
+
 int socket_connect_addr(
     
   int              *local_socket,
@@ -319,7 +331,7 @@ int socket_connect_addr(
   {
   int cntr = 0;
   int rc = PBSE_NONE;
-  char tmp_buf[LOCAL_LOG_BUF_SIZE+1];
+  char tmp_buf[LOCAL_LOG_BUF_SIZE];
 
   while ((rc = connect(*local_socket, remote, remote_size)) != 0)
     {
@@ -327,12 +339,13 @@ int socket_connect_addr(
     switch (errno)
       {
       case ECONNREFUSED:    /* Connection refused */
-        snprintf(tmp_buf, LOCAL_LOG_BUF_SIZE, "cannot connect to port %d in %s - connection refused",
+        snprintf(tmp_buf, sizeof(tmp_buf), "cannot connect to port %d in %s - connection refused",
           *local_socket, __func__);
         *error_msg = strdup(tmp_buf);
+
         rc = PBS_NET_RC_RETRY;
         close(*local_socket);
-        *local_socket = -1;
+        *local_socket = PERMANENT_SOCKET_FAIL;
         cntr = 0;
         break;
 
@@ -370,7 +383,7 @@ int socket_connect_addr(
           else
             {
             close(*local_socket);
-            *local_socket = -1;
+            *local_socket = TRANSIENT_SOCKET_FAIL;
             /* Hit RES_PORT_RETRY, exit */
             cntr = 0;
             }
@@ -378,19 +391,22 @@ int socket_connect_addr(
         break;
 
       default:
-        snprintf(tmp_buf, LOCAL_LOG_BUF_SIZE, "cannot connect to port %d in %s - errno:%d %s", 
+        snprintf(tmp_buf, sizeof(tmp_buf), "cannot connect to port %d in %s - errno:%d %s", 
           *local_socket, __func__, errno, strerror(errno));
         *error_msg = strdup(tmp_buf);
+
         close(*local_socket);
         rc = PBSE_SOCKET_FAULT;
         cntr = 0;
-        *local_socket = -1;
+        *local_socket = PERMANENT_SOCKET_FAIL;
         break;
       }
+
     if (cntr == 0)
       break;
     }
-  return rc;
+
+  return(rc);
   } /* END socket_connect() */
 
 

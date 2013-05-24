@@ -3166,18 +3166,12 @@ int write_status_strings(
     }
   else if ((rc = DIS_tcp_wflush(chan)) == DIS_SUCCESS)
     {
-/*    read_tcp_reply(chan, IS_PROTOCOL, IS_PROTOCOL_VER, IS_STATUS, &rc);
-    
-    if (rc == DIS_SUCCESS)
+    if (LOGLEVEL >= 7)
       {
-      */
-      if (LOGLEVEL >= 7)
-        {
-        snprintf(log_buffer, sizeof(log_buffer),
-          "Successfully sent status update to mom %s", nc->name);
-        log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER,__func__,log_buffer);
-        }
-/*      } */
+      snprintf(log_buffer, sizeof(log_buffer),
+        "Successfully sent status update to mom %s", nc->name);
+      log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER,__func__,log_buffer);
+      }
     }
 
   if (chan != NULL)

@@ -112,6 +112,7 @@
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
 #include "net_connect.h"
+#include "net_cache.h"
 #include "rpp.h"
 #include "dis.h"
 #include "dis_init.h"
@@ -1867,6 +1868,9 @@ void send_im_error(
       if ((socket = get_reply_stream(pjob)) < 0)
         {
         rc = DIS_INVALID;
+
+        if (socket == PERMANENT_SOCKET_FAIL)
+          break;
         }
       else if ((local_chan = DIS_tcp_setup(socket)) == NULL)
         {
@@ -1953,9 +1957,13 @@ int reply_to_join_job_as_sister(
       socket = get_radix_reply_stream(pjob);
     else
       socket = get_reply_stream(pjob);
+
     if (socket < 0)
       {
       ret = PBSE_SOCKET_FAULT;
+
+      if (socket == PERMANENT_SOCKET_FAIL)
+        break;
       }
     else if ((local_chan = DIS_tcp_setup(socket)) == NULL)
       {
@@ -3470,7 +3478,7 @@ int get_radix_reply_stream(
   hnodent *np = pjob->ji_sisters;
 
   return (tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr)));
-  } /* END get_reply_stream() */
+  } /* END get_radix_reply_stream() */
 
 
 
@@ -3482,10 +3490,10 @@ int get_radix_reply_stream(
  */
 int im_poll_job_as_sister(
 
-    job        *pjob,     /* I */
-    char       *cookie,   /* I */
-    tm_event_t  event,    /* I */
-    tm_task_id  fromtask) /* I */
+  job        *pjob,     /* I */
+  char       *cookie,   /* I */
+  tm_event_t  event,    /* I */
+  tm_task_id  fromtask) /* I */
 
   {
   int              should_kill_job = FALSE;
@@ -4349,7 +4357,7 @@ int handle_im_get_tid_response(
     
     local_socket = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
     
-    if (local_socket == -1)
+    if (local_socket < 0)
       return(IM_DONE);
     
     if ((local_chan = DIS_tcp_setup(local_socket)) == NULL)
@@ -4477,6 +4485,10 @@ int send_im_error_addr(
     if ((sock = tcp_connect_sockaddr((struct sockaddr *)si,sizeof(struct sockaddr))) < 0)
       {
       rc = PBSE_SOCKET_FAULT;
+
+      if (sock == PERMANENT_SOCKET_FAIL)
+        break; 
+
       continue;
       }
     if ((local_chan = DIS_tcp_setup(sock)) == NULL)

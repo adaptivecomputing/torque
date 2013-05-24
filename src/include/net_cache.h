@@ -79,6 +79,9 @@
 
 #include <netinet/in.h>
 
+#define PERMANENT_SOCKET_FAIL -2
+#define TRANSIENT_SOCKET_FAIL -1
+
 
 typedef struct network_info
   {

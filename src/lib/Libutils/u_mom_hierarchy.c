@@ -88,6 +88,7 @@
 #include <arpa/inet.h> /* inet_ntoa */
 #include <unistd.h>
 
+#include "net_cache.h"
 #include "pbs_ifl.h"
 #include "dis.h"
 #include "pbs_error.h"
@@ -284,7 +285,7 @@ int rm_establish_connection(
  *
  * opens a socket to the node with sockaddr
  *
- * returns -1 on FAILURE, stream descriptor otherwise
+ * returns permanent or transient on FAILURE, stream descriptor otherwise
  */
 
 int tcp_connect_sockaddr(
@@ -295,7 +296,7 @@ int tcp_connect_sockaddr(
   {
   char *id = "tcp_connect_sockaddr";
   int rc = PBSE_NONE;
-  int stream = -1;
+  int stream = TRANSIENT_SOCKET_FAIL;
   char *err_msg = NULL;
   char local_err_buf[LOCAL_LOG_BUF];
   char *tmp_ip = NULL;
@@ -340,9 +341,12 @@ int tcp_connect_sockaddr(
 
   /* FAILURE */
   if (IS_VALID_STREAM(stream))
+    {
     close(stream);
+    stream = TRANSIENT_SOCKET_FAIL;
+    }
 
-  return(-1);
+  return(stream);
   } /* END tcp_connect_sockaddr() */
 
 

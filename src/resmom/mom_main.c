@@ -9223,9 +9223,6 @@ int resend_spawn_task_reply(
         {
         if ((ret = DIS_tcp_wflush(chan)) == DIS_SUCCESS)
           {
-/*          read_tcp_reply(chan, IM_PROTOCOL, IM_PROTOCOL_VER, st->ici->command, &ret);
- *          */
-
           if (ret == DIS_SUCCESS)
             {
             log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, st->ici->jobid, "Successfully re-sent spawn task reply");
