@@ -114,6 +114,7 @@ extern "C"
 #include "pbs_error.h"
 #include "svrfunc.h"
 #include "net_connect.h"
+#include "net_cache.h"
 #include "dis.h"
 #include "batch_request.h"
 #include "md5.h"
@@ -1896,8 +1897,6 @@ int open_tcp_stream_to_sisters(
       if ((rc = encode_DIS_svrattrl(chan, psatl)) == DIS_SUCCESS)
         DIS_tcp_wflush(chan);
       }
-
-    /*read_tcp_reply(chan, IM_PROTOCOL, IM_PROTOCOL_VER, IM_JOIN_JOB_RADIX, &exit_status);*/
 
     if (chan != NULL)
       DIS_tcp_cleanup(chan);
@@ -6138,6 +6137,8 @@ int send_join_job_to_sisters(
         
         close(stream);
         }
+      else if (stream == PERMANENT_SOCKET_FAIL)
+        break;
 
       if (ret == DIS_SUCCESS)
         {

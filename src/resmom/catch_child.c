@@ -21,6 +21,7 @@
 #include "attribute.h"
 #include "resource.h"
 #include "pbs_job.h"
+#include "net_cache.h"
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
@@ -195,6 +196,8 @@ int send_task_obit_response(
         close(stream);
         }
       }
+    else if (stream == PERMANENT_SOCKET_FAIL)
+      break;;
 
     if (ret == DIS_SUCCESS)
       break;
@@ -2136,7 +2139,6 @@ int send_job_obit_to_ms(
                 /* Don't wait for a reply from Mother Superior since this could lead to a 
                    live lock. That is Mother Superior is waiting for a read from us and
                    we are waiting on this read */
-                /* read_tcp_reply(stream, IM_PROTOCOL, IM_PROTOCOL_VER, IM_KILL_JOB, &rc);*/
                 /* SUCCESS - no more retries needed */
                 if (LOGLEVEL >= 6)
                   {
@@ -2159,7 +2161,8 @@ int send_job_obit_to_ms(
             
       close(stream);
       } /* END work on a valid stream */
-    
+    else if (stream == PERMANENT_SOCKET_FAIL)
+      break;
     
     usleep(10);
     } /* END retry loop */
