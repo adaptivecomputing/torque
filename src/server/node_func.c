@@ -1113,6 +1113,10 @@ static int process_host_name_part(
     }
 
   addr_info = insert_addr_name_info(addr_info,phostname);
+  if(addr_info == NULL)
+    {
+    return(PBSE_SYSTEM);
+    }
   snprintf(hname, sizeof(hname), "%s", addr_info->ai_canonname);
   
   totalipcount = 0;

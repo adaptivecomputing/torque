@@ -843,6 +843,7 @@ int pbs_getaddrinfo(const char *pNode,struct addrinfo *pHints,struct addrinfo **
   int rc;
   struct addrinfo hints;
   int retryCount = 3;
+  int addrFound = FALSE;
 
   if(ppAddrInfoOut == NULL)
     {
@@ -867,11 +868,23 @@ int pbs_getaddrinfo(const char *pNode,struct addrinfo *pHints,struct addrinfo **
 
   do
     {
-    rc = getaddrinfo(pNode,NULL,pHints,ppAddrInfoOut);
+    if(addrFound)
+      {
+      rc = 0;
+      }
+    else
+      {
+      rc = getaddrinfo(pNode,NULL,pHints,ppAddrInfoOut);
+      }
     if(rc == 0)
       {
+      addrFound = TRUE;
       *ppAddrInfoOut = insert_addr_name_info(*ppAddrInfoOut,pNode);
-      return 0;
+      if(*ppAddrInfoOut != NULL)
+        {
+        return 0;
+        }
+      rc = EAI_AGAIN;
       }
     if(rc != EAI_AGAIN)
       {
