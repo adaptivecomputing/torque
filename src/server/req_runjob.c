@@ -479,14 +479,16 @@ void post_checkpointsend(
       
       /* continue to start job running */
 
-      svr_strtjob2(&pjob, NULL);
+      svr_strtjob2(&pjob, preq);
+      preq = NULL;
       }
 
     if (pjob != NULL)
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     }    /* END if (pjob != NULL) */
 
-  free_br(preq); /* close connection and release request */
+  if (preq)
+    free_br(preq); /* close connection and release request */
 
   return;
   }  /* END post_checkpointsend() */
@@ -716,7 +718,8 @@ void post_stagein(
           {
           /* continue to start job running */
 
-          svr_strtjob2(&pjob, NULL);
+          svr_strtjob2(&pjob, preq);
+          preq = NULL;
           }
         }
       else
@@ -731,7 +734,8 @@ void post_stagein(
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     }    /* END if (pjob != NULL) */
 
-  free_br(preq); /* close connection and release request */
+  if (preq)
+    free_br(preq); /* close connection and release request */
 
   return;
   }  /* END post_stagein() */
