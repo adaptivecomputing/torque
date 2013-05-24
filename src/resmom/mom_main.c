@@ -114,7 +114,6 @@ unsigned int default_server_port = 0;
 
 int    exiting_tasks = 0;
 int    internal_state = 0;
-bool   need_proto_ver = false;
 
 /* info useful when analyzing core file */
 char           Torque_Info_Version[] = PACKAGE_VERSION;
@@ -2949,8 +2948,7 @@ int tcp_read_proto_version(
 
   tmpT = pbs_tcp_timeout;
 
-  if (need_proto_ver)
-    pbs_tcp_timeout = TCP_READ_PROTO_TIMEOUT;
+  pbs_tcp_timeout = TCP_READ_PROTO_TIMEOUT;
 
   *proto = disrsi(chan, &rc);
 
@@ -2995,7 +2993,11 @@ int tcp_read_proto_version(
 
   }
 
-int do_tcp(int socket,struct sockaddr_in *pSockAddr)
+int do_tcp(
+    
+  int                 socket,
+  struct sockaddr_in *pSockAddr)
+
   {
   int                       rc = PBSE_NONE;
   int                       proto = -1;
@@ -3044,14 +3046,7 @@ int do_tcp(int socket,struct sockaddr_in *pSockAddr)
         }
 
       if (rc == PBSE_NONE)
-        {
         rc = RM_PROTOCOL * -1;
-        need_proto_ver = true;
-        }
-      else
-        {
-        need_proto_ver = false;
-        }
       }    /* END BLOCK (case RM_PROTOCOL) */
 
     break;
@@ -3066,12 +3061,9 @@ int do_tcp(int socket,struct sockaddr_in *pSockAddr)
       while ((rc == PBSE_NONE) &&
              (tcp_chan_has_data(chan) == TRUE))
         {
-        need_proto_ver = true;
         if ((rc = tcp_read_proto_version(chan, &proto, &version)) == DIS_SUCCESS)
           rc = tm_request(chan, version);
         }
-
-      need_proto_ver = false;
 
       break;
 
@@ -3191,7 +3183,6 @@ void *tcp_request(
 
   rc = RM_PROTOCOL * -1;
 
-  need_proto_ver = false;
   while (rc == RM_PROTOCOL * -1)
     rc = do_tcp(socket,&sockAddr);
   
