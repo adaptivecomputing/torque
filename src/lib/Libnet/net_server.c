@@ -1259,13 +1259,17 @@ char *netaddr_pbs_net_t(
   char *return_value;
 
   if (ipadd == 0)
-    return "unknown";
-
-  sprintf(out, "%ld.%ld.%ld.%ld",
+    {
+    strcpy(out, "unknown");
+    }
+  else
+    {
+    sprintf(out, "%ld.%ld.%ld.%ld",
           (ipadd & 0xff000000) >> 24,
           (ipadd & 0x00ff0000) >> 16,
           (ipadd & 0x0000ff00) >> 8,
           (ipadd & 0x000000ff));
+    }
 
   return_value = calloc(1, strlen(out) + 1);
   strcpy(return_value,out);
