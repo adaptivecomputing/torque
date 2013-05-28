@@ -316,6 +316,18 @@ int socket_connect(
 
 
 
+/*
+ * socket_conenct_addr()
+ *
+ * connects socket to the remote address specified
+ * @param socket - the socket that will be connected. On failure, set to a permanent or transient
+ * failure code.
+ * @param remote - the address that socket should be connected to
+ * @param remote_size - the size of the memory remote points to
+ * @param is_privileged - indicates whether socket is bound to a privileged port or not
+ * @param error_msg - pointer to an error msg buffer
+ */
+
 int socket_connect_addr(
     
   int              *socket,
@@ -338,12 +350,12 @@ int socket_connect_addr(
     switch (errno)
       {
       case ECONNREFUSED:    /* Connection refused */
-        snprintf(tmp_buf, LOCAL_LOG_BUF_SIZE, "cannot connect to port %d in %s - connection refused",
+        snprintf(tmp_buf, sizeof(tmp_buf), "cannot connect to port %d in %s - connection refused",
           local_socket, __func__);
         *error_msg = strdup(tmp_buf);
         rc = PBS_NET_RC_RETRY;
         close(local_socket);
-        local_socket = -1;
+        local_socket = PERMANENT_SOCKET_FAIL;
         break;
 
       case EINPROGRESS:   /* Operation now in progress */
@@ -383,28 +395,30 @@ int socket_connect_addr(
           else
             {
             close(local_socket);
-            local_socket = -1;
+            local_socket = TRANSIENT_SOCKET_FAIL;
             }
           }
         break;
 
       default:
-        snprintf(tmp_buf, LOCAL_LOG_BUF_SIZE, "cannot connect to port %d in %s - errno:%d %s",
+
+        snprintf(tmp_buf, sizeof(tmp_buf), "cannot connect to port %d in %s - errno:%d %s",
           local_socket, __func__, errno, strerror(errno));
         *error_msg = strdup(tmp_buf);
         close(local_socket);
         rc = PBSE_SOCKET_FAULT;
-        local_socket = -1;
+        local_socket = PERMANENT_SOCKET_FAIL;
+
         break;
       }
 
-    if (local_socket == -1)
+    if (local_socket == PERMANENT_SOCKET_FAIL)
       break;
     }
 
-  if (rc == PBSE_NONE)
-    *socket = local_socket;
-  else if (local_socket != -1)
+  *socket = local_socket;
+  
+  if (local_socket >= 0)
     close(local_socket);
 
   return(rc);
