@@ -245,6 +245,7 @@
 #define ATTR_keepcompleted "keep_completed"
 #define ATTR_disallowedtypes "disallowed_types"
 #define ATTR_is_transit  "is_transit"
+#define ATTR_req_login_property "required_login_property"
 
 /* additional server attributes names */
 
