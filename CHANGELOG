@@ -1,5 +1,9 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
+4.2.4
+  b - TRQ-1802. Make the environment variable $PBS_NUM_NODES accurate for multi-req
+      jobs. 
+
 4.2.3
   b - TRQ-1653. Arrays depending on non-array jobs was broken. Fix this.
   b - Add retries on transient failures to setuid and seteuid calls. TRQ-1541. 
