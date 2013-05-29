@@ -124,6 +124,7 @@ class addrcache
     catch (const std::out_of_range &oor)
       {
       remove_hash(addrToName, key);
+      i = -1;
       }
 
     pthread_mutex_unlock(cacheMutex);
@@ -136,34 +137,36 @@ class addrcache
       }
     pthread_mutex_lock(cacheMutex);
     int index = addrs.size();
-    /*  NOTE: Not sure this will work.
-        torque only uses the first entry
-        in the linked list and this
-        commented out code would free
-        any subsequent entries, but
-        its not documented that you can do
-        something like this.
+    char *priv_host = NULL;
 
-    if(pAddr->ai_next != NULL)
-      {
-      freeaddrinfo(pAddr->ai_next);
-      pAddr->ai_next = NULL;
-      }
-    */
     try
       {
       addrs.push_back(pAddr);
-      char *priv_host = strdup(host);
-      hosts.push_back(priv_host);
-      add_hash(addrToName,index,strdup(key));
-      add_hash(nameToAddr,index,(void *)priv_host);
       }
     catch(...)
       {
-      pAddr = NULL;
-      remove_hash(addrToName, key);
-      remove_hash(nameToAddr, host);
+      pthread_mutex_unlock(cacheMutex);
+      return(NULL);
       }
+
+    try
+      {
+      priv_host = strdup(host);
+      hosts.push_back(priv_host);
+      }
+    catch(...)
+      {
+      addrs.pop_back();
+      if (priv_host != NULL)
+        free(priv_host);
+    
+      pthread_mutex_unlock(cacheMutex);
+
+      return(NULL);
+      }
+
+    add_hash(addrToName,index,strdup(key));
+    add_hash(nameToAddr,index,(void *)priv_host);
 
     pthread_mutex_unlock(cacheMutex);
     return pAddr;
@@ -172,9 +175,11 @@ class addrcache
   struct addrinfo * getFromCache(in_addr_t addr)
     {
     struct addrinfo *p = NULL;
-    pthread_mutex_lock(cacheMutex);
-    char key[65];
+    char             key[65];
+
     sprintf(key,"%d",addr);
+
+    pthread_mutex_lock(cacheMutex);
     int index = get_value_hash(addrToName,key);
     if(index >= 0) p = addrs.at(index);
     pthread_mutex_unlock(cacheMutex);
@@ -191,7 +196,7 @@ class addrcache
     return p;
     }
 
-  char * getHostName(in_addr_t addr)
+  char *getHostName(in_addr_t addr)
     {
     char *p = NULL;
     char key[65];
