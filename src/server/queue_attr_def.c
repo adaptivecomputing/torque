@@ -701,5 +701,17 @@ attribute_def que_attr_def[] =
     NO_USER_SET,
     ATR_TYPE_STR,
     PARENT_TYPE_QUE_ALL
-  }
+  },
+  /* QA_ATR_ReqLoginProperty */
+  { (char *)ATTR_req_login_property, /* required_login_property */
+    decode_str,
+    encode_str,
+    set_str,
+    comp_str,
+    free_str,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_STR,
+    PARENT_TYPE_QUE_ALL
+  },
   };

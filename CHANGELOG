@@ -3,6 +3,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 4.2.4
   b - TRQ-1802. Make the environment variable $PBS_NUM_NODES accurate for multi-req
       jobs. 
+  e - TRQ-1832. Add the ability to add a login_property to a job at the queue level
+      by setting required_login_property on the queue.
 
 4.2.3
   b - TRQ-1653. Arrays depending on non-array jobs was broken. Fix this.
