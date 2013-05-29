@@ -317,7 +317,7 @@ int socket_connect(
 
 
 /*
- * socket_conenct_addr()
+ * socket_connect_addr()
  *
  * connects socket to the remote address specified
  * @param socket - the socket that will be connected. On failure, set to a permanent or transient
@@ -418,7 +418,8 @@ int socket_connect_addr(
 
   *socket = local_socket;
   
-  if (local_socket >= 0)
+  if ((local_socket >= 0) &&
+      (rc != PBSE_NONE))
     close(local_socket);
 
   return(rc);
