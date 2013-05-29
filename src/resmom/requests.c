@@ -2456,7 +2456,7 @@ int req_stat_job(
   {
   int     all;
   int     resc_access_perm = preq->rq_perm & ATR_DFLAG_RDACC;
-  char   *name;
+  char    name[(PBS_MAXSVRJOBID > PBS_MAXDEST ? PBS_MAXSVRJOBID:PBS_MAXDEST)+1];
   job    *pjob;
 
   struct batch_reply *preply = &preq->rq_reply;
@@ -2468,9 +2468,10 @@ int req_stat_job(
    * a single job or all jobs
    */
 
-  name = preq->rq_ind.rq_status.rq_id;
+  snprintf(name, sizeof(name), "%s", preq->rq_ind.rq_status.rq_id);
+  name[(PBS_MAXSVRJOBID > PBS_MAXDEST ? PBS_MAXSVRJOBID:PBS_MAXDEST)] = '\0';
 
-  if ((*name == '\0') || (*name == '@'))
+  if ((name[0] == '\0') || (name[0] == '@'))
     {
     all = 1;
 
