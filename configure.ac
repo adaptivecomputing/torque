@@ -364,6 +364,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/lib/Libnet/test/net_client/Makefile
     src/lib/Libnet/test/net_common/Makefile
     src/lib/Libnet/test/net_server/Makefile
+    src/lib/Libnet/test/net_cache/Makefile
     src/lib/Libnet/test/net_set_clse/Makefile
     src/lib/Libnet/test/port_forwarding/Makefile
     src/lib/Libnet/test/rm/Makefile
