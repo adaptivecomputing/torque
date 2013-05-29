@@ -987,18 +987,17 @@ void *req_modifyjob(
   svrattrl             *plist;
   struct batch_request *preq = (struct batch_request *)vp;
 
-
-  if (LOGLEVEL >= 7)
-    {
-    snprintf(log_buf, sizeof(log_buf), "%s", pjob->ji_qs.ji_jobid);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-    }
-
   pjob = chk_job_request(preq->rq_ind.rq_modify.rq_objname, preq);
 
   if (pjob == NULL)
     {
     return(NULL);
+    }
+
+  if (LOGLEVEL >= 7)
+    {
+    snprintf(log_buf, sizeof(log_buf), "%s", pjob->ji_qs.ji_jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
 
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_modify.rq_attr);
