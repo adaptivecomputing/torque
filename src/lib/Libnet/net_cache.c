@@ -99,6 +99,9 @@
   *
   ****************************************/
 
+static pthread_mutex_t cacheMutex = PTHREAD_MUTEX_INITIALIZER;
+
+
 class addrcache
   {
   public:
@@ -114,7 +117,7 @@ class addrcache
     int                 i;
 
     sprintf(key,"%d",pINetAddr->sin_addr.s_addr);
-    pthread_mutex_lock(cacheMutex);
+    pthread_mutex_lock(&cacheMutex);
     try 
       {
       i = get_value_hash(addrToName,key);
@@ -127,7 +130,7 @@ class addrcache
       i = -1;
       }
 
-    pthread_mutex_unlock(cacheMutex);
+    pthread_mutex_unlock(&cacheMutex);
     if (i >= 0)
       {
       if (pTmpAddr != pAddr)
@@ -135,7 +138,7 @@ class addrcache
 
       return(pTmpAddr);
       }
-    pthread_mutex_lock(cacheMutex);
+    pthread_mutex_lock(&cacheMutex);
     int index = addrs.size();
     char *priv_host = NULL;
 
@@ -145,7 +148,7 @@ class addrcache
       }
     catch(...)
       {
-      pthread_mutex_unlock(cacheMutex);
+      pthread_mutex_unlock(&cacheMutex);
       return(NULL);
       }
 
@@ -160,7 +163,7 @@ class addrcache
       if (priv_host != NULL)
         free(priv_host);
     
-      pthread_mutex_unlock(cacheMutex);
+      pthread_mutex_unlock(&cacheMutex);
 
       return(NULL);
       }
@@ -168,7 +171,7 @@ class addrcache
     add_hash(addrToName,index,strdup(key));
     add_hash(nameToAddr,index,(void *)priv_host);
 
-    pthread_mutex_unlock(cacheMutex);
+    pthread_mutex_unlock(&cacheMutex);
     return pAddr;
     }
 
@@ -179,20 +182,20 @@ class addrcache
 
     sprintf(key,"%d",addr);
 
-    pthread_mutex_lock(cacheMutex);
+    pthread_mutex_lock(&cacheMutex);
     int index = get_value_hash(addrToName,key);
     if(index >= 0) p = addrs.at(index);
-    pthread_mutex_unlock(cacheMutex);
+    pthread_mutex_unlock(&cacheMutex);
     return p;
     }
 
   struct addrinfo * getFromCache(const char *hostName)
     {
     struct addrinfo *p = NULL;
-    pthread_mutex_lock(cacheMutex);
+    pthread_mutex_lock(&cacheMutex);
     int index = get_value_hash(nameToAddr,(void *)hostName);
     if(index >= 0) p = addrs.at(index);
-    pthread_mutex_unlock(cacheMutex);
+    pthread_mutex_unlock(&cacheMutex);
     return p;
     }
 
@@ -201,41 +204,38 @@ class addrcache
     char *p = NULL;
     char key[65];
     sprintf(key,"%d",addr);
-    pthread_mutex_lock(cacheMutex);
+    pthread_mutex_lock(&cacheMutex);
     int index = get_value_hash(addrToName,key);
     if(index >= 0) p = hosts.at(index);
-    pthread_mutex_unlock(cacheMutex);
+    pthread_mutex_unlock(&cacheMutex);
     return p;
     }
 
     addrcache()
     {
-        cacheMutex = (pthread_mutex_t *)calloc(1,sizeof(pthread_mutex_t));
-        pthread_mutex_init(cacheMutex,NULL);
-        nameToAddr = create_hash(INITIAL_HASH_SIZE);
-        addrToName = create_hash(INITIAL_HASH_SIZE);
+    nameToAddr = create_hash(INITIAL_HASH_SIZE);
+    addrToName = create_hash(INITIAL_HASH_SIZE);
     }
     ~addrcache()
     {
-        pthread_mutex_destroy(cacheMutex);
-        free(cacheMutex);
-        for(std::vector<struct addrinfo *>::iterator i = addrs.begin();i != addrs.end();i++)
-        {
-            freeaddrinfo(*i);
-        }
-        addrs.clear();
-        for(std::vector<char *>::iterator i = hosts.begin();i != hosts.end();i++)
-          {
-          free(*i);
-          }
-        hosts.clear();
-        free_hash(nameToAddr);
-        free_hash(addrToName);
+#if 0
+    for(std::vector<struct addrinfo *>::iterator i = addrs.begin();i != addrs.end();i++)
+      {
+      freeaddrinfo(*i);
+      }
+    addrs.clear();
+    for(std::vector<char *>::iterator i = hosts.begin();i != hosts.end();i++)
+      {
+      free(*i);
+      }
+    hosts.clear();
+    free_hash(nameToAddr);
+    free_hash(addrToName);
+#endif
     }
 private:
     hash_table_t *nameToAddr;
     hash_table_t *addrToName;
-    pthread_mutex_t *cacheMutex;
     std::vector<struct addrinfo *> addrs;
     std::vector<char *> hosts;
 };
