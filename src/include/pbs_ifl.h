@@ -226,6 +226,7 @@
 #define ATTR_rescmax     "resources_max"
 #define ATTR_rescmin     "resources_min"
 #define ATTR_featreqd    "features_required"
+#define ATTR_req_login_property "required_login_property"
 #define ATTR_rerunnable  "restartable"      /* TORQUE only */
 #define ATTR_rndzretry   "rendezvous_retry"
 #define ATTR_routedest   "route_destinations"

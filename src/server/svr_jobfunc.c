@@ -2911,6 +2911,31 @@ int add_required_features(
       }
     }
 
+  /* add the login property as well */
+  if (pque->qu_attr[QA_ATR_ReqLoginProperty].at_val.at_str != NULL)
+    {
+    if (pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str != NULL)
+      {
+      char *new_prop;
+      int len = strlen(pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str) + 1;
+      len += strlen(pque->qu_attr[QA_ATR_ReqLoginProperty].at_val.at_str) + 1; /* another 1 for ',' */
+      new_prop = (char *)calloc(1, len);
+
+      snprintf(new_prop, len, "%s,%s",
+        pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str,
+        pque->qu_attr[QA_ATR_ReqLoginProperty].at_val.at_str);
+      free(pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str);
+      pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str = new_prop;
+      }
+    else
+      {
+      char *new_prop = strdup(pque->qu_attr[QA_ATR_ReqLoginProperty].at_val.at_str);
+      pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str = new_prop;
+      pjob->ji_wattr[JOB_ATR_login_prop].at_flags |= ATR_VFLAG_SET;
+      }
+
+    }
+
   return(rc);
   } /* END add_required_features() */
 
