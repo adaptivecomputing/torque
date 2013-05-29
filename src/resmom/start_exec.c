@@ -1621,18 +1621,27 @@ int InitUserEnv(
   if (presc != NULL)
     {
     const char *ppn_str = "ppn=";
-    char *tmp;
+    char       *tmp;
+    char       *other_reqs;
     
     if (presc->rs_value.at_val.at_str != NULL)
       {
-      num_nodes = atoi(presc->rs_value.at_val.at_str);
+      num_nodes = strtol(presc->rs_value.at_val.at_str, NULL, 10);
       if (num_nodes != 0)
         {
         if ((tmp = strstr(presc->rs_value.at_val.at_str,ppn_str)) != NULL)
           {
           tmp += strlen(ppn_str);
           
-          num_ppn = atoi(tmp);
+          num_ppn = strtol(tmp, NULL, 10);
+          }
+
+        other_reqs = presc->rs_value.at_val.at_str;
+
+        while ((other_reqs = strchr(other_reqs, '+')) != NULL)
+          {
+          other_reqs += 1;
+          num_nodes += strtol(other_reqs, &other_reqs, 10);
           }
         }
       }
