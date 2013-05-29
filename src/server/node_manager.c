@@ -2672,6 +2672,7 @@ int add_login_node_if_needed(
         req.nodes = 1;
         req.ppn = 1;
         req.gpu = 0;
+        req.mic = 0;
         req.prop = NULL;
         save_node_for_adding(naji, login, &req, login->nd_name, FALSE);
         strcpy(*first_node_name_ptr, login->nd_name);
@@ -4244,17 +4245,29 @@ int set_nodes(
     free_alps_req_data_array(ard_array, num_reqs);
     return(PBSE_UNKNODE);
     }
+  
+  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
+  if (cray_enabled == TRUE)
+    {
+    if (naji->next != NULL)
+      {
+      pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str = strdup(naji->node_name);
+      pjob->ji_wattr[JOB_ATR_login_node_id].at_flags = ATR_VFLAG_SET;
+      }
+    }
 
   newstate = INUSE_JOB;
 
   if ((rc = build_hostlist_nodes_req(pjob, EMsg, spec, newstate, &hlist, &gpu_list, &mic_list, naji)) != PBSE_NONE)
     {
+    free_nodes(pjob);
     free_alps_req_data_array(ard_array, num_reqs);
     return(rc);
     }
 
   if ((rc = build_hostlist_procs_req(pjob, procs, newstate, &hlist)) != PBSE_NONE)
     {
+    free_nodes(pjob);
     free_alps_req_data_array(ard_array, num_reqs);
     return(rc);
     }
@@ -4289,11 +4302,9 @@ int set_nodes(
     return(rc);
     }
 
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
   if (cray_enabled == TRUE)
     {
     char *plus = strchr(*rtnlist, '+');
-    char *login_name;
 
     /* only do this if there's more than one host in the host list */
     if (plus != NULL)
@@ -4301,13 +4312,8 @@ int set_nodes(
       char *to_free = *rtnlist;
 
       *plus = '\0';
-      login_name = strdup(*rtnlist);
       *rtnlist = strdup(plus + 1);
       free(to_free);
-      
-
-      pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str = login_name;
-      pjob->ji_wattr[JOB_ATR_login_node_id].at_flags = ATR_VFLAG_SET;
       }
     }
 
