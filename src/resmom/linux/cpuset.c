@@ -1432,6 +1432,7 @@ int create_job_cpuset(
   else
 #endif /* GEOMETRY REQUESTS */
     {
+    remove_logical_processor_if_requested(&tcpus);
     if ((pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET) &&
         (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long != 0))
       /* If job's node_usage is singlejob, simply add all cpus */
