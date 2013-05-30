@@ -798,6 +798,20 @@ void log_record(
   thr_id = syscall(SYS_gettid);
   pthread_mutex_lock(log_mutex);
 
+#if SYSLOG
+  if (eventtype & PBSEVENT_SYSLOG)
+    {
+    if (syslogopen == 0)
+      {
+      openlog(msg_daemonname, LOG_NOWAIT, LOG_DAEMON);
+
+      syslogopen = 1;
+      }
+
+    syslog(LOG_ERR | LOG_DAEMON,"%s",text);
+    }
+#endif /* SYSLOG */
+
   if (log_opened < 1)
     {
     pthread_mutex_unlock(log_mutex);
