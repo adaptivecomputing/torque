@@ -930,12 +930,6 @@ void *modify_job_work(
   batch_request *preq = (struct batch_request *)vp;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
 
-  if (LOGLEVEL >= 7)
-    {
-    snprintf(log_buf, sizeof(log_buf), "%s", pjob->ji_qs.ji_jobid);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-    }
-
   pjob = svr_find_job(preq->rq_ind.rq_modify.rq_objname, FALSE);
 
   if (pjob == NULL)
@@ -944,6 +938,12 @@ void *modify_job_work(
     return(NULL);
     }
   
+  if (LOGLEVEL >= 7)
+    {
+    snprintf(log_buf, sizeof(log_buf), "%s", pjob->ji_qs.ji_jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
+
   /* pbs_mom sets the extend string to trigger copying of checkpoint files */
   if (preq->rq_extend != NULL)
     {
