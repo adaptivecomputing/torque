@@ -198,6 +198,7 @@ extern int LOGLEVEL;
 #define PBSEVENT_DEBUG  0x0080  /* common debug messages      */
 #define PBSEVENT_DEBUG2  0x0100  /* less needed debug messages */
 #define PBSEVENT_CLIENTAUTH 0X0200 /* TRQAUTHD login events */
+#define PBSEVENT_SYSLOG 0x0400   /* pass this event to the syslog as well (if defined) */
 #define PBSEVENT_FORCE  0x8000  /* set to force a messag      */
 
 /* Event Object Classes, see array class_names[] in ../lib/Liblog/pbs_log.c   */
