@@ -51,6 +51,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       4.2.3)
   b - TRQ-1802. Make the environment variable $PBS_NUM_NODES accurate for multi-req
       jobs. (backported from 4.2.4)
+  e - TRQ-1832. Add the ability to add a login_property to a job at the queue level
+      by setting required_login_property on the queue. (backported from 4.2.4)
 
 4.1.5
   b - For cray: make sure that reservations are released when jobs are requeued. TRQ-1572.
