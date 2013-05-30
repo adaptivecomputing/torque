@@ -2469,7 +2469,7 @@ int req_stat_job(
    */
 
   snprintf(name, sizeof(name), "%s", preq->rq_ind.rq_status.rq_id);
-  name[(PBS_MAXSVRJOBID > PBS_MAXDEST ? PBS_MAXSVRJOBID:PBS_MAXDEST)] = '\0';
+  name[sizeof(name) - 1] = '\0';
 
   if ((name[0] == '\0') || (name[0] == '@'))
     {
