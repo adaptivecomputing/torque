@@ -733,7 +733,7 @@ int create_alps_reservation(
       {
       snprintf(log_buffer, sizeof(log_buffer),
         "Successful reservation command is: %s", command->str);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+      log_event(PBSEVENT_JOB | PBSEVENT_SYSLOG, PBS_EVENTCLASS_JOB, __func__, log_buffer);
       }
 
     rc = 1;
@@ -760,7 +760,7 @@ int create_alps_reservation(
       {
       snprintf(log_buffer, sizeof(log_buffer),
         "Successful confirmation command is: %s", confirm_command_buf);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+      log_event(PBSEVENT_JOB | PBSEVENT_SYSLOG, PBS_EVENTCLASS_JOB, __func__, log_buffer);
       }
     }
   else
