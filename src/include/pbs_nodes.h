@@ -470,8 +470,6 @@ int tlist(tree *, char *, int);
 #define INUSE_BUSY             0x40 /* Node is busy (high loadave)  */
 
 #define INUSE_UNKNOWN          0x100 /* Node has not been heard from yet */
-#define INUSE_NEEDS_HELLO_PING 0x200  /*node needs to be informed of a*/
-/*new qmgr created node         */
 #define INUSE_SUBNODE_MASK     0xff /* bits both in nd_state and inuse */
 #define INUSE_COMMON_MASK  (INUSE_OFFLINE|INUSE_DOWN)
 /* state bits that go from node to subn */

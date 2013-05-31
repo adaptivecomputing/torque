@@ -876,7 +876,7 @@ int initialize_pbsnode(
   pnode->nd_status          = NULL;
   pnode->nd_note            = NULL;
   pnode->nd_psn             = NULL;
-  pnode->nd_state           = INUSE_NEEDS_HELLO_PING | INUSE_DOWN;
+  pnode->nd_state           = INUSE_DOWN;
   pnode->nd_first           = init_prop(pnode->nd_name);
   pnode->nd_last            = pnode->nd_first;
   pnode->nd_f_st            = init_prop(pnode->nd_name);
@@ -2504,7 +2504,7 @@ int setup_nodes(void)
         {
         if (strcmp(np->nd_name, line) == 0)
           {
-          np->nd_state = num | INUSE_NEEDS_HELLO_PING;
+          np->nd_state = num;
 
           /* exclusive bits are calculated later in set_old_nodes() */
           np->nd_state &= ~INUSE_JOB;
