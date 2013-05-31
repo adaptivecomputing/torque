@@ -1187,7 +1187,7 @@ int write_cached_statuses(
   
   if (ret == DIS_SUCCESS)
     updates_waiting_to_send = 0;
-  
+
   return(ret);
   } /* END write_cached_statuses() */
 
@@ -1503,8 +1503,17 @@ void mom_server_all_update_stat(void)
 
   if (pid > 0)
     {
-    /* We are the parent */
+    /* We are the parent clear out the status cache. */
+    int iter = -1;
+    received_node *rn = NULL;
+
     LastServerUpdateTime = time_now;
+
+    while ((rn = (received_node *)next_thing(received_statuses, &iter)) != NULL)
+      {
+      clear_dynamic_string(rn->statuses);
+      }
+
     return;
     }
  
