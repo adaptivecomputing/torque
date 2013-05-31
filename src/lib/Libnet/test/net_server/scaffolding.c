@@ -59,3 +59,12 @@ void log_record(int eventtype, int objclass, const char *objname, const char *te
   exit(1);
   }
 
+int pbs_getaddrinfo(const char *pNode,struct addrinfo *pHints,struct addrinfo **ppAddrInfoOut)
+  {
+  return(0);
+  }
+
+char *get_cached_nameinfo(const struct sockaddr_in *sai)
+  {
+  return(NULL);
+  }
