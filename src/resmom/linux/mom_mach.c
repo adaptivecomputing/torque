@@ -2160,7 +2160,8 @@ int kill_task(
   char          *id = "kill_task";
 
   int            ct = 0;  /* num of processes killed */
-  int			 ctThisIteration = 0;
+  int	         ctThisIteration = 0;
+  int            ctCleanIterations = 0;
   int            loopCt = 0;
   int            NumProcessesFound = 0; /* number of processes found with session ID */
 
@@ -2285,6 +2286,11 @@ int kill_task(
 				  ptask->ti_job->ji_qs.ji_jobid,
 				  log_buffer);
 				}
+
+  			    if((sig == SIGKILL)||(sig == SIGTERM))
+                            {
+                            ++ctThisIteration; //Ultimately this is  task that will need to be killed.
+                            }
 
 			  continue;
 			  }  /* END if (ps->pid == mompid) */
@@ -2414,7 +2420,15 @@ int kill_task(
 			}  /* END else ((ps->state == 'Z') || (ps->pid == 0)) */
 		  }    /* END if (sesid == ps->session) */
 		}      /* END while ((dent = readdir(pdir)) != NULL) */
-      }while((ctThisIteration != 0)&&(loopCt++ < 20));
+          if(ctThisIteration == 0)
+          { 
+          ctCleanIterations++;
+          }
+          else
+          {
+          ctCleanIterations=0;
+          }
+      }while((ctCleanIterations <= 5)&&(loopCt++ < 20));
 
   /* NOTE:  to fix bad state situations resulting from a hard crash, the logic
             below should be triggered any time no processes are found (NYI) */
