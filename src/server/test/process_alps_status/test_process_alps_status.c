@@ -39,14 +39,14 @@ START_TEST(set_ncpus_test)
   fail_unless(pnode.nd_nsn == 2, buf);
 
   pnode.nd_nsn = 0;
-  fail_unless(set_ncpus(&pnode,&parent, proc2) == 0, "Couldn't set ncpus to 4");
-  snprintf(buf, sizeof(buf), "ncpus should be 4 but is %d", pnode.nd_nsn);
-  fail_unless(pnode.nd_nsn == 4, buf);
-
-  pnode.nd_nsn = 0;
   fail_unless(set_ncpus(&pnode,&parent, proc3) == 0, "Couldn't set ncpus to 8");
   snprintf(buf, sizeof(buf), "ncpus should be 8 but is %d", pnode.nd_nsn);
   fail_unless(pnode.nd_nsn == 8, buf);
+
+  pnode.nd_nsn = 0;
+  fail_unless(set_ncpus(&pnode,&parent, proc2) == 0, "Couldn't set ncpus to 4");
+  snprintf(buf, sizeof(buf), "ncpus should be 4 but is %d", pnode.nd_nsn);
+  fail_unless(pnode.nd_nsn == 4, buf);
   }
 END_TEST
 
