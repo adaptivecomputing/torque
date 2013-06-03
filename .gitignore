@@ -318,6 +318,7 @@ src/lib/Libnet/test/conn_table/test_conn_table
 src/lib/Libnet/test/get_hostaddr/test_get_hostaddr
 src/lib/Libnet/test/get_hostname/test_get_hostname
 src/lib/Libnet/test/md5/test_md5
+src/lib/Libnet/test/net_cache/test_net_cache
 src/lib/Libnet/test/net_client/test_net_client
 src/lib/Libnet/test/net_common/test_net_common
 src/lib/Libnet/test/net_server/test_net_server
