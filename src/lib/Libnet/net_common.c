@@ -370,8 +370,11 @@ int socket_connect_addr(
           /* no network failures detected, socket available */
           break;
           }
-        else
+        else if (rc == PERMANENT_SOCKET_FAIL)
+          {
+          close(local_socket);
           local_socket = rc;
+          }
 
       /* socket not ready for writing after 5 timeout */
       case EINVAL:    /* Invalid argument */
