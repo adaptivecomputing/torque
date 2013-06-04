@@ -365,7 +365,12 @@ int socket_connect_addr(
           {
           close(*local_socket);
           *local_socket = rc;
+
+          /* do not fall through here */
+          break;
           }
+
+        /* essentially, only transient failures fall through */
 
       /* socket not ready for writing after 5 timeout */
       case EINVAL:    /* Invalid argument */
