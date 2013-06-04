@@ -216,7 +216,7 @@ PbsErrClient(PBSE_MUTEX, (char *)"Error allocating controling mutex (lock/unlock
 PbsErrClient(PBSE_THREADATTR, (char *)"Error setting thread attributes")
 PbsErrClient(PBSE_THREAD, (char *)"Error creating thread")
 PbsErrClient(PBSE_SELECT, (char *)"Error in socket select")
-PbsErrClient(PBSE_SOCKET_FAULT, (char *)"Error getting connection to socket")
+PbsErrClient(PBSE_SOCKET_FAULT, (char *)"Unable to get connection to socket")
 PbsErrClient(PBSE_SOCKET_WRITE, (char *)"Error writing data to socket")
 PbsErrClient(PBSE_SOCKET_READ, (char *)"Error reading data from socket")
 PbsErrClient(PBSE_SOCKET_CLOSE, (char *)"Socket close detected")
