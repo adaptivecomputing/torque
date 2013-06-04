@@ -355,12 +355,24 @@ int socket_connect_addr(
       case ETIMEDOUT:   /* Connection timed out */
       case EAGAIN:    /* Operation would block */
       case EINTR:     /* Interrupted system call */
+
         if ((rc = socket_wait_for_write(*local_socket)) == PBSE_NONE)
           {
           /* no network failures detected, socket available */
           break;
           }
-        /* socket not ready for writing after 5 timeout */
+        else if (rc == PERMANENT_SOCKET_FAIL)
+          {
+          close(*local_socket);
+          *local_socket = rc;
+
+          /* do not fall through here */
+          break;
+          }
+
+        /* essentially, only transient failures fall through */
+
+      /* socket not ready for writing after 5 timeout */
       case EINVAL:    /* Invalid argument */
       case EADDRINUSE:    /* Address already in use */
       case EADDRNOTAVAIL:   /* Cannot assign requested address */
@@ -411,6 +423,15 @@ int socket_connect_addr(
 
 
 
+/*
+ * socket_wait_for_write()
+ *
+ * connect failed, this function determines why. 
+ * if the failure is a permanent failure, pass that back to the caller
+ *
+ * @return TRANSIENT_SOCKET_FAIL if its not permanent, PERMANENT_SOCKET_FAIL
+ * if it is permanent.
+ */
 
 int socket_wait_for_write(
     
@@ -439,10 +460,31 @@ int socket_wait_for_write(
     }
   else
     {
-    errno = val;
-    rc = PBSE_SOCKET_WRITE;
+    switch (val)
+      {
+      case EINPROGRESS:
+      case EALREADY:    /* Operation already in progress */
+      case EISCONN:   /* Transport endpoint is already connected */
+      case ETIMEDOUT:   /* Connection timed out */
+      case EAGAIN:    /* Operation would block */
+      case EINTR:     /* Interrupted system call */
+      case EINVAL:    /* Invalid argument */
+      case EADDRINUSE:    /* Address already in use */
+      case EADDRNOTAVAIL:   /* Cannot assign requested address */
+
+        rc = TRANSIENT_SOCKET_FAIL;
+
+        break;
+
+      default:
+
+        rc = PERMANENT_SOCKET_FAIL;
+
+        break;
+      }
     }
-  return rc;
+
+  return(rc);
   } /* END socket_wait_for_write() */
 
 
