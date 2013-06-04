@@ -1468,7 +1468,7 @@ void print_server_port_to_stderr(
     {
     memcpy((void *)&hostaddr, (void *)s_addr, s_len);
     ip_addr = inet_ntoa(hostaddr);
-    fprintf(stderr, "Error communicating with %s(%s)\n", s_name, ip_addr);
+    fprintf(stderr, "Unable to communicate with %s(%s)\n", s_name, ip_addr);
     }
   else  
     {
