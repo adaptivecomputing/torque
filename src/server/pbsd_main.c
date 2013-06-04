@@ -259,6 +259,14 @@ int                     a_opt_init = -1;
 int                     wait_for_moms_hierarchy = FALSE;
 
 int                     route_retry_interval = 10; /* time in seconds to check routing queues */
+
+/* info useful when analyzing core file */
+char                    Torque_Info_Version[] = PACKAGE_VERSION;
+char                    Torque_Info_Version_Revision[] = GIT_HASH;
+char                    Torque_Info_Component[] = "pbs_server";
+char                    Torque_Info_SysVersion[BUF_SIZE];
+char                    Torque_Info_SysVersionSignature[BUF_SIZE];
+
 /* HA global data items */
 long                    HALockCheckTime = 0;
 long                    HALockUpdateTime = 0;
@@ -1774,6 +1782,20 @@ int main(
   extern char  pbs_server_name[];
   extern char *msg_svrdown; /* log message   */
   extern char *msg_startup1; /* log message   */
+
+  FILE      *fp;
+
+  /* populate a couple variables useful when analyzing a core file */
+  if ((fp = fopen("/proc/version", "r")) != NULL)
+    {
+    fread(Torque_Info_SysVersion, sizeof(Torque_Info_SysVersion), 1, fp);
+    fclose(fp);
+    }
+  if ((fp = fopen("/proc/version_signature", "r")) != NULL)
+    {
+    fread(Torque_Info_SysVersionSignature, sizeof(Torque_Info_SysVersionSignature), 1, fp);
+    fclose(fp);
+    }
 
   ProgName = argv[0];
   srand(get_random_number());
