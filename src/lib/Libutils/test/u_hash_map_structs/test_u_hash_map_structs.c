@@ -1,5 +1,5 @@
 
-#include "u_hash_map_structs_ct.h"
+#include "test_u_hash_map_structs.h"
 #include "u_hash_map_structs.h"
 #include <stdlib.h>
 #include <stdio.h>
