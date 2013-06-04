@@ -6095,6 +6095,7 @@ int send_join_job_to_sisters(
   int           *send_failed = (int *)calloc(nodenum, sizeof(int));
   int            unsent_count = nodenum - 1;
   std::set<int>  sisters_contacted;
+  bool             permanent_fail = false;
 
   errno = 0;
     
@@ -6102,7 +6103,7 @@ int send_join_job_to_sisters(
   for (i = 1; i < nodenum; i++)
     send_failed[i] = i;
 
-  for (retry_count = 0; retry_count < 5; retry_count++)
+  for (retry_count = 0; retry_count < 5 && permanent_fail == false; retry_count++)
     {
     if (unsent_count == 0)
       break;
@@ -6127,7 +6128,10 @@ int send_join_job_to_sisters(
         close(stream);
         }
       else if (stream == PERMANENT_SOCKET_FAIL)
+        {
+        permanent_fail = true;
         break;
+        }
 
       if (ret == DIS_SUCCESS)
         {
