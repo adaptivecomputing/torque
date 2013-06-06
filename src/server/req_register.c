@@ -2189,6 +2189,9 @@ int send_depend_req(
 
   struct batch_request *preq;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  pbs_net_t             svraddr1;
+  pbs_net_t             svraddr2;
+  int                   my_err;
 
   preq = alloc_br(PBS_BATCH_RegistDep);
 
@@ -2265,9 +2268,14 @@ int send_depend_req(
   get_batch_request_id(preq);
   strcpy(br_id, preq->rq_id);
 
+  svraddr1 = get_hostaddr(&my_err, server_name);
+  svraddr2 = get_hostaddr(&my_err, pparent->dc_svr);
+
   if ((rc = issue_to_svr(pparent->dc_svr, preq, NULL)) != PBSE_NONE)
     {
-    if (strcmp(pparent->dc_svr, server_name))
+    /* local requests have already been processed and freed. Do not attempt to
+     * free or reference again. */
+    if (svraddr1 != svraddr2)
       {
       free_br(preq);
       }
@@ -2279,7 +2287,9 @@ int send_depend_req(
 
     return(rc);
     }
-  else if (strcmp(pparent->dc_svr, server_name))
+  /* local requests have already been processed and freed. Do not attempt to
+   * free or reference again. */
+  else if (svraddr1 != svraddr2)
     postfunc(preq);
 
   return(PBSE_NONE);
