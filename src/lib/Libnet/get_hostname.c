@@ -118,7 +118,6 @@ int get_fullhostname(
   struct addrinfo  hints;
   char            *full_name;
 
-  int              index;
   int              tmp_len = 0;
 
   if ((shortname == NULL) || (shortname[0] == '\0'))
@@ -207,14 +206,6 @@ int get_fullhostname(
     }
 
   snprintf(namebuf, bufsize, "%s", addr_info->ai_canonname);
-
-  for (index = 0;index < bufsize;index++)
-    {
-    if (namebuf[index] == '\0')
-      break;
-
-    namebuf[index] = tolower(namebuf[index]);
-    }  /* END for (index) */
 
   /* SUCCESS */
   return(PBSE_NONE);
