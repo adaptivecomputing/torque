@@ -180,9 +180,6 @@ extern void scheduler_close();
 #define bool_t unsigned char
 #endif
 #define ISEMPTYSTR(STR)  ((STR)[0] == '\0')
-#ifndef MAX_CMD_ARGS
-#define MAX_CMD_ARGS 10
-#endif
 
 static void lock_out_ha();
 
@@ -211,8 +208,6 @@ static int    get_port (char *, unsigned int *, pbs_net_t *);
 static int    daemonize_server (int, pid_t *);
 int mutex_lock (mutex_t *);
 int mutex_unlock (mutex_t *);
-int get_file_info (char *,unsigned long *,long *,bool_t *,bool_t *);
-int get_full_path (char *,char *,int);
 int svr_restart();
 void          restore_attr_default (struct pbs_attribute *);
 
@@ -247,7 +242,6 @@ char                   *path_nodenote;
 char                   *path_nodenote_new;
 char                   *path_checkpoint;
 char                   *path_jobinfo_log;
-char                   *ArgV[MAX_CMD_ARGS];
 extern char            *msg_daemonname;
 extern char            *msg_info_server; /* Server information message   */
 const char             *pbs_o_host = "PBS_O_HOST";
@@ -265,11 +259,18 @@ int                     a_opt_init = -1;
 int                     wait_for_moms_hierarchy = FALSE;
 
 int                     route_retry_interval = 10; /* time in seconds to check routing queues */
+
+/* info useful when analyzing core file */
+char                    Torque_Info_Version[] = PACKAGE_VERSION;
+char                    Torque_Info_Version_Revision[] = GIT_HASH;
+char                    Torque_Info_Component[] = "pbs_server";
+char                    Torque_Info_SysVersion[BUF_SIZE];
+char                    Torque_Info_SysVersionSignature[BUF_SIZE];
+
 /* HA global data items */
 long                    HALockCheckTime = 0;
 long                    HALockUpdateTime = 0;
 char                    HALockFile[MAXPATHLEN+1];
-char                    OriginalPath[MAXPATHLEN+1];
 mutex_t                 EUIDMutex; /* prevents thread from trying to lock the file
                                       from a different euid */
 int                     HALockFD;
@@ -423,7 +424,7 @@ int process_pbs_server_port(
       
       if (rc != DIS_SUCCESS)
         {
-        log_err(-1,  __func__, (char *)"Cannot read version - skipping this request.\n");
+        log_err(-1,  __func__, "Cannot read version - skipping this request.\n");
         rc = PBSE_SOCKET_CLOSE; 
         break;
         }
@@ -458,7 +459,13 @@ int process_pbs_server_port(
               }
             }
 
-          rc = PBSE_SOCKET_CLOSE;
+          if (chan->IsTimeout)
+            {
+            chan->IsTimeout = 0;
+            rc = PBSE_TIMEOUT;
+            }
+          else
+	    rc = PBSE_SOCKET_CLOSE;
           }
         else
           {
@@ -603,10 +610,12 @@ int PBSShowUsage(
   fprintf(stderr, "Usage: %s\n",
           ProgName);
 
-  fprintf(stderr, "  -A <INT>  \\\\ Alarm Time\n");
+  fprintf(stderr, "  -A <PATH> \\\\ Path to accounting file\n");
   fprintf(stderr, "  -a <BOOL> \\\\ Scheduling\n");
-  fprintf(stderr, "  -d <PATH> \\\\ Homedir\n");
+  fprintf(stderr, "  -c        \\\\ Wait for mom hierarchy\n");
   fprintf(stderr, "  -D        \\\\ Debugmode\n");
+  fprintf(stderr, "  -d <PATH> \\\\ Homedir\n");
+  fprintf(stderr, "  -e        \\\\ Enable any mom\n");
   fprintf(stderr, "  -f        \\\\ Force Overwrite Serverdb\n");
   fprintf(stderr, "  -h        \\\\ Print Usage\n");
   fprintf(stderr, "  -H <HOST> \\\\ Daemon Hostname\n");
@@ -618,9 +627,10 @@ int PBSShowUsage(
   fprintf(stderr, "  -S <PORT> \\\\ Scheduler Port\n");
   fprintf(stderr, "  -t <TYPE> \\\\ Startup Type (hot, warm, cold, create)\n");
   fprintf(stderr, "  -v        \\\\ Version\n");
+  fprintf(stderr, "  --about   \\\\ Print information about pbs_server\n");
   fprintf(stderr, "  --ha      \\\\ High Availability MODE\n");
   fprintf(stderr, "  --help    \\\\ Print Usage\n");
-  fprintf(stderr, "  --version \\\\ Version\n");
+  fprintf(stderr, "  --version \\\\ Version and commit\n");
 
   if (EMsg != NULL)
     {
@@ -689,7 +699,7 @@ void parse_command_line(
 
         if (!strcmp(optarg, "version"))
           {
-          fprintf(stderr, "Version: %s\nRevision: %s \n",
+          fprintf(stderr, "Version: %s\nCommit: %s \n",
             PACKAGE_VERSION, GIT_HASH);
 
           exit(0);
@@ -952,6 +962,7 @@ void parse_command_line(
       case 'm':
 
         MultiMomMode = 1;
+
         break;
 
       case 'M':
@@ -1537,6 +1548,7 @@ void main_loop(void)
         snprintf(log_buf, sizeof(log_buf), "tcp timeout was %ld resetting to 300",
           timeout);
         timeout = 300;
+        set_svr_attr(SRV_ATR_tcp_timeout, &timeout);
         log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
         }
       
@@ -1640,7 +1652,11 @@ void main_loop(void)
     get_svr_attr_l(SRV_ATR_State, &state);
     }    /* END while (*state != SV_STATE_DOWN) */
 
-  pthread_cancel(accept_thread_id);
+  if(accept_thread_id != (pthread_t)-1)
+    {
+    pthread_cancel(accept_thread_id);
+    accept_thread_id = (pthread_t)-1;
+    }
 
   svr_save(&server, SVR_SAVE_FULL); /* final recording of server */
 
@@ -1758,7 +1774,6 @@ int main(
   int          local_errno = 0;
   char         lockfile[MAXPATHLEN + 1];
   char        *pc = NULL;
-  char        *pathPtr = NULL;
   char         EMsg[MAX_LINE];
   char         tmpLine[MAX_LINE];
   char         log_buf[LOCAL_LOG_BUF_SIZE];
@@ -1767,6 +1782,20 @@ int main(
   extern char  pbs_server_name[];
   extern char *msg_svrdown; /* log message   */
   extern char *msg_startup1; /* log message   */
+
+  FILE      *fp;
+
+  /* populate a couple variables useful when analyzing a core file */
+  if ((fp = fopen("/proc/version", "r")) != NULL)
+    {
+    fread(Torque_Info_SysVersion, sizeof(Torque_Info_SysVersion), 1, fp);
+    fclose(fp);
+    }
+  if ((fp = fopen("/proc/version_signature", "r")) != NULL)
+    {
+    fread(Torque_Info_SysVersionSignature, sizeof(Torque_Info_SysVersionSignature), 1, fp);
+    fclose(fp);
+    }
 
   ProgName = argv[0];
   srand(get_random_number());
@@ -1782,24 +1811,7 @@ int main(
   umask(022);
 
   /* save argv and the path for later use */
-  for (i = 0;i < argc;i++)
-    {
-    ArgV[i] = (char *)calloc(sizeof(char), (strlen(argv[i])+1));
-
-    if (ArgV[i] == NULL)
-      {
-      printf("ERROR:      failed to allocate memory to save argv, shutting down\n");
-
-      exit(-1);
-      }
-
-    strcpy(ArgV[i],argv[i]);
-    }
-
-  /* save the path before we go into the background.  If we don't do this
-   * we can't restart the server because the path will change */
-  pathPtr = getenv("PATH");
-  snprintf(OriginalPath,sizeof(OriginalPath),"%s",pathPtr);
+  save_args(argc, argv);
 
   /* close files for security purposes */
   /* do the following before getuid() and geteuid() can trigger
@@ -3077,193 +3089,6 @@ static int daemonize_server(
 
 
 
-
-
-
-/**
- * gets attributes for the specified file/directory
- *
- * @param FileName (I)
- * @param ModifyTime (O) [optional]
- * @param FileSize   (O) [optional]
- * @param IsExe      (O) [optional]
- * @param IsDir      (O) [optional]
- */
-
-int get_file_info(
-
-  char          *FileName,    /* I */
-  unsigned long *ModifyTime,  /* O (optional */
-  long          *FileSize,    /* O (optional */
-  bool_t        *IsExe,       /* O (optional */
-  bool_t        *IsDir)       /* O (optional */
-
-  {
-  int          rc;
-  char        *ptr;
-  char         log_buf[LOCAL_LOG_BUF_SIZE];
-
-  struct stat  sbuf;
-
-  if (IsExe != NULL)
-    *IsExe = FALSE;
-
-  if (ModifyTime != NULL)
-    *ModifyTime = 0;
-
-  if (FileSize != NULL)
-    *FileSize = 0;
-
-  if (IsDir != NULL)
-    *IsDir = FALSE;
-
-  if ((FileName == NULL) || (FileName[0] == '\0'))
-    {
-    return(FAILURE);
-    }
-
-  /* FORMAT:   <FILENAME>[ <ARG>]... */
-
-  /* NOTE:  mask off, then restore possible args */
-  ptr = strchr(FileName,' ');
-
-  if (ptr != NULL)
-    *ptr = '\0';
-
-  rc = stat(FileName,&sbuf);
-
-  if (rc == -1)
-    {
-    sprintf(log_buf,"INFO:      cannot stat file '%s', errno: %d (%s)\n",
-      FileName,
-      errno,
-      strerror(errno));
-
-    log_err(errno, __func__, log_buf);
-
-    return(FAILURE);
-    }
-
-  if (ModifyTime != NULL)
-    {
-    *ModifyTime = (unsigned long)sbuf.st_mtime;
-    }
-
-  if (FileSize != NULL)
-    {
-    *FileSize = (long)sbuf.st_size;
-    }
-
-  if (IsExe != NULL)
-    {
-    if (sbuf.st_mode & S_IXUSR)
-      *IsExe = TRUE;
-    else
-      *IsExe = FALSE;
-    }
-
-  if (IsDir != NULL)
-   {
-   if (sbuf.st_mode & S_IFDIR)
-     *IsDir = TRUE;
-   else
-     *IsDir = FALSE;
-   }
-
-  return(SUCCESS);
-  } /* end get_file_info() */
-
-
-
-
-/**
- * gets the full path for command
- *
- * @return SUCCESS if the path is found, FAILURE otherwise
- */
-
-int get_full_path(
-
-  char *Cmd,         /* I */
-  char *GoodCmd,     /* O */
-  int   GoodCmdLen)  /* O */
-
-  {
-  char   *TokPtr = NULL;
-  char   *Delims = (char *)":;"; /* windows and unix path deliminators */
-  char   *PathLocation;
-  char    tmpPath[MAX_LINE];
-  bool_t  IsExe = FALSE;
-  bool_t  IsDir = FALSE;
-
-  if (Cmd[0] == '/')
-    {
-    /* absolute path specified */
-
-    if (get_file_info(Cmd,NULL,NULL,&IsExe,&IsDir) == FAILURE)
-      {
-      return(FAILURE);
-      }
-
-    if ((IsExe == FALSE) && (IsDir == FALSE))
-      {
-      return(FAILURE);
-      }
-
-    snprintf(GoodCmd,GoodCmdLen,"%s",Cmd);
-
-    return(SUCCESS);
-    }
-
-  PathLocation = strtok_r(OriginalPath,Delims,&TokPtr);
-
-  while (PathLocation != NULL)
-    {
-    if (strlen(PathLocation) <= 0)
-      {
-      PathLocation = strtok_r(NULL,Delims,&TokPtr);
-
-      continue;
-      }
-
-    if (PathLocation[strlen(PathLocation) - 1] == '/')
-      {
-      sprintf(tmpPath,"%s%s",
-        PathLocation,
-        Cmd);
-      }
-    else
-      {
-      sprintf(tmpPath,"%s/%s",
-        PathLocation,
-        Cmd);
-      }
-
-    if (get_file_info(tmpPath,NULL,NULL,&IsExe,NULL) == FAILURE)
-      {
-      PathLocation = strtok_r(NULL,Delims,&TokPtr);
-
-      continue;
-     }
-
-    if (IsExe == FALSE)
-      {
-      PathLocation = strtok_r(NULL,Delims,&TokPtr);
-
-      continue;
-      }
-
-    snprintf(GoodCmd,GoodCmdLen,"%s",tmpPath);
-
-    return(SUCCESS);
-    } /* END while (PathLocation != NULL) */
-
-  return(FAILURE);
-  } /* END get_full_path() */
-
-
-
-
 /**
  *  * Restarts the pbs_server
  *   */
@@ -3273,44 +3098,10 @@ int svr_restart()
   {
   int   rc;
 
-  char  FullCmd[MAX_LINE];
   char  log_buf[LOCAL_LOG_BUF_SIZE];
-
-  if (get_full_path(
-        ArgV[0],
-        FullCmd,
-        sizeof(FullCmd)) == FAILURE)
-    {
-    sprintf(log_buf, "ALERT:      cannot locate full path for '%s'\n", ArgV[0]);
-
-    log_err(-1, __func__, log_buf);
-
-    exit(-10);
-    }
 
   /* shut down network connections */
   net_close(-1);   /* close all network connections */
-
-  /* copying FullCmd to ArV[0] is necessary for multiple restarts because
-   * the path changes when we run pbs_server in the background. */
-
-  if (strcmp(FullCmd,ArgV[0]) != 0)
-    {
-    free(ArgV[0]);
-
-    ArgV[0] = (char *)calloc(sizeof(char), (strlen(FullCmd) + 1));
-
-    if (ArgV[0] == NULL)
-      {
-      /* could not calloc */
-
-      log_err(errno, __func__, "ERROR:   (char *)  cannot allocate memory for full command, cannot restart\n");
-
-      exit(-10);
-      }
-
-    strcpy(ArgV[0],FullCmd);
-    }
 
   sprintf(log_buf, "INFO:     about to exec '%s'\n", ArgV[0]);
 
@@ -3320,7 +3111,7 @@ int svr_restart()
   log_close(1);
   pthread_mutex_unlock(log_mutex);
 
-  if ((rc = execv(FullCmd,ArgV)) == -1)
+  if ((rc = execv(ArgV[0],ArgV)) == -1)
     {
     /* exec failed */
 

@@ -2575,8 +2575,6 @@ errtoken2:
 
 
 
-
-
 /*
  * delete_a_subnode - mark a (last) single subnode entry as deleted
  */
@@ -2613,6 +2611,8 @@ void delete_a_subnode(
 
   if ((psubn->inuse & INUSE_JOB) == 0)
     pnode->nd_nsnfree--;
+
+  pnode->nd_nsn--;
 
   subnode_delete(psubn);
   memset(psubn, 252, sizeof(struct pbssubn));
@@ -2719,6 +2719,7 @@ int node_np_action(
 
   return 0;
   } /* END node_np_action */
+
 
 
 /*

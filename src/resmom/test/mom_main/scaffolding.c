@@ -16,9 +16,9 @@
 #include "pbs_nodes.h" /* pbsnode */
 #include "attribute.h" /* pbs_attribute */
 #include "resource.h" /* resource_def */
-#include "prolog.h" /* PBS_PROLOG_TIME */
 #include "log.h" /* LOG_BUF_SIZE */
 #include "tcp.h"
+#include "mom_config.h"
 
 mom_server     mom_servers[PBS_MAXSERVER];
 resizable_array *received_statuses;
@@ -44,13 +44,111 @@ time_t wait_time = 10;
 pthread_mutex_t *log_mutex;
 dynamic_string  *mom_status;
 char log_buffer[LOG_BUF_SIZE];
-
-
+int job_exit_wait_time;
+char             config_file[_POSIX_PATH_MAX] = "config";
+char             xauth_path[MAXPATHLEN];
+int              MOMConfigRReconfig        = 0;
+long             TJobStartBlockTime = 5; /* seconds to wait for job to launch before backgrounding */
+int              ServerStatUpdateInterval = 45;
+int              ignmem;
+int              igncput;
+int              PBSNodeCheckInterval = 1;
+int              hostname_specified = 0;
+char             rcp_path[MAXPATHLEN];
+char             tmpdir_basename[MAXPATHLEN];  /* for $TMPDIR */
+float            max_load_val = -1.0;
+int              MOMConfigDownOnError      = 0;
+int              mask_num = 0;
+char             PBSNodeMsgBuf[1024];
+int              MOMConfigRestart          = 0;
+attribute_def    job_attr_def[1];
+int              LOGKEEPDAYS;
+long             log_file_roll_depth = 1;
+char             extra_parm[] = "extra parameter(s)";
+struct config   *config_array = NULL;
+char           **maskclient = NULL; /* wildcard connections */
+char             PBSNodeCheckPath[1024];
+int              CheckPollTime            = 45;
+char             rcp_args[1024];
+long             log_file_max_size = 0;
+char             mom_host[PBS_MAXHOSTNAME + 1];
+int              rm_errno;
+int              config_file_specified = 0;
+char             MOMConfigVersion[64];
+struct config common_config[1];
+char           **ArgV;
+char            *OriginalPath;
+int              resend_join_job_wait_time = 45;
+int              max_join_job_wait_time = 90;
 
 int log_remove_old(char *DirPath, unsigned long ExpireTime)
   {
   fprintf(stderr, "The call to long needs to be mocked!!\n");
   exit(1);
+  }
+
+char *tokcpy(char *str, char *tok)
+  {
+  return(NULL);
+  }
+
+void free_attrlist(list_link *l) {}
+
+void attrl_fixlink(list_link *l) {}
+
+unsigned long addclient(const char *name)
+  {
+  return(1);
+  }
+
+unsigned long jobstartblocktime(const char *value)
+  {
+  return(1);
+  }
+
+int read_config(char *path)
+  {
+  return(0);
+  }
+
+int send_join_job_to_a_sister(job *pjob, int stream, eventent *ep, tlist_head phead, int node_id)
+  {
+  return(0);
+  }
+
+unsigned long setcheckpolltime(const char *value)
+  {
+  return(1);
+  }
+
+unsigned long setdownonerror(const char *value)
+  {
+  return(1);
+  }
+
+unsigned long setstatusupdatetime(const char *value)
+  {
+  return(1);
+  }
+
+unsigned long setloglevel(const char *value)
+  {
+  return(1);
+  }
+
+unsigned long setenablemomrestart(const char *value)
+  {
+  return(1);
+  }
+
+unsigned long setrcpcmd(const char *value)
+  {
+  return(1);
+  }
+
+unsigned long jostartblocktime(const char *value)
+  {
+  return(1);
   }
 
 int mom_close_poll(void)
@@ -693,6 +791,11 @@ ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
   }
 
 ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
+  {
+  return(0);
+  }
+
+int save_args(int argc, char **argv)
   {
   return(0);
   }

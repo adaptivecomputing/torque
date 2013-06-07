@@ -43,6 +43,7 @@
 #ifdef PENABLE_LINUX26_CPUSETS
 #include "pbs_cpuset.h"
 #endif
+#include "mom_config.h"
 
 #define DIS_REPLY_READ_RETRY 10
 
@@ -67,13 +68,8 @@ extern char  *path_aux;
 
 extern int   multi_mom;
 extern int   pbs_rm_port;
-extern int   is_login_node;
-
-extern int   LOGLEVEL;
 
 extern char  *PJobSubState[];
-extern int   PBSNodeCheckProlog;
-extern int   PBSNodeCheckEpilog;
 extern char  *PMOMCommand[];
 
 /* external prototypes */
@@ -303,6 +299,12 @@ void check_jobs_main_process(
   if (mom_radix < 2)
     {
     NumSisters = send_sisters(pjob, IM_KILL_JOB, FALSE);
+
+    if (NumSisters > 0)
+      {
+      pjob->ji_qs.ji_substate = JOB_SUBSTATE_MOM_WAIT;
+      pjob->ji_kill_started = time(NULL);
+      }
     }
   else
     {
@@ -336,7 +338,12 @@ void check_jobs_main_process(
           }
         }
       }
-    } 
+        
+    /* job is waiting for the reply from other sisters 
+     * before it exits */
+    pjob->ji_qs.ji_substate = JOB_SUBSTATE_MOM_WAIT;
+    pjob->ji_kill_started = time(NULL);
+    }
 
   if (NumSisters == 0)
     {
@@ -728,6 +735,7 @@ bool mother_superior_cleanup(
   if (rc != PBSE_NONE)
     {
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXIT_WAIT;
+
     if (LOGLEVEL >= 4)
       {
       snprintf(log_buffer, LOCAL_LOG_BUF_SIZE, "could not contact server for job %s: error: %d", 
@@ -2011,6 +2019,11 @@ void init_abort_jobs(
           {
           send_sisters(pj, IM_KILL_JOB, FALSE);
           }
+    
+        /* job is waiting for the reply from other sisters 
+         * before it exits */
+        pj->ji_qs.ji_substate = JOB_SUBSTATE_MOM_WAIT;
+        pj->ji_kill_started = time(NULL);
 
         continue;
         }
@@ -2182,10 +2195,10 @@ int send_job_obit_to_ms(
     np = pjob->ji_sisters;
   else
     np = pjob->ji_hosts;
+
   /* no entry for Mother Superior?? */
   if (np == NULL)
     return(-1);
-
 
   if (mom_radix < 2)
     {
@@ -2258,7 +2271,6 @@ int send_job_obit_to_ms(
             
       close(stream);
       } /* END work on a valid stream */
-    
     
     usleep(10);
     } /* END retry loop */

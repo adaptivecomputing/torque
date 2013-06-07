@@ -17,6 +17,7 @@ int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 resource_def *svr_resc_def;
 pthread_mutex_t *reroute_job_mutex;
 int                     route_retry_interval = 5; /* time in seconds to check routing queues */
+int pbs_errno;
 
 #ifndef NDEBUG
 

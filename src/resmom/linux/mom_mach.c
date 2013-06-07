@@ -60,6 +60,7 @@
 #ifdef PENABLE_LINUX26_CPUSETS
 #include "pbs_cpuset.h"
 #endif
+#include "mom_config.h"
 
 
 /*
@@ -100,14 +101,8 @@ static DIR    *pdir = NULL;
 static int     pagesize;
 
 extern char *ret_string;
-extern char extra_parm[];
-extern char no_parm[];
-extern char mom_host[];
 
 extern time_t   time_now;
-
-extern  int     LOGLEVEL;
-extern  char    PBSNodeMsgBuf[MAXLINE];
 
 #define TBL_INC 200            /* initial proc table */
 #define PMEMBUF_SIZE  2048
@@ -122,20 +117,7 @@ static int            max_proc = 0;
 extern tlist_head               svr_alljobs;
 extern struct  config          *search(struct config *,char *);
 extern struct  rm_attribute    *momgetattr(char *);
-extern int                      rm_errno;
-extern double	cputfactor;
-extern double	wallfactor;
 extern long     system_ncpus;
-extern int      ignwalltime;
-extern int      igncput;
-extern int      ignvmem;
-extern int      ignmem;
-extern int      job_oom_score_adjust;
-extern int      mom_oom_immunize;
-#ifdef PENABLE_LINUX26_CPUSETS
-extern int      memory_pressure_threshold;
-extern short    memory_pressure_duration;
-#endif
 #ifdef NUMA_SUPPORT
 extern int       num_node_boards;
 extern nodeboard node_boards[]; 

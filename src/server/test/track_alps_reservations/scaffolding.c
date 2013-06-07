@@ -261,7 +261,7 @@ void free_buckets(
 int get_hash(
     
   hash_table_t *ht,
-  void         *key)
+  const void   *key)
 
   {
   return(atoi((char *)key) % ht->size);
@@ -322,7 +322,7 @@ int add_hash(
 int get_value_hash(
     
   hash_table_t *ht,
-  void         *key)
+  const void   *key)
 
   {
   int     value = -1;
@@ -406,7 +406,7 @@ char *threadsafe_tokenizer(
 int remove_hash(
     
   hash_table_t *ht,
-  char         *key)
+  const char   *key)
 
   {
   int     rc = PBSE_NONE;

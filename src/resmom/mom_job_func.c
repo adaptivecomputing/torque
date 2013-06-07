@@ -134,11 +134,13 @@
 #include "portability.h"
 #include "threadpool.h"
 #include "alps_functions.h"
+#include "alps_constants.h"
 #include "dis.h"
 #ifdef PENABLE_LINUX26_CPUSETS
 #include "pbs_cpuset.h"
 #endif
 #include "utils.h"
+#include "mom_config.h"
 
 #ifndef TRUE
 #define TRUE 1
@@ -165,9 +167,6 @@ static void job_init_wattr(job *);
 
 /* Global Data items */
 
-extern char   *apbasil_path;
-extern char   *apbasil_protocol;
-extern char    tmpdir_basename[];	/* for TMPDIR */
 extern gid_t   pbsgroup;
 extern uid_t   pbsuser;
 extern char   *msg_abt_err;
@@ -177,14 +176,11 @@ extern char   *path_aux;
 extern char   *msg_err_purgejob;
 extern char    server_name[];
 extern time_t  time_now;
-extern int     LOGLEVEL;
-extern int     is_login_node;
 
 extern tlist_head svr_newjobs;
 extern tlist_head svr_alljobs;
 
 void nodes_free(job *);
-extern int thread_unlink_calls;
 
 extern void MOMCheckRestart(void);
 void       send_update_soon();
@@ -791,7 +787,7 @@ int release_job_reservation(
     {
     rsv_id = pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str;
 
-    if ((rc = destroy_alps_reservation(rsv_id, apbasil_path, apbasil_protocol)) != PBSE_NONE)
+    if ((rc = destroy_alps_reservation(rsv_id, apbasil_path, apbasil_protocol, APBASIL_RETRIES)) != PBSE_NONE)
       {
       snprintf(log_buffer, sizeof(log_buffer), "Couldn't release reservation for job %s",
         pjob->ji_qs.ji_jobid);

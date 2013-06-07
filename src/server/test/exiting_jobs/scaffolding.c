@@ -18,7 +18,7 @@ int add_to_hash_map(hash_map *hm, void *obj, char *key)
     return(-1);
   }
 
-void *get_remove_from_hash_map(hash_map *hm, char *key)
+void *get_remove_from_hash_map(hash_map *hm, const char *key, bool already_locked)
   {
   if (!strcmp(key, "2.napali"))
     return(calloc(1, sizeof(job_exiting_retry_info)));
@@ -27,7 +27,7 @@ void *get_remove_from_hash_map(hash_map *hm, char *key)
   }
 
 
-int remove_from_hash_map(hash_map *hm, char *key)
+int remove_from_hash_map(hash_map *hm, const char *key, bool already_locked)
   {
   if (!strcmp(key, "3.napali"))
     return(PBSE_NONE);
@@ -55,7 +55,7 @@ job *svr_find_job(char *jobid, int a)
   }
 
 
-void *next_from_hash_map(hash_map *hm, int *iter)
+void *next_from_hash_map(hash_map *hm, int *iter, bool already_locked)
   {
   job_exiting_retry_info *jeri;
     

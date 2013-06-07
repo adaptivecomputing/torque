@@ -1211,11 +1211,10 @@ void *job_clone_wt(
       if ((rc = svr_enquejob(pjobclone, FALSE, prev_index, false)))
         {
         /* XXX need more robust error handling */
+        clone_mgr.set_lock_on_exit(false);
 
         if (rc != PBSE_JOB_RECYCLED)
           svr_job_purge(pjobclone);
-
-        clone_mgr.set_lock_on_exit(false);
 
         if ((pa = get_array(arrayid)) == NULL)
           return(NULL);
@@ -1225,8 +1224,13 @@ void *job_clone_wt(
         continue;
         }
 
-      if ((pa = get_array(arrayid)) == NULL)
+      if ((pa = get_jobs_array(&pjobclone)) == NULL)
+        {
+        if (pjobclone == NULL)
+          clone_mgr.set_lock_on_exit(false);
+
         return(NULL);
+        }
       
       array_mgr.mark_as_locked();
 
@@ -1236,8 +1240,6 @@ void *job_clone_wt(
         array_mgr.unlock();
         svr_job_purge(pjobclone);
         
-        clone_mgr.set_lock_on_exit(false);
-       
         if ((pa = get_array(arrayid)) == NULL)
           return(NULL);
 
@@ -1252,7 +1254,8 @@ void *job_clone_wt(
       
       rn->start++;
       
-      if (prev_index == -1)
+      /* index below 0 means the job no longer exists */
+      if (prev_index < 0)
         clone_mgr.set_lock_on_exit(false);
       }  /* END for (i) */
 
@@ -1340,7 +1343,6 @@ void *job_clone_wt(
        }
 
       pjob->ji_commit_done = 1;
-     
       }
     }
   
@@ -2080,21 +2082,22 @@ job_array *get_jobs_array(
 
   if (pjob_ptr == NULL)
     {
-      log_err(PBSE_BAD_PARAMETER, __func__, "NULL input pointer to pointer");
-      return(NULL);
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input pointer to pointer");
+    return(NULL);
     }
-    pjob = *pjob_ptr;
+  
+  pjob = *pjob_ptr;
 
   if (pjob == NULL)
     {
-      log_err(PBSE_BAD_PARAMETER, __func__, "NULL input job pointer");
-      return(NULL);
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input job pointer");
+    return(NULL);
     }
+
   mutex_mgr job_mutex(pjob->ji_mutex,true);
   job_mutex.set_lock_on_exit(false);
 
   strcpy(jobid, pjob->ji_qs.ji_jobid);
-
 
   if (pjob->ji_arraystructid[0] != '\0')
     {

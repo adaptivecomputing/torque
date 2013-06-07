@@ -123,6 +123,7 @@
 #include "mom_server_lib.h"
 #include "../lib/Libifl/lib_ifl.h" /* pbs_disconnect_socket */
 #include "alps_functions.h"
+#include "mom_config.h"
 
 #define MAX_GPUS  32
 
@@ -131,7 +132,6 @@
 #endif  /* NVML_API */
 
 extern int find_file(char *, char *);
-extern char   mom_host[];
 extern int    MOMNvidiaDriverVersion;
 extern int    use_nvidia_gpu;
 extern time_t time_now;
@@ -484,7 +484,7 @@ int check_nvidia_setup()
       }
 
     /* We have the PATH, now find the nvidia-smi executable */
-    rc = find_file(pathEnv, "nvidia-smi");
+    rc = find_file(pathEnv, (char *)"nvidia-smi");
     if (rc == FALSE)
       {
       if (LOGLEVEL >= 3)

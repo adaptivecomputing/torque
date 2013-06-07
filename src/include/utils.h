@@ -124,6 +124,10 @@
 #define APOS_ESCAPED     "&apos;"
 #define APOS_ESCAPED_LEN 6
 
+extern char **ArgV;
+extern int ArgC;
+extern char *OriginalPath;
+
 /* Function declarations */
 
 /* group functions in u_groups.c */
@@ -141,6 +145,10 @@ extern int tlist (tree *, char *, int);
 extern void tfree (tree **);
 extern int is_whitespace (char);
 extern int write_buffer (char *,int,int);
+
+/* misc functions */
+extern void save_args(int, char **);
+extern char *find_command(char *, char *);
 
 /* utility functions in u_mu.c */
 int           MUSNPrintF (char **, int *, const char *, ...);

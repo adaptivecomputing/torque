@@ -82,9 +82,9 @@
 #include "pbs_ifl.h"
 #include "alps_functions.h"
 #include "../lib/Libifl/lib_ifl.h"
+#include "mom_config.h"
 
 extern int exiting_tasks;
-extern int LOGLEVEL;
 extern     int             lockfds;
 extern int ForceServerUpdate;
 extern char TORQUE_JData[];
@@ -92,13 +92,9 @@ extern char TORQUE_JData[];
 extern int task_recov(job *pjob);
 extern char *path_spool;
 extern char  *path_jobs;
-extern char  *TRemChkptDirList[];
-extern char  *apbasil_path;
-extern char  *apbasil_protocol;
 
 extern int  multi_mom;
 extern unsigned short pbs_rm_port;
-extern int            is_login_node;
 
 #ifdef USEJOBCREATE
 extern uint64_t get_jobid(char *);

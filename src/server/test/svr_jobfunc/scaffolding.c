@@ -109,6 +109,12 @@ int decode_str(pbs_attribute *patr, const char *name, const char *rescn, const c
   exit(1);
   }
 
+int decode_resc(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm)
+  {
+  fprintf(stderr, "The call to decode_str to be mocked!!\n");
+  exit(1);
+  }
+
 int depend_on_que(pbs_attribute *pattr, void *pjob, int mode)
   {
   fprintf(stderr, "The call to depend_on_que to be mocked!!\n");
@@ -167,6 +173,12 @@ int comp_resc2(struct pbs_attribute *attr, struct pbs_attribute *with, int IsQue
 
 resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
   {
+  if (!strcmp(name, "mppnppn") ||
+      !strcmp(name, "mppwidth"))
+    {
+    return((resource_def *)name);
+    }
+
   return(NULL);
   }
 
@@ -323,6 +335,26 @@ int get_svr_attr_l(int attr_index, long *l)
   return(0);
   }
 
+int lock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
+  {
+  return(0);
+  }
+
+int unlock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
+  {
+  return(0);
+  }
+
 void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+
+int remove_procct(job *pjob)
+  {
+  return(0);
+  }
+
+int initialize_procct(job *pjob)
+  {
+  return(0);
+  }

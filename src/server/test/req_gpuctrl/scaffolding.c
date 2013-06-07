@@ -29,3 +29,57 @@ int get_batch_request_id(
   }
 
 void log_ext(int errnum, const char *routine, const char *text, int l) {}
+
+int svr_connect(
+
+  pbs_net_t        hostaddr,  /* host order */
+  unsigned int     port,   /* I */
+  int             *my_err,
+  struct pbsnode  *pnode,
+  void           *(*func)(void *),
+  enum conn_type   cntype)
+
+  {
+  return(0);
+  }
+
+int gpu_entry_by_id(
+
+  struct pbsnode *pnode,  /* I */
+  char   *gpuid,
+  int    get_empty)
+  
+  {
+  return(0);
+  }
+
+int unlock_node(
+    
+  struct pbsnode *the_node,
+  const char     *id,
+  const char     *msg,
+  int             logging)
+  
+  {
+  return(0);
+  }
+
+int issue_Drequest(
+
+  int                    conn,
+  struct batch_request  *request)
+  
+  {
+  return(0);
+  }
+
+void reply_ack(batch_request *preq) {}
+
+struct pbsnode *find_nodebyname(const char *node_id)
+  {
+  return(NULL);
+  }
+
+void log_err(int errno, const char *caller, const char *msg) {}
+
+unsigned int pbs_mom_port = 0;

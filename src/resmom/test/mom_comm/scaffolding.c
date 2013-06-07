@@ -43,6 +43,7 @@ int maxupdatesbeforesending = 0;
 int    ServerStatUpdateInterval = DEFAULT_SERVER_STAT_UPDATES;
 time_t          LastServerUpdateTime = 0;  /* NOTE: all servers updated together */
 char log_buffer[LOG_BUF_SIZE];
+int log_event_counter;
 
 /*
  *  * inserts an item, resizing the array if necessary
@@ -338,7 +339,7 @@ int kill_task(struct task *task, int sig, int pg)
   exit(1);
   }
 
-int get_value_hash(hash_table_t *ht, void *key)
+int get_value_hash(hash_table_t *ht, const void *key)
   {
   return -1;
   }
@@ -649,5 +650,8 @@ int disrsi(struct tcp_chan *chan, int *retval)
 
 void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
-void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) 
+  {
+  log_event_counter++;
+  }
 void log_ext(int type, const char *func_name, const char *msg, int o) {}

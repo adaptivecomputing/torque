@@ -1,9 +1,10 @@
 
-#include "u_hash_map_structs_ct.h"
 #include "u_hash_map_structs.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <check.h>
+
 #include "pbs_error.h"
 #include "pbs_ifl.h"
 #include "u_memmgr.h"

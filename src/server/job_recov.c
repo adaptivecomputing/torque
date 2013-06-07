@@ -135,6 +135,9 @@
 #ifdef PBS_MOM
 int save_tmsock(job *, int, char *, size_t *, size_t);
 int recov_tmsock(int, job *);
+extern unsigned int pbs_mom_port;
+extern unsigned int pbs_rm_port;
+extern int           multi_mom;
 #endif
 
 extern int job_qs_upgrade(job *, int, char *, int);
@@ -436,6 +439,8 @@ job *job_recov(
 #ifndef PBS_MOM
   char       parent_id[PBS_MAXSVRJOBID + 1];
   job_array *pa;
+#else
+  char      fileid[MAXPATHLEN];
 #endif
 
   pj = job_alloc(); /* allocate & initialize job structure space */
@@ -526,7 +531,19 @@ job *job_recov(
 
   pn = strrchr(namebuf, (int)'/') + 1;
 
+#ifndef PBS_MOM
   if (strncmp(pn, pj->ji_qs.ji_fileprefix, strlen(pj->ji_qs.ji_fileprefix)) != 0)
+#else
+  if(multi_mom != 0)
+    {
+    sprintf(fileid,"%s%d",pj->ji_qs.ji_fileprefix,pbs_rm_port);
+    }
+  else
+    {
+    strcpy(fileid,pj->ji_qs.ji_fileprefix);
+    }
+  if (strncmp(pn, fileid, strlen(fileid)) != 0)
+#endif
     {
     /* mismatch, discard job */
 
@@ -663,7 +680,11 @@ job *job_recov(
 
   /* all done recovering the job */
 
+#ifdef PBS_MOM
+  job_save(pj, SAVEJOB_FULL, (multi_mom == 0)?0:pbs_rm_port);
+#else
   job_save(pj, SAVEJOB_FULL, 0);
+#endif
 
   return(pj);
   }  /* END job_recov() */

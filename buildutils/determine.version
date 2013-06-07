@@ -1,0 +1,24 @@
+#!/bin/bash
+
+root_path="${1}"
+if [ -z "${root_path}" ]
+then
+    base_name="`echo ${0} | sed 's|[^/]*$||'`"
+    # Assume the script directory is buildutils/
+    root_path="${base_name}/../"
+fi
+cat "${root_path}/configure.ac" | awk '/^ *AC_INIT/ {
+    ac_init_line = $0
+    while (!match($0,/\)/))
+    {
+        getline
+        ac_init_line = ac_init_line $0
+    }
+    sub(/AC_INIT *\([ \t]*\[/,"",ac_init_line)
+    sub(/\][ \t]*\) *$/,"",ac_init_line)
+    split(ac_init_line,info,/\][ \t]*,[ \t]*\[/)
+    name=info[1]
+    version=info[2]
+    email=info[3]
+    print version
+}'

@@ -1,0 +1,19 @@
+language: cpp
+
+branches:
+  only:
+    - master
+
+before_install:
+ - sudo apt-get update -qq
+ - sudo apt-get install -qq check
+
+script: ./autogen.sh && ./configure --with-check && make && make check -k
+
+compiler:
+  - clang
+  - gcc
+
+notifications:
+  email:
+    - torquedev@supercluster.org

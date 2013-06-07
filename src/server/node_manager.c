@@ -145,9 +145,7 @@ int                     svr_totnodes = 0; /* total number nodes defined       */
 int                     svr_clnodes  = 0; /* number of cluster nodes     */
 int                     svr_chngNodesfile = 0; /* 1 signals want nodes file update */
 int                     gpu_mode_rqstd = -1;  /* default gpu mode requested */
-#ifdef NVIDIA_GPUS
 int                     gpu_err_reset = FALSE;    /* was a gpu errcount reset requested */
-#endif  /* NVIDIA_GPUS */
 /* on server shutdown, (qmgr mods)  */
 
 all_nodes               allnodes;
@@ -158,10 +156,8 @@ pthread_mutex_t        *addrnote_mutex = NULL;
 extern int              server_init_type;
 extern int              has_nodes;
 
-#ifdef NVIDIA_GPUS
 extern int create_a_gpusubnode(struct pbsnode *);
 int        is_gpustat_get(struct pbsnode *np, char **str_ptr);
-#endif  /* NVIDIA_GPUS */
 
 extern int              ctnodes(char *);
 
@@ -199,9 +195,7 @@ int reserve_node(struct pbsnode *,short,job *,char *,struct howl **);
 int build_host_list(struct howl **,struct pbssubn *,struct pbsnode *);
 int procs_available(int proc_ct);
 void check_nodes(struct work_task *);
-#ifdef NVIDIA_GPUS
 int gpu_entry_by_id(struct pbsnode *,char *, int);
-#endif  /* NVIDIA_GPUS */
 job *get_job_from_jobinfo(struct jobinfo *,struct pbsnode *);
 
 /* marks a stream as finished being serviced */
@@ -706,11 +700,11 @@ int kill_job_on_mom(
   struct pbsnode *pnode)
 
   {
-  struct batch_request *preq;
-  int                   rc = -1;
-  int                   conn;
-  int                   local_errno = 0;
-  char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  batch_request *preq;
+  int            rc = -1;
+  int            conn;
+  int            local_errno = 0;
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* job is reported by mom but server has no record of job */
   sprintf(log_buf, "stray job %s found on %s", jobid, pnode->nd_name);
@@ -1040,7 +1034,6 @@ void setup_notification(
 
 
 
-#ifdef NVIDIA_GPUS
 /*
  **     reset gpu data in case mom reconnects with changed gpus.
  **     If we have real gpus, not virtual ones, then clear out gpu_status,
@@ -1081,7 +1074,6 @@ void clear_nvidia_gpus(
   return;
   }  /* END clear_nvidia_gpus() */
 
-#endif  /* NVIDIA_GPUS */
 
 
 
@@ -1425,7 +1417,7 @@ int write_node_note(void)
   if ((nin = fopen(path_nodenote_new, "w")) == NULL)
     goto err1;
 
-  if ((svr_totnodes == 0))
+  if (svr_totnodes == 0)
     {
     log_event(
       PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, "Server has empty nodes list");
@@ -1667,7 +1659,6 @@ static int gpu_count(
     return (count);
     }
 
-#ifdef NVIDIA_GPUS
   if (pnode->nd_gpus_real)
     {
     int j;
@@ -1693,7 +1684,6 @@ static int gpu_count(
       }
     }
   else
-#endif  /* NVIDIA_GPUS */
     {
     /* virtual gpus */
     if (freeonly)
@@ -1724,7 +1714,6 @@ static int gpu_count(
 
 
 
-#ifdef NVIDIA_GPUS
 /*
 ** get gpu index for this gpuid
 */
@@ -1775,8 +1764,6 @@ int gpu_entry_by_id(
 
   return (-1);
   }  /* END gpu_entry_by_id() */
-#endif  /* NVIDIA_GPUS */
-
 
 
 
@@ -1969,10 +1956,8 @@ int proplist(
   char         name_storage[80];
   char        *pname;
   char        *pequal;
-#ifdef NVIDIA_GPUS
   int          have_gpus = FALSE;
   char         log_buf[LOCAL_LOG_BUF_SIZE];
-#endif  /* NVIDIA_GPUS */
 
   *node_req = 1; /* default to 1 processor per node */
 
@@ -2025,10 +2010,9 @@ int proplist(
           {
           return(1);
           }
-#ifdef NVIDIA_GPUS
+
         have_gpus = TRUE;
         gpu_err_reset = FALSE; /* default to no */
-#endif  /* NVIDIA_GPUS */
 
         /* default value if no other gets specified */
 
@@ -2039,7 +2023,6 @@ int proplist(
         return(1); /* not recognized - error */
         }
       }
-#ifdef NVIDIA_GPUS
     else if (have_gpus && (!strcasecmp(pname, "exclusive_thread")))
       {
       gpu_mode_rqstd = gpu_exclusive_thread;
@@ -2064,7 +2047,6 @@ int proplist(
       {
       gpu_err_reset = TRUE;
       }
-#endif  /* NVIDIA_GPUS */
     else
       {
       pp = (struct prop *)calloc(1, sizeof(struct prop));
@@ -2076,7 +2058,6 @@ int proplist(
       *plist = pp;
       }
 
-#ifdef NVIDIA_GPUS
     if ((have_gpus) && (LOGLEVEL >= 7))
       {
       sprintf(log_buf,
@@ -2085,7 +2066,6 @@ int proplist(
 
        log_ext(-1, __func__, log_buf, LOG_DEBUG);
       }
-#endif  /* NVIDIA_GPUS */
 
     if (**str != ':')
       break;
@@ -3448,9 +3428,7 @@ int add_job_to_gpu_subnode(
   job            *pjob)
 
   {
-#ifdef NVIDIA_GPUS
   if (!pnode->nd_gpus_real)
-#endif  /* NVIDIA_GPUS */
     {
     /* update the gpu subnode */
     strcpy(gn->jobid, pjob->ji_qs.ji_jobid);
@@ -3637,18 +3615,31 @@ int place_gpus_in_hostlist(
     DBPRT(("%s\n", log_buf));
     
     gn = pnode->nd_gpusn + j;
+
+    if (pnode->nd_gpus_real)
+      {
+      if ((gn->state == gpu_unavailable) ||
+          (gn->state == gpu_exclusive) ||
+          ((((int)gn->mode == gpu_normal)) &&
+           (gpu_mode_rqstd != gpu_normal) &&
+           (gn->state != gpu_unallocated)))
+        continue;
+      }
+    else
+      {
+      if ((gn->state == gpu_unavailable) ||
+          (gn->inuse == TRUE))
+        continue;
+      }
+
     if ((gn->state == gpu_unavailable) ||
-#ifdef NVIDIA_GPUS
         ((gn->state == gpu_exclusive) && pnode->nd_gpus_real) ||
         ((pnode->nd_gpus_real) &&
          ((int)gn->mode == gpu_normal) &&
          ((gpu_mode_rqstd != gpu_normal) && (gn->state != gpu_unallocated))) ||
         ((!pnode->nd_gpus_real) && 
          (gn->inuse == TRUE)))
-#else
-      (gn->inuse == TRUE))
-#endif  /* NVIDIA_GPUS */
-        continue;
+      continue;
     
     add_job_to_gpu_subnode(pnode,gn,pjob);
     naji->gpu_needed--;
@@ -3667,7 +3658,6 @@ int place_gpus_in_hostlist(
     
     add_gpu_to_hostlist(gpu_list,gn,pnode);
     
-#ifdef NVIDIA_GPUS
     /*
      * If this a real gpu in exclusive/single job mode, or a gpu in default
      * mode and the job requested an exclusive mode then we change state
@@ -3717,7 +3707,6 @@ int place_gpus_in_hostlist(
         log_ext(-1, __func__, log_buf, LOG_DEBUG);
         }
       }
-#endif  /* NVIDIA_GPUS */
     }
 
   return(PBSE_NONE);
@@ -4256,9 +4245,7 @@ int set_nodes(
   int                num_reqs = 0;
   long               cray_enabled = FALSE; 
 
-#ifdef NVIDIA_GPUS
   int gpu_flags = 0;
-#endif  /* NVIDIA_GPUS */
 
   if (FailHost != NULL)
     FailHost[0] = '\0';
@@ -4417,7 +4404,6 @@ int set_nodes(
     
     free(gpu_str);
 
-#ifdef NVIDIA_GPUS
     if (gpu_mode_rqstd != -1)
       gpu_flags = gpu_mode_rqstd;
     if (gpu_err_reset)
@@ -4438,7 +4424,6 @@ int set_nodes(
         log_ext(-1, __func__, log_buf, LOG_DEBUG);
         }
       }
-#endif  /* NVIDIA_GPUS */
     }
 
   if (LOGLEVEL >= 3)
@@ -4874,11 +4859,9 @@ int remove_job_from_nodes_gpus(
   struct gpusubn *gn;
   char           *gpu_str = NULL;
   int             i;
-#ifdef NVIDIA_GPUS
   char            log_buf[LOCAL_LOG_BUF_SIZE];
   char            tmp_str[PBS_MAXHOSTNAME + 10];
   char            num_str[6];
-#endif
  
   if (pjob->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET)
     gpu_str = pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str;
@@ -4889,7 +4872,7 @@ int remove_job_from_nodes_gpus(
     for (i = 0; i < pnode->nd_ngpus; i++)
       {
       gn = pnode->nd_gpusn + i;
-#ifdef NVIDIA_GPUS
+      
       if (pnode->nd_gpus_real)
         {
         /* reset real gpu nodes */
@@ -4933,7 +4916,6 @@ int remove_job_from_nodes_gpus(
           }
         }
       else
-#endif  /* NVIDIA_GPUS */
         {
         if (!strcmp(gn->jobid, pjob->ji_qs.ji_jobid))
           {

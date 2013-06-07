@@ -116,6 +116,7 @@
 #include "utils.h"
 #include "alps_functions.h"
 #include "tcp.h" /* tcp_chan */
+#include "mom_config.h"
 
 #ifdef _CRAY
 #include <sys/category.h>
@@ -126,8 +127,6 @@
 
 extern struct var_table vtable;      /* see start_exec.c */
 extern char           **environ;
-extern char            *apbasil_path;
-extern char            *apbasil_protocol;
 
 int reply_send_mom(struct batch_request *request);
 
@@ -159,7 +158,6 @@ extern unsigned int alarm_time;
 extern unsigned int default_server_port;
 extern int  exiting_tasks;
 extern tlist_head svr_alljobs;
-extern char  mom_host[];
 extern char            *msg_err_unlink;
 extern char            *path_spool;
 extern char            *path_undeliv;
@@ -168,7 +166,6 @@ extern char            *msg_jobmod;
 extern char            *msg_manager;
 extern time_t  time_now;
 extern int  multi_mom;
-extern int spoolasfinalname;
 #ifdef NVIDIA_GPUS
 extern int  use_nvidia_gpu;
 #endif /* NVIDIA_GPUS */
@@ -177,9 +174,6 @@ extern int  use_nvidia_gpu;
 
 extern char             MOMUNameMissing[];
 extern int              pbs_rm_port;
-extern char             rcp_path[];
-extern char             rcp_args[];
-extern char            *TNoSpoolDirList[];
 extern char             path_checkpoint[];
 
 /* Local Data Items */
@@ -193,9 +187,6 @@ static char  *output_retained = (char *)"Output retained on that host in: ";
 #endif /* !NO_SPOOL_OUTPUT */
 
 static char   rcperr[MAXPATHLEN]; /* file to contain rcp error */
-
-extern char PBSNodeMsgBuf[1024];
-extern int  LOGLEVEL;
 
 
 /* prototypes */
@@ -794,8 +785,6 @@ static int told_to_cp(
   static char newp[MAXPATHLEN + 1];
   char linkpath[MAXPATHLEN + 1];
   int max_links;
-
-  extern struct cphosts *pcphosts;
 
   for (max_links = 16;max_links > 0;max_links--)
     {
@@ -2110,7 +2099,7 @@ static void resume_suspend(
 
 void req_signaljob(
 
-  struct batch_request *preq) /* I */
+  batch_request *preq) /* I */
 
   {
   job            *pjob;
@@ -2119,6 +2108,7 @@ void req_signaljob(
   int             numprocs=0;
   char           *sname;
   unsigned int   momport = 0;
+  task           *ptask;
 
   struct sig_tbl *psigt;
 
@@ -2237,9 +2227,13 @@ void req_signaljob(
     sleep(1);
     }
 
-  if ((pjob->ji_qs.ji_state != JOB_STATE_RUNNING) &&
-      (sync_kill == TRUE))
+  if ((sync_kill == TRUE) &&
+      ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXITING) ||
+       (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)))
     {
+    snprintf(log_buffer, sizeof(log_buffer),
+      "Job %s is being killed from pbs_server.", pjob->ji_qs.ji_jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
     mom_deljob(pjob);
     }
   else
@@ -2255,24 +2249,39 @@ void req_signaljob(
     if ((numprocs == 0) && ((sig == 0)||(sig == SIGKILL)) &&
         (pjob->ji_qs.ji_substate != JOB_SUBSTATE_OBIT))
       {
-      /* SIGNUL and no procs found, force job to exiting */
-      /* force issue of (another) job obit */
-
-      sprintf(log_buffer, "job recycled into exiting on SIGNULL/KILL from substate %d",
-        pjob->ji_qs.ji_substate);
-
-      log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
-
-      pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
-
-      if (multi_mom)
+      if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXITED)
         {
-        momport = pbs_rm_port;
+        ptask = (task *)GET_NEXT(pjob->ji_tasks);
+        if (ptask == NULL)
+          {
+          snprintf(log_buffer, sizeof(log_buffer),
+            "job recycled into exiting on SIGNULL/KILL from substate %d again. Terminating job now.",
+            pjob->ji_qs.ji_substate);
+          log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+          mom_deljob(pjob);
+          }
         }
-      
-      job_save(pjob, SAVEJOB_QUICK, momport);
+      else
+        {
+        /* SIGNUL and no procs found, force job to exiting */
+        /* force issue of (another) job obit */
 
-      exiting_tasks = 1;
+        sprintf(log_buffer, "job recycled into exiting on SIGNULL/KILL from substate %d",
+          pjob->ji_qs.ji_substate);
+
+        log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+
+        pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+
+        if (multi_mom)
+          {
+          momport = pbs_rm_port;
+          }
+      
+        job_save(pjob, SAVEJOB_QUICK, momport);
+
+        exiting_tasks = 1;
+        }
       }
     }
 
@@ -2434,7 +2443,7 @@ int req_stat_job(
   {
   int     all;
   int     resc_access_perm = preq->rq_perm & ATR_DFLAG_RDACC;
-  char   *name;
+  char    name[(PBS_MAXSVRJOBID > PBS_MAXDEST ? PBS_MAXSVRJOBID:PBS_MAXDEST)+1];
   job    *pjob;
 
   struct batch_reply *preply = &preq->rq_reply;
@@ -2446,9 +2455,10 @@ int req_stat_job(
    * a single job or all jobs
    */
 
-  name = preq->rq_ind.rq_status.rq_id;
+  snprintf(name, sizeof(name), "%s", preq->rq_ind.rq_status.rq_id);
+  name[sizeof(name) - 1] = '\0';
 
-  if ((*name == '\0') || (*name == '@'))
+  if ((name[0] == '\0') || (name[0] == '@'))
     {
     all = 1;
 
@@ -4111,7 +4121,7 @@ void req_delete_reservation(
     {
     if ((pjob=job_with_reservation_id(rsv_id)) == NULL) 
       {
-      if ((rc = destroy_alps_reservation(rsv_id, apbasil_path, apbasil_protocol)) != PBSE_NONE)
+      if ((rc = destroy_alps_reservation(rsv_id, apbasil_path, apbasil_protocol, 1)) != PBSE_NONE)
         {
         snprintf(log_buffer, sizeof(log_buffer), "Couldn't release reservation id %s",
           rsv_id);

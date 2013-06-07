@@ -32,7 +32,7 @@ resizable_array *parse_exec_hosts(char *exec_hosts);
 dynamic_string  *get_reservation_command(resizable_array *, char *, char *, char *, char *, char *, int, int);
 int              parse_reservation_output(char *, char **);
 int              execute_reservation(char *, char **);
-int              confirm_reservation(char *, char *, long long, char *, char *);
+int              confirm_reservation(char *, char *, long long, char *, char *,char *,int);
 int              parse_confirmation_output(char *);
 
 START_TEST(host_req_tests)
@@ -242,16 +242,18 @@ START_TEST(confirm_reservation_test)
   char      *rsv_id = (char *)"20";
   long long  pagg = 20;
   int        rc;
+  char       cmdBuff[10240];
 
   /* this test only works if you're root */
+  memset(cmdBuff,0,sizeof(cmdBuff));
   if (getuid() == 0)
     {
-    rc = confirm_reservation(jobids[0], rsv_id, pagg, NULL, apbasil_protocol);
+    rc = confirm_reservation(jobids[0], rsv_id, pagg, NULL, apbasil_protocol,cmdBuff,sizeof(cmdBuff));
     /*fail_unless(rc == 0, "Couldn't execute the reservation");*/
     snprintf(buf, sizeof(buf), "Reservation id should be 20 but was %s", rsv_id);
     fail_unless(!strcmp(rsv_id, "20"), buf);
     
-    rc = confirm_reservation(jobids[1], rsv_id, pagg, blank_cmd, apbasil_protocol);
+    rc = confirm_reservation(jobids[1], rsv_id, pagg, blank_cmd, apbasil_protocol,cmdBuff,sizeof(cmdBuff));
     fail_unless(rc != 0, "Somehow parsed the blank command's output?");
     
     rc = parse_confirmation_output((char *)"tom");

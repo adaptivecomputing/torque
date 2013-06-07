@@ -712,7 +712,7 @@ int main(
 
         if ((optarg != NULL) && !strcmp(optarg, "version"))
           {
-          fprintf(stderr, "Version: %s\nRevision: %s\n",
+          fprintf(stderr, "Version: %s\nCommit: %s\n",
             PACKAGE_VERSION, GIT_HASH);
 
           exit(0);

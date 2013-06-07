@@ -1,5 +1,4 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "prolog.h"
 #include "test_prolog.h"
 #include <stdlib.h>
 #include <stdio.h>

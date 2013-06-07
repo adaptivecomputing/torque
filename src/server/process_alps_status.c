@@ -202,17 +202,21 @@ void *check_if_orphaned(
 
   {
   char                 *rsv_id = (char *)vp;
+  char                  job_id[PBS_MAXSVRJOBID];
   struct batch_request *preq;
   int                   handle = -1;
   int                   retries = 0;
   struct pbsnode       *pnode;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
-  if (is_orphaned(rsv_id) == TRUE)
+  if (is_orphaned(rsv_id, job_id) == TRUE)
     {
-    if((preq = alloc_br(PBS_BATCH_DeleteReservation)) == NULL)
+    if ((preq = alloc_br(PBS_BATCH_DeleteReservation)) == NULL)
       return NULL;
     preq->rq_extend = rsv_id;
+
+    /* Assume the request will be successful and remove the RSV from the hash table */
+    remove_alps_reservation(rsv_id);
 
     if ((pnode = get_next_login_node(NULL)) != NULL)
       {
@@ -224,8 +228,9 @@ void *check_if_orphaned(
       momaddr = ntohl(hostaddr.s_addr);
 
       snprintf(log_buf, sizeof(log_buf),
-        "Found orphan ALPS reservation ID %s; asking %s to remove it",
+        "Found orphan ALPS reservation ID %s for job %s; asking %s to remove it",
         rsv_id,
+        job_id,
         pnode->nd_name);
       log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, __func__, log_buf);
 
@@ -294,6 +299,7 @@ struct pbsnode *determine_node_from_str(
 int set_ncpus(
 
   struct pbsnode *current,
+  struct pbsnode *parent,
   char           *str)
 
   {
@@ -332,6 +338,8 @@ int set_ncpus(
     snprintf(log_buffer, sizeof(log_buffer), "ncpus was reduced from %d to %d", orig_svr_clnodes, svr_clnodes);
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
     }
+  else if (current->nd_nsn > parent->max_subnode_nppn)
+    parent->max_subnode_nppn = current->nd_nsn;
 
   return(PBSE_NONE);
   } /* END set_ncpus() */
@@ -676,7 +684,7 @@ int process_alps_status(
     /* perform any special processing */
     if (!strncmp(str, cproc_eq, ac_cproc_eq_len))
       {
-      set_ncpus(current, str);
+      set_ncpus(current, parent, str);
       }
     else if (!strncmp(str, state, strlen(state)))
       {

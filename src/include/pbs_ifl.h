@@ -198,12 +198,8 @@
 #define ATTR_J           "job_id"
 #define ATTR_pagg         "pagg_id"
 #define ATTR_system_start_time "system_start_time"
-
-
-#ifdef NVIDIA_GPUS
   /* JOB_ATR_gpu_flags */
 #define ATTR_gpu_flags		"gpu_flags"
-#endif  /* NVIDIA_GPUS */
 
 /* additional queue attributes names */
 
@@ -229,6 +225,8 @@
 #define ATTR_rescdflt    "resources_default"
 #define ATTR_rescmax     "resources_max"
 #define ATTR_rescmin     "resources_min"
+#define ATTR_featreqd    "features_required"
+#define ATTR_req_login_property "required_login_property"
 #define ATTR_rerunnable  "restartable"      /* TORQUE only */
 #define ATTR_rndzretry   "rendezvous_retry"
 #define ATTR_routedest   "route_destinations"

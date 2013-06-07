@@ -106,10 +106,10 @@ typedef struct hash_map
 
 hash_map *get_hash_map(int size);
 int       add_to_hash_map(hash_map *hm, void *obj, char *key);
-int       remove_from_hash_map(hash_map *hm, char *key);
-void     *get_from_hash_map(hash_map *hm, char *key);
-void     *get_remove_from_hash_map(hash_map *hm, char *key);
-void     *next_from_hash_map(hash_map *hm, int *iter);
+int       remove_from_hash_map(hash_map *hm, const char *key, bool already_locked = false);
+void     *get_from_hash_map(hash_map *hm, const char *key);
+void     *get_remove_from_hash_map(hash_map *hm, const char *key, bool already_locked = false);
+void     *next_from_hash_map(hash_map *hm, int *iter, bool already_locked = false);
 void      free_hash_map(hash_map *hm);
 
 

@@ -124,6 +124,8 @@ extern "C"
 #include "../lib/Libnet/lib_net.h" /* socket_avail_bytes_on_descriptor */
 #include "alps_functions.h"
 #include "tcp.h" /* tcp_chan */
+#include "mom_config.h"
+#include "dynamic_string.h"
 
 #ifdef ENABLE_CPA
   #include "pbs_cpa.h"
@@ -187,9 +189,6 @@ typedef enum
 /* Global Variables */
 
 
-extern int            exec_with_exec;
-extern int            attempttomakedir;
-extern int            spoolasfinalname;
 extern int            num_var_env;
 extern char         **environ;
 extern int            exiting_tasks;
@@ -202,39 +201,20 @@ extern char          *path_prologp;
 extern char          *path_prologuserp;
 extern char          *path_spool;
 extern char          *path_aux;
-extern char          *apbasil_path;
-extern char          *apbasil_protocol;
 extern gid_t          pbsgroup;
 extern uid_t          pbsuser;
 extern time_t         time_now;
 extern unsigned int   pbs_rm_port;
 extern u_long         localaddr;
-extern  char          *nodefile_suffix;
-extern  char          *submithost_suffix;
-extern  char           DEFAULT_UMASK[];
-extern  char           PRE_EXEC[];
 
-extern int             LOGLEVEL;
-extern int             EXTPWDRETRY;
-extern long            TJobStartBlockTime;
+extern int            multi_mom;
+extern unsigned int   pbs_rm_port;
 
-extern int             multi_mom;
-extern unsigned int    pbs_rm_port;
+extern char           path_checkpoint[];
 
-extern char            path_checkpoint[];
-extern char            jobstarter_exe_name[];
-extern char            mom_host[];
-extern int             jobstarter_set;
+int                   mom_reader_go;   /* see catchinter() & mom_writer() */
 
-int                    mom_reader_go;   /* see catchinter() & mom_writer() */
-
-struct var_table       vtable;  /* for building up job's environ */
-
-extern char            tmpdir_basename[];  /* for TMPDIR */
-
-extern int             src_login_batch;
-extern int             src_login_interactive;
-extern int             is_login_node;
+struct var_table      vtable;  /* for building up job's environ */
 
 #ifdef NUMA_SUPPORT
 extern int            num_node_boards;
@@ -1641,18 +1621,27 @@ int InitUserEnv(
   if (presc != NULL)
     {
     const char *ppn_str = "ppn=";
-    char *tmp;
+    char       *tmp;
+    char       *other_reqs;
     
     if (presc->rs_value.at_val.at_str != NULL)
       {
-      num_nodes = atoi(presc->rs_value.at_val.at_str);
+      num_nodes = strtol(presc->rs_value.at_val.at_str, NULL, 10);
       if (num_nodes != 0)
         {
         if ((tmp = strstr(presc->rs_value.at_val.at_str,ppn_str)) != NULL)
           {
           tmp += strlen(ppn_str);
           
-          num_ppn = atoi(tmp);
+          num_ppn = strtol(tmp, NULL, 10);
+          }
+
+        other_reqs = presc->rs_value.at_val.at_str;
+
+        while ((other_reqs = strchr(other_reqs, '+')) != NULL)
+          {
+          other_reqs += 1;
+          num_nodes += strtol(other_reqs, &other_reqs, 10);
           }
         }
       }
@@ -3087,7 +3076,7 @@ void handle_reservation(
     
       log_err(-1, __func__, log_buffer);
       
-      starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, sjr);
+      starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, sjr);
       }
     }
   } /* END handle_reservation() */
@@ -6040,121 +6029,151 @@ void sister_job_nodes(
 
 
 
+int send_join_job_to_a_sister(
+
+  job        *pjob,
+  int         stream,
+  eventent   *ep,
+  tlist_head  phead,
+  int         node_id)
+
+  {
+  tcp_chan *chan = DIS_tcp_setup(stream);
+  int       ret = DIS_NOMALLOC;
+
+  if (chan != NULL)
+    {
+    if ((ret = im_compose(chan, pjob->ji_qs.ji_jobid,
+            pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str, IM_JOIN_JOB,
+            ep->ee_event, TM_NULL_TASK)) != DIS_SUCCESS)
+      {
+      }
+    else if ((ret = diswsi(chan, node_id)) != DIS_SUCCESS)
+      {
+      }
+    else if ((ret = diswsi(chan, pjob->ji_numnodes)) != DIS_SUCCESS)
+      {
+      }
+    else if ((ret = diswsi(chan, pjob->ji_portout)) != DIS_SUCCESS)
+      {
+      }
+    else if ((ret = diswsi(chan, pjob->ji_porterr)) != DIS_SUCCESS)
+      {
+      }
+    else
+      {
+      svrattrl *psatl = (svrattrl *)GET_NEXT(phead);
+
+      if ((ret = encode_DIS_svrattrl(chan, psatl)) == DIS_SUCCESS)
+        {
+        ret = DIS_tcp_wflush(chan);
+        }
+      }
+
+    DIS_tcp_cleanup(chan);
+    }
+
+  return(ret);
+  } /* END send_join_job_to_a_sister() */
+
+
 
 int send_join_job_to_sisters(
     
   job        *pjob,
-  int         node_index,
   int         nodenum,
-  tlist_head  phead,
-  hnodent    *np)
+  tlist_head  phead)
 
   {
-  int          i;
-  int          stream;
-  int          connected;
-  int          ret = PBSE_NONE;
-  eventent    *ep;
-  svrattrl    *psatl;
-  struct tcp_chan *chan = NULL;
+  int              i;
+  int              retry_count;
+  int              stream;
+  int              ret = PBSE_NONE;
+  eventent        *ep;
+  hnodent         *np;
+  int              send_failed_size = nodenum * sizeof(int);
+  int             *send_failed = (int *)calloc(nodenum, sizeof(int));
+  int              unsent_count = nodenum - 1;
 
-  for (i = 0; i < 5; i++)
+  errno = 0;
+    
+  memset(send_failed, -1, send_failed_size);
+  for (i = 1; i < nodenum; i++)
+    send_failed[i] = i;
+
+  for (retry_count = 0; retry_count < 5; retry_count++)
     {
-    connected = FALSE;
-    stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
+    if (unsent_count == 0)
+      break;
 
-    if (IS_VALID_STREAM(stream))
+    for (i = 1; i < nodenum; i++)
       {
-      connected = TRUE;
-      ep = event_alloc(IM_JOIN_JOB, np, TM_NULL_EVENT, TM_NULL_TASK);
+      if (send_failed[i] == DIS_SUCCESS)
+        continue;
 
-      /* Send out a JOIN_JOB message to all the MOM's in the sisterhood. */
-      /* NOTE:  does not check success of join request */
-      if ((chan = DIS_tcp_setup(stream)) == NULL)
-        {
-        }
-      else if ((ret = im_compose(chan,
-          pjob->ji_qs.ji_jobid,
-          pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str,
-          IM_JOIN_JOB,
-          ep->ee_event,
-          TM_NULL_TASK)) == DIS_SUCCESS)
-        {
-        /* nodeid of receiver */
-        if ((ret = diswsi(chan, node_index)) == DIS_SUCCESS)
-          {
-          /* number of nodes */
-          if ((ret = diswsi(chan, nodenum)) == DIS_SUCCESS)
-            {
-            /* out port number */
-            if ((ret = diswsi(chan, pjob->ji_portout)) == DIS_SUCCESS)
-              {
-              /* err port number */
-              if ((ret = diswsi(chan, pjob->ji_porterr)) == DIS_SUCCESS)
-                {
-                /* write jobattrs */
-                psatl = (svrattrl *)GET_NEXT(phead);
-                
-                if ((ret = encode_DIS_svrattrl(chan, psatl)) == DIS_SUCCESS)
-                  {
-                  ret = DIS_tcp_wflush(chan);
-/*                  if ((ret = DIS_tcp_wflush(chan)) == DIS_SUCCESS)
-                    {
-                    read_tcp_reply(chan,IM_PROTOCOL,IM_PROTOCOL_VER,IM_JOIN_JOB,&ret);
-                    }*/
-                  }
-                }
-              }
-            }
-          }
-        }
-      if (chan != NULL)
-        DIS_tcp_cleanup(chan);
+      np = &pjob->ji_hosts[i];
+      log_buffer[0] = '\0';
+
+      ret = -1;
+      stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
       
-      close(stream);
+      if (IS_VALID_STREAM(stream))
+        {
+        ep = event_alloc(IM_JOIN_JOB, np, TM_NULL_EVENT, TM_NULL_TASK);
+
+        ret = send_join_job_to_a_sister(pjob, stream, ep, phead, i);
+        
+        close(stream);
+        }
 
       if (ret == DIS_SUCCESS)
         {
-        /* successfully sent job */
-        break;
-        }
-      }
-
-    usleep(10);
+        send_failed[i] = DIS_SUCCESS;
+        unsent_count--;
+        } 
+      } /* END for each node */
     } /* END for 5 retries */
 
+  if (unsent_count > 0)
+    {
+    snprintf(log_buffer, sizeof(log_buffer), "Failed to send join job to %d of %d sisters.",
+      unsent_count, nodenum - 1);
 
-  if (connected == FALSE)
-    {
-    pjob->ji_nodekill = node_index;
-    
-    if (log_buffer[0] != '\0')
+    if (LOGLEVEL >= 3)
       {
-      sprintf(log_buffer, "tcp_connect_sockaddr failed on %s - jobid %s", np->hn_host, pjob->ji_qs.ji_jobid);
+      /* append the names of the sisters that failed */
+      int             len;
+      dynamic_string *ds = get_dynamic_string(-1, NULL);
+
+      for (i = 1; i < nodenum; i++)
+        {
+        if (send_failed[i] != DIS_SUCCESS)
+          {
+          if (ds->used != 0)
+            append_dynamic_string(ds, ", ");
+
+          append_dynamic_string(ds, pjob->ji_hosts[i].hn_host);
+          }
+        }
+
+      len = strlen(log_buffer);
+      snprintf(log_buffer + len, sizeof(log_buffer) - len,
+        " The list of nodes it failed to contact was %s",
+        ds->str);
+
+      free_dynamic_string(ds);
       }
-    
+
     log_err(errno, __func__, log_buffer);
-    log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
     
-    exec_bail(pjob, JOB_EXEC_FAIL1);
-   
-    ret = PBSE_CANTCONTACTSISTERS;
-    }
-  else if (ret != DIS_SUCCESS)
-    {
-    /* FAILURE */
-    snprintf(log_buffer,sizeof(log_buffer),
-      "Couldn't send join job request to %s for job %s",
-      np->hn_host,
-      pjob->ji_qs.ji_jobid);
-    
-    log_err(-1, __func__, log_buffer);
-    log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
-    
-    exec_bail(pjob,JOB_EXEC_FAIL1);
+    exec_bail(pjob, JOB_EXEC_RETRY);
     
     ret = PBSE_CANTCONTACTSISTERS;
     }
+  else
+    ret = PBSE_NONE;
+
+  free(send_failed);
 
   return(ret);
   } /* END send_join_job_to_sisters() */
@@ -6472,19 +6491,13 @@ int start_exec(
       return(ret);
       }
     
-    /* Send the join job request to the sisterhood. */
-    for (i = 1;i < nodenum;i++)
+    if ((ret = send_join_job_to_sisters(pjob, nodenum, phead)) != DIS_SUCCESS)
       {
-      np = &pjob->ji_hosts[i];
-      
-      log_buffer[0] = '\0';
-      
-      if ((ret = send_join_job_to_sisters(pjob, i, nodenum, phead, np)) != DIS_SUCCESS)
-        {
-        /* couldn't contact all of the sisters, we've already bailed */
-        return(ret);
-        }
-      }     /* END for (i) */
+      /* couldn't contact all of the sisters, we've already bailed */
+      return(ret);
+      }
+
+    pjob->ji_joins_sent = time(NULL);
     
     /* We made it to here. That means all of the sisters responded and we
        can now start the job */
@@ -6703,7 +6716,7 @@ void starter_return(
         (sjrtn->sj_rsvid != 0))
       {
       snprintf(rsv_id, sizeof(rsv_id), "%d", sjrtn->sj_rsvid);
-      destroy_alps_reservation(rsv_id, apbasil_path, apbasil_protocol);
+      destroy_alps_reservation(rsv_id, apbasil_path, apbasil_protocol, 1);
       }
 
     exit(254);
@@ -6791,7 +6804,6 @@ char *std_file_name(
 #if NO_SPOOL_OUTPUT == 0
   int          havehomespool = 0;
 
-  extern char *TNoSpoolDirList[];
 #else /* NO_SPOOL_OUTPUT */
 
   struct stat  myspooldir;

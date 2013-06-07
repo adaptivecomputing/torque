@@ -427,6 +427,8 @@ batch_request *get_batch_request(char *br_id);
 batch_request *get_remove_batch_request(char *br_id);
 int            remove_batch_request(char *br_id);
 
+int req_gpuctrl_svr(struct batch_request *preq);
+
 #ifndef PBS_MOM
 extern void  req_connect (struct batch_request *req);
 /* DIAGTODO: declr req_stat_diag() */
@@ -482,5 +484,5 @@ extern int encode_DIS_svrattrl (struct tcp_chan *chan, svrattrl *);
 extern int dis_request_read (struct tcp_chan *chan, struct batch_request *);
 extern int dis_reply_read (struct tcp_chan *chan, struct batch_reply *);
 
-batch_request *duplicate_request(batch_request *preq);
+batch_request *duplicate_request(batch_request *preq, int job_index = -1);
 #endif /* BATCH_REQUEST_H */

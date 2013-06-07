@@ -262,8 +262,7 @@ int add_mic_status(
       snprintf(log_buffer, sizeof(log_buffer), "Can't get handle for mic index %d", (int)i);
       log_err(-1, __func__, log_buffer);
 
-      copy_to_end_of_dynamic_string(status, END_MIC_STATUS);
-      return(PBSE_SYSTEM);
+      continue;
       }
 
     if (COIEngineGetInfo(engine[i], sizeof(struct COI_ENGINE_INFO), &mic_stat[i]) != COI_SUCCESS)
@@ -271,8 +270,7 @@ int add_mic_status(
       snprintf(log_buffer, sizeof(log_buffer), "Can't get information for mic index %d", (int)i);
       log_err(-1, __func__, log_buffer);
 
-      copy_to_end_of_dynamic_string(status, END_MIC_STATUS);
-      return(PBSE_SYSTEM);
+      continue;
       }
 
     add_single_mic_info(status, &mic_stat[i]);

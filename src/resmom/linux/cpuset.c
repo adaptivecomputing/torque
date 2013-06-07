@@ -25,6 +25,7 @@
 #include "pbs_nodes.h"
 #include "log.h"
 #include "pbs_cpuset.h"
+#include "mom_config.h"
 
 /* NOTE: move these three things to utils when lib is checked in */
 #ifndef MAXPATHLEN
@@ -39,7 +40,6 @@
 
 
 extern hwloc_topology_t topology;
-extern int              MOMConfigUseSMT;
 #ifdef NUMA_SUPPORT
 extern nodeboard        node_boards[];
 extern int              num_node_boards;
@@ -1074,12 +1074,11 @@ int init_torque_cpuset(void)
   hwloc_bitmap_t cpus = NULL;
   hwloc_bitmap_t mems = NULL;
   int            rc   = -1;
-  int            i;
 #ifndef NUMA_SUPPORT
-  hwloc_obj_t    obj;
-  hwloc_obj_t    pu;
   hwloc_bitmap_t bootcpus = NULL;
   hwloc_bitmap_t bootmems = NULL;
+#else
+  int            i;
 #endif
 
 #ifdef USELIBCPUSET
@@ -1433,6 +1432,7 @@ int create_job_cpuset(
   else
 #endif /* GEOMETRY REQUESTS */
     {
+    remove_logical_processor_if_requested(&tcpus);
     if ((pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET) &&
         (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long != 0))
       /* If job's node_usage is singlejob, simply add all cpus */

@@ -62,3 +62,8 @@ int encode_DIS_attropl(struct tcp_chan *chan, struct attropl *pattropl)
 void DIS_tcp_cleanup(struct tcp_chan *chan)
   {
   }
+
+int encode_DIS_attrl(tcp_chan *chan, attrl *al)
+  {
+  return(0);
+  }

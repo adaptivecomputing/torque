@@ -80,7 +80,6 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <rpc/rpc.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <errno.h>
@@ -91,6 +90,7 @@
 #include "server_limits.h"
 #include "net_connect.h"
 #include "mcom.h"
+#include "log.h"
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -200,6 +200,11 @@ static int await_connect(
   /* calculate needed size for fd_set in select() */
 
   BigFDSet = (fd_set *)calloc(1,sizeof(char) * get_fdset_size());
+  if (!BigFDSet)
+    {
+    log_err(ENOMEM,__func__,"Could not allocate memory to set file descriptor");
+    return -1;
+    }
 
   FD_SET(sockd, BigFDSet);
 

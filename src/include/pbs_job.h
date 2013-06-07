@@ -372,9 +372,7 @@ enum job_atr
   JOB_ATR_submit_host,  /* host which submitted the job */
   JOB_ATR_init_work_dir,    /* initial working directory */
   JOB_ATR_pagg_id,
-#ifdef NVIDIA_GPUS
   JOB_ATR_gpu_flags,   /* gpu flags - mode and reset flags */
-#endif  /* NVIDIA_GPUS */
   JOB_ATR_job_id,
   JOB_ATR_arguments,
   JOB_ATR_reservation_id,
@@ -657,7 +655,10 @@ struct job
   int            ji_mempressure_curr;  /* current memory_pressure value */
   int            ji_mempressure_cnt;   /* counts MOM cycles memory_pressure is over threshold */
 #endif
-  int               ji_examined; 
+  int            ji_examined;
+  time_t         ji_kill_started;      /* time since we've begun killing the job - MS only */
+  time_t         ji_joins_sent;        /* time we sent out the join requests - MS only */
+  int            ji_joins_resent;      /* set to TRUE when rejoins have been sent */
 
 #else     /* END MOM ONLY */
 
@@ -1028,6 +1029,7 @@ typedef struct send_job_request
 #define JOB_SUBSTATE_RUNNING 42 /* job running */
 #define JOB_SUBSTATE_SUSPEND 43 /* job suspended, CRAY only */
 
+#define JOB_SUBSTATE_MOM_WAIT 49 /* waiting for kill confirm from sister moms */
 #define JOB_SUBSTATE_EXITING 50 /* Start of job exiting processing */
 #define JOB_SUBSTATE_EXIT_WAIT 51 /* Waiting for response from other moms
                                      or from server */

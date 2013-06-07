@@ -13,6 +13,8 @@ coverage_run.sh
 .libs
 *.m4
 autom4te.cache/
+buildutils/ar-lib
+buildutils/compile
 buildutils/config.guess
 buildutils/config.sub
 buildutils/depcomp
@@ -331,6 +333,7 @@ src/lib/Libsite/test/site_mom_jst/test_site_mom_jst
 src/lib/Libutils/test/u_MXML/test_u_MXML
 src/lib/Libutils/test/u_dynamic_string/test_u_dynamic_string
 src/lib/Libutils/test/u_groups/test_u_groups
+src/lib/Libutils/test/u_hash_map_structs/test_u_hash_map_structs
 src/lib/Libutils/test/u_hash_map_structs/ct_u_hash_map_structs
 src/lib/Libutils/test/u_hash_table/test_u_hash_table
 src/lib/Libutils/test/u_lock_ctl/test_u_lock_ctl
@@ -471,3 +474,4 @@ src/scheduler.basl/Parser.c
 src/scheduler.basl/y.tab.h
 src/resmom/test/mom_comm/some\ path\ to\ nowhere.prefix0.TK
 src/resmom/test/mom_comm/some\ path\ to\ nowhere.0.TK
+src/resmom/test/release_reservation/test_input.txt

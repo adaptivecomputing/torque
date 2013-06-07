@@ -805,7 +805,7 @@ int node_gpustatus_list(
 int get_value_hash(
 
   hash_table_t *ht,
-  void         *key)
+  const void   *key)
   
   {
   if (((char *)key)[0] == 'n')
@@ -2138,7 +2138,8 @@ void free_null(struct pbs_attribute *attr) {}
 
 int is_orphaned(
 
-  char *rsv_id)
+  char *rsv_id,
+  char *job_id)
 
   {
   return(1);
@@ -2273,4 +2274,9 @@ void delete_a_subnode(
   struct pbsnode *pnode)
 
   {
+  }
+
+int remove_alps_reservation(char *rsv_id)
+  {
+  return(0);
   }

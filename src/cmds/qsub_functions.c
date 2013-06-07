@@ -548,7 +548,7 @@ int get_name_value(
 
   curr_ptr = smart_strtok(tmpLine,"",&tok_ptr,FALSE);
 
-  if ((curr_ptr == NULL))
+  if (curr_ptr == NULL)
     return(0);
      
   if ((*curr_ptr == '=') || 
@@ -717,6 +717,8 @@ int validate_submit_filter(
       {
       rc = 1;
       }
+    else
+      rc = -1;
     }
   else if (stat(SUBMIT_FILTER_PATH, &sfilter) != -1)
     {
@@ -835,8 +837,6 @@ void validate_qsub_host_pbs_o_server(
   } /* END validate_qsub_host_pbs_o_server() */
 
 
-
-
 int are_mpp_present(
 
   job_data  *resources,
@@ -893,14 +893,88 @@ void validate_basic_resourcing(
 
   } /* END validate_basic_rsourcing() */
 
+/*
+ * Set up (or enforce) errpath or outpath when join option specified
+ * so that qstat will diplay it properly.
+ */
+void validate_join_options (
+
+  memmgr   **mm,
+  job_data **job_attr,
+  char     *script_tmp)
+
+  {
+
+  job_data         *tmp_job_info = NULL;
+
+  char             *j_attr_value = NULL;
+  char             *o_attr_value = NULL;
+  char             *e_attr_value = NULL;
+
+  /* obtain j, e, and o option values if they exist for further processing */
+  if (hash_find(*job_attr, ATTR_j, &tmp_job_info))
+    {
+    j_attr_value = tmp_job_info->value;
+    }
+
+  /* check needed only if j option is specified */
+  if (j_attr_value != NULL)
+    {
+    if (hash_find(*job_attr, ATTR_o, &tmp_job_info))
+      {
+      o_attr_value = tmp_job_info->value;
+      }
+
+    if (hash_find(*job_attr, ATTR_e, &tmp_job_info))
+      {
+      e_attr_value = tmp_job_info->value;
+      }
+
+    if (strcmp(j_attr_value, "oe") == 0)
+      {
+      if (e_attr_value != NULL)
+        {
+        unlink(script_tmp);
+        fprintf(stderr,"-e option not allowed since -j oe specified\n");
+        exit(1);
+        }
+      /* copy request outpath to errpath so that qstat displays errpath correctly */
+      if (o_attr_value != NULL)
+        {
+        hash_add_or_exit(mm, job_attr, ATTR_e, o_attr_value, CMDLINE_DATA);
+        }
+      }
+    else if (strcmp(j_attr_value, "eo") == 0)
+      {
+      if (o_attr_value != NULL)
+        {
+        unlink(script_tmp);
+        fprintf(stderr,"-o option not allowed since -j eo specified\n");
+        exit(1);
+        }
+      /* copy request errpath to outpath so that qstat displays outpath correctly */
+      if (e_attr_value != NULL)
+        {
+        hash_add_or_exit(mm, job_attr, ATTR_o, e_attr_value, CMDLINE_DATA);
+        }
+      }
+    }
+  }
 
 
-
-void post_check_attributes(job_info *ji)
+void post_check_attributes(job_info *ji, char *script_tmp)
   {
   validate_pbs_o_workdir(&ji->mm, &ji->job_attr);
   validate_qsub_host_pbs_o_server(&ji->mm, &ji->job_attr);
   validate_basic_resourcing(ji);
+
+  /* Make sure -j and -e or -o options are compatible so qstat will properly
+   * display the outpath and errpath for the job.
+   *
+   * Fix for TRQ-1839 (job does not have matching output and errpath when
+   * -j oe (or eo) specified.)
+   */
+  validate_join_options(&ji->mm, &ji->job_attr, script_tmp);
   } /* END post_check_attributes() */
 
 
@@ -2658,7 +2732,6 @@ void process_opts(
             print_qsub_usage_exit("qsub: illegal -j value");
           hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_j, optarg, data_type);
 
-
         break;
 
       case 'J':
@@ -3339,6 +3412,7 @@ void process_opts(
     print_qsub_usage_exit("The -J option can only be used in conjunction with -P");
     }
 
+
   /* ORNL WRAPPER */
 
   if (!(hash_find(ji->client_attr, "no_submit_filter", &tmp_job_info)) &&
@@ -3604,55 +3678,21 @@ void set_job_defaults(
   {
   job_data *tmp_job_info = NULL;
   hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_c, CHECKPOINT_UNSPECIFIED, STATIC_DATA);
-/*  if (c_opt == FALSE)
-    set_attr(&attrib, ATTR_c, default_ckpt);
-    */
 
   hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_h, NO_HOLD, STATIC_DATA);
-/*  if (h_opt == FALSE)
-    set_attr(&attrib, ATTR_h, NO_HOLD);
-    */
 
   hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_j, NO_JOIN, STATIC_DATA);
-/*  if (j_opt == FALSE)
-    set_attr(&attrib, ATTR_j, NO_JOIN);
-    */
 
   hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_k, NO_KEEP, STATIC_DATA);
-/*  if (k_opt == FALSE)
-    set_attr(&attrib, ATTR_k, NO_KEEP);
-    */
 
   hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_m, MAIL_AT_ABORT, STATIC_DATA);
-/*  if (m_opt == FALSE)
-    set_attr(&attrib, ATTR_m, MAIL_AT_ABORT);
-    */
 
   hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_p, DEFAULT_PRIORITY, STATIC_DATA);
-/*  if (p_opt == FALSE)
-    set_attr(&attrib, ATTR_p, "0");
-    */
 
-    /* rerunnable_by_default = true, if this changes later, that value will override this one */
+  /* rerunnable_by_default = true, if this changes later, that value will override this one */
   hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_r, "TRUE", STATIC_DATA);
-/*   if (r_opt == FALSE) */
-/*    {
-    if (rerunnable_by_default)
-      set_attr(&attrib, ATTR_r, "TRUE");
-    else
-      set_attr(&attrib, ATTR_r, "FALSE");
-    }
-    */
   hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_f, "FALSE", STATIC_DATA);
-/*   if (f_opt == FALSE) */
-    /* fault_tolerant_by_default = false, if this changes later, that value will override this one */
-/*    {
-    if (fault_tolerant_by_default)
-      set_attr(&attrib, ATTR_f, "TRUE");
-    else
-      set_attr(&attrib, ATTR_f, "FALSE");
-    }
-    */
+  
   hash_add_or_exit(&ji->mm, &ji->client_attr, "pbs_dprefix", "#PBS", STATIC_DATA);
   hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_job_radix, "0", STATIC_DATA);
   if (hash_find(ji->user_attr, "pbs_clientretry", &tmp_job_info))
@@ -3847,7 +3887,7 @@ void print_qsub_usage_exit(const char *error_msg)
     [-c [ none | { enabled | periodic | shutdown |\n\
     depth=<int> | dir=<path> | interval=<minutes>}... ]\n\
     [-C directive_prefix] [-d path] [-D path]\n\
-    [-e path] [-h] [-I] [-j oe] [-k {oe}] [-l resource_list] [-m n|{abe}]\n\
+    [-e path] [-h] [-I] [-j oe|eo|n] [-k {oe}] [-l resource_list] [-m n|{abe}]\n\
     [-M user_list] [-N jobname] [-o path] [-p priority] [-P proxy_user [-J <jobid]]\n\
     [-q queue] [-r y|n] [-S path] [-t number_to_submit] [-T type]  [-u user_list]\n\
     [-w] path\n";
@@ -3947,6 +3987,8 @@ void add_variable_list(
     {
     /* add the length of this + 1 for the comma */
     total_len = v_value->value_len + 1;;
+    if ((v_value->value) && (!v_value->value_len))
+      total_len += strlen(v_value->value);
     }
 
   total_len += hash_strlen(ji->user_attr);
@@ -4004,7 +4046,7 @@ void process_early_opts(
         TShowAbout_exit();
       else if (strcmp(name, "version") == 0)
         {
-        fprintf(stderr, "Version: %s\nRevision: %s\n", PACKAGE_VERSION, GIT_HASH);
+        fprintf(stderr, "Version: %s\nCommit: %s\n", PACKAGE_VERSION, GIT_HASH);
         exit(0);
         }
       }
@@ -4100,7 +4142,15 @@ void main_func(
   process_config_file(&ji);
 
   /* check/set submit filter_path */
-  validate_submit_filter(&ji.mm, &ji.job_attr);
+  if (validate_submit_filter(&ji.mm, &ji.job_attr) == -1)
+  {
+     hash_find(ji.job_attr, ATTR_pbs_o_submit_filter, &tmp_job_info);
+     fprintf(stderr,
+             "qsub: invalid submit filter: \"%s\"\n",
+             tmp_job_info->value);
+
+     exit(1);
+  }
 
   /* NOTE:  load config before processing opts since config may modify how opts are handled */
 
@@ -4217,7 +4267,7 @@ void main_func(
   if (((optind + 1) < argc) && (hash_find(ji.job_attr, ATTR_inter, &tmp_job_info) == FALSE))
     print_qsub_usage_exit("index issues");
   
-  post_check_attributes(&ji);
+  post_check_attributes(&ji, script_tmp);
 
   if (hash_find(ji.client_attr, "DISPLAY", &tmp_job_info))
     {

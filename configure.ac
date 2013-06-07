@@ -37,6 +37,10 @@ AC_CONFIG_AUX_DIR([buildutils])
 AC_CANONICAL_HOST
 AC_CONFIG_MACRO_DIR([buildutils])
 
+AC_PROG_CXX
+m4_ifdef([AM_PROG_AR], [
+    AM_PROG_AR
+])
 LT_INIT
 LT_LANG([C++])
 AC_SUBST([LIBTOOL_DEPS])
@@ -50,7 +54,7 @@ m4_ifdef([HAVE_CHECK],
   [AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.9.6 color-tests])],
   [AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.9.6])])
 
-AC_PROG_CXX
+AM_PROG_CC_C_O
 CC="$CXX"
 CCLD="$CXX"
 AC_SUBST([CCLD])
@@ -80,9 +84,14 @@ AM_CONFIG_HEADER([src/include/pbs_config.h])
 dnl
 dnl Find our git revision hash for program outputs
 dnl
+git_installed=`which git`
+success=$?
+if test "X$success" == "X0" ; then
 githash="`git rev-parse HEAD`"
 success=$?
-if test "X$success" != "X0" ; then
+fi
+
+if test "X$success" == "X0" ; then
   AC_DEFINE_UNQUOTED(GIT_HASH, ["$githash"], [repository svn version])
 else
   dnl current hash is a file checked in to the git repo in the base directory
@@ -698,7 +707,7 @@ AC_ARG_ENABLE(gcc_warnings, [
                           gcc, default is to not error on any warnings])
 if test "x$GCC" = "xyes" ;then
   AC_MSG_CHECKING([whether to disable strict gcc warnings])
-  if test "${disable_gcc_warnings}" == "yes" ; then
+  if test "${enable_gcc_warnings}" = "no" ; then
     AC_MSG_RESULT([yes])
     gccwarnings=no
   else
@@ -971,8 +980,8 @@ AC_ARG_WITH(mic-path, [
                      Example: ./configure --with-mic-path=/opt/intel/mic/coi will
                      specify that the include files are in /opt/intel/mic/coi/include
                      and the libraries are in /opt/intel/mic/coi/host-linux-release/lib],
-  [MOMLIBS="$MOMLIBS -L${withval}/host-linux-release/lib"; CFLAGS="$CFLAGS -I${withval}/include"],
-  [MOMLIBS="$MOMLIBS -L/opt/intel/mic/coi/host-linux-release/lib"; CFLAGS="$CFLAGS -I/opt/intel/mic/coi/include"])
+  [MICLIBS="-L${withval}/host-linux-release/lib"; MICCFLAGS="-I${withval}/include"],
+  [MICLIBS="-L/opt/intel/mic/coi/host-linux-release/lib"; MICCFLAGS="-I/opt/intel/mic/coi/include"])
 
 
 dnl
@@ -992,8 +1001,8 @@ esac
 AM_CONDITIONAL([MIC], test "$MIC" = yes)
 
 if test "$MIC" = "yes" ; then
-  MOMLIBS="$MOMLIBS -lcoi_host"
-  CPPFLAGS="$CPPFLAGS $CFLAGS"
+  MOMLIBS="$MOMLIBS $MICLIBS -lcoi_host"
+  CPPFLAGS="$CPPFLAGS $MICCFLAGS"
   gccwarnings=no
   AC_CHECK_HEADERS([source/COIPipeline_source.h],
     [],

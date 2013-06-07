@@ -3,7 +3,7 @@
 /*
  *                    TORQUE v2.5+ Software License v1.1 
  *                    
- * Copyright (c) 2010-2011 Adaptive Computing Enterprises, Inc.
+ * Copyright (c) 2010-2013 Adaptive Computing Enterprises, Inc.
  * All rights reserved. 
  * 
  * Use this license to use or redistribute the TORQUE software v2.5+ and later
@@ -64,8 +64,6 @@
  * 
  * 5. DISCLAIMER OF WARRANTY 
  * 
- *      THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. 
- *      ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
  *      THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
  *      PARTICULAR PURPOSE, AND NON-INFRINGEMENT ARE EXPRESSLY 
  *      DISCLAIMED. 
@@ -86,9 +84,8 @@
  * 
  * Note 1: TORQUE is developed from an earlier version v2.3 of OpenPBS.
  * TORQUE has been developed beyond OpenPBS v2.3. The OpenPBS v2.3 license
- * and OpenPBS software can be obtained at: 
+ * and OpenPBS software are included in this distribution.
  * 
- * http://www.pbsworks.com/ResLibSearchResult.aspx?keywords=openpbs&industry=All&product_service=All&category=Free%20Software%20Downloads&order_by=title
  * Users of TORQUE should comply with the TORQUE license as well as the
  * OpenPBS license.
  *

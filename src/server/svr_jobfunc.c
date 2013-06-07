@@ -305,18 +305,17 @@ int insert_into_alljobs_by_rank(
 
   while ((pjcur = next_job_from_back(aj, &iter)) != NULL)
     {
+    mutex_mgr pjcur_mgr(pjcur->ji_mutex, true);
     if (job_qrank > pjcur->ji_wattr[JOB_ATR_qrank].at_val.at_long)
       {
+      pjcur_mgr.set_lock_on_exit(false);
       break;
       }
     
     if (strcmp(jobid, pjcur->ji_qs.ji_jobid) == 0)
       {
-      unlock_ji_mutex(pjcur, __func__, "6", LOGLEVEL);
       return(ALREADY_IN_LIST);
       }
-
-    unlock_ji_mutex(pjcur, __func__, "7", LOGLEVEL);
     }
 
   if (pjcur != NULL)
@@ -386,6 +385,15 @@ int svr_enquejob(
 
   if (pque == NULL)
     {
+    /* job came in locked, so it must exit locked if possible */
+    lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+
+    if (pjob->ji_being_recycled == TRUE)
+      {
+      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+      return(PBSE_JOB_RECYCLED);
+      }
+
     return(PBSE_UNKQUE);
     }
 
@@ -394,7 +402,7 @@ int svr_enquejob(
     {
     if (LOGLEVEL >= 6)
       {
-      sprintf(log_buf, "reserved jobs: %d - job id %s", pque->qu_reserved_jobs, pjob->ji_qs.ji_jobid);
+      sprintf(log_buf, "reserved jobs: %d - job id %s", pque->qu_reserved_jobs, job_id);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
       }
     pque->qu_reserved_jobs--;
@@ -406,7 +414,6 @@ int svr_enquejob(
 
   if (pjob->ji_being_recycled == TRUE)
     {
-    que_mgr.unlock();
     unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
     return(PBSE_JOB_RECYCLED);
     }
@@ -424,8 +431,6 @@ int svr_enquejob(
     total_jobs = count_queued_jobs(pque, NULL);
     if ((total_jobs + array_jobs + pque->qu_reserved_jobs) >= pque->qu_attr[QA_ATR_MaxJobs].at_val.at_long)
       {
-      que_mgr.unlock();
-      unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
       return(PBSE_MAXQUED);
       }
     }
@@ -436,8 +441,6 @@ int svr_enquejob(
     user_jobs = count_queued_jobs(pque, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
     if ((user_jobs + pque->qu_reserved_jobs) >= pque->qu_attr[QA_ATR_MaxUserJobs].at_val.at_long)
       {
-      que_mgr.unlock();
-      unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
       return(PBSE_MAXUSERQUED);
       }
     }
@@ -516,6 +519,7 @@ int svr_enquejob(
       snprintf(log_buf, sizeof(log_buf), "jobs queued job id %s for %s", pjob->ji_qs.ji_jobid, pque->qu_qs.qu_name);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
       }
+
     increment_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob);
     }
 
@@ -623,7 +627,6 @@ int svr_enquejob(
     /* start attempts to route job */
     pjob->ji_qs.ji_un_type = JOB_UNION_TYPE_ROUTE;
     pjob->ji_qs.ji_un.ji_routet.ji_quetime = time_now;
-    
     }
 
   return(PBSE_NONE);
@@ -1155,6 +1158,174 @@ static resource *get_resource(
 
 
 /*
+ * chk_mppnodect
+ * special case where mppnodect was not specified for the job, we need to
+ * check max against recalculated value using queue/server resources_defaults
+ *
+ * @return PBSE_NONE if it meets the limits, -1 for less than, 1 for greater than
+ */
+
+int chk_mppnodect(
+
+  resource  *mppnodect_resource,
+  pbs_queue *pque,
+  long       nppn,
+  long       mpp_width,
+  char      *EMsg)               /* O (optional) */
+
+  {
+  resource    *cmpwith;
+  long         mpp_nodect;
+  int          LimitIsFromQueue = FALSE;
+  int          rc = PBSE_NONE;
+  const char  *LimitName;
+  char         log_buf[LOCAL_LOG_BUF_SIZE];
+   
+  if (nppn == 0)
+    {     
+    /* get queue/server default value */
+    resource_def *mppnppn = find_resc_def(svr_resc_def, "mppnppn",   svr_resc_size);
+    resource     *default_nppn;
+    
+    if (mppnppn != NULL)
+      {
+      pthread_mutex_lock(server.sv_attr_mutex);
+      default_nppn = get_resource(&pque->qu_attr[QA_ATR_ResourceDefault],
+          &server.sv_attr[SRV_ATR_resource_deflt],
+          mppnppn,
+          &LimitIsFromQueue);
+      pthread_mutex_unlock(server.sv_attr_mutex);
+        
+      if (default_nppn != NULL)
+        {
+        nppn = default_nppn->rs_value.at_val.at_long;
+        }
+      }
+    }
+
+  if (mpp_width == 0)
+    {
+    /* get queue/server default value */
+    resource_def *mppwidth = find_resc_def(svr_resc_def, "mppwidth",  svr_resc_size);
+    resource     *default_width;
+
+    if (mppwidth != NULL)
+      {
+      pthread_mutex_lock(server.sv_attr_mutex);
+      default_width = get_resource(&pque->qu_attr[QA_ATR_ResourceDefault],
+          &server.sv_attr[SRV_ATR_resource_deflt],
+          mppwidth,
+          &LimitIsFromQueue);
+      pthread_mutex_unlock(server.sv_attr_mutex);
+        
+      if (default_width != NULL)
+        {
+        mpp_width = default_width->rs_value.at_val.at_long;
+        }
+      }
+    }
+
+  /* Uses same way of calculating as set_mppnodect */
+  /* Check for width less than a node */
+
+  if ((mpp_width) &&
+      (mpp_width < nppn))
+    {
+    nppn = mpp_width;
+    }
+  else if (mpp_width == 0)
+    mpp_width = nppn;
+
+  /* if nppn is 0, make it default to the largest number of execution slots 
+   * on a subnode */
+  if (nppn == 0)
+    {
+    if (alps_reporter != NULL)
+      {
+      lock_node(alps_reporter, __func__, NULL, 0);
+      nppn = alps_reporter->max_subnode_nppn;
+      unlock_node(alps_reporter, __func__, NULL, 0);
+      }
+    }
+
+  /* Compute an estimate for the number of nodes needed */
+
+  if (nppn > 1)
+    mpp_nodect = mpp_width / nppn;
+  else
+    mpp_nodect = mpp_width;
+
+  LimitIsFromQueue = FALSE;
+  LimitName = mppnodect_resource->rs_defin->rs_name;
+  
+  pthread_mutex_lock(server.sv_attr_mutex);
+  cmpwith = get_resource(&pque->qu_attr[QA_ATR_ResourceMax],
+      &server.sv_attr[SRV_ATR_ResourceMax],
+      mppnodect_resource->rs_defin,
+      &LimitIsFromQueue);
+  pthread_mutex_unlock(server.sv_attr_mutex);
+
+  if (cmpwith != NULL)
+    {
+    long nodect_orig;
+
+    if (LOGLEVEL >= 7)
+      {
+      snprintf(log_buf, sizeof(log_buf),
+        "chk_svr_resc_limit: comparing calculated mppnodect %ld, %s limit %s %ld\n",
+        mpp_nodect,
+        (LimitIsFromQueue == 1) ? "queue" : "server",
+        LimitName,
+        cmpwith->rs_value.at_val.at_long);
+      
+      log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
+      }
+
+    nodect_orig = mppnodect_resource->rs_value.at_val.at_long;
+    mppnodect_resource->rs_value.at_val.at_long = mpp_nodect;
+    
+    rc = mppnodect_resource->rs_defin->rs_comp(
+            &cmpwith->rs_value,
+            &mppnodect_resource->rs_value);
+
+    mppnodect_resource->rs_value.at_val.at_long = nodect_orig;
+
+    if (rc > 0)
+      {
+      rc = 1;
+      }
+    else if (rc < 0)
+      {
+      rc = PBSE_NONE;
+
+      /* only record if:
+       *     is_transit flag is not set
+       * or  is_transit is set, but not to true
+       * or  the value comes from queue limit
+       */
+      if ((!(pque->qu_attr[QE_ATR_is_transit].at_flags & ATR_VFLAG_SET)) ||
+          (!pque->qu_attr[QE_ATR_is_transit].at_val.at_long) ||
+          (LimitIsFromQueue))
+        {
+        if ((EMsg != NULL) && (EMsg[0] == '\0'))
+          {
+          sprintf(EMsg, "cannot satisfy %s max %s requirement",
+                  (LimitIsFromQueue == 1) ? "queue" : "server",
+                  (LimitName != NULL) ? LimitName : "resource");
+          }
+
+        rc = -1;
+        }
+      }
+    }
+
+  return(rc);
+  } /* END chk_mppnodect() */
+
+
+
+
+/*
  * compare the job resource limit against the system limit
  * unless a queue limit exists, it takes priority
  *
@@ -1190,7 +1361,6 @@ int chk_svr_resc_limit(
 
   long          mpp_nppn = 0;
   long          mpp_width = 0;
-  long          mpp_nodect = 0;
   resource     *mppnodect_resource = NULL;
   long          proc_ct = 0;
   long          cray_enabled = FALSE;
@@ -1198,10 +1368,7 @@ int chk_svr_resc_limit(
   resource_def *noderesc     = NULL;
   resource_def *needresc     = NULL;
   resource_def *nodectresc   = NULL;
-  resource_def *mppwidthresc = NULL;
-  resource_def *mppnppn      = NULL;
   resource_def *procresc     = NULL;
-  char          log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* NOTE:  server limits are specified with server.resources_available */
 
@@ -1211,8 +1378,6 @@ int chk_svr_resc_limit(
   noderesc     = find_resc_def(svr_resc_def, "nodes",     svr_resc_size);
   needresc     = find_resc_def(svr_resc_def, "neednodes", svr_resc_size);
   nodectresc   = find_resc_def(svr_resc_def, "nodect",    svr_resc_size);
-  mppwidthresc = find_resc_def(svr_resc_def, "mppwidth",  svr_resc_size);
-  mppnppn      = find_resc_def(svr_resc_def, "mppnppn",   svr_resc_size);
   procresc     = find_resc_def(svr_resc_def, "procs",   svr_resc_size);
   
   SvrNodeCt = 0;
@@ -1367,132 +1532,6 @@ int chk_svr_resc_limit(
     jbrc = (resource *)GET_NEXT(jbrc->rs_link);
     }  /* END while (jbrc != NULL) */
 
-  if (mppnodect_resource != NULL)
-    {
-    /*
-     * special case where mppnodect was not specified for the job, we need to
-     * check max against recalculated value using queue/server resources_defaults
-     */
-     
-    if (mpp_nppn == 0)
-      {     
-      /* get queue/server default value */
-      
-      if (mppnppn != NULL)
-        {
-        pthread_mutex_lock(server.sv_attr_mutex);
-        cmpwith = get_resource(&pque->qu_attr[QA_ATR_ResourceDefault],
-            &server.sv_attr[SRV_ATR_resource_deflt],
-            mppnppn,
-            &LimitIsFromQueue);
-        pthread_mutex_unlock(server.sv_attr_mutex);
-          
-        if (cmpwith != NULL)
-          {
-          mpp_nppn = cmpwith->rs_value.at_val.at_long;
-          }
-        }
-      }
-
-    if (mpp_width == 0)
-      {
-      /* get queue/server default value */
-
-      if (mppwidthresc != NULL)
-        {
-        pthread_mutex_lock(server.sv_attr_mutex);
-        cmpwith = get_resource(&pque->qu_attr[QA_ATR_ResourceDefault],
-            &server.sv_attr[SRV_ATR_resource_deflt],
-            mppwidthresc,
-            &LimitIsFromQueue);
-        pthread_mutex_unlock(server.sv_attr_mutex);
-          
-        if (cmpwith != NULL)
-          {
-          mpp_width = cmpwith->rs_value.at_val.at_long;
-          }
-        }
-      }
-
-    /* Uses same way of calculating as set_mppnodect */
-    /* Check for width less than a node */
-
-    if ((mpp_width) && (mpp_width < mpp_nppn))
-      {
-      mpp_nppn = mpp_width;
-      }
-
-    /* Compute an estimate for the number of nodes needed */
-
-    mpp_nodect = mpp_width;
-    if (mpp_nppn > 1)
-      {
-      mpp_nodect = (mpp_nodect + mpp_nppn - 1) / mpp_nppn;
-      }
-
-    LimitIsFromQueue = FALSE;
-    LimitName = mppnodect_resource->rs_defin->rs_name;
-    
-    pthread_mutex_lock(server.sv_attr_mutex);
-    cmpwith = get_resource(&pque->qu_attr[QA_ATR_ResourceMax],
-        &server.sv_attr[SRV_ATR_ResourceMax],
-        mppnodect_resource->rs_defin,
-        &LimitIsFromQueue);
-    pthread_mutex_unlock(server.sv_attr_mutex);
-
-    if (cmpwith != NULL)
-      {
-      long nodect_orig;
-
-      if (LOGLEVEL >= 7)
-        {
-        sprintf(log_buf,
-          "chk_svr_resc_limit: comparing calculated mppnodect %ld, %s limit %s %ld\n",
-          mpp_nodect,
-          (LimitIsFromQueue == 1) ? "queue" : "server",
-          LimitName,
-          cmpwith->rs_value.at_val.at_long);
-        
-        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
-        }
-
-      nodect_orig = mppnodect_resource->rs_value.at_val.at_long;
-      mppnodect_resource->rs_value.at_val.at_long = mpp_nodect;
-      
-      rc = mppnodect_resource->rs_defin->rs_comp(
-              &cmpwith->rs_value,
-              &mppnodect_resource->rs_value);
-
-      mppnodect_resource->rs_value.at_val.at_long = nodect_orig;
-
-      if (rc > 0)
-        {
-        comp_resc_gt++;
-        }
-      else if (rc < 0)
-        {
-        /* only record if:
-         *     is_transit flag is not set
-         * or  is_transit is set, but not to true
-         * or  the value comes from queue limit
-         */
-        if ((!(pque->qu_attr[QE_ATR_is_transit].at_flags & ATR_VFLAG_SET)) ||
-            (!pque->qu_attr[QE_ATR_is_transit].at_val.at_long) ||
-            (LimitIsFromQueue))
-          {
-          if ((EMsg != NULL) && (EMsg[0] == '\0'))
-            {
-            sprintf(EMsg, "cannot satisfy %s max %s requirement",
-                    (LimitIsFromQueue == 1) ? "queue" : "server",
-                    (LimitName != NULL) ? LimitName : "resource");
-            }
-
-          comp_resc_lt++;
-          }
-        }
-      }
-    }  /* END if (mppnodect_resource != NULL) */
-
   get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
   /* If we restart pbs_server while the cray is down, pbs_server won't know about
    * the computes. Don't perform this check for this case. */
@@ -1500,6 +1539,19 @@ int chk_svr_resc_limit(
       (alps_reporter == NULL) ||
       (alps_reporter->alps_subnodes.ra->num != 0))
     {
+    if (cray_enabled == TRUE)
+      {
+      if (mppnodect_resource != NULL)
+        {
+        rc = chk_mppnodect(mppnodect_resource, pque, mpp_nppn, mpp_width, EMsg);
+        
+        if (rc > 0)
+          comp_resc_gt++;
+        else if (rc < 0)
+          comp_resc_lt++;
+        }  /* END if (mppnodect_resource != NULL) */
+      }
+
     if (jbrc_nodes != NULL)
       {
       int tmpI;
@@ -2761,7 +2813,7 @@ void get_jobowner(
  * @param *dflt
  */
 
-static void set_deflt_resc(
+void set_deflt_resc(
 
   pbs_attribute *jb,
   pbs_attribute *dflt)
@@ -2813,6 +2865,79 @@ static void set_deflt_resc(
   }  /* END set_deflt_resc() */
 
 
+
+
+int add_required_features(
+
+  job       *pjob,
+  pbs_queue *pque)
+
+  {
+  int rc = PBSE_NONE;
+
+  if (pque->qu_attr[QA_ATR_FeaturesRequired].at_val.at_str != NULL)
+    {
+    resource_def *prd      = find_resc_def(svr_resc_def, "feature", svr_resc_size);
+    resource     *features = find_resc_entry(&pjob->ji_wattr[JOB_ATR_resource], prd);      
+    char         *current_features = NULL;
+    char         *output_features;
+    
+    if (features != NULL)
+      current_features = features->rs_value.at_val.at_str;
+    
+    if (current_features == NULL)
+      output_features = strdup(pque->qu_attr[QA_ATR_FeaturesRequired].at_val.at_str);
+    else
+      {
+      /* add +1 for the null terminator and +1 for a comma */
+      int len  = strlen(pque->qu_attr[QA_ATR_FeaturesRequired].at_val.at_str) + 1;
+      len     += strlen(current_features) + 1;
+      output_features = (char *)calloc(1, len);
+      snprintf(output_features, len, "%s,%s",
+        current_features, pque->qu_attr[QA_ATR_FeaturesRequired].at_val.at_str);
+      }
+
+    if (features != NULL)
+      {
+      features->rs_value.at_flags |= ATR_VFLAG_SET;
+      if (features->rs_value.at_val.at_str != NULL)
+        free(features->rs_value.at_val.at_str);
+      features->rs_value.at_val.at_str = output_features;
+      }
+    else
+      {
+      rc = decode_resc(&pjob->ji_wattr[JOB_ATR_resource], ATTR_l, "feature", output_features, ATR_DFLAG_ACCESS);
+      free(output_features);
+      }
+    }
+
+  /* add the login property as well */
+  if (pque->qu_attr[QA_ATR_ReqLoginProperty].at_val.at_str != NULL)
+    {
+    if (pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str != NULL)
+      {
+      char *new_prop;
+      int len = strlen(pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str) + 1;
+      len += strlen(pque->qu_attr[QA_ATR_ReqLoginProperty].at_val.at_str) + 1; /* another 1 for ',' */
+      new_prop = (char *)calloc(1, len);
+
+      snprintf(new_prop, len, "%s,%s",
+        pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str,
+        pque->qu_attr[QA_ATR_ReqLoginProperty].at_val.at_str);
+      free(pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str);
+      pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str = new_prop;
+      }
+    else
+      {
+      char *new_prop = strdup(pque->qu_attr[QA_ATR_ReqLoginProperty].at_val.at_str);
+      pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str = new_prop;
+      pjob->ji_wattr[JOB_ATR_login_prop].at_flags |= ATR_VFLAG_SET;
+      }
+
+    }
+
+  return(rc);
+  } /* END add_required_features() */
 
 
 
@@ -2883,6 +3008,9 @@ void set_resc_deflt(
     set_deflt_resc(ja, &server.sv_attr[SRV_ATR_ResourceMax]);
 #endif
     pthread_mutex_unlock(server.sv_attr_mutex);
+
+    /* check for the required feature attribute */
+    add_required_features(pjob, pque);
 
     unlock_queue(pque, __func__, NULL, LOGLEVEL);
     }
@@ -3224,6 +3352,7 @@ int unlock_ji_mutex(
   const char *id,
   const char *msg,
   int        logging)
+
   {
   int rc = PBSE_NONE;
   char *err_msg = NULL;

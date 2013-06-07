@@ -405,6 +405,7 @@ void post_checkpointsend(
   {
   int                   code;
   job                  *pjob;
+  bool                 preq_free_done = FALSE;
 
   pbs_attribute        *pwait;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
@@ -476,14 +477,16 @@ void post_checkpointsend(
       
       /* continue to start job running */
 
-      svr_strtjob2(&pjob, NULL);
+      svr_strtjob2(&pjob, preq);
+      preq_free_done = TRUE;
       }
 
     if (pjob == NULL)
       job_mutex.set_lock_on_exit(false);
     }    /* END if (pjob != NULL) */
 
-  free_br(preq); /* close connection and release request */
+  if (!preq_free_done)
+    free_br(preq); /* close connection and release request */
 
   return;
   }  /* END post_checkpointsend() */
@@ -715,7 +718,11 @@ void post_stagein(
           {
           /* continue to start job running */
 
-          svr_strtjob2(&pjob, NULL);
+          svr_strtjob2(&pjob, preq);
+          
+          /* svr_strjob2 would call finish_sendmom which would free preq 
+             in its reply_send_svr, set preq now to NULL to avoid double free */
+          preq = NULL;
           }
         }
       else
@@ -730,7 +737,8 @@ void post_stagein(
       job_mutex.set_lock_on_exit(false);
     }    /* END if (pjob != NULL) */
 
-  free_br(preq); /* close connection and release request */
+  if (preq)
+    free_br(preq); /* close connection and release request */
 
   return;
   }  /* END post_stagein() */
@@ -1657,12 +1665,17 @@ job *chk_job_torun(
   if ((pque = get_jobs_queue(&pjob)) != NULL)
     {
     mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
-    if (pque->qu_qs.qu_type != QTYPE_Execution)
+    if (pque->qu_qs.qu_type != QTYPE_Execution ||
+         pque->qu_attr[QA_ATR_Started].at_val.at_long == 0)
       {
-      /* FAILURE - job must be in execution queue */
-      log_err(-1, __func__, "attempt to start job in non-execution queue");
+      if (pque->qu_attr[QA_ATR_Started].at_val.at_long == 0)
+        snprintf(EMsg, sizeof(EMsg), "attempt to start job in non-started queue");
+      else
+        /* FAILURE - job must be in execution queue */
+        snprintf(EMsg, sizeof(EMsg), "attempt to start job in non-execution queue");
+      log_err(-1, __func__, EMsg);
   
-      req_reject(PBSE_IVALREQ, 0, preq, NULL, "job not in execution queue");
+      req_reject(PBSE_IVALREQ, 0, preq, NULL, EMsg);
   
       return(NULL);
       }
@@ -1864,7 +1877,6 @@ int set_job_exec_info(
 
 
 
-#ifdef NVIDIA_GPUS
 char *get_correct_spec_string(
 
   char *given,
@@ -1882,6 +1894,7 @@ char *get_correct_spec_string(
   char     *gpu_req;
   int       len;
   resource *pres = NULL;
+  char      log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* check to see if there is a gpus request. If so moab
    * sripted the mode request if it existed. We need to
@@ -1924,12 +1937,12 @@ char *get_correct_spec_string(
           {
           if (LOGLEVEL >= 7)
             {
-            sprintf(log_buffer, "%s: job has %d gpu requests in node spec '%s'",
+            sprintf(log_buf, "%s: job has %d gpu requests in node spec '%s'",
               __func__,
               num_gpu_reqs,
               given);
 
-            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
             }
 
           if ((outer_plus = strchr(mode_string, '+')) != NULL)
@@ -1997,11 +2010,11 @@ char *get_correct_spec_string(
             }
           if ((LOGLEVEL >= 7) && (correct_spec != NULL) && (correct_spec[0] != '\0'))
             {
-            sprintf(log_buffer, "%s: job gets adjusted gpu node spec of '%s'",
+            sprintf(log_buf, "%s: job gets adjusted gpu node spec of '%s'",
               __func__,
               correct_spec);
 
-            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
             }
           }
         }
@@ -2013,7 +2026,6 @@ char *get_correct_spec_string(
 
   return(correct_spec);
   } /* get_correct_spec_string() */
-#endif
 
 
 
@@ -2068,12 +2080,8 @@ int assign_hosts(
 
   if ((given != NULL) && (given[0] != '\0'))
     {
-#ifdef NVIDIA_GPUS
     hosttoalloc = get_correct_spec_string(given, pjob);
     to_free = hosttoalloc;
-#else
-    hosttoalloc = given;
-#endif
     }
   else
     {

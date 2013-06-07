@@ -171,6 +171,7 @@ int start_domainsocket_listener(
   pthread_t           tid;
   pthread_attr_t      t_attr;
   int objclass = 0;
+  char authd_host_port[1024];
 
   memset(&addr, 0, sizeof(addr));
   addr.sun_family = AF_UNIX;
@@ -220,6 +221,12 @@ int start_domainsocket_listener(
     log_get_set_eventclass(&objclass, GETV);
     if (objclass == PBS_EVENTCLASS_TRQAUTHD)
       {
+      log_get_host_port(authd_host_port, sizeof(authd_host_port));
+      if (authd_host_port[0])
+        snprintf(log_buf, sizeof(log_buf),
+          "TORQUE authd daemon started and listening on %s (unix socket %s)", 
+            authd_host_port, socket_name);
+      else
       snprintf(log_buf, sizeof(log_buf),
         "TORQUE authd daemon started and listening unix socket %s", socket_name);
       log_event(PBSEVENT_SYSTEM | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD,
@@ -310,10 +317,16 @@ int start_listener_addrinfo(
   unsigned short      port_net_byte_order;
   pthread_attr_t      t_attr;
   char                err_msg[MAXPATHLEN];
+  char                log_buf[LOCAL_LOG_BUF_SIZE + 1];
+  int                 ret = getaddrinfo(host_name, NULL, NULL, &adr_svr);
 
-  if (!(getaddrinfo(host_name, NULL, NULL, &adr_svr) == 0))
+  if (ret != 0)
     {
+    /* hostname didn't resolve */
+    sprintf(err_msg,"Error with getaddrinfo on host name %s. Error code = %d.\n",host_name,ret);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, err_msg);
     rc = PBSE_SOCKET_FAULT;
+    return rc;
     }
 
   port_net_byte_order = htons(server_port);
@@ -409,18 +422,26 @@ int start_listener_addrinfo(
           }
         else
           {
-          /* add_conn is not protocol independent. We need to 
-             do some IPv4 stuff here */
-          in_addr = (struct sockaddr_in *)&adr_client;
-          add_conn(
-            *new_conn_port,
-            FromClientDIS,
-            (pbs_net_t)ntohl(in_addr->sin_addr.s_addr),
-            (unsigned int)htons(in_addr->sin_port),
-            PBS_SOCK_INET,
-            NULL);
-          enqueue_threadpool_request(process_meth, new_conn_port);
+          if (*new_conn_port == PBS_LOCAL_CONNECTION)
+            {
+            snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Ignoring local incoming request %d", *new_conn_port);
+            log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
+            }
+          else
+            {
+            /* add_conn is not protocol independent. We need to 
+               do some IPv4 stuff here */
+            in_addr = (struct sockaddr_in *)&adr_client;
+            add_conn(
+              *new_conn_port,
+              FromClientDIS,
+              (pbs_net_t)ntohl(in_addr->sin_addr.s_addr),
+              (unsigned int)htons(in_addr->sin_port),
+              PBS_SOCK_INET,
+              NULL);
+            enqueue_threadpool_request(process_meth, new_conn_port);
           /*pthread_create(&tid, &t_attr, process_meth, (void *)new_conn_port);*/
+            }
           }
         }
 

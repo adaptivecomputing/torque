@@ -83,7 +83,7 @@ int setuid_ext(
 
   {
   int count = 0;
-  int rc;
+  int rc = PBSE_NONE;
 
   errno = 0;
 
