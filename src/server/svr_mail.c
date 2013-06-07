@@ -175,7 +175,7 @@ void *send_the_mail(
     }
 
   /* mail subject line formating statement */
-  get_svr_attr_str(SRV_ATR_MailSubjectFmt, (char **)subjectfmt);
+  get_svr_attr_str(SRV_ATR_MailSubjectFmt, (char **)&subjectfmt);
   if (subjectfmt == NULL)
     {
     subjectfmt = "PBS JOB %i";
