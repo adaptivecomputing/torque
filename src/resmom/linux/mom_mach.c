@@ -2548,7 +2548,7 @@ int kill_task(
 
   			    if((sig == SIGKILL)||(sig == SIGTERM))
                             {
-                            ++ctThisIteration; //Ultimately this is  task that will need to be killed.
+                            ++ctThisIteration;
                             }
 
 			  continue;

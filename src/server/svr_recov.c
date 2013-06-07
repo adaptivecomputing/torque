@@ -852,6 +852,9 @@ int svr_recov_xml(
     }
 
   close(sdb);
+
+  if (errorCount)
+    return -1;
     
   if (!read_only)
     {
