@@ -126,7 +126,8 @@ int main(
 
   struct servent *sp;
   int ch, fflag, tflag;
-  char *targ, *shell;
+  char *targ;
+  const char *shell;
   extern int optind;
 
   fflag = tflag = 0;
@@ -209,7 +210,7 @@ int main(
     sp = getservbyname(shell = "shell", "tcp");
 
 #else
-  sp = getservbyname(shell = "shell", "tcp");
+  sp = getservbyname(shell = (const char *)"shell", (const char *)"tcp");
 
 #endif
   if (sp == NULL)
@@ -292,7 +293,7 @@ toremote(char *targ, int argc, char *argv[])
   *targ++ = 0;
 
   if (*targ == 0)
-    targ = ".";
+    targ = (char *)".";
 
   if ((thost = strchr(argv[argc - 1], '@')))
     {
@@ -320,7 +321,7 @@ toremote(char *targ, int argc, char *argv[])
       *src++ = 0;
 
       if (*src == 0)
-        src = ".";
+        src = (char *)".";
 
       host = strchr(argv[i], '@');
 
@@ -328,7 +329,7 @@ toremote(char *targ, int argc, char *argv[])
             strlen(src) + (tuser ? strlen(tuser) : 0) +
             strlen(thost) + strlen(targ) + CMDNEEDS + 20;
 
-      if (!(bp = calloc(1, len)))
+      if (!(bp = (char *)calloc(1, len)))
         err(1, NULL);
 
       if (host)
@@ -364,7 +365,7 @@ toremote(char *targ, int argc, char *argv[])
         {
         len = strlen(targ) + CMDNEEDS + 20;
 
-        if (!(bp = calloc(1, len)))
+        if (!(bp = (char *)calloc(1, len)))
           err(1, NULL);
 
         (void)sprintf(bp, "%s -t %s", cmd, targ);
@@ -412,7 +413,7 @@ tolocal(int argc, char *argv[])
       len = strlen(_PATH_CP) + strlen(argv[i]) +
             strlen(argv[argc - 1]) + 20;
 
-      if (!(bp = calloc(1, len)))
+      if (!(bp = (char *)calloc(1, len)))
         err(1, NULL);
 
       (void)sprintf(bp, "exec %s%s%s %s %s", _PATH_CP,
@@ -430,7 +431,7 @@ tolocal(int argc, char *argv[])
     *src++ = 0;
 
     if (*src == 0)
-      src = ".";
+      src = (char *)".";
 
     if ((host = strchr(argv[i], '@')) == NULL)
       {
@@ -450,7 +451,7 @@ tolocal(int argc, char *argv[])
 
     len = strlen(src) + CMDNEEDS + 20;
 
-    if ((bp = calloc(1, len)) == NULL)
+    if ((bp = (char *)calloc(1, len)) == NULL)
       err(1, NULL);
 
     (void)sprintf(bp, "%s -f %s", cmd, src);
@@ -618,10 +619,7 @@ next:
   }
 
 void
-rsource(name, statp)
-char *name;
-
-struct stat *statp;
+rsource(char *name, struct stat *statp)
   {
   DIR *dirp;
 
@@ -705,7 +703,7 @@ sink(int argc, char *argv[])
 
 #define atime tv[0]
 #define mtime tv[1]
-#define SCREWUP(str) { why = str; goto screwup; }
+#define SCREWUP(str) { why = (char *)str; goto screwup; }
 
   setimes = targisdir = 0;
   mask = umask(0);
@@ -853,7 +851,7 @@ sink(int argc, char *argv[])
 
       if (need > cursize)
         {
-        if (!(namebuf = calloc(1, need)))
+        if (!(namebuf = (char *)calloc(1, need)))
           run_err("%s", strerror(errno));
         }
 

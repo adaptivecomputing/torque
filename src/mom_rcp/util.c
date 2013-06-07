@@ -195,10 +195,10 @@ BUF *allocbuf(
     return(0);
     }
   if (bp->buf != NULL)
-    strcat(tmpP, bp->buf);
+    strcat((char *)tmpP, bp->buf);
   free(bp->buf);
 
-  bp->buf = tmpP;
+  bp->buf = (char  *)tmpP;
 
   bp->cnt = size;
 
