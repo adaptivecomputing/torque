@@ -105,6 +105,7 @@
 #include "ji_mutex.h"
 #include "req_register.h"
 #include "pbs_job.h"
+#include "net_connect.h"
 
 #define SYNC_SCHED_HINT_NULL 0
 #define SYNC_SCHED_HINT_FIRST 1

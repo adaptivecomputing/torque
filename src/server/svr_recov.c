@@ -98,6 +98,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
+#include <dirent.h>
 #include "server_limits.h"
 #include "list_link.h"
 #include "attribute.h"
@@ -128,6 +129,9 @@ extern char     *msg_svdbnosv;
 
 long             recovered_tcp_timeout = 5000;
 extern int       disable_timeout_check;
+extern int       chk_save_file(char *);
+extern char      *build_path(char *, const char *, const char *);
+int              nextjobnumber = -1;
 
 /**
  * Recover server state from server database.
@@ -537,6 +541,8 @@ int str_to_attr(
 
       if (index == SRV_ATR_tcp_timeout)
         recovered_tcp_timeout = attr[index].at_val.at_long;
+      if (index == SRV_ATR_NextJobNumber)
+        nextjobnumber =  attr[index].at_val.at_long;
 
       break;
 
@@ -691,6 +697,98 @@ int str_to_attr(
 
 
 
+int get_jobid(
+
+  char *filename) /* I */
+  
+  {
+  int  fds;
+  int  job_number = -1;
+  job  *pj = NULL;
+  char  jobid[PBS_MAXSVRJOBID + 1], *s, *d;
+
+  if ((fds = open(filename, O_RDONLY, 0)) != -1)
+    {
+    if ((pj = job_alloc()))
+      {
+      if (read(fds, (char *)&pj->ji_qs, sizeof(pj->ji_qs)) == sizeof(pj->ji_qs) ||
+           pj->ji_qs.qs_version != PBS_QS_VERSION)
+        {
+        if (pj->ji_qs.ji_jobid)
+          {
+          memset(jobid, 0, sizeof(jobid));
+          s = pj->ji_qs.ji_jobid;
+          d = jobid;
+          while(isdigit(*s)) 
+            {
+            *d++ = *s++;
+            }
+          job_number = atoi(jobid);
+          }
+        }
+        free((char *)pj);
+      }
+    }  
+    return job_number;
+  }
+
+
+
+int get_next_jobid_from_job_files(
+
+  void)
+
+  {
+  struct dirent    *pdirent;
+  DIR              *dir;
+  char             *psuffix;
+  const char       *job_suffix = JOB_FILE_SUFFIX;
+  int               job_suf_len = strlen(job_suffix);
+  int               max_jobid = -1;
+  int               baselen;
+  int               jobid;
+  char             *path_server_priv = NULL;
+  char             *path_jobs = NULL;
+  char              namebuf[MAXPATHLEN];
+  const char       *path_home = PBS_SERVER_HOME;
+  const char       *suffix_slash = "/";
+
+  if (!(path_server_priv = build_path((char *)path_home, PBS_SVR_PRIVATE, suffix_slash)))
+    goto done;
+
+  if (!(path_jobs = build_path(path_priv, PBS_JOBDIR, suffix_slash)))
+    goto done;
+
+  if (chdir(path_jobs) != 0)
+    goto done;
+
+  if (!(dir = opendir(".")))
+    goto done;
+
+  while ((pdirent = readdir(dir)) != NULL)
+    {
+    if (chk_save_file(pdirent->d_name) == 0)
+      {
+      baselen = strlen(pdirent->d_name) - job_suf_len;
+      psuffix = pdirent->d_name + baselen;
+      if (!strcmp(psuffix, job_suffix))
+        snprintf(namebuf, sizeof(namebuf), "%s%s", path_jobs, pdirent->d_name);
+        jobid = get_jobid(namebuf);
+        if (jobid > max_jobid)
+          max_jobid = jobid;
+      }
+    }
+
+done:
+  if (path_server_priv)
+    free(path_server_priv);
+  if (path_jobs)
+    free(path_jobs);
+
+  return max_jobid + 1;
+  }
+
+
 
 int svr_recov_xml(
 
@@ -783,7 +881,7 @@ int svr_recov_xml(
   lock_sv_qs_mutex(server.sv_qs_mutex, __func__);
 
   server.sv_qs.sv_numjobs = 0; 
-  server.sv_qs.sv_numque = server.sv_qs.sv_jobidnumber = 0;
+  server.sv_qs.sv_numque = server.sv_qs.sv_jobidnumber = -1;
 
   while (current < end)
     {
@@ -852,7 +950,19 @@ int svr_recov_xml(
     }
 
   close(sdb);
-    
+
+  if (server.sv_qs.sv_jobidnumber == -1)
+    {
+    if (nextjobnumber != -1)
+      server.sv_qs.sv_jobidnumber = nextjobnumber;
+    else
+      {
+      server.sv_qs.sv_jobidnumber = get_next_jobid_from_job_files();
+      if (server.sv_qs.sv_jobidnumber < 0)
+        server.sv_qs.sv_jobidnumber = 0;
+      }
+    }
+   
   if (!read_only)
     {
     server.sv_attr[SRV_ATR_NextJobNumber].at_val.at_long = 
