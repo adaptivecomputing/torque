@@ -184,25 +184,25 @@ int start_domainsocket_listener(
 
   if ( (listen_socket = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
     {
-    snprintf(log_buf, sizeof(log_buf), "socket failed: %d", errno);
+    snprintf(log_buf, sizeof(log_buf), "socket failed: %d %s", errno, strerror(errno));
     log_event(PBSEVENT_ADMIN | PBSEVENT_FORCE, PBS_EVENTCLASS_SERVER, __func__, log_buf);
     rc = PBSE_SOCKET_FAULT;
     }
   else if ( bind(listen_socket, (struct sockaddr *)&addr, sizeof(addr)) < 0)
     {
-    snprintf(log_buf, sizeof(log_buf), "failed to bind socket %s: %d", socket_name, errno);
+    snprintf(log_buf, sizeof(log_buf), "failed to bind socket %s: %d %s", socket_name, errno, strerror(errno));
     log_event(PBSEVENT_ADMIN | PBSEVENT_FORCE, PBS_EVENTCLASS_SERVER, __func__, log_buf);
     rc = PBSE_SOCKET_FAULT;
     }
   else if (chmod(socket_name,  S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH) < 0)
     {
-    snprintf(log_buf, sizeof(log_buf), "failed to change file permissions on  %s: %d", socket_name, errno);
+    snprintf(log_buf, sizeof(log_buf), "failed to change file permissions on  %s: %d %s", socket_name, errno, strerror(errno));
     log_event(PBSEVENT_ADMIN | PBSEVENT_FORCE, PBS_EVENTCLASS_SERVER, __func__, log_buf);
     rc = PBSE_SOCKET_FAULT;
     }
   else if ( listen(listen_socket, 64) < 0)
     {
-    snprintf(log_buf, sizeof(log_buf), "listen failed %s: %d", socket_name, errno);
+    snprintf(log_buf, sizeof(log_buf), "listen failed %s: %d %s", socket_name, errno, strerror(errno));
     log_event(PBSEVENT_ADMIN | PBSEVENT_FORCE, PBS_EVENTCLASS_SERVER, __func__, log_buf);
     rc = PBSE_SOCKET_LISTEN;
     }
