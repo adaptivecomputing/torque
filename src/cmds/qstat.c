@@ -34,6 +34,7 @@
 #include "net_cache.h"
 #include "../lib/Libifl/lib_ifl.h"
 
+bool    do_not_display_complete = false;
 
 static void states(  
 
@@ -1232,6 +1233,7 @@ void display_statjob(
 
   for (p = status;p != NULL;p = p->next)
     {
+    bool do_not_display = false;
     jid = NULL;
     name = NULL;
     owner = NULL;
@@ -1471,6 +1473,11 @@ void display_statjob(
               }
 
             state = a->value;
+            if (*state == 'C')
+              {
+              if ( do_not_display_complete == true )
+                do_not_display = true;
+              }
             }
           else if (!strcmp(a->name, ATTR_queue))
             {
@@ -1502,20 +1509,24 @@ void display_statjob(
 
       /* display summary data */
 
-      printf(format,
-             jid,
-             name,
-             owner,
-             timeu,
-             state,
-             location);
+      if (do_not_display == false)
+        {
+        printf(format,
+               jid,
+               name,
+               owner,
+               timeu,
+               state,
+               location);
+        }
       }  /* END else (full) */
 
-    if (DisplayXML != TRUE)
+    if (DisplayXML != TRUE && do_not_display == false)
       {
       if (full)
         printf("\n");
       }
+
     }  /* END for (p = status) */
 
   if (DisplayXML == TRUE)
@@ -2212,7 +2223,7 @@ int main(
 #endif /* !FALSE */
 
 #if !defined(PBS_NO_POSIX_VIOLATION)
-#define GETOPT_ARGS "aeE:filn1qrstu:xGMQRBW:-:"
+#define GETOPT_ARGS "aceE:filn1qrstu:xGMQRBW:-:"
 #else
 #define GETOPT_ARGS "flQBW:"
 #endif /* PBS_NO_POSIX_VIOLATION */
@@ -2270,6 +2281,11 @@ int main(
 
         alt_opt |= ALT_DISPLAY_a;
 
+        break;
+
+      case 'c':
+
+        do_not_display_complete = true;
         break;
 
       case 'e':
