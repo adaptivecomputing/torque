@@ -178,8 +178,11 @@ find_command(char *cmd, char *path)
  * @param argc The @a argc value passed to main(). (I)
  * @param argv The @a argv[] array passed to main(). (I)
  */
-void
-save_args(int argc, char **argv)
+void save_args(
+    
+    int argc, 
+    char **argv)
+
   {
   int i;
 
