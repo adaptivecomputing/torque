@@ -714,7 +714,6 @@ int setup_array_struct(
     {
     long max_limit = 0;
     get_svr_attr_l(SRV_ATR_MaxSlotLimit, &max_limit);
-    array_delete(pa);
 
     snprintf(log_buf,sizeof(log_buf),
       "Array %s requested a slot limit above the max limit %ld, rejecting\n",
@@ -723,6 +722,7 @@ int setup_array_struct(
 
     log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_JOB,pa->ai_qs.parent_id,log_buf);
 
+    array_delete(pa);
     return(INVALID_SLOT_LIMIT);
     }
 
