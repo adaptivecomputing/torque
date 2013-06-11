@@ -349,7 +349,9 @@ int socket_connect_addr(
     
     switch (errno)
       {
+      /* permanent failures go here */
       case ECONNREFUSED:    /* Connection refused */
+      case ETIMEDOUT:       /* Connection timed out */
         snprintf(tmp_buf, sizeof(tmp_buf), "cannot connect to port %d in %s - connection refused",
           local_socket, __func__);
         *error_msg = strdup(tmp_buf);
@@ -361,7 +363,6 @@ int socket_connect_addr(
       case EINPROGRESS:   /* Operation now in progress */
       case EALREADY:    /* Operation already in progress */
       case EISCONN:   /* Transport endpoint is already connected */
-      case ETIMEDOUT:   /* Connection timed out */
       case EAGAIN:    /* Operation would block */
       case EINTR:     /* Interrupted system call */
 
@@ -476,10 +477,10 @@ int socket_wait_for_write(
     {
     switch (val)
       {
+      /* ETIMEDOUT is not listed because it should be considered a permanent failure */
       case EINPROGRESS:
       case EALREADY:    /* Operation already in progress */
       case EISCONN:   /* Transport endpoint is already connected */
-      case ETIMEDOUT:   /* Connection timed out */
       case EAGAIN:    /* Operation would block */
       case EINTR:     /* Interrupted system call */
       case EINVAL:    /* Invalid argument */
