@@ -11,7 +11,7 @@ then
     exit 1
 fi
 
-revision_number="`git log --oneline | wc -l`"
+revision_number="`git rev-list HEAD --count`"
 changeset="`git rev-parse HEAD`"
 short_changeset="`echo "${changeset}" | sed 's/^\([[:xdigit:]]\{16\}\).*$/\1/'`"
 release_number="${revision_number}_${short_changeset}"

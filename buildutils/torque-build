@@ -15,6 +15,9 @@ usage() {
     echo   "    -d|--debug                  Enable debug mode"
     echo   "    -q|--quiet                  Enable quiet mode"
     echo   "    -v|--verbose                Enable verbose mode"
+    echo
+    echo   "    -t|--tarball                Make the TORQUE distribution tarball"
+    echo   "    -T|--no-tarball                Do not make the TORQUE distribution tarball"
     echo   "                                    (takes precedent over quiet mode)"
     echo   "    -a|--adaptive-rpm           Make the adaptive RPM (default)"
     echo   "    -A|--no-adaptive-rpm        Do not make the adaptive RPM"
@@ -27,6 +30,8 @@ usage() {
     echo   "    -u|--unit-tests             Run unit-tests (default)"
     echo   "    -U|--no-unit-tests          Do not run unit tests"
     echo   ""
+    echo   "    -j <number>                 Passes '-j <number>' to make"
+    echo   "                                  ('3' by default)"
     exit 1
 }
 
@@ -38,6 +43,8 @@ quiet=0
 adaptive_rpm=1
 coverity=0
 unit_tests=1
+parallel=3
+tarball=1
 
 # To be set later
 version=
@@ -85,6 +92,14 @@ do
             adaptive_rpm=0
             shift
             ;;
+        -t|--tarball)
+            tarball=1
+            shift
+            ;;
+        -T|--no-tarball)
+            tarball=0
+            shift
+            ;;
         -c|--coverity)
             coverity=1
             shift
@@ -103,6 +118,10 @@ do
             unit_tests=0
             shift
             ;;
+        -j)
+            shift
+            parallel="${1}"
+            shift
         *)
             echo "Invalid argument '${1}' specified." >&2
             usage
@@ -112,7 +131,8 @@ done
 
 # Argument processing
 
-if [ ${adaptive_rpm} -eq 0 -a \
+if [ ${tarball} -eq 0 -a \
+     ${adaptive_rpm} -eq 0 -a \
      ${coverity} -eq 0 -a \
      ${unit_tests} -eq 0 ]
 then
@@ -159,6 +179,12 @@ then
     quiet_redirect=">/dev/null"
 fi
 
+if ! echo "${parallel}" | grep -q -E '^[[:digit:]]+$'
+then
+    echo "Argument provided to the '-j' option must be a number." >&2
+    usage
+fi
+
 epoch=`date +%s`
 print_build_date="`date --date="@$epoch"`"
 branch=`git branch | awk '/^[*]/ { print $2}'`
@@ -184,6 +210,38 @@ echo "Started ${0}, version ${version}, release ${release_number}." \
 
 sh autogen.sh
 
+if [ ${coverity} -ne 0 -o ${unit_tests} -ne 0 ]
+then
+    ./configure --with-debug --with-check
+    make -j${parallel} clean || :
+fi
+
+if [ ${coverity} -ne 0 ]
+then
+    if [ ! -x "${cov_build}" ]
+    then
+        echo "'${cov_build}' is not a valid script." >&2
+        usage
+    fi
+    "${cov_build}" --dir cov-int make
+fi
+
+if [ ${unit_tests} -ne 0 ]
+then
+    make -j${parallel}
+    chmod +x src/test/test_scripts/*
+    make check -j${parallel}
+    make check | ./parse_cov_results.py
+fi
+
+if [ ${tarball} -ne 0 ]
+then
+    make -j${parallel} distclean
+    sh autogen.sh
+    ./configure
+    make distcheck -j${parallel}
+fi
+
 # MOAB RPMs ####################################################################
 if [ ${adaptive_rpm} -ne 0 ]
 then
@@ -198,16 +256,15 @@ then
     cp buildutils/torque.adaptive.spec \
         buildutils/rpmbuild/SPECS/torque.adaptive.spec
 
-    tar_base_dir=moab-torque-${version}
-    rm -rf ${tar_base_dir}
-    mkdir ${tar_base_dir}
-    ls -1A | grep -v -E "rpmbuild|${tar_base_dir}" | while read file
-    do
-        cp -rf $file ${tar_base_dir}
-    done
-    tar czf buildutils/rpmbuild/SOURCES/${tar_base_dir}.tar.gz ${tar_base_dir}
-
+    tar_base_dir=torque-${version}
     source_file=${tar_base_dir}.tar.gz
+    if [ ! -s "${source_file}" ]
+    then
+        echo "TORQUE tarball '${source_file}' not found!" >&2
+        exit 1
+    fi
+    cp -f "${source_file}" buildutils/rpmbuild/SOURCES
+
     verbose_option=
 
     if [ ${debug} -ne 0 ]
@@ -240,31 +297,4 @@ then
         --define "release_number ${release_number}" \
         --define "source_file ${source_file}" \
         --define "base_name ${tar_base_dir}"
-fi
-
-
-if [ ${coverity} -ne 0 -o ${unit_tests} -ne 0 ]
-then
-    ./configure --with-debug --with-check
-    make clean || :
-fi
-
-if [ ${coverity} -ne 0 ]
-then
-    if [ ! -x "${cov_build}" ]
-    then
-        echo "'${cov_build}' is not a valid script." >&2
-        usage
-    fi
-    "${cov_build}" --dir cov-int make
-fi
-
-
-if [ ${unit_tests} -ne 0 ]
-then
-    parallel=3
-    make -j${parallel}
-    chmod +x src/test/test_scripts/*
-    make check -j${parallel}
-    make check | ./parse_cov_results.py
 fi
