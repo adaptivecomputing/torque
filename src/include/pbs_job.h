@@ -1117,6 +1117,7 @@ extern char *add_std_filename(job *, char *, int, dynamic_string *);
 extern int   set_jobexid(job *, pbs_attribute *, char *);
 extern int   site_check_user_map(job *, char *, char *, int);
 int  svr_dequejob(job *, int);
+int initialize_ruserok_mutex();
 extern int   svr_enquejob(job *, int, int, bool);
 extern void  svr_evaljobstate(job *, int *, int *, int);
 extern void  svr_mailowner(job *, int, int, const char *);

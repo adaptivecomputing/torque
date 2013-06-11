@@ -23,10 +23,14 @@ START_TEST(test_one)
     for(int i=0;i < 20;i++)
     {
         pthread_t num;
+        //Spin off a bunch of threads that will hammer the cache simultaneously.
         pthread_create(&num,NULL,add_and_lookup_stuff,NULL);
     }
     sleep(2);
     exited = TRUE;
+    //Exit without shutting down the cache. It turns out that the cache destructor can be called
+    //before the threads exit and we want to make sure the exit doesn't create any segfaults
+    //or exceptions.
   }
 END_TEST
 

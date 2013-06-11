@@ -34,6 +34,7 @@
 #include "net_cache.h"
 #include "../lib/Libifl/lib_ifl.h"
 
+bool    do_not_display_complete = false;
 
 static void states(  
 
@@ -1232,6 +1233,7 @@ void display_statjob(
 
   for (p = status;p != NULL;p = p->next)
     {
+    bool do_not_display = false;
     jid = NULL;
     name = NULL;
     owner = NULL;
@@ -1470,6 +1472,11 @@ void display_statjob(
               }
 
             state = a->value;
+            if (*state == 'C')
+              {
+              if ( do_not_display_complete == true )
+                do_not_display = true;
+              }
             }
           else if (!strcmp(a->name, ATTR_queue))
             {
@@ -1501,20 +1508,24 @@ void display_statjob(
 
       /* display summary data */
 
-      printf(format,
-             jid,
-             name,
-             owner,
-             timeu,
-             state,
-             location);
+      if (do_not_display == false)
+        {
+        printf(format,
+               jid,
+               name,
+               owner,
+               timeu,
+               state,
+               location);
+        }
       }  /* END else (full) */
 
-    if (DisplayXML != TRUE)
+    if (DisplayXML != TRUE && do_not_display == false)
       {
       if (full)
         printf("\n");
       }
+
     }  /* END for (p = status) */
 
   if (DisplayXML == TRUE)
@@ -2192,6 +2203,7 @@ int main(
   struct batch_status *p_server;
 
   struct attropl      *p_atropl = 0;
+  struct attrl        *attrib = NULL;
   char                *errmsg;
   int                  exec_only = 0;
   
@@ -2210,7 +2222,7 @@ int main(
 #endif /* !FALSE */
 
 #if !defined(PBS_NO_POSIX_VIOLATION)
-#define GETOPT_ARGS "aeE:filn1qrstu:xGMQRBW:-:"
+#define GETOPT_ARGS "aceE:filn1qrstu:xGMQRBW:-:"
 #else
 #define GETOPT_ARGS "flQBW:"
 #endif /* PBS_NO_POSIX_VIOLATION */
@@ -2224,6 +2236,13 @@ int main(
   Q_opt = 0;
   t_opt = 0;
   E_opt = 0;
+
+  /* Attributes needed for default view */
+  set_attr(&attrib, ATTR_name, NULL);
+  set_attr(&attrib, ATTR_owner, NULL);
+  set_attr(&attrib, ATTR_used, NULL);
+  set_attr(&attrib, ATTR_state, NULL);
+  set_attr(&attrib, ATTR_queue, NULL);
 
   tcl_init();
   tcl_addarg(flags, argv[0]);
@@ -2261,6 +2280,11 @@ int main(
 
         break;
 
+      case 'c':
+
+        do_not_display_complete = true;
+        break;
+
       case 'e':
 
         exec_only = 1;
@@ -2288,6 +2312,9 @@ int main(
 
         alt_opt |= ALT_DISPLAY_n;
 
+        if (attrib != NULL)
+          set_attr(&attrib, ATTR_exechost, NULL);
+
         break;
 
       case 'q':
@@ -2309,6 +2336,9 @@ int main(
       case 's':
 
         alt_opt |= ALT_DISPLAY_s;
+
+        if (attrib != NULL)
+          set_attr(&attrib, ATTR_comment, NULL);
 
         break;
 
@@ -2357,11 +2387,17 @@ int main(
 
         f_opt = 1;
 
+        /* We want to return all attributes */
+        attrib = NULL;
+
         break;
 
       case 'x':
 
         DisplayXML = TRUE;
+
+        /* We want to return all attributes */
+        attrib = NULL;
 
         break;
 
@@ -2594,10 +2630,18 @@ int main(
   if (def_server == NULL)
     def_server = "";
 
+  /* Alternate display requires a few extra attributes */
+  if (alt_opt && (attrib != NULL))
+    {
+    set_attr(&attrib, ATTR_session, NULL);
+    set_attr(&attrib, ATTR_used, NULL);
+    set_attr(&attrib, ATTR_l, NULL);
+    }
+
   if (alt_opt & ALT_DISPLAY_u)
     {
     if (f_opt == 0)
-      add_atropl(&p_atropl, (char *)ATTR_u, NULL, optarg, EQ);
+      add_atropl(&p_atropl, (char *)ATTR_u, NULL, user, EQ);
     else
       alt_opt &= ~ALT_DISPLAY_u;
     }
@@ -2780,7 +2824,7 @@ job_no_args:
           p_status = pbs_statjob_err(
                        connect,
                        job_id_out,
-                       NULL,
+                       attrib,
                        exec_only ? (char *)EXECQUEONLY : (char *)ExtendOpt,
                        &any_failed);
           }
@@ -2788,11 +2832,15 @@ job_no_args:
           {
           if (t_opt)
             {
-            p_status = pbs_selstat_err(connect, p_atropl, exec_only ? (char *)EXECQUEONLY : NULL, &any_failed);
+            p_status = pbs_selstatattr_err(connect, p_atropl, attrib, exec_only ? (char *)EXECQUEONLY : NULL, &any_failed);
+            if (any_failed == PBSE_UNKREQ)
+              p_status = pbs_selstat_err(connect, p_atropl, exec_only ? (char *)EXECQUEONLY : NULL, &any_failed);
             }
           else
             {
-            p_status = pbs_selstat_err(connect, p_atropl, exec_only ? (char *)EXECQUEONLY : (char *)summarize_arrays_extend_opt, &any_failed);
+            p_status = pbs_selstatattr_err(connect, p_atropl, attrib, exec_only ? (char *)EXECQUEONLY : (char *)summarize_arrays_extend_opt, &any_failed);
+            if (any_failed == PBSE_UNKREQ)
+              p_status = pbs_selstat_err(connect, p_atropl, exec_only ? (char *)EXECQUEONLY : (char *)summarize_arrays_extend_opt, &any_failed);
             }
           }
 

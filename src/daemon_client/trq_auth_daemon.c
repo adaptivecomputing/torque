@@ -167,8 +167,9 @@ int daemonize_trqauthd(const char *server_ip, int server_port, void *(*process_m
     if ((mkdir(path_log, 0755) == -1) && (errno != EEXIST))
       {
          openlog("daemonize_trqauthd", LOG_PID | LOG_NOWAIT, LOG_DAEMON);
-         syslog(LOG_ALERT, "Failed to create client_logs directory: errno: %d", errno);
-         log_err(errno,"daemonize_trqauthd", "Failed to create client_logs directory");
+         syslog(LOG_ALERT, "Failed to create client_logs directory: %s errno: %d error message: %s", path_log, errno, strerror(errno));
+         sprintf(error_buf,"Failed to create client_logs directory: %s, error message: %s",path_log,strerror(errno));
+         log_err(errno,__func__,error_buf);
          closelog();
       }
     pthread_mutex_lock(log_mutex);

@@ -309,9 +309,6 @@ int                     allow_any_mom = FALSE;
 int                     array_259_upgrade = FALSE;
 
 
-
-
-
 char server_localhost[PBS_MAXHOSTNAME + 1];
 size_t localhost_len = PBS_MAXHOSTNAME;
 /*
@@ -1666,6 +1663,7 @@ void initialize_globals(void)
   pthread_mutex_init(server.sv_qs_mutex,NULL);
   pthread_mutex_init(server.sv_attr_mutex,NULL);
   pthread_mutex_init(server.sv_jobstates_mutex,NULL);
+  initialize_ruserok_mutex();
   lock_init();
   }
 
