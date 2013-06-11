@@ -122,6 +122,7 @@ do
             shift
             parallel="${1}"
             shift
+            ;;
         *)
             echo "Invalid argument '${1}' specified." >&2
             usage
