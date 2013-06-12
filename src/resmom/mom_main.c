@@ -4108,14 +4108,6 @@ int setup_program_environment(void)
     return(3);
     }
 
-  if (read_config(NULL))
-    {
-    fprintf(stderr, "pbs_mom: cannot load config file '%s'\n",
-            config_file);
-
-    exit(1);
-    }
-
 #ifdef PENABLE_LINUX26_CPUSETS
   /* load system topology */
   if ((hwloc_topology_init(&topology) == -1))
@@ -4447,6 +4439,14 @@ int setup_program_environment(void)
     addclient(ret_string);
 
   tmpdir_basename[0] = '\0';
+
+  if (read_config(NULL))
+    {
+    fprintf(stderr, "pbs_mom: cannot load config file '%s'\n",
+            config_file);
+
+    exit(1);
+    }
 
 
   /* if no alias is specified, make mom_alias the same as mom_host */
