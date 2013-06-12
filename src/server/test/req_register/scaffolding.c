@@ -320,3 +320,9 @@ int safe_strncat(char *str, const char *to_append, size_t space_remaining)
   return(0);
   }
 
+pbs_net_t get_hostaddr(int *, char *)
+{
+  fprintf(stderr, "The call to get_hostaddr to be mocked!!\n");
+  exit(1);
+}
+  
