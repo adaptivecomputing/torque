@@ -4847,7 +4847,6 @@ int setup_program_environment(void)
     exit(1);
     }
 
-
   /* if no alias is specified, make mom_alias the same as mom_host */
   if (mom_alias[0] == '\0')
     strcpy(mom_alias,mom_short_name);
