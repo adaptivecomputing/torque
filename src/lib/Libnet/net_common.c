@@ -459,7 +459,7 @@ int socket_wait_for_write(
   fd_set         wfd;
   struct timeval timeout;
 
-  timeout.tv_sec = pbs_tcp_timeout / RES_PORT_RETRY;
+  timeout.tv_sec = pbs_tcp_timeout;
   timeout.tv_usec = 0;
 
   FD_ZERO(&wfd);
@@ -467,7 +467,8 @@ int socket_wait_for_write(
 
   if ((write_soc = select(socket+1, 0, &wfd, 0, &timeout)) != 1)
     {
-    rc = PBSE_TIMEOUT;
+    /* timeout is now seen as a permanent failure */
+    rc = PERMANENT_SOCKET_FAIL;
     }
   else if (((rc = getsockopt(socket, SOL_SOCKET, SO_ERROR, &val, &len)) == 0) && (val == 0))
     {
