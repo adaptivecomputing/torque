@@ -885,14 +885,13 @@ void mom_checkpoint_check_periodic_timer(
 
 int establish_server_connection(
     
-  job *pjob)
+  job &pjob)
 
   {
   int num_attempts = 0;
   int connection   = -1;
 
-  if ((pjob == NULL) ||
-      (pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str == NULL))
+  if (pjob.ji_wattr[JOB_ATR_at_server].at_val.at_str == NULL)
     return(connection);
 
   while ((connection < 0) &&
@@ -901,17 +900,20 @@ int establish_server_connection(
     if (num_attempts > 0)
       sleep(1);
 
-    connection = pbs_connect(pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str);
+    connection = pbs_connect(pjob.ji_wattr[JOB_ATR_at_server].at_val.at_str);
 
-    num_attempts++;
+    if (connection < 0)
+      {
+      num_attempts++;
+      }
     }
   
-  if (connection < 0)
+  if (num_attempts == MAX_CONN_RETRY)
     {
     sprintf(log_buffer,"Job %s failed %d times to get connection to %s",
-      pjob->ji_qs.ji_jobid,
+      pjob.ji_qs.ji_jobid,
       MAX_CONN_RETRY,
-      pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str);
+      pjob.ji_wattr[JOB_ATR_at_server].at_val.at_str);
     log_err(-1, __func__, log_buffer);
     }
 
@@ -929,9 +931,6 @@ int establish_server_connection(
  * only have one task associated with the job.
  *
  * @see start_checkpoint() - parent
- * @pre-cond: this is a child routine, not the main pbs_mom process
- * @pre-cond: pjob is a valid job pointer
- * @pre-cond: pjob has a valid checkpoint directory in its attributes
  *
  * @returns PBSE_NONE if no error
  */
@@ -958,14 +957,14 @@ int blcr_checkpoint_job(
   char             namebuf[MAXPATHLEN+1];
   int              conn = -1;
   int              err;
+  int              conn_fail = 0;
   int              local_errno = 0;
   struct attrl    *attrib = NULL;
   time_t           epoch;
   unsigned short   momport = 0;
 
-  if ((pjob == NULL) ||
-      (pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str == NULL))
-    exit(-1);
+  assert(pjob != NULL);
+  assert(pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str != NULL);
 
   /*
   * Get jobs checkpoint directory.
@@ -1109,7 +1108,26 @@ int blcr_checkpoint_job(
 
     delete_blcr_checkpoint_files(pjob);
 
-    conn = establish_server_connection(pjob);
+    /* open a connection to the server */
+
+    while ((conn < 0) && (conn_fail < MAX_CONN_RETRY))
+      {
+      conn = pbs_connect(pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str);
+
+      if (conn < 0)
+        {
+        conn_fail++;
+        sleep(1);
+        if (conn_fail == MAX_CONN_RETRY)
+          {
+          sprintf(log_buffer,"Job %s failed %d times to get connection to %s",
+            pjob->ji_qs.ji_jobid,
+            MAX_CONN_RETRY,
+            pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str);
+          log_err(-1, __func__, log_buffer);
+          }
+        }
+      }
 
     if (conn >= 0)
       {
@@ -1127,7 +1145,7 @@ int blcr_checkpoint_job(
           /* TODO: GB - can the job exit while waiting for the checkpoint
               script to exit?? call log_err */
           pbs_disconnect(conn);
-          exit(err);
+          goto done;
           }
         }
 
@@ -1159,7 +1177,26 @@ int blcr_checkpoint_job(
     /* checkpoint script returned a zero value.  We assume the checkpoint
         suceeded */
 
-    conn = establish_server_connection(pjob);
+    /* open a connection to the server */
+
+    while ((conn < 0) && (conn_fail < MAX_CONN_RETRY))
+      {
+      conn = pbs_connect(pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str);
+
+      if (conn < 0)
+        {
+        conn_fail++;
+        sleep(1);
+        if (conn_fail == MAX_CONN_RETRY)
+          {
+          sprintf(log_buffer,"Job %s failed %d times to get connection to %s",
+            pjob->ji_qs.ji_jobid,
+            MAX_CONN_RETRY,
+            pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str);
+          log_err(-1, __func__, log_buffer);
+          }
+        }
+      }
 
     if (conn >= 0)
       {
@@ -1206,17 +1243,21 @@ int blcr_checkpoint_job(
             {
             delete_blcr_checkpoint_files(pjob);
             }
-          exit(err);
+          goto done;
           }
         }
 
       pbs_disconnect(conn);
 
-      /* Normally, this is an empty routine and does nothing. */
-      rc = site_mom_postchk(pjob,abort);
+      if (rc == 0)
+        {
+        /* Normally, this is an empty routine and does nothing. */
+        rc = site_mom_postchk(pjob,abort);
+        }
       }
     }
 
+done:
   exit (rc);
   }  /* END blcr_checkpoint_job() */
 
