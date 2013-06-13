@@ -18,8 +18,12 @@ START_TEST(establish_server_connection_test)
 
   memset(&pjob, 0, sizeof(pjob));
 
-  fail_unless(establish_server_connection(pjob) == -1);
-
+  fail_unless(establish_server_connection(&pjob) == -1);
+  connect_fail = true;
+  pjob.ji_wattr[JOB_ATR_at_server].at_val.at_str = strdup("bob");
+  fail_unless(establish_server_connection(&pjob) == -1);
+  connect_fail = false;
+  fail_unless(establish_server_connection(&pjob) >= 0);
   }
 END_TEST
 
