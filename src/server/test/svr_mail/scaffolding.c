@@ -9,8 +9,7 @@ int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
 int enqueue_threadpool_request(void *(*func)(void *),void *arg)
   {
-  fprintf(stderr, "The call to enqueue_threadpool_request to be mocked!!\n");
-  exit(1);
+  return 0; 
   }
 
 void svr_format_job(FILE *fh, mail_info *mi, const char *fmt)
