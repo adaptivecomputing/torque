@@ -114,6 +114,7 @@ int get_fullhostname(
   char             hostname[MAXLINE];
   struct addrinfo *addr_info = NULL;
   struct addrinfo  hints;
+  char            *dot;
   char            *full_name;
 
   int              tmp_len = 0;
@@ -126,6 +127,15 @@ int get_fullhostname(
       strcpy(EMsg, "host name not specified");
 
     return(-1);
+    }
+  
+  /* The idea of this function is to turn a short name into a long
+     name. If it is already a long name we are done */
+  dot = strchr(shortname, '.');
+  if (dot != NULL)
+    {
+    snprintf(namebuf, bufsize, "%s", shortname);
+    return(PBSE_NONE);
     }
 
   if ((pcolon = strchr(shortname, ':')) != NULL)
