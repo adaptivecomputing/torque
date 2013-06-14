@@ -19,7 +19,7 @@ time_t cvtdate(char *datestr);
 
 /* from file get_server.c */
 int TShowAbout(void);
-int get_server(char *job_id_in, char *job_id_out, char *server_out);
+int get_server(const char *job_id_in, char *job_id_out, int job_id_out_size, char *server_out, int server_out_size);
 
 /* from file locate_job.c */
 int locate_job(char *job_id, char *parent_server, char *located_server);
