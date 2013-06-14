@@ -106,3 +106,28 @@ mutex_mgr::~mutex_mgr() {}
 void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+
+int get_svr_attr_l(int index, long *l)
+  {
+  return -1;
+  //fprintf(stderr, "The call to %s needs to be mocked!!\n",__func__);
+  //exit(1);
+  //return 0;
+  }
+
+int get_svr_attr_str(int index, char **str)
+  {
+  return -1;
+  //fprintf(stderr, "The call to %s needs to be mocked!!\n",__func__);
+  //exit(1);
+  //return 0;
+  }
+
+void svr_format_job(FILE *fh, mail_info *mi, const char *fmt)
+  {
+  //fprintf(stderr, "The call to %s needs to be mocked!!\n",__func__);
+  //exit(1);
+  }
+
+
+
