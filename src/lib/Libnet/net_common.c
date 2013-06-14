@@ -895,22 +895,27 @@ int socket_close(
   } /* END socket_close() */
 
 
-int pbs_getaddrinfo(const char *pNode,struct addrinfo *pHints,struct addrinfo **ppAddrInfoOut)
+int pbs_getaddrinfo(
+    
+  const char       *pNode,
+  struct addrinfo  *pHints,
+  struct addrinfo **ppAddrInfoOut)
+
   {
   int rc;
   struct addrinfo hints;
   int retryCount = 3;
   int addrFound = FALSE;
 
-  if(ppAddrInfoOut == NULL)
+  if (ppAddrInfoOut == NULL)
     {
     return -1;
     }
-  if((*ppAddrInfoOut = get_cached_addrinfo_full(pNode)) != NULL)
+  if ((*ppAddrInfoOut = get_cached_addrinfo_full(pNode)) != NULL)
     {
     return 0;
     }
-  if(pHints == NULL)
+  if (pHints == NULL)
     {
     memset(&hints,0,sizeof(hints));
     hints.ai_socktype = SOCK_STREAM;
