@@ -83,6 +83,8 @@
 #include "alps_functions.h"
 #include "../lib/Libifl/lib_ifl.h"
 
+#define MAX_CONN_RETRY 3
+
 extern int exiting_tasks;
 extern int LOGLEVEL;
 extern     int             lockfds;
@@ -872,6 +874,50 @@ void mom_checkpoint_check_periodic_timer(
 
 
 
+/*
+ * establish_server_connection()
+ *
+ * establishes a conncection to pjob's server if possible.
+ * @pre-cond pjob must have a server attribute and be a valid job
+ * @param - pjob the job whose server we should connect to
+ * @return - the index of the connection to pjob's server, or -1 on error
+ */
+
+int establish_server_connection(
+    
+  job *pjob)
+
+  {
+  int num_attempts = 0;
+  int connection   = -1;
+
+  if ((pjob == NULL) ||
+      (pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str == NULL))
+    return(connection);
+
+  while ((connection < 0) &&
+         (num_attempts < MAX_CONN_RETRY))
+    {
+    if (num_attempts > 0)
+      sleep(1);
+
+    connection = pbs_connect(pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str);
+
+    num_attempts++;
+    }
+  
+  if (connection < 0)
+    {
+    sprintf(log_buffer,"Job %s failed %d times to get connection to %s",
+      pjob->ji_qs.ji_jobid,
+      MAX_CONN_RETRY,
+      pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str);
+    log_err(-1, __func__, log_buffer);
+    }
+
+  return(connection);
+  } /* END establish_server_connection() */
+
 
 
 /**
@@ -883,11 +929,13 @@ void mom_checkpoint_check_periodic_timer(
  * only have one task associated with the job.
  *
  * @see start_checkpoint() - parent
+ * @pre-cond: this is a child routine, not the main pbs_mom process
+ * @pre-cond: pjob is a valid job pointer
+ * @pre-cond: pjob has a valid checkpoint directory in its attributes
  *
  * @returns PBSE_NONE if no error
  */
 
-#define MAX_CONN_RETRY 3
 
 int blcr_checkpoint_job(
 
@@ -910,14 +958,14 @@ int blcr_checkpoint_job(
   char             namebuf[MAXPATHLEN+1];
   int              conn = -1;
   int              err;
-  int              conn_fail = 0;
   int              local_errno = 0;
   struct attrl    *attrib = NULL;
   time_t           epoch;
   unsigned short   momport = 0;
 
-  assert(pjob != NULL);
-  assert(pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str != NULL);
+  if ((pjob == NULL) ||
+      (pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str == NULL))
+    exit(-1);
 
   /*
   * Get jobs checkpoint directory.
@@ -1061,64 +1109,48 @@ int blcr_checkpoint_job(
 
     delete_blcr_checkpoint_files(pjob);
 
-    /* open a connection to the server */
+    conn = establish_server_connection(pjob);
 
-    while ((conn < 0) && (conn_fail < MAX_CONN_RETRY))
+    if (conn >= 0)
       {
-      conn = pbs_connect(pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str);
+      set_attr(&attrib, ATTR_comment, err_buf);
+      
+      err = pbs_alterjob_err(conn, pjob->ji_qs.ji_jobid, attrib, NULL, &local_errno);
 
-      if (conn < 0)
+      if (err != 0)
         {
-        conn_fail++;
-        sleep(1);
-        if (conn_fail == MAX_CONN_RETRY)
+        sprintf(buf, "pbs_alterjob requested on job %s failed (%d-%s)\n",
+            pjob->ji_qs.ji_jobid, err, pbs_strerror(err));
+        log_err(-1, __func__, buf);
+        if (err == PBSE_UNKJOBID)
           {
-          sprintf(log_buffer,"Job %s failed %d times to get connection to %s",
-            pjob->ji_qs.ji_jobid,
-            MAX_CONN_RETRY,
-            pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str);
-          log_err(-1, __func__, log_buffer);
+          /* TODO: GB - can the job exit while waiting for the checkpoint
+              script to exit?? call log_err */
+          pbs_disconnect(conn);
+          exit(err);
           }
         }
-      }
 
-    set_attr(&attrib, ATTR_comment, err_buf);
-
-    err = pbs_alterjob_err(conn, pjob->ji_qs.ji_jobid, attrib, NULL, &local_errno);
-
-    if (err != 0)
-      {
-      sprintf(buf, "pbs_alterjob requested on job %s failed (%d-%s)\n",
-          pjob->ji_qs.ji_jobid, err, pbs_strerror(err));
-      log_err(-1, __func__, buf);
-      if (err == PBSE_UNKJOBID)
+      if (abort != 0)
         {
-        /* TODO: GB - can the job exit while waiting for the checkpoint
-            script to exit?? call log_err */
-        pbs_disconnect(conn);
-        goto done;
-        }
+        /*
+         * we need to tell the server to release the hold (abort is non-zero
+         * which means we are trying to hold the job)
+         */
+
+
+        /*
+         * send release job request, the job will still be running,
+         * so it shouldn't have any holds set so we will send "uos"
+         * to clear all holds
+         */
+        pbs_rlsjob_err(conn, pjob->ji_qs.ji_jobid, (char *)"uos", NULL, &local_errno);
+
+        } /* END if (abort != 0) */
+
+
+      pbs_disconnect(conn);
       }
-
-    if (abort != 0)
-      {
-      /*
-       * we need to tell the server to release the hold (abort is non-zero
-       * which means we are trying to hold the job)
-       */
-
-
-      /*
-       * send release job request, the job will still be running,
-       * so it shouldn't have any holds set so we will send "uos"
-       * to clear all holds
-       */
-      pbs_rlsjob_err(conn, pjob->ji_qs.ji_jobid, (char *)"uos", NULL, &local_errno);
-
-      } /* END if (abort != 0) */
-
-
-    pbs_disconnect(conn);
 
     } /* END if (rc != 0) */
   else
@@ -1127,84 +1159,64 @@ int blcr_checkpoint_job(
     /* checkpoint script returned a zero value.  We assume the checkpoint
         suceeded */
 
-    /* open a connection to the server */
+    conn = establish_server_connection(pjob);
 
-    while ((conn < 0) && (conn_fail < MAX_CONN_RETRY))
+    if (conn >= 0)
       {
-      conn = pbs_connect(pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str);
+      sprintf(timestr,"%ld",
+          (long)pjob->ji_wattr[JOB_ATR_checkpoint_time].at_val.at_long);
+      epoch = (time_t)pjob->ji_wattr[JOB_ATR_checkpoint_time].at_val.at_long;
 
-      if (conn < 0)
+      sprintf(err_buf,"Job %s was checkpointed and %s to %s/%s at %s",
+        pjob->ji_qs.ji_jobid,
+        (request_type == PBS_BATCH_HoldJob) ? "terminated" : "continued",
+        namebuf,
+        pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str,
+        ctime(&epoch));
+
+      set_attr(&attrib, ATTR_comment, err_buf);
+      set_attr(&attrib, ATTR_checkpoint_name,
+          pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
+      set_attr(&attrib, ATTR_checkpoint_time, timestr);
+
+      err = pbs_alterjob_err(conn, 
+          pjob->ji_qs.ji_jobid, attrib,
+          (request_type == PBS_BATCH_HoldJob) ? (char *)CHECKPOINTHOLD : (char *)CHECKPOINTCONT,
+          &local_errno);
+
+      if (err != 0)
         {
-        conn_fail++;
-        sleep(1);
-        if (conn_fail == MAX_CONN_RETRY)
+        sprintf(buf, "pbs_alterjob requested on job %s failed (%d-%s)\n",
+            pjob->ji_qs.ji_jobid, err, pbs_strerror(err));
+        log_err(-1, __func__, buf);
+        if (err == PBSE_UNKJOBID)
           {
-          sprintf(log_buffer,"Job %s failed %d times to get connection to %s",
-            pjob->ji_qs.ji_jobid,
-            MAX_CONN_RETRY,
-            pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str);
-          log_err(-1, __func__, log_buffer);
+          /* TODO: GB - can the job exit while waiting for the checkpoint
+              script to exit?? call log_err */
+          pbs_disconnect(conn);
+
+          /*
+           * If we get an unknown jobid after succesfully doing a non-hold
+           * checkpoint, then it is most likely the result of a periodic
+           * checkpoint for a job that had a qdel -p done, so we get rid of
+           * any local checkpoint / restart files
+           */
+
+          if (request_type == 0)
+            {
+            delete_blcr_checkpoint_files(pjob);
+            }
+          exit(err);
           }
         }
-      }
 
-    sprintf(timestr,"%ld",
-        (long)pjob->ji_wattr[JOB_ATR_checkpoint_time].at_val.at_long);
-    epoch = (time_t)pjob->ji_wattr[JOB_ATR_checkpoint_time].at_val.at_long;
+      pbs_disconnect(conn);
 
-    sprintf(err_buf,"Job %s was checkpointed and %s to %s/%s at %s",
-      pjob->ji_qs.ji_jobid,
-      (request_type == PBS_BATCH_HoldJob) ? "terminated" : "continued",
-      namebuf,
-      pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str,
-      ctime(&epoch));
-
-    set_attr(&attrib, ATTR_comment, err_buf);
-    set_attr(&attrib, ATTR_checkpoint_name,
-        pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
-    set_attr(&attrib, ATTR_checkpoint_time, timestr);
-
-    err = pbs_alterjob_err(conn, 
-        pjob->ji_qs.ji_jobid, attrib,
-        (request_type == PBS_BATCH_HoldJob) ? (char *)CHECKPOINTHOLD : (char *)CHECKPOINTCONT,
-        &local_errno);
-
-    if (err != 0)
-      {
-      sprintf(buf, "pbs_alterjob requested on job %s failed (%d-%s)\n",
-          pjob->ji_qs.ji_jobid, err, pbs_strerror(err));
-      log_err(-1, __func__, buf);
-      if (err == PBSE_UNKJOBID)
-        {
-        /* TODO: GB - can the job exit while waiting for the checkpoint
-            script to exit?? call log_err */
-        pbs_disconnect(conn);
-
-        /*
-         * If we get an unknown jobid after succesfully doing a non-hold
-         * checkpoint, then it is most likely the result of a periodic
-         * checkpoint for a job that had a qdel -p done, so we get rid of
-         * any local checkpoint / restart files
-         */
-
-        if (request_type == 0)
-          {
-          delete_blcr_checkpoint_files(pjob);
-          }
-        goto done;
-        }
-      }
-
-    pbs_disconnect(conn);
-
-    if (rc == 0)
-      {
       /* Normally, this is an empty routine and does nothing. */
       rc = site_mom_postchk(pjob,abort);
       }
     }
 
-done:
   exit (rc);
   }  /* END blcr_checkpoint_job() */
 

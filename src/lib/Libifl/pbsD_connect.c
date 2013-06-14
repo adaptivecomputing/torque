@@ -1435,7 +1435,7 @@ int pbs_disconnect_socket(
     DIS_tcp_cleanup(chan);
   close(sock);
   return(0);
-  }  /* END pbs_disconnect() */
+  }  /* END pbs_disconnect_socket() */
 
 
 int pbs_disconnect(
@@ -1444,6 +1444,10 @@ int pbs_disconnect(
 
   {
   int  sock;
+
+  if ((connect < 0) ||
+      (connect > PBS_NET_MAX_CONNECTIONS))
+    return(-1);
 
   pthread_mutex_lock(connection[connect].ch_mutex);
 

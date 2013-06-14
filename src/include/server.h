@@ -302,6 +302,8 @@ typedef struct mail_info
   char *jobid;
   char *jobname;
   char *text;        /* additional optional text */
+  char *errFile;
+  char *outFile;
   int   mail_point;
   } mail_info;
 

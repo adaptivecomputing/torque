@@ -1,6 +1,7 @@
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ --coverage
+AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ --coverage `xml2-config --cflags`
+AM_LIBS = `xml2-config --libs`
 
 lib_LTLIBRARIES = libsvr_mail.la
 
@@ -9,9 +10,11 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_svr_mail
 
 libsvr_mail_la_SOURCES = scaffolding.c ${PROG_ROOT}/svr_mail.c
+
+#libsvr_mail_la_SOURCES = scaffolding.c ${PROG_ROOT}/svr_mail.c ${PROG_ROOT}/svr_func.c ${PROG_ROOT}/svr_format_job.c ${PROG_ROOT}/../lib/Libutils/u_threadpool.c
 libsvr_mail_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
-test_svr_mail_SOURCES = test_svr_mail.c
+test_svr_mail_SOURCES = test_svr_mail.c 
 
 check_SCRIPTS = coverage_run.sh
 
