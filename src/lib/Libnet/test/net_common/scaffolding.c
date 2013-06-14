@@ -2,14 +2,10 @@
 #include <stdlib.h>
 #include <netinet/in.h>
 
-int insert_addr_name_info(
-    
-  char               *hostname,
-  char               *full_hostname,
-  struct sockaddr_in *sai)
+struct addrinfo * insert_addr_name_info(struct addrinfo *pAddrInfo,const char *host)
 
   {
-  return(0);
+  return(NULL);
   }
 
 char *get_cached_fullhostname(
@@ -21,10 +17,12 @@ char *get_cached_fullhostname(
   return(NULL);
   }
 
+struct sockaddr_in *get_cached_addrinfo_full(const char *hostname)
+  {
+  return(NULL);
+  }
 
-struct sockaddr_in *get_cached_addrinfo(
-    
-  char               *hostname)
+struct sockaddr_in *get_cached_addrinfo(const char *hostname)
   
   {
   return(NULL);

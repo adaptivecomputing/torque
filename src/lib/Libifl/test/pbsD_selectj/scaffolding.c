@@ -63,7 +63,7 @@ void DIS_tcp_cleanup(struct tcp_chan *chan)
   {
   }
 
-int encode_DIS_attrl(tcp_chan *chan, attrl *al)
+int encode_DIS_attrl(tcp_chan* chan, attrl *attrs)
   {
   return(0);
   }
