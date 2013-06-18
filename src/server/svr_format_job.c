@@ -180,6 +180,25 @@ void svr_format_job(
 
           break;
 
+        case 'k':  /* error File */
+
+          if (mi->errFile != NULL)
+            fprintf(fh, "%s", mi->errFile);
+
+          p += 2;
+
+          break;
+
+
+        case 'l':  /* output File */
+
+          if (mi->outFile != NULL)
+            fprintf(fh, "%s", mi->outFile);
+
+          p += 2;
+
+          break;
+
         case 'm':  /* stdmessage */
 
           if (stdmessage != NULL)
