@@ -120,6 +120,8 @@
 struct job_array;
 #endif
 
+#define JOB_REPORTED_ABORT_DELTA 180
+
 /*
  * Dependent Job Structures
  *
@@ -679,6 +681,7 @@ struct job
 
   pthread_mutex_t  *ji_mutex;
   char              ji_being_recycled;
+  time_t            ji_last_reported_time;
 #endif/* PBS_MOM */   /* END SERVER ONLY */
   int               ji_commit_done;   /* req_commit has completed. If in routing queue job can now be routed */
 

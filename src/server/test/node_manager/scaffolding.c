@@ -87,14 +87,11 @@ char *netaddr_pbs_net_t(pbs_net_t ipadd)
 
 void free_br(struct batch_request *preq)
   {
-  fprintf(stderr, "The call to free_br needs to be mocked!!\n");
-  exit(1);
   }
 
 int enqueue_threadpool_request(void *(*func)(void *), void *arg)
   {
-  fprintf(stderr, "The call to enqueue_threadpool_request needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 struct pbsnode *find_nodebyname(const char *nodename)
@@ -257,9 +254,11 @@ job *svr_find_job(char *jobid, int get_subjob)
   {
   static job pjob;
 
+  time_t old = pjob.ji_last_reported_time;
   memset(&pjob, 0, sizeof(pjob));
   pjob.ji_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   strcpy(pjob.ji_qs.ji_jobid, jobid);
+  pjob.ji_last_reported_time = old;
 
   if ((!strcmp(jobid, "1")) ||
       (!strcmp(jobid, "5")))
