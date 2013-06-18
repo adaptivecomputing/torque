@@ -594,6 +594,53 @@ int check_node_for_job(
 
 
 
+/*
+ * record_reported_time()
+ *
+ * @pre-cond: vp must be a character pointer to a job id
+ * @post-cond: the job's last reported time is updated. This is used to safeguard against
+ * deleting jobs pre-maturely
+ *
+ * @param vp - the jobid of the job
+ *
+ */
+void *record_reported_time(
+
+  void *vp)
+
+  {
+  char *job_and_node = (char *)vp;
+
+  if (job_and_node != NULL)
+    {
+    char *jobid = job_and_node;
+    char *node_id;
+    char *colon = strchr(job_and_node, ':');
+
+    if (colon != NULL)
+      {
+      *colon = '\0';
+      node_id = colon + 1;
+
+      job *pjob = svr_find_job(jobid, TRUE);
+
+      if (pjob != NULL)
+        {
+        mutex_mgr job_mutex(pjob->ji_mutex, true);
+
+        if (!strncmp(node_id, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, strlen(node_id)))
+          pjob->ji_last_reported_time = time(NULL);
+        }
+      }
+
+    free(job_and_node);
+    }
+
+  return(NULL);
+  } /* END record_reported_time() */
+
+
+
 
 /*
  * is_job_on_node - return TRUE if this jobid is present on pnode
@@ -633,6 +680,12 @@ int is_job_on_node(
   else
     {
     present = check_node_for_job(pnode, jobid);
+    if (present == TRUE)
+      {
+      char *job_and_node = (char *)calloc(1, strlen(jobid) + 2 + strlen(pnode->nd_name));
+      sprintf(job_and_node, "%s:%s", jobid, pnode->nd_name);
+      enqueue_threadpool_request(record_reported_time, job_and_node);
+      }
     }
 
   if (at != NULL)

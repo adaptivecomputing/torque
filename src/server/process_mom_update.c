@@ -760,7 +760,8 @@ int process_status_info(
       char          *jobstr = (char *)calloc(1, len);
       sync_job_info *sji = (sync_job_info *)calloc(1, sizeof(sync_job_info));
 
-      if ((jobstr != NULL)&&(sji != NULL))
+      if ((jobstr != NULL) &&
+          (sji != NULL))
         {
         sprintf(jobstr, "%s:%s", current->nd_name, str+5);
         sji->input = jobstr;
@@ -771,11 +772,11 @@ int process_status_info(
         }
       else
         {
-        if( jobstr != NULL)
+        if (jobstr != NULL)
           {
           free(jobstr);
           }
-        if(sji != NULL)
+        if (sji != NULL)
           {
           free(sji);
           }
