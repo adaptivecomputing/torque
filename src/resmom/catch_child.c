@@ -404,13 +404,13 @@ void process_tm_obits(
 
   while ((pobit = (obitent *)GET_NEXT(ptask->ti_obits)) != NULL)
     {
+#ifndef NUMA_SUPPORT
     hnodent *pnode;
 
     pnode = get_node(pjob, pobit->oe_info.fe_node);
 
     /* see if this is me or another MOM */
 
-#ifndef NUMA_SUPPORT
     /* for NUMA, we are always the mother superior and the correct
      * node for everything to happen */
     if ((pnode != NULL) &&

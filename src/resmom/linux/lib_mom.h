@@ -10,17 +10,7 @@
 #include "resource.h" /* resource */
 #include "mom_mach.h" /* proc_stat_t, startjob_rtn */
 #include "mom_func.h" /* var_table */
-
-/* was in mom_mach.c */
-typedef struct proc_mem
-  {
-  unsigned long long mem_total;
-  unsigned long long mem_used;
-  unsigned long long mem_free;
-  unsigned long long swap_total;
-  unsigned long long swap_used;
-  unsigned long long swap_free;
-  } proc_mem_t;
+#include "mom_memory.h"
 
 #ifdef BUILD_L26_CPUSETS
 /* cpuset.c */

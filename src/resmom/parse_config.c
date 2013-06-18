@@ -195,6 +195,9 @@ extern int          mom_server_count;
 extern tlist_head   svr_alljobs; /* all jobs under MOM's control */
 extern time_t       time_now;
 extern int          internal_state;
+#ifdef NUMA_SUPPORT
+extern int            numa_index;
+#endif
 
 /* external functions */
 int      mom_server_add(const char *name);
