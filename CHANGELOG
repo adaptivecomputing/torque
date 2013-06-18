@@ -5,6 +5,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       jobs. 
   e - TRQ-1832. Add the ability to add a login_property to a job at the queue level
       by setting required_login_property on the queue.
+  e - TRQ-1925. Make pbs_mom smart enough to reserved extra memory nodes for non-numa
+      configured TORQUE when more memory is requested than reserved.
 
 4.2.3
   b - TRQ-1653. Arrays depending on non-array jobs was broken. Fix this.

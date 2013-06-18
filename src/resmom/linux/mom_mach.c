@@ -435,16 +435,193 @@ long long get_memacct_resi(pid_t pid)
   } /* END get_memacct_resi() */
 #endif
 
+
+
+/*
+ * get_proc_mem_from_path()
+ * @returns a pointer to a struct containing the memory information 
+ * @pre-cond: path must point to a valid path of a meminfo system file
+ */
+
+proc_mem_t *get_proc_mem_from_path(
+
+  const char *path)
+
+  {
+  proc_mem_t *mm;
+  FILE       *fp;
+  char        str[32];
+  long long   bfsz  = -1;
+  long long   casz  = -1;
+  long long   fcasz = -1;
+
+  if ((fp = fopen(path,"r")) == NULL)
+    {
+    return(NULL);
+    }
+
+  mm = (proc_mem_t *)calloc(1, sizeof(proc_mem_t));
+
+  if (fscanf(fp,"%30s",str) != 1)
+    {
+    fclose(fp);
+
+    return(NULL);
+    }
+
+  if (!strncmp(str,"total:",sizeof(str)))
+    {
+    /* old format */
+    if (fscanf(fp,"%*[^\n]%*c") != 0)     /* remove text header */
+      {
+      fclose(fp);
+
+      return(NULL);
+      }
+
+    /* umu vmem patch */
+    if (fscanf(fp, "%*s %llu %llu %llu %*u %lld %lld",
+               &mm->mem_total,
+               &mm->mem_used,
+               &mm->mem_free,
+               &bfsz,
+               &casz) != 5)
+      {
+      fclose(fp);
+
+      return(NULL);
+      }
+
+    mm->mem_free += casz + bfsz;
+
+    if (fscanf(fp, "%*s %llu %llu %llu %*[^\n]%*c",
+               &mm->swap_total,
+               &mm->swap_used,
+               &mm->swap_free) != 3)
+      {
+      fclose(fp);
+
+      return(NULL);
+      }
+    }
+  else
+    {
+    do
+      {
+      /* new format (kernel > 2.4) the first 'str' has been read */
+      if (!strncmp(str, "MemTotal:", sizeof(str)))
+        {
+        if (fscanf(fp, "%llu",
+                   &mm->mem_total) != 1)
+          {
+          fclose(fp);
+
+          return(NULL);
+          }
+
+        mm->mem_total *= 1024; /* the unit is kB */
+        }
+      else if (!strncmp(str, "MemFree:", sizeof(str)))
+        {
+        if (fscanf(fp, "%llu",
+                   &mm->mem_free) != 1)
+          {
+          fclose(fp);
+
+          return(NULL);
+          }
+
+        mm->mem_free *= 1024;
+        }
+      else if (!strncmp(str, "Buffers:", sizeof(str)))
+        {
+        if (fscanf(fp, "%lld",
+                   &bfsz) != 1)
+          {
+          fclose(fp);
+
+          return(NULL);
+          }
+
+        bfsz *= 1024;
+        }
+      else if (!strncmp(str, "Cached:", sizeof(str)))
+        {
+        if (fscanf(fp, "%lld",
+                   &casz) != 1)
+          {
+          fclose(fp);
+
+          return(NULL);
+          }
+
+        casz *= 1024;
+        }
+      else if (!strncmp(str, "FilePages:", sizeof(str)))
+        {
+        if (fscanf(fp, "%lld",
+                   &fcasz) != 1)
+          {
+          fclose(fp);
+
+          return(NULL);
+          }
+
+        fcasz *= 1024;
+        }
+      else if (!strncmp(str, "SwapTotal:", sizeof(str)))
+        {
+        if (fscanf(fp, "%llu",
+                   &mm->swap_total) != 1)
+          {
+          fclose(fp);
+          return(NULL);
+          }
+
+        mm->swap_total *= 1024;
+        }
+      else if (!strncmp(str, "SwapFree:", sizeof(str)))
+        {
+        if (fscanf(fp, "%llu",
+                   &mm->swap_free) != 1)
+          {
+          fclose(fp);
+          return(NULL);
+          }
+
+        mm->swap_free *= 1024;
+        }
+      }
+    while (fscanf(fp, "%30s", str) == 1);
+    }    /* END else */
+
+  fclose(fp);
+
+  if (bfsz >= 0 || casz >= 0)
+    {
+    if (bfsz > 0)
+      mm->mem_free += bfsz;
+    if (casz > 0)
+      mm->mem_free += casz;
+    }
+  else if (fcasz > 0)
+    {
+    mm->mem_free += fcasz;
+    }
+
+  return(mm);
+  } /* END get_proc_mem_from_path() */
+
+
+
 proc_mem_t *get_proc_mem(void)
 
   {
   static proc_mem_t   ret_mm;
-  proc_mem_t          mm;
-  FILE               *fp;
-  char                str[32];
-  long long           bfsz, casz, fcasz;
 #ifdef NUMA_SUPPORT
-  int i;
+  int                 i;
+#else
+  proc_mem_t         *mem;
 #endif
 
 #ifdef NUMA_SUPPORT
@@ -457,197 +634,31 @@ proc_mem_t *get_proc_mem(void)
 
   for (i = 0; i < node_boards[numa_index].num_nodes; i++)
     {
-    if ((fp = fopen(node_boards[numa_index].path_meminfo[i],"r")) == NULL)
-#else
-    if ((fp = fopen(path_meminfo,"r")) == NULL)
-#endif
-      {
+    proc_mem_t *node_mem = get_proc_mem_from_path(node_boards[numa_index].path_meminfo[i]);
+
+    if (node_mem == NULL)
       return(NULL);
-      }
 
-    bfsz = casz = fcasz = -1;
-    mm.mem_total  = 0;
-    mm.mem_used   = 0;
-    mm.mem_free   = 0;
-    mm.swap_total = 0;
-    mm.swap_used  = 0;
-    mm.swap_free  = 0;
+    ret_mm.mem_total  += node_mem->mem_total;
+    ret_mm.mem_used   += node_mem->mem_used;
+    ret_mm.mem_free   += node_mem->mem_free;
+    ret_mm.swap_total += node_mem->swap_total;
+    ret_mm.swap_used  += node_mem->swap_used;
+    ret_mm.swap_free  += node_mem->swap_free;
 
-    if (fscanf(fp,"%30s",str) != 1)
-      {
-      fclose(fp);
-
-      return(NULL);
-      }
-
-    if (!strncmp(str,"total:",sizeof(str)))
-      {
-      /* old format */
-
-      if (fscanf(fp,"%*[^\n]%*c") != 0)     /* remove text header */
-        {
-        fclose(fp);
-
-        return(NULL);
-        }
-
-      /* umu vmem patch */
-
-      if (fscanf(fp, "%*s %llu %llu %llu %*u %lld %lld",
-                 &mm.mem_total,
-                 &mm.mem_used,
-                 &mm.mem_free,
-                 &bfsz,
-                 &casz) != 5)
-        {
-        fclose(fp);
-
-        return(NULL);
-        }
-
-      mm.mem_free += casz + bfsz;
-
-      /*
-          if (fscanf(fp,"%*s %lu %lu %lu %*[^\n]%*c",
-            &mm.mem_total,
-            &mm.mem_used,
-            &mm.mem_free) != 3)
-            {
-            return(NULL);
-            }
-      */
-
-      if (fscanf(fp, "%*s %llu %llu %llu %*[^\n]%*c",
-                 &mm.swap_total,
-                 &mm.swap_used,
-                 &mm.swap_free) != 3)
-        {
-        fclose(fp);
-
-        return(NULL);
-        }
-      }
-    else
-      {
-      do
-        {
-        /* new format (kernel > 2.4) the first 'str' has been read */
-
-        if (!strncmp(str, "MemTotal:", sizeof(str)))
-          {
-          if (fscanf(fp, "%llu",
-                     &mm.mem_total) != 1)
-            {
-            fclose(fp);
-
-            return(NULL);
-            }
-
-          mm.mem_total *= 1024; /* the unit is kB */
-          }
-        else if (!strncmp(str, "MemFree:", sizeof(str)))
-          {
-          if (fscanf(fp, "%llu",
-                     &mm.mem_free) != 1)
-            {
-            fclose(fp);
-
-            return(NULL);
-            }
-
-          mm.mem_free *= 1024;
-          }
-        else if (!strncmp(str, "Buffers:", sizeof(str)))
-          {
-          if (fscanf(fp, "%lld",
-                     &bfsz) != 1)
-            {
-            fclose(fp);
-
-            return(NULL);
-            }
-
-          bfsz *= 1024;
-          }
-        else if (!strncmp(str, "Cached:", sizeof(str)))
-          {
-          if (fscanf(fp, "%lld",
-                     &casz) != 1)
-            {
-            fclose(fp);
-
-            return(NULL);
-            }
-
-          casz *= 1024;
-          }
-        else if (!strncmp(str, "FilePages:", sizeof(str)))
-          {
-          if (fscanf(fp, "%lld",
-                     &fcasz) != 1)
-            {
-            fclose(fp);
-
-            return(NULL);
-            }
-
-          fcasz *= 1024;
-          }
-        else if (!strncmp(str, "SwapTotal:", sizeof(str)))
-          {
-          if (fscanf(fp, "%llu",
-                     &mm.swap_total) != 1)
-            {
-            fclose(fp);
-            return(NULL);
-            }
-
-          mm.swap_total *= 1024;
-          }
-        else if (!strncmp(str, "SwapFree:", sizeof(str)))
-          {
-          if (fscanf(fp, "%llu",
-                     &mm.swap_free) != 1)
-            {
-            fclose(fp);
-            return(NULL);
-            }
-
-          mm.swap_free *= 1024;
-          }
-        }
-      while (fscanf(fp, "%30s", str) == 1);
-      }    /* END else */
-
-    fclose(fp);
-  
-    if (bfsz >= 0 || casz >= 0)
-      {
-      if (bfsz > 0)
-        mm.mem_free += bfsz;
-      if (casz > 0)
-        mm.mem_free += casz;
-      }
-    else if (fcasz > 0)
-      {
-      mm.mem_free += fcasz;
-      }
-
-#ifdef NUMA_SUPPORT
-    ret_mm.mem_total  += mm.mem_total;
-    ret_mm.mem_used   += mm.mem_used;
-    ret_mm.mem_free   += mm.mem_free;
-    ret_mm.swap_total += mm.swap_total;
-    ret_mm.swap_used  += mm.swap_used;
-    ret_mm.swap_free  += mm.swap_free;
+    free(node_mem);
     }
 #else
-    ret_mm.mem_total  = mm.mem_total;
-    ret_mm.mem_used   = mm.mem_used;
-    ret_mm.mem_free   = mm.mem_free;
-    ret_mm.swap_total = mm.swap_total;
-    ret_mm.swap_used  = mm.swap_used;
-    ret_mm.swap_free  = mm.swap_free;
+  mem = get_proc_mem_from_path(path_meminfo);
+  
+  ret_mm.mem_total  = mem->mem_total;
+  ret_mm.mem_used   = mem->mem_used;
+  ret_mm.mem_free   = mem->mem_free;
+  ret_mm.swap_total = mem->swap_total;
+  ret_mm.swap_used  = mem->swap_used;
+  ret_mm.swap_free  = mem->swap_free;
+
+  free(mem);
 #endif
 
   return(&ret_mm);

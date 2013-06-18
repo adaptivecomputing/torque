@@ -298,7 +298,9 @@ void scan_for_exiting(void)
   job          *pjob;
   task         *ptask;
   obitent      *pobit;
+#ifndef NUMA_SUPPORT 
   char         *cookie;
+#endif
   task         *task_find(job *, tm_task_id);
   int          rc = PBSE_NONE;
 
@@ -407,7 +409,9 @@ void scan_for_exiting(void)
       continue;
       }
 
+#ifndef NUMA_SUPPORT 
     cookie = pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str;
+#endif
 
     /*
     ** Check each EXITED task.  They transition to DEAD here.
@@ -540,13 +544,13 @@ void scan_for_exiting(void)
 
       while ((pobit = (obitent *)GET_NEXT(ptask->ti_obits)) != NULL)
         {
+#ifndef NUMA_SUPPORT
         hnodent *pnode;
 
         pnode = get_node(pjob, pobit->oe_info.fe_node);
 
         /* see if this is me or another MOM */
 
-#ifndef NUMA_SUPPORT
         /* for NUMA, we are always the mother superior and the correct
          * node for everything to happen */
         if ((pnode != NULL) &&

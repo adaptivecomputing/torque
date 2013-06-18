@@ -125,3 +125,14 @@ const char *loadave(struct rm_attribute *attrib)
 void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_ext(int code, const char *src, const char *msg, int level) {}
+
+int get_cpuset_mempressure(const char *path)
+  {
+  return(0);
+  }
+
+pidl *get_cpuset_pidlist(const char *path, pidl *bob)
+  {
+  return(NULL);
+  }
