@@ -209,6 +209,7 @@
 #include <sys/param.h>
 #include <netinet/in.h>
 #include <sys/time.h>
+#include <sstream>
 #if defined(NTOHL_NEEDS_ARPA_INET_H) && defined(HAVE_ARPA_INET_H)
 #include <arpa/inet.h>
 #endif
@@ -1656,17 +1657,15 @@ int calculate_retry_seconds(
  *
  * @param pms pointer to mom_server instance
  * @param sindex the mom_server index (used to display a server ID name)
- * @param BPtr pointer to space for writing the string
- * @param BSpace amount of space remaining
+ * @param output the string stream that all of this output should be written to
  * @see mom_server_all_diag
  */
 
 void mom_server_diag(
 
-  mom_server   *pms,
-  int           sindex,
-  char        **BPtr,
-  int          *BSpace)
+  mom_server        *pms,
+  int                sindex,
+  std::stringstream &output)
 
   {
   char tmpLine[1024];
@@ -1684,36 +1683,7 @@ void mom_server_diag(
           pms->pbs_servername,
           netaddr(&(pms->sock_addr)));
 
-  MUStrNCat(BPtr, BSpace, tmpLine);
-
-/*  if ((pms->received_hello_count > 0) ||
-      (pms->received_cluster_address_count > 0))
-    {
-    if (verbositylevel >= 1)
-      {
-      sprintf(tmpLine, "  Init Msgs Received:     %d hellos/%d cluster-addrs\n",
-              pms->received_hello_count,
-              pms->received_cluster_address_count);
-
-      MUStrNCat(BPtr, BSpace, tmpLine);
-
-      sprintf(tmpLine, "  Init Msgs Sent:         %d hellos\n",
-              pms->sent_hello_count);
-
-      MUStrNCat(BPtr, BSpace, tmpLine);
-      }
-    }
-  else
-    {
-    sprintf(tmpLine, "  WARNING:  no hello/cluster-addrs messages received from server\n");
-
-    MUStrNCat(BPtr, BSpace, tmpLine);
-
-    sprintf(tmpLine, "  Init Msgs Sent:         %d hellos\n",
-            pms->sent_hello_count);
-
-    MUStrNCat(BPtr, BSpace, tmpLine);
-    }*/
+  output << tmpLine;
 
   if (pms->MOMSendStatFailure[0] != '\0')
     {
@@ -1723,13 +1693,12 @@ void mom_server_diag(
             " (check name resolution - /etc/hosts?)" :
             "");
 
-    MUStrNCat(BPtr, BSpace, tmpLine);
+    output << tmpLine;
     }
 
   if (TMOMRejectConn[0] != '\0')
     {
-    MUSNPrintF(BPtr, BSpace, "  WARNING:  invalid attempt to connect from server %s\n",
-      TMOMRejectConn);
+    output << "  WARNING:  invalid attempt to connect from server " << TMOMRejectConn << "\n";
     }
 
   if (pms->MOMLastRecvFromServerTime > 0)
@@ -1744,7 +1713,7 @@ void mom_server_diag(
     sprintf(tmpLine, "  WARNING:  no messages received from server\n");
     }
 
-  MUStrNCat(BPtr, BSpace, tmpLine);
+  output << tmpLine;
 
   if (pms->MOMLastSendToServerTime > 0)
     {
@@ -1756,7 +1725,7 @@ void mom_server_diag(
     sprintf(tmpLine, "  WARNING:  no messages sent to server\n");
     }
 
-  MUStrNCat(BPtr, BSpace, tmpLine);
+  output << tmpLine;
 
   return;
   }  /* END mom_server_diag() */
@@ -1777,21 +1746,20 @@ void mom_server_diag(
 
 void mom_server_all_diag(
 
-  char **BPtr,
-  int *BSpace)
+  std::stringstream &output)
 
   {
   int sindex;
 
   if (mom_servers[0].pbs_servername[0] == '\0')
     {
-    MUStrNCat(BPtr, BSpace, "WARNING:  server not specified (set $pbsserver)\n");
+    output << "WARNING:  server not specified (set $pbsserver)\n";
     }
   else
     {
     for (sindex = 0;sindex < PBS_MAXSERVER;sindex++)
       {
-      mom_server_diag(&mom_servers[sindex], sindex, BPtr, BSpace);
+      mom_server_diag(&mom_servers[sindex], sindex, output);
       }
     }
 
