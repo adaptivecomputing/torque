@@ -229,7 +229,7 @@ int get_server(
         snprintf(job_id_out, job_id_out_size, "%s.%s%s", seq_number, host_server, c);
         }
       else
-        snprintf(job_id_out, job_id_out_size, "%s.%s", seq_number, parent_server);
+        snprintf(job_id_out, job_id_out_size, "%s.%s", seq_number, host_server);
 
       }    /* END else */
     }
