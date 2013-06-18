@@ -15,6 +15,8 @@
 #include <termios.h>
 #endif /* _CRAY */
 
+#include <string>
+#include <sstream>
 #include <signal.h>
 #include <string.h>
 #include <ctype.h>
@@ -224,7 +226,7 @@ pjobexec_t      TMOMStartInfo[TMAX_JE];
 
 void            resend_things();
 extern void     add_resc_def(char *, char *);
-extern void     mom_server_all_diag(char **BPtr, int *BSpace);
+extern void     mom_server_all_diag(std::stringstream &output);
 extern void     mom_server_all_init(void);
 extern void     mom_server_all_update_stat(void);
 extern void     mom_server_all_update_gpustat(void);
@@ -1472,6 +1474,1168 @@ void cleanup_aux()
 
 
 
+int process_clear_job_request(
+    
+  std::stringstream &output,
+  char              *curr)
+
+  {
+  char *ptr = NULL;
+
+  job  *pjob = NULL;
+  job  *pjobnext = NULL;
+
+  if ((*curr == '=') && ((*curr) + 1 != '\0'))
+    {
+    ptr = curr + 1;
+    }
+
+  /* purge job if local */
+  if (ptr == NULL)
+    {
+    output << "invalid clearjob request";
+    }
+  else
+    {
+    std::string tmpLine;
+
+    if (!strcasecmp(ptr, "all"))
+      {
+      if ((pjob = (job *)GET_NEXT(svr_alljobs)) != NULL)
+        {
+        while (pjob != NULL)
+          {
+          tmpLine.append("clearing job ");
+          tmpLine.append(pjob->ji_qs.ji_jobid);
+
+          log_record(PBSEVENT_SYSTEM, 0, __func__, tmpLine.c_str());
+
+          pjobnext = (job *)GET_NEXT(pjob->ji_alljobs);
+
+          mom_job_purge(pjob);
+
+          pjob = pjobnext;
+
+          output << tmpLine + "\n";
+          }
+        }
+
+      output << "clear completed";
+      }
+    else if ((pjob = mom_find_job(ptr)) != NULL)
+      {
+      output << "clearing job ";
+      output << pjob->ji_qs.ji_jobid;
+
+      log_record(PBSEVENT_SYSTEM, 0, __func__, tmpLine.c_str());
+
+      mom_job_purge(pjob);
+
+      output << tmpLine;
+      }
+    }
+
+  return(PBSE_NONE);
+  } /* END process_clear_job_request() */
+
+
+
+void add_diag_header(
+
+  std::stringstream &output)
+
+  {
+  output << "\nHost: " << mom_short_name << "/" << mom_host << "   Version: ";
+  output << PACKAGE_VERSION << "   PID: " << getpid() << "\n";
+  } /* END add_diag_header() */
+
+
+
+void add_diag_home_dir(
+
+  std::stringstream &output)
+
+  {
+  output << "HomeDirectory:          ";
+  if (mom_home != NULL)
+   output << mom_home;
+  else
+    output << "N/A";
+  output << "\n";
+  } /* END add_diag_home_dir() */
+
+
+
+void add_diag_remaining_spool_space(
+
+  std::stringstream &output)
+
+  {
+  struct statvfs VFSStat;
+  
+  if (statvfs((const char *)path_spool, &VFSStat) < 0)
+    {
+    output << "ALERT:  cannot stat stdout/stderr spool directory '" << path_spool;
+    output << "' (errno=" << errno << ")" << strerror(errno) << "\n";
+    }
+  else
+    {
+    if (VFSStat.f_bavail > 0)
+      {
+      if (verbositylevel >= 1)
+        {
+        output << "stdout/stderr spool directory: '" << path_spool << "' (" << VFSStat.f_bavail;
+        output << "blocks available)\n";
+        }
+      }
+    else
+      {
+      output << "ALERT:  stdout/stderr spool directory '" << path_spool << "' is full\n";
+      }
+    }
+  } /* END add_diag_remaining_spool_space() */
+
+
+
+void add_diag_config_version(
+
+  std::stringstream &output)
+
+  {
+  if (MOMConfigVersion[0] != '\0')
+    output << "ConfigVersion:          " << MOMConfigVersion << "\n";
+  } /* END add_diag_config_version() */
+
+
+
+void add_diag_syslog_status(
+
+  std::stringstream &output)
+
+  {
+#if SYSLOG
+  output << "NOTE:  syslog enabled\n";
+#else /* SYSLOG */
+  output << "NOTE:  syslog not enabled (use 'configure --enable-syslog' to enable)\n";
+#endif /* SYSLOG */
+  }
+
+
+
+void add_diag_health_check_script_status(
+
+  std::stringstream &output)
+
+  {
+  if (PBSNodeCheckPath[0] != '\0')
+    {
+    output << "Node Health Check Script: " << PBSNodeCheckPath << " (";
+    output << PBSNodeCheckInterval * ServerStatUpdateInterval << " second update interval)\n";
+    }
+  } /* END add_diag_health_check_script_status() */
+
+
+
+void add_diag_active_time(
+
+  std::stringstream &output)
+
+  {
+  output << "MOM active:             " << (long)time(NULL) - MOMStartTime << " seconds\n";
+  } /* END add_diag_active_time() */
+
+
+
+void add_diag_check_poll_time(
+
+  std::stringstream &output)
+
+  {
+  output << "Check Poll Time:        " << CheckPollTime << " seconds\n";
+  }
+
+void add_diag_status_update_interval(
+
+  std::stringstream &output)
+
+  {
+  output << "Server Update Interval: " << ServerStatUpdateInterval << " seconds\n";
+  }
+
+
+void add_diag_mom_message(
+
+  std::stringstream &output)
+
+  {
+  if (PBSNodeMsgBuf[0] != '\0')
+    {
+    output << "MOM Message:            " << PBSNodeMsgBuf << " (use 'momctl -q clearmsg' to clear)\n";
+    }
+  }
+
+
+
+
+void add_diag_mom_name_error_if_needed(
+    
+  std::stringstream &output)
+
+  {
+  if (MOMUNameMissing[0] != '\0')
+    {
+    output << "WARNING:  passwd file is corrupt (job requests user '" << MOMUNameMissing;
+    output << "' - not found in local passwd file)\n";
+    }
+  }
+
+
+
+
+void add_diag_prolog_timeout_count(
+    
+  std::stringstream &output)
+
+  {
+  if (MOMPrologTimeoutCount > 0)
+    {
+    output << "WARNING:  " << MOMPrologTimeoutCount << " prolog timeouts (" << pe_alarm_time;
+    output << " seconds) detected since start up - increase $prologalarm or investigate prolog\n";
+    }
+  }
+
+
+
+void add_diag_prolog_failure_count(
+
+  std::stringstream &output)
+
+  {
+  if (MOMPrologFailureCount > 0)
+    {
+    output << "WARNING:  " << MOMPrologFailureCount;
+    output << " prolog failures detected since start up - investigate prolog\n";
+    }
+  }
+
+
+
+void add_diag_log_level(
+
+  std::stringstream &output)
+
+  {
+  output << "LogLevel:               " << LOGLEVEL << " (use SIGUSR1/SIGUSR2 to adjust)\n";
+  }
+
+
+void add_diag_communication_model(
+
+  std::stringstream &output)
+
+  {
+  output << "Communication Model:    TCP\n";
+  }
+
+
+void add_diag_mom_locking_information(
+
+  std::stringstream &output)
+
+  {
+  if ((MOMIsLocked == 1) || (MOMIsPLocked == 1) || (verbositylevel >= 4))
+    {
+    output << "MemLocked:              ";
+    if (MOMIsLocked == 0)
+      output << "FALSE";
+    else
+      output << "TRUE";
+
+    if (MOMIsLocked == 1)
+      output << "  (mlock)";
+
+    if (MOMIsPLocked == 1)
+      output <<  "  (plocked)";
+
+    output << "\n";
+    }
+  }
+
+
+
+void add_diag_tcp_timeout(
+
+  std::stringstream &output)
+
+  {
+  output << "TCP Timeout:            " << pbs_tcp_timeout << " seconds\n";
+  }
+
+
+
+void add_diag_prolog_epilog_info(
+
+  std::stringstream &output)
+
+  {
+  struct stat s;
+
+  int prologfound = 0;
+
+  if (stat(path_prolog, &s) != -1)
+    {
+    output << "Prolog:                 " << path_prolog << " (enabled)\n";
+
+    prologfound = 1;
+    }
+  else if (verbositylevel >= 2)
+    {
+    output << "Prolog:                 " << path_prolog << " (disabled)\n";
+    }
+
+  if (stat(path_prologp, &s) != -1)
+    {
+    output << "Parallel Prolog:        " << path_prologp << " (enabled)\n";
+
+    prologfound = 1;
+    }
+
+  if (prologfound == 1)
+    {
+    output << "Prolog Alarm Time:      " << pe_alarm_time << " seconds\n";
+    }
+  }
+
+
+
+void add_diag_alarm_time(
+
+  std::stringstream &output)
+
+  {
+  int rc = alarm(alarm_time);
+
+  alarm(rc);
+
+  output << "Alarm Time:             " << rc << " of " << alarm_time << " seconds\n";
+  }
+
+
+void add_diag_okclient_list(
+
+  std::stringstream &output)
+
+  {
+  long max_len = 1024;
+  long final_len = 0;
+  char *tmp_line = (char *)calloc(1, max_len + 1);
+  
+  if (tmp_line != NULL)
+    {
+    int ret = AVL_list(okclients, &tmp_line, &final_len, &max_len);
+
+    output << "Trusted Client List:  " << tmp_line << ":  " << ret << "\n";
+    free(tmp_line);
+    }
+  else
+    {
+    output << "Trusted Client Could not be retrieved\n";
+    }
+  }
+
+
+void add_diag_copy_command(
+
+  std::stringstream &output)
+
+  {
+  output << "Copy Command:           " << rcp_path << " " << rcp_args << "\n";
+  }
+
+
+void add_diag_jobs_session_ids(
+
+  std::stringstream &output,
+  job               *pjob)
+
+  {
+  bool  first = true;
+  task *ptask;
+
+  output << " sidlist=";
+
+  for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
+       ptask != NULL;
+       ptask = (task *)GET_NEXT(ptask->ti_jobtask))
+    {
+    /* only check on tasks that we think should still be around */
+    if (ptask->ti_qs.ti_status != TI_STATE_RUNNING)
+      continue;
+
+    /* NOTE:  on linux systems, the session master should have
+       pid == sessionid */
+    if (first == true)
+      output << ptask->ti_qs.ti_sid;
+    else
+      output << "," << ptask->ti_qs.ti_sid;
+    }  /* END for (task) */
+  }
+
+
+void add_diag_jobs_memory_info(
+
+  std::stringstream &output,
+  job               *pjob)
+
+  {
+  resource      *pres;
+  const char    *resname;
+  unsigned long  resvalue;
+  
+  /* Selected resources used by job (on this node) */
+  if (verbositylevel >= 2)
+    {
+    if (pjob->ji_wattr[JOB_ATR_resc_used].at_type != ATR_TYPE_RESC)
+      {
+      output << "\n";
+      return;
+      }
+
+    pres = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resc_used].at_val.at_list);
+    for (;pres != NULL;pres = (resource *)GET_NEXT(pres->rs_link))
+      {
+      if (pres->rs_defin == NULL) 
+        {
+        continue;
+        }
+
+      resname = pres->rs_defin->rs_name;
+      if (!(strcmp(resname, "mem")))
+        resvalue = getsize(pres);
+      else if (!(strcmp(resname, "vmem")))
+        resvalue = getsize(pres);
+      else if (!(strcmp(resname, "cput")))
+        resvalue = gettime(pres);
+      else
+        continue;
+
+      output << " " << resname << "=" << resvalue;
+      }
+
+#ifdef PENABLE_LINUX26_CPUSETS
+    /* report current memory pressure */
+    output << " mempressure=" << pjob->ji_mempressure_curr;
+#endif
+    }
+  }
+
+
+
+void add_diag_jobs_batch_env_vars(
+
+  std::stringstream &output,
+  job               *pjob)
+
+  {
+  if (verbositylevel >= 4)
+    {
+    char *VPtr = get_job_envvar(pjob, "BATCH_PARTITION_ID");
+
+    if (VPtr != NULL)
+      output << "  BATCH_PARTITION_ID=" << VPtr;
+
+    VPtr = get_job_envvar(pjob, "BATCH_ALLOC_COOKIE");
+
+    if (VPtr != NULL)
+      output << "  BATCH_ALLOC_COOKIE=" << VPtr;
+    }    /* END if (verbositylevel >= 4) */
+  }
+
+
+
+int diag_jobs_count_vnodes(
+
+  job *pjob)
+
+  {
+  int vnindex;
+  int numvnodes = 0;
+
+  /* count the CPUs assigned to this mom */
+  for (vnindex = 0; vnindex < pjob->ji_numvnod; vnindex++)
+    {
+    if (!strcmp(pjob->ji_vnods[vnindex].vn_host->hn_host, mom_alias))
+      {
+      numvnodes++;
+      }
+    }
+
+  return(numvnodes);
+  }
+
+
+void add_diag_jobid_and_state(
+
+  std::stringstream &output,
+  job               *pjob)
+
+  {
+  output << "job[" << pjob->ji_qs.ji_jobid << "]  state=" << PJobSubState[pjob->ji_qs.ji_substate];
+  }
+
+
+
+void add_diag_job_entry(
+
+  std::stringstream &output,
+  int               *numvnodes,
+  job               *pjob)
+
+  {
+  *numvnodes += diag_jobs_count_vnodes(pjob);
+
+  add_diag_jobid_and_state(output, pjob);
+
+  add_diag_jobs_memory_info(output, pjob);
+
+  add_diag_jobs_session_ids(output, pjob);
+
+  add_diag_jobs_batch_env_vars(output, pjob);
+
+  output << "\n";
+  } /* END add_diag_job_entry() */
+
+
+void add_diag_new_jobs(
+
+  std::stringstream &output)
+
+  {
+  job *pjob;
+
+  if ((pjob = (job *)GET_NEXT(svr_newjobs)) != NULL)
+    {
+    while (pjob != NULL)
+      {
+      output << "job[" <<  pjob->ji_qs.ji_jobid << "]  state=NEW\n";
+
+      pjob = (job *)GET_NEXT(pjob->ji_alljobs);
+      }
+    }
+  }
+
+
+
+void add_diag_job_list(
+
+  std::stringstream &output)
+
+  {
+  job  *pjob;
+
+  if ((pjob = (job *)GET_NEXT(svr_alljobs)) == NULL)
+    {
+    output << "NOTE:  no local jobs detected\n";
+    }
+  else
+    {
+    int            numvnodes = 0;
+
+    for (;pjob != NULL;pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+      {
+      add_diag_job_entry(output, &numvnodes, pjob);
+      }  /* END for (pjob) */
+
+    output << "Assigned CPU Count:     " << numvnodes << "\n";
+    }  /* END else ((pjob = (job *)GET_NEXT(svr_alljobs)) == NULL) */
+
+  add_diag_new_jobs(output);
+  } /* END add_diag_job_list() */
+
+
+void add_diag_var_attrs(
+
+  std::stringstream &output)
+
+  {
+  struct varattr *pva;
+
+  if ((pva = (struct varattr *)GET_NEXT(mom_varattrs)) != NULL)
+    {
+    output << "Varattrs:\n";
+
+    while (pva != NULL)
+      {
+      output << "  ttl=" << pva->va_ttl << "  last=" << ctime(&pva->va_lasttime);
+      output << "  cmd=" << pva->va_cmd << "\n  value=";
+
+      if (pva->va_value != NULL) 
+       output << pva->va_value;
+      else
+       output << "NULL";
+
+      output << "\n\n",
+
+      pva = (struct varattr *)GET_NEXT(pva->va_link);
+      }
+    }
+
+  }
+
+
+/*
+ * set_verbosity_level()
+ *
+ * parses the string to determine what verbosity level this diag output should be
+ *
+ * @pre-cond: name must be a valid string
+ * @post-cond: global variable verbositylevel is set
+ */
+void set_verbosity_level(
+
+  const char *name)
+
+  {
+  const char     *ptr;
+
+  ptr = name + strlen("diag");
+
+  verbositylevel = (int)strtol(ptr, NULL, 10);
+  }
+
+
+
+int process_diag_request(
+    
+  std::stringstream &output,
+  const char        *name)
+
+  {
+  output.str("");
+
+  add_diag_header(output);
+
+  mom_server_all_diag(output);
+
+  add_diag_home_dir(output);
+
+#ifdef HAVE_SYS_STATVFS_H
+  add_diag_remaining_spool_space(output);
+#endif /* HAVE_SYS_STATVFS_H */
+
+  add_diag_config_version(output);
+
+  if (verbositylevel >= 3)
+    {
+    add_diag_syslog_status(output);
+
+    add_diag_health_check_script_status(output);
+    }
+
+  add_diag_active_time(output);
+
+  if (verbositylevel >= 1)
+    {
+    add_diag_check_poll_time(output);
+    
+    add_diag_status_update_interval(output);
+    }
+
+  add_diag_mom_message(output);
+
+  add_diag_mom_name_error_if_needed(output);
+
+  add_diag_prolog_timeout_count(output);
+
+  add_diag_prolog_failure_count(output);
+
+  add_diag_log_level(output);
+
+  if (verbositylevel >= 1)
+    {
+    add_diag_communication_model(output);
+
+    add_diag_mom_locking_information(output);
+
+    add_diag_tcp_timeout(output);
+
+    add_diag_prolog_epilog_info(output);
+
+    if (verbositylevel >= 2)
+      {
+      add_diag_alarm_time(output);
+      }
+    
+    add_diag_okclient_list(output);
+    
+    add_diag_copy_command(output);
+    }
+
+  add_diag_job_list(output);
+
+  add_diag_var_attrs(output);
+  
+  output << "\ndiagnostics complete\n";
+
+  log_record(PBSEVENT_SYSTEM, 0, __func__, "internal diagnostics complete");
+  
+  return(PBSE_NONE);
+  } /* END process_diag_request() */
+
+
+
+/*
+ * clear_rm_messages()
+ * clears any stored messages for this mom
+ * @pre-condition: output must be a valid stringstream
+ */
+void clear_rm_messages(
+
+  std::stringstream &output)
+
+  {
+  /* this is where the messages are stored */
+  PBSNodeMsgBuf[0] = '\0';
+
+  output << "messages cleared";
+
+  log_record(PBSEVENT_SYSTEM, 0, __func__, "messages cleared");
+  } /* END clear_rm_messages() */
+
+
+
+/*
+ * force_status_update()
+ * forces an update to pbs_server
+ * @see mom_server_all_update_stat() - this calls send_update() to 
+ * determine whether or not to send an update. 
+ */
+
+void force_status_update(
+
+  std::stringstream &output)
+
+  {
+  /* make it seem like we've never sent an update to pbs_server */
+  LastServerUpdateTime = 0;
+
+  output << "cycle forced";
+
+  log_record(PBSEVENT_SYSTEM, 0, __func__, "reporting cycle forced");
+  } /* END force_status_update() */
+
+
+
+/*
+ * set_report_status_update_interval()
+ * @pre-cond: curr points to a valid character pointer
+ */
+
+void set_report_status_update_interval(
+
+  std::stringstream &output,
+  char              *curr)
+
+  {
+  if ((*curr == '=') && ((*curr) + 1 != '\0'))
+    {
+    setstatusupdatetime(curr + 1);
+    }
+
+  output << "status_update_time=" + ServerStatUpdateInterval;
+  } /* END set_report_status_update_interval() */
+
+
+
+/*
+ * set_report_check_poll_time()
+ * @pre-cond: curr points to a valid character pointer
+ */
+
+void set_report_check_poll_time(
+
+  std::stringstream &output,
+  char              *curr)
+
+  {
+  if ((*curr == '=') && ((*curr) + 1 != '\0'))
+    {
+    setcheckpolltime(curr + 1);
+    }
+
+  output << "check_poll_time=" + CheckPollTime;
+  } /* set_report_check_poll_time() */
+
+
+
+/*
+ * set_report_job_start_block_time()
+ * @pre-cond: curr points to a valid character pointer
+ */
+
+void set_report_job_start_block_time(
+
+  std::stringstream &output,
+  char              *curr)
+
+  {
+  if ((*curr == '=') && ((*curr) + 1 != '\0'))
+    {
+    jobstartblocktime(curr + 1);
+    }
+
+  output << "jobstartblocktime=" << TJobStartBlockTime;
+  } /* END set_report_job_start_block_time() */
+
+
+
+/*
+ * set_report_log_level()
+ * @pre-cond: curr points to a valid character pointer
+ */
+
+void set_report_log_level(
+
+  std::stringstream &output,
+  char              *curr)
+
+  {
+  if ((*curr == '=') && ((*curr) + 1 != '\0'))
+    {
+    setloglevel(curr + 1);
+    }
+
+  output << "loglevel=" + LOGLEVEL;
+  } /* END set_report_log_level() */
+
+
+
+/*
+ * set_report_down_on_error()
+ * @pre-cond: curr points to a valid character pointer
+ */
+
+void set_report_down_on_error(
+
+  std::stringstream &output,
+  char              *curr)
+
+  {
+  if ((*curr == '=') && ((*curr) + 1 != '\0'))
+    {
+    setdownonerror(curr + 1);
+    }
+
+  output << "down_on_error=" + MOMConfigDownOnError;
+  } /* END set_report_down_on_error() */
+
+
+
+/*
+ * set_report_mom_rolling_restart()
+ * @pre-cond: curr points to a valid character pointer
+ */
+
+void set_report_mom_rolling_restart(
+
+  std::stringstream &output,
+  char              *curr)
+
+  {
+  if ((*curr == '=') && ((*curr) + 1 != '\0'))
+    {
+    setenablemomrestart(curr + 1);
+    }
+
+  output << "enablemomrestart=" + MOMConfigRestart;
+  } /* END set_report_mom_rolling_restart() */
+
+
+
+void set_report_rcpcmd(
+
+  std::stringstream &output,
+  char              *curr)
+
+  {
+  if ((*curr == '=') && ((*curr) + 1 != '\0'))
+    {
+    setrcpcmd(curr + 1);
+    }
+
+  output << "rcpcmd=" << rcp_path << " " << rcp_args;
+  } /* END set_report_rcpcmd() */
+
+
+
+#ifdef PENABLE_LINUX26_CPUSETS
+void set_report_memory_pressure_threshold(
+
+  std::stringstream &output,
+  char              *curr)
+
+  {
+  if ((*curr == '=') && ((*curr) + 1 != '\0'))
+    setmempressthr(curr + 1);
+
+  output << "memory_pressure_threshold=" + memory_pressure_threshold;
+  } /* END set_report_memory_pressure_threshold() */
+
+
+
+void set_report_memory_pressure_duration(
+
+  std::stringstream &output,
+  char              *curr)
+
+  {
+  if ((*curr == '=') && ((*curr) + 1 != '\0'))
+    setmempressdur(curr + 1);
+
+  output << "memory_pressure_duration=" + memory_pressure_duration;
+  } /* END set_report_memory_pressure_duration() */
+#endif
+
+
+
+void report_version(
+
+  std::stringstream &output)
+
+  {
+  output << "version=" << PACKAGE_VERSION;
+  } /* END report_version() */
+
+
+
+void report_config_version(
+
+  std::stringstream &output)
+
+  {
+  output << "configversion=" << MOMConfigVersion;
+  } /* END report_config_version() */
+
+
+
+/*
+ * report_other_configured_attribute()
+ * @pre-cond: name points to a valid str
+ * @pre-cond: curr points to a valid str
+ */
+
+void report_other_configured_attribute(
+
+  std::stringstream &output,
+  char              *name,
+  char              *curr,
+  char              *cp,
+  bool               restrictrm)
+
+  {
+  struct config       *ap = rm_search(config_array, name);
+  struct rm_attribute *attr = momgetattr(curr);
+
+  if (LOGLEVEL >= 3)
+    {
+    snprintf(log_buffer, sizeof(log_buffer), "setting alarm in %s", __func__);
+    log_record(PBSEVENT_SYSTEM, 0, __func__, log_buffer);
+    }
+
+  alarm(alarm_time);
+
+  if ((ap != NULL) && !restrictrm)
+    {
+    /* static */
+    output << cp << "=" << conf_res(ap->c_u.c_value, attr);
+    }
+  else
+    {
+    /* check dependent code */
+
+    log_buffer[0] = '\0';
+
+    const char *value = dependent(name, attr);
+
+    if (value != NULL)
+      {
+      output << cp << "=" << value;
+       }
+    else
+      {
+      /* not found anywhere */
+      output << cp << "=? " << rm_errno;
+      }
+    }
+
+  alarm(0);
+  } /* END report_other_configured_attribute() */
+
+
+
+/*
+ * process_rm_cmd_request()
+ * 
+ * @pre-condition: chan must have a pointer to a valid socket from which
+ * @pre-condition: num_queries indicates the number of queries the rm 
+ * will execute
+ * the request can be read and to which the response can be written.
+ */
+
+int process_rm_cmd_request(
+  
+  struct tcp_chan   *chan,        /* I */
+  int                num_queries, /* I */
+  bool               restrictrm)
+
+  {
+  int                  ret;
+  char                 name[100];
+  std::stringstream    output;
+
+  /* query resource data */
+  reqnum++;
+
+  ret = diswsi(chan, RM_RSP_OK);
+
+  if (ret != DIS_SUCCESS)
+    {
+    sprintf(log_buffer, "write request response failed: %s",
+      dis_emsg[ret]);
+
+    return(ret);
+    }
+
+  for (int query_index = 0; query_index < num_queries; query_index++)
+    {
+    char *cp = disrst(chan, &ret);
+
+    if (ret == DIS_EOD)
+      {
+      if (cp != NULL)
+        {
+        free(cp);
+        cp = NULL;
+        }
+
+      break;
+      }
+
+    if (ret != DIS_SUCCESS)
+      {
+      sprintf(log_buffer, "problem with request line: %s",
+              dis_emsg[ret]);
+
+      return(ret);
+      }
+
+    char *curr = skipwhite(cp);
+    curr = tokcpy(curr, name);
+
+    if (name[0] == '\0')
+      {
+      /* no name */
+      output << cp;
+      output << "=? ";
+      output << RM_ERR_UNKNOWN;
+      }
+    else
+      {
+      if (!strncasecmp(name, "clearjob", strlen("clearjob")))
+        {
+        process_clear_job_request(output, curr);
+        }
+      else if (!strncasecmp(name, "clearmsg", strlen("clearmsg")))
+        {
+        /*  clear rm messages */
+        clear_rm_messages(output);
+        }
+      else if (!strncasecmp(name, "cycle", strlen("cycle")))
+        {
+        force_status_update(output);
+        }
+      else if (!strncasecmp(name, "status_update_time", strlen("status_update_time")))
+        {
+        set_report_status_update_interval(output, curr);
+        }
+      else if (!strncasecmp(name, "check_poll_time", strlen("check_poll_time")))
+        {
+        set_report_check_poll_time(output, curr);
+        }
+      else if (!strncasecmp(name, "jobstartblocktime", strlen("jobstartblocktime")))
+        {
+        set_report_job_start_block_time(output, curr);
+        }
+      else if (!strncasecmp(name, "loglevel", strlen("loglevel")))
+        {
+        set_report_log_level(output, curr);
+        }
+      else if (!strncasecmp(name, "down_on_error", strlen("down_on_error")))
+        {
+        set_report_down_on_error(output, curr);
+        }
+      else if (!strncasecmp(name, "enablemomrestart", strlen("enablemomrestart")))
+        {
+        set_report_mom_rolling_restart(output, curr);
+        }
+      else if (!strncasecmp(name, "rcpcmd", strlen("rcpcmd")))
+        {
+        set_report_rcpcmd(output, curr);
+        }
+#ifdef PENABLE_LINUX26_CPUSETS
+      else if (!strncasecmp(name, "memory_pressure_threshold", strlen("memory_pressure_threshold")))
+        {
+        set_report_memory_pressure_threshold(output, curr);
+        }
+      else if (!strncasecmp(name, "memory_pressure_duration", strlen("memory_pressure_duration")))
+        {
+        set_report_memory_pressure_duration(output, curr);
+        }
+#endif
+      else if (!strncasecmp(name, "version", strlen("version")))
+        {
+        report_version(output);
+        }
+      else if ((!strncasecmp(name, "configversion", strlen("configversion"))) && (MOMConfigVersion[0] != '\0'))
+        {
+        report_config_version(output);
+        }
+      else if (!strncasecmp(name, "diag", strlen("diag")))
+        {
+        ret = process_diag_request(output, name);
+        }
+      else
+        {
+        report_other_configured_attribute(output, name, curr, cp, restrictrm);
+        }
+      }  /* END (name[0] == '\0') */
+
+    free(cp);
+
+    ret = diswst(chan, output.str().c_str());
+
+    if (ret != DIS_SUCCESS)
+      {
+      sprintf(log_buffer, "write string failed %s",
+        dis_emsg[ret]);
+
+      return(ret);
+      }
+
+    if (DIS_tcp_wflush(chan) == -1)
+      {
+      log_err(errno, __func__, "flush");
+
+      return(-1);
+      }
+
+    } /* END for each query */
+
+  return(ret);
+  } /* END process_rm_cmd_request() */
+
+
+
 /*
 ** Process a request for the resource monitor.  The i/o
 ** will take place using DIS over a tcp fd or an rpp stream.
@@ -1483,21 +2647,13 @@ int rm_request(
   int              version)
 
   {
-  char                 name[100];
   char                 output[BUFSIZ << 2];
   int                  len;
   int                  command;
   int                  ret;
-  int                  restrictrm = 0;
-  char                *curr;
-  const char         *value;
-  char                *cp;
+  bool                 restrictrm = false;
   char                *body;
   int                  sindex;
-
-  struct config       *ap;
-
-  struct rm_attribute *attr;
 
   unsigned long             ipadd;
   u_short                   port;
@@ -1507,10 +2663,7 @@ int rm_request(
   int   NotTrusted = 0;
 
   char *tmp;
-  char *BPtr;
-  int   BSpace;
   int   num_queries = 0;
-  int   query_index;
 
   errno = 0;
   log_buffer[0] = '\0';
@@ -1539,7 +2692,7 @@ int rm_request(
       goto bad;
       }
 
-    restrictrm = 1;
+    restrictrm = true;
     }
 
   /* looks okay, find out how many queries and what command it is */
@@ -1567,767 +2720,9 @@ int rm_request(
 
     case RM_CMD_REQUEST:
 
-      /* query resource data */
-      reqnum++;
-
-      ret = diswsi(chan, RM_RSP_OK);
-
-      if (ret != DIS_SUCCESS)
-        {
-        sprintf(log_buffer, "write request response failed: %s",
-                dis_emsg[ret]);
-
+      if (process_rm_cmd_request(chan, num_queries, restrictrm) != DIS_SUCCESS)
         goto bad;
-        }
-
-      for (query_index = 0; query_index < num_queries; query_index++)
-        {
-        cp = disrst(chan, &ret);
-
-        if (ret == DIS_EOD)
-          {
-          if (cp != NULL)
-            {
-            free(cp);
-            cp = NULL;
-            }
-
-          break;
-          }
-
-        if (ret != DIS_SUCCESS)
-          {
-          sprintf(log_buffer, "problem with request line: %s",
-                  dis_emsg[ret]);
-
-          goto bad;
-          }
-
-        curr = skipwhite(cp);
-
-        curr = tokcpy(curr, name);
-
-        if (name[0] == '\0')
-          {
-          /* no name */
-
-          sprintf(output, "%s=? %d",
-                  cp,
-                  RM_ERR_UNKNOWN);
-          }
-        else
-          {
-          if (!strncasecmp(name, "clearjob", strlen("clearjob")))
-            {
-            char *ptr = NULL;
-
-            job *pjob = NULL, *pjobnext = NULL;
-
-            if ((*curr == '=') && ((*curr) + 1 != '\0'))
-              {
-              ptr = curr + 1;
-              }
-
-            /* purge job if local */
-
-            if (ptr == NULL)
-              {
-              strcpy(output, "invalid clearjob request");
-              }
-            else
-              {
-              char tmpLine[1024];
-
-              if (!strcasecmp(ptr, "all"))
-                {
-                if ((pjob = (job *)GET_NEXT(svr_alljobs)) != NULL)
-                  {
-                  while (pjob != NULL)
-                    {
-                    sprintf(tmpLine, "clearing job %s",
-                            pjob->ji_qs.ji_jobid);
-
-                    log_record(PBSEVENT_SYSTEM, 0, __func__, tmpLine);
-
-                    pjobnext = (job *)GET_NEXT(pjob->ji_alljobs);
-
-                    mom_job_purge(pjob);
-
-                    pjob = pjobnext;
-
-                    strcat(output, tmpLine);
-                    strcat(output, "\n");
-                    }
-                  }
-
-                strcat(output, "clear completed");
-                }
-              else if ((pjob = mom_find_job(ptr)) != NULL)
-                {
-                sprintf(tmpLine, "clearing job %s",
-                        pjob->ji_qs.ji_jobid);
-
-                log_record(PBSEVENT_SYSTEM, 0, __func__, tmpLine);
-
-                mom_job_purge(pjob);
-
-                strcpy(output, tmpLine);
-                }
-              }
-            }
-          else if (!strncasecmp(name, "clearmsg", strlen("clearmsg")))
-            {
-            /*  clear rm messages */
-
-            PBSNodeMsgBuf[0] = '\0';
-
-            strcpy(output, "messages cleared");
-
-            log_record(PBSEVENT_SYSTEM, 0, __func__, "messages cleared");
-            }
-          else if (!strncasecmp(name, "cycle", strlen("cycle")))
-            {
-            /*  force immediate cycle */
-
-            LastServerUpdateTime = 0;
-
-            strcpy(output, "cycle forced");
-
-            log_record(PBSEVENT_SYSTEM, 0, __func__, "reporting cycle forced");
-            }
-          else if (!strncasecmp(name, "status_update_time", strlen("status_update_time")))
-            {
-            /* set or report status_update_time */
-
-            if ((*curr == '=') && ((*curr) + 1 != '\0'))
-              {
-              setstatusupdatetime(curr + 1);
-              }
-
-            sprintf(output, "status_update_time=%d",
-
-                    ServerStatUpdateInterval);
-            }
-          else if (!strncasecmp(name, "check_poll_time", strlen("check_poll_time")))
-            {
-            /* set or report check_poll_time */
-
-            if ((*curr == '=') && ((*curr) + 1 != '\0'))
-              {
-              setcheckpolltime(curr + 1);
-              }
-
-            sprintf(output, "check_poll_time=%d",
-                    CheckPollTime);
-            }
-          else if (!strncasecmp(name, "jobstartblocktime", strlen("jobstartblocktime")))
-            {
-            /* set or report jobstartblocktime */
-
-            if ((*curr == '=') && ((*curr) + 1 != '\0'))
-              {
-              jobstartblocktime(curr + 1);
-              }
-
-            sprintf(output, "jobstartblocktime=%ld",
-
-                    TJobStartBlockTime);
-            }
-          else if (!strncasecmp(name, "loglevel", strlen("loglevel")))
-            {
-            /* set or report loglevel */
-
-            if ((*curr == '=') && ((*curr) + 1 != '\0'))
-              {
-              setloglevel(curr + 1);
-              }
-
-            sprintf(output, "loglevel=%d",
-                    LOGLEVEL);
-            }
-          else if (!strncasecmp(name, "down_on_error", strlen("down_on_error")))
-            {
-            /* set or report down_on_error */
-
-            if ((*curr == '=') && ((*curr) + 1 != '\0'))
-              {
-              setdownonerror(curr + 1);
-              }
-
-            sprintf(output, "down_on_error=%d",
-
-                    MOMConfigDownOnError);
-            }
-          else if (!strncasecmp(name, "enablemomrestart", strlen("enablemomrestart")))
-            {
-            /* set or report enablemomrestart */
-
-            if ((*curr == '=') && ((*curr) + 1 != '\0'))
-              {
-              setenablemomrestart(curr + 1);
-              }
-
-            sprintf(output, "enablemomrestart=%d",
-
-                    MOMConfigRestart);
-            }
-          else if (!strncasecmp(name, "rcpcmd", strlen("rcpcmd")))
-            {
-            /* set or report rcp_path and rcp_args */
-
-            if ((*curr == '=') && ((*curr) + 1 != '\0'))
-              {
-              setrcpcmd(curr + 1);
-              }
-
-            sprintf(output, "rcpcmd=%s %s",
-
-                    rcp_path, rcp_args);
-            }
-#ifdef PENABLE_LINUX26_CPUSETS
-          else if (!strncasecmp(name, "memory_pressure_threshold", strlen("memory_pressure_threshold")))
-            {
-            /* set or report memory_pressure_threshold */
-
-            if ((*curr == '=') && ((*curr) + 1 != '\0'))
-              setmempressthr(curr + 1);
-
-            sprintf(output, "memory_pressure_threshold=%d", memory_pressure_threshold);
-            }
-          else if (!strncasecmp(name, "memory_pressure_duration", strlen("memory_pressure_duration")))
-            {
-            /* set or report memory_pressure_duration */
-
-            if ((*curr == '=') && ((*curr) + 1 != '\0'))
-              setmempressdur(curr + 1);
-
-            sprintf(output, "memory_pressure_duration=%d", memory_pressure_duration);
-            }
-#endif
-          else if (!strncasecmp(name, "version", strlen("version")))
-            {
-            /* report version */
-
-            sprintf(output, "version=%s",
-                    PACKAGE_VERSION);
-            }
-          else if ((!strncasecmp(name, "configversion", strlen("configversion"))) && (MOMConfigVersion[0] != '\0'))
-            {
-            /* report configversion */
-
-            sprintf(output, "configversion=%s",
-                    MOMConfigVersion);
-            }
-          else if (!strncasecmp(name, "diag", strlen("diag")))
-            {
-            char tmpLine[1024];
-            char *ptr;
-
-            int rc;
-            time_t Now;
-
-            job *pjob;
-
-            struct varattr *pva;
-
-            time(&Now);
-
-            ptr = name + strlen("diag");
-
-            verbositylevel = (int)strtol(ptr, NULL, 10);
-
-            output[0] = '\0';
-
-            BPtr = output;
-            BSpace = sizeof(output);
-
-            sprintf(tmpLine, "\nHost: %s/%s   Version: %s   PID: %ld\n",
-                    mom_short_name,
-                    mom_host,
-                    PACKAGE_VERSION,
-                    (long)getpid());
-
-            MUStrNCat(&BPtr, &BSpace, tmpLine);
-
-            mom_server_all_diag(&BPtr, &BSpace);
-
-            sprintf(tmpLine, "HomeDirectory:          %s\n",
-                    (mom_home != NULL) ? mom_home : "N/A");
-
-            MUStrNCat(&BPtr, &BSpace, tmpLine);
-
-#ifdef HAVE_SYS_STATVFS_H
-             {
-
-              struct statvfs VFSStat;
-
-              if (statvfs((const char *)path_spool, &VFSStat) < 0)
-                {
-                MUSNPrintF(&BPtr, &BSpace, "ALERT:  cannot stat stdout/stderr spool directory '%s' (errno=%d) %s\n",
-                           path_spool,
-                           errno,
-                           strerror(errno));
-                }
-              else
-                {
-                if (VFSStat.f_bavail > 0)
-                  {
-                  if (verbositylevel >= 1)
-                    MUSNPrintF(&BPtr, &BSpace, "stdout/stderr spool directory: '%s' (%d blocks available)\n",
-                               path_spool,
-                               VFSStat.f_bavail);
-                  }
-                else
-                  {
-                  MUSNPrintF(&BPtr, &BSpace, "ALERT:  stdout/stderr spool directory '%s' is full\n",
-                             path_spool);
-                  }
-                }
-              }    /* END BLOCK */
-#endif /* HAVE_SYS_STATVFS_H */
-
-            if (MOMConfigVersion[0] != '\0')
-              {
-              sprintf(tmpLine, "ConfigVersion:          %s\n",
-                      MOMConfigVersion);
-
-              MUStrNCat(&BPtr, &BSpace, tmpLine);
-              }
-
-            if (verbositylevel >= 3)
-              {
-#if SYSLOG
-              MUStrNCat(&BPtr, &BSpace, "NOTE:  syslog enabled\n");
-#else /* SYSLOG */
-              MUStrNCat(&BPtr, &BSpace, "NOTE:  syslog not enabled (use 'configure --enable-syslog' to enable)\n");
-#endif /* SYSLOG */
-              }
-
-            if (verbositylevel >= 3)
-              {
-              if (PBSNodeCheckPath[0] != '\0')
-                {
-                sprintf(tmpLine, "Node Health Check Script: %s (%d second update interval)\n",
-                        PBSNodeCheckPath,
-                        PBSNodeCheckInterval * ServerStatUpdateInterval);
-
-                MUStrNCat(&BPtr, &BSpace, tmpLine);
-                }
-              }
-
-            sprintf(tmpLine, "MOM active:             %ld seconds\n",
-                    (long)Now - MOMStartTime);
-
-            MUStrNCat(&BPtr, &BSpace, tmpLine);
-
-            if (verbositylevel >= 1)
-              {
-              sprintf(tmpLine, "Check Poll Time:        %d seconds\n",
-                      CheckPollTime);
-
-              MUStrNCat(&BPtr, &BSpace, tmpLine);
-
-              sprintf(tmpLine, "Server Update Interval: %d seconds\n",
-                      ServerStatUpdateInterval);
-
-              MUStrNCat(&BPtr, &BSpace, tmpLine);
-              }
-
-            if (PBSNodeMsgBuf[0] != '\0')
-              {
-              sprintf(tmpLine, "MOM Message:            %s (use 'momctl -q clearmsg' to clear)\n",
-                      PBSNodeMsgBuf);
-
-              MUStrNCat(&BPtr, &BSpace, tmpLine);
-              }
-
-            if (MOMUNameMissing[0] != '\0')
-              {
-              sprintf(tmpLine, "WARNING:  passwd file is corrupt (job requests user '%s' - not found in local passwd file)\n",
-                      MOMUNameMissing);
-
-              MUStrNCat(&BPtr, &BSpace, tmpLine);
-              }
-
-            if (MOMPrologTimeoutCount > 0)
-              {
-              sprintf(tmpLine, "WARNING:  %d prolog timeouts (%d seconds) detected since start up - increase $prologalarm or investigate prolog\n",
-                      MOMPrologTimeoutCount,
-                      pe_alarm_time);
-
-              MUStrNCat(&BPtr, &BSpace, tmpLine);
-              }
-
-            if (MOMPrologFailureCount > 0)
-              {
-              sprintf(tmpLine, "WARNING:  %d prolog failures detected since start up - investigate prolog\n",
-                      MOMPrologFailureCount);
-
-              MUStrNCat(&BPtr, &BSpace, tmpLine);
-              }
-
-            sprintf(tmpLine, "LogLevel:               %d (use SIGUSR1/SIGUSR2 to adjust)\n",
-
-                    LOGLEVEL);
-
-            MUStrNCat(&BPtr, &BSpace, tmpLine);
-
-            if (verbositylevel >= 1)
-              {
-              sprintf(tmpLine, "Communication Model:    %s\n", "TCP");
-
-              MUStrNCat(&BPtr, &BSpace, tmpLine);
-
-              if ((MOMIsLocked == 1) || (MOMIsPLocked == 1) || (verbositylevel >= 4))
-                {
-                sprintf(tmpLine, "MemLocked:              %s",
-                        (MOMIsLocked == 0) ? "FALSE" : "TRUE");
-
-                if (MOMIsLocked == 1)
-                  strcat(tmpLine, "  (mlock)");
-
-                if (MOMIsPLocked == 1)
-                  strcat(tmpLine, "  (plocked)");
-
-                strcat(tmpLine, "\n");
-
-                MUStrNCat(&BPtr, &BSpace, tmpLine);
-                }
-              }    /* END if (verbositylevel >= 1) */
-
-            if (verbositylevel >= 1)
-              {
-              sprintf(tmpLine, "TCP Timeout:            %d seconds\n",
-                      (int)pbs_tcp_timeout);
-
-              MUStrNCat(&BPtr, &BSpace, tmpLine);
-              }
-
-            if (verbositylevel >= 1)
-              {
-
-              struct stat s;
-
-              int prologfound = 0;
-
-              if (stat(path_prolog, &s) != -1)
-                {
-                MUSNPrintF(&BPtr, &BSpace, "Prolog:                 %s (enabled)\n",
-                           path_prolog);
-
-                prologfound = 1;
-                }
-              else if (verbositylevel >= 2)
-                {
-                MUSNPrintF(&BPtr, &BSpace, "Prolog:                 %s (disabled)\n",
-                           path_prolog);
-                }
-
-              if (stat(path_prologp, &s) != -1)
-                {
-                MUSNPrintF(&BPtr, &BSpace, "Parallel Prolog:        %s (enabled)\n",
-                           path_prologp);
-
-                prologfound = 1;
-                }
-
-              if (prologfound == 1)
-                {
-                sprintf(tmpLine, "Prolog Alarm Time:      %d seconds\n",
-                        pe_alarm_time);
-
-                MUStrNCat(&BPtr, &BSpace, tmpLine);
-                }
-              }
-
-            if (verbositylevel >= 2)
-              {
-              /* check alarm */
-
-              rc = alarm(alarm_time);
-
-              alarm(rc);
-
-              sprintf(tmpLine, "Alarm Time:             %d of %d seconds\n",
-                      rc,
-                      alarm_time);
-
-              MUStrNCat(&BPtr, &BSpace, tmpLine);
-              }
-
-            if (verbositylevel >= 1)
-              {
-              /* display okclient list */
-
-              long max_len = 1024;
-              long final_len = 0;
-              char *tmp_line = (char *)calloc(1, max_len + 1);
-              if (tmp_line != NULL)
-                {
-                ret = AVL_list(okclients, &tmp_line, &final_len, &max_len);
-
-                MUSNPrintF(&BPtr, &BSpace, "Trusted Client List:  %s:  %d\n",
-                    tmp_line, ret);
-                free(tmp_line);
-                }
-              else
-                {
-                MUSNPrintF(&BPtr, &BSpace,
-                    "Trusted Client Could not be retrieved\n");
-                }
-              }
-
-            if (verbositylevel >= 1)
-              {
-              tmpLine[0] = '\0';
-
-              MUSNPrintF(&BPtr, &BSpace, "Copy Command:           %s %s\n",
-                         rcp_path,
-                         rcp_args);
-              }
-
-            /* joblist */
-
-            if ((pjob = (job *)GET_NEXT(svr_alljobs)) == NULL)
-              {
-              sprintf(tmpLine, "NOTE:  no local jobs detected\n");
-
-              MUStrNCat(&BPtr, &BSpace, tmpLine);
-              }
-            else
-              {
-              int            numvnodes = 0;
-              resource      *pres;
-              const char   *resname;
-              unsigned long  resvalue;
-              char           SIDList[1024];
-              task          *ptask;
-              char          *VPtr;  /* job env variable value pointer */
-              char          *SPtr;
-              int            SSpace;
-              int            vnindex;
-
-              for (;pjob != NULL;pjob = (job *)GET_NEXT(pjob->ji_alljobs))
-                {
-
-                /* count the CPUs assigned to this mom */
-                for (vnindex = 0; vnindex < pjob->ji_numvnod; vnindex++)
-                  {
-                  if (!strcmp(pjob->ji_vnods[vnindex].vn_host->hn_host, mom_alias))
-                    {
-                    numvnodes++;
-                    }
-                  }
-
-                /* JobId, job state */
-                sprintf(tmpLine, "job[%s]  state=%s",
-                        pjob->ji_qs.ji_jobid,
-                        PJobSubState[pjob->ji_qs.ji_substate]);
-                MUStrNCat(&BPtr, &BSpace, tmpLine);
-
-                /* Selected resources used by job (on this node) */
-                if (verbositylevel >= 2)
-                  {
-                  if (pjob->ji_wattr[JOB_ATR_resc_used].at_type != ATR_TYPE_RESC)
-                    {
-                    free(cp);
-                    return(DIS_INVALID);
-                    }
-
-                  pres = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resc_used].at_val.at_list);
-                  for (;pres != NULL;pres = (resource *)GET_NEXT(pres->rs_link))
-                    {
-                    if (pres->rs_defin == NULL) 
-                      {
-                      free(cp);
-                      return(DIS_INVALID);
-                      }
-
-                    resname = pres->rs_defin->rs_name;
-                    if (!(strcmp(resname, "mem")))
-                      resvalue = getsize(pres);
-                    else if (!(strcmp(resname, "vmem")))
-                      resvalue = getsize(pres);
-                    else if (!(strcmp(resname, "cput")))
-                      resvalue = gettime(pres);
-                    else
-                      continue;
-
-                    sprintf(tmpLine, " %s=%lu", resname, resvalue);
-                    MUStrNCat(&BPtr, &BSpace, tmpLine);
-                    }
-
-#ifdef PENABLE_LINUX26_CPUSETS
-                  /* report current memory pressure */
-                  sprintf(tmpLine, " %s=%d", "mempressure", pjob->ji_mempressure_curr);
-                  MUStrNCat(&BPtr, &BSpace, tmpLine);
-#endif
-                  }
-
-                /* List of job's sessionIds */
-                SPtr       = SIDList;
-                SSpace     = sizeof(SIDList);
-                SIDList[0] = '\0';
-
-                for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
-                     ptask != NULL;
-                     ptask = (task *)GET_NEXT(ptask->ti_jobtask))
-                  {
-                  /* only check on tasks that we think should still be around */
-
-                  if (ptask->ti_qs.ti_status != TI_STATE_RUNNING)
-                    continue;
-
-                  /* NOTE:  on linux systems, the session master should have
-                     pid == sessionid */
-
-                  MUSNPrintF(&SPtr, &SSpace, "%s%d",
-                             (SIDList[0] != '\0') ? "," : "",
-                             ptask->ti_qs.ti_sid);
-                  }  /* END for (task) */
-
-                sprintf(tmpLine, " sidlist=%s",
-                        SIDList);
-                MUStrNCat(&BPtr, &BSpace, tmpLine);
-
-                if (verbositylevel >= 4)
-                  {
-                  /* report job variables */
-
-                  VPtr = get_job_envvar(pjob, "BATCH_PARTITION_ID");
-
-                  if (VPtr != NULL)
-                    {
-                    sprintf(tmpLine, "  BATCH_PARTITION_ID=%s",
-                            VPtr);
-
-                    MUStrNCat(&BPtr, &BSpace, tmpLine);
-                    }
-
-                  VPtr = get_job_envvar(pjob, "BATCH_ALLOC_COOKIE");
-
-                  if (VPtr != NULL)
-                    {
-                    sprintf(tmpLine, "  BATCH_ALLOC_COOKIE=%s",
-                            VPtr);
-
-                    MUStrNCat(&BPtr, &BSpace, tmpLine);
-                    }
-                  }    /* END if (verbositylevel >= 4) */
-
-                MUStrNCat(&BPtr, &BSpace, "\n");
-                }  /* END for (pjob) */
-
-              sprintf(tmpLine, "Assigned CPU Count:     %d\n",
-                      numvnodes);
-
-              MUStrNCat(&BPtr, &BSpace, tmpLine);
-              }  /* END else ((pjob = (job *)GET_NEXT(svr_alljobs)) == NULL) */
-
-            if ((pjob = (job *)GET_NEXT(svr_newjobs)) != NULL)
-              {
-              while (pjob != NULL)
-                {
-                sprintf(tmpLine, "job[%s]  state=NEW\n",
-                        pjob->ji_qs.ji_jobid);
-
-                MUStrNCat(&BPtr, &BSpace, tmpLine);
-
-                pjob = (job *)GET_NEXT(pjob->ji_alljobs);
-                }
-              }
-
-            if ((pva = (struct varattr *)GET_NEXT(mom_varattrs)) != NULL)
-              {
-              MUStrNCat(&BPtr, &BSpace, "Varattrs:\n");
-
-              while (pva != NULL)
-                {
-                sprintf(tmpLine, "  ttl=%d  last=%s  cmd=%s\n  value=%s\n\n",
-                        pva->va_ttl,
-                        ctime(&pva->va_lasttime),
-                        pva->va_cmd,
-                        (pva->va_value != NULL) ? pva->va_value : "NULL");
-
-                MUStrNCat(&BPtr, &BSpace, tmpLine);
-
-                pva = (struct varattr *)GET_NEXT(pva->va_link);
-                }
-              }
-
-            MUStrNCat(&BPtr, &BSpace, "\ndiagnostics complete\n");
-
-            log_record(PBSEVENT_SYSTEM, 0, __func__, "internal diagnostics complete");
-            }
-          else
-            {
-            ap = rm_search(config_array, name);
-
-            attr = momgetattr(curr);
-
-            if (LOGLEVEL >= 3)
-              log_record(PBSEVENT_SYSTEM, 0, __func__, "setting alarm in rm_request");
-
-            alarm(alarm_time);
-
-            if ((ap != NULL) && !restrictrm)
-              {
-              /* static */
-
-              sprintf(output, "%s=%s",
-                      cp,
-                      conf_res(ap->c_u.c_value, attr));
-              }
-            else
-              {
-              /* check dependent code */
-
-              log_buffer[0] = '\0';
-
-              value = dependent(name, attr);
-
-              if (value != NULL)
-                {
-                sprintf(output, "%s=%s",
-                        cp,
-                        value);
-                }
-              else
-                {
-                /* not found anywhere */
-
-                sprintf(output, "%s=? %d",
-                        cp,
-                        rm_errno);
-                }
-              }
-
-            alarm(0);
-            }
-          }  /* END (name[0] == '\0') */
-
-        free(cp);
-
-        ret = diswst(chan, output);
-
-
-        if (ret != DIS_SUCCESS)
-          {
-          sprintf(log_buffer, "write string failed %s",
-                  dis_emsg[ret]);
-
-          goto bad;
-          }
-
-        if (DIS_tcp_wflush(chan) == -1)
-          {
-          log_err(errno, __func__, "flush");
-
-          goto bad;
-          }
-
-        }    /* END for () */
-
+      
       break;
 
     case RM_CMD_CONFIG:
