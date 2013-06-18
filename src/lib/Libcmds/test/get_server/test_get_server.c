@@ -7,22 +7,9 @@
 
 #include "pbs_error.h"
 
-START_TEST(test_one_all)
+START_TEST(test_one)
   {
-  char job_id[10];
-  char job_id_out[64];
-  int  job_id_out_size = 64;
-  char server_out[64];
-  int  server_out_size = 64;
-  int  rc;
-  char error_msg[256];
 
-  strcpy(job_id, "all");
-
-  rc = get_server(job_id, job_id_out, job_id_out_size, server_out, server_out_size);
-
-  sprintf(error_msg, "rc = %d", rc);
-  fail_unless(rc == PBSE_NONE, error_msg);
 
   }
 END_TEST
@@ -37,8 +24,8 @@ END_TEST
 Suite *get_server_suite(void)
   {
   Suite *s = suite_create("get_server_suite methods");
-  TCase *tc_core = tcase_create("test_one_all");
-  tcase_add_test(tc_core, test_one_all);
+  TCase *tc_core = tcase_create("test_one");
+  tcase_add_test(tc_core, test_one);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");
