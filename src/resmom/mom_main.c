@@ -4690,7 +4690,7 @@ int process_clear_job_request(
 
           pjob = pjobnext;
 
-          output << tmpLine + "\n";
+          output << tmpLine << "\n";
           }
         }
 
@@ -5418,7 +5418,7 @@ void set_report_status_update_interval(
     setstatusupdatetime(curr + 1);
     }
 
-  output << "status_update_time=" + ServerStatUpdateInterval;
+  output << "status_update_time=" << ServerStatUpdateInterval;
   } /* END set_report_status_update_interval() */
 
 
@@ -5439,7 +5439,7 @@ void set_report_check_poll_time(
     setcheckpolltime(curr + 1);
     }
 
-  output << "check_poll_time=" + CheckPollTime;
+  output << "check_poll_time=" << CheckPollTime;
   } /* set_report_check_poll_time() */
 
 
@@ -5481,7 +5481,7 @@ void set_report_log_level(
     setloglevel(curr + 1);
     }
 
-  output << "loglevel=" + LOGLEVEL;
+  output << "loglevel=" << LOGLEVEL;
   } /* END set_report_log_level() */
 
 
@@ -5502,7 +5502,7 @@ void set_report_down_on_error(
     setdownonerror(curr + 1);
     }
 
-  output << "down_on_error=" + MOMConfigDownOnError;
+  output << "down_on_error=" << MOMConfigDownOnError;
   } /* END set_report_down_on_error() */
 
 
@@ -5523,7 +5523,7 @@ void set_report_mom_rolling_restart(
     setenablemomrestart(curr + 1);
     }
 
-  output << "enablemomrestart=" + MOMConfigRestart;
+  output << "enablemomrestart=" << MOMConfigRestart;
   } /* END set_report_mom_rolling_restart() */
 
 
@@ -5554,7 +5554,7 @@ void set_report_memory_pressure_threshold(
   if ((*curr == '=') && ((*curr) + 1 != '\0'))
     setmempressthr(curr + 1);
 
-  output << "memory_pressure_threshold=" + memory_pressure_threshold;
+  output << "memory_pressure_threshold=" << memory_pressure_threshold;
   } /* END set_report_memory_pressure_threshold() */
 
 
@@ -5568,7 +5568,7 @@ void set_report_memory_pressure_duration(
   if ((*curr == '=') && ((*curr) + 1 != '\0'))
     setmempressdur(curr + 1);
 
-  output << "memory_pressure_duration=" + memory_pressure_duration;
+  output << "memory_pressure_duration=" << memory_pressure_duration;
   } /* END set_report_memory_pressure_duration() */
 #endif
 
