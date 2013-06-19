@@ -918,14 +918,8 @@ int pbs_getaddrinfo(
   if (pHints == NULL)
     {
     memset(&hints,0,sizeof(hints));
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_family = AF_INET;
     hints.ai_flags = AI_CANONNAME;
     pHints = &hints;
-    }
-  else
-    {
-    pHints->ai_family = AF_INET;
     }
 
   do
