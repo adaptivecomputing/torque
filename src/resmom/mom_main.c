@@ -5287,6 +5287,8 @@ int process_diag_request(
   {
   output.str("");
 
+  set_verbosity_level(name);
+
   add_diag_header(output);
 
   mom_server_all_diag(output);
