@@ -256,6 +256,8 @@ void *check_and_run_job(
           "Cannot run job. Array slot limit is %d and there are already %d jobs running\n",
           pa->ai_qs.slot_limit,
           pa->ai_qs.jobs_running);
+
+        free_nodes(pjob);
        
         req_reject(PBSE_IVALREQ, 0, preq, NULL, log_buf);
         
