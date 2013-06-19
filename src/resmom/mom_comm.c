@@ -871,7 +871,8 @@ int send_sisters(
     int             local_errno;
     int             addr_len;
 
-    if ((using_radix == TRUE) && (pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM))
+    if ((using_radix == TRUE) &&
+        (pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM))
       {
       np = &pjob->ji_sisters[i];
 
@@ -904,9 +905,6 @@ int send_sisters(
         np->hn_sister);
 
       log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
-
-      /* garrick commented out continue statement below */
-      /* continue; */
       }
 
     ep = event_alloc(com, np, TM_NULL_EVENT, TM_NULL_TASK);

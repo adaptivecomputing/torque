@@ -106,7 +106,11 @@ class addrcache
   {
   public:
 
-  struct addrinfo *addToCache(struct addrinfo *pAddr,const char *host)
+  struct addrinfo *addToCache(
+      
+    struct addrinfo *pAddr,
+    const char      *host)
+
     {
     if (pAddr->ai_family != AF_INET)
       return(NULL);
@@ -199,16 +203,22 @@ class addrcache
     return p;
     }
 
-  char *getHostName(in_addr_t addr)
+  char *getHostName(
+      
+      in_addr_t addr)
+
     {
     char *p = NULL;
     char key[65];
     sprintf(key,"%d",addr);
+    
     pthread_mutex_lock(&cacheMutex);
     int index = get_value_hash(addrToName,key);
-    if(index >= 0) p = hosts.at(index);
+    if (index >= 0)
+      p = hosts.at(index);
     pthread_mutex_unlock(&cacheMutex);
-    return p;
+    
+    return(p);
     }
 
   addrcache()
@@ -262,10 +272,17 @@ char *get_cached_fullhostname(const char *hostname,const struct sockaddr_in *sai
   {
   struct addrinfo *pAddrInfo = NULL;
 
-  if(hostname != NULL) pAddrInfo = cache.getFromCache(hostname);
-  if((pAddrInfo == NULL) && sai != NULL) pAddrInfo = cache.getFromCache(sai->sin_addr.s_addr);
-  if(pAddrInfo == NULL) return NULL;
-  return pAddrInfo->ai_canonname;
+  if (hostname != NULL) 
+    pAddrInfo = cache.getFromCache(hostname);
+
+  if ((pAddrInfo == NULL) &&
+      (sai != NULL))
+    pAddrInfo = cache.getFromCache(sai->sin_addr.s_addr);
+
+  if (pAddrInfo == NULL)
+    return(NULL);
+
+  return(pAddrInfo->ai_canonname);
   } /* END get_cached_fullhostname() */
 
 /*************************************************************

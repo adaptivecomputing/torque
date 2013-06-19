@@ -10,6 +10,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - TRQ-1923. Make job aborts for a mother superior not recognizing the job a bit 
       more intelligent - if the job has been reported in the last 180 seconds in the
       mom's status update don't abort it.
+  b - TRQ-1934. Ask for canonical hostnames on the default address family without 
+      specifying for uniformity in the code.
 
 4.2.3
   b - TRQ-1653. Arrays depending on non-array jobs was broken. Fix this.
