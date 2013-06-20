@@ -1208,7 +1208,7 @@ int handle_stageout(
       log_event(
         PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        job_id,
+        __func__,
         log_buf);
       
       if (LOGLEVEL >= 3)
@@ -2243,7 +2243,7 @@ void on_job_rerun(
           log_event(
             PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
             PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
+            __func__,
             log_buf);
           }
         
@@ -2315,7 +2315,7 @@ void on_job_rerun(
             log_event(
               PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
               PBS_EVENTCLASS_JOB,
-              pjob->ji_qs.ji_jobid,
+              __func__,
               log_buf);
             
             if (preq->rq_reply.brp_choice == BATCH_REPLY_CHOICE_Text)
@@ -2399,7 +2399,7 @@ void on_job_rerun(
             
             log_event(
               PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
-              PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,
+              PBS_EVENTCLASS_JOB, __func__,
               log_buf);
             }
     
