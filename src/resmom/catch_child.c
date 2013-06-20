@@ -1120,6 +1120,7 @@ void *preobit_reply(
 
   int                   sock = *(int *)new_sock;
   struct tcp_chan      *chan = NULL;
+  int                   retries = 0;
 
   log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, __func__, "top of preobit_reply");
 
@@ -1135,8 +1136,11 @@ void *preobit_reply(
     return NULL;
     }
 
+  errno = 0;
+
   while ((irtn = DIS_reply_read(chan, &preq->rq_reply)) &&
-         (errno == EINTR))
+         (errno == EINTR) &&
+         (retries++ < DIS_REPLY_READ_RETRY))
     /* NO-OP, just retry for EINTR */;
 
   pbs_disconnect_socket(sock);
@@ -1160,11 +1164,10 @@ void *preobit_reply(
   else
     {
     log_record( PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, __func__,
-        "DIS_reply_read/decode_DIS_replySvr worked, top of while loop");
+      "DIS_reply_read/decode_DIS_replySvr worked, top of while loop");
     }
 
   /* find the job that triggered this req */
-
   pjob = (job *)GET_NEXT(svr_alljobs);
 
   while (pjob != NULL)
@@ -1188,7 +1191,7 @@ void *preobit_reply(
         "cannot locate job that triggered req");
 
     free_br(preq);
-    return NULL;
+    return(NULL);
     }  /* END if (pjob != NULL) */
 
   /* we've got a job in PREOBIT and matches the socket, now
@@ -1265,7 +1268,6 @@ void *preobit_reply(
     }  /* END switch (preq->rq_reply.brp_code) */
 
   /* we've inspected the server's response and can now act */
-
   free_br(preq);
 
   /* at this point, server gave us a valid response so we can run epilogue */
@@ -1283,7 +1285,6 @@ void *preobit_reply(
   if (cpid < 0)
     {
     /* FAILURE */
-
     log_record(
       PBSEVENT_DEBUG,
       PBS_EVENTCLASS_JOB,
