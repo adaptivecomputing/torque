@@ -838,7 +838,7 @@ job *job_clone(
 
   if (LOGLEVEL >= 7)
     {
-    sprintf(log_buf, "taskid %d", taskid);
+    sprintf(log_buf, "taskid %d, job_id %s", taskid, template_job->ji_qs.ji_jobid);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
 
@@ -1085,6 +1085,12 @@ void *job_clone_wt(
     return(NULL);
     }
 
+  if (LOGLEVEL >= 10)
+    {
+    sprintf(log_buf, "job array id: %s", jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
+
   /* don't call get_jobs_array because the template job isn't part of the array */
   if (((template_job = svr_find_job(jobid, TRUE)) == NULL) ||
       ((pa = get_jobs_array(&template_job)) == NULL))
@@ -1263,6 +1269,7 @@ void *job_clone_wt(
             continue;
             }
           }
+        unlock_queue(pque, __func__, "2", LOGLEVEL);
         }
                                          
       pjob->ji_commit_done = 1;
