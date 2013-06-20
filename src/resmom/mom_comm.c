@@ -867,7 +867,8 @@ int send_sisters(
     int             local_errno;
     int             addr_len;
 
-    if ((using_radix == TRUE) && (pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM))
+    if ((using_radix == TRUE) &&
+        (pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM))
       {
       np = &pjob->ji_sisters[i];
 
