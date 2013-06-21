@@ -34,6 +34,31 @@ int              parse_reservation_output(char *, char **);
 int              execute_reservation(char *, char **);
 int              confirm_reservation(char *, char *, long long, char *, char *,char *,int);
 int              parse_confirmation_output(char *);
+void             adjust_for_depth(unsigned int &width, unsigned int &nppn, int depth);
+
+
+START_TEST(adjust_for_depth_test)
+  {
+  unsigned int width = 24;
+  unsigned int nppn  = 24;
+
+  adjust_for_depth(width, nppn, 24);
+  fail_unless(width == 1);
+  fail_unless(nppn  == 1);
+
+  width = 96;
+  nppn  = 24;
+  adjust_for_depth(width, nppn, 12);
+  fail_unless(width == 8);
+  fail_unless(nppn  == 2);
+
+  adjust_for_depth(width, nppn, 0);
+  fail_unless(width == 8);
+  fail_unless(nppn  == 2);
+  }
+END_TEST
+
+
 
 START_TEST(host_req_tests)
   {
@@ -294,6 +319,7 @@ Suite *node_func_suite(void)
 
   tc_core = tcase_create("get_reservation_command_test");
   tcase_add_test(tc_core, get_reservation_command_test);
+  tcase_add_test(tc_core, adjust_for_depth_test);
   suite_add_tcase(s, tc_core);
 
   /*
