@@ -304,6 +304,20 @@ START_TEST(tm_spawn_request_test)
   }
 END_TEST
 
+START_TEST(pbs_task_create_test)
+  {
+  job *pjob = (job *)calloc(1, sizeof(job));
+
+  /* Check ranning into reserved task IDs */
+  pjob->ji_taskid = TM_ADOPTED_TASKID_BASE + 1;
+  fail_unless(pbs_task_create(pjob, TM_NULL_TASK) == NULL, "Reserved task");
+
+  /* Success */
+  pjob->ji_taskid = TM_NULL_TASK;
+  fail_unless(pbs_task_create(pjob, TM_NULL_TASK) != NULL);
+  }
+END_TEST
+
 Suite *mom_comm_suite(void)
   {
   Suite *s = suite_create("mom_comm_suite methods");
@@ -336,6 +350,10 @@ Suite *mom_comm_suite(void)
 
   tc_core = tcase_create("tm_spawn_request_test");
   tcase_add_test(tc_core, tm_spawn_request_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("pbs_task_create_test");
+  tcase_add_test(tc_core, pbs_task_create_test);
   suite_add_tcase(s, tc_core);
 
   return(s);
