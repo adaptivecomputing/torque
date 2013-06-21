@@ -12,6 +12,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       mom's status update don't abort it.
   b - TRQ-1934. Ask for canonical hostnames on the default address family without 
       specifying for uniformity in the code.
+  b - TRQ-2003. For cray fix a miscalculation of nppn and width when mppdepth is 
+      provided for the job.
 
 4.2.3
   b - TRQ-1653. Arrays depending on non-array jobs was broken. Fix this.

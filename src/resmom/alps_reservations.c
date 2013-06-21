@@ -219,6 +219,33 @@ int save_current_reserve_param(
 
 
 
+/*
+ * adjust_for_depth()
+ *
+ * pre-cond: nppn and width have been calculated based on the list of hosts
+ * assigned to the job. This didn't account for the depth requested - 
+ * @param depth means how many execution slots are used per task. 
+ * @param nppn is the number of tasks per node.
+ * @param width is the number of tasks for the whole job.
+ * Dividing each by the depth produces the correct results.
+ * @post-cond: nppn and width have been updated to account for the depth.
+ */
+
+void adjust_for_depth(
+
+  unsigned int &width,
+  unsigned int &nppn,
+  int           depth)
+
+  {
+  if (depth != 0)
+    {
+    width /= depth;
+    nppn  /= depth;
+    }
+  } /* END adjust_for_depth() */
+
+
 
 int create_reserve_params_from_host_req_list(
 
@@ -230,7 +257,7 @@ int create_reserve_params_from_host_req_list(
   {
   dynamic_string *node_list = get_dynamic_string(-1, NULL);
   host_req       *hr;
-  int             nppn = 0;
+  unsigned int    nppn = 0;
   unsigned int    width = 0;
   int             iter = -1;
   
@@ -249,6 +276,8 @@ int create_reserve_params_from_host_req_list(
 
   if (use_nppn == FALSE)
     nppn = -1;
+
+  adjust_for_depth(width, nppn, mppdepth);
   
   save_current_reserve_param(command, node_list, width, nppn, mppdepth);
 
@@ -288,6 +317,9 @@ int create_reserve_params_from_multi_req_list(
     nppn = atoi(tok);
     
     width = nppn * node_count;
+
+    adjust_for_depth(width, nppn, mppdepth);
+
     save_current_reserve_param(command, node_list, width, nppn, mppdepth);
     }
 
