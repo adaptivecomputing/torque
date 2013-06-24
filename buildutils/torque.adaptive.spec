@@ -297,7 +297,7 @@ CXXFLAGS="-g3 -O0"
 %{__install} -d %{buildroot}%{torque_logdir}
 %{__install} -d %{buildroot}%{torque_spooldir}
 %{__install} -d %{buildroot}%{torque_sysconfdir}
-
+%{__install} -d %{buildroot}%{_sbindir}
 
 %{make_install} \
     sysconfdir=%{torque_sysconfdir} \
@@ -326,6 +326,8 @@ do
             contrib/init.d/$INIT_PREFIX$PROG > %{buildroot}%{_initrddir}/$PROG
     %{__chmod} 0755 %{buildroot}%{_initrddir}/$PROG
 done
+
+%{__install} torque.setup %{buildroot}%{_sbindir}
 
 ## Configuration
 echo '__AC_HOSTNAME_NOT_SET__ np=__AC_PROCS_NOT_SET__' > \
@@ -434,7 +436,7 @@ fi
 TIMESTAMP="`date +%%Y.%%m.%%d_%%H.%%M.%%S`"
 %{pre_clear_back_up %{server_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{server_pkg_doc_dir}/doc/admin_guide.ps %{server_sub}-${TIMESTAMP}}
-%{pre_add_back_up_file %{server_pkg_doc_dir}/torque.setup %{server_sub}-${TIMESTAMP}}
+%{pre_add_back_up_file %{_sbindir}/torque.setup %{server_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{torque_sysconfdir}/server_priv/mom_hierarchy \
                        %{server_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{torque_sysconfdir}/server_name %{server_sub}-${TIMESTAMP}}
@@ -496,9 +498,9 @@ EOF
                 exit 1
            }
         export TORQUE_SERVER="${HOSTNAME}"
-        echo "  Running '%{server_pkg_doc_dir}/torque.setup' with first argument as"
+        echo "  Running '%{_sbindir}/torque.setup' with first argument as"
         echo "    '%{torque_user}'..."
-        yes 'y' | %{server_pkg_doc_dir}/torque.setup \
+        yes 'y' | %{_sbindir}/torque.setup \
             "%{torque_user}" >/dev/null
         qterm >/dev/null 2>&1 || :
 
@@ -659,7 +661,7 @@ ldconfig
 
 %files %{server_sub}
 %attr(-,root,root) %doc doc/admin_guide.ps
-%attr(0755,root,root) %doc torque.setup
+%attr(0755,root,root) %{_sbindir}/torque.setup
 %attr(-,root,root) %config(noreplace) %{torque_sysconfdir}/server_priv/mom_hierarchy
 %attr(-,root,root) %config(noreplace) %{torque_appstatedir}/server_priv/serverdb
 %attr(-,root,root) %config(noreplace) %{torque_sysconfdir}/server_name
