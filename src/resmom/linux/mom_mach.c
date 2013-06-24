@@ -633,6 +633,9 @@ proc_mem_t *get_proc_mem(void)
 #else
   mem = get_proc_mem_from_path(path_meminfo);
   
+  if(mem == NULL)
+    return (NULL);
+
   ret_mm.mem_total  = mem->mem_total;
   ret_mm.mem_used   = mem->mem_used;
   ret_mm.mem_free   = mem->mem_free;
