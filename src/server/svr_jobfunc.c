@@ -640,6 +640,11 @@ int svr_enquejob(
 /*
  * svr_dequejob() - remove job from whatever queue its in and reduce counts
  * Make sure job mutex is unlocked before exiting
+ * @pre-cond: pjob is a valid job pointer
+ * @pre-cond: pjob is not a running job
+ * @pre-cond: pjob is currently queued
+ * @pre-cond: pjob's mutex is held
+ * @post-cond: pjob will have no queue when it successfully returns from this function
  */
 
 int svr_dequejob(
@@ -654,6 +659,18 @@ int svr_dequejob(
   pbs_queue     *pque;
   resource      *presc;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
+
+  /* make sure pjob isn't null */
+  if (pjob == NULL)
+    {
+    return(PBSE_BAD_PARAMETER);
+    }
+
+  /* do not allow svr_dequeujob to be called on a running job */
+  if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
+    {
+    return(PBSE_BADSTATE);
+    }
 
   /* remove job from server's all job list and reduce server counts */
   if (LOGLEVEL >= 7)

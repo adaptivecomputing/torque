@@ -1924,7 +1924,11 @@ int svr_job_purge(
     /* jobs that are being deleted after a cold restart
      * haven't been queued */
     if (need_deque == TRUE)
+      {
+      /* set the state to complete so that svr_dequejob() will function properly */
+      pjob->ji_qs.ji_state = JOB_STATE_COMPLETE;
       rc = svr_dequejob(pjob, FALSE);
+      }
 
     if (rc != PBSE_JOBNOTFOUND)
       {
