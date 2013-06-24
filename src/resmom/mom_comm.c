@@ -214,7 +214,6 @@ int start_process(task *, char **, char **);
  
 int allocate_demux_sockets(job *pjob, int flag);
 
-extern void exec_bail(job *, int);
 extern int TMomFinalizeJob1(job *, pjobexec_t *, int *);
 extern int TMomFinalizeJob2(pjobexec_t *, int *);
 extern int TMomFinalizeJob3(pjobexec_t *, int, int, int *);
@@ -800,9 +799,10 @@ int im_compose(
 
 int send_sisters(
 
-  job *pjob,         /* I */
-  int  com,          /* I (command to send to all sisters) */
-  int  using_radix)  /* I (TRUE if this job has a job radix, false otherwise */
+  job           *pjob,         /* I */
+  int            com,          /* I (command to send to all sisters) */
+  int            using_radix,  /* I (TRUE if this job has a job radix, false otherwise */
+  std::set<int> *sisters_contacted)
 
   {
   int              i;
@@ -862,7 +862,6 @@ int send_sisters(
     }
 
   /* walk thru node list, contact each mom */
-
   for (i = 0; i < loop_limit && job_radix < pjob->ji_radix; i++)
     {
     hnodent        *np;
@@ -870,6 +869,12 @@ int send_sisters(
     unsigned short  af_family;
     int             local_errno;
     int             addr_len;
+    
+    if (sisters_contacted != NULL)
+      {
+      if (sisters_contacted->find(i) == sisters_contacted->end())
+        continue;
+      }
 
     if ((using_radix == TRUE) &&
         (pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM))
