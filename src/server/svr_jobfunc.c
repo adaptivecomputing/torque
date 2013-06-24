@@ -644,6 +644,11 @@ int svr_enquejob(
  * @pre-cond: pjob is currently queued
  * @pre-cond: pjob's mutex is held
  * @post-cond: pjob will have no queue when it successfully returns from this function
+ *
+ * @return: PBSE_BAD_PARAMETER if pjob is NULL
+ *          PBSE_BADSTATE if pjob is running
+ *          PBS_JOBNOTFOUND if pjob disappears mid-execution
+ *          PBSE_NONE on success
  */
 
 int svr_dequejob(
@@ -666,7 +671,8 @@ int svr_dequejob(
     }
 
   /* do not allow svr_dequeujob to be called on a running job */
-  if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
+  if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
+      (pjob->ji_is_array_template == FALSE))
     {
     return(PBSE_BADSTATE);
     }
