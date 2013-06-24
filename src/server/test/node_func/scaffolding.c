@@ -292,11 +292,6 @@ int insert_thing_after(resizable_array *ra, void *thing, int index)
   return(0);
   }
 
-int get_addr_info(char *name, struct sockaddr_in *sa_info, int retry)
-  {
-  return(0);
-  }
-
 int is_compose(
 
   struct tcp_chan *chan,
@@ -410,7 +405,14 @@ void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 
-int pbs_getaddrinfo(const char *,struct addrinfo *,struct addrinfo **)
+struct addrinfo dummyAddrInfo;
+struct sockaddr dummySockAddr;
+
+int pbs_getaddrinfo(const char *,struct addrinfo *,struct addrinfo **ai)
   {
-  return -1;
+  memset(&dummyAddrInfo,0,sizeof(struct addrinfo));
+  memset(&dummySockAddr,0,sizeof(struct sockaddr));
+  dummyAddrInfo.ai_addr = &dummySockAddr;
+  *ai = &dummyAddrInfo;
+  return 0;
   }
