@@ -862,7 +862,6 @@ int send_sisters(
     }
 
   /* walk thru node list, contact each mom */
-
   for (i = 0; i < loop_limit && job_radix < pjob->ji_radix; i++)
     {
     hnodent        *np;
@@ -870,9 +869,12 @@ int send_sisters(
     unsigned short  af_family;
     int             local_errno;
     int             addr_len;
-      
-    if (sisters_contacted->find(i) == sisters_contacted->end())
-      continue;
+    
+    if (sisters_contacted != NULL)
+      {
+      if (sisters_contacted->find(i) == sisters_contacted->end())
+        continue;
+      }
 
     if ((using_radix == TRUE) &&
         (pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM))
