@@ -134,7 +134,8 @@ int get_fullhostname(
   dot = strchr(shortname, '.');
   if (dot != NULL)
     {
-    snprintf(namebuf, bufsize, "%s", shortname);
+    if (shortname != namebuf)
+      snprintf(namebuf, bufsize, "%s", shortname);
     return(PBSE_NONE);
     }
 
