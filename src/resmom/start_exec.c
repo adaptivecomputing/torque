@@ -6094,9 +6094,9 @@ int send_join_job_to_sisters(
   int            send_failed_size = nodenum * sizeof(int);
   int           *send_failed = (int *)calloc(nodenum, sizeof(int));
   int            unsent_count = nodenum - 1;
+  bool           permanent_fail = false;
   std::set<int>  sisters_contacted;
-  bool             permanent_fail = false;
-
+  
   errno = 0;
     
   memset(send_failed, -1, send_failed_size);
