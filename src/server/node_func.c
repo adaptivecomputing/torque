@@ -47,7 +47,7 @@
 #include "../lib/Libattr/attr_node_func.h" /* free_prop_list */
 #include "req_manager.h" /* mgr_set_node_attr */
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
-#include "../lib/Libnet/lib_net.h" /* get_addr_info */
+#include "../lib/Libnet/lib_net.h" /* pbs_getaddrinfo */
 #include "svrfunc.h" /* get_svr_attr_* */
 #include "alps_constants.h"
 #include "login_nodes.h"
@@ -855,6 +855,8 @@ int initialize_pbsnode(
   int             ntype) /* time-shared or cluster */
 
   {
+  struct addrinfo *pAddrInfo;
+
   if (pnode == NULL)
     {
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL pointer was passed for initialization");
@@ -898,7 +900,11 @@ int initialize_pbsnode(
     return(ENOMEM);
     }
 
-  get_addr_info(pname, &pnode->nd_sock_addr, 3);
+  if(pbs_getaddrinfo(pname,NULL,&pAddrInfo))
+    {
+    return (PBSE_SYSTEM);
+    }
+  memcpy(&pnode->nd_sock_addr,pAddrInfo->ai_addr,sizeof(struct sockaddr_in));
 
   pthread_mutex_init(pnode->nd_mutex,NULL);
 
@@ -3664,19 +3670,15 @@ int send_hierarchy(
   char               *string;
   int                 ret = PBSE_NONE;
   int                 sock;
+  struct addrinfo    *pAddrInfo;
   struct sockaddr_in  sa;
-  struct sockaddr_in *sai;
   struct tcp_chan    *chan = NULL;
 
-  if ((sai = get_cached_addrinfo(name)) != NULL)
+  if((ret = pbs_getaddrinfo(name,NULL,&pAddrInfo)) != PBSE_NONE)
     {
-    memcpy(&sa, sai, sizeof(sa));
+    return ret;
     }
-  else
-    {
-    if ((ret = get_addr_info(name, &sa, 3)) != PBSE_NONE)
-      return(ret);
-    }
+  memcpy(&sa,pAddrInfo->ai_addr,sizeof(sa));
 
   sa.sin_port = htons(port);
 
