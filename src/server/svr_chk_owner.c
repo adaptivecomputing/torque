@@ -258,15 +258,21 @@ int svr_get_privilege(
   char *host)  /* I */
 
   {
-  int   is_root = 0;
-  int   priv = (ATR_DFLAG_USRD | ATR_DFLAG_USWR);
-  int   num_host_chars;
-  char  uh[PBS_MAXUSER + PBS_MAXHOSTNAME + 2];
-  char  host_no_port[PBS_MAXHOSTNAME+1];
-  char *colon_loc = NULL;
-  char  log_buf[LOCAL_LOG_BUF_SIZE];
-  char *other_host;
-  int   other_priv = 0;
+  int        is_root = 0;
+  int        priv = (ATR_DFLAG_USRD | ATR_DFLAG_USWR);
+  int        num_host_chars;
+  char       uh[PBS_MAXUSER + PBS_MAXHOSTNAME + 2];
+  char       host_no_port[PBS_MAXHOSTNAME+1];
+  char      *colon_loc = NULL;
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
+  char      *other_host;
+  int        other_priv = 0;
+  int        my_err;
+  pbs_net_t  server_addr;
+  pbs_net_t  connect_addr;
+#ifndef __CYGWIN__
+  pbs_net_t  local_server_addr;
+#endif
 
   if (!user)
     {
@@ -323,18 +329,22 @@ int svr_get_privilege(
 
   sprintf(uh, "%s@%s", user, host);
 
-  /* NOTE:  enable case insensitive host check (CRI) */
+  server_addr = get_hostaddr(&my_err, server_host);
+  connect_addr = get_hostaddr(&my_err, host_no_port);
 
 #ifdef __CYGWIN__
-  if (IamAdminByName(user) && !strcasecmp(host_no_port, server_host))
+  if ((IamAdminByName(user)) && 
+      (server_addr == connect_addr))
     {
     return(priv | ATR_DFLAG_MGRD | ATR_DFLAG_MGWR | ATR_DFLAG_OPRD | ATR_DFLAG_OPWR);
     }
 #else /* __CYGWIN__ */
 
+  local_server_addr = get_hostaddr(&my_err, server_localhost);
+
   if ((strcmp(user, PBS_DEFAULT_ADMIN) == 0) &&
-      ((!strcasecmp(host_no_port, server_host)) || 
-       (!strcasecmp(host_no_port, server_localhost))))
+      ((connect_addr == server_addr) || 
+       (connect_addr == local_server_addr)))
     {
     is_root = 1;
 
@@ -517,17 +527,21 @@ int authenticate_user(
     get_svr_attr_arst(SRV_ATR_AclUsers, &acl_users);
     if (acl_check_my_array_string(acl_users, uath, ACL_User) == 0)
       {
+      int       my_err;
+      pbs_net_t connect_addr = get_hostaddr(&my_err, preq->rq_host);
+      pbs_net_t server_addr = get_hostaddr(&my_err, server_host);
 
 #ifdef __CYGWIN__
-  if (!IamAdminByName(preq->rq_user) || (strcasecmp(preq->rq_host, server_host) != 0))
-    {
-	return(PBSE_PERM);
-    }
+
+      if ((!IamAdminByName(preq->rq_user)) || 
+          (connect_addr != server_addr))
+        {
+        return(PBSE_PERM);
+        }
 #else /* __CYGWIN__ */
 #ifdef PBS_ROOT_ALWAYS_ADMIN
-
       if ((strcmp(preq->rq_user, PBS_DEFAULT_ADMIN) != 0) ||
-          (strcasecmp(preq->rq_host, server_host) != 0))
+          (connect_addr != server_addr))
         {
         return(PBSE_PERM);
         }
