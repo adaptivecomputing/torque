@@ -46,13 +46,18 @@ END_TEST
 START_TEST(svr_dequejob_test)
   {
   int result = PBSE_NONE;
-  struct job j;
+  job j;
+
+  memset(&j, 0, sizeof(job));
 
   result = svr_dequejob(NULL, 0);
-  fail_unless(result != PBSE_NONE, "NULL input pointer fail");
+  fail_unless(result == PBSE_BAD_PARAMETER, "NULL input pointer fail");
 
   result = svr_dequejob(&j, 0);
   fail_unless(result == PBSE_JOBNOTFOUND, "svr_dequejob fail");
+
+  j.ji_qs.ji_state = JOB_STATE_RUNNING;
+  fail_unless(svr_dequejob(&j, 0) == PBSE_BADSTATE);
   }
 END_TEST
 
