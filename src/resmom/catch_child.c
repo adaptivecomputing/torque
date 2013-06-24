@@ -1187,7 +1187,7 @@ void *preobit_reply(
         "cannot locate job that triggered req");
 
     free_br(preq);
-    return NULL;
+    return(NULL);
     }  /* END if (pjob != NULL) */
 
   /* we've got a job in PREOBIT and matches the socket, now
@@ -1264,7 +1264,6 @@ void *preobit_reply(
     }  /* END switch (preq->rq_reply.brp_code) */
 
   /* we've inspected the server's response and can now act */
-
   free_br(preq);
 
   /* at this point, server gave us a valid response so we can run epilogue */
@@ -1282,7 +1281,6 @@ void *preobit_reply(
   if (cpid < 0)
     {
     /* FAILURE */
-
     log_record(
       PBSEVENT_DEBUG,
       PBS_EVENTCLASS_JOB,
