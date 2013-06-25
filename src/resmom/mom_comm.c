@@ -131,6 +131,7 @@
 #ifdef PENABLE_LINUX26_CPUSETS
 #include "pbs_cpuset.h"
 #endif
+#include "mom_config.h"
 
 
 #define IM_FINISHED                 1
@@ -156,7 +157,6 @@ extern int           port_care;
 extern char         *path_prologp;
 extern char         *path_prologuserp;
 extern int           multi_mom;
-extern int           maxupdatesbeforesending;
 char                *stat_string_aggregate = NULL;
 unsigned int         ssa_index;
 unsigned long        ssa_size;
@@ -164,7 +164,6 @@ resizable_array     *received_statuses; /* holds information on node's whose sta
 hash_table_t        *received_table;
 int                  updates_waiting_to_send = 0;
 extern time_t       LastServerUpdateTime;
-extern int         ServerStatUpdateInterval;
 extern struct connection svr_conn[];
 
 const char *PMOMCommand[] =
@@ -191,8 +190,6 @@ const char *PMOMCommand[] =
 char task_fmt[] = "/%010.10ld";
 char noglobid[] = "none";
 
-extern int    LOGLEVEL;
-extern long   TJobStartBlockTime;
 enum rwhich { invalid, listen_out, listen_err, new_out, new_err};
 struct routefd
   {
@@ -961,7 +958,9 @@ int send_sisters(
         log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,log_buffer);
         }
       }
+
     close(local_socket);
+
     if (local_chan != NULL)
       DIS_tcp_cleanup(local_chan);
 
@@ -1275,7 +1274,7 @@ void job_start_error(
   /* annotate job with failed node info */
 
   snprintf(tmpLine, sizeof(tmpLine), "REJHOST=%s",
-           nodename);
+    nodename);
 
   pattr = &pjob->ji_wattr[JOB_ATR_sched_hint];
 
@@ -1587,8 +1586,8 @@ void term_job(
 
 int check_ms(
 
-  struct tcp_chan *chan,
-  job *pjob,
+  struct tcp_chan    *chan,
+  job                *pjob,
   struct sockaddr_in *source_addr)
 
   {
@@ -4616,22 +4615,23 @@ int handle_im_get_tid_response(
   } /* END handle_im_get_tid_response() */
 
 
+
+
 int send_im_error_addr(
 
-  int         err,
+  int                 err,
   struct sockaddr_in *si,
-  int mom_mgr_sock,
-  char *jobid,
-  char       *cookie,
-  tm_event_t  event,
-  tm_task_id  fromtask)
+  int                 mom_mgr_sock,
+  char               *jobid,
+  char               *cookie,
+  tm_event_t          event,
+  tm_task_id          fromtask)
 
   {
-  int rc = PBSE_NONE;
-  int          cntr = 0;
-  int sock = 0;
+  int              rc = PBSE_NONE;
+  int              cntr = 0;
+  int              sock = 0;
   struct tcp_chan *local_chan = NULL;
-  /*  char log_buf[LOCAL_LOG_BUF_SIZE]; */
 
   si->sin_port = htons(mom_mgr_sock);
 
@@ -4669,36 +4669,813 @@ int send_im_error_addr(
       break;
     }
 
-  /*    if (rc != DIS_SUCCESS)
-        {
-        resend_momcomm *mc;
-
-        if ((mc = calloc(1, sizeof(resend_momcomm))) != NULL)
-        {
-        mc->mc_type = COMPOSE_REPLY;
-        mc->mc_struct = create_compose_reply_info(jobid, 
-        cookie,
-        si,
-        IM_ERROR,
-        TM_NULL_EVENT,
-        TM_NULL_TASK);
-
-        if (mc->mc_struct == NULL)
-        free(mc);
-        else
-        add_to_resend_things(mc);
-        }
-
-        snprintf(log_buf,sizeof(log_buf),
-        "Could not send error on event %d for job %s",
-        event,
-        pjob->ji_qs.ji_jobid);
-
-        log_err(-1,__func__,log_buf);
-        }
-        */
-  return rc;
+  return(rc);
   }
+
+
+
+
+/*
+ * process_end_job_error_reply
+ *
+ * job cleanup failed on a sister. Mark it as cleaned up
+ * and see if we're done or not. 
+ *
+ */
+
+int process_end_job_error_reply(
+
+  job                *pjob,
+  hnodent            *np,
+  struct sockaddr_in *pSockAddr, /* I */
+  int                 errcode)
+
+  {
+  int          i;
+  int          awaiting_replies = 0;
+  unsigned int momport = 0;
+
+  if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+    {
+    log_err(-1, __func__, "KILL_JOB ERROR and I'm not MS");
+    return(IM_FAILURE);
+    }
+  
+  snprintf(log_buffer, sizeof(log_buffer),
+    "KILL/ABORT (job %s) request returned error %d from %s (%d total nodes)\n",
+    pjob->ji_qs.ji_jobid, errcode, netaddr(pSockAddr), pjob->ji_numnodes);
+  log_err(errcode, __func__, log_buffer);
+  
+  np->hn_sister = errcode ? errcode : SISTER_KILLDONE;
+  
+  for (i = 1;i < pjob->ji_numnodes;i++)
+    {
+    if (pjob->ji_hosts[i].hn_sister == SISTER_OKAY)
+      {
+      snprintf(log_buffer, sizeof(log_buffer),
+        "KILL (job %s) still awaiting response from at least %s(%s)",
+        pjob->ji_qs.ji_jobid,
+        pjob->ji_hosts[i].hn_host,
+        netaddr(&pjob->ji_hosts[i].sock_addr));
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+
+      awaiting_replies++;
+      break;
+      }
+    }
+
+  if (awaiting_replies == 0)
+    {
+    snprintf(log_buffer, LOCAL_LOG_BUF_SIZE,
+      "Job %s has received replies from all moms, setting substate to exiting",
+      pjob->ji_qs.ji_jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+    
+    /* all dead */            
+    pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+    
+    if (multi_mom)
+      {
+      momport = pbs_rm_port;
+      }
+    
+    job_save(pjob, SAVEJOB_QUICK, momport);
+    exiting_tasks = 1;
+    }
+
+  return(IM_DONE);
+  } /* END process_end_job_error_reply() */
+
+
+
+
+/* 
+ * tm_error_reply
+ * A user attempt failed, inform process. 
+ */
+
+int tm_error_reply(
+    
+  struct tcp_chan  *chan,
+  job              *pjob,
+  int               event_task,
+  int               event_com,
+  int               errcode,
+  tm_event_t        event,
+  fwdevent          efwd,
+  char            **argv,
+  char            **envp,
+  bool              get_tid)
+
+  {
+  task *ptask;
+
+  if (LOGLEVEL >= 7)
+    {
+    if (get_tid == false)
+      {
+      snprintf(log_buffer,sizeof(log_buffer),
+        "%s: REQUEST %d %s returned ERROR %d\n",
+        __func__, event_com, pjob->ji_qs.ji_jobid, errcode);
+      }
+    else
+      {
+      snprintf(log_buffer,sizeof(log_buffer),
+        "%s: GET_TID %s returned ERROR %d\n",
+        __func__, pjob->ji_qs.ji_jobid, errcode);
+      }
+    
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+    }
+
+  if (get_tid == true)
+    {
+    arrayfree(argv);          
+    arrayfree(envp);
+    }
+  
+  ptask = task_check(pjob, event_task);
+  
+  if (ptask == NULL)
+    return(IM_DONE);
+
+  if (get_tid == true)
+    tm_reply(ptask->ti_chan, TM_ERROR, efwd.fe_event);
+  else
+    tm_reply(ptask->ti_chan, TM_ERROR, event);
+
+  diswsi(ptask->ti_chan, errcode);
+  DIS_tcp_wflush(ptask->ti_chan);
+
+  return(IM_DONE); 
+  } /* END tm_error_reply() */
+
+
+
+
+/*
+ * im_poll_error
+ *
+ * I sent out an im_poll request and got an error back
+ */
+
+int im_poll_error(
+
+  job     *pjob,
+  hnodent *np,
+  int      errcode)
+
+  {
+  /* I must be Mother Superior for the job */
+  if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+    {
+    log_err(-1, __func__, "POLL_JOB ERROR and I'm not MS");
+    return(IM_FAILURE);
+    }
+  
+  if (LOGLEVEL >= 7)
+    {
+    snprintf(log_buffer,sizeof(log_buffer),
+      "%s: POLL_JOB %s returned ERROR %d\n",
+      __func__, pjob->ji_qs.ji_jobid, errcode);
+    
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+    }
+  
+  np->hn_sister = errcode ? errcode : SISTER_BADPOLL;
+
+  return(IM_DONE);
+  } /* END im_poll_error() */
+
+
+
+
+/*
+ * process_error_reply
+ *
+ * Someone sent me an error reply to a message I sent out
+ */
+
+int process_error_reply(
+
+  struct tcp_chan    *chan,
+  job                *pjob,
+  int                 event_com,
+  struct sockaddr_in *pSockAddr, /* I */
+  hnodent            *np,
+  unsigned short      sender_port,
+  int                 event_task,
+  tm_event_t          event,
+  char               **argv,
+  char               **envp,
+  fwdevent             efwd,
+  int                  command)
+
+  {
+  int   errcode;
+  int   ret;
+  int   rc;
+      
+  errcode = disrsi(chan, &ret);
+
+  snprintf(log_buffer, LOCAL_LOG_BUF_SIZE,
+    "Error response received from client %s (%d) jobid %s",
+    netaddr(pSockAddr), sender_port, pjob->ji_qs.ji_jobid);
+  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+ 
+  if ((errcode == PBSE_UNKJOBID) &&
+      (event_com == TM_NULL_EVENT))
+    event_com = IM_KILL_JOB;
+
+  if (ret != DIS_SUCCESS)
+    {
+    close_conn(chan->sock, FALSE);
+    svr_conn[chan->sock].cn_stay_open = FALSE;
+    chan->sock = -1;
+
+    log_err(-1, __func__, "Could not read error code");
+
+    return(IM_FAILURE);
+    }
+
+  if (event_com == IM_GET_TID)
+    {
+    if ((ret = check_ms(chan, pjob, pSockAddr)) == TRUE)
+      {
+      close_conn(chan->sock, FALSE);
+      svr_conn[chan->sock].cn_stay_open = FALSE;
+
+      log_err(-1, __func__, "IM_GET_TID close_conn");
+
+      return(IM_FAILURE);
+      }
+    }
+
+  close_conn(chan->sock, FALSE);
+  svr_conn[chan->sock].cn_stay_open = FALSE;
+  chan->sock = -1;
+  
+  switch (event_com)
+    {
+    case IM_JOIN_JOB:
+      /*
+       ** A MOM has rejected a request to join a job.
+       ** We need to send a ABORT_JOB to all the sisterhood
+       ** and fail the job start to server.
+       ** I'm mother superior.
+       */
+      if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+        {
+        log_err(-1, __func__, "JOIN_JOB ERROR and I'm not MS");
+        return(IM_FAILURE);
+        }
+      
+      job_start_error(pjob, errcode, netaddr(pSockAddr));
+
+      break;
+      
+    case IM_ABORT_JOB:
+    case IM_KILL_JOB:
+
+      rc = process_end_job_error_reply(pjob, np, pSockAddr, errcode);
+     
+     break;
+     
+    case IM_SPAWN_TASK:
+    case IM_GET_TASKS:
+    case IM_SIGNAL_TASK:
+    case IM_OBIT_TASK:
+    case IM_GET_INFO:
+     
+      rc = tm_error_reply(chan, pjob, event_task, event_com, errcode, event, efwd,
+                          argv, envp, false);
+      
+      break;
+      
+    case IM_POLL_JOB:
+
+      rc = im_poll_error(pjob, np, errcode);
+      
+      break;
+      
+    case IM_GET_TID:
+      
+      rc = tm_error_reply(chan, pjob, event_task, event_com, errcode, event, efwd,
+                          argv, envp, true);
+      
+      break;
+      
+    default:
+      
+      snprintf(log_buffer,sizeof(log_buffer),
+        "%s: job %s received event_com %d event %d. (IM_ERROR) No handler!!!\n",
+        __func__, pjob->ji_qs.ji_jobid, command, event_com);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+
+      return(IM_FAILURE);
+    }  /* END switch(event_com) */
+  
+  return(rc);
+  } /* END process_error_reply() */
+
+
+
+
+int process_valid_response(
+    
+  struct tcp_chan    *chan,
+  job                *pjob,
+  hnodent            *np,
+  struct sockaddr_in *pSockAddr, /* I */
+  int                 event_com,
+  int                 nodeidx,
+  int                 event_task,
+  tm_event_t          event,
+  char               **argv,
+  char               **envp,
+  int                  command,
+  fwdevent             efwd)
+
+  {
+  int ret;
+
+  /* Sender is another MOM telling me that a request has completed successfully */
+  svr_conn[chan->sock].cn_stay_open = FALSE;
+
+  switch (event_com)
+    {
+    case IM_JOIN_JOB:
+      {
+
+      ret = handle_im_join_job_response(chan, pjob, pSockAddr);
+
+      close_conn(chan->sock, FALSE);
+      chan->sock = -1;
+
+      if (ret == IM_FAILURE)
+        log_err(-1, __func__, "handle_im_join_job_response error");
+
+      break;
+      }
+
+    case IM_KILL_JOB:
+ 
+      ret = handle_im_kill_job_response(chan, pjob, np, event_com, nodeidx);
+
+      close_conn(chan->sock, FALSE);
+      chan->sock = -1;
+
+      if (ret == IM_FAILURE)
+        log_err(-1, __func__, "handle_im_kill_job_response error");
+
+      break;
+
+    case IM_SPAWN_TASK:
+
+      ret = handle_im_spawn_task_response(chan,pjob,event_task,event);
+
+      close_conn(chan->sock, FALSE);
+      chan->sock = -1;
+
+      if (ret == IM_FAILURE)
+        log_err(-1, __func__, "handle_im_spawn_task_response error");
+
+      break;
+
+    case IM_GET_TASKS:
+
+      ret = handle_im_get_tasks_response(chan,pjob,event_task,event);
+      close_conn(chan->sock, FALSE);
+      chan->sock = -1;
+
+      if (ret == IM_FAILURE)
+        log_err(-1, __func__, "handle_im_get_tasks_response error");
+
+      break;
+
+    case IM_SIGNAL_TASK:
+      
+      ret = handle_im_signal_task_response(pjob,event_task,event);
+     
+      close_conn(chan->sock, FALSE);
+      chan->sock = -1;
+    
+      if (ret == IM_FAILURE)
+        log_err(-1, __func__, "handle_im_signal_task_response error");
+
+      break;
+
+    case IM_OBIT_TASK:
+      
+      ret = handle_im_obit_task_response(chan,pjob,event_task,event);
+     
+      close_conn(chan->sock, FALSE);
+      chan->sock = -1;
+    
+      if (ret == IM_FAILURE)
+        log_err(-1, __func__, "handle_im_obit_task_response error");
+
+      break;
+
+    case IM_GET_INFO:
+
+      ret = handle_im_get_info_response(chan,pjob,event_task,event);
+      close_conn(chan->sock, FALSE);
+      chan->sock = -1;
+
+      if (ret == IM_FAILURE)
+        log_err(-1, __func__, "handle_im_get_info_response error");
+
+      break;
+
+    case IM_GET_RESC:
+      
+      ret = handle_im_get_resc_response(chan,pjob,event_task,event);
+      
+      close_conn(chan->sock, FALSE);
+      chan->sock = -1;
+      
+      if (ret == IM_FAILURE)
+        log_err(-1, __func__, "handle_im_get_resc_response error");
+
+      break;
+
+    case IM_POLL_JOB:
+
+      ret = handle_im_poll_job_response(chan,pjob,nodeidx,np);
+
+      if (ret == IM_FAILURE)
+        log_err(-1, __func__, "handle_im_poll_job_response error");
+
+      close_conn(chan->sock, FALSE);
+      chan->sock = -1;
+
+      break;
+
+    case IM_GET_TID:
+
+      if (check_ms(chan, NULL, pSockAddr) == FALSE)
+        ret = handle_im_get_tid_response(chan,pjob,pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str,argv,envp,&efwd);
+      else
+        ret = IM_FAILURE;
+
+      svr_conn[chan->sock].cn_stay_open = FALSE;
+      chan->sock = -1;
+
+      if (ret == IM_FAILURE)
+        log_err(-1, __func__, "IM_FAILURE in IM_GET_TID handle response");
+
+      break;
+
+    default:
+
+      snprintf(log_buffer,LOCAL_LOG_BUF_SIZE,
+        "%s: job %s received event_com %d event %d. (IM_ALL_OKAY) No handler!!!\n",
+        __func__, pjob->ji_qs.ji_jobid, command, event_com);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+
+      break;
+    } /* END switch (event_com) */
+
+  return(ret);
+  } /* END process_valid_response() */
+
+
+
+
+int pass_joined_successfully_up_the_chain(
+
+  job *pjob)
+
+  {
+  /* 0 is always the intermediate mom that called us */
+  hnodent          *np = &pjob->ji_sisters[0];
+  int              local_socket;
+  int              ret;
+  struct tcp_chan *local_chan = NULL;
+  
+  log_buffer[0] = 0;
+
+  local_socket = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
+  
+  if (IS_VALID_STREAM(local_socket) == FALSE)
+    {
+    pjob->ji_nodekill = pjob->ji_nodeid;
+    
+    if (log_buffer[0] != '\0')
+      {
+      sprintf(log_buffer, "tcp_connect_sockaddr failed on %s - job id %s", np->hn_host, pjob->ji_qs.ji_jobid);
+      }
+    
+    log_err(errno, __func__, log_buffer);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+    
+    exec_bail(pjob, JOB_EXEC_FAIL1);
+    }
+  
+  if ((local_chan = DIS_tcp_setup(local_socket)) == NULL)
+    {
+    }
+  else if ((ret = im_compose(local_chan,
+                             pjob->ji_qs.ji_jobid,
+                             pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str,
+                             IM_RADIX_ALL_OK,
+                             pjob->ji_intermediate_join_event,
+                             TM_NULL_TASK)) != DIS_SUCCESS)
+    {
+    }
+  else
+    DIS_tcp_wflush(local_chan);
+ 
+  if (local_chan != NULL)
+    DIS_tcp_cleanup(local_chan);
+
+  close(local_socket);
+  
+  /* We need to open our intermediate demux here */
+  fork_demux(pjob);
+
+  return(IM_DONE);
+  } /* END pass_joined_successfully_up_the_chain() */
+
+
+
+
+int handle_im_join_job_radix_response(
+
+  struct tcp_chan    *chan,
+  job                *pjob,
+  struct sockaddr_in *pSockAddr) /* I */
+
+  {
+  close_conn(chan->sock, FALSE);
+  svr_conn[chan->sock].cn_stay_open = FALSE;
+  chan->sock = -1;
+  
+  if (pjob->ji_outstanding > 0)
+    {
+    pjob->ji_outstanding--;
+    }
+  
+  if (pjob->ji_outstanding == 0)
+    {              
+    if (LOGLEVEL >= 5)
+      {
+      struct timeval tv, *tv_attr, result;
+      struct timezone tz;
+      
+      if (gettimeofday(&tv, &tz) == 0)
+        {
+        tv_attr = &pjob->ji_wattr[JOB_ATR_total_runtime].at_val.at_timeval;
+        timeval_subtract(&result, &tv, tv_attr);
+        sprintf(log_buffer, "%s: job_radix total wire-up time for job %ld.%ld",
+          __func__,
+          result.tv_sec,
+          result.tv_usec);
+ 
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+        }
+      
+      }
+
+    /* All sisters in our job radix have reported in */
+    if (pjob->ji_im_nodeid == 1)
+      {
+      sprintf(log_buffer, "%s: all sisters for intermediate mom %s reported in",
+        __func__,
+        pjob->ji_sisters[0].hn_host);
+      }
+    else
+      {
+      sprintf(log_buffer, "%s: all sisters for Mother Superior %s reported in",
+        __func__,
+        pjob->ji_hosts[0].hn_host);
+      }
+    
+    if (LOGLEVEL >= 2)
+      {
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+      }
+    
+    /* no events remaining, all moms have reported in,
+     * launch job report back to parent MOM unless I am
+     * Mother superior and then execute job */
+    if (pjob->ji_im_nodeid == 1)
+      {
+      pass_joined_successfully_up_the_chain(pjob);
+      }
+    else
+      {
+      /* I am Mother Superior. Start job execution */
+      if (LOGLEVEL >= 2)
+        {
+        log_event(
+          PBSEVENT_JOB,
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid,
+          "im_request:all sisters have reported in, launching job locally");
+        }
+      
+      exec_job_on_ms(pjob);
+      }
+    }
+  /* SUCCESS:  MOM returns */
+  /* END if (pjob->ji_outstanding == 0) */
+  else
+    {
+    if (LOGLEVEL >= 4)
+      {
+      sprintf(log_buffer, "%s:joinjob response received from node %s",
+        __func__,
+        netaddr(pSockAddr));
+      
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+      }
+    }
+
+  return(IM_DONE);
+  } /* END handle_im_join_job_radix_response() */
+
+
+
+
+int handle_im_kill_job_radix_response(
+
+  struct tcp_chan    *chan,
+  job                *pjob,
+  struct sockaddr_in *pSockAddr)
+
+  {
+  long            cput;
+  long            mem;
+  long            vmem;
+  tm_node_id      nodeid;
+  int             ret;
+  hnodent        *np;
+  int             i;
+  unsigned short  momport = 0;
+  bool            all_done = false;
+    
+  if (LOGLEVEL >= 2)
+    {
+    sprintf(log_buffer, "KILL_JOB_RADIX acknowledgement received");
+    
+    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+    }
+
+  cput = disrul(chan, &ret);
+  if (ret == DIS_SUCCESS)
+    mem  = disrul(chan, &ret);
+  
+  if (ret == DIS_SUCCESS)
+    vmem  = disrul(chan, &ret);
+  
+  if (ret == DIS_SUCCESS)
+    nodeid = disrsi(chan, &ret);
+  
+  if (ret != DIS_SUCCESS)
+    {
+    close_conn(chan->sock, FALSE);
+    svr_conn[chan->sock].cn_stay_open = FALSE;
+    chan->sock = -1;
+    log_err(-1, __func__, "Count not read cput||mem||vmem||nodeid");
+    return(IM_FAILURE);
+    }
+
+  if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE)
+    np = &pjob->ji_hosts[nodeid];
+  else 
+    np = &pjob->ji_sisters[nodeid+1]; /* yes this is klugey but the sisters are off by one on the index */
+    
+  if (pjob->ji_resources != NULL)
+    {
+    pjob->ji_resources[nodeid - 1].nr_cput = cput;
+    pjob->ji_resources[nodeid - 1].nr_mem = mem;
+    pjob->ji_resources[nodeid - 1].nr_vmem = vmem;
+    
+    if (LOGLEVEL >= 7)
+      {
+      snprintf(log_buffer,sizeof(log_buffer),
+        "%s: %s FINAL from %d  cpu %lu sec  mem %lu kb  vmem %ld kb\n",
+        __func__,
+        pjob->ji_qs.ji_jobid,
+        nodeid,
+        pjob->ji_resources[nodeid - 1].nr_cput,
+        pjob->ji_resources[nodeid - 1].nr_mem,
+        pjob->ji_resources[nodeid - 1].nr_vmem);
+      
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+      }
+    }  /* END if (pjob_ji_resources != NULL) */
+    
+  np->hn_sister = SISTER_KILLDONE;
+
+  if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE)
+    {
+    for (i = 1; i < pjob->ji_radix + 1;i++)
+      {
+      /* SISTER_OKAY means the job hasn't been killed yet */
+      if (pjob->ji_hosts[i].hn_sister == SISTER_OKAY)
+        break;
+      }
+    
+    if (i == pjob->ji_radix + 1 )
+      all_done = true;
+    }
+  else if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM)
+    {
+    if (pjob->ji_outstanding > 0)
+      pjob->ji_outstanding--;
+    
+    if (pjob->ji_outstanding == 0)
+      all_done = true;
+    }
+
+  if (all_done == true)
+    {
+    if (LOGLEVEL >= 7)
+      {
+      snprintf(log_buffer,LOCAL_LOG_BUF_SIZE,
+        "%s: ALL DONE, set EXITING job %s\n", 
+        __func__,
+        pjob->ji_qs.ji_jobid);
+      
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+      }
+    
+    pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+    
+    if (multi_mom)
+      {
+      momport = pbs_rm_port;
+      }
+
+    job_save(pjob, SAVEJOB_QUICK, momport);
+    
+    exiting_tasks = 1;
+    }
+
+  close_conn(chan->sock, FALSE);
+  svr_conn[chan->sock].cn_stay_open = FALSE;
+  chan->sock = -1;
+
+  return(IM_DONE);
+  } /* END handle_im_kill_job_radix_response() */
+
+
+
+
+/*
+ * process_valid_intermediate_response
+ * 
+ * I must either be mother superior or an intermediate 
+ * mom for this to be valid
+ */
+int process_valid_intermediate_response(
+  
+  struct tcp_chan    *chan,
+  job                *pjob,
+  struct sockaddr_in *pSockAddr, /* I */
+  int                 event_com,
+  int                 command)
+
+  {
+  int ret;
+
+  if (((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) == 0) &&
+      ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0))
+    {
+    log_err(-1, __func__, "got IM_RADIX_ALL_OKAY message and I'm not an intermediate MOM or Mother Superior");
+    
+    return(IM_FAILURE);
+    }
+
+  switch (event_com)
+    {
+    case IM_JOIN_JOB_RADIX:
+
+      ret = handle_im_join_job_radix_response(chan, pjob, pSockAddr);
+      
+      break;
+    
+    case IM_KILL_JOB_RADIX:
+   
+      ret = handle_im_kill_job_radix_response(chan, pjob, pSockAddr);
+ 
+      break;
+    
+    default:
+      snprintf(log_buffer,LOCAL_LOG_BUF_SIZE,
+        "%s: job %s received event_com %d event %d. (IM_RADIX_ALL_OK) No handler!!!\n",
+        __func__, pjob->ji_qs.ji_jobid, command, event_com);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+      break;
+    }
+  
+  return(ret);
+  } /* END process_valid_intermediate_response() */
+
+
 
 
 /**
@@ -4721,8 +5498,8 @@ int send_im_error_addr(
 
 void im_request(
 
-  struct tcp_chan *chan,
-  int version,  /* I */
+  struct tcp_chan    *chan,
+  int                 version,  /* I */
   struct sockaddr_in *pSockAddr) /* I */
 
   {
@@ -4733,16 +5510,12 @@ void im_request(
   char                *cookie = NULL;
   char                *oreo;
   job                 *pjob;
-  task                *ptask;
   hnodent             *np = NULL;
   eventent            *ep = NULL;
 
   u_long               ipaddr;
-  int                  i;
-  int                  errcode;
   int                  nodeidx = 0;
   int                  check_for_event = 0;
-  tm_node_id           nodeid;
   tm_task_id           fromtask;
   int                  event_task = 0;
   char               **argv = NULL;
@@ -4751,10 +5524,7 @@ void im_request(
   fwdevent             efwd;
   unsigned short       sender_port = -1;
   unsigned int         momport = 0;
-  char log_buffer[LOCAL_LOG_BUF_SIZE+1];
-  int awaiting_replies = 0;
-  int local_socket;
-  struct tcp_chan *local_chan = NULL;
+  char                 log_buffer[LOCAL_LOG_BUF_SIZE+1];
 
   struct passwd       *check_pwd();
   
@@ -4914,9 +5684,7 @@ void im_request(
       break;
     }  /* END switch (command) */
  
-  /*
-  ** Check if job already exists.
-  */
+  /* Check if job already exists. */
   pjob = mom_find_job(jobid);
  
   if (pjob == NULL)
@@ -4924,22 +5692,19 @@ void im_request(
     /* Without this if, the systems will play ping pong with the request */
     if (command == IM_ERROR)
       {
-      sprintf(log_buffer, "ERROR: received request '%s' from %s for job '%s' (job does not exist locally). No response (no ping pong)",
-        PMOMCommand[MIN(command,IM_MAX)],
-        netaddr(pSockAddr),
-        jobid);
+      snprintf(log_buffer, sizeof(log_buffer),
+        "ERROR: received request '%s' from %s for job '%s' (job does not exist locally). No response (no ping pong)",
+        PMOMCommand[MIN(command,IM_MAX)], netaddr(pSockAddr), jobid);
       close_conn(chan->sock, FALSE);
       svr_conn[chan->sock].cn_stay_open = FALSE;
       chan->sock = -1;
       goto err;
       }
+
     send_im_error_addr(PBSE_UNKJOBID,pSockAddr,sender_port,jobid,cookie,event,fromtask);
-    sprintf(log_buffer, "ERROR: received request '%s' from %s for job '%s' cookie '%s' event '%d' (job does not exist locally).",
-      PMOMCommand[MIN(command,IM_MAX)],
-      netaddr(pSockAddr),
-      jobid,
-      cookie,
-      event);
+    snprintf(log_buffer, sizeof(log_buffer),
+      "ERROR: received request '%s' from %s for job '%s' cookie '%s' event '%d' (job does not exist locally).",
+      PMOMCommand[MIN(command,IM_MAX)], netaddr(pSockAddr), jobid, cookie, event);
     close_conn(chan->sock, FALSE);
     svr_conn[chan->sock].cn_stay_open = FALSE;
     chan->sock = -1;
@@ -5000,6 +5765,7 @@ void im_request(
     check_for_event = (command == IM_ALL_OKAY)
                   || (command == IM_ERROR)
                   || (command == IM_RADIX_ALL_OK);
+
     if (check_for_event == TRUE)
       {
       for (nodeidx = 0;nodeidx < pjob->ji_numnodes;nodeidx++)
@@ -5061,12 +5827,14 @@ void im_request(
 
   switch (command)
     {
+    /* all of these are requests for a sister until we get to IM_ALL_OK */
     case IM_KILL_JOB:
       {
       if (check_ms(chan, pjob, pSockAddr) == FALSE)
         {
         im_kill_job_as_sister(pjob,event,momport,FALSE);
         }
+
       close_conn(chan->sock, FALSE);
       svr_conn[chan->sock].cn_stay_open = FALSE;
       chan->sock = -1;
@@ -5075,9 +5843,8 @@ void im_request(
 
     case IM_KILL_JOB_RADIX:
       {
-      /*if (check_ms(chan, pjob))
-        goto fini;*/
       im_kill_job_as_sister(pjob,event,momport,TRUE);
+      
       close_conn(chan->sock, FALSE);
       svr_conn[chan->sock].cn_stay_open = FALSE;
       chan->sock = -1;
@@ -5093,6 +5860,11 @@ void im_request(
       svr_conn[chan->sock].cn_stay_open = FALSE;
       chan->sock = -1;
 
+      snprintf(log_buffer, LOCAL_LOG_BUF_SIZE,
+        "Error response received from client %s (%d) jobid %s",
+        netaddr(pSockAddr), sender_port, jobid);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buffer);
+     
       if (ret == IM_FAILURE)
         {
         log_err(-1, __func__, "im_spawn_task error");
@@ -5210,810 +5982,32 @@ void im_request(
 
       break;
       }
-
-    case IM_ALL_OKAY: /* this is a response message */
+   
+    /* this is a response message */
+    case IM_ALL_OKAY:
       {
-      /* Sender is another MOM telling me that a request has completed successfully */
-      svr_conn[chan->sock].cn_stay_open = FALSE;
+      ret = process_valid_response(chan, pjob, np, pSockAddr, event_com, nodeidx, event_task, event, argv,
+                                   envp, command, efwd);
 
-      switch (event_com)
-        {
-        case IM_JOIN_JOB:
-          {
-          ret = handle_im_join_job_response(chan, pjob, pSockAddr);
-          close_conn(chan->sock, FALSE);
-          chan->sock = -1;
-          if (ret == IM_FAILURE)
-            {
-            log_err(-1, __func__, "handle_im_join_job_response error");
-            goto err;
-            }
-
-          break;
-          }
-
-        case IM_KILL_JOB:
-          ret = handle_im_kill_job_response(chan, pjob, np, event_com, nodeidx);
-          close_conn(chan->sock, FALSE);
-          chan->sock = -1;
-          if (ret == IM_FAILURE)
-            {
-            log_err(-1, __func__, "handle_im_kill_job_response error");
-            goto err;
-            }
-
-          break;
-
-        case IM_SPAWN_TASK:
-          ret = handle_im_spawn_task_response(chan,pjob,event_task,event);
-          close_conn(chan->sock, FALSE);
-          chan->sock = -1;
-          if (ret == IM_FAILURE)
-            {
-            log_err(-1, __func__, "handle_im_spawn_task_response error");
-            goto err;
-            }
-
-          break;
-
-        case IM_GET_TASKS:
-          ret = handle_im_get_tasks_response(chan,pjob,event_task,event);
-          close_conn(chan->sock, FALSE);
-          chan->sock = -1;
-          if (ret == IM_FAILURE)
-            {
-            log_err(-1, __func__, "handle_im_get_tasks_response error");
-            goto err;
-            }
-
-          break;
-
-        case IM_SIGNAL_TASK:
-          ret = handle_im_signal_task_response(pjob,event_task,event);
-          close_conn(chan->sock, FALSE);
-          chan->sock = -1;
-          if (ret == IM_FAILURE)
-            {
-            log_err(-1, __func__, "handle_im_signal_task_response error");
-            goto err;
-            }
-
-          break;
-
-        case IM_OBIT_TASK:
-          ret = handle_im_obit_task_response(chan,pjob,event_task,event);
-          close_conn(chan->sock, FALSE);
-          chan->sock = -1;
-          if (ret == IM_FAILURE)
-            {
-            log_err(-1, __func__, "handle_im_obit_task_response error");
-            goto err;
-            }
-
-          break;
-
-        case IM_GET_INFO:
-          ret = handle_im_get_info_response(chan,pjob,event_task,event);
-          close_conn(chan->sock, FALSE);
-          chan->sock = -1;
-          if (ret == IM_FAILURE)
-            {
-            log_err(-1, __func__, "handle_im_get_info_response error");
-            goto err;
-            }
-
-          break;
-
-        case IM_GET_RESC:
-          ret = handle_im_get_resc_response(chan,pjob,event_task,event);
-          close_conn(chan->sock, FALSE);
-          chan->sock = -1;
-          if (ret == IM_FAILURE)
-            {
-            log_err(-1, __func__, "handle_im_get_resc_response error");
-            goto err;
-            }
-
-          break;
-
-        case IM_POLL_JOB:
-          ret = handle_im_poll_job_response(chan,pjob,nodeidx,np);
-          if (ret == IM_FAILURE)
-            {
-            close_conn(chan->sock, FALSE);
-            chan->sock = -1;
-            log_err(-1, __func__, "handle_im_poll_job_response error");
-            goto err;
-            }
-          close_conn(chan->sock, FALSE);
-          chan->sock = -1;
-
-          break;
-
-        case IM_GET_TID:
-          if (check_ms(chan, NULL, pSockAddr) == FALSE)
-            {
-            ret = handle_im_get_tid_response(chan,pjob,cookie,argv,envp,&efwd);
-            }
-          else
-            ret = IM_FAILURE;
-
-          svr_conn[chan->sock].cn_stay_open = FALSE;
-          chan->sock = -1;
-
-          switch (ret)
-            {
-            case IM_FINISHED:
-
-              goto im_req_finish;
-              break;
-
-            case IM_DONE:
-
-              break;
-
-            case IM_FAILURE:
-              {
-              log_err(-1, __func__, "IM_FAILURE in IM_GET_TID handle response");
-              goto err;
-              }
-            }
-
-          break;
-
-        default:
-
-          snprintf(log_buffer,LOCAL_LOG_BUF_SIZE,
-            "%s: job %s received event_com %d event %d. (IM_ALL_OKAY) No handler!!!\n",
-            __func__, jobid, command, event_com);
-            log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
-          break;
-        } /* END switch (event_com) */
+      if (ret == IM_FAILURE)
+        goto err;
 
       break;
       }
 
     case IM_RADIX_ALL_OK:
       {
-       /*
-        ** Sender is an intermediate MOM or leaf within the radix
-        ** of the current MOM. The sending intermediate mom
-        ** has received the job structure sent plus all of
-        ** her children have also received the job structure
-        ** and accepted it. 
-        **  
-        ** This node can be the mother superior 
-        ** or an intermediate MOM.
-        ** 
-        ** auxiliary info (
-        ** none;
-        ** )
-        */
-
-      switch (event_com)
-        {
-        
-        case IM_JOIN_JOB_RADIX:
-          {
-          close_conn(chan->sock, FALSE);
-          svr_conn[chan->sock].cn_stay_open = FALSE;
-          chan->sock = -1;
-
-          pjob = mom_find_job(jobid);
-          if (pjob != NULL)
-            {
-            if (((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) == 0) &&
-                ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0))
-              {
-              log_err(-1, __func__, "got JOIN_JOB OKAY and I'm not an intermediate MOM or Mother Superior");
-              
-              goto err;
-              }
-            
-            if (pjob->ji_outstanding > 0)
-              {
-              pjob->ji_outstanding--;
-              }
-            
-            if (pjob->ji_outstanding == 0)
-              {              
-              if (LOGLEVEL >= 5)
-                {
-                struct timeval tv, *tv_attr, result;
-                struct timezone tz;
-                
-                if (gettimeofday(&tv, &tz) == 0)
-                  {
-                  tv_attr = &pjob->ji_wattr[JOB_ATR_total_runtime].at_val.at_timeval;
-                  timeval_subtract(&result, &tv, tv_attr);
-                  sprintf(log_buffer, "%s: job_radix total wire-up time for job %ld.%ld",
-                    __func__,
-                    result.tv_sec,
-                    result.tv_usec);
-           
-                  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
-                  }
-                
-                }
-
-              /* All sisters in our job radix have reported in */
-              if (pjob->ji_im_nodeid == 1)
-                {
-                sprintf(log_buffer, "%s: all sisters for intermediate mom %s reported in",
-                  __func__,
-                  pjob->ji_sisters[0].hn_host);
-                }
-              else
-                {
-                sprintf(log_buffer, "%s: all sisters for Mother Superior %s reported in",
-                  __func__,
-                  pjob->ji_hosts[0].hn_host);
-                }
-              
-              if (LOGLEVEL >= 2)
-                {
-                log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
-                }
-              
-              /* no events remaining, all moms have reported in,
-               * launch job report back to parent MOM unless I am
-               * Mother superior and then execute job */
-              if (pjob->ji_im_nodeid == 1)
-                {
-                sprintf(log_buffer, "%s:all sisters for intermediate mom %s reported in",
-                  __func__,
-                  pjob->ji_sisters[0].hn_host);
-
-                if (LOGLEVEL >= 2)
-                  {
-                  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
-                  }
-                
-                /* 0 is always the intermediate mom that called us */
-                np = &pjob->ji_sisters[0];
-                log_buffer[0] = 0;
-
-                /* at this point stream is the connection between
-                 * the intermediate mom and her sister.  we need to
-                 * finish this stream and then we are going to either
-                 * open a new connection to the mom that called us or
-                 * reuse an existing connection */
-               /*rpp_eom(stream);*/
-                
-                local_socket = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
-                
-                if (IS_VALID_STREAM(local_socket) == FALSE)
-                  {
-                  pjob->ji_nodekill = pjob->ji_nodeid;
-                  
-                  if (log_buffer[0] != '\0')
-                    {
-                    sprintf(log_buffer, "tcp_connect_sockaddr failed on %s - job id %s", np->hn_host, pjob->ji_qs.ji_jobid);
-                    }
-                  
-                  log_err(errno, __func__, log_buffer);
-                  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
-                  
-                  exec_bail(pjob, JOB_EXEC_FAIL1);
-                  }
-                
-                if ((local_chan = DIS_tcp_setup(local_socket)) == NULL)
-                  {
-                  }
-                else if ((ret = im_compose(local_chan,
-                        jobid,
-                        cookie,
-                        IM_RADIX_ALL_OK,
-                        pjob->ji_intermediate_join_event,
-                        TM_NULL_TASK)) != DIS_SUCCESS)
-                  {
-                  }
-                else
-                  DIS_tcp_wflush(local_chan);
-               
-                if (local_chan != NULL)
-                  DIS_tcp_cleanup(local_chan);
-
-                close(local_socket);
-                
-                /* We need to open our intermediate demux here */
-                fork_demux(pjob);
-                }
-              else
-                {
-                /* I am Mother Superior. Start job execution */
-                if (LOGLEVEL >= 2)
-                  {
-                  log_event(
-                    PBSEVENT_JOB,
-                    PBS_EVENTCLASS_JOB,
-                    pjob->ji_qs.ji_jobid,
-                    "im_request:all sisters have reported in, launching job locally");
-                  }
-                
-                exec_job_on_ms(pjob);
-                }
-              }
-            /* SUCCESS:  MOM returns */
-            /* END if (pjob->ji_outstanding == 0) */
-            else
-              {
-              if (LOGLEVEL >= 4)
-                {
-                sprintf(log_buffer, "%s:joinjob response received from node %s",
-                  __func__,
-                  netaddr(pSockAddr));
-                
-                log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
-                }
-              }
-            }
-          else
-            {
-            if (LOGLEVEL >= 0)
-              {
-              snprintf(log_buffer,LOCAL_LOG_BUF_SIZE,
-                "ERROR: received request '%s' from %s for job '%s' (job does not exist locally):IM_RADIX_ALL_OK",
-                PMOMCommand[MIN(command,IM_MAX)],
-                netaddr(pSockAddr),
-                jobid);
-              
-              log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buffer);
-              }
-            }
-
-          break;
-          }
-        
-        case IM_KILL_JOB_RADIX:
-          {
-          /*
-           ** Sender is sending a response that a job
-           ** which needs to die has been given the ax.
-           ** I'm mother superior.
-           **
-           ** auxiliary info (
-           **   cput    ulong;
-           **   mem     ulong;
-           **   vmem    ulong;
-           ** )
-           */
-          long   cput;
-          long   mem;
-          long   vmem;
-
-          if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE)
-            {
-            if (LOGLEVEL >= 2)
-              {
-              sprintf(log_buffer, "KILL_JOB_RADIX acknowledgement received");
-              
-              log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
-              }
-            
-            cput = disrul(chan, &ret);
-            if (ret == DIS_SUCCESS)
-              mem  = disrul(chan, &ret);
-              
-            if (ret == DIS_SUCCESS)
-              vmem  = disrul(chan, &ret);
-                
-            if (ret == DIS_SUCCESS)
-              nodeid = disrsi(chan, &ret);
-            
-            if (ret != DIS_SUCCESS)
-              {
-              close_conn(chan->sock, FALSE);
-              svr_conn[chan->sock].cn_stay_open = FALSE;
-              chan->sock = -1;
-              log_err(-1, __func__, "Count not read cput||mem||vmem||nodeid");
-              goto err;
-              }
-            
-            np = &pjob->ji_hosts[nodeid];
-            
-            if (pjob->ji_resources != NULL)
-              {
-              pjob->ji_resources[nodeid - 1].nr_cput = cput;
-              pjob->ji_resources[nodeid - 1].nr_mem = mem;
-              pjob->ji_resources[nodeid - 1].nr_vmem = vmem;
-              
-              if (LOGLEVEL >= 7)
-                {
-                snprintf(log_buffer,sizeof(log_buffer),
-                  "%s: %s FINAL from %d  cpu %lu sec  mem %lu kb  vmem %ld kb\n",
-                  __func__,
-                  jobid,
-                  nodeid,
-                  pjob->ji_resources[nodeid - 1].nr_cput,
-                  pjob->ji_resources[nodeid - 1].nr_mem,
-                  pjob->ji_resources[nodeid - 1].nr_vmem);
-                
-                log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
-                }
-              }  /* END if (pjob_ji_resources != NULL) */
-            
-            /* don't close stream in case other jobs use it */
-            np->hn_sister = SISTER_KILLDONE;
-
-            for (i = 1; i < pjob->ji_radix + 1;i++)
-              {
-              if (pjob->ji_hosts[i].hn_sister == SISTER_OKAY)
-                break;
-              }
-            
-            if (i == pjob->ji_radix + 1 )
-              {
-              /* all dead */
-              if (LOGLEVEL >= 7)
-                {
-                snprintf(log_buffer,sizeof(log_buffer),
-                  "%s: ALL DONE, set EXITING job %s\n",
-                  __func__,
-                  jobid);
-                
-                log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
-                }
-              
-              pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
-
-              if (multi_mom)
-                {
-                momport = pbs_rm_port;
-                }
-              
-              job_save(pjob, SAVEJOB_QUICK, momport);
-              
-              exiting_tasks = 1;
-              }
-            }
-          else if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM)
-            {
-            if (LOGLEVEL >= 2)
-              {
-              sprintf(log_buffer, "KILL_JOB_RADIX acknowledgement received");
-
-              log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
-              }
-            
-            cput = disrul(chan, &ret);
-            if (ret == DIS_SUCCESS)
-              mem  = disrul(chan, &ret);
-            if (ret == DIS_SUCCESS)
-              vmem  = disrul(chan, &ret);
-            if (ret == DIS_SUCCESS)
-              nodeid = disrsi(chan, &ret);
-
-            if (ret != DIS_SUCCESS)
-              {
-              close_conn(chan->sock, FALSE);
-              svr_conn[chan->sock].cn_stay_open = FALSE;
-              chan->sock = -1;
-              log_err(-1, __func__, "Count not read cput||mem||vmem||nodeid");
-              goto err;
-              }
-            
-            np = &pjob->ji_sisters[nodeid+1]; /* yes this is klugey but the sisters are off by one on the index */
-            
-            if (pjob->ji_resources != NULL)
-              {
-              pjob->ji_resources[nodeid - 1].nr_cput = cput;
-              pjob->ji_resources[nodeid - 1].nr_mem = mem;
-              pjob->ji_resources[nodeid - 1].nr_vmem = vmem;
-              
-              
-              if (LOGLEVEL >= 7)
-                {
-                snprintf(log_buffer,LOCAL_LOG_BUF_SIZE,
-                  "%s: %s FINAL from %d  cpu %lu sec  mem %lu kb  vmem %ld kb\n",
-                  __func__,
-                  jobid,
-                  nodeid,
-                  pjob->ji_resources[nodeid - 1].nr_cput,
-                  pjob->ji_resources[nodeid - 1].nr_mem,
-                  pjob->ji_resources[nodeid - 1].nr_vmem);
-                
-                log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
-                }
-              }  /* END if (pjob_ji_resources != NULL) */
-            
-            /* don't close stream in case other jobs use it */
-            np->hn_sister = SISTER_KILLDONE;
-            
-            if (pjob->ji_outstanding > 0)
-              {
-              pjob->ji_outstanding--;
-              }
-            
-            if (pjob->ji_outstanding == 0)
-              {
-              /* all dead */
-              if (LOGLEVEL >= 7)
-                {
-                snprintf(log_buffer,LOCAL_LOG_BUF_SIZE,
-                  "%s: ALL DONE, set EXITING job %s\n", 
-                  __func__,
-                  jobid);
-                
-                log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
-                }
-              
-              pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
-              
-              if (multi_mom)
-                {
-                momport = pbs_rm_port;
-                }
-
-              job_save(pjob, SAVEJOB_QUICK, momport);
-              
-              exiting_tasks = 1;
-              }
-            }
-          else
-            {
-            close_conn(chan->sock, FALSE);
-            svr_conn[chan->sock].cn_stay_open = FALSE;
-            chan->sock = -1;
-            log_err(-1, __func__, "KILL_JOB_RADIX OK received on a leaf node");
-            goto err;
-            }
-
-          close_conn(chan->sock, FALSE);
-          svr_conn[chan->sock].cn_stay_open = FALSE;
-          chan->sock = -1;
-          break;
-          }
-        
-        default:
-          snprintf(log_buffer,LOCAL_LOG_BUF_SIZE,
-            "%s: job %s received event_com %d event %d. (IM_RADIX_ALL_OK) No handler!!!\n",
-            __func__, jobid, command, event_com);
-            log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
-          break;
-        }
-      
-      break;
+      ret = process_valid_intermediate_response(chan, pjob, pSockAddr, event_com, command);
       }
     
     case IM_ERROR:  /* this is a REPLY */
       {
-      /*
-       ** Sender is responding to a request with an error code.
-       **
-       ** auxiliary info (
-       **  error value int;
-       ** )
-       */
-      errcode = disrsi(chan, &ret);
+      ret = process_error_reply(chan, pjob, event_com, pSockAddr, np, sender_port, event_task, event,
+                               argv, envp, efwd, command);
 
-      snprintf(log_buffer, LOCAL_LOG_BUF_SIZE,
-        "Error response received from client %s (%d) jobid %s",
-        netaddr(pSockAddr), sender_port, jobid);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buffer);
-     
-      if ((errcode == PBSE_UNKJOBID) && (event_com == TM_NULL_EVENT))
-        event_com = IM_KILL_JOB;
-
-      if (ret != DIS_SUCCESS)
-        {
-        close_conn(chan->sock, FALSE);
-        svr_conn[chan->sock].cn_stay_open = FALSE;
-        chan->sock = -1;
-
-        log_err(-1, __func__, "Could not read error code");
-
+      if (ret == IM_FAILURE)
         goto err;
-        }
 
-      /* What's the purpose of this? *MUTSU* */
-      if (event_com == IM_GET_TID)
-        {
-        if ((ret = check_ms(chan, pjob, pSockAddr)) == TRUE)
-          {
-          close_conn(chan->sock, FALSE);
-          svr_conn[chan->sock].cn_stay_open = FALSE;
-
-          log_err(-1, __func__, "IM_GET_TID close_conn");
-
-          goto err;
-          }
-        }
-
-      close_conn(chan->sock, FALSE);
-      svr_conn[chan->sock].cn_stay_open = FALSE;
-      chan->sock = -1;
-      
-      switch (event_com)
-        {
-        case IM_JOIN_JOB:
-          /*
-           ** A MOM has rejected a request to join a job.
-           ** We need to send a ABORT_JOB to all the sisterhood
-           ** and fail the job start to server.
-           ** I'm mother superior.
-           */
-          if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
-            {
-            log_err(-1, __func__, "JOIN_JOB ERROR and I'm not MS");
-            goto err;
-            }
-          
-          job_start_error(pjob, errcode, netaddr(pSockAddr));
-          break;
-          
-        case IM_ABORT_JOB:
-          
-        case IM_KILL_JOB:
-          
-          /*
-           ** Job cleanup failed on a sister.
-           ** Wait for everybody to respond then finish.
-           ** I'm mother superior.
-           */
-
-          if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
-            {
-            log_err(-1, __func__, "KILL_JOB ERROR and I'm not MS");
-            goto err;
-            }
-          
-          snprintf(log_buffer, sizeof(log_buffer),
-              "KILL/ABORT (job %s) request returned error %d from %s (%d total nodes)\n",
-              jobid,
-              errcode,
-              netaddr(pSockAddr),
-              pjob->ji_numnodes);
-          log_err(errcode, __func__, log_buffer);
-          
-          np->hn_sister = errcode ? errcode : SISTER_KILLDONE;
-          
-          for (i = 1;i < pjob->ji_numnodes;i++)
-            {
-            if (pjob->ji_hosts[i].hn_sister == SISTER_OKAY)
-              {
-              snprintf(log_buffer, sizeof(log_buffer),
-                  "KILL (job %s) still awaiting response from at least %s(%s)",
-                  jobid,
-                  pjob->ji_hosts[i].hn_host,
-                  netaddr(&pjob->ji_hosts[i].sock_addr));
-              log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
-
-              awaiting_replies += 1;
-              break;
-              }
-            }
-
-          if (awaiting_replies == 0)
-            {
-            snprintf(log_buffer, LOCAL_LOG_BUF_SIZE,
-              "Job %s has received replies from all moms, setting substate to exiting",
-              jobid);
-            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
-            
-            /* all dead */            
-            pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
-            
-            if (multi_mom)
-              {
-              momport = pbs_rm_port;
-              }
-            
-            job_save(pjob, SAVEJOB_QUICK, momport);
-            exiting_tasks = 1;
-            }
-         
-         break;
-         
-        case IM_SPAWN_TASK:
-         
-        case IM_GET_TASKS:
-         
-        case IM_SIGNAL_TASK:
-         
-        case IM_OBIT_TASK:
-         
-        case IM_GET_INFO:
-         
-          /* A user attempt failed, inform process. */
-
-          if (LOGLEVEL >= 7)
-            {
-            snprintf(log_buffer,sizeof(log_buffer),
-              "%s: REQUEST %d %s returned ERROR %d\n",
-              __func__,
-              event_com,
-              jobid,
-              errcode);
-            
-            log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
-            }
-          
-          ptask = task_check(pjob, event_task);
-          
-          if (ptask == NULL)
-            break;
-         
-          tm_reply(ptask->ti_chan, TM_ERROR, event);
-          diswsi(ptask->ti_chan, errcode);
-          DIS_tcp_wflush(ptask->ti_chan);
-          
-          break;
-          
-        case IM_POLL_JOB:
-          
-          /*
-           ** I must be Mother Superior for the job and
-           ** this is an error reply to a poll request.
-           */
-
-          if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
-            {
-            log_err(-1, __func__, "POLL_JOB ERROR and I'm not MS");
-            goto err;
-            }
-          
-          if (LOGLEVEL >= 7)
-            {
-            snprintf(log_buffer,sizeof(log_buffer),
-              "%s: POLL_JOB %s returned ERROR %d\n",
-              __func__,
-              jobid,
-              errcode);
-            
-            log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
-            }
-          
-          np->hn_sister = errcode ? errcode : SISTER_BADPOLL;
-          
-          break;
-          
-        case IM_GET_TID:
-          
-          /*
-           ** Sender must be Mother Superior failing to
-           ** send a TID.
-           ** Send a fail to the task which called SPAWN.
-           */
-          
-          if (LOGLEVEL >= 7)
-            {
-            snprintf(log_buffer,sizeof(log_buffer),
-              "%s: GET_TID %s returned ERROR %d\n",
-              __func__,
-              jobid,
-              errcode);
-            
-            log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
-            }
-          
-          arrayfree(argv);          
-          arrayfree(envp);
-          
-          ptask = task_check(pjob, efwd.fe_taskid);
-          
-          if (ptask == NULL)
-            break;
-          
-          /* When is this connection created? *MUTSU* */
-          tm_reply(ptask->ti_chan, TM_ERROR, efwd.fe_event);
-          diswsi(ptask->ti_chan, errcode);
-          DIS_tcp_wflush(ptask->ti_chan);
-          /* Does it need to be closed here? *MUTSU* */
-          
-          break;
-          
-        default:
-          
-          snprintf(log_buffer,sizeof(log_buffer),
-            "%s: job %s received event_com %d event %d. (IM_ERROR) No handler!!!\n",
-            __func__, jobid, command, event_com);
-            log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
-          goto err;
-
-          break;
-        }  /* END switch(event_com) */
-      
       break;
       }
 

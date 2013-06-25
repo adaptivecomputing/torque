@@ -1670,7 +1670,6 @@ int chk_svr_resc_limit(
         {
         if ((EMsg != NULL) && (EMsg[0] == '\0'))
           strcpy(EMsg, "cannot locate feasible nodes (nodes file is empty or requested nodes exceed all systems)");
-        
         comp_resc_lt++;
         }
       }

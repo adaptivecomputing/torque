@@ -46,6 +46,7 @@ void post_delete(struct work_task *pwt);
 
 void array_delete_wt(struct work_task *ptask);
 void          on_job_exit_task(struct work_task *);
+int   delete_inactive_job(job **pjob_ptr, const char *Msg);
 
 extern int LOGLEVEL;
 
@@ -68,7 +69,6 @@ int attempt_delete(
 
   job       *pjob;
   time_t     time_now = time(NULL);
-  char       log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* job considered deleted if null */
   if (j == NULL)
@@ -77,6 +77,12 @@ int attempt_delete(
   pjob = (job *)j;
 
   mutex_mgr pjob_mutex(pjob->ji_mutex, true);
+
+  if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0)
+    {
+    /* job has restart file at mom, change restart comment if failed */    
+    change_restart_comment_if_needed(pjob);
+    }
 
   if (pjob->ji_qs.ji_state == JOB_STATE_TRANSIT)
     {
@@ -115,73 +121,16 @@ int attempt_delete(
         change_restart_comment_if_needed(pjob);
         }
       }
+    else
+      pjob_mutex.set_lock_on_exit(false);
     
     return(!skipped);
     }  /* END if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) */
 
-  if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0)
-    {
-    /* job has restart file at mom, change restart comment if failed */    
-    change_restart_comment_if_needed(pjob);
-    
-    /* job has restart file at mom, do end job processing */
-    svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITING, FALSE);
-
-    pjob->ji_momhandle = -1;
-    
-    /* force new connection */
-    if (LOGLEVEL >= 7)
-      {
-      sprintf(log_buf, "calling on_job_exit from %s", __func__);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
-      }
-
-    set_task(WORK_Immed, 0, on_job_exit_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
-    }
-  else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)
-    {
-    /* job has staged-in file, should remove them */
-    
-    remove_stagein(&pjob);
-    
-    if (pjob != NULL)
-      job_abt(&pjob, NULL);
-
-    }
-  else
-    {
-    /*
-     * the job is not transitting (though it may have been) and
-     * is not running, so put in into a complete state.
-     */
-    struct pbs_queue *pque;
-    int  KeepSeconds = 0;
-
-    svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
-    
-    if ((pque = get_jobs_queue(&pjob)) != NULL)
-      {
-      unlock_queue(pque, __func__, NULL, LOGLEVEL);
-      }
-    
-    if (pjob != NULL)
-      {
-      pthread_mutex_lock(server.sv_attr_mutex);
-      KeepSeconds = attr_ifelse_long(
-        &pque->qu_attr[QE_ATR_KeepCompleted],
-        &server.sv_attr[SRV_ATR_KeepCompleted],
-        0);
-      pthread_mutex_unlock(server.sv_attr_mutex);
-      
-      if (LOGLEVEL >= 7)
-        {
-        sprintf(log_buf, "calling on_job_exit from %s", __func__);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
-        }
-      
-      set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
-      }
-    }
+  delete_inactive_job(&pjob, NULL);
+  
+  if (pjob == NULL)
+    pjob_mutex.set_lock_on_exit(false);
 
   return(!skipped);
   } /* END attempt_delete() */

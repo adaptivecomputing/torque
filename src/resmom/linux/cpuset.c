@@ -41,7 +41,6 @@
 
 
 extern hwloc_topology_t topology;
-extern int              MOMConfigUseSMT;
 #ifdef NUMA_SUPPORT
 extern nodeboard        node_boards[];
 extern int              num_node_boards;

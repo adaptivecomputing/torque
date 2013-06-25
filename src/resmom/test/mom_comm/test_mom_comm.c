@@ -13,8 +13,32 @@ extern int disrsi_return_index;
 extern int disrst_return_index;
 extern int disrsi_array[];
 extern char *disrst_array[];
+extern int log_event_counter;
 
+int process_end_job_error_reply(job *pjob, hnodent *np, struct sockaddr_in *pSockAddr, int errcode);
 received_node *get_received_node_entry(char *str);
+
+START_TEST(test_process_end_job_error_reply)
+  {
+  job                *pjob = (job *)calloc(1, sizeof(job));
+  hnodent             np;
+  struct sockaddr_in  psock;
+
+  pjob->ji_hosts = (hnodent *)calloc(4, sizeof(hnodent));
+  pjob->ji_hosts[0].hn_sister = SISTER_OKAY;
+  pjob->ji_hosts[1].hn_sister = SISTER_OKAY;
+  pjob->ji_hosts[2].hn_sister = SISTER_OKAY;
+  pjob->ji_hosts[3].hn_sister = SISTER_OKAY;
+
+  fail_unless(process_end_job_error_reply(pjob, &np, &psock, PBSE_UNKJOBID) == -1);
+
+  pjob->ji_numnodes = 4;
+  pjob->ji_qs.ji_svrflags = JOB_SVFLG_HERE;
+  log_event_counter = 0;
+  fail_unless(process_end_job_error_reply(pjob, &np, &psock, PBSE_UNKJOBID) == 0);
+  fail_unless(log_event_counter == 1);
+  }
+END_TEST
 
 START_TEST(test_read_status_strings_null_chan_doesnt_crash)
   {
@@ -280,6 +304,20 @@ START_TEST(tm_spawn_request_test)
   }
 END_TEST
 
+START_TEST(pbs_task_create_test)
+  {
+  job *pjob = (job *)calloc(1, sizeof(job));
+
+  /* Check ranning into reserved task IDs */
+  pjob->ji_taskid = TM_ADOPTED_TASKID_BASE + 1;
+  fail_unless(pbs_task_create(pjob, TM_NULL_TASK) == NULL, "Reserved task");
+
+  /* Success */
+  pjob->ji_taskid = TM_NULL_TASK;
+  fail_unless(pbs_task_create(pjob, TM_NULL_TASK) != NULL);
+  }
+END_TEST
+
 Suite *mom_comm_suite(void)
   {
   Suite *s = suite_create("mom_comm_suite methods");
@@ -291,6 +329,7 @@ Suite *mom_comm_suite(void)
 
   tc_core = tcase_create("test_read_status_strings_loop");
   tcase_add_test(tc_core, test_read_status_strings_loop);
+  tcase_add_test(tc_core, test_process_end_job_error_reply);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_get_received_node_entry");
@@ -311,6 +350,10 @@ Suite *mom_comm_suite(void)
 
   tc_core = tcase_create("tm_spawn_request_test");
   tcase_add_test(tc_core, tm_spawn_request_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("pbs_task_create_test");
+  tcase_add_test(tc_core, pbs_task_create_test);
   suite_add_tcase(s, tc_core);
 
   return(s);

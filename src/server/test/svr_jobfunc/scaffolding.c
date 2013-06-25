@@ -109,6 +109,12 @@ int decode_str(pbs_attribute *patr, const char *name, const char *rescn, const c
   exit(1);
   }
 
+int decode_resc(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm)
+  {
+  fprintf(stderr, "The call to decode_str to be mocked!!\n");
+  exit(1);
+  }
+
 int depend_on_que(pbs_attribute *pattr, void *pjob, int mode)
   {
   fprintf(stderr, "The call to depend_on_que to be mocked!!\n");
@@ -159,13 +165,6 @@ job *next_job_from_back(struct all_jobs *aj, int *iter)
   {
   return(NULL);
   }
-
-int decode_resc(pbs_attribute *,const char *,const char *,const char *,int)
-  {
-  fprintf(stderr,"Call to %s needs to be mocked.\n",__func__);
-  return 0;
-  }
-
 
 int comp_resc2(struct pbs_attribute *attr, struct pbs_attribute *with, int IsQueueCentric, char *EMsg, enum compare_types type)
   {

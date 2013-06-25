@@ -305,4 +305,3 @@ void process_gpu_request_reply(
     reply_ack(preq);
     }
   } /* END process_gpu_request_reply() */
-

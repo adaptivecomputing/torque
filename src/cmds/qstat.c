@@ -1368,7 +1368,8 @@ void display_statjob(
             }
           }
 
-        c++;    /* List the first part of the server name, too. */
+        if (*c != '\0')
+          c++;    /* List the first part of the server name, too. */
 
         while ((*c != '.') && (*c != '\0'))
           c++;

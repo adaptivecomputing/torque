@@ -92,10 +92,21 @@ int is_array(
 
   char      *bracket_ptr;
   char      *end_bracket_ptr;
+  char      *tmpjobid;
   char       jobid[PBS_MAXSVRJOBID];
   char       temp_jobid[PBS_MAXSVRJOBID];
 
-  snprintf(jobid, sizeof(jobid), "%s", id);
+  tmpjobid = get_correct_jobname(id);
+  if (tmpjobid == NULL)
+    {
+    /* Maybe we should just return ENOMEM? */
+    snprintf(jobid, sizeof(jobid), "%s", id);
+    }
+  else
+    {
+    snprintf(jobid, sizeof(jobid), "%s", tmpjobid);
+    free(tmpjobid);
+    }
 
   /* Check to see if we have an array dependency */
   /* If there is an array dependency count then we will */
@@ -158,15 +169,21 @@ job_array *get_array(
 
   {
   job_array *pa;
-  
+  char      *tmpjobid;
+
+  tmpjobid = get_correct_jobname(id);
+
   pthread_mutex_lock(allarrays.allarrays_mutex);
 
-  pa = get_array_from_hash(allarrays.hm, id);
+  pa = (job_array *)get_from_hash_map(allarrays.hm, tmpjobid);
 
   if (pa != NULL)
     lock_ai_mutex(pa, __func__, NULL, LOGLEVEL);
 
   pthread_mutex_unlock(allarrays.allarrays_mutex);
+
+  if (tmpjobid != NULL)
+    free(tmpjobid);
 
   return(pa);
   } /* END get_array() */
@@ -1487,7 +1504,8 @@ int modify_array_range(
             struct batch_request *array_req = duplicate_request(preq, i);
             mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
             pthread_mutex_unlock(pa->ai_mutex);
-            rc = modify_job((void **)&pjob, plist, array_req, checkpoint_req, NO_MOM_RELAY);
+            array_req->rq_noreply = TRUE;
+            modify_job((void **)&pjob, plist, array_req, checkpoint_req, NO_MOM_RELAY);
             pa = get_jobs_array(&pjob);
 
             if (pa == NULL)

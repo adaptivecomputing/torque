@@ -259,6 +259,15 @@ int main(
         clean_up_and_exit(2);
       }
     }
+ 
+  if (errflg)
+    clean_up_and_exit(2);
+
+  if (errflg)
+    clean_up_and_exit(2);
+
+  if (errflg)
+    clean_up_and_exit(2);
 
   if (errflg)
     clean_up_and_exit(2);

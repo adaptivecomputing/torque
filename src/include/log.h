@@ -172,7 +172,7 @@ void log_record (int, int, const char *, const char *);
 /* extern long job_log_size (void); */
 /* extern int  log_remove_old (char *,unsigned long); */
 extern char log_buffer[LOG_BUF_SIZE];
-/* int log_init (char *, char *); */
+int log_init(const char *suffix, const char *hostname);
 
 /* extern int  IamRoot (void); */
 /* #ifdef __CYGWIN__ */
@@ -181,10 +181,8 @@ extern char log_buffer[LOG_BUF_SIZE];
 /* extern int  IamUserByName (char *); */
 /* #endif  __CYGWIN__ */
 
-/* extern int  chk_file_sec (char *, int, int, int, int, char *); */
+int chk_file_sec( const char *path, int isdir, int sticky, int disallow, int fullpath, char *SEMsg);
 /* extern int  setup_env (char *); */
-
-extern int LOGLEVEL;
 
 extern int LOGLEVEL;
 

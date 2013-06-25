@@ -239,6 +239,7 @@
 #include "../lib/Libifl/lib_ifl.h" /* pbs_disconnect_socket */
 #include "alps_functions.h"
 #include "../lib/Libnet/lib_net.h" /* netaddr */
+#include "mom_config.h"
 
 #define MAX_RETRY_TIME_IN_SECS           (5 * 60)
 #define STARTING_RETRY_INTERVAL_IN_SECS   2
@@ -255,15 +256,11 @@ extern int num_node_boards;
 extern void collect_cpuact(void);
 #endif /* NUMA_SUPPORT */
 
-extern char *apbasil_path;
-extern char *apbasil_protocol;
-
 mom_server     mom_servers[PBS_MAXSERVER];
 int            mom_server_count = 0;
 pbs_net_t      down_svraddrs[PBS_MAXSERVER];
 
 extern unsigned int        default_server_port;
-extern char                mom_host[];
 extern char               *path_jobs;
 extern char               *path_home;
 extern  char              *path_spool;
@@ -271,19 +268,12 @@ extern unsigned int        pbs_mom_port;
 extern unsigned int        pbs_rm_port;
 extern unsigned int        pbs_tm_port;
 extern int                 internal_state;
-extern int                 LOGLEVEL;
-extern char                PBSNodeCheckPath[1024];
-extern int                 PBSNodeCheckInterval;
 char                       TORQUE_JData[MMAX_LINE];
-extern char                PBSNodeMsgBuf[1024];
 extern int                 received_hello_count[];
 extern char                TMOMRejectConn[];
 extern time_t              LastServerUpdateTime;
-extern int                 ServerStatUpdateInterval;
 extern long                system_ncpus;
 extern int                 alarm_time; /* time before alarm */
-extern int                 rm_errno;
-extern int                 is_reporter_mom;
 extern time_t              time_now;
 extern int                 verbositylevel;
 extern AvlTree             okclients;
@@ -649,7 +639,6 @@ int is_compose(
   int   command)
 
   {
-  static const char *id = "is_compose";
   int ret;
 
   if (chan->sock < 0)
@@ -659,19 +648,19 @@ int is_compose(
 
   if ((ret = diswsi(chan, IS_PROTOCOL)) != DIS_SUCCESS)
     {
-    mom_server_stream_error(chan->sock, server_name, id, "writing protocol");
+    mom_server_stream_error(chan->sock, server_name, __func__, "writing protocol");
 
     return(ret);
     }
   else if ((ret = diswsi(chan, IS_PROTOCOL_VER)) != DIS_SUCCESS)
     {
-    mom_server_stream_error(chan->sock, server_name, id, "writing protocol version");
+    mom_server_stream_error(chan->sock, server_name, __func__, "writing protocol version");
 
     return(ret);
     }
   else if ((ret = diswsi(chan, command)) != DIS_SUCCESS)
     {
-    mom_server_stream_error(chan->sock, server_name, id, "writing command");
+    mom_server_stream_error(chan->sock, server_name, __func__, "writing command");
 
     return(ret);
     }
@@ -713,8 +702,6 @@ int is_compose(
 
 
 
-
-extern struct config *config_array;
 
 /**
  * gen_size
@@ -1972,7 +1959,6 @@ int process_host_name(
   int  *something_added)
 
   {
-  static const char        *id = "process_host_name";
   char               *colon;
   unsigned short      rm_port;
   unsigned long       ipaddr;
@@ -2007,7 +1993,7 @@ int process_host_name(
       "Bad entry in mom_hierarchy file, could not resolve host %s",
       hostname);
 
-    log_err(PBSE_BADHOST, id, log_buffer);
+    log_err(PBSE_BADHOST, __func__, log_buffer);
     }
 
   return(PBSE_NONE);
@@ -2549,8 +2535,6 @@ void check_busy(
   double mla) /* I */
 
   {
-  static char id[] = "check_busy";
-
   int sindex;
   int numvnodes = 0;
   job *pjob;
@@ -2558,10 +2542,6 @@ void check_busy(
   float mymax_load;
 
   extern int   internal_state;
-  extern float ideal_load_val;
-  extern float max_load_val;
-  extern char *auto_ideal_load;
-  extern char *auto_max_load;
 
   if ((auto_max_load != NULL) || (auto_ideal_load != NULL))
     {
@@ -2592,11 +2572,7 @@ void check_busy(
               mymax_load,
               mla);
 
-      log_record(
-        PBSEVENT_ERROR,
-        PBS_EVENTCLASS_JOB,
-        id,
-        log_buffer);
+      log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
       }
 
     internal_state |= INUSE_BUSY;
@@ -2618,11 +2594,7 @@ void check_busy(
               mymax_load,
               mla);
 
-      log_record(
-        PBSEVENT_ERROR,
-        PBS_EVENTCLASS_JOB,
-        id,
-        log_buffer);
+      log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
       }
 
     internal_state = (internal_state & ~INUSE_BUSY);
@@ -2654,8 +2626,6 @@ void check_state(
   static int ICount = 0;
 
   static char tmpPBSNodeMsgBuf[1024];
-
-  const char *id = "check_state";
 
   if (Force)
     {
@@ -2751,15 +2721,15 @@ void check_state(
 
         snprintf(log_buffer,sizeof(log_buffer),
           "Setting node to down. The node health script output the following message:\n%s\n",
-          tmpPBSNodeMsgBuf);
-        log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,id,log_buffer);
+          tmpPBSNodeMsgBuf); 
+        log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
         }
       else
         {
         snprintf(log_buffer,sizeof(log_buffer),
           "Node health script ran and says the node is healthy with this message:\n%s\n",
           tmpPBSNodeMsgBuf);
-        log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,id,log_buffer);
+        log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
         }
       }
     }      /* END if (PBSNodeCheckPath[0] != '\0') */

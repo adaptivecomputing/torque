@@ -741,7 +741,7 @@ int set_jobexid(
   if (free_pgrpn == TRUE)
     free(pgrpn);
 
-  return(0);
+  return(PBSE_NONE);
   }  /* END set_jobexid() */
 
 /* END geteusernam.c */

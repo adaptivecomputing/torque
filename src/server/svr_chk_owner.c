@@ -99,7 +99,7 @@
 #include "utils.h"
 #include "svr_func.h" /* get_svr_attr_* */
 #include "net_cache.h"
-#include "../lib/Libnet/lib_net.h"
+#include "lib_net.h"
 #include "ji_mutex.h"
 
 /* Global Data */

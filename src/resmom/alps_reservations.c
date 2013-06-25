@@ -89,10 +89,10 @@
 #include "dynamic_string.h"
 #include "utils.h"
 #include "../lib/Libifl/lib_ifl.h"
+#include "mom_config.h"
 
 
 extern char mom_alias[];
-extern char mom_host[];
 
 
 host_req *get_host_req(

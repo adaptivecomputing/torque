@@ -9,6 +9,7 @@
 #include "list_link.h" /* tlist_head, list_link */
 #include "pbs_job.h" /* job */
 #include "libpbs.h" /* job_file */
+#include "mom_config.h"
 
 int lockfds = -1;
 int svr_resc_size = 0;
@@ -23,6 +24,7 @@ char log_buffer[LOG_BUF_SIZE];
 int MOMPrologTimeoutCount;
 uid_t pbsuser;
 gid_t pbsgroup;
+unsigned int     pe_alarm_time = PBS_PROLOG_TIME;
 
 int encode_resc(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int ac_perm)
   {
@@ -140,3 +142,4 @@ int setuid_ext(uid_t uid, int set_euid)
   {
   return(0);
   }
+

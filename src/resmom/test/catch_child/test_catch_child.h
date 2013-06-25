@@ -2,7 +2,6 @@
 #define _CATCH_CHILD_CT_H
 #include <errno.h>
 #include <check.h>
-#define PBS_MOM
 
 #define CATCH_CHILD 1
 Suite *catch_child_suite();

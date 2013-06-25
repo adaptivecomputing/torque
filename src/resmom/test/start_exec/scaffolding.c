@@ -315,7 +315,7 @@ void *get_next(list_link pl, char *file, int line)
   exit(1);
   }
 
-int send_sisters(job *pjob, int com, int using_radix)
+int send_sisters(job *pjob, int com, int using_radix, std::set<int> *sisters_to_contact)
   {
   fprintf(stderr, "The call to send_sisters needs to be mocked!!\n");
   exit(1);
@@ -525,6 +525,10 @@ int append_dynamic_string(dynamic_string *ds, const char *str)
   return(0);
   }
 
+int destroy_alps_reservation(char *reservation_id, char *apbasil_path, char *apbasil_protocol, int retries)
+  {
+  return(0);
+  }
 int pbs_getaddrinfo(const char *,struct addrinfo *,struct addrinfo **)
   {
   return -1;

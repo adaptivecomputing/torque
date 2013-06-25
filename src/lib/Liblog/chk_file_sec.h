@@ -16,4 +16,3 @@ int IamUserByName(char *userName);
 int IamRoot();
 #endif
 
-int chk_file_sec( const char *path, int isdir, int sticky, int disallow, int fullpath, char *SEMsg);

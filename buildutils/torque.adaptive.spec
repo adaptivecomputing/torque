@@ -44,6 +44,12 @@
 %define mom_pkg         %{name}-%{mom_sub}
 %define devel_pkg       %{name}-%{devel_sub}
 
+%define pkg_doc_dir             %{_docdir}/%{name}-%{version}
+%define server_pkg_doc_dir             %{_docdir}/%{server_pkg}-%{version}
+%define mom_pkg_doc_dir             %{_docdir}/%{mom_pkg}-%{version}
+%define client_pkg_doc_dir             %{_docdir}/%{client_pkg}-%{version}
+%define common_pkg_doc_dir             %{_docdir}/%{common_pkg}-%{version}
+
 # End Autoconf variables #######################################################
 
 # Nice error message if some macro is undefined.
@@ -111,7 +117,6 @@
 %define torque_logdir           %{torque_home}
 %define torque_spooldir         %{torque_home}
 
-%define pkg_doc_dir             %{_docdir}/%{name}-%{version}
 # These macros allow for easy searching and replacing of unwanted strings.
 %define grep_safety_net_error \
     %{error:Usage: grep_safety_net <directory> <search-str> <repl-str>}
@@ -142,7 +147,7 @@
     fi
 
 %define pre_add_back_up_file() \
-    if [ -d "%{1}" ] \
+    if [ -f "%{1}" ] \
     then \
         echo "  Adding '%{1}' to the back-up tar file" \
         echo "    '/var/tmp/backup-%{name}%{?2:-%{2}}.tar'..." \
@@ -292,7 +297,7 @@ CXXFLAGS="-g3 -O0"
 %{__install} -d %{buildroot}%{torque_logdir}
 %{__install} -d %{buildroot}%{torque_spooldir}
 %{__install} -d %{buildroot}%{torque_sysconfdir}
-
+%{__install} -d %{buildroot}%{_sbindir}
 
 %{make_install} \
     sysconfdir=%{torque_sysconfdir} \
@@ -322,8 +327,10 @@ do
     %{__chmod} 0755 %{buildroot}%{_initrddir}/$PROG
 done
 
+%{__install} torque.setup %{buildroot}%{_sbindir}
+
 ## Configuration
-echo '__AC_HOSTNAME_NOT_SET__' > \
+echo '__AC_HOSTNAME_NOT_SET__ np=__AC_PROCS_NOT_SET__' > \
     %{buildroot}%{torque_sysconfdir}/server_priv/nodes
 echo '$pbsserver __AC_HOSTNAME_NOT_SET__' > \
     %{buildroot}%{torque_sysconfdir}/mom_priv/config
@@ -340,7 +347,6 @@ rm -rf %{buildroot}%{torque_spooldir}/sched_logs
 
 # Empty config files
 
-touch %{buildroot}%{torque_sysconfdir}/server_priv/nodes
 touch %{buildroot}%{torque_appstatedir}/server_priv/serverdb
 touch %{buildroot}%{torque_sysconfdir}/server_priv/mom_hierarchy
 
@@ -362,21 +368,7 @@ for file in %{_libdir}/lib%{project_name}.so.*
 do
     %{pre_add_back_up_file ${file} %{common_sub}-${TIMESTAMP}}
 done
-%{pre_add_back_up_file %{pkg_doc_dir}/INSTALL %{common_sub}-${TIMESTAMP}}
-%{pre_add_back_up_file %{pkg_doc_dir}/INSTALL.GNU %{common_sub}-${TIMESTAMP}}
-%{pre_add_back_up_file %{pkg_doc_dir}/CHANGELOG %{common_sub}-${TIMESTAMP}}
-%{pre_add_back_up_file %{pkg_doc_dir}/PBS_License.txt %{common_sub}-${TIMESTAMP}}
-for file in %{pkg_doc_dir}/README.*
-do
-    %{pre_add_back_up_file ${file} %{common_sub}-${TIMESTAMP}}
-done
-%{pre_add_back_up_file %{pkg_doc_dir}/Release_Notes %{common_sub}-${TIMESTAMP}}
-%{pre_add_back_up_file %{pkg_doc_dir}/src/pam/README.pam %{common_sub}-${TIMESTAMP}}
-%{pre_add_back_up_file %{pkg_doc_dir}/doc/READ_ME %{common_sub}-${TIMESTAMP}}
-%{pre_add_back_up_file %{pkg_doc_dir}/doc/doc_fonts %{common_sub}-${TIMESTAMP}}
-%{pre_add_back_up_file %{pkg_doc_dir}/doc/soelim.c %{common_sub}-${TIMESTAMP}}
-%{pre_add_back_up_file %{pkg_doc_dir}/doc/ers %{common_sub}-${TIMESTAMP}}
-%{pre_add_back_up_dir  %{_docdir}/%{version} %{common_sub}-${TIMESTAMP}}
+%{pre_add_back_up_dir  %{common_pkg_doc_dir} %{common_sub}-${TIMESTAMP}}
 %{pre_add_back_up_dir  %{torque_spooldir}/spool %{common_sub}-${TIMESTAMP}}
 %{pre_add_back_up_dir  %{torque_appstatedir}/checkpoint %{common_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{torque_sysconfdir}/pbs_environment %{common_sub}-${TIMESTAMP}}
@@ -443,8 +435,8 @@ fi
 %pre %{server_sub}
 TIMESTAMP="`date +%%Y.%%m.%%d_%%H.%%M.%%S`"
 %{pre_clear_back_up %{server_sub}-${TIMESTAMP}}
-%{pre_add_back_up_file %{pkg_doc_dir}/doc/admin_guide.ps %{server_sub}-${TIMESTAMP}}
-%{pre_add_back_up_file %{pkg_doc_dir}/torque.setup %{server_sub}-${TIMESTAMP}}
+%{pre_add_back_up_file %{server_pkg_doc_dir}/doc/admin_guide.ps %{server_sub}-${TIMESTAMP}}
+%{pre_add_back_up_file %{_sbindir}/torque.setup %{server_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{torque_sysconfdir}/server_priv/mom_hierarchy \
                        %{server_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{torque_sysconfdir}/server_name %{server_sub}-${TIMESTAMP}}
@@ -484,10 +476,11 @@ trqauthd      15005/udp           # authorization daemon
 EOF
     }
 
+    NODES_FILE="%{torque_sysconfdir}/server_priv/nodes"
+    NUM_PROCS="`grep processor /proc/cpuinfo | wc -l`"
     %grep_safety_net "%{torque_home}" "__AC_HOSTNAME_NOT_SET__" "${HOSTNAME}"
-
-    echo "`hostname` np=`grep processor /proc/cpuinfo | wc -l`" > \
-        %{torque_sysconfdir}/server_priv/nodes
+    # This is used in the server_priv/nodes file.
+    %grep_safety_net "%{torque_home}" "__AC_PROCS_NOT_SET__" "${NUM_PROCS}"
 
     echo "  Checking for the existence of the file"
     echo "    '%{torque_appstatedir}/server_priv/serverdb'..."
@@ -495,13 +488,28 @@ EOF
     then
         echo "  '%{torque_appstatedir}/server_priv/serverdb' does not"
         echo "    exist or is empty."
+        # In 4.2-EA, TRQ-1578, torque.setup is found to delete the
+        # 'nodes' file when run. This prevents that.
+        echo "  Backing up nodes file..."
+        NODES_BACKUP_FILE=`mktemp -u "/var/tmp/nodes.XXXXXX"`
+        cp "${NODES_FILE}" \
+           "${NODES_BACKUP_FILE}" || {
+                echo "Could not back up nodes file!"
+                exit 1
+           }
         export TORQUE_SERVER="${HOSTNAME}"
-        echo "  Running '%{_docdir}/torque.setup' with first argument as"
+        echo "  Running '%{_sbindir}/torque.setup' with first argument as"
         echo "    '%{torque_user}'..."
-        yes 'y' | %{_docdir}/%{server_pkg}-%{version}/torque.setup \
+        yes 'y' | %{_sbindir}/torque.setup \
             "%{torque_user}" >/dev/null
-
         qterm >/dev/null 2>&1 || :
+
+        if [ ! -s "${NODES_FILE}" ]
+        then
+            echo "Restoring nodes file..."
+            cp "${NODES_BACKUP_FILE}" \
+                "${NODES_FILE}"
+        fi
     fi
 
     chkconfig --add pbs_server >/dev/null 2>&1 || :
@@ -653,7 +661,7 @@ ldconfig
 
 %files %{server_sub}
 %attr(-,root,root) %doc doc/admin_guide.ps
-%attr(0755,root,root) %doc torque.setup
+%attr(0755,root,root) %{_sbindir}/torque.setup
 %attr(-,root,root) %config(noreplace) %{torque_sysconfdir}/server_priv/mom_hierarchy
 %attr(-,root,root) %config(noreplace) %{torque_appstatedir}/server_priv/serverdb
 %attr(-,root,root) %config(noreplace) %{torque_sysconfdir}/server_name
