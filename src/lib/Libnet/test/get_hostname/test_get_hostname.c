@@ -28,6 +28,9 @@ START_TEST(get_fullhostname_canonical_name_in)
   fail_unless(rc == PBSE_NONE, log_msg);
   fail_unless((strcmp(canonical_name, server_name) == 0), "names are not the same");
 
+  rc = get_fullhostname(canonical_name, canonical_name, bufsize, EMsg);
+  fail_unless((strcmp(canonical_name, "kmn.ac") == 0), "name did not match what was given");
+
 
   }
 END_TEST

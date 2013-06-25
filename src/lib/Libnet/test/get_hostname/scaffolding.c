@@ -5,7 +5,7 @@
 
 int insert_addr_name_info(
     
-  const char               *hostname,
+  char               *hostname,
   char               *full_hostname,
   struct sockaddr_in *sai)
 
@@ -15,8 +15,8 @@ int insert_addr_name_info(
 
 char *get_cached_fullhostname(
 
-  const char               *hostname,
-  const struct sockaddr_in *sai)
+  char               *hostname,
+  struct sockaddr_in *sai)
 
   {
   return(NULL);
