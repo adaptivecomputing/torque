@@ -1,4 +1,6 @@
 #include "license_pbs.h" 
+#include <iostream>
+#include <iomanip>
 #include <stdlib.h>
 #include <stdio.h>
 #include <netdb.h> /* hostent */
@@ -232,7 +234,7 @@ void mom_checkpoint_set_directory_path(const char *str)
   exit(1);
   }
 
-void exec_bail(job *pjob, int code)
+void exec_bail(job *pjob, int code, std::set<int> *sisters_contacted)
   {
   fprintf(stderr, "The call to exec_bail needs to be mocked!!\n");
   exit(1);
@@ -496,7 +498,7 @@ int log_open(char *filename, char *directory)
   exit(1);
   }
 
-int send_sisters(job *pjob, int com, int using_radix)
+int send_sisters(job *pjob, int com, int using_radix, std::set<int> *sisters_to_contact)
   {
   fprintf(stderr, "The call to send_sisters needs to be mocked!!\n");
   exit(1);
@@ -670,7 +672,7 @@ int diswsi(tcp_chan *chan, int value)
   exit(1);
   }
 
-void mom_server_all_diag(char **BPtr, int *BSpace)
+void mom_server_all_diag(std::stringstream &output)
   {
   fprintf(stderr, "The call to mom_server_all_diag needs to be mocked!!\n");
   exit(1);

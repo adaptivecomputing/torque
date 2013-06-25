@@ -315,7 +315,7 @@ void *get_next(list_link pl, char *file, int line)
   exit(1);
   }
 
-int send_sisters(job *pjob, int com, int using_radix)
+int send_sisters(job *pjob, int com, int using_radix, std::set<int> *sisters_to_contact)
   {
   fprintf(stderr, "The call to send_sisters needs to be mocked!!\n");
   exit(1);
