@@ -100,6 +100,7 @@ int is_array(
     {
     /* Maybe we should just return ENOMEM? */
     snprintf(jobid, sizeof(jobid), "%s", id);
+    }
   else
     {
     snprintf(jobid, sizeof(jobid), "%s", tmpjobid);
