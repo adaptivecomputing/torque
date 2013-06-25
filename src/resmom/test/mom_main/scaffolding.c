@@ -679,12 +679,6 @@ void mom_server_all_diag(std::stringstream &output)
   exit(1);
   }
 
-void mom_server_all_diag(std::stringstream &output)
-  {
-  fprintf(stderr, "The call to mom_server_all_diag needs to be mocked!!\n");
-  exit(1);
-  }
-
 int disrsi(tcp_chan *chan, int *retval)
   {
   fprintf(stderr, "The call to disrsi needs to be mocked!!\n");
