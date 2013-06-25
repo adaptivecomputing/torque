@@ -49,11 +49,6 @@ struct batch_status * pbs_selstat_err(int c, struct attropl *attrib, char *exten
   exit(1);
   }
 
-struct batch_status *pbs_selstatattr_err(int c, struct attropl *attropl, struct attrl *attrib, char *extend, int *any_failed)
-  {
-  return(NULL);
-  }
-
 int TShowAbout_exit(void)
   { 
   fprintf(stderr, "The call to TShowAbout_exit needs to be mocked!!\n");
@@ -65,11 +60,6 @@ struct batch_status *pbs_statserver(int c, struct attrl *attrib, char *extend)
   fprintf(stderr, "The call to pbs_statserver needs to be mocked!!\n");
   exit(1);
   }
-
-extern "C"
-{
-void set_attr(struct attrl **attrib, const char *attrib_name, const char *attrib_value) {}
-}
 
 struct batch_status *pbs_statserver_err(int c, struct attrl *attrib, char *extend, int *local_errno)
   { 

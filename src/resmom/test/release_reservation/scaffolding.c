@@ -50,6 +50,3 @@ int find_error_type(
   return(rc);
   }
 
-void log_event(int, int, char const*, char const*)
-{
-}

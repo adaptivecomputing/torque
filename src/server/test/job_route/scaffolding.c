@@ -7,6 +7,7 @@
 #include "queue.h" /* pbs_queue */
 #include "batch_request.h" /* batach_request */
 #include "resource.h"
+#include "log.h"
 #include "mutex_mgr.hpp"
 
 const char *msg_err_noqueue = "Unable to requeue job, queue is not defined";
@@ -18,6 +19,8 @@ resource_def *svr_resc_def;
 pthread_mutex_t *reroute_job_mutex;
 int                     route_retry_interval = 5; /* time in seconds to check routing queues */
 int pbs_errno;
+char log_buffer[LOG_BUF_SIZE];
+
 
 #ifndef NDEBUG
 
