@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <netdb.h> /* hostent */
+#include <sstream>
 
 #include "mom_func.h" /* sig_tbl */
 #include "pbs_job.h" /* job, pjobexec_t, task, pjobexec_t */
@@ -669,6 +670,12 @@ mom_hierarchy_t *initialize_mom_hierarchy(void)
 int diswsi(tcp_chan *chan, int value)
   {
   fprintf(stderr, "The call to diswsi needs to be mocked!!\n");
+  exit(1);
+  }
+
+void mom_server_all_diag(std::stringstream &output)
+  {
+  fprintf(stderr, "The call to mom_server_all_diag needs to be mocked!!\n");
   exit(1);
   }
 
