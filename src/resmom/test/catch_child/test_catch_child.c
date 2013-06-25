@@ -1,16 +1,34 @@
+#include <errno.h>
 #include "pbs_job.h"
 #include "test_catch_child.h"
 #include "utils.h"
+
 
 void catch_child(int sig);
 bool eligible_for_exiting_check(job *pjob);
 void check_jobs_main_process(job *pjob, task *ptask);
 bool non_mother_superior_cleanup(job *pjob);
 bool mother_superior_cleanup(job *pjob, int limit, int *found);
+void *obit_reply(void *new_sock);
 
 extern int termin_child;
 extern int server_down;
 extern int exiting_tasks;
+extern int  DIS_reply_read_count;
+extern int  tc;
+extern bool eintr_test;
+
+START_TEST(obit_reply_test)
+  {
+  int sock = 1;
+  DIS_reply_read_count = 0;
+  
+  eintr_test = true;
+  obit_reply(&sock);
+  fail_unless(DIS_reply_read_count == 11);
+  eintr_test = false;
+  }
+END_TEST
 
 START_TEST(test_catch_child_1)
   {
@@ -98,6 +116,7 @@ Suite *catch_child_suite(void)
   Suite *s = suite_create("catch_child methods");
   TCase *tc_core = tcase_create("Core");
   tcase_add_test(tc_core, test_catch_child_1);
+  tcase_add_test(tc_core, obit_reply_test);
   tcase_add_test(tc_core, test_eligible_for_exiting_check);
   tcase_add_test(tc_core, test_jobs_main_process);
   tcase_add_test(tc_core, test_non_mother_superior_cleanup);

@@ -41,6 +41,9 @@ const char *PMOMCommand[] =
   "ERROR",     /* 14+ */
   NULL
   };
+
+int DIS_reply_read_count;
+bool eintr_test;
 int termin_child = 0; /* mom_main.c */
 int LOGLEVEL = 10; /* force logging code to be exercised as tests run */ /* mom_main.c/pbsd_main.c */
 tlist_head svr_alljobs; /* mom_main.c */
@@ -625,7 +628,7 @@ void log_event(int eventtype, int objclass, const char *objname, const char *tex
   {
   }
 
-int send_sisters(job *pjob, int com, int using_radix)
+int send_sisters(job *pjob, int com, int using_radix, std::set<int> *sisters_contacted)
   {
   int rc = 1;
   if (func_num == SCAN_FOR_EXITING)
@@ -825,7 +828,8 @@ int mom_open_socket_to_jobs_server(job *pjob, const char *caller_id, void *(*mes
 
 struct tcp_chan *DIS_tcp_setup(int sock)
   {
-  return(NULL);
+  static tcp_chan bob;
+  return(&bob);
   }
 
 void DIS_tcp_close(struct tcp_chan *chan) {}
@@ -977,6 +981,14 @@ void free_br(struct batch_request *preq)
 int DIS_reply_read(struct tcp_chan *chan, struct batch_reply *preply)
   {
   int rc = 0;
+
+  if (eintr_test == true)
+    {
+    DIS_reply_read_count++;
+    errno = EINTR;
+    return(-1);
+    }
+
   switch (func_num)
     {
   case OBIT_REPLY:
