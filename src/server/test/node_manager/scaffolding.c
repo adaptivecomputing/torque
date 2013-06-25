@@ -89,14 +89,11 @@ char *netaddr_pbs_net_t(pbs_net_t ipadd)
 
 void free_br(struct batch_request *preq)
   {
-  fprintf(stderr, "The call to free_br needs to be mocked!!\n");
-  exit(1);
   }
 
 int enqueue_threadpool_request(void *(*func)(void *), void *arg)
   {
-  fprintf(stderr, "The call to enqueue_threadpool_request needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 struct pbsnode *find_nodebyname(char *nodename)
