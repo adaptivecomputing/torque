@@ -30,8 +30,6 @@ int tm_reply(struct tcp_chan *chan, int com, tm_event_t event);
 
 int im_compose(struct tcp_chan *chan, char *jobid, char *cookie, int command, tm_event_t event, tm_task_id taskid);
 
-int send_sisters(struct job *pjob, int com, int using_radix);
-
 int send_ms(struct job *pjob, int com);
 
 struct hnodent *find_node(struct job *pjob, int stream, tm_node_id nodeid);

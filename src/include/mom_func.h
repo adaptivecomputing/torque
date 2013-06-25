@@ -80,6 +80,7 @@
 #define _MOM_FUNC_H
 
 #include "libpbs.h"
+#include <set>
 
 #ifndef MOM_MACH
 #include "mom_mach.h"
@@ -188,6 +189,9 @@ typedef struct obit_task_info
 int add_to_resend_things(resend_momcomm *mc);
 im_compose_info *create_compose_reply_info(char *, char *, hnodent *, int command, tm_event_t, tm_task_id);
 int open_tcp_stream_to_sisters(job *pjob, int com, tm_event_t parent_event, int mom_radix, hnodent *hosts, struct radix_buf **sister_list, tlist_head *phead, int flag);
+
+void exec_bail(job *pjob, int code, std::set<int> *nodes_contacted = NULL);
+int send_sisters(struct job *pjob, int com, int using_radix, std::set<int> *sisters_to_contact = NULL);
 
 /* public funtions within MOM */
 

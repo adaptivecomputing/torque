@@ -359,7 +359,6 @@ enum csa_chk_cmd
 
 #endif /* ENABLE_CSA */
 
-
 #define FDMOVE(fd) if (fd < 3) { \
     int hold = fcntl(fd,F_DUPFD,3); \
     close(fd); \
@@ -583,8 +582,9 @@ struct passwd *check_pwd(
 
 void exec_bail(
 
-  job *pjob,  /* I */
-  int  code)  /* I */
+  job           *pjob,  /* I */
+  int            code,  /* I */
+  std::set<int> *sisters_contacted)
 
   {
   int            nodecount;
@@ -596,7 +596,7 @@ void exec_bail(
 
   if (pjob->ji_hosts[0].hn_node == pjob->ji_nodeid) //only call send_sisters if I'm mother superior
     {
-    nodecount = send_sisters(pjob, IM_ABORT_JOB, FALSE);
+    nodecount = send_sisters(pjob, IM_ABORT_JOB, FALSE, sisters_contacted);
 
     if (nodecount != pjob->ji_numnodes - 1)
       {
@@ -6085,15 +6085,16 @@ int send_join_job_to_sisters(
   tlist_head  phead)
 
   {
-  int              i;
-  int              retry_count;
-  int              stream;
-  int              ret = PBSE_NONE;
-  eventent        *ep;
-  hnodent         *np;
-  int              send_failed_size = nodenum * sizeof(int);
-  int             *send_failed = (int *)calloc(nodenum, sizeof(int));
-  int              unsent_count = nodenum - 1;
+  int            i;
+  int            retry_count;
+  int            stream;
+  int            ret = PBSE_NONE;
+  eventent      *ep;
+  hnodent       *np;
+  int            send_failed_size = nodenum * sizeof(int);
+  int           *send_failed = (int *)calloc(nodenum, sizeof(int));
+  int            unsent_count = nodenum - 1;
+  std::set<int>  sisters_contacted;
 
   errno = 0;
     
@@ -6128,6 +6129,7 @@ int send_join_job_to_sisters(
 
       if (ret == DIS_SUCCESS)
         {
+        sisters_contacted.insert(i);
         send_failed[i] = DIS_SUCCESS;
         unsent_count--;
         } 
@@ -6166,7 +6168,7 @@ int send_join_job_to_sisters(
 
     log_err(errno, __func__, log_buffer);
     
-    exec_bail(pjob, JOB_EXEC_RETRY);
+    exec_bail(pjob, JOB_EXEC_RETRY, &sisters_contacted);
     
     ret = PBSE_CANTCONTACTSISTERS;
     }

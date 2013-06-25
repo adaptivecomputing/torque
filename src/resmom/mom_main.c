@@ -411,7 +411,6 @@ extern void scan_for_exiting();
 extern void scan_for_terminated();
 extern int TMomCheckJobChild(pjobexec_t *, int, int *, int *);
 extern int TMomFinalizeJob3(pjobexec_t *, int, int, int *);
-extern void exec_bail(job *, int);
 extern void check_state(int);
 
 
