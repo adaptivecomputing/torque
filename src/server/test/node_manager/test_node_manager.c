@@ -15,6 +15,18 @@ char *get_next_exec_host(char **);
 int   job_should_be_on_node(char *, struct pbsnode *);
 int   check_for_node_type(complete_spec_data *, enum node_types);
 int   record_external_node(job *, struct pbsnode *);
+void *record_reported_time(void *vp);
+
+START_TEST(record_reported_time_test)
+  {
+  job *pjob;
+
+  record_reported_time(strdup("1:tom"));
+  pjob = svr_find_job(strdup("1"), TRUE);
+
+  fail_unless(time(NULL) - pjob->ji_last_reported_time < 10);
+  }
+END_TEST
 
 START_TEST(get_next_exec_host_test)
   {
@@ -198,6 +210,7 @@ Suite *node_manager_suite(void)
 
   tc_core = tcase_create("record_external_node_test");
   tcase_add_test(tc_core, record_external_node_test);
+  tcase_add_test(tc_core, record_reported_time_test);
   suite_add_tcase(s, tc_core);
 
   return(s);

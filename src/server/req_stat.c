@@ -1070,17 +1070,29 @@ void stat_update(
          this can happen if a diskless node reboots and the mom_priv/jobs
          directory is cleared, set its state to queued so job_abt doesn't
          think it is still running */
-      snprintf(log_buf, sizeof(log_buf),
-        "mother superior no longer recognizes %s as a valid job, aborting",
-        preq->rq_ind.rq_status.rq_id);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-      
-      svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_ABORT, FALSE);
-      rel_resc(pjob);
-      
-      job_abt(&pjob, "Job does not exist on node");
-      
-      /* TODO, if the job is rerunnable we should set its state back to queued */
+      unsigned long delta = time(NULL) - pjob->ji_last_reported_time;
+
+      if (delta > JOB_REPORTED_ABORT_DELTA)
+        {
+        snprintf(log_buf, sizeof(log_buf),
+          "mother superior no longer recognizes %s as a valid job, aborting",
+          preq->rq_ind.rq_status.rq_id);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+        
+        svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_ABORT, FALSE);
+        rel_resc(pjob);
+        
+        job_abt(&pjob, "Job does not exist on node");
+        
+        /* TODO, if the job is rerunnable we should set its state back to queued */
+        }
+      else
+        {
+        snprintf(log_buf, sizeof(log_buf),
+          "Unknown job message from mother superior appears to be in error, reported %d seconds ago",
+          (int)delta);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+        }
       }
     }
   else
