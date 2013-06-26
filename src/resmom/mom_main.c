@@ -123,7 +123,6 @@ char           Torque_Info_Version[] = PACKAGE_VERSION;
 char           Torque_Info_Version_Revision[] = GIT_HASH;
 char           Torque_Info_Component[] = "pbs_mom";
 char           Torque_Info_SysVersion[BUF_SIZE];
-char           Torque_Info_SysVersionSignature[BUF_SIZE];
 
 /* mom data items */
 #ifdef NUMA_SUPPORT
@@ -6238,15 +6237,11 @@ int main(
   int       tmpFD;
   FILE      *fp;
 
-  /* populate a couple variables useful when analyzing a core file */
+  /* populate a variable useful when analyzing a core file */
+  memset(Torque_Info_SysVersion, 0, sizeof(Torque_Info_SysVersion));
   if ((fp = fopen("/proc/version", "r")) != NULL)
     {
     fread(Torque_Info_SysVersion, sizeof(Torque_Info_SysVersion), 1, fp);
-    fclose(fp);
-    }
-  if ((fp = fopen("/proc/version_signature", "r")) != NULL)
-    {
-    fread(Torque_Info_SysVersionSignature, sizeof(Torque_Info_SysVersionSignature), 1, fp);
     fclose(fp);
     }
 
