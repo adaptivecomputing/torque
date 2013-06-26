@@ -979,7 +979,7 @@ int run_epilogues(
     if (run_pelog(PE_EPILOGUSER, path_epiloguserp, pjob, io_type) != 0)
       log_err(-1, __func__, "user epilog failed - interactive job");
   
-    if (run_pelog(PE_EPILOG, path_epilogp, pjob, PE_IO_TYPE_STD) != 0)
+    if (run_pelog(PE_EPILOG, path_epilogp, pjob, io_type) != 0)
       {
       log_err(-1, __func__, "parallel epilog failed");
       }
