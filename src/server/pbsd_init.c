@@ -131,6 +131,8 @@
 #include "user_info.h"
 #include "hash_map.h"
 #include "mutex_mgr.hpp"
+#include "lib_net.h"
+
 
 /*#ifndef SIGKILL*/
 /* there is some weird stuff in gcc include files signal.h & sys/params.h */
@@ -521,12 +523,10 @@ int can_resolve_hostname(
 
   if (get_cached_addrinfo(hostname) != NULL)
     can_resolve = TRUE;
-  else if (getaddrinfo(hostname, NULL, NULL, &addr_info) == 0)
+  else if (pbs_getaddrinfo(hostname, NULL, &addr_info) == 0)
     {
-    struct sockaddr_in *sai = (struct sockaddr_in *)addr_info->ai_addr;
     can_resolve = TRUE;
-    insert_addr_name_info(hostname, addr_info->ai_canonname, sai);
-    freeaddrinfo(addr_info);
+    insert_addr_name_info(addr_info,hostname);
     }
 
   if (colon != NULL)
@@ -564,14 +564,12 @@ void check_if_in_nodes_file(
 
     if ((sai = get_cached_addrinfo(hostname)) == NULL)
       {
-      if (getaddrinfo(hostname, NULL, NULL, &addr_info) == 0)
+      if (pbs_getaddrinfo(hostname, NULL, &addr_info) == 0)
         {
         sai = (struct sockaddr_in *)addr_info->ai_addr;
         ipaddr = ntohl(sai->sin_addr.s_addr);
 
-        insert_addr_name_info(hostname, addr_info->ai_canonname, sai);
-
-        freeaddrinfo(addr_info);
+        insert_addr_name_info(addr_info, hostname);
         }
       else
         {
@@ -2130,8 +2128,6 @@ int pbsd_init(
   setup_threadpool();
 
   setup_limits();
-
-  initialize_network_info();
 
   /* 1. set up to catch or ignore various signals */
   if ((ret = setup_signal_handling()) != PBSE_NONE)

@@ -184,25 +184,25 @@ int start_domainsocket_listener(
 
   if ( (listen_socket = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
     {
-    snprintf(log_buf, sizeof(log_buf), "socket failed: %d", errno);
+    snprintf(log_buf, sizeof(log_buf), "socket failed: %d %s", errno, strerror(errno));
     log_event(PBSEVENT_ADMIN | PBSEVENT_FORCE, PBS_EVENTCLASS_SERVER, __func__, log_buf);
     rc = PBSE_SOCKET_FAULT;
     }
   else if ( bind(listen_socket, (struct sockaddr *)&addr, sizeof(addr)) < 0)
     {
-    snprintf(log_buf, sizeof(log_buf), "failed to bind socket %s: %d", socket_name, errno);
+    snprintf(log_buf, sizeof(log_buf), "failed to bind socket %s: %d %s", socket_name, errno, strerror(errno));
     log_event(PBSEVENT_ADMIN | PBSEVENT_FORCE, PBS_EVENTCLASS_SERVER, __func__, log_buf);
     rc = PBSE_SOCKET_FAULT;
     }
   else if (chmod(socket_name,  S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH) < 0)
     {
-    snprintf(log_buf, sizeof(log_buf), "failed to change file permissions on  %s: %d", socket_name, errno);
+    snprintf(log_buf, sizeof(log_buf), "failed to change file permissions on  %s: %d %s", socket_name, errno, strerror(errno));
     log_event(PBSEVENT_ADMIN | PBSEVENT_FORCE, PBS_EVENTCLASS_SERVER, __func__, log_buf);
     rc = PBSE_SOCKET_FAULT;
     }
   else if ( listen(listen_socket, 64) < 0)
     {
-    snprintf(log_buf, sizeof(log_buf), "listen failed %s: %d", socket_name, errno);
+    snprintf(log_buf, sizeof(log_buf), "listen failed %s: %d %s", socket_name, errno, strerror(errno));
     log_event(PBSEVENT_ADMIN | PBSEVENT_FORCE, PBS_EVENTCLASS_SERVER, __func__, log_buf);
     rc = PBSE_SOCKET_LISTEN;
     }
@@ -227,8 +227,8 @@ int start_domainsocket_listener(
           "TORQUE authd daemon started and listening on %s (unix socket %s)", 
             authd_host_port, socket_name);
       else
-      snprintf(log_buf, sizeof(log_buf),
-        "TORQUE authd daemon started and listening unix socket %s", socket_name);
+        snprintf(log_buf, sizeof(log_buf),
+          "TORQUE authd daemon started and listening unix socket %s", socket_name);
       log_event(PBSEVENT_SYSTEM | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD,
         msg_daemonname, log_buf);
       }
@@ -311,14 +311,14 @@ int start_listener_addrinfo(
   socklen_t           len_inet;
   int                 rc = PBSE_NONE;
   int                 sockoptval;
-  int                *new_conn_port = NULL;
+  int                 new_conn_port = -1;
   int                 listen_socket = 0;
   int                 total_cntr = 0;
   unsigned short      port_net_byte_order;
   pthread_attr_t      t_attr;
   char                err_msg[MAXPATHLEN];
   char                log_buf[LOCAL_LOG_BUF_SIZE + 1];
-  int                 ret = getaddrinfo(host_name, NULL, NULL, &adr_svr);
+  int                 ret = pbs_getaddrinfo(host_name, NULL, &adr_svr);
 
   if (ret != 0)
     {
@@ -364,20 +364,27 @@ int start_listener_addrinfo(
     }
   else
     {
-    freeaddrinfo(adr_svr);
     int exit_loop = FALSE;
     int retry_tolerance = NUM_ACCEPT_RETRIES;
 
     while (1)
       {
-      len_inet = sizeof(struct sockaddr);
-      if ((new_conn_port = (int *)calloc(1, sizeof(int))) == NULL)
+      long *args = NULL;
+
+      /* if successfully allocated args will be freed in process_meth */
+      args = (long *)calloc(3, sizeof(long));
+      if (args == NULL)
         {
-        snprintf(err_msg, sizeof(err_msg), "Error allocating new connection handle - stopping accept loop.");
-        break;
+        snprintf(log_buf, sizeof(log_buf), "failed to allocate argument space");
+        log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
+        /* Let's try to recover */
+        sleep(5);
+        continue;
         }
 
-      if ((*new_conn_port = accept(listen_socket, (struct sockaddr *)&adr_client, (socklen_t *)&len_inet)) == -1)
+     len_inet = sizeof(struct sockaddr);
+
+      if ((new_conn_port = accept(listen_socket, (struct sockaddr *)&adr_client, (socklen_t *)&len_inet)) == -1)
         {
         switch (errno)
           {
@@ -404,42 +411,49 @@ int start_listener_addrinfo(
           }
 
         if (exit_loop == TRUE)
+          {
+          if (args)
+            free(args);
           break;
+          }
 
         errno = 0;
-        free(new_conn_port);
-        new_conn_port = NULL;
         }
       else
         {
         retry_tolerance = NUM_ACCEPT_RETRIES;
         sockoptval = 1;
-        setsockopt(*new_conn_port, SOL_SOCKET, SO_REUSEADDR, (void *)&sockoptval, sizeof(sockoptval));
+        setsockopt(new_conn_port, SOL_SOCKET, SO_REUSEADDR, (void *)&sockoptval, sizeof(sockoptval));
+
+        in_addr = (struct sockaddr_in *)&adr_client;
+        args[0] = new_conn_port;
+        args[1] = ntohl(in_addr->sin_addr.s_addr);
+        args[2] = htons(in_addr->sin_port);
         
         if (debug_mode == TRUE)
           {
-          process_meth((void *)new_conn_port);
+          process_meth((void *)args);
           }
         else
           {
-          if (*new_conn_port == PBS_LOCAL_CONNECTION)
+          if (new_conn_port == PBS_LOCAL_CONNECTION)
             {
-            snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Ignoring local incoming request %d", *new_conn_port);
+            snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Ignoring local incoming request %d", new_conn_port);
             log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
             }
           else
             {
+
             /* add_conn is not protocol independent. We need to 
                do some IPv4 stuff here */
-            in_addr = (struct sockaddr_in *)&adr_client;
             add_conn(
-              *new_conn_port,
+              new_conn_port,
               FromClientDIS,
               (pbs_net_t)ntohl(in_addr->sin_addr.s_addr),
               (unsigned int)htons(in_addr->sin_port),
               PBS_SOCK_INET,
               NULL);
-            enqueue_threadpool_request(process_meth, new_conn_port);
+            enqueue_threadpool_request(process_meth, args);
           /*pthread_create(&tid, &t_attr, process_meth, (void *)new_conn_port);*/
             }
           }
@@ -454,11 +468,6 @@ int start_listener_addrinfo(
         total_cntr++;
         }
       } /* END infinite_loop() */
-
-    if (new_conn_port != NULL)
-      {
-      free(new_conn_port);
-      }
 
     pthread_attr_destroy(&t_attr);
 

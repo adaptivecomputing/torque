@@ -175,7 +175,7 @@ job *next_job(struct all_jobs *aj, int *iter)
   exit(1);
   }
 
-int svr_is_request(tcp_chan *chan, int version)
+int svr_is_request(tcp_chan *chan, int version, long *args)
   {
   fprintf(stderr, "The call to svr_is_request needs to be mocked!!\n");
   exit(1);

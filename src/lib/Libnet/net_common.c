@@ -159,7 +159,7 @@ int get_random_reserved_port()
     {
     found = 0;
     res_port = (rand() % RES_PORT_RANGE) + RES_PORT_START;
-    for(i = 0; i < MAX_USED_PRIV_PORTS; i++)
+    for (i = 0; i < MAX_USED_PRIV_PORTS; i++)
       {
       if (res_port == used_priv_ports[i])
         found = 1;
@@ -173,7 +173,7 @@ int get_random_reserved_port()
       }
     else
       usleep(50000);
-    }while(!done);
+    } while(!done);
 
   return res_port;
   } /* END get_random_reserved_port() */
@@ -316,6 +316,18 @@ int socket_connect(
 
 
 
+/*
+ * socket_connect_addr()
+ *
+ * connects socket to the remote address specified
+ * @param socket - the socket that will be connected. On failure, set to a permanent or transient
+ * failure code.
+ * @param remote - the address that socket should be connected to
+ * @param remote_size - the size of the memory remote points to
+ * @param is_privileged - indicates whether socket is bound to a privileged port or not
+ * @param error_msg - pointer to an error msg buffer
+ */
+
 int socket_connect_addr(
     
   int              *socket,
@@ -337,19 +349,20 @@ int socket_connect_addr(
     
     switch (errno)
       {
+      /* permanent failures go here */
       case ECONNREFUSED:    /* Connection refused */
-        snprintf(tmp_buf, LOCAL_LOG_BUF_SIZE, "cannot connect to port %d in %s - connection refused",
+      case ETIMEDOUT:       /* Connection timed out */
+        snprintf(tmp_buf, sizeof(tmp_buf), "cannot connect to port %d in %s - connection refused",
           local_socket, __func__);
         *error_msg = strdup(tmp_buf);
         rc = PBS_NET_RC_RETRY;
         close(local_socket);
-        local_socket = -1;
+        local_socket = PERMANENT_SOCKET_FAIL;
         break;
 
       case EINPROGRESS:   /* Operation now in progress */
       case EALREADY:    /* Operation already in progress */
       case EISCONN:   /* Transport endpoint is already connected */
-      case ETIMEDOUT:   /* Connection timed out */
       case EAGAIN:    /* Operation would block */
       case EINTR:     /* Interrupted system call */
 
@@ -358,6 +371,16 @@ int socket_connect_addr(
           /* no network failures detected, socket available */
           break;
           }
+        else if (rc == PERMANENT_SOCKET_FAIL)
+          {
+          close(local_socket);
+          local_socket = rc;
+
+          /* do not fall through here */
+          break;
+          }
+
+        /* essentially, only fall through for a transient failure */
 
       /* socket not ready for writing after 5 timeout */
       case EINVAL:    /* Invalid argument */
@@ -383,28 +406,31 @@ int socket_connect_addr(
           else
             {
             close(local_socket);
-            local_socket = -1;
+            local_socket = TRANSIENT_SOCKET_FAIL;
             }
           }
         break;
 
       default:
-        snprintf(tmp_buf, LOCAL_LOG_BUF_SIZE, "cannot connect to port %d in %s - errno:%d %s",
+
+        snprintf(tmp_buf, sizeof(tmp_buf), "cannot connect to port %d in %s - errno:%d %s",
           local_socket, __func__, errno, strerror(errno));
         *error_msg = strdup(tmp_buf);
         close(local_socket);
         rc = PBSE_SOCKET_FAULT;
-        local_socket = -1;
+        local_socket = PERMANENT_SOCKET_FAIL;
+
         break;
       }
 
-    if (local_socket == -1)
+    if (local_socket == PERMANENT_SOCKET_FAIL)
       break;
     }
 
-  if (rc == PBSE_NONE)
-    *socket = local_socket;
-  else if (local_socket != -1)
+  *socket = local_socket;
+  
+  if ((local_socket >= 0) &&
+      (rc != PBSE_NONE))
     close(local_socket);
 
   return(rc);
@@ -412,6 +438,15 @@ int socket_connect_addr(
 
 
 
+/*
+ * socket_wait_for_write()
+ *
+ * connect failed, this function determines why. 
+ * if the failure is a permanent failure, pass that back to the caller
+ *
+ * @return TRANSIENT_SOCKET_FAIL if its not permanent, PERMANENT_SOCKET_FAIL
+ * if it is permanent.
+ */
 
 int socket_wait_for_write(
     
@@ -424,7 +459,7 @@ int socket_wait_for_write(
   fd_set         wfd;
   struct timeval timeout;
 
-  timeout.tv_sec = pbs_tcp_timeout / RES_PORT_RETRY;
+  timeout.tv_sec = pbs_tcp_timeout;
   timeout.tv_usec = 0;
 
   FD_ZERO(&wfd);
@@ -432,7 +467,8 @@ int socket_wait_for_write(
 
   if ((write_soc = select(socket+1, 0, &wfd, 0, &timeout)) != 1)
     {
-    rc = PBSE_TIMEOUT;
+    /* timeout is now seen as a permanent failure */
+    rc = PERMANENT_SOCKET_FAIL;
     }
   else if (((rc = getsockopt(socket, SOL_SOCKET, SO_ERROR, &val, &len)) == 0) && (val == 0))
     {
@@ -440,10 +476,31 @@ int socket_wait_for_write(
     }
   else
     {
-    errno = val;
-    rc = PBSE_SOCKET_WRITE;
+    switch (val)
+      {
+      /* ETIMEDOUT is not listed because it should be considered a permanent failure */
+      case EINPROGRESS:
+      case EALREADY:    /* Operation already in progress */
+      case EISCONN:   /* Transport endpoint is already connected */
+      case EAGAIN:    /* Operation would block */
+      case EINTR:     /* Interrupted system call */
+      case EINVAL:    /* Invalid argument */
+      case EADDRINUSE:    /* Address already in use */
+      case EADDRNOTAVAIL:   /* Cannot assign requested address */
+
+        rc = TRANSIENT_SOCKET_FAIL;
+
+        break;
+
+      default:
+
+        rc = PERMANENT_SOCKET_FAIL;
+
+        break;
+      }
     }
-  return rc;
+
+  return(rc);
   } /* END socket_wait_for_write() */
 
 
@@ -838,59 +895,57 @@ int socket_close(
   } /* END socket_close() */
 
 
-
-int get_addr_info(
+int pbs_getaddrinfo(
     
-  char               *name,
-  struct sockaddr_in *sa_info,
-  int                 retry)
+  const char       *pNode,
+  struct addrinfo  *pHints,
+  struct addrinfo **ppAddrInfoOut)
 
   {
-  int                 rc = PBSE_NONE;
-  int                 cntr = 0;
-  struct addrinfo    *addr_info;
-  struct addrinfo     hints;
-  struct timeval      start_time;
-  struct timeval      end_time;
-  struct sockaddr_in *cached_sai;
+  int rc;
+  struct addrinfo hints;
+  int retryCount = 3;
+  int addrFound = FALSE;
 
-  /* retrieve from cache if possible */
-  if ((cached_sai = get_cached_addrinfo(name)) != NULL)
+  if (ppAddrInfoOut == NULL)
     {
-    memcpy(sa_info, cached_sai, sizeof(struct sockaddr_in));
-    return(PBSE_NONE);
+    return -1;
+    }
+  if ((*ppAddrInfoOut = get_cached_addrinfo_full(pNode)) != NULL)
+    {
+    return 0;
+    }
+  if (pHints == NULL)
+    {
+    memset(&hints,0,sizeof(hints));
+    hints.ai_flags = AI_CANONNAME;
+    pHints = &hints;
     }
 
-  memset(&hints, 0, sizeof(struct addrinfo));
-  hints.ai_socktype = SOCK_STREAM;
-  hints.ai_family = PF_INET;
-
-  while (cntr < retry)
+  do
     {
-    gettimeofday(&start_time, 0);
-
-    if ((rc = getaddrinfo(name, NULL, &hints, &addr_info)) != 0)
+    if(addrFound)
       {
-      gettimeofday(&end_time, 0);
-
-      rc = PBSE_BADHOST;
+      rc = 0;
       }
     else
       {
-      sa_info->sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
-      sa_info->sin_family = addr_info->ai_family;
-      insert_addr_name_info(name, addr_info->ai_canonname, sa_info);
-      freeaddrinfo(addr_info);
-      gettimeofday(&end_time, 0);
-
-      rc = PBSE_NONE;
-
-      break;
+       rc = getaddrinfo(pNode,NULL,pHints,ppAddrInfoOut);
       }
-
-    cntr++;
-    }
-
-  return(rc);
-  } /* END get_addr_info() */
-
+    if(rc == 0)
+      {
+      addrFound = TRUE;
+      *ppAddrInfoOut = insert_addr_name_info(*ppAddrInfoOut,pNode);
+      if(*ppAddrInfoOut != NULL)
+        {
+        return 0;
+        }
+      rc = EAI_AGAIN;
+      }
+    if(rc != EAI_AGAIN)
+      {
+      return rc;
+      }
+    }while(retryCount-- >= 0);
+  return EAI_FAIL;
+  }

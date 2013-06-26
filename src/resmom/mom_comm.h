@@ -70,10 +70,6 @@ int im_get_info(struct tcp_chan *chan, struct job *pjob, char *cookie, tm_event_
 
 int im_get_resc_as_sister(struct tcp_chan *chan, struct job *pjob, char *cookie, tm_event_t event, tm_task_id fromtask);
 
-int get_reply_stream(struct job *pjob);
-
-int get_radix_reply_stream(struct job *pjob);
-
 int im_poll_job_as_sister(struct job *pjob, char *cookie, tm_event_t event, tm_task_id fromtask);
 
 int im_abort_job(struct job *pjob, struct sockaddr_in *addr, char *cookie, tm_event_t event, tm_task_id fromtask);

@@ -43,7 +43,7 @@ int   job_oom_score_adjust = 0;  /* no oom score adjust by default */
 int   mom_oom_immunize = 0;  /* make pbs_mom processes immune? no by default */
 
 #ifdef PENABLE_LINUX26_CPUSETS
-hwloc_topology_t topology = NULL;       /* system topology */
+//hwloc_topology_t topology = NULL;       /* system topology */
 
 int      memory_pressure_threshold = 0; /* 0: off, >0: check and kill */
 short    memory_pressure_duration  = 0; /* 0: off, >0: check and kill */

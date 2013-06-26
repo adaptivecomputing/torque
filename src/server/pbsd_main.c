@@ -391,7 +391,8 @@ static void need_y_response(
 int process_pbs_server_port(
      
   int sock,
-  int is_scheduler_port)
+  int is_scheduler_port,
+  long *args)
  
   {
   int              proto_type;
@@ -426,7 +427,7 @@ int process_pbs_server_port(
         break;
         }
       
-      rc = svr_is_request(chan, version);
+      rc = svr_is_request(chan, version, args);
       
       break;
 
@@ -488,56 +489,16 @@ int process_pbs_server_port(
 
 
 
-/* 
- * process_pbs_server_port_scheduler
- * This function is a wrapper for process_pbs_server_port
- * whose signature has been changed to make torques
- * accept process fully multithreaded. 
- * This will be run from contact_sched
- */
-
-void process_pbs_server_port_scheduler(
-    
-  int *new_sock)
-
-  {
-  int rc = PBSE_NONE;
-  int sock = *new_sock;
-
-  while ((rc != PBSE_SOCKET_DATA) && 
-         (rc != PBSE_SOCKET_INFORMATION) &&
-         (rc != PBSE_INTERNAL) &&
-         (rc != PBSE_SYSTEM) &&
-         (rc != PBSE_MEM_MALLOC) &&
-         (rc != PBSE_SOCKET_CLOSE))
-    {
-    netcounter_incr();
-    rc = process_pbs_server_port(sock, TRUE);
-    }
-
-  /* 
-   * Socket should have been closed by scheduler, except in error cases,
-   * but we still need to call close_conn() to clean up connections.
-   */
-
-  close_conn(sock, FALSE);
-
-  scheduler_close();
-  return;
-  }
-
-
-
-
 void *start_process_pbs_server_port(
     
   void *new_sock)
 
   {
-  int sock = *(int *)new_sock;
+  long *args = (long *)new_sock;
+  int sock;
   int rc = PBSE_NONE;
  
-  free(new_sock);
+  sock = (int)args[0];
 
   while ((rc != PBSE_SOCKET_DATA) &&
          (rc != PBSE_SOCKET_INFORMATION) &&
@@ -548,9 +509,10 @@ void *start_process_pbs_server_port(
     {
     netcounter_incr();
 
-    rc = process_pbs_server_port(sock, FALSE);
+    rc = process_pbs_server_port(sock, FALSE, args);
     }
 
+  free(new_sock);
   close_conn(sock, FALSE);
 
   /* Thread exit */
@@ -704,18 +666,18 @@ void parse_command_line(
 
         if (!strcmp(optarg, "about"))
           {
-          printf("package:     %s\n", PACKAGE_STRING);
-          printf("sourcedir:   %s\n", PBS_SOURCE_DIR);
-          printf("configure:   %s\n", PBS_CONFIG_ARGS);
-          printf("buildcflags: %s\n", PBS_CFLAGS);
-          printf("buildhost:   %s\n", PBS_BUILD_HOST);
-          printf("builddate:   %s\n", PBS_BUILD_DATE);
-          printf("builddir:    %s\n", PBS_BUILD_DIR);
-          printf("builduser:   %s\n", PBS_BUILD_USER);
-          printf("installdir:  %s\n", PBS_INSTALL_DIR);
-          printf("serverhome:  %s\n", PBS_SERVER_HOME);
-          printf("version:     %s\n", PACKAGE_VERSION);
-          printf("Revision:    %s\n", GIT_HASH);
+          printf("Package:     %s\n", PACKAGE_STRING);
+          printf("Sourcedir:   %s\n", PBS_SOURCE_DIR);
+          printf("Configure:   %s\n", PBS_CONFIG_ARGS);
+          printf("Buildcflags: %s\n", PBS_CFLAGS);
+          printf("Buildhost:   %s\n", PBS_BUILD_HOST);
+          printf("Builddate:   %s\n", PBS_BUILD_DATE);
+          printf("Builddir:    %s\n", PBS_BUILD_DIR);
+          printf("Builduser:   %s\n", PBS_BUILD_USER);
+          printf("Installdir:  %s\n", PBS_INSTALL_DIR);
+          printf("Serverhome:  %s\n", PBS_SERVER_HOME);
+          printf("Version:     %s\n", PACKAGE_VERSION);
+          printf("Commit:    %s\n", GIT_HASH);
 
           exit(0);
           }

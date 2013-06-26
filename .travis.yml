@@ -2,7 +2,7 @@ language: cpp
 
 branches:
   only:
-    - master
+    - 4.2-dev
 
 before_install:
  - sudo apt-get update -qq

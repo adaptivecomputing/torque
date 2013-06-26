@@ -49,3 +49,8 @@ int enqueue_threadpool_request(
   }
 
 void log_get_host_port(char *output, unsigned long size) {}
+
+int pbs_getaddrinfo(const char *pNode,struct addrinfo *pHints,struct addrinfo **ppAddrInfoOut)
+  {
+  return(0);
+  }

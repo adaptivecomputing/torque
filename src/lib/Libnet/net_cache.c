@@ -77,207 +77,258 @@
 * without reference to its choice of law rules.
 */
 
-
 #include <pthread.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
+#include <netdb.h> /* struct addrinfo */
+#include <vector>
+#include <stdexcept>
 
 #include "net_cache.h"
-#include "resizable_array.h"
 #include "hash_table.h"
 #include "pbs_error.h"
 
 
-typedef struct network_cache
+
+/****************************************
+  *
+  * Class containing the cache of network addresses
+  * used by torque.
+  *
+  ****************************************/
+
+static pthread_mutex_t cacheMutex = PTHREAD_MUTEX_INITIALIZER;
+
+
+class addrcache
   {
-  resizable_array *nc_ra;
-  hash_table_t    *nc_namekey;
-  hash_table_t    *nc_saikey;
-  pthread_mutex_t *nc_mutex;
-  } network_cache;
+  public:
 
+  struct addrinfo *addToCache(
+      
+    struct addrinfo *pAddr,
+    const char      *host)
 
-
-network_cache cache;
-
-
-void initialize_network_info()
-  {
-  cache.nc_ra = initialize_resizable_array(INITIAL_HASH_SIZE);
-
-  cache.nc_namekey = create_hash(INITIAL_HASH_SIZE);
-  cache.nc_saikey = create_hash(INITIAL_HASH_SIZE);
-
-  cache.nc_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(cache.nc_mutex, NULL);
-  } /* END initialize_network_info() */
-
-
-
-
-char *get_cached_nameinfo(
-    
-  struct sockaddr_in  *sai)
-
-  {
-  network_info *ni;
-  char         *hostname = NULL;
-  int           index;
-  char          s_addr_key[65];
-
-  pthread_mutex_lock(cache.nc_mutex);
-
-  sprintf (s_addr_key, "%d", sai->sin_addr.s_addr);
-
-  if ((index = get_value_hash(cache.nc_saikey, s_addr_key)) >= 0)
     {
-    ni = (network_info *)cache.nc_ra->slots[index].item;
+    if (pAddr->ai_family != AF_INET)
+      return(NULL);
 
-    if (ni != NULL)
-      hostname = ni->hostname;
+    struct sockaddr_in *pINetAddr = (struct sockaddr_in *)pAddr->ai_addr;
+    struct addrinfo    *pTmpAddr = NULL;
+    char                key[65];
+    int                 i;
+
+    sprintf(key,"%d",pINetAddr->sin_addr.s_addr);
+    pthread_mutex_lock(&cacheMutex);
+    try 
+      {
+      i = get_value_hash(addrToName,key);
+      if (i >= 0) 
+        pTmpAddr = addrs.at(i);
+      }
+    catch (const std::out_of_range &oor)
+      {
+      remove_hash(addrToName, key);
+      i = -1;
+      }
+
+    pthread_mutex_unlock(&cacheMutex);
+    if (i >= 0)
+      {
+      if (pTmpAddr != pAddr)
+        freeaddrinfo(pAddr);
+
+      return(pTmpAddr);
+      }
+    pthread_mutex_lock(&cacheMutex);
+    int index = addrs.size();
+    char *priv_host = NULL;
+
+    try
+      {
+      addrs.push_back(pAddr);
+      }
+    catch(...)
+      {
+      pthread_mutex_unlock(&cacheMutex);
+      return(NULL);
+      }
+
+    try
+      {
+      priv_host = strdup(host);
+      hosts.push_back(priv_host);
+      }
+    catch(...)
+      {
+      addrs.pop_back();
+      if (priv_host != NULL)
+        free(priv_host);
+    
+      pthread_mutex_unlock(&cacheMutex);
+
+      return(NULL);
+      }
+
+    add_hash(addrToName,index,strdup(key));
+    add_hash(nameToAddr,index,(void *)priv_host);
+
+    pthread_mutex_unlock(&cacheMutex);
+    return pAddr;
     }
 
+  struct addrinfo * getFromCache(in_addr_t addr)
+    {
+    struct addrinfo *p = NULL;
+    char             key[65];
 
-  pthread_mutex_unlock(cache.nc_mutex);
+    sprintf(key,"%d",addr);
 
-  return(hostname);
+    pthread_mutex_lock(&cacheMutex);
+    int index = get_value_hash(addrToName,key);
+    if(index >= 0) p = addrs.at(index);
+    pthread_mutex_unlock(&cacheMutex);
+    return p;
+    }
+
+  struct addrinfo * getFromCache(const char *hostName)
+    {
+    struct addrinfo *p = NULL;
+    pthread_mutex_lock(&cacheMutex);
+    int index = get_value_hash(nameToAddr,(void *)hostName);
+    if(index >= 0) p = addrs.at(index);
+    pthread_mutex_unlock(&cacheMutex);
+    return p;
+    }
+
+  char *getHostName(
+      
+      in_addr_t addr)
+
+    {
+    char *p = NULL;
+    char key[65];
+    sprintf(key,"%d",addr);
+    
+    pthread_mutex_lock(&cacheMutex);
+    int index = get_value_hash(addrToName,key);
+    if (index >= 0)
+      p = hosts.at(index);
+    pthread_mutex_unlock(&cacheMutex);
+    
+    return(p);
+    }
+
+  addrcache()
+    {
+    nameToAddr = create_hash(INITIAL_HASH_SIZE);
+    addrToName = create_hash(INITIAL_HASH_SIZE);
+    }
+
+  ~addrcache()
+    {
+#if 0
+    for(std::vector<struct addrinfo *>::iterator i = addrs.begin();i != addrs.end();i++)
+      {
+      freeaddrinfo(*i);
+      }
+    addrs.clear();
+    for(std::vector<char *>::iterator i = hosts.begin();i != hosts.end();i++)
+      {
+      free(*i);
+      }
+    hosts.clear();
+    free_hash(nameToAddr);
+    free_hash(addrToName);
+#endif
+    }
+
+private:
+
+    hash_table_t *nameToAddr;
+    hash_table_t *addrToName;
+    std::vector<struct addrinfo *> addrs;
+    std::vector<char *> hosts;
+  };
+
+addrcache cache;
+
+/*******************************************************
+  * Get the host name associated with an address.
+  *****************************************************/
+char *get_cached_nameinfo(const struct sockaddr_in  *sai)
+  {
+  return cache.getHostName(sai->sin_addr.s_addr);
   } /* END get_cached_nameinfo() */
 
-
-
-
-char *get_cached_fullhostname(
-
-  char               *hostname,
-  struct sockaddr_in *sai)
-
+/*******************************************************
+  * Get the full host name from the cache using either 
+  * the host name or the address depending on what is 
+  * supplied.
+  *****************************************************/
+char *get_cached_fullhostname(const char *hostname,const struct sockaddr_in *sai)
   {
-  network_info *ni;
-  int           index = -1;
-  char         *fullname = NULL;
-  char          s_addr_key[65];
+  struct addrinfo *pAddrInfo = NULL;
 
-  if (cache.nc_mutex == NULL)
+  if (hostname != NULL) 
+    pAddrInfo = cache.getFromCache(hostname);
+
+  if ((pAddrInfo == NULL) &&
+      (sai != NULL))
+    pAddrInfo = cache.getFromCache(sai->sin_addr.s_addr);
+
+  if (pAddrInfo == NULL)
     return(NULL);
 
-  pthread_mutex_lock(cache.nc_mutex);
-
-  if (hostname != NULL)
-    index = get_value_hash(cache.nc_namekey, hostname);
-
-  if ((index == -1) &&
-      (sai != NULL))
-    {
-    sprintf (s_addr_key, "%d", sai->sin_addr.s_addr);
-    index = get_value_hash(cache.nc_saikey, s_addr_key);
-    }
-
-  if (index >= 0)
-    {
-    ni = (network_info *)cache.nc_ra->slots[index].item;
-    fullname = ni->full_hostname;
-    }
-
-  pthread_mutex_unlock(cache.nc_mutex);
-
-  return(fullname);
+  return(pAddrInfo->ai_canonname);
   } /* END get_cached_fullhostname() */
 
-
-
-struct sockaddr_in *get_cached_addrinfo(
-    
-  char               *hostname)
-  
+/*************************************************************
+  * Get the address from the host name.
+  ***********************************************************/
+struct sockaddr_in *get_cached_addrinfo(const char *hostname)
   {
-  network_info       *ni;
-  int                 index;
-  struct sockaddr_in *sai = NULL;
-
-  if (cache.nc_mutex == NULL)
-    return(NULL);
-
-  pthread_mutex_lock(cache.nc_mutex);
-
-  if ((index = get_value_hash(cache.nc_namekey, hostname)) >= 0)
-    {
-    ni = (network_info *)cache.nc_ra->slots[index].item;
-
-    if (ni != NULL)
-      {
-      sai = &ni->sai;
-      }
-    }
-
-  pthread_mutex_unlock(cache.nc_mutex);
-
-  return(sai);
+  struct addrinfo *pAddrInfo = NULL;
+  
+  if(hostname != NULL) pAddrInfo = cache.getFromCache(hostname);
+  if(pAddrInfo == NULL) return NULL;
+  return (struct sockaddr_in *)pAddrInfo->ai_addr;
   } /* END get_cached_addrinfo() */
 
-
-
-
-network_info *get_network_info_holder(
-
-  char               *hostname,
-  char               *full_hostname,
-  struct sockaddr_in *sai)
-
+/*************************************************************
+  * Get the full addrinfo structure returned by getaddrinfo
+  * from the cache.
+  ************************************************************/
+struct addrinfo *get_cached_addrinfo_full(const char *hostname)
   {
-  /* initialize the network info holder */
-  network_info *ni = (network_info *)calloc(1, sizeof(network_info));
+  struct addrinfo *pAddrInfo = NULL;
 
-  ni->hostname = strdup(hostname);
+  if(hostname != NULL) pAddrInfo = cache.getFromCache(hostname);
+  if(pAddrInfo == NULL) return NULL;
+  return pAddrInfo;
+  } /* END get_cached_addrinfo() */
 
-  if (full_hostname != NULL)
-    ni->full_hostname = strdup(full_hostname);
-
-  memcpy(&ni->sai, sai, sizeof(struct sockaddr_in));
-
-  return(ni);
-  } /* END get_network_info_holder() */
-
-
-
-
-int insert_addr_name_info(
-    
-  char               *hostname,
-  char               *full_hostname,
-  struct sockaddr_in *sai)
-
+/*****************************************************************************
+  * Add a new addrinfo struct to the cache along with the host name if its not
+  * already in the cache.
+  ***************************************************************************/
+struct addrinfo * insert_addr_name_info(struct addrinfo *pAddrInfo,const char *host)
   {
-  int           rc = PBSE_NONE;
-  int           index;
-  network_info *ni;
-  char          s_addr_key[65];
-
-  if (cache.nc_mutex == NULL)
-    return(-1);
-
-  pthread_mutex_lock(cache.nc_mutex);
-
-  /* only insert if it isn't already there */
-  if (get_value_hash(cache.nc_namekey, hostname) < 0)
+  if(pAddrInfo == NULL)
     {
-    ni = get_network_info_holder(hostname, full_hostname, sai);
+    struct addrinfo hints;
 
-    if ((index = insert_thing(cache.nc_ra, ni)) < 0)
-      rc = ENOMEM;
-    else
+    memset(&hints,0,sizeof(hints));
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_family = AF_INET;
+    hints.ai_flags = AI_CANONNAME;
+
+    if(getaddrinfo(host,NULL,&hints,&pAddrInfo) != 0)
       {
-      /* store the key in both hash tables so we can look things up either way */
-      add_hash(cache.nc_namekey, index, ni->hostname);
-      sprintf (s_addr_key, "%d", sai->sin_addr.s_addr);
-      add_hash(cache.nc_saikey, index, strdup(s_addr_key));
+      return NULL;
       }
     }
-
-  pthread_mutex_unlock(cache.nc_mutex);
-
-  return(rc);
+  return cache.addToCache(pAddrInfo,host);
   } /* END insert_addr_name_info() */
-
-

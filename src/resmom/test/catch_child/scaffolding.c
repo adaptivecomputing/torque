@@ -1140,7 +1140,7 @@ char *get_local_script_path(job *pjob, char *base)
   return val;
   }
 
-int run_pelog(int which, char *specpelog, job *pjog, int pe_io_type)
+int run_pelog(int which, char *specpelog, job *pjog, int pe_io_type, int deletejob)
   {
   return 1;
   }

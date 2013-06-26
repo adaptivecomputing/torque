@@ -167,7 +167,7 @@ int site_check_user_map(
   pid_t pid;
 #endif
 
-  if (LOGLEVEL >= 6)
+  if (LOGLEVEL >= 10)
     {
     sprintf(log_buf, "job id: %s - luser: %s", pjob->ji_qs.ji_jobid, luser);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
@@ -380,6 +380,8 @@ int site_check_user_map(
   else
     {
     /* This is the child */
+
+    /* ruserok is not thread safe. mutex it */
     pthread_mutex_lock(&ruserok_mutex);
     rc = ruserok(orighost, 0, owner, luser);
     pthread_mutex_unlock(&ruserok_mutex);

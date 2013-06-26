@@ -655,6 +655,14 @@ int mom_comm(
   int               handle = -1;
   long              cray_enabled = FALSE;
   char              jobid[PBS_MAXSVRJOBID + 1];
+  char              log_buf[LOCAL_LOG_BUF_SIZE];
+
+
+  if (LOGLEVEL >= 6)
+    {
+    snprintf(log_buf, sizeof(log_buf), "%s", pjob->ji_qs.ji_jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
 
   /* need to make connection, called from pbsd_init() */
   if (pjob->ji_qs.ji_un.ji_exect.ji_momaddr == 0)
@@ -1117,7 +1125,10 @@ int handle_stageout(
     }
   
   if (LOGLEVEL >= 4)
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,job_id,"JOB_SUBSTATE_STAGEOUT");
+    {
+    snprintf(log_buf, sizeof(log_buf), "JOB_SUBSTATE_STAGE_OUT: %s", job_id);
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
   
   if (type != WORK_Deferred_Reply)
     {
@@ -1197,7 +1208,7 @@ int handle_stageout(
       log_event(
         PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        job_id,
+        __func__,
         log_buf);
       
       if (LOGLEVEL >= 3)
@@ -1362,7 +1373,10 @@ int handle_stagedel(
   job_momname = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
 
   if (LOGLEVEL >= 4)
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,job_id,"JOB_SUBSTATE_STAGEDEL");
+    {
+    snprintf(log_buf, sizeof(log_buf), "JOB_SUBSTATE_STAGEDEL: %s", job_id);
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,__func__, log_buf);
+    }
 
   if (type != WORK_Deferred_Reply)
     {
@@ -1916,7 +1930,11 @@ void on_job_exit(
         break;
 
       if ((rc = handle_stageout(pjob, type, preq)) != PBSE_NONE)
+        {
+        snprintf(log_buf, sizeof(log_buf), "handle_stageout failed: %d", rc);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
         break;
+        }
 
       preq = NULL;
       pjob = NULL;
@@ -1925,10 +1943,18 @@ void on_job_exit(
 
       if ((pjob == NULL) &&
           ((pjob = svr_find_job(job_id, TRUE)) == NULL))
+        {
+        snprintf(log_buf, sizeof(log_buf), "could not find job: %s", job_id);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
         break;
+        }
 
       if ((rc = handle_stagedel(pjob, type, preq)) != PBSE_NONE)
+        {
+        snprintf(log_buf, sizeof(log_buf), "handle_stagedel failed: %d", rc);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
         break;
+        }
 
       preq = NULL;
       pjob = NULL;
@@ -1937,13 +1963,21 @@ void on_job_exit(
 
       if ((pjob == NULL) &&
           ((pjob = svr_find_job(job_id, TRUE)) == NULL))
+        {
+        snprintf(log_buf, sizeof(log_buf), "could not find job: %s", job_id);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
         break;
+        }
 
       rc = handle_exited(pjob);
 
       if ((rc == PBSE_JOBNOTFOUND) ||
           (rc == PBSE_CONNECT))
+        {
+        snprintf(log_buf, sizeof(log_buf), "handle_exited failed: %s, rc = %d", job_id, rc);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
         break;
+        }
 
       type = rc;
       pjob = NULL;
@@ -1952,7 +1986,11 @@ void on_job_exit(
 
       if ((pjob == NULL) &&
           ((pjob = svr_find_job(job_id, TRUE)) == NULL))
+        {
+        snprintf(log_buf, sizeof(log_buf), "could not find job: %s", job_id);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
         break;
+        }
 
       if (pjob->ji_parent_job != NULL)
         {
@@ -2006,14 +2044,26 @@ void *on_job_exit_task(
   struct work_task *vp)
 
   {
+  char log_buf[LOCAL_LOG_BUF_SIZE];
   struct work_task *ptask = (struct work_task *)vp;
   char *jobid = (char *)ptask->wt_parm1;
 
   free(ptask->wt_mutex);
   free(ptask);
 
+  if (LOGLEVEL >= 10)
+    {
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "We scheduled a task");
+    }
+
   if (jobid != NULL)
     {
+  if (LOGLEVEL >= 10)
+    {
+    snprintf(log_buf, sizeof(log_buf), "%s", jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "log_buf");
+    }
+
     on_job_exit(NULL, jobid);
     }
 
@@ -2193,7 +2243,7 @@ void on_job_rerun(
           log_event(
             PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
             PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
+            __func__,
             log_buf);
           }
         
@@ -2265,7 +2315,7 @@ void on_job_rerun(
             log_event(
               PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
               PBS_EVENTCLASS_JOB,
-              pjob->ji_qs.ji_jobid,
+              __func__,
               log_buf);
             
             if (preq->rq_reply.brp_choice == BATCH_REPLY_CHOICE_Text)
@@ -2349,7 +2399,7 @@ void on_job_rerun(
             
             log_event(
               PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
-              PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,
+              PBS_EVENTCLASS_JOB, __func__,
               log_buf);
             }
     

@@ -402,6 +402,11 @@ int log_open(
   log_opened = 1;   /* note that file is open */
 
   pthread_mutex_unlock(log_mutex);
+
+  if (log_host_port[0])
+    snprintf(buf2, sizeof(buf2), "Log opened at %s", log_host_port);
+  else
+    snprintf(buf2, sizeof(buf2), "Log opened");
   
   if (log_host_port[0])
     snprintf(buf2, sizeof(buf2), "Log opened at %s", log_host_port);

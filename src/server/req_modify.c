@@ -407,9 +407,9 @@ int modify_job(
   int                    rc;
   int                    sendmom = 0;
   int                    copy_checkpoint_files = FALSE;
-
   char                   jobid[PBS_MAXSVRJOBID + 1];
   char                   log_buf[LOCAL_LOG_BUF_SIZE];
+  svrattrl              *plist_hold;
 
   job                  **pjob_ptr = (job **)j;
   job                   *pjob = *pjob_ptr;
@@ -423,6 +423,8 @@ int modify_job(
 
     return(PBSE_IVALREQ);
     }
+  
+  plist_hold = plist;
 
   /* cannot be in exiting or transit, exiting has already been checked */
   if (pjob->ji_qs.ji_state == JOB_STATE_TRANSIT)
@@ -539,26 +541,30 @@ int modify_job(
   /* modify the job's attributes */
   bad = 0;
 
-  plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_modify.rq_attr);
-
-  rc = modify_job_attr(pjob, plist, preq->rq_perm, &bad);
-
-  if (rc)
+  /* if the job was running we need to reset plist */
+  plist = plist_hold;
+  while (plist != NULL)
     {
-    /* FAILURE */
-    snprintf(log_buf,sizeof(log_buf),
-      "Cannot set attributes for job '%s'\n",
-      pjob->ji_qs.ji_jobid);
-    log_err(rc, __func__, log_buf);
+    rc = modify_job_attr(pjob, plist, preq->rq_perm, &bad);
 
-    if (rc == PBSE_JOBNOTFOUND)
-      *j = NULL;
+    if (rc)
+      {
+      /* FAILURE */
+      snprintf(log_buf,sizeof(log_buf),
+        "Cannot set attributes for job '%s'\n",
+        pjob->ji_qs.ji_jobid);
+      log_err(rc, __func__, log_buf);
+
+      if (rc == PBSE_JOBNOTFOUND)
+        *j = NULL;
     
-    req_reject(rc, 0, preq, NULL, NULL);
+      req_reject(rc, 0, preq, NULL, NULL);
 
-    return(rc);
+      return(rc);
+      }
+
+    plist = (svrattrl *)GET_NEXT(plist->al_link);
     }
-
   /* Reset any defaults resource limit which might have been unset */
   set_resc_deflt(pjob, NULL, FALSE);
 
@@ -821,7 +827,7 @@ void *modify_array_work(
     if ((rc != 0) && 
         (rc != PBSE_RELAYED_TO_MOM))
       {
-      req_reject(PBSE_IVALREQ, 0, preq, NULL, "Error altering the array");
+      req_reject(PBSE_IVALREQ, 0, preq, NULL, "At least one array element did not modify successfully. Use qstat -f to verify changes");
       return(NULL);
       }
 

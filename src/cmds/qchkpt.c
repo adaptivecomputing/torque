@@ -31,8 +31,6 @@ int main(int argc, char **argv) /* qchkpt */
     return 1;
     }
 
-  initialize_network_info();
-
   for (optind = 1; optind < argc; optind++)
     {
     int connect;

@@ -102,6 +102,9 @@
 
 #define PMOMTCPTIMEOUT 60  /* duration in seconds mom TCP requests will block */
 #define TCP_READ_PROTO_TIMEOUT  2
+#define DEFAULT_JOB_EXIT_WAIT_TIME 600
+#define MAX_JOIN_WAIT_TIME          600
+#define RESEND_WAIT_TIME            300
 
 /* Global Data Items */
 
@@ -179,6 +182,7 @@ time_t  last_poll_time = 0;
 extern tlist_head svr_requests;
 
 extern struct var_table vtable; /* see start_exec.c */
+
 time_t          last_log_check;
 
 char            JobsToResend[MAX_RESEND_JOBS][PBS_MAXSVRJOBID+1];
@@ -1446,10 +1450,10 @@ void cleanup_aux()
       {
       if (pdirent->d_name[0] == '.')
         continue;
-        
+
       if (could_be_mic_or_gpu_file(pdirent->d_name) == TRUE)
         continue;
-     
+
       if (mom_find_job(pdirent->d_name) == NULL)
         {
         /* this job doesn't exist */
@@ -1474,7 +1478,7 @@ void cleanup_aux()
 
 
 int process_clear_job_request(
-    
+
   std::stringstream &output,
   char              *curr)
 
@@ -2992,7 +2996,11 @@ int tcp_read_proto_version(
 
   }
 
-int do_tcp(int socket,struct sockaddr_in *pSockAddr)
+int do_tcp(
+    
+  int                 socket,
+  struct sockaddr_in *pSockAddr)
+
   {
   int                       rc = PBSE_NONE;
   int                       proto = -1;
@@ -3163,7 +3171,7 @@ void *tcp_request(
     {
     sprintf(log_buffer, "%s: fd %d addr %s", __func__, socket, address);
 
-    log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,"tcp_request",log_buffer);
+    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
     }
 
   if (AVL_is_in_tree_no_port_compare(ipadd, 0, okclients) == 0)
@@ -3292,7 +3300,7 @@ int kill_job(
 
   if (sig == SIGTERM)
     {
-    if (run_pelog(PE_EPILOGUSER, path_epilogpdel, pjob, PE_IO_TYPE_NULL) != 0)
+    if (run_pelog(PE_EPILOGUSER, path_epilogpdel, pjob, PE_IO_TYPE_NULL, FALSE) != 0)
       {
       log_err(-1, __func__, "precancel epilog failed");
 
@@ -4256,8 +4264,6 @@ int setup_program_environment(void)
     return(1);
     }
 
-  initialize_network_info();
-
   /* The following is code to reduce security risks                */
   /* start out with standard umask, system resource limit infinite */
 
@@ -4503,6 +4509,7 @@ int setup_program_environment(void)
 
     return(3);
     }
+
 
 #ifdef PENABLE_LINUX26_CPUSETS
   /* load system topology */
@@ -4844,7 +4851,6 @@ int setup_program_environment(void)
     exit(1);
     }
 
-
   /* if no alias is specified, make mom_alias the same as mom_host */
   if (mom_alias[0] == '\0')
     strcpy(mom_alias,mom_short_name);
@@ -4955,11 +4961,6 @@ int setup_program_environment(void)
   return(PBSE_NONE);
   }  /* END setup_program_environment() */
 
-
-
-
-
-
 /*
  * TMOMJobGetStartInfo
  *
@@ -4986,8 +4987,6 @@ int TMOMJobGetStartInfo(
 
   return(FAILURE);
   }  /* END TMOMJobGetStartInfo() */
-
-
 
 /*
  * TMOMScanForStarting
@@ -5245,7 +5244,6 @@ void examine_all_polled_jobs(void)
 
   return;
   }      /* END examine_all_polled_jobs() */
-
 
 
 

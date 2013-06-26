@@ -291,7 +291,7 @@ int mom_get_sample()
   exit(1);
   }
 
-int run_pelog(int which, char *specpelog, job *pjog, int pe_io_type)
+int run_pelog(int which, char *specpelog, job *pjog, int pe_io_type, int deletejob)
   {
   return(0);
   }

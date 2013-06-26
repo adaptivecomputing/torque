@@ -1108,18 +1108,20 @@ void req_deletejob(
   {
   job        *pjob;
   pjobexec_t *TJE = NULL;
+  char        log_buf[LOCAL_LOG_BUF_SIZE];
 
   pjob = mom_find_job(preq->rq_ind.rq_delete.rq_objname);
 
   if (pjob != NULL)
     {
+    snprintf(log_buf, sizeof(log_buf), "%s", pjob->ji_qs.ji_jobid);
     if (LOGLEVEL >= 3)
       {
       log_record(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        (char *)"deleting job");
+        __func__,
+        log_buf);
       }
 
     /*
@@ -1836,7 +1838,7 @@ int sigalltasks_sisters(
     ep = event_alloc(IM_SIGNAL_TASK, np, TM_NULL_EVENT, TM_NULL_TASK);
 
     if ((stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr))) < 0)
-        return(-1);
+      return(-1);
 
     if ((chan = DIS_tcp_setup(stream)) == NULL)
       {

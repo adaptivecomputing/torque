@@ -178,8 +178,8 @@ int net_move(job *, struct batch_request *);
    */
 bool have_reservation(
     
-    job *pjob, 
-    struct pbs_queue *pque)
+  job              *pjob, 
+  struct pbs_queue *pque)
 
   {
   if (pque->qu_attr[QA_ATR_MaxJobs].at_flags & ATR_VFLAG_SET)
@@ -225,7 +225,7 @@ int svr_movejob(
   char         *toserver;
   char          log_buf[LOCAL_LOG_BUF_SIZE];
 
-  if (LOGLEVEL >= 7)
+  if (LOGLEVEL >= 8)
     {
     sprintf(log_buf, "%s", jobp->ji_qs.ji_jobid);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
@@ -308,7 +308,7 @@ int local_move(
   if (!strcmp(pjob->ji_qs.ji_queue, pjob->ji_qs.ji_destin))
     return(PBSE_NONE);
 
-  if (LOGLEVEL >= 7)
+  if (LOGLEVEL >= 8)
     {
     sprintf(log_buf, "%s", pjob->ji_qs.ji_jobid);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);

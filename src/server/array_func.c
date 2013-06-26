@@ -77,6 +77,7 @@ int         array_request_token_count(const char *);
 int         array_request_parse_token(char *, int *, int *);
 int         parse_array_request(char *request, tlist_head *tl);
 job_array  *next_array_check(int *, job_array *);
+job_array  *get_array_from_hash(hash_map *hm, const char *id);
 
 
 
@@ -149,7 +150,7 @@ int is_array(
 
   pthread_mutex_lock(allarrays.allarrays_mutex);
 
-  if (get_from_hash_map(allarrays.hm, jobid) != NULL)
+  if (get_array_from_hash(allarrays.hm, jobid) != NULL)
     rc = TRUE;
 
   pthread_mutex_unlock(allarrays.allarrays_mutex);
@@ -1462,6 +1463,7 @@ int modify_array_range(
   {
   tlist_head          tl;
   int                 i;
+  int                 rc = PBSE_NONE;
   job                *pjob;
 
   array_request_node *rn;
@@ -1530,7 +1532,7 @@ int modify_array_range(
       }
     }
 
-  return(PBSE_NONE);
+  return(rc);
   } /* END modify_array_range() */
 
 
@@ -1838,7 +1840,7 @@ int remove_array(
     unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
     pthread_mutex_lock(allarrays.allarrays_mutex);
 
-    pa = (job_array *)get_from_hash_map(allarrays.hm, arrayid);
+    pa = get_array_from_hash(allarrays.hm, arrayid);
 
     if (pa != NULL)
       lock_ai_mutex(pa, __func__, "2", LOGLEVEL);
@@ -1899,6 +1901,27 @@ job_array *next_array_check(
 
   return(pa);
   } /* END next_array_check() */
+
+
+/* Search for the job array with and without the .<server> extension */
+job_array  *get_array_from_hash(hash_map *hm, const char *id)
+  {
+  char       jobid[PBS_MAXSVRJOBID];
+  char      *dot;
+  job_array  *pJa = NULL;
+
+  strcpy(jobid,id);
+  dot = strchr(jobid,'.');
+  pJa = (job_array *)get_from_hash_map(hm,jobid);
+  if(pJa != NULL) return pJa;
+  if(dot != NULL)
+    {
+    *dot = '\0';
+    pJa = (job_array *)get_from_hash_map(hm,jobid);
+    }
+  return pJa;
+  }
+
 
 
 /* END array_func.c */

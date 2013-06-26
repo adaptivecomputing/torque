@@ -47,7 +47,7 @@
 #include "../lib/Libattr/attr_node_func.h" /* free_prop_list */
 #include "req_manager.h" /* mgr_set_node_attr */
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
-#include "../lib/Libnet/lib_net.h" /* get_addr_info */
+#include "../lib/Libnet/lib_net.h" /* pbs_getaddrinfo */
 #include "svrfunc.h" /* get_svr_attr_* */
 #include "alps_constants.h"
 #include "login_nodes.h"
@@ -855,6 +855,8 @@ int initialize_pbsnode(
   int             ntype) /* time-shared or cluster */
 
   {
+  struct addrinfo *pAddrInfo;
+
   if (pnode == NULL)
     {
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL pointer was passed for initialization");
@@ -876,7 +878,7 @@ int initialize_pbsnode(
   pnode->nd_status          = NULL;
   pnode->nd_note            = NULL;
   pnode->nd_psn             = NULL;
-  pnode->nd_state           = INUSE_NEEDS_HELLO_PING | INUSE_DOWN;
+  pnode->nd_state           = INUSE_DOWN;
   pnode->nd_first           = init_prop(pnode->nd_name);
   pnode->nd_last            = pnode->nd_first;
   pnode->nd_f_st            = init_prop(pnode->nd_name);
@@ -898,7 +900,11 @@ int initialize_pbsnode(
     return(ENOMEM);
     }
 
-  get_addr_info(pname, &pnode->nd_sock_addr, 3);
+  if(pbs_getaddrinfo(pname,NULL,&pAddrInfo))
+    {
+    return (PBSE_SYSTEM);
+    }
+  memcpy(&pnode->nd_sock_addr,pAddrInfo->ai_addr,sizeof(struct sockaddr_in));
 
   pthread_mutex_init(pnode->nd_mutex,NULL);
 
@@ -1078,7 +1084,7 @@ static int process_host_name_part(
 
   *pul = NULL;
 
-  if (getaddrinfo(phostname, NULL, &hints, &addr_info) != 0)
+  if (pbs_getaddrinfo(phostname, &hints, &addr_info) != 0)
     {
     snprintf(log_buf, sizeof(log_buf), "host %s not found", objname);
 
@@ -1112,7 +1118,11 @@ static int process_host_name_part(
     return(PBSE_SYSTEM);
     }
 
-  insert_addr_name_info(phostname, addr_info->ai_canonname, sai);
+  addr_info = insert_addr_name_info(addr_info,phostname);
+  if(addr_info == NULL)
+    {
+    return(PBSE_SYSTEM);
+    }
   snprintf(hname, sizeof(hname), "%s", addr_info->ai_canonname);
   
   totalipcount = 0;
@@ -1169,7 +1179,7 @@ static int process_host_name_part(
       continue;
       }
     
-    if ((rc = getaddrinfo(hptr, NULL, NULL, &addr_iter)) != 0)
+    if ((rc = pbs_getaddrinfo(hptr, NULL, &addr_iter)) != 0)
       {
       snprintf(log_buf, sizeof(log_buf), "bad cname %s, h_errno=%d errno=%d (%s)",
         hptr,
@@ -1187,8 +1197,6 @@ static int process_host_name_part(
       
       return(PBSE_UNKNODE);
       }
-    
-    freeaddrinfo(addr_iter);
     
     /* count host ipaddrs */
     for (addr_iter = addr_info; addr_iter != NULL; addr_iter = addr_iter->ai_next)
@@ -1231,8 +1239,6 @@ static int process_host_name_part(
     
     (*pul)[totalipcount] = 0;  /* zero-term array ip addrs */
     }  /* END for (hindex) */
-  
-  freeaddrinfo(addr_info);
   
   *pname = phostname;   /* return node name     */
 
@@ -2504,7 +2510,7 @@ int setup_nodes(void)
         {
         if (strcmp(np->nd_name, line) == 0)
           {
-          np->nd_state = num | INUSE_NEEDS_HELLO_PING;
+          np->nd_state = num;
 
           /* exclusive bits are calculated later in set_old_nodes() */
           np->nd_state &= ~INUSE_JOB;
@@ -3664,19 +3670,15 @@ int send_hierarchy(
   char               *string;
   int                 ret = PBSE_NONE;
   int                 sock;
+  struct addrinfo    *pAddrInfo;
   struct sockaddr_in  sa;
-  struct sockaddr_in *sai;
   struct tcp_chan    *chan = NULL;
 
-  if ((sai = get_cached_addrinfo(name)) != NULL)
+  if((ret = pbs_getaddrinfo(name,NULL,&pAddrInfo)) != PBSE_NONE)
     {
-    memcpy(&sa, sai, sizeof(sa));
+    return ret;
     }
-  else
-    {
-    if ((ret = get_addr_info(name, &sa, 3)) != PBSE_NONE)
-      return(ret);
-    }
+  memcpy(&sa,pAddrInfo->ai_addr,sizeof(sa));
 
   sa.sin_port = htons(port);
 

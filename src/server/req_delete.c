@@ -745,7 +745,7 @@ batch_request *duplicate_request(
 
   if (preq->rq_extend != NULL)
     preq_tmp->rq_extend = strdup(preq->rq_extend);
-  
+
   switch (preq->rq_type)
     {
     /* This function was created for a modify array request (PBS_BATCH_ModifyJob)

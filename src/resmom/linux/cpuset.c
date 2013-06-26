@@ -26,7 +26,6 @@
 #include "pbs_nodes.h"
 #include "log.h"
 #include "pbs_cpuset.h"
-#include "mom_config.h"
 #include "mom_memory.h"
 
 /* NOTE: move these three things to utils when lib is checked in */

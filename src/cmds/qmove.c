@@ -39,8 +39,6 @@ int main(int argc, char **argv) /* qmove */
     exit(2);
     }
 
-  initialize_network_info();
-
   snprintf(destination, sizeof(destination), "%s", argv[1]);
 
   if (parse_destination_id(destination, &q_n_out, &s_n_out))

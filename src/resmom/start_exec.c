@@ -114,6 +114,7 @@ extern "C"
 #include "pbs_error.h"
 #include "svrfunc.h"
 #include "net_connect.h"
+#include "net_cache.h"
 #include "dis.h"
 #include "batch_request.h"
 #include "md5.h"
@@ -1326,7 +1327,9 @@ void get_mic_indices(
 
   if (buf == NULL)
     return;
- 
+
+  fprintf(stderr,"in %s val = %d\n",__func__,JOB_ATR_exec_mics);
+
   mic_str = strdup(pjob->ji_wattr[JOB_ATR_exec_mics].at_val.at_str);
 
   buf[0] = '\0';
@@ -1882,8 +1885,6 @@ int open_tcp_stream_to_sisters(
       if ((rc = encode_DIS_svrattrl(chan, psatl)) == DIS_SUCCESS)
         DIS_tcp_wflush(chan);
       }
-
-    /*read_tcp_reply(chan, IM_PROTOCOL, IM_PROTOCOL_VER, IM_JOIN_JOB_RADIX, &exit_status);*/
 
     if (chan != NULL)
       DIS_tcp_cleanup(chan);
@@ -3094,7 +3095,7 @@ void handle_prologs(
   int       rc;
   resource *presc;
 
-  if ((rc = run_pelog(PE_PROLOG, path_prolog, pjob, PE_IO_TYPE_ASIS)) != PBSE_NONE)
+  if ((rc = run_pelog(PE_PROLOG, path_prolog, pjob, PE_IO_TYPE_ASIS, FALSE)) != PBSE_NONE)
     {
     log_err(-1, __func__, "prolog failed");
 
@@ -3113,7 +3114,7 @@ void handle_prologs(
     log_ext(-1, __func__, "prolog complete", LOG_DEBUG);
 
   /* run user prolog */
-  if ((rc = run_pelog(PE_PROLOGUSER, path_prologuser, pjob, PE_IO_TYPE_ASIS)) != PBSE_NONE)
+  if ((rc = run_pelog(PE_PROLOGUSER, path_prologuser, pjob, PE_IO_TYPE_ASIS, FALSE)) != PBSE_NONE)
     {
     log_err(-1, __func__, "user prolog failed");
     
@@ -3144,7 +3145,7 @@ void handle_prologs(
       
       if (path_prologuserjob)
         {
-        if ((rc = run_pelog(PE_PROLOGUSERJOB, path_prologuserjob, pjob, PE_IO_TYPE_ASIS)) != PBSE_NONE)
+        if ((rc = run_pelog(PE_PROLOGUSERJOB, path_prologuserjob, pjob, PE_IO_TYPE_ASIS, FALSE)) != PBSE_NONE)
           {
           log_err(-1, __func__, "batch job local user prolog failed");
           free(path_prologuserjob);
@@ -5779,12 +5780,11 @@ void job_nodes(
       CLEAR_HEAD(hp->hn_events);
 
       /* set up the socket address information */
-      if (getaddrinfo(nodename, NULL, NULL, &addr_info) == 0)
+      if (pbs_getaddrinfo(nodename, NULL, &addr_info) == 0)
         {
         hp->sock_addr.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
         hp->sock_addr.sin_family = AF_INET;
         hp->sock_addr.sin_port = htons(hp->hn_port);
-        freeaddrinfo(addr_info);
         }
       }
 
@@ -6094,15 +6094,16 @@ int send_join_job_to_sisters(
   int            send_failed_size = nodenum * sizeof(int);
   int           *send_failed = (int *)calloc(nodenum, sizeof(int));
   int            unsent_count = nodenum - 1;
+  bool           permanent_fail = false;
   std::set<int>  sisters_contacted;
-
+  
   errno = 0;
     
   memset(send_failed, -1, send_failed_size);
   for (i = 1; i < nodenum; i++)
     send_failed[i] = i;
 
-  for (retry_count = 0; retry_count < 5; retry_count++)
+  for (retry_count = 0; retry_count < 5 && permanent_fail == false; retry_count++)
     {
     if (unsent_count == 0)
       break;
@@ -6125,6 +6126,11 @@ int send_join_job_to_sisters(
         ret = send_join_job_to_a_sister(pjob, stream, ep, phead, i);
         
         close(stream);
+        }
+      else if (stream == PERMANENT_SOCKET_FAIL)
+        {
+        permanent_fail = true;
+        break;
         }
 
       if (ret == DIS_SUCCESS)
@@ -6359,6 +6365,7 @@ int start_exec(
     pjob->ji_resources[0].nr_mem = 0;
     pjob->ji_resources[0].nr_vmem = 0;
     
+    pjob->ji_joins_sent = time(NULL);
     CLEAR_HEAD(phead);
     
     pattr = pjob->ji_wattr;

@@ -31,7 +31,7 @@ void *check_nodes_work(void *vp);
 
 void check_nodes(struct work_task *ptask);
 
-int svr_is_request(struct tcp_chan *chan, int version);
+int svr_is_request(struct tcp_chan *chan, int version, long *args);
 
 void *write_node_state_work(void *vp);
 
@@ -48,8 +48,6 @@ int hasprop(struct pbsnode *pnode, struct prop *props);
 int search_acceptable(struct pbsnode *pnode, struct prop *glorf, int skip, int vpreq, int gpureq);
 
 int can_reshuffle(struct pbsnode *pnode, struct prop *glorf, int skip, int vpreq, int gpureq, int pass);
-
-int MSNPrintF(char **BPtr, int *BSpace, char *Format, ...);
 
 int procs_available(int proc_ct);
 

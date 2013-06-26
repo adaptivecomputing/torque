@@ -110,8 +110,6 @@ int main(
 
   struct objname *svrs;
   
-  initialize_network_info();
-
   /* Command line options */
 
   while ((c = getopt(argc, argv, opts)) != EOF)
@@ -262,6 +260,15 @@ int main(
       }
     }
  
+  if (errflg)
+    clean_up_and_exit(2);
+
+  if (errflg)
+    clean_up_and_exit(2);
+
+  if (errflg)
+    clean_up_and_exit(2);
+
   if (errflg)
     clean_up_and_exit(2);
 

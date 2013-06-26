@@ -497,7 +497,7 @@ int mom_server_add(
     else
       port = default_server_port;
 
-    if (getaddrinfo(tmp_server_name, NULL, NULL, &addr_info) != 0)
+    if (pbs_getaddrinfo(tmp_server_name, NULL,&addr_info) != 0)
       {
       sprintf(log_buffer, "Cannot resolve host %s for pbs_server", tmp_server_name);
       log_err(PBSE_BADHOST, __func__, log_buffer);
@@ -511,7 +511,6 @@ int mom_server_add(
     pms->sock_addr.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
     pms->sock_addr.sin_family = AF_INET;
     pms->sock_addr.sin_port = htons(port);
-    freeaddrinfo(addr_info);
 
     mom_server_count++;
 
@@ -543,7 +542,7 @@ int mom_server_add(
 
     /* FIXME: must be able to retry failed lookups later */
 
-    if (getaddrinfo(pms->pbs_servername, NULL, NULL, &addr_info) != 0)
+    if (pbs_getaddrinfo(pms->pbs_servername, NULL, &addr_info) != 0)
       {
       sprintf(log_buffer, "host %s not found", pms->pbs_servername);
 
@@ -552,7 +551,6 @@ int mom_server_add(
     else
       {
       saddr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
-      freeaddrinfo(addr_info);
 
       ipaddr = ntohl(saddr.s_addr);
 
@@ -1189,7 +1187,7 @@ int write_cached_statuses(
   
   if (ret == DIS_SUCCESS)
     updates_waiting_to_send = 0;
-  
+
   return(ret);
   } /* END write_cached_statuses() */
 
@@ -1379,18 +1377,12 @@ int write_status_strings(
     }
   else if ((rc = DIS_tcp_wflush(chan)) == DIS_SUCCESS)
     {
-/*    read_tcp_reply(chan, IS_PROTOCOL, IS_PROTOCOL_VER, IS_STATUS, &rc);
-    
-    if (rc == DIS_SUCCESS)
+    if (LOGLEVEL >= 7)
       {
-      */
-      if (LOGLEVEL >= 7)
-        {
-        snprintf(log_buffer, sizeof(log_buffer),
-          "Successfully sent status update to mom %s", nc->name);
-        log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER,__func__,log_buffer);
-        }
-/*      } */
+      snprintf(log_buffer, sizeof(log_buffer),
+        "Successfully sent status update to mom %s", nc->name);
+      log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER,__func__,log_buffer);
+      }
     }
 
   if (chan != NULL)
@@ -1469,6 +1461,7 @@ void mom_server_all_update_stat(void)
   node_comm_t *nc = NULL;
   int          sindex;
   int          rc;
+  pid_t        pid;
 
   time_now = time(NULL);
 
@@ -1491,6 +1484,37 @@ void mom_server_all_update_stat(void)
   if (LOGLEVEL >= 6)
     {
     log_record(PBSEVENT_SYSTEM, 0, __func__, "composing status update for server");
+    }
+
+  /* It is possible that pbs_server may get busy and start queing incoming requests and not be able 
+     to process them right away. If pbs_mom is waiting for a reply to a statuys update that has 
+     been queued and at the same time the server makes a request to the mom we can get stuck
+     in a pseudo live-lock state. That is the server is waiting for a response from the mom and
+     the mom is waiting for a response from the server. neither of which will come until a request times out.
+     If we fork the status updates this alleviates the problem by making one less request from the
+     mom single threaded */
+  pid = fork();
+
+  if (pid < 0)
+    {
+    log_record(PBSEVENT_SYSTEM, 0, __func__, "Failed to fork stat update process");
+    return;
+    }
+
+  if (pid > 0)
+    {
+    /* We are the parent clear out the status cache. */
+    int iter = -1;
+    received_node *rn = NULL;
+
+    LastServerUpdateTime = time_now;
+
+    while ((rn = (received_node *)next_thing(received_statuses, &iter)) != NULL)
+      {
+      clear_dynamic_string(rn->statuses);
+      }
+
+    return;
     }
  
 #ifdef NUMA_SUPPORT
@@ -1555,7 +1579,7 @@ void mom_server_all_update_stat(void)
       close(nc->stream);
     }
  
-  return;
+  exit(0);
   }  /* END mom_server_all_update_stat() */
 
 
@@ -1893,10 +1917,9 @@ mom_server *mom_server_valid_message_source(
           struct in_addr   saddr;
           u_long           server_ip;
 
-          if (getaddrinfo(pms->pbs_servername, NULL, NULL, &addr_info) == 0)
+          if (pbs_getaddrinfo(pms->pbs_servername, NULL, &addr_info) == 0)
             {
             saddr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
-            freeaddrinfo(addr_info);
 
             server_ip = ntohl(saddr.s_addr);
 
@@ -1950,7 +1973,7 @@ int process_host_name(
     rm_port = (unsigned short)atoi(colon+1);
     }
   
-  if (getaddrinfo(hostname, NULL, NULL, &addr_info) == 0)
+  if (pbs_getaddrinfo(hostname, NULL, &addr_info) == 0)
     {
     sa.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
     ipaddr      = ntohl(sa.sin_addr.s_addr);
@@ -1960,8 +1983,6 @@ int process_host_name(
       add_network_entry(mh, hostname, addr_info, rm_port, path, level);
       *something_added = TRUE;
       }
-
-    freeaddrinfo(addr_info);
 
     /* add to acceptable host tree */
     okclients = AVL_insert(ipaddr, rm_port, NULL, okclients);

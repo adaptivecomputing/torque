@@ -8,7 +8,6 @@
 #include "attribute.h" /* pbs_attribute */
 #include "server.h" /* mutex_t */
 
-void process_pbs_server_port_scheduler(int *sock);
 
 void clear_listeners(void);
 

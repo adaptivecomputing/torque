@@ -15,8 +15,3 @@ void log_event(int eventtype, int objclass, const char *objname, const char *tex
   exit(1);
   }
 
-int get_addr_info(char *name, struct sockaddr_in *sa_info, int retry)
-  {
-  return(0);
-  }
-

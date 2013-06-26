@@ -1193,7 +1193,6 @@ void *job_clone_wt(
         }
 
       mutex_mgr clone_mgr(pjobclone->ji_mutex, true);
-
       svr_evaljobstate(pjobclone, &newstate, &newsub, 1);
 
       /* do this so that  svr_setjobstate() doesn't alter sv_jobstates,
@@ -1214,7 +1213,9 @@ void *job_clone_wt(
         clone_mgr.set_lock_on_exit(false);
 
         if (rc != PBSE_JOB_RECYCLED)
+          {
           svr_job_purge(pjobclone);
+          }
 
         if ((pa = get_array(arrayid)) == NULL)
           return(NULL);
@@ -1946,17 +1947,6 @@ int svr_job_purge(
     job_free(pjob, TRUE);
     pjob_mutex.set_lock_on_exit(false);
     }
- 
-  /* remove checkpoint restart file if there is one */
-  /* MUTSU - The following functions, updates a flag, saves the job and returns.
-   * As we are deleting the job (and file we are saving) anyway, this is 
-   * superfluous
-   */
-/*  if (pjob->ji_wattr[JOB_ATR_restart_name].at_flags & ATR_VFLAG_SET)
-    {
-    cleanup_restart_file(pjob);
-    }
-    */
 
   /* delete the script file */
   if ((job_has_arraystruct == FALSE) || 

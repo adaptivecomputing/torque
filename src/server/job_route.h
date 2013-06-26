@@ -13,6 +13,10 @@ int default_router(job *jobp, struct pbs_queue *qp, long retry_time);
 
 int job_route(job *jobp);
 
+int remove_procct(job *pjob);
+
+int initialize_procct(job *pjob);
+
 void *queue_route(void *pque);
 
 #endif /* _JOB_ROUTE_H */

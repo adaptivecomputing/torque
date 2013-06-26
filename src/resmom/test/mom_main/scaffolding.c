@@ -319,7 +319,7 @@ void set_rpp_throttle_sleep_time(long sleep_time)
   exit(1);
   }
 
-int run_pelog(int which, char *specpelog, job *pjog, int pe_io_type)
+int run_pelog(int which, char *specpelog, job *pjog, int pe_io_type, int deletejob)
   {
   fprintf(stderr, "The call to run_pelog needs to be mocked!!\n");
   exit(1);
@@ -679,12 +679,6 @@ void mom_server_all_diag(std::stringstream &output)
   exit(1);
   }
 
-void mom_server_all_diag(std::stringstream &output)
-  {
-  fprintf(stderr, "The call to mom_server_all_diag needs to be mocked!!\n");
-  exit(1);
-  }
-
 int disrsi(tcp_chan *chan, int *retval)
   {
   fprintf(stderr, "The call to disrsi needs to be mocked!!\n");
@@ -813,3 +807,4 @@ void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_ext(int type, const char *func_name, const char *msg, int o) {}
+

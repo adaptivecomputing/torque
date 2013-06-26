@@ -320,3 +320,11 @@ int safe_strncat(char *str, const char *to_append, size_t space_remaining)
   return(0);
   }
 
+pbs_net_t get_hostaddr(
+
+  int  *local_errno, /* O */    
+  char *hostname)    /* I */
+
+  {
+  return(0);
+  }
