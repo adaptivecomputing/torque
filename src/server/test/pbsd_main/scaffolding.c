@@ -490,6 +490,11 @@ void DIS_tcp_cleanup(struct tcp_chan *chan) {}
 
 void scheduler_close() {}
 
+int initialize_ruserok_mutex()
+  {
+  return(0);
+  }
+
 int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
