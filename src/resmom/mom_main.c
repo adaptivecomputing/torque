@@ -1592,7 +1592,7 @@ void add_diag_remaining_spool_space(
       }
     else
       {
-      output << "ALERT:  stdout/stderr spool directory '" << path_spool << "' is full\n";
+      output << "ALERT:  stdout/stderr spool directory '" << path_spool << "' is full.\nFree space then restart the pbs_mom.\n";
       }
     }
   } /* END add_diag_remaining_spool_space() */
