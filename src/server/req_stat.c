@@ -1092,6 +1092,8 @@ void stat_update(
           "Unknown job message from mother superior appears to be in error, reported %d seconds ago",
           (int)delta);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+
+        unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
         }
       }
     }
