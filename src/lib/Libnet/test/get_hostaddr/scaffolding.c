@@ -15,3 +15,7 @@ void log_event(int eventtype, int objclass, const char *objname, const char *tex
   exit(1);
   }
 
+int pbs_getaddrinfo(const char *pNode, struct addrinfo *pHints, struct addrinfo **ppAddrInfoOut)
+  {
+  return 0;
+  }
