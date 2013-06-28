@@ -321,6 +321,12 @@ int send_sisters(job *pjob, int com, int using_radix)
   exit(1);
   }
 
+int send_sisters(job*, int, int, std::set<int, std::less<int>, std::allocator<int> >*)
+  {
+  fprintf(stderr, "The call to send_sisters needs to be mocked!!\n");
+  exit(1);
+  }
+
 int send_ms(job *pjob,int  com)
   {
   fprintf(stderr, "The call to send_ms needs to be mocked!!\n");

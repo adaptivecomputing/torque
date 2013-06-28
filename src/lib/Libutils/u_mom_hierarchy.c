@@ -313,7 +313,7 @@ int tcp_connect_sockaddr(
       /* FAILED */
       if(rc != EINTR) //Interrupted system call is a retryable error so try it again.
         {
-        retryCount = 0;
+        retryCount = -1;
         }
       else
         {
