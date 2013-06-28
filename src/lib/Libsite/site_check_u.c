@@ -163,8 +163,6 @@ int site_check_user_map(
 
 #ifdef MUNGE_AUTH
   char  uh[PBS_MAXUSER + PBS_MAXHOSTNAME + 2];
-#else
-  pid_t pid;
 #endif
 
   if (LOGLEVEL >= 10)
@@ -321,76 +319,28 @@ int site_check_user_map(
     }
 #else
 
-  pid = fork();
-  if (pid < 0)
+  /* This is the child */
+
+  /* ruserok is not thread safe. mutex it */
+  pthread_mutex_lock(&ruserok_mutex);
+  rc = ruserok(orighost, 0, owner, luser);
+  pthread_mutex_unlock(&ruserok_mutex);
+
+  if (rc != 0)
     {
-    rc = PBSE_SYSTEM;
+    /* Test rc so as to not fill this message in the case of success, since other
+     * callers might not fill this message in the case of their errors and
+     * very misleading error message will go into the logs.
+     */
     if (EMsg != NULL)
-      snprintf(EMsg, 1024, "fork failed");
+      snprintf(EMsg, 1024, "ruserok failed validating %s/%s from %s",
+             owner,
+             luser,
+             orighost);
+    rc = -1;
     }
 
-  else if (pid > 0)
-    {
-    int    status;
-    pid_t  wait_pid;
-    int    retries = 0;
-    int    exit_val = 0;
-
-    while ((wait_pid = waitpid(pid, &status, WNOHANG)) == 0)
-      {
-      if (retries > 5)
-        break;
-
-      sleep(1);
-      retries++;
-      }
-
-    if (wait_pid <= 0)
-      {
-      /* Something went wrong. Kill the child process */
-      kill(pid, SIGKILL);
-      rc = -1;
-      }
-    else
-      {
-      if (WIFEXITED(status))
-        exit_val = WEXITSTATUS(status);
-      else if (WIFSIGNALED(status))
-        exit_val = WTERMSIG(status)+10000;
-      else
-        exit_val = 10;
-
-      if (exit_val == 0)
-        rc = PBSE_NONE;
-      else
-        {
-        /* Test rc so as to not fill this message in the case of success, since other
-         * callers might not fill this message in the case of their errors and
-         * very misleading error message will go into the logs.
-         */
-        if (EMsg != NULL)
-          snprintf(EMsg, 1024, "ruserok failed validating %s/%s from %s",
-                 owner,
-                 luser,
-                 orighost);
-        rc = -1;
-        }
-      }
-    }
-  else
-    {
-    /* This is the child */
-
-    /* ruserok is not thread safe. mutex it */
-    pthread_mutex_lock(&ruserok_mutex);
-    rc = ruserok(orighost, 0, owner, luser);
-    pthread_mutex_unlock(&ruserok_mutex);
-    if (rc != 0)
-      exit (2);
-
-    exit(0);
-
-    }
+    
 #endif
 
    
