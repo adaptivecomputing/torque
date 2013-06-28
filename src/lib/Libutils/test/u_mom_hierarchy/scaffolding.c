@@ -65,21 +65,28 @@ long disrsl(tcp_chan *chan, int *retval)
   }
 
 void log_err(int errnum, const char *routine, const char *text)
-  { 
-  fprintf(stderr, "The call to log_err needs to be mocked!!\n");
-  exit(1);
+  {
+  fprintf(stderr,"ERROR: Function: %s Message: %s\n",routine,text);
   }
+
+extern int dummySocket;
+extern int dummySocketAfterRetries;
+extern int connectAddrRetries;
 
 int socket_connect_addr(int *local_socket, struct sockaddr *remote, size_t remote_size, int is_privileged, char **err_msg)
-  { 
-  fprintf(stderr, "The call to socket_connect_addr needs to be mocked!!\n");
-  exit(1);
+  {
+  if(connectAddrRetries-- <= 0)
+    {
+    return dummySocketAfterRetries;
+    }
+  return dummySocket;
   }
 
+extern int tcpSocket;
+
 int socket_get_tcp_priv()
-  { 
-  fprintf(stderr, "The call to socket_get_tcp_priv needs to be mocked!!\n");
-  exit(1);
+  {
+  return tcpSocket;
   }
 
 void log_event(int eventtype, int objclass, const char *objname, const char *text)
