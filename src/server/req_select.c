@@ -509,12 +509,11 @@ static void sel_step3(
   job       *next;
 
   struct batch_request *preq;
-
   struct batch_reply   *preply;
-
   struct brp_select    *pselect;
-
   struct brp_select   **pselx;
+  struct svrattrl      *pal;
+
   int        rc = 0;
   int        exec_only = 0;
   pbs_queue           *pque = NULL;
@@ -546,6 +545,7 @@ static void sel_step3(
     }
 
   pselx = &preply->brp_un.brp_select;
+  pal = (svrattrl *)GET_NEXT(preq->rq_ind.rq_status.rq_attr);
 
   if (preq->rq_extend != NULL)
     if (!strncmp(preq->rq_extend, EXECQUEONLY, strlen(EXECQUEONLY)))
@@ -626,7 +626,7 @@ static void sel_step3(
           {
           /* Select-Status */
 
-          rc = status_job(pjob, preq, NULL, &preply->brp_un.brp_status, &bad);
+          rc = status_job(pjob, preq, pal, &preply->brp_un.brp_status, &bad);
 
           if (rc && (rc != PBSE_PERM))
             {

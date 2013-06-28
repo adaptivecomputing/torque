@@ -128,12 +128,50 @@ void free_mail_info(
   if (mi->text)
     free(mi->text);
 
+  if (mi->errFile)
+    free(mi->errFile);
+
+  if (mi->outFile)
+    free(mi->outFile);
+
   free(mi->jobid);
   free(mi->mailto);
 
   free(mi);
   } /* END free_mail_info() */
 
+
+
+void add_body_info(
+
+  char      *bodyfmtbuf /* I */,
+  mail_info *mi /* I */)
+  {
+  char *bodyfmt = NULL;
+  bodyfmt =  strcpy(bodyfmtbuf, "PBS Job Id: %i\n"
+                                  "Job Name:   %j\n");
+  if (mi->exec_host != NULL)
+    {
+    strcat(bodyfmt, "Exec host:  %h\n");
+    }
+
+  strcat(bodyfmt, "%m\n");
+
+  if (mi->text != NULL)
+    {
+    strcat(bodyfmt, "%d\n");
+    }
+
+  if (mi->errFile != NULL)
+    {
+    strcat(bodyfmt, "Error_Path: %k\n");
+    }
+
+  if (mi->outFile !=NULL)
+    {
+    strcat(bodyfmt, "Output_Path: %l\n");
+    }
+  }
 
 
 
@@ -175,7 +213,7 @@ void *send_the_mail(
     }
 
   /* mail subject line formating statement */
-  get_svr_attr_str(SRV_ATR_MailSubjectFmt, (char **)subjectfmt);
+  get_svr_attr_str(SRV_ATR_MailSubjectFmt, (char **)&subjectfmt);
   if (subjectfmt == NULL)
     {
     subjectfmt = "PBS JOB %i";
@@ -185,19 +223,8 @@ void *send_the_mail(
   get_svr_attr_str(SRV_ATR_MailBodyFmt, &bodyfmt);
   if (bodyfmt == NULL)
     {
-    bodyfmt =  strcpy(bodyfmtbuf, "PBS Job Id: %i\n"
-                                  "Job Name:   %j\n");
-    if (mi->exec_host != NULL)
-      {
-      strcat(bodyfmt, "Exec host:  %h\n");
-      }
-
-    strcat(bodyfmt, "%m\n");
-
-    if (mi->text != NULL)
-      {
-      strcat(bodyfmt, "%d\n");
-      }
+    add_body_info(bodyfmtbuf, mi);
+    bodyfmt = bodyfmtbuf;
     }
 
   /* setup sendmail command line with -f from_whom */
@@ -293,6 +320,42 @@ void *send_the_mail(
   return(NULL);
   } /* END send_the_mail() */
 
+
+
+int add_fileinfo(
+
+  const char       *attrVal,                  /* I */      
+        char      **filename,                 /* O */
+        mail_info  *mi,                       /* I/O */
+  const pbs_attribute job_attr[JOB_ATR_LAST], /* I */
+  const char       *memory_err)               /* I */
+
+  {
+  char *attributeValue = (char *)attrVal;
+ 
+  if (job_attr[JOB_ATR_join].at_flags & ATR_VFLAG_SET)
+    {
+    if (!(strncmp(job_attr[JOB_ATR_join].at_val.at_str, "oe", 2)))
+      attributeValue = job_attr[JOB_ATR_outpath].at_val.at_str;
+    else if (!(strncmp(job_attr[JOB_ATR_join].at_val.at_str, "eo", 2)))
+      attributeValue = job_attr[JOB_ATR_errpath].at_val.at_str;
+    }
+  if (attributeValue != NULL)
+    {
+    *filename = strdup(attributeValue);
+
+    if (*filename == NULL)
+      {
+      log_err(ENOMEM, __func__, memory_err);
+      free(mi);
+      return -1;
+      }
+    }
+  else
+    *filename = NULL;
+
+  return 0;
+  }
 
 
 
@@ -514,6 +577,16 @@ void svr_mailowner(
     }
   else
     mi->jobname = NULL;
+
+  if (mailpoint == (int) MAIL_END)
+    {
+    if (add_fileinfo((const char*)pjob->ji_wattr[JOB_ATR_errpath].at_val.at_str,
+        &(mi->errFile), mi, pjob->ji_wattr, memory_err))
+      return;
+    else if (add_fileinfo((char *)pjob->ji_wattr[JOB_ATR_outpath].at_val.at_str, 
+             &(mi->outFile), mi, pjob->ji_wattr, memory_err))
+      return;
+   }
 
   if (text)
     {

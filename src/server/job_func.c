@@ -1924,7 +1924,11 @@ int svr_job_purge(
     /* jobs that are being deleted after a cold restart
      * haven't been queued */
     if (need_deque == TRUE)
+      {
+      /* set the state to complete so that svr_dequejob() will function properly */
+      pjob->ji_qs.ji_state = JOB_STATE_COMPLETE;
       rc = svr_dequejob(pjob, FALSE);
+      }
 
     if (rc != PBSE_JOBNOTFOUND)
       {
@@ -1944,17 +1948,6 @@ int svr_job_purge(
     job_free(pjob, TRUE);
     pjob_mutex.set_lock_on_exit(false);
     }
- 
-  /* remove checkpoint restart file if there is one */
-  /* MUTSU - The following functions, updates a flag, saves the job and returns.
-   * As we are deleting the job (and file we are saving) anyway, this is 
-   * superfluous
-   */
-/*  if (pjob->ji_wattr[JOB_ATR_restart_name].at_flags & ATR_VFLAG_SET)
-    {
-    cleanup_restart_file(pjob);
-    }
-    */
 
   /* delete the script file */
   if ((job_has_arraystruct == FALSE) || 

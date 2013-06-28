@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <netinet/in.h> /* sockaddr_in */
 #include <errno.h>
+#include <set>
 
 #include "mom_server.h" /* mom_server */
 #include "resmon.h" /* PBS_MAXSERVER */
@@ -93,7 +94,7 @@ unsigned long gettime(resource *pres)
   exit(1);
   }
 
-void exec_bail(job *pjob, int code) {}
+void exec_bail(job *pjob, int code, std::set<int> *contacted_sisters) {}
 
 int AVL_list(AvlTree tree, char **Buf, long *current_len, long *max_len)
   {

@@ -25,8 +25,6 @@ enum csa_chk_cmd
 
 struct passwd *check_pwd(job *pjob);
 
-void exec_bail(job *pjob, int code);
-
 int open_demux(u_long addr, int port);
 
 int is_joined(job *pjob);

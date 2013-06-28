@@ -83,6 +83,15 @@
 #include "batch_request.h"
 #include "utils.h"
 
+/**
+ * get_batch_request_id
+ *
+ * Add the batch request to the brh hash table and put the id
+ * into the batch request. This allows the batch request to be
+ * retrieved on a delayed invocation.
+ */
+
+
 int get_batch_request_id(
 
   batch_request *preq)
@@ -149,7 +158,11 @@ int insert_batch_request(
   } /* END insert_batch_request() */
 
 
-
+/*
+ * get_batch_request
+ *
+ * Get the batch request from the hash table.
+ */
 
 batch_request *get_batch_request(
 
@@ -172,6 +185,12 @@ batch_request *get_batch_request(
   } /* END get_batch_request() */
 
 
+/*
+ * get_remove_batch_request
+ *
+ * Get the batch request from the hash table and delete it from
+ * the hash table.
+ */
 
 
 batch_request *get_remove_batch_request(

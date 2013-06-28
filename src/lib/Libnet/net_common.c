@@ -349,7 +349,9 @@ int socket_connect_addr(
     
     switch (errno)
       {
+      /* permanent failures go here */
       case ECONNREFUSED:    /* Connection refused */
+      case ETIMEDOUT:       /* Connection timed out */
         snprintf(tmp_buf, sizeof(tmp_buf), "cannot connect to port %d in %s - connection refused",
           local_socket, __func__);
         *error_msg = strdup(tmp_buf);
@@ -361,7 +363,6 @@ int socket_connect_addr(
       case EINPROGRESS:   /* Operation now in progress */
       case EALREADY:    /* Operation already in progress */
       case EISCONN:   /* Transport endpoint is already connected */
-      case ETIMEDOUT:   /* Connection timed out */
       case EAGAIN:    /* Operation would block */
       case EINTR:     /* Interrupted system call */
 
@@ -458,7 +459,7 @@ int socket_wait_for_write(
   fd_set         wfd;
   struct timeval timeout;
 
-  timeout.tv_sec = pbs_tcp_timeout / RES_PORT_RETRY;
+  timeout.tv_sec = pbs_tcp_timeout;
   timeout.tv_usec = 0;
 
   FD_ZERO(&wfd);
@@ -466,7 +467,8 @@ int socket_wait_for_write(
 
   if ((write_soc = select(socket+1, 0, &wfd, 0, &timeout)) != 1)
     {
-    rc = PBSE_TIMEOUT;
+    /* timeout is now seen as a permanent failure */
+    rc = PERMANENT_SOCKET_FAIL;
     }
   else if (((rc = getsockopt(socket, SOL_SOCKET, SO_ERROR, &val, &len)) == 0) && (val == 0))
     {
@@ -476,10 +478,10 @@ int socket_wait_for_write(
     {
     switch (val)
       {
+      /* ETIMEDOUT is not listed because it should be considered a permanent failure */
       case EINPROGRESS:
       case EALREADY:    /* Operation already in progress */
       case EISCONN:   /* Transport endpoint is already connected */
-      case ETIMEDOUT:   /* Connection timed out */
       case EAGAIN:    /* Operation would block */
       case EINTR:     /* Interrupted system call */
       case EINVAL:    /* Invalid argument */
@@ -893,32 +895,31 @@ int socket_close(
   } /* END socket_close() */
 
 
-int pbs_getaddrinfo(const char *pNode,struct addrinfo *pHints,struct addrinfo **ppAddrInfoOut)
+int pbs_getaddrinfo(
+    
+  const char       *pNode,
+  struct addrinfo  *pHints,
+  struct addrinfo **ppAddrInfoOut)
+
   {
   int rc;
   struct addrinfo hints;
   int retryCount = 3;
   int addrFound = FALSE;
 
-  if(ppAddrInfoOut == NULL)
+  if (ppAddrInfoOut == NULL)
     {
     return -1;
     }
-  if((*ppAddrInfoOut = get_cached_addrinfo_full(pNode)) != NULL)
+  if ((*ppAddrInfoOut = get_cached_addrinfo_full(pNode)) != NULL)
     {
     return 0;
     }
-  if(pHints == NULL)
+  if (pHints == NULL)
     {
     memset(&hints,0,sizeof(hints));
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_family = AF_INET;
     hints.ai_flags = AI_CANONNAME;
     pHints = &hints;
-    }
-  else
-    {
-    pHints->ai_family = AF_INET;
     }
 
   do
@@ -948,59 +949,3 @@ int pbs_getaddrinfo(const char *pNode,struct addrinfo *pHints,struct addrinfo **
     }while(retryCount-- >= 0);
   return EAI_FAIL;
   }
-
-int get_addr_info(
-    
-  char               *name,
-  struct sockaddr_in *sa_info,
-  int                 retry)
-
-  {
-  int                 rc = PBSE_NONE;
-  int                 cntr = 0;
-  struct addrinfo    *addr_info;
-  struct addrinfo     hints;
-  struct timeval      start_time;
-  struct timeval      end_time;
-  struct sockaddr_in *cached_sai;
-
-  /* retrieve from cache if possible */
-  if ((cached_sai = get_cached_addrinfo(name)) != NULL)
-    {
-    memcpy(sa_info, cached_sai, sizeof(struct sockaddr_in));
-    return(PBSE_NONE);
-    }
-
-  memset(&hints, 0, sizeof(struct addrinfo));
-  hints.ai_socktype = SOCK_STREAM;
-  hints.ai_family = PF_INET;
-  hints.ai_flags = AI_CANONNAME;
-
-  while (cntr < retry)
-    {
-    gettimeofday(&start_time, 0);
-
-    if ((rc = getaddrinfo(name, NULL, &hints, &addr_info)) != 0)
-      {
-      gettimeofday(&end_time, 0);
-
-      rc = PBSE_BADHOST;
-      }
-    else
-      {
-      sa_info->sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
-      sa_info->sin_family = addr_info->ai_family;
-      insert_addr_name_info(addr_info,name);
-      gettimeofday(&end_time, 0);
-
-      rc = PBSE_NONE;
-
-      break;
-      }
-
-    cntr++;
-    }
-
-  return(rc);
-  } /* END get_addr_info() */
-

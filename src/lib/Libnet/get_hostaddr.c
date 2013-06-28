@@ -210,7 +210,8 @@ int  get_hostaddr_hostent_af(
 
   {
   int                    addr_rc;
-  struct sockaddr_in     sa;
+  struct sockaddr_in    *sa;
+  struct addrinfo       *pAddrInfo;
   char                   log_buf[LOCAL_LOG_BUF_SIZE];
   char                  *tmp_ip = NULL;
 
@@ -232,23 +233,23 @@ int  get_hostaddr_hostent_af(
       *dash = '\0';
 
       /* check if this resolves to a hostname without the dash */
-      if ((addr_rc = get_addr_info(hostname, &sa, 3)) != 0)
+      if ((addr_rc = pbs_getaddrinfo(hostname, NULL, &pAddrInfo)) != 0)
         {
         /* not a numa-owned node, act normal */
         *dash = '-';
       
-        addr_rc = get_addr_info(hostname, &sa, 3);
+        addr_rc = pbs_getaddrinfo(hostname, NULL, &pAddrInfo);
         }
       }
     /* otherwise proceed with just the parent hostname so 
      * it can be resolved */
     else
-      addr_rc = get_addr_info(hostname, &sa, 3);
+      addr_rc = pbs_getaddrinfo(hostname, NULL, &pAddrInfo);
     }
   else
-    addr_rc = get_addr_info(hostname, &sa, 3);
+    addr_rc = pbs_getaddrinfo(hostname, NULL, &pAddrInfo);
 #else
-  addr_rc = get_addr_info(hostname, &sa, 3);
+  addr_rc = pbs_getaddrinfo(hostname, NULL, &pAddrInfo);
 #endif /* NUMA_SUPPORT */
 
   *rc = PBSE_NONE;
@@ -280,10 +281,11 @@ int  get_hostaddr_hostent_af(
     }
   else
     {
-    memcpy(tmp_ip, &sa.sin_addr, sizeof(struct in_addr));
+    sa = (struct sockaddr_in *)pAddrInfo->ai_addr;
+    memcpy(tmp_ip, &sa->sin_addr, sizeof(struct in_addr));
     *host_addr = tmp_ip;
     *host_addr_len = sizeof(struct in_addr);
-    *af_family = sa.sin_family;
+    *af_family = sa->sin_family;
     }
 
 

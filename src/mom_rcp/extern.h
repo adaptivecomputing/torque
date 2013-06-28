@@ -56,4 +56,3 @@ int  okname __P((char *));
 void  run_err __P((const char *, ...));
 int  susystem __P((char *, int));
 void  verifydir __P((char *));
-char    *strerror __P((int));

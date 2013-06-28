@@ -5,6 +5,15 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       jobs. 
   e - TRQ-1832. Add the ability to add a login_property to a job at the queue level
       by setting required_login_property on the queue.
+  e - TRQ-1925. Make pbs_mom smart enough to reserved extra memory nodes for non-numa
+      configured TORQUE when more memory is requested than reserved.
+  e - TRQ-1923. Make job aborts for a mother superior not recognizing the job a bit 
+      more intelligent - if the job has been reported in the last 180 seconds in the
+      mom's status update don't abort it.
+  b - TRQ-1934. Ask for canonical hostnames on the default address family without 
+      specifying for uniformity in the code.
+  b - TRQ-2003. For cray fix a miscalculation of nppn and width when mppdepth is 
+      provided for the job.
 
 4.2.3
   b - TRQ-1653. Arrays depending on non-array jobs was broken. Fix this.
@@ -24,7 +33,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       default_features overcomes this issue.
   b - If privileged ports are disabled, make pbs_moms not check if incoming connections
       from mother superior are on privileged ports. TRQ-1669.
-  e - Add two mom config parameters: max_join_job_wait_time and resent_join_job_wait_time.
+  e - Add two mom config parameters: max_join_job_wait_time and resend_join_job_wait_time.
       The first specifies how long pbs_mom should wait before deciding that join jobs
       will never be received, and defaults to 10 minutes. The latter specifies how long
       pbs_mom should wait before attempting to resend join jobs to moms that it hasn't

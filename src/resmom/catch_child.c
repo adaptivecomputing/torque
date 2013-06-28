@@ -298,7 +298,9 @@ void scan_for_exiting(void)
   job          *pjob;
   task         *ptask;
   obitent      *pobit;
+#ifndef NUMA_SUPPORT 
   char         *cookie;
+#endif
   task         *task_find(job *, tm_task_id);
   int          rc = PBSE_NONE;
 
@@ -407,7 +409,9 @@ void scan_for_exiting(void)
       continue;
       }
 
+#ifndef NUMA_SUPPORT 
     cookie = pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str;
+#endif
 
     /*
     ** Check each EXITED task.  They transition to DEAD here.
@@ -540,13 +544,13 @@ void scan_for_exiting(void)
 
       while ((pobit = (obitent *)GET_NEXT(ptask->ti_obits)) != NULL)
         {
+#ifndef NUMA_SUPPORT
         hnodent *pnode;
 
         pnode = get_node(pjob, pobit->oe_info.fe_node);
 
         /* see if this is me or another MOM */
 
-#ifndef NUMA_SUPPORT
         /* for NUMA, we are always the mother superior and the correct
          * node for everything to happen */
         if ((pnode != NULL) &&
@@ -869,7 +873,7 @@ int run_epilogues(
     if (run_pelog(PE_EPILOGUSER, path_epiloguserp, pjob, io_type, deletejob) != 0)
       log_err(-1, __func__, "user epilog failed - interactive job");
   
-    if (run_pelog(PE_EPILOG, path_epilogp, pjob, PE_IO_TYPE_STD, deletejob) != 0)
+    if (run_pelog(PE_EPILOG, path_epilogp, pjob, io_type, deletejob) != 0)
       {
       log_err(-1, __func__, "parallel epilog failed");
       }
@@ -1116,6 +1120,7 @@ void *preobit_reply(
 
   int                   sock = *(int *)new_sock;
   struct tcp_chan      *chan = NULL;
+  int                   retries = 0;
 
   log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, __func__, "top of preobit_reply");
 
@@ -1131,8 +1136,11 @@ void *preobit_reply(
     return NULL;
     }
 
+  errno = 0;
+
   while ((irtn = DIS_reply_read(chan, &preq->rq_reply)) &&
-         (errno == EINTR))
+         (errno == EINTR) &&
+         (retries++ < DIS_REPLY_READ_RETRY))
     /* NO-OP, just retry for EINTR */;
 
   pbs_disconnect_socket(sock);
@@ -1156,11 +1164,10 @@ void *preobit_reply(
   else
     {
     log_record( PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, __func__,
-        "DIS_reply_read/decode_DIS_replySvr worked, top of while loop");
+      "DIS_reply_read/decode_DIS_replySvr worked, top of while loop");
     }
 
   /* find the job that triggered this req */
-
   pjob = (job *)GET_NEXT(svr_alljobs);
 
   while (pjob != NULL)
@@ -1184,7 +1191,7 @@ void *preobit_reply(
         "cannot locate job that triggered req");
 
     free_br(preq);
-    return NULL;
+    return(NULL);
     }  /* END if (pjob != NULL) */
 
   /* we've got a job in PREOBIT and matches the socket, now
@@ -1261,7 +1268,6 @@ void *preobit_reply(
     }  /* END switch (preq->rq_reply.brp_code) */
 
   /* we've inspected the server's response and can now act */
-
   free_br(preq);
 
   /* at this point, server gave us a valid response so we can run epilogue */
@@ -1279,7 +1285,6 @@ void *preobit_reply(
   if (cpid < 0)
     {
     /* FAILURE */
-
     log_record(
       PBSEVENT_DEBUG,
       PBS_EVENTCLASS_JOB,

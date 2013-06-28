@@ -112,9 +112,19 @@
 extern char *pbs_o_host;
 extern char  server_host[];
 extern char *msg_orighost; /* error message: no PBS_O_HOST */
+pthread_mutex_t ruserok_mutex;
 
 /* This is in the server code? */
 extern struct pbsnode *find_nodebyname(const char *);
+
+
+int initialize_ruserok_mutex()
+  {
+  int rc;
+  
+  rc = pthread_mutex_init(&ruserok_mutex, NULL);
+  return(rc);
+  }
 
 /*
  * site_check_u - site_check_user_map()
@@ -149,12 +159,17 @@ int site_check_user_map(
   char  *dptr;
 
   struct pbsnode *tmp;
+  char   log_buf[256];
 
 #ifdef MUNGE_AUTH
   char  uh[PBS_MAXUSER + PBS_MAXHOSTNAME + 2];
-#else
-  pid_t pid;
 #endif
+
+  if (LOGLEVEL >= 10)
+    {
+    sprintf(log_buf, "job id: %s - luser: %s", pjob->ji_qs.ji_jobid, luser);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
 
   if (EMsg != NULL)
     EMsg[0] = '\0';
@@ -188,12 +203,14 @@ int site_check_user_map(
     return(-1);
     }
 
+  /* check to see if we are allowing a proxy user to submit the job */
   if ((server.sv_attr[SRV_ATR_AllowProxyUser].at_flags & ATR_VFLAG_SET) && \
       (server.sv_attr[SRV_ATR_AllowProxyUser].at_val.at_long == 1))
     {
     ProxyAllowed = 1;
     }
 
+  /* If the users are different and allow_proxy_user is set we have a proxy submission */
   if (strcmp(owner, luser) != 0)
     {
     ProxyRequested = 1;
@@ -302,72 +319,28 @@ int site_check_user_map(
     }
 #else
 
-  pid = fork();
-  if (pid < 0)
+  /* This is the child */
+
+  /* ruserok is not thread safe. mutex it */
+  pthread_mutex_lock(&ruserok_mutex);
+  rc = ruserok(orighost, 0, owner, luser);
+  pthread_mutex_unlock(&ruserok_mutex);
+
+  if (rc != 0)
     {
-    rc = PBSE_SYSTEM;
+    /* Test rc so as to not fill this message in the case of success, since other
+     * callers might not fill this message in the case of their errors and
+     * very misleading error message will go into the logs.
+     */
     if (EMsg != NULL)
-      snprintf(EMsg, 1024, "fork failed");
+      snprintf(EMsg, 1024, "ruserok failed validating %s/%s from %s",
+             owner,
+             luser,
+             orighost);
+    rc = -1;
     }
 
-  else if (pid > 0)
-    {
-    int    status;
-    pid_t  wait_pid;
-    int    retries = 0;
-    int    exit_val = 0;
-
-    while ((wait_pid = waitpid(pid, &status, WNOHANG)) == 0)
-      {
-      if (retries > 5)
-        break;
-
-      sleep(1);
-      retries++;
-      }
-
-    if (wait_pid <= 0)
-      {
-      /* Something went wrong. Kill the child process */
-      kill(pid, SIGKILL);
-      rc = -1;
-      }
-    else
-      {
-      if (WIFEXITED(status))
-        exit_val = WEXITSTATUS(status);
-      else if (WIFSIGNALED(status))
-        exit_val = WTERMSIG(status)+10000;
-      else
-        exit_val = 10;
-
-      if (exit_val == 0)
-        rc = PBSE_NONE;
-      else
-        {
-        /* Test rc so as to not fill this message in the case of success, since other
-         * callers might not fill this message in the case of their errors and
-         * very misleading error message will go into the logs.
-         */
-        if (EMsg != NULL)
-          snprintf(EMsg, 1024, "ruserok failed validating %s/%s from %s",
-                 owner,
-                 luser,
-                 orighost);
-        rc = -1;
-        }
-      }
-    }
-  else
-    {
-    /* This is the child */
-    rc = ruserok(orighost, 0, owner, luser);
-    if (rc != 0)
-      exit (2);
-
-    exit(0);
-
-    }
+    
 #endif
 
    

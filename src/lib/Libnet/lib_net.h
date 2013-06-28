@@ -51,7 +51,6 @@ int socket_read_one_byte(int socket, char *one_char);
 int socket_read_num(int socket, long long *the_num);
 int socket_read_str(int socket, char **the_str, long long *str_len);
 int socket_close(int socket);
-int get_addr_info(char *name, struct sockaddr_in *sa_info, int retry);
 int pbs_getaddrinfo(const char *pNode,struct addrinfo *pHints,struct addrinfo **ppAddrInfoOut);
 
 

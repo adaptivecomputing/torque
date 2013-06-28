@@ -120,6 +120,8 @@
 struct job_array;
 #endif
 
+#define JOB_REPORTED_ABORT_DELTA 180
+
 /*
  * Dependent Job Structures
  *
@@ -679,6 +681,7 @@ struct job
 
   pthread_mutex_t  *ji_mutex;
   char              ji_being_recycled;
+  time_t            ji_last_reported_time;
 #endif/* PBS_MOM */   /* END SERVER ONLY */
   int               ji_commit_done;   /* req_commit has completed. If in routing queue job can now be routed */
 
@@ -1117,6 +1120,7 @@ extern char *add_std_filename(job *, char *, int, dynamic_string *);
 extern int   set_jobexid(job *, pbs_attribute *, char *);
 extern int   site_check_user_map(job *, char *, char *, int);
 int  svr_dequejob(job *, int);
+int initialize_ruserok_mutex();
 extern int   svr_enquejob(job *, int, int, bool);
 extern void  svr_evaljobstate(job *, int *, int *, int);
 extern void  svr_mailowner(job *, int, int, const char *);
