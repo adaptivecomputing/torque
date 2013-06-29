@@ -7,6 +7,7 @@
 #include "tcp.h"
 #include "log.h" /* LOG_BUF_SIZE */
 #include "resizable_array.h" /* resizable_array */
+#include <errno.h>
 
 int pbs_errno;
 time_t time_now;
@@ -79,6 +80,7 @@ int socket_connect_addr(int *local_socket, struct sockaddr *remote, size_t remot
     {
     return dummySocketAfterRetries;
     }
+  errno = dummySocket;
   return dummySocket;
   }
 
