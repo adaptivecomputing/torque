@@ -2298,6 +2298,9 @@ int main(
 
   if (getenv("PBS_QSTAT_EXECONLY") != NULL)
     exec_only = 1;
+
+  if (getenv("PBS_QSTAT_NO_COMPLETE") != NULL)
+    do_not_display_complete = true;
     
   while ((c = getopt(argc, argv, GETOPT_ARGS)) != EOF)
     {
