@@ -11,6 +11,7 @@
 #include <syslog.h> /* openlog and syslog */
 #include <unistd.h> /* getgid, fork */
 #include <grp.h> /* setgroups */
+#include <ctype.h> /*isspace */
 #include "pbs_error.h" /* PBSE_NONE */
 #include "pbs_constants.h" /* AUTH_IP */
 #include "pbs_ifl.h" /* pbs_default, PBS_BATCH_SERVICE_PORT, TRQ_AUTHD_SERVICE_PORT */
@@ -20,6 +21,8 @@
 #include "../lib/Liblog/chk_file_sec.h" /* IamRoot */
 #include "../lib/Liblog/pbs_log.h" /* logging stuff */
 #include "../include/log.h"  /* log events and event classes */
+#include "csv.h" /*csv_nth() */
+
 
 #define MAX_BUF 1024
 #define TRQ_LOGFILES "client_logs"
@@ -30,7 +33,7 @@ extern pthread_mutex_t *job_log_mutex;
 
 extern int debug_mode;
 static int changed_msg_daem = 0;
-static char *trq_server_ip = NULL;
+static char *active_pbs_server;
 
 int load_config(
     char **ip,
@@ -55,6 +58,7 @@ int load_config(
     if (*t_port == 0)
       *t_port = PBS_BATCH_SERVICE_PORT;
     *d_port = TRQ_AUTHD_SERVICE_PORT;
+    set_active_pbs_server(tmp_name);
     }
   return rc;
   }
@@ -66,23 +70,14 @@ int load_ssh_key(
   return rc;
   }
 
-int validate_server(
-    char *t_server_ip,
-    int t_server_port,
-    char *ssh_key,
-    char **sign_key)
-  {
-  int rc = PBSE_NONE;
-  fprintf(stderr, "pbs_server port is: %d\n", t_server_port);
-  return rc;
-  }
+
 
 void initialize_globals_for_log(int port)
   {
   strcpy(pbs_current_user, "trqauthd");   
   if ((msg_daemonname = strdup(pbs_current_user)))
     changed_msg_daem = 1;
-  log_set_hostname_sharelogging(trq_server_ip, port);
+  log_set_hostname_sharelogging(active_pbs_server, port);
   }
 
 void clean_log_init_mutex(void)
@@ -92,6 +87,7 @@ void clean_log_init_mutex(void)
   free(log_mutex);
   free(job_log_mutex);
   }
+
 
 int daemonize_trqauthd(const char *server_ip, int server_port, void *(*process_meth)(void *))
   {
@@ -187,9 +183,10 @@ int daemonize_trqauthd(const char *server_ip, int server_port, void *(*process_m
       pthread_mutex_lock(log_mutex);
       log_close(1);
       pthread_mutex_unlock(log_mutex);
-      if (changed_msg_daem && msg_daemonname) {
+      if (changed_msg_daem && msg_daemonname) 
+        {
           free(msg_daemonname);
-      }
+        }
       clean_log_init_mutex();
       exit(-1);
       }
@@ -254,13 +251,13 @@ int trq_main(
 
 
   parse_command_line(argc, argv);
-  if ((rc = load_config(&trq_server_ip, &trq_server_port, &daemon_port)) != PBSE_NONE)
+  if ((rc = load_config(&active_pbs_server, &trq_server_port, &daemon_port)) != PBSE_NONE)
     {
     }
   else if ((rc = load_ssh_key(&the_key)) != PBSE_NONE)
     {
     }
-  else if ((validate_server(trq_server_ip, trq_server_port, the_key, &sign_key)) != PBSE_NONE)
+  else if ((validate_server(active_pbs_server, trq_server_port, the_key, &sign_key)) != PBSE_NONE)
     {
     }
   else if ((rc = daemonize_trqauthd(AUTH_IP, daemon_port, process_method)) == PBSE_NONE)
