@@ -1203,6 +1203,7 @@ void display_statjob(
   char                 format[80];
   char                 long_name[17];
   time_t               epoch;
+  bool do_not_display = false;
 
   mxml_t              *DE;
   mxml_t              *JE;
@@ -1245,7 +1246,6 @@ void display_statjob(
 
   for (p = status;p != NULL;p = p->next)
     {
-    bool do_not_display = false;
     jid = NULL;
     name = NULL;
     owner = NULL;
@@ -1260,6 +1260,38 @@ void display_statjob(
 
     if (full)
       {
+
+      do_not_display = false;
+      a = p->attribs;
+      while (a != NULL)
+        {
+        if (!strcmp(a->name, ATTR_state))
+          {
+          l = strlen(a->value);
+
+          if (l > STATEL)
+            {
+            c = a->value + STATEL;
+
+            *c = '\0';
+            }
+
+          state = a->value;
+          if (*state == 'C')
+            {
+            if ( do_not_display_complete == true )
+              {
+              do_not_display = true;
+              }
+            break;
+            }
+          }
+        a = a->next;
+        }
+
+      if (do_not_display == true)
+        continue;
+
       if (DisplayXML == TRUE)
         {
         JE = NULL;
@@ -1281,10 +1313,10 @@ void display_statjob(
         printf("Job Id: %s\n", p->name);
         }
 
-      a = p->attribs;
 
       RE1 = NULL;
 
+      a = p->attribs;
       while (a != NULL)
         {
         if (a->name != NULL)
