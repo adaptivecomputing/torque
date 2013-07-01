@@ -108,6 +108,7 @@
 #include "pbs_ifl.h"
 #include "pbs_error.h"
 #include "../Libnet/lib_net.h" /* get_hostaddr_hostent_af */
+#include "../Libifl/lib_ifl.h"
 
 #define CNTRETRYDELAY 5
 
@@ -137,7 +138,9 @@ int cnt2server(
   int connect;
   time_t firsttime = 0, thistime = 0;
 
-  char Server[1024];
+  char  Server[PBS_MAXHOSTNAME];
+  char *tmpServer;
+  int   rc;
 
   if (cnt2server_retry > 0)
     {
@@ -150,6 +153,16 @@ int cnt2server(
     {
     snprintf(Server, sizeof(Server)-1, "%s", SpecServer);
     }
+  else
+    {
+    rc = get_active_pbs_server(&tmpServer);
+    if (rc == PBSE_NONE)
+      {
+      strncpy(Server, tmpServer, PBS_MAXHOSTNAME);
+      free(tmpServer);
+      }
+    }
+
 
   /* NOTE:  env vars PBS_DEFAULT and PBS_SERVER will be checked and applied w/in pbs_connect() */
 
@@ -224,6 +237,38 @@ start:
 
           fprintf(stderr, "protocol failure.\n");
           break;
+
+        case PBSE_SOCKET_FAULT:
+            {
+            /* primary server may be down. See if secondary is up */
+            /* We are getting this error because trqauthd could not
+               contact the active pbs_server. If the error changes
+               you can resuse this code with a different error case */
+            char *new_server_name;
+            unsigned int   port;
+            int   rc;
+
+            new_server_name = PBS_get_server(SpecServer, &port);
+            rc = validate_active_pbs_server(&new_server_name, port);
+            if (rc)
+              {
+              break;
+              }
+            connect = pbs_connect(new_server_name);
+            if (connect <= 0)
+              {
+              if (thistime == 0)
+                fprintf(stderr, "Communication failure.\n");
+              }
+            else
+              {
+              fprintf(stderr, "New active server is %s\n", new_server_name);
+              }
+              
+
+          break;
+            }
+
 
         default:
 

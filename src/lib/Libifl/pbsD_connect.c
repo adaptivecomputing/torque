@@ -320,7 +320,7 @@ char *pbs_fbserver(void)
 
 char *PBS_get_server(
 
-  char         *server,  /* I (NULL|'\0' for not set,modified) */
+  const char         *server,  /* I (NULL|'\0' for not set,modified) */
   unsigned int *port)    /* O */
 
   {
@@ -571,7 +571,7 @@ int validate_socket(
      * trq_system|trq_port|Validation_type|user|pid|psock|
      */
     mypid = getpid();
-    sprintf(write_buf, "%d|%s|%d|%d|%d|%s|%d|%d|", (int)strlen(server_name), server_name, server_port, AUTH_TYPE_IFF, (int)strlen(pwent->pw_name), pwent->pw_name, mypid, parent_client_socket);
+    sprintf(write_buf, "%d|%d|%s|%d|%d|%d|%s|%d|%d|", TRQ_AUTH_CONNECTION, (int)strlen(server_name), server_name, server_port, AUTH_TYPE_IFF, (int)strlen(pwent->pw_name), pwent->pw_name, mypid, parent_client_socket);
     /*
      * total_length|val
      */

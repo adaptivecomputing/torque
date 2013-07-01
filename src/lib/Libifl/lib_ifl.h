@@ -12,6 +12,10 @@
 #define AUTH_TYPE_IFF 1
 #define AUTH_TYPE_KEY 2
 
+#define  TRQ_AUTH_CONNECTION        1  /* Authorize a client connection. Used by trqauthd */
+#define  TRQ_GET_ACTIVE_SERVER      2  /* Request the name of the currently active pbs_server from trqauthd */
+#define  TRQ_VALIDATE_ACTIVE_SERVER 3 /* Request trqauthd to validate which server is active */
+
 
 int parse_request_client(int sock, char **server_name, int *server_port, int *auth_type, char **user, int *user_pid, int *user_sock);
 int build_request_svr(int auth_type, char *user, int sock, char **send_message);
@@ -19,6 +23,11 @@ int parse_response_svr(int sock, char **msg);
 int build_response_client(int code, char *msg, char **send_message);
 int get_trq_server_addr(char *server_name, char **server_addr, int *server_addr_len);
 void *process_svr_conn(void *sock);
+int validate_server(char *active_server_name, int t_server_port, char *ssh_key, char **sign_key);
+int set_active_pbs_server(const char *);
+int get_active_pbs_server(char **);
+int validate_active_pbs_server(char **, int);
+
 
 /* PBSD_gpuctrl2.c */
 int PBSD_gpu_put(int c, char *node, char *gpuid, int gpumode, int reset_perm, int reset_vol, char *extend);
@@ -251,7 +260,7 @@ int pbs_checkpointjob_err(int c, char *jobid, char *extend, int *);
 
 /* pbsD_connect.c */
 void empty_alarm_handler(int signo);
-char *PBS_get_server(char *server, unsigned int *port);
+char *PBS_get_server(const char *server, unsigned int *port);
 void get_port_from_server_name_file(unsigned int *server_name_file_port);
 #ifdef MUNGE_AUTH
 int PBSD_munge_authenticate(int psock, int handle); 
