@@ -3,6 +3,7 @@
 #include "dynamic_string.h"
 
 int parse_alps_output(dynamic_string *output, dynamic_string *status);
+int process_label_array(dynamic_string *feature_list, xmlNode *node);
 
 
 char *sample_start1 = (char *)"<BasilResponse protocol='1.0'> <ResponseData status='SUCCESS' method='QUERY'> <Inventory> <NodeArray> <Node node_id='6142' name='c3-0c0s0n0' architecture='XT' role='BATCH' state='UP'> <ProcessorArray> <Processor ordinal='0' architecture='x86_64' clock_mhz='2100'> ";
@@ -34,6 +35,11 @@ char *sample_start24 = (char *)"<Label name='MOAB:FEATURE=regmem' type='SOFT' di
 
 int search_dynamic_string_status(dynamic_string *status, char *str);
 int generate_alps_status(dynamic_string *status, const char *path, const char *protocol);
+
+START_TEST(process_label_array_test)
+  {
+  }
+END_TEST
 
 
 START_TEST(parse_alps_output_test)

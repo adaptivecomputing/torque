@@ -89,3 +89,30 @@ int  get_hostaddr_hostent_af(
   }
 
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+
+int socket_get_unix()
+  {
+  return(0);
+  }
+
+char *pbs_get_server_list()
+  {
+  return(NULL);
+  }
+
+int socket_connect_unix(int sock, const char *tmp, char **o)
+  {
+  return(0);
+  }
+
+void log_event(int a, int b, const char *c, const char *d) {}
+
+int csv_nth(const char *a, int b)
+  {
+  return(0);
+  }
+
+int csv_length(const char *a)
+  {
+  return(0);
+  }

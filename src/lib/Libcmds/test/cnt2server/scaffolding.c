@@ -32,3 +32,18 @@ char *pbs_strerror(
   return(NULL);
   }
 }
+
+int validate_active_pbs_server(char **out, int size)
+  {
+  return(0);
+  }
+
+char *PBS_get_server(const char *a, unsigned int *b)
+  {
+  return(NULL);
+  }
+
+int get_active_pbs_server(char **out)
+  {
+  return(0);
+  }
