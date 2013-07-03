@@ -88,6 +88,40 @@ void clean_log_init_mutex(void)
   free(job_log_mutex);
   }
 
+int init_trqauth_log(int server_port)
+  {
+  const char *path_home = PBS_SERVER_HOME;
+  int eventclass = PBS_EVENTCLASS_TRQAUTHD;
+  char path_log[MAXPATHLEN + 1];
+  char *log_file=NULL;
+  char  error_buf[MAX_BUF];
+  int  rc;
+
+  rc = log_init(NULL, NULL);
+  if (rc != PBSE_NONE)
+    return(rc);
+  
+  log_get_set_eventclass(&eventclass, SETV);
+
+  initialize_globals_for_log(server_port);
+  sprintf(path_log, "%s/%s", path_home, TRQ_LOGFILES);
+  if ((mkdir(path_log, 0755) == -1) && (errno != EEXIST))
+    {
+       openlog("daemonize_trqauthd", LOG_PID | LOG_NOWAIT, LOG_DAEMON);
+       syslog(LOG_ALERT, "Failed to create client_logs directory: %s errno: %d error message: %s", path_log, errno, strerror(errno));
+       sprintf(error_buf,"Failed to create client_logs directory: %s, error message: %s",path_log,strerror(errno));
+       log_err(errno,__func__,error_buf);
+       closelog();
+       return(PBSE_SYSTEM);
+    }
+    pthread_mutex_lock(log_mutex);
+    rc = log_open(log_file, path_log);
+    pthread_mutex_unlock(log_mutex);
+
+    return(rc);
+
+  }
+
 
 int daemonize_trqauthd(const char *server_ip, int server_port, void *(*process_meth)(void *))
   {
@@ -96,11 +130,7 @@ int daemonize_trqauthd(const char *server_ip, int server_port, void *(*process_m
   int   rc;
   char  error_buf[MAX_BUF];
   char msg_trqauthddown[MAX_BUF];
-  char path_log[MAXPATHLEN + 1];
   char unix_socket_name[MAXPATHLEN + 1];
-  char *log_file=NULL;
-  int eventclass = PBS_EVENTCLASS_TRQAUTHD;
-  const char *path_home = PBS_SERVER_HOME;
 
   umask(022);
 
@@ -156,22 +186,6 @@ int daemonize_trqauthd(const char *server_ip, int server_port, void *(*process_m
     fprintf(stderr, "trqauthd port: %d\n", server_port);
     }
 
-    log_init(NULL, NULL);
-    log_get_set_eventclass(&eventclass, SETV);
-    initialize_globals_for_log(server_port);
-    sprintf(path_log, "%s/%s", path_home, TRQ_LOGFILES);
-    if ((mkdir(path_log, 0755) == -1) && (errno != EEXIST))
-      {
-         openlog("daemonize_trqauthd", LOG_PID | LOG_NOWAIT, LOG_DAEMON);
-         syslog(LOG_ALERT, "Failed to create client_logs directory: %s errno: %d error message: %s", path_log, errno, strerror(errno));
-         sprintf(error_buf,"Failed to create client_logs directory: %s, error message: %s",path_log,strerror(errno));
-         log_err(errno,__func__,error_buf);
-         closelog();
-      }
-    pthread_mutex_lock(log_mutex);
-    log_open(log_file, path_log);
-    pthread_mutex_unlock(log_mutex);
-
     /* start the listener */
     snprintf(unix_socket_name, sizeof(unix_socket_name), "%s/%s", TRQAUTHD_SOCK_DIR, TRQAUTHD_SOCK_NAME);
     rc = start_domainsocket_listener(unix_socket_name, process_meth);
@@ -193,7 +207,7 @@ int daemonize_trqauthd(const char *server_ip, int server_port, void *(*process_m
     snprintf(msg_trqauthddown, sizeof(msg_trqauthddown),
       "TORQUE authd daemon shut down and no longer listening on IP:port %s:%d",
       server_ip, server_port);
-    log_event(PBSEVENT_SYSTEM | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD,
+    log_record(PBSEVENT_SYSTEM | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD,
       msg_daemonname, msg_trqauthddown);
     pthread_mutex_lock(log_mutex);
     log_close(1);
@@ -257,7 +271,10 @@ int trq_main(
   else if ((rc = load_ssh_key(&the_key)) != PBSE_NONE)
     {
     }
-  else if ((validate_server(active_pbs_server, trq_server_port, the_key, &sign_key)) != PBSE_NONE)
+  else if ((rc = init_trqauth_log(daemon_port) != PBSE_NONE))
+    {
+    }
+  else if ((rc = validate_server(active_pbs_server, trq_server_port, the_key, &sign_key)) != PBSE_NONE)
     {
     }
   else if ((rc = daemonize_trqauthd(AUTH_IP, daemon_port, process_method)) == PBSE_NONE)

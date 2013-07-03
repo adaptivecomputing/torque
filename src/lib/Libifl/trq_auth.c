@@ -76,8 +76,11 @@ int validate_active_pbs_server(
     }
 
   rc = socket_read_str(local_socket, &read_buf, &read_buf_len);
-  if (rc <= 0)
-    return(PBSE_SYSTEM);
+  if (rc != PBSE_NONE) 
+    return(rc);
+
+  if (read_buf_len == 0)
+    return(PBSE_SOCKET_READ);
 
   rc = PBSE_NONE;
 
@@ -136,8 +139,11 @@ int get_active_pbs_server(
     }
 
   rc = socket_read_str(local_socket, &read_buf, &read_buf_len);
-  if (rc <= 0)
-    return(PBSE_SYSTEM);
+  if (rc != PBSE_NONE) 
+    return(rc);
+
+  if (read_buf_len == 0)
+    return(PBSE_SOCKET_READ);
 
   rc = PBSE_NONE;
 
@@ -424,7 +430,7 @@ int build_active_server_response(
     return(PBSE_MEM_MALLOC);
     }
 
-  sprintf(resp_msg, "%d|%s", len, active_pbs_server);
+  sprintf(resp_msg, "%d|%s|", len, active_pbs_server);
 
   *send_message = resp_msg;
 

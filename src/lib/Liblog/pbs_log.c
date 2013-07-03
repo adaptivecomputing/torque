@@ -293,6 +293,7 @@ int log_init(
   const char *hostname)  /* I (optional) */
 
   {
+  int rc;
   pthread_mutexattr_t log_mutex_attr;
 
   if (suffix != NULL)
@@ -304,16 +305,28 @@ int log_init(
   /* Making log_mutex recursive because of signal handler like alarm
      and may be others interrupting log_record trq-1763 */
 
-  pthread_mutexattr_init(&log_mutex_attr);
-  pthread_mutexattr_settype(&log_mutex_attr, PTHREAD_MUTEX_RECURSIVE);
+  rc = pthread_mutexattr_init(&log_mutex_attr);
+  if (rc != 0)
+    return(PBSE_SYSTEM);
+
+  rc = pthread_mutexattr_settype(&log_mutex_attr, PTHREAD_MUTEX_RECURSIVE);
+  if (rc != 0)
+    return(PBSE_SYSTEM);
 
   log_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(log_mutex, &log_mutex_attr);
+  if (log_mutex == NULL)
+    return(PBSE_MEM_MALLOC);
+
+  rc = pthread_mutex_init(log_mutex, &log_mutex_attr);
+  if (rc != 0)
+    return(PBSE_SYSTEM);
 
   job_log_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(job_log_mutex, NULL);
+  rc = pthread_mutex_init(job_log_mutex, NULL);
+  if (rc != 0)
+    return(PBSE_SYSTEM);
 
-  return(0);
+  return(PBSE_NONE);
   }  /* END log_init() */
 
 
