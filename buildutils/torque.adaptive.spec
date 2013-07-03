@@ -458,6 +458,8 @@ TIMESTAMP="`date +%%Y.%%m.%%d_%%H.%%M.%%S`"
 %{pre_zip_back_up %{server_sub}-${TIMESTAMP}}
 
 %post %{server_sub}
+%grep_safety_net "%{torque_home}" "__AC_HOSTNAME_NOT_SET__" "${HOSTNAME}"
+
 if [ $1 -eq 1 ]
 then
     echo "  No other installation of '%{server_pkg}' detected on"
@@ -484,7 +486,6 @@ trqauthd      15005/udp           # authorization daemon
 EOF
     }
 
-    %grep_safety_net "%{torque_home}" "__AC_HOSTNAME_NOT_SET__" "${HOSTNAME}"
 
     echo "`hostname` np=`grep processor /proc/cpuinfo | wc -l`" > \
         %{torque_sysconfdir}/server_priv/nodes
@@ -569,6 +570,9 @@ TIMESTAMP="`date +%%Y.%%m.%%d_%%H.%%M.%%S`"
 
 %post %{mom_sub}
 echo "  Executing the '%{mom_pkg}' post-install script..."
+
+%grep_safety_net "%{torque_home}" "__AC_HOSTNAME_NOT_SET__" "${HOSTNAME}"
+
 if [ $1 -eq 1 ]
 then
     echo "  No other installation of '%{mom_pkg}' detected on"
@@ -591,8 +595,6 @@ trqauthd      15005/tcp           # authorization daemon
 trqauthd      15005/udp           # authorization daemon
 EOF
     }
-
-    %grep_safety_net "%{torque_home}" "__AC_HOSTNAME_NOT_SET__" "${HOSTNAME}"
 
     export TORQUE_SERVER="${HOSTNAME}"
 
