@@ -701,7 +701,7 @@ int status_nodeattrib(
     else if (i == ND_ATR_jobs)
       atemp[i].at_val.at_jinfo = pnode;
     else if (i == ND_ATR_np)
-      atemp[i].at_val.at_long = pnode->nd_nsn;
+      atemp[i].at_val.at_long = pnode->nd_slots.get_total_execution_slots();
     else if (i == ND_ATR_note)
       atemp[i].at_val.at_str  = pnode->nd_note;
     else if (i == ND_ATR_mom_port)
@@ -877,8 +877,6 @@ int initialize_pbsnode(
   pnode->nd_mom_rm_port     = PBS_MANAGER_SERVICE_PORT;
   pnode->nd_addrs           = pul;       /* list of host byte order */
   pnode->nd_ntype           = ntype;
-  pnode->nd_nsn             = 0;
-  pnode->nd_nsnfree         = 0;
   pnode->nd_needed          = 0;
   pnode->nd_order           = 0;
   pnode->nd_prop            = NULL;
@@ -1268,8 +1266,8 @@ int update_nodes_file(
 
     /* if number of subnodes is gt 1, write that; if only one,   */
     /* don't write to maintain compatability with old style file */
-    if (np->nd_nsn > 1)
-      fprintf(nin, " %s=%d", ATTR_NODE_np, np->nd_nsn);
+    if (np->nd_slots.get_total_execution_slots() > 1)
+      fprintf(nin, " %s=%d", ATTR_NODE_np, np->nd_slots.get_total_execution_slots());
 
     /* if number of gpus is gt 0, write that; if none,   */
     /* don't write to maintain compatability with old style file */
@@ -1389,7 +1387,7 @@ void recompute_ntype_cnts(void)
     while ((pnode = next_node(&allnodes, pnode, &iter)) != NULL)
       {
       /* count normally */
-      svr_loc_clnodes += pnode->nd_nsn;
+      svr_loc_clnodes += pnode->nd_slots.get_total_execution_slots();
       }
 
     svr_clnodes = svr_loc_clnodes;
@@ -1427,26 +1425,26 @@ struct prop *init_prop(
 
 
 /*
- * create_subnode - create a subnode entry and link to parent node
+ * add_execution_slot - create a subnode entry and link to parent node
  *
  *  NOTE: pname arg must be a copy of prop list as it is linked directly in
  */
 
-int create_subnode(
+int add_execution_slot(
     
   struct pbsnode *pnode)
 
   {
-  if(pnode == NULL) return(PBSE_RMBADPARAM);
-  pnode->nd_nsn++;
-  pnode->nd_nsnfree++;
+  if (pnode == NULL)
+    return(PBSE_RMBADPARAM);
+  
   pnode->nd_slots.add_execution_slot();
 
   if ((pnode->nd_state & INUSE_JOB) != 0)
     pnode->nd_state &= ~INUSE_JOB;
 
   return(PBSE_NONE);
-  }  /* END create_subnode() */
+  }  /* END add_execution_slot() */
 
 
 
@@ -1666,7 +1664,7 @@ static int setup_node_boards(
     read_val_and_advance(&np,&np_ptr);
     }
   else
-    np = pnode->nd_nsn / pnode->num_node_boards;
+    np = pnode->nd_slots.get_total_execution_slots() / pnode->num_node_boards;
 
   /* determine the number of gpus per node */
   if (pnode->gpu_str != NULL)
@@ -1712,7 +1710,7 @@ static int setup_node_boards(
 
     /* create the subnodes for this node */
     for (j = 0; j < np; j++)
-      create_subnode(pn);
+      add_execution_slot(pn);
 
     /* create the gpu subnodes for this node */
     for (j = 0; j < gpus; j++)
@@ -1937,7 +1935,7 @@ int create_pbs_node(
     }
 
   /* All nodes have at least one execution slot */
-  create_subnode(pnode);
+  add_execution_slot(pnode);
 
   rc = mgr_set_node_attr(
          pnode,
@@ -2570,11 +2568,11 @@ int node_np_action(
     {
 
     case ATR_ACTION_NEW:
-      new_attr->at_val.at_long = pnode->nd_nsn;
+      new_attr->at_val.at_long = pnode->nd_slots.get_total_execution_slots();
       break;
 
     case ATR_ACTION_ALTER:
-      old_np = pnode->nd_nsn;
+      old_np = pnode->nd_slots.get_total_execution_slots();
       new_np = (short)new_attr->at_val.at_long;
 
       if (new_np <= 0)
@@ -2590,12 +2588,10 @@ int node_np_action(
           }
         else
           {
-          create_subnode(pnode);
+          add_execution_slot(pnode);
           old_np++;
           }
         }
-
-      pnode->nd_nsn = old_np;
 
       break;
     default:
@@ -3067,7 +3063,7 @@ int create_partial_pbs_node(
 
   /* create and initialize the first subnode to go with the parent node */
 
-  create_subnode(pnode);
+  add_execution_slot(pnode);
 
   rc = mgr_set_node_attr(
          pnode,

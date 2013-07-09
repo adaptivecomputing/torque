@@ -33,20 +33,17 @@ START_TEST(set_ncpus_test)
   char           *proc3 = (char *)"CPROC=8";
 
   memset(&parent,0,sizeof(pbsnode));
-  pnode.nd_nsn = 0;
   fail_unless(set_ncpus(&pnode,&parent, proc1) == 0, "Couldn't set ncpus to 2");
-  snprintf(buf, sizeof(buf), "ncpus should be 2 but is %d", pnode.nd_nsn);
-  fail_unless(pnode.nd_nsn == 2, buf);
+  snprintf(buf, sizeof(buf), "ncpus should be 2 but is %d", pnode.nd_slots.get_total_execution_slots());
+  fail_unless(pnode.nd_slots.get_total_execution_slots() == 2, buf);
 
-  pnode.nd_nsn = 0;
-  fail_unless(set_ncpus(&pnode,&parent, proc3) == 0, "Couldn't set ncpus to 8");
-  snprintf(buf, sizeof(buf), "ncpus should be 8 but is %d", pnode.nd_nsn);
-  fail_unless(pnode.nd_nsn == 8, buf);
-
-  pnode.nd_nsn = 0;
   fail_unless(set_ncpus(&pnode,&parent, proc2) == 0, "Couldn't set ncpus to 4");
-  snprintf(buf, sizeof(buf), "ncpus should be 4 but is %d", pnode.nd_nsn);
-  fail_unless(pnode.nd_nsn == 4, buf);
+  snprintf(buf, sizeof(buf), "ncpus should be 4 but is %d", pnode.nd_slots.get_total_execution_slots());
+  fail_unless(pnode.nd_slots.get_total_execution_slots() == 4, buf);
+
+  fail_unless(set_ncpus(&pnode,&parent, proc3) == 0, "Couldn't set ncpus to 8");
+  snprintf(buf, sizeof(buf), "ncpus should be 8 but is %d", pnode.nd_slots.get_total_execution_slots());
+  fail_unless(pnode.nd_slots.get_total_execution_slots() == 8, buf);
   }
 END_TEST
 

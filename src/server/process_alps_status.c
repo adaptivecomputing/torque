@@ -154,7 +154,7 @@ struct pbsnode *create_alps_subnode(
     return(NULL);
     }
 
-  create_subnode(subnode);
+  add_execution_slot(subnode);
 
   /* do we need to do something else here? */
   subnode->nd_addrs = parent->nd_addrs;
@@ -306,14 +306,14 @@ int set_ncpus(
     return(PBSE_BAD_PARAMETER);
   
   ncpus = atoi(str + ac_cproc_eq_len);
-  difference = ncpus - current->nd_nsn;
+  difference = ncpus - current->nd_slots.get_total_execution_slots();
   orig_svr_clnodes = svr_clnodes;
 
   for (i = 0; i < abs(difference); i++)
     {
     if (difference > 0)
       {
-      create_subnode(current); 
+      add_execution_slot(current); 
 
       svr_clnodes++;
       }
@@ -329,8 +329,8 @@ int set_ncpus(
     snprintf(log_buffer, sizeof(log_buffer), "ncpus was reduced from %d to %d", orig_svr_clnodes, svr_clnodes);
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
     }
-  else if (current->nd_nsn > parent->max_subnode_nppn)
-    parent->max_subnode_nppn = current->nd_nsn;
+  else if (current->nd_slots.get_total_execution_slots() > parent->max_subnode_nppn)
+    parent->max_subnode_nppn = current->nd_slots.get_total_execution_slots();
 
   return(PBSE_NONE);
   } /* END set_ncpus() */

@@ -382,17 +382,17 @@ START_TEST(init_prop_test)
   }
 END_TEST
 
-START_TEST(create_subnode_test)
+START_TEST(add_execution_slot_test)
   {
   struct pbsnode node;
   int result = 0;
   initialize_pbsnode(&node, NULL, NULL, 0, FALSE);
 
-  result = create_subnode(NULL);
+  result = add_execution_slot(NULL);
   fail_unless(result == PBSE_RMBADPARAM, "NULL node pointer input fail");
 
-  result = create_subnode(&node);
-  fail_unless(result == PBSE_NONE, "create_subnode_test fail");
+  result = add_execution_slot(&node);
+  fail_unless(result == PBSE_NONE, "add_execution_slot_test fail");
   }
 END_TEST
 
@@ -950,8 +950,8 @@ Suite *node_func_suite(void)
   tcase_add_test(tc_core, init_prop_test);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("create_subnode_test");
-  tcase_add_test(tc_core, create_subnode_test);
+  tc_core = tcase_create("add_execution_slot_test");
+  tcase_add_test(tc_core, add_execution_slot_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("create_a_gpusubnode_test");
