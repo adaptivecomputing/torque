@@ -8799,10 +8799,13 @@ int mark_for_resend(
 
   {
   int jindex;
-  int rc = FAILURE;
+  int rc = PBSE_NONE;
 
   if (pjob == NULL)
+    {
+    rc = PBSE_JOBNOTFOUND;
     return(rc);
+    }
 
   for (jindex = 0;jindex < MAX_RESEND_JOBS;jindex++)
     {
@@ -8820,7 +8823,7 @@ int mark_for_resend(
           "marking job for resend");
         }
 
-      rc = SUCCESS;
+      rc = PBSE_NONE;
 
       break;
       }
