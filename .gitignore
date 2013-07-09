@@ -388,6 +388,7 @@ src/server/test/attr_recov/test_attr_recov
 src/server/test/batch_request/test_batch_request
 src/server/test/dis_read/test_dis_read
 src/server/test/display_alps_status/test_display_alps_status
+src/server/test/execution_slot_tracker/test_execution_slot_tracker
 src/server/test/exiting_jobs/test_exiting_jobs
 src/server/test/geteusernam/test_geteusernam
 src/server/test/issue_request/test_issue_request
