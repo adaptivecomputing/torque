@@ -16,7 +16,8 @@ void initialize_node_for_testing(
 
   {
   memset(pnode, 0, sizeof(struct pbsnode));
-  pnode->nd_nsn = 5;
+  for (int i = 0; i < 5; i++)
+    pnode->nd_slots.add_execution_slot();
   }
 
 

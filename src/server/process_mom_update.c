@@ -362,7 +362,7 @@ int handle_auto_np(
   if ((node_attr_def + ND_ATR_np)->at_decode(&nattr, ATTR_NODE_np, NULL, str + 6, 0) == 0)
     {
     /* ... and if MOM's ncpus is different than our np... */
-    if (nattr.at_val.at_long != np->nd_nsn)
+    if (nattr.at_val.at_long != np->nd_slots.get_total_execution_slots())
       {
       /* ... then we do the defined magic to create new subnodes */
       (node_attr_def + ND_ATR_np)->at_action(&nattr, (void *)np, ATR_ACTION_ALTER);

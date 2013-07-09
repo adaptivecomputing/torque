@@ -390,7 +390,6 @@ void  update_default_np()
   struct pbsnode *pnode;
   int             iter = -1;
   long            default_np = 0;
-  long            npfreediff;
 
   get_svr_attr_l(SRV_ATR_NPDefault, &default_np);
 
@@ -398,9 +397,9 @@ void  update_default_np()
     {
     while ((pnode = next_host(&allnodes,&iter,NULL)) != NULL)
       {
-      npfreediff = pnode->nd_nsn - pnode->nd_nsnfree;
-      pnode->nd_nsn = default_np;
-      pnode->nd_nsnfree = default_np - npfreediff;
+      while (pnode->nd_slots.get_total_execution_slots() < default_np)
+        add_execution_slot(pnode);
+      
       unlock_node(pnode, __func__, NULL, LOGLEVEL);
       }
     }

@@ -436,7 +436,7 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   return(0);
   }
 
-int create_subnode(struct pbsnode *pnode)
+int add_execution_slot(struct pbsnode *pnode)
 
   {
   return(0);

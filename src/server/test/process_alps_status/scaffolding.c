@@ -2247,19 +2247,17 @@ int remove_alps_reservation(
   return 0;
   }
 
-int create_subnode(
+int add_execution_slot(
 
   struct pbsnode *pnode)
 
   {
   if(pnode == NULL) return(PBSE_RMBADPARAM);
-  pnode->nd_nsn++;
-  pnode->nd_nsnfree++;
   pnode->nd_slots.add_execution_slot();
 
   if ((pnode->nd_state & INUSE_JOB) != 0)
     pnode->nd_state &= ~INUSE_JOB;
 
   return(PBSE_NONE);
-  }  /* END create_subnode() */
+  } 
 
