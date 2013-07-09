@@ -102,7 +102,7 @@ extern int              allow_any_mom;
 extern AvlTree          ipaddrs;
 
 
-job *get_job_from_jobinfo(struct jobinfo *jp, struct pbsnode *pnode);
+job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode);
 int  unlock_ji_mutex(job *, const char *, const char *, int);
 
 
@@ -207,50 +207,41 @@ int gpu_has_job(
   char           *found_str;
   /* increased so that really high gpu indexes don't bother us */
   char            tmp_str[PBS_MAXHOSTNAME + 10];
-  struct pbssubn *np;
-  struct jobinfo *jp;
 
   /* check each subnode for a job using a gpuid */
-  for (np = pnode->nd_psn;np != NULL;np = np->next)
+  for (unsigned int i = 0; i < pnode->nd_job_usages.size(); i++)
     {
-    /* for each jobinfo on subnode on node ... */
-    for (jp = np->jobs;jp != NULL;jp = jp->next)
+    job_usage_info *jui = pnode->nd_job_usages[i];
+    
+    if ((pjob = get_job_from_job_usage_info(jui, pnode)) != NULL)
       {
-      if (jp->jobid != NULL)
+      mutex_mgr job_mutex(pjob->ji_mutex, true);
+
+      /* Does this job have this gpuid assigned? */
+      if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
+          (pjob->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET) != 0)
         {
-        if ((pjob = get_job_from_jobinfo(jp,pnode)) != NULL)
+        gpu_str = pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str;
+        
+        if (gpu_str != NULL)
           {
-          /* Does this job have this gpuid assigned? */
-          if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
-              (pjob->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET) != 0)
-            {
-            gpu_str = pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str;
-            
-            if (gpu_str != NULL)
-              {
-              snprintf(tmp_str, sizeof(tmp_str), "%s-gpu/%d",
-                pnode->nd_name, gpuid);
-              
-              /* look thru the string and see if it has this host and gpuid.
-               * exec_gpus string should be in format of 
-               * <hostname>-gpu/<index>[+<hostname>-gpu/<index>...]
-               */
-              
-              found_str = strstr (gpu_str, tmp_str);
-              if (found_str != NULL)
-                {
-                unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-                return(TRUE);
-                }
-              }
-            }
+          snprintf(tmp_str, sizeof(tmp_str), "%s-gpu/%d",
+            pnode->nd_name, gpuid);
           
-          /* done with job, unlock the mutex */
-          unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+          /* look thru the string and see if it has this host and gpuid.
+           * exec_gpus string should be in format of 
+           * <hostname>-gpu/<index>[+<hostname>-gpu/<index>...]
+           */
+          
+          found_str = strstr (gpu_str, tmp_str);
+          if (found_str != NULL)
+            {
+            return(TRUE);
+            }
           }
         }
-      } /* END for each job on the subnode */
-    } /* END for each subnode */
+      }
+    } /* END for each job on node */
 
   return(FALSE);
   }

@@ -429,6 +429,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/server/test/batch_request/Makefile
     src/server/test/dis_read/Makefile
     src/server/test/display_alps_status/Makefile
+    src/server/test/execution_slot_tracker/Makefile
     src/server/test/exiting_jobs/Makefile
     src/server/test/geteusernam/Makefile
     src/server/test/issue_request/Makefile
@@ -438,6 +439,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/server/test/job_recov/Makefile
     src/server/test/job_recycler/Makefile
     src/server/test/job_route/Makefile
+    src/server/test/job_usage_info/Makefile
     src/server/test/login_nodes/Makefile
     src/server/test/node_func/Makefile
     src/server/test/node_manager/Makefile

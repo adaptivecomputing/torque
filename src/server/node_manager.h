@@ -55,8 +55,6 @@ int procs_available(int proc_ct);
 int get_bitmap(job *pjob, int ProcBMSize, char *ProcBMPtr);
 
 int node_satisfies_request(struct pbsnode *pnode, char *ProcBMStr);
-
-int reserve_node(struct pbsnode *pnode, short newstate, job *pjob, char *ProcBMStr, struct howl **hlistptr);
 #endif /* GEOMETRY_REQUESTS */
 
 int add_job_to_node(struct pbsnode *pnode, struct pbssubn *snp, short newstate, job *pjob);
@@ -80,7 +78,5 @@ int node_reserve(char *nspec, resource_t tag);
 void free_nodes(job *pjob);
 
 void set_old_nodes(job *pjob);
-
-job *get_job_from_jobinfo(struct jobinfo *jp, struct pbsnode *pnode);
 
 #endif /* _NODE_MANAGER_H */

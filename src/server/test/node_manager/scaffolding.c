@@ -436,10 +436,10 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   return(0);
   }
 
-struct pbssubn *create_subnode(struct pbsnode *pnode)
+int create_subnode(struct pbsnode *pnode)
 
   {
-  return(NULL);
+  return(0);
   }
 
 struct pbsnode *create_alps_subnode(

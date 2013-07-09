@@ -10,12 +10,37 @@ char  buf[4096];
 const char *napali = "napali";
 const char *l11 =    "l11";
 
+int   remove_job_from_node(struct pbsnode *pnode, job *pjob);
 int   node_in_exechostlist(char *, char *);
 char *get_next_exec_host(char **);
 int   job_should_be_on_node(char *, struct pbsnode *);
 int   check_for_node_type(complete_spec_data *, enum node_types);
 int   record_external_node(job *, struct pbsnode *);
 void *record_reported_time(void *vp);
+
+START_TEST(remove_job_from_node_test)
+  {
+  job pjob;
+
+  strcpy(pjob.ji_qs.ji_jobid, "1.napali");
+  job_usage_info *jui = (job_usage_info *)calloc(1, sizeof(job_usage_info));
+  strcpy(jui->jobid, "1.napali");
+  struct pbsnode *pnode = (struct pbsnode *)calloc(1, sizeof(struct pbsnode));
+
+  for (int i = 0; i < 10; i++)
+    pnode->nd_slots.add_execution_slot();
+
+  pnode->nd_slots.reserve_execution_slots(6, jui->est);
+  pnode->nd_job_usages.push_back(jui);
+
+  fail_unless(pnode->nd_slots.get_number_free() == 4);
+
+  remove_job_from_node(pnode, &pjob);
+  fail_unless(pnode->nd_slots.get_number_free() == 10);
+  remove_job_from_node(pnode, &pjob);
+  fail_unless(pnode->nd_slots.get_number_free() == 10);
+  }
+END_TEST
 
 START_TEST(record_reported_time_test)
   {
@@ -211,6 +236,7 @@ Suite *node_manager_suite(void)
   tc_core = tcase_create("record_external_node_test");
   tcase_add_test(tc_core, record_external_node_test);
   tcase_add_test(tc_core, record_reported_time_test);
+  tcase_add_test(tc_core, remove_job_from_node_test);
   suite_add_tcase(s, tc_core);
 
   return(s);
