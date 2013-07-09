@@ -641,6 +641,8 @@ static void altdsp_statjob(
   int   usecput;
   static char  pfs[SIZEL];
   static char  rqmem[SIZEL];
+  static char  rqpmem[SIZEL];
+  static char  rqdmem[SIZEL];
   static char  srfsbig[SIZEL];
   static char  srfsfast[SIZEL];
   static const char *blank = " -- ";
@@ -658,19 +660,15 @@ static void altdsp_statjob(
 
     if (alt_opt & ALT_DISPLAY_R)
       {
-      printf("\n                                                       Req'd  Req'd       Elap \n");
-
-      printf("Job ID               Username    Queue    NDS   TSK    Memory Time      S Time       BIG  FAST   PFS\n");
-
-      printf("-------------------- ----------- -------- ----- ------ ------ --------- - --------- ----- ----- -----\n");
+      printf("\n                                                       Required Memory      Req'd       Elap");
+      printf("\nJob ID               Username    Queue    NDS   TSK    mem    pmem   dmem   Time      S Time      BIG   FAST  PFS");
+      printf("\n-------------------- ----------- -------- ----- ------ ------ ------ ------ --------- - --------- ----- ----- -----\n");
       }
     else
       {
-      printf("\n                                                                               Req'd    Req'd       Elap\n");
-
-      printf("Job ID               Username    Queue    Jobname          SessID NDS   TSK    Memory   Time    S   Time\n");
-
-      printf("-------------------- ----------- -------- ---------------- ------ ----- ------ ------ --------- - ---------\n");
+      printf("\n                                                                               Required Memory      Req'd       Elap");
+      printf("\nJob ID               Username    Queue    Jobname          SessID NDS   TSK    mem    pmem   dmem   Time      S Time");
+      printf("\n-------------------- ----------- -------- ---------------- ------ ----- ------ ------ ------ ------ --------- - ---------\n");
       }
     }
 
@@ -689,6 +687,8 @@ static void altdsp_statjob(
     strcpy(elap_time_string, blank);
     snprintf(pfs, sizeof(pfs), "%s", blank);
     snprintf(rqmem, sizeof(rqmem), "%s", blank);
+    snprintf(rqpmem, sizeof(rqpmem), "%s", blank);
+    snprintf(rqdmem, sizeof(rqdmem), "%s", blank);
     snprintf(srfsbig, sizeof(srfsbig), "%s", blank);
     snprintf(srfsfast, sizeof(srfsfast), "%s", blank);
     usecput = 0;
@@ -767,6 +767,14 @@ static void altdsp_statjob(
           {
           snprintf(rqmem, sizeof(rqmem), "%s", cnv_size(pat->value, alt_opt));
           }
+        else if (!strcmp(pat->resource, "pmem"))
+          {
+          snprintf(rqpmem, sizeof(rqpmem), "%s", cnv_size(pat->value, alt_opt));
+          }
+        else if (!strcmp(pat->resource, "dmem"))
+          { 
+          snprintf(rqdmem, sizeof(rqdmem), "%s", cnv_size(pat->value, alt_opt));
+          }
         else if (!strcmp(pat->resource, "walltime"))
           {
           rqtimewal = pat->value;
@@ -835,12 +843,14 @@ static void altdsp_statjob(
 
     if (alt_opt & ALT_DISPLAY_R)
       {
-      printf("%5.5s %*.*s %6.6s %9.9s %1.1s %9.9s %5.5s %5.5s %5.5s",
+      printf("%5.5s %*.*s %6.6s %6.6s %6.6s %9.9s %1.1s %9.9s %5.5s %5.5s %5.5s",
              nodect,
              tasksize,
              tasksize,
              tasks,
              rqmem,
+             rqpmem,
+             rqdmem,
              usecput ? rqtimecpu : rqtimewal,
              jstate,
              usecput ? eltimecpu : elap_time_string,
@@ -850,7 +860,7 @@ static void altdsp_statjob(
       }
     else
       {
-      snprintf(tmpLine, sizeof(tmpLine), "%%-%d.%ds %%6.6s %%5.5s %%*.*s %%6.6s %%9.9s  %%1.1s %%9.9s",
+      snprintf(tmpLine, sizeof(tmpLine), "%%-%d.%ds %%6.6s %%5.5s %%*.*s %%6.6s %%6.6s %%6.6s %%9.9s %%1.1s %%9.9s",
                PBS_NAMELEN, PBS_NAMELEN);
 
       printf(tmpLine,
@@ -861,6 +871,8 @@ static void altdsp_statjob(
              tasksize,
              tasks,
              rqmem,
+             rqpmem,
+             rqdmem,
              usecput ? rqtimecpu : rqtimewal,
              jstate,
              usecput ? eltimecpu : elap_time_string);
@@ -1191,6 +1203,7 @@ void display_statjob(
   char                 format[80];
   char                 long_name[17];
   time_t               epoch;
+  bool do_not_display = false;
 
   mxml_t              *DE;
   mxml_t              *JE;
@@ -1233,7 +1246,6 @@ void display_statjob(
 
   for (p = status;p != NULL;p = p->next)
     {
-    bool do_not_display = false;
     jid = NULL;
     name = NULL;
     owner = NULL;
@@ -1248,6 +1260,38 @@ void display_statjob(
 
     if (full)
       {
+
+      do_not_display = false;
+      a = p->attribs;
+      while (a != NULL)
+        {
+        if (!strcmp(a->name, ATTR_state))
+          {
+          l = strlen(a->value);
+
+          if (l > STATEL)
+            {
+            c = a->value + STATEL;
+
+            *c = '\0';
+            }
+
+          state = a->value;
+          if (*state == 'C')
+            {
+            if ( do_not_display_complete == true )
+              {
+              do_not_display = true;
+              }
+            break;
+            }
+          }
+        a = a->next;
+        }
+
+      if (do_not_display == true)
+        continue;
+
       if (DisplayXML == TRUE)
         {
         JE = NULL;
@@ -1269,10 +1313,10 @@ void display_statjob(
         printf("Job Id: %s\n", p->name);
         }
 
-      a = p->attribs;
 
       RE1 = NULL;
 
+      a = p->attribs;
       while (a != NULL)
         {
         if (a->name != NULL)
@@ -2254,6 +2298,9 @@ int main(
 
   if (getenv("PBS_QSTAT_EXECONLY") != NULL)
     exec_only = 1;
+
+  if (getenv("PBS_QSTAT_NO_COMPLETE") != NULL)
+    do_not_display_complete = true;
     
   while ((c = getopt(argc, argv, GETOPT_ARGS)) != EOF)
     {

@@ -437,8 +437,11 @@ void *record_reported_time(
         {
         mutex_mgr job_mutex(pjob->ji_mutex, true);
 
-        if (!strncmp(node_id, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, strlen(node_id)))
-          pjob->ji_last_reported_time = time(NULL);
+        if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
+          {
+          if (!strncmp(node_id, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, strlen(node_id)))
+            pjob->ji_last_reported_time = time(NULL);
+          }
         }
       }
 

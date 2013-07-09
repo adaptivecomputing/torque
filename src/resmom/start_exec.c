@@ -461,6 +461,7 @@ struct passwd *check_pwd(
     /* FAILURE */
 
     sprintf(log_buffer, "no user specified for job");
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
     return(NULL);
     }
@@ -483,6 +484,7 @@ struct passwd *check_pwd(
 
     sprintf(log_buffer, "no password entry for user %s",
             ptr);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
     return(NULL);
     }
@@ -511,6 +513,7 @@ struct passwd *check_pwd(
     {
     /* FAILURE */
     sprintf(log_buffer, "calloc failed");
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
     return(NULL);
     }
@@ -556,6 +559,7 @@ struct passwd *check_pwd(
           ptr,
           errno,
           strerror(errno));
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
         return(NULL);
         }
@@ -576,6 +580,7 @@ struct passwd *check_pwd(
     /* FAILURE */
 
     sprintf(log_buffer, "too many group entries");
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
     return(NULL);
     }
@@ -587,6 +592,7 @@ struct passwd *check_pwd(
     /* FAILURE */
 
     sprintf(log_buffer, "site_mom_chkuser failed");
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
     return(NULL);
     }

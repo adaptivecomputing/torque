@@ -850,7 +850,7 @@ int socket_read_str(
     rc = PBSE_INTERNAL;
     }
   /* This is where the select would go until the availbytes is > the tmp_len */
-  else if ((rc = socket_wait_for_xbytes(socket, tmp_len+1)) != PBSE_NONE)
+  else if ((rc = socket_wait_for_xbytes(socket, tmp_len)) != PBSE_NONE)
     {
     }
   else if (socket_read_force(socket, *the_str, tmp_len, &read_len) == -1)

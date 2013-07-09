@@ -299,35 +299,47 @@ int tcp_connect_sockaddr(
   char *err_msg = NULL;
   char local_err_buf[LOCAL_LOG_BUF];
   char *tmp_ip = NULL;
+  int  retryCount = 5;
 
-  if ((stream = socket_get_tcp_priv()) < 0)
+  while(retryCount-- >= 0)
     {
-    /* FAILED */
-    log_err(errno,__func__,"Failed when trying to get privileged port - socket_get_tcp_priv() failed");
-    }
-  else if ((rc = socket_connect_addr(&stream, sa, sa_size, 1, &err_msg)) != PBSE_NONE)
-    {
-    /* FAILED */
-    tmp_ip = inet_ntoa(((struct sockaddr_in *)sa)->sin_addr);
-    snprintf(local_err_buf, LOCAL_LOG_BUF, "Failed when trying to open tcp connection - connect() failed [rc = %d] [addr = %s:%d]", rc, tmp_ip, htons(((struct sockaddr_in *)sa)->sin_port));
-    log_err(errno,__func__,local_err_buf);
-    if (err_msg != NULL)
+    if ((stream = socket_get_tcp_priv()) < 0)
       {
-      log_err(errno,__func__,err_msg);
-      free(err_msg);
+      /* FAILED */
+      log_err(errno,__func__,"Failed when trying to get privileged port - socket_get_tcp_priv() failed");
       }
-    }
-  else
-    {
-    /* SUCCESS */
-    return(stream);
-    }
+    else if ((rc = socket_connect_addr(&stream, sa, sa_size, 1, &err_msg)) != PBSE_NONE)
+      {
+      /* FAILED */
+      if(errno != EINTR) //Interrupted system call is a retryable error so try it again.
+        {
+        retryCount = -1;
+        }
+      else
+        {
+        usleep(10000); //Catch a breath on a retryable error.
+        }
+      tmp_ip = inet_ntoa(((struct sockaddr_in *)sa)->sin_addr);
+      snprintf(local_err_buf, LOCAL_LOG_BUF, "Failed when trying to open tcp connection - connect() failed [rc = %d] [addr = %s:%d]", rc, tmp_ip, htons(((struct sockaddr_in *)sa)->sin_port));
+      log_err(errno,__func__,local_err_buf);
+      if (err_msg != NULL)
+        {
+        log_err(errno,__func__,err_msg);
+        free(err_msg);
+        }
+      }
+    else
+      {
+      /* SUCCESS */
+      return(stream);
+      }
 
-  /* FAILURE */
-  if (IS_VALID_STREAM(stream))
-    {
-    close(stream);
-    stream = TRANSIENT_SOCKET_FAIL;
+    /* FAILURE */
+    if (IS_VALID_STREAM(stream))
+      {
+      close(stream);
+      stream = TRANSIENT_SOCKET_FAIL;
+      }
     }
 
   return(stream);

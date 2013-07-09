@@ -215,6 +215,40 @@ START_TEST(test_get_mic_indices)
   }
 END_TEST
 
+START_TEST(test_check_pwd_euser)
+  {
+  job *pjob = (job *)calloc(1, sizeof(job));
+  struct passwd *pwd = NULL;
+
+  pwd = check_pwd(pjob);
+  fail_unless(pwd == NULL, "check_pwd succeeded with an empty job");
+
+  decode_str(&pjob->ji_wattr[JOB_ATR_euser], "euser", NULL, "bogus", 0);
+  fail_unless(pwd == NULL, "check_pwd still succeeded with bogus user");
+  }
+END_TEST
+
+START_TEST(test_check_pwd_no_user)
+  {
+  job *pjob = (job *)calloc(1, sizeof(job));
+  struct passwd *pwd = NULL;
+
+  decode_str(&pjob->ji_wattr[JOB_ATR_euser], "euser", NULL, "bogus", 0);
+  fail_unless(pwd == NULL, "check_pwd still succeeded with bogus user");
+  }
+END_TEST
+
+START_TEST(test_check_pwd_adaptive_user)
+  {
+  job *pjob = (job *)calloc(1, sizeof(job));
+  struct passwd *pwd = NULL;
+
+  decode_str(&pjob->ji_wattr[JOB_ATR_euser], "euser", NULL, "adaptive", 0);
+  fail_unless(pwd == NULL, "check_pwd still succeeded with bogus user");
+  }
+END_TEST
+
+
 Suite *start_exec_suite(void)
   {
   Suite *s = suite_create("start_exec_suite methods");
@@ -237,6 +271,18 @@ Suite *start_exec_suite(void)
 
   tc_core = tcase_create("test_get_mic_indices");
   tcase_add_test(tc_core, test_get_mic_indices);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_check_pwd_euser");
+  tcase_add_test(tc_core, test_check_pwd_euser);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_check_pwd_no_user");
+  tcase_add_test(tc_core, test_check_pwd_no_user);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_check_pwd_adaptive_user");
+  tcase_add_test(tc_core, test_check_pwd_adaptive_user);
   suite_add_tcase(s, tc_core);
 
   return s;

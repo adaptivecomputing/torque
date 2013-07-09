@@ -337,7 +337,7 @@ int add_fileinfo(
     {
     if (!(strncmp(job_attr[JOB_ATR_join].at_val.at_str, "oe", 2)))
       attributeValue = job_attr[JOB_ATR_outpath].at_val.at_str;
-    else
+    else if (!(strncmp(job_attr[JOB_ATR_join].at_val.at_str, "eo", 2)))
       attributeValue = job_attr[JOB_ATR_errpath].at_val.at_str;
     }
   if (attributeValue != NULL)
