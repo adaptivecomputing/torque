@@ -1950,7 +1950,7 @@ int req_commit(
   int        newstate;
   int        newsub;
   pbs_queue *pque;
-  char       log_buf[LOCAL_LOG_BUF_SIZE];
+  char       log_buf[LOCAL_LOG_BUF_SIZE] = {0};
 
 #ifdef AUTORUN_JOBS
 
