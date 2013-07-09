@@ -147,7 +147,7 @@ struct pbsnode *create_alps_subnode(
   int             bad;
   int             rc = PBSE_NONE;
 
-  if (initialize_pbsnode(subnode, strdup(node_id), NULL, NTYPE_CLUSTER) != PBSE_NONE)
+  if (initialize_pbsnode(subnode, strdup(node_id), NULL, NTYPE_CLUSTER, FALSE) != PBSE_NONE)
     {
     free(subnode);
     log_err(ENOMEM, __func__, "");

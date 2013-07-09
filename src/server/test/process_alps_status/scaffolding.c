@@ -1509,7 +1509,8 @@ int initialize_pbsnode(
   char           *pname, /* node name */
   u_long         *pul,  /* host byte order array */
   /* ipaddrs for this node */
-  int             ntype) /* time-shared or cluster */
+  int             ntype, /* time-shared or cluster */
+  bool            isNUMANode) /* TRUE if this is a NUMA node. */
 
   {
   memset(pnode, 0, sizeof(struct pbsnode));

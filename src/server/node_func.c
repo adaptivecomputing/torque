@@ -852,7 +852,8 @@ int initialize_pbsnode(
   char           *pname, /* node name */
   u_long         *pul,  /* host byte order array */
   /* ipaddrs for this node */
-  int             ntype) /* time-shared or cluster */
+  int             ntype, /* time-shared or cluster */
+  bool            isNUMANode) /* TRUE if this is a NUMA node */
 
   {
   struct addrinfo *pAddrInfo;
@@ -892,20 +893,22 @@ int initialize_pbsnode(
   pnode->nd_ngpustatus      = 0;
   pnode->nd_ms_jobs         = initialize_resizable_array(20);
 
+  if(!isNUMANode) //NUMA nodes don't have their own address and their name is not in DNS.
+    {
+    if(pbs_getaddrinfo(pname,NULL,&pAddrInfo))
+      {
+      return (PBSE_SYSTEM);
+      }
+    memcpy(&pnode->nd_sock_addr,pAddrInfo->ai_addr,sizeof(struct sockaddr_in));
+    }
+
   pnode->nd_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   if (pnode->nd_mutex == NULL)
     {
     log_err(ENOMEM, __func__, "Could not allocate memory for the node's mutex");
-    
+
     return(ENOMEM);
     }
-
-  if(pbs_getaddrinfo(pname,NULL,&pAddrInfo))
-    {
-    return (PBSE_SYSTEM);
-    }
-  memcpy(&pnode->nd_sock_addr,pAddrInfo->ai_addr,sizeof(struct sockaddr_in));
-
   pthread_mutex_init(pnode->nd_mutex,NULL);
 
   return(PBSE_NONE);
@@ -1769,7 +1772,7 @@ static int setup_node_boards(
       return(PBSE_SYSTEM);
       }
 
-    if ((rc = initialize_pbsnode(pn, allocd_name, pul, NTYPE_CLUSTER)) != PBSE_NONE)
+    if ((rc = initialize_pbsnode(pn, allocd_name, pul, NTYPE_CLUSTER, TRUE)) != PBSE_NONE)
       {
       free(pn);
       return(rc);
@@ -2008,7 +2011,7 @@ int create_pbs_node(
     return(PBSE_SYSTEM);
     }
 
-  if ((rc = initialize_pbsnode(pnode, pname, pul, ntype)) != PBSE_NONE)
+  if ((rc = initialize_pbsnode(pnode, pname, pul, ntype, FALSE)) != PBSE_NONE)
     {
     free(pul);
     free(pname);
@@ -3176,7 +3179,7 @@ int create_partial_pbs_node(
   *pul = addr;
   pname = strdup(nodename);
 
-  if ((rc = initialize_pbsnode(pnode, pname, pul, ntype)) != PBSE_NONE)
+  if ((rc = initialize_pbsnode(pnode, pname, pul, ntype, FALSE)) != PBSE_NONE)
     {
     free(pul);
     free(pname);
