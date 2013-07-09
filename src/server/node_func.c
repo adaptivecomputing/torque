@@ -1437,6 +1437,7 @@ int create_subnode(
   struct pbsnode *pnode)
 
   {
+  if(pnode == NULL) return(PBSE_RMBADPARAM);
   pnode->nd_nsn++;
   pnode->nd_nsnfree++;
   pnode->nd_slots.add_execution_slot();

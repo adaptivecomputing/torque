@@ -91,16 +91,12 @@ END_TEST
 START_TEST(job_should_be_on_node_test)
   {
   struct pbsnode pnode;
-  struct pbssubn subnode;
   struct jobinfo jinfo;
 
   memset(&pnode, 0, sizeof(pnode));
   memset(&jinfo, 0, sizeof(jinfo));
-  memset(&subnode, 0, sizeof(subnode));
 
   pnode.nd_name = (char *)"tom";
-  pnode.nd_psn = &subnode;
-  subnode.jobs = &jinfo;
   strcpy(jinfo.jobid, "1");
 
   fail_unless(job_should_be_on_node((char *)"2", &pnode) == FALSE, "non-existent job shouldn't be on node");

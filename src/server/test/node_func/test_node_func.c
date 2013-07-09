@@ -385,14 +385,14 @@ END_TEST
 START_TEST(create_subnode_test)
   {
   struct pbsnode node;
-  struct pbssubn *result = NULL;
+  int result = 0;
   initialize_pbsnode(&node, NULL, NULL, 0, FALSE);
 
   result = create_subnode(NULL);
-  fail_unless(result == NULL, "NULL node pointer input fail");
+  fail_unless(result == PBSE_RMBADPARAM, "NULL node pointer input fail");
 
   result = create_subnode(&node);
-  fail_unless(result->host == &node, "create_subnode_test fail");
+  fail_unless(result == PBSE_NONE, "create_subnode_test fail");
   }
 END_TEST
 

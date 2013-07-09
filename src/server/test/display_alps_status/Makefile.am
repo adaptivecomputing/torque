@@ -10,7 +10,7 @@ AM_LDFLAGS = @CHECK_LIBS@ $(lib_LTLIBRARIES) $(AM_LIBS)
 
 check_PROGRAMS = test_display_alps_status
 
-libtest_display_alps_status_la_SOURCES = scaffolding.c $(PROG_ROOT)/display_alps_status.c $(PROG_ROOT)/../lib/Libutils/u_constants.c
+libtest_display_alps_status_la_SOURCES = scaffolding.c $(PROG_ROOT)/display_alps_status.c $(PROG_ROOT)/../lib/Libutils/u_constants.c $(PROG_ROOT)/execution_slot_tracker.cpp
 libtest_display_alps_status_la_LDFLAGS = @CHECK_LIBS@ $(AM_LIBS) -shared -lgcov
 
 test_display_alps_status_SOURCES = test_display_alps_status.c
