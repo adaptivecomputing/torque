@@ -7547,6 +7547,15 @@ int setup_program_environment(void)
   /* initialize the mom_status */
   mom_status = get_dynamic_string(16 * 1024, NULL);
 
+  if(mom_status == NULL)
+    {
+    snprintf(log_buffer, sizeof(log_buffer),
+      "get_dynamic_string() failed: %s\n",strerror(errno));
+    log_err(errno, __func__, log_buffer);
+
+    return(1);
+    }
+
   init_resc_defs();
 
   c |= mom_checkpoint_init();
