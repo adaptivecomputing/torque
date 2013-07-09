@@ -642,3 +642,18 @@ void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_ext(int eventtype, const char *func_name, const char *msg, int level) {}
+
+int pbs_getaddrinfo(const char *pNode, struct addrinfo *pHints, struct addrinfo **ppAddrInfoOut)
+  {
+  return(0);
+  }
+
+struct sockaddr_in *get_cached_addrinfo(const char *hostname)
+  {
+  return(NULL);
+  }
+
+struct addrinfo * insert_addr_name_info(struct addrinfo *pAddrInfo, const char *host)
+  {
+  return(NULL);
+  }
