@@ -206,22 +206,6 @@ int save_node_status(struct pbsnode *np, pbs_attribute  *temp)
   } /* END save_node_status() */
 
 
-
-
-
-struct pbssubn *create_subnode(
-
-  struct pbsnode *pnode)
-
-  {
-  pnode->nd_nsn++;
-  pnode->nd_nsnfree++;
-
-  return((struct pbssubn *)1);
-  }  /* END create_subnode() */
-
-
-
 void update_node_state(
 
   struct pbsnode *np,         /* I (modified) */
@@ -328,27 +312,6 @@ void free_prop_list(
     }
   } /* END free_prop_list() */
 
-
-
-void update_subnode(
-
-  struct pbsnode *pnode)
-
-  {
-  struct  pbssubn *pnxtsn;
-  unsigned short   state;
-
-  state = pnode->nd_state & INUSE_COMMON_MASK;
-
-  for (pnxtsn = pnode->nd_psn;pnxtsn;pnxtsn = pnxtsn->next)
-    {
-    pnxtsn->host  = pnode;
-
-    pnxtsn->inuse = (pnxtsn->inuse & ~INUSE_COMMON_MASK) | state;
-    }
-
-  return;
-  }  /* END update_subnode() */
 
 
 struct prop *init_prop(
@@ -2283,4 +2246,20 @@ int remove_alps_reservation(
   {
   return 0;
   }
+
+int create_subnode(
+
+  struct pbsnode *pnode)
+
+  {
+  if(pnode == NULL) return(PBSE_RMBADPARAM);
+  pnode->nd_nsn++;
+  pnode->nd_nsnfree++;
+  pnode->nd_slots.add_execution_slot();
+
+  if ((pnode->nd_state & INUSE_JOB) != 0)
+    pnode->nd_state &= ~INUSE_JOB;
+
+  return(PBSE_NONE);
+  }  /* END create_subnode() */
 
