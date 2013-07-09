@@ -1512,6 +1512,8 @@ int post_epilogue(
   int                   resc_access_perm;
   struct batch_request *preq;
   struct tcp_chan *chan = NULL;
+  pid_t            pid;
+  int              rc = PBSE_NONE;
 
   if (LOGLEVEL >= 2)
     {
@@ -1519,6 +1521,45 @@ int post_epilogue(
     log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, __func__, log_buffer);
     }
 
+  if (pjob->ji_job_is_being_rerun == TRUE)
+    {
+    pjob->ji_qs.ji_un.ji_momt.ji_exitstat = 0;
+    }
+
+   /*This was called if the call to mom_open_socket_to_jobs_server
+   * failed. We moved it to here and are now marking every job to be
+   * resent because after we fork we can no longer update the job. In the
+   * routine examine_all_jobs_to_resend it will fail to find this job
+   * and removeit from the resend queue. - where is this retried?
+   * Answer: In the main_loop examine_all_jobs_to_resend() tries
+   * every so often to send the obit.  This would work for recovered
+   * jobs also.
+   */
+  if (ev != MOM_OBIT_RETRY)
+    {
+    rc = mark_for_resend(pjob);
+    if (rc == PBSE_JOBNOTFOUND)
+      return(rc);
+    }
+
+
+  pid = fork();
+
+  if (pid < 0)
+    {
+    sprintf(log_buffer, "failed to fork: %d", errno);
+    log_err(errno, __func__, log_buffer);
+    return(PBSE_SYSTEM);
+    }
+
+  if (pid > 0)
+    {
+    /* we are the parent and our job is done */
+    return(PBSE_NONE);
+    }
+
+
+  /* This is the child code */
   /* open new connection - register obit_reply as handler */
   sock = mom_open_socket_to_jobs_server(pjob, __func__, obit_reply);
 
@@ -1543,17 +1584,7 @@ int post_epilogue(
 
     if (sock < 0)
       {
-      /* We are trying to send obit, but failed - where is this retried?
-       * Answer: In the main_loop examine_all_jobs_to_resend() tries
-       * every so often to send the obit.  This would work for recovered
-       * jobs also.
-       */
-      if (ev != MOM_OBIT_RETRY)
-        {
-        mark_for_resend(pjob);
-        }
-
-      return(1);
+      exit(1);
       }
     }
 
@@ -1571,16 +1602,11 @@ int post_epilogue(
 
     close_conn(sock, FALSE);
 
-    return(1);
+    exit(1);
     }
 
   strcpy(preq->rq_ind.rq_jobobit.rq_jid, pjob->ji_qs.ji_jobid);
 
-  if (pjob->ji_job_is_being_rerun == TRUE)
-    {
-    pjob->ji_qs.ji_un.ji_momt.ji_exitstat = 0;
-    }
- 
   preq->rq_ind.rq_jobobit.rq_status = pjob->ji_qs.ji_un.ji_momt.ji_exitstat;
 
   CLEAR_HEAD(preq->rq_ind.rq_jobobit.rq_attr);
@@ -1609,7 +1635,7 @@ int post_epilogue(
     close_conn(chan->sock, FALSE);
     DIS_tcp_cleanup(chan);
     free_br(preq);
-    return(1);
+    exit(1);
     }
 
   if (chan != NULL)
@@ -1625,7 +1651,7 @@ int post_epilogue(
 
   log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "obit sent to server");
 
-  return(0);
+  exit(0);
   }  /* END post_epilog() */
 
 
