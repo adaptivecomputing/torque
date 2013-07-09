@@ -17,15 +17,16 @@
 #include "../../include/log.h" /* log event types */
 
 
-char *trq_addr = NULL;
-int trq_addr_len;
-char *trq_server_name = NULL;
-int debug_mode = 0;
-static char active_pbs_server[PBS_MAXSERVERNAME + 1];
+char         *trq_addr = NULL;
+int           trq_addr_len;
+char         *trq_server_name = NULL;
+int           debug_mode = 0;
+static char   active_pbs_server[PBS_MAXSERVERNAME + 1];
+extern time_t pbs_tcp_timeout;
 
 int set_active_pbs_server(
 
-    const char *new_active_server)
+  const char *new_active_server)
 
   {
   strncpy(active_pbs_server, new_active_server, PBS_MAXSERVERNAME);
@@ -40,8 +41,8 @@ int set_active_pbs_server(
 
 int validate_active_pbs_server(
 
-    char **active_server,
-    int    port)
+  char **active_server,
+  int    port)
 
   {
   char     *err_msg;
@@ -93,17 +94,19 @@ int validate_active_pbs_server(
   *active_server = current_server;
 
   return(rc);
+  } /* END validate_active_pbs_server() */
 
-  }
-
-/* get_active_pbs_server sends a TRQ_GET_ACTIVE_SERVER
-   request to trqauthd. trqauthd will send a string of the
-   currently active server back
+/* 
+ * get_active_pbs_server()
+ * sends a TRQ_GET_ACTIVE_SERVER request to trqauthd. trqauthd will send a string of the
+ * currently active server back
+ * @pre-cond:  active_server must be a valid char **
+ * @post-cond: active_server will be populated with the hostname of the active server
 */
 
 int get_active_pbs_server(
     
-    char **active_server)
+  char **active_server)
 
   {
   char     *err_msg;
@@ -115,7 +118,15 @@ int get_active_pbs_server(
   long long read_buf_len = MAX_LINE;
   int       local_socket;
   int       rc;
+  char     *timeout_ptr;
 
+  if ((timeout_ptr = getenv("PBSAPITIMEOUT")) != NULL)
+    {
+    time_t tmp_timeout = strtol(timeout_ptr, NULL, 0);
+
+    if (tmp_timeout > 0)
+      pbs_tcp_timeout = tmp_timeout;
+    }
 
   /* the syntax for this call is a number followed by a | (pipe). The pipe indicates 
      the end of a number */
@@ -147,9 +158,7 @@ int get_active_pbs_server(
 
   rc = PBSE_NONE;
 
-  current_server = (char *)calloc(1, strlen(read_buf));
-
-  strcpy(current_server, read_buf);
+  current_server = strdup(read_buf);
   
   close(local_socket);
 
@@ -160,7 +169,7 @@ int get_active_pbs_server(
 
 int trq_simple_disconnect(
 
-    int sock_handle)
+  int sock_handle)
 
   {
   close(sock_handle);
@@ -176,9 +185,9 @@ int trq_simple_disconnect(
 
 int trq_simple_connect(
     
-    const char *server_name,
-    int   batch_port,
-    int  *sock_handle)
+  const char *server_name,
+  int         batch_port,
+  int        *sock_handle)
 
   {
   struct addrinfo      *results = NULL;
@@ -238,15 +247,16 @@ int trq_simple_connect(
       break;
     }
 
-    /* If we made it to here we connected */
-    if (results != NULL)
-      freeaddrinfo(results);
-    *sock_handle = sock;
+  /* If we made it to here we connected */
+  if (results != NULL)
+    freeaddrinfo(results);
 
-    if (addr_info == NULL)
-      return(PBSE_SERVER_NOT_FOUND);
-
-    return(PBSE_NONE);
+  *sock_handle = sock;
+  
+  if (addr_info == NULL)
+    return(PBSE_SERVER_NOT_FOUND);
+  
+  return(PBSE_NONE);
   }
 
 /* validate_server:
@@ -254,10 +264,12 @@ int trq_simple_connect(
  * pbs_server. If no server can be found the default 
  * server is made the active server */ 
 int validate_server(
-    char *active_server_name,
-    int t_server_port,
-    char *ssh_key,
-    char **sign_key)
+
+  char  *active_server_name,
+  int    t_server_port,
+  char  *ssh_key,
+  char **sign_key)
+
   {
   int rc = PBSE_NONE;
   int sd;
