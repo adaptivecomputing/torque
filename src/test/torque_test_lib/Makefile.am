@@ -15,6 +15,8 @@ libtorque_test_la_SOURCES = ../../lib/Libifl/list_link.c \
                             ../../lib/Libattr/attr_fn_l.c \
                             ../../lib/Libattr/attr_fn_hold.c \
                             ../../lib/Libattr/attr_fn_str.c \
-                            ../../lib/Libattr/attr_fn_unkn.c
+                            ../../lib/Libattr/attr_fn_unkn.c \
+														../../server/execution_slot_tracker.cpp \
+														../../server/job_usage_info.cpp
 libtorque_test_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
