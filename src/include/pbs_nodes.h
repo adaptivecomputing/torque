@@ -85,6 +85,10 @@
 
 #include <pthread.h>
 #include <netinet/in.h> /* sockaddr_in */
+#include <set>
+#include <vector>
+
+#include "execution_slot_tracker.hpp"
 #include "resizable_array.h"
 #include "hash_table.h"
 #include "net_connect.h" /* pbs_net_t */
@@ -157,6 +161,26 @@ struct prop
   struct prop *next;
   };
 
+/* Make a class to cover this in case we need special functionality such as being able 
+ * to match this is stdlib containers. 
+ * This class is stored on the node to keep track of jobs and what they're using on the node. */
+class job_usage_info
+  {
+  public:
+    char                    jobid[PBS_MAXSVRJOBID+1];
+    execution_slot_tracker  est;
+    job_usage_info(const char *id);
+    bool operator ==(const job_usage_info &jui);
+  };
+
+/* this struct is only used while the job is being created. */
+typedef struct job_reservation_info
+  {
+  char                         node_name[PBS_MAXHOSTNAME];
+  int                          port;
+  execution_slot_tracker       est;
+  } job_reservation_info;
+
 struct jobinfo
   {
   char            jobid[PBS_MAXSVRJOBID+1];
@@ -189,6 +213,8 @@ typedef struct complete_spec_data
   char             **req_start;   
   } complete_spec_data;
 
+
+
 typedef struct node_job_add_info
   {
   char                      node_name[PBS_MAXNODENAME + 1];
@@ -203,7 +229,6 @@ typedef struct node_job_add_info
 
 struct pbssubn
   {
-
   struct pbsnode *host;
 
   struct pbssubn *next;
@@ -215,7 +240,6 @@ struct pbssubn
   unsigned short  inuse;
   short           index;  /* subnode index */
   };
-
 
 
 
@@ -293,73 +317,71 @@ typedef struct all_nodes
 
 struct pbsnode
   {
-  char                 *nd_name;             /* node's host name */
+  char                         *nd_name;             /* node's host name */
 
-  struct pbssubn       *nd_psn;              /* ptr to list of subnodes */
-
-  struct prop          *nd_first;            /* first and last property */
-
-  struct prop          *nd_last;
-
-  struct prop          *nd_f_st;             /* first and last status */
-
-  struct prop          *nd_l_st;
-  u_long               *nd_addrs;            /* IP addresses of host */
-
-  struct array_strings *nd_prop;             /* array of properities */
-
-  struct array_strings *nd_status;
-  char                 *nd_note;             /* note set by administrator */
-  int                   nd_stream;           /* stream to Mom on host */
-  enum psit             nd_flag;
-  unsigned short        nd_mom_port;         /* For multi-mom-mode unique port value PBS_MOM_SERVICE_PORT*/
-  unsigned short        nd_mom_rm_port;      /* For multi-mom-mode unique port value PBS_MANAGER_SERVICE_PORT */
-  struct sockaddr_in    nd_sock_addr;        /* address information */
-  short                 nd_nprops;           /* number of properties */
-  short                 nd_nstatus;          /* number of status items */
-  short                 nd_nsn;              /* number of VPs  */
-  short                 nd_nsnfree;          /* number of VPs free */
-  short                 nd_needed;           /* number of VPs needed */
-  short                 nd_np_to_be_used;    /* number of VPs marked for a job but not yet assigned */
-  unsigned short        nd_state;            /* node state (see INUSE_* #defines below) */
-  unsigned short        nd_ntype;            /* node type */
-  short                 nd_order;            /* order of user's request */
-  time_t                nd_warnbad;
-  time_t                nd_lastupdate;       /* time of last update. */
-  unsigned short        nd_hierarchy_level;
-  unsigned char         nd_in_hierarchy;     /* set to TRUE if in the hierarchy file */
-
-  short                 nd_ngpus;            /* number of gpus */ 
-  short                 nd_gpus_real;        /* gpus are real not virtual */ 
-  struct gpusubn       *nd_gpusn;            /* gpu subnodes */
-  short                 nd_ngpus_free;       /* number of free gpus */
-  short                 nd_ngpus_needed;     /* number of gpus needed */
-  short                 nd_ngpus_to_be_used; /* number of gpus marked for a job but not yet assigned */
-  struct array_strings *nd_gpustatus;        /* string array of GPU status */
-  short                 nd_ngpustatus;       /* number of gpu status items */
-
-  short                 nd_nmics;            /* number of mics */
-  struct array_strings *nd_micstatus;        /* string array of MIC status */
-  struct jobinfo       *nd_micjobs;          /* array for the jobs on the mic(s) */
-  short                 nd_nmics_alloced;    /* number of mic slots alloc'ed */
-  short                 nd_nmics_free;       /* number of free mics */
-  short                 nd_nmics_to_be_used; /* number of mics marked for a job but not yet assigned */
-
-  struct pbsnode       *parent;              /* pointer to the node holding this node, or NULL */
-  unsigned short        num_node_boards;     /* number of numa nodes */
-  struct AvlNode       *node_boards;         /* private tree of numa nodes */
-  char                 *numa_str;            /* comma-delimited string of processor values */
-  char                 *gpu_str;             /* comma-delimited string of the number of gpus for each nodeboard */
-
-  unsigned char         nd_mom_reported_down;/* notes that the mom reported its own shutdown */
+  struct prop                  *nd_first;            /* first and last property */
+  struct prop                  *nd_last;
+  struct prop                  *nd_f_st;             /* first and last status */
+  struct prop                  *nd_l_st;
   
-  unsigned char         nd_is_alps_reporter;
-  unsigned char         nd_is_alps_login;
-  resizable_array      *nd_ms_jobs;          /* the jobs this node is mother superior for */
-  all_nodes             alps_subnodes;       /* collection of alps subnodes */
-  int                   max_subnode_nppn;    /* maximum ppn of an alps subnode */
+  u_long                       *nd_addrs;            /* IP addresses of host */
 
-  pthread_mutex_t      *nd_mutex;            /* semaphore for accessing this node's data */
+  struct array_strings         *nd_prop;             /* array of properities */
+
+  struct array_strings         *nd_status;
+  char                         *nd_note;             /* note set by administrator */
+  int                           nd_stream;           /* stream to Mom on host */
+  enum psit                     nd_flag;
+  unsigned short                nd_mom_port;         /* For multi-mom-mode unique port value PBS_MOM_SERVICE_PORT*/
+  unsigned short                nd_mom_rm_port;   /* For multi-mom-mode unique port value PBS_MANAGER_SERVICE_PORT */
+  struct sockaddr_in            nd_sock_addr;        /* address information */
+  short                         nd_nprops;           /* number of properties */
+  short                         nd_nstatus;          /* number of status items */
+  execution_slot_tracker        nd_slots;            /* bitmap of execution slots */
+  std::vector<job_usage_info *> nd_job_usages;       /* information about each job using this node */
+  short                         nd_nsn;              /* number of VPs  */
+  short                         nd_nsnfree;          /* number of VPs free */
+  short                         nd_needed;           /* number of VPs needed */
+  short                         nd_np_to_be_used;    /* number of VPs marked for a job but not yet assigned */
+  unsigned short                nd_state;            /* node state (see INUSE_* #defines below) */
+  unsigned short                nd_ntype;            /* node type */
+  short                         nd_order;            /* order of user's request */
+  time_t                        nd_warnbad;
+  time_t                        nd_lastupdate;       /* time of last update. */
+  unsigned short                nd_hierarchy_level;
+  unsigned char                 nd_in_hierarchy;     /* set to TRUE if in the hierarchy file */
+
+  short                         nd_ngpus;            /* number of gpus */ 
+  short                         nd_gpus_real;        /* gpus are real not virtual */ 
+  struct gpusubn               *nd_gpusn;            /* gpu subnodes */
+  short                         nd_ngpus_free;       /* number of free gpus */
+  short                         nd_ngpus_needed;     /* number of gpus needed */
+  short                         nd_ngpus_to_be_used; /* number of gpus marked for a job but not yet assigned */
+  struct array_strings         *nd_gpustatus;        /* string array of GPU status */
+  short                         nd_ngpustatus;       /* number of gpu status items */
+
+  short                         nd_nmics;            /* number of mics */
+  struct array_strings         *nd_micstatus;        /* string array of MIC status */
+  struct jobinfo               *nd_micjobs;          /* array for the jobs on the mic(s) */
+  short                         nd_nmics_alloced;    /* number of mic slots alloc'ed */
+  short                         nd_nmics_free;       /* number of free mics */
+  short                         nd_nmics_to_be_used; /* number of mics marked for a job but not yet assigned */
+ 
+  struct pbsnode               *parent;              /* pointer to the node holding this node, or NULL */
+  unsigned short                num_node_boards;     /* number of numa nodes */
+  struct AvlNode               *node_boards;         /* private tree of numa nodes */
+  char                         *numa_str;            /* comma-delimited string of processor values */
+  char                         *gpu_str;             /* comma-delimited string of the number of gpus for each nodeboard */
+
+  unsigned char                 nd_mom_reported_down;/* notes that the mom reported its own shutdown */
+  
+  unsigned char                 nd_is_alps_reporter;
+  unsigned char                 nd_is_alps_login;
+  resizable_array              *nd_ms_jobs;          /* the jobs this node is mother superior for */
+  all_nodes                     alps_subnodes;       /* collection of alps subnodes */
+  int                           max_subnode_nppn;    /* maximum ppn of an alps subnode */
+
+  pthread_mutex_t              *nd_mutex;            /* semaphore for accessing this node's data */
   };
 
 
@@ -571,7 +593,7 @@ extern void bad_node_warning(pbs_net_t, struct pbsnode *);
 struct pbsnode  *find_nodebyname(const char *);
 struct pbsnode  *find_node_in_allnodes(all_nodes *an, char *nodename);
 int              create_partial_pbs_node(char *, unsigned long, int);
-struct pbssubn  *create_subnode(struct pbsnode *pnode);
+int              create_subnode(struct pbsnode *pnode);
 extern void      delete_a_subnode(struct pbsnode *pnode);
 
 #ifdef BATCH_REQUEST_H 
