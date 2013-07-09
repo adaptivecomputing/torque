@@ -617,7 +617,7 @@ void             reinitialize_node_iterator(node_iterator *);
 #endif /* BATCH_REQUEST_H */
 
 struct prop     *init_prop(char *pname);
-int              initialize_pbsnode(struct pbsnode *, char *pname, u_long *pul, int ntype);
+int              initialize_pbsnode(struct pbsnode *, char *pname, u_long *pul, int ntype, bool isNUMANode);
 int              hasprop(struct pbsnode *pnode, struct prop *props);
 void             update_node_state(struct pbsnode *np, int newstate);
 int              is_job_on_node(struct pbsnode *np, char *jobid);

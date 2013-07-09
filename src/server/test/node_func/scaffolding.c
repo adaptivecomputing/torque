@@ -416,3 +416,10 @@ int pbs_getaddrinfo(const char *,struct addrinfo *,struct addrinfo **ai)
   *ai = &dummyAddrInfo;
   return 0;
   }
+
+job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode)
+  {
+  fprintf(stderr, "The call to get_job_from_job_usage_info needs to be mocked!!\n");
+  exit(1);
+  }
+

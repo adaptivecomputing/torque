@@ -247,5 +247,19 @@ int unlock_ji_mutex(
   return(0);
   }
 
+job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode)
+  {
+  return(NULL);
+  }
+
+char *get_cached_nameinfo(const struct sockaddr_in  *sai)
+  {
+  return(NULL);
+  }
+
+struct addrinfo * insert_addr_name_info(struct addrinfo *pAddrInfo,const char *host)
+  {
+  return(NULL);
+  }
 
 mutex_mgr::~mutex_mgr() {}

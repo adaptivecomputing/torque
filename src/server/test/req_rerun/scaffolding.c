@@ -6,6 +6,7 @@
 #include "pbs_job.h" /* job */
 #include "batch_request.h" /* batch_request.h */
 #include "work_task.h" /* work_task, all_tasks */
+#include "server.h"
 
 const char *msg_jobrerun = "Job Rerun";
 attribute_def job_attr_def[10];
@@ -134,3 +135,27 @@ int get_svr_attr_l(int index, long *l)
 void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+
+void free_nodes(job *pjob) {}
+
+int svr_job_purge(job *pjob)
+  {
+  return(0);
+  }
+
+void set_resc_assigned(job *pjob, enum batch_op op) {}
+
+struct work_task *set_task(
+
+  enum work_type   type,
+  long             event_id,  /* I - based on type can be time of event */
+  void           (*func)(struct work_task *),
+  void            *parm,
+  int              get_lock)
+
+  {
+  return(NULL);
+  }
+
+
+struct server server;
