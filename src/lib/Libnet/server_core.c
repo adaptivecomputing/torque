@@ -304,7 +304,7 @@ int start_listener_addrinfo(
   void *(*process_meth)(void *))
 
   {
-  struct addrinfo    *adr_svr;
+  struct addrinfo    *adr_svr = NULL;
   struct sockaddr     adr_client;
   struct sockaddr_in *in_addr;
   struct sockaddr_in  svr_address;

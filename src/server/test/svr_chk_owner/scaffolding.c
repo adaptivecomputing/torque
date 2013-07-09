@@ -113,3 +113,32 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
 void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+
+int pbs_getaddrinfo(const char *pNode, struct addrinfo *pHints, struct addrinfo **ppAddrInfoOut)
+  {
+  return(0);
+  }
+
+struct sockaddr_in *get_cached_addrinfo(const char *hostname)
+  {
+  return(NULL);
+  }
+
+struct addrinfo * insert_addr_name_info(struct addrinfo *pAddrInfo, const char *host)
+  {
+  return(NULL);
+  }
+
+pbs_net_t get_hostaddr(
+
+  int  *local_errno, /* O */    
+  char *hostname)    /* I */
+
+  {
+  return(0);
+  }
+
+char *get_cached_fullhostname(const char *hostname,const struct sockaddr_in *sai)
+  {
+  return(NULL);
+  }

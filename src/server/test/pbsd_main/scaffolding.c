@@ -518,3 +518,9 @@ int save_args(int argc, char **argv)
   {
   return(0);
   }
+
+int initialize_ruserok_mutex()
+  {
+  return(0);
+  }
+

@@ -221,13 +221,8 @@ END_TEST
 START_TEST(process_reservation_id_test)
   {
   struct pbsnode pnode;
-  struct pbssubn sub;
 
   memset(&pnode, 0, sizeof(struct pbsnode));
-  memset(&sub, 0, sizeof(struct pbssubn));
-  sub.jobs = (jobinfo *)calloc(1, sizeof(struct jobinfo));
-  strcpy(sub.jobs->jobid, "bob");
-  pnode.nd_psn = &sub;
 
   fail_unless(process_reservation_id(&pnode, (char *)"12") == 0, "couldn't process reservation");
   fail_unless(process_reservation_id(&pnode, (char *)"13") == 0, "couldn't process reservation");
