@@ -526,7 +526,6 @@ int process_state_str(
 
   {
   char            log_buf[LOCAL_LOG_BUF_SIZE];
-  struct pbssubn *sp = NULL;
   int             rc = PBSE_NONE;
 
   if (!strncmp(str, "state=down", 10))
@@ -561,27 +560,6 @@ int process_state_str(
     log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
     }
   
-  for (sp = np->nd_psn; sp != NULL; sp = sp->next)
-    {
-    if ((!(np->nd_state & INUSE_OFFLINE)) &&
-        (sp->inuse & INUSE_OFFLINE))
-      {
-      /* this doesn't seem to ever happen */
-      if (LOGLEVEL >= 2)
-        {
-        sprintf(log_buf, "sync'ing subnode state '%s' with node state on node %s\n",
-          "offline",
-          np->nd_name);
-        
-        log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
-        }
-      
-      sp->inuse &= ~INUSE_OFFLINE;
-      }
-    
-    sp->inuse &= ~INUSE_DOWN;
-    }
-
   return(rc);
   } /* END process_state_str() */
 

@@ -12,6 +12,7 @@ libattr_node_func_la_SOURCES = scaffolding.c ${PROG_ROOT}/attr_node_func.c
 libattr_node_func_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_attr_node_func_SOURCES = test_attr_node_func.c
+test_attr_node_func_LDADD = ../../../../test/torque_test_lib/libtorque_test.la ../../../../test/scaffold_fail/libscaffold_fail.la
 
 check_SCRIPTS = coverage_run.sh
 

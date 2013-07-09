@@ -154,12 +154,7 @@ struct pbsnode *create_alps_subnode(
     return(NULL);
     }
 
-  if (create_subnode(subnode) == NULL)
-    {
-    free(subnode);
-    log_err(ENOMEM, __func__, "");
-    return(NULL);
-    }
+  create_subnode(subnode);
 
   /* do we need to do something else here? */
   subnode->nd_addrs = parent->nd_addrs;
@@ -318,11 +313,7 @@ int set_ncpus(
     {
     if (difference > 0)
       {
-      if (create_subnode(current) == NULL)
-        {
-        log_err(ENOMEM, __func__, "");
-        return(PBSE_SYSTEM);
-        }
+      create_subnode(current); 
 
       svr_clnodes++;
       }
@@ -492,46 +483,41 @@ int process_gpu_status(
 
 
 
-
-
 int record_reservation(
 
   struct pbsnode *pnode,
   char           *rsv_id)
 
   {
-  struct pbssubn *sub_node;
   job            *pjob;
-  int             found_job = FALSE;
+  bool            found_job = false;
   char            jobid[PBS_MAXSVRJOBID + 1];
-  
-  for (sub_node = pnode->nd_psn; sub_node != NULL; sub_node = sub_node->next)
+
+  for (unsigned int i = 0; i < pnode->nd_job_usages.size(); i++)
     {
-    if (sub_node->jobs != NULL)
+    job_usage_info *jui = pnode->nd_job_usages[i];
+    strcpy(jobid, jui->jobid);
+
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+
+    if ((pjob = svr_find_job(jobid, TRUE)) != NULL)
       {
-      strcpy(jobid, sub_node->jobs->jobid);
+      mutex_mgr job_mutex(pjob->ji_mutex, true);
+      pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str = strdup(rsv_id);
+      pjob->ji_wattr[JOB_ATR_reservation_id].at_flags = ATR_VFLAG_SET;
 
-      unlock_node(pnode, __func__, NULL, LOGLEVEL);
+      track_alps_reservation(pjob);
+      found_job = true;
 
-      if ((pjob = svr_find_job(jobid, TRUE)) != NULL)
-        {
-        mutex_mgr job_mutex(pjob->ji_mutex, true);
-        pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str = strdup(rsv_id);
-        pjob->ji_wattr[JOB_ATR_reservation_id].at_flags = ATR_VFLAG_SET;
-
-        track_alps_reservation(pjob);
-        found_job = TRUE;
-
-        job_mutex.unlock();
-        lock_node(pnode, __func__, NULL, LOGLEVEL);
-        break;
-        }
-      else
-        lock_node(pnode, __func__, NULL, LOGLEVEL);
+      job_mutex.unlock();
+      lock_node(pnode, __func__, NULL, LOGLEVEL);
+      break;
       }
+    else
+      lock_node(pnode, __func__, NULL, LOGLEVEL);
     }
 
-  if (found_job == FALSE)
+  if (found_job == true)
     return(-1);
 
   return(PBSE_NONE);

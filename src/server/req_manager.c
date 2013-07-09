@@ -639,8 +639,7 @@ void update_subnode(
 
   {
 
-  struct  pbssubn *pnxtsn;
-  unsigned short   state;
+/*  unsigned short   state;
 
   state = pnode->nd_state & INUSE_COMMON_MASK;
 
@@ -649,7 +648,7 @@ void update_subnode(
     pnxtsn->host  = pnode;
 
     pnxtsn->inuse = (pnxtsn->inuse & ~INUSE_COMMON_MASK) | state;
-    }
+    } */
 
   return;
   }  /* END update_subnode() */
@@ -706,10 +705,6 @@ int mgr_set_node_attr(
   pbs_attribute   *pnew;
 
   struct pbsnode   tnode;  /*temporary node*/
-
-  struct pbssubn   tsnd;  /*temporary subnode */
-
-  struct pbssubn  *xtmp;
 
   struct prop     *pdest;
 
@@ -779,12 +774,6 @@ int mgr_set_node_attr(
    */
 
   tnode = *pnode;
-
-  tsnd  = *pnode->nd_psn;
-
-  tnode.nd_psn = &tsnd;
-
-  tsnd.host = &tnode;
 
   for (index = 0;index < limit;index++)
     {
@@ -865,15 +854,7 @@ int mgr_set_node_attr(
       }
   */
 
-  xtmp                = pnode->nd_psn;
-
   *pnode              = tnode;        /* updates all data including linking in props */
-
-  pnode->nd_psn       = xtmp;
-
-  *pnode->nd_psn      = tsnd;
-
-  pnode->nd_psn->host = pnode;
 
   free(new_attr);  /*any new  prop list has been put on pnode*/
 

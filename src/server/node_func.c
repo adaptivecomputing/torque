@@ -55,6 +55,7 @@
 #include "net_cache.h"
 #include "ji_mutex.h"
 #include "svr_task.h" /* set_task */
+#include "execution_slot_tracker.hpp"
 
 #if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
 /*extern int h_errno;*/
@@ -76,6 +77,7 @@ extern attribute_def    node_attr_def[];   /* node attributes defs */
 extern AvlTree          ipaddrs;
 extern dynamic_string  *hierarchy_holder;
 
+job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode);
 
 /* Functions in this file
  * find_nodebyname()   -     given a node host name, search allnodes
@@ -552,8 +554,6 @@ int login_encode_jobs(
   tlist_head     *phead)
 
   {
-  struct pbssubn *psubn;
-  struct jobinfo *jip;
   job            *pjob;
   char           *login_id;
   dynamic_string *job_str = get_dynamic_string(-1, NULL);
@@ -576,30 +576,36 @@ int login_encode_jobs(
     return(PBSE_BAD_PARAMETER);
     }
 
-  for (psubn = pnode->nd_psn; psubn != NULL; psubn = psubn->next)
+  for (unsigned int i = 0; i < pnode->nd_job_usages.size(); i++)
     {
-    for (jip = psubn->jobs; jip != NULL; jip = jip->next)
+    job_usage_info *jui = pnode->nd_job_usages[i];
+    int             jui_index;
+    int             jui_iterator = -1;
+  
+    login_id = NULL;
+
+    pjob = get_job_from_job_usage_info(jui, pnode);
+    
+    if (pjob != NULL)
       {
-      pjob = get_job_from_jobinfo(jip, pnode);
-      login_id = NULL;
-
-      if (pjob != NULL)
-        {
-        login_id = pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str;
-        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-        }
-
+      login_id = pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str;
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+      }
+    
+    while ((jui_index = jui->est.get_next_occupied_index(jui_iterator)) != -1)
+      {
       if ((login_id == NULL) ||
           (strncmp(pnode->nd_name, login_id, strlen(pnode->nd_name))))
         {
         if (job_str->used != 0)
-          snprintf(str_buf, sizeof(str_buf), ",%d/%s", psubn->index, jip->jobid);
+          snprintf(str_buf, sizeof(str_buf), ",%d/%s", jui_index, jui->jobid);
         else
-          snprintf(str_buf, sizeof(str_buf), "%d/%s", psubn->index, jip->jobid);
+          snprintf(str_buf, sizeof(str_buf), "%d/%s", jui_index, jui->jobid);
 
         append_dynamic_string(job_str, str_buf);
         }
       }
+
     }
 
   if ((job_str->str) == NULL)
@@ -878,7 +884,6 @@ int initialize_pbsnode(
   pnode->nd_prop            = NULL;
   pnode->nd_status          = NULL;
   pnode->nd_note            = NULL;
-  pnode->nd_psn             = NULL;
   pnode->nd_state           = INUSE_DOWN;
   pnode->nd_first           = init_prop(pnode->nd_name);
   pnode->nd_last            = pnode->nd_first;
@@ -915,51 +920,12 @@ int initialize_pbsnode(
   }  /* END initialize_pbsnode() */
 
 
-/*
- * subnode_delete - delete the specified subnode
- * by marking it deleted
- */
-
-static void subnode_delete(
-
-  struct pbssubn *psubn)
-
-  {
-  struct jobinfo *jip;
-  struct jobinfo *jipt;
-
-  if (psubn == NULL)
-    {
-    log_err(PBSE_BAD_PARAMETER, __func__, "NULL subnode pointer delete call");
-    return;
-    }
-
-  for (jip = psubn->jobs;jip;jip = jipt)
-    {
-    jipt = jip->next;
-
-    free(jip);
-    }
-
-  psubn->host  = NULL;
-
-  psubn->jobs  = NULL;
-  psubn->next  = NULL;
-  psubn->inuse = INUSE_DELETED;
-
-  return;
-  }
-
 
 void effective_node_delete(
 
   struct pbsnode **ppnode)
 
   {
-
-  struct pbssubn  *psubn;
-
-  struct pbssubn  *pnxt;
   u_long          *up;
   struct pbsnode* pnode = NULL;
 
@@ -979,17 +945,6 @@ void effective_node_delete(
   remove_node(&allnodes,pnode);
   unlock_node(pnode, __func__, NULL, LOGLEVEL);
   free(pnode->nd_mutex);
-
-  psubn = pnode->nd_psn;
-
-  while (psubn != NULL)
-    {
-    pnxt = psubn->next;
-
-    subnode_delete(psubn);
-
-    psubn = pnxt;
-    }
 
   pnode->nd_last->next = NULL;      /* just in case */
 
@@ -1477,52 +1432,19 @@ struct prop *init_prop(
  *  NOTE: pname arg must be a copy of prop list as it is linked directly in
  */
 
-struct pbssubn *create_subnode(
+int create_subnode(
     
   struct pbsnode *pnode)
 
   {
-  struct pbssubn  *psubn = NULL;
-
-  struct pbssubn *nxtsn = NULL;
-  struct pbssubn *lastsn = NULL;
-
-  if (pnode == NULL)
-    {
-    log_err(PBSE_BAD_PARAMETER, __func__, "NULL pbsnode pointer input");
-    return(NULL);
-    }
-
-  psubn = (struct pbssubn *)calloc(1, sizeof(struct pbssubn));
-
-  if (psubn == NULL)
-    {
-    return(NULL);
-    }
-
-  /* initialize the subnode and link into the parent node */
-  psubn->host  = pnode;
-  psubn->flag  = okay;
-  psubn->index = pnode->nd_nsn++;
+  pnode->nd_nsn++;
   pnode->nd_nsnfree++;
+  pnode->nd_slots.add_execution_slot();
 
   if ((pnode->nd_state & INUSE_JOB) != 0)
     pnode->nd_state &= ~INUSE_JOB;
 
-  if (pnode->nd_psn == NULL)
-    pnode->nd_psn = psubn;
-  else
-    {
-    nxtsn = pnode->nd_psn;    /* link subnode onto parent node's list */
-    while (nxtsn != NULL)
-      {
-      lastsn = nxtsn;
-      nxtsn = nxtsn->next;
-      }
-    lastsn->next = psubn;
-    }
-
-  return(psubn);
+  return(PBSE_NONE);
   }  /* END create_subnode() */
 
 
@@ -1789,14 +1711,7 @@ static int setup_node_boards(
 
     /* create the subnodes for this node */
     for (j = 0; j < np; j++)
-      {
-      if (create_subnode(pn) == NULL)
-        {
-        /* ERROR */
-        free(pn);
-        return(PBSE_SYSTEM);
-        }
-      }
+      create_subnode(pn);
 
     /* create the gpu subnodes for this node */
     for (j = 0; j < gpus; j++)
@@ -2020,15 +1935,8 @@ int create_pbs_node(
     return(rc);
     }
 
-  /* create and initialize the first subnode to go with the parent node */
-  if (create_subnode(pnode) == NULL)
-    {
-    free(pul);
-    free(pname);
-    free(pnode);
-
-    return(PBSE_SYSTEM);
-    }
+  /* All nodes have at least one execution slot */
+  create_subnode(pnode);
 
   rc = mgr_set_node_attr(
          pnode,
@@ -2593,39 +2501,7 @@ void delete_a_subnode(
   struct pbsnode *pnode)
 
   {
-
-  struct pbssubn *psubn;
-
-  struct pbssubn *pprior = NULL;
-
-  psubn = pnode->nd_psn;
-
-  while (psubn->next)
-    {
-    pprior = psubn;
-    psubn = psubn->next;
-    }
-
-  if (pprior == pnode->nd_psn)
-    pnode->nd_psn = NULL;
-  if (pprior != NULL)
-    pprior->next = NULL;
-
-  /*
-   * found last subnode in list for given node, mark it deleted
-   * note, have to update nd_nsnfree using pnode rather than psubn->host
-   * because it point to the real node rather than the the copy (pnode)
-   * and the real node is overwritten by the copy
-   */
-
-  if ((psubn->inuse & INUSE_JOB) == 0)
-    pnode->nd_nsnfree--;
-
-  pnode->nd_nsn--;
-
-  subnode_delete(psubn);
-  memset(psubn, 252, sizeof(struct pbssubn));
-  free(psubn);
+  pnode->nd_slots.remove_execution_slot();
   return;
   }  /* END delete_a_subnode() */
 
@@ -3190,15 +3066,7 @@ int create_partial_pbs_node(
 
   /* create and initialize the first subnode to go with the parent node */
 
-  if (create_subnode(pnode) == NULL)
-    {
-    free(pul);
-    free(pname);
-    free(pnode->nd_mutex);
-    free(pnode);
-
-    return(PBSE_SYSTEM);
-    }
+  create_subnode(pnode);
 
   rc = mgr_set_node_attr(
          pnode,

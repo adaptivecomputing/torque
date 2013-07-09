@@ -14,6 +14,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       specifying for uniformity in the code.
   b - TRQ-2003. For cray fix a miscalculation of nppn and width when mppdepth is 
       provided for the job.
+  e - TRQ-1833. Optimize starting jobs by not internally tracking the jobid for each
+      execution slot used by the job. Reduce string buildup and manipulation in other
+      internal places as well. Job start for large jobs has been optimized to be up 
+      to 150X faster according to internal testing.
 
 4.2.3
   b - TRQ-1653. Arrays depending on non-array jobs was broken. Fix this.
