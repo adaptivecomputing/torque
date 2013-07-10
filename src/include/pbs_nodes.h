@@ -339,8 +339,6 @@ struct pbsnode
   short                         nd_nstatus;          /* number of status items */
   execution_slot_tracker        nd_slots;            /* bitmap of execution slots */
   std::vector<job_usage_info *> nd_job_usages;       /* information about each job using this node */
-  short                         nd_nsn;              /* number of VPs  */
-  short                         nd_nsnfree;          /* number of VPs free */
   short                         nd_needed;           /* number of VPs needed */
   short                         nd_np_to_be_used;    /* number of VPs marked for a job but not yet assigned */
   unsigned short                nd_state;            /* node state (see INUSE_* #defines below) */
@@ -593,7 +591,7 @@ extern void bad_node_warning(pbs_net_t, struct pbsnode *);
 struct pbsnode  *find_nodebyname(const char *);
 struct pbsnode  *find_node_in_allnodes(all_nodes *an, char *nodename);
 int              create_partial_pbs_node(char *, unsigned long, int);
-int              create_subnode(struct pbsnode *pnode);
+int              add_execution_slot(struct pbsnode *pnode);
 extern void      delete_a_subnode(struct pbsnode *pnode);
 
 #ifdef BATCH_REQUEST_H 

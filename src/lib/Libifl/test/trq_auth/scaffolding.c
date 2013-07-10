@@ -4,6 +4,8 @@
 #include "tcp.h"
 #include "libpbs.h" /* batch_reply */
 
+time_t pbs_tcp_timeout;
+
 int socket_close(int socket)
   {
   fprintf(stderr, "The call to socket_close needs to be mocked!!\n");
@@ -12,8 +14,7 @@ int socket_close(int socket)
 
 int socket_write(int socket, char *data, int data_len)
   {
-  fprintf(stderr, "The call to socket_write needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 int decode_DIS_replyCmd(struct tcp_chan *chan, struct batch_reply *reply)
@@ -89,3 +90,30 @@ int  get_hostaddr_hostent_af(
   }
 
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+
+int socket_get_unix()
+  {
+  return(0);
+  }
+
+char *pbs_get_server_list(void)
+  {
+  return(NULL);
+  }
+
+int socket_connect_unix(int sock, const char *unix_sockname, char **err_msg)
+  {
+  return(0);
+  }
+
+void log_event(int a, int b, const char *c, const char *d) {}
+
+char *csv_nth(const char *csv_str, int n)
+  {
+  return(NULL);
+  }
+
+int csv_length(const char *csv_str)
+  {
+  return(0);
+  }

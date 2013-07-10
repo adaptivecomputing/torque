@@ -6,11 +6,16 @@
 
 
 #include "pbs_error.h"
+int get_active_pbs_server(char **active_server);
 
-START_TEST(test_one)
+extern time_t pbs_tcp_timeout;
+
+START_TEST(get_active_pbs_server_test)
   {
-
-
+  char *server_name;
+  setenv("PBSAPITIMEOUT", "3", 1);
+  get_active_pbs_server(&server_name);
+  fail_unless(pbs_tcp_timeout == 3);
   }
 END_TEST
 
@@ -24,8 +29,8 @@ END_TEST
 Suite *trq_auth_suite(void)
   {
   Suite *s = suite_create("trq_auth_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("testing");
+  tcase_add_test(tc_core, get_active_pbs_server_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");

@@ -1466,13 +1466,13 @@ static int hasppn(
   {
   if ((free != SKIP_NONE) &&
       (free != SKIP_NONE_REUSE) &&
-      (pnode->nd_nsnfree >= node_req))
+      (pnode->nd_slots.get_number_free() >= node_req))
     {
     return(1);
     }
 
   if ((free == SKIP_NONE) && 
-      (pnode->nd_nsn >= node_req))
+      (pnode->nd_slots.get_total_execution_slots() >= node_req))
     {
     return(1);
     }
@@ -1669,12 +1669,12 @@ int can_reshuffle(
        }
 
     if ((skip == SKIP_EXCLUSIVE) && 
-        (vpreq < pnode->nd_nsnfree) &&
+        (vpreq < pnode->nd_slots.get_number_free()) &&
         (gpureq < gpu_count(pnode, TRUE)))
       return(FALSE);
 
     if ((skip == SKIP_ANYINUSE) &&
-        (vpreq < pnode->nd_nsnfree) &&
+        (vpreq < pnode->nd_slots.get_number_free()) &&
         (gpureq < gpu_count(pnode, TRUE)))
       return(FALSE);
 
@@ -2019,7 +2019,7 @@ int procs_available(
 
   while ((pnode = next_host(&allnodes,&iter,NULL)) != NULL)
     {
-    procs_avail += pnode->nd_nsnfree;
+    procs_avail += pnode->nd_slots.get_number_free();
 
     unlock_node(pnode, "procs_available", NULL, LOGLEVEL);
     }
@@ -2084,7 +2084,7 @@ int node_is_spec_acceptable(
     return(FALSE);
 
   gpu_free = gpu_count(pnode, TRUE) - pnode->nd_ngpus_to_be_used;
-  np_free  = pnode->nd_nsnfree - pnode->nd_np_to_be_used;
+  np_free  = pnode->nd_slots.get_number_free() - pnode->nd_np_to_be_used;
   mic_free = pnode->nd_nmics_free - pnode->nd_nmics_to_be_used;
   
   if ((ppn_req > np_free) ||
@@ -3162,7 +3162,7 @@ int add_job_to_node(
       pnode->nd_name,
       snp->index,
       pjob->ji_qs.ji_jobid,
-      pnode->nd_nsnfree);
+      pnode->nd_slots.get_number_free());
 
     log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
     DBPRT(("%s\n", log_buf));
@@ -3183,11 +3183,8 @@ int add_job_to_node(
     snp->jobs = jp;
     strcpy(jp->jobid, pjob->ji_qs.ji_jobid);
 
-    /* reduce free count */
-    pnode->nd_nsnfree--;
-
     /* if no free VPs, set node state */
-    if ((pnode->nd_nsnfree <= 0) ||
+    if ((pnode->nd_slots.get_number_free() <= 0) ||
         (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long == TRUE))
       pnode->nd_state = newstate;
 
@@ -3599,6 +3596,9 @@ job_reservation_info *place_subnodes_in_hostlist(
     
     snprintf(node_info->node_name, sizeof(node_info->node_name), "%s", pnode->nd_name);
     pnode->nd_job_usages.push_back(jui);
+    
+    if (pnode->nd_slots.get_number_free() <= 0)
+      pnode->nd_state |= INUSE_JOB;
     }
   else
     {
@@ -4624,8 +4624,8 @@ int node_reserve(
         }
 
 
-      if (pnode->nd_np_to_be_used == pnode->nd_nsn)
-        pnode->nd_state = INUSE_RESERVE;
+      if (pnode->nd_np_to_be_used == pnode->nd_slots.get_total_execution_slots())
+        pnode->nd_state |= INUSE_RESERVE;
       } /* END for each node */
     }
   else
@@ -4763,6 +4763,8 @@ int remove_job_from_node(
   job            *pjob)
 
   {
+  char log_buf[LOCAL_LOG_BUF_SIZE];
+
   for (int i = 0; i < (int)pnode->nd_job_usages.size(); i++)
     {
     job_usage_info *jui = pnode->nd_job_usages[i];
@@ -4771,6 +4773,18 @@ int remove_job_from_node(
       {
       pnode->nd_slots.unreserve_execution_slots(jui->est);
       pnode->nd_job_usages.erase(pnode->nd_job_usages.begin() + i);
+
+      if (LOGLEVEL >= 6)
+        {
+        sprintf(log_buf, "increased execution slot free count to %d of %d\n",
+          pnode->nd_slots.get_number_free(),
+          pnode->nd_slots.get_total_execution_slots());
+        
+        log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
+        }
+
+      pnode->nd_state &= ~INUSE_JOB;
+
       break;
       }
     }
@@ -4921,9 +4935,9 @@ void set_one_old(
       {
       if (pnode->parent == alps_reporter)
         {
-        while (index >= pnode->nd_nsn)
+        while (index >= pnode->nd_slots.get_total_execution_slots())
           {
-          create_subnode(pnode);
+          add_execution_slot(pnode);
           }
         }
       }
@@ -4955,7 +4969,7 @@ void set_one_old(
       pnode->nd_job_usages.push_back(jui);
       }
 
-    if (--pnode->nd_nsnfree <= 0)
+    if (pnode->nd_slots.get_number_free() <= 0)
       pnode->nd_state |= INUSE_JOB;
 
     unlock_node(pnode, __func__, NULL, LOGLEVEL);
