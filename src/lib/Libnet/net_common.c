@@ -833,7 +833,7 @@ int socket_read_str(
   char delin;
 
   if ((the_str == NULL) || (str_len == NULL))
-    return PBSE_INTERNAL;
+    return(PBSE_INTERNAL);
 
   if ((rc = socket_read_num(socket, (long long *)&tmp_len)) != PBSE_NONE)
     {
