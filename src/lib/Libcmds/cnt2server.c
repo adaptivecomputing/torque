@@ -156,10 +156,15 @@ int cnt2server(
   else
     {
     rc = get_active_pbs_server(&tmpServer);
+    
     if (rc == PBSE_NONE)
       {
       strncpy(Server, tmpServer, PBS_MAXHOSTNAME);
       free(tmpServer);
+      }
+    else if (rc == PBSE_TIMEOUT)
+      {
+      return(rc * -1);
       }
     }
 
