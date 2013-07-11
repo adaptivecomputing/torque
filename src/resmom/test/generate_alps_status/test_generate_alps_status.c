@@ -31,7 +31,6 @@ char *sample_start23 = (char *)"architecture='x86_64' clock_mhz='2100'/> <Proces
 char *sample_start24 = (char *)"<Label name='MOAB:FEATURE=regmem' type='SOFT' disposition='ATTRACT'/> </LabelArray> </Node> </NodeArray> <ReservationArray> <Reservation reservation_id='1772' user_name='pgarias' account_name='DEFAULT'/> <Reservation reservation_id='2549' user_name='daryal' account_name='DEFAULT'/> <Reservation reservation_id='2869' user_name='zachary' account_name='DEFAULT'/> </ReservationArray> </Inventory> </ResponseData> </BasilResponse> ";
 
 
-
 int search_dynamic_string_status(dynamic_string *status, char *str);
 int generate_alps_status(dynamic_string *status, const char *path, const char *protocol);
 
@@ -94,6 +93,22 @@ START_TEST(full_generate_test)
   }
 END_TEST 
 
+START_TEST(label_generate_test)
+  {
+  dynamic_string *status = get_dynamic_string(-1, NULL);
+  int             rc;
+  char           *path = (char *)"../../../test/test_scripts/label_inventory.sh";
+  char           *protocol = (char *)"1.0";
+  
+  rc = generate_alps_status(status, path, protocol);
+
+  fail_unless(rc == 0, "Couldn't generate the status");
+  fail_unless(search_dynamic_string_status(status, (char *)"regmem") == 1);
+  fail_unless(search_dynamic_string_status(status, (char *)"regmem,") != 1);
+  fail_unless(search_dynamic_string_status(status, (char *)"regmemregmem") != 1);
+  }
+END_TEST
+
 Suite *node_func_suite(void)
   {
   Suite *s = suite_create("alps helper suite methods");
@@ -106,6 +121,7 @@ Suite *node_func_suite(void)
   
   tc_core = tcase_create("full_generate_test");
   tcase_add_test(tc_core, full_generate_test);
+  tcase_add_test(tc_core, label_generate_test);
   suite_add_tcase(s, tc_core); 
   
   return s;
