@@ -3597,7 +3597,8 @@ job_reservation_info *place_subnodes_in_hostlist(
     snprintf(node_info->node_name, sizeof(node_info->node_name), "%s", pnode->nd_name);
     pnode->nd_job_usages.push_back(jui);
     
-    if (pnode->nd_slots.get_number_free() <= 0)
+    if ((pnode->nd_slots.get_number_free() <= 0) ||
+        (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long == TRUE))
       pnode->nd_state |= INUSE_JOB;
     }
   else
