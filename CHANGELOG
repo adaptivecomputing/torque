@@ -1,5 +1,26 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
+4.2.3.h5
+  b - TRQ-1802. Make the environment variable $PBS_NUM_NODES accurate for multi-req
+      jobs. 
+  e - TRQ-1832. Add the ability to add a login_property to a job at the queue level
+      by setting required_login_property on the queue.
+  e - TRQ-1925. Make pbs_mom smart enough to reserved extra memory nodes for non-numa
+      configured TORQUE when more memory is requested than reserved.
+  e - TRQ-1923. Make job aborts for a mother superior not recognizing the job a bit 
+      more intelligent - if the job has been reported in the last 180 seconds in the
+      mom's status update don't abort it.
+  b - TRQ-1934. Ask for canonical hostnames on the default address family without 
+      specifying for uniformity in the code.
+  b - TRQ-2003. For cray fix a miscalculation of nppn and width when mppdepth is 
+      provided for the job.
+  e - TRQ-1833. Optimize starting jobs by not internally tracking the jobid for each
+      execution slot used by the job. Reduce string buildup and manipulation in other
+      internal places as well. Job start for large jobs has been optimized to be up 
+      to 150X faster according to internal testing.
+  b - TRQ-2030. Fix an ALPS 1.2 bug with labels on nodes. In 1.2 labels would be
+      repeated like this: labelnamelabelname... Cray only.
+
 4.2.3
   b - TRQ-1653. Arrays depending on non-array jobs was broken. Fix this.
   b - Add retries on transient failures to setuid and seteuid calls. TRQ-1541. 
