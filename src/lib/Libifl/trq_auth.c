@@ -119,13 +119,21 @@ int get_active_pbs_server(
   int       local_socket;
   int       rc;
   char     *timeout_ptr;
+  bool      retry = true;
+  int       retries = 0;
 
   if ((timeout_ptr = getenv("PBSAPITIMEOUT")) != NULL)
     {
     time_t tmp_timeout = strtol(timeout_ptr, NULL, 0);
 
     if (tmp_timeout > 0)
+      {
       pbs_tcp_timeout = tmp_timeout;
+
+      if (tmp_timeout > 2)
+        retry = false;
+      }
+
     }
 
   /* the syntax for this call is a number followed by a | (pipe). The pipe indicates 
@@ -149,8 +157,14 @@ int get_active_pbs_server(
     return(PBSE_SYSTEM);
     }
 
-  rc = socket_read_str(local_socket, &read_buf, &read_buf_len);
-  if (rc != PBSE_NONE) 
+  do
+    {
+    rc = socket_read_str(local_socket, &read_buf, &read_buf_len);
+    if (rc == PBSE_NONE) 
+      break;
+    } while ((retry == true) && (++retries <= 5));
+
+  if (rc != PBSE_NONE)
     return(rc);
 
   if (read_buf_len == 0)

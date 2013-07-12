@@ -808,10 +808,11 @@ int socket_read_num(
       break;
     }
 
-  if (str_ll[0] == '\0')
+  if ((str_ll[0] == '\0') &&
+      (rc == PBSE_INTERNAL))
     rc = PBSE_SOCKET_READ;
 
-  return rc;
+  return(rc);
   } /* END socket_read_num() */
 
 
