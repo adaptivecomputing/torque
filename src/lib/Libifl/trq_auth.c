@@ -62,6 +62,13 @@ int validate_active_pbs_server(
   snprintf(unix_sockname, sizeof(unix_sockname), "%s/%s", TRQAUTHD_SOCK_DIR, TRQAUTHD_SOCK_NAME);
 
   local_socket = socket_get_unix();
+  if (local_socket < 0)
+    {
+    fprintf(stderr, "could not allocate unix domain socket: %d\n", local_socket);
+    return(local_socket * -1); /*socket_get_unix returns a negative PBSE error value
+                                 Change it back */
+    }
+
   rc = socket_connect_unix(local_socket, unix_sockname, &err_msg);
   if (rc != PBSE_NONE)
     {
@@ -86,6 +93,10 @@ int validate_active_pbs_server(
   rc = PBSE_NONE;
 
   current_server = (char *)calloc(1, strlen(read_buf));
+  if (current_server == NULL)
+    {
+    return(PBSE_MEM_MALLOC);
+    }
 
   strcpy(current_server, read_buf);
   
@@ -135,6 +146,9 @@ int get_active_pbs_server(
   snprintf(unix_sockname, sizeof(unix_sockname), "%s/%s", TRQAUTHD_SOCK_DIR, TRQAUTHD_SOCK_NAME);
 
   local_socket = socket_get_unix();
+  if (local_socket < 0)
+    return(local_socket * -1); /* socket_get_unix returns a negative PBSE error on failure. make it positive */
+
   rc = socket_connect_unix(local_socket, unix_sockname, &err_msg);
   if (rc != PBSE_NONE)
     {
@@ -172,7 +186,12 @@ int trq_simple_disconnect(
   int sock_handle)
 
   {
-  close(sock_handle);
+  int rc;
+
+  rc = close(sock_handle);
+  if (rc != 0)
+    return(PBSE_SYSTEM);
+
   return(PBSE_NONE);
   }
 
@@ -215,7 +234,7 @@ int trq_simple_connect(
     {
 
     sock = socket(addr_info->ai_family, SOCK_STREAM, addr_info->ai_protocol);
-    if (sock <= 0)
+    if (sock < 0)
       {
       fprintf(stderr, "Could not open socket in %s. error %d\n", __func__, errno);
       freeaddrinfo(results);
@@ -241,10 +260,14 @@ int trq_simple_connect(
       close(sock);
       freeaddrinfo(results);
       results = NULL;
+      rc = PBSE_SYSTEM;
       continue;
       }
     else
+      {
+      rc = PBSE_NONE;
       break;
+      }
     }
 
   /* If we made it to here we connected */
@@ -256,7 +279,7 @@ int trq_simple_connect(
   if (addr_info == NULL)
     return(PBSE_SERVER_NOT_FOUND);
   
-  return(PBSE_NONE);
+  return(rc);
   }
 
 /* validate_server:
