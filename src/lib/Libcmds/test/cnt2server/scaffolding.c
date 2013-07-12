@@ -32,3 +32,22 @@ char *pbs_strerror(
   return(NULL);
   }
 }
+
+int validate_active_pbs_server(char **active_server, int port)
+  {
+  return(0);
+  }
+
+char *PBS_get_server(
+
+  const char         *server,  /* I (NULL|'\0' for not set,modified) */
+  unsigned int *port)    /* O */
+
+  {
+  return(NULL);
+  }
+
+int get_active_pbs_server(char **server)
+  {
+  return(0);
+  }
