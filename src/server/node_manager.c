@@ -2173,10 +2173,14 @@ int save_node_for_adding(
   {
   node_job_add_info *to_add;
   node_job_add_info *old_next;
+  bool               first = false;
 
   if ((first_node_name[0] != '\0') &&
       (!strcmp(first_node_name, pnode->nd_name)))
+    {
     pnode->nd_order = 0;
+    first = true;
+    }
   else
     pnode->nd_order = 1;
 
@@ -2199,12 +2203,26 @@ int save_node_for_adding(
       return(ENOMEM);
       }
     
-    /* initialize to_add */
-    snprintf(to_add->node_name, sizeof(to_add->node_name), "%s", pnode->nd_name);
-    to_add->ppn_needed = req->ppn;
-    to_add->gpu_needed = req->gpu;
-    to_add->mic_needed = req->mic;
-    to_add->is_external = is_external_node;
+    if (first == true)
+      {
+      /* move the first element here and place me first */
+      memcpy(to_add, naji, sizeof(node_job_add_info));
+
+      snprintf(naji->node_name, sizeof(naji->node_name), "%s", pnode->nd_name);
+      naji->ppn_needed = req->ppn;
+      naji->gpu_needed = req->gpu;
+      naji->mic_needed = req->mic;
+      naji->is_external = is_external_node;
+      }
+    else
+      {
+      /* initialize to_add */
+      snprintf(to_add->node_name, sizeof(to_add->node_name), "%s", pnode->nd_name);
+      to_add->ppn_needed = req->ppn;
+      to_add->gpu_needed = req->gpu;
+      to_add->mic_needed = req->mic;
+      to_add->is_external = is_external_node;
+      }
 
     /* fix pointers, NOTE: works even if old_next == NULL */
     old_next = naji->next;
@@ -3597,7 +3615,8 @@ job_reservation_info *place_subnodes_in_hostlist(
     snprintf(node_info->node_name, sizeof(node_info->node_name), "%s", pnode->nd_name);
     pnode->nd_job_usages.push_back(jui);
     
-    if (pnode->nd_slots.get_number_free() <= 0)
+    if ((pnode->nd_slots.get_number_free() <= 0) ||
+        (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long == TRUE))
       pnode->nd_state |= INUSE_JOB;
     }
   else

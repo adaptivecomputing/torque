@@ -630,13 +630,12 @@ static void altdsp_statjob(
   const char *rqtimewal;
   const char *jstate;
   const char *eltimecpu;
-  const char *eltimewal;
   const char *walltime_remaining = "0";
   int         rem_walltime = 0;
   int         req_walltime = 0;
   int         elap_time = 0;
   char        elap_time_string[100];
-  char tmpLine[MAX_LINE_LEN];
+  char format_string[MAX_LINE_LEN];
 
   int   usecput;
   static char  pfs[SIZEL];
@@ -660,15 +659,15 @@ static void altdsp_statjob(
 
     if (alt_opt & ALT_DISPLAY_R)
       {
-      printf("\n                                                       Required Memory      Req'd       Elap");
-      printf("\nJob ID               Username    Queue    NDS   TSK    mem    pmem   dmem   Time      S Time      BIG   FAST  PFS");
-      printf("\n-------------------- ----------- -------- ----- ------ ------ ------ ------ --------- - --------- ----- ----- -----\n");
+      printf("\n                                                       Req'd  Req'd       Elap");
+      printf("\nJob ID               Username    Queue    NDS   TSK    Memory Time      S Time       BIG  FAST   PFS");
+      printf("\n-------------------- ----------- -------- ----- ------ ------ --------- - --------- ----- ----- -----\n");
       }
     else
       {
-      printf("\n                                                                               Required Memory      Req'd       Elap");
-      printf("\nJob ID               Username    Queue    Jobname          SessID NDS   TSK    mem    pmem   dmem   Time      S Time");
-      printf("\n-------------------- ----------- -------- ---------------- ------ ----- ------ ------ ------ ------ --------- - ---------\n");
+      printf("\n                                                                               Req'd    Req'd       Elap");
+      printf("\nJob ID               Username    Queue    Jobname          SessID NDS   TSK    Memory   Time    S   Time");
+      printf("\n-------------------- ----------- -------- ---------------- ------ ----- ------ ------ --------- - ---------\n");
       }
     }
 
@@ -681,7 +680,6 @@ static void altdsp_statjob(
     rqtimecpu = blank;
     rqtimewal = blank;
     eltimecpu = blank;
-    eltimewal = blank;
     jstate    = blank;
     comment   = blank;
     strcpy(elap_time_string, blank);
@@ -804,14 +802,11 @@ static void altdsp_statjob(
         }
       else if (!strcmp(pat->name, ATTR_used))
         {
-        if (!strcmp(pat->resource, "walltime"))
-          {
-          eltimewal = pat->value;
-          }
-        else if (!strcmp(pat->resource, "cput"))
+        if (!strcmp(pat->resource, "cput"))
           {
           eltimecpu = pat->value;
           }
+        //else if (!strcmp(pat->resource, "walltime"))
         }
       else if (!strcmp(pat->name, ATTR_comment))
         {
@@ -832,25 +827,30 @@ static void altdsp_statjob(
       time_to_string(elap_time_string, elap_time);
       }
 
-    snprintf(tmpLine, sizeof(tmpLine), "%%-20.%ds %%-11.11s %%-8.8s ",
-
+    /* inject precision into the format string */
+    snprintf(format_string, sizeof(format_string), "%%-20.%ds %%-11.11s %%-8.8s ",
              PBS_NAMELEN);
 
-    printf(tmpLine,
+    printf(format_string,
            pstat->name,
            usern,
            queuen);
 
+    /* select which of the three memory types to display, move to the next one if the current one is blank */
+    char* memoryToDisplay = rqmem;
+    if (strcmp(memoryToDisplay, blank) == 0)
+      memoryToDisplay = rqpmem;
+    if (strcmp(memoryToDisplay, blank) == 0)
+      memoryToDisplay = rqdmem;
+
     if (alt_opt & ALT_DISPLAY_R)
       {
-      printf("%5.5s %*.*s %6.6s %6.6s %6.6s %9.9s %1.1s %9.9s %5.5s %5.5s %5.5s",
+      printf("%5.5s %*.*s %6.6s %9.9s %1.1s %9.9s %5.5s %5.5s %5.5s",
              nodect,
              tasksize,
              tasksize,
              tasks,
-             rqmem,
-             rqpmem,
-             rqdmem,
+             memoryToDisplay,
              usecput ? rqtimecpu : rqtimewal,
              jstate,
              usecput ? eltimecpu : elap_time_string,
@@ -860,19 +860,18 @@ static void altdsp_statjob(
       }
     else
       {
-      snprintf(tmpLine, sizeof(tmpLine), "%%-%d.%ds %%6.6s %%5.5s %%*.*s %%6.6s %%6.6s %%6.6s %%9.9s %%1.1s %%9.9s",
+      /* inject precision into the format string */
+      snprintf(format_string, sizeof(format_string), "%%-%d.%ds %%6.6s %%5.5s %%*.*s %%6.6s %%9.9s  %%1.1s %%9.9s",
                PBS_NAMELEN, PBS_NAMELEN);
 
-      printf(tmpLine,
+      printf(format_string,
              jobn,
              sess,
              nodect,
              tasksize,
              tasksize,
              tasks,
-             rqmem,
-             rqpmem,
-             rqdmem,
+             memoryToDisplay,
              usecput ? rqtimecpu : rqtimewal,
              jstate,
              usecput ? eltimecpu : elap_time_string);
@@ -897,19 +896,8 @@ static void altdsp_statjob(
                comment);
       }
 
-    /* This makes the compiler happy because this value is now
-       set but not used. It was replaced by elap_time_string.
-       I am leaving it here as an artifact incase we need to 
-       still use it. */
-    if (eltimewal)
-      {
-      ;
-      }
-
     pstat = pstat->next;
     }
-
-  return;
   }  /* END altdsp_statjob() */
 
 

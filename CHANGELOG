@@ -18,6 +18,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       execution slot used by the job. Reduce string buildup and manipulation in other
       internal places as well. Job start for large jobs has been optimized to be up 
       to 150X faster according to internal testing.
+  b - TRQ-2030. Fix an ALPS 1.2 bug with labels on nodes. In 1.2 labels would be
+      repeated like this: labelnamelabelname... Cray only.
 
 4.2.3
   b - TRQ-1653. Arrays depending on non-array jobs was broken. Fix this.
