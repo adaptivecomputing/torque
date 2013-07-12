@@ -255,10 +255,10 @@ start:
 
             new_server_name = PBS_get_server(SpecServer, &port);
             rc = validate_active_pbs_server(&new_server_name, port);
-            if (rc)
-              {
+            if ((rc) ||
+                (!strcmp(new_server_name, Server)))
               break;
-              }
+
             connect = pbs_connect(new_server_name);
             if (connect <= 0)
               {
