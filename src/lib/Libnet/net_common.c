@@ -74,10 +74,14 @@ int socket_avail_bytes_on_descriptor(
 int socket_get_unix()
   {
   int fd;
+  int rc;
 
   fd = socket(AF_UNIX, SOCK_STREAM, 0);
   if (fd < 0)
-    return(PBSE_SOCKET_FAULT);
+    {
+    rc = PBSE_SOCKET_FAULT * -1;
+    return(rc);
+    }
 
   return(fd);
   }
