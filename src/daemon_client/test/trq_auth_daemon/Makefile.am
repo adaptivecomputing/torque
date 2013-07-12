@@ -2,10 +2,6 @@ PROG_ROOT = ../..
 
 AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
 
-GCOV_CFLAGS  ="-fprofile-arcs -ftest-coverage --coverage"
-GCOV_LDFLAGS ="-fprofile-arcs -ftest-coverage"
-GCOV_LIBS    ="-lgcov"
-
 lib_LTLIBRARIES = libtrq_auth_daemon.la
 
 AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES} ${PROG_ROOT}/../lib/Libpbs/.libs/libtorque.la
