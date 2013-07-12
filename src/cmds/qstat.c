@@ -818,7 +818,7 @@ static void altdsp_statjob(
       pat = pat->next;
       }
 
-    if ((*jstate != 'Q') && (*jstate != 'C'))
+    if ((*jstate != 'Q') && (*jstate != 'C') && (*jstate != 'H'))
       {
       elap_time = req_walltime - rem_walltime;
       time_to_string(elap_time_string, elap_time);
