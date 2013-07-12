@@ -27,6 +27,8 @@ int validate_server(char *active_server_name, int t_server_port, char *ssh_key, 
 int set_active_pbs_server(const char *);
 int get_active_pbs_server(char **);
 int validate_active_pbs_server(char **, int);
+int trq_simple_connect(const char *server_name, int port, int *handle);
+int trq_simple_disconnect(int handle);
 
 
 /* PBSD_gpuctrl2.c */
