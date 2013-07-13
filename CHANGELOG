@@ -20,6 +20,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       to 150X faster according to internal testing.
   b - TRQ-2030. Fix an ALPS 1.2 bug with labels on nodes. In 1.2 labels would be
       repeated like this: labelnamelabelname... Cray only.
+  b - TRQ-1914. Fix after type dependencies not being removed from arrays.
 
 4.2.3
   b - TRQ-1653. Arrays depending on non-array jobs was broken. Fix this.

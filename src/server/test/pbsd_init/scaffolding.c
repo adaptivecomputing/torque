@@ -657,3 +657,8 @@ struct addrinfo * insert_addr_name_info(struct addrinfo *pAddrInfo, const char *
   {
   return(NULL);
   }
+
+int add_execution_slot(struct pbsnode *pnode)
+  {
+  return(0);
+  }

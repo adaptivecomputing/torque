@@ -718,3 +718,13 @@ int send_join_job_to_a_sister(job *pjob, int stream, eventent *ep, tlist_head ph
 void im_request(struct tcp_chan *chan, int version,struct sockaddr_in *pSockAddr) {}
 
 attribute_def    job_attr_def[1];
+
+int pbs_getaddrinfo(
+
+  const char       *pNode,
+  struct addrinfo  *pHints,
+  struct addrinfo **ppAddrInfoOut)
+
+  {
+  return(0);
+  }
