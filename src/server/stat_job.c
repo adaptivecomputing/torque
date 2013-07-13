@@ -331,6 +331,10 @@ int status_attrib(
       pal = (svrattrl *)GET_NEXT(pal->al_link);
       }
 
+    /* We want to return walltime remaining for all running jobs */
+    if ((pattr + JOB_ATR_start_time)->at_flags & ATR_VFLAG_SET)
+      add_walltime_remaining(JOB_ATR_start_time, pattr, phead);
+
     /* SUCCESS */
     return(PBSE_NONE);
     }    /* END if (pal != NULL) */
