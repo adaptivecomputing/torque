@@ -960,7 +960,7 @@ int register_array_depend(
     pdep = (struct array_depend *)GET_NEXT(pdep->dp_link);
     }
 
-  /* make dependency of none exists */
+  /* make dependency if none exists */
   if (pdep == NULL)
     {
     pdep = (struct array_depend *)calloc(1, sizeof(struct array_depend));
@@ -1030,20 +1030,66 @@ int register_array_depend(
   } /* END register_array_depend */
 
 
+bool remove_array_dependency_job_from_job(
+
+  struct array_depend *pdep,
+  job                 *pjob,
+  char                *job_array_id)
+
+  {
+  struct depend_job *job_pdj;
+  struct depend     *job_pdep = NULL;
+  bool               removed = false;
+  char               log_buf[LOCAL_LOG_BUF_SIZE];
+
+  if ((job_pdep = find_depend(pdep->dp_type, &pjob->ji_wattr[JOB_ATR_depend])) != NULL)
+    {
+    if ((job_pdj = find_dependjob(job_pdep, job_array_id)) != NULL)
+      {
+      removed = true;
+      del_depend_job(job_pdj);
+      
+      snprintf(log_buf, sizeof(log_buf), msg_registerrel, job_array_id);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+      
+      if (GET_NEXT(job_pdep->dp_jobs) == NULL)
+        {
+        /* no more dependencies of this type */
+        del_depend(job_pdep);
+        }
+      }
+    }
+
+  return(removed);
+  } /* remove_array_dependency_job_from_job() */
 
 
-void set_array_depend_holds(
+/*
+ * set_array_depend_holds()
+ *
+ * looks through the array which is passed for all jobs depending on this
+ * array.
+ * Checks to see if the dependencies are satisfied, and updates the holds
+ * and dependencies on the job as needed.
+ * @pre-cond: pa must point to a valid array
+ * @post-cond: all jobs depending on pa have their holds up to date. If a job
+ * has an after dependency on pa and it is satisfied, the dependency is removed
+ * from the job.
+ * @return true if at least one dependency was satisfied, false if none were.
+ */
+
+bool set_array_depend_holds(
 
   job_array *pa)
 
   {
   int                      compareNumber;
+  bool                     dependency_satisfied = false;
 
   job                     *pjob;
   struct array_depend_job *pdj;
 
   struct array_depend     *pdep = (struct array_depend *)GET_NEXT(pa->ai_qs.deps);
-  char                     log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* loop through dependencies to update holds */
   while (pdep != NULL)
@@ -1134,28 +1180,11 @@ void set_array_depend_holds(
           }
         else 
           {
-          struct depend_job *job_pdj;
-          struct depend     *job_pdep = NULL;
+          dependency_satisfied = true;
 
           if (pdep->dp_type < JOB_DEPEND_TYPE_BEFORESTARTARRAY)
             {
-            /* remove the dependency from the job */
-            if ((job_pdep = find_depend(pdep->dp_type, &pjob->ji_wattr[JOB_ATR_depend])) != NULL)
-              {
-              if ((job_pdj = find_dependjob(job_pdep, pa->ai_qs.parent_id)) != NULL)
-                {
-                del_depend_job(job_pdj);
-                
-                snprintf(log_buf, sizeof(log_buf), msg_registerrel, pa->ai_qs.parent_id);
-                log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
-                
-                if (GET_NEXT(job_pdep->dp_jobs) == NULL)
-                  {
-                  /* no more dependencies of this type */
-                  del_depend(job_pdep);
-                  }
-                }
-              }
+            remove_array_dependency_job_from_job(pdep, pjob, pa->ai_qs.parent_id);
             }
           
           /* release the array's hold - set_depend_hold
@@ -1171,6 +1200,7 @@ void set_array_depend_holds(
     pdep = (struct array_depend *)GET_NEXT(pdep->dp_link);
     }
 
+  return(dependency_satisfied);
   } /* END set_array_depend_holds */
 
 
