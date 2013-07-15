@@ -14,8 +14,6 @@ int req_registerarray(struct batch_request *preq);
 
 int register_array_depend(job_array *pa, struct batch_request *preq, int type, int num_jobs);
 
-void set_array_depend_holds(job_array *pa);
-
 int depend_on_exec(job *pjob);
 
 void depend_clrrdy(job *pjob);
