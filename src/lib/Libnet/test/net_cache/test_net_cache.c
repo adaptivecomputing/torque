@@ -11,20 +11,23 @@
 #include <stdio.h>
 
 #include "pbs_error.h"
-#include <QtCore/qglobal.h>
 
-extern const char *getRandomWord();
+#define NUMTHREADS 20
+
+extern const char *getRandomWord(unsigned int *);
 void *add_and_lookup_stuff(void *parm);
 
-int exited = FALSE;
+int          exited = FALSE;
+unsigned int seedp[NUMTHREADS];
 
 START_TEST(test_one)
   {
-    for(int i=0;i < 20;i++)
+    for(int i=0;i < NUMTHREADS;i++)
     {
+        seedp[i]=i;
         pthread_t num;
         //Spin off a bunch of threads that will hammer the cache simultaneously.
-        pthread_create(&num,NULL,add_and_lookup_stuff,NULL);
+        pthread_create(&num,NULL,add_and_lookup_stuff, (void *)&seedp[i]);
     }
     sleep(2);
     exited = TRUE;
@@ -40,7 +43,7 @@ void *add_and_lookup_stuff(void *parm)
     {
         struct addrinfo *pAddr = (struct addrinfo *)calloc(1,sizeof(addrinfo));
         struct sockaddr_in *pINetAddr;
-        const char *word = getRandomWord();
+        const char *word = getRandomWord((unsigned int *)parm);
 
         if(NULL == get_cached_addrinfo(word))
         {
@@ -49,7 +52,7 @@ void *add_and_lookup_stuff(void *parm)
             pINetAddr = (struct sockaddr_in *)pAddr->ai_addr;
 
             pAddr->ai_canonname = strdup(word);
-            pINetAddr->sin_addr.s_addr = qrand();
+            pINetAddr->sin_addr.s_addr = rand_r((unsigned int *)parm);
             pAddr = insert_addr_name_info(pAddr,pAddr->ai_canonname);
         }
         else
