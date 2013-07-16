@@ -5043,7 +5043,7 @@ void set_old_nodes(
     set_one_old(old, pjob);
 
     free(old);
-    }  /* END if pjobs exec host is set */
+    } /* END if pjobs exec host is set */
 
   /* record the job on the alps_login if cray_enabled */
   get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
