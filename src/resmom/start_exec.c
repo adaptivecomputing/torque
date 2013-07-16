@@ -4243,7 +4243,7 @@ int TMomFinalizeChild(
 
       /*NOTREACHED*/
 
-      return(-1);
+      exit(-1);
       }
     }
 
@@ -4337,7 +4337,7 @@ int TMomFinalizeChild(
 
         /*NOTREACHED*/
 
-        return(-1);
+        exit(-1);
         }
 
       if (exec_with_exec)
@@ -4376,7 +4376,7 @@ int TMomFinalizeChild(
 
         /*NOTREACHED*/
 
-        return(-1);
+        exit(-1);
         }
       }
 
@@ -4388,7 +4388,7 @@ int TMomFinalizeChild(
 
         /*NOTREACHED*/
 
-        return(-1);
+        exit(-1);
         }
       }
     else
@@ -4456,9 +4456,6 @@ int TMomFinalizeChild(
 
   exit(254); /* should never, ever get here */
 
-  /*NOTREACHED*/
-
-  return(-1);
   }   /* END TMomFinalizeChild() */
 
 
@@ -5513,9 +5510,6 @@ int start_process(
 
   exit(254);
 
-  /*NOTREACHED*/
-
-  return(-1);
   }   /* END start_process() */
 
 
