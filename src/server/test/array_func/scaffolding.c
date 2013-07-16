@@ -127,7 +127,7 @@ void append_link(tlist_head *head, list_link *new_link, void *pobj)
   exit(1);
   }
 
-void set_array_depend_holds(job_array *pa)
+bool set_array_depend_holds(job_array *pa)
   {
   fprintf(stderr, "The call to set_array_depend_holds needs to be mocked!!\n");
   exit(1);
