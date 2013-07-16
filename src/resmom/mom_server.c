@@ -1540,7 +1540,7 @@ void mom_server_all_update_stat(void)
 
     if (is_reporter_mom == FALSE)
       {
-      mom_status->used = generate_server_status(mom_status->str, mom_status->size);
+      mom_status->used = generate_server_status(mom_status->str, mom_status->size - 1);
 #ifdef NVIDIA_GPUS
       add_gpu_status(mom_status);
 #endif /* NVIDIA_GPU */
