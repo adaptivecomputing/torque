@@ -102,10 +102,6 @@
 #include "svrfunc.h"
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
-#include "svr_func.h" /* get_svr_attr_* */
-#include "job_func.h" /* get_svr_attr_* */
-#include "svr_task.h"
-
 
 /* Private Function local to this file */
 
@@ -119,151 +115,6 @@ extern void rel_resc(job *);
 
 extern job  *chk_job_request(char *, struct batch_request *);
 int          issue_signal(job **, const char *, void(*)(batch_request *), void *);
-
-int finalize_rerunjob(struct batch_request *preq,job *pjob,int rc);
-
-void delay_and_send_sig_kill(batch_request *preq_sig);
-
-void send_sig_kill(struct work_task *pwt);
-
-void post_rerun(batch_request *preq);
-
-
-/*
- * delay_and_send_sig_kill
- *
- * The SIGTERM signal has been sent. Set a delay and prepare to send the SIGKILL.
- *
- */
-
-void delay_and_send_sig_kill(batch_request *preq_sig)
-  {
-  int                   delay = 0;
-  job                  *pjob;
-
-  pbs_queue            *pque;
-
-  char                 *preq_clt_id;
-
-  struct batch_request *preq_clt = NULL;  /* original client request */
-  int                   rc;
-  time_t                time_now = time(NULL);
-
-  if (preq_sig == NULL)
-    return;
-
-  rc          = preq_sig->rq_reply.brp_code;
-  preq_clt_id = (char *)preq_sig->rq_extra;
-
-  free_br(preq_sig);
-
-  if (preq_clt_id != NULL)
-    {
-    preq_clt = get_remove_batch_request(preq_clt_id);
-    free(preq_clt_id);
-    }
-
-  /* the client request has been handled another way, nothing left to do */
-  if (preq_clt == NULL)
-    return;
-
-  if ((pjob = chk_job_request(preq_clt->rq_ind.rq_rerun, preq_clt)) == NULL)
-    {
-    /* job has gone away */
-    req_reject(PBSE_UNKJOBID, 0, preq_clt, NULL, NULL);
-
-    return;
-    }
-
-  if (rc)
-    {
-    /* mom rejected request */
-
-    if (rc == PBSE_UNKJOBID)
-      {
-      /* MOM claims no knowledge, so just purge it */
-      log_event(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        "MOM rejected signal during rerun");
-
-      /* removed the resources assigned to job */
-
-      free_nodes(pjob);
-
-      set_resc_assigned(pjob, DECR);
-
-      unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
-
-      svr_job_purge(pjob);
-
-      reply_ack(preq_clt);
-      }
-    else
-      {
-      unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
-      req_reject(rc, 0, preq_clt, NULL, NULL);
-      }
-
-    return;
-    }
-
-  if ((pque = get_jobs_queue(&pjob)) != NULL)
-    {
-    mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
-    pthread_mutex_lock(server.sv_attr_mutex);
-    delay = attr_ifelse_long(&pque->qu_attr[QE_ATR_KillDelay],
-                           &server.sv_attr[SRV_ATR_KillDelay],
-                           0);
-    pthread_mutex_unlock(server.sv_attr_mutex);
-    }
-  else if (pjob == NULL)
-    {
-    unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
-    return;
-    }
-
-  unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
-  reply_ack(preq_clt);
-  set_task(WORK_Timed, delay + time_now, send_sig_kill, strdup(pjob->ji_qs.ji_jobid), FALSE);
-  }
-
-/*
- * send_sig_kill
- *
- * The SIGTERM has been sent and we've waited for the kill_delay so now send the SIGKILL.
- *
- */
-void send_sig_kill(struct work_task *pwt)
-  {
-  job                  *pjob;
-
-  char                 *job_id = (char *)pwt->wt_parm1;
-  static const char *rerun = "rerun";
-  char               *extra = strdup(rerun);
-
-  free(pwt->wt_mutex);
-  free(pwt);
-
-  if(job_id == NULL) return;
-
-  if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
-    {
-    free(job_id);
-    return;
-    }
-  free(job_id);
-  if(issue_signal(&pjob, "SIGKILL", post_rerun, extra) == 0)
-    {
-    pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN;
-    pjob->ji_qs.ji_svrflags = (pjob->ji_qs.ji_svrflags &
-        ~(JOB_SVFLG_CHECKPOINT_FILE |JOB_SVFLG_CHECKPOINT_MIGRATEABLE |
-          JOB_SVFLG_CHECKPOINT_COPIED)) | JOB_SVFLG_HASRUN;
-    }
-  unlock_ji_mutex(pjob, __func__, "6", LOGLEVEL);
-  }
-
 
 /*
  * post_rerun - handler for reply from mom on signal_job sent in req_rerunjob
@@ -327,6 +178,7 @@ int req_rerunjob(
   int     rc = PBSE_NONE;
   job    *pjob;
 
+  int     Force;
   int     MgrRequired = TRUE;
   char    log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -403,42 +255,10 @@ int req_rerunjob(
   if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
     {
     /* ask MOM to kill off the job if it is running */
-    int                 delay = 0;
-    pbs_queue          *pque;
+    static const char *rerun = "rerun";
+    char              *extra = strdup(rerun);
 
-    if ((pque = get_jobs_queue(&pjob)) != NULL)
-      {
-      mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
-      pthread_mutex_lock(server.sv_attr_mutex);
-      delay = attr_ifelse_long(&pque->qu_attr[QE_ATR_KillDelay],
-                             &server.sv_attr[SRV_ATR_KillDelay],
-                             0);
-      pthread_mutex_unlock(server.sv_attr_mutex);
-      }
-    else if (pjob == NULL)
-      {
-      rc = PBSE_NORERUN;
-      unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
-      return rc;
-      }
-    if(delay != 0)
-      {
-      get_batch_request_id(preq);
-      if ((rc = issue_signal(&pjob, "SIGTERM", delay_and_send_sig_kill, strdup(preq->rq_id))))
-        {
-        /* cant send to MOM */
-        req_reject(rc, 0, preq, NULL, NULL);
-        }
-      unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
-      return rc;
-      }
-    else
-      {
-      static const char *rerun = "rerun";
-      char               *extra = strdup(rerun);
-
-      rc = issue_signal(&pjob, "SIGKILL", post_rerun, extra);
-      }
+    rc = issue_signal(&pjob, "SIGKILL", post_rerun, extra);
     }
   else
     { 
@@ -460,21 +280,6 @@ int req_rerunjob(
 
     rc = -1;
     }
-  return finalize_rerunjob(preq,pjob,rc);
-  }
-
-/*
- * finalize_rerunjob
- *
- * The SIGKILL or SIGTERM - delay - SIGKILL has been sent to the job
- * now mark its substate as JOB_SUBSTATE_RERUN
- */
-
-
-int finalize_rerunjob(struct batch_request *preq,job *pjob,int rc)
-  {
-  int     Force;
-  char    log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (preq->rq_extend && !strncasecmp(preq->rq_extend, RERUNFORCE, strlen(RERUNFORCE)))
     Force = 1;
@@ -484,7 +289,7 @@ int finalize_rerunjob(struct batch_request *preq,job *pjob,int rc)
   switch (rc)
     {
 
-    case -1:
+    case - 1:
 
       /* completed job was requeued */
 
@@ -504,8 +309,6 @@ int finalize_rerunjob(struct batch_request *preq,job *pjob,int rc)
       rc = PBSE_MEM_MALLOC;
       snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Can not allocate memory");
       req_reject(rc, 0, preq, NULL, log_buf);
-      if (pjob != NULL)
-        unlock_ji_mutex(pjob, __func__, "5", LOGLEVEL);
       return rc;
       break;
 
