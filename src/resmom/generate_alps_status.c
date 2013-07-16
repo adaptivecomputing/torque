@@ -216,17 +216,21 @@ int process_label_array(
           }
         else
           {
-          char *str = strstr(feature_list->str, feature_name);
-          bool  found = false;
+          /* this can be called multiple times per node. Make sure the same feature
+           * isn't inserted twice */
+          const char *str = strstr(feature_list->str, feature_name);
+          bool        found = false;
 
           if (str != NULL)
             {
             if ((str == feature_list->str) ||
                 (*(str - 1) == ','))
               {
-              if ((str + strlen(feature_name) > feature_list->str + feature_list->used) ||
-                  (*(str + strlen(feature_name)) == ',') ||
-                  (*(str + strlen(feature_name)) == '\0'))
+              int feature_name_len = strlen(feature_name);
+
+              if ((str + feature_name_len > feature_list->str + feature_list->used) ||
+                  (*(str + feature_name_len) == ',') ||
+                  (*(str + feature_name_len) == '\0'))
                 found = true;
               }
             }
