@@ -1138,7 +1138,8 @@ extern int   svr_chk_owner(struct batch_request *, job *);
 extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_atr, int);
 extern struct batch_request *setup_cpyfiles(struct batch_request *, job *, char *, char *, int, int);
 extern struct batch_request *cpy_checkpoint(struct batch_request *, job *, enum job_atr, int);
-int   issue_signal(job **, const char *, void(*)(struct batch_request *), void *);
+int issue_signal(job **, const char *, void(*)(struct batch_request *), void *, char *);
+
 #endif /* BATCH_REQUEST_H */
 
 
