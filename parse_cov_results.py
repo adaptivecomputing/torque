@@ -96,7 +96,7 @@ def report_file(report):
     #Output this information to a comma separated values file
     csv = open('coverages.csv', 'w')
 
-    csv.write('File name,Percentage Covered,Total Lines,Lines Covered')
+    csv.write('File name,Percentage Covered,Total Lines,Lines Covered\n')
 
     for item in list:
        csv.write(item[0] + ',' + item[1] + ',' + item[2] + ',')
