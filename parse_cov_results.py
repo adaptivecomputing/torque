@@ -93,6 +93,17 @@ def report_file(report):
     print "-----------------------------------------------------------"
     print "Lines executed: %6s of %6s statements: %.02f%% COVERAGE" % (int(actual_lines), total_lines, percent_touched)
 
+    #Output this information to a comma separated values file
+    csv = open('coverages.csv', 'w')
+
+    csv.write('File name,Percentage Covered,Total Lines,Lines Covered')
+
+    for item in list:
+       csv.write(item[0] + ',' + item[1] + ',' + item[2] + ',')
+       csv.write("%d" % (int((float(item[1]) / 100) * float(item[2]))))
+       csv.write('\n')
+
+    csv.close()
 
 # program file1 [file2 ...]
 #    for each argument, use that argument as a filename to be parsed and output
