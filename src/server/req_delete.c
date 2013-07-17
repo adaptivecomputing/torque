@@ -135,7 +135,7 @@ extern struct server server;
 extern int   LOGLEVEL;
 extern struct all_jobs alljobs;
 
-int issue_signal(job **, const char *, void (*)(batch_request *), void *);
+extern int issue_signal(job **, const char *, void (*)(batch_request *), void *, char *);
 
 /* Private Functions in this file */
 
@@ -299,6 +299,8 @@ int execute_job_delete(
 
   int               rc;
   const char      *sigt = "SIGTERM";
+  const char      *del = "delete";
+
 
   char              log_buf[LOCAL_LOG_BUF_SIZE];
   time_t            time_now = time(NULL);
@@ -463,7 +465,7 @@ jump:
      */
     get_batch_request_id(preq);
 
-    if ((rc = issue_signal(&pjob, sigt, post_delete_mom1, strdup(preq->rq_id))))
+    if ((rc = issue_signal(&pjob, sigt, post_delete_mom1,strdup(del), strdup(preq->rq_id))))
       {
       /* cant send to MOM */
 
@@ -1174,8 +1176,6 @@ void post_delete_mom1(
 
   pbs_queue            *pque;
 
-  char                 *preq_clt_id;
-
   struct batch_request *preq_clt = NULL;  /* original client request */
   int                   rc;
   time_t                time_now = time(NULL);
@@ -1185,15 +1185,12 @@ void post_delete_mom1(
 
 
   rc          = preq_sig->rq_reply.brp_code;
-  preq_clt_id = (char *)preq_sig->rq_extra;
 
-  free_br(preq_sig);
-
-  if (preq_clt_id != NULL)
+  if (preq_sig->rq_extend != NULL)
     {
-    preq_clt = get_remove_batch_request(preq_clt_id);
-    free(preq_clt_id);
+    preq_clt = get_remove_batch_request(preq_sig->rq_extend);
     }
+  free_br(preq_sig);
 
   /* the client request has been handled another way, nothing left to do */
   if (preq_clt == NULL)
@@ -1316,7 +1313,7 @@ void post_delete_mom2(
 
     if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
       {
-      issue_signal(&pjob, sigk, free_br, NULL);
+      issue_signal(&pjob, sigk, free_br, NULL, NULL);
       
       if (pjob != NULL)
         {
@@ -1489,7 +1486,7 @@ void job_delete_nanny(
           snprintf(newreq->rq_ind.rq_signal.rq_signame, sizeof(newreq->rq_ind.rq_signal.rq_signame), "%s", sigk);
           }
         
-        issue_signal(&pjob, sigk, post_job_delete_nanny, newreq);
+        issue_signal(&pjob, sigk, post_job_delete_nanny, newreq, NULL);
         
         if (pjob != NULL)
           apply_job_delete_nanny(pjob, time_now + 60);

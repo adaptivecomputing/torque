@@ -226,7 +226,7 @@ void *get_next(list_link pl, char *file, int line)
   return(NULL);
   }
 
-int issue_signal(job **pjob, const char *signame, void (*func)(batch_request *), void *extra)
+int issue_signal(job **pjob, const char *signame, void (*func)(batch_request *), void *extra, char *extend)
   {
   fprintf(stderr, "The call to issue_signal needs to be mocked!!\n");
   exit(1);
