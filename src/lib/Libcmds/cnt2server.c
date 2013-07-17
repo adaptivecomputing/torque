@@ -156,10 +156,15 @@ int cnt2server(
   else
     {
     rc = get_active_pbs_server(&tmpServer);
+    
     if (rc == PBSE_NONE)
       {
       strncpy(Server, tmpServer, PBS_MAXHOSTNAME);
       free(tmpServer);
+      }
+    else if (rc == PBSE_TIMEOUT)
+      {
+      return(rc * -1);
       }
     }
 
@@ -250,10 +255,14 @@ start:
 
             new_server_name = PBS_get_server(SpecServer, &port);
             rc = validate_active_pbs_server(&new_server_name, port);
-            if (rc)
-              {
-              break;
-              }
+            if ((rc) ||
+                (!strcmp(new_server_name, Server)))
+
+            if (cnt2server_retry != 0)
+              goto retry;
+
+            break;
+
             connect = pbs_connect(new_server_name);
             if (connect <= 0)
               {

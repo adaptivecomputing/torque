@@ -37,6 +37,7 @@ int release_syncwith_dependency(batch_request *preq, job *pjob);
 void set_depend_hold(job *pjob, pbs_attribute *pattr);
 int delete_dependency_job(batch_request *preq, job **pjob_ptr);
 int req_register(batch_request *preq);
+bool remove_array_dependency_job_from_job(struct array_depend *pdep, job *pjob, char *job_array_id);
 
 extern char server_name[];
 extern int i;
@@ -56,6 +57,36 @@ void initialize_depend_attr(
   CLEAR_HEAD(pattr->at_val.at_list);
   } /* END initialize_depend_attr() */
 
+START_TEST(remove_array_dependency_from_job_test)
+  {
+  job                 *pjob = (job *)calloc(1, sizeof(job));
+  struct depend       *pdep;
+  struct depend_job   *d1;
+  struct array_depend  array_dep;
+
+  initialize_depend_attr(&pjob->ji_wattr[JOB_ATR_depend]);
+  pdep = make_depend(JOB_DEPEND_TYPE_AFTEROKARRAY, &pjob->ji_wattr[JOB_ATR_depend]);
+  fail_unless((d1 = make_dependjob(pdep, job1, host)) != NULL, "didn't create dep 1");
+
+  array_dep.dp_type = JOB_DEPEND_TYPE_AFTEROKARRAY;
+  fail_unless(remove_array_dependency_job_from_job(&array_dep, pjob, job1) == true);
+  }
+END_TEST
+
+START_TEST(set_array_depend_holds_test)
+  {
+  batch_request *preq = (batch_request *)calloc(1, sizeof(batch_request));
+  job_array     *pa = (job_array *)calloc(1, sizeof(job_array));
+
+  strcpy(preq->rq_ind.rq_register.rq_child, job1);
+  strcpy(preq->rq_ind.rq_register.rq_svr, host);
+
+  CLEAR_HEAD(pa->ai_qs.deps);
+  fail_unless(register_array_depend(pa, preq, JOB_DEPEND_TYPE_AFTEROKARRAY, 10) == PBSE_NONE);
+  pa->ai_qs.num_successful = 12;
+  fail_unless(set_array_depend_holds(pa) == true);
+  }
+END_TEST
 
 
 START_TEST(check_dependency_job_test)
@@ -811,6 +842,8 @@ Suite *req_register_suite(void)
 
   tc_core = tcase_create("req_register_test");
   tcase_add_test(tc_core, req_register_test);
+  tcase_add_test(tc_core, set_array_depend_holds_test);
+  tcase_add_test(tc_core, remove_array_dependency_from_job_test);
   suite_add_tcase(s, tc_core);
 
   return s;

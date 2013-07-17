@@ -176,7 +176,7 @@ int modify_job(void **,svrattrl *,struct batch_request *,int, int);
 void update_array_values(job_array *,int,enum ArrayEventsEnum, char *job_id, long job_atr_hold, int job_exit_status);
 
 int register_array_depend(job_array*,struct batch_request *,int,int);
-void set_array_depend_holds(job_array *);
+bool set_array_depend_holds(job_array *);
 
 int release_job(struct batch_request *,void *);
 int release_array_range(job_array *,struct batch_request *,char *);

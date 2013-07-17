@@ -74,10 +74,14 @@ int socket_avail_bytes_on_descriptor(
 int socket_get_unix()
   {
   int fd;
+  int rc;
 
   fd = socket(AF_UNIX, SOCK_STREAM, 0);
   if (fd < 0)
-    return(PBSE_SOCKET_FAULT);
+    {
+    rc = PBSE_SOCKET_FAULT * -1;
+    return(rc);
+    }
 
   return(fd);
   }
@@ -808,10 +812,11 @@ int socket_read_num(
       break;
     }
 
-  if (str_ll[0] == '\0')
+  if ((str_ll[0] == '\0') &&
+      (rc == PBSE_INTERNAL))
     rc = PBSE_SOCKET_READ;
 
-  return rc;
+  return(rc);
   } /* END socket_read_num() */
 
 
@@ -833,7 +838,7 @@ int socket_read_str(
   char delin;
 
   if ((the_str == NULL) || (str_len == NULL))
-    return PBSE_INTERNAL;
+    return(PBSE_INTERNAL);
 
   if ((rc = socket_read_num(socket, (long long *)&tmp_len)) != PBSE_NONE)
     {

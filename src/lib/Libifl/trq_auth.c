@@ -62,6 +62,13 @@ int validate_active_pbs_server(
   snprintf(unix_sockname, sizeof(unix_sockname), "%s/%s", TRQAUTHD_SOCK_DIR, TRQAUTHD_SOCK_NAME);
 
   local_socket = socket_get_unix();
+  if (local_socket < 0)
+    {
+    fprintf(stderr, "could not allocate unix domain socket: %d\n", local_socket);
+    return(local_socket * -1); /*socket_get_unix returns a negative PBSE error value
+                                 Change it back */
+    }
+
   rc = socket_connect_unix(local_socket, unix_sockname, &err_msg);
   if (rc != PBSE_NONE)
     {
@@ -86,6 +93,10 @@ int validate_active_pbs_server(
   rc = PBSE_NONE;
 
   current_server = (char *)calloc(1, strlen(read_buf));
+  if (current_server == NULL)
+    {
+    return(PBSE_MEM_MALLOC);
+    }
 
   strcpy(current_server, read_buf);
   
@@ -119,13 +130,21 @@ int get_active_pbs_server(
   int       local_socket;
   int       rc;
   char     *timeout_ptr;
+  bool      retry = true;
+  int       retries = 0;
 
   if ((timeout_ptr = getenv("PBSAPITIMEOUT")) != NULL)
     {
     time_t tmp_timeout = strtol(timeout_ptr, NULL, 0);
 
     if (tmp_timeout > 0)
+      {
       pbs_tcp_timeout = tmp_timeout;
+
+      if (tmp_timeout > 2)
+        retry = false;
+      }
+
     }
 
   /* the syntax for this call is a number followed by a | (pipe). The pipe indicates 
@@ -135,6 +154,9 @@ int get_active_pbs_server(
   snprintf(unix_sockname, sizeof(unix_sockname), "%s/%s", TRQAUTHD_SOCK_DIR, TRQAUTHD_SOCK_NAME);
 
   local_socket = socket_get_unix();
+  if (local_socket < 0)
+    return(local_socket * -1); /* socket_get_unix returns a negative PBSE error on failure. make it positive */
+
   rc = socket_connect_unix(local_socket, unix_sockname, &err_msg);
   if (rc != PBSE_NONE)
     {
@@ -149,8 +171,14 @@ int get_active_pbs_server(
     return(PBSE_SYSTEM);
     }
 
-  rc = socket_read_str(local_socket, &read_buf, &read_buf_len);
-  if (rc != PBSE_NONE) 
+  do
+    {
+    rc = socket_read_str(local_socket, &read_buf, &read_buf_len);
+    if (rc == PBSE_NONE) 
+      break;
+    } while ((retry == true) && (++retries <= 5));
+
+  if (rc != PBSE_NONE)
     return(rc);
 
   if (read_buf_len == 0)
@@ -172,7 +200,12 @@ int trq_simple_disconnect(
   int sock_handle)
 
   {
-  close(sock_handle);
+  int rc;
+
+  rc = close(sock_handle);
+  if (rc != 0)
+    return(PBSE_SYSTEM);
+
   return(PBSE_NONE);
   }
 
@@ -215,7 +248,7 @@ int trq_simple_connect(
     {
 
     sock = socket(addr_info->ai_family, SOCK_STREAM, addr_info->ai_protocol);
-    if (sock <= 0)
+    if (sock < 0)
       {
       fprintf(stderr, "Could not open socket in %s. error %d\n", __func__, errno);
       freeaddrinfo(results);
@@ -241,10 +274,14 @@ int trq_simple_connect(
       close(sock);
       freeaddrinfo(results);
       results = NULL;
+      rc = PBSE_SYSTEM;
       continue;
       }
     else
+      {
+      rc = PBSE_NONE;
       break;
+      }
     }
 
   /* If we made it to here we connected */
@@ -256,7 +293,7 @@ int trq_simple_connect(
   if (addr_info == NULL)
     return(PBSE_SERVER_NOT_FOUND);
   
-  return(PBSE_NONE);
+  return(rc);
   }
 
 /* validate_server:

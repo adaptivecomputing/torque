@@ -102,10 +102,10 @@ size_t need_to_grow(
   const char     *to_check)
 
   {
-  size_t to_add = strlen(to_check) + 1;
+  size_t to_add = strlen(to_check) + 2;
   size_t to_grow = 0;
 
-  if (ds->size <= ds->used + to_add) //Dyanamic strings has an implied zero length string at the end
+  if (ds->size < ds->used + to_add) //Dyanamic strings has an implied zero length string at the end
     {                                // So we need an extra null byte.
     to_grow = to_add + ds->size;
 

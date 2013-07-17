@@ -202,7 +202,6 @@ int process_label_array(
   {
   char     *attr_value;
   xmlNode  *child;
-  int       first = 0;
 
   for (child = node->children; child != NULL; child = child->next)
     {
@@ -211,15 +210,36 @@ int process_label_array(
       if (!strncmp(attr_value, "MOAB:FEATURE=", strlen("MOAB:FEATURE=")))
         {
         char *feature_name = attr_value + strlen("MOAB:FEATURE=");
-        if (first == 0)
+        if (feature_list->used == 0)
           {
           append_dynamic_string(feature_list, feature_name);
-          first++;
           }
         else
           {
-          append_dynamic_string(feature_list, ",");
-          append_dynamic_string(feature_list, feature_name);
+          /* this can be called multiple times per node. Make sure the same feature
+           * isn't inserted twice */
+          const char *str = strstr(feature_list->str, feature_name);
+          bool        found = false;
+
+          if (str != NULL)
+            {
+            if ((str == feature_list->str) ||
+                (*(str - 1) == ','))
+              {
+              int feature_name_len = strlen(feature_name);
+
+              if ((str + feature_name_len > feature_list->str + feature_list->used) ||
+                  (*(str + feature_name_len) == ',') ||
+                  (*(str + feature_name_len) == '\0'))
+                found = true;
+              }
+            }
+
+          if (found == false)
+            {
+            append_dynamic_string(feature_list, ",");
+            append_dynamic_string(feature_list, feature_name);
+            }
           }
         }
 

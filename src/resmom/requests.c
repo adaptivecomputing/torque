@@ -1360,7 +1360,7 @@ int message_job(
     free(pstr);
 
   /* SUCCESS */
-  exit(0);
+  exit(EXIT_SUCCESS);
   }  /* END message_job() */
 
 
@@ -2968,7 +2968,8 @@ void req_rerunjob(
     exit(0);
     }
 
-  return;
+  /* make sure to call exit() and not return to avoid zombie process */
+  exit(0);
   }  /* END req_rerunjob() */
 
 
