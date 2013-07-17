@@ -60,7 +60,7 @@ int job_abt(struct job **pjobp, const char *text)
   exit(1);
   }
 
-int issue_signal(job **pjob_ptr, const char *signame, void (*func)(batch_request *), void *extra)
+int issue_signal(job **pjob_ptr, const char *signame, void (*func)(batch_request *), void *extra, char *extend)
   {
   fprintf(stderr, "The call to issue_signal to be mocked!!\n");
   exit(1);

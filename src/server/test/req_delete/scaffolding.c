@@ -133,7 +133,7 @@ int job_abt(struct job **pjobp, const char *text)
   return(0);
   }
 
-int issue_signal(job **pjob_ptr, const char *signame, void (*func)(struct batch_request *), void *extra)
+int issue_signal(job **pjob_ptr, const char *signame, void (*func)(struct batch_request *), void *extra, char *extend)
   {
   signal_issued = TRUE;
   return(PBSE_NONE);
