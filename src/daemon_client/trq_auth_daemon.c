@@ -12,6 +12,7 @@
 #include <unistd.h> /* getgid, fork */
 #include <grp.h> /* setgroups */
 #include <ctype.h> /*isspace */
+#include <getopt.h> /*getopt_long */
 #include "pbs_error.h" /* PBSE_NONE */
 #include "pbs_constants.h" /* AUTH_IP */
 #include "pbs_ifl.h" /* pbs_default, PBS_BATCH_SERVICE_PORT, TRQ_AUTHD_SERVICE_PORT */
@@ -223,17 +224,49 @@ int daemonize_trqauthd(const char *server_ip, int server_port, void *(*process_m
 void parse_command_line(int argc, char **argv)
   {
   int c;
+  int option_index = 0;
+  int iterator;
+  static struct option long_options[] = {
+            {"about",   no_argument,      0,  0 },
+            {"help",    no_argument,      0,  0 },
+            {"version", no_argument,      0,  0 },
+            {0,         0,                0,  0 }
+  };
 
-  while ((c = getopt(argc, argv, "D")) != -1)
+  while ((c = getopt_long(argc, argv, "D", long_options, &option_index)) != -1)
     {
     switch (c)
       {
+      case 0:
+	switch (option_index)  /* One of the long options was passed */
+          {
+          case 0:   /*about*/
+            fprintf(stderr, "torque user authorization daemon version %s\n", VERSION);
+            exit(0);
+            break;
+          case 1:   /* help */
+            iterator = 0;
+            fprintf(stderr, "Usage: trqauthd [FLAGS]\n");
+            while (long_options[iterator].name != 0)
+              {
+              fprintf(stderr, "  --%s\n", long_options[iterator++].name);
+              }
+            fprintf(stderr, "\n  -D // RUN IN DEBUG MODE\n");
+            exit(0);
+            break;
+          case 2:   /* version */
+            fprintf(stderr, "Version: %s Commit: %s\n", VERSION, GIT_HASH);
+            exit(0);
+            break;
+          }
+        break;
+
       case 'D':
         debug_mode = TRUE;
         break;
 
       default:
-        fprintf(stderr, "Only the -D flag  is currently supported\n");
+        fprintf(stderr, "Unknown command line option\n");
         exit(1);
         break;
       }
@@ -257,14 +290,14 @@ int trq_main(
   int daemon_port = 0;
   void *(*process_method)(void *) = process_svr_conn;
 
+  parse_command_line(argc, argv);
+
   if (IamRoot() == 0)
     {
     printf("This program must be run as root!!!\n");
     return(PBSE_IVALREQ);
     }
 
-
-  parse_command_line(argc, argv);
   if ((rc = load_config(&active_pbs_server, &trq_server_port, &daemon_port)) != PBSE_NONE)
     {
     }
