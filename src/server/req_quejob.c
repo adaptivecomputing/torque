@@ -2208,7 +2208,6 @@ int req_commit(
     preq_run->rq_ind.rq_run.rq_resch = 0;
     preq_run->rq_ind.rq_run.rq_destin = rq_destin;
     preq_run->rq_fromsvr = preq->rq_fromsvr;
-    preq_run->rq_extsz = preq->rq_extsz;
     preq_run->rq_noreply = TRUE; /* set for no replies */
     strcpy(preq_run->rq_user, preq->rq_user);
     strcpy(preq_run->rq_host, preq->rq_host);

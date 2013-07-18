@@ -451,14 +451,14 @@ typedef struct noderes
 
 /* Flags for ji_flags (mom only) */
 
-#define MOM_CHECKPOINT_ACTIVE 1 /* checkpoint in progress */
-#define MOM_CHECKPOINT_POST  2 /* post checkpoint call returned */
-#define MOM_HAS_NODEFILE 4 /* Mom wrote job PBS_NODEFILE */
-#define MOM_NO_PROC  8 /* no procs found for job */
-#define MOM_HAS_TMPDIR  16 /* Mom made a tmpdir */
+#define MOM_CHECKPOINT_ACTIVE         0x00000001 /* checkpoint in progress */
+#define MOM_CHECKPOINT_POST           0x00000002 /* post checkpoint call returned */
+#define MOM_HAS_NODEFILE              0x00000004 /* Mom wrote job PBS_NODEFILE */
+#define MOM_NO_PROC                   0x00000008 /* no procs found for job */
+#define MOM_HAS_TMPDIR                0x00000010 /* Mom made a tmpdir */
 
 #ifdef USESAVEDRESOURCES
-#define MOM_JOB_RECOVERY   32  /* recovering dead job on restart */
+#define MOM_JOB_RECOVERY              0x000000020  /* recovering dead job on restart */
 #endif    /* USESAVEDRESOURCES */
 
 #endif /* MOM */

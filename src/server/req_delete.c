@@ -734,7 +734,6 @@ batch_request *duplicate_request(
 
   preq_tmp->rq_perm = preq->rq_perm;
   preq_tmp->rq_fromsvr = preq->rq_fromsvr;
-  preq_tmp->rq_extsz = preq->rq_extsz;
   preq_tmp->rq_conn = preq->rq_conn;
   preq_tmp->rq_time = preq->rq_time;
   preq_tmp->rq_orgconn = preq->rq_orgconn;
