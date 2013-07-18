@@ -8,7 +8,7 @@ import os
 # re patterns for the following line: 
 #     TOTALCOV -- '../../MConfig.c': Lines(1020) - executed:1.37%
 #
-line_prog = re.compile(".*TOTALCOV -- '\.\./\.\./(.*)': Lines\(([0-9]+)\)- executed:(.+)%.*")
+line_prog = re.compile(".*TOTALCOV -- (.*): Lines\(([0-9]+)\) - executed:(.+)%.*")
 count_pat = re.compile(r'.*[fF]ailures?:\s*(\d+),\s*[eE]rrors?: (\d+)')
 loc_pat = re.compile(r"Entering directory `(.*)'$")
 
@@ -83,7 +83,7 @@ def report_file(report):
     # Print info for each reported file and then give a summary total for all the files mentioned
     # item[0] is the name, item[1] is percentage, item[2] is line count
     for item in list:
-        print "%24s  %10s%%  of %7s" % tuple(item)
+        print "%30s  %10s%%  of %7s" % tuple(item)
         actual_lines += (float(item[1]) / 100) * float(item[2])
         total_lines += int(item[2])
 

@@ -52,19 +52,16 @@ extern int cray_enabled;
 
 int insert_thing(resizable_array *ra, void *thing)
   {
-  fprintf(stderr, "This mock insert_thing always returns 0!!\n");
   return(0);
   }
 
 svrattrl *attrlist_create(const char *aname, const char *rname, int vsize)
   {
-  fprintf(stderr, "This mock  attrlist_create always returns NULL!!\n");
   return(NULL);
   }
 
 int remove_thing(resizable_array *ra, void *thing)
   {
-  fprintf(stderr, "This mock remove_thing always returns 0!!\n");
   return(0);
   }
 
@@ -76,25 +73,21 @@ AvlTree AVL_delete_node(u_long key, uint16_t port, AvlTree tree)
 
 int add_hash(hash_table_t *ht, int value, void *key)
   {
-  fprintf(stderr, "This mock add_hash always returns 0!!\n");
   return(0);
   }
 
 struct work_task *set_task(enum work_type type, long event_id, void (*func)(work_task *), void *parm, int get_lock)
   {
-  fprintf(stderr, "This mock set_task always returns NULL!!\n");
   return(NULL);
   }
 
 int find_attr(struct attribute_def *attr_def, const char *name, int limit)
   {
-  fprintf(stderr, "This mock find_attr always returns 0!!\n");
   return(0);
   }
 
 int mgr_set_node_attr(struct pbsnode *pnode, attribute_def *pdef, int limit, svrattrl *plist, int privil, int *bad, void *parent, int mode)
   {
-  fprintf(stderr, "This mock mgr_set_node_attr always returns 0!!\n");
   return(0);
   }
 
@@ -125,7 +118,6 @@ int get_value_hash(hash_table_t *ht, const void *key)
 
 void *get_next(list_link pl, char *file, int line)
   {
-  fprintf(stderr, "This mock get_next always returns NULL!!\n");
   return(NULL);
   }
 
@@ -197,7 +189,6 @@ char *pbs_strerror(int err)
 
 AvlTree AVL_insert(u_long key, uint16_t port, struct pbsnode *node, AvlTree tree)
   {
-  fprintf(stderr, "This mock  AVL_insert is always returns 0!!\n");
   return(NULL);
   }
 
@@ -226,7 +217,6 @@ int is_present(resizable_array *ra, void *thing)
 
 struct tcp_chan* DIS_tcp_setup(int sock)
   {
-  fprintf(stderr, "This mock DIS_tcp_setup always returns NULL!!\n");
   return(NULL);
   }
 
@@ -248,7 +238,6 @@ int diswcs (tcp_chan* c, char const* a, unsigned long l)
 
 int tcp_connect_sockaddr(struct sockaddr *sa, size_t s)
   {
-  fprintf(stderr, "This mock tcp_connect_sockaddr always returns 0!!\n");
   return(0);
   }
 
@@ -282,13 +271,11 @@ int get_svr_attr_str(int index, char **str)
 
 int remove_thing_from_index(resizable_array *ra, int index)
   {
-  fprintf(stderr, "This mock remove_thing_from_index always returns 0!!\n");
   return(0);
   }
 
 int insert_thing_after(resizable_array *ra, void *thing, int index)
   {
-  fprintf(stderr, "This mock insert_thing_after always returns 0!!\n");
   return(0);
   }
 
