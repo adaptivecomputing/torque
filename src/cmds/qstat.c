@@ -640,8 +640,6 @@ static void altdsp_statjob(
   int   usecput;
   static char  pfs[SIZEL];
   static char  rqmem[SIZEL];
-  static char  rqpmem[SIZEL];
-  static char  rqdmem[SIZEL];
   static char  srfsbig[SIZEL];
   static char  srfsfast[SIZEL];
   static const char *blank = " -- ";
@@ -685,8 +683,6 @@ static void altdsp_statjob(
     strcpy(elap_time_string, blank);
     snprintf(pfs, sizeof(pfs), "%s", blank);
     snprintf(rqmem, sizeof(rqmem), "%s", blank);
-    snprintf(rqpmem, sizeof(rqpmem), "%s", blank);
-    snprintf(rqdmem, sizeof(rqdmem), "%s", blank);
     snprintf(srfsbig, sizeof(srfsbig), "%s", blank);
     snprintf(srfsfast, sizeof(srfsfast), "%s", blank);
     usecput = 0;
@@ -767,11 +763,19 @@ static void altdsp_statjob(
           }
         else if (!strcmp(pat->resource, "pmem"))
           {
-          snprintf(rqpmem, sizeof(rqpmem), "%s", cnv_size(pat->value, alt_opt));
+          snprintf(rqmem, sizeof(rqmem), "%s", cnv_size(pat->value, alt_opt));
           }
         else if (!strcmp(pat->resource, "dmem"))
           { 
-          snprintf(rqdmem, sizeof(rqdmem), "%s", cnv_size(pat->value, alt_opt));
+          snprintf(rqmem, sizeof(rqmem), "%s", cnv_size(pat->value, alt_opt));
+          }
+        else if (!strcmp(pat->resource, "vmem"))
+          {
+          snprintf(rqmem, sizeof(rqmem), "%s", cnv_size(pat->value, alt_opt));
+          }
+        else if (!strcmp(pat->resource, "pvmem"))
+          {
+          snprintf(rqmem, sizeof(rqmem), "%s", cnv_size(pat->value, alt_opt));
           }
         else if (!strcmp(pat->resource, "walltime"))
           {
@@ -836,13 +840,6 @@ static void altdsp_statjob(
            usern,
            queuen);
 
-    /* select which of the three memory types to display, move to the next one if the current one is blank */
-    char* memoryToDisplay = rqmem;
-    if (strcmp(memoryToDisplay, blank) == 0)
-      memoryToDisplay = rqpmem;
-    if (strcmp(memoryToDisplay, blank) == 0)
-      memoryToDisplay = rqdmem;
-
     if (alt_opt & ALT_DISPLAY_R)
       {
       printf("%5.5s %*.*s %6.6s %9.9s %1.1s %9.9s %5.5s %5.5s %5.5s",
@@ -850,7 +847,7 @@ static void altdsp_statjob(
              tasksize,
              tasksize,
              tasks,
-             memoryToDisplay,
+             rqmem,
              usecput ? rqtimecpu : rqtimewal,
              jstate,
              usecput ? eltimecpu : elap_time_string,
@@ -871,7 +868,7 @@ static void altdsp_statjob(
              tasksize,
              tasksize,
              tasks,
-             memoryToDisplay,
+             rqmem,
              usecput ? rqtimecpu : rqtimewal,
              jstate,
              usecput ? eltimecpu : elap_time_string);

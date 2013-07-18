@@ -109,7 +109,7 @@
 #include "mutex_mgr.hpp"
 
 
-int          issue_signal(job **, const char *, void(*)(batch_request *), void *);
+int          issue_signal(job **, const char *, void(*)(batch_request *), void *, char *);
 
 /* Private Fuctions Local to this File */
 
@@ -520,7 +520,7 @@ void rerun_or_kill(
     {
     /* job is rerunable, mark it to be requeued */
 
-    issue_signal(&pjob, "SIGKILL", free_br, NULL);
+    issue_signal(&pjob, "SIGKILL", free_br, NULL, NULL);
 
     if (pjob != NULL)
       {

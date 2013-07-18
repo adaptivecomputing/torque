@@ -118,7 +118,7 @@ extern char *msg_jobrerun;
 extern void rel_resc(job *);
 
 extern job  *chk_job_request(char *, struct batch_request *);
-int          issue_signal(job **, const char *, void(*)(batch_request *), void *);
+extern int issue_signal(job **, const char *, void(*)(batch_request *), void *, char *);
 
 int finalize_rerunjob(struct batch_request *preq,job *pjob,int rc);
 
@@ -143,9 +143,7 @@ void delay_and_send_sig_kill(batch_request *preq_sig)
 
   pbs_queue            *pque;
 
-  char                 *preq_clt_id;
-
-  struct batch_request *preq_clt = NULL;  /* original client request */
+    struct batch_request *preq_clt = NULL;  /* original client request */
   int                   rc;
   time_t                time_now = time(NULL);
 
@@ -153,15 +151,12 @@ void delay_and_send_sig_kill(batch_request *preq_sig)
     return;
 
   rc          = preq_sig->rq_reply.brp_code;
-  preq_clt_id = (char *)preq_sig->rq_extra;
 
-  free_br(preq_sig);
-
-  if (preq_clt_id != NULL)
+  if (preq_sig->rq_extend != NULL)
     {
-    preq_clt = get_remove_batch_request(preq_clt_id);
-    free(preq_clt_id);
+    preq_clt = get_remove_batch_request(preq_sig->rq_extend);
     }
+  free_br(preq_sig);
 
   /* the client request has been handled another way, nothing left to do */
   if (preq_clt == NULL)
@@ -254,7 +249,7 @@ void send_sig_kill(struct work_task *pwt)
     return;
     }
   free(job_id);
-  if(issue_signal(&pjob, "SIGKILL", post_rerun, extra) == 0)
+  if(issue_signal(&pjob, "SIGKILL", post_rerun, extra,NULL) == 0)
     {
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN;
     pjob->ji_qs.ji_svrflags = (pjob->ji_qs.ji_svrflags &
@@ -423,8 +418,11 @@ int req_rerunjob(
       }
     if(delay != 0)
       {
+      static const char *rerun = "rerun";
+      char               *extra = strdup(rerun);
+
       get_batch_request_id(preq);
-      if ((rc = issue_signal(&pjob, "SIGTERM", delay_and_send_sig_kill, strdup(preq->rq_id))))
+      if ((rc = issue_signal(&pjob, "SIGTERM", delay_and_send_sig_kill, extra, strdup(preq->rq_id))))
         {
         /* cant send to MOM */
         req_reject(rc, 0, preq, NULL, NULL);
@@ -437,7 +435,7 @@ int req_rerunjob(
       static const char *rerun = "rerun";
       char               *extra = strdup(rerun);
 
-      rc = issue_signal(&pjob, "SIGKILL", post_rerun, extra);
+      rc = issue_signal(&pjob, "SIGKILL", post_rerun, extra, NULL);
       }
     }
   else

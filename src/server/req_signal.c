@@ -235,10 +235,6 @@ int req_signaljob(
   return(PBSE_NONE);
   }  /* END req_signaljob() */
 
-
-
-
-
 /*
  * issue_signal - send an internally generated signal to a running job
  */
@@ -248,7 +244,8 @@ int issue_signal(
   job  **pjob_ptr,
   const char  *signame, /* name of the signal to send */
   void  (*func)(struct batch_request *),
-  void  *extra) /* extra parameter to be stored in sig request */
+  void  *extra, /* extra parameter to be stored in sig request */
+  char  *extend) /* Parameter to put in extended part of request */
 
   {
   int                   rc;
@@ -266,6 +263,11 @@ int issue_signal(
     }
 
   newreq->rq_extra = extra;
+  newreq->rq_extend = extend;
+  if(extend != NULL)
+    {
+    newreq->rq_extsz = strlen(extend);
+    }
 
   strcpy(newreq->rq_ind.rq_signal.rq_jid, pjob->ji_qs.ji_jobid);
 
@@ -294,8 +296,6 @@ int issue_signal(
 
   return(rc);
   }  /* END issue_signal() */
-
-
 
 
 
