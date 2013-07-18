@@ -1934,6 +1934,12 @@ int create_pbs_node(
     return(rc);
     }
 
+  /*
+   * catch errors thrown by the C++ libraries 
+   * when memory failed to be allocated
+   */
+  try
+  {
   /* All nodes have at least one execution slot */
   add_execution_slot(pnode);
 
@@ -1953,7 +1959,18 @@ int create_pbs_node(
     
     return(rc);
     }
-
+  }
+  catch(...)
+  {
+  free(pul);
+  free(pname);
+  free(pnode);
+  snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+    "Unexpected exception caught while processing node %s. Node will not be added.",
+    objname);
+  log_err(-1,__func__,log_buf);
+  return -1;
+  }
   for (i = 0; pul[i]; i++)
     {
     if (LOGLEVEL >= 6)
