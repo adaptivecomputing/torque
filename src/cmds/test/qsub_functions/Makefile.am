@@ -14,16 +14,9 @@ libqsub_functions_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_x11_get_proto_SOURCES = test_x11_get_proto.c
 
-check_SCRIPTS = build_test_files.sh coverage_run.sh
+check_SCRIPTS = build_test_files.sh ${PROG_ROOT}/../test/coverage_run.sh
 
-TESTS = build_test_files.sh ${check_PROGRAMS} coverage_run.sh
-
-coverage_run.sh:
-	echo 'cp -p .libs/qsub_functions.gc* . > /dev/null 2>&1' > $@
-	echo 'RESULTS=($$(gcov qsub_functions))' >> $@
-	echo 'PARSED_RESULT="TOTALCOV -- $${RESULTS[1]}: Lines($${RESULTS[5]})- $${RESULTS[3]}"' >> $@
-	echo 'echo -e "\033[40m\033[1;33m$$PARSED_RESULT\033[0m"' >> $@
-	chmod +x $@
+TESTS = $(check_PROGRAMS) ${check_SCRIPTS}
 
 build_test_files.sh:
 	echo 'echo No test files needed yet.' > $@
@@ -31,4 +24,4 @@ build_test_files.sh:
 	echo 'mkdir -p submitFilter' >> $@
 	chmod +x $@
 
-CLEANFILES = coverage_run.sh build_test_files.sh *.gcno *.gcda *.gcov core *.log
+CLEANFILES = build_test_files.sh *.gcno *.gcda *.gcov core *.log

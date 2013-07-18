@@ -34,20 +34,10 @@ test_preobit_reply_SOURCES = test_preobit_reply.c
 test_scan_for_exiting_SOURCES = test_scan_for_exiting.c
 test_exit_mom_job_SOURCES = test_exit_mom_job.c
 
-#A list of scripts that are needed (And are built below)
-check_SCRIPTS = build_test_files.sh coverage_run.sh
-
 #A list of tests that make check runs. They are run in the order indicated on the line
-TESTS = build_test_files.sh ${check_PROGRAMS} coverage_run.sh
+check_SCRIPTS = build_test_files.sh ${PROG_ROOT}/../test/coverage_run.sh
 
-#The contents the coverage run script.
-#NOTE: If the script already exists, it will NOT be overwritten. Even if the current contents differ from the contents below.
-coverage_run.sh:
-	echo 'cp -p .libs/catch_child.gc* . >/dev/null 2>&1' > $@
-	echo 'RESULTS=($$(gcov catch_child))' >> $@
-	echo 'PARSED_RESULT="TOTALCOV -- $${RESULTS[1]}: Lines($${RESULTS[5]})- $${RESULTS[3]}"' >> $@
-	echo 'echo -e "\033[40m\033[1;33m$$PARSED_RESULT\033[0m"' >> $@
-	chmod +x $@
+TESTS = $(check_PROGRAMS) ${check_SCRIPTS}
 
 #The contents of the scripts used for creation of files needed for the test harness to complete function testing.
 build_test_files.sh:
@@ -57,4 +47,4 @@ build_test_files.sh:
 	chmod +x $@
 
 #Additional files that would not normally be removed as part of clean that still need to go
-CLEANFILES = coverage_run.sh build_test_files.sh *.JB *.gcno *.gcda *.gcov core *.log
+CLEANFILES = build_test_files.sh *.JB *.gcno *.gcda *.gcov core *.log

@@ -5,7 +5,6 @@ Makefile.in
 test_uut
 *.l[oa]
 *.gcno
-coverage_run.sh
 *.gcov
 *.gcda
 *_suite.log

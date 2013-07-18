@@ -8,7 +8,7 @@ import os
 # re patterns for the following line: 
 #     TOTALCOV -- '../../MConfig.c': Lines(1020) - executed:1.37%
 #
-line_prog = re.compile(".*TOTALCOV -- '\.\./\.\./(.*)': Lines\(([0-9]+)\)- executed:(.+)%.*")
+line_prog = re.compile(".*TOTALCOV -- (.*): Lines\(([0-9]+)\) - executed:(.+)%.*")
 count_pat = re.compile(r'.*[fF]ailures?:\s*(\d+),\s*[eE]rrors?: (\d+)')
 loc_pat = re.compile(r"Entering directory `(.*)'$")
 
