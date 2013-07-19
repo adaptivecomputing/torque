@@ -1478,7 +1478,7 @@ int tm_poll(
   ** Setup tcp dis routines with a wait value appropriate for
   ** the value of wait the user set.
   */
-  pbs_tcp_timeout = wait ? FOREVER : 0;
+  pbs_tcp_timeout = wait ? FOREVER : 1;
 
   prot = disrsi(static_chan, &ret);
 
