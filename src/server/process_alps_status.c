@@ -482,11 +482,21 @@ int process_gpu_status(
 
 
 
-
+/*
+ * record_reservation()
+ *
+ * @pre-cond: pnode and rsv_id must be valid pointers
+ * @post-cond: the reservation will be recorded in pbs_server's tracking mechanism
+ * and on the job which has the node reserved, or -1 is returned and the reservation
+ * is not recorded.
+ * @param - pnode the node which is reporting the reservation
+ * @param - rsv_id the id of the reservation being reported
+ * @return - PBSE_NONE if the reservation was successfully recorded, -1 otherwise
+ */
 int record_reservation(
 
   struct pbsnode *pnode,
-  char           *rsv_id)
+  const char     *rsv_id)
 
   {
   job            *pjob;
@@ -495,6 +505,8 @@ int record_reservation(
 
   for (unsigned int i = 0; i < pnode->nd_job_usages.size(); i++)
     {
+    /* cray only allows one job per node, so any valid job will be the job that is 
+     * reserving this node. */
     job_usage_info *jui = pnode->nd_job_usages[i];
     strcpy(jobid, jui->jobid);
 
@@ -509,7 +521,7 @@ int record_reservation(
       track_alps_reservation(pjob);
       found_job = true;
 
-      job_mutex.unlock();
+      job_mutex.unlock(); 
       lock_node(pnode, __func__, NULL, LOGLEVEL);
       break;
       }
@@ -517,7 +529,7 @@ int record_reservation(
       lock_node(pnode, __func__, NULL, LOGLEVEL);
     }
 
-  if (found_job == true)
+  if (found_job == false)
     return(-1);
 
   return(PBSE_NONE);

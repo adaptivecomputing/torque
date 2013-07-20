@@ -1934,6 +1934,8 @@ int create_pbs_node(
     return(rc);
     }
 
+  try
+  {
   /* All nodes have at least one execution slot */
   add_execution_slot(pnode);
 
@@ -1953,7 +1955,14 @@ int create_pbs_node(
     
     return(rc);
     }
-
+  }
+  catch(...)
+  {
+  free(pul);
+  free(pname);
+  free(pnode);
+  return -1;
+  }
   for (i = 0; pul[i]; i++)
     {
     if (LOGLEVEL >= 6)
