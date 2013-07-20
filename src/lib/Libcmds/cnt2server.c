@@ -261,8 +261,6 @@ start:
             if (cnt2server_retry != 0)
               goto retry;
 
-            break;
-
             connect = pbs_connect(new_server_name);
             if (connect <= 0)
               {
