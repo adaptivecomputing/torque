@@ -7,9 +7,13 @@
 
 #include "pbs_error.h"
 
-START_TEST(test_one)
+START_TEST(test_cnt2server_conf)
   {
+  int rc;
+  long retry = 10;
 
+  rc = cnt2server_conf(retry);
+  fail_unless(rc == PBSE_NONE, "cnt2server_retry failed", rc);
 
   }
 END_TEST
@@ -24,8 +28,8 @@ END_TEST
 Suite *cnt2server_suite(void)
   {
   Suite *s = suite_create("cnt2server_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_cnt2server_conf");
+  tcase_add_test(tc_core, test_cnt2server_conf);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");
