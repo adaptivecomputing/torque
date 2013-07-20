@@ -8,4 +8,6 @@ Suite *cnt2server_suite();
 #define METH_2 2
 Suite *meth_2_suite();
 
+int cnt2server_conf(long retry);
+
 #endif /* _CNT2SERVER_CT_H */
