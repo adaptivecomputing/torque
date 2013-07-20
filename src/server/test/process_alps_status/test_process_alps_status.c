@@ -16,6 +16,7 @@ struct pbsnode *determine_node_from_str(char *str, struct pbsnode *parent, struc
 int check_if_orphaned(void *str);
 int process_alps_status(char *, dynamic_string *);
 int process_reservation_id(struct pbsnode *pnode, char *rsv_id_str);
+int record_reservation(struct pbsnode *pnode, const char *rsv_id);
 
 char buf[4096];
 
@@ -23,6 +24,22 @@ char *alps_status = (char *)"node=1\0CPROC=12\0state=UP\0reservation_id=12\0<cra
 /*node=2\0CPROC=12\0state=UP\0<cray_gpu_status>\0gpu_id=0\0clock_mhz=2600\0gpu_id=1\0clock_mhz=2600\0</cray_gpu_status>\0node=3\0CPROC=12\0state=UP\0<cray_gpu_status>\0gpu_id=0\0clock_mhz=2600\0gpu_id=1\0clock_mhz=2600\0</cray_gpu_status>\0\0";*/
 
 extern int count;
+
+START_TEST(record_reservation_test)
+  {
+  struct pbsnode pnode;
+
+  memset(&pnode, 0, sizeof(pnode));
+
+  fail_unless(record_reservation(&pnode, "1") != PBSE_NONE);
+
+  job_usage_info *jui = (job_usage_info *)calloc(1, sizeof(job_usage_info));
+  strcpy(jui->jobid, "1.napali");
+  pnode.nd_job_usages.push_back(jui);
+  fail_unless(record_reservation(&pnode, "1") == PBSE_NONE);
+  }
+END_TEST
+
 
 START_TEST(set_ncpus_test)
   {
@@ -270,6 +287,7 @@ Suite *node_func_suite(void)
 
   tc_core = tcase_create("process_reservation_id_test");
   tcase_add_test(tc_core, process_reservation_id_test);
+  tcase_add_test(tc_core, record_reservation_test);
   suite_add_tcase(s, tc_core);
   
   return(s);
