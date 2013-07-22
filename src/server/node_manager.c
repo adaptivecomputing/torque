@@ -3651,11 +3651,13 @@ int translate_howl_to_string(
   size_t       len = 1;
   int          count = 1;
   char        *str;
+  char        *end;
   char        *portlist = NULL;
+  char        *endport;
 
   for (hp = list;hp != NULL;hp = hp->next)
     {
-    len += (strlen(hp->name) + 6);
+    len += (strlen(hp->name) + 8);
     count++;
     }
 
@@ -3692,16 +3694,21 @@ int translate_howl_to_string(
   /* now copy in name+name+... */
   *NCount = 0;
 
-  for (hp = list; hp != NULL; hp = next)
+  for (hp = list,end = str,endport = portlist; hp != NULL; hp = next)
     {
     (*NCount)++;
 
-    sprintf(str + strlen(str), "%s/%d+",
+    sprintf(end, "%s/%d+",
       hp->name,
       hp->index);
 
+    end += strlen(end);
+
     if (port == TRUE)
-      sprintf(portlist + strlen(portlist), "%d+", hp->port);
+      {
+      sprintf(endport, "%d+", hp->port);
+      endport += strlen(endport);
+      }
 
     next = hp->next;
 
