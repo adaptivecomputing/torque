@@ -8,7 +8,7 @@ struct work_task *set_task(enum work_type type, long event_id, void (*func)(stru
 
 int task_is_in_threadpool(struct work_task *ptask);
 
-void dispatch_task(struct work_task *ptask);
+int dispatch_task(struct work_task *ptask);
 
 void delete_task(struct work_task *ptask);
 

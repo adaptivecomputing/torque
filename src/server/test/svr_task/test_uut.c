@@ -14,6 +14,7 @@ task_recycler tr;
 
 START_TEST(test_one)
   {
+  int rc;
   initialize_all_tasks_array(&task_list_timed);
   initialize_all_tasks_array(&task_list_event);
   initialize_task_recycler();
@@ -25,7 +26,8 @@ START_TEST(test_one)
   struct work_task *pWorkTask3 = set_task(WORK_Timed,358,check_nodes,NULL,0);
   fail_unless(pWorkTask3 != NULL);
 
-  dispatch_task(pWorkTask);
+  rc = dispatch_task(pWorkTask);
+  fail_unless(rc == PBSE_NONE, "dispatch_task failed", rc);
   delete_task(pWorkTask);
 
   int iter = -1;

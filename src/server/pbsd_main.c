@@ -1027,6 +1027,7 @@ void *check_tasks(void *notUsed)
   {
   work_task *ptask;
   int        iter = -1;
+  int        rc = PBSE_NONE;
 
   time_t     time_now;
 
@@ -1045,7 +1046,18 @@ void *check_tasks(void *notUsed)
       }
     else
       {
-      dispatch_task(ptask); /* will delete link */
+      rc = dispatch_task(ptask); /* will delete link */
+
+      /* if dispatch_task does not return PBSE_NONE 
+         it is because we have used up our alotment of threads.
+         Break for now and come back to this next time 
+         through the main_loop 
+       */
+      if (rc != PBSE_NONE)
+        {
+        pthread_mutex_unlock(ptask->wt_mutex);
+        break;
+        }
       }
     }
 
