@@ -309,7 +309,7 @@ int req_runjob(
   {
   job                  *pjob;
   int                   rc = PBSE_NONE;
-  int                   setneednodes;
+  int                   setneednodes = 0;
   int                  *rc_ptr;
   char                  log_buf[LOCAL_LOG_BUF_SIZE + 1];
 
@@ -1622,6 +1622,8 @@ job *chk_job_torun(
   char             *exec_host;
   char             *ptr;
 
+  FailHost[0] = '\0';
+  EMsg[0] = '\0';
   prun = &preq->rq_ind.rq_run;
 
   if ((pjob = chk_job_request(prun->rq_jid, preq)) == 0)

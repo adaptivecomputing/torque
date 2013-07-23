@@ -2561,7 +2561,7 @@ int del_files(
 
   struct rqfpair  *pair;
   int   rc = 0;
-  char  *path;
+  char  *path = NULL;
   char  *pp;
   char  *prmt;
 

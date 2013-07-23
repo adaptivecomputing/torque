@@ -4099,7 +4099,7 @@ int set_nodes(
 
   int                i;
   int                rc;
-  int                NCount;
+  int                NCount = 0;
   short              newstate;
 
   char              *login_prop = NULL;

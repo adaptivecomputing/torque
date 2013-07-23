@@ -251,7 +251,7 @@ unsigned int            pbs_rm_port;
 pbs_net_t               pbs_scheduler_addr;
 unsigned int            pbs_scheduler_port;
 extern pbs_net_t        pbs_server_addr;
-unsigned int            pbs_server_port_dis;
+unsigned int            pbs_server_port_dis = 0;
 
 listener_connection     listener_conns[MAXLISTENERS];
 int                     queue_rank = 0;
