@@ -241,7 +241,7 @@ int get_fullhostname(char *shortname, char *namebuf, int bufsize, char *EMsg)
   exit(1);
   }
 
-void dispatch_task(struct work_task *ptask)
+int dispatch_task(struct work_task *ptask)
   {
   fprintf(stderr, "The call to dispatch_task needs to be mocked!!\n");
   exit(1);

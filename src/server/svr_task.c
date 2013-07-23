@@ -248,11 +248,25 @@ int task_is_in_threadpool(
  * the parameters from the work task entry, and then frees the entry.
  */
 
-void dispatch_task(
+int dispatch_task(
 
   struct work_task *ptask) /* M */
 
   {
+  int rc = PBSE_NONE;
+  int max_n_thread_difference; /* The difference between the maximun number of threads and the current number of threads */
+
+  /* Make sure we have some threads available to do this work
+     in the thread pool before we schedule */
+  pthread_mutex_lock(&request_pool->tp_mutex);
+  max_n_thread_difference = request_pool->tp_max_threads - request_pool->tp_nthreads;
+  if ((request_pool->tp_idle_threads + max_n_thread_difference) <= (request_pool->tp_max_threads * 0.1))
+    {
+    pthread_mutex_unlock(&request_pool->tp_mutex);
+    return(PBSE_SERVER_BUSY);
+    }
+  pthread_mutex_unlock(&request_pool->tp_mutex);
+  
   if (ptask->wt_tasklist)
     remove_task(ptask->wt_tasklist, ptask);
 
@@ -263,7 +277,7 @@ void dispatch_task(
   if (ptask->wt_func != NULL)
     enqueue_threadpool_request((void *(*)(void *))ptask->wt_func, ptask);
 
-  return;
+  return(rc);
   }  /* END dispatch_task() */
 
 

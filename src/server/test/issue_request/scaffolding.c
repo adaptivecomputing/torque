@@ -158,7 +158,7 @@ int svr_connect(pbs_net_t hostaddr, unsigned int port, int *my_err, struct pbsno
   exit(1);
   }
 
-void dispatch_task(struct work_task *ptask)
+int dispatch_task(struct work_task *ptask)
   {
   fprintf(stderr, "The call to dispatch_task needs to be mocked!!\n");
   exit(1);
