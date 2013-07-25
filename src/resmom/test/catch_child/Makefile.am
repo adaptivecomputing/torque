@@ -11,7 +11,7 @@ lib_LTLIBRARIES = libcatch_child.la
 AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES} -lgcov
 
 #These are the binaries built for a check test run
-check_PROGRAMS = test_catch_child test_get_node test_init_abort_jobs test_mom_deljob test_obit_reply test_post_epilogue test_preobit_reply test_scan_for_exiting test_exit_mom_job
+check_PROGRAMS = test_catch_child test_get_node test_init_abort_jobs test_mom_deljob test_obit_reply test_post_epilogue test_scan_for_exiting test_exit_mom_job
 
 #Note: {libary_name}_la_SOURCES.
 # {library_name} must match the entry in lib_LTLIBRARIES
@@ -30,7 +30,6 @@ test_get_node_SOURCES = test_get_node.c
 test_mom_deljob_SOURCES = test_mom_deljob.c
 test_obit_reply_SOURCES = test_obit_reply.c
 #test_post_epilogue_SOURCES = test_post_epilogue.c
-test_preobit_reply_SOURCES = test_preobit_reply.c
 test_scan_for_exiting_SOURCES = test_scan_for_exiting.c
 test_exit_mom_job_SOURCES = test_exit_mom_job.c
 
