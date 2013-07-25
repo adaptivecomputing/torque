@@ -36,9 +36,11 @@ static int changed_msg_daem = 0;
 static char *active_pbs_server;
 
 int load_config(
-    char **ip,
-    int *t_port,
-    int *d_port)
+
+  char **ip,
+  int   *t_port,
+  int   *d_port)
+
   {
   int rc = PBSE_NONE;
   char *tmp_name = pbs_default();
@@ -60,6 +62,7 @@ int load_config(
     *d_port = TRQ_AUTHD_SERVICE_PORT;
     set_active_pbs_server(tmp_name);
     }
+
   return rc;
   }
 

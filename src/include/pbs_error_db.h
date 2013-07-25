@@ -258,6 +258,7 @@ PbsErrClient(PBSE_MUTEX_ALREADY_UNLOCKED, (char *)"The mutex has already been un
 PbsErrClient(PBSE_INVALID_SYNTAX, (char *)"Command syntax invalid")
 PbsErrClient(PBSE_NODE_DOWN, (char *)"A node is down. Check the MOM and host")
 PbsErrClient(PBSE_SERVER_NOT_FOUND, (char *)"Could not connect to batch server")
+PbsErrClient(PBSE_SERVER_BUSY, (char *)"Server busy. Currently no  available threads")
 
 
 /* pbs client errors ceiling (max_client_err + 1) */
