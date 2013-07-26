@@ -126,7 +126,6 @@ extern "C"
 #include "alps_functions.h"
 #include "tcp.h" /* tcp_chan */
 #include "mom_config.h"
-#include "dynamic_string.h"
 
 #ifdef ENABLE_CPA
   #include "pbs_cpa.h"
@@ -6151,25 +6150,24 @@ int send_join_job_to_sisters(
       {
       /* append the names of the sisters that failed */
       int             len;
-      dynamic_string *ds = get_dynamic_string(-1, NULL);
+      std::string     ds = "";
 
       for (i = 1; i < nodenum; i++)
         {
         if (send_failed[i] != DIS_SUCCESS)
           {
-          if (ds->used != 0)
-            append_dynamic_string(ds, ", ");
+          if (ds.length() != 0)
+            ds += ", ";
 
-          append_dynamic_string(ds, pjob->ji_hosts[i].hn_host);
+          ds += pjob->ji_hosts[i].hn_host;
           }
         }
 
       len = strlen(log_buffer);
       snprintf(log_buffer + len, sizeof(log_buffer) - len,
         " The list of nodes it failed to contact was %s",
-        ds->str);
+        ds.c_str());
 
-      free_dynamic_string(ds);
       }
 
     log_err(errno, __func__, log_buffer);

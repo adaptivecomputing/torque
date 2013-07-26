@@ -96,7 +96,8 @@
 
 /* NOTE:  requires server_limits.h */
 
-#include "dynamic_string.h"
+#include <vector>
+#include <string>
 
 #ifdef NUMA_SUPPORT
 /* NOTE: cpuset support needs hwloc */
@@ -190,7 +191,7 @@ struct jobinfo
 
 typedef struct alps_req_data
   {
-  dynamic_string *node_list;
+  std::string     node_list;
   int             ppn;
   } alps_req_data;
 
@@ -286,7 +287,7 @@ typedef struct nodeboard_t
 typedef struct received_node
   {
   char            hostname[PBS_MAXNODENAME];
-  dynamic_string *statuses;
+  std::vector<std::string *> statuses;
   int             hellos_sent;
   } received_node;
 

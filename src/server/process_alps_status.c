@@ -84,7 +84,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "dynamic_string.h"
 #include "pbs_nodes.h"
 #include "attribute.h"
 #include "alps_constants.h"
@@ -100,6 +99,8 @@
 #include "threadpool.h"
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
+#include <string>
+#include <vector>
 
 /* Global Data */
 extern int LOGLEVEL;
@@ -112,7 +113,7 @@ int save_node_status(struct pbsnode *current, pbs_attribute *temp);
 struct pbsnode *find_alpsnode_by_name(
 
   struct pbsnode *parent,
-  char           *node_id)
+  const char    *node_id)
 
   {
   struct pbsnode *node = NULL;
@@ -139,7 +140,7 @@ struct pbsnode *find_alpsnode_by_name(
 struct pbsnode *create_alps_subnode(
 
   struct pbsnode *parent,
-  char           *node_id)
+  const char    *node_id)
 
   {
   struct pbsnode *subnode = (struct pbsnode *)calloc(1, sizeof(struct pbsnode));
@@ -256,13 +257,13 @@ void *check_if_orphaned(
 
 struct pbsnode *determine_node_from_str(
 
-  char           *str,
+  const char     *str,
   struct pbsnode *parent,
   struct pbsnode *current)
 
   {
   struct pbsnode *next = NULL;
-  char           *node_id = str + strlen("node=");
+  const char     *node_id = str + strlen("node=");
 
   if ((current == NULL) || 
       (strcmp(node_id, current->nd_name)))
@@ -295,7 +296,7 @@ int set_ncpus(
 
   struct pbsnode *current,
   struct pbsnode *parent,
-  char           *str)
+  const char     *str)
 
   {
   int ncpus;
@@ -341,10 +342,10 @@ int set_ncpus(
 int set_state(
 
   struct pbsnode *pnode,
-  char           *str)
+  const char     *str)
 
   {
-  char *state_str = str + strlen("state=");
+  const char *state_str = str + strlen("state=");
 
   if (pnode == NULL)
     return(PBSE_BAD_PARAMETER);
@@ -362,21 +363,19 @@ int set_state(
 
 
 
-char *finish_gpu_status(
+void finish_gpu_status(
 
-  char *str)
+    std::vector<std::string *>::iterator& i,
+    std::vector<std::string *>::iterator end)
 
   {
-  while ((str != NULL) &&
-         (str[0] != '\0'))
+  while (i != end)
     {
-    if (!strcmp(str, CRAY_GPU_STATUS_END))
+    if (!strcmp((*i)->c_str(), CRAY_GPU_STATUS_END))
       break;
 
-    str += strlen(str) + 1;
+    i++;
     }
-
-  return(str);
   } /* END finish_gpu_status() */
 
 
@@ -409,75 +408,63 @@ int set_ngpus(
 int process_gpu_status(
 
   struct pbsnode  *pnode,
-  char           **str_ptr)
+  std::vector<std::string *>::iterator& i,
+  std::vector<std::string *>::iterator end)
 
   {
-  char           *str = *str_ptr;
   pbs_attribute   temp;
   int             gpu_count = 0;
   int             rc;
   char            buf[MAXLINE * 2];
-  dynamic_string *gpu_info;
+  std::string     gpu_info = "";
 
   memset(&temp, 0, sizeof(temp));
   
-  if ((gpu_info = get_dynamic_string(-1, NULL)) == NULL)
-    {
-    *str_ptr = finish_gpu_status(str);
-
-    return(ENOMEM);
-    }
-
   if ((rc = decode_arst(&temp, NULL, NULL, NULL, 0)) != PBSE_NONE)
     {
     log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, "cannot initialize attribute");
 
-    *str_ptr = finish_gpu_status(str);
-    free_dynamic_string(gpu_info);
+    finish_gpu_status(i,end);
 
     return(rc);
     }
 
   /* move past the initial gpu status */
-  str += strlen(str) + 1;
+  i++;
   
-  for (; *str != '\0'; str += strlen(str) + 1)
+  for (; i != end; i++)
     {
-    if (!strcmp(str, CRAY_GPU_STATUS_END))
+    if (!strcmp((*i)->c_str(), CRAY_GPU_STATUS_END))
       break;
 
-    if (!strncmp(str, "gpu_id=", strlen("gpu_id=")))
+    if (!strncmp((*i)->c_str(), "gpu_id=", strlen("gpu_id=")))
       {
-      snprintf(buf, sizeof(buf), "gpu[%d]=%s;", gpu_count, str);
-      rc = append_dynamic_string(gpu_info, buf);
+      snprintf(buf, sizeof(buf), "gpu[%d]=%s;", gpu_count, (*i)->c_str());
+      gpu_info += buf;
       gpu_count++;
       }
     else
       {
-      rc = append_dynamic_string(gpu_info, str);
-      rc = append_char_to_dynamic_string(gpu_info, ';');
+      gpu_info += (*i)->c_str();
+      gpu_info += ';';
       }
 
     if (rc != PBSE_NONE)
       {
-      free_dynamic_string(gpu_info);
 
-      *str_ptr = finish_gpu_status(str);
+      finish_gpu_status(i,end);
 
       return(rc);
       }
     }
 
   set_ngpus(pnode, gpu_count);
-  decode_arst(&temp, NULL, NULL, gpu_info->str, 0);
+  decode_arst(&temp, NULL, NULL, gpu_info.c_str(), 0);
   node_gpustatus_list(&temp, pnode, ATR_ACTION_ALTER);
   
   free_arst(&temp);
-  free_dynamic_string(gpu_info);
 
-  *str_ptr = str;
-
-  return(PBSE_NONE);
+  return(rc);
   } /* END process_gpu_status() */
 
 
@@ -541,7 +528,7 @@ int record_reservation(
 int process_reservation_id(
     
   struct pbsnode *pnode, 
-  char           *rsv_id_str)
+  const char    *rsv_id_str)
 
   {
   char           *rsv_id;
@@ -567,10 +554,9 @@ int process_reservation_id(
 int process_alps_status(
 
   char           *nd_name,
-  dynamic_string *status_info)
+  std::vector<std::string *>& status_info)
 
   {
-  char           *str;
   char           *current_node_id = NULL;
   char            node_index_buf[MAXLINE];
   int             node_index = 0;
@@ -597,11 +583,12 @@ int process_alps_status(
   rsv_ht = create_hash(INITIAL_RESERVATION_HOLDER_SIZE);
 
   /* loop over each string */
-  for (str = status_info->str; str != NULL && *str != '\0'; str += strlen(str) + 1)
+  for(std::vector<std::string *>::iterator i = status_info.begin();i != status_info.end();i++)
     {
+    const char *str = (*i)->c_str();
     if (!strncmp(str, "node=", strlen("node=")))
       {
-      if (str != status_info->str)
+      if (i != status_info.begin())
         {
         snprintf(node_index_buf, sizeof(node_index_buf), "node_index=%d", node_index++);
         decode_arst(&temp, NULL, NULL, node_index_buf, 0);
@@ -620,12 +607,13 @@ int process_alps_status(
     /* process the gpu status information separately */
     if (!strcmp(CRAY_GPU_STATUS_START, str))
       {
-      process_gpu_status(current, &str);
+      rc = process_gpu_status(current, i,status_info.end());
+      str = (*i)->c_str();
       continue;
       }
     else if (!strncmp(reservation_id, str, strlen(reservation_id)))
       {
-      char *just_rsv_id = str + strlen(reservation_id);
+      const char *just_rsv_id = str + strlen(reservation_id);
 
       if (get_value_hash(rsv_ht, just_rsv_id) == -1)
         {

@@ -114,6 +114,7 @@
 #include "threadpool.h"
 #include "svr_task.h"
 #include "mutex_mgr.hpp"
+#include <string>
 
 #define CHK_HOLD 1
 #define CHK_CONT 2
@@ -1134,11 +1135,8 @@ int modify_job_attr(
 
       if (newattr[JOB_ATR_outpath].at_val.at_str[strlen(newattr[JOB_ATR_outpath].at_val.at_str) - 1] == ':')
         {
-        dynamic_string *ds = get_dynamic_string(-1, NULL);
-        newattr[JOB_ATR_outpath].at_val.at_str = prefix_std_file(pjob, ds, (int)'o');
-
-        /* don't call free_dynamic_string() */
-        free(ds);
+        std::string ds = "";
+        newattr[JOB_ATR_outpath].at_val.at_str = strdup(prefix_std_file(pjob, ds, (int)'o'));
         }
       /*
        * if the output path was specified and ends with a '/'
@@ -1146,14 +1144,11 @@ int modify_job_attr(
        */
       else if (newattr[JOB_ATR_outpath].at_val.at_str[strlen(newattr[JOB_ATR_outpath].at_val.at_str) - 1] == '/')
         {
-        dynamic_string *ds = get_dynamic_string(-1, NULL);
+        std::string ds = "";
         newattr[JOB_ATR_outpath].at_val.at_str[strlen(newattr[JOB_ATR_outpath].at_val.at_str) - 1] = '\0';
         
         replace_attr_string(&newattr[JOB_ATR_outpath],
-          (add_std_filename(pjob, newattr[JOB_ATR_outpath].at_val.at_str, (int)'o', ds)));
-
-        /* don't call free_dynamic_string because() we still want to use the allocated string */
-        free(ds);
+          (strdup(add_std_filename(pjob, newattr[JOB_ATR_outpath].at_val.at_str, (int)'o', ds))));
         }
       }
 
@@ -1164,11 +1159,8 @@ int modify_job_attr(
 
       if (newattr[JOB_ATR_errpath].at_val.at_str[strlen(newattr[JOB_ATR_errpath].at_val.at_str) - 1] == ':')
         {
-        dynamic_string *ds = get_dynamic_string(-1, NULL);
-        newattr[JOB_ATR_errpath].at_val.at_str = prefix_std_file(pjob, ds, (int)'e');
-
-        /* don't call free_dynamic_string() */
-        free(ds);
+        std::string ds = "";
+        newattr[JOB_ATR_errpath].at_val.at_str = strdup(prefix_std_file(pjob, ds, (int)'e'));
         }
       /*
        * if the error path was specified and ends with a '/'
@@ -1176,14 +1168,11 @@ int modify_job_attr(
        */
       else if (newattr[JOB_ATR_errpath].at_val.at_str[strlen(newattr[JOB_ATR_errpath].at_val.at_str) - 1] == '/')
         {
-        dynamic_string *ds = get_dynamic_string(-1, NULL);
+        std::string ds = "";
         newattr[JOB_ATR_errpath].at_val.at_str[strlen(newattr[JOB_ATR_errpath].at_val.at_str) - 1] = '\0';
         
         replace_attr_string(&newattr[JOB_ATR_errpath],
-          (add_std_filename(pjob, newattr[JOB_ATR_errpath].at_val.at_str,(int)'e', ds)));
-
-        /* don't call free_dynamic_string() */
-        free(ds);
+          (strdup(add_std_filename(pjob, newattr[JOB_ATR_errpath].at_val.at_str,(int)'e', ds))));
         }
       }
 

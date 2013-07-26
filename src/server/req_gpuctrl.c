@@ -105,7 +105,7 @@
 
 /* External Functions */
 
-extern int gpu_entry_by_id(struct pbsnode *,char *, int);
+extern int gpu_entry_by_id(struct pbsnode *,const char *, int);
 
 /* Private Functions Local to this file */
 

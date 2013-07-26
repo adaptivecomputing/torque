@@ -275,11 +275,6 @@ void *get_next(list_link pl, char *file, int line)
   return(NULL);
   }
 
-int append_dynamic_string (dynamic_string *ds, const char *str)
-  {
-  return(0);
-  }
-
 int unlock_startup() 
   {
   return(0);
@@ -291,11 +286,6 @@ int lock_startup()
   }
 
 int insert_job_after_index(struct all_jobs *aj, int index, job *pjob)
-  {
-  return(0);
-  }
-
-int append_char_to_dynamic_string (dynamic_string *ds, char c)
   {
   return(0);
   }

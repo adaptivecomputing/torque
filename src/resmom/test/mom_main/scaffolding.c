@@ -22,6 +22,8 @@
 #include "log.h" /* LOG_BUF_SIZE */
 #include "tcp.h"
 #include "mom_config.h"
+#include <string>
+#include <vector>
 
 mom_server     mom_servers[PBS_MAXSERVER];
 resizable_array *received_statuses;
@@ -45,7 +47,7 @@ threadpool_t *request_pool;
 AvlTree okclients;
 time_t wait_time = 10;
 pthread_mutex_t *log_mutex;
-dynamic_string  *mom_status;
+std::vector<std::string *> mom_status;
 char log_buffer[LOG_BUF_SIZE];
 int job_exit_wait_time;
 char             config_file[_POSIX_PATH_MAX] = "config";
@@ -748,12 +750,6 @@ void *next_thing(resizable_array *ra, int *iter)
 int im_compose(tcp_chan *chan, char *jobid, char *cookie, int command, tm_event_t event, tm_task_id taskid)
   {
   fprintf(stderr, "The call to im_compose needs to be mocked!!\n");
-  exit(1);
-  }
-
-dynamic_string *get_dynamic_string(int size, const char *str)
-  {
-  fprintf(stderr, "The call to get_dynamic_string needs to be mocked!!\n");
   exit(1);
   }
 

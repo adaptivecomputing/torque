@@ -98,9 +98,9 @@
 #include "resizable_array.h"
 #include "hash_table.h"
 #include "mom_hierarchy.h"
-#include "dynamic_string.h"
 #include "tcp.h" /* tcp_chan */
 #include "net_connect.h"
+#include <string>
 
 #define SAVEJOB_BUF_SIZE 8192
 
@@ -1115,8 +1115,8 @@ extern job  *mom_find_job(char *);
 extern job  *job_recov(char *);
 extern int   job_save(job *, int, int);
 extern int   modify_job_attr(job *, svrattrl *, int, int *);
-extern char *prefix_std_file(job *, dynamic_string *, int);
-extern char *add_std_filename(job *, char *, int, dynamic_string *);
+extern const char *prefix_std_file(job *, std::string& , int);
+extern const char *add_std_filename(job *, char *, int, std::string&);
 extern int   set_jobexid(job *, pbs_attribute *, char *);
 extern int   site_check_user_map(job *, char *, char *, int);
 int  svr_dequejob(job *, int);

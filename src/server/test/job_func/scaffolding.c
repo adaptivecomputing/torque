@@ -15,7 +15,7 @@
 #include "batch_request.h" /* batch_request */
 #include "work_task.h" /* all_tasks */
 #include "array.h" /* ArrayEventsEnum */
-#include "dynamic_string.h" /* dynamic_string */
+#include <string>
 
 /* This section is for manipulting function return values */
 #include "test_job_func.h" /* *_SUITE */
@@ -323,7 +323,7 @@ int insert_into_recycler(job *pjob)
   return 0;
   }
 
-int attr_to_str(struct dynamic_string *ds, attribute_def *attr_def,struct pbs_attribute attr,int XML)
+int attr_to_str(std::string& ds, attribute_def *attr_def,struct pbs_attribute attr,int XML)
   {
   int rc = 0;
   if ((func_num == RECORD_JOBINFO_SUITE) && (tc == 4))
@@ -383,123 +383,6 @@ int lock_queue(struct pbs_queue *the_queue, const char *method_name, const char 
   {
   return(0);
   }
-
-
-size_t need_to_grow(
-
-  dynamic_string *ds,
-  const char     *to_check)
-
-  {
-  size_t to_add = strlen(to_check) + 1;
-  size_t to_grow = 0;
-
-  if (ds->size < ds->used + to_add)
-    {
-    to_grow = to_add + ds->size;
-
-    if (to_grow < (ds->size * 4))
-      to_grow = ds->size * 4;
-    }
-
-  return(to_grow);
-  } /* END need_to_grow() */
-
-
-
-
-int resize_if_needed(
-
-  dynamic_string *ds,
-  const char     *to_check)
-
-  {
-  size_t  new_size = need_to_grow(ds, to_check);
-  size_t  difference;
-  char   *tmp;
-
-  if (new_size > 0)
-    {
-    /* need to resize */
-    difference = new_size - ds->size;
-
-    if ((tmp = (char *)realloc(ds->str, new_size)) == NULL)
-      return(-1);
-
-    ds->str = tmp;
-    /* zero out the new space as well */
-    memset(ds->str + ds->size, 0, difference);
-    ds->size = new_size;
-    }
-
-  return(PBSE_NONE);
-  } /* END resize_if_needed() */
-
-int append_dynamic_string(dynamic_string *ds, const char *to_append)
-  {
-  int len = strlen(to_append);
-  int add_one = FALSE;
-  int offset = ds->used;
-
-  if (ds->used == 0)
-    add_one = TRUE;
-  else
-    offset -= 1;
-
-  resize_if_needed(ds, to_append);
-  strcat(ds->str + offset, to_append);
-    
-  ds->used += len;
-
-  if (add_one == TRUE)
-    ds->used += 1;
-
-  return(PBSE_NONE);
-  }
-
-void clear_dynamic_string(dynamic_string *ds)
-  {
-  fprintf(stderr, "The call to attr_to_str needs to be mocked!!\n");
-  exit(1);
-  }
-
-dynamic_string *get_dynamic_string(int initial_size, const char *str)
-  {
-  dynamic_string *ds = (dynamic_string *)calloc(1, sizeof(dynamic_string));
-
-  if (ds == NULL)
-    return(ds);
-
-  if (initial_size > 0)
-    ds->size = initial_size;
-  else
-    ds->size = DS_INITIAL_SIZE;
-    
-  ds->str = (char *)calloc(1, ds->size);
-
-  if (ds->str == NULL)
-    {
-    free(ds);
-    return(NULL);
-    }
-    
-  /* initialize empty str */
-  ds->used = 0;
-
-  /* add the string if it exists */
-  if (str != NULL)
-    {
-    if (append_dynamic_string(ds,str) != PBSE_NONE)
-      {
-      free_dynamic_string(ds);
-      return(NULL);
-      }
-    }
-
-  return(ds);
-  }
-
-void free_dynamic_string(dynamic_string *ds) {}
 
 int get_svr_attr_l(int index, long *l)
   {

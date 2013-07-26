@@ -56,6 +56,8 @@
 #include "ji_mutex.h"
 #include "svr_task.h" /* set_task */
 #include "execution_slot_tracker.hpp"
+#include <string>
+#include <vector>
 
 #if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
 /*extern int h_errno;*/
@@ -75,7 +77,7 @@ extern char            *path_nodenote;
 extern int              LOGLEVEL;
 extern attribute_def    node_attr_def[];   /* node attributes defs */
 extern AvlTree          ipaddrs;
-extern dynamic_string  *hierarchy_holder;
+extern std::vector<std::string *> hierarchy_holder;
 
 job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode);
 
@@ -556,7 +558,7 @@ int login_encode_jobs(
   {
   job            *pjob;
   char           *login_id;
-  dynamic_string *job_str = get_dynamic_string(-1, NULL);
+  std::string     job_str = "";
   char            str_buf[MAXLINE*2];
   svrattrl       *pal;
 
@@ -568,11 +570,6 @@ int login_encode_jobs(
   if (phead == NULL)
     {
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL input tlist_head pointer");
-    return(PBSE_BAD_PARAMETER);
-    }
-  if (job_str == NULL)
-    {
-    log_err(PBSE_BAD_PARAMETER, __func__, "job_str was not allocated");
     return(PBSE_BAD_PARAMETER);
     }
 
@@ -597,33 +594,26 @@ int login_encode_jobs(
       if ((login_id == NULL) ||
           (strncmp(pnode->nd_name, login_id, strlen(pnode->nd_name))))
         {
-        if (job_str->used != 0)
+        if (job_str.length() != 0)
           snprintf(str_buf, sizeof(str_buf), ",%d/%s", jui_index, jui->jobid);
         else
           snprintf(str_buf, sizeof(str_buf), "%d/%s", jui_index, jui->jobid);
 
-        append_dynamic_string(job_str, str_buf);
+        job_str += str_buf;
         }
       }
 
     }
 
-  if ((job_str->str) == NULL)
-    {
-    log_err(PBSE_BAD_PARAMETER, __func__, "job_str value was not initialized");
-    return(PBSE_BAD_PARAMETER);
-    }
 
-  if ((pal = attrlist_create((char *)ATTR_NODE_jobs, (char *)NULL, strlen(job_str->str) + 1)) == NULL)
+  if ((pal = attrlist_create((char *)ATTR_NODE_jobs, (char *)NULL, strlen(job_str.c_str()) + 1)) == NULL)
     {
     log_err(ENOMEM, __func__, "");
     return(ENOMEM);
     }
 
-  strcpy((char *)pal->al_value, job_str->str);
+  strcpy((char *)pal->al_value, job_str.c_str());
   pal->al_flags = ATR_VFLAG_SET;
-
-  free_dynamic_string(job_str);
 
   append_link(phead, &pal->al_link, pal);
 
@@ -3535,7 +3525,7 @@ int send_hierarchy(
 
   {
   char                log_buf[LOCAL_LOG_BUF_SIZE];
-  char               *string;
+  const char        *string;
   int                 ret = PBSE_NONE;
   int                 sock;
   struct addrinfo    *pAddrInfo;
@@ -3574,8 +3564,9 @@ int send_hierarchy(
   /* write the protocol, version and command */
   else if ((ret = is_compose(chan, IS_CLUSTER_ADDRS)) == DIS_SUCCESS)
     {
-    for (string = hierarchy_holder->str; string != NULL && *string != '\0'; string += strlen(string) + 1)
+    for(std::vector<std::string *>::iterator i = hierarchy_holder.begin(); i != hierarchy_holder.end(); i++)
       {
+      string = (*i)->c_str();
       if ((ret = diswst(chan, string)) != DIS_SUCCESS)
         {
         if (ret > 0)

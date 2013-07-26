@@ -6,6 +6,8 @@
 #include "work_task.h" /* work_task */
 #include "pbs_ifl.h" /* resource_t */
 #include "pbs_nodes.h" /* howl, gpusubn */
+#include <string>
+#include <vector>
 
 struct pbsnode *tfind_addr(const u_long key, uint16_t port, char *job_momname);
 
@@ -21,7 +23,7 @@ void setup_notification(char *pname);
 
 int is_stat_get(char *node_name, struct tcp_chan *chan);
 
-int is_gpustat_get(struct pbsnode *np, char **str_ptr);
+int is_gpustat_get(struct pbsnode *np, std::vector<std::string *>::iterator& i, std::vector<std::string *>::iterator end);
 
 int is_compose(struct tcp_chan *chan, int command);
 

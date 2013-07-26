@@ -379,7 +379,6 @@ m4_ifdef([AM_SILENT_RULES],[
     src/lib/Libsite/test/site_mom_jst/Makefile
     src/lib/Libutils/test/Makefile
     src/lib/Libutils/test/u_MXML/Makefile
-    src/lib/Libutils/test/u_dynamic_string/Makefile
     src/lib/Libutils/test/u_groups/Makefile
     src/lib/Libutils/test/u_hash_map/Makefile
     src/lib/Libutils/test/u_hash_map_structs/Makefile

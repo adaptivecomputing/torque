@@ -87,6 +87,8 @@
 #include "mom_config.h"
 #include "mcom.h"
 #include "mom_server_lib.h" /* shutdown_to_server */
+#include <string>
+#include <vector>
 
 #ifdef NOPOSIXMEMLOCK
 #undef _POSIX_MEMLOCK
@@ -162,7 +164,7 @@ char        *path_aux;
 char        *path_home = (char *)PBS_SERVER_HOME;
 char        *mom_home;
 
-extern dynamic_string *mom_status;
+extern std::vector<std::string *> mom_status;
 extern int  multi_mom;
 char        *path_layout;
 extern char *msg_daemonname;          /* for logs     */
@@ -4373,18 +4375,6 @@ int setup_program_environment(void)
 #else
   path_aux         = mk_dirs("aux/");
 #endif  /* __CYGWIN__ */
-
-  /* initialize the mom_status */
-  mom_status = get_dynamic_string(16 * 1024, NULL);
-
-  if(mom_status == NULL)
-    {
-    snprintf(log_buffer, sizeof(log_buffer),
-      "get_dynamic_string() failed: %s\n",strerror(errno));
-    log_err(errno, __func__, log_buffer);
-
-    return(1);
-    }
 
   init_resc_defs();
 

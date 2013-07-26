@@ -143,7 +143,6 @@
 #include "array.h"
 #include "pbs_job.h"
 #include "resizable_array.h"
-#include "dynamic_string.h"
 #include "svr_func.h" /* get_svr_attr_* */
 #include "issue_request.h" /* release_req */
 #include "ji_mutex.h"
@@ -151,6 +150,7 @@
 #include "svr_task.h"
 #include "mutex_mgr.hpp"
 #include "job_route.h" /* job_route */
+#include <string>
 
 #ifndef TRUE
 #define TRUE 1
@@ -1653,7 +1653,7 @@ int record_jobinfo(
   pbs_attribute          *pattr;
   int                     i;
   int                     rc;
-  dynamic_string         *buffer;
+  std::string              bf = "";
   char                    job_script_buf[(MAXPATHLEN << 4) + 1];
   char                    namebuf[MAXPATHLEN + 1];
   int                     fd;
@@ -1677,22 +1677,15 @@ int record_jobinfo(
     }
   pthread_mutex_unlock(job_log_mutex);
 
-  if ((buffer = get_dynamic_string(MAXLINE << 3, NULL)) == NULL)
-    {
-    log_err(ENOMEM, __func__, "Can't allocate memory");
-    return(-1);
-    }
-
-  append_dynamic_string(buffer, "<Jobinfo>\n");
-  append_dynamic_string(buffer, "\t<Job_Id>");
-  append_dynamic_string(buffer, pjob->ji_qs.ji_jobid);
-  append_dynamic_string(buffer, "</JobId>\n");
+  bf += "<Jobinfo>\n";
+  bf += "\t<Job_Id>";
+  bf += pjob->ji_qs.ji_jobid;
+  bf += "</JobId>\n";
 
  #if 0
   if ((rc = log_job_record(buffer->str)) != PBSE_NONE)
     {
     log_err(rc, __func__, "log_job_record failed");
-    free_dynamic_string(buffer);
     return(rc);
     }
 #endif
@@ -1700,7 +1693,7 @@ int record_jobinfo(
   for (i = 0; i < JOB_ATR_LAST; i++)
     {
 #if 0
-    clear_dynamic_string(buffer);
+    bf.clear();
 #endif
     pattr = &(pjob->ji_wattr[i]);
 
@@ -1713,27 +1706,26 @@ int record_jobinfo(
         continue;
         }
 
-      append_dynamic_string(buffer, "\t<");
-      append_dynamic_string(buffer, job_attr_def[i].at_name);
-      append_dynamic_string(buffer, ">");
+      bf += "\t<";
+      bf += job_attr_def[i].at_name;
+      bf += ">";
 
       if (pattr->at_type == ATR_TYPE_RESC)
-        append_dynamic_string(buffer, "\n");
+        bf += "\n";
 
-      rc = attr_to_str(buffer, job_attr_def+i, pjob->ji_wattr[i], 1);
+      rc = attr_to_str(bf, job_attr_def+i, pjob->ji_wattr[i], 1);
       
       if (pattr->at_type == ATR_TYPE_RESC)
-        append_dynamic_string(buffer, "\t");
+        bf += "\t";
 
-      append_dynamic_string(buffer, "</");
-      append_dynamic_string(buffer, job_attr_def[i].at_name);
-      append_dynamic_string(buffer, ">\n");
+      bf += "</";
+      bf += job_attr_def[i].at_name;
+      bf += ">\n";
 
 #if 0
       if ((rc = log_job_record(buffer->str)) != PBSE_NONE)
         {
         log_err(rc, __func__, "log_job_record failed recording attributes");
-        free_dynamic_string(buffer);
         return(rc);
         }
 #endif
@@ -1746,7 +1738,7 @@ int record_jobinfo(
     /* This is for Baylor. We will make it a server parameter eventually
      * Write the contents of the script to our log file*/
     
-    append_dynamic_string(buffer, "\t<job_script>");
+    bf += "\t<job_script>";
     
     snprintf(namebuf, sizeof(namebuf), "%s%s%s",
       path_jobs, pjob->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
@@ -1757,7 +1749,7 @@ int record_jobinfo(
 
       while ((bytes_read = read_ac_socket(fd, job_script_buf, sizeof(job_script_buf) - 1)) > 0)
         {
-        rc = append_dynamic_string(buffer, job_script_buf);
+        bf += job_script_buf;
         memset(job_script_buf, 0, sizeof(job_script_buf));
         }
 
@@ -1765,15 +1757,14 @@ int record_jobinfo(
       }
     else
       {
-      append_dynamic_string(buffer, "unable to open script file\n");
+      bf += "unable to open script file\n";
       }
    
-    append_dynamic_string(buffer, "\t</job_script>\n");
+    bf += "\t</job_script>\n";
     
 #if 0
     if ((rc = log_job_record(buffer->str)) != PBSE_NONE)
       {
-      free_dynamic_string(buffer);
       log_err(rc, __func__, "log_job_record failed");
       return(rc);
       }
@@ -1781,19 +1772,13 @@ int record_jobinfo(
     }
  
 #if 0
-  clear_dynamic_string(buffer);
+  bf.clear();
 #endif
 
-  if ((rc = append_dynamic_string(buffer, "</Jobinfo>\n")) != PBSE_NONE)
-    {
-    log_err(rc, __func__, "");
-    free_dynamic_string(buffer);
-    return(rc);
-    }
+  bf += "</Jobinfo>\n";
 
-  rc = log_job_record(buffer->str);
+  rc = log_job_record(bf.c_str());
       
-  free_dynamic_string(buffer);
   return(rc);
   } /* END record_jobinfo() */
 
@@ -2194,7 +2179,7 @@ struct pbs_queue *get_jobs_queue(
   job *pjob) /* the external sub-job */
 
   {
-  dynamic_string *external_execs;
+  std::string     external_execs = "";
   char           *exec_host = pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str;
   char           *externals = pjob->ji_wattr[JOB_ATR_external_nodes].at_val.at_str;
   char           *exec_ptr;
@@ -2208,7 +2193,6 @@ struct pbs_queue *get_jobs_queue(
   /* wipe out the current destination */
   pjob->ji_qs.ji_destin[0] = '\0';
 
-  external_execs = get_dynamic_string(-1, NULL);
   exec_ptr = exec_host;
 
   while (exec_ptr != NULL)
@@ -2235,10 +2219,10 @@ struct pbs_queue *get_jobs_queue(
         *slash = '/';
 
       /* delimit with + */
-      if (external_execs->used != 0)
-        append_dynamic_string(external_execs, "+");
+      if (external_execs.length() != 0)
+        external_execs += "+";
 
-      append_dynamic_string(external_execs, exec_ptr);
+      external_execs += exec_ptr;
       }
 
     exec_ptr = plus;
@@ -2260,9 +2244,7 @@ struct pbs_queue *get_jobs_queue(
     }
 
   free(exec_host);
-  pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup(external_execs->str);
-
-  free_dynamic_string(external_execs);
+  pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup(external_execs.c_str());
 
   return(PBSE_NONE);
   } /* END fix_external_exec_hosts() */
