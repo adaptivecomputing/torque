@@ -87,6 +87,7 @@
 #include <netinet/in.h> /* sockaddr_in */
 #include <set>
 #include <vector>
+#include <boost/ptr_container/ptr_vector.hpp>
 
 #include "execution_slot_tracker.hpp"
 #include "resizable_array.h"
@@ -287,7 +288,7 @@ typedef struct nodeboard_t
 typedef struct received_node
   {
   char            hostname[PBS_MAXNODENAME];
-  std::vector<std::string *> statuses;
+  boost::ptr_vector<std::string> statuses;
   int             hellos_sent;
   } received_node;
 

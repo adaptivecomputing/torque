@@ -97,6 +97,7 @@
 #include "mutex_mgr.hpp"
 #include <vector>
 #include <string>
+#include <boost/ptr_container/ptr_vector.hpp>
 
 
 
@@ -116,7 +117,7 @@ int  unlock_ji_mutex(job *, const char *, const char *, int);
 void get_status_info(
 
   struct tcp_chan *chan,
-  std::vector<std::string *>& status)
+  boost::ptr_vector<std::string>& status)
 
   {
   char           *ret_info;
@@ -167,7 +168,7 @@ int is_stat_get(
   {
   int             rc;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
-  std::vector<std::string *> status_info;
+  boost::ptr_vector<std::string> status_info;
 
   if (LOGLEVEL >= 3)
     {

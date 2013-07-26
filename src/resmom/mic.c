@@ -88,6 +88,7 @@
 #include "pbs_nodes.h"
 #include <vector>
 #include <string>
+#include <boost/ptr_container/ptr_vector.hpp>
 
 #define  MAX_ENGINES 32
 
@@ -100,7 +101,7 @@ extern nodeboard node_boards[];
 
 int add_isa(
 
-  std::vector<std::string *>& status,
+  boost::ptr_vector<std::string>& status,
   struct COI_ENGINE_INFO *mic_stat)
 
   {
@@ -145,7 +146,7 @@ int add_isa(
 
 int calculate_and_add_load(
 
-  std::vector<std::string *>& status,
+  boost::ptr_vector<std::string>& status,
   struct COI_ENGINE_INFO     *mic_stat)
 
   {
@@ -176,7 +177,7 @@ int calculate_and_add_load(
 
 int add_single_mic_info(
 
-  std::vector<std::string *>& status,
+  boost::ptr_vector<std::string>& status,
   struct COI_ENGINE_INFO *mic_stat)
 
   {
@@ -219,7 +220,7 @@ int add_single_mic_info(
 
 int add_mic_status(
 
-    std::vector<std::string *>& status)
+    boost::ptr_vector<std::string>& status)
 
   {
   COIENGINE                engine[MAX_ENGINES];

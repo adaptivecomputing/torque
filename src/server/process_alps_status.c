@@ -101,6 +101,7 @@
 #include "mutex_mgr.hpp"
 #include <string>
 #include <vector>
+#include <boost/ptr_container/ptr_vector.hpp>
 
 /* Global Data */
 extern int LOGLEVEL;
@@ -365,13 +366,13 @@ int set_state(
 
 void finish_gpu_status(
 
-    std::vector<std::string *>::iterator& i,
-    std::vector<std::string *>::iterator end)
+    boost::ptr_vector<std::string>::iterator& i,
+    boost::ptr_vector<std::string>::iterator end)
 
   {
   while (i != end)
     {
-    if (!strcmp((*i)->c_str(), CRAY_GPU_STATUS_END))
+    if (!strcmp(i->c_str(), CRAY_GPU_STATUS_END))
       break;
 
     i++;
@@ -408,8 +409,8 @@ int set_ngpus(
 int process_gpu_status(
 
   struct pbsnode  *pnode,
-  std::vector<std::string *>::iterator& i,
-  std::vector<std::string *>::iterator end)
+  boost::ptr_vector<std::string>::iterator& i,
+  boost::ptr_vector<std::string>::iterator end)
 
   {
   pbs_attribute   temp;
@@ -434,18 +435,18 @@ int process_gpu_status(
   
   for (; i != end; i++)
     {
-    if (!strcmp((*i)->c_str(), CRAY_GPU_STATUS_END))
+    if (!strcmp(i->c_str(), CRAY_GPU_STATUS_END))
       break;
 
-    if (!strncmp((*i)->c_str(), "gpu_id=", strlen("gpu_id=")))
+    if (!strncmp(i->c_str(), "gpu_id=", strlen("gpu_id=")))
       {
-      snprintf(buf, sizeof(buf), "gpu[%d]=%s;", gpu_count, (*i)->c_str());
+      snprintf(buf, sizeof(buf), "gpu[%d]=%s;", gpu_count, i->c_str());
       gpu_info += buf;
       gpu_count++;
       }
     else
       {
-      gpu_info += (*i)->c_str();
+      gpu_info += i->c_str();
       gpu_info += ';';
       }
 
@@ -554,7 +555,7 @@ int process_reservation_id(
 int process_alps_status(
 
   char           *nd_name,
-  std::vector<std::string *>& status_info)
+  boost::ptr_vector<std::string>& status_info)
 
   {
   char           *current_node_id = NULL;
@@ -583,9 +584,9 @@ int process_alps_status(
   rsv_ht = create_hash(INITIAL_RESERVATION_HOLDER_SIZE);
 
   /* loop over each string */
-  for(std::vector<std::string *>::iterator i = status_info.begin();i != status_info.end();i++)
+  for(boost::ptr_vector<std::string>::iterator i = status_info.begin();i != status_info.end();i++)
     {
-    const char *str = (*i)->c_str();
+    const char *str = i->c_str();
     if (!strncmp(str, "node=", strlen("node=")))
       {
       if (i != status_info.begin())
@@ -608,7 +609,7 @@ int process_alps_status(
     if (!strcmp(CRAY_GPU_STATUS_START, str))
       {
       rc = process_gpu_status(current, i,status_info.end());
-      str = (*i)->c_str();
+      str = i->c_str();
       continue;
       }
     else if (!strncmp(reservation_id, str, strlen(reservation_id)))

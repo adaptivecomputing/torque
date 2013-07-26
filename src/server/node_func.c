@@ -58,6 +58,7 @@
 #include "execution_slot_tracker.hpp"
 #include <string>
 #include <vector>
+#include <boost/ptr_container/ptr_vector.hpp>
 
 #if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
 /*extern int h_errno;*/
@@ -77,7 +78,7 @@ extern char            *path_nodenote;
 extern int              LOGLEVEL;
 extern attribute_def    node_attr_def[];   /* node attributes defs */
 extern AvlTree          ipaddrs;
-extern std::vector<std::string *> hierarchy_holder;
+extern boost::ptr_vector<std::string> hierarchy_holder;
 
 job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode);
 
@@ -3564,9 +3565,9 @@ int send_hierarchy(
   /* write the protocol, version and command */
   else if ((ret = is_compose(chan, IS_CLUSTER_ADDRS)) == DIS_SUCCESS)
     {
-    for(std::vector<std::string *>::iterator i = hierarchy_holder.begin(); i != hierarchy_holder.end(); i++)
+    for(boost::ptr_vector<std::string>::iterator i = hierarchy_holder.begin(); i != hierarchy_holder.end(); i++)
       {
-      string = (*i)->c_str();
+      string = i->c_str();
       if ((ret = diswst(chan, string)) != DIS_SUCCESS)
         {
         if (ret > 0)

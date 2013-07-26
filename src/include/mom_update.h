@@ -79,5 +79,7 @@
 
 #include <string>
 #include <vector>
+#include <boost/ptr_container/ptr_vector.hpp>
 
-int process_status_info(char *nd_name, std::vector<std::string *>& status_info);
+
+int process_status_info(char *nd_name, boost::ptr_vector<std::string>& status_info);

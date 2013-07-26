@@ -5,17 +5,18 @@
 #include "alps_constants.h"
 #include <string>
 #include <vector>
+#include <boost/ptr_container/ptr_vector.hpp>
 #include "pbs_nodes.h"
 
 int set_ncpus(struct pbsnode *,struct pbsnode *, const char *);
 int set_ngpus(struct pbsnode *, int);
 int set_state(struct pbsnode *, const char *);
-void finish_gpu_status(std::vector<std::string *>::iterator& i,std::vector<std::string *>::iterator end);
+void finish_gpu_status(boost::ptr_vector<std::string>::iterator& i,boost::ptr_vector<std::string>::iterator end);
 struct pbsnode *create_alps_subnode(struct pbsnode *parent, const char *node_id);
 struct pbsnode *find_alpsnode_by_name(struct pbsnode *parent, const char *node_id);
 struct pbsnode *determine_node_from_str(const char *str, struct pbsnode *parent, struct pbsnode *current);
 int check_if_orphaned(void *str);
-int process_alps_status(char *, std::vector<std::string *>&);
+int process_alps_status(char *, boost::ptr_vector<std::string>&);
 int process_reservation_id(struct pbsnode *pnode, const char *rsv_id_str);
 int record_reservation(struct pbsnode *pnode, const char *rsv_id);
 
@@ -120,8 +121,8 @@ END_TEST
 
 START_TEST(finish_gpu_status_test)
   {
-  std::vector<std::string *> status;
-  std::vector<std::string *>::iterator end;
+  boost::ptr_vector<std::string> status;
+  boost::ptr_vector<std::string>::iterator end;
 
   status.push_back(new std::string("o"));
   status.push_back(new std::string("n"));
@@ -224,7 +225,7 @@ END_TEST
 
 START_TEST(whole_test)
   {
-  std::vector<std::string *> ds;
+  boost::ptr_vector<std::string> ds;
   int             rc;
   
   ds.push_back(new std::string(alps_status));

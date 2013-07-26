@@ -7,6 +7,7 @@
 #include "utils.h"
 #include <string>
 #include <vector>
+#include <boost/ptr_container/ptr_vector.hpp>
 
 
 char log_buffer[16384];
@@ -29,13 +30,13 @@ void log_err(int errnum, const char *routine, const char *msg) {}
 
 int search_dynamic_string_status(
 
-  std::vector<std::string *>& status,
+    boost::ptr_vector<std::string>& status,
   char           *str)
 
   {
   char         first_char = str[0];
 
-  for (std::vector<std::string *>::iterator i = status.begin(); i != status.end(); i++)
+  for (boost::ptr_vector<std::string>::iterator i = status.begin(); i != status.end(); i++)
     {
     const char *ptr = (*i)->c_str();
     while(*ptr != '\0')

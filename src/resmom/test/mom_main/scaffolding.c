@@ -24,6 +24,7 @@
 #include "mom_config.h"
 #include <string>
 #include <vector>
+#include <boost/ptr_container/ptr_vector.hpp>
 
 mom_server     mom_servers[PBS_MAXSERVER];
 resizable_array *received_statuses;
@@ -47,7 +48,7 @@ threadpool_t *request_pool;
 AvlTree okclients;
 time_t wait_time = 10;
 pthread_mutex_t *log_mutex;
-std::vector<std::string *> mom_status;
+boost::ptr_vector<std::string> mom_status;
 char log_buffer[LOG_BUF_SIZE];
 int job_exit_wait_time;
 char             config_file[_POSIX_PATH_MAX] = "config";

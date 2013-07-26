@@ -124,6 +124,7 @@
 #include "../lib/Libifl/lib_ifl.h" /* pbs_disconnect_socket */
 #include "alps_functions.h"
 #include "mom_config.h"
+#include <boost/ptr_container/ptr_vector.hpp>
 
 #define MAX_GPUS  32
 
@@ -1096,7 +1097,7 @@ int setup_gpus_for_job(
 
 void generate_server_gpustatus_nvml(
 
-  std::vector<std::string *>& gpu_status)
+  boost::ptr_vector<std::string>& gpu_status)
 
   {
   nvmlReturn_t        rc;
@@ -1374,7 +1375,7 @@ void generate_server_gpustatus_nvml(
  */
 
 void generate_server_gpustatus_smi(
-    std::vector<std::string *>& gpu_status)
+    boost::ptr_vector<std::string>& gpu_status)
 
   {
   char   *dataptr;
@@ -1976,7 +1977,7 @@ void req_gpuctrl_mom(
 
 int add_gpu_status(
 
-  std::vector<std::string *>& mom_status)
+  boost::ptr_vector<std::string>& mom_status)
 
   {
 #ifdef NVIDIA_GPUS

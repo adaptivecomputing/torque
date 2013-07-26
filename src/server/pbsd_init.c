@@ -133,6 +133,7 @@
 #include "../lib/Libnet/lib_net.h"
 #include <string>
 #include <vector>
+#include <boost/ptr_container/ptr_vector.hpp>
 
 
 /*#ifndef SIGKILL*/
@@ -209,7 +210,7 @@ job_recycler            recycler;
 queue_recycler          q_recycler;
 hash_map               *exiting_jobs_info;
 
-std::vector<std::string *> hierarchy_holder;
+boost::ptr_vector<std::string> hierarchy_holder;
 hello_container         hellos;
 hello_container         failures;
 
@@ -459,7 +460,7 @@ void add_server_names_to_acl_hosts(void)
 
 
 
-void make_default_hierarchy(std::vector<std::string *>& hierarchy)
+void make_default_hierarchy(boost::ptr_vector<std::string>& hierarchy)
 
   {
   struct pbsnode *pnode;
@@ -601,7 +602,7 @@ void check_if_in_nodes_file(
 int handle_level(
     
   char           *level_iter,
-  std::vector<std::string *>& send_format,
+  boost::ptr_vector<std::string>& send_format,
   int             level_index)
 
   {
@@ -652,7 +653,7 @@ int handle_level(
 int handle_path(
 
   char           *path_iter,
-  std::vector<std::string *>& send_format)
+  boost::ptr_vector<std::string>& send_format)
 
   {
   char  log_buf[LOCAL_LOG_BUF_SIZE];
@@ -702,7 +703,7 @@ int handle_path(
 void parse_mom_hierarchy(
     
   int fds,
-  std::vector<std::string *>& send_format)
+  boost::ptr_vector<std::string>& send_format)
 
   {
   int             bytes_read;
@@ -787,7 +788,7 @@ void parse_mom_hierarchy(
 
 
 
-void prepare_mom_hierarchy(std::vector<std::string *>& send_format)
+void prepare_mom_hierarchy(boost::ptr_vector<std::string>& send_format)
 
   {
   char            log_buf[LOCAL_LOG_BUF_SIZE];

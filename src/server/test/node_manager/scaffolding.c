@@ -16,6 +16,8 @@
 #include "work_task.h" /* work_task, work_type */
 #include <vector>
 #include <string>
+#include <boost/ptr_container/ptr_vector.hpp>
+
 
 int SvrNodeCt = 0; 
 int svr_resc_size = 0;
@@ -346,7 +348,7 @@ int get_svr_attr_l(int index, long *l)
 int process_alps_status(
 
   char           *nd_name,
-  std::vector<std::string *>& status_info)
+  boost::ptr_vector<std::string>& status_info)
 
   {
   return(0);

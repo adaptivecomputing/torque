@@ -87,6 +87,7 @@
 #include "alps_constants.h"
 #include <string>
 #include <vector>
+#include <boost/ptr_container/ptr_vector.hpp>
 
 #include "../lib/Libifl/lib_ifl.h"
 
@@ -96,7 +97,7 @@
  */
 int process_reservations(
 
-  std::vector<std::string *>& status,
+  boost::ptr_vector<std::string>& status,
   xmlNode        *node)
 
   {
@@ -256,7 +257,7 @@ int process_label_array(
 
 int process_accelerator_array(
 
-  std::vector<std::string *>& status,
+  boost::ptr_vector<std::string>& status,
   xmlNode        *node)
 
   {
@@ -324,7 +325,7 @@ int process_accelerator_array(
 
 int process_node(
 
-  std::vector<std::string *>& status,
+  boost::ptr_vector<std::string>& status,
   xmlNode        *node)
 
   {
@@ -487,7 +488,7 @@ int process_node(
 
 int process_nodes(
 
-  std::vector<std::string *>& status,
+  boost::ptr_vector<std::string>& status,
   xmlNode        *node)
 
   {
@@ -508,7 +509,7 @@ int process_nodes(
 
 int process_element(
 
-  std::vector<std::string *>& status,
+  boost::ptr_vector<std::string>& status,
   xmlNode        *node)
 
   {
@@ -559,7 +560,7 @@ int process_element(
 int parse_alps_output(
 
   std::string& alps_output,
-  std::vector<std::string *>& status)
+  boost::ptr_vector<std::string>& status)
 
   {
   xmlDocPtr  doc;
@@ -586,7 +587,7 @@ int parse_alps_output(
 
 int generate_alps_status(
 
-  std::vector<std::string *>& status,
+  boost::ptr_vector<std::string>& status,
   const char     *apbasil_path,
   const char     *apbasil_protocol)
 

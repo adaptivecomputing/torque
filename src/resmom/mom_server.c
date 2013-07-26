@@ -242,6 +242,8 @@
 #include "mom_config.h"
 #include <string>
 #include <vector>
+#include <boost/ptr_container/ptr_vector.hpp>
+
 
 #define MAX_RETRY_TIME_IN_SECS           (5 * 60)
 #define STARTING_RETRY_INTERVAL_IN_SECS   2
@@ -292,7 +294,7 @@ extern mom_hierarchy_t    *mh;
 extern char               *stat_string_aggregate;
 extern unsigned int        ssa_index;
 extern resizable_array    *received_statuses;
-std::vector<std::string *> mom_status;
+boost::ptr_vector<std::string> mom_status;
 
 extern struct config *rm_search(struct config *where, const char *what);
 
@@ -309,8 +311,8 @@ extern int  use_nvidia_gpu;
 void check_state(int);
 void state_to_server(int, int);
 void node_comm_error(node_comm_t *, const char *);
-int  add_mic_status(std::vector<std::string *>& status);
-int  add_gpu_status(std::vector<std::string *>& status);
+int  add_mic_status(boost::ptr_vector<std::string>& status);
+int  add_gpu_status(boost::ptr_vector<std::string>& status);
 
 /* clear servers */
 void clear_servers()
@@ -721,7 +723,7 @@ int is_compose(
 void gen_size(
 
   const char  *name,
-  std::vector<std::string *>& status)
+  boost::ptr_vector<std::string>& status)
 
   {
   struct config  *ap;
@@ -760,7 +762,7 @@ void gen_size(
 void gen_arch(
 
   const char  *name,
-  std::vector<std::string *>& status)
+  boost::ptr_vector<std::string>& status)
 
   {
   struct config  *ap;
@@ -786,7 +788,7 @@ void gen_arch(
 void gen_opsys(
 
   const char  *name,
-  std::vector<std::string *>& status)
+  boost::ptr_vector<std::string>& status)
 
   {
   struct config  *ap;
@@ -812,7 +814,7 @@ void gen_opsys(
 void gen_jdata(
 
   const char  *name,
-  std::vector<std::string *>& status)
+  boost::ptr_vector<std::string>& status)
 
   {
   if (TORQUE_JData[0] != '\0')
@@ -829,7 +831,7 @@ void gen_jdata(
 void gen_gres(
 
   const char  *name,
-  std::vector<std::string *>& status)
+  boost::ptr_vector<std::string>& status)
   {
 
   char  *value;
@@ -851,7 +853,7 @@ void gen_gres(
 void gen_gen(
 
   const char  *name,
-  std::vector<std::string *>& status)
+  boost::ptr_vector<std::string>& status)
   {
   struct config  *ap;
   char  *value;
@@ -902,7 +904,7 @@ void gen_gen(
   return;
   }   /* END gen_gen() */
 
-typedef void (*gen_func_ptr)(const char *, std::vector<std::string *>& );
+typedef void (*gen_func_ptr)(const char *, boost::ptr_vector<std::string>& );
 
 typedef struct stat_record
   {
@@ -942,7 +944,7 @@ stat_record stats[] = {
  *
  */
 
-void generate_server_status(std::vector<std::string *>& status)
+void generate_server_status(boost::ptr_vector<std::string>& status)
   {
   int   i;
 
@@ -1035,7 +1037,7 @@ int write_my_server_status(
  
   struct tcp_chan *chan,
   const char *id,
-  std::vector<std::string *>& strings,
+  boost::ptr_vector<std::string>& strings,
   void       *dest,
   int         mode)
  
@@ -1046,18 +1048,18 @@ int write_my_server_status(
   node_comm_t *nc;
  
   /* put each string into the message. */
-  for(std::vector<std::string *>::iterator i = strings.begin();i != strings.end();i++)
+  for(boost::ptr_vector<std::string>::iterator i = strings.begin();i != strings.end();i++)
     {
     if (LOGLEVEL >= 7)
       {
       sprintf(log_buffer,"%s: sending to server \"%s\"",
         id,
-        (*i)->c_str());
+        i->c_str());
       
       log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
       }
     
-    if ((ret = diswst(chan,(*i)->c_str())) != DIS_SUCCESS)
+    if ((ret = diswst(chan,i->c_str())) != DIS_SUCCESS)
       {
       switch (mode)
         {
@@ -1108,9 +1110,9 @@ int write_cached_statuses(
   /* traverse the received_nodes array and send/clear the updates */
   while ((rn = (received_node *)next_thing(received_statuses, &iter)) != NULL)
     {
-    for(std::vector<std::string *>::iterator i = rn->statuses.begin();i != rn->statuses.end();i++)
+    for(boost::ptr_vector<std::string>::iterator i = rn->statuses.begin();i != rn->statuses.end();i++)
       {
-      cp = (*i)->c_str();
+      cp = i->c_str();
       if (LOGLEVEL >= 7)
         {
         sprintf(log_buffer,"%s: sending to server \"%s\"",
@@ -1175,7 +1177,7 @@ int write_cached_statuses(
 int mom_server_update_stat(
  
   mom_server *pms,
-  std::vector<std::string *>& strings)
+  boost::ptr_vector<std::string>& strings)
  
   {
   int              stream;
@@ -1309,7 +1311,7 @@ void node_comm_error(
 
 int write_status_strings(
  
-  std::vector<std::string *>& strings,
+  boost::ptr_vector<std::string>& strings,
   node_comm_t *nc)
  
   {

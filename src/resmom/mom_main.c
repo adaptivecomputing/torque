@@ -89,6 +89,7 @@
 #include "mom_server_lib.h" /* shutdown_to_server */
 #include <string>
 #include <vector>
+#include <boost/ptr_container/ptr_vector.hpp>
 
 #ifdef NOPOSIXMEMLOCK
 #undef _POSIX_MEMLOCK
@@ -164,7 +165,7 @@ char        *path_aux;
 char        *path_home = (char *)PBS_SERVER_HOME;
 char        *mom_home;
 
-extern std::vector<std::string *> mom_status;
+extern boost::ptr_vector<std::string> mom_status;
 extern int  multi_mom;
 char        *path_layout;
 extern char *msg_daemonname;          /* for logs     */

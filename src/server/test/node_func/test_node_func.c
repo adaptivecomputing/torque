@@ -1,3 +1,4 @@
+#include <boost/ptr_container/ptr_vector.hpp>
 #include "license_pbs.h" /* See here for the software license */
 #include "node_func.h"
 #include "test_node_func.h"

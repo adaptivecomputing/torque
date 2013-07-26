@@ -17,6 +17,7 @@
 #include "pbs_job.h"
 #include <string>
 #include <vector>
+#include <boost/ptr_container/ptr_vector.hpp>
 
 
 hello_container failures;
@@ -48,7 +49,7 @@ const char *dis_emsg[] = {"No error",
   "Protocol failure in commit",
   "End of File"
 };
-std::vector<std::string *> hierarchy_holder;
+boost::ptr_vector<std::string> hierarchy_holder;
 extern int cray_enabled;
 
 
