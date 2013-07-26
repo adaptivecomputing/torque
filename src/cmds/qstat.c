@@ -423,6 +423,8 @@ static char *findattrl(
 #define PBS_NAMELEN   16  /* printf of jobs, queues, and servers */
 #endif  /* PBS_NAMELEN */
 
+#define PBS_JOB_ID_LEN 22
+
 #define OWNERL  15  /* printf of jobs */
 #define TIMEUL  8   /* printf of jobs */
 #define STATEL  1   /* printf of jobs */
@@ -636,7 +638,7 @@ static void altdsp_statjob(
   int         req_walltime = 0;
   int         elap_time = 0;
   char        elap_time_string[100];
-  char tmpLine[MAX_LINE_LEN];
+  char        format_string[MAX_LINE_LEN];
 
   int   usecput;
   static char  pfs[SIZEL];
@@ -658,19 +660,15 @@ static void altdsp_statjob(
 
     if (alt_opt & ALT_DISPLAY_R)
       {
-      printf("\n                                                       Req'd  Req'd       Elap \n");
-
-      printf("Job ID               Username    Queue    NDS   TSK    Memory Time      S Time       BIG  FAST   PFS\n");
-
-      printf("-------------------- ----------- -------- ----- ------ ------ --------- - --------- ----- ----- -----\n");
+      printf("\n                                                          Req'd  Req'd       Elap");
+      printf("\nJob ID                  Username    Queue    NDS   TSK    Memory Time      S Time       BIG  FAST   PFS");
+      printf("\n----------------------- ----------- -------- ----- ------ ------ --------- - --------- ----- ----- -----\n");
       }
     else
       {
-      printf("\n                                                                               Req'd    Req'd       Elap\n");
-
-      printf("Job ID               Username    Queue    Jobname          SessID NDS   TSK    Memory   Time    S   Time\n");
-
-      printf("-------------------- ----------- -------- ---------------- ------ ----- ------ ------ --------- - ---------\n");
+      printf("\n                                                                                  Req'd    Req'd       Elap");
+      printf("\nJob ID                  Username    Queue    Jobname          SessID  NDS   TSK   Memory   Time    S   Time");
+      printf("\n----------------------- ----------- -------- ---------------- ------ ----- ------ ------ --------- - ---------\n");
       }
     }
 
@@ -824,11 +822,11 @@ static void altdsp_statjob(
       time_to_string(elap_time_string, elap_time);
       }
 
-    snprintf(tmpLine, sizeof(tmpLine), "%%-20.%ds %%-11.11s %%-8.8s ",
+    /* inject precision into the format string */
+    snprintf(format_string, sizeof(format_string), "%%-23.%ds %%-11.11s %%-8.8s ",
+             PBS_JOB_ID_LEN);
 
-             PBS_NAMELEN);
-
-    printf(tmpLine,
+    printf(format_string,
            pstat->name,
            usern,
            queuen);
@@ -850,10 +848,10 @@ static void altdsp_statjob(
       }
     else
       {
-      snprintf(tmpLine, sizeof(tmpLine), "%%-%d.%ds %%6.6s %%5.5s %%*.*s %%6.6s %%9.9s  %%1.1s %%9.9s",
+      snprintf(format_string, sizeof(format_string), "%%-%d.%ds %%6.6s %%5.5s %%*.*s %%6.6s %%9.9s %%1.1s %%9.9s",
                PBS_NAMELEN, PBS_NAMELEN);
 
-      printf(tmpLine,
+      printf(format_string,
              jobn,
              sess,
              nodect,
