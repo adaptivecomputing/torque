@@ -242,4 +242,6 @@ void main_func(
     char **argv,                  /* I */
     char **envp);                 /* I */
 
+int isWindowsFormat(FILE   *fd);
+
 #endif /* _QSUB_FUNCTIONS_H */
