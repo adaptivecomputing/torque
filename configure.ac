@@ -385,14 +385,15 @@ m4_ifdef([AM_SILENT_RULES],[
     src/lib/Libutils/test/u_hash_table/Makefile
     src/lib/Libutils/test/u_lock_ctl/Makefile
     src/lib/Libutils/test/u_memmgr/Makefile
+    src/lib/Libutils/test/u_misc/Makefile
     src/lib/Libutils/test/u_mom_hierarchy/Makefile
     src/lib/Libutils/test/u_mu/Makefile
+    src/lib/Libutils/test/u_mutex_mgr/Makefile
     src/lib/Libutils/test/u_resizable_array/Makefile
     src/lib/Libutils/test/u_threadpool/Makefile
     src/lib/Libutils/test/u_tree/Makefile
     src/lib/Libutils/test/u_users/Makefile
     src/lib/Libutils/test/u_xml/Makefile
-    src/lib/Libutils/test/u_mutex_mgr/Makefile
     src/lib/test/Makefile
     src/momctl/test/Makefile
     src/momctl/test/momctl/Makefile
@@ -450,6 +451,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/server/test/process_request/Makefile
     src/server/test/queue_func/Makefile
     src/server/test/queue_recov/Makefile
+    src/server/test/queue_recycler/Makefile
     src/server/test/receive_mom_communication/Makefile
     src/server/test/reply_send/Makefile
     src/server/test/req_delete/Makefile

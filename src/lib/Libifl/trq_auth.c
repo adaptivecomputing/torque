@@ -241,7 +241,7 @@ int trq_simple_connect(
   if (rc != PBSE_NONE)
     {
     fprintf(stderr, "cannot resolve server name %s\n", server_name);
-    return(PBSE_SYSTEM);
+    return(PBSE_SERVER_NOT_FOUND);
     }
 
   for (addr_info = results; addr_info != NULL; addr_info = addr_info->ai_next)
@@ -369,20 +369,27 @@ int validate_server(
     trq_simple_disconnect(sd);
 
   if (rc == PBSE_SERVER_NOT_FOUND) /* This only indicates no server is currently active. Go to default */
+    {
+    active_pbs_server[0] = '\0';
     rc = PBSE_NONE;
+    }
+
   fprintf(stderr, "Active server name: %s  pbs_server port is: %d\n", active_pbs_server, t_server_port);
-  return rc;
-  }
+
+  return(rc);
+  } /* END validate_server() */
 
 
 int parse_request_client(
-    int sock,
-    char **server_name,
-    int *server_port,
-    int *auth_type,
-    char **user,
-    int *user_pid,
-    int *user_sock)
+
+  int    sock,
+  char **server_name,
+  int   *server_port,
+  int   *auth_type,
+  char **user,
+  int   *user_pid,
+  int   *user_sock)
+
   {
   int rc = PBSE_NONE;
   long long tmp_val = 0, tmp_port = 0, tmp_auth_type = 0, tmp_sock = 0, tmp_pid = 0;
@@ -463,7 +470,8 @@ int build_request_svr(
 
 int build_active_server_response(
 
-    char **send_message)
+  char **send_message)
+
   {
   int rc = PBSE_NONE;
   int len = 0;
@@ -471,6 +479,13 @@ int build_active_server_response(
   char temp_buf[20]; 
 
   len = strlen(active_pbs_server);
+
+  if (len == 0)
+    {
+    validate_server(NULL, PBS_BATCH_SERVICE_PORT, NULL, NULL);
+    len = strlen(active_pbs_server);
+    }
+
   sprintf(temp_buf, "%d", len);
 
   resp_msg = (char *)calloc(1, len + strlen(temp_buf) + 2); /* 2 because we need one for the '|' delimeter and one for a null termination */
