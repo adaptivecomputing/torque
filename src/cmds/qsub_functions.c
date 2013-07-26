@@ -66,6 +66,8 @@
 #define GETOPT_ARGS "a:A:b:c:C:d:D:e:EfF:hIj:J:k:l:m:M:nN:o:p:P:q:r:S:t:T:u:v:Vw:W:Xxz-:"
 #endif /* PBS_NO_POSIX_VIOLATION */
 
+#define MAXBUF 2048
+
 /* START: These are needed for bailout purposes */
 int inter_sock = -1;
 int interactivechild = 0;
@@ -125,6 +127,9 @@ char *x11_get_proto(
     {
     return(NULL);
     }
+
+  if (!xauth_path)
+    return NULL;
 
   if (stat(xauth_path, &st))
     {
@@ -642,6 +647,44 @@ char *ispbsdir(
 
 
 
+int isWindowsFormat(
+
+  FILE   *fd)      /* I */
+
+  {
+  size_t len;
+  char buffer[MAXBUF];
+  int dosformat = 0;
+
+  if (fd == NULL)
+    {
+    return(1);
+    }
+
+  if (fd == stdin)
+    {
+    return(0);
+    }
+
+  /* read first characters to ensure this is ASCII text */
+  fseek(fd, 0, SEEK_SET);
+
+  while(fgets(buffer, sizeof(buffer), fd) != NULL)
+    {
+    len = strlen(buffer);
+    if (len < MAXBUF)
+      if (buffer[len - 2] == '\r')
+        {
+        dosformat = 1;
+        break;
+        }
+     }
+
+  fseek(fd, 0, SEEK_SET);
+  return dosformat;
+  }
+
+
 /* #define MMAX_VERIFY_BYTES 50 */
 
 int istext(
@@ -1024,6 +1067,13 @@ static int get_script(
     return(4);
     }
 
+  if (isWindowsFormat(file))
+    {
+    fprintf(stderr,
+            "qsub:  script is written in DOS/Windows text format\n");
+
+    return(4);
+    }
   if (hash_find(ji->job_attr, ATTR_pbs_o_submit_filter, &tmp_job_info))
     {
     /* run the copy through the submit filter. */
