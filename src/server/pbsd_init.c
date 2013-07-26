@@ -118,7 +118,6 @@
 #include "threadpool.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
 #include "queue_recov.h" /* que_recov_xml */
-#include "dynamic_string.h"
 #include "utils.h"
 #include "queue_recycler.h" /* queue_recycler */
 #include "svr_task.h" /* initialize_task_recycler */
@@ -132,6 +131,8 @@
 #include "hash_map.h"
 #include "mutex_mgr.hpp"
 #include "../lib/Libnet/lib_net.h"
+#include <string>
+#include <vector>
 
 
 /*#ifndef SIGKILL*/
@@ -208,7 +209,7 @@ job_recycler            recycler;
 queue_recycler          q_recycler;
 hash_map               *exiting_jobs_info;
 
-dynamic_string         *hierarchy_holder;
+std::vector<std::string *> hierarchy_holder;
 hello_container         hellos;
 hello_container         failures;
 
@@ -458,36 +459,31 @@ void add_server_names_to_acl_hosts(void)
 
 
 
-dynamic_string *make_default_hierarchy() 
+void make_default_hierarchy(std::vector<std::string *>& hierarchy)
 
   {
   struct pbsnode *pnode;
-  dynamic_string *default_hierarchy;
-  dynamic_string *level_ds;
+  std::string      level_ds = "";
   int             iter = -1;
   char            buf[MAXLINE];
 
-  if (((default_hierarchy = get_dynamic_string(-1, NULL)) == NULL) ||
-      ((level_ds = get_dynamic_string(-1, NULL)) == NULL))
-    {
-    log_err(ENOMEM, __func__, "Cannot allocate memory");
-    return(NULL);
-    }
 
-  copy_to_end_of_dynamic_string(default_hierarchy, "<sp>");
-  copy_to_end_of_dynamic_string(default_hierarchy, "<sl>");
+  hierarchy.clear();
+
+  hierarchy.push_back(new std::string("<sp>"));
+  hierarchy.push_back(new std::string("<sl>"));
 
   while ((pnode = next_host(&allnodes, &iter, NULL)) != NULL)
     {
-    if (level_ds->used > 0)
-      append_dynamic_string(level_ds, ",");
+    if (level_ds.length() > 0)
+      level_ds += ",";
 
-    append_dynamic_string(level_ds, pnode->nd_name);
+    level_ds += pnode->nd_name;
 
     if (PBS_MANAGER_SERVICE_PORT != pnode->nd_mom_rm_port)
       {
       snprintf(buf, sizeof(buf), ":%d", (int)pnode->nd_mom_rm_port);
-      append_dynamic_string(level_ds, buf);
+      level_ds += buf;
       }
 
     pnode->nd_hierarchy_level = 0;
@@ -495,13 +491,9 @@ dynamic_string *make_default_hierarchy()
     unlock_node(pnode, __func__, NULL, LOGLEVEL);
     }
 
-  copy_to_end_of_dynamic_string(default_hierarchy, level_ds->str);
-  copy_to_end_of_dynamic_string(default_hierarchy, "</sl>");
-  copy_to_end_of_dynamic_string(default_hierarchy, "</sp>");
-
-  free_dynamic_string(level_ds);
-
-  return(default_hierarchy);
+  hierarchy.push_back(new std::string(level_ds.c_str()));
+  hierarchy.push_back(new std::string("</sl>"));
+  hierarchy.push_back(new std::string("</sp>"));
   } /* END make_default_hierarchy() */
 
 
@@ -609,22 +601,17 @@ void check_if_in_nodes_file(
 int handle_level(
     
   char           *level_iter,
-  dynamic_string *send_format,
+  std::vector<std::string *>& send_format,
   int             level_index)
 
   {
   char            log_buf[LOCAL_LOG_BUF_SIZE];
   const char           *delims = ",";
   char           *host_tok;
-  dynamic_string *level_buf;
+  std::string     level_buf = "";
 
-  if ((level_buf = get_dynamic_string(-1, NULL)) == NULL)
-    {
-    log_err(ENOMEM, __func__, "Cannot allocate memory");
-    return(ENOMEM);
-    }
 
-  copy_to_end_of_dynamic_string(send_format, "<sl>");
+  send_format.push_back(new std::string("<sl>"));
       
   /* find each hostname */
   host_tok = threadsafe_tokenizer(&level_iter, delims);
@@ -642,21 +629,19 @@ int handle_level(
       }
     else
       {
-      if (level_buf->used > 0)
-        append_dynamic_string(level_buf, ",");
+      if (level_buf.length() > 0)
+        level_buf += ",";
 
       check_if_in_nodes_file(host_tok, level_index);
 
-      append_dynamic_string(level_buf, host_tok);
+      level_buf += host_tok;
       }
 
     host_tok = threadsafe_tokenizer(&level_iter, delims);
     }
      
-  copy_to_end_of_dynamic_string(send_format, level_buf->str);
-  copy_to_end_of_dynamic_string(send_format, "</sl>");
-
-  free_dynamic_string(level_buf);
+  send_format.push_back(new std::string(level_buf.c_str()));
+  send_format.push_back(new std::string("</sl>"));
 
   return(PBSE_NONE);
   } /* END handle_level() */
@@ -667,7 +652,7 @@ int handle_level(
 int handle_path(
 
   char           *path_iter,
-  dynamic_string *send_format)
+  std::vector<std::string *>& send_format)
 
   {
   char  log_buf[LOCAL_LOG_BUF_SIZE];
@@ -676,7 +661,7 @@ int handle_path(
 
   int   level_index = 0;
 
-  copy_to_end_of_dynamic_string(send_format, "<sp>");
+  send_format.push_back(new std::string("<sp>"));
   
   /* iterate over each level in the path */
   while (get_parent_and_child(path_iter,&level_parent,&level_child,&path_iter) == PBSE_NONE)
@@ -700,12 +685,12 @@ int handle_path(
   if (level_index == 0)
     {
     /* empty level, delete the <sp> */
-    delete_last_word_from_dynamic_string(send_format);
+    send_format.pop_back();
     }
   else
     {
     /* close path */
-    copy_to_end_of_dynamic_string(send_format, "</sp>");
+    send_format.push_back(new std::string("</sp>"));
     }
 
   return(PBSE_NONE);
@@ -714,9 +699,10 @@ int handle_path(
 
 
 
-dynamic_string *parse_mom_hierarchy(
+void parse_mom_hierarchy(
     
-  int fds)
+  int fds,
+  std::vector<std::string *>& send_format)
 
   {
   int             bytes_read;
@@ -728,7 +714,6 @@ dynamic_string *parse_mom_hierarchy(
   struct pbsnode *pnode;
   int             iter = -1;
   unsigned char   first_missing_node = TRUE;
-  dynamic_string *send_format = NULL;
 
   memset(&buffer, 0, sizeof(buffer));
 
@@ -738,15 +723,9 @@ dynamic_string *parse_mom_hierarchy(
       "Unable to read from %s", path_mom_hierarchy);
     log_err(errno, __func__, log_buf);
 
-    return(NULL);
+    return;
     }
   
-  if ((send_format = get_dynamic_string(-1, NULL)) == NULL)
-    {
-    log_err(ENOMEM, __func__, "Cannot allocate memory");
-    return(NULL);
-    }
-
   current = buffer;
 
   while (get_parent_and_child(current, &parent, &child, &current) == PBSE_NONE)
@@ -765,13 +744,7 @@ dynamic_string *parse_mom_hierarchy(
       }
     }
 
-  if (send_format->used == 0)
-    {
-    /* if there were no valid paths, return NULL to signify an error */
-    free_dynamic_string(send_format);
-    send_format = NULL;
-    }
-  else
+  if (send_format.size() != 0)
     {
     /* check if there are nodes that weren't in the hierarchy file that are in the nodes file */
     while ((pnode = next_host(&allnodes, &iter, NULL)) != NULL)
@@ -780,15 +753,15 @@ dynamic_string *parse_mom_hierarchy(
         {
         if (first_missing_node == TRUE)
           {
-          copy_to_end_of_dynamic_string(send_format, "<sp>");
-          copy_to_end_of_dynamic_string(send_format, "<sl>");
+          send_format.push_back(new std::string("<sp>"));
+          send_format.push_back(new std::string("<sl>"));
           first_missing_node = FALSE;
-          copy_to_end_of_dynamic_string(send_format, pnode->nd_name);
+          send_format.push_back(new std::string(pnode->nd_name));
           }
         else
           {
-          append_dynamic_string(send_format, ",");
-          append_dynamic_string(send_format, pnode->nd_name);
+          send_format.push_back(new std::string(","));
+          send_format.push_back(new std::string(pnode->nd_name));
           }
 
         snprintf(log_buf, sizeof(log_buf),
@@ -804,48 +777,47 @@ dynamic_string *parse_mom_hierarchy(
 
     if (first_missing_node == FALSE)
       {
-      copy_to_end_of_dynamic_string(send_format, "</sl>");
-      copy_to_end_of_dynamic_string(send_format, "</sp>");
+      send_format.push_back(new std::string("</sl>"));
+      send_format.push_back(new std::string("</sp>"));
       }
     }
-
-  return(send_format);
   } /* END parse_mom_hierarchy() */
 
 
 
 
 
-dynamic_string *prepare_mom_hierarchy()
+void prepare_mom_hierarchy(std::vector<std::string *>& send_format)
 
   {
   char            log_buf[LOCAL_LOG_BUF_SIZE];
   int             fds;
-  dynamic_string *send_format = NULL;
 
   if ((fds = open(path_mom_hierarchy, O_RDONLY, 0)) < 0)
     {
     if (errno == ENOENT)
       {
       /* Each node is a top level node */
-      send_format = make_default_hierarchy();
-      return(send_format);
+      make_default_hierarchy(send_format);
+      return;
       }
 
     snprintf(log_buf, sizeof(log_buf),
       "Unable to open %s", path_mom_hierarchy);
     log_err(errno, __func__, log_buf);
     }
-  else if ((send_format = parse_mom_hierarchy(fds)) == NULL)
+  else
     {
-    /* if there's an error, make a default hierarchy */
-    send_format = make_default_hierarchy();
+    parse_mom_hierarchy(fds,send_format);
+    if(send_format.size() == 0)
+      {
+      /* if there's an error, make a default hierarchy */
+      make_default_hierarchy(send_format);
+      }
     }
 
   if (fds >= 0)
     close(fds);
-
-  return(send_format);
   } /* END prepare_mom_hierarchy() */
 
 
@@ -2168,7 +2140,8 @@ int pbsd_init(
   handle_tracking_records();
 
   /* read the hierarchy file */
-  if ((hierarchy_holder = prepare_mom_hierarchy()) == NULL)
+  prepare_mom_hierarchy(hierarchy_holder);
+  if(hierarchy_holder.size() == 0)
     {
     /* hierarchy file exists but we couldn't open it */
     return(-1);

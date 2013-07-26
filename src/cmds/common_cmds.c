@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include "pbs_error_db.h"
-#include "dynamic_string.h"
+#include <string>
 
 #define  JOB_ENV_START_SIZE 2048
 
@@ -218,7 +218,7 @@ int parse_variable_list(
 
   {
   int             alloc_size = 0;
-  dynamic_string *job_env = get_dynamic_string(-1, NULL);
+  std::string     job_env = "";
   char            name[JOB_ENV_START_SIZE];
   char           *s = NULL;
   char           *c = NULL;
@@ -254,14 +254,14 @@ int parse_variable_list(
 
       if (c != NULL)
         {
-        append_dynamic_string(job_env, name);
-        append_dynamic_string(job_env, "=");
-        append_dynamic_string(job_env, c);
+        job_env += name;
+        job_env += "=";
+        job_env += c;
         if (delim == NULL)
           s = NULL;
         else
           {
-          append_dynamic_string(job_env, ",");
+          job_env += ",";
           s = delim + 1;
           if (*s == ',') /* This ended in '='. Move one more */
             s++;
@@ -273,16 +273,16 @@ int parse_variable_list(
         if (delim == NULL)
           {
           snprintf(name, sizeof(name), "%s", s);
-          append_dynamic_string(job_env, name);
-          append_dynamic_string(job_env, "=");
+          job_env += "name";
+          job_env += "=";
           s = NULL;
           }
         else
           {
           memcpy(name, s, delim - s);
           name[delim - s] = '\0';
-          append_dynamic_string(job_env, name);
-          append_dynamic_string(job_env, "=,");
+          job_env += name;
+          job_env += "=,";
           s = delim + 1;
           }
         }
@@ -295,7 +295,7 @@ int parse_variable_list(
         {
         alloc_size = strlen(s);
         /* we are at the end */
-        append_dynamic_string(job_env, s);
+        job_env += s;
         s = NULL;
         }
       else
@@ -304,15 +304,14 @@ int parse_variable_list(
         alloc_size = delim - s;
         memcpy(name, s, alloc_size);
         name[alloc_size] = '\0';
-        append_dynamic_string(job_env, name);
-        append_dynamic_string(job_env, ",");
+        job_env += name;
+        job_env += ",";
         s = delim + 1;
         }
       }
     }
 
-  hash_add_or_exit(mm, dest_hash, ATTR_v, job_env->str, ENV_DATA);
-  free_dynamic_string(job_env);
+  hash_add_or_exit(mm, dest_hash, ATTR_v, job_env.c_str(), ENV_DATA);
 
   return(PBSE_NONE);
   } /* END parse_variable_list() */ 

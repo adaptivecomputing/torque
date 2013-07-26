@@ -1023,12 +1023,9 @@ int req_quejob(
     if (!(pj->ji_wattr[JOB_ATR_outpath].at_flags & ATR_VFLAG_SET) ||
         (((pj->ji_wattr[JOB_ATR_outpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str) - 1] == ':'))))
       {
-      dynamic_string *ds = get_dynamic_string(-1, NULL);
-      pj->ji_wattr[JOB_ATR_outpath].at_val.at_str = prefix_std_file(pj, ds, (int)'o');
+      std::string ds = "";
+      pj->ji_wattr[JOB_ATR_outpath].at_val.at_str = strdup(prefix_std_file(pj, ds, (int)'o'));
       pj->ji_wattr[JOB_ATR_outpath].at_flags |= ATR_VFLAG_SET;
-
-      /* don't call free_dynamic_string() */
-      free(ds);
       }
     /*
      * if the output path was specified and ends with a '/'
@@ -1037,15 +1034,12 @@ int req_quejob(
     else if ((pj->ji_wattr[JOB_ATR_outpath].at_flags & ATR_VFLAG_SET) &&
         (((pj->ji_wattr[JOB_ATR_outpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str) - 1] == '/'))))
       {
-      dynamic_string *ds = get_dynamic_string(-1, NULL);
+      std::string ds = "";
       pj->ji_wattr[JOB_ATR_outpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str) - 1] = '\0';
       
       replace_attr_string(
         &pj->ji_wattr[JOB_ATR_outpath],
-        (add_std_filename(pj, pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, (int)'o', ds)));
-
-      /* don't call free_dynamic_string() */
-      free(ds);
+        (strdup(add_std_filename(pj, pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, (int)'o', ds))));
       }
     else if (pj->ji_wattr[JOB_ATR_outpath].at_flags & ATR_VFLAG_SET)
       {
@@ -1067,14 +1061,11 @@ int req_quejob(
         {
         if (S_ISDIR(stat_buf.st_mode))
           {
-          dynamic_string *ds = get_dynamic_string(-1, NULL);
+          std::string ds = "";
 /*          strcat(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, "/"); */
           replace_attr_string(
             &pj->ji_wattr[JOB_ATR_outpath],
-            (add_std_filename(pj, pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, (int)'o', ds)));
-      
-          /* don't call free_dynamic_string() */
-          free(ds);
+            (strdup(add_std_filename(pj, pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, (int)'o', ds))));
           }
         }
       }
@@ -1082,12 +1073,9 @@ int req_quejob(
     if (!(pj->ji_wattr[JOB_ATR_errpath].at_flags & ATR_VFLAG_SET) ||
         (((pj->ji_wattr[JOB_ATR_errpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_errpath].at_val.at_str) - 1] == ':'))))
       {
-      dynamic_string *ds = get_dynamic_string(-1, NULL);
-      pj->ji_wattr[JOB_ATR_errpath].at_val.at_str = prefix_std_file(pj, ds, (int)'e');
+      std::string ds = "";
+      pj->ji_wattr[JOB_ATR_errpath].at_val.at_str = strdup(prefix_std_file(pj, ds, (int)'e'));
       pj->ji_wattr[JOB_ATR_errpath].at_flags |= ATR_VFLAG_SET;
-
-      /* don't call free_dynamic_string() */
-      free(ds);
       }
     /*
      * if the error path was specified and ends with a '/'
@@ -1096,14 +1084,11 @@ int req_quejob(
     else if ((pj->ji_wattr[JOB_ATR_errpath].at_flags & ATR_VFLAG_SET) &&
         (((pj->ji_wattr[JOB_ATR_errpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_errpath].at_val.at_str) - 1] == '/'))))
       {
-      dynamic_string *ds = get_dynamic_string(-1, NULL);
+      std::string ds = "";
       pj->ji_wattr[JOB_ATR_errpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_errpath].at_val.at_str) - 1] = '\0';
       
       replace_attr_string(&pj->ji_wattr[JOB_ATR_errpath],
-        (add_std_filename(pj, pj->ji_wattr[JOB_ATR_errpath].at_val.at_str, (int)'e', ds)));
-          
-      /* don't call free_dynamic_string() */      
-      free(ds);
+        (strdup(add_std_filename(pj, pj->ji_wattr[JOB_ATR_errpath].at_val.at_str, (int)'e', ds))));
       }
     else if (pj->ji_wattr[JOB_ATR_errpath].at_flags & ATR_VFLAG_SET)
       {
@@ -1125,13 +1110,10 @@ int req_quejob(
         {
         if (S_ISDIR(stat_buf.st_mode))
           {
-          dynamic_string *ds = get_dynamic_string(-1, NULL);
+          std::string ds = "";
 /*          strcat(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, "/"); */
           replace_attr_string(&pj->ji_wattr[JOB_ATR_errpath],
-            (add_std_filename(pj, pj->ji_wattr[JOB_ATR_errpath].at_val.at_str, (int)'e', ds)));
-      
-          /* don't call free_dynamic_string() */
-          free(ds);
+            (strdup(add_std_filename(pj, pj->ji_wattr[JOB_ATR_errpath].at_val.at_str, (int)'e', ds))));
           }
         }
       }

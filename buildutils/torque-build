@@ -192,6 +192,7 @@ branch=`git branch | awk '/^[*]/ { print $2}'`
 version=`buildutils/determine.version`
 release_number="`buildutils/determine.release_number`"
 changeset=`git rev-parse HEAD`
+distro="`buildutils/determine.distro -c | tr [A-Z] [a-z]`"
 
 if [ -z "${version}" ]
 then
@@ -295,7 +296,7 @@ then
         --define "_specdir ${root_path}/buildutils/rpmbuild/SPECS" \
         --define "_tmppath ${root_path}/buildutils/rpmbuild/tmp" \
         --define "version ${version}" \
-        --define "release_number ${release_number}" \
+        --define "release_number ${release_number}.${distro}" \
         --define "source_file ${source_file}" \
         --define "base_name ${tar_base_dir}"
 fi

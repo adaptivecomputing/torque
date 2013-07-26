@@ -86,10 +86,11 @@
 
 #include "alps_constants.h"
 #include "resizable_array.h"
-#include "dynamic_string.h"
 #include "utils.h"
 #include "../lib/Libifl/lib_ifl.h"
 #include "mom_config.h"
+#include <vector>
+#include <string>
 
 
 extern char mom_alias[];
@@ -177,15 +178,14 @@ resizable_array *parse_exec_hosts(
 
 int save_current_reserve_param(
 
-  dynamic_string *command,
-  dynamic_string *node_list,
+  std::string& command,
+  std::string& node_list,
   unsigned int    width,
   int             nppn,
   int             mppdepth)
 
   {
   char            buf[MAXLINE * 2];
-  int             rc; 
 
   /* print out the current reservation param element */
   /* place everything up to the node list */
@@ -204,17 +204,15 @@ int save_current_reserve_param(
       snprintf(buf, sizeof(buf), APBASIL_RESERVE_PARAM_BEGIN_DEPTH, width, nppn, mppdepth);
     }
 
-  rc = append_dynamic_string(command, buf);
+  command += buf;
   
   /* add the node list */
-  if (rc == PBSE_NONE)
-    append_dynamic_string(command, node_list->str);
+  command += node_list.c_str();
   
   /* end the reserve param element */
-  if (rc == PBSE_NONE)
-    append_dynamic_string(command, APBASIL_RESERVE_PARAM_END);
+  command += APBASIL_RESERVE_PARAM_END;
 
-  return(rc);
+  return(PBSE_NONE);
   } /* END save_current_reserve_param() */
 
 
@@ -252,10 +250,10 @@ int create_reserve_params_from_host_req_list(
   resizable_array *host_req_list, /* I */
   int              use_nppn,      /* I */
   int              mppdepth,      /* I */
-  dynamic_string  *command)       /* O */
+  std::string&     command)       /* O */
 
   {
-  dynamic_string *node_list = get_dynamic_string(-1, NULL);
+  std::string    node_list = "";
   host_req       *hr;
   unsigned int    nppn = 0;
   unsigned int    width = 0;
@@ -266,10 +264,10 @@ int create_reserve_params_from_host_req_list(
     width += hr->ppn;
     nppn = MAX((unsigned int)nppn, hr->ppn);
     
-    if (node_list->used != 0)
-      append_dynamic_string(node_list, ",");
+    if (node_list.length() != 0)
+      node_list += ",";
     
-    append_dynamic_string(node_list, hr->hostname);
+    node_list += hr->hostname;
     
     free_host_req(hr);
     }
@@ -291,10 +289,10 @@ int create_reserve_params_from_multi_req_list(
 
   char           *multi_req_list, /* I */
   int             mppdepth,       /* I */
-  dynamic_string *command)        /* O */
+  std::string&    command)        /* O */
 
   {
-  dynamic_string *node_list = get_dynamic_string(-1, NULL);
+  std::string     node_list = "";
   char           *tok;
   char           *str = multi_req_list;
   int             node_count;
@@ -306,8 +304,8 @@ int create_reserve_params_from_multi_req_list(
     {
     node_count = 1;
 
-    clear_dynamic_string(node_list);
-    append_dynamic_string(node_list, tok);
+    node_list.clear();
+    node_list += tok;
     
     comma = tok;
     while ((comma = strchr(comma+1, ',')) != NULL)
@@ -329,7 +327,7 @@ int create_reserve_params_from_multi_req_list(
 
 
 
-dynamic_string *get_reservation_command(
+void get_reservation_command(
 
   resizable_array *host_req_list,
   char            *username,
@@ -338,21 +336,22 @@ dynamic_string *get_reservation_command(
   char            *apbasil_protocol,
   char            *multi_req_list,
   int              use_nppn,
-  int              mppdepth)
+  int              mppdepth,
+  std::string&     command)
 
   {
-  dynamic_string *command = get_dynamic_string(-1, NULL);
-  dynamic_string *node_list = get_dynamic_string(-1, NULL);
+  std::string      node_list = "";
   char            buf[MAXLINE * 2];
 
+  command.clear();
   /* place the top header */
   snprintf(buf, sizeof(buf), APBASIL_RESERVE_REQ, 
     (apbasil_protocol != NULL) ? apbasil_protocol : DEFAULT_APBASIL_PROTOCOL);
-  append_dynamic_string(command, buf);
+  command += buf;
 
   /* place the reserve header */
   snprintf(buf, sizeof(buf), APBASIL_RESERVE_ARRAY, username, jobid);
-  append_dynamic_string(command, buf);
+  command += buf;
 
   if (multi_req_list == NULL)
     {
@@ -364,14 +363,10 @@ dynamic_string *get_reservation_command(
     create_reserve_params_from_multi_req_list(multi_req_list, mppdepth, command);
     }
 
-  free_dynamic_string(node_list);
-
   /* pipe the output to apbasil */
   snprintf(buf, sizeof(buf), "</ReserveParamArray></BasilRequest>\" | %s",
     (apbasil_path != NULL) ? apbasil_path : DEFAULT_APBASIL_PATH);
-  append_dynamic_string(command, buf);
-
-  return(command);
+  command += buf;
   } /* END get_reservation_command() */
 
 
@@ -419,7 +414,7 @@ int find_error_type(
 
 int parse_reservation_output(
 
-  char  *output,
+  const char  *output,
   char **rsv_id)
 
   {
@@ -477,14 +472,14 @@ int parse_reservation_output(
 
 int execute_reservation(
 
-  char  *command_str,
-  char **reservation_id)
+  const char  *command_str,
+  char         **reservation_id)
 
   {
   int             rc;
   FILE           *alps_pipe;
   int             fd;
-  dynamic_string *output = NULL;
+  std::string      output = "";
   char            tmpBuf[MAXLINE];
   int             bytes_read;
   int             total_bytes_read = 0;
@@ -502,12 +497,11 @@ int execute_reservation(
   fd = fileno(alps_pipe);
 
   /* now read from the pipe */
-  output = get_dynamic_string(-1, NULL);
   while ((bytes_read = read(fd, tmpBuf, sizeof(tmpBuf) - 1)) > 0)
     {
     total_bytes_read += bytes_read;
     tmpBuf[bytes_read] = '\0';
-    append_dynamic_string(output, tmpBuf);
+    output += tmpBuf;
     }
 
   /* perform post-processing */
@@ -518,10 +512,8 @@ int execute_reservation(
     rc = READING_PIPE_ERROR;
   else
     {
-    rc = parse_reservation_output(output->str, reservation_id);
+    rc = parse_reservation_output(output.c_str(), reservation_id);
     }
-
-  free_dynamic_string(output);
 
   return(rc);
   } /* END execute_reservation() */
@@ -712,7 +704,7 @@ int create_alps_reservation(
 
   {
   resizable_array *host_req_list;
-  dynamic_string  *command;
+  std::string      command = "";
   int              rc = 1;
   int              retry_count = 0;
   char            *user = strdup(username);
@@ -733,13 +725,13 @@ int create_alps_reservation(
       return(PBSE_NONE);
       }
   
-    command = get_reservation_command(host_req_list, user, jobid, apbasil_path, apbasil_protocol, NULL, use_nppn, mppdepth);
+    get_reservation_command(host_req_list, user, jobid, apbasil_path, apbasil_protocol, NULL, use_nppn, mppdepth,command);
   
     free_resizable_array(host_req_list);
     }
   else
     {
-    command = get_reservation_command(NULL, user, jobid, apbasil_path, apbasil_protocol, exec_hosts, use_nppn, mppdepth);
+    get_reservation_command(NULL, user, jobid, apbasil_path, apbasil_protocol, exec_hosts, use_nppn, mppdepth,command);
     }
 
   free(user);
@@ -749,7 +741,7 @@ int create_alps_reservation(
          (rc != apbasil_fail_permanent) &&
          (rc != PBSE_NONE))
     {
-    rc = execute_reservation(command->str, reservation_id);
+    rc = execute_reservation(command.c_str(), reservation_id);
 
     if (rc != PBSE_NONE)
       usleep(100);
@@ -762,7 +754,7 @@ int create_alps_reservation(
     if (LOGLEVEL >= 3)
       {
       snprintf(log_buffer, sizeof(log_buffer),
-        "Successful reservation command is: %s", command->str);
+        "Successful reservation command is: %s", command.c_str());
       log_event(PBSEVENT_JOB | PBSEVENT_SYSLOG, PBS_EVENTCLASS_JOB, __func__, log_buffer);
       }
 
@@ -796,11 +788,9 @@ int create_alps_reservation(
   else
     {
     snprintf(log_buffer, sizeof(log_buffer),
-      "Failed reservation command is: %s", command->str);
+      "Failed reservation command is: %s", command.c_str());
     log_err(-1, __func__, log_buffer);
     }
-
-  free_dynamic_string(command);
 
   return(rc);
   } /* END create_alps_reservation() */

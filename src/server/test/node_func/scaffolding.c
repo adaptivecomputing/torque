@@ -15,6 +15,8 @@
 #include "work_task.h" /* work_task, work_type */
 #include "tcp.h"
 #include "pbs_job.h"
+#include <string>
+#include <vector>
 
 
 hello_container failures;
@@ -46,7 +48,7 @@ const char *dis_emsg[] = {"No error",
   "Protocol failure in commit",
   "End of File"
 };
-dynamic_string *hierarchy_holder;
+std::vector<std::string *> hierarchy_holder;
 extern int cray_enabled;
 
 
@@ -300,51 +302,6 @@ int add_to_login_holder(
   return(0);
   }
 
-int append_dynamic_string(
-
-  dynamic_string *ds,
-  const char     *str)
-
-  {
-  return(0);
-  }
-
-dynamic_string *get_dynamic_string(int initial_size, const char *str)
-  {
-  dynamic_string *ds = (dynamic_string *)calloc(1, sizeof(dynamic_string));
-
-  if (ds == NULL)
-    return(ds);
-
-  if (initial_size > 0)
-    ds->size = initial_size;
-  else
-    ds->size = DS_INITIAL_SIZE;
-
-  ds->str = (char *)calloc(1, ds->size);
-
-  if (ds->str == NULL)
-    {
-    free(ds);
-    return(NULL);
-    }
-
-  /* initialize empty str */
-  ds->used = 0;
-
-  /* add the string if it exists */
-  if (str != NULL)
-    {
-    if (append_dynamic_string(ds,str) != PBSE_NONE)
-      {
-      free_dynamic_string(ds);
-      return(NULL);
-      }
-    }
-
-  return(ds);
-  }
-
 
 int login_node_count() 
 
@@ -359,8 +316,6 @@ struct sockaddr_in *get_cached_addrinfo(
   {
   return(NULL);
   }
-
-void free_dynamic_string(dynamic_string *ds) {}
 
 job *get_job_from_jobinfo(
     

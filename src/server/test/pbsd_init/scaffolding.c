@@ -477,11 +477,6 @@ int get_svr_attr_l(int index, long *l)
   return(0);
   }
 
-int append_dynamic_string (dynamic_string *ds, const char *str)
-  {
-  return(0);
-  }
-
 int get_parent_and_child(char *start, char **parent, char **child, char **end)
   {
   return(0);
@@ -497,11 +492,6 @@ int create_partial_pbs_node(char *nodename, unsigned long addr, int perms)
   return(0);
   }
 
-dynamic_string *get_dynamic_string(int initial_size, const char *str)
-  {
-  return(NULL);
-  }
-
 struct pbsnode *find_nodebyname(const char *name)
   {
   return(NULL);
@@ -512,23 +502,9 @@ hello_container *initialize_hello_container(hello_container *hc)
   return(NULL);
   }
 
-void free_dynamic_string(dynamic_string *ds)
-  {
-  }
-
-int delete_last_word_from_dynamic_string(dynamic_string *ds)
-  {
-  return(0);
-  }
-
 void initialize_queue_recycler() {}
 
 int set_svr_attr(int attr_index, void *val) 
-  {
-  return(0);
-  }
-
-int copy_to_end_of_dynamic_string(dynamic_string *ds, const char *str)
   {
   return(0);
   }

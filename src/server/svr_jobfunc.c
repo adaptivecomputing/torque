@@ -123,7 +123,6 @@
 #include "resource.h"
 #include "server.h"
 #include "queue.h"
-#include "dynamic_string.h"
 #include "pbs_job.h"
 #include "work_task.h"
 #include "pbs_error.h"
@@ -144,12 +143,14 @@
 #include "svr_task.h"
 #include "job_route.h" /*remove_procct */
 #include "mutex_mgr.hpp"
+#include <string>
+#include <vector>
 
 #define MSG_LEN_LONG 160
 
 /* Private Functions */
 
-static void default_std(job *, int key, dynamic_string *ds);
+static void default_std(job *, int key, std::string& ds);
 static void eval_checkpoint(pbs_attribute *j, pbs_attribute *q);
 static int count_queued_jobs(pbs_queue *pque, char *user);
 
@@ -2627,7 +2628,7 @@ static void default_std(
 
   job            *pjob,
   int             key,  /* 'e' for stderr, 'o' for stdout */
-  dynamic_string *ds)   /* O */
+  std::string&    ds)   /* O */
 
   {
   char          *pd;
@@ -2643,14 +2644,14 @@ static void default_std(
     pd = pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str;
 
   /* start with the job name */
-  append_dynamic_string(ds, pd);
-  append_char_to_dynamic_string(ds, '.');
-  append_char_to_dynamic_string(ds, (char)key);
+  ds += pd;
+  ds += '.';
+  ds += (char)key;
 
   job_id_num = strtol(pjob->ji_qs.ji_jobid, NULL, 10);
   sprintf(job_num_buf, "%lu", job_id_num);
 
-  append_dynamic_string(ds, job_num_buf);
+  ds += job_num_buf;
 
   if ((pd = strchr(pjob->ji_qs.ji_jobid, '[')) != NULL)
     {
@@ -2658,11 +2659,11 @@ static void default_std(
 
     if (isdigit(*pd))
       {
-      append_char_to_dynamic_string(ds, '-');
+      ds += '-';
 
       job_id_num = strtol(pd, NULL, 10);
       sprintf(job_num_buf, "%lu", job_id_num);
-      append_dynamic_string(ds, job_num_buf);
+      ds += job_num_buf;
       }
     }
 
@@ -2679,10 +2680,10 @@ static void default_std(
  *  qsub_host:$PBS_O_WORKDIR/job_name.[e|o]job_sequence_number
  */
 
-char *prefix_std_file(
+const char *prefix_std_file(
 
   job            *pjob,
-  dynamic_string *ds,
+  std::string&    ds,
   int             key)
 
   {
@@ -2693,11 +2694,6 @@ char *prefix_std_file(
   if (pjob == NULL)
     {
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL input job pointer");
-    return(NULL);
-    }
-  if (ds == NULL)
-    {
-    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input dynamic_string pointer");
     return(NULL);
     }
 
@@ -2738,20 +2734,21 @@ char *prefix_std_file(
     if (wdir)
       len += strlen(wdir);
 
-    append_dynamic_string(ds, qsubhost);
-    append_char_to_dynamic_string(ds, ':');
+    ds += qsubhost;
+    ds += ':';
 
     if (wdir)
       {
-      append_dynamic_string(ds, wdir);
-      append_char_to_dynamic_string(ds, '/');
+      ds += wdir;
+      ds += '/';
       }
 
     /* now add the rest */
     default_std(pjob, key, ds);
     }
 
-  return(ds->str);
+  if(ds.length() == 0) return NULL;
+  return(ds.c_str());
   } /* END prefix_std_file() */
 
 
@@ -2763,12 +2760,12 @@ char *prefix_std_file(
  *  job_name.[e|o]job_sequence_number
  */
 
-char *add_std_filename(
+const char *add_std_filename(
 
   job            *pjob,
   char           *path,
   int             key,
-  dynamic_string *ds)
+  std::string&    ds)
 
   {
   if (pjob == NULL)
@@ -2781,19 +2778,15 @@ char *add_std_filename(
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL input path pointer");
     return(NULL);
     }
-  if (ds == NULL)
-    {
-    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input dynamic_string pointer");
-    return(NULL);
-    }
 
-  append_dynamic_string(ds, path);
-  append_char_to_dynamic_string(ds, '/');
+  ds += path;
+  ds += '/';
   
   /* now add the rest */
   default_std(pjob, key, ds);
 
-  return(ds->str);
+  if(ds.length() == 0) return NULL;
+  return(ds.c_str());
   } /* add_std_filename() */
 
 

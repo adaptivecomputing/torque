@@ -240,6 +240,8 @@
 #include "alps_functions.h"
 #include "../lib/Libnet/lib_net.h" /* netaddr */
 #include "mom_config.h"
+#include <string>
+#include <vector>
 
 #define MAX_RETRY_TIME_IN_SECS           (5 * 60)
 #define STARTING_RETRY_INTERVAL_IN_SECS   2
@@ -290,7 +292,7 @@ extern mom_hierarchy_t    *mh;
 extern char               *stat_string_aggregate;
 extern unsigned int        ssa_index;
 extern resizable_array    *received_statuses;
-dynamic_string            *mom_status = NULL;
+std::vector<std::string *> mom_status;
 
 extern struct config *rm_search(struct config *where, const char *what);
 
@@ -307,8 +309,8 @@ extern int  use_nvidia_gpu;
 void check_state(int);
 void state_to_server(int, int);
 void node_comm_error(node_comm_t *, const char *);
-int  add_mic_status(dynamic_string *status);
-int  add_gpu_status(dynamic_string *status);
+int  add_mic_status(std::vector<std::string *>& status);
+int  add_gpu_status(std::vector<std::string *>& status);
 
 /* clear servers */
 void clear_servers()
@@ -719,8 +721,7 @@ int is_compose(
 void gen_size(
 
   const char  *name,
-  char **BPtr,
-  int   *BSpace)
+  std::vector<std::string *>& status)
 
   {
   struct config  *ap;
@@ -740,12 +741,11 @@ void gen_size(
 
       if (value && *value)
         {
-        MUSNPrintF(BPtr, BSpace, "%s=%s",
-          name,
-          value);
-
-        (*BPtr)++; /* Need to start the next string after the null */
-        (*BSpace)--;
+        std::string *s;
+        s = new std::string(name);
+        *s += "=";
+        *s += value;
+        status.push_back(s);
         }
       }
     }
@@ -760,8 +760,7 @@ void gen_size(
 void gen_arch(
 
   const char  *name,
-  char **BPtr,
-  int   *BSpace)
+  std::vector<std::string *>& status)
 
   {
   struct config  *ap;
@@ -770,12 +769,11 @@ void gen_arch(
 
   if (ap != NULL)
     {
-    MUSNPrintF(BPtr,BSpace,"%s=%s",
-      name,
-      ap->c_u.c_value);
-
-    (*BPtr)++; /* Need to start the next string after the null */
-    (*BSpace)--;
+    std::string *s;
+    s = new std::string(name);
+    *s += "=";
+    *s += ap->c_u.c_value;
+    status.push_back(s);
     }
 
   return;
@@ -788,8 +786,7 @@ void gen_arch(
 void gen_opsys(
 
   const char  *name,
-  char **BPtr,
-  int   *BSpace)
+  std::vector<std::string *>& status)
 
   {
   struct config  *ap;
@@ -798,12 +795,11 @@ void gen_opsys(
 
   if (ap != NULL)
     {
-    MUSNPrintF(BPtr,BSpace,"%s=%s",
-      name,
-      ap->c_u.c_value);
-
-    (*BPtr)++; /* Need to start the next string after the null */
-    (*BSpace)--;
+    std::string *s;
+    s = new std::string(name);
+    *s += "=";
+    *s += ap->c_u.c_value;
+    status.push_back(s);
     }
 
   return;
@@ -816,32 +812,24 @@ void gen_opsys(
 void gen_jdata(
 
   const char  *name,
-  char **BPtr,
-  int   *BSpace)
+  std::vector<std::string *>& status)
 
   {
   if (TORQUE_JData[0] != '\0')
     {
-    MUSNPrintF(BPtr,BSpace,"%s=%s",
-      name,
-      TORQUE_JData);
-
-    (*BPtr)++; /* Need to start the next string after the null */
-    (*BSpace)--;
+    std::string *s;
+    s = new std::string(name);
+    *s += "=";
+    *s += TORQUE_JData;
+    status.push_back(s);
     }
   return;
   }
 
-
-
-
-
 void gen_gres(
 
   const char  *name,
-  char **BPtr,
-  int   *BSpace)
-
+  std::vector<std::string *>& status)
   {
 
   char  *value;
@@ -850,27 +838,20 @@ void gen_gres(
 
   if (value != NULL)
     {
-    MUSNPrintF(BPtr, BSpace, "%s=%s",
-                name,
-                value);
-    (*BPtr)++; /* Need to start the next string after the null */
-    (*BSpace)--;
+    std::string *s;
+    s = new std::string(name);
+    *s += "=";
+    *s += value;
+    status.push_back(s);
     }
 
   return;
   }    /* END gen_gres() */
 
-
-
-
-
-
 void gen_gen(
 
   const char  *name,
-  char **BPtr,
-  int   *BSpace)
-
+  std::vector<std::string *>& status)
   {
   struct config  *ap;
   char  *value;
@@ -884,12 +865,11 @@ void gen_gen(
 
     if (ptr && *ptr)
       {
-      MUSNPrintF(BPtr,BSpace,"%s=%s",
-        name,
-        ptr);
-
-      (*BPtr)++; /* Need to start the next string after the null */
-      (*BSpace)--;
+      std::string *s;
+      s = new std::string(name);
+      *s += "=";
+      *s += ptr;
+      status.push_back(s);
       }
     }
   else
@@ -899,13 +879,11 @@ void gen_gen(
     if (value == NULL)
       {
       /* value not set (attribute required) */
-
-      MUSNPrintF(BPtr,BSpace,"%s=? %d",
-        name,
-        rm_errno);
-
-      (*BPtr)++; /* Need to start the next string after the null */
-      (*BSpace)--;
+      std::string *s;
+      s = new std::string(name);
+      *s += "=";
+      *s += rm_errno;
+      status.push_back(s);
       }
     else if (value[0] == '\0')
       {
@@ -913,18 +891,18 @@ void gen_gen(
       }
     else
       {
-      MUSNPrintF(BPtr, BSpace, "%s=%s",
-                 name,
-                 value);
-      (*BPtr)++; /* Need to start the next string after the null */
-      (*BSpace)--;
+      std::string *s;
+      s = new std::string(name);
+      *s += "=";
+      *s += value;
+      status.push_back(s);
       }
     } /* else if (ap) */
 
   return;
   }   /* END gen_gen() */
 
-typedef void (*gen_func_ptr)(const char *, char **, int *);
+typedef void (*gen_func_ptr)(const char *, std::vector<std::string *>& );
 
 typedef struct stat_record
   {
@@ -964,22 +942,15 @@ stat_record stats[] = {
  *
  */
 
-int generate_server_status(
-
-  char *buffer,
-  int   buffer_size)
-
+void generate_server_status(std::vector<std::string *>& status)
   {
   int   i;
-  char *BPtr = buffer;
-  int   BSpace = buffer_size;
 
   /* identify which vnode this is */
 #ifdef NUMA_SUPPORT
-  MUSNPrintF(&BPtr,&BSpace,"%s%d",NUMA_KEYWORD,numa_index);
-  /* advance the buffer values past the NULL */
-  BPtr++;
-  BSpace--;
+  std::string *s = new std::string(NUMA_KEYWORD);
+  *s += numa_index;
+  status.push_back(s);
 #endif /* NUMA_SUPPORT */
 
   for (i = 0;stats[i].name != NULL;i++)
@@ -988,14 +959,13 @@ int generate_server_status(
 
     if (stats[i].func)
       {
-      (stats[i].func)(stats[i].name, &BPtr, &BSpace);
+      (stats[i].func)(stats[i].name, status);
       }
 
     alarm(0);
     }  /* END for (i) */
 
   TORQUE_JData[0] = '\0';
-  return(buffer_size - BSpace);
   }  /* END generate_server_status */
 
 
@@ -1065,30 +1035,29 @@ int write_my_server_status(
  
   struct tcp_chan *chan,
   const char *id,
-  char       *status_strings,
+  std::vector<std::string *>& strings,
   void       *dest,
   int         mode)
  
   {
   int          ret = DIS_SUCCESS;
-  char        *cp;
 
   mom_server  *pms;
   node_comm_t *nc;
  
   /* put each string into the message. */
-  for (cp = status_strings;cp && *cp;cp += strlen(cp) + 1)
+  for(std::vector<std::string *>::iterator i = strings.begin();i != strings.end();i++)
     {
     if (LOGLEVEL >= 7)
       {
       sprintf(log_buffer,"%s: sending to server \"%s\"",
         id,
-        cp);
+        (*i)->c_str());
       
       log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
       }
     
-    if ((ret = diswst(chan,cp)) != DIS_SUCCESS)
+    if ((ret = diswst(chan,(*i)->c_str())) != DIS_SUCCESS)
       {
       switch (mode)
         {
@@ -1131,7 +1100,7 @@ int write_cached_statuses(
   {
   int            ret = DIS_SUCCESS;
   int            iter = -1;
-  char          *cp;
+  const char   *cp;
   received_node *rn;
   mom_server    *pms;
   node_comm_t   *nc;
@@ -1139,11 +1108,9 @@ int write_cached_statuses(
   /* traverse the received_nodes array and send/clear the updates */
   while ((rn = (received_node *)next_thing(received_statuses, &iter)) != NULL)
     {
-    cp = rn->statuses->str;
-    
-    while ((cp != NULL) &&
-           (cp - rn->statuses->str < (int)rn->statuses->used))
+    for(std::vector<std::string *>::iterator i = rn->statuses.begin();i != rn->statuses.end();i++)
       {
+      cp = (*i)->c_str();
       if (LOGLEVEL >= 7)
         {
         sprintf(log_buffer,"%s: sending to server \"%s\"",
@@ -1179,10 +1146,9 @@ int write_cached_statuses(
         break;
         }
       
-      cp += strlen(cp) + 1;
       } /* END write each string */
     
-    clear_dynamic_string(rn->statuses);
+    rn->statuses.clear();
     } /* END iterate over received statuses */
   
   if (ret == DIS_SUCCESS)
@@ -1209,7 +1175,7 @@ int write_cached_statuses(
 int mom_server_update_stat(
  
   mom_server *pms,
-  char       *status_strings)
+  std::vector<std::string *>& strings)
  
   {
   int              stream;
@@ -1235,7 +1201,7 @@ int mom_server_update_stat(
     else if ((ret = write_update_header(chan, __func__, pms->pbs_servername)) != DIS_SUCCESS)
       {
       }
-    else if ((ret = write_my_server_status(chan, __func__, status_strings, pms, UPDATE_TO_SERVER)) != DIS_SUCCESS)
+    else if ((ret = write_my_server_status(chan, __func__, strings, pms, UPDATE_TO_SERVER)) != DIS_SUCCESS)
       {
       }
     else if ((ret = write_cached_statuses(chan, __func__, pms, UPDATE_TO_SERVER)) != DIS_SUCCESS)
@@ -1343,7 +1309,7 @@ void node_comm_error(
 
 int write_status_strings(
  
-  char        *stat_str,
+  std::vector<std::string *>& strings,
   node_comm_t *nc)
  
   {
@@ -1365,7 +1331,7 @@ int write_status_strings(
   else if ((rc = write_update_header(chan,__func__,nc->name)) != DIS_SUCCESS)
     {
     }
-  else if ((rc = write_my_server_status(chan,__func__,stat_str,nc,UPDATE_TO_SERVER)) != DIS_SUCCESS)
+  else if ((rc = write_my_server_status(chan,__func__,strings,nc,UPDATE_TO_SERVER)) != DIS_SUCCESS)
     {
     }
   else if ((rc = write_cached_statuses(chan,__func__,nc,UPDATE_TO_SERVER)) != DIS_SUCCESS)
@@ -1511,7 +1477,7 @@ void mom_server_all_update_stat(void)
 
     while ((rn = (received_node *)next_thing(received_statuses, &iter)) != NULL)
       {
-      clear_dynamic_string(rn->statuses);
+      rn->statuses.clear();
       }
 
     return;
@@ -1523,11 +1489,11 @@ void mom_server_all_update_stat(void)
     {
     rc = NO_SERVER_CONFIGURED;
 
-    clear_dynamic_string(mom_status);
+    mom_status.clear();
 
     if (is_reporter_mom == FALSE)
       {
-      mom_status->used = generate_server_status(mom_status->str, mom_status->size - 1);
+      generate_server_status(mom_status);
 #ifdef NVIDIA_GPUS
       add_gpu_status(mom_status);
 #endif /* NVIDIA_GPU */
@@ -1545,7 +1511,7 @@ void mom_server_all_update_stat(void)
       /* write to the socket */
       while (nc != NULL)
         {
-        if (write_status_strings(mom_status->str, nc) < 0)
+        if (write_status_strings(mom_status, nc) < 0)
           {
           nc->bad = TRUE;
           nc->mtime = time_now;
@@ -1566,7 +1532,7 @@ void mom_server_all_update_stat(void)
       /* now, once we contact one server we stop attempting to report in */
       for (sindex = 0; sindex < PBS_MAXSERVER && rc != PBSE_NONE; sindex++)
         {
-        int tmp_rc = mom_server_update_stat(&mom_servers[sindex], mom_status->str);
+        int tmp_rc = mom_server_update_stat(&mom_servers[sindex], mom_status);
 
         if (tmp_rc != NO_SERVER_CONFIGURED)
           rc = tmp_rc;
@@ -2115,7 +2081,7 @@ int read_cluster_addresses(
   int             something_added;
   char           *str;
   char           *okclients_list;
-  dynamic_string *hierarchy_file;
+  std::string      hierarchy_file = "/n";
   long            list_size;
   long            list_len = 0;
 
@@ -2123,8 +2089,6 @@ int read_cluster_addresses(
     free_mom_hierarchy(mh);
 
   mh = initialize_mom_hierarchy();
-
-  hierarchy_file = get_dynamic_string(-1, "\n");
 
   while (((str = disrst(chan, &rc)) != NULL) &&
          (rc == DIS_SUCCESS))
@@ -2136,11 +2100,11 @@ int read_cluster_addresses(
       something_added = FALSE;
       level = -1;
 
-      append_dynamic_string(hierarchy_file, "<path>\n");
+      hierarchy_file += "<path>\n";
       }
     else if (!strcmp(str, "<sl>"))
       {
-      append_dynamic_string(hierarchy_file, "  <level>");
+      hierarchy_file += "  <level>";
       level++;
       }
     else if (!strcmp(str, "</sp>"))
@@ -2150,21 +2114,21 @@ int read_cluster_addresses(
         /* we were not in the last path, so delete it */
         remove_last_thing(mh->paths);
         path_index--;
-        delete_last_word_from_dynamic_string(hierarchy_file);
+        hierarchy_file.clear();
         }
       else if (something_added == FALSE)
         {
         /* if we're on the first level of the path, we didn't record anything 
          * and we need to decrement the path_index */
         path_index--;
-        delete_last_word_from_dynamic_string(hierarchy_file);
+        hierarchy_file.clear();
         }
       else
-        append_dynamic_string(hierarchy_file, "</path>\n");
+        hierarchy_file += "</path>\n";
       }
     else if (!strcmp(str, "</sl>"))
       {
-      append_dynamic_string(hierarchy_file, "  </level>\n");
+      hierarchy_file += "  </level>\n";
       /* NO-OP */
       }
     else if (!strcmp(str, IS_EOL_MESSAGE))
@@ -2177,7 +2141,7 @@ int read_cluster_addresses(
     else
       {
       /* receiving a level */
-      append_dynamic_string(hierarchy_file, str);
+      hierarchy_file += str;
       process_level_string(str, path_index, level, &path_complete, &something_added);
       }
 
@@ -2215,7 +2179,7 @@ int read_cluster_addresses(
       AVL_list(okclients, &okclients_list, &list_len, &list_size);
       snprintf(log_buffer, sizeof(log_buffer),
         "Successfully received the mom hierarchy file. My okclients list is '%s', and the hierarchy file is '%s'",
-        okclients_list, hierarchy_file->str);
+        okclients_list, hierarchy_file.c_str());
       log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
 
       free(okclients_list);
@@ -2224,8 +2188,6 @@ int read_cluster_addresses(
     /* tell the mom to go ahead and send an update to pbs_server */
     first_update_time = 0;
     }
-
-  free_dynamic_string(hierarchy_file);
 
   return(PBSE_NONE);
   } /* END read_cluster_addresses() */

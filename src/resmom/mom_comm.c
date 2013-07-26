@@ -132,6 +132,8 @@
 #include "pbs_cpuset.h"
 #endif
 #include "mom_config.h"
+#include <string>
+#include <vector>
 
 
 #define IM_FINISHED                 1
@@ -8633,15 +8635,7 @@ received_node *get_received_node_entry(
       }
     
     /* initialize the received node struct */
-    rn->statuses = get_dynamic_string(MAXLINE,NULL);
     snprintf(rn->hostname, sizeof(rn->hostname), "%s", hostname);
-    
-    if (rn->statuses == NULL)
-      {
-      log_err(ENOMEM, __func__, "No memory to allocate for status information\n");
-      free(rn);
-      return(NULL);
-      }
     
     rn->hellos_sent = 0;
 
@@ -8671,7 +8665,7 @@ received_node *get_received_node_entry(
     rn = (received_node *)received_statuses->slots[index].item;
     
     /* make sure we aren't hold 2 statuses for the same node */
-    clear_dynamic_string(rn->statuses);
+    rn->statuses.clear();
 
     if (LOGLEVEL >= 10)
       {
@@ -8743,7 +8737,7 @@ int read_status_strings(
     /* place each string into the buffer */
     if (rn != NULL)
       {
-      copy_to_end_of_dynamic_string(rn->statuses, str);
+      rn->statuses.push_back(new std::string(str));
       }
 
     free(str);

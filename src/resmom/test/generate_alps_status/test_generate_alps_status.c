@@ -1,8 +1,10 @@
 #include <check.h>
 #include "alps_constants.h"
-#include "dynamic_string.h"
+#include <string>
+#include <vector>
 
-int parse_alps_output(dynamic_string *output, dynamic_string *status);
+int parse_alps_output(std::string& alps_output,std::vector<std::string *>& status);
+
 
 
 char *sample_start1 = (char *)"<BasilResponse protocol='1.0'> <ResponseData status='SUCCESS' method='QUERY'> <Inventory> <NodeArray> <Node node_id='6142' name='c3-0c0s0n0' architecture='XT' role='BATCH' state='UP'> <ProcessorArray> <Processor ordinal='0' architecture='x86_64' clock_mhz='2100'> ";
@@ -31,40 +33,40 @@ char *sample_start23 = (char *)"architecture='x86_64' clock_mhz='2100'/> <Proces
 char *sample_start24 = (char *)"<Label name='MOAB:FEATURE=regmem' type='SOFT' disposition='ATTRACT'/> </LabelArray> </Node> </NodeArray> <ReservationArray> <Reservation reservation_id='1772' user_name='pgarias' account_name='DEFAULT'/> <Reservation reservation_id='2549' user_name='daryal' account_name='DEFAULT'/> <Reservation reservation_id='2869' user_name='zachary' account_name='DEFAULT'/> </ReservationArray> </Inventory> </ResponseData> </BasilResponse> ";
 
 
-int search_dynamic_string_status(dynamic_string *status, char *str);
-int generate_alps_status(dynamic_string *status, const char *path, const char *protocol);
+int search_dynamic_string_status(std::vector<std::string *>& status, char *str);
+int generate_alps_status(std::vector<std::string *>& status, const char *path, const char *protocol);
 
 
 START_TEST(parse_alps_output_test)
   {
-  dynamic_string *output = get_dynamic_string(-1, NULL);
-  dynamic_string *status = get_dynamic_string(-1, NULL);
+  std::string output = "";
+  std::vector<std::string *> status;
   int             rc;
 
-  append_dynamic_string(output, sample_start1);
-  append_dynamic_string(output, sample_start2);
-  append_dynamic_string(output, sample_start3);
-  append_dynamic_string(output, sample_start4);
-  append_dynamic_string(output, sample_start5);
-  append_dynamic_string(output, sample_start6);
-  append_dynamic_string(output, sample_start7);
-  append_dynamic_string(output, sample_start8);
-  append_dynamic_string(output, sample_start9);
-  append_dynamic_string(output, sample_start10);
-  append_dynamic_string(output, sample_start11);
-  append_dynamic_string(output, sample_start12);
-  append_dynamic_string(output, sample_start13);
-  append_dynamic_string(output, sample_start14);
-  append_dynamic_string(output, sample_start15);
-  append_dynamic_string(output, sample_start16);
-  append_dynamic_string(output, sample_start17);
-  append_dynamic_string(output, sample_start18);
-  append_dynamic_string(output, sample_start19);
-  append_dynamic_string(output, sample_start20);
-  append_dynamic_string(output, sample_start21);
-  append_dynamic_string(output, sample_start22);
-  append_dynamic_string(output, sample_start23);
-  append_dynamic_string(output, sample_start24);
+  output += sample_start1;
+  output += sample_start2;
+  output += sample_start3;
+  output += sample_start4;
+  output += sample_start5;
+  output += sample_start6;
+  output += sample_start7;
+  output += sample_start8;
+  output += sample_start9;
+  output += sample_start10;
+  output += sample_start11;
+  output += sample_start12;
+  output += sample_start13;
+  output += sample_start14;
+  output += sample_start15;
+  output += sample_start16;
+  output += sample_start17;
+  output += sample_start18;
+  output += sample_start19;
+  output += sample_start20;
+  output += sample_start21;
+  output += sample_start22;
+  output += sample_start23;
+  output += sample_start24;
   
   rc = parse_alps_output(output, status);
   fail_unless(rc == 0, "Couldn't parse alps output");
@@ -79,7 +81,7 @@ END_TEST
 
 START_TEST(full_generate_test)
   {
-  dynamic_string *status = get_dynamic_string(-1, NULL);
+  std::vector<std::string *> status;
   int             rc;
   char           *path = (char *)"../../../test/test_scripts/get_inventory.sh";
   char           *protocol = (char *)"1.0";
@@ -95,7 +97,7 @@ END_TEST
 
 START_TEST(label_generate_test)
   {
-  dynamic_string *status = get_dynamic_string(-1, NULL);
+  std::vector<std::string *> status;
   int             rc;
   char           *path = (char *)"../../../test/test_scripts/label_inventory.sh";
   char           *protocol = (char *)"1.0";

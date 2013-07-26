@@ -111,7 +111,7 @@
 #include "pbs_error.h"
 #include "resource.h"
 #include "utils.h"
-#include "dynamic_string.h"
+#include <string>
 
 #ifndef MAXLINE
 #define MAXLINE 1024
@@ -129,6 +129,36 @@ extern char     *msg_svdbnosv;
 
 long             recovered_tcp_timeout = 5000;
 extern int       disable_timeout_check;
+
+/* append a string escaping the XML special characters. */
+
+void appendEscapedXML(const char *xml,std::string& str)
+  {
+  for(;*xml;xml++)
+    {
+    switch(*xml)
+      {
+      case '<':
+        str += LT_ESCAPED;
+        break;
+      case '>':
+        str += GT_ESCAPED;
+        break;
+      case '&':
+        str += AMP_ESCAPED;
+        break;
+      case '"':
+        str += QUOT_ESCAPED;
+        break;
+      case '\'':
+        str += APOS_ESCAPED;
+        break;
+      default:
+        str += *xml;
+        break;
+      }
+    }
+  }
 
 /**
  * Recover server state from server database.
@@ -318,7 +348,7 @@ int size_to_str(
  */
 int attr_to_str(
 
-  dynamic_string   *ds,     /* O */
+  std::string&      ds,     /* O */
   attribute_def    *at_def, /* I */
   pbs_attribute     attr,   /* I */
   int               XML)    /* I */
@@ -336,14 +366,14 @@ int attr_to_str(
     case ATR_TYPE_LONG:
 
       snprintf(local_buf, sizeof(local_buf), "%ld", attr.at_val.at_long);
-      rc = append_dynamic_string(ds, local_buf);
+      ds += local_buf;
 
       break;
 
     case ATR_TYPE_CHAR:
 
       sprintf(local_buf, "%c", attr.at_val.at_char);
-      rc = append_dynamic_string(ds, local_buf);
+      ds += local_buf;
 
       break;
 
@@ -356,9 +386,9 @@ int attr_to_str(
         return(NO_ATTR_DATA);
 
       if (XML)
-        rc = append_dynamic_string_xml(ds, attr.at_val.at_str);
+        appendEscapedXML(attr.at_val.at_str,ds);
       else
-        rc = append_dynamic_string(ds, attr.at_val.at_str);
+        ds += attr.at_val.at_str;
 
       break;
 
@@ -376,12 +406,12 @@ int attr_to_str(
       for (j = 0; j < arst->as_usedptr; j++)
         {
         if (j > 0)
-          append_dynamic_string(ds, ",");
+          ds += ",";
 
         if (XML)
-          rc = append_dynamic_string_xml(ds, arst->as_string[j]);
+          appendEscapedXML(arst->as_string[j],ds);
         else
-          rc = append_dynamic_string(ds, arst->as_string[j]);
+          ds += arst->as_string[j];
         }
       }
 
@@ -389,7 +419,8 @@ int attr_to_str(
 
     case ATR_TYPE_SIZE:
 
-      rc = size_to_dynamic_string(ds, &(attr.at_val.at_size));
+      sprintf(local_buf,"%lu",attr.at_val.at_size.atsv_num);
+      ds += local_buf;
 
       break;
 
@@ -410,16 +441,16 @@ int attr_to_str(
           {
           case ATR_TYPE_LONG:
 
-            append_dynamic_string(ds, "\t\t<");
-            append_dynamic_string(ds, current->rs_defin->rs_name);
-            append_dynamic_string(ds, ">");
+            ds += "\t\t<";
+            ds += current->rs_defin->rs_name;
+            ds += ">";
 
             snprintf(local_buf, sizeof(local_buf), "%ld", current->rs_value.at_val.at_long);
-            append_dynamic_string(ds, local_buf);
+            ds += local_buf;
 
-            append_dynamic_string(ds, "</");
-            append_dynamic_string(ds, current->rs_defin->rs_name);
-            rc = append_dynamic_string(ds, ">");
+            ds += "</";
+            ds += current->rs_defin->rs_name;
+            ds += ">";
 
             break;
 
@@ -436,33 +467,34 @@ int attr_to_str(
             if (strlen(current->rs_value.at_val.at_str) == 0)
               break;
 
-            append_dynamic_string(ds, "\t\t<");
-            append_dynamic_string(ds, current->rs_defin->rs_name);
-            append_dynamic_string(ds, ">");
+            ds += "\t\t<";
+            ds += current->rs_defin->rs_name;
+            ds += ">";
 
             
             if (XML)
-              append_dynamic_string_xml(ds, current->rs_value.at_val.at_str);
+              appendEscapedXML(current->rs_value.at_val.at_str,ds);
             else
-              append_dynamic_string(ds, current->rs_value.at_val.at_str);
+              ds += current->rs_value.at_val.at_str;
 
-            append_dynamic_string(ds, "</");
-            append_dynamic_string(ds, current->rs_defin->rs_name);
-            rc = append_dynamic_string(ds, ">");
+            ds += "</";
+            ds += current->rs_defin->rs_name;
+            ds += ">";
 
             break;
 
           case ATR_TYPE_SIZE:
 
-            append_dynamic_string(ds, "\t\t<");
-            append_dynamic_string(ds, current->rs_defin->rs_name);
-            append_dynamic_string(ds, ">");
+            ds += "\t\t<";
+            ds += current->rs_defin->rs_name;
+            ds += ">";
 
-            size_to_dynamic_string(ds, &(current->rs_value.at_val.at_size));
+            sprintf(local_buf,"%lu",current->rs_value.at_val.at_size.atsv_num);
+            ds += local_buf;
 
-            append_dynamic_string(ds, "</");
-            append_dynamic_string(ds, current->rs_defin->rs_name);
-            rc = append_dynamic_string(ds, ">");
+            ds += "</";
+            ds += current->rs_defin->rs_name;
+            ds += ">";
 
             break;
           }
@@ -471,7 +503,7 @@ int attr_to_str(
           return(rc);
 
         current = (resource *)GET_NEXT(current->rs_link);
-        append_dynamic_string(ds, "\n");
+        ds += "\n";
         }
       }
 

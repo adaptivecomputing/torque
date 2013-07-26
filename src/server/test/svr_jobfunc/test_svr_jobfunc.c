@@ -7,6 +7,7 @@
 #include "test_svr_jobfunc.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <string>
 #include "pbs_error.h"
 
 int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging);
@@ -294,19 +295,15 @@ END_TEST
 START_TEST(prefix_std_file_test)
   {
   struct job test_job;
-  struct dynamic_string test_string;
-  char *result = NULL;
+  std::string test_string = "";
+  const char *result = NULL;
 
   memset(&test_job, 0, sizeof(test_job));
-  memset(&test_string, 0, sizeof(test_string));
 
-  result = prefix_std_file(NULL, &test_string, 0);
+  result = prefix_std_file(NULL, test_string, 0);
   fail_unless(result == NULL, "NULL input job pointer fail");
 
-  result = prefix_std_file(&test_job, NULL, 0);
-  fail_unless(result == NULL, "NULL input dynamic_string pointer fail");
-
-  result = prefix_std_file(&test_job, &test_string, 0);
+  result = prefix_std_file(&test_job, test_string, 0);
   fail_unless(result == NULL, "prefix_std_file fail");
 
   }
@@ -316,25 +313,21 @@ START_TEST(add_std_filename_test)
   {
   struct job test_job;
   char* path = (char *)"path";
-  struct dynamic_string test_string;
-  char* result = NULL;
+  std::string test_string = "";
+  const char* result = NULL;
   char* at_str = (char *)"string";
 
   memset(&test_job, 0, sizeof(test_job));
-  memset(&test_string, 0, sizeof(test_string));
   test_job.ji_wattr[JOB_ATR_jobname].at_val.at_str = at_str;
 
-  result = add_std_filename(NULL, path, 0, &test_string);
+  result = add_std_filename(NULL, path, 0, test_string);
   fail_unless(result == NULL, "NULL input job pointer fail");
 
-  result = add_std_filename(&test_job, NULL, 0, &test_string);
+  result = add_std_filename(&test_job, NULL, 0, test_string);
   fail_unless(result == NULL, "NULL input path pointer fail");
 
-  result = add_std_filename(&test_job, path, 0, NULL);
-  fail_unless(result == NULL, "NULL input dynamic_string pointer fail");
-
-  result = add_std_filename(&test_job, path, 0, &test_string);
-  fail_unless(result == NULL, "add_std_filename fail");
+  result = add_std_filename(&test_job, path, 0, test_string);
+  fail_unless(result != NULL, "add_std_filename fail");
 
   }
 END_TEST

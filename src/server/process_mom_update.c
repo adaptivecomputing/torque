@@ -84,7 +84,6 @@
 #include "pbs_nodes.h"
 #include "svrfunc.h"
 #include "log.h"
-#include "dynamic_string.h"
 #include "threadpool.h"
 #include "u_tree.h"
 #include "server.h"
@@ -93,6 +92,8 @@
 #include "ji_mutex.h"
 #include "../lib/Libutils/u_lock_ctl.h"
 #include "mutex_mgr.hpp"
+#include <string>
+#include <vector>
 
 
 extern attribute_def    node_attr_def[];   /* node attributes defs */
@@ -100,48 +101,45 @@ extern int              allow_any_mom;
 extern char             server_name[];
 
 
-int is_gpustat_get(struct pbsnode *np, char **str_ptr);
+int is_gpustat_get(struct pbsnode *np,
+    std::vector<std::string *>::iterator& i,
+    std::vector<std::string *>::iterator end);
 void clear_nvidia_gpus(struct pbsnode *np);
-int  gpu_entry_by_id(struct pbsnode *pnode, char *gpuid, int get_empty);
+int  gpu_entry_by_id(struct pbsnode *pnode, const char *gpuid, int get_empty);
 int gpu_has_job(struct pbsnode *pnode, int gpuid);
 
 
-char *move_past_mic_status(
-
-  char *str)
+void move_past_mic_status(
+    std::vector<std::string *>::iterator& i,
+    std::vector<std::string *>::iterator end)
 
   {
-  while ((str != NULL) &&
-         (str[0] != '\0'))
+  while (i != end)
     {
-    if (!strcmp(str, END_MIC_STATUS))
+    if (!strcmp((*i)->c_str(), END_MIC_STATUS))
       break;
 
-    str += strlen(str) + 1;
+    i++;
     }
-
-  return(str);
   } /* END move_past_mic_status() */
 
 
 
 int save_single_mic_status(
 
-  dynamic_string *single_mic_status,
+  std::string&    single_mic_status,
   pbs_attribute  *temp)
 
   {
   int rc = PBSE_NONE;
 
-  if (single_mic_status->used > 0)
+  if (single_mic_status.length() > 0)
     {
-    if ((rc = decode_arst(temp, NULL, NULL, single_mic_status->str, 0)) != PBSE_NONE)
+    if ((rc = decode_arst(temp, NULL, NULL, single_mic_status.c_str(), 0)) != PBSE_NONE)
       {
       log_err(ENOMEM, __func__, "");
       free_arst(temp);
       }
-    
-    clear_dynamic_string(single_mic_status);
     }
 
   return(rc);
@@ -153,43 +151,43 @@ int save_single_mic_status(
 int process_mic_status(
     
   struct pbsnode  *pnode, 
-  char           **str_ptr)
+  std::vector<std::string *>::iterator& i,
+  std::vector<std::string *>::iterator end)
 
   {
-  char           *str = *str_ptr;
   int             rc = PBSE_NONE;
   pbs_attribute   temp;
   int             mic_count = 0;
-  dynamic_string *single_mic_status = get_dynamic_string(-1, NULL);
+  std::string     single_mic_status = "";
   char            mic_id_buf[MAXLINE];
   
   memset(&temp, 0, sizeof(temp));
   if ((rc = decode_arst(&temp, NULL, NULL, NULL, 0)) != PBSE_NONE)
     {
     log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, "cannot initialize attribute");
-    *str_ptr = move_past_mic_status(str);
+    move_past_mic_status(i,end);
     return(rc);
     }
 
-  for (str = str + strlen(str) + 1; str != NULL && str[0] != '\0'; str += strlen(str) + 1)
+  for (i++; i != end; i++)
     {
-    if (!strcmp(str, END_MIC_STATUS))
+    if (!strcmp((*i)->c_str(), END_MIC_STATUS))
       break;
 
-    if (!strncmp(str, "mic_id=", strlen("mic_id=")))
+    if (!strncmp((*i)->c_str(), "mic_id=", strlen("mic_id=")))
       {
       if ((rc = save_single_mic_status(single_mic_status, &temp)) != PBSE_NONE)
         break;
 
-      snprintf(mic_id_buf, sizeof(mic_id_buf), "mic[%d]=%s", mic_count, str);
-      append_dynamic_string(single_mic_status, mic_id_buf);
+      snprintf(mic_id_buf, sizeof(mic_id_buf), "mic[%d]=%s", mic_count, (*i)->c_str());
+      single_mic_status += mic_id_buf;
 
       mic_count++;
       }
     else
       {
-      append_char_to_dynamic_string(single_mic_status, ';');
-      append_dynamic_string(single_mic_status, str);
+      single_mic_status += ';';
+      single_mic_status += (*i)->c_str();
       }
     }
 
@@ -215,7 +213,7 @@ int process_mic_status(
       }
     }
 
-  *str_ptr = move_past_mic_status(str);
+  move_past_mic_status(i,end);
   
   node_micstatus_list(&temp, pnode, ATR_ACTION_ALTER);
 
@@ -232,11 +230,11 @@ int process_mic_status(
 
 struct pbsnode *get_numa_from_str(
     
-  char           *str, /* I */
+  const char     *str, /* I */
   struct pbsnode *np)  /* I */
 
   {
-  char           *numa_id;
+  const char     *numa_id;
   struct pbsnode *numa;
   unsigned long   numa_index;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
@@ -290,13 +288,13 @@ struct pbsnode *get_numa_from_str(
 
 struct pbsnode *get_node_from_str(
 
-  char           *str,     /* I */
+  const char    *str,     /* I */
   char           *orig_id, /* I */
   struct pbsnode *np)      /* M */
 
   {
   /* this is a node reporting on another node as well */
-  char           *node_id = str + strlen("node=");
+  const char     *node_id = str + strlen("node=");
   struct pbsnode *next = NULL;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
  
@@ -352,7 +350,7 @@ struct pbsnode *get_node_from_str(
 int handle_auto_np(
 
   struct pbsnode *np,  /* M */
-  char           *str) /* I */
+  const char     *str) /* I */
 
   {
   pbs_attribute nattr;
@@ -388,7 +386,7 @@ int handle_auto_np(
 void update_job_data(
 
   struct pbsnode *np,            /* I */
-  char           *jobstring_in)  /* I (changed attributes sent by mom) */
+  const char     *jobstring_in)  /* I (changed attributes sent by mom) */
 
   {
   char  *jobdata;
@@ -481,14 +479,14 @@ void update_job_data(
 int process_uname_str(
 
   struct pbsnode *np,
-  char           *str)
+  const char     *str)
 
   {
   /* for any mom mode if an address did not succeed at getnameinfo it was
    * given the hex value of its ip address */
   if (!strncmp(np->nd_name, "0x", 2))
     {
-    char *cp;
+    const char *cp;
     char  node_name[PBS_MAXHOSTNAME + 1];
     int   count;
     
@@ -506,7 +504,7 @@ int process_uname_str(
     node_name[count-1] = 0;
     cp = strdup(node_name);
     free(np->nd_name);
-    np->nd_name = cp;
+    np->nd_name = (char *)cp;
     np->nd_first = init_prop(np->nd_name);
     np->nd_last = np->nd_first;
     np->nd_f_st = init_prop(np->nd_name);
@@ -522,7 +520,7 @@ int process_uname_str(
 int process_state_str(
 
   struct pbsnode *np,
-  char           *str)
+  const char    *str)
 
   {
   char            log_buf[LOCAL_LOG_BUF_SIZE];
@@ -599,10 +597,9 @@ int save_node_status(
 int process_status_info(
 
   char           *nd_name,
-  dynamic_string *status_info)
+  std::vector<std::string *>& status_info)
 
   {
-  char           *str;
   char           *name = nd_name;
   struct pbsnode *current;
   long            mom_job_sync = FALSE;
@@ -633,13 +630,14 @@ int process_status_info(
     return(PBSE_NONE);
 
   /* loop over each string */
-  for (str = status_info->str; str != NULL && *str; str += strlen(str) + 1)
+  for(std::vector<std::string *>::iterator i = status_info.begin();i != status_info.end();i++)
     {
+    const char *str = (*i)->c_str();
     /* these two options are for switching nodes */
     if (!strncmp(str, NUMA_KEYWORD, strlen(NUMA_KEYWORD)))
       {
       /* if we've already processed some, save this before moving on */
-      if (str != status_info->str)
+      if (i != status_info.begin())
         save_node_status(current, &temp);
       
       dont_change_state = FALSE;
@@ -652,7 +650,7 @@ int process_status_info(
     else if (!strncmp(str, "node=", strlen("node=")))
       {
       /* if we've already processed some, save this before moving on */
-      if (str != status_info->str)
+      if (i != status_info.begin())
         save_node_status(current, &temp);
 
       dont_change_state = FALSE;
@@ -681,11 +679,13 @@ int process_status_info(
     /* add the info to the "temp" pbs_attribute */
     else if (!strcmp(str, START_GPU_STATUS))
       {
-      is_gpustat_get(current, &str);
+      is_gpustat_get(current, i,status_info.end());
+      str = (*i)->c_str();
       }
     else if (!strcmp(str, START_MIC_STATUS))
       {
-      process_mic_status(current, &str);
+      process_mic_status(current, i,status_info.end());
+      str = (*i)->c_str();
       }
     else if (!strcmp(str, "first_update=true"))
       {
@@ -785,21 +785,18 @@ int process_status_info(
 
 
 
-char *move_past_gpu_status(
-
-  char *str)
+void move_past_gpu_status(
+    std::vector<std::string *>::iterator& i,
+    std::vector<std::string *>::iterator end)
 
   {
-  while ((str != NULL) &&
-         (str[0] != '\0'))
+  while (i != end)
     {
-    if (!strcmp(str, END_GPU_STATUS))
+    if (!strcmp((*i)->c_str(), END_GPU_STATUS))
       break;
 
-    str += strlen(str) + 1;
+    i++;
     }
-
-  return(str);
   } /* END move_past_gpu_status() */
 
 
@@ -812,12 +809,12 @@ char *move_past_gpu_status(
 int is_gpustat_get(
 
   struct pbsnode  *np,      /* I (modified) */
-  char           **str_ptr) /* I (modified) */
+  std::vector<std::string *>::iterator& i,
+  std::vector<std::string *>::iterator end)
 
   {
   pbs_attribute  temp;
-  char          *gpuid;
-  char          *str = *str_ptr;
+  const char   *gpuid;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
   int            gpuidx = -1;
   char           gpuinfo[2048];
@@ -853,21 +850,21 @@ int is_gpustat_get(
     return(DIS_NOCOMMIT);
     }
 
-  str += strlen(str) + 1;
+  i++;
 
-  for (; str != NULL && *str; str += strlen(str) + 1)
+  for (; i != end; i++)
     {
     /* add the info to the "temp" attribute */
 
     /* get timestamp */
-    if (!strncmp(str, "timestamp=", 10))
+    if (!strncmp((*i)->c_str(), "timestamp=", 10))
       {
-      if (decode_arst(&temp, NULL, NULL, str, 0))
+      if (decode_arst(&temp, NULL, NULL, (*i)->c_str(), 0))
         {
         DBPRT(("is_gpustat_get: cannot add attributes\n"));
 
         free_arst(&temp);
-        *str_ptr = move_past_gpu_status(str);
+        move_past_gpu_status(i,end);
 
         return(DIS_NOCOMMIT);
         }
@@ -875,28 +872,28 @@ int is_gpustat_get(
       }
 
     /* get driver version, if there is one */
-    if (!strncmp(str, "driver_ver=", 11))
+    if (!strncmp((*i)->c_str(), "driver_ver=", 11))
       {
-      if (decode_arst(&temp, NULL, NULL, str, 0))
+      if (decode_arst(&temp, NULL, NULL, (*i)->c_str(), 0))
         {
         DBPRT(("is_gpustat_get: cannot add attributes\n"));
 
         free_arst(&temp);
-        *str_ptr = move_past_gpu_status(str);
+        move_past_gpu_status(i,end);
 
         return(DIS_NOCOMMIT);
         }
-      drv_ver = atoi(str + 11);
+      drv_ver = atoi((*i)->c_str() + 11);
       continue;
       }
-    else if (!strcmp(str, END_GPU_STATUS))
+    else if (!strcmp((*i)->c_str(), END_GPU_STATUS))
       {
       break;
       }
 
     /* gpuid must come before the rest or we will be in trouble */
 
-    if (!strncmp(str, "gpuid=", 6))
+    if (!strncmp((*i)->c_str(), "gpuid=", 6))
       {
       if (strlen(gpuinfo) > 0)
         {
@@ -905,14 +902,14 @@ int is_gpustat_get(
           DBPRT(("is_gpustat_get: cannot add attributes\n"));
 
           free_arst(&temp);
-          *str_ptr = move_past_gpu_status(str);
+          move_past_gpu_status(i,end);
 
           return(DIS_NOCOMMIT);
           }
         memset(gpuinfo, 0, 2048);
         }
 
-      gpuid = &str[6];
+      gpuid = &(*i)->c_str()[6];
 
       /*
        * Get this gpus index, if it does not yet exist then find an empty entry.
@@ -939,7 +936,7 @@ int is_gpustat_get(
           }
 
         free_arst(&temp);
-        *str_ptr = move_past_gpu_status(str);
+        move_past_gpu_status(i,end);
 
         return(DIS_SUCCESS);
         }
@@ -968,15 +965,15 @@ int is_gpustat_get(
         {
         strcat(gpuinfo, ";");
         }
-      strcat(gpuinfo, str);
+      strcat(gpuinfo, (*i)->c_str());
       need_delimiter = TRUE;
       }
 
     /* check current gpu mode and determine gpu state */
     
-    if (!memcmp(str, "gpu_mode=", 9))
+    if (!memcmp((*i)->c_str(), "gpu_mode=", 9))
       {
-      if ((!memcmp(str + 9, "Normal", 6)) || (!memcmp(str + 9, "Default", 7)))
+      if ((!memcmp((*i)->c_str() + 9, "Normal", 6)) || (!memcmp((*i)->c_str() + 9, "Default", 7)))
         {
         np->nd_gpusn[gpuidx].mode = gpu_normal;
         if (gpu_has_job(np, gpuidx))
@@ -989,8 +986,8 @@ int is_gpustat_get(
           np->nd_gpusn[gpuidx].state = gpu_unallocated;
           }
         }
-      else if ((!memcmp(str + 9, "Exclusive", 9)) ||
-              (!memcmp(str + 9, "Exclusive_Thread", 16)))
+      else if ((!memcmp((*i)->c_str() + 9, "Exclusive", 9)) ||
+              (!memcmp((*i)->c_str() + 9, "Exclusive_Thread", 16)))
         {
         np->nd_gpusn[gpuidx].mode = gpu_exclusive_thread;
         if (gpu_has_job(np, gpuidx))
@@ -1003,7 +1000,7 @@ int is_gpustat_get(
           np->nd_gpusn[gpuidx].state = gpu_unallocated;
           }
         }
-      else if (!memcmp(str + 9, "Exclusive_Process", 17))
+      else if (!memcmp((*i)->c_str() + 9, "Exclusive_Process", 17))
         {
         np->nd_gpusn[gpuidx].mode = gpu_exclusive_process;
         if (gpu_has_job(np, gpuidx))
@@ -1016,7 +1013,7 @@ int is_gpustat_get(
           np->nd_gpusn[gpuidx].state = gpu_unallocated;
           }
         }
-      else if (!memcmp(str + 9, "Prohibited", 10))
+      else if (!memcmp((*i)->c_str() + 9, "Prohibited", 10))
         {
         np->nd_gpusn[gpuidx].mode = gpu_prohibited;
         np->nd_gpusn[gpuidx].state = gpu_unavailable;
@@ -1070,7 +1067,7 @@ int is_gpustat_get(
       DBPRT(("is_gpustat_get: cannot add attributes\n"));
       
       free_arst(&temp);
-      *str_ptr = move_past_gpu_status(str);
+      move_past_gpu_status(i,end);
 
       return(DIS_NOCOMMIT);
       }
@@ -1087,7 +1084,7 @@ int is_gpustat_get(
     }
 
   node_gpustatus_list(&temp, np, ATR_ACTION_ALTER);
-  *str_ptr = move_past_gpu_status(str);
+  move_past_gpu_status(i,end);
 
   return(DIS_SUCCESS);
   }  /* END is_gpustat_get() */

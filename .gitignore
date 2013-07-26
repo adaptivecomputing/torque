@@ -334,7 +334,6 @@ src/lib/Libsite/test/site_mom_chu/test_site_mom_chu
 src/lib/Libsite/test/site_mom_ckp/test_site_mom_ckp
 src/lib/Libsite/test/site_mom_jst/test_site_mom_jst
 src/lib/Libutils/test/u_MXML/test_u_MXML
-src/lib/Libutils/test/u_dynamic_string/test_u_dynamic_string
 src/lib/Libutils/test/u_groups/test_u_groups
 src/lib/Libutils/test/u_hash_map_structs/test_u_hash_map_structs
 src/lib/Libutils/test/u_hash_map_structs/ct_u_hash_map_structs
@@ -385,6 +384,7 @@ src/server/test/accounting/test_accounting
 src/server/test/array_func/test_array_func
 src/server/test/array_upgrade/test_array_upgrade
 src/server/test/attr_recov/test_attr_recov
+src/server/test/job_attr_def/test_job_attr_def
 src/server/test/batch_request/test_batch_request
 src/server/test/dis_read/test_dis_read
 src/server/test/display_alps_status/test_display_alps_status
