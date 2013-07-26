@@ -1,6 +1,10 @@
 
 include $(top_srcdir)/buildutils/config.mk
 
+CHECK_DIR = test
+
+CLEANFILES = *.gcda *.gcno *.gcov
+
 pammoddir=@pammoddir@
 
 pammod_LTLIBRARIES = pam_pbssimpleauth.la
@@ -8,9 +12,17 @@ pammod_LTLIBRARIES = pam_pbssimpleauth.la
 AM_CFLAGS = -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
 
 EXTRA_DIST = README.pam
-CLEANFILES = *.gcda *.gcno *.gcov
 
 pam_pbssimpleauth_la_SOURCES = pam_pbssimpleauth.c
 pam_pbssimpleauth_la_LDFLAGS = -no-undefined -module -avoid-version
 pam_pbssimpleauth_la_LIBADD = -lpam
+
+if HAVE_CHECK
+check:
+  $(MAKE) -C $(CHECK_DIR) $(MAKECMDGOALS)
+
+.PHONY: cleancheck
+cleancheck:
+  cd test && $(MAKE) cleancheck
+endif
 
