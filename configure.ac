@@ -1873,6 +1873,12 @@ AC_DEFINE_UNQUOTED(SENDMAIL_CMD, "${SENDMAIL_CMD}",
 
 dnl attempt to find a location to install PAM modules
 AC_MSG_CHECKING([for PAM install directory])
+
+uname -p | grep 64 > /dev/null
+if test "X$?" == "X0"; then
+libsuff=64
+fi
+
 pammoddir=disabled
 AC_ARG_WITH(pam,
     [  --with-pam=DIR          Directory that holds the system PAM modules.
