@@ -472,7 +472,7 @@ static char *findattrl(
 #endif /* PBS_MINNAMELEN */
 
 #ifndef PBS_NAMELEN
-#define PBS_NAMELEN   16  /* printf of jobs, queues, and servers */
+#define PBS_NAMELEN   22  /* printf of jobs, queues, and servers */
 #endif  /* PBS_NAMELEN */
 
 #define OWNERL  15  /* printf of jobs */
@@ -710,17 +710,17 @@ static void altdsp_statjob(
 
     if (alt_opt & ALT_DISPLAY_R)
       {
-      printf("\n                                                       Req'd  Req'd       Elap \n");
+      printf("\n                                                          Req'd  Req'd       Elap \n");
 
-      printf("Job ID               Username    Queue    NDS   TSK    Memory Time      S Time       BIG  FAST   PFS\n");
-      printf("-------------------- ----------- -------- ----- ------ ------ --------- - --------- ----- ----- -----\n");
+      printf("Job ID                  Username    Queue    NDS   TSK    Memory Time      S Time       BIG  FAST   PFS\n");
+      printf("----------------------- ----------- -------- ----- ------ ------ --------- - --------- ----- ----- -----\n");
       }
     else
       {
-       printf("\n                                                                               Req'd    Req'd       Elap\n");
+       printf("\n                                                                                  Req'd    Req'd       Elap\n");
 
-       printf("Job ID               Username    Queue    Jobname          SessID NDS   TSK    Memory   Time    S   Time\n");
-       printf("-------------------- ----------- -------- ---------------- ------ ----- ------ ------ --------- - ---------\n");
+       printf("Job ID                  Username    Queue    Jobname          SessID  NDS   TSK   Memory   Time    S   Time\n");
+       printf("----------------------- ----------- -------- ---------------- ------ ----- ------ ------ --------- - ---------\n");
       }
     }
 
@@ -880,7 +880,7 @@ static void altdsp_statjob(
       }
 
 
-    snprintf(tmpLine, MAX_LINE_LEN, "%%-20.%ds %%-11.11s %%-8.8s ",
+    snprintf(tmpLine, MAX_LINE_LEN, "%%-23.%ds %%-11.11s %%-8.8s ",
 
              PBS_NAMELEN);
 
