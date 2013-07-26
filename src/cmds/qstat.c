@@ -472,8 +472,10 @@ static char *findattrl(
 #endif /* PBS_MINNAMELEN */
 
 #ifndef PBS_NAMELEN
-#define PBS_NAMELEN   22  /* printf of jobs, queues, and servers */
+#define PBS_NAMELEN   16  /* printf of jobs, queues, and servers */
 #endif  /* PBS_NAMELEN */
+
+#define PBS_JOB_ID_LEN 22
 
 #define OWNERL  15  /* printf of jobs */
 #define TIMEUL  8   /* printf of jobs */
@@ -882,7 +884,7 @@ static void altdsp_statjob(
 
     snprintf(tmpLine, MAX_LINE_LEN, "%%-23.%ds %%-11.11s %%-8.8s ",
 
-             PBS_NAMELEN);
+             PBS_JOB_ID_LEN);
 
     printf(tmpLine,
            pstat->name,
