@@ -647,9 +647,13 @@ char *ispbsdir(
 
 
 
+/*
+ * isWindowsFormat detects whether a file is written in a DOS/Windows format
+ * or not. It returns 1 if it is, 0 otherwise.
+*/
 int isWindowsFormat(
 
-  FILE   *fd)      /* I */
+  FILE   *fd)      /* I */ /* File handler containing the file to check */
 
   {
   size_t len;
@@ -666,9 +670,10 @@ int isWindowsFormat(
     return(0);
     }
 
-  /* read first characters to ensure this is ASCII text */
   fseek(fd, 0, SEEK_SET);
 
+  /* Read a line of text and check for the return character */
+  /* If found, we assume it's a Windows format */
   while(fgets(buffer, sizeof(buffer), fd) != NULL)
     {
     len = strlen(buffer);
