@@ -185,30 +185,30 @@ int istrue(
 
 int time_to_string(
 
-    char *time_string, 
-    int    time_to_convert)
+  char *time_string, 
+  int   time_to_convert)
 
   {
   int seconds = 0;
   int total_minutes = 0;
   int minutes = 0;
   int hours = 0;
-  int mytime = 0;
+  int time_in_seconds = 0;
 
-  mytime = time_to_convert;
+  time_in_seconds = time_to_convert;
   /* Get the number of seconds in the job */
-  seconds = mytime % 60;
-  mytime -= seconds;
+  seconds = time_in_seconds % 60;
 
   /* Calculate the total minutes and then get the minutes less than an hour */
-  total_minutes = mytime/60;
-  minutes = total_minutes % 60;
-  total_minutes -= minutes;
-
-  sprintf(time_string, "%.2d:%.2d:%.2d", hours, minutes, seconds);
+  total_minutes = time_in_seconds / 60;
 
   /* Calculate hours */
-  hours = total_minutes/60;
+  hours = total_minutes / 60;
+
+  /* calculate minutes */
+  minutes = total_minutes % 60;
+
+  sprintf(time_string, "%.2d:%.2d:%.2d", hours, minutes, seconds);
 
   return(PBSE_NONE);
   }
