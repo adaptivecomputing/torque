@@ -1768,7 +1768,8 @@ int svr_chkque(
 
     /* 1e. check queue's disallowed_types */
 
-    if (pque->qu_attr[QA_ATR_DisallowedTypes].at_flags & ATR_VFLAG_SET)
+    if ((pque->qu_attr[QA_ATR_DisallowedTypes].at_flags & ATR_VFLAG_SET) &&
+        (pque->qu_attr[QA_ATR_DisallowedTypes].at_val.at_arst != NULL))
       {
       for (i = 0;
            i < (pque->qu_attr[QA_ATR_DisallowedTypes]).at_val.at_arst->as_usedptr;
