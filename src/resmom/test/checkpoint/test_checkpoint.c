@@ -8,7 +8,7 @@
 
 #include "pbs_error.h"
 
-int establish_server_connection(job *pjob);
+int establish_server_connection(job& pjob);
 
 extern bool connect_fail;
 
