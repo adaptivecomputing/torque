@@ -244,7 +244,7 @@ then
     make distcheck -j${parallel}
 fi
 
-# MOAB RPMs ####################################################################
+# TORQUE RPMs ##################################################################
 if [ ${adaptive_rpm} -ne 0 ]
 then
     # blow away old build stuff
