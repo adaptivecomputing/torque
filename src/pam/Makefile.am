@@ -17,12 +17,3 @@ pam_pbssimpleauth_la_SOURCES = pam_pbssimpleauth.c
 pam_pbssimpleauth_la_LDFLAGS = -no-undefined -module -avoid-version
 pam_pbssimpleauth_la_LIBADD = -lpam
 
-if HAVE_CHECK
-check:
-  $(MAKE) -C $(CHECK_DIR) $(MAKECMDGOALS)
-
-.PHONY: cleancheck
-cleancheck:
-  cd test && $(MAKE) cleancheck
-endif
-
