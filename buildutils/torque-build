@@ -236,12 +236,14 @@ then
     make check | ./parse_cov_results.py
 fi
 
+distdir="torque-${version}-${release_number}"
+
 if [ ${tarball} -ne 0 ]
 then
     make -j${parallel} distclean
     sh autogen.sh
     ./configure
-    make distcheck -j${parallel}
+    make distcheck -j${parallel} distdir="${distdir}"
 fi
 
 # TORQUE RPMs ##################################################################
@@ -258,8 +260,7 @@ then
     cp buildutils/torque.adaptive.spec \
         buildutils/rpmbuild/SPECS/torque.adaptive.spec
 
-    tar_base_dir=torque-${version}
-    source_file=${tar_base_dir}.tar.gz
+    source_file=${distdir}.tar.gz
     if [ ! -s "${source_file}" ]
     then
         echo "TORQUE tarball '${source_file}' not found!" >&2
@@ -298,5 +299,5 @@ then
         --define "version ${version}" \
         --define "release_number ${release_number}.${distro}" \
         --define "source_file ${source_file}" \
-        --define "base_name ${tar_base_dir}"
+        --define "base_name ${distdir}"
 fi
