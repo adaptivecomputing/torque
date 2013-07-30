@@ -1,7 +1,7 @@
+#include "utils.h"
 #include <errno.h>
 #include "pbs_job.h"
 #include "test_catch_child.h"
-#include "utils.h"
 
 
 void catch_child(int sig);

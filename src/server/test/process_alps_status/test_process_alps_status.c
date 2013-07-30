@@ -1,12 +1,12 @@
+#include <boost/ptr_container/ptr_vector.hpp>
 #include <stdio.h>
 #include <stdlib.h>
 #include <check.h>
 
-#include "alps_constants.h"
 #include <string>
 #include <vector>
-#include <boost/ptr_container/ptr_vector.hpp>
 #include "pbs_nodes.h"
+#include "alps_constants.h"
 
 int set_ncpus(struct pbsnode *,struct pbsnode *, const char *);
 int set_ngpus(struct pbsnode *, int);
@@ -132,13 +132,13 @@ START_TEST(finish_gpu_status_test)
   end = status.begin();
   finish_gpu_status(end,status.end());
   snprintf(buf, sizeof(buf), "penultimate string isn't correct, should be '%s' but is '%s'",
-    CRAY_GPU_STATUS_END, (*end)->c_str());
-  fail_unless(!strcmp((*end)->c_str(), CRAY_GPU_STATUS_END), buf);
+    CRAY_GPU_STATUS_END, end->c_str());
+  fail_unless(!strcmp(end->c_str(), CRAY_GPU_STATUS_END), buf);
 
   end++;
   snprintf(buf, sizeof(buf), "last string isn't correct, should be 'tom' but is '%s'",
-    (*end)->c_str());
-  fail_unless(!strcmp((*end)->c_str(), "tom"), buf);
+    end->c_str());
+  fail_unless(!strcmp(end->c_str(), "tom"), buf);
 
   }
 END_TEST

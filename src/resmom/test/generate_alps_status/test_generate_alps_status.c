@@ -1,8 +1,8 @@
-#include <check.h>
 #include "alps_constants.h"
 #include <string>
 #include <vector>
 #include <boost/ptr_container/ptr_vector.hpp>
+#include <check.h>
 
 
 int parse_alps_output(std::string& alps_output,boost::ptr_vector<std::string>& status);

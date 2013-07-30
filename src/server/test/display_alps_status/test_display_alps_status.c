@@ -1,8 +1,8 @@
+#include "pbs_nodes.h"
 #include <check.h>
 #include "alps_constants.h"
 
 
-#include "pbs_nodes.h"
 #include "batch_request.h"
 #include "list_link.h"
 #include "alps_functions.h"

@@ -1,9 +1,9 @@
-#include <check.h>
 #include <stdio.h>
 
 #include "login_nodes.h"
 #include "pbs_nodes.h"
 #include "attribute.h"
+#include <check.h>
 
 extern login_holder logins;
 char                buf[4096];

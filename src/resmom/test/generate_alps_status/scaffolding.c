@@ -38,7 +38,7 @@ int search_dynamic_string_status(
 
   for (boost::ptr_vector<std::string>::iterator i = status.begin(); i != status.end(); i++)
     {
-    const char *ptr = (*i)->c_str();
+    const char *ptr = i->c_str();
     while(*ptr != '\0')
       {
       if (*ptr == first_char)
