@@ -211,6 +211,8 @@ echo "Started ${0}, version ${version}, release ${release_number}." \
     ${quiet_redirect}
 
 sh autogen.sh
+./configure
+
 
 if [ ${coverity} -ne 0 -o ${unit_tests} -ne 0 ]
 then
