@@ -2989,6 +2989,8 @@ que_no_args:
             if (errmsg != NULL)
               {
               fprintf(stderr, "qstat: %s ", errmsg);
+
+              free(errmsg);
               }
             else
               fprintf(stderr, "qstat: Error (%d - %s) getting status of queue ",
@@ -3061,6 +3063,8 @@ svr_no_args:
             if (errmsg != NULL)
               {
               fprintf(stderr, "qstat: %s ", errmsg);
+
+              free(errmsg);
               }
             else
               fprintf(stderr, "qstat: Error (%d - %s) getting status of server ",

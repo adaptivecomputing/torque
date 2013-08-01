@@ -117,6 +117,8 @@ static void execute(
       if (errmsg != NULL)
         {
         fprintf(stderr, "qdisable: %s ", errmsg);
+
+        free(errmsg);
         }
       else
         {

@@ -939,11 +939,7 @@ int send_job_work(
     if ((mom_err = PBSD_commit_get_sid(con, &sid, job_id)) != PBSE_NONE)
       {
       int   errno2;
-      char *err_text;
-
-      pthread_mutex_lock(connection[con].ch_mutex);
-      err_text = connection[con].ch_errtxt;
-      pthread_mutex_unlock(connection[con].ch_mutex);
+      char *err_text = pbs_geterrmsg(con);
 
       /* NOTE:  errno is modified by log_err */
       if (mom_err > PBSE_FLOOR)
@@ -958,6 +954,9 @@ int send_job_work(
           mom_err, (err_text != NULL) ? err_text : "N/A");
         errno2 = errno;
         }
+
+      if (err_text != NULL)
+        free(err_text);
 
       log_ext(errno2, __func__, log_buf, LOG_WARNING);
 
