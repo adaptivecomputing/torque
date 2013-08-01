@@ -702,7 +702,6 @@ void *process_svr_conn(
   int         send_len = 0;
   char       *trq_server_addr = NULL;
   int         trq_server_addr_len = 0;
-  int         disconnect_svr = TRUE;
   int         svr_sock = -1;
   int         msg_len = 0;
   int         debug_mark = 0;
@@ -719,14 +718,11 @@ void *process_svr_conn(
         {
         /* rc will get evaluated after the switch statement. */
         rc = build_active_server_response(&send_message);
-        disconnect_svr = FALSE;
-
         break;
         }
 
       case TRQ_VALIDATE_ACTIVE_SERVER:
         {
-        disconnect_svr = FALSE;
         if ((rc = socket_read_num(local_socket, (long long *)&server_port)) != PBSE_NONE)
           {
           break;
@@ -746,6 +742,7 @@ void *process_svr_conn(
       case TRQ_AUTH_CONNECTION:
         {
 
+        int         disconnect_svr = TRUE;
         /* incoming message format is:
          * trq_system_len|trq_system|trq_port|Validation_type|user_len|user|pid|psock|
          * message format to pbs_server is:
@@ -838,6 +835,12 @@ void *process_svr_conn(
           log_record(PBSEVENT_CLIENTAUTH | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD,
             className, msg_buf);
           }
+
+        if (TRUE == disconnect_svr)
+          {
+          send_svr_disconnect(svr_sock, user_name);
+          socket_close(svr_sock);
+          }
         break;
         }
       }
@@ -846,7 +849,6 @@ void *process_svr_conn(
     {
     sprintf(msg_buf, "socket_read_num failed: %d", rc);
     log_record(PBSEVENT_CLIENTAUTH, PBS_EVENTCLASS_TRQAUTHD, __func__, msg_buf);
-    disconnect_svr = FALSE;
     }
 
   if (rc != PBSE_NONE)
@@ -887,11 +889,6 @@ void *process_svr_conn(
   if(send_message != NULL)
     rc = socket_write(local_socket, send_message, strlen(send_message));
 
-  if (TRUE == disconnect_svr)
-    {
-    send_svr_disconnect(svr_sock, user_name);
-    socket_close(svr_sock);
-    }
 
   if (trq_server_addr != NULL)
     free(trq_server_addr);
