@@ -642,10 +642,10 @@ void *record_reported_time(
 
     if (colon != NULL)
       {
+      job *pjob = svr_find_job(jobid, TRUE);
+      
       *colon = '\0';
       node_id = colon + 1;
-
-      job *pjob = svr_find_job(jobid, TRUE);
 
       if (pjob != NULL)
         {
