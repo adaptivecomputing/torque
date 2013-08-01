@@ -30,7 +30,7 @@ dnl added library functionality to testing
 dnl by John Rosenquist (jrosenquist@adaptivecomputing.com)
 
 AC_PREREQ(2.53)
-AC_INIT([torque], [4.2.4], [torqueusers@supercluster.org])
+AC_INIT([torque], [4.2.5], [torqueusers@supercluster.org])
 AC_REVISION($Revision$)
 AC_CONFIG_SRCDIR([src/cmds/qrun.c])
 AC_CONFIG_AUX_DIR([buildutils])
@@ -1907,6 +1907,12 @@ AC_DEFINE_UNQUOTED(SENDMAIL_CMD, "${SENDMAIL_CMD}",
 
 dnl attempt to find a location to install PAM modules
 AC_MSG_CHECKING([for PAM install directory])
+
+uname -p | grep 64 > /dev/null
+if test "X$?" == "X0"; then
+libsuff=64
+fi
+
 pammoddir=disabled
 AC_ARG_WITH(pam,
     [  --with-pam=DIR          Directory that holds the system PAM modules.

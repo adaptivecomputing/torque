@@ -423,6 +423,8 @@ static char *findattrl(
 #define PBS_NAMELEN   16  /* printf of jobs, queues, and servers */
 #endif  /* PBS_NAMELEN */
 
+#define PBS_JOB_ID_LEN 22
+
 #define OWNERL  15  /* printf of jobs */
 #define TIMEUL  8   /* printf of jobs */
 #define STATEL  1   /* printf of jobs */
@@ -657,15 +659,15 @@ static void altdsp_statjob(
 
     if (alt_opt & ALT_DISPLAY_R)
       {
-      printf("\n                                                       Req'd  Req'd       Elap");
-      printf("\nJob ID               Username    Queue    NDS   TSK    Memory Time      S Time       BIG  FAST   PFS");
-      printf("\n-------------------- ----------- -------- ----- ------ ------ --------- - --------- ----- ----- -----\n");
+      printf("\n                                                          Req'd  Req'd       Elap");
+      printf("\nJob ID                  Username    Queue    NDS   TSK    Memory Time      S Time       BIG  FAST   PFS");
+      printf("\n----   ---------------- ----------- -------- ----- ------ ------ --------- - --------- ----- ----- -----\n");
       }
     else
       {
-      printf("\n                                                                               Req'd    Req'd       Elap");
-      printf("\nJob ID               Username    Queue    Jobname          SessID NDS   TSK    Memory   Time    S   Time");
-      printf("\n-------------------- ----------- -------- ---------------- ------ ----- ------ ------ --------- - ---------\n");
+      printf("\n                                                                                  Req'd    Req'd       Elap");
+      printf("\nJob ID                  Username    Queue    Jobname          SessID  NDS   TSK   Memory   Time    S   Time");
+      printf("\n----------------------- ----------- -------- ---------------- ------ ----- ------ ------ --------- - ---------\n");
       }
     }
 
@@ -832,8 +834,8 @@ static void altdsp_statjob(
       }
 
     /* inject precision into the format string */
-    snprintf(format_string, sizeof(format_string), "%%-20.%ds %%-11.11s %%-8.8s ",
-             PBS_NAMELEN);
+    snprintf(format_string, sizeof(format_string), "%%-23.%ds %%-11.11s %%-8.8s ",
+             PBS_JOB_ID_LEN);
 
     printf(format_string,
            pstat->name,
@@ -858,7 +860,7 @@ static void altdsp_statjob(
     else
       {
       /* inject precision into the format string */
-      snprintf(format_string, sizeof(format_string), "%%-%d.%ds %%6.6s %%5.5s %%*.*s %%6.6s %%9.9s  %%1.1s %%9.9s",
+      snprintf(format_string, sizeof(format_string), "%%-%d.%ds %%6.6s %%5.5s %%*.*s %%6.6s %%9.9s %%1.1s %%9.9s",
                PBS_NAMELEN, PBS_NAMELEN);
 
       printf(format_string,

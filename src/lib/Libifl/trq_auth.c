@@ -663,6 +663,7 @@ void send_svr_disconnect(int sock, char *user_name)
   int len = 0, user_len = 0, user_ll = 0, resp_msg_len = 0;
   char tmp_buf[8];
   char *resp_msg = NULL;
+
   user_len = strlen(user_name);
   sprintf(tmp_buf, "%d", user_len);
   user_ll = strlen(tmp_buf);
@@ -671,6 +672,7 @@ void send_svr_disconnect(int sock, char *user_name)
   len += 1;
   len += user_len;
   len += LOGIN_NAME_MAX + 1;
+
   resp_msg = (char *)calloc(1, len);
   sprintf(resp_msg, "+2+22+59%d+%d%s", user_ll, user_len, user_name);
   resp_msg_len = strlen(resp_msg);
@@ -701,7 +703,7 @@ void *process_svr_conn(
   char       *trq_server_addr = NULL;
   int         trq_server_addr_len = 0;
   int         disconnect_svr = TRUE;
-  int         svr_sock = 0;
+  int         svr_sock = -1;
   int         msg_len = 0;
   int         debug_mark = 0;
   int         local_socket = *(int *)sock;
@@ -837,9 +839,15 @@ void *process_svr_conn(
             className, msg_buf);
           }
         break;
-       }
+        }
+      }
     }
-  }
+  else
+    {
+    sprintf(msg_buf, "socket_read_num failed: %d", rc);
+    log_record(PBSEVENT_CLIENTAUTH, PBS_EVENTCLASS_TRQAUTHD, __func__, msg_buf);
+    disconnect_svr = FALSE;
+    }
 
   if (rc != PBSE_NONE)
     {

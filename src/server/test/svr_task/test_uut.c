@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "pbs_error.h"
+#include "threadpool.h"
 
 extern void check_nodes(struct work_task *ptask);
 
@@ -11,6 +12,7 @@ extern void check_nodes(struct work_task *ptask);
 all_tasks task_list_timed;
 all_tasks task_list_event;
 task_recycler tr;
+extern threadpool_t *request_pool;
 
 START_TEST(test_one)
   {
@@ -18,6 +20,9 @@ START_TEST(test_one)
   initialize_all_tasks_array(&task_list_timed);
   initialize_all_tasks_array(&task_list_event);
   initialize_task_recycler();
+
+  rc = initialize_threadpool(&request_pool, 5, 50, 60);
+  fail_unless(rc == PBSE_NONE, "initalize_threadpool failed", rc);
 
   struct work_task *pWorkTask = set_task(WORK_Timed,357,check_nodes,NULL,0);
   fail_unless(pWorkTask != NULL);
