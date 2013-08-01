@@ -180,8 +180,9 @@ static int set_note(
 
     if ((errmsg = pbs_geterrmsg(con)) != NULL)
       {
-      fprintf(stderr, "%s\n",
-        errmsg);
+      fprintf(stderr, "%s\n", errmsg);
+
+      free(errmsg);
       }
     }
 
@@ -313,8 +314,11 @@ static int marknode(
             name);
 
     if ((errmsg = pbs_geterrmsg(con)) != NULL)
-      fprintf(stderr, "%s\n",
-              errmsg);
+      {
+      fprintf(stderr, "%s\n", errmsg);
+
+      free(errmsg);
+      }
     }
 
   return(rc);
@@ -344,9 +348,9 @@ struct batch_status *statnode(
         {
         if ((errmsg = pbs_geterrmsg(con)) != NULL)
           {
-          fprintf(stderr, "%s: %s\n",
-                  progname,
-                  errmsg);
+          fprintf(stderr, "%s: %s\n", progname, errmsg);
+
+          free(errmsg);
           }
         else
           {
