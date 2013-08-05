@@ -5,6 +5,9 @@
 #include "pbs_job.h"
 #include "pbs_error.h"
 
+extern void traverse_all_jobs(void (*traverseCallback)(job *pJob,void *callbackParameter),void *callbackParameter);
+
+
 START_TEST(initialize_all_jobs_array_test)
   {
   initialize_all_jobs_array(NULL); /* TODO: add check */
@@ -208,6 +211,50 @@ START_TEST(next_job_from_back_test)
   }
 END_TEST
 
+void null_found_job(job *pJob,void *jobsParm)
+  {
+  job **jobs = (job **)jobsParm;
+
+  for(int i = 0;i < 4;i++)
+    {
+    if(jobs[i] == pJob)
+      {
+      jobs[i] = NULL;
+      return;
+      }
+    }
+  fprintf(stderr,"Job not found.\n");
+  exit(1);
+  }
+
+START_TEST(traverse_all_jobs_test)
+  {
+  extern struct all_jobs alljobs;
+
+  struct job *test_job[4];
+
+  initialize_all_jobs_array(&alljobs);
+  resizable_array *ar = (resizable_array *)calloc(1,sizeof(resizable_array));
+  ar->slots = (slot *)calloc(4,sizeof(slot));
+
+  for(int i = 0;i < 4;i++)
+    {
+    test_job[i] = job_alloc();
+    ar->slots[i].item = (void *)test_job[i];
+    ar->max++;
+    }
+  alljobs.ra = ar;
+
+  traverse_all_jobs(null_found_job,test_job);
+
+  for(int i = 0;i < 4;i++)
+    {
+    fail_unless((test_job[i] == NULL),"Job not found.");
+    }
+  }
+END_TEST
+
+
 Suite *job_container_suite(void)
   {
   Suite *s = suite_create("job_container test suite methods");
@@ -255,6 +302,10 @@ Suite *job_container_suite(void)
   tcase_add_test(tc_core, next_job_from_back_test);
   suite_add_tcase(s, tc_core);
   
+  tc_core = tcase_create("traverse_all_jobs_test");
+  tcase_add_test(tc_core, traverse_all_jobs_test);
+  suite_add_tcase(s, tc_core);
+
   return(s);
   }
 
