@@ -166,6 +166,7 @@ extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_a
 extern int   svr_chk_owner(struct batch_request *, job *);
 void chk_job_req_permissions(job **,struct batch_request *);
 void          on_job_exit_task(struct work_task *);
+extern void removeAfterAnyDependency(job *pJob,void *targetJob);
 
 
 
@@ -938,8 +939,6 @@ void *single_delete_work(
   } /* END single_delete_work() */
 
 
-
-
 int handle_single_delete(
 
   struct batch_request *preq,
@@ -958,7 +957,9 @@ int handle_single_delete(
     }
   else
     {
+    traverse_all_jobs(removeAfterAnyDependency,(void *)pjob);
     unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+
 
     /* send the asynchronous reply if needed */
     if (preq_tmp != NULL)

@@ -95,6 +95,7 @@
 #include "server.h"
 #include "svrfunc.h"
 #include "ji_mutex.h"
+#include <vector>
 
 
 
@@ -316,6 +317,30 @@ char *get_correct_jobname(
   return(correct);
   } /* END get_correct_jobname() */
 
+
+void traverse_all_jobs(void (*traverseCallback)(job *pJob,void *callbackParameter),void *callbackParameter)
+  {
+  if(traverseCallback == NULL) return;
+  //Get a snapshot of all current jobs.
+  std::vector<job *> jobs;
+
+  pthread_mutex_lock(alljobs.alljobs_mutex);
+  for(int i = 0;i < alljobs.ra->max;i++)
+    {
+    job *pj = (job *)alljobs.ra->slots[i].item;
+    if(pj != NULL)
+      {
+      jobs.push_back(pj);
+      }
+    }
+  pthread_mutex_unlock(alljobs.alljobs_mutex);
+
+  for(std::vector<job *>::iterator i = jobs.begin();i != jobs.end();i++)
+    {
+    job *pj = (*i);
+    traverseCallback(pj,callbackParameter);
+    }
+  }
 
 
 
