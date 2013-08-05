@@ -155,6 +155,8 @@ static void execute(
       if (errmsg != NULL)
         {
         fprintf(stderr, " qgpureset: %s ", errmsg);
+
+        free(errmsg);
         }
       else
         {

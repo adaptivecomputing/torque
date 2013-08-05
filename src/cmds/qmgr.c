@@ -1542,6 +1542,8 @@ int execute(
 
             pstderr_big(pname -> obj_name, Svrname(sp), errmsg);
             }
+
+          free(errmsg);
           }
         else
           if (! zopt)
@@ -2771,6 +2773,8 @@ int is_valid_object(
                             errmsg);
 
       valid = 0;
+
+      free(errmsg);
       }
     else
       {

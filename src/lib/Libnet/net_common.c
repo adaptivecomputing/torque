@@ -443,10 +443,62 @@ int socket_connect_addr(
 
 
 /*
+ * process_and_save_socket_error()
+ * Evaluates an error read from a socket to determine if it is a retryable error or not. 
+ * For our purposes, timeouts are not retryable.
+ *
+ * @post-cond: errno is updated to sock_errno, an error read from the socket.
+ *
+ * @return TRANSIENT_SOCKET_FAIL if the error is retryable, PERMANENT_SOCKET_FAIL otherwise
+ */
+
+int process_and_save_socket_error(
+
+  int sock_errno)
+
+  {
+  int rc = PBSE_NONE;
+
+  errno = sock_errno;
+
+  switch (sock_errno)
+    {
+    /* ETIMEDOUT is not listed because it should be considered a permanent failure */
+    case EINPROGRESS:
+    case EALREADY:    /* Operation already in progress */
+    case EISCONN:   /* Transport endpoint is already connected */
+    case EAGAIN:    /* Operation would block */
+    case EINTR:     /* Interrupted system call */
+    case EINVAL:    /* Invalid argument */
+    case EADDRINUSE:    /* Address already in use */
+    case EADDRNOTAVAIL:   /* Cannot assign requested address */
+
+      rc = TRANSIENT_SOCKET_FAIL;
+
+      break;
+
+    default:
+
+      rc = PERMANENT_SOCKET_FAIL;
+
+      break;
+    }
+
+  return(rc);
+  }
+
+
+
+/*
  * socket_wait_for_write()
  *
- * connect failed, this function determines why. 
+ * connect failed, this function determines why. For non-blocking sockets,
+ * EINPROGRESS is almost always set, and you need to select the socket and then
+ * read error using getsockopt(), as is done below.
+ *
  * if the failure is a permanent failure, pass that back to the caller
+ *
+ * @post-cond: errno will be populated with the correct error condition
  *
  * @return TRANSIENT_SOCKET_FAIL if its not permanent, PERMANENT_SOCKET_FAIL
  * if it is permanent.
@@ -458,7 +510,8 @@ int socket_wait_for_write(
 
   {
   int            rc = PBSE_NONE;
-  int            write_soc = 0, val;
+  int            write_soc = 0;
+  int            sock_errno;
   socklen_t      len = sizeof(int);
   fd_set         wfd;
   struct timeval timeout;
@@ -474,39 +527,18 @@ int socket_wait_for_write(
     /* timeout is now seen as a permanent failure */
     rc = PERMANENT_SOCKET_FAIL;
     }
-  else if (((rc = getsockopt(socket, SOL_SOCKET, SO_ERROR, &val, &len)) == 0) && (val == 0))
+  else if (((rc = getsockopt(socket, SOL_SOCKET, SO_ERROR, &sock_errno, &len)) == 0) && 
+           (sock_errno == 0))
     {
     rc = PBSE_NONE;
     }
   else
     {
-    switch (val)
-      {
-      /* ETIMEDOUT is not listed because it should be considered a permanent failure */
-      case EINPROGRESS:
-      case EALREADY:    /* Operation already in progress */
-      case EISCONN:   /* Transport endpoint is already connected */
-      case EAGAIN:    /* Operation would block */
-      case EINTR:     /* Interrupted system call */
-      case EINVAL:    /* Invalid argument */
-      case EADDRINUSE:    /* Address already in use */
-      case EADDRNOTAVAIL:   /* Cannot assign requested address */
-
-        rc = TRANSIENT_SOCKET_FAIL;
-
-        break;
-
-      default:
-
-        rc = PERMANENT_SOCKET_FAIL;
-
-        break;
-      }
+    rc = process_and_save_socket_error(sock_errno);
     }
 
   return(rc);
   } /* END socket_wait_for_write() */
-
 
 
 

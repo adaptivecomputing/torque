@@ -115,6 +115,8 @@ static void execute(
       if (errmsg != NULL)
         {
         fprintf(stderr, "qstop: %s ", errmsg);
+
+        free(errmsg);
         }
       else
         {
