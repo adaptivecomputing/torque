@@ -3298,5 +3298,33 @@ void del_depend_job(
   return;
   }  /* END del_depend_job() */
 
+/*
+ * If pJob has an AFTERANY dependency on targetJob, remove it.
+ * pJob is passed in with the ji_mutex locked.
+ */
+void removeAfterAnyDependency(job *pJob,void *targetJob)
+  {
+  job *pTargetJob = (job *)targetJob;
+
+  if(pTargetJob == pJob) return;
+  job *pLockedJob = svr_find_job(pJob->ji_qs.ji_jobid,FALSE);
+  if(pLockedJob == NULL) return;
+  mutex_mgr job_mutex(pLockedJob->ji_mutex,true);
+  pbs_attribute *pattr = &pJob->ji_wattr[JOB_ATR_depend];
+  struct depend *pDep = find_depend(JOB_DEPEND_TYPE_AFTERANY,pattr);
+  if(pDep != NULL)
+    {
+    struct depend_job *pDepJob = find_dependjob(pDep,pTargetJob->ji_qs.ji_jobid);
+    if(pDepJob != NULL)
+      {
+      del_depend_job(pDepJob);
+      job_mutex.unlock();
+      set_depend_hold(pJob,pattr);
+      }
+    }
+  }
+
+
+
 /* END req_register.c */
 

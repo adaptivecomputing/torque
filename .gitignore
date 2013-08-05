@@ -392,6 +392,7 @@ src/server/test/execution_slot_tracker/test_execution_slot_tracker
 src/server/test/exiting_jobs/test_exiting_jobs
 src/server/test/geteusernam/test_geteusernam
 src/server/test/issue_request/test_issue_request
+src/server/test/job_attr_def/test_job_attr_def
 src/server/test/job_container/test_job_container
 src/server/test/job_func/test_job_func
 src/server/test/job_func/test_record_jobinfo
