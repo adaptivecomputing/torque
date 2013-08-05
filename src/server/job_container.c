@@ -320,7 +320,7 @@ char *get_correct_jobname(
 
 void traverse_all_jobs(void (*traverseCallback)(job *pJob,void *callbackParameter),void *callbackParameter)
   {
-  if(traverseCallback == NULL) return;
+  if((traverseCallback == NULL)||(alljobs.ra == NULL)) return;
   //Get a snapshot of all current jobs.
   std::vector<job *> jobs;
 

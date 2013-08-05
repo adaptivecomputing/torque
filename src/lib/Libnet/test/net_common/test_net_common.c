@@ -32,7 +32,7 @@ START_TEST(test_process_and_save_socket_error)
   fail_unless(process_and_save_socket_error(EAGAIN) == TRANSIENT_SOCKET_FAIL);
   fail_unless(errno == EAGAIN);
 
-  fail_unless(process_and_save_socket_error(EHOSTUNREACH) == TRANSIENT_SOCKET_FAIL);
+  fail_unless(process_and_save_socket_error(EHOSTUNREACH) == PERMANENT_SOCKET_FAIL);
   fail_unless(errno == EHOSTUNREACH);
   }
 END_TEST

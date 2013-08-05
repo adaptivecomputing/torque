@@ -8,4 +8,6 @@ Suite *req_register_suite();
 #define METH_2 2
 Suite *meth_2_suite();
 
+extern job *job_alloc(void);
+
 #endif /* _REQ_REGISTER_CT_H */

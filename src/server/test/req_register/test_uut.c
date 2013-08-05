@@ -38,6 +38,8 @@ void set_depend_hold(job *pjob, pbs_attribute *pattr);
 int delete_dependency_job(batch_request *preq, job **pjob_ptr);
 int req_register(batch_request *preq);
 bool remove_array_dependency_job_from_job(struct array_depend *pdep, job *pjob, char *job_array_id);
+void removeAfterAnyDependency(job *pJob,void *targetJob);
+
 
 extern char server_name[];
 extern int i;
@@ -725,6 +727,65 @@ START_TEST(req_register_test)
   }
 END_TEST
 
+extern job *pGlobalJob;
+
+START_TEST(remove_after_any_test)
+  {
+  job *pJob = job_alloc();
+  job *pTJob = job_alloc();
+  job *pOJob = job_alloc();
+  struct depend_job *pj;
+
+  strcpy(pJob->ji_qs.ji_jobid,"job 1");
+  strcpy(pTJob->ji_qs.ji_jobid,"job 2");
+  strcpy(pOJob->ji_qs.ji_jobid,"job 3");
+
+  pbs_attribute *pattr = &pJob->ji_wattr[JOB_ATR_depend];
+  initialize_depend_attr(pattr);
+  struct depend *pdep = make_depend(JOB_DEPEND_TYPE_AFTERANY, pattr);
+  make_dependjob(pdep, pTJob->ji_qs.ji_jobid, (char *)"SomeHost");
+
+  make_dependjob(pdep, pOJob->ji_qs.ji_jobid, (char *)"SomeHost");
+
+  pattr = &pJob->ji_wattr[JOB_ATR_depend];
+  pdep = find_depend(JOB_DEPEND_TYPE_AFTERANY,pattr);
+  pj = find_dependjob(pdep,pTJob->ji_qs.ji_jobid);
+  fail_unless((pj != NULL),"Dependency not found.");
+  fail_unless(!strcmp(pj->dc_child,pTJob->ji_qs.ji_jobid),"Wrong job found.");
+  pj = find_dependjob(pdep,pOJob->ji_qs.ji_jobid);
+  fail_unless((pj != NULL),"Wrong dependency deleted.");
+  fail_unless(!strcmp(pj->dc_child,pOJob->ji_qs.ji_jobid),"Wrong job found.");
+
+  pGlobalJob = pJob;
+
+  removeAfterAnyDependency(pJob,pTJob);
+
+  pGlobalJob = NULL;
+
+  pattr = &pJob->ji_wattr[JOB_ATR_depend];
+  pdep = find_depend(JOB_DEPEND_TYPE_AFTERANY,pattr);
+  pj = find_dependjob(pdep,pTJob->ji_qs.ji_jobid);
+  fail_unless((pj == NULL),"Dependency not deleted.");
+  pj = find_dependjob(pdep,pOJob->ji_qs.ji_jobid);
+  fail_unless((pj != NULL),"Wrong dependency deleted.");
+  fail_unless(!strcmp(pj->dc_child,pOJob->ji_qs.ji_jobid),"Wrong job found.");
+
+  pGlobalJob = pJob;
+
+  removeAfterAnyDependency(pJob,pOJob);
+
+  pGlobalJob = NULL;
+
+  pattr = &pJob->ji_wattr[JOB_ATR_depend];
+  pdep = find_depend(JOB_DEPEND_TYPE_AFTERANY,pattr);
+  pj = find_dependjob(pdep,pTJob->ji_qs.ji_jobid);
+  fail_unless((pj == NULL),"Dependency not deleted.");
+  pj = find_dependjob(pdep,pOJob->ji_qs.ji_jobid);
+  fail_unless((pj == NULL),"Dependency not deleted.");
+  }
+END_TEST
+
+
 
 
 
@@ -838,6 +899,10 @@ Suite *req_register_suite(void)
 
   tc_core = tcase_create("delete_dependency_job_test");
   tcase_add_test(tc_core, delete_dependency_job_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("remove_after_any_test");
+  tcase_add_test(tc_core, remove_after_any_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("req_register_test");

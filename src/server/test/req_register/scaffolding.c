@@ -179,6 +179,8 @@ int svr_setjobstate(job *pjob, int newstate, int newsubstate, int has_queue_mute
   return(0);
   }
 
+job *pGlobalJob = NULL;
+
 job *svr_find_job(char *jobid, int get_subjob)
   {
   job *pjob = (job *)calloc(1, sizeof(job));
@@ -193,6 +195,10 @@ job *svr_find_job(char *jobid, int get_subjob)
     {
     pjob->ji_qs.ji_state = JOB_STATE_COMPLETE;
     return(pjob);
+    }
+  else if ((pGlobalJob != NULL) &&(!strcmp(pGlobalJob->ji_qs.ji_jobid,jobid)))
+    {
+    return (pGlobalJob);
     }
   else
     return(NULL);
@@ -328,3 +334,25 @@ pbs_net_t get_hostaddr(
   {
   return(0);
   }
+
+job *job_alloc(void)
+  {
+  job *pj = (job *)calloc(1, sizeof(job));
+
+  if (pj == NULL)
+    {
+    return(NULL);
+    }
+
+  pj->ji_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+
+  pj->ji_qs.qs_version = PBS_QS_VERSION;
+
+  CLEAR_HEAD(pj->ji_rejectdest);
+  pj->ji_is_array_template = FALSE;
+
+  pj->ji_momhandle = -1;
+
+  return(pj);
+  }
+
