@@ -30,7 +30,7 @@ dnl added library functionality to testing
 dnl by John Rosenquist (jrosenquist@adaptivecomputing.com)
 
 AC_PREREQ(2.53)
-AC_INIT([torque], [4.2.4], [torqueusers@supercluster.org])
+AC_INIT([torque], [4.2.4.1], [torqueusers@supercluster.org])
 AC_REVISION($Revision$)
 AC_CONFIG_SRCDIR([src/cmds/qrun.c])
 AC_CONFIG_AUX_DIR([buildutils])
@@ -505,6 +505,9 @@ m4_ifdef([AM_SILENT_RULES],[
   fi
 ])
 
+if test "x$have_check" = "xyes"; then
+  AC_DEFINE(UNIT_TEST, 1, [turns on unit test conditionals in code])
+fi
 
 dnl
 dnl  ######################################################################

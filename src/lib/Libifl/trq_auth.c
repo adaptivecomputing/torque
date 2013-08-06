@@ -16,13 +16,16 @@
 #include "../Libnet/lib_net.h" /* get_hostaddr, socket_* */
 #include "../../include/log.h" /* log event types */
 
-
 char         *trq_addr = NULL;
 int           trq_addr_len;
 char         *trq_server_name = NULL;
 int           debug_mode = 0;
 static char   active_pbs_server[PBS_MAXSERVERNAME + 1];
 extern time_t pbs_tcp_timeout;
+
+#ifdef UNIT_TEST
+  int process_svr_conn_rc;
+#endif
 
 int set_active_pbs_server(
 
@@ -509,7 +512,7 @@ int validate_user(
     char *msg)
   {
   struct ucred cr;
-  socklen_t cr_size;
+  socklen_t   cr_size;
   struct passwd *user_pwd;
 
   if (msg == NULL)
@@ -522,7 +525,7 @@ int validate_user(
     }
 
   cr_size = sizeof(struct ucred);
-  if (getsockopt(sock, SOL_SOCKET, SO_PEERCRED, &cr, &cr_size) < 0)
+  if (getsockopt(sock, SOL_SOCKET, SO_PEERCRED, (void *)&cr, &cr_size) < 0)
     {
     sprintf(msg, "getsockopt for SO_PEERDRED failed: %d", errno);
     return(PBSE_SOCKET_FAULT);
@@ -653,7 +656,7 @@ int get_trq_server_addr(
   return rc;
   }
 
-void send_svr_disconnect(int sock, char *user_name)
+void send_svr_disconnect(int sock, const char *user_name)
   {
   /*
    * Disconnect message to svr:
@@ -663,6 +666,10 @@ void send_svr_disconnect(int sock, char *user_name)
   int len = 0, user_len = 0, user_ll = 0, resp_msg_len = 0;
   char tmp_buf[8];
   char *resp_msg = NULL;
+
+  if (user_name == NULL)
+    return;
+
   user_len = strlen(user_name);
   sprintf(tmp_buf, "%d", user_len);
   user_ll = strlen(tmp_buf);
@@ -671,6 +678,7 @@ void send_svr_disconnect(int sock, char *user_name)
   len += 1;
   len += user_len;
   len += LOGIN_NAME_MAX + 1;
+
   resp_msg = (char *)calloc(1, len);
   sprintf(resp_msg, "+2+22+59%d+%d%s", user_ll, user_len, user_name);
   resp_msg_len = strlen(resp_msg);
@@ -700,8 +708,7 @@ void *process_svr_conn(
   int         send_len = 0;
   char       *trq_server_addr = NULL;
   int         trq_server_addr_len = 0;
-  int         disconnect_svr = TRUE;
-  int         svr_sock = 0;
+  int         svr_sock = -1;
   int         msg_len = 0;
   int         debug_mark = 0;
   int         local_socket = *(int *)sock;
@@ -717,14 +724,11 @@ void *process_svr_conn(
         {
         /* rc will get evaluated after the switch statement. */
         rc = build_active_server_response(&send_message);
-        disconnect_svr = FALSE;
-
         break;
         }
 
       case TRQ_VALIDATE_ACTIVE_SERVER:
         {
-        disconnect_svr = FALSE;
         if ((rc = socket_read_num(local_socket, (long long *)&server_port)) != PBSE_NONE)
           {
           break;
@@ -744,6 +748,7 @@ void *process_svr_conn(
       case TRQ_AUTH_CONNECTION:
         {
 
+        int         disconnect_svr = TRUE;
         /* incoming message format is:
          * trq_system_len|trq_system|trq_port|Validation_type|user_len|user|pid|psock|
          * message format to pbs_server is:
@@ -799,23 +804,27 @@ void *process_svr_conn(
         else if ((rc = build_request_svr(auth_type, user_name, user_sock, &send_message)) != PBSE_NONE)
           {
           socket_close(svr_sock);
+          disconnect_svr = FALSE;
           debug_mark = 5;
           }
         else if ((send_len = ((send_message == NULL)?0:strlen(send_message)) ) <= 0)
           {
           socket_close(svr_sock);
+          disconnect_svr = FALSE;
           rc = PBSE_INTERNAL;
           debug_mark = 6;
           }
         else if ((rc = socket_write(svr_sock, send_message, send_len)) != send_len)
           {
           socket_close(svr_sock);
+          disconnect_svr = FALSE;
           rc = PBSE_SOCKET_WRITE;
           debug_mark = 7;
           }
         else if ((rc = parse_response_svr(svr_sock, &error_msg)) != PBSE_NONE)
           {
           socket_close(svr_sock);
+          disconnect_svr = FALSE;
           debug_mark = 8;
           }
         else
@@ -836,10 +845,31 @@ void *process_svr_conn(
           log_record(PBSEVENT_CLIENTAUTH | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD,
             className, msg_buf);
           }
+
+        if (TRUE == disconnect_svr)
+          {
+          send_svr_disconnect(svr_sock, user_name);
+          socket_close(svr_sock);
+          }
         break;
-       }
+        }
+      default:
+        rc = PBSE_IVALREQ;
+        break;
+      }
     }
-  }
+  else
+    {
+    sprintf(msg_buf, "socket_read_num failed: %d", rc);
+    log_record(PBSEVENT_CLIENTAUTH, PBS_EVENTCLASS_TRQAUTHD, __func__, msg_buf);
+    }
+
+#ifdef UNIT_TEST
+  /* process_svr_conn_rc is used by ./test/trq_auth/test_trq_auth.c
+     to discover the status of unit test calls to process_svr_conn
+   */
+  process_svr_conn_rc = rc;
+#endif
 
   if (rc != PBSE_NONE)
     {
@@ -879,11 +909,6 @@ void *process_svr_conn(
   if(send_message != NULL)
     rc = socket_write(local_socket, send_message, strlen(send_message));
 
-  if (TRUE == disconnect_svr)
-    {
-    send_svr_disconnect(svr_sock, user_name);
-    socket_close(svr_sock);
-    }
 
   if (trq_server_addr != NULL)
     free(trq_server_addr);

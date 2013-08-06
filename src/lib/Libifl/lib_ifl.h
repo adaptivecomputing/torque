@@ -29,6 +29,7 @@ int get_active_pbs_server(char **);
 int validate_active_pbs_server(char **, int);
 int trq_simple_connect(const char *server_name, int port, int *handle);
 int trq_simple_disconnect(int handle);
+void send_svr_disconnect(int, const char *);
 
 
 /* PBSD_gpuctrl2.c */
