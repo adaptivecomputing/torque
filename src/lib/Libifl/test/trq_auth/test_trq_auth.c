@@ -206,7 +206,7 @@ START_TEST(test_process_svr_conn)
 
   sock = (int *)calloc(1, sizeof(int));
   *sock = 20;
-  request_type = TRQ_GET_ACTIVE_SERVER;
+  request_type = -1;
 
   /* a request_tyupe of -1 will cause a failure on the reading of the incoming request */
   (*process_svr_conn)((void *)sock);
