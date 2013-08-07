@@ -507,6 +507,9 @@ m4_ifdef([AM_SILENT_RULES],[
   fi
 ])
 
+if test "x$have_check" = "xyes"; then
+  AC_DEFINE(UNIT_TEST, 1, [turns on unit test conditionals in code])
+fi
 
 dnl
 dnl  ######################################################################

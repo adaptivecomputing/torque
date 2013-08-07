@@ -16,13 +16,16 @@
 #include "../Libnet/lib_net.h" /* get_hostaddr, socket_* */
 #include "../../include/log.h" /* log event types */
 
-
 char         *trq_addr = NULL;
 int           trq_addr_len;
 char         *trq_server_name = NULL;
 int           debug_mode = 0;
 static char   active_pbs_server[PBS_MAXSERVERNAME + 1];
 extern time_t pbs_tcp_timeout;
+
+#ifdef UNIT_TEST
+  int process_svr_conn_rc;
+#endif
 
 int set_active_pbs_server(
 
@@ -509,7 +512,7 @@ int validate_user(
     char *msg)
   {
   struct ucred cr;
-  socklen_t cr_size;
+  socklen_t   cr_size;
   struct passwd *user_pwd;
 
   if (msg == NULL)
@@ -522,7 +525,7 @@ int validate_user(
     }
 
   cr_size = sizeof(struct ucred);
-  if (getsockopt(sock, SOL_SOCKET, SO_PEERCRED, &cr, &cr_size) < 0)
+  if (getsockopt(sock, SOL_SOCKET, SO_PEERCRED, (void *)&cr, &cr_size) < 0)
     {
     sprintf(msg, "getsockopt for SO_PEERDRED failed: %d", errno);
     return(PBSE_SOCKET_FAULT);
@@ -653,7 +656,7 @@ int get_trq_server_addr(
   return rc;
   }
 
-void send_svr_disconnect(int sock, char *user_name)
+void send_svr_disconnect(int sock, const char *user_name)
   {
   /*
    * Disconnect message to svr:
@@ -798,23 +801,27 @@ void *process_svr_conn(
         else if ((rc = build_request_svr(auth_type, user_name, user_sock, &send_message)) != PBSE_NONE)
           {
           socket_close(svr_sock);
+          disconnect_svr = FALSE;
           debug_mark = 5;
           }
         else if ((send_len = ((send_message == NULL)?0:strlen(send_message)) ) <= 0)
           {
           socket_close(svr_sock);
+          disconnect_svr = FALSE;
           rc = PBSE_INTERNAL;
           debug_mark = 6;
           }
         else if ((rc = socket_write(svr_sock, send_message, send_len)) != send_len)
           {
           socket_close(svr_sock);
+          disconnect_svr = FALSE;
           rc = PBSE_SOCKET_WRITE;
           debug_mark = 7;
           }
         else if ((rc = parse_response_svr(svr_sock, &error_msg)) != PBSE_NONE)
           {
           socket_close(svr_sock);
+          disconnect_svr = FALSE;
           debug_mark = 8;
           }
         else
@@ -843,6 +850,9 @@ void *process_svr_conn(
           }
         break;
         }
+      default:
+        rc = PBSE_IVALREQ;
+        break;
       }
     }
   else
@@ -850,6 +860,10 @@ void *process_svr_conn(
     sprintf(msg_buf, "socket_read_num failed: %d", rc);
     log_record(PBSEVENT_CLIENTAUTH, PBS_EVENTCLASS_TRQAUTHD, __func__, msg_buf);
     }
+
+#ifdef UNIT_TEST
+  process_svr_conn_rc = rc;
+#endif
 
   if (rc != PBSE_NONE)
     {
