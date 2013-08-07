@@ -22,6 +22,7 @@ char         *trq_server_name = NULL;
 int           debug_mode = 0;
 static char   active_pbs_server[PBS_MAXSERVERNAME + 1];
 extern time_t pbs_tcp_timeout;
+bool   trqauthd_up = true;
 
 #ifdef UNIT_TEST
   int process_svr_conn_rc;
@@ -717,6 +718,13 @@ void *process_svr_conn(
     {
     switch (req_type)
       {
+      case TRQ_DOWN_TRQAUTHD:
+        {
+        trqauthd_up = false;
+        rc = build_active_server_response(&send_message);
+        break;
+        }
+
       case TRQ_GET_ACTIVE_SERVER:
         {
         /* rc will get evaluated after the switch statement. */
