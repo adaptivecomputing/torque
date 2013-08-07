@@ -22,6 +22,8 @@ extern int debug_mode;
 extern void *(*read_func[])(void *);
 extern char *msg_daemonname;
 
+extern bool trqauthd_up;
+
 /* Note, in extremely high load cases, the alloc value in /proc/net/sockstat can exceed the max value. This will substantially slow down throughput and generate connection failures (accept gets a EMFILE error). As the client is designed to run on each submit host, that issue shouldn't occur. The client must be restarted to clear out this issue. */
 int start_listener(
     
@@ -232,7 +234,7 @@ int start_domainsocket_listener(
       log_event(PBSEVENT_SYSTEM | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD,
         msg_daemonname, log_buf);
       }
-    while (1)
+    while (trqauthd_up == true)
       {
       if((new_conn_port = (int *)calloc(1, sizeof(int))) == NULL)
         {
@@ -292,7 +294,7 @@ int start_domainsocket_listener(
     close(listen_socket);
 
   return(rc);
-  } /* END start_listener() */
+  } /* END start_domainsocket_listener() */
 
 
 

@@ -256,7 +256,6 @@ START_TEST(test_process_svr_conn)
 
   /* Test with an invalid request_type */
   process_svr_conn_rc = PBSE_NONE;
-  socket_read_num_success = true;
   sock = (int *)calloc(1, sizeof(int));
   *sock = 20;
   request_type = 10;
@@ -269,6 +268,12 @@ START_TEST(test_process_svr_conn)
   sock = (int *)calloc(1, sizeof(int));
   *sock = 20;
   request_type = TRQ_GET_ACTIVE_SERVER;
+  (*process_svr_conn)((void *)sock);
+  fail_unless(process_svr_conn_rc == PBSE_NONE, "TRQ_GET_ACTIVE_SERVER failed");
+
+  sock = (int *)calloc(1, sizeof(int));
+  *sock = 20;
+  request_type = TRQ_DOWN_TRQAUTHD;
   (*process_svr_conn)((void *)sock);
   fail_unless(process_svr_conn_rc == PBSE_NONE, "TRQ_GET_ACTIVE_SERVER failed");
 
