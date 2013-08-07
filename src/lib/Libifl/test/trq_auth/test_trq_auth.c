@@ -38,10 +38,17 @@ START_TEST(get_active_pbs_server_test)
   int  rc;
   
   connect_success = true;
+  getaddrinfo_success = true;
   socket_success = true;
   setsockopt_success = true;
+  close_success = true;
   write_success = true;
   socket_read_success = true;
+  socket_read_num_success = true;
+  getsockopt_success = true;
+  tcp_priv_success = true;
+  socket_connect_success = true;
+  DIS_success = true;
 
   setenv("PBSAPITIMEOUT", "3", 1);
   get_active_pbs_server(&server_name);
@@ -76,10 +83,19 @@ START_TEST(test_trq_simple_connect)
   int         handle = -1;
   int         rc;
 
+  connect_success = true;
+  getaddrinfo_success = true;
   socket_success = true;
   setsockopt_success = true;
-  connect_success = true;
   close_success = true;
+  write_success = true;
+  socket_read_success = true;
+  socket_read_num_success = true;
+  getsockopt_success = true;
+  tcp_priv_success = true;
+  socket_connect_success = true;
+  DIS_success = true;
+
 
   rc = trq_simple_connect(server_name, batch_port, &handle);
   fail_unless(rc == PBSE_NONE, "trq_simple_connect failed success case", rc);
@@ -108,7 +124,18 @@ START_TEST(test_trq_simple_disconnect)
   int         handle = 1;
   int         rc;
 
+  connect_success = true;
+  getaddrinfo_success = true;
+  socket_success = true;
+  setsockopt_success = true;
   close_success = true;
+  write_success = true;
+  socket_read_success = true;
+  socket_read_num_success = true;
+  getsockopt_success = true;
+  tcp_priv_success = true;
+  socket_connect_success = true;
+  DIS_success = true;
 
   rc = trq_simple_disconnect(handle);
   fail_unless(rc == PBSE_NONE, "trq_simple_disconnect failed success case", rc);
@@ -125,12 +152,18 @@ START_TEST(test_validate_server)
   char *sign_key = NULL;
   int   rc;
 
+  connect_success = true;
+  getaddrinfo_success = true;
   socket_success = true;
   setsockopt_success = true;
-  connect_success = true;
   close_success = true;
   write_success = true;
   socket_read_success = true;
+  socket_read_num_success = true;
+  getsockopt_success = true;
+  tcp_priv_success = true;
+  socket_connect_success = true;
+  DIS_success = true;
 
   strcpy(active_server_name, "localhost");
   rc = validate_server(active_server_name, port, ssh_key, &sign_key);
@@ -158,10 +191,17 @@ START_TEST(test_validate_active_pbs_server)
   int  port = 15001;
 
   connect_success = true;
+  getaddrinfo_success = true;
   socket_success = true;
   setsockopt_success = true;
+  close_success = true;
   write_success = true;
   socket_read_success = true;
+  socket_read_num_success = true;
+  getsockopt_success = true;
+  tcp_priv_success = true;
+  socket_connect_success = true;
+  DIS_success = true;
 
   rc = validate_active_pbs_server(&active_server, port);
   fail_unless(rc == PBSE_NONE, "validate_active_pbs_server failed", rc);
@@ -193,13 +233,15 @@ START_TEST(test_process_svr_conn)
   {
   int *sock;
 
-  getsockopt_success = true;
   connect_success = true;
+  getaddrinfo_success = true;
   socket_success = true;
   setsockopt_success = true;
+  close_success = true;
   write_success = true;
   socket_read_success = true;
-  socket_read_num_success = false;
+  socket_read_num_success = true;
+  getsockopt_success = true;
   tcp_priv_success = true;
   socket_connect_success = true;
   DIS_success = true;
