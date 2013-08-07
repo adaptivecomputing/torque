@@ -1,7 +1,9 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
+#include <sys/types.h>
 #include <sys/socket.h>
+#include <netdb.h>
 #include <errno.h>
 #include <pwd.h>
 #include "tcp.h"
@@ -300,7 +302,7 @@ char *pbs_get_server_list(void)
   if (list == NULL)
     return(NULL);
 
-  strcpy(list, "kmn");
+  strcpy(list, "george");
   return(list);
   }
 
@@ -415,6 +417,10 @@ int close(
     return(-1);
   }
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 int getaddrinfo(
 
   const char *node,
@@ -423,10 +429,36 @@ int getaddrinfo(
   struct addrinfo **res)
 
   {
+  struct addrinfo *results;
+
   if (getaddrinfo_success == true)
+    {
+    results = (struct addrinfo *)calloc(1, sizeof(struct addrinfo));
+    if (results == NULL)
+      {
+      fprintf(stderr, "failed to allocated memory in getaddrinfo\n");
+      return(-1);
+      }
+
+    results->ai_family = AF_INET;
+    results->ai_protocol = IPPROTO_TCP;
+    results->ai_next = NULL;
+
+    *res = results;
+
     return(0);
+    }
   else
     return(-1);
+  }
+#ifdef __cplusplus
+}
+#endif
+
+void freeaddrinfo(struct addrinfo *addr) throw()
+  {
+  if (addr != NULL)
+    free(addr);
   }
 
 int setsockopt(
