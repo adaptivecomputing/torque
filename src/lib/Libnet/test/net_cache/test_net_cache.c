@@ -42,13 +42,29 @@ void *add_and_lookup_stuff(void *parm)
         struct sockaddr_in *pINetAddr;
         const char *word = getRandomWord();
 
+        if(pAddr == NULL)
+        {
+           //We're out of memory, just bail on this thread.
+           return NULL;
+        }
+
         if(NULL == get_cached_addrinfo(word))
         {
             pAddr->ai_addr = (struct sockaddr *)calloc(1,sizeof(struct sockaddr_in));
+            if(pAddr->ai_addr == NULL)
+            {
+               //Out of memory so bail out on this thread.
+               return NULL;
+            }
             pAddr->ai_family = AF_INET;
             pINetAddr = (struct sockaddr_in *)pAddr->ai_addr;
 
             pAddr->ai_canonname = strdup(word);
+            if(pAddr->ai_canonname == NULL)
+            {
+               //Out of memory so bail out on this thread.
+               return NULL;
+            }
             pINetAddr->sin_addr.s_addr = qrand();
             pAddr = insert_addr_name_info(pAddr,pAddr->ai_canonname);
         }
