@@ -15,4 +15,6 @@ void clean_log_init_mutex(void);
 
 void initialize_globals_for_log(int server_port);
 
+int termiante_trqauthd(void);
+
 #endif /* _TRQ_AUTH_DAEMON_H */
