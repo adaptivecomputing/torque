@@ -1079,7 +1079,7 @@ int handle_stageout(
   int     rc = PBSE_NONE;
   int     IsFaked = 0;
   int     spool_file_exists;
-  char    log_buf[LOCAL_LOG_BUF_SIZE+1];
+  char   *log_buf = NULL;
   char    namebuf[MAXPATHLEN + 1];
   char   *namebuf2;
   int     handle = -1;
@@ -1101,6 +1101,16 @@ int handle_stageout(
     rc = PBSE_MEM_MALLOC;
     goto handle_stageout_cleanup;
     }
+
+  log_buf = (char *)malloc(LOCAL_LOG_BUF_SIZE+1);
+  if (log_buf == NULL)
+    {
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+
+    rc = PBSE_MEM_MALLOC;
+    goto handle_stageout_cleanup;
+    }
+  memset(log_buf, 0, LOCAL_LOG_BUF_SIZE+1);
   
   if (LOGLEVEL >= 4)
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,job_id,"JOB_SUBSTATE_STAGEOUT");
@@ -1320,6 +1330,9 @@ handle_stageout_cleanup:
   
   if (job_momname != NULL)
     free(job_momname); 
+
+  if (log_buf != NULL)
+    free(log_buf);
 
   return(rc);
   } /* END handle_stageout() */
