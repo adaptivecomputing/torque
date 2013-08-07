@@ -256,6 +256,8 @@ void parse_command_line(int argc, char **argv)
               fprintf(stderr, "  --%s\n", long_options[iterator++].name);
               }
             fprintf(stderr, "\n  -D // RUN IN DEBUG MODE\n");
+            fprintf(stderr, "  -d // terminate trqauthd\n");
+            fprintf(stderr, "\n");
             exit(0);
             break;
           case 2:   /* version */
