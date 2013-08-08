@@ -485,7 +485,7 @@ int build_active_server_response(
     len = strlen(active_pbs_server);
     }
 
-  sprintf(temp_buf, "%d", len);
+  sprintf(temp_buf, "%d|", len);
 
   resp_msg = (char *)calloc(1, len + strlen(temp_buf) + 2); /* 2 because we need one for the '|' delimeter and one for a null termination */
   if (resp_msg == NULL)
