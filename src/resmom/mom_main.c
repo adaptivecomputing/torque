@@ -7295,6 +7295,7 @@ int setup_program_environment(void)
     return(3);
     }
 
+
 #ifdef PENABLE_LINUX26_CPUSETS
   /* load system topology */
   if ((hwloc_topology_init(&topology) == -1))
