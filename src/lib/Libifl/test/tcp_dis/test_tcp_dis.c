@@ -11,8 +11,9 @@
 #include <unistd.h>
 #include "pbs_error.h"
 
-/* Note: must set MAXCHUNK in tcp_dis.c to 30 for an actual test, 
- * I could not find a way to overwrite 50000 with 30 for our unit
+/* Note: must set MAXCHUNK in tcp_dis.c to 30 for testing all possible combinations 
+ * of length, (less than MAXCHUNK, same as MAXCHUNK, larger than MAXCHUNK.  I could 
+ * not find a way to overwrite 50000 with 30 for our unit
  * test even if I had defined MAXCHUNK in a header file and 
  * undefinining in this file and redefine it to 30.
 */
