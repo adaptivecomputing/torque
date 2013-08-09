@@ -12,9 +12,9 @@
 #include "pbs_error.h"
 
 /* Note: must set MAXCHUNK in tcp_dis.c to 30 for an actual test, 
- * I could not find a value to override it with a test value of 30
- * even if I had defined MAXCHUNK in a header file and undefinining
- * in this file and redefine it to 30.
+ * I could not find a way to overwrite 50000 with 30 for our unit
+ * test even if I had defined MAXCHUNK in a header file and 
+ * undefinining in this file and redefine it to 30.
 */
 
 #ifndef MAXCHUNK
@@ -44,12 +44,17 @@ char *setupAndDoBreakup(const char *strToBreak)
  {
  struct tcp_chan chan;
  char *tempfilename = setup_tcp_chan_for_test(&chan, strToBreak);
+
  DIS_tcp_wflush(&chan);
+
  close(chan.sock);
  free(chan.writebuf.tdis_thebuf);
  return tempfilename;
 }
 
+/* 
+ * Read back the file and make sure that they were broken in chunks of the right size
+ */
 void test_chunk_breakups(const char *filename, const char *str)
   {
   FILE *fp = fopen(filename, "r");
