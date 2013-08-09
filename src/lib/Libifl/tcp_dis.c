@@ -109,7 +109,7 @@
 #define MAX_SOCKETS 65536
 time_t pbs_tcp_timeout = 300;  
 
-
+#define MAXCHUNK 50000 
 
 void DIS_tcp_settimeout(
 
@@ -312,8 +312,11 @@ int DIS_tcp_wflush(
 
   {
   size_t            ct;
+  size_t            writtenCount = 0;
+  size_t            totalCt, chunk;
   int               i;
   char             *pb = NULL;
+  char             *nextPb = NULL;
   char             *pbs_debug = NULL;
 
   struct tcpdisbuf *tp;
@@ -321,35 +324,45 @@ int DIS_tcp_wflush(
   pbs_debug = getenv("PBSDEBUG");
 
   tp = &chan->writebuf;
-  pb = tp->tdis_thebuf;
-  ct = tp->tdis_trailp - tp->tdis_thebuf;
+  nextPb = tp->tdis_thebuf;
+  totalCt = chunk = tp->tdis_trailp - tp->tdis_thebuf;
 
-  while ((i = write_ac_socket(chan->sock, pb, ct)) != (ssize_t)ct)
+  while (writtenCount < totalCt)
     {
-    if (i == -1)
+    if (chunk > MAXCHUNK)
+      chunk = MAXCHUNK; 
+    ct = chunk;
+    pb = nextPb;
+    while ((i = write_ac_socket(chan->sock, pb, ct)) != (ssize_t)ct)
       {
-      if (errno == EINTR)
+      if (i == -1)
         {
-        continue;
-        }
+        if (errno == EINTR)
+          {
+          continue;
+          }
 
-      /* FAILURE */
+        /* FAILURE */
 
-      if (pbs_debug != NULL)
-        {
-        fprintf(stderr,
-          "TCP write of %d bytes (%.32s) [sock=%d] failed, errno=%d (%s)\n",
-          (int)ct, pb, chan->sock, errno, strerror(errno));
-        }
+        if (pbs_debug != NULL)
+          {
+          fprintf(stderr,
+            "TCP write of %d bytes (%.32s) [sock=%d] failed, errno=%d (%s)\n",
+            (int)ct, pb, chan->sock, errno, strerror(errno));
+          }
       
-      return(-1);
-      }  /* END if (i == -1) */
-    else
-      {
-      ct -= i;
-      pb += i;
-      }
-    }  /* END while (i) */
+        return(-1);
+        }  /* END if (i == -1) */
+      else
+        {
+        ct -= i;
+        pb += i;
+        }
+      }  /* END while (i) */
+    writtenCount += chunk;
+    nextPb += chunk;
+    chunk = totalCt - writtenCount;
+    } /* END while (writtenCount) */
 
   /* SUCCESS */
 
