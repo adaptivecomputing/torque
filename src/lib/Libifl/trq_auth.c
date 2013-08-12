@@ -492,7 +492,7 @@ int build_active_server_response(
 
   sprintf(temp_buf, "%d", len);
 
-  resp_msg = (char *)calloc(1, len + strlen(temp_buf) + 2); /* 2 because we need one for the '|' delimeter and one for a null termination */
+  resp_msg = (char *)calloc(1, len + strlen(temp_buf) + 3); /* 3 because we need two for the '|' delimiters and one for a null termination */
   if (resp_msg == NULL)
     {
     return(PBSE_MEM_MALLOC);
