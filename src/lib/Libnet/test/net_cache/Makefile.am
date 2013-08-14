@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 check_PROGRAMS = test_net_cache
 
 libnet_cache_la_SOURCES = scaffolding.c ${PROG_ROOT}/net_cache.c ${PROG_ROOT}/../Libutils/u_hash_table.c
-libnet_cache_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov -lQtCore
+libnet_cache_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_net_cache_SOURCES = test_net_cache.c
 
