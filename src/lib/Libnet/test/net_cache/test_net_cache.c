@@ -12,12 +12,16 @@
 #include <stdio.h>
 
 #include "pbs_error.h"
-#include <QtCore/qglobal.h>
 
-extern const char *getRandomWord();
+#define NUMTHREADS 20
+
+extern const char *getRandomWord(unsigned int *);
+
 void *add_and_lookup_stuff(void *parm);
 
 bool everybody_started  = false;
+unsigned int seedp[NUMTHREADS];
+
 
 #define NUM_THREADS 20
 
@@ -29,7 +33,7 @@ START_TEST(test_one)
     {
         pthread_t num;
         //Spin off a bunch of threads that will hammer the cache simultaneously.
-        pthread_create(&num,NULL,add_and_lookup_stuff,NULL);
+        pthread_create(&num,NULL,add_and_lookup_stuff,(void *)&seedp[i]);
         thread_ids[i] = num;
     }
 
@@ -53,54 +57,53 @@ void *add_and_lookup_stuff(void *parm)
 
     while((i < 10000) || (everybody_started == false))
     {
-        struct addrinfo *pAddr = (struct addrinfo *)calloc(1,sizeof(addrinfo));
-        struct sockaddr_in *pINetAddr;
-        const char *word = getRandomWord();
+      struct addrinfo *pAddr = (struct addrinfo *)calloc(1,sizeof(addrinfo));
+      struct sockaddr_in *pINetAddr;
+      const char *word = getRandomWord((unsigned int *)parm);
 
-        i++;
-        if(NULL == get_cached_addrinfo(word))
-        {
-            pAddr->ai_addr = (struct sockaddr *)calloc(1,sizeof(struct sockaddr_in));
-            pAddr->ai_family = AF_INET;
-            pINetAddr = (struct sockaddr_in *)pAddr->ai_addr;
+      i++;
+      if(NULL == get_cached_addrinfo(word))
+      {
+        pAddr->ai_addr = (struct sockaddr *)calloc(1,sizeof(struct sockaddr_in));
+        pAddr->ai_family = AF_INET;
+        pINetAddr = (struct sockaddr_in *)pAddr->ai_addr;
 
-            pAddr->ai_canonname = strdup(word);
-            pINetAddr->sin_addr.s_addr = qrand();
-            pAddr = insert_addr_name_info(pAddr,pAddr->ai_canonname);
-        }
-        else
-        {
-            freeaddrinfo(pAddr);
-            pAddr = get_cached_addrinfo_full(word);
-        }
+        pAddr->ai_canonname = strdup(word);
+        pINetAddr->sin_addr.s_addr = rand_r((unsigned int *)parm);        
+        pAddr = insert_addr_name_info(pAddr,pAddr->ai_canonname);
+      }
+      else
+      {
+        freeaddrinfo(pAddr);
+        pAddr = get_cached_addrinfo_full(word);
+      }
 
-        fail_unless((pAddr != NULL));
+      fail_unless((pAddr != NULL));
 
-        if(pAddr != NULL)
-        {
-            char *p1;
-            char *p2;
-            struct sockaddr_in *p3;
-            struct addrinfo *p4;
+      if(pAddr != NULL)
+      {
+        char *p1;
+        char *p2;
+        struct sockaddr_in *p3;
+        struct addrinfo *p4;
 
-            pINetAddr = (struct sockaddr_in *)pAddr->ai_addr;
-            p1 = get_cached_nameinfo(pINetAddr);
-            p2 = get_cached_fullhostname(word,pINetAddr);
-            p3 = get_cached_addrinfo(word);
-            p4 = get_cached_addrinfo_full(word);
-            fail_unless(((p1 != NULL)&&(p2 != NULL)&&(p3 != NULL)&&(p4 != NULL)));
-        }
-        else
-        {
-        }
+        pINetAddr = (struct sockaddr_in *)pAddr->ai_addr;
+        p1 = get_cached_nameinfo(pINetAddr);
+        p2 = get_cached_fullhostname(word,pINetAddr);
+        p3 = get_cached_addrinfo(word);
+        p4 = get_cached_addrinfo_full(word);
+        fail_unless(((p1 != NULL)&&(p2 != NULL)&&(p3 != NULL)&&(p4 != NULL)));
+      }
+      else
+      {
+      }
     }
-    return NULL;
-}
+  return NULL;
+  }
 
 
 /*START_TEST(test_two)
   {
-
 
   }
 END_TEST*/

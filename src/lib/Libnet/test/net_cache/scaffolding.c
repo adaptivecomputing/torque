@@ -5,7 +5,6 @@
 #include <sys/types.h>
 #include <netdb.h>
 #include <pthread.h>
-#include<QtCore/qglobal.h>
 
 
 const char *words[] =
@@ -247,10 +246,10 @@ const char *words[] =
         "X-ray"
 };
 
-const char *getRandomWord()
+const char *getRandomWord(unsigned int *seedp)
 {
     int len = sizeof(words)/sizeof(const char *);
-    int index = qrand()%len;
+    int index = rand_r(seedp)%len;
 
     return words[index];
 }
