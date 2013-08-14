@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <errno.h>
 #include "license_pbs.h" /* See here for the software license */
 #include "lib_net.h"
 #include "test_net_cache.h"
@@ -16,18 +17,30 @@
 extern const char *getRandomWord();
 void *add_and_lookup_stuff(void *parm);
 
-int exited = FALSE;
+bool everybody_started  = false;
+
+#define NUM_THREADS 20
 
 START_TEST(test_one)
   {
-    for(int i=0;i < 20;i++)
+  pthread_t thread_ids[NUM_THREADS];
+
+    for(int i=0;i < NUM_THREADS;i++)
     {
         pthread_t num;
         //Spin off a bunch of threads that will hammer the cache simultaneously.
         pthread_create(&num,NULL,add_and_lookup_stuff,NULL);
+        thread_ids[i] = num;
     }
-    sleep(2);
-    exited = TRUE;
+
+    sleep(1);
+    everybody_started = true;
+
+    for(int i = 0; i < NUM_THREADS; i++)
+      {
+      pthread_join(thread_ids[i], NULL);
+      }
+
     //Exit without shutting down the cache. It turns out that the cache destructor can be called
     //before the threads exit and we want to make sure the exit doesn't create any segfaults
     //or exceptions.
@@ -36,12 +49,15 @@ END_TEST
 
 void *add_and_lookup_stuff(void *parm)
 {
-    while(1)
+  int i = 0;
+
+    while((i < 10000) || (everybody_started == false))
     {
         struct addrinfo *pAddr = (struct addrinfo *)calloc(1,sizeof(addrinfo));
         struct sockaddr_in *pINetAddr;
         const char *word = getRandomWord();
 
+        i++;
         if(NULL == get_cached_addrinfo(word))
         {
             pAddr->ai_addr = (struct sockaddr *)calloc(1,sizeof(struct sockaddr_in));
@@ -58,7 +74,7 @@ void *add_and_lookup_stuff(void *parm)
             pAddr = get_cached_addrinfo_full(word);
         }
 
-        fail_unless((pAddr != NULL)||(exited == TRUE));
+        fail_unless((pAddr != NULL));
 
         if(pAddr != NULL)
         {
@@ -72,7 +88,7 @@ void *add_and_lookup_stuff(void *parm)
             p2 = get_cached_fullhostname(word,pINetAddr);
             p3 = get_cached_addrinfo(word);
             p4 = get_cached_addrinfo_full(word);
-            fail_unless(((p1 != NULL)&&(p2 != NULL)&&(p3 != NULL)&&(p4 != NULL))||(exited == TRUE));
+            fail_unless(((p1 != NULL)&&(p2 != NULL)&&(p3 != NULL)&&(p4 != NULL)));
         }
         else
         {
@@ -82,12 +98,12 @@ void *add_and_lookup_stuff(void *parm)
 }
 
 
-START_TEST(test_two)
+/*START_TEST(test_two)
   {
 
 
   }
-END_TEST
+END_TEST*/
 
 Suite *get_hostaddr_suite(void)
   {
@@ -96,9 +112,9 @@ Suite *get_hostaddr_suite(void)
   tcase_add_test(tc_core, test_one);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("test_two");
+/*  tc_core = tcase_create("test_two");
   tcase_add_test(tc_core, test_two);
-  suite_add_tcase(s, tc_core);
+  suite_add_tcase(s, tc_core);*/
 
   return s;
   }
