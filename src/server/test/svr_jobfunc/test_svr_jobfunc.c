@@ -12,6 +12,8 @@
 int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging);
 int chk_mppnodect(resource *mppnodect, pbs_queue *pque, long nppn, long mpp_width, char *EMsg);
 
+extern int decrement_count;
+
 START_TEST(chk_mppnodect_test)
   {
   }
@@ -86,6 +88,18 @@ START_TEST(svr_setjobstate_test)
   result = svr_setjobstate(&test_job, 1, 2, 3);
   fail_unless(result == PBSE_NONE, "svr_setjobstate fail");
 
+  test_job.ji_qs.ji_state = JOB_STATE_RUNNING;
+  test_job.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("napali/0");
+  fail_unless(svr_setjobstate(&test_job, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE) == PBSE_NONE);
+  fail_unless(test_job.ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL);
+
+  decrement_count = 0;
+  fail_unless(svr_setjobstate(&test_job, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE) == PBSE_NONE);
+  fail_unless(decrement_count == 2);
+
+  decrement_count = 0;
+  fail_unless(svr_setjobstate(&test_job, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE) == PBSE_NONE);
+  fail_unless(decrement_count == 0);
   }
 END_TEST
 

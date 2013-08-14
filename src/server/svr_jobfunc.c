@@ -845,12 +845,30 @@ int svr_dequejob(
   }  /* END svr_dequejob() */
 
 
+void release_node_allocation(
+
+  job &pjob)
+
+  {
+  free_nodes(&pjob);
+
+  free(pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+  pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = NULL;
+  pjob.ji_wattr[JOB_ATR_exec_host].at_flags &= ~ATR_VFLAG_SET;
+  }
 
 
 
 /*
- * svr_setjobstate - set the job state, update the server/queue state counts,
- * and save the job
+ * svr_setjobstate
+ *
+ * @pre-cond: pjob must be a valid job pointer
+ * @post-cond: pjob will have state newstate and substate newsubstate, and relevant
+ * counts/events will be updated.
+ * @return: PBSE_BAD_PARAMETER if pjob is NULL
+ *          PBSE_JOBNOTFOUND if the job disappears mid-execution
+ *          return value from job_save if job_save is called (on modification)
+ *          PBSE_NONE on success
  */
 
 int svr_setjobstate(
@@ -861,7 +879,7 @@ int svr_setjobstate(
   int  has_queue_mutex) /* I */
 
   {
-  int          changed = 0;
+  bool         changed = false;
   int          oldstate;
   pbs_queue   *pque = NULL;
   char         log_buf[LOCAL_LOG_BUF_SIZE];
@@ -898,7 +916,7 @@ int svr_setjobstate(
     /* Not a new job, update the counts and save if needed */
 
     if (pjob->ji_qs.ji_substate != newsubstate)
-      changed = 1;
+      changed = true;
 
     /* if the state is changing, also update the state counts */
 
@@ -906,7 +924,14 @@ int svr_setjobstate(
 
     if (oldstate != newstate)
       {
-      changed = 1;
+      changed = true;
+
+      /* add a fail-safe for not having queued jobs with nodes assigned */
+      if ((newstate == JOB_STATE_QUEUED) &&
+          (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL))
+        {
+        release_node_allocation(*pjob);
+        }
 
       /* the array job isn't actually a job so don't count it here */
       if (pjob->ji_is_array_template == FALSE)
@@ -929,6 +954,19 @@ int svr_setjobstate(
         }
       else
         pque = pjob->ji_qhdr;
+      
+      /* decrement queued job count if we're completing */
+      if ((pjob->ji_is_array_template == FALSE) &&
+          (newstate == JOB_STATE_COMPLETE))
+        {
+        if (LOGLEVEL >= 6)
+          {
+          sprintf(log_buf, "jobs queued job id %s for users", pjob->ji_qs.ji_jobid);
+          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+          }
+
+        decrement_queued_jobs(&users, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+        }
 
       if (pque != NULL)
         {
@@ -986,20 +1024,6 @@ int svr_setjobstate(
       }
     }    /* END if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRANSICM) */
 
-  /* decrement queued job count if we're completing */
-  if ((pjob->ji_is_array_template == FALSE) &&
-      (pjob->ji_qs.ji_state != JOB_STATE_TRANSIT) &&
-      (pjob->ji_qs.ji_state != JOB_STATE_COMPLETE) &&
-      (newstate == JOB_STATE_COMPLETE))
-    {
-    if (LOGLEVEL >= 6)
-      {
-      sprintf(log_buf, "jobs queued job id %s for users", pjob->ji_qs.ji_jobid);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-      }
-    decrement_queued_jobs(&users, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
-    }
-
   /* set the states accordingly */
   pjob->ji_qs.ji_state = newstate;
   pjob->ji_qs.ji_substate = newsubstate;
@@ -1015,12 +1039,12 @@ int svr_setjobstate(
     return(job_save(pjob, SAVEJOB_FULL,0));
     }
 
-  if (changed)
+  if (changed == true)
     {
     return(job_save(pjob, SAVEJOB_QUICK,0));
     }
 
-  return(0);
+  return(PBSE_NONE);
   }  /* END svr_setjobstate() */
 
 
@@ -3162,10 +3186,10 @@ void set_statechar(
   static const char suspend    = 'S';
   
   if (pjob == NULL)
-  {
-  log_err(PBSE_BAD_PARAMETER, __func__, "NULL input job pointer");
-  return;
-  }
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input job pointer");
+    return;
+    }
   
   if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
       (pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend))
@@ -3176,8 +3200,7 @@ void set_statechar(
     {
     if (pjob->ji_qs.ji_state < (int)strlen(statechar))
       {
-      pjob->ji_wattr[JOB_ATR_state].at_val.at_char =
-        *(statechar + pjob->ji_qs.ji_state);
+      pjob->ji_wattr[JOB_ATR_state].at_val.at_char = *(statechar + pjob->ji_qs.ji_state);
       }
     else
       {
