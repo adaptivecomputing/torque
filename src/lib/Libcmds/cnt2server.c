@@ -257,9 +257,14 @@ start:
             rc = validate_active_pbs_server(&new_server_name, port);
             if ((rc) ||
                 (!strcmp(new_server_name, Server)))
-
-            if (cnt2server_retry != 0)
-              goto retry;
+              {
+              if (cnt2server_retry != 0)
+                {
+                goto retry;
+                }
+              //Don't try again if we have an error or its the same server we already tried.
+              break;
+              }
 
             connect = pbs_connect(new_server_name);
             if (connect <= 0)
