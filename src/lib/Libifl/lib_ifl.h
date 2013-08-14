@@ -15,6 +15,7 @@
 #define  TRQ_AUTH_CONNECTION        1  /* Authorize a client connection. Used by trqauthd */
 #define  TRQ_GET_ACTIVE_SERVER      2  /* Request the name of the currently active pbs_server from trqauthd */
 #define  TRQ_VALIDATE_ACTIVE_SERVER 3 /* Request trqauthd to validate which server is active */
+#define  TRQ_DOWN_TRQAUTHD          4 /* Terminate trqauthd */
 
 
 int parse_request_client(int sock, char **server_name, int *server_port, int *auth_type, char **user, int *user_pid, int *user_sock);
@@ -29,6 +30,7 @@ int get_active_pbs_server(char **);
 int validate_active_pbs_server(char **, int);
 int trq_simple_connect(const char *server_name, int port, int *handle);
 int trq_simple_disconnect(int handle);
+void send_svr_disconnect(int, const char *);
 
 
 /* PBSD_gpuctrl2.c */

@@ -11,6 +11,8 @@ check_PROGRAMS = test_tcp_dis
 libtcp_dis_la_SOURCES = scaffolding.c ${PROG_ROOT}/tcp_dis.c
 libtcp_dis_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
+test_tcp_dis_LDADD = ../../../../test/torque_test_lib/libtorque_test.la ../../../../test/scaffold_fail/libscaffold_fail.la
+
 test_tcp_dis_SOURCES = test_tcp_dis.c
 
 check_SCRIPTS = ${PROG_ROOT}/../../test/coverage_run.sh

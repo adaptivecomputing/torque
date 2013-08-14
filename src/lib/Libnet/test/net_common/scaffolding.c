@@ -2,6 +2,10 @@
 #include <stdlib.h>
 #include <netinet/in.h>
 
+bool socket_success = true;
+bool close_success = true;
+bool connect_success = true;
+
 struct addrinfo * insert_addr_name_info(struct addrinfo *pAddrInfo,const char *host)
 
   {
@@ -39,4 +43,37 @@ ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   {
   return(0);
   }
+
+int socket (int __domain, int __type, int __protocol) __THROW
+  {
+  if (socket_success == true)
+    return(10); /* don't return a 0, 1, or 2 because we may end up closing them */
+  else
+    return(-1);
+  }
+
+int close(
+
+  int filedes)
+
+  {
+  if (close_success == true)
+    return(0);
+  else
+    return(-1);
+  }
+
+int connect(
+
+  int socket,
+  const struct sockaddr *address,
+  socklen_t address_len)
+
+  {
+  if (connect_success == true)
+    return(0);
+  else
+    return(-1);
+  }
+
 

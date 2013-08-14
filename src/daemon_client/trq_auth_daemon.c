@@ -33,6 +33,7 @@ extern pthread_mutex_t *log_mutex;
 extern pthread_mutex_t *job_log_mutex;
 
 extern int debug_mode;
+bool       down_server = false;
 static int changed_msg_daem = 0;
 static char *active_pbs_server;
 
@@ -236,7 +237,7 @@ void parse_command_line(int argc, char **argv)
             {0,         0,                0,  0 }
   };
 
-  while ((c = getopt_long(argc, argv, "D", long_options, &option_index)) != -1)
+  while ((c = getopt_long(argc, argv, "Dd", long_options, &option_index)) != -1)
     {
     switch (c)
       {
@@ -255,6 +256,8 @@ void parse_command_line(int argc, char **argv)
               fprintf(stderr, "  --%s\n", long_options[iterator++].name);
               }
             fprintf(stderr, "\n  -D // RUN IN DEBUG MODE\n");
+            fprintf(stderr, "  -d // terminate trqauthd\n");
+            fprintf(stderr, "\n");
             exit(0);
             break;
           case 2:   /* version */
@@ -268,6 +271,10 @@ void parse_command_line(int argc, char **argv)
         debug_mode = TRUE;
         break;
 
+      case 'd':
+        down_server = true;
+        break;
+
       default:
         fprintf(stderr, "Unknown command line option\n");
         exit(1);
@@ -276,6 +283,44 @@ void parse_command_line(int argc, char **argv)
     }
   }
 
+int terminate_trqauthd()
+  {
+  int rc = PBSE_NONE;
+  int sock = -1;
+  char write_buf[MAX_LINE];
+  char *read_buf;
+  long long read_buf_len = MAX_LINE;
+
+  sprintf(write_buf, "%d|", TRQ_DOWN_TRQAUTHD);
+
+  if((rc = connect_to_trqauthd(&sock)) != PBSE_NONE)
+    {
+    fprintf(stderr, "Could not connect to trqauthd. trqauthd may already be down\n");
+    }
+  else if ((rc = socket_write(sock, write_buf, strlen(write_buf))) < 0)
+    {
+    fprintf(stderr, "Failed to send termnation request to trqauthd: %d\n", rc);
+    }
+  else if ((rc = socket_read_str(sock, &read_buf, &read_buf_len)) != PBSE_NONE)
+    {
+    fprintf(stderr, "trqauthd did not respond. Check to see if trqauthd has terminated: %d\n", rc);
+    }
+  else if( (rc = connect_to_trqauthd(&sock)) != PBSE_NONE) /* We do this because the accept loop on trqauthd 
+                                                             is still waiting for a command before it realizes 
+                                                             it is terminated */
+    {
+    fprintf(stderr, "\ntrqauthd has been terminated\n");
+    }
+  else
+    {
+    fprintf(stderr, "\ntrqauthd has been terminated\n");
+    }
+
+  if (sock != -1)
+    close(sock);
+
+  return(rc);
+  }
 
 extern "C"
 {
@@ -294,6 +339,12 @@ int trq_main(
   void *(*process_method)(void *) = process_svr_conn;
 
   parse_command_line(argc, argv);
+
+  if (down_server == true)
+    {
+    rc = terminate_trqauthd();
+    return(rc);
+    }
 
   if (IamRoot() == 0)
     {
