@@ -28,11 +28,12 @@ struct server server;
 struct all_jobs array_summary;
 int svr_do_schedule = SCH_SCHEDULE_NULL;
 int listener_command = SCH_SCHEDULE_NULL;
-int LOGLEVEL = 0;
+int LOGLEVEL = 10;
 pthread_mutex_t *svr_do_schedule_mutex;
 pthread_mutex_t *listener_command_mutex;
 struct pbsnode *alps_reporter;
 user_info_holder users;
+int decrement_count;
 
 resource *add_resource_entry(pbs_attribute *pattr, resource_def *prdef)
   {
@@ -312,6 +313,7 @@ int increment_queued_jobs(user_info_holder *uih, char *user_name, job *pjob)
 
 int decrement_queued_jobs(user_info_holder *uih, char *user_name)
   {
+  decrement_count++;
   return(0);
   }
 
@@ -348,3 +350,5 @@ int initialize_procct(job *pjob)
   {
   return(0);
   }
+
+void free_nodes(job *pjob) {}
