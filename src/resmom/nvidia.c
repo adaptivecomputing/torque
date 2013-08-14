@@ -1483,7 +1483,7 @@ void generate_server_gpustatus_smi(
 
           default:
 
-            s += "None";
+            *s += "None";
             nvidia_gpu_modes[gpuid] = -1;
 
             break;
