@@ -348,6 +348,7 @@ src/lib/Libutils/test/u_threadpool/test_u_threadpool
 src/lib/Libutils/test/u_tree/test_u_tree
 src/lib/Libutils/test/u_users/test_u_users
 src/lib/Libutils/test/u_xml/test_u_xml
+src/lib/Libutils/test/u_putenv/test_u_putenv
 src/momctl/test/momctl/test_momctl
 src/resmom/linux/test/mom_mach/test_mom_mach
 src/resmom/linux/test/mom_start/test_mom_start
