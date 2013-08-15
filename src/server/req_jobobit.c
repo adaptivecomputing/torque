@@ -2523,7 +2523,8 @@ void wait_for_send(
 
 int setrerun(
 
-  job *pjob)
+  job *pjob,
+  const char *text)
 
   {
   if (pjob->ji_wattr[JOB_ATR_rerunable].at_val.at_long)
@@ -2539,7 +2540,7 @@ int setrerun(
 
   /* FAILURE */
 
-  svr_mailowner(pjob, MAIL_ABORT, MAIL_FORCE, msg_init_abt);
+  svr_mailowner_with_message(pjob, MAIL_ABORT, MAIL_FORCE, msg_init_abt,text);
 
   return(1);
   }  /* END setrerun() */
@@ -3033,7 +3034,8 @@ int handle_terminating_job(
 int update_substate_from_exit_status(
 
   job *pjob,
-  int *alreadymailed)
+  int *alreadymailed,
+  const char *text)
 
   {
   long  automatic_requeue = -1000;
@@ -3060,7 +3062,7 @@ int update_substate_from_exit_status(
       case JOB_EXEC_OVERLIMIT_MEM:
 
         /* the job exceeded a memory resource limit */
-        svr_mailowner(pjob, MAIL_ABORT, MAIL_FORCE, msg_momjobovermemlimit);
+        svr_mailowner_with_message(pjob, MAIL_ABORT, MAIL_FORCE, msg_momjobovermemlimit,text);
         *alreadymailed = 1;
 
         break;
@@ -3068,7 +3070,7 @@ int update_substate_from_exit_status(
       case JOB_EXEC_OVERLIMIT_WT:
 
         /* the job exceeded its  walltime limit */
-        svr_mailowner(pjob, MAIL_ABORT, MAIL_FORCE, msg_momjoboverwalltimelimit);
+        svr_mailowner_with_message(pjob, MAIL_ABORT, MAIL_FORCE, msg_momjoboverwalltimelimit,text);
         *alreadymailed = 1;
 
         break;
@@ -3076,7 +3078,7 @@ int update_substate_from_exit_status(
       case JOB_EXEC_OVERLIMIT_CPUT:
 
         /* the job exceeded its cpu time limit */
-        svr_mailowner(pjob, MAIL_ABORT, MAIL_FORCE, msg_momjobovercputlimit);
+        svr_mailowner_with_message(pjob, MAIL_ABORT, MAIL_FORCE, msg_momjobovercputlimit,text);
         *alreadymailed = 1;
 
         break;
@@ -3086,7 +3088,7 @@ int update_substate_from_exit_status(
       default:
 
         /* MOM rejected job with fatal error, abort job */
-        svr_mailowner(pjob, MAIL_ABORT, MAIL_FORCE, msg_momnoexec1);
+        svr_mailowner_with_message(pjob, MAIL_ABORT, MAIL_FORCE, msg_momnoexec1,text);
 
         *alreadymailed = 1;
 
@@ -3095,7 +3097,7 @@ int update_substate_from_exit_status(
       case JOB_EXEC_FAIL2:
 
         /* MOM reject job after files setup, abort job */
-        svr_mailowner(pjob, MAIL_ABORT, MAIL_FORCE, msg_momnoexec2);
+        svr_mailowner_with_message(pjob, MAIL_ABORT, MAIL_FORCE, msg_momnoexec2,text);
 
         *alreadymailed = 1;
 
@@ -3104,7 +3106,7 @@ int update_substate_from_exit_status(
       case JOB_EXEC_INITABT:
 
         /* MOM aborted job on her initialization */
-        *alreadymailed = setrerun(pjob);
+        *alreadymailed = setrerun(pjob,text);
 
         pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN;
 
@@ -3117,7 +3119,7 @@ int update_substate_from_exit_status(
         if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HASRUN)
           {
           /* has run before, treat this as another rerun */
-          *alreadymailed = setrerun(pjob);
+          *alreadymailed = setrerun(pjob,text);
           }
         else
           {
@@ -3131,7 +3133,7 @@ int update_substate_from_exit_status(
       case JOB_EXEC_BADRESRT:
 
         /* MOM could not restart job, setup for rerun */
-        *alreadymailed = setrerun(pjob);
+        *alreadymailed = setrerun(pjob,text);
         pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_CHECKPOINT_FILE;
 
         break;
@@ -3170,7 +3172,7 @@ int update_substate_from_exit_status(
 
         /* MOM abort job on init, job has migratable checkpoint */
         /* Must recover output and checkpoint file, do eoj      */
-        *alreadymailed = setrerun(pjob);
+        *alreadymailed = setrerun(pjob,text);
 
         pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_MIGRATEABLE;
 
@@ -3373,14 +3375,14 @@ int req_jobobit(
 
   sprintf(acctbuf, msg_job_end_stat, pjob->ji_qs.ji_un.ji_exect.ji_exitstat);
 
-  if (exitstatus < 10000)
-    {
-    snprintf(mailbuf, sizeof(mailbuf), "%s", acctbuf);
-    }
-  else
+  if (exitstatus >= 10000)
     {
     sprintf(mailbuf, msg_job_end_sig,
             exitstatus - 10000);
+    }
+  else
+    {
+    mailbuf[0] = '\0';
     }
 
   accttail = strlen(acctbuf);
@@ -3432,14 +3434,14 @@ int req_jobobit(
      }
 #endif    /* USESAVEDRESOURCES */
 
-  safe_strncat(mailbuf, (acctbuf + strlen(acctbuf)), sizeof(mailbuf) - strlen(mailbuf) - 1);
+  safe_strncat(mailbuf, acctbuf, sizeof(mailbuf) - strlen(mailbuf) - 1);
 
   reply_ack(preq);
 
   /* clear suspended flag if it was set */
   pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_Suspend;
 
-  if ((rc = update_substate_from_exit_status(pjob, &alreadymailed)) != PBSE_NONE)
+  if ((rc = update_substate_from_exit_status(pjob, &alreadymailed,mailbuf)) != PBSE_NONE)
     return(rc);
 
   /* What do we now do with the job... */
