@@ -97,6 +97,7 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Libifl/lib_ifl.h"
+#include "../lib/Libutils/lib_utils.h"
 #include "mom_mach.h"
 #include "mom_func.h"
 #include "resource.h"
@@ -999,21 +1000,51 @@ int run_pelog(
       {
       /* setenv("PBS_RESOURCE_NODES",r->rs_value.at_val.at_str,1); */
 
-      const char *envname = "PBS_RESOURCE_NODES=";
-      char *envstr;
+      const char *ppn_str = "ppn=";
+      int num_nodes = 1;
+      int num_ppn = 1;
 
-      envstr = (char *)calloc((strlen(envname) + strlen(r->rs_value.at_val.at_str) + 1), sizeof(char));
+      /* PBS_RESOURCE_NODES */
+      put_env_var("PBS_RESOURCE_NODES", r->rs_value.at_val.at_str);
 
-      if (envstr != NULL)
+      /* PBS_NUM_NODES */
+      num_nodes = strtol(r->rs_value.at_val.at_str, NULL, 10);
+
+      /* 
+       * InitUserEnv() also calculates num_nodes and num_ppn the same way
+       */
+      if (num_nodes != 0)
         {
-        strcpy(envstr,envname);
+        char *tmp;
+        char *other_reqs;
 
-        strcat(envstr,r->rs_value.at_val.at_str);
+        /* get the ppn */
+        if ((tmp = strstr(r->rs_value.at_val.at_str,ppn_str)) != NULL)
+          {
+          tmp += strlen(ppn_str);
 
-        /* do _not_ free the string when using putenv */
+          num_ppn = strtol(tmp, NULL, 10);
+          }
 
-        putenv(envstr);
+        other_reqs = r->rs_value.at_val.at_str;
+
+        while ((other_reqs = strchr(other_reqs, '+')) != NULL)
+          {
+          other_reqs += 1;
+          num_nodes += strtol(other_reqs, &other_reqs, 10);
+          }
         }
+
+      sprintf(buf, "%d", num_nodes);
+      put_env_var("PBS_NUM_NODES", buf);
+
+      /* PBS_NUM_PPN */
+      sprintf(buf, "%d", num_ppn);
+      put_env_var("PBS_NUM_PPN", buf);
+
+      /* PBS_NP */
+      sprintf(buf, "%d", pjob->ji_numvnod);
+      put_env_var("PBS_NP", buf);
       }  /* END if (r != NULL) */
 
     r = find_resc_entry(
@@ -1023,215 +1054,105 @@ int run_pelog(
     if (r != NULL)
       {
       /* setenv("PBS_RESOURCE_NODES",r->rs_value.at_val.at_str,1); */
-
-      const char *envname = "PBS_RESOURCE_GRES=";
-      char *envstr;
-
-      envstr = (char *)calloc((strlen(envname) + strlen(r->rs_value.at_val.at_str) + 1), sizeof(char));
-
-      if (envstr != NULL)
-        {
-        strcpy(envstr,envname);
-
-        strcat(envstr,r->rs_value.at_val.at_str);
-
-        /* do _not_ free the string when using putenv */
-
-        putenv(envstr);
-        }
-      }  /* END if (r != NULL) */
+      put_env_var("PBS_RESOURCE_GRES", r->rs_value.at_val.at_str);
+      }
 
     if (TTmpDirName(pjob, buf, sizeof(buf)))
       {
-      const char *envname = "TMPDIR=";
-      char *envstr;
-
-      envstr = (char *)calloc((strlen(envname) + strlen(buf) + 1), sizeof(char));
-
-      if (envstr != NULL)
-        {
-        strcpy(envstr,envname);
-
-        strcat(envstr,buf);
-
-        /* do _not_ free the string when using putenv */
-
-        putenv(envstr);
-        }
-      }  /* END if (TTmpDirName(pjob,&buf)) */
+      put_env_var("TMPDIR", buf);
+      }
 
     /* Set PBS_SCHED_HINT */
 
+    {
+    char *envname = (char *)"PBS_SCHED_HINT";
+    char *envval;
+
+    if ((envval = get_job_envvar(pjob, envname)) != NULL)
       {
-      char *envname = (char *)"PBS_SCHED_HINT";
-      char *envval;
-      char *envstr;
-
-      if ((envval = get_job_envvar(pjob, envname)) != NULL)
-        {
-        envstr = (char *)calloc((strlen(envname) + strlen(envval) + 2), sizeof(char));
-
-        if (envstr != NULL)
-          {
-          sprintf(envstr,"%s=%s",
-            envname,
-            envval);
-
-          putenv(envstr);
-          }
-        }
+      put_env_var("PBS_SCHED_HINT", envval);
       }
+    }
 
     /* Set PBS_NODENUM */
-      {
-      char *envname = (char *)"PBS_NODENUM";
-      char *envstr;
 
-      sprintf(buf, "%d",
-        pjob->ji_nodeid);
-
-      envstr = (char *)calloc((strlen(envname) + strlen(buf) + 2), sizeof(char));
-
-      if (envstr != NULL)
-        {
-        sprintf(envstr,"%s=%d",
-          envname,
-          pjob->ji_nodeid);
-
-        putenv(envstr);
-        }
-      }
+    sprintf(buf, "%d",
+      pjob->ji_nodeid);
+    put_env_var("PBS_NODENUM", buf);
 
     /* Set PBS_MSHOST */
-      {
-      char *envname = (char *)"PBS_MSHOST";
-      char *envstr;
 
-      if ((pjob->ji_vnods[0].vn_host != NULL) && (pjob->ji_vnods[0].vn_host->hn_host != NULL))
-        {
-        envstr = (char *)calloc((strlen(envname) + strlen(pjob->ji_vnods[0].vn_host->hn_host) + 2), sizeof(char));
-
-        if (envstr != NULL)
-          {
-          sprintf(envstr,"%s=%s",
-            envname,
-            pjob->ji_vnods[0].vn_host->hn_host);
-
-          putenv(envstr);
-          }
-        }
-      }
+    put_env_var("PBS_MSHOST", pjob->ji_vnods[0].vn_host->hn_host);
 
     /* Set PBS_NODEFILE */
+
+    if (pjob->ji_flags & MOM_HAS_NODEFILE)
       {
-      char *envname = (char *)"PBS_NODEFILE";
-      char *envstr;
-
-      if (pjob->ji_flags & MOM_HAS_NODEFILE)
-        {
-        sprintf(buf, "%s/%s",
-          path_aux,
-          pjob->ji_qs.ji_jobid);
-
-        envstr = (char *)calloc((strlen(envname) + strlen(buf) + 2), sizeof(char));
-
-        if (envstr != NULL)
-          {
-          sprintf(envstr,"%s=%s",
-            envname,
-            buf);
-
-          putenv(envstr);
-          }
-        }
+      sprintf(buf, "%s/%s",
+        path_aux,
+        pjob->ji_qs.ji_jobid);
+      put_env_var("PBS_NODEFILE", buf);
       }
 
-    /* Set PBS_O_Workdir */
+    /* Set PBS_O_WORKDIR */
+    {
+    char *workdir_val;
+
+    workdir_val = get_job_envvar(pjob,"PBS_O_WORKDIR");
+    if (workdir_val != NULL)
       {
-      char *envname = (char *)"PBS_O_WORKDIR";
-      char *workdir_val;
-      char *envstr;
-
-      workdir_val = get_job_envvar(pjob,envname);
-      if (workdir_val != NULL)
-        {
-        envstr = (char *)calloc((strlen(workdir_val) + strlen(envname) + 2), sizeof(char));
-
-        if (envstr != NULL)
-          {
-          sprintf(envstr,"%s=%s",
-            envname,
-            workdir_val);
-
-          putenv(envstr);
-          }
-        }
+      put_env_var("PBS_O_WORKDIR", workdir_val);
       }
+    }
 
     /* SET BEOWULF_JOB_MAP */
 
+    {
+
+    struct array_strings *vstrs;
+
+    int VarIsSet = 0;
+    int j;
+
+    vstrs = pjob->ji_wattr[JOB_ATR_variables].at_val.at_arst;
+
+    for (j = 0;j < vstrs->as_usedptr;++j)
       {
-
-      struct array_strings *vstrs;
-
-      int VarIsSet = 0;
-      int j;
-
-      vstrs = pjob->ji_wattr[JOB_ATR_variables].at_val.at_arst;
-
-      for (j = 0;j < vstrs->as_usedptr;++j)
+      if (!strncmp(
+            vstrs->as_string[j],
+            "BEOWULF_JOB_MAP=",
+            strlen("BEOWULF_JOB_MAP=")))
         {
-        if (!strncmp(
-              vstrs->as_string[j],
-              "BEOWULF_JOB_MAP=",
-              strlen("BEOWULF_JOB_MAP=")))
-          {
-          VarIsSet = 1;
+        VarIsSet = 1;
 
-          break;
-          }
-        }
-
-      if (VarIsSet == 1)
-        {
-        char *envstr;
-
-        envstr = (char *)calloc((strlen(vstrs->as_string[j])), sizeof(char));
-
-        if (envstr != NULL)
-          {
-          strcpy(envstr,vstrs->as_string[j]);
-
-          putenv(envstr);
-          }
+        break;
         }
       }
 
-    /* Set some Moab env variables if they exist */
+    if (VarIsSet == 1)
+      {
+      char *val = strchr(vstrs->as_string[j], '=');
+
+      if (val != NULL)
+        put_env_var("BEOWULF_JOB_MAP", val+1);
+      }
+    }
+
+  /* Set some Moab env variables if they exist */
 
   if ((which == PE_PROLOG) || (which == PE_EPILOG))
+    {
+    char *tmp_val;
+
+    for (aindex=0;aindex<moabenvcnt;aindex++)
       {
-      char *tmp_val;
-      char *envstr;
-
-      for (aindex=0;aindex<moabenvcnt;aindex++)
+      tmp_val = get_job_envvar(pjob,moabenvs[aindex]);
+      if (tmp_val != NULL)
         {
-        tmp_val = get_job_envvar(pjob,moabenvs[aindex]);
-        if (tmp_val != NULL)
-          {
-          envstr = (char *)calloc((strlen(tmp_val) + strlen(moabenvs[aindex]) + 2), sizeof(char));
-
-          if (envstr != NULL)
-            {
-            sprintf(envstr,"%s=%s",
-              moabenvs[aindex],
-              tmp_val);
-
-            putenv(envstr);
-            }
-          }
+        put_env_var(moabenvs[aindex], tmp_val);
         }
       }
+    }
 
   /*
    * if we want to run as user then we need to reset real user permissions
@@ -1327,5 +1248,3 @@ int run_pelog(
 
   return(run_exit);
   }  /* END run_pelog() */
-
-
