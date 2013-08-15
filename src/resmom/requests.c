@@ -110,6 +110,7 @@
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
 #include "../lib/Libifl/lib_ifl.h"
+#include "../lib/Libutils/lib_utils.h"
 #include "checkpoint.h" /* start_checkpoint */
 #include "resmon.h"
 #include "net_connect.h"
@@ -497,17 +498,14 @@ static pid_t fork_to_user(
 
 #ifdef HAVE_WORDEXP
     {
+    int rc;
+
     /* set some useful env variables */
 
-    char *envstr;
-
-    envstr = (char *)calloc((strlen("HOME=") + strlen(hdir) + 1), sizeof(char));
-
-    if (envstr == NULL)
+    rc = put_env_var("HOME", hdir);
+    if (rc)
       {
-      sprintf(log_buffer, "calloc failed, errno=%d (%s)",
-              errno,
-              strerror(errno));
+      sprintf(log_buffer, "put_env_var failed with %d", rc);
 
       log_err(-1, __func__, log_buffer);
 
@@ -517,19 +515,10 @@ static pid_t fork_to_user(
       return(-PBSE_SYSTEM);
       }
 
-    sprintf(envstr, "HOME=%s",
-
-            hdir);
-
-    putenv(envstr);
-
-    envstr = (char *)calloc((strlen("PBS_JOBID=") + strlen(preq->rq_ind.rq_cpyfile.rq_jobid) + 1), sizeof(char));
-
-    if (envstr == NULL)
+    rc = put_env_var("PBS_JOBID", preq->rq_ind.rq_cpyfile.rq_jobid);
+    if (rc)
       {
-      sprintf(log_buffer, "calloc failed, errno=%d (%s)",
-              errno,
-              strerror(errno));
+      sprintf(log_buffer, "put_env_var failed with %d", rc);
 
       log_err(-1, __func__, log_buffer);
 
@@ -538,12 +527,6 @@ static pid_t fork_to_user(
 
       return(-PBSE_SYSTEM);
       }
-
-    sprintf(envstr, "PBS_JOBID=%s",
-
-            preq->rq_ind.rq_cpyfile.rq_jobid);
-
-    putenv(envstr);
     }
 #endif /* END HAVE_WORDEXP */
 
@@ -3434,28 +3417,23 @@ void req_cpyfile(
       {
       if (!mkdirtree(faketmpdir, 0755))
         {
-        char *envstr;
+        int rc;
 
-        envstr = (char *)calloc((strlen("TMPDIR=") + strlen(faketmpdir) + 1), sizeof(char));
-
-        if (envstr == NULL)
+        rc = put_env_var("TMPDIR", faketmpdir);
+        if (rc)
           {
           /* FAILURE - in child process */
 
-          sprintf(log_buffer,"alloc failed with errno=%d - returning failure",
-            errno);
+          sprintf(log_buffer,"put_env_var failed with %d - returning failure",
+            rc);
 
-          log_err(errno, __func__, log_buffer);
+          log_err(rc, __func__, log_buffer);
 
           bad_files = 1;
 
           goto error;
           }
 
-        sprintf(envstr, "TMPDIR=%s",
-          faketmpdir);
-
-        putenv(envstr);
 
         madefaketmpdir = 1;
         }

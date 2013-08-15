@@ -65,6 +65,7 @@
 #include "../lib/Liblog/setup_env.h"
 #include "../lib/Libnet/lib_net.h" /* socket_avail_bytes_on_descriptor */
 #include "../lib/Libifl/lib_ifl.h"
+#include "../lib/Libutils/lib_utils.h"
 #include "net_connect.h"
 #include "dis.h"
 #include "dis_init.h"
@@ -9053,24 +9054,18 @@ void restart_mom(
   char *argv[])
 
   {
-  char *envstr;
+  const char *envstr = "PATH";
+  int rc;
 
-  envstr = (char *)calloc(1, (strlen("PATH") + strlen(OriginalPath) + 2) * sizeof(char));
-
-  if (!envstr)
+  rc = put_env_var(envstr, OriginalPath);
+  if (rc)
     {
-    sprintf(log_buffer, "calloc failed prior to execing myself: %s (%d)",
-            strerror(errno),
-            errno);
+    sprintf(log_buffer, "put_env_var failed with %d prior to execing myself", rc);
 
-    log_err(errno, __func__, log_buffer);
+    log_err(rc, __func__, log_buffer);
 
     return;
     }
-
-  strcpy(envstr, "PATH=");
-  strcat(envstr, OriginalPath);
-  putenv(envstr);
 
   DBPRT(("Re-execing myself now...\n"));
 
