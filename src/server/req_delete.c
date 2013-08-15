@@ -604,44 +604,47 @@ jump:
         return(-1);
         }
 
-      for (i = 0; i < pa->ai_qs.array_size; i++)
+      if(pa != NULL)
         {
-        if (pa->job_ids[i] == NULL)
-          continue;
-
-        if (!strcmp(pa->job_ids[i], pjob->ji_qs.ji_jobid))
-          continue;
-
-        if ((tmp = svr_find_job(pa->job_ids[i], FALSE)) == NULL)
+        for (i = 0; i < pa->ai_qs.array_size; i++)
           {
-          free(pa->job_ids[i]);
-          pa->job_ids[i] = NULL;
-          }
-        else
-          {
-          if (tmp->ji_wattr[JOB_ATR_hold].at_val.at_long & HOLD_l)
+          if (pa->job_ids[i] == NULL)
+            continue;
+
+          if (!strcmp(pa->job_ids[i], pjob->ji_qs.ji_jobid))
+            continue;
+
+          if ((tmp = svr_find_job(pa->job_ids[i], FALSE)) == NULL)
             {
-            tmp->ji_wattr[JOB_ATR_hold].at_val.at_long &= ~HOLD_l;
-            
-            if (tmp->ji_wattr[JOB_ATR_hold].at_val.at_long == 0)
-              {
-              tmp->ji_wattr[JOB_ATR_hold].at_flags &= ~ATR_VFLAG_SET;
-              }
-            
-            svr_evaljobstate(tmp, &newstate, &newsub, 1);
-            svr_setjobstate(tmp, newstate, newsub, FALSE);
-            job_save(tmp, SAVEJOB_FULL, 0);
-
-            unlock_ji_mutex(tmp, __func__, "5", LOGLEVEL);
-            
-            break;
+            free(pa->job_ids[i]);
+            pa->job_ids[i] = NULL;
             }
+          else
+            {
+            if (tmp->ji_wattr[JOB_ATR_hold].at_val.at_long & HOLD_l)
+              {
+              tmp->ji_wattr[JOB_ATR_hold].at_val.at_long &= ~HOLD_l;
 
-          unlock_ji_mutex(tmp, __func__, "6", LOGLEVEL);
+              if (tmp->ji_wattr[JOB_ATR_hold].at_val.at_long == 0)
+                {
+                tmp->ji_wattr[JOB_ATR_hold].at_flags &= ~ATR_VFLAG_SET;
+                }
+
+              svr_evaljobstate(tmp, &newstate, &newsub, 1);
+              svr_setjobstate(tmp, newstate, newsub, FALSE);
+              job_save(tmp, SAVEJOB_FULL, 0);
+
+              unlock_ji_mutex(tmp, __func__, "5", LOGLEVEL);
+
+              break;
+              }
+
+            unlock_ji_mutex(tmp, __func__, "6", LOGLEVEL);
+            }
           }
-        }
 
-      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+        unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+        }
       }
     } /* END MoabArrayCompatible check */
 
