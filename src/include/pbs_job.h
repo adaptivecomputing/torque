@@ -1124,6 +1124,7 @@ int initialize_ruserok_mutex();
 extern int   svr_enquejob(job *, int, int, bool);
 extern void  svr_evaljobstate(job *, int *, int *, int);
 extern void  svr_mailowner(job *, int, int, const char *);
+extern void  svr_mailowner_with_message(job *, int, int, const char *, const char *);
 extern void  set_resc_deflt(job *, pbs_attribute *, int);
 extern void  set_statechar(job *);
 extern int   svr_setjobstate(job *, int, int, int);

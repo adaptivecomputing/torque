@@ -82,6 +82,8 @@ int svr_job_purge(job *pjob)
   return(0);
   }
 
+void svr_mailowner_with_message(job *pjob, int mailpoint, int force, const char *text,const char *msg) {}
+
 void svr_mailowner(job *pjob, int mailpoint, int force, const char *text) {}
 
 pbs_net_t get_hostaddr(int *local_errno, char *hostname)

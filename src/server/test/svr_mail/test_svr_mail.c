@@ -19,6 +19,7 @@ const char jobname[] = "testJob";
 const char errpath[] = "xyz_host.ac:/home/echan/work/dev/torque/trunk/STDIN.e123";
 const char outpath[] = "xyz_host.ac:/home/echan/work/dev/torque/trunk/STDIN.o123";
 const char mailbuf[] = "Exit_status=271";
+const char msgbuf[]  = "Resources Used: One gallon of diesel; One bag Doritos; 2 liters Pepsi.";
 const char complete[] = "e";
 
 void init_server()
@@ -54,6 +55,7 @@ START_TEST(test_with_default_files_when_complete)
   FILE *fp = NULL;
   bool errFile_found = false;
   bool outFile_found = false;
+  bool msg_found = false;
   char buf[512];
   char correct_outfilepath[512];
   char correct_errfilepath[512];
@@ -81,6 +83,30 @@ START_TEST(test_with_default_files_when_complete)
     fclose(fp);
     remove_old_mail("/tmp/mail.out");
     }
+
+  errFile_found = false;
+  outFile_found = false;
+
+  svr_mailowner_with_message(&pjob, MAIL_END, MAIL_NORMAL, mailbuf,msgbuf);
+  fp = fopen("/tmp/mail.out", "r");
+  /* if fp is null, no email program was set hence no test */
+  if (fp)
+    {
+    while (fgets(buf, sizeof(buf), fp) != NULL)
+      {
+      if (strstr(buf, correct_errfilepath))
+        errFile_found = true;
+      else if (strstr(buf, correct_outfilepath))
+        outFile_found = true;
+      else if (strstr(buf,msgbuf))
+        msg_found = true;
+      }
+    fail_unless(errFile_found, "No error file path was found in the mail");
+    fail_unless(outFile_found, "No output file path was found in the mail");
+    fail_unless(msg_found,"The additional message was not found in the mail.");
+    fclose(fp);
+    remove_old_mail("/tmp/mail.out");
+    }
   }
 END_TEST
 
@@ -90,6 +116,7 @@ START_TEST(test_with_oe_when_complete)
   FILE *fp = NULL;
   bool errFile_found = false;
   bool outFile_found = false;
+  bool msg_found = false;
   char buf[512];
   char correct_outfilepath[512];
   char correct_errfilepath[512];
@@ -121,6 +148,31 @@ START_TEST(test_with_oe_when_complete)
     fclose(fp);
     remove_old_mail("/tmp/mail.out");
     }
+
+  errFile_found = false;
+  outFile_found = false;
+
+  svr_mailowner_with_message(&pjob, MAIL_END, MAIL_NORMAL, mailbuf,msgbuf);
+  fp = fopen("/tmp/mail.out", "r");
+  /* if fp is null, no email program was set hence no test */
+  if (fp)
+    {
+    while (fgets(buf, sizeof(buf), fp) != NULL)
+      {
+      if (strstr(buf, correct_errfilepath))
+        errFile_found = true;
+      else if (strstr(buf, correct_outfilepath))
+        outFile_found = true;
+      else if (strstr(buf,msgbuf))
+        msg_found = true;
+      }
+    fail_unless(errFile_found, "No error file path was found in the mail");
+    fail_unless(outFile_found, "No output file path was found in the mail");
+    fail_unless(msg_found,"The additional message was not found in the mail.");
+    fclose(fp);
+    remove_old_mail("/tmp/mail.out");
+    }
+
   }
 END_TEST
 
@@ -130,6 +182,7 @@ START_TEST(test_with_eo_when_complete)
   FILE *fp = NULL;
   bool errFile_found = false;
   bool outFile_found = false;
+  bool msg_found = false;
   char buf[512];
   char correct_outfilepath[512];
   char correct_errfilepath[512];
@@ -161,6 +214,31 @@ START_TEST(test_with_eo_when_complete)
     fclose(fp);
     remove_old_mail("/tmp/mail.out");
     }
+
+  errFile_found = false;
+  outFile_found = false;
+
+  svr_mailowner_with_message(&pjob, MAIL_END, MAIL_NORMAL, mailbuf,msgbuf);
+  fp = fopen("/tmp/mail.out", "r");
+  /* if fp is null, no email program was set hence no test */
+  if (fp)
+    {
+    while (fgets(buf, sizeof(buf), fp) != NULL)
+      {
+      if (strstr(buf, correct_errfilepath))
+        errFile_found = true;
+      else if (strstr(buf, correct_outfilepath))
+        outFile_found = true;
+      else if (strstr(buf,msgbuf))
+        msg_found = true;
+      }
+    fail_unless(errFile_found, "No error file path was found in the mail");
+    fail_unless(outFile_found, "No output file path was found in the mail");
+    fail_unless(msg_found,"The additional message was not found in the mail.");
+    fclose(fp);
+    remove_old_mail("/tmp/mail.out");
+    }
+
   }
 END_TEST
 
