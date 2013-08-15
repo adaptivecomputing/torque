@@ -2072,90 +2072,98 @@ int pbsd_init(
   gid_t             gid;
   char              log_buf[LOCAL_LOG_BUF_SIZE];
 
-  memset(&hints, 0, sizeof(hints));
-  hints.ai_flags = AI_CANONNAME;
-
-  /* The following is code to reduce security risks */
-  if (setup_env(PBS_ENVIRON) == -1)
+  try
     {
-    return(-1);
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_flags = AI_CANONNAME;
+
+    /* The following is code to reduce security risks */
+    if (setup_env(PBS_ENVIRON) == -1)
+      {
+      return(-1);
+      }
+
+    gid = getgid();
+
+    /* secure suppl. groups */
+    if (setgroups(1, &gid) != 0)
+      {
+      snprintf(log_buf, sizeof(log_buf),
+        "Unable to drop secondary groups. Some MAC framework is active?\n");
+      log_err(errno, __func__, log_buf);
+      snprintf(log_buf, sizeof(log_buf),
+        "setgroups(group = %lu) failed: %s\n",
+        (unsigned long)gid, strerror(errno));
+      log_err(errno, __func__, log_buf);
+
+      return(-1);
+      }
+
+    setup_threadpool();
+
+    setup_limits();
+
+    /* 1. set up to catch or ignore various signals */
+    if ((ret = setup_signal_handling()) != PBSE_NONE)
+      return(ret);
+
+    /* 2. set up the various paths and other global variables we need */
+    if ((ret = initialize_paths()) != PBSE_NONE)
+      return(ret);
+
+    initialize_data_structures_and_mutexes();
+
+    /* 3. Set default server attibutes values */
+    if ((ret = setup_server_attrs(type)) != PBSE_NONE)
+      return(ret);
+
+    /* Open and read in node list if one exists */
+    if ((ret = initialize_nodes()) != PBSE_NONE)
+      return(ret);
+
+    /* the functions we're calling assume this mutex is locked */
+    sprintf(log_buf, "%s:1", __func__);
+    lock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
+
+    if ((ret = handle_queue_recovery(type)) != PBSE_NONE)
+      return(ret);
+
+    handle_job_and_array_recovery(type);
+
+    /* Put us back in the Server's Private directory */
+    if (chdir(path_priv) != 0)
+      {
+      sprintf(log_buf, msg_init_chdir, path_priv);
+
+      log_err(-1, __func__, log_buf);
+
+      return(3);
+      }
+
+    handle_tracking_records();
+
+    /* read the hierarchy file */
+    prepare_mom_hierarchy(hierarchy_holder);
+    if(hierarchy_holder.size() == 0)
+      {
+      /* hierarchy file exists but we couldn't open it */
+      return(-1);
+      }
+
+    /* mark all nodes as needing a hello */
+    add_all_nodes_to_hello_container();
+
+    /* allow the threadpool to start processing */
+    start_request_pool();
+
+    /* SUCCESS */
+    return(PBSE_NONE);
+    }
+  catch(...)
+    {
+    return (-1);
     }
 
-  gid = getgid();
-
-  /* secure suppl. groups */
-  if (setgroups(1, &gid) != 0)
-    {
-    snprintf(log_buf, sizeof(log_buf),
-      "Unable to drop secondary groups. Some MAC framework is active?\n");
-    log_err(errno, __func__, log_buf);
-    snprintf(log_buf, sizeof(log_buf),
-      "setgroups(group = %lu) failed: %s\n",
-      (unsigned long)gid, strerror(errno));
-    log_err(errno, __func__, log_buf);
-
-    return(-1);
-    }
-
-  setup_threadpool();
-
-  setup_limits();
-
-  /* 1. set up to catch or ignore various signals */
-  if ((ret = setup_signal_handling()) != PBSE_NONE)
-    return(ret);
-
-  /* 2. set up the various paths and other global variables we need */
-  if ((ret = initialize_paths()) != PBSE_NONE)
-    return(ret);
-
-  initialize_data_structures_and_mutexes();
-
-  /* 3. Set default server attibutes values */
-  if ((ret = setup_server_attrs(type)) != PBSE_NONE)
-    return(ret);
-
-  /* Open and read in node list if one exists */
-  if ((ret = initialize_nodes()) != PBSE_NONE)
-    return(ret);
-
-  /* the functions we're calling assume this mutex is locked */
-  sprintf(log_buf, "%s:1", __func__);
-  lock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
-
-  if ((ret = handle_queue_recovery(type)) != PBSE_NONE)
-    return(ret);
-
-  handle_job_and_array_recovery(type);
-
-  /* Put us back in the Server's Private directory */
-  if (chdir(path_priv) != 0)
-    {
-    sprintf(log_buf, msg_init_chdir, path_priv);
-
-    log_err(-1, __func__, log_buf);
-
-    return(3);
-    }
-
-  handle_tracking_records();
-
-  /* read the hierarchy file */
-  prepare_mom_hierarchy(hierarchy_holder);
-  if(hierarchy_holder.size() == 0)
-    {
-    /* hierarchy file exists but we couldn't open it */
-    return(-1);
-    }
-
-  /* mark all nodes as needing a hello */
-  add_all_nodes_to_hello_container();
-
-  /* allow the threadpool to start processing */
-  start_request_pool();
-
-  /* SUCCESS */
-  return(PBSE_NONE);
   }  /* END pbsd_init() */
 
 
