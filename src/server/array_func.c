@@ -29,6 +29,9 @@
 #include <unistd.h>
 #include <pthread.h>
 
+#include <libxml/parser.h>
+#include <libxml/tree.h>
+
 #include "pbs_ifl.h"
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
@@ -50,6 +53,10 @@
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
 #include "batch_request.h"
+
+#ifndef PBS_MOM
+#include "../lib/Libutils/u_lock_ctl.h" /* lock_ss, unlock_ss */
+#endif /* PBS_MOM */
 
 extern int array_upgrade(job_array *, int, int, int *);
 extern char *get_correct_jobname(const char *jobid);
@@ -79,7 +86,7 @@ int         parse_array_request(char *request, tlist_head *tl);
 job_array  *next_array_check(int *, job_array *);
 job_array  *get_array_from_hash(hash_map *hm, const char *id);
 
-
+#define     BUFSIZE 256
 
 /* search job array list to determine if id is a job array */
 
@@ -189,6 +196,207 @@ job_array *get_array(
   } /* END get_array() */
 
 
+void add_string_field_node(
+
+    xmlNodePtr *rnode,
+    const char *content, 
+    const char *tag,
+    int        *node_count)
+
+  {
+  xmlNodePtr root_node = *rnode;
+  if (xmlNewChild(root_node, NULL, (xmlChar *)tag, (xmlChar *)content))
+    *node_count += 1;
+  }
+
+void add_integer_field_node(
+
+  xmlNodePtr *rnode,
+  int field,
+  const char *tag,
+  int *node_count)
+
+  {
+  char content[BUFSIZE];
+  xmlNodePtr root_node = *rnode;
+  
+  snprintf(content, sizeof(content), "%d", field);
+  if (xmlNewChild(root_node, NULL, (xmlChar *)tag, (xmlChar *)content))
+    *node_count += 1;
+  }
+
+
+int add_token_xml(
+
+  xmlNodePtr *tnode, 
+  const array_request_node *rn, 
+  int *node_count)
+
+  {
+  int rc = -1;
+  
+  xmlNodePtr tokenNode = *tnode;
+  xmlNodePtr node;
+  char buf[BUFSIZE];
+
+  snprintf(buf, sizeof(buf), "%s%d", TOKEN_TAG,*node_count);
+  if ((node = xmlNewNode(NULL, (xmlChar *)buf)))
+    {
+    if (xmlAddChild(tokenNode, node))
+      {
+      snprintf(buf, sizeof(buf), "%u", (unsigned int)rn->start);
+      if (xmlSetProp(node, (const xmlChar *)START_TAG, (const xmlChar *)buf))
+        {
+        snprintf(buf, sizeof(buf), "%u", (unsigned int)rn->end);
+        if (xmlSetProp(node, (const xmlChar *)END_TAG, (const xmlChar *)buf))
+          {
+          *node_count += 1;
+          rc = PBSE_NONE;
+          }
+        }
+      }
+    }
+  return rc;
+  }
+  
+
+int array_tokens_xml(
+
+  xmlNodePtr *rnode,                /* M */ /* dom's root node */
+  tlist_head  request_tokens_head,  /* I */ /* head of tokens */
+  char       *log_buf,              /* O */ /* error buffer */
+  size_t      buflen)               /* I */ /* size of error buffer */
+
+  {
+  array_request_node *rn;
+  int num_tokens = 0;
+  int rc = -1;
+  int node_count = 0;
+
+  xmlNodePtr root_node = *rnode;
+  xmlNodePtr tokenNode = NULL;
+
+  /* count number of request tokens left, empty loop body intentionally */
+  for (rn = (array_request_node*)GET_NEXT(request_tokens_head), num_tokens = 0;
+       rn != NULL;
+       rn = (array_request_node*)GET_NEXT(rn->request_tokens_link), num_tokens++); 
+
+  add_integer_field_node(rnode, num_tokens, NUM_TOKENS_TAG, &node_count);
+  if (node_count == 1)
+    {
+    rc = PBSE_NONE;
+    if (num_tokens > 0)
+      {
+      if ((tokenNode = xmlNewNode(NULL, (xmlChar *)TOKENS_TAG)))
+        {
+        xmlAddChild(root_node, tokenNode);
+        node_count = 0;
+        for (rn = (array_request_node*)GET_NEXT(request_tokens_head); rn != NULL;
+          rn = (array_request_node*)GET_NEXT(rn->request_tokens_link))
+          {
+          if (add_token_xml(&tokenNode, rn, &node_count))
+            {
+            snprintf(log_buf, buflen, "unexpected error while creating xml nodes for array tokens %d", node_count);
+            rc = -1;
+            break;
+            }
+          }
+        }
+      else
+        { 
+        snprintf(log_buf, buflen, "unable to create the element tokens %s", __func__);
+        rc = -1;
+        }
+      }
+    }
+  else
+    snprintf(log_buf, buflen, "unable to add the element %s to the dom", NUM_TOKENS_TAG);
+ 
+  return rc;
+  }
+
+
+int array_info_xml(
+
+  xmlNodePtr *rnode,         /* M */ /* dom's root node */
+  const array_info *ai_qs,   /* I */ /* info to written to xml */
+  char *log_buf,             /* O */ /* error buffer */
+  size_t buflen)             /* I */ /* len of error buffer */
+
+  {
+  int node_count = 0;
+
+  add_integer_field_node(rnode, ai_qs->struct_version, ARRAY_STRUCT_VERSION_TAG, &node_count);
+  add_integer_field_node(rnode, ai_qs->array_size, ARRAY_SIZE_TAG, &node_count);
+  add_integer_field_node(rnode, ai_qs->num_jobs, NUM_JOBS_TAG, &node_count);
+  add_integer_field_node(rnode, ai_qs->slot_limit, SLOT_LIMIT_TAG, &node_count);
+  add_integer_field_node(rnode, ai_qs->jobs_running, JOBS_RUNNING_TAG, &node_count);
+  add_integer_field_node(rnode, ai_qs->jobs_done, JOBS_DONE_TAG, &node_count);
+  add_integer_field_node(rnode, ai_qs->num_cloned, NUM_CLONED_TAG, &node_count);
+  add_integer_field_node(rnode, ai_qs->num_started, NUM_STARTED_TAG, &node_count);
+  add_integer_field_node(rnode, ai_qs->num_failed, NUM_FAILED_TAG, &node_count);
+  add_integer_field_node(rnode, ai_qs->num_successful, NUM_SUCCESSFULL_TAG, &node_count);
+  add_string_field_node(rnode, ai_qs->owner, OWNER_TAG, &node_count);
+  add_string_field_node(rnode, ai_qs->parent_id, PARENT_TAG, &node_count);
+  add_string_field_node(rnode, ai_qs->fileprefix, ARRAY_FILEPREFIX_TAG, &node_count);
+  add_string_field_node(rnode, ai_qs->submit_host, SUBMIT_HOST_TAG, &node_count);
+  add_integer_field_node(rnode, ai_qs->num_purged, NUM_PURGED_TAG, &node_count);
+
+  if (node_count == 15)
+    return PBSE_NONE;
+
+  return -1;
+  }
+
+
+
+int array_save_xml(
+  const job_array *pa,     /* I */  /* array info to be written to xml */
+  const char *filename,    /* I */  /* xml filename */
+  char  *log_buf,          /* O */  /* error buffer */
+  size_t buflen)           /* I */  /* length of error buffer */
+  {
+  int rc = -1;
+  xmlDocPtr doc = NULL; 
+  xmlNodePtr root_node;
+
+  if ((doc = xmlNewDoc((const xmlChar*) "1.0")))
+    {
+    if ((root_node = xmlNewNode(NULL, (const xmlChar*) ARRAY_TAG)))
+      {
+      xmlDocSetRootElement(doc, root_node);
+      if ((rc = array_info_xml(&root_node, (const array_info*) &(pa->ai_qs), log_buf, buflen)) == PBSE_NONE)
+        if ((rc = array_tokens_xml(&root_node, pa->request_tokens, log_buf, buflen)) == PBSE_NONE)
+          {
+#ifndef PBS_MOM
+    lock_ss();
+#endif /* !defined PBS_MOM */
+
+          int lenwritten = xmlSaveFormatFileEnc(filename, doc, NULL, 1);
+
+#ifndef PBS_MOM
+    unlock_ss();
+#endif /* !defined PBS_MOM */
+          if (!(lenwritten))
+            {
+            rc = -1;
+            snprintf(log_buf, buflen, "unable to write document to disk (file %s) for job array %s", 
+              filename, pa->ai_qs.parent_id);
+            }
+          }
+      }
+    else
+      snprintf(log_buf, buflen, "Can't create root node on the document for job array file %s", filename);
+    xmlFreeDoc(doc);
+    }
+    else
+      snprintf(log_buf, buflen, "unable to create document for the xml file job %s", filename);
+
+    /* error message will be printed out by the caller */
+    return rc;
+  }
+
+
 
 /* save a job array struct to disk returns zero if no errors*/
 int array_save(
@@ -196,58 +404,19 @@ int array_save(
   job_array *pa)
 
   {
-  int fds;
   char namebuf[MAXPATHLEN];
-  array_request_node *rn;
-  int num_tokens = 0;
+  char log_buf[LOCAL_LOG_BUF_SIZE];
 
   snprintf(namebuf, sizeof(namebuf), "%s%s%s",
     path_arrays, pa->ai_qs.fileprefix, ARRAY_FILE_SUFFIX);
 
-  fds = open(namebuf, O_Sync | O_TRUNC | O_WRONLY | O_CREAT, 0600);
-
-  if (fds < 0)
+  /* error buf is filled in array_save_xml or its subroutines */
+  if (array_save_xml((const job_array *)pa, namebuf, log_buf, sizeof(log_buf)) != PBSE_NONE)
     {
-    return -1;
-    }
-
-  if (write_ac_socket(fds,  &(pa->ai_qs), sizeof(struct array_info)) == -1)
-    {
+    log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_JOB,pa->ai_qs.parent_id,log_buf);
     unlink(namebuf);
-    close(fds);
     return -1;
     }
-
-  /* count number of request tokens left */
-  for (rn = (array_request_node*)GET_NEXT(pa->request_tokens), num_tokens = 0;
-       rn != NULL;
-       rn = (array_request_node*)GET_NEXT(rn->request_tokens_link), num_tokens++)
-    /* NO-OP, just counting */;
-
-
-  if (write_ac_socket(fds, &num_tokens, sizeof(num_tokens)) == -1)
-    {
-    unlink(namebuf);
-    close(fds);
-    return -1;
-    }
-
-  if (num_tokens > 0)
-    {
-
-    for (rn = (array_request_node*)GET_NEXT(pa->request_tokens); rn != NULL;
-         rn = (array_request_node*)GET_NEXT(rn->request_tokens_link))
-      {
-      if (write_ac_socket(fds, rn, sizeof(array_request_node)) == -1)
-        {
-        unlink(namebuf);
-        close(fds);
-        return -1;
-        }
-      }
-    }
-
-  close(fds);
 
   return(PBSE_NONE);
   } /* END array_save() */
@@ -375,46 +544,255 @@ int read_and_convert_259_array(
   } /* END read_and_convert_259_array() */
 
 
-
-
-/* array_recov reads in  an array struct saved to disk and inserts it into
-   the servers list of arrays */
-int array_recov(
-
-  char       *path, 
-  job_array **new_pa)
+int assign_array_info_fields(
+  job_array  **pa_new,       /* O */ /* Array Job to recover information from file */
+  xmlNodePtr xml_node,       /* I */ /*Root element of the dom */
+  char       *log_buf,        /* O */ /* Error buffer */
+  size_t      buflen,        /* I */ /* Error buffer length */
+  int        *num_tokens)    /* O */ /* Number of tokens, value to be kept in another variable */
 
   {
-  job_array *pa;
+  xmlChar *content = xmlNodeGetContent(xml_node);
+  int rc = PBSE_NONE;
+
+  if (!content)
+    {
+    snprintf(log_buf, buflen, "missing content on array xml, tag was %s", (const char*) xml_node->name);
+    return -1;
+    }
+  
+  job_array *pa = *pa_new;
+  size_t nameLen = strlen((const char *) xml_node->name);
+
+  /* The length comparison first so to avoid buffer overrun with strcmp */
+  if ((nameLen == strlen(ARRAY_STRUCT_VERSION_TAG)) && 
+    (!(strcmp((char *)xml_node->name, ARRAY_STRUCT_VERSION_TAG)))) 
+    pa->ai_qs.struct_version = atoi((const char *)content);
+  else if ((nameLen == strlen(ARRAY_SIZE_TAG)) && 
+    (!(strcmp((char *)xml_node->name, ARRAY_SIZE_TAG)))) 
+    pa->ai_qs.array_size = atoi((const char *)content);
+  else if ((nameLen == strlen(NUM_JOBS_TAG)) &&
+    (!(strcmp((char *)xml_node->name, NUM_JOBS_TAG)))) 
+    pa->ai_qs.num_jobs = atoi((const char *)content);
+  else if ((nameLen == strlen(SLOT_LIMIT_TAG)) &&
+    (!(strcmp((char *)xml_node->name, SLOT_LIMIT_TAG)))) 
+    pa->ai_qs.slot_limit = atoi((const char *)content);
+  else if ((nameLen == strlen(JOBS_RUNNING_TAG)) &&
+    (!(strcmp((char *)xml_node->name, JOBS_RUNNING_TAG)))) 
+    pa->ai_qs.jobs_running = atoi((const char *)content);
+  else if ((nameLen == strlen(JOBS_DONE_TAG)) && 
+    (!(strcmp((char *)xml_node->name, JOBS_DONE_TAG)))) 
+    pa->ai_qs.jobs_done = atoi((const char *)content);
+  else if ((nameLen == strlen(NUM_CLONED_TAG)) &&
+    (!(strcmp((char *)xml_node->name, NUM_CLONED_TAG)))) 
+    pa->ai_qs.num_cloned = atoi((const char *)content);
+  else if ((nameLen == strlen(NUM_STARTED_TAG)) &&
+    (!(strcmp((char *)xml_node->name, NUM_STARTED_TAG)))) 
+    pa->ai_qs.num_started = atoi((const char *)content);
+  else if ((nameLen == strlen(NUM_FAILED_TAG)) &&
+    (!(strcmp((char *)xml_node->name, NUM_FAILED_TAG)))) 
+    pa->ai_qs.num_failed = atoi((const char *)content);
+  else if ((nameLen == strlen(NUM_PURGED_TAG)) &&
+    (!(strcmp((char *)xml_node->name, NUM_PURGED_TAG)))) 
+    pa->ai_qs.num_purged = atoi((const char *)content);
+  else if ((nameLen == strlen(OWNER_TAG)) &&
+    (!(strcmp((char *)xml_node->name, OWNER_TAG)))) 
+    snprintf(pa->ai_qs.owner, PBS_MAXUSER + PBS_MAXSERVERNAME + 2, "%s", (const char *)content);
+  else if ((nameLen == strlen(PARENT_TAG)) &&
+    (!(strcmp((char *)xml_node->name, PARENT_TAG)))) 
+    snprintf(pa->ai_qs.parent_id, PBS_MAXSVRJOBID + 1, "%s", (const char *)content);
+  else if ((nameLen == strlen(ARRAY_FILEPREFIX_TAG)) &&
+    (!(strcmp((char *)xml_node->name, ARRAY_FILEPREFIX_TAG)))) 
+    snprintf(pa->ai_qs.fileprefix, PBS_JOBBASE + 1, "%s", (const char *)content);
+  else if ((nameLen == strlen(SUBMIT_HOST_TAG)) &&
+    (!(strcmp((char *)xml_node->name, SUBMIT_HOST_TAG)))) 
+    snprintf(pa->ai_qs.submit_host, PBS_MAXSERVERNAME + 1, "%s", (const char *)content);
+  else if ((nameLen == strlen(NUM_SUCCESSFULL_TAG)) &&
+    (!(strcmp((char *)xml_node->name, NUM_SUCCESSFULL_TAG)))) 
+    pa->ai_qs.num_successful = atoi((const char *)content);
+  else if ((nameLen == strlen(NUM_TOKENS_TAG)) &&
+    (!(strcmp((char *)xml_node->name, NUM_TOKENS_TAG)))) 
+    *num_tokens = atoi((const char *)content);
+  else
+    {
+    snprintf(log_buf, buflen, "unknown tag \"%s\" on array xml", (const char*) xml_node->name);
+    rc = -1;
+    }
+
+  xmlFree(content);
+  return rc;
+  }
+
+
+void delete_rn(tlist_head *th)
+  {
   array_request_node *rn;
-  char  log_buf[LOCAL_LOG_BUF_SIZE];
+  tlist_head pa_request_tokens = *th;
+
+  for (rn = (array_request_node*)GET_NEXT(pa_request_tokens);
+    rn != NULL;
+    rn = (array_request_node*)GET_NEXT(pa_request_tokens))
+    {
+    delete_link(&rn->request_tokens_link);
+    free(rn);
+    }
+  }
+
+
+int parse_num_tokens(
+
+  job_array **new_pa, 
+  xmlNodePtr  tokensNode, 
+  char       *log_buf, 
+  size_t       buflen)
+  
+  {
+  xmlNodePtr cur_node = NULL;
+  job_array *pa = *new_pa;
+  int rc = PBSE_NONE;
+
+  if ((cur_node = xmlFirstElementChild(tokensNode)))
+    while(cur_node)
+      {
+      xmlChar *start_attr, *end_attr;
+      start_attr = end_attr = NULL;
+      mbool_t gotBothAttr = false;
+      if ((start_attr = xmlGetProp(cur_node, (xmlChar *)START_TAG)))
+        if ((end_attr = xmlGetProp(cur_node, (xmlChar *)END_TAG)))
+          {
+          array_request_node *rn = (array_request_node *)calloc(1, sizeof(array_request_node));
+          rn->start = atoi((char *)start_attr);
+          rn->end = atoi((char *)end_attr);
+          CLEAR_LINK(rn->request_tokens_link);
+          append_link(&pa->request_tokens, &rn->request_tokens_link, (void*)rn);
+          gotBothAttr = true;
+          }
+        if (start_attr)
+          xmlFree(start_attr);
+        if (end_attr)
+          xmlFree(end_attr);
+        if (!gotBothAttr)
+          {
+          delete_rn(&pa->request_tokens);
+          snprintf(log_buf, buflen, "%s", "missing start/end attributes for array tokens in the array xml");
+          rc = -1;
+          break;
+          }
+      cur_node = xmlNextElementSibling(cur_node);
+      }
+  else
+    {
+    snprintf(log_buf, buflen, "%s", "no \"tokens\" xml element was found");
+    rc = -1;
+    }
+
+  return rc;
+  }
+
+
+int parse_array_dom(
+
+  job_array  **pa,         /* O */ /* Array Job to recover information from file */
+  xmlNodePtr root_element, /* I */ /*Root element of the dom */
+  char       *log_buf,      /* O */ /* Error buffer */
+  size_t      buflen)      /* I */ /* Error buffer length */
+
+  {
+  xmlNodePtr cur_node = NULL;
+  xmlNodePtr tokensNode = NULL;
+  int rc = -1;
+  int num_tokens = 0;
+
+  if ((cur_node = xmlFirstElementChild(root_element)))
+    {
+    while(cur_node)
+      {
+      if (!(strcmp((const char*)cur_node->name, TOKENS_TAG)))
+        tokensNode = cur_node;
+      else
+        if ((rc = assign_array_info_fields(pa, cur_node, log_buf, buflen, &num_tokens)))
+           break;
+      cur_node = xmlNextElementSibling(cur_node);
+      }
+
+    if ((!rc))
+      {
+      job_array  *new_pa = *pa;
+      if (new_pa->ai_qs.array_size > 0)
+        if ((new_pa->job_ids = (char **)calloc(new_pa->ai_qs.array_size, sizeof(char *))) == NULL)
+          {
+          snprintf(log_buf, buflen, "%s", "unable to allocate memory for array job_ids strings");
+          rc = -1;
+          }
+      if ((!(rc)) && (num_tokens > 0) && tokensNode)
+        rc = parse_num_tokens(pa, tokensNode, log_buf, buflen);  
+      }
+    }
+  else
+    snprintf(log_buf, buflen, "%s", "xml file is empty");
+
+    return rc;
+  }
+
+
+int array_recov_xml(
+
+  char       *filename,    /* I */ /* File containing array information to read */
+  job_array **pa,          /* O */ /* Array Job to recover information from file */
+  char       *log_buf,     /* O */ /* Error buffer */
+  size_t      buflen)      /* I */ /* Error buffer length */
+
+  {
+  xmlDoc *doc = NULL;
+  xmlNode *root_element = NULL;
+  int rc = PBSE_INVALID_SYNTAX;
+
+  /*parse the file and get the DOM */
+  doc = xmlReadFile(filename, NULL, 0);
+
+  if (doc == NULL)
+    return rc;
+
+  /*Get the root element node */
+  if (!(root_element = xmlDocGetRootElement(doc)))
+    return rc;
+  else
+    {
+    if (strcmp((const char *) root_element->name, ARRAY_TAG))
+      {
+      snprintf(log_buf, buflen, "missing root tag %s", ARRAY_TAG);
+      /* set return code of -1 as we do have an AR xml but it did not have the right root elem. */
+      return -1; 
+      }
+    if (parse_array_dom(pa, root_element, log_buf, buflen))
+      return -1;
+    }
+
+  return PBSE_NONE;
+  } /* END array_recov_xml */
+
+
+int array_recov_binary(
+
+  char       *path,    /* I */ /* File containing array information to read */
+  job_array **new_pa,  /* O */ /* Array Job to recover information from file */
+  char       *log_buf, /* O */ /* Error buffer */
+  size_t      buflen)  /* I */ /* Error buffer length */
+
+  {
+  job_array *pa = *new_pa;
+  int   old_version = ARRAY_QS_STRUCT_VERSION;
   int   fd;
-  int   old_version;
   int   num_tokens;
   int   i;
   int   len;
-  int   rc;
+  int   rc = -1;
+  array_request_node *rn;
 
-  *new_pa = NULL;
-
-  old_version = ARRAY_QS_STRUCT_VERSION;
-
-  /* allocate the storage for the struct */
-  pa = (job_array*)calloc(1,sizeof(job_array));
-
-  if (pa == NULL)
-    {
-    return(PBSE_SYSTEM);
-    }
-
-  /* initialize the linked list nodes */
-
-  CLEAR_HEAD(pa->request_tokens);
 
   fd = open(path, O_RDONLY, 0);
   if(fd < 0)
     {
-    free(pa);
     return(PBSE_SYSTEM);
     }
 
@@ -423,7 +801,6 @@ int array_recov(
     rc = read_and_convert_259_array(fd, pa, path);
     if (rc != PBSE_NONE)
       {
-      free(pa);
       close(fd);
       return(rc);
       }
@@ -437,9 +814,7 @@ int array_recov(
     len = read_ac_socket(fd, &(pa->ai_qs), sizeof(pa->ai_qs));
     if ((len < 0) || ((len < (int)sizeof(pa->ai_qs)) && (pa->ai_qs.struct_version == ARRAY_QS_STRUCT_VERSION)))
       {
-      sprintf(log_buf, "error reading %s", path);
-      log_err(errno, __func__, log_buf);
-      free(pa);
+      snprintf(log_buf, buflen, "error reading %s", path);
       close(fd);
       return(PBSE_SYSTEM);
       }
@@ -449,9 +824,8 @@ int array_recov(
       rc = array_upgrade(pa, fd, pa->ai_qs.struct_version, &old_version);
       if (rc)
         {
-        sprintf(log_buf, "Cannot upgrade array version %d to %d", pa->ai_qs.struct_version, ARRAY_QS_STRUCT_VERSION);
-        log_err(errno, __func__, log_buf);
-        free(pa);
+        snprintf(log_buf, buflen, 
+          "Cannot upgrade array version %d to %d", pa->ai_qs.struct_version, ARRAY_QS_STRUCT_VERSION);
         close(fd);
         return(rc);
         }
@@ -468,10 +842,7 @@ int array_recov(
     {
     if (read_ac_socket(fd, &num_tokens, sizeof(int)) != sizeof(int))
       {
-      sprintf(log_buf, "error reading token count from %s", path);
-      log_err(errno, __func__, log_buf);
-
-      free(pa);
+      snprintf(log_buf, buflen, "error reading token count from %s", path);
       close(fd);
       return(PBSE_SYSTEM);
       }
@@ -482,9 +853,7 @@ int array_recov(
 
       if (read_ac_socket(fd, rn, sizeof(array_request_node)) != sizeof(array_request_node))
         {
-        sprintf(log_buf, "error reading array_request_node from %s", path);
-        log_err(errno, __func__, log_buf);
-
+        snprintf(log_buf, buflen, "error reading array_request_node from %s", path);
         free(rn);
 
         for (rn = (array_request_node*)GET_NEXT(pa->request_tokens);
@@ -495,8 +864,6 @@ int array_recov(
           free(rn);
           }
 
-        free(pa);
-
         close(fd);
         return(PBSE_SYSTEM);
         }
@@ -506,7 +873,6 @@ int array_recov(
       append_link(&pa->request_tokens, &rn->request_tokens_link, (void*)rn);
 
       }
-
     }
 
   close(fd);
@@ -519,6 +885,80 @@ int array_recov(
     array_save(pa);
     }
 
+  return PBSE_NONE;
+  } /* END array_recov_binary */
+
+void free_array_job_sub_struct(
+
+  job_array *pa)
+
+  {
+  array_request_node *rn;
+
+  /* clear array request linked list */
+  for (rn = (array_request_node *)GET_NEXT(pa->request_tokens);
+       rn != NULL;
+       rn = (array_request_node *)GET_NEXT(pa->request_tokens))
+    {
+    delete_link(&rn->request_tokens_link);
+    free(rn);
+    }
+
+  /* free the memory for the job pointers */
+  for (int i = 0; i < pa->ai_qs.array_size; i++)
+    {
+    if (pa->job_ids[i] != NULL)
+      free(pa->job_ids[i]);
+    }
+
+  free(pa->job_ids);
+  }
+
+/* array_recov reads in  an array struct saved to disk and inserts it into
+   the servers list of arrays */
+int array_recov(
+
+  char       *path, 
+  job_array **new_pa)
+
+  {
+  job_array *pa;
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
+  int   rc;
+
+  *new_pa = NULL;
+  bool   binary_conversion = false;
+
+  /* allocate the storage for the struct */
+  pa = (job_array*)calloc(1,sizeof(job_array));
+
+  if (pa == NULL)
+    {
+    return(PBSE_SYSTEM);
+    }
+
+  /* initialize the linked list nodes */
+  CLEAR_HEAD(pa->request_tokens);
+  
+  if ((rc = array_recov_xml(path, &pa, log_buf, sizeof(log_buf))) && rc == PBSE_INVALID_SYNTAX)
+    {
+    rc = array_recov_binary(path, &pa, log_buf, sizeof(log_buf));
+    binary_conversion = true;
+    }
+
+    if (rc != PBSE_NONE) 
+    {
+    free_array_job_sub_struct(pa);
+    free(pa);
+    log_err(-1, __func__, log_buf);
+    return rc;
+    }
+
+  if (binary_conversion)
+    if (array_save_xml((const job_array *)pa, path, log_buf, sizeof(log_buf)) != PBSE_NONE)
+      log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_JOB,pa->ai_qs.parent_id,log_buf);
+
+  CLEAR_HEAD(pa->ai_qs.deps);
   pa->ai_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(pa->ai_mutex,NULL);
 

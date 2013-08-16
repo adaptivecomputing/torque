@@ -102,6 +102,8 @@
 #include <unistd.h> /* getpid */
 #include <stdlib.h>
 #include <pthread.h>
+#include <libxml/parser.h>
+
 #include "list_link.h"
 #include "work_task.h"
 #include "log.h"
@@ -1731,6 +1733,16 @@ void set_globals_from_environment(void)
   }  /* END set_globals_from_environment() */
 
 
+/* initialize libxml2 */
+void initialize_xmllib()
+
+  {
+  LIBXML_TEST_VERSION;
+  /* not reentrant; called once before processing, set up multithreading */
+  xmlInitParser(); 
+  } /* END of initialize_xmllib */
+
+
 /*
  * main - the initialization and main loop of pbs_daemon
  */
@@ -1767,6 +1779,7 @@ int main(
   ProgName = argv[0];
   srand(get_random_number());
   tzset(); /* localtime_r needs this */
+  initialize_xmllib();
 
   memset(&server, 0, sizeof(struct server));
   log_init(NULL, NULL);
@@ -2090,6 +2103,8 @@ int main(
   job_log_close(1);
   pthread_mutex_unlock(job_log_mutex);
 
+  /* cleans up memory allocated by the xml library */
+  xmlCleanupParser(); /* must be called the latest possible */
   exit(0);
   }  /* END main() */
 

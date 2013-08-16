@@ -183,7 +183,7 @@ int save_struct(
 
 
 
-
+#if 0
 /*
  * save_attr() - write set of attributes to disk file
  *
@@ -273,7 +273,7 @@ int save_attr(
 
   return(0);
   }  /* END save_attr() */
-
+#endif
 
 
 

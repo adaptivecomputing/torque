@@ -44,6 +44,7 @@
 #include <sys/resource.h>
 #include <sys/utsname.h>
 #include <dirent.h>
+#include <libxml/parser.h>
 
 
 #include "libpbs.h"
@@ -3734,6 +3735,16 @@ void MOMCheckRestart(void)
 
 
 
+/* initialize libxml2 */
+void initialize_xmllib()
+
+  {
+  LIBXML_TEST_VERSION;
+  /* not reentrant; called once before processing, set up multithreading */
+  xmlInitParser();
+  } /* END of initialize_xmllib */
+
+
 
 /*
  * initialize_globals
@@ -6252,6 +6263,7 @@ int main(
 
   save_args(argc, argv);
 
+  initialize_xmllib();
   initialize_globals();
 
   parse_command_line(argc, argv); /* Calls exit on command line error */
@@ -6321,6 +6333,8 @@ int main(
     restart_mom(argc, argv);
     }
 
+  /* cleans up memory allocated by the lib2xml libraries */
+  xmlCleanupParser(); /* this call must be call before program exits */
   return(0);
   }  /* END main() */
 
