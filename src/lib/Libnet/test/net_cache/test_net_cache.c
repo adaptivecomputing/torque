@@ -112,6 +112,7 @@ Suite *get_hostaddr_suite(void)
   {
   Suite *s = suite_create("net_cache_suite methods");
   TCase *tc_core = tcase_create("test_one");
+  tcase_set_timeout(tc_core,10);
   tcase_add_test(tc_core, test_one);
   suite_add_tcase(s, tc_core);
 
