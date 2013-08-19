@@ -2038,25 +2038,7 @@ char *get_correct_jobname(
     /* just the server suffix */
 
     /* check for the server suffix */
-    if (second_suffix != NULL)
-      {
-      dot = second_suffix - 1;
-      *dot = '\0';
-
-      len = strlen(jobid) + 1 ;
-
-      correct = calloc(1, len);
-
-      if (correct == NULL)
-        {
-        log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
-        return(NULL);
-        }
-
-      snprintf(correct,len,"%s",jobid);
-      *dot = '.';
-      }
-    else if (first_suffix != NULL)
+    if (first_suffix != NULL)
       {
       correct = strdup(jobid);
 
