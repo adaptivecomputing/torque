@@ -2168,11 +2168,13 @@ int save_node_for_adding(
   struct pbsnode    *pnode,
   single_spec_data  *req,
   char              *first_node_name,
-  int                is_external_node)
+  int                is_external_node,
+  int                req_rank)
 
   {
   node_job_add_info *to_add;
   node_job_add_info *old_next;
+  node_job_add_info *cur_naji;
   bool               first = false;
 
   if ((first_node_name[0] != '\0') &&
@@ -2180,6 +2182,7 @@ int save_node_for_adding(
     {
     pnode->nd_order = 0;
     first = true;
+    req_rank = 0;
     }
   else
     pnode->nd_order = 1;
@@ -2192,6 +2195,7 @@ int save_node_for_adding(
     naji->gpu_needed = req->gpu;
     naji->mic_needed = req->mic;
     naji->is_external = is_external_node;
+    naji->req_rank = req_rank;
     }
   else
     {
@@ -2213,6 +2217,7 @@ int save_node_for_adding(
       naji->gpu_needed = req->gpu;
       naji->mic_needed = req->mic;
       naji->is_external = is_external_node;
+      naji->req_rank = req_rank;
       }
     else
       {
@@ -2222,12 +2227,29 @@ int save_node_for_adding(
       to_add->gpu_needed = req->gpu;
       to_add->mic_needed = req->mic;
       to_add->is_external = is_external_node;
+      to_add->req_rank = req_rank;
       }
 
     /* fix pointers, NOTE: works even if old_next == NULL */
-    old_next = naji->next;
-    to_add->next = old_next;
-    naji->next = to_add;
+    cur_naji = naji;
+    old_next = cur_naji->next;
+    while(old_next != NULL)
+      {
+      if(to_add->req_rank <= old_next->req_rank)
+        {
+        cur_naji->next = to_add;
+        to_add->next = old_next;
+        to_add = NULL;
+        break;
+        }
+      cur_naji = old_next;
+      old_next = cur_naji->next;
+      }
+    if(to_add != NULL)
+      {
+      cur_naji->next = to_add;
+      to_add->next = NULL;
+      }
     }
 
   /* count off the number we have reserved */
@@ -2531,7 +2553,7 @@ int add_login_node_if_needed(
         req.gpu = 0;
         req.mic = 0;
         req.prop = NULL;
-        save_node_for_adding(naji, login, &req, login->nd_name, FALSE);
+        save_node_for_adding(naji, login, &req, login->nd_name, FALSE, -1);
         strcpy(*first_node_name_ptr, login->nd_name);
         }
       
@@ -2863,9 +2885,9 @@ int node_spec(
              * nodes in a separate attribute */
             if ((job_type == JOB_TYPE_heterogeneous) &&
                 (node_is_external(pnode) == TRUE))
-              save_node_for_adding(naji, pnode, req, first_node_name, TRUE);
+              save_node_for_adding(naji, pnode, req, first_node_name, TRUE, i+1);
             else
-              save_node_for_adding(naji, pnode, req, first_node_name, FALSE);
+              save_node_for_adding(naji, pnode, req, first_node_name, FALSE, i+1);
 
             if ((num_alps_reqs > 0) &&
                 (ard_array != NULL) &&
