@@ -224,6 +224,7 @@ typedef struct node_job_add_info
   int                       gpu_needed;
   int                       mic_needed;
   int                       is_external;
+  int                       req_rank;
   struct node_job_add_info *next;
   } node_job_add_info;
 
