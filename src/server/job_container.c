@@ -121,6 +121,7 @@ char *get_correct_jobname(
   {
   char *correct = NULL;
   char *dot;
+  char *work_jobid = strdup(jobid);
   /* first suffix could be the server name or the alias */
   char *first_suffix = NULL;
 
@@ -137,7 +138,7 @@ char *get_correct_jobname(
   if (display_suffix == FALSE)
     server_suffix = FALSE;
 
-  if ((dot = strchr((char *)jobid,'.')) != NULL)
+  if ((dot = strchr((char *)work_jobid,'.')) != NULL)
     {
     first_suffix = dot + 1;
 
@@ -145,9 +146,9 @@ char *get_correct_jobname(
       {
       second_suffix = dot + 1;
       }
+  
+    dot = NULL;
     }
-
-  dot = NULL;
 
   /* check current settings */
   get_svr_attr_str(SRV_ATR_job_suffix_alias, &alias);
@@ -165,6 +166,8 @@ char *get_correct_jobname(
 
         if (correct == NULL)
           log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
+      
+        free(work_jobid);
 
         return(correct);
         }
@@ -172,81 +175,66 @@ char *get_correct_jobname(
     else if (first_suffix == NULL)
       {
       /* alloc memory and sprint, add 3 for 2 '.' and NULL terminator */
-      len = strlen(jobid) + strlen(server_name) + strlen(alias) + 3;
+      len = strlen(work_jobid) + strlen(server_name) + strlen(alias) + 3;
       correct = (char *)calloc(1, len);
 
       if (correct == NULL)
         {
         log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
+        free(work_jobid);
         return(NULL);
         }
 
       snprintf(correct,len,"%s.%s.%s",
-        jobid,server_name,alias);
+        work_jobid,server_name,alias);
       }
     else
       {
       /* add 2 for null terminator and '.' */
-      len = strlen(alias) + 2 + strlen(jobid);
+      len = strlen(alias) + 2 + strlen(work_jobid);
 
       correct = (char *)calloc(1, len);
 
       if (correct == NULL)
         {
         log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
+        free(work_jobid);
         return(NULL);
         }
 
-      snprintf(correct,len,"%s.%s",jobid,alias);
+      snprintf(correct,len,"%s.%s",work_jobid,alias);
       }
     } /* END if (server_suffix && alias) */
   else if (server_suffix == TRUE)
     {
     /* just the server suffix */
 
-    /* check for the server suffix */
-    if (second_suffix != NULL)
+    if (first_suffix != NULL)
       {
-      dot = second_suffix - 1;
-      *dot = '\0';
-
-      len = strlen(jobid) + 1 ;
-
-      correct = (char *)calloc(1, len);
+      correct = strdup(work_jobid);
 
       if (correct == NULL)
         {
         log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
-        return(NULL);
-        }
-
-      snprintf(correct,len,"%s",jobid);
-      *dot = '.';
-      }
-    else if (first_suffix != NULL)
-      {
-      correct = strdup(jobid);
-
-      if (correct == NULL)
-        {
-        log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
+        free(work_jobid);
         return(NULL);
         }
       }
     else
       {
-      len = strlen(jobid) + strlen(server_name) + 2;
+      len = strlen(work_jobid) + strlen(server_name) + 2;
 
       correct = (char *)calloc(1, len);
 
       if (correct == NULL)
         {
         log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
+        free(work_jobid);
         return(NULL);
         }
 
       snprintf(correct,len,"%s.%s",
-        jobid,server_name);
+        work_jobid,server_name);
       }
     } /* END if (just server_suffix) */
   else if (alias != NULL)
@@ -255,17 +243,18 @@ char *get_correct_jobname(
 
     if (first_suffix == NULL)
       {
-      len = strlen(jobid) + strlen(alias) + 2;
+      len = strlen(work_jobid) + strlen(alias) + 2;
 
       correct = (char *)calloc(1, len);
 
       if (correct == NULL)
         {
         log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
+        free(work_jobid);
         return(NULL);
         }
 
-      snprintf(correct,len,"%s.%s",jobid,alias);
+      snprintf(correct,len,"%s.%s",work_jobid,alias);
       }
     else
       {
@@ -274,17 +263,18 @@ char *get_correct_jobname(
       dot = first_suffix - 1;
       *dot = '\0';
 
-      len += strlen(jobid);
+      len += strlen(work_jobid);
       correct = (char *)calloc(1, len);
 
       if (correct == NULL)
         {
         log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
+        free(work_jobid);
         return(NULL);
         }
 
       snprintf(correct,len,"%s.%s",
-        jobid,
+        work_jobid,
         alias);
 
       *dot = '.';
@@ -299,20 +289,23 @@ char *get_correct_jobname(
       *dot = '\0';
       }
 
-    len = strlen(jobid) + 1;
+    len = strlen(work_jobid) + 1;
     correct = (char *)calloc(1, len);
 
     if (correct == NULL)
       {
       log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
+      free(work_jobid);
       return(NULL);
       }
 
-    snprintf(correct,len,"%s",jobid);
+    snprintf(correct,len,"%s",work_jobid);
 
     if (first_suffix != NULL)
       *dot = '.';
     }
+
+  free(work_jobid);
 
   return(correct);
   } /* END get_correct_jobname() */

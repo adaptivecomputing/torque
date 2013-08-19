@@ -6,7 +6,16 @@
 #include "pbs_error.h"
 
 extern void traverse_all_jobs(void (*traverseCallback)(job *pJob,void *callbackParameter),void *callbackParameter);
+char *get_correct_jobname(const char *jobid);
 
+
+START_TEST(get_correct_jobname_test)
+  {
+  // with nothing set, get_correct_jobname should just return the jobid passed in.
+  char *jobid = get_correct_jobname("1.napali.ac");
+  fail_unless(!strcmp(jobid, "1.napali.ac"));
+  }
+END_TEST
 
 START_TEST(initialize_all_jobs_array_test)
   {
@@ -300,6 +309,7 @@ Suite *job_container_suite(void)
 
   tc_core = tcase_create("next_job_from_back_test");
   tcase_add_test(tc_core, next_job_from_back_test);
+  tcase_add_test(tc_core, get_correct_jobname_test);
   suite_add_tcase(s, tc_core);
   
   tc_core = tcase_create("traverse_all_jobs_test");
