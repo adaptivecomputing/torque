@@ -608,7 +608,7 @@ int parse_attributes(
 int check_fileprefix(
 
   const char *filename, /* I */  /* name of the Job file */
-  job   **pjob,           /* M */  /* job structure to compare */
+  job   **pjob,         /* M */  /* job structure to compare */
   char   *log_buf,      /* O */  /* error buffer */
   size_t  buf_len)      /* I */  /* error buffer lenght */
 
@@ -627,7 +627,7 @@ int check_fileprefix(
   if (pn)
     pn++;
   else
-    pn = filename;
+    pn = (char *)filename;
 
 #ifndef PBS_MOM
   if (strncmp(pn, pj->ji_qs.ji_fileprefix, strlen(pj->ji_qs.ji_fileprefix)) != 0)
