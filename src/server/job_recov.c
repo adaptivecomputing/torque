@@ -626,6 +626,8 @@ int check_fileprefix(
   pn = strrchr((char *)filename, (int)'/');
   if (pn)
     pn++;
+  else
+    pn = filename;
 
 #ifndef PBS_MOM
   if (strncmp(pn, pj->ji_qs.ji_fileprefix, strlen(pj->ji_qs.ji_fileprefix)) != 0)

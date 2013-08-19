@@ -811,8 +811,8 @@ int array_recov_binary(
     /* read the file into the struct previously allocated.
      */
 
-    len = read_ac_socket(fd, &(pa->ai_qs), sizeof(pa->ai_qs));
-    if ((len < 0) || ((len < (int)sizeof(pa->ai_qs)) && (pa->ai_qs.struct_version == ARRAY_QS_STRUCT_VERSION)))
+    len = read_ac_socket(fd, &(pa->ai_qs), sizeof(array_info));
+    if ((len < 0) || ((len < (int)sizeof(array_info)) && (pa->ai_qs.struct_version == ARRAY_QS_STRUCT_VERSION)))
       {
       snprintf(log_buf, buflen, "error reading %s", path);
       close(fd);
