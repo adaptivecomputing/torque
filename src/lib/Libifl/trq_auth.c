@@ -255,9 +255,8 @@ int trq_simple_connect(
     if (sock < 0)
       {
       fprintf(stderr, "Could not open socket in %s. error %d\n", __func__, errno);
-      freeaddrinfo(results);
-      results = NULL;
-      return(PBSE_SYSTEM);
+      rc = PBSE_SYSTEM;
+      continue;
       }
       
     /* Make sure we don't make the socket wait for the linger timeout before getting freed */
@@ -265,10 +264,8 @@ int trq_simple_connect(
     if (rc != 0)
       {
       fprintf(stderr, "setsockopt failed in %s. error %d\n", __func__, errno);
-      close(sock);
-      freeaddrinfo(results);
-      results = NULL;
-      return(PBSE_SYSTEM);
+      rc = PBSE_SYSTEM;
+      continue;
       }
 
     rc = connect(sock, addr_info->ai_addr, addr_info->ai_addrlen);
@@ -276,8 +273,6 @@ int trq_simple_connect(
       {
       /* This server is not listening */
       close(sock);
-      freeaddrinfo(results);
-      results = NULL;
       rc = PBSE_SYSTEM;
       continue;
       }
@@ -288,9 +283,10 @@ int trq_simple_connect(
       }
     }
 
-  /* If we made it to here we connected */
   if (results != NULL)
     freeaddrinfo(results);
+  if (rc != PBSE_NONE)
+      return(rc);
 
   *sock_handle = sock;
   
@@ -490,7 +486,7 @@ int build_active_server_response(
     len = strlen(active_pbs_server);
     }
 
-  sprintf(temp_buf, "%d", len);
+  sprintf(temp_buf, "%d|", len);
 
   resp_msg = (char *)calloc(1, len + strlen(temp_buf) + 2); /* 2 because we need one for the '|' delimeter and one for a null termination */
   if (resp_msg == NULL)
