@@ -851,6 +851,12 @@ void *delete_all_work(
       {
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       
+      if(rc == -1)
+        {
+        //forced_jobpurge freed preq_dup so reallocate it.
+        preq_dup = duplicate_request(preq);
+        preq_dup->rq_noreply = TRUE;
+        }
       continue;
       }
     
@@ -862,7 +868,7 @@ void *delete_all_work(
       if ((rc = execute_job_delete(pjob, Msg, preq_dup)) == PBSE_NONE)
         reply_ack(preq_dup);
        
-      /* mark this as NULL because it has been freed */
+      /* preq_dup has been freed at this point. Either reallocate it or set it to NULL*/
       if (rc == PURGE_SUCCESS)
         {
         preq_dup = duplicate_request(preq);
