@@ -370,9 +370,9 @@ int validate_server(
   else
     trq_simple_disconnect(sd);
 
-  if (rc == PBSE_SERVER_NOT_FOUND) /* This only indicates no server is currently active. Go to default */
+  if (rc != PBSE_NONE) /* This only indicates no server is currently active. Go to default */
     {
-    active_pbs_server[0] = '\0';
+    fprintf(stderr, "Currently no servers active. Last active server is returned as the currently active server: %d\n", rc);
     rc = PBSE_NONE;
     }
 

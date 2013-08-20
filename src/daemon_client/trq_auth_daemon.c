@@ -48,7 +48,7 @@ int load_config(
   char *tmp_name = pbs_default();
   /* Assume TORQUE_HOME = /var/spool/torque */
   /* /var/spool/torque/server_name */
-  if (tmp_name == NULL)
+  if ((tmp_name == NULL) || (tmp_name[0] == '\0'))
     rc = PBSE_BADHOST;
   else
     {
@@ -357,6 +357,7 @@ int trq_main(
   parse_command_line(argc, argv);
   if ((rc = load_config(&active_pbs_server, &trq_server_port, &daemon_port)) != PBSE_NONE)
     {
+     fprintf(stderr, "Failed to load configuration. Make sure the $TORQUE_HOME/server_name file exists\n");
     }
   else if ((rc = load_ssh_key(&the_key)) != PBSE_NONE)
     {
