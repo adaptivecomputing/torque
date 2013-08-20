@@ -374,7 +374,7 @@ int validate_server(
 
   if (rc == PBSE_SERVER_NOT_FOUND) /* This only indicates no server is currently active. Go to default */
     {
-    active_pbs_server[0] = '\0';
+    fprintf(stderr, "Currently no servers active. Last active server is returned as the currently active server\n");
     rc = PBSE_NONE;
     }
 
