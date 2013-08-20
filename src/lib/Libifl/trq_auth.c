@@ -250,8 +250,8 @@ int trq_simple_connect(
 
   for (addr_info = results; addr_info != NULL; addr_info = addr_info->ai_next)
     {
-
     sock = socket(addr_info->ai_family, SOCK_STREAM, addr_info->ai_protocol);
+
     if (sock < 0)
       {
       fprintf(stderr, "Could not open socket in %s. error %d\n", __func__, errno);
@@ -265,6 +265,7 @@ int trq_simple_connect(
       {
       fprintf(stderr, "setsockopt failed in %s. error %d\n", __func__, errno);
       rc = PBSE_SYSTEM;
+      close(sock);
       continue;
       }
 
