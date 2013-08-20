@@ -159,7 +159,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
         continue;
         }
 
-      amt = read_ac_socket(fp, &xjob.ji_qs, sizeof(xjob.ji_qs));
+      amt = read(fp, &xjob.ji_qs, sizeof(xjob.ji_qs));
 
       if (amt != sizeof(xjob.ji_qs))
         {
