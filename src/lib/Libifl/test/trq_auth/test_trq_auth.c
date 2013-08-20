@@ -104,12 +104,12 @@ START_TEST(test_trq_simple_connect)
 
   socket_success = false;
   rc = trq_simple_connect(server_name, batch_port, &handle);
-  fail_unless(rc == PBSE_SYSTEM, "trq_simple_connect failed failed socket call", rc);
+  fail_unless(rc != PBSE_NONE, "trq_simple_connect failed failed socket call", rc);
 
   socket_success = true;
   setsockopt_success = false;
   rc = trq_simple_connect(server_name, batch_port, &handle);
-  fail_unless(rc == PBSE_SYSTEM, "trq_simple_connect failed failed setsockopt call", rc);
+  fail_unless(rc != PBSE_NONE, "trq_simple_connect failed failed setsockopt call", rc);
 
   setsockopt_success = true;
   connect_success = false;
