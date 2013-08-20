@@ -1,6 +1,6 @@
 #include "license_pbs.h" /* See here for the software license */
 #include "attr_fn_resc.h"
-#include "test_attr_fn_resc.h"
+#include "test_uut.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -9,7 +9,21 @@
 
 START_TEST(test_one)
   {
+  pbs_attribute attr;
 
+  memset(&attr,0,sizeof(pbs_attribute));
+
+  fail_unless(decode_resc(NULL,NULL,NULL,NULL,0) == PBSE_INTERNAL);
+  fail_unless(decode_resc(&attr,NULL,NULL,NULL,0) == PBSE_UNKRESC);
+  fail_unless(decode_resc(&attr,"attrName",NULL,NULL,0) == PBSE_UNKRESC);
+  fail_unless(decode_resc(&attr,"attrName","arch",NULL,0) == PBSE_ATTRRO);
+  fail_unless(decode_resc(&attr,"notherAttrName","string","Pie",0) == PBSE_ATTRRO);
+  fail_unless(decode_resc(&attr,"notherAttrName","string","Pie",ATR_DFLAG_ACCESS) == 0);
+  fail_unless(decode_resc(&attr,"someLong","long","314179",ATR_DFLAG_ACCESS) == 0);
+  fail_unless(decode_resc(&attr,"someBit","bit","1",ATR_DFLAG_ACCESS) == 0);
+  fail_unless(decode_resc(&attr,"notherString","string","poop",ATR_DFLAG_ACCESS) == 0);
+  free_resc(&attr);
+  free_resc(&attr);
 
   }
 END_TEST
