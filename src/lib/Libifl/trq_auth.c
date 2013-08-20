@@ -285,13 +285,14 @@ int trq_simple_connect(
 
   if (results != NULL)
     freeaddrinfo(results);
+
+  if (addr_info == NULL)
+    rc = PBSE_SERVER_NOT_FOUND;
+
   if (rc != PBSE_NONE)
-      return(rc);
+    return(rc);
 
   *sock_handle = sock;
-  
-  if (addr_info == NULL)
-    return(PBSE_SERVER_NOT_FOUND);
   
   return(rc);
   }
