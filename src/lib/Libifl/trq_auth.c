@@ -250,8 +250,8 @@ int trq_simple_connect(
 
   for (addr_info = results; addr_info != NULL; addr_info = addr_info->ai_next)
     {
-
     sock = socket(addr_info->ai_family, SOCK_STREAM, addr_info->ai_protocol);
+
     if (sock < 0)
       {
       fprintf(stderr, "Could not open socket in %s. error %d\n", __func__, errno);
@@ -265,6 +265,7 @@ int trq_simple_connect(
       {
       fprintf(stderr, "setsockopt failed in %s. error %d\n", __func__, errno);
       rc = PBSE_SYSTEM;
+      close(sock);
       continue;
       }
 
@@ -368,9 +369,9 @@ int validate_server(
   else
     trq_simple_disconnect(sd);
 
-  if (rc == PBSE_SERVER_NOT_FOUND) /* This only indicates no server is currently active. Go to default */
+  if (rc != PBSE_NONE) /* This only indicates no server is currently active. Go to default */
     {
-    fprintf(stderr, "Currently no servers active. Last active server is returned as the currently active server\n");
+    fprintf(stderr, "Currently no servers active. Last active server is returned as the currently active server: %d\n", rc);
     rc = PBSE_NONE;
     }
 

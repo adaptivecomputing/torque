@@ -55,7 +55,7 @@ void *add_and_lookup_stuff(void *parm)
 {
   int i = 0;
 
-    while((i < 10000) || (everybody_started == false))
+    while((i < 1000) || (everybody_started == false))
     {
       struct addrinfo *pAddr = (struct addrinfo *)calloc(1,sizeof(addrinfo));
       struct sockaddr_in *pINetAddr;

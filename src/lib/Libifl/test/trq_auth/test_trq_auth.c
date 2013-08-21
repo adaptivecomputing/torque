@@ -114,7 +114,7 @@ START_TEST(test_trq_simple_connect)
   setsockopt_success = true;
   connect_success = false;
   rc = trq_simple_connect(server_name, batch_port, &handle);
-  fail_unless(rc == PBSE_SERVER_NOT_FOUND, "trq_simple_connect failed failed connect call", rc);
+  fail_unless(rc != PBSE_NONE, "trq_simple_connect failed failed connect call", rc);
 
   }
 END_TEST
@@ -292,7 +292,7 @@ START_TEST(test_process_svr_conn)
   *sock = 20;
   request_type = TRQ_VALIDATE_ACTIVE_SERVER;
   (*process_svr_conn)((void *)sock);
-  fail_unless(process_svr_conn_rc != PBSE_NONE, "TRQ_VALIDATE_ACIVE_SERVER failed");
+  fail_unless(process_svr_conn_rc == PBSE_NONE, "TRQ_VALIDATE_ACIVE_SERVER failed");
 
   /* Test the success case for TRQ_AUTH_CONNECTION */
   sock = (int *)calloc(1, sizeof(int));
