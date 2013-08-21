@@ -126,7 +126,6 @@ int decode_DIS_AltAuthen(
     {
     return(rc);
     }
-
   rc = disrfst(chan, PBS_MAXCREDENTIAL_LEN, preq->rq_ind.rq_authen.rq_cred);
 
   return rc;

@@ -31,11 +31,13 @@
 extern char *msg_daemonname;
 extern pthread_mutex_t *log_mutex;
 extern pthread_mutex_t *job_log_mutex;
-
 extern int debug_mode;
+
 bool       down_server = false;
 static int changed_msg_daem = 0;
 static char *active_pbs_server;
+pbs_net_t   trq_server_addr;
+char       trq_hostname[PBS_MAXSERVERNAME + 1];
 
 int load_config(
 
@@ -323,6 +325,7 @@ int terminate_trqauthd()
   return(rc);
   }
 
+
 extern "C"
 {
 int trq_main(
@@ -340,6 +343,10 @@ int trq_main(
   void *(*process_method)(void *) = process_svr_conn;
 
   parse_command_line(argc, argv);
+
+  rc = set_trqauthd_addr();
+  if (rc != PBSE_NONE)
+    return(rc);
 
   if (down_server == true)
     {

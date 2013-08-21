@@ -268,6 +268,7 @@ struct rq_register
 struct rq_authen
   {
   unsigned int rq_port;
+  unsigned long rq_addr;
   char rq_cred[PBS_MAXCREDENTIAL_LEN];
   };
 

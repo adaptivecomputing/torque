@@ -22,9 +22,12 @@ int           trq_addr_len;
 char         *trq_server_name = NULL;
 int           debug_mode = 0;
 static char   active_pbs_server[PBS_MAXSERVERNAME + 1];
-extern time_t pbs_tcp_timeout;
 bool   trqauthd_up = true;
 
+pbs_net_t  trq_server_addr;
+char       trq_hostname[PBS_MAXSERVERNAME + 1];
+
+extern time_t pbs_tcp_timeout;
 #ifdef UNIT_TEST
   int process_svr_conn_rc;
 #endif
@@ -35,6 +38,28 @@ int set_active_pbs_server(
 
   {
   strncpy(active_pbs_server, new_active_server, PBS_MAXSERVERNAME);
+  return(PBSE_NONE);
+  }
+
+/* set_trqauthd_addr: This function gets the host name and address
+   where trqauthd is running */
+int set_trqauthd_addr()
+  {
+  int local_errno;
+
+  if (gethostname(trq_hostname, PBS_MAXSERVERNAME) == -1)
+    {
+    fprintf(stderr, "failed to get host name: %d\n", errno);
+    return(PBSE_BADHOST);
+    }
+          
+  trq_server_addr = get_hostaddr(&local_errno, trq_hostname);
+  if (trq_server_addr == 0)
+    {
+    fprintf(stderr, "Could not get host address\n");
+    return(PBSE_BADHOST);
+    }
+              
   return(PBSE_NONE);
   }
 
@@ -450,7 +475,8 @@ int build_request_svr(
   int  user_ll = 0;
   int  user_len = 0;
   int  port_len = 0;
-  char tmp_buf[13];
+  int  addr_len = 0;
+  char tmp_buf[32];
 
   if (user == NULL)
     return(PBSE_BAD_PARAMETER);
@@ -462,12 +488,15 @@ int build_request_svr(
     user_ll = strlen(tmp_buf);
     sprintf(tmp_buf, "%d", sock);
     port_len = strlen(tmp_buf);
+    sprintf(tmp_buf, "%ld", trq_server_addr);
+    addr_len = strlen(tmp_buf);
+
 
     message.str("");
     message << "+" << PBS_BATCH_PROT_TYPE << "+";
     message << PBS_BATCH_PROT_VER << "2+" << PBS_BATCH_AuthenUser;
     message << user_ll << "+" << user_len << user << port_len << "+";
-    message << sock << "+0";
+    message << sock << addr_len << "+" << trq_server_addr << "+0";
     }
   else if (AUTH_TYPE_KEY == auth_type)
     {
