@@ -280,10 +280,7 @@ int start_domainsocket_listener(
         }
       }
 
-    if (new_conn_port != NULL)
-      {
-      free(new_conn_port);
-      }
+    /* Do not free the new_conn_port here. It will be freed in process_svr_conn */
 
     pthread_attr_destroy(&t_attr);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, "net_srvr",
