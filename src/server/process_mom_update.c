@@ -611,7 +611,7 @@ int process_status_info(
   int             dont_change_state = FALSE;
   pbs_attribute   temp;
   int             rc = PBSE_NONE;
-  int             send_hello = FALSE;
+  bool            send_hello = false;
 
   get_svr_attr_l(SRV_ATR_MomJobSync, &mom_job_sync);
   get_svr_attr_l(SRV_ATR_AutoNodeNP, &auto_np);
@@ -691,7 +691,7 @@ int process_status_info(
       {
       /* mom is requesting that we send the mom hierarchy file to her */
       remove_hello(&hellos, current->nd_name);
-      send_hello = TRUE;
+      send_hello = true;
       
       /* reset gpu data in case mom reconnects with changed gpus */
       clear_nvidia_gpus(current);
@@ -776,7 +776,7 @@ int process_status_info(
     }
   
   if ((rc == PBSE_NONE) &&
-      (send_hello == TRUE))
+      (send_hello == true))
     rc = SEND_HELLO;
     
   return(rc);
