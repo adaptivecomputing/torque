@@ -7,6 +7,11 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       at connect time.
   b - TRQ-2111. Make queued jobs never hold node resources.
   c - TRQ-2155. Fix a crash in trqauthd.
+  e - TRQ-2058. Add the option of having the pbs_mom daemon read the mom hierarchy 
+      file instead of having to get it from pbs_server. To do this, copy the 
+      hierarchy to mom_priv/mom_hierarchy.
+  e - TRQ-2058. Add the -n option to pbs_server, telling pbs_server not to send a 
+      hierarchy over the network unless it is requested by pbs_mom.
 
 4.2.4
   b - TRQ-1802. Make the environment variable $PBS_NUM_NODES accurate for multi-req

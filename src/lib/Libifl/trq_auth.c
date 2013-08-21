@@ -292,7 +292,7 @@ int trq_simple_connect(
     rc = PBSE_SERVER_NOT_FOUND;
 
   if (rc != PBSE_NONE)
-      return(rc);
+    return(rc);
 
   *sock_handle = sock;
   

@@ -4,13 +4,22 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+extern bool received_cluster_addrs;
+extern char *path_mom_hierarchy;
+
+void read_mom_hierarchy();
 
 #include "pbs_error.h"
 
-START_TEST(test_one)
+START_TEST(test_read_mom_hierarchy)
   {
-
-
+  system("rm -f bob");
+  path_mom_hierarchy = strdup("bob");
+  read_mom_hierarchy();
+  fail_unless(received_cluster_addrs == false);
+  system("touch bob");
+  read_mom_hierarchy();
+  fail_unless(received_cluster_addrs == true);
   }
 END_TEST
 
@@ -24,8 +33,8 @@ END_TEST
 Suite *mom_main_suite(void)
   {
   Suite *s = suite_create("mom_main_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_read_mom_hiearchy");
+  tcase_add_test(tc_core, test_read_mom_hierarchy);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");

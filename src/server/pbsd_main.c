@@ -253,6 +253,9 @@ unsigned int            pbs_scheduler_port;
 extern pbs_net_t        pbs_server_addr;
 unsigned int            pbs_server_port_dis;
 
+bool                    auto_send_hierarchy = true;
+mom_hierarchy_t        *mh;
+
 listener_connection     listener_conns[MAXLISTENERS];
 int                     queue_rank = 0;
 int                     a_opt_init = -1;
@@ -641,7 +644,7 @@ void parse_command_line(
 
   ForceCreation = FALSE;
 
-  while ((c = getopt(argc, argv, "A:a:cd:DefhH:L:l:mM:p:R:S:t:uv-:")) != -1)
+  while ((c = getopt(argc, argv, "A:a:cd:DefhH:L:l:mM:np:R:S:t:uv-:")) != -1)
     {
     switch (c)
       {
@@ -940,6 +943,12 @@ void parse_command_line(
 
           mom_host = optarg;
           }
+
+        break;
+
+      case 'n':
+
+        auto_send_hierarchy = false;
 
         break;
 

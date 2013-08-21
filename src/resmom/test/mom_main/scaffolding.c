@@ -22,6 +22,8 @@
 #include "tcp.h"
 #include "prolog.h" /* PBS_PROLOG_TIME */
 
+extern mom_hierarchy_t *mh;
+
 mom_server     mom_servers[PBS_MAXSERVER];
 resizable_array *received_statuses;
 int mom_server_count = 0;
@@ -392,8 +394,17 @@ void *get_next(list_link pl, char *file, int line)
 
 resizable_array *initialize_resizable_array(int size)
   {
-  fprintf(stderr, "The call to initialize_resizable_array needs to be mocked!!\n");
-  exit(1);
+  resizable_array *ra = (resizable_array*)calloc(1, sizeof(resizable_array));
+  size_t           amount = sizeof(slot) * size;
+
+  ra->max       = size;
+  ra->num       = 0;
+  ra->next_slot = 1;
+  ra->last      = 0;
+
+  ra->slots = (slot *)calloc(1, amount);
+
+  return(ra);
   }
 
 int log_open(char *filename, char *directory)
@@ -566,8 +577,9 @@ void DIS_tcp_settimeout(long timeout)
 
 mom_hierarchy_t *initialize_mom_hierarchy(void)
   {
-  fprintf(stderr, "The call to initialize_mom_hierarchy needs to be mocked!!\n");
-  exit(1);
+  mom_hierarchy_t *nt = (mom_hierarchy_t *)calloc(1, sizeof(mom_hierarchy_t));
+  nt->paths = initialize_resizable_array(INITIAL_SIZE_NETWORK);
+  return(nt);
   }
 
 int diswsi(tcp_chan *chan, int value)
@@ -725,6 +737,16 @@ int pbs_getaddrinfo(
   struct addrinfo  *pHints,
   struct addrinfo **ppAddrInfoOut)
 
+  {
+  return(0);
+  }
+
+void parse_mom_hierarchy(int fds)
+  {
+  mh->paths->num++;
+  }
+
+int put_env_var(const char *name, const char *value)
   {
   return(0);
   }

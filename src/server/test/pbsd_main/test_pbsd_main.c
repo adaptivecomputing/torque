@@ -5,10 +5,17 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "pbs_error.h"
-START_TEST(test_one)
+
+void parse_command_line(int argc, char *argv[]);
+extern bool auto_send_hierarchy;
+
+START_TEST(test_parse_command_line)
   {
+  char *argv[] = {strdup("pbs_server"), strdup("-n")};
 
-
+  fail_unless(auto_send_hierarchy == true);
+  parse_command_line(2, argv);
+  fail_unless(auto_send_hierarchy == false);
   }
 END_TEST
 
@@ -22,8 +29,8 @@ END_TEST
 Suite *pbsd_main_suite(void)
   {
   Suite *s = suite_create("pbsd_main_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_parse_command_line");
+  tcase_add_test(tc_core, test_parse_command_line);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");
