@@ -1,6 +1,7 @@
 #include "license_pbs.h" /* See here for the software license */
 #include "lib_ifl.h"
 
+#include <sstream>
 #include <limits.h> /* LOGIN_NAME_MAX */
 #include <netinet/in.h> /* in_addr_t */
 #include <stdio.h> /* sprintf */
@@ -286,13 +287,14 @@ int trq_simple_connect(
 
   if (results != NULL)
     freeaddrinfo(results);
+  
+  if (addr_info == NULL)
+    rc = PBSE_SERVER_NOT_FOUND;
+
   if (rc != PBSE_NONE)
       return(rc);
 
   *sock_handle = sock;
-  
-  if (addr_info == NULL)
-    return(PBSE_SERVER_NOT_FOUND);
   
   return(rc);
   }
@@ -423,39 +425,49 @@ int parse_request_client(
   return rc;
   }
 
+
+/*
+ * build_request_svr()
+ *
+ * builds the authentication request for the specified user
+ * to send to pbs_server
+ * @pre-cond: user must be a valid string pointer
+ * @post-cond: the authenticate user request to send over the wire
+ * is placed in message
+ * @return PBSE_NONE on success, PBSE_NOT_IMPLEMENTED for AUTH_TYPE_KEY,
+ * PBSE_INVALID for unrecognized, and PBSE_BAD_PARAMETER for user == NULL
+ */
 int build_request_svr(
-    int auth_type,
-    char *user,
-    int sock,
-    char **send_message)
+
+  int                auth_type,
+  const char        *user,
+  int                sock,
+  std::stringstream &message)
+
   {
   /* PBS_BATCH_PROT_TYPE PBS_BATCH_PROT_VER PBS_BATCH_AuthenUser */
-  int rc = PBSE_NONE;
-  int len = 0;
-  int user_ll = 0, user_len = 0, port_len = 0;
-  char *resp_msg;
+  int  rc = PBSE_NONE;
+  int  user_ll = 0;
+  int  user_len = 0;
+  int  port_len = 0;
   char tmp_buf[13];
-  len += 2 + 2 + 4;
-  user_len = strlen(user);
-  sprintf(tmp_buf, "%d", user_len);
-  user_ll = strlen(tmp_buf);
-  len += LOGIN_NAME_MAX + 1;
-  len += user_ll;
-  len += user_len;
-  sprintf(tmp_buf, "%d", sock);
-  port_len = strlen(tmp_buf);
-  len += 2 + port_len;
-  len += 2;
+
+  if (user == NULL)
+    return(PBSE_BAD_PARAMETER);
+
   if (AUTH_TYPE_IFF == auth_type)
     {
-    resp_msg = (char *)calloc(1, len);
-    sprintf(resp_msg, "+%d+%d%d+%d%d+%d%s%d+%d+0",
-        PBS_BATCH_PROT_TYPE,
-        PBS_BATCH_PROT_VER,
-        2, PBS_BATCH_AuthenUser,
-        user_ll, user_len, user,
-        port_len, sock);
-    *send_message = resp_msg;
+    user_len = strlen(user);
+    sprintf(tmp_buf, "%d", user_len);
+    user_ll = strlen(tmp_buf);
+    sprintf(tmp_buf, "%d", sock);
+    port_len = strlen(tmp_buf);
+
+    message.str("");
+    message << "+" << PBS_BATCH_PROT_TYPE << "+";
+    message << PBS_BATCH_PROT_VER << "2+" << PBS_BATCH_AuthenUser;
+    message << user_ll << "+" << user_len << user << port_len << "+";
+    message << sock << "+0";
     }
   else if (AUTH_TYPE_KEY == auth_type)
     {
@@ -466,18 +478,19 @@ int build_request_svr(
     {
     rc = PBSE_AUTH_INVALID;
     }
-  return rc;
-  }
+
+  return(rc);
+  } /* END build_request_svr() */
+
+
 
 int build_active_server_response(
 
-  char **send_message)
+  std::stringstream &message)
 
   {
-  int rc = PBSE_NONE;
-  int len = 0;
-  char *resp_msg;
-  char temp_buf[20]; 
+  int  rc = PBSE_NONE;
+  int  len = 0;
 
   len = strlen(active_pbs_server);
 
@@ -487,20 +500,10 @@ int build_active_server_response(
     len = strlen(active_pbs_server);
     }
 
-  sprintf(temp_buf, "%d|", len);
-
-  resp_msg = (char *)calloc(1, len + strlen(temp_buf) + 2); /* 2 because we need one for the '|' delimeter and one for a null termination */
-  if (resp_msg == NULL)
-    {
-    return(PBSE_MEM_MALLOC);
-    }
-
-  sprintf(resp_msg, "%d|%s|", len, active_pbs_server);
-
-  *send_message = resp_msg;
+  message.str("");
+  message << len << "|" << active_pbs_server << "|";
 
   return(rc);
-
   }
 
 int validate_user(
@@ -696,10 +699,10 @@ void *process_svr_conn(
   int         server_port = 0;
   int         auth_type = 0;
   char       *user_name = NULL;
-  int         user_pid = 0;
-  int         user_sock = 0;
-  char       *error_msg = NULL;
-  char       *send_message = NULL;
+  int                user_pid = 0;
+  int                user_sock = 0;
+  char              *error_msg = NULL;
+  std::stringstream  message;
   int         send_len = 0;
   char       *trq_server_addr = NULL;
   int         trq_server_addr_len = 0;
@@ -718,14 +721,14 @@ void *process_svr_conn(
       case TRQ_DOWN_TRQAUTHD:
         {
         trqauthd_up = false;
-        rc = build_active_server_response(&send_message);
+        rc = build_active_server_response(message);
         break;
         }
 
       case TRQ_GET_ACTIVE_SERVER:
         {
         /* rc will get evaluated after the switch statement. */
-        rc = build_active_server_response(&send_message);
+        rc = build_active_server_response(message);
         break;
         }
 
@@ -739,7 +742,7 @@ void *process_svr_conn(
           {
           break;
           }
-        else if ((rc = build_active_server_response(&send_message)) != PBSE_NONE)
+        else if ((rc = build_active_server_response(message)) != PBSE_NONE)
           {
           break;
           }
@@ -803,20 +806,20 @@ void *process_svr_conn(
           debug_mark = 4;
           socket_close(svr_sock);
           }
-        else if ((rc = build_request_svr(auth_type, user_name, user_sock, &send_message)) != PBSE_NONE)
+        else if ((rc = build_request_svr(auth_type, user_name, user_sock, message)) != PBSE_NONE)
           {
           socket_close(svr_sock);
           disconnect_svr = FALSE;
           debug_mark = 5;
           }
-        else if ((send_len = ((send_message == NULL)?0:strlen(send_message)) ) <= 0)
+        else if ((send_len = message.str().size()) <= 0)
           {
           socket_close(svr_sock);
           disconnect_svr = FALSE;
           rc = PBSE_INTERNAL;
           debug_mark = 6;
           }
-        else if ((rc = socket_write(svr_sock, send_message, send_len)) != send_len)
+        else if ((rc = socket_write(svr_sock, message.str().c_str(), send_len)) != send_len)
           {
           socket_close(svr_sock);
           disconnect_svr = FALSE;
@@ -832,14 +835,12 @@ void *process_svr_conn(
         else
           {
           /* Success case */
-          if (send_message != NULL)
-            free(send_message);
-          send_message = (char *)calloc(1, 6);
-          if(send_message != NULL)
-            strcat(send_message, "0|0||");
+          message.str("");
+          message << "0|0||";
           if (debug_mode == TRUE)
             {
-            fprintf(stderr, "Conn to %s port %d success. Conn %d authorized\n", server_name, server_port, user_sock);
+            fprintf(stderr, "Conn to %s port %d success. Conn %d authorized\n",
+              server_name, server_port, user_sock);
             }
 
           snprintf(msg_buf, sizeof(msg_buf),
@@ -873,9 +874,6 @@ void *process_svr_conn(
   if (rc != PBSE_NONE)
     {
     /* Failure case */
-    if (send_message != NULL)
-      free(send_message);
-    
     msg_len = 6 + 1 + 6 + 1 + 1;
     
     if (error_msg == NULL)
@@ -888,9 +886,10 @@ void *process_svr_conn(
       }
 
     msg_len += strlen(error_msg);
-    send_message = (char *)calloc(1, msg_len);
-    if(send_message != NULL)
-      snprintf(send_message, msg_len, "%d|%d|%s|", rc, (int)strlen(error_msg), error_msg);
+
+    message.str("");
+    message << rc << "|" << strlen(error_msg) << "|" << error_msg << "|";
+    
     if (debug_mode == TRUE)
       {
       fprintf(stderr, "Conn to %s port %d Fail. Conn %d not authorized (dm = %d, Err Num %d)\n", server_name, server_port, user_sock, debug_mark, rc);
@@ -900,14 +899,13 @@ void *process_svr_conn(
       "User %s at IP:port %s:%d login attempt failed --%s", 
         (user_name) ? user_name : "null",
         (server_name) ? server_name : "null", server_port, 
-        (error_msg) ? error_msg : "nullL");
+        (error_msg) ? error_msg : "null");
     log_record(PBSEVENT_CLIENTAUTH | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD,
       className, msg_buf);
     }
 
-  if(send_message != NULL)
-    rc = socket_write(local_socket, send_message, strlen(send_message));
-
+  if (message.str().size() != 0)
+    rc = socket_write(local_socket, message.str().c_str(), message.str().size());
 
   if (trq_server_addr != NULL)
     free(trq_server_addr);
@@ -920,9 +918,6 @@ void *process_svr_conn(
 
   if (error_msg != NULL)
     free(error_msg);
-
-  if (send_message != NULL)
-    free(send_message);
 
   socket_close(local_socket);
   free(sock);

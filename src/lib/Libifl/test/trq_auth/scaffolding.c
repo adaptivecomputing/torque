@@ -79,7 +79,7 @@ int socket_close(int socket)
   return(PBSE_NONE);
   }
 
-int socket_write(int socket, char *data, int data_len)
+int socket_write(int socket, const char *data, int data_len)
   {
   if (write_success == true)
     {
@@ -489,4 +489,3 @@ int connect(
   else
     return(-1);
   }
-
