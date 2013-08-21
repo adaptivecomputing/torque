@@ -128,5 +128,8 @@ int tcp_connect_sockaddr(struct sockaddr *,size_t);
 int write_tcp_reply(struct tcp_chan *chan,int,int,int,int);
 int read_tcp_reply(struct tcp_chan *chan,int,int,int,int *);
 void free_mom_hierarchy(mom_hierarchy_t *);
+int handle_level(char *level_iter, int path_index, int &level_index);
+int handle_path(char *path_iter, int &path_index);
+void parse_mom_hierarchy(int fds);
 
 #endif /* ndef MOM_HIERARCHY_H */

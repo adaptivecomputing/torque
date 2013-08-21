@@ -226,11 +226,13 @@ extern pthread_mutex_t *listener_command_mutex;
 extern pthread_mutex_t *node_state_mutex;
 extern pthread_mutex_t *check_tasks_mutex;
 extern pthread_mutex_t *reroute_job_mutex;
+extern mom_hierarchy_t *mh;
 
 extern int a_opt_init;
 
 extern int LOGLEVEL;
 extern char *plogenv;
+extern bool  auto_send_hierarchy;
 
 extern struct server server;
 
@@ -529,7 +531,17 @@ int can_resolve_hostname(
 
 
 
-
+/*
+ * check_if_in_nodes_file()
+ * When parsing the mom_hierarchy file, make sure that the nodes found there
+ * are also present in the nodes file, and create the nodes if they don't exist already.
+ * Also, mark nodes as having been found in the hierarchy file so that they the hierarchy
+ * can be checked for completeness later.
+ *
+ * @pre-cond: hostname must be a valid char pointer
+ * @pre-cond: the nodes file must be parsed before the mom hierarchy
+ * @post-cond: any nodes in the hierarchy file that aren't in the nodes file are created
+ */
 
 void check_if_in_nodes_file(
 
@@ -596,203 +608,175 @@ void check_if_in_nodes_file(
   } /* END check_if_in_nodes_file() */
 
 
+/*
+ * convert_level_to_send_format()
+ *
+ * @pre-cond: level must be a valid resizable array of node_comm_t
+ * @post-cond: all nodes at this level are added to send format in the format for sending
+ */
+void convert_level_to_send_format(
 
-
-
-int handle_level(
-    
-  char           *level_iter,
-  boost::ptr_vector<std::string>& send_format,
-  int             level_index)
+  resizable_array                *level,
+  int                             level_index,
+  boost::ptr_vector<std::string> &send_format)
 
   {
-  char            log_buf[LOCAL_LOG_BUF_SIZE];
-  const char           *delims = ",";
-  char           *host_tok;
-  std::string     level_buf = "";
-
+  node_comm_t *nc;
+  std::string  level_string = "";
+  int          node_iter = -1;
 
   send_format.push_back(new std::string("<sl>"));
-      
-  /* find each hostname */
-  host_tok = threadsafe_tokenizer(&level_iter, delims);
 
-  while (host_tok != NULL)
+  while ((nc = (node_comm_t *)next_thing(level, &node_iter)) != NULL)
     {
-    host_tok = trim(host_tok);
+    if (level_string.size() != 0)
+      level_string += ",";
+  
+    check_if_in_nodes_file(nc->name, level_index);
+    level_string += nc->name;
 
-    if (can_resolve_hostname(host_tok) == FALSE)
+    if (ntohs(nc->sock_addr.sin_port) != PBS_MANAGER_SERVICE_PORT)
       {
-      snprintf(log_buf, sizeof(log_buf),
-        "While parsing the mom hierarchy file, cannot resolve hostname %s",
-        host_tok);
-      log_err(-1, __func__, log_buf);
+      level_string += ":";
+      level_string += ntohs(nc->sock_addr.sin_port);
       }
-    else
-      {
-      if (level_buf.length() > 0)
-        level_buf += ",";
-
-      check_if_in_nodes_file(host_tok, level_index);
-
-      level_buf += host_tok;
-      }
-
-    host_tok = threadsafe_tokenizer(&level_iter, delims);
     }
-     
-  send_format.push_back(new std::string(level_buf.c_str()));
+
+  send_format.push_back(new std::string(level_string.c_str()));
   send_format.push_back(new std::string("</sl>"));
-
-  return(PBSE_NONE);
-  } /* END handle_level() */
+  } /* END convert_level_to_send_format() */
 
 
+/*
+ * convert_path_to_send_format()
+ * iterates over each level in the path and adds in to send format appropriately.
+ *
+ * @pre-cond: path must be a valid resizable array of resizable arrays.
+ * @post-cond: this path is added to send_format in the correct format.
+ */
+void convert_path_to_send_format(
 
-
-int handle_path(
-
-  char           *path_iter,
-  boost::ptr_vector<std::string>& send_format)
+  resizable_array                *path,
+  boost::ptr_vector<std::string> &send_format)
 
   {
-  char  log_buf[LOCAL_LOG_BUF_SIZE];
-  char *level_parent;
-  char *level_child;
-
-  int   level_index = 0;
-
+  int              levels_iter = -1;
+  resizable_array *level;
+    
   send_format.push_back(new std::string("<sp>"));
   
-  /* iterate over each level in the path */
-  while (get_parent_and_child(path_iter,&level_parent,&level_child,&path_iter) == PBSE_NONE)
+  while ((level = (resizable_array *)next_thing(path, &levels_iter)) != NULL)
+    convert_level_to_send_format(level, levels_iter - 1, send_format);
+
+  send_format.push_back(new std::string("</sp>"));
+  } /* END convert_path_to_send_format() */
+
+
+/*
+ * add_missing_nodes()
+ *
+ * @pre-cond: nodes have been marked if they are in the hierarchy or not 
+ * (i.e.: check_if_in_nodes_file() has been called for all nodes in the hierarchy)
+ * @post-cond: any nodes not in the hierarchy are added in a new path, all at level 1
+ */
+void add_missing_nodes(
+
+  boost::ptr_vector<std::string> &send_format)
+
+  {
+  struct pbsnode *pnode;
+  bool            found_missing_node = false;
+  int             iter = -1;
+  char            log_buf[LOCAL_LOG_BUF_SIZE];
+
+  /* check if there are nodes that weren't in the hierarchy file that are in the nodes file */
+  while ((pnode = next_host(&allnodes, &iter, NULL)) != NULL)
     {
-    if (!strncmp(level_parent,"level",strlen("level")))
+    if (pnode->nd_in_hierarchy == FALSE)
       {
-      handle_level(level_child, send_format, level_index);
-  
-      level_index++;
-      }
-    else
-      {
-      /* non-fatal error */
+      if (found_missing_node == false)
+        {
+        send_format.push_back(new std::string("<sp>"));
+        send_format.push_back(new std::string("<sl>"));
+        found_missing_node = true;
+        send_format.push_back(new std::string(pnode->nd_name));
+        }
+      else
+        {
+        send_format.push_back(new std::string(","));
+        send_format.push_back(new std::string(pnode->nd_name));
+        }
+
       snprintf(log_buf, sizeof(log_buf),
-        "Found noise in the mom hierarchy file. Ignoring <%s>%s</%s>",
-        level_parent, level_child, level_parent);
-      log_err(-1, __func__, log_buf);
+        "Node %s found in the nodes file but not in the mom_hierarchy file. Making it a level 1 node",
+        pnode->nd_name);
+
+      pnode->nd_hierarchy_level = 0;
+      log_err( -1, __func__, log_buf);
       }
+
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
     }
-  
-  if (level_index == 0)
+
+  if (found_missing_node == true)
     {
-    /* empty level, delete the <sp> */
-    send_format.pop_back();
+    send_format.push_back(new std::string("</sl>"));
+    send_format.push_back(new std::string("</sp>"));
+    }
+  }
+
+
+
+/*
+ * convert_mom_hierarchy_to_send_format()
+ * iterates over the mom_hierarchy struct and adds each node to send_format 
+ * in the format for sending.
+ *
+ */
+
+void convert_mom_hierarchy_to_send_format(
+
+  boost::ptr_vector<std::string> &send_format)
+
+  {
+  resizable_array *path;
+  int              paths_iter = -1;
+
+  while ((path = (resizable_array *)next_thing(mh->paths, &paths_iter)) != NULL)
+    convert_path_to_send_format(path, send_format);
+    
+  if (send_format.size() == 0)
+    {
+    /* if there's an error, make a default hierarchy */
+    make_default_hierarchy(send_format);
     }
   else
     {
-    /* close path */
-    send_format.push_back(new std::string("</sp>"));
+    add_missing_nodes(send_format);
     }
-
-  return(PBSE_NONE);
-  } /* END handle_path() */
+  }
 
 
+/*
+ * prepare_mom_hierarchy()
+ * opens the mom hierarchy file, creates a mom hierarchy, and places it into a format
+ * to be sent to the mom nodes.
+ * if no hierarchy file exists or if it cannot be parsed, all of the nodes are placed
+ * into a default hierarchy with all nodes at level 1.
+ *
+ * @pre-cond: nodes file has been parsed.
+ * @post-cond: send_format is populated so that the hierarchy can be sent.
+ */
 
-
-void parse_mom_hierarchy(
+void prepare_mom_hierarchy(
     
-  int fds,
-  boost::ptr_vector<std::string>& send_format)
-
-  {
-  int             bytes_read;
-  char            buffer[MAXLINE<<10];
-  char           *current;
-  char           *parent;
-  char           *child;
-  char            log_buf[LOCAL_LOG_BUF_SIZE];
-  struct pbsnode *pnode;
-  int             iter = -1;
-  unsigned char   first_missing_node = TRUE;
-
-  memset(&buffer, 0, sizeof(buffer));
-
-  if ((bytes_read = read_ac_socket(fds, buffer, sizeof(buffer) - 1)) < 0)
-    {
-    snprintf(log_buf, sizeof(log_buf),
-      "Unable to read from %s", path_mom_hierarchy);
-    log_err(errno, __func__, log_buf);
-
-    return;
-    }
-  
-  current = buffer;
-
-  while (get_parent_and_child(current, &parent, &child, &current) == PBSE_NONE)
-    {
-    if (!strncmp(parent,"path",strlen("path")))
-      {
-      handle_path(child, send_format);
-      }
-    else
-      {
-      /* non-fatal error */
-      snprintf(log_buf, sizeof(log_buf),
-        "Found noise in the mom hierarchy file. Ignoring <%s>%s</%s>",
-        parent, child, parent);
-      log_err(-1, __func__, log_buf);
-      }
-    }
-
-  if (send_format.size() != 0)
-    {
-    /* check if there are nodes that weren't in the hierarchy file that are in the nodes file */
-    while ((pnode = next_host(&allnodes, &iter, NULL)) != NULL)
-      {
-      if (pnode->nd_in_hierarchy == FALSE)
-        {
-        if (first_missing_node == TRUE)
-          {
-          send_format.push_back(new std::string("<sp>"));
-          send_format.push_back(new std::string("<sl>"));
-          first_missing_node = FALSE;
-          send_format.push_back(new std::string(pnode->nd_name));
-          }
-        else
-          {
-          send_format.push_back(new std::string(","));
-          send_format.push_back(new std::string(pnode->nd_name));
-          }
-
-        snprintf(log_buf, sizeof(log_buf),
-          "Node %s found in the nodes file but not in the mom_hierarchy file. Making it a level 1 node",
-          pnode->nd_name);
-
-        pnode->nd_hierarchy_level = 0;
-        log_err( -1, __func__, log_buf);
-        }
-
-      unlock_node(pnode, __func__, NULL, LOGLEVEL);
-      }
-
-    if (first_missing_node == FALSE)
-      {
-      send_format.push_back(new std::string("</sl>"));
-      send_format.push_back(new std::string("</sp>"));
-      }
-    }
-  } /* END parse_mom_hierarchy() */
-
-
-
-
-
-void prepare_mom_hierarchy(boost::ptr_vector<std::string>& send_format)
+  boost::ptr_vector<std::string> &send_format)
 
   {
   char            log_buf[LOCAL_LOG_BUF_SIZE];
   int             fds;
+
+  mh = initialize_mom_hierarchy();
 
   if ((fds = open(path_mom_hierarchy, O_RDONLY, 0)) < 0)
     {
@@ -809,12 +793,9 @@ void prepare_mom_hierarchy(boost::ptr_vector<std::string>& send_format)
     }
   else
     {
-    parse_mom_hierarchy(fds,send_format);
-    if(send_format.size() == 0)
-      {
-      /* if there's an error, make a default hierarchy */
-      make_default_hierarchy(send_format);
-      }
+    parse_mom_hierarchy(fds);
+
+    convert_mom_hierarchy_to_send_format(send_format);
     }
 
   if (fds >= 0)
@@ -2144,14 +2125,15 @@ int pbsd_init(
 
     /* read the hierarchy file */
     prepare_mom_hierarchy(hierarchy_holder);
-    if(hierarchy_holder.size() == 0)
+    if (hierarchy_holder.size() == 0)
       {
       /* hierarchy file exists but we couldn't open it */
       return(-1);
       }
 
     /* mark all nodes as needing a hello */
-    add_all_nodes_to_hello_container();
+    if (auto_send_hierarchy == true)
+      add_all_nodes_to_hello_container();
 
     /* allow the threadpool to start processing */
     start_request_pool();

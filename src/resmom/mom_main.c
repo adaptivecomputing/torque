@@ -147,7 +147,7 @@ char         mom_alias[PBS_MAXHOSTNAME + 1];
 char         TMOMRejectConn[MAXLINE];   /* most recent rejected connection */
 char         mom_short_name[PBS_MAXHOSTNAME + 1];
 int          num_var_env;
-int          received_cluster_addrs;
+bool         received_cluster_addrs;
 time_t       requested_cluster_addrs;
 time_t       first_update_time = 0;
 char        *path_epilog;
@@ -194,7 +194,7 @@ char            JobsToResend[MAX_RESEND_JOBS][PBS_MAXSVRJOBID+1];
 resizable_array  *exiting_job_list;
 resizable_array  *things_to_resend;
 
-mom_hierarchy_t *mh;
+mom_hierarchy_t  *mh;
 
 #ifdef PENABLE_LINUX26_CPUSETS
 hwloc_topology_t topology = NULL;       /* system topology */
@@ -4247,7 +4247,36 @@ void parse_command_line(
   }  /* END parse_command_line() */
 
 
+/*
+ * read_mom_hierarchy()
+ *
+ * opens the path to mom hierarchy and reads it in, if it exists.
+ * If it doesn't exist, sets things to request the hierarchy from pbs_server.
+ */
+void read_mom_hierarchy()
 
+  {
+  int  fds;
+    
+  mh = initialize_mom_hierarchy();
+  
+  if ((fds = open(path_mom_hierarchy, O_RDONLY, 0)) < 0)
+    {
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__,
+      "No local mom hierarchy file found, will request from server.");
+  
+    received_cluster_addrs = false;
+    }
+  else
+    {
+    parse_mom_hierarchy(fds);
+ 
+    // if we read something successfully, we have the cluster addresses and don't 
+    // need to request them.
+    if (mh->paths->num > 0)
+      received_cluster_addrs = true;
+    }
+  } /* END read_mom_hierarchy() */
 
 
 
@@ -4868,7 +4897,7 @@ int setup_program_environment(void)
 
   initialize();  /* init RM code */
 
-  mh = initialize_mom_hierarchy();
+  read_mom_hierarchy();
 
   /* initialize machine-dependent polling routines */
   if ((c = mom_open_poll()) != PBSE_NONE)
@@ -4952,7 +4981,6 @@ int setup_program_environment(void)
 
   initialize_threadpool(&request_pool,MOM_THREADS,MOM_THREADS,THREAD_INFINITE);
 
-  received_cluster_addrs = FALSE;
   requested_cluster_addrs = 0;
 
   /* allocate status strings if needed */
