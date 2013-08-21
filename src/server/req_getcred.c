@@ -428,6 +428,7 @@ int req_authenuser(
   int             delay_cntr = 0;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
   unsigned short  conn_port;
+  unsigned long   conn_addr;
 #ifndef NOPRIVPORTS
   unsigned short  conn_authen;
 #endif
@@ -448,12 +449,13 @@ int req_authenuser(
       {
       pthread_mutex_lock(svr_conn[s].cn_mutex);
       conn_port = svr_conn[s].cn_port;
+      conn_addr = svr_conn[s].cn_addr;
 #ifndef NOPRIVPORTS
       conn_authen = svr_conn[s].cn_authen;
 #endif
       pthread_mutex_unlock(svr_conn[s].cn_mutex);
   
-      if (preq->rq_ind.rq_authen.rq_port != conn_port)
+      if ((preq->rq_ind.rq_authen.rq_port != conn_port)||(preq->rq_ind.rq_authen.rq_addr != conn_addr))
         {
         continue;
         }
