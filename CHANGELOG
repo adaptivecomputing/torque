@@ -6,6 +6,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - TRQ-2097. Make it so that the proper errno is stored for non-blocking sockets 
       at connect time.
   b - TRQ-2111. Make queued jobs never hold node resources.
+  c - TRQ-2155. Fix a crash in trqauthd.
 
 4.2.4
   b - TRQ-1802. Make the environment variable $PBS_NUM_NODES accurate for multi-req

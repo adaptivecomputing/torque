@@ -1,3 +1,4 @@
+#include <sstream>
 #include "license_pbs.h" /* See here for the software license */
 #include "lib_ifl.h"
 #include "test_trq_auth.h"
@@ -28,9 +29,60 @@ extern   int request_type;
 extern   int process_svr_conn_rc;
 
 int get_active_pbs_server(char **active_server);
+int build_request_svr(int auth_type, const char *user, int sock, std::stringstream &message);
+int build_active_server_response(std::stringstream &message);
+int set_active_pbs_server(const char *server_name);
 
 extern time_t pbs_tcp_timeout;
 extern char   *my_active_server;
+
+
+START_TEST(build_request_svr_test)
+  {
+  std::stringstream message;
+
+  fail_unless(build_request_svr(AUTH_TYPE_IFF, NULL, 5, message) == PBSE_BAD_PARAMETER);
+  fail_unless(build_request_svr(AUTH_TYPE_KEY, "dbeer", 5, message) == PBSE_NOT_IMPLEMENTED);
+  fail_unless(build_request_svr(-17, "dbeer", 5, message) == PBSE_AUTH_INVALID);
+  fail_unless(build_request_svr(AUTH_TYPE_IFF, "dbeer", 6, message) == PBSE_NONE);
+
+  char buf[1024];
+  snprintf(buf, sizeof(buf), "+%d+%d2+%d%d+%ddbeer%d+%d+0",
+    PBS_BATCH_PROT_TYPE,
+    PBS_BATCH_PROT_VER,
+    PBS_BATCH_AuthenUser,
+    1, // length of "dbeer" is 5, 1 char to represent 5
+    (int)strlen("dbeer"),
+    1, // number of character to represent 6 is 1
+    6);
+  fail_unless(!strcmp(message.str().c_str(), buf));
+  
+  fail_unless(build_request_svr(AUTH_TYPE_IFF, "dbeer", 7, message) == PBSE_NONE);
+  snprintf(buf, sizeof(buf), "+%d+%d2+%d%d+%ddbeer%d+%d+0",
+    PBS_BATCH_PROT_TYPE,
+    PBS_BATCH_PROT_VER,
+    PBS_BATCH_AuthenUser,
+    1, // length of "dbeer" is 5, 1 char to represent 5
+    (int)strlen("dbeer"),
+    1, // number of character to represent 7 is 1
+    7);
+  fail_unless(!strcmp(message.str().c_str(), buf));
+  }
+END_TEST
+
+
+START_TEST(build_active_server_response_test)
+  {
+  std::stringstream message;
+  set_active_pbs_server("");
+  fail_unless(build_active_server_response(message) == PBSE_NONE);
+  set_active_pbs_server("napali");
+  fail_unless(build_active_server_response(message) == PBSE_NONE);
+  fail_unless(!strcmp(message.str().c_str(), "6|napali|"));
+  }
+END_TEST
+
+
 
 START_TEST(get_active_pbs_server_test)
   {
@@ -104,12 +156,12 @@ START_TEST(test_trq_simple_connect)
 
   socket_success = false;
   rc = trq_simple_connect(server_name, batch_port, &handle);
-  fail_unless(rc != PBSE_NONE, "trq_simple_connect failed failed socket call", rc);
+  fail_unless(rc == PBSE_SERVER_NOT_FOUND, "trq_simple_connect failed failed socket call", rc);
 
   socket_success = true;
   setsockopt_success = false;
   rc = trq_simple_connect(server_name, batch_port, &handle);
-  fail_unless(rc != PBSE_NONE, "trq_simple_connect failed failed setsockopt call", rc);
+  fail_unless(rc == PBSE_SERVER_NOT_FOUND, "trq_simple_connect failed failed setsockopt call", rc);
 
   setsockopt_success = true;
   connect_success = false;
@@ -292,7 +344,7 @@ START_TEST(test_process_svr_conn)
   *sock = 20;
   request_type = TRQ_VALIDATE_ACTIVE_SERVER;
   (*process_svr_conn)((void *)sock);
-  fail_unless(process_svr_conn_rc == PBSE_NONE, "TRQ_VALIDATE_ACIVE_SERVER failed");
+  fail_unless(process_svr_conn_rc == PBSE_NONE, "TRQ_VALIDATE_ACTIVE_SERVER failed");
 
   /* Test the success case for TRQ_AUTH_CONNECTION */
   sock = (int *)calloc(1, sizeof(int));
@@ -373,13 +425,6 @@ START_TEST(test_send_svr_disconnect)
 END_TEST
 
 
-START_TEST(test_two)
-  {
-
-  }
-END_TEST
-
-
 Suite *trq_auth_suite(void)
   {
   Suite *s = suite_create("trq_auth_suite methods");
@@ -415,8 +460,9 @@ Suite *trq_auth_suite(void)
   tcase_add_test(tc_core, test_send_svr_disconnect);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("test_two");
-  tcase_add_test(tc_core, test_two);
+  tc_core = tcase_create("test_response_building");
+  tcase_add_test(tc_core, build_request_svr_test);
+  tcase_add_test(tc_core, build_active_server_response_test);
   suite_add_tcase(s, tc_core);
 
   return s;
