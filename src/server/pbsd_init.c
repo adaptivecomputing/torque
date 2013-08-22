@@ -666,7 +666,7 @@ void convert_path_to_send_format(
   send_format.push_back(new std::string("<sp>"));
   
   while ((level = (resizable_array *)next_thing(path, &levels_iter)) != NULL)
-    convert_level_to_send_format(level, levels_iter - 1, send_format);
+    convert_level_to_send_format(level, levels_iter, send_format);
 
   send_format.push_back(new std::string("</sp>"));
   } /* END convert_path_to_send_format() */
