@@ -40,6 +40,14 @@ int disrsi_(
   if (count > sizeof(scratch) - 1)
     return DIS_INVALID;
 
+  if (count > dis_umaxd)
+    goto overflow;
+  if (count == dis_umaxd)
+    {
+    if (memcmp(scratch, dis_umax, dis_umaxd) > 0)
+      goto overflow;
+    }
+
   switch (c = tcp_getc(chan))
     {
 
