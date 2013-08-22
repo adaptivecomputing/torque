@@ -787,6 +787,8 @@ dynamic_string *prepare_mom_hierarchy()
   int             fds;
   dynamic_string *send_format = NULL;
 
+  mh = initialize_mom_hierarchy();
+
   if ((fds = open(path_mom_hierarchy, O_RDONLY, 0)) < 0)
     {
     if (errno == ENOENT)
