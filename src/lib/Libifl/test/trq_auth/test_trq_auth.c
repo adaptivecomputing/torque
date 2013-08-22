@@ -1,4 +1,5 @@
 #include <sstream>
+#include <iostream>
 #include "license_pbs.h" /* See here for the software license */
 #include "lib_ifl.h"
 #include "test_trq_auth.h"
@@ -24,6 +25,9 @@ bool    getsockopt_success;
 bool    tcp_priv_success;
 bool    socket_connect_success;
 bool    DIS_success;
+bool    gethostname_success;
+bool    get_hostaddr_success;
+bool    getpwuid_success;
 
 extern   int request_type;
 extern   int process_svr_conn_rc;
@@ -37,50 +41,6 @@ extern time_t pbs_tcp_timeout;
 extern char   *my_active_server;
 
 
-START_TEST(build_request_svr_test)
-  {
-  std::stringstream message;
-
-  fail_unless(build_request_svr(AUTH_TYPE_IFF, NULL, 5, message) == PBSE_BAD_PARAMETER);
-  fail_unless(build_request_svr(AUTH_TYPE_KEY, "dbeer", 5, message) == PBSE_NOT_IMPLEMENTED);
-  fail_unless(build_request_svr(-17, "dbeer", 5, message) == PBSE_AUTH_INVALID);
-  fail_unless(build_request_svr(AUTH_TYPE_IFF, "dbeer", 6, message) == PBSE_NONE);
-
-  char buf[1024];
-  snprintf(buf, sizeof(buf), "+%d+%d2+%d%d+%ddbeer%d+%d+0",
-    PBS_BATCH_PROT_TYPE,
-    PBS_BATCH_PROT_VER,
-    PBS_BATCH_AuthenUser,
-    1, // length of "dbeer" is 5, 1 char to represent 5
-    (int)strlen("dbeer"),
-    1, // number of character to represent 6 is 1
-    6);
-  fail_unless(!strcmp(message.str().c_str(), buf));
-  
-  fail_unless(build_request_svr(AUTH_TYPE_IFF, "dbeer", 7, message) == PBSE_NONE);
-  snprintf(buf, sizeof(buf), "+%d+%d2+%d%d+%ddbeer%d+%d+0",
-    PBS_BATCH_PROT_TYPE,
-    PBS_BATCH_PROT_VER,
-    PBS_BATCH_AuthenUser,
-    1, // length of "dbeer" is 5, 1 char to represent 5
-    (int)strlen("dbeer"),
-    1, // number of character to represent 7 is 1
-    7);
-  fail_unless(!strcmp(message.str().c_str(), buf));
-  }
-END_TEST
-
-
-START_TEST(build_active_server_response_test)
-  {
-  std::stringstream message;
-  set_active_pbs_server("");
-  fail_unless(build_active_server_response(message) == PBSE_NONE);
-  set_active_pbs_server("napali");
-  fail_unless(build_active_server_response(message) == PBSE_NONE);
-  fail_unless(!strcmp(message.str().c_str(), "6|napali|"));
-  }
-END_TEST
 
 
 
@@ -297,6 +257,9 @@ START_TEST(test_process_svr_conn)
   tcp_priv_success = true;
   socket_connect_success = true;
   DIS_success = true;
+  getpwuid_success = true;
+  get_hostaddr_success = true;
+  gethostname_success = true;
 
   sock = (int *)calloc(1, sizeof(int));
   *sock = 20;
@@ -424,6 +387,111 @@ START_TEST(test_send_svr_disconnect)
   }
 END_TEST
 
+START_TEST(build_request_svr_test)
+  {
+  std::stringstream message;
+
+  fail_unless(build_request_svr(AUTH_TYPE_IFF, NULL, 5, message) == PBSE_BAD_PARAMETER);
+  fail_unless(build_request_svr(AUTH_TYPE_KEY, "dbeer", 5, message) == PBSE_NOT_IMPLEMENTED);
+  fail_unless(build_request_svr(-17, "dbeer", 5, message) == PBSE_AUTH_INVALID);
+  fail_unless(build_request_svr(AUTH_TYPE_IFF, "dbeer", 6, message) == PBSE_NONE);
+
+  char buf[1024];
+  snprintf(buf, sizeof(buf), "+%d+%d2+%d%d+%ddbeer%d+%d1+0+0",
+    PBS_BATCH_PROT_TYPE,
+    PBS_BATCH_PROT_VER,
+    PBS_BATCH_AuthenUser,
+    1, // length of "dbeer" is 5, 1 char to represent 5
+    (int)strlen("dbeer"),
+    1, // number of character to represent 6 is 1
+    6);
+  fail_unless(!strcmp(message.str().c_str(), buf));
+  
+  fail_unless(build_request_svr(AUTH_TYPE_IFF, "dbeer", 7, message) == PBSE_NONE);
+  snprintf(buf, sizeof(buf), "+%d+%d2+%d%d+%ddbeer%d+%d1+0+0",
+    PBS_BATCH_PROT_TYPE,
+    PBS_BATCH_PROT_VER,
+    PBS_BATCH_AuthenUser,
+    1, // length of "dbeer" is 5, 1 char to represent 5
+    (int)strlen("dbeer"),
+    1, // number of character to represent 7 is 1
+    7);
+  fail_unless(!strcmp(message.str().c_str(), buf));
+  }
+END_TEST
+
+START_TEST(build_active_server_response_test)
+  {
+  std::stringstream message;
+  set_active_pbs_server("");
+  fail_unless(build_active_server_response(message) == PBSE_NONE);
+  set_active_pbs_server("napali");
+  fail_unless(build_active_server_response(message) == PBSE_NONE);
+  fail_unless(!strcmp(message.str().c_str(), "6|napali|"));
+  }
+END_TEST
+
+START_TEST(test_set_trqauthd_addr)
+  {
+  int rc;
+
+  gethostname_success = true;
+  get_hostaddr_success = true;
+  rc = set_trqauthd_addr();
+  fail_unless(rc == PBSE_NONE, "set_trqauthd_addr failed for success case");
+
+  gethostname_success = false;
+  rc = set_trqauthd_addr();
+  fail_unless(rc != PBSE_NONE, "set_trqauthd_addr failed for success case");
+  
+  gethostname_success = true;
+  get_hostaddr_success = false;
+  rc = set_trqauthd_addr();
+  fail_unless(rc != PBSE_NONE, "set_trqauthd_addr failed for success case");
+
+
+  }
+END_TEST
+
+START_TEST(test_validate_user)
+  {
+  int rc;
+  char msg [100];
+
+  getsockopt_success = true;
+  getpwuid_success = true;
+  
+  rc = validate_user(10, "eris", 1, msg);
+  fail_unless(rc == PBSE_NONE);
+
+  /* send in a NULL name */
+  rc = validate_user(10, NULL, 1, msg);
+  fail_unless(rc != PBSE_NONE);
+
+  /* send a null msg pointer */
+  rc = validate_user(10, "eris", 1, NULL);
+  fail_unless(rc != PBSE_NONE);
+
+  getsockopt_success = false;
+  rc = validate_user(10, "eris", 1, msg);
+  fail_unless(rc != PBSE_NONE);
+
+  getsockopt_success = true;
+  getpwuid_success = false;
+  rc = validate_user(10, "eris", 1, msg);
+  fail_unless(rc != PBSE_NONE);
+
+  /* test the case where user names won't match */
+  getpwuid_success = true;
+  rc = validate_user(10, "fred", 1, msg);
+  fail_unless(rc != PBSE_NONE);
+
+  /* test the case where user pids won't match */
+  rc = validate_user(10, "eris", 2, msg);
+  fail_unless(rc != PBSE_NONE);
+
+  }
+END_TEST
 
 Suite *trq_auth_suite(void)
   {
@@ -464,6 +532,15 @@ Suite *trq_auth_suite(void)
   tcase_add_test(tc_core, build_request_svr_test);
   tcase_add_test(tc_core, build_active_server_response_test);
   suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_set_trqauthd_addr");
+  tcase_add_test(tc_core, test_set_trqauthd_addr);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_validate_user");
+  tcase_add_test(tc_core, test_validate_user);
+  suite_add_tcase(s, tc_core);
+
 
   return s;
   }
