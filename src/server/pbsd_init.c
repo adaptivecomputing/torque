@@ -677,7 +677,7 @@ void convert_path_to_send_format(
   copy_to_end_of_dynamic_string(send_format, "<sp>");
   
   while ((level = (resizable_array *)next_thing(path, &levels_iter)) != NULL)
-    convert_level_to_send_format(level, levels_iter - 1, send_format);
+    convert_level_to_send_format(level, levels_iter, send_format);
 
   copy_to_end_of_dynamic_string(send_format, "</sp>");
   } /* END convert_path_to_send_format() */
