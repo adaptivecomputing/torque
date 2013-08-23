@@ -112,6 +112,15 @@ int disrsi_(
   if (dis_umaxd == 0)
     disiui_();
 
+  if (count >= dis_umaxd)
+    {
+    if (count > dis_umaxd)
+      goto overflow;
+
+    if (memcmp(scratch, dis_umax, dis_umaxd) > 0)
+      goto overflow;
+    }
+
   switch (c = (*dis_getc)(stream))
     {
 
