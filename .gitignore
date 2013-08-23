@@ -372,6 +372,7 @@ src/resmom/test/mom_comm/test_mom_comm
 src/resmom/test/mom_inter/test_mom_inter
 src/resmom/test/mom_job_func/test_mom_job_func
 src/resmom/test/mom_main/test_mom_main
+src/resmom/test/mom_main/bob
 src/resmom/test/mom_process_request/test_mom_process_request
 src/resmom/test/mom_req_quejob/test_mom_req_quejob
 src/resmom/test/mom_server/test_mom_server

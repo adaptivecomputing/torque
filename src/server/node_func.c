@@ -1,3 +1,4 @@
+#include <sstream>
 #include "license_pbs.h" /* See here for the software license */
 /*
  * node_func.c - various functions dealing with nodes, properties and
@@ -59,6 +60,7 @@
 #include <string>
 #include <vector>
 #include <boost/ptr_container/ptr_vector.hpp>
+#include "alps_functions.h"
 
 #if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
 /*extern int h_errno;*/
@@ -1925,24 +1927,34 @@ int create_pbs_node(
     return(rc);
     }
 
-  /* All nodes have at least one execution slot */
-  add_execution_slot(pnode);
-
-  rc = mgr_set_node_attr(
-         pnode,
-         node_attr_def,
-         ND_ATR_LAST,
-         plist,
-         perms,
-         bad,
-         (void *)pnode,
-         ATR_ACTION_ALTER);
-
-  if (rc != 0)
+  try
     {
-    effective_node_delete(&pnode);
-    
-    return(rc);
+    /* All nodes have at least one execution slot */
+    add_execution_slot(pnode);
+
+    rc = mgr_set_node_attr(
+           pnode,
+           node_attr_def,
+           ND_ATR_LAST,
+           plist,
+           perms,
+           bad,
+           (void *)pnode,
+           ATR_ACTION_ALTER);
+
+    if (rc != 0)
+      {
+      effective_node_delete(&pnode);
+      
+      return(rc);
+      }
+    }
+  catch(...)
+    {
+    free(pul);
+    free(pname);
+    free(pnode);
+    return(-1);
     }
 
   for (i = 0; pul[i]; i++)
@@ -2056,6 +2068,28 @@ static char *parse_node_token(
   }  /* END parse_node_token() */
 
 
+/*
+ * add_to_property_list()
+ *
+ * adds token to the list of properties
+ * @pre-cond: token must be a valid string pointer
+ * @post-cond: token will be appended to propstr, which is the list of properties.
+ */
+void add_to_property_list(
+
+  std::stringstream &propstr,
+  const char        *token)
+
+  {
+  if (token != NULL)
+    {
+    if (propstr.str().size() != 0)
+      propstr << ",";
+    
+    propstr << token;
+    }
+  }
+
 
 
 /*
@@ -2070,36 +2104,37 @@ static char *parse_node_token(
 int setup_nodes(void)
 
   {
-  FILE           *nin;
-  char            line[MAXLINE << 4];
-  char            note[MAX_NOTE+1];
-  char           *nodename;
-  char            propstr[256];
-  char           *token;
-  char           *open_bracket;
-  char           *close_bracket;
-  char           *dash;
-  char            tmp_node_name[MAX_LINE];
-  char            log_buf[LOCAL_LOG_BUF_SIZE];
-  int             bad;
-  int             num;
-  int             linenum;
-  int             err;
-  int             start = -1;
-  int             end = -1;
-  int             is_alps_reporter = FALSE;
-  int             is_alps_starter = FALSE;
-  long            cray_enabled = FALSE;
+  FILE              *nin;
+  char               line[MAXLINE << 4];
+  char               note[MAX_NOTE+1];
+  char              *nodename;
+  std::stringstream  propstr;
+  char              *token;
+  char              *open_bracket;
+  char              *close_bracket;
+  char              *dash;
+  char               tmp_node_name[MAX_LINE];
+  char               log_buf[LOCAL_LOG_BUF_SIZE];
+  int                bad;
+  int                num;
+  int                linenum;
+  int                err;
+  int                start = -1;
+  int                end = -1;
+  bool               is_alps_reporter = false;
+  bool               is_alps_starter = false;
+  bool               is_alps_compute = false;
+  long               cray_enabled = FALSE;
 
-  struct pbsnode *np;
-  char           *val;
-  char            xchar;
-  svrattrl       *pal;
-  int             perm = ATR_DFLAG_MGRD | ATR_DFLAG_MGWR;
-  tlist_head      atrlist;
+  struct pbsnode    *np;
+  char              *val;
+  char               xchar;
+  svrattrl          *pal;
+  int                perm = ATR_DFLAG_MGRD | ATR_DFLAG_MGWR;
+  tlist_head         atrlist;
 
-  extern char server_name[];
-  extern resource_t next_resource_tag;
+  extern char        server_name[];
+  extern resource_t  next_resource_tag;
 
   snprintf(log_buf, sizeof(log_buf), "%s()", __func__);
 
@@ -2135,11 +2170,12 @@ int setup_nodes(void)
       continue;
       }
 
-    is_alps_reporter = FALSE;
-    is_alps_starter = FALSE;
+    is_alps_reporter = false;
+    is_alps_starter = false;
+    is_alps_compute = false;
+    propstr.str("");
 
     /* first token is the node name, may have ":ts" appended */
-    propstr[0] = '\0';
 
     token = parse_node_token(line, 1, 0, &err, &xchar);
 
@@ -2157,12 +2193,16 @@ int setup_nodes(void)
       goto errtoken2;
       }
 
-    if (!isalpha((int)*token))
+    // cray allows numeric node names
+    if (cray_enabled == FALSE)
       {
-      snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-        "token \"%s\" doesn't start with alpha on line %d", token, linenum);
-
-      goto errtoken2;
+      if (!isalpha((int)*token))
+        {
+        snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+          "token \"%s\" doesn't start with alpha on line %d", token, linenum);
+        
+        goto errtoken2;
+        }
       }
 
     nodename = token;
@@ -2206,37 +2246,28 @@ int setup_nodes(void)
         {
         /* old style properity */
         if (!strcmp(token, alps_starter_feature))
-          is_alps_starter = TRUE;
+          is_alps_starter = true;
 
         if (!strcmp(token, alps_reporter_feature))
           {
-          is_alps_reporter = TRUE;
+          is_alps_reporter = true;
 
-          if (sizeof(propstr) - strlen(propstr) > strlen("cray_compute") + 1)
-            {
-            if (propstr[0] != '\0')
-              strcat(propstr, ",");
-            
-            strcat(propstr, "cray_compute");
-            }
+          add_to_property_list(propstr, "cray_compute");
           }
         else
           {
-          if (sizeof(propstr) - strlen(propstr) > strlen(token) + 1)
-            {
-            if (propstr[0] != '\0')
-              strcat(propstr, ",");
-   
-            strcat(propstr, token);
-            }
+          if (!strcmp(token, "cray_compute"))
+            is_alps_compute = true;
+
+          add_to_property_list(propstr, token);
           }
         }
       }    /* END while(1) */
 
     /* if any properties, create property attr and add to list */
-    if (propstr[0] != '\0')
+    if (propstr.str().size() != 0)
       {
-      pal = (svrattrl *)attrlist_create((char *)ATTR_NODE_properties, 0, strlen(propstr) + 1);
+      pal = (svrattrl *)attrlist_create((char *)ATTR_NODE_properties, 0, strlen(propstr.str().c_str()) + 1);
       
       if (pal == NULL)
         {
@@ -2248,7 +2279,7 @@ int setup_nodes(void)
         return(-1);
         }
       
-      strcpy((char *)pal->al_value, propstr);
+      strcpy((char *)pal->al_value, propstr.str().c_str());
       
       pal->al_flags = SET;
       
@@ -2257,6 +2288,8 @@ int setup_nodes(void)
 
     /* now create node and subnodes */
     pal = (svrattrl *)GET_NEXT(atrlist);
+
+    err = PBSE_NONE;
 
     if ((open_bracket = strchr(nodename,'[')) != NULL)
       {
@@ -2321,7 +2354,7 @@ int setup_nodes(void)
         start++;
         }
       }
-    else
+    else if (is_alps_compute == false)
       {
       err = create_pbs_node(nodename, pal, perm, &bad);
       }
@@ -2338,9 +2371,9 @@ int setup_nodes(void)
     if (err != 0)
       {
       snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-          "could not create node \"%s\", error = %d",
-          nodename,
-          err);
+        "could not create node \"%s\", error = %d",
+        nodename,
+        err);
 
       log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
 
@@ -2352,7 +2385,7 @@ int setup_nodes(void)
 
     if (cray_enabled == TRUE)
       {
-      if (is_alps_reporter == TRUE)
+      if (is_alps_reporter == true)
         {
         np = find_nodebyname(nodename);
         np->nd_is_alps_reporter = TRUE;
@@ -2360,12 +2393,20 @@ int setup_nodes(void)
         initialize_all_nodes_array(&(np->alps_subnodes));
         unlock_node(np, __func__, NULL, LOGLEVEL);
         }
-      else if (is_alps_starter == TRUE)
+      else if (is_alps_starter == true)
         {
         np = find_nodebyname(nodename);
         np->nd_is_alps_login = TRUE;
         add_to_login_holder(np);
         /* NYI: add to login node list */
+        unlock_node(np, __func__, NULL, LOGLEVEL);
+        }
+      else if (is_alps_compute == true)
+        {
+        np = create_alps_subnode(alps_reporter, nodename);
+        // add features
+        int bad;
+        mgr_set_node_attr(np, node_attr_def, ND_ATR_LAST, pal, perm, &bad, (void *)np, ATR_ACTION_ALTER);
         unlock_node(np, __func__, NULL, LOGLEVEL);
         }
       }

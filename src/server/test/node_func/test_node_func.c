@@ -1,4 +1,5 @@
 #include <boost/ptr_container/ptr_vector.hpp>
+#include <sstream>
 #include "license_pbs.h" /* See here for the software license */
 #include "node_func.h"
 #include "test_node_func.h"
@@ -8,6 +9,7 @@
 #include "pbs_nodes.h" /* pbs_nodes, node_check_info, node_iterator, all_nodes */
 #include "attribute.h" /* svrattrl, struct  */
 
+void add_to_property_list(std::stringstream &property_list, const char *token);
 int login_encode_jobs(struct pbsnode *pnode, tlist_head *phead);
 int cray_enabled;
 
@@ -21,6 +23,19 @@ void initialize_allnodes(all_nodes *an, struct pbsnode *n1, struct pbsnode *n2)
   an->ra->slots[1].item = n1;
   an->ra->slots[2].item = n2;
   }
+
+START_TEST(add_to_property_list_test)
+  {
+  std::stringstream properties;
+
+  add_to_property_list(properties, NULL);
+  add_to_property_list(properties, "one");
+  add_to_property_list(properties, "two");
+  add_to_property_list(properties, "three");
+  fail_unless(!strcmp(properties.str().c_str(), "one,two,three"));
+  }
+END_TEST
+
 
 START_TEST(PGetNodeFromAddr_test)
   {
@@ -1045,6 +1060,7 @@ Suite *node_func_suite(void)
 
   tc_core = tcase_create("remove_hello_test");
   tcase_add_test(tc_core, remove_hello_test);
+  tcase_add_test(tc_core, add_to_property_list_test);
   suite_add_tcase(s, tc_core);
 
   return s;

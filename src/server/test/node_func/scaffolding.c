@@ -366,3 +366,7 @@ job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode)
   exit(1);
   }
 
+struct pbsnode *create_alps_subnode(struct pbsnode *parent, const char *node_id)
+  {
+  return(NULL);
+  }

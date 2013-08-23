@@ -12,6 +12,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       hierarchy to mom_priv/mom_hierarchy.
   e - TRQ-2058. Add the -n option to pbs_server, telling pbs_server not to send a 
       hierarchy over the network unless it is requested by pbs_mom.
+  e - TRQ-2020. Add the option of setting properties (features) for cray compute
+      nodes in the nodes file. Syntax: node_id cray_compute property_name.
 
 4.2.4
   b - TRQ-1802. Make the environment variable $PBS_NUM_NODES accurate for multi-req
