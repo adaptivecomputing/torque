@@ -305,28 +305,42 @@ int client_to_svr(
     close(sock);
     return(PBS_NET_RC_RETRY);
     }
-
+  if (local_port == 0)
+    {
+    /* we will just get a dynamic port */
+    rc = bind(sock, &local, sizeof(local));
+    if (rc != 0)
+      {
+      if (EMsg != NULL)
+        sprintf(EMsg, "could not bind a port in %s -- errno: %d %s", id, errno, strerror(errno));
+      close(sock);
+      return(PBS_NET_RC_RETRY);
+      }
+    }
+  else
+    {
 #ifndef NOPRIVPORTS 
-  /* privileged ports are on. */
-  rc = bindresvport(sock, &local);
-  if (rc != 0)
-    {
-    if (EMsg != NULL)
-      sprintf(EMsg, "could not bind a reserve port in %s -- errno: %d %s", id, errno, strerror(errno));
-    close(sock);
-    return(PBS_NET_RC_RETRY);
-    }
+    /* privileged ports are on. */
+    rc = bindresvport(sock, &local);
+    if (rc != 0)
+      {
+      if (EMsg != NULL)
+        sprintf(EMsg, "could not bind a reserve port in %s -- errno: %d %s", id, errno, strerror(errno));
+      close(sock);
+      return(PBS_NET_RC_RETRY);
+      }
 #else
-  /* we will just get a dynamic port */
-  rc = bind(sock, &local, sizeof(local));
-  if (rc != 0)
-    {
-    if (EMsg != NULL)
-      sprintf(EMsg, "could not bind a port in %s -- errno: %d %s", id, errno, strerror(errno));
-    close(sock);
-    return(PBS_NET_RC_RETRY);
-    }
+    /* we will just get a dynamic port */
+    rc = bind(sock, &local, sizeof(local));
+    if (rc != 0)
+      {
+      if (EMsg != NULL)
+        sprintf(EMsg, "could not bind a port in %s -- errno: %d %s", id, errno, strerror(errno));
+      close(sock);
+      return(PBS_NET_RC_RETRY);
+      }
 #endif
+    }
 
   /* time to connect to the remote target */
   remote.sin_addr.s_addr = htonl(hostaddr);
