@@ -741,7 +741,6 @@ void *process_svr_conn(
   int         local_socket = *(int *)sock;
   char        msg_buf[1024];
   long long   req_type;  /* Type of request coming in */
-  char        *string_ptr;
 
   rc = socket_read_num(local_socket, &req_type);
   if (rc == PBSE_NONE)
@@ -865,9 +864,6 @@ void *process_svr_conn(
         else
           {
           /* Success case */
-          string_ptr = (char *)message.str().c_str();
-          if (string_ptr == NULL)
-            {;}
           message.str("");
           message << "0|0||";
           if (debug_mode == TRUE)
