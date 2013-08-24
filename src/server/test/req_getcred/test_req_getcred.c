@@ -4,9 +4,39 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "pbs_error.h"
+
+extern struct connection svr_conn[PBS_NET_MAX_CONNECTIONS];
+extern int rejected;
+extern int acked;
+
+
 START_TEST(test_one)
   {
+  batch_request req;
 
+  memset(&req,0,sizeof(batch_request));
+  memset(svr_conn,0,sizeof(svr_conn));
+  req.rq_ind.rq_authen.rq_port = 42;
+  req.rq_ind.rq_authen.rq_addr = 3577385;
+  strcpy(req.rq_user,"Tron");
+  strcpy(req.rq_user,"Flynns");
+  fail_unless(req_authenuser(&req) == PBSE_BADCRED);
+  fail_unless(rejected);
+  rejected = FALSE;
+  acked = FALSE;
+  svr_conn[6].cn_addr = 3577385;
+  svr_conn[6].cn_port = 42;
+  svr_conn[5].cn_addr = 2083577385;
+  svr_conn[5].cn_port = 42;
+  svr_conn[7].cn_addr = 2265079;
+  svr_conn[7].cn_port = 42;
+
+  fail_unless(req_authenuser(&req) == PBSE_NONE);
+  fail_unless(rejected == FALSE);
+  fail_unless(acked);
+  fail_unless(svr_conn[6].cn_authen == PBS_NET_CONN_AUTHENTICATED);
+  fail_unless(svr_conn[5].cn_authen != PBS_NET_CONN_AUTHENTICATED);
+  fail_unless(svr_conn[7].cn_authen != PBS_NET_CONN_AUTHENTICATED);
 
   }
 END_TEST

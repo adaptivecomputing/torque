@@ -1,13 +1,17 @@
+#include <sstream>
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
+#include <sys/types.h>
 #include <sys/socket.h>
+#include <netdb.h>
 #include <errno.h>
 #include <pwd.h>
 #include "tcp.h"
 #include "libpbs.h" /* batch_reply */
 #include "../lib/Liblog/pbs_messages.c"
 #include "dis.h"
+#include "net_connect.h" /* pbs_net_t */
 
 
 time_t pbs_tcp_timeout;
@@ -25,11 +29,15 @@ bool    getsockopt_success = true;
 bool    tcp_priv_success = true;
 bool    socket_connect_success = true;
 bool    DIS_success = true;
+bool    gethostname_success = true;
+bool    get_hostaddr_success = true;
+bool    getpwuid_success = true;
 
 int     request_type;
 
 char *my_active_server;
 char error_text[100] = "some error text";
+char test_trq_hostname[20] = "hosta";
 
 /****************** GLibC mocks begin ********************/
 char dummy_name[20] = "eris";
@@ -60,11 +68,15 @@ struct passwd *getpwuid(uid_t uid)
   {
   struct passwd *stuff;
 
+
   stuff = (struct passwd *)calloc(1, sizeof(struct passwd));
   if (stuff == NULL)
     return(NULL);
 
-  stuff->pw_name = dummy_name;
+  if (getpwuid_success == true)
+    stuff->pw_name = dummy_name;
+  else
+    return(NULL);
 
   return(stuff);
   }
@@ -77,7 +89,7 @@ int socket_close(int socket)
   return(PBSE_NONE);
   }
 
-int socket_write(int socket, char *data, int data_len)
+int socket_write(int socket, const char *data, int data_len)
   {
   if (write_success == true)
     {
@@ -300,7 +312,7 @@ char *pbs_get_server_list(void)
   if (list == NULL)
     return(NULL);
 
-  strcpy(list, "kmn");
+  strcpy(list, "george");
   return(list);
   }
 
@@ -415,6 +427,10 @@ int close(
     return(-1);
   }
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 int getaddrinfo(
 
   const char *node,
@@ -423,10 +439,36 @@ int getaddrinfo(
   struct addrinfo **res)
 
   {
+  struct addrinfo *results;
+
   if (getaddrinfo_success == true)
+    {
+    results = (struct addrinfo *)calloc(1, sizeof(struct addrinfo));
+    if (results == NULL)
+      {
+      fprintf(stderr, "failed to allocated memory in getaddrinfo\n");
+      return(-1);
+      }
+
+    results->ai_family = AF_INET;
+    results->ai_protocol = IPPROTO_TCP;
+    results->ai_next = NULL;
+
+    *res = results;
+
     return(0);
+    }
   else
     return(-1);
+  }
+#ifdef __cplusplus
+}
+#endif
+
+void freeaddrinfo(struct addrinfo *addr) throw()
+  {
+  if (addr != NULL)
+    free(addr);
   }
 
 int setsockopt(
@@ -458,3 +500,30 @@ int connect(
     return(-1);
   }
 
+int gethostname(char *name, size_t len) throw()
+  {
+
+  if(gethostname_success == false)
+    return(-1);
+
+  name = test_trq_hostname;
+  len = strlen(name);
+  if (len == 0)
+    return(-1);
+
+  return(0);
+  }
+
+pbs_net_t get_hostaddr(
+
+    int *local_errno,
+    char *hostname)
+
+  {
+  pbs_net_t rval = 10101010;
+
+  if (get_hostaddr_success == false)
+    return(0);
+
+  return(rval);
+  }
