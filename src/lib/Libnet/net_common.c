@@ -6,6 +6,7 @@
 
 #include <stdio.h> /* perror */
 #include <unistd.h> /* close, usleep, read, write */
+#include <iostream> /* cerr */
 
 #include <string.h> /* memset */
 #include <sys/ioctl.h> /* ioctl, FIONREAD */
@@ -29,6 +30,7 @@
 
 #include "../lib/Libifl/lib_ifl.h"
 
+using std::cerr;
 
 extern time_t pbs_tcp_timeout; /* located in tcp_dis.c. Move here later */
 
@@ -607,7 +609,7 @@ void socket_read_flush(
 int socket_write(
     
   int   socket,
-  char *data,
+  const char *data,
   int   data_len)
 
   {
@@ -954,3 +956,35 @@ int pbs_getaddrinfo(
     }while(retryCount-- >= 0);
   return EAI_FAIL;
   }
+
+
+int connect_to_trqauthd(int *sock)
+  {
+  int rc = PBSE_NONE;
+  int local_socket;
+  char     unix_sockname[MAXPATHLEN + 1];
+  char     *err_msg;
+
+  snprintf(unix_sockname, sizeof(unix_sockname), "%s/%s", TRQAUTHD_SOCK_DIR, TRQAUTHD_SOCK_NAME);
+
+  if((local_socket = socket_get_unix()) <= 0)
+    {
+    cerr << "could not open unix domain socket\n";
+    rc = PBSE_SOCKET_FAULT;
+    }
+  else if ((rc = socket_connect_unix(local_socket, unix_sockname, &err_msg)) != PBSE_NONE)
+    {
+    cerr << "socket_connect_unix failed: " << rc;
+    rc = PBSE_SOCKET_FAULT;
+    close(local_socket);
+    }
+  else
+    {
+    *sock = local_socket;
+    }
+
+  return(rc);
+  }
+
+
+

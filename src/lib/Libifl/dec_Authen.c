@@ -108,6 +108,7 @@ int decode_DIS_Authen(
   int rc;
 
   preq->rq_ind.rq_authen.rq_port = disrui(chan, &rc);
+  preq->rq_ind.rq_authen.rq_addr = disrul(chan, &rc);
   return rc;
   } /* END decode_DIS_Authen() */
 
