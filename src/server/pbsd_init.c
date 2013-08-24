@@ -193,6 +193,8 @@ extern char *path_nodenote_new;
 extern char *path_checkpoint;
 extern char *path_jobinfo_log;
 
+extern struct    credential conn_credent[PBS_NET_MAX_CONNECTIONS];
+
 
 extern int              queue_rank;
 extern char             server_name[];
@@ -1287,6 +1289,9 @@ int initialize_data_structures_and_mutexes()
     initialize_login_holder();
     initialize_alps_reservations();
     }
+
+  for (int i = 0; i < PBS_NET_MAX_CONNECTIONS; i++)
+    pthread_mutex_init(&conn_credent[i].cred_mutex, NULL);
   
   acctfile_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(acctfile_mutex, NULL);

@@ -59,8 +59,6 @@ tlist_head svr_requests;
 
 extern struct    connection svr_conn[];
 
-extern struct    credential conn_credent[PBS_NET_MAX_CONNECTIONS];
-
 extern struct server server;
 extern char      server_host[];
 extern tlist_head svr_newjobs;

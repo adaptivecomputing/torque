@@ -105,7 +105,6 @@
 /* Global Data */
 
 extern int    LOGLEVEL;
-extern struct credential conn_credent[PBS_NET_MAX_CONNECTIONS];
 extern char *pbs_o_host;
 extern char  server_host[];
 extern char *msg_permlog;

@@ -132,14 +132,7 @@ void req_connect(
   struct batch_request *preq)
 
   {
-  int  sock = preq->rq_conn;
-  unsigned short conn_authen;
-
-  /* Called from one location inside a lock */
-  pthread_mutex_lock(svr_conn[sock].cn_mutex);
-  conn_authen = svr_conn[sock].cn_authen;
-  pthread_mutex_unlock(svr_conn[sock].cn_mutex);
-  if (conn_authen == 0)
+  if (get_authentication_status(preq->rq_conn, false) == 0)
     {
     reply_ack(preq);
     }
@@ -147,7 +140,6 @@ void req_connect(
     {
     req_reject(PBSE_BADCRED, 0, preq, NULL, "Connection not authorized");
     }
-
 
   return;
   }  /* END req_connect() */
@@ -195,7 +187,9 @@ int get_encode_host(
     ptr++;
     }
 
+  pthread_mutex_lock(&conn_credent[s].cred_mutex);
   strcpy(conn_credent[s].hostname, host_name);
+  pthread_mutex_unlock(&conn_credent[s].cred_mutex);
 
   return(0);
   } /* END get_encode_host() */
@@ -237,8 +231,9 @@ int get_UID(
 	  ptr++;
 	  }
 
-	strncpy(conn_credent[s].username, user_name, sizeof(conn_credent[s].username) - 1);
-        conn_credent[s].username[sizeof(conn_credent[s].username) - 1] = 0;
+  pthread_mutex_lock(&conn_credent[s].cred_mutex);
+	snprintf(conn_credent[s].username, sizeof(conn_credent[s].username), "%s", user_name);
+  pthread_mutex_unlock(&conn_credent[s].cred_mutex);
 	
   return(PBSE_NONE);
   } /* END get_UID() */
@@ -451,7 +446,7 @@ int req_authenuser(
       conn_port = svr_conn[s].cn_port;
       conn_addr = svr_conn[s].cn_addr;
 #ifndef NOPRIVPORTS
-      conn_authen = svr_conn[s].cn_authen;
+      conn_authen = get_authentication_status(s, true);
 #endif
       pthread_mutex_unlock(svr_conn[s].cn_mutex);
   
@@ -464,16 +459,15 @@ int req_authenuser(
       if (conn_authen == 0)
 #endif
         {
+        pthread_mutex_lock(&conn_credent[s].cred_mutex);
         strcpy(conn_credent[s].username, preq->rq_user);
         strcpy(conn_credent[s].hostname, preq->rq_host);
 
         /* time stamp just for the record */
-
         conn_credent[s].timestamp = time(NULL);
+        pthread_mutex_unlock(&conn_credent[s].cred_mutex);
 
-        pthread_mutex_lock(svr_conn[s].cn_mutex);
-        svr_conn[s].cn_authen = PBS_NET_CONN_AUTHENTICATED;
-        pthread_mutex_unlock(svr_conn[s].cn_mutex);
+        set_authentication_status(s, PBS_NET_CONN_AUTHENTICATED, false);
         }
 
       reply_ack(preq);
@@ -553,13 +547,12 @@ int req_altauthenuser(
 
   /* SUCCESS */
 
+  pthread_mutex_lock(&conn_credent[s].cred_mutex);
   /* time stamp just for the record */
-
   conn_credent[s].timestamp = time(NULL);
+  pthread_mutex_unlock(&conn_credent[s].cred_mutex);
 
-  pthread_mutex_lock(svr_conn[s].cn_mutex);
-  svr_conn[s].cn_authen = PBS_NET_CONN_AUTHENTICATED;
-  pthread_mutex_unlock(svr_conn[s].cn_mutex);
+  set_authentication_status(s, PBS_NET_CONN_AUTHENTICATED, false);
 
   reply_ack(preq);
   

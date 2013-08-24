@@ -329,14 +329,12 @@ int process_request(
   char                 *auth_err = NULL;
   enum conn_type        conn_active;
   unsigned short        conn_socktype;
-  unsigned short        conn_authen;
   unsigned long         conn_addr;
   int                   sfds = chan->sock;
 
   pthread_mutex_lock(svr_conn[sfds].cn_mutex);
   conn_active = svr_conn[sfds].cn_active;
   conn_socktype = svr_conn[sfds].cn_socktype;
-  conn_authen = svr_conn[sfds].cn_authen;
   conn_addr = svr_conn[sfds].cn_addr;
   svr_conn[sfds].cn_lasttime = time_now;
   pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
@@ -362,10 +360,12 @@ int process_request(
 #ifdef ENABLE_UNIX_SOCKETS
 
     if ((conn_socktype & PBS_SOCK_UNIX) &&
-        (conn_authen != PBS_NET_CONN_AUTHENTICATED))
+        (get_authentication_status(sfds, false) != PBS_NET_CONN_AUTHENTICATED))
       {
       /* get_creds interestingly always returns 0 */
+      pthread_mutex_lock(&conn_credent[sfds].cred_mutex);
       get_creds(sfds, conn_credent[sfds].username, conn_credent[sfds].hostname);
+      pthread_mutex_unlock(&conn_credent[sfds].cred_mutex);
       }
 
 #endif /* END ENABLE_UNIX_SOCKETS */
@@ -488,7 +488,7 @@ int process_request(
    * set the permissions granted to the client
    */
 
-  if (conn_authen == PBS_NET_CONN_FROM_PRIVIL)
+  if (get_authentication_status(sfds, false) == PBS_NET_CONN_FROM_PRIVIL)
     {
     /* request came from another server */
 
@@ -503,7 +503,9 @@ int process_request(
   else
     {
     /* request not from another server */
+    pthread_mutex_lock(&conn_credent[sfds].cred_mutex);
     conn_credent[sfds].timestamp = time_now;
+    pthread_mutex_unlock(&conn_credent[sfds].cred_mutex);
 
     request->rq_fromsvr = 0;
 
@@ -538,11 +540,7 @@ int process_request(
       }
 
     if (conn_socktype & PBS_SOCK_UNIX)
-      {
-      pthread_mutex_lock(svr_conn[sfds].cn_mutex);
-      svr_conn[sfds].cn_authen = PBS_NET_CONN_AUTHENTICATED;
-      pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
-      }
+      set_authentication_status(sfds, PBS_NET_CONN_AUTHENTICATED, false);
 
     if (ENABLE_TRUSTED_AUTH == TRUE )
       rc = PBSE_NONE;  /* bypass the authentication of the user--trust the client completely */
@@ -557,14 +555,20 @@ int process_request(
         }
       else
         {
+        pthread_mutex_lock(&conn_credent[sfds].cred_mutex);
         rc = authenticate_user(request, &conn_credent[sfds], &auth_err);
+        pthread_mutex_unlock(&conn_credent[sfds].cred_mutex);
         }
       }
-    else if (conn_authen != PBS_NET_CONN_AUTHENTICATED)
+    else if (get_authentication_status(sfds, false) != PBS_NET_CONN_AUTHENTICATED)
       /* skip checking user if we did not get an authenticated credential */
       rc = PBSE_BADCRED;
     else
+      {
+      pthread_mutex_lock(&conn_credent[sfds].cred_mutex);
       rc = authenticate_user(request, &conn_credent[sfds], &auth_err);
+      pthread_mutex_unlock(&conn_credent[sfds].cred_mutex);
+      }
 
     if (rc != 0)
       {
@@ -626,7 +630,7 @@ int process_request(
       {
       request->rq_perm = svr_get_privilege(request->rq_user, request->rq_host);
       }
-    }  /* END else (conn_authen == PBS_NET_CONN_FROM_PRIVIL) */
+    }  /* END connection not from privileged port */
 
   /* if server shutting down, disallow new jobs and new running */
   get_svr_attr_l(SRV_ATR_State, &state);

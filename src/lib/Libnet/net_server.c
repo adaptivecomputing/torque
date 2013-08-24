@@ -965,6 +965,73 @@ int add_connection(
 
 
 /*
+ * get_authentication_status()
+ *
+ * @pre-cond: sock must be a valid connection index.
+ * @post-cond: nothing is changed. Read-only function.
+ *
+ * @param mutex_held: true if the mutex for this sock is held by the caller, false otherwise
+ * @return: the authentication status of socket 'sock'
+ */
+int get_authentication_status(
+
+  int  sock,
+  bool mutex_held)
+
+  {
+  int authen = 0;
+
+  if ((sock < 0) ||
+      (sock > PBS_NET_MAX_CONNECTIONS))
+    return(-1);
+
+  if (mutex_held == false)
+    {
+    pthread_mutex_lock(svr_conn[sock].cn_mutex);
+    authen = svr_conn[sock].cn_authen;
+    pthread_mutex_unlock(svr_conn[sock].cn_mutex);
+    }
+  else
+    return(svr_conn[sock].cn_authen);
+
+  return(authen);
+  } /* END get_authentication_status() */
+
+
+
+/*
+ * set_authentication_status()
+ *
+ * @pre-cond: sock must be a valid connection index.
+ * @post-cond: the connection for socket 'sock' will now have
+ * its authentication status set to 'authentication_status'
+ * @param mutex_held: true if the mutex for this sock is held by the caller, false otherwise
+ */
+void set_authentication_status(
+
+  int  sock,
+  int  authentication_status,
+  bool mutex_held)
+
+  {
+  if ((sock < 0) ||
+      (sock > PBS_NET_MAX_CONNECTIONS))
+    return;
+
+  if (mutex_held == true)
+    svr_conn[sock].cn_authen = authentication_status;
+  else
+    {
+    pthread_mutex_lock(svr_conn[sock].cn_mutex);
+    svr_conn[sock].cn_authen = authentication_status;
+    pthread_mutex_unlock(svr_conn[sock].cn_mutex);
+    }
+
+  } /* END set_authentication_status() */
+
+
+
+/*
  * add_conn - add a connection to the svr_conn array.
  * The params addr and port are in host order.
  *

@@ -17,10 +17,11 @@
 #include "pbs_ifl.h" /* PBS_MAXUSER, PBS_MAXHOSTNAME */
 typedef struct credential
   {
-  time_t timestamp;
-  int    type;  /* see BATCH-types.h */
-  char   username[PBS_MAXUSER + 1];
-  char   hostname[PBS_MAXHOSTNAME + 1];
+  time_t          timestamp;
+  int             type;  /* see BATCH-types.h */
+  char            username[PBS_MAXUSER + 1];
+  char            hostname[PBS_MAXHOSTNAME + 1];
+  pthread_mutex_t cred_mutex;
   } pbs_credential;
 
 /*

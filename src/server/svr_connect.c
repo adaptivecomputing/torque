@@ -255,9 +255,7 @@ int svr_connect(
     return -1;
     }
 
-  pthread_mutex_lock(svr_conn[sock].cn_mutex);
-  svr_conn[sock].cn_authen = PBS_NET_CONN_AUTHENTICATED;
-  pthread_mutex_unlock(svr_conn[sock].cn_mutex);
+  set_authentication_status(sock, PBS_NET_CONN_AUTHENTICATED, false);
 
   /* find a connect_handle entry we can use and pass to the PBS_*() */
   handle = socket_to_handle(sock, my_err);

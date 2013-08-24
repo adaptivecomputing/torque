@@ -218,6 +218,9 @@ char * netaddr_pbs_net_t(pbs_net_t);
 }
 #endif
 
+int get_authentication_status(int sock, bool mutex_held);
+void set_authentication_status(int sock, int authentication_status, bool mutex_held);
+
 
 struct connection
   {

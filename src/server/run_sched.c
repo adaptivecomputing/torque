@@ -202,9 +202,7 @@ void *contact_sched(
   scheduler_sock = sock;
   pthread_mutex_unlock(scheduler_sock_jobct_mutex);
 
-  pthread_mutex_lock(svr_conn[sock].cn_mutex);
-  svr_conn[sock].cn_authen = PBS_NET_CONN_FROM_PRIVIL;
-  pthread_mutex_unlock(svr_conn[sock].cn_mutex);
+  set_authentication_status(sock, PBS_NET_CONN_FROM_PRIVIL, false);
 
   /* send command to Scheduler */
 
@@ -386,9 +384,7 @@ static int contact_listener(
     PBS_SOCK_INET,
     start_process_request);
 
-  pthread_mutex_lock(svr_conn[sock].cn_mutex);
-  svr_conn[sock].cn_authen = PBS_NET_CONN_FROM_PRIVIL;
-  pthread_mutex_unlock(svr_conn[sock].cn_mutex);
+  set_authentication_status(sock, PBS_NET_CONN_FROM_PRIVIL, false);
 
   net_add_close_func(sock, listener_close);
 
