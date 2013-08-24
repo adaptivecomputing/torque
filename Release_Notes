@@ -2,11 +2,11 @@
 
 TORQUE Resource Manager
 
-Software Version 4.0.0
+Software Version 4.2.0
 
 		                   	-------- WARNING! --------
 
-TORQUE 4.0.0 is not backwards compatible in any way. When you upgrade to 4.0.0, 
+TORQUE 4.2.0 is not backwards compatible in any way with versions 3.x and 2.x. When you upgrade to 4.2.0, 
 everything has to be upgraded at once.
 
 ---------------------------------------------------------------------------
@@ -60,11 +60,22 @@ WHAT'S NEW
 
     More detail can be found in README.new_in_4.0
 
+New with 4.2.4.1.h1
+
+4.2.4.1.h1 has had the trqauthd client from 4.2.5 backported. This client has the ability
+to shutdown trqauthd using a -d argument. Previously only a kill or pkill could be used 
+to shutdown trqauthd.
+
+In order to fix a problem where client commands would sometimes fail with an invalid credential
+error the trqauthd and pbs_server were changed and the protocol between them added an address
+field which is not in earlier trqauthd and pbs_server implementations. Because of this
+pbs_server and all trqauthd daemons in the cluster must be upgraded together. 
+
 REQUIREMENTS
 ------------
 
-An ANSI C compiler is required.   The native C compiler is recommended if it
-is ANSI, otherwise use gcc.
+4.2.x is now compiled using C++. An ANSI Ci++ compiler is required.   The native Ci++ compiler is recommended if it
+is ANSI, otherwise use g++.
 
 A fully POSIX make is required.  If you are unable to "make" PBS with your
 make, we suggest use of gmake from GNU.
