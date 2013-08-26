@@ -755,3 +755,5 @@ int put_env_var(const char *name, const char *value)
   }
 
 void sort_paths() {}
+
+void free_mom_hierarchy(mom_hierarchy_t *nh) {}
