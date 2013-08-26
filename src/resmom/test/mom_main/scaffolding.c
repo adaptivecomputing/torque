@@ -50,6 +50,8 @@ dynamic_string  *mom_status;
 char log_buffer[LOG_BUF_SIZE];
 char **ArgV;
 char  *OriginalPath;
+bool   parsing_hierarchy = false;
+extern bool received_cluster_addrs;
 
 void save_args(int argc, char **argv) {}
 
@@ -656,8 +658,9 @@ int diswul(tcp_chan *chan, unsigned long value)
 
 void *next_thing(resizable_array *ra, int *iter)
   {
-  fprintf(stderr, "The call to next_thing needs to be mocked!!\n");
-  exit(1);
+  if (parsing_hierarchy)
+    received_cluster_addrs = true;
+  return(NULL);
   }
 
 int im_compose(tcp_chan *chan, char *jobid, char *cookie, int command, tm_event_t event, tm_task_id taskid)
@@ -750,3 +753,5 @@ int put_env_var(const char *name, const char *value)
   {
   return(0);
   }
+
+void sort_paths() {}

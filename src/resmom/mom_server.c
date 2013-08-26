@@ -1972,7 +1972,6 @@ int process_host_name(
   int  *something_added)
 
   {
-  static const char        *id = "process_host_name";
   char               *colon;
   unsigned short      rm_port;
   unsigned long       ipaddr;
@@ -2007,7 +2006,7 @@ int process_host_name(
       "Bad entry in mom_hierarchy file, could not resolve host %s",
       hostname);
 
-    log_err(PBSE_BADHOST, id, log_buffer);
+    log_err(PBSE_BADHOST, __func__, log_buffer);
     }
 
   return(PBSE_NONE);
