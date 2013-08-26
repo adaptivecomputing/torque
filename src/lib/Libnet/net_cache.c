@@ -299,6 +299,25 @@ char *get_cached_fullhostname(const char *hostname,const struct sockaddr_in *sai
   return(pAddrInfo->ai_canonname);
   } /* END get_cached_fullhostname() */
 
+void get_cached_fullhostname(unsigned long address, std::string &fullhostname)
+  {
+  struct in_addr     addr;
+  struct sockaddr_in addr_in;
+
+  memset(&addr_in, 0, sizeof(addr_in));
+  memset(&addr, 0, sizeof(addr));
+
+  addr.s_addr = htonl(address);
+  addr_in.sin_addr = addr;
+  addr_in.sin_family = AF_INET;
+
+  char *name = get_cached_nameinfo(&addr_in);
+  fullhostname.clear();
+
+  if (name != NULL)
+    fullhostname = name;
+  }
+
 /*************************************************************
   * Get the address from the host name.
   ***********************************************************/
