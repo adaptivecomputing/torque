@@ -124,6 +124,7 @@
 #include "../Libnet/lib_net.h" /* socket_* */
 #include "../Libifl/lib_ifl.h" /* AUTH_TYPE_IFF, DIS_* */
 #include "pbs_constants.h" /* LOCAL_IP */
+#include "net_cache.h"
 
 #define LOCAL_LOG_BUF 1024
 #define CNTRETRYDELAY 5
@@ -780,10 +781,7 @@ int pbs_original_connect(
   struct passwd       *pw;
   int                  use_unixsock = 0;
   uid_t                pbs_current_uid;
-  struct timeval       tv;
   long                 sockflags;
-  fd_set               fdset;
-  socklen_t            socklen;
   int                  retry = 1;
 
 #ifdef ENABLE_UNIX_SOCKETS
@@ -1151,117 +1149,28 @@ int pbs_original_connect(
           }
         }
 
-      rc = connect(connection[out].ch_socket,
-          (struct sockaddr *)&server_addr,
-          sizeof(server_addr));
+      int sock = connection[out].ch_socket;
+      int conn_retries = 0;
 
-      /* Try a select() with a timeout if we connect()ed */
-      if (rc < 0)
+      while (((rc = connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr))) != 0) &&
+             (conn_retries < MAX_RETRIES))
         {
-        if (errno == EINPROGRESS) /* Non-blocking connection in progress */
-          {
-          tv.tv_sec = pbs_tcp_timeout;
-          tv.tv_usec = 0;
-          FD_ZERO(&fdset);
-          FD_SET(connection[out].ch_socket, &fdset);
-          rc = select(connection[out].ch_socket + 1, NULL, &fdset, NULL, &tv);
+        rc = socket_wait_for_write(sock);
 
-          if (rc > 0)
-             {
-            socklen = sizeof(int);
-            getsockopt(connection[out].ch_socket, SOL_SOCKET, SO_ERROR, (void*)(&rc), &socklen);
+        if (rc == PERMANENT_SOCKET_FAIL)
+          break;
 
-            if (rc)
-              {
-              if (getenv("PBSDEBUG"))
-                fprintf(stderr, "ERROR: socket has error status %d\n", rc);
-         
-              if (!retry || retries >= MAX_RETRIES)
-                {
-                rc = PBSE_SOCKET_FAULT * -1;
-                goto cleanup_conn;
-                }
-              else
-                {
-                close(connection[out].ch_socket);
-                connection[out].ch_inuse = FALSE;
-                
-                retries++;
-                usleep(1000);
-                continue;
-                }
-              }
-            }
-          else if (rc == 0) /* Select timed out */
-            {
-            if (getenv("PBSDEBUG"))
-              {
-              fprintf(stderr,
-                "ERROR: could not connect to host after %d seconds\n",
-                (int)pbs_tcp_timeout);
-              }
-              
-            if (!retry || retries >= MAX_RETRIES)
-              {
-              rc = PBSE_TIMEOUT * -1;
-              goto cleanup_conn;
-              }
-            else
-              {
-              close(connection[out].ch_socket);
-              connection[out].ch_inuse = FALSE;
-              
-              retries++;
-              usleep(1000);
-              continue;
-              }
-            }
-          else /* Select returned some error */
-            {
-            if (getenv("PBSDEBUG"))
-              {
-              fprintf(stderr, "ERROR: select failed rc=%d errno=%d - %s\n",
-                rc, errno, strerror(errno));
-              }
-
-            if (!retry || retries >= MAX_RETRIES)
-              {
-              rc = PBSE_SELECT * -1;
-              goto cleanup_conn;
-              }
-            else
-              {
-              close(connection[out].ch_socket);
-              connection[out].ch_inuse = FALSE;
-              
-              retries++;
-              usleep(1000);
-              continue;
-              }
-            }
-          }
-        else /* Connect errno != EINPROGRESS */
-          {
-          if (getenv("PBSDEBUG"))
-            fprintf(stderr, "ERROR: connect failed\n");
-
-          if (!retry || retries >= MAX_RETRIES)
-            {
-            rc = PBSE_SOCKET_FAULT * -1;
-            goto cleanup_conn;
-            }
-          else
-            {
-            close(connection[out].ch_socket);
-            connection[out].ch_inuse = FALSE;
-            
-            retries++;
-            usleep(1000);
-            continue;
-            }
-          }
+        conn_retries++;
         }
-      
+
+      if (rc != 0)
+        {
+        close(sock);
+        retries++;
+        continue;
+        }
+
+      // if we are at this point, connect has succeeded, proceed to authorize
       /* Set the socket back to blocking so read()s actually work */
       sockflags &= (~O_NONBLOCK);
       
