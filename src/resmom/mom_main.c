@@ -232,6 +232,7 @@ pjobexec_t      TMOMStartInfo[TMAX_JE];
 
 /* prototypes */
 
+void            sort_paths();
 void            resend_things();
 extern void     add_resc_def(char *, char *);
 extern void     mom_server_all_diag(std::stringstream &output);
@@ -4247,6 +4248,95 @@ void parse_command_line(
   }  /* END parse_command_line() */
 
 
+
+/*
+ * verify_mom_hierarchy()
+ *
+ * iterates over the mom hierarchy to prune away paths and or levels
+ * below this node's level and also add all entries in the hierarchy to
+ * the okclients list.
+ *
+ * @pre-cond: parse_mom_hierarchy() must be called before this function.
+ * @post-cond: the old hierarchy will be freed and a new, appropriately
+ * pruned hierarchy will be put in its place.
+ * @return true if there were legitimate nodes in the hierarchy, false otherwise
+ */
+bool verify_mom_hierarchy()
+
+  {
+  int              paths_iter = -1;
+  mom_hierarchy_t *tmp_hierarchy = initialize_mom_hierarchy();
+
+  resizable_array *paths;
+  int              path_index = 0;
+  bool             legitimate_hierarchy = false;
+
+  while ((paths = (resizable_array *)next_thing(mh->paths, &paths_iter)) != NULL)
+    {
+    resizable_array *level;
+    int              levels_iter = -1;
+    int              level_index = 0;
+    bool             continue_on_path = true;
+    bool             legitimate_path = false;
+
+    while ((level = (resizable_array *)next_thing(paths, &levels_iter)) != NULL)
+      {
+      node_comm_t     *nc;
+      int              node_iter = -1;
+
+      while ((nc = (node_comm_t *)next_thing(level, &node_iter)) != NULL)
+        {
+        if (!strcmp(nc->name, mom_alias))
+          continue_on_path = false;
+        else
+          addclient(nc->name);
+            
+        legitimate_hierarchy = true;
+        }
+      
+      if (continue_on_path == true)
+        {
+        node_iter = -1;
+
+        while ((nc = (node_comm_t *)next_thing(level, &node_iter)) != NULL)
+          {
+          struct addrinfo *addr_info;
+          if (pbs_getaddrinfo(nc->name, NULL, &addr_info) == 0)
+            {
+            add_network_entry(tmp_hierarchy,
+                              nc->name,
+                              addr_info,
+                              ntohl(nc->sock_addr.sin_port),
+                              path_index,
+                              level_index);
+
+            // mark that we found legitimate nodes in the hierarchy
+            legitimate_path = true;
+            }
+          }
+        }
+
+      level_index++;
+      }
+
+    if (legitimate_path == true)
+      path_index++;
+    }
+
+  if (legitimate_hierarchy == true)
+    {
+    free_mom_hierarchy(mh);
+    mh = tmp_hierarchy;
+    sort_paths();
+    }
+  else
+    free_mom_hierarchy(tmp_hierarchy);
+
+  return(legitimate_hierarchy);
+  } /* END verify_mom_hierarchy() */
+
+
+
 /*
  * read_mom_hierarchy()
  *
@@ -4273,8 +4363,7 @@ void read_mom_hierarchy()
  
     // if we read something successfully, we have the cluster addresses and don't 
     // need to request them.
-    if (mh->paths->num > 0)
-      received_cluster_addrs = true;
+    received_cluster_addrs = verify_mom_hierarchy();
     }
   } /* END read_mom_hierarchy() */
 

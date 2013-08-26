@@ -88,6 +88,10 @@ char           **ArgV;
 char            *OriginalPath;
 int              resend_join_job_wait_time = 45;
 int              max_join_job_wait_time = 90;
+bool   parsing_hierarchy = false;
+extern bool received_cluster_addrs;
+
+void save_args(int argc, char **argv) {}
 
 int log_remove_old(char *DirPath, unsigned long ExpireTime)
   {
@@ -756,8 +760,9 @@ int diswul(tcp_chan *chan, unsigned long value)
 
 void *next_thing(resizable_array *ra, int *iter)
   {
-  fprintf(stderr, "The call to next_thing needs to be mocked!!\n");
-  exit(1);
+  if (parsing_hierarchy)
+    received_cluster_addrs = true;
+  return(NULL);
   }
 
 int im_compose(tcp_chan *chan, char *jobid, char *cookie, int command, tm_event_t event, tm_task_id taskid)
@@ -807,11 +812,6 @@ ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   return(0);
   }
 
-int save_args(int argc, char **argv)
-  {
-  return(0);
-  }
-
 void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
@@ -826,3 +826,17 @@ int put_env_var(const char *name, const char *value)
   {
   return(0);
   }
+
+void sort_paths() {}
+
+int pbs_getaddrinfo(
+    
+  const char       *pNode,
+  struct addrinfo  *pHints,
+  struct addrinfo **ppAddrInfoOut)
+
+  {
+  return(0);
+  }
+
+void free_mom_hierarchy(mom_hierarchy_t *nh) {}
