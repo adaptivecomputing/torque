@@ -14,16 +14,19 @@ START_TEST(test_one)
   {
   batch_request req;
 
+
   memset(&req,0,sizeof(batch_request));
   memset(svr_conn,0,sizeof(svr_conn));
   req.rq_ind.rq_authen.rq_port = 42;
-  req.rq_ind.rq_authen.rq_addr = 3577385;
   strcpy(req.rq_user,"Tron");
   strcpy(req.rq_user,"Flynns");
   fail_unless(req_authenuser(&req) == PBSE_BADCRED);
+  req.rq_conn = 4;
   fail_unless(rejected);
   rejected = FALSE;
   acked = FALSE;
+  svr_conn[4].cn_addr = 3577385;
+  svr_conn[4].cn_port = 62;
   svr_conn[6].cn_addr = 3577385;
   svr_conn[6].cn_port = 42;
   svr_conn[5].cn_addr = 2083577385;

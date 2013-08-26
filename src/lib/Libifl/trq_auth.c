@@ -475,7 +475,6 @@ int build_request_svr(
   int  user_ll = 0;
   int  user_len = 0;
   int  port_len = 0;
-  int  addr_len = 0;
   char tmp_buf[32];
 
   if (user == NULL)
@@ -488,15 +487,12 @@ int build_request_svr(
     user_ll = strlen(tmp_buf);
     sprintf(tmp_buf, "%d", sock);
     port_len = strlen(tmp_buf);
-    sprintf(tmp_buf, "%ld", trq_server_addr);
-    addr_len = strlen(tmp_buf);
-
 
     message.str("");
     message << "+" << PBS_BATCH_PROT_TYPE << "+";
     message << PBS_BATCH_PROT_VER << "2+" << PBS_BATCH_AuthenUser;
     message << user_ll << "+" << user_len << user << port_len << "+";
-    message << sock << addr_len << "+" << trq_server_addr << "+0";
+    message << sock << "+0";
     }
   else if (AUTH_TYPE_KEY == auth_type)
     {
@@ -897,6 +893,9 @@ void *process_svr_conn(
     }
 
 #ifdef UNIT_TEST
+  /* process_svr_conn_rc is used by ./test/trq_auth/test_trq_auth.c
+     to discover the status of unit test calls to process_svr_conn
+   */ 
   process_svr_conn_rc = rc;
 #endif
 
