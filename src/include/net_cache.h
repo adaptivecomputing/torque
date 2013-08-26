@@ -77,7 +77,9 @@
 * without reference to its choice of law rules.
 */
 
+#include <string>
 #include <netinet/in.h>
+
 
 #define PERMANENT_SOCKET_FAIL -2
 #define TRANSIENT_SOCKET_FAIL -1
@@ -87,6 +89,7 @@ char               *get_cached_nameinfo(const struct sockaddr_in *sai);
 struct sockaddr_in *get_cached_addrinfo(const char *hostname);
 struct addrinfo    *get_cached_addrinfo_full(const char *hostname);
 char               *get_cached_fullhostname(const char *shortname, const struct sockaddr_in *sai);
+void                get_cached_fullhostname(unsigned long address, std::string &fullhostname);
 struct addrinfo    *insert_addr_name_info(struct addrinfo *pAddrInfo, const char *hostName);
 
 
