@@ -1,4 +1,5 @@
 #include "license_pbs.h" /* See here for the software license */
+#include <string>
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 
@@ -53,7 +54,16 @@ int pthread_mutex_unlock (pthread_mutex_t *__mutex) throw()
   return 0;
   }
 
+void get_cached_fullhostname(unsigned long addr, std::string &fullhostname)
+  {
+  if (addr == 3577385)
+    fullhostname = "napali.ac";
+  }
 
+unsigned long get_connectaddr(int sock, int mutex)
+  {
+  return(svr_conn[sock].cn_addr);
+  }
 
 
 void log_err(int errnum, const char *routine, const char *text) {}

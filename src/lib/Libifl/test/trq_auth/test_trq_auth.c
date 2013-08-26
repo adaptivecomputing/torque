@@ -397,7 +397,7 @@ START_TEST(build_request_svr_test)
   fail_unless(build_request_svr(AUTH_TYPE_IFF, "dbeer", 6, message) == PBSE_NONE);
 
   char buf[1024];
-  snprintf(buf, sizeof(buf), "+%d+%d2+%d%d+%ddbeer%d+%d1+0+0",
+  snprintf(buf, sizeof(buf), "+%d+%d2+%d%d+%ddbeer%d+%d+0",
     PBS_BATCH_PROT_TYPE,
     PBS_BATCH_PROT_VER,
     PBS_BATCH_AuthenUser,
@@ -408,7 +408,7 @@ START_TEST(build_request_svr_test)
   fail_unless(!strcmp(message.str().c_str(), buf));
   
   fail_unless(build_request_svr(AUTH_TYPE_IFF, "dbeer", 7, message) == PBSE_NONE);
-  snprintf(buf, sizeof(buf), "+%d+%d2+%d%d+%ddbeer%d+%d1+0+0",
+  snprintf(buf, sizeof(buf), "+%d+%d2+%d%d+%ddbeer%d+%d+0",
     PBS_BATCH_PROT_TYPE,
     PBS_BATCH_PROT_VER,
     PBS_BATCH_AuthenUser,
