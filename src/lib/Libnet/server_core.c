@@ -290,6 +290,8 @@ int start_domainsocket_listener(
   if (listen_socket != -1)
     close(listen_socket);
 
+  log_close(1);
+
   return(rc);
   } /* END start_domainsocket_listener() */
 
