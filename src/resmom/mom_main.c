@@ -65,7 +65,6 @@
 #include "../lib/Liblog/setup_env.h"
 #include "../lib/Libnet/lib_net.h" /* socket_avail_bytes_on_descriptor */
 #include "../lib/Libifl/lib_ifl.h"
-#include "../lib/Libutils/lib_utils.h"
 #include "net_connect.h"
 #include "dis.h"
 #include "dis_init.h"

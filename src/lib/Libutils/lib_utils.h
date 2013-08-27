@@ -180,6 +180,3 @@ int escape_xml(char *in, char *out, int size);
 char *find_next_tag(char *buffer, char **tag);
 
 int unescape_xml(char *in, char *out, int size);
-
-/* u_putenv.c */
-int put_env_var(const char *, const char *);
