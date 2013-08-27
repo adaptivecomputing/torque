@@ -690,8 +690,7 @@ int mom_comm(
       pjob->ji_qs.ji_un.ji_exect.ji_momport,
       &local_errno,
       NULL,
-      NULL,
-      ToServerDIS);
+      NULL);
 
   if ((pjob = svr_find_job(jobid, TRUE)) == NULL)
     {

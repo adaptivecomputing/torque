@@ -234,7 +234,7 @@ void *check_if_orphaned(
       while ((handle < 0) &&
              (retries < 3))
         {
-        handle = svr_connect(momaddr, pnode->nd_mom_port, &local_errno, pnode, NULL, ToServerDIS);
+        handle = svr_connect(momaddr, pnode->nd_mom_port, &local_errno, pnode, NULL);
         retries++;
         }
 

@@ -920,6 +920,8 @@ task *task_find(job *pjob, tm_task_id taskid);
 #define LOCUTION_SUCCESS  0
 #define LOCUTION_FAIL    -1
 #define LOCUTION_REQUEUE -2
+#define LOCUTION_RETRY   -3
+#define LOCUTION_DONE     1
 
 #define LOCUTION_SIZE     20
 

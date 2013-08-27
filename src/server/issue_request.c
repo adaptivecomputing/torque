@@ -214,8 +214,7 @@ int relay_to_mom(
            pjob->ji_qs.ji_un.ji_exect.ji_momport,
            &local_errno,
            NULL,
-           NULL,
-           ToServerDIS);
+           NULL);
     
 
   if (handle < 0)
@@ -328,7 +327,7 @@ int issue_to_svr(
     }
   else
     {
-    handle = svr_connect(svraddr, port, &my_err, NULL, NULL, ToServerDIS);
+    handle = svr_connect(svraddr, port, &my_err, NULL, NULL);
 
     if (handle >= 0)
       {

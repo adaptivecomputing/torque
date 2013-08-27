@@ -238,8 +238,7 @@ int req_gpuctrl_svr(
            pbs_mom_port,
            &local_errno,
            NULL,
-           NULL,
-           ToServerDIS);
+           NULL);
     
 
   if (conn >= 0)

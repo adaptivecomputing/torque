@@ -1985,8 +1985,7 @@ int svr_connect(
   unsigned int     port,   /* I */
   int             *my_err,
   struct pbsnode  *pnode,
-  void           *(*func)(void *),
-  enum conn_type   cntype)
+  void           *(*func)(void *))
 
   {
   return(0);

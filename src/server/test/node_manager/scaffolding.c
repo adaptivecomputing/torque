@@ -230,7 +230,7 @@ void free_arst(struct pbs_attribute *attr)
   exit(1);
   }
 
-int svr_connect(unsigned long, unsigned int, int*, pbsnode*, void* (*)(void*), conn_type)
+int svr_connect(unsigned long, unsigned int, int*, pbsnode*, void* (*)(void*))
   {
   fprintf(stderr, "The call to svr_connect needs to be mocked!!\n");
   exit(1);

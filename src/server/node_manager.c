@@ -575,7 +575,7 @@ int kill_job_on_mom(
   sprintf(log_buf, "stray job %s found on %s", jobid, pnode->nd_name);
   log_err(-1, __func__, log_buf);
   
-  conn = svr_connect(pnode->nd_addrs[0], pnode->nd_mom_port, &local_errno, pnode, NULL, ToServerDIS);
+  conn = svr_connect(pnode->nd_addrs[0], pnode->nd_mom_port, &local_errno, pnode, NULL);
 
   if (conn >= 0)
     {
@@ -956,7 +956,6 @@ void stream_eof(
 
   {
   char            log_buf[LOCAL_LOG_BUF_SIZE];
-  enum conn_type  cntype = ToServerDIS;
   int             conn;
   int             my_err = 0;
 
@@ -982,7 +981,7 @@ void stream_eof(
 
   /* Before we mark this node down see if we can connect */
   lock_node(np, __func__, "parent", LOGLEVEL);
-  conn = svr_connect(addr, port, &my_err, np, NULL, cntype);
+  conn = svr_connect(addr, port, &my_err, np, NULL);
   if(conn >= 0)
     {
     unlock_node(np, __func__, "parent", LOGLEVEL);
@@ -1032,11 +1031,10 @@ int contact_node(
   int my_err = 0;
   char local_buf[LOCAL_LOG_BUF_SIZE];
   pbs_net_t addr;
-  enum conn_type cntype = ToServerDIS;
 
   /* the node is locked coming in. */
   addr = get_hostaddr(&my_err, np->nd_name);
-  conn = svr_connect(addr, np->nd_mom_port, &my_err, np, NULL, cntype);
+  conn = svr_connect(addr, np->nd_mom_port, &my_err, np, NULL);
   if (conn < 0)
     {
     snprintf(local_buf, sizeof(local_buf), "node %s is unresponsive. Check both the node and MOM", np->nd_name);  
