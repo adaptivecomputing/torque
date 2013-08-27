@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "../../lib_utils.h"
 #include <check.h>
+#include "utils.h"
 
 START_TEST(test_one)
   {
