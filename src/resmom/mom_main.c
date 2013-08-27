@@ -7445,7 +7445,11 @@ bool verify_mom_hierarchy()
         if (!strcmp(nc->name, mom_alias))
           continue_on_path = false;
         else
-          addclient(nc->name);
+          {
+          unsigned short rm_port = ntohs(nc->sock_addr.sin_port);
+          unsigned long  ipaddr = ntohl(nc->sock_addr.sin_addr.s_addr);
+          okclients = AVL_insert(ipaddr, rm_port, NULL, okclients);
+          }
             
         legitimate_hierarchy = true;
         }
@@ -7462,7 +7466,7 @@ bool verify_mom_hierarchy()
             add_network_entry(tmp_hierarchy,
                               nc->name,
                               addr_info,
-                              ntohl(nc->sock_addr.sin_port),
+                              ntohs(nc->sock_addr.sin_port),
                               path_index,
                               level_index);
 
