@@ -1,5 +1,7 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
+4.2.6
+
 4.2.5
   e - Remove the mom asking for a job status before sending an obit to pbs_server
       for a job that has exited. This is unnecessary overhead.
