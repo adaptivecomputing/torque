@@ -184,8 +184,8 @@ static void execute(
 
       if (errmsg != NULL)
         {
-        fprintf(stderr, "qterm: %s",
-                errmsg);
+        fprintf(stderr, "qterm: %s", errmsg);
+        free(errmsg);
         }
       else
         {

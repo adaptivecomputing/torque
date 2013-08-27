@@ -118,6 +118,7 @@ static void execute(
       if (errmsg != NULL)
         {
         fprintf(stderr, "qstart: %s ", errmsg);
+        free(errmsg);
         }
       else
         {

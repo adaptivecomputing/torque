@@ -541,6 +541,7 @@ int main(
       if (errmsg != NULL)
         {
         fprintf(stderr, "qselect: %s\n", errmsg);
+        free(errmsg);
         }
       else
         {

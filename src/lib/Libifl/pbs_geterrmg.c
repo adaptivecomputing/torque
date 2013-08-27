@@ -103,7 +103,10 @@ char *pbs_geterrmsg(
 
   pthread_mutex_lock(connection[connect].ch_mutex);
 
-  errmsg = connection[connect].ch_errtxt;
+  if (connection[connect].ch_errtxt != NULL)
+    errmsg = strdup(connection[connect].ch_errtxt);
+  else
+    errmsg = NULL;
 
   pthread_mutex_unlock(connection[connect].ch_mutex);
 
