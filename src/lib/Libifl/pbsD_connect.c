@@ -1158,7 +1158,10 @@ int pbs_original_connect(
         rc = socket_wait_for_write(sock);
 
         if (rc == PERMANENT_SOCKET_FAIL)
+          {
+          rc = errno;
           break;
+          }
 
         conn_retries++;
         }
@@ -1279,6 +1282,10 @@ int pbs_original_connect(
         }
 #endif /* ifdef MUNGE_AUTH */
       } while ((rc != PBSE_NONE) && (retries <= MAX_RETRIES));
+    if(rc != PBSE_NONE)
+      {
+      goto cleanup_conn;
+      }
 
     } /* END if !use_unixsock */
 
