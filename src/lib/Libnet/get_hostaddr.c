@@ -211,7 +211,7 @@ int  get_hostaddr_hostent_af(
   {
   int                    addr_rc;
   struct sockaddr_in    *sa;
-  struct addrinfo       *pAddrInfo;
+  struct addrinfo       *pAddrInfo = NULL;
   char                   log_buf[LOCAL_LOG_BUF_SIZE];
   char                  *tmp_ip = NULL;
 

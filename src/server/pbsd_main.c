@@ -2323,28 +2323,35 @@ static int get_port(
   int   local_errno = 0;
 
   if (*arg == ':')
-    ++arg;
-
-  if (isdigit(*arg))
     {
+    ++arg;
     /* port only specified */
-
     *port = (unsigned int)atoi(arg);
     }
   else
     {
-    name = parse_servername(arg, port);
+    char *a;
 
-    if (name == NULL)
+    for (a = arg; *a && isdigit(*a); a++);
+    if ((! *a) && ((*port = (unsigned int)atoi(arg)) > 0) && (*port <= 65535))
       {
-      /* FAILURE */
-
-      return(-1);
+      /* port only specified */
       }
+    else
+      {
+      name = parse_servername(arg, port);
 
-    *addr = get_hostaddr(&local_errno, name);
+      if (name == NULL)
+        {
+        /* FAILURE */
 
-    free(name);
+        return(-1);
+        }
+
+      *addr = get_hostaddr(&local_errno, name);
+
+      free(name);
+      }
     }
 
   if ((*port <= 0) || (*addr == 0))

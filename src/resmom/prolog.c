@@ -118,6 +118,7 @@ extern char *path_aux;
 
 extern gid_t   pbsgroup;
 extern uid_t   pbsuser;
+extern char   *path_epilogp;
 
 static pid_t child;
 static int   run_exit;
@@ -863,6 +864,11 @@ int run_pelog(
         }
       }
 
+    /*
+     * dupeStdFiles is a flag for those that couldn't open their .OU/.ER files
+    */
+    int dupeStdFiles = 1;
+
     if (!deletejob)
       if ((fds1 < 0) ||
           (fds2 < 0))
@@ -871,8 +877,11 @@ int run_pelog(
           close(fds1);
         if (fds2 >= 0)
           close(fds2);
-
-        exit(-1);
+        if (pe_io_type == PE_IO_TYPE_STD && strlen(specpelog) == strlen(path_epilogp) &&
+            (strcmp(path_epilogp, specpelog) == 0))
+          dupeStdFiles = 0;
+        else
+          exit(-1);
         }
 
     if (pe_io_type != PE_IO_TYPE_ASIS)
@@ -883,9 +892,10 @@ int run_pelog(
         {
         close(1);
 
-        if (dup(fds1) >= 0)
+        if (dupeStdFiles)
           {
-          close(fds1);
+          if (dup(fds1) >= 0)
+            close(fds1);
           }
         }
 
@@ -893,9 +903,10 @@ int run_pelog(
         {
         close(2);
 
-        if (dup(fds2) >= 0)
+        if (dupeStdFiles)
           {
-          close(fds2);
+          if (dup(fds2) >= 0)
+            close(fds2);
           }
         }
       }
