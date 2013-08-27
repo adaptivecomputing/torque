@@ -257,6 +257,7 @@ Suite *svr_movejob_suite(void)
   tcase_add_test(tc_core, commit_job_on_mom_test);
   tcase_add_test(tc_core, send_job_over_network_test);
   tcase_add_test(tc_core, send_job_over_network_with_retries_test);
+  tcase_set_timeout(tc_core, 12);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("save_jobs_sid_test");
