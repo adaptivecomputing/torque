@@ -146,6 +146,33 @@ int execution_slot_tracker::mark_as_free (
     return(OUT_OF_RANGE);
     }
   }
+  
+
+
+int execution_slot_tracker::reserve_execution_slot(
+    
+  int                     index,
+  execution_slot_tracker &subset)
+
+  {
+  int rc;
+ 
+  while (subset.get_total_execution_slots() < this->get_total_execution_slots())
+    subset.add_execution_slot();
+
+  if ((rc = this->mark_as_used(index)) == PBSE_NONE)
+    {
+
+    if ((rc = subset.mark_as_used(index)) != PBSE_NONE)
+      {
+      this->mark_as_free(index);
+      }
+      
+    return(rc);
+    }
+
+  return(rc);
+  }
 
 
 
@@ -284,4 +311,28 @@ int execution_slot_tracker::get_next_occupied_index(
     }
 
   return(occupied_index);
+  }
+
+bool execution_slot_tracker::is_occupied(
+
+  int index) const
+
+  {
+  int  size = this->slots.size();
+  bool occupied = false;
+
+  if ((index < 0) ||
+      (index >= size))
+    return(false);
+  
+  try
+    {
+    occupied = this->slots[index] == OCCUPIED;
+    }
+  catch (std::out_of_range &oor)
+    {
+    return(false);
+    }
+
+  return(occupied);
   }

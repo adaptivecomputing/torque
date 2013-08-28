@@ -99,10 +99,12 @@ class execution_slot_tracker
   int get_number_free() const;
   int get_total_execution_slots() const;
   int get_next_occupied_index(int &iterator) const;
+  bool is_occupied(int index) const;
 	int mark_as_used(int index);
   int mark_as_free(int index);
   void add_execution_slot();
   int unset_subset(const execution_slot_tracker &subset);
+  int reserve_execution_slot(int index, execution_slot_tracker &subset);
   int reserve_execution_slots(int num_slots_to_reserve, execution_slot_tracker &subset);
   int unreserve_execution_slots(const execution_slot_tracker &subset);
   int remove_execution_slot();
