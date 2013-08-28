@@ -5,7 +5,12 @@
 #include <stdio.h>
 
 
+#include "server_limits.h"
 #include "pbs_error.h"
+
+int add_connection(int sock, enum conn_type type, pbs_net_t addr, unsigned int port, unsigned int socktype, void *(*func)(void *), int add_wait_request);
+void *accept_conn(void *new_conn);
+
 
 START_TEST(netaddr_pbs_net_t_test_one)
   {
@@ -41,9 +46,10 @@ END_TEST
 
 
 
-START_TEST(test_two)
+START_TEST(test_add_connection)
   {
-
+  fail_unless(add_connection(-1, ToServerDIS, 0, 0, PBS_SOCK_INET, accept_conn, 0) == PBSE_BAD_PARAMETER);
+  fail_unless(add_connection(PBS_NET_MAX_CONNECTIONS, ToServerDIS, 0, 0, PBS_SOCK_INET, accept_conn, 0) == PBSE_BAD_PARAMETER);
 
   }
 END_TEST
@@ -59,8 +65,8 @@ Suite *net_server_suite(void)
   tcase_add_test(tc_core, netaddr_pbs_net_t_test_two);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("test_two");
-  tcase_add_test(tc_core, test_two);
+  tc_core = tcase_create("test_add_connection");
+  tcase_add_test(tc_core, test_add_connection);
   suite_add_tcase(s, tc_core);
 
   return s;
