@@ -47,17 +47,9 @@ int get_fdset_size(void)
   exit(1);
   }
 
-void log_err(int errnum, const char *routine, const char *text)
-  {
-  fprintf(stderr, "The call to log_err needs to be mocked!!\n");
-  exit(1);
-  }
+void log_err(int errnum, const char *routine, const char *text) {}
 
-void log_record(int eventtype, int objclass, const char *objname, const char *text)
-  {
-  fprintf(stderr, "The call to log_err needs to be mocked!!\n");
-  exit(1);
-  }
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 
 int pbs_getaddrinfo(const char *pNode,struct addrinfo *pHints,struct addrinfo **ppAddrInfoOut)
   {

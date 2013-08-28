@@ -753,7 +753,7 @@ int wait_request(
       ipaddrStr,
       PBS_NET_MAXCONNECTIDLE);
     
-    log_err(-1, "wait_request", tmpLine);
+    log_err(-1, __func__, tmpLine);
 
     /* locate node associated with interface, mark node as down until node responds */
 
@@ -900,6 +900,16 @@ int add_connection(
   int            add_wait_request) /* True to add into global select set */
 
   {
+  if ((sock < 0) ||
+      (sock >= PBS_NET_MAX_CONNECTIONS))
+    {
+    char log_buf[LOCAL_LOG_BUF_SIZE];
+
+    snprintf(log_buf, sizeof(log_buf), "Ignoring request to add connection for invalid socket %d", sock);
+    log_err(PBSE_BAD_PARAMETER, __func__, log_buf);
+    return(PBSE_BAD_PARAMETER);
+    }
+
   if (num_connections_mutex == NULL)
     {
     usleep(100000);
