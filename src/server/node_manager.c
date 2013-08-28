@@ -3077,8 +3077,6 @@ int node_satisfies_request(
   int BMLen;
   int BMIndex;
 
-  struct pbssubn *snp; 
-
   if (IS_VALID_STR(ProcBMStr) == FALSE)
     return(BM_ERROR);
 
@@ -3092,14 +3090,13 @@ int node_satisfies_request(
   BMIndex = BMLen-1;
 
   /* check if the requested processors are available on this node */
-  for (snp = pnode->nd_psn;snp && BMIndex >= 0;snp = snp->next)
+  for (int i = 0; i < pnode->nd_slots.get_total_execution_slots() && BMIndex >= 0; i++)
     {
     /* don't check cores that aren't requested */
     if (ProcBMStr[BMIndex--] != '1')
       continue;
 
-    /* cannot use this node, one of the requested cores is busy */
-    if (snp->inuse != INUSE_FREE)
+    if (pnode->nd_slots.is_occupied(i) == true)
       return(FALSE);
     }
 
@@ -3126,46 +3123,51 @@ int node_satisfies_request(
  * @param hlistptr - a pointer to the host list 
  */
 
-int reserve_node(
+job_reservation_info *reserve_node(
 
-  struct pbsnode  *pnode,     /* I/O */
-  short            newstate,  /* I */
-  job             *pjob,      /* I */
-  char            *ProcBMStr, /* I */
-  struct howl    **hlistptr)  /* O */
+  struct pbsnode                      *pnode,     /* I/O */
+  job                                 *pjob,      /* I */
+  char                                *ProcBMStr) /* I */
 
   {
-  int             BMLen;
-  int             BMIndex;
-
-  struct pbssubn *snp; 
-
   if ((pnode == NULL) ||
-      (pjob == NULL) ||
-      (hlistptr == NULL))
+      (pjob == NULL)  ||
+      (ProcBMStr == NULL))
     {
-    return(FAILURE);
+    return(NULL);
     }
 
-  BMLen = strlen(ProcBMStr);
-  BMIndex = BMLen-1;
+  int                   BMIndex = strlen(ProcBMStr) - 1;
+  job_reservation_info *node_info = (job_reservation_info *)calloc(1, sizeof(job_reservation_info));
 
   /* now reserve each node */
-  for (snp = pnode->nd_psn;snp && BMIndex >= 0;snp = snp->next)
+  for (int i = 0; i < pnode->nd_slots.get_total_execution_slots() && BMIndex >= 0; i++)
     {
     /* ignore unrequested cores */
     if (ProcBMStr[BMIndex--] != '1')
       continue;
 
-    add_job_to_node(pnode, snp, INUSE_JOB, pjob);
-
-    build_host_list(hlistptr,snp,pnode);
+    pnode->nd_slots.reserve_execution_slot(i, node_info->est);
     }
-  
+
+  if (BMIndex >= 0)
+    {
+    /* failure */
+    free(node_info);
+    return(NULL);
+    }
+    
+  job_usage_info *jui = new job_usage_info(pjob->ji_qs.ji_jobid);
+    
+  jui->est = node_info->est;
+  snprintf(node_info->node_name, sizeof(node_info->node_name), "%s", pnode->nd_name);
+  node_info->port = pnode->nd_mom_rm_port;
+  pnode->nd_job_usages.push_back(jui);
+    
   /* mark the node as exclusive */
   pnode->nd_state = INUSE_JOB;
 
-  return(SUCCESS);
+  return(node_info);
   }
 #endif /* GEOMETRY_REQUESTS */
 
@@ -3353,8 +3355,6 @@ int build_host_list(
 
   return(SUCCESS);
   }
-
-
 
 
 
@@ -3616,11 +3616,27 @@ int place_mics_in_hostlist(
 job_reservation_info *place_subnodes_in_hostlist(
 
   job                *pjob,
-  short               newstate,
   struct pbsnode     *pnode,
-  node_job_add_info  *naji)
+  node_job_add_info  *naji,
+  char               *ProcBMStr)
 
   {
+#ifdef GEOMETRY_REQUESTS
+  if (IS_VALID_STR(ProcBMStr))
+    {
+    job_reservation_info *node_info = reserve_node(pnode, pjob, ProcBMStr);
+
+    if (node_info != NULL)
+      {
+      // nodes are used exclusively for GEOMETRY_REQUESTS
+      pnode->nd_np_to_be_used = 0;
+      naji->ppn_needed = 0;
+      }
+
+    return(node_info);
+    }
+
+#endif
   job_reservation_info   *node_info = (job_reservation_info *)calloc(1, sizeof(job_reservation_info));
 
   if (pnode->nd_slots.reserve_execution_slots(naji->ppn_needed, node_info->est) == PBSE_NONE)
@@ -3857,8 +3873,6 @@ int record_external_node(
 
 
 
-
-
 /*
  * builds the hostlist based on the nodes=... part of the request
  */
@@ -3872,7 +3886,8 @@ int build_hostlist_nodes_req(
   std::vector<job_reservation_info *>  &host_info, /* O */
   struct howl                         **gpu_list,  /* O */
   struct howl                         **mic_list,  /* O */ 
-  node_job_add_info                    *naji)      /* I - freed */
+  node_job_add_info                    *naji,      /* I - freed */
+  char                                 *ProcBMStr) /* I */
 
   {
   struct pbsnode    *pnode = NULL;
@@ -3896,7 +3911,7 @@ int build_hostlist_nodes_req(
         }
       else
         {
-        job_reservation_info *host_single = place_subnodes_in_hostlist(pjob, newstate, pnode, current);
+        job_reservation_info *host_single = place_subnodes_in_hostlist(pjob, pnode, current, ProcBMStr);
 
         if (host_single != NULL)
           {
@@ -4201,7 +4216,15 @@ int set_nodes(
 
   newstate = INUSE_JOB;
 
-  if ((rc = build_hostlist_nodes_req(pjob, EMsg, spec, newstate, host_info, &gpu_list, &mic_list, naji)) != PBSE_NONE)
+  if ((rc = build_hostlist_nodes_req(pjob,
+                                     EMsg,
+                                     spec,
+                                     newstate,
+                                     host_info,
+                                     &gpu_list,
+                                     &mic_list,
+                                     naji,
+                                     ProcBMStr)) != PBSE_NONE)
     {
     free_nodes(pjob);
     free_alps_req_data_array(ard_array, num_reqs);

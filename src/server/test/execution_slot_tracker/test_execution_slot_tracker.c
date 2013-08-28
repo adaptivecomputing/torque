@@ -7,6 +7,24 @@
 #include "pbs_error.h"
 
 
+START_TEST(test_reserve_slot)
+  {
+  execution_slot_tracker est;
+  execution_slot_tracker est2;
+
+  for (int i = 0; i < 10; i++)
+    est.add_execution_slot();
+
+  for (int i = 0; i < 10; i++)
+    {
+    fail_unless(est.reserve_execution_slot(i, est2) == PBSE_NONE);
+    fail_unless(est.is_occupied(i) == true);
+    fail_unless(est2.is_occupied(i) == true);
+    }
+  }
+END_TEST
+
+
 START_TEST(test_constructors)
   {
   execution_slot_tracker est;
@@ -187,6 +205,7 @@ Suite *execution_slot_tracker_suite(void)
   tcase_add_test(tc_core, test_equals);
   tcase_add_test(tc_core, test_reserving);
   tcase_add_test(tc_core, test_occupied_iterator);
+  tcase_add_test(tc_core, test_reserve_slot);
   suite_add_tcase(s, tc_core);
   
   return(s);
