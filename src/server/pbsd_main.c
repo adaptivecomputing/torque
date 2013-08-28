@@ -2316,7 +2316,8 @@ static int get_port(
     {
     char *a;
 
-    for (a = arg; *a && isdigit(*a); a++);
+    for (a = arg; *a && isdigit(*a); a++)
+       {}
     if ((! *a) && ((*port = (unsigned int)atoi(arg)) > 0) && (*port <= 65535))
       {
       /* port only specified */
