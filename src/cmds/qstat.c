@@ -247,10 +247,14 @@ static void states(
     {
     s = c;
 
-    while (*c != ':')
+    while ((*c != ':')&&(*c != '\0'))
       c++;
 
-    *c = '\0';
+    if(*c != '\0')
+      {
+      *c = '\0';
+      c++;
+      }
 
     d = NULL;
 
@@ -269,7 +273,6 @@ static void states(
     else if (strcmp(s, "Complete") == 0)
       d = complete;
 
-    c++;
 
     if (d != NULL)
       {
