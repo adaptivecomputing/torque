@@ -1583,10 +1583,10 @@ void term_job(
  * a good port. A good port is a privileged port if port_care is TRUE.
  * Check to make sure I am not Mother Superior (talking to myself).
  * Set the stream in ji_nodes[0] if needed.
- * Return TRUE on error, FALSE if okay.
+ * @return false if the connection is not privileged or not from mother superior, true otherwise
  */
 
-int check_ms(
+bool connection_from_ms(
 
   struct tcp_chan    *chan,
   job                *pjob,
@@ -1610,35 +1610,35 @@ int check_ms(
     log_err(-1, __func__, log_buffer);
     close(chan->sock);
     chan->sock = -1;
-    return(TRUE);
+    return(false);
     }
 
   if (pjob == NULL)
     {
-    return(FALSE);
+    return(false);
     }
   
   np = pjob->ji_hosts;
   if (pjob->ji_hosts == NULL)
     {
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL ptr to job host management stuff");
-    return(PBSE_BAD_PARAMETER);
+    return(false);
     }
   ipaddr_ms = ntohl(((struct sockaddr_in *)(&np->sock_addr))->sin_addr.s_addr);
 
   /* make sure the ip addresses match */
   if (ipaddr_ms != ipaddr_connect)
-    return(TRUE);
+    return(false);
 
   if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE)
     {
     log_err(-1, __func__, "Mother Superior talking to herself");
 
-    return(TRUE);
+    return(false);
     }
 
-  return(FALSE);
-  }  /* END check_ms() */
+  return(true);
+  }  /* END connection_from_ms() */
 
 
 
@@ -4902,7 +4902,7 @@ int process_error_reply(
 
   if (event_com == IM_GET_TID)
     {
-    if ((ret = check_ms(chan, pjob, pSockAddr)) == TRUE)
+    if (connection_from_ms(chan, pjob, pSockAddr) == false)
       {
       close_conn(chan->sock, FALSE);
       svr_conn[chan->sock].cn_stay_open = FALSE;
@@ -5116,7 +5116,7 @@ int process_valid_response(
 
     case IM_GET_TID:
 
-      if (check_ms(chan, NULL, pSockAddr) == FALSE)
+      if (connection_from_ms(chan, NULL, pSockAddr) == true)
         ret = handle_im_get_tid_response(chan,pjob,pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str,argv,envp,&efwd);
       else
         ret = IM_FAILURE;
@@ -5642,7 +5642,7 @@ void im_request(
     {
     case IM_JOIN_JOB:
       {
-      if (check_ms(chan, NULL, pSockAddr) == FALSE)
+      if (connection_from_ms(chan, NULL, pSockAddr) == true)
         {
         ret = im_join_job_as_sister(chan,jobid,pSockAddr,cookie,event,fromtask,command,FALSE);
         }
@@ -5663,7 +5663,7 @@ void im_request(
  
     case IM_JOIN_JOB_RADIX:
       {
-      if (check_ms(chan, NULL, pSockAddr) == FALSE)
+      if (connection_from_ms(chan, NULL, pSockAddr) == true)
         {
         ret = im_join_job_as_sister(chan,jobid,pSockAddr,cookie,event,fromtask,command,TRUE);
         }
@@ -5832,7 +5832,7 @@ void im_request(
     /* all of these are requests for a sister until we get to IM_ALL_OK */
     case IM_KILL_JOB:
       {
-      if (check_ms(chan, pjob, pSockAddr) == FALSE)
+      if (connection_from_ms(chan, pjob, pSockAddr) == FALSE)
         {
         im_kill_job_as_sister(pjob,event,momport,FALSE);
         }
@@ -5931,7 +5931,7 @@ void im_request(
     case IM_POLL_JOB:
       {
       /* check the validity of our connection */
-      if ((ret = check_ms(chan, pjob, pSockAddr)) == TRUE)
+      if ((ret = connection_from_ms(chan, pjob, pSockAddr)) == TRUE)
         {
         close_conn(chan->sock, FALSE);
         svr_conn[chan->sock].cn_stay_open = FALSE;
@@ -5952,7 +5952,7 @@ void im_request(
     case IM_ABORT_JOB:
       {
       /* check the validity of our connection */
-      if ((ret = check_ms(chan, pjob, pSockAddr)) == TRUE)
+      if ((ret = connection_from_ms(chan, pjob, pSockAddr)) == TRUE)
         {
         if (pjob->ji_qs.ji_svrflags & (~JOB_SVFLG_JOB_ABORTED))
           {

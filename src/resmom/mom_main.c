@@ -3252,7 +3252,6 @@ const char *find_signal_name(
 
 
 
-
 /*
  *  Kill a job.
  * Call with the job pointer and a signal number.
