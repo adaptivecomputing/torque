@@ -118,6 +118,7 @@
 #include "mutex_mgr.hpp"
 #include "threadpool.h"
 #include "svr_task.h"
+#include <string>
 
 #define PURGE_SUCCESS 1
 #define MOM_DELETE    2
@@ -508,6 +509,7 @@ jump:
       int        newsub;
       job       *tmp;
       job_array *pa = get_jobs_array(&pjob);
+      std::string dup_job_id(strdup(pjob->ji_qs.ji_jobid));
 
       if (pjob == NULL)
         {
@@ -525,6 +527,7 @@ jump:
           if (!strcmp(pa->job_ids[i], pjob->ji_qs.ji_jobid))
             continue;
 
+          job_mutex.unlock();
           if ((tmp = svr_find_job(pa->job_ids[i], FALSE)) == NULL)
             {
             free(pa->job_ids[i]);
@@ -546,11 +549,16 @@ jump:
               job_save(tmp, SAVEJOB_FULL, 0);
 
               unlock_ji_mutex(tmp, __func__, "5", LOGLEVEL);
+              pjob = svr_find_job((char *)dup_job_id.c_str(),FALSE);  //Job disappeared.
 
               break;
               }
 
             unlock_ji_mutex(tmp, __func__, "6", LOGLEVEL);
+            }
+          if((pjob = svr_find_job((char *)dup_job_id.c_str(),FALSE)) == NULL) //Job disappeared.
+            {
+            break;
             }
           }
 
@@ -558,6 +566,13 @@ jump:
         }
       }
     } /* END MoabArrayCompatible check */
+
+  if (pjob == NULL)
+    {
+    job_mutex.set_lock_on_exit(false);
+    return -1;
+    }
+
 
   if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0)
     {
