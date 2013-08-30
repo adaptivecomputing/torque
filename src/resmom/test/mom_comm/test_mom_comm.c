@@ -2,6 +2,7 @@
 #include "pbs_nodes.h"
 #include "mom_comm.h"
 #include "test_mom_comm.h"
+#include <set>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -16,6 +17,7 @@ extern char *disrst_array[];
 extern int log_event_counter;
 
 int process_end_job_error_reply(job *pjob, hnodent *np, struct sockaddr_in *pSockAddr, int errcode);
+void create_contact_list(job &pjob, std::set<int> &sister_list, struct sockaddr_in *contacting_address);
 received_node *get_received_node_entry(char *str);
 
 START_TEST(test_process_end_job_error_reply)
@@ -39,6 +41,32 @@ START_TEST(test_process_end_job_error_reply)
   fail_unless(log_event_counter == 1);
   }
 END_TEST
+
+
+START_TEST(create_contact_list_test)
+  {
+  job pjob;
+  std::set<int> contact_list;
+  struct sockaddr_in addr;
+
+  memset(&pjob, 0, sizeof(pjob));
+  memset(&addr, 0, sizeof(addr));
+
+  addr.sin_addr.s_addr = htonl(100);
+  pjob.ji_numnodes = 3;
+  pjob.ji_sisters = (hnodent *)calloc(3, sizeof(hnodent));
+  pjob.ji_sisters[1].sock_addr.sin_addr.s_addr = htonl(100);
+  pjob.ji_sisters[2].sock_addr.sin_addr.s_addr = htonl(101);
+
+  create_contact_list(pjob, contact_list, &addr);
+  fail_unless(contact_list.size() == 1);
+  contact_list.clear();
+
+  create_contact_list(pjob, contact_list, NULL);
+  fail_unless(contact_list.size() == 2);
+  }
+END_TEST
+
 
 START_TEST(test_read_status_strings_null_chan_doesnt_crash)
   {
@@ -342,6 +370,7 @@ Suite *mom_comm_suite(void)
 
   tc_core = tcase_create("im_request_test");
   tcase_add_test(tc_core, im_request_test);
+  tcase_add_test(tc_core, create_contact_list_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("im_join_job_as_sister_test");
