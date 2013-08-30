@@ -1580,6 +1580,7 @@ void term_job(
 /*
  * Check to be sure this is a connection from Mother Superior on
  * a good port. A good port is a privileged port if port_care is TRUE.
+ * If pjob is NULL, only check that it is on a privileged port.
  * Check to make sure I am not Mother Superior (talking to myself).
  * Set the stream in ji_nodes[0] if needed.
  * @return false if the connection is not privileged or not from mother superior, true otherwise
@@ -1614,7 +1615,7 @@ bool connection_from_ms(
 
   if (pjob == NULL)
     {
-    return(false);
+    return(true);
     }
   
   np = pjob->ji_hosts;
