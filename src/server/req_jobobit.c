@@ -1090,6 +1090,14 @@ handle_returnstd_cleanup:
 
 
 
+/*
+ * handle_stageout()
+ *
+ * asks the mom to copy back any relevant files - stdout, stderr, and stageout files
+ * @pre-cond: pjob must point to a valid job that is exiting
+ * @post-cond: the job will be done with the stageout portion of it exiting.
+ * @return: PBSE_NONE on success
+ */
 
 int handle_stageout(
 
@@ -1110,12 +1118,14 @@ int handle_stageout(
   char       job_fileprefix[PBS_JOBBASE+1];
   mutex_mgr  job_mutex(pjob->ji_mutex, true);
 
-  if (LOGLEVEL >= 10 )
+  if (LOGLEVEL >= 10)
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
 
   snprintf(job_id, sizeof(job_id), "%s", pjob->ji_qs.ji_jobid);
   snprintf(job_fileprefix, sizeof(job_fileprefix), "%s", pjob->ji_qs.ji_fileprefix);
-  job_momname = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+  
+  if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
+    job_momname = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
 
   if (job_momname == NULL)
     {
