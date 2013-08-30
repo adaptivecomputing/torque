@@ -4701,6 +4701,42 @@ int send_im_error_addr(
   }
 
 
+/*
+ * create_contact_list()
+ *
+ * Mother superior has received an abort from a sister, and it is going to notify all 
+ * other sisters that they should abort. This function adds all moms other than this
+ * one to the contact list.
+ *
+ * @pre-cond: contacting_address must be a valid pointer to the address of the mom
+ * that sent the abort
+ * @post-cond: sister_list will be populated with the indices of the nodes that 
+ * should be contacted.
+ */
+void create_contact_list(
+
+  job                &pjob,
+  std::set<int>      &sister_list,
+  struct sockaddr_in *contacting_address)
+
+  {
+  unsigned long ipaddr_connect = 0;
+ 
+  if (contacting_address != NULL)
+    ipaddr_connect = ntohl(contacting_address->sin_addr.s_addr);
+
+  for (int i = 1; i < pjob.ji_numnodes; i++)
+    {
+    hnodent *np = &pjob.ji_sisters[i];
+    unsigned long node_addr = ntohl(np->sock_addr.sin_addr.s_addr);
+
+    if (node_addr != ipaddr_connect)
+      sister_list.insert(i);
+    }
+  }
+
+
+
 /**
  * Input is coming from another MOM over a DIS rpp stream.
  * Read the stream to get a Inter-MOM request.
@@ -5180,10 +5216,13 @@ void im_request(
       /* check the validity of our connection */
       if ((ret = check_ms(chan, pjob, pSockAddr)) == TRUE)
         {
+        /* it is valid to receive an abort from a sister */
         if (pjob->ji_qs.ji_svrflags & (~JOB_SVFLG_JOB_ABORTED))
           {
+          std::set<int> sisters;
+          create_contact_list(*pjob, sisters, pSockAddr);
           pjob->ji_qs.ji_svrflags |= JOB_SVFLG_JOB_ABORTED;
-          exec_bail(pjob, JOB_EXEC_RETRY);
+          exec_bail(pjob, JOB_EXEC_RETRY, &sisters);
           sprintf(log_buffer, "%s sent an abort. Killing job %s", netaddr(pSockAddr), pjob->ji_qs.ji_jobid);
           log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
           }
