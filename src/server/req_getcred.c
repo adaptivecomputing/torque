@@ -118,6 +118,7 @@
 
 extern struct connection svr_conn[];
 extern char *path_credentials;
+extern int    LOGLEVEL;
 
 /* Global Data Home in this file */
 
@@ -449,6 +450,12 @@ int req_authenuser(
     debug = 1;
     }
 
+  if (LOGLEVEL >= 6)
+    {
+    sprintf(log_buf, "addr: %ld  port: %d", incoming_conn_addr, preq->rq_ind.rq_authen.rq_port);
+    log_record(PBSEVENT_CLIENTAUTH, PBS_EVENTCLASS_TRQAUTHD, __func__, log_buf);
+    }
+
   for (delay_cntr = 0; delay_cntr < 5;delay_cntr++)
     {
     for (s = 0; s < PBS_NET_MAX_CONNECTIONS; s++)
@@ -506,7 +513,7 @@ int req_authenuser(
     if (debug) 
       fprintf(stderr, "sock not found, sleeping (%d)\n", delay_cntr);
 
-    usleep(10);
+    usleep(250000); /* sleep a quarter of a second and lets see if the connection comes in */
     }
 
   sprintf(log_buf, "trqauthd fail %d", preq->rq_ind.rq_authen.rq_port);
