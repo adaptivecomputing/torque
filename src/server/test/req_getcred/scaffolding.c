@@ -11,6 +11,7 @@ char *path_credentials;
 struct connection svr_conn[PBS_NET_MAX_CONNECTIONS];
 int rejected = FALSE;
 int acked = FALSE;
+int LOGLEVEL = 3;
 
 
 size_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
