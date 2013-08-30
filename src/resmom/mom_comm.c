@@ -5196,7 +5196,7 @@ void im_request(
         close_conn(chan->sock, FALSE);
         svr_conn[chan->sock].cn_stay_open = FALSE;
         chan->sock = -1;
-        log_err(-1, __func__, "IM_POLL_JOB not from mother superior");
+        log_err(-1, __func__, "IM_POLL_JOB request came from a node other than mother superior");
         goto err;
         }
 
@@ -5211,7 +5211,7 @@ void im_request(
 
     case IM_ABORT_JOB:
       {
-      /* check the validity of our connection */
+      /* check if the abort is from mother superior or a sister node */
       if (connection_from_ms(chan, pjob, pSockAddr) == false)
         {
         /* it is valid to receive an abort from a sister */
@@ -5236,7 +5236,7 @@ void im_request(
     
     case IM_GET_TID:
       {
-      if (im_get_tid(pjob,cookie,event,fromtask) == IM_FAILURE)
+      if ((ret = im_get_tid(pjob,cookie,event,fromtask)) == IM_FAILURE)
         {
         close_conn(chan->sock, FALSE);
         svr_conn[chan->sock].cn_stay_open = FALSE;
