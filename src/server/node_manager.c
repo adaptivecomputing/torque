@@ -2291,7 +2291,8 @@ void set_first_node_name(
       {
       /* a ':' means you've moved on to ppn and a + means its the next req */
       if ((spec_param[i] == ':') ||
-          (spec_param[i] == '+'))
+          (spec_param[i] == '+') ||
+          (spec_param[i] == '|'))
         break;
       else
         first_node_name[i] = spec_param[i];
