@@ -395,7 +395,7 @@ int start_listener_addrinfo(
             if (retry_tolerance-- <= 0)
               {
               exit_loop = TRUE;
-              snprintf(err_msg, sizeof(err_msg), "Exiting loop because we passed our retry tolerance");
+              snprintf(err_msg, sizeof(err_msg), "Exiting loop because we passed our retry tolerance: %d", errno);
               }
             else
               sleep(1);
