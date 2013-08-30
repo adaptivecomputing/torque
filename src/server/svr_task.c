@@ -349,25 +349,26 @@ work_task *next_task(
   {
   work_task *wt;
 
-  pthread_mutex_lock(at->alltasks_mutex);
-
-  wt = (work_task *)next_thing(at->ra,iter);
-  if (wt != NULL)
-    pthread_mutex_lock(wt->wt_mutex);
-
-  pthread_mutex_unlock(at->alltasks_mutex);
-
-  if (wt != NULL)
+  while(true)
     {
-    if (wt->wt_being_recycled == TRUE)
+    pthread_mutex_lock(at->alltasks_mutex);
+
+    wt = (work_task *)next_thing(at->ra,iter);
+    if (wt != NULL)
+      pthread_mutex_lock(wt->wt_mutex);
+
+    pthread_mutex_unlock(at->alltasks_mutex);
+    if(wt == NULL)
       {
-      pthread_mutex_unlock(wt->wt_mutex);
-
-      wt = next_task(at, iter);
+      return wt;
       }
+    if(wt->wt_being_recycled != TRUE)
+      {
+      return wt;
+      }
+    pthread_mutex_unlock(wt->wt_mutex);
     }
-
-  return(wt);
+  return(NULL);
   } /* END next_task() */
 
 
