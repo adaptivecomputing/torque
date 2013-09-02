@@ -509,13 +509,13 @@ jump:
       int        newsub;
       job       *tmp;
       job_array *pa = get_jobs_array(&pjob);
-      std::string dup_job_id(strdup(pjob->ji_qs.ji_jobid));
 
       if (pjob == NULL)
         {
         job_mutex.set_lock_on_exit(false);
         return(-1);
         }
+      std::string dup_job_id(pjob->ji_qs.ji_jobid);
 
       if(pa != NULL)
         {
@@ -549,7 +549,8 @@ jump:
               job_save(tmp, SAVEJOB_FULL, 0);
 
               unlock_ji_mutex(tmp, __func__, "5", LOGLEVEL);
-              pjob = svr_find_job((char *)dup_job_id.c_str(),FALSE);  //Job disappeared.
+              pjob = svr_find_job((char *)dup_job_id.c_str(),FALSE);  //Job might have disappeared.
+              job_mutex.set_lock_state(true);
 
               break;
               }
@@ -560,6 +561,7 @@ jump:
             {
             break;
             }
+          job_mutex.set_lock_state(true);
           }
 
         unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
