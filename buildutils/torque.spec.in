@@ -34,7 +34,7 @@
 ### Autoconf macro expansions
 %define ac_with_blcr       --%{?with_blcr:en}%{!?with_blcr:dis}able-blcr
 %define ac_with_cpuset     --%{?with_cpuset:en}%{!?with_cpuset:dis}able-cpuset
-%define ac_with_debug      --with%{!?with_debug:out}-debug CFLAGS="-O0 -g3"
+%define ac_with_debug      --with%{!?with_debug:out}-debug CFLAGS="-O0 -g3" CXXFLAGS="-O0 -g3"
 %define ac_with_drmaa      --%{?with_drmaa:en}%{!?with_drmaa:dis}able-drmaa
 %define ac_with_gui        --%{?with_gui:en}%{!?with_gui:dis}able-gui --with%{!?with_gui:out}-tcl
 %define ac_with_munge      --%{?with_munge:en}%{!?with_munge:dis}able-munge-auth
