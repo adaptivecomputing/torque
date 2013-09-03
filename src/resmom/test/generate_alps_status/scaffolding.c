@@ -30,7 +30,8 @@ void log_err(int errnum, const char *routine, const char *msg) {}
 int search_dynamic_string_status(
 
   dynamic_string *status,
-  char           *str)
+  char           *str,
+  unsigned int   *offset)
 
   {
   unsigned int i;
@@ -41,7 +42,11 @@ int search_dynamic_string_status(
     if (status->str[i] == first_char)
       {
       if (!strncmp(str, status->str + i, strlen(str)))
+        {
+        if (offset != NULL)
+          *offset = i;
         return(1);
+        }
       }
     }
 

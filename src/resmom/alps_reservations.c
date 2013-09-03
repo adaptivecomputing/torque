@@ -178,30 +178,58 @@ resizable_array *parse_exec_hosts(
 int save_current_reserve_param(
 
   dynamic_string *command,
+  char           *apbasil_protocol,
   dynamic_string *node_list,
   unsigned int    width,
   int             nppn,
+  int             nppcu,
   int             mppdepth)
 
   {
   char            buf[MAXLINE * 2];
   int             rc; 
+  float           apbasil_protocol_float;
+
+  if (apbasil_protocol != NULL)
+    sscanf(apbasil_protocol, "%f", &apbasil_protocol_float);
+  else
+    sscanf(DEFAULT_APBASIL_PROTOCOL, "%f", &apbasil_protocol_float);
 
   /* print out the current reservation param element */
   /* place everything up to the node list */
   if (nppn == -1)
     {
     if (mppdepth == 0)
-      snprintf(buf, sizeof(buf), APBASIL_RESERVE_PARAM_BEGIN_SANS_NPPN, width);
+      {
+      if (apbasil_protocol_float >= APBASIL_PROTOCOL_v13)
+        snprintf(buf, sizeof(buf), APBASIL_RESERVE_PARAM_BEGIN_SANS_NPPN_13, width, nppcu);
+      else
+        snprintf(buf, sizeof(buf), APBASIL_RESERVE_PARAM_BEGIN_SANS_NPPN, width);
+      }
     else
-      snprintf(buf, sizeof(buf), APBASIL_RESERVE_PARAM_BEGIN_DEPTH_SANS_NPPN, width, mppdepth);
+      {
+      if (apbasil_protocol_float >= APBASIL_PROTOCOL_v13)
+        snprintf(buf, sizeof(buf), APBASIL_RESERVE_PARAM_BEGIN_DEPTH_SANS_NPPN_13, width, nppcu, mppdepth);
+      else
+        snprintf(buf, sizeof(buf), APBASIL_RESERVE_PARAM_BEGIN_DEPTH_SANS_NPPN, width, mppdepth);
+      }
     }
   else
     {
     if (mppdepth == 0)
-      snprintf(buf, sizeof(buf), APBASIL_RESERVE_PARAM_BEGIN, width, nppn);
+      {
+      if (apbasil_protocol_float >= APBASIL_PROTOCOL_v13)
+        snprintf(buf, sizeof(buf), APBASIL_RESERVE_PARAM_BEGIN_13, width, nppcu, nppn);
+      else
+        snprintf(buf, sizeof(buf), APBASIL_RESERVE_PARAM_BEGIN, width, nppn);
+      }
     else
-      snprintf(buf, sizeof(buf), APBASIL_RESERVE_PARAM_BEGIN_DEPTH, width, nppn, mppdepth);
+      {
+      if (apbasil_protocol_float >= APBASIL_PROTOCOL_v13)
+        snprintf(buf, sizeof(buf), APBASIL_RESERVE_PARAM_BEGIN_DEPTH_13, width, nppcu, nppn, mppdepth);
+      else
+        snprintf(buf, sizeof(buf), APBASIL_RESERVE_PARAM_BEGIN_DEPTH, width, nppn, mppdepth);
+      }
     }
 
   rc = append_dynamic_string(command, buf);
@@ -250,7 +278,9 @@ void adjust_for_depth(
 int create_reserve_params_from_host_req_list(
 
   resizable_array *host_req_list, /* I */
+  char            *apbasil_protocol, /* I */
   int              use_nppn,      /* I */
+  int              nppcu,         /* I */
   int              mppdepth,      /* I */
   dynamic_string  *command)       /* O */
 
@@ -279,7 +309,7 @@ int create_reserve_params_from_host_req_list(
 
   adjust_for_depth(width, nppn, mppdepth);
   
-  save_current_reserve_param(command, node_list, width, nppn, mppdepth);
+  save_current_reserve_param(command, apbasil_protocol, node_list, width, nppn, nppcu, mppdepth);
 
   return(PBSE_NONE);
   } /* END create_reserve_params_from_host_req_list() */
@@ -290,6 +320,8 @@ int create_reserve_params_from_host_req_list(
 int create_reserve_params_from_multi_req_list(
 
   char           *multi_req_list, /* I */
+  char           *apbasil_protocol, /* I */
+  int             nppcu,          /* I */
   int             mppdepth,       /* I */
   dynamic_string *command)        /* O */
 
@@ -320,7 +352,7 @@ int create_reserve_params_from_multi_req_list(
 
     adjust_for_depth(width, nppn, mppdepth);
 
-    save_current_reserve_param(command, node_list, width, nppn, mppdepth);
+    save_current_reserve_param(command, apbasil_protocol, node_list, width, nppn, nppcu, mppdepth);
     }
 
   return(PBSE_NONE);
@@ -338,6 +370,7 @@ dynamic_string *get_reservation_command(
   char            *apbasil_protocol,
   char            *multi_req_list,
   int              use_nppn,
+  int              nppcu,
   int              mppdepth)
 
   {
@@ -356,12 +389,12 @@ dynamic_string *get_reservation_command(
 
   if (multi_req_list == NULL)
     {
-    create_reserve_params_from_host_req_list(host_req_list, use_nppn, mppdepth, command);
+    create_reserve_params_from_host_req_list(host_req_list, apbasil_protocol, use_nppn, nppcu, mppdepth, command);
     }
   else
     {
     /* no need to account for use_nppn here, this path always should */
-    create_reserve_params_from_multi_req_list(multi_req_list, mppdepth, command);
+    create_reserve_params_from_multi_req_list(multi_req_list, apbasil_protocol, nppcu, mppdepth, command);
     }
 
   free_dynamic_string(node_list);
@@ -488,6 +521,7 @@ int execute_reservation(
   char            tmpBuf[MAXLINE];
   int             bytes_read;
   int             total_bytes_read = 0;
+
 
   if ((alps_pipe = popen(command_str, "r")) == NULL)
     {
@@ -650,6 +684,7 @@ int confirm_reservation(
     command_buf,
     command_buf_size);
 
+
   if ((alps_pipe = popen(command_buf, "r")) == NULL)
     {
     snprintf(log_buffer, sizeof(log_buffer),
@@ -707,6 +742,7 @@ int create_alps_reservation(
   char       *apbasil_protocol,
   long long   pagg_id_value,
   int         use_nppn,
+  int         nppcu,
   int         mppdepth,
   char      **reservation_id)
 
@@ -733,13 +769,13 @@ int create_alps_reservation(
       return(PBSE_NONE);
       }
   
-    command = get_reservation_command(host_req_list, user, jobid, apbasil_path, apbasil_protocol, NULL, use_nppn, mppdepth);
+    command = get_reservation_command(host_req_list, user, jobid, apbasil_path, apbasil_protocol, NULL, use_nppn, nppcu, mppdepth);
   
     free_resizable_array(host_req_list);
     }
   else
     {
-    command = get_reservation_command(NULL, user, jobid, apbasil_path, apbasil_protocol, exec_hosts, use_nppn, mppdepth);
+    command = get_reservation_command(NULL, user, jobid, apbasil_path, apbasil_protocol, exec_hosts, use_nppn, nppcu, mppdepth);
     }
 
   free(user);
