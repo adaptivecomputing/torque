@@ -209,11 +209,6 @@ echo '$pbsserver %{torque_server}' > $RPM_BUILD_ROOT%{torque_home}/mom_priv/conf
 # Moab requires libtorque.so.0, but works with libtorque.so.2, so fudge it.
 %{__ln_s} libtorque.so.2 $RPM_BUILD_ROOT%{_libdir}/libtorque.so.0
 
-%if %{with drmaa}
-# Move DRMAA docs back to the source tree so we can install them properly.
-mv $RPM_BUILD_ROOT%{_docdir}/*drmaa* drmaa-doc-dir
-%endif
-
 %post
 /sbin/ldconfig
 if [ $1 -eq 1 ]; then
@@ -429,7 +424,6 @@ test "x$RPM_BUILD_ROOT" != "x/" && rm -rf $RPM_BUILD_ROOT
 %if %{with drmaa}
 %files drmaa
 %defattr(-, root, root)
-%doc drmaa-doc-dir/*
 %{_includedir}/%{name}/drmaa.h
 %{_libdir}/libdrmaa.*
 %endif
