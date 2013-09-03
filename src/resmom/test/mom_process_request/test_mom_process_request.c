@@ -7,10 +7,15 @@
 
 #include "pbs_error.h"
 
-START_TEST(test_one)
+void *mom_process_request(void *sock_num);
+extern char log_buffer[];
+
+START_TEST(test_mom_process_request)
   {
+  int sock = 1;
 
-
+  mom_process_request(&sock);
+  fail_unless(strstr(log_buffer, "connection not privileged") != NULL);
   }
 END_TEST
 
@@ -24,8 +29,8 @@ END_TEST
 Suite *mom_process_request_suite(void)
   {
   Suite *s = suite_create("mom_process_request_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_mom_process_request");
+  tcase_add_test(tc_core, test_mom_process_request);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");
