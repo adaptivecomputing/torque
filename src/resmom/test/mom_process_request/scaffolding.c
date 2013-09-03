@@ -53,8 +53,7 @@ void req_modifyjob(struct batch_request *preq)
 
 int get_connecthost(int sock, char *namebuf, int size)
   {
-  fprintf(stderr, "The call to get_connecthost needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 pbs_net_t get_connectaddr(int sock, int mutex)
@@ -83,14 +82,13 @@ int req_stat_job(struct batch_request *preq)
 
 int dis_request_read(struct tcp_chan *chan, struct batch_request *request)
   {
-  fprintf(stderr, "The call to dis_request_read needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 struct tcp_chan *DIS_tcp_setup(int fd)
   {
-  fprintf(stderr, "The call to DIS_tcp_setup needs to be mocked!!\n");
-  exit(1);
+  static struct tcp_chan chan;
+  return(&chan);
   }
 
 void req_rdytocommit(struct batch_request *preq)
@@ -107,14 +105,11 @@ int AVL_is_in_tree_no_port_compare(u_long key, uint16_t port, AvlTree tree)
 
 void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
   {
-  fprintf(stderr, "The call to req_reject needs to be mocked!!\n");
-  exit(1);
   }
 
 void *get_next(list_link pl, char *file, int line)
   {
-  fprintf(stderr, "The call to get_next needs to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 void req_checkpointjob(struct batch_request *preq)
@@ -173,8 +168,6 @@ char *pbse_to_txt(int err)
 
 void append_link(tlist_head *head, list_link *new_link, void *pobj)
   {
-  fprintf(stderr, "The call to append_link needs to be mocked!!\n");
-  exit(1);
   }
 
 void req_mvjobfile(struct batch_request *preq)
@@ -203,8 +196,6 @@ void req_jobcredential(struct batch_request *preq)
 
 void close_conn(int sd, int has_mutex)
   {
-  fprintf(stderr, "The call to close_conn needs to be mocked!!\n");
-  exit(1);
   }
 
 void mom_req_holdjob(struct batch_request *preq)
@@ -215,8 +206,7 @@ void mom_req_holdjob(struct batch_request *preq)
 
 const char *reqtype_to_txt(int reqtype)
   {
-  fprintf(stderr, "The call to reqtype_to_txt needs to be mocked!!\n");
-  exit(1);
+  return("Queue_Job");
   }
 
 void req_messagejob(struct batch_request *preq)
