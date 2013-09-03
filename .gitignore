@@ -400,6 +400,7 @@ src/server/test/job_func/test_job_func
 src/server/test/job_func/test_record_jobinfo
 src/server/test/job_qs_upgrade/test_job_qs_upgrade
 src/server/test/job_recov/test_job_recov
+src/server/test/job_recov/unit_test_job1.JB
 src/server/test/job_recycler/test_job_recycler
 src/server/test/job_route/test_job_route
 src/server/test/login_nodes/test_login_nodes
