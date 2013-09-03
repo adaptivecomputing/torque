@@ -80,6 +80,7 @@
 #include "csv.h"
 #include "svrfunc.h"
 #include "pbs_ifl.h"
+#include "alps_constants.h"
 #include "alps_functions.h"
 #include "../lib/Libifl/lib_ifl.h"
 
@@ -1906,6 +1907,7 @@ int blcr_restart_job(
       {
       int       use_nppn = TRUE;
       int       mppdepth = 0;
+      int       nppcu = APBASIL_DEFAULT_NPPCU_VALUE; /* default */
       resource *pres = find_resc_entry(
                          &pjob->ji_wattr[JOB_ATR_resource],
                          find_resc_def(svr_resc_def, "procs", svr_resc_size));
@@ -1920,6 +1922,10 @@ int blcr_restart_job(
           (pres->rs_value.at_val.at_long != 0))
         mppdepth = pres->rs_value.at_val.at_long;
 
+      /* look up job nppcu value if it exists */
+      if ((pjob->ji_wattr[JOB_ATR_nppcu].at_flags & ATR_VFLAG_SET))
+              nppcu = pjob->ji_wattr[JOB_ATR_nppcu].at_val.at_long;
+
       if (create_alps_reservation(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
             pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
             pjob->ji_qs.ji_jobid,
@@ -1927,6 +1933,7 @@ int blcr_restart_job(
             apbasil_protocol,
             pagg,
             use_nppn,
+            nppcu,
             mppdepth,
             &rsv_id) != PBSE_NONE)
         {

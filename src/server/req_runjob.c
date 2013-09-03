@@ -1081,6 +1081,27 @@ int svr_startjob(
     return(rc);
     }
 
+  /* copy the server nppcu value to the job */
+  if (!(pjob->ji_wattr[JOB_ATR_nppcu].at_flags & ATR_VFLAG_SET))
+    {
+    long svr_nppcu_value = 0;
+    char buf[128];
+
+    /* get server nppcu here */
+    get_svr_attr_l(SRV_ATR_nppcu, &svr_nppcu_value);
+    sprintf(buf, "%ld", svr_nppcu_value);
+
+    if (job_attr_def[JOB_ATR_nppcu].at_decode(
+          &pjob->ji_wattr[JOB_ATR_nppcu],
+          NULL,
+          NULL,
+          buf,
+          0))
+      {
+      return(PBSE_SYSTEM);
+      }
+    }
+
 #ifdef BOEING
   if ((rc = verify_moms_up(pjob)) != PBSE_NONE)
     return(rc);

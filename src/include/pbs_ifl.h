@@ -329,6 +329,7 @@
 #define ATTR_nomailforce             "no_mail_force"
 #define ATTR_interactivejobscanroam  "interactive_jobs_can_roam" 
 #define ATTR_crayenabled             "cray_enabled"
+#define ATTR_nppcu                   "nppcu"
 #define ATTR_maxuserqueuable         "max_user_queuable"
 #define ATTR_automaticrequeueexitcode "automatic_requeue_exit_code"
 /* additional node "attributes" names */
@@ -537,6 +538,9 @@
 #define NO_MOM_RELAY 1
 
 enum batch_op { SET, UNSET, INCR, DECR, EQ, NE, GE, GT, LE, LT, DFLT, MERGE, INCR_OLD };
+
+/* ALPS nppcu values */
+enum nppcu_values { NPPCU_ALPS_CHOOSES = 0, NPPCU_NO_USE_HT, NPPCU_USE_HT };
 
 /*
 ** This structure is identical to attropl so they can be used

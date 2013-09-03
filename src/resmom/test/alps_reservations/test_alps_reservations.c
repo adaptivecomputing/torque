@@ -19,6 +19,7 @@ char *uname = (char *)"dbeer";
 char *jobids[] = {(char *)"0.napali", (char *)"1.napali"} ;
 char *apbasil_path = (char *)"/usr/local/bin/apbasil";
 char *apbasil_protocol = (char *)"1.0";
+char *apbasil_protocol_13 = (char *)"1.3";
 char *blank_cmd = (char *)"../../../test/test_scripts/blank_script.sh";
 
 char *alps_rsv_outputs[] = {
@@ -29,7 +30,7 @@ char *alps_rsv_outputs[] = {
     (char *)"tom"};
 
 resizable_array *parse_exec_hosts(char *exec_hosts);
-dynamic_string  *get_reservation_command(resizable_array *, char *, char *, char *, char *, char *, int, int);
+dynamic_string  *get_reservation_command(resizable_array *, char *, char *, char *, char *, char *, int, int, int);
 int              parse_reservation_output(char *, char **);
 int              execute_reservation(char *, char **);
 int              confirm_reservation(char *, char *, long long, char *, char *,char *,int);
@@ -164,9 +165,11 @@ START_TEST(get_reservation_command_test)
   char            *reserve_param;
   char            *reserve_param2;
   char            *nppn;
+  char            *nppcu;
   int              ppn;
+  int              nppcu_value;
 
-  apbasil_command = get_reservation_command(hrl, uname, jobids[0], NULL, apbasil_protocol, NULL, 0, 0);
+  apbasil_command = get_reservation_command(hrl, uname, jobids[0], NULL, apbasil_protocol, NULL, 0, 0, 0);
 
   snprintf(buf, sizeof(buf), "Username '%s' not found in command '%s'", uname, apbasil_command->str);
   fail_unless(strstr(apbasil_command->str, uname) != NULL, buf);
@@ -182,7 +185,7 @@ START_TEST(get_reservation_command_test)
   free_dynamic_string(apbasil_command);
 
   hrl = parse_exec_hosts(eh3);
-  apbasil_command = get_reservation_command(hrl, uname, jobids[1], apbasil_path, apbasil_protocol, NULL, 1, 0);
+  apbasil_command = get_reservation_command(hrl, uname, jobids[1], apbasil_path, apbasil_protocol, NULL, 1, 0, 0);
 
   reserve_param = strstr(apbasil_command->str, "ReserveParam ");
   reserve_param2 = strstr(reserve_param + 1, "ReserveParam ");
@@ -194,6 +197,23 @@ START_TEST(get_reservation_command_test)
   ppn = atoi(nppn);
   snprintf(buf, sizeof(buf), "nppn should be 3 but is %d", ppn);
   fail_unless(ppn == 3, buf);
+
+  free_resizable_array(hrl);
+  free_dynamic_string(apbasil_command);
+
+  hrl = parse_exec_hosts(eh3);
+  apbasil_command = get_reservation_command(hrl, uname, jobids[1], apbasil_path, apbasil_protocol_13, NULL, 1, 1, 0);
+
+  reserve_param = strstr(apbasil_command->str, "ReserveParam ");
+  reserve_param2 = strstr(reserve_param + 1, "ReserveParam ");
+  fail_unless(reserve_param != NULL, "Couldn't find the first ReserveParam element in the request");
+
+  nppcu = strstr(reserve_param, "nppcu");
+  fail_unless(nppcu != NULL, "Couldn't find the nppcu specification in the next reservation");
+  nppcu += strlen("nppcu='");
+  nppcu_value = atoi(nppcu);
+  snprintf(buf, sizeof(buf), "nppcu should be 1 but is %d", nppcu_value);
+  fail_unless(nppcu_value == 1, buf);
   }
 END_TEST
 

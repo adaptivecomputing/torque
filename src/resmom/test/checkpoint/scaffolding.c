@@ -264,6 +264,7 @@ int create_alps_reservation(
   char       *apbasil_protocol,
   long long   pagg_id_value,
   int         use_nppn,
+  int         nppcu,
   int         mppdepth,
   char      **reservation_id)
 
