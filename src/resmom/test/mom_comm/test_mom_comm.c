@@ -52,6 +52,7 @@ START_TEST(create_contact_list_test)
   memset(&pjob, 0, sizeof(pjob));
   memset(&addr, 0, sizeof(addr));
 
+  pjob.ji_qs.ji_svrflags |= JOB_SVFLG_INTERMEDIATE_MOM;
   addr.sin_addr.s_addr = htonl(100);
   pjob.ji_numnodes = 3;
   pjob.ji_sisters = (hnodent *)calloc(3, sizeof(hnodent));
@@ -64,6 +65,19 @@ START_TEST(create_contact_list_test)
 
   create_contact_list(pjob, contact_list, NULL);
   fail_unless(contact_list.size() == 2);
+  contact_list.clear();
+
+  pjob.ji_qs.ji_svrflags &= ~JOB_SVFLG_INTERMEDIATE_MOM;
+  pjob.ji_hosts = pjob.ji_sisters;
+  pjob.ji_sisters = NULL;
+
+  create_contact_list(pjob, contact_list, &addr);
+  fail_unless(contact_list.size() == 1);
+  contact_list.clear();
+
+  create_contact_list(pjob, contact_list, NULL);
+  fail_unless(contact_list.size() == 2);
+
   }
 END_TEST
 

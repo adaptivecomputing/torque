@@ -4704,8 +4704,13 @@ void create_contact_list(
 
   for (int i = 1; i < pjob.ji_numnodes; i++)
     {
-    hnodent *np = &pjob.ji_sisters[i];
+    hnodent *np;
+    if (pjob.ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM)
+      np = &pjob.ji_sisters[i];
+    else
+      np = &pjob.ji_hosts[i];
     unsigned long node_addr = ntohl(np->sock_addr.sin_addr.s_addr);
+
 
     if (node_addr != ipaddr_connect)
       sister_list.insert(i);
