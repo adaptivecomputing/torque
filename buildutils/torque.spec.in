@@ -211,7 +211,12 @@ echo '$pbsserver %{torque_server}' > $RPM_BUILD_ROOT%{torque_home}/mom_priv/conf
 
 %if %{with drmaa}
 # Move DRMAA docs back to the source tree so we can install them properly.
-mv $RPM_BUILD_ROOT%{_docdir}/*drmaa* drmaa-doc-dir
+if test -d $RPM_BUILD_ROOT%{_docdir}/*drmaa*/html ; then
+    mv $RPM_BUILD_ROOT%{_docdir}/*drmaa* drmaa-doc-dir
+else
+    mkdir drmaa-doc-dir
+    echo "Doxygen is required to build DRMAA API docs but was not present at build time." > drmaa-doc-dir/README.drmaa_docs
+fi
 %endif
 
 %post
