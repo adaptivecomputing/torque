@@ -148,11 +148,14 @@ struct varattr
 #define JOB_COOKIE_SIZE 33
 enum momcomm_type { COMPOSE_REPLY, KILLJOB_REPLY, SPAWN_TASK_REPLY, OBIT_TASK_REPLY };
 
+#define RESEND_INTERVAL 10
+
 typedef struct resend_momcomm
   {
   enum momcomm_type  mc_type;
   void              *mc_struct;
   int                resend_attempts;
+  time_t             resend_time;
   } resend_momcomm;
 
 typedef struct im_compose_info

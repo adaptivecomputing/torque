@@ -9857,11 +9857,15 @@ void resend_things()
   im_compose_info    *ici;
   killjob_reply_info *kj;
   spawn_task_info    *st;
+  time_t              time_now = time(NULL);
 
   while ((mc = (resend_momcomm *)next_thing(things_to_resend, &iter)) != NULL)
     {
     ret = -1;
     mc->resend_attempts += 1;
+
+    if (time_now - mc->resend_time < RESEND_INTERVAL)
+      continue;
 
     switch (mc->mc_type)
       {
@@ -9911,6 +9915,8 @@ void resend_things()
       remove_thing(things_to_resend, mc);
       free(mc);
       }
+    else
+      mc->resend_time = time_now;
     } /* END for each resendable thing */
   } /* END resend_things() */
 
@@ -9921,6 +9927,7 @@ int add_to_resend_things(
   resend_momcomm *mc)
 
   {
+  mc->resend_time = time(NULL);
   return(insert_thing(things_to_resend, mc));
   } /* END add_to_resend_things() */
 
