@@ -34,7 +34,7 @@
 ### Autoconf macro expansions
 %define ac_with_blcr       --%{?with_blcr:en}%{!?with_blcr:dis}able-blcr
 %define ac_with_cpuset     --%{?with_cpuset:en}%{!?with_cpuset:dis}able-cpuset
-%define ac_with_debug      --with%{!?with_debug:out}-debug CFLAGS="-O0 -g3"
+%define ac_with_debug      --with%{!?with_debug:out}-debug CFLAGS="-O0 -g3" CXXFLAGS="-O0 -g3"
 %define ac_with_drmaa      --%{?with_drmaa:en}%{!?with_drmaa:dis}able-drmaa
 %define ac_with_gui        --%{?with_gui:en}%{!?with_gui:dis}able-gui --with%{!?with_gui:out}-tcl
 %define ac_with_munge      --%{?with_munge:en}%{!?with_munge:dis}able-munge-auth
@@ -211,7 +211,12 @@ echo '$pbsserver %{torque_server}' > $RPM_BUILD_ROOT%{torque_home}/mom_priv/conf
 
 %if %{with drmaa}
 # Move DRMAA docs back to the source tree so we can install them properly.
-mv $RPM_BUILD_ROOT%{_docdir}/*drmaa* drmaa-doc-dir
+if test -d $RPM_BUILD_ROOT%{_docdir}/*drmaa*/html ; then
+    mv $RPM_BUILD_ROOT%{_docdir}/*drmaa* drmaa-doc-dir
+else
+    mkdir drmaa-doc-dir
+    echo "Doxygen is required to build DRMAA API docs but was not present at build time." > drmaa-doc-dir/README.drmaa_docs
+fi
 %endif
 
 %post
