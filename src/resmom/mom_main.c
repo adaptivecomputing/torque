@@ -9861,11 +9861,11 @@ void resend_things()
 
   while ((mc = (resend_momcomm *)next_thing(things_to_resend, &iter)) != NULL)
     {
-    ret = -1;
-    mc->resend_attempts += 1;
-
     if (time_now - mc->resend_time < RESEND_INTERVAL)
       continue;
+
+    ret = -1;
+    mc->resend_attempts += 1;
 
     switch (mc->mc_type)
       {
