@@ -1346,3 +1346,7 @@ int release_job_reservation(job *pjob)
   exit(1);
   }
 
+bool am_i_mother_superior(const job &pjob)
+  {
+  return(false);
+  }

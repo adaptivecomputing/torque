@@ -536,3 +536,7 @@ int pbs_getaddrinfo(const char *,struct addrinfo *,struct addrinfo **)
   return -1;
   }
 
+bool am_i_mother_superior(const job &pjob)
+  {
+  return(false);
+  }
