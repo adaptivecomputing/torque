@@ -600,7 +600,7 @@ void exec_bail(
   sprintf(log_buffer, "bailing on job %s code %d", pjob->ji_qs.ji_jobid, code);
   log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
-  if (pjob->ji_hosts[0].hn_node == pjob->ji_nodeid) //only call send_sisters if I'm mother superior
+  if (am_i_mother_superior(*pjob) == true)
     {
     nodecount = send_sisters(pjob, IM_ABORT_JOB, FALSE, sisters_contacted);
 
@@ -4805,7 +4805,7 @@ int start_process(
   ** Get ipaddr to Mother Superior.
   */
 
-  if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE)  /* I'm MS */
+  if (am_i_mother_superior(*pjob) == true)
     {
     ipaddr = htonl(localaddr);
     }
@@ -4816,7 +4816,7 @@ int start_process(
   else
     {
     ipaddr = pjob->ji_hosts[0].sock_addr.sin_addr.s_addr;
-    }   /* END else (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) */
+    }
 
   /* A restarted mom will not have called this yet, but it is needed
    * to spawn tasks (ji_grpcache).

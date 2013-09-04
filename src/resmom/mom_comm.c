@@ -1056,12 +1056,11 @@ int send_ms(
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_REQUEST, __func__, log_buffer);
     }
 
-  /* walk thru node list, contact each mom */
-
-  np = &pjob->ji_hosts[0];
-
-  if (np->hn_node == pjob->ji_nodeid) /* this is me*/
+  if (am_i_mother_superior(*pjob) == true)
     return(1);
+
+  /* walk thru node list, contact each mom */
+  np = &pjob->ji_hosts[0];
 
   if (np->hn_sister != SISTER_OKAY) /* sister is gone? */
     {
@@ -1631,7 +1630,7 @@ bool connection_from_ms(
   if (ipaddr_ms != ipaddr_connect)
     return(false);
 
-  if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE)
+  if (am_i_mother_superior(*pjob) == true)
     {
     log_err(-1, __func__, "Mother Superior talking to herself");
 
@@ -3796,7 +3795,7 @@ int im_get_tid(
   int              local_socket;
   struct tcp_chan *local_chan = NULL;
 
-  if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+  if (am_i_mother_superior(*pjob) == false)
     {
     log_err(-1, __func__, "got GET_TID and I'm not MS");
     
@@ -3869,7 +3868,7 @@ int handle_im_join_job_response(
   hnodent  *np = NULL;
   eventent *ep = NULL;
   
-  if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+  if (am_i_mother_superior(*pjob) == false)
     {
     log_err(-1, __func__, "got JOIN_JOB OKAY and I'm not MS");
     
@@ -3967,7 +3966,7 @@ int handle_im_kill_job_response(
 
   char         *jobid = pjob->ji_qs.ji_jobid;
 
-  if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+  if (am_i_mother_superior(*pjob) == false)
     {
     log_err(-1, __func__, "got KILL_JOB OKAY and I'm not MS");
     return(IM_FAILURE);
@@ -4404,7 +4403,7 @@ int handle_im_poll_job_response(
   int exitval;
   int ret;
 
-  if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+  if (am_i_mother_superior(*pjob) == false)
     {
     log_err(-1, __func__, "got POLL_JOB and I'm not MS");
     
@@ -4739,7 +4738,7 @@ int process_end_job_error_reply(
   int          awaiting_replies = 0;
   unsigned int momport = 0;
 
-  if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+  if (am_i_mother_superior(*pjob) == false)
     {
     log_err(-1, __func__, "KILL_JOB ERROR and I'm not MS");
     return(IM_FAILURE);
@@ -4871,7 +4870,7 @@ int im_poll_error(
 
   {
   /* I must be Mother Superior for the job */
-  if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+  if (am_i_mother_superior(*pjob) == false)
     {
     log_err(-1, __func__, "POLL_JOB ERROR and I'm not MS");
     return(IM_FAILURE);
@@ -4968,7 +4967,7 @@ int process_error_reply(
        ** and fail the job start to server.
        ** I'm mother superior.
        */
-      if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+      if (am_i_mother_superior(*pjob) == false)
         {
         log_err(-1, __func__, "JOIN_JOB ERROR and I'm not MS");
         return(IM_FAILURE);
@@ -5468,7 +5467,6 @@ int handle_im_kill_job_radix_response(
 
 
 
-
 /*
  * process_valid_intermediate_response
  * 
@@ -5487,7 +5485,7 @@ int process_valid_intermediate_response(
   int ret;
 
   if (((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) == 0) &&
-      ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0))
+      (am_i_mother_superior(*pjob) == false))
     {
     log_err(-1, __func__, "got IM_RADIX_ALL_OKAY message and I'm not an intermediate MOM or Mother Superior");
     

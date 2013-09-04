@@ -840,3 +840,8 @@ int pbs_getaddrinfo(
   }
 
 void free_mom_hierarchy(mom_hierarchy_t *nh) {}
+
+bool am_i_mother_superior(const job &pjob)
+  {
+  return(false);
+  }

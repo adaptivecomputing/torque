@@ -627,7 +627,7 @@ bool non_mother_superior_cleanup(
 
     return(true);
     }
-  else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+  else if (am_i_mother_superior(*pjob) == false)
     {
     /* I am a regular sister.  Check to see if there is an obit event to
      * send back to mother superior, otherwise wait for her to send a KILL_JOB
@@ -1690,7 +1690,7 @@ void init_abort_jobs(
       ** any sisters that happen to still be alive.
       */
 
-      if ((pj->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+      if (am_i_mother_superior(*pj) == false)
         {
         if (LOGLEVEL >= 2)
           {

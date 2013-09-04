@@ -7,9 +7,16 @@
 
 #include "pbs_error.h"
 
-START_TEST(test_one)
-  {
+bool am_i_mother_superior(const job &pjob);
 
+START_TEST(test_am_i_mother_superior)
+  {
+  job pjob;
+
+  memset(&pjob, 0, sizeof(pjob));
+  fail_unless(am_i_mother_superior(pjob) == false);
+  pjob.ji_qs.ji_svrflags |= JOB_SVFLG_HERE;
+  fail_unless(am_i_mother_superior(pjob) == true);
 
   }
 END_TEST
@@ -24,8 +31,8 @@ END_TEST
 Suite *mom_job_func_suite(void)
   {
   Suite *s = suite_create("mom_job_func_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_am_i_mother_superior");
+  tcase_add_test(tc_core, test_am_i_mother_superior);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");

@@ -1240,7 +1240,7 @@ int message_job(
     }
 
   /* must be Mother Superior for this to make sense */
-  if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+  if (am_i_mother_superior(*pjob) == false)
     {
     log_err(errno, __func__, "cannot message job, not mother superior");
 
@@ -2475,8 +2475,8 @@ int req_stat_job(
 
   for (;pjob;pjob = all ? (job *)GET_NEXT(pjob->ji_alljobs) : NULL)
     {
-    if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
-      continue; /* not Mother Superior */
+    if (am_i_mother_superior(*pjob) == false)
+      continue;
 
     if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RUNNING)
       continue;
