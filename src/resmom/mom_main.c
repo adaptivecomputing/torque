@@ -6637,7 +6637,7 @@ int job_over_limit(
   /* cannot perform this check with NUMA, numnodes always is 1 and
    * you'll never have job stats */
   if ((pjob->ji_numnodes == 1) ||
-      ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0))
+      (am_i_mother_superior(*pjob) == false))
     {
     /* no other nodes or not mother superior */
 
@@ -8464,7 +8464,7 @@ void examine_all_polled_jobs(void)
     ** it is not being killed.
     */
 
-    if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) &&
+    if ((am_i_mother_superior(*pjob) == true) &&
         (pjob->ji_nodekill == TM_ERROR_NODE))
       {
       /*
@@ -8517,7 +8517,7 @@ void examine_all_polled_jobs(void)
         pjob->ji_qs.ji_jobid,
         log_buffer);
 
-      if (c & JOB_SVFLG_HERE)
+      if (am_i_mother_superior(*pjob) == true)
         {
         char *kill_msg;
 
@@ -8585,7 +8585,7 @@ void examine_all_running_jobs(void)
       continue; /* This job is not running, skip it. */
       }
 
-    if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+    if (am_i_mother_superior(*pjob) == false)
       continue; /* We are not the Mother Superior for this job, skip it. */
 
     /* update information for my tasks */
@@ -8766,7 +8766,7 @@ void check_jobs_awaiting_join_job_reply()
     {
     if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN) &&
         (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
-        (pjob->ji_hosts[0].hn_node == pjob->ji_nodeid)) /* am I mother superior? */
+        (am_i_mother_superior(*pjob) == true))
       {
       /* these jobs have sent out join requests but haven't received all replies */
       if (time_now - pjob->ji_joins_sent > max_join_job_wait_time)

@@ -2145,7 +2145,7 @@ int mom_over_limit(
       {
 
       /* no need to check walltime on sisters, MS will get it */
-      if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+      if (am_i_mother_superior(*pjob) == false)
         continue;
 
       retval = mm_gettime(pres, &value);
