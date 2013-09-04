@@ -4,9 +4,18 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "pbs_error.h"
-START_TEST(test_one)
-  {
 
+int process_request(struct tcp_chan *chan);
+
+START_TEST(test_process_request)
+  {
+  struct tcp_chan chan;
+
+  memset(&chan, 0, sizeof(chan));
+  chan.sock = -1;
+  fail_unless(process_request(&chan) == PBSE_SOCKET_CLOSE);
+  chan.sock = 66034;
+  fail_unless(process_request(&chan) == PBSE_SOCKET_CLOSE);
 
   }
 END_TEST
@@ -21,8 +30,8 @@ END_TEST
 Suite *process_request_suite(void)
   {
   Suite *s = suite_create("process_request_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_process_request");
+  tcase_add_test(tc_core, test_process_request);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");
