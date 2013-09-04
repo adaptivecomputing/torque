@@ -118,6 +118,7 @@ extern char *path_aux;
 extern int  reduceprologchecks;
 extern gid_t   pbsgroup;
 extern uid_t   pbsuser;
+extern char   *path_epilogp;
 
 unsigned int pe_alarm_time = PBS_PROLOG_TIME;
 static pid_t child;
@@ -414,6 +415,7 @@ int run_pelog(
   int               rc;
 
   char             *ptr;
+  int               dupeStdFiles = 1;
 
   if ((pjob == NULL) ||
       (specpelog == NULL) ||
@@ -847,6 +849,19 @@ int run_pelog(
         }
       }
 
+     if ((fds1 < 0) ||
+          (fds2 < 0))
+       {
+       if (fds1 >= 0)
+         close(fds1);
+       if (fds2 >= 0)
+         close(fds2);
+       if (pe_io_type == PE_IO_TYPE_STD && strlen(specpelog) == strlen(path_epilogp) &&
+         (strcmp(path_epilogp, specpelog) == 0))
+         dupeStdFiles = 0;
+       }
+    
+
     if (pe_io_type != PE_IO_TYPE_ASIS)
       {
       /* If PE_IO_TYPE_ASIS, leave as is, already open to job */
@@ -855,18 +870,18 @@ int run_pelog(
         {
         close(1);
 
-        if (dup(fds1) == -1) {}
-
-        close(fds1);
+        if (dupeStdFiles)
+          if (dup(fds1) >=0 )
+            close(fds1);
         }
 
       if (fds2 != 2)
         {
         close(2);
 
-        if (dup(fds2) == -1) {}
-
-        close(fds2);
+        if (dupeStdFiles)
+          if (dup(fds2) >= 0)
+           close(fds2);
         }
       }
 
