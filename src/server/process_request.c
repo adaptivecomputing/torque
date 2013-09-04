@@ -333,6 +333,10 @@ int process_request(
   unsigned long         conn_addr;
   int                   sfds = chan->sock;
 
+  if ((sfds < 0) ||
+      (sfds >= PBS_NET_MAX_CONNECTIONS))
+    return(PBSE_SOCKET_CLOSE);
+
   pthread_mutex_lock(svr_conn[sfds].cn_mutex);
   conn_active = svr_conn[sfds].cn_active;
   conn_socktype = svr_conn[sfds].cn_socktype;
