@@ -838,6 +838,7 @@ int array_recov_binary(
   if(pa->job_ids == NULL)
     {
     memset(&pa->ai_qs,0,sizeof(array_info));
+    close(fd);
     return PBSE_SYSTEM;
     }
 
