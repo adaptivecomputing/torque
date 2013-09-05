@@ -843,32 +843,6 @@ int pbs_getaddrinfo(
 
 void free_mom_hierarchy(mom_hierarchy_t *nh) {}
 
-attribute_def    job_attr_def[1];
-
-int pbs_getaddrinfo(
-
-  const char       *pNode,
-  struct addrinfo  *pHints,
-  struct addrinfo **ppAddrInfoOut)
-
-  {
-  return(0);
-  }
-
-void parse_mom_hierarchy(int fds)
-  {
-  mh->paths->num++;
-  }
-
-int put_env_var(const char *name, const char *value)
-  {
-  return(0);
-  }
-
-void sort_paths() {}
-
-void free_mom_hierarchy(mom_hierarchy_t *nh) {}
-
 bool am_i_mother_superior(const job &pjob)
   {
   return(false);

@@ -30,14 +30,8 @@ void log_err(int errnum, const char *routine, const char *msg) {}
 
 int search_dynamic_string_status(
 
-<<<<<<< HEAD
-  dynamic_string *status,
-  char           *str,
-  unsigned int   *offset)
-=======
     boost::ptr_vector<std::string>& status,
   char           *str)
->>>>>>> master
 
   {
   char         first_char = str[0];
@@ -47,21 +41,12 @@ int search_dynamic_string_status(
     const char *ptr = i->c_str();
     while(*ptr != '\0')
       {
-<<<<<<< HEAD
-      if (!strncmp(str, status->str + i, strlen(str)))
-        {
-        if (offset != NULL)
-          *offset = i;
-        return(1);
-        }
-=======
       if (*ptr == first_char)
         {
         if (!strncmp(str, ptr, strlen(str)))
           return(1);
         }
       ptr++;
->>>>>>> master
       }
     }
 

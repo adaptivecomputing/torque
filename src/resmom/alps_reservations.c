@@ -178,8 +178,9 @@ resizable_array *parse_exec_hosts(
 
 int save_current_reserve_param(
 
-  std::string& command,
-  std::string& node_list,
+  std::string&     command,
+  char            *apbasil_protocol,
+  std::string&     node_list,
   unsigned int    width,
   int             nppn,
   int             nppcu,
@@ -187,7 +188,6 @@ int save_current_reserve_param(
 
   {
   char            buf[MAXLINE * 2];
-  int             rc; 
   float           apbasil_protocol_float;
 
   if (apbasil_protocol != NULL)
@@ -368,13 +368,9 @@ void get_reservation_command(
   char            *apbasil_protocol,
   char            *multi_req_list,
   int              use_nppn,
-<<<<<<< HEAD
   int              nppcu,
-  int              mppdepth)
-=======
   int              mppdepth,
   std::string&     command)
->>>>>>> master
 
   {
   std::string      node_list = "";
@@ -765,21 +761,13 @@ int create_alps_reservation(
       return(PBSE_NONE);
       }
   
-<<<<<<< HEAD
-    command = get_reservation_command(host_req_list, user, jobid, apbasil_path, apbasil_protocol, NULL, use_nppn, nppcu, mppdepth);
-=======
-    get_reservation_command(host_req_list, user, jobid, apbasil_path, apbasil_protocol, NULL, use_nppn, mppdepth,command);
->>>>>>> master
+    get_reservation_command(host_req_list, user, jobid, apbasil_path, apbasil_protocol, NULL, use_nppn, nppcu, mppdepth,command);
   
     free_resizable_array(host_req_list);
     }
   else
     {
-<<<<<<< HEAD
-    command = get_reservation_command(NULL, user, jobid, apbasil_path, apbasil_protocol, exec_hosts, use_nppn, nppcu, mppdepth);
-=======
-    get_reservation_command(NULL, user, jobid, apbasil_path, apbasil_protocol, exec_hosts, use_nppn, mppdepth,command);
->>>>>>> master
+    get_reservation_command(NULL, user, jobid, apbasil_path, apbasil_protocol, exec_hosts, use_nppn, nppcu, mppdepth,command);
     }
 
   free(user);

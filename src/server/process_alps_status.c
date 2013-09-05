@@ -558,8 +558,7 @@ int process_alps_status(
   boost::ptr_vector<std::string>& status_info)
 
   {
-  char           *str;
-  char           *ccu_p = NULL;
+  const char    *ccu_p = NULL;
   char           *current_node_id = NULL;
   char            node_index_buf[MAXLINE];
   int             node_index = 0;

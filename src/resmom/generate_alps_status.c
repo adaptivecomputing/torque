@@ -334,6 +334,10 @@ int process_node(
   xmlNode            *child;
   xmlNode            *segments;
   xmlNode            *segment_child;
+  xmlNode            *sockets;
+  xmlNode            *socket_child;
+  xmlNode            *compute_units;
+  xmlNode            *compute_unit_child;
   std::string        features = "";
   char                buf[MAXLINE];
   int                 num_procs         = 0;
@@ -455,7 +459,7 @@ int process_node(
 
   /* note that CCU should come before CPROC */
   snprintf(buf, sizeof(buf), "CCU=%d", num_compute_units);
-  copy_to_end_of_dynamic_string(status, buf);
+  status.push_back(new std::string(buf));
 
   snprintf(buf, sizeof(buf), "CPROC=%d", num_procs);
   status.push_back(new std::string(buf));

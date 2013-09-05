@@ -193,12 +193,6 @@ char            JobsToResend[MAX_RESEND_JOBS][PBS_MAXSVRJOBID+1];
 
 resizable_array  *exiting_job_list;
 resizable_array  *things_to_resend;
-char             *AllocParCmd = NULL;  /* (alloc) */
-
-int      src_login_batch = TRUE;
-int      src_login_interactive = TRUE;
-
-mom_hierarchy_t  *mh;
 
 mom_hierarchy_t  *mh;
 

@@ -30,7 +30,7 @@ char *alps_rsv_outputs[] = {
     (char *)"tom"};
 
 resizable_array *parse_exec_hosts(char *exec_hosts);
-void             get_reservation_command(resizable_array *, char *, char *, char *, char *, char *, int, int,std::string&);
+void             get_reservation_command(resizable_array *, char *, char *, char *, char *, char *, int, int,int, std::string&);
 int              parse_reservation_output(char *, char **);
 int              execute_reservation(const char *, char **);
 int              confirm_reservation(char *, char *, long long, char *, char *,char *,int);
@@ -168,7 +168,7 @@ START_TEST(get_reservation_command_test)
   int              ppn;
   int              nppcu_value;
 
-  get_reservation_command(hrl, uname, jobids[0], NULL, apbasil_protocol, NULL, 0, 0, apbasil_command);
+  get_reservation_command(hrl, uname, jobids[0], NULL, apbasil_protocol, NULL, 0, 0, 0, apbasil_command);
 
   snprintf(buf, sizeof(buf), "Username '%s' not found in command '%s'", uname, apbasil_command.c_str());
   fail_unless(strstr(apbasil_command.c_str(), uname) != NULL, buf);
@@ -184,7 +184,7 @@ START_TEST(get_reservation_command_test)
 
   hrl = parse_exec_hosts(eh3);
   apbasil_command.clear();
-  get_reservation_command(hrl, uname, jobids[1], apbasil_path, apbasil_protocol, NULL, 1, 0,apbasil_command);
+  get_reservation_command(hrl, uname, jobids[1], apbasil_path, apbasil_protocol, NULL, 1, 0, 0,apbasil_command);
 
   reserve_param = strstr(apbasil_command.c_str(), "ReserveParam ");
   reserve_param2 = strstr(reserve_param + 1, "ReserveParam ");
@@ -198,16 +198,16 @@ START_TEST(get_reservation_command_test)
   fail_unless(ppn == 3, buf);
 
   free_resizable_array(hrl);
-  free_dynamic_string(apbasil_command);
+  apbasil_command.clear();
 
   hrl = parse_exec_hosts(eh3);
-  apbasil_command = get_reservation_command(hrl, uname, jobids[1], apbasil_path, apbasil_protocol_13, NULL, 1, 1, 0);
+  get_reservation_command(hrl, uname, jobids[1], apbasil_path, apbasil_protocol_13, NULL, 1, 1, 0, apbasil_command);
 
-  reserve_param = strstr(apbasil_command->str, "ReserveParam ");
+  reserve_param = strstr(apbasil_command.c_str(), "ReserveParam ");
   reserve_param2 = strstr(reserve_param + 1, "ReserveParam ");
   fail_unless(reserve_param != NULL, "Couldn't find the first ReserveParam element in the request");
 
-  nppcu = strstr(reserve_param, "nppcu");
+  const char *nppcu = strstr(reserve_param, "nppcu");
   fail_unless(nppcu != NULL, "Couldn't find the nppcu specification in the next reservation");
   nppcu += strlen("nppcu='");
   nppcu_value = atoi(nppcu);

@@ -8,7 +8,7 @@
 #include "pbs_nodes.h"
 #include "alps_constants.h"
 
-int set_ncpus(struct pbsnode *,struct pbsnode *, const char *);
+int set_ncpus(struct pbsnode *,struct pbsnode *, int);
 int set_ngpus(struct pbsnode *, int);
 int set_state(struct pbsnode *, const char *);
 void finish_gpu_status(boost::ptr_vector<std::string>::iterator& i,boost::ptr_vector<std::string>::iterator end);
@@ -47,20 +47,17 @@ START_TEST(set_ncpus_test)
   {
   struct pbsnode  pnode;
   struct pbsnode  parent;
-  const char     *proc1 = "CPROC=2";
-  const char     *proc2 = "CPROC=4";
-  const char     *proc3 = "CPROC=8";
 
   memset(&parent,0,sizeof(pbsnode));
-  fail_unless(set_ncpus(&pnode,&parent, proc1) == 0, "Couldn't set ncpus to 2");
+  fail_unless(set_ncpus(&pnode,&parent, 2) == 0, "Couldn't set ncpus to 2");
   snprintf(buf, sizeof(buf), "ncpus should be 2 but is %d", pnode.nd_slots.get_total_execution_slots());
   fail_unless(pnode.nd_slots.get_total_execution_slots() == 2, buf);
 
-  fail_unless(set_ncpus(&pnode,&parent, proc2) == 0, "Couldn't set ncpus to 4");
+  fail_unless(set_ncpus(&pnode,&parent, 4) == 0, "Couldn't set ncpus to 4");
   snprintf(buf, sizeof(buf), "ncpus should be 4 but is %d", pnode.nd_slots.get_total_execution_slots());
   fail_unless(pnode.nd_slots.get_total_execution_slots() == 4, buf);
 
-  fail_unless(set_ncpus(&pnode,&parent, proc3) == 0, "Couldn't set ncpus to 8");
+  fail_unless(set_ncpus(&pnode,&parent, 8) == 0, "Couldn't set ncpus to 8");
   snprintf(buf, sizeof(buf), "ncpus should be 8 but is %d", pnode.nd_slots.get_total_execution_slots());
   fail_unless(pnode.nd_slots.get_total_execution_slots() == 8, buf);
   }
