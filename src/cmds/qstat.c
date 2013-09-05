@@ -2733,6 +2733,12 @@ int main(
 
         if (have_args == true)
           {
+          if (!strcmp(operand, "(null)"))
+            {
+            break;
+            }
+
+
           if (isjobid(operand))
             {
             /* must be a job-id */
