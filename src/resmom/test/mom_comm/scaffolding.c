@@ -520,5 +520,7 @@ void log_ext(int type, const char *func_name, const char *msg, int o) {}
 
 bool am_i_mother_superior(const job &pjob)
   {
-  return(false);
+  bool mother_superior = ((pjob.ji_nodeid == 0) && ((pjob.ji_qs.ji_svrflags & JOB_SVFLG_HERE) != 0));
+    
+  return(mother_superior);
   }
