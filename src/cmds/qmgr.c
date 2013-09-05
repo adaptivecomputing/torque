@@ -259,6 +259,15 @@ int main(
         clean_up_and_exit(2);
       }
     }
+ 
+  if (errflg)
+    clean_up_and_exit(2);
+
+  if (errflg)
+    clean_up_and_exit(2);
+
+  if (errflg)
+    clean_up_and_exit(2);
 
   if (errflg)
     clean_up_and_exit(2);
@@ -1542,7 +1551,6 @@ int execute(
 
             pstderr_big(pname -> obj_name, Svrname(sp), errmsg);
             }
-
           free(errmsg);
           }
         else
@@ -2769,8 +2777,13 @@ int is_valid_object(
       {
       errmsg = pbs_geterrmsg(obj->svr->s_connect);
 
-      if (! zopt) fprintf(stderr, "qmgr: %s.\n",
-                            errmsg);
+      if (errmsg != NULL)
+        {
+        if (! zopt)
+          fprintf(stderr, "qmgr: %s.\n", errmsg);
+
+        free(errmsg);
+        }
 
       valid = 0;
 

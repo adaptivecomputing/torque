@@ -18,12 +18,20 @@ const char *msg_delrunjobsig = "Job sent signal %s on delete";
 struct server server;
 const char *msg_manager = "%s at request of %s@%s";
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
+long keep_seconds;
+int  bad_queue;
+int  bad_relay;
+int  signal_issued;
+int  nanny = 1;
+int  br_freed;
+int  alloc_work = 1;
 
-
-struct batch_request *alloc_br(int type)
+batch_request *alloc_br(int type)
   {
-  fprintf(stderr, "The call to alloc_br needs to be mocked!!\n");
-  exit(1);
+  if (alloc_work)
+    return((batch_request *)calloc(1, sizeof(batch_request)));
+  else
+    return(NULL);
   }
 
 job_array *get_jobs_array(job **pjob)
@@ -46,8 +54,8 @@ int job_save(job *pjob, int updatetype, int mom_port)
 
 int svr_job_purge(job *pjob)
   {
-  fprintf(stderr, "The call to job_purge needs to be mocked!!\n");
-  exit(1);
+  pjob->ji_qs.ji_state = JOB_STATE_COMPLETE;
+  return(0);
   }
 
 void chk_job_req_permissions(job **pjob_ptr, struct batch_request *preq)
@@ -64,8 +72,7 @@ void svr_mailowner(job *pjob, int mailpoint, int force, const char *text)
 
 long attr_ifelse_long(pbs_attribute *attr1, pbs_attribute *attr2, long deflong)
   {
-  fprintf(stderr, "The call to attr_ifelse_long needs to be mocked!!\n");
-  exit(1);
+  return(keep_seconds);
   }
 
 void on_job_exit(struct work_task *ptask)
@@ -76,39 +83,34 @@ void on_job_exit(struct work_task *ptask)
 
 pbs_queue *get_jobs_queue(job **pjob)
   {
-  fprintf(stderr, "The call to get_jobs_queue needs to be mocked!!\n");
-  exit(1);
+  static pbs_queue pque;
+
+  pque.qu_qs.qu_type = QTYPE_Execution;
+
+  if (bad_queue)
+    return(NULL);
+  else
+    return(&pque);
   }
 
-void reply_ack(struct batch_request *preq)
-  {
-  fprintf(stderr, "The call to reply_ack needs to be mocked!!\n");
-  exit(1);
-  }
+void reply_ack(struct batch_request *preq) {}
 
-void free_nodes(job *pjob)
+void free_nodes(job *pjob) 
   {
-  fprintf(stderr, "The call to free_nodes needs to be mocked!!\n");
-  exit(1);
+  pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str = NULL;
   }
 
 void free_br(struct batch_request *preq)
   {
-  fprintf(stderr, "The call to free_br needs to be mocked!!\n");
-  exit(1);
+  br_freed = TRUE;
   }
 
 struct work_task *set_task(enum work_type type, long event_id, void (*func)(struct work_task *), void *parm, int get_lock)
   {
-  fprintf(stderr, "The call to set_task needs to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
-void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
-  {
-  fprintf(stderr, "The call to req_reject needs to be mocked!!\n");
-  exit(1);
-  }
+void req_reject(int code, int aux, batch_request *preq, const char *HostName, const char *Msg) { }
 
 job *next_job(struct all_jobs *aj, int *iter)
   {
@@ -116,46 +118,34 @@ job *next_job(struct all_jobs *aj, int *iter)
   exit(1);
   }
 
-void delete_task(struct work_task *ptask)
-  {
-  fprintf(stderr, "The call to delete_task needs to be mocked!!\n");
-  exit(1);
-  }
+void delete_task(struct work_task *ptask) { }
 
 int svr_chk_owner(struct batch_request *preq, job *pjob)
   {
-  fprintf(stderr, "The call to svr_chk_owner needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 int job_abt(struct job **pjobp, const char *text)
   {
-  fprintf(stderr, "The call to job_abt needs to be mocked!!\n");
-  exit(1);
+  if (pjobp != NULL)
+    *pjobp = NULL;
+
+  return(0);
   }
 
 int issue_signal(job **pjob_ptr, const char *signame, void (*func)(struct batch_request *), void *extra, char *extend)
   {
-  fprintf(stderr, "The call to issue_signal needs to be mocked!!\n");
-  exit(1);
+  signal_issued = TRUE;
+  return(PBSE_NONE);
   }
 
-void set_resc_assigned(job *pjob, enum batch_op op)
-  {
-  fprintf(stderr, "The call to set_resc_assigned needs to be mocked!!\n");
-  exit(1);
-  }
+void set_resc_assigned(job *pjob, enum batch_op op) { }
 
-void release_req(struct work_task *pwt)
-  {
-  fprintf(stderr, "The call to release_req needs to be mocked!!\n");
-  exit(1);
-  }
+void release_req(struct work_task *pwt) { }
 
 char *pbse_to_txt(int err)
   {
-  fprintf(stderr, "The call to pbse_to_txt needs to be mocked!!\n");
-  exit(1);
+  return(strdup("bob"));
   }
 
  work_task *next_task(all_tasks *at, int *iter)
@@ -164,28 +154,34 @@ char *pbse_to_txt(int err)
   exit(1);
   }
 
-struct batch_request *cpy_stage(struct batch_request *preq, job *pjob, enum job_atr ati, int direction)
+batch_request *cpy_stage(batch_request *preq, job *pjob, enum job_atr ati, int direction)
   {
-  fprintf(stderr, "The call to cpy_stage needs to be mocked!!\n");
-  exit(1);
+  return((batch_request *)calloc(1, sizeof(batch_request)));
   }
 
 int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mute)
   {
-  fprintf(stderr, "The call to svr_setjobstate needs to be mocked!!\n");
-  exit(1);
+  pjob->ji_qs.ji_state = newstate;
+  pjob->ji_qs.ji_substate = newsubstate;
+  return(0);
   }
 
 job *svr_find_job(char *jobid, int get_subjob)
   {
-  fprintf(stderr, "The call to find_job needs to be mocked!!\n");
-  exit(1);
+  if (strcmp(jobid, "1.napali") == 0)
+    {
+    job *pjob = (job *)calloc(1, sizeof(job));
+    strcpy(pjob->ji_qs.ji_jobid, jobid);
+    pjob->ji_qs.ji_state = JOB_STATE_RUNNING;
+    return(pjob);
+    }
+
+  return(NULL);
   }
 
 int unlock_queue(struct pbs_queue *the_queue, const char *id, const char *msg, int logging)
   {
-  fprintf(stderr, "The call to unlock_queue needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void svr_evaljobstate(job *pjob, int *newstate, int *newsub, int forceeval)
@@ -209,6 +205,9 @@ char *threadsafe_tokenizer(char **str, const char *delims)
 
 int get_svr_attr_l(int index, long *l)
   {
+  if (nanny)
+    *l = 1;
+
   return(0);
   }
 
@@ -250,5 +249,13 @@ void log_event(int type, int otype, const char *func_name, const char *msg) {}
 
 int relay_to_mom(job **pjob_ptr, batch_request   *request, void (*func)(struct work_task *))
   {
-  return(0);
+  return(bad_relay);
   }
+
+void traverse_all_jobs(void (*)(job*, void*), void*)
+{
+}
+
+void removeAfterAnyDependency(job*, void*)
+{
+}

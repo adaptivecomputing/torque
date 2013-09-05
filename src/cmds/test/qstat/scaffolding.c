@@ -7,30 +7,6 @@
 int pbs_errno = 0;
 char *pbs_server = NULL;
 
-extern "C"
-{
-void set_attr(
-
-  struct attrl **attrib,        /* I */
-  const char   *attrib_name,   /* I */
-  const char   *attrib_value)  /* I */ 
-  
-  {
-  }
-}
-
-struct batch_status * pbs_selstatattr_err(
-
-  int             c,
-  struct attropl *attropl,
-  struct attrl   *attrib,
-  char           *extend,
-  int            *local_errno)
-
-  {
-  return(NULL);
-  }
-
 char *pbs_geterrmsg(int connect)
   { 
   fprintf(stderr, "The call to pbs_geterrmsg needs to be mocked!!\n");
@@ -179,4 +155,27 @@ char *pbs_default(void)
   }
 
 void initialize_network_info() {}
+
+extern "C"
+{
+void set_attr(
+  struct attrl **attrib,        /* I */
+  const char   *attrib_name,   /* I */
+  const char   *attrib_value)  /* I */ 
+  {
+  }
+}
+
+
+struct batch_status * pbs_selstatattr_err(
+
+  int             c,
+  struct attropl *attropl,
+  struct attrl   *attrib,
+  char           *extend,
+  int            *local_errno)
+  {
+  return(NULL);
+  }
+
 

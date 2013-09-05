@@ -38,7 +38,7 @@ char pbs_server_name[1];
 pthread_mutex_t *poll_job_task_mutex;
 threadpool_t *request_pool;
 int              max_poll_job_tasks;
-char           **ArgV;
+char           **ArgV = NULL;
 
 int log_remove_old(char *DirPath, unsigned long ExpireTime)
   {
@@ -490,6 +490,11 @@ void DIS_tcp_cleanup(struct tcp_chan *chan) {}
 
 void scheduler_close() {}
 
+int initialize_ruserok_mutex()
+  {
+  return(0);
+  }
+
 int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
@@ -505,6 +510,11 @@ void *inspect_exiting_jobs(void *vp)
   }
 
 ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
+  {
+  return(0);
+  }
+
+int save_args(int argc, char **argv)
   {
   return(0);
   }

@@ -101,6 +101,8 @@
 #include <stdio.h>
 #include <time.h>
 #include <unistd.h>
+#include <libxml/parser.h>
+#include <libxml/tree.h>
 #include "server_limits.h"
 #include "list_link.h"
 #include "attribute.h"
@@ -123,6 +125,7 @@
 #endif
 #include "array.h"
 #include "ji_mutex.h"
+#include "job_recov.h"
 
 #ifndef TRUE
 #define TRUE 1
@@ -131,9 +134,9 @@
 
 #define JOBBUFSIZE 2048
 #define MAX_SAVE_TRIES 3
+#define BUFSIZE 1024
 
 #ifdef PBS_MOM
-int save_tmsock(job *, int, char *, size_t *, size_t);
 int recov_tmsock(int, job *);
 extern unsigned int pbs_mom_port;
 extern unsigned int pbs_rm_port;
@@ -153,6 +156,848 @@ extern int LOGLEVEL;
 #ifndef PBS_MOM
 int add_to_ms_list(char *node_name, job *pjob);
 #endif
+
+
+int assign_tag_len_5(
+
+  job     **pj,    /* M */ /* job information to fill into */
+  xmlChar  *tag,     /* I */ /* xml tag */
+  xmlChar  *content) /* I */  /* content of the xml node */
+
+  {
+  job *pjob = *pj;
+  int rc = PBSE_NONE;
+  if (!(strncmp((const char *)tag, JOBID_TAG, 5)))
+    snprintf(pjob->ji_qs.ji_jobid, PBS_MAXSVRJOBID + 1, "%s", (const char*)content);
+  else if(!(strncmp((const char *)tag, STATE_TAG, 5)))
+    pjob->ji_qs.ji_state = atoi((const char*)content);
+  else if (!(strncmp((const char *)tag, QUEUE_TAG, 5)))
+    snprintf(pjob->ji_qs.ji_queue, PBS_MAXQUEUENAME + 1, "%s", (const char*)content);
+  else
+    rc = -1;
+
+  return rc;
+  }
+
+int assign_tag_len_6(
+
+  job     **pj,    /* M */ /* job information to fill into */
+  xmlChar  *tag,     /* I */ /* xml tag */
+  xmlChar  *content) /* I */ /* content of the xml node */
+
+  {
+  int rc = PBSE_NONE;
+
+#ifdef PBS_MOM
+  job *pjob = *pj;
+  
+  if (!(strncmp((const char *)tag, TASKID_TAG, 6)))
+    pjob->ji_taskid = atoi((const char*)content);
+  else if(!(strncmp((const char *)tag, NODEID_TAG, 6)))
+    pjob->ji_nodeid = atoi((const char*)content);
+  else
+    rc = -1;
+#endif /* PBS_MOM */
+
+  return rc;
+  }
+
+int assign_tag_len_7(
+
+  job     **pj,    /* M */ /* job information to fill into */
+  xmlChar  *tag,     /* I */ /* xml tag */
+  xmlChar  *content) /* I */  /* content of the xml node */
+
+  {
+  int rc = PBSE_NONE;
+  job *pjob = *pj;
+
+  if (!(strncmp((const char *)tag, VERSION_TAG, 7)))
+    pjob->ji_qs.qs_version = atoi((const char*)content);
+  else
+    rc = -1;
+
+  return rc;
+  }
+
+int assign_tag_len_8(
+
+  job     **pj,    /* M */  /* job information to fill into */
+  xmlChar  *tag,     /* I */  /* xml tag */
+  xmlChar  *content) /* I */  /* content of the xml node */
+
+  {
+  int rc = PBSE_NONE;
+  job *pjob = *pj;
+
+  if (!(strncmp((const char *)tag, SUBSTATE_TAG, 8)))
+    pjob->ji_qs.ji_substate = atoi((const char*)content);
+  else if(!(strncmp((const char *)tag, MOM_PORT_TAG, 8)))
+    pjob->ji_qs.ji_un.ji_exect.ji_momport = atoi((const char*)content);
+  else if (!(strncmp((const char *)tag, SVR_ADDR_TAG, 8)))
+    pjob->ji_qs.ji_un.ji_momt.ji_svraddr = (unsigned long) atol((const char*)content);
+  else
+    rc = -1;
+
+  return rc;
+  }
+
+int assign_tag_len_9(
+
+  job     **pj,    /* M */ /* job information to fill into */
+  xmlChar  *tag,     /* I */ /* xml tag */
+  xmlChar  *content) /* I */  /* content of the xml node */
+
+  {
+  int rc = PBSE_NONE;
+  job *pjob = *pj;
+
+  if (!(strncmp((const char *)tag, FROM_HOST_TAG, 9)))
+    pjob->ji_qs.ji_un.ji_newt.ji_fromaddr = (unsigned long) atol((const char*)content);
+  else
+    rc = -1;
+
+  return rc;
+  }
+
+svrattrl *fill_svrattr_info(
+
+  const char *aname,    /* I */ /* attribute name */
+  const char *avalue,   /* I */ /* attribute value */
+  const char *rname,   /* i */ /* resource name */
+  char       *log_buf,  /* O */ /* error buffer */
+  size_t      buf_len)  /* I */ /* len of error buffer */
+
+  {
+  size_t vsize = 0;
+  svrattrl *pal = NULL;
+
+  if (avalue)
+    vsize = strlen(avalue) + 1;
+
+  if ((pal = attrlist_create(aname, rname, vsize)))
+    {
+    if (avalue) 
+      strcpy(pal->al_value, avalue);
+    CLEAR_LINK(pal->al_link);
+    }
+  else
+    snprintf(log_buf, buf_len, "Error: could not allocate memory for svrattrl in %s", __func__);
+
+  return pal;
+  }
+
+int assign_tag_len_10(
+
+  job     **pj,      /* M */ /* job information to fill into */
+  xmlChar  *tag,     /* I */ /* xml tag */
+  xmlChar  *content) /* I */ /* content of the xml node */
+
+  {
+  int  rc = PBSE_NONE;
+  job *pjob = *pj;
+
+  if (!(strncmp((const char *)tag, STIME_TAG, 10)))
+    pjob->ji_qs.ji_stime = atol((const char*)content);
+  else if(!(strncmp((const char *)tag, FPREFIX_TAG, 10)))
+    snprintf(pjob->ji_qs.ji_fileprefix, PBS_JOBBASE + 1, "%s", (const char*)content);
+  else if (!(strncmp((const char *)tag, MOM_RPORT_TAG, 10)))
+    pjob->ji_qs.ji_un.ji_exect.ji_mom_rmport = atoi((const char*)content);
+  else if (!(strncmp((const char *)tag, QUE_TIME_TAG, 10)))
+    pjob->ji_qs.ji_un.ji_routet.ji_quetime = atol((const char*)content);
+  else
+    rc = -1;
+
+  return rc;
+  } /* END assign_tag_len_10*/
+
+int assign_tag_len_11(
+
+  job     **pj,    /* M */ /* job information to fill into */
+  xmlChar  *tag,     /* I */ /* xml tag */
+  xmlChar  *content) /* I */ /* content of the xml node */
+
+  {
+  int  rc = PBSE_NONE;
+  job *pjob = *pj;
+
+  if (!(strncmp((const char *)tag, REC_TYPE_TAG, 11)))
+    pjob->ji_qs.ji_un_type = atoi((const char*)content);
+  else if(!(strncmp((const char *)tag, FROM_SOCK_TAG, 11)))
+    pjob->ji_qs.ji_un.ji_newt.ji_fromsock = atoi((const char*)content);
+  else if (!(strncmp((const char *)tag, SCRT_SIZE_TAG, 11)))
+    pjob->ji_qs.ji_un.ji_newt.ji_scriptsz = atoi((const char*)content);
+  else if (!(strncmp((const char *)tag, MOM_ADDR_TAG, 11)))
+    pjob->ji_qs.ji_un.ji_exect.ji_momaddr = (unsigned long) atol((const char*)content);
+  else if (!(strncmp((const char *)tag, MOM_ADDR_TAG, 11)))
+    pjob->ji_qs.ji_un.ji_momt.ji_exitstat = atoi((const char*)content);
+  else
+    rc = -1;
+
+  return rc;
+  } /* END assign_tag_len_11 */
+
+
+int assign_tag_len_12(
+
+  job     **pj,    /* M */ /* job information to fill into */
+  xmlChar  *tag,     /* I */ /* xml tag */
+  xmlChar  *content) /* I */ /* content of the xml node */
+
+  {
+  int  rc = PBSE_NONE;
+  job *pjob = *pj;
+
+  if (!(strncmp((const char *)tag, SRV_FLAGS_TAG, 12)))
+    pjob->ji_qs.ji_svrflags = atoi((const char*)content);
+  else if(!(strncmp((const char *)tag, RQUE_TIME_TAG, 12)))
+    pjob->ji_qs.ji_un.ji_routet.ji_rteretry = atol((const char*)content);
+  else
+    rc = -1;
+
+  return rc;
+  } /* END assign_tag_len_12 */
+
+int assign_tag_len_13(
+
+  job     **pj,    /* M */ /* job information to fill into */
+  xmlChar  *tag,     /* I */ /* xml tag */
+  xmlChar  *content) /* I */ /* content of the xml node */
+
+  {
+  int rc = PBSE_NONE;
+  job *pjob = *pj;
+
+  if (!(strncmp((const char *)tag, EXEC_UID_TAG, 13)))
+    pjob->ji_qs.ji_un.ji_momt.ji_exuid = (unsigned int) atoi((const char*)content);
+  else if(!(strncmp((const char *)tag, EXEC_GID_TAG, 13)))
+    pjob->ji_qs.ji_un.ji_momt.ji_exgid = atoi((const char*)content);
+#ifdef PBS_MOM
+  else if(!(strncmp((const char *)tag, STDOUT_TAG, 13)))
+    pjob->ji_stdout = atoi((const char*)content);
+  else if(!(strncmp((const char *)tag, STDERR_TAG, 13)))
+    pjob->ji_stderr = atoi((const char*)content);
+#endif /* PBS_MOM */
+  else
+    rc = -1;
+
+  return rc;
+  } /* END assign_tag_len_13 */
+
+int assign_tag_len_17(
+
+  job     **pj,    /* M */ /* job information to fill into */
+  xmlChar  *tag,     /* I */ /* xml tag */
+  xmlChar  *content) /* I */ /* content of the xml node */
+
+  {
+  int rc = PBSE_NONE;
+  job *pjob = *pj;
+
+  if (!(strncmp((const char *)tag, DST_QUEUE, 17)))
+    snprintf(pjob->ji_qs.ji_destin, PBS_MAXROUTEDEST + 1, "%s", (const char*)content);
+  else
+    rc = -1;
+
+  return rc;
+  } /* END assign_tag_len_17 */
+
+int assign_job_field(
+
+  job     **pjob,    /* M */ /* job information to fill into */
+  xmlNode *xml_node, /* I */ /* current node to parse */
+  char     *log_buf, /* O */ /* error message buffer */
+  size_t    buf_len) /* I */ /* size of error message buffer */
+ 
+  {
+  xmlChar  *tag = (xmlChar *)xml_node->name;
+  xmlChar  *content;
+  size_t    len;
+  int rc = -1;
+
+  content = xmlNodeGetContent(xml_node);
+
+  if (content)
+    {
+    len = strlen((char *)tag);
+    switch (len)
+      {
+      case 5:
+        rc = assign_tag_len_5(pjob, tag, content);
+        break;
+      case 6:
+        rc = assign_tag_len_6(pjob, tag, content);
+        break;
+      case 7:
+        rc = assign_tag_len_7(pjob, tag, content);
+        break;
+      case 8:
+        rc = assign_tag_len_8(pjob, tag, content);
+        break;
+      case 9:
+        rc = assign_tag_len_9(pjob, tag, content);
+        break;
+      case 10:
+        rc = assign_tag_len_10(pjob, tag, content);
+        break;
+      case 11:
+        rc = assign_tag_len_11(pjob, tag, content);
+        break;
+      case 12:
+        rc = assign_tag_len_12(pjob, tag, content);
+        break;
+      case 13:
+        rc = assign_tag_len_13(pjob, tag, content);
+        break;
+      case 17:
+        rc = assign_tag_len_17(pjob, tag, content);
+        break;
+      }
+      if (rc == -1) 
+        snprintf(log_buf, buf_len, "error: invalid tag found %s", tag);
+
+      xmlFree(content);
+    }
+    else
+      snprintf(log_buf, buf_len, "Error: xml tag %s did not have a value", tag);
+
+  return rc;
+  } /* END assign_job_field */
+
+
+void decode_attribute(
+
+  svrattrl *pal,
+  job **pjob)
+
+  {
+  int index;
+  job *pj = *pjob;
+
+  /* find the pbs_attribute definition based on the name */
+
+  index = find_attr(job_attr_def, pal->al_name, JOB_ATR_LAST);
+
+  if (index < 0)
+    index = JOB_ATR_UNKN;
+
+  job_attr_def[index].at_decode(
+    &pj->ji_wattr[index],
+     pal->al_name,
+     pal->al_resc,
+     pal->al_value,
+     ATR_DFLAG_ACCESS);
+
+  if (job_attr_def[index].at_action != NULL)
+    job_attr_def[index].at_action(&pj->ji_wattr[index], pj, ATR_ACTION_RECOV);
+
+  pj->ji_wattr[index].at_flags =  pal->al_flags & ~ATR_VFLAG_MODIFY;
+  }
+
+
+int fill_resource_list(
+
+  job        **pj, 
+  xmlNodePtr   resource_list_node, 
+  char        *log_buf,
+  size_t       buflen,
+  const char  *aname)
+
+  {
+  xmlNodePtr resNode = NULL;
+  int rc = PBSE_NONE;
+
+  if ((resNode = xmlFirstElementChild(resource_list_node)))
+    {
+    while(resNode && (!rc))
+      {
+      xmlChar *value = xmlNodeGetContent(resNode);
+      svrattrl *pal = NULL;
+
+      if ((pal = fill_svrattr_info(aname, (const char*)value, (const char *)resNode->name, log_buf, buflen)))
+        {
+        char *attr_flags;
+        unsigned int flags;
+        if ((attr_flags = (char *)xmlGetProp(resNode, (xmlChar *)AL_FLAGS_ATTR)))
+          {
+          flags = (unsigned int)atoi((char *)attr_flags);
+          xmlFree(attr_flags);
+          pal->al_flags = flags;
+          }
+        decode_attribute(pal, pj);
+        free(pal);
+        }
+      else
+        rc = -1;
+
+      if (value) 
+        xmlFree(value);
+
+      resNode = xmlNextElementSibling(resNode);
+      }
+    }
+  else
+    {
+    snprintf(log_buf, buflen, "%s", "no Resource_List nodes were found in the xml");
+    rc = -1;
+    }
+
+  return rc;
+  }
+
+
+int parse_attributes(
+
+  job     **pj,       /* M */ /* job information to fill into */
+  xmlNode *attr_node, /* I */ /* attribute node to parse */
+  char    *log_buf,   /* O */ /* error message buffer */
+  size_t   buf_len)   /* I */ /* size of error message buffer */
+
+  {
+  int           rc = PBSE_NONE;
+  xmlNode      *cur_node = NULL;
+  xmlNode      *resource_list_node = NULL;
+  xmlNode      *resources_used_node = NULL;
+
+  if ((cur_node = xmlFirstElementChild(attr_node)))
+    {
+    while(cur_node && rc == PBSE_NONE)
+      {
+      if (!(strcmp((const char*)cur_node->name,  ATTR_l)))
+        resource_list_node = cur_node;
+      else if (!(strcmp((const char*)cur_node->name,  ATTR_used)))
+        resources_used_node = cur_node;
+      else
+        {
+        svrattrl *pal = NULL;
+        xmlChar *value = xmlNodeGetContent(cur_node);
+        if ((pal = fill_svrattr_info((const char*)cur_node->name, (const char*)value, NULL, log_buf, buf_len)))
+          {
+          xmlChar      *attr_flags;
+          unsigned int  flags;
+          if ((attr_flags = xmlGetProp(cur_node, (xmlChar *)AL_FLAGS_ATTR)))
+            {
+            flags = (unsigned int)atoi((char *)attr_flags);
+            xmlFree(attr_flags);
+            pal->al_flags = flags;
+            }
+            decode_attribute(pal, pj);
+            free(pal);
+          }
+        else
+          rc = -1;
+        if (value)
+          xmlFree(value);
+        }
+        cur_node = xmlNextElementSibling(cur_node);
+      }
+      if (rc == PBSE_NONE && resource_list_node) 
+        rc = fill_resource_list(pj, resource_list_node, log_buf, buf_len, ATTR_l);
+      if (rc == PBSE_NONE && resources_used_node)
+        rc = fill_resource_list(pj, resources_used_node, log_buf, buf_len, ATTR_used);
+    }
+    else
+      {
+      snprintf(log_buf, buf_len, "%s", "Error: there were no job attributes found"); 
+      rc = -1;
+      }
+    return rc;
+  } /* END parse_attributes */
+
+
+int check_fileprefix(
+
+  const char *filename, /* I */  /* name of the Job file */
+  job   **pjob,         /* M */  /* job structure to compare */
+  char   *log_buf,      /* O */  /* error buffer */
+  size_t  buf_len)      /* I */  /* error buffer lenght */
+
+  {
+  char *pn;
+  job *pj = *pjob;
+  int   rc = PBSE_NONE;
+
+#ifdef PBS_MOM
+  char  fileid[MAXPATHLEN];
+#endif
+
+  /* Does file name match the internal name? */
+  /* This detects ghost files */
+  pn = strrchr((char *)filename, (int)'/');
+  if (pn)
+    pn++;
+  else
+    pn = (char *)filename;
+
+#ifndef PBS_MOM
+  if (strncmp(pn, pj->ji_qs.ji_fileprefix, strlen(pj->ji_qs.ji_fileprefix)) != 0)
+#else
+  if(multi_mom != 0)
+    {
+    sprintf(fileid,"%s%d",pj->ji_qs.ji_fileprefix,pbs_rm_port);
+    }
+  else
+    {
+    strcpy(fileid,pj->ji_qs.ji_fileprefix);
+    }
+  if (strncmp(pn, fileid, strlen(fileid)) != 0)
+#endif
+    {
+    /* mismatch, discard job */
+
+    snprintf(log_buf, buf_len, "Job Id %s does not match file name for %s",
+      pj->ji_qs.ji_jobid,
+      filename);
+
+    rc = -1;
+    }
+
+    return rc;
+  }
+
+
+int parse_job_dom(
+
+  const char *filename,    /* I */ /* filename */
+  job **pjob,              /* M */ /* pointer to a pointer of a job structure */
+  xmlNodePtr root_element, /* I */ /*Root element of the dom */
+  char *log_buf,           /* O */ /* buffer for error message */
+  size_t buf_len)          /* I */ /* Size of error message */
+
+  {
+  xmlNode *cur_node = NULL;
+  xmlNode *attributeNode = NULL;
+
+  int rc = -1;
+
+  if ((cur_node = xmlFirstElementChild(root_element)))
+    {
+    while(cur_node)
+      {
+      if (!(strcmp((const char*)cur_node->name, ATTRIB_TAG)))
+        attributeNode = cur_node;
+      else
+        if ((rc = assign_job_field(pjob, cur_node, log_buf, buf_len)))
+          break;
+      cur_node = xmlNextElementSibling(cur_node);
+      }
+    if (!rc && attributeNode)
+      {
+      if (!(rc = check_fileprefix(filename, pjob, log_buf, buf_len)))
+        rc = parse_attributes(pjob, attributeNode, log_buf, buf_len);  
+      }
+    else if (!attributeNode)
+      {
+      snprintf(log_buf, buf_len, "Missing required %s tag", ATTRIB_TAG);
+      rc = -1;
+      }
+    }  
+    else
+      snprintf(log_buf, buf_len, "%s", "Error: no children xml tags were found");
+
+    return rc;
+  }  /* END parse_job_dom */
+
+/*
+ * add_fix_fields() - add xml nodes (that correspond to some of the fields in ji_qs fields of the job structure) 
+ *                    to the document. 
+ */
+
+void add_fix_fields(
+
+  xmlNodePtr *rnode, /* M root node */
+  const job *pjob)   /* I pointer to job from which nodes will be created */
+ {
+ char buf[BUFSIZE];
+ xmlNodePtr root_node = *rnode;
+
+ snprintf(buf, sizeof(buf), "%d", pjob->ji_qs.qs_version);
+ xmlNewChild(root_node, NULL, (xmlChar *)VERSION_TAG, (xmlChar *)buf);
+ snprintf(buf, sizeof(buf), "%d", pjob->ji_qs.ji_state);
+ xmlNewChild(root_node, NULL, (xmlChar *)STATE_TAG, (xmlChar *)buf);
+ snprintf(buf, sizeof(buf), "%d", pjob->ji_qs.ji_substate);
+ xmlNewChild(root_node, NULL, (xmlChar *)SUBSTATE_TAG, (xmlChar *)buf);
+ snprintf(buf, sizeof(buf), "%d", pjob->ji_qs.ji_svrflags);
+ xmlNewChild(root_node, NULL, (xmlChar *)SRV_FLAGS_TAG, (xmlChar *)buf);
+ snprintf(buf, sizeof(buf), "%ld", pjob->ji_qs.ji_stime);
+ xmlNewChild(root_node, NULL, (xmlChar *)STIME_TAG, (xmlChar *)buf);
+ xmlNewChild(root_node, NULL, (xmlChar *)JOBID_TAG, (xmlChar *)pjob->ji_qs.ji_jobid);
+ xmlNewChild(root_node, NULL, (xmlChar *)FPREFIX_TAG, (xmlChar *)pjob->ji_qs.ji_fileprefix); 
+ xmlNewChild(root_node, NULL, (xmlChar *)QUEUE_TAG, (xmlChar *)pjob->ji_qs.ji_queue);
+ xmlNewChild(root_node, NULL, (xmlChar *)DST_QUEUE, (xmlChar *)pjob->ji_qs.ji_destin);
+ } /* END add_fix_fields */
+
+
+/*
+ * add_union_fields() - add xml nodes (that correspond to some of the fields in ji_qs fields of the job structure) 
+ *                    to the document. 
+ */
+
+void add_union_fields(
+
+  xmlNodePtr *rnode,  /* M document's root node */
+  const job *pjob)    /* I job pointer */
+ {
+ char buf[BUFSIZE];
+ xmlNodePtr root_node = *rnode;
+
+ int type = pjob->ji_qs.ji_un_type;
+ snprintf(buf, sizeof(buf), "%d", type);
+ xmlNewChild(root_node, NULL, (xmlChar *)REC_TYPE_TAG, (xmlChar *)buf);
+
+ switch (type)
+   {
+   case JOB_UNION_TYPE_NEW:
+     snprintf(buf, sizeof(buf), "%lu", pjob->ji_qs.ji_un.ji_newt.ji_fromaddr);
+     xmlNewChild(root_node, NULL, (xmlChar *)FROM_HOST_TAG, (xmlChar *)buf);
+     snprintf(buf, sizeof(buf), "%d", pjob->ji_qs.ji_un.ji_newt.ji_fromsock);
+     xmlNewChild(root_node, NULL, (xmlChar *)FROM_SOCK_TAG, (xmlChar *)buf);
+     snprintf(buf, sizeof(buf), "%d", pjob->ji_qs.ji_un.ji_newt.ji_scriptsz);
+     xmlNewChild(root_node, NULL, (xmlChar *)SCRT_SIZE_TAG, (xmlChar *)buf);
+     break;  
+   case JOB_UNION_TYPE_EXEC:
+     snprintf(buf, sizeof(buf), "%lu", pjob->ji_qs.ji_un.ji_exect.ji_momaddr);
+     xmlNewChild(root_node, NULL, (xmlChar *)MOM_ADDR_TAG, (xmlChar *)buf);
+     snprintf(buf, sizeof(buf), "%d", pjob->ji_qs.ji_un.ji_exect.ji_momport);
+     xmlNewChild(root_node, NULL, (xmlChar *)MOM_PORT_TAG, (xmlChar *)buf);
+     snprintf(buf, sizeof(buf), "%d", pjob->ji_qs.ji_un.ji_exect.ji_mom_rmport);
+     xmlNewChild(root_node, NULL, (xmlChar *)MOM_RPORT_TAG, (xmlChar *)buf);
+     break;
+   case JOB_UNION_TYPE_ROUTE:
+     snprintf(buf, sizeof(buf), "%ld", pjob->ji_qs.ji_un.ji_routet.ji_quetime);
+     xmlNewChild(root_node, NULL, (xmlChar *)QUE_TIME_TAG, (xmlChar *)buf);
+     snprintf(buf, sizeof(buf), "%ld", pjob->ji_qs.ji_un.ji_routet.ji_rteretry);
+     xmlNewChild(root_node, NULL, (xmlChar *)RQUE_TIME_TAG, (xmlChar *)buf);
+     break;
+   case JOB_UNION_TYPE_MOM:
+     snprintf(buf, sizeof(buf), "%lu", pjob->ji_qs.ji_un.ji_momt.ji_svraddr);
+     xmlNewChild(root_node, NULL, (xmlChar *)SVR_ADDR_TAG, (xmlChar *)buf);
+     snprintf(buf, sizeof(buf), "%d", pjob->ji_qs.ji_un.ji_momt.ji_exitstat);
+     xmlNewChild(root_node, NULL, (xmlChar *)EXIT_STAT_TAG, (xmlChar *)buf);
+     snprintf(buf, sizeof(buf), "%u", pjob->ji_qs.ji_un.ji_momt.ji_exuid);
+     xmlNewChild(root_node, NULL, (xmlChar *)EXEC_UID_TAG, (xmlChar *)buf);
+     snprintf(buf, sizeof(buf), "%u", pjob->ji_qs.ji_un.ji_momt.ji_exgid);
+     xmlNewChild(root_node, NULL, (xmlChar *)EXEC_UID_TAG, (xmlChar *)buf);
+     break;
+   }
+ } /* END add_union_fields */
+
+
+xmlNodePtr add_resouce_list_attribute(
+    const char *nodeTag,     /* I tag to use on the resouce head-node */
+    xmlNodePtr *attr_node,   /* M attribute head-node */ 
+    xmlNodePtr *res_node,    /* M Resource_List/resources_used head-node */ 
+    svrattrl   *pal)         /* I encoded attribute structure */
+
+  {
+  xmlNodePtr attributeHeadNode = *attr_node;
+  xmlNodePtr resourceHeadNode = *res_node;
+  xmlNodePtr resourceNode = NULL;
+
+  if (!resourceHeadNode)
+    if ((resourceHeadNode = xmlNewNode(NULL, (xmlChar *)nodeTag)))
+      {
+      xmlAddChild(attributeHeadNode, resourceHeadNode);
+      *res_node = resourceHeadNode;
+      }
+
+  if (pal->al_atopl.resource)
+    resourceNode = xmlNewChild(resourceHeadNode, NULL, (xmlChar *)pal->al_atopl.resource, (xmlChar *)pal->al_atopl.value);
+
+  return resourceNode;
+  }
+
+
+/*
+ * add_encoded_attributes () - add encoded job attributes xml nodes. 
+ */
+
+int add_encoded_attributes(
+
+  xmlNodePtr *attr_node,   /* M attribute node */ 
+  pbs_attribute  *pattr)   /* M ptr to pbs_attribute value array */
+
+  {
+  tlist_head  lhead;
+  int         i;
+  int         resc_access_perm = ATR_DFLAG_ACCESS;
+  svrattrl   *pal;
+  int         rc = PBSE_NONE;
+  xmlNodePtr  attributeNode = *attr_node;
+  char        buf[BUFSIZE];
+  xmlNodePtr  pal_xmlNode;
+
+  CLEAR_HEAD(lhead);
+  xmlNodePtr  resource_list_head_node = NULL;
+  xmlNodePtr  resource_used_head_node = NULL;
+
+  for (i = 0; ((i < JOB_ATR_LAST) && (rc >= 0)); i++)
+    {
+    if (job_attr_def[i].at_type != ATR_TYPE_ACL)
+      if ((pattr + i)->at_flags & ATR_VFLAG_SET)
+        {
+        rc = job_attr_def[i].at_encode(
+        pattr + i,
+        &lhead,
+        job_attr_def[i].at_name,
+        NULL,
+        ATR_ENCODE_SAVE,
+        resc_access_perm);
+
+        (pattr + i)->at_flags &= ~ATR_VFLAG_MODIFY;
+        if (rc < 0)
+          return -1;
+
+        while ((pal = (svrattrl *)GET_NEXT(lhead)) != NULL)
+          {
+          if (!strcmp(ATTR_l, pal->al_atopl.name)) 
+            pal_xmlNode = add_resouce_list_attribute(ATTR_l, attr_node, &resource_list_head_node, pal);
+          else if (!strcmp(ATTR_used, pal->al_atopl.name)) 
+            pal_xmlNode = add_resouce_list_attribute(ATTR_used, attr_node, &resource_used_head_node, pal);
+          else 
+            pal_xmlNode = xmlNewChild(attributeNode, NULL, (xmlChar *)pal->al_atopl.name, (xmlChar *)pal->al_atopl.value);
+
+            if (pal_xmlNode)
+              {
+              snprintf(buf, sizeof(buf), "%u", (unsigned int)pal->al_flags);
+              xmlSetProp(pal_xmlNode, (const xmlChar *)AL_FLAGS_ATTR, (const xmlChar *)buf);
+              }
+            delete_link(&pal->al_link);
+            free(pal);
+            if (!pal_xmlNode)
+              rc = -1;
+          }
+        }
+    }
+  return (0);
+  } /* END add_encoded_attributes */
+
+
+/*
+ * add_attributes () - add xml nodes (that correspond to job's encoded attributes to the document.
+ */
+
+int add_attributes(
+
+  xmlNodePtr *rnode, /* M document root node */
+  job *pjob)   /* pointer to job */
+ {
+ xmlNodePtr attributeNode = NULL;
+ int rc = PBSE_NONE;
+ char  log_buf[LOCAL_LOG_BUF_SIZE];
+ xmlNodePtr root_node = *rnode;
+
+ if ((attributeNode = xmlNewNode(NULL, (xmlChar *)ATTRIB_TAG)))
+   {
+   xmlAddChild(root_node, attributeNode);
+   rc = add_encoded_attributes(&attributeNode, pjob->ji_wattr);
+   }
+ else
+   rc = -1;
+
+ if(rc != PBSE_NONE)
+   {
+   snprintf(log_buf, sizeof(log_buf), "could not add the job attributes to the XML doc");
+   log_event(
+     PBSEVENT_JOB,
+     PBS_EVENTCLASS_JOB,
+     pjob->ji_qs.ji_jobid,
+     log_buf);
+   rc = -1;     
+   }
+ return rc;
+ } /* END add_attributes */
+
+
+#ifdef PBS_MOM
+/*
+ * add_mom_fields() - add tm sockets xml nodes to the document
+ */
+
+void add_mom_fields(
+  xmlNodePtr *rnode,
+  const job *pjob)
+
+  {
+  char buf[BUFSIZE];
+  xmlNodePtr root_node = *rnode;
+
+  snprintf(buf, sizeof(buf), "%d", pjob->ji_stdout);
+  xmlNewChild(root_node, NULL, (xmlChar *)STDOUT_TAG, (xmlChar *)buf);
+  snprintf(buf, sizeof(buf), "%d", pjob->ji_stderr);
+  xmlNewChild(root_node, NULL, (xmlChar *)STDERR_TAG, (xmlChar *)buf);
+  snprintf(buf, sizeof(buf), "%d", pjob->ji_taskid);
+  xmlNewChild(root_node, NULL, (xmlChar *)TASKID_TAG, (xmlChar *)buf);
+  snprintf(buf, sizeof(buf), "%d", pjob->ji_nodeid);
+  xmlNewChild(root_node, NULL, (xmlChar *)NODEID_TAG, (xmlChar *)buf);
+ }
+#endif /* PBS_MOM */
+
+/*
+ * saveJobToXML() - save job to disk in xml format
+ */
+
+int saveJobToXML(
+
+  job *pjob,      /* I - pointer to job */
+  const char *filename) /* I - filename to save to */
+
+  {
+  xmlDocPtr doc = NULL;       /* document pointer */
+  xmlNodePtr root_node;
+  int lenwritten = 0, rc = PBSE_NONE;
+  root_node = NULL;
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
+  if ((doc = xmlNewDoc((const xmlChar*) "1.0")))
+    {
+    root_node = xmlNewNode(NULL, (const xmlChar*) JOB_TAG);
+    xmlDocSetRootElement(doc, root_node);
+    add_fix_fields(&root_node, (const job*)pjob);
+    add_union_fields(&root_node, (const job*)pjob);
+    if (add_attributes(&root_node, pjob))
+      return -1;
+
+#ifdef PBS_MOM
+    add_mom_fields(&root_node, (const job*)pjob);
+#endif /* PBS_MOM */
+
+#ifndef PBS_MOM
+    lock_ss();
+#endif /* !defined PBS_MOM */
+
+    lenwritten = xmlSaveFormatFileEnc(filename, doc, NULL, 1);
+
+#ifndef PBS_MOM
+    unlock_ss();
+#endif /* !defined PBS_MOM */
+
+    xmlFreeDoc(doc);
+    }
+  else
+    {
+    snprintf(log_buf, sizeof(log_buf), "could not create a new xml document");
+    log_event(
+    PBSEVENT_JOB,
+    PBS_EVENTCLASS_JOB,
+    pjob->ji_qs.ji_jobid,
+    log_buf);
+    rc = -1;     
+    }
+
+  if (lenwritten <= 0)
+    {
+    snprintf(log_buf, sizeof(log_buf), "failed writing job to the xml file %s", filename);
+    log_event(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      log_buf);
+    rc = -1;
+    }
+
+  return rc;
+  } /* saveJobToXML */
+
 
 /*
  * job_save() - Saves (or updates) a job structure image on disk
@@ -184,16 +1029,10 @@ int job_save(
   int  mom_port)   /* if 0 ignore otherwise append to end of job name. this is for multi-mom mode */
 
   {
-  int     fds;
-  int     i;
   char    namebuf1[MAXPATHLEN];
   char    namebuf2[MAXPATHLEN];
-  char    save_buf[SAVEJOB_BUF_SIZE];
   const char   *tmp_ptr = NULL;
-  size_t  buf_remaining = sizeof(save_buf);
 
-  int     openflags;
-  int     redo;
   time_t  time_now = time(NULL);
 
 
@@ -228,404 +1067,47 @@ int job_save(
     pjob->ji_wattr[JOB_ATR_mtime].at_val.at_long = time_now;
     }
 
-  if (updatetype == SAVEJOB_QUICK)
+  if (!(saveJobToXML(pjob, namebuf2)))
     {
-    openflags = O_WRONLY | O_Sync;
+    unlink(namebuf1);
 
-    /* NOTE:  open, do not create */
-
-    fds = open(namebuf1, openflags, 0600);
-
-    if (fds < 0)
+    if (link(namebuf2, namebuf1) == -1)
       {
-      char tmpLine[1024];
-
-      snprintf(tmpLine, sizeof(tmpLine), "cannot open file '%s' for job %s in state %s (%s)",
-               namebuf1,
-               pjob->ji_qs.ji_jobid,
-               PJobSubState[MAX(0,pjob->ji_qs.ji_substate)],
-               (updatetype == 0) ? "quick" : "full");
-
-      log_err(errno, "job_save", tmpLine);
-
-      /* FAILURE */
-
-      return(-1);
+      log_event(
+        PBSEVENT_ERROR | PBSEVENT_SECURITY,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        (char *)"Link in job_save failed");
       }
-
-    /* just write the "critical" base structure to the file */
-
-    while ((i = write_ac_socket(fds, (char *)&pjob->ji_qs, sizeof(pjob->ji_qs))) != sizeof(pjob->ji_qs))
-      {
-      if ((i < 0) && (errno == EINTR))
-        {
-        /* retry the write */
-
-        if (lseek(fds, (off_t)0, SEEK_SET) < 0)
-          {
-          log_err(errno, "job_save", (char *)"lseek");
-
-          close(fds);
-
-          return(-1);
-          }
-
-        continue;
-        }
-      else
-        {
-        log_err(errno, "job_save", (char *)"quickwrite");
-
-        close(fds);
-
-        /* FAILURE */
-
-        return(-1);
-        }
-      }
-
-    close(fds);
-    }
-  else /* SAVEJOB_FULL, SAVEJOB_NEW, SAVEJOB_ARY */
-    {
-    /*
-     * write the whole structure to the file.
-     * For a update, this is done to a new file to protect the
-     * old against crashs.
-     * The file is written in four parts:
-     * (1) the job structure,
-     * (2) the attribtes in "encoded" form,
-     * (3) the attributes in the "external" form, and last
-     * (4) the dependency list.
-     */
-
-    openflags = O_CREAT | O_WRONLY | O_Sync;
-
-    /* NOTE:  create file if required */
-
-    if (updatetype == SAVEJOB_NEW)
-      fds = open(namebuf1, openflags, 0600);
     else
-      fds = open(namebuf2, openflags, 0600);
-
-    if (fds < 0)
       {
-      log_err(errno, "job_save", (char *)"open for full save");
-
-      return(-1);
+      unlink(namebuf2);
       }
-
-    for (i = 0; i < MAX_SAVE_TRIES; i++)
-      {
-      redo = 0; /* try to save twice */
-
-#ifndef PBS_MOM
-      lock_ss();
-#endif
-
-      if (save_struct((char *)&pjob->ji_qs, sizeof(pjob->ji_qs), fds, save_buf, &buf_remaining, sizeof(save_buf)) != PBSE_NONE)
-        {
-        redo++;
-        }
-      else if (save_attr(job_attr_def,
-            pjob->ji_wattr,
-            JOB_ATR_LAST,
-            fds,
-            save_buf,
-            &buf_remaining,
-            sizeof(save_buf)) != PBSE_NONE)
-        {
-        redo++;
-        }
-
-#ifdef PBS_MOM
-      else if (save_tmsock(pjob, fds, save_buf, &buf_remaining, sizeof(save_buf)) != PBSE_NONE)
-        {
-        redo++;
-        }
-
-#endif  /* PBS_MOM */
-      else if (write_buffer(save_buf, sizeof(save_buf) - buf_remaining, fds) != PBSE_NONE)
-        {
-        redo++;
-        }
-
-#ifndef PBS_MOM
-      unlock_ss();
-#endif
-
-      if (redo != 0)
-        {
-        if (lseek(fds, (off_t)0, SEEK_SET) < 0)
-          {
-          log_err(errno, "job_save", (char *)"full lseek");
-          }
-        }
-      else
-        {
-        break;
-        }
-      }  /* END for (i) */
-
-    /* Some write() errors may not show up until the close() */
-    if((close(fds)) != 0)
-      {
-      if (updatetype == SAVEJOB_FULL)
-        unlink(namebuf2);
-
-      return(-1);
-      }
-
-    if (i >= MAX_SAVE_TRIES)
-      {
-      if (updatetype == SAVEJOB_FULL)
-        unlink(namebuf2);
-
-      return(-1);
-      }
-
-    if (updatetype == SAVEJOB_FULL)
-      {
-      unlink(namebuf1);
-
-      if (link(namebuf2, namebuf1) == -1)
-        {
-        log_event(
-          PBSEVENT_ERROR | PBSEVENT_SECURITY,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          (char *)"Link in job_save failed");
-        }
-      else
-        {
-        unlink(namebuf2);
-        }
-      }
-
-    pjob->ji_modified = 0;
-    }  /* END (updatetype == SAVEJOB_QUICK) */
-
+    }
+  else /* saveJobToXML failed */
+    {
+    log_event(
+    PBSEVENT_ERROR | PBSEVENT_SECURITY,
+    PBS_EVENTCLASS_JOB,
+    pjob->ji_qs.ji_jobid,
+    (char *)"call to saveJobToXML in job_save failed");
+    return -1;
+    }
   return(PBSE_NONE);
   }  /* END job_save() */
 
+int set_array_job_ids(
 
-
-
-
-/*
- * job_recov() - recover (read in) a job from its save file
- *
- * This function is only needed upon server start up.
- *
- * The job structure, its attributes strings, and its dependencies
- * are recovered from the disk.  Space to hold the above is
- * calloc-ed as needed.
- *
- * Returns: job pointer to new job structure or a
- *   null pointer on an error.
-*/
-
-job *job_recov(
-
-  char *filename) /* I */   /* pathname to job save file */
+  job  **pjob,       /* M */
+  char  *log_buf,    /* error Buffer */
+  size_t buflen)     /* error buffer length */
 
   {
-  int  fds;
-  job  *pj;
-  char *pn;
-  char  namebuf[MAXPATHLEN];
-  char  log_buf[LOCAL_LOG_BUF_SIZE];
-
+  int rc = PBSE_NONE;
 #ifndef PBS_MOM
-  char       parent_id[PBS_MAXSVRJOBID + 1];
+  job *pj = *pjob;
   job_array *pa;
-#else
-  char      fileid[MAXPATHLEN];
-#endif
-
-  pj = job_alloc(); /* allocate & initialize job structure space */
-
-  if (pj == NULL)
-    {
-    /* FAILURE - cannot alloc memory */
-
-    return(NULL);
-    }
-
-  snprintf(namebuf, MAXPATHLEN, "%s%s", path_jobs, filename); /* job directory path, filename */
-
-  fds = open(namebuf, O_RDONLY, 0);
-
-  if (fds < 0)
-    {
-    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "unable to open %s", namebuf);
-
-    log_err(errno, __func__, log_buf);
-
-#ifndef PBS_MOM
-    unlock_ji_mutex(pj, __func__, "1", LOGLEVEL);
-    free(pj->ji_mutex);
-#endif
-
-    free((char *)pj);
-
-    /* FAILURE - cannot open job file */
-
-    return(NULL);
-    }
-
-  /* read in job quick save sub-structure */
-
-  if (read_ac_socket(fds, (char *)&pj->ji_qs, sizeof(pj->ji_qs)) != sizeof(pj->ji_qs) &&
-      pj->ji_qs.qs_version == PBS_QS_VERSION)
-    {
-    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Unable to read %s", namebuf);
-
-    log_err(errno, __func__, log_buf);
-
-#ifndef PBS_MOM
-    unlock_ji_mutex(pj, __func__, "2", LOGLEVEL);
-    free(pj->ji_mutex);
-#endif
-
-    free((char *)pj);
-
-    close(fds);
-
-    return(NULL);
-    }
-
-  /* is ji_qs the version we expect? */
-
-  if (pj->ji_qs.qs_version != PBS_QS_VERSION)
-    {
-    /* ji_qs is older version */
-    snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-      "%s appears to be from an old version. Attempting to convert.\n",
-      namebuf);
-
-    log_err(-1, __func__, log_buf);
-
-    if (job_qs_upgrade(pj, fds, namebuf, pj->ji_qs.qs_version) != 0)
-      {
-      snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "unable to upgrade %s\n", namebuf);
-
-      log_err(-1, __func__, log_buf);
-
-#ifndef PBS_MOM
-      unlock_ji_mutex(pj, __func__, "3", LOGLEVEL);
-      free(pj->ji_mutex);
-#endif
-
-      free((char *)pj);
-
-      close(fds);
-
-      return(NULL);
-      }
-
-    }  /* END if (pj->ji_qs.qs_version != PBS_QS_VERSION) */
-
-  /* Does file name match the internal name? */
-  /* This detects ghost files */
-
-  pn = strrchr(namebuf, (int)'/') + 1;
-
-#ifndef PBS_MOM
-  if (strncmp(pn, pj->ji_qs.ji_fileprefix, strlen(pj->ji_qs.ji_fileprefix)) != 0)
-#else
-  if(multi_mom != 0)
-    {
-    sprintf(fileid,"%s%d",pj->ji_qs.ji_fileprefix,pbs_rm_port);
-    }
-  else
-    {
-    strcpy(fileid,pj->ji_qs.ji_fileprefix);
-    }
-  if (strncmp(pn, fileid, strlen(fileid)) != 0)
-#endif
-    {
-    /* mismatch, discard job */
-
-    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Job Id %s does not match file name for %s",
-      pj->ji_qs.ji_jobid,
-      namebuf);
-
-    log_err(-1, __func__, log_buf);
-
-#ifndef PBS_MOM
-    unlock_ji_mutex(pj, __func__, "4", LOGLEVEL);
-    free(pj->ji_mutex);
-#endif
-
-    free((char *)pj);
-
-    close(fds);
-
-    return(NULL);
-    }
-
-  /* read in working attributes */
-
-  if (recov_attr(
-        fds,
-        pj,
-        job_attr_def,
-        pj->ji_wattr,
-        JOB_ATR_LAST,
-        JOB_ATR_UNKN,
-        TRUE) != 0) 
-    {
-    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "unable to recover %s (file is likely corrupted)", namebuf);
-
-    log_err(-1, __func__, log_buf);
-
-#ifndef PBS_MOM
-    unlock_ji_mutex(pj, __func__, "5", LOGLEVEL);
-    job_free(pj, FALSE);
-#else
-    mom_job_free(pj);
-#endif
-
-
-    close(fds);
-
-    return(NULL);
-    }
-
-#ifndef PBS_MOM
-  /* Comment out the mother superior tracking. Will be debugged later 
-  if (pj->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
-    {*/
-    /* add job to the mother superior list for it's node */
-/*    char *ms = strdup(pj->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
-    char *end = strchr(ms, '/');
-
-    if (end != NULL)
-      *end = '\0';
-
-    if ((end = strchr(ms, '+')) != NULL)
-      *end = '\0';
-
-    add_to_ms_list(ms, pj);
-
-    free(ms);
-    }*/
-#endif
-
-#ifdef PBS_MOM
-  /* read in tm sockets and ips */
-
-  if (recov_tmsock(fds, pj) != 0)
-    {
-    snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-        "warning: tmsockets not recovered from %s (written by an older pbs_mom?)",
-        namebuf);
-
-    log_err(-1, __func__, log_buf);
-    }
-
-#else /* not PBS_MOM */
+  char       parent_id[PBS_MAXSVRJOBID + 1];
 
   if (strchr(pj->ji_qs.ji_jobid, '[') != NULL)
     {
@@ -638,8 +1120,8 @@ job *job_recov(
     if (pa == NULL)
       {   
       job_abt(&pj, (char *)"Array job missing array struct, aborting job");
-      close(fds);
-      return NULL;
+      snprintf(log_buf, buflen, "Array job missing array struct %s", __func__);
+      return -1;
       }
 
     strcpy(pj->ji_arraystructid, parent_id);
@@ -671,11 +1153,233 @@ job *job_recov(
       unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
       }
     }
+#endif /* !PBS_MOM */
+  return rc;
+  }
 
+
+int job_recov_xml(
+
+  char *filename,  /* I */   /* pathname to job save file */
+  job  **pjob,     /* M */   /* pointer to a pointer of job structure to fill info */
+  char *log_buf,   /* O */   /* buffer to hold error message */
+  size_t buf_len)  /* I */   /* len of the error buffer */
+  {
+  xmlDoc *doc = NULL;
+  xmlNode *root_element = NULL;
+  int rc = PBSE_INVALID_SYNTAX;
+
+  /*parse the file and get the DOM */
+  doc = xmlReadFile(filename, NULL, 0);
+
+  if (doc == NULL) {
+    return rc;
+  }
+
+  /*Get the root element node */
+  root_element = xmlDocGetRootElement(doc);
+  if (strcmp((const char *) root_element->name, JOB_TAG))
+    {
+    snprintf(log_buf, buf_len, "missing root tag %s in xml", JOB_TAG);
+    /* set return code of -1 as we do have a JB xml but it did not have the right root elem. */
+    return -1;
+    }
+
+  if (parse_job_dom(filename, pjob, root_element, log_buf, buf_len))
+    return -1;
+
+  return PBSE_NONE;
+  } /* END job_recov_xml */
+
+
+/*
+ * binary_job_recov() - recover (read in) a job from its save file
+ *
+ * This function is only needed upon server start up.
+ *
+ * The job structure, its attributes strings, and its dependencies
+ * are recovered from the disk.  Space to hold the above is
+ * calloc-ed as needed.
+ *
+ * Returns: job pointer to new job structure or a
+ *   null pointer on an error.
+*/
+
+int job_recov_binary(
+
+  char *filename,  /* I */   /* pathname to job save file */
+  job  **pjob,     /* M */   /* pointer to a pointer of job structure to fill info */
+  char *log_buf,   /* O */   /* buffer to hold error message */
+  size_t buf_len)  /* I */   /* len of the error buffer */
+
+  {
+  int  fds;
+  job  *pj = *pjob;
+  char *pn;
+
+#ifdef PBS_MOM
+  char fileid[MAXPATHLEN];
 #endif
+
+  fds = open(filename, O_RDONLY, 0);
+
+  if (fds < 0)
+    {
+    snprintf(log_buf, buf_len, "unable to open %s", filename);
+    return -1;
+    }
+
+  /* read in job quick save sub-structure */
+
+  if (read_ac_socket(fds, (char *)&pj->ji_qs, sizeof(pj->ji_qs)) != sizeof(pj->ji_qs) &&
+      pj->ji_qs.qs_version == PBS_QS_VERSION)
+    {
+    snprintf(log_buf, buf_len, "Unable to read %s", filename);
+    close(fds);
+    return -1;
+    }
+
+  /* is ji_qs the version we expect? */
+  if (pj->ji_qs.qs_version != PBS_QS_VERSION)
+    {
+    /* ji_qs is older version */
+    snprintf(log_buf, buf_len,
+      "%s appears to be from an old version. Attempting to convert.\n",
+      filename);
+    log_err(-1, __func__, log_buf);
+
+    if (job_qs_upgrade(pj, fds, filename, pj->ji_qs.qs_version) != 0)
+      {
+      snprintf(log_buf, buf_len, "unable to upgrade %s\n", filename);
+      close(fds);
+      return -1;
+      }
+    }  /* END if (pj->ji_qs.qs_version != PBS_QS_VERSION) */
+
+  /* Does file name match the internal name? */
+  /* This detects ghost files */
+
+  pn = strrchr(filename, (int)'/') + 1;
+
+#ifndef PBS_MOM
+  if (strncmp(pn, pj->ji_qs.ji_fileprefix, strlen(pj->ji_qs.ji_fileprefix)) != 0)
+#else
+  if(multi_mom != 0)
+    {
+    sprintf(fileid,"%s%d",pj->ji_qs.ji_fileprefix,pbs_rm_port);
+    }
+  else
+    {
+    strcpy(fileid,pj->ji_qs.ji_fileprefix);
+    }
+  if (strncmp(pn, fileid, strlen(fileid)) != 0)
+#endif
+    {
+    /* mismatch, discard job */
+
+    snprintf(log_buf, buf_len, "Job Id %s does not match file name for %s",
+      pj->ji_qs.ji_jobid,
+      filename);
+
+    close(fds);
+    return -1;
+    }
+
+  /* read in working attributes */
+
+  if (recov_attr(
+        fds,
+        pj,
+        job_attr_def,
+        pj->ji_wattr,
+        JOB_ATR_LAST,
+        JOB_ATR_UNKN,
+        TRUE) != 0) 
+    {
+    snprintf(log_buf, buf_len, "unable to recover %s (file is likely corrupted)", filename);
+    close(fds);
+    return -1;
+    }
+
+#ifdef PBS_MOM
+  /* read in tm sockets and ips */
+
+  if (recov_tmsock(fds, pj) != 0)
+    {
+    snprintf(log_buf, buf_len,
+        "warning: tmsockets not recovered from %s (written by an older pbs_mom?)",
+        filename);
+
+    log_err(-1, __func__, log_buf);
+    }
+#endif /* PBS_MOM */
 
   close(fds);
 
+  return PBSE_NONE;
+  }  /* END job_recov_binary() */
+
+
+
+
+
+/*
+ * job_recov() - recover (read in) a job from its save file
+ *
+ * This function is only needed upon server start up.
+ *
+ * The job structure, its attributes strings, and its dependencies
+ * are recovered from the disk.  Space to hold the above is
+ * calloc-ed as needed.
+ *
+ * Returns: job pointer to new job structure or a
+ *   null pointer on an error.
+*/
+
+job *job_recov(
+
+  char *filename) /* I */   /* pathname to job save file */
+
+  {
+  job  *pj;
+  char  namebuf[MAXPATHLEN];
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
+  int   rc;
+
+  pj = job_alloc(); /* allocate & initialize job structure space */
+
+  if (pj == NULL)
+    {
+    /* FAILURE - cannot alloc memory */
+
+    return(NULL);
+    }
+
+  snprintf(namebuf, MAXPATHLEN, "%s%s", path_jobs, filename); /* job directory path, filename */
+  size_t logBufLen = sizeof(log_buf);
+
+  if ((rc = job_recov_xml(namebuf, &pj, log_buf, logBufLen)) && rc == PBSE_INVALID_SYNTAX)
+    rc = job_recov_binary(namebuf, &pj, log_buf, logBufLen);
+
+  if (rc == PBSE_NONE)
+    rc = set_array_job_ids(&pj, log_buf, logBufLen);
+
+  if (rc != PBSE_NONE) 
+    {
+    if (rc == -1) 
+      {
+      log_err(errno, __func__, log_buf);
+
+#ifndef PBS_MOM
+      unlock_ji_mutex(pj, __func__, "1", LOGLEVEL);
+      free(pj->ji_mutex);
+#endif
+      free((char *)pj);
+      } /* sometime pjob is freed by abt_job() */
+    return(NULL);
+    }
+  
+  
   pj->ji_commit_done = 1;
 
   /* all done recovering the job */
@@ -688,9 +1392,3 @@ job *job_recov(
 
   return(pj);
   }  /* END job_recov() */
-
-/* END job_recov.c */
-
-
-
-

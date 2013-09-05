@@ -38,9 +38,12 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - TRQ-2030. Fix an ALPS 1.2 bug with labels on nodes. In 1.2 labels would be
       repeated like this: labelnamelabelname... Cray only.
   b - TRQ-1914. Fix after type dependencies not being removed from arrays.
+<<<<<<< HEAD
   b - TRQ-2015. Fix a problem where pbs_mom processes get stuck in a defunc state when
       doing a qrerun on a job. qrerun is not required to make this happen. Just the
       action of requeing a running job on the mom causes this to happen.
+=======
+>>>>>>> master
 
 4.2.3
   b - TRQ-1653. Arrays depending on non-array jobs was broken. Fix this.
@@ -60,6 +63,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       default_features overcomes this issue.
   b - If privileged ports are disabled, make pbs_moms not check if incoming connections
       from mother superior are on privileged ports. TRQ-1669.
+  c - TRQ-1784, bugzilla #231. Fix a crash for modifying arrays with qalter.
   e - Add two mom config parameters: max_join_job_wait_time and resend_join_job_wait_time.
       The first specifies how long pbs_mom should wait before deciding that join jobs
       will never be received, and defaults to 10 minutes. The latter specifies how long
@@ -75,11 +79,16 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - TRQ-1709. Fix parsing of -l gpus=X,other_things parsing incorrectly.
   b - TRQ-1639. Gpu status information wasn't being displayed correctly.
   b - TRQ-1826. mppdepth is now passed correctly to the ALPS reservation.
+  b - TRQ-1639. Gpu status information wasn't being displayed correctly.
+  b - TRQ-1826. mppdepth is now passed correctly to the ALPS reservation.
+  e - Reintroduced the procct resource for queues which allows jobs to be managed based
+      on the number of procs requested.  TRQ-1623
 
 4.2.2
   b - Make job_starter work for parallel jobs as well as serial. (TRQ-1577 - thanks
       to NERSC for the patch)
   b - Fix one issue with being able to submit jobs to the cray while offline. TRQ-1595.
+  b - Make job_starter work for parallel jobs as well as serial. (TRQ-1577 - thanks
   e - Make the abort and email messages for jobs more specific when they are killed 
       for going over a limit. TRQ-1076.
   e - Add mom parameter mom_oom_immunize, making the mom immune to being killed in out
@@ -117,6 +126,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 4.1.6
   b - Make job_starter work for parallel jobs as well as serial. (TRQ-1577 - thanks
       to NERSC for the patch, backported from 4.2.2)
+  b - Fix one issue with being able to submit jobs to the cray while offline. TRQ-1595.
+      backported from 4.2.2
 
 4.1.5
   b - For cray: make sure that reservations are released when jobs are requeued. TRQ-1572.

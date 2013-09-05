@@ -87,6 +87,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "pbs_error.h"
 #include "pbs_ifl.h"
@@ -106,7 +107,6 @@ void prt_job_err(
     {
     fprintf(stderr, "%s: %s ", cmd, errmsg);
     fprintf(stderr, "%s\n", id);
-
     free(errmsg);
     }
 

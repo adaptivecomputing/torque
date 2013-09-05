@@ -98,9 +98,9 @@
 #include "resizable_array.h"
 #include "hash_table.h"
 #include "mom_hierarchy.h"
-#include "dynamic_string.h"
 #include "tcp.h" /* tcp_chan */
 #include "net_connect.h"
+#include <string>
 
 #define SAVEJOB_BUF_SIZE 8192
 
@@ -452,14 +452,14 @@ typedef struct noderes
 
 /* Flags for ji_flags (mom only) */
 
-#define MOM_CHECKPOINT_ACTIVE 1 /* checkpoint in progress */
-#define MOM_CHECKPOINT_POST  2 /* post checkpoint call returned */
-#define MOM_HAS_NODEFILE 4 /* Mom wrote job PBS_NODEFILE */
-#define MOM_NO_PROC  8 /* no procs found for job */
-#define MOM_HAS_TMPDIR  16 /* Mom made a tmpdir */
+#define MOM_CHECKPOINT_ACTIVE         0x00000001 /* checkpoint in progress */
+#define MOM_CHECKPOINT_POST           0x00000002 /* post checkpoint call returned */
+#define MOM_HAS_NODEFILE              0x00000004 /* Mom wrote job PBS_NODEFILE */
+#define MOM_NO_PROC                   0x00000008 /* no procs found for job */
+#define MOM_HAS_TMPDIR                0x00000010 /* Mom made a tmpdir */
 
 #ifdef USESAVEDRESOURCES
-#define MOM_JOB_RECOVERY   32  /* recovering dead job on restart */
+#define MOM_JOB_RECOVERY              0x000000020  /* recovering dead job on restart */
 #endif    /* USESAVEDRESOURCES */
 
 #endif /* MOM */
@@ -921,6 +921,8 @@ task *task_find(job *pjob, tm_task_id taskid);
 #define LOCUTION_SUCCESS  0
 #define LOCUTION_FAIL    -1
 #define LOCUTION_REQUEUE -2
+#define LOCUTION_RETRY   -3
+#define LOCUTION_DONE     1
 
 #define LOCUTION_SIZE     20
 
@@ -1116,8 +1118,8 @@ extern job  *mom_find_job(char *);
 extern job  *job_recov(char *);
 extern int   job_save(job *, int, int);
 extern int   modify_job_attr(job *, svrattrl *, int, int *);
-extern char *prefix_std_file(job *, dynamic_string *, int);
-extern char *add_std_filename(job *, char *, int, dynamic_string *);
+extern const char *prefix_std_file(job *, std::string& , int);
+extern const char *add_std_filename(job *, char *, int, std::string&);
 extern int   set_jobexid(job *, pbs_attribute *, char *);
 extern int   site_check_user_map(job *, char *, char *, int);
 int  svr_dequejob(job *, int);

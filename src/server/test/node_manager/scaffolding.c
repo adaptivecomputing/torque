@@ -14,6 +14,10 @@
 #include "net_connect.h" /* pbs_net_t */
 #include "pbs_nodes.h" /* pbsnode, all_nodes, node_iterator */
 #include "work_task.h" /* work_task, work_type */
+#include <vector>
+#include <string>
+#include <boost/ptr_container/ptr_vector.hpp>
+
 
 int SvrNodeCt = 0; 
 int svr_resc_size = 0;
@@ -226,7 +230,7 @@ void free_arst(struct pbs_attribute *attr)
   exit(1);
   }
 
-int svr_connect(unsigned long, unsigned int, int*, pbsnode*, void* (*)(void*), conn_type)
+int svr_connect(unsigned long, unsigned int, int*, pbsnode*, void* (*)(void*))
   {
   fprintf(stderr, "The call to svr_connect needs to be mocked!!\n");
   exit(1);
@@ -330,24 +334,6 @@ void *send_hierarchy_threadtask(void *vp)
   exit(1);                            
   }
 
-dynamic_string *get_dynamic_string(int size, const char *str)
-  {
-  fprintf(stderr, "The call to get_dynamic_string needs to be mocked!!\n");
-  exit(1);                            
-  }
-
-int copy_to_end_of_dynamic_string(dynamic_string *ds, const char *str)
-  {
-  fprintf(stderr, "The call to copy_to_end_of_dynamic_string needs to be mocked!!\n");
-  exit(1);                            
-  }
-
-void free_dynamic_string(dynamic_string *ds)
-  {
-  }
-
-
-
 char *threadsafe_tokenizer(char **str, const char *delims)
   {
   fprintf(stderr, "The call to threadsafe_tokenizer needs to be mocked!!\n");
@@ -362,7 +348,7 @@ int get_svr_attr_l(int index, long *l)
 int process_alps_status(
 
   char           *nd_name,
-  dynamic_string *status_info)
+  boost::ptr_vector<std::string>& status_info)
 
   {
   return(0);
@@ -445,26 +431,17 @@ int add_execution_slot(struct pbsnode *pnode)
 struct pbsnode *create_alps_subnode(
 
   struct pbsnode *parent,
-  char           *node_id)
+  const char    *node_id)
 
   {
   return(NULL);
   }
 
-int append_dynamic_string(dynamic_string *ds, const char *str)
-  {
-  return(0);
-  }
-
-int append_char_to_dynamic_string(dynamic_string *ds, char c)
-  {
-  return(0);
-  }
-
-void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_ext(int eventtype, const char *func_name, const char *msg, int level) {}
+void log_err(int errnum, const char *routine, const char *text) {}
+
 
 pbs_net_t get_hostaddr(
 

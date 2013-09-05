@@ -154,6 +154,28 @@ struct all_arrays
   pthread_mutex_t *allarrays_mutex;
   };
 
+#define ARRAY_TAG "array"
+#define ARRAY_STRUCT_VERSION_TAG "struct_version"
+#define ARRAY_SIZE_TAG "array_size"
+#define NUM_JOBS_TAG "number_jobs"
+#define SLOT_LIMIT_TAG "slot_limit"
+#define JOBS_RUNNING_TAG "jobs_running"
+#define JOBS_DONE_TAG "jobs_done"
+#define NUM_CLONED_TAG "number_cloned"
+#define NUM_STARTED_TAG "number_started"
+#define NUM_FAILED_TAG "number_failed"
+#define NUM_SUCCESSFULL_TAG "number_successfull"
+#define OWNER_TAG "owner"
+#define PARENT_TAG "parent_id"
+#define ARRAY_FILEPREFIX_TAG "fileprefix"
+#define SUBMIT_HOST_TAG "submit_host"
+#define NUM_PURGED_TAG "number_purged"
+#define START_TAG "start"
+#define END_TAG "end"
+#define NUM_TOKENS_TAG "number_tokens"
+#define TOKENS_TAG "tokens"
+#define TOKEN_TAG "token"
+
 int  is_array(char *id);
 int  array_delete(job_array *pa);
 int  array_save(job_array *pa);

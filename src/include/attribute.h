@@ -73,6 +73,7 @@
 #include "pbs_constants.h" /* Long */
 #endif
 #include "list_link.h"
+#include <string>
 
 /*
  * This header file contains the definitions for attributes
@@ -446,7 +447,6 @@ extern char *parse_comma_string(char *,char **);
 #define NULL_FUNC '\0'
 
 /* other associated funtions */
-struct dynamic_string;
 
 extern int   acl_check(pbs_attribute *, char *canidate, int type);
 int          acl_check_my_array_string(struct array_strings *, char *, int);
@@ -458,7 +458,7 @@ extern int   save_attr(attribute_def *, pbs_attribute *, int, int, char *, size_
 extern int   save_attr_xml(attribute_def *, pbs_attribute *, int, int);
 extern int   write_buffer(char *,int,int);
 extern int   size_to_str(struct size_value,char *,int);
-extern int   attr_to_str(struct dynamic_string *ds, attribute_def *,struct pbs_attribute,int);
+extern int   attr_to_str(std::string& str, attribute_def *,struct pbs_attribute,int);
 extern int   str_to_attr(char *,char *,struct pbs_attribute *,struct attribute_def *);
 
 extern int      encode_state(pbs_attribute *, tlist_head *, const char *, const char *, int, int);

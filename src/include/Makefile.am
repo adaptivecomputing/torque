@@ -20,8 +20,9 @@ noinst_HEADERS = acct.h array.h assertions.h attribute.h		\
 		 mom_hierarchy.h dynamic_string.h mom_server.h		\
 		 alps_constants.h alps_functions.h login_nodes.h	\
 		 track_alps_reservations.h net_cache.h user_info.h	\
-		 hash_map.h exiting_jobs.h mom_update.h dis_internal.h \
-		 mutex_mgr.hpp mom_memory.h execution_slot_tracker.hpp
+		 hash_map.h exiting_jobs.h mom_update.h dis_internal.h  \
+		 mutex_mgr.hpp mom_memory.h execution_slot_tracker.hpp  \
+		 mom_config.h
 
 BUILT_SOURCES = site_job_attr_def.h site_job_attr_enum.h \
 		site_qmgr_node_print.h site_qmgr_que_print.h \

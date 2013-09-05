@@ -5,7 +5,6 @@
 
 
 #include "mcom.h" /* mxml_t, MDataFormatEnum, mbool_t */
-#include "dynamic_string.h" /* dynamic_string */
 #include "hash_table.h" /* hash_table_t, bucket, node_comm_t */
 #include "mom_hierarchy.h" /* mom_hierarchy_t */
 #include "resizable_array.h" /* resizable_array */
@@ -40,21 +39,6 @@ int MXMLGetAttr(mxml_t *E, char *AName, int *ATok, char *AVal, int VSize);
 int MXMLGetChild(mxml_t *E, char *CName, int *CTok, mxml_t **C);
 int MXMLGetChildCI(mxml_t *E, char *CName, int *CTok, mxml_t **CP);
 int        MXMLFromString(mxml_t **EP, char *XMLString, char **Tail, char *EMsg, int emsg_size);
-
-/* u_dynamic_string.c */
-size_t need_to_grow(dynamic_string *ds, char *to_check);
-
-int append_dynamic_string(dynamic_string *ds, const char *to_append);
-
-int copy_to_end_of_dynamic_string(dynamic_string *ds, const char *to_copy);
-
-dynamic_string *get_dynamic_string(int initial_size, const char *str);
-
-void free_dynamic_string(dynamic_string *ds);
-
-void clear_dynamic_string(dynamic_string *ds);
-
-char *get_string(dynamic_string *ds);
 
 /* u_groups.c */
 struct group * getgrnam_ext(char * grp_name );
@@ -180,3 +164,6 @@ int escape_xml(char *in, char *out, int size);
 char *find_next_tag(char *buffer, char **tag);
 
 int unescape_xml(char *in, char *out, int size);
+
+/* u_putenv.c */
+int put_env_var(const char *, const char *);

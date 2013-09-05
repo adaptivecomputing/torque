@@ -1023,12 +1023,9 @@ int req_quejob(
     if (!(pj->ji_wattr[JOB_ATR_outpath].at_flags & ATR_VFLAG_SET) ||
         (((pj->ji_wattr[JOB_ATR_outpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str) - 1] == ':'))))
       {
-      dynamic_string *ds = get_dynamic_string(-1, NULL);
-      pj->ji_wattr[JOB_ATR_outpath].at_val.at_str = prefix_std_file(pj, ds, (int)'o');
+      std::string ds = "";
+      pj->ji_wattr[JOB_ATR_outpath].at_val.at_str = strdup(prefix_std_file(pj, ds, (int)'o'));
       pj->ji_wattr[JOB_ATR_outpath].at_flags |= ATR_VFLAG_SET;
-
-      /* don't call free_dynamic_string() */
-      free(ds);
       }
     /*
      * if the output path was specified and ends with a '/'
@@ -1037,15 +1034,12 @@ int req_quejob(
     else if ((pj->ji_wattr[JOB_ATR_outpath].at_flags & ATR_VFLAG_SET) &&
         (((pj->ji_wattr[JOB_ATR_outpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str) - 1] == '/'))))
       {
-      dynamic_string *ds = get_dynamic_string(-1, NULL);
+      std::string ds = "";
       pj->ji_wattr[JOB_ATR_outpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str) - 1] = '\0';
       
       replace_attr_string(
         &pj->ji_wattr[JOB_ATR_outpath],
-        (add_std_filename(pj, pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, (int)'o', ds)));
-
-      /* don't call free_dynamic_string() */
-      free(ds);
+        (strdup(add_std_filename(pj, pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, (int)'o', ds))));
       }
     else if (pj->ji_wattr[JOB_ATR_outpath].at_flags & ATR_VFLAG_SET)
       {
@@ -1067,14 +1061,11 @@ int req_quejob(
         {
         if (S_ISDIR(stat_buf.st_mode))
           {
-          dynamic_string *ds = get_dynamic_string(-1, NULL);
+          std::string ds = "";
 /*          strcat(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, "/"); */
           replace_attr_string(
             &pj->ji_wattr[JOB_ATR_outpath],
-            (add_std_filename(pj, pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, (int)'o', ds)));
-      
-          /* don't call free_dynamic_string() */
-          free(ds);
+            (strdup(add_std_filename(pj, pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, (int)'o', ds))));
           }
         }
       }
@@ -1082,12 +1073,9 @@ int req_quejob(
     if (!(pj->ji_wattr[JOB_ATR_errpath].at_flags & ATR_VFLAG_SET) ||
         (((pj->ji_wattr[JOB_ATR_errpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_errpath].at_val.at_str) - 1] == ':'))))
       {
-      dynamic_string *ds = get_dynamic_string(-1, NULL);
-      pj->ji_wattr[JOB_ATR_errpath].at_val.at_str = prefix_std_file(pj, ds, (int)'e');
+      std::string ds = "";
+      pj->ji_wattr[JOB_ATR_errpath].at_val.at_str = strdup(prefix_std_file(pj, ds, (int)'e'));
       pj->ji_wattr[JOB_ATR_errpath].at_flags |= ATR_VFLAG_SET;
-
-      /* don't call free_dynamic_string() */
-      free(ds);
       }
     /*
      * if the error path was specified and ends with a '/'
@@ -1096,14 +1084,11 @@ int req_quejob(
     else if ((pj->ji_wattr[JOB_ATR_errpath].at_flags & ATR_VFLAG_SET) &&
         (((pj->ji_wattr[JOB_ATR_errpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_errpath].at_val.at_str) - 1] == '/'))))
       {
-      dynamic_string *ds = get_dynamic_string(-1, NULL);
+      std::string ds = "";
       pj->ji_wattr[JOB_ATR_errpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_errpath].at_val.at_str) - 1] = '\0';
       
       replace_attr_string(&pj->ji_wattr[JOB_ATR_errpath],
-        (add_std_filename(pj, pj->ji_wattr[JOB_ATR_errpath].at_val.at_str, (int)'e', ds)));
-          
-      /* don't call free_dynamic_string() */      
-      free(ds);
+        (strdup(add_std_filename(pj, pj->ji_wattr[JOB_ATR_errpath].at_val.at_str, (int)'e', ds))));
       }
     else if (pj->ji_wattr[JOB_ATR_errpath].at_flags & ATR_VFLAG_SET)
       {
@@ -1125,13 +1110,10 @@ int req_quejob(
         {
         if (S_ISDIR(stat_buf.st_mode))
           {
-          dynamic_string *ds = get_dynamic_string(-1, NULL);
+          std::string ds = "";
 /*          strcat(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, "/"); */
           replace_attr_string(&pj->ji_wattr[JOB_ATR_errpath],
-            (add_std_filename(pj, pj->ji_wattr[JOB_ATR_errpath].at_val.at_str, (int)'e', ds)));
-      
-          /* don't call free_dynamic_string() */
-          free(ds);
+            (strdup(add_std_filename(pj, pj->ji_wattr[JOB_ATR_errpath].at_val.at_str, (int)'e', ds))));
           }
         }
       }
@@ -1354,6 +1336,7 @@ int req_quejob(
   if ((rc = svr_chkque(pj, pque, preq->rq_host, MOVE_TYPE_Move, EMsg)))
     {
     que_mgr.unlock();
+    decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
     svr_job_purge(pj);
     job_mutex.set_lock_on_exit(false);
     req_reject(rc, 0, preq, NULL, EMsg);
@@ -1392,6 +1375,7 @@ int req_quejob(
     {
     /* reply failed, purge the job and close the connection */
     rc = PBSE_SOCKET_WRITE; /* Re-write reply_jobid to return the error */
+    decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
     svr_job_purge(pj);
     job_mutex.set_lock_on_exit(false);
     return(rc);
@@ -2113,6 +2097,7 @@ int req_commit(
         log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, log_buf);
         }
 
+      decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
       svr_job_purge(pj);
       }
     else
@@ -2166,6 +2151,7 @@ int req_commit(
       log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, log_buf);
       }
 
+    decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
     svr_job_purge(pj);
     req_reject(rc, 0, preq, NULL, log_buf);
     return(rc);
@@ -2204,7 +2190,6 @@ int req_commit(
     preq_run->rq_ind.rq_run.rq_resch = 0;
     preq_run->rq_ind.rq_run.rq_destin = rq_destin;
     preq_run->rq_fromsvr = preq->rq_fromsvr;
-    preq_run->rq_extsz = preq->rq_extsz;
     preq_run->rq_noreply = TRUE; /* set for no replies */
     strcpy(preq_run->rq_user, preq->rq_user);
     strcpy(preq_run->rq_host, preq->rq_host);

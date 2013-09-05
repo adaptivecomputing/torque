@@ -110,12 +110,14 @@
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
 #include "../lib/Libifl/lib_ifl.h"
+#include "../lib/Libutils/lib_utils.h"
 #include "checkpoint.h" /* start_checkpoint */
 #include "resmon.h"
 #include "net_connect.h"
 #include "utils.h"
 #include "alps_functions.h"
 #include "tcp.h" /* tcp_chan */
+#include "mom_config.h"
 
 #ifdef _CRAY
 #include <sys/category.h>
@@ -126,8 +128,6 @@
 
 extern struct var_table vtable;      /* see start_exec.c */
 extern char           **environ;
-extern char            *apbasil_path;
-extern char            *apbasil_protocol;
 
 int reply_send_mom(struct batch_request *request);
 
@@ -159,7 +159,6 @@ extern unsigned int alarm_time;
 extern unsigned int default_server_port;
 extern int  exiting_tasks;
 extern tlist_head svr_alljobs;
-extern char  mom_host[];
 extern char            *msg_err_unlink;
 extern char            *path_spool;
 extern char            *path_undeliv;
@@ -168,7 +167,6 @@ extern char            *msg_jobmod;
 extern char            *msg_manager;
 extern time_t  time_now;
 extern int  multi_mom;
-extern int spoolasfinalname;
 #ifdef NVIDIA_GPUS
 extern int  use_nvidia_gpu;
 #endif /* NVIDIA_GPUS */
@@ -177,9 +175,6 @@ extern int  use_nvidia_gpu;
 
 extern char             MOMUNameMissing[];
 extern int              pbs_rm_port;
-extern char             rcp_path[];
-extern char             rcp_args[];
-extern char            *TNoSpoolDirList[];
 extern char             path_checkpoint[];
 
 /* Local Data Items */
@@ -193,9 +188,6 @@ static char  *output_retained = (char *)"Output retained on that host in: ";
 #endif /* !NO_SPOOL_OUTPUT */
 
 static char   rcperr[MAXPATHLEN]; /* file to contain rcp error */
-
-extern char PBSNodeMsgBuf[1024];
-extern int  LOGLEVEL;
 
 
 /* prototypes */
@@ -776,8 +768,6 @@ static int told_to_cp(
   static char newp[MAXPATHLEN + 1];
   char linkpath[MAXPATHLEN + 1];
   int max_links;
-
-  extern struct cphosts *pcphosts;
 
   for (max_links = 16;max_links > 0;max_links--)
     {

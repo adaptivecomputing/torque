@@ -87,6 +87,7 @@
 #include <netinet/in.h> /* sockaddr_in */
 #include <set>
 #include <vector>
+#include <boost/ptr_container/ptr_vector.hpp>
 
 #include "execution_slot_tracker.hpp"
 #include "resizable_array.h"
@@ -96,7 +97,8 @@
 
 /* NOTE:  requires server_limits.h */
 
-#include "dynamic_string.h"
+#include <vector>
+#include <string>
 
 #ifdef NUMA_SUPPORT
 /* NOTE: cpuset support needs hwloc */
@@ -190,7 +192,7 @@ struct jobinfo
 
 typedef struct alps_req_data
   {
-  dynamic_string *node_list;
+  std::string     node_list;
   int             ppn;
   } alps_req_data;
 
@@ -287,7 +289,7 @@ typedef struct nodeboard_t
 typedef struct received_node
   {
   char            hostname[PBS_MAXNODENAME];
-  dynamic_string *statuses;
+  boost::ptr_vector<std::string> statuses;
   int             hellos_sent;
   } received_node;
 

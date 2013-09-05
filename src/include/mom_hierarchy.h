@@ -88,7 +88,6 @@
 #include "tcp.h" /* tcp_chan */
 
 #include "resizable_array.h"
-#include "dynamic_string.h"
 
 
 #define INITIAL_SIZE_NETWORK    1
@@ -119,16 +118,6 @@ typedef struct mom_hierarchy
   int              current_node;  /* index of the active node from that path */
   resizable_array *paths;         /* the paths we currently have, a 3D array of resizable arrays */
   } mom_hierarchy_t;
-
-
-
-/* struct to hold information on each node that passed a status string */
-typedef struct reported_node
-  {
-  char            hostname[100];
-  dynamic_string *status;
-  } reported_node_t;
-
 
 
 int add_network_entry(mom_hierarchy_t *,char *,struct addrinfo *,unsigned short,int,int);

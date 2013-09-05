@@ -27,6 +27,7 @@
 u_long addclient(char *name);
 
 
+#if 0 /* obsolete, we now write in xml */
 /*
  * save_tmsock() - Saves the tm sockets of a job to disk
  *
@@ -63,6 +64,7 @@ int save_tmsock(
 
   return(PBSE_NONE);
   }  /* END save_tmsock() */
+#endif 
 
 
 

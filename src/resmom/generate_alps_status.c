@@ -83,9 +83,11 @@
 #include <unistd.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
-#include "dynamic_string.h"
 #include "utils.h"
 #include "alps_constants.h"
+#include <string>
+#include <vector>
+#include <boost/ptr_container/ptr_vector.hpp>
 
 #include "../lib/Libifl/lib_ifl.h"
 
@@ -95,7 +97,7 @@
  */
 int process_reservations(
 
-  dynamic_string *status,
+  boost::ptr_vector<std::string>& status,
   xmlNode        *node)
 
   {
@@ -196,7 +198,7 @@ int process_memory_array(
 
 int process_label_array(
 
-  dynamic_string *feature_list,
+  std::string&   feature_list,
   xmlNode        *node)
 
   {
@@ -210,25 +212,25 @@ int process_label_array(
       if (!strncmp(attr_value, "MOAB:FEATURE=", strlen("MOAB:FEATURE=")))
         {
         char *feature_name = attr_value + strlen("MOAB:FEATURE=");
-        if (feature_list->used == 0)
+        if (feature_list.length() == 0)
           {
-          append_dynamic_string(feature_list, feature_name);
+          feature_list += feature_name;
           }
         else
           {
           /* this can be called multiple times per node. Make sure the same feature
            * isn't inserted twice */
-          const char *str = strstr(feature_list->str, feature_name);
+          const char *str = strstr(feature_list.c_str(), feature_name);
           bool        found = false;
 
           if (str != NULL)
             {
-            if ((str == feature_list->str) ||
+            if ((str == feature_list.c_str()) ||
                 (*(str - 1) == ','))
               {
               int feature_name_len = strlen(feature_name);
 
-              if ((str + feature_name_len > feature_list->str + feature_list->used) ||
+              if ((str + feature_name_len > feature_list.c_str() + feature_list.length()) ||
                   (*(str + feature_name_len) == ',') ||
                   (*(str + feature_name_len) == '\0'))
                 found = true;
@@ -237,8 +239,8 @@ int process_label_array(
 
           if (found == false)
             {
-            append_dynamic_string(feature_list, ",");
-            append_dynamic_string(feature_list, feature_name);
+            feature_list += ",";
+            feature_list += feature_name;
             }
           }
         }
@@ -255,7 +257,7 @@ int process_label_array(
 
 int process_accelerator_array(
 
-  dynamic_string *status,
+  boost::ptr_vector<std::string>& status,
   xmlNode        *node)
 
   {
@@ -264,45 +266,56 @@ int process_accelerator_array(
   char          *attr_value2;
   char           buf[MAXLINE];
 
-  copy_to_end_of_dynamic_string(status, CRAY_GPU_STATUS_START);
+  status.push_back(new std::string(CRAY_GPU_STATUS_START));
 
   for (child = node->children; child != NULL; child = child->next)
     {
     if (!strcmp((const char *)child->name, accelerator))
       {
+      std::string *str = NULL;
       /* write the gpu id */
       attr_value = (char *)xmlGetProp(child, (const xmlChar *)type);
       attr_value2 = (char *)xmlGetProp(child, (const xmlChar *)ordinal);
       snprintf(buf, sizeof(buf), "%s-%d", attr_value, atoi(attr_value2));
-      copy_to_end_of_dynamic_string(status, "gpu_id=");
-      append_dynamic_string(status, buf);
+      str = new std::string("gpu_id=");
+      *str += buf;
+      status.push_back(str);
+      str = NULL;
       free(attr_value);
       free(attr_value2);
 
       attr_value = (char *)xmlGetProp(child, (const xmlChar *)state);
-      copy_to_end_of_dynamic_string(status, "state=");
-      append_dynamic_string(status, attr_value);
+      str = new std::string("state=");
+      *str += attr_value;
+      status.push_back(str);
+      str = NULL;
       free(attr_value);
 
       attr_value = (char *)xmlGetProp(child, (const xmlChar *)family);
-      copy_to_end_of_dynamic_string(status, "family=");
-      append_dynamic_string(status, attr_value);
+      str = new std::string("family=");
+      *str += attr_value;
+      status.push_back(str);
+      str = NULL;
       free(attr_value);
 
       attr_value = (char *)xmlGetProp(child, (const xmlChar *)memory_mb);
-      copy_to_end_of_dynamic_string(status, "memory=");
-      append_dynamic_string(status, attr_value);
-      append_dynamic_string(status, "mb");
+      str = new std::string("memory=");
+      *str += attr_value;
+      *str += "mb";
+      status.push_back(str);
+      str = NULL;
       free(attr_value);
 
       attr_value = (char *)xmlGetProp(child, (const xmlChar *)clock_mhz);
-      copy_to_end_of_dynamic_string(status, "clock_mhz=");
-      append_dynamic_string(status, attr_value);
+      str = new std::string("clock_mhz=");
+      *str += attr_value;
+      status.push_back(str);
+      str = NULL;
       free(attr_value);
       }
     }
   
-  copy_to_end_of_dynamic_string(status, CRAY_GPU_STATUS_END);
+  status.push_back(new std::string(CRAY_GPU_STATUS_END));
 
   return(PBSE_NONE);
   } /* END process_accelerator_array() */
@@ -312,7 +325,7 @@ int process_accelerator_array(
 
 int process_node(
 
-  dynamic_string *status,
+  boost::ptr_vector<std::string>& status,
   xmlNode        *node)
 
   {
@@ -321,11 +334,7 @@ int process_node(
   xmlNode            *child;
   xmlNode            *segments;
   xmlNode            *segment_child;
-  xmlNode            *sockets;
-  xmlNode            *socket_child;
-  xmlNode            *compute_units;
-  xmlNode            *compute_unit_child;
-  dynamic_string     *features;
+  std::string        features = "";
   char                buf[MAXLINE];
   int                 num_procs         = 0;
   int                 avail_procs       = 0;
@@ -334,26 +343,32 @@ int process_node(
   unsigned long long  mem_kb;
   char               *rsv_id        = NULL;
 
-  if ((features = get_dynamic_string(-1, NULL)) == NULL)
-    return(ENOMEM);
-
-  copy_to_end_of_dynamic_string(status, "node=");
-  attr_value = (char *)xmlGetProp(node, (const xmlChar *)node_id);
-  append_dynamic_string(status, attr_value);
-  free(attr_value);
+    {
+    std::string *str = new std::string("node=");
+    attr_value = (char *)xmlGetProp(node, (const xmlChar *)node_id);
+    *str += attr_value;
+    status.push_back(str);
+    free(attr_value);
+    }
 
   /* check to see if the role is interactive - report these as down */
   role_value = (char *)xmlGetProp(node, (const xmlChar *)role);
 
-  copy_to_end_of_dynamic_string(status, "ARCH=");
-  attr_value = (char *)xmlGetProp(node, (const xmlChar *)architecture);
-  append_dynamic_string(status, attr_value);
-  free(attr_value);
+    {
+    std::string *str = new std::string("ARCH=");
+    attr_value = (char *)xmlGetProp(node, (const xmlChar *)architecture);
+    *str += attr_value;
+    status.push_back(str);
+    free(attr_value);
+    }
 
-  copy_to_end_of_dynamic_string(status, "name=");
-  attr_value = (char *)xmlGetProp(node, (const xmlChar *)name);
-  append_dynamic_string(status, attr_value);
-  free(attr_value);
+    {
+    std::string *str = new std::string("name=");
+    attr_value = (char *)xmlGetProp(node, (const xmlChar *)name);
+    *str += attr_value;
+    status.push_back(str);
+    free(attr_value);
+    }
 
   /* process the children */
   for (child = node->children; child != NULL; child = child->next)
@@ -443,21 +458,21 @@ int process_node(
   copy_to_end_of_dynamic_string(status, buf);
 
   snprintf(buf, sizeof(buf), "CPROC=%d", num_procs);
-  copy_to_end_of_dynamic_string(status, buf);
+  status.push_back(new std::string(buf));
 
   snprintf(buf, sizeof(buf), "APROC=%d", avail_procs);
-  copy_to_end_of_dynamic_string(status, buf);
+  status.push_back(new std::string(buf));
 
   snprintf(buf, sizeof(buf), "CMEMORY=%lu", memory);
-  copy_to_end_of_dynamic_string(status, buf);
+  status.push_back(new std::string(buf));
 
   mem_kb = memory * 1024;
 
   snprintf(buf, sizeof(buf), "totmem=%llukb", mem_kb);
-  copy_to_end_of_dynamic_string(status, buf);
+  status.push_back(new std::string(buf));
 
   snprintf(buf, sizeof(buf), "physmem=%llukb", mem_kb);
-  copy_to_end_of_dynamic_string(status, buf);
+  status.push_back(new std::string(buf));
 
   if (rsv_id != NULL)
     {
@@ -465,38 +480,41 @@ int process_node(
     if ((role_value == NULL) ||
         (strcmp(role_value, interactive_caps)))
       {
-      copy_to_end_of_dynamic_string(status, "reservation_id=");
-      append_dynamic_string(status, rsv_id);
+      std::string *str = new std::string("reservation_id=");
+      *str += rsv_id;
+      status.push_back(str);
       }
 
     free(rsv_id);
 
     /* if there's a reservation on this node, the state is busy */
-    copy_to_end_of_dynamic_string(status, "state=BUSY");
+    status.push_back(new std::string("state=BUSY"));
     
     snprintf(buf, sizeof(buf), "availmem=0kb");
-    copy_to_end_of_dynamic_string(status, buf);
+    status.push_back(new std::string("availmem=0kb"));
     }
   else
     {
     /* no reservation, evaluate the state normally */
-    copy_to_end_of_dynamic_string(status, "state=");
+    std::string *str = new std::string("state=");
     attr_value = (char *)xmlGetProp(node, (const xmlChar *)state);
     
     if ((role_value != NULL) &&
         (!strcmp(role_value, interactive_caps)))
       {
-      append_dynamic_string(status, "DOWN");
+      *str += "DOWN";
+      status.push_back(str);
       
       snprintf(buf, sizeof(buf), "availmem=0kb");
-      copy_to_end_of_dynamic_string(status, buf);
+      status.push_back(new std::string(buf));
       }
     else
       {
-      append_dynamic_string(status, attr_value);
+      *str += attr_value;
+      status.push_back(str);
      
       snprintf(buf, sizeof(buf), "availmem=%llukb", mem_kb);
-      copy_to_end_of_dynamic_string(status, buf);
+      status.push_back(new std::string(buf));
       }
 
     free(attr_value);
@@ -505,13 +523,12 @@ int process_node(
   if (role_value != NULL)
     free(role_value);
 
-  if (features->used > 0)
+  if (features.length() > 0)
     {
-    copy_to_end_of_dynamic_string(status, "feature_list=");
-    append_dynamic_string(status, features->str);
+    std::string *str = new std::string("feature_list=");
+    *str += features.c_str();
+    status.push_back(str);
     }
-
-  free_dynamic_string(features);
 
   return(PBSE_NONE);
   } /* END process_node() */
@@ -522,7 +539,7 @@ int process_node(
 
 int process_nodes(
 
-  dynamic_string *status,
+  boost::ptr_vector<std::string>& status,
   xmlNode        *node)
 
   {
@@ -543,7 +560,7 @@ int process_nodes(
 
 int process_element(
 
-  dynamic_string *status,
+  boost::ptr_vector<std::string>& status,
   xmlNode        *node)
 
   {
@@ -593,13 +610,13 @@ int process_element(
 
 int parse_alps_output(
 
-  dynamic_string *alps_output,
-  dynamic_string *status)
+  std::string& alps_output,
+  boost::ptr_vector<std::string>& status)
 
   {
   xmlDocPtr  doc;
 
-  if ((doc = xmlReadMemory(alps_output->str, strlen(alps_output->str), "apbasil", NULL, 0)) == NULL)
+  if ((doc = xmlReadMemory(alps_output.c_str(), alps_output.length(), "apbasil", NULL, 0)) == NULL)
     {
     char buf[MAXLINE * 4];
     xmlErrorPtr pErr = xmlGetLastError();
@@ -621,7 +638,7 @@ int parse_alps_output(
 
 int generate_alps_status(
 
-  dynamic_string *status,
+  boost::ptr_vector<std::string>& status,
   const char     *apbasil_path,
   const char     *apbasil_protocol)
 
@@ -634,10 +651,7 @@ int generate_alps_status(
   char            inventory_command[MAXLINE * 2];
   char            input_buffer[MAXLINE];
   char           *ptr;
-  dynamic_string *alps_output;
-
-  if ((alps_output = get_dynamic_string(-1, NULL)) == NULL)
-    return(ENOMEM);
+  std::string     alps_output = "";
 
   snprintf(inventory_command, sizeof(inventory_command), APBASIL_QUERY,
     (apbasil_protocol != NULL) ? apbasil_protocol : DEFAULT_APBASIL_PROTOCOL,
@@ -661,7 +675,7 @@ int generate_alps_status(
 
   while ((bytes_read = read(fd, ptr, sizeof(input_buffer) - 1)) > 0)
     {
-    append_dynamic_string(alps_output, ptr);
+    alps_output += ptr;
     memset(input_buffer, 0, sizeof(input_buffer));
     total_bytes_read += bytes_read;
     }
@@ -674,18 +688,15 @@ int generate_alps_status(
     rc = READING_PIPE_ERROR;
   else
     {
-    int index = alps_output->used - 1;
-    while (alps_output->str[index] != '>')
+    int index = alps_output.length() - 1;
+    while (alps_output.c_str()[index] != '>')
       {
-      alps_output->str[index] = '\0';
+      alps_output.resize(index);
       index--;
       }
 
-    alps_output->used -= 1;
     rc = parse_alps_output(alps_output, status);
     }
-
-  free_dynamic_string(alps_output);
 
   return(rc);
   } /* END generate_alps_status() */

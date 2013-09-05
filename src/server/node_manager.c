@@ -575,7 +575,7 @@ int kill_job_on_mom(
   sprintf(log_buf, "stray job %s found on %s", jobid, pnode->nd_name);
   log_err(-1, __func__, log_buf);
   
-  conn = svr_connect(pnode->nd_addrs[0], pnode->nd_mom_port, &local_errno, pnode, NULL, ToServerDIS);
+  conn = svr_connect(pnode->nd_addrs[0], pnode->nd_mom_port, &local_errno, pnode, NULL);
 
   if (conn >= 0)
     {
@@ -956,7 +956,6 @@ void stream_eof(
 
   {
   char            log_buf[LOCAL_LOG_BUF_SIZE];
-  enum conn_type  cntype = ToServerDIS;
   int             conn;
   int             my_err = 0;
 
@@ -982,7 +981,7 @@ void stream_eof(
 
   /* Before we mark this node down see if we can connect */
   lock_node(np, __func__, "parent", LOGLEVEL);
-  conn = svr_connect(addr, port, &my_err, np, NULL, cntype);
+  conn = svr_connect(addr, port, &my_err, np, NULL);
   if(conn >= 0)
     {
     unlock_node(np, __func__, "parent", LOGLEVEL);
@@ -1032,11 +1031,10 @@ int contact_node(
   int my_err = 0;
   char local_buf[LOCAL_LOG_BUF_SIZE];
   pbs_net_t addr;
-  enum conn_type cntype = ToServerDIS;
 
   /* the node is locked coming in. */
   addr = get_hostaddr(&my_err, np->nd_name);
-  conn = svr_connect(addr, np->nd_mom_port, &my_err, np, NULL, cntype);
+  conn = svr_connect(addr, np->nd_mom_port, &my_err, np, NULL);
   if (conn < 0)
     {
     snprintf(local_buf, sizeof(local_buf), "node %s is unresponsive. Check both the node and MOM", np->nd_name);  
@@ -1573,8 +1571,8 @@ static int gpu_count(
 int gpu_entry_by_id(
 
   struct pbsnode *pnode,  /* I */
-  char   *gpuid,
-  int    get_empty)
+  const char     *gpuid,
+  int             get_empty)
 
   {
   if (pnode->nd_gpus_real)
@@ -2859,7 +2857,7 @@ int node_spec(
       *ard_array = (alps_req_data *)calloc(num_alps_reqs + 1, sizeof(alps_req_data));
       
       for (i = 0; i <= num_alps_reqs; i++)
-        (*ard_array)[i].node_list = get_dynamic_string(-1, NULL);
+        (*ard_array)[i].node_list = "";
 
       *num_reqs = num_alps_reqs + 1;
       }
@@ -2894,10 +2892,10 @@ int node_spec(
                 (ard_array != NULL) &&
                 (*ard_array != NULL))
               {
-              if ((*ard_array)[req->req_id].node_list->used != 0)
-                append_char_to_dynamic_string((*ard_array)[req->req_id].node_list, ',');
+              if ((*ard_array)[req->req_id].node_list.length() != 0)
+                (*ard_array)[req->req_id].node_list += ',';
 
-              append_dynamic_string((*ard_array)[req->req_id].node_list, pnode->nd_name);
+              (*ard_array)[req->req_id].node_list += pnode->nd_name;
 
               if (req->ppn > (*ard_array)[req->req_id].ppn)
                 (*ard_array)[req->req_id].ppn = req->ppn;
@@ -4059,11 +4057,6 @@ void free_alps_req_data_array(
   int            num_reqs)
 
   {
-  int i;
-
-  for (i = 0; i < num_reqs; i++)
-    free_dynamic_string(ard_array[i].node_list);
-
   free(ard_array);
   } /* END free_alps_req_data_array() */
 
@@ -4078,30 +4071,30 @@ int add_multi_reqs_to_job(
 
   {
   int             i;
-  dynamic_string *attr_str;
+  std::string     *attr_str;
   char            buf[MAXLINE];
 
   if (ard_array == NULL)
     return(PBSE_NONE);
 
-  attr_str = ard_array[0].node_list;
+  attr_str = &ard_array[0].node_list;
 
   for (i = 0; i < num_reqs; i++)
     {
     if (i != 0)
       {
-      append_char_to_dynamic_string(attr_str, '|');
-      append_dynamic_string(attr_str, ard_array[i].node_list->str);
+      *attr_str += '|';
+      *attr_str += ard_array[i].node_list.c_str();
       }
 
     snprintf(buf, sizeof(buf), "*%d", ard_array[i].ppn);
-    append_dynamic_string(attr_str, buf);
+    *attr_str += buf;
     }
 
   if (pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str != NULL)
     free(pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str);
 
-  pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str = strdup(attr_str->str);
+  pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str = strdup(attr_str->c_str());
   pjob->ji_wattr[JOB_ATR_multi_req_alps].at_flags |= ATR_VFLAG_SET;
 
   return(PBSE_NONE);
@@ -5030,7 +5023,6 @@ void set_one_old(
 
         while (index >= jui->est.get_total_execution_slots())
           jui->est.add_execution_slot();
-
         jui->est.mark_as_used(index);
         pnode->nd_slots.mark_as_used(index);
         }
@@ -5042,7 +5034,6 @@ void set_one_old(
         
       while (index >= jui->est.get_total_execution_slots())
         jui->est.add_execution_slot();
-
       jui->est.mark_as_used(index);
       pnode->nd_slots.mark_as_used(index);
       pnode->nd_job_usages.push_back(jui);

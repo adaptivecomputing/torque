@@ -1,0 +1,305 @@
+#!/bin/sh
+
+POSIXLY_CORRECT=1
+
+# If there are any errors at all, fail.
+set -e
+
+usage() {
+    echo   "Usage:  torque-build [<options>]"
+    echo   "  Where <options> can be one of:"
+    echo   "    -h|--help                   Print this help page"
+    echo   "    -r|--root-path <path>       Root path of the MOAB source code"
+    echo   "                                  (default is the current"
+    echo   "                                  directory)"
+    echo   "    -d|--debug                  Enable debug mode"
+    echo   "    -q|--quiet                  Enable quiet mode"
+    echo   "    -v|--verbose                Enable verbose mode"
+    echo
+    echo   "    -t|--tarball                Make the TORQUE distribution tarball"
+    echo   "    -T|--no-tarball                Do not make the TORQUE distribution tarball"
+    echo   "                                    (takes precedent over quiet mode)"
+    echo   "    -a|--adaptive-rpm           Make the adaptive RPM (default)"
+    echo   "    -A|--no-adaptive-rpm        Do not make the adaptive RPM"
+    echo   ""
+    echo   "    -c|--coverity <cov-build>   Run coverity using the <cov-build>"
+    echo   "                                  script (e.g.,"
+    echo   "                                  /opt/coverity/default/bin/cov-build)"
+    echo   "    -C|--no-coverity            Do not run coverity (default)"
+    echo   ""
+    echo   "    -u|--unit-tests             Run unit-tests (default)"
+    echo   "    -U|--no-unit-tests          Do not run unit tests"
+    echo   ""
+    echo   "    -j <number>                 Passes '-j <number>' to make"
+    echo   "                                  ('3' by default)"
+    exit 1
+}
+
+# Default values for options
+root_path="${PWD}"
+verbose=0
+debug=0
+quiet=0
+adaptive_rpm=1
+coverity=0
+unit_tests=1
+parallel=3
+tarball=1
+
+# To be set later
+version=
+release_number=
+revision_number=
+changeset=
+short_changeset=
+cov_build=
+compile_type=
+
+while [ -n "${1}" ]
+do
+    case "${1}" in
+        -h|--help)
+            usage
+            ;;
+        -r|--root-path)
+            shift
+            root_path="${1}"
+            shift
+            ;;
+        -n|--name-suffix)
+            shift
+            name_suffix="${1}"
+            shift
+            ;;
+        -d|--debug)
+            debug=1
+            verbose=1
+            shift
+            ;;
+        -q|--quiet)
+            quiet=1
+            shift
+            ;;
+        -v|--verbose)
+            verbose=1
+            shift
+            ;;
+        -a|--adaptive-rpm)
+            adaptive_rpm=1
+            shift
+            ;;
+        -A|--no-adaptive-rpm)
+            adaptive_rpm=0
+            shift
+            ;;
+        -t|--tarball)
+            tarball=1
+            shift
+            ;;
+        -T|--no-tarball)
+            tarball=0
+            shift
+            ;;
+        -c|--coverity)
+            coverity=1
+            shift
+            cov_build="${1}"
+            shift
+            ;;
+        -C|--no-coverity)
+            coverity=0
+            shift
+            ;;
+        -u|--unit-tests)
+            unit_tests=1
+            shift
+            ;;
+        -U|--no-unit-tests)
+            unit_tests=0
+            shift
+            ;;
+        -j)
+            shift
+            parallel="${1}"
+            shift
+            ;;
+        *)
+            echo "Invalid argument '${1}' specified." >&2
+            usage
+            ;;
+    esac
+done
+
+# Argument processing
+
+if [ ${tarball} -eq 0 -a \
+     ${adaptive_rpm} -eq 0 -a \
+     ${coverity} -eq 0 -a \
+     ${unit_tests} -eq 0 ]
+then
+    echo "No artifacts or tests were requested." >&2
+    usage
+fi
+
+# Root path needs to be an absolute path
+if ! echo "${root_path}" | grep -q -E '^(/[^/]*)+$'
+then
+    root_path="${PWD}/${root_path}"
+fi
+
+if echo "${root_path}" | grep -q -E '^/+$'
+then
+    echo "The root path to the source code must not be '/'." >&2
+    usage
+fi
+
+if  [ ! -s "${root_path}/configure.ac" -o ! -d "${root_path}/buildutils" ] || \
+        ! grep -q -E 'AC_INIT[[:blank:]]*\([[:blank:]]*\[torque\]' \
+        "${root_path}/configure.ac"
+then
+    echo "It appears that '${root_path}' doesn't describe the root source" >&2
+    echo "  path for TORQUE." >&2
+    usage
+fi
+
+cd "${root_path}"
+
+if [ ${verbose} -ne 0 ]
+then
+    set -x
+fi
+
+if [ ${verbose} -ne 0 ]
+then
+    quiet=0
+fi
+
+quiet_redirect=""
+if [ ${quiet} -ne 0 ]
+then
+    quiet_redirect=">/dev/null"
+fi
+
+if ! echo "${parallel}" | grep -q -E '^[[:digit:]]+$'
+then
+    echo "Argument provided to the '-j' option must be a number." >&2
+    usage
+fi
+
+epoch=`date +%s`
+print_build_date="`date --date="@$epoch"`"
+branch=`git branch | awk '/^[*]/ { print $2}'`
+version=`buildutils/determine.version`
+release_number="`buildutils/determine.release_number`"
+changeset=`git rev-parse HEAD`
+distro="`buildutils/determine.distro -c | tr [A-Z] [a-z]`"
+
+if [ -z "${version}" ]
+then
+    echo "A <version> could not be found." >&2
+    echo "  Perhaps this is not a TORQUE repository?" >&2
+    usage
+fi
+
+if [ "${release_number}" = "_" ]
+then
+    echo "Something went wrong in creating the release number." >&2
+    usage
+fi
+
+echo "Started ${0}, version ${version}, release ${release_number}." \
+    ${quiet_redirect}
+
+sh autogen.sh
+./configure
+
+
+if [ ${coverity} -ne 0 -o ${unit_tests} -ne 0 ]
+then
+    ./configure --with-debug --with-check
+    make -j${parallel} clean || :
+fi
+
+if [ ${coverity} -ne 0 ]
+then
+    if [ ! -x "${cov_build}" ]
+    then
+        echo "'${cov_build}' is not a valid script." >&2
+        usage
+    fi
+    "${cov_build}" --dir cov-int make
+fi
+
+if [ ${unit_tests} -ne 0 ]
+then
+    make -j${parallel}
+    chmod +x src/test/test_scripts/*
+    make check -j${parallel}
+    make check | ./parse_cov_results.py
+fi
+
+distdir="torque-${version}-${release_number}"
+
+if [ ${tarball} -ne 0 ]
+then
+    make -j${parallel} distclean
+    sh autogen.sh
+    ./configure
+    make distcheck -j${parallel} distdir="${distdir}"
+fi
+
+# TORQUE RPMs ##################################################################
+if [ ${adaptive_rpm} -ne 0 ]
+then
+    # blow away old build stuff
+    rm -rf buildutils/rpmbuild
+    mkdir -p buildutils/rpmbuild/tmp
+    chmod a+rwxt buildutils/rpmbuild/tmp
+    mkdir -p buildutils/rpmbuild/BUILD
+    mkdir -p buildutils/rpmbuild/SOURCES
+    mkdir -p buildutils/rpmbuild/SPECS
+    mkdir -p buildutils/rpmbuild/RPMS/{i386,i686,noarch,x86_64}
+    cp buildutils/torque.adaptive.spec \
+        buildutils/rpmbuild/SPECS/torque.adaptive.spec
+
+    source_file=${distdir}.tar.gz
+    if [ ! -s "${source_file}" ]
+    then
+        echo "TORQUE tarball '${source_file}' not found!" >&2
+        exit 1
+    fi
+    cp -f "${source_file}" buildutils/rpmbuild/SOURCES
+
+    verbose_option=
+
+    if [ ${debug} -ne 0 ]
+    then
+        verbose_option="-vv"
+    elif [ ${quiet} -ne 0 ]
+    then
+        verbose_option="--quiet"
+    elif [ ${verbose} -ne 0 ]
+    then
+        verbose_option="-v"
+    else
+        verbose_option=""
+    fi
+
+    rpmbuild_option="-bb"
+
+    test ${quiet} -eq 0 && echo "Making adaptive rpm..."
+
+    mkdir -p buildutils/rpmbuild/moab-workload-manager-${version}
+    rpmbuild ${verbose_option} ${rpmbuild_option} ${with_option} \
+        buildutils/rpmbuild/SPECS/torque.adaptive.spec \
+        --buildroot "%{_topdir}/moab-torque${version}" \
+        --define "_topdir ${root_path}/buildutils/rpmbuild" \
+        --define "_rpmdir ${root_path}/buildutils/rpmbuild/RPMS" \
+        --define "_sourcedir ${root_path}/buildutils/rpmbuild/SOURCES" \
+        --define "_specdir ${root_path}/buildutils/rpmbuild/SPECS" \
+        --define "_tmppath ${root_path}/buildutils/rpmbuild/tmp" \
+        --define "version ${version}" \
+        --define "release_number ${release_number}.${distro}" \
+        --define "source_file ${source_file}" \
+        --define "base_name ${distdir}"
+fi

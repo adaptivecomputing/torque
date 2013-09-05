@@ -38,9 +38,7 @@ void job_start_error(struct job *pjob, int code, char *nodename);
 
 void arrayfree(char **array);
 
-void node_bailout(struct job *pjob, struct hnodent *np);
-
-void term_job(struct job *pjob);
+void term_job(job *pjob);
 
 void im_eof(int stream, int ret);
 

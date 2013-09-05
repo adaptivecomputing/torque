@@ -421,6 +421,11 @@ int log_open(
   else
     snprintf(buf2, sizeof(buf2), "Log opened");
   
+  if (log_host_port[0])
+    snprintf(buf2, sizeof(buf2), "Log opened at %s", log_host_port);
+  else
+    snprintf(buf2, sizeof(buf2), "Log opened");
+  
   log_record(
     PBSEVENT_SYSTEM,
     PBS_EVENTCLASS_SERVER,

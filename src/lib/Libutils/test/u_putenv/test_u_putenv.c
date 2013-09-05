@@ -1,7 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <check.h>
 #include "utils.h"
+#include <check.h>
+
+extern int put_env_var(const char *name, const char *value);
+
 
 START_TEST(test_one)
   {

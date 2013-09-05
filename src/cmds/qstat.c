@@ -640,7 +640,7 @@ static void altdsp_statjob(
   int         req_walltime = 0;
   int         elap_time = 0;
   char        elap_time_string[100];
-  char format_string[MAX_LINE_LEN];
+  char        format_string[MAX_LINE_LEN];
 
   int   usecput;
   static char  pfs[SIZEL];
@@ -1402,7 +1402,8 @@ void display_statjob(
             }
           }
 
-        c++;    /* List the first part of the server name, too. */
+        if (*c != '\0')
+          c++;    /* List the first part of the server name, too. */
 
         while ((*c != '.') && (*c != '\0'))
           c++;
@@ -2992,7 +2993,6 @@ que_no_args:
             if (errmsg != NULL)
               {
               fprintf(stderr, "qstat: %s ", errmsg);
-
               free(errmsg);
               }
             else
@@ -3066,7 +3066,6 @@ svr_no_args:
             if (errmsg != NULL)
               {
               fprintf(stderr, "qstat: %s ", errmsg);
-
               free(errmsg);
               }
             else

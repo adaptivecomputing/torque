@@ -10,7 +10,6 @@
 
 #define NO_LAYOUT_FILE      -10
 #define BAD_LAYOUT_FILE     -505
-#define CHECK_POLL_TIME     45
 
 #define PMAX_PORT                 32000
 #define MAX_PORT_STRING_LEN       6
@@ -26,25 +25,9 @@
 
 const char *nullproc(struct rm_attribute *attrib);
 
-/* static char *arch(struct rm_attribute *attrib); */
-
-/* static char *opsys(struct rm_attribute *attrib); */
-
 const char * getuname(void);
 
-/* static char *reqmsg(struct rm_attribute *attrib); */
-
-/* static char *getjoblist(struct rm_attribute *attrib); */
-
-/* static char *reqvarattr(struct rm_attribute *attrib); */
-
 const char *reqgres(struct rm_attribute *attrib);
-
-/* static char *reqstate(struct rm_attribute *attrib); */
-
-/* static char *requname(struct rm_attribute *attrib); */
-
-/* static char *validuser(struct rm_attribute *attrib); */
 
 const char *loadave(struct rm_attribute *attrib);
 
@@ -68,141 +51,25 @@ char *tokcpy(char *str, char *tok);
 
 void rmnl(char *str);
 
-/* static int setbool(char *value); */
-
 u_long addclient(const char *name);
-
-/* static u_long setpbsclient(char *value); */
-
-/* static u_long setpbsserver(char *value); */
-
-/* static u_long settmpdir(char *Value); */
-
-/* static u_long setxauthpath(char *Value); */
-
-/* static u_long setrcpcmd(char *Value); */
-
-/* static u_long setlogevent(char *value); */
-
-/* static u_long restricted(char *name); */
-
-/* static u_long configversion(char *Value); */
-
-/* static u_long setdownonerror(char *value); */
-
-/* static u_long setenablemomrestart(char *value); */
-
-/* static u_long cputmult(char *value); */
-
-/* static u_long wallmult(char *value); */
-
-/* static u_long usecp(char *value); */
-
-/* static unsigned long prologalarm(char *value); */
-
-/* static unsigned long setloglevel(char *value); */
-
-/* static unsigned long setumask(char *value); */
-
-/* static unsigned long setpreexec(char *value); */
-
-/* static unsigned long setsourceloginbatch(char *value); */
-
-/* static unsigned long setsourcelogininteractive(char *value); */
-
-/* static unsigned long jobstartblocktime(char *value); */
-
-/* static unsigned long setstatusupdatetime(char *value); */
-
-/* static unsigned long setcheckpolltime(char *value); */
-
-/* static void add_static(char *str, char *file, int linenum); */
-
-/* static unsigned long setidealload(char *value); */
-
-/* static unsigned long setignwalltime(char *value); */
-
-/* static unsigned long setignmem(char *value); */
-
-/* static unsigned long setigncput(char *value); */
-
-/* static unsigned long setignvmem(char *value); */
-
-/* static unsigned long setautoidealload(char *value); */
-
-/* static unsigned long setallocparcmd(char *value); */
-
-/* static unsigned long setautomaxload(char *value); */
-
-/* static unsigned long setmaxconnecttimeout(char *value); */
-
-/* static unsigned long setreduceprologchecks(char *value); */
-
-/* static unsigned long setnodecheckscript(char *value); */
-
-/* static unsigned long setnodecheckinterval(char *value); */
-
-/* static unsigned long settimeout(char *value); */
-
-/* static unsigned long setmaxload(char *value); */
-
-/* static unsigned long setlogfilemaxsize(char *value); */
-
-/* static unsigned long setlogfilerolldepth(char *value); */
-
-/* static unsigned long setlogdirectory(char *value); */
-
-/* static unsigned long setlogfilesuffix(char *value); */
-
-/* static unsigned long setlogkeepdays(char *value); */
-
-/* static u_long setvarattr(char *value); */
-
-/* static unsigned long setthreadunlinkcalls(char *value); */
-
-/* static unsigned long setnodefilesuffix(char *value); */
-
-/* static unsigned long setmomhost(char *value); */
-
-/* static u_long setrreconfig(char *value); */
-
-/* static unsigned long setnospooldirlist(char *value); */
 
 unsigned long aliasservername(const char *value);
 
-/* static unsigned long setspoolasfinalname(char *value); */
-
 unsigned long jobstarter(const char *value);
-
-/* static unsigned long setremchkptdirlist(char *value); */
 
 void check_log(void);
 
 int read_config(char *file);
 
-/* static u_long setusesmt(char *value); */
-
-/* static u_long setmempressthr(char *value); */
-
-/* static u_long setmempressdur(char *value); */
-
 struct rm_attribute *momgetattr(char *str);
 
 char *conf_res(char *resline, struct rm_attribute *attr);
-
-/* static void catch_abort(int sig); */
-
-/* static void catch_hup(int sig); */
-
-/* static void process_hup(void); */
 
 void toolong(int sig);
 
 void log_verbose(char *id, char *buf, int len);
 
 int bad_restrict(u_long ipadd);
-
-/* static void mom_lock(int fds, int op); */
 
 int rm_request(struct tcp_chan *chan, int version);
 
@@ -230,10 +97,6 @@ void MOMCheckRestart(void);
 
 void initialize_globals(void);
 
-/* static void stop_me(int sig); */
-
-/* static void PBSAdjustLogLevel(int sig); */
-
 char *mk_dirs(const char *base);
 
 void parse_command_line(int argc, char *argv[]);
@@ -247,7 +110,6 @@ int TMOMScanForStarting(void);
 void examine_all_polled_jobs(void);
 
 void examine_all_running_jobs(void);
-
 
 void examine_all_jobs_to_resend(void);
 
@@ -264,8 +126,6 @@ void restart_mom(int argc, char *argv[]);
 int read_layout_file();
 
 int setup_nodeboards();
-
-/* int main(int argc, char *argv[]); */
 
 int parse_mom_hierarchy_file(char *path, mom_hierarchy_t *nt);
 

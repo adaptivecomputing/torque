@@ -77,8 +77,9 @@
 * without reference to its choice of law rules.
 */
 
+#include <string>
+#include <vector>
+#include <boost/ptr_container/ptr_vector.hpp>
 
-#include "dynamic_string.h"
 
-
-int process_status_info(char *nd_name, dynamic_string *status_info);
+int process_status_info(char *nd_name, boost::ptr_vector<std::string>& status_info);

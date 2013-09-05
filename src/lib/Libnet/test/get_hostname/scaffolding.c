@@ -18,7 +18,6 @@ char *get_cached_fullhostname(const char *hostname,const struct sockaddr_in *sai
   return(NULL);
   }
 
-
 int pbs_getaddrinfo(
 
   const char       *pNode,
