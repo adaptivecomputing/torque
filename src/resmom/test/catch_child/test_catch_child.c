@@ -81,7 +81,7 @@ START_TEST(test_non_mother_superior_cleanup)
 
   pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HERE;
 
-  fail_unless(non_mother_superior_cleanup(pjob) == false);
+  fail_unless(non_mother_superior_cleanup(pjob) == true);
 
   pjob->ji_qs.ji_svrflags = 0;
   pjob->ji_qs.ji_svrflags |= JOB_SVFLG_INTERMEDIATE_MOM;
