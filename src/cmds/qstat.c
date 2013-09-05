@@ -2232,6 +2232,9 @@ int main(
   int                  p_header = TRUE;
   int                  stat_single_job = 0;
 
+  int                  testholder;
+  int                  argcholder;
+
   struct batch_status *p_status;
 
   struct batch_status *p_server;
@@ -2240,6 +2243,7 @@ int main(
   struct attrl        *attrib = NULL;
   char                *errmsg;
   int                  exec_only = 0;
+  bool                 have_args = false;
   
   enum { JOBS, QUEUES, SERVERS } mode;
 
@@ -2683,15 +2687,17 @@ int main(
       alt_opt &= ~ALT_DISPLAY_u;
     }
 
+  testholder = optind;
+  argcholder = argc;
+
+  if (testholder == argcholder)
+    {
+    ;
+    }
+
   if (optind >= argc)
     {
     /* If no arguments, then set defaults */
-
-    switch (mode)
-      {
-
-      case JOBS:
-
         server_out[0] = '@';
         strcpy(&server_out[1], def_server);
         tcl_addarg(ops, server_out);
@@ -2699,50 +2705,18 @@ int main(
         job_id_out[0] = '\0';
         server_out[0] = '\0';
 
-        goto job_no_args;
-
-        /*NOTREACHED*/
-
-        break;
-
-      case QUEUES:
-
-        server_out[0] = '@';
-        strcpy(&server_out[1], def_server);
-
-        tcl_addarg(ops, server_out);
-
         queue_name_out = NULL;
-
-        server_out[0] = '\0';
-
-        goto que_no_args;
-
-        /*NOTREACHED*/
-
-        break;
-
-      case SERVERS:
-
-        tcl_addarg(ops, def_server);
-
-        server_out[0] = '\0';
-
-        goto svr_no_args;
-
-        /*NOTREACHED*/
-
-        break;
-
-      default:
-
-        /* NO-OP */
-
-        break;
-      }
+        have_args = false;
+    
     }    /* END if (optind >= argc) */
+  else
+    {
+    have_args = true;
+    }
 
-  for (;optind < argc;optind++)
+  testholder = optind;
+  argcholder = argc;
+  for (;optind <= argc;optind++)
     {
     int connect;
 
@@ -2757,65 +2731,68 @@ int main(
 
       case JOBS:      /* get status of batch jobs */
 
-        if (isjobid(operand))
+        if (have_args == true)
           {
-          /* must be a job-id */
-
-          stat_single_job = 1;
-
-          snprintf(job_id, sizeof(job_id), "%s", operand);
-
-          if (get_server(job_id, job_id_out, sizeof(job_id_out), server_out, sizeof(server_out)))
+          if (isjobid(operand))
             {
-            fprintf(stderr, "qstat: illegally formed job identifier: %s\n",
-                    job_id);
+            /* must be a job-id */
 
-            tcl_stat(error, NULL, f_opt);
+            stat_single_job = 1;
 
-            any_failed = 1;
+            snprintf(job_id, sizeof(job_id), "%s", operand);
 
-            break;
-            }
-          }
-        else
-          {
-          /* must be a destination-id */
+            if (get_server(job_id, job_id_out, sizeof(job_id_out), server_out, sizeof(server_out)))
+              {
+              fprintf(stderr, "qstat: illegally formed job identifier: %s\n",
+                      job_id);
 
-          stat_single_job = 0;
+              tcl_stat(error, NULL, f_opt);
 
-          snprintf(destination, sizeof(destination), "%s", operand);
+              any_failed = 1;
 
-          if (parse_destination_id(
-                destination,
-                &queue_name_out,
-                &server_name_out))
-            {
-            fprintf(stderr, "qstat: illegally formed destination: %s\n",
-                    destination);
-
-            tcl_stat(error, NULL, f_opt);
-
-            any_failed = 1;
-
-            break;
-            }
-
-          if (notNULL(server_name_out))
-            {
-            snprintf(server_out, sizeof(server_out), "%s", server_name_out);
+              break;
+              }
             }
           else
             {
-            server_out[0] = '\0';
-            }
+            /* must be a destination-id */
 
-          snprintf(job_id_out, sizeof(job_id_out), "%s", queue_name_out);
+            stat_single_job = 0;
 
-          if (*queue_name_out != '\0')
-            {
-            add_atropl(&p_atropl, (char *)ATTR_q, NULL, queue_name_out, EQ);
-            }
-          }    /* END else */
+            snprintf(destination, sizeof(destination), "%s", operand);
+
+            if (parse_destination_id(
+                  destination,
+                  &queue_name_out,
+                  &server_name_out))
+              {
+              fprintf(stderr, "qstat: illegally formed destination: %s\n",
+                      destination);
+
+              tcl_stat(error, NULL, f_opt);
+
+              any_failed = 1;
+
+              break;
+              }
+
+            if (notNULL(server_name_out))
+              {
+              snprintf(server_out, sizeof(server_out), "%s", server_name_out);
+              }
+            else
+              {
+              server_out[0] = '\0';
+              }
+
+            snprintf(job_id_out, sizeof(job_id_out), "%s", queue_name_out);
+
+            if (*queue_name_out != '\0')
+              {
+              add_atropl(&p_atropl, (char *)ATTR_q, NULL, queue_name_out, EQ);
+              }
+            }    /* END else */
+          }
 
 job_no_args:
 
@@ -2938,28 +2915,35 @@ job_no_args:
 
       case QUEUES:        /* get status of batch queues */
 
-        snprintf(destination, sizeof(destination), "%s", operand);
-
-        if (parse_destination_id(destination,
-                                 &queue_name_out,
-                                 &server_name_out))
+        if (have_args == true)
           {
-          fprintf(stderr, "qstat: illegal 'destination' value\n");
-          tcl_stat(error, NULL, f_opt);
-          any_failed = 1;
-          break;
-          }
-        else
-          {
-          if (notNULL(server_name_out))
+          if (!strcmp(operand, "(null)"))
             {
-            snprintf(server_out, sizeof(server_out), "%s", server_name_out);
+            break;
+            }
+
+          snprintf(destination, sizeof(destination), "%s", operand);
+
+          if (parse_destination_id(destination,
+                                   &queue_name_out,
+                                   &server_name_out))
+            {
+            fprintf(stderr, "qstat: illegal 'destination' value\n");
+            tcl_stat(error, NULL, f_opt);
+            any_failed = 1;
+            break;
             }
           else
-            server_out[0] = '\0';
+            {
+            if (notNULL(server_name_out))
+              {
+              snprintf(server_out, sizeof(server_out), "%s", server_name_out);
+              }
+            else
+              server_out[0] = '\0';
+            }
           }
 
-que_no_args:
 
         connect = cnt2server(server_out);
 
@@ -3030,9 +3014,16 @@ que_no_args:
 
       case SERVERS:           /* get status of batch servers */
 
-        snprintf(server_out, sizeof(server_out), "%s", operand);
+        if (have_args == true)
+          {
+          if (!strcmp(operand, "(null)"))
+            {
+            break;
+            }
 
-svr_no_args:
+          snprintf(server_out, sizeof(server_out), "%s", operand);
+          }
+
         connect = cnt2server(server_out);
 
         if (connect <= 0)
