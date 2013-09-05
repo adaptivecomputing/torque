@@ -106,6 +106,7 @@
 #include "attribute.h"
 #include "pbs_job.h"
 #include "port_forwarding.h"
+#include "mom_config.h"
 
 static char cc_array[PBS_TERM_CCA];
 
@@ -118,7 +119,6 @@ static int IPv4or6 = AF_UNSPEC;
 #endif
 
 extern int conn_qsub(char *, long, char *);
-extern char xauth_path[];
 extern int DEBUGMODE;
 
 /*

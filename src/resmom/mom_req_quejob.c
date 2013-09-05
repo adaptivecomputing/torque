@@ -110,6 +110,7 @@
 #include "utils.h"
 #include "pbs_nodes.h"
 #include "utils.h"
+#include "mom_config.h"
 
 /* External Functions Called: */
 
@@ -127,7 +128,6 @@ extern unsigned int pbs_rm_port;
 
 /* Global Data Items: */
 
-extern int PBSNodeCheckProlog;
 extern int internal_state;
 
 extern const char *PJobSubState[];
@@ -155,8 +155,6 @@ extern char *msg_init_abt;
 
 extern char *msg_jobnew;
 extern time_t time_now;
-extern int    LOGLEVEL;
-extern int    reject_job_submit;
 
 extern  char *msg_daemonname;
 
@@ -577,7 +575,6 @@ void req_jobscript(
   char         namebuf[MAXPATHLEN];
   job         *pj;
   int          filemode = 0700;
-  extern char  mom_host[];
 
   errno = 0;
 

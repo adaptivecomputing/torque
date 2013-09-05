@@ -120,7 +120,6 @@ static void execute(
       if (errmsg != NULL)
         {
         fprintf(stderr, "qenable: %s ", errmsg);
-
         free(errmsg);
         }
       else

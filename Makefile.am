@@ -4,7 +4,6 @@ ACLOCAL_AMFLAGS = -I buildutils
 SUBDIRS = src doc contrib/blcr contrib/init.d
 
 EXTRA_DIST = acinclude.m4 \
-  autogen.sh \
   CHANGELOG \
   configure.ac \
   cov_file_results.py \

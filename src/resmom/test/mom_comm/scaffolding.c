@@ -44,6 +44,7 @@ int maxupdatesbeforesending = 0;
 int    ServerStatUpdateInterval = DEFAULT_SERVER_STAT_UPDATES;
 time_t          LastServerUpdateTime = 0;  /* NOTE: all servers updated together */
 char log_buffer[LOG_BUF_SIZE];
+int log_event_counter;
 
 /*
  *  * inserts an item, resizing the array if necessary
@@ -129,12 +130,6 @@ void delete_link(struct list_link *old)
   return;
   }
 
-void clear_dynamic_string(dynamic_string *ds)
-  {
-  fprintf(stderr, "The call to clear_dynamic_string needs to be mocked!!\n");
-  return;
-  }
-
 int add_hash(hash_table_t *ht, int value, void *key)
   {
   fprintf(stderr, "The call to add_hash needs to be mocked!!\n");
@@ -146,131 +141,6 @@ char *get_job_envvar(job *pjob, const char *variable)
   fprintf(stderr, "The call to get_job_envvar needs to be mocked!!\n");
   return(0);
   }
-
-/*
- *  * initializes a dynamic string and returns it, or NULL if there is no memory
- *   *
- *    * @param initial_size - the initial size of the string, use default if -1
- *     * @param str - the initial string to place in the dynamic string if not NULL
- *      * @return - the dynamic string object or NULL if no memory
- *       */
-dynamic_string *get_dynamic_string(
-
-  int         initial_size, /* I (-1 means default) */
-  const char *str)          /* I (optional) */
-
-  {
-  dynamic_string *ds = (dynamic_string *)calloc(1, sizeof(dynamic_string));
-
-  if (ds == NULL)
-    return(ds);
-
-  if (initial_size > 0)
-    ds->size = initial_size;
-  else
-    ds->size = DS_INITIAL_SIZE;
-
-  ds->str = (char *)calloc(1, ds->size);
-
-  if (ds->str == NULL)
-    {
-    free(ds);
-    return(NULL);
-    }
-
-  /* initialize empty str */
-  ds->used = 0;
-
-  /* add the string if it exists */
-  if (str != NULL)
-    {
-    if (append_dynamic_string(ds,str) != PBSE_NONE)
-      {
-      free_dynamic_string(ds);
-      return(NULL);
-      }
-    }
-
-  return(ds);
-  } /* END get_dynamic_string() */
-
-
-size_t need_to_grow(
-
-  dynamic_string *ds,
-  const char     *to_check)
-
-  {
-  size_t to_add = strlen(to_check) + 1;
-  size_t to_grow = 0;
-
-  if (ds->size < ds->used + to_add)
-    {
-    to_grow = to_add + ds->size;
-
-    if (to_grow < (ds->size * 4))
-      to_grow = ds->size * 4;
-    }
-
-  return(to_grow);
-  } /* END need_to_grow() */
-
-
-
-
-int resize_if_needed(
-
-  dynamic_string *ds,
-  const char     *to_check)
-
-  {
-  size_t  new_size = need_to_grow(ds, to_check);
-  size_t  difference;
-  char   *tmp;
-
-  if (new_size > 0)
-    {
-    /* need to resize */
-    difference = new_size - ds->size;
-
-    if ((tmp = (char *)realloc(ds->str, new_size)) == NULL)
-      return(ENOMEM);
-
-    ds->str = tmp;
-    /* zero out the new space as well */
-    memset(ds->str + ds->size, 0, difference);
-    ds->size = new_size;
-    }
-
-  return(PBSE_NONE);
-  } /* END resize_if_needed() */
-
-
-int append_dynamic_string(
-    
-  dynamic_string *ds,        /* M */
-  const char     *to_append) /* I */
-
-  {
-  int len = strlen(to_append);
-  int add_one = FALSE;
-  int offset = ds->used;
-
-  if (ds->used == 0)
-    add_one = TRUE;
-  else
-    offset -= 1;
-
-  resize_if_needed(ds, to_append);
-  strcat(ds->str + offset, to_append);
-    
-  ds->used += len;
-
-  if (add_one == TRUE)
-    ds->used += 1;
-
-  return(PBSE_NONE);
-  } /* END append_dynamic_string() */
 
 int open_tcp_stream_to_sisters(job *pjob, int com, tm_event_t parent_event, int mom_radix, hnodent *hosts, struct radix_buf **sister_list, tlist_head *phead, int flag)
   {
@@ -463,12 +333,6 @@ void job_nodes(job *pjob) {}
 
 void close_conn(int sd, int has_mutex) {}
 
-int copy_to_end_of_dynamic_string(dynamic_string *ds, const char *to_copy)
-  {
-  fprintf(stderr, "The call to copy_to_end_of_dynamic_string needs to be mocked!!\n");
-  return(0);
-  }
-
 int diswul(struct tcp_chan * chan, unsigned long value)
   {
   fprintf(stderr, "The call to diswul needs to be mocked!!\n");
@@ -565,8 +429,6 @@ void DIS_tcp_close(struct tcp_chan *chan) {}
 
 void DIS_tcp_cleanup(struct tcp_chan *chan) {}
 
-void free_dynamic_string(dynamic_string *ds) {}
-
 ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
   {
   return(0);
@@ -650,10 +512,15 @@ int disrsi(struct tcp_chan *chan, int *retval)
 
 void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
-void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) 
+  {
+  log_event_counter++;
+  }
 void log_ext(int type, const char *func_name, const char *msg, int o) {}
 
 bool am_i_mother_superior(const job &pjob)
   {
-  return(false);
+  bool mother_superior = ((pjob.ji_nodeid == 0) && ((pjob.ji_qs.ji_svrflags & JOB_SVFLG_HERE) != 0));
+    
+  return(mother_superior);
   }

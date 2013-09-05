@@ -38,7 +38,7 @@ char pbs_server_name[1];
 pthread_mutex_t *poll_job_task_mutex;
 threadpool_t *request_pool;
 int              max_poll_job_tasks;
-char           **ArgV;
+char           **ArgV = NULL;
 
 int log_remove_old(char *DirPath, unsigned long ExpireTime)
   {
@@ -490,6 +490,11 @@ void DIS_tcp_cleanup(struct tcp_chan *chan) {}
 
 void scheduler_close() {}
 
+int initialize_ruserok_mutex()
+  {
+  return(0);
+  }
+
 int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
@@ -509,18 +514,13 @@ ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
   return(0);
   }
 
-void log_err(int errnum, const char *routine, const char *text) {}
-void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
-void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
-void log_ext(int eventtype, const char *func_name, const char *msg, int level) {}
-
 int save_args(int argc, char **argv)
   {
   return(0);
   }
 
-int initialize_ruserok_mutex()
-  {
-  return(0);
-  }
+void log_err(int errnum, const char *routine, const char *text) {}
+void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_ext(int eventtype, const char *func_name, const char *msg, int level) {}
 

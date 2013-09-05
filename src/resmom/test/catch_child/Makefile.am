@@ -2,7 +2,7 @@
 PROG_ROOT = ../..
 
 #TEST_FUNCTION is used to #ifdef out things that adjust the enviroment for the test run (i.e. main function in file under test, defines that are needed, or undesired, etc)
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
+AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage -DPBS_MOM
 
 #The name of the library used for function replacement
 lib_LTLIBRARIES = libcatch_child.la

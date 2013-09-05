@@ -8,7 +8,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 
 check_PROGRAMS = test_diswsl
 
-libdiswsl_la_SOURCES = scaffolding.c ${PROG_ROOT}/diswsl.c
+libdiswsl_la_SOURCES = scaffolding.c ${PROG_ROOT}/diswsl.c ${PROG_ROOT}/discui_.c  ${PROG_ROOT}/discul_.c
 libdiswsl_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_diswsl_SOURCES = test_diswsl.c

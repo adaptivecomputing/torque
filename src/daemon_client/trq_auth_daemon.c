@@ -50,7 +50,7 @@ int load_config(
   char *tmp_name = pbs_default();
   /* Assume TORQUE_HOME = /var/spool/torque */
   /* /var/spool/torque/server_name */
-  if (tmp_name == NULL || tmp_name[0] == '\0')
+  if ((tmp_name == NULL) || (tmp_name[0] == '\0'))
     rc = PBSE_BADHOST;
   else
     {
@@ -227,6 +227,7 @@ int daemonize_trqauthd(const char *server_ip, int server_port, void *(*process_m
     exit(0);
   }
 
+
 void parse_command_line(int argc, char **argv)
   {
   int c;
@@ -244,7 +245,7 @@ void parse_command_line(int argc, char **argv)
     switch (c)
       {
       case 0:
-	switch (option_index)  /* One of the long options was passed */
+        switch (option_index)  /* One of the long options was passed */
           {
           case 0:   /*about*/
             fprintf(stderr, "torque user authorization daemon version %s\n", VERSION);
@@ -282,7 +283,7 @@ void parse_command_line(int argc, char **argv)
         exit(1);
         break;
       }
-    }
+    } 
   }
 
 int terminate_trqauthd()

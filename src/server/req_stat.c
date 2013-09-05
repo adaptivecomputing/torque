@@ -955,7 +955,7 @@ int stat_to_mom(
 
   /* get connection to MOM */
   unlock_node(node, __func__, "before svr_connect", LOGLEVEL);
-  handle = svr_connect(job_momaddr, job_momport, &rc, NULL, NULL, ToServerDIS);
+  handle = svr_connect(job_momaddr, job_momport, &rc, NULL, NULL);
 
   if (handle >= 0)
     {
@@ -1007,7 +1007,7 @@ void stat_update(
   
     if (msg_ptr != NULL)
       msg_ptr += strlen(PBS_MSG_EQUAL);
-    }   
+    }
 
   if (preply->brp_choice == BATCH_REPLY_CHOICE_Status)
     {

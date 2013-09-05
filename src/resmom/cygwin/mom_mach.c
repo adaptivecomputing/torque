@@ -110,6 +110,7 @@
 #include "resmon.h"
 #include "utils.h"
 #include "../rm_dep.h"
+#include "mom_config.h"
 
 #include <windows.h>
 #include <sys/cygwin.h>
@@ -161,9 +162,6 @@ extern char extra_parm[];
 extern char no_parm[];
 
 extern time_t   time_now;
-
-extern  int     LOGLEVEL;
-extern  char    PBSNodeMsgBuf[1024];
 
 #define TBL_INC 200            /* initial proc table */
 

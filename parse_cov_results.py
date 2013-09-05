@@ -105,7 +105,6 @@ def report_file(report):
 
     csv.close()
 
-
 # program file1 [file2 ...]
 #    for each argument, use that argument as a filename to be parsed and output
 #    expected input is gcov output data where a File name and Lines executed is generated

@@ -380,7 +380,6 @@ m4_ifdef([AM_SILENT_RULES],[
     src/lib/Libsite/test/site_mom_jst/Makefile
     src/lib/Libutils/test/Makefile
     src/lib/Libutils/test/u_MXML/Makefile
-    src/lib/Libutils/test/u_dynamic_string/Makefile
     src/lib/Libutils/test/u_groups/Makefile
     src/lib/Libutils/test/u_hash_map/Makefile
     src/lib/Libutils/test/u_hash_map_structs/Makefile
@@ -756,8 +755,16 @@ dnl skip the first two chars because its -l<libname>
 AC_CHECK_LIB(${xmlLib}, xmlGetProp,
   [],
   [AC_MSG_ERROR([TORQUE needs libxml2-devel in order to build]) ])
-
-
+  
+  
+ dnl
+ dnl Check for boost headers
+ dnl
+ 
+ AC_CHECK_HEADERS([boost/ptr_container/ptr_vector.hpp],
+                  [],
+                  [AC_MSG_ERROR(Boost ptr_vector.hpp header not found)],
+                  [])
 
 
 dnl ###########################################

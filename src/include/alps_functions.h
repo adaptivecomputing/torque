@@ -79,16 +79,19 @@
 
 #include "list_link.h"
 #include "pbs_nodes.h"
-#include "dynamic_string.h"
 #include "batch_request.h"
 #include <libxml/parser.h>
 #include <libxml/tree.h>
+#include <string>
+#include <vector>
+#include <boost/ptr_container/ptr_vector.hpp>
+
 
 extern const char *alps_reporter_feature;
 
-int generate_alps_status(dynamic_string *status, const char *apbasil_path, const char *apbasil_protocol);
+int generate_alps_status(boost::ptr_vector<std::string>& status, const char *apbasil_path, const char *apbasil_protocol);
 
-int process_alps_status(char *nd_name, dynamic_string *status);
+int process_alps_status(char *nd_name, boost::ptr_vector<std::string>& status);
 
 int get_alps_statuses(struct pbsnode *parent, struct batch_request *preq, int *bad, tlist_head *pstathd);
 
@@ -98,4 +101,4 @@ int create_alps_reservation(char *exec_hosts, char *username, char *jobid, char 
 
 int find_error_type(xmlNode *node);
 
-struct pbsnode *create_alps_subnode(struct pbsnode *parent, char *node_id);
+struct pbsnode *create_alps_subnode(struct pbsnode *parent, const char *node_id);

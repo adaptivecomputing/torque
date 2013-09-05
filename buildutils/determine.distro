@@ -1,0 +1,80 @@
+#!/bin/bash
+
+# Script to "probe" current machine for what linux distribution type it is running on
+#
+# Output possibilities:
+#
+#  no args:
+#    Unknown
+#    CentOS
+#    RHEL
+#    Ubuntu
+#
+#  w/args
+#    EL<ver>
+#    unknown
+
+# We prefer to use lsb_release if it is available
+LSB_RELEASE=`which lsb_release 2>/dev/null`;
+if [ $? -eq 0 ] ; then
+  if [ -e ${LSB_RELEASE} ] ; then
+    #
+    # extract the distro and the distro release
+    #
+    DISTRO=`lsb_release -i | sed -e "s/Distributor[ \t]*ID:[ \t]*//"`
+    REL=`lsb_release -r | sed -e "s/Release:[ \t]*//" -e "s/\..*$//"`
+
+    # Map raw data stream to a normalized output
+    case ${DISTRO} in
+      CentOS)
+        DISTRO=EL
+        ;;
+      RedHatEnterpriseServer)
+        DISTRO=EL
+        ;;
+      RHEL)
+        DISTRO=EL
+        ;;
+      'SUSE LINUX')
+        DISTRO=SLES
+        ;;
+      SLES)
+        DISTRO=SLES
+        ;;
+      SUSE)
+        DISTRO=SLES
+        ;;
+      Scientific)
+        DISTRO=EL
+        ;;
+      *)
+        DISTRO=Unknown
+        ;;
+    esac
+  fi;
+
+# If lsb_release is not found, look for a /etc/*-release file
+elif test -f /etc/redhat-release; then
+  DISTRO=EL
+  REL=`cat /etc/redhat-release | sed -e "s/^[^0-9]*//" -e "s/[^0-9].*$//"`
+
+elif test -f /etc/SuSE-release; then
+  DISTRO=SLES
+  REL=`grep SUSE /etc/SuSE-release | sed -e "s/^[^0-9]*//" -e "s/[^0-9].*$//"`
+elif test -f /etc/lsb-release; then
+  DISTRO=`grep DISTRIB_ID /etc/lsb-release | sed "s/^DISTRIB_ID=//"`
+  REL=`grep DISTRIB_RELEASE /etc/lsb-release | sed -e "s/^DISTRIB_RELEASE=//" -e "s/[^0-9].*$//"`
+
+# Otherwise it is unknown
+else
+  DISTRO=Unknown
+fi
+
+#
+# If an arg was given, then map to a common distro type and append the release
+#
+if [ -n "$1" ] ; then
+  echo ${DISTRO}${REL}
+else
+  echo $DISTRO
+fi

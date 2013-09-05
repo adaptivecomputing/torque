@@ -105,7 +105,7 @@
 
 /* External Functions */
 
-extern int gpu_entry_by_id(struct pbsnode *,char *, int);
+extern int gpu_entry_by_id(struct pbsnode *,const char *, int);
 
 /* Private Functions Local to this file */
 
@@ -238,8 +238,7 @@ int req_gpuctrl_svr(
            pbs_mom_port,
            &local_errno,
            NULL,
-           NULL,
-           ToServerDIS);
+           NULL);
     
 
   if (conn >= 0)
@@ -305,4 +304,3 @@ void process_gpu_request_reply(
     reply_ack(preq);
     }
   } /* END process_gpu_request_reply() */
-

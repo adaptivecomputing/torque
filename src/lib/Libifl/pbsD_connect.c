@@ -1017,14 +1017,14 @@ int pbs_original_connect(
         rc = trq_set_preferred_network_interface(if_name, &preferred_addr);
         if (rc != PBSE_NONE)
           {
-          if (retries >= MAX_RETRIES)
+          if (!retry || retries >= MAX_RETRIES)
             fprintf(stderr, "could not set preferred network interface (%s): %d\n",
                   if_name, rc);
 
           if (if_name)
             free(if_name);
 
-          if (retries >= MAX_RETRIES)
+          if (!retry || retries >= MAX_RETRIES)
             {
             rc = rc * -1;
             goto cleanup_conn;
@@ -1043,14 +1043,14 @@ int pbs_original_connect(
         rc = bind(connection[out].ch_socket, &preferred_addr, sizeof(struct sockaddr));
         if (rc < 0)
           {
-          if (retries >= MAX_RETRIES)
+          if (!retry || retries >= MAX_RETRIES)
             fprintf(stderr, "ERROR: could not bind preferred network interface (%s): errno: %d",
                   if_name, errno);
 
           if (if_name)
             free(if_name);
 
-          if (retries >= MAX_RETRIES)
+          if (!retry || retries >= MAX_RETRIES)
             {
             rc = PBSE_SYSTEM * -1;
             goto cleanup_conn;
@@ -1078,14 +1078,14 @@ int pbs_original_connect(
         {
         if (getenv("PBSDEBUG"))
           {
-          if (retries >= MAX_RETRIES)
+          if (!retry || retries >= MAX_RETRIES)
             fprintf(stderr, "ERROR:  cannot get servername (%s) errno=%d (%s)\n",
                   (server != NULL) ? server : "NULL",
                   errno,
                   strerror(errno));
           }
 
-        if (retries >= MAX_RETRIES)
+        if (!retry || retries >= MAX_RETRIES)
           {
           rc = PBSE_BADHOST * -1;
           goto cleanup_conn;
@@ -1107,7 +1107,7 @@ int pbs_original_connect(
       /* Set the socket to non-blocking mode so we can timeout */
       if ((sockflags = fcntl(connection[out].ch_socket, F_GETFL, NULL)) < 0)
         {
-        if (retries >= MAX_RETRIES)
+        if (!retry || retries >= MAX_RETRIES)
           {
           if (getenv("PBSDEBUG"))
             fprintf(stderr, "ERROR:  getting socket flags failed\n");
@@ -1130,7 +1130,7 @@ int pbs_original_connect(
 
       if (fcntl(connection[out].ch_socket, F_SETFL, sockflags) < 0)
         {
-        if (retries >= MAX_RETRIES)
+        if (!retry || retries >= MAX_RETRIES)
           {
           if (getenv("PBSDEBUG"))
             fprintf(stderr, "ERROR:  setting socket flags failed\n");
@@ -1182,7 +1182,7 @@ int pbs_original_connect(
         if (getenv("PBSDEBUG"))
           fprintf(stderr, "ERROR: setting socket flags failed\n");
 
-        if (retries >= MAX_RETRIES)
+        if (!retry || retries >= MAX_RETRIES)
           {
           rc = PBSE_SOCKET_FAULT * -1;
           goto cleanup_conn;
@@ -1227,7 +1227,7 @@ int pbs_original_connect(
           }
         else
           {
-          if (retries >= MAX_RETRIES)
+          if (!retry || retries >= MAX_RETRIES)
             {
             local_errno = PBSE_PERM;
             

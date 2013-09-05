@@ -82,7 +82,6 @@
 
 #include <vector>
 
-/* This class is made to track execution slots for the computes nodes. */
 class execution_slot_tracker
   {
   std::vector<bool> slots;

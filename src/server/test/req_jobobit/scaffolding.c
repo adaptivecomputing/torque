@@ -174,7 +174,7 @@ void append_link(tlist_head *head, list_link *new_link, void *pobj)
   new_link->ll_prior->ll_next = new_link; /* now visible to forward iteration */
   }
 
-int svr_connect(unsigned long, unsigned int, int*, pbsnode*, void* (*)(void*), conn_type)
+int svr_connect(unsigned long, unsigned int, int*, pbsnode*, void* (*)(void*))
   {
   if (bad_connect)
     return(-1);

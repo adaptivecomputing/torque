@@ -1,21 +1,23 @@
+#include <boost/ptr_container/ptr_vector.hpp>
 #include <stdio.h>
 #include <stdlib.h>
 #include <check.h>
 
-#include "dynamic_string.h"
-#include "alps_constants.h"
+#include <string>
+#include <vector>
 #include "pbs_nodes.h"
+#include "alps_constants.h"
 
 int set_ncpus(struct pbsnode *,struct pbsnode *, int);
 int set_ngpus(struct pbsnode *, int);
-int set_state(struct pbsnode *, char *);
-char *finish_gpu_status(char *str);
-struct pbsnode *create_alps_subnode(struct pbsnode *parent, char *node_id);
-struct pbsnode *find_alpsnode_by_name(struct pbsnode *parent, char *node_id);
-struct pbsnode *determine_node_from_str(char *str, struct pbsnode *parent, struct pbsnode *current);
+int set_state(struct pbsnode *, const char *);
+void finish_gpu_status(boost::ptr_vector<std::string>::iterator& i,boost::ptr_vector<std::string>::iterator end);
+struct pbsnode *create_alps_subnode(struct pbsnode *parent, const char *node_id);
+struct pbsnode *find_alpsnode_by_name(struct pbsnode *parent, const char *node_id);
+struct pbsnode *determine_node_from_str(const char *str, struct pbsnode *parent, struct pbsnode *current);
 int check_if_orphaned(void *str);
-int process_alps_status(char *, dynamic_string *);
-int process_reservation_id(struct pbsnode *pnode, char *rsv_id_str);
+int process_alps_status(char *, boost::ptr_vector<std::string>&);
+int process_reservation_id(struct pbsnode *pnode, const char *rsv_id_str);
 int record_reservation(struct pbsnode *pnode, const char *rsv_id);
 
 char buf[4096];
@@ -93,8 +95,8 @@ END_TEST
 START_TEST(set_state_test)
   {
   struct pbsnode  pnode;
-  char           *up_str   = (char *)"state=UP";
-  char           *down_str = (char *)"state=DOWN";
+  const char    *up_str   = "state=UP";
+  const char    *down_str = "state=DOWN";
 
   memset(&pnode, 0, sizeof(pnode));
 
@@ -116,21 +118,24 @@ END_TEST
 
 START_TEST(finish_gpu_status_test)
   {
-  char  status[] = "o\0n\0</cray_gpu_status>\0tom";
-  char  str[sizeof(status)];
-  char *end;
+  boost::ptr_vector<std::string> status;
+  boost::ptr_vector<std::string>::iterator end;
 
-  memcpy(str, status, sizeof(status));
+  status.push_back(new std::string("o"));
+  status.push_back(new std::string("n"));
+  status.push_back(new std::string("</cray_gpu_status>"));
+  status.push_back(new std::string("tom"));
 
-  end = finish_gpu_status(str);
+  end = status.begin();
+  finish_gpu_status(end,status.end());
   snprintf(buf, sizeof(buf), "penultimate string isn't correct, should be '%s' but is '%s'",
-    CRAY_GPU_STATUS_END, end);
-  fail_unless(!strcmp(end, CRAY_GPU_STATUS_END), buf);
+    CRAY_GPU_STATUS_END, end->c_str());
+  fail_unless(!strcmp(end->c_str(), CRAY_GPU_STATUS_END), buf);
 
-  end += strlen(end) + 1;
+  end++;
   snprintf(buf, sizeof(buf), "last string isn't correct, should be 'tom' but is '%s'",
-    end);
-  fail_unless(!strcmp(end, "tom"), buf);
+    end->c_str());
+  fail_unless(!strcmp(end->c_str(), "tom"), buf);
 
   }
 END_TEST
@@ -141,7 +146,7 @@ END_TEST
 START_TEST(find_alpsnode_test)
   {
   struct pbsnode  parent;
-  char           *node_id = (char *)"tom";
+  const char     *node_id = (char *)"tom";
   struct pbsnode *alpsnode;
 
   parent.alps_subnodes.allnodes_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
@@ -159,8 +164,8 @@ END_TEST
 START_TEST(determine_node_from_str_test)
   {
   struct pbsnode  parent;
-  char           *node_str1 = (char *)"node=tom";
-  char           *node_str2 = (char *)"node=george";
+  const char     *node_str1 = "node=tom";
+  const char     *node_str2 = "node=george";
   struct pbsnode *new_node;
 
   memset(&parent, 0, sizeof(parent));
@@ -197,7 +202,7 @@ END_TEST
 START_TEST(create_alps_subnode_test)
   {
   struct pbsnode  parent;
-  char           *node_id = (char *)"tom";
+  const char     *node_id = "tom";
   struct pbsnode *subnode;
 
   memset(&parent, 0, sizeof(struct pbsnode));
@@ -217,10 +222,10 @@ END_TEST
 
 START_TEST(whole_test)
   {
-  dynamic_string *ds = get_dynamic_string(2048, NULL);
+  boost::ptr_vector<std::string> ds;
   int             rc;
   
-  ds->str = strdup(alps_status);
+  ds.push_back(new std::string(alps_status));
  
   rc = process_alps_status((char *)"tom", ds);
   fail_unless(rc == 0, "didn't process alps status");
@@ -235,9 +240,9 @@ START_TEST(process_reservation_id_test)
 
   memset(&pnode, 0, sizeof(struct pbsnode));
 
-  fail_unless(process_reservation_id(&pnode, (char *)"12") == 0, "couldn't process reservation");
-  fail_unless(process_reservation_id(&pnode, (char *)"13") == 0, "couldn't process reservation");
-  fail_unless(process_reservation_id(&pnode, (char *)"14") == 0, "couldn't process reservation");
+  fail_unless(process_reservation_id(&pnode, "12") == 0, "couldn't process reservation");
+  fail_unless(process_reservation_id(&pnode, "13") == 0, "couldn't process reservation");
+  fail_unless(process_reservation_id(&pnode, "14") == 0, "couldn't process reservation");
   }
 END_TEST
 

@@ -105,6 +105,7 @@
 #include "svrfunc.h"
 #include "utils.h"
 #include "server.h"
+#include <string>
 
 /* data items global to functions in this file */
 
@@ -182,7 +183,7 @@ int save_struct(
 
 
 
-
+#if 0
 /*
  * save_attr() - write set of attributes to disk file
  *
@@ -272,7 +273,7 @@ int save_attr(
 
   return(0);
   }  /* END save_attr() */
-
+#endif
 
 
 
@@ -289,7 +290,7 @@ int save_attr_xml(
   int             rc;
   char            buf[MAXLINE<<8];
   char            log_buf[LOCAL_LOG_BUF_SIZE];
-  dynamic_string *ds = get_dynamic_string(-1, NULL);
+  std::string      ds = "";
 
   /* write the opening tag for attributes */
   snprintf(buf,sizeof(buf),"<attributes>\n");
@@ -301,7 +302,7 @@ int save_attr_xml(
     if (pattr[i].at_flags & ATR_VFLAG_SET)
       {
       buf[0] = '\0';
-      clear_dynamic_string(ds);
+      ds.clear();
 
       if ((rc = attr_to_str(ds, padef+i, pattr[i], TRUE)) != 0)
         {
@@ -312,7 +313,6 @@ int save_attr_xml(
               "Not enough space to print pbs_attribute %s",
               padef[i].at_name);
 
-          free_dynamic_string(ds);
           return(rc);
           }
         }
@@ -320,19 +320,16 @@ int save_attr_xml(
         {
         snprintf(buf,sizeof(buf),"<%s>%s</%s>\n",
             padef[i].at_name,
-            ds->str,
+            ds.c_str(),
             padef[i].at_name);
 
         if ((rc = write_buffer(buf,strlen(buf),fds)) != 0)
           {
-          free_dynamic_string(ds);
           return(rc);
           }
         }
       }
     } /* END for each pbs_attribute */
-
-  free_dynamic_string(ds);
 
   /* close the attributes */
   snprintf(buf,sizeof(buf),"</attributes>\n");

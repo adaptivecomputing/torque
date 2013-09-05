@@ -12,9 +12,9 @@
 #include "list_link.h" /* tlist_head, list_link */
 #include "array.h"
 
-char *path_jobs;
+char *path_jobs = strdup("/var/spool/torque/server_priv/jobs/");
 struct connect_handle connection[10];
-attribute_def job_attr_def[10];
+attribute_def job_attr_def[JOB_ATR_LAST];
 const char *pbs_o_host = "PBS_O_HOST";
 const char *msg_routexceed = "Route queue lifetime exceeded";
 int queue_rank = 0;
@@ -24,19 +24,29 @@ pbs_net_t pbs_server_addr;
 unsigned int pbs_server_port_dis;
 const char *msg_manager = "%s at request of %s@%s";
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
-
-
+bool commit_error = false;
+bool expired = false;
+bool job_exist = false;
+bool other_fail = false;
+bool script_fail = false;
+bool jobfile_fail = false;
+bool rdycommit_fail = false;
+int  retry;
+bool connect_fail = false;
 
 void finish_sendmom(char *job_id, batch_request *preq, long start_time, char *node_name, int status, int o)
   {
-  fprintf(stderr, "The call to finish_sendmom to be mocked!!\n");
-  exit(1);
   }
 
 int PBSD_commit_get_sid(int connect, long *sid, char *jobid)
   {
-  fprintf(stderr, "The call to PBSD_commit_get_sid to be mocked!!\n");
-  exit(1);
+  if (commit_error == true)
+    return(-1);
+  else
+    {
+    *sid = 10;
+    return(0);
+    }
   }
 
 pbs_queue *find_queuebyname(const char *quename)
@@ -53,14 +63,15 @@ char *parse_servername(char *name, unsigned int *service)
 
 int PBSD_jobfile(int c, int req_type, char *path, char *jobid, enum job_file which)
   {
-  fprintf(stderr, "The call to PBSD_jobfile to be mocked!!\n");
-  exit(1);
+  if (jobfile_fail == true)
+    return(-1);
+  else
+    return(PBSE_NONE);
   }
 
 int job_save(job *pjob, int updatetype, int mom_port)
   {
-  fprintf(stderr, "The call to job_save to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 int svr_job_purge(job *pjob)
@@ -71,8 +82,10 @@ int svr_job_purge(job *pjob)
 
 int PBSD_jscript(int c, char *script_file, char *jobid)
   {
-  fprintf(stderr, "The call to PBSD_jscript to be mocked!!\n");
-  exit(1);
+  if (script_fail == true)
+    return(-1);
+
+  return(0);
   }
 
 pbs_net_t get_hostaddr(int *local_errno, char *hostname)
@@ -129,17 +142,9 @@ int unlock_node(struct pbsnode *the_node, const char *id, const char *msg, int l
   exit(1);
   }
 
-void svr_disconnect(int handle)
-  {
-  fprintf(stderr, "The call to svr_disconnect to be mocked!!\n");
-  exit(1);
-  }
+void svr_disconnect(int handle) {}
 
-void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
-  {
-  fprintf(stderr, "The call to req_reject to be mocked!!\n");
-  exit(1);
-  }
+void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg) {}
 
 int job_abt(struct job **pjobp, const char *text)
   {
@@ -149,8 +154,7 @@ int job_abt(struct job **pjobp, const char *text)
 
 void *get_next(list_link pl, char *file, int line)
   {
-  fprintf(stderr, "The call to get_next to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 int job_route(job *jobp)
@@ -171,10 +175,20 @@ void attrl_fixlink(tlist_head *phead)
   exit(1);
   }
 
-int svr_connect(pbs_net_t hostaddr, unsigned int port, int *err, struct pbsnode *pnode, void *(*func)(void *), enum conn_type cntype)
+int svr_connect(pbs_net_t hostaddr, unsigned int port, int *err, struct pbsnode *pnode, void *(*func)(void *))
   {
-  fprintf(stderr, "The call to svr_connect to be mocked!!\n");
-  exit(1);
+  static int retries = 0;
+  if (retry != 0)
+    {
+    if (retry != retries++)
+      return(PBS_NET_RC_RETRY);
+    else
+      return(7);
+    }
+  else if (connect_fail == true)
+    return(PBS_NET_RC_FATAL);
+  else
+    return(7);
   }
 
 struct pbsnode *PGetNodeFromAddr(pbs_net_t addr)
@@ -185,8 +199,10 @@ struct pbsnode *PGetNodeFromAddr(pbs_net_t addr)
 
 int PBSD_rdytocmt(int connect, char *jobid)
   {
-  fprintf(stderr, "The call to PBSD_rdytocmt to be mocked!!\n");
-  exit(1);
+  if (rdycommit_fail == true)
+    return(-1);
+
+  return(0);
   }
 
 void add_dest(job *jobp)
@@ -197,14 +213,22 @@ void add_dest(job *jobp)
 
 int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mute)
   {
-  fprintf(stderr, "The call to svr_setjobstate to be mocked!!\n");
-  exit(1);
+  pjob->ji_qs.ji_state = newstate;
+  pjob->ji_qs.ji_substate = newsubstate;
+  return(0);
   }
 
 job *svr_find_job(char *jobid, int get_subjob)
   {
-  fprintf(stderr, "The call to find_job to be mocked!!\n");
-  exit(1);
+  static job pjob;
+
+  if (!strcmp(jobid, "1.napali"))
+    {
+    strcpy(pjob.ji_qs.ji_jobid, "1.napali");
+    return(&pjob);
+    }
+
+  return(NULL);
   }
 
 int unlock_queue(struct pbs_queue *the_queue, const char *method_name, const char *msg, int logging)
@@ -221,16 +245,30 @@ void svr_evaljobstate(job *pjob, int *newstate, int *newsub, int forceeval)
 
 char *PBSD_queuejob(int connect, int *local_errno, char *jobid, char *destin, struct attropl *attrib, char *extend)
   {
-  fprintf(stderr, "The call to PBSD_queuejob to be mocked!!\n");
-  exit(1);
+  if (expired == true)
+    {
+    *local_errno = PBSE_EXPIRED;
+    return(NULL);
+    }
+  else if (job_exist == true)
+    {
+    *local_errno = PBSE_JOBEXIST;
+    return(NULL);
+    }
+  else if (other_fail == true)
+    {
+    *local_errno = PBSE_TIMEOUT;
+    return(NULL);
+    }
+
+  return(strdup(jobid));
   }
 
 void delete_link(struct list_link *old) {}
 
 char *pbse_to_txt(int err)
   {
-  fprintf(stderr, "The call to pbse_to_txt to be mocked!!\n");
-  exit(1);
+  return(strdup("err"));
   }
 
 int svr_chkque(job *pjob, pbs_queue *pque, char *hostname, int mtype, char *EMsg)
@@ -275,12 +313,28 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   return(0);
   }
 
+bool get_jobs_array_recycled = false;
+bool get_jobs_array_fail = false;
+
 job_array *get_jobs_array(
 
   job **pjob_ptr)
 
   {
-  return(NULL);
+  static job_array pa;
+  strcpy(pa.ai_qs.fileprefix, "2.napali");
+
+  if (get_jobs_array_recycled == true)
+    {
+    *pjob_ptr = NULL;
+    return(NULL);
+    }
+  else if (get_jobs_array_fail == true)
+    {
+    return(NULL);
+    }
+  else
+    return(&pa);
   }
 
 int unlock_ai_mutex(
@@ -298,3 +352,34 @@ void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_ext(int type, const char *func_name, const char *msg, int o) {}
+
+int encode_exec_host(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm)
+  {
+  char *old_str;
+  char *export_str;
+  char *pipe;
+  int   rc;
+
+  if (attr->at_val.at_str == NULL)
+    return(PBSE_NONE);
+
+  if ((export_str = strdup(attr->at_val.at_str)) == NULL)
+    return(PBSE_SYSTEM);
+
+  while ((pipe = strchr(export_str, '|')) != NULL)
+    *pipe = '+';
+
+  old_str = attr->at_val.at_str;
+  attr->at_val.at_str = export_str;
+
+  rc = encode_str(attr, phead, atname, rsname, mode, perm);
+  attr->at_val.at_str = old_str;
+  free(export_str);
+
+  return(rc);
+  }
+
+char *pbs_geterrmsg(int con)
+  {
+  return(strdup("err"));
+  }

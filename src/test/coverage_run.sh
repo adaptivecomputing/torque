@@ -10,6 +10,14 @@ F=`pwd`
 
 FILENAME=`basename $F`
 
+if [ "x$FILENAME" = "xMAssertAbort" ] ; then
+  FILENAME=MAssert
+fi
+
+if [ "x$FILENAME" = "xMAssertNonAbort" ] ; then
+  FILENAME=MAssert
+fi
+
 echo "File: $FILENAME"
 
 cp -p .libs/${FILENAME}.gc* . 
@@ -32,5 +40,6 @@ PARSED_RESULT="TOTALCOV -- ${FILENAME}: Lines(${LINES}) - ${PERCENT}"
 
 # Output the results
 echo -e "\033[1;33m$PARSED_RESULT\033[0m"
-
+                      
 exit 0
+  

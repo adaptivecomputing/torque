@@ -143,7 +143,6 @@ static void execute(
       if (errmsg != NULL)
         {
         fprintf(stderr, "qgpumode: %s ", errmsg);
-
         free(errmsg);
         }
       else

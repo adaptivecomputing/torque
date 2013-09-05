@@ -95,6 +95,9 @@
 #include "../lib/Libnet/lib_net.h"
 #include "../lib/Libutils/u_lock_ctl.h"
 #include "mutex_mgr.hpp"
+#include <vector>
+#include <string>
+#include <boost/ptr_container/ptr_vector.hpp>
 
 
 
@@ -111,18 +114,15 @@ int  unlock_ji_mutex(job *, const char *, const char *, int);
  * and stores it in a dynamic string
  */
 
-dynamic_string *get_status_info(
+void get_status_info(
 
-  struct tcp_chan *chan)
+  struct tcp_chan *chan,
+  boost::ptr_vector<std::string>& status)
 
   {
-  dynamic_string *ds = get_dynamic_string(-1, NULL);
   char           *ret_info;
   int             rc;
 
-  if (ds == NULL)
-    return(NULL);
-  
   while (((ret_info = disrst(chan, &rc)) != NULL) && 
          (rc == DIS_SUCCESS))
     {
@@ -132,11 +132,9 @@ dynamic_string *get_status_info(
       break;
       }
 
-    copy_to_end_of_dynamic_string(ds, ret_info);
+    status.push_back(new std::string(ret_info));
     free(ret_info);
     }
-
-  return(ds);
   } /* END get_status_info() */
 
 
@@ -170,7 +168,7 @@ int is_stat_get(
   {
   int             rc;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
-  dynamic_string *status_info;
+  boost::ptr_vector<std::string> status_info;
 
   if (LOGLEVEL >= 3)
     {
@@ -178,14 +176,12 @@ int is_stat_get(
     log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
     }
 
-  status_info = get_status_info(chan);
+  get_status_info(chan,status_info);
  
   if (is_reporter_node(node_name))
     rc = process_alps_status(node_name, status_info);
   else
     rc = process_status_info(node_name, status_info);
-
-  free_dynamic_string(status_info);
 
   return(rc);
   }  /* END is_stat_get() */

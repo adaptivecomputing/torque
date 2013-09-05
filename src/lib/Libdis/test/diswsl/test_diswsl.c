@@ -3,14 +3,29 @@
 #include "test_diswsl.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <string>
 
 
 #include "pbs_error.h"
 
+extern std::string output;
+
 START_TEST(test_one)
   {
+  struct tcp_chan chan;
 
-
+  output = "";
+  diswsl(&chan,5);
+  fail_unless(strcmp(output.c_str(),"+5") == 0,"Incorrectly encoded.");
+  output = "";
+  diswsl(&chan,327);
+  fail_unless(strcmp(output.c_str(),"3+327") == 0,"Incorrectly encoded.");
+  output = "";
+  diswsl(&chan,-200202020);
+  fail_unless(strcmp(output.c_str(),"9-200202020") == 0,"Incorrectly encoded.");
+  output = "";
+  diswsl(&chan,-0);
+  fail_unless(strcmp(output.c_str(),"+0") == 0,"Incorrectly encoded.");
   }
 END_TEST
 
