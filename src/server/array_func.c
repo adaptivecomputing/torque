@@ -459,6 +459,11 @@ int array_recov(
     }
 
   pa->job_ids = (char **)calloc(pa->ai_qs.array_size, sizeof(char *));
+  if(pa->job_ids == NULL)
+    {
+    memset(&pa->ai_qs,0,sizeof(array_info));
+    return PBSE_SYSTEM;
+    }
 
   /* check to see if there is any additional info saved in the array file */
   /* check if there are any array request tokens that haven't been fully
