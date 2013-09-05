@@ -67,7 +67,7 @@ int array_upgrade(
    */
   if (version < 3)
     {
-    /* these versions are depricated, documentation includes a warning 
+    /* these versions are deprecated, documentation includes a warning
        about the incompatibility and inability to upgrade, print a quick and 
        dirty error message and exit */
        

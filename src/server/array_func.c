@@ -814,6 +814,7 @@ int array_recov_binary(
     len = read_ac_socket(fd, &(pa->ai_qs), sizeof(array_info));
     if ((len < 0) || ((len < (int)sizeof(array_info)) && (pa->ai_qs.struct_version == ARRAY_QS_STRUCT_VERSION)))
       {
+      memset(&pa->ai_qs,0,sizeof(array_info));
       snprintf(log_buf, buflen, "error reading %s", path);
       close(fd);
       return(PBSE_SYSTEM);
@@ -824,6 +825,7 @@ int array_recov_binary(
       rc = array_upgrade(pa, fd, pa->ai_qs.struct_version, &old_version);
       if (rc)
         {
+        memset(&pa->ai_qs,0,sizeof(array_info));
         snprintf(log_buf, buflen, 
           "Cannot upgrade array version %d to %d", pa->ai_qs.struct_version, ARRAY_QS_STRUCT_VERSION);
         close(fd);
@@ -833,6 +835,11 @@ int array_recov_binary(
     }
 
   pa->job_ids = (char **)calloc(pa->ai_qs.array_size, sizeof(char *));
+  if(pa->job_ids == NULL)
+    {
+    memset(&pa->ai_qs,0,sizeof(array_info));
+    return PBSE_SYSTEM;
+    }
 
   /* check to see if there is any additional info saved in the array file */
   /* check if there are any array request tokens that haven't been fully
