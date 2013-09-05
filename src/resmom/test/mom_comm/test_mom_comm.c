@@ -16,8 +16,6 @@ extern int disrsi_array[];
 extern char *disrst_array[];
 extern int log_event_counter;
 
-extern bool amMotherSuperior;
-
 int process_end_job_error_reply(job *pjob, hnodent *np, struct sockaddr_in *pSockAddr, int errcode);
 void create_contact_list(job &pjob, std::set<int> &sister_list, struct sockaddr_in *contacting_address);
 received_node *get_received_node_entry(char *str);
@@ -34,16 +32,13 @@ START_TEST(test_process_end_job_error_reply)
   pjob->ji_hosts[2].hn_sister = SISTER_OKAY;
   pjob->ji_hosts[3].hn_sister = SISTER_OKAY;
 
-  amMotherSuperior = false;
   fail_unless(process_end_job_error_reply(pjob, &np, &psock, PBSE_UNKJOBID) == -1);
 
   pjob->ji_numnodes = 4;
   pjob->ji_qs.ji_svrflags = JOB_SVFLG_HERE;
   log_event_counter = 0;
-  amMotherSuperior = true;
   fail_unless(process_end_job_error_reply(pjob, &np, &psock, PBSE_UNKJOBID) == 0);
   fail_unless(log_event_counter == 1);
-  amMotherSuperior = false;
   }
 END_TEST
 

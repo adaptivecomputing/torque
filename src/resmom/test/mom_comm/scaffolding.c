@@ -518,10 +518,9 @@ void log_event(int eventtype, int objclass, const char *objname, const char *tex
   }
 void log_ext(int type, const char *func_name, const char *msg, int o) {}
 
-bool amMotherSuperior = false;
-
-
 bool am_i_mother_superior(const job &pjob)
   {
-  return(amMotherSuperior);
+  bool mother_superior = ((pjob.ji_nodeid == 0) && ((pjob.ji_qs.ji_svrflags & JOB_SVFLG_HERE) != 0));
+    
+  return(mother_superior);
   }
