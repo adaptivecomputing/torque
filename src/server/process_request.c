@@ -678,6 +678,21 @@ void process_request(
         log_buffer);
       }
 
+    if (svr_conn[sfds].cn_authen != PBS_NET_CONN_FROM_PRIVIL)
+      {
+      sprintf(log_buffer, "request type %s from host %s rejected (connection not privileged)",
+        reqtype_to_txt(request->rq_type),
+        request->rq_host);
+
+      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, id, log_buffer);
+
+      req_reject(PBSE_BADHOST, 0, request, NULL, "request not authorized");
+
+      close_client(sfds);
+
+      return;
+      }
+
     if (!tfind(svr_conn[sfds].cn_addr, &okclients))
       {
       sprintf(log_buffer, "request type %s from host %s rejected (host not authorized)",
