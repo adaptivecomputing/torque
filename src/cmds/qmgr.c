@@ -2781,8 +2781,6 @@ int is_valid_object(
         {
         if (! zopt)
           fprintf(stderr, "qmgr: %s.\n", errmsg);
-
-        free(errmsg);
         }
 
       valid = 0;

@@ -129,7 +129,10 @@ char *x11_get_proto(
     }
 
   if (!xauth_path)
+    {
+    free(display);
     return NULL;
+    }
 
   if (stat(xauth_path, &st))
     {
