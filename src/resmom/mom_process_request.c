@@ -238,6 +238,19 @@ void *mom_process_request(
       log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
       }
 
+    if (svr_conn[chan->sock].cn_authen != PBS_NET_CONN_FROM_PRIVIL)
+      {
+      sprintf(log_buffer, "request type %s from host %s rejected (connection not privileged)",
+        reqtype_to_txt(request->rq_type),
+        request->rq_host);
+
+      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+      req_reject(PBSE_BADHOST, 0, request, NULL, "request not authorized");
+      mom_close_client(chan->sock);
+      DIS_tcp_cleanup(chan);
+      return NULL;
+      }
+
     if (!AVL_is_in_tree_no_port_compare(svr_conn[chan->sock].cn_addr, 0, okclients))
       {
       sprintf(log_buffer, "request type %s from host %s rejected (host not authorized)",
