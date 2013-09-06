@@ -2089,3 +2089,8 @@ int add_execution_slot(
   return(PBSE_NONE);
   } 
 
+int get_svr_attr_l(int index, long *l)
+  {
+  return(0);
+  }
+

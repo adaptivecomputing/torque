@@ -93,7 +93,7 @@ char *pbs_geterrmsg(
   int connect) /* I - socket descriptor */
 
   {
-  char *errmsg;
+  char *errmsg = NULL;
 
   if ((connect < 0) ||
       (connect >= PBS_NET_MAX_CONNECTIONS))
@@ -105,8 +105,6 @@ char *pbs_geterrmsg(
 
   if (connection[connect].ch_errtxt != NULL)
     errmsg = strdup(connection[connect].ch_errtxt);
-  else
-    errmsg = NULL;
 
   pthread_mutex_unlock(connection[connect].ch_mutex);
 

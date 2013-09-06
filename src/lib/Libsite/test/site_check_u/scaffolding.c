@@ -8,7 +8,7 @@
 
 char *server_host;
 struct server server;
-int LOGLEVEL;
+int    LOGLEVEL = 10;
 
 const char *pbs_o_host = "PBS_O_HOST";
 const char *msg_orighost = "Job missing PBS_O_HOST value";

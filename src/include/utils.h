@@ -179,5 +179,8 @@ int get_parent_and_child(char *,char **,char **,char **);
 int escape_xml(char *,char *,int);
 int unescape_xml(char *,char *,int);
 
+/* functions from u_putenv.c */
+int put_env_var(const char *, const char *);
+
 #endif /* END #ifndef UTILS_H */
  

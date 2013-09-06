@@ -81,7 +81,6 @@ START_TEST(create_contact_list_test)
   }
 END_TEST
 
-
 START_TEST(test_read_status_strings_null_chan_doesnt_crash)
   {
   fail_unless(DIS_INVALID == read_status_strings(NULL, 1));
@@ -296,7 +295,7 @@ END_TEST
 
 START_TEST(im_join_job_as_sister_test)
   {
-  int result = -1;
+  int result = 0;
   char *test_job_id = strdup("not_jobid");
   char *test_cookie = strdup("cookie");
   struct tcp_chan test_chan;
@@ -313,7 +312,7 @@ START_TEST(im_join_job_as_sister_test)
                                  0,
                                  0,
                                  0);
-  fail_unless(result==0);
+  fail_unless(result==0, "im_join_job_as_sister_failed", result);
   }
 END_TEST
 

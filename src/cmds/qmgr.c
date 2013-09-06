@@ -1551,7 +1551,6 @@ int execute(
 
             pstderr_big(pname -> obj_name, Svrname(sp), errmsg);
             }
-        
           free(errmsg);
           }
         else
@@ -2782,11 +2781,11 @@ int is_valid_object(
         {
         if (! zopt)
           fprintf(stderr, "qmgr: %s.\n", errmsg);
-
-        free(errmsg);
         }
 
       valid = 0;
+
+      free(errmsg);
       }
     else
       {

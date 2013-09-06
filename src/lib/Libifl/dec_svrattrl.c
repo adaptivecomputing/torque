@@ -141,7 +141,7 @@ int decode_DIS_svrattrl(
     if (rc)
       return(rc);
 
-    tsize = sizeof(svrattrl) + data_len + 2; /* 2 more for nulls in name & resc*/
+    tsize = sizeof(svrattrl) + data_len + 2; /*add 2 for nulls name & resc*/
 
     if ((psvrat = (svrattrl *)calloc(1, tsize)) == 0)
       return DIS_NOMALLOC;

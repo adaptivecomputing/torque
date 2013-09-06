@@ -888,6 +888,8 @@ int run_pelog(
       {
       /* If PE_IO_TYPE_ASIS, leave as is, already open to job */
 
+      /* dup only for those fds1 >= 0 */
+
       if (fds1 != 1)
         {
         close(1);

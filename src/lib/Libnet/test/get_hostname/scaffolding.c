@@ -12,25 +12,18 @@ int insert_addr_name_info(
   return(0);
   }
 
-char *get_cached_fullhostname(
-
-  char               *hostname,
-  struct sockaddr_in *sai)
+char *get_cached_fullhostname(const char *hostname,const struct sockaddr_in *sai)
 
   {
   return(NULL);
   }
 
-int pbs_getaddrinfo(const char *pNode,struct addrinfo *pHints,struct addrinfo **ppAddrInfoOut)
+int pbs_getaddrinfo(
+
+  const char       *pNode,
+  struct addrinfo  *pHints,
+  struct addrinfo **ppAddrInfoOut)
+
   {
   return(0);
-  }
-
-char *get_cached_fullhostname(
-    
-  const char               *hostname,
-  const struct sockaddr_in *sai)
-
-  {
-  return(NULL);
   }

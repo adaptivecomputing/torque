@@ -6,8 +6,13 @@
 #include "pbs_error.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
+
 #include "pbs_nodes.h" /* pbs_nodes, node_check_info, node_iterator, all_nodes */
 #include "attribute.h" /* svrattrl, struct  */
+#include "svr_task.h"
+
+#define HOST_NAME_MAX 255
 
 void add_to_property_list(std::stringstream &property_list, const char *token);
 int login_encode_jobs(struct pbsnode *pnode, tlist_head *phead);
@@ -465,7 +470,6 @@ START_TEST(create_pbs_node_test)
   result = create_pbs_node(name, &attributes, 0, NULL);
   fail_unless(result != PBSE_NONE, "NULL input mask fail");
 
-  /*TODO: mock properly in order to success*/
   result = create_pbs_node(name, &attributes, 0, &mask);
   fail_unless(result != PBSE_NONE, "create_pbs_node fail");
   }
@@ -903,6 +907,27 @@ START_TEST(remove_hello_test)
   }
 END_TEST
 
+#if 0
+START_TEST(create_pbs_node_real_test)
+  {
+  char hostname[HOST_NAME_MAX+1];
+  int mask = 0;
+  fail_unless(gethostname(hostname, sizeof(hostname)) == 0, 
+    "failed calling gethostname api");
+
+  svrattrl *pal = (svrattrl *)attrlist_create((char *)ATTR_NODE_np, 0, 2);
+  fail_unless(pal != 0, "failed to allocate svrattrl in test_create_pbs_node");
+  strcpy((char *)pal->al_value, "6");
+  pal->al_flags = SET;
+  tlist_head      atrlist;
+  CLEAR_HEAD(atrlist);
+  append_link(&atrlist, &pal->al_link, pal);
+  fail_unless(create_pbs_node (hostname, pal, 48, &mask) == PBSE_NONE, "create_pbs_node should have succeeded");
+  free(pal);
+  }
+END_TEST
+#endif
+
 Suite *node_func_suite(void)
   {
   Suite *s = suite_create("node_func_suite methods");
@@ -1057,11 +1082,17 @@ Suite *node_func_suite(void)
   tc_core = tcase_create("pop_hello_test");
   tcase_add_test(tc_core, pop_hello_test);
   suite_add_tcase(s, tc_core);
-
   tc_core = tcase_create("remove_hello_test");
   tcase_add_test(tc_core, remove_hello_test);
   tcase_add_test(tc_core, add_to_property_list_test);
   suite_add_tcase(s, tc_core);
+
+#if 0
+  /* Will uncoment this test once we use the real, append_link, etc */
+  tc_core = tcase_create("create_pbs_node_real_test");
+  tcase_add_test(tc_core, create_pbs_node_real_test);
+  suite_add_tcase(s, tc_core);
+#endif
 
   return s;
   }

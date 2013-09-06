@@ -1976,7 +1976,7 @@ int send_job_obit_to_ms(
               {
               if (mom_radix >= 2)
                 {
-                rc = diswsi(chan, pjob->ji_nodeid);		
+                rc = diswsi(chan, pjob->ji_nodeid);
                 }
               
               if (rc == DIS_SUCCESS)

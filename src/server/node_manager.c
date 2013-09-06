@@ -5023,7 +5023,6 @@ void set_one_old(
 
         while (index >= jui->est.get_total_execution_slots())
           jui->est.add_execution_slot();
-      
         jui->est.mark_as_used(index);
         pnode->nd_slots.mark_as_used(index);
         }
@@ -5035,7 +5034,6 @@ void set_one_old(
         
       while (index >= jui->est.get_total_execution_slots())
         jui->est.add_execution_slot();
-     
       jui->est.mark_as_used(index);
       pnode->nd_slots.mark_as_used(index);
       pnode->nd_job_usages.push_back(jui);

@@ -480,6 +480,9 @@ trqauthd      15005/udp           # authorization daemon
 EOF
     }
 
+
+    echo "`hostname` np=`grep processor /proc/cpuinfo | wc -l`" > \
+        %{torque_sysconfdir}/server_priv/nodes
     NODES_FILE="%{torque_sysconfdir}/server_priv/nodes"
     NUM_PROCS="`grep processor /proc/cpuinfo | wc -l`"
 

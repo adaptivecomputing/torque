@@ -635,7 +635,6 @@ static void altdsp_statjob(
   const char *rqtimewal;
   const char *jstate;
   const char *eltimecpu;
-  const char *eltimewal;
   const char *walltime_remaining = "0";
   int         rem_walltime = 0;
   int         req_walltime = 0;
@@ -665,7 +664,7 @@ static void altdsp_statjob(
       {
       printf("\n                                                          Req'd  Req'd       Elap");
       printf("\nJob ID                  Username    Queue    NDS   TSK    Memory Time      S Time       BIG  FAST   PFS");
-      printf("\n----------------------- ----------- -------- ----- ------ ------ --------- - --------- ----- ----- -----\n");
+      printf("\n----   ---------------- ----------- -------- ----- ------ ------ --------- - --------- ----- ----- -----\n");
       }
     else
       {
@@ -684,7 +683,6 @@ static void altdsp_statjob(
     rqtimecpu = blank;
     rqtimewal = blank;
     eltimecpu = blank;
-    eltimewal = blank;
     jstate    = blank;
     comment   = blank;
     strcpy(elap_time_string, blank);
@@ -768,6 +766,22 @@ static void altdsp_statjob(
           {
           snprintf(rqmem, sizeof(rqmem), "%s", cnv_size(pat->value, alt_opt));
           }
+        else if (!strcmp(pat->resource, "pmem"))
+          {
+          snprintf(rqmem, sizeof(rqmem), "%s", cnv_size(pat->value, alt_opt));
+          }
+        else if (!strcmp(pat->resource, "dmem"))
+          { 
+          snprintf(rqmem, sizeof(rqmem), "%s", cnv_size(pat->value, alt_opt));
+          }
+        else if (!strcmp(pat->resource, "vmem"))
+          {
+          snprintf(rqmem, sizeof(rqmem), "%s", cnv_size(pat->value, alt_opt));
+          }
+        else if (!strcmp(pat->resource, "pvmem"))
+          {
+          snprintf(rqmem, sizeof(rqmem), "%s", cnv_size(pat->value, alt_opt));
+          }
         else if (!strcmp(pat->resource, "walltime"))
           {
           rqtimewal = pat->value;
@@ -797,14 +811,11 @@ static void altdsp_statjob(
         }
       else if (!strcmp(pat->name, ATTR_used))
         {
-        if (!strcmp(pat->resource, "walltime"))
-          {
-          eltimewal = pat->value;
-          }
-        else if (!strcmp(pat->resource, "cput"))
+        if (!strcmp(pat->resource, "cput"))
           {
           eltimecpu = pat->value;
           }
+        //else if (!strcmp(pat->resource, "walltime"))
         }
       else if (!strcmp(pat->name, ATTR_comment))
         {
@@ -851,6 +862,7 @@ static void altdsp_statjob(
       }
     else
       {
+      /* inject precision into the format string */
       snprintf(format_string, sizeof(format_string), "%%-%d.%ds %%6.6s %%5.5s %%*.*s %%6.6s %%9.9s %%1.1s %%9.9s",
                PBS_NAMELEN, PBS_NAMELEN);
 
@@ -886,19 +898,8 @@ static void altdsp_statjob(
                comment);
       }
 
-    /* This makes the compiler happy because this value is now
-       set but not used. It was replaced by elap_time_string.
-       I am leaving it here as an artifact incase we need to 
-       still use it. */
-    if (eltimewal)
-      {
-      ;
-      }
-
     pstat = pstat->next;
     }
-
-  return;
   }  /* END altdsp_statjob() */
 
 

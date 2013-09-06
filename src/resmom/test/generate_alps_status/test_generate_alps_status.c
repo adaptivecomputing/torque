@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "alps_constants.h"
 #include <string>
 #include <vector>
@@ -78,8 +79,40 @@ START_TEST(parse_alps_output_test)
   fail_unless(search_dynamic_string_status(status, (char *)"6144") == 1, "Couldn't find node 6144 in the status");
   fail_unless(search_dynamic_string_status(status, (char *)"CPROC") == 1, "Couldn't find CPROC in the status");
   fail_unless(search_dynamic_string_status(status, (char *)"APROC") == 1, "Couldn't find APROC in the status");
+
   } 
 END_TEST 
+
+START_TEST(parse_alps13_output_test)
+  {
+  /* test 1.3 protocol strings */
+
+  #define ALPS_13_INPUT_FILE "basil_13_short.xml"
+
+  std::string output = "";
+  boost::ptr_vector<std::string> status;
+  int             rc;
+  FILE           *fp;
+  char            linebuf[1024];
+
+  if ((fp = fopen(ALPS_13_INPUT_FILE, "r")) == NULL)
+    ck_abort_msg("Couldn't open ALPS 13 input file %s", ALPS_13_INPUT_FILE);
+
+  while (fgets(linebuf, sizeof(linebuf), fp) != NULL)
+    output += linebuf;
+
+  fclose(fp);
+
+  rc = parse_alps_output(output, status);
+  fail_unless(rc == 0, "Couldn't parse ALPS 1.3 output contained in file %s", ALPS_13_INPUT_FILE);
+
+  fail_unless(search_dynamic_string_status(status, (char *)"6142") == 1, "Couldn't find node 6142 in the 1.3 status");
+  fail_unless(search_dynamic_string_status(status, (char *)"CPROC") == 1, "Couldn't find CPROC in the 1.3 status");
+  fail_unless(search_dynamic_string_status(status, (char *)"APROC") == 1, "Couldn't find APROC in the 1.3 status");
+  fail_unless(search_dynamic_string_status(status, (char *)"CCU") == 1, "Couldn't find CCU in the 1.3 status");
+
+  }
+END_TEST
 
 START_TEST(full_generate_test)
   {
@@ -92,8 +125,8 @@ START_TEST(full_generate_test)
 
   fail_unless(rc == 0, "Couldn't generate the status");
 
-  fail_unless(search_dynamic_string_status(status, (char *)"GPU") == 1, "Couldn't find the GPUs reported in the status");
-  fail_unless(search_dynamic_string_status(status, (char *)"cheeseburger") == 1, "Couldn't find the feature cheeseburger in the status");
+  fail_unless(search_dynamic_string_status(status, (char *)"GPU") > 0, "Couldn't find the GPUs reported in the status");
+  fail_unless(search_dynamic_string_status(status, (char *)"cheeseburger") > 0, "Couldn't find the feature cheeseburger in the status");
   }
 END_TEST 
 
@@ -122,12 +155,20 @@ Suite *node_func_suite(void)
   tc_core = tcase_create("parse_alps_output_test");
   tcase_add_test(tc_core, parse_alps_output_test);
   suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("parse_alps13_output_test");
+  tcase_add_test(tc_core, parse_alps13_output_test);
+  suite_add_tcase(s, tc_core);
   
   tc_core = tcase_create("full_generate_test");
   tcase_add_test(tc_core, full_generate_test);
   tcase_add_test(tc_core, label_generate_test);
   suite_add_tcase(s, tc_core); 
   
+  //tc_core = tcase_create("full_generate_test_13");
+  //tcase_add_test(tc_core, full_generate_test_13);
+  //suite_add_tcase(s, tc_core);
+
   return s;
   }
 

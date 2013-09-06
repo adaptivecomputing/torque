@@ -12,7 +12,7 @@
 #include <unistd.h> /* getgid, fork */
 #include <grp.h> /* setgroups */
 #include <ctype.h> /*isspace */
-#include <getopt.h> /* getopt_long */
+#include <getopt.h> /*getopt_long */
 #include "pbs_error.h" /* PBSE_NONE */
 #include "pbs_constants.h" /* AUTH_IP */
 #include "pbs_ifl.h" /* pbs_default, PBS_BATCH_SERVICE_PORT, TRQ_AUTHD_SERVICE_PORT */
@@ -270,18 +270,18 @@ void parse_command_line(int argc, char **argv)
           }
         break;
 
-        case 'D':
-          debug_mode = TRUE;
-          break;
+      case 'D':
+        debug_mode = TRUE;
+        break;
 
-        case 'd':
-          down_server = true;
-          break;
-        
-        default:
-          fprintf(stderr, "Unknown command line option\n");
-          exit(1);
-          break;
+      case 'd':
+        down_server = true;
+        break;
+
+      default:
+        fprintf(stderr, "Unknown command line option\n");
+        exit(1);
+        break;
       }
     } 
   }
@@ -360,11 +360,9 @@ int trq_main(
     return(PBSE_IVALREQ);
     }
 
-
-  parse_command_line(argc, argv);
   if ((rc = load_config(&active_pbs_server, &trq_server_port, &daemon_port)) != PBSE_NONE)
     {
-     fprintf(stderr, "Failed to load configuration. Make sure the $TORQUE_HOME/server_name file exists\n");
+    fprintf(stderr, "Failed to load configuration. Make sure the $TORQUE_HOME/server_name file exists\n");
     }
   else if ((rc = load_ssh_key(&the_key)) != PBSE_NONE)
     {

@@ -85,6 +85,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "pbs_nodes.h"
+#include "pbs_ifl.h"
 #include "attribute.h"
 #include "alps_constants.h"
 #include "log.h"
@@ -99,6 +100,7 @@
 #include "threadpool.h"
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
+#include "server.h"
 #include <string>
 #include <vector>
 #include <boost/ptr_container/ptr_vector.hpp>
@@ -297,17 +299,15 @@ int set_ncpus(
 
   struct pbsnode *current,
   struct pbsnode *parent,
-  const char     *str)
+  int             ncpus)
 
   {
-  int ncpus;
   int difference;
   int i, orig_svr_clnodes;
 
   if (current == NULL)
     return(PBSE_BAD_PARAMETER);
   
-  ncpus = atoi(str + ac_cproc_eq_len);
   difference = ncpus - current->nd_slots.get_total_execution_slots();
   orig_svr_clnodes = svr_clnodes;
 
@@ -558,6 +558,7 @@ int process_alps_status(
   boost::ptr_vector<std::string>& status_info)
 
   {
+  const char    *ccu_p = NULL;
   char           *current_node_id = NULL;
   char            node_index_buf[MAXLINE];
   int             node_index = 0;
@@ -669,9 +670,50 @@ int process_alps_status(
       }
 
     /* perform any special processing */
-    if (!strncmp(str, cproc_eq, ac_cproc_eq_len))
+    if (!strncmp(str, ccu_eq, ac_ccu_eq_len))
       {
-      set_ncpus(current, parent, str);
+      /* save compute unit count in case we need it */
+      /* note: this string (ccu_eq (CCU=)) needs to be found before cprocs_eq (CPROCS=) */
+      /*  for the node */
+      ccu_p = str;
+      }
+    else if (!strncmp(str, cproc_eq, ac_cproc_eq_len))
+      {
+      int ncpus;
+      long svr_nppcu_value = 0;
+
+      /*
+       * Get the server nppcu value which determines how Hyper-Threaded
+       * cores are reported. When server nppcu value is:
+       *
+       *  0 - Let ALPS choose whether or not to use Hyper-Threaded cores 
+       *      (report all cores)
+       *  1 - Do not use Hyper-Threaded cores
+       *      (report only physical core (compute unit count)
+       *  2 - Use Hyper-Threaded cores
+       *      (report all cores)
+       */
+      get_svr_attr_l(SRV_ATR_nppcu, &svr_nppcu_value);
+
+      if (svr_nppcu_value == NPPCU_NO_USE_HT && ccu_p != NULL)
+        {
+        /* no HT (nppcu==1), so use compute unit count */
+        ncpus = atoi(ccu_p + ac_ccu_eq_len);
+
+        /* use CPROC value if we are using APBASIL protocol < 1.3 */
+        if (ncpus == 0)
+          ncpus = atoi(str + ac_cproc_eq_len);
+
+        /* reset the pointer */
+        ccu_p = NULL;
+        }
+      else
+        {
+        /* let ALPS choose (nppcu==0) or use HT (nppcu==2), use actual processor count */
+        ncpus = atoi(str + ac_cproc_eq_len);
+        }
+
+      set_ncpus(current, parent, ncpus);
       }
     else if (!strncmp(str, state, strlen(state)))
       {

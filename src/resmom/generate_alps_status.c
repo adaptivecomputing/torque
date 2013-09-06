@@ -334,11 +334,16 @@ int process_node(
   xmlNode            *child;
   xmlNode            *segments;
   xmlNode            *segment_child;
+  xmlNode            *sockets;
+  xmlNode            *socket_child;
+  xmlNode            *compute_units;
+  xmlNode            *compute_unit_child;
   std::string        features = "";
   char                buf[MAXLINE];
-  int                 num_procs     = 0;
-  int                 avail_procs   = 0;
-  unsigned long       memory        = 0;
+  int                 num_procs         = 0;
+  int                 avail_procs       = 0;
+  int                 num_compute_units = 0;
+  unsigned long       memory            = 0;
   unsigned long long  mem_kb;
   char               *rsv_id        = NULL;
 
@@ -372,7 +377,48 @@ int process_node(
   /* process the children */
   for (child = node->children; child != NULL; child = child->next)
     {
-    if (!strcmp((const char *)child->name, segment_array))
+
+    /* 1.3 socket (does not exist in previous protocol versions) */
+    if (!strcmp((const char *)child->name, socket_array))
+      {
+      for (sockets = child->children; sockets != NULL; sockets = sockets->next)
+        {
+        for (socket_child = sockets->children; socket_child != NULL; socket_child = socket_child->next)
+          {
+          if (!strcmp((const char *)socket_child->name, segment_array))
+            {
+            for (segments = socket_child->children; segments != NULL; segments = segments->next)
+              {
+              for (segment_child = segments->children; segment_child != NULL; segment_child = segment_child->next)
+                {
+                if (!strcmp((const char *)segment_child->name, compute_unit_array))
+                  {
+                  for (compute_units = segment_child->children; compute_units != NULL; compute_units = compute_units->next)
+                    {
+                    /* tally compute units */
+                    if (!strcmp((const char *)compute_units->name, compute_unit))
+                      num_compute_units++;
+
+                    for (compute_unit_child = compute_units->children; compute_unit_child != NULL; compute_unit_child = compute_unit_child->next)
+                      {
+                      if (!strcmp((const char *)compute_unit_child->name, processor_array))
+                        process_processor_array(compute_unit_child, &num_procs, &avail_procs, &rsv_id);
+                      }
+                    }
+                  }
+                else if (!strcmp((const char *)segment_child->name, memory_array))
+                  process_memory_array(segment_child, &memory);
+                else if (!strcmp((const char *)segment_child->name, label_array))
+                  process_label_array(features, segment_child);
+                }
+              }
+            }
+          }
+        }
+      }
+
+    /* 1.1/1.2 segment */
+    else if (!strcmp((const char *)child->name, segment_array))
       {
       for (segments = child->children; segments != NULL; segments = segments->next)
         {
@@ -387,6 +433,8 @@ int process_node(
           }
         }
       }
+
+    /* 1.0 tags (no SegmentArray tag) */
     else if (!strcmp((const char *)child->name, processor_array))
       {
       process_processor_array(child, &num_procs, &avail_procs, &rsv_id);
@@ -399,13 +447,20 @@ int process_node(
       {
       process_label_array(features, child);
       }
+
+    /* 1.0-1.3 */
     else if (!strcmp((const char *)child->name, accelerator_array))
       {
       process_accelerator_array(status, child);
       }
     } /* END the loop for processing the children */
 
-  /* once done, add the procs, available procs, memory info, reservation, and features */
+  /* once done, add the procs, available procs, compute unit count, memory info, reservation, and features */
+
+  /* note that CCU should come before CPROC */
+  snprintf(buf, sizeof(buf), "CCU=%d", num_compute_units);
+  status.push_back(new std::string(buf));
+
   snprintf(buf, sizeof(buf), "CPROC=%d", num_procs);
   status.push_back(new std::string(buf));
 

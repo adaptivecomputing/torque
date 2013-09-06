@@ -123,6 +123,7 @@ extern "C"
 #include "utils.h"
 #include "mom_comm.h"
 #include "../lib/Libnet/lib_net.h" /* socket_avail_bytes_on_descriptor */
+#include "alps_constants.h"
 #include "alps_functions.h"
 #include "tcp.h" /* tcp_chan */
 #include "mom_config.h"
@@ -3012,6 +3013,7 @@ void handle_reservation(
   char      *rsv_id = NULL;
   resource  *pres;
   int        use_nppn = TRUE;
+  int        nppcu = APBASIL_DEFAULT_NPPCU_VALUE; /* default */
   
   sjr->sj_session = setsid();
 
@@ -3058,6 +3060,10 @@ void handle_reservation(
         (pres->rs_value.at_val.at_long != 0))
       mppdepth = pres->rs_value.at_val.at_long;
 
+    /* get nppcu value from job if it exists */
+    if ((pjob->ji_wattr[JOB_ATR_nppcu].at_flags & ATR_VFLAG_SET))
+      nppcu = pjob->ji_wattr[JOB_ATR_nppcu].at_val.at_long;
+
     j = create_alps_reservation(exec_str,
           pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
           pjob->ji_qs.ji_jobid,
@@ -3065,6 +3071,7 @@ void handle_reservation(
           apbasil_protocol,
           pagg,
           use_nppn,
+          nppcu,
           mppdepth,
           &rsv_id);
     

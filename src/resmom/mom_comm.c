@@ -5049,7 +5049,6 @@ int process_valid_response(
     {
     case IM_JOIN_JOB:
       {
-
       ret = handle_im_join_job_response(chan, pjob, pSockAddr);
 
       close_conn(chan->sock, FALSE);
@@ -5097,12 +5096,12 @@ int process_valid_response(
       break;
 
     case IM_SIGNAL_TASK:
-      
+
       ret = handle_im_signal_task_response(pjob,event_task,event);
-     
+
       close_conn(chan->sock, FALSE);
       chan->sock = -1;
-    
+
       if (ret == IM_FAILURE)
         log_err(-1, __func__, "handle_im_signal_task_response error");
 
@@ -5340,8 +5339,6 @@ int handle_im_join_job_radix_response(
   } /* END handle_im_join_job_radix_response() */
 
 
-
-
 int handle_im_kill_job_radix_response(
 
   struct tcp_chan    *chan,
@@ -5358,11 +5355,11 @@ int handle_im_kill_job_radix_response(
   int             i;
   unsigned short  momport = 0;
   bool            all_done = false;
-    
+
   if (LOGLEVEL >= 2)
     {
     sprintf(log_buffer, "KILL_JOB_RADIX acknowledgement received");
-    
+
     log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
     }
 

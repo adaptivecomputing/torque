@@ -1,5 +1,7 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
+4.2.6
+
 4.2.5
   e - Remove the mom asking for a job status before sending an obit to pbs_server
       for a job that has exited. This is unnecessary overhead.
@@ -36,6 +38,12 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - TRQ-2030. Fix an ALPS 1.2 bug with labels on nodes. In 1.2 labels would be
       repeated like this: labelnamelabelname... Cray only.
   b - TRQ-1914. Fix after type dependencies not being removed from arrays.
+<<<<<<< HEAD
+  b - TRQ-2015. Fix a problem where pbs_mom processes get stuck in a defunc state when
+      doing a qrerun on a job. qrerun is not required to make this happen. Just the
+      action of requeing a running job on the mom causes this to happen.
+=======
+>>>>>>> master
 
 4.2.3
   b - TRQ-1653. Arrays depending on non-array jobs was broken. Fix this.

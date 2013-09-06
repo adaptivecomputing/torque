@@ -895,8 +895,7 @@ void *process_svr_conn(
 #ifdef UNIT_TEST
   /* process_svr_conn_rc is used by ./test/trq_auth/test_trq_auth.c
      to discover the status of unit test calls to process_svr_conn
-   */
-
+   */ 
   process_svr_conn_rc = rc;
 #endif
 

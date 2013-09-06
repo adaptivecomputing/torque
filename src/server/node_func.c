@@ -605,7 +605,6 @@ int login_encode_jobs(
         job_str += str_buf;
         }
       }
-
     }
 
 

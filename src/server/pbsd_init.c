@@ -132,6 +132,7 @@
 #include "hash_map.h"
 #include "mutex_mgr.hpp"
 #include "../lib/Libnet/lib_net.h"
+#include "alps_constants.h"
 #include <string>
 #include <vector>
 #include <boost/ptr_container/ptr_vector.hpp>
@@ -653,6 +654,13 @@ void convert_level_to_send_format(
   send_format.push_back(new std::string("</sl>"));
   } /* END convert_level_to_send_format() */
 
+/*
+ * convert_path_to_send_format()
+ * iterates over each level in the path and adds in to send format appropriately.
+ *
+ * @pre-cond: path must be a valid resizable array of resizable arrays.
+ * @post-cond: this path is added to send_format in the correct format.
+ */
 
 /*
  * convert_path_to_send_format()
@@ -783,6 +791,8 @@ void prepare_mom_hierarchy(
   {
   char            log_buf[LOCAL_LOG_BUF_SIZE];
   int             fds;
+
+  mh = initialize_mom_hierarchy();
 
   mh = initialize_mom_hierarchy();
 
@@ -1304,6 +1314,9 @@ int setup_server_attrs(
   /* force logging of all types */
   server.sv_attr[SRV_ATR_log_events].at_val.at_long = PBSEVENT_MASK;
   server.sv_attr[SRV_ATR_log_events].at_flags = ATR_VFLAG_SET;
+
+  server.sv_attr[SRV_ATR_nppcu].at_val.at_long = APBASIL_DEFAULT_NPPCU_VALUE;
+  server.sv_attr[SRV_ATR_nppcu].at_flags = ATR_VFLAG_SET;
 
   /* If not a "create" initialization, recover server db */
   rc = chk_save_file(path_svrdb);

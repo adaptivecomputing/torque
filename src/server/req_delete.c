@@ -161,12 +161,12 @@ const char *delasyncstr = DELASYNC;
 
 /* Extern Functions */
 
-void           set_resc_assigned(job *, enum batch_op);
-job           *chk_job_request(char *, struct batch_request *);
-batch_request *cpy_stage(struct batch_request *, job *, enum job_atr, int);
-int            svr_chk_owner(struct batch_request *, job *);
-void           chk_job_req_permissions(job **,struct batch_request *);
-void           on_job_exit_task(struct work_task *);
+extern void set_resc_assigned(job *, enum batch_op);
+extern job  *chk_job_request(char *, struct batch_request *);
+extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_atr, int);
+extern int   svr_chk_owner(struct batch_request *, job *);
+void chk_job_req_permissions(job **,struct batch_request *);
+void          on_job_exit_task(struct work_task *);
 void           remove_stagein(job **pjob_ptr);
 extern void removeAfterAnyDependency(job *pJob,void *targetJob);
 
@@ -658,7 +658,30 @@ jump:
       }
     } /* END MoabArrayCompatible check */
 
-  if(pjob == NULL)
+  if (pjob == NULL)
+    {
+    job_mutex.set_lock_on_exit(false);
+    return -1;
+    }
+
+
+  if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0)
+    {
+    /* job has restart file at mom, do end job processing */
+    svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITING, FALSE);
+
+    /* force new connection */
+    pjob->ji_momhandle = -1;
+
+    if (LOGLEVEL >= 7)
+      {
+      sprintf(log_buf, "calling on_job_exit from %s", __func__);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+      }
+
+    set_task(WORK_Immed, 0, on_job_exit_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
+    }
+  else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)
     {
     job_mutex.set_lock_on_exit(false);
     return -1;

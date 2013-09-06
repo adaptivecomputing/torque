@@ -28,6 +28,8 @@
 
 extern mom_hierarchy_t *mh;
 
+extern mom_hierarchy_t *mh;
+
 mom_server     mom_servers[PBS_MAXSERVER];
 resizable_array *received_statuses;
 int mom_server_count = 0;
