@@ -1062,6 +1062,7 @@ int blcr_checkpoint_job(
             MAX_CONN_RETRY,
             pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str);
           log_err(-1, __func__, log_buffer);
+          return(PBSE_CONNECT);
           }
         }
       }
@@ -1128,6 +1129,7 @@ int blcr_checkpoint_job(
             MAX_CONN_RETRY,
             pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str);
           log_err(-1, __func__, log_buffer);
+          return(PBSE_CONNECT);
           }
         }
       }
