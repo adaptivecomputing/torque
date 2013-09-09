@@ -6,6 +6,249 @@
 %{!?version:%{error:%%version not defined.}}
 %{!?release_number:%{error:%%release_number not defined.}}
 
+# Autoconf variables
+# These are set in /usr/lib/rpm/macros, but are explicitly defined here
+# For consistency between distributions.
+%define _prefix                /usr
+%define _exec_prefix           %{_prefix}
+%define _bindir                %{_exec_prefix}/bin
+%define _sbindir               %{_exec_prefix}/sbin
+%define _libexecdir            %{_exec_prefix}/libexec
+%define _datadir               %{_prefix}/share
+%define _sysconfdir            %{_prefix}/etc
+%define _sharedstatedir        %{_prefix}/com
+%define _localstatedir         %{_prefix}/var
+%define _lib                   lib
+%define _libdir                %{_exec_prefix}/%{_lib}
+%define _includedir            %{_prefix}/include
+%define _oldincludedir         /usr/include
+%define _infodir               %{_prefix}/info
+%define _mandir                %{_prefix}/man
+%define _initrddir             %{_sysconfdir}/init.d
+
+# Autoconf variables, which are not set in /usr/lib/rpm/macros.
+# Set according to the standard found here:
+# http://www.gnu.org/prep/standards/html_node/Directory-Variables.html
+%define _man1dir          %{_mandir}/man1
+%define _man2dir          %{_mandir}/man2
+%define _lispdir          %{_datarootdir}/emacs/site-lisp
+%define _logdir           %{_localstatedir}/log
+%define _datarootdir      %{_prefix}/share
+%define _oldincludedir    /usr/include
+%define _localedir        %{_datarootdir}/locale
+%define _docdir           %{_datarootdir}/doc
+%define _htmldir          %{_docdir}
+%define _dvidir           %{_docdir}
+%define _pdfdir           %{_docdir}
+%define _psdir            %{_docdir}
+# Not standard, but useful.
+%define pkg_doc_dir       %{_docdir}/%{name}-%{version}
+
+# Autoconf variables supported in Adaptive's build environment
+# (Some products use homedir, TORQUE uses spool,appstate, and homedir)
+# The latter three are intended to follow the Linux FHS standard.
+%define _man3dir          %{_mandir}/man3
+%define _homedir          %{_prefix}
+%define _spooldir         %{_localstatedir}/spool
+%define _cachedir         %{_localstatedir}/cache
+%define _appstatedir      %{_localstatedir}/lib
+
+# Nice error message if some macro is undefined.
+%define macro_undefined_error() \
+    %{error:%{?1:%{1}}%{!?1:macro} is not defined.}
+
+%define _configure ./configure
+
+%define configure \
+  unset CONFFLAGS \
+  CONFFLAGS_FILE=`mktemp %{_tmppath}/confflags.XXXX` \
+  ./configure --help 2>&1 > ${CONFFLAGS_FILE} \
+  if grep -q  -- '--oldincludedir' "${CONFFLAGS_FILE}" \
+  then \
+      CONFFLAGS='--oldincludedir=%{_oldincludedir}' \
+  fi \
+  if grep -q  -- '--datarootdir' ${CONFFLAGS_FILE} \
+  then \
+      CONFFLAGS="${CONFFLAGS} --datarootdir=%{_datarootdir}" \
+  fi \
+  if grep -q  -- '--localedir' ${CONFFLAGS_FILE} \
+  then \
+      CONFFLAGS="${CONFFLAGS} --localedir=%{_localedir}" \
+  fi \
+  if grep -q  -- '--docdir' ${CONFFLAGS_FILE} \
+  then \
+      CONFFLAGS="${CONFFLAGS} --docdir=%{_docdir}" \
+  fi \
+  if grep -q  -- '--htmldir' ${CONFFLAGS_FILE} \
+  then \
+      CONFFLAGS="${CONFFLAGS} --htmldir=%{_htmldir}" \
+  fi \
+  if grep -q  -- '--dvidir' ${CONFFLAGS_FILE} \
+  then \
+      CONFFLAGS="${CONFFLAGS} --dvidir=%{_dvidir}" \
+  fi \
+  if grep -q  -- '--pdfdir' ${CONFFLAGS_FILE} \
+  then \
+      CONFFLAGS="${CONFFLAGS} --pdfdir=%{_pdfdir}" \
+  fi \
+  if grep -q  -- '--psdir' ${CONFFLAGS_FILE} \
+  then \
+      CONFFLAGS="${CONFFLAGS} --psdir=%{_psdir}" \
+  fi \
+  if grep -q  -- '--homedir' ${CONFFLAGS_FILE} \
+  then \
+      CONFFLAGS="${CONFFLAGS} --homedir=%{_homedir}" \
+  fi \
+  if grep -q  -- '--spooldir' ${CONFFLAGS_FILE} \
+  then \
+      CONFFLAGS="${CONFFLAGS} --spooldir=%{_spooldir}" \
+  fi \
+  if grep -q  -- '--cachedir' ${CONFFLAGS_FILE} \
+  then \
+      CONFFLAGS="${CONFFLAGS} --cachedir=%{_cachedir}" \
+  fi \
+  if grep -q  -- '--appstatedir' ${CONFFLAGS_FILE} \
+  then \
+      CONFFLAGS="${CONFFLAGS} --appstatedir=%{_appstatedir}" \
+  fi \
+  if grep -q  -- '--logdir' ${CONFFLAGS_FILE} \
+  then \
+      CONFFLAGS="${CONFFLAGS} --logdir=%{_logdir}" \
+  fi \
+  if grep -q  -- '--lispdir' ${CONFFLAGS_FILE} \
+  then \
+      CONFFLAGS="${CONFFLAGS} --lispdir=%{_lispdir}" \
+  fi \
+  if grep -q  -- '--man1dir' ${CONFFLAGS_FILE} \
+  then \
+      CONFFLAGS="${CONFFLAGS} --man1dir=%{_man1dir}" \
+  fi \
+  if grep -q  -- '--man2dir' ${CONFFLAGS_FILE} \
+  then \
+      CONFFLAGS="${CONFFLAGS} --man2dir=%{_man2dir}" \
+  fi \
+  if grep -q  -- '--initrddir' ${CONFFLAGS_FILE} \
+  then \
+      CONFFLAGS="${CONFFLAGS} --initrddir=%{_initrddir}" \
+  fi \
+  CFLAGS="${CFLAGS:-%optflags}" ; export CFLAGS ; \
+  CXXFLAGS="${CXXFLAGS:-%optflags}" ; export CXXFLAGS ; \
+  FFLAGS="${FFLAGS:-%optflags}" ; export FFLAGS ; \
+  %{_configure} --host=%{_host} --build=%{_build} --target=%{_target} \\\
+        --program-prefix=%{?_program_prefix} \\\
+        --prefix=%{_prefix} \\\
+        --exec-prefix=%{_exec_prefix} \\\
+        --bindir=%{_bindir} \\\
+        --sbindir=%{_sbindir} \\\
+        --sysconfdir=%{_sysconfdir} \\\
+        --datadir=%{_datadir} \\\
+        --includedir=%{_includedir} \\\
+        --libdir=%{_libdir} \\\
+        --libexecdir=%{_libexecdir} \\\
+        --localstatedir=%{_localstatedir} \\\
+        --sharedstatedir=%{_sharedstatedir} \\\
+        --mandir=%{_mandir} \\\
+        --infodir=%{_infodir} ${CONFFLAGS}
+
+# The following 'makefile_*_subst' macros are designed to be used AFTER
+# autoconf has been run, and AFTER the configure script has been run as well.
+
+# There is a bug in autoconf which in some cases does not substitute correctly
+# into makefiles. This is the reason why we explicitly replace autoconf
+# variables in any 'Makefile's found.
+%makefile_autoconf_subst \
+    for j in "Makefile" "makefile" "Makefile.include" "makefile.include" \
+    do \
+        for i in `find . -type f -name "${j}"` \
+        do \
+            %{__sed} -i \\\
+                -e "s|@prefix@|%{_prefix}|g" \\\
+                -e "s|@exec_prefix@|%{_exec_prefix}|g" \\\
+                -e "s|@bindir@|%{_bindir}|g" \\\
+                -e "s|@sbindir@|%{_sbindir}|g" \\\
+                -e "s|@libexecdir@|%{_libexecdir}|g" \\\
+                -e "s|@datadir@|%{_datadir}|g" \\\
+                -e "s|@datarootdir@|%{_datarootdir}|g" \\\
+                -e "s|@sysconfdir@|%{_sysconfdir}|g" \\\
+                -e "s|@sharedstatedir@|%{_sharedstatedir}|g" \\\
+                -e "s|@localstatedir@|%{_localstatedir}|g" \\\
+                -e "s|@libdir@|%{_libdir}|g" \\\
+                -e "s|@oldincludedir@|%{_oldincludedir}|g" \\\
+                -e "s|@includedir@|%{_includedir}|g" \\\
+                -e "s|@localedir@|%{_localedir}|g" \\\
+                -e "s|@docdir@|%{_docdir}|g" \\\
+                -e "s|@htmldir@|%{_htmldir}|g" \\\
+                -e "s|@dvidir@|%{_dvidir}|g" \\\
+                -e "s|@pdfdir@|%{_pdfdir}|g" \\\
+                -e "s|@psdir@|%{_psdir}|g" \\\
+                -e "s|@man1dir@|%{_man1dir}|g" \\\
+                -e "s|@man2dir@|%{_man2dir}|g" \\\
+                -e "s|@lispdir@|%{_lispdir}|g" \\\
+                -e "s|@homedir@|%{_homedir}|g" \\\
+                -e "s|@spooldir@|%{_spooldir}|g" \\\
+                -e "s|@cachedir@|%{_cachedir}|g" \\\
+                -e "s|@appstatedir@|%{_appstatedir}|g" \\\
+                -e "s|@initrddir@|%{_initrddir}|g" \\\
+                -e "s|@logdir@|%{_logdir}|g" "${i}" \
+        done \
+    done
+
+%makefile_ldconfig_subst \
+    for j in "Makefile" "makefile" "Makefile.include" "makefile.include" \
+    do \
+        for i in `find . -type f -name "${j}"` \
+        do \
+            %{__sed} -i \\\
+                -e "s/ldconfig/echo 'skipped calling ldconfig'/g" "${i}" \
+        done \
+    done
+
+# Another autoconf bug macro.
+%makefile_destdir_subst \
+    for j in "Makefile" "makefile" "Makefile.include" "makefile.include" \
+    do \
+        for i in `find . -type f -name "${j}"` \
+        do \
+            %{__sed} -i \\\
+                -e 's/\\([^)]\\)\\$(prefix)/\\1$(DESTDIR)$(prefix)/g' \\\
+                -e 's/\\([^)]\\)\\$(exec_prefix)/\\1$(DESTDIR)$(exec_prefix)/g' \\\
+                -e 's/\\([^)]\\)\\$(bindir)/\\1$(DESTDIR)$(bindir)/g' \\\
+                -e 's/\\([^)]\\)\\$(sbindir)/\\1$(DESTDIR)$(sbindir)/g' \\\
+                -e 's/\\([^)]\\)\\$(libexecdir)/\\1$(DESTDIR)$(libexecdir)/g' \\\
+                -e 's/\\([^)]\\)\\$(datadir)/\\1$(DESTDIR)$(datadir)/g' \\\
+                -e 's/\\([^)]\\)\\$(datarootdir)/\\1$(DESTDIR)$(datarootdir)/g' \\\
+                -e 's/\\([^)]\\)\\$(sysconfdir)/\\1$(DESTDIR)$(sysconfdir)/g' \\\
+                -e 's/\\([^)]\\)\\$(sharedstatedir)/\\1$(DESTDIR)$(sharedstatedir)/g' \\\
+                -e 's/\\([^)]\\)\\$(localstatedir)/\\1$(DESTDIR)$(localstatedir)/g' \\\
+                -e 's/\\([^)]\\)\\$(libdir)/\\1$(DESTDIR)$(libdir)/g' \\\
+                -e 's/\\([^)]\\)\\$(oldincludedir)/\\1$(DESTDIR)$(oldincludedir)/g' \\\
+                -e 's/\\([^)]\\)\\$(includedir)/\\1$(DESTDIR)$(includedir)/g' \\\
+                -e 's/\\([^)]\\)\\$(localedir)/\\1$(DESTDIR)$(localedir)/g' \\\
+                -e 's/\\([^)]\\)\\$(docdir)/\\1$(DESTDIR)$(docdir)/g' \\\
+                -e 's/\\([^)]\\)\\$(htmldir)/\\1$(DESTDIR)$(htmldir)/g' \\\
+                -e 's/\\([^)]\\)\\$(dvidir)/\\1$(DESTDIR)$(dvidir)/g' \\\
+                -e 's/\\([^)]\\)\\$(pdfdir)/\\1$(DESTDIR)$(pdfdir)/g' \\\
+                -e 's/\\([^)]\\)\\$(psdir)/\\1$(DESTDIR)$(psdir)/g' \\\
+                -e 's/\\([^)]\\)\\$(man1dir)/\\1$(DESTDIR)$(man1dir)/g' \\\
+                -e 's/\\([^)]\\)\\$(man2dir)/\\1$(DESTDIR)$(man2dir)/g' \\\
+                -e 's/\\([^)]\\)\\$(lispdir)/\\1$(DESTDIR)$(lispdir)/g' \\\
+                -e 's/\\([^)]\\)\\$(homedir)/\\1$(DESTDIR)$(homedir)/g' \\\
+                -e 's/\\([^)]\\)\\$(spooldir)/\\1$(DESTDIR)$(spooldir)/g' \\\
+                -e 's/\\([^)]\\)\\$(cachedir)/\\1$(DESTDIR)$(cachedir)/g' \\\
+                -e 's/\\([^)]\\)\\$(appstatedir)/\\1$(DESTDIR)$(appstatedir)/g' \\\
+                -e 's/\\([^)]\\)\\$(initrddir)/\\1$(DESTDIR)$(initrddir)/g' \\\
+                -e 's/\\([^)]\\)\\$(logdir)/\\1$(DESTDIR)$(logdir)/g' "${i}" \
+        done \
+    done
+
+# This is the proper make install macro to use. It contains 'subst' macros
+# which are designed to work around autoconf bugs.
+%define make_install \
+    %makefile_autoconf_subst \
+    %makefile_destdir_subst \
+    %makefile_ldconfig_subst \
+     make DESTDIR="%{?buildroot:%{buildroot}}" install
+
 # This is the name of the tarball of the source code. If not set,
 # the default <name>-<version> tarball is used from the web site.
 %{!?source_file:%{warn:%%source_file not defined.}}
@@ -44,17 +287,12 @@
 %define mom_pkg         %{name}-%{mom_sub}
 %define devel_pkg       %{name}-%{devel_sub}
 
-%define pkg_doc_dir             %{_docdir}/%{name}-%{version}
 %define server_pkg_doc_dir             %{_docdir}/%{server_pkg}-%{version}
 %define mom_pkg_doc_dir             %{_docdir}/%{mom_pkg}-%{version}
 %define client_pkg_doc_dir             %{_docdir}/%{client_pkg}-%{version}
 %define common_pkg_doc_dir             %{_docdir}/%{common_pkg}-%{version}
 
 # End Autoconf variables #######################################################
-
-# Nice error message if some macro is undefined.
-%define macro_undefined_error() \
-    %{error:%{?1:%%%{1}}%{!?1:macro} is not defined.}
 
 ### Features disabled by default
 %bcond_with    blcr
