@@ -156,7 +156,7 @@
 # There is a bug in autoconf which in some cases does not substitute correctly
 # into makefiles. This is the reason why we explicitly replace autoconf
 # variables in any 'Makefile's found.
-%makefile_autoconf_subst \
+%define makefile_autoconf_subst \
     for j in "Makefile" "makefile" "Makefile.include" "makefile.include" \
     do \
         for i in `find . -type f -name "${j}"` \
@@ -193,7 +193,7 @@
         done \
     done
 
-%makefile_ldconfig_subst \
+%define makefile_ldconfig_subst \
     for j in "Makefile" "makefile" "Makefile.include" "makefile.include" \
     do \
         for i in `find . -type f -name "${j}"` \
@@ -204,7 +204,7 @@
     done
 
 # Another autoconf bug macro.
-%makefile_destdir_subst \
+%define makefile_destdir_subst \
     for j in "Makefile" "makefile" "Makefile.include" "makefile.include" \
     do \
         for i in `find . -type f -name "${j}"` \
