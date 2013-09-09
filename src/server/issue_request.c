@@ -209,9 +209,13 @@ int relay_to_mom(
     }
 
   unlock_node(node, __func__, "after svr_connect", LOGLEVEL);
+  strcpy(jobid, pjob->ji_qs.ji_jobid);
+  unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+  *pjob_ptr = NULL;
+
   handle = svr_connect(
-           pjob->ji_qs.ji_un.ji_exect.ji_momaddr,
-           pjob->ji_qs.ji_un.ji_exect.ji_momport,
+           addr,
+           port,
            &local_errno,
            NULL,
            NULL,
@@ -225,8 +229,6 @@ int relay_to_mom(
     return(PBSE_NORELYMOM);
     }
 
-  strcpy(jobid, pjob->ji_qs.ji_jobid);
-  unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
   request->rq_orgconn = request->rq_conn; /* save client socket */
 
