@@ -113,7 +113,7 @@
 
 
 
-
+#if 0
 
 /*
  * save_struct - Copy a structure (as a block)  into the save i/o buffer
@@ -181,7 +181,7 @@ int save_struct(
   }  /* END save_struct() */
 
 
-
+#endif
 
 #if 0
 /*

@@ -6,43 +6,8 @@
 #include "pbs_error.h"
 
 
-struct attribute_def test_def[] =
-{
-    {"A String",decode_str,encode_str,set_str,comp_str,free_str,NULL_FUNC,READ_WRITE,ATR_TYPE_STR,PARENT_TYPE_JOB},
-    {"A Long",decode_l,encode_l,set_l,comp_l,free_null,NULL_FUNC,READ_WRITE,ATR_TYPE_LONG,PARENT_TYPE_JOB}
-};
-
-char saveBuff[1024];
-int saveBuffRdPtr = 0;
-int saveBuffEndPtr = 0;
-
 START_TEST(test_one)
   {
-  size_t spaceLeft = sizeof(saveBuff);
-  pbs_attribute things[2];
-  pbs_attribute recoveredThings[3];
-
-  memset(things,0,sizeof(things));
-  decode_str(&things[0],"A String","Hello","I am Thing One",0);
-  decode_l(&things[1],"A Long","Hello","3577385",0);
-
-  fail_unless(save_attr(test_def,things,2,0,saveBuff,&spaceLeft,sizeof(saveBuff)) == 0);
-  saveBuffEndPtr = sizeof(saveBuff) - spaceLeft;
-
-  memset(recoveredThings,0,sizeof(recoveredThings));
-
-  fail_unless(recov_attr(0,NULL,test_def,recoveredThings,2,0,0) == 0);
-
-  fail_unless(comp_str(things,recoveredThings) == 0);
-  fail_unless(comp_l(things + 1,recoveredThings + 1) == 0);
-
-  //Corrupt the file and make sure it errors properly
-  saveBuffRdPtr = 0;
-  saveBuff[0x45] = 6;
-  memset(recoveredThings,0,sizeof(recoveredThings));
-
-  fail_unless(recov_attr(0,NULL,test_def,recoveredThings,2,0,0) == -1);
-
   }
 END_TEST
 

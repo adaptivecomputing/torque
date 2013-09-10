@@ -4,7 +4,7 @@
 
 #include "list_link.h" /* list_link */
 #include "attribute.h" /* pbs_attribute, attribute_def */
-#include "dynamic_string.h" /* dynamic_string */
+#include <string>
 
 
 ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
@@ -43,11 +43,12 @@ void *get_next(list_link pl, char *file, int line)
   exit(1);
   }
 
-int attr_to_str(struct dynamic_string *ds, attribute_def *at_def, struct pbs_attribute attr, int XML)
+int attr_to_str(std::string&, attribute_def *at_def, struct pbs_attribute attr, int XML)
   {
   fprintf(stderr, "The call to attr_to_str needs to be mocked!!\n");
   exit(1);
   }
+#if 0
 
 void clear_dynamic_string(dynamic_string *ds)
   {
@@ -66,23 +67,12 @@ void free_dynamic_string(dynamic_string *ds)
   fprintf(stderr, "The call to attr_to_str needs to be mocked!!\n");
   exit(1);
   }
+#endif
 
-
-extern char saveBuff[];
-extern int saveBuffRdPtr;
-extern int saveBuffEndPtr;
 
 ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   {
-  int lenRead = 0;
-  int i;
-  char *buff = (char *)buf;
-  for(i=0;(i<count)&&(saveBuffRdPtr < saveBuffEndPtr);i++)
-    {
-    *buff++ = saveBuff[saveBuffRdPtr++];
-    lenRead++;
-    }
-  return (lenRead);
+  return 0;
   }
 
 void log_err(int errnum, const char *routine, const char *text) {}
