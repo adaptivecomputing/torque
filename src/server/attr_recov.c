@@ -369,6 +369,7 @@ int recov_attr(
 
   svrattrl *pal = NULL;
   svrattrl  tempal;
+  char     *endPal;
 
   /* set all privileges (read and write) for decoding resources */
   /* This is a special (kludge) flag for the recovery case, see */
@@ -398,7 +399,7 @@ int recov_attr(
       return(-1);
       }
 
-    /* read in the pbs_attribute chunck (name and encoded value) */
+    /* read in the pbs_attribute chunk (name and encoded value) */
 
     palsize = tempal.al_tsize;
 
@@ -410,6 +411,7 @@ int recov_attr(
 
       return(-1);
       }
+    endPal = (char *)pal + palsize;
 
     memcpy(pal, &tempal, sizeof(svrattrl));
   
@@ -435,14 +437,37 @@ int recov_attr(
     pal->al_name = (char *)pal + sizeof(svrattrl);
 
     if (pal->al_rescln)
+      {
       pal->al_resc = pal->al_name + pal->al_nameln;
+      if(((char *)pal->al_resc > endPal)||((char *)pal->al_resc < (char *)pal))
+        {
+        //Bad size in file.
+        free(pal);
+        return(-1);
+        }
+      }
     else
       pal->al_resc = NULL;
 
     if (pal->al_valln)
+      {
       pal->al_value = pal->al_name + pal->al_nameln + pal->al_rescln;
+      if(((char *)pal->al_value > endPal)||((char *)pal->al_value < (char *)pal))
+        {
+        //Bad size in file.
+        free(pal);
+        return(-1);
+        }
+      }
     else
       pal->al_value = NULL;
+
+    if((pal->al_name + pal->al_nameln + pal->al_rescln + pal->al_valln) > endPal)
+      {
+      //Bad size in file.
+      free(pal);
+      return(-1);
+      }
 
     /* find the pbs_attribute definition based on the name */
 
