@@ -329,7 +329,7 @@ int assign_tag_len_11(
     pjob->ji_qs.ji_un.ji_newt.ji_scriptsz = atoi((const char*)content);
   else if (!(strncmp((const char *)tag, MOM_ADDR_TAG, 11)))
     pjob->ji_qs.ji_un.ji_exect.ji_momaddr = (unsigned long) atol((const char*)content);
-  else if (!(strncmp((const char *)tag, MOM_ADDR_TAG, 11)))
+  else if (!(strncmp((const char *)tag, EXIT_STAT_TAG, 11)))
     pjob->ji_qs.ji_un.ji_momt.ji_exitstat = atoi((const char*)content);
   else
     rc = -1;
@@ -686,7 +686,7 @@ int parse_job_dom(
       if (!(rc = check_fileprefix(filename, pjob, log_buf, buf_len)))
         rc = parse_attributes(pjob, attributeNode, log_buf, buf_len);  
       }
-    else if (!attributeNode)
+    else if (!attributeNode && !rc)
       {
       snprintf(log_buf, buf_len, "Missing required %s tag", ATTRIB_TAG);
       rc = -1;
@@ -777,7 +777,7 @@ void add_union_fields(
      snprintf(buf, sizeof(buf), "%u", pjob->ji_qs.ji_un.ji_momt.ji_exuid);
      xmlNewChild(root_node, NULL, (xmlChar *)EXEC_UID_TAG, (xmlChar *)buf);
      snprintf(buf, sizeof(buf), "%u", pjob->ji_qs.ji_un.ji_momt.ji_exgid);
-     xmlNewChild(root_node, NULL, (xmlChar *)EXEC_UID_TAG, (xmlChar *)buf);
+     xmlNewChild(root_node, NULL, (xmlChar *)EXEC_GID_TAG, (xmlChar *)buf);
      break;
    }
  } /* END add_union_fields */
