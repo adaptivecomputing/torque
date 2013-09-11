@@ -172,6 +172,13 @@ int issue_to_svr(char *servern, struct batch_request *preq, void (*replyfunc)(st
   exit(1);
   }
 
+int que_to_local_svr(struct batch_request *preq)
+  {
+  fprintf(stderr, "The call to que_to_local_svr to be mocked!!\n");
+  exit(1);
+  }
+
+
 int svr_setjobstate(job *pjob, int newstate, int newsubstate, int has_queue_mutex)
   {
   pjob->ji_qs.ji_state = newstate;
