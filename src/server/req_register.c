@@ -118,6 +118,7 @@
 /* External functions */
 
 extern int issue_to_svr(char *svr, struct batch_request *, void (*func)(struct work_task *));
+extern int que_to_local_svr(struct batch_request *preq);
 extern long calc_job_cost(job *);
 
 
@@ -2411,7 +2412,17 @@ int send_depend_req(
   svraddr1 = get_hostaddr(&my_err, server_name);
   svraddr2 = get_hostaddr(&my_err, pparent->dc_svr);
 
-  if ((rc = issue_to_svr(pparent->dc_svr, preq, NULL)) != PBSE_NONE)
+  if(svraddr1 == svraddr2)
+    {
+    snprintf(preq->rq_host,sizeof(preq->rq_host),"%s",pparent->dc_svr);
+    rc = que_to_local_svr(preq);
+    }
+  else
+    {
+    rc = issue_to_svr(pparent->dc_svr, preq, NULL);
+    }
+
+  if (rc != PBSE_NONE)
     {
     /* local requests have already been processed and freed. Do not attempt to
      * free or reference again. */
