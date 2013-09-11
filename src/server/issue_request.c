@@ -255,12 +255,13 @@ void reissue_to_svr(
   time_t         time_now = time(NULL);
   char          *br_id = (char *)pwt->wt_parm1;
   batch_request *preq = get_remove_batch_request(br_id);
+  char *serverName = strdup(preq->rq_host);
 
   /* if not timed-out, retry send to remote server */
   if (preq != NULL)
     {
     if (((time_now - preq->rq_time) > PBS_NET_RETRY_LIMIT) ||
-        (issue_to_svr(preq->rq_host, preq, pwt->wt_parmfunc) != PBSE_NONE))
+        (issue_to_svr(serverName, preq, pwt->wt_parmfunc) != PBSE_NONE))
       {
       /* either timed-out or got hard error, tell post-function  */
       
@@ -272,6 +273,7 @@ void reissue_to_svr(
       }
     }
 
+  free(serverName);
   free(pwt->wt_mutex);
   free(pwt);
   }  /* END reissue_to_svr() */
@@ -369,6 +371,33 @@ int issue_to_svr(
 
   return(PBSE_INTERNAL);
   }  /* END issue_to_svr() */
+
+
+/*
+ * que_to_local_svr - queue a batch request to a local server to be
+ * processed on another thread.
+ * This function parses the server name, looks up its host address,
+ * makes a connection and called issue_request (above) to send
+ * the request.
+ *
+ * Returns:  0 on success,
+ *   -1 on permanent error (no such host)
+ *
+ * On temporary error, establish a work_task to retry after a delay.
+ */
+
+int que_to_local_svr(struct batch_request *preq)                     /* I */
+  {
+  preq->rq_fromsvr = 1;
+  preq->rq_perm = ATR_DFLAG_MGRD | ATR_DFLAG_MGWR | ATR_DFLAG_SvWR;
+
+  if (preq->rq_id == NULL)
+    get_batch_request_id(preq);
+
+  set_task(WORK_Immed, 0, reissue_to_svr, preq->rq_id, TRUE);
+  return(PBSE_NONE);
+  }  /* END issue_to_svr() */
+
 
 
 
