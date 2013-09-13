@@ -19,9 +19,9 @@ int encode_exec_host(pbs_attribute *, tlist_head *, const char *, const char *, 
 int send_job_script_if_needed(int con, bool need_to_send_job_script, const char *script_name, char *job_id);
 int send_files_if_needed(int con, char *job_id, int type, bool job_has_run, unsigned long job_momaddr, char *stdout_path, char *stderr_path, char *chkpt_path);
 int attempt_to_queue_job_on_mom(char *job_id, int con, char *job_destin, bool &change_substate_on_attempt_to_queue, tlist_head &attrl, bool &timeout, bool need_to_send_job_script, bool job_has_run, unsigned long job_momaddr, const char *script_name, char *stdout_path, char *stderr_path, char *chkpt_path, int type, int *my_err);
-int commit_job_on_mom(int con, char *job_id, bool &timeout);
-int send_job_over_network(char *job_id, int con, char *job_destin, tlist_head &attrl, bool &attempt_to_queue_job, bool &change_substate_on_attempt_to_queue, bool &timeout, const char *script_name, bool need_to_send_job_script, bool job_has_run, unsigned long job_momaddr, char *stdout_path, char *stderr_path, char *chkpt_path, int type, int *my_err);
-int send_job_over_network_with_retries(char *job_id, char *job_destin, tlist_head &attrl, bool &attempt_to_queue_job, bool &change_subtate_on_attempt_to_queue, bool &timeout, const char *script_name, bool need_to_send_job_script, bool job_has_run, unsigned long momaddr, unsigned short momport, char *stdout_path, char *stderr_path, char *chkpt_path, int type, int *my_err);
+int commit_job_on_mom(int con, char *job_id, bool &timeout,int *mom_err);
+int send_job_over_network(char *job_id, int con, char *job_destin, tlist_head &attrl, bool &attempt_to_queue_job, bool &change_substate_on_attempt_to_queue, bool &timeout, const char *script_name, bool need_to_send_job_script, bool job_has_run, unsigned long job_momaddr, char *stdout_path, char *stderr_path, char *chkpt_path, int type, int *my_err,int *mom_err);
+int send_job_over_network_with_retries(char *job_id, char *job_destin, tlist_head &attrl, bool &attempt_to_queue_job, bool &change_subtate_on_attempt_to_queue, bool &timeout, const char *script_name, bool need_to_send_job_script, bool job_has_run, unsigned long momaddr, unsigned short momport, char *stdout_path, char *stderr_path, char *chkpt_path, int type, int *my_err, int *mom_err);
 
 extern bool get_jobs_array_recycled;
 extern bool get_jobs_array_fail;
@@ -45,15 +45,16 @@ START_TEST(send_job_over_network_with_retries_test)
   bool c = true;
   tlist_head h;
   int my_err;
+  int mom_err;
   
   connect_fail = true;
-  fail_unless(send_job_over_network_with_retries(jobid, destin, h, attempt_to_queue, c, timeout, "script", true, false, 10, 10, strdup("/out"), strdup("/err"), strdup("chkpt"), MOVE_TYPE_Exec, &my_err) == LOCUTION_FAIL);
+  fail_unless(send_job_over_network_with_retries(jobid, destin, h, attempt_to_queue, c, timeout, "script", true, false, 10, 10, strdup("/out"), strdup("/err"), strdup("chkpt"), MOVE_TYPE_Exec, &my_err,&mom_err) == LOCUTION_FAIL);
 
   retry = 1;
-  fail_unless(send_job_over_network_with_retries(jobid, destin, h, attempt_to_queue, c, timeout, "script", true, false, 10, 10, strdup("/out"), strdup("/err"), strdup("chkpt"), MOVE_TYPE_Exec, &my_err) == PBSE_NONE);
+  fail_unless(send_job_over_network_with_retries(jobid, destin, h, attempt_to_queue, c, timeout, "script", true, false, 10, 10, strdup("/out"), strdup("/err"), strdup("chkpt"), MOVE_TYPE_Exec, &my_err,&mom_err) == PBSE_NONE);
 
   retry = 10;
-  fail_unless(send_job_over_network_with_retries(jobid, destin, h, attempt_to_queue, c, timeout, "script", true, false, 10, 10, strdup("/out"), strdup("/err"), strdup("chkpt"), MOVE_TYPE_Exec, &my_err) == LOCUTION_RETRY);
+  fail_unless(send_job_over_network_with_retries(jobid, destin, h, attempt_to_queue, c, timeout, "script", true, false, 10, 10, strdup("/out"), strdup("/err"), strdup("chkpt"), MOVE_TYPE_Exec, &my_err,&mom_err) == LOCUTION_RETRY);
 
   }
 END_TEST
@@ -67,14 +68,15 @@ START_TEST(send_job_over_network_test)
   bool c = true;
   tlist_head h;
   int my_err;
+  int mom_err;
 
-  fail_unless(send_job_over_network(strdup("2.napali"), 5, destin, h, attempt_to_queue, c, timeout, "script", true, false, 10, strdup("/out"), strdup("/err"), strdup("/chkpt"), MOVE_TYPE_Exec, &my_err) == LOCUTION_FAIL);
+  fail_unless(send_job_over_network(strdup("2.napali"), 5, destin, h, attempt_to_queue, c, timeout, "script", true, false, 10, strdup("/out"), strdup("/err"), strdup("/chkpt"), MOVE_TYPE_Exec, &my_err,&mom_err) == LOCUTION_FAIL);
 
-  fail_unless(send_job_over_network(jobid, 5, destin, h, attempt_to_queue, c, timeout, "script", true, false, 10, strdup("/out"), strdup("/err"), strdup("/chkpt"), MOVE_TYPE_Exec, &my_err) == PBSE_NONE);
+  fail_unless(send_job_over_network(jobid, 5, destin, h, attempt_to_queue, c, timeout, "script", true, false, 10, strdup("/out"), strdup("/err"), strdup("/chkpt"), MOVE_TYPE_Exec, &my_err,&mom_err) == PBSE_NONE);
   fail_unless(attempt_to_queue == false);
 
   rdycommit_fail = true;
-  fail_unless(send_job_over_network(jobid, 5, destin, h, attempt_to_queue, c, timeout, "script", true, false, 10, strdup("/out"), strdup("/err"), strdup("/chkpt"), MOVE_TYPE_Exec, &my_err) == LOCUTION_RETRY);
+  fail_unless(send_job_over_network(jobid, 5, destin, h, attempt_to_queue, c, timeout, "script", true, false, 10, strdup("/out"), strdup("/err"), strdup("/chkpt"), MOVE_TYPE_Exec, &my_err,&mom_err) == LOCUTION_RETRY);
   rdycommit_fail = false;
 
   }
@@ -84,10 +86,11 @@ START_TEST(commit_job_on_mom_test);
   {
   bool timeout = false;
   char *jobid = strdup("1.napali");
+  int  mom_err;
 
-  fail_unless(commit_job_on_mom(5, jobid, timeout) == PBSE_NONE);
+  fail_unless(commit_job_on_mom(5, jobid, timeout,&mom_err) == PBSE_NONE);
   commit_error = true;
-  fail_unless(commit_job_on_mom(5, jobid, timeout) == LOCUTION_FAIL);
+  fail_unless(commit_job_on_mom(5, jobid, timeout,&mom_err) == LOCUTION_FAIL);
   commit_error = false;
   }
 END_TEST
