@@ -9,6 +9,7 @@
 #include "pbs_ifl.h" /* attropl */
 #include "net_connect.h" /* pbs_net_t */
 #include "list_link.h" /* tlist_head, list_link */
+#include "pbs_nodes.h"
 
 int pbs_errno = 0;
 const char *msg_daemonname = "unset";
@@ -64,8 +65,7 @@ int DIS_reply_read(struct tcp_chan *chan, struct batch_reply *preply)
 
 char *netaddr_pbs_net_t(pbs_net_t ipadd)
   {
-  fprintf(stderr, "The call to netaddr_pbs_net_t needs to be mocked!!\n");
-  exit(1);
+  return(strdup("Mock address."));
   }
 
 void free_br(struct batch_request *preq)
@@ -154,8 +154,7 @@ work_task *next_task(all_tasks *at, int *iter)
 
 int svr_connect(pbs_net_t hostaddr, unsigned int port, int *my_err, struct pbsnode  *pnode, void *(*func)(void *))
   {
-  fprintf(stderr, "The call to svr_connect needs to be mocked!!\n");
-  exit(1);
+  return PBS_LOCAL_CONNECTION;
   }
 
 int dispatch_task(struct work_task *ptask)
@@ -166,8 +165,7 @@ int dispatch_task(struct work_task *ptask)
 
 int dispatch_request(int sfds, struct batch_request *request)
   {
-  fprintf(stderr, "The call to dispatch_request needs to be mocked!!\n");
-  exit(1);
+  return 0;
   }
 
 int PBSD_msg_put(int c, char *jobid, int fileopt, char *msg, char *extend)
@@ -182,10 +180,12 @@ void close_conn(int sd, int has_mutex)
   exit(1);
   }
 
+struct pbsnode dummynode;
+
 struct pbsnode *tfind_addr(const u_long key, uint16_t port, char *job_momname)
   {
-  fprintf(stderr, "The call to tfind_addr needs to be mocked!!\n");
-  exit(1);
+  memset(&dummynode,0,sizeof(dummynode));
+  return &dummynode;
   }
 
 int encode_DIS_ReqExtend(struct tcp_chan *chan, char *extend)
@@ -201,9 +201,8 @@ int PBSD_sig_put(int c, char *jobid, char *signal, char *extend)
   }
 
 int unlock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
-  { 
-  fprintf(stderr, "The call to unlock_node needs to be mocked!!\n");
-  exit(1);                    
+  {
+  return 0;
   }
 
 void DIS_tcp_cleanup(struct tcp_chan *chan)

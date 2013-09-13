@@ -1604,10 +1604,10 @@ bool connection_from_ms(
   if ((port_care != FALSE) && 
       (ntohs(addr->sin_port) >= IPPORT_RESERVED))
     {
-    sprintf(log_buffer, "non-privileged connection from %s",
-            netaddr(addr));
+    sprintf(log_buffer, "non-privileged connection from %s, job id %s",
+            netaddr(addr), pjob->ji_qs.ji_jobid);
 
-    log_err(-1, __func__, log_buffer);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
     close(chan->sock);
     chan->sock = -1;
     return(false);
@@ -5869,7 +5869,7 @@ void im_request(
     /* all of these are requests for a sister until we get to IM_ALL_OK */
     case IM_KILL_JOB:
       {
-      if (connection_from_ms(chan, pjob, pSockAddr) == FALSE)
+      if (connection_from_ms(chan, pjob, pSockAddr) == TRUE)
         {
         im_kill_job_as_sister(pjob,event,momport,FALSE);
         }

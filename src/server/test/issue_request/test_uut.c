@@ -1,12 +1,26 @@
 #include "license_pbs.h" /* See here for the software license */
 #include "issue_request.h"
-#include "test_issue_request.h"
+#include "test_uut.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include "pbs_error.h"
+#include "attribute.h"
+
 START_TEST(test_one)
   {
+  job testJob;
+  job *pTestJob;
+  struct batch_request request;
 
+  memset(&testJob,0,sizeof(job));
+  memset(&request,0,sizeof(request));
+  pTestJob = &testJob;
+
+  fail_unless(relay_to_mom(&pTestJob,&request,NULL) == PBSE_BADSTATE);
+
+  decode_str(&testJob.ji_wattr[JOB_ATR_exec_host],NULL,NULL,"Sherrie",0);
+
+  fail_unless(relay_to_mom(&pTestJob,&request,NULL) == PBSE_NONE);
 
   }
 END_TEST
