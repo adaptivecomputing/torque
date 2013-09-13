@@ -118,6 +118,7 @@
 /* External functions */
 
 extern int issue_to_svr(char *svr, struct batch_request *, void (*func)(struct work_task *));
+extern int que_to_local_svr(struct batch_request *preq);
 extern long calc_job_cost(job *);
 
 
@@ -141,7 +142,7 @@ int    build_depend(pbs_attribute *, const char *);
 void   clear_depend(struct depend *, int type, int exists);
 void   del_depend(struct depend *);
 int    release_cheapest(job *, struct depend *);
-int           send_depend_req(job *, struct depend_job *pparent, int, int, int, void (*postfunc)(batch_request *));
+int    send_depend_req(job *, struct depend_job *pparent, int, int, int, void (*postfunc)(batch_request *),bool bAsyncOk);
 
 /* External Global Data Items */
 
@@ -1319,7 +1320,7 @@ int alter_unreg(
         if ((pnewd == 0) || 
             (find_dependjob(pnewd, oldjd->dc_child) == 0))
           {
-          int rc = send_depend_req(pjob, oldjd, type, JOB_DEPEND_OP_UNREG, SYNC_SCHED_HINT_NULL, free_br);
+          int rc = send_depend_req(pjob, oldjd, type, JOB_DEPEND_OP_UNREG, SYNC_SCHED_HINT_NULL, free_br,false);
 
           if (rc == PBSE_JOBNOTFOUND)
             return(rc);
@@ -1420,7 +1421,7 @@ int depend_on_que(
 
       while (pparent)
         {
-        if ((rc = send_depend_req(pjob, pparent, type, JOB_DEPEND_OP_REGISTER, SYNC_SCHED_HINT_NULL, post_doq)) != PBSE_NONE)
+        if ((rc = send_depend_req(pjob, pparent, type, JOB_DEPEND_OP_REGISTER, SYNC_SCHED_HINT_NULL, post_doq,false)) != PBSE_NONE)
           {
           return(rc);
           }
@@ -1524,7 +1525,7 @@ int depend_on_exec(
             pdep->dp_type,
             JOB_DEPEND_OP_RELEASE,
             SYNC_SCHED_HINT_NULL,
-            post_doe) == PBSE_JOBNOTFOUND)
+            post_doe,false) == PBSE_JOBNOTFOUND)
         {
         return(PBSE_JOBNOTFOUND);
         }
@@ -1551,7 +1552,7 @@ int depend_on_exec(
             pdep->dp_type,
             JOB_DEPEND_OP_READY,
             SYNC_SCHED_HINT_NULL,
-            free_br) == PBSE_JOBNOTFOUND)
+            free_br,false) == PBSE_JOBNOTFOUND)
         {
         return(PBSE_JOBNOTFOUND);
         }
@@ -1688,7 +1689,7 @@ int depend_on_term(
             
             while (pparent)
               {
-              rc = send_depend_req(pjob, pparent, type, JOB_DEPEND_OP_DELETE, SYNC_SCHED_HINT_NULL, free_br);
+              rc = send_depend_req(pjob, pparent, type, JOB_DEPEND_OP_DELETE, SYNC_SCHED_HINT_NULL, free_br,true);
               
               if (rc == PBSE_JOBNOTFOUND)
                 {
@@ -1711,7 +1712,7 @@ int depend_on_term(
       while (pparent)
         {
         /* "release" the job to execute */
-        if ((rc = send_depend_req(pjob, pparent, type, op, SYNC_SCHED_HINT_NULL, free_br)) != PBSE_NONE)
+        if ((rc = send_depend_req(pjob, pparent, type, op, SYNC_SCHED_HINT_NULL, free_br,true)) != PBSE_NONE)
           {
           return(rc);
           }
@@ -1775,7 +1776,7 @@ int release_cheapest(
       hint = SYNC_SCHED_HINT_FIRST;
 
     if ((rc = send_depend_req(pjob, cheapest, JOB_DEPEND_TYPE_SYNCWITH,
-          JOB_DEPEND_OP_RELEASE, hint, free_br)) == PBSE_NONE)
+          JOB_DEPEND_OP_RELEASE, hint, free_br,false)) == PBSE_NONE)
       {
       cheapest->dc_state = JOB_DEPEND_OP_RELEASE;
       }
@@ -2327,7 +2328,8 @@ int send_depend_req(
   int                 type,
   int                 op,
   int                 schedhint,
-  void               (*postfunc)(batch_request *))
+  void               (*postfunc)(batch_request *),
+  bool                bAsyncOk)
 
   {
   int                   rc = 0;
@@ -2411,7 +2413,17 @@ int send_depend_req(
   svraddr1 = get_hostaddr(&my_err, server_name);
   svraddr2 = get_hostaddr(&my_err, pparent->dc_svr);
 
-  if ((rc = issue_to_svr(pparent->dc_svr, preq, NULL)) != PBSE_NONE)
+  if((svraddr1 == svraddr2)&&(bAsyncOk))
+    {
+    snprintf(preq->rq_host,sizeof(preq->rq_host),"%s",pparent->dc_svr);
+    rc = que_to_local_svr(preq);
+    }
+  else
+    {
+    rc = issue_to_svr(pparent->dc_svr, preq, NULL);
+    }
+
+  if (rc != PBSE_NONE)
     {
     /* local requests have already been processed and freed. Do not attempt to
      * free or reference again. */
