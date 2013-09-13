@@ -697,6 +697,7 @@ int modify_whole_array(
   {
   int   i;
   int   rc = PBSE_NONE;
+  int   modify_job_rc = PBSE_NONE;
   job  *pjob;
 
   for (i = 0; i < pa->ai_qs.array_size; i++)
@@ -717,6 +718,10 @@ int modify_whole_array(
       pthread_mutex_unlock(pa->ai_mutex);
       array_req->rq_noreply = TRUE;
       rc = modify_job((void **)&pjob, plist, array_req, checkpoint_req, NO_MOM_RELAY);
+      if (rc != PBSE_NONE)
+        {
+        modify_job_rc = rc;
+        }
       pa = get_jobs_array(&pjob);
       
       if (pa == NULL)
@@ -736,7 +741,7 @@ int modify_whole_array(
       }
     } /* END foreach job in array */
 
-  return(rc);
+  return(modify_job_rc);
   } /* END modify_whole_array() */
 
 
