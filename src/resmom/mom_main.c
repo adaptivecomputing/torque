@@ -1245,8 +1245,6 @@ void process_hup(void)
 
 /*
 ** Got an alarm call.
-** Close all general network connections, clean up and reinit the
-** dependent code.
 */
 
 void toolong(
@@ -1254,8 +1252,6 @@ void toolong(
   int sig)
 
   {
-  log_record(PBSEVENT_SYSTEM, 0, __func__, "alarm call");
-
   if (LOGLEVEL >= 1)
     DBPRT(("alarm call\n"))
 
