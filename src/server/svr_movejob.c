@@ -957,16 +957,16 @@ int commit_job_on_mom(
     
   int   con,
   char *job_id,
-  bool &timeout)
+  bool &timeout,
+  int  *mom_err)
 
   {
-  int  mom_err = PBSE_NONE;
   long sid = 0;
   int  rc = LOCUTION_SUCCESS;
 
-  if ((mom_err = PBSD_commit_get_sid(con, &sid, job_id)) != PBSE_NONE)
+  if ((*mom_err = PBSD_commit_get_sid(con, &sid, job_id)) != PBSE_NONE)
     {
-    log_commit_error(con, mom_err, job_id, timeout);
+    log_commit_error(con, *mom_err, job_id, timeout);
 
     /* don't retry on timeout or other errors -- break out and report error! */
     return(LOCUTION_FAIL);
@@ -999,7 +999,8 @@ int send_job_over_network(
   char          *stderr_path,
   char          *chkpt_path,
   int            type,
-  int           *my_err)
+  int           *my_err,
+  int           *mom_err)
 
   {
   int  rc;
@@ -1033,7 +1034,7 @@ int send_job_over_network(
     return(LOCUTION_RETRY);
     }
 
-  rc = commit_job_on_mom(con, job_id, timeout);
+  rc = commit_job_on_mom(con, job_id, timeout,mom_err);
 
   return(rc);
   } /* END send_job_over_network() */
@@ -1057,7 +1058,8 @@ int send_job_over_network_with_retries(
   char           *stderr_path,
   char           *chkpt_path,
   int             type,
-  int            *my_err)
+  int            *my_err,
+  int            *mom_err)
 
   {
   int  con = PBS_NET_RC_UNSET;
@@ -1132,7 +1134,8 @@ int send_job_over_network_with_retries(
                                stderr_path,
                                chkpt_path,
                                type,
-                               my_err);
+                               my_err,
+                               mom_err);
 
     if (rc == LOCUTION_SUCCESS)
       break;
@@ -1297,7 +1300,8 @@ int send_job_work(
                                           stderr_path,
                                           chkpt_path,
                                           type,
-                                          my_err);
+                                          my_err,
+                                          &mom_err);
 
   if (Timeout == TRUE)
     {
