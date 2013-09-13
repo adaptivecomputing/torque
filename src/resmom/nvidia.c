@@ -1165,7 +1165,7 @@ void generate_server_gpustatus_nvml(
       {
       std::string *s = new std::string("gpuid=");
       *s += pci_info.busId;
-      gpu_status.push_back(pci_info.busId);
+      gpu_status.push_back(s);
 
       s = new std::string("gpu_pci_device_id=");
       snprintf(tmpbuf, 100, "%d", pci_info.pciDeviceId);
@@ -1217,7 +1217,7 @@ void generate_server_gpustatus_nvml(
     if (rc == NVML_SUCCESS)
       {
       snprintf(tmpbuf, 20, "gpu_fan_speed=%d%%", tmpint);
-      gpu_status.push_back(new std::string(tmpbuf)));
+      gpu_status.push_back(new std::string(tmpbuf));
       }
     else
       {
@@ -1230,10 +1230,10 @@ void generate_server_gpustatus_nvml(
     if (rc == NVML_SUCCESS)
       {
       snprintf(tmpbuf, 50, "gpu_memory_total=%lld MB", (mem_info.total/(1024*1024)));
-      gpu_status.push_back(new std::string(tmpbuf)));
+      gpu_status.push_back(new std::string(tmpbuf));
 
       snprintf(tmpbuf, 50, "gpu_memory_used=%lld MB", (mem_info.used/(1024*1024)));
-      gpu_status.push_back(new std::string(tmpbuf)));
+      gpu_status.push_back(new std::string(tmpbuf));
       }
     else
       {
@@ -1293,10 +1293,10 @@ void generate_server_gpustatus_nvml(
     if (rc == NVML_SUCCESS)
       {
       snprintf(tmpbuf, 100, "gpu_utilization=%d%%", util_info.gpu);
-      gpu_status.push_back(new std::string(tmpbuf)));
+      gpu_status.push_back(new std::string(tmpbuf));
 
       snprintf(tmpbuf, 100, "gpu_memory_utilization=%d%%", util_info.memory);
-      gpu_status.push_back(new std::string(tmpbuf)));
+      gpu_status.push_back(new std::string(tmpbuf));
       }
     else
       {
@@ -1311,7 +1311,7 @@ void generate_server_gpustatus_nvml(
       {
       snprintf(tmpbuf, 50, "gpu_ecc_mode=%s",
         (ecc_mode == NVML_FEATURE_ENABLED) ? "Enabled" : "Disabled");
-      gpu_status.push_back(new std::string(tmpbuf)));
+      gpu_status.push_back(new std::string(tmpbuf));
       }
     else
       {
@@ -1326,7 +1326,7 @@ void generate_server_gpustatus_nvml(
     if (rc == NVML_SUCCESS)
       {
       snprintf(tmpbuf, 100, "gpu_single_bit_ecc_errors=%lld", ecc_counts);
-      gpu_status.push_back(new std::string(tmpbuf)));
+      gpu_status.push_back(new std::string(tmpbuf));
       }
     else
       {
@@ -1341,7 +1341,7 @@ void generate_server_gpustatus_nvml(
     if (rc == NVML_SUCCESS)
       {
       snprintf(tmpbuf, 100, "gpu_double_bit_ecc_errors=%lld", ecc_counts);
-      gpu_status.push_back(new std::string(tmpbuf)));
+      gpu_status.push_back(new std::string(tmpbuf));
       }
     else
       {
@@ -1355,7 +1355,7 @@ void generate_server_gpustatus_nvml(
     if (rc == NVML_SUCCESS)
       {
       snprintf(tmpbuf, 25, "gpu_temperature=%d C", tmpint);
-      gpu_status.push_back(new std::string(tmpbuf)));
+      gpu_status.push_back(new std::string(tmpbuf));
       }
     else
       {
