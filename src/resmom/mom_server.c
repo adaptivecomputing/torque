@@ -947,11 +947,13 @@ stat_record stats[] = {
 void generate_server_status(boost::ptr_vector<std::string>& status)
   {
   int   i;
+  std::stringstream ss;
 
   /* identify which vnode this is */
 #ifdef NUMA_SUPPORT
-  std::string *s = new std::string(NUMA_KEYWORD);
-  *s += numa_index;
+  ss << NUMA_KEYWORD;
+  ss << numa_index;
+  std::string *s = new std::string(ss.str());
   status.push_back(s);
 #endif /* NUMA_SUPPORT */
 
