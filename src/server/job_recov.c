@@ -113,6 +113,7 @@
 #include "../lib/Libifl/lib_ifl.h"
 #include "svrfunc.h"
 #include "server.h"
+#include "alps_constants.h"
 #if __STDC__ != 1
 #include <memory.h>
 #endif
@@ -505,38 +506,39 @@ int fill_resource_list(
 
   {
   xmlNodePtr resNode = NULL;
-  int rc = PBSE_NONE;
+  int        rc = PBSE_NONE;
+  bool       element_found = false;
 
-  if ((resNode = xmlFirstElementChild(resource_list_node)))
+  for (resNode = resource_list_node->children; resNode != NULL; resNode = resNode->next)
     {
-    while(resNode && (!rc))
+    /* skip text children, only process elements */
+    if (!strcmp((const char *)resNode->name, text_name))
+      continue;
+      
+    xmlChar *value = xmlNodeGetContent(resNode);
+    svrattrl *pal = NULL;
+
+    if ((pal = fill_svrattr_info(aname, (const char*)value, (const char *)resNode->name, log_buf, buflen)))
       {
-      xmlChar *value = xmlNodeGetContent(resNode);
-      svrattrl *pal = NULL;
-
-      if ((pal = fill_svrattr_info(aname, (const char*)value, (const char *)resNode->name, log_buf, buflen)))
+      char *attr_flags;
+      unsigned int flags;
+      if ((attr_flags = (char *)xmlGetProp(resNode, (xmlChar *)AL_FLAGS_ATTR)))
         {
-        char *attr_flags;
-        unsigned int flags;
-        if ((attr_flags = (char *)xmlGetProp(resNode, (xmlChar *)AL_FLAGS_ATTR)))
-          {
-          flags = (unsigned int)atoi((char *)attr_flags);
-          xmlFree(attr_flags);
-          pal->al_flags = flags;
-          }
-        decode_attribute(pal, pj);
-        free(pal);
+        flags = (unsigned int)atoi((char *)attr_flags);
+        xmlFree(attr_flags);
+        pal->al_flags = flags;
         }
-      else
-        rc = -1;
-
-      if (value) 
-        xmlFree(value);
-
-      resNode = xmlNextElementSibling(resNode);
+      decode_attribute(pal, pj);
+      free(pal);
       }
+    else
+      rc = -1;
+
+    if (value) 
+      xmlFree(value);
     }
-  else
+
+  if (element_found == false)
     {
     snprintf(log_buf, buflen, "%s", "no Resource_List nodes were found in the xml");
     rc = -1;
@@ -559,49 +561,53 @@ int parse_attributes(
   xmlNode      *resource_list_node = NULL;
   xmlNode      *resources_used_node = NULL;
 
-  if ((cur_node = xmlFirstElementChild(attr_node)))
+  for (cur_node = attr_node->children; cur_node != NULL && rc == PBSE_NONE; cur_node = cur_node->next)
     {
-    while(cur_node && rc == PBSE_NONE)
-      {
-      if (!(strcmp((const char*)cur_node->name,  ATTR_l)))
-        resource_list_node = cur_node;
-      else if (!(strcmp((const char*)cur_node->name,  ATTR_used)))
-        resources_used_node = cur_node;
-      else
-        {
-        svrattrl *pal = NULL;
-        xmlChar *value = xmlNodeGetContent(cur_node);
-        if ((pal = fill_svrattr_info((const char*)cur_node->name, (const char*)value, NULL, log_buf, buf_len)))
-          {
-          xmlChar      *attr_flags;
-          unsigned int  flags;
-          if ((attr_flags = xmlGetProp(cur_node, (xmlChar *)AL_FLAGS_ATTR)))
-            {
-            flags = (unsigned int)atoi((char *)attr_flags);
-            xmlFree(attr_flags);
-            pal->al_flags = flags;
-            }
-            decode_attribute(pal, pj);
-            free(pal);
-          }
-        else
-          rc = -1;
-        if (value)
-          xmlFree(value);
-        }
-        cur_node = xmlNextElementSibling(cur_node);
-      }
-      if (rc == PBSE_NONE && resource_list_node) 
-        rc = fill_resource_list(pj, resource_list_node, log_buf, buf_len, ATTR_l);
-      if (rc == PBSE_NONE && resources_used_node)
-        rc = fill_resource_list(pj, resources_used_node, log_buf, buf_len, ATTR_used);
-    }
+    /* skip text children, only process elements */
+    if (!strcmp((const char *)cur_node->name, text_name))
+      continue;
+      
+    if (!(strcmp((const char*)cur_node->name,  ATTR_l)))
+      resource_list_node = cur_node;
+    else if (!(strcmp((const char*)cur_node->name,  ATTR_used)))
+      resources_used_node = cur_node;
     else
       {
-      snprintf(log_buf, buf_len, "%s", "Error: there were no job attributes found"); 
-      rc = -1;
+      svrattrl *pal = NULL;
+      xmlChar *value = xmlNodeGetContent(cur_node);
+      if ((pal = fill_svrattr_info((const char*)cur_node->name, (const char*)value, NULL, log_buf, buf_len)))
+        {
+        xmlChar      *attr_flags;
+        unsigned int  flags;
+        if ((attr_flags = xmlGetProp(cur_node, (xmlChar *)AL_FLAGS_ATTR)))
+          {
+          flags = (unsigned int)atoi((char *)attr_flags);
+          xmlFree(attr_flags);
+          pal->al_flags = flags;
+          }
+          decode_attribute(pal, pj);
+          free(pal);
+        }
+      else
+        rc = -1;
+
+      if (value)
+        xmlFree(value);
       }
-    return rc;
+    
+    }
+    
+  if (rc == PBSE_NONE && resource_list_node) 
+    rc = fill_resource_list(pj, resource_list_node, log_buf, buf_len, ATTR_l);
+  if (rc == PBSE_NONE && resources_used_node)
+    rc = fill_resource_list(pj, resources_used_node, log_buf, buf_len, ATTR_used);
+  else
+    {
+    snprintf(log_buf, buf_len, "%s", "Error: there were no job attributes found"); 
+    rc = -1;
+    }
+
+  return(rc);
   } /* END parse_attributes */
 
 
@@ -667,35 +673,40 @@ int parse_job_dom(
   {
   xmlNode *cur_node = NULL;
   xmlNode *attributeNode = NULL;
+  bool     element_found = false;
 
   int rc = -1;
 
-  if ((cur_node = xmlFirstElementChild(root_element)))
+  for (cur_node = root_element->children; cur_node != NULL && rc == PBSE_NONE; cur_node = cur_node->next)
     {
-    while(cur_node)
-      {
-      if (!(strcmp((const char*)cur_node->name, ATTRIB_TAG)))
-        attributeNode = cur_node;
-      else
-        if ((rc = assign_job_field(pjob, cur_node, log_buf, buf_len)))
-          break;
-      cur_node = xmlNextElementSibling(cur_node);
-      }
-    if (!rc && attributeNode)
-      {
-      if (!(rc = check_fileprefix(filename, pjob, log_buf, buf_len)))
-        rc = parse_attributes(pjob, attributeNode, log_buf, buf_len);  
-      }
-    else if (!attributeNode && !rc)
-      {
-      snprintf(log_buf, buf_len, "Missing required %s tag", ATTRIB_TAG);
-      rc = -1;
-      }
-    }  
-    else
-      snprintf(log_buf, buf_len, "%s", "Error: no children xml tags were found");
+    /* skip text children, only process elements */
+    if (!strcmp((const char *)cur_node->name, text_name))
+      continue;
 
-    return rc;
+    element_found = true;
+      
+    if (!(strcmp((const char*)cur_node->name, ATTRIB_TAG)))
+      attributeNode = cur_node;
+    else
+      if ((rc = assign_job_field(pjob, cur_node, log_buf, buf_len)))
+        break;
+    }
+    
+  if (!rc && attributeNode)
+    {
+    if (!(rc = check_fileprefix(filename, pjob, log_buf, buf_len)))
+      rc = parse_attributes(pjob, attributeNode, log_buf, buf_len);  
+    }
+  else if (!attributeNode && !rc)
+    {
+    snprintf(log_buf, buf_len, "Missing required %s tag", ATTRIB_TAG);
+    rc = -1;
+    }
+    
+  if (element_found == false)
+    snprintf(log_buf, buf_len, "%s", "Error: no children xml tags were found");
+
+  return(rc);
   }  /* END parse_job_dom */
 
 /*

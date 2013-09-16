@@ -53,6 +53,7 @@
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
 #include "batch_request.h"
+#include "alps_constants.h"
 
 #ifndef PBS_MOM
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_ss, unlock_ss */
@@ -279,7 +280,10 @@ int array_tokens_xml(
   /* count number of request tokens left, empty loop body intentionally */
   for (rn = (array_request_node*)GET_NEXT(request_tokens_head), num_tokens = 0;
        rn != NULL;
-       rn = (array_request_node*)GET_NEXT(rn->request_tokens_link), num_tokens++); 
+       rn = (array_request_node*)GET_NEXT(rn->request_tokens_link), num_tokens++)
+    {
+    /* braces help older gcc versions not whine */
+    }
 
   add_integer_field_node(rnode, num_tokens, NUM_TOKENS_TAG, &node_count);
   if (node_count == 1)
@@ -647,40 +651,47 @@ int parse_num_tokens(
   size_t       buflen)
   
   {
-  xmlNodePtr cur_node = NULL;
-  job_array *pa = *new_pa;
-  int rc = PBSE_NONE;
+  xmlNodePtr  cur_node = NULL;
+  job_array  *pa = *new_pa;
+  int         rc = PBSE_NONE;
+  bool        element_found = false;
 
-  if ((cur_node = xmlFirstElementChild(tokensNode)))
-    while(cur_node)
-      {
-      xmlChar *start_attr, *end_attr;
-      start_attr = end_attr = NULL;
-      mbool_t gotBothAttr = false;
-      if ((start_attr = xmlGetProp(cur_node, (xmlChar *)START_TAG)))
-        if ((end_attr = xmlGetProp(cur_node, (xmlChar *)END_TAG)))
-          {
-          array_request_node *rn = (array_request_node *)calloc(1, sizeof(array_request_node));
-          rn->start = atoi((char *)start_attr);
-          rn->end = atoi((char *)end_attr);
-          CLEAR_LINK(rn->request_tokens_link);
-          append_link(&pa->request_tokens, &rn->request_tokens_link, (void*)rn);
-          gotBothAttr = true;
-          }
-        if (start_attr)
-          xmlFree(start_attr);
-        if (end_attr)
-          xmlFree(end_attr);
-        if (!gotBothAttr)
-          {
-          delete_rn(&pa->request_tokens);
-          snprintf(log_buf, buflen, "%s", "missing start/end attributes for array tokens in the array xml");
-          rc = -1;
-          break;
-          }
-      cur_node = xmlNextElementSibling(cur_node);
-      }
-  else
+
+  for (cur_node = tokensNode->children; cur_node != NULL; cur_node = cur_node->next)
+    {
+    /* skip text children, only process elements */
+    if (!strcmp((const char *)cur_node->name, text_name))
+      continue;
+
+    element_found = true;
+
+    xmlChar *start_attr, *end_attr;
+    start_attr = end_attr = NULL;
+    mbool_t gotBothAttr = false;
+    if ((start_attr = xmlGetProp(cur_node, (xmlChar *)START_TAG)))
+      if ((end_attr = xmlGetProp(cur_node, (xmlChar *)END_TAG)))
+        {
+        array_request_node *rn = (array_request_node *)calloc(1, sizeof(array_request_node));
+        rn->start = atoi((char *)start_attr);
+        rn->end = atoi((char *)end_attr);
+        CLEAR_LINK(rn->request_tokens_link);
+        append_link(&pa->request_tokens, &rn->request_tokens_link, (void*)rn);
+        gotBothAttr = true;
+        }
+      if (start_attr)
+        xmlFree(start_attr);
+      if (end_attr)
+        xmlFree(end_attr);
+      if (!gotBothAttr)
+        {
+        delete_rn(&pa->request_tokens);
+        snprintf(log_buf, buflen, "%s", "missing start/end attributes for array tokens in the array xml");
+        rc = -1;
+        break;
+        }
+    }
+   
+  if (element_found == false)
     {
     snprintf(log_buf, buflen, "%s", "no \"tokens\" xml element was found");
     rc = -1;
@@ -700,38 +711,42 @@ int parse_array_dom(
   {
   xmlNodePtr cur_node = NULL;
   xmlNodePtr tokensNode = NULL;
-  int rc = -1;
-  int num_tokens = 0;
+  int        rc = -1;
+  int        num_tokens = 0;
+  bool       element_found = false;
 
-  if ((cur_node = xmlFirstElementChild(root_element)))
+  for (cur_node = tokensNode->children; cur_node != NULL; cur_node = cur_node->next)
     {
-    while(cur_node)
-      {
-      if (!(strcmp((const char*)cur_node->name, TOKENS_TAG)))
-        tokensNode = cur_node;
-      else
-        if ((rc = assign_array_info_fields(pa, cur_node, log_buf, buflen, &num_tokens)))
-           break;
-      cur_node = xmlNextElementSibling(cur_node);
-      }
+    /* skip text children, only process elements */
+    if (!strcmp((const char *)cur_node->name, text_name))
+      continue;
 
-    if ((!rc))
-      {
-      job_array  *new_pa = *pa;
-      if (new_pa->ai_qs.array_size > 0)
-        if ((new_pa->job_ids = (char **)calloc(new_pa->ai_qs.array_size, sizeof(char *))) == NULL)
-          {
-          snprintf(log_buf, buflen, "%s", "unable to allocate memory for array job_ids strings");
-          rc = -1;
-          }
-      if ((!(rc)) && (num_tokens > 0) && tokensNode)
-        rc = parse_num_tokens(pa, tokensNode, log_buf, buflen);  
-      }
+    element_found = true;
+      
+    if (!(strcmp((const char*)cur_node->name, TOKENS_TAG)))
+      tokensNode = cur_node;
+    else
+      if ((rc = assign_array_info_fields(pa, cur_node, log_buf, buflen, &num_tokens)))
+         break;
     }
-  else
+
+  if ((!rc))
+    {
+    job_array  *new_pa = *pa;
+    if (new_pa->ai_qs.array_size > 0)
+      if ((new_pa->job_ids = (char **)calloc(new_pa->ai_qs.array_size, sizeof(char *))) == NULL)
+        {
+        snprintf(log_buf, buflen, "%s", "unable to allocate memory for array job_ids strings");
+        rc = -1;
+        }
+    if ((!(rc)) && (num_tokens > 0) && tokensNode)
+      rc = parse_num_tokens(pa, tokensNode, log_buf, buflen);  
+    }
+
+  if (element_found == false)
     snprintf(log_buf, buflen, "%s", "xml file is empty");
 
-    return rc;
+  return(rc);
   }
 
 
