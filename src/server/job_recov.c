@@ -675,7 +675,7 @@ int parse_job_dom(
   xmlNode *attributeNode = NULL;
   bool     element_found = false;
 
-  int rc = -1;
+  int rc = PBSE_NONE;
 
   for (cur_node = root_element->children; cur_node != NULL && rc == PBSE_NONE; cur_node = cur_node->next)
     {

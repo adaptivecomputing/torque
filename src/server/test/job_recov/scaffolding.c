@@ -13,6 +13,7 @@
 #include "server.h" /* server */
 #include "sched_cmds.h"
 
+const char *text_name              = "text";
 const char *PJobSubState[10];
 const char *PJobState[] = {"hi", "hello"};
 const char *path_jobs = "";

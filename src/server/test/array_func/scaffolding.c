@@ -11,6 +11,8 @@
 #include "array.h" /* job_array */
 #include "server.h" /* server */
 
+const char *text_name              = "text";
+
 
 
 char *path_arrays;
