@@ -517,14 +517,14 @@ int req_authenuser(
     }
 
   sprintf(log_buf, "trqauthd fail %d", preq->rq_ind.rq_authen.rq_port);
-  log_err(PBSE_BADCRED, __func__, log_buf);
+  log_err(PBSE_CLIENT_CONN_NOT_FOUND, __func__, log_buf);
   if (debug) 
     printf("%s\n", log_buf);
-  req_reject(PBSE_BADCRED, 0, preq, NULL, "cannot authenticate user. Client connection not found");
+  req_reject(PBSE_CLIENT_CONN_NOT_FOUND, 0, preq, NULL, "cannot authenticate user. Client connection not found");
 
   /* FAILURE */
 
-  return(PBSE_BADCRED);
+  return(PBSE_CLIENT_CONN_NOT_FOUND);
   }  /* END req_authenuser() */
 
 
