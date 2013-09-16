@@ -560,12 +560,15 @@ int parse_attributes(
   xmlNode      *cur_node = NULL;
   xmlNode      *resource_list_node = NULL;
   xmlNode      *resources_used_node = NULL;
+  bool          element_found = false;
 
   for (cur_node = attr_node->children; cur_node != NULL && rc == PBSE_NONE; cur_node = cur_node->next)
     {
     /* skip text children, only process elements */
     if (!strcmp((const char *)cur_node->name, text_name))
       continue;
+
+    element_found = true;
       
     if (!(strcmp((const char*)cur_node->name,  ATTR_l)))
       resource_list_node = cur_node;
@@ -601,7 +604,7 @@ int parse_attributes(
     rc = fill_resource_list(pj, resource_list_node, log_buf, buf_len, ATTR_l);
   if (rc == PBSE_NONE && resources_used_node)
     rc = fill_resource_list(pj, resources_used_node, log_buf, buf_len, ATTR_used);
-  else
+  else if (element_found == false)
     {
     snprintf(log_buf, buf_len, "%s", "Error: there were no job attributes found"); 
     rc = -1;
