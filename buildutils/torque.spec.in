@@ -37,7 +37,7 @@
 %define ac_with_debug      --with%{!?with_debug:out}-debug %{?with_debug:CFLAGS="-O0 -g3" CXXFLAGS="-O0 -g3"}
 %define ac_with_drmaa      --%{?with_drmaa:en}%{!?with_drmaa:dis}able-drmaa
 %define ac_with_gui        --%{?with_gui:en}%{!?with_gui:dis}able-gui --with%{!?with_gui:out}-tcl
-%define ac_with_munge      --%{?with_munge:en}%{!?with_munge:dis}able-munge-auth
+%define ac_with_munge      --%{?with_munge:en}%{!?with_munge:dis}able-munge-auth --%{?with_munge:en}%{!?with_munge:dis}able-munge-library
 %define ac_with_numa       --%{?with_numa:en}%{!?with_numa:dis}able-numa-support
 %define ac_with_memacct    --%{?with_memacct:en}%{!?with_memacct:dis}able-memacct
 %define ac_with_libcpuset  --%{?with_libcpuset:en}%{!?with_libcpuset:dis}able-libcpuset
