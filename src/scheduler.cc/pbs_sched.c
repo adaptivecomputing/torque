@@ -178,9 +178,9 @@ void die(
                id, "abnormal termination");
     }
 
-  pthread_mutex_lock(log_mutex);
+  pthread_mutex_lock(&log_mutex);
   log_close(1);
-  pthread_mutex_unlock(log_mutex);
+  pthread_mutex_unlock(&log_mutex);
 
   exit(1);
   }  /* END die() */
@@ -574,10 +574,10 @@ restart(int sig)
 
   if (sig)
     {
-    pthread_mutex_lock(log_mutex);
+    pthread_mutex_lock(&log_mutex);
     log_close(1);
     log_open(logfile, path_log);
-    pthread_mutex_unlock(log_mutex);
+    pthread_mutex_unlock(&log_mutex);
     sprintf(log_buffer, "restart on signal %d", sig);
     }
   else
@@ -976,14 +976,14 @@ int main(
 #endif /* not _CRAY */
 #endif /* DEBUG */
 
-  pthread_mutex_lock(log_mutex);
+  pthread_mutex_lock(&log_mutex);
   if (log_open(logfile, path_log) == -1)
     {
-    pthread_mutex_unlock(log_mutex);
+    pthread_mutex_unlock(&log_mutex);
     fprintf(stderr, "%s: logfile could not be opened\n", argv[0]);
     exit(1);
     }
-  pthread_mutex_unlock(log_mutex);
+  pthread_mutex_unlock(&log_mutex);
 
   if (gethostname(host, sizeof(host)) == -1)
     {

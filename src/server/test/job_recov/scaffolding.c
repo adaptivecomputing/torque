@@ -19,7 +19,7 @@ const char *PJobState[] = {"hi", "hello"};
 const char *path_jobs = "";
 pthread_mutex_t *setup_save_mutex = NULL;
 int LOGLEVEL=0;
-pthread_mutex_t *job_log_mutex;
+pthread_mutex_t job_log_mutex = PTHREAD_MUTEX_INITIALIZER;
 struct all_jobs array_summary;
 const char *msg_daemonname = "unset";
 char path_checkpoint[MAXPATHLEN + 1];
