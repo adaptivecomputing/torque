@@ -45,7 +45,7 @@ hash_table_t *received_table;
 threadpool_t *request_pool;
 AvlTree okclients;
 time_t wait_time = 10;
-pthread_mutex_t *log_mutex;
+pthread_mutex_t log_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 dynamic_string  *mom_status;
 char log_buffer[LOG_BUF_SIZE];
 char **ArgV;
