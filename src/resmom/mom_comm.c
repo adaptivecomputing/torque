@@ -5970,7 +5970,7 @@ void im_request(
     case IM_POLL_JOB:
       {
       /* check the validity of our connection */
-      if ((ret = connection_from_ms(chan, pjob, pSockAddr)) == TRUE)
+      if ((ret = connection_from_ms(chan, pjob, pSockAddr)) == false)
         {
         close_conn(chan->sock, FALSE);
         svr_conn[chan->sock].cn_stay_open = FALSE;
@@ -5991,7 +5991,7 @@ void im_request(
     case IM_ABORT_JOB:
       {
       /* check if the abort came from mother superior or a sister */
-      if ((ret = connection_from_ms(chan, pjob, pSockAddr)) == TRUE)
+      if ((ret = connection_from_ms(chan, pjob, pSockAddr)) == false)
         {
         if (pjob->ji_qs.ji_svrflags & (~JOB_SVFLG_JOB_ABORTED))
           {
