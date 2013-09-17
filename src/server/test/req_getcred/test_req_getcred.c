@@ -20,7 +20,7 @@ START_TEST(test_one)
   req.rq_ind.rq_authen.rq_port = 42;
   strcpy(req.rq_user,"Tron");
   strcpy(req.rq_user,"Flynns");
-  fail_unless(req_authenuser(&req) == PBSE_BADCRED);
+  fail_unless(req_authenuser(&req) == PBSE_CLIENT_CONN_NOT_FOUND);
   req.rq_conn = 4;
   fail_unless(rejected);
   rejected = FALSE;
