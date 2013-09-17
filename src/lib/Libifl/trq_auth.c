@@ -1,7 +1,7 @@
 #include "license_pbs.h" /* See here for the software license */
 #include "lib_ifl.h"
 
-#include <sstream>
+#include <string>
 #include <limits.h> /* LOGIN_NAME_MAX */
 #include <netinet/in.h> /* in_addr_t */
 #include <stdio.h> /* sprintf */
@@ -16,6 +16,7 @@
 #include "pbs_config.h"
 #include "../Libnet/lib_net.h" /* get_hostaddr, socket_* */
 #include "../../include/log.h" /* log event types */
+#include <stdarg.h>
 
 char         *trq_addr = NULL;
 int           trq_addr_len;
@@ -31,6 +32,30 @@ extern time_t pbs_tcp_timeout;
 #ifdef UNIT_TEST
   int process_svr_conn_rc;
 #endif
+
+std::string string_format(const std::string fmt, ...)
+  {
+  int size = 100;
+  std::string str;
+  va_list ap;
+  while (1)
+    {
+    str.resize(size);
+    va_start(ap, fmt);
+    int n = vsnprintf((char *)str.c_str(), size, fmt.c_str(), ap);
+    va_end(ap);
+    if (n > -1 && n < size)
+      {
+      str.resize(n);
+      return str;
+      }
+    if (n > -1)
+      size = n + 1;
+    else
+      size *= 2;
+    }
+  return str;
+  }
 
 int set_active_pbs_server(
 
@@ -467,7 +492,7 @@ int build_request_svr(
   int                auth_type,
   const char        *user,
   int                sock,
-  std::stringstream &message)
+  std::string        &message)
 
   {
   /* PBS_BATCH_PROT_TYPE PBS_BATCH_PROT_VER PBS_BATCH_AuthenUser */
@@ -488,11 +513,7 @@ int build_request_svr(
     sprintf(tmp_buf, "%d", sock);
     port_len = strlen(tmp_buf);
 
-    message.str("");
-    message << "+" << PBS_BATCH_PROT_TYPE << "+";
-    message << PBS_BATCH_PROT_VER << "2+" << PBS_BATCH_AuthenUser;
-    message << user_ll << "+" << user_len << user << port_len << "+";
-    message << sock << "+0";
+    message = string_format("+%d+%d2+%d%d+%d%s%d+%d+0",PBS_BATCH_PROT_TYPE,PBS_BATCH_PROT_VER,PBS_BATCH_AuthenUser,user_ll,user_len,user,port_len,sock);
     }
   else if (AUTH_TYPE_KEY == auth_type)
     {
@@ -511,7 +532,7 @@ int build_request_svr(
 
 int build_active_server_response(
 
-  std::stringstream &message)
+  std::string &message)
 
   {
   int  rc = PBSE_NONE;
@@ -525,8 +546,7 @@ int build_active_server_response(
     len = strlen(active_pbs_server);
     }
 
-  message.str("");
-  message << len << "|" << active_pbs_server << "|";
+  message = string_format("%d|%s|",len,active_pbs_server);
 
   return(rc);
   }
@@ -727,7 +747,7 @@ void *process_svr_conn(
   int                user_pid = 0;
   int                user_sock = 0;
   char              *error_msg = NULL;
-  std::stringstream  message;
+  std::string  message;
   int         send_len = 0;
   char       *trq_server_addr = NULL;
   int         trq_server_addr_len = 0;
@@ -837,14 +857,14 @@ void *process_svr_conn(
           disconnect_svr = FALSE;
           debug_mark = 5;
           }
-        else if ((send_len = message.str().size()) <= 0)
+        else if ((send_len = message.length()) <= 0)
           {
           socket_close(svr_sock);
           disconnect_svr = FALSE;
           rc = PBSE_INTERNAL;
           debug_mark = 6;
           }
-        else if ((rc = socket_write(svr_sock, message.str().c_str(), send_len)) != send_len)
+        else if ((rc = socket_write(svr_sock, message.c_str(), send_len)) != send_len)
           {
           socket_close(svr_sock);
           disconnect_svr = FALSE;
@@ -860,8 +880,7 @@ void *process_svr_conn(
         else
           {
           /* Success case */
-          message.str("");
-          message << "0|0||";
+          message = "0|0||";
           if (debug_mode == TRUE)
             {
             fprintf(stderr, "Conn to %s port %d success. Conn %d authorized\n",
@@ -915,8 +934,7 @@ void *process_svr_conn(
 
     msg_len += strlen(error_msg);
 
-    message.str("");
-    message << rc << "|" << strlen(error_msg) << "|" << error_msg << "|";
+    message = string_format("%d|%d|%s|",rc,strlen(error_msg),error_msg);
     
     if (debug_mode == TRUE)
       {
@@ -932,8 +950,8 @@ void *process_svr_conn(
       className, msg_buf);
     }
 
-  if (message.str().size() != 0)
-    rc = socket_write(local_socket, message.str().c_str(), message.str().size());
+  if (message.length() != 0)
+    rc = socket_write(local_socket, message.c_str(), message.length());
 
   if (trq_server_addr != NULL)
     free(trq_server_addr);

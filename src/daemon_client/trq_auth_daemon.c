@@ -29,8 +29,6 @@
 #define TRQ_LOGFILES "client_logs"
 
 extern char *msg_daemonname;
-extern pthread_mutex_t *log_mutex;
-extern pthread_mutex_t *job_log_mutex;
 extern int debug_mode;
 
 bool       down_server = false;
@@ -87,14 +85,6 @@ void initialize_globals_for_log(int port)
   log_set_hostname_sharelogging(active_pbs_server, port);
   }
 
-void clean_log_init_mutex(void)
-  {
-  pthread_mutex_destroy(log_mutex);
-  pthread_mutex_destroy(job_log_mutex);
-  free(log_mutex);
-  free(job_log_mutex);
-  }
-
 int init_trqauth_log(int server_port)
   {
   const char *path_home = PBS_SERVER_HOME;
@@ -121,9 +111,9 @@ int init_trqauth_log(int server_port)
        closelog();
        return(PBSE_SYSTEM);
     }
-    pthread_mutex_lock(log_mutex);
+    pthread_mutex_lock(&log_mutex);
     rc = log_open(log_file, path_log);
-    pthread_mutex_unlock(log_mutex);
+    pthread_mutex_unlock(&log_mutex);
 
     return(rc);
 
@@ -201,14 +191,13 @@ int daemonize_trqauthd(const char *server_ip, int server_port, void *(*process_m
       openlog("daemonize_trqauthd", LOG_PID | LOG_NOWAIT, LOG_DAEMON);
       syslog(LOG_ALERT, "trqauthd could not start: %d\n", rc);
       log_err(rc, "daemonize_trqauthd", (char *)"trqauthd could not start");
-      pthread_mutex_lock(log_mutex);
+      pthread_mutex_lock(&log_mutex);
       log_close(1);
-      pthread_mutex_unlock(log_mutex);
+      pthread_mutex_unlock(&log_mutex);
       if (changed_msg_daem && msg_daemonname) 
         {
           free(msg_daemonname);
         }
-      clean_log_init_mutex();
       exit(-1);
       }
     snprintf(msg_trqauthddown, sizeof(msg_trqauthddown),
@@ -216,14 +205,13 @@ int daemonize_trqauthd(const char *server_ip, int server_port, void *(*process_m
       server_ip, server_port);
     log_record(PBSEVENT_SYSTEM | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD,
       msg_daemonname, msg_trqauthddown);
-    pthread_mutex_lock(log_mutex);
+    pthread_mutex_lock(&log_mutex);
     log_close(1);
-    pthread_mutex_unlock(log_mutex);
+    pthread_mutex_unlock(&log_mutex);
     if (changed_msg_daem && msg_daemonname)
       {
       free(msg_daemonname);
       }
-    clean_log_init_mutex();
     exit(0);
   }
 
