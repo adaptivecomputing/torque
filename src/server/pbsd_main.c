@@ -215,6 +215,7 @@ void          restore_attr_default (struct pbs_attribute *);
 
 /* Global Data Items */
 
+int                     mom_hierarchy_retry_time = NODE_COMM_RETRY_TIME;
 time_t                  last_task_check_time = 0;
 int                     disable_timeout_check = FALSE;
 int                     lockfds = -1;

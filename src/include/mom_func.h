@@ -87,6 +87,8 @@
 #endif /* MOM_MACH */
 
 #include "pwd.h" /* passwd */
+#include "pbs_job.h"
+#include "tm_.h"
 #include "../resmom/mom_main.h"
 
 /* struct var_table = used to hold environment variables for the job */
