@@ -178,6 +178,7 @@ short            memory_pressure_duration  = 0; /* 0: off, >0: check and kill */
 #endif
 int              max_join_job_wait_time = MAX_JOIN_WAIT_TIME;
 int              resend_join_job_wait_time = RESEND_WAIT_TIME;
+int              mom_hierarchy_retry_time = NODE_COMM_RETRY_TIME;
 
 
 
@@ -281,6 +282,7 @@ unsigned long setmomoomimmunize(const char *);
 unsigned long setjobexitwaittime(const char *);
 unsigned long setmaxjoinjobwaittime(const char *);
 unsigned long setresendjoinjobwaittime(const char *);
+unsigned long setmomhierarchyretrytime(const char *);
 
 struct specials special[] = {
   { "alloc_par_cmd",       setallocparcmd },
@@ -359,6 +361,7 @@ struct specials special[] = {
   { "job_exit_wait_time",    setjobexitwaittime },
   { "max_join_job_wait_time", setmaxjoinjobwaittime},
   { "resend_join_job_wait_time", setresendjoinjobwaittime},
+  { "mom_hierarchy_retry_time",  setmomhierarchyretrytime},
   { NULL,                  NULL }
   };
 
@@ -2576,6 +2579,26 @@ unsigned long setresendjoinjobwaittime(
 
   return(1);
   } /* END setresendjoinjobwaittime() */
+
+
+
+unsigned long setmomhierarchyretrytime(
+
+  const char *value)
+
+  {
+  int tmp;
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
+
+  if (value != NULL)
+    {
+    tmp = strtol(value, NULL, 10);
+    if (tmp != 0)
+      mom_hierarchy_retry_time = tmp;
+    }
+
+  return(1);
+  }
 
 
 

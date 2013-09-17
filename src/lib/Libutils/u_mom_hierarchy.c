@@ -100,6 +100,7 @@
 #define LOCAL_LOG_BUF 1024
 
 
+extern int   mom_hierarchy_retry_time;
 
 
 extern mom_hierarchy_t *mh;
@@ -128,7 +129,7 @@ void free_mom_hierarchy(
       node_iter = -1;
 
       /* free each node_comm_t */
-      while ((nc = (node_comm_t *)next_thing(levels, &node_iter)) != NULL)
+     while ((nc = (node_comm_t *)next_thing(levels, &node_iter)) != NULL)
         {
         free(nc);
         }
@@ -385,7 +386,7 @@ node_comm_t *force_path_update(
           nc = (node_comm_t *)node_comm_entries->slots[node+1].item;
 
           if ((nc->bad == TRUE) &&
-              (time_now - nc->mtime <= NODE_COMM_RETRY_TIME))
+              (time_now - nc->mtime <= mom_hierarchy_retry_time))
             continue;
 
           if (rm_establish_connection(nc) == PBSE_NONE)
@@ -418,7 +419,7 @@ node_comm_t *force_path_update(
         nc = (node_comm_t *)node_comm_entries->slots[node+1].item;
 
         if ((nc->bad == TRUE) &&
-            (time_now - nc->mtime <= NODE_COMM_RETRY_TIME))
+            (time_now - nc->mtime <= mom_hierarchy_retry_time))
           continue;
 
         if (rm_establish_connection(nc) == PBSE_NONE)
@@ -469,7 +470,7 @@ node_comm_t *update_current_path(
            (nt->current_level != 0) ||
            (nt->current_node  != 0))
     {
-    if ((time(NULL) - nc->mtime) > NODE_COMM_RETRY_TIME)
+    if ((time(NULL) - nc->mtime) > mom_hierarchy_retry_time)
       {
       close(nc->stream);
       return(force_path_update(nt));

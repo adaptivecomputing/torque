@@ -4,11 +4,27 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "pbs_error.h"
+#include <libxml/parser.h>
+#include <libxml/tree.h>
 
 int is_num(const char *);
 int array_request_token_count(const char *);
 int array_request_parse_token(char *, int *, int *);
 int num_array_jobs(const char *str);
+int parse_array_dom(job_array **pa, xmlNodePtr root_element, char *log_buf, size_t buflen);
+
+const char *array_sample = "<array>\n</array>";
+
+START_TEST(parse_array_dom_test)
+  {
+  xmlDocPtr doc = xmlReadMemory(array_sample, strlen(array_sample), "array", NULL, 0);
+  job_array *pa = NULL;
+  char buf[1024];
+
+  /* this test fails prior to the fix for TRQ-2219 */
+  parse_array_dom(&pa, xmlDocGetRootElement(doc), buf, sizeof(buf));
+  }
+END_TEST
 
 
 START_TEST(set_slot_limit_test)
@@ -164,6 +180,7 @@ Suite *array_func_suite(void)
 
   tc_core = tcase_create("first_job_index_test");
   tcase_add_test(tc_core, first_job_index_test);
+  tcase_add_test(tc_core, parse_array_dom_test);
   suite_add_tcase(s, tc_core);
 
   return s;
