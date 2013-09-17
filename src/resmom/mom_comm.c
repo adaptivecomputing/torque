@@ -5486,6 +5486,7 @@ int process_valid_intermediate_response(
     {
     log_err(-1, __func__, "got IM_RADIX_ALL_OKAY message and I'm not an intermediate MOM or Mother Superior");
     
+    close_conn(chan->sock, FALSE);
     return(IM_FAILURE);
     }
 
@@ -5511,6 +5512,7 @@ int process_valid_intermediate_response(
       break;
     }
   
+  close_conn(chan->sock, FALSE);
   return(ret);
   } /* END process_valid_intermediate_response() */
 
@@ -6040,6 +6042,7 @@ void im_request(
       {
       ret = process_valid_intermediate_response(chan, pjob, pSockAddr, event_com, command);
       }
+      break;
     
     case IM_ERROR:  /* this is a REPLY */
       {
