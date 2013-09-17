@@ -153,8 +153,8 @@ typedef enum getter_setter SGetter;
 extern int LOGLEVEL;
 
 extern long *log_event_mask;
-extern pthread_mutex_t *log_mutex;
-extern pthread_mutex_t *job_log_mutex;
+extern pthread_mutex_t log_mutex;
+extern pthread_mutex_t job_log_mutex;
 
 /* set this to non-zero in calling app if errors go to stderr */
 extern int   chk_file_sec_stderr;
@@ -167,6 +167,7 @@ void log_event (int, int, const char *, const char *);
 /* extern int  log_open (char *, char *); */
 /* extern int  job_log_open (char *, char *); */
 void log_record (int, int, const char *, const char *);
+bool log_available(int eventtype);
 /* extern void log_roll (int); */
 /* extern long log_size (void); */
 /* extern long job_log_size (void); */

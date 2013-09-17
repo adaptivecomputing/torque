@@ -2218,9 +2218,9 @@ char *build_path(
 
   log_err(errno, "build_path", msg_err_malloc);
 
-  pthread_mutex_lock(log_mutex);
+  pthread_mutex_lock(&log_mutex);
   log_close(1);
-  pthread_mutex_unlock(log_mutex);
+  pthread_mutex_unlock(&log_mutex);
 
   exit(3);
   }  /* END build_path() */
@@ -2689,19 +2689,19 @@ void change_logs()
 
   run_change_logs = FALSE;
   acct_close();
-  pthread_mutex_lock(log_mutex);
+  pthread_mutex_lock(&log_mutex);
   log_close(1);
   log_open(log_file, path_log);
-  pthread_mutex_unlock(log_mutex);
+  pthread_mutex_unlock(&log_mutex);
 
   acct_open(acct_file);
 
   get_svr_attr_l(SRV_ATR_RecordJobInfo, &record_job_info);
   if (record_job_info)
     {
-    pthread_mutex_lock(job_log_mutex);
+    pthread_mutex_lock(&job_log_mutex);
     job_log_open(job_log_file, path_jobinfo_log);
-    pthread_mutex_unlock(job_log_mutex);
+    pthread_mutex_unlock(&job_log_mutex);
     }
   return;
   }

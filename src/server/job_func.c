@@ -1658,7 +1658,7 @@ int record_jobinfo(
   char                    namebuf[MAXPATHLEN + 1];
   int                     fd;
   size_t                  bytes_read = 0;
-  extern pthread_mutex_t *job_log_mutex; 
+  extern pthread_mutex_t job_log_mutex;
   long                    record_job_script = FALSE;
   
   if (pjob == NULL)
@@ -1668,14 +1668,14 @@ int record_jobinfo(
     return(rc);
     }
 
-  pthread_mutex_lock(job_log_mutex);
+  pthread_mutex_lock(&job_log_mutex);
   if ((rc = job_log_open(job_log_file, path_jobinfo_log)) < 0)
     {
-    pthread_mutex_unlock(job_log_mutex);
+    pthread_mutex_unlock(&job_log_mutex);
     log_err(rc, __func__, "Could not open job log ");
     return(rc);
     }
-  pthread_mutex_unlock(job_log_mutex);
+  pthread_mutex_unlock(&job_log_mutex);
 
   bf += "<Jobinfo>\n";
   bf += "\t<Job_Id>";

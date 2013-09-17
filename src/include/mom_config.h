@@ -169,6 +169,7 @@ extern int              memory_pressure_threshold;
 extern short            memory_pressure_duration;
 extern int              max_join_job_wait_time;
 extern int              resend_join_job_wait_time;
+extern int              mom_hierarchy_retry_time;
 
 struct specials
   {

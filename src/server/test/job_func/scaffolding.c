@@ -39,7 +39,7 @@ struct server server;
 struct all_jobs array_summary;
 char *path_jobinfo_log;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
-pthread_mutex_t *job_log_mutex;
+pthread_mutex_t job_log_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 user_info_holder users;
 

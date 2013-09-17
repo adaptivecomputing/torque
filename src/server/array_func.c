@@ -549,15 +549,16 @@ int read_and_convert_259_array(
 
 
 int assign_array_info_fields(
+
   job_array  **pa_new,       /* O */ /* Array Job to recover information from file */
-  xmlNodePtr xml_node,       /* I */ /*Root element of the dom */
-  char       *log_buf,        /* O */ /* Error buffer */
-  size_t      buflen,        /* I */ /* Error buffer length */
-  int        *num_tokens)    /* O */ /* Number of tokens, value to be kept in another variable */
+  xmlNodePtr   xml_node,       /* I */ /*Root element of the dom */
+  char        *log_buf,        /* O */ /* Error buffer */
+  size_t       buflen,        /* I */ /* Error buffer length */
+  int         *num_tokens)    /* O */ /* Number of tokens, value to be kept in another variable */
 
   {
   xmlChar *content = xmlNodeGetContent(xml_node);
-  int rc = PBSE_NONE;
+  int      rc = PBSE_NONE;
 
   if (!content)
     {
@@ -701,6 +702,15 @@ int parse_num_tokens(
   }
 
 
+/*
+ * parse_array_dom()
+ *
+ * @pre-cond: pa hasn't been allocated or recovered
+ * @pre-cond: root_element is a valid xmlNodePtr pointing to the root of this
+ * array's xml document
+ * @post-cond: pa and its attributes have been adequately recovered.
+ */
+
 int parse_array_dom(
 
   job_array  **pa,         /* O */ /* Array Job to recover information from file */
@@ -715,7 +725,7 @@ int parse_array_dom(
   int        num_tokens = 0;
   bool       element_found = false;
 
-  for (cur_node = tokensNode->children; cur_node != NULL; cur_node = cur_node->next)
+  for (cur_node = root_element->children; cur_node != NULL; cur_node = cur_node->next)
     {
     /* skip text children, only process elements */
     if (!strcmp((const char *)cur_node->name, text_name))
@@ -725,9 +735,8 @@ int parse_array_dom(
       
     if (!(strcmp((const char*)cur_node->name, TOKENS_TAG)))
       tokensNode = cur_node;
-    else
-      if ((rc = assign_array_info_fields(pa, cur_node, log_buf, buflen, &num_tokens)))
-         break;
+    else if ((rc = assign_array_info_fields(pa, cur_node, log_buf, buflen, &num_tokens)))
+      break;
     }
 
   if ((!rc))
@@ -739,7 +748,9 @@ int parse_array_dom(
         snprintf(log_buf, buflen, "%s", "unable to allocate memory for array job_ids strings");
         rc = -1;
         }
-    if ((!(rc)) && (num_tokens > 0) && tokensNode)
+
+    if ((!(rc)) &&
+        (num_tokens > 0) && tokensNode)
       rc = parse_num_tokens(pa, tokensNode, log_buf, buflen);  
     }
 
