@@ -499,7 +499,7 @@ int req_quejob(
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
   time_t                time_now = time(NULL);
 
-  job                  *pj;
+  job                  *pj = NULL;
   attribute_def        *pdef;
   svrattrl             *psatl;
   pbs_queue            *pque;
