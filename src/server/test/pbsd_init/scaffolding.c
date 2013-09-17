@@ -22,9 +22,9 @@
 
 int scheduler_sock=0;
 int scheduler_jobct = 0;
-pthread_mutex_t *job_log_mutex;
+pthread_mutex_t job_log_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t *reroute_job_mutex;
-pthread_mutex_t *log_mutex;
+pthread_mutex_t log_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 const char *msg_init_chdir = "unable to change to directory %s";
 char *path_jobs;
 const char *msg_err_noqueue = "Unable to requeue job, queue is not defined";
