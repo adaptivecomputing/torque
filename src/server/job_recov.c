@@ -514,6 +514,8 @@ int fill_resource_list(
     /* skip text children, only process elements */
     if (!strcmp((const char *)resNode->name, text_name))
       continue;
+
+    element_found = true;
       
     xmlChar *value = xmlNodeGetContent(resNode);
     svrattrl *pal = NULL;
