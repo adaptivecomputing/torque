@@ -145,7 +145,7 @@ static volatile int  log_opened = 0;
 static int      syslogopen = 0;
 #endif /* SYSLOG */
 
-pthread_mutex_t *log_mutex = NULL;
+pthread_mutex_t log_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 
 /* variables for job logging */
 static int      job_log_auto_switch = 0;
@@ -154,7 +154,8 @@ static FILE     *joblogfile;  /* open stream for log file */
 static char     *joblogpath = NULL;
 static volatile int  job_log_opened = 0;
 
-pthread_mutex_t *job_log_mutex;
+pthread_mutex_t job_log_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 /*
  * the order of these names MUST match the defintions of
  * PBS_EVENTCLASS_* in log.h
@@ -293,38 +294,11 @@ int log_init(
   const char *hostname)  /* I (optional) */
 
   {
-  int rc;
-  pthread_mutexattr_t log_mutex_attr;
-
   if (suffix != NULL)
     snprintf(log_suffix, sizeof(log_suffix), "%s", suffix);
 
   if (hostname != NULL)
     snprintf(log_host, sizeof(log_host), "%s", hostname);
-
-  /* Making log_mutex recursive because of signal handler like alarm
-     and may be others interrupting log_record trq-1763 */
-
-  rc = pthread_mutexattr_init(&log_mutex_attr);
-  if (rc != 0)
-    return(PBSE_SYSTEM);
-
-  rc = pthread_mutexattr_settype(&log_mutex_attr, PTHREAD_MUTEX_RECURSIVE);
-  if (rc != 0)
-    return(PBSE_SYSTEM);
-
-  log_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  if (log_mutex == NULL)
-    return(PBSE_MEM_MALLOC);
-
-  rc = pthread_mutex_init(log_mutex, &log_mutex_attr);
-  if (rc != 0)
-    return(PBSE_SYSTEM);
-
-  job_log_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  rc = pthread_mutex_init(job_log_mutex, NULL);
-  if (rc != 0)
-    return(PBSE_SYSTEM);
 
   return(PBSE_NONE);
   }  /* END log_init() */
@@ -414,7 +388,7 @@ int log_open(
 
   log_opened = 1;   /* note that file is open */
 
-  pthread_mutex_unlock(log_mutex);
+  pthread_mutex_unlock(&log_mutex);
 
   if (log_host_port[0])
     snprintf(buf2, sizeof(buf2), "Log opened at %s", log_host_port);
@@ -427,7 +401,7 @@ int log_open(
     "Log",
     buf2);
 
-  pthread_mutex_lock(log_mutex);
+  pthread_mutex_lock(&log_mutex);
 
   return(0);
   }  /* END log_open() */
@@ -619,30 +593,7 @@ void log_ext(
 
   buf[LOG_BUF_SIZE - 1] = '\0';
 
-  if (!log_mutex)
-    {
-    if (isatty(2))
-      {
-      fprintf(stderr, "%s: %s\n",
-              msg_daemonname,
-              buf);
-      }
-
-#if SYSLOG
-    if (syslogopen == 0)
-      {
-      openlog(msg_daemonname, LOG_NOWAIT, LOG_DAEMON);
-
-      syslogopen = 1;
-      }
-
-    syslog(severity|LOG_DAEMON,"%s",buf);
-#endif /* SYSLOG */
-
-    return;
-    }
-
-  pthread_mutex_lock(log_mutex);
+  pthread_mutex_lock(&log_mutex);
 
   if (log_opened == 0)
     {
@@ -660,7 +611,7 @@ void log_ext(
     
   if (log_opened > 0)
     {
-    pthread_mutex_unlock(log_mutex);
+    pthread_mutex_unlock(&log_mutex);
 
     log_record(
       PBSEVENT_ERROR | PBSEVENT_FORCE,
@@ -669,7 +620,7 @@ void log_ext(
       buf);
     }
   else
-    pthread_mutex_unlock(log_mutex);
+    pthread_mutex_unlock(&log_mutex);
 
 #if SYSLOG
   if (syslogopen == 0)
@@ -752,7 +703,7 @@ int log_job_record(const char *buf)
   now = time((time_t *)0);
   ptm = localtime_r(&now,&tmpPtm);
 
-  pthread_mutex_lock(job_log_mutex);
+  pthread_mutex_lock(&job_log_mutex);
 
   /* do we need to switch the log to the new day? */
   if (job_log_auto_switch && (ptm->tm_yday != joblog_open_day))
@@ -764,16 +715,31 @@ int log_job_record(const char *buf)
     if (job_log_opened < 1)
       {
       log_err(-1, __func__, "job_log_opened < 1");
-      pthread_mutex_unlock(job_log_mutex);
+      pthread_mutex_unlock(&job_log_mutex);
       return(-1);
       }
     }
 
   fprintf(joblogfile, "%s\n", buf);
   fflush(joblogfile);
-  pthread_mutex_unlock(job_log_mutex);
+  pthread_mutex_unlock(&job_log_mutex);
 
   return(0);
+  }
+
+/*
+ * See if the log is open. In client commands this will return false.
+ */
+
+bool log_available(int eventtype)
+  {
+#if SYSLOG
+  if(eventtype&PBSEVENT_SYSLOG)
+    return true;
+#endif
+  if(log_opened < 1)
+    return true;
+  return false;
   }
 
 
@@ -809,7 +775,7 @@ void log_record(
   char time_formatted_str[64];
 
   thr_id = syscall(SYS_gettid);
-  pthread_mutex_lock(log_mutex);
+  pthread_mutex_lock(&log_mutex);
 
 #if SYSLOG
   if (eventtype & PBSEVENT_SYSLOG)
@@ -827,7 +793,7 @@ void log_record(
 
   if (log_opened < 1)
     {
-    pthread_mutex_unlock(log_mutex);
+    pthread_mutex_unlock(&log_mutex);
     return;
     }
 
@@ -845,7 +811,7 @@ void log_record(
 
     if (log_opened < 1)
       {
-      pthread_mutex_unlock(log_mutex);
+      pthread_mutex_unlock(&log_mutex);
       return;
       }
     }
@@ -941,16 +907,16 @@ void log_record(
      * if we can't open this then we're going to have a nice surprise failure */
     if (logfile != NULL)
       {
-      pthread_mutex_unlock(log_mutex);
+      pthread_mutex_unlock(&log_mutex);
       log_err(rc, __func__, "PBS cannot write to its log");
       fclose(logfile);
-      pthread_mutex_lock(log_mutex);
+      pthread_mutex_lock(&log_mutex);
       }
 
     logfile = savlog;
     }
   
-  pthread_mutex_unlock(log_mutex);
+  pthread_mutex_unlock(&log_mutex);
 
   return;
   }  /* END log_record() */
@@ -979,13 +945,13 @@ void log_close(
       else
         snprintf(buf, sizeof(buf), "Log closed");
        
-      pthread_mutex_unlock(log_mutex);
+      pthread_mutex_unlock(&log_mutex);
       log_record(
         PBSEVENT_SYSTEM,
         PBS_EVENTCLASS_SERVER,
         "Log",
         buf);
-      pthread_mutex_lock(log_mutex);
+      pthread_mutex_lock(&log_mutex);
       }
 
     fclose(logfile);
@@ -1158,11 +1124,11 @@ void log_roll(
   char *source  = NULL;
   char *dest    = NULL;
   
-  pthread_mutex_lock(log_mutex);
+  pthread_mutex_lock(&log_mutex);
 
   if (!log_opened)
     {
-    pthread_mutex_unlock(log_mutex);
+    pthread_mutex_unlock(&log_mutex);
     return;
     }
 
@@ -1245,7 +1211,7 @@ done_roll:
     log_open(logpath, log_directory);
     }
 
-  pthread_mutex_unlock(log_mutex);
+  pthread_mutex_unlock(&log_mutex);
 
   if (source != NULL)
     free(source);
@@ -1280,11 +1246,11 @@ void job_log_roll(
   char *source  = NULL;
   char *dest    = NULL;
       
-  pthread_mutex_lock(job_log_mutex);
+  pthread_mutex_lock(&job_log_mutex);
 
   if (!job_log_opened)
     {
-    pthread_mutex_unlock(job_log_mutex);
+    pthread_mutex_unlock(&job_log_mutex);
     return;
     }
 
@@ -1388,7 +1354,7 @@ done_job_roll:
       "Job Log Rolled");
     }
     
-  pthread_mutex_unlock(job_log_mutex);
+  pthread_mutex_unlock(&job_log_mutex);
 
   return;
   } /* END job_log_roll() */
@@ -1411,7 +1377,7 @@ long log_size(void)
   struct stat file_stat;
 #endif
   
-  pthread_mutex_lock(log_mutex);
+  pthread_mutex_lock(&log_mutex);
 
 #if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64) && defined(LARGEFILE_WORKS)
 
@@ -1422,7 +1388,7 @@ long log_size(void)
     {
     /* FAILURE */
 
-    pthread_mutex_unlock(log_mutex);
+    pthread_mutex_unlock(&log_mutex);
     /* log_err through log_ext will lock the log_mutex, so release log_mutex before calling log_err */
     log_err(errno, "log_size", "PBS cannot fstat logfile");
 
@@ -1430,12 +1396,12 @@ long log_size(void)
     }
   
   if (!log_opened) {
-      pthread_mutex_unlock(log_mutex);
+      pthread_mutex_unlock(&log_mutex);
       log_err(EAGAIN, "log_size", "PBS cannot find size of log file because logfile has not been opened");
       return(0);
   }
 
-  pthread_mutex_unlock(log_mutex);
+  pthread_mutex_unlock(&log_mutex);
 
   return(file_stat.st_size / 1024);
   }
@@ -1454,7 +1420,7 @@ long job_log_size(void)
 #endif
  
   memset(&file_stat, 0, sizeof(file_stat));
-  pthread_mutex_lock(job_log_mutex);
+  pthread_mutex_lock(&job_log_mutex);
 
 #if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64) && defined(LARGEFILE_WORKS)
 
@@ -1466,12 +1432,12 @@ long job_log_size(void)
     /* FAILURE */
 
     log_err(errno, __func__, "PBS cannot fstat joblogfile");
-    pthread_mutex_unlock(job_log_mutex);
+    pthread_mutex_unlock(&job_log_mutex);
 
     return(0);
     }
   
-  pthread_mutex_unlock(job_log_mutex);
+  pthread_mutex_unlock(&job_log_mutex);
 
   return(file_stat.st_size / 1024);
   }

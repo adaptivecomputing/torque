@@ -138,7 +138,7 @@ int            numa_index;
 char           path_meminfo[MAX_LINE];
 #endif
 
-extern pthread_mutex_t *log_mutex;
+extern pthread_mutex_t log_mutex;
 
 int          thread_unlink_calls = FALSE;
 /* by default, enforce these policies */
@@ -212,6 +212,7 @@ int   mom_oom_immunize = 1;  /* make pbs_mom processes immune? no by default */
 int   job_exit_wait_time = DEFAULT_JOB_EXIT_WAIT_TIME;
 int   max_join_job_wait_time = MAX_JOIN_WAIT_TIME;
 int   resend_join_job_wait_time = RESEND_WAIT_TIME;
+int   mom_hierarchy_retry_time = NODE_COMM_RETRY_TIME;
 
 time_t          last_log_check;
 char           *nodefile_suffix = NULL;    /* suffix to append to each host listed in job host file */
@@ -427,6 +428,7 @@ static unsigned long setmomoomimmunize(const char *);
 unsigned long        setjobexitwaittime(const char *);
 unsigned long setmaxjoinjobwaittime(const char *);
 unsigned long setresendjoinjobwaittime(const char *);
+unsigned long setmomhierarchyretrytime(const char *);
 
 static struct specials
   {
@@ -509,6 +511,7 @@ static struct specials
   { "job_exit_wait_time",    setjobexitwaittime },
   { "max_join_job_wait_time", setmaxjoinjobwaittime},
   { "resend_join_job_wait_time", setresendjoinjobwaittime},
+  { "mom_hierarchy_retry_time",  setmomhierarchyretrytime},
   { NULL,                  NULL }
   };
 
@@ -3440,6 +3443,26 @@ unsigned long setresendjoinjobwaittime(
 
 
 
+unsigned long setmomhierarchyretrytime(
+
+  const char *value)
+
+  {
+  int tmp;
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
+
+  if (value != NULL)
+    {
+    tmp = strtol(value, NULL, 10);
+    if (tmp != 0)
+      mom_hierarchy_retry_time = tmp;
+    }
+
+  return(1);
+  }
+
+
+
 static unsigned long setrejectjobsubmission(
 
   const char *value)
@@ -4384,10 +4407,10 @@ static void process_hup(void)
   call_hup = 0;
   log_record(PBSEVENT_SYSTEM, 0, __func__, "reset");
 
-  pthread_mutex_lock(log_mutex);
+  pthread_mutex_lock(&log_mutex);
   log_close(1);
   log_open(log_file, path_log);
-  pthread_mutex_unlock(log_mutex);
+  pthread_mutex_unlock(&log_mutex);
   log_file_max_size = 0;
   log_file_roll_depth = 1;
 #ifdef PENABLE_LINUX26_CPUSETS
@@ -7726,17 +7749,17 @@ int setup_program_environment(void)
     }
  
   /* open log file while std in,out,err still open, forces to fd 4 */
-  pthread_mutex_lock(log_mutex);
+  pthread_mutex_lock(&log_mutex);
   if ((c = log_open(log_file, path_log)) != 0)
     {
-    pthread_mutex_unlock(log_mutex);
+    pthread_mutex_unlock(&log_mutex);
     /* use given name */
 
     fprintf(stderr, "pbs_mom: Unable to open logfile\n");
 
     return(1);
     }
-  pthread_mutex_unlock(log_mutex);
+  pthread_mutex_unlock(&log_mutex);
 
   check_log(); /* see if this log should be rolled */
 

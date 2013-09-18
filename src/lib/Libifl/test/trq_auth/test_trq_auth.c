@@ -1,4 +1,4 @@
-#include <sstream>
+#include <string>
 #include <iostream>
 #include "license_pbs.h" /* See here for the software license */
 #include "lib_ifl.h"
@@ -33,8 +33,8 @@ extern   int request_type;
 extern   int process_svr_conn_rc;
 
 int get_active_pbs_server(char **active_server);
-int build_request_svr(int auth_type, const char *user, int sock, std::stringstream &message);
-int build_active_server_response(std::stringstream &message);
+int build_request_svr(int auth_type, const char *user, int sock, std::string &message);
+int build_active_server_response(std::string &message);
 int set_active_pbs_server(const char *server_name);
 
 extern time_t pbs_tcp_timeout;
@@ -389,7 +389,7 @@ END_TEST
 
 START_TEST(build_request_svr_test)
   {
-  std::stringstream message;
+  std::string message;
 
   fail_unless(build_request_svr(AUTH_TYPE_IFF, NULL, 5, message) == PBSE_BAD_PARAMETER);
   fail_unless(build_request_svr(AUTH_TYPE_KEY, "dbeer", 5, message) == PBSE_NOT_IMPLEMENTED);
@@ -405,7 +405,7 @@ START_TEST(build_request_svr_test)
     (int)strlen("dbeer"),
     1, // number of character to represent 6 is 1
     6);
-  fail_unless(!strcmp(message.str().c_str(), buf));
+  fail_unless(!strcmp(message.c_str(), buf));
   
   fail_unless(build_request_svr(AUTH_TYPE_IFF, "dbeer", 7, message) == PBSE_NONE);
   snprintf(buf, sizeof(buf), "+%d+%d2+%d%d+%ddbeer%d+%d+0",
@@ -416,18 +416,18 @@ START_TEST(build_request_svr_test)
     (int)strlen("dbeer"),
     1, // number of character to represent 7 is 1
     7);
-  fail_unless(!strcmp(message.str().c_str(), buf));
+  fail_unless(!strcmp(message.c_str(), buf));
   }
 END_TEST
 
 START_TEST(build_active_server_response_test)
   {
-  std::stringstream message;
+  std::string message;
   set_active_pbs_server("");
   fail_unless(build_active_server_response(message) == PBSE_NONE);
   set_active_pbs_server("napali");
   fail_unless(build_active_server_response(message) == PBSE_NONE);
-  fail_unless(!strcmp(message.str().c_str(), "6|napali|"));
+  fail_unless(!strcmp(message.c_str(), "6|napali|"));
   }
 END_TEST
 

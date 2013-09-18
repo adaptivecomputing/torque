@@ -1048,7 +1048,7 @@ if test "${build_l26_cpuset}" = "yes" ; then
   if test "${build_mom}" = "yes" ; then
     PKG_CHECK_MODULES([HWLOC], [hwloc >= 1.1],
       [ MOMLIBS="$MOMLIBS $HWLOC_LIBS"; CFLAGS="$CFLAGS $HWLOC_CFLAGS" ],
-      [ AC_MSG_ERROR([cpuset support requires the hwloc package
+      [ AC_MSG_ERROR([cpuset support requires the hwloc development package
 
 $HWLOC_PKG_ERRORS
 
