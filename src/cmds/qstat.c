@@ -1,4 +1,5 @@
 /*
+  int last_error = 0;
  *
  * qstat - (PBS) show stats of batch jobs, queues, or servers
  *
@@ -67,13 +68,36 @@ static void states(
 #define ALT_DISPLAY_o   0x800   /* -1 option - add node list on same line */
 #endif /* not PBS_NO_POSIX_VIOLATION */
 
-
+#define MAX_RETRIES  3
 
 /* globals */
+extern char         *optarg;
+
+enum qstat_mode { JOBS, QUEUES, SERVERS } mode;
 
 mbool_t DisplayXML = FALSE;
 #define maxlinesize 65536
 int   linesize = 77;
+
+int                  alt_opt;
+int                  f_opt;
+int                  B_opt;
+int                  Q_opt;
+int                  t_opt;
+int                  E_opt;
+ 
+const char          *ExtendOpt = NULL;
+struct attropl      *p_atropl = 0;
+struct attrl        *attrib = NULL;
+char                 user[MAXPATHLEN];
+#if (TCL_QSTAT == 0)
+  char                *pc;
+#else
+  char                 option[3];
+#endif
+
+int                  exec_only = 0;
+const char          *conflict_msg = "qstat: conflicting options.\n";
 
 static const char *summarize_arrays_extend_opt = "summarize_arrays";
 
@@ -87,9 +111,9 @@ int   alias_opt = FALSE;
 
 
 
-int isjobid(
+bool isjobid(
 
-  char *string)
+  const char *string)
 
   {
   int i;
@@ -98,11 +122,11 @@ int isjobid(
   i = strspn(string, " "); /* locate first non-blank */
 
   if (isdigit(string[i]))
-    result = 1;  /* job_id */
+    result = true;  /* job_id */
   else if (isalpha(string[i]))
-    result = 0; /* not a job_id */
+    result = false; /* not a job_id */
   else
-    result = 0;  /* who knows - probably a syntax error */
+    result = false;  /* who knows - probably a syntax error */
 
   return(result);
   }  /* END isjobid() */
@@ -111,22 +135,22 @@ int isjobid(
 
 
 
-int istrue(
+bool istrue(
 
-  char *string)  /* I */
+  const char *string)  /* I */
 
   {
   if (!strcasecmp(string, "TRUE"))
     {
-    return(TRUE);
+    return(true);
     }
 
   if (!strcmp(string, "1"))
     {
-    return(TRUE);
+    return(true);
     }
 
-  return(FALSE);
+  return(false);
   }  /* END istrue() */
 
 
@@ -162,7 +186,7 @@ int time_to_string(
 
 int timestring_to_int(
     
-    char *timestring,
+    const char *timestring,
     int  *req_walltime)
 
   {
@@ -640,7 +664,7 @@ static void altdsp_statjob(
   int         req_walltime = 0;
   int         elap_time = 0;
   char        elap_time_string[100];
-  char format_string[MAX_LINE_LEN];
+  char        format_string[MAX_LINE_LEN];
 
   int   usecput;
   static char  pfs[SIZEL];
@@ -910,9 +934,9 @@ static void altdsp_statjob(
  * support function for altdsp_statque()
  */
 
-static void get_ct(
+void get_ct(
 
-  char *str,
+  const char *str,
   int  *jque,
   int  *jrun)
 
@@ -920,7 +944,7 @@ static void get_ct(
   char *ps;
   int   colon = (int)':';
 
-  ps = strchr(str, colon); /* Transit - skip */
+  ps = strchr((char *)str, colon); /* Transit - skip */
 
   ps = strchr(ps + 1, colon); /* Queued  - add to jque */
 
@@ -1115,7 +1139,7 @@ static void add_atropl(
  * @param a - the attribute list for this job
  */
 
-int is_the_user(
+bool is_the_user(
 
   char         *user,
   struct attrl *a)
@@ -1123,7 +1147,7 @@ int is_the_user(
   {
   char *at_user;
   char *at_owner;
-  int   is_the_user = FALSE;
+  bool   is_the_user = false;
 
   if ((user == NULL) ||
       (user[0] == '\0'))
@@ -1142,7 +1166,7 @@ int is_the_user(
           *at_owner = '\0';
 
           if (!strcmp(a->value, user))
-            is_the_user = TRUE;
+            is_the_user = true;
 
           *at_owner = '@';
 
@@ -1151,19 +1175,19 @@ int is_the_user(
         else
           {
           if (!strcmp(a->value, user))
-            return(TRUE);
+            return(true);
           else
-            return(FALSE);
+            return(false);
           }
         }
       else if (!strcmp(a->value, user))
-        return(TRUE);
+        return(true);
       else
-        return(FALSE);
+        return(false);
       }
     }
 
-  return(FALSE);
+  return(false);
   } /* END is_the_user() */
 
 
@@ -1174,7 +1198,7 @@ int is_the_user(
 void display_statjob(
 
   struct batch_status *status,    /* I (data) */
-  int                  prtheader, /* I (boolean) */
+  bool                 prtheader, /* I (boolean) */
   int                  full,      /* I (boolean) */
   char                *user)
 
@@ -1216,7 +1240,7 @@ void display_statjob(
             STATEL,
             LOCL);
 
-    if (prtheader)
+    if (prtheader == true)
       {
       /* display summary header TODO - the sizes of these fields should be determined from
          #defines in pbs_ifl.h */
@@ -1242,8 +1266,9 @@ void display_statjob(
     timeu = NULL;
     state = NULL;
     location = NULL;
+    do_not_display = false;
 
-    if (is_the_user(user, p->attribs) == FALSE)
+    if (is_the_user(user, p->attribs) == false)
       {
       continue;
       }
@@ -1251,7 +1276,6 @@ void display_statjob(
     if (full)
       {
 
-      do_not_display = false;
       a = p->attribs;
       while (a != NULL)
         {
@@ -1402,7 +1426,8 @@ void display_statjob(
             }
           }
 
-        c++;    /* List the first part of the server name, too. */
+        if (*c != '\0')
+          c++;    /* List the first part of the server name, too. */
 
         while ((*c != '.') && (*c != '\0'))
           c++;
@@ -1587,7 +1612,7 @@ void display_statjob(
 void display_statque(
 
   struct batch_status *status,
-  int                  prtheader,
+  bool                 prtheader,
   int                  full)
 
   {
@@ -1630,7 +1655,7 @@ void display_statque(
           TYPEL,
           NUML);
 
-  if (!full && prtheader)
+  if (!full && (prtheader == true))
     {
     printf(format, "Queue", "Max", "Tot", "Ena", "Str", "Que", "Run", "Hld", "Wat", "Trn", "Ext", "T", "Cpt");
     printf(format, "----------------", "---", "----", "--", "--", "---", "---", "---", "---", "---", "---", "-", "---");
@@ -1724,14 +1749,14 @@ void display_statque(
             }
           else if (strcmp(a->name, ATTR_enable) == 0)
             {
-            if (istrue(a->value))
+            if (istrue(a->value) == true)
               strcpy(ena, "yes");
             else
               strcpy(ena, "no");
             }
           else if (strcmp(a->name, ATTR_start) == 0)
             {
-            if (istrue(a->value))
+            if (istrue(a->value) == true)
               strcpy(str, "yes");
             else
               strcpy(str, "no");
@@ -1783,7 +1808,7 @@ void display_statque(
 void display_statserver(
 
   struct batch_status *status,
-  int                  prtheader,
+  bool                 prtheader,
   int                  full)
 
   {
@@ -1823,7 +1848,7 @@ void display_statserver(
           NUML,
           STATUSL);
 
-  if (!full && prtheader)
+  if (!full && (prtheader == true))
     {
     printf(format, "Server", "Max", "Tot", "Que", "Run", "Hld", "Wat", "Trn", "Ext", "Com", "Status");
     printf(format, "----------------", "---", "---", "---", "---", "---", "---", "---", "---", "---", "----------");
@@ -2181,83 +2206,18 @@ void tcl_run(
 #endif /* TCL_QSTAT */
 
 
+int process_commandline_opts(
 
-
-
-
-/* connects to server side routine pbs_statjob() in lib/Libifl/pbs_statjob.c */
-/*  routes to req_stat_job() in server/req_stat.c (PBS_BATCH_StatusJob) */
-
-int main(
-
-  int    argc,  /* I */
-  char **argv)  /* I */
+  int argc, 
+  char **argv, 
+  int *exec_only_flg, 
+  int *errflg_out)
 
   {
-  int                  c;
-  int                  errflg = 0;
-  int                  any_failed = 0;
-  extern char         *optarg;
-  const char          *conflict = "qstat: conflicting options.\n";
-#if (TCL_QSTAT == 0)
-  char                *pc;
-#else
-  char                 option[3];
-#endif
-  int                  located = FALSE;
-
-
-  char                 job_id[PBS_MAXCLTJOBID];
-
-  char                 job_id_out[PBS_MAXCLTJOBID];
-  char                 server_out[MAXSERVERNAME] = "";
-  char                 server_old[MAXSERVERNAME] = "";
-  char                 rmt_server[MAXSERVERNAME];
-  char                 user[MAXPATHLEN];
-  char                 destination[PBS_MAXDEST + 1];
-  const char          *def_server;
-
-  char                *queue_name_out;
-  char                *server_name_out;
-
-  const char          *ExtendOpt = NULL;
-
-  char                 operand[PBS_MAXCLTJOBID + 1];
-  int                  alt_opt;
-  int                  f_opt;
-  int                  B_opt;
-  int                  Q_opt;
-  int                  t_opt;
-  int                  E_opt;
-  int                  p_header = TRUE;
-  int                  stat_single_job = 0;
-
-  int                  testholder;
-  int                  argcholder;
-
-  struct batch_status *p_status;
-
-  struct batch_status *p_server;
-
-  struct attropl      *p_atropl = 0;
-  struct attrl        *attrib = NULL;
-  char                *errmsg;
-  int                  exec_only = 0;
-  bool                 have_args = false;
-  
-  enum { JOBS, QUEUES, SERVERS } mode;
-
-#ifndef mbool
-#define mbool char
-#endif /* !mbool */
-
-#ifndef TRUE
-#define TRUE 1
-#endif /* !TRUE */
-
-#ifndef FALSE
-#define FALSE 0
-#endif /* !FALSE */
+  int c;
+  int exec_only = 0;
+  int errflg = 0;
+  int rc = PBSE_NONE;
 
 #if !defined(PBS_NO_POSIX_VIOLATION)
 #define GETOPT_ARGS "aceE:filn1qrstu:xGMQRBW:-:"
@@ -2265,9 +2225,9 @@ int main(
 #define GETOPT_ARGS "flQBW:"
 #endif /* PBS_NO_POSIX_VIOLATION */
 
+  mode = JOBS;
   user[0] = '\0';
 
-  mode = JOBS; /* default */
   alt_opt = 0;
   f_opt = 0;
   B_opt = 0;
@@ -2275,27 +2235,7 @@ int main(
   t_opt = 0;
   E_opt = 0;
 
-  /* Attributes needed for default view */
-  set_attr(&attrib, ATTR_name, NULL);
-  set_attr(&attrib, ATTR_owner, NULL);
-  set_attr(&attrib, ATTR_used, NULL);
-  set_attr(&attrib, ATTR_state, NULL);
-  set_attr(&attrib, ATTR_queue, NULL);
 
-  tcl_init();
-  tcl_addarg(flags, argv[0]);
-
-#ifdef TCL_QSTAT
-  option[0] = '-';
-  option[2] = '\0';
-#endif
-
-  if (getenv("PBS_QSTAT_EXECONLY") != NULL)
-    exec_only = 1;
-
-  if (getenv("PBS_QSTAT_NO_COMPLETE") != NULL)
-    do_not_display_complete = true;
-    
   while ((c = getopt(argc, argv, GETOPT_ARGS)) != EOF)
     {
 #ifdef TCL_QSTAT
@@ -2362,7 +2302,15 @@ int main(
 
         alt_opt |= ALT_DISPLAY_q;
 
+        if (mode == SERVERS)
+          {
+          /* we can only process one mode at a time */
+          fprintf(stderr, "cannot combine -B with -q option\n");
+          return(PBSE_IVALREQ);
+          }
+
         mode = QUEUES;
+
 
         break;
 
@@ -2421,9 +2369,10 @@ int main(
         if ((alt_opt != 0) &&
             (alt_opt != ALT_DISPLAY_u))
           {
-          fprintf(stderr, "%s", conflict);
+          fprintf(stderr, "%s -f incompatible with one or more options. Read qstat man page\n", conflict_msg);
 
           errflg++;
+          return(PBSE_IVALREQ);
           }
 
         f_opt = 1;
@@ -2450,9 +2399,10 @@ int main(
 
         if (Q_opt || alt_opt)
           {
-          fprintf(stderr, "%s", conflict);
+          fprintf(stderr, "%s -B incompatible with one or more options. Read qstat man page\n", conflict_msg);
 
           errflg++;
+          return(PBSE_IVALREQ);
           }
 
         break;
@@ -2471,9 +2421,10 @@ int main(
 
         if (B_opt || alt_opt)
           {
-          fprintf(stderr, "%s", conflict);
+          fprintf(stderr, "%s -Q incompatible with one or more options. Read qstat man page\n", conflict_msg);
 
           errflg++;
+          return(PBSE_IVALREQ);
           }
 
         break;
@@ -2610,32 +2561,36 @@ int main(
       (c != ALT_DISPLAY_r) &&
       (c != ALT_DISPLAY_q))
     {
-      fprintf(stderr, "%s", conflict);
+      fprintf(stderr, "%s", conflict_msg);
 
     errflg++;
+    rc = PBSE_IVALREQ;
     }
 
   c = alt_opt & (ALT_DISPLAY_Mw | ALT_DISPLAY_G);
 
   if (c == (ALT_DISPLAY_Mw | ALT_DISPLAY_G))
     {
-    fprintf(stderr, "%s", conflict);
+    fprintf(stderr, "%s", conflict_msg);
 
     errflg++;
+    rc = PBSE_IVALREQ;
     }
 
   if ((alt_opt & ALT_DISPLAY_q) && (f_opt == 1))
     {
-    fprintf(stderr, "%s", conflict);
+    fprintf(stderr, "%s", conflict_msg);
 
     errflg++;
+    rc = PBSE_IVALREQ;
     }
 
   if ((alt_opt & ALT_DISPLAY_o) && !((alt_opt & ALT_DISPLAY_n) || (f_opt)))
     {
-    fprintf(stderr, "%s", conflict);
+    fprintf(stderr, "%s", conflict_msg);
 
     errflg++;
+    rc = PBSE_IVALREQ;
     }
 
   if (alt_opt & ALT_DISPLAY_o)
@@ -2646,9 +2601,474 @@ int main(
 
 #endif /* PBS_NO_POSIX_VIOLATION */
 
-  if (errflg)
+
+  *errflg_out = errflg;
+  *exec_only_flg = exec_only;
+  return(rc);
+  }
+
+
+int run_job_mode(
+    
+    bool have_args, 
+    const char *operand,
+    int  *located,
+    char *server_out,
+    char *server_old,
+    char *queue_name_out,
+    char *server_name_out,
+    char *job_id_out)
+
+  {
+  int    any_failed = PBSE_NONE;
+  int    stat_single_job = 0;
+  int    connect;
+  bool   p_header = true;
+  int    retry_count = 0;
+  char   destination[PBS_MAXDEST + 1];
+  char   job_id[PBS_MAXCLTJOBID];
+  char   rmt_server[MAXSERVERNAME];
+
+  struct batch_status *p_server;
+  struct batch_status *p_status;
+
+  if (have_args == true)
     {
-    static char usage[] = "usage: \n\
+    if (!strcmp(operand, "(null)"))
+      {
+      return(PBSE_NONE);
+      }
+
+    if (isjobid(operand) == true)
+      {
+      /* must be a job-id */
+
+      stat_single_job = 1;
+
+      snprintf(job_id, sizeof(job_id), "%s", operand);
+
+      if (get_server(job_id, job_id_out, sizeof(job_id_out), server_out, sizeof(server_out)))
+        {
+        fprintf(stderr, "qstat: illegally formed job identifier: %s\n",
+                job_id);
+
+        tcl_stat(error, NULL, f_opt);
+
+        any_failed = 1;
+
+        return(any_failed);
+        }
+      }
+    else
+      {
+      /* must be a destination-id */
+
+      stat_single_job = 0;
+
+      snprintf(destination, sizeof(destination), "%s", operand);
+
+      if (parse_destination_id(
+            destination,
+            &queue_name_out,
+            &server_name_out))
+        {
+        fprintf(stderr, "qstat: illegally formed destination: %s\n",
+                destination);
+
+        tcl_stat(error, NULL, f_opt);
+
+        any_failed = 1;
+
+        return(any_failed);
+        }
+
+      if (notNULL(server_name_out))
+        {
+        snprintf(server_out, sizeof(server_out), "%s", server_name_out);
+        }
+      else
+        {
+        server_out[0] = '\0';
+        }
+
+      snprintf(job_id_out, sizeof(job_id_out), "%s", queue_name_out);
+
+      if (*queue_name_out != '\0')
+        {
+        add_atropl(&p_atropl, (char *)ATTR_q, NULL, queue_name_out, EQ);
+        }
+      }    /* END else */
+    }
+
+  while (retry_count < MAX_RETRIES)
+    {
+    connect = cnt2server(server_out);
+
+    if (connect <= 0)
+      {
+      if (++retry_count < MAX_RETRIES)
+        {
+        continue;
+        }
+
+      any_failed = -1 * connect;
+
+      if (server_out[0] != 0)
+        fprintf(stderr, "qstat: cannot connect to server %s (errno=%d) %s\n",
+            server_out,
+            any_failed,
+            pbs_strerror(any_failed));
+      else
+        fprintf(stderr, "qstat: cannot connect to server %s (errno=%d) %s\n",
+              pbs_server,
+              any_failed,
+              pbs_strerror(any_failed));
+
+      tcl_stat(error, NULL, f_opt);
+
+      return(any_failed);
+      }
+
+    if ((alt_opt != 0) && (strcmp(pbs_server, server_old) != 0))
+      {
+      /* changing to a different server */
+
+      p_server = pbs_statserver_err(connect, NULL, NULL, &any_failed);
+
+      snprintf(server_old, sizeof(server_old), "%s", pbs_server);
+      }
+    else
+      {
+      p_server = 0;
+      }
+
+    if ((stat_single_job == 1) || (p_atropl == 0))
+      {
+      p_status = pbs_statjob_err(
+                   connect,
+                   job_id_out,
+                   attrib,
+                   exec_only ? (char *)EXECQUEONLY : (char *)ExtendOpt,
+                   &any_failed);
+      }
+    else
+      {
+      if (t_opt)
+        {
+        p_status = pbs_selstatattr_err(connect, p_atropl, attrib, exec_only ? (char *)EXECQUEONLY : NULL, &any_failed);
+        if (any_failed == PBSE_UNKREQ)
+          p_status = pbs_selstat_err(connect, p_atropl, exec_only ? (char *)EXECQUEONLY : NULL, &any_failed);
+        }
+      else
+        {
+        p_status = pbs_selstatattr_err(connect, p_atropl, attrib, exec_only ? (char *)EXECQUEONLY : (char *)summarize_arrays_extend_opt, &any_failed);
+        if (any_failed == PBSE_UNKREQ)
+          p_status = pbs_selstat_err(connect, p_atropl, exec_only ? (char *)EXECQUEONLY : (char *)summarize_arrays_extend_opt, &any_failed);
+        }
+      }
+
+    if (p_status == NULL)
+      {
+      if ((any_failed == PBSE_UNKJOBID) && !*located)
+        {
+        *located = TRUE;
+
+        if (locate_job(job_id_out, server_out, rmt_server))
+          {
+          pbs_disconnect(connect);
+
+          snprintf(server_out, sizeof(server_out), "%s", rmt_server);
+
+          continue;
+          }
+
+        tcl_stat("job", NULL, f_opt);
+
+        prt_job_err((char *)"qstat", connect, job_id_out);
+        break;
+        }
+      else
+        {
+        if (any_failed && (++retry_count < MAX_RETRIES))
+            {
+            pbs_disconnect(connect);
+            continue;
+            }
+
+        tcl_stat("job", NULL, f_opt);
+
+        if (any_failed != PBSE_NONE)
+          {
+          prt_job_err((char *)"qstat", connect, job_id_out);
+          }
+        }
+      }
+    else
+      {
+      int condition = TRUE;
+#ifdef TCL_QSTAT
+      condition = tcl_stat("job", p_status, f_opt);
+#endif
+      
+      if (alt_opt != 0)
+        {
+        altdsp_statjob(p_status, p_server, alt_opt);
+        }
+      else if ((f_opt == 0) ||
+               (condition)) 
+        {
+        display_statjob(p_status, p_header, f_opt, user);
+        }
+
+      p_header = false;
+
+      pbs_statfree(p_status);
+      }
+
+    pbs_disconnect(connect);
+    break;
+    }
+
+  return(any_failed);
+  }
+
+
+int run_queue_mode(
+
+    bool have_args, 
+    const char *operand,
+    char *server_out,
+    char *queue_name_out,
+    char *server_name_out)
+
+  {
+  int    any_failed = PBSE_NONE;
+  int    connect;
+  bool    p_header = true;
+  int    retry_count = 0;
+  char   destination[PBS_MAXDEST + 1];
+  char   *errmsg;
+ 
+  struct batch_status *p_status;
+
+  if (have_args == true)
+    {
+    if (!strcmp(operand, "(null)"))
+      {
+      return(any_failed);
+      }
+
+    snprintf(destination, sizeof(destination), "%s", operand);
+
+    if (parse_destination_id(destination,
+                             &queue_name_out,
+                             &server_name_out))
+      {
+      fprintf(stderr, "qstat: illegal 'destination' value\n");
+      tcl_stat(error, NULL, f_opt);
+      return(PBSE_IVALREQ);
+      }
+    else
+      {
+      if (notNULL(server_name_out))
+        {
+        snprintf(server_out, sizeof(server_out), "%s", server_name_out);
+        }
+      else
+        server_out[0] = '\0';
+      }
+    }
+
+  while(retry_count < MAX_RETRIES)
+    {
+    connect = cnt2server(server_out);
+
+    if (connect <= 0)
+      {
+      if (++retry_count < MAX_RETRIES)
+        {
+        continue;
+        }
+
+      any_failed = -1 * connect;
+      if (server_out[0] != 0)
+        fprintf(stderr, "qstat: cannot connect to server %s (errno=%d) %s\n",
+            server_out,
+            any_failed,
+            pbs_strerror(any_failed));
+      else
+        fprintf(stderr, "qstat: cannot connect to server %s (errno=%d) %s\n",
+              pbs_server,
+              any_failed,
+              pbs_strerror(any_failed));
+
+      tcl_stat(error, NULL, f_opt);
+      return(any_failed);
+      }
+
+    p_status = pbs_statque_err(connect, queue_name_out, NULL, NULL, &any_failed);
+
+    if (p_status == NULL)
+      {
+      if (any_failed && (++retry_count < MAX_RETRIES))
+        {
+        pbs_disconnect(connect);
+        continue;
+        }
+
+      if (any_failed)
+        {
+        errmsg = pbs_geterrmsg(connect);
+
+        if (errmsg != NULL)
+          {
+          fprintf(stderr, "qstat: %s ", errmsg);
+          free(errmsg);
+          }
+        else
+          fprintf(stderr, "qstat: Error (%d - %s) getting status of queue ",
+                  any_failed, pbs_strerror(any_failed));
+
+        fprintf(stderr, "%s\n", queue_name_out);
+
+        tcl_stat(error, NULL, f_opt);
+        }
+      }
+    else
+      {
+      int condition = TRUE;
+#ifdef TCL_QSTAT
+      condition = tcl_stat("queue", p_status, f_opt);
+#endif
+      if (alt_opt & ALT_DISPLAY_q)
+        {
+        altdsp_statque(pbs_server, p_status, alt_opt);
+        }
+      else if (condition)
+        {
+        display_statque(p_status, p_header, f_opt);
+        }
+
+      p_header = false;
+
+      pbs_statfree(p_status);
+      }
+
+    pbs_disconnect(connect);
+    break;
+    }
+
+  return(any_failed);
+  }
+
+
+int run_server_mode(
+    bool    have_args,
+    const char *operand,
+    char    *server_out)
+
+  {
+  int    connect;
+  int    any_failed = PBSE_NONE;
+  bool   p_header = true;
+  int    retry_count = 0;
+  char   *errmsg = NULL;
+  struct batch_status *p_status;
+
+  if (have_args == true)
+    {
+    if (!strcmp(operand, "(null)"))
+      {
+      return(PBSE_NONE);
+      }
+
+    snprintf(server_out, sizeof(server_out), "%s", operand);
+    }
+
+  while (retry_count < MAX_RETRIES)
+    {
+    connect = cnt2server(server_out);
+
+    if (connect <= 0)
+      {
+      if (++retry_count < MAX_RETRIES)
+        {
+        continue;
+        }
+
+      any_failed = -1 * connect;
+      if (server_out[0] != 0)
+        fprintf(stderr, "qstat: cannot connect to server %s (errno=%d) %s\n",
+            server_out,
+            any_failed,
+            pbs_strerror(any_failed));
+      else
+        fprintf(stderr, "qstat: cannot connect to server %s (errno=%d) %s\n",
+              pbs_server,
+              any_failed,
+              pbs_strerror(any_failed));
+
+
+      tcl_stat(error, NULL, f_opt);
+      any_failed = connect;
+      return(any_failed);
+      }
+
+    p_status = pbs_statserver_err(connect, NULL, NULL, &any_failed);
+
+    if (p_status == NULL)
+      {
+      /* check to see if we will do a retry before we print any error messages */
+      if (any_failed && (++retry_count < MAX_RETRIES))
+        {
+        pbs_disconnect(connect);
+        continue;
+        }
+
+      if (any_failed)
+        {
+        errmsg = pbs_geterrmsg(connect);
+
+        if (errmsg != NULL)
+          {
+          fprintf(stderr, "qstat: %s ", errmsg);
+          free(errmsg);
+          }
+        else
+          fprintf(stderr, "qstat: Error (%d - %s) getting status of server ",
+                  any_failed, pbs_strerror(any_failed));
+
+        fprintf(stderr, "%s\n", server_out);
+
+        tcl_stat(error, NULL, f_opt);
+        }
+      }
+    else
+      {
+      int condition = TRUE;
+#ifdef TCL_QSTAT
+      condition = tcl_stat("server", p_status, f_opt);
+#endif
+      if (condition)
+        display_statserver(p_status, p_header, f_opt);
+
+      p_header = false;
+
+      pbs_statfree(p_status);
+      }
+
+    pbs_disconnect(connect);
+    break;
+    } /* end while */
+
+  return(any_failed); 
+  }
+
+
+
+void print_usage()
+  {
+  static char usage[] = "usage: \n\
                           qstat [-f [-1]] [-W site_specific] [-x] [ job_identifier... | destination... ]\n\
                           qstat [-a|-i|-r|-e] [-u user] [-n [-1]] [-s] [-t] [-G|-M] [-R] [job_id... | destination...]\n\
                           qstat -Q [-f [-1]] [-W site_specific] [ destination... ]\n\
@@ -2656,8 +3076,81 @@ int main(
                           qstat -B [-f [-1]] [-W site_specific] [ server_name... ]\n\
                           qstat -t\n";
 
-    fprintf(stderr,"%s", usage);
+  fprintf(stderr,"%s", usage);
+  }
 
+
+
+/* connects to server side routine pbs_statjob() in lib/Libifl/pbs_statjob.c */
+/*  routes to req_stat_job() in server/req_stat.c (PBS_BATCH_StatusJob) */
+
+int main(
+
+  int    argc,  /* I */
+  char **argv)  /* I */
+
+  {
+  int                  rc;
+  int                  errflg = 0;
+  int                  exec_only = 0;
+  int                  any_failed = 0;
+  int                  located = FALSE;
+
+  char                 job_id_out[PBS_MAXCLTJOBID];
+  char                 server_out[MAXSERVERNAME] = "";
+  char                 server_old[MAXSERVERNAME] = "";
+  const char          *def_server;
+  char                *queue_name_out = NULL;
+  char                *server_name_out = NULL;
+  char                 operand[PBS_MAXCLTJOBID + 1];
+
+  bool                 have_args = false;
+  
+
+#ifndef mbool
+#define mbool char
+#endif /* !mbool */
+
+#ifndef TRUE
+#define TRUE 1
+#endif /* !TRUE */
+
+#ifndef FALSE
+#define FALSE 0
+#endif /* !FALSE */
+
+  /* Attributes needed for default view */
+  set_attr(&attrib, ATTR_name, NULL);
+  set_attr(&attrib, ATTR_owner, NULL);
+  set_attr(&attrib, ATTR_used, NULL);
+  set_attr(&attrib, ATTR_state, NULL);
+  set_attr(&attrib, ATTR_queue, NULL);
+
+  tcl_init();
+  tcl_addarg(flags, argv[0]);
+
+#ifdef TCL_QSTAT
+  option[0] = '-';
+  option[2] = '\0';
+#endif
+
+  if (getenv("PBS_QSTAT_EXECONLY") != NULL)
+    exec_only = 1;
+
+  if (getenv("PBS_QSTAT_NO_COMPLETE") != NULL)
+    do_not_display_complete = true;
+
+  rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
+  if (rc != PBSE_NONE)
+    {
+    print_usage();
+    exit(2);
+    }
+    
+
+  if (errflg)
+    {
+    print_usage();
     exit(2);
     }
 
@@ -2687,13 +3180,6 @@ int main(
       alt_opt &= ~ALT_DISPLAY_u;
     }
 
-  testholder = optind;
-  argcholder = argc;
-
-  if (testholder == argcholder)
-    {
-    ;
-    }
 
   if (optind >= argc)
     {
@@ -2714,12 +3200,8 @@ int main(
     have_args = true;
     }
 
-  testholder = optind;
-  argcholder = argc;
   for (;optind <= argc;optind++)
     {
-    int connect;
-
     located = FALSE;
 
     snprintf(operand, sizeof(operand), "%s", argv[optind]);
@@ -2730,368 +3212,18 @@ int main(
       {
 
       case JOBS:      /* get status of batch jobs */
-
-        if (have_args == true)
-          {
-          if (!strcmp(operand, "(null)"))
-            {
-            break;
-            }
-
-
-          if (isjobid(operand))
-            {
-            /* must be a job-id */
-
-            stat_single_job = 1;
-
-            snprintf(job_id, sizeof(job_id), "%s", operand);
-
-            if (get_server(job_id, job_id_out, sizeof(job_id_out), server_out, sizeof(server_out)))
-              {
-              fprintf(stderr, "qstat: illegally formed job identifier: %s\n",
-                      job_id);
-
-              tcl_stat(error, NULL, f_opt);
-
-              any_failed = 1;
-
-              break;
-              }
-            }
-          else
-            {
-            /* must be a destination-id */
-
-            stat_single_job = 0;
-
-            snprintf(destination, sizeof(destination), "%s", operand);
-
-            if (parse_destination_id(
-                  destination,
-                  &queue_name_out,
-                  &server_name_out))
-              {
-              fprintf(stderr, "qstat: illegally formed destination: %s\n",
-                      destination);
-
-              tcl_stat(error, NULL, f_opt);
-
-              any_failed = 1;
-
-              break;
-              }
-
-            if (notNULL(server_name_out))
-              {
-              snprintf(server_out, sizeof(server_out), "%s", server_name_out);
-              }
-            else
-              {
-              server_out[0] = '\0';
-              }
-
-            snprintf(job_id_out, sizeof(job_id_out), "%s", queue_name_out);
-
-            if (*queue_name_out != '\0')
-              {
-              add_atropl(&p_atropl, (char *)ATTR_q, NULL, queue_name_out, EQ);
-              }
-            }    /* END else */
-          }
-
-job_no_args:
-
-        connect = cnt2server(server_out);
-
-        if (connect <= 0)
-          {
-          any_failed = -1 * connect;
-
-          if (server_out[0] != 0)
-            fprintf(stderr, "qstat: cannot connect to server %s (errno=%d) %s\n",
-                server_out,
-                any_failed,
-                pbs_strerror(any_failed));
-          else
-            fprintf(stderr, "qstat: cannot connect to server %s (errno=%d) %s\n",
-                  pbs_server,
-                  any_failed,
-                  pbs_strerror(any_failed));
-
-          tcl_stat(error, NULL, f_opt);
-
-          any_failed = connect;
-
-          break;
-          }
-
-        if ((alt_opt != 0) && (strcmp(pbs_server, server_old) != 0))
-          {
-          /* changing to a different server */
-
-          p_server = pbs_statserver_err(connect, NULL, NULL, &any_failed);
-
-          snprintf(server_old, sizeof(server_old), "%s", pbs_server);
-          }
-        else
-          {
-          p_server = 0;
-          }
-
-        if ((stat_single_job == 1) || (p_atropl == 0))
-          {
-          p_status = pbs_statjob_err(
-                       connect,
-                       job_id_out,
-                       attrib,
-                       exec_only ? (char *)EXECQUEONLY : (char *)ExtendOpt,
-                       &any_failed);
-          }
-        else
-          {
-          if (t_opt)
-            {
-            p_status = pbs_selstatattr_err(connect, p_atropl, attrib, exec_only ? (char *)EXECQUEONLY : NULL, &any_failed);
-            if (any_failed == PBSE_UNKREQ)
-              p_status = pbs_selstat_err(connect, p_atropl, exec_only ? (char *)EXECQUEONLY : NULL, &any_failed);
-            }
-          else
-            {
-            p_status = pbs_selstatattr_err(connect, p_atropl, attrib, exec_only ? (char *)EXECQUEONLY : (char *)summarize_arrays_extend_opt, &any_failed);
-            if (any_failed == PBSE_UNKREQ)
-              p_status = pbs_selstat_err(connect, p_atropl, exec_only ? (char *)EXECQUEONLY : (char *)summarize_arrays_extend_opt, &any_failed);
-            }
-          }
-
-        if (p_status == NULL)
-          {
-          if ((any_failed == PBSE_UNKJOBID) && !located)
-            {
-            located = TRUE;
-
-            if (locate_job(job_id_out, server_out, rmt_server))
-              {
-              pbs_disconnect(connect);
-
-              snprintf(server_out, sizeof(server_out), "%s", rmt_server);
-
-              goto job_no_args;
-              }
-
-            tcl_stat("job", NULL, f_opt);
-
-            prt_job_err((char *)"qstat", connect, job_id_out);
-            }
-          else
-            {
-            tcl_stat("job", NULL, f_opt);
-
-            if (any_failed != PBSE_NONE)
-              {
-              prt_job_err((char *)"qstat", connect, job_id_out);
-              }
-            }
-          }
-        else
-          {
-          int condition = TRUE;
-#ifdef TCL_QSTAT
-          condition = tcl_stat("job", p_status, f_opt);
-#endif
-          
-          if (alt_opt != 0)
-            {
-            altdsp_statjob(p_status, p_server, alt_opt);
-            }
-          else if ((f_opt == 0) ||
-                   (condition)) 
-            {
-            display_statjob(p_status, p_header, f_opt, user);
-            }
-
-          p_header = FALSE;
-
-          pbs_statfree(p_status);
-          }
-
-        pbs_disconnect(connect);
-
+        any_failed = run_job_mode(have_args, operand, &located, server_out, server_old, queue_name_out, server_name_out, job_id_out);
         break;
 
       case QUEUES:        /* get status of batch queues */
-
-        if (have_args == true)
-          {
-          if (!strcmp(operand, "(null)"))
-            {
-            break;
-            }
-
-          snprintf(destination, sizeof(destination), "%s", operand);
-
-          if (parse_destination_id(destination,
-                                   &queue_name_out,
-                                   &server_name_out))
-            {
-            fprintf(stderr, "qstat: illegal 'destination' value\n");
-            tcl_stat(error, NULL, f_opt);
-            any_failed = 1;
-            break;
-            }
-          else
-            {
-            if (notNULL(server_name_out))
-              {
-              snprintf(server_out, sizeof(server_out), "%s", server_name_out);
-              }
-            else
-              server_out[0] = '\0';
-            }
-          }
-
-
-        connect = cnt2server(server_out);
-
-        if (connect <= 0)
-          {
-          any_failed = -1 * connect;
-          if (server_out[0] != 0)
-            fprintf(stderr, "qstat: cannot connect to server %s (errno=%d) %s\n",
-                server_out,
-                any_failed,
-                pbs_strerror(any_failed));
-          else
-            fprintf(stderr, "qstat: cannot connect to server %s (errno=%d) %s\n",
-                  pbs_server,
-                  any_failed,
-                  pbs_strerror(any_failed));
-
-          tcl_stat(error, NULL, f_opt);
-          break;
-          }
-
-        p_status = pbs_statque_err(connect, queue_name_out, NULL, NULL, &any_failed);
-
-        if (p_status == NULL)
-          {
-          if (any_failed)
-            {
-            errmsg = pbs_geterrmsg(connect);
-
-            if (errmsg != NULL)
-              {
-              fprintf(stderr, "qstat: %s ", errmsg);
-
-              free(errmsg);
-              }
-            else
-              fprintf(stderr, "qstat: Error (%d - %s) getting status of queue ",
-                      any_failed, pbs_strerror(any_failed));
-
-            fprintf(stderr, "%s\n", queue_name_out);
-
-            tcl_stat(error, NULL, f_opt);
-            }
-          }
-        else
-          {
-          int condition = TRUE;
-#ifdef TCL_QSTAT
-          condition = tcl_stat("queue", p_status, f_opt);
-#endif
-          if (alt_opt & ALT_DISPLAY_q)
-            {
-            altdsp_statque(pbs_server, p_status, alt_opt);
-            }
-          else if (condition)
-            {
-            display_statque(p_status, p_header, f_opt);
-            }
-
-          p_header = FALSE;
-
-          pbs_statfree(p_status);
-          }
-
-        pbs_disconnect(connect);
-
+        any_failed = run_queue_mode(have_args, operand, server_out, queue_name_out, server_name_out);
         break;
+
 
       case SERVERS:           /* get status of batch servers */
+       any_failed = run_server_mode(have_args, operand, server_out);
+       break;
 
-        if (have_args == true)
-          {
-          if (!strcmp(operand, "(null)"))
-            {
-            break;
-            }
-
-          snprintf(server_out, sizeof(server_out), "%s", operand);
-          }
-
-        connect = cnt2server(server_out);
-
-        if (connect <= 0)
-          {
-          any_failed = -1 * connect;
-          if (server_out[0] != 0)
-            fprintf(stderr, "qstat: cannot connect to server %s (errno=%d) %s\n",
-                server_out,
-                any_failed,
-                pbs_strerror(any_failed));
-          else
-            fprintf(stderr, "qstat: cannot connect to server %s (errno=%d) %s\n",
-                  pbs_server,
-                  any_failed,
-                  pbs_strerror(any_failed));
-
-
-          tcl_stat(error, NULL, f_opt);
-          any_failed = connect;
-          break;
-          }
-
-        p_status = pbs_statserver_err(connect, NULL, NULL, &any_failed);
-
-        if (p_status == NULL)
-          {
-          if (any_failed)
-            {
-            errmsg = pbs_geterrmsg(connect);
-
-            if (errmsg != NULL)
-              {
-              fprintf(stderr, "qstat: %s ", errmsg);
-
-              free(errmsg);
-              }
-            else
-              fprintf(stderr, "qstat: Error (%d - %s) getting status of server ",
-                      any_failed, pbs_strerror(any_failed));
-
-            fprintf(stderr, "%s\n", server_out);
-
-            tcl_stat(error, NULL, f_opt);
-            }
-          }
-        else
-          {
-          int condition = TRUE;
-#ifdef TCL_QSTAT
-          condition = tcl_stat("server", p_status, f_opt);
-#endif
-          if (condition)
-            display_statserver(p_status, p_header, f_opt);
-
-          p_header = FALSE;
-
-          pbs_statfree(p_status);
-          }
-
-        pbs_disconnect(connect);
-
-        break;
       }    /* END switch (mode) */
     }      /* END for () */
 
