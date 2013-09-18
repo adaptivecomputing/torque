@@ -891,7 +891,7 @@ ldconfig
 %attr(-,root,root) %{_bindir}/chk_tree
 %attr(-,root,root) %{_bindir}/hostn
 %attr(-,root,root) %{_bindir}/nqs2pbs
-%attr(-,root,root) %{_bindir}/pbs_track
+%attr(-,root,root) %{_bindir}/pbs_*
 %attr(-,root,root) %{_bindir}/pbsdsh
 %attr(-,root,root) %{_bindir}/pbsnodes
 %attr(-,root,root) %{_bindir}/printjob
