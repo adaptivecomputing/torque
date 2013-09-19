@@ -5486,6 +5486,7 @@ int process_valid_intermediate_response(
     {
     log_err(-1, __func__, "got IM_RADIX_ALL_OKAY message and I'm not an intermediate MOM or Mother Superior");
     
+    close_conn(chan->sock, FALSE);
     return(IM_FAILURE);
     }
 
@@ -5511,6 +5512,7 @@ int process_valid_intermediate_response(
       break;
     }
   
+  close_conn(chan->sock, FALSE);
   return(ret);
   } /* END process_valid_intermediate_response() */
 
@@ -5968,7 +5970,7 @@ void im_request(
     case IM_POLL_JOB:
       {
       /* check the validity of our connection */
-      if ((ret = connection_from_ms(chan, pjob, pSockAddr)) == TRUE)
+      if ((ret = connection_from_ms(chan, pjob, pSockAddr)) == false)
         {
         close_conn(chan->sock, FALSE);
         svr_conn[chan->sock].cn_stay_open = FALSE;
@@ -5989,7 +5991,7 @@ void im_request(
     case IM_ABORT_JOB:
       {
       /* check if the abort came from mother superior or a sister */
-      if ((ret = connection_from_ms(chan, pjob, pSockAddr)) == TRUE)
+      if ((ret = connection_from_ms(chan, pjob, pSockAddr)) == false)
         {
         if (pjob->ji_qs.ji_svrflags & (~JOB_SVFLG_JOB_ABORTED))
           {
@@ -6040,6 +6042,7 @@ void im_request(
       {
       ret = process_valid_intermediate_response(chan, pjob, pSockAddr, event_com, command);
       }
+      break;
     
     case IM_ERROR:  /* this is a REPLY */
       {

@@ -3,14 +3,18 @@
 #include "test_job_recov.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <libxml/parser.h>
+#include <libxml/tree.h>
 #include "pbs_error.h"
 #include "pbs_job.h"
 #include "attribute.h"
+#include "resource.h"
 
 extern int set_nodes_attr(job *pjob);
 extern int svr_resc_size;
 extern attribute_def job_attr_def[];
 extern void free_server_attrs(tlist_head *att_head);
+int fill_resource_list(job **pj, xmlNodePtr resource_list_node, char *log_buf, size_t buflen, const char *aname);
 
 char  server_name[] = "lei.ac";
 
@@ -193,6 +197,22 @@ int job_compare(job *pjob1, job *pjob2)
   return 0;
   }
 
+START_TEST(fill_resource_list_test)
+  {
+  const char *rl_sample = "<Resource_List>\n  <neednodes flags=\"1\">2</neednodes>\n  <nodect flags=\"1\">2</nodect>\n  <nodes flags=\"1\">2</nodes>\n  </Resource_List>";
+  xmlDocPtr   doc = xmlReadMemory(rl_sample, strlen(rl_sample), "Resource List", NULL, 0);
+  job        *pjob = (job *)calloc(1, sizeof(job));
+  char        buf[1024];
+  svr_resc_def = svr_resc_def_const;
+
+  fail_unless(fill_resource_list(&pjob, xmlDocGetRootElement(doc), buf, sizeof(buf), ATTR_l) == 0);
+  
+  const char *rl_empty_sample = "<Resource_List>\n</Resource_List>";
+  doc = xmlReadMemory(rl_empty_sample, strlen(rl_empty_sample), "Resource_List", NULL, 0);
+  fail_unless(fill_resource_list(&pjob, xmlDocGetRootElement(doc), buf, sizeof(buf), ATTR_l) == -1);
+  }
+END_TEST
+
 START_TEST(test_job_recover)
   {
   /* call initXML */
@@ -222,6 +242,7 @@ Suite *job_recov_suite(void)
 
   TCase *tc_core = tcase_create("test_job_recover");
   tcase_add_test(tc_core, test_job_recover);
+  tcase_add_test(tc_core, fill_resource_list_test);
   suite_add_tcase(s, tc_core);
 
   return s;

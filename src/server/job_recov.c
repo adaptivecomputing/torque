@@ -514,8 +514,10 @@ int fill_resource_list(
     /* skip text children, only process elements */
     if (!strcmp((const char *)resNode->name, text_name))
       continue;
+
+    element_found = true;
       
-    xmlChar *value = xmlNodeGetContent(resNode);
+    xmlChar  *value = xmlNodeGetContent(resNode);
     svrattrl *pal = NULL;
 
     if ((pal = fill_svrattr_info(aname, (const char*)value, (const char *)resNode->name, log_buf, buflen)))
@@ -544,7 +546,7 @@ int fill_resource_list(
     rc = -1;
     }
 
-  return rc;
+  return(rc);
   }
 
 
