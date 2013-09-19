@@ -4705,6 +4705,7 @@ int rm_request(
 
   errno = 0;
   log_buffer[0] = '\0';
+  output[0] = '\0';
 
   ipadd = svr_conn[chan->sock].cn_addr;
   port = svr_conn[chan->sock].cn_port;
