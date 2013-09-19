@@ -78,14 +78,11 @@ pbs_queue *get_jobs_queue(job **pjob)
 
 void reply_ack(struct batch_request *preq)
   {
-  fprintf(stderr, "The call to reply_ack to be mocked!!\n");
-  exit(1);
   }
 
 int svr_authorize_jobreq(struct batch_request *preq, job *pjob)
   {
-  fprintf(stderr, "The call to svr_authorize_jobreq to be mocked!!\n");
-  exit(1);
+  return 0;
   }
 
 char *get_variable(job *pjob, const char *variable)
@@ -138,14 +135,11 @@ int decode_resc(struct pbs_attribute *patr, const char *name, const char *rescn,
 
 void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
   {
-  fprintf(stderr, "The call to req_reject to be mocked!!\n");
-  exit(1);
   }
 
 job *next_job(struct all_jobs *aj, int *iter)
   {
-  fprintf(stderr, "The call to next_job to be mocked!!\n");
-  exit(1);
+  return((job *)next_thing(aj->ra,iter));
   }
 
 char *prefix_std_file(job *pjob, dynamic_string *ds, int key)
@@ -347,6 +341,11 @@ int lock_queue(
   return(0);
   }
 
+int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
+  {
+  return(0);
+  }
+
 int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
@@ -389,6 +388,25 @@ int safe_strncat(char *str, const char *to_append, size_t space_remaining)
   {
   return(0);
   }
+
+const char *prefix_std_file(
+  job            *pjob,
+  std::string&    ds,
+  int             key)
+  {
+  return "prefix";
+  }
+
+const char *add_std_filename(
+  job            *pjob,
+  char           *path,
+  int             key,
+  std::string&    ds)
+  {
+  return "stdfilename";
+  }
+
+
 
 
 

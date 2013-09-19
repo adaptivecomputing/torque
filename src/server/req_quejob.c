@@ -2268,9 +2268,6 @@ int req_commit(
  * The job must (also) match the socket specified and the host associated
  * with the socket unless ji_fromsock == -1, then its a recovery situation.
  */
-/* FIXME: why bother checking for matching sock if a jobid is supplied?  Seems
- * to me that a reconnect immediately invalidates fromsock.
- */
 
 static job *locate_new_job(
 
