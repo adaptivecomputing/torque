@@ -2623,6 +2623,9 @@ int run_job_mode(
   int    any_failed = PBSE_NONE;
   int    stat_single_job = 0;
   int    connect;
+  int    job_id_out_size = PBS_MAXCLTJOBID;
+  int    server_out_size = MAXSERVERNAME;
+  int    server_old_size = MAXSERVERNAME;
   bool   p_header = true;
   int    retry_count = 0;
   char   destination[PBS_MAXDEST + 1];
@@ -2647,7 +2650,7 @@ int run_job_mode(
 
       snprintf(job_id, sizeof(job_id), "%s", operand);
 
-      if (get_server(job_id, job_id_out, sizeof(job_id_out), server_out, sizeof(server_out)))
+      if (get_server(job_id, job_id_out, job_id_out_size, server_out, server_out_size))
         {
         fprintf(stderr, "qstat: illegally formed job identifier: %s\n",
                 job_id);
@@ -2684,14 +2687,14 @@ int run_job_mode(
 
       if (notNULL(server_name_out))
         {
-        snprintf(server_out, sizeof(server_out), "%s", server_name_out);
+        snprintf(server_out, server_out_size, "%s", server_name_out);
         }
       else
         {
         server_out[0] = '\0';
         }
 
-      snprintf(job_id_out, sizeof(job_id_out), "%s", queue_name_out);
+      snprintf(job_id_out, job_id_out_size, "%s", queue_name_out);
 
       if (*queue_name_out != '\0')
         {
@@ -2735,7 +2738,7 @@ int run_job_mode(
 
       p_server = pbs_statserver_err(connect, NULL, NULL, &any_failed);
 
-      snprintf(server_old, sizeof(server_old), "%s", pbs_server);
+      snprintf(server_old, server_old_size, "%s", pbs_server);
       }
     else
       {
@@ -2777,7 +2780,7 @@ int run_job_mode(
           {
           pbs_disconnect(connect);
 
-          snprintf(server_out, sizeof(server_out), "%s", rmt_server);
+          snprintf(server_out, server_out_size, "%s", rmt_server);
 
           continue;
           }
@@ -2844,6 +2847,7 @@ int run_queue_mode(
   {
   int    any_failed = PBSE_NONE;
   int    connect;
+  int    server_out_size = MAXSERVERNAME;
   bool    p_header = true;
   int    retry_count = 0;
   char   destination[PBS_MAXDEST + 1];
@@ -2872,7 +2876,7 @@ int run_queue_mode(
       {
       if (notNULL(server_name_out))
         {
-        snprintf(server_out, sizeof(server_out), "%s", server_name_out);
+        snprintf(server_out, server_out_size, "%s", server_name_out);
         }
       else
         server_out[0] = '\0';
@@ -2970,6 +2974,7 @@ int run_server_mode(
   {
   int    connect;
   int    any_failed = PBSE_NONE;
+  int    server_out_size = MAXSERVERNAME;
   bool   p_header = true;
   int    retry_count = 0;
   char   *errmsg = NULL;
@@ -2982,7 +2987,7 @@ int run_server_mode(
       return(PBSE_NONE);
       }
 
-    snprintf(server_out, sizeof(server_out), "%s", operand);
+    snprintf(server_out, server_out_size, "%s", operand);
     }
 
   while (retry_count < MAX_RETRIES)
