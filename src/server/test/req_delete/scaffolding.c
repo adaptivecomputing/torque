@@ -252,3 +252,11 @@ int relay_to_mom(job **pjob_ptr, batch_request   *request, void (*func)(struct w
   {
   return(0);
   }
+
+void traverse_all_jobs(void (*)(const char *, void*), void*)
+{
+}
+
+void removeAfterAnyDependency(const char *, void*)
+{
+}
