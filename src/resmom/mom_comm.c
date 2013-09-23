@@ -5546,7 +5546,7 @@ void im_request(
   {
   int                  command = 0;
   int                  event_com = 0;
-  int                  ret;
+  int                  ret = PBSE_NONE;
   char                *jobid = NULL;
   char                *cookie = NULL;
   char                *oreo;
@@ -5991,7 +5991,7 @@ void im_request(
     case IM_ABORT_JOB:
       {
       /* check if the abort came from mother superior or a sister */
-      ddif ((ret = connection_from_ms(chan, pjob, pSockAddr)) == false)
+      if ((ret = connection_from_ms(chan, pjob, pSockAddr)) == false)
         {
         if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_JOB_ABORTED) == 0)
           {
