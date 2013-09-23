@@ -5991,9 +5991,9 @@ void im_request(
     case IM_ABORT_JOB:
       {
       /* check if the abort came from mother superior or a sister */
-      if ((ret = connection_from_ms(chan, pjob, pSockAddr)) == false)
+      ddif ((ret = connection_from_ms(chan, pjob, pSockAddr)) == false)
         {
-        if (pjob->ji_qs.ji_svrflags & (~JOB_SVFLG_JOB_ABORTED))
+        if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_JOB_ABORTED) == 0)
           {
           std::set<int> sisters;
           create_contact_list(*pjob, sisters, pSockAddr);
