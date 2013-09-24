@@ -82,12 +82,14 @@
 
 #include <string>
 #include <sstream>
+#include <boost/ptr_container/ptr_vector.hpp>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
+#include <time.h>
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <stdarg.h>
@@ -601,15 +603,92 @@ int kill_job_on_mom(
   } /* END kill_job_on_mom() */
 
 
+#if 0
+class jobAndTimeout
+{
+private:
+  std::string   jobID;
+  time_t        timeKillWasSent;
+  jobAndTimeout():timeKillWasSent(0){}
+public:
+  jobAndTimeout(const char *id)
+    {
+    jobID = id;
+    timeKillWasSent = time(NULL);
+    }
+  bool hasJobKillExpired(const char *id)
+    {
+    if(jobMatches(id))
+      {
+      if(time(NULL) > (timeKillWasSent + KILL_TIMEOUT))
+        {
+        return true;
+        }
+      }
+    return false;
+    }
+  bool jobMatches(const char *id)
+    {
+    if(jobID.compare(id) == 0)
+      {
+      return true;
+      }
+    return false;
+    }
+};
+#endif
 
+pthread_mutex_t jobsKilledMutex = PTHREAD_MUTEX_INITIALIZER;
+boost::ptr_vector<std::string> jobsKilled;
+#define KILL_TIMEOUT 300 //Once a kill job has been sent to a MOM, don't send another for five minutes.
 
-int job_should_be_on_node(
+/*
+ * Delayed task to remove a killed job from the list in
+ * case it needs to be removed again.
+ */
+
+void remove_job_from_already_killed_list(struct work_task *pwt)
+  {
+  std::string *pJobID = (std::string *)pwt->wt_parm1;
+
+  free(pwt->wt_mutex);
+  free(pwt);
+
+  if(pJobID == NULL) return;
+
+  pthread_mutex_lock(&jobsKilledMutex);
+
+  for(boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();i != jobsKilled.end();i++)
+    {
+    if(i->compare(*pJobID) == 0)
+      {
+      jobsKilled.erase(i);
+      if(i == jobsKilled.end())
+        {
+        break;
+        }
+      }
+    }
+  pthread_mutex_unlock(&jobsKilledMutex);
+
+  delete pJobID;
+
+  }
+
+/*
+ * If a job is not supposed to be on a node and we have
+ * not sent a kill to that job in the last 5 minutes
+ * then the job should be killed.
+ */
+
+bool job_should_be_killed(
     
   char           *jobid,
   struct pbsnode *pnode)
 
   {
-  int  should_be_on_node = TRUE;
+  bool  should_be_on_node = true;
+  bool  should_kill_job = false;
   job *pjob;
   
   if (strstr(jobid, server_name) != NULL)
@@ -630,22 +709,40 @@ int job_should_be_on_node(
         mutex_mgr job_mgr(pjob->ji_mutex,true);
         if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL)
           {
-          should_be_on_node = FALSE;
+          should_be_on_node = false;
           }
         else if (node_in_exechostlist(pnode->nd_name, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str) == FALSE)
           {
-          should_be_on_node = FALSE;
+          should_be_on_node = false;
           }
         }
       else
-        should_be_on_node = FALSE;
+        should_be_on_node = false;
       }
     }
 
-  return(should_be_on_node);
+  if(!should_be_on_node)
+    {
+    bool jobAlreadyKilled = false;
+    //Job should not be on the node, see if we have already sent a kill for this job.
+    pthread_mutex_lock(&jobsKilledMutex);
+
+    for(boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();(i != jobsKilled.end())&&(jobAlreadyKilled == false);i++)
+      {
+      if(i->compare(jobid) == 0)
+        {
+        jobAlreadyKilled = true;
+        }
+      }
+    if(!jobAlreadyKilled)
+      {
+      should_kill_job = true;
+      }
+    pthread_mutex_unlock(&jobsKilledMutex);
+    }
+
+  return(should_kill_job);
   } /* END job_should_be_on_node() */
-
-
 
 
 void *finish_job(
@@ -741,7 +838,6 @@ int remove_jobs_that_have_disappeared(
 
 
 
-
 /*
  * sync_node_jobs() - determine if a MOM has a stale job and possibly delete it
  *
@@ -806,9 +902,15 @@ void *sync_node_jobs(
   while ((jobidstr != NULL) && 
          (isdigit(*jobidstr)) != FALSE)
     {
-    if (job_should_be_on_node(jobidstr, np) == FALSE)
+    if (job_should_be_killed(jobidstr, np))
       {
-      kill_job_on_mom(jobidstr, np);
+      if(kill_job_on_mom(jobidstr, np) == PBSE_NONE)
+        {
+        pthread_mutex_lock(&jobsKilledMutex);
+        jobsKilled.push_back(new std::string(jobidstr));
+        pthread_mutex_unlock(&jobsKilledMutex);
+        set_task(WORK_Timed,time(NULL) + KILL_TIMEOUT,remove_job_from_already_killed_list,(void *)new std::string(jobidstr),FALSE);
+        }
       }
     else
       {
