@@ -5,8 +5,13 @@
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <check.h>
 
+int log_event_called = 0;
+int LOGLEVEL = 7;
+
 
 int parse_alps_output(std::string& alps_output,boost::ptr_vector<std::string>& status);
+
+void log_event( int eventtype, int objclass, const char *objname, const char *text);
 
 
 
@@ -124,6 +129,9 @@ START_TEST(full_generate_test)
   rc = generate_alps_status(status, path, protocol);
 
   fail_unless(rc == 0, "Couldn't generate the status");
+
+  if (rc == 0)
+    fail_unless(log_event_called == 1, "log_event was not called within successful generate_alps_status()");
 
   fail_unless(search_dynamic_string_status(status, (char *)"GPU") > 0, "Couldn't find the GPUs reported in the status");
   fail_unless(search_dynamic_string_status(status, (char *)"cheeseburger") > 0, "Couldn't find the feature cheeseburger in the status");

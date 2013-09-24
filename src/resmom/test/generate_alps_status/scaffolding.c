@@ -9,16 +9,23 @@
 #include <vector>
 #include <boost/ptr_container/ptr_vector.hpp>
 
+extern int log_event_called;
 
 char log_buffer[16384];
 
 
-
-
-
-
 void log_err(int errnum, const char *routine, const char *msg) {}
 
+void log_event(
+    
+  int         eventtype,
+  int         objclass,
+  const char *objname,
+  const char *text)
+
+  {
+  log_event_called = 1;
+  }
 
 
 /*

@@ -700,6 +700,17 @@ int generate_alps_status(
       }
 
     rc = parse_alps_output(alps_output, status);
+
+    if (rc == PBSE_NONE)
+      {
+      if (LOGLEVEL >= 7)
+        {
+        /* log the command if output successfully parsed */
+        snprintf(log_buffer, sizeof(log_buffer),
+          "Successful inventory command is: %s", inventory_command);
+        log_event(PBSEVENT_JOB | PBSEVENT_SYSLOG, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+        }
+      }
     }
 
   return(rc);
