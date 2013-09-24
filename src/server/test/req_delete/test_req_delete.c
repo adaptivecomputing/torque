@@ -14,6 +14,7 @@
 
 int delete_inactive_job(job **, const char *);
 void force_purge_work(job *pjob);
+void *delete_all_work(void *vp);
 void ensure_deleted(struct work_task *ptask);
 int  apply_job_delete_nanny(job *pjob, int delay);
 void job_delete_nanny(struct work_task *ptask);
@@ -32,6 +33,8 @@ extern int br_freed;
 extern int alloc_work;
 extern struct server server;
 extern const char *delpurgestr;
+
+struct all_jobs  alljobs;
 
 START_TEST(test_handle_single_delete)
   {
@@ -118,6 +121,31 @@ START_TEST(test_forced_jobpurge)
  
   preq->rq_extend = NULL;
   fail_unless(forced_jobpurge(pjob, preq) == PBSE_NONE);
+
+  nanny = 1;
+  }
+END_TEST
+
+START_TEST(test_delete_all_work)
+  {
+  //struct all_jobs  alljobs;
+  job             *pjob;
+  batch_request   *preq;
+
+  pjob = (job *)calloc(1, sizeof(job));
+  pjob->ji_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(pjob->ji_mutex,NULL);
+
+  preq = (batch_request *)calloc(1, sizeof(batch_request));
+  preq->rq_extend = strdup(delpurgestr);
+  nanny = 0;
+
+  initialize_all_jobs_array(&alljobs);
+  insert_job(&alljobs, pjob);
+
+  /* no lock should remain on job after delete_all_work() */
+  /*  so test by making sure we can set lock */
+  fail_unless(delete_all_work((void *) preq) == NULL && pthread_mutex_trylock(pjob->ji_mutex) == 0);
 
   nanny = 1;
   }
@@ -264,6 +292,7 @@ Suite *req_delete_suite(void)
   TCase *tc_core = tcase_create("tests");
   tcase_add_test(tc_core, test_delete_inactive_job);
   tcase_add_test(tc_core, test_force_purge_work);
+  tcase_add_test(tc_core, test_delete_all_work);
   tcase_add_test(tc_core, test_ensure_deleted);
   tcase_add_test(tc_core, test_apply_job_delete_nanny);
   tcase_add_test(tc_core, test_job_delete_nanny);

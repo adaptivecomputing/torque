@@ -1,6 +1,7 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h> /* sprintf */
+#include <errno.h>
 
 #include "pbs_job.h" /* all_jobs, job */
 #include "server.h" /* server */
@@ -11,6 +12,12 @@
 #include "queue.h" /* pbs_queue */
 #include "node_func.h" /* node_info */
 
+int check_and_resize(resizable_array *ra);
+void update_next_slot(resizable_array *ra);
+int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging);
+int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging);
+
+#define MSG_LEN_LONG 160
 
 const char *msg_deletejob = "Job deleted";
 struct all_jobs alljobs;
@@ -112,11 +119,6 @@ struct work_task *set_task(enum work_type type, long event_id, void (*func)(stru
 
 void req_reject(int code, int aux, batch_request *preq, const char *HostName, const char *Msg) { }
 
-job *next_job(struct all_jobs *aj, int *iter)
-  {
-  fprintf(stderr, "The call to next_job needs to be mocked!!\n");
-  exit(1);
-  }
 
 void delete_task(struct work_task *ptask) { }
 
@@ -227,11 +229,6 @@ int get_batch_request_id(
   return(0);
   }
 
-int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
-  {
-  return(0);
-  }
-
 int unlock_ai_mutex(job_array *pa, const char *id, const char *msg, int logging)
   {
   return(0);
@@ -259,3 +256,315 @@ void traverse_all_jobs(void (*)(const char *, void*), void*)
 void removeAfterAnyDependency(const char *, void*)
 {
 }
+
+
+/*
+ * insert a new job into the array
+ *
+ * @param pjob - the job to be inserted
+ * @return PBSE_NONE on success 
+ */
+int insert_job(
+
+  struct all_jobs *aj,
+  job             *pjob)
+
+  {
+  int rc = -1;
+
+  if (aj == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc,__func__,"null job array input");
+    return(rc);
+    }
+  if (pjob == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc,__func__,"null job input");
+    return(rc);
+    }
+
+  pthread_mutex_lock(aj->alljobs_mutex);
+
+  rc = insert_thing(aj->ra,pjob);
+  if (rc == -1)
+    {
+    rc = ENOMEM;
+    log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE\n");
+    }
+  else
+    {
+    add_hash(aj->ht, rc, pjob->ji_qs.ji_jobid);
+    rc = PBSE_NONE;
+    }
+
+  pthread_mutex_unlock(aj->alljobs_mutex);
+
+  return(rc);
+  } /* END insert_job() */
+
+
+/*
+ * inserts an item, resizing the array if necessary
+ *
+ * @return the index in the array or -1 on failure
+ */
+int insert_thing(
+
+  resizable_array *ra,
+  void             *thing)
+
+  {
+  int rc;
+
+  /* check if the array must be resized */
+  if ((rc = check_and_resize(ra)) != PBSE_NONE)
+    {
+    return(-1);
+    }
+
+  ra->slots[ra->next_slot].item = thing;
+
+  /* save the insertion point */
+  rc = ra->next_slot;
+
+  /* handle the backwards pointer, next pointer is left at zero */
+  ra->slots[rc].prev = ra->last;
+
+  /* make sure the empty slot points to the next occupied slot */
+  if (ra->last == ALWAYS_EMPTY_INDEX)
+    {
+    ra->slots[ALWAYS_EMPTY_INDEX].next = rc;
+    }
+
+  /* update the last index */
+  ra->slots[ra->last].next = rc;
+  ra->last = rc;
+
+  /* update the new item's next index */
+  ra->slots[rc].next = ALWAYS_EMPTY_INDEX;
+
+  /* increase the count */
+  ra->num++;
+
+  update_next_slot(ra);
+
+  return(rc);
+  } /* END insert_thing() */
+
+
+/* initializes the all_jobs array */
+void initialize_all_jobs_array(
+
+  struct all_jobs *aj)
+
+  {
+  if (aj == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER,__func__,"null input job array");
+    return;
+    }
+
+  aj->ra = initialize_resizable_array(INITIAL_JOB_SIZE);
+  aj->ht = create_hash(INITIAL_HASH_SIZE);
+
+  aj->alljobs_mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(aj->alljobs_mutex, NULL);
+  } /* END initialize_all_jobs_array() */
+
+
+/*
+ * checks if the array needs to be resized, and resizes if necessary
+ *
+ * @return PBSE_NONE or ENOMEM
+ */
+int check_and_resize(
+
+    resizable_array *ra)
+
+  {
+  slot        *tmp;
+  size_t       remaining;
+  size_t       size;
+
+  if (ra->max == ra->num + 1)
+    {
+    /* double the size if we're out of space */
+    size = (ra->max * 2) * sizeof(slot);
+
+    if ((tmp = (slot *)realloc(ra->slots,size)) == NULL)
+      {
+      return(ENOMEM);
+      }
+
+    remaining = ra->max * sizeof(slot);
+
+    memset(tmp + ra->max, 0, remaining);
+
+    ra->slots = tmp;
+
+    ra->max = ra->max * 2;
+    }
+
+  return(PBSE_NONE);
+  } /* END check_and_resize() */
+
+
+/* 
+ * updates the next slot pointer if needed \
+ */
+void update_next_slot(
+
+    resizable_array *ra) /* M */
+
+  {
+  while ((ra->next_slot < ra->max) &&
+      (ra->slots[ra->next_slot].item != NULL))
+    ra->next_slot++;
+  } /* END update_next_slot() */
+
+
+job *next_job(
+
+  struct all_jobs *aj,
+  int             *iter)
+
+  {
+  job *pjob;
+
+  if (aj == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "null input pointer to all_jobs struct");
+    return(NULL);
+    }
+  if (iter == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "null input iterator");
+    return(NULL);
+    }
+
+  pthread_mutex_lock(aj->alljobs_mutex);
+
+  pjob = (job *)next_thing(aj->ra,iter);
+
+  pthread_mutex_unlock(aj->alljobs_mutex);
+
+  if (pjob != NULL)
+    {
+    lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+
+    if (pjob->ji_being_recycled == TRUE)
+      {
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+
+      pjob = next_job(aj,iter);
+      }
+    }
+
+  return(pjob);
+  } /* END next_job() */
+
+int lock_ji_mutex(
+
+  job        *pjob,
+  const char *id,
+  const char *msg,
+  int        logging)
+
+  {
+  int rc = PBSE_NONE;
+  char *err_msg = NULL;
+  char stub_msg[] = "no pos";
+
+  if (logging >= 10)
+    {
+    err_msg = (char *)calloc(1, MSG_LEN_LONG);
+    if (msg == NULL)
+      msg = stub_msg;
+    snprintf(err_msg, MSG_LEN_LONG, "locking %s in method %s-%s", pjob->ji_qs.ji_jobid, id, msg);
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+    }
+
+  if (pjob->ji_mutex != NULL)
+    {
+    if (pthread_mutex_lock(pjob->ji_mutex) != 0)
+      {
+      if (logging >= 20)
+        {
+        snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot lock job %s mutex in method %s",
+                                     pjob->ji_qs.ji_jobid, id);
+        log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+        }
+      rc = PBSE_MUTEX;
+      }
+    }
+  else
+    {
+    rc = -1;
+    log_err(rc, __func__, "Uninitialized mutex pass to pthread_mutex_lock!");
+    }
+
+  if (err_msg != NULL)
+  free(err_msg);
+
+  return rc;
+  }
+
+
+int unlock_ji_mutex(
+
+  job        *pjob,
+  const char *id,
+  const char *msg,
+  int        logging)
+
+  {
+  int rc = PBSE_NONE;
+  char *err_msg = NULL;
+  char stub_msg[] = "no pos";
+
+  if (logging >= 10)
+    {
+    err_msg = (char *)calloc(1, MSG_LEN_LONG);
+    if (msg == NULL)
+      msg = stub_msg;
+    snprintf(err_msg, MSG_LEN_LONG, "unlocking %s in method %s-%s", pjob->ji_qs.ji_jobid, id, msg);
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+    }
+
+  if (pjob->ji_mutex != NULL)
+    {
+    if (pthread_mutex_unlock(pjob->ji_mutex) != 0)
+      {
+    if (logging >= 20)
+        {
+        snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot unlock job %s mutex in method %s",
+                                            pjob->ji_qs.ji_jobid, id);
+        log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
+        }
+      rc = PBSE_MUTEX;
+      }
+    }
+  else
+    {
+    rc = -1;
+    log_err(rc, __func__, "Uninitialized mutex pass to pthread_mutex_unlock!");
+    }
+
+   if (err_msg != NULL)
+     free(err_msg);
+
+   return rc;
+   }
+
+void log_record(
+
+  int         eventtype,  /* I */
+  int         objclass,   /* I */
+  const char *objname,    /* I */
+  const char *text)       /* I */
+
+  {
+  return;
+  }
