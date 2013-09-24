@@ -95,7 +95,7 @@
 #include "server.h"
 #include "svrfunc.h"
 #include "ji_mutex.h"
-#include <vector>
+#include <boost/ptr_container/ptr_vector.hpp>
 
 
 
@@ -311,27 +311,25 @@ char *get_correct_jobname(
   } /* END get_correct_jobname() */
 
 
-void traverse_all_jobs(void (*traverseCallback)(job *pJob,void *callbackParameter),void *callbackParameter)
+void traverse_all_jobs(void (*traverseCallback)(const char *pJobID,void *callbackParameter),void *callbackParameter)
   {
   if((traverseCallback == NULL)||(alljobs.ra == NULL)) return;
   //Get a snapshot of all current jobs.
-  std::vector<job *> jobs;
+  boost::ptr_vector<std::string> jobIds;
 
   pthread_mutex_lock(alljobs.alljobs_mutex);
-  for(int i = 0;i < alljobs.ra->max;i++)
+
+  int iter = -1;
+  job *pj;
+  while((pj = (job *)next_thing(alljobs.ra,&iter)) != NULL)
     {
-    job *pj = (job *)alljobs.ra->slots[i].item;
-    if(pj != NULL)
-      {
-      jobs.push_back(pj);
-      }
+    jobIds.push_back(new std::string(pj->ji_qs.ji_jobid));
     }
   pthread_mutex_unlock(alljobs.alljobs_mutex);
 
-  for(std::vector<job *>::iterator i = jobs.begin();i != jobs.end();i++)
+  for(boost::ptr_vector<std::string>::iterator i = jobIds.begin();i != jobIds.end();i++)
     {
-    job *pj = (*i);
-    traverseCallback(pj,callbackParameter);
+    traverseCallback(i->c_str(),callbackParameter);
     }
   }
 
