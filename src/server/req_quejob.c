@@ -183,7 +183,7 @@ extern  char *msg_daemonname;
 
 /* Private Functions in this file */
 
-static job *locate_new_job(int, char *);
+static job *locate_new_job(char *);
 
 #ifdef PNOT
 static int user_account_verify(char *, char *);
@@ -1371,10 +1371,14 @@ int req_quejob(
 
   /* acknowledge the request with the job id */
 
+  /* link job into server's new jobs list request  */
+  insert_job(&newjobs,pj);
+
   if (reply_jobid(preq, pj->ji_qs.ji_jobid, BATCH_REPLY_CHOICE_Queue) != 0)
     {
     /* reply failed, purge the job and close the connection */
     rc = PBSE_SOCKET_WRITE; /* Re-write reply_jobid to return the error */
+    remove_job(&newjobs,pj);
     decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
     svr_job_purge(pj);
     job_mutex.set_lock_on_exit(false);
@@ -1382,9 +1386,6 @@ int req_quejob(
     }
   
   job_save(pj, SAVEJOB_NEW, 0);
-
-  /* link job into server's new jobs list request  */
-  insert_job(&newjobs,pj);
 
   *pjob_id = strdup(pj->ji_qs.ji_jobid);
 
@@ -1410,7 +1411,7 @@ int req_jobcredential(
   int rc = PBSE_NONE;
   job *pj;
 
-  pj = locate_new_job(preq->rq_conn, NULL);
+  pj = locate_new_job(NULL);
 
   if (pj == NULL)
     {
@@ -1455,7 +1456,8 @@ int req_jobscript(
 
   errno = 0;
 
-  pj = locate_new_job(preq->rq_conn, preq->rq_ind.rq_jobfile.rq_jobid);
+
+  pj = locate_new_job(preq->rq_ind.rq_jobfile.rq_jobid);
 
   if (pj == NULL)
     {
@@ -1593,7 +1595,7 @@ int req_mvjobfile(
   char  log_buf[LOCAL_LOG_BUF_SIZE];
   int   rc = PBSE_NONE;
 
-  pj = locate_new_job(preq->rq_conn, NULL);
+  pj = locate_new_job(NULL);
 
   if (pj == NULL)
     pj = svr_find_job(preq->rq_ind.rq_jobfile.rq_jobid, FALSE);
@@ -1719,7 +1721,6 @@ int req_rdytocommit(
 
   {
   job  *pj;
-  int   sock = preq->rq_conn;
 
   int   OrigState;
   int   OrigSState;
@@ -1731,7 +1732,7 @@ int req_rdytocommit(
   char  log_buf[LOCAL_LOG_BUF_SIZE];
   int   rc = PBSE_NONE;
 
-  pj = locate_new_job(sock, preq->rq_ind.rq_rdytocommit);
+  pj = locate_new_job(preq->rq_ind.rq_rdytocommit);
 
   if (LOGLEVEL >= 6)
     {
@@ -1955,7 +1956,7 @@ int req_commit(
   char                   namebuf[MAXPATHLEN+1];
 #endif /* QUICKCOMMIT */
 
-  pj = locate_new_job(preq->rq_conn, preq->rq_ind.rq_commit);
+  pj = locate_new_job(preq->rq_ind.rq_commit);
 
   if (LOGLEVEL >= 6)
     {
@@ -2267,48 +2268,30 @@ int req_commit(
  * The job must (also) match the socket specified and the host associated
  * with the socket unless ji_fromsock == -1, then its a recovery situation.
  */
-/* FIXME: why bother checking for matching sock if a jobid is supplied?  Seems
- * to me that a reconnect immediately invalidates fromsock.
- */
 
 static job *locate_new_job(
 
-  int   sock,   /* I */
   char *jobid)  /* I (optional) */
 
   {
-  job *pj;
-  int  iter = -1;
-
-  while ((pj = next_job(&newjobs,&iter)) != NULL)
+  int   iter = -1;
+  job   *pJob;
+  if((jobid == NULL)||(*jobid == '\0'))
     {
-    if ((jobid != NULL) && (*jobid != '\0'))
+    return next_job(&newjobs,&iter);
+    }
+  pthread_mutex_lock(newjobs.alljobs_mutex);
+  while((pJob = (job *)next_thing(newjobs.ra,&iter)) != NULL)
+    {
+    if(!strcmp(jobid,pJob->ji_qs.ji_jobid))
       {
-      if (!strncmp(pj->ji_qs.ji_jobid, jobid, PBS_MAXSVRJOBID))
-        {
-        /* requested job located */
-
-        break;
-        }
+      lock_ji_mutex(pJob,__func__,"1",LOGLEVEL);
+      pthread_mutex_unlock(newjobs.alljobs_mutex);
+      return pJob;
       }
-    else if (pj->ji_qs.ji_un.ji_newt.ji_fromsock == -1)
-      {
-      /* empty job slot located */
-
-      break;
-      }
-    else
-      {
-      /* matching job slot located */
-
-      break;
-      }
-    unlock_ji_mutex(pj, __func__, "1", LOGLEVEL);
-    }  /* END while(pj != NULL) */
-
-  /* return job slot located (NULL on FAILURE) */
-
-  return(pj);
+    }
+  pthread_mutex_unlock(newjobs.alljobs_mutex);
+  return NULL;
   }  /* END locate_new_job() */
 
 

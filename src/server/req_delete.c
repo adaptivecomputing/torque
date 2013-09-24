@@ -168,7 +168,7 @@ extern int   svr_chk_owner(struct batch_request *, job *);
 void chk_job_req_permissions(job **,struct batch_request *);
 void          on_job_exit_task(struct work_task *);
 void           remove_stagein(job **pjob_ptr);
-extern void removeAfterAnyDependency(job *pJob,void *targetJob);
+extern void removeAfterAnyDependency(const char *pJobID,void *targetJob);
 
 
 
@@ -881,14 +881,20 @@ void *delete_all_work(
   
   while ((pjob = next_job(&alljobs, &iter)) != NULL)
     {
+    // use mutex manager to make sure job mutex locks are properly handled at exit
+    mutex_mgr job_mutex(pjob->ji_mutex, true);
+ 
     if ((rc = forced_jobpurge(pjob, preq_dup)) == PURGE_SUCCESS)
       {
+      // want to leave lock in place after exiting
+      job_mutex.set_lock_on_exit(false);
+
       continue;
       }
 
     if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
       {
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+      job_mutex.unlock();
       
       if(rc == -1)
         {
@@ -905,7 +911,11 @@ void *delete_all_work(
     if (rc == PBSE_NONE)
       {
       if ((rc = execute_job_delete(pjob, Msg, preq_dup)) == PBSE_NONE)
+        {
+        // execute_job_delete() handles mutex so don't unlock on exit
+        job_mutex.set_lock_on_exit(false);
         reply_ack(preq_dup);
+        }
        
       /* preq_dup has been freed at this point. Either reallocate it or set it to NULL*/
       if (rc == PURGE_SUCCESS)
@@ -1033,8 +1043,9 @@ int handle_single_delete(
     }
   else
     {
-    traverse_all_jobs(removeAfterAnyDependency,(void *)pjob);
+    std::string jobID = pjob->ji_qs.ji_jobid;
     unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+    traverse_all_jobs(removeAfterAnyDependency,(void *)jobID.c_str());
 
 
     /* send the asynchronous reply if needed */

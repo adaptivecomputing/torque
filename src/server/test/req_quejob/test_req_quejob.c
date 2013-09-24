@@ -4,10 +4,46 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "pbs_error.h"
+
+extern struct all_jobs newjobs;
+
+extern int req_jobcredential(struct batch_request *preq);
+
+extern char *path_jobs;
+char path_to_jobs[500];
+
+
 START_TEST(test_one)
   {
+  struct batch_request req;
+  job j;
+  char cmd[500];
 
+  memset(&j,0,sizeof(j));
+  memset(&req,0,sizeof(req));
+  newjobs.ra = initialize_resizable_array(10);
+  newjobs.alljobs_mutex = (pthread_mutex_t *)calloc(1,sizeof(pthread_mutex_t));
 
+  fail_unless(req_jobcredential(&req) == PBSE_IVALREQ);
+
+  strcpy(j.ji_qs.ji_jobid,"SomeJob");
+  strcpy(j.ji_qs.ji_fileprefix,"prefix");
+  insert_thing(newjobs.ra,&j);
+
+  fail_unless(req_jobcredential(&req) == PBSE_NONE);
+
+  memset(&req,0,sizeof(req));
+
+  strcpy(req.rq_ind.rq_jobfile.rq_jobid,"NotThisJob");
+  fail_unless(req_jobscript(&req) == PBSE_IVALREQ);
+
+  path_jobs = getcwd(path_to_jobs,sizeof(path_to_jobs));
+  strcat(path_jobs,"/");
+  sprintf(cmd,"rm %s*.SC",path_jobs);
+  system(cmd);
+  strcpy(req.rq_ind.rq_jobfile.rq_jobid,"SomeJob");
+  fail_unless(req_jobscript(&req) == PBSE_NONE);
+  system(cmd);
   }
 END_TEST
 
