@@ -32,6 +32,7 @@ int handle_terminating_array_subjob(job *pjob);
 int handle_terminating_job(job *pjob, int alreadymailed, const char *mailbuf);
 int update_substate_from_exit_status(job *pjob, int *alreadymailed, const char *text);
 int handle_stageout(job *pjob, int type, batch_request *preq);
+int handle_stagedel(job *pjob,int type,batch_request *preq);
 
 
 extern pthread_mutex_t *svr_do_schedule_mutex;
@@ -53,6 +54,22 @@ void init_server()
   server.sv_attr_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(server.sv_attr_mutex, NULL);
   }
+
+
+START_TEST(handle_stagedel_test)
+  {
+  job pjob;
+
+  memset(&pjob, 0, sizeof(pjob));
+
+  pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("SherrieJWD");
+  pjob.ji_wattr[JOB_ATR_exec_host].at_flags |= ATR_VFLAG_SET;
+
+  // test to be sure that NULL exec hosts doesn't cause a segfault
+  fail_unless(handle_stagedel(&pjob, WORK_Immed, NULL) == PBSE_NONE);
+  }
+END_TEST
+
 
 
 START_TEST(handle_stageout_test)
@@ -537,6 +554,7 @@ Suite *req_jobobit_suite(void)
   tcase_add_test(tc_core, handle_terminating_job_test);
   tcase_add_test(tc_core, handle_stageout_test);
   tcase_add_test(tc_core, update_substate_from_exit_status_test);
+  tcase_add_test(tc_core, handle_stagedel_test);
   suite_add_tcase(s, tc_core);
 
   return(s);

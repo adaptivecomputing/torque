@@ -1379,7 +1379,10 @@ int handle_stagedel(
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
 
   strcpy(job_id, pjob->ji_qs.ji_jobid);
-  job_momname = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+  if(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
+    {
+    job_momname = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+    }
 
   if (LOGLEVEL >= 4)
     {
@@ -1445,7 +1448,7 @@ int handle_stagedel(
     if (preq->rq_reply.brp_code != 0)
       {
       /* an error occurred */
-      snprintf(log_buf, sizeof(log_buf), msg_obitnodel, job_id, job_momname);
+      snprintf(log_buf, sizeof(log_buf), msg_obitnodel, job_id, (job_momname != NULL)?job_momname:"(no host)");
       
       log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,job_id,log_buf);
       
@@ -1453,7 +1456,7 @@ int handle_stagedel(
         {
         snprintf(log_buf, sizeof(log_buf),
           "request to remove stage-in files failed on node '%s' for job %s%s",
-          job_momname,
+          (job_momname != NULL)?job_momname:"(no host)",
           job_id,
           (IsFaked == 1) ? "*" : "");
         
