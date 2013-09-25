@@ -2707,14 +2707,14 @@ int run_job_mode(
     {
     connect = cnt2server(server_out);
 
-    if (connect <= 0)
+    any_failed = -1 * connect;
+    if (connect <= 0 )
       {
-      if (++retry_count < MAX_RETRIES)
+      if ((++retry_count < MAX_RETRIES) && ((any_failed != PBSE_TIMEOUT) && (any_failed != PBSE_SOCKET_FAULT)))
         {
         continue;
         }
 
-      any_failed = -1 * connect;
 
       if (server_out[0] != 0)
         fprintf(stderr, "qstat: cannot connect to server %s (errno=%d) %s\n",
