@@ -392,6 +392,7 @@ int socket_connect_addr(
       case EINVAL:    /* Invalid argument */
       case EADDRINUSE:    /* Address already in use */
       case EADDRNOTAVAIL:   /* Cannot assign requested address */
+      case EBADF:          /* something is wrong with the socket descriptor */
 
         if (is_privileged)
           {
@@ -419,7 +420,7 @@ int socket_connect_addr(
 
       default:
 
-        snprintf(tmp_buf, sizeof(tmp_buf), "cannot connect to port %d in %s - errno:%d %s",
+        snprintf(tmp_buf, sizeof(tmp_buf), "cannot connect with socket %d in %s - errno:%d %s",
           local_socket, __func__, errno, strerror(errno));
         *error_msg = strdup(tmp_buf);
         close(local_socket);
