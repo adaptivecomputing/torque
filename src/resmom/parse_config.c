@@ -78,7 +78,9 @@
 */
 
 
-
+// including this file first is important to avoid bugs. This fixed a crash of the size of 
+// the job struct changing. For real.
+#include "pbs_config.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -95,7 +97,6 @@
 #include "mom_func.h"
 #include "u_tree.h"
 #include "csv.h"
-#include "pbs_config.h"
 
 
 /* these are the global variables we set or don't set as a result of the config file.
