@@ -1831,8 +1831,20 @@ void handle_complete_second_time(
     }
   else
     {
-    svr_job_purge(pjob);
-    job_mutex.set_lock_on_exit(false);
+    /* under rare circumstances, a job can have a clean up task but have been re-run
+     * by a scheduler. Ensure the job is ready to get deleted before purging */
+    if (pjob->ji_qs.ji_state != JOB_STATE_COMPLETE)
+      {
+      snprintf(log_buf, sizeof(log_buf), "Job %s has removal task but is in non-completed state %s",
+        pjob->ji_qs.ji_jobid,
+        PJobState[pjob->ji_qs.ji_state]);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
+      }
+    else
+      {
+      svr_job_purge(pjob);
+      job_mutex.set_lock_on_exit(false);
+      }
     }
 
   return;
