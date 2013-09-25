@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <check.h>
 
 #include "dynamic_string.h"
 #include "alps_constants.h"
 #include "pbs_nodes.h"
+#include <check.h>
 
 int set_ncpus(struct pbsnode *,struct pbsnode *, int);
 int set_ngpus(struct pbsnode *, int);

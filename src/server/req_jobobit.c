@@ -1380,7 +1380,10 @@ int handle_stagedel(
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
 
   strcpy(job_id, pjob->ji_qs.ji_jobid);
-  job_momname = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+  if(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
+    {
+    job_momname = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+    }
 
   if (LOGLEVEL >= 4)
     {
@@ -1446,7 +1449,7 @@ int handle_stagedel(
     if (preq->rq_reply.brp_code != 0)
       {
       /* an error occurred */
-      snprintf(log_buf, sizeof(log_buf), msg_obitnodel, job_id, job_momname);
+      snprintf(log_buf, sizeof(log_buf), msg_obitnodel, job_id, (job_momname != NULL)?job_momname:"(no host)");
       
       log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,job_id,log_buf);
       
@@ -1454,7 +1457,7 @@ int handle_stagedel(
         {
         snprintf(log_buf, sizeof(log_buf),
           "request to remove stage-in files failed on node '%s' for job %s%s",
-          job_momname,
+          (job_momname != NULL)?job_momname:"(no host)",
           job_id,
           (IsFaked == 1) ? "*" : "");
         
@@ -1828,8 +1831,20 @@ void handle_complete_second_time(
     }
   else
     {
-    svr_job_purge(pjob);
-    job_mutex.set_lock_on_exit(false);
+    /* under rare circumstances, a job can have a clean up task but have been re-run
+     * by a scheduler. Ensure the job is ready to get deleted before purging */
+    if (pjob->ji_qs.ji_state != JOB_STATE_COMPLETE)
+      {
+      snprintf(log_buf, sizeof(log_buf), "Job %s has removal task but is in non-completed state %s",
+        pjob->ji_qs.ji_jobid,
+        PJobState[pjob->ji_qs.ji_state]);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
+      }
+    else
+      {
+      svr_job_purge(pjob);
+      job_mutex.set_lock_on_exit(false);
+      }
     }
 
   return;

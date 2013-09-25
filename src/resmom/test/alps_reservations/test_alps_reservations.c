@@ -1,4 +1,3 @@
-#include <check.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,6 +8,7 @@
 #include "dynamic_string.h"
 #include "alps_constants.h"
 #include "alps_functions.h"
+#include <check.h>
 
 char *hostname = (char *)"napali";
 char *eh1 = (char *)"napali/0+napali/1+l11/0+l11/1";

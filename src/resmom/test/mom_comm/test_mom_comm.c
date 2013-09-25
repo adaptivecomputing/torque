@@ -1,6 +1,5 @@
 #include "license_pbs.h" /* See here for the software license */
 #include "mom_comm.h"
-#include "test_mom_comm.h"
 #include <set>
 #include <stdlib.h>
 #include <stdio.h>
@@ -9,6 +8,7 @@
 #include "pbs_error.h"
 #include "pbs_nodes.h"
 #include "pbs_job.h"
+#include "test_mom_comm.h"
 
 extern int disrsi_return_index;
 extern int disrst_return_index;

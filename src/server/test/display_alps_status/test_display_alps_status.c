@@ -1,4 +1,3 @@
-#include <check.h>
 #include "alps_constants.h"
 
 
@@ -6,6 +5,7 @@
 #include "batch_request.h"
 #include "list_link.h"
 #include "alps_functions.h"
+#include <check.h>
 
 
 START_TEST(get_status_test)

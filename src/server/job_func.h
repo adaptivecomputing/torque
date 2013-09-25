@@ -32,7 +32,7 @@ int svr_job_purge(struct job *pjob);
 
 /*static*/ struct job *find_job_by_array(struct all_jobs *aj, char *job_id, int get_subjob);
 
-void traverse_all_jobs(void (*traverseCallback)(job *pJob,void *callbackParameter),void *callbackParameter);
+void traverse_all_jobs(void (*traverseCallback)(const char *pJobID,void *callbackParameter),void *callbackParameter);
 
 struct job *svr_find_job(char *jobid, int get_subjob);
 
