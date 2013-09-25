@@ -833,19 +833,24 @@ void *process_svr_conn(
           disconnect_svr = FALSE;
           debug_mark = 2;
           }
-        else if ((svr_sock = socket_get_tcp_priv()) < 0)
-          {
-          rc = PBSE_SOCKET_FAULT;
-          disconnect_svr = FALSE;
-          debug_mark = 3;
-          }
         else
           {
           int retries = 0;
           while (retries < MAX_RETRIES)
             {
+            rc = PBSE_NONE;
             disconnect_svr = TRUE;
-            if ((rc = socket_connect(&svr_sock, trq_server_addr, trq_server_addr_len, server_port, AF_INET, 1, &error_msg)) != PBSE_NONE)
+
+            if ((svr_sock = socket_get_tcp_priv()) < 0)
+              {
+              rc = PBSE_SOCKET_FAULT;
+              disconnect_svr = FALSE;
+              debug_mark = 3;
+              retries++;
+              usleep(10000);
+              continue;
+              }
+            else if ((rc = socket_connect(&svr_sock, trq_server_addr, trq_server_addr_len, server_port, AF_INET, 1, &error_msg)) != PBSE_NONE)
               {
               /* for now we only need ssh_key and sign_key as dummys */
               char *ssh_key = NULL;
@@ -858,8 +863,9 @@ void *process_svr_conn(
               disconnect_svr = FALSE;
               debug_mark = 4;
               socket_close(svr_sock);
+              retries++;
               usleep(50000);
-              break;
+              continue;
               }
             else if ((rc = build_request_svr(auth_type, user_name, user_sock, message)) != PBSE_NONE)
               {

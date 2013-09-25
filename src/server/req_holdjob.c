@@ -224,6 +224,18 @@ int req_holdjob(
 
     /* have MOM attempt checkpointing */
 
+    /*
+    ** The jobid in the request always have the server suffix attached
+    ** which is dropped when the server attribute 
+    ** 'display_job_server_suffix' is FALSE and so will in the MOM's.
+    ** Therefore, it must be passed as the server to the MOM so she can
+    ** find it to hold.
+    */
+    if (strncmp(pjob->ji_qs.ji_jobid, 
+          preq->rq_ind.rq_hold.rq_orig.rq_objname, PBS_MAXSVRJOBID))
+       snprintf(preq->rq_ind.rq_hold.rq_orig.rq_objname, 
+          sizeof(preq->rq_ind.rq_hold.rq_orig.rq_objname), "%s", 
+          pjob->ji_qs.ji_jobid);
     if ((dup_req = duplicate_request(preq)) == NULL)
       {
       req_reject(rc, 0, preq, NULL, "memory allocation failure");
