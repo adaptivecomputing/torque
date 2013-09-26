@@ -28,6 +28,7 @@ bool    DIS_success;
 bool    gethostname_success;
 bool    get_hostaddr_success;
 bool    getpwuid_success;
+bool    trqauthd_terminate_success;
 
 extern   int request_type;
 extern   int process_svr_conn_rc;
@@ -61,6 +62,7 @@ START_TEST(get_active_pbs_server_test)
   tcp_priv_success = true;
   socket_connect_success = true;
   DIS_success = true;
+  trqauthd_terminate_success = false;
 
   setenv("PBSAPITIMEOUT", "3", 1);
   get_active_pbs_server(&server_name);
@@ -215,6 +217,7 @@ START_TEST(test_validate_active_pbs_server)
   socket_connect_success = true;
   DIS_success = true;
 
+  request_type = 1;
   rc = validate_active_pbs_server(&active_server, port);
   fail_unless(rc == PBSE_NONE, "validate_active_pbs_server failed", rc);
 
@@ -286,11 +289,20 @@ START_TEST(test_process_svr_conn)
   (*process_svr_conn)((void *)sock);
   fail_unless(process_svr_conn_rc == PBSE_NONE, "TRQ_GET_ACTIVE_SERVER failed");
 
+  trqauthd_terminate_success = true;
   sock = (int *)calloc(1, sizeof(int));
   *sock = 20;
   request_type = TRQ_DOWN_TRQAUTHD;
   (*process_svr_conn)((void *)sock);
   fail_unless(process_svr_conn_rc == PBSE_NONE, "TRQ_GET_ACTIVE_SERVER failed");
+
+  trqauthd_terminate_success = false;
+  sock = (int *)calloc(1, sizeof(int));
+  *sock = 20;
+  request_type = TRQ_DOWN_TRQAUTHD;
+  (*process_svr_conn)((void *)sock);
+  fail_unless(process_svr_conn_rc == PBSE_PERM, "TRQ_GET_ACTIVE_SERVER failed");
+
 
 
   /* Test the success case for TRQ_VALIDATE_ACTIVE_SERVER */
@@ -427,7 +439,7 @@ START_TEST(build_active_server_response_test)
   fail_unless(build_active_server_response(message) == PBSE_NONE);
   set_active_pbs_server("napali");
   fail_unless(build_active_server_response(message) == PBSE_NONE);
-  fail_unless(!strcmp(message.c_str(), "6|napali|"));
+  fail_unless(!strcmp(message.c_str(), "0|6|napali|"));
   }
 END_TEST
 
