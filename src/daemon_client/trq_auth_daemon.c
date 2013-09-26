@@ -290,7 +290,7 @@ int terminate_trqauthd()
     }
   else if ((rc = socket_write(sock, write_buf, strlen(write_buf))) < 0)
     {
-    fprintf(stderr, "Failed to send termnation request to trqauthd: %d\n", rc);
+    fprintf(stderr, "Failed to send termination request to trqauthd: %d\n", rc);
     }
   else if ((rc = socket_read_str(sock, &read_buf, &read_buf_len)) != PBSE_NONE)
     {
@@ -336,16 +336,16 @@ int trq_main(
   if (rc != PBSE_NONE)
     return(rc);
 
-  if (down_server == true)
-    {
-    rc = terminate_trqauthd();
-    return(rc);
-    }
-
   if (IamRoot() == 0)
     {
     printf("This program must be run as root!!!\n");
     return(PBSE_IVALREQ);
+    }
+
+  if (down_server == true)
+    {
+    rc = terminate_trqauthd();
+    return(rc);
     }
 
   if ((rc = load_config(&active_pbs_server, &trq_server_port, &daemon_port)) != PBSE_NONE)

@@ -592,7 +592,7 @@ int validate_user(
     return(PBSE_IFF_NOT_FOUND);
     }
 
-  if (cr.pid != user_pid)
+  if ((user_pid > 0) && (cr.pid != user_pid))
     {
     sprintf(msg, "invalid pid: submitted: %d, expected: %d", user_pid, cr.pid);
     return(PBSE_IFF_NOT_FOUND);
@@ -767,8 +767,19 @@ void *process_svr_conn(
       {
       case TRQ_DOWN_TRQAUTHD:
         {
-        trqauthd_up = false;
-        rc = build_active_server_response(message);
+        if((rc = validate_user(local_socket, "root", 0, msg_buf)) != PBSE_NONE)
+          {
+          sprintf(msg_buf, "Request to shutdown server from non-root");
+          log_record(PBSEVENT_CLIENTAUTH, PBS_EVENTCLASS_TRQAUTHD, __func__, msg_buf);
+          rc = build_active_server_response(message);
+          }
+        else
+          {
+          sprintf(msg_buf, "Request to shutdown server from root");
+          log_record(PBSEVENT_CLIENTAUTH, PBS_EVENTCLASS_TRQAUTHD, __func__, msg_buf);
+          trqauthd_up = false;
+          rc = build_active_server_response(message);
+          }
         break;
         }
 
@@ -821,6 +832,12 @@ void *process_svr_conn(
           {
           disconnect_svr = FALSE;
           debug_mark = 1;
+          }
+        else if (user_pid <= 0)
+          {
+          disconnect_svr = FALSE;
+          debug_mark = 1;
+          rc = PBSE_IVALREQ;
           }
         else if ((rc = validate_user(local_socket, user_name, user_pid, msg_buf)) != PBSE_NONE)
           {
