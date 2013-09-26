@@ -111,6 +111,7 @@ int validate_active_pbs_server(
   long long read_buf_len = MAX_LINE;
   int       local_socket;
   int       rc;
+  long long ret_code;
 
   /* the format is TRQ command|destination port */
   sprintf(write_buf, "%d|%d|", TRQ_VALIDATE_ACTIVE_SERVER, port);
@@ -139,6 +140,10 @@ int validate_active_pbs_server(
     fprintf(stderr, "socket_write failed: %d\n", rc);
     return(PBSE_SYSTEM);
     }
+
+  rc = socket_read_num(local_socket, &ret_code);
+  if (rc != PBSE_NONE) 
+    return(rc);
 
   rc = socket_read_str(local_socket, &read_buf, &read_buf_len);
   if (rc != PBSE_NONE) 
@@ -189,6 +194,7 @@ int get_active_pbs_server(
   char     *timeout_ptr;
   bool      retry = true;
   int       retries = 0;
+  long long ret_code = PBSE_NONE;
 
   if ((timeout_ptr = getenv("PBSAPITIMEOUT")) != NULL)
     {
@@ -230,6 +236,10 @@ int get_active_pbs_server(
 
   do
     {
+    rc = socket_read_num(local_socket, &ret_code);
+    if (rc != PBSE_NONE)
+      break;
+
     rc = socket_read_str(local_socket, &read_buf, &read_buf_len);
     if (rc == PBSE_NONE) 
       break;
@@ -435,6 +445,41 @@ int validate_server(
   } /* END validate_server() */
 
 
+/* parset_terminate_request is the request trqauthd receives to
+   shut down trqauthd. The request has the format of
+   %d|%d|%s|%d| where the first %d is the command which has already
+   been read in process_svr_conn. The next %d|%s pair is the user
+   name of the process issuing the request. For terminating 
+   trqauthd this must be root. The final %d is the pid of the
+   process requesting to terminate trqauthd 
+   parse_terminate_request extracts the user name and the pid
+ */
+
+int parse_terminate_request(
+
+    int   sock,
+    char  **username,
+    int   *pid)
+
+  {
+  int rc = PBSE_NONE;
+  long long tmp_val;
+  long long tmp_pid;
+
+  if ((rc = socket_read_str(sock, username, &tmp_val)) != PBSE_NONE)
+    {
+    }
+  else if ((rc = socket_read_num(sock, &tmp_pid)) != PBSE_NONE)
+    {
+    }
+  else
+    {
+    *pid = tmp_pid;
+    }
+
+  return(rc);
+  }
+
 int parse_request_client(
 
   int    sock,
@@ -548,7 +593,7 @@ int build_active_server_response(
     len = strlen(active_pbs_server);
     }
 
-  message = string_format("%d|%s|",len,active_pbs_server);
+  message = string_format("%d|%d|%s|",0,len,active_pbs_server);
 
   return(rc);
   }
@@ -600,7 +645,6 @@ int validate_user(
 
   return(PBSE_NONE);
   }
-
 
 
 int parse_response_svr(
@@ -767,8 +811,23 @@ void *process_svr_conn(
       {
       case TRQ_DOWN_TRQAUTHD:
         {
-        trqauthd_up = false;
-        rc = build_active_server_response(message);
+        rc = parse_terminate_request(local_socket, &user_name, &user_pid);
+        if (rc != PBSE_NONE)
+          break;
+
+        /* root is the only user that can terminate trqauthd */
+        if (strcmp(user_name, "root"))
+          {
+          rc = PBSE_PERM;
+          break;
+          }
+
+        rc = validate_user(local_socket, user_name, user_pid, msg_buf);
+        if (rc == PBSE_NONE)
+          {
+          trqauthd_up = false;
+          rc = build_active_server_response(message);
+          }
         break;
         }
 
