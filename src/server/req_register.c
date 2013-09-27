@@ -106,6 +106,7 @@
 #include "mutex_mgr.hpp"
 #include "utils.h"
 
+
 #define SYNC_SCHED_HINT_NULL 0
 #define SYNC_SCHED_HINT_FIRST 1
 #define SYNC_SCHED_HINT_OTHER 2
@@ -3302,24 +3303,24 @@ void del_depend_job(
  * If pJob has an AFTERANY dependency on targetJob, remove it.
  * pJob is passed in with the ji_mutex locked.
  */
-void removeAfterAnyDependency(job *pJob,void *targetJob)
+void removeAfterAnyDependency(const char *pJId,void *targetJobID)
   {
-  job *pTargetJob = (job *)targetJob;
+  char *pTargetJobID = (char *)targetJobID;
 
-  if(pTargetJob == pJob) return;
-  job *pLockedJob = svr_find_job(pJob->ji_qs.ji_jobid,FALSE);
+  if(!strcmp((char *)pJId,pTargetJobID)) return;
+  job *pLockedJob = svr_find_job((char *)pJId,FALSE);
   if(pLockedJob == NULL) return;
   mutex_mgr job_mutex(pLockedJob->ji_mutex,true);
-  pbs_attribute *pattr = &pJob->ji_wattr[JOB_ATR_depend];
+  pbs_attribute *pattr = &pLockedJob->ji_wattr[JOB_ATR_depend];
   struct depend *pDep = find_depend(JOB_DEPEND_TYPE_AFTERANY,pattr);
   if(pDep != NULL)
     {
-    struct depend_job *pDepJob = find_dependjob(pDep,pTargetJob->ji_qs.ji_jobid);
+    struct depend_job *pDepJob = find_dependjob(pDep,pTargetJobID);
     if(pDepJob != NULL)
       {
       del_depend_job(pDepJob);
       job_mutex.unlock();
-      set_depend_hold(pJob,pattr);
+      set_depend_hold(pLockedJob,pattr);
       }
     }
   }
