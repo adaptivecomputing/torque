@@ -7,6 +7,7 @@
 #include <sys/un.h> /*sockaddr_un */
 #include <fcntl.h>
 #include <sys/stat.h> /* chmod */
+#include <signal.h>  /* signal and constants */
 
 #include "pbs_error.h" /* PBSE_NONE */
 #include "log.h" /* log_event, PBSEVENT_JOB, PBS_EVENTCLASS_JOB */
@@ -183,6 +184,8 @@ int start_domainsocket_listener(
      before we can bind to it. Unlink it */
   unlink(socket_name);
 
+  /* Ignore SIGPIPE so a rougue client won't cause us to abort */
+  signal(SIGPIPE, SIG_IGN);
 
   if ( (listen_socket = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
     {
