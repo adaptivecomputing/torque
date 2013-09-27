@@ -3,6 +3,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 4.2.6
   b - TRQ-2111. Fix a rare case of running jobs being deleted without having their
       resources freed.
+  b - TRQ-2208. Stop having pbs_mom use trqauthd when it is checkpointing a job.
 
 4.2.5
   e - Remove the mom asking for a job status before sending an obit to pbs_server

@@ -410,68 +410,6 @@ void svr_disconnect(
 
 
 
-
-/*
- * socket_to_handle() - turn a socket into a connection handle
- * as used by the libpbs.a routines.
- *
- * Returns: >=0 connection handle if successful, or
- *    -1 if error, error number set in local_errno.
- */
-
-int socket_to_handle(
-
-  int  sock,        /* opened socket */
-  int *local_errno) /* O */
-
-  {
-  char  log_buf[LOCAL_LOG_BUF_SIZE];
-
-  int   conn_pos = 0;
-  int   rc = PBSE_NONE;
-
-  if ((rc = get_connection_entry(&conn_pos)) != PBSE_NONE)
-    {
-    sprintf(log_buf,"internal socket table full (%d) - num_connections is %d",
-      conn_pos,
-      get_num_connections());
-
-    log_ext(-1, __func__, log_buf, LOG_ALERT);
-
-    *local_errno = PBSE_NOCONNECTS;
-    }
-  else
-    {
-    /* NOTE: get_connection_entry() locks connection[conn_pos] */
-    connection[conn_pos].ch_stream = 0;
-    connection[conn_pos].ch_inuse  = TRUE;
-    connection[conn_pos].ch_errno  = 0;
-    connection[conn_pos].ch_socket = sock;
-    connection[conn_pos].ch_errtxt = 0;
-
-    /* SUCCESS - save handle for later close */
-    pthread_mutex_unlock(connection[conn_pos].ch_mutex);
-      
-    pthread_mutex_lock(svr_conn[sock].cn_mutex);
-    svr_conn[sock].cn_handle = conn_pos;
-    pthread_mutex_unlock(svr_conn[sock].cn_mutex);
-      
-    if (conn_pos >= (PBS_NET_MAX_CONNECTIONS/2))
-      {
-      sprintf(log_buf,"internal socket table is half-full at %d (expected num_connections is %d)!",
-        conn_pos,
-        get_num_connections());
-        
-      log_ext(-1, __func__, log_buf, LOG_CRIT);
-      }
-
-    rc = conn_pos;
-    }
-
-  return(rc);
-  }  /* END socket_to_handle() */
-
-
 /*
  * parse_servername - parse a server/mom name in the form:
  * hostname[:service_port][/#][+hostname...]
