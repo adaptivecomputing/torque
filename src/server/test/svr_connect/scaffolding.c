@@ -118,3 +118,8 @@ void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_ext(int l, const char *func_name, const char *msg, int o) {}
+
+int socket_to_handle(int sock, int *my_err)
+  {
+  return(0);
+  }

@@ -887,23 +887,18 @@ int establish_server_connection(
   job *pjob)
 
   {
-  int num_attempts = 0;
-  int connection   = -1;
+  int local_errno = 0;
+  int connection  = -1;
+  int sock;
 
   if ((pjob == NULL) ||
       (pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str == NULL))
     return(connection);
 
-  while ((connection < 0) &&
-         (num_attempts < MAX_CONN_RETRY))
-    {
-    if (num_attempts > 0)
-      sleep(1);
+  sock = mom_open_socket_to_jobs_server(pjob, __func__, NULL);
 
-    connection = pbs_connect(pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str);
-
-    num_attempts++;
-    }
+  if (sock >= 0)
+    connection = socket_to_handle(sock, &local_errno);
   
   if (connection < 0)
     {
