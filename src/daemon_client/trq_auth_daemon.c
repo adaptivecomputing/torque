@@ -13,6 +13,8 @@
 #include <grp.h> /* setgroups */
 #include <ctype.h> /*isspace */
 #include <getopt.h> /*getopt_long */
+#include <sys/types.h>
+#include <pwd.h>   /* getuid */
 #include "pbs_error.h" /* PBSE_NONE */
 #include "pbs_constants.h" /* AUTH_IP */
 #include "pbs_ifl.h" /* pbs_default, PBS_BATCH_SERVICE_PORT, TRQ_AUTHD_SERVICE_PORT */
@@ -279,9 +281,24 @@ int terminate_trqauthd()
   int sock = -1;
   char write_buf[MAX_LINE];
   char *read_buf;
+  char log_buf[MAX_BUF];
   long long read_buf_len = MAX_LINE;
+  long long ret_code;
+  uid_t     myrealuid;
+  pid_t     mypid;
+  struct passwd *pwent;
 
-  sprintf(write_buf, "%d|", TRQ_DOWN_TRQAUTHD);
+  myrealuid = getuid();
+  pwent = getpwuid(myrealuid);
+  if (pwent == NULL)
+    {
+    snprintf(log_buf, MAX_BUF, "cannot get account info: uid %d, errno %d (%s)\n", (int)myrealuid, errno, strerror(errno));
+    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
+    return(PBSE_SYSTEM);
+    }
+
+  mypid = getpid();
+  sprintf(write_buf, "%d|%d|%s|%d|", TRQ_DOWN_TRQAUTHD, (int )strlen(pwent->pw_name), pwent->pw_name, mypid);
 
   if((rc = connect_to_trqauthd(&sock)) != PBSE_NONE)
     {
@@ -290,6 +307,15 @@ int terminate_trqauthd()
   else if ((rc = socket_write(sock, write_buf, strlen(write_buf))) < 0)
     {
     fprintf(stderr, "Failed to send termnation request to trqauthd: %d\n", rc);
+    }
+  else if ((rc = socket_read_num(sock, &ret_code)) != PBSE_NONE)
+    {
+    fprintf(stderr, "trqauthd did not give proper response. Check to see if traquthd has terminated: %d\n", rc);
+    }
+  else if (ret_code != PBSE_NONE)
+    {
+    rc = socket_read_str(sock, &read_buf, &read_buf_len);
+    fprintf(stderr, "trqauthd not shutdown. %s\n", read_buf);
     }
   else if ((rc = socket_read_str(sock, &read_buf, &read_buf_len)) != PBSE_NONE)
     {
@@ -335,16 +361,16 @@ int trq_main(
   if (rc != PBSE_NONE)
     return(rc);
 
-  if (down_server == true)
-    {
-    rc = terminate_trqauthd();
-    return(rc);
-    }
-
   if (IamRoot() == 0)
     {
     printf("This program must be run as root!!!\n");
     return(PBSE_IVALREQ);
+    }
+
+  if (down_server == true)
+    {
+    rc = terminate_trqauthd();
+    return(rc);
     }
 
   if ((rc = load_config(&active_pbs_server, &trq_server_port, &daemon_port)) != PBSE_NONE)

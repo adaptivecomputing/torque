@@ -12,6 +12,7 @@
 #include "../lib/Liblog/pbs_messages.c"
 #include "dis.h"
 #include "net_connect.h" /* pbs_net_t */
+#include "lib_ifl.h"
 
 
 time_t pbs_tcp_timeout;
@@ -32,8 +33,10 @@ bool    DIS_success = true;
 bool    gethostname_success = true;
 bool    get_hostaddr_success = true;
 bool    getpwuid_success = true;
+bool    trqauthd_terminate_success = true;
 
 int     request_type;
+int     trq_down = 0;
 
 char *my_active_server;
 char error_text[100] = "some error text";
@@ -41,6 +44,7 @@ char test_trq_hostname[20] = "hosta";
 
 /****************** GLibC mocks begin ********************/
 char dummy_name[20] = "eris";
+char root_name[20] = "root";
 
 
 int getsockopt(
@@ -54,7 +58,10 @@ int getsockopt(
   {
   struct ucred *cr = (struct ucred *)optval;
 
-  cr->pid = 1;
+  if (trqauthd_terminate_success == true)
+    cr->pid = 0;
+  else
+    cr->pid = 1;
   cr->uid = request_type;
   cr->gid = 3;
 
@@ -73,8 +80,14 @@ struct passwd *getpwuid(uid_t uid)
   if (stuff == NULL)
     return(NULL);
 
-  if (getpwuid_success == true)
+  if (trqauthd_terminate_success == true)
+    {
+    stuff->pw_name = root_name;
+    }
+  else if (getpwuid_success == true)
+    {
     stuff->pw_name = dummy_name;
+    }
   else
     return(NULL);
 
@@ -231,7 +244,15 @@ int socket_read_str(int socket, char **the_str, long long *str_len)
   if (my_active_server == NULL)
     return(PBSE_SYSTEM);
 
-  strcpy(my_active_server, "eris");
+  if (trqauthd_terminate_success == true)
+    {
+    strcpy(my_active_server, "root");
+    }
+  else
+    {
+    strcpy(my_active_server, "eris");
+    }
+
   if (socket_read_success == true)
     {
     *the_str = my_active_server;
@@ -257,6 +278,24 @@ int socket_read_num(int socket, long long *the_num)
 
   if (socket_read_num_success == false)
     return(PBSE_SYSTEM);
+
+  if (request_type == TRQ_DOWN_TRQAUTHD)
+    {
+    if (trqauthd_terminate_success == true)
+      {
+      if (trq_down == 1)
+        {
+        *the_num = 0; /* This is the pid */
+        trq_down = 0;
+        rc = PBSE_NONE;
+        }
+      else
+        {
+        trq_down = 1;
+        rc = PBSE_NONE;
+        }
+      }
+    }
 
   return(rc);
   }
