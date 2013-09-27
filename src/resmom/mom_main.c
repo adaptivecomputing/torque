@@ -6299,17 +6299,15 @@ int do_tcp(
 
   /* don't close these connections -- the pointer is saved in 
    * the tasks for MPI jobs */
-  if (svr_conn[chan->sock].cn_stay_open == FALSE)
+  if (chan != NULL)
     DIS_tcp_cleanup(chan);
-  else
-    DBPRT(("%s:%d", __func__, proto));
+  DBPRT(("%s:%d", __func__, proto));
 
   return(rc);
 
 do_tcp_cleanup:
   
-  if ((chan != NULL) &&
-      (svr_conn[chan->sock].cn_stay_open == FALSE))
+  if (chan != NULL)
     DIS_tcp_cleanup(chan);
 
   return(DIS_INVALID);
