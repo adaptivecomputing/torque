@@ -347,12 +347,6 @@ void prt_job_err(const char *cmd, int connect, const char *id)
   return;
   }
 
-char *pbs_strerror(int err)
-  { 
-  fprintf(stderr, "The call to pbs_strerror needs to be mocked!!\n");
-  return(PBSE_NONE);
-  }
-
 struct batch_status *pbs_statque(int c, char *id, struct attrl *attrib, char *extend)
   { 
   fprintf(stderr, "The call to pbs_statque needs to be mocked!!\n");
@@ -375,15 +369,25 @@ char *pbs_default(void)
 
 void initialize_network_info() {}
 
+#ifdef __cplusplus
 extern "C"
 {
+#endif
 void set_attr(
   struct attrl **attrib,        /* I */
   const char   *attrib_name,   /* I */
   const char   *attrib_value)  /* I */ 
   {
   }
+
+char *pbs_strerror(int err)
+  { 
+  fprintf(stderr, "The call to pbs_strerror needs to be mocked!!\n");
+  return(PBSE_NONE);
+  }
+#ifdef __cplusplus
 }
+#endif
 
 
 struct batch_status * pbs_selstatattr_err(
