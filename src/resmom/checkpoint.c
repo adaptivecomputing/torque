@@ -1399,12 +1399,13 @@ fail:
  *
  * job is referenced by parent after calling this routine - do not 'purge'
  * job from inside this routine
+ * @param exit_code - exit code. 
  */
 
 void post_checkpoint(
 
   job *pjob,  /* I - may be purged */
-  int  ev)    /* I */
+  int  exit_code)    /* I */
 
   {
   char           path[MAXPATHLEN + 1];
@@ -1420,7 +1421,8 @@ void post_checkpoint(
 
   pjob->ji_flags &= ~MOM_CHECKPOINT_ACTIVE;
 
-  if (ev == 0)
+  /* exit value == 0 means checkpointing worked correctly */
+  if (exit_code == 0)
     {
     pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
 
