@@ -218,6 +218,8 @@ char * netaddr_pbs_net_t(pbs_net_t);
 }
 #endif
 
+int socket_to_handle(int sock, int *local_errno);
+
 
 struct connection
   {

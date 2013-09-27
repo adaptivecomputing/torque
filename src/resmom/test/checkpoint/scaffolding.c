@@ -286,3 +286,17 @@ void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_ext(int type, const char *func_name, const char *msg, int o) {}
+
+int socket_to_handle(int sock, int *my_err)
+  {
+  if (connect_fail == true)
+    return(-1);
+  else
+    return(5);
+  }
+
+int mom_open_socket_to_jobs_server(job *pjob, const char *caller, void *(*message_handler)(void *))
+  {
+  return(0);
+  }
+
