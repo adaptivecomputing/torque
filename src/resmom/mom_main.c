@@ -6239,6 +6239,7 @@ int do_tcp(
 
       if (rc == PBSE_NONE)
         rc = RM_PROTOCOL * -1;
+      svr_conn[chan->sock].cn_stay_open = FALSE;
       }    /* END BLOCK (case RM_PROTOCOL) */
 
     break;
@@ -6257,17 +6258,21 @@ int do_tcp(
           rc = tm_request(chan, version);
         }
 
+      /* chan will be freed by the task that was initiated in tm_request */
+
       break;
 
     case IS_PROTOCOL:
 
       mom_is_request(chan,version,NULL);
 
+      svr_conn[chan->sock].cn_stay_open = FALSE;
       break;
 
     case IM_PROTOCOL:
 
       im_request(chan,version,pSockAddr);
+      svr_conn[chan->sock].cn_stay_open = FALSE;
 
       break;
 
@@ -6299,7 +6304,7 @@ int do_tcp(
 
   /* don't close these connections -- the pointer is saved in 
    * the tasks for MPI jobs */
-  if (chan != NULL)
+  if ((chan != NULL) && (svr_conn[chan->sock].cn_stay_open == FALSE))
     DIS_tcp_cleanup(chan);
   DBPRT(("%s:%d", __func__, proto));
 
