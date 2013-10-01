@@ -1356,13 +1356,14 @@ int create_job_cpuset(
   hwloc_bitmap_t  cpus = NULL;
   hwloc_bitmap_t  mems = NULL;
   int             rc   = FAILURE;
-  int             j;
 #ifdef NUMA_SUPPORT
+  int             j;
   int             numa_idx;
 #else
   hwloc_bitmap_t  tmems = NULL;
   hwloc_bitmap_t  tcpus = NULL;
 #  ifdef GEOMETRY_REQUESTS
+  int             j;
   resource       *presc = NULL;
   resource_def   *prd   = NULL;
   hwloc_obj_t     obj   = NULL;
@@ -1497,13 +1498,13 @@ int create_job_cpuset(
     else
       {
       long long mem_requested = get_memory_requested_in_kb(*pjob);
-      int       cpus = get_cpu_count_requested_on_this_node(*pjob);
+      int       cpu_count = get_cpu_count_requested_on_this_node(*pjob);
 
       // make sure the memory is evenly set over the job.
-      double    mem_pcnt = ((double)cpus) / pjob->ji_numvnod;
+      double    mem_pcnt = ((double)cpu_count) / pjob->ji_numvnod;
       mem_requested = mem_requested * mem_pcnt;
 
-      internal_layout.reserve(cpus, mem_requested, pjob->ji_qs.ji_jobid);
+      internal_layout.reserve(cpu_count, mem_requested, pjob->ji_qs.ji_jobid);
       std::vector<int> *cpu_indices = internal_layout.get_cpu_indices(pjob->ji_qs.ji_jobid);
       std::vector<int> *mem_indices = internal_layout.get_memory_indices(pjob->ji_qs.ji_jobid);
 
@@ -1602,8 +1603,8 @@ finish:
 
 int move_to_job_cpuset(
 
-    pid_t  pid,   /* I */
-    job   *pjob)  /* I */
+  pid_t  pid,   /* I */
+  job   *pjob)  /* I */
 
   {
   char          cpuset_path[MAXPATHLEN + 1];
