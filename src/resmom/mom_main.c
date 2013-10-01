@@ -78,6 +78,7 @@
 #include "u_tree.h"
 #ifdef PENABLE_LINUX26_CPUSETS
 #include "pbs_cpuset.h"
+#include "node_internals.hpp"
 #endif
 #include "threadpool.h"
 #include "mom_hierarchy.h"
@@ -197,6 +198,7 @@ resizable_array  *things_to_resend;
 mom_hierarchy_t  *mh;
 
 #ifdef PENABLE_LINUX26_CPUSETS
+node_internals   internal_layout;
 hwloc_topology_t topology = NULL;       /* system topology */
 #endif
 
@@ -4643,6 +4645,8 @@ int setup_program_environment(void)
 
 
 #ifdef PENABLE_LINUX26_CPUSETS
+  internal_layout = node_internals();
+
   /* load system topology */
   if ((hwloc_topology_init(&topology) == -1))
     {
