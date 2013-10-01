@@ -275,6 +275,11 @@ START_TEST(svr_chkque_test)
   result = svr_chkque(&test_job, &test_queue, hostname, 0, NULL);
   fail_unless(result == PBSE_NONONRERUNABLE, "svr_chkque PBSE_NONONRERUNABLE fail");
 
+  test_queue.qu_attr[QA_ATR_DisallowedTypes].at_val.at_arst = NULL;
+  result = svr_chkque(&test_job, &test_queue, hostname, 0, NULL);
+  fail_unless(result == PBSE_QUNOENB, "svr_chkque some_string fail");
+
+
   /* must reallocate as_string for this to work.
   disallowed_types_array_strings.as_usedptr = 2;
   disallowed_types_array_strings.as_string[0] = some_string;

@@ -392,6 +392,7 @@ int socket_connect_addr(
       case EINVAL:    /* Invalid argument */
       case EADDRINUSE:    /* Address already in use */
       case EADDRNOTAVAIL:   /* Cannot assign requested address */
+      case EBADF:          /* something is wrong with the socket descriptor */
 
         if (is_privileged)
           {
@@ -419,7 +420,7 @@ int socket_connect_addr(
 
       default:
 
-        snprintf(tmp_buf, sizeof(tmp_buf), "cannot connect to port %d in %s - errno:%d %s",
+        snprintf(tmp_buf, sizeof(tmp_buf), "cannot connect with socket %d in %s - errno:%d %s",
           local_socket, __func__, errno, strerror(errno));
         *error_msg = strdup(tmp_buf);
         close(local_socket);
@@ -640,24 +641,28 @@ void socket_read_flush(
 
 int socket_write(
     
-  int   socket,
-  char *data,
-  int   data_len)
+  int         socket,
+  const char *data,
+  int         data_len)
 
   {
   int data_len_actual = -1;
-  if ((data != NULL) || (data_len > 0))
+  if ((data != NULL) &&
+      (data_len > 0))
     {
-    data_len_actual = write(socket, (const char *)data, data_len);
+    data_len_actual = write(socket, data, data_len);
     if (data_len_actual == -1)
-      printf("Error (%d-%s) writing %d bytes to socket (write_socket) data [%s]\n", errno, strerror(errno), data_len, data);
+      printf("Error (%d-%s) writing %d bytes to socket (write_socket) data [%s]\n",
+        errno, strerror(errno), data_len, data);
     else if (data_len_actual != data_len)
       {
-      printf("Error (%d-%s)writing data to socket (tried to send %d chars, actual %d)\n", errno, strerror(errno), data_len, data_len_actual);
+      printf("Error (%d-%s)writing data to socket (tried to send %d chars, actual %d)\n",
+        errno, strerror(errno), data_len, data_len_actual);
       data_len_actual = data_len_actual - data_len;
       }
     }
-  return data_len_actual;
+
+  return(data_len_actual);
   } /* END socket_write() */
 
 

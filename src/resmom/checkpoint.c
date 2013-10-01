@@ -80,6 +80,7 @@
 #include "csv.h"
 #include "svrfunc.h"
 #include "pbs_ifl.h"
+#include "alps_constants.h"
 #include "alps_functions.h"
 #include "../lib/Libifl/lib_ifl.h"
 
@@ -888,23 +889,18 @@ int establish_server_connection(
   job *pjob)
 
   {
-  int num_attempts = 0;
-  int connection   = -1;
+  int local_errno = 0;
+  int connection  = -1;
+  int sock;
 
   if ((pjob == NULL) ||
       (pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str == NULL))
     return(connection);
 
-  while ((connection < 0) &&
-         (num_attempts < MAX_CONN_RETRY))
-    {
-    if (num_attempts > 0)
-      sleep(1);
+  sock = mom_open_socket_to_jobs_server(pjob, __func__, NULL);
 
-    connection = pbs_connect(pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str);
-
-    num_attempts++;
-    }
+  if (sock >= 0)
+    connection = socket_to_handle(sock, &local_errno);
   
   if (connection < 0)
     {
@@ -1403,12 +1399,13 @@ fail:
  *
  * job is referenced by parent after calling this routine - do not 'purge'
  * job from inside this routine
+ * @param exit_code - exit code. 
  */
 
 void post_checkpoint(
 
   job *pjob,  /* I - may be purged */
-  int  ev)    /* I */
+  int  exit_code)    /* I */
 
   {
   char           path[MAXPATHLEN + 1];
@@ -1424,7 +1421,8 @@ void post_checkpoint(
 
   pjob->ji_flags &= ~MOM_CHECKPOINT_ACTIVE;
 
-  if (ev == 0)
+  /* exit value == 0 means checkpointing worked correctly */
+  if (exit_code == 0)
     {
     pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
 
@@ -1906,6 +1904,7 @@ int blcr_restart_job(
       {
       int       use_nppn = TRUE;
       int       mppdepth = 0;
+      int       nppcu = APBASIL_DEFAULT_NPPCU_VALUE; /* default */
       resource *pres = find_resc_entry(
                          &pjob->ji_wattr[JOB_ATR_resource],
                          find_resc_def(svr_resc_def, "procs", svr_resc_size));
@@ -1920,6 +1919,10 @@ int blcr_restart_job(
           (pres->rs_value.at_val.at_long != 0))
         mppdepth = pres->rs_value.at_val.at_long;
 
+      /* look up job nppcu value if it exists */
+      if ((pjob->ji_wattr[JOB_ATR_nppcu].at_flags & ATR_VFLAG_SET))
+              nppcu = pjob->ji_wattr[JOB_ATR_nppcu].at_val.at_long;
+
       if (create_alps_reservation(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
             pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
             pjob->ji_qs.ji_jobid,
@@ -1927,6 +1930,7 @@ int blcr_restart_job(
             apbasil_protocol,
             pagg,
             use_nppn,
+            nppcu,
             mppdepth,
             &rsv_id) != PBSE_NONE)
         {

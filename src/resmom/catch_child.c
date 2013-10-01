@@ -655,13 +655,13 @@ void scan_for_exiting(void)
     */
 
 #ifndef NUMA_SUPPORT
-    if (((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0) &&
+    if ((am_i_mother_superior(*pjob) == false) &&
         ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) == 0))
       {
       mom_radix = pjob->ji_wattr[JOB_ATR_job_radix].at_val.at_long;
       exit_mom_job(pjob, mom_radix);
       continue;
-      }  /* END if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0) */
+      }
 
 
     /* Are we an intermediate mom? If so kill our job
@@ -1579,7 +1579,7 @@ void init_abort_jobs(
       ** any sisters that happen to still be alive.
       */
 
-      if ((pj->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+      if (am_i_mother_superior(*pj) == false)
         {
         if (LOGLEVEL >= 2)
           {

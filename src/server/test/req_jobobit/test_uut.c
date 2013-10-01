@@ -18,7 +18,7 @@ int   is_joined(job *pjob, enum job_atr ati);
 batch_request *return_stdfile(batch_request *preq, job *pjob, enum job_atr ati);
 void rel_resc(job *pjob);
 int handle_exiting_or_abort_substate(job *pjob);
-int setrerun(job *pjob);
+int setrerun(job *pjob,const char *text);
 batch_request *setup_cpyfiles(batch_request *preq, job *pjob, char *from, char *to, int direction, int tflag);
 int handle_returnstd(job *pjob, batch_request *preq, int type);
 int mom_comm(job *pjob, void *(*func)(struct work_task *vp));
@@ -30,7 +30,9 @@ int add_comment_to_parent(job *parent_job, int cray_subjob_exited_nonzero, int e
 int end_of_job_accounting(job *pjob, char *acctbuf, int accttail);
 int handle_terminating_array_subjob(job *pjob);
 int handle_terminating_job(job *pjob, int alreadymailed, const char *mailbuf);
-int update_substate_from_exit_status(job *pjob, int *alreadymailed);
+int update_substate_from_exit_status(job *pjob, int *alreadymailed, const char *text);
+int handle_stageout(job *pjob, int type, batch_request *preq);
+int handle_stagedel(job *pjob,int type,batch_request *preq);
 
 
 extern pthread_mutex_t *svr_do_schedule_mutex;
@@ -46,12 +48,43 @@ extern int double_bad;
 extern int reported;
 extern int bad_drequest;
 extern int usage;
+extern bool completed;
+extern bool purged;
+
 
 void init_server()
   {
   server.sv_attr_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(server.sv_attr_mutex, NULL);
   }
+
+
+START_TEST(handle_stagedel_test)
+  {
+  job pjob;
+
+  memset(&pjob, 0, sizeof(pjob));
+
+  pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("SherrieJWD");
+  pjob.ji_wattr[JOB_ATR_exec_host].at_flags |= ATR_VFLAG_SET;
+
+  // test to be sure that NULL exec hosts doesn't cause a segfault
+  fail_unless(handle_stagedel(&pjob, WORK_Immed, NULL) == PBSE_NONE);
+  }
+END_TEST
+
+
+
+START_TEST(handle_stageout_test)
+  {
+  job pjob;
+
+  memset(&pjob, 0, sizeof(pjob));
+
+  // test to be sure that NULL exec hosts doesn't cause a segfault
+  fail_unless(handle_stageout(&pjob, WORK_Immed, NULL) != PBSE_NONE);
+  }
+END_TEST
 
 
 START_TEST(setup_from_test)
@@ -162,9 +195,9 @@ START_TEST(setrerun_test)
 
   memset(&pjob, 0, sizeof(pjob));
 
-  fail_unless(setrerun(&pjob) != PBSE_NONE);
+  fail_unless(setrerun(&pjob,NULL) != PBSE_NONE);
   pjob.ji_wattr[JOB_ATR_rerunable].at_val.at_long = 1;
-  fail_unless(setrerun(&pjob) == PBSE_NONE);
+  fail_unless(setrerun(&pjob,"rerunner") == PBSE_NONE);
   fail_unless(pjob.ji_qs.ji_substate == JOB_SUBSTATE_RERUN);
   }
 END_TEST
@@ -293,6 +326,22 @@ START_TEST(handle_complete_second_time_test)
   ptask->wt_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   ptask->wt_parm1 = strdup("1.napali");
   handle_complete_second_time(ptask);
+
+  completed = false;
+  purged = false;
+  ptask = (work_task *)calloc(1, sizeof(*ptask));
+  ptask->wt_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  ptask->wt_parm1 = strdup("1.napali");
+  handle_complete_second_time(ptask);
+  fail_unless(purged == false);
+  
+  completed = true;
+  ptask = (work_task *)calloc(1, sizeof(*ptask));
+  ptask->wt_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  ptask->wt_parm1 = strdup("1.napali");
+  handle_complete_second_time(ptask);
+  fail_unless(purged == true);
+  completed = false;
   }
 END_TEST
 
@@ -439,51 +488,51 @@ START_TEST(update_substate_from_exit_status_test)
   pjob->ji_qs.ji_un.ji_exect.ji_exitstat = -1000;
   cray_enabled = 0;
   usage = 0;
-  fail_unless(update_substate_from_exit_status(pjob, &alreadymailed) == PBSE_NONE);
+  fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,"Some random message") == PBSE_NONE);
   fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN1);
   fail_unless(alreadymailed == 0);
 
   pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
   pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_OVERLIMIT_MEM;
-  fail_unless(update_substate_from_exit_status(pjob, &alreadymailed) == PBSE_NONE);
+  fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,"Some random message") == PBSE_NONE);
   fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING);
   fail_unless(alreadymailed == 1);
 
   alreadymailed = 0;
   pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
   pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_FAIL1;
-  fail_unless(update_substate_from_exit_status(pjob, &alreadymailed) == PBSE_NONE);
+  fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,NULL) == PBSE_NONE);
   fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING);
   fail_unless(alreadymailed == 1);
 
   alreadymailed = 0;
   pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
   pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_INITABT;
-  fail_unless(update_substate_from_exit_status(pjob, &alreadymailed) == PBSE_NONE);
+  fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,"Some random message") == PBSE_NONE);
   fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN);
   fail_unless((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HASRUN) != 0);
 
   alreadymailed = 0;
   pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
   pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_RETRY;
-  fail_unless(update_substate_from_exit_status(pjob, &alreadymailed) == PBSE_NONE);
+  fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,"\n\n\n\n\n\n\n\n\n") == PBSE_NONE);
   fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN);
   pjob->ji_qs.ji_svrflags = 0;
-  fail_unless(update_substate_from_exit_status(pjob, &alreadymailed) == PBSE_NONE);
+  fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,"Some random message") == PBSE_NONE);
   fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN1);
 
   alreadymailed = 0;
   pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
   pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_BADRESRT;
   pjob->ji_qs.ji_svrflags = JOB_SVFLG_CHECKPOINT_FILE;
-  fail_unless(update_substate_from_exit_status(pjob, &alreadymailed) == PBSE_NONE);
+  fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,"Some random message") == PBSE_NONE);
   fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN);
   fail_unless((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) == 0);
 
   alreadymailed = 0;
   pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
   pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_INITRST;
-  fail_unless(update_substate_from_exit_status(pjob, &alreadymailed) == PBSE_SYSTEM);
+  fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,"Some random message") == PBSE_SYSTEM);
   fail_unless(pjob->ji_momhandle == -1);
   fail_unless((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HASRUN) != 0);
   fail_unless((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0);
@@ -491,7 +540,7 @@ START_TEST(update_substate_from_exit_status_test)
   alreadymailed = 0;
   pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
   pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_INITRMG;
-  fail_unless(update_substate_from_exit_status(pjob, &alreadymailed) == PBSE_NONE);
+  fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,"Some random message") == PBSE_NONE);
   fail_unless((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HASRUN) != 0);
   fail_unless((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_MIGRATEABLE) != 0);
 
@@ -522,7 +571,9 @@ Suite *req_jobobit_suite(void)
   tcase_add_test(tc_core, end_of_job_accounting_test);
   tcase_add_test(tc_core, handle_terminating_array_subjob_test);
   tcase_add_test(tc_core, handle_terminating_job_test);
+  tcase_add_test(tc_core, handle_stageout_test);
   tcase_add_test(tc_core, update_substate_from_exit_status_test);
+  tcase_add_test(tc_core, handle_stagedel_test);
   suite_add_tcase(s, tc_core);
 
   return(s);

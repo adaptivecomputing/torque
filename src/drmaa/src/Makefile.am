@@ -29,6 +29,7 @@ AM_CFLAGS  = @PTHREAD_CFLAGS@
 GPERF       = @GPERF@
 GPERFFLAGS  = -L C++ --struct-type --readonly-tables --includes 
 
+if DRMAA_BUILD
 lib_LTLIBRARIES     = libdrmaa.la
 libdrmaa_la_SOURCES = \
  attrib.c \
@@ -61,3 +62,4 @@ libdrmaa_la_LIBADD  = $(PBS_LIBS) @PTHREAD_LIBS@
 	else rm $@; exit 1; \
 	fi
 
+endif

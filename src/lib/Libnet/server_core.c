@@ -7,6 +7,7 @@
 #include <sys/un.h> /*sockaddr_un */
 #include <fcntl.h>
 #include <sys/stat.h> /* chmod */
+#include <signal.h>  /* signal and constants */
 
 #include "pbs_error.h" /* PBSE_NONE */
 #include "log.h" /* log_event, PBSEVENT_JOB, PBS_EVENTCLASS_JOB */
@@ -183,6 +184,8 @@ int start_domainsocket_listener(
      before we can bind to it. Unlink it */
   unlink(socket_name);
 
+  /* Ignore SIGPIPE so a rougue client won't cause us to abort */
+  signal(SIGPIPE, SIG_IGN);
 
   if ( (listen_socket = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
     {
@@ -280,10 +283,7 @@ int start_domainsocket_listener(
         }
       }
 
-    if (new_conn_port != NULL)
-      {
-      free(new_conn_port);
-      }
+    /* Do not free the new_conn_port here. It will be freed in process_svr_conn */
 
     pthread_attr_destroy(&t_attr);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, "net_srvr",
@@ -292,6 +292,8 @@ int start_domainsocket_listener(
 
   if (listen_socket != -1)
     close(listen_socket);
+
+  log_close(1);
 
   return(rc);
   } /* END start_domainsocket_listener() */
@@ -398,7 +400,7 @@ int start_listener_addrinfo(
             if (retry_tolerance-- <= 0)
               {
               exit_loop = TRUE;
-              snprintf(err_msg, sizeof(err_msg), "Exiting loop because we passed our retry tolerance");
+              snprintf(err_msg, sizeof(err_msg), "Exiting loop because we passed our retry tolerance: %d", errno);
               }
             else
               sleep(1);

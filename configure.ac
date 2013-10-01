@@ -30,7 +30,7 @@ dnl added library functionality to testing
 dnl by John Rosenquist (jrosenquist@adaptivecomputing.com)
 
 AC_PREREQ(2.53)
-AC_INIT([torque], [4.2.5], [torqueusers@supercluster.org])
+AC_INIT([torque], [4.2.6], [torqueusers@supercluster.org])
 AC_REVISION($Revision$)
 AC_CONFIG_SRCDIR([src/cmds/qrun.c])
 AC_CONFIG_AUX_DIR([buildutils])
@@ -191,6 +191,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/lib/Libattr/test/attr_fn_intr/Makefile
     src/lib/Libattr/test/attr_fn_l/Makefile
     src/lib/Libattr/test/attr_fn_ll/Makefile
+    src/lib/Libattr/test/attr_fn_nppcu/Makefile
     src/lib/Libattr/test/attr_fn_resc/Makefile
     src/lib/Libattr/test/attr_fn_size/Makefile
     src/lib/Libattr/test/attr_fn_str/Makefile
@@ -390,6 +391,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/lib/Libutils/test/u_mom_hierarchy/Makefile
     src/lib/Libutils/test/u_mu/Makefile
     src/lib/Libutils/test/u_mutex_mgr/Makefile
+    src/lib/Libutils/test/u_putenv/Makefile
     src/lib/Libutils/test/u_resizable_array/Makefile
     src/lib/Libutils/test/u_threadpool/Makefile
     src/lib/Libutils/test/u_tree/Makefile
@@ -1048,7 +1050,7 @@ if test "${build_l26_cpuset}" = "yes" ; then
   if test "${build_mom}" = "yes" ; then
     PKG_CHECK_MODULES([HWLOC], [hwloc >= 1.1],
       [ MOMLIBS="$MOMLIBS $HWLOC_LIBS"; CFLAGS="$CFLAGS $HWLOC_CFLAGS" ],
-      [ AC_MSG_ERROR([cpuset support requires the hwloc package
+      [ AC_MSG_ERROR([cpuset support requires the hwloc development package
 
 $HWLOC_PKG_ERRORS
 
@@ -2183,6 +2185,7 @@ else
   build_drmaa_docs=no
   RPM_AC_OPTS="$RPM_AC_OPTS --without drmaa"
 fi
+AM_CONDITIONAL(DRMAA_BUILD, [test "x$GPERF" != "x"])
 AM_CONDITIONAL(DRMAA_DOCS, [test "$DOXYGEN" != "none"])
 AC_SUBST(build_drmaa_docs)
 drmaadocdir=$datadir/doc/$PACKAGE-drmaa

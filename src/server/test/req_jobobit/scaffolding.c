@@ -53,6 +53,8 @@ int cray_enabled;
 int reported;
 int bad_drequest;
 int usage;
+bool purged = false;
+bool completed = false;
 
 
 struct batch_request *alloc_br(int type)
@@ -79,8 +81,11 @@ int job_save(job *pjob, int updatetype, int mom_port)
 
 int svr_job_purge(job *pjob)
   {
+  purged = true;
   return(0);
   }
+
+void svr_mailowner_with_message(job *pjob, int mailpoint, int force, const char *text,const char *msg) {}
 
 void svr_mailowner(job *pjob, int mailpoint, int force, const char *text) {}
 
@@ -201,6 +206,9 @@ job *svr_find_job(char *jobid, int get_subjob)
   
     if (reported)
       pjob->ji_wattr[JOB_ATR_reported].at_val.at_long = 1;
+
+    if (completed == true)
+      pjob->ji_qs.ji_state = JOB_STATE_COMPLETE;
     }
 
   return(pjob);

@@ -82,12 +82,14 @@
 
 #include <string>
 #include <sstream>
+#include <boost/ptr_container/ptr_vector.hpp>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
+#include <time.h>
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <stdarg.h>
@@ -601,15 +603,92 @@ int kill_job_on_mom(
   } /* END kill_job_on_mom() */
 
 
+#if 0
+class jobAndTimeout
+{
+private:
+  std::string   jobID;
+  time_t        timeKillWasSent;
+  jobAndTimeout():timeKillWasSent(0){}
+public:
+  jobAndTimeout(const char *id)
+    {
+    jobID = id;
+    timeKillWasSent = time(NULL);
+    }
+  bool hasJobKillExpired(const char *id)
+    {
+    if(jobMatches(id))
+      {
+      if(time(NULL) > (timeKillWasSent + KILL_TIMEOUT))
+        {
+        return true;
+        }
+      }
+    return false;
+    }
+  bool jobMatches(const char *id)
+    {
+    if(jobID.compare(id) == 0)
+      {
+      return true;
+      }
+    return false;
+    }
+};
+#endif
 
+pthread_mutex_t jobsKilledMutex = PTHREAD_MUTEX_INITIALIZER;
+boost::ptr_vector<std::string> jobsKilled;
+#define KILL_TIMEOUT 300 //Once a kill job has been sent to a MOM, don't send another for five minutes.
 
-int job_should_be_on_node(
+/*
+ * Delayed task to remove a killed job from the list in
+ * case it needs to be removed again.
+ */
+
+void remove_job_from_already_killed_list(struct work_task *pwt)
+  {
+  std::string *pJobID = (std::string *)pwt->wt_parm1;
+
+  free(pwt->wt_mutex);
+  free(pwt);
+
+  if(pJobID == NULL) return;
+
+  pthread_mutex_lock(&jobsKilledMutex);
+
+  for(boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();i != jobsKilled.end();i++)
+    {
+    if(i->compare(*pJobID) == 0)
+      {
+      jobsKilled.erase(i);
+      if(i == jobsKilled.end())
+        {
+        break;
+        }
+      }
+    }
+  pthread_mutex_unlock(&jobsKilledMutex);
+
+  delete pJobID;
+
+  }
+
+/*
+ * If a job is not supposed to be on a node and we have
+ * not sent a kill to that job in the last 5 minutes
+ * then the job should be killed.
+ */
+
+bool job_should_be_killed(
     
   char           *jobid,
   struct pbsnode *pnode)
 
   {
-  int  should_be_on_node = TRUE;
+  bool  should_be_on_node = true;
+  bool  should_kill_job = false;
   job *pjob;
   
   if (strstr(jobid, server_name) != NULL)
@@ -630,22 +709,40 @@ int job_should_be_on_node(
         mutex_mgr job_mgr(pjob->ji_mutex,true);
         if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL)
           {
-          should_be_on_node = FALSE;
+          should_be_on_node = false;
           }
         else if (node_in_exechostlist(pnode->nd_name, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str) == FALSE)
           {
-          should_be_on_node = FALSE;
+          should_be_on_node = false;
           }
         }
       else
-        should_be_on_node = FALSE;
+        should_be_on_node = false;
       }
     }
 
-  return(should_be_on_node);
+  if(!should_be_on_node)
+    {
+    bool jobAlreadyKilled = false;
+    //Job should not be on the node, see if we have already sent a kill for this job.
+    pthread_mutex_lock(&jobsKilledMutex);
+
+    for(boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();(i != jobsKilled.end())&&(jobAlreadyKilled == false);i++)
+      {
+      if(i->compare(jobid) == 0)
+        {
+        jobAlreadyKilled = true;
+        }
+      }
+    if(!jobAlreadyKilled)
+      {
+      should_kill_job = true;
+      }
+    pthread_mutex_unlock(&jobsKilledMutex);
+    }
+
+  return(should_kill_job);
   } /* END job_should_be_on_node() */
-
-
 
 
 void *finish_job(
@@ -741,7 +838,6 @@ int remove_jobs_that_have_disappeared(
 
 
 
-
 /*
  * sync_node_jobs() - determine if a MOM has a stale job and possibly delete it
  *
@@ -806,9 +902,15 @@ void *sync_node_jobs(
   while ((jobidstr != NULL) && 
          (isdigit(*jobidstr)) != FALSE)
     {
-    if (job_should_be_on_node(jobidstr, np) == FALSE)
+    if (job_should_be_killed(jobidstr, np))
       {
-      kill_job_on_mom(jobidstr, np);
+      if(kill_job_on_mom(jobidstr, np) == PBSE_NONE)
+        {
+        pthread_mutex_lock(&jobsKilledMutex);
+        jobsKilled.push_back(new std::string(jobidstr));
+        pthread_mutex_unlock(&jobsKilledMutex);
+        set_task(WORK_Timed,time(NULL) + KILL_TIMEOUT,remove_job_from_already_killed_list,(void *)new std::string(jobidstr),FALSE);
+        }
       }
     else
       {
@@ -2168,11 +2270,13 @@ int save_node_for_adding(
   struct pbsnode    *pnode,
   single_spec_data  *req,
   char              *first_node_name,
-  int                is_external_node)
+  int                is_external_node,
+  int                req_rank)
 
   {
   node_job_add_info *to_add;
   node_job_add_info *old_next;
+  node_job_add_info *cur_naji;
   bool               first = false;
 
   if ((first_node_name[0] != '\0') &&
@@ -2180,6 +2284,7 @@ int save_node_for_adding(
     {
     pnode->nd_order = 0;
     first = true;
+    req_rank = 0;
     }
   else
     pnode->nd_order = 1;
@@ -2192,6 +2297,7 @@ int save_node_for_adding(
     naji->gpu_needed = req->gpu;
     naji->mic_needed = req->mic;
     naji->is_external = is_external_node;
+    naji->req_rank = req_rank;
     }
   else
     {
@@ -2213,6 +2319,7 @@ int save_node_for_adding(
       naji->gpu_needed = req->gpu;
       naji->mic_needed = req->mic;
       naji->is_external = is_external_node;
+      naji->req_rank = req_rank;
       }
     else
       {
@@ -2222,12 +2329,29 @@ int save_node_for_adding(
       to_add->gpu_needed = req->gpu;
       to_add->mic_needed = req->mic;
       to_add->is_external = is_external_node;
+      to_add->req_rank = req_rank;
       }
 
     /* fix pointers, NOTE: works even if old_next == NULL */
-    old_next = naji->next;
-    to_add->next = old_next;
-    naji->next = to_add;
+    cur_naji = naji;
+    old_next = cur_naji->next;
+    while(old_next != NULL)
+      {
+      if(to_add->req_rank <= old_next->req_rank)
+        {
+        cur_naji->next = to_add;
+        to_add->next = old_next;
+        to_add = NULL;
+        break;
+        }
+      cur_naji = old_next;
+      old_next = cur_naji->next;
+      }
+    if(to_add != NULL)
+      {
+      cur_naji->next = to_add;
+      to_add->next = NULL;
+      }
     }
 
   /* count off the number we have reserved */
@@ -2271,7 +2395,8 @@ void set_first_node_name(
       {
       /* a ':' means you've moved on to ppn and a + means its the next req */
       if ((spec_param[i] == ':') ||
-          (spec_param[i] == '+'))
+          (spec_param[i] == '+') ||
+          (spec_param[i] == '|'))
         break;
       else
         first_node_name[i] = spec_param[i];
@@ -2531,7 +2656,7 @@ int add_login_node_if_needed(
         req.gpu = 0;
         req.mic = 0;
         req.prop = NULL;
-        save_node_for_adding(naji, login, &req, login->nd_name, FALSE);
+        save_node_for_adding(naji, login, &req, login->nd_name, FALSE, -1);
         strcpy(*first_node_name_ptr, login->nd_name);
         }
       
@@ -2863,9 +2988,9 @@ int node_spec(
              * nodes in a separate attribute */
             if ((job_type == JOB_TYPE_heterogeneous) &&
                 (node_is_external(pnode) == TRUE))
-              save_node_for_adding(naji, pnode, req, first_node_name, TRUE);
+              save_node_for_adding(naji, pnode, req, first_node_name, TRUE, i+1);
             else
-              save_node_for_adding(naji, pnode, req, first_node_name, FALSE);
+              save_node_for_adding(naji, pnode, req, first_node_name, FALSE, i+1);
 
             if ((num_alps_reqs > 0) &&
                 (ard_array != NULL) &&
@@ -3055,8 +3180,6 @@ int node_satisfies_request(
   int BMLen;
   int BMIndex;
 
-  struct pbssubn *snp; 
-
   if (IS_VALID_STR(ProcBMStr) == FALSE)
     return(BM_ERROR);
 
@@ -3070,14 +3193,13 @@ int node_satisfies_request(
   BMIndex = BMLen-1;
 
   /* check if the requested processors are available on this node */
-  for (snp = pnode->nd_psn;snp && BMIndex >= 0;snp = snp->next)
+  for (int i = 0; i < pnode->nd_slots.get_total_execution_slots() && BMIndex >= 0; i++)
     {
     /* don't check cores that aren't requested */
     if (ProcBMStr[BMIndex--] != '1')
       continue;
 
-    /* cannot use this node, one of the requested cores is busy */
-    if (snp->inuse != INUSE_FREE)
+    if (pnode->nd_slots.is_occupied(i) == true)
       return(FALSE);
     }
 
@@ -3104,46 +3226,51 @@ int node_satisfies_request(
  * @param hlistptr - a pointer to the host list 
  */
 
-int reserve_node(
+job_reservation_info *reserve_node(
 
-  struct pbsnode  *pnode,     /* I/O */
-  short            newstate,  /* I */
-  job             *pjob,      /* I */
-  char            *ProcBMStr, /* I */
-  struct howl    **hlistptr)  /* O */
+  struct pbsnode                      *pnode,     /* I/O */
+  job                                 *pjob,      /* I */
+  char                                *ProcBMStr) /* I */
 
   {
-  int             BMLen;
-  int             BMIndex;
-
-  struct pbssubn *snp; 
-
   if ((pnode == NULL) ||
-      (pjob == NULL) ||
-      (hlistptr == NULL))
+      (pjob == NULL)  ||
+      (ProcBMStr == NULL))
     {
-    return(FAILURE);
+    return(NULL);
     }
 
-  BMLen = strlen(ProcBMStr);
-  BMIndex = BMLen-1;
+  int                   BMIndex = strlen(ProcBMStr) - 1;
+  job_reservation_info *node_info = (job_reservation_info *)calloc(1, sizeof(job_reservation_info));
 
   /* now reserve each node */
-  for (snp = pnode->nd_psn;snp && BMIndex >= 0;snp = snp->next)
+  for (int i = 0; i < pnode->nd_slots.get_total_execution_slots() && BMIndex >= 0; i++)
     {
     /* ignore unrequested cores */
     if (ProcBMStr[BMIndex--] != '1')
       continue;
 
-    add_job_to_node(pnode, snp, INUSE_JOB, pjob);
-
-    build_host_list(hlistptr,snp,pnode);
+    pnode->nd_slots.reserve_execution_slot(i, node_info->est);
     }
-  
+
+  if (BMIndex >= 0)
+    {
+    /* failure */
+    free(node_info);
+    return(NULL);
+    }
+    
+  job_usage_info *jui = new job_usage_info(pjob->ji_qs.ji_jobid);
+    
+  jui->est = node_info->est;
+  snprintf(node_info->node_name, sizeof(node_info->node_name), "%s", pnode->nd_name);
+  node_info->port = pnode->nd_mom_rm_port;
+  pnode->nd_job_usages.push_back(jui);
+    
   /* mark the node as exclusive */
   pnode->nd_state = INUSE_JOB;
 
-  return(SUCCESS);
+  return(node_info);
   }
 #endif /* GEOMETRY_REQUESTS */
 
@@ -3331,8 +3458,6 @@ int build_host_list(
 
   return(SUCCESS);
   }
-
-
 
 
 
@@ -3594,11 +3719,27 @@ int place_mics_in_hostlist(
 job_reservation_info *place_subnodes_in_hostlist(
 
   job                *pjob,
-  short               newstate,
   struct pbsnode     *pnode,
-  node_job_add_info  *naji)
+  node_job_add_info  *naji,
+  char               *ProcBMStr)
 
   {
+#ifdef GEOMETRY_REQUESTS
+  if (IS_VALID_STR(ProcBMStr))
+    {
+    job_reservation_info *node_info = reserve_node(pnode, pjob, ProcBMStr);
+
+    if (node_info != NULL)
+      {
+      // nodes are used exclusively for GEOMETRY_REQUESTS
+      pnode->nd_np_to_be_used = 0;
+      naji->ppn_needed = 0;
+      }
+
+    return(node_info);
+    }
+
+#endif
   job_reservation_info   *node_info = (job_reservation_info *)calloc(1, sizeof(job_reservation_info));
 
   if (pnode->nd_slots.reserve_execution_slots(naji->ppn_needed, node_info->est) == PBSE_NONE)
@@ -3835,8 +3976,6 @@ int record_external_node(
 
 
 
-
-
 /*
  * builds the hostlist based on the nodes=... part of the request
  */
@@ -3850,7 +3989,8 @@ int build_hostlist_nodes_req(
   std::vector<job_reservation_info *>  &host_info, /* O */
   struct howl                         **gpu_list,  /* O */
   struct howl                         **mic_list,  /* O */ 
-  node_job_add_info                    *naji)      /* I - freed */
+  node_job_add_info                    *naji,      /* I - freed */
+  char                                 *ProcBMStr) /* I */
 
   {
   struct pbsnode    *pnode = NULL;
@@ -3874,7 +4014,7 @@ int build_hostlist_nodes_req(
         }
       else
         {
-        job_reservation_info *host_single = place_subnodes_in_hostlist(pjob, newstate, pnode, current);
+        job_reservation_info *host_single = place_subnodes_in_hostlist(pjob, pnode, current, ProcBMStr);
 
         if (host_single != NULL)
           {
@@ -4099,7 +4239,7 @@ int set_nodes(
 
   int                i;
   int                rc;
-  int                NCount;
+  int                NCount = 0;
   short              newstate;
 
   char              *login_prop = NULL;
@@ -4179,7 +4319,15 @@ int set_nodes(
 
   newstate = INUSE_JOB;
 
-  if ((rc = build_hostlist_nodes_req(pjob, EMsg, spec, newstate, host_info, &gpu_list, &mic_list, naji)) != PBSE_NONE)
+  if ((rc = build_hostlist_nodes_req(pjob,
+                                     EMsg,
+                                     spec,
+                                     newstate,
+                                     host_info,
+                                     &gpu_list,
+                                     &mic_list,
+                                     naji,
+                                     ProcBMStr)) != PBSE_NONE)
     {
     free_nodes(pjob);
     free_alps_req_data_array(ard_array, num_reqs);

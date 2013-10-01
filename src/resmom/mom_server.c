@@ -292,7 +292,7 @@ extern tlist_head          mom_polljobs;
 extern char                mom_alias[];
 extern int                 updates_waiting_to_send;
 time_t                     LastUpdateAttempt;
-extern int                 received_cluster_addrs;
+extern bool                received_cluster_addrs;
 extern time_t              requested_cluster_addrs;
 extern time_t              first_update_time;
 extern int                 UpdateFailCount;
@@ -1018,7 +1018,7 @@ int should_request_cluster_addrs()
   int should = FALSE;
   time_now = time(NULL);
 
-  if (received_cluster_addrs == FALSE)
+  if (received_cluster_addrs == false)
     {
     if (time_now - requested_cluster_addrs > DEFAULT_SERVER_STAT_UPDATES)
       {
@@ -1972,7 +1972,6 @@ int process_host_name(
   int  *something_added)
 
   {
-  static const char        *id = "process_host_name";
   char               *colon;
   unsigned short      rm_port;
   unsigned long       ipaddr;
@@ -2007,7 +2006,7 @@ int process_host_name(
       "Bad entry in mom_hierarchy file, could not resolve host %s",
       hostname);
 
-    log_err(PBSE_BADHOST, id, log_buffer);
+    log_err(PBSE_BADHOST, __func__, log_buffer);
     }
 
   return(PBSE_NONE);
@@ -2217,7 +2216,7 @@ int read_cluster_addresses(
     }
   else
     {
-    received_cluster_addrs = TRUE;
+    received_cluster_addrs = true;
     send_update_soon();
     
     sort_paths();

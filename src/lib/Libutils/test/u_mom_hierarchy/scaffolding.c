@@ -7,12 +7,16 @@
 #include "tcp.h"
 #include "log.h" /* LOG_BUF_SIZE */
 #include "resizable_array.h" /* resizable_array */
+#include "mom_hierarchy.h"
 #include <errno.h>
 
+mom_hierarchy_t *mh;
 int pbs_errno;
 time_t time_now;
 int   LOGLEVEL=0;
 char log_buffer[LOG_BUF_SIZE];
+int  mom_hierarchy_retry_time;
+
 const char *dis_emsg[] =
   {
   "No error",
@@ -102,3 +106,47 @@ void *next_thing(resizable_array *ra, int *iter)
 
 void free_resizable_array(resizable_array *ra) {}
 
+char *trim(char *str)
+  {
+  return(str);
+  }
+
+int pbs_getaddrinfo(
+    
+  const char       *pNode,
+  struct addrinfo  *pHints,
+  struct addrinfo **ppAddrInfoOut)
+
+  {
+  return(0);
+  }
+
+char *threadsafe_tokenizer(
+
+  char **str,    /* M */
+  const char  *delims) /* I */
+
+  {
+  return(NULL);
+  }
+
+ssize_t read_ac_socket(
+
+  int     fd,
+  void   *buf,
+  ssize_t count)
+
+  {
+  return(0);
+  }
+
+int get_parent_and_child(
+
+  char  *start,       /* I */
+  char **parent,      /* O */
+  char **child,       /* O */
+  char **end)         /* O */
+
+  {
+  return(0);
+  }

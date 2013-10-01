@@ -38,7 +38,7 @@ void set_depend_hold(job *pjob, pbs_attribute *pattr);
 int delete_dependency_job(batch_request *preq, job **pjob_ptr);
 int req_register(batch_request *preq);
 bool remove_array_dependency_job_from_job(struct array_depend *pdep, job *pjob, char *job_array_id);
-void removeAfterAnyDependency(job *pJob,void *targetJob);
+void removeAfterAnyDependency(const char *pJobID, void *targetJob);
 
 
 extern char server_name[];
@@ -758,7 +758,7 @@ START_TEST(remove_after_any_test)
 
   pGlobalJob = pJob;
 
-  removeAfterAnyDependency(pJob,pTJob);
+  removeAfterAnyDependency(pJob->ji_qs.ji_jobid,pTJob->ji_qs.ji_jobid);
 
   pGlobalJob = NULL;
 
@@ -772,7 +772,7 @@ START_TEST(remove_after_any_test)
 
   pGlobalJob = pJob;
 
-  removeAfterAnyDependency(pJob,pOJob);
+  removeAfterAnyDependency(pJob->ji_qs.ji_jobid,pOJob->ji_qs.ji_jobid);
 
   pGlobalJob = NULL;
 

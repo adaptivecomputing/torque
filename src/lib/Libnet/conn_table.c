@@ -10,6 +10,8 @@
 
 
 extern struct connect_handle connection[];
+extern struct connection     svr_conn[];
+
 /*
  * finds and locks an entry in the connection table or returns an error
  */ 
@@ -68,4 +70,48 @@ int get_connection_entry(
   return(rc);
   } /* END get_connection_entry() */
 
+
+
+/*
+ * socket_to_handle() - turn a socket into a connection handle
+ * as used by the libpbs.a routines.
+ *
+ * Returns: >=0 connection handle if successful, or
+ *    -1 if error, error number set in local_errno.
+ */
+
+int socket_to_handle(
+
+  int  sock,        /* opened socket */
+  int *local_errno) /* O */
+
+  {
+  int   conn_pos = 0;
+  int   rc = PBSE_NONE;
+
+  if ((rc = get_connection_entry(&conn_pos)) != PBSE_NONE)
+    {
+    *local_errno = PBSE_NOCONNECTS;
+    }
+  else
+    {
+    /* NOTE: get_connection_entry() locks connection[conn_pos] */
+    connection[conn_pos].ch_stream = 0;
+    connection[conn_pos].ch_inuse  = TRUE;
+    connection[conn_pos].ch_errno  = 0;
+    connection[conn_pos].ch_socket = sock;
+    connection[conn_pos].ch_errtxt = 0;
+
+    /* SUCCESS - save handle for later close */
+    pthread_mutex_unlock(connection[conn_pos].ch_mutex);
+      
+    pthread_mutex_lock(svr_conn[sock].cn_mutex);
+    svr_conn[sock].cn_handle = conn_pos;
+    pthread_mutex_unlock(svr_conn[sock].cn_mutex);
+
+    rc = conn_pos;
+    }
+
+  return(rc);
+  }  /* END socket_to_handle() */
 

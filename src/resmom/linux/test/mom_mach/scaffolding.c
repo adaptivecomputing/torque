@@ -136,3 +136,8 @@ pidl *get_cpuset_pidlist(const char *path, pidl *bob)
   {
   return(NULL);
   }
+
+bool am_i_mother_superior(const job &pjob)
+  {
+  return(false);
+  }

@@ -149,3 +149,8 @@ int pbs_getaddrinfo(const char *hostname, struct addrinfo *in, struct addrinfo *
   {
   return(0);
   }
+
+int socket_wait_for_write(int sock)
+  {
+  return(0);
+  }

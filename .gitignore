@@ -348,6 +348,7 @@ src/lib/Libutils/test/u_threadpool/test_u_threadpool
 src/lib/Libutils/test/u_tree/test_u_tree
 src/lib/Libutils/test/u_users/test_u_users
 src/lib/Libutils/test/u_xml/test_u_xml
+src/lib/Libutils/test/u_putenv/test_u_putenv
 src/momctl/test/momctl/test_momctl
 src/resmom/linux/test/mom_mach/test_mom_mach
 src/resmom/linux/test/mom_start/test_mom_start
@@ -372,6 +373,7 @@ src/resmom/test/mom_comm/test_mom_comm
 src/resmom/test/mom_inter/test_mom_inter
 src/resmom/test/mom_job_func/test_mom_job_func
 src/resmom/test/mom_main/test_mom_main
+src/resmom/test/mom_main/bob
 src/resmom/test/mom_process_request/test_mom_process_request
 src/resmom/test/mom_req_quejob/test_mom_req_quejob
 src/resmom/test/mom_server/test_mom_server

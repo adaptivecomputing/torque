@@ -13,6 +13,8 @@
 #include <grp.h> /* setgroups */
 #include <ctype.h> /*isspace */
 #include <getopt.h> /*getopt_long */
+#include <sys/types.h>
+#include <pwd.h>   /* getuid */
 #include "pbs_error.h" /* PBSE_NONE */
 #include "pbs_constants.h" /* AUTH_IP */
 #include "pbs_ifl.h" /* pbs_default, PBS_BATCH_SERVICE_PORT, TRQ_AUTHD_SERVICE_PORT */
@@ -29,13 +31,13 @@
 #define TRQ_LOGFILES "client_logs"
 
 extern char *msg_daemonname;
-extern pthread_mutex_t *log_mutex;
-extern pthread_mutex_t *job_log_mutex;
-
 extern int debug_mode;
+
 bool       down_server = false;
 static int changed_msg_daem = 0;
 static char *active_pbs_server;
+pbs_net_t   trq_server_addr;
+char       trq_hostname[PBS_MAXSERVERNAME + 1];
 
 int load_config(
 
@@ -48,7 +50,7 @@ int load_config(
   char *tmp_name = pbs_default();
   /* Assume TORQUE_HOME = /var/spool/torque */
   /* /var/spool/torque/server_name */
-  if (tmp_name == NULL)
+  if (tmp_name == NULL || tmp_name[0] == '\0')
     rc = PBSE_BADHOST;
   else
     {
@@ -85,14 +87,6 @@ void initialize_globals_for_log(int port)
   log_set_hostname_sharelogging(active_pbs_server, port);
   }
 
-void clean_log_init_mutex(void)
-  {
-  pthread_mutex_destroy(log_mutex);
-  pthread_mutex_destroy(job_log_mutex);
-  free(log_mutex);
-  free(job_log_mutex);
-  }
-
 int init_trqauth_log(int server_port)
   {
   const char *path_home = PBS_SERVER_HOME;
@@ -119,9 +113,9 @@ int init_trqauth_log(int server_port)
        closelog();
        return(PBSE_SYSTEM);
     }
-    pthread_mutex_lock(log_mutex);
+    pthread_mutex_lock(&log_mutex);
     rc = log_open(log_file, path_log);
-    pthread_mutex_unlock(log_mutex);
+    pthread_mutex_unlock(&log_mutex);
 
     return(rc);
 
@@ -199,14 +193,13 @@ int daemonize_trqauthd(const char *server_ip, int server_port, void *(*process_m
       openlog("daemonize_trqauthd", LOG_PID | LOG_NOWAIT, LOG_DAEMON);
       syslog(LOG_ALERT, "trqauthd could not start: %d\n", rc);
       log_err(rc, "daemonize_trqauthd", (char *)"trqauthd could not start");
-      pthread_mutex_lock(log_mutex);
+      pthread_mutex_lock(&log_mutex);
       log_close(1);
-      pthread_mutex_unlock(log_mutex);
+      pthread_mutex_unlock(&log_mutex);
       if (changed_msg_daem && msg_daemonname) 
         {
           free(msg_daemonname);
         }
-      clean_log_init_mutex();
       exit(-1);
       }
     snprintf(msg_trqauthddown, sizeof(msg_trqauthddown),
@@ -214,14 +207,13 @@ int daemonize_trqauthd(const char *server_ip, int server_port, void *(*process_m
       server_ip, server_port);
     log_record(PBSEVENT_SYSTEM | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD,
       msg_daemonname, msg_trqauthddown);
-    pthread_mutex_lock(log_mutex);
+    pthread_mutex_lock(&log_mutex);
     log_close(1);
-    pthread_mutex_unlock(log_mutex);
+    pthread_mutex_unlock(&log_mutex);
     if (changed_msg_daem && msg_daemonname)
       {
       free(msg_daemonname);
       }
-    clean_log_init_mutex();
     exit(0);
   }
 
@@ -289,9 +281,24 @@ int terminate_trqauthd()
   int sock = -1;
   char write_buf[MAX_LINE];
   char *read_buf;
+  char log_buf[MAX_BUF];
   long long read_buf_len = MAX_LINE;
+  long long ret_code;
+  uid_t     myrealuid;
+  pid_t     mypid;
+  struct passwd *pwent;
 
-  sprintf(write_buf, "%d|", TRQ_DOWN_TRQAUTHD);
+  myrealuid = getuid();
+  pwent = getpwuid(myrealuid);
+  if (pwent == NULL)
+    {
+    snprintf(log_buf, MAX_BUF, "cannot get account info: uid %d, errno %d (%s)\n", (int)myrealuid, errno, strerror(errno));
+    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
+    return(PBSE_SYSTEM);
+    }
+
+  mypid = getpid();
+  sprintf(write_buf, "%d|%d|%s|%d|", TRQ_DOWN_TRQAUTHD, (int )strlen(pwent->pw_name), pwent->pw_name, mypid);
 
   if((rc = connect_to_trqauthd(&sock)) != PBSE_NONE)
     {
@@ -300,6 +307,15 @@ int terminate_trqauthd()
   else if ((rc = socket_write(sock, write_buf, strlen(write_buf))) < 0)
     {
     fprintf(stderr, "Failed to send termnation request to trqauthd: %d\n", rc);
+    }
+  else if ((rc = socket_read_num(sock, &ret_code)) != PBSE_NONE)
+    {
+    fprintf(stderr, "trqauthd did not give proper response. Check to see if traquthd has terminated: %d\n", rc);
+    }
+  else if (ret_code != PBSE_NONE)
+    {
+    rc = socket_read_str(sock, &read_buf, &read_buf_len);
+    fprintf(stderr, "trqauthd not shutdown. %s\n", read_buf);
     }
   else if ((rc = socket_read_str(sock, &read_buf, &read_buf_len)) != PBSE_NONE)
     {
@@ -322,6 +338,7 @@ int terminate_trqauthd()
   return(rc);
   }
 
+
 extern "C"
 {
 int trq_main(
@@ -340,11 +357,9 @@ int trq_main(
 
   parse_command_line(argc, argv);
 
-  if (down_server == true)
-    {
-    rc = terminate_trqauthd();
+  rc = set_trqauthd_addr();
+  if (rc != PBSE_NONE)
     return(rc);
-    }
 
   if (IamRoot() == 0)
     {
@@ -352,8 +367,15 @@ int trq_main(
     return(PBSE_IVALREQ);
     }
 
+  if (down_server == true)
+    {
+    rc = terminate_trqauthd();
+    return(rc);
+    }
+
   if ((rc = load_config(&active_pbs_server, &trq_server_port, &daemon_port)) != PBSE_NONE)
     {
+    fprintf(stderr, "Failed to load configuration. Make sure the $TORQUE_HOME/server_name file exists\n");
     }
   else if ((rc = load_ssh_key(&the_key)) != PBSE_NONE)
     {

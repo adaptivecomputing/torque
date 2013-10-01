@@ -123,6 +123,7 @@ extern "C"
 #include "utils.h"
 #include "mom_comm.h"
 #include "../lib/Libnet/lib_net.h" /* socket_avail_bytes_on_descriptor */
+#include "alps_constants.h"
 #include "alps_functions.h"
 #include "tcp.h" /* tcp_chan */
 #include "dynamic_string.h"
@@ -622,7 +623,7 @@ void exec_bail(
   sprintf(log_buffer, "bailing on job %s code %d", pjob->ji_qs.ji_jobid, code);
   log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
-  if (pjob->ji_hosts[0].hn_node == pjob->ji_nodeid) //only call send_sisters if I'm mother superior
+  if (am_i_mother_superior(*pjob) == true)
     {
     nodecount = send_sisters(pjob, IM_ABORT_JOB, FALSE, sisters_contacted);
 
@@ -3034,6 +3035,7 @@ void handle_reservation(
   char      *rsv_id = NULL;
   resource  *pres;
   int        use_nppn = TRUE;
+  int        nppcu = APBASIL_DEFAULT_NPPCU_VALUE; /* default */
   
   sjr->sj_session = setsid();
 
@@ -3080,6 +3082,10 @@ void handle_reservation(
         (pres->rs_value.at_val.at_long != 0))
       mppdepth = pres->rs_value.at_val.at_long;
 
+    /* get nppcu value from job if it exists */
+    if ((pjob->ji_wattr[JOB_ATR_nppcu].at_flags & ATR_VFLAG_SET))
+      nppcu = pjob->ji_wattr[JOB_ATR_nppcu].at_val.at_long;
+
     j = create_alps_reservation(exec_str,
           pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
           pjob->ji_qs.ji_jobid,
@@ -3087,6 +3093,7 @@ void handle_reservation(
           apbasil_protocol,
           pagg,
           use_nppn,
+          nppcu,
           mppdepth,
           &rsv_id);
     
@@ -4827,7 +4834,7 @@ int start_process(
   ** Get ipaddr to Mother Superior.
   */
 
-  if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE)  /* I'm MS */
+  if (am_i_mother_superior(*pjob) == true)
     {
     ipaddr = htonl(localaddr);
     }
@@ -4838,7 +4845,7 @@ int start_process(
   else
     {
     ipaddr = pjob->ji_hosts[0].sock_addr.sin_addr.s_addr;
-    }   /* END else (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) */
+    }
 
   /* A restarted mom will not have called this yet, but it is needed
    * to spawn tasks (ji_grpcache).

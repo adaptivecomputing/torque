@@ -96,13 +96,15 @@
 #include "utils.h"
 #include "../Liblog/pbs_log.h"
 #include "../Libnet/lib_net.h" /* socket_get_tcp_priv, socket_connect_addr */
+#include "../Libifl/lib_ifl.h"
 #define LOCAL_LOG_BUF 1024
 
 
+extern int   mom_hierarchy_retry_time;
 
 
-
-extern int LOGLEVEL;
+extern mom_hierarchy_t *mh;
+extern int              LOGLEVEL;
 
 
 void free_mom_hierarchy(
@@ -127,7 +129,7 @@ void free_mom_hierarchy(
       node_iter = -1;
 
       /* free each node_comm_t */
-      while ((nc = (node_comm_t *)next_thing(levels, &node_iter)) != NULL)
+     while ((nc = (node_comm_t *)next_thing(levels, &node_iter)) != NULL)
         {
         free(nc);
         }
@@ -181,8 +183,6 @@ int add_network_entry(
   node_comm_t     *nc = (node_comm_t *)calloc(1, sizeof(node_comm_t));
   resizable_array *levels;
   resizable_array *node_comm_entries;
-
-  memset(nc, 0, sizeof(node_comm_t));
 
   /* check if the path is already in the array */
   if (nt->paths->num > path)
@@ -386,7 +386,7 @@ node_comm_t *force_path_update(
           nc = (node_comm_t *)node_comm_entries->slots[node+1].item;
 
           if ((nc->bad == TRUE) &&
-              (time_now - nc->mtime <= NODE_COMM_RETRY_TIME))
+              (time_now - nc->mtime <= mom_hierarchy_retry_time))
             continue;
 
           if (rm_establish_connection(nc) == PBSE_NONE)
@@ -419,7 +419,7 @@ node_comm_t *force_path_update(
         nc = (node_comm_t *)node_comm_entries->slots[node+1].item;
 
         if ((nc->bad == TRUE) &&
-            (time_now - nc->mtime <= NODE_COMM_RETRY_TIME))
+            (time_now - nc->mtime <= mom_hierarchy_retry_time))
           continue;
 
         if (rm_establish_connection(nc) == PBSE_NONE)
@@ -470,7 +470,7 @@ node_comm_t *update_current_path(
            (nt->current_level != 0) ||
            (nt->current_node  != 0))
     {
-    if ((time(NULL) - nc->mtime) > NODE_COMM_RETRY_TIME)
+    if ((time(NULL) - nc->mtime) > mom_hierarchy_retry_time)
       {
       close(nc->stream);
       return(force_path_update(nt));
@@ -610,6 +610,126 @@ int read_tcp_reply(
   return(ret);
   } /* END read_tcp_reply() */
 
+
+
+int handle_level(
+    
+  char           *level_iter,
+  int             path_index,
+  int            &level_index)
+
+  {
+  const char     *delims = ",";
+  char           *host_tok;
+
+  level_index++;
+
+  /* find each hostname */
+  host_tok = threadsafe_tokenizer(&level_iter, delims);
+
+  while (host_tok != NULL)
+    {
+    struct addrinfo *addr_info = NULL;
+    char            *colon;
+    unsigned short   rm_port;
+
+    host_tok = trim(host_tok);
+
+    if ((colon = strchr(host_tok, ':')) != NULL)
+      {
+      *colon = '\0';
+      rm_port = strtol(colon+1, NULL, 10);
+      }
+    else
+      rm_port = PBS_MANAGER_SERVICE_PORT;
+
+    if (pbs_getaddrinfo(host_tok, NULL, &addr_info) == 0)
+      add_network_entry(mh, host_tok, addr_info, rm_port, path_index, level_index);
+
+    host_tok = threadsafe_tokenizer(&level_iter, delims);
+    }
+
+  return(PBSE_NONE);
+  } /* END handle_level() */
+
+
+
+int handle_path(
+
+  char           *path_iter,
+  int            &path_index)
+
+  {
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
+  char *level_parent;
+  char *level_child;
+
+  int   level_index = -1;
+
+  path_index++;
+  
+  /* iterate over each level in the path */
+  while (get_parent_and_child(path_iter,&level_parent,&level_child,&path_iter) == PBSE_NONE)
+    {
+    if (!strncmp(level_parent,"level",strlen("level")))
+      {
+      handle_level(level_child, path_index, level_index);
+      }
+    else
+      {
+      /* non-fatal error */
+      snprintf(log_buf, sizeof(log_buf),
+        "Found noise in the mom hierarchy file. Ignoring <%s>%s</%s>",
+        level_parent, level_child, level_parent);
+      log_err(-1, __func__, log_buf);
+      }
+    }
+  
+  return(PBSE_NONE);
+  } /* END handle_path() */
+
+
+
+void parse_mom_hierarchy(
+    
+  int fds)
+
+  {
+  int             bytes_read;
+  char            buffer[MAXLINE<<10];
+  char           *current;
+  char           *parent;
+  char           *child;
+  char            log_buf[LOCAL_LOG_BUF_SIZE];
+  int             path_index = -1;
+
+  memset(&buffer, 0, sizeof(buffer));
+
+  if ((bytes_read = read_ac_socket(fds, buffer, sizeof(buffer) - 1)) < 0)
+    {
+    snprintf(log_buf, sizeof(log_buf),
+      "Unable to read from mom hierarchy file");
+    log_err(errno, __func__, log_buf);
+
+    return;
+    }
+  
+  current = buffer;
+
+  while (get_parent_and_child(current, &parent, &child, &current) == PBSE_NONE)
+    {
+    if (!strncmp(parent,"path",strlen("path")))
+      handle_path(child, path_index);
+    else
+      {
+      /* non-fatal error */
+      snprintf(log_buf, sizeof(log_buf),
+        "Found noise in the mom hierarchy file. Ignoring <%s>%s</%s>",
+        parent, child, parent);
+      log_err(-1, __func__, log_buf);
+      }
+    }
+  } /* END parse_mom_hierarchy() */
 
 
 

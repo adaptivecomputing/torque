@@ -5,8 +5,17 @@
 #include "pbs_job.h"
 #include "pbs_error.h"
 
-extern void traverse_all_jobs(void (*traverseCallback)(job *pJob,void *callbackParameter),void *callbackParameter);
+extern void traverse_all_jobs(void (*traverseCallback)(const char *pJobID,void *callbackParameter),void *callbackParameter);
+char *get_correct_jobname(const char *jobid);
 
+
+START_TEST(get_correct_jobname_test)
+  {
+  // with nothing set, get_correct_jobname should just return the jobid passed in.
+  char *jobid = get_correct_jobname("1.napali.ac");
+  fail_unless(!strcmp(jobid, "1.napali.ac"));
+  }
+END_TEST
 
 START_TEST(initialize_all_jobs_array_test)
   {
@@ -211,13 +220,13 @@ START_TEST(next_job_from_back_test)
   }
 END_TEST
 
-void null_found_job(job *pJob,void *jobsParm)
+void null_found_job(const char *pJobID,void *jobsParm)
   {
   job **jobs = (job **)jobsParm;
 
   for(int i = 0;i < 4;i++)
     {
-    if(jobs[i] == pJob)
+    if((jobs[i] != NULL)&&(!strcmp(jobs[i]->ji_qs.ji_jobid,pJobID)))
       {
       jobs[i] = NULL;
       return;
@@ -227,6 +236,15 @@ void null_found_job(job *pJob,void *jobsParm)
   exit(1);
   }
 
+
+const char *jobIDs[4] =
+{
+    "fred",
+    "wilma",
+    "barney",
+    "betty"
+};
+
 START_TEST(traverse_all_jobs_test)
   {
   extern struct all_jobs alljobs;
@@ -234,14 +252,13 @@ START_TEST(traverse_all_jobs_test)
   struct job *test_job[4];
 
   initialize_all_jobs_array(&alljobs);
-  resizable_array *ar = (resizable_array *)calloc(1,sizeof(resizable_array));
-  ar->slots = (slot *)calloc(4,sizeof(slot));
+  resizable_array *ar = initialize_resizable_array(10);
 
   for(int i = 0;i < 4;i++)
     {
     test_job[i] = job_alloc();
-    ar->slots[i].item = (void *)test_job[i];
-    ar->max++;
+    strcpy(test_job[i]->ji_qs.ji_jobid,jobIDs[i]);
+    insert_thing(ar,(void *)test_job[i]);
     }
   alljobs.ra = ar;
 
@@ -300,6 +317,7 @@ Suite *job_container_suite(void)
 
   tc_core = tcase_create("next_job_from_back_test");
   tcase_add_test(tc_core, next_job_from_back_test);
+  tcase_add_test(tc_core, get_correct_jobname_test);
   suite_add_tcase(s, tc_core);
   
   tc_core = tcase_create("traverse_all_jobs_test");

@@ -1,3 +1,4 @@
+#include <sstream>
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
@@ -10,6 +11,8 @@
 #include "libpbs.h" /* batch_reply */
 #include "../lib/Liblog/pbs_messages.c"
 #include "dis.h"
+#include "net_connect.h" /* pbs_net_t */
+#include "lib_ifl.h"
 
 
 time_t pbs_tcp_timeout;
@@ -27,14 +30,21 @@ bool    getsockopt_success = true;
 bool    tcp_priv_success = true;
 bool    socket_connect_success = true;
 bool    DIS_success = true;
+bool    gethostname_success = true;
+bool    get_hostaddr_success = true;
+bool    getpwuid_success = true;
+bool    trqauthd_terminate_success = true;
 
 int     request_type;
+int     trq_down = 0;
 
 char *my_active_server;
 char error_text[100] = "some error text";
+char test_trq_hostname[20] = "hosta";
 
 /****************** GLibC mocks begin ********************/
 char dummy_name[20] = "eris";
+char root_name[20] = "root";
 
 
 int getsockopt(
@@ -48,7 +58,10 @@ int getsockopt(
   {
   struct ucred *cr = (struct ucred *)optval;
 
-  cr->pid = 1;
+  if (trqauthd_terminate_success == true)
+    cr->pid = 0;
+  else
+    cr->pid = 1;
   cr->uid = request_type;
   cr->gid = 3;
 
@@ -62,11 +75,21 @@ struct passwd *getpwuid(uid_t uid)
   {
   struct passwd *stuff;
 
+
   stuff = (struct passwd *)calloc(1, sizeof(struct passwd));
   if (stuff == NULL)
     return(NULL);
 
-  stuff->pw_name = dummy_name;
+  if (trqauthd_terminate_success == true)
+    {
+    stuff->pw_name = root_name;
+    }
+  else if (getpwuid_success == true)
+    {
+    stuff->pw_name = dummy_name;
+    }
+  else
+    return(NULL);
 
   return(stuff);
   }
@@ -79,7 +102,7 @@ int socket_close(int socket)
   return(PBSE_NONE);
   }
 
-int socket_write(int socket, char *data, int data_len)
+int socket_write(int socket, const char *data, int data_len)
   {
   if (write_success == true)
     {
@@ -221,7 +244,15 @@ int socket_read_str(int socket, char **the_str, long long *str_len)
   if (my_active_server == NULL)
     return(PBSE_SYSTEM);
 
-  strcpy(my_active_server, "eris");
+  if (trqauthd_terminate_success == true)
+    {
+    strcpy(my_active_server, "root");
+    }
+  else
+    {
+    strcpy(my_active_server, "eris");
+    }
+
   if (socket_read_success == true)
     {
     *the_str = my_active_server;
@@ -247,6 +278,24 @@ int socket_read_num(int socket, long long *the_num)
 
   if (socket_read_num_success == false)
     return(PBSE_SYSTEM);
+
+  if (request_type == TRQ_DOWN_TRQAUTHD)
+    {
+    if (trqauthd_terminate_success == true)
+      {
+      if (trq_down == 1)
+        {
+        *the_num = 0; /* This is the pid */
+        trq_down = 0;
+        rc = PBSE_NONE;
+        }
+      else
+        {
+        trq_down = 1;
+        rc = PBSE_NONE;
+        }
+      }
+    }
 
   return(rc);
   }
@@ -490,3 +539,30 @@ int connect(
     return(-1);
   }
 
+int gethostname(char *name, size_t len) throw()
+  {
+
+  if(gethostname_success == false)
+    return(-1);
+
+  name = test_trq_hostname;
+  len = strlen(name);
+  if (len == 0)
+    return(-1);
+
+  return(0);
+  }
+
+pbs_net_t get_hostaddr(
+
+    int *local_errno,
+    char *hostname)
+
+  {
+  pbs_net_t rval = 10101010;
+
+  if (get_hostaddr_success == false)
+    return(0);
+
+  return(rval);
+  }

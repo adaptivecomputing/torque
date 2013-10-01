@@ -243,8 +243,8 @@ int req_orderjob(
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
   pbs_queue            *pque1;
   pbs_queue            *pque2;
-  bool                  reservation1;
-  bool                  reservation2;
+  bool                  reservation1 = false;
+  bool                  reservation2 = false;
 
   if ((pjob1 = chk_job_request(req->rq_ind.rq_move.rq_jid, req)) == NULL)
     {

@@ -31,7 +31,8 @@ int validate_active_pbs_server(char **, int);
 int trq_simple_connect(const char *server_name, int port, int *handle);
 int trq_simple_disconnect(int handle);
 void send_svr_disconnect(int, const char *);
-
+int set_trqauthd_addr(void);
+int validate_user(int sock, const char *user_name, int user_pid, char *msg);
 
 /* PBSD_gpuctrl2.c */
 int PBSD_gpu_put(int c, char *node, char *gpuid, int gpumode, int reset_perm, int reset_vol, char *extend);

@@ -108,7 +108,8 @@ int decode_DIS_Authen(
   int rc;
 
   preq->rq_ind.rq_authen.rq_port = disrui(chan, &rc);
-  return rc;
+  
+  return(rc);
   } /* END decode_DIS_Authen() */
 
 
@@ -125,7 +126,6 @@ int decode_DIS_AltAuthen(
     {
     return(rc);
     }
-
   rc = disrfst(chan, PBS_MAXCREDENTIAL_LEN, preq->rq_ind.rq_authen.rq_cred);
 
   return rc;

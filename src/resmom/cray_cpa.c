@@ -16,6 +16,7 @@
 #include "log.h"
 #include "mom_func.h"
 #include "resource.h"
+#include "utils.h"
 
 
 extern int LOGLEVEL;
@@ -444,8 +445,6 @@ int CPASetJobEnv(
   char          *JobID)        /* I */
 
   {
-  char *ptr;
-
   char  tmpNum[64];
 
   const char *ParVar = "BATCH_PARTITION_ID";
@@ -459,57 +458,29 @@ int CPASetJobEnv(
 
   if (tmpNum[0] != '\0')
     {
-    ptr = (char *)calloc(1, strlen(tmpNum) + strlen(ParVar) + 2);
-
-    if (ptr == NULL)
+    if (put_env_var(ParVar, tmpNum))
       {
       return(1);
       }
-
-    sprintf(ptr, "%s=%s",
-
-            ParVar,
-            tmpNum);
-
-    putenv(ptr);
     }
 
   sprintf(tmpNum, "%ld",
-
           AllocCookie);
 
   if (tmpNum[0] != '\0')
     {
-    ptr = (char *)calloc(1, strlen(tmpNum) + strlen(AllVar) + 2);
-
-    if (ptr == NULL)
+    if (put_env_var(AllVar, tmpNum))
       {
       return(1);
       }
-
-    sprintf(ptr, "%s=%s",
-
-            AllVar,
-            tmpNum);
-
-    putenv(ptr);
     }
 
   if (JobID != NULL)
     {
-    ptr = (char *)calloc(1, strlen(JobID) + strlen(JobVar) + 2);
-
-    if (ptr == NULL)
+    if (put_env_var(JobVar, JobID))
       {
       return(1);
       }
-
-    sprintf(ptr, "%s=%s",
-
-            JobVar,
-            JobID);
-
-    putenv(ptr);
     }
 
   return(0);

@@ -1,9 +1,12 @@
+#include <string>
+#include <boost/ptr_container/ptr_vector.hpp>
 #include "license_pbs.h" /* See here for the software license */
 #include "node_manager.h"
 #include "test_uut.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include "pbs_error.h"
+
 
 const char *exec_hosts = "napali/0+napali/1+napali/2+napali/50+napali/4+l11/0+l11/1+l11/2+l11/3";
 char  buf[4096];
@@ -13,10 +16,49 @@ const char *l11 =    "l11";
 int   remove_job_from_node(struct pbsnode *pnode, job *pjob);
 int   node_in_exechostlist(char *, char *);
 char *get_next_exec_host(char **);
-int   job_should_be_on_node(char *, struct pbsnode *);
+int   job_should_be_killed(char *, struct pbsnode *);
 int   check_for_node_type(complete_spec_data *, enum node_types);
 int   record_external_node(job *, struct pbsnode *);
 void *record_reported_time(void *vp);
+int save_node_for_adding(node_job_add_info *naji,struct pbsnode *pnode,single_spec_data *req,char *first_node_name,int is_external_node,int req_rank);
+void remove_job_from_already_killed_list(struct work_task *pwt);
+
+extern boost::ptr_vector<std::string> jobsKilled;
+
+START_TEST(remove_job_from_already_killed_list_test)
+  {
+  struct work_task *pwt;
+
+  pwt = (struct work_task *)calloc(1,sizeof(struct work_task));
+  pwt->wt_mutex = (pthread_mutex_t *)calloc(1,sizeof(pthread_mutex_t));
+  pwt->wt_parm1 = (void *)new std::string("Job 5");
+  jobsKilled.push_back(new std::string("Job 1"));
+  jobsKilled.push_back(new std::string("Job 2"));
+  jobsKilled.push_back(new std::string("Job 3"));
+  jobsKilled.push_back(new std::string("Job 4"));
+  jobsKilled.push_back(new std::string("Job 5"));
+  jobsKilled.push_back(new std::string("Job 6"));
+
+  remove_job_from_already_killed_list(pwt);
+
+  for(boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();i != jobsKilled.end();i++)
+    {
+    fail_unless(strcmp(i->c_str(),"Job 5") != 0);
+    }
+
+  pwt = (struct work_task *)calloc(1,sizeof(struct work_task));
+  pwt->wt_mutex = (pthread_mutex_t *)calloc(1,sizeof(pthread_mutex_t));
+  pwt->wt_parm1 = (void *)new std::string("Job 6");
+
+  remove_job_from_already_killed_list(pwt);
+
+  for(boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();i != jobsKilled.end();i++)
+    {
+    fail_unless(strcmp(i->c_str(),"Job 6") != 0);
+    }
+
+  }
+END_TEST
 
 START_TEST(remove_job_from_node_test)
   {
@@ -88,7 +130,7 @@ END_TEST
 
 
 
-START_TEST(job_should_be_on_node_test)
+START_TEST(job_should_be_killed_test)
   {
   struct pbsnode pnode;
   struct jobinfo jinfo;
@@ -99,11 +141,11 @@ START_TEST(job_should_be_on_node_test)
   pnode.nd_name = (char *)"tom";
   strcpy(jinfo.jobid, "1");
 
-  fail_unless(job_should_be_on_node((char *)"2", &pnode) == FALSE, "non-existent job shouldn't be on node");
-  fail_unless(job_should_be_on_node((char *)"3", &pnode) == FALSE, "non-existent job shouldn't be on node");
-  fail_unless(job_should_be_on_node((char *)"4", &pnode) == FALSE, "non-existent job shouldn't be on node");
-  fail_unless(job_should_be_on_node((char *)"1", &pnode) == TRUE, "false positive");
-  fail_unless(job_should_be_on_node((char *)"5", &pnode) == TRUE, "false positive");
+  fail_unless(job_should_be_killed((char *)"2", &pnode) == true, "non-existent job shouldn't be on node");
+  fail_unless(job_should_be_killed((char *)"3", &pnode) == true, "non-existent job shouldn't be on node");
+  fail_unless(job_should_be_killed((char *)"4", &pnode) == true, "non-existent job shouldn't be on node");
+  fail_unless(job_should_be_killed((char *)"1", &pnode) == false, "false positive");
+  fail_unless(job_should_be_killed((char *)"5", &pnode) == false, "false positive");
   }
 END_TEST
 
@@ -170,8 +212,65 @@ START_TEST(check_for_node_type_test)
   }
 END_TEST
 
+START_TEST(check_node_order_test)
+  {
+  node_job_add_info *pBase = (node_job_add_info *)calloc(1,sizeof(node_job_add_info));
+  struct pbsnode    node;
+  single_spec_data   req;
 
+  memset(&req,0,sizeof(single_spec_data));
 
+  memset(&node,0,sizeof(struct pbsnode));
+  node.nd_name = (char *)"first";
+  fail_unless(save_node_for_adding(pBase,&node,&req,(char *)"Mother Superior",0,6) == PBSE_NONE);
+
+  memset(&node,0,sizeof(struct pbsnode));
+  node.nd_name = (char *)"second";
+  fail_unless(save_node_for_adding(pBase,&node,&req,(char *)"Mother Superior",0,3) == PBSE_NONE);
+
+  memset(&node,0,sizeof(struct pbsnode));
+  node.nd_name = (char *)"third";
+  fail_unless(save_node_for_adding(pBase,&node,&req,(char *)"Mother Superior",0,11) == PBSE_NONE);
+
+  memset(&node,0,sizeof(struct pbsnode));
+  node.nd_name = (char *)"fourth";
+  fail_unless(save_node_for_adding(pBase,&node,&req,(char *)"Mother Superior",0,1) == PBSE_NONE);
+
+  memset(&node,0,sizeof(struct pbsnode));
+  node.nd_name = (char *)"Mother Superior";
+  fail_unless(save_node_for_adding(pBase,&node,&req,(char *)"Mother Superior",0,15) == PBSE_NONE);
+
+  memset(&node,0,sizeof(struct pbsnode));
+  node.nd_name = (char *)"fifth";
+  fail_unless(save_node_for_adding(pBase,&node,&req,(char *)"Mother Superior",0,4) == PBSE_NONE);
+
+  memset(&node,0,sizeof(struct pbsnode));
+  node.nd_name = (char *)"sixth";
+  fail_unless(save_node_for_adding(pBase,&node,&req,(char *)"Mother Superior",0,10) == PBSE_NONE);
+
+  memset(&node,0,sizeof(struct pbsnode));
+  node.nd_name = (char *)"seventh";
+  fail_unless(save_node_for_adding(pBase,&node,&req,(char *)"Mother Superior",0,61) == PBSE_NONE);
+
+  node_job_add_info *index = pBase;
+
+  fail_unless(strcmp(index->node_name,"Mother Superior") == 0);
+  index = index->next;
+  fail_unless(strcmp(index->node_name,"fourth") == 0);
+  index = index->next;
+  fail_unless(strcmp(index->node_name,"second") == 0);
+  index = index->next;
+  fail_unless(strcmp(index->node_name,"fifth") == 0);
+  index = index->next;
+  fail_unless(strcmp(index->node_name,"first") == 0);
+  index = index->next;
+  fail_unless(strcmp(index->node_name,"sixth") == 0);
+  index = index->next;
+  fail_unless(strcmp(index->node_name,"third") == 0);
+  index = index->next;
+  fail_unless(strcmp(index->node_name,"seventh") == 0);
+  }
+END_TEST
 
 START_TEST(record_external_node_test)
   {
@@ -217,8 +316,9 @@ Suite *node_manager_suite(void)
   tcase_add_test(tc_core, get_next_exec_host_test);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("job_should_be_on_node_test");
-  tcase_add_test(tc_core, job_should_be_on_node_test);
+  tc_core = tcase_create("job_should_be_killed_test");
+  tcase_add_test(tc_core, job_should_be_killed_test);
+  tcase_add_test(tc_core, remove_job_from_already_killed_list_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("node_in_exechostlist_test");
@@ -227,6 +327,10 @@ Suite *node_manager_suite(void)
 
   tc_core = tcase_create("check_for_node_type_test");
   tcase_add_test(tc_core, check_for_node_type_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("check_node_order_test");
+  tcase_add_test(tc_core, check_node_order_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("record_external_node_test");

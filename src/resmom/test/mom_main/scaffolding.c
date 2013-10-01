@@ -22,6 +22,8 @@
 #include "tcp.h"
 #include "prolog.h" /* PBS_PROLOG_TIME */
 
+extern mom_hierarchy_t *mh;
+
 mom_server     mom_servers[PBS_MAXSERVER];
 resizable_array *received_statuses;
 int mom_server_count = 0;
@@ -43,11 +45,13 @@ hash_table_t *received_table;
 threadpool_t *request_pool;
 AvlTree okclients;
 time_t wait_time = 10;
-pthread_mutex_t *log_mutex;
+pthread_mutex_t log_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 dynamic_string  *mom_status;
 char log_buffer[LOG_BUF_SIZE];
 char **ArgV;
 char  *OriginalPath;
+bool   parsing_hierarchy = false;
+extern bool received_cluster_addrs;
 
 void save_args(int argc, char **argv) {}
 
@@ -392,8 +396,17 @@ void *get_next(list_link pl, char *file, int line)
 
 resizable_array *initialize_resizable_array(int size)
   {
-  fprintf(stderr, "The call to initialize_resizable_array needs to be mocked!!\n");
-  exit(1);
+  resizable_array *ra = (resizable_array*)calloc(1, sizeof(resizable_array));
+  size_t           amount = sizeof(slot) * size;
+
+  ra->max       = size;
+  ra->num       = 0;
+  ra->next_slot = 1;
+  ra->last      = 0;
+
+  ra->slots = (slot *)calloc(1, amount);
+
+  return(ra);
   }
 
 int log_open(char *filename, char *directory)
@@ -566,8 +579,9 @@ void DIS_tcp_settimeout(long timeout)
 
 mom_hierarchy_t *initialize_mom_hierarchy(void)
   {
-  fprintf(stderr, "The call to initialize_mom_hierarchy needs to be mocked!!\n");
-  exit(1);
+  mom_hierarchy_t *nt = (mom_hierarchy_t *)calloc(1, sizeof(mom_hierarchy_t));
+  nt->paths = initialize_resizable_array(INITIAL_SIZE_NETWORK);
+  return(nt);
   }
 
 int diswsi(tcp_chan *chan, int value)
@@ -644,8 +658,9 @@ int diswul(tcp_chan *chan, unsigned long value)
 
 void *next_thing(resizable_array *ra, int *iter)
   {
-  fprintf(stderr, "The call to next_thing needs to be mocked!!\n");
-  exit(1);
+  if (parsing_hierarchy)
+    received_cluster_addrs = true;
+  return(NULL);
   }
 
 int im_compose(tcp_chan *chan, char *jobid, char *cookie, int command, tm_event_t event, tm_task_id taskid)
@@ -727,4 +742,23 @@ int pbs_getaddrinfo(
 
   {
   return(0);
+  }
+
+void parse_mom_hierarchy(int fds)
+  {
+  mh->paths->num++;
+  }
+
+int put_env_var(const char *name, const char *value)
+  {
+  return(0);
+  }
+
+void sort_paths() {}
+
+void free_mom_hierarchy(mom_hierarchy_t *nh) {}
+
+bool am_i_mother_superior(const job &pjob)
+  {
+  return(false);
   }

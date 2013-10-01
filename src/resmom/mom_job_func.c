@@ -922,5 +922,22 @@ job *mom_find_job(
   return(pj);  /* may be NULL */
   }   /* END mom_find_job() */
 
+
+
+/*
+ * am_i_mother_superior()
+ *
+ * @return true if I am this job's mother superior, else false
+ */
+bool am_i_mother_superior(
+
+  const job &pjob)
+
+  {
+  bool mother_superior = ((pjob.ji_nodeid == 0) && ((pjob.ji_qs.ji_svrflags & JOB_SVFLG_HERE) != 0));
+    
+  return(mother_superior);
+  }
+
 /* END job_func.c */
 

@@ -118,6 +118,7 @@
 #include "mutex_mgr.hpp"
 #include "threadpool.h"
 #include "svr_task.h"
+#include <string>
 
 #define PURGE_SUCCESS 1
 #define MOM_DELETE    2
@@ -166,7 +167,8 @@ extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_a
 extern int   svr_chk_owner(struct batch_request *, job *);
 void chk_job_req_permissions(job **,struct batch_request *);
 void          on_job_exit_task(struct work_task *);
-extern void removeAfterAnyDependency(job *pJob,void *targetJob);
+void           remove_stagein(job **pjob_ptr);
+extern void removeAfterAnyDependency(const char *pJobID,void *targetJob);
 
 
 
@@ -514,47 +516,66 @@ jump:
         job_mutex.set_lock_on_exit(false);
         return(-1);
         }
+      std::string dup_job_id(pjob->ji_qs.ji_jobid);
 
-      for (i = 0; i < pa->ai_qs.array_size; i++)
+      if(pa != NULL)
         {
-        if (pa->job_ids[i] == NULL)
-          continue;
-
-        if (!strcmp(pa->job_ids[i], pjob->ji_qs.ji_jobid))
-          continue;
-
-        if ((tmp = svr_find_job(pa->job_ids[i], FALSE)) == NULL)
+        for (i = 0; i < pa->ai_qs.array_size; i++)
           {
-          free(pa->job_ids[i]);
-          pa->job_ids[i] = NULL;
-          }
-        else
-          {
-          if (tmp->ji_wattr[JOB_ATR_hold].at_val.at_long & HOLD_l)
+          if (pa->job_ids[i] == NULL)
+            continue;
+
+          if (!strcmp(pa->job_ids[i], pjob->ji_qs.ji_jobid))
+            continue;
+
+          job_mutex.unlock();
+          if ((tmp = svr_find_job(pa->job_ids[i], FALSE)) == NULL)
             {
-            tmp->ji_wattr[JOB_ATR_hold].at_val.at_long &= ~HOLD_l;
-            
-            if (tmp->ji_wattr[JOB_ATR_hold].at_val.at_long == 0)
+            free(pa->job_ids[i]);
+            pa->job_ids[i] = NULL;
+            }
+          else
+            {
+            if (tmp->ji_wattr[JOB_ATR_hold].at_val.at_long & HOLD_l)
               {
-              tmp->ji_wattr[JOB_ATR_hold].at_flags &= ~ATR_VFLAG_SET;
-              }
-            
-            svr_evaljobstate(tmp, &newstate, &newsub, 1);
-            svr_setjobstate(tmp, newstate, newsub, FALSE);
-            job_save(tmp, SAVEJOB_FULL, 0);
+              tmp->ji_wattr[JOB_ATR_hold].at_val.at_long &= ~HOLD_l;
 
-            unlock_ji_mutex(tmp, __func__, "5", LOGLEVEL);
-            
+              if (tmp->ji_wattr[JOB_ATR_hold].at_val.at_long == 0)
+                {
+                tmp->ji_wattr[JOB_ATR_hold].at_flags &= ~ATR_VFLAG_SET;
+                }
+
+              svr_evaljobstate(tmp, &newstate, &newsub, 1);
+              svr_setjobstate(tmp, newstate, newsub, FALSE);
+              job_save(tmp, SAVEJOB_FULL, 0);
+
+              unlock_ji_mutex(tmp, __func__, "5", LOGLEVEL);
+              pjob = svr_find_job((char *)dup_job_id.c_str(),FALSE);  //Job might have disappeared.
+              job_mutex.set_lock_state(true);
+
+              break;
+              }
+
+            unlock_ji_mutex(tmp, __func__, "6", LOGLEVEL);
+            }
+          if((pjob = svr_find_job((char *)dup_job_id.c_str(),FALSE)) == NULL) //Job disappeared.
+            {
             break;
             }
-
-          unlock_ji_mutex(tmp, __func__, "6", LOGLEVEL);
+          job_mutex.set_lock_state(true);
           }
-        }
 
-      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+        unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+        }
       }
     } /* END MoabArrayCompatible check */
+
+  if (pjob == NULL)
+    {
+    job_mutex.set_lock_on_exit(false);
+    return -1;
+    }
+
 
   if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0)
     {
@@ -820,6 +841,12 @@ void *delete_all_work(
       {
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       
+      if(rc == -1)
+        {
+        //forced_jobpurge freed preq_dup so reallocate it.
+        preq_dup = duplicate_request(preq);
+        preq_dup->rq_noreply = TRUE;
+        }
       continue;
       }
     
@@ -831,7 +858,7 @@ void *delete_all_work(
       if ((rc = execute_job_delete(pjob, Msg, preq_dup)) == PBSE_NONE)
         reply_ack(preq_dup);
        
-      /* mark this as NULL because it has been freed */
+      /* preq_dup has been freed at this point. Either reallocate it or set it to NULL*/
       if (rc == PURGE_SUCCESS)
         {
         preq_dup = duplicate_request(preq);
@@ -957,8 +984,9 @@ int handle_single_delete(
     }
   else
     {
-    traverse_all_jobs(removeAfterAnyDependency,(void *)pjob);
+    std::string jobID = pjob->ji_qs.ji_jobid;
     unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+    traverse_all_jobs(removeAfterAnyDependency,(void *)jobID.c_str());
 
 
     /* send the asynchronous reply if needed */

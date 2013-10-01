@@ -148,11 +148,14 @@ struct varattr
 #define JOB_COOKIE_SIZE 33
 enum momcomm_type { COMPOSE_REPLY, KILLJOB_REPLY, SPAWN_TASK_REPLY, OBIT_TASK_REPLY };
 
+#define RESEND_INTERVAL 10
+
 typedef struct resend_momcomm
   {
   enum momcomm_type  mc_type;
   void              *mc_struct;
   int                resend_attempts;
+  time_t             resend_time;
   } resend_momcomm;
 
 typedef struct im_compose_info
@@ -253,7 +256,9 @@ extern char *get_job_envvar(job *, const char *);
 extern int   mom_open_socket_to_jobs_server(job* pjob, const char *id, void *(*message_hander)(void *));
 void         clear_servers();
 
-int become_the_user(job *pjob);
+int          become_the_user(job *pjob);
+
+bool         am_i_mother_superior(const job &pjob);
 
 /* defined in mach-dependant mom_mach.c */
 extern int kill_task(struct task *, int, int);

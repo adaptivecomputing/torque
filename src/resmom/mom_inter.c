@@ -98,6 +98,7 @@
 #include "portability.h"
 #include "pbs_ifl.h"
 #include "../lib/Libifl/lib_ifl.h"
+#include "utils.h"
 #include "server_limits.h"
 #include "net_connect.h"
 #include "log.h"
@@ -538,7 +539,7 @@ int x11_create_display(
   pid_t            childpid;
 
   struct pfwdsock *socks;
-  char            *homeenv;
+  const char            *homeenv = "HOME";
 
   *display = '\0';
 
@@ -551,19 +552,14 @@ int x11_create_display(
     return(-1);
     }
 
-  if ((homeenv = (char *)calloc(1, strlen("HOME=") + strlen(homedir) + 2)) == NULL)
+  if (put_env_var(homeenv, homedir))
     {
-    /* FAILURE - cannot alloc memory */
+    /* FAILURE */
     free(socks);
-    fprintf(stderr, "ERROR: could not calloc!\n");
+    fprintf(stderr, "ERROR: could not insert %s into environment\n", homeenv);
 
     return(-1);
     }
-
-  sprintf(homeenv, "HOME=%s",
-    homedir);
-
-  putenv(homeenv);
 
   for (n = 0;n < NUM_SOCKS;n++)
     socks[n].active = 0;

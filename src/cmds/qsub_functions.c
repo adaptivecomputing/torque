@@ -942,8 +942,8 @@ void validate_basic_resourcing(
   } /* END validate_basic_rsourcing() */
 
 /*
- * Set up (or enforce) errpath or outpath when join option specified
- * so that qstat will diplay it properly.
+ * Set up errpath or outpath according to what MOM does when join 
+ * option specified so that qstat will diplay it properly.
  */
 void validate_join_options (
 
@@ -980,12 +980,6 @@ void validate_join_options (
 
     if (strcmp(j_attr_value, "oe") == 0)
       {
-      if (e_attr_value != NULL)
-        {
-        unlink(script_tmp);
-        fprintf(stderr,"-e option not allowed since -j oe specified\n");
-        exit(1);
-        }
       /* copy request outpath to errpath so that qstat displays errpath correctly */
       if (o_attr_value != NULL)
         {
@@ -994,12 +988,6 @@ void validate_join_options (
       }
     else if (strcmp(j_attr_value, "eo") == 0)
       {
-      if (o_attr_value != NULL)
-        {
-        unlink(script_tmp);
-        fprintf(stderr,"-o option not allowed since -j eo specified\n");
-        exit(1);
-        }
       /* copy request errpath to outpath so that qstat displays outpath correctly */
       if (e_attr_value != NULL)
         {

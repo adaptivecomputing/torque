@@ -139,7 +139,7 @@ int            numa_index;
 char           path_meminfo[MAX_LINE];
 #endif
 
-extern pthread_mutex_t *log_mutex;
+extern pthread_mutex_t log_mutex;
 
 int          thread_unlink_calls = FALSE;
 /* by default, enforce these policies */
@@ -165,7 +165,7 @@ char         mom_alias[PBS_MAXHOSTNAME + 1];
 char         TMOMRejectConn[MAXLINE];   /* most recent rejected connection */
 char         mom_short_name[PBS_MAXHOSTNAME + 1];
 int          num_var_env;
-int          received_cluster_addrs;
+bool         received_cluster_addrs;
 time_t       requested_cluster_addrs;
 time_t       first_update_time = 0;
 char        *path_epilog;
@@ -213,6 +213,7 @@ int   mom_oom_immunize = 1;  /* make pbs_mom processes immune? no by default */
 int   job_exit_wait_time = DEFAULT_JOB_EXIT_WAIT_TIME;
 int   max_join_job_wait_time = MAX_JOIN_WAIT_TIME;
 int   resend_join_job_wait_time = RESEND_WAIT_TIME;
+int   mom_hierarchy_retry_time = NODE_COMM_RETRY_TIME;
 
 time_t          last_log_check;
 char           *nodefile_suffix = NULL;    /* suffix to append to each host listed in job host file */
@@ -229,7 +230,7 @@ char             *AllocParCmd = NULL;  /* (alloc) */
 int      src_login_batch = TRUE;
 int      src_login_interactive = TRUE;
 
-mom_hierarchy_t *mh;
+mom_hierarchy_t  *mh;
 
 char    jobstarter_exe_name[MAXPATHLEN + 1];
 int     jobstarter_set = 0;
@@ -290,6 +291,7 @@ pjobexec_t      TMOMStartInfo[TMAX_JE];
 
 /* prototypes */
 
+void            sort_paths();
 void            resend_things();
 extern void     add_resc_def(char *, char *);
 extern void     mom_server_all_diag(std::stringstream &output);
@@ -428,6 +430,7 @@ static unsigned long setmomoomimmunize(const char *);
 unsigned long        setjobexitwaittime(const char *);
 unsigned long setmaxjoinjobwaittime(const char *);
 unsigned long setresendjoinjobwaittime(const char *);
+unsigned long setmomhierarchyretrytime(const char *);
 
 static struct specials
   {
@@ -510,6 +513,7 @@ static struct specials
   { "job_exit_wait_time",    setjobexitwaittime },
   { "max_join_job_wait_time", setmaxjoinjobwaittime},
   { "resend_join_job_wait_time", setresendjoinjobwaittime},
+  { "mom_hierarchy_retry_time",  setmomhierarchyretrytime},
   { NULL,                  NULL }
   };
 
@@ -3441,6 +3445,26 @@ unsigned long setresendjoinjobwaittime(
 
 
 
+unsigned long setmomhierarchyretrytime(
+
+  const char *value)
+
+  {
+  int tmp;
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
+
+  if (value != NULL)
+    {
+    tmp = strtol(value, NULL, 10);
+    if (tmp != 0)
+      mom_hierarchy_retry_time = tmp;
+    }
+
+  return(1);
+  }
+
+
+
 static unsigned long setrejectjobsubmission(
 
   const char *value)
@@ -4385,10 +4409,10 @@ static void process_hup(void)
   call_hup = 0;
   log_record(PBSEVENT_SYSTEM, 0, __func__, "reset");
 
-  pthread_mutex_lock(log_mutex);
+  pthread_mutex_lock(&log_mutex);
   log_close(1);
   log_open(log_file, path_log);
-  pthread_mutex_unlock(log_mutex);
+  pthread_mutex_unlock(&log_mutex);
   log_file_max_size = 0;
   log_file_roll_depth = 1;
 #ifdef PENABLE_LINUX26_CPUSETS
@@ -4410,8 +4434,6 @@ static void process_hup(void)
 
 /*
 ** Got an alarm call.
-** Close all general network connections, clean up and reinit the
-** dependent code.
 */
 
 void toolong(
@@ -4419,8 +4441,6 @@ void toolong(
   int sig)
 
   {
-  log_record(PBSEVENT_SYSTEM, 0, __func__, "alarm call");
-
   if (LOGLEVEL >= 1)
     DBPRT(("alarm call\n"))
 
@@ -6221,6 +6241,7 @@ int do_tcp(
 
       if (rc == PBSE_NONE)
         rc = RM_PROTOCOL * -1;
+      svr_conn[chan->sock].cn_stay_open = FALSE;
       }    /* END BLOCK (case RM_PROTOCOL) */
 
     break;
@@ -6239,17 +6260,21 @@ int do_tcp(
           rc = tm_request(chan, version);
         }
 
+      /* chan will be freed by the task that was initiated in tm_request */
+
       break;
 
     case IS_PROTOCOL:
 
       mom_is_request(chan,version,NULL);
 
+      svr_conn[chan->sock].cn_stay_open = FALSE;
       break;
 
     case IM_PROTOCOL:
 
       im_request(chan,version,pSockAddr);
+      svr_conn[chan->sock].cn_stay_open = FALSE;
 
       break;
 
@@ -6281,17 +6306,15 @@ int do_tcp(
 
   /* don't close these connections -- the pointer is saved in 
    * the tasks for MPI jobs */
-  if (svr_conn[chan->sock].cn_stay_open == FALSE)
+  if ((chan != NULL) && (svr_conn[chan->sock].cn_stay_open == FALSE))
     DIS_tcp_cleanup(chan);
-  else
-    DBPRT(("%s:%d", __func__, proto));
+  DBPRT(("%s:%d", __func__, proto));
 
   return(rc);
 
 do_tcp_cleanup:
   
-  if ((chan != NULL) &&
-      (svr_conn[chan->sock].cn_stay_open == FALSE))
+  if (chan != NULL)
     DIS_tcp_cleanup(chan);
 
   return(DIS_INVALID);
@@ -6415,7 +6438,6 @@ const char *find_signal_name(
 
   return("unknown signal");
   }
-
 
 
 
@@ -6639,7 +6661,7 @@ int job_over_limit(
   /* cannot perform this check with NUMA, numnodes always is 1 and
    * you'll never have job stats */
   if ((pjob->ji_numnodes == 1) ||
-      ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0))
+      (am_i_mother_superior(*pjob) == false))
     {
     /* no other nodes or not mother superior */
 
@@ -7405,6 +7427,127 @@ void parse_command_line(
 
 
 
+/*
+ * verify_mom_hierarchy()
+ *
+ * iterates over the mom hierarchy to prune away paths and or levels
+ * below this node's level and also add all entries in the hierarchy to
+ * the okclients list.
+ *
+ * @pre-cond: parse_mom_hierarchy() must be called before this function.
+ * @post-cond: the old hierarchy will be freed and a new, appropriately
+ * pruned hierarchy will be put in its place.
+ * @return true if there were legitimate nodes in the hierarchy, false otherwise
+ */
+bool verify_mom_hierarchy()
+
+  {
+  int              paths_iter = -1;
+  mom_hierarchy_t *tmp_hierarchy = initialize_mom_hierarchy();
+
+  resizable_array *paths;
+  int              path_index = 0;
+  bool             legitimate_hierarchy = false;
+
+  while ((paths = (resizable_array *)next_thing(mh->paths, &paths_iter)) != NULL)
+    {
+    resizable_array *level;
+    int              levels_iter = -1;
+    int              level_index = 0;
+    bool             continue_on_path = true;
+    bool             legitimate_path = false;
+
+    while ((level = (resizable_array *)next_thing(paths, &levels_iter)) != NULL)
+      {
+      node_comm_t     *nc;
+      int              node_iter = -1;
+
+      while ((nc = (node_comm_t *)next_thing(level, &node_iter)) != NULL)
+        {
+        if (!strcmp(nc->name, mom_alias))
+          continue_on_path = false;
+        else
+          {
+          unsigned short rm_port = ntohs(nc->sock_addr.sin_port);
+          unsigned long  ipaddr = ntohl(nc->sock_addr.sin_addr.s_addr);
+          okclients = AVL_insert(ipaddr, rm_port, NULL, okclients);
+          }
+            
+        legitimate_hierarchy = true;
+        }
+      
+      if (continue_on_path == true)
+        {
+        node_iter = -1;
+
+        while ((nc = (node_comm_t *)next_thing(level, &node_iter)) != NULL)
+          {
+          struct addrinfo *addr_info;
+          if (pbs_getaddrinfo(nc->name, NULL, &addr_info) == 0)
+            {
+            add_network_entry(tmp_hierarchy,
+                              nc->name,
+                              addr_info,
+                              ntohs(nc->sock_addr.sin_port),
+                              path_index,
+                              level_index);
+
+            // mark that we found legitimate nodes in the hierarchy
+            legitimate_path = true;
+            }
+          }
+        }
+
+      level_index++;
+      }
+
+    if (legitimate_path == true)
+      path_index++;
+    }
+
+  if (legitimate_hierarchy == true)
+    {
+    free_mom_hierarchy(mh);
+    mh = tmp_hierarchy;
+    sort_paths();
+    }
+  else
+    free_mom_hierarchy(tmp_hierarchy);
+
+  return(legitimate_hierarchy);
+  } /* END verify_mom_hierarchy() */
+
+
+
+/*
+ * read_mom_hierarchy()
+ *
+ * opens the path to mom hierarchy and reads it in, if it exists.
+ * If it doesn't exist, sets things to request the hierarchy from pbs_server.
+ */
+void read_mom_hierarchy()
+
+  {
+  int  fds;
+    
+  mh = initialize_mom_hierarchy();
+  
+  if ((fds = open(path_mom_hierarchy, O_RDONLY, 0)) < 0)
+    {
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__,
+      "No local mom hierarchy file found, will request from server.");
+  
+    received_cluster_addrs = false;
+    }
+  else
+    {
+    parse_mom_hierarchy(fds);
+ 
+    // if we read something successfully, we have the cluster addresses and don't 
+    // need to request them.
+    received_cluster_addrs = verify_mom_hierarchy();
+    }
+  } /* END read_mom_hierarchy() */
 
 
 
@@ -7611,17 +7754,17 @@ int setup_program_environment(void)
     }
  
   /* open log file while std in,out,err still open, forces to fd 4 */
-  pthread_mutex_lock(log_mutex);
+  pthread_mutex_lock(&log_mutex);
   if ((c = log_open(log_file, path_log)) != 0)
     {
-    pthread_mutex_unlock(log_mutex);
+    pthread_mutex_unlock(&log_mutex);
     /* use given name */
 
     fprintf(stderr, "pbs_mom: Unable to open logfile\n");
 
     return(1);
     }
-  pthread_mutex_unlock(log_mutex);
+  pthread_mutex_unlock(&log_mutex);
 
   check_log(); /* see if this log should be rolled */
 
@@ -8039,7 +8182,7 @@ int setup_program_environment(void)
 
   initialize();  /* init RM code */
 
-  mh = initialize_mom_hierarchy();
+  read_mom_hierarchy();
 
   /* initialize machine-dependent polling routines */
   if ((c = mom_open_poll()) != PBSE_NONE)
@@ -8123,7 +8266,6 @@ int setup_program_environment(void)
 
   initialize_threadpool(&request_pool,MOM_THREADS,MOM_THREADS,THREAD_INFINITE);
 
-  received_cluster_addrs = FALSE;
   requested_cluster_addrs = 0;
 
   /* allocate status strings if needed */
@@ -8348,7 +8490,7 @@ void examine_all_polled_jobs(void)
     ** it is not being killed.
     */
 
-    if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) &&
+    if ((am_i_mother_superior(*pjob) == true) &&
         (pjob->ji_nodekill == TM_ERROR_NODE))
       {
       /*
@@ -8401,7 +8543,7 @@ void examine_all_polled_jobs(void)
         pjob->ji_qs.ji_jobid,
         log_buffer);
 
-      if (c & JOB_SVFLG_HERE)
+      if (am_i_mother_superior(*pjob) == true)
         {
         char *kill_msg;
 
@@ -8469,7 +8611,7 @@ void examine_all_running_jobs(void)
       continue; /* This job is not running, skip it. */
       }
 
-    if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+    if (am_i_mother_superior(*pjob) == false)
       continue; /* We are not the Mother Superior for this job, skip it. */
 
     /* update information for my tasks */
@@ -8650,7 +8792,7 @@ void check_jobs_awaiting_join_job_reply()
     {
     if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN) &&
         (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
-        (pjob->ji_hosts[0].hn_node == pjob->ji_nodeid)) /* am I mother superior? */
+        (am_i_mother_superior(*pjob) == true))
       {
       /* these jobs have sent out join requests but haven't received all replies */
       if (time_now - pjob->ji_joins_sent > max_join_job_wait_time)
@@ -9057,24 +9199,18 @@ void restart_mom(
   char *argv[])
 
   {
-  char *envstr;
+  const char *envstr = "PATH";
+  int rc;
 
-  envstr = (char *)calloc(1, (strlen("PATH") + strlen(OriginalPath) + 2) * sizeof(char));
-
-  if (!envstr)
+  rc = put_env_var(envstr, OriginalPath);
+  if (rc)
     {
-    sprintf(log_buffer, "calloc failed prior to execing myself: %s (%d)",
-            strerror(errno),
-            errno);
+    sprintf(log_buffer, "put_env_var failed with %d prior to execing myself", rc);
 
-    log_err(errno, __func__, log_buffer);
+    log_err(rc, __func__, log_buffer);
 
     return;
     }
-
-  strcpy(envstr, "PATH=");
-  strcat(envstr, OriginalPath);
-  putenv(envstr);
 
   DBPRT(("Re-execing myself now...\n"));
 
@@ -9747,9 +9883,13 @@ void resend_things()
   im_compose_info    *ici;
   killjob_reply_info *kj;
   spawn_task_info    *st;
+  time_t              time_now = time(NULL);
 
   while ((mc = (resend_momcomm *)next_thing(things_to_resend, &iter)) != NULL)
     {
+    if (time_now - mc->resend_time < RESEND_INTERVAL)
+      continue;
+
     ret = -1;
     mc->resend_attempts += 1;
 
@@ -9801,6 +9941,8 @@ void resend_things()
       remove_thing(things_to_resend, mc);
       free(mc);
       }
+    else
+      mc->resend_time = time_now;
     } /* END for each resendable thing */
   } /* END resend_things() */
 
@@ -9811,6 +9953,7 @@ int add_to_resend_things(
   resend_momcomm *mc)
 
   {
+  mc->resend_time = time(NULL);
   return(insert_thing(things_to_resend, mc));
   } /* END add_to_resend_things() */
 

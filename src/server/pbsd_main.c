@@ -213,6 +213,7 @@ void          restore_attr_default (struct pbs_attribute *);
 
 /* Global Data Items */
 
+int                     mom_hierarchy_retry_time = NODE_COMM_RETRY_TIME;
 time_t                  last_task_check_time = 0;
 int                     disable_timeout_check = FALSE;
 int                     lockfds = -1;
@@ -252,6 +253,9 @@ pbs_net_t               pbs_scheduler_addr;
 unsigned int            pbs_scheduler_port;
 extern pbs_net_t        pbs_server_addr;
 unsigned int            pbs_server_port_dis;
+
+bool                    auto_send_hierarchy = true;
+mom_hierarchy_t        *mh;
 
 listener_connection     listener_conns[MAXLISTENERS];
 int                     queue_rank = 0;
@@ -641,7 +645,7 @@ void parse_command_line(
 
   ForceCreation = FALSE;
 
-  while ((c = getopt(argc, argv, "A:a:cd:DefhH:L:l:mM:p:R:S:t:uv-:")) != -1)
+  while ((c = getopt(argc, argv, "A:a:cd:DefhH:L:l:mM:np:R:S:t:uv-:")) != -1)
     {
     switch (c)
       {
@@ -940,6 +944,12 @@ void parse_command_line(
 
           mom_host = optarg;
           }
+
+        break;
+
+      case 'n':
+
+        auto_send_hierarchy = false;
 
         break;
 
@@ -1991,9 +2001,9 @@ int main(
 
   sprintf(path_log, "%s/%s", path_home, PBS_LOGFILES);
 
-  pthread_mutex_lock(log_mutex);
+  pthread_mutex_lock(&log_mutex);
   log_open(log_file, path_log);
-  pthread_mutex_unlock(log_mutex);
+  pthread_mutex_unlock(&log_mutex);
 
   sprintf(log_buf, msg_startup1, server_name, server_init_type);
 
@@ -2081,13 +2091,13 @@ int main(
 
   acct_close();
 
-  pthread_mutex_lock(log_mutex);
+  pthread_mutex_lock(&log_mutex);
   log_close(1);
-  pthread_mutex_unlock(log_mutex);
+  pthread_mutex_unlock(&log_mutex);
 
-  pthread_mutex_lock(job_log_mutex);
+  pthread_mutex_lock(&job_log_mutex);
   job_log_close(1);
-  pthread_mutex_unlock(job_log_mutex);
+  pthread_mutex_unlock(&job_log_mutex);
 
   exit(0);
   }  /* END main() */
@@ -2298,28 +2308,36 @@ static int get_port(
   int   local_errno = 0;
 
   if (*arg == ':')
-    ++arg;
-
-  if (isdigit(*arg))
     {
+    ++arg;
     /* port only specified */
-
     *port = (unsigned int)atoi(arg);
     }
   else
     {
-    name = parse_servername(arg, port);
+    char *a;
 
-    if (name == NULL)
+    for (a = arg; *a && isdigit(*a); a++)
+       {}
+    if ((! *a) && ((*port = (unsigned int)atoi(arg)) > 0) && (*port <= 65535))
       {
-      /* FAILURE */
-
-      return(-1);
+      /* port only specified */
       }
+    else
+      {
+      name = parse_servername(arg, port);
 
-    *addr = get_hostaddr(&local_errno, name);
+      if (name == NULL)
+        {
+        /* FAILURE */
 
-    free(name);
+        return(-1);
+        }
+
+      *addr = get_hostaddr(&local_errno, name);
+
+      free(name);
+      }
     }
 
   if ((*port <= 0) || (*addr == 0))
@@ -3073,9 +3091,9 @@ int svr_restart()
 
   log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buf);
 
-  pthread_mutex_lock(log_mutex);
+  pthread_mutex_lock(&log_mutex);
   log_close(1);
-  pthread_mutex_unlock(log_mutex);
+  pthread_mutex_unlock(&log_mutex);
 
   if ((rc = execv(ArgV[0],ArgV)) == -1)
     {

@@ -211,7 +211,7 @@ int  get_hostaddr_hostent_af(
   {
   int                    addr_rc;
   struct sockaddr_in    *sa;
-  struct addrinfo       *pAddrInfo;
+  struct addrinfo       *pAddrInfo = NULL;
   char                   log_buf[LOCAL_LOG_BUF_SIZE];
   char                  *tmp_ip = NULL;
 
@@ -261,8 +261,8 @@ int  get_hostaddr_hostent_af(
       hostname,
       h_errno,
       hstrerror(h_errno));
-      /* This is for cases where the client is running this command */
-      if (log_mutex == NULL)
+   /* This is for cases where the client is running this command */
+      if (!log_available(PBSEVENT_SYSTEM))
         fprintf(stderr, "%s\n", log_buf);
       else
         log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buf);

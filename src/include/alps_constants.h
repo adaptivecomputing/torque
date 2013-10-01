@@ -85,11 +85,22 @@
 #define ALPS_QUERY_FAILURE          -4
 #define DEFAULT_APBASIL_PATH        "/usr/bin/apbasil"
 #define DEFAULT_APBASIL_PROTOCOL    "1.0"
+#define APBASIL_PROTOCOL_v13        1.3f
+#define APBASIL_DEFAULT_NPPCU_VALUE 1
 #define APBASIL_QUERY               "echo \"<?xml version='1.0'?><BasilRequest protocol='%s' method='QUERY' type='INVENTORY'></BasilRequest>\" | %s"
+
+/* ALPS BASIL protocol < 1.3 */
 #define APBASIL_RESERVE_PARAM_BEGIN_DEPTH "<ReserveParam architecture='XT' width='%d' nppn='%d' depth='%d'><NodeParamArray><NodeParam>"
 #define APBASIL_RESERVE_PARAM_BEGIN_DEPTH_SANS_NPPN "<ReserveParam architecture='XT' width='%d' depth='%d'><NodeParamArray><NodeParam>"
 #define APBASIL_RESERVE_PARAM_BEGIN "<ReserveParam architecture='XT' width='%d' nppn='%d'><NodeParamArray><NodeParam>"
 #define APBASIL_RESERVE_PARAM_BEGIN_SANS_NPPN "<ReserveParam architecture='XT' width='%d'><NodeParamArray><NodeParam>"
+
+/* ALPS BASIL protocol >= 1.3 */
+#define APBASIL_RESERVE_PARAM_BEGIN_DEPTH_13 "<ReserveParam architecture='XT' width='%d' nppcu='%d' nppn='%d' depth='%d'><NodeParamArray><NodeParam>"
+#define APBASIL_RESERVE_PARAM_BEGIN_DEPTH_SANS_NPPN_13 "<ReserveParam architecture='XT' width='%d' nppcu='%d' depth='%d'><NodeParamArray><NodeParam>"
+#define APBASIL_RESERVE_PARAM_BEGIN_13 "<ReserveParam architecture='XT' width='%d' nppcu='%d' nppn='%d'><NodeParamArray><NodeParam>"
+#define APBASIL_RESERVE_PARAM_BEGIN_SANS_NPPN_13 "<ReserveParam architecture='XT' width='%d' nppcu='%d'><NodeParamArray><NodeParam>"
+
 #define APBASIL_RESERVE_PARAM_END   "</NodeParam></NodeParamArray></ReserveParam>"
 #define APBASIL_RESERVE_ARRAY       "<ReserveParamArray user_name='%s' batch_id='%s'>"
 #define CLOSE_RESERVE_ARRAY         "</ReserveParamArray>"
@@ -123,6 +134,10 @@ extern const char *memory_name;
 extern const char *label_array;
 extern const char *segment_array;
 extern const char *segment;
+extern const char *socket_array;
+extern const char *socket_name;
+extern const char *compute_unit_array;
+extern const char *compute_unit;
 extern const char *accelerator_array;
 extern const char *accelerator;
 extern const char *ordinal;
@@ -131,7 +146,9 @@ extern const char *text_name;
 extern const char *memory_mb;
 extern const char *family;
 extern const char *cproc_eq;
+extern const char *ccu_eq;
 extern const int   ac_cproc_eq_len;
+extern const int   ac_ccu_eq_len;
 extern const char *CRAY_GPU_STATUS_START;
 extern const char *CRAY_GPU_STATUS_END;
 extern const char *alps_reporter_feature;

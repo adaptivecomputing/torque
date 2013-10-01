@@ -22,9 +22,9 @@
 
 int scheduler_sock=0;
 int scheduler_jobct = 0;
-pthread_mutex_t *job_log_mutex;
+pthread_mutex_t job_log_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t *reroute_job_mutex;
-pthread_mutex_t *log_mutex;
+pthread_mutex_t log_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 const char *msg_init_chdir = "unable to change to directory %s";
 char *path_jobs;
 const char *msg_err_noqueue = "Unable to requeue job, queue is not defined";
@@ -661,4 +661,42 @@ struct addrinfo * insert_addr_name_info(struct addrinfo *pAddrInfo, const char *
 int add_execution_slot(struct pbsnode *pnode)
   {
   return(0);
+  }
+
+resizable_array *initialize_resizable_array(
+
+  int               size)
+
+  {
+  resizable_array *ra = (resizable_array*)calloc(1, sizeof(resizable_array));
+  size_t           amount = sizeof(slot) * size;
+
+  ra->max       = size;
+  ra->num       = 0;
+  ra->next_slot = 1;
+  ra->last      = 0;
+
+  ra->slots = (slot *)calloc(1, amount);
+
+  return(ra);
+  } /* END initialize_resizable_array() */
+
+mom_hierarchy_t *initialize_mom_hierarchy()
+
+  {
+  mom_hierarchy_t *nt = (mom_hierarchy_t *)calloc(1, sizeof(mom_hierarchy_t));
+  nt->paths = initialize_resizable_array(INITIAL_SIZE_NETWORK);
+
+  if (nt->paths == NULL)
+    {
+    free(nt);
+    nt = NULL;
+    return(nt);
+    }
+
+  nt->current_path  = -1;
+  nt->current_level = -1;
+  nt->current_node  = -1;
+
+  return(nt);
   }

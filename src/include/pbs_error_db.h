@@ -40,7 +40,7 @@ PbsErrClient(PBSE_TOOMANY,           (char *)"Too many submit retries")
 /* No permission */
 PbsErrClient(PBSE_PERM,              (char *)"Unauthorized Request ")
 /* pbs_iff not found */
-PbsErrClient(PBSE_IFF_NOT_FOUND,     (char *)"trqauthd unable to authenticate")
+PbsErrClient(PBSE_IFF_NOT_FOUND,     (char *)"trqauthd unable to authorize user. ")
 /* munge not found */
 PbsErrClient(PBSE_MUNGE_NOT_FOUND,   (char *)"munge executable not found, unable to authenticate")
 /* 15010 */
@@ -259,6 +259,7 @@ PbsErrClient(PBSE_INVALID_SYNTAX, (char *)"Command syntax invalid")
 PbsErrClient(PBSE_NODE_DOWN, (char *)"A node is down. Check the MOM and host")
 PbsErrClient(PBSE_SERVER_NOT_FOUND, (char *)"Could not connect to batch server")
 PbsErrClient(PBSE_SERVER_BUSY, (char *)"Server busy. Currently no available threads")
+PbsErrClient(PBSE_CLIENT_CONN_NOT_FOUND, (char *)"Client connection not found. trqauthd unable to authorize user. Possible transient failure. Please try again")
 
 
 /* pbs client errors ceiling (max_client_err + 1) */

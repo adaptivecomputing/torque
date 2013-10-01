@@ -1,4 +1,5 @@
 #include "license_pbs.h" /* See here for the software license */
+#include "utils.h"
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -51,13 +52,11 @@ get_winid(char *winidfile, char *mpchild)
 
 int main(int argc, char **argv)
   {
-  int      len;
-  char      *jk;
   char     *mpchild;
-  char     winid;
+  char     winid[2];
 
-  static const char *job_key = "MP_PARTITION=";
-  static char job_win[15+SWLINELEN] = "MP_MPI_NETWORK=";
+  static const char *job_key = "MP_PARTITION";
+  static const char *job_win = "MP_MPI_NETWORK";
 
   /* Check that calling args are correct */
 
@@ -79,33 +78,29 @@ int main(int argc, char **argv)
    * The switch window_id_file is the second argument.
    */
 
-  len = strlen(argv[1]) + strlen(job_key) + 1;
-
-  if ((jk  = (char *)calloc(1, len)) == 0)
+  if (put_env_var(job_key, argv[1]))
     {
-    fprintf(stderr, "%s: cannot allocate memory\n", argv[0]);
+    fprintf(stderr, "%s: unable to set environment variable %s\n", argv[0], job_key);
     return 1;
     }
 
-  (void)strcpy(jk, job_key);
-  (void)strcat(jk, argv[1]);
-  putenv(jk);
+  winid[0] = get_winid(argv[2], mpchild);
 
+  /* null terminate winid */
+  winid[1] = '\0';
 
-  winid = get_winid(argv[2], mpchild);
-
-  if (winid == '\0')
+  if (winid[0] == '\0')
     {
     fprintf(stderr, "%s: unable to obtain switch window id\n",
             argv[0]);
     return 1;
     }
 
-  len = strlen(job_win);
-
-  job_win[len] = winid;
-  job_win[len+1] = '\0';
-  putenv(job_win);
+  if (put_env_var(job_win, winid))
+    {
+    fprintf(stderr, "%s: unable to set environment variable %s\n", argv[0], job_win);
+    return 1;
+    }
 
   /* now exec the real program with its args */
 

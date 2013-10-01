@@ -1,8 +1,6 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
-#include <unistd.h>
-#include <string.h>
 #include "tcp.h"
 
 ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
@@ -37,21 +35,9 @@ int socket_read(int socket, char **the_str, long long *str_len)
   return(1);
   }
 
-ssize_t write_ac_socket(int fd, const void *x, ssize_t count)
+ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
   {
-  char buf2[128];
-  char *buf = (char *)x;
-  char savedChar = *(buf + count);
-  *(buf + count) = '\0';
-  snprintf(buf2, sizeof(buf2), "%s\n", (char *)buf);
-  size_t len = strlen(buf2);
-  int wcount = 0;
-  wcount = write(fd, (void *)buf2, len);
-  *(buf + count) = savedChar;
-  if (wcount == (int)len)
-    return count;
-  else
-    return -1;
+  return(0);
   }
 
 ssize_t read_ac_socket(int fd, void *buf, ssize_t count)

@@ -1,11 +1,11 @@
 #include "license_pbs.h" /* See here for the software license */
 #include "start_exec.h"
-#include "test_uut.h"
 #include <stdlib.h>
 #include <stdio.h>
 
 #include "pbs_error.h"
 #include "pbs_nodes.h"
+#include "test_uut.h"
 
 void get_mic_indices(job *pjob, char *buf, int buf_size);
 
