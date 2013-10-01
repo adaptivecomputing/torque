@@ -38,7 +38,7 @@ void set_depend_hold(job *pjob, pbs_attribute *pattr);
 int delete_dependency_job(batch_request *preq, job **pjob_ptr);
 int req_register(batch_request *preq);
 bool remove_array_dependency_job_from_job(struct array_depend *pdep, job *pjob, char *job_array_id);
-void removeAfterAnyDependency(const char *pJobID, void *targetJob);
+void removeAfterAnyDependency(const char *pJobID, const char *targetJob);
 
 
 extern char server_name[];
