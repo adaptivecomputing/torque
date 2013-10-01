@@ -76,6 +76,7 @@
 #include "u_tree.h"
 #ifdef PENABLE_LINUX26_CPUSETS
 #include "pbs_cpuset.h"
+#include "node_internals.hpp"
 #endif
 #include "threadpool.h"
 #include "mom_hierarchy.h"
@@ -234,6 +235,7 @@ char    jobstarter_exe_name[MAXPATHLEN + 1];
 int     jobstarter_set = 0;
 
 #ifdef PENABLE_LINUX26_CPUSETS
+node_internals   internal_layout;
 hwloc_topology_t topology = NULL;       /* system topology */
 
 int      memory_pressure_threshold = 0; /* 0: off, >0: check and kill */
@@ -7690,6 +7692,8 @@ int setup_program_environment(void)
 
 
 #ifdef PENABLE_LINUX26_CPUSETS
+  internal_layout = node_internals();
+
   /* load system topology */
   if ((hwloc_topology_init(&topology) == -1))
     {

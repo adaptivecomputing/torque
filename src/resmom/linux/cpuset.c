@@ -27,6 +27,7 @@
 #include "log.h"
 #include "pbs_cpuset.h"
 #include "mom_memory.h"
+#include "node_internals.hpp"
 
 /* NOTE: move these three things to utils when lib is checked in */
 #ifndef MAXPATHLEN
@@ -40,6 +41,7 @@
 #endif /* SUCCESS */
 
 
+extern node_internals   internal_layout;
 extern hwloc_topology_t topology;
 extern int              MOMConfigUseSMT;
 #ifdef NUMA_SUPPORT
@@ -51,8 +53,6 @@ extern long             system_ncpus;
 
 /* FIXME: TODO:  TTORQUECPUSET_PATH, enabling cpuset support, and correct error
  * checking need a run-time config */
-
-
 
 
 
@@ -793,7 +793,7 @@ int read_cpuset(
 
 int delete_cpuset(
 
-    const char *name)  /* I */
+  const char *name)  /* I */
 
   {
   char           cpuset_path[MAXPATHLEN + 1];
@@ -807,6 +807,8 @@ int delete_cpuset(
   FILE          *fd;
   DIR           *dir;
 #endif
+
+  internal_layout.remove_job(name);
 
 #ifdef USELIBCPUSET
 
@@ -1276,146 +1278,52 @@ int add_obj_from_cpuset(
   } /* END add_obj_from_cpuset() */
 
 
-/*
- * get_memory_requested_and_reserved()
- *
- * determines how much memory has been reserved in the cpuset and
- * how much is requested and stores these values in mem_reserved
- * and mem_requested.
- *
- * @pre-cond: all parameters must be valid
- * @post-cond: mem_requested will be populated with the amount of memory requested by pjob
- * @post-cond: mem_reserved will be populated with the amount of memory reserved in the mem 
- * cpuset for the job.
- *
- */
-void get_memory_requested_and_reserved(
 
-  long long        *mem_requested,
-  long long        *mem_reserved,
-  std::set<int>    &current_mems,
-  job              *pjob,
-  hwloc_bitmap_t    job_mems)
+long long get_memory_requested_in_kb(
+
+  job &pjob)
 
   {
-  if ((mem_requested == NULL) ||
-      (mem_reserved  == NULL))
-    return;
-
-  *mem_requested = 0;
-  *mem_reserved = 0;
-
-  resource *mem = find_resc_entry(&pjob->ji_wattr[JOB_ATR_resource],
-                    find_resc_def(svr_resc_def, "mem", svr_resc_size));
+  long long  mem_requested = 0;
+  resource  *mem = find_resc_entry(&pjob.ji_wattr[JOB_ATR_resource],
+                                  find_resc_def(svr_resc_def, "mem", svr_resc_size));
 
   if ((mem != NULL) &&
       (mem->rs_value.at_val.at_size.atsv_num != 0))
     {
     int             shift = mem->rs_value.at_val.at_size.atsv_shift;
-    int             idx;
-    char            meminfo_path[MAXLINE];
-    *mem_requested = mem->rs_value.at_val.at_size.atsv_num;
-
+    
+    mem_requested = mem->rs_value.at_val.at_size.atsv_num;
     /* make sure that the requested memory is in kb */
     while (shift > 10)
       {
-      *mem_requested *= 1024;
+      mem_requested *= 1024;
       shift -= 10;
       }
-
-    hwloc_bitmap_foreach_begin(idx, job_mems)
-      proc_mem_t *memnode;
-
-      snprintf(meminfo_path, sizeof(meminfo_path),
-        "/sys/devices/system/node/node%d/meminfo", idx);
-      memnode = get_proc_mem_from_path(meminfo_path);
-
-      if (memnode != NULL)
-        {
-        *mem_reserved += memnode->mem_total;
-        free(memnode);
-        }
-
-      current_mems.insert(idx);
-
-    hwloc_bitmap_foreach_end();
-
-    /* unfortunately proc_mem_t isn't in kb */
-    *mem_reserved /= 1024;
     }
 
-  } /* END get_memory_requested_and_reserved() */
+  return(mem_requested);
+  } /* END get_memory_requested_in_kb() */
 
 
 
-/*
- * add_extra_memory_nodes_if_needed()
- * @pre-cond: all parameters must be valid pointers
- * @pre-cond: mem_requested and mem_reserved should hold the amount of memory in kb for the job
- * @post-cond: job_mems will be populated with enough memory nodes to satisfy the job's memory request
- */
+int get_cpu_count_requested_on_this_node(
 
-void add_extra_memory_nodes_if_needed(
-    
-  long long      mem_requested,
-  long long      mem_reserved,
-  hwloc_bitmap_t job_mems,
-  hwloc_bitmap_t torque_root_mems,
-  std::set<int>  current_mem_ids)
+  job &pjob)
 
   {
-  char             meminfo_path[MAXLINE];
-  int              idx;
+  int      cpus = 0;
+  vnodent *np = pjob.ji_vnods;
 
-  if (mem_reserved < mem_requested)
+  for (int i = 0; i < pjob.ji_numvnod; ++i, np++)
     {
-    hwloc_bitmap_foreach_begin(idx, torque_root_mems)
-      if (current_mem_ids.find(idx) != current_mem_ids.end())
-        continue;
-
-      snprintf(meminfo_path, sizeof(meminfo_path),
-        "/sys/devices/system/node/node%d/meminfo", idx);
-      proc_mem_t *memnode = get_proc_mem_from_path(meminfo_path);
-
-      if (memnode != NULL)
-        {
-        hwloc_bitmap_set(job_mems, idx);
-        mem_reserved += memnode->mem_total;
-
-        free(memnode);
-        }
-
-      if (mem_reserved >= mem_requested)
-        break;
-
-    hwloc_bitmap_foreach_end();
+    /* Add core at position vn_index in TORQUE cpuset */
+    if (pjob.ji_nodeid == np->vn_host->hn_node)
+      cpus++;
     }
-  } /* END add_extra_memory_nodes_if_needed() */
 
-
-
-/*
- * verify_correct_memory_nodes()
- *
- * @pre-cond all parameters are valid pointers.
- * @post-cond: job_mems will be populated with enough memory nodes to satisfy the job's memory request
- */
-
-void verify_correct_memory_nodes(
-    
-  job            *pjob,
-  hwloc_bitmap_t  job_mems,
-  hwloc_bitmap_t  torque_root_mems)
-
-  {
-  long long        mem_requested = 0;
-  long long        mem_reserved  = 0;
-  std::set<int>    current_mem_ids;
-
-  get_memory_requested_and_reserved(&mem_requested, &mem_reserved, current_mem_ids, pjob, job_mems);
-
-  add_extra_memory_nodes_if_needed(mem_requested, mem_reserved, job_mems, torque_root_mems, current_mem_ids);
-  } /* END verify_correct_memory_nodes() */
+  return(cpus);
+  }
 
 
 
@@ -1588,28 +1496,38 @@ int create_job_cpuset(
       }
     else
       {
-      /* Walk through job's vnodes, add corresponding cpus */
-      for (j = 0; j < pjob->ji_numvnod; ++j, np++)
-        {
-        /* Add core at position vn_index in TORQUE cpuset */
-        if (pjob->ji_nodeid == np->vn_host->hn_node)
-          {
-          if (add_obj_from_cpuset(tcpus, cpus, np->vn_index) == -1)
-            {
-            sprintf(log_buffer, "TORQUE cpuset contains no CPU at index %d", np->vn_index);
-            log_err(-1, __func__, log_buffer);
-            }
-          }
-        } /* END for(j) */
+      long long mem_requested = get_memory_requested_in_kb(*pjob);
+      int       cpus = get_cpu_count_requested_on_this_node(*pjob);
 
+      // make sure the memory is evenly set over the job.
+      double    mem_pcnt = ((double)cpus) / pjob->ji_numvnod;
+      mem_requested = mem_requested * mem_pcnt;
+
+      internal_layout.reserve(cpus, mem_requested, pjob->ji_qs.ji_jobid);
+      std::vector<int> *cpu_indices = internal_layout.get_cpu_indices(pjob->ji_qs.ji_jobid);
+      std::vector<int> *mem_indices = internal_layout.get_memory_indices(pjob->ji_qs.ji_jobid);
+
+      for (unsigned int i = 0; i < cpu_indices->size(); i++)
+        {
+        if (add_obj_from_cpuset(tcpus, cpus, cpu_indices->at(i)) == -1)
+          {
+          sprintf(log_buffer, "TORQUE cpuset contains no CPU at index %d", np->vn_index);
+          log_err(-1, __func__, log_buffer);
+          }
+        }
+      
+      for (unsigned int i = 0; i < mem_indices->size(); i++)
+        {
+        if (add_obj_from_cpuset(tmems, mems, mem_indices->at(i)) == -1)
+          {
+          sprintf(log_buffer, "TORQUE cpuset contains no CPU at index %d", np->vn_index);
+          log_err(-1, __func__, log_buffer);
+          }
+        }
       }
     }
 
-  /* give this job the mems that these cpus cover */
-  hwloc_cpuset_to_nodeset_strict(topology, cpus, mems);
-  verify_correct_memory_nodes(pjob, mems, tmems);
-
-#endif /* NUMA_SUPPORT (first section def, second sectoin ndef */
+#endif /* NUMA_SUPPORT (first section def, second section ndef */
 
   /* Now create cpuset for job */
   snprintf(log_buffer, sizeof(log_buffer),
