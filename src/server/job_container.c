@@ -311,31 +311,6 @@ char *get_correct_jobname(
   } /* END get_correct_jobname() */
 
 
-void traverse_all_jobs(void (*traverseCallback)(const char *pJobID,void *callbackParameter),void *callbackParameter)
-  {
-  if((traverseCallback == NULL)||(alljobs.ra == NULL)) return;
-  //Get a snapshot of all current jobs.
-  boost::ptr_vector<std::string> jobIds;
-
-  pthread_mutex_lock(alljobs.alljobs_mutex);
-
-  int iter = -1;
-  job *pj;
-  while((pj = (job *)next_thing(alljobs.ra,&iter)) != NULL)
-    {
-    jobIds.push_back(new std::string(pj->ji_qs.ji_jobid));
-    }
-  pthread_mutex_unlock(alljobs.alljobs_mutex);
-
-  for(boost::ptr_vector<std::string>::iterator i = jobIds.begin();i != jobIds.end();i++)
-    {
-    traverseCallback(i->c_str(),callbackParameter);
-    }
-  }
-
-
-
-
 /*
  * Searches the array passed in for the job_id
  * @parent svr_find_job()

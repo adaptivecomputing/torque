@@ -5,7 +5,6 @@
 #include "pbs_job.h"
 #include "pbs_error.h"
 
-extern void traverse_all_jobs(void (*traverseCallback)(const char *pJobID,void *callbackParameter),void *callbackParameter);
 char *get_correct_jobname(const char *jobid);
 
 
@@ -220,57 +219,6 @@ START_TEST(next_job_from_back_test)
   }
 END_TEST
 
-void null_found_job(const char *pJobID,void *jobsParm)
-  {
-  job **jobs = (job **)jobsParm;
-
-  for(int i = 0;i < 4;i++)
-    {
-    if((jobs[i] != NULL)&&(!strcmp(jobs[i]->ji_qs.ji_jobid,pJobID)))
-      {
-      jobs[i] = NULL;
-      return;
-      }
-    }
-  fprintf(stderr,"Job not found.\n");
-  exit(1);
-  }
-
-
-const char *jobIDs[4] =
-{
-    "fred",
-    "wilma",
-    "barney",
-    "betty"
-};
-
-START_TEST(traverse_all_jobs_test)
-  {
-  extern struct all_jobs alljobs;
-
-  struct job *test_job[4];
-
-  initialize_all_jobs_array(&alljobs);
-  resizable_array *ar = initialize_resizable_array(10);
-
-  for(int i = 0;i < 4;i++)
-    {
-    test_job[i] = job_alloc();
-    strcpy(test_job[i]->ji_qs.ji_jobid,jobIDs[i]);
-    insert_thing(ar,(void *)test_job[i]);
-    }
-  alljobs.ra = ar;
-
-  traverse_all_jobs(null_found_job,test_job);
-
-  for(int i = 0;i < 4;i++)
-    {
-    fail_unless((test_job[i] == NULL),"Job not found.");
-    }
-  }
-END_TEST
-
 
 Suite *job_container_suite(void)
   {
@@ -320,10 +268,6 @@ Suite *job_container_suite(void)
   tcase_add_test(tc_core, get_correct_jobname_test);
   suite_add_tcase(s, tc_core);
   
-  tc_core = tcase_create("traverse_all_jobs_test");
-  tcase_add_test(tc_core, traverse_all_jobs_test);
-  suite_add_tcase(s, tc_core);
-
   return(s);
   }
 
