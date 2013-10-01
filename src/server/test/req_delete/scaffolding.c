@@ -253,7 +253,7 @@ void traverse_all_jobs(void (*)(const char *, void*), void*)
 {
 }
 
-void removeAfterAnyDependency(const char *, void*)
+void removeBeforeAnyDependencies(const char *)
 {
 }
 
