@@ -27,7 +27,7 @@ struct batch_status * pbs_selstat(int c, struct attropl *attrib, char *extend)
 
 struct batch_status * pbs_selstat_err(int c, struct attropl *attrib, char *extend, int *any_failed)
   { 
-  fprintf(stderr, "The call to pbs_selstat_err needs to be mocked!!\n");
+  *any_failed = 0;
   return(PBSE_NONE);
   }
 
@@ -172,6 +172,7 @@ struct batch_status *pbs_statjob(int c, char *id, struct attrl *attrib, char *ex
 struct batch_status *pbs_statjob_err(int c, char *id, struct attrl *attrib, char *extend, int *local_errno)
   { 
   static struct batch_status job_status;
+  *local_errno = PBSE_NONE;
   return(&job_status);
   }
 
@@ -398,6 +399,7 @@ struct batch_status * pbs_selstatattr_err(
   char           *extend,
   int            *local_errno)
   {
+  *local_errno = PBSE_NONE;
   return(NULL);
   }
 
