@@ -8406,14 +8406,10 @@ int TMOMScanForStarting(void)
         if ((STime > 0) && ((time_now - STime) > TJobStartTimeout))
           {
           sprintf(log_buffer, "job %s child not started after %ld seconds, server will retry",
-                  pjob->ji_qs.ji_jobid,
-                  TJobStartTimeout);
+            pjob->ji_qs.ji_jobid,
+            TJobStartTimeout);
 
-          log_record(
-            PBSEVENT_ERROR,
-            PBS_EVENTCLASS_JOB,
-            __func__,
-            log_buffer);
+          log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
           memset(TJE, 0, sizeof(pjobexec_t));
 
@@ -8428,11 +8424,7 @@ int TMOMScanForStarting(void)
           {
           /* no need to log this, TMomFinalizeJob3() already did */
           sprintf(log_buffer, "job %s failed after TMomFinalizeJob3", pjob->ji_qs.ji_jobid);
-          log_record(
-            PBSEVENT_ERROR,
-            PBS_EVENTCLASS_JOB,
-            __func__,
-            log_buffer);
+          log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
           memset(TJE, 0, sizeof(pjobexec_t));
 
@@ -8441,7 +8433,6 @@ int TMOMScanForStarting(void)
         else
           {
           /* job successfully started */
-
           memset(TJE, 0, sizeof(pjobexec_t));
 
           if (LOGLEVEL >= 3)
