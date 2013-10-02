@@ -742,6 +742,11 @@ int read_cpuset(
           return(-1);
           }
         }
+      else
+        {
+        errno = ENOENT;
+        return(-1);
+        }
 
       fclose(fd);
       }
@@ -751,7 +756,7 @@ int read_cpuset(
       {
       sprintf(path, "%s/%smems", cpuset_path, cpuset_prefix);
 
-  if ((fd = fopen(path, "r")) == NULL)
+      if ((fd = fopen(path, "r")) == NULL)
         {
         sprintf(log_buffer, "(%s) failed to open %s", __func__, path);
         return(-1);
@@ -766,6 +771,11 @@ int read_cpuset(
           errno = EINVAL;
           return(-1);
           }
+        }
+      else
+        {
+        errno = ENOENT;
+        return(-1);
         }
 
       fclose(fd);
