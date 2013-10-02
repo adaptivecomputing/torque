@@ -419,7 +419,8 @@ int find_error_type(
   xmlNode *child;
   xmlNode *grandchild;
 
-  if (!strcmp(attr_val, "PERMANENT"))
+  /* Make sure attr_val had a property before checking on it */
+  if ((attr_val) && !strcmp(attr_val, "PERMANENT"))
     rc = apbasil_fail_permanent;
 
   for (child = node->children; child != NULL; child = child->next)
@@ -431,18 +432,21 @@ int find_error_type(
         if (!strcmp((const char *)grandchild->name, text_name))
           {
           char *errtext = (char *)xmlNodeGetContent(grandchild);
-          if (strstr(errtext, "error") != NULL)
+          if ((errtext) && strstr(errtext, "error") != NULL)
             {
             snprintf(log_buffer, sizeof(log_buffer), "%s alps error: '%s'",
-              attr_val, errtext);
+              (attr_val)?attr_val:"error was null", errtext);
             log_err(-1, __func__, log_buffer);
             }
+          if (errtext)
+            xmlFree((xmlChar *)errtext);
           }
         }
       }
     }
 
-  free(attr_val);
+  if (attr_val)
+    xmlFree((xmlChar *)attr_val);
 
   return(rc);
   } /* END find_error_type() */
