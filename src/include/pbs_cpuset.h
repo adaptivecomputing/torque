@@ -20,5 +20,6 @@ extern void         free_cpuset_pidlist(struct pidl *);
 extern int          get_cpuset_mempressure(const char *);
 extern int          hwloc_bitmap_parselist(const char *, hwloc_bitmap_t);
 extern int          hwloc_bitmap_displaylist(char *, size_t len, hwloc_bitmap_t);
+extern void         remove_logical_processor_if_requested(hwloc_bitmap_t *);
 
 #endif /* END PBS_CPUSET_H */

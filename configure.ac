@@ -1091,7 +1091,7 @@ if test "${build_mom}" = "yes" ; then
         AC_CHECK_LIB([cpuset],[cpuset_version], ,
           [AC_MSG_ERROR([--enable-libcpuset requires libcpuset to be installed]) ])
         AC_DEFINE([USELIBCPUSET], 1, [Define to enable libcpuset support])
-        MOMLIBS="$MOMLIBS -lcpuset"
+        MOMLIBS="$MOMLIBS -lcpuset -lbitmask"
       else
         AC_MSG_RESULT([no])
       fi

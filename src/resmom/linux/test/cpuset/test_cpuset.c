@@ -12,7 +12,15 @@ void get_memory_requested_and_reserved(long long *requested, long long *reserved
 void add_extra_memory_nodes_if_needed(long long requested, long long reserved, hwloc_bitmap_t job_mems, hwloc_bitmap_t torque_root_mems, std::set<int> current_mem_ids);
 int hwloc_bitmap_displaylist(char *buf, size_t buflen, hwloc_bitmap_t map);
 
+int init_torque_cpuset(void);
+
 extern bool no_memory;
+extern int  read_cpuset_rc;
+extern const char *cpus_template_string;
+extern const char *mems_template_string;
+
+extern char *global_cpus_string;
+extern char *global_mems_string;
 
 START_TEST(get_memory_requested_and_reserved_test)
   {
@@ -65,12 +73,29 @@ START_TEST(add_extra_memory_nodes_if_needed_test)
   }
 END_TEST
 
+START_TEST(init_torque_cpuset_test)
+  {
+  /* force read_cpuset to return 0 */
+  read_cpuset_rc = 0;
+
+  /*
+   * The code path being tested here is for when the torque cpuset
+   * has null cpus and mems (see TRQ-1785). In this case the cpuset
+   * functionality should remove (via rmdir) and reconstruct the torque
+   * cpuset with the cpus and mems from the root cpuset.
+   */
+
+  fail_unless(init_torque_cpuset() == 0);
+  }
+END_TEST
+
 Suite *cpuset_suite(void)
   {
   Suite *s = suite_create("cpuset_suite methods");
   TCase *tc_core = tcase_create("memory_tests");
   tcase_add_test(tc_core, get_memory_requested_and_reserved_test);
   tcase_add_test(tc_core, add_extra_memory_nodes_if_needed_test);
+  tcase_add_test(tc_core, init_torque_cpuset_test);
   suite_add_tcase(s, tc_core);
 
   return(s);

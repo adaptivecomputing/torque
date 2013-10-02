@@ -177,7 +177,7 @@ int hwloc_bitmap_displaylist(
 
 
 
-
+#ifndef UNIT_TEST_INIT_TORQUE_CPUSET
 /**
  * Initializes cpuset usage.
  *
@@ -259,11 +259,12 @@ int init_cpusets(void)
   return(rc);
 #endif /* USELIBCPUSET */
   } /* END init_cpusets() */
+#endif /* UNIT_TEST_INIT_TORQUE_CPUSET */
 
 
 
 
-
+#ifndef UNIT_TEST_INIT_TORQUE_CPUSET
 /**
  * Creates/modifies a cpuset.
  *
@@ -546,11 +547,12 @@ int create_cpuset(
   return(PBSE_NONE);
 #endif
   } /* END create_cpuset() */
+#endif /* UNIT_TEST_INIT_TORQUE_CPUSET */
 
 
 
 
-
+#ifndef UNIT_TEST_INIT_TORQUE_CPUSET
 /**
  * Read cpus and mems of a cpuset into hwloc_bitmap structs.
  *
@@ -760,6 +762,7 @@ int read_cpuset(
   return(rc);
 #endif
   } /* END read_cpuset() */
+#endif /* UNIT_TEST_INIT_TORQUE_CPUSET */
 
 
 
@@ -1000,7 +1003,7 @@ void cleanup_torque_cpuset(void)
 
 
 
-
+#ifndef UNIT_TEST_INIT_TORQUE_CPUSET
 void remove_logical_processor_if_requested(
 
   hwloc_bitmap_t *cpus)
@@ -1033,6 +1036,7 @@ void remove_logical_processor_if_requested(
       }
     }
   }
+#endif /* UNIT_TEST_INIT_TORQUE_CPUSET */
 
 
 
@@ -1114,7 +1118,7 @@ int init_torque_cpuset(void)
 
   /*
    * See if cpuset exists.
-   * If it's already there, leave as is, set up otherwise.
+   * If it's already there and has non-empty cpus and mems, leave as is, set up otherwise.
    */
 #ifdef USELIBCPUSET
   if (read_cpuset(TTORQUECPUSET_BASE, cpus, mems) == -1)
@@ -1129,9 +1133,9 @@ int init_torque_cpuset(void)
         goto finish;
         }
       }
-    else
+    else if (! (hwloc_bitmap_iszero(cpus) || hwloc_bitmap_iszero(mems)))
       {
-      /* Exists, adjust and tell what we have and return */
+      /* Exists with non-empty cpus and mems, adjust and tell what we have and return */
       remove_logical_processor_if_requested(&cpus);
       sprintf(log_buffer, "cpus = ");
       hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), cpus);
@@ -1213,8 +1217,24 @@ int init_torque_cpuset(void)
   log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
 
 #ifdef USELIBCPUSET
+  /* remove existing Torque cpuset if it exists (has empty/invalid cpus and/or mems) */
+  /*   before creating new one */
+  if (rmdir(TTORQUECPUSET_BASE) == -1 && errno != ENOENT)
+    {
+    sprintf(log_buffer, "%s: rmdir failed with errno=%d", TTORQUECPUSET_BASE, errno);
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
+    }
+
   if ((rc = create_cpuset(TTORQUECPUSET_BASE, cpus, mems, O_CREAT)) == -1)
 #else
+  /* remove existing Torque cpuset if it exists (has empty/invalid cpus and/or mems */
+  /*   before creating new one */
+  if (rmdir(TTORQUECPUSET_PATH) == -1 && errno != ENOENT)
+    {
+    sprintf(log_buffer, "%s: rmdir failed with errno=%d", TTORQUECPUSET_PATH, errno);
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
+    }
+
   if ((rc = create_cpuset(TTORQUECPUSET_PATH, cpus, mems, O_CREAT)) == -1)
 #endif
     log_err(errno, __func__, log_buffer);

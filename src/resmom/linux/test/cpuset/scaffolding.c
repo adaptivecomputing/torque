@@ -22,6 +22,15 @@ int              memory_pressure_threshold = 0; /* 0: off, >0: check and kill */
 short            memory_pressure_duration  = 0; /* 0: off, >0: check and kill */
 int              MOMConfigUseSMT           = 1; /* 0: off, 1: on */
 hwloc_topology_t topology;
+int              read_cpuset_rc;
+const char      *cpus_template_string = "0-5";
+const char      *mems_template_string = "0";
+
+char             global_cpus_string[MAXPATHLEN];
+char             global_mems_string[MAXPATHLEN];
+
+int hwloc_bitmap_parselist(const char *buf, hwloc_bitmap_t map);
+int hwloc_bitmap_displaylist(char *buf, size_t buflen, hwloc_bitmap_t map);
 #endif
 
 bool no_memory;
@@ -66,3 +75,96 @@ resource_def *find_resc_def(resource_def *svr_resc, char const * name, int max_i
   {
   return(NULL);
   }
+
+#ifdef PENABLE_LINUX26_CPUSETS
+int init_cpusets(void)
+  {
+  return 0;
+  }
+
+int read_cpuset(
+  const char     *name,  /* I */
+  hwloc_bitmap_t  cpus,  /* O */
+  hwloc_bitmap_t  mems)  /* O */
+
+  {
+  /* if we have a root cpuset, return template cpus and mems */
+  if (strcmp(name, "/dev/cpuset") == 0 || strcmp(name, "/") == 0)
+    {
+    if (cpus != NULL)
+      /* parse cpus_template_string */
+      hwloc_bitmap_parselist(cpus_template_string, cpus);
+
+    if (mems != NULL)
+      /* parse mems_template_string */
+      hwloc_bitmap_parselist(mems_template_string, mems);
+    }
+  else
+    {
+    /* Zero bitmaps */
+    if (cpus != NULL)
+      hwloc_bitmap_zero(cpus);
+
+    if (mems != NULL)
+      hwloc_bitmap_zero(mems);
+    }
+
+  return read_cpuset_rc;
+  }
+
+int create_cpuset(
+
+  const char           *name,  /* I */
+  const hwloc_bitmap_t  cpus,  /* I */
+  const hwloc_bitmap_t  mems,  /* I */
+  mode_t                flags) /* I */
+
+  {
+  /* make sure cpus and mems match templates for torque cpuset */
+  /*  return PBSE_NONE if match, -1 otherwise */
+  if (strcmp(name, "/dev/cpuset/torque") == 0 || strcmp(name, "/torque") == 0)
+    {
+    /* check for cpus to be what previously set */
+    if (cpus != NULL)
+      {
+      hwloc_bitmap_displaylist(global_cpus_string, sizeof(global_cpus_string), cpus);
+      if (strcmp(global_cpus_string, cpus_template_string))
+        return(-1);
+      }
+    else
+      return(-1);
+
+    /* check for mems to be what previously set */
+    if (mems != NULL)
+      {
+      hwloc_bitmap_displaylist(global_mems_string, sizeof(global_mems_string), mems);
+      if (strcmp(global_mems_string, mems_template_string))
+        return(-1);
+      }
+    else
+      return(-1);
+
+    return(PBSE_NONE);
+    }
+
+  /* return for non-torque cpuset */
+  return(-1);
+  }
+
+void remove_logical_processor_if_requested(
+  hwloc_bitmap_t *cpus)
+
+  {
+  return;
+  }
+
+int rmdir(const char *path) throw ()
+  {
+  return 0;
+  }
+
+void log_record(int eventtype, int objclass, const char *objname, const char *text)
+  {
+  }
+
+#endif
