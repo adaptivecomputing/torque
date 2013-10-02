@@ -50,10 +50,55 @@ extern int              num_node_boards;
 #endif /* NUMA_SUPPORT */
 extern int              LOGLEVEL;
 extern long             system_ncpus;
+char                    cpuset_prefix[MAXPATHLEN];
 
 /* FIXME: TODO:  TTORQUECPUSET_PATH, enabling cpuset support, and correct error
  * checking need a run-time config */
 
+
+
+void set_cpuset_prefix()
+
+  {
+  char        path[MAXPATHLEN];
+  struct stat statbuf;
+
+  cpuset_prefix[0] = '\0';
+
+  sprintf(path, "%s/cpuset.cpus", TROOTCPUSET_PATH);
+  
+  if (lstat(path, &statbuf) != -1)
+    snprintf(cpuset_prefix, sizeof(cpuset_prefix), "cpuset.");
+  }
+
+
+
+int manual_cpuset_init()
+
+  {
+  struct stat statbuf;
+  int         rc = PBSE_NONE;
+  char        cmd[MAXPATHLEN + 1];
+
+  if (lstat(TROOTCPUSET_PATH, &statbuf) == -1)
+    {
+    /* create cpuset base directory */
+    mkdir(TROOTCPUSET_PATH,0755);
+
+    /* now mount it */
+    sprintf(cmd,"mount -t cpuset none %s", TROOTCPUSET_PATH);
+
+    if (system(cmd) == -1)
+      {
+      fprintf(stderr,"Cannot mount directory '%s'\n",TROOTCPUSET_PATH);
+      rc = -1;
+      }
+    }
+
+  set_cpuset_prefix();
+
+  return(rc);
+  }
 
 
 
@@ -201,11 +246,6 @@ int init_cpusets(void)
   int           rc   = -1;
 #ifdef USELIBCPUSET
   struct cpuset *cp  = NULL;
-#else
-  char           path[MAXPATHLEN + 1];
-  char           cmd[MAXPATHLEN + 1];
-  FILE          *pipe;
-  struct stat    statbuf;
 #endif
 
 #ifdef USELIBCPUSET
@@ -233,28 +273,7 @@ int init_cpusets(void)
 #else /* !USELIBCPUSET */
 
   /* Check if /dev/cpuset/cpus exists */
-  sprintf(path, "%s/cpus", TROOTCPUSET_PATH);
-  if ((rc = lstat(path, &statbuf)) == -1)
-    {
-    /* create cpuset base directory */
-    mkdir(TROOTCPUSET_PATH,0755);
-
-    /* now mount it */
-    sprintf(cmd,"mount -t cpuset none %s", TROOTCPUSET_PATH);
-
-    pipe = popen(cmd,"r");
-
-    if (pipe == NULL)
-      {
-      fprintf(stderr,"Cannot mount directory '%s'\n",TROOTCPUSET_PATH);
-      }
-    else
-      {
-      /* successfully created/mounted cpusets */
-      rc = 0;
-      pclose(pipe);
-      }
-    }
+  rc = manual_cpuset_init();
 
   return(rc);
 #endif /* USELIBCPUSET */
@@ -495,7 +514,7 @@ int create_cpuset(
   /* Set cpus */
   if (cpus != NULL)
     {
-    sprintf(path, "%s/cpus", cpuset_path);
+    sprintf(path, "%s/%scpus", cpuset_path, cpuset_prefix);
 
     if ((fd = fopen(path, "w")) == NULL)
       {
@@ -518,7 +537,7 @@ int create_cpuset(
   /* Set mems */
   if (mems != NULL)
     {
-    sprintf(path, "%s/mems", cpuset_path);
+    sprintf(path, "%s/%smems", cpuset_path, cpuset_prefix);
 
     if ((fd = fopen(path, "w")) == NULL)
       {
@@ -705,7 +724,7 @@ int read_cpuset(
     /* Read cpus */
     if (cpus != NULL)
       {
-      sprintf(path, "%s/cpus", cpuset_path);
+      sprintf(path, "%s/%scpus", cpuset_path, cpuset_prefix);
 
       if ((fd = fopen(path, "r")) == NULL)
         {
@@ -730,9 +749,9 @@ int read_cpuset(
     /* Read mems */
     if (mems != NULL)
       {
-      sprintf(path, "%s/mems", cpuset_path);
+      sprintf(path, "%s/%smems", cpuset_path, cpuset_prefix);
 
-      if ((fd = fopen(path, "r")) == NULL)
+  if ((fd = fopen(path, "r")) == NULL)
         {
         sprintf(log_buffer, "(%s) failed to open %s", __func__, path);
         return(-1);
@@ -1125,42 +1144,41 @@ int init_torque_cpuset(void)
 #ifdef USELIBCPUSET
   if (read_cpuset(TTORQUECPUSET_BASE, cpus, mems) == -1)
 #else
-    if (read_cpuset(TTORQUECPUSET_PATH, cpus, mems) == -1)
+  if (read_cpuset(TTORQUECPUSET_PATH, cpus, mems) == -1)
 #endif
-      {
-      if (errno != ENOENT)
-        {
-        /* Error */
-        log_err(errno, __func__, log_buffer);
-        goto finish;
-        }
-      }
-    else if (! (hwloc_bitmap_iszero(cpus) || hwloc_bitmap_iszero(mems)))
-      {
-      /* Exists with non-empty cpus and mems, adjust and tell what we have and return */
-      remove_logical_processor_if_requested(&cpus);
-      sprintf(log_buffer, "cpus = ");
-      hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), cpus);
-      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
+  {
+  if (errno != ENOENT)
+    {
+    /* Error */
+    log_err(errno, __func__, log_buffer);
+    goto finish;
+    }
+  else if (! (hwloc_bitmap_iszero(cpus) || hwloc_bitmap_iszero(mems)))
+    {
+    /* Exists with non-empty cpus and mems, adjust and tell what we have and return */
+    remove_logical_processor_if_requested(&cpus);
+    sprintf(log_buffer, "cpus = ");
+    hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), cpus);
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
 
-      sprintf(log_buffer, "mems = ");
-      hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), mems);
-      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
+    sprintf(log_buffer, "mems = ");
+    hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), mems);
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
 
-      rc = 0;
-      goto finish;
-      }
+    rc = 0;
+    goto finish;
+    }
 
   /* Add all resources of the root cpuset */
 #ifdef USELIBCPUSET
   if (read_cpuset(TROOTCPUSET_BASE, cpus, mems) == -1)
 #else
-    if (read_cpuset(TROOTCPUSET_PATH, cpus, mems) == -1)
+  if (read_cpuset(TROOTCPUSET_PATH, cpus, mems) == -1)
 #endif
-      {
-      log_err(errno, __func__, log_buffer);
-      goto finish;
-      }
+    {
+    log_err(errno, __func__, log_buffer);
+    goto finish;
+    }
 
   remove_logical_processor_if_requested(&cpus);
 
@@ -1184,29 +1202,29 @@ int init_torque_cpuset(void)
 #ifdef USELIBCPUSET
   if (read_cpuset(TBOOTCPUSET_BASE, bootcpus, bootmems) == -1)
 #else
-    if (read_cpuset(TBOOTCPUSET_PATH, bootcpus, bootmems) == -1)
+  if (read_cpuset(TBOOTCPUSET_PATH, bootcpus, bootmems) == -1)
 #endif
+    {
+    if (errno != ENOENT)
       {
-      if (errno != ENOENT)
-        {
-        /* Error */
-        log_err(errno, __func__, log_buffer);
-        goto finish;
-        }
+      /* Error */
+      log_err(errno, __func__, log_buffer);
+      goto finish;
       }
-    else
-      {
-      sprintf(log_buffer, "subtracting cpus of boot cpuset: ");
-      hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), bootcpus);
-      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
+    }
+  else
+    {
+    sprintf(log_buffer, "subtracting cpus of boot cpuset: ");
+    hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), bootcpus);
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
 
-      sprintf(log_buffer, "subtracting mems of boot cpuset: ");
-      hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), bootmems);
-      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
+    sprintf(log_buffer, "subtracting mems of boot cpuset: ");
+    hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), bootmems);
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
 
-      hwloc_bitmap_andnot(cpus, cpus, bootcpus);
-      hwloc_bitmap_andnot(mems, mems, bootmems);
-      }
+    hwloc_bitmap_andnot(cpus, cpus, bootcpus);
+    hwloc_bitmap_andnot(mems, mems, bootmems);
+    }
 
 #endif
 
@@ -2206,9 +2224,9 @@ int get_cpuset_mempressure(
 
   /* Construct the name of the cpuset's memory_pressure file */
   if (name[0] == '/')
-    snprintf(path, sizeof(path), "%s/memory_pressure", name);
+    snprintf(path, sizeof(path), "%s/%smemory_pressure", name, cpuset_prefix);
   else
-    snprintf(path, sizeof(path), "%s/%s/memory_pressure", TTORQUECPUSET_PATH, name);
+    snprintf(path, sizeof(path), "%s/%s/%smemory_pressure", TTORQUECPUSET_PATH, name, cpuset_prefix);
 
   /* Open, read, close */
   if ((fd = fopen(path, "r")) == NULL)
