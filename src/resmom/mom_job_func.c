@@ -674,7 +674,7 @@ void *delete_job_files(
 
 #ifdef PENABLE_LINUX26_CPUSETS
   /* Delete the cpuset for the job. */
-  delete_cpuset(jfdi->jobid);
+  delete_cpuset(jfdi->jobid, true);
 #endif /* PENABLE_LINUX26_CPUSETS */
 
   /* delete the node file and gpu file */

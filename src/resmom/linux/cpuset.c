@@ -825,7 +825,8 @@ int read_cpuset(
 
 int delete_cpuset(
 
-  const char *name)  /* I */
+  const char *name,                      /* I */
+  bool        remove_layout_reservation) /* I */
 
   {
   char           cpuset_path[MAXPATHLEN + 1];
@@ -840,7 +841,8 @@ int delete_cpuset(
   DIR           *dir;
 #endif
 
-  internal_layout.remove_job(name);
+  if (remove_layout_reservation == true)
+    internal_layout.remove_job(name);
 
 #ifdef USELIBCPUSET
 
@@ -899,7 +901,7 @@ int delete_cpuset(
       /* If a directory is found, it is a child cpuset. Try to delete it. */
       if ((statbuf.st_mode & S_IFDIR) == S_IFDIR)
         {
-        delete_cpuset(path);
+        delete_cpuset(path, false);
         }
 
       /*
@@ -1012,7 +1014,7 @@ void cleanup_torque_cpuset(void)
           log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
           }
 
-        if (delete_cpuset(pdirent->d_name) == 0)
+        if (delete_cpuset(pdirent->d_name, true) == 0)
           {
           sprintf(log_buffer, "deleted orphaned cpuset %s", path);
           log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
@@ -1420,7 +1422,7 @@ int create_job_cpuset(
 #endif
 
   /* Delete cpuset, if it exists */
-  delete_cpuset(pjob->ji_qs.ji_jobid);
+  delete_cpuset(pjob->ji_qs.ji_jobid, false);
 
   /* Allocate bitmaps for cpus and mems */
   if (((cpus = hwloc_bitmap_alloc()) == NULL) ||
@@ -1494,9 +1496,9 @@ int create_job_cpuset(
     goto finish;
     }
 
+#ifdef GEOMETRY_REQUESTS
   hwloc_bitmap_or(mems, mems, tmems);
 
-#ifdef GEOMETRY_REQUESTS
   /* Check if job requested procs_bitmap */
   prd   = find_resc_def(svr_resc_def,"procs_bitmap",svr_resc_size);
   presc = find_resc_entry(&pjob->ji_wattr[JOB_ATR_resource],prd);
@@ -1542,17 +1544,10 @@ int create_job_cpuset(
       /* If job's node_usage is singlejob, simply add all cpus */
       {
       hwloc_bitmap_or(cpus, cpus, tcpus);
+      hwloc_bitmap_or(mems, mems, tmems);
       }
     else
       {
-      long long mem_requested = get_memory_requested_in_kb(*pjob);
-      int       cpu_count = get_cpu_count_requested_on_this_node(*pjob);
-
-      // make sure the memory is evenly set over the job.
-      double    mem_pcnt = ((double)cpu_count) / pjob->ji_numvnod;
-      mem_requested = mem_requested * mem_pcnt;
-
-      internal_layout.reserve(cpu_count, mem_requested, pjob->ji_qs.ji_jobid);
       std::vector<int> *cpu_indices = internal_layout.get_cpu_indices(pjob->ji_qs.ji_jobid);
       std::vector<int> *mem_indices = internal_layout.get_memory_indices(pjob->ji_qs.ji_jobid);
 

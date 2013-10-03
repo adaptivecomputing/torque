@@ -10,7 +10,7 @@
 extern int          init_cpusets(void);
 extern int          create_cpuset(const char *, const hwloc_bitmap_t, const hwloc_bitmap_t, mode_t);
 extern int          read_cpuset(const char *, hwloc_bitmap_t, hwloc_bitmap_t);
-extern int          delete_cpuset(const char *);
+extern int          delete_cpuset(const char *, bool);
 extern int          init_torque_cpuset(void);
 extern void         cleanup_torque_cpuset(void);
 extern int          create_job_cpuset(job *);
