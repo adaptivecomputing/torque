@@ -1594,11 +1594,16 @@ finish:
 
   if (cpus != NULL)
     hwloc_bitmap_free(cpus);
+
   if (mems != NULL)
     hwloc_bitmap_free(mems);
+
 #ifndef NUMA_SUPPORT
   if (tcpus != NULL)
     hwloc_bitmap_free(tcpus);
+
+  if (tmems != NULL)
+    hwloc_bitmap_free(tmems);
 #endif
 
   return(rc);
