@@ -4209,7 +4209,20 @@ int add_multi_reqs_to_job(
   return(PBSE_NONE);
   } /* END add_multi_reqs_to_job() */
 
+int free_hostinfo(
 
+    std::vector<job_reservation_info *>  &host_info) /* O */
+
+  {
+  for (unsigned int i = 0; i < host_info.size(); i++)
+    {
+    job_reservation_info *host_single = host_info[i];
+
+    if (host_single != NULL)
+      free(host_single);
+    }
+  return(PBSE_NONE);
+  }
 
 
 /*
@@ -4331,6 +4344,7 @@ int set_nodes(
     {
     free_nodes(pjob);
     free_alps_req_data_array(ard_array, num_reqs);
+    free_hostinfo(host_info);
     return(rc);
     }
 
@@ -4338,6 +4352,7 @@ int set_nodes(
     {
     free_nodes(pjob);
     free_alps_req_data_array(ard_array, num_reqs);
+    free_hostinfo(host_info);
     return(rc);
     }
 
@@ -4356,6 +4371,7 @@ int set_nodes(
     
     free_alps_req_data_array(ard_array, num_reqs);
 
+    free_hostinfo(host_info);
     return(PBSE_RESCUNAV);
     }  /* END if (host_info.size() == 0) */
 
@@ -4371,6 +4387,7 @@ int set_nodes(
   if (rc != PBSE_NONE)
     {
     free_alps_req_data_array(ard_array, num_reqs);
+    free_hostinfo(host_info);
     return(rc);
     }
 
@@ -4395,7 +4412,10 @@ int set_nodes(
   if (mic_list != NULL)
     {
     if ((rc = translate_howl_to_string(mic_list, EMsg, &NCount, &mic_str, NULL, FALSE)) != PBSE_NONE)
+      {
+      free_hostinfo(host_info);
       return(rc);
+      }
 
     job_attr_def[JOB_ATR_exec_mics].at_free(
       &pjob->ji_wattr[JOB_ATR_exec_mics]);
@@ -4415,6 +4435,7 @@ int set_nodes(
     if ((rc = translate_howl_to_string(gpu_list, EMsg, &NCount, &gpu_str, NULL, FALSE)) != PBSE_NONE)
       {
       free_alps_req_data_array(ard_array, num_reqs);
+      free_hostinfo(host_info);
       return(rc);
       }
 
@@ -4464,6 +4485,7 @@ int set_nodes(
 
   add_multi_reqs_to_job(pjob, num_reqs, ard_array);
   free_alps_req_data_array(ard_array, num_reqs);
+  free_hostinfo(host_info);
 
   /* SUCCESS */
 
