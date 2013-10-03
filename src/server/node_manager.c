@@ -4958,6 +4958,7 @@ int remove_job_from_node(
         }
 
       pnode->nd_state &= ~INUSE_JOB;
+      delete jui;
 
       break;
       }

@@ -3646,7 +3646,6 @@ int send_hierarchy(
   close_conn(sock, FALSE);
   if (chan != NULL)
     {
-
     DIS_tcp_cleanup(chan);
     }
 
