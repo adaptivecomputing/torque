@@ -131,6 +131,8 @@ struct batch_reply *PBSD_rdrpy(
 
   if ((chan = DIS_tcp_setup(sock)) == NULL)
     {
+    *local_errno = PBSE_MEM_MALLOC;
+    return(NULL);
     }
   else if ((rc = decode_DIS_replyCmd(chan, reply)))
     {

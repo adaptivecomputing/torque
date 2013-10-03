@@ -112,6 +112,7 @@ int PBSD_msg_put(
   sock = connection[c].ch_socket;
   if ((chan = DIS_tcp_setup(sock)) == NULL)
     {
+    return(PBSE_MEM_MALLOC);
     }
   else if ((rc = encode_DIS_ReqHdr(chan, PBS_BATCH_MessJob,pbs_current_user)) ||
       (rc = encode_DIS_MessageJob(chan, jobid, fileopt, msg)) ||
