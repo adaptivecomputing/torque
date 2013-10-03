@@ -1,5 +1,7 @@
 #include "license_pbs.h"
 
+#include "pbs_job.h"
+
 /* was in mom_mach.c */
 typedef struct proc_mem
   {
@@ -12,3 +14,5 @@ typedef struct proc_mem
   } proc_mem_t;
 
 proc_mem_t *get_proc_mem_from_path(const char *path);
+long long get_memory_requested_in_kb(job &pjob);
+int       get_cpu_count_requested_on_this_node(job &pjob);

@@ -24,8 +24,6 @@ int create_cpuset(const char *name, const hwloc_bitmap_t cpus, const hwloc_bitma
 
 int read_cpuset(const char *name, hwloc_bitmap_t cpus, hwloc_bitmap_t mems);
 
-int delete_cpuset(const char *name);
-
 void cleanup_torque_cpuset(void);
 
 int init_torque_cpuset(void);
