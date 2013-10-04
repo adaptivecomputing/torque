@@ -6270,23 +6270,6 @@ void create_cpuset_reservation_if_needed(
     mem_requested = mem_requested * mem_pcnt;
 
     internal_layout.reserve(cpu_count, mem_requested, pjob.ji_qs.ji_jobid);
-
-    std::vector<int> *cpu_indices = internal_layout.get_cpu_indices(pjob.ji_qs.ji_jobid);
-    std::stringstream buf;
-
-    for (unsigned int i = 0; i < cpu_indices->size(); i++)
-      {
-      if (i > 0)
-        buf << ",";
-
-      buf << cpu_indices->at(i);
-      }
-
-    if (buf.str().size() > 0)
-      {
-      sprintf(log_buffer, "Cpus: %s", buf.str().c_str());
-      log_err(-1, __func__, log_buffer);
-      }
     }
   }
 #endif
