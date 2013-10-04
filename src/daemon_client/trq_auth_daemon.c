@@ -380,8 +380,9 @@ int trq_main(
   else if ((rc = load_ssh_key(&the_key)) != PBSE_NONE)
     {
     }
-  else if ((rc = init_trqauth_log(daemon_port) != PBSE_NONE))
+  else if ((rc = init_trqauth_log(daemon_port)) != PBSE_NONE)
     {
+    fprintf(stderr, "ERROR: Failed to initialize trqauthd log\n");
     }
   else if ((rc = validate_server(active_pbs_server, trq_server_port, the_key, &sign_key)) != PBSE_NONE)
     {
