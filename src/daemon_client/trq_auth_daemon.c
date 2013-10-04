@@ -29,8 +29,6 @@
 #define TRQ_LOGFILES "client_logs"
 
 extern char *msg_daemonname;
-extern pthread_mutex_t *log_mutex;
-extern pthread_mutex_t *job_log_mutex;
 extern int debug_mode;
 
 bool       down_server = false;
@@ -85,14 +83,6 @@ void initialize_globals_for_log(int port)
   if ((msg_daemonname = strdup(pbs_current_user)))
     changed_msg_daem = 1;
   log_set_hostname_sharelogging(active_pbs_server, port);
-  }
-
-void clean_log_init_mutex(void)
-  {
-  pthread_mutex_destroy(log_mutex);
-  pthread_mutex_destroy(job_log_mutex);
-  free(log_mutex);
-  free(job_log_mutex);
   }
 
 int init_trqauth_log(int server_port)
@@ -208,7 +198,6 @@ int daemonize_trqauthd(const char *server_ip, int server_port, void *(*process_m
         {
           free(msg_daemonname);
         }
-      clean_log_init_mutex();
       exit(-1);
       }
     snprintf(msg_trqauthddown, sizeof(msg_trqauthddown),
@@ -223,7 +212,6 @@ int daemonize_trqauthd(const char *server_ip, int server_port, void *(*process_m
       {
       free(msg_daemonname);
       }
-    clean_log_init_mutex();
     exit(0);
   }
 
