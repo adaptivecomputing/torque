@@ -349,6 +349,9 @@ src/lib/Libutils/test/u_users/test_u_users
 src/lib/Libutils/test/u_xml/test_u_xml
 src/lib/Libutils/test/u_putenv/test_u_putenv
 src/momctl/test/momctl/test_momctl
+src/resmom/linux/test/cpuset/test_cpuset
+src/resmom/linux/test/numa_node/test_numa_node
+src/resmom/linux/test/node_internals/test_node_internals
 src/resmom/linux/test/mom_mach/test_mom_mach
 src/resmom/linux/test/mom_start/test_mom_start
 src/resmom/linux/test/pe_input/test_pe_input
@@ -471,7 +474,6 @@ tmpdiff
 tmporig
 tmpfile
 src/lib/Libutils/test/u_mutex_mgr/test_u_mutex_mgr
-src/resmom/linux/test/cpuset/test_cpuset
 STDIN.*
 src/drmaa/test/exit_job
 src/drmaa/test/sleeper_job

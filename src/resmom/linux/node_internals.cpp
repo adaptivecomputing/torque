@@ -155,9 +155,10 @@ void node_internals::reserve(
 
   if (done == false)
     {
+    allocation alloc;
+
     for (unsigned int i = 0; i < this->numa_nodes.size(); i++)
       {
-      allocation alloc;
       this->numa_nodes[i].reserve(num_cpus, memory, jobid, alloc);
       num_cpus -= alloc.cpus;
       memory -= alloc.memory;
