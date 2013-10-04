@@ -114,11 +114,11 @@ class numa_node
   numa_node();
   numa_node(const numa_node &nn);
   void            parse_cpu_string(std::string &line);
+  void            get_meminfo(const char *path);
   void            reserve(int num_cpus, unsigned long memory, const char *jobid, allocation &alloc);
   void            remove_job(const char *jobid);
-  bool            completely_fits(int num_cpus, unsigned long memory);
-  void            get_job_indices(const char *jobid, std::vector<int> &cpu_indices, bool cpu);
-  void            get_meminfo(const char *path);
+  bool            completely_fits(int num_cpus, unsigned long memory) const;
+  void            get_job_indices(const char *jobid, std::vector<int> &cpu_indices, bool cpu) const;
   unsigned int    get_total_cpus() const;
   unsigned long   get_total_memory() const;
   unsigned long   get_available_memory() const;
