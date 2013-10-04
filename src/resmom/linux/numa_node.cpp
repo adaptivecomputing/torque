@@ -144,7 +144,7 @@ void numa_node::parse_cpu_string(
     }
 
   free(str);
-  }
+  } /* END parse_cpu_string */
 
 
 
@@ -234,7 +234,7 @@ numa_node::numa_node() : total_cpus(0), total_memory (0), available_memory(0), a
 bool numa_node::completely_fits(
 
   int           num_cpus,
-  unsigned long memory)
+  unsigned long memory) const
 
   {
   bool fits = false;
@@ -320,7 +320,7 @@ void numa_node::get_job_indices(
 
   const char       *jobid,
   std::vector<int> &indices,
-  bool              cpus)
+  bool              cpus) const
 
   {
   for (unsigned int i = 0; i < this->allocations.size(); i++)
