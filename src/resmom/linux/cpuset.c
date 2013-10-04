@@ -1383,17 +1383,18 @@ int create_job_cpuset(
   job *pjob) /* I */
 
   {
-  vnodent        *np = pjob->ji_vnods;
   hwloc_bitmap_t  cpus = NULL;
   hwloc_bitmap_t  mems = NULL;
   int             rc   = FAILURE;
 #ifdef NUMA_SUPPORT
+  vnodent        *np = pjob->ji_vnods;
   int             j;
   int             numa_idx;
 #else
   hwloc_bitmap_t  tmems = NULL;
   hwloc_bitmap_t  tcpus = NULL;
 #  ifdef GEOMETRY_REQUESTS
+  vnodent        *np = pjob->ji_vnods;
   int             j;
   resource       *presc = NULL;
   resource_def   *prd   = NULL;
@@ -1533,22 +1534,10 @@ int create_job_cpuset(
       std::vector<int> *mem_indices = internal_layout.get_memory_indices(pjob->ji_qs.ji_jobid);
 
       for (unsigned int i = 0; i < cpu_indices->size(); i++)
-        {
-        if (add_obj_from_cpuset(tcpus, cpus, cpu_indices->at(i)) == -1)
-          {
-          sprintf(log_buffer, "TORQUE cpuset contains no CPU at index %d", np->vn_index);
-          log_err(-1, __func__, log_buffer);
-          }
-        }
+        hwloc_bitmap_set(cpus, cpu_indices->at(i));
       
       for (unsigned int i = 0; i < mem_indices->size(); i++)
-        {
-        if (add_obj_from_cpuset(tmems, mems, mem_indices->at(i)) == -1)
-          {
-          sprintf(log_buffer, "TORQUE cpuset contains no CPU at index %d", np->vn_index);
-          log_err(-1, __func__, log_buffer);
-          }
-        }
+        hwloc_bitmap_set(mems, mem_indices->at(i));
       }
     }
 

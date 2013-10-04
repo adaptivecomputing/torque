@@ -257,15 +257,13 @@ void numa_node::reserve(
 
   {
   snprintf(alloc.jobid, sizeof(alloc.jobid), "%s", jobid);
-
-  alloc.cpus = 0;
-    
+  
   for (unsigned int i = 0; i < this->cpu_indices.size() && alloc.cpus < num_cpus; i++)
     {
     if (this->cpu_avail[i] == true)
       {
       this->cpu_avail[i] = false;
-      alloc.cpu_indices.push_back(i);
+      alloc.cpu_indices.push_back(this->cpu_indices[i]);
       alloc.cpus++;
       this->available_cpus--;
       }
@@ -273,12 +271,12 @@ void numa_node::reserve(
 
   if (memory <= this->available_memory)
     {
-    alloc.memory = memory;
+    alloc.memory += memory;
     this->available_memory -= memory;
     }
   else
     {
-    alloc.memory = this->available_memory;
+    alloc.memory += this->available_memory;
     this->available_memory = 0;
     }
 
@@ -300,9 +298,14 @@ void numa_node::remove_job(
       this->available_cpus   += a.cpus;
       this->available_memory += a.memory;
 
-      for (unsigned int j = 0; j < a.cpu_indices.size(); j++)
+      /* find the job indices used by this allocation and release them */
+      for (unsigned int k = 0; k < this->cpu_indices.size(); k++)
         {
-        this->cpu_avail[a.cpu_indices[j]] = true;
+        for (unsigned int j = 0; j < a.cpu_indices.size(); j++)
+          {
+          if (this->cpu_indices[k] == a.cpu_indices[j])
+            this->cpu_avail[k] = true;
+          }
         }
 
       this->allocations.erase(this->allocations.begin() + i);

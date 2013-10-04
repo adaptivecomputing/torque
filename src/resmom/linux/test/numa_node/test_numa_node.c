@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <check.h>
+#include <stdio.h>
 
 #include "numa_node.hpp"
 
@@ -71,18 +72,21 @@ START_TEST(test_reserve)
   n.reserve(2, 2048, "1.napali", a);
   fail_unless(a.cpus == 2);
   fail_unless(a.memory == 2048);
-  a.cpu_indices.clear();
-  n.reserve(1, 2048, "2.napali", a);
-  fail_unless(a.cpus == 1);
-  fail_unless(a.memory == 2048);
-  a.cpu_indices.clear();
-  n.reserve(2, 2048, "3.napali", a);
-  fail_unless(a.cpus == 1);
-  fail_unless(a.memory == 1024);
+
+  allocation a2;
+  n.reserve(1, 2048, "2.napali", a2);
+  fail_unless(a2.cpus == 1);
+  fail_unless(a2.memory == 2048);
+ 
+  allocation a3;
+  n.reserve(2, 2048, "3.napali", a3);
+  fail_unless(a3.cpus == 1);
+  fail_unless(a3.memory == 1024);
 
   n.get_job_indices("2.napali", cpu_indices, true);
   fail_unless(cpu_indices.size() == 1);
-  fail_unless(cpu_indices[0] == 2);
+  printf("index: %d\n", cpu_indices[0]);
+  fail_unless(cpu_indices[0] == 8);
 
   cpu_indices.clear();
   n.get_job_indices("2.napali", cpu_indices, false);
@@ -97,7 +101,7 @@ START_TEST(test_reserve)
   cpu_indices.clear();
   n.get_job_indices("3.napali", cpu_indices, true);
   fail_unless(cpu_indices.size() == 1);
-  fail_unless(cpu_indices[0] == 3);
+  fail_unless(cpu_indices[0] == 9);
 
   n.remove_job("2.napali");
   cpu_indices.clear();
@@ -107,13 +111,13 @@ START_TEST(test_reserve)
   fail_unless(n.get_available_cpus() == 1);
   fail_unless(n.get_available_memory() == 2048);
 
-  a.cpu_indices.clear();
-  n.reserve(1, 1024, "4.napali", a);
-  fail_unless(a.cpus == 1);
-  fail_unless(a.memory == 1024);
+  allocation a4;
+  n.reserve(1, 1024, "4.napali", a4);
+  fail_unless(a4.cpus == 1);
+  fail_unless(a4.memory == 1024);
   cpu_indices.clear();
   n.get_job_indices("4.napali", cpu_indices, true);
-  fail_unless(cpu_indices[0] == 2);
+  fail_unless(cpu_indices[0] == 8);
   }
 END_TEST
 
@@ -132,8 +136,8 @@ START_TEST(test_allocation_constructors)
 
   allocation a2(a);
   fail_unless(!strcmp(a2.jobid, "1.napali"));
-  fail_unless(a.cpus == 4);
-  fail_unless(a.memory == 1024 * 6);
+  fail_unless(a2.cpus == 4);
+  fail_unless(a2.memory == 1024 * 6);
   }
 END_TEST
 
