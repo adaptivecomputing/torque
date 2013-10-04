@@ -332,6 +332,7 @@
 #define ATTR_nppcu                   "nppcu"
 #define ATTR_maxuserqueuable         "max_user_queuable"
 #define ATTR_automaticrequeueexitcode "automatic_requeue_exit_code"
+#define ATTR_jobsynctimeout           "job_sync_timeout"
 /* additional node "attributes" names */
 
 #define ATTR_NODE_state            "state"
