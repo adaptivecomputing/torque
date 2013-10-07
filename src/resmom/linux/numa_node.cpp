@@ -194,6 +194,8 @@ void numa_node::get_meminfo(
     {
     this->total_memory = memnode->mem_total / 1024;
     this->available_memory = this->total_memory;
+
+    free(memnode);
     }
   }
 
