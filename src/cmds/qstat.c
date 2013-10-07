@@ -2650,7 +2650,8 @@ int run_job_mode(
 
       snprintf(job_id, sizeof(job_id), "%s", operand);
 
-      if (get_server(job_id, job_id_out, job_id_out_size, server_out, server_out_size))
+      any_failed = get_server(job_id, job_id_out, job_id_out_size, server_out, server_out_size);
+      if (any_failed != PBSE_NONE)
         {
         fprintf(stderr, "qstat: illegally formed job identifier: %s\n",
                 job_id);
@@ -2680,7 +2681,7 @@ int run_job_mode(
 
         tcl_stat(error, NULL, f_opt);
 
-        any_failed = 1;
+        any_failed = PBSE_IVALREQ;
 
         return(any_failed);
         }
@@ -2707,14 +2708,14 @@ int run_job_mode(
     {
     connect = cnt2server(server_out);
 
-    if (connect <= 0)
+    any_failed = -1 * connect;
+    if (connect <= 0 )
       {
-      if (++retry_count < MAX_RETRIES)
+      if ((++retry_count < MAX_RETRIES) && ((any_failed != PBSE_TIMEOUT) && (any_failed != PBSE_SOCKET_FAULT)))
         {
         continue;
         }
 
-      any_failed = -1 * connect;
 
       if (server_out[0] != 0)
         fprintf(stderr, "qstat: cannot connect to server %s (errno=%d) %s\n",
@@ -2782,6 +2783,8 @@ int run_job_mode(
 
           snprintf(server_out, server_out_size, "%s", rmt_server);
 
+          ++retry_count;
+
           continue;
           }
 
@@ -2792,18 +2795,20 @@ int run_job_mode(
         }
       else
         {
-        if (any_failed && (++retry_count < MAX_RETRIES))
-            {
-            pbs_disconnect(connect);
-            continue;
-            }
-
-        tcl_stat("job", NULL, f_opt);
-
-        if (any_failed != PBSE_NONE)
+        if ((any_failed != PBSE_NONE) && (++retry_count >= MAX_RETRIES))
           {
           prt_job_err((char *)"qstat", connect, job_id_out);
+          break;
           }
+        
+        if (any_failed && (retry_count < MAX_RETRIES))
+          {
+          pbs_disconnect(connect);
+          continue;
+          }
+
+        tcl_stat("job", NULL, f_opt);
+        
         }
       }
     else
