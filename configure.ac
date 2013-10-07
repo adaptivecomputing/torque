@@ -757,16 +757,6 @@ AC_CHECK_LIB(${xmlLib}, xmlGetProp,
   [AC_MSG_ERROR([TORQUE needs libxml2-devel in order to build]) ])
 
 
-dnl
-dnl Check for boost headers
-dnl
-
-AC_CHECK_HEADERS([boost/ptr_container/ptr_vector.hpp],
-                 [],
-                 [AC_MSG_ERROR(Boost ptr_vector.hpp header not found)],
-                 [])
-
-
 
 dnl ###########################################
 dnl Make only top dir mode?
