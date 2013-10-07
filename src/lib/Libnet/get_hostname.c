@@ -127,7 +127,7 @@ int get_fullhostname(
     if (EMsg != NULL)
       strcpy(EMsg, "host name not specified");
 
-    return(-1);
+    return(PBSE_NOSERVER);
     }
 
   if ((pcolon = strchr(shortname, ':')) != NULL)
@@ -168,7 +168,7 @@ int get_fullhostname(
                shortname,
                h_errno);
 
-    return(-1);
+    return(PBSE_CANNOT_RESOLVE);
     }
 
   if (getnameinfo(addr_info->ai_addr, addr_info->ai_addrlen, hostname, MAXLINE, NULL, 0, 0) != 0)
@@ -188,7 +188,7 @@ int get_fullhostname(
 
     /* FAILURE - cannot get host by address */
 
-    return(-1);
+    return(PBSE_CANNOT_RESOLVE);
     }
 
   tmp_len = strlen(addr_info->ai_canonname);
@@ -202,7 +202,7 @@ int get_fullhostname(
         addr_info->ai_canonname,
         bufsize);
 
-    return(-1);
+    return(PBSE_BAD_PARAMETER);
     }
 
   snprintf(namebuf, bufsize, "%s", addr_info->ai_canonname);

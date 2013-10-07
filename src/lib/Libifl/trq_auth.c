@@ -881,17 +881,6 @@ void *process_svr_conn(
           disconnect_svr = FALSE;
           debug_mark = 1;
           }
-        else if ((rc = validate_user(local_socket, user_name, user_pid, msg_buf)) != PBSE_NONE)
-          {
-          log_record(PBSEVENT_CLIENTAUTH | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD, __func__, msg_buf);
-          disconnect_svr = FALSE;
-          debug_mark = 1;
-          }
-        else if ((rc = get_trq_server_addr(server_name, &trq_server_addr, &trq_server_addr_len)) != PBSE_NONE)
-          {
-          disconnect_svr = FALSE;
-          debug_mark = 2;
-          }
         else
           {
           int retries = 0;
@@ -900,7 +889,23 @@ void *process_svr_conn(
             rc = PBSE_NONE;
             disconnect_svr = TRUE;
 
-            if ((svr_sock = socket_get_tcp_priv()) < 0)
+
+            if ((rc = validate_user(local_socket, user_name, user_pid, msg_buf)) != PBSE_NONE)
+              {
+              log_record(PBSEVENT_CLIENTAUTH | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD, __func__, msg_buf);
+              disconnect_svr = FALSE;
+              debug_mark = 1;
+              usleep(20000);
+              continue;
+              }
+            else if ((rc = get_trq_server_addr(server_name, &trq_server_addr, &trq_server_addr_len)) != PBSE_NONE)
+              {
+              disconnect_svr = FALSE;
+              debug_mark = 2;
+              usleep(20000);
+              continue;
+              }
+            else if ((svr_sock = socket_get_tcp_priv()) < 0)
               {
               rc = PBSE_SOCKET_FAULT;
               disconnect_svr = FALSE;
