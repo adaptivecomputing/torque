@@ -17,6 +17,7 @@
 #include "../Libnet/lib_net.h" /* get_hostaddr, socket_* */
 #include "../../include/log.h" /* log event types */
 #include <stdarg.h>
+#include <string.h>
 
 #define MAX_RETRIES 5
 #define USER_PWD_RETRIES 3
@@ -99,8 +100,7 @@ int set_trqauthd_addr()
 
 int validate_active_pbs_server(
 
-  char **active_server,
-  int    port)
+  char **active_server)
 
   {
   char     *err_msg;
@@ -115,7 +115,7 @@ int validate_active_pbs_server(
   long long ret_code;
 
   /* the format is TRQ command|destination port */
-  sprintf(write_buf, "%d|%d|", TRQ_VALIDATE_ACTIVE_SERVER, port);
+  sprintf(write_buf, "%d|", TRQ_VALIDATE_ACTIVE_SERVER);
 
   write_buf_len = strlen(write_buf);
   snprintf(unix_sockname, sizeof(unix_sockname), "%s/%s", TRQAUTHD_SOCK_DIR, TRQAUTHD_SOCK_NAME);
@@ -362,6 +362,30 @@ int trq_simple_connect(
   return(rc);
   }
 
+/* ger_server_port_from_string scans current_name for a 
+   : and a port. If present t_server_port is set to the 
+   value after the :. otherwise t_server_port is set to
+   15001, the default pbs_server port */
+int get_server_port_from_string(
+    
+    char *current_name, 
+    int  *t_server_port)
+
+  {
+  char *ptr;
+
+  ptr = strchr(current_name, ':');
+  if (ptr != NULL)
+    {
+    ptr++;
+    *t_server_port = atoi(ptr);
+    }
+  else
+    *t_server_port = PBS_BATCH_SERVICE_PORT;
+  
+  return(PBSE_NONE);
+  }
+
 /* validate_server:
  * This function tries to find the currently active
  * pbs_server. If no server can be found the default 
@@ -411,6 +435,8 @@ int validate_server(
         
         memset(current_name, 0, sizeof(current_name));
         snprintf(current_name, sizeof(current_name), "%s", tp);
+
+        get_server_port_from_string(current_name, &t_server_port);
 
         if (getenv("PBSDEBUG"))
           {
@@ -846,11 +872,7 @@ void *process_svr_conn(
 
       case TRQ_VALIDATE_ACTIVE_SERVER:
         {
-        if ((rc = socket_read_num(local_socket, (long long *)&server_port)) != PBSE_NONE)
-          {
-          break;
-          }
-        else if ((rc = validate_server(server_name, server_port, NULL, NULL)) != PBSE_NONE)
+        if ((rc = validate_server(server_name, server_port, NULL, NULL)) != PBSE_NONE)
           {
           break;
           }
@@ -901,6 +923,7 @@ void *process_svr_conn(
               log_record(PBSEVENT_CLIENTAUTH | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD, __func__, msg_buf);
               disconnect_svr = FALSE;
               debug_mark = 1;
+              retries++;
               usleep(20000);
               continue;
               }
@@ -908,6 +931,7 @@ void *process_svr_conn(
               {
               disconnect_svr = FALSE;
               debug_mark = 2;
+              retries++;
               usleep(20000);
               continue;
               }

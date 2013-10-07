@@ -174,6 +174,23 @@ int cnt2server(
 start:
 
   connect = pbs_connect(Server);
+  
+  /* if pbs_connect failed maybe the active server is down. validate the active 
+     server and try again */
+  if ((connect <= 0) && ((SpecServer == NULL) || (SpecServer[0] == '\0')))
+    {
+    char *valid_server;
+    rc = validate_active_pbs_server(&valid_server);
+    if (rc != PBSE_NONE)
+      return(connect);
+
+    connect = pbs_connect(valid_server);
+    
+    if (connect >= 0)
+      fprintf(stderr, "New active server is %s\n", valid_server);
+    free(valid_server);
+    }
+
 
   if (connect <= 0)
     {
@@ -254,7 +271,7 @@ start:
             int   rc;
 
             new_server_name = PBS_get_server(SpecServer, &port);
-            rc = validate_active_pbs_server(&new_server_name, port);
+            rc = validate_active_pbs_server(&new_server_name);
             if ((rc) ||
                 (!strcmp(new_server_name, Server)))
               {
