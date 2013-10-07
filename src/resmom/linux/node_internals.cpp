@@ -77,108 +77,135 @@
 * without reference to its choice of law rules.
 */
 
-/*
- * This is a list of public server attributes
- *
- * FORMAT:
- *  attr1,
- *   attr2, <--- important the last has a comma after it
- *
- *  This file will be used for the initialization of an array
- *
- */
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
-/* sync w/SRV_ATR_* in server.h, server/svr_attr_def.c, and ATTR_* in pbs_ifl.h  */
 
-ATTR_aclhten,
-ATTR_aclhost,
-ATTR_acluren,
-ATTR_acluser,
-ATTR_aclroot,
-ATTR_comment,
-ATTR_defnode,
-ATTR_dfltque,
-ATTR_locsvrs,
-ATTR_logevents,
-ATTR_loglevel,
-ATTR_managers,
-ATTR_mailfrom,
-ATTR_maxrun,
-ATTR_maxuserrun,
-ATTR_maxgrprun,
-ATTR_nodepack,
-ATTR_nodesuffix,
-ATTR_operators,
-ATTR_queryother,
-ATTR_rescavail,
-ATTR_resccost,
-ATTR_rescdflt,
-ATTR_rescmax,
-ATTR_schedit,
-ATTR_scheduling,
-ATTR_syscost,
-ATTR_pingrate,
-ATTR_ndchkrate,
-ATTR_tcptimeout,
-ATTR_jobstatrate,
-ATTR_polljobs,
-ATTR_downonerror,
-ATTR_disableserveridcheck,
-ATTR_jobnanny,
-ATTR_ownerpurge,
-ATTR_qcqlimits,
-ATTR_momjobsync,
-ATTR_maildomain,
-ATTR_killdelay,
-ATTR_acllogic,
-ATTR_aclgrpslpy,
-ATTR_keepcompleted,
-ATTR_submithosts,
-ATTR_allownodesubmit,
-ATTR_allowproxyuser,
-ATTR_servername,
-ATTR_autonodenp,
-ATTR_logfilemaxsize,
-ATTR_logfilerolldepth,
-ATTR_logkeepdays,
-ATTR_nextjobnum,
-ATTR_tokens,
-ATTR_extraresc,
-ATTR_schedversion,
-ATTR_acctkeepdays,
-ATTR_lockfile,
-ATTR_LockfileUpdateTime,
-ATTR_LockfileCheckTime,
-ATTR_credentiallifetime,
-ATTR_jobmustreport,
-ATTR_checkpoint_dir,
-ATTR_dispsvrsuffix,
-ATTR_jobsuffixalias,
-ATTR_mailsubjectfmt,
-ATTR_mailbodyfmt,
-ATTR_npdefault,
-ATTR_clonebatchsize,
-ATTR_clonebatchdelay,
-ATTR_jobstarttimeout,
-ATTR_jobforcecanceltime,
-ATTR_maxarraysize,
-ATTR_maxslotlimit,
-ATTR_recordjobinfo,
-ATTR_recordjobscript,
-ATTR_joblogfilemaxsize,
-ATTR_joblogfilerolldepth,
-ATTR_joblogkeepdays,
-#ifdef MUNGE_AUTH
-ATTR_authusers,
-#endif
-ATTR_minthreads,
-ATTR_maxthreads,
-ATTR_threadidleseconds,
-ATTR_moabarraycompatible,
-ATTR_nomailforce,
-ATTR_crayenabled,
-ATTR_interactivejobscanroam,
-ATTR_maxuserqueuable,
-ATTR_automaticrequeueexitcode,
-ATTR_nppcu,
-ATTR_jobsynctimeout,
+#include "node_internals.hpp"
+#include "utils.h"
+
+const char *base_path = "/sys/devices/system/node/";
+
+node_internals::node_internals()
+  {
+  char        path[MAXLINE];
+  bool        fail = false;
+  struct stat buf;
+
+  for (int i = 0; fail == false; i++)
+    {
+    snprintf(path, sizeof(path), "%snode%d", base_path, i);
+
+    if (stat(path, &buf) == 0)
+      {
+      numa_node n(path, i);
+      this->numa_nodes.push_back(n);
+      }
+    else
+      fail = true;
+    }
+  }
+  
+node_internals::node_internals(
+    
+  const node_internals &ni) : numa_nodes(ni.numa_nodes)
+
+  {
+  }
+
+
+
+node_internals::node_internals(
+    
+  const std::vector<numa_node> nodes) : numa_nodes(nodes)
+
+  {
+  }
+
+
+
+int node_internals::num_numa_nodes() const
+
+  {
+  return(this->numa_nodes.size());
+  }
+
+
+
+void node_internals::reserve(
+
+  int            num_cpus,
+  unsigned long  memory,
+  const char    *jobid)
+
+  {
+  bool done = false;
+
+  for (unsigned int i = 0; i < this->numa_nodes.size(); i++)
+    {
+    if (this->numa_nodes[i].completely_fits(num_cpus, memory))
+      {
+      allocation alloc;
+      this->numa_nodes[i].reserve(num_cpus, memory, jobid, alloc);
+      done = true;
+      break;
+      }
+    }
+
+  if (done == false)
+    {
+    for (unsigned int i = 0; i < this->numa_nodes.size(); i++)
+      {
+      allocation alloc;
+      this->numa_nodes[i].reserve(num_cpus, memory, jobid, alloc);
+      num_cpus -= alloc.cpus;
+      memory -= alloc.memory;
+
+      if ((num_cpus <= 0) &&
+          (memory <= 0))
+        break;
+      }
+    }
+  }
+
+
+
+void node_internals::remove_job(
+
+  const char *jobid)
+
+  {
+  for (unsigned int i = 0; i < this->numa_nodes.size(); i++)
+    this->numa_nodes[i].remove_job(jobid);
+  }
+
+
+
+std::vector<int> *node_internals::get_cpu_indices(
+    
+  const char *jobid)
+
+  {
+  std::vector<int> *cpu_indices = new std::vector<int>();
+    
+  for (unsigned int i = 0; i < this->numa_nodes.size(); i++)
+    this->numa_nodes[i].get_job_indices(jobid, *cpu_indices, true);
+
+  return(cpu_indices);
+  }
+
+
+
+std::vector<int> *node_internals::get_memory_indices(
+    
+  const char *jobid)
+
+  {
+  std::vector<int> *memory_indices = new std::vector<int>();
+    
+  for (unsigned int i = 0; i < this->numa_nodes.size(); i++)
+    this->numa_nodes[i].get_job_indices(jobid, *memory_indices, false);
+
+  return(memory_indices);
+  }

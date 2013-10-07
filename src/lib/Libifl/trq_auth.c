@@ -19,6 +19,7 @@
 #include <stdarg.h>
 
 #define MAX_RETRIES 5
+#define USER_PWD_RETRIES 3
 
 char         *trq_addr = NULL;
 int           trq_addr_len;
@@ -624,7 +625,12 @@ int validate_user(
     return(PBSE_SOCKET_FAULT);
     }
 
-  user_pwd = getpwuid(cr.uid);
+  for (int i = 0; i < USER_PWD_RETRIES; i++)
+    {
+    if ((user_pwd = getpwuid(cr.uid)) != NULL)
+      break;
+    }
+   
   if (user_pwd == NULL)
     {
     sprintf(msg, "UID %d returned NULL from getpwuid", cr.uid);

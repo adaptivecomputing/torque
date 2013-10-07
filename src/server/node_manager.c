@@ -603,44 +603,12 @@ int kill_job_on_mom(
   } /* END kill_job_on_mom() */
 
 
-#if 0
-class jobAndTimeout
-{
-private:
-  std::string   jobID;
-  time_t        timeKillWasSent;
-  jobAndTimeout():timeKillWasSent(0){}
-public:
-  jobAndTimeout(const char *id)
-    {
-    jobID = id;
-    timeKillWasSent = time(NULL);
-    }
-  bool hasJobKillExpired(const char *id)
-    {
-    if(jobMatches(id))
-      {
-      if(time(NULL) > (timeKillWasSent + KILL_TIMEOUT))
-        {
-        return true;
-        }
-      }
-    return false;
-    }
-  bool jobMatches(const char *id)
-    {
-    if(jobID.compare(id) == 0)
-      {
-      return true;
-      }
-    return false;
-    }
-};
-#endif
 
 pthread_mutex_t jobsKilledMutex = PTHREAD_MUTEX_INITIALIZER;
 boost::ptr_vector<std::string> jobsKilled;
-#define KILL_TIMEOUT 300 //Once a kill job has been sent to a MOM, don't send another for five minutes.
+#define JOB_SYNC_TIMEOUT 60 //Once a kill job has been sent to a MOM, don't send another for five minutes.
+
+
 
 /*
  * Delayed task to remove a killed job from the list in
@@ -861,7 +829,7 @@ void *sync_node_jobs(
   char                 *jobstring_in;
   char                 *joblist;
   char                 *jobidstr;
-  /*resizable_array      *ms_jobs;*/
+  long                  job_sync_timeout = JOB_SYNC_TIMEOUT;
 
   if (vp == NULL)
     return(NULL);
@@ -896,28 +864,25 @@ void *sync_node_jobs(
   /* FORMAT <JOBID>[ <JOBID>]... */
   joblist = jobstring_in;
   jobidstr = threadsafe_tokenizer(&joblist, (char *)" ");
-  
-  /*ms_jobs = initialize_resizable_array(MAX(np->nd_ms_jobs->num, 2));*/
+
+  get_svr_attr_l(SRV_ATR_job_sync_timeout, &job_sync_timeout);
 
   while ((jobidstr != NULL) && 
          (isdigit(*jobidstr)) != FALSE)
     {
     if (job_should_be_killed(jobidstr, np))
       {
-      if(kill_job_on_mom(jobidstr, np) == PBSE_NONE)
+      if (kill_job_on_mom(jobidstr, np) == PBSE_NONE)
         {
         pthread_mutex_lock(&jobsKilledMutex);
         jobsKilled.push_back(new std::string(jobidstr));
         pthread_mutex_unlock(&jobsKilledMutex);
-        set_task(WORK_Timed,time(NULL) + KILL_TIMEOUT,remove_job_from_already_killed_list,(void *)new std::string(jobidstr),FALSE);
+        set_task(WORK_Timed, 
+                 time(NULL) + job_sync_timeout,
+                 remove_job_from_already_killed_list,
+                 (void *)new std::string(jobidstr),
+                 FALSE);
         }
-      }
-    else
-      {
-/*      char *jobid = remove_thing_memcmp(np->nd_ms_jobs, jobidstr, strlen(jobidstr));
-
-      if (jobid != NULL)
-        insert_thing(ms_jobs, jobid);*/
       }
     
     jobidstr = threadsafe_tokenizer(&joblist, " ");
@@ -926,18 +891,12 @@ void *sync_node_jobs(
   /* SUCCESS */
   free(raw_input);
 
-  /* now check if the mom is reporting any jobs that the server doesn't know about */
-  /*remove_jobs_that_have_disappeared(np, ms_jobs, sji->timestamp);*/
-
   free(sji);
-
-  /*free_resizable_array(ms_jobs);*/
 
   unlock_node(np, __func__, NULL, LOGLEVEL);
 
   return(NULL);
   }  /* END sync_node_jobs() */
-
 
 
 

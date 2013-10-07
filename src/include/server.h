@@ -203,6 +203,7 @@ enum srv_atr
   SRV_ATR_MaxUserQueuable,
   SRV_ATR_AutomaticRequeueExitCode,
   SRV_ATR_nppcu,
+  SRV_ATR_job_sync_timeout,
 
 #include "site_svr_attr_enum.h"
   /* This must be last */

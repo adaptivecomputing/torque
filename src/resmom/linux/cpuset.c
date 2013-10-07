@@ -27,6 +27,7 @@
 #include "log.h"
 #include "pbs_cpuset.h"
 #include "mom_memory.h"
+#include "node_internals.hpp"
 
 /* NOTE: move these three things to utils when lib is checked in */
 #ifndef MAXPATHLEN
@@ -40,6 +41,7 @@
 #endif /* SUCCESS */
 
 
+extern node_internals   internal_layout;
 extern hwloc_topology_t topology;
 extern int              MOMConfigUseSMT;
 #ifdef NUMA_SUPPORT
@@ -48,12 +50,55 @@ extern int              num_node_boards;
 #endif /* NUMA_SUPPORT */
 extern int              LOGLEVEL;
 extern long             system_ncpus;
+char                    cpuset_prefix[MAXPATHLEN];
 
 /* FIXME: TODO:  TTORQUECPUSET_PATH, enabling cpuset support, and correct error
  * checking need a run-time config */
 
 
 
+void set_cpuset_prefix()
+
+  {
+  char        path[MAXPATHLEN];
+  struct stat statbuf;
+
+  cpuset_prefix[0] = '\0';
+
+  sprintf(path, "%s/cpuset.cpus", TROOTCPUSET_PATH);
+  
+  if (lstat(path, &statbuf) != -1)
+    snprintf(cpuset_prefix, sizeof(cpuset_prefix), "cpuset.");
+  }
+
+
+
+int manual_cpuset_init()
+
+  {
+  struct stat statbuf;
+  int         rc = PBSE_NONE;
+  char        cmd[MAXPATHLEN + 1];
+
+  if (lstat(TROOTCPUSET_PATH, &statbuf) == -1)
+    {
+    /* create cpuset base directory */
+    mkdir(TROOTCPUSET_PATH,0755);
+
+    /* now mount it */
+    sprintf(cmd,"mount -t cpuset none %s", TROOTCPUSET_PATH);
+
+    if (system(cmd) == -1)
+      {
+      fprintf(stderr,"Cannot mount directory '%s'\n",TROOTCPUSET_PATH);
+      rc = -1;
+      }
+    }
+
+  set_cpuset_prefix();
+
+  return(rc);
+  }
 
 
 
@@ -201,11 +246,6 @@ int init_cpusets(void)
   int           rc   = -1;
 #ifdef USELIBCPUSET
   struct cpuset *cp  = NULL;
-#else
-  char           path[MAXPATHLEN + 1];
-  char           cmd[MAXPATHLEN + 1];
-  FILE          *pipe;
-  struct stat    statbuf;
 #endif
 
 #ifdef USELIBCPUSET
@@ -233,28 +273,7 @@ int init_cpusets(void)
 #else /* !USELIBCPUSET */
 
   /* Check if /dev/cpuset/cpus exists */
-  sprintf(path, "%s/cpus", TROOTCPUSET_PATH);
-  if ((rc = lstat(path, &statbuf)) == -1)
-    {
-    /* create cpuset base directory */
-    mkdir(TROOTCPUSET_PATH,0755);
-
-    /* now mount it */
-    sprintf(cmd,"mount -t cpuset none %s", TROOTCPUSET_PATH);
-
-    pipe = popen(cmd,"r");
-
-    if (pipe == NULL)
-      {
-      fprintf(stderr,"Cannot mount directory '%s'\n",TROOTCPUSET_PATH);
-      }
-    else
-      {
-      /* successfully created/mounted cpusets */
-      rc = 0;
-      pclose(pipe);
-      }
-    }
+  rc = manual_cpuset_init();
 
   return(rc);
 #endif /* USELIBCPUSET */
@@ -495,7 +514,7 @@ int create_cpuset(
   /* Set cpus */
   if (cpus != NULL)
     {
-    sprintf(path, "%s/cpus", cpuset_path);
+    sprintf(path, "%s/%scpus", cpuset_path, cpuset_prefix);
 
     if ((fd = fopen(path, "w")) == NULL)
       {
@@ -518,7 +537,7 @@ int create_cpuset(
   /* Set mems */
   if (mems != NULL)
     {
-    sprintf(path, "%s/mems", cpuset_path);
+    sprintf(path, "%s/%smems", cpuset_path, cpuset_prefix);
 
     if ((fd = fopen(path, "w")) == NULL)
       {
@@ -705,7 +724,7 @@ int read_cpuset(
     /* Read cpus */
     if (cpus != NULL)
       {
-      sprintf(path, "%s/cpus", cpuset_path);
+      sprintf(path, "%s/%scpus", cpuset_path, cpuset_prefix);
 
       if ((fd = fopen(path, "r")) == NULL)
         {
@@ -723,6 +742,11 @@ int read_cpuset(
           return(-1);
           }
         }
+      else
+        {
+        errno = ENOENT;
+        return(-1);
+        }
 
       fclose(fd);
       }
@@ -730,7 +754,7 @@ int read_cpuset(
     /* Read mems */
     if (mems != NULL)
       {
-      sprintf(path, "%s/mems", cpuset_path);
+      sprintf(path, "%s/%smems", cpuset_path, cpuset_prefix);
 
       if ((fd = fopen(path, "r")) == NULL)
         {
@@ -747,6 +771,11 @@ int read_cpuset(
           errno = EINVAL;
           return(-1);
           }
+        }
+      else
+        {
+        errno = ENOENT;
+        return(-1);
         }
 
       fclose(fd);
@@ -796,7 +825,8 @@ int read_cpuset(
 
 int delete_cpuset(
 
-    const char *name)  /* I */
+  const char *name,                      /* I */
+  bool        remove_layout_reservation) /* I */
 
   {
   char           cpuset_path[MAXPATHLEN + 1];
@@ -810,6 +840,9 @@ int delete_cpuset(
   FILE          *fd;
   DIR           *dir;
 #endif
+
+  if (remove_layout_reservation == true)
+    internal_layout.remove_job(name);
 
 #ifdef USELIBCPUSET
 
@@ -868,7 +901,7 @@ int delete_cpuset(
       /* If a directory is found, it is a child cpuset. Try to delete it. */
       if ((statbuf.st_mode & S_IFDIR) == S_IFDIR)
         {
-        delete_cpuset(path);
+        delete_cpuset(path, false);
         }
 
       /*
@@ -981,7 +1014,7 @@ void cleanup_torque_cpuset(void)
           log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
           }
 
-        if (delete_cpuset(pdirent->d_name) == 0)
+        if (delete_cpuset(pdirent->d_name, true) == 0)
           {
           sprintf(log_buffer, "deleted orphaned cpuset %s", path);
           log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
@@ -1123,15 +1156,14 @@ int init_torque_cpuset(void)
 #ifdef USELIBCPUSET
   if (read_cpuset(TTORQUECPUSET_BASE, cpus, mems) == -1)
 #else
-    if (read_cpuset(TTORQUECPUSET_PATH, cpus, mems) == -1)
+  if (read_cpuset(TTORQUECPUSET_PATH, cpus, mems) == -1)
 #endif
+    {
+    if (errno != ENOENT)
       {
-      if (errno != ENOENT)
-        {
-        /* Error */
-        log_err(errno, __func__, log_buffer);
-        goto finish;
-        }
+      /* Error */
+      log_err(errno, __func__, log_buffer);
+      goto finish;
       }
     else if (! (hwloc_bitmap_iszero(cpus) || hwloc_bitmap_iszero(mems)))
       {
@@ -1148,17 +1180,18 @@ int init_torque_cpuset(void)
       rc = 0;
       goto finish;
       }
+    }
 
   /* Add all resources of the root cpuset */
 #ifdef USELIBCPUSET
   if (read_cpuset(TROOTCPUSET_BASE, cpus, mems) == -1)
 #else
-    if (read_cpuset(TROOTCPUSET_PATH, cpus, mems) == -1)
+  if (read_cpuset(TROOTCPUSET_PATH, cpus, mems) == -1)
 #endif
-      {
-      log_err(errno, __func__, log_buffer);
-      goto finish;
-      }
+    {
+    log_err(errno, __func__, log_buffer);
+    goto finish;
+    }
 
   remove_logical_processor_if_requested(&cpus);
 
@@ -1182,29 +1215,29 @@ int init_torque_cpuset(void)
 #ifdef USELIBCPUSET
   if (read_cpuset(TBOOTCPUSET_BASE, bootcpus, bootmems) == -1)
 #else
-    if (read_cpuset(TBOOTCPUSET_PATH, bootcpus, bootmems) == -1)
+  if (read_cpuset(TBOOTCPUSET_PATH, bootcpus, bootmems) == -1)
 #endif
+    {
+    if (errno != ENOENT)
       {
-      if (errno != ENOENT)
-        {
-        /* Error */
-        log_err(errno, __func__, log_buffer);
-        goto finish;
-        }
+      /* Error */
+      log_err(errno, __func__, log_buffer);
+      goto finish;
       }
-    else
-      {
-      sprintf(log_buffer, "subtracting cpus of boot cpuset: ");
-      hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), bootcpus);
-      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
+    }
+  else
+    {
+    sprintf(log_buffer, "subtracting cpus of boot cpuset: ");
+    hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), bootcpus);
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
 
-      sprintf(log_buffer, "subtracting mems of boot cpuset: ");
-      hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), bootmems);
-      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
+    sprintf(log_buffer, "subtracting mems of boot cpuset: ");
+    hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), bootmems);
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
 
-      hwloc_bitmap_andnot(cpus, cpus, bootcpus);
-      hwloc_bitmap_andnot(mems, mems, bootmems);
-      }
+    hwloc_bitmap_andnot(cpus, cpus, bootcpus);
+    hwloc_bitmap_andnot(mems, mems, bootmems);
+    }
 
 #endif
 
@@ -1296,146 +1329,52 @@ int add_obj_from_cpuset(
   } /* END add_obj_from_cpuset() */
 
 
-/*
- * get_memory_requested_and_reserved()
- *
- * determines how much memory has been reserved in the cpuset and
- * how much is requested and stores these values in mem_reserved
- * and mem_requested.
- *
- * @pre-cond: all parameters must be valid
- * @post-cond: mem_requested will be populated with the amount of memory requested by pjob
- * @post-cond: mem_reserved will be populated with the amount of memory reserved in the mem 
- * cpuset for the job.
- *
- */
-void get_memory_requested_and_reserved(
 
-  long long        *mem_requested,
-  long long        *mem_reserved,
-  std::set<int>    &current_mems,
-  job              *pjob,
-  hwloc_bitmap_t    job_mems)
+long long get_memory_requested_in_kb(
+
+  job &pjob)
 
   {
-  if ((mem_requested == NULL) ||
-      (mem_reserved  == NULL))
-    return;
-
-  *mem_requested = 0;
-  *mem_reserved = 0;
-
-  resource *mem = find_resc_entry(&pjob->ji_wattr[JOB_ATR_resource],
-                    find_resc_def(svr_resc_def, "mem", svr_resc_size));
+  long long  mem_requested = 0;
+  resource  *mem = find_resc_entry(&pjob.ji_wattr[JOB_ATR_resource],
+                                  find_resc_def(svr_resc_def, "mem", svr_resc_size));
 
   if ((mem != NULL) &&
       (mem->rs_value.at_val.at_size.atsv_num != 0))
     {
     int             shift = mem->rs_value.at_val.at_size.atsv_shift;
-    int             idx;
-    char            meminfo_path[MAXLINE];
-    *mem_requested = mem->rs_value.at_val.at_size.atsv_num;
-
+    
+    mem_requested = mem->rs_value.at_val.at_size.atsv_num;
     /* make sure that the requested memory is in kb */
     while (shift > 10)
       {
-      *mem_requested *= 1024;
+      mem_requested *= 1024;
       shift -= 10;
       }
-
-    hwloc_bitmap_foreach_begin(idx, job_mems)
-      proc_mem_t *memnode;
-
-      snprintf(meminfo_path, sizeof(meminfo_path),
-        "/sys/devices/system/node/node%d/meminfo", idx);
-      memnode = get_proc_mem_from_path(meminfo_path);
-
-      if (memnode != NULL)
-        {
-        *mem_reserved += memnode->mem_total;
-        free(memnode);
-        }
-
-      current_mems.insert(idx);
-
-    hwloc_bitmap_foreach_end();
-
-    /* unfortunately proc_mem_t isn't in kb */
-    *mem_reserved /= 1024;
     }
 
-  } /* END get_memory_requested_and_reserved() */
+  return(mem_requested);
+  } /* END get_memory_requested_in_kb() */
 
 
 
-/*
- * add_extra_memory_nodes_if_needed()
- * @pre-cond: all parameters must be valid pointers
- * @pre-cond: mem_requested and mem_reserved should hold the amount of memory in kb for the job
- * @post-cond: job_mems will be populated with enough memory nodes to satisfy the job's memory request
- */
+int get_cpu_count_requested_on_this_node(
 
-void add_extra_memory_nodes_if_needed(
-    
-  long long      mem_requested,
-  long long      mem_reserved,
-  hwloc_bitmap_t job_mems,
-  hwloc_bitmap_t torque_root_mems,
-  std::set<int>  current_mem_ids)
+  job &pjob)
 
   {
-  char             meminfo_path[MAXLINE];
-  int              idx;
+  int      cpus = 0;
+  vnodent *np = pjob.ji_vnods;
 
-  if (mem_reserved < mem_requested)
+  for (int i = 0; i < pjob.ji_numvnod; ++i, np++)
     {
-    hwloc_bitmap_foreach_begin(idx, torque_root_mems)
-      if (current_mem_ids.find(idx) != current_mem_ids.end())
-        continue;
-
-      snprintf(meminfo_path, sizeof(meminfo_path),
-        "/sys/devices/system/node/node%d/meminfo", idx);
-      proc_mem_t *memnode = get_proc_mem_from_path(meminfo_path);
-
-      if (memnode != NULL)
-        {
-        hwloc_bitmap_set(job_mems, idx);
-        mem_reserved += memnode->mem_total;
-
-        free(memnode);
-        }
-
-      if (mem_reserved >= mem_requested)
-        break;
-
-    hwloc_bitmap_foreach_end();
+    /* Add core at position vn_index in TORQUE cpuset */
+    if (pjob.ji_nodeid == np->vn_host->hn_node)
+      cpus++;
     }
-  } /* END add_extra_memory_nodes_if_needed() */
 
-
-
-/*
- * verify_correct_memory_nodes()
- *
- * @pre-cond all parameters are valid pointers.
- * @post-cond: job_mems will be populated with enough memory nodes to satisfy the job's memory request
- */
-
-void verify_correct_memory_nodes(
-    
-  job            *pjob,
-  hwloc_bitmap_t  job_mems,
-  hwloc_bitmap_t  torque_root_mems)
-
-  {
-  long long        mem_requested = 0;
-  long long        mem_reserved  = 0;
-  std::set<int>    current_mem_ids;
-
-  get_memory_requested_and_reserved(&mem_requested, &mem_reserved, current_mem_ids, pjob, job_mems);
-
-  add_extra_memory_nodes_if_needed(mem_requested, mem_reserved, job_mems, torque_root_mems, current_mem_ids);
-  } /* END verify_correct_memory_nodes() */
+  return(cpus);
+  }
 
 
 
@@ -1464,17 +1403,19 @@ int create_job_cpuset(
   job *pjob) /* I */
 
   {
-  vnodent        *np = pjob->ji_vnods;
   hwloc_bitmap_t  cpus = NULL;
   hwloc_bitmap_t  mems = NULL;
   int             rc   = FAILURE;
-  int             j;
 #ifdef NUMA_SUPPORT
+  vnodent        *np = pjob->ji_vnods;
+  int             j;
   int             numa_idx;
 #else
   hwloc_bitmap_t  tmems = NULL;
   hwloc_bitmap_t  tcpus = NULL;
 #  ifdef GEOMETRY_REQUESTS
+  vnodent        *np = pjob->ji_vnods;
+  int             j;
   resource       *presc = NULL;
   resource_def   *prd   = NULL;
   hwloc_obj_t     obj   = NULL;
@@ -1483,7 +1424,7 @@ int create_job_cpuset(
 #endif
 
   /* Delete cpuset, if it exists */
-  delete_cpuset(pjob->ji_qs.ji_jobid);
+  delete_cpuset(pjob->ji_qs.ji_jobid, false);
 
   /* Allocate bitmaps for cpus and mems */
   if (((cpus = hwloc_bitmap_alloc()) == NULL) ||
@@ -1557,9 +1498,9 @@ int create_job_cpuset(
     goto finish;
     }
 
+#ifdef GEOMETRY_REQUESTS
   hwloc_bitmap_or(mems, mems, tmems);
 
-#ifdef GEOMETRY_REQUESTS
   /* Check if job requested procs_bitmap */
   prd   = find_resc_def(svr_resc_def,"procs_bitmap",svr_resc_size);
   presc = find_resc_entry(&pjob->ji_wattr[JOB_ATR_resource],prd);
@@ -1605,31 +1546,22 @@ int create_job_cpuset(
       /* If job's node_usage is singlejob, simply add all cpus */
       {
       hwloc_bitmap_or(cpus, cpus, tcpus);
+      hwloc_bitmap_or(mems, mems, tmems);
       }
     else
       {
-      /* Walk through job's vnodes, add corresponding cpus */
-      for (j = 0; j < pjob->ji_numvnod; ++j, np++)
-        {
-        /* Add core at position vn_index in TORQUE cpuset */
-        if (pjob->ji_nodeid == np->vn_host->hn_node)
-          {
-          if (add_obj_from_cpuset(tcpus, cpus, np->vn_index) == -1)
-            {
-            sprintf(log_buffer, "TORQUE cpuset contains no CPU at index %d", np->vn_index);
-            log_err(-1, __func__, log_buffer);
-            }
-          }
-        } /* END for(j) */
+      std::vector<int> *cpu_indices = internal_layout.get_cpu_indices(pjob->ji_qs.ji_jobid);
+      std::vector<int> *mem_indices = internal_layout.get_memory_indices(pjob->ji_qs.ji_jobid);
 
+      for (unsigned int i = 0; i < cpu_indices->size(); i++)
+        hwloc_bitmap_set(cpus, cpu_indices->at(i));
+      
+      for (unsigned int i = 0; i < mem_indices->size(); i++)
+        hwloc_bitmap_set(mems, mem_indices->at(i));
       }
     }
 
-  /* give this job the mems that these cpus cover */
-  hwloc_cpuset_to_nodeset_strict(topology, cpus, mems);
-  verify_correct_memory_nodes(pjob, mems, tmems);
-
-#endif /* NUMA_SUPPORT (first section def, second sectoin ndef */
+#endif /* NUMA_SUPPORT (first section def, second section ndef */
 
   /* Now create cpuset for job */
   snprintf(log_buffer, sizeof(log_buffer),
@@ -1671,11 +1603,16 @@ finish:
 
   if (cpus != NULL)
     hwloc_bitmap_free(cpus);
+
   if (mems != NULL)
     hwloc_bitmap_free(mems);
+
 #ifndef NUMA_SUPPORT
   if (tcpus != NULL)
     hwloc_bitmap_free(tcpus);
+
+  if (tmems != NULL)
+    hwloc_bitmap_free(tmems);
 #endif
 
   return(rc);
@@ -1704,8 +1641,8 @@ finish:
 
 int move_to_job_cpuset(
 
-    pid_t  pid,   /* I */
-    job   *pjob)  /* I */
+  pid_t  pid,   /* I */
+  job   *pjob)  /* I */
 
   {
   char          cpuset_path[MAXPATHLEN + 1];
@@ -2287,9 +2224,9 @@ int get_cpuset_mempressure(
 
   /* Construct the name of the cpuset's memory_pressure file */
   if (name[0] == '/')
-    snprintf(path, sizeof(path), "%s/memory_pressure", name);
+    snprintf(path, sizeof(path), "%s/%smemory_pressure", name, cpuset_prefix);
   else
-    snprintf(path, sizeof(path), "%s/%s/memory_pressure", TTORQUECPUSET_PATH, name);
+    snprintf(path, sizeof(path), "%s/%s/%smemory_pressure", TTORQUECPUSET_PATH, name, cpuset_prefix);
 
   /* Open, read, close */
   if ((fd = fopen(path, "r")) == NULL)

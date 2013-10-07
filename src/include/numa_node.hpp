@@ -1,3 +1,5 @@
+#ifndef NUMA_NODE_HPP
+#define NUMA_NODE_HPP
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
 *
@@ -77,108 +79,51 @@
 * without reference to its choice of law rules.
 */
 
-/*
- * This is a list of public server attributes
- *
- * FORMAT:
- *  attr1,
- *   attr2, <--- important the last has a comma after it
- *
- *  This file will be used for the initialization of an array
- *
- */
+#include <vector>
+#include <string>
 
-/* sync w/SRV_ATR_* in server.h, server/svr_attr_def.c, and ATTR_* in pbs_ifl.h  */
+#include "pbs_ifl.h"
 
-ATTR_aclhten,
-ATTR_aclhost,
-ATTR_acluren,
-ATTR_acluser,
-ATTR_aclroot,
-ATTR_comment,
-ATTR_defnode,
-ATTR_dfltque,
-ATTR_locsvrs,
-ATTR_logevents,
-ATTR_loglevel,
-ATTR_managers,
-ATTR_mailfrom,
-ATTR_maxrun,
-ATTR_maxuserrun,
-ATTR_maxgrprun,
-ATTR_nodepack,
-ATTR_nodesuffix,
-ATTR_operators,
-ATTR_queryother,
-ATTR_rescavail,
-ATTR_resccost,
-ATTR_rescdflt,
-ATTR_rescmax,
-ATTR_schedit,
-ATTR_scheduling,
-ATTR_syscost,
-ATTR_pingrate,
-ATTR_ndchkrate,
-ATTR_tcptimeout,
-ATTR_jobstatrate,
-ATTR_polljobs,
-ATTR_downonerror,
-ATTR_disableserveridcheck,
-ATTR_jobnanny,
-ATTR_ownerpurge,
-ATTR_qcqlimits,
-ATTR_momjobsync,
-ATTR_maildomain,
-ATTR_killdelay,
-ATTR_acllogic,
-ATTR_aclgrpslpy,
-ATTR_keepcompleted,
-ATTR_submithosts,
-ATTR_allownodesubmit,
-ATTR_allowproxyuser,
-ATTR_servername,
-ATTR_autonodenp,
-ATTR_logfilemaxsize,
-ATTR_logfilerolldepth,
-ATTR_logkeepdays,
-ATTR_nextjobnum,
-ATTR_tokens,
-ATTR_extraresc,
-ATTR_schedversion,
-ATTR_acctkeepdays,
-ATTR_lockfile,
-ATTR_LockfileUpdateTime,
-ATTR_LockfileCheckTime,
-ATTR_credentiallifetime,
-ATTR_jobmustreport,
-ATTR_checkpoint_dir,
-ATTR_dispsvrsuffix,
-ATTR_jobsuffixalias,
-ATTR_mailsubjectfmt,
-ATTR_mailbodyfmt,
-ATTR_npdefault,
-ATTR_clonebatchsize,
-ATTR_clonebatchdelay,
-ATTR_jobstarttimeout,
-ATTR_jobforcecanceltime,
-ATTR_maxarraysize,
-ATTR_maxslotlimit,
-ATTR_recordjobinfo,
-ATTR_recordjobscript,
-ATTR_joblogfilemaxsize,
-ATTR_joblogfilerolldepth,
-ATTR_joblogkeepdays,
-#ifdef MUNGE_AUTH
-ATTR_authusers,
-#endif
-ATTR_minthreads,
-ATTR_maxthreads,
-ATTR_threadidleseconds,
-ATTR_moabarraycompatible,
-ATTR_nomailforce,
-ATTR_crayenabled,
-ATTR_interactivejobscanroam,
-ATTR_maxuserqueuable,
-ATTR_automaticrequeueexitcode,
-ATTR_nppcu,
-ATTR_jobsynctimeout,
+class allocation
+  {
+  public:
+  std::vector<int> cpu_indices;
+  unsigned long    memory;
+  int              cpus;
+  char             jobid[PBS_MAXSVRJOBID];
+
+  allocation(const allocation &alloc);
+  allocation();
+  };
+
+class numa_node
+  {
+  unsigned int            total_cpus;
+  unsigned long           total_memory;
+  unsigned long           available_memory;
+  unsigned int            available_cpus;
+  unsigned int            my_index;
+  std::vector<int>        cpu_indices;
+  std::vector<bool>       cpu_avail;
+  std::vector<allocation> allocations;
+
+  void get_cpuinfo(const char *path);
+
+  public:
+  numa_node(const char *node_path, int index);
+  numa_node();
+  numa_node(const numa_node &nn);
+  void            parse_cpu_string(std::string &line);
+  void            get_meminfo(const char *path);
+  void            reserve(int num_cpus, unsigned long memory, const char *jobid, allocation &alloc);
+  void            remove_job(const char *jobid);
+  bool            completely_fits(int num_cpus, unsigned long memory) const;
+  void            get_job_indices(const char *jobid, std::vector<int> &cpu_indices, bool cpu) const;
+  unsigned int    get_total_cpus() const;
+  unsigned long   get_total_memory() const;
+  unsigned long   get_available_memory() const;
+  unsigned int    get_available_cpus() const;
+  unsigned int    get_my_index() const;
+  };
+
+#endif /* NUMA_NODE_HPP */
