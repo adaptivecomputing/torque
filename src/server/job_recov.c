@@ -1188,23 +1188,29 @@ int job_recov_xml(
   /*parse the file and get the DOM */
   doc = xmlReadFile(filename, NULL, 0);
 
-  if (doc == NULL) {
-    return rc;
-  }
+  if (doc == NULL)
+    return(rc);
 
   /*Get the root element node */
   root_element = xmlDocGetRootElement(doc);
   if (strcmp((const char *) root_element->name, JOB_TAG))
     {
     snprintf(log_buf, buf_len, "missing root tag %s in xml", JOB_TAG);
+   
     /* set return code of -1 as we do have a JB xml but it did not have the right root elem. */
-    return -1;
+    xmlFreeDoc(doc);
+    return(-1);
     }
 
   if (parse_job_dom(filename, pjob, root_element, log_buf, buf_len))
-    return -1;
+    {
+    xmlFreeDoc(doc);
+    return(-1);
+    }
+  
+  xmlFreeDoc(doc);
 
-  return PBSE_NONE;
+  return(PBSE_NONE);
   } /* END job_recov_xml */
 
 
