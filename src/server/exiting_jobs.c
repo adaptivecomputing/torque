@@ -138,16 +138,18 @@ int remove_from_exiting_list_by_jobid(
 
 
 
-
 int remove_job_from_exiting_list(
 
-  job *pjob)
+  job **pjob)
 
   {
-  return(remove_from_exiting_list_by_jobid(pjob->ji_qs.ji_jobid));
+  std::string jobid((*pjob)->ji_qs.ji_jobid);
+
+  unlock_ji_mutex(*pjob,__func__, NULL, LOGLEVEL);
+  int rc = remove_from_exiting_list_by_jobid(jobid.c_str());
+  *pjob = svr_find_job((char *)jobid.c_str(),FALSE);
+  return rc;
   } /* END remove_job_from_exiting_list() */
-
-
 
 
 int retry_job_exit(
