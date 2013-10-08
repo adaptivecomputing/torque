@@ -955,71 +955,83 @@ int svr_setjobstate(
       else
         pque = pjob->ji_qhdr;
       
-      /* decrement queued job count if we're completing */
-      if ((pjob->ji_is_array_template == FALSE) &&
-          (newstate == JOB_STATE_COMPLETE))
+      //We unlock the job during the call to get_jobs_queue so we need to recheck and see if we are still changing the
+      //job state.
+      changed = false;
+      if (pjob->ji_qs.ji_substate != newsubstate)
+        changed = true;
+
+      oldstate = pjob->ji_qs.ji_state;
+      if (oldstate != newstate)
         {
-        if (LOGLEVEL >= 6)
+        changed = true;
+
+        /* decrement queued job count if we're completing */
+        if ((pjob->ji_is_array_template == FALSE) &&
+            (newstate == JOB_STATE_COMPLETE))
           {
-          sprintf(log_buf, "jobs queued job id %s for users", pjob->ji_qs.ji_jobid);
-          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+          if (LOGLEVEL >= 6)
+            {
+            sprintf(log_buf, "jobs queued job id %s for users", pjob->ji_qs.ji_jobid);
+            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+            }
+
+          decrement_queued_jobs(&users, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
           }
 
-        decrement_queued_jobs(&users, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
-        }
-
-      if (pque != NULL)
-        {
-        /* the array job isn't actually a job so don't count it here */
-        if (pjob->ji_is_array_template == FALSE)
+        if (pque != NULL)
           {
-          pque->qu_njstate[oldstate]--;
-          pque->qu_njstate[newstate]++;
-          
-          /* decrement queued job count if we're completing */
-          if ((pjob->ji_qs.ji_state != JOB_STATE_TRANSIT) &&
-              (pjob->ji_qs.ji_state != JOB_STATE_COMPLETE) &&
-              (newstate == JOB_STATE_COMPLETE))
+          /* the array job isn't actually a job so don't count it here */
+          if (pjob->ji_is_array_template == FALSE)
             {
-            if (LOGLEVEL >= 6)
+            pque->qu_njstate[oldstate]--;
+            pque->qu_njstate[newstate]++;
+
+            /* decrement queued job count if we're completing */
+            if ((pjob->ji_qs.ji_state != JOB_STATE_TRANSIT) &&
+                (pjob->ji_qs.ji_state != JOB_STATE_COMPLETE) &&
+                (newstate == JOB_STATE_COMPLETE))
               {
-              sprintf(log_buf, "jobs queued job id %s for queue %s", pjob->ji_qs.ji_jobid, pque->qu_qs.qu_name);
-              log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+              if (LOGLEVEL >= 6)
+                {
+                sprintf(log_buf, "jobs queued job id %s for queue %s", pjob->ji_qs.ji_jobid, pque->qu_qs.qu_name);
+                log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+                }
+              decrement_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
               }
-            decrement_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
             }
-          }
 
-        /* if execution queue, and eligibility to run has improved, */
-        /* notify the scheduler */
+          /* if execution queue, and eligibility to run has improved, */
+          /* notify the scheduler */
 
-        if ((pque->qu_qs.qu_type == QTYPE_Execution) &&
-            (newstate == JOB_STATE_QUEUED))
-          {
-          pthread_mutex_lock(svr_do_schedule_mutex);
-          svr_do_schedule = SCH_SCHEDULE_NEW;
-          pthread_mutex_unlock(svr_do_schedule_mutex);
-          pthread_mutex_lock(listener_command_mutex);
-          listener_command = SCH_SCHEDULE_NEW;
-          pthread_mutex_unlock(listener_command_mutex);
-
-          if ((pjob->ji_wattr[JOB_ATR_etime].at_flags & ATR_VFLAG_SET) == 0)
+          if ((pque->qu_qs.qu_type == QTYPE_Execution) &&
+              (newstate == JOB_STATE_QUEUED))
             {
-            pjob->ji_wattr[JOB_ATR_etime].at_val.at_long = time_now;
-            pjob->ji_wattr[JOB_ATR_etime].at_flags |= ATR_VFLAG_SET;
+            pthread_mutex_lock(svr_do_schedule_mutex);
+            svr_do_schedule = SCH_SCHEDULE_NEW;
+            pthread_mutex_unlock(svr_do_schedule_mutex);
+            pthread_mutex_lock(listener_command_mutex);
+            listener_command = SCH_SCHEDULE_NEW;
+            pthread_mutex_unlock(listener_command_mutex);
+
+            if ((pjob->ji_wattr[JOB_ATR_etime].at_flags & ATR_VFLAG_SET) == 0)
+              {
+              pjob->ji_wattr[JOB_ATR_etime].at_val.at_long = time_now;
+              pjob->ji_wattr[JOB_ATR_etime].at_flags |= ATR_VFLAG_SET;
+              }
             }
-          }
-        else if ((newstate == JOB_STATE_HELD) ||
-                 (newstate == JOB_STATE_WAITING))
-          {
-          /* on hold or wait, clear etime */
+          else if ((newstate == JOB_STATE_HELD) ||
+                   (newstate == JOB_STATE_WAITING))
+            {
+            /* on hold or wait, clear etime */
 
-          job_attr_def[JOB_ATR_etime].at_free(
-            &pjob->ji_wattr[JOB_ATR_etime]);
-          }
+            job_attr_def[JOB_ATR_etime].at_free(
+              &pjob->ji_wattr[JOB_ATR_etime]);
+            }
 
-        if (has_queue_mutex == FALSE)
-          unlock_queue(pque, __func__, NULL, LOGLEVEL);
+          if (has_queue_mutex == FALSE)
+            unlock_queue(pque, __func__, NULL, LOGLEVEL);
+          }
         }
       }
     }    /* END if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRANSICM) */
