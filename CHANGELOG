@@ -1,6 +1,9 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 4.2.6
+  b - TRQ-2273. Job start time is hard coded to 5 minutes. If the prolog takes longer
+      than that to run the job will be requeued without killing the prolog. This 
+      change will now set the prolog timeout to less than 5 minutes.
   b - TRQ-2111. Fix a rare case of running jobs being deleted without having their
       resources freed.
   b - TRQ-2208. Stop having pbs_mom use trqauthd when it is checkpointing a job.
