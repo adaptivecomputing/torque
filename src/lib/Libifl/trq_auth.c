@@ -901,6 +901,7 @@ void *process_svr_conn(
               log_record(PBSEVENT_CLIENTAUTH | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD, __func__, msg_buf);
               disconnect_svr = FALSE;
               debug_mark = 1;
+              retries++;
               usleep(20000);
               continue;
               }
@@ -908,6 +909,7 @@ void *process_svr_conn(
               {
               disconnect_svr = FALSE;
               debug_mark = 2;
+              retries++;
               usleep(20000);
               continue;
               }
