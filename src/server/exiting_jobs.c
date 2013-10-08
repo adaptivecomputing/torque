@@ -85,6 +85,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <string>
 
 #include "exiting_jobs.h"
 #include "log.h"
@@ -174,7 +175,6 @@ char *get_next_retryable_jobid(
   int *iter)
 
   {
-  char                   *jobid = NULL;
   job_exiting_retry_info *jeri;
   job                    *pjob;
   time_t                  time_now = time(NULL);
@@ -189,7 +189,11 @@ char *get_next_retryable_jobid(
       {
       if (jeri->attempts >= MAX_EXITING_RETRY_ATTEMPTS)
         {
-        if ((pjob = svr_find_job(jeri->jobid, TRUE)) != NULL)
+        std::string jid(jeri->jobid);
+        remove_from_hash_map(exiting_jobs_info, jeri->jobid, true);
+        free(jeri);
+        exit_mgr.unlock(); //Don't hold on to a mutex when trying to lock another.
+        if ((pjob = svr_find_job((char *)jid.c_str(), TRUE)) != NULL)
           {
           snprintf(log_buf, sizeof(log_buf), "Job %s has had its exiting re-tried %d times, purging.",
             jeri->jobid, MAX_EXITING_RETRY_ATTEMPTS);
@@ -197,23 +201,20 @@ char *get_next_retryable_jobid(
 
           force_purge_work(pjob);
           }
-
-        remove_from_hash_map(exiting_jobs_info, jeri->jobid, true);
-        
-        free(jeri);
+        exit_mgr.lock();
         }
       else
         {
         jeri->attempts++;
         jeri->last_attempt = time_now;
 
-        jobid = strdup(jeri->jobid);
+        char *jobid = strdup(jeri->jobid);
         return(jobid);
         }
       }
     }
 
-  return(jobid);
+  return(NULL);
   } /* END get_next_retryable_jobid() */
 
 
