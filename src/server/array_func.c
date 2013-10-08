@@ -777,24 +777,35 @@ int array_recov_xml(
   doc = xmlReadFile(filename, NULL, 0);
 
   if (doc == NULL)
-    return rc;
+    return(rc);
 
   /*Get the root element node */
   if (!(root_element = xmlDocGetRootElement(doc)))
-    return rc;
+    {
+    xmlFreeDoc(doc);
+    return(rc);
+    }
   else
     {
     if (strcmp((const char *) root_element->name, ARRAY_TAG))
       {
       snprintf(log_buf, buflen, "missing root tag %s", ARRAY_TAG);
+      
       /* set return code of -1 as we do have an AR xml but it did not have the right root elem. */
-      return -1; 
+      xmlFreeDoc(doc);
+      return(-1); 
       }
-    if (parse_array_dom(pa, root_element, log_buf, buflen))
-      return -1;
-    }
 
-  return PBSE_NONE;
+    if (parse_array_dom(pa, root_element, log_buf, buflen))
+      {
+      xmlFreeDoc(doc);
+      return(-1);
+      }
+    }
+      
+  xmlFreeDoc(doc);
+
+  return(PBSE_NONE);
   } /* END array_recov_xml */
 
 
