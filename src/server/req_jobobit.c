@@ -1672,7 +1672,14 @@ int handle_complete_first_time(
   if (LOGLEVEL >= 4)
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "JOB_SUBSTATE_COMPLETE");
 
-  remove_job_from_exiting_list(pjob);
+  remove_job_from_exiting_list(&pjob);
+
+  if(pjob == NULL)
+    {
+    /* let the caller know the job is gone */
+    log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while removing job from exiting list.");
+    return PBSE_JOBNOTFOUND;
+    }
 
   pque = get_jobs_queue(&pjob);
   
