@@ -45,6 +45,7 @@ int    ServerStatUpdateInterval = DEFAULT_SERVER_STAT_UPDATES;
 time_t          LastServerUpdateTime = 0;  /* NOTE: all servers updated together */
 char log_buffer[LOG_BUF_SIZE];
 int log_event_counter;
+bool ms_val = true;
 
 /*
  *  * inserts an item, resizing the array if necessary
@@ -168,8 +169,8 @@ int run_pelog(int which, char *specpelog, job *pjog, int pe_io_type, int deletej
 #undef disrul
 unsigned long disrul(struct tcp_chan * chan, int *retval)
   {
-  fprintf(stderr, "The call to disrul needs to be mocked!!\n");
-  return(0);
+  static int rc = 0;
+  return(rc++);
   }
 
 const char * getuname(void )

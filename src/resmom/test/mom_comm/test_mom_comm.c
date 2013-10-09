@@ -18,6 +18,7 @@ extern int log_event_counter;
 
 int process_end_job_error_reply(job *pjob, hnodent *np, struct sockaddr_in *pSockAddr, int errcode);
 void create_contact_list(job &pjob, std::set<int> &sister_list, struct sockaddr_in *contacting_address);
+int handle_im_poll_job_response(struct tcp_chan *chan, job &pjob, int nodeidx, hnodent *np);
 received_node *get_received_node_entry(char *str);
 
 START_TEST(test_process_end_job_error_reply)
@@ -42,6 +43,25 @@ START_TEST(test_process_end_job_error_reply)
   }
 END_TEST
 
+
+
+START_TEST(handle_im_poll_job_response_test)
+  {
+  job             *pjob = (job *)calloc(1, sizeof(job));
+  struct tcp_chan *chan = (struct tcp_chan *)calloc(1, sizeof(struct tcp_chan));
+  hnodent         *np   = (hnodent *)calloc(1, sizeof(hnodent));
+  pjob->ji_resources = (noderes *)calloc(10, sizeof(noderes));
+
+  disrsi_return_index = 0;
+  np->hn_node = 4;
+
+  fail_unless(handle_im_poll_job_response(chan, *pjob, 4, np) == -1);
+
+  pjob->ji_qs.ji_svrflags = JOB_SVFLG_HERE;
+  fail_unless(handle_im_poll_job_response(chan, *pjob, 4, np) == 0);
+  fail_unless(pjob->ji_resources[3].nr_mem < pjob->ji_resources[3].nr_vmem);
+  }
+END_TEST
 
 START_TEST(create_contact_list_test)
   {
@@ -388,6 +408,7 @@ Suite *mom_comm_suite(void)
 
   tc_core = tcase_create("im_join_job_as_sister_test");
   tcase_add_test(tc_core, im_join_job_as_sister_test);
+  tcase_add_test(tc_core, handle_im_poll_job_response_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("tm_spawn_request_test");
