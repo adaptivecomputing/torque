@@ -202,7 +202,6 @@ START_TEST(test_validate_active_pbs_server)
   {
   int rc;
   char *active_server;
-  int  port = 15001;
 
   connect_success = true;
   getaddrinfo_success = true;
@@ -218,26 +217,26 @@ START_TEST(test_validate_active_pbs_server)
   DIS_success = true;
 
   request_type = 1;
-  rc = validate_active_pbs_server(&active_server, port);
+  rc = validate_active_pbs_server(&active_server);
   fail_unless(rc == PBSE_NONE, "validate_active_pbs_server failed", rc);
 
   socket_success = false;
-  rc = validate_active_pbs_server(&active_server, port);
+  rc = validate_active_pbs_server(&active_server);
   fail_unless(rc != PBSE_NONE, "validate_active_pbs_server bad socket", rc);
 
   socket_success = true;;
   connect_success = false;
-  rc = validate_active_pbs_server(&active_server, port);
+  rc = validate_active_pbs_server(&active_server);
   fail_unless(rc != PBSE_NONE, "validate_active_pbs_server bad connect", rc);
 
   write_success = false;
   connect_success = true;
-  rc = validate_active_pbs_server(&active_server, port);
+  rc = validate_active_pbs_server(&active_server);
   fail_unless(rc != PBSE_NONE, "validate_active_pbs_server bad write", rc);
 
   write_success = true;
   socket_read_success = false;
-  rc = validate_active_pbs_server(&active_server, port);
+  rc = validate_active_pbs_server(&active_server);
   fail_unless(rc != PBSE_NONE, "validate_active_pbs_server bad write", rc);
 
   }
@@ -329,14 +328,6 @@ START_TEST(test_process_svr_conn)
   (*process_svr_conn)((void *)sock);
   fail_unless(process_svr_conn_rc == PBSE_NONE, "TRQ_AUTH_CONNECTION failed");
   
-  /* Test when socket read fails */
-  socket_read_success = false;
-  sock = (int *)calloc(1, sizeof(int));
-  *sock = 20;
-  request_type = TRQ_AUTH_CONNECTION;
-  (*process_svr_conn)((void *)sock);
-  fail_unless(process_svr_conn_rc != PBSE_NONE, "TRQ_AUTH_CONNECTION failed");
-
   /* Test when validate_user fails */
   socket_read_success = true;
   getsockopt_success = false;
@@ -505,6 +496,26 @@ START_TEST(test_validate_user)
   }
 END_TEST
 
+START_TEST(test_get_server_port_from_string)
+  {
+  std::string server;
+  int  port;
+  int  rc;
+
+  server = "geroge";
+
+  rc = get_server_port_from_string((char *)server.c_str(), &port);
+  fail_unless(port == 15001);
+  fail_unless(rc == PBSE_NONE);
+
+  server="george:17053";
+  rc = get_server_port_from_string((char *)server.c_str(), &port);
+  fail_unless(port == 17053);
+  fail_unless(rc == PBSE_NONE);
+
+  }
+END_TEST
+
 Suite *trq_auth_suite(void)
   {
   Suite *s = suite_create("trq_auth_suite methods");
@@ -547,6 +558,10 @@ Suite *trq_auth_suite(void)
 
   tc_core = tcase_create("test_set_trqauthd_addr");
   tcase_add_test(tc_core, test_set_trqauthd_addr);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_get_server_port_from_string");
+  tcase_add_test(tc_core, test_get_server_port_from_string);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_validate_user");

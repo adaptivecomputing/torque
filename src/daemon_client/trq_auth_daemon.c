@@ -39,17 +39,18 @@ static char *active_pbs_server;
 pbs_net_t   trq_server_addr;
 char       trq_hostname[PBS_MAXSERVERNAME + 1];
 
-int load_config(
+int load_trqauthd_config(
 
-  char **ip,
+  char **default_server_name,
   int   *t_port,
   int   *d_port)
 
   {
   int rc = PBSE_NONE;
-  char *tmp_name = pbs_default();
-  /* Assume TORQUE_HOME = /var/spool/torque */
-  /* /var/spool/torque/server_name */
+  char *tmp_name;
+
+  tmp_name = pbs_default();
+
   if ((tmp_name == NULL) || (tmp_name[0] == '\0'))
     rc = PBSE_BADHOST;
   else
@@ -59,7 +60,7 @@ int load_config(
      * the client utilities determine the pbs_server port)
      */
     printf("hostname: %s\n", tmp_name);
-    *ip = tmp_name;
+    *default_server_name = tmp_name;
     PBS_get_server(tmp_name, (unsigned int *)t_port);
     if (*t_port == 0)
       *t_port = PBS_BATCH_SERVICE_PORT;
@@ -374,7 +375,7 @@ int trq_main(
     return(rc);
     }
 
-  if ((rc = load_config(&active_pbs_server, &trq_server_port, &daemon_port)) != PBSE_NONE)
+  if ((rc = load_trqauthd_config(&active_pbs_server, &trq_server_port, &daemon_port)) != PBSE_NONE)
     {
     fprintf(stderr, "Failed to load configuration. Make sure the $TORQUE_HOME/server_name file exists\n");
     }
