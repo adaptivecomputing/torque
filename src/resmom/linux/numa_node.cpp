@@ -87,6 +87,8 @@
 #include "utils.h"
 #include "mom_memory.h"
 
+extern int MOMConfigUseSMT;
+
 
 
 
@@ -122,10 +124,17 @@ void numa_node::parse_cpu_string(
 
       while (prev <= curr)
         {
-        this->cpu_indices.push_back(prev);
-        this->cpu_avail.push_back(true);
-        this->total_cpus++;
-        this->available_cpus++;
+#ifdef PENABLE_LINUX26_CPUSETS
+        if ((MOMConfigUseSMT == 1) ||
+            (is_physical_core(prev) == true))
+#endif
+          {
+          this->cpu_indices.push_back(prev);
+          this->cpu_avail.push_back(true);
+          this->total_cpus++;
+          this->available_cpus++;
+          }
+
         prev++;
         }
 
@@ -135,10 +144,17 @@ void numa_node::parse_cpu_string(
     else if ((*ptr == ',') ||
              (*ptr == '\0'))
       {
-      this->cpu_indices.push_back(prev);
-      this->cpu_avail.push_back(true);
-      this->total_cpus++;
-      this->available_cpus++;
+#ifdef PENABLE_LINUX26_CPUSETS
+      if ((MOMConfigUseSMT == 1) ||
+          (is_physical_core(prev) == true))
+#endif
+        {
+        this->cpu_indices.push_back(prev);
+        this->cpu_avail.push_back(true);
+        this->total_cpus++;
+        this->available_cpus++;
+        }
+
       ptr++;
       }
     }
@@ -231,6 +247,7 @@ numa_node::numa_node() : total_cpus(0), total_memory (0), available_memory(0), a
 
   {
   }
+
 
 
 bool numa_node::completely_fits(

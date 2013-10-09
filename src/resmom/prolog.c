@@ -90,6 +90,8 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <grp.h>
+#include <dirent.h>
+#include <ctype.h>
 #include "libpbs.h"
 #include "list_link.h"
 #include "server_limits.h"
@@ -122,7 +124,9 @@ extern uid_t   pbsuser;
 extern char   *path_epilogp;
 
 unsigned int pe_alarm_time = PBS_PROLOG_TIME;
+extern long TJobStartTimeout;
 static pid_t child;
+static pid_t childSessionID;
 static int   run_exit;
 
 /* external prototypes */
@@ -288,15 +292,48 @@ static void pelogalm(
   int sig)  /* I */
 
   {
+  DIR            *pProcDir = NULL;
+  struct dirent *pProc;
+  proc_stat_t    *pProcStat;
   /* child is global */
 
   errno = 0;
 
-  kill(child,SIGKILL);
+  if(childSessionID > 0)
+    {
+    if((pProcDir = opendir("/proc")) == NULL)
+      {
+      childSessionID = -1;
+      }
+    }
+  if(childSessionID > 0)
+    {
+    rewinddir(pProcDir);
+    while((pProc = readdir(pProcDir)) != NULL)
+      {
+      if(!isdigit(pProc->d_name[0]))
+        continue;
+      int procID = atoi(pProc->d_name);
+      if((pProcStat = get_proc_stat(procID)) == NULL)
+        continue;
+      if((childSessionID == pProcStat->session)&&(pProcStat->state != 'Z')&&(pProcStat->pid != 0))
+        {
+        kill(procID,SIGKILL);
+        }
+      }
+    closedir(pProcDir);
+    }
 
+
+  if(childSessionID <= 0)
+    {
+    kill(child,SIGKILL);
+    }
   run_exit = -4;
 
   return;
+
+
   }  /* END pelogalm() */
 
 
@@ -417,6 +454,13 @@ int run_pelog(
   int               rc;
 
   char             *ptr;
+
+  int               pipes[2];
+  int               kid_read;
+  int               kid_write;
+  int               parent_read;
+  int               parent_write;
+
 
   int               moabenvcnt = 14;  /* # of entries in moabenvs */
   static char      *moabenvs[] = {
@@ -684,6 +728,51 @@ int run_pelog(
 
   run_exit = 0;
 
+
+  //Set up communications between parent and child so that
+  //child can send back the session id.
+  if (pipe(pipes) == -1)
+    {
+    return(-1);
+    }
+
+  if (pipes[1] < 3)
+    {
+    kid_write = fcntl(pipes[1], F_DUPFD, 3);
+
+    close(pipes[1]);
+    }
+  else
+    {
+    kid_write = pipes[1];
+    }
+
+  parent_read = pipes[0];
+
+  if (pipe(pipes) == -1)
+    {
+    return(-1);
+    }
+
+  if (pipes[0] < 3)
+    {
+    kid_read = fcntl(pipes[0], F_DUPFD, 3);
+
+    close(pipes[0]);
+    }
+  else
+    {
+    kid_read = pipes[0];
+    }
+
+  parent_write = pipes[1];
+
+  if ((kid_read < 0) ||
+      (kid_write < 0))
+    {
+    return(-1);
+    }
+
   child = fork();
 
   if (child > 0)
@@ -693,6 +782,13 @@ int run_pelog(
     /* parent - watch for prolog/epilog to complete */
 
     close(fd_input);
+
+    close(kid_read);
+    close(kid_write);
+    read(parent_read,(char *)&childSessionID,sizeof(childSessionID));
+    close(parent_read);
+    close(parent_write);
+
 
     /* switch back to root if necessary */
     undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,__func__);
@@ -718,7 +814,18 @@ int run_pelog(
        start time)
     */
 
-    alarm(pe_alarm_time);
+    /* The prolog cannot take longer than the TJobStartTimeout */
+    unsigned int real_alarm_time = pe_alarm_time;
+    unsigned int job_start_timeout = (unsigned int)TJobStartTimeout;
+    if(job_start_timeout > 10) //Kill the prolog at least ten seconds before the timeout.
+      {
+      job_start_timeout -= 10;
+      }
+    if(real_alarm_time > job_start_timeout)
+      {
+      real_alarm_time = job_start_timeout;
+      }
+    alarm(real_alarm_time);
 
     while (waitpid(child, &waitst, 0) < 0)
       {
@@ -796,6 +903,14 @@ int run_pelog(
   else
     {
     /* child - run script */
+
+    childSessionID = setsid();
+
+    close(parent_read);
+    close(parent_write);
+    write(kid_write,(char *)&childSessionID,sizeof(childSessionID));
+    close(kid_read);
+    close(kid_write);
 
     log_close(0);
 
