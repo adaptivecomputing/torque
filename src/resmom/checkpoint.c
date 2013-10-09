@@ -511,9 +511,11 @@ int replace_checkpoint_path(
   int len;
   int rtnval = 0;
 
-  memcpy(tmppath, path, strlen(path));
+  snprintf(tmppath, sizeof(tmppath), "%s", path);
+
   ptr1 = strstr(path, MOM_DEFAULT_CHECKPOINT_DIR);
   ptr2 = strstr(tmppath, MOM_DEFAULT_CHECKPOINT_DIR);
+
   if (ptr1 != NULL)
     {
     ptr1++;
