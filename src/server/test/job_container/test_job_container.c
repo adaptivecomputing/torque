@@ -5,7 +5,8 @@
 #include "pbs_job.h"
 #include "pbs_error.h"
 
-extern void traverse_all_jobs(void (*traverseCallback)(job *pJob,void *callbackParameter),void *callbackParameter);
+extern resizable_array *initialize_resizable_array(int size);
+extern void traverse_all_jobs(void (*traverseCallback)(const char *pJobID,void *callbackParameter),void *callbackParameter);
 char *get_correct_jobname(const char *jobid);
 
 
@@ -220,13 +221,13 @@ START_TEST(next_job_from_back_test)
   }
 END_TEST
 
-void null_found_job(job *pJob,void *jobsParm)
+void null_found_job(const char *pJobID,void *jobsParm)
   {
   job **jobs = (job **)jobsParm;
 
   for(int i = 0;i < 4;i++)
     {
-    if(jobs[i] == pJob)
+    if((jobs[i] != NULL)&&(strcmp(jobs[i]->ji_qs.ji_jobid,pJobID) == 0))
       {
       jobs[i] = NULL;
       return;
@@ -243,14 +244,15 @@ START_TEST(traverse_all_jobs_test)
   struct job *test_job[4];
 
   initialize_all_jobs_array(&alljobs);
-  resizable_array *ar = (resizable_array *)calloc(1,sizeof(resizable_array));
-  ar->slots = (slot *)calloc(4,sizeof(slot));
+  resizable_array *ar = initialize_resizable_array(10);
 
   for(int i = 0;i < 4;i++)
     {
     test_job[i] = job_alloc();
-    ar->slots[i].item = (void *)test_job[i];
-    ar->max++;
+    sprintf(test_job[i]->ji_qs.ji_jobid,"Job_%d",i);
+    insert_thing(ar,(void *)test_job[i]);
+    //ar->slots[i].item = (void *)test_job[i];
+    //ar->max++;
     }
   alljobs.ra = ar;
 
