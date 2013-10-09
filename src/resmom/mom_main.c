@@ -4692,10 +4692,15 @@ int setup_program_environment(void)
     return(3);
     }
 
+  if (read_config(NULL))
+    {
+    fprintf(stderr, "pbs_mom: cannot load config file '%s'\n",
+            config_file);
+
+    exit(1);
+    }
 
 #ifdef PENABLE_LINUX26_CPUSETS
-  internal_layout = node_internals();
-
   /* load system topology */
   if ((hwloc_topology_init(&topology) == -1))
     {
@@ -4719,6 +4724,8 @@ int setup_program_environment(void)
     hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_NODE),
     hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_PU));
   log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
+  
+  internal_layout = node_internals();
 
 #endif
 
@@ -5026,14 +5033,6 @@ int setup_program_environment(void)
     addclient(ret_string);
 
   tmpdir_basename[0] = '\0';
-
-  if (read_config(NULL))
-    {
-    fprintf(stderr, "pbs_mom: cannot load config file '%s'\n",
-            config_file);
-
-    exit(1);
-    }
 
   /* if no alias is specified, make mom_alias the same as mom_host */
   if (mom_alias[0] == '\0')

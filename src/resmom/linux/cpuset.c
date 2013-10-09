@@ -1034,6 +1034,20 @@ void cleanup_torque_cpuset(void)
 
 
 
+/* 
+ * is_physical_core() 
+ *
+ * @pre-cond: topology must be initialized
+ * 
+ * @return true if the object at os_index is a physical core, false otherwise
+ */
+bool is_physical_core(
+
+  unsigned int os_index)
+
+  {
+  return(hwloc_get_obj_by_type(topology, HWLOC_OBJ_CORE, os_index) != NULL);
+  }
 
 
 #ifndef UNIT_TEST_INIT_TORQUE_CPUSET
