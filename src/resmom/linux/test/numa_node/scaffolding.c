@@ -7,11 +7,10 @@
 
 proc_mem_t *get_proc_mem_from_path(const char *path)
   {
-  static proc_mem_t pm;
+  proc_mem_t *pm = (proc_mem_t *)calloc(1, sizeof(proc_mem_t));
 
-  memset(&pm, 0, sizeof(pm));
-  pm.mem_total = 1024 * 1024 * 5;
+  pm->mem_total = 1024 * 1024 * 5;
 
-  return(&pm);
+  return(pm);
   }
 

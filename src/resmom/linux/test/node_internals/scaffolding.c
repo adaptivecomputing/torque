@@ -15,7 +15,7 @@ numa_node::numa_node(const char *path, int index)
   this->my_index = index;
   }
 
-bool numa_node::completely_fits(int cpus, unsigned long memory)
+bool numa_node::completely_fits(int cpus, unsigned long memory) const
   {
   return(does_it_fit);
   }
@@ -60,7 +60,7 @@ void numa_node::get_job_indices(
 
   const char       *jobid,
   std::vector<int> &indices,
-  bool              cpus)
+  bool              cpus) const
 
   {
   get_job_indices_called++;
