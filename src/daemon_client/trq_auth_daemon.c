@@ -39,6 +39,7 @@ static char *active_pbs_server;
 pbs_net_t   trq_server_addr;
 char       trq_hostname[PBS_MAXSERVERNAME + 1];
 
+/* Get the name of the active pbs_server */
 int load_trqauthd_config(
 
   char **default_server_name,
