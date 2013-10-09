@@ -6,6 +6,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - TRQ-2208. Stop having pbs_mom use trqauthd when it is checkpointing a job.
   e - TRQ-2022. Make pbs_mom capable of handling either naming convention for cpuset
       files, those with the 'cpuset.' prefix and those without.
+  b - TRQ-2259. Fix a problem for multi-node jobs: vmem was being stored in mem and
+      vice versa from the sisters.
 
 4.2.5
   e - Remove the mom asking for a job status before sending an obit to pbs_server

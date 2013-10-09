@@ -4383,6 +4383,13 @@ int handle_im_get_resc_response(
  * this is a reply with job resources to
  * tally up.
  *
+ * @pre-cond: chan must be a valid tcp_chan pointer
+ * @pre-cond: this node should be mother superior for pjob
+ * @post-cond: the resources used by this sister will be overwritten with the new resources reported
+ * @post-cond: if a non-zero exit status is reported by this sister it will be marked as the node
+ * to report a failed exit status
+ * @return: IM_FAILURE if this node isn't the mother superior or IM_DONE otherwise
+ *
  * auxiliary info (
  * recommendation int;
  * cput  u_long;
@@ -4394,15 +4401,15 @@ int handle_im_get_resc_response(
 int handle_im_poll_job_response(
     
   struct tcp_chan *chan,
-  job     *pjob,     /* I */
-  int      nodeidx,  /* I */
-  hnodent *np)       /* I */
+  job             &pjob,     /* I */
+  int              nodeidx,  /* I */
+  hnodent         *np)       /* I */
 
   {
   int exitval;
   int ret;
 
-  if (am_i_mother_superior(*pjob) == false)
+  if (am_i_mother_superior(pjob) == false)
     {
     log_err(-1, __func__, "got POLL_JOB and I'm not MS");
     
@@ -4413,14 +4420,14 @@ int handle_im_poll_job_response(
   
   if (ret == DIS_SUCCESS)
     {
-    pjob->ji_resources[nodeidx - 1].nr_cput = disrul(chan, &ret);
+    pjob.ji_resources[nodeidx - 1].nr_cput = disrul(chan, &ret);
     
     if (ret == DIS_SUCCESS)
       {
-      pjob->ji_resources[nodeidx - 1].nr_vmem = disrul(chan, &ret);
+      pjob.ji_resources[nodeidx - 1].nr_mem = disrul(chan, &ret);
       
       if (ret == DIS_SUCCESS)
-        pjob->ji_resources[nodeidx - 1].nr_mem = disrul(chan, &ret);
+        pjob.ji_resources[nodeidx - 1].nr_vmem = disrul(chan, &ret);
       }
     }
   
@@ -4429,13 +4436,13 @@ int handle_im_poll_job_response(
     snprintf(log_buffer,sizeof(log_buffer),
       "%s: POLL_JOB %s OKAY kill %d  cpu=%lu  mem=%lu  vmem=%lu\n",
       __func__,
-      pjob->ji_qs.ji_jobid,
+      pjob.ji_qs.ji_jobid,
       exitval,
-      pjob->ji_resources[nodeidx - 1].nr_cput,
-      pjob->ji_resources[nodeidx - 1].nr_mem,
-      pjob->ji_resources[nodeidx - 1].nr_vmem);
+      pjob.ji_resources[nodeidx - 1].nr_cput,
+      pjob.ji_resources[nodeidx - 1].nr_mem,
+      pjob.ji_resources[nodeidx - 1].nr_vmem);
     
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob.ji_qs.ji_jobid,log_buffer);
     }
   
   if (exitval != 0)
@@ -4445,10 +4452,10 @@ int handle_im_poll_job_response(
       sprintf(log_buffer, "non-zero exit status reported from node %s, aborting job",
         np->hn_host);
       
-      log_record(PBSEVENT_ERROR,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+      log_record(PBSEVENT_ERROR,PBS_EVENTCLASS_JOB,pjob.ji_qs.ji_jobid,log_buffer);
       }
     
-    pjob->ji_nodekill = np->hn_node;
+    pjob.ji_nodekill = np->hn_node;
     }
 
   return(IM_DONE);
@@ -5359,7 +5366,7 @@ void im_request(
           break;
 
         case IM_POLL_JOB:
-          ret = handle_im_poll_job_response(chan,pjob,nodeidx,np);
+          ret = handle_im_poll_job_response(chan, *pjob, nodeidx, np);
           if (ret == IM_FAILURE)
             {
             close_conn(chan->sock, FALSE);
