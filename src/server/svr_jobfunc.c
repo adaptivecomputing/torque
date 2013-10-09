@@ -1034,6 +1034,11 @@ int svr_setjobstate(
             unlock_queue(pque, __func__, NULL, LOGLEVEL);
           }
         }
+      else
+        {
+        if (has_queue_mutex == FALSE)
+          unlock_queue(pque, __func__, NULL, LOGLEVEL);
+        }
       }
     }    /* END if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRANSICM) */
 
