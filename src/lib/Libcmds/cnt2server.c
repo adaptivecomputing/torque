@@ -235,7 +235,7 @@ start:
           
         case PBSE_IFF_NOT_FOUND:
         
-          fprintf(stderr, "pbs_iff command not found.\n");
+          fprintf(stderr, "Unable to authorize user.\n");
           break;
 
         case PBSE_PROTOCOL:
