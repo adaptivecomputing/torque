@@ -366,7 +366,8 @@
     for i in `%{__grep} -H -r -l -I %{?4} "%{2}" "%{1}"`; \
     do \
        %{__sed} -i "s|%{2}|%{3}|g" $i; \
-    done
+    done; 
+
 # These allow the automatic back up to take place.
 
 %define pre_clear_back_up() \
@@ -595,7 +596,9 @@ touch %{buildroot}%{torque_sysconfdir}/server_priv/mom_hierarchy
 echo '%{_libdir}' > %{buildroot}/etc/ld.so.conf.d/torque.conf
 
 %grep_safety_net "%{buildroot}" "%{buildroot}" ""
+
 %grep_safety_net "%{buildroot}" "${HOSTNAME}" "__AC_HOSTNAME_NOT_SET__"
+
 %grep_safety_net "%{buildroot}" "localhost" "__AC_HOSTNAME_NOT_SET__"
 
 %pre %{common_sub}
@@ -689,6 +692,7 @@ TIMESTAMP="`date +%%Y.%%m.%%d_%%H.%%M.%%S`"
 
 %post %{server_sub}
 %grep_safety_net "%{torque_home}" "__AC_HOSTNAME_NOT_SET__" "${HOSTNAME}"
+
 # This is used in the server_priv/nodes file.
 %grep_safety_net "%{torque_home}" "__AC_PROCS_NOT_SET__" "${NUM_PROCS}"
 
