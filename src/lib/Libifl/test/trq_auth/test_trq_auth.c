@@ -93,7 +93,6 @@ END_TEST
 START_TEST(test_trq_simple_connect)
   {
   const char *server_name = "localhost";
-  int         batch_port = 15001;
   int         handle = -1;
   int         rc;
 
@@ -111,23 +110,23 @@ START_TEST(test_trq_simple_connect)
   DIS_success = true;
 
 
-  rc = trq_simple_connect(server_name, batch_port, &handle);
+  rc = trq_simple_connect(server_name, &handle);
   fail_unless(rc == PBSE_NONE, "trq_simple_connect failed success case", rc);
   fail_unless(handle >= 0, "trq_simple_connect returned invalid handle", handle);
   trq_simple_disconnect(handle);
 
   socket_success = false;
-  rc = trq_simple_connect(server_name, batch_port, &handle);
+  rc = trq_simple_connect(server_name, &handle);
   fail_unless(rc == PBSE_SERVER_NOT_FOUND, "trq_simple_connect failed failed socket call", rc);
 
   socket_success = true;
   setsockopt_success = false;
-  rc = trq_simple_connect(server_name, batch_port, &handle);
+  rc = trq_simple_connect(server_name, &handle);
   fail_unless(rc == PBSE_SERVER_NOT_FOUND, "trq_simple_connect failed failed setsockopt call", rc);
 
   setsockopt_success = true;
   connect_success = false;
-  rc = trq_simple_connect(server_name, batch_port, &handle);
+  rc = trq_simple_connect(server_name, &handle);
   fail_unless(rc != PBSE_NONE, "trq_simple_connect failed failed connect call", rc);
 
   }
@@ -161,7 +160,6 @@ END_TEST
 START_TEST(test_validate_server)
   {
   char  active_server_name[PBS_MAXHOSTNAME+1];
-  int   port = 15001;
   char *ssh_key = NULL;
   char *sign_key = NULL;
   int   rc;
@@ -180,7 +178,7 @@ START_TEST(test_validate_server)
   DIS_success = true;
 
   strcpy(active_server_name, "localhost");
-  rc = validate_server(active_server_name, port, ssh_key, &sign_key);
+  rc = validate_server(active_server_name, ssh_key, &sign_key);
   fail_unless(rc == PBSE_NONE, "validate_server success case failed", rc);
 
   }
@@ -504,12 +502,12 @@ START_TEST(test_get_server_port_from_string)
 
   server = "geroge";
 
-  rc = get_server_port_from_string((char *)server.c_str(), &port);
+  rc = get_server_port_from_string(server, &port);
   fail_unless(port == 15001);
   fail_unless(rc == PBSE_NONE);
 
   server="george:17053";
-  rc = get_server_port_from_string((char *)server.c_str(), &port);
+  rc = get_server_port_from_string(server, &port);
   fail_unless(port == 17053);
   fail_unless(rc == PBSE_NONE);
 

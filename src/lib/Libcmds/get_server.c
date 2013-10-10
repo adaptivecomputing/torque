@@ -209,7 +209,7 @@ int get_server(
       
       c = def_server;
       
-      while ((*c != '\n') && (*c != '\0'))
+      while ((*c != '\n') && (*c != '\0') && (*c != ':'))
         c++;
       
       *c = '\0';

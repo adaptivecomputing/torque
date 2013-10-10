@@ -18,6 +18,7 @@
 #include "../../include/log.h" /* log event types */
 #include <stdarg.h>
 #include <string.h>
+#include <string>
 
 #define MAX_RETRIES 5
 #define USER_PWD_RETRIES 3
@@ -277,6 +278,30 @@ int trq_simple_disconnect(
   return(PBSE_NONE);
   }
 
+/* ger_server_port_from_string scans current_name for a
+   : and a port. If present t_server_port is set to the
+   value after the :. otherwise t_server_port is set to
+   15001, the default pbs_server port */
+int get_server_port_from_string(
+
+    std::string &current_name,
+    int         *t_server_port)
+
+  {
+
+  size_t loc = current_name.find(':');
+  if (loc !=  std::string::npos)
+    {
+    const char *ptr = current_name.c_str() + loc + 1;
+    *t_server_port = atoi(ptr);
+    current_name.erase(loc);
+    }
+  else
+    *t_server_port = PBS_BATCH_SERVICE_PORT;
+
+  return(PBSE_NONE);
+  }
+
 
 /* trq_simple_connect 
  * The original purpose of this function is to connect to pbs_server
@@ -286,8 +311,7 @@ int trq_simple_disconnect(
 
 int trq_simple_connect(
     
-  const char *server_name,
-  int         batch_port,
+  const char *server_name, //Format is name[:port]
   int        *sock_handle)
 
   {
@@ -298,14 +322,17 @@ int trq_simple_connect(
   int                  rc;
   int                  sock;
   int                  optval = 1;
+  int                  port;
+  std::string          server(server_name);
 
+  get_server_port_from_string(server, &port);
   memset(&hints, 0, sizeof(hints));
   /* set the hints so we get a STREAM socket */
   hints.ai_family = AF_UNSPEC; /* allow for IPv4 or IPv6 */
   hints.ai_socktype = SOCK_STREAM; /* we want a tcp connection */
   hints.ai_flags = AI_PASSIVE;  /* fill in my IP for me */
-  snprintf(port_string, 10, "%d", batch_port);
-  rc = getaddrinfo(server_name, port_string , &hints, &results);
+  snprintf(port_string, 10, "%d", port);
+  rc = getaddrinfo(server.c_str(), port_string , &hints, &results);
   if (rc != PBSE_NONE)
     {
     fprintf(stderr, "cannot resolve server name %s\n", server_name);
@@ -362,30 +389,6 @@ int trq_simple_connect(
   return(rc);
   }
 
-/* ger_server_port_from_string scans current_name for a 
-   : and a port. If present t_server_port is set to the 
-   value after the :. otherwise t_server_port is set to
-   15001, the default pbs_server port */
-int get_server_port_from_string(
-    
-    char *current_name, 
-    int  *t_server_port)
-
-  {
-  char *ptr;
-
-  ptr = strchr(current_name, ':');
-  if (ptr != NULL)
-    {
-    ptr++;
-    *t_server_port = atoi(ptr);
-    }
-  else
-    *t_server_port = PBS_BATCH_SERVICE_PORT;
-  
-  return(PBSE_NONE);
-  }
-
 /* validate_server:
  * This function tries to find the currently active
  * pbs_server. If no server can be found the default 
@@ -393,7 +396,6 @@ int get_server_port_from_string(
 int validate_server(
 
   char  *active_server_name,
-  int    t_server_port,
   char  *ssh_key,
   char **sign_key)
 
@@ -412,7 +414,7 @@ int validate_server(
      another server in teh server_name_list responds 
      that will become the active_pbs_server */
   if (active_server_name != NULL)
-    rc = trq_simple_connect(active_server_name, t_server_port, &sd);
+    rc = trq_simple_connect(active_server_name, &sd);
   else
     rc = PBSE_UNKREQ; /* If we don't have a server name we want to process everyting. */
 
@@ -436,15 +438,13 @@ int validate_server(
         memset(current_name, 0, sizeof(current_name));
         snprintf(current_name, sizeof(current_name), "%s", tp);
 
-        get_server_port_from_string(current_name, &t_server_port);
-
         if (getenv("PBSDEBUG"))
           {
           fprintf(stderr, "pbs_connect attempting connection to server \"%s\"\n",
                                                                     current_name);
           }
 
-        rc = trq_simple_connect(current_name, t_server_port, &sd);
+        rc = trq_simple_connect(current_name, &sd);
         if ( rc == PBSE_NONE)
           {
           trq_simple_disconnect(sd);
@@ -466,7 +466,11 @@ int validate_server(
     rc = PBSE_NONE;
     }
 
-  fprintf(stderr, "Active server name: %s  pbs_server port is: %d\n", active_pbs_server, t_server_port);
+  int t_server_port;
+  std::string svr(active_pbs_server);
+  get_server_port_from_string(svr,&t_server_port);
+
+  fprintf(stderr, "Active server name: %s  pbs_server port is: %d\n", svr.c_str(), t_server_port);
 
   return(rc);
   } /* END validate_server() */
@@ -616,7 +620,7 @@ int build_active_server_response(
 
   if (len == 0)
     {
-    validate_server(NULL, PBS_BATCH_SERVICE_PORT, NULL, NULL);
+    validate_server(NULL, NULL, NULL);
     len = strlen(active_pbs_server);
     }
 
@@ -872,7 +876,7 @@ void *process_svr_conn(
 
       case TRQ_VALIDATE_ACTIVE_SERVER:
         {
-        if ((rc = validate_server(server_name, server_port, NULL, NULL)) != PBSE_NONE)
+        if ((rc = validate_server(server_name, NULL, NULL)) != PBSE_NONE)
           {
           break;
           }
@@ -951,7 +955,7 @@ void *process_svr_conn(
               char *sign_key = NULL;
               char  log_buf[LOCAL_LOG_BUF_SIZE];
 
-              validate_server(server_name, server_port, ssh_key, &sign_key);
+              validate_server(server_name, ssh_key, &sign_key);
               sprintf(log_buf, "Active server is %s", active_pbs_server);
               log_event(PBSEVENT_CLIENTAUTH, PBS_EVENTCLASS_TRQAUTHD, __func__, log_buf);
               disconnect_svr = FALSE;

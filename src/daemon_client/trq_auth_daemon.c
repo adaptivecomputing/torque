@@ -386,7 +386,7 @@ int trq_main(
     {
     fprintf(stderr, "ERROR: Failed to initialize trqauthd log\n");
     }
-  else if ((rc = validate_server(active_pbs_server, trq_server_port, the_key, &sign_key)) != PBSE_NONE)
+  else if ((rc = validate_server(active_pbs_server, the_key, &sign_key)) != PBSE_NONE)
     {
     }
   else if ((rc = daemonize_trqauthd(AUTH_IP, daemon_port, process_method)) == PBSE_NONE)
