@@ -7,6 +7,7 @@
 #include "tm_.h" /* tm_task_id, tm_node_id, tm_event_t */
 #include "tm.h" /* tm_roots */
 #include "tcp.h" /* tcp_chan */
+#include <string>
 
 /* trq_auth.c */
 #define AUTH_TYPE_IFF 1
@@ -24,11 +25,12 @@ int parse_response_svr(int sock, char **msg);
 int build_response_client(int code, char *msg, char **send_message);
 int get_trq_server_addr(char *server_name, char **server_addr, int *server_addr_len);
 void *process_svr_conn(void *sock);
-int validate_server(char *active_server_name, int t_server_port, char *ssh_key, char **sign_key);
+int validate_server(char *active_server_name, char *ssh_key, char **sign_key);
 int set_active_pbs_server(const char *);
 int get_active_pbs_server(char **);
-int validate_active_pbs_server(char **, int);
-int trq_simple_connect(const char *server_name, int port, int *handle);
+int validate_active_pbs_server(char **);
+int trq_simple_connect(const char *server_name, int *handle);
+int get_server_port_from_string(std::string&, int *);
 int trq_simple_disconnect(int handle);
 void send_svr_disconnect(int, const char *);
 int set_trqauthd_addr(void);

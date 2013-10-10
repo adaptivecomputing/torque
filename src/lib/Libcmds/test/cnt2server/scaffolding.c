@@ -33,7 +33,7 @@ char *pbs_strerror(
   }
 }
 
-int validate_active_pbs_server(char **active_server, int port)
+int validate_active_pbs_server(char **active_server)
   {
   return(0);
   }

@@ -93,7 +93,6 @@ END_TEST
 START_TEST(test_trq_simple_connect)
   {
   const char *server_name = "localhost";
-  int         batch_port = 15001;
   int         handle = -1;
   int         rc;
 
@@ -111,23 +110,23 @@ START_TEST(test_trq_simple_connect)
   DIS_success = true;
 
 
-  rc = trq_simple_connect(server_name, batch_port, &handle);
+  rc = trq_simple_connect(server_name, &handle);
   fail_unless(rc == PBSE_NONE, "trq_simple_connect failed success case", rc);
   fail_unless(handle >= 0, "trq_simple_connect returned invalid handle", handle);
   trq_simple_disconnect(handle);
 
   socket_success = false;
-  rc = trq_simple_connect(server_name, batch_port, &handle);
+  rc = trq_simple_connect(server_name, &handle);
   fail_unless(rc == PBSE_SERVER_NOT_FOUND, "trq_simple_connect failed failed socket call", rc);
 
   socket_success = true;
   setsockopt_success = false;
-  rc = trq_simple_connect(server_name, batch_port, &handle);
+  rc = trq_simple_connect(server_name, &handle);
   fail_unless(rc == PBSE_SERVER_NOT_FOUND, "trq_simple_connect failed failed setsockopt call", rc);
 
   setsockopt_success = true;
   connect_success = false;
-  rc = trq_simple_connect(server_name, batch_port, &handle);
+  rc = trq_simple_connect(server_name, &handle);
   fail_unless(rc != PBSE_NONE, "trq_simple_connect failed failed connect call", rc);
 
   }
@@ -161,7 +160,6 @@ END_TEST
 START_TEST(test_validate_server)
   {
   char  active_server_name[PBS_MAXHOSTNAME+1];
-  int   port = 15001;
   char *ssh_key = NULL;
   char *sign_key = NULL;
   int   rc;
@@ -180,7 +178,7 @@ START_TEST(test_validate_server)
   DIS_success = true;
 
   strcpy(active_server_name, "localhost");
-  rc = validate_server(active_server_name, port, ssh_key, &sign_key);
+  rc = validate_server(active_server_name, ssh_key, &sign_key);
   fail_unless(rc == PBSE_NONE, "validate_server success case failed", rc);
 
   }
@@ -202,7 +200,6 @@ START_TEST(test_validate_active_pbs_server)
   {
   int rc;
   char *active_server;
-  int  port = 15001;
 
   connect_success = true;
   getaddrinfo_success = true;
@@ -218,26 +215,26 @@ START_TEST(test_validate_active_pbs_server)
   DIS_success = true;
 
   request_type = 1;
-  rc = validate_active_pbs_server(&active_server, port);
+  rc = validate_active_pbs_server(&active_server);
   fail_unless(rc == PBSE_NONE, "validate_active_pbs_server failed", rc);
 
   socket_success = false;
-  rc = validate_active_pbs_server(&active_server, port);
+  rc = validate_active_pbs_server(&active_server);
   fail_unless(rc != PBSE_NONE, "validate_active_pbs_server bad socket", rc);
 
   socket_success = true;;
   connect_success = false;
-  rc = validate_active_pbs_server(&active_server, port);
+  rc = validate_active_pbs_server(&active_server);
   fail_unless(rc != PBSE_NONE, "validate_active_pbs_server bad connect", rc);
 
   write_success = false;
   connect_success = true;
-  rc = validate_active_pbs_server(&active_server, port);
+  rc = validate_active_pbs_server(&active_server);
   fail_unless(rc != PBSE_NONE, "validate_active_pbs_server bad write", rc);
 
   write_success = true;
   socket_read_success = false;
-  rc = validate_active_pbs_server(&active_server, port);
+  rc = validate_active_pbs_server(&active_server);
   fail_unless(rc != PBSE_NONE, "validate_active_pbs_server bad write", rc);
 
   }
@@ -505,6 +502,26 @@ START_TEST(test_validate_user)
   }
 END_TEST
 
+START_TEST(test_get_server_port_from_string)
+  {
+  std::string server;
+  int  port;
+  int  rc;
+
+  server = "geroge";
+
+  rc = get_server_port_from_string(server, &port);
+  fail_unless(port == 15001);
+  fail_unless(rc == PBSE_NONE);
+
+  server="george:17053";
+  rc = get_server_port_from_string(server, &port);
+  fail_unless(port == 17053);
+  fail_unless(rc == PBSE_NONE);
+
+  }
+END_TEST
+
 Suite *trq_auth_suite(void)
   {
   Suite *s = suite_create("trq_auth_suite methods");
@@ -551,6 +568,10 @@ Suite *trq_auth_suite(void)
 
   tc_core = tcase_create("test_validate_user");
   tcase_add_test(tc_core, test_validate_user);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_get_server_port_from_string");
+  tcase_add_test(tc_core, test_get_server_port_from_string);
   suite_add_tcase(s, tc_core);
 
 
