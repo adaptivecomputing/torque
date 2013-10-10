@@ -1074,7 +1074,7 @@ int pbs_original_connect(
 
       server_addr.sin_family = AF_INET;
 
-      if (pbs_getaddrinfo(server, NULL, &addr_info) != 0)
+      if ((rc = pbs_getaddrinfo(server, NULL, &addr_info)) != 0)
         {
         if (getenv("PBSDEBUG"))
           {
