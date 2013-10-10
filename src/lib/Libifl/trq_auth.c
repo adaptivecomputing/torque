@@ -462,8 +462,6 @@ int validate_server(
         memset(current_name, 0, sizeof(current_name));
         snprintf(current_name, sizeof(current_name), "%s", tp);
 
-        get_server_port_from_string(current_name, &t_server_port);
-
         if (getenv("PBSDEBUG"))
           {
           fprintf(stderr, "pbs_connect attempting connection to server \"%s\"\n",
