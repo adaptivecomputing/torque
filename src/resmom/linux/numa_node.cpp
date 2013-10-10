@@ -83,11 +83,16 @@
 #include <string>
 #include <stdlib.h>
 
+#include "pbs_config.h"
+
 #include "numa_node.hpp"
 #include "utils.h"
 #include "mom_memory.h"
 
+#ifdef PENABLE_LINUX26_CPUSETS
 extern int MOMConfigUseSMT;
+bool is_physical_core(unsigned int os_index);
+#endif
 
 
 
