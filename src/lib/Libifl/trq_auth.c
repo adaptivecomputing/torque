@@ -389,6 +389,30 @@ int trq_simple_connect(
   return(rc);
   }
 
+/* ger_server_port_from_string scans current_name for a 
+   : and a port. If present t_server_port is set to the 
+   value after the :. otherwise t_server_port is set to
+   15001, the default pbs_server port */
+int get_server_port_from_string(
+    
+    char *current_name, 
+    int  *t_server_port)
+
+  {
+  char *ptr;
+
+  ptr = strchr(current_name, ':');
+  if (ptr != NULL)
+    {
+    ptr++;
+    *t_server_port = atoi(ptr);
+    }
+  else
+    *t_server_port = PBS_BATCH_SERVICE_PORT;
+  
+  return(PBSE_NONE);
+  }
+
 /* validate_server:
  * This function tries to find the currently active
  * pbs_server. If no server can be found the default 
@@ -437,6 +461,8 @@ int validate_server(
         
         memset(current_name, 0, sizeof(current_name));
         snprintf(current_name, sizeof(current_name), "%s", tp);
+
+        get_server_port_from_string(current_name, &t_server_port);
 
         if (getenv("PBSDEBUG"))
           {

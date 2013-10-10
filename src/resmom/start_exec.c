@@ -6413,6 +6413,10 @@ int start_exec(
     pjob->ji_resources[0].nr_vmem = 0;
     
     pjob->ji_joins_sent = time(NULL);
+    
+    if ((ret = allocate_demux_sockets(pjob, MOTHER_SUPERIOR)) != PBSE_NONE)
+      return(ret);
+
     CLEAR_HEAD(phead);
     
     pattr = pjob->ji_wattr;
@@ -6430,9 +6434,6 @@ int start_exec(
       }  /* END for (i) */
     
     attrl_fixlink(&phead);
-    
-    if ((ret = allocate_demux_sockets(pjob, MOTHER_SUPERIOR)) != PBSE_NONE)
-      return(ret);
 
     pjob->ji_sisters = NULL;
     pjob->ji_numsisternodes = 0;
@@ -6523,6 +6524,13 @@ int start_exec(
     
     assert(pjob->ji_resources != NULL);
     
+    /* open a pair of sockets for pbs_demux used later */
+    if ((ret = allocate_demux_sockets(pjob, MOTHER_SUPERIOR)) != PBSE_NONE)
+      {
+      /* can't gather stdout/err for the job - FAIL */
+      return(ret);
+      }
+    
     CLEAR_HEAD(phead);
     
     pattr = pjob->ji_wattr;
@@ -6540,16 +6548,10 @@ int start_exec(
     
     attrl_fixlink(&phead);
     
-    /* open a pair of sockets for pbs_demux used later */
-    if ((ret = allocate_demux_sockets(pjob, MOTHER_SUPERIOR)) != PBSE_NONE)
-      {
-      /* can't gather stdout/err for the job - FAIL */
-      return(ret);
-      }
-    
     if ((ret = send_join_job_to_sisters(pjob, nodenum, phead)) != DIS_SUCCESS)
       {
       /* couldn't contact all of the sisters, we've already bailed */
+      free_attrlist(&phead);
       return(ret);
       }
 

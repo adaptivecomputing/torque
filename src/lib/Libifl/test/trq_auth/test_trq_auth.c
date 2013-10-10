@@ -326,14 +326,6 @@ START_TEST(test_process_svr_conn)
   (*process_svr_conn)((void *)sock);
   fail_unless(process_svr_conn_rc == PBSE_NONE, "TRQ_AUTH_CONNECTION failed");
   
-  /* Test when socket read fails */
-  socket_read_success = false;
-  sock = (int *)calloc(1, sizeof(int));
-  *sock = 20;
-  request_type = TRQ_AUTH_CONNECTION;
-  (*process_svr_conn)((void *)sock);
-  fail_unless(process_svr_conn_rc != PBSE_NONE, "TRQ_AUTH_CONNECTION failed");
-
   /* Test when validate_user fails */
   socket_read_success = true;
   getsockopt_success = false;
@@ -564,6 +556,10 @@ Suite *trq_auth_suite(void)
 
   tc_core = tcase_create("test_set_trqauthd_addr");
   tcase_add_test(tc_core, test_set_trqauthd_addr);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_get_server_port_from_string");
+  tcase_add_test(tc_core, test_get_server_port_from_string);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_validate_user");
