@@ -292,7 +292,7 @@ int socket_connect_unix(
     {
     snprintf(tmp_buf, sizeof(tmp_buf), "could not connect to unix socket %s: %d", sock_name, errno);
     *error_msg = strdup(tmp_buf);
-    rc = PBSE_SOCKET_FAULT;
+    rc = PBSE_DOMAIN_SOCKET_FAULT;
     }
 
   return(rc);
