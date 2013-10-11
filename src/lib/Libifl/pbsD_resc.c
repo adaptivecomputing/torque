@@ -150,8 +150,6 @@ static int PBS_resc(
   int sock;
   struct tcp_chan *chan = NULL;
 
-  pthread_mutex_lock(connection[c].ch_mutex);
-
   sock = connection[c].ch_socket;
 
   /* setup DIS support routines for following DIS calls */
@@ -172,8 +170,6 @@ static int PBS_resc(
     DIS_tcp_cleanup(chan);
     return (PBSE_PROTOCOL);
     }
-
-  pthread_mutex_unlock(connection[c].ch_mutex);
 
   if (DIS_tcp_wflush(chan))
     {
@@ -337,10 +333,14 @@ int pbs_rescrelease(
   int                 rc;
   int                 local_errno = 0;
 
-  if ((rc = PBS_resc(c, PBS_BATCH_ReleaseResc, (char **)0, 0, rh)) != 0)
-    return (rc);
-
   pthread_mutex_lock(connection[c].ch_mutex);
+
+  if ((rc = PBS_resc(c, PBS_BATCH_ReleaseResc, (char **)0, 0, rh)) != 0)
+    {
+    pthread_mutex_unlock(connection[c].ch_mutex);
+    return (rc);
+    }
+
 
   /* now get reply */
   reply = PBSD_rdrpy(&local_errno, c);

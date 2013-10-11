@@ -115,7 +115,7 @@ int validate_active_pbs_server(
   int       rc;
   long long ret_code;
 
-  /* the format is TRQ command|destination port */
+  /* the format is TRQ command */
   sprintf(write_buf, "%d|", TRQ_VALIDATE_ACTIVE_SERVER);
 
   write_buf_len = strlen(write_buf);
