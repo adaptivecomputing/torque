@@ -1339,15 +1339,11 @@ int setup_server_attrs(
     }
   else
     {
-    if (rc == PBSE_NONE)
-      {
-      /* path_svrdb exists */
-      rm_files(path_priv);
+    rm_files(path_priv);
 
-      pthread_mutex_unlock(server.sv_attr_mutex);
-      svr_save(&server, SVR_SAVE_FULL);
-      pthread_mutex_lock(server.sv_attr_mutex);
-      }
+    pthread_mutex_unlock(server.sv_attr_mutex);
+    svr_save(&server, SVR_SAVE_FULL);
+    pthread_mutex_lock(server.sv_attr_mutex);
     }
 
   rc = PBSE_NONE;

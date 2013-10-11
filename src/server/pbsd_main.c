@@ -639,10 +639,10 @@ void parse_command_line(
 
     {
       { "hot", RECOV_HOT },
-    { "warm", RECOV_WARM },
-    { "cold", RECOV_COLD },
-    { "create", RECOV_CREATE },
-    { "", RECOV_Invalid }
+      { "warm", RECOV_WARM },
+      { "cold", RECOV_COLD },
+      { "create", RECOV_CREATE },
+      { "", RECOV_Invalid }
     };
 
   ForceCreation = FALSE;
