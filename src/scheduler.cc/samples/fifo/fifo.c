@@ -80,6 +80,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <unistd.h>
 #include "pbs_error.h"
 #include "pbs_ifl.h"
 #include "sched_cmds.h"
