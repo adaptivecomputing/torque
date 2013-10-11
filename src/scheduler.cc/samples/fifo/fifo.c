@@ -352,10 +352,24 @@ int init_scheduling_cycle(server_info *sinfo)
 
 int schedule(
 
-  int cmd,
-  int sd)
+  int cmd)
 
   {
+  int sd;
+  int retryCount = 100;
+
+  while(retryCount > 0)
+    {
+    sd = pbs_connect(NULL);
+    if(sd >= 0) break;
+    usleep(20000);
+    retryCount--;
+    }
+  if(sd < 0)
+    {
+    return -1;
+    }
+
   switch (cmd)
     {
 
@@ -380,8 +394,11 @@ int schedule(
     case SCH_SCHEDULE_CMD:
 
     case SCH_SCHEDULE_TIME:
-
-      return(scheduling_cycle(sd));
+      {
+      int rc = scheduling_cycle(sd);
+      pbs_disconnect(sd);
+      return rc;
+      }
 
       /*NOTREACHED*/
 
@@ -415,12 +432,15 @@ int schedule(
       if (conf.prime_fs || conf.non_prime_fs)
         write_usage();
 
+      pbs_disconnect(sd);
       return 1;  /* have the scheduler exit nicely */
 
     default:
+      pbs_disconnect(sd);
       return 0;
     }
 
+  pbs_disconnect(sd);
   return(0);
   }  /* END schedule() */
 
