@@ -140,7 +140,7 @@ int cnt2server(
 
   char  Server[PBS_MAXHOSTNAME];
   char *tmpServer;
-  int   rc = PBSE_NONE;
+  int   rc;
 
   if (cnt2server_retry > 0)
     {
@@ -149,39 +149,22 @@ int cnt2server(
 
   memset(Server, 0, sizeof(Server));
 
-  /* The precedence is commandline, environment, then server_name file for client commands */
   if ((SpecServer != NULL) && (SpecServer[0] != '\0'))
     {
     snprintf(Server, sizeof(Server)-1, "%s", SpecServer);
     }
   else
     {
-    tmpServer = getenv("PBS_DEFAULT");
-    if ((tmpServer != NULL) && (*tmpServer != '\0'))
-      {
-      snprintf(Server, sizeof(Server)-1, "%s", tmpServer);
-      }
-    else
-      {
-      tmpServer = getenv("PBS_SERVER");
-      if ((tmpServer != NULL) && (*tmpServer != '\0'))
-      {
-      snprintf(Server, sizeof(Server)-1, "%s", tmpServer);
-      }
-      else
-        {
-        rc = get_active_pbs_server(&tmpServer);
+    rc = get_active_pbs_server(&tmpServer);
     
-        if (rc == PBSE_NONE)
-          {
-          strncpy(Server, tmpServer, PBS_MAXHOSTNAME);
-          free(tmpServer);
-          }
-        else if (rc == PBSE_TIMEOUT)
-          {
-          return(rc * -1);
-          }
-        }
+    if (rc == PBSE_NONE)
+      {
+      strncpy(Server, tmpServer, PBS_MAXHOSTNAME);
+      free(tmpServer);
+      }
+    else if (rc == PBSE_TIMEOUT)
+      {
+      return(rc * -1);
       }
     }
 
