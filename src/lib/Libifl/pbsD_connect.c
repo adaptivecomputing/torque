@@ -782,7 +782,8 @@ int pbs_original_connect(
   int                  use_unixsock = 0;
   uid_t                pbs_current_uid;
   long                 sockflags;
-  int                  retry = 1;
+  int                  retry = 1; /* Flag to indicate if PBSAPITIMEOUT is set. 1 indicates 
+                                     PBSAPITIMEOUT is not set or is set and is 2 or less. */
 
 #ifdef ENABLE_UNIX_SOCKETS
   struct sockaddr_un  unserver_addr;
@@ -1282,7 +1283,7 @@ int pbs_original_connect(
           }
         }
 #endif /* ifdef MUNGE_AUTH */
-      } while ((rc != PBSE_NONE) && (retries < MAX_RETRIES));
+      } while ((rc != PBSE_NONE) && (retries < MAX_RETRIES) && (retry != 0));
     if(rc != PBSE_NONE)
       {
       goto cleanup_conn;
