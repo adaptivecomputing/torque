@@ -3693,7 +3693,7 @@ int read_config(
   if (LOGLEVEL >= 3)
     {
     sprintf(log_buffer, "updating configuration using file '%s'",
-            (file != NULL) ? file : "NULL");
+      (file != NULL) ? file : "NULL");
 
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
     }
@@ -3725,11 +3725,6 @@ int read_config(
     {
     IgnConfig = 1;
 
-    sprintf(log_buffer, "fstat: %s",
-            file);
-
-    log_err(errno, __func__, log_buffer);
-
     if (config_file_specified != 0)
       {
       /* file specified and not there, return failure */
@@ -3748,8 +3743,7 @@ int read_config(
 
       if (LOGLEVEL >= 3)
         {
-        sprintf(log_buffer, "cannot open file '%s'",
-                file);
+        sprintf(log_buffer, "cannot open file '%s'", file);
 
         log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
         }
@@ -7884,8 +7878,7 @@ int setup_program_environment(void)
 
   if (read_config(NULL))
     {
-    fprintf(stderr, "pbs_mom: cannot load config file '%s'\n",
-            config_file);
+    fprintf(stderr, "pbs_mom: cannot load config file '%s'\n", config_file);
 
     exit(1);
     }
@@ -8221,8 +8214,6 @@ int setup_program_environment(void)
 
   if (gethostname(ret_string, ret_size) == 0)
     addclient(ret_string);
-
-  tmpdir_basename[0] = '\0';
 
   /* if no alias is specified, make mom_alias the same as mom_host */
   if (mom_alias[0] == '\0')
