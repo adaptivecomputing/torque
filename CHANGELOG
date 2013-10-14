@@ -11,6 +11,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       files, those with the 'cpuset.' prefix and those without.
   b - TRQ-2259. Fix a problem for multi-node jobs: vmem was being stored in mem and
       vice versa from the sisters.
+  b - TRQ-2280. Save properties added to cray compute nodes in the nodes file if the 
+      file is overwritten by pbs_server.
 
 4.2.5
   e - Remove the mom asking for a job status before sending an obit to pbs_server
