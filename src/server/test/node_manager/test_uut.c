@@ -1,5 +1,5 @@
 #include <string>
-#include <boost/ptr_container/ptr_vector.hpp>
+#include <vector>
 #include "license_pbs.h" /* See here for the software license */
 #include "node_manager.h"
 #include "test_uut.h"
@@ -23,7 +23,7 @@ void *record_reported_time(void *vp);
 int save_node_for_adding(node_job_add_info *naji,struct pbsnode *pnode,single_spec_data *req,char *first_node_name,int is_external_node,int req_rank);
 void remove_job_from_already_killed_list(struct work_task *pwt);
 
-extern boost::ptr_vector<std::string> jobsKilled;
+extern std::vector<std::string> jobsKilled;
 
 START_TEST(remove_job_from_already_killed_list_test)
   {
@@ -32,18 +32,24 @@ START_TEST(remove_job_from_already_killed_list_test)
   pwt = (struct work_task *)calloc(1,sizeof(struct work_task));
   pwt->wt_mutex = (pthread_mutex_t *)calloc(1,sizeof(pthread_mutex_t));
   pwt->wt_parm1 = (void *)new std::string("Job 5");
-  jobsKilled.push_back(new std::string("Job 1"));
-  jobsKilled.push_back(new std::string("Job 2"));
-  jobsKilled.push_back(new std::string("Job 3"));
-  jobsKilled.push_back(new std::string("Job 4"));
-  jobsKilled.push_back(new std::string("Job 5"));
-  jobsKilled.push_back(new std::string("Job 6"));
+  std::string s("Job 1");
+  jobsKilled.push_back(s);
+  s = "Job 2";
+  jobsKilled.push_back(s);
+  s = "Job 3";
+  jobsKilled.push_back(s);
+  s = "Job 4";
+  jobsKilled.push_back(s);
+  s = "Job 5";
+  jobsKilled.push_back(s);
+  s = "Job 6";
+  jobsKilled.push_back(s);
 
   remove_job_from_already_killed_list(pwt);
 
-  for(boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();i != jobsKilled.end();i++)
+  for(std::vector<std::string>::iterator i = jobsKilled.begin();i != jobsKilled.end();i++)
     {
-    fail_unless(strcmp(i->c_str(),"Job 5") != 0);
+    fail_unless(strcmp((*i).c_str(),"Job 5") != 0);
     }
 
   pwt = (struct work_task *)calloc(1,sizeof(struct work_task));
@@ -52,7 +58,7 @@ START_TEST(remove_job_from_already_killed_list_test)
 
   remove_job_from_already_killed_list(pwt);
 
-  for(boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();i != jobsKilled.end();i++)
+  for(std::vector<std::string>::iterator i = jobsKilled.begin();i != jobsKilled.end();i++)
     {
     fail_unless(strcmp(i->c_str(),"Job 6") != 0);
     }
