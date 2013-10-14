@@ -121,11 +121,9 @@ extern char   *path_queues;
  * que_save() - Saves a queue structure image on disk
  *
  *
- * For a save, to insure no data is ever lost due to system crash:
+ * For a save, to ensure no data is ever lost due to system crash:
  * 1. write new image to a new file using a temp name
- * 2. unlink the old (image) file
- * 3. link the correct name to the new file
- * 4. unlink the temp name
+ * 2. rename the new file over the old one
  *
  * Then, if the queue has any access control lists, they are saved
  * to their own files.
@@ -138,7 +136,6 @@ int que_save(
   {
   int fds;
   int rc;
-  const char   *myid = "que_save_xml";
   char namebuf1[MAXPATHLEN];
   char namebuf2[MAXPATHLEN];
   char buf[MAXLINE<<8];
@@ -156,7 +153,7 @@ int que_save(
 
   if (fds < 0)
     {
-    log_err(errno, myid, (char *)"open error");
+    log_err(errno, __func__, (char *)"open error");
 
     return(-1);
     }
@@ -172,7 +169,7 @@ int que_save(
 
   if ((rc = write_buffer(buf,strlen(buf),fds)))
     {
-    log_err(rc,myid, (char *)"unable to write to the file");
+    log_err(rc, __func__, (char *)"unable to write to the file");
     close(fds);
     return(-1);
     }
@@ -181,7 +178,7 @@ int que_save(
 
   if (save_attr_xml(que_attr_def, pque->qu_attr, QA_ATR_LAST,fds) != 0)
     {
-    log_err(-1, myid, (char *)"save_attr failed");
+    log_err(-1, __func__, (char *)"save_attr failed");
     close(fds);
     return(-1);
     }
@@ -190,21 +187,22 @@ int que_save(
   snprintf(buf,sizeof(buf),"</queue>");
   if ((rc = write_buffer(buf,strlen(buf),fds)))
     {
-    log_err(rc,myid, (char *)"unable to write to the queue's file");
+    log_err(rc, __func__, (char *)"unable to write to the queue's file");
     close(fds);
     return(-1);
     }
 
-  close(fds);
-  unlink(namebuf1);
-
-  if (link(namebuf2, namebuf1) < 0)
+  /* Close the file descriptor and check for errors */
+  if (close(fds) < 0)
     {
-    log_err(errno, myid, (char *)"unable to link queue name");
+    log_err(errno, __func__, (char *)"unable to close the queue's file");
+    return(-1);
     }
-  else
+
+  if (rename(namebuf2, namebuf1) < 0)
     {
-    unlink(namebuf2);
+    log_err(errno, __func__, (char *)"unable to replace queue file");
+    return(-1);
     }
 
   return(0);
