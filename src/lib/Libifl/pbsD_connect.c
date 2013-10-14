@@ -1074,7 +1074,7 @@ int pbs_original_connect(
 
       server_addr.sin_family = AF_INET;
 
-      if (pbs_getaddrinfo(server, NULL, &addr_info) != 0)
+      if ((rc = pbs_getaddrinfo(server, NULL, &addr_info)) != 0)
         {
         if (getenv("PBSDEBUG"))
           {
@@ -1120,6 +1120,7 @@ int pbs_original_connect(
           close(connection[out].ch_socket);
           connection[out].ch_inuse = FALSE;
 
+          rc = sockflags;
           retries++;
           usleep(1000);
           continue;
@@ -1128,7 +1129,7 @@ int pbs_original_connect(
       
       sockflags |= O_NONBLOCK;
 
-      if (fcntl(connection[out].ch_socket, F_SETFL, sockflags) < 0)
+      if ((rc = fcntl(connection[out].ch_socket, F_SETFL, sockflags)) < 0)
         {
         if (retries >= MAX_RETRIES)
           {
@@ -1177,7 +1178,7 @@ int pbs_original_connect(
       /* Set the socket back to blocking so read()s actually work */
       sockflags &= (~O_NONBLOCK);
       
-      if (fcntl(connection[out].ch_socket, F_SETFL, sockflags) < 0)
+      if ((rc = fcntl(connection[out].ch_socket, F_SETFL, sockflags)) < 0)
         {
         if (getenv("PBSDEBUG"))
           fprintf(stderr, "ERROR: setting socket flags failed\n");
