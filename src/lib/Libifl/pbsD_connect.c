@@ -130,7 +130,7 @@
 #define CNTRETRYDELAY 5
 #define MUNGE_SIZE 256 /* I do not know what the proper size of this should be. My 
                           testing with munge shows it creates a string of 128 bytes */
-#define MAX_RETRIES 5  /* maximum number of times to try and successfully connect in pbs_original_connect */
+#define MAX_RETRIES 3  /* maximum number of times to try and successfully connect in pbs_original_connect */
 
 
 /* NOTE:  globals, must not impose per connection constraints */
@@ -1074,7 +1074,7 @@ int pbs_original_connect(
 
       server_addr.sin_family = AF_INET;
 
-      if (pbs_getaddrinfo(server, NULL, &addr_info) != 0)
+      if ((rc = pbs_getaddrinfo(server, NULL, &addr_info)) != 0)
         {
         if (getenv("PBSDEBUG"))
           {
@@ -1120,6 +1120,7 @@ int pbs_original_connect(
           close(connection[out].ch_socket);
           connection[out].ch_inuse = FALSE;
 
+          rc = sockflags;
           retries++;
           usleep(1000);
           continue;
@@ -1128,7 +1129,7 @@ int pbs_original_connect(
       
       sockflags |= O_NONBLOCK;
 
-      if (fcntl(connection[out].ch_socket, F_SETFL, sockflags) < 0)
+      if ((rc = fcntl(connection[out].ch_socket, F_SETFL, sockflags)) < 0)
         {
         if (retries >= MAX_RETRIES)
           {
@@ -1177,7 +1178,7 @@ int pbs_original_connect(
       /* Set the socket back to blocking so read()s actually work */
       sockflags &= (~O_NONBLOCK);
       
-      if (fcntl(connection[out].ch_socket, F_SETFL, sockflags) < 0)
+      if ((rc = fcntl(connection[out].ch_socket, F_SETFL, sockflags)) < 0)
         {
         if (getenv("PBSDEBUG"))
           fprintf(stderr, "ERROR: setting socket flags failed\n");
@@ -1281,7 +1282,7 @@ int pbs_original_connect(
           }
         }
 #endif /* ifdef MUNGE_AUTH */
-      } while ((rc != PBSE_NONE) && (retries <= MAX_RETRIES));
+      } while ((rc != PBSE_NONE) && (retries < MAX_RETRIES));
     if(rc != PBSE_NONE)
       {
       goto cleanup_conn;
