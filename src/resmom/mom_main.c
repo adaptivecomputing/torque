@@ -5032,8 +5032,6 @@ int setup_program_environment(void)
   if (gethostname(ret_string, ret_size) == 0)
     addclient(ret_string);
 
-  tmpdir_basename[0] = '\0';
-
   /* if no alias is specified, make mom_alias the same as mom_host */
   if (mom_alias[0] == '\0')
     strcpy(mom_alias,mom_short_name);

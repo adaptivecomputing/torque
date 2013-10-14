@@ -2255,11 +2255,6 @@ int read_config(
     {
     IgnConfig = 1;
 
-    sprintf(log_buffer, "fstat: %s",
-            file);
-
-    log_err(errno, __func__, log_buffer);
-
     if (config_file_specified != 0)
       {
       /* file specified and not there, return failure */
@@ -2275,11 +2270,9 @@ int read_config(
     else
       {
       /* "config" file not located, return success */
-
       if (LOGLEVEL >= 3)
         {
-        sprintf(log_buffer, "cannot open file '%s'",
-                file);
+        sprintf(log_buffer, "cannot open file '%s'", file);
 
         log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
         }
