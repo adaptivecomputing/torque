@@ -207,7 +207,7 @@ start:
   
   /* if pbs_connect failed maybe the active server is down. validate the active 
      server and try again */
-  if ((connect <= 0) && ((SpecServer == NULL) || (SpecServer[0] == '\0')) && (one_host_only > 1))
+  if ((connect <= 0) && ((SpecServer == NULL) || (SpecServer[0] == '\0')) && (one_host_only == 0))
     {
     char *valid_server;
     rc = validate_active_pbs_server(&valid_server);
