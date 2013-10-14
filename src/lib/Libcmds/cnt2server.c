@@ -177,7 +177,7 @@ int cnt2server(
           strncpy(Server, tmpServer, PBS_MAXHOSTNAME);
           free(tmpServer);
           }
-        else if (rc == PBSE_TIMEOUT)
+        else if ((rc == PBSE_TIMEOUT) || (rc == PBSE_DOMAIN_SOCKET_FAULT))
           {
           return(rc * -1);
           }
