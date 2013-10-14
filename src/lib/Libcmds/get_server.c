@@ -140,7 +140,7 @@ int get_server(
     {
     if (parse_jobid(job_id_in, &seq_number, &parent_server, &current_server))
       {
-      return(1);
+      return(PBSE_BAD_PARAMETER);
       }
     
     /* Apply the above rules, in order, except for the locate job request.
@@ -202,7 +202,7 @@ int get_server(
       
       if ((parent_server == (char *)NULL) || (*parent_server == '\0'))
         {
-        return(1);
+        return(PBSE_SERVER_NOT_FOUND);
         }
 
       snprintf(def_server, PBS_MAXSERVERNAME, "%s", parent_server);

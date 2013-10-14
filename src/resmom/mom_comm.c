@@ -5220,7 +5220,7 @@ void im_request(
       if (connection_from_ms(chan, pjob, pSockAddr) == false)
         {
         /* it is valid to receive an abort from a sister */
-        if (pjob->ji_qs.ji_svrflags & (~JOB_SVFLG_JOB_ABORTED))
+        if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_JOB_ABORTED) == 0)
           {
           std::set<int> sisters;
           create_contact_list(*pjob, sisters, pSockAddr);

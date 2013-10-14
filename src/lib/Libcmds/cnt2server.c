@@ -140,7 +140,7 @@ int cnt2server(
 
   char  Server[PBS_MAXHOSTNAME];
   char *tmpServer;
-  int   rc;
+  int   rc = PBSE_NONE;
 
   if (cnt2server_retry > 0)
     {
@@ -149,22 +149,39 @@ int cnt2server(
 
   memset(Server, 0, sizeof(Server));
 
+  /* The precedence is commandline, environment, then server_name file for client commands */
   if ((SpecServer != NULL) && (SpecServer[0] != '\0'))
     {
     snprintf(Server, sizeof(Server)-1, "%s", SpecServer);
     }
   else
     {
-    rc = get_active_pbs_server(&tmpServer);
-    
-    if (rc == PBSE_NONE)
+    tmpServer = getenv("PBS_DEFAULT");
+    if ((tmpServer != NULL) && (*tmpServer != '\0'))
       {
-      strncpy(Server, tmpServer, PBS_MAXHOSTNAME);
-      free(tmpServer);
+      snprintf(Server, sizeof(Server)-1, "%s", tmpServer);
       }
-    else if (rc == PBSE_TIMEOUT)
+    else
       {
-      return(rc * -1);
+      tmpServer = getenv("PBS_SERVER");
+      if ((tmpServer != NULL) && (*tmpServer != '\0'))
+      {
+      snprintf(Server, sizeof(Server)-1, "%s", tmpServer);
+      }
+      else
+        {
+        rc = get_active_pbs_server(&tmpServer);
+    
+        if (rc == PBSE_NONE)
+          {
+          strncpy(Server, tmpServer, PBS_MAXHOSTNAME);
+          free(tmpServer);
+          }
+        else if ((rc == PBSE_TIMEOUT) || (rc == PBSE_DOMAIN_SOCKET_FAULT))
+          {
+          return(rc * -1);
+          }
+        }
       }
     }
 
@@ -174,6 +191,23 @@ int cnt2server(
 start:
 
   connect = pbs_connect(Server);
+  
+  /* if pbs_connect failed maybe the active server is down. validate the active 
+     server and try again */
+  if ((connect <= 0) && ((SpecServer == NULL) || (SpecServer[0] == '\0')))
+    {
+    char *valid_server;
+    rc = validate_active_pbs_server(&valid_server);
+    if (rc != PBSE_NONE)
+      return(connect);
+
+    connect = pbs_connect(valid_server);
+    
+    if (connect >= 0)
+      fprintf(stderr, "New active server is %s\n", valid_server);
+    free(valid_server);
+    }
+
 
   if (connect <= 0)
     {
@@ -235,7 +269,7 @@ start:
           
         case PBSE_IFF_NOT_FOUND:
         
-          fprintf(stderr, "pbs_iff command not found.\n");
+          fprintf(stderr, "Unable to authorize user.\n");
           break;
 
         case PBSE_PROTOCOL:
@@ -254,7 +288,7 @@ start:
             int   rc;
 
             new_server_name = PBS_get_server(SpecServer, &port);
-            rc = validate_active_pbs_server(&new_server_name, port);
+            rc = validate_active_pbs_server(&new_server_name);
             if ((rc) ||
                 (!strcmp(new_server_name, Server)))
               {

@@ -2,9 +2,21 @@
 
 #include "pbs_ifl.h" /* batch_status */
 
-int isjobid(char *string);
+int isjobid(const char *string);
 
-int istrue(char *string); 
+int istrue(const char *string); 
+
+int timestring_to_int(const char *, int *);
+
+int process_commandline_opts(int, char **, int *, int *);
+
+void get_ct(const char *, int *, int *);
+ 
+int run_job_mode(bool, const char *, int *, char *, char *, char *, char *, char *);
+
+int run_queue_mode(bool, const char *, char *, char *, char *);
+
+int run_server_mode(bool, const char *, char *);
 
 /* static void states(char *string, char *q, char *r, char *h, char *w, char *t, char *e, int len); */
 
