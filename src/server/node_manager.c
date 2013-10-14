@@ -82,7 +82,6 @@
 
 #include <string>
 #include <sstream>
-#include <boost/ptr_container/ptr_vector.hpp>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -605,7 +604,7 @@ int kill_job_on_mom(
 
 
 pthread_mutex_t jobsKilledMutex = PTHREAD_MUTEX_INITIALIZER;
-boost::ptr_vector<std::string> jobsKilled;
+std::vector<std::string> jobsKilled;
 #define JOB_SYNC_TIMEOUT 60 //Once a kill job has been sent to a MOM, don't send another for five minutes.
 
 
@@ -626,9 +625,9 @@ void remove_job_from_already_killed_list(struct work_task *pwt)
 
   pthread_mutex_lock(&jobsKilledMutex);
 
-  for(boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();i != jobsKilled.end();i++)
+  for(std::vector<std::string>::iterator i = jobsKilled.begin();i != jobsKilled.end();i++)
     {
-    if(i->compare(*pJobID) == 0)
+    if((*i).compare(*pJobID) == 0)
       {
       jobsKilled.erase(i);
       if(i == jobsKilled.end())
@@ -695,9 +694,9 @@ bool job_should_be_killed(
     //Job should not be on the node, see if we have already sent a kill for this job.
     pthread_mutex_lock(&jobsKilledMutex);
 
-    for(boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();(i != jobsKilled.end())&&(jobAlreadyKilled == false);i++)
+    for(std::vector<std::string>::iterator i = jobsKilled.begin();(i != jobsKilled.end())&&(jobAlreadyKilled == false);i++)
       {
-      if(i->compare(jobid) == 0)
+      if((*i).compare(jobid) == 0)
         {
         jobAlreadyKilled = true;
         }
@@ -875,7 +874,8 @@ void *sync_node_jobs(
       if (kill_job_on_mom(jobidstr, np) == PBSE_NONE)
         {
         pthread_mutex_lock(&jobsKilledMutex);
-        jobsKilled.push_back(new std::string(jobidstr));
+        std::string str(jobidstr);
+        jobsKilled.push_back(str);
         pthread_mutex_unlock(&jobsKilledMutex);
         set_task(WORK_Timed, 
                  time(NULL) + job_sync_timeout,
