@@ -131,7 +131,7 @@ int validate_active_pbs_server(
   if (rc != PBSE_NONE)
     {
     fprintf(stderr, "socket_connect_unix failed: %d\n", rc);
-    return(PBSE_SYSTEM);
+    return(rc);
     }
 
   rc = socket_write(local_socket, write_buf, write_buf_len);

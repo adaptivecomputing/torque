@@ -130,7 +130,7 @@
 #define CNTRETRYDELAY 5
 #define MUNGE_SIZE 256 /* I do not know what the proper size of this should be. My 
                           testing with munge shows it creates a string of 128 bytes */
-#define MAX_RETRIES 5  /* maximum number of times to try and successfully connect in pbs_original_connect */
+#define MAX_RETRIES 3  /* maximum number of times to try and successfully connect in pbs_original_connect */
 
 
 /* NOTE:  globals, must not impose per connection constraints */
