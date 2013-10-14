@@ -27,14 +27,17 @@ END_TEST
 START_TEST(remove_job_from_exiting_list_test)
   {
   job pjob;
+  job *pJob = &pjob;
 
   memset(&pjob, 0, sizeof(pjob));
 
   strcpy(pjob.ji_qs.ji_jobid, "2.napali");
-  fail_unless(remove_job_from_exiting_list(&pjob) == 0, "Couldn't remove job from exiting list");
+  fail_unless(remove_job_from_exiting_list(&pJob) == 0, "Couldn't remove job from exiting list");
  
+  pJob = &pjob;
+
   strcpy(pjob.ji_qs.ji_jobid, "1.napali");
-  fail_unless(remove_job_from_exiting_list(&pjob) == 0, "Couldn't remove job from exiting list");
+  fail_unless(remove_job_from_exiting_list(&pJob) == 0, "Couldn't remove job from exiting list");
   }
 END_TEST
 

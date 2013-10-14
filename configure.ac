@@ -758,7 +758,6 @@ AC_CHECK_LIB(${xmlLib}, xmlGetProp,
 
 
 
-
 dnl ###########################################
 dnl Make only top dir mode?
 dnl

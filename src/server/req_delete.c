@@ -167,7 +167,8 @@ extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_a
 extern int   svr_chk_owner(struct batch_request *, job *);
 void chk_job_req_permissions(job **,struct batch_request *);
 void          on_job_exit_task(struct work_task *);
-extern void removeAfterAnyDependency(job *pJob,void *targetJob);
+void           remove_stagein(job **pjob_ptr);
+extern void removeAfterAnyDependency(const char *pJobID,void *targetJob);
 
 
 
@@ -983,8 +984,9 @@ int handle_single_delete(
     }
   else
     {
-    traverse_all_jobs(removeAfterAnyDependency,(void *)pjob);
+    std::string jobID = pjob->ji_qs.ji_jobid;
     unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+    traverse_all_jobs(removeAfterAnyDependency,(void *)jobID.c_str());
 
 
     /* send the asynchronous reply if needed */
