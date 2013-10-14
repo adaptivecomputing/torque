@@ -1282,7 +1282,7 @@ int pbs_original_connect(
           }
         }
 #endif /* ifdef MUNGE_AUTH */
-      } while ((rc != PBSE_NONE) && (retries <= MAX_RETRIES));
+      } while ((rc != PBSE_NONE) && (retries < MAX_RETRIES));
     if(rc != PBSE_NONE)
       {
       goto cleanup_conn;
