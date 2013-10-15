@@ -4,8 +4,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
+#include "csv.h"
 #include "pbs_error.h"
+#include "pbs_ifl.h"
+
 
 START_TEST(test_cnt2server_conf)
   {
