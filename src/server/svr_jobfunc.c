@@ -1855,15 +1855,16 @@ static int check_execution_uid_and_gid(
 
 static int check_queue_disallowed_types(
 
-    struct job       *const pjob,
-    struct pbs_queue *const pque,
-    char             *const EMsg)
+  struct job       *const pjob,
+  struct pbs_queue *const pque,
+  char             *const EMsg)
+
   {
   int return_code = PBSE_NONE; /* Optimistic assumption */
   int i = 0;
 
   if ((pque->qu_attr[QA_ATR_DisallowedTypes].at_flags & ATR_VFLAG_SET) &&
-        (pque->qu_attr[QA_ATR_DisallowedTypes].at_val.at_arst != NULL))
+      (pque->qu_attr[QA_ATR_DisallowedTypes].at_val.at_arst != NULL))
     {
     for (i = 0;
          i < (pque->qu_attr[QA_ATR_DisallowedTypes]).at_val.at_arst->as_usedptr;
