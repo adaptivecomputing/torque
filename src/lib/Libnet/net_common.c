@@ -292,7 +292,7 @@ int socket_connect_unix(
     {
     snprintf(tmp_buf, sizeof(tmp_buf), "could not connect to unix socket %s: %d", sock_name, errno);
     *error_msg = strdup(tmp_buf);
-    rc = PBSE_SOCKET_FAULT;
+    rc = PBSE_DOMAIN_SOCKET_FAULT;
     }
 
   return(rc);
@@ -419,8 +419,25 @@ int socket_connect_addr(
 
       default:
 
+         if (cntr < RES_PORT_RETRY)
+         {
+         if (is_privileged)
+           {
+           rc = PBSE_SOCKET_FAULT;
+
+          close(local_socket);
+          if ((local_socket = socket_get_tcp_priv()) < 0)
+            rc = PBSE_SOCKET_FAULT;
+          else
+            {
+            rc = PBSE_NONE;
+            continue;
+            }
+          }
+        }
+
         snprintf(tmp_buf, sizeof(tmp_buf), "cannot connect to port %d in %s - errno:%d %s",
-          local_socket, __func__, errno, strerror(errno));
+        local_socket, __func__, errno, strerror(errno));
         *error_msg = strdup(tmp_buf);
         close(local_socket);
         rc = PBSE_SOCKET_FAULT;
