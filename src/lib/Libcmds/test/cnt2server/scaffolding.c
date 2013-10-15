@@ -1,6 +1,8 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+#include <pbs_ifl.h>
 
 int pbs_errno = 0;
 
@@ -51,3 +53,17 @@ int get_active_pbs_server(char **server)
   {
   return(0);
   }
+
+char *pbs_get_server_list(void)
+  {
+  char *list;
+
+  list = (char *)malloc(30);
+
+  if (list == NULL)
+    return(NULL);
+
+  strcpy(list, "george");
+  return(list);
+  }
+
