@@ -56,9 +56,17 @@ int get_active_pbs_server(char **server)
 
 char *pbs_get_server_list(void)
   {
-  fprintf(stderr, "pbs_get_server_list needs to be mocked!!\n");
-  return(NULL);
+  char *list;
+
+  list = (char *)malloc(30);
+
+  if (list == NULL)
+    return(NULL);
+
+  strcpy(list, "george");
+  return(list);
   }
+
 
 /**
    * Gets the number of items in a string list.
