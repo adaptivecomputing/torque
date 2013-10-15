@@ -86,8 +86,8 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     {
     if (!strcmp(*argv, "debug"))
       debug = 1;
-    else if (!strncmp(*argv, "jobdir=", 7))
-      strncpy(jobdirpath, (*argv)+7, PATH_MAX);
+    else if (!strncmp(*argv, "jobdir=", strlen("jobdir=")))
+      strncpy(jobdirpath, (*argv) + strlen("jobdir="), PATH_MAX);
     else
       syslog(LOG_ERR, "unknown option: %s", *argv);
     }
