@@ -853,7 +853,7 @@ void job_free(
  * job_clone - create a clone of a job for use with job arrays
  */
 
-/*static*/ job *job_clone(
+job *job_clone(
 
   job       *template_job, /* I */  /* job to clone */
   job_array *pa,           /* I */  /* array which the job is a part of */
@@ -880,7 +880,7 @@ void job_free(
 
   if (LOGLEVEL >= 7)
     {
-    sprintf(log_buf, "taskid %d", taskid);
+    sprintf(log_buf, "taskid %d jobid %s ", taskid, template_job->ji_qs.ji_jobid);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
 
@@ -893,8 +893,8 @@ void job_free(
 
   if (template_job == NULL)
     {
-      log_err(PBSE_BAD_PARAMETER, __func__, "template_job* is NULL");
-      return(NULL);
+    log_err(PBSE_BAD_PARAMETER, __func__, "template_job* is NULL");
+    return(NULL);
     }
 
   if ((pnewjob = job_alloc()) == NULL)
