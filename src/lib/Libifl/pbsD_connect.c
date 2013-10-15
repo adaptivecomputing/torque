@@ -990,9 +990,11 @@ int pbs_original_connect(
                   strerror(errno));
           }
 
+          retries++;
+
         if (!retry || retries >= MAX_RETRIES)
           {
-          rc = PBSE_PROTOCOL * -1;
+          rc = PBSE_SYSTEM * -1;
           goto cleanup_conn;
           }
         else
@@ -1000,7 +1002,6 @@ int pbs_original_connect(
           connection[out].ch_inuse = FALSE;
           pthread_mutex_unlock(connection[out].ch_mutex);
 
-          retries++;
           usleep(1000);
           continue;
           }
@@ -1024,6 +1025,8 @@ int pbs_original_connect(
           if (if_name)
             free(if_name);
 
+          retries++;
+
           if (!retry || retries >= MAX_RETRIES)
             {
             rc = rc * -1;
@@ -1034,7 +1037,6 @@ int pbs_original_connect(
             connection[out].ch_inuse = FALSE;
             pthread_mutex_unlock(connection[out].ch_mutex);
 
-            retries++;
             usleep(1000);
             continue;
             }
@@ -1050,6 +1052,8 @@ int pbs_original_connect(
           if (if_name)
             free(if_name);
 
+          retries++;
+
           if (!retry || retries >= MAX_RETRIES)
             {
             rc = PBSE_SYSTEM * -1;
@@ -1060,7 +1064,6 @@ int pbs_original_connect(
             close(connection[out].ch_socket);
             connection[out].ch_inuse = FALSE;
 
-            retries++;
             usleep(1000);
             continue;
             }
@@ -1085,6 +1088,7 @@ int pbs_original_connect(
                   strerror(errno));
           }
 
+        retries++;
         if (!retry || retries >= MAX_RETRIES)
           {
           rc = PBSE_BADHOST * -1;
@@ -1095,7 +1099,6 @@ int pbs_original_connect(
           close(connection[out].ch_socket);
           connection[out].ch_inuse = FALSE;
 
-          retries++;
           usleep(1000);
           continue;
           }
@@ -1107,6 +1110,7 @@ int pbs_original_connect(
       /* Set the socket to non-blocking mode so we can timeout */
       if ((sockflags = fcntl(connection[out].ch_socket, F_GETFL, NULL)) < 0)
         {
+        retries++;
         if (!retry || retries >= MAX_RETRIES)
           {
           if (getenv("PBSDEBUG"))
@@ -1121,7 +1125,6 @@ int pbs_original_connect(
           connection[out].ch_inuse = FALSE;
 
           rc = sockflags;
-          retries++;
           usleep(1000);
           continue;
           }
@@ -1131,6 +1134,7 @@ int pbs_original_connect(
 
       if ((rc = fcntl(connection[out].ch_socket, F_SETFL, sockflags)) < 0)
         {
+        retries++;
         if (!retry || retries >= MAX_RETRIES)
           {
           if (getenv("PBSDEBUG"))
@@ -1144,7 +1148,6 @@ int pbs_original_connect(
           close(connection[out].ch_socket);
           connection[out].ch_inuse = FALSE;
 
-          retries++;
           usleep(1000);
           continue;
           }
@@ -1183,6 +1186,7 @@ int pbs_original_connect(
         if (getenv("PBSDEBUG"))
           fprintf(stderr, "ERROR: setting socket flags failed\n");
 
+        retries++;
         if (!retry || retries >= MAX_RETRIES)
           {
           rc = PBSE_SOCKET_FAULT * -1;
@@ -1193,7 +1197,6 @@ int pbs_original_connect(
           close(connection[out].ch_socket);
           connection[out].ch_inuse = FALSE;
           
-          retries++;
           usleep(1000);
           continue;
           }
@@ -1228,6 +1231,7 @@ int pbs_original_connect(
           }
         else
           {
+          retries++;
           if (!retry || retries >= MAX_RETRIES)
             {
             local_errno = PBSE_PERM;
@@ -1248,7 +1252,6 @@ int pbs_original_connect(
             close(connection[out].ch_socket);
             connection[out].ch_inuse = FALSE;
             
-            retries++;
             usleep(1000);
             continue;
             }
