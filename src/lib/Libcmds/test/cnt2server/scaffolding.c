@@ -49,7 +49,7 @@ char *PBS_get_server(
   return(NULL);
   }
 
-int get_active_pbs_server(char **server)
+int get_active_pbs_server(char **server, int port)
   {
   return(0);
   }

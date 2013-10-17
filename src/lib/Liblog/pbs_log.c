@@ -428,7 +428,6 @@ int job_log_open(
 
   if (job_log_opened > 0)
     {
-    log_err(-1, __func__, "job log already open");
     return(1); /* already open */
     }
 
