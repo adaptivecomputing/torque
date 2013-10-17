@@ -176,12 +176,20 @@ int cnt2server(
         {
         char server_name_list[PBS_MAXSERVERNAME*4+1];
         int  list_len;
+        int  port;
 
-        rc = get_active_pbs_server(&tmpServer);
+        rc = get_active_pbs_server(&tmpServer, &port);
     
         if (rc == PBSE_NONE)
           {
-          strncpy(Server, tmpServer, PBS_MAXHOSTNAME);
+          if ((port != 0) && (port != PBS_BATCH_SERVICE_PORT))
+            {
+            snprintf(Server, PBS_MAXHOSTNAME, "%s:%d", tmpServer, port);
+            }
+          else
+            {
+            snprintf(Server, PBS_MAXHOSTNAME, "%s", tmpServer);
+            }
           free(tmpServer);
           }
         else if ((rc == PBSE_TIMEOUT) || (rc == PBSE_DOMAIN_SOCKET_FAULT))
