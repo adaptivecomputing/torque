@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 #include <pthread.h> /* pthread_mutex_t */
+#include <unistd.h>
 
 
 #include "attribute.h" /* attribute_def, pbs_attribute */
@@ -23,22 +24,37 @@ ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
   exit(1);
   }
 
-int get_parent_and_child(char *start, char **parent, char **child, char **end)
+int is_whitespace(
+
+  char c)
+
   {
-  fprintf(stderr, "The call to get_parent_and_child needs to be mocked!!\n");
-  exit(1);
-  }
+  if ((c == ' ')  ||
+      (c == '\n') ||
+      (c == '\t') ||
+      (c == '\r') ||
+      (c == '\f'))
+    return(TRUE);
+  else
+    return(FALSE);
+  } /* END is_whitespace */
+
 
 int write_buffer(char *buf, int len, int fds)
   {
-  fprintf(stderr, "The call to write_buffer needs to be mocked!!\n");
-  exit(1);
+  int l = write(fds,buf,len);
+  if(l == len) return 0;
+  return -1;
   }
 
 pbs_queue *que_alloc(char *name, int sv_qs_mutex_held)
   {
-  fprintf(stderr, "The call to que_alloc needs to be mocked!!\n");
-  exit(1);
+  pbs_queue *pq;
+
+  pq = (pbs_queue *)calloc(1, sizeof(pbs_queue));
+  snprintf(pq->qu_qs.qu_name, sizeof(pq->qu_qs.qu_name), "%s", name);
+
+  return pq;
   }
 
 int recov_attr(int fd, void *parent, struct attribute_def *padef, struct pbs_attribute *pattr, int limit, int unknown, int do_actions)
@@ -61,13 +77,14 @@ void que_free(pbs_queue *pq, int sv_qs_mutex_held)
 
 int save_attr_xml(struct attribute_def *padef, struct pbs_attribute *pattr, int numattr, int fds)
   {
-  fprintf(stderr, "The call to save_attr_xml needs to be mocked!!\n");
-  exit(1);
+  const char *p = "<attributes>\n</attributes>\n";
+  write(fds,p,strlen(p));
+  return 0;
   }
 
 ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   {
-  return(0);
+  return read(fd,buf,count);
   }
 
 void log_err(int errnum, const char *routine, const char *text) {}
