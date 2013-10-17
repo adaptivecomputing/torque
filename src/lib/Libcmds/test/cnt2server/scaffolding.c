@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <pbs_ifl.h>
+#include "pbs_ifl.h"
 
 int pbs_errno = 0;
 
