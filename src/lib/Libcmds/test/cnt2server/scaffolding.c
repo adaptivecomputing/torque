@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "pbs_ifl.h"
+#include "csv.h"
 
 int pbs_errno = 0;
 
@@ -72,7 +73,7 @@ char *pbs_get_server_list(void)
  * @param csv_str  The string list.
  * @return The number of items in the list.
  */
-int csv_length(const char *csv_str)
+/*int csv_length(const char *csv_str)
   {
   int  length = 0;
   const char *cp;
@@ -91,5 +92,5 @@ int csv_length(const char *csv_str)
     }
 
   return(length);
-  }
+  }*/
 
