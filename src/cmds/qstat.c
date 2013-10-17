@@ -3223,15 +3223,21 @@ int main(
 
       case JOBS:      /* get status of batch jobs */
         any_failed = run_job_mode(have_args, operand, &located, server_out, server_old, queue_name_out, server_name_out, job_id_out);
+        if (any_failed != PBSE_NONE)
+          exit(any_failed);
         break;
 
       case QUEUES:        /* get status of batch queues */
         any_failed = run_queue_mode(have_args, operand, server_out, queue_name_out, server_name_out);
+        if (any_failed != PBSE_NONE)
+          exit(any_failed);
         break;
 
 
       case SERVERS:           /* get status of batch servers */
        any_failed = run_server_mode(have_args, operand, server_out);
+        if (any_failed != PBSE_NONE)
+          exit(any_failed);
        break;
 
       }    /* END switch (mode) */
