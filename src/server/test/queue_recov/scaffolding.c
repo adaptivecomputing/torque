@@ -90,3 +90,15 @@ ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
 void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+
+int get_parent_and_child(
+
+  char  *start,       /* I */
+  char **parent,      /* O */
+  char **child,       /* O */
+  char **end)         /* O */
+
+  {
+  return(0);
+  }
+
