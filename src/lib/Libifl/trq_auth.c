@@ -199,6 +199,19 @@ int get_active_pbs_server(
   int       local_socket;
   int       rc = PBSE_NONE;
   long long ret_code = PBSE_NONE;
+  char     *timeout_ptr;
+
+  if ((timeout_ptr = getenv("PBSAPITIMEOUT")) != NULL)
+    {
+    time_t tmp_timeout = strtol(timeout_ptr, NULL, 0);
+
+    if (tmp_timeout > 0)
+      {
+      pbs_tcp_timeout = tmp_timeout;
+
+      }
+
+    }
 
   /* the syntax for this call is a number followed by a | (pipe). The pipe indicates 
      the end of a number */

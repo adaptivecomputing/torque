@@ -49,7 +49,7 @@ char *PBS_get_server(
   return(NULL);
   }
 
-int get_active_pbs_server(char **server, int port)
+int get_active_pbs_server(char **server, int *port)
   {
   return(0);
   }
@@ -65,5 +65,31 @@ char *pbs_get_server_list(void)
 
   strcpy(list, "george");
   return(list);
+  }
+
+/**
+ * Gets the number of items in a string list.
+ * @param csv_str  The string list.
+ * @return The number of items in the list.
+ */
+int csv_length(const char *csv_str)
+  {
+  int  length = 0;
+  const char *cp;
+
+  if (!csv_str || *csv_str == 0)
+    return(0);
+
+  length++;
+
+  cp = csv_str;
+
+  while ((cp = strchr(cp, ',')))
+    {
+    cp++;
+    length++;
+    }
+
+  return(length);
   }
 

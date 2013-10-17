@@ -431,7 +431,7 @@ START_TEST(build_active_server_response_test)
   fail_unless(build_active_server_response(message) == PBSE_NONE);
   set_active_pbs_server("napali", 15001);
   fail_unless(build_active_server_response(message) == PBSE_NONE);
-  fail_unless(!strcmp(message.c_str(), "0|6|napali|"));
+  fail_unless(!strcmp(message.c_str(), "0|6|napali|15001|"));
   }
 END_TEST
 
@@ -540,10 +540,6 @@ Suite *trq_auth_suite(void)
 
   tc_core = tcase_create("test_set_trqauthd_addr");
   tcase_add_test(tc_core, test_set_trqauthd_addr);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("test_get_server_port_from_string");
-  tcase_add_test(tc_core, test_get_server_port_from_string);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_validate_user");
