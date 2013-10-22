@@ -67,29 +67,3 @@ char *pbs_get_server_list(void)
   return(list);
   }
 
-/**
- * Gets the number of items in a string list.
- * @param csv_str  The string list.
- * @return The number of items in the list.
- */
-int csv_length(const char *csv_str)
-  {
-  int  length = 0;
-  const char *cp;
-
-  if (!csv_str || *csv_str == 0)
-    return(0);
-
-  length++;
-
-  cp = csv_str;
-
-  while ((cp = strchr(cp, ',')))
-    {
-    cp++;
-    length++;
-    }
-
-  return(length);
-  }
-
