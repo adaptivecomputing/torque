@@ -765,7 +765,7 @@ AC_CHECK_LIB(${xmlLib}, xmlGetProp,
  
  AC_CHECK_HEADERS([boost/ptr_container/ptr_vector.hpp],
                   [],
-                  [AC_MSG_ERROR(Boost ptr_vector.hpp header not found)],
+                  [AC_MSG_ERROR(Boost ptr_vector.hpp header not found. Install boost-devel package.)],
                   [])
 
 
