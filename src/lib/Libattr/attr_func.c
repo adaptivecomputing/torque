@@ -406,11 +406,12 @@ void free_attrlist(
 
   if (pattrlisthead == NULL)
     {
-      return;
+    return;
     }
+
   if (pattrlisthead->ll_next == NULL)
     {
-      return;
+    return;
     }
   pal = (svrattrl *)GET_NEXT(*pattrlisthead);
 

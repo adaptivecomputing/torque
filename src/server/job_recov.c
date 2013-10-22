@@ -482,6 +482,8 @@ void decode_attribute(
   if (index < 0)
     index = JOB_ATR_UNKN;
 
+  job_attr_def[index].at_free(&pj->ji_wattr[index]);
+
   job_attr_def[index].at_decode(
     &pj->ji_wattr[index],
      pal->al_name,
@@ -590,8 +592,10 @@ int parse_attributes(
           xmlFree(attr_flags);
           pal->al_flags = flags;
           }
-          decode_attribute(pal, pj);
-          free(pal);
+          
+        decode_attribute(pal, pj);
+
+        free(pal);
         }
       else
         rc = -1;
