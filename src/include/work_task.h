@@ -114,6 +114,15 @@ enum work_type
   };
 
 
+struct work_task *set_task(enum work_type type, long event_id, void (*func)(struct work_task *), void *parm, int get_lock);
+int dispatch_task(struct work_task *ptask);
+void delete_task(struct work_task *ptask);
+void clear_task(struct work_task *ptask);
+
+
+int task_is_in_threadpool(struct work_task *ptask);
+
+
 
 
 typedef struct all_tasks
@@ -152,10 +161,6 @@ work_task *next_task(all_tasks *,int *);
 
 
 
-extern void clear_task(struct work_task *ptask);
-extern int  dispatch_task(struct work_task *);
-extern void delete_task(struct work_task *ptask);
-
 
 #define TASKS_TO_REMOVE       1000
 #define MAX_TASKS_IN_RECYCLER 5000
@@ -169,6 +174,11 @@ typedef struct task_recycler
   unsigned int     max_id;
   pthread_mutex_t *mutex;
   } task_recycler;
+
+void initialize_task_recycler();
+work_task *next_task_from_recycler(all_tasks *at, int *iter);
+void *remove_some_recycle_tasks(void *vp);
+int insert_task_into_recycler(struct work_task *ptask);
 
 
 #endif /* WORK_TASK_H */

@@ -12,6 +12,7 @@
 #include "mutex_mgr.hpp"
 #include "sched_cmds.h" /* SCH_SCHEDULE_NULL */
 #include "attribute.h" /* svrattrl */
+#include "work_task.h"
 
 extern void *send_the_mail(void *vp);
 
@@ -85,6 +86,11 @@ mutex_mgr::mutex_mgr(pthread_mutex_t *, bool a)
 int mutex_mgr::unlock()
   {
   return(0);
+  }
+
+struct work_task *set_task(enum work_type type, long event_id, void (*func)(struct work_task *), void *parm, int get_lock)
+  {
+  return(NULL);
   }
 
 void mutex_mgr::mark_as_locked() {}

@@ -118,7 +118,6 @@
 #include "req_stat.h" /* stat_mom_job */
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
-#include "svr_task.h"
 
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
