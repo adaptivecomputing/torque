@@ -85,10 +85,13 @@
 
 #include "pbs_ifl.h"
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include "list_link.h"
 #include "attribute.h"
 #include "server_limits.h"
@@ -100,6 +103,7 @@
 #include "utils.h"
 #include "threadpool.h"
 #include "svrfunc.h" /* get_svr_attr_* */
+#include "work_task.h"
 
 /* External Functions Called */
 
@@ -107,6 +111,7 @@ extern void net_close (int);
 extern void svr_format_job (FILE *, mail_info *, const char *);
 
 /* Global Data */
+#define TEMPORARY_FILE_LIFE_SPAN 15
 
 extern struct server server;
 
@@ -174,6 +179,113 @@ void add_body_info(
   }
 
 
+/*
+ * write_the_temporary_input_file()
+ *
+ * In emailing, the mail body is written as a temporary input file 
+ * and then set up as the standard input for sendmail. This function
+ * creates the temporary input file.
+ *
+ * @post-cond: the temporary input file is created.
+ */
+void write_the_temporary_input_file(
+
+  const char *filename,
+  mail_info  *mi)
+
+  {
+  FILE  *outmail_input = fopen(filename, "w");
+  char  *bodyfmt = NULL;
+  const char *subjectfmt = NULL;
+  int         rc;
+
+  if (outmail_input == NULL)
+    {
+    char tmpBuf[LOG_BUF_SIZE];
+
+    snprintf(tmpBuf,sizeof(tmpBuf),
+      "Unable to fopen() file '%s' for writing: '%s' (error %d)\n",
+      filename,
+      strerror(errno),
+      errno);
+    log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      mi->jobid,
+      tmpBuf);
+
+    free_mail_info(mi);
+
+    return;
+    }
+
+  /* Pipe in mail headers: To: and Subject: */
+  fprintf(outmail_input, "To: %s\n", mi->mailto);
+
+  /* mail subject line formating statement */
+  get_svr_attr_str(SRV_ATR_MailSubjectFmt, (char **)&subjectfmt);
+  if (subjectfmt == NULL)
+    {
+    subjectfmt = "PBS JOB %i";
+    }
+
+  fprintf(outmail_input, "Subject: ");
+  svr_format_job(outmail_input, mi, subjectfmt);
+  fprintf(outmail_input, "\n");
+
+  /* Set "Precedence: bulk" to avoid vacation messages, etc */
+  fprintf(outmail_input, "Precedence: bulk\n\n");
+
+  /* mail body formating statement */
+  get_svr_attr_str(SRV_ATR_MailBodyFmt, &bodyfmt);
+  if (bodyfmt == NULL)
+    {
+    char bodyfmtbuf[MAXLINE];
+    add_body_info(bodyfmtbuf, mi);
+    bodyfmt = bodyfmtbuf;
+    }
+
+  /* Now pipe in the email body */
+  svr_format_job(outmail_input, mi, bodyfmt);
+
+  errno = 0;
+  if ((rc = fclose(outmail_input)) != 0)
+    {
+    char tmpBuf[LOG_BUF_SIZE];
+
+    snprintf(tmpBuf,sizeof(tmpBuf),
+      "Creation of temporary input file '%s' failed: errno %d:%s\n",
+      filename, errno, strerror(errno));
+
+    log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      mi->jobid,
+      tmpBuf);
+    }
+  } /* write_the_temporary_input_file() */
+
+
+/*
+ * remove_temporary_file()
+ *
+ * This task function can be used to remove any temporary file.
+ *
+ * @post-cond: the temporary file is deleted
+ */
+void remove_temporary_file(
+
+  struct work_task *ptask)
+
+  {
+  if (ptask->wt_parm1 != NULL)
+    {
+    unlink((char *)ptask->wt_parm1);
+    free(ptask->wt_parm1);
+    }
+
+  free(ptask->wt_mutex);
+  free(ptask);
+  } /* END remove_temporary_file() */
+
 
 
 void *send_the_mail(
@@ -181,16 +293,30 @@ void *send_the_mail(
   void *vp)
 
   {
-  mail_info *mi = (mail_info *)vp;
+  mail_info  *mi = (mail_info *)vp;
 
-  int         i;
-  int         cmdbuf_len;
+  int         fd;
   const char *mailfrom = NULL;
-  const char *subjectfmt = NULL;
-  char       *bodyfmt = NULL;
-  char       *cmdbuf = NULL;
-  char        bodyfmtbuf[MAXLINE];
-  FILE       *outmail;
+  char        tmp_input_filename[MAXLINE];
+  // We call sendmail with 3 arguments + 1 for null
+  char       *sendmail_args[4];
+
+  snprintf(tmp_input_filename, sizeof(tmp_input_filename), "/tmp/%s%d",
+    mi->jobid, mi->mail_point);
+
+  if (fork())
+    {
+    /* let the child handle things */
+    set_task(WORK_Timed, time(NULL) + TEMPORARY_FILE_LIFE_SPAN, remove_temporary_file, 
+             strdup(tmp_input_filename), FALSE);
+    free_mail_info(mi);
+    return(NULL);
+    }
+
+  /* CHILD */
+
+  /* close all open network sockets */
+  net_close(-1);
   
   /* Who is mail from, if SRV_ATR_mailfrom not set use default */
   get_svr_attr_str(SRV_ATR_mailfrom, (char **)&mailfrom);
@@ -212,111 +338,32 @@ void *send_the_mail(
     mailfrom = PBS_DEFAULT_MAIL;
     }
 
-  /* mail subject line formating statement */
-  get_svr_attr_str(SRV_ATR_MailSubjectFmt, (char **)&subjectfmt);
-  if (subjectfmt == NULL)
-    {
-    subjectfmt = "PBS JOB %i";
-    }
+  write_the_temporary_input_file(tmp_input_filename, mi);
 
-  /* mail body formating statement */
-  get_svr_attr_str(SRV_ATR_MailBodyFmt, &bodyfmt);
-  if (bodyfmt == NULL)
-    {
-    add_body_info(bodyfmtbuf, mi);
-    bodyfmt = bodyfmtbuf;
-    }
-
-  /* setup sendmail command line with -f from_whom */
-  cmdbuf_len = strlen(SENDMAIL_CMD) + strlen(mailfrom) + strlen(mi->mailto) + 6;
-
-  if ((cmdbuf = (char *)calloc(1, cmdbuf_len)) == NULL)
-    {
-    char tmpBuf[LOG_BUF_SIZE];
-
-    snprintf(tmpBuf,sizeof(tmpBuf),
-      "Unable to popen() command '%s' for writing: '%s' (error %d)\n",
-      SENDMAIL_CMD,
-      strerror(errno),
-      errno);
-    log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      mi->jobid,
-      tmpBuf);
-  
-    free_mail_info(mi);
-
-    return(NULL);
-    }
-
-  snprintf(cmdbuf, cmdbuf_len, "%s -f %s %s",
-    SENDMAIL_CMD, mailfrom, mi->mailto);
-
-  outmail = popen(cmdbuf, "w");
-
-  if (outmail == NULL)
-    {
-    char tmpBuf[LOG_BUF_SIZE];
-
-    snprintf(tmpBuf,sizeof(tmpBuf),
-      "Unable to popen() command '%s' for writing: '%s' (error %d)\n",
-      cmdbuf,
-      strerror(errno),
-      errno);
-    log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      mi->jobid,
-      tmpBuf);
-
-    free_mail_info(mi);
-    free(cmdbuf);
-
-    return(NULL);
-    }
-
-  /* Pipe in mail headers: To: and Subject: */
-  fprintf(outmail, "To: %s\n", mi->mailto);
-
-  fprintf(outmail, "Subject: ");
-  svr_format_job(outmail, mi, subjectfmt);
-  fprintf(outmail, "\n");
-
-  /* Set "Precedence: bulk" to avoid vacation messages, etc */
-  fprintf(outmail, "Precedence: bulk\n\n");
-
-  /* Now pipe in the email body */
-  svr_format_job(outmail, mi, bodyfmt);
-
-  errno = 0;
-  if ((i = pclose(outmail)) != 0)
-    {
-    char tmpBuf[LOG_BUF_SIZE];
-
-    snprintf(tmpBuf,sizeof(tmpBuf),
-      "Email '%c' to %s failed: Child process '%s' %s %d (errno %d:%s)\n",
-      mi->mail_point,
-      mi->mailto,
-      cmdbuf,
-      ((WIFEXITED(i)) ? ("returned") : ((WIFSIGNALED(i)) ? ("killed by signal") : ("croaked"))),
-      ((WIFEXITED(i)) ? (WEXITSTATUS(i)) : ((WIFSIGNALED(i)) ? (WTERMSIG(i)) : (i))),
-      errno,
-      strerror(errno));
-    log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      mi->jobid,
-      tmpBuf);
-    }
-  else if (LOGLEVEL >= 4)
-    {
-    log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      mi->jobid,
-      "Email sent successfully\n");
-    }
-
-  free_mail_info(mi);
-  free(cmdbuf);
+  sendmail_args[0] = strdup("-f");
+  sendmail_args[1] = strdup(mailfrom);
+  sendmail_args[2] = strdup(mi->mailto);
+  sendmail_args[3] = NULL;
     
+  free_mail_info(mi);
+
+  if ((fd = open(tmp_input_filename, O_RDONLY)) >= 0)
+    {
+    // make sure that we're > 3 at this point 
+    FDMOVE(fd);
+
+    // make this stdin for the job
+    close(0);
+
+    dup(fd);
+
+    execv(SENDMAIL_CMD, sendmail_args);
+    }
+
+  exit(0);
+  
+  /* NOT REACHED */
+
   return(NULL);
   } /* END send_the_mail() */
 
@@ -324,11 +371,11 @@ void *send_the_mail(
 
 int add_fileinfo(
 
-  const char       *attrVal,                  /* I */      
-        char      **filename,                 /* O */
-        mail_info  *mi,                       /* I/O */
-  const pbs_attribute job_attr[JOB_ATR_LAST], /* I */
-  const char       *memory_err)               /* I */
+  const char           *attrVal,                  /* I */      
+  char                **filename,                 /* O */
+  mail_info            *mi,                       /* I/O */
+  const pbs_attribute   job_attr[JOB_ATR_LAST], /* I */
+  const char           *memory_err)               /* I */
 
   {
   char *attributeValue = (char *)attrVal;

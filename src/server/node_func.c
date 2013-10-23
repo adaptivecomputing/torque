@@ -55,7 +55,6 @@
 #include "work_task.h"
 #include "net_cache.h"
 #include "ji_mutex.h"
-#include "svr_task.h" /* set_task */
 #include "execution_slot_tracker.hpp"
 #include "alps_functions.h"
 

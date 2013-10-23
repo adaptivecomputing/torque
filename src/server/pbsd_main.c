@@ -140,7 +140,6 @@
 #include "ji_mutex.h"
 #include "job_route.h" /* queue_route */
 #include "exiting_jobs.h"
-#include "svr_task.h"
 
 #define TASK_CHECK_INTERVAL      10
 #define HELLO_WAIT_TIME          600

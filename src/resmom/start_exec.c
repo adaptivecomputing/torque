@@ -387,12 +387,6 @@ enum csa_chk_cmd
 
 #endif /* ENABLE_CSA */
 
-#define FDMOVE(fd) if (fd < 3) { \
-    int hold = fcntl(fd,F_DUPFD,3); \
-    close(fd); \
-    fd = hold; \
-    }
-
 
 int create_command(
 
@@ -3582,7 +3576,7 @@ void set_job_script_as_stdin(
     {
     close(0);
     
-    if(dup(script_in) > 0)
+    if (dup(script_in) > 0)
       {
       close(script_in);
       }

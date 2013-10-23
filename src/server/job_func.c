@@ -148,7 +148,6 @@
 #include "issue_request.h" /* release_req */
 #include "ji_mutex.h"
 #include "user_info.h"
-#include "svr_task.h"
 #include "mutex_mgr.hpp"
 #include "job_route.h" /* job_route */
 
