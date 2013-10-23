@@ -262,6 +262,7 @@ PbsErrClient(PBSE_SERVER_BUSY, (char *)"Server busy. Currently no available thre
 PbsErrClient(PBSE_CLIENT_CONN_NOT_FOUND, (char *)"Client connection not found. trqauthd unable to authorize user. Possible transient failure. Please try again")
 PbsErrClient(PBSE_CANNOT_RESOLVE, (char *)"Could not resolve host name")
 PbsErrClient(PBSE_DOMAIN_SOCKET_FAULT, (char *)"could not connect to trqauthd")
+PbsErrClient(PBSE_JOB_NOT_IN_QUEUE, (char *)"Job not found in queue.")
 
 /* pbs client errors ceiling (max_client_err + 1) */
 PbsErrClient(PBSE_CEILING,           (char*)0)
