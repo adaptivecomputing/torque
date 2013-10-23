@@ -693,9 +693,8 @@ int svr_dequejob(
       }
     if (pque == NULL)
       {
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-      log_err(PBSE_JOBNOTFOUND, __func__, "Job has no queue");
-      return(PBSE_JOBNOTFOUND);
+      log_err(PBSE_JOB_NOT_IN_QUEUE, __func__, "Job has no queue");
+      return(PBSE_JOB_NOT_IN_QUEUE);
       }
     }
   else
