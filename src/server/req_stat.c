@@ -123,7 +123,6 @@
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
 #include "unistd.h"
-#include "svr_task.h"
 
 /* Global Data Items: */
 

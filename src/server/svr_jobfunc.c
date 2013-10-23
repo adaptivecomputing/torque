@@ -140,7 +140,6 @@
 #include "ji_mutex.h"
 #include "user_info.h"
 #include "svr_jobfunc.h"
-#include "svr_task.h"
 #include "job_route.h" /*remove_procct */
 #include "mutex_mgr.hpp"
 #include <string>

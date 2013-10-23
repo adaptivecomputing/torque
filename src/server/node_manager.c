@@ -132,7 +132,6 @@
 #include "net_cache.h"
 #include "ji_mutex.h"
 #include "alps_constants.h"
-#include "svr_task.h"
 #include "mutex_mgr.hpp"
 
 #define IS_VALID_STR(STR)  (((STR) != NULL) && ((STR)[0] != '\0'))

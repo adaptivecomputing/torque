@@ -121,7 +121,6 @@
 #include "queue_recov.h" /* que_recov_xml */
 #include "utils.h"
 #include "queue_recycler.h" /* queue_recycler */
-#include "svr_task.h" /* initialize_task_recycler */
 #include "svr_func.h" /* get_svr_attr_* */
 #include "login_nodes.h"
 #include "track_alps_reservations.h"
@@ -1054,6 +1053,13 @@ int setup_signal_handling()
   if (sigaction(SIGPIPE, &act, &oact) != 0)
     {
     log_err(errno, __func__, "sigaction for PIPE");
+
+    return(2);
+    }
+
+  if (sigaction(SIGCHLD, &act, &oact) != 0)
+    {
+    log_err(errno, __func__, "sigaction for SIGCHLD");
 
     return(2);
     }
