@@ -23,6 +23,9 @@ int  svr_do_schedule = SCH_SCHEDULE_NULL;
 int listener_command = SCH_SCHEDULE_NULL;
 pthread_mutex_t *svr_do_schedule_mutex;
 pthread_mutex_t *listener_command_mutex;
+int listening_socket;
+
+void net_close(int sock) {}
 
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
