@@ -22,6 +22,8 @@
 
 int scheduler_sock=0;
 int scheduler_jobct = 0;
+bool auto_send_hierarchy = true;
+mom_hierarchy_t *mh;
 pthread_mutex_t job_log_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t *reroute_job_mutex;
 pthread_mutex_t log_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
@@ -675,4 +677,9 @@ mom_hierarchy_t *initialize_mom_hierarchy()
   nt->current_node  = -1;
 
   return(nt);
+  }
+
+void parse_mom_hierarchy(int fds)
+  {
+  mh->paths->num++;
   }
