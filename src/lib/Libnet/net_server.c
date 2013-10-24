@@ -1156,8 +1156,8 @@ void net_close_without_mutexes()
   {
   for (int i = 0; i < max_connection; i++)
     {
-    svr_conn[i].cn_oncl = NULL;
-    close_conn(i, TRUE);
+    if (svr_conn[i].cn_active != Idle)
+      close(i);
     }
   }
 
