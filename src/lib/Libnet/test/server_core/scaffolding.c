@@ -7,6 +7,7 @@
 #include "log.h"
 
 const char *msg_daemonname = "unset";
+bool trqauthd_up = true;
 
 void log_get_set_eventclass(int *objclass, SGetter action) {}
 
@@ -53,4 +54,12 @@ void log_get_host_port(char *output, unsigned long size) {}
 int pbs_getaddrinfo(const char *pNode,struct addrinfo *pHints,struct addrinfo **ppAddrInfoOut)
   {
   return(0);
+  }
+
+void log_close(
+
+  int msg)  /* BOOLEAN - write close message */
+
+  {
+  return;
   }

@@ -148,12 +148,6 @@ job *next_job(struct all_jobs *aj, int *iter)
   exit(1);
   }
 
-char *prefix_std_file(job *pjob, dynamic_string *ds, int key)
-  {
-  fprintf(stderr, "The call to prefix_std_file to be mocked!!\n");
-  exit(1);
-  }
-
 void *get_next(list_link pl, char *file, int line)
   {
   fprintf(stderr, "The call to get_next to be mocked!!\n");
@@ -247,12 +241,6 @@ void replace_attr_string(struct pbs_attribute *attr, char *newval)
 job *job_alloc(void)
   {
   fprintf(stderr, "The call to job_alloc to be mocked!!\n");
-  exit(1);
-  }
-
-char *add_std_filename(job *pjob, char * path, int key, dynamic_string *ds)
-  {
-  fprintf(stderr, "The call to add_std_filename to be mocked!!\n");
   exit(1);
   }
 

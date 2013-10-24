@@ -11,7 +11,7 @@ AM_LDFLAGS = @CHECK_LIBS@ $(lib_LTLIBRARIES) $(AM_LIBS)
 check_PROGRAMS = test_job_attr_def
 
 libtest_job_attr_def_la_SOURCES = scaffolding.c $(PROG_ROOT)/job_attr_def.c
-libtest_job_attr_def_la_LDFLAGS = @CHECK_LIBS@ $(AM_LIBS) -shared
+libtest_job_attr_def_la_LDFLAGS = @CHECK_LIBS@ $(AM_LIBS) -shared -lgcov
 
 test_job_attr_def_SOURCES = test_job_attr_def.c
 

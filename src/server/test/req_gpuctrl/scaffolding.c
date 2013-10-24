@@ -46,8 +46,8 @@ int svr_connect(
 int gpu_entry_by_id(
 
   struct pbsnode *pnode,  /* I */
-  char   *gpuid,
-  int    get_empty)
+  const char     *gpuid,
+  int             get_empty)
   
   {
   return(0);

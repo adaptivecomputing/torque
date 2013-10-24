@@ -15,6 +15,11 @@ void log_event(int eventtype, int objclass, const char *objname, const char *tex
   exit(1);
   }
 
+bool log_available(int eventtype)
+  {
+  return true;
+  }
+
 int pbs_getaddrinfo(
 
   const char       *pNode,

@@ -10,7 +10,7 @@
 
 #include "pbs_nodes.h" /* pbs_nodes, node_check_info, node_iterator, all_nodes */
 #include "attribute.h" /* svrattrl, struct  */
-#include "svr_task.h"
+#include "work_task.h"
 
 #define HOST_NAME_MAX 255
 
