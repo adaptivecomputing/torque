@@ -109,6 +109,7 @@
 
 extern void net_close (int);
 extern void svr_format_job (FILE *, mail_info *, const char *);
+extern int  listening_socket;
 
 /* Global Data */
 #define TEMPORARY_FILE_LIFE_SPAN 15
@@ -317,6 +318,10 @@ void *send_the_mail(
 
   /* close all open network sockets */
   net_close(-1);
+
+  // this socket isn't in the connections table so it doesn't get closed by net_close().
+  // the connections table has it marked as idle so it doesn't call close()
+  close(listening_socket);
   
   /* Who is mail from, if SRV_ATR_mailfrom not set use default */
   get_svr_attr_str(SRV_ATR_mailfrom, (char **)&mailfrom);
