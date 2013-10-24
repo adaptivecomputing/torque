@@ -580,8 +580,10 @@ void svr_mailowner(
         {
         if ((strlen(mailto) + strlen(pas->as_string[i]) + 2) < sizeof(mailto))
           {
+          if (mailto[0] != '\0')
+            strcat(mailto, ",");
+
           strcat(mailto, pas->as_string[i]);
-          strcat(mailto, ",");
           }
         }
       }
