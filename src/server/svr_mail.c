@@ -114,7 +114,7 @@
 
 /* External Functions Called */
 
-extern void net_close (int);
+extern void net_close_without_mutexes ();
 extern void svr_format_job (FILE *, mail_info *, const char *);
 extern int  listening_socket;
 
@@ -333,9 +333,9 @@ void *send_the_mail(
     /* CHILD */
 
     /* close all open network sockets */
-    net_close(-1);
+    net_close_without_mutexes();
 
-    // this socket isn't in the connections table so it doesn't get closed by net_close().
+    // this socket isn't in the connections table so it doesn't get closed by net_close_without_mutexes().
     // the connections table has it marked as idle so it doesn't call close()
     close(listening_socket);
 
