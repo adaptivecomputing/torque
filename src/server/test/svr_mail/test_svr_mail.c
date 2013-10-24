@@ -68,7 +68,7 @@ START_TEST(test_with_default_files_when_complete)
   snprintf(correct_errfilepath, sizeof(correct_errfilepath), "Error_Path: %s", errpath);
   svr_mailowner(&pjob, MAIL_END, MAIL_NORMAL, mailbuf);
   fp = fopen("/tmp/mail.out", "r");
-  /* if fp is null, no email program was set hence no test */
+  fail_unless((fp != NULL), "No output file was found");
   if (fp)
     {
     while (fgets(buf, sizeof(buf), fp) != NULL)
@@ -89,7 +89,7 @@ START_TEST(test_with_default_files_when_complete)
 
   svr_mailowner_with_message(&pjob, MAIL_END, MAIL_NORMAL, mailbuf,msgbuf);
   fp = fopen("/tmp/mail.out", "r");
-  /* if fp is null, no email program was set hence no test */
+  fail_unless((fp != NULL), "No output file was found");
   if (fp)
     {
     while (fgets(buf, sizeof(buf), fp) != NULL)
@@ -133,7 +133,7 @@ START_TEST(test_with_oe_when_complete)
   snprintf(correct_errfilepath, sizeof(correct_errfilepath), "Error_Path: %s", outpath);
   svr_mailowner(&pjob, MAIL_END, MAIL_NORMAL, mailbuf);
   fp = fopen("/tmp/mail.out", "r");
-  /* if fp is null, no email program was set hence no test */
+  fail_unless((fp != NULL), "No output file was found");
   if (fp)
     {
     while (fgets(buf, sizeof(buf), fp) != NULL)
@@ -154,7 +154,7 @@ START_TEST(test_with_oe_when_complete)
 
   svr_mailowner_with_message(&pjob, MAIL_END, MAIL_NORMAL, mailbuf,msgbuf);
   fp = fopen("/tmp/mail.out", "r");
-  /* if fp is null, no email program was set hence no test */
+  fail_unless((fp != NULL), "No output file was found");
   if (fp)
     {
     while (fgets(buf, sizeof(buf), fp) != NULL)
@@ -199,7 +199,7 @@ START_TEST(test_with_eo_when_complete)
   snprintf(correct_errfilepath, sizeof(correct_errfilepath), "Error_Path: %s", errpath);
   svr_mailowner(&pjob, MAIL_END, MAIL_NORMAL, mailbuf);
   fp = fopen("/tmp/mail.out", "r");
-  /* if fp is null, no email program was set hence no test */
+  fail_unless((fp != NULL), "No output file was found");
   if (fp)
     {
     while (fgets(buf, sizeof(buf), fp) != NULL)
@@ -220,7 +220,7 @@ START_TEST(test_with_eo_when_complete)
 
   svr_mailowner_with_message(&pjob, MAIL_END, MAIL_NORMAL, mailbuf,msgbuf);
   fp = fopen("/tmp/mail.out", "r");
-  /* if fp is null, no email program was set hence no test */
+  fail_unless((fp != NULL), "No output file was found");
   if (fp)
     {
     while (fgets(buf, sizeof(buf), fp) != NULL)

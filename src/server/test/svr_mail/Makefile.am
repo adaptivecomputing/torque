@@ -1,6 +1,6 @@
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ --coverage `xml2-config --cflags`
+AM_CFLAGS = -g -DTEST_FUNCTION -DUT_SENDMAIL_CMD=\"./fakemail.sh\" -I${PROG_ROOT}/ --coverage `xml2-config --cflags`
 AM_LIBS = `xml2-config --libs`
 
 lib_LTLIBRARIES = libsvr_mail.la
