@@ -2192,6 +2192,30 @@ int mom_over_limit(
 
 
 
+/*
+ * job_expected_resc_found: logs an error if an expected resource was not found
+ */
+int job_expected_resc_found(
+
+  const resource *pres,
+  const resource_def  *rd,
+  const char *jobid)
+
+  {
+  if (!pres)
+    {
+    char log_buf[2048];
+    snprintf(log_buf, sizeof(log_buf), "job %s missing expected resource %s for resource usage calculation",
+      jobid, rd->rs_name);
+    log_err(-1, __func__, log_buf);
+    return -1;
+    }
+  return PBSE_NONE;
+  }
+
+
+
+
 
 /*
  * Update the job attribute for resources used.
@@ -2293,7 +2317,8 @@ int mom_set_use(
 
   pres = find_resc_entry(at, rd);
 
-  assert(pres != NULL);
+  if (job_expected_resc_found(pres, rd, pjob->ji_qs.ji_jobid))
+	return -1;
 
   lp = (unsigned long *) & pres->rs_value.at_val.at_long;
 
@@ -2309,7 +2334,8 @@ int mom_set_use(
 
   pres = find_resc_entry(at, rd);
 
-  assert(pres != NULL);
+  if (job_expected_resc_found(pres, rd, pjob->ji_qs.ji_jobid))
+	return -1;
 
   lp = &pres->rs_value.at_val.at_size.atsv_num;
 
@@ -2325,7 +2351,8 @@ int mom_set_use(
 
   pres = find_resc_entry(at, rd);
 
-  assert(pres != NULL);
+  if (job_expected_resc_found(pres, rd, pjob->ji_qs.ji_jobid))
+	return -1;
 
   /* NOTE: starting jobs can come through here before stime is recorded */
   if (pjob->ji_qs.ji_stime == 0)
@@ -2342,7 +2369,8 @@ int mom_set_use(
 
   pres = find_resc_entry(at, rd);
 
-  assert(pres != NULL);
+  if (job_expected_resc_found(pres, rd, pjob->ji_qs.ji_jobid))
+	return -1;
 
   lp = &pres->rs_value.at_val.at_size.atsv_num;
 
