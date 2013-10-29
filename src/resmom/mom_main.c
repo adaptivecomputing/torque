@@ -6007,7 +6007,7 @@ void main_loop(void)
 
     /* wait_request does a select and then calls the connection's cn_func for sockets with data */
 
-    if (wait_request(tmpTime, NULL) != 0)
+    if (wait_request(tmpTime, NULL,-1) != 0)
       {
       if (errno == EBADF)
         {
@@ -6558,7 +6558,7 @@ int resend_compose_reply(
   struct tcp_chan *chan = NULL;
 
   np = &ici->np;
-  stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
+  stream = tcp_connect_sockaddr_or_read((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
   
   if (IS_VALID_STREAM(stream))
     {
@@ -6597,7 +6597,7 @@ int resend_kill_job_reply(
   struct tcp_chan *chan = NULL;
         
   np = &kj->ici->np;
-  stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
+  stream = tcp_connect_sockaddr_or_read((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
   
   if (IS_VALID_STREAM(stream))
     {
@@ -6649,7 +6649,7 @@ int resend_spawn_task_reply(
   int      ret = -1;
   hnodent *np = &st->ici->np;
   struct tcp_chan *chan = NULL;
-  int      stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
+  int      stream = tcp_connect_sockaddr_or_read((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
 
   if (IS_VALID_STREAM(stream))
     {
@@ -6691,7 +6691,7 @@ int resend_obit_task_reply(
   int              ret = -1;
   hnodent         *np = &ot->ici->np;
   struct tcp_chan *chan = NULL;
-  int              stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
+  int              stream = tcp_connect_sockaddr_or_read((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
 
   if (IS_VALID_STREAM(stream))
     {
@@ -6740,7 +6740,7 @@ void resend_things()
 
   while ((mc = (resend_momcomm *)next_thing(things_to_resend, &iter)) != NULL)
     {
-    if (time_now - mc->resend_time < RESEND_INTERVAL)
+    if (time_now < mc->resend_time)
       continue;
 
     ret = -1;
@@ -6795,7 +6795,7 @@ void resend_things()
       free(mc);
       }
     else
-      mc->resend_time = time_now;
+      mc->resend_time = time_now + RESEND_INTERVAL;
     } /* END for each resendable thing */
   } /* END resend_things() */
 
@@ -6803,10 +6803,11 @@ void resend_things()
 
 int add_to_resend_things(
 
-  resend_momcomm *mc)
+  resend_momcomm *mc,
+  int initialSendTime)
 
   {
-  mc->resend_time = time(NULL);
+  mc->resend_time = time(NULL) + initialSendTime;
   return(insert_thing(things_to_resend, mc));
   } /* END add_to_resend_things() */
 

@@ -263,6 +263,7 @@ PbsErrClient(PBSE_CLIENT_CONN_NOT_FOUND, (char *)"Client connection not found. t
 PbsErrClient(PBSE_CANNOT_RESOLVE, (char *)"Could not resolve host name")
 PbsErrClient(PBSE_DOMAIN_SOCKET_FAULT, (char *)"could not connect to trqauthd")
 PbsErrClient(PBSE_JOB_NOT_IN_QUEUE, (char *)"Job not found in queue.")
+PbsErrClient(PBSE_READY_TO_WRITE, (char *)"Socket is ready to be written to.")
 
 /* pbs client errors ceiling (max_client_err + 1) */
 PbsErrClient(PBSE_CEILING,           (char*)0)

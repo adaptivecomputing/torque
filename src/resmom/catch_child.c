@@ -2058,7 +2058,7 @@ int send_job_obit_to_ms(
       else
         kj->node_id = -1;
       
-      add_to_resend_things(mc);
+      add_to_resend_things(mc,RESEND_INTERVAL);
       }
     
     if (LOGLEVEL >= 3)

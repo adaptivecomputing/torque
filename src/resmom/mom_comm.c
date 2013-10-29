@@ -785,7 +785,7 @@ int im_compose(
 
 
 /**
- * Send a message (command = com) to all the other MOMs in the job -> pjob.
+ * Queue up a message (command = com) to be sent to all the other MOMs in the job -> pjob.
  *
  * @see scan_for_exiting() - parent - report to sisters upon job completion
  * @see examine_all_polled_jobs() - parent - poll job status info
@@ -806,9 +806,6 @@ int send_sisters(
   {
   int              i;
   int              num;
-  int              ret = PBSE_NONE;
-  int              local_socket;
-  struct tcp_chan *local_chan = NULL;
   int              job_radix;
   int              loop_limit;
   eventent        *ep;
@@ -924,73 +921,18 @@ int send_sisters(
       continue;
       }
 
-    local_socket = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
-    
-    if (IS_VALID_STREAM(local_socket) == FALSE)
+    if ((mc = (resend_momcomm *)calloc(1, sizeof(resend_momcomm))) != NULL)
       {
-      if ((mc = (resend_momcomm *)calloc(1, sizeof(resend_momcomm))) != NULL)
+      mc->mc_type = COMPOSE_REPLY;
+      mc->mc_struct = create_compose_reply_info(pjob->ji_qs.ji_jobid, cookie, np, com, TM_NULL_EVENT, TM_NULL_TASK);
+
+      if (mc->mc_struct == NULL)
+        free(mc);
+      else
         {
-        mc->mc_type = COMPOSE_REPLY;
-        mc->mc_struct = create_compose_reply_info(pjob->ji_qs.ji_jobid, cookie, np, com, TM_NULL_EVENT, TM_NULL_TASK);
-
-        if (mc->mc_struct == NULL)
-          free(mc);
-        else
-          add_to_resend_things(mc);
+        add_to_resend_things(mc,0);
+        num++;
         }
-
-      snprintf(log_buffer, sizeof(log_buffer), "%s:  cannot open tcp connection to sister #%d (%s)",
-        __func__,
-        i,
-        (np->hn_host != NULL) ? np->hn_host : "NULL");
-      
-      log_record(PBSEVENT_ERROR,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
-      
-      continue;
-      }
-
-    if ((local_chan = DIS_tcp_setup(local_socket)) == NULL)
-      {
-      }
-    else if ((ret = im_compose(local_chan,pjob->ji_qs.ji_jobid,cookie,com,ep->ee_event,TM_NULL_TASK)) == DIS_SUCCESS)
-      {
-      if ((ret = DIS_tcp_wflush(local_chan)) != DIS_SUCCESS)
-        {
-        sprintf(log_buffer, "%s:DIS_tcp_wflush failed", __func__);
-        log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,log_buffer);
-        }
-      }
-
-    close(local_socket);
-
-    if (local_chan != NULL)
-      DIS_tcp_cleanup(local_chan);
-
-    if (ret != DIS_SUCCESS)
-      {
-      if ((mc = (resend_momcomm *)calloc(1, sizeof(resend_momcomm))) != NULL)
-        {
-        mc->mc_type = COMPOSE_REPLY;
-        mc->mc_struct = create_compose_reply_info(pjob->ji_qs.ji_jobid, cookie, np, com, TM_NULL_EVENT, TM_NULL_TASK);
-
-        if (mc->mc_struct == NULL)
-          free(mc);
-        else
-          add_to_resend_things(mc);
-        }
-
-      snprintf(log_buffer, sizeof(log_buffer),
-        "%s:  cannot compose message to sister #%d (%s) - %d",
-        __func__, i, (np->hn_host != NULL) ? np->hn_host : "NULL", ret);
-
-      log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
-
-      np->hn_sister = SISTER_EOF;
-      }
-    else
-      {
-      np->hn_sister = SISTER_OKAY;
-      num++;
       }
     }  /* END for (i) */
 
@@ -999,7 +941,7 @@ int send_sisters(
 
 
 /**
- * Send a message (command = com) to Mother Superior in the job -> pjob.
+ * Queue a message (command = com) to be sent to Mother Superior in the job -> pjob.
  *
  * @see examine_all_polled_jobs() - parent - poll job status info
  * @see exec_bail() - parent - abort parallel job
@@ -1016,9 +958,6 @@ int send_ms(
 
   {
   int              num;
-  int              ret = PBSE_NONE;
-  int              local_socket;
-  struct tcp_chan *local_chan = NULL;
   char            *cookie;
   resend_momcomm  *mc;
   hnodent        *np;
@@ -1074,72 +1013,19 @@ int send_ms(
     return(0);
     }
 
-  local_socket = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
-
-  if (IS_VALID_STREAM(local_socket) == FALSE)
+  if ((mc = (resend_momcomm *)calloc(1, sizeof(resend_momcomm))) != NULL)
     {
-    if ((mc = (resend_momcomm *)calloc(1, sizeof(resend_momcomm))) != NULL)
+    mc->mc_type = COMPOSE_REPLY;
+    mc->mc_struct = create_compose_reply_info(pjob->ji_qs.ji_jobid, cookie, np, com, TM_NULL_EVENT, TM_NULL_TASK);
+
+    if (mc->mc_struct == NULL)
+      free(mc);
+    else
       {
-      mc->mc_type = COMPOSE_REPLY;
-      mc->mc_struct = create_compose_reply_info(pjob->ji_qs.ji_jobid, cookie, np, com, TM_NULL_EVENT, TM_NULL_TASK);
-
-      if (mc->mc_struct == NULL)
-        free(mc);
-      else
-        add_to_resend_things(mc);
-      }
-
-    snprintf(log_buffer, sizeof(log_buffer), "%s:  cannot open tcp connection to sister (%s)",
-      __func__,
-      (np->hn_host != NULL) ? np->hn_host : "NULL");
-
-    log_record(PBSEVENT_ERROR,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
-
-    return(0);
-    }
-
-  if ((local_chan = DIS_tcp_setup(local_socket)) == NULL)
-    {
-    }
-  else if ((ret = im_compose(local_chan,pjob->ji_qs.ji_jobid,cookie,com,0,TM_NULL_TASK)) == DIS_SUCCESS)
-    {
-    if ((ret = DIS_tcp_wflush(local_chan)) != DIS_SUCCESS)
-      {
-      sprintf(log_buffer, "%s:DIS_tcp_wflush failed", __func__);
-      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,log_buffer);
+      add_to_resend_things(mc,0);
+      num++;
       }
     }
-  close(local_socket);
-  if (local_chan != NULL)
-    DIS_tcp_cleanup(local_chan);
-
-  if (ret != DIS_SUCCESS)
-    {
-    if ((mc = (resend_momcomm *)calloc(1, sizeof(resend_momcomm))) != NULL)
-      {
-      mc->mc_type = COMPOSE_REPLY;
-      mc->mc_struct = create_compose_reply_info(pjob->ji_qs.ji_jobid, cookie, np, com, TM_NULL_EVENT, TM_NULL_TASK);
-
-      if (mc->mc_struct == NULL)
-        free(mc);
-      else
-        add_to_resend_things(mc);
-      }
-
-    snprintf(log_buffer, sizeof(log_buffer),
-      "%s:  cannot compose message to sister (%s) - %d",
-      __func__,(np->hn_host != NULL) ? np->hn_host : "NULL", ret);
-
-    log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
-
-    np->hn_sister = SISTER_EOF;
-    }
-  else
-    {
-    np->hn_sister = SISTER_OKAY;
-    num++;
-    }
-
   return(num);
   }  /* END send_ms() */
 
@@ -2083,7 +1969,7 @@ void send_im_error(
         if (mc->mc_struct == NULL)
           free(mc);
         else
-          add_to_resend_things(mc);
+          add_to_resend_things(mc,RESEND_INTERVAL);
         }
 
       snprintf(log_buffer, sizeof(log_buffer),
@@ -2178,7 +2064,7 @@ int reply_to_join_job_as_sister(
         {
         mc->mc_type = COMPOSE_REPLY;
         mc->mc_struct = ici;
-        add_to_resend_things(mc);
+        add_to_resend_things(mc,RESEND_INTERVAL);
         }
       else
         free(mc);
@@ -3087,7 +2973,7 @@ int im_spawn_task(
                 {
                 st->ti_task = ptask->ti_qs.ti_task;
                 mc->mc_struct = st;
-                add_to_resend_things(mc);
+                add_to_resend_things(mc,RESEND_INTERVAL);
                 }
               }
             else
@@ -3245,7 +3131,7 @@ int im_signal_task(
       else
         {
         mc->mc_type = COMPOSE_REPLY;
-        add_to_resend_things(mc);
+        add_to_resend_things(mc,RESEND_INTERVAL);
         }
       }
     }
@@ -3364,7 +3250,7 @@ int im_obit_task(
               mc->mc_type = OBIT_TASK_REPLY;
               ot->ti_exitstat = ptask->ti_qs.ti_exitstat;
               mc->mc_struct = ot;
-              add_to_resend_things(mc);
+              add_to_resend_things(mc,RESEND_INTERVAL);
               }
             }
           }

@@ -554,7 +554,8 @@ int check_network_port(
 int wait_request(
 
   time_t  waittime,   /* I (seconds) */
-  long   *SState)     /* I (optional) */
+  long   *SState,     /* I (optional) */
+  int    writeFd)      /* I fd we are trying to write on. */
 
   {
   int             i;
@@ -567,8 +568,7 @@ int wait_request(
   int             SetSize = 0;
   u_long   		  *SocketAddrSet = NULL;
   u_long          *SocketPortSet = NULL;
-
-
+  fd_set         wfd;
   char            tmpLine[1024];
   char            ipaddrStr[INET_ADDRSTRLEN];
   struct timeval  timeout;
@@ -609,7 +609,33 @@ int wait_request(
   memcpy(SocketPortSet,GlobalSocketPortSet,SetSize);
 
   pthread_mutex_unlock(global_sock_read_mutex);
-  n = select(MaxNumDescriptors, SelectSet, (fd_set *)0, (fd_set *)0, &timeout);
+
+  FD_ZERO(&wfd);
+  if(writeFd != -1)
+    {
+    FD_SET(writeFd, &wfd);
+    }
+
+
+  n = select(MaxNumDescriptors, SelectSet, &wfd, (fd_set *)0, &timeout);
+
+  if((n >= 0)&&(writeFd != -1))
+    {
+    if(FD_ISSET(writeFd,&wfd))
+      {
+      free(SelectSet);
+      free(SocketAddrSet);
+      free(SocketPortSet);
+      return PBSE_READY_TO_WRITE;
+      }
+    if(n == 0)
+      {
+      free(SelectSet);
+      free(SocketAddrSet);
+      free(SocketPortSet);
+      return PBSE_TIMEOUT;
+      }
+    }
 
   if (n == -1)
     {

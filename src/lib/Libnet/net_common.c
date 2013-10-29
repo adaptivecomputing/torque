@@ -317,7 +317,7 @@ int socket_connect(
   remote.sin_family = family;
   memcpy(&remote.sin_addr, dest_addr, dest_addr_len);
   remote.sin_port = htons((unsigned short)dest_port);
-  return socket_connect_addr(local_socket, (struct sockaddr *)&remote, r_size, is_privileged, error_msg);
+  return socket_connect_addr(local_socket, (struct sockaddr *)&remote, r_size, is_privileged, error_msg,false);
   } /* END socket_connect() */
 
 
@@ -332,6 +332,7 @@ int socket_connect(
  * @param remote_size - the size of the memory remote points to
  * @param is_privileged - indicates whether socket is bound to a privileged port or not
  * @param error_msg - pointer to an error msg buffer
+ * @param checkForReads - if true check to see if any reads are pending.
  */
 
 int socket_connect_addr(
@@ -340,7 +341,8 @@ int socket_connect_addr(
   struct sockaddr  *remote,
   size_t            remote_size,
   int               is_privileged,
-  char            **error_msg)
+  char            **error_msg,
+  bool              checkForReads)
 
   {
   int   cntr = 0;
@@ -372,18 +374,37 @@ int socket_connect_addr(
       case EAGAIN:    /* Operation would block */
       case EINTR:     /* Interrupted system call */
 
-        if ((rc = socket_wait_for_write(local_socket)) == PBSE_NONE)
+        if(checkForReads)
           {
-          /* no network failures detected, socket available */
-          break;
-          }
-        else if (rc == PERMANENT_SOCKET_FAIL)
-          {
-          close(local_socket);
-          local_socket = rc;
+          bool isReadyToWrite;
+          bool isWriteError;
 
-          /* do not fall through here */
-          break;
+          rc = socket_wait_for_read_or_write(local_socket,isReadyToWrite,isWriteError);
+          if(isReadyToWrite)
+            break;
+          if((isWriteError)&&(rc == PERMANENT_SOCKET_FAIL))
+            {
+            close(local_socket);
+            local_socket = rc;
+            break;
+            }
+          rc = TRANSIENT_SOCKET_FAIL;
+          }
+        else
+          {
+          if ((rc = socket_wait_for_write(local_socket)) == PBSE_NONE)
+            {
+            /* no network failures detected, socket available */
+            break;
+            }
+          else if (rc == PERMANENT_SOCKET_FAIL)
+            {
+            close(local_socket);
+            local_socket = rc;
+
+            /* do not fall through here */
+            break;
+            }
           }
 
         /* essentially, only fall through for a transient failure */
@@ -542,6 +563,50 @@ int socket_wait_for_write(
 
   return(rc);
   } /* END socket_wait_for_write() */
+
+/*
+ * Wait to write on a socket but be checking the sockets open for reading.
+ * Returns: error code, an error occurred.
+ *          PBSE_READY_TO_WRITE the socket is ready to write on
+ *          PBSE_NONE           no error but the socket is not ready to write on.
+ */
+int socket_wait_for_read_or_write(
+
+  int  socket,              //I Socket to test for writing to.
+  bool &readyToWrite,       //O Set to true if the socket is ready to write.
+  bool &errorIsWriteError)  //O Set to true if the returned error code is an error on the write socket.
+
+  {
+  int            rc = PBSE_NONE;
+  int            sock_errno;
+  socklen_t      len = sizeof(int);
+
+  readyToWrite = false;
+  errorIsWriteError = false;
+  rc = wait_request(pbs_tcp_timeout,NULL,socket);
+  if(rc == PBSE_READY_TO_WRITE)
+    {
+    errorIsWriteError = true;
+    if (((getsockopt(socket, SOL_SOCKET, SO_ERROR, &sock_errno, &len)) == 0) &&
+           (sock_errno == 0))
+      {
+        rc = PBSE_NONE;
+        readyToWrite = true;
+      }
+    else
+      {
+      rc = process_and_save_socket_error(sock_errno);
+      }
+    }
+  else if(rc == PBSE_TIMEOUT)
+    {
+    errorIsWriteError = true;
+    rc = PERMANENT_SOCKET_FAIL;
+    }
+
+  return(rc);
+  } /* END socket_wait_for_write() */
+
 
 
 
