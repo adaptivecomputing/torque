@@ -525,6 +525,7 @@ CXXFLAGS="-g3 -O0"
             --disable-gcc-warnings \
             --disable-qsub-keep-override \
             --with-debug \
+            --without-tcl \
             %{ac_with_scp} %{ac_with_syslog} \
             %{ac_with_munge} %{ac_with_pam} \
             %{ac_with_blcr} %{ac_with_cpuset} %{ac_with_spool} %{?acflags}
