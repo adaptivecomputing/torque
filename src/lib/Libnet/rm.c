@@ -348,7 +348,8 @@ static int startcom(
 
   struct tcp_chan *chan,
   int *local_errno, /* O */
-  int  com)         /* I */
+  int  com,         /* I */
+  int  num_requests) /* I */
 
   {
   int ret;
@@ -361,7 +362,12 @@ static int startcom(
 
     if (ret == DIS_SUCCESS)
       {
-      ret = diswsi(chan, com);
+      ret = diswsi(chan, num_requests);
+
+      if (ret == DIS_SUCCESS)
+        {
+        ret = diswsi(chan, com);
+        }
       }
     }
 
@@ -401,7 +407,7 @@ static int simplecom(
 
   op->len = -1;
 
-  if (startcom(op->chan, local_errno, com) != DIS_SUCCESS)
+  if (startcom(op->chan, local_errno, com,0) != DIS_SUCCESS)
     {
     close(op->chan->sock);
 
@@ -585,7 +591,7 @@ int configrm(
     return(-1 * EINVAL);
     }
 
-  if (startcom(op->chan, local_errno, RM_CMD_CONFIG) != DIS_SUCCESS)
+  if (startcom(op->chan, local_errno, RM_CMD_CONFIG,1) != DIS_SUCCESS)
     {
     return(-1);
     }
@@ -649,17 +655,7 @@ static int doreq(
 
   if (op->len == -1)
     {
-    /* start new message */
-
-    if (startcom(op->chan, &local_errno, RM_CMD_REQUEST) != DIS_SUCCESS)
-      {
-      if (local_errno != 0)
-        return(-1 * local_errno);
-      else
-        return(-1);
-      }
-
-    op->len = 1;
+    return -1; //begin_rm_req needs to be called before this is called.
     }
 
   ret = diswcs(op->chan, line, strlen(line));
@@ -685,7 +681,34 @@ static int doreq(
   }  /* END doreq() */
 
 
+/*
+ * Call prior to calling add_reqerr to set the number of requests to be sent
+ * by add_reqerr.
+ */
+int begin_rm_req(int stream,int *local_errno,int num_requests)
+  {
+  struct out *op;
 
+  if ((op = findout(local_errno, stream)) == NULL)
+    {
+    return(-1);
+    }
+  if (op->len != -1)
+    {
+    return -1; //Channel was already set up.
+    }
+
+  if (startcom(op->chan, local_errno, RM_CMD_REQUEST,num_requests) != DIS_SUCCESS)
+    {
+    if (*local_errno != 0)
+      return(-1 * (*local_errno));
+    else
+      return(-1);
+    }
+
+  op->len = 1;
+  return 0;
+  }
 
 
 /*
