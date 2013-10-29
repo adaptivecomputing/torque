@@ -9,7 +9,6 @@
 #include "list_link.h" /* tlist_head, list_link */
 #include "pbs_job.h" /* job */
 #include "libpbs.h" /* job_file */
-#include "mom_config.h"
 #include "mom_mach.h"
 
 int lockfds = -1;
@@ -25,7 +24,6 @@ char log_buffer[LOG_BUF_SIZE];
 int MOMPrologTimeoutCount;
 uid_t pbsuser;
 gid_t pbsgroup;
-unsigned int     pe_alarm_time = PBS_PROLOG_TIME;
 char *path_epilogp;
 long TJobStartTimeout = 300;
 

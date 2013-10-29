@@ -1,3 +1,4 @@
+#include <string>
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
@@ -188,7 +189,16 @@ void replace_attr_string(struct pbs_attribute *attr, char *newval)
   exit(1);
   }
 
-const char *add_std_filename(job *pjob, char *path, int key, std::string& ds) { return "stdfilename"; }
+char *add_std_filename(
+
+  job            *pjob,
+  char           *path,
+  int             key,
+  dynamic_string *ds)
+
+  {
+  return(strdup("stdfilename"));
+  }
 
 int unlock_queue(struct pbs_queue *the_queue, const char *method_name, const char *msg, int logging)
   {
