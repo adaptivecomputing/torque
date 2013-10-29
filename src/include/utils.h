@@ -103,6 +103,13 @@
 #include "log.h"
 #include "mcom.h"
 
+#define FDMOVE(fd) if (fd < 3) { \
+      int hold = fcntl(fd,F_DUPFD,3); \
+      close(fd); \
+      fd = hold; \
+      }
+
+
 #define MAXLINE 1024
 #ifndef NULL
 #define NULL 0

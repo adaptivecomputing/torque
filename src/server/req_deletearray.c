@@ -15,7 +15,6 @@
 #include "pbs_job.h"
 #include "queue.h"
 #include "pbs_error.h"
-#include "svr_task.h"
 #include "acct.h"
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
@@ -27,8 +26,6 @@
 
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
-
-#include "svr_task.h"
 
 extern int LOGLEVEL;
 extern int  svr_authorize_req(struct batch_request *preq, char *owner, char *submit_host);
