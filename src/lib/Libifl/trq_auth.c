@@ -16,12 +16,12 @@
 #include "pbs_config.h"
 #include "../Libnet/lib_net.h" /* get_hostaddr, socket_* */
 #include "../../include/log.h" /* log event types */
+#include "utils.h"
 #include <stdarg.h>
 #include <string.h>
 #include <string>
 
 #define MAX_RETRIES 5
-#define USER_PWD_RETRIES 3
 
 char         *trq_addr = NULL;
 int           trq_addr_len;
@@ -29,7 +29,7 @@ char         *trq_server_name = NULL;
 int           debug_mode = 0;
 static char   active_pbs_server[PBS_MAXSERVERNAME + 1];
 static int    active_pbs_server_port;
-bool   trqauthd_up = true;
+bool          trqauthd_up = true;
 
 pbs_net_t  trq_server_addr;
 char       trq_hostname[PBS_MAXSERVERNAME + 1];
@@ -605,14 +605,18 @@ int build_active_server_response(
   return(rc);
   }
 
+
+
 int validate_user(
-    int sock,
-    const char *user_name, 
-    int user_pid,
-    char *msg)
+ 
+  int         sock,
+  const char *user_name, 
+  int         user_pid,
+  char       *msg)
+
   {
-  struct ucred cr;
-  socklen_t   cr_size;
+  struct ucred   cr;
+  socklen_t      cr_size;
   struct passwd *user_pwd;
 
   if (msg == NULL)
@@ -631,11 +635,7 @@ int validate_user(
     return(PBSE_SOCKET_FAULT);
     }
 
-  for (int i = 0; i < USER_PWD_RETRIES; i++)
-    {
-    if ((user_pwd = getpwuid(cr.uid)) != NULL)
-      break;
-    }
+  user_pwd = get_password_entry_by_uid(cr.uid);
    
   if (user_pwd == NULL)
     {
