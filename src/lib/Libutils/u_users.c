@@ -11,7 +11,8 @@
 
 #define LDAP_RETRIES 5
 
-
+struct passwd *getpwnam_wrapper(const char *user_name);
+struct passwd *getpwuid_wrapper(uid_t uid);
 
 
 /**
@@ -37,7 +38,7 @@ struct passwd *getpwnam_ext(
 
   while ((pwent == NULL) && (retrycnt != -1) && (retrycnt < LDAP_RETRIES))
     {
-    pwent = getpwnam( user_name );
+    pwent = getpwnam_wrapper( user_name );
 
     /* if the user wasn't found check for any errors to log */
     if (pwent == NULL)
@@ -68,6 +69,29 @@ struct passwd *getpwnam_ext(
   return(pwent);
   } /* END getpwnam_ext() */
 
+
+
+/*
+ * get_password_entry_by_uid()
+ *
+ * calls the getpwuid_wrapper in a loop with 5 retries to 
+ * handle transient LDAP failures.
+ */
+struct passwd *get_password_entry_by_uid(
+
+  uid_t uid)
+
+  {
+  struct passwd *user_pwd = NULL;
+  
+  for (int i = 0; i < LDAP_RETRIES; i++)
+    {
+    if ((user_pwd = getpwuid_wrapper(uid)) != NULL)
+      break;
+    }
+
+  return(user_pwd);
+  } /* get_password_entry_by_uid() */
 
 
 
