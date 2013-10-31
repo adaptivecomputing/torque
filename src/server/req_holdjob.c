@@ -404,7 +404,7 @@ int release_job(
 
   {
   long           old_hold;
-  int            rc = 0;
+  int            rc = PBSE_NONE;
   int            newstate;
   int            newsub;
   char          *pset;
@@ -412,6 +412,10 @@ int release_job(
   char           log_buf[LOCAL_LOG_BUF_SIZE];
 
   pbs_attribute  temphold;
+
+  // this function is meaningless for jobs in exiting or completed
+  if (pjob->ji_qs.ji_state > JOB_STATE_RUNNING)
+    return(PBSE_NONE);
 
   /* cannot do anything until we decode the holds to be set */
 
