@@ -205,13 +205,13 @@ pthread_mutex_t        *node_state_mutex = NULL;
 
 
 
+AvlTree                 ipaddrs_tree = NULL;
 
 
 /**
 **      Modified by Tom Proett <proett@nas.nasa.gov> for PBS.
 */
 
-AvlTree                 ipaddrs = NULL;
 
 
 /**
@@ -227,7 +227,7 @@ struct pbsnode *tfind_addr(
   char         *job_momname)
 
   {
-  struct pbsnode *pn = AVL_find(key,port,ipaddrs);
+  struct pbsnode *pn = AVL_find(key,port,ipaddrs_tree);
 
   if (pn == NULL)
     return(NULL);
@@ -1030,7 +1030,7 @@ void stream_eof(
 
   if (addr != 0)
     {
-    np = AVL_find(addr, port, ipaddrs);
+    np = AVL_find(addr, port, ipaddrs_tree);
     }
 
   if (np == NULL)

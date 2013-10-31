@@ -1975,7 +1975,7 @@ int process_host_name(
   char               *colon;
   unsigned short      rm_port;
   unsigned long       ipaddr;
-  struct addrinfo    *addr_info;
+  struct addrinfo    *addr_info = NULL;
   struct sockaddr_in  sa;
       
   rm_port      = PBS_MANAGER_SERVICE_PORT;

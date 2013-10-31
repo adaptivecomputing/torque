@@ -30,7 +30,7 @@ char *path_nodes_new;
 attribute_def node_attr_def[2];
 int svr_clnodes = 0; 
 struct server server;
-AvlTree ipaddrs = NULL;
+AvlTree ipaddrs_tree = NULL;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 int svr_totnodes = 0; 
 const char *dis_emsg[] = {"No error",

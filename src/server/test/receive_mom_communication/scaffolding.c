@@ -11,7 +11,7 @@
 #include "mutex_mgr.hpp"
 
 int         allow_any_mom;
-AvlTree     ipaddrs = NULL;
+AvlTree     ipaddrs_tree = NULL;
 int         LOGLEVEL;
 const char *dis_emsg[] =
   {
