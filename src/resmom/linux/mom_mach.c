@@ -977,6 +977,9 @@ static int injob(
       }
     pid = getsid(ps->ppid);
 
+    if (pid <= 1) /* pid will be 1 if we are back to pbs_mom. No need to iterate */
+      break;
+
     for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
          ptask != NULL;
          ptask = (task *)GET_NEXT(ptask->ti_jobtask))

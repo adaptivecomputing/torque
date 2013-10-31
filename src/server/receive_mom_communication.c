@@ -99,7 +99,7 @@
 
 
 extern int              allow_any_mom;
-extern AvlTree          ipaddrs;
+extern AvlTree          ipaddrs_tree;
 
 
 job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode);
@@ -358,7 +358,7 @@ int svr_is_request(
 
   ipaddr = args[1];
   
-  if ((node = AVL_find(ipaddr, mom_port, ipaddrs)) != NULL)
+  if ((node = AVL_find(ipaddr, mom_port, ipaddrs_tree)) != NULL)
     {
     lock_node(node, __func__, "AVL_find", LOGLEVEL);
     } /* END if AVL_find != NULL) */
@@ -380,7 +380,7 @@ int svr_is_request(
 
     if (err == PBSE_NONE)
       {
-      node = AVL_find(ipaddr, 0, ipaddrs);
+      node = AVL_find(ipaddr, 0, ipaddrs_tree);
        
       lock_node(node, __func__, "no error", LOGLEVEL);
       }                                                         
@@ -388,7 +388,7 @@ int svr_is_request(
     
   if (node == NULL)
     {
-    /* node not listed in trusted ipaddrs list */
+    /* node not listed in trusted ipaddrs_tree list */
     netaddr_long(args[1], tmp);
     sprintf(msg_buf, "%s:%ld", tmp, args[2]);
     

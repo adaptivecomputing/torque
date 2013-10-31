@@ -75,7 +75,7 @@ extern char            *path_nodestate;
 extern char            *path_nodenote;
 extern int              LOGLEVEL;
 extern attribute_def    node_attr_def[];   /* node attributes defs */
-extern AvlTree          ipaddrs;
+extern AvlTree          ipaddrs_tree;
 extern dynamic_string  *hierarchy_holder;
 
 job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode);
@@ -957,7 +957,7 @@ void effective_node_delete(
       {
       /* del node's IP addresses from tree  */
 
-      ipaddrs = AVL_delete_node( *up, pnode->nd_mom_port, ipaddrs);
+      ipaddrs_tree = AVL_delete_node( *up, pnode->nd_mom_port, ipaddrs_tree);
       } 
 
     if (pnode->nd_addrs != NULL)
@@ -2034,7 +2034,7 @@ int create_pbs_node(
       }
     
     addr = pul[i];
-    ipaddrs = AVL_insert(addr, pnode->nd_mom_port, pnode, ipaddrs);
+    ipaddrs_tree = AVL_insert(addr, pnode->nd_mom_port, pnode, ipaddrs_tree);
     }  /* END for (i) */
 
   if ((rc = setup_node_boards(pnode,pul)) != PBSE_NONE)
@@ -3177,7 +3177,7 @@ int create_partial_pbs_node(
     }
 
   insert_node(&allnodes,pnode);
-  AVL_insert(addr, pnode->nd_mom_port, pnode, ipaddrs);
+  AVL_insert(addr, pnode->nd_mom_port, pnode, ipaddrs_tree);
   
   svr_totnodes++;
   recompute_ntype_cnts();
