@@ -13,6 +13,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       vice versa from the sisters.
   b - TRQ-2280. Save properties added to cray compute nodes in the nodes file if the 
       file is overwritten by pbs_server.
+  b - TRQ-2329. Fix a problem where nodes could be allocated to array subjobs even
+      after the job was deleted.
 
 4.2.5
   e - Remove the mom asking for a job status before sending an obit to pbs_server
