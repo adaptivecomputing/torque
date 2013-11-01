@@ -1,5 +1,9 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
+4.2.7
+  b - TRQ-2329. Fix a problem where nodes could be allocated to array subjobs even
+      after the job was deleted.
+
 4.2.6
   b - TRQ-2273. Job start time is hard coded to 5 minutes. If the prolog takes longer
       than that to run the job will be requeued without killing the prolog. This 

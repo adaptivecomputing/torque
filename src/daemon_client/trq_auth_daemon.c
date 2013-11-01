@@ -327,11 +327,11 @@ int terminate_trqauthd()
                                                              is still waiting for a command before it realizes 
                                                              it is terminated */
     {
-    fprintf(stderr, "\ntrqauthd has been terminated\n");
+    fprintf(stdout, "\ntrqauthd has been terminated\n");
     }
   else
     {
-    fprintf(stderr, "\ntrqauthd has been terminated\n");
+    fprintf(stdout, "\ntrqauthd has been terminated\n");
     }
 
   if (sock != -1)
