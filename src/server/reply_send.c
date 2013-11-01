@@ -39,11 +39,6 @@
 /* External Globals */
 extern char *msg_daemonname;
 
-#ifndef PBS_MOM
-extern all_tasks task_list_event;
-extern int LOGLEVEL;
-#endif /* PBS_MOM */
-
 #define ERR_MSG_SIZE 127
 
 

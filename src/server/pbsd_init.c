@@ -202,7 +202,6 @@ extern char                     server_name[];
 extern tlist_head               svr_newnodes;
 extern std::list<timed_task>    task_list_timed;
 extern pthread_mutex_t          task_list_timed_mutex;
-extern all_tasks                task_list_event;
 task_recycler                   tr;
 extern struct all_jobs          alljobs;
 extern struct all_jobs          array_summary;
@@ -1240,7 +1239,6 @@ int initialize_data_structures_and_mutexes()
   initialize_batch_request_holder();
 
   pthread_mutex_init(&task_list_timed_mutex, NULL);
-  initialize_all_tasks_array(&task_list_event);
 
   initialize_all_jobs_array(&alljobs);
   initialize_all_jobs_array(&array_summary);
