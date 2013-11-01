@@ -524,3 +524,18 @@ void log_record(int eventtype, int objclass, const char *objname, const char *te
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_ext(int eventtype, const char *func_name, const char *msg, int level) {}
 
+int dispatch_timed_task(
+
+  work_task *ptask)
+  
+  {
+  return(0);
+  }
+
+work_task *pop_timed_task(
+
+  time_t  time_now)
+
+  {
+  return(NULL);
+  }
