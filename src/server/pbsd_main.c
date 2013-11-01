@@ -293,7 +293,8 @@ extern hello_container  hellos;
 extern hello_container  failures;
 pthread_mutex_t        *listener_command_mutex;
 tlist_head              svr_newnodes;          /* list of newly created nodes      */
-all_tasks               task_list_timed;
+std::list<timed_task>   task_list_timed;
+pthread_mutex_t         task_list_timed_mutex;
 all_tasks               task_list_event;
 pid_t                   sid;
 
@@ -1035,7 +1036,6 @@ void *check_tasks(void *notUsed)
 
   {
   work_task *ptask;
-  int        iter = -1;
   int        rc = PBSE_NONE;
 
   time_t     time_now;
@@ -1045,28 +1045,19 @@ void *check_tasks(void *notUsed)
   time_now = time(NULL);
   last_task_check_time = time_now;
 
-  while ((ptask = next_task(&task_list_timed, &iter)) != NULL)
+  while ((ptask = pop_timed_task(time_now)) != NULL)
     {
-    if (ptask->wt_event - time_now > 0)
+    rc = dispatch_timed_task(ptask); /* will delete link */
+
+    /* if dispatch_task does not return PBSE_NONE 
+       it is because we have used up our alotment of threads.
+       Break for now and come back to this next time 
+       through the main_loop 
+     */
+    if (rc != PBSE_NONE)
       {
       pthread_mutex_unlock(ptask->wt_mutex);
-
       break;
-      }
-    else
-      {
-      rc = dispatch_task(ptask); /* will delete link */
-
-      /* if dispatch_task does not return PBSE_NONE 
-         it is because we have used up our alotment of threads.
-         Break for now and come back to this next time 
-         through the main_loop 
-       */
-      if (rc != PBSE_NONE)
-        {
-        pthread_mutex_unlock(ptask->wt_mutex);
-        break;
-        }
       }
     }
 

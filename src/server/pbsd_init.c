@@ -196,37 +196,38 @@ extern char *path_checkpoint;
 extern char *path_jobinfo_log;
 
 
-extern int              queue_rank;
-extern char             server_name[];
-extern tlist_head       svr_newnodes;
-extern all_tasks        task_list_timed;
-extern all_tasks        task_list_event;
-task_recycler           tr;
-extern struct all_jobs  alljobs;
-extern struct all_jobs  array_summary;
-extern struct all_jobs  newjobs;
-all_queues              svr_queues;
-job_recycler            recycler;
-queue_recycler          q_recycler;
-hash_map               *exiting_jobs_info;
+extern int                    queue_rank;
+extern char                   server_name[];
+extern tlist_head             svr_newnodes;
+extern std::list<timed_task>  task_list_timed;
+extern pthread_mutex_t        task_list_timed_mutex;
+extern all_tasks              task_list_event;
+task_recycler                 tr;
+extern struct all_jobs        alljobs;
+extern struct all_jobs        array_summary;
+extern struct all_jobs        newjobs;
+all_queues                    svr_queues;
+job_recycler                  recycler;
+queue_recycler                q_recycler;
+hash_map                     *exiting_jobs_info;
 
-dynamic_string         *hierarchy_holder;
-hello_container         hellos;
-hello_container         failures;
+dynamic_string               *hierarchy_holder;
+hello_container               hellos;
+hello_container               failures;
 
-reservation_holder      alps_reservations;
-batch_request_holder    brh;
+reservation_holder            alps_reservations;
+batch_request_holder          brh;
 
-extern pthread_mutex_t *acctfile_mutex;
-pthread_mutex_t        *scheduler_sock_jobct_mutex;
-extern int              scheduler_sock;
-extern int              scheduler_jobct;
-extern pthread_mutex_t *svr_do_schedule_mutex;
-extern pthread_mutex_t *listener_command_mutex;
-extern pthread_mutex_t *node_state_mutex;
-extern pthread_mutex_t *check_tasks_mutex;
-extern pthread_mutex_t *reroute_job_mutex;
-extern mom_hierarchy_t *mh;
+extern pthread_mutex_t       *acctfile_mutex;
+pthread_mutex_t              *scheduler_sock_jobct_mutex;
+extern int                    scheduler_sock;
+extern int                    scheduler_jobct;
+extern pthread_mutex_t       *svr_do_schedule_mutex;
+extern pthread_mutex_t       *listener_command_mutex;
+extern pthread_mutex_t       *node_state_mutex;
+extern pthread_mutex_t       *check_tasks_mutex;
+extern pthread_mutex_t       *reroute_job_mutex;
+extern mom_hierarchy_t       *mh;
 
 extern int a_opt_init;
 
@@ -1242,7 +1243,7 @@ int initialize_data_structures_and_mutexes()
   initialize_recycler();
   initialize_batch_request_holder();
 
-  initialize_all_tasks_array(&task_list_timed);
+  pthread_mutex_init(&task_list_timed_mutex, NULL);
   initialize_all_tasks_array(&task_list_event);
 
   initialize_all_jobs_array(&alljobs);
