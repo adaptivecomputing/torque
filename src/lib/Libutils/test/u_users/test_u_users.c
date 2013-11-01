@@ -7,6 +7,18 @@
 
 #include "pbs_error.h"
 
+struct passwd *get_password_entry_by_uid(uid_t uid);
+extern int uid_i;
+extern int nam_i;
+
+START_TEST(get_password_entry_by_uid_test)
+  {
+  struct passwd *root = get_password_entry_by_uid(0);
+  fail_unless(uid_i == 6);
+  fail_unless(root != NULL);
+  }
+END_TEST
+
 START_TEST(null_check)
   {
   char *user_name = NULL;
@@ -65,6 +77,7 @@ Suite *u_users_suite(void)
 
   tc_core = tcase_create("invalid_user_with_error");
   tcase_add_test(tc_core, invalid_user_with_error);
+  tcase_add_test(tc_core, get_password_entry_by_uid_test);
   suite_add_tcase(s, tc_core);
   return s;
   }

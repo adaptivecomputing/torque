@@ -96,6 +96,7 @@
 #define WORK_TASK_H 1
 
 #include <pthread.h>
+#include <list>
 #include "resizable_array.h"
 
 #define INITIAL_ALL_TASKS_SIZE 4
@@ -124,7 +125,6 @@ int task_is_in_threadpool(struct work_task *ptask);
 
 
 
-
 typedef struct all_tasks
   {
   resizable_array *ra;
@@ -132,6 +132,12 @@ typedef struct all_tasks
   pthread_mutex_t *alltasks_mutex;
   } all_tasks;
 
+
+typedef struct timed_task
+  {
+  work_task *wt;
+  long       task_time;
+  } timed_task;
 
 
 
@@ -153,11 +159,11 @@ typedef struct work_task
 
 void       initialize_all_tasks_array(all_tasks *);
 int        insert_task(all_tasks *, work_task *);
-int        insert_task_before(all_tasks *,work_task *before,work_task *after);
-int        insert_task_first(all_tasks *,work_task *);
 int        remove_task(all_tasks *,work_task *);
 int        has_task(all_tasks *);
-work_task *next_task(all_tasks *,int *);
+int        dispatch_timed_task(work_task *);
+work_task *pop_timed_task(time_t time_now);
+int        insert_timed_task(all_tasks *, time_t task_time, work_task *);
 
 
 

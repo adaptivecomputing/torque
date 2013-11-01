@@ -10,6 +10,8 @@ check_PROGRAMS = test_rm
 
 librm_la_SOURCES = scaffolding.c ${PROG_ROOT}/rm.c
 librm_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
+test_rm_LDADD = ../../../../test/torque_test_lib/libtorque_test.la ../../../../test/scaffold_fail/libscaffold_fail.la
+
 
 test_rm_SOURCES = test_rm.c
 

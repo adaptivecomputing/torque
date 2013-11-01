@@ -452,8 +452,6 @@ START_TEST(test_set_trqauthd_addr)
   get_hostaddr_success = false;
   rc = set_trqauthd_addr();
   fail_unless(rc != PBSE_NONE, "set_trqauthd_addr failed for success case");
-
-
   }
 END_TEST
 

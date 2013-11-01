@@ -9,6 +9,7 @@
 #include "list_link.h" /* tlist_head, list_link */
 #include "pbs_job.h" /* job */
 #include "libpbs.h" /* job_file */
+#include "mom_mach.h"
 
 int lockfds = -1;
 int svr_resc_size = 0;
@@ -23,6 +24,8 @@ char log_buffer[LOG_BUF_SIZE];
 int MOMPrologTimeoutCount;
 uid_t pbsuser;
 gid_t pbsgroup;
+char *path_epilogp;
+long TJobStartTimeout = 300;
 
 int encode_resc(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int ac_perm)
   {
@@ -137,6 +140,16 @@ ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   }
 
 int setuid_ext(uid_t uid, int set_euid)
+  {
+  return(0);
+  }
+
+proc_stat_t *get_proc_stat(int pid)
+  {
+  return(NULL);
+  }
+
+int put_env_var(const char *name, const char *value)
   {
   return(0);
   }

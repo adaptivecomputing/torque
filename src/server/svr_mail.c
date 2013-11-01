@@ -248,7 +248,7 @@ void *send_the_mail(
   {
   mail_info  *mi = (mail_info *)vp;
 
-  int         status;
+  int         status = 0;
   int         numargs = 0;
   int         pipes[2];
   int         counter;

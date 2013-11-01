@@ -142,6 +142,7 @@ extern struct group *getgrnam_ext (char *);
 
 /* user functions in u_users.c */
 extern struct passwd *getpwnam_ext (char *);
+struct passwd *get_password_entry_by_uid(uid_t uid);
 int                   setuid_ext(uid_t uid, int set_euid);
 
 /* tree functions in u_tree.c */

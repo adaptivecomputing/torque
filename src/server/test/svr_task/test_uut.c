@@ -1,23 +1,102 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "svr_task.h"
+#include "work_task.h"
 #include "test_uut.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include "pbs_error.h"
 #include "threadpool.h"
 
-extern void check_nodes(struct work_task *ptask);
+extern void  check_nodes(struct work_task *ptask);
+void         insert_timed_task(work_task *wt);
+work_task   *pop_timed_task(time_t  time_now);
+bool         can_dispatch_task();
+int          dispatch_timed_task(work_task *ptask);
 
 
-all_tasks task_list_timed;
-all_tasks task_list_event;
-task_recycler tr;
-extern threadpool_t *request_pool;
+extern all_tasks      task_list_event;
+extern task_recycler  tr;
+extern threadpool_t  *request_pool;
+
+START_TEST(dispatch_timed_task_test)
+  {
+  work_task wt;
+
+  memset(&wt, 0, sizeof(wt));
+  wt.wt_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  wt.wt_event = 200;
+
+  if(request_pool == NULL)   initialize_threadpool(&request_pool,10,50,50);
+  request_pool->tp_max_threads = 50;
+  request_pool->tp_nthreads = 50;
+  request_pool->tp_idle_threads = 0;
+
+  fail_unless(dispatch_timed_task(&wt) == PBSE_SERVER_BUSY);
+  
+  request_pool->tp_idle_threads = 6;
+  fail_unless(dispatch_timed_task(&wt) == PBSE_NONE);
+  fail_unless(wt.wt_being_recycled == TRUE);
+  }
+END_TEST
+
+START_TEST(can_dispatch_task_test)
+  {
+  if(request_pool == NULL)   initialize_threadpool(&request_pool,10,50,50);
+
+  request_pool->tp_max_threads = 50;
+  request_pool->tp_nthreads = 50;
+  request_pool->tp_idle_threads = 0;
+
+  fail_unless(can_dispatch_task() == false);
+
+  request_pool->tp_idle_threads = 45;
+  fail_unless(can_dispatch_task() == true);
+
+  request_pool->tp_idle_threads = 6;
+  fail_unless(can_dispatch_task() == true);
+  }
+END_TEST
+
+START_TEST(manage_timed_task_test)
+  {
+  work_task  ptask1;
+  work_task  ptask2;
+  work_task  ptask3;
+  work_task *wt;
+
+  memset(&ptask1, 0, sizeof(ptask1));
+  memset(&ptask2, 0, sizeof(ptask2));
+  memset(&ptask3, 0, sizeof(ptask3));
+
+  ptask1.wt_event = 100;
+  ptask2.wt_event = 200;
+  ptask3.wt_event = 300;
+
+  insert_timed_task(&ptask1);
+  insert_timed_task(&ptask2);
+  insert_timed_task(&ptask3);
+
+  fail_unless(pop_timed_task(0) == NULL);
+  fail_unless(pop_timed_task(99) == NULL);
+
+  wt = pop_timed_task(150);
+  fail_unless(wt != NULL);
+  fail_unless(wt->wt_event == 100);
+  fail_unless(pop_timed_task(150) == NULL);
+
+  wt = pop_timed_task(350);
+  fail_unless(wt != NULL);
+  fail_unless(wt->wt_event == 200);
+  wt = pop_timed_task(350);
+  fail_unless(wt != NULL);
+  fail_unless(wt->wt_event == 300);
+  wt = pop_timed_task(350);
+  fail_unless(wt == NULL);
+  }
+END_TEST
 
 START_TEST(test_one)
   {
   int rc;
-  initialize_all_tasks_array(&task_list_timed);
   initialize_all_tasks_array(&task_list_event);
   initialize_task_recycler();
 
@@ -40,16 +119,6 @@ START_TEST(test_one)
   fprintf(stderr,"%p %p\n",(void *)pWorkTask,(void *)pRecycled);
   fail_unless(pRecycled == pWorkTask);
   fail_unless(task_is_in_threadpool(pWorkTask2));
-
-
-
-  }
-END_TEST
-
-START_TEST(test_two)
-  {
-
-
   }
 END_TEST
 
@@ -60,8 +129,10 @@ Suite *svr_task_suite(void)
   tcase_add_test(tc_core, test_one);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("test_two");
-  tcase_add_test(tc_core, test_two);
+  tc_core = tcase_create("can_dispatch_task_test");
+  tcase_add_test(tc_core, can_dispatch_task_test);
+  tcase_add_test(tc_core, manage_timed_task_test);
+  tcase_add_test(tc_core, dispatch_timed_task_test);
   suite_add_tcase(s, tc_core);
 
   return s;

@@ -915,6 +915,13 @@ static int injob(
 
   {
   task *ptask;
+  pid_t  pid;
+#ifdef PENABLE_LINUX26_CPUSETS
+  struct pidl   *pids = NULL;
+  struct pidl   *pp;
+#else
+  proc_stat_t   *ps;
+#endif /* PENABLE_LINUX26_CPUSETS */
 
   for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
        ptask != NULL;
@@ -928,6 +935,62 @@ static int injob(
       return(TRUE);
       }
     }
+
+  /* processes with a different sessionid are not necessarily not part of the
+     job: the job can call setsid; need to check whether one of the parent
+     processes has a sessionid that is in the job */
+#ifdef PENABLE_LINUX26_CPUSETS
+
+  /* check whether the sid is in the job's cpuset */
+
+  pids = get_cpuset_pidlist(pjob->ji_qs.ji_jobid, pids);
+  pp   = pids;
+
+  while (pp != NULL)
+    {
+    pid = pp->pid;
+    pp  = pp->next;
+    if (pid == sid)
+      {
+      free_pidlist(pids);
+      return(TRUE);
+      }
+    }
+    free_pidlist(pids);
+#else
+
+  /* get the parent process id of the sid and check whether it is part of
+     the job; iterate */
+
+  pid = sid;
+  while (pid > 1)
+    {
+    if ((ps = get_proc_stat(pid)) == NULL)
+      {
+      if (errno != ENOENT)
+        {
+        sprintf(log_buffer, "%d: get_proc_stat", pid);
+
+        log_err(errno, __func__, log_buffer);
+        }
+      return(FALSE);
+      }
+    pid = getsid(ps->ppid);
+
+    for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
+         ptask != NULL;
+         ptask = (task *)GET_NEXT(ptask->ti_jobtask))
+      {
+      if (ptask->ti_qs.ti_sid <= 1)
+        continue;
+
+      if (ptask->ti_qs.ti_sid == pid)
+        {
+        return(TRUE);
+        }
+      }
+    }
+#endif /* PENABLE_LINUX26_CPUSETS */
 
   return(FALSE);
   }  /* END injob() */

@@ -647,3 +647,8 @@ pbs_net_t get_hostaddr(
   return(rval);
   }
 
+struct passwd *get_password_entry_by_uid(uid_t uid)
+  {
+  return(getpwuid(uid));
+  }
+
