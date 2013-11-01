@@ -1956,7 +1956,7 @@ int svr_job_purge(
     }
 
   /* delete any spooled stdout */
-  snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_jobs, job_fileprefix, JOB_STDOUT_SUFFIX);
+  snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_spool, job_fileprefix, JOB_STDOUT_SUFFIX);
 
   if (unlink(namebuf) < 0)
     {
@@ -1971,7 +1971,7 @@ int svr_job_purge(
     }
 
   /* delete any spooled stderr */
-  snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_jobs, job_fileprefix, JOB_STDERR_SUFFIX);
+  snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_spool, job_fileprefix, JOB_STDERR_SUFFIX);
 
   if (unlink(namebuf) < 0)
     {

@@ -65,6 +65,11 @@ int debug_read(int sock,char **bf,long long *len)
   return fds[sock]->read(bf,len);
   }
 
+int debug_write(int sock,char *bf,long long len)
+  {
+  return fds[sock]->write(bf,len);
+  }
+
 void DIS_tcp_settimeout(long timeout)  /* I */
   {
   }  /* END DIS_tcp_settimeout() */
