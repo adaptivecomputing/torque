@@ -110,31 +110,8 @@ extern void check_nodes(struct work_task *);
 
 extern std::list<timed_task> task_list_timed;
 extern pthread_mutex_t       task_list_timed_mutex;
-extern all_tasks             task_list_event;
 extern task_recycler         tr;
 
-
-
-
-struct work_task *find_insertion_point(
-
-  all_tasks *at,
-  work_task *wt)
-
-  {
-  int        iter = -1;
-  work_task *before_me;
-
-  while ((before_me = next_task(at, &iter)) != NULL)
-    {
-    if (before_me->wt_event > wt->wt_event)
-      break;
-
-    pthread_mutex_unlock(before_me->wt_mutex);
-    }
-
-  return(before_me);
-  } /* END find_insertion_point() */
 
 
 void insert_timed_task(
@@ -239,14 +216,7 @@ struct work_task *set_task(
     pthread_mutex_init(pnew->wt_mutex,NULL);
     pthread_mutex_lock(pnew->wt_mutex);
    
-    if (type == WORK_Timed)
-      {
-      insert_timed_task(pnew);
-      }
-    else
-      {
-      insert_task(&task_list_event, pnew);
-      }
+    insert_timed_task(pnew);
 
     /* only keep the lock if they want it */
     if (get_lock == FALSE)
@@ -410,42 +380,6 @@ void initialize_all_tasks_array(
 
 
 
-/* 
- * return the next task in this array using iter
- */
-work_task *next_task(
-
-  all_tasks *at,
-  int       *iter)
-
-  {
-  work_task *wt;
-
-  while(true)
-    {
-    pthread_mutex_lock(at->alltasks_mutex);
-
-    wt = (work_task *)next_thing(at->ra,iter);
-    if (wt != NULL)
-      pthread_mutex_lock(wt->wt_mutex);
-
-    pthread_mutex_unlock(at->alltasks_mutex);
-    if(wt == NULL)
-      {
-      return wt;
-      }
-    if(wt->wt_being_recycled != TRUE)
-      {
-      return wt;
-      }
-    pthread_mutex_unlock(wt->wt_mutex);
-    }
-  return(NULL);
-  } /* END next_task() */
-
-
-
-
 /*
  * adds a task to the specified array
  */
@@ -471,91 +405,6 @@ int insert_task(
 
   return(rc);
   } /* END insert_task() */
-
-
-
-
-/*
- * NOTE: we currently don't unlock before in the trylock 
- * because this is only called in set_task, and before is
- * always a new task not in the structure yet
- * adds a task to the array after another
- */
-
-int insert_task_before(
-
-  all_tasks *at,
-  work_task *before,
-  work_task *after)
-
-  {
-  int          rc;
-  int          i;
-
-  if (pthread_mutex_trylock(at->alltasks_mutex))
-    {
-    pthread_mutex_unlock(after->wt_mutex);
-    pthread_mutex_lock(at->alltasks_mutex);
-    pthread_mutex_lock(after->wt_mutex);
-    }
-
-  if (after->wt_being_recycled == TRUE)
-    {
-    pthread_mutex_unlock(after->wt_mutex);
-    pthread_mutex_unlock(at->alltasks_mutex);
-    return(AFTER_IS_BEING_RECYCLED);
-    }
-
-  i = get_index(at->ra,after);
-
-  if (i == THING_NOT_FOUND)
-    {
-    rc = i;
-    }
-  else
-    {
-    if ((rc = insert_thing_before(at->ra,before,i)) == -1)
-      {
-      rc = ENOMEM;
-      log_err(rc, __func__, "Cannot allocate space to resize the array");
-      }
-    else
-      rc = PBSE_NONE;
-    }
-
-  pthread_mutex_unlock(at->alltasks_mutex);
-
-  before->wt_tasklist = at;
-
-  return(rc);
-  } /* insert_task_before() */
-
-
-
-
-
-int insert_task_first(
-    
-  all_tasks *at,
-  work_task *wt)
-
-  {
-  int          rc;
-
-  pthread_mutex_lock(at->alltasks_mutex);
-
-  if ((rc = insert_thing_after(at->ra,wt,ALWAYS_EMPTY_INDEX)) == -1)
-    {
-    rc = ENOMEM;
-    log_err(rc, __func__, "Cannot allocate space to resize the array");
-    }
-
-  wt->wt_tasklist = at;
-  pthread_mutex_unlock(at->alltasks_mutex);
-  
-
-  return(rc);
-  } /* END insert_task_first() */
 
 
 
@@ -709,25 +558,3 @@ int insert_task_into_recycler(
 
 
 
-#if 0
-
-work_task *get_recycled_task()
-
-  {
-  work_task *ptask;
-
-  pthread_mutex_lock(tr.mutex);
-  ptask = next_task_from_recycler(&tr.tasks, &tr.iter);
-
-  if (ptask == NULL)
-    tr.iter = -1;
-  pthread_mutex_unlock(tr.mutex);
-
-  if (ptask != NULL)
-    ptask->wt_being_recycled = FALSE;
-
-  return(ptask);
-  } /* END get_recycled_task() */
-
-
-#endif

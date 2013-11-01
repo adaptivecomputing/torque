@@ -122,7 +122,6 @@ extern struct server server;
 extern char *server_name;
 extern struct connect_handle connection[];
 extern char     *msg_daemonname;
-extern all_tasks task_list_event;
 extern char *msg_daemonname;
 extern char *msg_issuebad;
 extern char     *msg_norelytomom;
