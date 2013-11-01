@@ -25,6 +25,7 @@ START_TEST(dispatch_timed_task_test)
   wt.wt_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   wt.wt_event = 200;
 
+  if(request_pool == NULL)   initialize_threadpool(&request_pool,10,50,50);
   request_pool->tp_max_threads = 50;
   request_pool->tp_nthreads = 50;
   request_pool->tp_idle_threads = 0;
@@ -39,6 +40,8 @@ END_TEST
 
 START_TEST(can_dispatch_task_test)
   {
+  if(request_pool == NULL)   initialize_threadpool(&request_pool,10,50,50);
+
   request_pool->tp_max_threads = 50;
   request_pool->tp_nthreads = 50;
   request_pool->tp_idle_threads = 0;
