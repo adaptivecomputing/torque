@@ -524,3 +524,18 @@ int initialize_ruserok_mutex()
   return(0);
   }
 
+int dispatch_timed_task(
+
+  work_task *ptask)
+  
+  {
+  return(0);
+  }
+
+work_task *pop_timed_task(
+
+  time_t  time_now)
+
+  {
+  return(NULL);
+  }
