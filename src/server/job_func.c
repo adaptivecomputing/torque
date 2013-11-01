@@ -776,6 +776,9 @@ void job_free(
    * the lock and then deletes the job, but thread 2 gets the job's lock as
    * the job is freed, causing segfaults. We use the recycler and the 
    * ji_being_recycled flag to solve this problem --dbeer */
+
+  remove_job(&alljobs,pj); //Remove this from the alljobs array.
+
   if (use_recycle)
     {
     insert_into_recycler(pj);
