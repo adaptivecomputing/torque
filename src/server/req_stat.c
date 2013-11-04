@@ -105,7 +105,6 @@
 #include "svrfunc.h"
 #include "net_connect.h"
 #include "pbs_nodes.h"
-#include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
 #include "u_tree.h"
@@ -123,6 +122,7 @@
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
 #include "unistd.h"
+#include "log.h"
 
 /* Global Data Items: */
 
@@ -1340,6 +1340,7 @@ static int status_que(
   {
   struct brp_status *pstat;
   svrattrl          *pal;
+  int                rc = PBSE_NONE;
   int                bad = 0;
 
   if ((preq->rq_perm & ATR_DFLAG_RDACC) == 0)
@@ -1381,7 +1382,7 @@ static int status_que(
 
   pal = (svrattrl *)GET_NEXT(preq->rq_ind.rq_status.rq_attr);
 
-  if (status_attrib(
+  if ((rc = status_attrib(
         pal,
         que_attr_def,
         pque->qu_attr,
@@ -1389,9 +1390,9 @@ static int status_que(
         preq->rq_perm,
         &pstat->brp_attr,
         &bad,
-        1) != 0)   /* IsOwner == TRUE */
+        1)) != PBSE_NONE)   /* IsOwner == TRUE */
     {
-    return(bad);
+    return(rc);
     }
 
   return(PBSE_NONE);
