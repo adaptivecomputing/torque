@@ -69,7 +69,8 @@ unsigned int get_svrport(const char *service_name, const char *ptype, unsigned i
 
 int socket(int ns,int style,int protocol) throw()
   {
-  return 42;
+  static int fd = 32;
+  return fd++;
   }
 
 int bindresvport(int stream,struct sockaddr_in *addr) throw()
