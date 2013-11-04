@@ -234,7 +234,7 @@ if [ ${unit_tests} -ne 0 ]
 then
     make -j${parallel}
     chmod +x src/test/test_scripts/*
-    make check -j${parallel}
+    make check 
     make check | ./parse_cov_results.py
 fi
 
