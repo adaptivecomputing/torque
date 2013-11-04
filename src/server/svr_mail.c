@@ -370,9 +370,10 @@ void *send_the_mail(
         mi->jobid,
         tmpBuf);
       }
-    waitpid(pid, &status, 0);
 
-    if (status != 0)
+    // we aren't going to block in order to find out whether or not sendmail worked 
+    if ((waitpid(pid, &status, WNOHANG) != 0) &&
+        (status != 0))
       {
       snprintf(tmpBuf,sizeof(tmpBuf),
         "Sendmail command returned %d. Mail may not have been sent\n",
@@ -382,6 +383,12 @@ void *send_the_mail(
         PBS_EVENTCLASS_JOB,
         mi->jobid,
         tmpBuf);
+      }
+
+    // don't leave zombies
+    while (waitpid(-1, &status, WNOHANG) != 0)
+      {
+      // zombie reaped, NO-OP
       }
       
     free_mail_info(mi);
