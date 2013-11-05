@@ -358,6 +358,8 @@ void *send_the_mail(
     stream = fdopen(pipes[1], "w");
     write_email(stream, mi);
 
+    fflush(stream);
+
     /* Close and wait for the command to finish */
     if (fclose(stream) != 0)
       {
