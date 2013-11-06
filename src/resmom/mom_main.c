@@ -6267,13 +6267,15 @@ int do_tcp(
 
       mom_is_request(chan,version,NULL);
 
-      svr_conn[chan->sock].cn_stay_open = FALSE;
       break;
 
     case IM_PROTOCOL:
 
       im_request(chan,version,pSockAddr);
-      svr_conn[chan->sock].cn_stay_open = FALSE;
+      if(chan->sock >= 0)
+        {
+        svr_conn[chan->sock].cn_stay_open = FALSE;
+        }
 
       break;
 
@@ -6305,7 +6307,9 @@ int do_tcp(
 
   /* don't close these connections -- the pointer is saved in 
    * the tasks for MPI jobs */
-  if ((chan != NULL) && (svr_conn[chan->sock].cn_stay_open == FALSE))
+  if ((chan != NULL) &&
+      (((chan->sock >= 0) && (svr_conn[chan->sock].cn_stay_open == FALSE)) ||
+      ((chan->sock == -1))))
     DIS_tcp_cleanup(chan);
   DBPRT(("%s:%d", __func__, proto));
 
