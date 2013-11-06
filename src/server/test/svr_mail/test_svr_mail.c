@@ -67,8 +67,9 @@ START_TEST(test_with_default_files_when_complete)
   snprintf(correct_outfilepath, sizeof(correct_outfilepath), "Output_Path: %s", outpath);
   snprintf(correct_errfilepath, sizeof(correct_errfilepath), "Error_Path: %s", errpath);
   svr_mailowner(&pjob, MAIL_END, MAIL_NORMAL, mailbuf);
+  sleep(1);
   fp = fopen("/tmp/mail.out", "r");
-  //fail_unless((fp != NULL), "No output file was found");
+  fail_unless((fp != NULL), "No output file was found");
   if (fp)
     {
     while (fgets(buf, sizeof(buf), fp) != NULL)
@@ -88,8 +89,9 @@ START_TEST(test_with_default_files_when_complete)
   outFile_found = false;
 
   svr_mailowner_with_message(&pjob, MAIL_END, MAIL_NORMAL, mailbuf,msgbuf);
+  sleep(1);
   fp = fopen("/tmp/mail.out", "r");
-  //fail_unless((fp != NULL), "No output file was found");
+  fail_unless((fp != NULL), "No output file was found");
   if (fp)
     {
     while (fgets(buf, sizeof(buf), fp) != NULL)
@@ -132,8 +134,9 @@ START_TEST(test_with_oe_when_complete)
   snprintf(correct_outfilepath, sizeof(correct_outfilepath), "Output_Path: %s", outpath);
   snprintf(correct_errfilepath, sizeof(correct_errfilepath), "Error_Path: %s", outpath);
   svr_mailowner(&pjob, MAIL_END, MAIL_NORMAL, mailbuf);
+  sleep(1);
   fp = fopen("/tmp/mail.out", "r");
-  //fail_unless((fp != NULL), "No output file was found");
+  fail_unless((fp != NULL), "No output file was found");
   if (fp)
     {
     while (fgets(buf, sizeof(buf), fp) != NULL)
@@ -153,8 +156,9 @@ START_TEST(test_with_oe_when_complete)
   outFile_found = false;
 
   svr_mailowner_with_message(&pjob, MAIL_END, MAIL_NORMAL, mailbuf,msgbuf);
+  sleep(1);
   fp = fopen("/tmp/mail.out", "r");
-  //fail_unless((fp != NULL), "No output file was found");
+  fail_unless((fp != NULL), "No output file was found");
   if (fp)
     {
     while (fgets(buf, sizeof(buf), fp) != NULL)
@@ -198,8 +202,9 @@ START_TEST(test_with_eo_when_complete)
   snprintf(correct_outfilepath, sizeof(correct_outfilepath), "Output_Path: %s", errpath);
   snprintf(correct_errfilepath, sizeof(correct_errfilepath), "Error_Path: %s", errpath);
   svr_mailowner(&pjob, MAIL_END, MAIL_NORMAL, mailbuf);
+  sleep(1);
   fp = fopen("/tmp/mail.out", "r");
-  //fail_unless((fp != NULL), "No output file was found");
+  fail_unless((fp != NULL), "No output file was found");
   if (fp)
     {
     while (fgets(buf, sizeof(buf), fp) != NULL)
@@ -219,8 +224,9 @@ START_TEST(test_with_eo_when_complete)
   outFile_found = false;
 
   svr_mailowner_with_message(&pjob, MAIL_END, MAIL_NORMAL, mailbuf,msgbuf);
+  sleep(1);
   fp = fopen("/tmp/mail.out", "r");
-  //fail_unless((fp != NULL), "No output file was found");
+  fail_unless((fp != NULL), "No output file was found");
   if (fp)
     {
     while (fgets(buf, sizeof(buf), fp) != NULL)

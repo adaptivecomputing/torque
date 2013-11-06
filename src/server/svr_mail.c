@@ -119,8 +119,6 @@ extern void svr_format_job (FILE *, mail_info *, const char *);
 extern int  listening_socket;
 
 /* Global Data */
-#define TEMPORARY_FILE_LIFE_SPAN 15
-
 extern struct server server;
 
 extern int LOGLEVEL;
@@ -190,44 +188,29 @@ void add_body_info(
 /*
  * write_email()
  *
- * In emailing, the mail body is written as a temporary input file
- * and then set up as the standard input for sendmail. This function
- * creates the temporary input file
+ * In emailing, the mail body is written to a pipe connected to
+ * standard input for sendmail. This function supplies the body
+ * of the message.
  *
- * @post-cond: the temporary input file is created
  */
-int write_the_temporary_input_file(
+void write_email(
 
-  const char *filename,
-  char       *bodyfmt,
-  const char *subjectfmt,
-  mail_info  *mi)
+  FILE      *outmail_input,
+  mail_info *mi)
 
   {
-  FILE       *outmail_input = fopen(filename, "w");
-  int         rc = PBSE_NONE;
-
-  if (outmail_input == NULL)
-    {
-    char tmpBuf[LOG_BUF_SIZE];
-    
-    snprintf(tmpBuf,sizeof(tmpBuf),
-      "Unable to fopen() file '%s' for writing: '%s' (error %d)\n",
-      filename,
-      strerror(errno),
-      errno);
-    log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      mi->jobid,
-      tmpBuf);
-    
-    free_mail_info(mi);
-    
-    return(PBSE_CAN_NOT_OPEN_FILE);
-    }
+  char       *bodyfmt = NULL;
+  const char *subjectfmt = NULL;
 
   /* Pipe in mail headers: To: and Subject: */
   fprintf(outmail_input, "To: %s\n", mi->mailto);
+
+  /* mail subject line formating statement */
+  get_svr_attr_str(SRV_ATR_MailSubjectFmt, (char **)&subjectfmt);
+  if (subjectfmt == NULL)
+    {
+    subjectfmt = "PBS JOB %i";
+    }
 
   fprintf(outmail_input, "Subject: ");
   svr_format_job(outmail_input, mi, subjectfmt);
@@ -236,52 +219,19 @@ int write_the_temporary_input_file(
   /* Set "Precedence: bulk" to avoid vacation messages, etc */
   fprintf(outmail_input, "Precedence: bulk\n\n");
 
+  /* mail body formating statement */
+  get_svr_attr_str(SRV_ATR_MailBodyFmt, &bodyfmt);
+  if (bodyfmt == NULL)
+    {
+    char bodyfmtbuf[MAXLINE];
+    add_body_info(bodyfmtbuf, mi);
+    bodyfmt = bodyfmtbuf;
+    }
+
   /* Now pipe in the email body */
   svr_format_job(outmail_input, mi, bodyfmt);
 
-  errno = 0;
-  if ((rc = fclose(outmail_input)) != 0)
-    {
-    char tmpBuf[LOG_BUF_SIZE];
-    
-    snprintf(tmpBuf,sizeof(tmpBuf),
-      "Creation of temporary input file '%s' failed: errno %d:%s\n",
-      filename, errno, strerror(errno));
-    
-    log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      mi->jobid,
-      tmpBuf);
-    }
-
-  return(rc);
-  } /* write_the_temporary_input_file() */
-
-
-
-/* 
- * remove_temporary_file()
- *
- * This task function can be used to remove any temporary file.
- *
- * @post-cond: the temporary file is deleted
- */
-
-void remove_temporary_file(
-    
-  struct work_task *ptask)
-
-  {
-  if (ptask->wt_parm1 != NULL)
-    {
-    unlink((char *)ptask->wt_parm1);
-    free(ptask->wt_parm1);
-    }
-  
-  free(ptask->wt_mutex);
-  free(ptask);
-  } /* END remove_temporary_file() */
-
+  } /* write_email() */
 
 
 /*
@@ -298,20 +248,18 @@ void *send_the_mail(
   {
   mail_info  *mi = (mail_info *)vp;
 
+  int         status = 0;
   int         numargs = 0;
+  int         pipes[2];
   int         counter;
   pid_t       pid;
   char       *mailptr;
   const char *mailfrom = NULL;
-  char       *bodyfmt = NULL;
-  const char *subjectfmt = NULL;
-  char        tmp_input_filename[MAXLINE];
   char        tmpBuf[LOG_BUF_SIZE];
   // We call sendmail with cmd_name + 2 arguments + # of mailto addresses + 1 for null
   char       *sendmail_args[100];
+  FILE       *stream;
 
-  snprintf(tmp_input_filename, sizeof(tmp_input_filename), "/tmp/%s%d",
-    mi->jobid, mi->mail_point);
 
   /* Who is mail from, if SRV_ATR_mailfrom not set use default */
   get_svr_attr_str(SRV_ATR_mailfrom, (char **)&mailfrom);
@@ -331,52 +279,6 @@ void *send_the_mail(
         tmpBuf);
       }
     }
-
-  /* mail subject line formating statement */
-  get_svr_attr_str(SRV_ATR_MailSubjectFmt, (char **)&subjectfmt);
-  if (subjectfmt == NULL)
-    {
-    subjectfmt = "PBS JOB %i";
-    }
-
-  /* mail body formating statement */
-  get_svr_attr_str(SRV_ATR_MailBodyFmt, &bodyfmt);
-  if (bodyfmt == NULL)
-    {
-    char bodyfmtbuf[MAXLINE];
-    add_body_info(bodyfmtbuf, mi);
-    bodyfmt = bodyfmtbuf;
-    }
-  
-  if ((pid = fork()) == -1)
-    {
-    snprintf(tmpBuf, sizeof(tmpBuf), "Unable to fork for sending e-mail\n");
-    log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      mi->jobid,
-      tmpBuf);
-
-    free_mail_info(mi);
-    return(NULL);
-    }
-  else if (pid != 0)
-    {
-    /* This is the parent */
-    set_task(WORK_Timed, time(NULL) + TEMPORARY_FILE_LIFE_SPAN, remove_temporary_file, 
-      strdup(tmp_input_filename), FALSE);
-
-    free_mail_info(mi);
-    return(NULL);
-    }
-    
-  /* CHILD */
-    
-  /* close all open network sockets */
-  net_close_without_mutexes();
-
-  // this socket isn't in the connections table so it doesn't get closed by net_close_without_mutexes().
-  // the connections table has it marked as idle so it doesn't call close()
-  close(listening_socket);
 
   sendmail_args[numargs++] = (char *)SENDMAIL_CMD;
   sendmail_args[numargs++] = (char *)"-f";
@@ -398,11 +300,103 @@ void *send_the_mail(
 
   sendmail_args[numargs] = NULL;
 
-  if (write_the_temporary_input_file(tmp_input_filename, bodyfmt, subjectfmt, mi) == PBSE_NONE)
-    execv(SENDMAIL_CMD, sendmail_args);
+  /* Create a pipe to talk to the sendmail process we are about to fork */
+  if (pipe(pipes) == -1)
+    {
+    snprintf(tmpBuf, sizeof(tmpBuf), "Unable to pipes for sending e-mail\n");
+    log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      mi->jobid,
+      tmpBuf);
 
-  /* This never returns, but if the execv fails the child should exit */
-  exit(1);
+    free_mail_info(mi);
+    free(mailptr);
+    return(NULL);
+    }
+
+  if ((pid=fork()) == -1)
+    {
+    snprintf(tmpBuf, sizeof(tmpBuf), "Unable to fork for sending e-mail\n");
+    log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      mi->jobid,
+      tmpBuf);
+
+    free_mail_info(mi);
+    free(mailptr);
+    close(pipes[0]);
+    close(pipes[1]);
+    return(NULL);
+    }
+  else if (pid == 0)
+    {
+    /* CHILD */
+
+    /* close all open network sockets */
+    net_close_without_mutexes();
+
+    // this socket isn't in the connections table so it doesn't get closed by net_close_without_mutexes().
+    // the connections table has it marked as idle so it doesn't call close()
+    close(listening_socket);
+
+    /* Close the write end of the pipe, make read end stdin */
+    dup2(pipes[0],STDIN_FILENO);
+    close(pipes[0]);
+    close(pipes[1]);
+    execv(SENDMAIL_CMD, sendmail_args);
+    /* This never returns, but if the execv fails the child should exit */
+    exit(1);
+    }
+  else
+    {
+    /* This is the parent */
+
+    /* Close the read end of the pipe */
+    close(pipes[0]);
+
+    /* Write the body to the pipe */
+    stream = fdopen(pipes[1], "w");
+    write_email(stream, mi);
+
+    fflush(stream);
+
+    /* Close and wait for the command to finish */
+    if (fclose(stream) != 0)
+      {
+      snprintf(tmpBuf,sizeof(tmpBuf),
+        "Piping mail body to sendmail closed: errno %d:%s\n",
+        errno, strerror(errno));
+
+      log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        mi->jobid,
+        tmpBuf);
+      }
+
+    // we aren't going to block in order to find out whether or not sendmail worked 
+    if ((waitpid(pid, &status, WNOHANG) != 0) &&
+        (status != 0))
+      {
+      snprintf(tmpBuf,sizeof(tmpBuf),
+        "Sendmail command returned %d. Mail may not have been sent\n",
+        status);
+
+      log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        mi->jobid,
+        tmpBuf);
+      }
+
+    // don't leave zombies
+    while (waitpid(-1, &status, WNOHANG) != 0)
+      {
+      // zombie reaped, NO-OP
+      }
+      
+    free_mail_info(mi);
+    free(mailptr);
+    return(NULL);
+    }
     
   /* NOT REACHED */
 
