@@ -11,4 +11,8 @@ MAILTO="$@"
 echo "MAILFROM=$MAILFROM" > $MAILFILE
 echo "MAILTO=$MAILTO" >> $MAILFILE
 echo >> $MAILFILE
-cat >> $MAILFILE
+
+while read i
+do
+echo $i
+done
