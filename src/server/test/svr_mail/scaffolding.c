@@ -25,8 +25,6 @@ pthread_mutex_t *svr_do_schedule_mutex;
 pthread_mutex_t *listener_command_mutex;
 int listening_socket;
 
-void net_close_without_mutexes() {}
-
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
 int enqueue_threadpool_request(void *(*func)(void *),void *arg)
