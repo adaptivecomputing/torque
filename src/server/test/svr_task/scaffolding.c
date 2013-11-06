@@ -10,7 +10,6 @@
 #include <string.h>
 
 #define FALSE 0
-std::list<timed_task> task_list_timed;
 all_tasks             task_list_event;
 task_recycler         tr;
 pthread_mutex_t       task_list_timed_mutex;
