@@ -16,6 +16,7 @@ int          dispatch_timed_task(work_task *ptask);
 extern all_tasks      task_list_event;
 extern task_recycler  tr;
 extern threadpool_t  *request_pool;
+extern std::list<timed_task> *task_list_timed;
 
 START_TEST(dispatch_timed_task_test)
   {
@@ -25,7 +26,11 @@ START_TEST(dispatch_timed_task_test)
   wt.wt_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   wt.wt_event = 200;
 
-  if(request_pool == NULL)   initialize_threadpool(&request_pool,10,50,50);
+  if (task_list_timed == NULL)
+    task_list_timed = new std::list<timed_task>();
+
+  if (request_pool == NULL)
+    initialize_threadpool(&request_pool,10,50,50);
   request_pool->tp_max_threads = 50;
   request_pool->tp_nthreads = 50;
   request_pool->tp_idle_threads = 0;
@@ -40,7 +45,8 @@ END_TEST
 
 START_TEST(can_dispatch_task_test)
   {
-  if(request_pool == NULL)   initialize_threadpool(&request_pool,10,50,50);
+  if (request_pool == NULL)
+    initialize_threadpool(&request_pool,10,50,50);
 
   request_pool->tp_max_threads = 50;
   request_pool->tp_nthreads = 50;
@@ -66,6 +72,9 @@ START_TEST(manage_timed_task_test)
   memset(&ptask1, 0, sizeof(ptask1));
   memset(&ptask2, 0, sizeof(ptask2));
   memset(&ptask3, 0, sizeof(ptask3));
+
+  if (task_list_timed == NULL)
+    task_list_timed = new std::list<timed_task>();
 
   ptask1.wt_event = 100;
   ptask2.wt_event = 200;
@@ -99,6 +108,9 @@ START_TEST(test_one)
   int rc;
   initialize_all_tasks_array(&task_list_event);
   initialize_task_recycler();
+
+  if (task_list_timed == NULL)
+    task_list_timed = new std::list<timed_task>();
 
   rc = initialize_threadpool(&request_pool, 5, 50, 60);
   fail_unless(rc == PBSE_NONE, "initalize_threadpool failed", rc);
