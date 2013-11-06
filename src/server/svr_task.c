@@ -108,9 +108,9 @@ extern void check_nodes(struct work_task *);
 
 /* Global Data Items: */
 
-extern std::list<timed_task> task_list_timed;
-extern pthread_mutex_t       task_list_timed_mutex;
-extern task_recycler         tr;
+std::list<timed_task>  *task_list_timed;
+extern pthread_mutex_t  task_list_timed_mutex;
+extern task_recycler    tr;
 
 
 
@@ -128,18 +128,18 @@ void insert_timed_task(
 
   pthread_mutex_lock(&task_list_timed_mutex);
 
-  for (it = task_list_timed.begin(); it != task_list_timed.end(); it++)
+  for (it = task_list_timed->begin(); it != task_list_timed->end(); it++)
     {
     if (it->task_time >= tt.task_time)
       {
-      task_list_timed.insert(it, tt);
+      task_list_timed->insert(it, tt);
       inserted = true;
       break;
       }
     }
 
   if (inserted == false)
-    task_list_timed.push_back(tt);
+    task_list_timed->push_back(tt);
 
   pthread_mutex_unlock(&task_list_timed_mutex);
   } /* END insert_timed_task() */
@@ -156,14 +156,14 @@ work_task *pop_timed_task(
 
   pthread_mutex_lock(&task_list_timed_mutex);
 
-  if (task_list_timed.begin() != task_list_timed.end())
+  if (task_list_timed->begin() != task_list_timed->end())
     {
-    it = task_list_timed.begin();
+    it = task_list_timed->begin();
 
     if (it->task_time <= time_now)
       {
       wt = it->wt;
-      task_list_timed.pop_front();
+      task_list_timed->pop_front();
       }
     }
   
