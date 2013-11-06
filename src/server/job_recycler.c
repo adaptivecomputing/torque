@@ -177,11 +177,17 @@ int insert_into_recycler(
       "Adding job %s to the recycler", pjob->ji_qs.ji_jobid);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
+  if(pjob->ji_being_recycled == TRUE)
+    {
+    return PBSE_NONE;
+    }
+
 
   memset(pjob, 0, sizeof(job));
   pjob->ji_mutex = tmp;
 
   pthread_mutex_lock(recycler.rc_mutex);
+
 
   sprintf(pjob->ji_qs.ji_jobid,"%d",recycler.rc_next_id);
   pjob->ji_being_recycled = TRUE;
