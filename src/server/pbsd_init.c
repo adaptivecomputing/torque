@@ -199,7 +199,7 @@ extern char *path_jobinfo_log;
 extern int                    queue_rank;
 extern char                   server_name[];
 extern tlist_head             svr_newnodes;
-extern std::list<timed_task>  task_list_timed;
+extern std::list<timed_task> *task_list_timed;
 extern pthread_mutex_t        task_list_timed_mutex;
 extern all_tasks              task_list_event;
 task_recycler                 tr;
@@ -1243,6 +1243,7 @@ int initialize_data_structures_and_mutexes()
   initialize_recycler();
   initialize_batch_request_holder();
 
+  task_list_timed = new std::list<timed_task>();
   pthread_mutex_init(&task_list_timed_mutex, NULL);
   initialize_all_tasks_array(&task_list_event);
 

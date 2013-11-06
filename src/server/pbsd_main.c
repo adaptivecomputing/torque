@@ -293,7 +293,6 @@ extern hello_container  hellos;
 extern hello_container  failures;
 pthread_mutex_t        *listener_command_mutex;
 tlist_head              svr_newnodes;          /* list of newly created nodes      */
-std::list<timed_task>   task_list_timed;
 pthread_mutex_t         task_list_timed_mutex;
 all_tasks               task_list_event;
 pid_t                   sid;
