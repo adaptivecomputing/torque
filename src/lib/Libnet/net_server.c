@@ -1144,24 +1144,6 @@ void net_close(
 
 
 
-/*
- * performs the work of net_close but without worrying about mutexes.
- * It can do this because this function should only ever be called by a child that
- * is simply closing all of the file descriptors.
- *
- * WARNING!!!: Only call from forked children ONLY ONLY ONLY
- */
-void net_close_without_mutexes()
-
-  {
-  for (int i = 0; i < max_connection; i++)
-    {
-    if (svr_conn[i].cn_active != Idle)
-      close(i);
-    }
-  }
-
-
 
 /*
  * get_connectaddr - return address of host connected via the socket

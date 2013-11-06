@@ -114,7 +114,6 @@
 
 /* External Functions Called */
 
-extern void net_close_without_mutexes ();
 extern void svr_format_job (FILE *, mail_info *, const char *);
 extern int  listening_socket;
 
@@ -332,17 +331,14 @@ void *send_the_mail(
     {
     /* CHILD */
 
-    /* close all open network sockets */
-    net_close_without_mutexes();
-
-    // this socket isn't in the connections table so it doesn't get closed by net_close_without_mutexes().
-    // the connections table has it marked as idle so it doesn't call close()
-    close(listening_socket);
-
-    /* Close the write end of the pipe, make read end stdin */
+    /* Make stdin the read end of the pipe */
     dup2(pipes[0],STDIN_FILENO);
-    close(pipes[0]);
-    close(pipes[1]);
+
+    /* Close the rest of the open file descriptors */
+    int numfds = sysconf(_SC_OPEN_MAX);
+    while (--numfds > 0)
+      close(numfds);
+
     execv(SENDMAIL_CMD, sendmail_args);
     /* This never returns, but if the execv fails the child should exit */
     exit(1);
