@@ -255,7 +255,7 @@ void force_purge_work(
   svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
   
   if (pjob != NULL)
-    svr_job_purge(pjob);
+    svr_job_purge(pjob, true);
   } /* END force_purge_work() */
 
 
