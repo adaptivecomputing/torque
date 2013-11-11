@@ -1,10 +1,15 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "trq_auth_daemon.h"
-#include "test_trq_auth_daemon.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <iostream>
+#include <string>
+#include <sstream>
+#include "trq_auth_daemon.h"
+#include "test_trq_auth_daemon.h"
 #include "pbs_error.h"
-START_TEST(test_one)
+
+
+START_TEST(test_load_trqauthd_config)
   {
   }
 END_TEST
@@ -17,8 +22,8 @@ END_TEST
 Suite *trq_auth_daemon_suite(void)
   {
   Suite *s = suite_create("trq_auth_daemon_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_load_trqauthd_config");
+  tcase_add_test(tc_core, test_load_trqauthd_config);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");

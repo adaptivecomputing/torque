@@ -477,7 +477,29 @@ int init_network(
   }  /* END init_network() */
 
 
+/**
+ * Check to see if the unix domain socket file exists for trqauthd. If
+ * it exists then trqauthd is running. Return an error. Otherwise
+ * trqauthd is not running. Return PBSE_NONE
+ */
 
+int check_trqauthd_unix_domain_port(const char *unix_socket_name)
+  {
+  struct stat statbuf;
+  int rc = PBSE_NONE;
+
+  rc = stat(unix_socket_name, &statbuf);
+
+  if (rc == 0)
+    {
+    /* trqauthd unix domain socket already exists. trqauthd is started */
+    return(PBSE_SOCKET_LISTEN);
+    }
+
+  /* trqauthd unix domain socket not found. trqauthd not started */
+  return(PBSE_NONE);
+
+  }
 
 
 /**
