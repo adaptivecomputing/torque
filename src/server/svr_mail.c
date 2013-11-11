@@ -89,6 +89,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "list_link.h"
 #include "attribute.h"
 #include "server_limits.h"
@@ -136,6 +137,77 @@ void free_mail_info(
 
 
 
+void add_body_info(
+
+  char      *bodyfmtbuf /* I */,
+  mail_info *mi /* I */)
+
+  {
+  char *bodyfmt = NULL;
+  bodyfmt =  strcpy(bodyfmtbuf, "PBS Job Id: %i\n"
+                                  "Job Name:   %j\n");
+  if (mi->exec_host != NULL)
+    {
+    strcat(bodyfmt, "Exec host:  %h\n");
+    }
+
+  strcat(bodyfmt, "%m\n");
+
+  if (mi->text != NULL)
+    {
+    strcat(bodyfmt, "%d\n");
+    }
+  }
+
+
+/*
+ * write_email()
+ *
+ * In emailing, the mail body is written to a pipe connected to
+ * standard input for sendmail. This function supplies the body
+ * of the message.
+ *
+ */
+void write_email(
+
+  FILE      *outmail_input,
+  mail_info *mi)
+
+  {
+  char *bodyfmt = NULL;
+  char *subjectfmt = NULL;
+
+  /* Pipe in mail headers: To: and Subject: */
+  fprintf(outmail_input, "To: %s\n", mi->mailto);
+
+  /* mail subject line formating statement */
+  get_svr_attr_str(SRV_ATR_MailSubjectFmt, (char **)&subjectfmt);
+  if (subjectfmt == NULL)
+    {
+    subjectfmt = "PBS JOB %i";
+    }
+
+  fprintf(outmail_input, "Subject: ");
+  svr_format_job(outmail_input, mi, subjectfmt);
+  fprintf(outmail_input, "\n");
+
+  /* Set "Precedence: bulk" to avoid vacation messages, etc */
+  fprintf(outmail_input, "Precedence: bulk\n\n");
+
+  /* mail body formating statement */
+  get_svr_attr_str(SRV_ATR_MailBodyFmt, &bodyfmt);
+  if (bodyfmt == NULL)
+    {
+    char bodyfmtbuf[MAXLINE];
+    add_body_info(bodyfmtbuf, mi);
+    bodyfmt = bodyfmtbuf;
+    }
+
+  /* Now pipe in the email body */
+  svr_format_job(outmail_input, mi, bodyfmt);
+
+  } /* write_email() */
+
 
 
 void *send_the_mail(
@@ -143,15 +215,19 @@ void *send_the_mail(
   void *vp)
 
   {
-  mail_info *mi = (mail_info *)vp;
+  mail_info  *mi = (mail_info *)vp;
 
-  int        i;
-  char      *mailfrom = NULL;
-  char      *subjectfmt = NULL;
-  char      *bodyfmt = NULL;
-  char      *cmdbuf = NULL;
-  char       bodyfmtbuf[MAXLINE];
-  FILE      *outmail;
+  int         status = 0;
+  int         numargs = 0;
+  int         pipes[2];
+  int         counter;
+  pid_t       pid;
+  char       *mailptr;
+  char       *mailfrom = NULL;
+  char        tmpBuf[LOG_BUF_SIZE];
+  // We call sendmail with cmd_name + 2 arguments + # of mailto addresses + 1 for null
+  char       *sendmail_args[100];
+  FILE       *stream;
   
   /* Who is mail from, if SRV_ATR_mailfrom not set use default */
   get_svr_attr_str(SRV_ATR_mailfrom, &mailfrom);
@@ -173,124 +249,123 @@ void *send_the_mail(
     mailfrom = PBS_DEFAULT_MAIL;
     }
 
-  /* mail subject line formating statement */
-  get_svr_attr_str(SRV_ATR_MailSubjectFmt, &subjectfmt);
-  if (subjectfmt == NULL)
+  sendmail_args[numargs++] = (char *)SENDMAIL_CMD;
+  sendmail_args[numargs++] = (char *)"-f";
+  sendmail_args[numargs++] = (char *)mailfrom;
+
+  /* Add the e-mail addresses to the command line */
+  mailptr = strdup(mi->mailto);
+  sendmail_args[numargs++] = mailptr;
+  for (counter=0; counter < (int)strlen(mailptr); counter++)
     {
-    subjectfmt = "PBS JOB %i";
-    }
-
-  /* mail body formating statement */
-  get_svr_attr_str(SRV_ATR_MailBodyFmt, &bodyfmt);
-  if (bodyfmt == NULL)
-    {
-    bodyfmt =  strcpy(bodyfmtbuf, "PBS Job Id: %i\n"
-                                  "Job Name:   %j\n");
-    if (mi->exec_host != NULL)
+    if (mailptr[counter] == ',')
       {
-      strcat(bodyfmt, "Exec host:  %h\n");
-      }
-
-    strcat(bodyfmt, "%m\n");
-
-    if (mi->text != NULL)
-      {
-      strcat(bodyfmt, "%d\n");
+      mailptr[counter] = '\0';
+      sendmail_args[numargs++] = mailptr + counter + 1;
+      if (numargs >= 99)
+        break;
       }
     }
 
-  /* setup sendmail command line with -f from_whom */
-  i = strlen(SENDMAIL_CMD) + strlen(mailfrom) + strlen(mi->mailto) + 6;
-
-  if ((cmdbuf = calloc(1, i + 1)) == NULL)
-    {
-    char tmpBuf[LOG_BUF_SIZE];
-
-    snprintf(tmpBuf,sizeof(tmpBuf),
-      "Unable to popen() command '%s' for writing: '%s' (error %d)\n",
-      SENDMAIL_CMD,
-      strerror(errno),
-      errno);
-    log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      mi->jobid,
-      tmpBuf);
+  sendmail_args[numargs] = NULL;
   
-    free_mail_info(mi);
-
-    return(NULL);
-    }
-
-  sprintf(cmdbuf, "%s -f %s %s",
-    SENDMAIL_CMD,
-    mailfrom,
-    mi->mailto);
-
-  outmail = popen(cmdbuf, "w");
-
-  if (outmail == NULL)
+  /* Create a pipe to talk to the sendmail process we are about to fork */
+  if (pipe(pipes) == -1)
     {
-    char tmpBuf[LOG_BUF_SIZE];
-
-    snprintf(tmpBuf,sizeof(tmpBuf),
-      "Unable to popen() command '%s' for writing: '%s' (error %d)\n",
-      cmdbuf,
-      strerror(errno),
-      errno);
+    snprintf(tmpBuf, sizeof(tmpBuf), "Unable to pipes for sending e-mail\n");
     log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
       mi->jobid,
       tmpBuf);
 
     free_mail_info(mi);
-    free(cmdbuf);
-
+    free(mailptr);
     return(NULL);
     }
 
-  /* Pipe in mail headers: To: and Subject: */
-  fprintf(outmail, "To: %s\n", mi->mailto);
-
-  fprintf(outmail, "Subject: ");
-  svr_format_job(outmail, mi, subjectfmt);
-  fprintf(outmail, "\n");
-
-  /* Set "Precedence: bulk" to avoid vacation messages, etc */
-  fprintf(outmail, "Precedence: bulk\n\n");
-
-  /* Now pipe in the email body */
-  svr_format_job(outmail, mi, bodyfmt);
-
-  errno = 0;
-  if ((i = pclose(outmail)) != 0)
+  if ((pid=fork()) == -1)
     {
-    char tmpBuf[LOG_BUF_SIZE];
-
-    snprintf(tmpBuf,sizeof(tmpBuf),
-      "Email '%c' to %s failed: Child process '%s' %s %d (errno %d:%s)\n",
-      mi->mail_point,
-      mi->mailto,
-      cmdbuf,
-      ((WIFEXITED(i)) ? ("returned") : ((WIFSIGNALED(i)) ? ("killed by signal") : ("croaked"))),
-      ((WIFEXITED(i)) ? (WEXITSTATUS(i)) : ((WIFSIGNALED(i)) ? (WTERMSIG(i)) : (i))),
-      errno,
-      strerror(errno));
+    snprintf(tmpBuf, sizeof(tmpBuf), "Unable to fork for sending e-mail\n");
     log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
       mi->jobid,
       tmpBuf);
-    }
-  else if (LOGLEVEL >= 4)
-    {
-    log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      mi->jobid,
-      "Email sent successfully\n");
-    }
 
-  free_mail_info(mi);
-  free(cmdbuf);
+    free_mail_info(mi);
+    free(mailptr);
+    close(pipes[0]);
+    close(pipes[1]);
+    return(NULL);
+    }
+  else if (pid == 0)
+    {
+    /* CHILD */
+
+    /* Make stdin the read end of the pipe */
+    dup2(pipes[0], 0);
+
+    /* Close the rest of the open file descriptors */
+    int numfds = sysconf(_SC_OPEN_MAX);
+    while (--numfds > 0)
+      close(numfds);
+
+    execv(SENDMAIL_CMD, sendmail_args);
+    /* This never returns, but if the execv fails the child should exit */
+    exit(1);
+    }
+  else
+    {
+    /* This is the parent */
+
+    /* Close the read end of the pipe */
+    close(pipes[0]);
+
+    /* Write the body to the pipe */
+    stream = fdopen(pipes[1], "w");
+    write_email(stream, mi);
+
+    fflush(stream);
+
+    /* Close and wait for the command to finish */
+    if (fclose(stream) != 0)
+      {
+      snprintf(tmpBuf,sizeof(tmpBuf),
+        "Piping mail body to sendmail closed: errno %d:%s\n",
+        errno, strerror(errno));
+
+      log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        mi->jobid,
+        tmpBuf);
+      }
+
+    // we aren't going to block in order to find out whether or not sendmail worked 
+    if ((waitpid(pid, &status, WNOHANG) != 0) &&
+        (status != 0))
+      {
+      snprintf(tmpBuf,sizeof(tmpBuf),
+        "Sendmail command returned %d. Mail may not have been sent\n",
+        status);
+
+      log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        mi->jobid,
+        tmpBuf);
+      }
+
+    // don't leave zombies
+    while (waitpid(-1, &status, WNOHANG) != 0)
+      {
+      // zombie reaped, NO-OP
+      }
+      
+    free_mail_info(mi);
+    free(mailptr);
+    return(NULL);
+    }
     
+  /* NOT REACHED */
+
   return(NULL);
   } /* END send_the_mail() */
 
