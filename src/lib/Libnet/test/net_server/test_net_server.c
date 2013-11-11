@@ -3,6 +3,12 @@
 #include "test_net_server.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <string>
+#include <errno.h>
+#include <string.h>
 
 
 #include "server_limits.h"
@@ -54,6 +60,29 @@ START_TEST(test_add_connection)
   }
 END_TEST
 
+START_TEST(test_check_trqauthd_unix_domain_port)
+  {
+  int fd;
+  int rc;
+  std::string unix_domain_file_name;
+
+  unix_domain_file_name = "./unit_test";
+  fd = open(unix_domain_file_name.c_str(), O_RDWR | O_TRUNC | O_CREAT);
+  fail_unless((fd >= 0), "Could not open unix domain file. %s", strerror(errno));
+  
+  rc = check_trqauthd_unix_domain_port(unix_domain_file_name.c_str());
+  fail_unless((rc == PBSE_SOCKET_LISTEN), "check_trqauthd_unix_domain_port failed for existing unix domain file %s", unix_domain_file_name.c_str());
+
+  rc = unlink(unix_domain_file_name.c_str());
+  fail_unless((rc == 0), "could not unlink unix domain file", strerror(errno)); 
+
+  rc = check_trqauthd_unix_domain_port(unix_domain_file_name.c_str());
+  fail_unless((rc == PBSE_NONE), "check_trqauthd_unix_domain_port failed for success case", rc);
+
+  }
+END_TEST
+
+
 Suite *net_server_suite(void)
   {
   Suite *s = suite_create("net_server_suite methods");
@@ -67,6 +96,10 @@ Suite *net_server_suite(void)
 
   tc_core = tcase_create("test_add_connection");
   tcase_add_test(tc_core, test_add_connection);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_check_trqauthd_unix_domain_port");
+  tcase_add_test(tc_core, test_check_trqauthd_unix_domain_port);
   suite_add_tcase(s, tc_core);
 
   return s;

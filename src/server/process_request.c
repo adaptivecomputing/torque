@@ -441,7 +441,7 @@ int process_request(
     goto process_request_cleanup;
     }
 
-  if (LOGLEVEL >= 1)
+  if (LOGLEVEL >= 8)
     {
     sprintf(log_buf,
       msg_request,

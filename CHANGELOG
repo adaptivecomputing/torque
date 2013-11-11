@@ -13,6 +13,14 @@ ascent
       after the job was deleted.
   b - TRQ-2351. Fix an issue where moms that are before 4.2.6 can't run jobs if the
       server is 4.2.6.
+  e - Made it so trqauthd cannot be loaded more than once. trqauthd opens a UNIX
+      domain name file to do its communication with client commands. If the
+      UNIX domain name file exists trqauthd will not load. By default this file
+      is /tmp/trqauthd-unix. It can be configured to point to a different directory.
+      If trqauthd will not start and you know there are no other instances of trqauthd
+      running you should delete the UNIX domain file and try again.
+
+
 
 4.2.6
   b - TRQ-2273. Job start time is hard coded to 5 minutes. If the prolog takes longer

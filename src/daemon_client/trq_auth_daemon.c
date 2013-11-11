@@ -15,6 +15,9 @@
 #include <getopt.h> /*getopt_long */
 #include <sys/types.h>
 #include <pwd.h>   /* getuid */
+#include <string>
+#include <iostream>
+#include <sstream>
 #include "pbs_error.h" /* PBSE_NONE */
 #include "pbs_constants.h" /* AUTH_IP */
 #include "pbs_ifl.h" /* pbs_default, PBS_BATCH_SERVICE_PORT, TRQ_AUTHD_SERVICE_PORT */
@@ -43,11 +46,12 @@ int load_trqauthd_config(
 
   char **default_server_name,
   int   *t_port,
-  int   *d_port)
+  char **trqauthd_unix_domain_port)
 
   {
   int rc = PBSE_NONE;
-  char *tmp_name;
+  char *tmp_name = NULL;
+  int  unix_domain_len;
 
   tmp_name = pbs_default();
 
@@ -64,7 +68,13 @@ int load_trqauthd_config(
     PBS_get_server(tmp_name, (unsigned int *)t_port);
     if (*t_port == 0)
       *t_port = PBS_BATCH_SERVICE_PORT;
-    *d_port = TRQ_AUTHD_SERVICE_PORT;
+
+    unix_domain_len = strlen(TRQAUTHD_SOCK_DIR);
+    unix_domain_len += strlen(TRQAUTHD_SOCK_NAME) + 2; /* on for the "/" and one for zero termination*/
+    *trqauthd_unix_domain_port = (char *)malloc(unix_domain_len);
+    strcpy(*trqauthd_unix_domain_port, TRQAUTHD_SOCK_DIR);
+    strcat(*trqauthd_unix_domain_port, "/");
+    strcat(*trqauthd_unix_domain_port, TRQAUTHD_SOCK_NAME);
     set_active_pbs_server(tmp_name, *t_port);
     }
 
@@ -80,7 +90,7 @@ int load_ssh_key(
 
 
 
-void initialize_globals_for_log(int port)
+void initialize_globals_for_log(const char *port)
   {
   strcpy(pbs_current_user, "trqauthd");   
   if ((msg_daemonname = strdup(pbs_current_user)))
@@ -88,7 +98,7 @@ void initialize_globals_for_log(int port)
   log_set_hostname_sharelogging(active_pbs_server, port);
   }
 
-int init_trqauth_log(int server_port)
+int init_trqauth_log(const char *server_port)
   {
   const char *path_home = PBS_SERVER_HOME;
   int eventclass = PBS_EVENTCLASS_TRQAUTHD;
@@ -123,7 +133,7 @@ int init_trqauth_log(int server_port)
   }
 
 
-int daemonize_trqauthd(const char *server_ip, int server_port, void *(*process_meth)(void *))
+int daemonize_trqauthd(const char *server_ip, const char *server_port, void *(*process_meth)(void *))
   {
   int gid;
   pid_t pid;
@@ -164,7 +174,7 @@ int daemonize_trqauthd(const char *server_ip, int server_port, void *(*process_m
       }
     else
       {
-      fprintf(stderr, "trqauthd daemonized - port %d\n", server_port);
+      fprintf(stderr, "trqauthd daemonized - port %s\n", server_port);
       /* If I made it here I am the child */
       fclose(stdin);
       fclose(stdout);
@@ -183,7 +193,7 @@ int daemonize_trqauthd(const char *server_ip, int server_port, void *(*process_m
     }
   else
     {
-    fprintf(stderr, "trqauthd port: %d\n", server_port);
+    fprintf(stderr, "trqauthd port: %s\n", server_port);
     }
 
     /* start the listener */
@@ -204,7 +214,7 @@ int daemonize_trqauthd(const char *server_ip, int server_port, void *(*process_m
       exit(-1);
       }
     snprintf(msg_trqauthddown, sizeof(msg_trqauthddown),
-      "TORQUE authd daemon shut down and no longer listening on IP:port %s:%d",
+      "TORQUE authd daemon shut down and no longer listening on IP:port %s:%s",
       server_ip, server_port);
     log_record(PBSEVENT_SYSTEM | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD,
       msg_daemonname, msg_trqauthddown);
@@ -354,20 +364,20 @@ int trq_main(
   char *the_key = NULL;
   char *sign_key = NULL;
   int trq_server_port = 0;
-  int daemon_port = 0;
+  char *daemon_port;
   void *(*process_method)(void *) = process_svr_conn;
 
   parse_command_line(argc, argv);
-
-  rc = set_trqauthd_addr();
-  if (rc != PBSE_NONE)
-    return(rc);
 
   if (IamRoot() == 0)
     {
     printf("This program must be run as root!!!\n");
     return(PBSE_IVALREQ);
     }
+
+  rc = set_trqauthd_addr();
+  if (rc != PBSE_NONE)
+    return(rc);
 
   if (down_server == true)
     {
@@ -378,6 +388,10 @@ int trq_main(
   if ((rc = load_trqauthd_config(&active_pbs_server, &trq_server_port, &daemon_port)) != PBSE_NONE)
     {
     fprintf(stderr, "Failed to load configuration. Make sure the $TORQUE_HOME/server_name file exists\n");
+    }
+  else if ((rc = check_trqauthd_unix_domain_port(daemon_port)) != PBSE_NONE)
+    {
+    fprintf(stderr, "trqauthd unix domain file %s already bound.\n trqauthd may already be running \n", daemon_port);
     }
   else if ((rc = load_ssh_key(&the_key)) != PBSE_NONE)
     {
