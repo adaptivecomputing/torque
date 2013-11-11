@@ -91,6 +91,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "list_link.h"
 #include "attribute.h"
 #include "server_limits.h"
@@ -98,7 +99,7 @@
 #include "log.h"
 #include "server.h"
 #include "rpp.h"
-
+#include "utils.h"
 
 /* External Functions Called */
 
@@ -111,21 +112,100 @@ extern struct server server;
 
 extern int LOGLEVEL;
 
+
+
+
+/*
+ * write_email()
+ *
+ * In emailing, the mail body is written to a pipe connected to
+ * standard input for sendmail. This function supplies the body
+ * of the message.
+ *
+ */
+void write_email(
+
+  FILE      *outmail_input,
+  job       *pjob,
+  char      *mailto,
+  int        mailpoint,
+  char      *text)
+
+  {
+  char *bodyfmt = NULL;
+  char  bodyfmtbuf[MAXLINE];
+  char *subjectfmt = NULL;
+
+  /* Pipe in mail headers: To: and Subject: */
+  fprintf(outmail_input, "To: %s\n", mailto);
+
+  /* mail subject line formating statement */
+  if ((server.sv_attr[SRV_ATR_MailSubjectFmt].at_flags & ATR_VFLAG_SET) &&
+      (server.sv_attr[SRV_ATR_MailSubjectFmt].at_val.at_str != NULL))
+    {
+    subjectfmt = server.sv_attr[SRV_ATR_MailSubjectFmt].at_val.at_str;
+    }
+  else
+    {
+    subjectfmt = "PBS JOB %i";
+    }
+
+  fprintf(outmail_input, "Subject: ");
+  svr_format_job(outmail_input, pjob, subjectfmt, mailpoint, text);
+  fprintf(outmail_input, "\n");
+
+  /* Set "Precedence: bulk" to avoid vacation messages, etc */
+  fprintf(outmail_input, "Precedence: bulk\n\n");
+
+  /* mail body formating statement */
+  if ((server.sv_attr[SRV_ATR_MailBodyFmt].at_flags & ATR_VFLAG_SET) &&
+      (server.sv_attr[SRV_ATR_MailBodyFmt].at_val.at_str != NULL))
+    {
+    bodyfmt = server.sv_attr[SRV_ATR_MailBodyFmt].at_val.at_str;
+    }
+  else
+    {
+    bodyfmt =  strcpy(bodyfmtbuf, "PBS Job Id: %i\n"
+                                  "Job Name:   %j\n");
+    if (pjob->ji_wattr[JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET)
+      {
+      strcat(bodyfmt, "Exec host:  %h\n");
+      }
+
+    strcat(bodyfmt, "%m\n");
+
+    if (text != NULL)
+      {
+      strcat(bodyfmt, "%d\n");
+      }
+    }
+
+  /* Now pipe in the email body */
+  svr_format_job(outmail_input, pjob, bodyfmt, mailpoint, text);
+  } /* write_email() */
+
+
+
 void svr_mailowner(
 
   job   *pjob,       /* I */
-  int   mailpoint,  /* note, single character  */
+  int    mailpoint,  /* note, single character  */
   int    force,      /* if set to MAIL_FORCE, force mail delivery */
   char *text)      /* (optional) additional message text */
 
   {
-  char *cmdbuf;
-  int    i;
-  char *mailfrom;
-  char  mailto[1024];
-  char *bodyfmt, *subjectfmt;
-  char bodyfmtbuf[1024];
-  FILE *outmail;
+  int         status = 0;
+  int         numargs = 0;
+  int         pipes[2];
+  int         counter;
+  pid_t       pid;
+  char       *mailptr;
+  char       *mailfrom = NULL;
+  char        tmpBuf[LOG_BUF_SIZE];
+  // We call sendmail with cmd_name + 2 arguments + # of mailto addresses + 1 for null
+  char       *sendmail_args[100];
+  char        mailto[1024];
+  FILE       *stream;
 
   struct array_strings *pas;
 
@@ -217,17 +297,12 @@ void svr_mailowner(
     return;  /* its all up to the child now */
     }
 
-  /*
-   * From here on, we are a child process of the server.
-   * Fix up file descriptors and signal handlers.
-   */
-
-  rpp_terminate();
-
-  net_close(-1);
-
+  /* Close the rest of the open file descriptors */
+  int numfds = sysconf(_SC_OPEN_MAX);
+  while (--numfds > 0)
+    close(numfds);
+  
   /* Who is mail from, if SRV_ATR_mailfrom not set use default */
-
   if ((mailfrom = server.sv_attr[SRV_ATR_mailfrom].at_val.at_str) == NULL)
     {
     if (LOGLEVEL >= 5)
@@ -244,19 +319,18 @@ void svr_mailowner(
       }
     mailfrom = PBS_DEFAULT_MAIL;
     }
-
+  
   /* Who does the mail go to?  If mail-list, them; else owner */
-
   *mailto = '\0';
 
   if (pjob->ji_wattr[JOB_ATR_mailuser].at_flags & ATR_VFLAG_SET)
     {
     /* has mail user list, send to them rather than owner */
-
     pas = pjob->ji_wattr[JOB_ATR_mailuser].at_val.at_arst;
 
     if (pas != NULL)
       {
+      int i;
       for (i = 0;i < pas->as_usedptr;i++)
         {
         if ((strlen(mailto) + strlen(pas->as_string[i]) + 2) < sizeof(mailto))
@@ -270,7 +344,6 @@ void svr_mailowner(
   else
     {
     /* no mail user list, just send to owner */
-
     if ((server.sv_attr[SRV_ATR_MailDomain].at_flags & ATR_VFLAG_SET) &&
         (server.sv_attr[SRV_ATR_MailDomain].at_val.at_str != NULL))
       {
@@ -316,135 +389,121 @@ void svr_mailowner(
       }
     }
 
-  /* mail subject line formating statement */
+  sendmail_args[numargs++] = (char *)SENDMAIL_CMD;
+  sendmail_args[numargs++] = (char *)"-f";
+  sendmail_args[numargs++] = (char *)mailfrom;
 
-  if ((server.sv_attr[SRV_ATR_MailSubjectFmt].at_flags & ATR_VFLAG_SET) &&
-      (server.sv_attr[SRV_ATR_MailSubjectFmt].at_val.at_str != NULL))
+  /* Add the e-mail addresses to the command line */
+  mailptr = strdup(mailto);
+  sendmail_args[numargs++] = mailptr;
+  for (counter=0; counter < (int)strlen(mailptr); counter++)
     {
-    subjectfmt = server.sv_attr[SRV_ATR_MailSubjectFmt].at_val.at_str;
+    if (mailptr[counter] == ',')
+      {
+      mailptr[counter] = '\0';
+      sendmail_args[numargs++] = mailptr + counter + 1;
+      if (numargs >= 99)
+        break;
+      }
+    }
+
+  sendmail_args[numargs] = NULL;
+  
+  /* Create a pipe to talk to the sendmail process we are about to fork */
+  if (pipe(pipes) == -1)
+    {
+    snprintf(tmpBuf, sizeof(tmpBuf), "Unable to pipes for sending e-mail\n");
+    log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      tmpBuf);
+
+    free(mailptr);
+    exit(-1);
+    }
+
+  if ((pid=fork()) == -1)
+    {
+    snprintf(tmpBuf, sizeof(tmpBuf), "Unable to fork for sending e-mail\n");
+    log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      tmpBuf);
+
+    free(mailptr);
+    close(pipes[0]);
+    close(pipes[1]);
+    exit(-1);
+    }
+  else if (pid == 0)
+    {
+    /* CHILD */
+
+    /* Make stdin the read end of the pipe */
+    dup2(pipes[0], 0);
+
+    /* Close the rest of the open file descriptors */
+    int numfds = sysconf(_SC_OPEN_MAX);
+    while (--numfds > 0)
+      close(numfds);
+
+    execv(SENDMAIL_CMD, sendmail_args);
+    /* This never returns, but if the execv fails the child should exit */
+    exit(1);
     }
   else
     {
-    subjectfmt = "PBS JOB %i";
-    }
+    /* This is the parent */
 
-  /* mail body formating statement */
+    /* Close the read end of the pipe */
+    close(pipes[0]);
 
-  if ((server.sv_attr[SRV_ATR_MailBodyFmt].at_flags & ATR_VFLAG_SET) &&
-      (server.sv_attr[SRV_ATR_MailBodyFmt].at_val.at_str != NULL))
-    {
-    bodyfmt = server.sv_attr[SRV_ATR_MailBodyFmt].at_val.at_str;
-    }
-  else
-    {
-    bodyfmt =  strcpy(bodyfmtbuf, "PBS Job Id: %i\n"
-                                  "Job Name:   %j\n");
-    if (pjob->ji_wattr[JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET)
+    /* Write the body to the pipe */
+    stream = fdopen(pipes[1], "w");
+    write_email(stream, pjob, mailto, mailpoint, text);
+
+    fflush(stream);
+
+    /* Close and wait for the command to finish */
+    if (fclose(stream) != 0)
       {
-      strcat(bodyfmt, "Exec host:  %h\n");
+      snprintf(tmpBuf,sizeof(tmpBuf),
+        "Piping mail body to sendmail closed: errno %d:%s\n",
+        errno, strerror(errno));
+
+      log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        tmpBuf);
       }
 
-    strcat(bodyfmt, "%m\n");
-
-    if (text != NULL)
+    // we aren't going to block in order to find out whether or not sendmail worked 
+    if ((waitpid(pid, &status, WNOHANG) != 0) &&
+        (status != 0))
       {
-      strcat(bodyfmt, "%d\n");
+      snprintf(tmpBuf,sizeof(tmpBuf),
+        "Sendmail command returned %d. Mail may not have been sent\n",
+        status);
+
+      log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        tmpBuf);
       }
+
+    // don't leave zombies
+    while (waitpid(-1, &status, WNOHANG) != 0)
+      {
+      // zombie reaped, NO-OP
+      }
+      
+    free(mailptr);
+    exit(0);
     }
-  /* setup sendmail command line with -f from_whom */
-
-  i = strlen(SENDMAIL_CMD) + strlen(mailfrom) + strlen(mailto) + 6;
-
-  if ((cmdbuf = malloc(i)) == NULL)
-    {
-    char tmpBuf[LOG_BUF_SIZE];
-
-    snprintf(tmpBuf,sizeof(tmpBuf),
-      "Unable to popen() command '%s' for writing: '%s' (error %d)\n",
-      cmdbuf,
-      strerror(errno),
-      errno);
-    log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      tmpBuf);
-
-    exit(1);
-    }
-
-  sprintf(cmdbuf, "%s -f %s %s",
-
-          SENDMAIL_CMD,
-          mailfrom,
-          mailto);
-
-  outmail = (FILE *)popen(cmdbuf, "w");
-
-  if (outmail == NULL)
-    {
-    char tmpBuf[LOG_BUF_SIZE];
-
-    snprintf(tmpBuf,sizeof(tmpBuf),
-      "Unable to popen() command '%s' for writing: '%s' (error %d)\n",
-      cmdbuf,
-      strerror(errno),
-      errno);
-    log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      tmpBuf);
-
-    exit(1);
-    }
-
-  /* Pipe in mail headers: To: and Subject: */
-
-  fprintf(outmail, "To: %s\n",
-          mailto);
-
-  fprintf(outmail, "Subject: ");
-  svr_format_job(outmail, pjob, subjectfmt, mailpoint, text);
-  fprintf(outmail, "\n");
-
-  /* Set "Precedence: bulk" to avoid vacation messages, etc */
-
-  fprintf(outmail, "Precedence: bulk\n\n");
-
-  /* Now pipe in the email body */
-  svr_format_job(outmail, pjob, bodyfmt, mailpoint, text);
-
-  errno = 0;
-  if ((i = pclose(outmail)) != 0)
-    {
-    char tmpBuf[LOG_BUF_SIZE];
-
-    snprintf(tmpBuf,sizeof(tmpBuf),
-      "Email '%c' to %s failed: Child process '%s' %s %d (errno %d:%s)\n",
-      mailpoint,
-      mailto,
-      cmdbuf,
-      ((WIFEXITED(i)) ? ("returned") : ((WIFSIGNALED(i)) ? ("killed by signal") : ("croaked"))),
-      ((WIFEXITED(i)) ? (WEXITSTATUS(i)) : ((WIFSIGNALED(i)) ? (WTERMSIG(i)) : (i))),
-      errno,
-      strerror(errno));
-    log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      tmpBuf);
-    }
-  else if (LOGLEVEL >= 4)
-    {
-    log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      "Email sent successfully\n");
-    }
+    
+  /* NOT REACHED */
 
   exit(0);
-
-  /*NOTREACHED*/
-
-  return;
   }  /* END svr_mailowner() */
 
 /* END svr_mail.c */
