@@ -55,7 +55,7 @@ int req_rescq(batch_request *preq)
   exit(1);
   }
 
-int svr_job_purge(job *pjob)
+int svr_job_purge(job *pjob, int)
   {
   fprintf(stderr, "The call to job_purge needs to be mocked!!\n");
   exit(1);
