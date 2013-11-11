@@ -79,6 +79,7 @@ int get_num_connections();
 void netcounter_get(int netrates[]);
 int init_network(unsigned int port, void *(*readfunc)(void *));
 int check_network_port(unsigned int port);
+int check_trqauthd_unix_domain_port(const char *);
 int thread_func(int active_sockets, fd_set *select_set);
 int wait_request(time_t waittime, long *SState);
 /* static void accept_conn(void *new_conn); */

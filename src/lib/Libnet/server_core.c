@@ -294,6 +294,7 @@ int start_domainsocket_listener(
   if (listen_socket != -1)
     close(listen_socket);
 
+  unlink(socket_name);
   log_close(1);
 
   return(rc);
