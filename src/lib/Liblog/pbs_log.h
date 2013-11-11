@@ -36,7 +36,7 @@ void log_get_set_eventclass(int *objclass, SGetter action);
 
 void log_format_trq_timestamp(char *time_formatted_str, unsigned int buflen);
 
-void log_set_hostname_sharelogging(const char *server_name, int server_port);
+void log_set_hostname_sharelogging(const char *server_name, const char *server_port);
 
 void log_get_host_port(char *host_n_port, size_t s);
 
