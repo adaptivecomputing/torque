@@ -116,6 +116,7 @@
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
 #include "threadpool.h"
+#include "req_delete.h"
 #include <string>
 
 #define PURGE_SUCCESS 1
@@ -129,6 +130,7 @@ extern char *msg_delrunjobsig;
 extern char *msg_manager;
 extern char *msg_permlog;
 extern char *msg_badstate;
+extern char *server_host;
 
 extern struct server server;
 extern int   LOGLEVEL;
@@ -343,7 +345,20 @@ void force_purge_work(
   svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
   
   if (pjob != NULL)
-    svr_job_purge(pjob);
+    {
+    if (is_ms_on_server(pjob))
+      {
+      char  log_buf[LOCAL_LOG_BUF_SIZE];
+      if (LOGLEVEL >= 7)
+        {
+        snprintf(log_buf, sizeof(log_buf), "Mother Superior is on the server, not cleaning spool files in %s", __func__);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        }
+      svr_job_purge(pjob, 1);
+      }
+    else
+      svr_job_purge(pjob);
+    }
   } /* END force_purge_work() */
 
 
@@ -1744,6 +1759,38 @@ void purge_completed_jobs(
 
   return;
   } /* END purge_completed_jobs() */
+
+
+/*
+ * is_ms_on_server() determines whether the mother superior
+ * is on the pbs_server or not.
+ */
+int is_ms_on_server(const job *pjob)
+  {
+  char mom_fullhostname[PBS_MAXHOSTNAME + 1];
+  int ms_on_server = 0;
+
+  char *exec_hosts = pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str;
+  if (exec_hosts)
+    {
+    char *host_tok = threadsafe_tokenizer(&exec_hosts, "+");
+    if (host_tok)
+      {
+      char *slash;
+      if ((slash = strchr(host_tok, '/')) != NULL)
+        *slash = '\0';
+
+      snprintf(mom_fullhostname, sizeof(mom_fullhostname), "%s", host_tok);
+
+      if (strstr(server_host, "."))
+        if (strstr(host_tok, ".") == NULL)
+          get_fullhostname(host_tok, mom_fullhostname, sizeof(mom_fullhostname), NULL);
+
+      ms_on_server = strcmp(server_host, mom_fullhostname) != 0;
+      }
+    }
+  return ms_on_server;
+  } /* is_ms_on_server */
 
 /* END req_delete.c */
 
