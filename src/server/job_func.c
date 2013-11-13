@@ -1797,8 +1797,7 @@ int record_jobinfo(
 
 int svr_job_purge(
 
-  job *pjob,  /* I (modified) */
-  int leaveSpoolFiles) /* I */
+  job *pjob)  /* I (modified) */
 
   {
   int           rc = PBSE_NONE;
@@ -1956,37 +1955,34 @@ int svr_job_purge(
       }
     }
 
-  if (!leaveSpoolFiles)
+  /* delete any spooled stdout */
+  snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_spool, job_fileprefix, JOB_STDOUT_SUFFIX);
+
+  if (unlink(namebuf) < 0)
     {
-    /* delete any spooled stdout */
-    snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_spool, job_fileprefix, JOB_STDOUT_SUFFIX);
+    if (errno != ENOENT)
+      log_err(errno, __func__, msg_err_purgejob);
+    }
+  else if (LOGLEVEL >= 6)
+    {
+    sprintf(log_buf, "removed job stdout");
 
-    if (unlink(namebuf) < 0)
-      {
-      if (errno != ENOENT)
-        log_err(errno, __func__, msg_err_purgejob);
-      }
-    else if (LOGLEVEL >= 6)
-      {
-      sprintf(log_buf, "removed job stdout");
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, job_id, log_buf);
+    }
 
-      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, job_id, log_buf);
-      }
+  /* delete any spooled stderr */
+  snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_spool, job_fileprefix, JOB_STDERR_SUFFIX);
 
-    /* delete any spooled stderr */
-    snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_spool, job_fileprefix, JOB_STDERR_SUFFIX);
+  if (unlink(namebuf) < 0)
+    {
+    if (errno != ENOENT)
+      log_err(errno, __func__, msg_err_purgejob);
+    }
+  else if (LOGLEVEL >= 6)
+    {
+    sprintf(log_buf, "removed job stderr");
 
-    if (unlink(namebuf) < 0)
-      {
-      if (errno != ENOENT)
-        log_err(errno, __func__, msg_err_purgejob);
-      }
-    else if (LOGLEVEL >= 6)
-      {
-      sprintf(log_buf, "removed job stderr");
-
-      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, job_id, log_buf);
-      }
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, job_id, log_buf);
     }
 
   /* delete checkpoint file directory if there is one */

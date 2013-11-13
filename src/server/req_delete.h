@@ -22,6 +22,4 @@ void remove_job_delete_nanny(struct job *pjob);
 
 void purge_completed_jobs(struct batch_request *preq);
 
-int is_ms_on_server(const job *pjob);
-
 #endif /* _REQ_DELETE_H */
