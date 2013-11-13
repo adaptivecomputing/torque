@@ -138,7 +138,7 @@ void log_event(int eventtype, int objclass, const char *objname, const char *tex
 
 void free_nodes(job *pjob) {}
 
-int svr_job_purge(job *pjob)
+int svr_job_purge(job *pjob, int leaveSpoolFiles)
   {
   return(0);
   }

@@ -118,6 +118,7 @@
 #include "req_runjob.h" /* finish_sendmom */
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
+#include "job_func.h"
 
 #if __STDC__ != 1
 #include <memory.h>
@@ -133,7 +134,6 @@
 extern void remove_stagein(job **);
 extern void remove_checkpoint(job **);
 extern int  job_route(job *);
-extern int svr_job_purge(job *);
 int PBSD_commit_get_sid(int ,long *,char *);
 int get_job_file_path(job *,enum job_file, char *, int);
 void add_dest(job *jobp);
