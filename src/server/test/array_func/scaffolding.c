@@ -242,7 +242,7 @@ job *svr_find_job(char *name, int get_subjob)
   return(NULL);
   }
 
-int svr_job_purge(job *pjob)
+int svr_job_purge(job *pjob, int leaveSpoolFiles)
   {
   return(0);
   }

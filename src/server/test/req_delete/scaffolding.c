@@ -44,7 +44,7 @@ int job_save(job *pjob, int updatetype, int mom_port)
   exit(1);
   }
 
-int svr_job_purge(job *pjob)
+int svr_job_purge(job *pjob, int leaveSpoolFiles)
   {
   fprintf(stderr, "The call to job_purge needs to be mocked!!\n");
   exit(1);
@@ -197,13 +197,6 @@ void svr_evaljobstate(job *pjob, int *newstate, int *newsub, int forceeval)
 int insert_task(all_tasks *at, work_task *wt)
   {
   fprintf(stderr, "The call to insert_task needs to be mocked!!\n");
-  exit(1);
-  }
-
-
-char *threadsafe_tokenizer(char **str, const char *delims)
-  {
-  fprintf(stderr, "The call to threadsafe_tokenizer needs to be mocked!!\n");
   exit(1);
   }
 

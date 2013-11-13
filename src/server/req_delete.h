@@ -12,7 +12,7 @@ void ensure_deleted(struct work_task *ptask);
 
 int execute_job_delete(job *pjob, char *Msg, struct batch_request *preq);
 
-struct batch_request *duplicate_request(struct batch_request *preq);
+struct batch_request *duplicate_request(struct batch_request *preq, int            job_index);
 
 int req_deletejob(struct batch_request *preq);
 
@@ -30,12 +30,14 @@ int has_job_delete_nanny(struct job *pjob);
 
 void remove_job_delete_nanny(struct job *pjob);
 
-struct work_task *apply_job_delete_nanny(struct job *pjob, int delay);
+int apply_job_delete_nanny(struct job *pjob, int delay);
 
 /* static void job_delete_nanny(struct work_task *pwt); */
 
 /* static void post_job_delete_nanny(struct work_task *pwt); */
 
 void purge_completed_jobs(struct batch_request *preq);
+
+int is_ms_on_server(const job *pjob);
 
 #endif /* _REQ_DELETE_H */
