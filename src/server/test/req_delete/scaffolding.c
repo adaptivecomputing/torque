@@ -59,7 +59,7 @@ int job_save(job *pjob, int updatetype, int mom_port)
   exit(1);
   }
 
-int svr_job_purge(job *pjob)
+int svr_job_purge(job *pjob, int leaveSpoolFiles)
   {
   pjob->ji_qs.ji_state = JOB_STATE_COMPLETE;
   return(0);
@@ -195,13 +195,6 @@ void svr_evaljobstate(job *pjob, int *newstate, int *newsub, int forceeval)
 int insert_task(all_tasks *at, work_task *wt)
   {
   fprintf(stderr, "The call to insert_task needs to be mocked!!\n");
-  exit(1);
-  }
-
-
-char *threadsafe_tokenizer(char **str, const char *delims)
-  {
-  fprintf(stderr, "The call to threadsafe_tokenizer needs to be mocked!!\n");
   exit(1);
   }
 
@@ -567,4 +560,14 @@ void log_record(
 
   {
   return;
+  }
+
+ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
+  {
+  return(0);
+  }
+
+ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
+  {
+  return(0);
   }
