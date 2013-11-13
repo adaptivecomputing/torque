@@ -372,11 +372,9 @@ void svr_mailowner(
     exit(1);
     }
 
-  sprintf(cmdbuf, "%s -f %s %s",
-
+  sprintf(cmdbuf, "%s -t -f %s",
           SENDMAIL_CMD,
-          mailfrom,
-          mailto);
+          mailfrom);
 
   outmail = (FILE *)popen(cmdbuf, "w");
 
