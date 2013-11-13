@@ -28,7 +28,7 @@ void cleanup_restart_file(struct job *pjob);
 
 int record_jobinfo(struct job *pjob);
 
-int svr_job_purge(struct job *pjob, int keepSpoolFiles=0);
+int svr_job_purge(struct job *pjob);
 
 /*static*/ struct job *find_job_by_array(struct all_jobs *aj, char *job_id, int get_subjob);
 
