@@ -7,6 +7,7 @@
 #include "pbs_nodes.h"
 #include "pbs_job.h"
 #include "pbs_config.h"
+#include "node_internals.hpp"
 
 int LOGLEVEL;
 
@@ -17,18 +18,23 @@ nodeboard node_boards[MAX_NODE_BOARDS];
 int       numa_index;
 #endif
 
-#ifdef PENABLE_LINUX26_CPUSETS
 int              memory_pressure_threshold = 0; /* 0: off, >0: check and kill */
 short            memory_pressure_duration  = 0; /* 0: off, >0: check and kill */
 int              MOMConfigUseSMT           = 1; /* 0: off, 1: on */
 hwloc_topology_t topology;
-#endif
+node_internals   internal_layout;
 
 bool no_memory;
 
+extern bool check_event;
+extern void event_data(const char *d);
+
 void log_err(int l, const char *func_name, const char *msg) {}
 void log_ext(int a, const char *b, const char *c, int d) {}
-void log_event(int a, int b, const char *c, const char *d) {}
+void log_event(int a, int b, const char *c, const char *d)
+  {
+  if(check_event) event_data(d);
+  }
 
 job *mom_find_job(char *jobid) 
   {

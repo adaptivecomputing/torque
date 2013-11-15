@@ -351,6 +351,7 @@ src/lib/Libutils/test/u_xml/test_u_xml
 src/lib/Libutils/test/u_putenv/test_u_putenv
 src/momctl/test/momctl/test_momctl
 src/resmom/linux/test/cpuset/test_cpuset
+src/resmom/linux/test/cpuset/coverage_run.sh
 src/resmom/linux/test/numa_node/test_numa_node
 src/resmom/linux/test/node_internals/test_node_internals
 src/resmom/linux/test/mom_mach/test_mom_mach
