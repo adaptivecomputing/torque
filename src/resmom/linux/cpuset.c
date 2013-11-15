@@ -222,7 +222,6 @@ int hwloc_bitmap_displaylist(
 
 
 
-#ifndef UNIT_TEST_INIT_TORQUE_CPUSET
 /**
  * Initializes cpuset usage.
  *
@@ -278,12 +277,10 @@ int init_cpusets(void)
   return(rc);
 #endif /* USELIBCPUSET */
   } /* END init_cpusets() */
-#endif /* UNIT_TEST_INIT_TORQUE_CPUSET */
 
 
 
 
-#ifndef UNIT_TEST_INIT_TORQUE_CPUSET
 /**
  * Creates/modifies a cpuset.
  *
@@ -566,12 +563,10 @@ int create_cpuset(
   return(PBSE_NONE);
 #endif
   } /* END create_cpuset() */
-#endif /* UNIT_TEST_INIT_TORQUE_CPUSET */
 
 
 
 
-#ifndef UNIT_TEST_INIT_TORQUE_CPUSET
 /**
  * Read cpus and mems of a cpuset into hwloc_bitmap structs.
  *
@@ -791,7 +786,6 @@ int read_cpuset(
   return(rc);
 #endif
   } /* END read_cpuset() */
-#endif /* UNIT_TEST_INIT_TORQUE_CPUSET */
 
 
 
@@ -1050,7 +1044,6 @@ bool is_physical_core(
   }
 
 
-#ifndef UNIT_TEST_INIT_TORQUE_CPUSET
 void remove_logical_processor_if_requested(
 
   hwloc_bitmap_t *cpus)
@@ -1083,7 +1076,6 @@ void remove_logical_processor_if_requested(
       }
     }
   }
-#endif /* UNIT_TEST_INIT_TORQUE_CPUSET */
 
 
 

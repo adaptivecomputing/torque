@@ -1,4 +1,5 @@
-#include "license_pbs.h" 
+#include "license_pbs.h"
+#include <pbs_config.h>
 #include <iostream>
 #include <iomanip>
 #include <stdlib.h>
@@ -27,6 +28,16 @@
 #include <boost/ptr_container/ptr_vector.hpp>
 
 extern mom_hierarchy_t *mh;
+
+#ifdef PENABLE_LINUX26_CPUSETS
+#include "pbs_cpuset.h"
+#include "node_internals.hpp"
+
+int              memory_pressure_threshold = 0; /* 0: off, >0: check and kill */
+short            memory_pressure_duration  = 0; /* 0: off, >0: check and kill */
+
+#endif
+
 
 extern mom_hierarchy_t *mh;
 
@@ -847,3 +858,59 @@ bool am_i_mother_superior(const job &pjob)
   {
   return(false);
   }
+
+#ifdef PENABLE_LINUX26_CPUSETS
+
+int hwloc_topology_init(hwloc_topology_t *)
+  {
+  return 0;
+  }
+
+int hwloc_topology_set_flags(hwloc_topology_t,unsigned long)
+  {
+  return 0;
+  }
+
+int hwloc_topology_load(hwloc_topology_t )
+  {
+  return 0;
+  }
+
+int hwloc_get_type_depth (hwloc_topology_t topology, hwloc_obj_type_t type)
+  {
+  return 0;
+  }
+
+unsigned hwloc_get_nbobjs_by_depth (hwloc_topology_t topology, unsigned depth)
+  {
+  return 0;
+  }
+
+void cleanup_torque_cpuset(void){}
+
+void create_cpuset_reservation_if_needed(job &pjob){}
+
+int init_torque_cpuset(void)
+  {
+  return 0;
+  }
+
+
+node_internals::node_internals(void){}
+
+numa_node::numa_node(numa_node const&){}
+
+allocation::allocation(allocation const&){}
+
+unsigned long setmempressthr(const char *)
+  {
+  return 0;
+  }
+
+unsigned long setmempressdur(const char *)
+{
+return 0;
+}
+
+
+#endif

@@ -152,3 +152,8 @@ int setuid_ext(uid_t uid, int set_euid)
   {
   return(0);
   }
+
+int delete_cpuset(const char *, bool)
+  {
+  return 0;
+  }

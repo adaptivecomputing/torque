@@ -1,4 +1,5 @@
 #include "license_pbs.h" /* See here for the software license */
+#include <pbs_config.h>
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 #include <time.h> /* time_t */
@@ -19,6 +20,10 @@
 #include "mom_mach.h" /* startjob_rtn */
 #include "mom_func.h" /* var_table */
 #include "pbs_nodes.h"
+#ifdef PENABLE_LINUX26_CPUSETS
+#include "pbs_cpuset.h"
+#include "node_internals.hpp"
+#endif
 
 int exec_with_exec;
 int is_login_node = 0;
@@ -66,6 +71,12 @@ char log_buffer[LOG_BUF_SIZE];
 nodeboard node_boards[MAX_NODE_BOARDS];
 int       num_node_boards = 10;
 #endif
+
+#ifdef PENABLE_LINUX26_CPUSETS
+node_internals internal_layout;
+#endif
+
+
 
 
 int diswcs (struct tcp_chan *chan, const char *value,size_t nchars) 
@@ -526,3 +537,21 @@ bool am_i_mother_superior(const job &pjob)
   {
   return(false);
   }
+
+#ifdef PENABLE_LINUX26_CPUSETS
+
+node_internals::node_internals(void){}
+
+void node_internals::reserve(int, unsigned long, char const*){}
+
+long long get_memory_requested_in_kb(job&)
+  {
+  return 0;
+  }
+
+int get_cpu_count_requested_on_this_node(job&)
+  {
+  return 0;
+  }
+
+#endif
