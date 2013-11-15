@@ -1,6 +1,6 @@
 PROG_ROOT = ../..
 
-AM_CFLAGS = -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
+AM_CFLAGS = -include pbs_config.h -include pbs_nodes.h -include cpuset_macros.h -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
 
 lib_LTLIBRARIES = libcpuset.la
 
@@ -8,7 +8,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 
 check_PROGRAMS = test_cpuset
 
-libcpuset_la_SOURCES = scaffolding.c ${PROG_ROOT}/cpuset.c
+libcpuset_la_SOURCES = scaffolding.c ${PROG_ROOT}/numa_node.cpp ${PROG_ROOT}/node_internals.cpp ${PROG_ROOT}/cpuset.c
 libcpuset_la_LDFLAGS = @CHECK_LIBS@ -shared -lhwloc -lgcov
 
 test_cpuset_SOURCES = test_cpuset.c
@@ -20,7 +20,7 @@ TESTS = ${check_PROGRAMS} coverage_run.sh
 coverage_run.sh:
 	echo 'cp -p .libs/cpuset.gc* . >/dev/null 2>&1' > $@
 	echo 'RESULTS=($$(gcov cpuset.gcda))' >> $@
-	echo 'PARSED_RESULT="TOTALCOV -- $${RESULTS[1]}: Lines($${RESULTS[5]})- $${RESULTS[3]}"' >> $@
+	echo 'PARSED_RESULT="TOTALCOV -- $${RESULTS[9]}: Lines($${RESULTS[13]})- $${RESULTS[11]}"' >> $@
 	echo 'echo -e "\033[40m\033[1;33m$$PARSED_RESULT\033[0m"' >> $@
 	chmod +x $@
 
