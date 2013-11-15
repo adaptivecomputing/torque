@@ -1,4 +1,5 @@
 #include "license_pbs.h" /* See here for the software license */
+#include <pbs_config.h>
 #include "mom_job_func.h"
 #include "test_mom_job_func.h"
 #include <stdlib.h>

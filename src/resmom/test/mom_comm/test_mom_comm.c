@@ -1,4 +1,5 @@
 #include "license_pbs.h" /* See here for the software license */
+#include <pbs_config.h>
 #include "pbs_nodes.h"
 #include "mom_comm.h"
 #include "test_mom_comm.h"

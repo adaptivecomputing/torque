@@ -1,4 +1,5 @@
 #include "license_pbs.h" /* See here for the software license */
+#include <pbs_config.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
@@ -331,7 +332,7 @@ START_TEST(test_is_ms_on_server)
 
   myjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup(server_host);
   rc = is_ms_on_server(&myjob);
-  fail_unless(rc == 0, "failed to detect mother superior is the same as the pbs_server");
+  fail_unless(rc != 0, "failed to detect mother superior is the same as the pbs_server");
   free(myjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str);
 
   myjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup(server_host);
@@ -339,12 +340,12 @@ START_TEST(test_is_ms_on_server)
   if (p)
 	 *p = '\0';
   rc = is_ms_on_server(&myjob);
-  fail_unless(rc == 0, "failed to detect mother superior is the same as the pbs_server");
+  fail_unless(rc != 0, "failed to detect mother superior is the same as the pbs_server");
   free(myjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str);
 
   myjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("bob");
   rc = is_ms_on_server(&myjob);
-  fail_unless(rc != 0, "failed to detect mother superior is not the same as the pbs_server");
+  fail_unless(rc == 0, "failed to detect mother superior is not the same as the pbs_server");
   free(myjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str);
   }
 END_TEST
