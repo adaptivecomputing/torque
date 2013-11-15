@@ -1017,6 +1017,7 @@ int svr_startjob(
   {
   int     f;
   int     rc;
+  long    cray_enabled = FALSE;
 
   if (FailHost != NULL)
     FailHost[0] = '\0';
@@ -1080,8 +1081,11 @@ int svr_startjob(
     return(rc);
     }
 
+  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
+
   /* copy the server nppcu value to the job */
-  if (!(pjob->ji_wattr[JOB_ATR_nppcu].at_flags & ATR_VFLAG_SET))
+  if ((cray_enabled == TRUE) &&
+      (!(pjob->ji_wattr[JOB_ATR_nppcu].at_flags & ATR_VFLAG_SET)))
     {
     long svr_nppcu_value = 0;
     char buf[128];
