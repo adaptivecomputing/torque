@@ -3,6 +3,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 4.2.7
   b - TRQ-2329. Fix a problem where nodes could be allocated to array subjobs even
       after the job was deleted.
+  b - TRQ-2351. Fix an issue where moms that are before 4.2.6 can't run jobs if the
+      server is 4.2.6.
 
 4.2.6
   b - TRQ-2273. Job start time is hard coded to 5 minutes. If the prolog takes longer
