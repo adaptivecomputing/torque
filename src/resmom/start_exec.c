@@ -6261,7 +6261,7 @@ void create_cpuset_reservation_if_needed(
 
     // make sure the memory is evenly set over the job.
     double    mem_pcnt = ((double)cpu_count) / pjob.ji_numvnod;
-    mem_requested = mem_requested * mem_pcnt;
+    mem_requested = mem_requested * (long long)mem_pcnt;
 
     internal_layout.reserve(cpu_count, mem_requested, pjob.ji_qs.ji_jobid);
     }
