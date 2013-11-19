@@ -928,7 +928,18 @@ int svr_setjobstate(
       if ((newstate == JOB_STATE_QUEUED) &&
           (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL))
         {
-        release_node_allocation(*pjob);
+    	if ((pjob->ji_wattr[JOB_ATR_checkpoint].at_val.at_str != NULL) &&
+            (!strncmp(pjob->ji_wattr[JOB_ATR_checkpoint].at_val.at_str, "enabled", 7) &&
+            (pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE)))
+    	  {
+    	  if (LOGLEVEL >= 7)
+    		{
+            sprintf(log_buf, "Job has checkpoint set; leaving exec_host list as is.");
+            log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+    		}
+    	  }
+    	else
+          release_node_allocation(*pjob);
         }
 
       /* the array job isn't actually a job so don't count it here */
