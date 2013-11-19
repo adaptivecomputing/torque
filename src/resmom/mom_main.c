@@ -6155,7 +6155,7 @@ int read_layout_file()
           }
 
         /* Parse val into nodeset, abort if parsing fails */
-        if ((node_boards[i].num_nodes = hwloc_bitmap_parselist(val, nodeset)) < 0)
+        if ((node_boards[i].num_nodes = hwloc_bitmap_list_sscanf(nodeset, val)) < 0)
           {
           sprintf(log_buffer, "failed to parse mom.layout file token: nodes=%s", val);
           goto failure;
@@ -6220,7 +6220,7 @@ int read_layout_file()
 
         /* Show what we have */
         sprintf(log_buffer, "nodeboard %2d: %d NUMA nodes: ", i, node_boards[i].num_nodes);
-        hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer),
+        hwloc_bitmap_list_snprintf(log_buffer + strlen(log_buffer),
                                  sizeof(log_buffer) - strlen(log_buffer),
                                  node_boards[i].nodeset);
         log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
@@ -6376,13 +6376,13 @@ int setup_nodeboards()
       i,
       node_boards[i].num_cpus);
 
-    hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer),
+    hwloc_bitmap_list_snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer),
       node_boards[i].cpuset);
     snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer),
       "), %d mems (",
       node_boards[i].num_nodes);
 
-    hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer),
+    hwloc_bitmap_list_snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer),
       node_boards[i].nodeset);
     snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer),
       ")");
