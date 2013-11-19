@@ -18,7 +18,5 @@ extern int          move_to_job_cpuset(pid_t, job *);
 extern struct pidl *get_cpuset_pidlist(const char *, struct pidl *);
 extern void         free_cpuset_pidlist(struct pidl *);
 extern int          get_cpuset_mempressure(const char *);
-extern int          hwloc_bitmap_parselist(const char *, hwloc_bitmap_t);
-extern int          hwloc_bitmap_displaylist(char *, size_t len, hwloc_bitmap_t);
 
 #endif /* END PBS_CPUSET_H */
