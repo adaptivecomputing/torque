@@ -5,6 +5,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       after the job was deleted.
   b - TRQ-2351. Fix an issue where moms that are before 4.2.6 can't run jobs if the
       server is 4.2.6.
+  b - TRQ-2319. Replace two Torque functions with ones from the hwloc package.
+  n - Portable Hardware Locality (hwloc) package version 1.2 or higher must be
+      installed when using cpusets (--enable-cpuset). Previously at least version
+      1.1 was required.
 
 4.2.6
   b - TRQ-2273. Job start time is hard coded to 5 minutes. If the prolog takes longer
