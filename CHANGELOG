@@ -1,5 +1,11 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
+4.5.0
+  b - TRQ-2319. Replace two Torque functions with ones from the hwloc package.
+  n - Portable Hardware Locality (hwloc) package version 1.2 or higher must be
+      installed when using cpusets (--enable-cpuset). Previously at least version
+      1.1 was required.
+
 4.2.7
   b - TRQ-2329. Fix a problem where nodes could be allocated to array subjobs even
       after the job was deleted.
