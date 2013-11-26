@@ -131,8 +131,7 @@ struct pbsnode *find_nodebyname(
     {
     memset(&pnode, 0, sizeof(struct pbsnode));
     pnode.nd_name = strdup("george");
-    pnode.alps_subnodes.allnodes_mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));
-    pthread_mutex_init(pnode.alps_subnodes.allnodes_mutex, NULL);
+    pnode.alps_subnodes = new all_nodes();
     }
 
   initialized++;

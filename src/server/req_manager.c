@@ -1884,7 +1884,7 @@ static void mgr_node_delete(
 
   {
   int             check_all = 0;
-  int             iter;
+  all_nodes_iterator *iter = NULL;
 
   struct pbsnode *pnode;
   const char    *nodename = NULL;
@@ -1938,7 +1938,7 @@ static void mgr_node_delete(
   if (check_all)
     {
     /* handle all nodes */
-    iter = -1;
+    iter = NULL;
 
     while ((pnode = next_host(&allnodes,&iter,NULL)) != NULL)
       {

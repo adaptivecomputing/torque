@@ -149,8 +149,7 @@ START_TEST(find_alpsnode_test)
   const char     *node_id = (char *)"tom";
   struct pbsnode *alpsnode;
 
-  parent.alps_subnodes.allnodes_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(parent.alps_subnodes.allnodes_mutex, NULL);
+  parent.alps_subnodes = new all_nodes();
 
   alpsnode = find_alpsnode_by_name(&parent, node_id);
   fail_unless(alpsnode == NULL, "returned a non-NULL node?");
@@ -170,8 +169,7 @@ START_TEST(determine_node_from_str_test)
 
   memset(&parent, 0, sizeof(parent));
   parent.nd_name = strdup("george");
-  parent.alps_subnodes.allnodes_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(parent.alps_subnodes.allnodes_mutex, NULL);
+  parent.alps_subnodes = new all_nodes();
 
   count = 0; // set so that create_alps_subnode doesn't fail
   new_node = determine_node_from_str(node_str1, &parent, &parent);

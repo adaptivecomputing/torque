@@ -110,7 +110,7 @@ struct pbsnode *find_nodebyname(const char *nodename)
     return(NULL);
   }
 
-struct pbsnode *find_node_in_allnodes(struct all_nodes *an, char *nodename)
+struct pbsnode *find_node_in_allnodes(all_nodes *an, char *nodename)
   {
   static struct pbsnode cray;
 
@@ -140,7 +140,7 @@ void svr_disconnect(int handle)
   exit(1);
   }
 
-struct pbsnode *next_host(all_nodes *an, int *iter, struct pbsnode *held)
+struct pbsnode *next_host(all_nodes *an, all_nodes_iterator **iter, struct pbsnode *held)
   {
   fprintf(stderr, "The call to next_host needs to be mocked!!\n");
   exit(1);

@@ -120,16 +120,12 @@ struct pbsnode *find_alpsnode_by_name(
 
   {
   struct pbsnode *node = NULL;
-  int             index;
 
-  pthread_mutex_lock(parent->alps_subnodes.allnodes_mutex);
+  parent->alps_subnodes->lock();
 
-  index = get_value_hash(parent->alps_subnodes.ht, node_id);
+  node = parent->alps_subnodes->find(node_id);
 
-  if (index >= 0)
-    node = (struct pbsnode *)parent->alps_subnodes.ra->slots[index].item;
-
-  pthread_mutex_unlock(parent->alps_subnodes.allnodes_mutex);
+  parent->alps_subnodes->unlock();
 
   if (node != NULL)
     lock_node(node, __func__, NULL, LOGLEVEL);
@@ -187,7 +183,7 @@ struct pbsnode *create_alps_subnode(
 
   lock_node(subnode, __func__, NULL, LOGLEVEL);
     
-  insert_node(&(parent->alps_subnodes), subnode);
+  insert_node(parent->alps_subnodes, subnode);
   
   return(subnode);
   } /* END create_alps_subnode() */
@@ -642,7 +638,7 @@ int process_alps_status(
           return(PBSE_NONE);
           }
 
-        if ((current = find_node_in_allnodes(&parent->alps_subnodes, current_node_id)) == NULL)
+        if ((current = find_node_in_allnodes(parent->alps_subnodes, current_node_id)) == NULL)
           {
           /* current node disappeared, this shouldn't be possible either */
           unlock_node(parent, __func__, NULL, LOGLEVEL);

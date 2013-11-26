@@ -1615,7 +1615,7 @@ int chk_svr_resc_limit(
    * the computes. Don't perform this check for this case. */
   if ((cray_enabled != TRUE) || 
       (alps_reporter == NULL) ||
-      (alps_reporter->alps_subnodes.ra->num != 0))
+      (alps_reporter->alps_subnodes->count() != 0))
     {
     if (cray_enabled == TRUE)
       {

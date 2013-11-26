@@ -106,13 +106,23 @@ public:
 	{
 		memset(&mutex,0,sizeof(mutex));
 	}
-	bool insert(T it,std::string id)
+    bool insert(T it,const char *id)
+      {
+      if(id == NULL) return false;
+      return insert(it,std::string(id));
+      }
+    bool insert(T it,std::string id)
 	{
 		std::pair<hashed_iterator,bool> ret;
 		ret = container.get<1>().insert(item<T>(id,it));
 		return ret.second;
 	}
-	bool insert_after(std::string location_id,T it,std::string id)
+    bool insert_after(const char *location_id,T it,const char *id)
+      {
+      if((id == NULL)||(location_id == NULL)) return false;
+      return insert_after(std::string(location_id),it,std::string(id));
+      }
+    bool insert_after(std::string location_id,T it,std::string id)
 	{
 		sequenced_index ind = container.get<0>();
 		sequenced_iterator iter = ind.begin();
@@ -131,6 +141,11 @@ public:
 		ret = container.get<0>().insert(iter,item<T>(id,it));
 		return ret.second;
 	}
+    bool insert_first(T it,const char *id)
+      {
+      if(id == NULL) return false;
+      return insert_first(it,std::string(id));
+      }
     bool insert_first(T it,std::string id)
     {
         sequenced_index ind = container.get<0>();
@@ -139,6 +154,11 @@ public:
         ret = container.get<0>().insert(iter,item<T>(id,it));
         return ret.second;
     }
+    bool insert_before(const char *location_id,T it,const char *id)
+      {
+      if((id == NULL)||(location_id == NULL)) return false;
+      return insert_before(std::string(location_id),it,std::string(id));
+      }
 	bool insert_before(std::string location_id,T it,std::string id)
 	{
 		sequenced_index ind = container.get<0>();
@@ -159,7 +179,8 @@ public:
 	}
 	bool remove(const char *id)
 	{
-		return remove(std::string(id));
+	  if(id == NULL) return false;
+	  return remove(std::string(id));
 	}
 	bool remove(std::string id)
 	{
@@ -174,6 +195,7 @@ public:
 	}
 	T find(const char *id)
 	{
+	  if(id == NULL) return empty_val();
 		return find(std::string(id));
 	}
 	T find(std::string id)
@@ -207,7 +229,12 @@ public:
 		return itm.get();
 	}
 
-	bool swap(std::string id1,std::string id2)
+    bool swap(const char *id1,const char *id2)
+      {
+      if((id1 == NULL)||(id2 == NULL)) return false;
+      return swap(std::string(id1),std::string(id2));
+      }
+    bool swap(std::string id1,std::string id2)
 	{
 		sequenced_index ind = container.get<0>();
 		sequenced_iterator it1 = ind.begin();

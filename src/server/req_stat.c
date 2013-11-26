@@ -1568,7 +1568,7 @@ int req_stat_node(
   else
     {
     /* get status of all or several nodes */
-    int iter = -1;
+    all_nodes_iterator *iter = NULL;
 
     while ((pnode = next_host(&allnodes,&iter,NULL)) != NULL)
       {

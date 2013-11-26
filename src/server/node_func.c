@@ -121,7 +121,7 @@ struct pbsnode *PGetNodeFromAddr(
 
   {
   struct pbsnode *pnode;
-  int             iter = -1;
+  all_nodes_iterator *iter = NULL;
   int             aindex;
 
   while ((pnode = next_host(&allnodes,&iter,NULL)) != NULL)
@@ -269,7 +269,6 @@ struct pbsnode *find_node_in_allnodes(
 
   {
   struct pbsnode *pnode = NULL;
-  int             index;
 
   if (an == NULL)
     {
@@ -282,19 +281,12 @@ struct pbsnode *find_node_in_allnodes(
     return(NULL);
     }
 
-  pthread_mutex_lock(an->allnodes_mutex);
+  an->lock();
+  pnode = an->find(nodename);
+  if (pnode != NULL)
+    lock_node(pnode, __func__, 0, LOGLEVEL);
 
-  index = get_value_hash(an->ht, nodename);
-
-  if (index > 0)
-    {
-    pnode = (struct pbsnode *)an->ra->slots[index].item;
-
-    if (pnode != NULL)
-      lock_node(pnode, __func__, 0, LOGLEVEL);
-    }
-
-  pthread_mutex_unlock(an->allnodes_mutex);
+  an->unlock();
 
   return(pnode);
   } /* END find_node_in_allnodes() */
@@ -318,7 +310,6 @@ struct pbsnode *find_nodebyname(
   struct pbsnode *pnode = NULL;
   struct pbsnode *numa  = NULL;
 
-  int             i;
   int             numa_index;
   long            cray_enabled = FALSE;
   
@@ -331,20 +322,9 @@ struct pbsnode *find_nodebyname(
   if ((pslash = strchr((char *)nodename, (int)'/')) != NULL)
     *pslash = '\0';
 
-  pthread_mutex_lock(allnodes.allnodes_mutex);
+  allnodes.lock();
 
-  i = get_value_hash(allnodes.ht, (void *)nodename);
-
-  if (i >= 0)
-    {
-
-    if (allnodes.ra == NULL)
-      {
-      log_err(PBSE_BAD_PARAMETER, __func__, "allnodes is not initialized");
-      return(NULL);
-      }
-    pnode = (struct pbsnode *)allnodes.ra->slots[i].item;
-    }
+  pnode = allnodes.find(nodename);
 
   if (pnode != NULL)
     {
@@ -359,14 +339,11 @@ struct pbsnode *find_nodebyname(
         {
         lock_node(alps_reporter, __func__, NULL, LOGLEVEL);
         
-        if ((i = get_value_hash(alps_reporter->alps_subnodes.ht, (void *)nodename)) >= 0)
+        if ((pnode = (struct pbsnode *)alps_reporter->alps_subnodes->find(nodename)) != NULL)
           {
-          if ((pnode = (struct pbsnode *)alps_reporter->alps_subnodes.ra->slots[i].item) != NULL)
-            {
-            lock_node(pnode, __func__, NULL, LOGLEVEL);
-            }
+          lock_node(pnode, __func__, NULL, LOGLEVEL);
           }
-        
+
         unlock_node(alps_reporter, __func__, NULL, LOGLEVEL);
         }
       }
@@ -385,20 +362,17 @@ struct pbsnode *find_nodebyname(
         *dash = '\0';
         numa_index = atoi(dash + 1);
         
-        if ((i = get_value_hash(allnodes.ht, (void *)nodename)) >= 0)
+        if ((pnode = allnodes.find(nodename)) != NULL)
           {
-          if ((pnode = (struct pbsnode *)allnodes.ra->slots[i].item) != NULL)
-            {
-            lock_node(pnode, __func__, NULL, LOGLEVEL);
-            
-            /* get the NUMA node */
-            numa = AVL_find(numa_index, pnode->nd_mom_port, pnode->node_boards);
-            if (numa != NULL)
-              lock_node(numa, __func__, NULL, LOGLEVEL);
-            
-            unlock_node(pnode, __func__, NULL, LOGLEVEL);
-            pnode = numa;
-            }
+          lock_node(pnode, __func__, NULL, LOGLEVEL);
+
+          /* get the NUMA node */
+          numa = AVL_find(numa_index, pnode->nd_mom_port, pnode->node_boards);
+          if (numa != NULL)
+            lock_node(numa, __func__, NULL, LOGLEVEL);
+
+          unlock_node(pnode, __func__, NULL, LOGLEVEL);
+          pnode = numa;
           }
         
         *dash = '-';
@@ -407,7 +381,7 @@ struct pbsnode *find_nodebyname(
     }
 
 
-  pthread_mutex_unlock(allnodes.allnodes_mutex);
+  allnodes.unlock();
 
   if (pslash != NULL)
     *pslash = '/'; /* restore the slash */
@@ -962,6 +936,8 @@ void effective_node_delete(
 
   free(pnode->nd_name);
 
+  if(pnode->alps_subnodes != NULL) delete pnode->alps_subnodes;
+
   free(pnode);
   *ppnode = NULL;
 
@@ -1212,10 +1188,10 @@ void write_compute_node_properties(
   FILE           *nin)
 
   {
-  struct pbsnode *alps_node;
-  int             iter = -1;
+  struct pbsnode    *alps_node;
+  all_nodes_iterator *iter = NULL;
 
-  while ((alps_node = next_host(&(reporter.alps_subnodes), &iter, NULL)) != NULL)
+  while ((alps_node = next_host(reporter.alps_subnodes, &iter, NULL)) != NULL)
     {
     /* only write nodes that have more than just cray_compute as their properties.
      * Checking for > 2 properties should be sufficient -- all computes have 
@@ -1260,7 +1236,7 @@ int update_nodes_file(
   {
   struct pbsnode  *np;
   int              j;
-  int              iter = -1;
+  all_nodes_iterator *iter = NULL;
   FILE            *nin;
   long             cray_enabled = FALSE;
 
@@ -2441,7 +2417,7 @@ int setup_nodes(void)
         np = find_nodebyname(nodename);
         np->nd_is_alps_reporter = TRUE;
         alps_reporter = np;
-        initialize_all_nodes_array(&(np->alps_subnodes));
+        np->alps_subnodes = new all_nodes();
         unlock_node(np, __func__, NULL, LOGLEVEL);
         }
       else if (is_alps_starter == true)
@@ -2497,7 +2473,7 @@ int setup_nodes(void)
                   line,
                   &num) == 2)
       {
-      int iter = -1;
+      all_nodes_iterator *iter = NULL;
 
       while ((np = next_host(&allnodes,&iter,NULL)) != NULL)
         {
@@ -3189,9 +3165,9 @@ void reinitialize_node_iterator(
   {
   if (iter != NULL)
     {
-    iter->node_index = -1;
+    iter->node_index = NULL;
     iter->numa_index = -1;
-    iter->alps_index = -1;
+    iter->alps_index = NULL;
     }
   } /* END reinitialize_node_iterator() */
 
@@ -3225,7 +3201,7 @@ static struct pbsnode *get_my_next_alps_node(
   struct pbsnode *pnode)
 
   {
-  struct pbsnode *alps_node = next_host(&(pnode->alps_subnodes), &(iter->alps_index), NULL);
+  struct pbsnode *alps_node = next_host(pnode->alps_subnodes, &(iter->alps_index), NULL);
 
   unlock_node(pnode, __func__, NULL, LOGLEVEL);
 
@@ -3261,14 +3237,15 @@ struct pbsnode *next_node(
 
   if (current == NULL)
     {
-    pthread_mutex_lock(an->allnodes_mutex);
+    an->lock();
 
+    if(iter->node_index == NULL) iter->node_index = an->get_iterator();
     /* the first call to next_node */
-    next = (struct pbsnode *)next_thing(an->ra, &iter->node_index);
+    next = iter->node_index->get_next_item();
     if (next != NULL)
       lock_node(next, __func__, "next != NULL", LOGLEVEL);
 
-    pthread_mutex_unlock(an->allnodes_mutex);
+    an->unlock();
 
     if (next != NULL)
       {
@@ -3289,7 +3266,7 @@ struct pbsnode *next_node(
 
     /* if current is a numa subnode, go back to the parent */
     if ((iter->numa_index >= 0) ||
-        (iter->alps_index >= 0))
+        (iter->alps_index !=  NULL))
       {
       tmp = current->parent;
       unlock_node(current, __func__, "current == NULL && numa_index > 0", LOGLEVEL);
@@ -3311,11 +3288,11 @@ struct pbsnode *next_node(
         {
         if ((next = get_my_next_alps_node(iter, current)) == NULL)
           {
-          iter->alps_index = -1;
+          iter->alps_index = NULL;
           
-          pthread_mutex_lock(an->allnodes_mutex);
-          next = (struct pbsnode *)next_thing(an->ra, &iter->node_index);
-          pthread_mutex_unlock(an->allnodes_mutex);
+          an->lock();
+          next = iter->node_index->get_next_item();
+          an->unlock();
           
           if (next != NULL)
             {
@@ -3329,11 +3306,11 @@ struct pbsnode *next_node(
       else
         {
         unlock_node(current, __func__, NULL, LOGLEVEL);
-        iter->alps_index = -1;
+        iter->alps_index = NULL;
         
-        pthread_mutex_lock(an->allnodes_mutex);
-        next = (struct pbsnode *)next_thing(an->ra, &iter->node_index);
-        pthread_mutex_unlock(an->allnodes_mutex);
+        an->lock();
+        next = iter->node_index->get_next_item();
+        an->unlock();
         
         if (next != NULL)
           {
@@ -3351,11 +3328,11 @@ struct pbsnode *next_node(
 
       /* go to the next node in all nodes */
       unlock_node(current, __func__, "next == NULL && numa_index+1", LOGLEVEL);
-      pthread_mutex_lock(an->allnodes_mutex);
+      an->lock();
 
-      next = (struct pbsnode *)next_thing(an->ra, &iter->node_index);
+      next = iter->node_index->get_next_item();
 
-      pthread_mutex_unlock(an->allnodes_mutex);
+      an->unlock();
 
       if (next != NULL)
         {
@@ -3375,27 +3352,6 @@ struct pbsnode *next_node(
 
   return(next);
   } /* END next_node() */
-
-
-
-
-void initialize_all_nodes_array(
-
-  all_nodes *an)
-
-  {
-  if (an == NULL)
-    {
-    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input pointer");
-    return;
-    }
-
-  an->ra = initialize_resizable_array(INITIAL_NODE_SIZE);
-  an->ht = create_hash(INITIAL_HASH_SIZE);
-
-  an->allnodes_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(an->allnodes_mutex,NULL);
-  } /* END initialize_all_nodes_array() */
 
 
 
@@ -3428,21 +3384,19 @@ int insert_node(
     return(rc);
     }
 
-  pthread_mutex_lock(an->allnodes_mutex);
+  an->lock();
 
-  if ((rc = insert_thing(an->ra,pnode)) == -1)
+  if(!an->insert(pnode,pnode->nd_name))
     {
     rc = ENOMEM;
     log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE");
     }
   else
     {
-    add_hash(an->ht,rc,pnode->nd_name);
-
     rc = PBSE_NONE;
     }
 
-  pthread_mutex_unlock(an->allnodes_mutex);
+  an->unlock();
 
   return(rc);
   } /* END insert_node() */
@@ -3478,16 +3432,18 @@ int remove_node(
     return(rc);
     }
 
-  if (pthread_mutex_trylock(an->allnodes_mutex))
+  if (an->trylock())
     {
     unlock_node(pnode, __func__, NULL, LOGLEVEL);
-    pthread_mutex_lock(an->allnodes_mutex);
+    an->lock();
     lock_node(pnode, __func__, NULL, LOGLEVEL);
     }
 
-  rc = remove_thing(an->ra,pnode);
+  //Don't care if it was in there or not.
+  an->remove(pnode->nd_name);
+  rc = PBSE_NONE;
 
-  pthread_mutex_unlock(an->allnodes_mutex);
+  an->unlock();
 
   return(rc);
   } /* END remove_node() */
@@ -3498,7 +3454,7 @@ int remove_node(
 struct pbsnode *next_host(
 
   all_nodes      *an,    /* I */
-  int            *iter,  /* M */
+  all_nodes_iterator **iter,  /* M */
   struct pbsnode *held)  /* I */
 
   {
@@ -3515,18 +3471,22 @@ struct pbsnode *next_host(
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL input iter pointer");
     return(NULL);
     }
+  if(*iter == NULL)
+    {
+    *iter = an->get_iterator();
+    }
 
-  if (pthread_mutex_trylock(an->allnodes_mutex))
+  if (an->trylock())
     {
     if (held != NULL)
       {
       name = strdup(held->nd_name);
       unlock_node(held, __func__, NULL, LOGLEVEL);
       }
-    pthread_mutex_lock(an->allnodes_mutex);
+    an->lock();
     }
 
-  pnode = (struct pbsnode *)next_thing(an->ra,iter);
+  pnode = (*iter)->get_next_item();
   if ((pnode != NULL) &&
       ((pnode != held) && 
        (name == NULL)))
@@ -3534,7 +3494,7 @@ struct pbsnode *next_host(
     lock_node(pnode, __func__, NULL, LOGLEVEL);
     }
 
-  pthread_mutex_unlock(an->allnodes_mutex);
+  an->unlock();
 
   if ((held != pnode) &&
       (name != NULL))

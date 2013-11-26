@@ -393,7 +393,7 @@ void  update_default_np()
   
   {
   struct pbsnode *pnode;
-  int             iter = -1;
+  all_nodes_iterator *iter = NULL;
   long            default_np = 0;
 
   get_svr_attr_l(SRV_ATR_NPDefault, &default_np);
@@ -468,7 +468,7 @@ void make_default_hierarchy(boost::ptr_vector<std::string>& hierarchy)
   {
   struct pbsnode *pnode;
   std::string      level_ds = "";
-  int             iter = -1;
+  all_nodes_iterator *iter = NULL;
   char            buf[MAXLINE];
 
 
@@ -700,7 +700,7 @@ void add_missing_nodes(
   {
   struct pbsnode *pnode;
   bool            found_missing_node = false;
-  int             iter = -1;
+  all_nodes_iterator *iter = NULL;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
   std::string     level_string = "";
 
@@ -851,7 +851,7 @@ void add_all_nodes_to_hello_container()
 
   {
   struct pbsnode *pnode;
-  int             iter = -1;
+  all_nodes_iterator *iter = NULL;
   int             level_indices[MAX_LEVEL_DEPTH];
   int             insertion_index;
   char           *node_name_dup;
@@ -1395,8 +1395,6 @@ int setup_server_attrs(
 int initialize_nodes()
 
   {
-  initialize_all_nodes_array(&allnodes);
-
   if (setup_nodes() == -1)
     {
     return(-1);
