@@ -17,6 +17,7 @@
 #define  TRQ_GET_ACTIVE_SERVER      2  /* Request the name of the currently active pbs_server from trqauthd */
 #define  TRQ_VALIDATE_ACTIVE_SERVER 3 /* Request trqauthd to validate which server is active */
 #define  TRQ_DOWN_TRQAUTHD          4 /* Terminate trqauthd */
+#define  TRQ_PING_SERVER            5 /* just request a response from the trqauthd server */
 
 
 int parse_request_client(int sock, char **server_name, int *server_port, int *auth_type, char **user, int *user_pid, int *user_sock);
@@ -274,6 +275,7 @@ int PBSD_munge_authenticate(int psock, int handle);
 #ifndef MUNGE_AUTH
 int parse_svr_response(long long code, long long len, char *buf);
 int validate_socket(int psock);
+int parse_daemon_response(long long code, long long len, char *buf);
 #endif 
 #ifdef ENABLE_UNIX_SOCKETS
 ssize_t send_unix_creds(int sd);
