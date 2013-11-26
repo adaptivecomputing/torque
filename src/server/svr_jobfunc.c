@@ -156,8 +156,8 @@ static int count_queued_jobs(pbs_queue *pque, char *user);
 /* Global Data Items: */
 
 extern struct server server;
-extern struct all_jobs alljobs;
-extern struct all_jobs array_summary;
+extern all_jobs alljobs;
+extern all_jobs array_summary;
 
 extern char  *msg_badwait;  /* error message */
 extern char  *msg_daemonname;
@@ -292,19 +292,19 @@ const char *PJobSubState[] =
 
 int insert_into_alljobs_by_rank(
 
-  struct all_jobs *aj,
-  job             *pjob,
+  all_jobs         *aj,
+  job              *pjob,
   char            *jobid)
 
   {
   job  *pjcur;
-  int   iter = -1;
+  all_jobs_iterator  *iter = aj->get_iterator(true);
   long  job_qrank = pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long;
-  int   index = -1;
+  std::string curJobid = "";
   
   unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
 
-  while ((pjcur = next_job_from_back(aj, &iter)) != NULL)
+  while ((pjcur = iter->get_next_item()) != NULL)
     {
     mutex_mgr pjcur_mgr(pjcur->ji_mutex, true);
     if (job_qrank > pjcur->ji_wattr[JOB_ATR_qrank].at_val.at_long)
@@ -321,7 +321,10 @@ int insert_into_alljobs_by_rank(
 
   if (pjcur != NULL)
     {
-    index = get_jobs_index(aj, pjcur);
+    if(aj->find(pjcur->ji_qs.ji_jobid))
+      {
+      curJobid = pjcur->ji_qs.ji_jobid;
+      }
     unlock_ji_mutex(pjcur, __func__, "8", LOGLEVEL);
     pjcur = NULL;
     }
@@ -331,15 +334,15 @@ int insert_into_alljobs_by_rank(
     return(PBSE_JOBNOTFOUND);
     }
   
-  if (index == -1)
+  if (curJobid.length() == 0)
     {
     /* link first in list */
-    insert_job_first(aj, pjob);
+    aj->insert_first(pjob,pjob->ji_qs.ji_jobid);
     }
   else
     {
     /* link after 'current' job in list */
-    insert_job_after_index(aj, index, pjob);
+    aj->insert_after(curJobid, pjob,pjob->ji_qs.ji_jobid);
     }
 
   return(PBSE_NONE);
@@ -353,7 +356,7 @@ int svr_enquejob(
 
   job *pjob,            /* I */
   int  has_sv_qs_mutex, /* I */
-  int  prev_job_index,  /* I */
+  char  *prev_job_id,  /* I */
   bool have_reservation)
 
   {
@@ -459,10 +462,10 @@ int svr_enquejob(
 
   if (!pjob->ji_is_array_template)
     {
-    if (prev_job_index < 0)
-      insert_job(&alljobs, pjob);
+    if (prev_job_id == NULL)
+      alljobs.insert(pjob,pjob->ji_qs.ji_jobid);
     else
-      insert_job_after_index(&alljobs, prev_job_index, pjob);
+      alljobs.insert_after(prev_job_id,pjob,pjob->ji_qs.ji_jobid);
 
     if (has_sv_qs_mutex == FALSE)
       {
@@ -3302,7 +3305,7 @@ static void correct_ct()
   job          *pjob;
   pbs_queue    *pque;
   int           queue_iter = -1;
-  int           job_iter = -1;
+  all_jobs_iterator *job_iter = NULL;
   int           num_jobs = 0;
   int           job_counts[PBS_NUMJOBSTATE];
   char          log_buf[LOCAL_LOG_BUF_SIZE];
@@ -3347,9 +3350,12 @@ static void correct_ct()
      * lock again, since the mutex is released before being destroyed. This caused crashes 
      * along with other mayhem. Thus, keep the code here and only get jobs that really 
      * exist */
-    job_iter = -1;
     
-    while ((pjob = next_job(pque->qu_jobs, &job_iter)) != NULL)
+    pque->qu_jobs->lock();
+    job_iter = pque->qu_jobs->get_iterator();
+    pque->qu_jobs->unlock();
+
+    while ((pjob = next_job(pque->qu_jobs, job_iter)) != NULL)
       {
       num_jobs++;
       

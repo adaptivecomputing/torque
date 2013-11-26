@@ -53,12 +53,6 @@ int get_value_hash(hash_table_t *ht, void *key)
   exit(1);
   }
 
-void initialize_all_jobs_array(struct all_jobs *aj)
-  {
-  fprintf(stderr, "The call to initialize_all_jobs_array needs to be mocked!!\n");
-  exit(1);
-  }
-
 resizable_array *initialize_resizable_array(int size)
   {
   fprintf(stderr, "The call to initialize_resizable_array needs to be mocked!!\n");

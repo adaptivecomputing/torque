@@ -52,10 +52,10 @@ const char *msg_init_expctq = "Expected %d, recovered %d queues";
 char *path_arrays;
 char *log_file = NULL;
 const char *msg_script_open = "Unable to open script file";
-struct all_jobs newjobs;
+all_jobs newjobs;
 char server_name[PBS_MAXSERVERNAME + 1];
 char *path_nodenote;
-struct all_jobs alljobs;
+all_jobs alljobs;
 char *path_queues;
 char path_log[MAXPATHLEN + 1];
 const char *msg_init_nojobs = "No jobs to open";
@@ -79,7 +79,7 @@ const char *msg_init_baddb = "Unable to read server database";
 struct server server;
 const char *msg_init_substate = "Requeueing job, substate: %d ";
 const char *msg_init_unkstate = "Unable to recover job in strange substate: %d";
-struct all_jobs array_summary;
+all_jobs array_summary;
 attribute_def svr_attr_def[10];
 int a_opt_init = -1;
 all_tasks task_list_timed;
@@ -245,7 +245,7 @@ void initialize_all_tasks_array(all_tasks *at)
   exit(1);
   }
 
-int insert_job(struct all_jobs *aj, job *pjob)
+int insert_job(all_jobs *aj, job *pjob)
   {
   fprintf(stderr, "The call to insert_job needs to be mocked!!\n");
   exit(1);
@@ -269,7 +269,7 @@ struct pbsnode *next_host(all_nodes *an, int *iter, struct pbsnode *held)
   exit(1);
   }
 
-job *next_job(struct all_jobs *aj, int *iter)
+job *next_job(all_jobs *aj, int *iter)
   {
   fprintf(stderr, "The call to next_job needs to be mocked!!\n");
   exit(1);
@@ -299,7 +299,7 @@ int svr_recov_xml(char *svrfile,  int read_only)
   exit(1);
   }
 
-void initialize_all_jobs_array(struct all_jobs *aj)
+void initialize_all_jobs_array(all_jobs *aj)
   {
   fprintf(stderr, "The call to initialize_all_jobs_array needs to be mocked!!\n");
   exit(1);

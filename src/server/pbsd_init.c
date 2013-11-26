@@ -203,9 +203,9 @@ extern tlist_head               svr_newnodes;
 extern std::list<timed_task>   *task_list_timed;
 extern pthread_mutex_t          task_list_timed_mutex;
 task_recycler                   tr;
-extern struct all_jobs          alljobs;
-extern struct all_jobs          array_summary;
-extern struct all_jobs          newjobs;
+extern all_jobs                alljobs;
+extern all_jobs                array_summary;
+extern all_jobs                newjobs;
 all_queues                      svr_queues;
 job_recycler                    recycler;
 queue_recycler                  q_recycler;
@@ -1241,9 +1241,6 @@ int initialize_data_structures_and_mutexes()
   task_list_timed = new std::list<timed_task>();
   pthread_mutex_init(&task_list_timed_mutex, NULL);
 
-  initialize_all_jobs_array(&alljobs);
-  initialize_all_jobs_array(&array_summary);
-  initialize_all_jobs_array(&newjobs);
   initialize_hello_container(&hellos);
   initialize_hello_container(&failures);
   initialize_task_recycler();
@@ -1624,7 +1621,7 @@ int handle_job_recovery(
   int               job_suf_len = strlen(job_suffix);
   char              basen[MAXPATHLEN+1];
   int               Index;
-  int               iter = -1;
+  all_jobs_iterator *iter = NULL;
   time_t            time_now = time(NULL);
 
   if (chdir(path_jobs) != 0)
@@ -1837,11 +1834,13 @@ int handle_job_recovery(
   /* If queue_rank has gone negative, renumber all jobs and reset rank */
   if (queue_rank < 0)
     {
-    iter = -1;
+    alljobs.lock();
+    iter = alljobs.get_iterator();
+    alljobs.unlock();
 
     queue_rank = 0;
 
-    while ((pjob = next_job(&alljobs, &iter)) != NULL)
+    while ((pjob = next_job(&alljobs, iter)) != NULL)
       {
       pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
       
@@ -2577,7 +2576,7 @@ int pbsd_init_reque(
 
   sprintf(log_buf, "%s:1", __func__);
   lock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
-  if ((rc = svr_enquejob(pjob, TRUE, -1, false)) == PBSE_NONE)
+  if ((rc = svr_enquejob(pjob, TRUE, NULL, false)) == PBSE_NONE)
     {
     int len;
     snprintf(log_buf, sizeof(log_buf), msg_init_substate,

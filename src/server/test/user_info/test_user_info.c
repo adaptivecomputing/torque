@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <check.h>
 #include <errno.h>
 
 #include "user_info.h"
+#include <check.h>
 
 unsigned int get_num_queued(user_info_holder *, char *);
 unsigned int count_jobs_submitted(job *);

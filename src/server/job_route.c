@@ -531,7 +531,7 @@ void *queue_route(
   char      *queue_name;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
 
-  int       iter = -1;
+  all_jobs_iterator   *iter = NULL;
 
   queue_name = (char *)vp;
 
@@ -556,6 +556,10 @@ void *queue_route(
       }
 
     mutex_mgr que_mutex(pque->qu_mutex, true);
+
+    pque->qu_jobs->lock();
+    iter = pque->qu_jobs->get_iterator();
+    pque->qu_jobs->unlock();
   
     if (LOGLEVEL >= 7)
       {
@@ -563,7 +567,7 @@ void *queue_route(
       log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_QUEUE, __func__, log_buf);
       }
 
-    while ((pjob = next_job(pque->qu_jobs,&iter)) != NULL)
+    while ((pjob = next_job(pque->qu_jobs,iter)) != NULL)
       {
       /* We only want to try if routing has been tried at least once - this is to let
        * req_commit have the first crack at routing always. */

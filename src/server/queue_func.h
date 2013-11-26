@@ -21,8 +21,6 @@ pbs_queue *get_dfltque(void);
 
 void initialize_allques_array(all_queues *aq);
 
-void free_alljobs_array(struct all_jobs *aj);
-
 int insert_queue(all_queues *aq, pbs_queue *pque);
 
 int remove_queue(all_queues *aq, pbs_queue *pque);

@@ -1,7 +1,7 @@
-#include <check.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "batch_request.h"
+#include <check.h>
 
 
 START_TEST(test_one)

@@ -69,8 +69,8 @@ void *remove_some_recycle_queues(
   remove_queue(&q_recycler.queues,pq);
   unlock_queue(pq, __func__, NULL, LOGLEVEL);
   free(pq->qu_mutex);
-  free_alljobs_array(pq->qu_jobs);
-  free_alljobs_array(pq->qu_jobs_array_sum);
+  delete pq->qu_jobs;
+  delete pq->qu_jobs_array_sum;
   memset(pq, 254, sizeof(pbs_queue));
   free(pq);
 

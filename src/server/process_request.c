@@ -168,9 +168,9 @@ extern struct    connection svr_conn[];
 
 extern struct    credential conn_credent[PBS_NET_MAX_CONNECTIONS];
 
-extern struct server server;
+extern struct    server server;
 extern char      server_host[];
-struct all_jobs newjobs;
+all_jobs          newjobs;
 
 extern char     *msg_err_noqueue;
 extern char     *msg_err_malloc;
@@ -1050,7 +1050,7 @@ int close_quejob_by_jobid(
     remove_job(&newjobs,pjob);
     pjob->ji_qs.ji_state = JOB_STATE_QUEUED;
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_QUEUED;
-    rc = svr_enquejob(pjob, FALSE, -1, false);
+    rc = svr_enquejob(pjob, FALSE, NULL, false);
 
     if ((rc == PBSE_JOBNOTFOUND) ||
         (rc == PBSE_JOB_RECYCLED))

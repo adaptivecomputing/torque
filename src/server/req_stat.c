@@ -126,8 +126,8 @@
 
 /* Global Data Items: */
 
-extern struct all_jobs alljobs;
-extern struct all_jobs array_summary;
+extern all_jobs         alljobs;
+extern all_jobs         array_summary;
 extern struct server   server;
 extern char            server_name[];
 extern attribute_def   svr_attr_def[];
@@ -388,7 +388,7 @@ static void req_stat_job_step2(
   int                    job_array_index = 0;
   job_array             *pa = NULL;
   char                   log_buf[LOCAL_LOG_BUF_SIZE];
-  int                    iter;
+  all_jobs_iterator      *iter;
   time_t                 time_now = time(NULL);
   long                   poll_jobs = 0;
   char                   job_id[PBS_MAXSVRJOBID+1];
@@ -447,7 +447,25 @@ static void req_stat_job_step2(
       }
     }
 
-  iter = -1;
+  {
+  all_jobs *ajptr = NULL;
+
+  if (type == tjstQueue)
+    ajptr = cntl->sc_pque->qu_jobs;
+
+  else if (type == tjstSummarizeArraysQueue)
+    ajptr = cntl->sc_pque->qu_jobs_array_sum;
+
+  else if (type == tjstSummarizeArraysServer)
+    ajptr = &array_summary;
+
+  else
+    ajptr = &alljobs;
+
+  ajptr->lock();
+  iter = ajptr->get_iterator();
+  ajptr->unlock();
+  }
 
   get_svr_attr_l(SRV_ATR_PollJobs, &poll_jobs);
   if (!poll_jobs)
@@ -472,7 +490,7 @@ static void req_stat_job_step2(
           }
         else if (type == tjstQueue)
           {
-          pjob = next_job(cntl->sc_pque->qu_jobs,&iter);
+          pjob = next_job(cntl->sc_pque->qu_jobs,iter);
           }
         else if (type == tjstArray)
           {
@@ -494,7 +512,7 @@ static void req_stat_job_step2(
           }
         else
           {
-          pjob = next_job(&alljobs,&iter);
+          pjob = next_job(&alljobs,iter);
           }
 
         }    /* END if (pjob == NULL) */
@@ -507,7 +525,7 @@ static void req_stat_job_step2(
           break;
 
         if (type == tjstQueue)
-          pjob = next_job(cntl->sc_pque->qu_jobs,&iter);
+          pjob = next_job(cntl->sc_pque->qu_jobs,iter);
         else if (type == tjstArray)
           {
           pjob = NULL;
@@ -525,7 +543,7 @@ static void req_stat_job_step2(
             }
           }
         else
-          pjob = next_job(&alljobs,&iter);
+          pjob = next_job(&alljobs,iter);
           
         }
 
@@ -588,17 +606,18 @@ static void req_stat_job_step2(
     update_array_statuses();
     }
 
+
   if (type == tjstJob)
     pjob = svr_find_job(preq->rq_ind.rq_status.rq_id, FALSE);
 
   else if (type == tjstQueue)
-    pjob = next_job(cntl->sc_pque->qu_jobs,&iter);
+    pjob = next_job(cntl->sc_pque->qu_jobs,iter);
 
   else if (type == tjstSummarizeArraysQueue)
-    pjob = next_job(cntl->sc_pque->qu_jobs_array_sum,&iter);
+    pjob = next_job(cntl->sc_pque->qu_jobs_array_sum,iter);
 
   else if (type == tjstSummarizeArraysServer)
-    pjob = next_job(&array_summary,&iter);
+    pjob = next_job(&array_summary,iter);
 
   else if (type == tjstArray)
     {
@@ -617,7 +636,7 @@ static void req_stat_job_step2(
       }
     }
   else
-    pjob = next_job(&alljobs,&iter);
+    pjob = next_job(&alljobs,iter);
 
   DTime = 0;
 
@@ -687,9 +706,12 @@ static void req_stat_job_step2(
       if (pjob != NULL)
         unlock_ji_mutex(pjob, __func__, "5", LOGLEVEL);
 
-      iter = -1;
+      all_jobs_iterator *jobiter = NULL;
+      pque->qu_jobs->lock();
+      jobiter = pque->qu_jobs->get_iterator();
+      pque->qu_jobs->unlock();
 
-      while ((pjob = next_job(pque->qu_jobs,&iter)) != NULL)
+      while ((pjob = next_job(pque->qu_jobs,jobiter)) != NULL)
         {
         if ((qjcounter >= qmaxreport) &&
             (pjob->ji_qs.ji_state == JOB_STATE_QUEUED))
@@ -816,11 +838,11 @@ nextjob:
       break;
 
     if (type == tjstQueue)
-      pjob = next_job(cntl->sc_pque->qu_jobs,&iter);
+      pjob = next_job(cntl->sc_pque->qu_jobs,iter);
     else if (type == tjstSummarizeArraysQueue)
-      pjob = next_job(cntl->sc_pque->qu_jobs_array_sum,&iter);
+      pjob = next_job(cntl->sc_pque->qu_jobs_array_sum,iter);
     else if (type == tjstSummarizeArraysServer)
-      pjob = next_job(&array_summary,&iter);
+      pjob = next_job(&array_summary,iter);
     else if (type == tjstArray)
       {
       pjob = NULL;
@@ -837,7 +859,7 @@ nextjob:
         }
       }
     else
-      pjob = next_job(&alljobs,&iter);
+      pjob = next_job(&alljobs,iter);
 
     rc = 0;
     }  /* END while (pjob != NULL) */

@@ -313,9 +313,8 @@ END_TEST
 
 START_TEST(find_job_by_array_test)
   {
-  struct all_jobs alljobs;
+  all_jobs alljobs;
   struct job* result = find_job_by_array(NULL,(char *)"",0);
-  initialize_all_jobs_array(&alljobs);
 
   result = find_job_by_array(NULL,(char *)"",0);
   fail_unless(result == NULL, "NULL all jobs input fail");

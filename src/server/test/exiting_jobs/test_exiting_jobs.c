@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <check.h>
 #include <pthread.h>
 
 #include "exiting_jobs.h"
 #include "log.h"
 #include "hash_table.h"
+#include <check.h>
 
 int retry_job_exit(char *jobid);
 int check_exiting_jobs();

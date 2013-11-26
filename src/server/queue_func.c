@@ -234,8 +234,8 @@ pbs_queue *que_alloc(
   pq->qu_qs.qu_type = QTYPE_Unset;
 
   pq->qu_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  pq->qu_jobs = (struct all_jobs *)calloc(1, sizeof(struct all_jobs));
-  pq->qu_jobs_array_sum = (struct all_jobs *)calloc(1, sizeof(struct all_jobs));
+  pq->qu_jobs = new all_jobs();
+  pq->qu_jobs_array_sum = new all_jobs();
   
   if ((pq->qu_mutex == NULL) ||
       (pq->qu_jobs == NULL) ||
@@ -246,8 +246,6 @@ pbs_queue *que_alloc(
     return(NULL);
     }
 
-  initialize_all_jobs_array(pq->qu_jobs);
-  initialize_all_jobs_array(pq->qu_jobs_array_sum);
   pthread_mutex_init(pq->qu_mutex,NULL);
   lock_queue(pq, __func__, NULL, LOGLEVEL);
 
@@ -457,21 +455,6 @@ void initialize_allques_array(
   aq->allques_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(aq->allques_mutex,NULL);
   } /* END initialize_all_ques_array() */
-
-
-
-
-void free_alljobs_array(
-
-  struct all_jobs *aj)
-
-  {
-  free(aj->alljobs_mutex);
-  free_resizable_array(aj->ra);
-  free_hash(aj->ht);
-  } /* END free_alljobs_array() */   
-
-
 
 
 int insert_queue(

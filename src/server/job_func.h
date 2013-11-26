@@ -30,11 +30,9 @@ int record_jobinfo(struct job *pjob);
 
 int svr_job_purge(struct job *pjob, int keepSpoolFiles=0);
 
-/*static*/ struct job *find_job_by_array(struct all_jobs *aj, char *job_id, int get_subjob);
+/*static*/ struct job *find_job_by_array(all_jobs *aj, char *job_id, int get_subjob);
 
 struct job *svr_find_job(char *jobid, int get_subjob);
-
-int get_jobs_index(struct all_jobs *aj, struct job *pjob);
 
 struct job_array *get_jobs_array(struct job **pjob);
 

@@ -191,8 +191,8 @@ typedef struct pbs_queue
   {
   int              q_being_recycled;
 #ifndef PBS_MOM
-  struct all_jobs *qu_jobs;  /* jobs in this queue */
-  struct all_jobs *qu_jobs_array_sum; /* jobs with job arrays summarized */
+  all_jobs *qu_jobs;  /* jobs in this queue */
+  all_jobs *qu_jobs_array_sum; /* jobs with job arrays summarized */
 #else
   tlist_head       qu_jobs;  /* jobs in this queue */
   tlist_head       qu_jobs_array_sum; /* jobs with job arrays summarized */

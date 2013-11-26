@@ -15,25 +15,19 @@ int enqueue_threadpool_request(void *(*func)(void *),void *arg)
   exit(1);
   }
 
-int insert_job(struct all_jobs *aj, job *pjob)
+int insert_job(all_jobs *aj, job *pjob)
   {
   fprintf(stderr, "The call to insert_job to be mocked!!\n");
   exit(1);
   }
 
-job *next_job(struct all_jobs *aj, int *iter)
+job *next_job(all_jobs *aj, all_jobs_iterator *iter)
   {
   fprintf(stderr, "The call to next_job to be mocked!!\n");
   exit(1);
   }
 
-void initialize_all_jobs_array(struct all_jobs *aj)
-  {
-  fprintf(stderr, "The call to initialize_all_jobs_array to be mocked!!\n");
-  exit(1);
-  }
-
-int remove_job(struct all_jobs *aj, job *pjob)
+int remove_job(all_jobs *aj, job *pjob)
   {
   fprintf(stderr, "The call to remove_job to be mocked!!\n");
   exit(1);
@@ -54,12 +48,12 @@ int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   return(0);
   }
 
-int lock_alljobs_mutex(struct all_jobs *aj, const char *id, char *msg, int logging)
+int lock_alljobs_mutex(all_jobs *aj, const char *id, char *msg, int logging)
   {
   return(0);
   }
 
-int unlock_alljobs_mutex(struct all_jobs *aj, const char *id, char *msg, int logging)
+int unlock_alljobs_mutex(all_jobs *aj, const char *id, char *msg, int logging)
   {
   return(0);
   }

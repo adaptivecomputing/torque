@@ -189,8 +189,8 @@ static void lock_out_ha();
 extern hello_container failures;
 extern int             svr_chngNodesfile;
 extern int             svr_totnodes;
-extern struct all_jobs alljobs;
-extern int run_change_logs;
+extern all_jobs        alljobs;
+extern int             run_change_logs;
 
 extern pthread_mutex_t *poll_job_task_mutex;
 extern int max_poll_job_tasks;
@@ -1094,9 +1094,13 @@ static int start_hot_jobs(void)
   int  ct = 0;
   job *pjob;
 
-  int  iter = -1;
+  all_jobs_iterator  *iter = NULL;
 
-  while ((pjob = next_job(&alljobs,&iter)) != NULL)
+  alljobs.lock();
+  iter = alljobs.get_iterator();
+  alljobs.unlock();
+
+  while ((pjob = next_job(&alljobs,iter)) != NULL)
     {
 
     if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_QUEUED) &&
@@ -1398,7 +1402,7 @@ void main_loop(void)
   long          state = SV_STATE_DOWN;
   time_t        waittime = 5;
   job          *pjob;
-  int           iter;
+  all_jobs_iterator  *iter = NULL;
   long          when = 0;
   long          timeout = 0;
   long          log = 0;
@@ -1631,10 +1635,12 @@ void main_loop(void)
 
   track_save(NULL);                     /* save tracking data */
 
-  iter = -1;
+  alljobs.lock();
+  iter = alljobs.get_iterator();
+  alljobs.unlock();
 
   /* save any jobs that need saving */
-  while ((pjob = next_job(&alljobs, &iter)) != NULL)
+  while ((pjob = next_job(&alljobs, iter)) != NULL)
     {
     if (pjob->ji_modified)
       job_save(pjob, SAVEJOB_FULL, 0);

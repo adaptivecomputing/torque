@@ -137,7 +137,7 @@ extern int   lockfds;
 extern struct server server;
 extern attribute_def svr_attr_def[];
 extern int    LOGLEVEL;
-extern struct all_jobs alljobs;
+extern all_jobs alljobs;
 
 
 
@@ -173,7 +173,7 @@ void svr_shutdown(
   pbs_attribute *pattr;
   job           *pjob;
   long           state = SV_STATE_DOWN;
-  int            iter;
+  all_jobs_iterator *iter = NULL;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
 
   close(lockfds);
@@ -247,9 +247,11 @@ void svr_shutdown(
 
   svr_save(&server, SVR_SAVE_QUICK);
 
-  iter = -1;
+  alljobs.lock();
+  iter = alljobs.get_iterator();
+  alljobs.unlock();
 
-  while ((pjob = next_job(&alljobs,&iter)) != NULL)
+  while ((pjob = next_job(&alljobs,iter)) != NULL)
     {
     mutex_mgr job_mutex(pjob->ji_mutex, true);
 

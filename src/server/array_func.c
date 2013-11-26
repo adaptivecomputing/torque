@@ -69,7 +69,7 @@ extern void post_modify_arrayreq(batch_request *preq);
 /* list of job arrays */
 extern struct server   server;
 
-struct all_jobs          array_summary;
+all_jobs          array_summary;
 static struct all_arrays allarrays;
 
 extern char *path_arrays;

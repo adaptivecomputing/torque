@@ -80,6 +80,7 @@
 
 #include <pthread.h>
 #include "resizable_array.h"
+#include "hash_table.h"
 #include "pbs_job.h"
 
 #define INITIAL_NODE_LIST_SIZE          10

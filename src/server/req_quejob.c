@@ -146,7 +146,7 @@ void        *job_clone_wt(void *);
 
 /* Global Data Items: */
 
-extern struct all_jobs newjobs;
+extern all_jobs newjobs;
 extern char *path_spool;
 
 extern struct server server;
@@ -556,9 +556,12 @@ int req_quejob(
 
   if ((pj = svr_find_job(jid, FALSE)) == NULL)
     {
-    int  iter = -1;
+    all_jobs_iterator  *iter = NULL;
+    newjobs.lock();
+    iter = newjobs.get_iterator();
+    newjobs.unlock();
 
-    while ((pj = next_job(&newjobs,&iter)) != NULL)
+    while ((pj = next_job(&newjobs,iter)) != NULL)
       {
       if (!strcmp(pj->ji_qs.ji_jobid, jid))
         break;
@@ -2086,7 +2089,7 @@ int req_commit(
   pj->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
   pj->ji_wattr[JOB_ATR_qrank].at_flags |= ATR_VFLAG_SET;
 
-  if ((rc = svr_enquejob(pj, FALSE, -1, false)) != PBSE_NONE)
+  if ((rc = svr_enquejob(pj, FALSE, NULL, false)) != PBSE_NONE)
     {
     if (rc != PBSE_JOB_RECYCLED)
       {
@@ -2274,23 +2277,24 @@ static job *locate_new_job(
   char *jobid)  /* I (optional) */
 
   {
-  int   iter = -1;
   job   *pJob;
+  //If the ID is NULL just return the first job in the list.
   if((jobid == NULL)||(*jobid == '\0'))
     {
-    return next_job(&newjobs,&iter);
+    newjobs.lock();
+    all_jobs_iterator *iter = newjobs.get_iterator();
+    pJob = iter->get_next_item();
+    newjobs.unlock();
+    return pJob;
     }
-  pthread_mutex_lock(newjobs.alljobs_mutex);
-  while((pJob = (job *)next_thing(newjobs.ra,&iter)) != NULL)
+  newjobs.lock();
+  if((pJob = newjobs.find(jobid)) != NULL)
     {
-    if(!strcmp(jobid,pJob->ji_qs.ji_jobid))
-      {
-      lock_ji_mutex(pJob,__func__,"1",LOGLEVEL);
-      pthread_mutex_unlock(newjobs.alljobs_mutex);
-      return pJob;
-      }
+    lock_ji_mutex(pJob,__func__,"1",LOGLEVEL);
+    newjobs.unlock();
+    return pJob;
     }
-  pthread_mutex_unlock(newjobs.alljobs_mutex);
+  newjobs.unlock();
   return NULL;
   }  /* END locate_new_job() */
 

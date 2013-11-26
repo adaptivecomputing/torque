@@ -99,7 +99,7 @@ int modify_job(void **j, svrattrl *plist, struct batch_request *preq, int checkp
   exit(1);
   }
 
-job *next_job(struct all_jobs *aj, int *iter)
+job *next_job(all_jobs *aj, all_jobs_iterator *iter)
   {
   fprintf(stderr, "The call to next_job needs to be mocked!!\n");
   exit(1);

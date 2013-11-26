@@ -1,6 +1,6 @@
-#include <check.h>
 #include "alps_constants.h"
 #include "track_alps_reservations.h"
+#include <check.h>
 
 
 char *eh1 = (char *)"napali+l11+tom";

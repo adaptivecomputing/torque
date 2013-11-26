@@ -5,9 +5,9 @@
 #include "hash_table.h"
 #include "pbs_job.h"
 
-struct all_jobs        array_summary;
+all_jobs        array_summary;
 char                   server_name[PBS_MAXSERVERNAME + 1]; /* host_name[:service|port] */
-struct all_jobs        alljobs;
+all_jobs        alljobs;
 int                    LOGLEVEL;
 
 void log_err(int errno, const char *ident, const char *msg) {}
