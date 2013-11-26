@@ -88,3 +88,8 @@ ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
 void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+int ctnodes(char *spec)
+  {
+  fprintf(stderr, "The call to append_link needs to be mocked!!\n");
+  exit(1);
+  }

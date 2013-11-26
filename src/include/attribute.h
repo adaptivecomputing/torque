@@ -425,6 +425,7 @@ extern int comp_l(pbs_attribute *, pbs_attribute *);
 extern int comp_ll(pbs_attribute *, pbs_attribute *);
 extern int comp_size(pbs_attribute *, pbs_attribute *);
 extern int comp_str(pbs_attribute *, pbs_attribute *);
+extern int comp_nodestr(pbs_attribute *, pbs_attribute *);
 extern int comp_arst(pbs_attribute *, pbs_attribute *);
 extern int comp_resc(pbs_attribute *, pbs_attribute *);
 extern int comp_resc2(pbs_attribute *, pbs_attribute *, int, char *, enum compare_types);
