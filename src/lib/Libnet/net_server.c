@@ -477,6 +477,65 @@ int init_network(
   }  /* END init_network() */
 
 
+/* 
+ * ping_trqauthd 
+ * Send a "ping" request to trqauthd to see if it is up.
+ * @return 0 if trqauthd is up, PBSE_BADHOST if trqauthd is no responding
+ */
+
+int ping_trqauthd(
+    
+  const char *unix_socket_name)
+
+  {
+  int   rc;
+  int   local_socket;
+  int   write_buf_len;
+  char  *err_msg;
+  char  write_buf[MAX_LINE];
+#ifndef MUNGE_AUTH
+  char  *read_buf = NULL;
+#endif /* MUNGE_AUTH */
+  long long   ccode;
+#ifndef MUNGE_AUTH
+  long long   read_buf_len = 0;
+#endif /* MUNGE_AUTH */
+
+  sprintf(write_buf, "%d|", TRQ_PING_SERVER);
+  write_buf_len = strlen(write_buf);
+
+  if ((local_socket = socket_get_unix()) <= 0)
+    {
+    fprintf(stderr, "socket_get_unix error\n");
+    return(PBSE_SOCKET_FAULT);
+    }
+  rc = socket_connect_unix(local_socket, unix_socket_name, &err_msg);
+  if (rc != 0)
+    {
+    /* If we are here we could not connect to trqauthd. That is ok though. That tells us trqauthd is not up.  */
+    return(rc);
+    }
+  else if ((rc = socket_write(local_socket, write_buf, write_buf_len)) != write_buf_len)
+    {
+    rc = PBSE_SOCKET_WRITE;
+    fprintf(stderr, "socket_write error\n");
+    }
+  else if ((rc = socket_read_num(local_socket, &ccode)) != PBSE_NONE)
+    {
+    fprintf(stderr, "socket_read_num error\n");
+    }
+#ifndef MUNGE_AUTH
+  else if ((rc = parse_daemon_response(ccode, read_buf_len, read_buf)) != PBSE_NONE)
+    {
+    fprintf(stderr, "parse_daemon_response error %lld %s\n", ccode, pbse_to_txt(ccode));
+    }
+#endif /* MUNGE_AUTH */
+
+  if (local_socket >= 0)
+    socket_close(local_socket);
+
+  return(rc);
+  }
 
 
 
