@@ -14,3 +14,7 @@ proc_mem_t *get_proc_mem_from_path(const char *path)
   return(pm);
   }
 
+bool is_physical_core(unsigned int os_index)
+  {
+  return(FALSE);
+  }

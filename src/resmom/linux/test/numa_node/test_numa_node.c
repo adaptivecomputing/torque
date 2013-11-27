@@ -4,20 +4,34 @@
 
 #include "numa_node.hpp"
 
+#include "pbs_config.h"
+
+#ifdef PENABLE_LINUX26_CPUSETS
+int MOMConfigUseSMT = 1;
+bool is_physical_core(unsigned int os_index);
+#endif
+
 START_TEST(test_parse_cpu_string)
   {
   numa_node nn;
-
   std::string str("0-1,8-9");
   nn.parse_cpu_string(str);
   fail_unless(nn.get_total_cpus() == 4);
   fail_unless(nn.get_available_cpus() == 4);
-  
+
   std::string str2("0,8");
   numa_node n2;
   n2.parse_cpu_string(str2);
   fail_unless(n2.get_total_cpus() == 2);
   fail_unless(n2.get_available_cpus() == 2);
+
+  numa_node nn2("torque2", 0);
+  fail_unless(nn2.get_total_cpus() == 2);
+  fail_unless(nn2.get_available_cpus() == 2);
+
+  numa_node nn4("torque4", 0);
+  fail_unless(nn4.get_total_cpus() == 4);
+  fail_unless(nn4.get_available_cpus() == 4);
   }
 END_TEST
 

@@ -160,7 +160,8 @@ void numa_node::parse_cpu_string(
         this->available_cpus++;
         }
 
-      ptr++;
+      if (*ptr == ',')
+        ptr++;
       }
     }
 
