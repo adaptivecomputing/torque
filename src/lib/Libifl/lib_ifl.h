@@ -275,7 +275,6 @@ int PBSD_munge_authenticate(int psock, int handle);
 #ifndef MUNGE_AUTH
 int parse_svr_response(long long code, long long len, char *buf);
 int validate_socket(int psock);
-int parse_daemon_response(long long code, long long len, char *buf);
 #endif 
 #ifdef ENABLE_UNIX_SOCKETS
 ssize_t send_unix_creds(int sd);
@@ -284,6 +283,7 @@ int pbs_original_connect(char *server);
 int pbs_disconnect_socket(int socket);
 int pbs_connect_with_retry(char *server_name_ptr, int retry_seconds); 
 void initialize_connections_table();
+int parse_daemon_response(long long code, long long len, char *buf);
 
 /* pbsD_deljob.c */
 int pbs_deljob_err(int c, char *jobid, char *extend, int *);
