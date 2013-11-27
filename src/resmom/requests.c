@@ -2951,7 +2951,7 @@ void req_rerunjob(
     }
 
   /* make sure to call exit() and not return to avoid zombie process */
-  exit(EXIT_SUCCESS);
+  exit(0);
   }  /* END req_rerunjob() */
 
 
