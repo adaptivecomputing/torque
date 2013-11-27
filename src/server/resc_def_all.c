@@ -274,7 +274,7 @@ resource_def svr_resc_def_const[] =
     decode_nodes,
     encode_str,
     set_str,
-    comp_str,
+    comp_nodestr,
     free_str,
     set_node_ct,
     READ_WRITE | ATR_DFLAG_MOM | ATR_DFLAG_RMOMIG,

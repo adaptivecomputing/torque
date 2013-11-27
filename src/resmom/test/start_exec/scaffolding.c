@@ -538,6 +538,12 @@ bool am_i_mother_superior(const job &pjob)
   return(false);
   }
 
+int ctnodes(char *epec)
+  {
+  fprintf(stderr, "The call to append_link needs to be mocked!!\n");
+  exit(1);
+  }
+
 #ifdef PENABLE_LINUX26_CPUSETS
 
 node_internals::node_internals(void){}

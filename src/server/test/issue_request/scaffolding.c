@@ -248,9 +248,7 @@ struct batch_request *alloc_br(int type)
     {
     return NULL;
     }
-
-    req->rq_type = type;
-
+  req->rq_type = type;
   req->rq_conn = -1;  /* indicate not connected */
   req->rq_orgconn = -1;  /* indicate not connected */
   req->rq_time = time(NULL);
@@ -260,3 +258,8 @@ struct batch_request *alloc_br(int type)
   return(req);
   } /* END alloc_br() */
 
+int ctnodes(char *spec)
+  {
+  fprintf(stderr, "The call to append_link needs to be mocked!!\n");
+  exit(1);
+  }
