@@ -556,8 +556,6 @@ struct sockaddr_in *get_cached_addrinfo(
   return(NULL);
   }
 
-void initialize_batch_request_holder() {}
-
 int insert_addr_name_info(
     
   char               *hostname,

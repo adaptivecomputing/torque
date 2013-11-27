@@ -1236,7 +1236,6 @@ int initialize_data_structures_and_mutexes()
    * they can be called by a signal handler */
 
   initialize_recycler();
-  initialize_batch_request_holder();
 
   task_list_timed = new std::list<timed_task>();
   pthread_mutex_init(&task_list_timed_mutex, NULL);

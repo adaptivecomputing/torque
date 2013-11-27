@@ -6,7 +6,6 @@
 
 START_TEST(test_one)
   {
-  initialize_batch_request_holder();
 
   batch_request *pBr1 = (batch_request *)calloc(1,sizeof(batch_request));
   batch_request *pBr2 = (batch_request *)calloc(1,sizeof(batch_request));
