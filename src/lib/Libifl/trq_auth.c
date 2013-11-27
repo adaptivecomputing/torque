@@ -843,6 +843,7 @@ void *process_svr_conn(
         break;
         }
 
+      case TRQ_PING_SERVER:
       case TRQ_GET_ACTIVE_SERVER:
         {
         /* rc will get evaluated after the switch statement. */
