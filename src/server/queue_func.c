@@ -260,8 +260,7 @@ pbs_queue *que_alloc(
     unlock_sv_qs_mutex(server.sv_qs_mutex, __func__);
 
   /* set up the user info struct */
-  pq->qu_uih = (user_info_holder *)calloc(1, sizeof(user_info_holder));
-  initialize_user_info_holder(pq->qu_uih);
+  pq->qu_uih = new user_info_holder();
 
   /* set the working attributes to "unspecified" */
 
@@ -320,7 +319,7 @@ void que_free(
   if (sv_qs_mutex_held == FALSE)
     unlock_sv_qs_mutex(server.sv_qs_mutex, __func__);
 
-  free_user_info_holder(pq->qu_uih);
+  delete pq->qu_uih;
 
   remove_queue(&svr_queues, pq);
   pq->q_being_recycled = TRUE;

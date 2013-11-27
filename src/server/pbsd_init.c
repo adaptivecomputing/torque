@@ -1244,8 +1244,6 @@ int initialize_data_structures_and_mutexes()
   initialize_hello_container(&failures);
   initialize_task_recycler();
 
-  initialize_user_info_holder(&users);
-
   CLEAR_HEAD(svr_newnodes);
 
   initialize_all_arrays_array();

@@ -81,8 +81,7 @@
 #define USER_INFO_H
 
 #include <pthread.h>
-#include "resizable_array.h"
-#include "hash_table.h"
+#include "container.hpp"
 #include "pbs_job.h"
 
 #define INITIAL_USER_INFO_COUNT 50
@@ -95,23 +94,15 @@ typedef struct user_info
 
 
 
-typedef struct user_info_holder
-  {
-  resizable_array *ui_ra;
-  hash_table_t    *ui_ht;
-
-  pthread_mutex_t *ui_mutex;
-  } user_info_holder;
-
+typedef container::item_container<user_info *>                    user_info_holder;
+typedef container::item_container<user_info *>::item_iterator     user_info_holder_iterator;
 
 extern user_info_holder users;
 
 
-void         initialize_user_info_holder(user_info_holder *uih);
 int          can_queue_new_job(char *user_name, job *pjob);
 int          increment_queued_jobs(user_info_holder *uih, char *user_name, job *pjob);
 int          decrement_queued_jobs(user_info_holder *uih, char *user_name);
 unsigned int get_num_queued(user_info_holder *uih, char *user_name);
-void         free_user_info_holder(user_info_holder *uih);
 
 #endif /* ifndef USER_INFO_H */
