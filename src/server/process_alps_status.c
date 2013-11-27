@@ -104,6 +104,7 @@
 #include <string>
 #include <vector>
 #include <boost/ptr_container/ptr_vector.hpp>
+#include "container.hpp"
 
 /* Global Data */
 extern int LOGLEVEL;
@@ -562,7 +563,7 @@ int process_alps_status(
   struct pbsnode *current = NULL;
   int             rc;
   pbs_attribute   temp;
-  hash_table_t   *rsv_ht;
+  container::item_container<const char *> rsv_ht;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
 
   memset(&temp, 0, sizeof(temp));
@@ -576,9 +577,6 @@ int process_alps_status(
   /* if we can't find the parent node, ignore the update */
   if ((parent = find_nodebyname(nd_name)) == NULL)
     return(PBSE_NONE);
-
-  /* keep track of reservations so that they're only processed once per update */
-  rsv_ht = create_hash(INITIAL_RESERVATION_HOLDER_SIZE);
 
   /* loop over each string */
   for(boost::ptr_vector<std::string>::iterator i = status_info.begin();i != status_info.end();i++)
@@ -613,9 +611,9 @@ int process_alps_status(
       {
       const char *just_rsv_id = str + strlen(reservation_id);
 
-      if (get_value_hash(rsv_ht, just_rsv_id) == -1)
+      if (rsv_ht.find(just_rsv_id) == NULL)
         {
-        add_hash(rsv_ht, 1, strdup(just_rsv_id));
+        rsv_ht.insert(just_rsv_id,just_rsv_id);
 
         /* sub-functions will attempt to lock a job, so we must unlock the
          * reporter node */
@@ -632,8 +630,6 @@ int process_alps_status(
           /* reporter node disappeared - this shouldn't be possible */
           log_err(PBSE_UNKNODE, __func__, "Alps reporter node disappeared while recording a reservation");
           free_arst(&temp);
-          free_all_keys(rsv_ht);
-          free_hash(rsv_ht);
           free(current_node_id);
           return(PBSE_NONE);
           }
@@ -646,8 +642,6 @@ int process_alps_status(
             current_node_id);
           log_err(PBSE_UNKNODE, __func__, log_buf);
           free_arst(&temp);
-          free_all_keys(rsv_ht);
-          free_hash(rsv_ht);
           free(current_node_id);
           return(PBSE_NONE);
           }
@@ -660,8 +654,6 @@ int process_alps_status(
     else if ((rc = decode_arst(&temp, NULL, NULL, str, 0)) != PBSE_NONE)
       {
       free_arst(&temp);
-      free_all_keys(rsv_ht);
-      free_hash(rsv_ht);
       return(rc);
       }
 
@@ -727,9 +719,6 @@ int process_alps_status(
     }
 
   unlock_node(parent, __func__, NULL, LOGLEVEL);
-
-  free_all_keys(rsv_ht);
-  free_hash(rsv_ht);
 
   return(PBSE_NONE);
   } /* END process_alps_status() */
