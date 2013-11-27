@@ -243,7 +243,7 @@
 #include <string>
 #include <vector>
 #include <boost/ptr_container/ptr_vector.hpp>
-
+#include "container.hpp"
 
 #define MAX_RETRY_TIME_IN_SECS           (5 * 60)
 #define STARTING_RETRY_INTERVAL_IN_SECS   2
@@ -293,7 +293,7 @@ extern int                 UpdateFailCount;
 extern mom_hierarchy_t    *mh;
 extern char               *stat_string_aggregate;
 extern unsigned int        ssa_index;
-extern resizable_array    *received_statuses;
+extern container::item_container<received_node *> received_statuses;
 boost::ptr_vector<std::string> mom_status;
 
 extern struct config *rm_search(struct config *where, const char *what);
@@ -1105,14 +1105,14 @@ int write_cached_statuses(
  
   {
   int            ret = DIS_SUCCESS;
-  int            iter = -1;
+  container::item_container<received_node *>::item_iterator *iter = received_statuses.get_iterator();
   const char   *cp;
   received_node *rn;
   mom_server    *pms;
   node_comm_t   *nc;
   
   /* traverse the received_nodes array and send/clear the updates */
-  while ((rn = (received_node *)next_thing(received_statuses, &iter)) != NULL)
+  while ((rn = iter->get_next_item()) != NULL)
     {
     for(boost::ptr_vector<std::string>::iterator i = rn->statuses.begin();i != rn->statuses.end();i++)
       {
@@ -1476,12 +1476,13 @@ void mom_server_all_update_stat(void)
   if (pid > 0)
     {
     /* We are the parent clear out the status cache. */
-    int iter = -1;
     received_node *rn = NULL;
 
     LastServerUpdateTime = time_now;
 
-    while ((rn = (received_node *)next_thing(received_statuses, &iter)) != NULL)
+    container::item_container<received_node *>::item_iterator *iter = received_statuses.get_iterator();
+
+    while ((rn = iter->get_next_item()) != NULL)
       {
       rn->statuses.clear();
       }

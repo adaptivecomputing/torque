@@ -134,6 +134,7 @@
 #include "mom_config.h"
 #include <string>
 #include <vector>
+#include "container.hpp"
 
 
 #define IM_FINISHED                 1
@@ -162,8 +163,7 @@ extern int           multi_mom;
 char                *stat_string_aggregate = NULL;
 unsigned int         ssa_index;
 unsigned long        ssa_size;
-resizable_array     *received_statuses; /* holds information on node's whose statuses we've received */
-hash_table_t        *received_table;
+container::item_container<received_node *> received_statuses; /* holds information on node's whose statuses we've received */
 int                  updates_waiting_to_send = 0;
 extern time_t       LastServerUpdateTime;
 extern struct connection svr_conn[];
@@ -8661,7 +8661,6 @@ received_node *get_received_node_entry(
 
   {
   received_node  *rn;
-  int             index;
   char           *hostname;
 
   if (str == NULL)
@@ -8670,9 +8669,9 @@ received_node *get_received_node_entry(
   hostname = str + strlen("node=");
 
   /* get the old node for this table if present. If not, create a new one */
-  index = get_value_hash(received_table, hostname);
+  rn = received_statuses.find(hostname);
   
-  if (index == -1)
+  if (rn == NULL)
     {
 
     rn = (received_node *)calloc(1, sizeof(received_node));
@@ -8698,21 +8697,15 @@ received_node *get_received_node_entry(
       }
 
     /* add the new node to the received status list */
-    index = insert_thing(received_statuses, rn);
-
-    if (index == -1)
+    if(!received_statuses.insert(rn,rn->hostname))
       log_err(ENOMEM, __func__, "No memory to resize the received_statuses array...SYSTEM FAILURE\n");
     else
       {
-      add_hash(received_table, index, rn->hostname);
-
       send_update_soon();
       }
     }
   else
     {
-    rn = (received_node *)received_statuses->slots[index].item;
-    
     /* make sure we aren't hold 2 statuses for the same node */
     rn->statuses.clear();
 
