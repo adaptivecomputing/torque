@@ -253,12 +253,21 @@ void reissue_to_svr(
   time_t         time_now = time(NULL);
   char          *br_id = (char *)pwt->wt_parm1;
   batch_request *preq = get_remove_batch_request(br_id);
-  char *serverName = strdup(preq->rq_host);
-
+  char *serverName = NULL;
+  
   /* if not timed-out, retry send to remote server */
   if (preq != NULL)
     {
-    if (((time_now - preq->rq_time) > PBS_NET_RETRY_LIMIT) ||
+   if (preq->rq_host != NULL)
+    serverName = strdup(preq->rq_host);
+   else
+     {
+     free(pwt->wt_mutex);
+     free(pwt);
+     return;
+     }
+
+   if (((time_now - preq->rq_time) > PBS_NET_RETRY_LIMIT) ||
         (issue_to_svr(serverName, preq, pwt->wt_parmfunc) != PBSE_NONE))
       {
       /* either timed-out or got hard error, tell post-function  */
@@ -271,7 +280,8 @@ void reissue_to_svr(
       }
     }
 
-  free(serverName);
+  if (serverName)
+    free(serverName);
   free(pwt->wt_mutex);
   free(pwt);
   }  /* END reissue_to_svr() */
@@ -353,10 +363,21 @@ int issue_to_svr(
 
   if (do_retry)
     {
-    if (preq->rq_id == NULL)
-      get_batch_request_id(preq);
+    /* create a new batch_request because preq is going to be freed when issue_to_svr returns success */
+    struct batch_request *new_preq;
 
-    pwt = set_task(WORK_Timed, (long)(time_now + PBS_NET_RETRY_TIME), reissue_to_svr, preq->rq_id, TRUE);
+    new_preq = alloc_br(0);
+    if (new_preq == NULL)
+      {
+      return(PBSE_MEM_MALLOC);
+      }
+
+    memcpy(new_preq, preq, sizeof(batch_request));
+
+    if (preq->rq_id == NULL)
+      get_batch_request_id(new_preq);
+
+    pwt = set_task(WORK_Timed, (long)(time_now + PBS_NET_RETRY_TIME), reissue_to_svr, new_preq->rq_id, TRUE);
 
     pwt->wt_parmfunc = replyfunc;
 
