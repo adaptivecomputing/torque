@@ -383,3 +383,10 @@ char *pbs_geterrmsg(int con)
   {
   return(strdup("err"));
   }
+
+int ctnodes(char *spec)
+  {
+  fprintf(stderr, "The call to ctnodes needs to be mocked!!\n");
+  exit(1);
+  }
+

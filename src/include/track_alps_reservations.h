@@ -79,29 +79,37 @@
 
 
 #include <pthread.h>
-#include "resizable_array.h"
-#include "hash_table.h"
+#include "container.hpp"
+#include <vector>
+#include <string>
 #include "pbs_job.h"
 
 #define INITIAL_NODE_LIST_SIZE          10
 #define INITIAL_RESERVATION_HOLDER_SIZE 100
 
 
-typedef struct alps_reservation
+class alps_reservation
   {
+public:
   char            *rsv_id;         /* the reservation id */
-  resizable_array *ar_node_names;  /* the node ids associated with this reservation */
+  std::vector<std::string> ar_node_names;/* the node ids associated with this reservation */
   char            *job_id;         /* the job id associated with this reservation */
-  } alps_reservation;
+  alps_reservation():rsv_id(NULL),job_id(NULL){}
+  alps_reservation(const char *new_jid,const char *new_rsvid)
+    {
+    job_id = strdup(new_jid);
+    rsv_id = strdup(new_rsvid);
+    }
+  ~alps_reservation()
+    {
+    if(rsv_id != NULL) free(rsv_id);
+    if(job_id != NULL) free(job_id);
+    }
+  };
 
 
-typedef struct reservation_holder
-  {
-  pthread_mutex_t *rh_mutex;     
-  resizable_array *rh_alps_rsvs;  /* resizable array containing the alps_reservations */
-  hash_table_t    *rh_ht;         /* hash table that holds the index and uses the rsv_id as the key */
-  } reservation_holder;
-
+  typedef container::item_container<alps_reservation *>                 reservation_holder;
+  typedef container::item_container<alps_reservation *>::item_iterator  reservation_holder_iterator;
 
 extern reservation_holder alps_reservations;
 

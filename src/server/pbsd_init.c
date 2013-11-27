@@ -1256,7 +1256,6 @@ int initialize_data_structures_and_mutexes()
   if (cray_enabled == TRUE)
     {
     initialize_login_holder();
-    initialize_alps_reservations();
     }
   
   acctfile_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));

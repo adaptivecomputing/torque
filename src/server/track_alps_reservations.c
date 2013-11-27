@@ -112,8 +112,6 @@ int add_node_names(
   int   rc = PBSE_NONE;
   char *prev_node = NULL;
 
-  ar->ar_node_names = initialize_resizable_array(INITIAL_NODE_LIST_SIZE);
-
   while ((host_tok = threadsafe_tokenizer(&str_ptr, "+")) != NULL)
     {
     if ((slash = strchr(host_tok, '/')) != NULL)
@@ -122,10 +120,8 @@ int add_node_names(
     if ((prev_node == NULL) ||
         (strcmp(prev_node, host_tok)))
       {
-      if ((rc = insert_thing(ar->ar_node_names, host_tok)) < 0)
-        break;
-      else
-        rc = PBSE_NONE;
+      ar->ar_node_names.push_back(std::string(host_tok));
+      rc = PBSE_NONE;
       }
 
     prev_node = host_tok;
@@ -141,17 +137,13 @@ alps_reservation *populate_alps_reservation(
   job *pjob)
 
   {
-  alps_reservation *ar = NULL;
+  alps_reservation *ar = new alps_reservation(pjob->ji_qs.ji_jobid,pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str);
   
-  if ((ar = (alps_reservation *)calloc(1, sizeof(alps_reservation))) != NULL)
+  if (ar != NULL)
     {
-    ar->job_id = strdup(pjob->ji_qs.ji_jobid);
-    ar->rsv_id = strdup(pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str);
     if ((add_node_names(ar, pjob)) != PBSE_NONE)
       {
-      free(ar->job_id);
-      free(ar->rsv_id);
-      free(ar);
+      delete ar;
       ar = NULL;
       }
     }
@@ -195,15 +187,12 @@ int insert_alps_reservation(
   alps_reservation *ar)
 
   {
-  int index;
   int rc;
 
-  pthread_mutex_lock(alps_reservations.rh_mutex);
-  if ((index = insert_thing(alps_reservations.rh_alps_rsvs, ar)) >= 0)
-    rc = add_hash(alps_reservations.rh_ht, index, ar->rsv_id);
-  else
+  alps_reservations.lock();
+  if(!alps_reservations.insert(ar,ar->rsv_id))
     rc = ENOMEM;
-  pthread_mutex_unlock(alps_reservations.rh_mutex);
+  alps_reservations.unlock();
 
   return(rc);
   } /* insert_alps_reservation() */
@@ -215,16 +204,12 @@ int already_recorded(
   char *rsv_id)
 
   {
-  int               index;
   int               recorded = FALSE;
 
-  pthread_mutex_lock(alps_reservations.rh_mutex);
-  if ((index = get_value_hash(alps_reservations.rh_ht, rsv_id)) >= 0)
-    {
-    if (alps_reservations.rh_alps_rsvs->slots[index].item != NULL)
-      recorded = TRUE;
-    }
-  pthread_mutex_unlock(alps_reservations.rh_mutex);
+  alps_reservations.lock();
+  if(alps_reservations.find(rsv_id) != NULL)
+    recorded = TRUE;
+  alps_reservations.unlock();
 
   return(recorded);
   } /* already_recorded() */
@@ -237,16 +222,13 @@ int is_orphaned(
   char *job_id)
 
   {
-  int               index;
   int               orphaned = FALSE;
   job              *pjob;
   alps_reservation *ar = NULL;
 
-  pthread_mutex_lock(alps_reservations.rh_mutex);
-  index = get_value_hash(alps_reservations.rh_ht, rsv_id);
-  if (index != -1)
-    ar = (alps_reservation *)alps_reservations.rh_alps_rsvs->slots[index].item;
-  pthread_mutex_unlock(alps_reservations.rh_mutex);
+  alps_reservations.lock();
+  ar = alps_reservations.find(rsv_id);
+  alps_reservations.unlock();
 
   if (ar != NULL)
     {
@@ -274,20 +256,6 @@ int is_orphaned(
   } /* END is_orphaned() */
 
 
-
-void free_alps_reservation(
-
-  alps_reservation *ar)
-
-  {
-  free_resizable_array(ar->ar_node_names);
-  free(ar->rsv_id);
-  free(ar->job_id);
-  free(ar);
-  } /* END free_alps_reservation() */
-
-
-
 /*
  * remove_alps_reservation
  * remove the reservation with rsv_id from the alps_reservations struct
@@ -301,41 +269,18 @@ int remove_alps_reservation(
   char *rsv_id)
 
   {
-  int               index;
   int               rc = PBSE_NONE;
   alps_reservation *ar = NULL;
 
-  pthread_mutex_lock(alps_reservations.rh_mutex);
-  if ((index = get_value_hash(alps_reservations.rh_ht, rsv_id)) < 0)
+  alps_reservations.lock();
+  if(!alps_reservations.remove(rsv_id))
     rc = THING_NOT_FOUND;
-  else
-    {
-    ar = (alps_reservation *)alps_reservations.rh_alps_rsvs->slots[index].item;
-    remove_thing_from_index(alps_reservations.rh_alps_rsvs, index);
-    remove_hash(alps_reservations.rh_ht, rsv_id);
-    }
-  pthread_mutex_unlock(alps_reservations.rh_mutex);
+  alps_reservations.unlock();
 
   if (ar != NULL)
-    free_alps_reservation(ar);
+    delete ar;
 
   return(rc);
   } /* END remove_alps_reservation() */
-
-
-
-
-void initialize_alps_reservations()
-
-  {
-  alps_reservations.rh_mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(alps_reservations.rh_mutex, NULL);
-
-  alps_reservations.rh_alps_rsvs = initialize_resizable_array(INITIAL_RESERVATION_HOLDER_SIZE);
-  alps_reservations.rh_ht = create_hash(INITIAL_RESERVATION_HOLDER_SIZE + 1);
-  } /* END initialize_alps_reservations() */
-
-
-
 
 
