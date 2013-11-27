@@ -210,6 +210,7 @@ fi
 echo "Started ${0}, version ${version}, release ${release_number}." \
     ${quiet_redirect}
 
+echo $(git rev-parse HEAD) > current_hash
 sh autogen.sh
 ./configure
 
