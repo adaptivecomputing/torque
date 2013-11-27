@@ -666,10 +666,14 @@ static void req_stat_job_step2(
     long sentJobCounter;
     long qjcounter;
     long qmaxreport;
-    int  iter = -1;
+    all_queues_iterator *iter = NULL;
+
+    svr_queues.lock();
+    iter = svr_queues.get_iterator();
+    svr_queues.unlock();
 
     /* loop through all queues */
-    while ((pque = next_queue(&svr_queues,&iter)) != NULL)
+    while ((pque = next_queue(&svr_queues,iter)) != NULL)
       {
       qjcounter = 0;
 
@@ -1310,10 +1314,12 @@ int req_stat_que(
   else
     {
     /* pque == NULL before next_queue */
-    int iter = -1;
+    svr_queues.lock();
+    all_queues_iterator *iter = svr_queues.get_iterator();
+    svr_queues.unlock();
 
     /* get status of all queues */
-    while ((pque = next_queue(&svr_queues,&iter)) != NULL)
+    while ((pque = next_queue(&svr_queues,iter)) != NULL)
       {
       mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
       rc = status_que(pque, preq, &preply->brp_un.brp_status);
@@ -1327,7 +1333,6 @@ int req_stat_que(
 
         rc = 0;
         }
-
       }
     }
 

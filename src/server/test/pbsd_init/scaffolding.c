@@ -353,12 +353,6 @@ int setup_nodes(void)
   exit(1);
   }
 
-void initialize_allques_array(all_queues *aq)
-  {
-  fprintf(stderr, "The call to initialize_allques_array needs to be mocked!!\n");
-  exit(1);
-  }
-
 job *job_recov(char *filename)
   {
   fprintf(stderr, "The call to job_recov needs to be mocked!!\n");

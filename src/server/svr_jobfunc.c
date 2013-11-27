@@ -3304,7 +3304,7 @@ static void correct_ct()
   char         *pc;
   job          *pjob;
   pbs_queue    *pque;
-  int           queue_iter = -1;
+  all_queues_iterator *queue_iter = NULL;
   all_jobs_iterator *job_iter = NULL;
   int           num_jobs = 0;
   int           job_counts[PBS_NUMJOBSTATE];
@@ -3332,7 +3332,11 @@ static void correct_ct()
   
   log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
   
-  while ((pque = next_queue(&svr_queues,&queue_iter)) != NULL)
+  svr_queues.lock();
+  queue_iter = svr_queues.get_iterator();
+  svr_queues.unlock();
+
+  while ((pque = next_queue(&svr_queues,queue_iter)) != NULL)
     {
     mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "checking queue %s", pque->qu_qs.qu_name);

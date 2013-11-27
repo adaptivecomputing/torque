@@ -229,7 +229,7 @@ work_task *next_task(all_tasks *at, int *iter)
   exit(1);
   }
 
-pbs_queue *next_queue(all_queues *aq, int *iter)
+pbs_queue *next_queue(all_queues *aq, all_queues_iterator *iter)
   {
   fprintf(stderr, "The call to next_queue needs to be mocked!!\n");
   exit(1);

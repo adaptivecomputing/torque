@@ -1244,15 +1244,12 @@ int initialize_data_structures_and_mutexes()
   initialize_hello_container(&hellos);
   initialize_hello_container(&failures);
   initialize_task_recycler();
-  initialize_queue_recycler();
 
   initialize_user_info_holder(&users);
 
   CLEAR_HEAD(svr_newnodes);
 
   initialize_all_arrays_array();
-
-  initialize_allques_array(&svr_queues);
 
   exiting_jobs_info = get_hash_map(-1);
 

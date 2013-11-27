@@ -19,12 +19,10 @@ pbs_queue *find_queuebyname(const char *quename);
 
 pbs_queue *get_dfltque(void);
 
-void initialize_allques_array(all_queues *aq);
-
 int insert_queue(all_queues *aq, pbs_queue *pque);
 
 int remove_queue(all_queues *aq, pbs_queue *pque);
 
-pbs_queue *next_queue(all_queues *aq, int *iter);
+pbs_queue *next_queue(all_queues *aq, all_queues_iterator *iter);
 
 #endif /* _QUEUE_FUNC_H */

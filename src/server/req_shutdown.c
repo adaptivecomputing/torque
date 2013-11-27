@@ -149,9 +149,13 @@ void save_queues()
 
   {
   struct pbs_queue *pque;
-  int               iter = -1;
+  all_queues_iterator *iter = NULL;
 
-  while ((pque = next_queue(&svr_queues, &iter)) != NULL)
+  svr_queues.lock();
+  iter = svr_queues.get_iterator();
+  svr_queues.unlock();
+
+  while ((pque = next_queue(&svr_queues, iter)) != NULL)
     {
     que_save(pque);
     unlock_queue(pque, __func__, NULL, LOGLEVEL);

@@ -1162,7 +1162,7 @@ void *handle_queue_routing_retries(
   {
   pbs_queue *pque;
   char       *queuename = NULL;
-  int        iter = -1;
+  all_queues_iterator *iter = NULL;
   int        rc;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
   pthread_attr_t  routing_attr;
@@ -1184,9 +1184,13 @@ void *handle_queue_routing_retries(
     return(NULL);
     }
 
+  svr_queues.lock();
+  iter = svr_queues.get_iterator();
+  svr_queues.unlock();
+
   while(1)
     {
-    while ((pque = next_queue(&svr_queues, &iter)) != NULL)
+    while ((pque = next_queue(&svr_queues, iter)) != NULL)
       {
       if (pque->qu_qs.qu_type == QTYPE_RoutePush)
         {
