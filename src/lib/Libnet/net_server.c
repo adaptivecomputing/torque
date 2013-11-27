@@ -494,13 +494,9 @@ int ping_trqauthd(
   int   write_buf_len;
   char  *err_msg;
   char  write_buf[MAX_LINE];
-#ifndef MUNGE_AUTH
   char  *read_buf = NULL;
-#endif /* MUNGE_AUTH */
   long long   ccode;
-#ifndef MUNGE_AUTH
   long long   read_buf_len = 0;
-#endif /* MUNGE_AUTH */
 
   sprintf(write_buf, "%d|", TRQ_PING_SERVER);
   write_buf_len = strlen(write_buf);
@@ -525,12 +521,10 @@ int ping_trqauthd(
     {
     fprintf(stderr, "socket_read_num error\n");
     }
-#ifndef MUNGE_AUTH
   else if ((rc = parse_daemon_response(ccode, read_buf_len, read_buf)) != PBSE_NONE)
     {
     fprintf(stderr, "parse_daemon_response error %lld %s\n", ccode, pbse_to_txt(ccode));
     }
-#endif /* MUNGE_AUTH */
 
   if (local_socket >= 0)
     socket_close(local_socket);

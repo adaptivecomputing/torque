@@ -487,9 +487,6 @@ int PBSD_munge_authenticate(
 /*
  * PBS_authenticate - call pbs_iff(1) to authenticate use to the PBS server.
  */
-
-#ifndef MUNGE_AUTH
-
 int parse_daemon_response(long long code, long long len, char *buf)
   {
   int rc = PBSE_NONE;
@@ -503,6 +500,9 @@ int parse_daemon_response(long long code, long long len, char *buf)
     }
   return rc;
   }
+
+
+#ifndef MUNGE_AUTH
 
 
 
