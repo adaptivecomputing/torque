@@ -128,13 +128,13 @@
 #include "net_cache.h"
 #include "ji_mutex.h"
 #include "user_info.h"
-#include "hash_map.h"
 #include "mutex_mgr.hpp"
 #include "../lib/Libnet/lib_net.h"
 #include "alps_constants.h"
 #include <string>
 #include <vector>
 #include <boost/ptr_container/ptr_vector.hpp>
+#include "exiting_jobs.h"
 
 
 /*#ifndef SIGKILL*/
@@ -209,7 +209,7 @@ extern all_jobs                newjobs;
 all_queues                      svr_queues;
 job_recycler                    recycler;
 queue_recycler                  q_recycler;
-hash_map                       *exiting_jobs_info;
+container::item_container<job_exiting_retry_info *>  exiting_jobs_info;
 
 boost::ptr_vector<std::string>  hierarchy_holder;
 hello_container                 hellos;
@@ -1246,10 +1246,6 @@ int initialize_data_structures_and_mutexes()
 
   CLEAR_HEAD(svr_newnodes);
 
-  initialize_all_arrays_array();
-
-  exiting_jobs_info = get_hash_map(-1);
-
   get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
   if (cray_enabled == TRUE)
     {
@@ -1853,7 +1849,7 @@ int cleanup_recovered_arrays()
   job_array *pa;
   job       *pjob;
   char       arrayid[PBS_MAXSVRJOBID+1];
-  int        iter = -1;
+  all_arrays_iterator   *iter = NULL;
   int        rc = PBSE_NONE;
 
   while ((pa = next_array(&iter)) != NULL)

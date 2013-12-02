@@ -5,7 +5,6 @@
 
 
 #include "mcom.h" /* mxml_t, MDataFormatEnum, mbool_t */
-#include "hash_table.h" /* hash_table_t, bucket, node_comm_t */
 #include "mom_hierarchy.h" /* mom_hierarchy_t */
 #include "resizable_array.h" /* resizable_array */
 #include "threadpool.h" /* threadpool_t */

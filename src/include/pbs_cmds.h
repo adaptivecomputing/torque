@@ -83,7 +83,7 @@
 #include "u_memmgr.h"
 
 /* lib/Libcmds/add_verify_resources.c */
-int add_verify_resources(memmgr **mm, job_data **res_attr, char *resources, int p_type);
+int add_verify_resources(job_data_container *res_attr, char *resources, int p_type);
 
 
 #endif /* _PBS_CMDS_H */

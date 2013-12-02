@@ -78,9 +78,8 @@
 */
 #ifndef _U_HASH_MAP_STRUCTS_H
 #define _U_HASH_MAP_STRUCTS_H
-#include "uthash.h"
 #include "pbs_error.h"
-#include "u_memmgr.h"
+#include "container.hpp"
 
 /*
  * Type of data in the map
@@ -100,34 +99,43 @@
 * all parameters
 * all filter information
 */
-typedef struct job_data
+class job_data
   {
-    char *name;
-    int name_len;
-    char *value;
-    int value_len;
+public:
+    std::string name;
+    std::string value;
     int var_type;
     int op_type;
     unsigned int flags;
-    UT_hash_handle hh;
-  } job_data;
+    job_data(const char *pName,const char *pVal,int var,int op):
+      var_type(var),op_type(op),flags(0)
+      {
+      if(pName == NULL) pName = "";
+      if(pVal == NULL) pVal = "";
+      name = pName;
+      value = pVal;
+      }
+  };
 
-int hash_add_item(memmgr **mm, job_data **head, const char *name, const char *value, int var_type, int op_type);
+typedef container::item_container<job_data *> job_data_container;
+typedef job_data_container::item_iterator     job_data_iterator;
 
-void hash_add_or_exit(memmgr **mm, job_data **head, const char *name, const char *value, int var_type);
+int hash_add_item(job_data_container *head, const char *name, const char *value, int var_type, int op_type);
 
-int hash_del_item(memmgr **mm, job_data **head, const char *name);
+void hash_add_or_exit(job_data_container *head, const char *name, const char *value, int var_type);
 
-int hash_clear(memmgr **mm, job_data **head);
+int hash_del_item(job_data_container *head, const char *name);
 
-int hash_find(job_data *head, const char *name, job_data **env_var);
+int hash_clear(job_data_container *head);
 
-int hash_count(job_data *head);
+int hash_find(job_data_container *head, const char *name, job_data **env_var);
 
-int hash_print(job_data *head);
+int hash_count(job_data_container *head);
 
-int hash_add_hash(memmgr **mm, job_data **dest, job_data *src, int overwrite_existing);
+int hash_print(job_data_container *head);
 
-int hash_strlen(job_data *src);
+int hash_add_hash(job_data_container *dest, job_data_container *src, int overwrite_existing);
+
+int hash_strlen(job_data_container *src);
 
 #endif /* _U_HASH_MAP_STRUCTS_H */
