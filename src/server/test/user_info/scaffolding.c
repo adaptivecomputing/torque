@@ -6,7 +6,7 @@
 #include "hash_table.h"
 #include "user_info.h"
 
-int LOGLEVEL = 0;
+int LOGLEVEL = 10;
 
 void log_event(
 

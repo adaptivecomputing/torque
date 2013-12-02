@@ -301,7 +301,7 @@ int lock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string)
   return(0);
   }
 
-unsigned int get_num_queued(user_info_holder *uih, char *user_name)
+unsigned int get_num_queued(user_info_holder *uih, const char *user_name)
   {
   return(0);
   }
