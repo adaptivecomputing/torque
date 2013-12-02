@@ -17,6 +17,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       1.1 was required.
   b - TRQ-2373. Fix login nodes restricting the number of jobs to the number specified
       by np=X.
+  b - TRQ-2354. Fix an issue with potential overflow in user job counts. Also fix a 
+      user being considered different if from a different submit host.
 
 4.2.6
   b - TRQ-2273. Job start time is hard coded to 5 minutes. If the prolog takes longer
