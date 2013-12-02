@@ -386,7 +386,25 @@ char *pbs_geterrmsg(int con)
 
 int ctnodes(char *spec)
   {
-  fprintf(stderr, "The call to ctnodes needs to be mocked!!\n");
-  exit(1);
-  }
+  int   ct = 0;
+  char *pc;
+
+  while (1)
+    {
+    while (isspace((int)*spec))
+      ++spec;
+
+    if (isdigit((int)*spec))
+      ct += atoi(spec);
+    else
+      ++ct;
+
+    if ((pc = strchr(spec, '+')) == NULL)
+      break;
+
+    spec = pc + 1;
+    }  /* END while (1) */
+
+  return(ct);
+  }  /* END ctnodes() */
 
