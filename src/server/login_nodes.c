@@ -124,7 +124,16 @@ int add_to_login_holder(
 
 
 
-
+/*
+ * check_node() 
+ *
+ * @return a pointer to the node if it is valid to be used
+ * @param ln - a pointer to the login node struct containing the 
+ * node that should be checked
+ * @pre-cond - ln must be a pointer to a valid login node struct
+ * @param needed - an optional pointer to the required properties for
+ * the login node to have.
+ */
 struct pbsnode *check_node(
 
   login_node  *ln,
@@ -136,7 +145,7 @@ struct pbsnode *check_node(
   lock_node(pnode, __func__, NULL, LOGLEVEL);
 
   if ((hasprop(pnode, needed) == TRUE) &&
-      (pnode->nd_slots.get_total_execution_slots() - pnode->nd_np_to_be_used >= 1) &&
+      (pnode->nd_slots.get_number_free() - pnode->nd_np_to_be_used >= 1) &&
       ((pnode->nd_state & INUSE_DOWN) == 0) &&
       ((pnode->nd_state & INUSE_OFFLINE) == 0))
     return(pnode);
