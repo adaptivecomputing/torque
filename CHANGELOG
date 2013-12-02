@@ -15,6 +15,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   n - Portable Hardware Locality (hwloc) package version 1.2 or higher must be
       installed when using cpusets (--enable-cpuset). Previously at least version
       1.1 was required.
+  b - TRQ-2373. Fix login nodes restricting the number of jobs to the number specified
+      by np=X.
 
 4.2.6
   b - TRQ-2273. Job start time is hard coded to 5 minutes. If the prolog takes longer
