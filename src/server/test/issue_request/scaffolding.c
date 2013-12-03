@@ -270,25 +270,6 @@ void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 
-struct batch_request *alloc_br(int type)
-  {
-
-  struct batch_request *req = NULL;
-
-  if ((req = (struct batch_request *)calloc(1, sizeof(struct batch_request))) == NULL)
-    {
-    return NULL;
-    }
-  req->rq_type = type;
-  req->rq_conn = -1;  /* indicate not connected */
-  req->rq_orgconn = -1;  /* indicate not connected */
-  req->rq_time = time(NULL);
-  req->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
-  req->rq_noreply = FALSE;  /* indicate reply is needed */
-
-  return(req);
-  } /* END alloc_br() */
-
 int ctnodes(char *spec)
   {
   fprintf(stderr, "The call to append_link needs to be mocked!!\n");

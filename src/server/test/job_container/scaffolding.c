@@ -2,7 +2,6 @@
 #include <stdio.h>
 
 #include "resizable_array.h"
-#include "hash_table.h"
 #include "pbs_job.h"
 
 all_jobs        array_summary;
@@ -29,37 +28,15 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   return(0);
   }
 
-int add_hash(hash_table_t *ht, int value, void *key)
-  {
-  return(0);
-  }
-  
 int is_svr_attr_set(int index)
   {
   return(0);
   }
 
-int get_value_hash(hash_table_t *ht, const void *key)
-  {
-  return(0);
-  }
-
-hash_table_t *create_hash(int size)
-  {
-  return(NULL);
-  }
-  
 int get_svr_attr_str(int index, char **str)
   {
   return(0);
   }
-
-int remove_hash(hash_table_t *ht, const char *key)
-  {
-  return(0);
-  }
-
-void change_value_hash(hash_table_t *ht, char *key, int new_value) {}
 
 job *job_alloc(void)
   {

@@ -106,15 +106,19 @@ public:
 	{
 		memset(&mutex,0,sizeof(mutex));
 	}
-    bool insert(T it,const char *id)
+    bool insert(T it,const char *id,bool replace = false)
       {
       if(id == NULL) return false;
-      return insert(it,std::string(id));
+      return insert(it,std::string(id),replace);
       }
-    bool insert(T it,std::string id)
+    bool insert(T it,std::string id,bool replace = false)
 	{
 		std::pair<hashed_iterator,bool> ret;
 		ret = container.get<1>().insert(item<T>(id,it));
+		if(!ret.second && replace)
+		  {
+		  return container.get<1>().replace(ret.first,item<T>(id,it));
+		  }
 		return ret.second;
 	}
     bool insert_after(const char *location_id,T it,const char *id)

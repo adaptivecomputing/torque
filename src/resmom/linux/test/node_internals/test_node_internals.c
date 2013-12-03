@@ -1,9 +1,9 @@
 #include <vector>
 
 #include <stdlib.h>
-#include <check.h>
 
 #include "node_internals.hpp"
+#include <check.h>
 
 extern int  reserve_called;
 extern int  remove_called;

@@ -154,7 +154,7 @@ int hash_clear(
   job_data *item;
   while((item = it->get_next_item()) != NULL)
     {
-    delete it;
+    delete item;
     }
   head->clear();
   return TRUE;
@@ -228,7 +228,7 @@ int hash_add_hash(
     {
     if (overwrite_existing)
       {
-      hash_add_item(dest, en->name.c_str(), en->value.c_str(), en->var_type, en->op_type);
+      dest->insert(new job_data(en->name.c_str(),en->value.c_str(), en->var_type, en->op_type),en->name.c_str(),true);
       cntr++;
       }
     else

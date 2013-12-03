@@ -132,12 +132,6 @@ void delete_link(struct list_link *old)
   return;
   }
 
-int add_hash(hash_table_t *ht, int value, void *key)
-  {
-  fprintf(stderr, "The call to add_hash needs to be mocked!!\n");
-  return(0);
-  }
-
 char *get_job_envvar(job *pjob, const char *variable)
   {
   fprintf(stderr, "The call to get_job_envvar needs to be mocked!!\n");
@@ -209,11 +203,6 @@ int kill_task(struct task *task, int sig, int pg)
   {
   fprintf(stderr, "The call to kill_task needs to be mocked!!\n");
   return(0);
-  }
-
-int get_value_hash(hash_table_t *ht, const void *key)
-  {
-  return -1;
   }
 
 int DIS_tcp_wflush(struct tcp_chan * chan)

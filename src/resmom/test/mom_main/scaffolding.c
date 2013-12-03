@@ -58,7 +58,6 @@ struct config dependent_config[2];
 long MaxConnectTimeout = 5000000;
 tlist_head svr_requests;
 const char *msg_info_mom = "Torque Mom Version = %s, loglevel = %d";
-hash_table_t *received_table;
 threadpool_t *request_pool;
 AvlTree okclients;
 time_t wait_time = 10;
@@ -599,12 +598,6 @@ void append_link(tlist_head *head, list_link *new_link, void *pobj)
 void log_roll(int max_depth)
   {
   fprintf(stderr, "The call to log_roll needs to be mocked!!\n");
-  exit(1);
-  }
-
-hash_table_t *create_hash(int size)
-  {
-  fprintf(stderr, "The call to create_hash needs to be mocked!!\n");
   exit(1);
   }
 

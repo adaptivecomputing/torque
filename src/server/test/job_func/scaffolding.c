@@ -11,7 +11,6 @@
 #include "attribute.h" /* pbs_attribute, attribute_def */
 #include "net_connect.h" /* pbs_net_t */
 #include "list_link.h" /* list_link */
-#include "hash_table.h" /* hash_table_t */
 #include "batch_request.h" /* batch_request */
 #include "work_task.h" /* all_tasks */
 #include "array.h" /* ArrayEventsEnum */
@@ -152,11 +151,6 @@ void delete_link(struct list_link *old)
   exit(1);
   }
 
-int add_hash(hash_table_t *ht, int value, void *key)
-  {
-  return 0;
-  }
-
 void free_br(struct batch_request *preq)
   {
   fprintf(stderr, "The call to free_br needs to be mocked!!\n");
@@ -197,11 +191,6 @@ job *get_recycled_job()
   {
   fprintf(stderr, "The call to get_recycled_job needs to be mocked!!\n");
   exit(1);
-  }
-
-int get_value_hash(hash_table_t *ht, void *key)
-  {
-  return(-1);
   }
 
 void delete_task(struct work_task *ptask)
@@ -276,11 +265,6 @@ void release_req(struct work_task *pwt)
   {
   fprintf(stderr, "The call to release_req needs to be mocked!!\n");
   exit(1);
-  }
-
-hash_table_t *create_hash(int size)
-  {
-  return(NULL);
   }
 
 work_task *next_task(all_tasks *at, int *iter)
@@ -361,21 +345,9 @@ void svr_evaljobstate(job *pjob, int *newstate, int *newsub, int forceeval)
   exit(1);
   }
 
-int remove_hash(hash_table_t *ht, char *key)
-  {
-  fprintf(stderr, "The call to remove_hash needs to be mocked!!\n");
-  exit(1);
-  }
-
 void *next_thing_from_back(resizable_array *ra, int *iter)
   {
   fprintf(stderr, "The call to next_thing_from_back needs to be mocked!!\n");
-  exit(1);
-  }
-
-void change_value_hash(hash_table_t *ht, char *key, int new_value)
-  {
-  fprintf(stderr, "The call to change_value_hash needs to be mocked!!\n");
   exit(1);
   }
 

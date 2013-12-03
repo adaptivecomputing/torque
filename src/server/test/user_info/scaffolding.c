@@ -3,7 +3,6 @@
 #include <string.h>
 
 #include "resizable_array.h"
-#include "hash_table.h"
 #include "user_info.h"
 
 int LOGLEVEL = 0;

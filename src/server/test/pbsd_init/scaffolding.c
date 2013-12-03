@@ -18,7 +18,6 @@
 #include "net_connect.h" /* pbs_net_t */
 #include "queue.h" /* all_queues, pbs_queue */
 #include "user_info.h"
-#include "hash_map.h"
 
 int scheduler_sock=0;
 int scheduler_jobct = 0;
@@ -586,11 +585,6 @@ int lock_ai_mutex(job_array *pa, const char *func_id, const char *msg, int loggi
 int unlock_ai_mutex(job_array *pa, const char *func_id, const char *msg, int logging)
   {
   return(0);
-  }
-
-hash_map *get_hash_map(int size)
-  {
-  return(NULL);
   }
 
 job_array *get_array(

@@ -6,7 +6,6 @@
 #include "server.h" /* server */
 #include "resizable_array.h" /* resizable_array */
 #include "attribute.h" /* pbs_attribute */
-#include "hash_table.h" /* hash_table */
 #include "pbs_job.h" /* job */
 #include "user_info.h"
 
@@ -41,18 +40,6 @@ int save_acl(pbs_attribute *attr, attribute_def *pdef, const char *subdir, const
   exit(1);
   }
 
-int add_hash(hash_table_t *ht, int value, void *key)
-  {
-  fprintf(stderr, "The call to add_hash needs to be mocked!!\n");
-  exit(1);
-  }
-
-int get_value_hash(hash_table_t *ht, void *key)
-  {
-  fprintf(stderr, "The call to get_value_hash needs to be mocked!!\n");
-  exit(1);
-  }
-
 resizable_array *initialize_resizable_array(int size)
   {
   fprintf(stderr, "The call to initialize_resizable_array needs to be mocked!!\n");
@@ -65,24 +52,10 @@ void *next_thing(resizable_array *ra, int *iter)
   exit(1);
   }
 
-hash_table_t *create_hash(int size)
-  {
-  fprintf(stderr, "The call to create_hash needs to be mocked!!\n");
-  exit(1);
-  }
-
-int remove_hash(hash_table_t *ht, char *key)
-  {
-  fprintf(stderr, "The call to remove_hash needs to be mocked!!\n");
-  exit(1);
-  }
-
 int insert_into_queue_recycler(pbs_queue *pq)
   {
   return(0);
   }
-
-void free_hash(hash_table_t *ht) {}
 
 void free_resizable_array(resizable_array *ra) {}
 
