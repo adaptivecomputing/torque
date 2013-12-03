@@ -88,8 +88,8 @@
 
 typedef struct user_info
   {
-  char         *user_name;
-  unsigned int  num_jobs_queued;
+  char *user_name;
+  int   num_jobs_queued;
   } user_info;
 
 
@@ -103,6 +103,7 @@ extern user_info_holder users;
 int          can_queue_new_job(char *user_name, job *pjob);
 int          increment_queued_jobs(user_info_holder *uih, char *user_name, job *pjob);
 int          decrement_queued_jobs(user_info_holder *uih, char *user_name);
-unsigned int get_num_queued(user_info_holder *uih, char *user_name);
+unsigned int get_num_queued(user_info_holder *uih, const char *user_name);
+void         free_user_info_holder(user_info_holder *uih);
 
 #endif /* ifndef USER_INFO_H */
