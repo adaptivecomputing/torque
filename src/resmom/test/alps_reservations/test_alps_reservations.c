@@ -3,12 +3,15 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <vector>
 
-#include "resizable_array.h"
 #include "alps_constants.h"
 #include "alps_functions.h"
 #include <string>
 #include <check.h>
+
+typedef std::vector<host_req *> host_req_list;
+
 
 char *hostname = (char *)"napali";
 char *eh1 = (char *)"napali/0+napali/1+l11/0+l11/1";
@@ -29,8 +32,8 @@ char *alps_rsv_outputs[] = {
     (char *)"<?xml version='1.0'?><BasilResponse protocol='1.0'> <ResponseData status='FAILURE' method='RESERVE'/></BasilResponse>",
     (char *)"tom"};
 
-resizable_array *parse_exec_hosts(char *exec_hosts);
-void             get_reservation_command(resizable_array *, char *, char *, char *, char *, char *, int, int,int, std::string&);
+host_req_list *parse_exec_hosts(char *exec_hosts);
+void             get_reservation_command(host_req_list *, char *, char *, char *, char *, char *, int, int,int, std::string&);
 int              parse_reservation_output(char *, char **);
 int              execute_reservation(const char *, char **);
 int              confirm_reservation(char *, char *, long long, char *, char *,char *,int);
@@ -80,13 +83,13 @@ END_TEST
 
 START_TEST(parse_exec_hosts_test)
   {
-  resizable_array *hrl = parse_exec_hosts(eh1);
-  int              iter = -1;
+  host_req_list *hrl = parse_exec_hosts(eh1);
   int              host_count = 0;
   host_req        *hr;
 
-  while ((hr = (host_req *)next_thing(hrl, &iter)) != NULL)
+  for(host_req_list::iterator iter = hrl->begin();iter != hrl->end();iter++)
     {
+    hr = *iter;
     snprintf(buf, sizeof(buf), "ppn should be %d but is %d", 2, hr->ppn);
     fail_unless(hr->ppn == 2, buf);
     host_count++;
@@ -96,13 +99,13 @@ START_TEST(parse_exec_hosts_test)
   snprintf(buf, sizeof(buf), "Should be 2 hosts but there were %d", host_count);
   fail_unless(host_count == 2, buf);
 
-  free_resizable_array(hrl);
+  delete hrl;
   hrl = parse_exec_hosts(eh2);
-  iter = -1;
   host_count = 0;
 
-  while ((hr = (host_req *)next_thing(hrl, &iter)) != NULL)
+  for(host_req_list::iterator iter = hrl->begin();iter != hrl->end();iter++)
     {
+    hr = *iter;
     if (host_count == 0)
       {
       snprintf(buf, sizeof(buf), "Hostname should be napali but is %s", hr->hostname);
@@ -127,13 +130,13 @@ START_TEST(parse_exec_hosts_test)
   snprintf(buf, sizeof(buf), "Should count 2 hosts but counted %d", host_count);
   fail_unless(host_count == 2, buf);
 
-  free_resizable_array(hrl);
+  delete hrl;
   hrl = parse_exec_hosts(eh3);
-  iter = -1;
   host_count = 0;
 
-  while ((hr = (host_req *)next_thing(hrl, &iter)) != NULL)
+  for(host_req_list::iterator iter = hrl->begin();iter != hrl->end();iter++)
     {
+    hr = *iter;
     if (host_count < 2)
       {
       snprintf(buf, sizeof(buf), "ppn should be 2 but is %d", hr->ppn);
@@ -152,7 +155,7 @@ START_TEST(parse_exec_hosts_test)
   snprintf(buf, sizeof(buf), "Should count 4 hosts but counted %d", host_count);
   fail_unless(host_count == 4, buf);
 
-  free_resizable_array(hrl);
+  delete hrl;
   }
 END_TEST
 
@@ -160,7 +163,7 @@ END_TEST
 
 START_TEST(get_reservation_command_test)
   {
-  resizable_array *hrl = parse_exec_hosts(eh1);
+  host_req_list   *hrl = parse_exec_hosts(eh1);
   std::string      apbasil_command = "";
   const char     *reserve_param;
   const char     *reserve_param2;
@@ -180,7 +183,7 @@ START_TEST(get_reservation_command_test)
     "Found two ReserveParam elements when there should be only one '%s'", apbasil_command.c_str());
   fail_unless(reserve_param2 == NULL, buf);
 
-  free_resizable_array(hrl);
+  delete hrl;
 
   hrl = parse_exec_hosts(eh3);
   apbasil_command.clear();
@@ -197,7 +200,7 @@ START_TEST(get_reservation_command_test)
   snprintf(buf, sizeof(buf), "nppn should be 3 but is %d", ppn);
   fail_unless(ppn == 3, buf);
 
-  free_resizable_array(hrl);
+  delete hrl;
   apbasil_command.clear();
 
   hrl = parse_exec_hosts(eh3);

@@ -164,6 +164,5 @@ typedef struct host_req
   char            *hostname;
   } host_req;
 
-
 host_req *get_host_req(char *hostname);
 void      free_host_req(host_req *hr);
