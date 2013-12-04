@@ -1388,7 +1388,7 @@ tm_register(tm_whattodo_t *what, tm_event_t *event)
   }
 
 #define FOREVER              2592000
-#define INITIALPOLLTIMEOUT   5
+
 
 /*
 ** tm_poll - poll to see if an event has been completed.
@@ -1479,7 +1479,7 @@ int tm_poll(
   ** Setup tcp dis routines with a wait value appropriate for
   ** the value of wait the user set.
   */
-  pbs_tcp_timeout = wait ? INITIALPOLLTIMEOUT : 1;
+  pbs_tcp_timeout = wait ? FOREVER : 1;
 
   prot = disrsi(static_chan, &ret);
 

@@ -194,7 +194,7 @@ time_t          last_log_check;
 char            JobsToResend[MAX_RESEND_JOBS][PBS_MAXSVRJOBID+1];
 
 boost::ptr_vector<exiting_job_info> exiting_job_list;
-resizable_array  *things_to_resend;
+std::vector<resend_momcomm *> things_to_resend;
 
 mom_hierarchy_t  *mh;
 
@@ -5056,8 +5056,6 @@ int setup_program_environment(void)
     return(3);
     }
   
-  things_to_resend = initialize_resizable_array(10);
-
   /* recover & abort jobs which were under MOM's control */
   log_record(
     PBSEVENT_DEBUG,
@@ -6712,7 +6710,6 @@ int resend_obit_task_reply(
 void resend_things()
 
   {
-  int                 iter = -1;
   int                 ret;
   resend_momcomm     *mc;
   im_compose_info    *ici;
@@ -6720,8 +6717,9 @@ void resend_things()
   spawn_task_info    *st;
   time_t              time_now = time(NULL);
 
-  while ((mc = (resend_momcomm *)next_thing(things_to_resend, &iter)) != NULL)
+  for(std::vector<resend_momcomm *>::iterator iter = things_to_resend.begin();iter != things_to_resend.end();iter++)
     {
+    mc = *iter;
     if (time_now - mc->resend_time < RESEND_INTERVAL)
       continue;
 
@@ -6773,7 +6771,7 @@ void resend_things()
     if ((ret == DIS_SUCCESS) ||
         (mc->resend_attempts > 3))
       {
-      remove_thing(things_to_resend, mc);
+      things_to_resend.erase(iter);
       free(mc);
       }
     else
@@ -6789,7 +6787,8 @@ int add_to_resend_things(
 
   {
   mc->resend_time = time(NULL);
-  return(insert_thing(things_to_resend, mc));
+  things_to_resend.push_back(mc);
+  return PBSE_NONE;
   } /* END add_to_resend_things() */
 
 
