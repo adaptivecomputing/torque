@@ -88,14 +88,12 @@ extern int LOGLEVEL;
 
 login_holder logins;
 
-
-
-
 void initialize_login_holder()
   {
-  logins.ra = initialize_resizable_array(LOGIN_INITIAL_SIZE);
   logins.next_node = 0;
+  logins.iterate_backwards = 0;
   logins.ln_mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));
+  logins.nodes.clear();
   pthread_mutex_init(logins.ln_mutex, NULL);
   }
 
@@ -106,20 +104,12 @@ int add_to_login_holder(
   struct pbsnode *pnode)
 
   {
-  login_node *ln = (login_node *)calloc(1, sizeof(login_node));
-  int         rc;
-
-  ln->pnode = pnode;
-
   pthread_mutex_lock(logins.ln_mutex);
-  if ((rc = insert_thing(logins.ra, ln)) >= 0)
-    {
-    logins.next_node = rc;
-    rc = PBSE_NONE;
-    }
+  logins.nodes.push_back(new login_node(pnode));
+  logins.next_node = logins.nodes.size() - 1;
   pthread_mutex_unlock(logins.ln_mutex);
 
-  return(rc);
+  return(PBSE_NONE);
   } /* END add_to_login_holder() */
 
 
@@ -165,55 +155,42 @@ struct pbsnode *find_fitting_node(
 
   {
   struct pbsnode  *pnode = NULL;
-  login_node      *ln;
-  login_node      *ordered_ln;
-  int              iter = -1;
-  int              ordered_iter;
-  int              index;
-  resizable_array *ordered = initialize_resizable_array(logins.ra->num + 1);
+  std::vector<login_node *> ordered;
 
   /* create a sorted list of the logins */
-  while ((ln = (login_node *)next_thing(logins.ra, &iter)) != NULL)
+  for(boost::ptr_vector<login_node>::iterator it = logins.nodes.begin();it != logins.nodes.end();it++)
     {
     /* if ordered is empty just insert without attempting to sort */
-    if (ordered->num == 0)
-      insert_thing(ordered, ln);
+    if (ordered.size() == 0)
+      ordered.push_back(&(*it));
     else
       {
-      ordered_iter = -1;
-      index = ordered->slots[ALWAYS_EMPTY_INDEX].next;
-
-      while ((ordered_ln = (login_node *)next_thing(ordered, &ordered_iter)) != NULL)
+      bool inserted = false;
+      for(std::vector<login_node *>::iterator oit = ordered.begin();oit != ordered.end();oit++)
         {
-        if (ln->times_used <= ordered_ln->times_used)
+        if (it->times_used <= (*oit)->times_used)
           {
-          insert_thing_before(ordered, ln, index);
+          inserted = true;
+          ordered.insert(oit,&(*it));
           break;
           }
-
-        index = ordered_iter;
         }
 
       /* insert if it hasn't been inserted yet */
-      if (ordered_ln == NULL)
-        insert_thing(ordered, ln);
+      if (!inserted)
+        ordered.push_back(&(*it));
       }
     }
 
-  iter = -1;
-
-  while ((ln = (login_node *)next_thing(ordered, &iter)) != NULL)
+  for(std::vector<login_node *>::iterator it = ordered.begin();it != ordered.end();it++)
     {
-    if ((pnode = check_node(ln, needed)) != NULL)
+
+    if ((pnode = check_node(*it, needed)) != NULL)
       {
-      ln->times_used++;
-      free_resizable_array(ordered);
+      (*it)->times_used++;
       return(pnode);
       }
     }
-
-  free_resizable_array(ordered);
-
   return(NULL);
   } /* END find_fitting_node() */
 
@@ -225,20 +202,17 @@ void update_next_node_index(
   unsigned int to_beat)
 
   {
-  int         iter = -1;
-  int         prev_index = logins.ra->slots[ALWAYS_EMPTY_INDEX].next;
-  login_node *ln;
+  int         prev_index = 0;
 
-  while ((ln = (login_node *)next_thing(logins.ra, &iter)) != NULL)
+  for(boost::ptr_vector<login_node>::iterator it = logins.nodes.begin();it != logins.nodes.end();it++)
     {
-    if (ln->times_used < to_beat)
+    if (it->times_used < to_beat)
       {
       /* don't break - there may be one lower */
-      to_beat = ln->times_used;
+      to_beat = it->times_used;
       logins.next_node = prev_index;
       }
-
-    prev_index = iter;
+    prev_index++;
     }
 
   } /* END update_next_node_index() */
@@ -257,7 +231,7 @@ struct pbsnode *get_next_login_node(
   int             node_fits = TRUE;
 
   pthread_mutex_lock(logins.ln_mutex);
-  ln = (login_node *)logins.ra->slots[logins.next_node].item;
+  ln = &logins.nodes[logins.next_node];
 
   if (ln != NULL)
     {
@@ -304,7 +278,7 @@ int login_node_count()
   int count = 0;
 
   pthread_mutex_lock(logins.ln_mutex);
-  count = logins.ra->num;
+  count = logins.nodes.size();
   pthread_mutex_unlock(logins.ln_mutex);
 
   return(count);

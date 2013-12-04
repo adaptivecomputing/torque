@@ -754,21 +754,21 @@ int remove_jobs_that_have_disappeared(
   {
   int   iter = -1;
   char  log_buf[LOCAL_LOG_BUF_SIZE];
-  char *jobid;
+  std::string jobid;
   
-  while ((jobid = (char *)pop_thing(pnode->nd_ms_jobs)) != NULL)
+  while (pnode->nd_ms_jobs->size() != 0)
     {
+    jobid = pnode->nd_ms_jobs->back();
+    pnode->nd_ms_jobs->pop_back();
     job *pjob;
 
     /* locking priority is job before node */
     unlock_node(pnode, __func__, NULL, LOGLEVEL);
-    pjob = svr_find_job(jobid, TRUE);
+    pjob = svr_find_job((char *)jobid.c_str(), TRUE);
     lock_node(pnode, __func__, NULL, LOGLEVEL);
 
     if (pjob == NULL)
       {
-      free(jobid);
-
       continue;
       }
     mutex_mgr job_mgr(pjob->ji_mutex,true);
@@ -780,8 +780,6 @@ int remove_jobs_that_have_disappeared(
         (pjob->ji_qs.ji_substate < JOB_SUBSTATE_RUNNING) ||
         (pjob->ji_wattr[JOB_ATR_start_time].at_val.at_long > timestamp - 45))
       {
-      free(jobid);
-
       job_mgr.unlock();
       continue;
       }
@@ -790,15 +788,16 @@ int remove_jobs_that_have_disappeared(
     /* mom didn't report this job - it has exited unexpectedly */
     snprintf(log_buf, sizeof(log_buf),
       "Server thinks job %s is on node %s, but the mom doesn't. Terminating job",
-      jobid, pnode->nd_name);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buf);  
+      jobid.c_str(), pnode->nd_name);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid.c_str(), log_buf);
 
-    enqueue_threadpool_request(finish_job, jobid);
+    enqueue_threadpool_request(finish_job, (char *)jobid.c_str());
     }
 
+  char *jid;
   /* now replace the old resizable array with the ones currently reported */
-  while ((jobid = (char *)next_thing(reported_ms_jobs, &iter)) != NULL)
-    insert_thing(pnode->nd_ms_jobs, jobid);
+  while ((jid = (char *)next_thing(reported_ms_jobs, &iter)) != NULL)
+    pnode->nd_ms_jobs->push_back(jid);
 
   return(PBSE_NONE);
   } /* END remove_jobs_that_have_disappeared() */
@@ -4100,7 +4099,7 @@ int add_to_ms_list(
 
   if (pnode != NULL)
     {
-    insert_thing(pnode->nd_ms_jobs, strdup(pjob->ji_qs.ji_jobid));
+    pnode->nd_ms_jobs->push_back(pjob->ji_qs.ji_jobid);
 
     unlock_node(pnode, __func__, NULL, LOGLEVEL);
     }

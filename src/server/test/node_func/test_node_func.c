@@ -91,6 +91,7 @@ START_TEST(write_compute_node_properties_test)
   line.clear();
   getline(myfile, line);
   fail_unless(line.size() == 0);
+  alps_reporter = NULL;
   }
 END_TEST
 
@@ -234,6 +235,7 @@ START_TEST(find_nodebyname_test)
 
   pnode = find_nodebyname("george");
   fail_unless(pnode == NULL, "george found but doesn't exist");
+  alps_reporter = NULL;
 
   }
 END_TEST
@@ -805,11 +807,10 @@ END_TEST
 
 START_TEST(send_hierarchy_threadtask_test)
   {
-  struct hello_info info;
-  memset(&info, 0, sizeof(info));
+  hello_info *info = new hello_info("fred");
 
   send_hierarchy_threadtask(NULL);
-  send_hierarchy_threadtask((void*)(&info));
+  send_hierarchy_threadtask((void*)(info));
   }
 END_TEST
 
@@ -826,59 +827,53 @@ START_TEST(send_hierarchy_test)
   }
 END_TEST
 
-START_TEST(initialize_hello_container_test)
-  {
-  struct hello_container container;
-  struct hello_container* result = NULL;
-  memset(&container, 0, sizeof(container));
-
-  result = initialize_hello_container(NULL);
-  fail_unless(result == NULL, "NULL input fail");
-
-  result = initialize_hello_container(&container);
-  fail_unless(result == &container, "wrong returned pointer");
-  fail_unless(result->ra != NULL, "resizeble array was not initialized");
-
-  result = initialize_hello_container(result);
-  fail_unless(result->hello_mutex != NULL, "mutex was not initialized");
-
-  }
-END_TEST
-
 START_TEST(add_hello_after_test)
   {
-  struct hello_container container;
+  hello_container container;
   const char* node_name = "node_name";
   int result = -1;
-  memset(&container, 0, sizeof(container));
-  initialize_hello_container(&container);
 
-  result = add_hello_after(NULL, (char *)node_name, 0);
+  result = add_hello_after(NULL, (char *)strdup(node_name), 0);
   fail_unless(result != PBSE_NONE, "NULL input container pointer fail");
 
   result = add_hello_after(&container, NULL, 0);
-  fail_unless(result == PBSE_NONE, "NULL input name pointer fail");
+  fail_unless(result != PBSE_NONE, "NULL input name pointer fail");
 
-  result = add_hello_after(&container, (char *)node_name, 0);
+  result = add_hello_after(&container, (char *)strdup(node_name), 0);
   fail_unless(result == PBSE_NONE, "add_hello_after fail");
+
+  container.clear();
+  add_hello(&container,strdup("first"));
+  add_hello(&container,strdup("second"));
+  add_hello(&container,strdup("third"));
+  add_hello(&container,strdup("fifth"));
+  add_hello_after(&container,strdup("fourth"),2);
+
+  hello_info *pInfo = pop_hello(&container);
+  fail_unless((strcmp(pInfo->name.c_str(),"first") == 0),"Insert order fail.");
+  pInfo = pop_hello(&container);
+  fail_unless((strcmp(pInfo->name.c_str(),"second") == 0),"Insert order fail.");
+  pInfo = pop_hello(&container);
+  fail_unless((strcmp(pInfo->name.c_str(),"third") == 0),"Insert order fail.");
+  pInfo = pop_hello(&container);
+  fail_unless((strcmp(pInfo->name.c_str(),"fourth") == 0),"Insert order fail.");
+  pInfo = pop_hello(&container);
+  fail_unless((strcmp(pInfo->name.c_str(),"fifth") == 0),"Insert order fail.");
 
   }
 END_TEST
 
 START_TEST(add_hello_info_test)
   {
-  struct hello_container container;
-  struct hello_info info;
+  hello_container container;
+  hello_info info("Fred");
   int result = -1;
-  memset(&container, 0, sizeof(container));
-  memset(&info, 0, sizeof(info));
-  initialize_hello_container(&container);
 
   result = add_hello_info(NULL, &info);
   fail_unless(result != PBSE_NONE, "NULL input container pointer fail");
 
   result = add_hello_info(&container, NULL);
-  fail_unless(result == PBSE_NONE, "NULL input hello_info pointer fail");
+  fail_unless(result != PBSE_NONE, "NULL input hello_info pointer fail");
 
   result = add_hello_info(&container, &info);
   fail_unless(result == PBSE_NONE, "add_hello_info fail");
@@ -888,10 +883,8 @@ END_TEST
 
 START_TEST(pop_hello_test)
   {
-  struct hello_container container;
-  struct hello_info *result = NULL;
-  memset(&container, 0, sizeof(container));
-  initialize_hello_container(&container);
+  hello_container container;
+  hello_info *result = NULL;
 
   result = pop_hello(NULL);
   fail_unless(result == NULL, "NULL input container pointer fail");
@@ -903,11 +896,9 @@ END_TEST
 
 START_TEST(remove_hello_test)
   {
-  struct hello_container container;
+  hello_container container;
   const char* node_name = "node_name";
   int result = -1;
-  memset(&container, 0, sizeof(container));
-  initialize_hello_container(&container);
 
   result = remove_hello(NULL, (char *)node_name);
   fail_unless(result != PBSE_NONE, "NULL input container pointer fail");
@@ -916,31 +907,11 @@ START_TEST(remove_hello_test)
   fail_unless(result != PBSE_NONE, "NULL input name pointer fail");
 
   result = remove_hello(&container, (char *)node_name);
-  fail_unless(result == PBSE_NONE, "add_hello_after fail");
+  fail_unless(result == THING_NOT_FOUND, "add_hello_after fail");
 
   }
 END_TEST
 
-#if 0
-START_TEST(create_pbs_node_real_test)
-  {
-  char hostname[HOST_NAME_MAX+1];
-  int mask = 0;
-  fail_unless(gethostname(hostname, sizeof(hostname)) == 0, 
-    "failed calling gethostname api");
-
-  svrattrl *pal = (svrattrl *)attrlist_create((char *)ATTR_NODE_np, 0, 2);
-  fail_unless(pal != 0, "failed to allocate svrattrl in test_create_pbs_node");
-  strcpy((char *)pal->al_value, "6");
-  pal->al_flags = SET;
-  tlist_head      atrlist;
-  CLEAR_HEAD(atrlist);
-  append_link(&atrlist, &pal->al_link, pal);
-  fail_unless(create_pbs_node (hostname, pal, 48, &mask) == PBSE_NONE, "create_pbs_node should have succeeded");
-  free(pal);
-  }
-END_TEST
-#endif
 
 Suite *node_func_suite(void)
   {
@@ -1075,10 +1046,6 @@ Suite *node_func_suite(void)
 
   tc_core = tcase_create("send_hierarchy_test");
   tcase_add_test(tc_core, send_hierarchy_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("initialize_hello_container_test");
-  tcase_add_test(tc_core, initialize_hello_container_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("add_hello_after_test");

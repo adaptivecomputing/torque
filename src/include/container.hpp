@@ -145,6 +145,25 @@ public:
 		ret = container.get<0>().insert(iter,item<T>(id,it));
 		return ret.second;
 	}
+    bool insert_at(int index,T it,const char *id)
+      {
+      if(id == NULL) return false;
+      return insert_at(index,it,std::string(id));
+      }
+    bool insert_at(int index,T it,std::string id)
+    {
+        sequenced_index ind = container.get<0>();
+        sequenced_iterator iter = ind.begin();
+        while(index--)
+          {
+          if(iter == ind.end()) return false;
+          iter++;
+          }
+        std::pair<sequenced_iterator,bool> ret;
+        ret = container.get<0>().insert(iter,item<T>(id,it));
+        return ret.second;
+    }
+
     bool insert_first(T it,const char *id)
       {
       if(id == NULL) return false;

@@ -86,7 +86,6 @@
 #include <pthread.h>
 #include <netinet/in.h> /* sockaddr_in */
 #include <set>
-#include <vector>
 #include <boost/ptr_container/ptr_vector.hpp>
 
 #include "execution_slot_tracker.hpp"
@@ -354,7 +353,7 @@ struct pbsnode
   
   unsigned char                 nd_is_alps_reporter;
   unsigned char                 nd_is_alps_login;
-  resizable_array              *nd_ms_jobs;          /* the jobs this node is mother superior for */
+  std::vector<std::string>       *nd_ms_jobs;          /* the jobs this node is mother superior for */
   container::item_container<struct pbsnode *> *alps_subnodes;       /* collection of alps subnodes */
   int                           max_subnode_nppn;    /* maximum ppn of an alps subnode */
 
@@ -386,23 +385,20 @@ int             copy_properties(struct pbsnode *dest, struct pbsnode *src);
 
 #define HELLO_RESEND_WAIT_TIME 10
 
-typedef struct hello_info
+class hello_info
   {
-  char   *name;
-  time_t  last_retry;
-  int     num_retries;
-  } hello_info;
+public:
+  std::string name;
+  time_t      last_retry;
+  int         num_retries;
+  hello_info(const char *nm):name(nm),last_retry(0),num_retries(0){}
+  };
 
 
 
-typedef struct hello_container
-  {
-  resizable_array *ra;
-  pthread_mutex_t *hello_mutex;
-  } hello_container;
+  typedef container::item_container<hello_info *>                 hello_container;
+  typedef container::item_container<hello_info *>::item_iterator  hello_container_iterator;
 
-
-hello_container * initialize_hello_container(hello_container *);
 int         needs_hello(hello_container *, char *);
 int         add_hello(hello_container *, char *);
 int         add_hello_after(hello_container *, char *, int);

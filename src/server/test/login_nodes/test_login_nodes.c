@@ -27,7 +27,6 @@ START_TEST(initialize_test)
   initialize_login_holder();
 
   fail_unless(logins.next_node == 0, "Next node set incorrectly");
-  fail_unless(logins.ra != 0, "Resizable array initialized incorrectly");
   fail_unless(logins.ln_mutex != 0, "Mutex wasn't initialized correctly");
   fail_unless(logins.iterate_backwards == 0, "Set to iterate backwards from beginning");
   }
@@ -168,11 +167,10 @@ END_TEST
 
 START_TEST(check_node_test)
   {
-  login_node ln;
   struct pbsnode pnode;
+  login_node ln(&pnode);
 
   memset(&pnode, 0, sizeof(pnode));
-  ln.pnode = &pnode;
 
   pnode.nd_slots.add_execution_slot();
   fail_unless(check_node(&ln, NULL) != NULL);

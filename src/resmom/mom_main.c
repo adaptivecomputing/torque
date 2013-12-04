@@ -193,7 +193,7 @@ time_t          last_log_check;
 
 char            JobsToResend[MAX_RESEND_JOBS][PBS_MAXSVRJOBID+1];
 
-resizable_array  *exiting_job_list;
+boost::ptr_vector<exiting_job_info> exiting_job_list;
 resizable_array  *things_to_resend;
 
 mom_hierarchy_t  *mh;
@@ -5058,8 +5058,6 @@ int setup_program_environment(void)
   
   things_to_resend = initialize_resizable_array(10);
 
-  exiting_job_list = initialize_resizable_array(10);
-
   /* recover & abort jobs which were under MOM's control */
   log_record(
     PBSEVENT_DEBUG,
@@ -5693,33 +5691,28 @@ void check_jobs_in_mom_wait()
 void check_exiting_jobs()
 
   {
-  exiting_job_info *eji;
   job              *pjob;
   time_t            time_now = time(NULL);
 
-  while ((eji = (exiting_job_info *)pop_thing(exiting_job_list)) != NULL)
+  while (exiting_job_list.size() != 0)
     {
+    boost::ptr_vector<exiting_job_info>::auto_type eji = exiting_job_list.pop_back();
     if (time_now - eji->obit_sent < 300)
       {
       /* insert this back at the front */
-      insert_thing_after(exiting_job_list, eji, ALWAYS_EMPTY_INDEX);
+      exiting_job_list.insert(exiting_job_list.begin(),eji.release());
       break;
       }
 
-    pjob = mom_find_job(eji->jobid);
+    pjob = mom_find_job((char *)eji->jobid.c_str());
 
-    if (pjob == NULL)
-      {
-      free(eji);
-      }
-    else
+    if (pjob != NULL)
       {
       post_epilogue(pjob, 0);
       eji->obit_sent = time_now;
-      insert_thing(exiting_job_list, eji);
+      exiting_job_list.push_back(eji.release());
       }
     }
-
   } /* END check_exiting_jobs() */
 
 

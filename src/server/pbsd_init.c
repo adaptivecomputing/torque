@@ -1240,8 +1240,6 @@ int initialize_data_structures_and_mutexes()
   task_list_timed = new std::list<timed_task>();
   pthread_mutex_init(&task_list_timed_mutex, NULL);
 
-  initialize_hello_container(&hellos);
-  initialize_hello_container(&failures);
   initialize_task_recycler();
 
   CLEAR_HEAD(svr_newnodes);

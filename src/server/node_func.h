@@ -12,8 +12,6 @@ struct node_iterator;
 struct svrattrl;
 struct pbs_attribute;
 struct attribute_def;
-struct hello_info;
-struct hello_container;
 
 typedef struct _node_info_
   {
@@ -105,18 +103,16 @@ void *send_hierarchy_threadtask(void *vp);
 
 int send_hierarchy(char *name, unsigned short  port);
 
-struct hello_container* initialize_hello_container(struct hello_container *);
+int needs_hello(hello_container *hc, char *node_name);
 
-int needs_hello(struct hello_container *hc, char *node_name);
+int add_hello(hello_container *hc, char *node_name);
 
-int add_hello(struct hello_container *hc, char *node_name);
+int add_hello_after(hello_container *hc, char *node_name, int index);
 
-int add_hello_after(struct hello_container *hc, char *node_name, int index);
+int add_hello_info(hello_container *hc, hello_info *hi);
 
-int add_hello_info(struct hello_container *hc, struct hello_info *hi);
+hello_info *pop_hello(hello_container *hc);
 
-struct hello_info *pop_hello(struct hello_container *hc);
-
-int remove_hello(struct hello_container *hc, char *node_name);
+int remove_hello(hello_container *hc, char *node_name);
 
 #endif /* _NODE_FUNC_H */

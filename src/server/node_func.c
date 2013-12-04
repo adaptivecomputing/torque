@@ -859,7 +859,7 @@ int initialize_pbsnode(
   pnode->nd_ngpus           = 0;
   pnode->nd_gpustatus       = NULL;
   pnode->nd_ngpustatus      = 0;
-  pnode->nd_ms_jobs         = initialize_resizable_array(20);
+  pnode->nd_ms_jobs         = new std::vector<std::string>();
 
   if (!isNUMANode) //NUMA nodes don't have their own address and their name is not in DNS.
     {
@@ -937,6 +937,8 @@ void effective_node_delete(
   free(pnode->nd_name);
 
   if(pnode->alps_subnodes != NULL) delete pnode->alps_subnodes;
+
+  if(pnode->nd_ms_jobs != NULL) delete pnode->nd_ms_jobs;
 
   free(pnode);
   *ppnode = NULL;
@@ -3524,19 +3526,14 @@ void *send_hierarchy_threadtask(
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL input pointer");
     return(NULL);
     }
-  if (hi->name == NULL)
-    {
-    log_err(PBSE_BAD_PARAMETER, __func__, "NULL hello_info->name pointer");
-    return(NULL);
-    }
-  pnode = find_nodebyname(hi->name);
+  pnode = find_nodebyname((char *)hi->name.c_str());
 
   if (pnode != NULL)
     {
     port = pnode->nd_mom_rm_port;
     unlock_node(pnode, __func__, NULL, LOGLEVEL);
 
-    if (send_hierarchy(hi->name, port) != PBSE_NONE)
+    if (send_hierarchy((char *)hi->name.c_str(), port) != PBSE_NONE)
       {
       if (hi->num_retries < 3) /*TODO: why 3? remove magic number*/
         {
@@ -3553,7 +3550,7 @@ void *send_hierarchy_threadtask(
       if (LOGLEVEL >= 3)
         {
         snprintf(log_buf, sizeof(log_buf),
-          "Successfully sent hierarchy to %s", hi->name);
+          "Successfully sent hierarchy to %s", hi->name.c_str());
         log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buf);
         }
       }
@@ -3561,8 +3558,7 @@ void *send_hierarchy_threadtask(
 
   if (hi != NULL)
     {
-    free(hi->name);
-    free(hi);
+    delete hi;
     }
 
   return(NULL);
@@ -3656,41 +3652,16 @@ int send_hierarchy(
   } /* END send_hierarchy() */
 
 
-
-
-struct hello_container* initialize_hello_container(
-
-  hello_container *hc)
-
-  {
-  if (hc != NULL)
-    {
-    hc->ra = initialize_resizable_array(INITIAL_NODE_SIZE);
-
-    hc->hello_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-    pthread_mutex_init(hc->hello_mutex, NULL);
-    }
-  else
-  {
-  log_err(PBSE_BAD_PARAMETER, __func__, "NULL input container pointer was passed for initialization");
-  }
-  return hc;
-  } /* END initialize_hello_container() */
-
-
-
-
 int needs_hello(
-
   hello_container *hc,
   char            *node_name)
 
   {
   int needs;
 
-  pthread_mutex_lock(hc->hello_mutex);
-  needs = is_present(hc->ra, node_name);
-  pthread_mutex_unlock(hc->hello_mutex);
+  hc->lock();
+  needs = (hc->find(node_name) != NULL);
+  hc->unlock();
 
   return(needs);
   } /* END needs_hello */
@@ -3699,25 +3670,23 @@ int needs_hello(
 
 
 int add_hello(
-
   hello_container *hc,
   char            *node_name)
 
   {
-  int         rc;
-  hello_info *hi = (hello_info *)calloc(1, sizeof(hello_info));
-  hi->name = node_name;
+  int         rc = PBSE_NONE;
+  hello_info *hi = new hello_info(node_name);
 
-  pthread_mutex_lock(hc->hello_mutex);
+  free(node_name);
+  hc->lock();
 
-  if ((rc = insert_thing(hc->ra, hi)) == -1)
+  if (!hc->insert(hi,hi->name))
     {
     rc = ENOMEM;
-    free(hi->name);
-    free(hi);
+    delete hi;
     }
 
-  pthread_mutex_unlock(hc->hello_mutex);
+  hc->unlock();
 
   return(rc);
   } /* END add_hello() */
@@ -3732,28 +3701,33 @@ int add_hello_after(
   int              index)
 
   {
-  hello_info *hi = NULL;
-  int         rc = -1;
+  int         rc = PBSE_NONE;
 
   if (hc == NULL)
     {
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL input container pointer");
     return(PBSE_BAD_PARAMETER);
     }
-
-  hi = (hello_info *)calloc(1, sizeof(hello_info));
-  hi->name = node_name;
-
-  pthread_mutex_lock(hc->hello_mutex);
-
-  if ((rc = insert_thing_after(hc->ra, hi, index)) == -1)
+  if(node_name == NULL)
     {
-    rc = ENOMEM;
-    free(hi->name);
-    free(hi);
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL node name pointer");
+    return(PBSE_BAD_PARAMETER);
     }
 
-  pthread_mutex_unlock(hc->hello_mutex);
+  hello_info *hi = new hello_info(node_name);
+  free(node_name);
+  hc->lock();
+
+  index++;
+  if(index > (int)hc->count()) index = (int)hc->count();
+
+  if (!hc->insert_at(index, hi,hi->name))
+    {
+    rc = ENOMEM;
+    delete hi;
+    }
+
+  hc->unlock();
 
   return(rc);
   } /* END insert_thing_after() */
@@ -3762,22 +3736,26 @@ int add_hello_after(
 
 
 int add_hello_info(
-
-  struct hello_container *hc,
-  struct hello_info      *hi)
+  hello_container *hc,
+  hello_info      *hi)
 
   {
-  int rc = -1;
+  int rc = PBSE_NONE;
   if (hc == NULL)
     {
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL input container pointer");
     return(PBSE_BAD_PARAMETER);
     }
+  if (hi == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL hello info pointer");
+    return(PBSE_BAD_PARAMETER);
+    }
 
-  pthread_mutex_lock(hc->hello_mutex);
-  if ((rc = insert_thing(hc->ra, hi)) == -1)
+  hc->lock();
+  if (!hc->insert(hi,hi->name))
     rc = ENOMEM;
-  pthread_mutex_unlock(hc->hello_mutex);
+  hc->unlock();
 
   return(rc);
   } /* END add_hello_info() */
@@ -3791,24 +3769,15 @@ hello_info *pop_hello(
 
   {
   hello_info *hi = NULL;
-  int         index;
   if (hc == NULL)
     {
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL input container pointer");
     return(NULL);
     }
 
-  pthread_mutex_lock(hc->hello_mutex);
-  index = hc->ra->slots[ALWAYS_EMPTY_INDEX].next;
-  if (index != ALWAYS_EMPTY_INDEX)
-    {
-    hi = (hello_info *)hc->ra->slots[index].item;
-    if (time(NULL) - hi->last_retry > HELLO_RESEND_WAIT_TIME)
-      hi = (hello_info *)pop_thing(hc->ra);
-    else
-      hi = NULL;
-    }
-  pthread_mutex_unlock(hc->hello_mutex);
+  hc->lock();
+  hi = hc->pop();
+  hc->unlock();
 
   return(hi);
   } /* END pop_hello() */
@@ -3823,9 +3792,6 @@ int remove_hello(
 
   {
   int         rc = PBSE_NONE;
-  int         iter = -1;
-  int         prev_index = -1;
-  hello_info *hi;
 
   if (hc == NULL)
     {
@@ -3840,18 +3806,10 @@ int remove_hello(
     return(rc);
     }
 
-  pthread_mutex_lock(hc->hello_mutex);
-  while ((hi = (hello_info *)next_thing(hc->ra, &iter)) != NULL)
-    {
-    if (!strcmp(hi->name, node_name))
-      {
-      if (prev_index == -1)
-        prev_index = hc->ra->slots[ALWAYS_EMPTY_INDEX].next;
-
-      rc = remove_thing_from_index(hc->ra, prev_index);
-      }
-    }
-  pthread_mutex_unlock(hc->hello_mutex);
+  hc->lock();
+  if(!hc->remove(node_name))
+    rc = THING_NOT_FOUND;
+  hc->unlock();
 
   return(rc);
   } /* END remove_hello() */
