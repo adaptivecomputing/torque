@@ -1377,7 +1377,10 @@ int pbs_disconnect(
   pbs_disconnect_socket(sock);
 
   if (connection[connect].ch_errtxt != (char *)NULL)
+    {
     free(connection[connect].ch_errtxt);
+    connection[connect].ch_errtxt = (char *)NULL;
+    }
 
   connection[connect].ch_errno = 0;
   connection[connect].ch_inuse = FALSE;
