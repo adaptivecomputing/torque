@@ -353,32 +353,6 @@ void delete_task(
  * initializes the all_tasks object
  */
 
-void initialize_all_tasks_array(
-
-  all_tasks *at) /* O */
-
-  {
-  at->ra = initialize_resizable_array(INITIAL_ALL_TASKS_SIZE);
-
-  if (at->ra == NULL)
-    {
-    log_err(ENOMEM, __func__, "Cannot allocate space for array...FAILURE");
-    }
-  
-  at->alltasks_mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));
-
-  if (at->alltasks_mutex == NULL)
-    {
-    log_err(ENOMEM, __func__, "Cannot allocate space for mutex...FAILURE");
-    }
-  else
-    {
-    pthread_mutex_init(at->alltasks_mutex,NULL);
-    }
-  } /* END initialize_all_tasks_array() */
-
-
-
 
 /*
  * adds a task to the specified array
@@ -390,20 +364,12 @@ int insert_task(
   work_task *wt)
 
   {
-  int rc;
-
   pthread_mutex_lock(at->alltasks_mutex);
-
-  if ((rc = insert_thing(at->ra,wt)) == -1)
-    {
-    rc = ENOMEM;
-    log_err(rc, __func__, "Cannot allocate space to resize the array");
-    }
-
+  at->tasks.push_back(wt);
   wt->wt_tasklist = at;
   pthread_mutex_unlock(at->alltasks_mutex);
 
-  return(rc);
+  return(PBSE_NONE);
   } /* END insert_task() */
 
 
@@ -425,7 +391,7 @@ int has_task(
 
   pthread_mutex_lock(at->alltasks_mutex);
 
-  if (at->ra->num > 0)
+  if (at->tasks.size() > 0)
     rc = TRUE;
 
   pthread_mutex_unlock(at->alltasks_mutex);
@@ -456,7 +422,14 @@ int remove_task(
 
   if (wt->wt_being_recycled == FALSE)
     {
-    rc = remove_thing(at->ra,wt);
+    for(std::vector<work_task *>::iterator it = at->tasks.begin();it != at->tasks.end();it++)
+      {
+      if(wt == *it)
+        {
+        at->tasks.erase(it);
+        break;
+        }
+      }
     }
     
   pthread_mutex_unlock(at->alltasks_mutex);
@@ -470,8 +443,7 @@ int remove_task(
 void initialize_task_recycler()
 
   {
-  initialize_all_tasks_array(&tr.tasks);
-  tr.iter = -1;
+  tr.iter = tr.tasks.tasks.end();
 
   tr.mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(tr.mutex, NULL);
@@ -483,13 +455,24 @@ void initialize_task_recycler()
 work_task *next_task_from_recycler(
 
   all_tasks *at,
-  int       *iter)
+  std::vector<work_task *>::iterator& iter)
 
   {
   work_task *wt = NULL;
 
   pthread_mutex_lock(at->alltasks_mutex);
-  wt = (work_task *)next_thing(at->ra,iter);
+  if(at->tasks.size() != 0)
+    {
+    if(iter == at->tasks.end())
+      {
+      iter = at->tasks.begin();
+      }
+    else
+      {
+      iter++;
+      }
+    wt = *iter;
+    }
   if (wt != NULL)
     pthread_mutex_lock(wt->wt_mutex);
   pthread_mutex_unlock(at->alltasks_mutex);
@@ -505,19 +488,19 @@ void *remove_some_recycle_tasks(
 
   {
   int        i;
-  int        iter = -1;
+  std::vector<work_task *>::iterator iter = tr.tasks.tasks.end();
   work_task *ptask;
 
   pthread_mutex_lock(tr.mutex);
 
   for (i = 0; i < TASKS_TO_REMOVE; i++)
     {
-    ptask = next_task_from_recycler(&tr.tasks, &iter);
+    ptask = next_task_from_recycler(&tr.tasks, iter);
 
     if (ptask == NULL)
       break;
 
-    remove_task(&tr.tasks, ptask);
+    tr.tasks.tasks.erase(iter);
     pthread_mutex_unlock(ptask->wt_mutex);
     free(ptask->wt_mutex);
     free(ptask);
@@ -546,7 +529,7 @@ int insert_task_into_recycler(
 
   ptask->wt_being_recycled = TRUE;
 
-  if (tr.tasks.ra->num >= MAX_TASKS_IN_RECYCLER)
+  if (tr.tasks.tasks.size() >= MAX_TASKS_IN_RECYCLER)
     enqueue_threadpool_request(remove_some_recycle_tasks, NULL);
 
   rc = insert_task(&tr.tasks, ptask);
