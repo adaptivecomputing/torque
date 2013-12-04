@@ -204,7 +204,10 @@ server_disconnect(int connect)
   close(connection[connect].ch_socket);
 
   if (connection[connect].ch_errtxt != (char *)NULL)
+    {
     free(connection[connect].ch_errtxt);
+    connection[connect].ch_errtxt = (char *)NULL;
+    }
 
   connection[connect].ch_errno = 0;
 
