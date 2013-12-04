@@ -89,7 +89,7 @@ Source: http://www.clusterresources.com/downloads/torque/%{name}-%{tarversion}.t
 Vendor: %{?_vendorinfo:%{_vendorinfo}}%{!?_vendorinfo:%{_vendor}}
 Distribution: %{?_distribution:%{_distribution}}%{!?_distribution:%{_vendor}}
 #BuildSuggests: openssh-clients tcl-devel tclx tk-devel
-BuildRequires: %{breq_gui} %{breq_munge} %{breq_pam} %{breq_scp} make
+BuildRequires: %{breq_gui} %{breq_munge} %{breq_pam} %{breq_scp} make libtool automake openssl-devel libxml2-devel boost-devel
 Conflicts: pbspro, openpbs, openpbs-oscar
 Obsoletes: scatorque <= %{version}-%{release}, %{!?with_gui:%{name}-gui < %{version}-%{release}}
 Provides: pbs, pbs-docs, pbs-pam, %{!?with_gui:%{name}-gui = %{version}-%{release}}
@@ -177,6 +177,7 @@ CFLAGS="%{?cflags:%{cflags}}%{!?cflags:$RPM_OPT_FLAGS}"
 CXXFLAGS="%{?cxxflags:%{cxxflags}}%{!?cxxflags:$RPM_OPT_FLAGS}"
 export CFLAGS CXXFLAGS
 
+./autogen.sh
 %configure --includedir=%{_includedir}/%{name} --with-default-server=%{torque_server} \
     --with-server-home=%{torque_home} %{ac_with_debug} %{ac_with_libcpuset} \
     --with-sendmail=%{sendmail_path} %{ac_with_numa} %{ac_with_memacct} %{ac_with_top} \
