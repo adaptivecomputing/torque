@@ -1389,7 +1389,6 @@ tm_register(tm_whattodo_t *what, tm_event_t *event)
 
 #define FOREVER              2592000
 
-
 /*
 ** tm_poll - poll to see if an event has been completed.
 **
