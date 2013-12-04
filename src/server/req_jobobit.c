@@ -128,7 +128,7 @@
 
 /* External Global Data Items */
 
-extern struct all_jobs  alljobs;
+extern all_jobs           alljobs;
 extern unsigned int     pbs_mom_port;
 extern unsigned int     pbs_rm_port;
 extern char            *path_spool;

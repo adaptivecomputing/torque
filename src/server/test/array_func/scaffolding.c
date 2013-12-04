@@ -99,7 +99,7 @@ int modify_job(void **j, svrattrl *plist, struct batch_request *preq, int checkp
   exit(1);
   }
 
-job *next_job(struct all_jobs *aj, int *iter)
+job *next_job(all_jobs *aj, all_jobs_iterator *iter)
   {
   fprintf(stderr, "The call to next_job needs to be mocked!!\n");
   exit(1);
@@ -282,53 +282,6 @@ int lock_ai_mutex(
 
   {
   return(0);
-  }
-
-int remove_from_hash_map(
-
-  hash_map   *hm,
-  const char *key,
-  bool        already_locked)
-
-  {
-  return(0);
-  }
-
-int add_to_hash_map(
-    
-  hash_map *hm,
-  void     *obj,
-  char     *key)
-
-  {
-  return(0);
-  }
-
-hash_map *get_hash_map(
-
-  int size_param)
-
-  {
-  return(NULL);
-  }
-
-void *get_from_hash_map(
-
-  hash_map   *hm,
-  const char *key)
-
-  {
-  return(NULL);
-  }
-
-void *next_from_hash_map(
-
-  hash_map *hm,
-  int      *iter,
-  bool      already_locked)
-
-  {
-  return(NULL);
   }
 
 ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)

@@ -91,7 +91,6 @@
 
 #include "execution_slot_tracker.hpp"
 #include "resizable_array.h"
-#include "hash_table.h"
 #include "net_connect.h" /* pbs_net_t */
 #include "pbs_ifl.h" /* resource_t */
 
@@ -99,6 +98,7 @@
 
 #include <vector>
 #include <string>
+#include "container.hpp"
 
 #ifdef NUMA_SUPPORT
 /* NOTE: cpuset support needs hwloc */
@@ -294,30 +294,6 @@ typedef struct received_node
   } received_node;
 
 
-
-
-
-/* struct used for iterating numa nodes */
-typedef struct node_iterator 
-  {
-  int node_index;
-  int numa_index;
-  int alps_index;
-  } node_iterator;
-
-
-
-typedef struct all_nodes
-  {
-  resizable_array *ra;
-  hash_table_t    *ht;
-
-  pthread_mutex_t *allnodes_mutex;
-  } all_nodes;
-
-
-
-
 struct pbsnode
   {
   char                         *nd_name;             /* node's host name */
@@ -379,12 +355,22 @@ struct pbsnode
   unsigned char                 nd_is_alps_reporter;
   unsigned char                 nd_is_alps_login;
   resizable_array              *nd_ms_jobs;          /* the jobs this node is mother superior for */
-  all_nodes                     alps_subnodes;       /* collection of alps subnodes */
+  container::item_container<struct pbsnode *> *alps_subnodes;       /* collection of alps subnodes */
   int                           max_subnode_nppn;    /* maximum ppn of an alps subnode */
 
   pthread_mutex_t              *nd_mutex;            /* semaphore for accessing this node's data */
   };
 
+typedef container::item_container<struct pbsnode *>                all_nodes;
+typedef container::item_container<struct pbsnode *>::item_iterator all_nodes_iterator;
+
+/* struct used for iterating numa nodes */
+typedef struct node_iterator
+  {
+  all_nodes_iterator *node_index;
+  int                numa_index;
+  all_nodes_iterator *alps_index;
+  } node_iterator;
 
 #define INITIAL_NODE_SIZE  20
 
@@ -394,7 +380,7 @@ void            initialize_all_nodes_array(all_nodes *);
 int             insert_node(all_nodes *,struct pbsnode *);
 int             remove_node(all_nodes *,struct pbsnode *);
 struct pbsnode *next_node(all_nodes *,struct pbsnode *,node_iterator *);
-struct pbsnode *next_host(all_nodes *,int *,struct pbsnode *);
+struct pbsnode *next_host(all_nodes *,all_nodes_iterator **,struct pbsnode *);
 int             copy_properties(struct pbsnode *dest, struct pbsnode *src);
 
 

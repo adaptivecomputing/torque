@@ -555,21 +555,19 @@ char *PBSD_queuejob(
 
 int PBSD_QueueJob_hash(
 
-  int             connect,     /* I */
-  char           *jobid,       /* I */
-  char           *destin,
-  memmgr        **mm,
-  job_data       *job_attr,
-  job_data       *res_attr,
-  char           *extend,
-  char          **job_id,
-  char          **msg)
+  int                connect,     /* I */
+  char               *jobid,       /* I */
+  char               *destin,
+  job_data_container *job_attr,
+  job_data_container *res_attr,
+  char              *extend,
+  char              **job_id,
+  char              **msg)
 
   {
   struct batch_reply *reply;
   int                 rc = PBSE_NONE;
   int                 sock;
-  int                 tmp_size = 0;
   struct tcp_chan *chan = NULL;
 
   pthread_mutex_lock(connection[connect].ch_mutex);
@@ -582,7 +580,7 @@ int PBSD_QueueJob_hash(
     }
   /* first, set up the body of the Queue Job request */
   else if ((rc = encode_DIS_ReqHdr(chan, PBS_BATCH_QueueJob, pbs_current_user)) ||
-           (rc = encode_DIS_QueueJob_hash(chan, jobid, destin, mm, job_attr, res_attr)) ||
+           (rc = encode_DIS_QueueJob_hash(chan, jobid, destin, job_attr, res_attr)) ||
            (rc = encode_DIS_ReqExtend(chan, extend)))
     {
     pthread_mutex_lock(connection[connect].ch_mutex);
@@ -590,9 +588,9 @@ int PBSD_QueueJob_hash(
       {
       if ((rc >= 0) &&
           (rc <= DIS_INVALID))
-        connection[connect].ch_errtxt = memmgr_strdup(mm, (char *)dis_emsg[rc], &tmp_size);
+        connection[connect].ch_errtxt = strdup((char *)dis_emsg[rc]);
       }
-    *msg = memmgr_strdup(mm, connection[connect].ch_errtxt, &tmp_size);
+    *msg = strdup(connection[connect].ch_errtxt);
 
     pthread_mutex_unlock(connection[connect].ch_mutex);
 
@@ -606,7 +604,7 @@ int PBSD_QueueJob_hash(
     pthread_mutex_lock(connection[connect].ch_mutex);
     if (connection[connect].ch_errtxt == NULL)
       {
-      *msg = memmgr_strdup(mm, connection[connect].ch_errtxt, &tmp_size);
+      *msg = strdup(connection[connect].ch_errtxt);
       }
     pthread_mutex_unlock(connection[connect].ch_mutex);
 
@@ -634,16 +632,16 @@ int PBSD_QueueJob_hash(
     
     if (connection[connect].ch_errtxt == NULL)
       {
-      *msg = memmgr_strdup(mm, connection[connect].ch_errtxt, &tmp_size);
+      *msg = strdup(connection[connect].ch_errtxt);
       }
     }
   else if (reply->brp_choice == BATCH_REPLY_CHOICE_Text)
     {
-    *msg = memmgr_strdup(mm, reply->brp_un.brp_txt.brp_str, &tmp_size);
+    *msg = strdup(reply->brp_un.brp_txt.brp_str);
     }
   else if (connection[connect].ch_errno == 0)
     {
-    *job_id = memmgr_strdup(mm, reply->brp_un.brp_jid, &tmp_size);
+    *job_id = strdup(reply->brp_un.brp_jid);
     }
     
   pthread_mutex_unlock(connection[connect].ch_mutex);

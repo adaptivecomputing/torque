@@ -3,12 +3,12 @@
 #include "license_pbs.h" /* See here for the software license */
 #include "list_link.h" /* tlist_head */
 #include "net_connect.h"
+#include "pbs_nodes.h"
 
 /* Forward declarations. */
 struct pbsnode;
 struct node_check_info;
 struct node_iterator;
-struct all_nodes;
 struct svrattrl;
 struct pbs_attribute;
 struct attribute_def;
@@ -93,15 +93,13 @@ void reinitialize_node_iterator(struct node_iterator *iter);
 
 /*static struct pbsnode *get_my_next_node_board(node_iterator *iter, struct pbsnode *np);*/
 
-struct pbsnode *next_node(struct all_nodes *an, struct pbsnode *current, struct node_iterator *iter);
+struct pbsnode *next_node(all_nodes *an, struct pbsnode *current, struct node_iterator *iter);
 
-void initialize_all_nodes_array(struct all_nodes *an);
+int insert_node(all_nodes *an, struct pbsnode *pnode);
 
-int insert_node(struct all_nodes *an, struct pbsnode *pnode);
+int remove_node(all_nodes *an, struct pbsnode *pnode);
 
-int remove_node(struct all_nodes *an, struct pbsnode *pnode);
-
-struct pbsnode *next_host(struct all_nodes *an, int *iter, struct pbsnode *held);
+struct pbsnode *next_host(all_nodes *an, all_nodes_iterator **iter, struct pbsnode *held);
 
 void *send_hierarchy_threadtask(void *vp);
 

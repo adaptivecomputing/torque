@@ -655,7 +655,7 @@ struct batch_status *pbs_statnode(int connect, char *id, struct attrl *attrib, c
 
 char *pbs_submit(int connect, struct attropl *attrib, char *script, char *destination, char *extend);
 
-int pbs_submit_hash(int connect, memmgr **mm, job_data *job_attr, job_data *res_attr, char *script, char *destination, char *extend, char **job_id, char **msg);
+int pbs_submit_hash(int connect, job_data_container *job_attr, job_data_container *res_attr, char *script, char *destination, char *extend, char **job_id, char **msg);
 
 int pbs_terminate(int connect, int manner, char *extend);
 

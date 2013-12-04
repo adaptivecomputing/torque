@@ -175,7 +175,7 @@ void req_reject(int code, int aux, struct batch_request *preq, const char *HostN
   exit(1);
   }
 
-job *next_job(struct all_jobs *aj, int *iter)
+job *next_job(all_jobs *aj, all_jobs_iterator *iter)
   {
   fprintf(stderr, "The call to next_job needs to be mocked!!\n");
   exit(1);
@@ -211,7 +211,7 @@ int req_altauthenuser(struct batch_request *preq)
   exit(1);
   }
 
-int svr_enquejob(job *pjob, int has_sv_qs_mutex, int prev_index, bool reservation)
+int svr_enquejob(job *pjob, int has_sv_qs_mutex, char *prev_id, bool reservation)
   {
   fprintf(stderr, "The call to svr_enquejob needs to be mocked!!\n");
   exit(1);
@@ -313,7 +313,7 @@ void req_mvjobfile(struct batch_request *preq)
   exit(1);
   }
 
-int remove_job(struct all_jobs *aj, job *pjob)
+int remove_job(all_jobs *aj, job *pjob)
   {
   fprintf(stderr, "The call to remove_job needs to be mocked!!\n");
   exit(1);

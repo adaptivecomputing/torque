@@ -13,37 +13,19 @@ extern queue_recycler q_recycler;
 extern int LOGLEVEL;
 
 
-void initialize_queue_recycler()
-
-  {
-  pthread_mutexattr_t t_attr;
-  pthread_mutexattr_init(&t_attr);
-  pthread_mutexattr_settype(&t_attr, PTHREAD_MUTEX_NORMAL);
-  q_recycler.next_id = 0;
-  q_recycler.max_id = 10;
-  initialize_allques_array(&q_recycler.queues);
-  q_recycler.iter = -1;
-
-  q_recycler.mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(q_recycler.mutex,&t_attr);
-  } /* END initialize_recycler() */
-
-
-
-
 pbs_queue *next_queue_from_recycler(
     
-  struct all_queues *aq,
-  int             *iter)
+  all_queues           *aq,
+  all_queues_iterator  *iter)
 
   {
   pbs_queue *pq;
 
-  pthread_mutex_lock(aq->allques_mutex);
-  pq = (pbs_queue *)next_thing(aq->ra, iter);
+  aq->lock();
+  pq = iter->get_next_item();
   if (pq != NULL)
     lock_queue(pq, __func__, NULL, LOGLEVEL);
-  pthread_mutex_unlock(aq->allques_mutex);
+  aq->unlock();
 
   return(pq);
   } /* END next_queue_from_recycler() */
@@ -56,12 +38,15 @@ void *remove_some_recycle_queues(
   void *vp)
 
   {
-  int        iter = -1;
+  all_queues_iterator *iter = NULL;
   pbs_queue *pq;
 
+  q_recycler.queues.lock();
+  iter = q_recycler.queues.get_iterator();
+  q_recycler.queues.unlock();
   pthread_mutex_lock(q_recycler.mutex);
 
-  pq = next_queue_from_recycler(&q_recycler.queues,&iter);
+  pq = next_queue_from_recycler(&q_recycler.queues,iter);
 
   if (pq == NULL)
     return NULL;
@@ -69,8 +54,8 @@ void *remove_some_recycle_queues(
   remove_queue(&q_recycler.queues,pq);
   unlock_queue(pq, __func__, NULL, LOGLEVEL);
   free(pq->qu_mutex);
-  free_alljobs_array(pq->qu_jobs);
-  free_alljobs_array(pq->qu_jobs_array_sum);
+  delete pq->qu_jobs;
+  delete pq->qu_jobs_array_sum;
   memset(pq, 254, sizeof(pbs_queue));
   free(pq);
 
@@ -95,7 +80,7 @@ int insert_into_queue_recycler(
   sprintf(pq->qu_qs.qu_name,"%d",q_recycler.next_id);
   pq->q_being_recycled = TRUE;
 
-  if (q_recycler.queues.ra->num >= MAX_RECYCLE_QUEUES)
+  if (q_recycler.queues.count() >= MAX_RECYCLE_QUEUES)
     {
     enqueue_threadpool_request(remove_some_recycle_queues,NULL);
     }

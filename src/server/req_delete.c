@@ -134,7 +134,7 @@ extern char server_host[];
 
 extern struct server server;
 extern int   LOGLEVEL;
-extern struct all_jobs alljobs;
+extern all_jobs alljobs;
 
 extern int issue_signal(job **, const char *, void (*)(batch_request *), void *, char *);
 
@@ -885,14 +885,17 @@ void *delete_all_work(
   batch_request *preq = (batch_request *)vp;
   batch_request *preq_dup = duplicate_request(preq);
   job           *pjob;
-  int            iter = -1;
+  all_jobs_iterator *iter = NULL;
   int            failed_deletes = 0;
   int            total_jobs = 0;
   int            rc = PBSE_NONE;
   char           tmpLine[MAXLINE];
   char          *Msg = preq->rq_extend;
   
-  while ((pjob = next_job(&alljobs, &iter)) != NULL)
+  alljobs.lock();
+  iter = alljobs.get_iterator();
+  alljobs.unlock();
+  while ((pjob = next_job(&alljobs, iter)) != NULL)
     {
     // use mutex manager to make sure job mutex locks are properly handled at exit
     mutex_mgr job_mutex(pjob->ji_mutex, true);
@@ -1699,7 +1702,7 @@ void purge_completed_jobs(
   job          *pjob;
   char         *time_str;
   time_t        purge_time = 0;
-  int           iter;
+  all_jobs_iterator   *iter = NULL;
   char          log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* get the time to purge the jobs that completed before */
@@ -1730,9 +1733,11 @@ void purge_completed_jobs(
     
   reply_ack(preq);
 
-  iter = -1;
+  alljobs.lock();
+  iter = alljobs.get_iterator();
+  alljobs.unlock();
 
-  while ((pjob = next_job(&alljobs,&iter)) != NULL) 
+  while ((pjob = next_job(&alljobs,iter)) != NULL)
     {
     if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_COMPLETE) &&
         (pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long <= purge_time) &&

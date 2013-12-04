@@ -1,8 +1,8 @@
 #include <stdlib.h>
-#include <check.h>
 #include <stdio.h>
 
 #include "numa_node.hpp"
+#include <check.h>
 
 START_TEST(test_parse_cpu_string)
   {

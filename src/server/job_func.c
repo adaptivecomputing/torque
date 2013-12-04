@@ -176,8 +176,8 @@ int issue_signal(job **, const char *, void(*)(batch_request *), void *, char *)
 static void job_init_wattr(job *);
 
 /* Global Data items */
-struct all_jobs        alljobs;
-extern struct all_jobs array_summary;
+all_jobs        alljobs;
+extern all_jobs array_summary;
 
 int check_job_log_started = 0;
 
@@ -1118,7 +1118,7 @@ void *job_clone_wt(
   job                *pjobclone;
   char               *jobid;
   int                 i;
-  int                 prev_index = -1;
+  char                *prev_job_id = NULL;
   int                 actual_job_count = 0;
   int                 newstate;
   int                 newsub;
@@ -1209,7 +1209,7 @@ void *job_clone_wt(
 
       array_mgr.unlock();
 
-      if ((rc = svr_enquejob(pjobclone, FALSE, prev_index, false)))
+      if ((rc = svr_enquejob(pjobclone, FALSE, prev_job_id, false)))
         {
         /* XXX need more robust error handling */
         clone_mgr.set_lock_on_exit(false);
@@ -1220,7 +1220,10 @@ void *job_clone_wt(
           }
 
         if ((pa = get_array(arrayid)) == NULL)
+          {
+          if(prev_job_id != NULL) free(prev_job_id);
           return(NULL);
+          }
 
         array_mgr.mark_as_locked();
 
@@ -1232,6 +1235,7 @@ void *job_clone_wt(
         if (pjobclone == NULL)
           clone_mgr.set_lock_on_exit(false);
 
+        if(prev_job_id != NULL) free(prev_job_id);
         return(NULL);
         }
       
@@ -1244,21 +1248,29 @@ void *job_clone_wt(
         svr_job_purge(pjobclone);
         
         if ((pa = get_array(arrayid)) == NULL)
+          {
+          if(prev_job_id != NULL) free(prev_job_id);
           return(NULL);
+          }
 
         array_mgr.mark_as_locked();
         
         continue;
         }
       
-      prev_index = get_jobs_index(&alljobs, pjobclone);
+      if(prev_job_id != NULL) free(prev_job_id);
+      prev_job_id = NULL;
+      if(alljobs.find(pjobclone->ji_qs.ji_jobid) != NULL)
+        {
+        prev_job_id = strdup(pjobclone->ji_qs.ji_jobid);
+        }
       
       pa->ai_qs.num_cloned++;
       
       rn->start++;
       
       /* index below 0 means the job no longer exists */
-      if (prev_index < 0)
+      if (prev_job_id == NULL)
         clone_mgr.set_lock_on_exit(false);
       }  /* END for (i) */
 
@@ -1269,6 +1281,9 @@ void *job_clone_wt(
       }
     }    /* END while (loop) */
       
+  if(prev_job_id != NULL) free(prev_job_id);
+  prev_job_id = NULL;
+
   array_save(pa);
 
   /* scan over all the jobs in the array and unset the hold */

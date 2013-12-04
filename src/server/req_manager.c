@@ -1401,7 +1401,7 @@ void mgr_queue_set(
   pbs_queue *pque;
   const char      *qname;
   int        rc;
-  int        iter = -1;
+  all_queues_iterator  *iter = NULL;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (LOGLEVEL >= 7)
@@ -1410,12 +1410,16 @@ void mgr_queue_set(
     log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_QUEUE, __func__, log_buf);
     }
 
+  svr_queues.lock();
+  iter = svr_queues.get_iterator();
+  svr_queues.unlock();
+
   if ((*preq->rq_ind.rq_manager.rq_objname == '\0') ||
       (*preq->rq_ind.rq_manager.rq_objname == '@'))
     {
     qname   = all_quename;
     allques = TRUE;
-    pque = next_queue(&svr_queues,&iter);
+    pque = next_queue(&svr_queues,iter);
     }
   else
     {
@@ -1469,14 +1473,16 @@ void mgr_queue_set(
 
       }
 
-    pque = next_queue(&svr_queues,&iter);
+    pque = next_queue(&svr_queues,iter);
     }  /* END while (pque != NULL) */
 
   /* check the appropriateness of the attributes based on queue type */
-  iter = -1;
+  svr_queues.lock();
+  iter = svr_queues.get_iterator();
+  svr_queues.unlock();
 
   if (allques == TRUE)
-    pque = next_queue(&svr_queues,&iter);
+    pque = next_queue(&svr_queues,iter);
 
   while (pque != NULL)
     {
@@ -1494,7 +1500,7 @@ void mgr_queue_set(
         break;
 
       }
-    pque = next_queue(&svr_queues,&iter);
+    pque = next_queue(&svr_queues,iter);
     }  /* END while (pque != NULL) */
 
   reply_ack(preq);
@@ -1523,7 +1529,7 @@ void mgr_queue_unset(
   pbs_queue *pque;
   const char      *qname;
   int    rc;
-  int    iter = -1;
+  all_queues_iterator *iter = NULL;
   char   log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (LOGLEVEL >= 7)
@@ -1532,12 +1538,16 @@ void mgr_queue_unset(
     log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_QUEUE, __func__, log_buf);
     }
 
+  svr_queues.lock();
+  iter = svr_queues.get_iterator();
+  svr_queues.unlock();
+  
   if ((*preq->rq_ind.rq_manager.rq_objname == '\0') ||
       (*preq->rq_ind.rq_manager.rq_objname == '@'))
     {
     qname   = all_quename;
     allques = TRUE;
-    pque = next_queue(&svr_queues,&iter);
+    pque = next_queue(&svr_queues,iter);
     }
   else
     {
@@ -1583,7 +1593,7 @@ void mgr_queue_unset(
     if (allques == FALSE)
       break;
     
-    pque = next_queue(&svr_queues,&iter);
+    pque = next_queue(&svr_queues,iter);
     }
 
   reply_ack(preq);
@@ -1884,7 +1894,7 @@ static void mgr_node_delete(
 
   {
   int             check_all = 0;
-  int             iter;
+  all_nodes_iterator *iter = NULL;
 
   struct pbsnode *pnode;
   const char    *nodename = NULL;
@@ -1938,7 +1948,7 @@ static void mgr_node_delete(
   if (check_all)
     {
     /* handle all nodes */
-    iter = -1;
+    iter = NULL;
 
     while ((pnode = next_host(&allnodes,&iter,NULL)) != NULL)
       {

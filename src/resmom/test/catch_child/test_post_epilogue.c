@@ -1,8 +1,8 @@
-#include "test_catch_child.h"
 #include "catch_child.h"
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h>
+#include "test_catch_child.h"
 
 extern int tc;
 extern int func_num;

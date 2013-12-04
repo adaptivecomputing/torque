@@ -21,7 +21,7 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging);
 #define MSG_LEN_LONG 160
 
 const char *msg_deletejob = "Job deleted";
-struct all_jobs alljobs;
+all_jobs alljobs;
 const char *msg_delrunjobsig = "Job sent signal %s on delete";
 struct server server;
 const char *msg_manager = "%s at request of %s@%s";
@@ -260,7 +260,7 @@ void removeBeforeAnyDependencies(const char *)
  */
 int insert_job(
 
-  struct all_jobs *aj,
+  all_jobs *aj,
   job             *pjob)
 
   {
@@ -279,21 +279,19 @@ int insert_job(
     return(rc);
     }
 
-  pthread_mutex_lock(aj->alljobs_mutex);
+  aj->lock();
 
-  rc = insert_thing(aj->ra,pjob);
-  if (rc == -1)
+  if(!aj->insert(pjob,pjob->ji_qs.ji_jobid))
     {
     rc = ENOMEM;
     log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE\n");
     }
   else
     {
-    add_hash(aj->ht, rc, pjob->ji_qs.ji_jobid);
     rc = PBSE_NONE;
     }
 
-  pthread_mutex_unlock(aj->alljobs_mutex);
+  aj->unlock();
 
   return(rc);
   } /* END insert_job() */
@@ -346,27 +344,6 @@ int insert_thing(
 
   return(rc);
   } /* END insert_thing() */
-
-
-/* initializes the all_jobs array */
-void initialize_all_jobs_array(
-
-  struct all_jobs *aj)
-
-  {
-  if (aj == NULL)
-    {
-    log_err(PBSE_BAD_PARAMETER,__func__,"null input job array");
-    return;
-    }
-
-  aj->ra = initialize_resizable_array(INITIAL_JOB_SIZE);
-  aj->ht = create_hash(INITIAL_HASH_SIZE);
-
-  aj->alljobs_mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(aj->alljobs_mutex, NULL);
-  } /* END initialize_all_jobs_array() */
-
 
 /*
  * checks if the array needs to be resized, and resizes if necessary
@@ -421,8 +398,8 @@ void update_next_slot(
 
 job *next_job(
 
-  struct all_jobs *aj,
-  int             *iter)
+  all_jobs *aj,
+  all_jobs_iterator             *iter)
 
   {
   job *pjob;
@@ -438,11 +415,11 @@ job *next_job(
     return(NULL);
     }
 
-  pthread_mutex_lock(aj->alljobs_mutex);
+  aj->lock();
 
-  pjob = (job *)next_thing(aj->ra,iter);
+  pjob = iter->get_next_item();
 
-  pthread_mutex_unlock(aj->alljobs_mutex);
+  aj->unlock();
 
   if (pjob != NULL)
     {

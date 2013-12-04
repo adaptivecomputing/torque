@@ -345,6 +345,7 @@ src/lib/Libutils/test/u_mu/test_u_mu
 src/lib/Libutils/test/u_resizable_array/test_u_resizable_array
 src/lib/Libutils/test/u_threadpool/test_u_threadpool
 src/lib/Libutils/test/u_tree/test_u_tree
+src/lib/Libutils/test/u_misc/test_u_misc
 src/lib/Libutils/test/u_users/test_u_users
 src/lib/Libutils/test/u_xml/test_u_xml
 src/lib/Libutils/test/u_putenv/test_u_putenv

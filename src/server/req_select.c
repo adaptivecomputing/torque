@@ -122,8 +122,8 @@ extern int   svr_authorize_jobreq(struct batch_request *, job *);
 
 extern int LOGLEVEL;
 extern struct server server;
-extern struct all_jobs alljobs;
-extern struct all_jobs array_summary;
+extern all_jobs       alljobs;
+extern all_jobs       array_summary;
 
 /* Private Functions  */
 
@@ -382,7 +382,7 @@ static void sel_step2(
   int           exec_only = 0;
   int           summarize_arrays = 0;
   pbs_queue    *pque = NULL;
-  int           iter;
+  all_jobs_iterator  *iter = NULL;
   time_t        time_now = time(NULL);
   long          query_others = 0;
   char job_id[PBS_MAXSVRJOBID+1];
@@ -400,7 +400,19 @@ static void sel_step2(
       summarize_arrays = 1;
     }
 
-  iter = -1;
+  if (cntl->sc_pque)
+    {
+    cntl->sc_pque->qu_jobs_array_sum->lock();
+    iter = cntl->sc_pque->qu_jobs_array_sum->get_iterator();
+    cntl->sc_pque->qu_jobs_array_sum->unlock();
+    }
+  else
+    {
+    array_summary.lock();
+    iter = array_summary.get_iterator();
+    array_summary.unlock();
+    }
+
 
   while (1)
     {
@@ -413,16 +425,16 @@ static void sel_step2(
     if (summarize_arrays)
       {
       if (cntl->sc_pque)
-        pjob = next_job(cntl->sc_pque->qu_jobs_array_sum,&iter);
+        pjob = next_job(cntl->sc_pque->qu_jobs_array_sum,iter);
       else
-        pjob = next_job(&array_summary,&iter);;
+        pjob = next_job(&array_summary,iter);
       }
     else
       {
       if (cntl->sc_pque)
-        pjob = next_job(cntl->sc_pque->qu_jobs_array_sum,&iter);
+        pjob = next_job(cntl->sc_pque->qu_jobs_array_sum,iter);
       else
-        pjob = next_job(&alljobs,&iter);
+        pjob = next_job(&alljobs,iter);
       }
 
     if (pjob == NULL)
@@ -518,7 +530,7 @@ static void sel_step3(
   int        exec_only = 0;
   pbs_queue           *pque = NULL;
 
-  int         iter = -1;
+  all_jobs_iterator   *iter = NULL;
   long        query_others = 0;
   
   get_svr_attr_l(SRV_ATR_query_others, &query_others);
@@ -551,22 +563,36 @@ static void sel_step3(
     if (!strncmp(preq->rq_extend, EXECQUEONLY, strlen(EXECQUEONLY)))
       exec_only = 1;
 
+  if (cntl->sc_pque)
+    {
+    cntl->sc_pque->qu_jobs_array_sum->lock();
+    iter = cntl->sc_pque->qu_jobs_array_sum->get_iterator();
+    cntl->sc_pque->qu_jobs_array_sum->unlock();
+    }
+  else
+    {
+    array_summary.lock();
+    iter = array_summary.get_iterator();
+    array_summary.unlock();
+    }
+
+
   /* now start checking for jobs that match the selection criteria */
   if (summarize_arrays)
     {
     if (cntl->sc_pque)
-      pjob = next_job(cntl->sc_pque->qu_jobs_array_sum,&iter);
+      pjob = next_job(cntl->sc_pque->qu_jobs_array_sum,iter);
     else
       {
-      pjob = next_job(&array_summary,&iter);
+      pjob = next_job(&array_summary,iter);
       }
     }
   else
     {
     if (cntl->sc_pque)
-      pjob = next_job(cntl->sc_pque->qu_jobs,&iter);
+      pjob = next_job(cntl->sc_pque->qu_jobs,iter);
     else
-      pjob = next_job(&alljobs,&iter);
+      pjob = next_job(&alljobs,iter);
     }
 
   while (pjob != NULL)
@@ -645,16 +671,16 @@ nextjob:
     if (summarize_arrays)
       {
       if (cntl->sc_pque)
-        next = next_job(cntl->sc_pque->qu_jobs_array_sum,&iter);
+        next = next_job(cntl->sc_pque->qu_jobs_array_sum,iter);
       else
-        next = next_job(&array_summary,&iter);
+        next = next_job(&array_summary,iter);
       }
     else
       {
       if (cntl->sc_pque)
-        next = next_job(cntl->sc_pque->qu_jobs,&iter);
+        next = next_job(cntl->sc_pque->qu_jobs,iter);
       else
-        next = next_job(&alljobs,&iter);
+        next = next_job(&alljobs,iter);
       }
 
     pjob = next;

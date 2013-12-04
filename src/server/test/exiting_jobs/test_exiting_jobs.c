@@ -1,11 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <check.h>
 #include <pthread.h>
 
 #include "exiting_jobs.h"
 #include "log.h"
-#include "hash_table.h"
+#include <check.h>
 
 int retry_job_exit(char *jobid);
 int check_exiting_jobs();
@@ -92,8 +91,6 @@ int main(void)
   {
   int number_failed = 0;
   SRunner *sr = NULL;
-  exiting_jobs_info = (hash_map *)calloc(1, sizeof(hash_map));
-  exiting_jobs_info->hm_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   rundebug();
   sr = srunner_create(exiting_jobs_suite());
   srunner_set_log(sr, "exiting_jobs_suite.log");

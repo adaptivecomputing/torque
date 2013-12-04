@@ -87,8 +87,8 @@
 #include <stdexcept>
 
 #include "net_cache.h"
-#include "hash_table.h"
 #include "pbs_error.h"
+#include "container.hpp"
 
 
 
@@ -102,6 +102,14 @@
 static pthread_mutex_t cacheMutex = PTHREAD_MUTEX_INITIALIZER;
 static int cacheDestroyed = FALSE;
 
+namespace container
+{
+template<>
+int item_container<int>::empty_val(void)
+{
+    return -1;
+}
+}
 
 class addrcache
   {
@@ -125,13 +133,13 @@ class addrcache
     pthread_mutex_lock(&cacheMutex);
     try 
       {
-      i = get_value_hash(addrToName,key);
+      i = addrToName.find(key);
       if (i >= 0) 
         pTmpAddr = addrs.at(i);
       }
     catch (const std::out_of_range &oor)
       {
-      remove_hash(addrToName, key);
+      addrToName.remove(key);
       i = -1;
       }
 
@@ -173,8 +181,8 @@ class addrcache
       return(NULL);
       }
 
-    add_hash(addrToName,index,strdup(key));
-    add_hash(nameToAddr,index,(void *)priv_host);
+    addrToName.insert(index,key);
+    nameToAddr.insert(index,priv_host);
 
     pthread_mutex_unlock(&cacheMutex);
     return pAddr;
@@ -192,7 +200,7 @@ class addrcache
     sprintf(key,"%d",addr);
 
     pthread_mutex_lock(&cacheMutex);
-    int index = get_value_hash(addrToName,key);
+    int index = addrToName.find(key);
     if(index >= 0) p = addrs.at(index);
     pthread_mutex_unlock(&cacheMutex);
     return p;
@@ -206,7 +214,7 @@ class addrcache
         return NULL;
       }
     pthread_mutex_lock(&cacheMutex);
-    int index = get_value_hash(nameToAddr,(void *)hostName);
+    int index = nameToAddr.find(hostName);
     if(index >= 0) p = addrs.at(index);
     pthread_mutex_unlock(&cacheMutex);
     return p;
@@ -226,7 +234,7 @@ class addrcache
     sprintf(key,"%d",addr);
     
     pthread_mutex_lock(&cacheMutex);
-    int index = get_value_hash(addrToName,key);
+    int index = addrToName.find(key);
     if (index >= 0)
       p = hosts.at(index);
     pthread_mutex_unlock(&cacheMutex);
@@ -236,8 +244,6 @@ class addrcache
 
   addrcache()
     {
-    nameToAddr = create_hash(INITIAL_HASH_SIZE);
-    addrToName = create_hash(INITIAL_HASH_SIZE);
     }
 
   ~addrcache()
@@ -261,10 +267,10 @@ class addrcache
 
 private:
 
-    hash_table_t *nameToAddr;
-    hash_table_t *addrToName;
-    std::vector<struct addrinfo *> addrs;
-    std::vector<char *> hosts;
+  container::item_container<int> nameToAddr;
+  container::item_container<int> addrToName;
+  std::vector<struct addrinfo *> addrs;
+  std::vector<char *> hosts;
   };
 
 addrcache cache;

@@ -19,13 +19,13 @@ all_queues svr_queues;
 const char *msg_daemonname = "unset";
 attribute_def job_attr_def[10];
 const char *msg_badwait = "Invalid time in work task for waiting, job = %s";
-struct all_jobs alljobs;
+all_jobs alljobs;
 const char *pbs_o_host = "PBS_O_HOST";
 extern resource_def *svr_resc_def;
 int svr_clnodes = 0;
 int comp_resc_gt; 
 struct server server;
-struct all_jobs array_summary;
+all_jobs array_summary;
 int svr_do_schedule = SCH_SCHEDULE_NULL;
 int listener_command = SCH_SCHEDULE_NULL;
 int LOGLEVEL = 10;
@@ -48,8 +48,8 @@ pbs_queue *find_queuebyname(const char *quename)
   pq->qu_qs.qu_type = QTYPE_Unset;
 
   pq->qu_mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));
-  pq->qu_jobs = (all_jobs *)calloc(1, sizeof(struct all_jobs));
-  pq->qu_jobs_array_sum = (all_jobs *)calloc(1, sizeof(struct all_jobs));
+  pq->qu_jobs = new all_jobs();
+  pq->qu_jobs_array_sum = new all_jobs();
 
   snprintf(pq->qu_qs.qu_name, sizeof(pq->qu_qs.qu_name), "%s", quename);
 
@@ -87,8 +87,8 @@ pbs_queue *get_jobs_queue(job **pjob)
   pq->qu_qs.qu_type = QTYPE_Unset;
 
   pq->qu_mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));
-  pq->qu_jobs = (all_jobs *)calloc(1, sizeof(struct all_jobs));
-  pq->qu_jobs_array_sum = (all_jobs *)calloc(1, sizeof(struct all_jobs));
+  pq->qu_jobs = new all_jobs();
+  pq->qu_jobs_array_sum = new all_jobs();
 
   snprintf(pq->qu_qs.qu_name, sizeof(pq->qu_qs.qu_name), "%s", "qu_name");
 
@@ -122,13 +122,13 @@ int depend_on_que(pbs_attribute *pattr, void *pjob, int mode)
   exit(1);
   }
 
-int insert_job_after(struct all_jobs *aj, job *already_in, job *pjob)
+int insert_job_after(all_jobs *aj, job *already_in, job *pjob)
   {
   fprintf(stderr, "The call to insert_job_after to be mocked!!\n");
   exit(1);
   }
 
-int has_job(struct all_jobs *aj, job *pjob)
+int has_job(all_jobs *aj, job *pjob)
   {
   return(0);
   }
@@ -139,7 +139,7 @@ struct work_task *set_task(enum work_type type, long event_id, void (*func)(work
   exit(1);
   }
 
-int insert_job(struct all_jobs *aj, job *pjob)
+int insert_job(all_jobs *aj, job *pjob)
   {
   return(0);
   }
@@ -156,15 +156,10 @@ int num_array_jobs(const char *req_str)
   exit(1);
   }
 
-job *next_job(struct all_jobs *aj, int *iter)
+job *next_job(all_jobs *aj, all_jobs_iterator *iter)
   {
   fprintf(stderr, "The call to next_job to be mocked!!\n");
   exit(1);
-  }
-
-job *next_job_from_back(struct all_jobs *aj, int *iter)
-  {
-  return(NULL);
   }
 
 int comp_resc2(struct pbs_attribute *attr, struct pbs_attribute *with, int IsQueueCentric, char *EMsg, enum compare_types type)
@@ -201,12 +196,12 @@ work_task *next_task(all_tasks *at, int *iter)
   exit(1);
   }
 
-pbs_queue *next_queue(all_queues *aq, int *iter)
+pbs_queue *next_queue(all_queues *aq, all_queues_iterator *iter)
   {
   return(NULL);
   }
 
-int remove_job(struct all_jobs *aj, job *pjob)
+int remove_job(all_jobs *aj, job *pjob)
   {
   return(PBSE_JOB_RECYCLED);
   }
@@ -243,7 +238,7 @@ job *svr_find_job(char *jobid, int get_subjob)
   return(NULL);
   }
 
-int insert_job_first(struct all_jobs *aj, job *pjob)
+int insert_job_first(all_jobs *aj, job *pjob)
   {
   fprintf(stderr, "The call to insert_job_first to be mocked!!\n");
   exit(1);
@@ -286,7 +281,7 @@ int lock_startup()
   return(0);
   }
 
-int insert_job_after_index(struct all_jobs *aj, int index, job *pjob)
+int insert_job_after_index(all_jobs *aj, int index, job *pjob)
   {
   return(0);
   }
@@ -301,7 +296,7 @@ int lock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string)
   return(0);
   }
 
-unsigned int get_num_queued(user_info_holder *uih, char *user_name)
+unsigned int get_num_queued(user_info_holder *uih, const char *user_name)
   {
   return(0);
   }
@@ -317,7 +312,7 @@ int decrement_queued_jobs(user_info_holder *uih, char *user_name)
   return(0);
   }
 
-int get_jobs_index(struct all_jobs *aj, struct job *pjob)
+int get_jobs_index(all_jobs *aj, struct job *pjob)
   {
   return(0);
   }

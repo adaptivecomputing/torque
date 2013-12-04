@@ -176,7 +176,7 @@ extern struct server    server;
 extern tlist_head       svr_newnodes;
 extern attribute_def    node_attr_def[];   /* node attributes defs */
 extern int              SvrNodeCt;
-extern struct all_jobs  alljobs;
+extern all_jobs  alljobs;
 
 extern int              multi_mom;
 
@@ -1233,7 +1233,7 @@ void *write_node_state_work(
   struct pbsnode *np;
   static char    *fmt = (char *)"%s %d\n";
   static FILE    *nstatef = NULL;
-  int             iter = -1;
+  all_nodes_iterator *iter = NULL;
 
   int             savemask;
 
@@ -1329,7 +1329,7 @@ int write_node_note(void)
 
   {
   struct pbsnode *np;
-  int             iter = -1;
+  all_nodes_iterator *iter = NULL;
   FILE           *nin;
 
   if (LOGLEVEL >= 2)
@@ -1425,7 +1425,7 @@ void *node_unreserve_work(
   resource_t       handle = *((resource_t *)vp);
 
   struct  pbsnode *np;
-  int              iter = -1;
+  all_nodes_iterator *iter = NULL;
 
   /* clear old reserve */
   while ((np = next_host(&allnodes,&iter,NULL)) != NULL)
@@ -2065,7 +2065,7 @@ int procs_available(
   int proc_ct)
 
   {
-  int             iter = -1;
+  all_nodes_iterator *iter = NULL;
   int             procs_avail = 0;
   struct pbsnode *pnode;
 
@@ -2488,7 +2488,7 @@ int check_for_node_type(
         continue;
 
       lock_node(reporter, __func__, NULL, LOGLEVEL);
-      pnode = find_node_in_allnodes(&(reporter->alps_subnodes), p->name);
+      pnode = find_node_in_allnodes(reporter->alps_subnodes, p->name);
       unlock_node(reporter, __func__, NULL, LOGLEVEL);
 
       if (pnode != NULL)
@@ -2842,7 +2842,7 @@ int node_spec(
    * the computes. Don't perform this check for this case. */
   if ((cray_enabled != TRUE) || 
       (alps_reporter == NULL) ||
-      (alps_reporter->alps_subnodes.ra->num != 0))
+      (alps_reporter->alps_subnodes->count() != 0))
     {
     if (num > svr_clnodes)
       {
@@ -2994,7 +2994,7 @@ int node_spec(
    * the computes. Don't perform this check for this case. */
   if ((cray_enabled != TRUE) || 
       (alps_reporter == NULL) ||
-      (alps_reporter->alps_subnodes.ra->num != 0))
+      (alps_reporter->alps_subnodes->count() != 0))
     {
 #ifndef CRAY_MOAB_PASSTHRU
     if (eligible_nodes < num)

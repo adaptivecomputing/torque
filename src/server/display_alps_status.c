@@ -21,10 +21,10 @@ int get_alps_statuses(
 
   {
   struct pbsnode *alps_node;
-  int             iter = -1;
+  all_nodes_iterator  *iter = NULL;
   int             rc = PBSE_NONE;
 
-  while ((alps_node = next_host(&(parent->alps_subnodes), &iter, NULL)) != NULL)
+  while ((alps_node = next_host(parent->alps_subnodes, &iter, NULL)) != NULL)
     {
     rc = status_node(alps_node, preq, bad, pstathd);
     unlock_node(alps_node, __func__, NULL, LOGLEVEL);

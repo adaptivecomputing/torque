@@ -208,9 +208,6 @@ hwloc_topology_t topology = NULL;       /* system topology */
 
 extern long     MaxConnectTimeout;
 
-extern resizable_array *received_statuses;
-extern hash_table_t    *received_table;
-
 time_t          pbs_tcp_timeout = PMOMTCPTIMEOUT;
 
 time_t          LastServerUpdateTime = 0;  /* NOTE: all servers updated together */
@@ -5129,18 +5126,6 @@ int setup_program_environment(void)
   initialize_threadpool(&request_pool,MOM_THREADS,MOM_THREADS,THREAD_INFINITE);
 
   requested_cluster_addrs = 0;
-
-  /* allocate status strings if needed */
-  received_statuses = initialize_resizable_array(2);
-  received_table = create_hash(101);
-
-
-  if ((received_statuses == NULL) ||
-      (received_table == NULL))
-    {
-    log_err(ENOMEM, __func__, "No memory!!!");
-    return(-1);
-    }
 
   srand(get_random_number());
 

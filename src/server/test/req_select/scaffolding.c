@@ -14,11 +14,11 @@
 
 int svr_resc_size = 0;
 attribute_def job_attr_def[10];
-struct all_jobs alljobs;
+all_jobs alljobs;
 resource_def *svr_resc_def;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 struct server server;
-struct all_jobs array_summary;
+all_jobs array_summary;
 
 
 pbs_queue *find_queuebyname(const char *quename)
@@ -75,7 +75,7 @@ void req_reject(int code, int aux, struct batch_request *preq, const char *HostN
   exit(1);
   }
 
-job *next_job(struct all_jobs *aj, int *iter)
+job *next_job(all_jobs *aj, all_jobs_iterator *iter)
   {
   fprintf(stderr, "The call to next_job to be mocked!!\n");
   exit(1);

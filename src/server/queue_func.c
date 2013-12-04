@@ -234,8 +234,8 @@ pbs_queue *que_alloc(
   pq->qu_qs.qu_type = QTYPE_Unset;
 
   pq->qu_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  pq->qu_jobs = (struct all_jobs *)calloc(1, sizeof(struct all_jobs));
-  pq->qu_jobs_array_sum = (struct all_jobs *)calloc(1, sizeof(struct all_jobs));
+  pq->qu_jobs = new all_jobs();
+  pq->qu_jobs_array_sum = new all_jobs();
   
   if ((pq->qu_mutex == NULL) ||
       (pq->qu_jobs == NULL) ||
@@ -246,8 +246,6 @@ pbs_queue *que_alloc(
     return(NULL);
     }
 
-  initialize_all_jobs_array(pq->qu_jobs);
-  initialize_all_jobs_array(pq->qu_jobs_array_sum);
   pthread_mutex_init(pq->qu_mutex,NULL);
   lock_queue(pq, __func__, NULL, LOGLEVEL);
 
@@ -262,8 +260,7 @@ pbs_queue *que_alloc(
     unlock_sv_qs_mutex(server.sv_qs_mutex, __func__);
 
   /* set up the user info struct */
-  pq->qu_uih = (user_info_holder *)calloc(1, sizeof(user_info_holder));
-  initialize_user_info_holder(pq->qu_uih);
+  pq->qu_uih = new user_info_holder();
 
   /* set the working attributes to "unspecified" */
 
@@ -322,7 +319,7 @@ void que_free(
   if (sv_qs_mutex_held == FALSE)
     unlock_sv_qs_mutex(server.sv_qs_mutex, __func__);
 
-  free_user_info_holder(pq->qu_uih);
+  delete pq->qu_uih;
 
   remove_queue(&svr_queues, pq);
   pq->q_being_recycled = TRUE;
@@ -383,7 +380,6 @@ pbs_queue *find_queuebyname(
   char  *pc;
   pbs_queue *pque = NULL;
   char   qname[PBS_MAXDEST + 1];
-  int    i;
 
   snprintf(qname, sizeof(qname), "%s", quename);
 
@@ -392,16 +388,11 @@ pbs_queue *find_queuebyname(
   if (pc != NULL)
     *pc = '\0';
 
-  pthread_mutex_lock(svr_queues.allques_mutex);
+  svr_queues.lock();
 
-  i = get_value_hash(svr_queues.ht,qname);
+  pque = svr_queues.find(qname);
 
-  if (i >= 0)
-    {
-    pque = (pbs_queue *)svr_queues.ra->slots[i].item;
-    }
-  
-  pthread_mutex_unlock(svr_queues.allques_mutex);
+  svr_queues.unlock();
   
   if (pque != NULL)
     {
@@ -445,35 +436,6 @@ pbs_queue *get_dfltque(void)
 
 
 
-
-void initialize_allques_array(
-
-  all_queues *aq)
-
-  {
-  aq->ra = initialize_resizable_array(INITIAL_QUEUE_SIZE);
-  aq->ht = create_hash(INITIAL_HASH_SIZE);
-
-  aq->allques_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(aq->allques_mutex,NULL);
-  } /* END initialize_all_ques_array() */
-
-
-
-
-void free_alljobs_array(
-
-  struct all_jobs *aj)
-
-  {
-  free(aj->alljobs_mutex);
-  free_resizable_array(aj->ra);
-  free_hash(aj->ht);
-  } /* END free_alljobs_array() */   
-
-
-
-
 int insert_queue(
 
   all_queues *aq,
@@ -482,20 +444,19 @@ int insert_queue(
   {
   int          rc;
 
-  pthread_mutex_lock(aq->allques_mutex);
+  aq->lock();
 
-  if ((rc = insert_thing(aq->ra,pque)) == -1)
+  if(!aq->insert(pque,pque->qu_qs.qu_name))
     {
     rc = ENOMEM;
     log_err(rc, __func__, "No memory to resize the array");
     }
   else
     {
-    add_hash(aq->ht,rc,pque->qu_qs.qu_name);
     rc = PBSE_NONE;
     }
 
-  pthread_mutex_unlock(aq->allques_mutex);
+  aq->unlock();
 
   return(rc);
   } /* END insert_queue() */
@@ -511,28 +472,22 @@ int remove_queue(
 
   {
   int  rc = PBSE_NONE;
-  int  index;
   char log_buf[1000];
 
-  if (pthread_mutex_trylock(aq->allques_mutex))
+  if (aq->trylock())
     {
     unlock_queue(pque, __func__, NULL, LOGLEVEL);
-    pthread_mutex_lock(aq->allques_mutex);
+    aq->lock();
     lock_queue(pque, __func__, NULL, LOGLEVEL);
     }
 
-  if ((index = get_value_hash(aq->ht,pque->qu_qs.qu_name)) < 0)
+  if(!aq->remove(pque->qu_qs.qu_name))
     rc = THING_NOT_FOUND;
-  else
-    {
-    remove_thing_from_index(aq->ra,index);
-    remove_hash(aq->ht,pque->qu_qs.qu_name);
-    }
 
-  snprintf(log_buf, sizeof(log_buf), "index = %d, name = %s", index, pque->qu_qs.qu_name);
+  snprintf(log_buf, sizeof(log_buf), "name = %s", pque->qu_qs.qu_name);
   log_err(-1, __func__, log_buf);
 
-  pthread_mutex_unlock(aq->allques_mutex);
+  aq->unlock();
 
   return(rc);
   } /* END remove_queue() */
@@ -543,18 +498,18 @@ int remove_queue(
 
 pbs_queue *next_queue(
 
-  all_queues *aq,
-  int        *iter)
+  all_queues          *aq,
+  all_queues_iterator *iter)
 
   {
   pbs_queue *pque;
 
-  pthread_mutex_lock(aq->allques_mutex);
+  aq->lock();
 
-  pque = (pbs_queue *)next_thing(aq->ra,iter);
+  pque = iter->get_next_item();
   if (pque != NULL)
     lock_queue(pque, "next_queue", (char *)NULL, LOGLEVEL);
-  pthread_mutex_unlock(aq->allques_mutex);
+  aq->unlock();
 
   if (pque != NULL)
     {
@@ -592,8 +547,6 @@ int get_parent_dest_queues(
   char       jobid[PBS_MAXSVRJOBID + 1];
   char       log_buf[LOCAL_LOG_BUF_SIZE + 1];
   job       *pjob = *pjob_ptr;
-  int        index_parent;
-  int        index_dest;
   int        rc = PBSE_NONE;
 
   strcpy(jobid, pjob->ji_qs.ji_jobid);
@@ -622,47 +575,34 @@ int get_parent_dest_queues(
 
   *parent = NULL;
 
-  pthread_mutex_lock(svr_queues.allques_mutex);
+  svr_queues.lock();
 
-  index_parent = get_value_hash(svr_queues.ht, queue_parent_name);
-  index_dest   = get_value_hash(svr_queues.ht, queue_dest_name);
+  pque_parent = svr_queues.find(queue_parent_name);
+  pque_dest   = svr_queues.find(queue_dest_name);
 
-  if ((index_parent < 0) ||
-      (index_dest < 0))
+  if ((pque_parent == NULL) ||
+      (pque_dest == NULL))
     {
     rc = -1;
     }
   else
     {
-    /* good path */
-    pque_parent = (pbs_queue *)svr_queues.ra->slots[index_parent].item;
-    pque_dest   = (pbs_queue *)svr_queues.ra->slots[index_dest].item;
-
-    if ((pque_parent == NULL) ||
-        (pque_dest == NULL))
+    /* SUCCESS! */
+    if (LOGLEVEL >= 6)
       {
-      rc = -1;
+      snprintf(log_buf, sizeof(log_buf), "Job %s successfully routed:  %s (%p) -> %s (%p)",
+               jobid, queue_parent_name, (void *)pque_parent, queue_dest_name, (void *)pque_dest);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
       }
-    else
-      {
-      /* SUCCESS! */
-      if (LOGLEVEL >= 6)
-        {
-        snprintf(log_buf, sizeof(log_buf), "Job %s successfully routed:  %s (%p, %d) -> %s (%p, %d)",
-                 jobid, queue_parent_name, (void *)pque_parent, index_parent, queue_dest_name, (void *)pque_dest,
-                 index_dest);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-        }
-      lock_queue(pque_parent, __func__, NULL, LOGLEVEL);
-      lock_queue(pque_dest,   __func__, (char *)NULL, LOGLEVEL);
-      *parent = pque_parent;
-      *dest = pque_dest;
+    lock_queue(pque_parent, __func__, NULL, LOGLEVEL);
+    lock_queue(pque_dest,   __func__, (char *)NULL, LOGLEVEL);
+    *parent = pque_parent;
+    *dest = pque_dest;
 
-      rc = PBSE_NONE;
-      }
+    rc = PBSE_NONE;
     }
 
-  pthread_mutex_unlock(svr_queues.allques_mutex);
+  svr_queues.unlock();
 
   if ((*pjob_ptr = svr_find_job(jobid, TRUE)) == NULL)
     rc = -1;

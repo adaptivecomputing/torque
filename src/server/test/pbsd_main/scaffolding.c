@@ -25,7 +25,7 @@ const char *msg_startup2 = "Server Ready, pid = %d, loglevel=%d";
 char pbs_current_user[PBS_MAXUSER];
 const char *msg_svrdown = "Server shutdown completed";
 const char *msg_info_server = "Torque Server Version = %s, loglevel = %d";
-struct all_jobs alljobs;
+all_jobs alljobs;
 long *log_event_mask = NULL;
 const char *msg_startup3 = "%s %s: %s mode and %s exist, \ndo you wish to continue y/(n)?";
 pbs_net_t pbs_server_addr;
@@ -169,7 +169,7 @@ void shutdown_ack(void)
   exit(1);
   }
 
-job *next_job(struct all_jobs *aj, int *iter)
+job *next_job(all_jobs *aj, all_jobs_iterator *iter)
   {
   fprintf(stderr, "The call to next_job needs to be mocked!!\n");
   exit(1);
@@ -229,7 +229,7 @@ work_task *next_task(all_tasks *at, int *iter)
   exit(1);
   }
 
-pbs_queue *next_queue(all_queues *aq, int *iter)
+pbs_queue *next_queue(all_queues *aq, all_queues_iterator *iter)
   {
   fprintf(stderr, "The call to next_queue needs to be mocked!!\n");
   exit(1);

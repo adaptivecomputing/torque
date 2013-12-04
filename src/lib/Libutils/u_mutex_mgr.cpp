@@ -112,7 +112,6 @@ using namespace std;
     int rc;
 
     unlock_on_exit = true;
-    locked = true;
     mutex_valid = true;
 
     /* validate the mutex */

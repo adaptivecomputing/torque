@@ -163,7 +163,7 @@ int job_route(job *jobp)
   exit(1);
   }
 
-int svr_enquejob(job *pjob, int has_sv_qs_mutex, int prev_index, bool have_reservation)
+int svr_enquejob(job *pjob, int has_sv_qs_mutex, char *prev_id, bool have_reservation)
   {
   fprintf(stderr, "The call to svr_enquejob to be mocked!!\n");
   exit(1);
@@ -383,3 +383,28 @@ char *pbs_geterrmsg(int con)
   {
   return(strdup("err"));
   }
+
+int ctnodes(char *spec)
+  {
+  int   ct = 0;
+  char *pc;
+
+  while (1)
+    {
+    while (isspace((int)*spec))
+      ++spec;
+
+    if (isdigit((int)*spec))
+      ct += atoi(spec);
+    else
+      ++ct;
+
+    if ((pc = strchr(spec, '+')) == NULL)
+      break;
+
+    spec = pc + 1;
+    }  /* END while (1) */
+
+  return(ct);
+  }  /* END ctnodes() */
+
