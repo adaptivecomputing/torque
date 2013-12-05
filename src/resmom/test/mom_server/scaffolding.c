@@ -287,8 +287,13 @@ char *disrst(tcp_chan *chan, int *ret)
 
 mom_hierarchy_t *initialize_mom_hierarchy()
   {
-  fprintf(stderr, "The call to initialize_mom_hierarchy needs to be mocked!!\n");
-  exit(1);
+  mom_hierarchy_t *nt = (mom_hierarchy_t *)calloc(1, sizeof(mom_hierarchy_t));
+  nt->paths = new mom_paths();
+  nt->current_path  = -1;
+  nt->current_level = -1;
+  nt->current_node  = -1;
+
+  return(nt);
   }
 
 int remove_last_thing(resizable_array *ra)

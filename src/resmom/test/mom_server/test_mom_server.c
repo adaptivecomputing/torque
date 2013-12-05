@@ -7,10 +7,45 @@
 
 #include "pbs_error.h"
 
-START_TEST(test_one)
+extern mom_hierarchy_t *mh;
+
+extern void sort_paths();
+
+
+START_TEST(test_sort_paths)
   {
+  char before[500];
+  char after[500];
+  mh = initialize_mom_hierarchy();
+  for(int paths = 0;paths < 5;paths++)
+    {
+    mom_levels *lvl = new  mom_levels();
+    mh->paths->push_back(lvl);
+    for(int levels = 0;levels < (15 - paths);levels++)
+      {
+      mom_nodes *nd = new mom_nodes();
+      lvl->push_back(nd);
+      }
+    }
+  before[0] = '\0';
+  for(size_t i = 0;i < mh->paths->size();i++)
+    {
+    char num[10];
+    sprintf(num,"%d ",(int)mh->paths->at(i)->size());
+    strcat(before,num);
+    }
 
+  sort_paths();
 
+  after[0] = '\0';
+  for(size_t i = 0;i < mh->paths->size();i++)
+    {
+    char num[10];
+    sprintf(num,"%d ",(int)mh->paths->at(i)->size());
+    strcat(after,num);
+    }
+  fail_unless(strcmp(before,"15 14 13 12 11 ") == 0);
+  fail_unless(strcmp(after,"11 12 13 14 15 ") == 0);
   }
 END_TEST
 
@@ -24,8 +59,8 @@ END_TEST
 Suite *mom_server_suite(void)
   {
   Suite *s = suite_create("mom_server_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_sort_paths");
+  tcase_add_test(tc_core, test_sort_paths);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");

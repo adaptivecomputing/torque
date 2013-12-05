@@ -117,6 +117,8 @@
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
 
+#include "resizable_array.h"
+
 
 #define MSG_LEN_LONG 160
 

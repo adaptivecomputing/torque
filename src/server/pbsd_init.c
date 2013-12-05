@@ -621,19 +621,19 @@ void check_if_in_nodes_file(
  */
 void convert_level_to_send_format(
 
-  resizable_array                *level,
+  mom_nodes                      *nodes,
   int                             level_index,
   boost::ptr_vector<std::string> &send_format)
 
   {
   node_comm_t       *nc;
   std::stringstream  level_string;
-  int                node_iter = -1;
 
   send_format.push_back(new std::string("<sl>"));
 
-  while ((nc = (node_comm_t *)next_thing(level, &node_iter)) != NULL)
+  for(mom_nodes::iterator nodes_iter = nodes->begin();nodes_iter != nodes->end();nodes_iter++)
     {
+    nc = *nodes_iter;
     unsigned short rm_port = 0;
 
     if (level_string.str().size() != 0)
@@ -670,17 +670,15 @@ void convert_level_to_send_format(
  */
 void convert_path_to_send_format(
 
-  resizable_array                *path,
+  mom_levels                     *levels,
   boost::ptr_vector<std::string> &send_format)
 
   {
-  int              levels_iter = -1;
-  resizable_array *level;
-    
+  int level_index = 0;
   send_format.push_back(new std::string("<sp>"));
   
-  while ((level = (resizable_array *)next_thing(path, &levels_iter)) != NULL)
-    convert_level_to_send_format(level, levels_iter, send_format);
+  for(mom_levels::iterator levels_iter = levels->begin();levels_iter != levels->end();levels_iter++)
+    convert_level_to_send_format(*levels_iter, level_index++, send_format);
 
   send_format.push_back(new std::string("</sp>"));
   } /* END convert_path_to_send_format() */
@@ -754,11 +752,9 @@ void convert_mom_hierarchy_to_send_format(
   boost::ptr_vector<std::string> &send_format)
 
   {
-  resizable_array *path;
-  int              paths_iter = -1;
 
-  while ((path = (resizable_array *)next_thing(mh->paths, &paths_iter)) != NULL)
-    convert_path_to_send_format(path, send_format);
+  for(mom_paths::iterator paths_iter = mh->paths->begin();paths_iter != mh->paths->end();paths_iter++)
+    convert_path_to_send_format(*paths_iter, send_format);
     
   if (send_format.size() == 0)
     {

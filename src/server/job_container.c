@@ -97,6 +97,7 @@
 #include "ji_mutex.h"
 #include <boost/ptr_container/ptr_vector.hpp>
 
+#include "resizable_array.h"
 
 
 

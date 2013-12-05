@@ -4270,28 +4270,25 @@ void parse_command_line(
 bool verify_mom_hierarchy()
 
   {
-  int              paths_iter = -1;
   mom_hierarchy_t *tmp_hierarchy = initialize_mom_hierarchy();
 
-  resizable_array *paths;
   int              path_index = 0;
   bool             legitimate_hierarchy = false;
 
-  while ((paths = (resizable_array *)next_thing(mh->paths, &paths_iter)) != NULL)
+  for(mom_paths::iterator paths_iter = mh->paths->begin();paths_iter != mh->paths->end();paths_iter++)
     {
-    resizable_array *level;
-    int              levels_iter = -1;
+    mom_levels      *levels = *paths_iter;
     int              level_index = 0;
     bool             continue_on_path = true;
     bool             legitimate_path = false;
 
-    while ((level = (resizable_array *)next_thing(paths, &levels_iter)) != NULL)
+    for(mom_levels::iterator levels_iter = levels->begin();levels_iter != levels->end();levels_iter++)
       {
-      node_comm_t     *nc;
-      int              node_iter = -1;
+      mom_nodes       *nodes = *levels_iter;
 
-      while ((nc = (node_comm_t *)next_thing(level, &node_iter)) != NULL)
+      for(mom_nodes::iterator nodes_iter = nodes->begin();nodes_iter != nodes->end();nodes_iter++)
         {
+        node_comm_t *nc = *nodes_iter;
         if (!strcmp(nc->name, mom_alias))
           continue_on_path = false;
         else
@@ -4306,10 +4303,9 @@ bool verify_mom_hierarchy()
       
       if (continue_on_path == true)
         {
-        node_iter = -1;
-
-        while ((nc = (node_comm_t *)next_thing(level, &node_iter)) != NULL)
+        for(mom_nodes::iterator nodes_iter = nodes->begin();nodes_iter != nodes->end();nodes_iter++)
           {
+          node_comm_t *nc = *nodes_iter;
           struct addrinfo *addr_info;
           if (pbs_getaddrinfo(nc->name, NULL, &addr_info) == 0)
             {

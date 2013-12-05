@@ -1,5 +1,6 @@
 #include "alps_constants.h"
 #include "track_alps_reservations.h"
+#include "resizable_array.h"
 #include <check.h>
 
 

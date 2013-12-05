@@ -10,6 +10,7 @@
 #include "net_connect.h" /* pbs_net_t */
 #include "server_limits.h" /* pbs_net_t. Also defined in net_connect.h */
 #include "pbs_job.h" /* job_file_delete_info */
+#include "resizable_array.h"
 
 int is_login_node = 0;
 char *apbasil_path = NULL;
@@ -131,7 +132,7 @@ resizable_array *initialize_resizable_array(
   }
 
 int insert_thing(
-    
+
   resizable_array *ra,
   void             *thing)
 

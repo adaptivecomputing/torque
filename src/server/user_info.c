@@ -85,6 +85,8 @@
 #include "array.h"
 #include "server.h"
 
+#include "resizable_array.h"
+
 user_info_holder users;
 
 

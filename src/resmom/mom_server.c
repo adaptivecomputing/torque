@@ -2051,22 +2051,16 @@ int process_level_string(
 void sort_paths()
 
   {
-  resizable_array *path1;
-  resizable_array *path2;
-  int forwards_iter = -1;
-  int backwards_iter;
-
-  while ((path1 = (resizable_array *)next_thing(mh->paths, &forwards_iter)) != NULL)
+  for(int i = 0;i < (int)mh->paths->size();i++)
     {
-    backwards_iter = -1;
-
-    while (((path2 = (resizable_array *)next_thing_from_back(mh->paths, &backwards_iter)) != NULL) &&
-           (path2 != path1))
+    for(int j = (int)(mh->paths->size() -1);(j >= 0)&&(j != i);j--)
       {
-      if (path2->num < path1->num)
+      if(mh->paths->at(j)->size() < mh->paths->at(i)->size())
         {
         /* swap positions */
-        swap_things(mh->paths, path1, path2);
+        mom_levels *tmp = mh->paths->at(i);
+        mh->paths->at(i) = mh->paths->at(j);
+        mh->paths->at(j) = tmp;
         }
       }
     }
@@ -2119,7 +2113,7 @@ int read_cluster_addresses(
       if (path_complete == FALSE)
         {
         /* we were not in the last path, so delete it */
-        remove_last_thing(mh->paths);
+        mh->paths->pop_back();
         path_index--;
         hierarchy_file.clear();
         }

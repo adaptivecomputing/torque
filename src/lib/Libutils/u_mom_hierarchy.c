@@ -112,34 +112,26 @@ void free_mom_hierarchy(
   mom_hierarchy_t *mh)
 
   {
-  resizable_array *paths;
-  resizable_array *levels;
-  node_comm_t     *nc;
-  int              paths_iter = -1;
-  int              levels_iter = -1;
-  int              node_iter = -1;
 
-  while ((paths = (resizable_array *)next_thing(mh->paths, &paths_iter)) != NULL)
+  for(mom_paths::iterator paths_iter = mh->paths->begin();paths_iter != mh->paths->end();paths_iter++)
     {
-    levels_iter = -1;
-
+    mom_levels *levels = *paths_iter;
     /* free each level */
-    while ((levels = (resizable_array *)next_thing(paths, &levels_iter)) != NULL)
+    for(mom_levels::iterator levels_iter = levels->begin();levels_iter != levels->end();levels_iter++)
       {
-      node_iter = -1;
+      mom_nodes *nodes = *levels_iter;
 
       /* free each node_comm_t */
-     while ((nc = (node_comm_t *)next_thing(levels, &node_iter)) != NULL)
+      for(mom_nodes::iterator nodes_iter = nodes->begin();nodes_iter != nodes->end();nodes_iter++)
         {
-        free(nc);
+        free(*nodes_iter);
         }
-
-      free_resizable_array(levels);
+      delete nodes;
       }
 
-    free_resizable_array(paths);
+    delete levels;
     }
-
+  delete mh->paths;
   free(mh);
   } /* END free_mom_hierarchy() */
 
@@ -150,7 +142,7 @@ mom_hierarchy_t *initialize_mom_hierarchy()
 
   {
   mom_hierarchy_t *nt = (mom_hierarchy_t *)calloc(1, sizeof(mom_hierarchy_t));
-  nt->paths = initialize_resizable_array(INITIAL_SIZE_NETWORK);
+  nt->paths = new mom_paths();
 
   if (nt->paths == NULL)
     {
@@ -179,18 +171,17 @@ int add_network_entry(
   int                 level)
 
   {
-  int              rc;
   node_comm_t     *nc = (node_comm_t *)calloc(1, sizeof(node_comm_t));
-  resizable_array *levels;
-  resizable_array *node_comm_entries;
+  mom_levels      *levels;
+  mom_nodes       *node_comm_entries;
 
   /* check if the path is already in the array */
-  if (nt->paths->num > path)
-    levels = (resizable_array *)nt->paths->slots[path+1].item;
+  if (nt->paths->size() > (size_t)path)
+    levels = nt->paths->at(path);
   else
     {
     /* insert a new path */
-    levels = initialize_resizable_array(INITIAL_SIZE_NETWORK);
+    levels = new mom_levels();
 
     if (levels == NULL)
       {
@@ -199,31 +190,21 @@ int add_network_entry(
       return(-1);
       }
 
-    if ((rc = insert_thing(nt->paths,levels)) < 0)
-      {
-      free(nc);
-
-      return(rc);
-      }
+    nt->paths->push_back(levels);
     }
 
   /* check if the level is in the array already */
-  if (levels->num > level)
-    node_comm_entries = (resizable_array *)levels->slots[level+1].item;
+  if (levels->size() > (size_t)level)
+    node_comm_entries = levels->at(level);
   else
     {
     /* insert a new level */
-    node_comm_entries = initialize_resizable_array(INITIAL_SIZE_NETWORK);
+    node_comm_entries = new mom_nodes();
 
     if (node_comm_entries == NULL)
       return(-1);
 
-    if ((rc = insert_thing(levels,node_comm_entries)) < 0)
-      {
-      free(nc);
-
-      return(rc);
-      }
+    levels->push_back(node_comm_entries);
     }
 
   /* finally, insert the entry into the node_comm_entries */
@@ -241,9 +222,7 @@ int add_network_entry(
   else
     strcpy(nc->name,name);
 
-  if ((rc = insert_thing(node_comm_entries,nc)) < 0)
-    return(rc);
-  else
+  node_comm_entries->push_back(nc);
     return(PBSE_NONE);
   } /* END add_network_entry() */
 
@@ -363,27 +342,27 @@ node_comm_t *force_path_update(
   int                 updated  = FALSE;
   time_t              time_now = time(NULL);
  
-  resizable_array    *levels;
-  resizable_array    *node_comm_entries;
-  node_comm_t        *nc;
+  mom_levels          *levels;
+  mom_nodes           *node_comm_entries;
+  node_comm_t         *nc;
 
 
-  if (nt->paths->num > 1)
+  if (nt->paths->size() > 1)
     {
-    path = nt->paths->num-1;
+    path = nt->paths->size() - 1;
 
     while ((path >= 0) &&
            (updated == FALSE))
       {
-      levels = (resizable_array *)nt->paths->slots[nt->paths->num].item;
+      levels = nt->paths->at(nt->paths->size() - 1);
      
-      for (level = levels->num - 1; level >= 0 && updated == FALSE; level--) 
+      for (level = levels->size() - 1; level >= 0 && updated == FALSE; level--)
         {
-        node_comm_entries = (resizable_array *)levels->slots[level+1].item;
+        node_comm_entries = levels->at(level);
         
-        for (node = 0; node < node_comm_entries->num; node++)
+        for (node = 0; node < (int)node_comm_entries->size(); node++)
           {
-          nc = (node_comm_t *)node_comm_entries->slots[node+1].item;
+          nc = node_comm_entries->at(node);
 
           if ((nc->bad == TRUE) &&
               (time_now - nc->mtime <= mom_hierarchy_retry_time))
@@ -408,15 +387,15 @@ node_comm_t *force_path_update(
     }
   else
     {
-    levels = (resizable_array *)nt->paths->slots[nt->paths->num].item;
+    levels = nt->paths->at(nt->paths->size()-1);
 
-    for (level = levels->num - 1; level >= 0 && updated == FALSE; level--)
+    for (level = levels->size() - 1; level >= 0 && updated == FALSE; level--)
       {
-      node_comm_entries = (resizable_array *)levels->slots[level+1].item;
+      node_comm_entries = levels->at(level);
 
-      for (node = 0; node < node_comm_entries->num; node++)
+      for (node = 0; node < (int)node_comm_entries->size(); node++)
         {
-        nc = (node_comm_t *)node_comm_entries->slots[node+1].item;
+        nc = node_comm_entries->at(node);
 
         if ((nc->bad == TRUE) &&
             (time_now - nc->mtime <= mom_hierarchy_retry_time))
@@ -446,12 +425,12 @@ node_comm_t *update_current_path(
   mom_hierarchy_t *nt)
 
   {
-  resizable_array *levels;
-  resizable_array *node_comm_entries;
+  mom_levels      *levels;
+  mom_nodes       *node_comm_entries;
   node_comm_t     *nc;
 
   /* check to make sure we're initialized */
-  if (nt->paths->num == 0)
+  if (nt->paths->size() == 0)
     return(NULL);
 
   /* if we haven't picked a path, update */
@@ -460,9 +439,9 @@ node_comm_t *update_current_path(
       (nt->current_node  < 0))
     return(force_path_update(nt));
 
-  levels = (resizable_array *)nt->paths->slots[nt->current_path+1].item;
-  node_comm_entries = (resizable_array *)levels->slots[nt->current_level+1].item;
-  nc = (node_comm_t *)node_comm_entries->slots[nt->current_node+1].item;
+  levels = nt->paths->at(nt->current_path);
+  node_comm_entries = levels->at(nt->current_level);
+  nc = node_comm_entries->at(nt->current_node);
 
   if (nc->stream < 0)
     return(force_path_update(nt));

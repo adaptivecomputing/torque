@@ -84,10 +84,10 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <vector>
 #include <netdb.h>
 #include "tcp.h" /* tcp_chan */
 
-#include "resizable_array.h"
 
 
 #define INITIAL_SIZE_NETWORK    1
@@ -109,6 +109,9 @@ typedef struct node_comm_t
   } node_comm_t;
 
 
+ typedef std::vector<node_comm_t *> mom_nodes;
+ typedef std::vector<mom_nodes *> mom_levels;
+ typedef std::vector<mom_levels *> mom_paths;
 
 /* mom_hierarchy_t holder */
 typedef struct mom_hierarchy
@@ -116,7 +119,7 @@ typedef struct mom_hierarchy
   int              current_path;  /* index of the active path */
   int              current_level; /* index of the active level of the active path */
   int              current_node;  /* index of the active node from that path */
-  resizable_array *paths;         /* the paths we currently have, a 3D array of resizable arrays */
+  mom_paths        *paths;         /* the paths we currently have, a 3D array of resizable arrays */
   } mom_hierarchy_t;
 
 

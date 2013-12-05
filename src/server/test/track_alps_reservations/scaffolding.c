@@ -6,6 +6,7 @@
 #include "utils.h"
 #include "pbs_nodes.h"
 #include "batch_request.h"
+#include "resizable_array.h"
 
 int LOGLEVEL;
 
