@@ -25,6 +25,7 @@
 %bcond_with    numa
 %bcond_with    pam
 %bcond_with    top
+%bcond_with    readline
 
 ### Features enabled by default
 %bcond_without scp
@@ -98,6 +99,9 @@ BuildRequires: munge-devel
 %endif
 %if %{with pam}
 BuildRequires: pam-devel
+%endif
+%if %{with readline}
+BuildRequires: readline-devel
 %endif
 Conflicts: pbspro, openpbs, openpbs-oscar
 Obsoletes: scatorque <= %{version}-%{release}, %{!?with_gui:%{name}-gui < %{version}-%{release}}
