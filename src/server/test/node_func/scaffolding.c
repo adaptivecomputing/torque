@@ -5,7 +5,6 @@
 #include <netinet/in.h>
 
 
-#include "resizable_array.h" /* resizable_array */
 #include "pbs_nodes.h" /* all_nodes, pbsnode */
 #include "attribute.h" /* attribute_def, pbs_attribute, svrattrl */
 #include "server.h" /* server */
@@ -52,19 +51,9 @@ boost::ptr_vector<std::string> hierarchy_holder;
 extern int cray_enabled;
 
 
-int insert_thing(resizable_array *ra, void *thing)
-  {
-  return(0);
-  }
-
 svrattrl *attrlist_create(const char *aname, const char *rname, int vsize)
   {
   return(NULL);
-  }
-
-int remove_thing(resizable_array *ra, void *thing)
-  {
-  return(0);
   }
 
 AvlTree AVL_delete_node(u_long key, uint16_t port, AvlTree tree)
@@ -104,22 +93,6 @@ void *get_next(list_link pl, char *file, int line)
   return(NULL);
   }
 
-resizable_array *initialize_resizable_array(int size)
-  {
-  resizable_array *ra = (resizable_array *)calloc(1, sizeof(resizable_array));
-  size_t           amount = sizeof(slot) * size;
-  size = 10;
-
-  ra->max       = size;
-  ra->num       = 0;
-  ra->next_slot = 1;
-  ra->last      = 0;
-
-  ra->slots = (slot *)calloc(1, amount);
-
-  return(ra);
-  }
-
 struct pbsnode *AVL_find(u_long key, uint16_t port, AvlTree tree)
   {
   static struct pbsnode numa;
@@ -139,25 +112,6 @@ void free_attrlist(tlist_head *pattrlisthead)
   {
   fprintf(stderr, "The call to free_attrlist needs to be mocked!!\n");
   exit(1);
-  }
-
-void *next_thing(resizable_array *ra, int *iter)
-  {
-  int i;
-  void *thing;
-
-  if(ra == NULL) return NULL;
-
-  if (*iter == -1)
-    i = 1;
-  else
-    i = *iter;
-
-  thing = ra->slots[i++].item;
-
-  *iter = i;
-
-  return(thing);
   }
 
 void append_link(tlist_head *head, list_link *new_link, void *pobj)
@@ -186,19 +140,6 @@ int lock_node(struct pbsnode *the_node, const char *id, const char *msg, int log
   { 
   return(0); 
   }                           
-
-void *pop_thing(resizable_array *ra)
-
-  {
-  return(NULL);
-  }
-
-int is_present(resizable_array *ra, void *thing)
-  {
-  fprintf(stderr, "The call to is_present needs to be mocked!!\n");
-  exit(1);                    
-  }
-
 
 struct tcp_chan* DIS_tcp_setup(int sock)
   {
@@ -250,16 +191,6 @@ void close_conn(int sd, int has_mutex)
   }
 
 int get_svr_attr_str(int index, char **str)
-  {
-  return(0);
-  }
-
-int remove_thing_from_index(resizable_array *ra, int index)
-  {
-  return(0);
-  }
-
-int insert_thing_after(resizable_array *ra, void *thing, int index)
   {
   return(0);
   }

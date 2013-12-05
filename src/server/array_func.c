@@ -2316,7 +2316,7 @@ int remove_array(
   if (pa == NULL)
     rc = PBSE_NONE;
   else
-    if(allarrays.remove(pa->ai_qs.parent_id))
+    if(!allarrays.remove(pa->ai_qs.parent_id))
       rc = THING_NOT_FOUND;
 
   allarrays.unlock();

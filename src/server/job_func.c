@@ -142,7 +142,6 @@
 #include "portability.h"
 #include "array.h"
 #include "pbs_job.h"
-#include "resizable_array.h"
 #include "svr_func.h" /* get_svr_attr_* */
 #include "issue_request.h" /* release_req */
 #include "ji_mutex.h"

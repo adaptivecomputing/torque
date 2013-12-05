@@ -13,8 +13,6 @@
 #include "queue.h" /* pbs_queue */
 #include "node_func.h" /* node_info */
 
-int check_and_resize(resizable_array *ra);
-void update_next_slot(resizable_array *ra);
 int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging);
 int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging);
 
@@ -295,105 +293,6 @@ int insert_job(
 
   return(rc);
   } /* END insert_job() */
-
-
-/*
- * inserts an item, resizing the array if necessary
- *
- * @return the index in the array or -1 on failure
- */
-int insert_thing(
-
-  resizable_array *ra,
-  void             *thing)
-
-  {
-  int rc;
-
-  /* check if the array must be resized */
-  if ((rc = check_and_resize(ra)) != PBSE_NONE)
-    {
-    return(-1);
-    }
-
-  ra->slots[ra->next_slot].item = thing;
-
-  /* save the insertion point */
-  rc = ra->next_slot;
-
-  /* handle the backwards pointer, next pointer is left at zero */
-  ra->slots[rc].prev = ra->last;
-
-  /* make sure the empty slot points to the next occupied slot */
-  if (ra->last == ALWAYS_EMPTY_INDEX)
-    {
-    ra->slots[ALWAYS_EMPTY_INDEX].next = rc;
-    }
-
-  /* update the last index */
-  ra->slots[ra->last].next = rc;
-  ra->last = rc;
-
-  /* update the new item's next index */
-  ra->slots[rc].next = ALWAYS_EMPTY_INDEX;
-
-  /* increase the count */
-  ra->num++;
-
-  update_next_slot(ra);
-
-  return(rc);
-  } /* END insert_thing() */
-
-/*
- * checks if the array needs to be resized, and resizes if necessary
- *
- * @return PBSE_NONE or ENOMEM
- */
-int check_and_resize(
-
-    resizable_array *ra)
-
-  {
-  slot        *tmp;
-  size_t       remaining;
-  size_t       size;
-
-  if (ra->max == ra->num + 1)
-    {
-    /* double the size if we're out of space */
-    size = (ra->max * 2) * sizeof(slot);
-
-    if ((tmp = (slot *)realloc(ra->slots,size)) == NULL)
-      {
-      return(ENOMEM);
-      }
-
-    remaining = ra->max * sizeof(slot);
-
-    memset(tmp + ra->max, 0, remaining);
-
-    ra->slots = tmp;
-
-    ra->max = ra->max * 2;
-    }
-
-  return(PBSE_NONE);
-  } /* END check_and_resize() */
-
-
-/* 
- * updates the next slot pointer if needed \
- */
-void update_next_slot(
-
-    resizable_array *ra) /* M */
-
-  {
-  while ((ra->next_slot < ra->max) &&
-      (ra->slots[ra->next_slot].item != NULL))
-    ra->next_slot++;
-  } /* END update_next_slot() */
 
 
 job *next_job(

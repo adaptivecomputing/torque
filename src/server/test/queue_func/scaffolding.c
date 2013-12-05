@@ -4,7 +4,6 @@
 
 #include "queue.h" /* all_queues */
 #include "server.h" /* server */
-#include "resizable_array.h" /* resizable_array */
 #include "attribute.h" /* pbs_attribute */
 #include "pbs_job.h" /* job */
 #include "user_info.h"
@@ -15,18 +14,6 @@ attribute_def que_attr_def[10];
 struct server server;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 char *path_queues;
-
-int insert_thing(resizable_array *ra, void *thing)
-  {
-  fprintf(stderr, "The call to insert_thing needs to be mocked!!\n");
-  exit(1);
-  }
-
-int remove_thing_from_index(resizable_array *ra, int index)
-  {
-  fprintf(stderr, "The call to remove_thing_from_index needs to be mocked!!\n");
-  exit(1);
-  }
 
 void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
   {
@@ -40,26 +27,7 @@ int save_acl(pbs_attribute *attr, attribute_def *pdef, const char *subdir, const
   exit(1);
   }
 
-resizable_array *initialize_resizable_array(int size)
-  {
-  fprintf(stderr, "The call to initialize_resizable_array needs to be mocked!!\n");
-  exit(1);
-  }
-
-void *next_thing(resizable_array *ra, int *iter)
-  {
-  fprintf(stderr, "The call to next_thing needs to be mocked!!\n");
-  exit(1);
-  }
-
 int insert_into_queue_recycler(pbs_queue *pq)
-  {
-  return(0);
-  }
-
-void free_resizable_array(resizable_array *ra) {}
-
-int get_svr_attr_str(int index, char **str)
   {
   return(0);
   }

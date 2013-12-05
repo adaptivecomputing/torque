@@ -3,7 +3,6 @@
 #include <stdio.h> /* fprintf */
 
 #include "pbs_job.h" /* job_recycler, all_jobs, job */
-#include "resizable_array.h"
 
 job_recycler recycler;
 int          LOGLEVEL;
@@ -31,11 +30,6 @@ int remove_job(all_jobs *aj, job *pjob)
   {
   fprintf(stderr, "The call to remove_job to be mocked!!\n");
   exit(1);
-  }
-
-void *next_thing(resizable_array *ra, int *iter)
-  {
-  return(NULL);
   }
 
 int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)

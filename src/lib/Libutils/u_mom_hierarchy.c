@@ -92,7 +92,6 @@
 #include "pbs_ifl.h"
 #include "dis.h"
 #include "pbs_error.h"
-#include "resizable_array.h"
 #include "utils.h"
 #include "../Liblog/pbs_log.h"
 #include "../Libnet/lib_net.h" /* socket_get_tcp_priv, socket_connect_addr */

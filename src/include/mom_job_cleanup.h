@@ -82,7 +82,6 @@
 #include <string>
 #include <boost/ptr_container/ptr_vector.hpp>
 #include "pbs_ifl.h"
-#include "resizable_array.h"
 
 class exiting_job_info
   {

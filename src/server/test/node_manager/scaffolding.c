@@ -380,29 +380,7 @@ int insert_addr_name_info(
   return(0);
   }
 
-void *next_thing(resizable_array *ra, int *iter)
-  {
-  return(NULL);
-  }
-
-resizable_array *initialize_resizable_array(int size)
-  {
-  return(NULL);
-  }
-
 int handle_complete_first_time(job *pjob)
-  {
-  return(0);
-  }
-
-void free_resizable_array(resizable_array *ra) {}
-
-void *remove_thing_memcmp(resizable_array *ra, void *thing, unsigned int size)
-  {
-  return(NULL);
-  }
-
-int insert_thing(resizable_array *ra, void *thing)
   {
   return(0);
   }
@@ -410,11 +388,6 @@ int insert_thing(resizable_array *ra, void *thing)
 int svr_setjobstate(job *pjob, int newstate, int newsubstate, int has_queue_mutex)
   {
   return(0);
-  }
-
-void *pop_thing(resizable_array *ra)
-  {
-  return(NULL);
   }
 
 int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)

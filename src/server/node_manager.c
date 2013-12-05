@@ -742,68 +742,6 @@ void *finish_job(
   return(NULL);
   } /* END finish_job() */
 
-
-
-
-int remove_jobs_that_have_disappeared(
-
-  struct pbsnode  *pnode,
-  resizable_array *reported_ms_jobs,
-  time_t           timestamp)
-
-  {
-  int   iter = -1;
-  char  log_buf[LOCAL_LOG_BUF_SIZE];
-  std::string jobid;
-  
-  while (pnode->nd_ms_jobs->size() != 0)
-    {
-    jobid = pnode->nd_ms_jobs->back();
-    pnode->nd_ms_jobs->pop_back();
-    job *pjob;
-
-    /* locking priority is job before node */
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
-    pjob = svr_find_job((char *)jobid.c_str(), TRUE);
-    lock_node(pnode, __func__, NULL, LOGLEVEL);
-
-    if (pjob == NULL)
-      {
-      continue;
-      }
-    mutex_mgr job_mgr(pjob->ji_mutex,true);
-
-    /* 45 seconds is typically the time between intervals for each update 
-     * from the mom. Add this in case a stale update is processed and the job
-     * hadn't started at the time the update was sent */
-    if ((pjob->ji_qs.ji_state >= JOB_STATE_EXITING) ||
-        (pjob->ji_qs.ji_substate < JOB_SUBSTATE_RUNNING) ||
-        (pjob->ji_wattr[JOB_ATR_start_time].at_val.at_long > timestamp - 45))
-      {
-      job_mgr.unlock();
-      continue;
-      }
-
-    job_mgr.unlock();
-    /* mom didn't report this job - it has exited unexpectedly */
-    snprintf(log_buf, sizeof(log_buf),
-      "Server thinks job %s is on node %s, but the mom doesn't. Terminating job",
-      jobid.c_str(), pnode->nd_name);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid.c_str(), log_buf);
-
-    enqueue_threadpool_request(finish_job, (char *)jobid.c_str());
-    }
-
-  char *jid;
-  /* now replace the old resizable array with the ones currently reported */
-  while ((jid = (char *)next_thing(reported_ms_jobs, &iter)) != NULL)
-    pnode->nd_ms_jobs->push_back(jid);
-
-  return(PBSE_NONE);
-  } /* END remove_jobs_that_have_disappeared() */
-
-
-
 /*
  * sync_node_jobs() - determine if a MOM has a stale job and possibly delete it
  *

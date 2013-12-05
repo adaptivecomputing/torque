@@ -627,24 +627,6 @@ int add_execution_slot(struct pbsnode *pnode)
   return(0);
   }
 
-resizable_array *initialize_resizable_array(
-
-  int               size)
-
-  {
-  resizable_array *ra = (resizable_array*)calloc(1, sizeof(resizable_array));
-  size_t           amount = sizeof(slot) * size;
-
-  ra->max       = size;
-  ra->num       = 0;
-  ra->next_slot = 1;
-  ra->last      = 0;
-
-  ra->slots = (slot *)calloc(1, amount);
-
-  return(ra);
-  } /* END initialize_resizable_array() */
-
 mom_hierarchy_t *initialize_mom_hierarchy()
 
   {

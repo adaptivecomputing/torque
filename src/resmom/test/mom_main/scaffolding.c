@@ -16,7 +16,6 @@
 #include "server_limits.h" /* pbs_net_t. Also defined in net_connect.h */
 #include "threadpool.h" /* threadpool_t */
 #include "list_link.h" /* list_link, tlist_head */
-#include "resizable_array.h" /* resizable_array */
 #include "pbs_nodes.h" /* pbsnode */
 #include "attribute.h" /* pbs_attribute */
 #include "resource.h" /* resource_def */
@@ -42,7 +41,6 @@ short            memory_pressure_duration  = 0; /* 0: off, >0: check and kill */
 extern mom_hierarchy_t *mh;
 
 mom_server     mom_servers[PBS_MAXSERVER];
-resizable_array *received_statuses;
 int mom_server_count = 0;
 const char *msg_daemonname = "unset";
 struct sig_tbl sig_tbl[2];
@@ -508,21 +506,6 @@ void *get_next(list_link pl, char *file, int line)
   exit(1);
   }
 
-resizable_array *initialize_resizable_array(int size)
-  {
-  resizable_array *ra = (resizable_array*)calloc(1, sizeof(resizable_array));
-  size_t           amount = sizeof(slot) * size;
-
-  ra->max       = size;
-  ra->num       = 0;
-  ra->next_slot = 1;
-  ra->last      = 0;
-
-  ra->slots = (slot *)calloc(1, amount);
-
-  return(ra);
-  }
-
 int log_open(char *filename, char *directory)
   {
   fprintf(stderr, "The call to log_open needs to be mocked!!\n");
@@ -604,12 +587,6 @@ void log_roll(int max_depth)
 int init_resc_defs(void)
   {
   fprintf(stderr, "The call to init_resc_defs needs to be mocked!!\n");
-  exit(1);
-  }
-
-int swap_things(resizable_array *ra, void *thing1, void *thing2)
-  {
-  fprintf(stderr, "The call to swap_things needs to be mocked!!\n");
   exit(1);
   }
 
@@ -734,21 +711,9 @@ char *netaddr(struct sockaddr_in *sai)
   exit(1);
   }
 
-int remove_thing(resizable_array *ra, void *thing)
-  {
-  fprintf(stderr, "The call to remove_thing needs to be mocked!!\n");
-  exit(1);
-  }
-
 int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size)
   {
   fprintf(stderr, "The call to tcp_connect_sockaddr needs to be mocked!!\n");
-  exit(1);
-  }
-
-int insert_thing(resizable_array *ra, void *thing)
-  {
-  fprintf(stderr, "The call to insert_thing needs to be mocked!!\n");
   exit(1);
   }
 
@@ -762,13 +727,6 @@ int diswul(tcp_chan *chan, unsigned long value)
   {
   fprintf(stderr, "The call to diswul needs to be mocked!!\n");
   exit(1);
-  }
-
-void *next_thing(resizable_array *ra, int *iter)
-  {
-  if (parsing_hierarchy)
-    received_cluster_addrs = true;
-  return(NULL);
   }
 
 int im_compose(tcp_chan *chan, char *jobid, char *cookie, int command, tm_event_t event, tm_task_id taskid)
@@ -797,16 +755,6 @@ void shutdown_to_server(int ServerIndex) {}
 void DIS_tcp_cleanup(struct tcp_chan *chan) {}
 
 void initialize_network_info() {}
-
-void *pop_thing(resizable_array *ra)
-  {
-  return(NULL);
-  }
-
-int insert_thing_after(resizable_array *ra, void *thing, int i)
-  {
-  return(0);
-  }
 
 ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
   {

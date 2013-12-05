@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "resizable_array.h"
 #include "pbs_job.h"
 
 all_jobs        array_summary;

@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 
-#include "resizable_array.h" /* resizable_array */
 #include "pbs_job.h" /* job */
 #include "batch_request.h" /* batch_request */
 #include "attribute.h" /* pbs_attribute */
@@ -21,12 +20,6 @@ struct server server;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 int array_259_upgrade = 0;
 
-int insert_thing(resizable_array *ra, void *thing)
-  {
-  fprintf(stderr, "The call to insert_thing needs to be mocked!!\n");
-  exit(1);
-  }
-
 int job_save(job *pjob, int updatetype, int mom_port)
   {
   fprintf(stderr, "The call to job_save needs to be mocked!!\n");
@@ -36,12 +29,6 @@ int job_save(job *pjob, int updatetype, int mom_port)
 ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
   {
   fprintf(stderr, "The call to read_nonblocking_socket needs to be mocked!!\n");
-  exit(1);
-  }
-
-int remove_thing(resizable_array *ra, void *thing)
-  {
-  fprintf(stderr, "The call to remove_thing needs to be mocked!!\n");
   exit(1);
   }
 
@@ -105,21 +92,9 @@ job *next_job(all_jobs *aj, all_jobs_iterator *iter)
   exit(1);
   }
 
-resizable_array *initialize_resizable_array(int size)
-  {
-  fprintf(stderr, "The call to initialize_resizable_array needs to be mocked!!\n");
-  exit(1);
-  }
-
 int attempt_delete(void *j)
   {
   fprintf(stderr, "The call to attempt_delete needs to be mocked!!\n");
-  exit(1);
-  }
-
-void *next_thing(resizable_array *ra, int *iter)
-  {
-  fprintf(stderr, "The call to next_thing needs to be mocked!!\n");
   exit(1);
   }
 

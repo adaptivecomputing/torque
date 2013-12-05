@@ -7,7 +7,6 @@
 #include "pbs_ifl.h" /* MAXPATHLEN, PBS_MAXSERVERNAME */
 #include "server.h" /* server, NO_BUFFER_SPACE */
 #include "pbs_job.h" /* all_jobs, job_array, job */
-#include "resizable_array.h" /* resizable_array */
 #include "attribute.h" /* pbs_attribute, attribute_def */
 #include "net_connect.h" /* pbs_net_t */
 #include "list_link.h" /* list_link */
@@ -64,11 +63,6 @@ int relay_to_mom(job **pjob_ptr, batch_request   *request, void (*func)(struct w
   return(0);
   }
 
-int insert_thing(resizable_array *ra, void *thing)
-  {
-  return 0;
-  }
-
 void account_record(int acctype, job *pjob, const char *text)
   {
   fprintf(stderr, "The call to account_record needs to be mocked!!\n");
@@ -89,12 +83,6 @@ int job_save(job *pjob, int updatetype, int mom_port)
 void svr_mailowner(job *pjob, int mailpoint, int force, const char *text)
   {
   fprintf(stderr, "The call to svr_mailowner needs to be mocked!!\n");
-  exit(1);
-  }
-
-int remove_thing_from_index(resizable_array *ra, int index)
-  {
-  fprintf(stderr, "The call to remove_thing_from_index needs to be mocked!!\n");
   exit(1);
   }
 
@@ -221,22 +209,6 @@ int issue_signal(job **pjob, const char *signame, void (*func)(batch_request *),
   exit(1);
   }
 
-resizable_array *initialize_resizable_array(int size)
-  {
-  resizable_array *ra = (resizable_array *)calloc(1, sizeof(resizable_array));
-  size_t           amount = sizeof(slot) * size;
-  size = 10;
-
-  ra->max       = size;
-  ra->num       = 0;
-  ra->next_slot = 1;
-  ra->last      = 0;
-
-  ra->slots = (slot *)calloc(1, amount);
-
-  return(ra);
-  }
-
 int svr_enquejob(job *pjob, int has_sv_qs_mutex, char *prev_jobid, bool reservation)
   {
   fprintf(stderr, "The call to svr_enquejob needs to be mocked!!\n");
@@ -255,12 +227,6 @@ int array_delete(job_array *pa)
   exit(1);
   }
 
-void *next_thing(resizable_array *ra, int *iter)
-  {
-  fprintf(stderr, "The call to next_thing needs to be mocked!!\n");
-  exit(1);
-  }
-
 void release_req(struct work_task *pwt)
   {
   fprintf(stderr, "The call to release_req needs to be mocked!!\n");
@@ -271,17 +237,6 @@ work_task *next_task(all_tasks *at, int *iter)
   {
   fprintf(stderr, "The call to next_task needs to be mocked!!\n");
   exit(1);
-  }
-
-int swap_things(resizable_array *ra, void *thing1, void *thing2)
-  {
-  fprintf(stderr, "The call to swap_things needs to be mocked!!\n");
-  exit(1);
-  }
-
-int insert_thing_after(resizable_array *ra, void *thing, int index)
-  {
-  return(0);
   }
 
 void issue_track(job *pjob)
@@ -342,12 +297,6 @@ void check_job_log(struct work_task *ptask)
 void svr_evaljobstate(job *pjob, int *newstate, int *newsub, int forceeval)
   {
   fprintf(stderr, "The call to svr_evaljobstate needs to be mocked!!\n");
-  exit(1);
-  }
-
-void *next_thing_from_back(resizable_array *ra, int *iter)
-  {
-  fprintf(stderr, "The call to next_thing_from_back needs to be mocked!!\n");
   exit(1);
   }
 

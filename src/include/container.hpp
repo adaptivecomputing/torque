@@ -16,6 +16,9 @@
 #include <pthread.h>
 #include <memory.h>
 
+#define THING_NOT_FOUND    -2
+#define ALREADY_IN_LIST     9
+
 
 namespace container{ //Creating a scope to prevent my using from spilling past the include file.
 

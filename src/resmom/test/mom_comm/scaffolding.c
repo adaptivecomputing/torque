@@ -14,7 +14,6 @@
 #include "list_link.h" /* tlist_head */
 #include "resource.h" /* resource_def */
 #include "u_tree.h" /* AvlTree */
-#include "resizable_array.h" /* resizable_array */
 #include "pbs_job.h" /* job */
 #include "mom_func.h" /* radix_buf */
 #include "dis.h"
@@ -47,16 +46,6 @@ time_t          LastServerUpdateTime = 0;  /* NOTE: all servers updated together
 char log_buffer[LOG_BUF_SIZE];
 int log_event_counter;
 bool ms_val = true;
-
-/*
- *  * inserts an item, resizing the array if necessary
- *   *
- *    * @return the index in the array or -1 on failure
- *     */
-int insert_thing(resizable_array *ra, void *thing) 
-  {
-  return -1;
-  }
 
 #undef disrus
 unsigned short disrus(tcp_chan *c, int *retval)

@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-#include "resizable_array.h"
 
 #include "user_info.h"
 #include <check.h>

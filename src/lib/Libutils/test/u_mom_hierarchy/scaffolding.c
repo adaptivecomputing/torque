@@ -6,7 +6,6 @@
 
 #include "tcp.h"
 #include "log.h" /* LOG_BUF_SIZE */
-#include "resizable_array.h" /* resizable_array */
 #include "mom_hierarchy.h"
 #include <errno.h>
 
@@ -33,12 +32,6 @@ const char *dis_emsg[] =
   "End of File"
   };
 
-int insert_thing(resizable_array *ra, void *thing)
-  { 
-  fprintf(stderr, "The call to insert_thing needs to be mocked!!\n");
-  exit(1);
-  }
-
 void DIS_tcp_reset(int fd, int i)
   { 
   fprintf(stderr, "The call to DIS_tcp_reset needs to be mocked!!\n");
@@ -54,12 +47,6 @@ int diswsl(tcp_chan *chan, long value)
 int DIS_tcp_wflush(tcp_chan *chan)
   { 
   fprintf(stderr, "The call to DIS_tcp_wflush needs to be mocked!!\n");
-  exit(1);
-  }
-
-resizable_array *initialize_resizable_array(int size)
-  { 
-  fprintf(stderr, "The call to initialize_resizable_array needs to be mocked!!\n");
   exit(1);
   }
 
@@ -98,13 +85,6 @@ int socket_get_tcp_priv()
 void log_event(int eventtype, int objclass, const char *objname, const char *text)
   {
   }
-
-void *next_thing(resizable_array *ra, int *iter)
-  {
-  return(NULL);
-  }
-
-void free_resizable_array(resizable_array *ra) {}
 
 char *trim(char *str)
   {

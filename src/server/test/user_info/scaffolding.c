@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "resizable_array.h"
 #include "user_info.h"
 
 int LOGLEVEL = 10;

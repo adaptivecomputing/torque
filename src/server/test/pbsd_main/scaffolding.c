@@ -338,16 +338,6 @@ void destroy_request_pool(void)
   }
 
 
-void free_resizable_array(resizable_array *ra)
-  {
-  }
-
-resizable_array *initialize_resizable_array(int size)
-  {
-  fprintf(stderr, "The call to initialize_resizable_array needs to be mocked!!\n");
-  exit(1);
-  }
-
 hello_info *pop_hello(hello_container *hc)
   {
   fprintf(stderr, "The call to pop_hello needs to be mocked!!\n");
@@ -376,18 +366,6 @@ int send_hierarchy(char *nodename, unsigned short port)
 int add_hello(hello_container *hc, char *node_name)
   {
   fprintf(stderr, "The call to add_hello needs to be mocked!\n");
-  exit(1);
-  }
-
-void *pop_thing(resizable_array *ra)
-  {
-  fprintf(stderr, "The call to pop_thing needs to be mocked!\n");
-  exit(1);
-  }
-
-int insert_thing(resizable_array *ra, void *thing)
-  {
-  fprintf(stderr, "The call to insert_thing needs to be mocked!\n");
   exit(1);
   }
 

@@ -616,7 +616,7 @@ void check_if_in_nodes_file(
 /*
  * convert_level_to_send_format()
  *
- * @pre-cond: level must be a valid resizable array of node_comm_t
+ * @pre-cond: nodes must be a valid std::vector of node_comm_t
  * @post-cond: all nodes at this level are added to send format in the format for sending
  */
 void convert_level_to_send_format(
@@ -657,7 +657,7 @@ void convert_level_to_send_format(
  * convert_path_to_send_format()
  * iterates over each level in the path and adds in to send format appropriately.
  *
- * @pre-cond: path must be a valid resizable array of resizable arrays.
+ * @pre-cond: levels must be a valid std::vector of std::vectors.
  * @post-cond: this path is added to send_format in the correct format.
  */
 
@@ -665,7 +665,7 @@ void convert_level_to_send_format(
  * convert_path_to_send_format()
  * iterates over each level in the path and adds in to send format appropriately.
  *
- * @pre-cond: path must be a valid resizable array of resizable arrays.
+ * @pre-cond: levels must be a valid std::vector of std::vectors.
  * @post-cond: this path is added to send_format in the correct format.
  */
 void convert_path_to_send_format(

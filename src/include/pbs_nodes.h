@@ -89,7 +89,6 @@
 #include <boost/ptr_container/ptr_vector.hpp>
 
 #include "execution_slot_tracker.hpp"
-#include "resizable_array.h"
 #include "net_connect.h" /* pbs_net_t */
 #include "pbs_ifl.h" /* resource_t */
 
