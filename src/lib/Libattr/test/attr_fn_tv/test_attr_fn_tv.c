@@ -20,7 +20,7 @@ START_TEST(decode_tv)
   memset(&pattr, 0, sizeof(pbs_attribute));
   strcpy(name, "freddy");
   strcpy(rescn, "someresc");
-  strcpy(val, "33:3");
+  strcpy(val, "33.3");
 
   rc = decode_tv(&pattr, name, rescn, val, perm);
   sprintf(EMsg, "decode_tv unexpectedly failed: %d", rc);
@@ -29,7 +29,7 @@ START_TEST(decode_tv)
   }
 END_TEST
 
-START_TEST(decode_tv_no_colon)
+START_TEST(decode_tv_no_dot)
   {
   pbs_attribute pattr;
   char    name[32];
@@ -51,7 +51,7 @@ START_TEST(decode_tv_no_colon)
   }
 END_TEST
 
-START_TEST(decode_tv_two_colons)
+START_TEST(decode_tv_two_dots)
   {
   pbs_attribute pattr;
   char    name[32];
@@ -64,7 +64,7 @@ START_TEST(decode_tv_two_colons)
   memset(&pattr, 0, sizeof(pbs_attribute));
   strcpy(name, "freddy");
   strcpy(rescn, "someresc");
-  strcpy(val, "33:44:55");
+  strcpy(val, "33.44.55");
 
   rc = decode_tv(&pattr, name, rescn, val, perm);
   sprintf(EMsg, "decode_tv unexpectedly failed: %d", rc);
@@ -86,7 +86,7 @@ START_TEST(decode_tv_not_digit)
   memset(&pattr, 0, sizeof(pbs_attribute));
   strcpy(name, "freddy");
   strcpy(rescn, "someresc");
-  strcpy(val, "XX:44");
+  strcpy(val, "XX.44");
 
   rc = decode_tv(&pattr, name, rescn, val, perm);
   sprintf(EMsg, "decode_tv unexpectedly failed: %d", rc);
@@ -153,12 +153,12 @@ Suite *attr_fn_tv_suite(void)
   tcase_add_test(tc_core, decode_tv);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("decode_tv_no_colon");
-  tcase_add_test(tc_core, decode_tv_no_colon);
+  tc_core = tcase_create("decode_tv_no_dot");
+  tcase_add_test(tc_core, decode_tv_no_dot);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("decode_tv_two_colons");
-  tcase_add_test(tc_core, decode_tv_two_colons);
+  tc_core = tcase_create("decode_tv_two_dots");
+  tcase_add_test(tc_core, decode_tv_two_dots);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("decode_tv_not_digit");
