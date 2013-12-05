@@ -92,6 +92,7 @@ class node_internals
   node_internals(const node_internals &ni);
   node_internals(const std::vector<numa_node> nodes);
   void reserve(int num_cpus, unsigned long memory, const char *jobid);
+  void recover_reservation(int num_cpus, unsigned long memory, const char *jobid);
   void remove_job(const char *jobid);
   std::vector<int> *get_cpu_indices(const char *jobid);
   std::vector<int> *get_memory_indices(const char *jobid);
