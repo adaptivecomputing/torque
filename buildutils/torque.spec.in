@@ -49,10 +49,13 @@
 %define ac_with_syslog     --%{?with_syslog:en}%{!?with_syslog:dis}able-syslog
 
 ### Build Requirements
-%define breq_gui   %{?with_gui:tcl-devel tk-devel tclx}
-%define breq_munge %{?with_munge:munge-devel}
-%define breq_pam   %{?with_pam:pam-devel}
-%define breq_scp   %{?with_scp:/usr/bin/scp}
+%define breq_cpuset   %{?with_cpuset:hwloc-devel}
+%define breq_gui      %{?with_gui:tcl-devel tk-devel tclx}
+%define breq_numa     %{?with_cpuset:hwloc-devel}
+%define breq_munge    %{?with_munge:munge-devel}
+%define breq_pam      %{?with_pam:pam-devel}
+%define breq_readline %{?with_readline:readline-devel}
+%define breq_scp      %{?with_scp:/usr/bin/scp}
 
 ### Macro variables
 %{!?torque_user:%global torque_user torque}
@@ -90,19 +93,7 @@ Source: http://www.clusterresources.com/downloads/torque/%{name}-%{tarversion}.t
 Vendor: %{?_vendorinfo:%{_vendorinfo}}%{!?_vendorinfo:%{_vendor}}
 Distribution: %{?_distribution:%{_distribution}}%{!?_distribution:%{_vendor}}
 #BuildSuggests: openssh-clients tcl-devel tclx tk-devel
-BuildRequires: %{breq_gui} %{breq_munge} %{breq_pam} %{breq_scp} make openssl-devel libxml2-devel boost-devel
-%if %{with cpuset} || %{with numa}
-BuildRequires: hwloc-devel
-%endif
-%if %{with munge}
-BuildRequires: munge-devel
-%endif
-%if %{with pam}
-BuildRequires: pam-devel
-%endif
-%if %{with readline}
-BuildRequires: readline-devel
-%endif
+BuildRequires: %{breq_cpuset} %{breq_gui} %{breq_numa} %{breq_munge} %{breq_pam} %{breq_readline} %{breq_scp} make openssl-devel libxml2-devel boost-devel
 Conflicts: pbspro, openpbs, openpbs-oscar
 Obsoletes: scatorque <= %{version}-%{release}, %{!?with_gui:%{name}-gui < %{version}-%{release}}
 Provides: pbs, pbs-docs, pbs-pam, %{!?with_gui:%{name}-gui = %{version}-%{release}}
