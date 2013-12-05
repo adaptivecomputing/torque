@@ -92,6 +92,7 @@ success=$?
 fi
 
 if test "X$success" == "X0" ; then
+  success=`echo $githash > current_hash`
   AC_DEFINE_UNQUOTED(GIT_HASH, ["$githash"], [repository svn version])
 else
   dnl current hash is a file checked in to the git repo in the base directory
