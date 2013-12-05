@@ -92,8 +92,53 @@
 #ifdef PENABLE_LINUX26_CPUSETS
 extern int MOMConfigUseSMT;
 bool is_physical_core(unsigned int os_index);
+extern char cpuset_prefix[MAXPATHLEN];
+
+void get_cpu_list(const char *jobid, char *buf, int bufsize);
 #endif
 
+
+
+void translate_range_string_to_vector(
+
+  const char       *range_string,
+  std::vector<int> &indices)
+
+  {
+  char *str = strdup(range_string);
+  char *ptr = str;
+  int   prev;
+  int   curr;
+
+  while (*ptr != '\0')
+    {
+    prev = strtol(ptr, &ptr, 10);
+    
+    if (*ptr == '-')
+      {
+      ptr++;
+      curr = strtol(ptr, &ptr, 10);
+
+      while (prev <= curr)
+        {
+        indices.push_back(prev);
+
+        prev++;
+        }
+
+      if (*ptr == ',')
+        ptr++;
+      }
+    else
+      {
+      indices.push_back(prev);
+      ptr++;
+      }
+    }
+
+  free(str);
+  } /* END translate_range_string_to_vector() */
+  
 
 
 
@@ -109,63 +154,27 @@ void numa_node::parse_cpu_string(
   std::string &line)
 
   {
-  char       *str = strdup(line.c_str());
-  char       *ptr = str;
-  int         prev = -1;
-  int         curr = -1;
-  bool        parsing_range = false;
+  std::vector<int> indices;
 
   this->total_cpus = 0;
   this->available_cpus = 0;
 
-  while (*ptr != '\0')
+  translate_range_string_to_vector(line.c_str(), indices);
+
+  for (int i = 0; i < indices.size(); i++)
     {
-    prev = strtol(ptr, &ptr, 10);
-
-    if (*ptr == '-')
-      {
-      ptr++;
-      curr = strtol(ptr, &ptr, 10);
-
-      while (prev <= curr)
-        {
 #ifdef PENABLE_LINUX26_CPUSETS
-        if ((MOMConfigUseSMT == 1) ||
-            (is_physical_core(prev) == true))
+    if ((MOMConfigUseSMT == 1) ||
+        (is_physical_core(indices[i]) == true))
 #endif
-          {
-          this->cpu_indices.push_back(prev);
-          this->cpu_avail.push_back(true);
-          this->total_cpus++;
-          this->available_cpus++;
-          }
-
-        prev++;
-        }
-
-      if (*ptr == ',')
-        ptr++;
-      }
-    else if ((*ptr == ',') ||
-             (*ptr == '\0'))
       {
-#ifdef PENABLE_LINUX26_CPUSETS
-      if ((MOMConfigUseSMT == 1) ||
-          (is_physical_core(prev) == true))
-#endif
-        {
-        this->cpu_indices.push_back(prev);
-        this->cpu_avail.push_back(true);
-        this->total_cpus++;
-        this->available_cpus++;
-        }
-
-      if (*ptr == ',')
-        ptr++;
+      this->cpu_indices.push_back(indices[i]);
+      this->cpu_avail.push_back(true);
+      this->total_cpus++;
+      this->available_cpus++;
       }
     }
 
-  free(str);
   } /* END parse_cpu_string */
 
 
@@ -273,6 +282,40 @@ bool numa_node::completely_fits(
 
 
 
+void numa_node::mark_cpu_as_in_use(
+
+  unsigned int  index,
+  allocation   &alloc)
+
+  {
+  this->cpu_avail[index] = false;
+  alloc.cpu_indices.push_back(this->cpu_indices[index]);
+  alloc.cpus++;
+  this->available_cpus--;
+  } /* END mark_cpu_as_in_use() */
+
+
+
+void numa_node::mark_memory_as_in_use(
+
+  unsigned long  memory,
+  allocation     &alloc)
+
+  {
+  if (memory <= this->available_memory)
+    {
+    alloc.memory += memory;
+    this->available_memory -= memory;
+    }
+  else
+    {
+    alloc.memory += this->available_memory;
+    this->available_memory = 0;
+    }
+  } /* END mark_memory_as_in_use() */
+
+
+
 void numa_node::reserve(
     
   int            num_cpus,
@@ -287,26 +330,86 @@ void numa_node::reserve(
     {
     if (this->cpu_avail[i] == true)
       {
-      this->cpu_avail[i] = false;
-      alloc.cpu_indices.push_back(this->cpu_indices[i]);
-      alloc.cpus++;
-      this->available_cpus--;
+      mark_cpu_as_in_use(i, alloc);
       }
     }
 
-  if (memory <= this->available_memory)
-    {
-    alloc.memory += memory;
-    this->available_memory -= memory;
-    }
-  else
-    {
-    alloc.memory += this->available_memory;
-    this->available_memory = 0;
-    }
+  mark_memory_as_in_use(memory, alloc);
 
   this->allocations.push_back(alloc);
   }
+
+
+
+int numa_node::in_this_numa_node(
+
+  int cpu_index)
+
+  {
+  int match = -1;
+
+  for (int i = 0; i < this->cpu_indices.size(); i++)
+    {
+    if (cpu_index == this->cpu_indices[i])
+      {
+      match = i;
+      break;
+      }
+    }
+
+  return(match);
+  }
+
+
+
+void numa_node::recover_reservation(
+    
+  int            num_cpus,
+  unsigned long  memory,
+  const char    *jobid,
+  allocation    &alloc)
+
+  {
+  char             cpuset_buf[MAXPATHLEN + 1];
+  std::vector<int> indices;
+  bool             matches_this_numa_node = false;
+
+  snprintf(alloc.jobid, sizeof(alloc.jobid), "%s", jobid);
+
+#ifdef PENABLE_LINUX26_CPUSETS
+  get_cpu_list(jobid, cpuset_buf, sizeof(cpuset_buf));
+#endif
+
+  translate_range_string_to_vector(cpuset_buf, indices);
+
+  for (int i = 0; i < indices.size(); i++)
+    {
+#ifdef PENABLE_LINUX26_CPUSETS
+    if ((MOMConfigUseSMT == 1) ||
+        (is_physical_core(indices[i]) == true))
+#endif
+      {
+      int my_index = in_this_numa_node(indices[i]);
+
+      if (my_index == -1)
+        continue;
+
+      matches_this_numa_node = true;
+
+      if (this->cpu_avail[my_index] == true)
+        {
+        mark_cpu_as_in_use(my_index, alloc);
+        }
+      }
+    }
+
+  if (matches_this_numa_node == true)
+    {
+    mark_memory_as_in_use(memory, alloc);
+    
+    this->allocations.push_back(alloc);
+    }
+  } /* END recover_reservation() */
   
 
 

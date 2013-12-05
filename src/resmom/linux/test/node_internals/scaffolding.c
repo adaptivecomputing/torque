@@ -8,6 +8,8 @@ int  reserve_called;
 int  remove_called;
 int  get_job_indices_called;
 bool does_it_fit;
+int  recover_mode;
+int  recover_called;
 
 
 numa_node::numa_node(const char *path, int index)
@@ -18,6 +20,22 @@ numa_node::numa_node(const char *path, int index)
 bool numa_node::completely_fits(int cpus, unsigned long memory) const
   {
   return(does_it_fit);
+  }
+
+void numa_node::recover_reservation(int cpus, unsigned long memory, const char *jobid, allocation &a)
+  {
+  recover_called++;
+
+  if (recover_mode == 0)
+    {
+    a.cpus = cpus;
+    a.memory = memory;
+    }
+  else if (recover_mode == 1)
+    {
+    a.cpus = cpus / 2;
+    a.memory = memory / 2;
+    }
   }
 
 numa_node::numa_node(

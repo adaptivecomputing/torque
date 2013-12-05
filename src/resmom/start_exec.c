@@ -6289,6 +6289,37 @@ void create_cpuset_reservation_if_needed(
     internal_layout.reserve(cpu_count, mem_requested, pjob.ji_qs.ji_jobid);
     }
   }
+
+
+
+void recover_cpuset_reservation(
+
+  job &pjob)
+
+  {
+  /* recover the cpuset reservation of running jobs
+   * only do this for cpuset builds that aren't built for NUMA and don't
+   * have a geometry request */
+  resource       *presc = NULL;
+  resource_def   *prd   = NULL;
+
+  prd   = find_resc_def(svr_resc_def, "procs_bitmap", svr_resc_size);
+  presc = find_resc_entry(&pjob.ji_wattr[JOB_ATR_resource],prd);
+
+  if ((presc == NULL) ||
+      (presc->rs_value.at_flags & ATR_VFLAG_SET) == FALSE)
+    {
+    /* this means there is no geometry request */
+    long long mem_requested = get_memory_requested_in_kb(pjob);
+    int       cpu_count = get_cpu_count_requested_on_this_node(pjob);
+
+    // make sure the memory is evenly set over the job.
+    double    mem_pcnt = ((double)cpu_count) / pjob.ji_numvnod;
+    mem_requested = mem_requested * mem_pcnt;
+
+    internal_layout.recover_reservation(cpu_count, mem_requested, pjob.ji_qs.ji_jobid);
+    }
+  }
 #endif
 #endif
 
