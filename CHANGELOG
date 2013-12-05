@@ -21,6 +21,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       by np=X.
   b - TRQ-2354. Fix an issue with potential overflow in user job counts. Also fix a 
       user being considered different if from a different submit host.
+  b - TRQ-2369. Fix a problem with pbs_mom recovering which cpu indices were in use for
+      jobs that were running at shutdown and still running at the time the mom restarted.
 
 4.2.6
   b - TRQ-2273. Job start time is hard coded to 5 minutes. If the prolog takes longer
