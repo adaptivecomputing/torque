@@ -2561,7 +2561,7 @@ int pbsd_init_reque(
     {
     /* update the state, typically to some form of QUEUED */
 
-    svr_evaljobstate(pjob, &newstate, &newsubstate, 0);
+    svr_evaljobstate(*pjob, newstate, newsubstate, 0);
 
     svr_setjobstate(pjob, newstate, newsubstate, FALSE);
     }

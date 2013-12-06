@@ -450,7 +450,7 @@ void finish_routing_processing(
 
       /* force re-eval of job state out of Transit */
 
-      svr_evaljobstate(pjob, &newstate, &newsub, 1);
+      svr_evaljobstate(*pjob, newstate, newsub, 1);
       svr_setjobstate(pjob, newstate, newsub, FALSE);
 
       if ((status = job_route(pjob)) == PBSE_ROUTEREJ)
@@ -527,7 +527,7 @@ void finish_moving_processing(
       if (pjob != NULL)
         {
         /* force re-eval of job state out of Transit */
-        svr_evaljobstate(pjob, &newstate, &newsub, 1);
+        svr_evaljobstate(*pjob, newstate, newsub, 1);
         svr_setjobstate(pjob, newstate, newsub, FALSE);
    
         unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);

@@ -1086,69 +1086,58 @@ int svr_setjobstate(
 
 void svr_evaljobstate(
 
-  job *pjob,
-  int *newstate,  /* O recommended new state for job    */
-  int *newsub,    /* O recommended new substate for job */
+  job &pjob,
+  int &newstate,  /* O recommended new state for job    */
+  int &newsub,    /* O recommended new substate for job */
   int  forceeval)
 
   {
-  if (pjob == NULL)
+  // this should be a NO-OP for jobs that are exiting or completed
+  if (pjob.ji_qs.ji_state >= JOB_STATE_EXITING)
     {
-    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input job pointer");
-    return;
+    newstate = pjob.ji_qs.ji_state; /* leave as is */
+    newsub   = pjob.ji_qs.ji_substate;
     }
-  if (newstate == NULL)
+  else if ((forceeval == 0) &&
+           ((pjob.ji_qs.ji_state == JOB_STATE_RUNNING) ||
+            (pjob.ji_qs.ji_state == JOB_STATE_TRANSIT)))
     {
-    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input newstate pointer");
-    return;
+    newstate = pjob.ji_qs.ji_state; /* leave as is */
+    newsub   = pjob.ji_qs.ji_substate;
     }
-  if (newsub == NULL)
+  else if (pjob.ji_wattr[JOB_ATR_hold].at_val.at_long)
     {
-    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input newsub pointer");
-    return;
-    }
-
-  if ((forceeval == 0) &&
-      ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) ||
-       (pjob->ji_qs.ji_state == JOB_STATE_TRANSIT)))
-    {
-    *newstate = pjob->ji_qs.ji_state; /* leave as is */
-    *newsub   = pjob->ji_qs.ji_substate;
-    }
-  else if (pjob->ji_wattr[JOB_ATR_hold].at_val.at_long)
-    {
-    *newstate = JOB_STATE_HELD;
+    newstate = JOB_STATE_HELD;
 
     /* is the hold due to a dependency? */
-
-    if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_SYNCHOLD) ||
-        (pjob->ji_qs.ji_substate == JOB_SUBSTATE_DEPNHOLD))
-      *newsub = pjob->ji_qs.ji_substate;  /* keep it */
+    if ((pjob.ji_qs.ji_substate == JOB_SUBSTATE_SYNCHOLD) ||
+        (pjob.ji_qs.ji_substate == JOB_SUBSTATE_DEPNHOLD))
+      newsub = pjob.ji_qs.ji_substate;  /* keep it */
     else
-      *newsub = JOB_SUBSTATE_HELD;
+      newsub = JOB_SUBSTATE_HELD;
     }
-  else if (pjob->ji_wattr[JOB_ATR_exectime].at_val.at_long > (long)time(NULL))
+  else if (pjob.ji_wattr[JOB_ATR_exectime].at_val.at_long > (long)time(NULL))
     {
-    *newstate = JOB_STATE_WAITING;
-    *newsub   = JOB_SUBSTATE_WAITING;
+    newstate = JOB_STATE_WAITING;
+    newsub   = JOB_SUBSTATE_WAITING;
     }
-  else if (pjob->ji_wattr[JOB_ATR_stagein].at_flags & ATR_VFLAG_SET)
+  else if (pjob.ji_wattr[JOB_ATR_stagein].at_flags & ATR_VFLAG_SET)
     {
-    *newstate = JOB_STATE_QUEUED;
+    newstate = JOB_STATE_QUEUED;
 
-    if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn)
+    if (pjob.ji_qs.ji_svrflags & JOB_SVFLG_StagedIn)
       {
-      *newsub = JOB_SUBSTATE_STAGECMP;
+      newsub = JOB_SUBSTATE_STAGECMP;
       }
     else
       {
-      *newsub = JOB_SUBSTATE_PRESTAGEIN;
+      newsub = JOB_SUBSTATE_PRESTAGEIN;
       }
     }
   else
     {
-    *newstate = JOB_STATE_QUEUED;
-    *newsub   = JOB_SUBSTATE_QUEUED;
+    newstate = JOB_STATE_QUEUED;
+    newsub   = JOB_SUBSTATE_QUEUED;
     }
 
   return;
@@ -2611,8 +2600,12 @@ void job_wait_over(
     
     pjob->ji_modified = 1;
     
-    svr_evaljobstate(pjob, &newstate, &newsub, 0);
-    svr_setjobstate(pjob, newstate, newsub, FALSE);
+    // jobs that are running, exiting, or completed shouldn't be affected by this
+    if (pjob->ji_qs.ji_state < JOB_STATE_RUNNING)
+      {
+      svr_evaljobstate(*pjob, newstate, newsub, 0);
+      svr_setjobstate(pjob, newstate, newsub, FALSE);
+      }
     }
 
   return;
