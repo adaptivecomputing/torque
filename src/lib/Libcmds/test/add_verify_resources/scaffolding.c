@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "u_memmgr.h" /* memmgr */
 #include "u_hash_map_structs.h" /* job_data */
 
 void *memmgr_calloc(memmgr **mgr, int qty, int size)

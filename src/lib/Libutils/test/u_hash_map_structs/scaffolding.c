@@ -1,7 +1,6 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include "pbs_ifl.h"
-#include "u_memmgr.h"
 
 int calloc_fail;
 

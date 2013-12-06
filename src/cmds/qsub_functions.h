@@ -89,7 +89,6 @@
 #include <termios.h>
 #include <sys/types.h>
 #include "u_hash_map_structs.h"
-#include "u_memmgr.h"
 #ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
 #endif /* HAVE_SYS_IOCTL_H */
@@ -258,7 +257,7 @@ void process_config_file(
 void print_qsub_usage_exit(
     const char *error_msg);             /* I */
 
-void add_submit_args_to_job(memmgr **mm, job_data **job_attr, int argc, char **argv);
+void add_submit_args_to_job(job_data_container *job_attr, int argc, char **argv);
 
 void main_func(
     int    argc,                  /* I */

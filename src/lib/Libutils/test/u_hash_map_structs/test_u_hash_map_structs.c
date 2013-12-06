@@ -7,7 +7,6 @@
 
 #include "pbs_error.h"
 #include "pbs_ifl.h"
-#include "u_memmgr.h"
 
 extern int calloc_fail;
 

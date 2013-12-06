@@ -84,7 +84,6 @@
 #ifndef _COMMON_CMDS_H
 #define _COMMON_CMDS_H
 #include "u_hash_map_structs.h"
-#include "u_memmgr.h"
 
 int parse_env_line(char *one_var, char **name, char **value);
 

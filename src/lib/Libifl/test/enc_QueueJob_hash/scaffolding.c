@@ -3,7 +3,6 @@
 #include <stdio.h> /* fprintf */
 #include "tcp.h"
 #include "attribute.h" /* attropl */
-#include "u_memmgr.h" /* memmgr */
 #include "u_hash_map_structs.h" /* job_data */
 
 int diswcs(tcp_chan *chan, const char *value, size_t nchars)

@@ -57,7 +57,6 @@
 #include "log.h"
 #include "port_forwarding.h"
 #include "common_cmds.h" 
-#include "u_memmgr.h" /* global memmgr for client */
 #include "utils.h"
 
 #if defined(PBS_NO_POSIX_VIOLATION)

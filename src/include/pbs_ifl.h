@@ -88,7 +88,6 @@
 #include <sys/socket.h>
 
 #include "u_hash_map_structs.h"
-#include "u_memmgr.h"
 
 /* Attribute Names used by user commands */
 

@@ -86,7 +86,6 @@
 #include "libpbs.h"
 #include "dis.h"
 #include "u_hash_map_structs.h"
-#include "u_memmgr.h"
 #include "pbs_ifl.h"
 #include "../lib/Libifl/lib_ifl.h"
 

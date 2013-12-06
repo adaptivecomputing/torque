@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "u_hash_map_structs.h"
-#include "u_memmgr.h"
 #include "dynamic_string.h"
 
 

@@ -104,7 +104,6 @@
 #include "pbs_ifl.h"
 #include "list_link.h"
 #include "pbs_error.h"
-#include "u_memmgr.h"
 #include "tcp.h" /* tcp_chan */
 
 

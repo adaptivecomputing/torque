@@ -3,7 +3,6 @@
 #include <stdio.h> /* fprintf */
 
 #include "libpbs.h" /* connect_handle, batch_reply */
-#include "u_memmgr.h" /* memmgr */
 #include "u_hash_map_structs.h" /* job_data */
 #include "attribute.h" /* attropl */
 

@@ -4,7 +4,6 @@
 
 #include "libpbs.h" /* connect_handle */
 #include "attribute.h" /* attropl */
-#include "u_memmgr.h" /* memmgr */
 
 int pbs_errno = 0;
 struct connect_handle connection[10];

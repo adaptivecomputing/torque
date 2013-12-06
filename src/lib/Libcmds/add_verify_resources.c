@@ -101,7 +101,6 @@
 #include "pbs_ifl.h"
 #include "pbs_cmds.h"
 #include "u_hash_map_structs.h"
-#include "u_memmgr.h"
 
 int add_verify_resources(
   job_data_container *res_attr, /* M */
