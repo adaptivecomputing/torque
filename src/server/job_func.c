@@ -1195,6 +1195,7 @@ void *job_clone_wt(
         }
 
       mutex_mgr clone_mgr(pjobclone->ji_mutex, true);
+
       svr_evaljobstate(*pjobclone, newstate, newsub, 1);
 
       /* do this so that  svr_setjobstate() doesn't alter sv_jobstates,
