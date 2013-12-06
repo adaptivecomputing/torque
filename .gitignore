@@ -52,6 +52,7 @@ coverages.csv
 doc/soelim
 libtool
 pbs-config
+current_hash
 src/cmds/nqs2pbs
 src/cmds/pbs_track
 src/cmds/pbsdsh
