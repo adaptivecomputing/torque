@@ -17,7 +17,7 @@
 extern int svr_resc_size;
 all_queues svr_queues;
 const char *msg_daemonname = "unset";
-attribute_def job_attr_def[10];
+attribute_def job_attr_def[JOB_ATR_LAST];
 const char *msg_badwait = "Invalid time in work task for waiting, job = %s";
 all_jobs alljobs;
 const char *pbs_o_host = "PBS_O_HOST";
@@ -34,6 +34,7 @@ pthread_mutex_t *listener_command_mutex;
 struct pbsnode *alps_reporter;
 user_info_holder users;
 int decrement_count;
+job napali_job;
 
 resource *add_resource_entry(pbs_attribute *pattr, resource_def *prdef)
   {
@@ -226,14 +227,16 @@ job *svr_find_job(char *jobid, int get_subjob)
   const char *job_id = "job_id";
 
   if (jobid != NULL)
-  {
+    {
     if (strcmp(job_id,jobid) == 0)
       {
       static struct job job_id_job;
       memset(&job_id_job, 0, sizeof(job_id_job));
       return(&job_id_job);
       }
-  }
+    else if (!strcmp(jobid, "1.napali"))
+      return(&napali_job);
+    }
 
   return(NULL);
   }

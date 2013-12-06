@@ -185,7 +185,7 @@ int unlock_queue(struct pbs_queue *the_queue, const char *id, const char *msg, i
   return(0);
   }
 
-void svr_evaljobstate(job *pjob, int *newstate, int *newsub, int forceeval)
+void svr_evaljobstate(job &pjob, int &newstate, int &newsub, int forceeval)
   {
   fprintf(stderr, "The call to svr_evaljobstate needs to be mocked!!\n");
   exit(1);

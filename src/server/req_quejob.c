@@ -2080,7 +2080,7 @@ int req_commit(
       }
     }  /* end if (pj->ji_is_array_template) */
 
-  svr_evaljobstate(pj, &newstate, &newsub, 1);
+  svr_evaljobstate(*pj, newstate, newsub, 1);
   svr_setjobstate(pj, newstate, newsub, FALSE);
 
   set_interactive_job_roaming_policy(pj);
