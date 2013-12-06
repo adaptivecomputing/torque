@@ -290,7 +290,7 @@ void post_rerun(
       {
       mutex_mgr job_mutex(pjob->ji_mutex, true);
       
-      svr_evaljobstate(pjob, &newstate, &newsub, 1);
+      svr_evaljobstate(*pjob, newstate, newsub, 1);
       svr_setjobstate(pjob, newstate, newsub, FALSE);
       }
     }
@@ -577,7 +577,7 @@ int finalize_rerunjob(struct batch_request *preq,job *pjob,int rc)
           pjob->ji_momhandle = -1;
           pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_StagedIn;
           
-          svr_evaljobstate(pjob, &newstate, &newsubst, 0);
+          svr_evaljobstate(*pjob, newstate, newsubst, 0);
           svr_setjobstate(pjob, newstate, newsubst, FALSE);
           }
         }

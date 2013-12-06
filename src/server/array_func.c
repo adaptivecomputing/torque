@@ -2123,7 +2123,7 @@ void update_array_values(
                   pj->ji_wattr[JOB_ATR_hold].at_flags &= ~ATR_VFLAG_SET;
                   }
                 
-                svr_evaljobstate(pj, &newstate, &newsub, 1);
+                svr_evaljobstate(*pj, newstate, newsub, 1);
                 svr_setjobstate(pj, newstate, newsub, FALSE);
                 job_save(pj, SAVEJOB_FULL, 0);
                 

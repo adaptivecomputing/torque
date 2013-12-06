@@ -729,7 +729,7 @@ void post_stagein(
         }
       else
         {
-        svr_evaljobstate(pjob, &newstate, &newsub, 0);
+        svr_evaljobstate(*pjob, newstate, newsub, 0);
 
         svr_setjobstate(pjob, newstate, newsub, FALSE);
         }
@@ -1530,7 +1530,7 @@ void finish_sendmom(
             req_reject(PBSE_MOMREJECT, 0, preq, node_name, "connection to mom timed out");
           }
         
-        svr_evaljobstate(pjob, &newstate, &newsub, 1);
+        svr_evaljobstate(*pjob, newstate, newsub, 1);
         svr_setjobstate(pjob, newstate, newsub, FALSE);
         }
       else
@@ -1598,7 +1598,7 @@ void finish_sendmom(
           }
         else
           {
-          svr_evaljobstate(pjob, &newstate, &newsub, 1);
+          svr_evaljobstate(*pjob, newstate, newsub, 1);
           svr_setjobstate(pjob, newstate, newsub, FALSE);
           }
         }

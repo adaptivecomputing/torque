@@ -633,7 +633,7 @@ jump:
                 tmp->ji_wattr[JOB_ATR_hold].at_flags &= ~ATR_VFLAG_SET;
                 }
 
-              svr_evaljobstate(tmp, &newstate, &newsub, 1);
+              svr_evaljobstate(*tmp, newstate, newsub, 1);
               svr_setjobstate(tmp, newstate, newsub, FALSE);
               job_save(tmp, SAVEJOB_FULL, 0);
 

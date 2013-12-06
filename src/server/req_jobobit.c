@@ -2517,7 +2517,7 @@ void on_job_rerun(
       pjob->ji_momhandle = -1;
       pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_StagedIn;
 
-      svr_evaljobstate(pjob, &newstate, &newsubst, 0);
+      svr_evaljobstate(*pjob, newstate, newsubst, 0);
       svr_setjobstate(pjob, newstate, newsubst, FALSE);
 
       break;
@@ -2841,7 +2841,7 @@ int rerun_job(
     
     pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN;
     
-    svr_evaljobstate(pjob, &newstate, &newsubst, 1);
+    svr_evaljobstate(*pjob, newstate, newsubst, 1);
     svr_setjobstate(pjob, newstate, newsubst, FALSE);
 
     close_conn(pjob->ji_momhandle, FALSE);
@@ -3187,7 +3187,7 @@ int update_substate_from_exit_status(
 
         pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_FILE;
 
-        svr_evaljobstate(pjob, &newstate, &newsubst, 1);
+        svr_evaljobstate(*pjob, newstate, newsubst, 1);
         svr_setjobstate(pjob, newstate, newsubst, FALSE);
 
         close_conn(pjob->ji_momhandle, FALSE);

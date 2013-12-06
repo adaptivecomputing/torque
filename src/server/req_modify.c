@@ -572,7 +572,7 @@ int modify_job(
   /* if job is not running, may need to change its state */
   if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
     {
-    svr_evaljobstate(pjob, &newstate, &newsubstate, 0);
+    svr_evaljobstate(*pjob, newstate, newsubstate, 0);
     svr_setjobstate(pjob, newstate, newsubstate, FALSE);
     }
   else
