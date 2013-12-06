@@ -4240,11 +4240,11 @@ int handle_im_obit_task_response(
   
   ptask = task_check(pjob, event_task);
   
-  if (is_ptask_corrupt(ptask->ti_chan))
-     return(IM_FAILURE);
-
   if (ptask != NULL)
     {
+    if (is_ptask_corrupt(ptask->ti_chan))
+       return(IM_FAILURE);
+
     tm_reply(ptask->ti_chan, TM_OKAY, event);
     
     diswsi(ptask->ti_chan, exitval);
