@@ -253,13 +253,13 @@ void reissue_to_svr(
   time_t         time_now = time(NULL);
   char          *br_id = (char *)pwt->wt_parm1;
   batch_request *preq = get_remove_batch_request(br_id);
-  char *serverName = NULL;
+  char          *serverName = NULL;
   
   /* if not timed-out, retry send to remote server */
   if (preq != NULL)
     {
-   if (preq->rq_host != NULL)
-    serverName = strdup(preq->rq_host);
+    if (preq->rq_host != NULL)
+      serverName = strdup(preq->rq_host);
    else
      {
      free(pwt->wt_mutex);
@@ -282,9 +282,31 @@ void reissue_to_svr(
 
   if (serverName)
     free(serverName);
+
   free(pwt->wt_mutex);
   free(pwt);
   }  /* END reissue_to_svr() */
+
+
+
+void queue_a_retry_task(
+
+  batch_request *preq,                           /* I */
+  void         (*replyfunc)(struct work_task *)) /* I */
+
+  {
+  /* create a new batch_request because preq is going to be freed when issue_to_svr returns success */
+  batch_request    *new_preq = duplicate_request(preq, -1);
+  struct work_task *pwt;
+
+  get_batch_request_id(new_preq);
+
+  pwt = set_task(WORK_Timed, (time(NULL) + PBS_NET_RETRY_TIME), reissue_to_svr, new_preq->rq_id, TRUE);
+
+  pwt->wt_parmfunc = replyfunc;
+
+  pthread_mutex_unlock(pwt->wt_mutex);
+  } /* END queue_a_retry_task() */
 
 
 
@@ -307,16 +329,13 @@ int issue_to_svr(
   void (*replyfunc)    (struct work_task *))      /* I */
 
   {
-  int               rc = PBSE_NONE;
-  int               do_retry = 0;
-  int               handle;
-  int               my_err = 0;
-  pbs_net_t         svraddr;
-  char             *svrname;
-  unsigned int      port = pbs_server_port_dis;
-
-  struct work_task *pwt;
-  time_t            time_now = time(NULL);
+  int             rc = PBSE_NONE;
+  int             do_retry = 0;
+  int             handle;
+  int             my_err = 0;
+  pbs_net_t       svraddr;
+  char           *svrname;
+  unsigned int    port = pbs_server_port_dis;
 
   snprintf(preq->rq_host, sizeof(preq->rq_host), "%s", servern);
 
@@ -363,25 +382,7 @@ int issue_to_svr(
 
   if (do_retry)
     {
-    /* create a new batch_request because preq is going to be freed when issue_to_svr returns success */
-    struct batch_request *new_preq;
-
-    new_preq = alloc_br(0);
-    if (new_preq == NULL)
-      {
-      return(PBSE_MEM_MALLOC);
-      }
-
-    memcpy(new_preq, preq, sizeof(batch_request));
-
-    if (preq->rq_id == NULL)
-      get_batch_request_id(new_preq);
-
-    pwt = set_task(WORK_Timed, (long)(time_now + PBS_NET_RETRY_TIME), reissue_to_svr, new_preq->rq_id, TRUE);
-
-    pwt->wt_parmfunc = replyfunc;
-
-    pthread_mutex_unlock(pwt->wt_mutex);
+    queue_a_retry_task(preq, replyfunc);
 
     return(PBSE_NONE);
     }
