@@ -10,11 +10,15 @@
 #include <string>
 #include "pbs_error.h"
 #include "resource.h"
+#include "work_task.h"
 
 int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging);
 int chk_mppnodect(resource *mppnodect, pbs_queue *pque, long nppn, long mpp_width, char *EMsg);
+void job_wait_over(struct work_task *);
 
 extern int decrement_count;
+extern job napali_job;
+extern attribute_def job_attr_def[];
 
 void add_resc_attribute(pbs_attribute *pattr, resource_def *prdef, const char *value)
   {
@@ -26,6 +30,23 @@ void add_resc_attribute(pbs_attribute *pattr, resource_def *prdef, const char *v
   pattr->at_val.at_str = (char *)strdup(value);
   append_link(&pattr->at_val.at_list, &rsc->rs_link, rsc);
   }
+
+START_TEST(job_wait_over_test)
+  {
+  napali_job.ji_qs.ji_state = JOB_STATE_COMPLETE;
+  napali_job.ji_qs.ji_substate = JOB_SUBSTATE_COMPLETE;
+  job_attr_def[JOB_ATR_exectime].at_free = free_null;
+
+  struct work_task *pwt = (struct work_task *)calloc(1, sizeof(struct work_task));
+  pwt->wt_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  pwt->wt_parm1 = strdup("1.napali");
+
+  job_wait_over(pwt);
+
+  fail_unless(napali_job.ji_qs.ji_state == JOB_STATE_COMPLETE);
+  fail_unless(napali_job.ji_qs.ji_substate == JOB_SUBSTATE_COMPLETE);
+  }
+END_TEST
 
 START_TEST(chk_mppnodect_test)
   {
@@ -131,37 +152,48 @@ START_TEST(svr_evaljobstate_test)
 
   memset(&test_job, 0, sizeof(test_job));
 
-  svr_evaljobstate(NULL, &state, &substate, 0);
-  svr_evaljobstate(&test_job, NULL, &substate, 0);
-  svr_evaljobstate(&test_job, &state, NULL, 0);
-
   test_job.ji_qs.ji_state = JOB_STATE_RUNNING;
-  svr_evaljobstate(&test_job, &state, &substate, 0);
+  svr_evaljobstate(test_job, state, substate, 0);
   fail_unless(test_job.ji_qs.ji_state == state, "svr_setjobstate state fail case 1");
   fail_unless(test_job.ji_qs.ji_substate == substate, "svr_setjobstate substate fail case 1");
   memset(&test_job, 0, sizeof(test_job));
 
   test_job.ji_wattr[JOB_ATR_hold].at_val.at_long = 1;
-  svr_evaljobstate(&test_job, &state, &substate, 0);
+  svr_evaljobstate(test_job, state, substate, 0);
   fail_unless(test_job.ji_qs.ji_state == state, "svr_setjobstate state fail case 2");
   fail_unless(test_job.ji_qs.ji_substate == substate, "svr_setjobstate substate fail case 2");
   memset(&test_job, 0, sizeof(test_job));
 
   test_job.ji_wattr[JOB_ATR_stagein].at_flags = 1;
-  svr_evaljobstate(&test_job, &state, &substate, 0);
+  svr_evaljobstate(test_job, state, substate, 0);
   fail_unless(test_job.ji_qs.ji_state == state, "svr_setjobstate state fail case 3");
   fail_unless(test_job.ji_qs.ji_substate == substate, "svr_setjobstate substate fail case 3");
   memset(&test_job, 0, sizeof(test_job));
 
-  svr_evaljobstate(&test_job, &state, &substate, 0);
+  svr_evaljobstate(test_job, state, substate, 0);
   fail_unless(test_job.ji_qs.ji_state == state, "svr_setjobstate state fail case 4");
   fail_unless(test_job.ji_qs.ji_substate == substate, "svr_setjobstate substate fail case 4");
   memset(&test_job, 0, sizeof(test_job));
 
-  svr_evaljobstate(&test_job, &state, &substate, 1);
+  svr_evaljobstate(test_job, state, substate, 1);
   fail_unless(JOB_STATE_QUEUED == state, "svr_setjobstate state fail case 5");
   fail_unless(JOB_SUBSTATE_QUEUED == substate, "svr_setjobstate substate fail case 5");
 
+  int old_state;
+  int old_substate;
+  test_job.ji_qs.ji_state = JOB_STATE_EXITING;
+  old_state = test_job.ji_qs.ji_state;
+  old_substate = test_job.ji_qs.ji_substate;
+  svr_evaljobstate(test_job, state, substate, 1);
+  fail_unless(old_state == state);
+  fail_unless(old_substate == substate);
+
+  test_job.ji_qs.ji_state = JOB_STATE_COMPLETE;
+  old_state = test_job.ji_qs.ji_state;
+  old_substate = test_job.ji_qs.ji_substate;
+  svr_evaljobstate(test_job, state, substate, 1);
+  fail_unless(old_state == state);
+  fail_unless(old_substate == substate);
   }
 END_TEST
 
@@ -558,6 +590,7 @@ Suite *svr_jobfunc_suite(void)
   tc_core = tcase_create("lock_ji_mutex_test");
   tcase_add_test(tc_core, lock_ji_mutex_test);
   tcase_add_test(tc_core, chk_mppnodect_test);
+  tcase_add_test(tc_core, job_wait_over_test);
   suite_add_tcase(s, tc_core);
 
   return s;

@@ -92,7 +92,7 @@ job *svr_find_job(char *jobid, int get_subjob)
   exit(1);
   }
 
-void svr_evaljobstate(job *pjob, int *newstate, int *newsub, int forceeval)
+void svr_evaljobstate(job &pjob, int &newstate, int &newsub, int forceeval)
   {
   fprintf(stderr, "The call to svr_evaljobstate to be mocked!!\n");
   exit(1);
