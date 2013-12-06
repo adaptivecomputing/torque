@@ -16,7 +16,7 @@ int diswui(tcp_chan *chan, unsigned value)
  exit(1);
  }
 
-int hash_count(job_data *head)
+int hash_count(job_data_container *head)
  {
  fprintf(stderr, "The call to hash_count needs to be mocked!!\n");
  exit(1);

@@ -82,6 +82,7 @@ all_jobs array_summary;
 attribute_def svr_attr_def[10];
 int a_opt_init = -1;
 all_tasks task_list_timed;
+pthread_mutex_t task_list_timed_mutex;
 char *path_jobinfo_log;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 pthread_mutex_t *svr_requests_mutex = NULL;
@@ -232,7 +233,7 @@ void initialize_all_nodes_array(all_nodes *an)
   exit(1);
   }
 
-job_array *next_array(int *iter)
+job_array *next_array(all_arrays_iterator **iter)
   {
   fprintf(stderr, "The call to next_array needs to be mocked!!\n");
   exit(1);
@@ -262,13 +263,13 @@ void depend_clrrdy(job *pjob)
   exit(1);
   }
 
-struct pbsnode *next_host(all_nodes *an, int *iter, struct pbsnode *held)
+struct pbsnode *next_host(all_nodes *an, all_nodes_iterator **iter, struct pbsnode *held)
   {
   fprintf(stderr, "The call to next_host needs to be mocked!!\n");
   exit(1);
   }
 
-job *next_job(all_jobs *aj, int *iter)
+job *next_job(all_jobs *aj, all_jobs_iterator *iter)
   {
   fprintf(stderr, "The call to next_job needs to be mocked!!\n");
   exit(1);
@@ -322,7 +323,7 @@ int log_open(char *filename, char *directory)
   exit(1);
   }
 
-int svr_enquejob(job *pjob, int has_sv_qs_mutex, int prev_index, bool reservation)
+int svr_enquejob(job *pjob, int has_sv_qs_mutex, char *prev_id, bool reservation)
   {
   fprintf(stderr, "The call to svr_enquejob needs to be mocked!!\n");
   exit(1);

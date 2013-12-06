@@ -43,6 +43,11 @@ int unlock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string)
   return(0);
   }
 
+int get_svr_attr_str(int index, char **str)
+  {
+  return(0);
+  }
+
 int lock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string)
   {
   return(0);

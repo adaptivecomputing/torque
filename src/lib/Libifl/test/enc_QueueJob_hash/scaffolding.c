@@ -11,7 +11,7 @@ int diswcs(tcp_chan *chan, const char *value, size_t nchars)
  exit(1);
  }
 
-int encode_DIS_attropl_hash(tcp_chan *chan, job_data *job_attr, job_data *res_attr)
+int encode_DIS_attropl_hash(tcp_chan *chan, job_data_container *job_attr, job_data_container *res_attr)
  {
  fprintf(stderr, "The call to encode_DIS_attropl needs to be mocked!!\n");
  exit(1);

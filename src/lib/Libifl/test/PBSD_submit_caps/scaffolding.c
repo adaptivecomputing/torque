@@ -53,7 +53,7 @@ struct batch_reply *PBSD_rdrpy(int *local_errno, int c)
   exit(1);
   }
 
-int encode_DIS_QueueJob_hash(struct tcp_chan *chan, char *jobid, char *destin, job_data *job_attr, job_data *res_attr)
+int encode_DIS_QueueJob_hash(struct tcp_chan *chan, char *jobid, char *destin, job_data_container *job_attr, job_data_container *res_attr)
   {
   fprintf(stderr, "The call to encode_DIS_QueueJob_hash needs to be mocked!!\n");
   exit(1);
