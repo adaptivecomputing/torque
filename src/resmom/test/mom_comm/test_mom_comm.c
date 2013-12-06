@@ -21,6 +21,10 @@ extern bool ms_val;
 #define IM_FAILURE                 -1
 
 
+#define IM_DONE                     0
+#define IM_FAILURE                 -1
+
+
 int process_end_job_error_reply(job *pjob, hnodent *np, struct sockaddr_in *pSockAddr, int errcode);
 void create_contact_list(job &pjob, std::set<int> &sister_list, struct sockaddr_in *contacting_address);
 int handle_im_poll_job_response(struct tcp_chan *chan, job &pjob, int nodeidx, hnodent *np);
@@ -390,6 +394,10 @@ Suite *mom_comm_suite(void)
 
   tc_core = tcase_create("test_read_status_strings_loop");
   tcase_add_test(tc_core, test_read_status_strings_loop);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("handle_im_obit_task_response_test");
+  tcase_add_test(tc_core, handle_im_obit_task_response_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("handle_im_obit_task_response_test");
