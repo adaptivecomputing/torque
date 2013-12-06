@@ -23,12 +23,6 @@ int encode_DIS_JobId(struct tcp_chan *chan, char *jobid)
   exit(1);
   }
 
-char *memmgr_strdup(memmgr **mgr, char *value, int *size)
-  {
-  fprintf(stderr, "The call to memmgr_strdup needs to be mocked!!\n");
-  exit(1);
-  }
-
 int encode_DIS_JobFile(struct tcp_chan *chan, int seq, char *buf, int len, char *jobid, int which)
   {
   fprintf(stderr, "The call to encode_DIS_JobFile needs to be mocked!!\n");
@@ -59,7 +53,7 @@ struct batch_reply *PBSD_rdrpy(int *local_errno, int c)
   exit(1);
   }
 
-int encode_DIS_QueueJob_hash(struct tcp_chan *chan, char *jobid, char *destin, memmgr **mm, job_data *job_attr, job_data *res_attr)
+int encode_DIS_QueueJob_hash(struct tcp_chan *chan, char *jobid, char *destin, job_data *job_attr, job_data *res_attr)
   {
   fprintf(stderr, "The call to encode_DIS_QueueJob_hash needs to be mocked!!\n");
   exit(1);

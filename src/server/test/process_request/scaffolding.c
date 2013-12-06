@@ -443,18 +443,6 @@ int get_svr_attr_l(int index, long *l)
   return(0);
   }
 
-void memmgr_destroy(memmgr **mgr) {}
-
-void *memmgr_calloc(memmgr **mgr, int qty, int size)
-  {
-  return(NULL);
-  }
-
-int memmgr_init(memmgr **mgr, int mgr_size)
-  {
-  return(0);
-  }
-
 int acl_check_my_array_string(struct array_strings *pas, char *name, int type)
   {
   return(0);

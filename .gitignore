@@ -46,6 +46,7 @@ contrib/init.d/suse.pbs_sched
 contrib/init.d/suse.pbs_server
 contrib/init.d/suse.trqauthd
 coverages.csv
+current_hash
 *.1
 *.3
 *.7

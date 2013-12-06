@@ -406,18 +406,6 @@ int get_svr_attr_arst(int index, struct array_strings **arst)
   return(0);
   }
 
-void memmgr_destroy(memmgr **mgr) {}
-
-int memmgr_init(memmgr **mgr, int mgr_size)
-  {
-  return(0);
-  }
-
-void *memmgr_calloc(memmgr **mgr, int qty, int size)
-  {
-  return(NULL);
-  }
-
 int acl_check_my_array_string(struct array_strings *pas, char *name, int type)
   {
   return(0);
