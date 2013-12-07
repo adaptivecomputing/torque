@@ -90,7 +90,8 @@
 
 
 
-#define MINIMUM_STACK_SIZE 16777216
+#define MINIMUM_STACK_SIZE 8192 * 1024
+#define MAX_STACK_SIZE MINIMUM_STACK_SIZE * 4
 /*extern int    LOGLEVEL;*/
 sigset_t      fillset;
 
@@ -104,23 +105,15 @@ int create_work_thread(void)
   int             rc;
   sigset_t        oldset;
   pthread_t       wthread;
-  pthread_attr_t  attr;
-  size_t          stack_size;
 
   if (request_pool == NULL)
     {
     initialize_threadpool(&request_pool,5,5,-1);
     }
 
-  pthread_attr_init(&attr);
-  pthread_attr_getstacksize(&attr, &stack_size);
-  if (stack_size < MINIMUM_STACK_SIZE)
-    stack_size = MINIMUM_STACK_SIZE;
-  pthread_attr_setstacksize(&attr, stack_size);
-
   /* save old signal mask */
   pthread_sigmask(SIG_SETMASK,&fillset,&oldset);
-  rc = pthread_create(&wthread,&request_pool->tp_attr,work_thread, &attr);
+  rc = pthread_create(&wthread,&request_pool->tp_attr,work_thread, NULL);
   pthread_sigmask(SIG_SETMASK,&oldset,NULL);
   
   return(rc);
@@ -336,6 +329,7 @@ int initialize_threadpool(
   {
   int           i;
   int           rc = 0;
+  size_t        stack_size;
 
   sigfillset(&fillset);
 
@@ -361,7 +355,21 @@ int initialize_threadpool(
   (*pool)->tp_started = FALSE;
   
   /* initialize attributes */
-  pthread_attr_init(&(*pool)->tp_attr);
+  if ((rc = pthread_attr_init(&(*pool)->tp_attr)) != 0)
+    {
+    perror("pthread_attr_init failed. Could not init thread pool.");
+    log_err(-1, __func__, "pthread_attr_init failed. Could not init thread pool.");
+    return rc;
+    }
+
+  pthread_attr_getstacksize(&(*pool)->tp_attr, &stack_size);
+  if (stack_size < MINIMUM_STACK_SIZE)
+    stack_size = MINIMUM_STACK_SIZE;
+  if (stack_size > MAX_STACK_SIZE)
+    stack_size = MAX_STACK_SIZE;
+
+  pthread_attr_setstacksize(&(*pool)->tp_attr, stack_size);
+
   pthread_attr_setdetachstate(&(*pool)->tp_attr,PTHREAD_CREATE_DETACHED);
 
   /* if threads are static, create them all now */
