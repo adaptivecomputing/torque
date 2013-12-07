@@ -4243,6 +4243,9 @@ int handle_im_obit_task_response(
   
   if (ptask != NULL)
     {
+    if (is_ptask_corrupt(ptask->ti_chan))
+       return(IM_FAILURE);
+
     tm_reply(ptask->ti_chan, TM_OKAY, event);
     
     diswsi(ptask->ti_chan, exitval);
@@ -8820,6 +8823,34 @@ int read_status_strings(
   } /* END read_status_strings() */
 
 
+
+int is_ptask_corrupt(
+
+  struct tcp_chan *chan) /* Input */
+
+  {
+  char log_buf[LOCAL_LOG_BUF_SIZE];
+  struct tcpdisbuf *tp = &chan->writebuf;
+
+  if (tp->tdis_bufsize == 0)
+    {
+    snprintf(log_buf,sizeof(log_buf),
+      "write buffer's tdis_bufsize was unexpectely found with a value of 0");
+    log_err(-1, __func__, log_buf);
+    return 1;
+    }
+
+  tp = &chan->readbuf;
+  if (tp->tdis_bufsize == 0)
+    {
+    snprintf(log_buf,sizeof(log_buf),
+      "read buffer's tdis_bufsize was unexpectely found with a value of 0");
+    log_err(-1, __func__, log_buf);
+    return -1;
+    }
+
+  return 0;
+  }
 
 /* END mom_comm.c */
 

@@ -513,6 +513,7 @@ int tcp_puts(
   /*        performance (how?) */
 
   tp = &chan->writebuf;
+
   if ((tp->tdis_thebuf + tp->tdis_bufsize - tp->tdis_leadp) < (ssize_t)ct)
     {
     /* not enough room, reallocate the buffer */
