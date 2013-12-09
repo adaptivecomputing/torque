@@ -1097,7 +1097,6 @@ void *check_nodes_work(
   long              chk_len = 300;
   char              log_buf[LOCAL_LOG_BUF_SIZE];
   time_t            time_now = time(NULL);
-  int               rc;
 
   node_iterator     iter;
   
