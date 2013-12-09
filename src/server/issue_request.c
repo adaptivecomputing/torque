@@ -252,10 +252,15 @@ void reissue_to_svr(
 
   {
   time_t         time_now = time(NULL);
-  char          *br_id = (char *)pwt->wt_parm1;
-  batch_request *preq = get_remove_batch_request(br_id);
+  char          *br_id;
+  batch_request *preq;
   char          *serverName = NULL;
   
+  if (pwt == NULL)
+    return;
+
+  br_id = (char *)pwt->wt_parm1;
+  preq = get_remove_batch_request(br_id);
   /* if not timed-out, retry send to remote server */
   if (preq != NULL)
     {
