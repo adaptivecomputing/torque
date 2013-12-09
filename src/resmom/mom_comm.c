@@ -228,11 +228,14 @@ u_long gettime(resource *);
 u_long getsize(resource *);
 
 #ifdef NVIDIA_GPUS
-extern int  setup_gpus_for_job(job *pjob);
+int  setup_gpus_for_job(job *pjob);
 #endif  /* NVIDIA_GPUS */
 
 #ifdef PENABLE_LINUX26_CPUSETS
-extern int use_cpusets(job *);
+int  use_cpusets(job *);
+#ifndef NUMA_SUPPORT
+void create_cpuset_reservation_if_needed(job &pjob);
+#endif
 #endif /* PENABLE_LINUX26_CPUSETS */
 
 
@@ -2553,6 +2556,8 @@ int im_join_job_as_sister(
       pjob->ji_qs.ji_jobid);
     
     log_ext(-1, __func__, log_buffer, LOG_INFO);
+
+    create_cpuset_reservation_if_needed(*pjob);
 
     if (create_job_cpuset(pjob) == FAILURE)
       {

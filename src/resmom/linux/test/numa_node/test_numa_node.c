@@ -35,6 +35,12 @@ START_TEST(test_translate_range_string_to_vector)
   fail_unless(indices[0] == 1);
 
   indices.clear();
+  translate_range_string_to_vector("0-1\n", indices);
+  fail_unless(indices.size() == 2);
+  fail_unless(indices[0] == 0);
+  fail_unless(indices[1] == 1);
+
+  indices.clear();
   translate_range_string_to_vector("1-4", indices);
   fail_unless(indices.size() == 4);
   fail_unless(indices[0] == 1);
