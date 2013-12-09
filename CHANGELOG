@@ -27,6 +27,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       deleted if they were deleted before their start date and keep_completed kept them
       around long enough. Fix this.
   c - TRQ-2347. Fix a segfault around re-sending batch requests.
+  b - TRQ-2270. Fix some problems with TORQUE continuing to have nodes in a free state 
+      when the host is down.
 
 4.2.6
   b - TRQ-2273. Job start time is hard coded to 5 minutes. If the prolog takes longer
