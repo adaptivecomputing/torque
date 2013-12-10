@@ -400,6 +400,8 @@ m4_ifdef([AM_SILENT_RULES],[
     src/lib/test/Makefile
     src/momctl/test/Makefile
     src/momctl/test/momctl/Makefile
+    src/pam/test/Makefile
+    src/pam/test/pam_pbssimpleauth/Makefile
     src/resmom/test/Makefile
     src/resmom/test/alps_reservations/Makefile
     src/resmom/test/catch_child/Makefile
