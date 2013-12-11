@@ -1,5 +1,6 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
+
 4.5.0
   b - TRQ-2319. Replace two Torque functions with ones from the hwloc package.
   n - Portable Hardware Locality (hwloc) package version 1.2 or higher must be
@@ -9,6 +10,13 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 4.2.7
   b - TRQ-2329. Fix a problem where nodes could be allocated to array subjobs even
       after the job was deleted.
+
+4.2.6.1.h1
+  b - TRQ-2395. Fix a problem when running jobs on non-Cray nodes reporting to a pbs
+      server running in cray enabled mode.
+
+4.2.6.1
+
   b - TRQ-2351. Fix an issue where moms that are before 4.2.6 can't run jobs if the
       server is 4.2.6.
   e - Made it so trqauthd cannot be loaded more than once. trqauthd opens a UNIX 
