@@ -2945,7 +2945,8 @@ int node_spec(
   char               *EMsg,       /* O (optional,minsize=1024) */
   char               *login_prop, /* I (optional) */
   alps_req_data     **ard_array,  /* O (optional) */
-  int                *num_reqs)   /* O (optional) */
+  int                *num_reqs,   /* O (optional) */
+  enum job_types     &job_type)
 
   {
   char                 first_node_name[PBS_MAXHOSTNAME + 1];
@@ -2963,7 +2964,6 @@ int node_spec(
   char                *spec;
   char                *plus;
   long                 cray_enabled = FALSE;
-  enum job_types       job_type = JOB_TYPE_normal;
   int                  num_alps_reqs = 0;
 
   if (EMsg != NULL)
@@ -2980,6 +2980,8 @@ int node_spec(
 
     DBPRT(("%s\n", log_buf));
     }
+  
+  job_type = JOB_TYPE_normal;
 
   set_first_node_name(spec_param, first_node_name);
   get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
@@ -4435,6 +4437,7 @@ int set_nodes(
   alps_req_data     *ard_array = NULL;
   int                num_reqs = 0;
   long               cray_enabled = FALSE; 
+  enum job_types     job_type;
 
   int gpu_flags = 0;
 
@@ -4464,7 +4467,17 @@ int set_nodes(
     login_prop = pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str;
 
   /* allocate nodes */
-  if ((i = node_spec(spec, 1, 1, ProcBMStr, FailHost, naji, EMsg, login_prop, &ard_array, &num_reqs)) == 0)
+  if ((i = node_spec(spec,
+                     1,
+                     1,
+                     ProcBMStr,
+                     FailHost,
+                     naji,
+                     EMsg,
+                     login_prop,
+                     &ard_array,
+                     &num_reqs,
+                     job_type)) == 0)
     {
     /* no resources located, request failed */
     if (EMsg != NULL)
@@ -4490,11 +4503,13 @@ int set_nodes(
     free_alps_req_data_array(ard_array, num_reqs);
     return(PBSE_UNKNODE);
     }
-  
+ 
   get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
   if (cray_enabled == TRUE)
     {
-    if (naji->next != NULL)
+    // JOB_TYPE_normal means no component from the Cray will be used
+    if ((job_type != JOB_TYPE_normal) && 
+        (naji->next != NULL))
       {
       pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str = strdup(naji->node_name);
       pjob->ji_wattr[JOB_ATR_login_node_id].at_flags = ATR_VFLAG_SET;
@@ -4548,12 +4563,7 @@ int set_nodes(
 
   pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HasNodes;  /* indicate has nodes */
 
-  /* add this job to ms's job list --not used right now, will be debugged later */
-  /*add_to_ms_list(hlist->name, pjob);*/
-
-
   /* build list of allocated nodes, gpus, and ports */
-/*  if ((rc = translate_howl_to_string(hlist, EMsg, &NCount, rtnlist, rtnportlist, TRUE)) != PBSE_NONE) */
   rc = translate_job_reservation_info_to_string(host_info, &NCount, exec_hosts, &exec_ports);
   if (rc != PBSE_NONE)
     {
@@ -4565,7 +4575,9 @@ int set_nodes(
   *rtnlist = strdup(exec_hosts.str().c_str());
   *rtnportlist = strdup(exec_ports.str().c_str());
 
-  if (cray_enabled == TRUE)
+  // JOB_TYPE_normal means no component from the Cray will be used
+  if ((cray_enabled == TRUE) &&
+      (job_type != JOB_TYPE_normal))
     {
     char *plus = strchr(*rtnlist, '+');
 
@@ -4801,9 +4813,10 @@ int node_avail_complex(
   int  *ndown)  /* O - number down      */
 
   {
-  int ret;
+  int            ret;
+  enum job_types job_type;
 
-  ret = node_spec(spec, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+  ret = node_spec(spec, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, job_type);
 
   *navail = ret;
   *nalloc = 0;
@@ -4962,6 +4975,7 @@ int node_reserve(
   node_iterator      iter;
   char               log_buf[LOCAL_LOG_BUF_SIZE];
   node_job_add_info  *naji = NULL;
+  enum job_types      job_type;
 
   DBPRT(("%s: entered\n", __func__))
 
@@ -4974,7 +4988,7 @@ int node_reserve(
 
   naji = (node_job_add_info *)calloc(1, sizeof(node_job_add_info));
 
-  if ((ret_val = node_spec(nspec, 0, 0, NULL, NULL, naji, NULL, NULL, NULL, NULL)) >= 0)
+  if ((ret_val = node_spec(nspec, 0, 0, NULL, NULL, naji, NULL, NULL, NULL, NULL, job_type)) >= 0)
     {
     /*
     ** Zero or more of the needed Nodes are available to be

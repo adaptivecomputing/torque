@@ -19,8 +19,20 @@ ascent
       is /tmp/trqauthd-unix. It can be configured to point to a different directory.
       If trqauthd will not start and you know there are no other instances of trqauthd
       running you should delete the UNIX domain file and try again.
-
-
+  b - TRQ-2373. Fix login nodes restricting the number of jobs to the number specified
+      by np=X.
+  b - TRQ-2354. Fix an issue with potential overflow in user job counts. Also fix a 
+      user being considered different if from a different submit host.
+  b - TRQ-2369. Fix a problem with pbs_mom recovering which cpu indices were in use for
+      jobs that were running at shutdown and still running at the time the mom restarted.
+  b - TRQ-2377. Jobs with future start dates were being placed in queued after being 
+      deleted if they were deleted before their start date and keep_completed kept them
+      around long enough. Fix this.
+  c - TRQ-2347. Fix a segfault around re-sending batch requests.
+  b - TRQ-2270. Fix some problems with TORQUE continuing to have nodes in a free state 
+      when the host is down.
+  b - TRQ-2395. Fix a problem when running jobs on non-Cray nodes reporting to a pbs
+      server running in cray enabled mode.
 
 4.2.6
   b - TRQ-2273. Job start time is hard coded to 5 minutes. If the prolog takes longer
