@@ -29,6 +29,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       when the host is down.
   b - TRQ-2395. Fix a problem when running jobs on non-Cray nodes reporting to a pbs
       server running in cray enabled mode.
+  n - TRQ-2299. Make it so that the reporter mom doesn't fork to send its update.
 
 4.2.6
   b - TRQ-2273. Job start time is hard coded to 5 minutes. If the prolog takes longer
