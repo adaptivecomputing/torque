@@ -1419,6 +1419,77 @@ int send_update()
   } /* END send_update() */
 
 
+
+int send_update_to_a_server()
+
+  {
+  int rc = NO_SERVER_CONFIGURED;
+
+  /* now, once we contact one server we stop attempting to report in */
+  for (int sindex = 0; sindex < PBS_MAXSERVER && rc != PBSE_NONE; sindex++)
+    {
+    int tmp_rc = mom_server_update_stat(&mom_servers[sindex], mom_status);
+
+    if (tmp_rc != NO_SERVER_CONFIGURED)
+      rc = tmp_rc;
+    }
+
+  if (rc == COULD_NOT_CONTACT_SERVER)
+    log_err(-1, __func__, "Could not contact any of the servers to send an update");
+
+  return(rc);
+  } /* END send_update_to_a_server() */
+
+
+
+void update_mom_status()
+
+  {
+  mom_status.clear();
+
+  generate_server_status(mom_status);
+#ifdef NVIDIA_GPUS
+  add_gpu_status(mom_status);
+#endif /* NVIDIA_GPU */
+
+#ifdef MIC
+  add_mic_status(mom_status);
+#endif /* MIC */
+  } /* update_mom_status() */
+
+
+int send_status_through_hierarchy()
+
+  {
+  node_comm_t *nc = NULL;
+  int          rc = -1;
+
+  if ((nc = update_current_path(mh)) != NULL)
+    {
+    /* write to the socket */
+    while (nc != NULL)
+      {
+      if (write_status_strings(mom_status, nc) < 0)
+        {
+        nc->bad = TRUE;
+        nc->mtime = time_now;
+        nc = force_path_update(mh);
+        }
+      else 
+        {
+        rc = PBSE_NONE;
+  
+        close(nc->stream);
+        break;
+        }
+      }
+    }
+
+  return(rc);
+  } /* END send_status_through_hierarchy() */
+
+
+
 /**
  * mom_server_all_update_stat
  *
@@ -1430,9 +1501,6 @@ int send_update()
 void mom_server_all_update_stat(void)
  
   {
-  node_comm_t *nc = NULL;
-  int          sindex;
-  int          rc;
   pid_t        pid;
 
   time_now = time(NULL);
@@ -1458,100 +1526,63 @@ void mom_server_all_update_stat(void)
     log_record(PBSEVENT_SYSTEM, 0, __func__, "composing status update for server");
     }
 
-  /* It is possible that pbs_server may get busy and start queing incoming requests and not be able 
-     to process them right away. If pbs_mom is waiting for a reply to a statuys update that has 
-     been queued and at the same time the server makes a request to the mom we can get stuck
-     in a pseudo live-lock state. That is the server is waiting for a response from the mom and
-     the mom is waiting for a response from the server. neither of which will come until a request times out.
-     If we fork the status updates this alleviates the problem by making one less request from the
-     mom single threaded */
-  pid = fork();
-
-  if (pid < 0)
+  if (is_reporter_mom == TRUE)
     {
-    log_record(PBSEVENT_SYSTEM, 0, __func__, "Failed to fork stat update process");
-    return;
+    generate_alps_status(mom_status, apbasil_path, apbasil_protocol);
+
+    if (send_update_to_a_server() == PBSE_NONE)
+      LastServerUpdateTime = time_now;
     }
-
-  if (pid > 0)
+  else
     {
-    /* We are the parent clear out the status cache. */
-    int iter = -1;
-    received_node *rn = NULL;
+    /* It is possible that pbs_server may get busy and start queing incoming requests and not be able 
+       to process them right away. If pbs_mom is waiting for a reply to a statuys update that has 
+       been queued and at the same time the server makes a request to the mom we can get stuck
+       in a pseudo live-lock state. That is the server is waiting for a response from the mom and
+       the mom is waiting for a response from the server. neither of which will come until a request times out.
+       If we fork the status updates this alleviates the problem by making one less request from the
+       mom single threaded */
+    pid = fork();
 
-    LastServerUpdateTime = time_now;
-
-    while ((rn = (received_node *)next_thing(received_statuses, &iter)) != NULL)
+    if (pid < 0)
       {
-      rn->statuses.clear();
+      log_record(PBSEVENT_SYSTEM, 0, __func__, "Failed to fork stat update process");
+      return;
       }
 
-    return;
-    }
+    if (pid > 0)
+      {
+      // PARENT 
+      int iter = -1;
+      received_node *rn = NULL;
+
+      LastServerUpdateTime = time_now;
+      UpdateFailCount = 0;
+
+      // clear cached statuses from hierarchy
+      while ((rn = (received_node *)next_thing(received_statuses, &iter)) != NULL)
+        {
+        rn->statuses.clear();
+        }
+
+      return;
+      }
+
+    // CHILD
  
 #ifdef NUMA_SUPPORT
-  for (numa_index = 0; numa_index < num_node_boards; numa_index++)
+    for (numa_index = 0; numa_index < num_node_boards; numa_index++)
 #endif /* NUMA_SUPPORT */
-    {
-    rc = NO_SERVER_CONFIGURED;
-
-    mom_status.clear();
-
-    if (is_reporter_mom == FALSE)
       {
-      generate_server_status(mom_status);
-#ifdef NVIDIA_GPUS
-      add_gpu_status(mom_status);
-#endif /* NVIDIA_GPU */
-
-#ifdef MIC
-      add_mic_status(mom_status);
-#endif /* MIC */
-
+      update_mom_status();
+  
+      if (send_status_through_hierarchy() != PBSE_NONE)
+        send_update_to_a_server();
       }
-    else
-      generate_alps_status(mom_status, apbasil_path, apbasil_protocol);
- 
-    if ((nc = update_current_path(mh)) != NULL)
-      {
-      /* write to the socket */
-      while (nc != NULL)
-        {
-        if (write_status_strings(mom_status, nc) < 0)
-          {
-          nc->bad = TRUE;
-          nc->mtime = time_now;
-          nc = force_path_update(mh);
-          }
-        else 
-          {
-          LastServerUpdateTime = time_now;
-          UpdateFailCount = 0;
-
-          break;
-          }
-        }
-      }
-    
-    if (nc == NULL)
-      {
-      /* now, once we contact one server we stop attempting to report in */
-      for (sindex = 0; sindex < PBS_MAXSERVER && rc != PBSE_NONE; sindex++)
-        {
-        int tmp_rc = mom_server_update_stat(&mom_servers[sindex], mom_status);
-
-        if (tmp_rc != NO_SERVER_CONFIGURED)
-          rc = tmp_rc;
-        }
-
-      if (rc == COULD_NOT_CONTACT_SERVER)
-        log_err(-1, __func__, "Could not contact any of the servers to send an update");
-      }
-    else
-      close(nc->stream);
+  
+    exit(0);
     }
  
-  exit(0);
   }  /* END mom_server_all_update_stat() */
 
 
