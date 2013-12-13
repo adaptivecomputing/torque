@@ -29,7 +29,7 @@ char *alps_rsv_outputs[] = {
     (char *)"<?xml version='1.0'?><BasilResponse protocol='1.0'> <ResponseData status='FAILURE' method='RESERVE'/></BasilResponse>",
     (char *)"tom"};
 
-resizable_array *parse_exec_hosts(char *exec_hosts);
+resizable_array *parse_exec_hosts(char *exec_hosts,const char *mppnodes);
 dynamic_string  *get_reservation_command(resizable_array *, char *, char *, char *, char *, char *, int, int, int);
 int              parse_reservation_output(char *, char **);
 int              execute_reservation(char *, char **);
@@ -80,7 +80,7 @@ END_TEST
 
 START_TEST(parse_exec_hosts_test)
   {
-  resizable_array *hrl = parse_exec_hosts(eh1);
+  resizable_array *hrl = parse_exec_hosts(eh1,NULL);
   int              iter = -1;
   int              host_count = 0;
   host_req        *hr;
@@ -97,7 +97,7 @@ START_TEST(parse_exec_hosts_test)
   fail_unless(host_count == 2, buf);
 
   free_resizable_array(hrl);
-  hrl = parse_exec_hosts(eh2);
+  hrl = parse_exec_hosts(eh2,NULL);
   iter = -1;
   host_count = 0;
 
@@ -128,7 +128,7 @@ START_TEST(parse_exec_hosts_test)
   fail_unless(host_count == 2, buf);
 
   free_resizable_array(hrl);
-  hrl = parse_exec_hosts(eh3);
+  hrl = parse_exec_hosts(eh3,NULL);
   iter = -1;
   host_count = 0;
 
@@ -160,7 +160,7 @@ END_TEST
 
 START_TEST(get_reservation_command_test)
   {
-  resizable_array *hrl = parse_exec_hosts(eh1);
+  resizable_array *hrl = parse_exec_hosts(eh1,NULL);
   dynamic_string  *apbasil_command;
   char            *reserve_param;
   char            *reserve_param2;
@@ -184,7 +184,7 @@ START_TEST(get_reservation_command_test)
   free_resizable_array(hrl);
   free_dynamic_string(apbasil_command);
 
-  hrl = parse_exec_hosts(eh3);
+  hrl = parse_exec_hosts(eh3,NULL);
   apbasil_command = get_reservation_command(hrl, uname, jobids[1], apbasil_path, apbasil_protocol, NULL, 1, 0, 0);
 
   reserve_param = strstr(apbasil_command->str, "ReserveParam ");
@@ -201,7 +201,7 @@ START_TEST(get_reservation_command_test)
   free_resizable_array(hrl);
   free_dynamic_string(apbasil_command);
 
-  hrl = parse_exec_hosts(eh3);
+  hrl = parse_exec_hosts(eh3,NULL);
   apbasil_command = get_reservation_command(hrl, uname, jobids[1], apbasil_path, apbasil_protocol_13, NULL, 1, 1, 0);
 
   reserve_param = strstr(apbasil_command->str, "ReserveParam ");
