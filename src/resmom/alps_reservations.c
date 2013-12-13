@@ -93,7 +93,6 @@
 
 typedef std::vector<host_req *> host_req_list;
 
-
 extern char mom_alias[];
 
 
@@ -122,11 +121,53 @@ void free_host_req(
   free(hr);
   } /* END free_host_req() */
 
+/* 
+ * Sort the exec_hosts lists to match the nodes in mppnodes. 
+ *
+ */
 
+host_req_list *sort_exec_hosts(
+  host_req_list *exec_hosts,
+  const char      *mppnodes)
+  {
+  if(mppnodes == NULL)
+    {
+    return exec_hosts;
+    }
+
+  char *tmp = strdup(mppnodes);
+  char *tmp_str = tmp;
+  host_req_list *tmp_host_list = new host_req_list();
+  char *tok;
+  host_req *pHr;
+    
+  while((tok = threadsafe_tokenizer(&tmp_str,",")) != NULL)
+    {
+    for(int i = exec_hosts->size() - 1;i >= 0;i--)
+      {
+      pHr = exec_hosts->at(i);
+      if(strcmp(pHr->hostname,tok) == 0)
+        {
+        tmp_host_list->push_back(pHr);
+        exec_hosts->erase(exec_hosts->begin() + i);
+        break;
+        }
+      }
+    }
+  while(exec_hosts->size() != 0)
+    {
+    tmp_host_list->push_back(exec_hosts->back());
+    exec_hosts->pop_back();
+    }
+  delete exec_hosts;
+  free(tmp);
+  return tmp_host_list;
+  }
 
 host_req_list *parse_exec_hosts(
 
-  char *exec_hosts_param)
+  char *exec_hosts_param,
+  const char *mppnodes)
 
   {
   char            *slash;
@@ -163,8 +204,7 @@ host_req_list *parse_exec_hosts(
     }
 
   free(exec_hosts);
-
-  return(list);
+  return(sort_exec_hosts(list,mppnodes));
   } /* END parse_exec_hosts() */
 
 
@@ -741,7 +781,8 @@ int create_alps_reservation(
   int         use_nppn,
   int         nppcu,
   int         mppdepth,
-  char      **reservation_id)
+  char      **reservation_id,
+  const char *mppnodes)
 
   {
   host_req_list    *list;
@@ -750,13 +791,13 @@ int create_alps_reservation(
   int              retry_count = 0;
   char            *user = strdup(username);
   char            *aroba;
-  
+
   if ((aroba = strchr(user, '@')) != NULL)
     *aroba = '\0';
 
   if (strchr(exec_hosts, '|') == NULL)
     {
-    list = parse_exec_hosts(exec_hosts);
+    list = parse_exec_hosts(exec_hosts,mppnodes);
     
     if (list->size() == 0)
       {

@@ -1904,6 +1904,7 @@ int blcr_restart_job(
       {
       int       use_nppn = TRUE;
       int       mppdepth = 0;
+      char     *mppnodes = NULL;
       int       nppcu = APBASIL_DEFAULT_NPPCU_VALUE; /* default */
       resource *pres = find_resc_entry(
                          &pjob->ji_wattr[JOB_ATR_resource],
@@ -1923,6 +1924,18 @@ int blcr_restart_job(
       if ((pjob->ji_wattr[JOB_ATR_nppcu].at_flags & ATR_VFLAG_SET))
               nppcu = pjob->ji_wattr[JOB_ATR_nppcu].at_val.at_long;
 
+      /* get the mppnodes if it exists */
+      pres = find_resc_entry(
+             &pjob->ji_wattr[JOB_ATR_resource],
+             find_resc_def(svr_resc_def, "mppnodes", svr_resc_size));
+
+      if ((pres != NULL) &&
+          (pres->rs_value.at_val.at_str != NULL))
+        {
+        mppnodes = strdup(pres->rs_value.at_val.at_str);
+        }
+
+
       if (create_alps_reservation(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
             pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
             pjob->ji_qs.ji_jobid,
@@ -1932,7 +1945,8 @@ int blcr_restart_job(
             use_nppn,
             nppcu,
             mppdepth,
-            &rsv_id) != PBSE_NONE)
+            &rsv_id,
+            mppnodes) != PBSE_NONE)
         {
         snprintf(log_buffer, sizeof(log_buffer),
           "Couldn't create the reservation for job %s",
@@ -1945,6 +1959,7 @@ int blcr_restart_job(
         pjob->ji_wattr[JOB_ATR_reservation_id].at_flags = ATR_VFLAG_SET;
         pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str = rsv_id;
         }
+      if(mppnodes != NULL) free(mppnodes);
       }
 
     if (pid < 0)

@@ -3034,6 +3034,7 @@ void handle_reservation(
     {
     char *exec_str;
     int   mppdepth = 0;
+    char *mppnodes = NULL;
 
     if (pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str != NULL)
       exec_str = pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str;
@@ -3060,6 +3061,18 @@ void handle_reservation(
     if ((pjob->ji_wattr[JOB_ATR_nppcu].at_flags & ATR_VFLAG_SET))
       nppcu = pjob->ji_wattr[JOB_ATR_nppcu].at_val.at_long;
 
+    /* get the mppnodes if it exists */
+    pres = find_resc_entry(
+             &pjob->ji_wattr[JOB_ATR_resource],
+             find_resc_def(svr_resc_def, "mppnodes", svr_resc_size));
+
+    if ((pres != NULL) &&
+        (pres->rs_value.at_val.at_str != NULL))
+      {
+      mppnodes = strdup(pres->rs_value.at_val.at_str);
+      }
+    
+
     j = create_alps_reservation(exec_str,
           pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
           pjob->ji_qs.ji_jobid,
@@ -3069,7 +3082,10 @@ void handle_reservation(
           use_nppn,
           nppcu,
           mppdepth,
-          &rsv_id);
+          &rsv_id,
+          mppnodes);
+
+    if(mppnodes != NULL) free(mppnodes);
     
     if (rsv_id != NULL)
       {
