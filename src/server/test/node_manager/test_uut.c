@@ -164,6 +164,14 @@ START_TEST(sync_node_jobs_with_moms_test)
   /* Clean all jobs from the node */
   sync_node_jobs_with_moms(pnode, "");
   fail_unless(pnode->nd_slots.get_number_free() == 9);
+
+  /* This job should not be clean as svr_find_job should find it */
+  jui = (job_usage_info *)calloc(1, sizeof(job_usage_info));
+  strcpy(jui->jobid, "4.noclean.ac");
+  pnode->nd_slots.reserve_execution_slots(3, jui->est);
+  pnode->nd_job_usages.push_back(jui);
+  sync_node_jobs_with_moms(pnode, "");
+  fail_unless(pnode->nd_slots.get_number_free() == 6);
   }
 END_TEST
 
