@@ -79,4 +79,8 @@ void free_nodes(job *pjob);
 
 void set_old_nodes(job *pjob);
 
+int remove_job_from_node(struct pbsnode *pnode, const char *jobid);
+
+void sync_node_jobs_with_moms(struct pbsnode *np, const char *jobs_in_mom);
+
 #endif /* _NODE_MANAGER_H */
