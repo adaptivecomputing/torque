@@ -805,9 +805,10 @@ int remove_jobs_that_have_disappeared(
 
 
 /*
- * match_exact_jobid()
+ * is_jobid_in_mom()
+ * returns: true if jobid was found; false otherwise.
  */
-int match_exact_jobid(
+bool is_jobid_in_mom(
 
   const char *jobs,
   const char *jobid)
@@ -820,11 +821,11 @@ int match_exact_jobid(
   while (jobidstr != NULL)
     {
     if (strcmp(jobid, jobidstr) == 0)
-      return(1);
+      return(true);
     jobidstr = threadsafe_tokenizer(&joblist, " ");
     }
 
-  return(0);
+  return(false);
   }
 
 
@@ -840,11 +841,11 @@ void sync_node_jobs_with_moms(
 
   {
   std::vector<std::string> jobsRemoveFromNode;
-  int removealljobs = (strlen(jobs_in_mom) == 0);
+  bool removealljobs = (strlen(jobs_in_mom) == 0);
 
   for (int i = 0; i < (int)np->nd_job_usages.size(); i++)
     {
-    int removejob = 0;
+    bool removejob = false;
     job_usage_info *jui = np->nd_job_usages[i];
     char *jobid = jui->jobid;
 
@@ -853,9 +854,9 @@ void sync_node_jobs_with_moms(
       char *p = strstr((char *)jobs_in_mom, jobid);
       /* job is in the node but not in mom */
       if (!p)
-        removejob = 1;
-      else if (!(match_exact_jobid(jobs_in_mom, jobid)))
-        removejob = 1;
+        removejob = true;
+      else if (is_jobid_in_mom(jobs_in_mom, jobid) == false)
+        removejob = true;
       }
     if (removejob || removealljobs)
       {
