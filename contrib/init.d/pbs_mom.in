@@ -53,7 +53,7 @@ case "$1" in
 	start)
 		echo -n "Starting TORQUE Mom: "
 		# check if pbs_mom is already running
-		status pbs_mom 2>&1 > /dev/null
+		status -p $PBS_HOME/mom_priv/mom.lock pbs_mom 2>&1 > /dev/null
 		RET=$?
 		[ $RET -eq 0 ] && echo -n "pbs_mom already running" && success && echo && exit 0
 
@@ -74,7 +74,7 @@ case "$1" in
 	stop)
 		echo -n "Shutting down TORQUE Mom: "
 		# check if pbs_mom is running
-		status pbs_mom 2>&1 > /dev/null
+		status -p $PBS_HOME/mom_priv/mom.lock pbs_mom 2>&1 > /dev/null
 		RET=$?
 		[ ! $RET -eq 0 ] && echo -n "pbs_mom already stopped" && success && echo && exit 0
 
@@ -85,7 +85,7 @@ case "$1" in
 		rm -f /var/lock/subsys/pbs_mom
 		;;
 	status)
-		status pbs_mom
+		status -p $PBS_HOME/mom_priv/mom.lock pbs_mom
 		RET=$?
 		;;
 	restart)
