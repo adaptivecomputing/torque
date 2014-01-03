@@ -3402,13 +3402,9 @@ int lock_ji_mutex(
       }
     }
   else
-   {
-    err_msg = (char *)calloc(1, MSG_LEN_LONG);
-    if (msg == NULL)
-      msg = stub_msg;
-    snprintf(err_msg, MSG_LEN_LONG, " Uninitialized mutex pass to pthread_mutex_lock! job id %s", pjob->ji_qs.ji_jobid);
+    {
     rc = -1;
-    log_err(rc, __func__, err_msg);
+    log_err(rc, __func__, "Uninitialized mutex pass to pthread_mutex_lock!");
     }
 
   if (err_msg != NULL)
