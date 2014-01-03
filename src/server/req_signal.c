@@ -199,7 +199,7 @@ int req_signaljob(
   if (preq->rq_type == PBS_BATCH_AsySignalJob)
     {
     reply_ack(preq);
-    preq->rq_noreply = TRUE;
+    return(PBSE_NONE);
     }
 
   /* pass the request on to MOM */
