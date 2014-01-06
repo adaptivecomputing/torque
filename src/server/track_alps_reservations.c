@@ -196,7 +196,7 @@ int insert_alps_reservation(
 
   {
   int index;
-  int rc;
+  int rc = PBSE_NONE;
 
   pthread_mutex_lock(alps_reservations.rh_mutex);
   if ((index = insert_thing(alps_reservations.rh_alps_rsvs, ar)) >= 0)

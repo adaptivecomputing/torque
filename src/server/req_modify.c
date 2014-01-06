@@ -954,6 +954,7 @@ void *req_modifyjob(
   {
   job       *pjob;
   svrattrl  *plist;
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
 
   pjob = chk_job_request(preq->rq_ind.rq_modify.rq_objname, preq);
 
@@ -980,12 +981,24 @@ void *req_modifyjob(
   /* If async modify, reply now; otherwise reply is handled later */
   if (preq->rq_type == PBS_BATCH_AsyModifyJob)
     {
+    /* reply_ack will free preq. We need to copy it before we call reply_ack */
+    batch_request *new_preq;
+
+    new_preq = duplicate_request(preq, -1);
+    if (new_preq == NULL)
+      {
+      sprintf(log_buf, "failed to duplicate batch request");
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+      return(NULL);
+      }
+
+    get_batch_request_id(new_preq);
     reply_ack(preq);
 
-    preq->rq_noreply = TRUE; /* set for no more replies */
+    new_preq->rq_noreply = TRUE; /* set for no more replies */
 
-    enqueue_threadpool_request((void *(*)(void *))modify_job_work, preq);
-    }
+    enqueue_threadpool_request((void *(*)(void *))modify_job_work, new_preq);
+    } 
   else
     modify_job_work(preq);
   
