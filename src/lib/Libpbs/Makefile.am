@@ -23,6 +23,7 @@ libtorque_la_SOURCES = ../Libcsv/csv.c ../Libdis/dis.c \
 		    ../Libdis/diswl_.c ../Libdis/diswsi.c ../Libdis/diswsl.c \
 		    ../Libdis/diswui_.c ../Libdis/diswui.c \
 		    ../Libdis/diswul.c \
+        ../Libutils/u_mutex_mgr.cpp \
 		    ../Libifl/dec_attrl.c ../Libifl/dec_attropl.c \
 		    ../Libifl/dec_Authen.c ../Libifl/dec_CpyFil.c \
 		    ../Libifl/dec_JobCred.c ../Libifl/dec_JobFile.c \
