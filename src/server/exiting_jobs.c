@@ -179,14 +179,13 @@ int retry_job_exit(
 
 char *get_next_retryable_jobid(
 
-    exiting_jobs_info_iterator **iter)
+  exiting_jobs_info_iterator **iter)
 
   {
   job_exiting_retry_info *jeri;
   job                    *pjob;
   time_t                  time_now = time(NULL);
   char                    log_buf[LOCAL_LOG_BUF_SIZE];
-  char                    jobid[PBS_MAXSVRJOBID+1];
 
   exiting_jobs_info.lock();
   if(*iter == NULL)
@@ -195,22 +194,20 @@ char *get_next_retryable_jobid(
     }
 
   while ((jeri = (*iter)->get_next_item()) != NULL)
-    {
+    { 
     if (time_now - jeri->last_attempt > EXITING_RETRY_TIME)
-      {
+      { 
       if (jeri->attempts >= MAX_EXITING_RETRY_ATTEMPTS)
         {
+        /* We will need to use the jobid after jeri is freed. Save the jobid */
         std::string jid(jeri->jobid);
         exiting_jobs_info.remove(jeri->jobid);
-
-        /* We are going to free jeri but we need the job id for a message */
-        strcpy(jobid, jeri->jobid);
         free(jeri);
         exiting_jobs_info.unlock();
         if ((pjob = svr_find_job((char *)jid.c_str(), TRUE)) != NULL)
           {
           snprintf(log_buf, sizeof(log_buf), "Job %s has had its exiting re-tried %d times, purging.",
-            jobid, MAX_EXITING_RETRY_ATTEMPTS);
+          jid.c_str(), MAX_EXITING_RETRY_ATTEMPTS);
           log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
 
           force_purge_work(pjob);
