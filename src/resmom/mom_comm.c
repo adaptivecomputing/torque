@@ -4926,8 +4926,8 @@ int process_error_reply(
 
   {
   int   errcode;
-  int   ret;
-  int   rc;
+  int   ret = PBSE_NONE;
+  int   rc = PBSE_NONE;
       
   errcode = disrsi(chan, &ret);
 
@@ -5050,7 +5050,7 @@ int process_valid_response(
   fwdevent             efwd)
 
   {
-  int ret;
+  int ret = PBSE_NONE;
 
   /* Sender is another MOM telling me that a request has completed successfully */
   svr_conn[chan->sock].cn_stay_open = FALSE;
@@ -5489,7 +5489,7 @@ int process_valid_intermediate_response(
   int                 command)
 
   {
-  int ret;
+  int ret = PBSE_NONE;
 
   if (((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) == 0) &&
       (am_i_mother_superior(*pjob) == false))

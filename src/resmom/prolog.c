@@ -731,6 +731,7 @@ int run_pelog(
   //child can send back the session id.
   if (pipe(pipes) == -1)
     {
+    free(real_gids);
     return(-1);
     }
 
@@ -749,6 +750,7 @@ int run_pelog(
 
   if (pipe(pipes) == -1)
     {
+    free(real_gids);
     return(-1);
     }
 
@@ -768,6 +770,7 @@ int run_pelog(
   if ((kid_read < 0) ||
       (kid_write < 0))
     {
+    free(real_gids);
     return(-1);
     }
 

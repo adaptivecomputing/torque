@@ -630,7 +630,10 @@ int modify_job(
     return(PBSE_RELAYED_TO_MOM);
     }
   else
+    {
     reply_ack(preq);
+    preq = NULL;
+    }
 
   if (copy_checkpoint_files)
     {
@@ -649,8 +652,9 @@ int modify_job(
       if (rc != PBSE_NONE)
         {
         free_br(momreq);
-    
-        req_reject(rc, 0, preq, NULL, NULL);
+   
+        if (preq != NULL)
+          req_reject(rc, 0, preq, NULL, NULL);
 
         if (pjob != NULL)
           {

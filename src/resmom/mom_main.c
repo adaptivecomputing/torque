@@ -4377,6 +4377,8 @@ void read_mom_hierarchy()
     // if we read something successfully, we have the cluster addresses and don't 
     // need to request them.
     received_cluster_addrs = verify_mom_hierarchy();
+
+    close(fds);
     }
   } /* END read_mom_hierarchy() */
 

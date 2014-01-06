@@ -814,14 +814,14 @@ int is_gpustat_get(
 
   {
   pbs_attribute  temp;
-  const char   *gpuid;
+  const char    *gpuid = NULL;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
   int            gpuidx = -1;
   char           gpuinfo[2048];
-  int            need_delimiter;
+  int            need_delimiter = FALSE;
   int            reportedgpucnt = 0;
   int            startgpucnt = 0;
-  int            drv_ver;
+  int            drv_ver = 0;
 
   if (LOGLEVEL >= 7)
     {

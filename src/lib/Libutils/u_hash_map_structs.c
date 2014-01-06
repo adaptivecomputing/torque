@@ -333,5 +333,6 @@ int hash_strlen(
       len += strlen(en->value);
       }
     }
+
   return len;
   }
