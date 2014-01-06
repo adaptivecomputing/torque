@@ -85,6 +85,7 @@
 #include <stdio.h>
 #include "libpbs.h"
 #include "dis.h"
+#include "mutex_mgr.hpp"
 
 /* PBS_sig_put.c
  *
@@ -103,7 +104,7 @@ int PBSD_sig_put(
   int rc = 0;
   struct tcp_chan *chan = NULL;
 
-  pthread_mutex_lock(connection[c].ch_mutex);
+  mutex_mgr ch_mutex = mutex_mgr(connection[c].ch_mutex, false);
 
   sock = connection[c].ch_socket;
   if ((chan = DIS_tcp_setup(sock)) == NULL)
@@ -117,7 +118,6 @@ int PBSD_sig_put(
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
 
-    pthread_mutex_unlock(connection[c].ch_mutex);
     DIS_tcp_cleanup(chan);
     return (PBSE_PROTOCOL);
     }
@@ -127,7 +127,7 @@ int PBSD_sig_put(
     rc = PBSE_PROTOCOL;
     }
 
-  pthread_mutex_unlock(connection[c].ch_mutex);
+  ch_mutex.unlock();
   DIS_tcp_cleanup(chan);
 
   return rc;
