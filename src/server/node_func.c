@@ -136,7 +136,7 @@ struct pbsnode *PGetNodeFromAddr(
 
     unlock_node(pnode, __func__, 0, LOGLEVEL);
     } /* END for each node */
-
+      
   return(NULL);
   }  /* END PGetNodeFromAddr() */
 
@@ -1248,6 +1248,7 @@ void write_compute_node_properties(
       
     unlock_node(alps_node, __func__, "loop", LOGLEVEL);
     }
+   
   } /* END write_compute_node_properties() */
 
 

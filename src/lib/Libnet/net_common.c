@@ -995,16 +995,19 @@ int pbs_getaddrinfo(
   }    
 
 
-int connect_to_trqauthd(int *sock)
+int connect_to_trqauthd(
+    
+  int *sock)
+
   {
-  int rc = PBSE_NONE;
-  int local_socket;
-  char     unix_sockname[MAXPATHLEN + 1];
-  char     *err_msg;
+  int   rc = PBSE_NONE;
+  int   local_socket;
+  char  unix_sockname[MAXPATHLEN + 1];
+  char *err_msg = NULL;
 
   snprintf(unix_sockname, sizeof(unix_sockname), "%s/%s", TRQAUTHD_SOCK_DIR, TRQAUTHD_SOCK_NAME);
   
-  if((local_socket = socket_get_unix()) <= 0)
+  if ((local_socket = socket_get_unix()) < 0)
     {
     cerr << "could not open unix domain socket\n";
     rc = PBSE_SOCKET_FAULT;
@@ -1019,6 +1022,9 @@ int connect_to_trqauthd(int *sock)
     {
     *sock = local_socket;
     }
+
+  if (err_msg != NULL)
+    free(err_msg);
 
   return(rc);
   }

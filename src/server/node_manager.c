@@ -883,6 +883,8 @@ void sync_node_jobs_with_moms(
 
 
 
+
+
 /*
  * sync_node_jobs() - determine if a MOM has a stale job and possibly delete it
  *
@@ -4128,6 +4130,8 @@ int build_hostlist_procs_req(
           host_info.push_back(node_info);
           node_info->port = pnode->nd_mom_rm_port;
           }
+        else
+          free(node_info);
         }
       } /* END for each node */
     } /* if (procs > 0) */
@@ -4213,9 +4217,11 @@ int add_multi_reqs_to_job(
   return(PBSE_NONE);
   } /* END add_multi_reqs_to_job() */
 
+
+
 int free_hostinfo(
 
-    std::vector<job_reservation_info *>  &host_info) /* O */
+  std::vector<job_reservation_info *>  &host_info) /* O */
 
   {
   for (unsigned int i = 0; i < host_info.size(); i++)

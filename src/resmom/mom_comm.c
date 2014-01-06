@@ -742,7 +742,7 @@ int im_compose(
   tm_task_id taskid)
 
   {
-  int ret;
+  int ret = PBSE_NONE;
 
   if (chan->sock < 0)
     {
@@ -4784,7 +4784,7 @@ void im_request(
   {
   int                  command = 0;
   int                  event_com = 0;
-  int                  ret;
+  int                  ret = 0;
   char                *jobid = NULL;
   char                *cookie = NULL;
   char                *oreo;

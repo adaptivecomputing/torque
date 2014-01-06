@@ -586,6 +586,7 @@ proc_mem_t *get_proc_mem_from_path(
                    &mm->swap_free) != 1)
           {
           fclose(fp);
+          free(mm);
           return(NULL);
           }
 
