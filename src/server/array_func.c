@@ -2273,7 +2273,7 @@ int insert_array(
   job_array *pa)
 
   {
-  int           rc;
+  int rc = PBSE_NONE;
 
   allarrays.lock();
 
@@ -2297,7 +2297,7 @@ int remove_array(
   job_array *pa)
 
   {
-  int  rc;
+  int  rc = PBSE_NONE;
   char arrayid[PBS_MAXSVRJOBID+1];
 
   if (allarrays.trylock())

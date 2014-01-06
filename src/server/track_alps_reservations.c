@@ -187,7 +187,7 @@ int insert_alps_reservation(
   alps_reservation *ar)
 
   {
-  int rc;
+  int rc = PBSE_NONE;
 
   alps_reservations.lock();
   if(!alps_reservations.insert(ar,ar->rsv_id))
