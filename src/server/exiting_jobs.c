@@ -271,6 +271,9 @@ int check_exiting_jobs()
       }
     } /* END loop over exiting job information */
 
+  if (iter != NULL)
+    delete iter;
+
   return(PBSE_NONE);
   } /* END check_exiting_jobs() */
 

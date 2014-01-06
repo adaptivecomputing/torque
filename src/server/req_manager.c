@@ -1478,6 +1478,10 @@ void mgr_queue_set(
 
   /* check the appropriateness of the attributes based on queue type */
   svr_queues.lock();
+
+  if (iter != NULL)
+    delete iter;
+
   iter = svr_queues.get_iterator();
   svr_queues.unlock();
 
@@ -1502,6 +1506,9 @@ void mgr_queue_set(
       }
     pque = next_queue(&svr_queues,iter);
     }  /* END while (pque != NULL) */
+
+  if (iter != NULL)
+    delete iter;
 
   reply_ack(preq);
 
@@ -1595,6 +1602,8 @@ void mgr_queue_unset(
     
     pque = next_queue(&svr_queues,iter);
     }
+
+  delete iter;
 
   reply_ack(preq);
 
@@ -1958,6 +1967,9 @@ static void mgr_node_delete(
 
       mgr_log_attr(msg_man_set, plist, PBS_EVENTCLASS_NODE, log_buf);
       } /* end loop ( all nodes ) */
+
+    if (iter != NULL)
+      delete iter;
     }
   else
     {

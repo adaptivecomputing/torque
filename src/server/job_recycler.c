@@ -129,7 +129,7 @@ void *remove_some_recycle_jobs(
 
   {
   int  i;
-  all_jobs_iterator  *iter;
+  all_jobs_iterator  *iter = NULL;
   job *pjob = NULL;
 
   pthread_mutex_lock(recycler.rc_mutex);
@@ -155,6 +155,9 @@ void *remove_some_recycle_jobs(
     }
 
   pthread_mutex_unlock(recycler.rc_mutex);
+
+  if (iter != NULL)
+   delete iter; 
 
   return(NULL);
   } /* END remove_some_recycle_jobs() */

@@ -33,6 +33,9 @@ int get_alps_statuses(
       break;
     }
 
+  if (iter != NULL)
+    delete iter;
+
   return(rc);
   } /* END get_alps_statuses() */
 

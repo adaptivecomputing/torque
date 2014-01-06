@@ -577,6 +577,8 @@ static void req_stat_job_step2(
         if (pa != NULL)
           unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
 
+        delete iter;
+
         return; /* will pick up after mom replies */
         }
       }    /* END while(1) */
@@ -589,6 +591,8 @@ static void req_stat_job_step2(
       reply_free(preply);
 
       req_reject(rc, 0, preq, NULL, "cannot get update from mom");
+
+      delete iter;
 
       return;
       }
@@ -745,6 +749,9 @@ static void req_stat_job_step2(
             }
           unlock_ji_mutex(pjob, __func__, "7", LOGLEVEL);
           unlock_queue(pque, __func__, "perm", LOGLEVEL);
+
+          delete iter;
+
           return;
           }
 
@@ -772,6 +779,8 @@ static void req_stat_job_step2(
       unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
 
     reply_send_svr(preq);
+
+    delete iter;
 
     return;
     }        /* END if ((type == tjstTruncatedServer) || ...) */
@@ -828,6 +837,8 @@ static void req_stat_job_step2(
 
       req_reject(rc, bad, preq, NULL, NULL);
 
+      delete iter;
+
       return;
       }
 
@@ -867,6 +878,8 @@ nextjob:
 
     rc = 0;
     }  /* END while (pjob != NULL) */
+
+  delete iter;
 
   if (pa != NULL)
     {
@@ -1598,6 +1611,9 @@ int req_stat_node(
 
       unlock_node(pnode, __func__, "type != 0, rc == 0, get_numa_statuses", LOGLEVEL);
       }
+
+    if (iter != NULL)
+      delete iter;
     }
 
   if (rc == PBSE_NONE)

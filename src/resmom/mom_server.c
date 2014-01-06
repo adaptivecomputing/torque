@@ -1156,6 +1156,8 @@ int write_cached_statuses(
     
     rn->statuses.clear();
     } /* END iterate over received statuses */
+
+  delete iter;
   
   if (ret == DIS_SUCCESS)
     updates_waiting_to_send = 0;
@@ -1562,6 +1564,8 @@ void mom_server_all_update_stat(void)
       // clear cached statuses from hierarchy
       while ((rn = iter->get_next_item()) != NULL)
         rn->statuses.clear();
+
+      delete iter;
 
       return;
       }

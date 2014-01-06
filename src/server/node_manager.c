@@ -742,6 +742,8 @@ void *finish_job(
   return(NULL);
   } /* END finish_job() */
 
+
+
 /*
  * is_jobid_in_mom()
  * returns: true if jobid was found; false otherwise.
@@ -759,12 +761,18 @@ bool is_jobid_in_mom(
   while (jobidstr != NULL)
     {
     if (strcmp(jobid, jobidstr) == 0)
+      {
+      free(joblist);
       return(true);
+      }
+
     jobidstr = threadsafe_tokenizer(&joblist, " ");
     }
 
+  free(joblist);
+
   return(false);
-  }
+  } /* END is_jobid_in_mom() */
 
 
 
@@ -1272,6 +1280,9 @@ void *write_node_state_work(
     unlock_node(np, __func__, NULL, LOGLEVEL);
     } /* END for each node */
 
+  if (iter != NULL)
+    delete iter;
+
   if (fflush(nstatef) != 0)
     {
     log_err(errno, __func__, "failed saving node state to disk");
@@ -1345,6 +1356,9 @@ int write_node_note(void)
     unlock_node(np, __func__, NULL, LOGLEVEL);
     }
 
+  if (iter != NULL)
+    delete iter;
+
   fflush(nin);
 
   if (ferror(nin))
@@ -1417,6 +1431,9 @@ void *node_unreserve_work(
 
     unlock_node(np, "node_unreserve_work", NULL, LOGLEVEL);
     }
+
+  if (iter != NULL)
+    delete iter;
 
   return(NULL);
   } /* END node_unreserve_work() */
@@ -2063,6 +2080,9 @@ int procs_available(
 
     unlock_node(pnode, "procs_available", NULL, LOGLEVEL);
     }
+
+  if (iter != NULL)
+    delete iter;
 
   if (proc_ct > procs_avail)
     {
@@ -4064,6 +4084,8 @@ int build_hostlist_procs_req(
           host_info.push_back(node_info);
           node_info->port = pnode->nd_mom_rm_port;
           }
+        else
+          free(node_info);
         }
       } /* END for each node */
     } /* if (procs > 0) */
@@ -4144,9 +4166,11 @@ int add_multi_reqs_to_job(
   return(PBSE_NONE);
   } /* END add_multi_reqs_to_job() */
 
+
+
 int free_hostinfo(
 
-    std::vector<job_reservation_info *>  &host_info) /* O */
+  std::vector<job_reservation_info *>  &host_info) /* O */
 
   {
   for (unsigned int i = 0; i < host_info.size(); i++)

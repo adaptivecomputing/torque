@@ -2203,6 +2203,8 @@ void update_array_statuses()
       }
     } /* END for each array */
 
+  if (iter != NULL)
+    delete iter;
   } /* END update_array_statuses() */
 
 

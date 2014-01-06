@@ -48,6 +48,8 @@ void *remove_some_recycle_queues(
 
   pq = next_queue_from_recycler(&q_recycler.queues,iter);
 
+  delete iter;
+
   if (pq == NULL)
     return NULL;
 

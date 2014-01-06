@@ -243,9 +243,11 @@ class queue_recycler
     iter = queues.get_iterator();
     pthread_mutex_init(mutex,&t_attr);
     }
+
   ~queue_recycler()
     {
-      free(mutex);
+    free(mutex);
+    delete iter;
     }
   };
 

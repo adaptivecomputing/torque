@@ -108,7 +108,7 @@ int validate_active_pbs_server(
   char **active_server)
 
   {
-  char     *err_msg;
+  char     *err_msg = NULL;
   char      *current_server = NULL;
   char      unix_sockname[MAXPATHLEN + 1];
   char      write_buf[MAX_LINE];
@@ -134,8 +134,13 @@ int validate_active_pbs_server(
     }
 
   rc = socket_connect_unix(local_socket, unix_sockname, &err_msg);
+
+  if (err_msg != NULL)
+    free(err_msg);
+
   if (rc != PBSE_NONE)
     {
+    close(local_socket);
     fprintf(stderr, "socket_connect_unix failed: %d\n", rc);
     return(rc);
     }
@@ -143,15 +148,22 @@ int validate_active_pbs_server(
   rc = socket_write(local_socket, write_buf, write_buf_len);
   if (rc <= 0 )
     {
+    close(local_socket);
     fprintf(stderr, "socket_write failed: %d\n", rc);
     return(PBSE_SYSTEM);
     }
 
   rc = socket_read_num(local_socket, &ret_code);
   if (rc != PBSE_NONE) 
+    {
+    close(local_socket);
     return(rc);
+    }
 
   rc = socket_read_str(local_socket, &read_buf, &read_buf_len);
+  
+  close(local_socket);
+  
   if (rc != PBSE_NONE) 
     return(rc);
 
@@ -168,7 +180,6 @@ int validate_active_pbs_server(
 
   strcpy(current_server, read_buf);
   
-  close(local_socket);
 
   *active_server = current_server;
 
@@ -189,7 +200,7 @@ int get_active_pbs_server(
   int   *port)
 
   {
-  char     *err_msg;
+  char     *err_msg = NULL;
   char      *current_server = NULL;
   char      unix_sockname[MAXPATHLEN + 1];
   char      write_buf[MAX_LINE];
@@ -224,8 +235,13 @@ int get_active_pbs_server(
     return(local_socket * -1); /* socket_get_unix returns a negative PBSE error on failure. make it positive */
 
   rc = socket_connect_unix(local_socket, unix_sockname, &err_msg);
+
+  if (err_msg != NULL)
+    free(err_msg);
+
   if (rc != PBSE_NONE)
     {
+    close(local_socket);
     fprintf(stderr, "socket_connect_unix failed: %d\n", rc);
     return(rc);
     }
@@ -233,6 +249,7 @@ int get_active_pbs_server(
   rc = socket_write(local_socket, write_buf, write_buf_len);
   if (rc <= 0 )
     {
+    close(local_socket);
     fprintf(stderr, "socket_write failed: %d\n", rc);
     return(PBSE_SYSTEM);
     }
@@ -240,28 +257,31 @@ int get_active_pbs_server(
   /* get the server name */
   if ((rc = socket_read_num(local_socket, &ret_code)) != PBSE_NONE)
     {
+    close(local_socket);
     return(rc);
     }
   else if ((rc = socket_read_str(local_socket, &read_buf, &read_buf_len)) != PBSE_NONE)
     {
+    close(local_socket);
     return(rc);
     }
   else if ((rc = socket_read_num(local_socket, (long long *)port)) != PBSE_NONE)
     {
+    close(local_socket);
     return(rc);
     }
+  
+  close(local_socket);
 
   if (read_buf_len == 0)
     return(PBSE_SOCKET_READ);
 
   current_server = strdup(read_buf);
-  
-  close(local_socket);
 
   *active_server = current_server;
 
   return(rc);
-  }
+  } /* END get_active_pbs_server() */
 
 int trq_simple_disconnect(
 

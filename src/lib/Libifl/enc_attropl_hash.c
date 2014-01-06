@@ -114,6 +114,7 @@
 
 /* This whole method is a workaround until the server code is updated */
 int build_var_list(
+
   std::string&       var_list,
   job_data_container *attrs)
 
@@ -123,7 +124,7 @@ int build_var_list(
   int       item_count = 0;
   int       preexisting_var_list = FALSE;
 
-  while((atr = it->get_next_item()) != NULL)
+  while ((atr = it->get_next_item()) != NULL)
     {
     if ((strncmp(atr->name.c_str(), "pbs_o", 5) == 0)
         || (strncmp(atr->name.c_str(), "PBS_O", 5) == 0))
@@ -160,6 +161,9 @@ int build_var_list(
       /* item_count++; */
       }
     }
+
+  delete it;
+
   if (preexisting_var_list == TRUE)
     {
     hash_del_item(attrs, (char *)ATTR_v);
@@ -226,8 +230,11 @@ int encode_DIS_attropl_hash_single(
       break;
 
     }
+
+  delete it;
+
   return rc;
-  }
+  } /* END enode_DIS_attropl_hash_single() */
 
 
 

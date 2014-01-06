@@ -111,6 +111,7 @@ private:
     }
   attr->clear();
   delete attr;
+  delete it;
   }
 public:
   job_data_container *job_attr;

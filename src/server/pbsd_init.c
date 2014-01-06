@@ -407,6 +407,9 @@ void  update_default_np()
       
       unlock_node(pnode, __func__, NULL, LOGLEVEL);
       }
+
+    if (iter != NULL)
+      delete iter;
     }
 
   return;
@@ -494,6 +497,9 @@ void make_default_hierarchy(boost::ptr_vector<std::string>& hierarchy)
 
     unlock_node(pnode, __func__, NULL, LOGLEVEL);
     }
+
+  if (iter != NULL)
+    delete iter;
 
   hierarchy.push_back(new std::string(level_ds.c_str()));
   hierarchy.push_back(new std::string("</sl>"));
@@ -731,6 +737,9 @@ void add_missing_nodes(
     unlock_node(pnode, __func__, NULL, LOGLEVEL);
     }
 
+  if (iter != NULL)
+    delete iter;
+
   if (found_missing_node == true)
     {
     send_format.push_back(new std::string("</sl>"));
@@ -870,6 +879,9 @@ void add_all_nodes_to_hello_container()
 
     unlock_node(pnode, __func__, NULL, LOGLEVEL);
     }
+
+  if (iter != NULL)
+    delete iter;
 
   return;
   } /* END add_all_nodes_to_hello_container() */
@@ -1923,6 +1935,9 @@ int cleanup_recovered_arrays()
 
     unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
     } /* END for each array */
+
+  if (iter != NULL)
+    delete iter;
 
   return(rc);
   } /* END cleanup_recovered_arrays() */

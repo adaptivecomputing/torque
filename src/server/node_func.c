@@ -139,6 +139,9 @@ struct pbsnode *PGetNodeFromAddr(
 
     unlock_node(pnode, __func__, 0, LOGLEVEL);
     } /* END for each node */
+      
+  if (iter != NULL)
+    delete iter;
 
   return(NULL);
   }  /* END PGetNodeFromAddr() */
@@ -1216,6 +1219,9 @@ void write_compute_node_properties(
       
     unlock_node(alps_node, __func__, "loop", LOGLEVEL);
     }
+   
+  if (iter != NULL)
+    delete iter;
   } /* END write_compute_node_properties() */
 
 
@@ -1359,6 +1365,9 @@ int update_nodes_file(
     if (held != np)
       unlock_node(np, __func__, "loop", LOGLEVEL);
     } /* for each node */
+      
+  if (iter != NULL)
+    delete iter;
 
   if ((fclose(nin)) != 0)
     {
@@ -2493,6 +2502,9 @@ int setup_nodes(void)
 
         unlock_node(np, __func__, "no match", LOGLEVEL);
         }
+
+      if (iter != NULL)
+        delete iter;
       }
 
     fclose(nin);

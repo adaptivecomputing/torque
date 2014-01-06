@@ -319,6 +319,8 @@ int insert_into_alljobs_by_rank(
       }
     }
 
+  delete iter;
+
   if (pjcur != NULL)
     {
     if(aj->find(pjcur->ji_qs.ji_jobid))

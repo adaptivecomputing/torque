@@ -2284,6 +2284,7 @@ static job *locate_new_job(
     newjobs.lock();
     all_jobs_iterator *iter = newjobs.get_iterator();
     pJob = iter->get_next_item();
+    delete iter;
     newjobs.unlock();
     return pJob;
     }

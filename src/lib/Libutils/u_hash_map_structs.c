@@ -152,10 +152,14 @@ int hash_clear(
   {
   job_data_iterator *it = head->get_iterator();
   job_data *item;
-  while((item = it->get_next_item()) != NULL)
+
+  while ((item = it->get_next_item()) != NULL)
     {
     delete item;
     }
+
+  delete it;
+
   head->clear();
   return TRUE;
   }
@@ -195,7 +199,9 @@ int hash_count(
 
 /* Prints all of the contents to the screen (debugging) */
 int hash_print(
-    job_data_container *head)           /* I - hashmap */
+   
+  job_data_container *head)           /* I - hashmap */
+
   {
   int cntr = 0;
   if (head != NULL)
@@ -207,6 +213,8 @@ int hash_print(
       printf("%d - [%25s]-{%s}\n", cntr, en->name.c_str(), en->value.c_str());
       cntr++;
       }
+
+    delete it;
     }
   return cntr;
   }
@@ -216,33 +224,40 @@ int hash_print(
  * This allocates memory for the new hash entries
  * returns qty of items added */
 int hash_add_hash(
-    job_data_container *dest,
-    job_data_container *src,
-    int overwrite_existing)
+
+  job_data_container *dest,
+  job_data_container *src,
+  int                 overwrite_existing)
+
   {
   int cntr = 0;
   job_data *en;
   job_data *tmp;
   job_data_iterator *it = src->get_iterator();
-  while((en = it->get_next_item()) != NULL)
+
+  while ((en = it->get_next_item()) != NULL)
     {
     if (overwrite_existing)
       {
       dest->insert(new job_data(en->name.c_str(),en->value.c_str(), en->var_type, en->op_type),en->name.c_str(),true);
       cntr++;
       }
-    else
-      if (hash_find(dest, en->name.c_str(), &tmp) != TRUE)
-        {
-        hash_add_item(dest, en->name.c_str(), en->value.c_str(), en->var_type, en->op_type);
-        cntr++;
-        }
+    else if (hash_find(dest, en->name.c_str(), &tmp) != TRUE)
+      {
+      hash_add_item(dest, en->name.c_str(), en->value.c_str(), en->var_type, en->op_type);
+      cntr++;
+      }
     }
+
+  delete it;
+
   return cntr;
   }
 
 int hash_strlen(
-    job_data_container *src)
+
+  job_data_container *src)
+
   {
   int len = 0;
   job_data *en;
@@ -252,5 +267,8 @@ int hash_strlen(
     len += en->name.length();
     len += en->value.length();
     }
+
+  delete it;
+
   return len;
   }
