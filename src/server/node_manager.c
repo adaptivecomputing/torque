@@ -755,9 +755,10 @@ bool is_jobid_in_mom(
 
   {
   char *joblist = strdup(jobs);
+  char *jobptr = joblist;
   char *jobidstr = NULL;
 
-  jobidstr = threadsafe_tokenizer(&joblist, (char *)" ");
+  jobidstr = threadsafe_tokenizer(&jobptr, (char *)" ");
   while (jobidstr != NULL)
     {
     if (strcmp(jobid, jobidstr) == 0)
@@ -766,7 +767,7 @@ bool is_jobid_in_mom(
       return(true);
       }
 
-    jobidstr = threadsafe_tokenizer(&joblist, " ");
+    jobidstr = threadsafe_tokenizer(&jobptr, " ");
     }
 
   free(joblist);
