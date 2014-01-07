@@ -447,6 +447,7 @@ proc_mem_t *get_proc_mem_from_path(
   if (fscanf(fp,"%30s",str) != 1)
     {
     fclose(fp);
+    free(mm);
 
     return(NULL);
     }
@@ -457,6 +458,7 @@ proc_mem_t *get_proc_mem_from_path(
     if (fscanf(fp,"%*[^\n]%*c") != 0)     /* remove text header */
       {
       fclose(fp);
+      free(mm);
 
       return(NULL);
       }
@@ -470,6 +472,7 @@ proc_mem_t *get_proc_mem_from_path(
                &casz) != 5)
       {
       fclose(fp);
+      free(mm);
 
       return(NULL);
       }
@@ -482,6 +485,7 @@ proc_mem_t *get_proc_mem_from_path(
                &mm->swap_free) != 3)
       {
       fclose(fp);
+      free(mm);
 
       return(NULL);
       }
@@ -497,6 +501,7 @@ proc_mem_t *get_proc_mem_from_path(
                    &mm->mem_total) != 1)
           {
           fclose(fp);
+          free(mm);
 
           return(NULL);
           }
@@ -509,6 +514,7 @@ proc_mem_t *get_proc_mem_from_path(
                    &mm->mem_free) != 1)
           {
           fclose(fp);
+          free(mm);
 
           return(NULL);
           }
@@ -521,6 +527,7 @@ proc_mem_t *get_proc_mem_from_path(
                    &bfsz) != 1)
           {
           fclose(fp);
+          free(mm);
 
           return(NULL);
           }
@@ -533,6 +540,7 @@ proc_mem_t *get_proc_mem_from_path(
                    &casz) != 1)
           {
           fclose(fp);
+          free(mm);
 
           return(NULL);
           }
@@ -545,6 +553,7 @@ proc_mem_t *get_proc_mem_from_path(
                    &fcasz) != 1)
           {
           fclose(fp);
+          free(mm);
 
           return(NULL);
           }
@@ -557,6 +566,7 @@ proc_mem_t *get_proc_mem_from_path(
                    &mm->swap_total) != 1)
           {
           fclose(fp);
+          free(mm);
           return(NULL);
           }
 
