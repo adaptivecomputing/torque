@@ -29,7 +29,7 @@ template <class T>
 class item
 {
 public:
-	item(std::string idString):id(idString){}
+	item(std::string idString):id(idString){ptr = 0;}
 	item(std::string idString,T p):id(idString),ptr(p){}
 	item(const char *idString,T p):id(idString),ptr(p){}
     bool operator == (const item& rhs) const
