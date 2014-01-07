@@ -1497,6 +1497,7 @@ void mgr_queue_set(
         sprintf(log_buf, msg_attrtype, pque->qu_qs.qu_name, badattr);
         que_mutex.unlock();
         reply_text(preq, PBSE_ATTRTYPE, log_buf);
+        delete iter;
         return;
         }
 
@@ -1567,6 +1568,7 @@ void mgr_queue_unset(
   if (pque == NULL)
     {
     req_reject(PBSE_UNKQUE, 0, preq, NULL, NULL);
+    delete iter;
 
     return;
     }
@@ -1587,6 +1589,7 @@ void mgr_queue_unset(
         {
         que_mutex.unlock();
         reply_badattr(rc, bad_attr, plist, preq);
+        delete iter;
         return;
         }
 

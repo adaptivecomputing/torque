@@ -133,6 +133,7 @@ struct pbsnode *PGetNodeFromAddr(
 
       if (pnode->nd_addrs[aindex] == addr)
         {
+        delete iter;
         return(pnode);
         }
       }    /* END for (aindex) */
