@@ -1433,6 +1433,8 @@ void mgr_queue_set(
     {
     req_reject(PBSE_UNKQUE, 0, preq, NULL, NULL);
 
+    delete iter;
+
     return;
     }
   /* set the attributes */
@@ -1461,6 +1463,9 @@ void mgr_queue_set(
         {
         que_mutex.unlock();
         reply_badattr(rc, bad, plist, preq);
+
+        delete iter;
+
         return;
         }
 
@@ -1479,8 +1484,7 @@ void mgr_queue_set(
   /* check the appropriateness of the attributes based on queue type */
   svr_queues.lock();
 
-  if (iter != NULL)
-    delete iter;
+  delete iter;
 
   iter = svr_queues.get_iterator();
   svr_queues.unlock();

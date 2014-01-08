@@ -1360,6 +1360,8 @@ int update_nodes_file(
       if (held != np)
         unlock_node(np, __func__, "error", LOGLEVEL);
 
+      delete iter;
+
       return(-1);
       }
     
