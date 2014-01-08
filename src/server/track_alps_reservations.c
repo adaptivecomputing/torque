@@ -270,15 +270,11 @@ int remove_alps_reservation(
 
   {
   int               rc = PBSE_NONE;
-  alps_reservation *ar = NULL;
 
   alps_reservations.lock();
-  if(!alps_reservations.remove(rsv_id))
+  if (!alps_reservations.remove(rsv_id))
     rc = THING_NOT_FOUND;
   alps_reservations.unlock();
-
-  if (ar != NULL)
-    delete ar;
 
   return(rc);
   } /* END remove_alps_reservation() */

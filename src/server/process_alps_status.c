@@ -412,7 +412,7 @@ int process_gpu_status(
   {
   pbs_attribute   temp;
   int             gpu_count = 0;
-  int             rc;
+  int             rc = PBSE_NONE;
   char            buf[MAXLINE * 2];
   std::string     gpu_info = "";
 
@@ -445,14 +445,6 @@ int process_gpu_status(
       {
       gpu_info += i->c_str();
       gpu_info += ';';
-      }
-
-    if (rc != PBSE_NONE)
-      {
-
-      finish_gpu_status(i,end);
-
-      return(rc);
       }
     }
 
@@ -604,7 +596,6 @@ int process_alps_status(
     if (!strcmp(CRAY_GPU_STATUS_START, str))
       {
       rc = process_gpu_status(current, i,status_info.end());
-      str = i->c_str();
       continue;
       }
     else if (!strncmp(reservation_id, str, strlen(reservation_id)))

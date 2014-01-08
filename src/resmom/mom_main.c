@@ -1886,6 +1886,8 @@ void add_diag_jobs_session_ids(
       output << ptask->ti_qs.ti_sid;
     else
       output << "," << ptask->ti_qs.ti_sid;
+
+    first = false;
     }  /* END for (task) */
   }
 
@@ -3213,6 +3215,8 @@ void *tcp_request(
     case DIS_EOF:
 
       DBPRT(("Closing socket %d twice...\n", socket))
+
+      // Fall through to close the connection
 
     case PBSE_MEM_MALLOC:
     case DIS_EOD:

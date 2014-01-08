@@ -84,19 +84,16 @@ cnt:
     if (stat &&
         (any_failed != PBSE_UNKJOBID))
       {
-      prt_job_err("qmove", connect, job_id_out);
-      }
-    else if (stat && 
-             (any_failed != PBSE_UNKJOBID) &&
-             !located)
-      {
-      located = TRUE;
-
-      if (locate_job(job_id_out, server_out, rmt_server))
+      if (!located)
         {
-        pbs_disconnect(connect);
-        strcpy(server_out, rmt_server);
-        goto cnt;
+        located = TRUE;
+        
+        if (locate_job(job_id_out, server_out, rmt_server))
+          {
+          pbs_disconnect(connect);
+          strcpy(server_out, rmt_server);
+          goto cnt;
+          }
         }
 
       prt_job_err("qmove", connect, job_id_out);

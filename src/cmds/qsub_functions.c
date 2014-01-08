@@ -4124,7 +4124,6 @@ void main_func(
 
   int               script_idx = 0;
   int               idx;
-  int               have_intr_cmd = FALSE;
   job_data         *tmp_job_info = NULL;
   /* Allocate Memmgr */
   int               debug = FALSE;
@@ -4335,7 +4334,7 @@ void main_func(
   if (hash_find(ji.job_attr, ATTR_inter, &tmp_job_info) &&
       ((isatty(0) == 0) || (isatty(1) == 0)))
     {
-    if (have_intr_cmd)
+    if (hash_find(ji.job_attr, ATTR_intcmd, &tmp_job_info))
       {
       have_terminal = FALSE;
       }

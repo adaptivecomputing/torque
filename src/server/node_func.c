@@ -3470,9 +3470,9 @@ int remove_node(
 
 struct pbsnode *next_host(
 
-  all_nodes      *an,    /* I */
+  all_nodes           *an,    /* I */
   all_nodes_iterator **iter,  /* M */
-  struct pbsnode *held)  /* I */
+  struct pbsnode      *held)  /* I */
 
   {
   struct pbsnode *pnode;
