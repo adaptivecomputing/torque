@@ -501,7 +501,7 @@ int ping_trqauthd(
   sprintf(write_buf, "%d|", TRQ_PING_SERVER);
   write_buf_len = strlen(write_buf);
 
-  if ((local_socket = socket_get_unix()) <= 0)
+  if ((local_socket = socket_get_unix()) < 0)
     {
     fprintf(stderr, "socket_get_unix error\n");
     return(PBSE_SOCKET_FAULT);
