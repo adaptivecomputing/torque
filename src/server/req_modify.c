@@ -652,9 +652,6 @@ int modify_job(
         {
         free_br(momreq);
    
-        if (preq != NULL)
-          req_reject(rc, 0, preq, NULL, NULL);
-
         if (pjob != NULL)
           {
           snprintf(log_buf,sizeof(log_buf),

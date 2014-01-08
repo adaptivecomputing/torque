@@ -469,7 +469,7 @@ int svr_enquejob(
       }
 
     server.sv_qs.sv_numjobs++;
-    
+
     if (has_sv_qs_mutex == FALSE)
       unlock_sv_qs_mutex(server.sv_qs_mutex, __func__);
 
@@ -953,12 +953,18 @@ int svr_setjobstate(
 
       if (has_queue_mutex == FALSE)
         {
-        pque = get_jobs_queue(&pjob);
-
         if (pjob == NULL)
           {
           log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 11");
           return(PBSE_JOBNOTFOUND);
+          }
+
+        pque = get_jobs_queue(&pjob);
+        if (pque == NULL)
+          {
+          sprintf(log_buf, "queue not found for jobid %s", pjob->ji_qs.ji_jobid);
+          log_err(PBSE_UNKQUE, __func__, log_buf);
+          return(PBSE_UNKQUE);
           }
         }
       else
