@@ -72,7 +72,7 @@ int load_trqauthd_config(
     unix_domain_len = strlen(TRQAUTHD_SOCK_DIR);
     unix_domain_len += strlen(TRQAUTHD_SOCK_NAME) + 2; /* on for the "/" and one for zero termination*/
     *trqauthd_unix_domain_port = (char *)malloc(unix_domain_len);
-    if (trqauthd_unix_domain_port == NULL)
+    if (*trqauthd_unix_domain_port == NULL)
       {
       fprintf(stderr, "could not allocate memory for unix domain port");
       return(PBSE_MEM_MALLOC);
