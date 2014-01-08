@@ -943,12 +943,6 @@ int svr_setjobstate(
 
       if (has_queue_mutex == FALSE)
         {
-        if (pjob == NULL)
-          {
-          log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 11");
-          return(PBSE_JOBNOTFOUND);
-          }
-
         pque = get_jobs_queue(&pjob);
         if (pque == NULL)
           {
