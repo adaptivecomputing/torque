@@ -177,7 +177,7 @@ int insert_into_recycler(
       "Adding job %s to the recycler", pjob->ji_qs.ji_jobid);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
-  if(pjob->ji_being_recycled == TRUE)
+  if (pjob->ji_being_recycled == TRUE)
     {
     return PBSE_NONE;
     }

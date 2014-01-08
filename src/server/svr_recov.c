@@ -324,9 +324,9 @@ int attr_to_str(
   int               XML)    /* I */
 
   {
-  int  rc = PBSE_NONE;
   /* used to print numbers and chars as strings */
   char local_buf[MAXLINE];
+  int  rc;
 
   if ((attr.at_flags & ATR_VFLAG_SET) == FALSE)
     return(NO_ATTR_DATA);
@@ -466,9 +466,9 @@ int attr_to_str(
 
             break;
           }
-
+        
         if (rc != PBSE_NONE)
-          return(rc);
+          break;
 
         current = (resource *)GET_NEXT(current->rs_link);
         append_dynamic_string(ds, "\n");

@@ -1740,7 +1740,6 @@ int main(
   int          i;
   int          local_errno = 0;
   char         lockfile[MAXPATHLEN + 1];
-  char        *pc = NULL;
   char         EMsg[MAX_LINE];
   char         tmpLine[MAX_LINE];
   char         log_buf[LOCAL_LOG_BUF_SIZE];
@@ -1915,7 +1914,7 @@ int main(
   if (HALockUpdateTime == 0)
     HALockUpdateTime = PBS_LOCKFILE_UPDATE_TIME;
 
-  if ((pc = getenv("PBSDEBUG")) != NULL)
+  if (getenv("PBSDEBUG") != NULL)
     {
     DEBUGMODE = 1;
     TDoBackground = 0;

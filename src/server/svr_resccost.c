@@ -393,8 +393,10 @@ void free_rcost(
  * cost is per unit.
  */
 
-long
-calc_job_cost(job *pjob)
+long calc_job_cost(
+    
+  job *pjob)
+
   {
   long      amt;
   long      cost = 0;

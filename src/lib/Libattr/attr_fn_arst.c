@@ -508,6 +508,8 @@ int encode_arst(
 
         *pc++ = '\\';
 
+        // escape sequence added. Fall through.
+
       default:
 
         *pc = *pfrom;

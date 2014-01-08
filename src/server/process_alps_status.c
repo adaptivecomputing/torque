@@ -415,7 +415,7 @@ int process_gpu_status(
   char           *str = *str_ptr;
   pbs_attribute   temp;
   int             gpu_count = 0;
-  int             rc;
+  int             rc = PBSE_NONE;
   char            buf[MAXLINE * 2];
   dynamic_string *gpu_info;
 
@@ -622,6 +622,7 @@ int process_alps_status(
     if (!strcmp(CRAY_GPU_STATUS_START, str))
       {
       process_gpu_status(current, &str);
+      
       continue;
       }
     else if (!strncmp(reservation_id, str, strlen(reservation_id)))
