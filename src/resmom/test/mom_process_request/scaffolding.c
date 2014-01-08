@@ -154,10 +154,8 @@ void req_cpyfile(struct batch_request *preq)
   exit(1);
   }
  
-void req_quejob(struct batch_request *preq)
+void mom_req_quejob(struct batch_request *preq)
   {
-  fprintf(stderr, "The call to req_quejob needs to be mocked!!\n");
-  exit(1);
   }
 
 char *pbse_to_txt(int err)
