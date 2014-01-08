@@ -264,7 +264,7 @@ void reissue_to_svr(
   /* if not timed-out, retry send to remote server */
   if (preq != NULL)
     {
-    if (preq->rq_host != NULL)
+    if (preq->rq_host[0] != '\0')
       serverName = strdup(preq->rq_host);
    else
      {
