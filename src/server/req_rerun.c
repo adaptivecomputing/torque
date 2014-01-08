@@ -484,10 +484,19 @@ int req_rerunjob(
  */
 
 
-int finalize_rerunjob(struct batch_request *preq,job *pjob,int rc)
+int finalize_rerunjob(
+    
+  batch_request *preq,
+  job           *pjob,
+  int            rc)
+
   {
-  int     Force;
-  char    log_buf[LOCAL_LOG_BUF_SIZE];
+  int       Force;
+  char      log_buf[LOCAL_LOG_BUF_SIZE];
+
+  if (pjob == NULL)
+    return(PBSE_BAD_PARAMETER);
+
   mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
 
   if (preq->rq_extend && !strncasecmp(preq->rq_extend, RERUNFORCE, strlen(RERUNFORCE)))
