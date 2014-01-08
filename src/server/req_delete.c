@@ -1020,7 +1020,9 @@ void *single_delete_work(
   job             *pjob;
   char            *Msg = preq->rq_extend;
 
-  pjob = svr_find_job(jobid, FALSE);
+  // TRUE is the same for non-heterogeneous jobs as FALSE. For heterogeneous
+  // jobs simply delete one to trigger the other being deleted as well.
+  pjob = svr_find_job(jobid, TRUE);
 
   if (pjob == NULL)
     {

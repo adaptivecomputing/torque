@@ -66,13 +66,13 @@
 * without reference to its choice of law rules.
 */
 /*
- * req_quejob.c
+ * mom_req_quejob.c
  *
  * Functions relating to the Queue Job Batch Request sequence, including
  * Queue Job, Job Script, Ready to Commit, and Commit.
  *
  * Included functions are:
- * req_quejob()
+ * mom_req_quejob()
  * req_jobcredential()
  * req_jobscript()
  * req_rdycommit()
@@ -176,12 +176,12 @@ static int user_account_read_user(char *);
 
 
 /*
- * req_quejob - Queue Job Batch Request processing routine
+ * mom_req_quejob - Queue Job Batch Request processing routine
  */
 
-void req_quejob(
+void mom_req_quejob(
 
-  struct batch_request *preq) /* ptr to the decoded request   */
+  batch_request *preq) /* ptr to the decoded request   */
 
   {
   char           basename[PBS_JOBBASE + 1];
@@ -197,6 +197,8 @@ void req_quejob(
   int            IsCheckpoint = 0;
   /* set basic (user) level access permission */
   int            resc_access_perm = ATR_DFLAG_USWR | ATR_DFLAG_Creat;
+
+  memset(basename, 0, sizeof(basename));
 
   if (PBSNodeCheckProlog)
     {
@@ -270,6 +272,9 @@ void req_quejob(
 
     psatl = (svrattrl *)GET_NEXT(psatl->al_link);
     }
+
+  if (basename[0] == '\0')
+    snprintf(basename, sizeof(basename), "%s", jid);
 
   if (pj != NULL)
     {
@@ -523,7 +528,7 @@ void req_quejob(
   append_link(&svr_newjobs, &pj->ji_alljobs, pj);
 
   return;
-  }  /* END req_quejob() */
+  }  /* END mom_req_quejob() */
 
 
 
@@ -1120,7 +1125,7 @@ void req_commit(
 
 
 /*
- * locate_new_job - locate a "new" job which has been set up req_quejob on
+ * locate_new_job - locate a "new" job which has been set up mom_req_quejob on
  * the servers new job list.
  *
  * This function is used by the sub-requests which make up the global
@@ -1183,5 +1188,5 @@ static job *locate_new_job(
   return(pj);
   }  /* END locate_new_job() */
 
-/* END req_quejob.c() */
+/* END mom_req_quejob.c() */
 
