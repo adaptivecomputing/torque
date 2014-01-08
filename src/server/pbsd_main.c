@@ -1618,7 +1618,7 @@ void main_loop(void)
     get_svr_attr_l(SRV_ATR_State, &state);
     }    /* END while (*state != SV_STATE_DOWN) */
 
-  if(accept_thread_id != (pthread_t)-1)
+  if (accept_thread_id != (pthread_t)-1)
     {
     pthread_cancel(accept_thread_id);
     accept_thread_id = (pthread_t)-1;

@@ -2806,6 +2806,9 @@ int handle_subjob_exit_status(
   else
     unlock_ji_mutex(parent_job, __func__, NULL, LOGLEVEL);
 
+  if ((pjob = svr_find_job(jobid, TRUE)) == NULL)
+    rc = PBSE_JOB_RECYCLED;
+
   return(rc);
   } /* END handle_subjob_exit_status() */
 
@@ -3382,8 +3385,15 @@ int req_jobobit(
   pjob->ji_wattr[JOB_ATR_exitstat].at_val.at_long = exitstatus;
   pjob->ji_wattr[JOB_ATR_exitstat].at_flags |= ATR_VFLAG_SET;
 
-  if (pjob->ji_parent_job != NULL)
-    handle_subjob_exit_status(pjob);
+  if ((exitstatus != JOB_EXEC_RETRY) &&
+      (pjob->ji_parent_job != NULL))
+    {
+    if (handle_subjob_exit_status(pjob) == PBSE_JOB_RECYCLED)
+      {
+      req_reject(PBSE_UNKJOBID, 0, preq, NULL, NULL);
+      return(PBSE_NONE);
+      }
+    }
 
   patlist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_jobobit.rq_attr);
 
