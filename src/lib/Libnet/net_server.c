@@ -517,6 +517,7 @@ int ping_trqauthd(
       free(err_msg);
 
     /* If we are here we could not connect to trqauthd. That is ok though. That tells us trqauthd is not up.  */
+    close(local_socket);
     return(rc);
     }
   else if ((rc = socket_write(local_socket, write_buf, write_buf_len)) != write_buf_len)
