@@ -1715,7 +1715,7 @@ int record_jobinfo(
       if (pattr->at_type == ATR_TYPE_RESC)
         bf += "\n";
 
-      rc = attr_to_str(bf, job_attr_def+i, pjob->ji_wattr[i], 1);
+      rc = attr_to_str(bf, job_attr_def+i, pjob->ji_wattr[i], true);
       
       if (pattr->at_type == ATR_TYPE_RESC)
         bf += "\t";

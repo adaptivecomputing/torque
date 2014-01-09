@@ -292,10 +292,6 @@ int unlock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string);
 #define MAX(a,b) (((a)>(b))?(a):(b))
 #endif /* END MAX */
 
-#ifndef JobStatRate
-#define JobStatRate MAX(PBS_JOBSTAT_MIN,server.sv_attr[SRV_ATR_JobStatRate].at_val.at_long)
-#endif
-
 
 typedef struct mail_info
   {

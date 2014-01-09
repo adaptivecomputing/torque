@@ -141,10 +141,6 @@ extern int             LOGLEVEL;
 
 extern pthread_mutex_t *netrates_mutex;
 
-pthread_mutex_t  *poll_job_task_mutex;
-int              max_poll_job_tasks;
-int              current_poll_job_tasks = 0;
-
 /* Extern Functions */
 
 int status_job(job *, struct batch_request *, svrattrl *, tlist_head *, int *);
@@ -539,9 +535,9 @@ static void req_stat_job_step2(
       unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
       pjob = NULL;
 
-      /* PBS_RESTAT_JOB defaults to 30 seconds */
+      /* PBS_RESTAT_JOB defaults to 300 seconds */
       if ((job_substate == JOB_SUBSTATE_RUNNING) &&
-          ((time_now - job_momstattime) > JobStatRate))
+          ((time_now - job_momstattime) > PBS_RESTAT_JOB))
         {
         /* go to MOM for status */
         if ((rc = stat_to_mom(job_id, cntl)) == PBSE_MEM_MALLOC)
@@ -1064,30 +1060,18 @@ void stat_update(
          directory is cleared, set its state to queued so job_abt doesn't
          think it is still running */
       mutex_mgr job_mutex(pjob->ji_mutex, true);
-      unsigned long delta = time(NULL) - pjob->ji_last_reported_time;
       
-      if (delta > JOB_REPORTED_ABORT_DELTA)
-        {
-        snprintf(log_buf, sizeof(log_buf),
-          "mother superior no longer recognizes %s as a valid job, aborting. Last reported time was %ld",
-          preq->rq_ind.rq_status.rq_id, pjob->ji_last_reported_time);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-        
-        svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_ABORT, FALSE);
-        rel_resc(pjob);
-        job_mutex.set_lock_on_exit(false);
-        job_abt(&pjob, "Job does not exist on node");
+      snprintf(log_buf, sizeof(log_buf),
+        "mother superior no longer recognizes %s as a valid job, aborting. Last reported time was %ld",
+        preq->rq_ind.rq_status.rq_id, pjob->ji_last_reported_time);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+      
+      svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_ABORT, FALSE);
+      rel_resc(pjob);
+      job_mutex.set_lock_on_exit(false);
+      job_abt(&pjob, "Job does not exist on node");
 
-        /* TODO, if the job is rerunnable we should set its state back to queued */
-        }
-      else
-        {
-        snprintf(log_buf, sizeof(log_buf),
-          "Unknown job message from mother superior appears to be in error, reported %d seconds ago",
-          (int)delta);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-        }
-
+      /* TODO, if the job is rerunnable we should set its state back to queued */
       }
     }
   else
@@ -1155,7 +1139,7 @@ void stat_mom_job(
 
 
 /**
- * poll _job_task
+ * poll_job_task
  *
  * The invocation of this routine is triggered from
  * the pbs_server main_loop code.  The check of
@@ -1170,8 +1154,10 @@ void poll_job_task(
   job       *pjob;
   time_t     time_now = time(NULL);
   long       poll_jobs = 0;
-  int        job_state = -1;
-  char       log_buf[LOCAL_LOG_BUF_SIZE];
+  long       job_stat_rate;
+
+  free(ptask->wt_mutex);
+  free(ptask);
 
   if (job_id != NULL)
     {
@@ -1180,51 +1166,28 @@ void poll_job_task(
     if (pjob != NULL)
       {
       mutex_mgr job_mutex(pjob->ji_mutex, true);
+      int       job_state = -1;
 
       job_state = pjob->ji_qs.ji_state;
+
       job_mutex.unlock();
 
-      get_svr_attr_l(SRV_ATR_PollJobs, &poll_jobs);
-      if ((poll_jobs) && (job_state == JOB_STATE_RUNNING))
+      get_svr_attr_l(SRV_ATR_JobStatRate, &job_stat_rate);
+
+      if (time(NULL) - pjob->ji_last_reported_time > job_stat_rate)
         {
-        /* we need to throttle the number of outstanding threads are
-           doing job polling. This prevents a problem where pbs_server
-           gets hung waiting on I/O from the mom */
-        pthread_mutex_lock(poll_job_task_mutex);
-        if (current_poll_job_tasks < max_poll_job_tasks)
-          {
-          if ((pjob->ji_qs.ji_un.ji_exect.ji_momaddr == 0) ||
-              (!pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str))
-            {
-            pthread_mutex_unlock(poll_job_task_mutex);
-            snprintf(log_buf, sizeof(log_buf),
-              "Job %s missing MOM's information. Skipping polling on this job", pjob->ji_qs.ji_jobid);
-            log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-            } 
-          else
-            {
-            current_poll_job_tasks++;
-            pthread_mutex_unlock(poll_job_task_mutex);
-
-            stat_mom_job(job_id);
-
-            pthread_mutex_lock(poll_job_task_mutex);
-            current_poll_job_tasks--;
-            }
-          }
-        pthread_mutex_unlock(poll_job_task_mutex);
-
-        
-        /* add another task */
-        set_task(WORK_Timed, time_now + JobStatRate, poll_job_task, strdup(job_id), FALSE);
+        get_svr_attr_l(SRV_ATR_PollJobs, &poll_jobs);
+        if ((poll_jobs) &&
+            (job_state == JOB_STATE_RUNNING))
+          stat_mom_job(job_id);
         }
+
+      /* add another task */
+      set_task(WORK_Timed, time_now + (job_stat_rate / 3), poll_job_task, strdup(job_id), FALSE);
       }
       
     free(job_id);
     }
-
-  free(ptask->wt_mutex);
-  free(ptask);
   }  /* END poll_job_task() */
 
 
@@ -1238,7 +1201,9 @@ void poll_job_task(
  */
 
 int req_stat_que(
-    struct batch_request *preq)
+    
+  batch_request *preq)
+
   {
   char                 *name;
   pbs_queue            *pque = NULL;

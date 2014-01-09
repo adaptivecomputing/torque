@@ -22,8 +22,37 @@ int   record_external_node(job *, struct pbsnode *);
 void *record_reported_time(void *vp);
 int save_node_for_adding(node_job_add_info *naji,struct pbsnode *pnode,single_spec_data *req,char *first_node_name,int is_external_node,int req_rank);
 void remove_job_from_already_killed_list(struct work_task *pwt);
+bool job_already_being_killed(const char *jobid);
+void process_job_attribute_information(std::string &job_id, std::string &attributes);
 
 extern boost::ptr_vector<std::string> jobsKilled;
+
+extern int str_to_attr_count;
+extern int decode_resc_count;
+
+
+START_TEST(process_job_attribute_information_test)
+  {
+  std::string attr_str("(cput=100,vmem=100101,mem=100020)");
+  std::string jobid("2.napali");
+
+  str_to_attr_count = 0;
+  process_job_attribute_information(jobid, attr_str);
+  fail_unless(str_to_attr_count == 3);
+  fail_unless(decode_resc_count == 3);
+  }
+END_TEST
+
+
+START_TEST(job_already_being_killed_test)
+  {
+  jobsKilled.push_back(new std::string("10.napali"));
+
+  fail_unless(job_already_being_killed("1.napali") == false);
+  fail_unless(job_already_being_killed("10.napali") == true);
+  }
+END_TEST
+
 
 START_TEST(remove_job_from_already_killed_list_test)
   {
@@ -337,6 +366,8 @@ Suite *node_manager_suite(void)
   tcase_add_test(tc_core, record_external_node_test);
   tcase_add_test(tc_core, record_reported_time_test);
   tcase_add_test(tc_core, remove_job_from_node_test);
+  tcase_add_test(tc_core, job_already_being_killed_test);
+  tcase_add_test(tc_core, process_job_attribute_information_test);
   suite_add_tcase(s, tc_core);
 
   return(s);

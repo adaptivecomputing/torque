@@ -120,7 +120,7 @@
 struct job_array;
 #endif
 
-#define JOB_REPORTED_ABORT_DELTA 180
+#define JOB_REPORTED_POLL_TIMEOUT 300
 
 /*
  * Dependent Job Structures

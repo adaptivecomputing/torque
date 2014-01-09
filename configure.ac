@@ -412,6 +412,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/resmom/test/mom_server/Makefile
     src/resmom/test/mom_process_request/Makefile
     src/resmom/test/mom_req_quejob/Makefile
+    src/resmom/test/parse_config/Makefile
     src/resmom/test/pbs_demux/Makefile
     src/resmom/test/prolog/Makefile
     src/resmom/test/release_reservation/Makefile

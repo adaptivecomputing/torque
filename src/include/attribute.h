@@ -457,9 +457,6 @@ extern int   save_acl(pbs_attribute *, attribute_def *,  const char *, const cha
 extern int   save_attr(attribute_def *, pbs_attribute *, int, int, char *, size_t *, size_t);
 extern int   save_attr_xml(attribute_def *, pbs_attribute *, int, int);
 extern int   write_buffer(char *,int,int);
-extern int   size_to_str(struct size_value,char *,int);
-extern int   attr_to_str(std::string& str, attribute_def *,struct pbs_attribute,int);
-extern int   str_to_attr(char *,char *,struct pbs_attribute *,struct attribute_def *);
 
 extern int      encode_state(pbs_attribute *, tlist_head *, const char *, const char *, int, int);
 extern int      encode_props(pbs_attribute*, tlist_head*, const char*, const char*, int, int);
@@ -501,6 +498,10 @@ extern int 		job_radix_action (pbs_attribute *new_attr, void *pobj, int actmode)
 extern int  decode_tokens(pbs_attribute *, const char *, const char *, const char *, int);
 
 int timeval_subtract(struct timeval *result, struct timeval *x, struct timeval *y);
+
+int size_to_str(struct size_value szv, char *out, int space);
+int attr_to_str(std::string &ds, attribute_def *at_def, pbs_attribute attr, bool XML);
+int str_to_attr(const char *name, char *val, pbs_attribute *attr, struct attribute_def *padef, int limit);
 
 /* "type" to pass to acl_check() */
 #define ACL_Host      1

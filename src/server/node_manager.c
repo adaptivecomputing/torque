@@ -404,56 +404,6 @@ int check_node_for_job(
 
 
 
-/*
- * record_reported_time()
- *
- * @pre-cond: vp must be a character pointer to a job id
- * @post-cond: the job's last reported time is updated. This is used to safeguard against
- * deleting jobs pre-maturely
- *
- * @param vp - the jobid of the job
- *
- */
-void *record_reported_time(
-
-  void *vp)
-
-  {
-  char *job_and_node = (char *)vp;
-
-  if (job_and_node != NULL)
-    {
-    char *jobid = job_and_node;
-    char *node_id;
-    char *colon = strchr(job_and_node, ':');
-
-    if (colon != NULL)
-      {
-      *colon = '\0';
-      node_id = colon + 1;
-
-      job *pjob = svr_find_job(jobid, TRUE);
-
-      if (pjob != NULL)
-        {
-        mutex_mgr job_mutex(pjob->ji_mutex, true);
-
-        if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
-          {
-          if (!strncmp(node_id, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, strlen(node_id)))
-            pjob->ji_last_reported_time = time(NULL);
-          }
-        }
-      }
-
-    free(job_and_node);
-    }
-
-  return(NULL);
-  } /* END record_reported_time() */
-
-
-
 
 /*
  * is_job_on_node - return TRUE if this jobid is present on pnode
@@ -493,12 +443,6 @@ int is_job_on_node(
   else
     {
     present = check_node_for_job(pnode, jobid);
-    if (present == TRUE)
-      {
-      char *job_and_node = (char *)calloc(1, strlen(jobid) + 2 + strlen(pnode->nd_name));
-      sprintf(job_and_node, "%s:%s", jobid, pnode->nd_name);
-      enqueue_threadpool_request(record_reported_time, job_and_node);
-      }
     }
 
   if (at != NULL)
@@ -614,23 +558,26 @@ boost::ptr_vector<std::string> jobsKilled;
  * case it needs to be removed again.
  */
 
-void remove_job_from_already_killed_list(struct work_task *pwt)
+void remove_job_from_already_killed_list(
+    
+  struct work_task *pwt)
+
   {
   std::string *pJobID = (std::string *)pwt->wt_parm1;
 
   free(pwt->wt_mutex);
   free(pwt);
 
-  if(pJobID == NULL) return;
+  if (pJobID == NULL) return;
 
   pthread_mutex_lock(&jobsKilledMutex);
 
-  for(boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();i != jobsKilled.end();i++)
+  for (boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();i != jobsKilled.end();i++)
     {
-    if(i->compare(*pJobID) == 0)
+    if (i->compare(*pJobID) == 0)
       {
       jobsKilled.erase(i);
-      if(i == jobsKilled.end())
+      if (i == jobsKilled.end())
         {
         break;
         }
@@ -639,8 +586,37 @@ void remove_job_from_already_killed_list(struct work_task *pwt)
   pthread_mutex_unlock(&jobsKilledMutex);
 
   delete pJobID;
+  } /* END remove_job_from_already_killed_list() */
 
-  }
+
+
+bool job_already_being_killed(
+
+  const char *jobid)
+
+  {
+  bool jobAlreadyKilled = false;
+  // Job should not be on the node, see if we have already sent a kill for this job.
+  pthread_mutex_lock(&jobsKilledMutex);
+
+  for (boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();
+       (i != jobsKilled.end()) && (jobAlreadyKilled == false);
+       i++)
+    {
+    if (i->compare(jobid) == 0)
+      {
+      jobAlreadyKilled = true;
+      break;
+      }
+    }
+
+  pthread_mutex_unlock(&jobsKilledMutex);
+
+  return(jobAlreadyKilled);
+  } /* END job_already_being_killed() */
+
+
+
 
 /*
  * If a job is not supposed to be on a node and we have
@@ -656,7 +632,7 @@ bool job_should_be_killed(
   {
   bool  should_be_on_node = true;
   bool  should_kill_job = false;
-  job *pjob;
+  job  *pjob;
   
   if (strstr(jobid, server_name) != NULL)
     {
@@ -688,25 +664,8 @@ bool job_should_be_killed(
       }
     }
 
-  if(!should_be_on_node)
-    {
-    bool jobAlreadyKilled = false;
-    //Job should not be on the node, see if we have already sent a kill for this job.
-    pthread_mutex_lock(&jobsKilledMutex);
-
-    for(boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();(i != jobsKilled.end())&&(jobAlreadyKilled == false);i++)
-      {
-      if(i->compare(jobid) == 0)
-        {
-        jobAlreadyKilled = true;
-        }
-      }
-    if(!jobAlreadyKilled)
-      {
-      should_kill_job = true;
-      }
-    pthread_mutex_unlock(&jobsKilledMutex);
-    }
+  if (!should_be_on_node)
+    should_kill_job = !job_already_being_killed(jobid);
 
   return(should_kill_job);
   } /* END job_should_be_on_node() */
@@ -806,6 +765,64 @@ int remove_jobs_that_have_disappeared(
 
 
 /*
+ * process_job_attribute_information()
+ *
+ * @post-cond: the job with id job_id has its attribute values updated to match
+ * the values parsed from attributes
+ * @param attributes - a string object with job attributes and values in the 
+ * format (name1=val1[,name2=val2[...]])
+ * @param jobid - a string object containing the job's id
+ */
+void process_job_attribute_information(
+    
+  std::string &job_id,
+  std::string &attributes)
+
+  {
+  char *job_id_dup = strdup(job_id.c_str());
+  char *attr_dup = strdup(attributes.c_str());
+  // move past '(' at front
+  char *attr_work = attr_dup + 1;
+  job  *pjob;
+
+  // remove the ')' at the end
+  char *paren = strrchr(attr_work, ')');
+
+  if (paren != NULL)
+    *paren = '\0';
+
+  if ((pjob = svr_find_job(job_id_dup, TRUE)) != NULL)
+    {
+    mutex_mgr job_mutex(pjob->ji_mutex, true);
+    char *attr_val = threadsafe_tokenizer(&attr_work, ",");
+    
+    while (attr_val != NULL)
+      {
+      char *attr_name = threadsafe_tokenizer(&attr_val, "=");
+
+      if ((attr_name != NULL) &&
+          (attr_val != '\0'))
+        {
+        if (str_to_attr(attr_name, attr_val, pjob->ji_wattr, job_attr_def, JOB_ATR_LAST) == ATTR_NOT_FOUND)
+          {
+          // should be resources used if not found as attribute
+          decode_resc(&(pjob->ji_wattr[JOB_ATR_resc_used]), ATTR_used, attr_name, attr_val, ATR_DFLAG_ACCESS);
+          }
+        }
+
+      attr_val = threadsafe_tokenizer(&attr_work, ",");
+      }
+
+    pjob->ji_last_reported_time = time(NULL);
+    }
+
+  free(job_id_dup);
+  free(attr_dup);
+  } /* END process_job_attribute_information() */
+
+
+
+/*
  * sync_node_jobs() - determine if a MOM has a stale job and possibly delete it
  *
  * This function is called every time we get a node stat from the pbs_mom.
@@ -836,7 +853,7 @@ void *sync_node_jobs(
   raw_input = sji->input;
 
   /* raw_input's format is:
-   *   node name:<JOBID>[ <JOBID>]... */
+   *   node name:<JOBID>(resource_name=usage_val[,resource_name2=usage_val2...])[ <JOBID>]... */
   if ((jobstring_in = strchr(raw_input, ':')) != NULL)
     {
     node_id = raw_input;
@@ -862,27 +879,43 @@ void *sync_node_jobs(
 
   /* FORMAT <JOBID>[ <JOBID>]... */
   joblist = jobstring_in;
-  jobidstr = threadsafe_tokenizer(&joblist, (char *)" ");
+  jobidstr = threadsafe_tokenizer(&joblist, " ");
 
   get_svr_attr_l(SRV_ATR_job_sync_timeout, &job_sync_timeout);
 
   while ((jobidstr != NULL) && 
          (isdigit(*jobidstr)) != FALSE)
     {
-    if (job_should_be_killed(jobidstr, np))
+    std::string job_id(jobidstr);
+    size_t      pos;
+    char       *job_work_str;
+
+    if ((pos = job_id.find("(")) != std::string::npos)
       {
-      if (kill_job_on_mom(jobidstr, np) == PBSE_NONE)
+      std::string attributes = job_id.substr(pos);
+      job_id.erase(pos);
+
+      process_job_attribute_information(job_id, attributes);
+      }
+
+    job_work_str = strdup(job_id.c_str());
+
+    if (job_should_be_killed(job_work_str, np))
+      {
+      if (kill_job_on_mom(job_work_str, np) == PBSE_NONE)
         {
         pthread_mutex_lock(&jobsKilledMutex);
-        jobsKilled.push_back(new std::string(jobidstr));
+        jobsKilled.push_back(new std::string(job_id));
         pthread_mutex_unlock(&jobsKilledMutex);
         set_task(WORK_Timed, 
                  time(NULL) + job_sync_timeout,
                  remove_job_from_already_killed_list,
-                 (void *)new std::string(jobidstr),
+                 (void *)new std::string(job_id),
                  FALSE);
         }
       }
+
+    free(job_work_str);
     
     jobidstr = threadsafe_tokenizer(&joblist, " ");
     } /* END while ((jobidstr != NULL) && ...) */

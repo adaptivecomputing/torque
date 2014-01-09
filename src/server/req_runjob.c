@@ -1468,7 +1468,10 @@ void finish_sendmom(
     {
     case LOCUTION_SUCCESS:  /* send to MOM went ok */
 
+      long job_stat_rate;
+
       pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_HOTSTART;
+      get_svr_attr_l(SRV_ATR_JobStatRate, &job_stat_rate);
       
       if (preq != NULL)
         reply_ack(preq);
@@ -1505,7 +1508,8 @@ void finish_sendmom(
         depend_on_exec(pjob);
 
       /* set up the poll task */
-      set_task(WORK_Timed, time_now + JobStatRate, poll_job_task, strdup(job_id), FALSE);
+      pjob->ji_last_reported_time = time_now;
+      set_task(WORK_Timed, time_now + job_stat_rate, poll_job_task, strdup(job_id), FALSE);
 
       break;
 

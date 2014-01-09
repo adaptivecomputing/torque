@@ -304,7 +304,7 @@ int save_attr_xml(
       buf[0] = '\0';
       ds.clear();
 
-      if ((rc = attr_to_str(ds, padef+i, pattr[i], TRUE)) != 0)
+      if ((rc = attr_to_str(ds, padef+i, pattr[i], true)) != 0)
         {
         if (rc != NO_ATTR_DATA)
           {
