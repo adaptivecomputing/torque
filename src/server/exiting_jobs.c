@@ -198,7 +198,7 @@ char *get_next_retryable_jobid(
         if ((pjob = svr_find_job((char *)jid.c_str(), TRUE)) != NULL)
           {
           snprintf(log_buf, sizeof(log_buf), "Job %s has had its exiting re-tried %d times, purging.",
-            jeri->jobid, MAX_EXITING_RETRY_ATTEMPTS);
+            jid.c_str(), MAX_EXITING_RETRY_ATTEMPTS);
           log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
 
           force_purge_work(pjob);

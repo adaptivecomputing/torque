@@ -1811,7 +1811,7 @@ int insert_array(
   job_array *pa)
 
   {
-  int           rc;
+  int rc = PBSE_NONE;
 
   pthread_mutex_lock(allarrays.allarrays_mutex);
 
@@ -1834,7 +1834,7 @@ int remove_array(
   job_array *pa)
 
   {
-  int  rc;
+  int  rc = PBSE_NONE;
   char arrayid[PBS_MAXSVRJOBID+1];
 
   if (pthread_mutex_trylock(allarrays.allarrays_mutex))
