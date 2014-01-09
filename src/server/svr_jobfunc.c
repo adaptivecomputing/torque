@@ -943,11 +943,11 @@ int svr_setjobstate(
       if (has_queue_mutex == FALSE)
         {
         pque = get_jobs_queue(&pjob);
-
-        if (pjob == NULL)
+        if (pque == NULL)
           {
-          log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 11");
-          return(PBSE_JOBNOTFOUND);
+          sprintf(log_buf, "queue not found for jobid %s", pjob->ji_qs.ji_jobid);
+          log_err(PBSE_UNKQUE, __func__, log_buf);
+          return(PBSE_UNKQUE);
           }
         }
       else
