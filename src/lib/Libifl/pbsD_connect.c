@@ -1366,7 +1366,7 @@ int pbs_disconnect(
   int  sock;
 
   if ((connect < 0) ||
-      (connect > PBS_NET_MAX_CONNECTIONS))
+      (connect >= PBS_NET_MAX_CONNECTIONS))
     return(-1);
 
   pthread_mutex_lock(connection[connect].ch_mutex);

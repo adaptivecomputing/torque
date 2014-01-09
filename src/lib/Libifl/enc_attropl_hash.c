@@ -201,6 +201,7 @@ int build_var_list(
       /* item_count++; */
       }
     }
+
   if (preexisting_var_list == TRUE)
     {
     hash_del_item(mm, attrs, (char *)ATTR_v);
@@ -267,6 +268,7 @@ int encode_DIS_attropl_hash_single(
       break;
 
     }
+
   return rc;
   }
 

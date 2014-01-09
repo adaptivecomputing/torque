@@ -96,8 +96,7 @@ char  *OriginalCommand = NULL;
 /**
  * Abort the program due to memory allocation failure.
  */
-static void
-fail_nomem(void)
+static void fail_nomem(void)
   {
   printf("ERROR:  Insufficient memory to save command line.  Shutting down.\n");
   exit(-1);
@@ -106,27 +105,34 @@ fail_nomem(void)
 /**
  * Locate the executable @a cmd in the supplied @a path.
  *
+ * @pre-cond: cmd and path must be valid char *s
  * @param cmd   Command to locate (name or absolute path) (I)
  * @param path  Colon-delimited set of directories to search (e.g., $PATH) (I)
  * @return Absolute path to @a cmd (malloc'd), or NULL on failure.
  */
-char *
-find_command(char *cmd, char *path)
+char *find_command(
+    
+    char *cmd, 
+    char *path)
+
   {
-  char *token, *saveptr = NULL;
+  char *token;
+  char *saveptr = NULL;
 
   /* Duplicate path variable so we don't alter it. */
-  if (!path) return NULL;
+  if ((!path) || (!cmd))
+    return NULL;
   else if (!(path = strdup(path)))
     fail_nomem();
 
-  if (!cmd) return NULL;
-  else if (*cmd == '/')
+  if (*cmd == '/')
     {
     /* Absolute path to command provided. */
     free(path);
-    if (access(cmd, X_OK)) return NULL;
-    else return strdup(cmd);
+    if (access(cmd, X_OK)) 
+      return NULL;
+    else 
+      return strdup(cmd);
     }
   else if (strchr(cmd, '/'))
     {
@@ -135,12 +141,15 @@ find_command(char *cmd, char *path)
 
     /* Relative path to command provided. */
     free(path);
-    if (!getcwd(buff, sizeof(buff))) return NULL;
+    if (!getcwd(buff, sizeof(buff))) 
+      return NULL;
     cwd_len = strlen(buff);
-    if (cwd_len > sizeof(buff) - 2) return NULL;
+    if (cwd_len > sizeof(buff) - 2) 
+      return NULL;
     strcat(buff, "/");
     cwd_len++;
     strncat(buff, cmd, sizeof(buff) - cwd_len - 1);
+
     return strdup(buff);
     }
 

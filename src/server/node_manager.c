@@ -4082,6 +4082,8 @@ int build_hostlist_procs_req(
           host_info.push_back(node_info);
           node_info->port = pnode->nd_mom_rm_port;
           }
+        else
+          free(node_info);
         }
       } /* END for each node */
     } /* if (procs > 0) */

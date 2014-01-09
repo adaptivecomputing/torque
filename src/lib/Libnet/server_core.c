@@ -452,7 +452,6 @@ int start_listener_addrinfo(
             }
           else
             {
-
             /* add_conn is not protocol independent. We need to 
                do some IPv4 stuff here */
             add_conn(
@@ -463,7 +462,6 @@ int start_listener_addrinfo(
               PBS_SOCK_INET,
               NULL);
             enqueue_threadpool_request(process_meth, args);
-          /*pthread_create(&tid, &t_attr, process_meth, (void *)new_conn_port);*/
             }
           }
         }

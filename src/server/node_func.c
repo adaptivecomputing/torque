@@ -1248,6 +1248,7 @@ void write_compute_node_properties(
       
     unlock_node(alps_node, __func__, "loop", LOGLEVEL);
     }
+
   } /* END write_compute_node_properties() */
 
 

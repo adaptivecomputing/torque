@@ -364,7 +364,7 @@ int trq_main(
   char *the_key = NULL;
   char *sign_key = NULL;
   int trq_server_port = 0;
-  char *daemon_port;
+  char *daemon_port = NULL;
   void *(*process_method)(void *) = process_svr_conn;
 
   parse_command_line(argc, argv);
@@ -410,8 +410,13 @@ int trq_main(
     {
     printf("Daemon exit requested\n");
     }
+
   if (the_key != NULL)
     free(the_key);
+
+  if (daemon_port != NULL)
+    free(daemon_port);
+
   return rc;
   }
 }

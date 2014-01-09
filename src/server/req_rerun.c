@@ -135,14 +135,17 @@ void post_rerun(batch_request *preq);
  *
  */
 
-void delay_and_send_sig_kill(batch_request *preq_sig)
+void delay_and_send_sig_kill(
+    
+  batch_request *preq_sig)
+
   {
   int                   delay = 0;
   job                  *pjob;
 
   pbs_queue            *pque;
 
-    struct batch_request *preq_clt = NULL;  /* original client request */
+  struct batch_request *preq_clt = NULL;  /* original client request */
   int                   rc;
   time_t                time_now = time(NULL);
 
@@ -163,9 +166,7 @@ void delay_and_send_sig_kill(batch_request *preq_sig)
 
   if ((pjob = chk_job_request(preq_clt->rq_ind.rq_rerun, preq_clt)) == NULL)
     {
-    /* job has gone away */
-    req_reject(PBSE_UNKJOBID, 0, preq_clt, NULL, NULL);
-
+    /* job has gone away. chk_job_request() calls req_reject() on failure */
     return;
     }
 
@@ -229,25 +230,31 @@ void delay_and_send_sig_kill(batch_request *preq_sig)
  * The SIGTERM has been sent and we've waited for the kill_delay so now send the SIGKILL.
  *
  */
-void send_sig_kill(struct work_task *pwt)
+void send_sig_kill(
+    
+  struct work_task *pwt)
+
   {
   job                  *pjob;
-
   char                 *job_id = (char *)pwt->wt_parm1;
   static const char *rerun = "rerun";
-  char               *extra = strdup(rerun);
 
   free(pwt->wt_mutex);
   free(pwt);
 
-  if(job_id == NULL) return;
+  if(job_id == NULL) 
+    return;
+
+  char *extra = strdup(rerun);
 
   if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
     {
     free(job_id);
     return;
     }
+
   free(job_id);
+
   if(issue_signal(&pjob, "SIGKILL", post_rerun, extra,NULL) == 0)
     {
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN;
@@ -255,8 +262,10 @@ void send_sig_kill(struct work_task *pwt)
         ~(JOB_SVFLG_CHECKPOINT_FILE |JOB_SVFLG_CHECKPOINT_MIGRATEABLE |
           JOB_SVFLG_CHECKPOINT_COPIED)) | JOB_SVFLG_HASRUN;
     }
+  
   unlock_ji_mutex(pjob, __func__, "6", LOGLEVEL);
-  }
+
+  } /* END send_sig_kill() */
 
 
 /*

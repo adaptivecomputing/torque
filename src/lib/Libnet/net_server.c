@@ -490,9 +490,9 @@ int ping_trqauthd(
 
   {
   int   rc;
-  int   local_socket;
+  int   local_socket = -1;
   int   write_buf_len;
-  char  *err_msg;
+  char  *err_msg = NULL;
   char  write_buf[MAX_LINE];
 #ifndef MUNGE_AUTH
   char  *read_buf = NULL;
@@ -513,6 +513,9 @@ int ping_trqauthd(
   rc = socket_connect_unix(local_socket, unix_socket_name, &err_msg);
   if (rc != 0)
     {
+    if (err_msg != NULL)
+      free(err_msg);
+
     /* If we are here we could not connect to trqauthd. That is ok though. That tells us trqauthd is not up.  */
     return(rc);
     }
@@ -532,7 +535,7 @@ int ping_trqauthd(
     }
 #endif /* MUNGE_AUTH */
 
-  if (local_socket >= 0)
+  if (local_socket > 0)
     socket_close(local_socket);
 
   return(rc);
