@@ -164,7 +164,8 @@ int reply_send_svr(
   int               sfds = request->rq_conn;  /* socket */
 
   /* Handle remote replies - local batch requests no longer create work tasks */
-  if (sfds >= 0)
+  if ((sfds >= 0) &&
+      (sfds != PBS_LOCAL_CONNECTION))
     {
     /* Otherwise, the reply is to be sent to a remote client */
 
