@@ -143,7 +143,8 @@ void numa_node::parse_cpu_string(
         prev++;
         }
 
-      if (*ptr == ',')
+      if ((*ptr == ',') ||
+          (is_whitespace(*ptr)))
         ptr++;
       }
     else if ((*ptr == ',') ||

@@ -19,3 +19,17 @@ bool is_physical_core(unsigned int)
 {
   return false;
 }
+
+int is_whitespace(
+      char c)
+  {
+  if ((c == ' ')  ||
+      (c == '\n') ||
+      (c == '\t') ||
+      (c == '\r') ||
+      (c == '\f'))
+      return(TRUE);
+  else
+     return(FALSE);
+  }
+
