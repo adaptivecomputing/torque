@@ -848,12 +848,101 @@ void release_node_allocation(
   job &pjob)
 
   {
-  free_nodes(&pjob);
+  char log_buf[LOCAL_LOG_BUF_SIZE];
 
-  free(pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str);
-  pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = NULL;
-  pjob.ji_wattr[JOB_ATR_exec_host].at_flags &= ~ATR_VFLAG_SET;
-  }
+  free_nodes(&pjob);
+  
+  // we need to leave the exec host list intact even though the nodes are no longer allocated to that job
+  if ((pjob.ji_wattr[JOB_ATR_checkpoint].at_val.at_str != NULL) &&
+      (!strncmp(pjob.ji_wattr[JOB_ATR_checkpoint].at_val.at_str, "enabled", 7) &&
+       (pjob.ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE)))
+    {
+    if (LOGLEVEL >= 7)
+      {
+      sprintf(log_buf, "Job has checkpoint set; leaving exec_host list as is.");
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob.ji_qs.ji_jobid, log_buf);
+      }
+    }
+  else
+    {
+    free(pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+    pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = NULL;
+    pjob.ji_wattr[JOB_ATR_exec_host].at_flags &= ~ATR_VFLAG_SET;
+    }
+  } /* END release_node_allocation() */
+
+
+
+void release_node_allocation_if_needed(
+
+  job &pjob,
+  int  newstate)
+
+  {
+  if ((newstate == JOB_STATE_QUEUED) &&
+      (pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL))
+    release_node_allocation(pjob);
+  } /* END release_node_allocation_if_needed() */
+
+
+
+/*
+ * set_jobstate_basic()
+ *
+ * @post-cond: pjob's state and substate, with according markers, are updated to 
+ * match newstate and newsubstate
+ */
+void set_jobstate_basic(
+
+  job &pjob,
+  int  newstate,
+  int  newsubstate)
+
+  {
+  pjob.ji_qs.ji_state = newstate;
+  pjob.ji_qs.ji_substate = newsubstate;
+
+  pjob.ji_wattr[JOB_ATR_substate].at_val.at_long = newsubstate;
+
+  set_statechar(&pjob);
+  } /* END set_jobstate_basic() */
+
+
+
+/*
+ * set_subjob_state()
+ *
+ * and abbreviated version of svr_setjobstate() for subjobs. Most things
+ * done by svr_setjobstate() don't need to be done for subjobs.
+ */
+int set_subjob_state(
+
+  job *pjob,            /* M */
+  int  newstate,        /* I */
+  int  newsubstate,     /* I */
+  int  has_queue_mutex) /* I */
+
+  {
+  char  jobid[PBS_MAXSVRJOBID + 1];
+  job  *parent = pjob->ji_parent_job;
+
+  strcpy(jobid, pjob->ji_qs.ji_jobid);
+  unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+  lock_ji_mutex(parent, __func__, NULL, LOGLEVEL);
+
+  svr_setjobstate(parent, newstate, newsubstate, has_queue_mutex);
+  unlock_ji_mutex(parent, __func__, NULL, LOGLEVEL);
+    
+  if ((pjob = svr_find_job(jobid, TRUE)) != NULL)
+    {
+    release_node_allocation_if_needed(*pjob, newstate);
+    set_jobstate_basic(*pjob,  newstate,  newsubstate);
+
+    return(PBSE_NONE);
+    }
+  else
+    return(PBSE_JOB_RECYCLED);
+  } /* END set_subjob_state() */
 
 
 
@@ -888,6 +977,8 @@ int svr_setjobstate(
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL input job pointer");
     return(PBSE_BAD_PARAMETER);
     }
+  else if (pjob->ji_parent_job != NULL)
+    return(set_subjob_state(pjob, newstate, newsubstate, has_queue_mutex));
 
   if (LOGLEVEL >= 2)
     {
@@ -925,22 +1016,7 @@ int svr_setjobstate(
       changed = true;
 
       /* add a fail-safe for not having queued jobs with nodes assigned */
-      if ((newstate == JOB_STATE_QUEUED) &&
-          (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL))
-        {
-    	if ((pjob->ji_wattr[JOB_ATR_checkpoint].at_val.at_str != NULL) &&
-            (!strncmp(pjob->ji_wattr[JOB_ATR_checkpoint].at_val.at_str, "enabled", 7) &&
-            (pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE)))
-    	  {
-    	  if (LOGLEVEL >= 7)
-    		{
-            sprintf(log_buf, "Job has checkpoint set; leaving exec_host list as is.");
-            log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
-    		}
-    	  }
-    	else
-          release_node_allocation(*pjob);
-        }
+      release_node_allocation_if_needed(*pjob, newstate);
 
       /* the array job isn't actually a job so don't count it here */
       if (pjob->ji_is_array_template == FALSE)
@@ -1050,16 +1126,9 @@ int svr_setjobstate(
       }
     }    /* END if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRANSICM) */
 
-  /* set the states accordingly */
-  pjob->ji_qs.ji_state = newstate;
-  pjob->ji_qs.ji_substate = newsubstate;
-
-  pjob->ji_wattr[JOB_ATR_substate].at_val.at_long = newsubstate;
-
-  set_statechar(pjob);
+  set_jobstate_basic(*pjob,  newstate,  newsubstate);
 
   /* update the job file */
-
   if (pjob->ji_modified)
     {
     return(job_save(pjob, SAVEJOB_FULL,0));
