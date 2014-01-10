@@ -3,6 +3,7 @@
 #include <stdio.h> /* fprintf */
 #include <pwd.h> /* struct password */
 
+#include "pbs_config.h"
 #include "attribute.h" /* attribute_def, pbs_attribute, svrattrl */
 #include "list_link.h" /* tlist_head */
 #include "resource.h" /* resource_def, resource */
@@ -10,8 +11,6 @@
 #include "pbs_job.h" /* job */
 #include "batch_request.h" /* batch_request */
 #include "libpbs.h" /* job_file */
-
-
 
 const char *PJobSubState[10];
 char *path_jobs;

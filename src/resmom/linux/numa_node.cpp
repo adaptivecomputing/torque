@@ -126,7 +126,8 @@ void translate_range_string_to_vector(
         prev++;
         }
 
-      if (*ptr == ',')
+      if ((*ptr == ',') ||
+          (is_whitespace(*ptr)))
         ptr++;
       }
     else
