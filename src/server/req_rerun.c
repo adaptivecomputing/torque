@@ -509,8 +509,7 @@ int finalize_rerunjob(struct batch_request *preq,job *pjob,int rc)
 
       /* requeue request successful */
 
-      if (pjob != NULL)
-        pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN;
+      pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN;
 
       break;
 
@@ -538,84 +537,73 @@ int finalize_rerunjob(struct batch_request *preq,job *pjob,int rc)
         char         *tmp;
         long          cray_enabled = FALSE;
        
-        if (pjob != NULL)
+        get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
+
+        if ((cray_enabled == TRUE) &&
+            (pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str != NULL))
+          tmp = parse_servername(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str, &dummy);
+        else
+          tmp = parse_servername(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, &dummy);
+
+        /* Cannot communicate with MOM, forcibly requeue job.
+           This is a relatively disgusting thing to do */
+
+        sprintf(log_buf, "rerun req to %s failed (rc=%d), forcibly requeueing job",
+          tmp, rc);
+
+        free(tmp);
+
+        log_event(
+          PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid,
+          log_buf);
+
+        log_err(-1, __func__, log_buf);
+
+        strcat(log_buf, ", previous output files may be lost");
+
+        svr_mailowner(pjob, MAIL_OTHER, MAIL_FORCE, log_buf);
+
+        svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_RERUN3, FALSE);
+
+        rel_resc(pjob); /* free resc assigned to job */
+
+        if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HOTSTART) == 0)
           {
-          get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
+          /* in case of server shutdown, don't clear exec_host */
+          /* will use it on hotstart when next comes up        */
+          
+          job_attr_def[JOB_ATR_exec_host].at_free(&pjob->ji_wattr[JOB_ATR_exec_host]);
 
-          if ((cray_enabled == TRUE) &&
-              (pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str != NULL))
-            tmp = parse_servername(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str, &dummy);
-          else
-            tmp = parse_servername(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, &dummy);
+          job_attr_def[JOB_ATR_session_id].at_free(&pjob->ji_wattr[JOB_ATR_session_id]);
           
-          /* Cannot communicate with MOM, forcibly requeue job.
-             This is a relatively disgusting thing to do */
-          
-          sprintf(log_buf, "rerun req to %s failed (rc=%d), forcibly requeueing job",
-            tmp, rc);
-
-          free(tmp);
-  
-          log_event(
-            PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
-            PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
-            log_buf);
-          
-          log_err(-1, __func__, log_buf);
-          
-          strcat(log_buf, ", previous output files may be lost");
-  
-          svr_mailowner(pjob, MAIL_OTHER, MAIL_FORCE, log_buf);
-  
-          svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_RERUN3, FALSE);
-  
-          rel_resc(pjob); /* free resc assigned to job */
-          
-          if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HOTSTART) == 0)
-            {
-            /* in case of server shutdown, don't clear exec_host */
-            /* will use it on hotstart when next comes up        */
-            
-            job_attr_def[JOB_ATR_exec_host].at_free(&pjob->ji_wattr[JOB_ATR_exec_host]);
-  
-            job_attr_def[JOB_ATR_session_id].at_free(&pjob->ji_wattr[JOB_ATR_session_id]);
-            
-            job_attr_def[JOB_ATR_exec_gpus].at_free(&pjob->ji_wattr[JOB_ATR_exec_gpus]);          
-            }
-          
-          pjob->ji_modified = 1;    /* force full job save */
-          
-          pjob->ji_momhandle = -1;
-          pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_StagedIn;
-          
-          svr_evaljobstate(pjob, &newstate, &newsubst, 0);
-          svr_setjobstate(pjob, newstate, newsubst, FALSE);
+          job_attr_def[JOB_ATR_exec_gpus].at_free(&pjob->ji_wattr[JOB_ATR_exec_gpus]);
           }
+
+        pjob->ji_modified = 1;    /* force full job save */
+
+        pjob->ji_momhandle = -1;
+        pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_StagedIn;
+
+        svr_evaljobstate(pjob, &newstate, &newsubst, 0);
+        svr_setjobstate(pjob, newstate, newsubst, FALSE);
         }
 
       break;
     }  /* END switch (rc) */
 
-  /* So job has run and is to be rerun (not restarted) */
-  if (pjob == NULL)
-    {
-    rc = PBSE_JOB_RERUN;
-    }
-  else
-    {
-    pjob->ji_qs.ji_svrflags = (pjob->ji_qs.ji_svrflags &
-        ~(JOB_SVFLG_CHECKPOINT_FILE |JOB_SVFLG_CHECKPOINT_MIGRATEABLE |
-          JOB_SVFLG_CHECKPOINT_COPIED)) | JOB_SVFLG_HASRUN;
-    
-    sprintf(log_buf, msg_manager, msg_jobrerun, preq->rq_user, preq->rq_host);
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+  pjob->ji_qs.ji_svrflags = (pjob->ji_qs.ji_svrflags &
+      ~(JOB_SVFLG_CHECKPOINT_FILE |JOB_SVFLG_CHECKPOINT_MIGRATEABLE |
+        JOB_SVFLG_CHECKPOINT_COPIED)) | JOB_SVFLG_HASRUN;
 
-    reply_ack(preq);
-  
-    /* note in accounting file */
-    account_record(PBS_ACCT_RERUN, pjob, NULL);
-    }
+  sprintf(log_buf, msg_manager, msg_jobrerun, preq->rq_user, preq->rq_host);
+  log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+
+  reply_ack(preq);
+
+  /* note in accounting file */
+  account_record(PBS_ACCT_RERUN, pjob, NULL);
 
   return rc;
   }  /* END req_rerunjob() */
