@@ -166,21 +166,6 @@ static void req_stat_job_step2(struct stat_cntl *);
 
 
 
-
-/**
- * req_stat_job - service the Status Job Request
- *
- * This request processes the request for status of a single job or
- * the set of jobs at a destination.
- * If SRV_ATR_PollJobs is not set or false (default), this takes three
- * steps because of running jobs being known to MOM:
- *   1. validate and setup the request (done here).
- *   2. for each candidate job which is running and for which there is no
- *      current status, ask MOM for an update.
- *   3. form the reply for each candidate job and return it to the client.
- *      If SRV_ATR_PollJobs is true, then we skip step 2.
- */
-
 enum TJobStatTypeEnum
   {
   tjstNONE = 0,
@@ -195,6 +180,17 @@ enum TJobStatTypeEnum
   tjstLAST
   };
 
+
+/**
+ * req_stat_job - service the Status Job Request
+ *
+ * This request processes the request for status of a single job or
+ * the set of jobs at a destination.
+ * This takes two steps because of running jobs being known to MOM:
+ *   1. validate and setup the request (done here).
+ *   2. form the reply for each candidate job and return it to the client.
+ */
+
 int req_stat_job(
 
   struct batch_request *preq)  /* ptr to the decoded request */
@@ -205,7 +201,6 @@ int req_stat_job(
   job                  *pjob = NULL;
   pbs_queue            *pque = NULL;
   int                   rc = PBSE_NONE;
-  long                  poll_jobs = 0;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   enum TJobStatTypeEnum type = tjstNONE;
@@ -332,10 +327,6 @@ int req_stat_job(
   cntl->sc_post   = req_stat_job_step2;
   cntl->sc_jobid[0] = '\0'; /* cause "start from beginning" */
 
-  get_svr_attr_l(SRV_ATR_PollJobs, &poll_jobs);
-  if (poll_jobs)
-    cntl->sc_post = 0; /* we're not going to make clients wait */
-
   req_stat_job_step2(cntl); /* go to step 2, see if running is current */
 
   if (pque != NULL)
@@ -389,11 +380,6 @@ static void req_stat_job_step2(
   job_array             *pa = NULL;
   char                   log_buf[LOCAL_LOG_BUF_SIZE];
   all_jobs_iterator      *iter;
-  time_t                 time_now = time(NULL);
-  long                   poll_jobs = 0;
-  char                   job_id[PBS_MAXSVRJOBID+1];
-  int                    job_substate = -1;
-  time_t                 job_momstattime = -1;
 
   preq   = cntl->sc_origrq;
   type   = (enum TJobStatTypeEnum)cntl->sc_type;
@@ -466,137 +452,6 @@ static void req_stat_job_step2(
   iter = ajptr->get_iterator();
   ajptr->unlock();
   }
-
-  get_svr_attr_l(SRV_ATR_PollJobs, &poll_jobs);
-  if (!poll_jobs)
-    {
-    /* polljobs not set - indicates we may need to obtain fresh data from
-       MOM */
-
-    if (cntl->sc_jobid[0] == '\0')
-      pjob = NULL;
-    else
-      pjob = svr_find_job(cntl->sc_jobid, FALSE);
-
-    while (1)
-      {
-      if (pjob == NULL)
-        {
-        /* start from the first job */
-
-        if (type == tjstJob)
-          {
-          pjob = svr_find_job(preq->rq_ind.rq_status.rq_id, FALSE);
-          }
-        else if (type == tjstQueue)
-          {
-          pjob = next_job(cntl->sc_pque->qu_jobs,iter);
-          }
-        else if (type == tjstArray)
-          {
-          job_array_index = 0;
-          /* increment job_array_index until we find a non-null pointer or hit the end */
-          while (job_array_index < pa->ai_qs.array_size)
-            {
-            if (pa->job_ids[job_array_index] != NULL)
-              {
-              if ((pjob = svr_find_job(pa->job_ids[job_array_index], FALSE)) != NULL)
-                {
-                unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
-                break;
-                }
-              }
-
-            job_array_index++;
-            }
-          }
-        else
-          {
-          pjob = next_job(&alljobs,iter);
-          }
-
-        }    /* END if (pjob == NULL) */
-      else
-        {
-        strcpy(job_id, pjob->ji_qs.ji_jobid);
-        unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
-
-        if (type == tjstJob)
-          break;
-
-        if (type == tjstQueue)
-          pjob = next_job(cntl->sc_pque->qu_jobs,iter);
-        else if (type == tjstArray)
-          {
-          pjob = NULL;
-          /* increment job_array_index until we find a non-null pointer or hit the end */
-          while (++job_array_index < pa->ai_qs.array_size)
-            {
-            if (pa->job_ids[job_array_index] != NULL)
-              {
-              if ((pjob = svr_find_job(pa->job_ids[job_array_index], FALSE)) != NULL)
-                {
-                unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
-                break;
-                }
-              }
-            }
-          }
-        else
-          pjob = next_job(&alljobs,iter);
-          
-        }
-
-      if (pjob == NULL)
-        break;
-
-      strcpy(job_id, pjob->ji_qs.ji_jobid);
-      job_substate = pjob->ji_qs.ji_substate;
-      job_momstattime = pjob->ji_momstat;
-      strcpy(cntl->sc_jobid, job_id);
-      unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
-      pjob = NULL;
-
-      /* PBS_RESTAT_JOB defaults to 30 seconds */
-      if ((job_substate == JOB_SUBSTATE_RUNNING) &&
-          ((time_now - job_momstattime) > JobStatRate))
-        {
-        /* go to MOM for status */
-        if ((rc = stat_to_mom(job_id, cntl)) == PBSE_MEM_MALLOC)
-          break;
-
-        if (rc != 0)
-          {
-          pjob = svr_find_job(job_id, FALSE);
-
-          rc = 0;
-
-          continue;
-          }
-        
-        if (pa != NULL)
-          unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
-
-        delete iter;
-
-        return; /* will pick up after mom replies */
-        }
-      }    /* END while(1) */
-
-    if (rc != 0)
-      {
-      if (pa != NULL)
-        unlock_ai_mutex(pa, __func__, "2", LOGLEVEL);
-
-      reply_free(preply);
-
-      req_reject(rc, 0, preq, NULL, "cannot get update from mom");
-
-      delete iter;
-
-      return;
-      }
-    }    /* END if (!server.sv_attr[SRV_ATR_PollJobs].at_val.at_long) */
 
   /*
    * now ready for part 3, building the status reply,
@@ -1197,8 +1052,7 @@ void stat_mom_job(
  * poll _job_task
  *
  * The invocation of this routine is triggered from
- * the pbs_server main_loop code.  The check of
- * SRV_ATR_PollJobs appears to be redundant.
+ * the pbs_server main_loop code.
  */
 void poll_job_task(
 
@@ -1208,7 +1062,6 @@ void poll_job_task(
   char      *job_id = (char *)ptask->wt_parm1;
   job       *pjob;
   time_t     time_now = time(NULL);
-  long       poll_jobs = 0;
   int        job_state = -1;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -1223,8 +1076,7 @@ void poll_job_task(
       job_state = pjob->ji_qs.ji_state;
       job_mutex.unlock();
 
-      get_svr_attr_l(SRV_ATR_PollJobs, &poll_jobs);
-      if ((poll_jobs) && (job_state == JOB_STATE_RUNNING))
+      if (job_state == JOB_STATE_RUNNING)
         {
         /* we need to throttle the number of outstanding threads are
            doing job polling. This prevents a problem where pbs_server
