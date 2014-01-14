@@ -5,6 +5,8 @@ ascent
       mom for a job's information if the information hasn't been received for 5 
       minutes. Otherwise, this information is communicated with the mom's status
       information.
+  e - TRQ-2309. Have TORQUE recognize when a request to run a job specifies a node
+      list and directly access those nodes instead of searching linearly.
 
 4.2.7
   b - TRQ-2329. Fix a problem where nodes could be allocated to array subjobs even

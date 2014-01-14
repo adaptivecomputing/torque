@@ -108,6 +108,8 @@ struct pbsnode *find_nodebyname(const char *nodename)
 
   if (!strcmp(nodename, "bob"))
     return(&bob);
+  else if (!strcmp(nodename, "2"))
+    return(&bob);
   else
     return(NULL);
   }
@@ -500,7 +502,7 @@ int node_gpustatus_list(pbs_attribute *attr, void *a, int b)
 
 int str_to_attr(
 
-  char                 *name,   /* I */
+  const char           *name,   /* I */
   char                 *val,    /* I */
   pbs_attribute        *attr,   /* O */
   struct attribute_def *padef,  /* I */

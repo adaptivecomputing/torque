@@ -1513,7 +1513,7 @@ int hasprop(
   {
   struct  prop    *need;
 
-  for (need = props;need;need = need->next)
+  for (need = props; need != NULL; need = need->next)
     {
 
     struct prop *pp;
@@ -1577,10 +1577,10 @@ static int hasppn(
 /*
 ** Count how many gpus are available for use on this node
 */
-static int gpu_count(
+int gpu_count(
 
-  struct pbsnode *pnode,  /* I */
-  int    freeonly)        /* I */
+  struct pbsnode *pnode,    /* I */
+  int             freeonly) /* I */
 
   {
   int  count = 0;
@@ -2126,7 +2126,7 @@ int procs_available(
 
 
 
-int node_is_spec_acceptable(
+bool node_is_spec_acceptable(
 
   struct pbsnode   *pnode,
   single_spec_data *spec,
@@ -2147,32 +2147,29 @@ int node_is_spec_acceptable(
   if (IS_VALID_STR(ProcBMStr))
     {
     if (pnode->nd_state != INUSE_FREE)
-      return(FALSE);
+      return(false);
 
     if (node_satisfies_request(pnode, ProcBMStr) == FALSE)
-      return(FALSE);
+      return(false);
     }
 #endif
 
   /* NYI: check if these are necessary */
   pnode->nd_flag = okay;
 
-  if (pnode->nd_ntype != NTYPE_CLUSTER)
-    return(FALSE);
-
   /* make sure that the node has properties */
   if (hasprop(pnode, prop) == FALSE)
-    return(FALSE);
+    return(false);
 
   if ((hasppn(pnode, ppn_req, SKIP_NONE) == FALSE) ||
       (gpu_count(pnode, FALSE) < gpu_req) ||
       (pnode->nd_nmics < mic_req))
-    return(FALSE);
+    return(false);
 
   (*eligible_nodes)++;
 
   if ((pnode->nd_state & (INUSE_OFFLINE | INUSE_DOWN | INUSE_RESERVE | INUSE_JOB)) != 0)
-    return(FALSE);
+    return(false);
 
   gpu_free = gpu_count(pnode, TRUE) - pnode->nd_ngpus_to_be_used;
   np_free  = pnode->nd_slots.get_number_free() - pnode->nd_np_to_be_used;
@@ -2181,9 +2178,9 @@ int node_is_spec_acceptable(
   if ((ppn_req > np_free) ||
       (gpu_req > gpu_free) ||
       (mic_req > mic_free))
-    return(FALSE);
+    return(false);
 
-  return(TRUE);
+  return(true);
   } /* END node_is_spec_acceptable() */
 
 
@@ -2683,6 +2680,249 @@ int node_is_external(
 
 
 
+/*
+ * record_fitting_node()
+ * updates relevant structs to reflect that this node fits the specifications in req
+ *
+ * @pre-cond: pnode, req, and first_node_name must all be valid pointers to their types.
+ * naji and ard_array are optional parameters
+ * @post-cond: if naji is non-null then this node is added so it can be put in the exec_host
+ * list later.
+ * @post-cond: req's nodes required count is decremented
+ * @post-cond: if ard_array is non-null then the node information is added there as well
+ */
+
+void record_fitting_node(
+
+  int                 &num,
+  struct pbsnode      *pnode,
+  node_job_add_info   *naji,
+  single_spec_data    *req,
+  char                *first_node_name,
+  int                  i,
+  int                  num_alps_reqs,
+  enum job_types       job_type,
+  complete_spec_data  *all_reqs,
+  alps_req_data      **ard_array)      /* O (optional) */
+
+  {
+  // count the nodes that work
+  num++;
+
+  /* for heterogeneous jobs on the cray, record the external 
+   * nodes in a separate attribute */
+  if (naji != NULL)
+    {
+    if ((job_type == JOB_TYPE_heterogeneous) &&
+        (node_is_external(pnode) == TRUE))
+      save_node_for_adding(naji, pnode, req, first_node_name, TRUE, i+1);
+    else
+      save_node_for_adding(naji, pnode, req, first_node_name, FALSE, i+1);
+
+    if ((num_alps_reqs > 0) &&
+        (ard_array != NULL) &&
+        (*ard_array != NULL))
+      {
+      if ((*ard_array)[req->req_id].node_list.length() != 0)
+        (*ard_array)[req->req_id].node_list += ',';
+
+      (*ard_array)[req->req_id].node_list += pnode->nd_name;
+
+      if (req->ppn > (*ard_array)[req->req_id].ppn)
+        (*ard_array)[req->req_id].ppn = req->ppn;
+      }
+    }
+
+  all_reqs->total_nodes--;
+  req->nodes--;
+  } /* END record_fitting_node */
+
+
+
+/*
+ * select_nodes_using_hostlist()
+ *
+ * This function assumes that the spec for this job run request comes in the form
+ * host:ppn[+host2:ppn[...]] and simply finds each node in this list. This 
+ * becomes O(N) with respect to the number of nodes in the job, whereas the 
+ * traditional method is O(N) with respect to the number of nodes in the system.
+ * In most cases, using this method will beome much faster.
+ *
+ * @pre-cond: all_reqs, naji, eligible_nodes, spec, and first_node_name must all
+ * be valid pointers.
+ * @post-cond: the nodes in the list are saved in naji to be added for the job later
+ */
+
+int select_nodes_using_hostlist(
+    
+  complete_spec_data *all_reqs,        /* I */
+  node_job_add_info  *naji,            /* O */
+  int                *eligible_nodes,  /* O */
+  const char         *spec,            /* I */
+  alps_req_data     **ard_array,       /* O (optional) */
+  char               *first_node_name, /* I */
+  int                 num_alps_reqs,   /* I */
+  enum job_types      job_type,        /* I */
+  char               *ProcBMStr)       /* I (optional) */
+
+  {
+  struct pbsnode      *pnode;
+  char                 log_buf[LOCAL_LOG_BUF_SIZE];
+  int                  num = 0;
+    
+  for (int i = 0; i < all_reqs->num_reqs; i++)
+    {
+    single_spec_data *req = all_reqs->reqs + i;
+
+    // must have a property and name specified for each 
+    if ((req->prop == NULL) ||
+        (req->prop->name == NULL))
+      {
+      snprintf(log_buf, sizeof(log_buf), "Spec '%s' doesn't have a node name for all entries", spec);
+      log_err(-1, __func__, log_buf);
+
+      return(-1);
+      }
+
+    pnode = find_nodebyname(req->prop->name);
+
+    // couldn't find the specified node 
+    if (pnode == NULL)
+      {
+      snprintf(log_buf, sizeof(log_buf), "Node '%s' not found", req->prop->name);
+      log_err(-1, __func__, log_buf);
+
+      return(-2);
+      }
+    
+    if (node_is_spec_acceptable(pnode, req, ProcBMStr, eligible_nodes) == false)
+      {
+      snprintf(log_buf, sizeof(log_buf), "Requested node '%s' is not currently available", req->prop->name);
+      log_err(-1, __func__, log_buf);
+      break;
+      }
+    
+    record_fitting_node(num, pnode, naji, req, first_node_name, i, num_alps_reqs, job_type, all_reqs, ard_array);
+
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+    }
+
+  return(num);
+  } /* END select_nodes_using_hostlist() */
+
+
+
+/*
+ * select_from_all_nodes()
+ *
+ * The traditional selecting algorithm. It iterates over every node that exists until finding the
+ * node(s) that we are searching for. This is O(N) with respect to the number of nodes in the system
+ * as each request is checked against each node at locking time.
+ *
+ * @pre-cond: all_reqs, eligible_nodes, and first_node_name must all be valid parameters
+ * @post-cond: the nodes in the list are saved in naji to be added for the job later
+ */
+
+int select_from_all_nodes(
+
+  complete_spec_data *all_reqs,        /* I */
+  node_job_add_info  *naji,            /* O (optional) */
+  int                *eligible_nodes,  /* O */
+  alps_req_data     **ard_array,       /* O (optional) */
+  char               *first_node_name, /* I */
+  int                 num_alps_reqs,   /* I */
+  enum job_types      job_type,        /* I */
+  char               *ProcBMStr)       /* I (optional) */
+
+  {
+  node_iterator   iter;
+  struct pbsnode *pnode = NULL;
+  int             num = 0;
+  
+  reinitialize_node_iterator(&iter);
+
+  /* iterate over all nodes */
+  while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
+    {
+    /* check each req against this node to see if it satisfies it */
+    for (int i = 0; i < all_reqs->num_reqs; i++)
+      {
+      single_spec_data *req = all_reqs->reqs + i;
+
+      if (req->nodes > 0)
+        {
+        if (node_is_spec_acceptable(pnode, req, ProcBMStr, eligible_nodes) == true)
+          {
+          record_fitting_node(num, pnode, naji, req, first_node_name, i, num_alps_reqs, job_type, all_reqs, ard_array);
+
+          /* are all reqs satisfied? */
+          if (all_reqs->total_nodes == 0)
+            break;
+          }
+        }
+      }
+
+    /* are all reqs satisfied? */
+    if (all_reqs->total_nodes == 0)
+      {
+      unlock_node(pnode, __func__, NULL, LOGLEVEL);
+      break;
+      }
+    } /* END for each node */
+
+  return(num);
+  } /* select_from_all_nodes() */
+
+
+
+/*
+ * process_as_node_list()
+ * Decides whether or not a spec is a list of hosts (host:ppn+host2:ppn...) or
+ * a generic request (4:ppn=20). Returns true if it is a list of hosts, false otherwise.
+ * If naji is null - indicating we aren't running a job, simply return false.
+ *
+ * @pre-cond: spec must be a valid char *
+ * @return: true if naji is non-null and spec looks like a node list.
+ */
+
+bool process_as_node_list(
+
+  const char              *spec,
+  const node_job_add_info *naji)
+
+  {
+  if (naji == NULL)
+    return(false);
+
+  if (spec == NULL)
+    return(false);
+
+  if (isalpha(spec[0]))
+    return(true);
+
+  std::string nodes(spec);
+  std::size_t pos = nodes.find("+");
+
+  if (pos != std::string::npos)
+    nodes.erase(pos);
+
+  pos = nodes.find(":");
+
+  if (pos != std::string::npos)
+    nodes.erase(pos);
+
+  struct pbsnode *pnode = find_nodebyname(nodes.c_str());
+
+  if (pnode != NULL)
+    {
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+    return(true);
+    }
+ 
+  return(false);
+  } /* process_as_node_list() */
+
+
 
 /*
  * Test a node specification.
@@ -2708,10 +2948,8 @@ int node_spec(
   int                *num_reqs)   /* O (optional) */
 
   {
-  struct pbsnode      *pnode;
   char                 first_node_name[PBS_MAXHOSTNAME + 1];
   char                *first_name_ptr;
-  node_iterator        iter;
   char                 log_buf[LOCAL_LOG_BUF_SIZE];
 
   char                *globs;
@@ -2956,63 +3194,12 @@ int node_spec(
       }
     }
 
-  reinitialize_node_iterator(&iter);
-  pnode = NULL;
-
-  /* iterate over all nodes */
-  while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
+  if (process_as_node_list(spec_param, naji) == true)
     {
-    /* check each req against this node to see if it satisfies it */
-    for (i = 0; i < all_reqs.num_reqs; i++)
-      {
-      single_spec_data *req = all_reqs.reqs + i;
-
-      if (req->nodes > 0)
-        {
-        if (node_is_spec_acceptable(pnode, req, ProcBMStr, &eligible_nodes) == TRUE)
-          {
-          if (naji != NULL)
-            {
-            /* for heterogeneous jobs on the cray, record the external 
-             * nodes in a separate attribute */
-            if ((job_type == JOB_TYPE_heterogeneous) &&
-                (node_is_external(pnode) == TRUE))
-              save_node_for_adding(naji, pnode, req, first_node_name, TRUE, i+1);
-            else
-              save_node_for_adding(naji, pnode, req, first_node_name, FALSE, i+1);
-
-            if ((num_alps_reqs > 0) &&
-                (ard_array != NULL) &&
-                (*ard_array != NULL))
-              {
-              if ((*ard_array)[req->req_id].node_list.length() != 0)
-                (*ard_array)[req->req_id].node_list += ',';
-
-              (*ard_array)[req->req_id].node_list += pnode->nd_name;
-
-              if (req->ppn > (*ard_array)[req->req_id].ppn)
-                (*ard_array)[req->req_id].ppn = req->ppn;
-              }
-            }
-
-          /* decrement needed nodes */
-          all_reqs.total_nodes--;
-          req->nodes--;
-    
-          /* are all reqs satisfied? */
-          if (all_reqs.total_nodes == 0)
-            break;
-          }
-        }
-      }
-
-    /* are all reqs satisfied? */
-    if (all_reqs.total_nodes == 0)
-      {
-      unlock_node(pnode, __func__, NULL, LOGLEVEL);
-      break;
-      }
-    } /* END for each node */
+    select_nodes_using_hostlist(&all_reqs, naji, &eligible_nodes, spec, ard_array, first_node_name, num_alps_reqs, job_type, ProcBMStr);
+    }
+  else
+    select_from_all_nodes(&all_reqs, naji, &eligible_nodes, ard_array, first_node_name, num_alps_reqs, job_type, ProcBMStr);
 
   for (i = 0; i < all_reqs.num_reqs; i++)
     if (all_reqs.reqs[i].prop != NULL)
