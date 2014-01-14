@@ -185,8 +185,6 @@ int log_init(const char *suffix, const char *hostname);
 int chk_file_sec( const char *path, int isdir, int sticky, int disallow, int fullpath, char *SEMsg);
 /* extern int  setup_env (char *); */
 
-extern int LOGLEVEL;
-
 /* Event types */
 
 #define PBSEVENT_ERROR  0x0001  /* internal errors       */
