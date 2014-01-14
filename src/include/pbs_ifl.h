@@ -640,8 +640,6 @@ int pbs_sigjobasync(int connect, char *job_id, char *signal, char *extend);
 
 void pbs_statfree(struct batch_status *stat);
 
-struct batch_status * pbs_statdest(int connect, char *id, char *extend);
-
 struct batch_status *pbs_statjob(int connect, char *id, struct attrl *attrib, char *extend);
 
 struct batch_status *pbs_selstat(int connect, struct attropl *select_list, char *extend);
@@ -669,7 +667,6 @@ char *trq_get_if_name(void);
 
 /* used by Moab */
 int pbs_stagein(int, char *, char *, char *);
-int pbs_stageout(int, char *, char *, char *);
 
 #ifdef __cplusplus
 }
