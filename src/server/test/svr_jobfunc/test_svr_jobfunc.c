@@ -181,13 +181,24 @@ START_TEST(svr_evaljobstate_test)
   int old_state;
   int old_substate;
   test_job.ji_qs.ji_state = JOB_STATE_EXITING;
+  test_job.ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
   old_state = test_job.ji_qs.ji_state;
   old_substate = test_job.ji_qs.ji_substate;
   svr_evaljobstate(test_job, state, substate, 1);
   fail_unless(old_state == state);
   fail_unless(old_substate == substate);
 
+  test_job.ji_qs.ji_state = JOB_STATE_EXITING;
+  test_job.ji_qs.ji_substate = JOB_SUBSTATE_RERUN3;
+  old_state = test_job.ji_qs.ji_state;
+  old_substate = test_job.ji_qs.ji_substate;
+  svr_evaljobstate(test_job, state, substate, 1);
+  fail_unless(state == JOB_STATE_QUEUED);
+  fail_unless(substate == JOB_SUBSTATE_QUEUED);
+
+
   test_job.ji_qs.ji_state = JOB_STATE_COMPLETE;
+  test_job.ji_qs.ji_substate = JOB_SUBSTATE_COMPLETE;
   old_state = test_job.ji_qs.ji_state;
   old_substate = test_job.ji_qs.ji_substate;
   svr_evaljobstate(test_job, state, substate, 1);

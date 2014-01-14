@@ -1161,8 +1161,13 @@ void svr_evaljobstate(
   int  forceeval)
 
   {
-  // this should be a NO-OP for jobs that are exiting or completed
-  if (pjob.ji_qs.ji_state >= JOB_STATE_EXITING)
+  // this should be a NO-OP for jobs that are exiting or completed unless
+  // the job is being rerun
+  if ((pjob.ji_qs.ji_state >= JOB_STATE_EXITING)&&
+      (pjob.ji_qs.ji_substate != JOB_SUBSTATE_RERUN)&&
+      (pjob.ji_qs.ji_substate != JOB_SUBSTATE_RERUN1)&&
+      (pjob.ji_qs.ji_substate != JOB_SUBSTATE_RERUN2)&&
+      (pjob.ji_qs.ji_substate != JOB_SUBSTATE_RERUN3))
     {
     newstate = pjob.ji_qs.ji_state; /* leave as is */
     newsub   = pjob.ji_qs.ji_substate;
