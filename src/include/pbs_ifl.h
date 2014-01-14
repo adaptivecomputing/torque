@@ -668,10 +668,6 @@ int pbs_gpumode(int connect, char *node, char *gpuid, int gpumode);
 int trq_set_preferred_network_interface(char *if_name, struct sockaddr *preferred_addr);
 char *trq_get_if_name(void);
 
-/* used by Moab */
-int pbs_stagein(int, char *, char *, char *);
-int pbs_stageout(int, char *, char *, char *);
-
 #ifdef __cplusplus
 }
 #endif
