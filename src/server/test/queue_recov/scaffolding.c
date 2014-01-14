@@ -63,10 +63,9 @@ int recov_attr(int fd, void *parent, struct attribute_def *padef, struct pbs_att
   exit(1);
   }
 
-int str_to_attr(char *name, char *val, struct pbs_attribute *attr, struct attribute_def *padef)
+int str_to_attr(const char *name, char *val, struct pbs_attribute *attr, struct attribute_def *padef, int limit)
   {
-  fprintf(stderr, "The call to str_to_attr needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void que_free(pbs_queue *pq, int sv_qs_mutex_held)
