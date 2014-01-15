@@ -260,8 +260,12 @@ job *svr_find_job(char *jobid, int get_subjob)
   strcpy(pjob.ji_qs.ji_jobid, jobid);
   pjob.ji_last_reported_time = old;
 
-  if ((!strcmp(jobid, "1")) ||
-      (!strcmp(jobid, "5")))
+  if (strstr(jobid, "lei.ac"))
+    {
+    return(NULL);
+    }
+  else if ((!strcmp(jobid, "1")) ||
+           (!strcmp(jobid, "5")))
     {
     pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("tom/0");
     }
@@ -344,14 +348,6 @@ int copy_to_end_of_dynamic_string(dynamic_string *ds, const char *str)
 
 void free_dynamic_string(dynamic_string *ds)
   {
-  }
-
-
-
-char *threadsafe_tokenizer(char **str, const char *delims)
-  {
-  fprintf(stderr, "The call to threadsafe_tokenizer needs to be mocked!!\n");
-  exit(1);
   }
 
 int get_svr_attr_l(int index, long *l)
@@ -484,3 +480,9 @@ int node_gpustatus_list(pbs_attribute *attr, void *a, int b)
   {
   return(0);
   }
+
+ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
+  {
+  return(0);
+  }
+
