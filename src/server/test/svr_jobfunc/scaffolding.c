@@ -36,6 +36,18 @@ user_info_holder users;
 int decrement_count;
 job napali_job;
 
+
+void remove_server_suffix(
+
+  std::string &user_name)
+
+  {
+  size_t pos = user_name.find("@");
+
+  if (pos != std::string::npos)
+    user_name.erase(pos);
+  }
+
 resource *add_resource_entry(pbs_attribute *pattr, resource_def *prdef)
   {
   fprintf(stderr, "The call to add_resource_entry to be mocked!!\n");

@@ -116,6 +116,7 @@
 #include <time.h>
 #include <ctype.h>
 #include <pthread.h>
+#include <string>
 
 #include "server_limits.h"
 #include "list_link.h"
@@ -143,6 +144,7 @@
 #include "svr_jobfunc.h"
 #include "job_route.h" /*remove_procct */
 #include "mutex_mgr.hpp"
+#include "user_info.h" /* remove_server_suffix */
 
 #define MSG_LEN_LONG 160
 
@@ -150,9 +152,10 @@
 
 static void default_std(job *, int key, dynamic_string *ds);
 static void eval_checkpoint(pbs_attribute *j, pbs_attribute *q);
-static int count_queued_jobs(pbs_queue *pque, char *user);
+static int count_queued_jobs(pbs_queue *pque, const char *user);
 
 /* Global Data Items: */
+
 
 extern struct server server;
 extern struct all_jobs alljobs;
@@ -437,7 +440,11 @@ int svr_enquejob(
 
   if ((pque->qu_attr[QA_ATR_MaxUserJobs].at_flags & ATR_VFLAG_SET))
     {
-    user_jobs = count_queued_jobs(pque, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+    std::string  uname(pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+
+    remove_server_suffix(uname);
+
+    user_jobs = count_queued_jobs(pque, uname.c_str());
     if ((user_jobs + pque->qu_reserved_jobs) >= pque->qu_attr[QA_ATR_MaxUserJobs].at_val.at_long)
       {
       return(PBSE_MAXUSERQUED);
@@ -1820,7 +1827,7 @@ int chk_svr_resc_limit(
 static int count_queued_jobs(
 
   pbs_queue *pque, /* I */
-  char      *user) /* I */
+  const char      *user) /* I */
 
   {
   int num_jobs = 0;
@@ -2296,13 +2303,14 @@ static int check_queue_job_limit(
   if ((pque->qu_attr[QA_ATR_MaxUserJobs].at_flags & ATR_VFLAG_SET) &&
       (pque->qu_attr[QA_ATR_MaxUserJobs].at_val.at_long >= 0))
     {
+    std::string  uname(pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
     int user_jobs = 0;
 
+    remove_server_suffix(uname);
     /* count number of jobs user has in queue */
     unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
-    user_jobs = count_queued_jobs(pque,
-        pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+    user_jobs = count_queued_jobs(pque, uname.c_str());
 
     lock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     if (pjob->ji_being_recycled == TRUE)
