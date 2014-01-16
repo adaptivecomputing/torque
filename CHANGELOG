@@ -25,6 +25,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       is /tmp/trqauthd-unix. It can be configured to point to a different directory.
       If trqauthd will not start and you know there are no other instances of trqauthd
       running you should delete the UNIX domain file and try again.
+  b - TRQ-2354. Fix an issue with potential overflow in user job counts. Also fix a 
+      user being considered different if from a different submit host.
+
 
 
 4.2.6
