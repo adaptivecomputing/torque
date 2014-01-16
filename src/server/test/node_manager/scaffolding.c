@@ -19,6 +19,8 @@
 #include <boost/ptr_container/ptr_vector.hpp>
 
 
+int str_to_attr_count;
+int decode_resc_count;
 int SvrNodeCt = 0; 
 int svr_resc_size = 0;
 char *path_nodestate;
@@ -105,6 +107,8 @@ struct pbsnode *find_nodebyname(const char *nodename)
   memset(&bob, 0, sizeof(bob));
 
   if (!strcmp(nodename, "bob"))
+    return(&bob);
+  else if (!strcmp(nodename, "2"))
     return(&bob);
   else
     return(NULL);
@@ -336,8 +340,42 @@ void *send_hierarchy_threadtask(void *vp)
 
 char *threadsafe_tokenizer(char **str, const char *delims)
   {
-  fprintf(stderr, "The call to threadsafe_tokenizer needs to be mocked!!\n");
-  exit(1);
+  char *current_char;
+  char *start;
+
+  if ((str == NULL) ||
+      (*str == NULL))
+    return(NULL);
+
+  /* save start position */
+  start = *str;
+
+  /* return NULL at the end of the string */
+  if (*start == '\0')
+    return(NULL);
+
+  /* begin at the start */
+  current_char = start;
+
+  /* advance to the end of the string or until you find a delimiter */
+  while ((*current_char != '\0') &&
+         (!strchr(delims, *current_char)))
+    current_char++;
+
+  /* advance str */
+  if (*current_char != '\0')
+    {
+    /* not at the end of the string */
+    *str = current_char + 1;
+    *current_char = '\0';
+    }
+  else
+    {
+    /* at the end of the string */
+    *str = current_char;
+    }
+
+  return(start);
   }
 
 int get_svr_attr_l(int index, long *l)
@@ -459,5 +497,33 @@ int create_a_gpusubnode(struct pbsnode *np)
 
 int node_gpustatus_list(pbs_attribute *attr, void *a, int b)
   {
+  return(0);
+  }
+
+int str_to_attr(
+
+  const char           *name,   /* I */
+  char                 *val,    /* I */
+  pbs_attribute        *attr,   /* O */
+  struct attribute_def *padef,  /* I */
+  int                   limit)  /* I */
+
+  {
+  str_to_attr_count++;
+
+  return(ATTR_NOT_FOUND);
+  }
+
+int decode_resc(
+
+  pbs_attribute *patr,  /* Modified on Return */
+  const char    *name,  /* pbs_attribute name */
+  const char    *rescn, /* I resource name - is used here */
+  const char    *val,   /* resource value */
+  int            perm)  /* access permissions */
+
+  {
+  decode_resc_count++;
+
   return(0);
   }

@@ -412,6 +412,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/resmom/test/mom_server/Makefile
     src/resmom/test/mom_process_request/Makefile
     src/resmom/test/mom_req_quejob/Makefile
+    src/resmom/test/parse_config/Makefile
     src/resmom/test/pbs_demux/Makefile
     src/resmom/test/prolog/Makefile
     src/resmom/test/release_reservation/Makefile
@@ -765,7 +766,7 @@ AC_CHECK_LIB(${xmlLib}, xmlGetProp,
  
  AC_CHECK_HEADERS([boost/ptr_container/ptr_vector.hpp],
                   [],
-                  [AC_MSG_ERROR(Boost ptr_vector.hpp header not found)],
+                  [AC_MSG_ERROR(Boost ptr_vector.hpp header not found. Install boost-devel package.)],
                   [])
 
 

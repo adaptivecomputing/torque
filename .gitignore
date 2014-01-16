@@ -379,6 +379,7 @@ src/resmom/test/mom_main/bob
 src/resmom/test/mom_process_request/test_mom_process_request
 src/resmom/test/mom_req_quejob/test_mom_req_quejob
 src/resmom/test/mom_server/test_mom_server
+src/resmom/test/parse_config/test_parse_config
 src/resmom/test/pbs_demux/test_pbs_demux
 src/resmom/test/prolog/test_prolog
 src/resmom/test/release_reservation/test_release_reservation
@@ -407,6 +408,7 @@ src/server/test/job_recov/unit_test_job1.JB
 src/server/test/job_recycler/test_job_recycler
 src/server/test/job_route/test_job_route
 src/server/test/login_nodes/test_login_nodes
+src/server/test/node_func/nodes
 src/server/test/node_func/test_node_func
 src/server/test/node_manager/test_node_manager
 src/server/test/pbsd_init/test_pbsd_init

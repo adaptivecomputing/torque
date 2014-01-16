@@ -1,8 +1,80 @@
+#include <vector>
 #include <stdlib.h>
 #include <check.h>
 #include <stdio.h>
 
 #include "numa_node.hpp"
+
+extern char cpulist[];
+
+void translate_range_string_to_vector(const char *range_string, std::vector<int> &indices);
+
+START_TEST(test_in_this_numa_node)
+  {
+  numa_node nn;
+
+  std::string str("0-1,8-9");
+  nn.parse_cpu_string(str);
+
+  fail_unless(nn.in_this_numa_node(0) >= 0);
+  fail_unless(nn.in_this_numa_node(1) >= 0);
+  fail_unless(nn.in_this_numa_node(8) >= 0);
+  fail_unless(nn.in_this_numa_node(9) >= 0);
+  fail_unless(nn.in_this_numa_node(2) < 0);
+  fail_unless(nn.in_this_numa_node(3) < 0);
+  }
+END_TEST
+
+
+START_TEST(test_translate_range_string_to_vector)
+  {
+  std::vector<int> indices;
+
+  translate_range_string_to_vector("1\n", indices);
+  fail_unless(indices.size() == 1);
+  fail_unless(indices[0] == 1);
+
+  indices.clear();
+  translate_range_string_to_vector("1-4", indices);
+  fail_unless(indices.size() == 4);
+  fail_unless(indices[0] == 1);
+  fail_unless(indices[1] == 2);
+  fail_unless(indices[2] == 3);
+  fail_unless(indices[3] == 4);
+  
+  indices.clear();
+  translate_range_string_to_vector("0-2,6-8", indices);
+  fail_unless(indices.size() == 6);
+  fail_unless(indices[0] == 0);
+  fail_unless(indices[1] == 1);
+  fail_unless(indices[2] == 2);
+  fail_unless(indices[3] == 6);
+  fail_unless(indices[4] == 7);
+  fail_unless(indices[5] == 8);
+  }
+END_TEST
+
+
+START_TEST(test_recover_reservation)
+  {
+  numa_node nn("../../../../test/test_files", 0);
+
+  allocation a;
+  strcpy(cpulist, "0-1");
+  nn.recover_reservation(2, 1024, "1.napali", a);
+
+  fail_unless(a.cpus == 2);
+  fail_unless(a.memory == 1024);
+
+  strcpy(cpulist, "2-3");
+  allocation a2;
+  nn.recover_reservation(2, 1024, "2.naplali", a2);
+
+  fail_unless(a2.cpus == 0);
+  fail_unless(a2.memory == 0);
+
+  }
+END_TEST
 
 START_TEST(test_parse_cpu_string)
   {
@@ -150,6 +222,9 @@ Suite *numa_node_suite(void)
   tcase_add_test(tc_core, test_parse_cpu_string);
   tcase_add_test(tc_core, test_completely_fits);
   tcase_add_test(tc_core, test_reserve);
+  tcase_add_test(tc_core, test_in_this_numa_node);
+  tcase_add_test(tc_core, test_recover_reservation);
+  tcase_add_test(tc_core, test_translate_range_string_to_vector);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_allocation");

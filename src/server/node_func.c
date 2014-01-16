@@ -55,7 +55,6 @@
 #include "work_task.h"
 #include "net_cache.h"
 #include "ji_mutex.h"
-#include "svr_task.h" /* set_task */
 #include "execution_slot_tracker.hpp"
 #include <string>
 #include <vector>
@@ -888,9 +887,9 @@ int initialize_pbsnode(
   pnode->nd_ngpustatus      = 0;
   pnode->nd_ms_jobs         = initialize_resizable_array(20);
 
-  if(!isNUMANode) //NUMA nodes don't have their own address and their name is not in DNS.
+  if (!isNUMANode) //NUMA nodes don't have their own address and their name is not in DNS.
     {
-    if(pbs_getaddrinfo(pname,NULL,&pAddrInfo))
+    if (pbs_getaddrinfo(pname,NULL,&pAddrInfo))
       {
       return (PBSE_SYSTEM);
       }
@@ -1067,7 +1066,7 @@ static int process_host_name_part(
     }
 
   addr_info = insert_addr_name_info(addr_info,phostname);
-  if(addr_info == NULL)
+  if (addr_info == NULL)
     {
     return(PBSE_SYSTEM);
     }
@@ -1195,6 +1194,52 @@ static int process_host_name_part(
 
 
 
+/*
+ * write_compute_node_properties()
+ *
+ * writes out any extra properties or features that have been added to compute
+ * nodes to the nodes file.
+ * They are written in the format <node_name> cray_compute feature1[ feature2[...]]
+ * 
+ * @pre-cond: nin must be an open file pointer
+ * @post-cond: all compute nodes with extra features have been written to nin
+ *
+ */
+
+void write_compute_node_properties(
+
+  struct pbsnode &reporter,
+  FILE           *nin)
+
+  {
+  struct pbsnode *alps_node;
+  int             iter = -1;
+
+  while ((alps_node = next_host(&(reporter.alps_subnodes), &iter, NULL)) != NULL)
+    {
+    /* only write nodes that have more than just cray_compute as their properties.
+     * Checking for > 2 properties should be sufficient -- all computes have 
+     * cray_compute and all nodes have their name as a property */
+    if ((alps_node->nd_first != NULL) && 
+        (alps_node->nd_first->next != NULL) &&
+        (alps_node->nd_first->next->next != NULL))
+      {
+      std::stringstream buf;
+      buf << alps_node->nd_name;
+
+      for (struct prop *pp = alps_node->nd_first; pp != NULL; pp = pp->next)
+        {
+        if (strcmp(pp->name, alps_node->nd_name))
+          buf << " " << pp->name;
+        }
+
+      fprintf(nin, "%s\n", buf.str().c_str());
+      }
+      
+    unlock_node(alps_node, __func__, "loop", LOGLEVEL);
+    }
+  } /* END write_compute_node_properties() */
+
 
 
 /*
@@ -1217,6 +1262,7 @@ int update_nodes_file(
   int              j;
   int              iter = -1;
   FILE            *nin;
+  long             cray_enabled = FALSE;
 
   if (LOGLEVEL >= 2)
     {
@@ -1246,6 +1292,8 @@ int update_nodes_file(
 
     return(-1);
     }
+    
+  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
 
   /* for each node ... */
   /* NOTE: DO NOT change this loop to iterate over numa nodes. Since they
@@ -1308,6 +1356,10 @@ int update_nodes_file(
     /* finish off line with new-line */
     fprintf(nin, "\n");
 
+    if ((cray_enabled == TRUE) &&
+        (np == alps_reporter))
+      write_compute_node_properties(*np, nin);
+
     fflush(nin);
 
     if (ferror(nin))
@@ -1330,7 +1382,7 @@ int update_nodes_file(
       unlock_node(np, __func__, "loop", LOGLEVEL);
     } /* for each node */
 
-  if((fclose(nin)) != 0)
+  if ((fclose(nin)) != 0)
     {
     log_event(
       PBSEVENT_ADMIN,
@@ -3573,7 +3625,7 @@ int send_hierarchy(
   struct sockaddr_in  sa;
   struct tcp_chan    *chan = NULL;
 
-  if((ret = pbs_getaddrinfo(name,NULL,&pAddrInfo)) != PBSE_NONE)
+  if ((ret = pbs_getaddrinfo(name,NULL,&pAddrInfo)) != PBSE_NONE)
     {
     return ret;
     }

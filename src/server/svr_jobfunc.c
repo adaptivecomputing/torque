@@ -140,7 +140,6 @@
 #include "ji_mutex.h"
 #include "user_info.h"
 #include "svr_jobfunc.h"
-#include "svr_task.h"
 #include "job_route.h" /*remove_procct */
 #include "mutex_mgr.hpp"
 #include <string>
@@ -694,9 +693,8 @@ int svr_dequejob(
       }
     if (pque == NULL)
       {
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-      log_err(PBSE_JOBNOTFOUND, __func__, "Job has no queue");
-      return(PBSE_JOBNOTFOUND);
+      log_err(PBSE_JOB_NOT_IN_QUEUE, __func__, "Job has no queue");
+      return(PBSE_JOB_NOT_IN_QUEUE);
       }
     }
   else
@@ -1855,15 +1853,16 @@ static int check_execution_uid_and_gid(
 
 static int check_queue_disallowed_types(
 
-    struct job       *const pjob,
-    struct pbs_queue *const pque,
-    char             *const EMsg)
+  struct job       *const pjob,
+  struct pbs_queue *const pque,
+  char             *const EMsg)
+
   {
   int return_code = PBSE_NONE; /* Optimistic assumption */
   int i = 0;
 
   if ((pque->qu_attr[QA_ATR_DisallowedTypes].at_flags & ATR_VFLAG_SET) &&
-        (pque->qu_attr[QA_ATR_DisallowedTypes].at_val.at_arst != NULL))
+      (pque->qu_attr[QA_ATR_DisallowedTypes].at_val.at_arst != NULL))
     {
     for (i = 0;
          i < (pque->qu_attr[QA_ATR_DisallowedTypes]).at_val.at_arst->as_usedptr;

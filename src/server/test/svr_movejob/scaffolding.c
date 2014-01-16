@@ -74,7 +74,7 @@ int job_save(job *pjob, int updatetype, int mom_port)
   return(0);
   }
 
-int svr_job_purge(job *pjob)
+int svr_job_purge(job *pjob, int leaveSpoolFiles)
   {
   fprintf(stderr, "The call to job_purge to be mocked!!\n");
   exit(1);

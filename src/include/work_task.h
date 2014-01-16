@@ -96,6 +96,7 @@
 #define WORK_TASK_H 1
 
 #include <pthread.h>
+#include <list>
 #include "resizable_array.h"
 
 #define INITIAL_ALL_TASKS_SIZE 4
@@ -114,6 +115,14 @@ enum work_type
   };
 
 
+struct work_task *set_task(enum work_type type, long event_id, void (*func)(struct work_task *), void *parm, int get_lock);
+int dispatch_task(struct work_task *ptask);
+void delete_task(struct work_task *ptask);
+void clear_task(struct work_task *ptask);
+
+
+int task_is_in_threadpool(struct work_task *ptask);
+
 
 
 typedef struct all_tasks
@@ -123,6 +132,12 @@ typedef struct all_tasks
   pthread_mutex_t *alltasks_mutex;
   } all_tasks;
 
+
+typedef struct timed_task
+  {
+  work_task *wt;
+  long       task_time;
+  } timed_task;
 
 
 
@@ -144,17 +159,13 @@ typedef struct work_task
 
 void       initialize_all_tasks_array(all_tasks *);
 int        insert_task(all_tasks *, work_task *);
-int        insert_task_before(all_tasks *,work_task *before,work_task *after);
-int        insert_task_first(all_tasks *,work_task *);
 int        remove_task(all_tasks *,work_task *);
 int        has_task(all_tasks *);
-work_task *next_task(all_tasks *,int *);
+int        dispatch_timed_task(work_task *);
+work_task *pop_timed_task(time_t time_now);
+int        insert_timed_task(all_tasks *, time_t task_time, work_task *);
 
 
-
-extern void clear_task(struct work_task *ptask);
-extern int  dispatch_task(struct work_task *);
-extern void delete_task(struct work_task *ptask);
 
 
 #define TASKS_TO_REMOVE       1000
@@ -169,6 +180,11 @@ typedef struct task_recycler
   unsigned int     max_id;
   pthread_mutex_t *mutex;
   } task_recycler;
+
+void initialize_task_recycler();
+work_task *next_task_from_recycler(all_tasks *at, int *iter);
+void *remove_some_recycle_tasks(void *vp);
+int insert_task_into_recycler(struct work_task *ptask);
 
 
 #endif /* WORK_TASK_H */

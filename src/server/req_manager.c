@@ -136,7 +136,6 @@
 #include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
 #include "queue_func.h" /* find_queuebyname, que_alloc, que_free */
 #include "queue_recov.h" /* que_save */
-#include "svr_task.h"
 #include "mutex_mgr.hpp"
 
 

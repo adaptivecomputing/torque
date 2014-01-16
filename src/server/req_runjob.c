@@ -118,7 +118,6 @@
 #include "req_stat.h" /* stat_mom_job */
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
-#include "svr_task.h"
 
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
@@ -1018,6 +1017,7 @@ int svr_startjob(
   {
   int     f;
   int     rc;
+  long    cray_enabled = FALSE;
 
   if (FailHost != NULL)
     FailHost[0] = '\0';
@@ -1081,8 +1081,11 @@ int svr_startjob(
     return(rc);
     }
 
+  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
+
   /* copy the server nppcu value to the job */
-  if (!(pjob->ji_wattr[JOB_ATR_nppcu].at_flags & ATR_VFLAG_SET))
+  if ((cray_enabled == TRUE) &&
+      (!(pjob->ji_wattr[JOB_ATR_nppcu].at_flags & ATR_VFLAG_SET)))
     {
     long svr_nppcu_value = 0;
     char buf[128];
@@ -1465,7 +1468,10 @@ void finish_sendmom(
     {
     case LOCUTION_SUCCESS:  /* send to MOM went ok */
 
+      long job_stat_rate;
+
       pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_HOTSTART;
+      get_svr_attr_l(SRV_ATR_JobStatRate, &job_stat_rate);
       
       if (preq != NULL)
         reply_ack(preq);
@@ -1502,7 +1508,8 @@ void finish_sendmom(
         depend_on_exec(pjob);
 
       /* set up the poll task */
-      set_task(WORK_Timed, time_now + JobStatRate, poll_job_task, strdup(job_id), FALSE);
+      pjob->ji_last_reported_time = time_now;
+      set_task(WORK_Timed, time_now + job_stat_rate, poll_job_task, strdup(job_id), FALSE);
 
       break;
 

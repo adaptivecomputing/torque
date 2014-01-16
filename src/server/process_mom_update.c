@@ -111,8 +111,9 @@ int gpu_has_job(struct pbsnode *pnode, int gpuid);
 
 
 void move_past_mic_status(
-    boost::ptr_vector<std::string>::iterator& i,
-    boost::ptr_vector<std::string>::iterator end)
+
+  boost::ptr_vector<std::string>::iterator& i,
+  boost::ptr_vector<std::string>::iterator end)
 
   {
   while (i != end)
@@ -128,7 +129,7 @@ void move_past_mic_status(
 
 int save_single_mic_status(
 
-  std::string&    single_mic_status,
+  std::string    &single_mic_status,
   pbs_attribute  *temp)
 
   {

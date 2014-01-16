@@ -264,7 +264,7 @@ static void mom_lock(int fds, int op);
 int setup_nodeboards();
 #else
 #ifdef PENABLE_LINUX26_CPUSETS
-void create_cpuset_reservation_if_needed(job &pjob);
+void recover_cpuset_reservation(job &pjob);
 #endif
 #endif /* NUMA_SUPPORT */
 
@@ -3085,13 +3085,15 @@ int do_tcp(
 
       mom_is_request(chan,version,NULL);
 
-      svr_conn[chan->sock].cn_stay_open = FALSE;
       break;
 
     case IM_PROTOCOL:
 
       im_request(chan,version,pSockAddr);
-      svr_conn[chan->sock].cn_stay_open = FALSE;
+      if(chan->sock >= 0)
+        {
+        svr_conn[chan->sock].cn_stay_open = FALSE;
+        }
 
       break;
 
@@ -3123,7 +3125,9 @@ int do_tcp(
 
   /* don't close these connections -- the pointer is saved in 
    * the tasks for MPI jobs */
-  if ((chan != NULL) && (svr_conn[chan->sock].cn_stay_open == FALSE))
+  if ((chan != NULL) &&
+      (((chan->sock >= 0) && (svr_conn[chan->sock].cn_stay_open == FALSE)) ||
+      ((chan->sock == -1))))
     DIS_tcp_cleanup(chan);
   DBPRT(("%s:%d", __func__, proto));
 
@@ -3160,7 +3164,7 @@ void *tcp_request(
   if ((avail_bytes = socket_avail_bytes_on_descriptor(socket)) == 0)
     {
     close_conn(socket, FALSE);
-    return NULL;
+    return(NULL);
     }
 
   memset(&sockAddr,0,sizeof(sockAddr));
@@ -3188,9 +3192,9 @@ void *tcp_request(
   if (AVL_is_in_tree_no_port_compare(ipadd, 0, okclients) == 0)
     {
     sprintf(log_buffer, "bad connect from %s", address);
-    log_err(errno, __func__, log_buffer);
+    log_err(-1, __func__, log_buffer);
     close_conn(socket, FALSE);
-    return NULL;
+    return(NULL);
     }
 
   log_buffer[0] = '\0';
@@ -4414,7 +4418,7 @@ void recover_internal_layout()
   // now, re-create the reservation for each job.
   for (std::list<job *>::iterator it = job_list.begin(); it != job_list.end(); it++)
     {
-    create_cpuset_reservation_if_needed(*(*it));
+    recover_cpuset_reservation(*(*it));
     }
 #endif
   }
@@ -5031,8 +5035,6 @@ int setup_program_environment(void)
 
   if (gethostname(ret_string, ret_size) == 0)
     addclient(ret_string);
-
-  tmpdir_basename[0] = '\0';
 
   /* if no alias is specified, make mom_alias the same as mom_host */
   if (mom_alias[0] == '\0')

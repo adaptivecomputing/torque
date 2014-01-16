@@ -1060,8 +1060,10 @@ int write_my_server_status(
       
       log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
       }
+
+    const char *str_to_write = i->c_str();
     
-    if ((ret = diswst(chan,i->c_str())) != DIS_SUCCESS)
+    if ((ret = diswst(chan, str_to_write)) != DIS_SUCCESS)
       {
       switch (mode)
         {

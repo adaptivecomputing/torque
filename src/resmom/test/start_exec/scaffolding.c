@@ -526,3 +526,23 @@ bool am_i_mother_superior(const job &pjob)
   {
   return(false);
   }
+
+#ifdef PENABLE_LINUX26_CPUSETS
+
+node_internals::node_internals(void){}
+
+void node_internals::reserve(int, unsigned long, char const*){}
+
+long long get_memory_requested_in_kb(job&)
+  {
+  return 0;
+  }
+
+int get_cpu_count_requested_on_this_node(job&)
+  {
+  return 0;
+  }
+
+void node_internals::recover_reservation(int cpus, unsigned long memory, char const* jobid) {}
+
+#endif

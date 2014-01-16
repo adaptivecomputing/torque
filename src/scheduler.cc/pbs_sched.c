@@ -126,7 +126,6 @@
 #include "rm.h"
 #include "libpbs.h"
 
-int  connector;
 int  server_sock;
 
 #define  START_CLIENTS 2 /* minimum number of clients */
@@ -233,30 +232,6 @@ static void catch_abort(
 
 
 
-
-
-
-static int server_disconnect(
-
-  int connect)
-
-  {
-  close(connection[connect].ch_socket);
-
-  if (connection[connect].ch_errtxt != (char *)NULL)
-    free(connection[connect].ch_errtxt);
-
-  connection[connect].ch_errno = 0;
-
-  connection[connect].ch_inuse = FALSE;
-
-  return(0);
-  }  /* END server_disconnect() */
-
-
-
-
-
 /*
 ** Got an alarm call.
 */
@@ -274,12 +249,6 @@ void toolong(
   log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, id,
              "scheduling iteration took too long");
   DBPRT(("scheduling iteration too long\n"))
-
-  if (connector >= 0 && server_disconnect(connector))
-    log_err(errno, id, (char *)"server_disconnect");
-
-  if (close(server_sock))
-    log_err(errno, id, (char *)"close");
 
   if ((cpid = fork()) > 0)   /* parent re-execs itself */
     {
@@ -646,7 +615,7 @@ badconn(const char *msg)
 
 
 int
-server_command(void)
+server_command(int sock)
 
   {
   const char *id = "server_command";
@@ -659,7 +628,7 @@ server_command(void)
 
   slen = sizeof(saddr);
 
-  new_socket = accept(server_sock, (struct sockaddr *) & saddr, &slen);
+  new_socket = accept(sock, (struct sockaddr *) & saddr, &slen);
 
   if (new_socket == -1)
     {
@@ -705,20 +674,14 @@ server_command(void)
       }
     }
 
-  if ((connector = socket_to_conn(new_socket)) < 0)
-    {
-    log_err(errno, id, (char *)"socket_to_conn");
-
-    return(SCH_ERROR);
-    }
-
   if (get_4byte(new_socket, &cmd) != 1)
     {
+    close(new_socket);
     log_err(errno, id, (char *)"get4bytes");
 
     return(SCH_ERROR);
     }
-
+  close(new_socket);
   return((int)cmd);
   }
 
@@ -771,6 +734,7 @@ int main(
   const char  *homedir = PBS_SERVER_HOME;
   unsigned int port;
   const char  *dbfile = "sched_out";
+  int   server_sock;
 
   struct sigaction act;
   sigset_t oldsigs;
@@ -781,7 +745,7 @@ int main(
   fd_set fdset;
 
   int  schedinit(int argc, char **argv);
-  int  schedule(int com, int connector);
+  int  schedule(int command);
 
   glob_argv = argv;
   alarm_time = 180;
@@ -1214,23 +1178,17 @@ int main(
     if (!FD_ISSET(server_sock, &fdset))
       continue;
 
-    cmd = server_command();
+    cmd = server_command(server_sock);
 
     if (sigprocmask(SIG_BLOCK, &allsigs, &oldsigs) == -1)
       log_err(errno, id, (char *)"sigprocmaskSIG_BLOCK)");
 
     alarm(alarm_time);
 
-    if (schedule(cmd, connector)) /* magic happens here */
+    if (schedule(cmd)) /* magic happens here */
       go = 0;
 
     alarm(0);
-
-    if (connector >= 0 && server_disconnect(connector))
-      {
-      log_err(errno, id, (char *)"server_disconnect");
-      die(0);
-      }
 
     next_brk = (caddr_t)sbrk(0);
 

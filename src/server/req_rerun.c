@@ -104,7 +104,6 @@
 #include "mutex_mgr.hpp"
 #include "svr_func.h" /* get_svr_attr_* */
 #include "job_func.h" /* get_svr_attr_* */
-#include "svr_task.h"
 
 
 /* Private Function local to this file */

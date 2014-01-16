@@ -433,6 +433,11 @@ int talk_with_mom(
       return 1;
       }
 
+    if(begin_rm_req(mom_sd,&local_errno,num_resget) != 0)
+      {
+      closerm_err(&local_errno, mom_sd);
+      return 0;
+      }
     for (i = 0; i < num_resget; i++)
       addreq_err(mom_sd, &local_errno, (char *) res_to_get[i]);
 

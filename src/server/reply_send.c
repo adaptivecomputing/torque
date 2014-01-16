@@ -39,11 +39,6 @@
 /* External Globals */
 extern char *msg_daemonname;
 
-#ifndef PBS_MOM
-extern all_tasks task_list_event;
-extern int LOGLEVEL;
-#endif /* PBS_MOM */
-
 #define ERR_MSG_SIZE 127
 
 
@@ -161,15 +156,16 @@ int reply_send(
 #ifndef PBS_MOM
 int reply_send_svr(
   
-  struct batch_request *request)  /* I (freed) */
+  struct batch_request *request)  /* I (conditionally freed) */
 
   {
-  int               rc = 0;
-  char              log_buf[LOCAL_LOG_BUF_SIZE];
-  int               sfds = request->rq_conn;  /* socket */
+  int   rc = 0;
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
+  int   sfds = request->rq_conn;  /* socket */
 
   /* Handle remote replies - local batch requests no longer create work tasks */
-  if (sfds >= 0)
+  if ((sfds >= 0) &&
+      (sfds != PBS_LOCAL_CONNECTION))
     {
     /* Otherwise, the reply is to be sent to a remote client */
 

@@ -109,6 +109,7 @@
 #include "pbs_error.h"
 #include "../Libnet/lib_net.h" /* get_hostaddr_hostent_af */
 #include "../Libifl/lib_ifl.h"
+#include "csv.h"
 
 #define CNTRETRYDELAY 5
 
@@ -136,11 +137,12 @@ int cnt2server(
 
   {
   int connect;
+  int one_host_only = 0; /* Indicates if there is more than one host name in the server_name file */
   time_t firsttime = 0, thistime = 0;
 
   char  Server[PBS_MAXHOSTNAME];
   char *tmpServer;
-  int   rc;
+  int   rc = PBSE_NONE;
 
   if (cnt2server_retry > 0)
     {
@@ -149,22 +151,58 @@ int cnt2server(
 
   memset(Server, 0, sizeof(Server));
 
+  /* The precedence is commandline, environment, then server_name file for client commands */
   if ((SpecServer != NULL) && (SpecServer[0] != '\0'))
     {
     snprintf(Server, sizeof(Server)-1, "%s", SpecServer);
     }
   else
     {
-    rc = get_active_pbs_server(&tmpServer);
-    
-    if (rc == PBSE_NONE)
+    tmpServer = getenv("PBS_DEFAULT");
+    if ((tmpServer != NULL) && (*tmpServer != '\0'))
       {
-      strncpy(Server, tmpServer, PBS_MAXHOSTNAME);
-      free(tmpServer);
+      snprintf(Server, sizeof(Server)-1, "%s", tmpServer);
+      one_host_only = 1; /* if PBS_DEFAULT is set don't use the server_name file */
       }
-    else if (rc == PBSE_TIMEOUT)
+    else
       {
-      return(rc * -1);
+      tmpServer = getenv("PBS_SERVER");
+      if ((tmpServer != NULL) && (*tmpServer != '\0'))
+      {
+      snprintf(Server, sizeof(Server)-1, "%s", tmpServer);
+      one_host_only = 1; /* if PBS_SERVER is set don't use the server_name file */
+      }
+      else
+        {
+        char server_name_list[PBS_MAXSERVERNAME*4+1];
+        int  list_len;
+        int  port;
+
+        rc = get_active_pbs_server(&tmpServer, &port);
+    
+        if (rc == PBSE_NONE)
+          {
+          if ((port != 0) && (port != PBS_BATCH_SERVICE_PORT))
+            {
+            snprintf(Server, PBS_MAXHOSTNAME, "%s:%d", tmpServer, port);
+            }
+          else
+            {
+            snprintf(Server, PBS_MAXHOSTNAME, "%s", tmpServer);
+            }
+          free(tmpServer);
+          }
+        else if ((rc == PBSE_TIMEOUT) || (rc == PBSE_DOMAIN_SOCKET_FAULT))
+          {
+          return(rc * -1);
+          }
+
+        snprintf(server_name_list, sizeof(server_name_list), "%s", pbs_get_server_list());
+        list_len = csv_length(server_name_list);
+        if (list_len <  2)
+          one_host_only = 1; /*server_name file has only one name */
+
+        }
       }
     }
 
@@ -177,7 +215,7 @@ start:
   
   /* if pbs_connect failed maybe the active server is down. validate the active 
      server and try again */
-  if ((connect <= 0) && ((SpecServer == NULL) || (SpecServer[0] == '\0')))
+  if ((connect <= 0) && ((SpecServer == NULL) || (SpecServer[0] == '\0')) && (one_host_only == 0))
     {
     char *valid_server;
     rc = validate_active_pbs_server(&valid_server);

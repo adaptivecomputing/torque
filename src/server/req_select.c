@@ -454,6 +454,9 @@ static void sel_step2(
         (svr_authorize_jobreq(cntl->sc_origrq, pjob) == 0))
       {
       /* have permission to look at job */
+      long job_stat_rate;
+
+      get_svr_attr_l(SRV_ATR_JobStatRate, &job_stat_rate);
 
       if (select_job(pjob, cntl->sc_select))
         {
@@ -464,7 +467,7 @@ static void sel_step2(
         unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
         if ((job_substate == JOB_SUBSTATE_RUNNING) &&
-            ((time_now - job_momstattime) > JobStatRate))
+            ((time_now - job_momstattime) > job_stat_rate))
           {
 
           if ((rc = stat_to_mom(job_id, cntl)) == PBSE_MEM_MALLOC)

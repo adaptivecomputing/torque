@@ -147,7 +147,6 @@
 #include "issue_request.h" /* release_req */
 #include "ji_mutex.h"
 #include "user_info.h"
-#include "svr_task.h"
 #include "mutex_mgr.hpp"
 #include "job_route.h" /* job_route */
 #include <string>
@@ -777,6 +776,9 @@ void job_free(
    * the lock and then deletes the job, but thread 2 gets the job's lock as
    * the job is freed, causing segfaults. We use the recycler and the 
    * ji_being_recycled flag to solve this problem --dbeer */
+
+  remove_job(&alljobs,pj); //Remove this from the alljobs array.
+
   if (use_recycle)
     {
     insert_into_recycler(pj);
@@ -853,7 +855,7 @@ void job_free(
  * job_clone - create a clone of a job for use with job arrays
  */
 
-/*static*/ job *job_clone(
+job *job_clone(
 
   job       *template_job, /* I */  /* job to clone */
   job_array *pa,           /* I */  /* array which the job is a part of */
@@ -880,7 +882,7 @@ void job_free(
 
   if (LOGLEVEL >= 7)
     {
-    sprintf(log_buf, "taskid %d", taskid);
+    sprintf(log_buf, "taskid %d jobid %s ", taskid, template_job->ji_qs.ji_jobid);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
 
@@ -893,8 +895,8 @@ void job_free(
 
   if (template_job == NULL)
     {
-      log_err(PBSE_BAD_PARAMETER, __func__, "template_job* is NULL");
-      return(NULL);
+    log_err(PBSE_BAD_PARAMETER, __func__, "template_job* is NULL");
+    return(NULL);
     }
 
   if ((pnewjob = job_alloc()) == NULL)
@@ -1713,7 +1715,7 @@ int record_jobinfo(
       if (pattr->at_type == ATR_TYPE_RESC)
         bf += "\n";
 
-      rc = attr_to_str(bf, job_attr_def+i, pjob->ji_wattr[i], 1);
+      rc = attr_to_str(bf, job_attr_def+i, pjob->ji_wattr[i], true);
       
       if (pattr->at_type == ATR_TYPE_RESC)
         bf += "\t";
@@ -1795,7 +1797,8 @@ int record_jobinfo(
 
 int svr_job_purge(
 
-  job *pjob)  /* I (modified) */
+  job *pjob,  /* I (modified) */
+  int leaveSpoolFiles) /* I */
 
   {
   int           rc = PBSE_NONE;
@@ -1953,34 +1956,37 @@ int svr_job_purge(
       }
     }
 
-  /* delete any spooled stdout */
-  snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_jobs, job_fileprefix, JOB_STDOUT_SUFFIX);
-
-  if (unlink(namebuf) < 0)
+  if (!leaveSpoolFiles)
     {
-    if (errno != ENOENT)
-      log_err(errno, __func__, msg_err_purgejob);
-    }
-  else if (LOGLEVEL >= 6)
-    {
-    sprintf(log_buf, "removed job stdout");
+    /* delete any spooled stdout */
+    snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_spool, job_fileprefix, JOB_STDOUT_SUFFIX);
 
-    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, job_id, log_buf);
-    }
+    if (unlink(namebuf) < 0)
+      {
+      if (errno != ENOENT)
+        log_err(errno, __func__, msg_err_purgejob);
+      }
+    else if (LOGLEVEL >= 6)
+      {
+      sprintf(log_buf, "removed job stdout");
 
-  /* delete any spooled stderr */
-  snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_jobs, job_fileprefix, JOB_STDERR_SUFFIX);
+      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, job_id, log_buf);
+      }
 
-  if (unlink(namebuf) < 0)
-    {
-    if (errno != ENOENT)
-      log_err(errno, __func__, msg_err_purgejob);
-    }
-  else if (LOGLEVEL >= 6)
-    {
-    sprintf(log_buf, "removed job stderr");
+    /* delete any spooled stderr */
+    snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_spool, job_fileprefix, JOB_STDERR_SUFFIX);
 
-    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, job_id, log_buf);
+    if (unlink(namebuf) < 0)
+      {
+      if (errno != ENOENT)
+        log_err(errno, __func__, msg_err_purgejob);
+      }
+    else if (LOGLEVEL >= 6)
+      {
+      sprintf(log_buf, "removed job stderr");
+
+      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, job_id, log_buf);
+      }
     }
 
   /* delete checkpoint file directory if there is one */

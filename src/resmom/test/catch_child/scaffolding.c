@@ -1,4 +1,5 @@
 #include "license_pbs.h" /* See here for the software license */
+#include <sstream>
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
@@ -945,11 +946,11 @@ struct batch_request *alloc_br(int type)
   return br;
   }
 
-void encode_used(job *pjob, int i, list_link *l)
+void encode_used(job *pjob, int i, std::stringstream *output, list_link *l)
   {
   }
 
-void encode_flagged_attrs(job *pjob, int i, list_link *l)
+void encode_flagged_attrs(job *pjob, int i, std::stringstream *output, list_link *l)
   {
   }
 

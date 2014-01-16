@@ -163,7 +163,21 @@ void free_attrlist(tlist_head *pattrlisthead)
 
 void *next_thing(resizable_array *ra, int *iter)
   {
-  return(NULL);
+  int i;
+  void *thing;
+
+  if(ra == NULL) return NULL;
+
+  if (*iter == -1)
+    i = 1;
+  else
+    i = *iter;
+
+  thing = ra->slots[i++].item;
+
+  *iter = i;
+
+  return(thing);
   }
 
 void append_link(tlist_head *head, list_link *new_link, void *pobj)

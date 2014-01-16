@@ -323,7 +323,7 @@ int insert_into_recycler(job *pjob)
   return 0;
   }
 
-int attr_to_str(std::string& ds, attribute_def *attr_def,struct pbs_attribute attr,int XML)
+int attr_to_str(std::string& ds, attribute_def *attr_def,struct pbs_attribute attr, bool XML)
   {
   int rc = 0;
   if ((func_num == RECORD_JOBINFO_SUITE) && (tc == 4))

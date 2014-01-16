@@ -343,7 +343,7 @@ void DIS_tcp_cleanup(struct tcp_chan *chan) {}
 
 int generate_alps_status(
 
-  dynamic_string *status,
+  boost::ptr_vector<std::string>& status,
   const char     *apbasil_path,
   const char     *apbasil_protocol)
 

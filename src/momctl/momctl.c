@@ -156,7 +156,7 @@ int main(
 
       case 'c':
 
-        /* clear stale job */
+        /* clear job */
 
         JPtr = optarg;
 
@@ -922,7 +922,7 @@ void MCShowUsage(
 
   fprintf(stderr, "USAGE:  momctl <ARGS>\n");
 
-  fprintf(stderr, "            [ -c {JOB|'all'} ]    // CLEAR STALE JOB\n");
+  fprintf(stderr, "            [ -c {JOB|'all'} ]    // CLEAR JOB\n");
 
   fprintf(stderr, "            [ -C ]                // CYCLE\n");
 

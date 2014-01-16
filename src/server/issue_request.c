@@ -114,7 +114,6 @@
 #include "svr_connect.h" /* svr_disconnect_sock */
 #include "node_manager.h" /* tfind_addr */
 #include "ji_mutex.h"
-#include "svr_task.h"
 
 
 /* Global Data Items: */
@@ -123,7 +122,6 @@ extern struct server server;
 extern char *server_name;
 extern struct connect_handle connection[];
 extern char     *msg_daemonname;
-extern all_tasks task_list_event;
 extern char *msg_daemonname;
 extern char *msg_issuebad;
 extern char     *msg_norelytomom;

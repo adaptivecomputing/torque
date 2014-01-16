@@ -65,7 +65,7 @@ int load_trqauthd_config(
     if (*t_port == 0)
       *t_port = PBS_BATCH_SERVICE_PORT;
     *d_port = TRQ_AUTHD_SERVICE_PORT;
-    set_active_pbs_server(tmp_name);
+    set_active_pbs_server(tmp_name, *t_port);
     }
 
   return rc;
@@ -327,11 +327,11 @@ int terminate_trqauthd()
                                                              is still waiting for a command before it realizes 
                                                              it is terminated */
     {
-    fprintf(stderr, "\ntrqauthd has been terminated\n");
+    fprintf(stdout, "\ntrqauthd has been terminated\n");
     }
   else
     {
-    fprintf(stderr, "\ntrqauthd has been terminated\n");
+    fprintf(stdout, "\ntrqauthd has been terminated\n");
     }
 
   if (sock != -1)

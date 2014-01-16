@@ -90,6 +90,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <errno.h>
+#include <sstream>
 
 #include "log.h"
 #include "mom_config.h"
@@ -98,6 +99,8 @@
 #include "u_tree.h"
 #include "csv.h"
 
+void encode_used(job *pjob, int perm, std::stringstream *list, tlist_head *phead);
+void encode_flagged_attrs(job *pjob, int perm, std::stringstream *list, tlist_head *phead);
 
 /* these are the global variables we set or don't set as a result of the config file.
  * They should be externed in mom_config.h */
@@ -1448,6 +1451,9 @@ u_long settmpdir(
   const char *Value)
 
   {
+  struct stat tmpdir_stat;
+  int rc;
+  
   log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, Value);
 
   if (*Value != '/')
@@ -1458,6 +1464,25 @@ u_long settmpdir(
     }
 
   snprintf(tmpdir_basename, sizeof(tmpdir_basename), "%s", Value);
+
+  /* Make sure the tmpdir exists */
+  rc = stat(tmpdir_basename, &tmpdir_stat);
+  if (rc < 0)
+    {
+    if ((errno == ENOENT) || (errno == ENOTDIR))
+      {
+      sprintf(log_buffer,  "$tmpdir option is set to %s in mom_priv/config file. This directory does not exist. \nPlease correct this problem and try starting pbs_mom again.", tmpdir_basename);
+      log_err(rc, __func__, log_buffer);
+      }
+    else
+      {
+      sprintf(log_buffer, "Failed to stat %s. %s\npbs_mom did not start.", tmpdir_basename, strerror(errno));
+      log_err(rc, __func__, log_buffer);
+      }
+
+    exit(rc);
+    }
+
 
   return(1);
   } /* END settmpdir() */
@@ -2255,11 +2280,6 @@ int read_config(
     {
     IgnConfig = 1;
 
-    sprintf(log_buffer, "fstat: %s",
-            file);
-
-    log_err(errno, __func__, log_buffer);
-
     if (config_file_specified != 0)
       {
       /* file specified and not there, return failure */
@@ -2275,11 +2295,9 @@ int read_config(
     else
       {
       /* "config" file not located, return success */
-
       if (LOGLEVEL >= 3)
         {
-        sprintf(log_buffer, "cannot open file '%s'",
-                file);
+        sprintf(log_buffer, "cannot open file '%s'", file);
 
         log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
         }
@@ -2698,7 +2716,21 @@ const char *reqmsg(
 
   return(PBSNodeMsgBuf);
   }  /* END reqmsg() */
+  
 
+
+void add_job_status_information(
+
+  job               &pjob,
+  std::stringstream &list)
+
+  {
+  list << "(";
+  encode_used(&pjob, ATR_DFLAG_MGRD, &list, NULL); /* adds resources_used attr */
+
+  encode_flagged_attrs(&pjob, ATR_DFLAG_MGRD, &list, NULL); /* adds other flagged attrs */
+  list << ")";
+  } /* END add_job_status_information() */
 
 
 
@@ -2707,33 +2739,17 @@ const char *getjoblist(
   struct rm_attribute *attrib) /* I */
 
   {
-  static char *list = NULL;
-  static int listlen = 0;
-  job *pjob;
-  int firstjob = 1;
+  static std::stringstream  list;
+  job                      *pjob;
+  bool                      firstjob = true;
 
 #ifdef NUMA_SUPPORT
   char  mom_check_name[PBS_MAXSERVERNAME];
   char *dot;
 #endif 
 
-  if (list == NULL)
-    {
-    if ((list = (char *)calloc(BUFSIZ + 50, sizeof(char)))==NULL)
-      {
-      /* FAILURE - cannot alloc memory */
-
-      fprintf(stderr,"ERROR: could not calloc!\n");
-
-      /* since memory cannot be allocated, report no jobs */
-
-      return (" ");
-      }
-
-    listlen = BUFSIZ;
-    }
-
-  *list = '\0'; /* reset the list */
+  // reset the job list
+  list.clear();
 
   if ((pjob = (job *)GET_NEXT(svr_alljobs)) == NULL)
     {
@@ -2759,46 +2775,24 @@ const char *getjoblist(
     if (strstr(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,mom_check_name) == NULL)
       continue;
 #endif
+
     if (!firstjob)
-      strcat(list, " ");
+      list << " ";
+    
+    firstjob = false;
 
-    strcat(list, pjob->ji_qs.ji_jobid);
+    list << pjob->ji_qs.ji_jobid;
 
-    if ((int)strlen(list) >= listlen)
+    if (am_i_mother_superior(*pjob) == true)
       {
-      int   new_list_len = listlen + BUFSIZ;
-      char *tmpList;
-
-      tmpList = (char *)realloc(list, new_list_len);
-
-      if (tmpList == NULL)
-        {
-        /* FAILURE - cannot alloc memory */
-
-        fprintf(stderr,"ERROR: could not realloc!\n");
-
-        /* since memory cannot be allocated, report no jobs */
-
-        return(" ");
-        }
-
-      memset(tmpList + listlen, 0, new_list_len - listlen);
-
-      list = tmpList;
-      listlen = new_list_len;
+      add_job_status_information(*pjob, list);
       }
-
-    firstjob = 0;
     }  /* END for (pjob) */
 
-  if (list[0] == '\0')
-    {
-    /* no jobs - return space character */
+  if (firstjob == true)
+    list << " ";
 
-    strcat(list, " ");
-    }
-
-  return(list);
+  return(list.str().c_str());
   }  /* END getjoblist() */
 
 

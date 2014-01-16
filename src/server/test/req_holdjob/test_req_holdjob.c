@@ -4,10 +4,21 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "pbs_error.h"
-START_TEST(test_one)
+
+int release_job(batch_request *preq, void *j);
+
+START_TEST(test_release_job)
   {
+  job           *pjob = (job *)calloc(1, sizeof(job));
+  batch_request  preq;
 
+  pjob->ji_qs.ji_state = JOB_STATE_EXITING;
+  fail_unless(release_job(&preq, pjob) == PBSE_NONE);
+  fail_unless(pjob->ji_qs.ji_state == JOB_STATE_EXITING);
 
+  pjob->ji_qs.ji_state = JOB_STATE_COMPLETE;
+  fail_unless(release_job(&preq, pjob) == PBSE_NONE);
+  fail_unless(pjob->ji_qs.ji_state == JOB_STATE_COMPLETE);
   }
 END_TEST
 
@@ -21,8 +32,8 @@ END_TEST
 Suite *req_holdjob_suite(void)
   {
   Suite *s = suite_create("req_holdjob_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_release_job");
+  tcase_add_test(tc_core, test_release_job);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");

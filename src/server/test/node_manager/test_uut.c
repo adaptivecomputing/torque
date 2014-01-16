@@ -19,11 +19,95 @@ char *get_next_exec_host(char **);
 int   job_should_be_killed(char *, struct pbsnode *);
 int   check_for_node_type(complete_spec_data *, enum node_types);
 int   record_external_node(job *, struct pbsnode *);
-void *record_reported_time(void *vp);
 int save_node_for_adding(node_job_add_info *naji,struct pbsnode *pnode,single_spec_data *req,char *first_node_name,int is_external_node,int req_rank);
 void remove_job_from_already_killed_list(struct work_task *pwt);
+bool job_already_being_killed(const char *jobid);
+void process_job_attribute_information(std::string &job_id, std::string &attributes);
+bool process_as_node_list(const char *spec, const node_job_add_info *naji);
+bool node_is_spec_acceptable(struct pbsnode *pnode, single_spec_data *spec, char *ProcBMStr, int *eligible_nodes);
 
 extern boost::ptr_vector<std::string> jobsKilled;
+
+extern int str_to_attr_count;
+extern int decode_resc_count;
+
+
+START_TEST(node_is_spec_acceptable_test)
+  {
+  struct pbsnode   pnode;
+  single_spec_data spec;
+  int              eligible_nodes = 0;
+
+  memset(&pnode, 0, sizeof(pnode));
+  memset(&spec, 0, sizeof(spec));
+
+  spec.ppn = 10;
+
+  fail_unless(node_is_spec_acceptable(&pnode, &spec, NULL, &eligible_nodes) == false);
+  fail_unless(eligible_nodes == 0);
+
+  for (int i = 0; i < 10; i++)
+    pnode.nd_slots.add_execution_slot();
+    
+  pnode.nd_slots.mark_as_used(4);
+
+  fail_unless(node_is_spec_acceptable(&pnode, &spec, NULL, &eligible_nodes) == false);
+  fail_unless(eligible_nodes == 1);
+
+  eligible_nodes = 0;
+  pnode.nd_slots.mark_as_free(4);
+  pnode.nd_state |= INUSE_DOWN;  
+  fail_unless(node_is_spec_acceptable(&pnode, &spec, NULL, &eligible_nodes) == false);
+  fail_unless(eligible_nodes == 1);
+  
+  eligible_nodes = 0;
+  pnode.nd_state = INUSE_FREE;
+  fail_unless(node_is_spec_acceptable(&pnode, &spec, NULL, &eligible_nodes) == true);
+  fail_unless(eligible_nodes == 1);
+  }
+END_TEST
+
+
+START_TEST(process_as_node_list_test)
+  {
+  node_job_add_info naji;
+
+  fail_unless(process_as_node_list("", NULL) == false);
+  fail_unless(process_as_node_list(NULL, &naji) == false);
+
+  fail_unless(process_as_node_list("bob:ppn=10", &naji) == true);
+  fail_unless(process_as_node_list("bob:ppn=12", NULL) == false);
+
+  // cray can have numeric node names so it should attempt to find the node 2 
+  // and 10 in the following tests to know if they exist
+  fail_unless(process_as_node_list("2:ppn=10+3:ppn=10", &naji) == true);
+  fail_unless(process_as_node_list("10:ppn=10", &naji) == false);
+  }
+END_TEST
+
+
+START_TEST(process_job_attribute_information_test)
+  {
+  std::string attr_str("(cput=100,vmem=100101,mem=100020)");
+  std::string jobid("2.napali");
+
+  str_to_attr_count = 0;
+  process_job_attribute_information(jobid, attr_str);
+  fail_unless(str_to_attr_count == 3);
+  fail_unless(decode_resc_count == 3);
+  }
+END_TEST
+
+
+START_TEST(job_already_being_killed_test)
+  {
+  jobsKilled.push_back(new std::string("10.napali"));
+
+  fail_unless(job_already_being_killed("1.napali") == false);
+  fail_unless(job_already_being_killed("10.napali") == true);
+  }
+END_TEST
+
 
 START_TEST(remove_job_from_already_killed_list_test)
   {
@@ -81,17 +165,6 @@ START_TEST(remove_job_from_node_test)
   fail_unless(pnode->nd_slots.get_number_free() == 10);
   remove_job_from_node(pnode, &pjob);
   fail_unless(pnode->nd_slots.get_number_free() == 10);
-  }
-END_TEST
-
-START_TEST(record_reported_time_test)
-  {
-  job *pjob;
-
-  record_reported_time(strdup("1:tom"));
-  pjob = svr_find_job(strdup("1"), TRUE);
-
-  fail_unless(time(NULL) - pjob->ji_last_reported_time < 10);
   }
 END_TEST
 
@@ -335,8 +408,11 @@ Suite *node_manager_suite(void)
 
   tc_core = tcase_create("record_external_node_test");
   tcase_add_test(tc_core, record_external_node_test);
-  tcase_add_test(tc_core, record_reported_time_test);
   tcase_add_test(tc_core, remove_job_from_node_test);
+  tcase_add_test(tc_core, job_already_being_killed_test);
+  tcase_add_test(tc_core, process_job_attribute_information_test);
+  tcase_add_test(tc_core, process_as_node_list_test);
+  tcase_add_test(tc_core, node_is_spec_acceptable_test);
   suite_add_tcase(s, tc_core);
 
   return(s);

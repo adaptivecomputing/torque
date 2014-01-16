@@ -142,7 +142,6 @@
 #include "ji_mutex.h"
 #include "job_route.h" /* queue_route */
 #include "exiting_jobs.h"
-#include "svr_task.h"
 
 #define TASK_CHECK_INTERVAL      10
 #define HELLO_WAIT_TIME          600
@@ -158,7 +157,6 @@ extern void job_log_roll(int max_depth);
 extern int  pbsd_init(int);
 extern void shutdown_ack();
 extern void tcp_settimeout(long);
-extern void poll_job_task(struct work_task *);
 extern int  schedule_jobs(void);
 extern int  notify_listeners(void);
 extern void svr_shutdown(int);
@@ -192,9 +190,6 @@ extern int             svr_chngNodesfile;
 extern int             svr_totnodes;
 extern struct all_jobs alljobs;
 extern int run_change_logs;
-
-extern pthread_mutex_t *poll_job_task_mutex;
-extern int max_poll_job_tasks;
 
 /* External Functions */
 
@@ -296,8 +291,7 @@ extern hello_container  hellos;
 extern hello_container  failures;
 pthread_mutex_t        *listener_command_mutex;
 tlist_head              svr_newnodes;          /* list of newly created nodes      */
-all_tasks               task_list_timed;
-all_tasks               task_list_event;
+pthread_mutex_t         task_list_timed_mutex;
 pid_t                   sid;
 
 char                   *plogenv = NULL;
@@ -639,10 +633,10 @@ void parse_command_line(
 
     {
       { "hot", RECOV_HOT },
-    { "warm", RECOV_WARM },
-    { "cold", RECOV_COLD },
-    { "create", RECOV_CREATE },
-    { "", RECOV_Invalid }
+      { "warm", RECOV_WARM },
+      { "cold", RECOV_COLD },
+      { "create", RECOV_CREATE },
+      { "", RECOV_Invalid }
     };
 
   ForceCreation = FALSE;
@@ -1039,7 +1033,6 @@ void *check_tasks(void *notUsed)
 
   {
   work_task *ptask;
-  int        iter = -1;
   int        rc = PBSE_NONE;
 
   time_t     time_now;
@@ -1049,28 +1042,19 @@ void *check_tasks(void *notUsed)
   time_now = time(NULL);
   last_task_check_time = time_now;
 
-  while ((ptask = next_task(&task_list_timed, &iter)) != NULL)
+  while ((ptask = pop_timed_task(time_now)) != NULL)
     {
-    if (ptask->wt_event - time_now > 0)
+    rc = dispatch_timed_task(ptask); /* will delete link */
+
+    /* if dispatch_task does not return PBSE_NONE 
+       it is because we have used up our alotment of threads.
+       Break for now and come back to this next time 
+       through the main_loop 
+     */
+    if (rc != PBSE_NONE)
       {
       pthread_mutex_unlock(ptask->wt_mutex);
-
       break;
-      }
-    else
-      {
-      rc = dispatch_task(ptask); /* will delete link */
-
-      /* if dispatch_task does not return PBSE_NONE 
-         it is because we have used up our alotment of threads.
-         Break for now and come back to this next time 
-         through the main_loop 
-       */
-      if (rc != PBSE_NONE)
-        {
-        pthread_mutex_unlock(ptask->wt_mutex);
-        break;
-        }
       }
     }
 
@@ -1614,8 +1598,7 @@ void main_loop(void)
       bool change_state = false;
       pthread_mutex_lock(server.sv_jobstates_mutex);
       change_state = ((server.sv_jobstates[JOB_STATE_RUNNING] == 0) &&
-                      (server.sv_jobstates[JOB_STATE_EXITING] == 0) &&
-                      (has_task(&task_list_event) == FALSE));
+                      (server.sv_jobstates[JOB_STATE_EXITING] == 0));
 
       pthread_mutex_unlock(server.sv_jobstates_mutex);
 
@@ -2062,23 +2045,6 @@ int main(
 
     exit(3);
     }
-
-  /* poll_job_task uses a mutex to protect a counter
-     that prevents the number of poll job tasks from
-     consuming all available threads */
-  poll_job_task_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  if (poll_job_task_mutex == NULL)
-    {
-    perror("pbs_server: failed to initialize poll_job_task_mutex");
-    log_err(-1, msg_daemonname, (char *)"pbs_server: failed to initialize poll_job_task_mutex");
-    exit(3);
-    }
-
-  pthread_mutex_init(poll_job_task_mutex, NULL);
-
-  max_poll_job_tasks = (int)(request_pool->tp_max_threads * 0.7) - 5;
-  if (max_poll_job_tasks <= 0)
-    max_poll_job_tasks = 1;
 
 #if (PLOCK_DAEMONS & 1)
   plock(PROCLOCK);
