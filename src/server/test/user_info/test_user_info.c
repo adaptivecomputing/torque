@@ -8,7 +8,6 @@
 
 unsigned int get_num_queued(user_info_holder *, const char *);
 unsigned int count_jobs_submitted(job *);
-void         remove_server_suffix(std::string &user_name);
 
 
 START_TEST(remove_server_suffix_test)

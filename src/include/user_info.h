@@ -81,6 +81,7 @@
 #define USER_INFO_H
 
 #include <pthread.h>
+#include <string>
 #include "container.hpp"
 #include "pbs_job.h"
 
@@ -105,5 +106,6 @@ int          increment_queued_jobs(user_info_holder *uih, char *user_name, job *
 int          decrement_queued_jobs(user_info_holder *uih, char *user_name);
 unsigned int get_num_queued(user_info_holder *uih, const char *user_name);
 void         free_user_info_holder(user_info_holder *uih);
+void         remove_server_suffix(std::string &user_name);
 
 #endif /* ifndef USER_INFO_H */
