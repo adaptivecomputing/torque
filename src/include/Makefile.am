@@ -2,7 +2,7 @@ include $(top_srcdir)/buildutils/config.mk
 
 include_HEADERS = libcmds.h license_pbs.h pbs_constants.h pbs_cmds.h pbs_error.h \
 									pbs_error_db.h pbs_ifl.h rm.h tm.h tm_.h u_hash_map_structs.h \
-									u_memmgr.h uthash.h tcp.h rpp.h log.h pbs_job.h
+									uthash.h tcp.h rpp.h log.h pbs_job.h
 
 noinst_HEADERS = acct.h array.h assertions.h attribute.h		\
 		 batch_request.h cmds.h credential.h csv.h dis.h	\
