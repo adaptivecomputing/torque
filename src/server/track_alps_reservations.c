@@ -105,6 +105,18 @@ int add_node_names(
   job              *pjob)
 
   {
+  if (!pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str)
+    {
+    if (LOGLEVEL >= 7)
+      {
+      char log_buf[PBS_MAXSVRJOBID + 512];
+      snprintf(log_buf, sizeof(log_buf), "Job %s exec list was null",
+        pjob->ji_qs.ji_jobid);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+      }
+    return -1;
+    }
+
   char *exec_str = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
   char *host_tok;
   char *str_ptr = exec_str;

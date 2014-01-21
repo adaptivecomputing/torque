@@ -21,6 +21,10 @@ START_TEST(add_node_names_test)
   alps_reservation ar;
   job              pjob;
 
+  pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = NULL;
+  fail_unless(add_node_names(&ar, &pjob) == -1, 
+     "add_node_names() should have returned -1");
+
   pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = eh1;
   fail_unless(add_node_names(&ar, &pjob) == 0, "failure in add_node_names()");
   fail_unless(ar.ar_node_names->num == 3, "didn't get the right count of nodes");
