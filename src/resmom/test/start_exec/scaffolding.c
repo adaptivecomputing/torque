@@ -311,8 +311,18 @@ void log_close(int msg)
 
 void *get_next(list_link pl, char *file, int line)
   {
-  return(NULL);
-  }
+  if ((pl.ll_next == NULL) ||
+      ((pl.ll_next == &pl) && (pl.ll_struct != NULL)))
+    {
+    fprintf(stderr, "Assertion failed, bad pointer in link: file \"%s\", line %d\n",
+            file,
+            line);
+
+    return NULL;
+    }
+
+  return(pl.ll_next->ll_struct);
+  }  /* END get_next() */
 
 int send_sisters(job *pjob, int com, int using_radix, std::set<int> *sisters_to_contact)
   {

@@ -5736,7 +5736,10 @@ void job_nodes(
     }
 
   for (unsigned int i = 0; i < hosts.size(); i++)
+    {
     memcpy(pjob.ji_hosts + i, &hosts[i], sizeof(hnodent));
+    CLEAR_HEAD(pjob.ji_hosts[i].hn_events);
+    }
 
   for (unsigned int i = 0; i < slots.size(); i++)
     {

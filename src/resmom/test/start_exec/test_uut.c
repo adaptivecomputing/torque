@@ -48,6 +48,7 @@ START_TEST(job_nodes_test)
     fail_unless(pjob->ji_hosts[i].hn_node == i);
     fail_unless(pjob->ji_hosts[i].hn_sister == SISTER_OKAY);
     fail_unless(pjob->ji_hosts[i].hn_port == 15002);
+    fail_unless(GET_NEXT(pjob->ji_hosts[i].hn_events) == NULL);
     }
   
   for (int i = 0; i < 20; i++)
@@ -243,8 +244,6 @@ START_TEST(test_get_mic_indices)
   {
   job  *pjob = (job *)calloc(1, sizeof(job));
   char  buf[1024];
-
-  fprintf(stderr,"in %s val = %d\n",__func__,JOB_ATR_exec_mics);
 
   pjob->ji_wattr[JOB_ATR_exec_mics].at_val.at_str = strdup("slesmic-0-mic/1+slesmic-0-mic/0");
 
