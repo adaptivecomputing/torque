@@ -2582,7 +2582,15 @@ int add_login_node_if_needed(
     {
     if (login_prop != NULL)
       {
-      proplist(&login_prop, &prop, &dummy1, &dummy2, &dummy3);
+      if (proplist(&login_prop, &prop, &dummy1, &dummy2, &dummy3) != PBSE_NONE)
+        {
+        if (LOGLEVEL >= 3)
+          {
+          char log_buf[LOCAL_LOG_BUF_SIZE];
+          snprintf(log_buf, sizeof(log_buf), "Malformed property list '%s', continuing.", login_prop);
+          log_err(-1, __func__, log_buf);
+          }
+        }
       }
 
     if ((login = get_next_login_node(prop)) == NULL)
