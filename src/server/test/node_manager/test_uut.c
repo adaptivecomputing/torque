@@ -1,4 +1,5 @@
 #include <string>
+#include <sstream>
 #include <boost/ptr_container/ptr_vector.hpp>
 #include "license_pbs.h" /* See here for the software license */
 #include "node_manager.h"
@@ -25,11 +26,86 @@ bool job_already_being_killed(const char *jobid);
 void process_job_attribute_information(std::string &job_id, std::string &attributes);
 bool process_as_node_list(const char *spec, const node_job_add_info *naji);
 bool node_is_spec_acceptable(struct pbsnode *pnode, single_spec_data *spec, char *ProcBMStr, int *eligible_nodes);
+void populate_range_string_from_job_reservation_info(job_reservation_info &jri, std::stringstream &range_str);
+int  translate_job_reservation_info_to_string(std::vector<job_reservation_info *> &host_info, int *NCount, std::stringstream &exec_host_output, std::stringstream *exec_port_output);
 
 extern boost::ptr_vector<std::string> jobsKilled;
 
 extern int str_to_attr_count;
 extern int decode_resc_count;
+
+
+START_TEST(translate_job_reservation_info_to_stirng_test)
+  {
+  std::vector<job_reservation_info *> host_info;
+  job_reservation_info jri[5];
+  std::stringstream    exec_host;
+  std::stringstream    exec_port;
+
+  memset(jri, 0, 5 * sizeof(job_reservation_info));
+
+  for (int i = 0; i < 5; i++)
+    {
+    for (int j = 0; j < 5; j++)
+      jri[i].est.add_execution_slot();
+    
+    jri[i].est.mark_as_used(0);
+    jri[i].est.mark_as_used(1);
+    jri[i].est.mark_as_used(2);
+
+    jri[i].port = 15002;
+    snprintf(jri[i].node_name, sizeof(jri[i].node_name), "napali%d", i);
+
+    host_info.push_back(jri + i);
+    }
+
+  int count = 0;
+
+  translate_job_reservation_info_to_string(host_info, &count, exec_host, &exec_port);
+  fail_unless(exec_host.str() == "napali0/0-2+napali1/0-2+napali2/0-2+napali3/0-2+napali4/0-2", exec_host.str().c_str());
+  fail_unless(exec_port.str() == "15002+15002+15002+15002+15002");
+  fail_unless(count == 5);
+  }
+END_TEST
+
+
+START_TEST(populate_range_string_from_job_reservation_info_test)
+  {
+  std::stringstream    range_str;
+  job_reservation_info jri;
+
+  memset(&jri, 0, sizeof(jri));
+  
+  for (int i = 0; i < 8; i++)
+    jri.est.add_execution_slot();
+
+  jri.est.mark_as_used(0);
+  jri.est.mark_as_used(3);
+  jri.est.mark_as_used(4);
+  jri.est.mark_as_used(5);
+  strcpy(jri.node_name, "napali");
+
+  populate_range_string_from_job_reservation_info(jri, range_str);
+  fail_unless(range_str.str() == "0,3-5");
+
+  jri.est.mark_as_free(0);
+  populate_range_string_from_job_reservation_info(jri, range_str);
+  fail_unless(range_str.str() == "3-5", range_str.str().c_str());
+
+  jri.est.mark_as_used(0);
+  jri.est.mark_as_free(4);
+  populate_range_string_from_job_reservation_info(jri, range_str);
+  fail_unless(range_str.str() == "0,3,5");
+
+  jri.est.mark_as_used(1);
+  populate_range_string_from_job_reservation_info(jri, range_str);
+  fail_unless(range_str.str() == "0-1,3,5", range_str.str().c_str());
+ 
+  jri.est.mark_as_free(3);
+  populate_range_string_from_job_reservation_info(jri, range_str);
+  fail_unless(range_str.str() == "0-1,5");
+  }
+END_TEST
 
 
 START_TEST(node_is_spec_acceptable_test)
@@ -413,6 +489,8 @@ Suite *node_manager_suite(void)
   tcase_add_test(tc_core, process_job_attribute_information_test);
   tcase_add_test(tc_core, process_as_node_list_test);
   tcase_add_test(tc_core, node_is_spec_acceptable_test);
+  tcase_add_test(tc_core, populate_range_string_from_job_reservation_info_test);
+  tcase_add_test(tc_core, translate_job_reservation_info_to_stirng_test);
   suite_add_tcase(s, tc_core);
 
   return(s);

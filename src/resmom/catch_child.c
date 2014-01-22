@@ -83,7 +83,7 @@ void *obit_reply (void *);
 extern u_long addclient (const char *);
 extern void encode_used (job *, int, std::stringstream *, tlist_head *);
 extern void encode_flagged_attrs (job *, int, std::stringstream *, tlist_head *);
-extern void job_nodes (job *);
+extern void job_nodes (job &);
 extern int task_recov (job *);
 extern void mom_server_all_update_stat(void);
 extern void check_state(int);
@@ -1589,7 +1589,7 @@ void init_abort_jobs(
 
     append_link(&svr_alljobs, &pj->ji_alljobs, pj);
 
-    job_nodes(pj);
+    job_nodes(*pj);
 
     rc = task_recov(pj);
 

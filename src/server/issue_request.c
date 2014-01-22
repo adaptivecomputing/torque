@@ -211,13 +211,7 @@ int relay_to_mom(
   unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
   *pjob_ptr = NULL;
 
-  handle = svr_connect(
-           addr,
-           port,
-           &local_errno,
-           NULL,
-           NULL);
-    
+  handle = svr_connect(addr, port, &local_errno, NULL, NULL);
 
   if (handle < 0)
     {
@@ -225,7 +219,6 @@ int relay_to_mom(
 
     return(PBSE_NORELYMOM);
     }
-
 
   request->rq_orgconn = request->rq_conn; /* save client socket */
 

@@ -1176,7 +1176,7 @@ void append_link(tlist_head *head, list_link *new_link, void *pobj)
   {
   }
 
-void job_nodes(job *pjob)
+void job_nodes(job &pjob)
   {
   }
 

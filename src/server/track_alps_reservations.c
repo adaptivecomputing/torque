@@ -110,7 +110,6 @@ int add_node_names(
   char *str_ptr = exec_str;
   char *slash;
   int   rc = PBSE_NONE;
-  char *prev_node = NULL;
 
   ar->ar_node_names = initialize_resizable_array(INITIAL_NODE_LIST_SIZE);
 
@@ -119,16 +118,10 @@ int add_node_names(
     if ((slash = strchr(host_tok, '/')) != NULL)
       *slash = '\0';
 
-    if ((prev_node == NULL) ||
-        (strcmp(prev_node, host_tok)))
-      {
-      if ((rc = insert_thing(ar->ar_node_names, host_tok)) < 0)
-        break;
-      else
-        rc = PBSE_NONE;
-      }
-
-    prev_node = host_tok;
+    if ((rc = insert_thing(ar->ar_node_names, host_tok)) < 0)
+      break;
+    else
+      rc = PBSE_NONE;
     }
 
   return(rc);

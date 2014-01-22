@@ -311,8 +311,7 @@ void log_close(int msg)
 
 void *get_next(list_link pl, char *file, int line)
   {
-  fprintf(stderr, "The call to get_next needs to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 int send_sisters(job *pjob, int com, int using_radix, std::set<int> *sisters_to_contact)
@@ -517,7 +516,8 @@ int destroy_alps_reservation(char *reservation_id, char *apbasil_path, char *apb
   {
   return(0);
   }
-int pbs_getaddrinfo(const char *,struct addrinfo *,struct addrinfo **)
+
+int pbs_getaddrinfo(const char *hostname, struct addrinfo *bob, struct addrinfo **)
   {
   return -1;
   }
@@ -546,3 +546,17 @@ int get_cpu_count_requested_on_this_node(job&)
 void node_internals::recover_reservation(int cpus, unsigned long memory, char const* jobid) {}
 
 #endif
+
+void translate_range_string_to_vector(const char *range, std::vector<int> &indices)
+  {
+  indices.push_back(0);
+  indices.push_back(1);
+  indices.push_back(2);
+  indices.push_back(3);
+  indices.push_back(4);
+  indices.push_back(5);
+  indices.push_back(6);
+  indices.push_back(7);
+  indices.push_back(8);
+  indices.push_back(9);
+  }

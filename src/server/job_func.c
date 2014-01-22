@@ -2180,7 +2180,7 @@ struct pbs_queue *get_jobs_queue(
 
 
 
-/*static*/ int fix_external_exec_hosts(
+int fix_external_exec_hosts(
 
   job *pjob) /* the external sub-job */
 
@@ -2204,7 +2204,7 @@ struct pbs_queue *get_jobs_queue(
   while (exec_ptr != NULL)
     {
     /* remove the extra parts after the hostname and get the point we'll advance to.
-     * exec_host strings are in the format hostname/index[hostname/index[+...]] */
+     * exec_host strings are in the format hostname/index_range[hostname/index_range[+...]] */
     if ((plus = strchr(exec_ptr, '+')) != NULL)
       {
       *plus = '\0';
@@ -2258,7 +2258,7 @@ struct pbs_queue *get_jobs_queue(
 
 
 
-/*static*/ int fix_cray_exec_hosts(
+int fix_cray_exec_hosts(
 
   job *pjob)
 
@@ -2305,7 +2305,7 @@ struct pbs_queue *get_jobs_queue(
 
 
 
-/*static*/ int change_external_job_name(
+int change_external_job_name(
 
   job *pjob)
 

@@ -8,6 +8,7 @@
 #include "test_uut.h"
 
 void get_mic_indices(job *pjob, char *buf, int buf_size);
+void job_nodes(job &pjob);
 
 #ifdef NUMA_SUPPORT
 extern nodeboard node_boards[];
@@ -18,6 +19,46 @@ extern nodeboard node_boards[];
 
 char *penv[MAX_TEST_ENVP]; /* max number of pointers bld_env_variables will create */
 char *envBuffer = NULL; /* points to the max block that bld_env_variables would ever need in this test suite */
+
+
+START_TEST(job_nodes_test)
+  {
+  job *pjob = (job *)calloc(1, sizeof(job));
+
+  pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("napali/0-9+waimea/0-9");
+  pjob->ji_wattr[JOB_ATR_exec_port].at_val.at_str = strdup("15002+15002");
+
+  job_nodes(*pjob);
+  // nothing should've happened since the flag isn't set
+  fail_unless(pjob->ji_numnodes == 0);
+
+  pjob->ji_wattr[JOB_ATR_exec_host].at_flags = ATR_VFLAG_SET;
+
+  job_nodes(*pjob);
+  fail_unless(pjob->ji_numnodes == 2);
+  fail_unless(pjob->ji_numvnod == 20);
+
+  fail_unless(!strcmp(pjob->ji_hosts[0].hn_host, "napali"));
+  fail_unless(!strcmp(pjob->ji_hosts[1].hn_host, "waimea"));
+  fail_unless(pjob->ji_hosts[2].hn_node == TM_ERROR_NODE);
+  fail_unless(pjob->ji_vnods[20].vn_node == TM_ERROR_NODE);
+
+  for (int i = 0; i < 2; i++)
+    {
+    fail_unless(pjob->ji_hosts[i].hn_node == i);
+    fail_unless(pjob->ji_hosts[i].hn_sister == SISTER_OKAY);
+    fail_unless(pjob->ji_hosts[i].hn_port == 15002);
+    }
+  
+  for (int i = 0; i < 20; i++)
+    {
+    fail_unless(pjob->ji_vnods[i].vn_node == i);
+    fail_unless(pjob->ji_vnods[i].vn_index == i % 10);
+    fail_unless(pjob->ji_vnods[i].vn_host == &pjob->ji_hosts[i/10]);
+    }
+  }
+END_TEST
+
 
 void setup_vtable(
   struct var_table *vtable, 
@@ -283,6 +324,7 @@ Suite *start_exec_suite(void)
 
   tc_core = tcase_create("test_check_pwd_adaptive_user");
   tcase_add_test(tc_core, test_check_pwd_adaptive_user);
+  tcase_add_test(tc_core, job_nodes_test);
   suite_add_tcase(s, tc_core);
 
   return s;

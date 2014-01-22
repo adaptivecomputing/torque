@@ -454,11 +454,13 @@ int is_job_on_node(
 
 
 
-/* If nodes have similiar names this will make sure the name is an exact match.
+/*
+ * If nodes have similiar names this will make sure the name is an exact match.
  * Not just found inside another name.
  * i.e. Machines by the name of gpu, gpuati, gpunvidia. If searching for gpu...
  * List format is similiar to: gpuati+gpu/1+gpunvidia/4+gpu/5
  */
+
 int node_in_exechostlist(
     
   char *node_name,
@@ -4049,6 +4051,73 @@ int translate_howl_to_string(
 
 
 
+/*
+ * populate_range_string_from_job_reservation_info()
+ * 
+ * @post-cond: range_str is populated with a string representing the range of
+ * occupied execution slots on in the job reservation info object.
+ * For example, if slots 0, 2, 3, 4, and 5 and occupied the string should be 0,2-5
+ */
+
+void populate_range_string_from_job_reservation_info(
+
+  job_reservation_info &jri,
+  std::stringstream    &range_str)
+
+  {
+  int               jri_index;
+  int               prev_jri_index = -1;
+  bool              consecutive_indices = false;
+  int               jri_iterator = -1;
+
+  range_str.str("");
+    
+  while ((jri_index = jri.est.get_next_occupied_index(jri_iterator)) != -1)
+    {
+    if (consecutive_indices == false)
+      {
+      if (range_str.str().size() == 0)
+        range_str << jri_index;
+      else
+        {
+        if (prev_jri_index == jri_index - 1)
+          consecutive_indices = true;
+        else
+          range_str << "," << jri_index;
+        }
+      }
+    else
+      {
+      // currently iterating over consecutive indices
+      if (prev_jri_index != jri_index - 1)
+        {
+        range_str << "-" << prev_jri_index;
+        consecutive_indices = false;
+        range_str << "," << jri_index;
+        }
+      }
+      
+    prev_jri_index = jri_index;
+    }
+
+  if (consecutive_indices == true)
+    range_str << "-" << prev_jri_index;
+  } /* END populate_range_string_from_job_reservation_info() */
+
+
+
+/*
+ * translate_job_reservation_info_to_string()
+ *
+ * takes a vector of job_reservation_info objects and turns them into an exec_host list.
+ * This list is in the format host1/range_str1[+host2/range_str2[+...]]
+ * range_str is in the format of digit1[-digit2][,digit3[-digit4]...
+ *
+ * @post-cond: exec_host_output is populated with the contents of this list
+ * @post-cond: exec_port_output is optionally populated with a corresponding port for each
+ * entry in the host list
+ */
+
 int translate_job_reservation_info_to_string(
     
   std::vector<job_reservation_info *>  &host_info, 
@@ -4062,29 +4131,27 @@ int translate_job_reservation_info_to_string(
   for (int hi_index = 0; hi_index < (int)host_info.size(); hi_index++)
     {
     job_reservation_info *jri = host_info[hi_index];
-    int                   jri_index;
-    int                   jri_iterator = -1;
+    std::stringstream     range_str;
     
     (*NCount)++;
-
-    while ((jri_index = jri->est.get_next_occupied_index(jri_iterator)) != -1)
+     
+    if (first == false)
       {
-      if (first == false)
-        {
-        exec_host_output << "+";
-
-        if (exec_port_output != NULL)
-          *exec_port_output << "+";
-        }
-
-      first = false;
-
-      exec_host_output << jri->node_name << "/" << jri_index;
+      exec_host_output << "+";
 
       if (exec_port_output != NULL)
-        *exec_port_output << jri->port;
+        *exec_port_output << "+";
       }
-    }
+
+    populate_range_string_from_job_reservation_info(*jri, range_str);
+      
+    exec_host_output << jri->node_name << "/" << range_str.str();
+
+    if (exec_port_output != NULL)
+      *exec_port_output << jri->port;
+
+    first = false;
+    } /* END for each job_reservation_info * in the vector */
 
   return(PBSE_NONE);
   } /* END translate_job_reservation_info_to_string() */
@@ -5192,7 +5259,6 @@ void free_nodes(
   char           *exec_hosts = NULL;
   char           *host_ptr = NULL;
   char           *hostname;
-  char           *previous_hostname = NULL;
 
   if (LOGLEVEL >= 3)
     {
@@ -5212,14 +5278,6 @@ void free_nodes(
 
   while ((hostname = get_next_exec_host(&host_ptr)) != NULL)
     {
-    if ((previous_hostname) != NULL)
-      {
-      if (!strcmp(hostname, previous_hostname))
-        continue;
-      }
-
-    previous_hostname = hostname;
-
     if ((pnode = find_nodebyname(hostname)) != NULL)
       {
       remove_job_from_node(pnode, pjob);

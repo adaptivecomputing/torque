@@ -1736,7 +1736,7 @@ job *chk_job_torun(
         }
 
       if ((ptr = strchr(exec_host, '/')))
-        * ptr = 0; /* For some reason, node name has "/0" on the end (i.e. "node0001/0"). */
+        *ptr = 0;
 
       if (strcmp(prun->rq_destin, exec_host) != 0)
         {

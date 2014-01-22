@@ -1765,12 +1765,16 @@ void purge_completed_jobs(
  * is_ms_on_server() determines whether the mother superior
  * is on the pbs_server or not.
  */
-int is_ms_on_server(const job *pjob)
-  {
-  char mom_fullhostname[PBS_MAXHOSTNAME + 1];
-  int ms_on_server = 0;
 
+int is_ms_on_server(
+    
+  const job *pjob)
+
+  {
+  char  mom_fullhostname[PBS_MAXHOSTNAME + 1];
+  int   ms_on_server = 0;
   char *exec_hosts = pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str;
+
   if (exec_hosts)
     {
     char *host_tok = threadsafe_tokenizer(&exec_hosts, "+");
@@ -1789,7 +1793,8 @@ int is_ms_on_server(const job *pjob)
       ms_on_server = strcmp(server_host, mom_fullhostname) == 0;
       }
     }
-  return ms_on_server;
+
+  return(ms_on_server);
   } /* is_ms_on_server */
 
 /* END req_delete.c */

@@ -94,17 +94,19 @@
 
 
 extern char mom_alias[];
+void translate_range_string_to_vector(const char *range_str, std::vector<int> &indices);
 
 
 host_req *get_host_req(
 
-  char *hostname)
+  char         *hostname,
+  unsigned int  ppn)
 
   {
   host_req *hr = (host_req *)calloc(1, sizeof(host_req));
 
   hr->hostname = strdup(hostname);
-  hr->ppn = 1;
+  hr->ppn = ppn;
 
   return(hr);
   } /* END get_host_req() */
@@ -133,7 +135,6 @@ resizable_array *parse_exec_hosts(
   char            *exec_hosts = strdup(exec_hosts_param);
   char            *str_ptr = exec_hosts;
   const char     *delims = "+";
-  char            *prev_host_tok = NULL;
   host_req        *hr;
   resizable_array *host_req_list = initialize_resizable_array(100);
 
@@ -146,18 +147,12 @@ resizable_array *parse_exec_hosts(
     if ((strcmp(mom_host, host_tok)) &&
         (strcmp(mom_alias, host_tok)))
       {
-      if ((prev_host_tok != NULL) &&
-          (!strcmp(prev_host_tok, host_tok)))
-        {
-        hr = (host_req *)host_req_list->slots[host_req_list->last].item;
-        hr->ppn += 1;
-        }
-      else
-        {
-        prev_host_tok = host_tok;
-        hr = get_host_req(host_tok);
-        insert_thing(host_req_list, hr);
-        }
+      std::vector<int> indices;
+
+      translate_range_string_to_vector(slash + 1, indices);
+
+      hr = get_host_req(host_tok, indices.size());
+      insert_thing(host_req_list, hr);
       }
     }
 

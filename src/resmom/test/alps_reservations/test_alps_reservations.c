@@ -11,9 +11,9 @@
 #include <check.h>
 
 char *hostname = (char *)"napali";
-char *eh1 = (char *)"napali/0+napali/1+l11/0+l11/1";
-char *eh2 = (char *)"napali/0+napali/1+l11/0+l11/1+l11/2";
-char *eh3 = (char *)"napali/0+napali/1+l11/0+l11/1+lihue/0+lihue/1+lihue/2+waimea/0+waimea/1+waimea/2";
+char *eh1 = (char *)"napali/0-1+l11/0-1";
+char *eh2 = (char *)"napali/0-1+l11/0-2";
+char *eh3 = (char *)"napali/0-1+l11/0-1+lihue/0-2+waimea/0-2";
 char  buf[4096];
 char *uname = (char *)"dbeer";
 char *jobids[] = {(char *)"0.napali", (char *)"1.napali"} ;
@@ -65,7 +65,7 @@ START_TEST(host_req_tests)
   {
   host_req *hr;
 
-  hr = get_host_req(hostname);
+  hr = get_host_req(hostname, 1);
 
   fail_unless(!strcmp(hostname, hr->hostname), "set incorrect hostname");
   fail_unless(hr->ppn == 1, "set incorrect ppn");

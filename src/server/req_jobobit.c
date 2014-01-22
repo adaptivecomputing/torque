@@ -1377,7 +1377,7 @@ int handle_stagedel(
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
 
   strcpy(job_id, pjob->ji_qs.ji_jobid);
-  if(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
+  if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
     {
     job_momname = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
     }

@@ -330,7 +330,7 @@ int TTmpDirName(job *pjob, char *tmpdir, int tmdir_size)
   return(0);
   }
 
-void job_nodes(job *pjob) {}
+void job_nodes(job &pjob) {}
 
 void close_conn(int sd, int has_mutex) {}
 
