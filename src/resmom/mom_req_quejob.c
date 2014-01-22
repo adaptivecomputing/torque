@@ -1077,11 +1077,7 @@ void req_commit(
 
     if (LOGLEVEL >= 6)
       {
-      log_record(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
-        tmpLine);
+      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, tmpLine);
       }
 
     reply_text(preq, rc, tmpLine);

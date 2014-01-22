@@ -518,7 +518,6 @@ static void req_stat_job_step2(
       }
     }
 
-
   if ((type == tjstTruncatedServer) || 
       (type == tjstTruncatedQueue))
     {
@@ -598,10 +597,6 @@ static void req_stat_job_step2(
           {
           req_reject(rc, bad, preq, NULL, NULL);
 
-          if (pa != NULL)
-            {
-            unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
-            }
           unlock_ji_mutex(pjob, __func__, "7", LOGLEVEL);
           unlock_queue(pque, __func__, "perm", LOGLEVEL);
 
@@ -629,16 +624,13 @@ static void req_stat_job_step2(
     
       unlock_queue(pque, __func__, "end while", LOGLEVEL);
       }      /* END for (pque) */
-      
-    if (pa != NULL)
-      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
 
     reply_send_svr(preq);
 
     delete iter;
 
     return;
-    }        /* END if ((type == tjstTruncatedServer) || ...) */
+    } /* END if ((type == tjstTruncatedServer) || ...) */
 
   while (pjob != NULL)
     {

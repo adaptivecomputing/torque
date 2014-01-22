@@ -1261,7 +1261,16 @@ int mom_checkpoint_job(
     hasold = 1;
     }
 
-  mkdir(path, 0755);
+  if (mkdir(path, 0755) == -1)
+    {
+    if (errno != EEXIST)
+      {
+      snprintf(log_buffer, sizeof(log_buffer), "Couldn't create directory '%s'", path);
+      log_err(errno, __func__, log_buffer);
+
+      return(errno);
+      }
+    }
 
   strcpy(file, path);
 
