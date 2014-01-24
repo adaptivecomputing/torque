@@ -308,6 +308,9 @@ extern void send_update_soon();
 extern int  use_nvidia_gpu;
 #endif
 
+
+int num_stat_update_failures = 0;
+
 void check_state(int);
 void state_to_server(int, int);
 void node_comm_error(node_comm_t *, const char *);
@@ -1426,6 +1429,7 @@ int send_update_to_a_server()
 
   {
   int rc = NO_SERVER_CONFIGURED;
+  char    log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* now, once we contact one server we stop attempting to report in */
   for (int sindex = 0; sindex < PBS_MAXSERVER && rc != PBSE_NONE; sindex++)
@@ -1437,7 +1441,17 @@ int send_update_to_a_server()
     }
 
   if (rc == COULD_NOT_CONTACT_SERVER)
+    {
+    num_stat_update_failures++;
     log_err(-1, __func__, "Could not contact any of the servers to send an update");
+    sprintf(log_buf, "Status not successfully updated for %d MOM status update intervals", num_stat_update_failures);
+    log_err(-1, __func__, log_buf);
+    }
+  else if (num_stat_update_failures != 0)
+    {
+    sprintf(log_buf, "Status update successfully sent after %d MOM status update intervals", num_stat_update_failures);
+    log_err(-1, __func__, log_buf);
+    }
 
   return(rc);
   } /* END send_update_to_a_server() */
@@ -1504,8 +1518,14 @@ void mom_server_all_update_stat(void)
  
   {
   pid_t        pid;
+  int          fd_pipe[2];
+  int          rc;
+  char         buf[LOCAL_LOG_BUF_SIZE];
+  size_t       len;
 
   time_now = time(NULL);
+
+  memset(buf, 0, LOCAL_LOG_BUF_SIZE);
 
   if (send_update() == FALSE)
     {
@@ -1544,6 +1564,13 @@ void mom_server_all_update_stat(void)
        the mom is waiting for a response from the server. neither of which will come until a request times out.
        If we fork the status updates this alleviates the problem by making one less request from the
        mom single threaded */
+    rc = pipe(fd_pipe);
+    if (rc != 0)
+      {
+      sprintf(buf, "pipe creation failed: %d", errno);
+      log_err(-1, __func__, buf);
+      }
+
     pid = fork();
 
     if (pid < 0)
@@ -1555,6 +1582,7 @@ void mom_server_all_update_stat(void)
     if (pid > 0)
       {
       // PARENT 
+      close(fd_pipe[1]);
       LastServerUpdateTime = time_now;
       UpdateFailCount = 0;
     
@@ -1567,10 +1595,24 @@ void mom_server_all_update_stat(void)
 
       delete iter;
 
+      len = read(fd_pipe[0], buf, LOCAL_LOG_BUF_SIZE);
+      if (len <= 0)
+        {
+        log_err(-1, __func__, "read of pipe failed for status update");
+        return;
+        }
+
+      if (buf[0] != '0')
+          num_stat_update_failures++;
+      else
+          num_stat_update_failures = 0;
+
       return;
       }
 
     // CHILD
+    close(fd_pipe[0]);
+
 #ifdef NUMA_SUPPORT
     for (numa_index = 0; numa_index < num_node_boards; numa_index++)
 #endif /* NUMA_SUPPORT */
@@ -1578,8 +1620,12 @@ void mom_server_all_update_stat(void)
       update_mom_status();
   
       if (send_status_through_hierarchy() != PBSE_NONE)
-        send_update_to_a_server();
+        rc = send_update_to_a_server();
       }
+
+    sprintf(buf, "%d", rc);
+    len = strlen(buf);
+    write(fd_pipe[1], buf, len);
   
     exit(0);
     }
