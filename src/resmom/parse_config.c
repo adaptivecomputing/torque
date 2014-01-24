@@ -2739,9 +2739,9 @@ const char *getjoblist(
   struct rm_attribute *attrib) /* I */
 
   {
-  static std::stringstream  list;
-  job                      *pjob;
-  bool                      firstjob = true;
+  std::stringstream  list;
+  job               *pjob;
+  bool               firstjob = true;
 
 #ifdef NUMA_SUPPORT
   char  mom_check_name[PBS_MAXSERVERNAME];
@@ -2792,7 +2792,7 @@ const char *getjoblist(
   if (firstjob == true)
     list << " ";
 
-  return(list.str().c_str());
+  return(strdup(list.str().c_str()));
   }  /* END getjoblist() */
 
 
