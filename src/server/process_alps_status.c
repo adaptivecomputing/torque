@@ -518,6 +518,19 @@ int record_reservation(
       pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str = strdup(rsv_id);
       pjob->ji_wattr[JOB_ATR_reservation_id].at_flags = ATR_VFLAG_SET;
 
+      /* add environment variable BATCH_PARTITION_ID */
+      char buf[1024];
+      snprintf(buf, sizeof(buf), "BATCH_PARTITION_ID=%s", rsv_id);
+      pbs_attribute  tempattr;
+      clear_attr(&tempattr, &job_attr_def[JOB_ATR_variables]);
+      job_attr_def[JOB_ATR_variables].at_decode(&tempattr,
+        NULL, NULL, buf, 0);
+
+      job_attr_def[JOB_ATR_variables].at_set(
+        &pjob->ji_wattr[JOB_ATR_variables], &tempattr, INCR);
+
+      job_attr_def[JOB_ATR_variables].at_free(&tempattr);
+
       track_alps_reservation(pjob);
       found_job = true;
 
