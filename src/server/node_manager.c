@@ -2899,14 +2899,17 @@ bool process_as_node_list(
   if (spec == NULL)
     return(false);
 
-  if (isalpha(spec[0]))
-    return(true);
-
   std::string nodes(spec);
   std::size_t pos = nodes.find("+");
+  std::string second_node;
 
   if (pos != std::string::npos)
+    {
+    second_node = nodes.substr(pos + 1);
     nodes.erase(pos);
+    }
+  else if (isalpha(spec[0]))
+    return(true);
 
   pos = nodes.find(":");
 
@@ -2918,7 +2921,23 @@ bool process_as_node_list(
   if (pnode != NULL)
     {
     unlock_node(pnode, __func__, NULL, LOGLEVEL);
-    return(true);
+
+    if (second_node.size() == 0)
+      return(true);
+
+    if ((pos = second_node.find("+")) != std::string::npos)
+      second_node.erase(pos);
+
+    if ((pos = second_node.find(":")) != std::string::npos)
+      second_node.erase(pos);
+
+    pnode = find_nodebyname(second_node.c_str());
+
+    if (pnode != NULL)
+      {
+      unlock_node(pnode, __func__, NULL, LOGLEVEL);
+      return(true);
+      }
     }
  
   return(false);

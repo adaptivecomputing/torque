@@ -157,7 +157,14 @@ START_TEST(process_as_node_list_test)
   // cray can have numeric node names so it should attempt to find the node 2 
   // and 10 in the following tests to know if they exist
   fail_unless(process_as_node_list("2:ppn=10+3:ppn=10", &naji) == true);
+  fail_unless(process_as_node_list("2:ppn=10", &naji) == true);
   fail_unless(process_as_node_list("10:ppn=10", &naji) == false);
+
+  // should now check the first two nodes so that it doesn't think things 
+  // like nodes=bob+10:ppn=10 are hostlists
+  fail_unless(process_as_node_list("bob:ppn=10+10:ppn=10", &naji) == false);
+  fail_unless(process_as_node_list("bob+10:ppn=10", &naji) == false);
+  fail_unless(process_as_node_list("bob+10", &naji) == false);
   }
 END_TEST
 
