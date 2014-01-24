@@ -383,23 +383,13 @@ int str_to_attr(
       (val  == NULL) ||
       (attr == NULL))
     {
-    log_err(-1, __func__, "Illegal NULL pointer argument");
-
     return(-10);
     }
 
   index = find_attr(padef,name,limit);
 
   if (index < 0)
-    {
-    /* couldn't find pbs_attribute */
-    snprintf(log_buf,sizeof(log_buf),
-      "Couldn't find attribute %s\n",
-      name);
-    log_err(-1, __func__, log_buf);
-
     return(ATTR_NOT_FOUND);
-    }
 
   switch (padef[index].at_type)
     {
