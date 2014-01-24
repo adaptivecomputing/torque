@@ -959,7 +959,43 @@ void remove_logical_processor_if_requested(
 
 
 
+/*
+ * get_cpu_list()
+ *
+ * reads the cpu list for the job matching jobid and stores it in buf
+ *
+ * @param jobid - the id of the job we're getting a cpu list for
+ * @param buf - the buffer where we'll store the list
+ * @param bufsize - the size of the buffer where we can store the list
+ *
+ */
+void get_cpu_list(
 
+  const char *jobid,
+  char       *buf,
+  int         bufsize)
+
+  {
+  char  cpuset_path[MAXPATHLEN + 1];
+  FILE *cpu_file;
+  int   fd;
+
+  if (buf == NULL)
+    return;
+
+  memset(buf, 0, bufsize);
+
+  snprintf(cpuset_path, sizeof(cpuset_path), "%s/%s/%scpus",
+    TTORQUECPUSET_PATH, jobid, cpuset_prefix);
+
+  if ((cpu_file = fopen(cpuset_path, "r")) != NULL)
+    {
+    fd = fileno(cpu_file);
+
+    read(fd, buf, bufsize - 1);
+    }
+
+  } /* END get_cpu_list() */
 
 
 

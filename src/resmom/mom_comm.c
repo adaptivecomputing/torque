@@ -4312,9 +4312,6 @@ int handle_im_get_info_response(
   
   ptask = task_check(pjob, event_task);
   
-  if (is_ptask_corrupt(ptask->ti_chan))
-     return(IM_FAILURE);
-
   if (ptask != NULL)
     {
     tm_reply(ptask->ti_chan, TM_OKAY, event);

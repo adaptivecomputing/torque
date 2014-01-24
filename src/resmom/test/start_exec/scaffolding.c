@@ -560,4 +560,19 @@ int get_cpu_count_requested_on_this_node(job&)
   return 0;
   }
 
+void numa_node::recover_reservation(
+
+  int            num_cpus,
+  unsigned long  memory,
+  const char    *jobid,
+  allocation    &alloc)
+
+  {
+  return;
+  }
+
+void node_internals::recover_reservation(int num_cpus, unsigned long memory, const char *jobid)
+  {
+  return;
+  }
 #endif

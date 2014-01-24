@@ -264,7 +264,7 @@ static void mom_lock(int fds, int op);
 int setup_nodeboards();
 #else
 #ifdef PENABLE_LINUX26_CPUSETS
-void create_cpuset_reservation_if_needed(job &pjob);
+void recover_cpuset_reservation(job &pjob);
 #endif
 #endif /* NUMA_SUPPORT */
 
@@ -3164,7 +3164,7 @@ void *tcp_request(
   if ((avail_bytes = socket_avail_bytes_on_descriptor(socket)) == 0)
     {
     close_conn(socket, FALSE);
-    return NULL;
+    return(NULL);
     }
 
   memset(&sockAddr,0,sizeof(sockAddr));
@@ -3192,9 +3192,9 @@ void *tcp_request(
   if (AVL_is_in_tree_no_port_compare(ipadd, 0, okclients) == 0)
     {
     sprintf(log_buffer, "bad connect from %s", address);
-    log_err(errno, __func__, log_buffer);
+    log_err(-1, __func__, log_buffer);
     close_conn(socket, FALSE);
-    return NULL;
+    return(NULL);
     }
 
   log_buffer[0] = '\0';
@@ -4420,7 +4420,7 @@ void recover_internal_layout()
   // now, re-create the reservation for each job.
   for (std::list<job *>::iterator it = job_list.begin(); it != job_list.end(); it++)
     {
-    create_cpuset_reservation_if_needed(*(*it));
+    recover_cpuset_reservation(*(*it));
     }
 #endif
   }
