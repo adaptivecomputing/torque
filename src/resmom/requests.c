@@ -3830,9 +3830,10 @@ nextword:
 
       bad_files = 1;
 
-      sprintf(log_buffer, "Unable to copy file %s to %s",
+      sprintf(log_buffer, "Unable to copy file %s to %s, error %d",
         arg2,
-        arg3);
+        arg3,
+        rc);
 
       add_bad_list(&bad_list, log_buffer, 2);
 
