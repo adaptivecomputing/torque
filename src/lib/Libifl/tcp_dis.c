@@ -521,6 +521,14 @@ int tcp_puts(
     return(-1);
     }
 
+  if (tp->tdis_bufsize == 0)
+   {
+   snprintf(log_buf,sizeof(log_buf),
+     "write buffer's tdis_bufsize was unexpectely found with a value of 0");
+   log_err(-1, __func__, log_buf);
+   return(-1);
+   }
+
   if ((tp->tdis_thebuf + tp->tdis_bufsize - tp->tdis_leadp) < (ssize_t)ct)
     {
     /* not enough room, reallocate the buffer */

@@ -136,6 +136,4 @@ void send_update_soon();
 
 int read_status_strings(struct tcp_chan *chan, int version);
 
-int is_ptask_corrupt(struct tcp_chan *chan);
-
 #endif /* _MOM_COMM_H */

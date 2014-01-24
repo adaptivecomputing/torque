@@ -227,6 +227,8 @@ extern int exec_job_on_ms(job *pjob);
 u_long gettime(resource *);
 u_long getsize(resource *);
 
+int is_ptask_corrupt( struct tcp_chan *chan); 
+
 #ifdef NVIDIA_GPUS
 int  setup_gpus_for_job(job *pjob);
 #endif  /* NVIDIA_GPUS */
@@ -4310,6 +4312,9 @@ int handle_im_get_info_response(
   
   ptask = task_check(pjob, event_task);
   
+  if (is_ptask_corrupt(ptask->ti_chan))
+     return(IM_FAILURE);
+
   if (ptask != NULL)
     {
     tm_reply(ptask->ti_chan, TM_OKAY, event);
