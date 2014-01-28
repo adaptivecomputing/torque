@@ -311,13 +311,18 @@ int insert_into_alljobs_by_rank(
     mutex_mgr pjcur_mgr(pjcur->ji_mutex, true);
     if (job_qrank > pjcur->ji_wattr[JOB_ATR_qrank].at_val.at_long)
       {
-      pjcur_mgr.set_lock_on_exit(false);
+      pjcur_mgr.set_unlock_on_exit(false);
       break;
       }
     
     if (strcmp(jobid, pjcur->ji_qs.ji_jobid) == 0)
       {
-      return(ALREADY_IN_LIST);
+      if ((pjob = svr_find_job(jobid, FALSE)) == NULL)
+        {
+        return(PBSE_JOBNOTFOUND);
+        }
+      else
+        return(ALREADY_IN_LIST);
       }
     }
 
@@ -603,14 +608,11 @@ int svr_enquejob(
         (pjob->ji_qs.ji_substate != JOB_SUBSTATE_COMPLETE) && 
         (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET))
       {
-      if ((rc = depend_on_que(&
-                              pjob->ji_wattr[JOB_ATR_depend],
-                              pjob,
-                              ATR_ACTION_NOOP)) != 0)
-        {
-        unlock_ji_mutex(pjob, __func__, "7", LOGLEVEL);
+      rc = depend_on_que(& pjob->ji_wattr[JOB_ATR_depend], pjob, ATR_ACTION_NOOP);
+      if (rc == PBSE_JOBNOTFOUND)
+        return(rc);
+      else if (rc != PBSE_NONE)
         return(PBSE_BADDEPEND);
-        }
       }
 
     /* set eligible time */

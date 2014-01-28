@@ -249,7 +249,7 @@ int req_holdjob(
       req_reject(rc, 0, preq, NULL, "relay to mom failed");
 
       if (pjob == NULL)
-        job_mutex.set_lock_on_exit(false);
+        job_mutex.set_unlock_on_exit(false);
       }
     else
       {
@@ -268,7 +268,7 @@ int req_holdjob(
         reply_ack(preq);
         }
       else
-        job_mutex.set_lock_on_exit(false);
+        job_mutex.set_unlock_on_exit(false);
 
       process_hold_reply(dup_req);
       }
@@ -358,7 +358,7 @@ void *req_checkpointjob(
       free_br(dup_req);
 
       if (pjob == NULL)
-        job_mutex.set_lock_on_exit(false);
+        job_mutex.set_unlock_on_exit(false);
       }
     else
       {
@@ -372,7 +372,7 @@ void *req_checkpointjob(
         pjob = NULL;
         }
       else
-        job_mutex.set_lock_on_exit(false);
+        job_mutex.set_unlock_on_exit(false);
 
       process_checkpoint_reply(dup_req);
       }

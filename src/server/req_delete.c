@@ -494,7 +494,7 @@ jump:
       log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
       }
     else
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
 
     return(-1);
     }  /* END if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) */
@@ -525,7 +525,7 @@ jump:
 
       if (pjob == NULL)
         {
-        job_mutex.set_lock_on_exit(false);
+        job_mutex.set_unlock_on_exit(false);
         return(-1);
         }
       std::string dup_job_id(pjob->ji_qs.ji_jobid);
@@ -584,7 +584,7 @@ jump:
 
   if (pjob == NULL)
     {
-    job_mutex.set_lock_on_exit(false);
+    job_mutex.set_unlock_on_exit(false);
     return -1;
     }
 
@@ -610,7 +610,7 @@ jump:
     /* job has staged-in file, should remove them */
     remove_stagein(&pjob);
 
-    job_mutex.set_lock_on_exit(false);
+    job_mutex.set_unlock_on_exit(false);
 
     if (pjob != NULL)
       job_abt(&pjob, Msg);
@@ -651,7 +651,7 @@ jump:
       set_task(WORK_Timed, time_now + KeepSeconds, on_job_exit_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
       }
     else
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
     }  /* END else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0) */
 
   return(PBSE_NONE);
@@ -1270,7 +1270,7 @@ void post_delete_mom1(
 
       set_resc_assigned(pjob, DECR);
 
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
 
       svr_job_purge(pjob);
 
@@ -1309,7 +1309,7 @@ void post_delete_mom1(
       }
     else if (pjob == NULL)
       {
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
       return;
       }
     }
@@ -1366,7 +1366,7 @@ void post_delete_mom2(
       }
     
     if (pjob == NULL)
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
     }
   }  /* END post_delete_mom2() */
 
@@ -1534,7 +1534,7 @@ void job_delete_nanny(
         if (pjob != NULL)
           apply_job_delete_nanny(pjob, time_now + 60);
         else
-          job_mutex.set_lock_on_exit(false);
+          job_mutex.set_unlock_on_exit(false);
         }
       }
     else
@@ -1611,7 +1611,7 @@ void post_job_delete_nanny(
   
     free_br(preq_sig);
 
-    job_mutex.set_lock_on_exit(false);
+    job_mutex.set_unlock_on_exit(false);
 
     svr_job_purge(pjob);
 

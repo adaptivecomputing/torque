@@ -728,7 +728,7 @@ void *finish_job(
     return(NULL);
     }
   mutex_mgr job_mgr(pjob->ji_mutex,true);
-  job_mgr.set_lock_on_exit(false);
+  job_mgr.set_unlock_on_exit(false);
 
   free(jobid);
 
@@ -737,6 +737,7 @@ void *finish_job(
   svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
 
   handle_complete_first_time(pjob);
+  /* pjob->ji_mutex is always returned unlocked from handle_complete_first_time */
 
   return(NULL);
   } /* END finish_job() */

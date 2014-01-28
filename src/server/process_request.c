@@ -1041,13 +1041,24 @@ int close_quejob_by_jobid(
   mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
   if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRANSICM)
     {
-    remove_job(&newjobs,pjob);
-    svr_job_purge(pjob);
+    rc = remove_job(&newjobs,pjob);
+    if (rc == PBSE_JOB_RECYCLED)
+      {
+      pjob_mutex.set_unlock_on_exit(false);
+      return(rc);
+      }
+    svr_job_purge(pjob); /* pjob will always be deleted regardless of error code */
     pjob = NULL;
     }
   else if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE)
     {
-    remove_job(&newjobs,pjob);
+    rc = remove_job(&newjobs,pjob);
+    if (rc == PBSE_JOB_RECYCLED)
+      {
+      pjob_mutex.set_unlock_on_exit(false);
+      return(rc);
+      }
+    
     pjob->ji_qs.ji_state = JOB_STATE_QUEUED;
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_QUEUED;
     rc = svr_enquejob(pjob, FALSE, -1, false);
@@ -1059,13 +1070,12 @@ int close_quejob_by_jobid(
       }
     else if (rc != PBSE_NONE)
       {
-      job_abt(&pjob, msg_err_noqueue);
-      pjob = NULL;
+      job_abt(&pjob, msg_err_noqueue); /* pjob will be set to null in job_abt */
       }
     }
 
   if (pjob == NULL)
-    pjob_mutex.set_lock_on_exit(false);
+    pjob_mutex.set_unlock_on_exit(false);
 
   return(rc);
   } /* close_quejob_by_jobid() */
