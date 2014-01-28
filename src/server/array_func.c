@@ -753,7 +753,8 @@ int setup_array_struct(
     
     array_delete(pa);
 
-    pa_mutex.set_lock_on_exit(false);
+    /* array_delete will delete pa and its mutex. Do not try to unlock */
+    pa_mutex.set_unlock_on_exit(false);
 
     return(INVALID_SLOT_LIMIT);
     }
@@ -789,7 +790,8 @@ int setup_array_struct(
     if (max_array_size < pa->ai_qs.num_jobs)
       {
       array_delete(pa);
-      pa_mutex.set_lock_on_exit(false);
+      /* array delete deletes pa and its mutex */
+      pa_mutex.set_unlock_on_exit(false);
 
       return(ARRAY_TOO_LARGE);
       }
@@ -815,7 +817,7 @@ int setup_array_struct(
   if (bad_token_count > 0)
     {
     array_delete(pa);
-    pa_mutex.set_lock_on_exit(false);
+    pa_mutex.set_unlock_on_exit(false);
     return 2;
     }
 
@@ -1177,7 +1179,7 @@ int delete_array_range(
         pthread_mutex_unlock(pa->ai_mutex);
         deleted = attempt_delete(pjob);
         /* we come out of attempt_delete unlocked */
-        pjob_mutex.set_lock_on_exit(false);
+        pjob_mutex.set_unlock_on_exit(false);
 
 
         if (deleted == FALSE)
@@ -1281,7 +1283,8 @@ int delete_whole_array(
 
       pthread_mutex_unlock(pa->ai_mutex);
       deleted = attempt_delete(pjob);
-      pjob_mutex.set_lock_on_exit(false);
+      /* we come out of attempt_delete unlocked */
+      pjob_mutex.set_unlock_on_exit(false);
 
       if (deleted == FALSE)
         {
@@ -1516,13 +1519,13 @@ int modify_array_range(
               {
               array_gone = TRUE;
               if (pjob == NULL)
-                pjob_mutex.set_lock_on_exit(false);
+                pjob_mutex.set_unlock_on_exit(false);
               break;
               }
             
             if (pjob == NULL)
               {
-              pjob_mutex.set_lock_on_exit(false);
+              pjob_mutex.set_unlock_on_exit(false);
               pa->job_ids[i] = NULL;
               }
             }

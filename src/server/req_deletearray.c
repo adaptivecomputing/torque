@@ -398,19 +398,19 @@ void array_delete_wt(
           /* job_abt() calls svr_job_purge which will try to lock the array again */
           array_mutex.unlock();
           job_abt(&pjob, NULL);
-          job_mutex.set_lock_on_exit(false);
+          job_mutex.set_unlock_on_exit(false);
           pa = get_array(preq->rq_ind.rq_delete.rq_objname);
           if (pa != NULL)
             array_mutex.mark_as_locked();
           }
         else
-          job_mutex.set_lock_on_exit(false);
+          job_mutex.set_unlock_on_exit(false);
         }
       else
         {
         /* job_abt() calls svr_job_purge which will try to lock the array again */
         array_mutex.unlock();
-        job_mutex.set_lock_on_exit(false);
+        job_mutex.set_unlock_on_exit(false);
 
         job_abt(&pjob, NULL);
         pa = get_array(preq->rq_ind.rq_delete.rq_objname);

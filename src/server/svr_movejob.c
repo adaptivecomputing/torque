@@ -727,7 +727,7 @@ int send_job_work(
     ret = svr_dequejob(pjob, FALSE);
     if (ret)
       {
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
       return(ret);
       }
     }
@@ -765,7 +765,7 @@ int send_job_work(
       }
     else if (pjob == NULL)
       {
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
       return(PBSE_JOB_RECYCLED);
       }
     }
