@@ -983,7 +983,7 @@ void mgr_queue_create(
     reply_badattr(rc, bad, plist, preq);
 
     que_free(pque, FALSE);
-    que_mgr.set_lock_on_exit(false);
+    que_mgr.set_unlock_on_exit(false);
     }
   else
     {
@@ -1058,7 +1058,7 @@ void mgr_queue_delete(
     req_reject(rc, 0, preq, NULL, NULL);
     return;
     }
-  pque_mutex.set_lock_on_exit(false);
+  pque_mutex.set_unlock_on_exit(false);
 
   svr_save(&server, SVR_SAVE_QUICK);
 

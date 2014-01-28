@@ -257,7 +257,7 @@ int array_delete(job_array *pa) {return 0;}
 int csv_length(const char *csv_str) {return 0;}
 int array_save(job_array *pa) {return 0;}
 int reply_jobid(struct batch_request *preq, char *jobid, int which) {return 0;}
-void mutex_mgr::set_lock_on_exit(bool val) {}
+void mutex_mgr::set_unlock_on_exit(bool val) {}
 int client_to_svr(pbs_net_t hostaddr, unsigned int port, int local_port, char *EMsg) {return 0;}
 int issue_signal(job **pjob_ptr, const char *signame, void (*func)(struct batch_request *), void *extra, char *extend) {return 0;}
 int get_jobs_index(all_jobs *aj, job *pjob) {return(0);}

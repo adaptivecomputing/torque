@@ -275,7 +275,7 @@ void svr_shutdown(
         if (shutdown_checkpoint(&pjob) == 0)
           {
           if (pjob == NULL)
-            job_mutex.set_lock_on_exit(false);
+            job_mutex.set_unlock_on_exit(false);
 
           continue;
           }
@@ -288,7 +288,7 @@ void svr_shutdown(
       }
 
     if (pjob != NULL)
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
     }
 
   return;
@@ -494,7 +494,7 @@ void post_checkpoint(
         rerun_or_kill(&pjob, msg_on_shutdown);
 
         if (pjob == NULL)
-          job_mutex.set_lock_on_exit(false);
+          job_mutex.set_unlock_on_exit(false);
         }
       }
     }
