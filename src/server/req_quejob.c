@@ -730,7 +730,7 @@ int req_quejob(
       /* FAILURE */
       rc = PBSE_ATTRRO;
       svr_job_purge(pj);
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
       reply_badattr(rc, 1, psatl, preq);
       return(rc);
       }
@@ -766,7 +766,7 @@ int req_quejob(
           /* FAILURE */
           /* any other error is fatal */
           svr_job_purge(pj);
-          job_mutex.set_lock_on_exit(false);
+          job_mutex.set_unlock_on_exit(false);
           reply_badattr(rc, 1, psatl, preq);
           return(rc);
           }
@@ -797,7 +797,7 @@ int req_quejob(
           {
           /* FAILURE */
           svr_job_purge(pj);
-          job_mutex.set_lock_on_exit(false);
+          job_mutex.set_unlock_on_exit(false);
           reply_badattr(rc, 1, psatl, preq);
           return(rc);
           }
@@ -807,7 +807,7 @@ int req_quejob(
         /* FAILURE */
         /* any other error is fatal */
         svr_job_purge(pj);
-        job_mutex.set_lock_on_exit(false);
+        job_mutex.set_unlock_on_exit(false);
         reply_badattr(rc, 1, psatl, preq);
         return(rc);
         }
@@ -838,7 +838,7 @@ int req_quejob(
       if (rc)
         {
         svr_job_purge(pj);
-        job_mutex.set_lock_on_exit(false);
+        job_mutex.set_unlock_on_exit(false);
         req_reject(rc, i, preq, NULL, "cannot execute attribute action");
         return(rc);
         }
@@ -880,7 +880,7 @@ int req_quejob(
         {
         rc = PBSE_BADATVAL;
         svr_job_purge(pj);
-        job_mutex.set_lock_on_exit(false);
+        job_mutex.set_unlock_on_exit(false);
         req_reject(rc, 0, preq, NULL, "invalid job priority");
         return rc;
         }
@@ -910,7 +910,7 @@ int req_quejob(
 
         /* not unique, reject job */
         svr_job_purge(pj);
-        job_mutex.set_lock_on_exit(false);
+        job_mutex.set_unlock_on_exit(false);
        
         rc = PBSE_JOBEXIST; 
         snprintf(log_buf,sizeof(log_buf),
@@ -1123,7 +1123,7 @@ int req_quejob(
       {
       rc = PBSE_NOATTR;
       svr_job_purge(pj);
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
       req_reject(rc, 0, preq, NULL, "no output/error file specified");
       return rc;
       }
@@ -1201,7 +1201,7 @@ int req_quejob(
         {
         rc = PBSE_BADACCT;
         svr_job_purge(pj);
-        job_mutex.set_lock_on_exit(false);
+        job_mutex.set_unlock_on_exit(false);
         req_reject(rc, 0, preq, NULL, "invalid account");
         return rc;
         }
@@ -1222,7 +1222,7 @@ int req_quejob(
         /* no default found */
         rc = PBSE_BADACCT;
         svr_job_purge(pj);
-        job_mutex.set_lock_on_exit(false);
+        job_mutex.set_unlock_on_exit(false);
         req_reject(rc, 0, preq, NULL, "no default account available");
         return rc;
         }
@@ -1241,7 +1241,7 @@ int req_quejob(
       rc = PBSE_IVALREQ;
       snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "no job owner specified");
       svr_job_purge(pj);
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
       log_err(rc, __func__, log_buf);
       req_reject(rc, 0, preq, NULL, log_buf);
       return rc;
@@ -1253,7 +1253,7 @@ int req_quejob(
       {
       rc = PBSE_HOPCOUNT;
       svr_job_purge(pj);
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
       req_reject(rc, 0, preq, NULL, "max job hop reached");
       return rc;
       }
@@ -1280,7 +1280,7 @@ int req_quejob(
       max_queuable);
 
     svr_job_purge(pj);
-    job_mutex.set_lock_on_exit(false);
+    job_mutex.set_unlock_on_exit(false);
 
     req_reject(PBSE_MAXQUED, 0, preq, NULL, log_buf);
     
@@ -1338,7 +1338,7 @@ int req_quejob(
     que_mgr.unlock();
     decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
     svr_job_purge(pj);
-    job_mutex.set_lock_on_exit(false);
+    job_mutex.set_unlock_on_exit(false);
     req_reject(rc, 0, preq, NULL, EMsg);
     return(rc);
     }
@@ -1381,7 +1381,7 @@ int req_quejob(
     remove_job(&newjobs,pj);
     decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
     svr_job_purge(pj);
-    job_mutex.set_lock_on_exit(false);
+    job_mutex.set_unlock_on_exit(false);
     return(rc);
     }
   

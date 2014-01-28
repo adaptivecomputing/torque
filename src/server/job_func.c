@@ -491,7 +491,7 @@ int job_abt(
           if (depend_on_term(pjob) == PBSE_JOBNOTFOUND)
             {
             pjob = NULL;
-            pjob_mutex.set_lock_on_exit(false);
+            pjob_mutex.set_unlock_on_exit(false);
             }
           }
         
@@ -552,7 +552,7 @@ int job_abt(
       if (depend_on_term(pjob) == PBSE_JOBNOTFOUND)
         {
         pjob = NULL;
-        pjob_mutex.set_lock_on_exit(false);
+        pjob_mutex.set_unlock_on_exit(false);
         }
       /* pjob_mutex managed mutex already points to pjob->ji_mutex. Nothing to do */
       }
@@ -587,7 +587,7 @@ int job_abt(
     }
 
   if (pjob == NULL)
-    pjob_mutex.set_lock_on_exit(false);
+    pjob_mutex.set_unlock_on_exit(false);
 
   return(rc);
   }  /* END job_abt() */
@@ -1212,7 +1212,7 @@ void *job_clone_wt(
       if ((rc = svr_enquejob(pjobclone, FALSE, prev_index, false)))
         {
         /* XXX need more robust error handling */
-        clone_mgr.set_lock_on_exit(false);
+        clone_mgr.set_unlock_on_exit(false);
 
         if (rc != PBSE_JOB_RECYCLED)
           {
@@ -1230,7 +1230,10 @@ void *job_clone_wt(
       if ((pa = get_jobs_array(&pjobclone)) == NULL)
         {
         if (pjobclone == NULL)
-          clone_mgr.set_lock_on_exit(false);
+          {
+          /* pjobclone has been released. No mutex left to unlock */
+          clone_mgr.set_unlock_on_exit(false);
+          }
 
         return(NULL);
         }
@@ -1259,7 +1262,7 @@ void *job_clone_wt(
       
       /* index below 0 means the job no longer exists */
       if (prev_index < 0)
-        clone_mgr.set_lock_on_exit(false);
+        clone_mgr.set_unlock_on_exit(false);
       }  /* END for (i) */
 
     if (rn->start > rn->end)
@@ -1854,8 +1857,8 @@ int svr_job_purge(
   if ((job_has_arraystruct == FALSE) || (job_is_array_template == TRUE))
     if (remove_job(&array_summary,pjob) == PBSE_JOB_RECYCLED)
       {
-      /* PBSE_JOB_RECYCLED means the job is gone */
-      pjob_mutex.set_lock_on_exit(false);
+      /* PBSE_JOB_RECYCLED means the job is gone. remove_job alreadly unlocked pjob->ji_mutex */
+      pjob_mutex.set_unlock_on_exit(false); 
       return(PBSE_NONE);
       }
 
@@ -1897,7 +1900,7 @@ int svr_job_purge(
       }
     else
       {
-      pjob_mutex.set_lock_on_exit(false);
+      pjob_mutex.set_unlock_on_exit(false);
       return(PBSE_JOBNOTFOUND);
       }
     }
@@ -1924,7 +1927,7 @@ int svr_job_purge(
       if (pjob->ji_being_recycled == FALSE)
         {
         job_free(pjob, TRUE);
-        pjob_mutex.set_lock_on_exit(false);
+        pjob_mutex.set_unlock_on_exit(false);  /* job_free will release lock */
         }
       else
         pjob_mutex.unlock();
@@ -1933,9 +1936,10 @@ int svr_job_purge(
   else
     {
     job_free(pjob, TRUE);
-    pjob_mutex.set_lock_on_exit(false);
+    pjob_mutex.set_unlock_on_exit(false); /* job_free will release lock */
     }
 
+  /* pjob->ji_mutex is unlocked at this point */
   /* delete the script file */
   if ((job_has_arraystruct == FALSE) || 
       (job_is_array_template == TRUE))
@@ -2080,7 +2084,7 @@ job_array *get_jobs_array(
     }
 
   mutex_mgr job_mutex(pjob->ji_mutex,true);
-  job_mutex.set_lock_on_exit(false);
+  job_mutex.set_unlock_on_exit(false);
 
   strcpy(jobid, pjob->ji_qs.ji_jobid);
 

@@ -216,7 +216,7 @@ int req_signaljob(
     if (pjob != NULL)
       job_mutex.unlock();
     else
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
 
     if (rc != PBSE_NONE)
       {

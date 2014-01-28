@@ -217,7 +217,7 @@ void *check_and_run_job(
 
     if (pjob == NULL)
       {
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
       req_reject(PBSE_JOBNOTFOUND, 0, preq, NULL, "Job unexpectedly deleted");
       *rc_ptr = PBSE_JOBNOTFOUND;
       return(rc_ptr);
@@ -483,7 +483,7 @@ void post_checkpointsend(
       }
 
     if (pjob == NULL)
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
     }    /* END if (pjob != NULL) */
 
   if (!preq_free_done)
@@ -735,7 +735,7 @@ void post_stagein(
       }
 
     if (pjob == NULL)
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
     }    /* END if (pjob != NULL) */
 
   if (preq)
@@ -1708,6 +1708,7 @@ job *chk_job_torun(
     }
   else if (pjob == NULL)
     {
+    job_mutex.set_unlock_on_exit(false);
     req_reject(PBSE_JOBNOTFOUND, 0, preq, NULL, "job vanished while trying to lock queue.");
     return(NULL);
     }
@@ -1843,7 +1844,7 @@ job *chk_job_torun(
 #endif /* TDEV */
     }    /* END if (setnn == 1) */
 
-  job_mutex.set_lock_on_exit(false);
+  job_mutex.set_unlock_on_exit(false);
 
   return(pjob);
   }  /* END chk_job_torun() */

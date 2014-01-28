@@ -294,7 +294,7 @@ void mom_cleanup_checkpoint_hold(
           log_err(rc, __func__, log_buf);
           }
         else
-          job_mutex.set_lock_on_exit(false);
+          job_mutex.set_unlock_on_exit(false);
 
         free_br(preq);
 
@@ -320,7 +320,7 @@ void mom_cleanup_checkpoint_hold(
     }
 
   if (pjob == NULL)
-    job_mutex.set_lock_on_exit(false);
+    job_mutex.set_unlock_on_exit(false);
   } /* END mom_cleanup_checkpoint_hold() */
 
 
@@ -727,7 +727,7 @@ int modify_whole_array(
       if (pa == NULL)
         {
         if (pjob == NULL)
-          job_mutex.set_lock_on_exit(false);
+          job_mutex.set_unlock_on_exit(false);
 
         return(PBSE_JOB_RECYCLED);
         }
@@ -735,7 +735,7 @@ int modify_whole_array(
       if (pjob == NULL)
         {
         pa->job_ids[i] = NULL;
-        job_mutex.set_lock_on_exit(false);
+        job_mutex.set_unlock_on_exit(false);
         continue;
         }
       }

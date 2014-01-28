@@ -583,7 +583,7 @@ jump:
       log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
       }
     else
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
 
     return(-1);
     }  /* END if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) */
@@ -614,7 +614,7 @@ jump:
 
       if (pjob == NULL)
         {
-        job_mutex.set_lock_on_exit(false);
+        job_mutex.set_unlock_on_exit(false);
         return(-1);
         }
       std::string dup_job_id(pjob->ji_qs.ji_jobid);
@@ -673,7 +673,7 @@ jump:
 
   if (pjob == NULL)
     {
-    job_mutex.set_lock_on_exit(false);
+    job_mutex.set_unlock_on_exit(false);
     return -1;
     }
 
@@ -696,14 +696,14 @@ jump:
     }
   else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)
     {
-    job_mutex.set_lock_on_exit(false);
+    job_mutex.set_unlock_on_exit(false);
     return -1;
     }
 
   delete_inactive_job(&pjob, Msg);
 
   if (pjob == NULL)
-    job_mutex.set_lock_on_exit(false);
+    job_mutex.set_unlock_on_exit(false);
 
   return(PBSE_NONE);
   } /* END execute_job_delete() */
@@ -900,7 +900,7 @@ void *delete_all_work(
     if ((rc = forced_jobpurge(pjob, preq_dup)) == PURGE_SUCCESS)
       {
       // want to leave lock in place after exiting
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
 
       continue;
       }
@@ -926,7 +926,7 @@ void *delete_all_work(
       if ((rc = execute_job_delete(pjob, Msg, preq_dup)) == PBSE_NONE)
         {
         // execute_job_delete() handles mutex so don't unlock on exit
-        job_mutex.set_lock_on_exit(false);
+        job_mutex.set_unlock_on_exit(false);
         reply_ack(preq_dup);
         }
        
@@ -1330,7 +1330,7 @@ void post_delete_mom1(
 
       set_resc_assigned(pjob, DECR);
 
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
 
       svr_job_purge(pjob);
 
@@ -1369,7 +1369,7 @@ void post_delete_mom1(
       }
     else if (pjob == NULL)
       {
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
       return;
       }
     }
@@ -1426,7 +1426,7 @@ void post_delete_mom2(
       }
     
     if (pjob == NULL)
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
     }
   }  /* END post_delete_mom2() */
 
@@ -1593,7 +1593,7 @@ void job_delete_nanny(
         if (pjob != NULL)
           apply_job_delete_nanny(pjob, time_now + 60);
         else
-          job_mutex.set_lock_on_exit(false);
+          job_mutex.set_unlock_on_exit(false);
         }
       }
     else
@@ -1672,7 +1672,7 @@ void post_job_delete_nanny(
   
     free_br(preq_sig);
 
-    job_mutex.set_lock_on_exit(false);
+    job_mutex.set_unlock_on_exit(false);
 
     svr_job_purge(pjob);
 

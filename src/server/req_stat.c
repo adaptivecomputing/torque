@@ -1075,7 +1075,7 @@ void stat_update(
         
         svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_ABORT, FALSE);
         rel_resc(pjob);
-        job_mutex.set_lock_on_exit(false);
+        job_mutex.set_unlock_on_exit(false);
         job_abt(&pjob, "Job does not exist on node");
 
         /* TODO, if the job is rerunnable we should set its state back to queued */
