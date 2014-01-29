@@ -89,7 +89,7 @@
 #define UNSPECIFIED -1  /* unspecified value */
 #define FREE_DEEP 1  /* constant to pass to free_*_list */
 #define INITIALIZE -1
-#define INFINITY -2  /* infinity value for resources */
+#define INFINITY_VAL -2  /* infinity value for resources */
 
 /* for update_jobs_cant run */
 #define START_BEFORE_JOB -1

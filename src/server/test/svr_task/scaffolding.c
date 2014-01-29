@@ -4,41 +4,22 @@
 #include <errno.h>
 
 #include "work_task.h" /* all_tasks, work_task */
-#include "resizable_array.h" /* resizable_array */
 #include "threadpool.h"
 #include <signal.h>
 #include <string.h>
 
 #define FALSE 0
-all_tasks task_list_timed;
-all_tasks task_list_event;
-task_recycler           tr;
+all_tasks             task_list_event;
+task_recycler         tr;
+pthread_mutex_t       task_list_timed_mutex;
 
-threadpool_t *request_pool;
+threadpool_t         *request_pool;
 
 sigset_t      fillset;
 
 int create_work_thread()
   {
   return(0);
-  }
-
-int insert_thing(resizable_array *ra, void *thing)
-  {
-  fprintf(stderr, "The call to insert_thing to be mocked!!\n");
-  exit(1);
-  }
-
-int insert_thing_before(resizable_array *ra, void *thing, int index)
-  {
-  fprintf(stderr, "The call to insert_thing_before to be mocked!!\n");
-  exit(1);
-  }
-
-int remove_thing(resizable_array *ra, void *thing)
-  {
-  fprintf(stderr, "The call to remove_thing to be mocked!!\n");
-  exit(1);
   }
 
 int enqueue_threadpool_request(void *(*func)(void *),void *arg)

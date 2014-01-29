@@ -8,6 +8,7 @@
 extern login_holder logins;
 char                buf[4096];
 int proplist(char **str, struct prop **plist, int *node_req, int *gpu_req);
+struct pbsnode *check_node(login_node *ln, struct prop *needed);
 
 
 void initialize_node_for_testing(
@@ -26,7 +27,6 @@ START_TEST(initialize_test)
   initialize_login_holder();
 
   fail_unless(logins.next_node == 0, "Next node set incorrectly");
-  fail_unless(logins.ra != 0, "Resizable array initialized incorrectly");
   fail_unless(logins.ln_mutex != 0, "Mutex wasn't initialized correctly");
   fail_unless(logins.iterate_backwards == 0, "Set to iterate backwards from beginning");
   }
@@ -165,6 +165,20 @@ START_TEST(retrieval_test)
 END_TEST
 
 
+START_TEST(check_node_test)
+  {
+  struct pbsnode pnode;
+  login_node ln(&pnode);
+
+  memset(&pnode, 0, sizeof(pnode));
+
+  pnode.nd_slots.add_execution_slot();
+  fail_unless(check_node(&ln, NULL) != NULL);
+  pnode.nd_slots.mark_as_used(0);
+  fail_unless(check_node(&ln, NULL) == NULL);
+
+  }
+END_TEST
 
 
 START_TEST(prop_test)
@@ -254,6 +268,7 @@ Suite *node_func_suite(void)
 
   tc_core = tcase_create("prop_test");
   tcase_add_test(tc_core, prop_test);
+  tcase_add_test(tc_core, check_node_test);
   suite_add_tcase(s, tc_core);
   
   return(s);

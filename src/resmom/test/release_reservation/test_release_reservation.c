@@ -18,9 +18,13 @@ START_TEST(destroy_alps_reservation_test)
   char *inp2 = (char *)"s\ns";
   int   rc;
 
+  fprintf(stderr,"%s:%d\n",__FILE__,__LINE__);
   create_input(input_file, inp1);
+  fprintf(stderr,"%s:%d\n",__FILE__,__LINE__);
   rc = destroy_alps_reservation(rsv1, release_path, apbasil_protocol, 1);
+  fprintf(stderr,"%s:%d\n",__FILE__,__LINE__);
   fail_unless(rc == 0, "couldn't release rsv 1");
+  fprintf(stderr,"%s:%d\n",__FILE__,__LINE__);
   
   create_input(input_file, inp2);
   rc = destroy_alps_reservation(rsv2, release_path, apbasil_protocol, 1);

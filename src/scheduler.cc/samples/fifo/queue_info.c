@@ -372,11 +372,11 @@ queue_info *new_queue_info()
 
   init_state_count(&(qinfo -> sc));
 
-  qinfo -> max_run  = INFINITY;
+  qinfo -> max_run  = INFINITY_VAL;
 
-  qinfo -> max_user_run  = INFINITY;
+  qinfo -> max_user_run  = INFINITY_VAL;
 
-  qinfo -> max_group_run = INFINITY;
+  qinfo -> max_group_run = INFINITY_VAL;
 
   qinfo -> name   = NULL;
 

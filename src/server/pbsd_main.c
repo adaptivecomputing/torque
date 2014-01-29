@@ -142,7 +142,6 @@
 #include "ji_mutex.h"
 #include "job_route.h" /* queue_route */
 #include "exiting_jobs.h"
-#include "svr_task.h"
 
 #define TASK_CHECK_INTERVAL      10
 #define HELLO_WAIT_TIME          600
@@ -190,8 +189,8 @@ static void lock_out_ha();
 extern hello_container failures;
 extern int             svr_chngNodesfile;
 extern int             svr_totnodes;
-extern struct all_jobs alljobs;
-extern int run_change_logs;
+extern all_jobs        alljobs;
+extern int             run_change_logs;
 
 extern pthread_mutex_t *poll_job_task_mutex;
 extern int max_poll_job_tasks;
@@ -296,8 +295,7 @@ extern hello_container  hellos;
 extern hello_container  failures;
 pthread_mutex_t        *listener_command_mutex;
 tlist_head              svr_newnodes;          /* list of newly created nodes      */
-all_tasks               task_list_timed;
-all_tasks               task_list_event;
+pthread_mutex_t         task_list_timed_mutex;
 pid_t                   sid;
 
 char                   *plogenv = NULL;
@@ -639,10 +637,10 @@ void parse_command_line(
 
     {
       { "hot", RECOV_HOT },
-    { "warm", RECOV_WARM },
-    { "cold", RECOV_COLD },
-    { "create", RECOV_CREATE },
-    { "", RECOV_Invalid }
+      { "warm", RECOV_WARM },
+      { "cold", RECOV_COLD },
+      { "create", RECOV_CREATE },
+      { "", RECOV_Invalid }
     };
 
   ForceCreation = FALSE;
@@ -1039,7 +1037,6 @@ void *check_tasks(void *notUsed)
 
   {
   work_task *ptask;
-  int        iter = -1;
   int        rc = PBSE_NONE;
 
   time_t     time_now;
@@ -1049,28 +1046,19 @@ void *check_tasks(void *notUsed)
   time_now = time(NULL);
   last_task_check_time = time_now;
 
-  while ((ptask = next_task(&task_list_timed, &iter)) != NULL)
+  while ((ptask = pop_timed_task(time_now)) != NULL)
     {
-    if (ptask->wt_event - time_now > 0)
+    rc = dispatch_timed_task(ptask); /* will delete link */
+
+    /* if dispatch_task does not return PBSE_NONE 
+       it is because we have used up our alotment of threads.
+       Break for now and come back to this next time 
+       through the main_loop 
+     */
+    if (rc != PBSE_NONE)
       {
       pthread_mutex_unlock(ptask->wt_mutex);
-
       break;
-      }
-    else
-      {
-      rc = dispatch_task(ptask); /* will delete link */
-
-      /* if dispatch_task does not return PBSE_NONE 
-         it is because we have used up our alotment of threads.
-         Break for now and come back to this next time 
-         through the main_loop 
-       */
-      if (rc != PBSE_NONE)
-        {
-        pthread_mutex_unlock(ptask->wt_mutex);
-        break;
-        }
       }
     }
 
@@ -1106,9 +1094,13 @@ static int start_hot_jobs(void)
   int  ct = 0;
   job *pjob;
 
-  int  iter = -1;
+  all_jobs_iterator  *iter = NULL;
 
-  while ((pjob = next_job(&alljobs,&iter)) != NULL)
+  alljobs.lock();
+  iter = alljobs.get_iterator();
+  alljobs.unlock();
+
+  while ((pjob = next_job(&alljobs,iter)) != NULL)
     {
 
     if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_QUEUED) &&
@@ -1170,7 +1162,7 @@ void *handle_queue_routing_retries(
   {
   pbs_queue *pque;
   char       *queuename = NULL;
-  int        iter = -1;
+  all_queues_iterator *iter = NULL;
   int        rc;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
   pthread_attr_t  routing_attr;
@@ -1192,9 +1184,13 @@ void *handle_queue_routing_retries(
     return(NULL);
     }
 
+  svr_queues.lock();
+  iter = svr_queues.get_iterator();
+  svr_queues.unlock();
+
   while(1)
     {
-    while ((pque = next_queue(&svr_queues, &iter)) != NULL)
+    while ((pque = next_queue(&svr_queues, iter)) != NULL)
       {
       if (pque->qu_qs.qu_type == QTYPE_RoutePush)
         {
@@ -1410,7 +1406,7 @@ void main_loop(void)
   long          state = SV_STATE_DOWN;
   time_t        waittime = 5;
   job          *pjob;
-  int           iter;
+  all_jobs_iterator  *iter = NULL;
   long          when = 0;
   long          timeout = 0;
   long          log = 0;
@@ -1614,8 +1610,7 @@ void main_loop(void)
       bool change_state = false;
       pthread_mutex_lock(server.sv_jobstates_mutex);
       change_state = ((server.sv_jobstates[JOB_STATE_RUNNING] == 0) &&
-                      (server.sv_jobstates[JOB_STATE_EXITING] == 0) &&
-                      (has_task(&task_list_event) == FALSE));
+                      (server.sv_jobstates[JOB_STATE_EXITING] == 0));
 
       pthread_mutex_unlock(server.sv_jobstates_mutex);
 
@@ -1634,7 +1629,7 @@ void main_loop(void)
     get_svr_attr_l(SRV_ATR_State, &state);
     }    /* END while (*state != SV_STATE_DOWN) */
 
-  if(accept_thread_id != (pthread_t)-1)
+  if (accept_thread_id != (pthread_t)-1)
     {
     pthread_cancel(accept_thread_id);
     accept_thread_id = (pthread_t)-1;
@@ -1644,10 +1639,12 @@ void main_loop(void)
 
   track_save(NULL);                     /* save tracking data */
 
-  iter = -1;
+  alljobs.lock();
+  iter = alljobs.get_iterator();
+  alljobs.unlock();
 
   /* save any jobs that need saving */
-  while ((pjob = next_job(&alljobs, &iter)) != NULL)
+  while ((pjob = next_job(&alljobs, iter)) != NULL)
     {
     if (pjob->ji_modified)
       job_save(pjob, SAVEJOB_FULL, 0);
@@ -1766,7 +1763,6 @@ int main(
   int          i;
   int          local_errno = 0;
   char         lockfile[MAXPATHLEN + 1];
-  char        *pc = NULL;
   char         EMsg[MAX_LINE];
   char         tmpLine[MAX_LINE];
   char         log_buf[LOCAL_LOG_BUF_SIZE];
@@ -1942,7 +1938,7 @@ int main(
   if (HALockUpdateTime == 0)
     HALockUpdateTime = PBS_LOCKFILE_UPDATE_TIME;
 
-  if ((pc = getenv("PBSDEBUG")) != NULL)
+  if (getenv("PBSDEBUG") != NULL)
     {
     DEBUGMODE = 1;
     TDoBackground = 0;

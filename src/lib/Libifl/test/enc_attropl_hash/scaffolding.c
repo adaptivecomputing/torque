@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 #include "tcp.h"
-#include "u_memmgr.h" /* memmgr */
 #include "u_hash_map_structs.h" /* job_data */
 
 int diswcs(tcp_chan *chan, const char *value, size_t nchars)
@@ -17,32 +16,15 @@ int diswui(tcp_chan *chan, unsigned value)
  exit(1);
  }
 
-void memmgr_destroy(memmgr **mgr)
- {
- fprintf(stderr, "The call to memmgr_destroy needs to be mocked!!\n");
- exit(1);
- }
-
-int hash_count(job_data *head)
+int hash_count(job_data_container *head)
  {
  fprintf(stderr, "The call to hash_count needs to be mocked!!\n");
  exit(1);
  }
 
-int hash_del_item(memmgr **mm, job_data **head, const char *name)
+int hash_del_item(job_data_container *head, const char *name)
  {
  fprintf(stderr, "The call to hash_del_item needs to be mocked!!\n");
  exit(1);
  }
 
-void *memmgr_realloc(memmgr **mgr, void *ptr, int new_size)
- {
- fprintf(stderr, "The call to memmgr_realloc needs to be mocked!!\n");
- exit(1);
- }
-
-int memmgr_init(memmgr **mgr, int mgr_size) 
- {
- fprintf(stderr, "The call to memmgr_init needs to be mocked!!\n");
- exit(1);
- }

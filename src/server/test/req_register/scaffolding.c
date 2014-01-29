@@ -211,10 +211,10 @@ job *svr_find_job(char *jobid, int get_subjob)
     return(NULL);
   }
 
-void svr_evaljobstate(job *pjob, int *newstate, int *newsub, int forceeval)
+void svr_evaljobstate(job &pjob, int &newstate, int &newsub, int forceeval)
   {
-  *newstate = 0;
-  *newsub = 0;
+  newstate = 0;
+  newsub = 0;
   }
 
 char *parse_comma_string(char *start, char **ptr) 

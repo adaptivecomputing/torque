@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import urllib2
 import sys
 import getopt
 import re
@@ -92,6 +93,11 @@ def report_file(report):
     percent_touched = (actual_lines / total_lines) * 100
     print "-----------------------------------------------------------"
     print "Lines executed: %6s of %6s statements: %.02f%% COVERAGE" % (int(actual_lines), total_lines, percent_touched)
+
+    # Record this on Ben's website
+    urlstr='http://moab-walldisplay/metrics/record.php?metric=10&date=now&value=';
+    urlstr += str(percent_touched)
+    urllib2.urlopen(urlstr)
 
     #Output this information to a comma separated values file
     csv = open('coverages.csv', 'w')

@@ -108,14 +108,18 @@ class numa_node
   std::vector<allocation> allocations;
 
   void get_cpuinfo(const char *path);
+  void mark_cpu_as_in_use(unsigned int i, allocation &alloc);
+  void mark_memory_as_in_use(unsigned long memory, allocation &alloc);
 
   public:
   numa_node(const char *node_path, int index);
   numa_node();
   numa_node(const numa_node &nn);
+  int             in_this_numa_node(int cpu_index);
   void            parse_cpu_string(std::string &line);
   void            get_meminfo(const char *path);
   void            reserve(int num_cpus, unsigned long memory, const char *jobid, allocation &alloc);
+  void            recover_reservation(int num_cpus, unsigned long memory, const char *jobid, allocation &alloc);
   void            remove_job(const char *jobid);
   bool            completely_fits(int num_cpus, unsigned long memory) const;
   void            get_job_indices(const char *jobid, std::vector<int> &cpu_indices, bool cpu) const;

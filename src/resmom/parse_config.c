@@ -1448,6 +1448,9 @@ u_long settmpdir(
   const char *Value)
 
   {
+  struct stat tmpdir_stat;
+  int rc;
+  
   log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, Value);
 
   if (*Value != '/')
@@ -1458,6 +1461,25 @@ u_long settmpdir(
     }
 
   snprintf(tmpdir_basename, sizeof(tmpdir_basename), "%s", Value);
+
+  /* Make sure the tmpdir exists */
+  rc = stat(tmpdir_basename, &tmpdir_stat);
+  if (rc < 0)
+    {
+    if ((errno == ENOENT) || (errno == ENOTDIR))
+      {
+      sprintf(log_buffer,  "$tmpdir option is set to %s in mom_priv/config file. This directory does not exist. \nPlease correct this problem and try starting pbs_mom again.", tmpdir_basename);
+      log_err(rc, __func__, log_buffer);
+      }
+    else
+      {
+      sprintf(log_buffer, "Failed to stat %s. %s\npbs_mom did not start.", tmpdir_basename, strerror(errno));
+      log_err(rc, __func__, log_buffer);
+      }
+
+    exit(rc);
+    }
+
 
   return(1);
   } /* END settmpdir() */
@@ -2255,11 +2277,6 @@ int read_config(
     {
     IgnConfig = 1;
 
-    sprintf(log_buffer, "fstat: %s",
-            file);
-
-    log_err(errno, __func__, log_buffer);
-
     if (config_file_specified != 0)
       {
       /* file specified and not there, return failure */
@@ -2275,11 +2292,9 @@ int read_config(
     else
       {
       /* "config" file not located, return success */
-
       if (LOGLEVEL >= 3)
         {
-        sprintf(log_buffer, "cannot open file '%s'",
-                file);
+        sprintf(log_buffer, "cannot open file '%s'", file);
 
         log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
         }

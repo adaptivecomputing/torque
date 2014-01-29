@@ -193,8 +193,8 @@ time_t          last_log_check;
 
 char            JobsToResend[MAX_RESEND_JOBS][PBS_MAXSVRJOBID+1];
 
-resizable_array  *exiting_job_list;
-resizable_array  *things_to_resend;
+boost::ptr_vector<exiting_job_info> exiting_job_list;
+std::vector<resend_momcomm *> things_to_resend;
 
 mom_hierarchy_t  *mh;
 
@@ -207,9 +207,6 @@ hwloc_topology_t topology = NULL;       /* system topology */
 /* externs */
 
 extern long     MaxConnectTimeout;
-
-extern resizable_array *received_statuses;
-extern hash_table_t    *received_table;
 
 time_t          pbs_tcp_timeout = PMOMTCPTIMEOUT;
 
@@ -264,7 +261,7 @@ static void mom_lock(int fds, int op);
 int setup_nodeboards();
 #else
 #ifdef PENABLE_LINUX26_CPUSETS
-void create_cpuset_reservation_if_needed(job &pjob);
+void recover_cpuset_reservation(job &pjob);
 #endif
 #endif /* NUMA_SUPPORT */
 
@@ -1889,6 +1886,8 @@ void add_diag_jobs_session_ids(
       output << ptask->ti_qs.ti_sid;
     else
       output << "," << ptask->ti_qs.ti_sid;
+
+    first = false;
     }  /* END for (task) */
   }
 
@@ -3085,13 +3084,15 @@ int do_tcp(
 
       mom_is_request(chan,version,NULL);
 
-      svr_conn[chan->sock].cn_stay_open = FALSE;
       break;
 
     case IM_PROTOCOL:
 
       im_request(chan,version,pSockAddr);
-      svr_conn[chan->sock].cn_stay_open = FALSE;
+      if(chan->sock >= 0)
+        {
+        svr_conn[chan->sock].cn_stay_open = FALSE;
+        }
 
       break;
 
@@ -3123,7 +3124,9 @@ int do_tcp(
 
   /* don't close these connections -- the pointer is saved in 
    * the tasks for MPI jobs */
-  if ((chan != NULL) && (svr_conn[chan->sock].cn_stay_open == FALSE))
+  if ((chan != NULL) &&
+      (((chan->sock >= 0) && (svr_conn[chan->sock].cn_stay_open == FALSE)) ||
+      ((chan->sock == -1))))
     DIS_tcp_cleanup(chan);
   DBPRT(("%s:%d", __func__, proto));
 
@@ -3160,7 +3163,7 @@ void *tcp_request(
   if ((avail_bytes = socket_avail_bytes_on_descriptor(socket)) == 0)
     {
     close_conn(socket, FALSE);
-    return NULL;
+    return(NULL);
     }
 
   memset(&sockAddr,0,sizeof(sockAddr));
@@ -3188,9 +3191,9 @@ void *tcp_request(
   if (AVL_is_in_tree_no_port_compare(ipadd, 0, okclients) == 0)
     {
     sprintf(log_buffer, "bad connect from %s", address);
-    log_err(errno, __func__, log_buffer);
+    log_err(-1, __func__, log_buffer);
     close_conn(socket, FALSE);
-    return NULL;
+    return(NULL);
     }
 
   log_buffer[0] = '\0';
@@ -3212,6 +3215,8 @@ void *tcp_request(
     case DIS_EOF:
 
       DBPRT(("Closing socket %d twice...\n", socket))
+
+      // Fall through to close the connection
 
     case PBSE_MEM_MALLOC:
     case DIS_EOD:
@@ -4269,28 +4274,25 @@ void parse_command_line(
 bool verify_mom_hierarchy()
 
   {
-  int              paths_iter = -1;
   mom_hierarchy_t *tmp_hierarchy = initialize_mom_hierarchy();
 
-  resizable_array *paths;
   int              path_index = 0;
   bool             legitimate_hierarchy = false;
 
-  while ((paths = (resizable_array *)next_thing(mh->paths, &paths_iter)) != NULL)
+  for(mom_paths::iterator paths_iter = mh->paths->begin();paths_iter != mh->paths->end();paths_iter++)
     {
-    resizable_array *level;
-    int              levels_iter = -1;
+    mom_levels      *levels = *paths_iter;
     int              level_index = 0;
     bool             continue_on_path = true;
     bool             legitimate_path = false;
 
-    while ((level = (resizable_array *)next_thing(paths, &levels_iter)) != NULL)
+    for(mom_levels::iterator levels_iter = levels->begin();levels_iter != levels->end();levels_iter++)
       {
-      node_comm_t     *nc;
-      int              node_iter = -1;
+      mom_nodes       *nodes = *levels_iter;
 
-      while ((nc = (node_comm_t *)next_thing(level, &node_iter)) != NULL)
+      for(mom_nodes::iterator nodes_iter = nodes->begin();nodes_iter != nodes->end();nodes_iter++)
         {
+        node_comm_t *nc = *nodes_iter;
         if (!strcmp(nc->name, mom_alias))
           continue_on_path = false;
         else
@@ -4305,10 +4307,9 @@ bool verify_mom_hierarchy()
       
       if (continue_on_path == true)
         {
-        node_iter = -1;
-
-        while ((nc = (node_comm_t *)next_thing(level, &node_iter)) != NULL)
+        for(mom_nodes::iterator nodes_iter = nodes->begin();nodes_iter != nodes->end();nodes_iter++)
           {
+          node_comm_t *nc = *nodes_iter;
           struct addrinfo *addr_info;
           if (pbs_getaddrinfo(nc->name, NULL, &addr_info) == 0)
             {
@@ -4373,6 +4374,8 @@ void read_mom_hierarchy()
     // if we read something successfully, we have the cluster addresses and don't 
     // need to request them.
     received_cluster_addrs = verify_mom_hierarchy();
+
+    close(fds);
     }
   } /* END read_mom_hierarchy() */
 
@@ -4414,7 +4417,7 @@ void recover_internal_layout()
   // now, re-create the reservation for each job.
   for (std::list<job *>::iterator it = job_list.begin(); it != job_list.end(); it++)
     {
-    create_cpuset_reservation_if_needed(*(*it));
+    recover_cpuset_reservation(*(*it));
     }
 #endif
   }
@@ -5032,8 +5035,6 @@ int setup_program_environment(void)
   if (gethostname(ret_string, ret_size) == 0)
     addclient(ret_string);
 
-  tmpdir_basename[0] = '\0';
-
   /* if no alias is specified, make mom_alias the same as mom_host */
   if (mom_alias[0] == '\0')
     strcpy(mom_alias,mom_short_name);
@@ -5057,10 +5058,6 @@ int setup_program_environment(void)
     return(3);
     }
   
-  things_to_resend = initialize_resizable_array(10);
-
-  exiting_job_list = initialize_resizable_array(10);
-
   /* recover & abort jobs which were under MOM's control */
   log_record(
     PBSEVENT_DEBUG,
@@ -5127,18 +5124,6 @@ int setup_program_environment(void)
   initialize_threadpool(&request_pool,MOM_THREADS,MOM_THREADS,THREAD_INFINITE);
 
   requested_cluster_addrs = 0;
-
-  /* allocate status strings if needed */
-  received_statuses = initialize_resizable_array(2);
-  received_table = create_hash(101);
-
-
-  if ((received_statuses == NULL) ||
-      (received_table == NULL))
-    {
-    log_err(ENOMEM, __func__, "No memory!!!");
-    return(-1);
-    }
 
   srand(get_random_number());
 
@@ -5706,33 +5691,28 @@ void check_jobs_in_mom_wait()
 void check_exiting_jobs()
 
   {
-  exiting_job_info *eji;
   job              *pjob;
   time_t            time_now = time(NULL);
 
-  while ((eji = (exiting_job_info *)pop_thing(exiting_job_list)) != NULL)
+  while (exiting_job_list.size() != 0)
     {
+    boost::ptr_vector<exiting_job_info>::auto_type eji = exiting_job_list.pop_back();
     if (time_now - eji->obit_sent < 300)
       {
       /* insert this back at the front */
-      insert_thing_after(exiting_job_list, eji, ALWAYS_EMPTY_INDEX);
+      exiting_job_list.insert(exiting_job_list.begin(),eji.release());
       break;
       }
 
-    pjob = mom_find_job(eji->jobid);
+    pjob = mom_find_job((char *)eji->jobid.c_str());
 
-    if (pjob == NULL)
-      {
-      free(eji);
-      }
-    else
+    if (pjob != NULL)
       {
       post_epilogue(pjob, 0);
       eji->obit_sent = time_now;
-      insert_thing(exiting_job_list, eji);
+      exiting_job_list.push_back(eji.release());
       }
     }
-
   } /* END check_exiting_jobs() */
 
 
@@ -6153,7 +6133,7 @@ int read_layout_file()
           }
 
         /* Parse val into nodeset, abort if parsing fails */
-        if ((node_boards[i].num_nodes = hwloc_bitmap_parselist(val, nodeset)) < 0)
+        if ((node_boards[i].num_nodes = hwloc_bitmap_list_sscanf(nodeset, val)) < 0)
           {
           sprintf(log_buffer, "failed to parse mom.layout file token: nodes=%s", val);
           goto failure;
@@ -6218,7 +6198,7 @@ int read_layout_file()
 
         /* Show what we have */
         sprintf(log_buffer, "nodeboard %2d: %d NUMA nodes: ", i, node_boards[i].num_nodes);
-        hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer),
+        hwloc_bitmap_list_snprintf(log_buffer + strlen(log_buffer),
                                  sizeof(log_buffer) - strlen(log_buffer),
                                  node_boards[i].nodeset);
         log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
@@ -6374,13 +6354,13 @@ int setup_nodeboards()
       i,
       node_boards[i].num_cpus);
 
-    hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer),
+    hwloc_bitmap_list_snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer),
       node_boards[i].cpuset);
     snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer),
       "), %d mems (",
       node_boards[i].num_nodes);
 
-    hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer),
+    hwloc_bitmap_list_snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer),
       node_boards[i].nodeset);
     snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer),
       ")");
@@ -6732,7 +6712,6 @@ int resend_obit_task_reply(
 void resend_things()
 
   {
-  int                 iter = -1;
   int                 ret;
   resend_momcomm     *mc;
   im_compose_info    *ici;
@@ -6740,8 +6719,9 @@ void resend_things()
   spawn_task_info    *st;
   time_t              time_now = time(NULL);
 
-  while ((mc = (resend_momcomm *)next_thing(things_to_resend, &iter)) != NULL)
+  for(std::vector<resend_momcomm *>::iterator iter = things_to_resend.begin();iter != things_to_resend.end();iter++)
     {
+    mc = *iter;
     if (time_now - mc->resend_time < RESEND_INTERVAL)
       continue;
 
@@ -6793,7 +6773,7 @@ void resend_things()
     if ((ret == DIS_SUCCESS) ||
         (mc->resend_attempts > 3))
       {
-      remove_thing(things_to_resend, mc);
+      things_to_resend.erase(iter);
       free(mc);
       }
     else
@@ -6809,7 +6789,8 @@ int add_to_resend_things(
 
   {
   mc->resend_time = time(NULL);
-  return(insert_thing(things_to_resend, mc));
+  things_to_resend.push_back(mc);
+  return PBSE_NONE;
   } /* END add_to_resend_things() */
 
 

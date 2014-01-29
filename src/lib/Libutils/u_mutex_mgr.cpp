@@ -112,7 +112,6 @@ using namespace std;
     int rc;
 
     unlock_on_exit = true;
-    locked = true;
     mutex_valid = true;
 
     /* validate the mutex */
@@ -197,10 +196,10 @@ using namespace std;
     locked = val;
     }
 
-  /* allows user to request a mutes not be
+  /* allows user to request a mutex not be
    * unlocked by the destructor
    */
-  void mutex_mgr::set_lock_on_exit(bool val)
+  void mutex_mgr::set_unlock_on_exit(bool val)
     {
     unlock_on_exit = val;
     }

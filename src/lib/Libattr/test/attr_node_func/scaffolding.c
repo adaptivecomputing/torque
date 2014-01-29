@@ -39,3 +39,9 @@ char *parse_comma_string(char *start, char **ptr)
   fprintf(stderr, "The call to parse_comma_string needs to be mocked!!\n");
   exit(1);
   }
+
+int ctnodes(char *spec)
+  {
+  fprintf(stderr, "The call to append_link needs to be mocked!!\n");
+  exit(1);
+  }

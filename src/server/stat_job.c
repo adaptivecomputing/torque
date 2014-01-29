@@ -104,6 +104,7 @@
 #include "svrfunc.h"
 #include "resource.h"
 #include "svr_func.h" /* get_svr_attr_* */
+#include "log.h"
 
 extern int     svr_authorize_jobreq(struct batch_request *, job *);
 int status_attrib(svrattrl *, attribute_def *, pbs_attribute *, int, int, tlist_head *, int *, int);
@@ -291,7 +292,9 @@ int status_attrib(
   int    index;
   int    nth = 0;
   int    resc_access_perm;
+  char   log_buf[LOCAL_LOG_BUF_SIZE + 1];
 
+  
   priv &= ATR_DFLAG_RDACC;  /* user-client privilege  */
   resc_access_perm = priv; 
 
@@ -311,8 +314,11 @@ int status_attrib(
         {
         *bad = nth;
 
+        snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Attribute %s not found. nth = %d", pal->al_name, nth);
+        LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_QUEUE, __func__, log_buf);
+
         /* FAILURE */
-        return(-1);
+        return(PBSE_NOATTR);
         }
 
       if ((padef + index)->at_flags & priv)
@@ -332,9 +338,12 @@ int status_attrib(
       pal = (svrattrl *)GET_NEXT(pal->al_link);
       }
 
-    /* We want to return walltime remaining for all running jobs */
-    if ((pattr + JOB_ATR_start_time)->at_flags & ATR_VFLAG_SET)
-      add_walltime_remaining(JOB_ATR_start_time, pattr, phead);
+    if (padef == job_attr_def)
+      {
+      /* We want to return walltime remaining for all running jobs */
+      if ((pattr + JOB_ATR_start_time)->at_flags & ATR_VFLAG_SET)
+        add_walltime_remaining(JOB_ATR_start_time, pattr, phead);
+      }
 
     /* SUCCESS */
     return(PBSE_NONE);

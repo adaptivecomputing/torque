@@ -152,3 +152,10 @@ pbs_queue *get_jobs_queue(job **pjob_ptr)
   {
   return(NULL);
   }
+
+job *next_job(all_jobs *aj, all_jobs_iterator *iter)
+  {
+  fprintf(stderr, "The call to next_job to be mocked!!\n");
+  exit(1);
+  }
+

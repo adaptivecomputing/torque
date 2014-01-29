@@ -3,7 +3,6 @@
 #include <stdio.h> /* fprintf */
 
 #include "libpbs.h" /* connect_handle, batch_reply */
-#include "u_memmgr.h" /* memmgr */
 #include "u_hash_map_structs.h" /* job_data */
 #include "attribute.h" /* attropl */
 
@@ -21,12 +20,6 @@ ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
 int encode_DIS_JobId(struct tcp_chan *chan, char *jobid)
   {
   fprintf(stderr, "The call to encode_DIS_JobId needs to be mocked!!\n");
-  exit(1);
-  }
-
-char *memmgr_strdup(memmgr **mgr, char *value, int *size)
-  {
-  fprintf(stderr, "The call to memmgr_strdup needs to be mocked!!\n");
   exit(1);
   }
 
@@ -60,7 +53,7 @@ struct batch_reply *PBSD_rdrpy(int *local_errno, int c)
   exit(1);
   }
 
-int encode_DIS_QueueJob_hash(struct tcp_chan *chan, char *jobid, char *destin, memmgr **mm, job_data *job_attr, job_data *res_attr)
+int encode_DIS_QueueJob_hash(struct tcp_chan *chan, char *jobid, char *destin, job_data_container *job_attr, job_data_container *res_attr)
   {
   fprintf(stderr, "The call to encode_DIS_QueueJob_hash needs to be mocked!!\n");
   exit(1);

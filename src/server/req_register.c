@@ -253,7 +253,7 @@ int check_dependency_job(
     return(rc);
     }
 
-  job_mutex.set_lock_on_exit(false);
+  job_mutex.set_unlock_on_exit(false);
   *job_ptr = pjob;
 
   return(PBSE_NONE);
@@ -1933,7 +1933,7 @@ void set_depend_hold(
           "Clearing HOLD_s due to dependencies\n");
         }
 
-      svr_evaljobstate(pjob, &newstate, &newsubst, 0);
+      svr_evaljobstate(*pjob, newstate, newsubst, 0);
       svr_setjobstate(pjob, newstate, newsubst, FALSE);
       }
     }

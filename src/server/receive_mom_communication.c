@@ -318,7 +318,7 @@ int svr_is_request(
 
   /* Just a note to let us know we only do IPv4 for now */
   addr.sin_family = AF_INET;
-  memcpy(&addr.sin_addr, (void *)&args[1], sizeof(long));
+  memcpy(&addr.sin_addr, (void *)&args[1], sizeof(struct in_addr));
   addr.sin_port = args[2];
 
   if (version != IS_PROTOCOL_VER)
@@ -481,10 +481,9 @@ int svr_is_request(
 
       if (ret == SEND_HELLO)
         {
-        struct hello_info *hi = (struct hello_info *)calloc(1, sizeof(struct hello_info));
+        hello_info *hi = new hello_info(node_name);
         write_tcp_reply(chan, IS_PROTOCOL, IS_PROTOCOL_VER, IS_STATUS, DIS_SUCCESS);
 
-        hi->name = strdup(node_name);
         enqueue_threadpool_request(send_hierarchy_threadtask, hi);
         ret = DIS_SUCCESS;
         }

@@ -118,7 +118,6 @@
 #include "req_stat.h" /* stat_mom_job */
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
-#include "svr_task.h"
 
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
@@ -218,7 +217,7 @@ void *check_and_run_job(
 
     if (pjob == NULL)
       {
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
       req_reject(PBSE_JOBNOTFOUND, 0, preq, NULL, "Job unexpectedly deleted");
       *rc_ptr = PBSE_JOBNOTFOUND;
       return(rc_ptr);
@@ -484,7 +483,7 @@ void post_checkpointsend(
       }
 
     if (pjob == NULL)
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
     }    /* END if (pjob != NULL) */
 
   if (!preq_free_done)
@@ -729,14 +728,14 @@ void post_stagein(
         }
       else
         {
-        svr_evaljobstate(pjob, &newstate, &newsub, 0);
+        svr_evaljobstate(*pjob, newstate, newsub, 0);
 
         svr_setjobstate(pjob, newstate, newsub, FALSE);
         }
       }
 
     if (pjob == NULL)
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
     }    /* END if (pjob != NULL) */
 
   if (preq)
@@ -1018,6 +1017,7 @@ int svr_startjob(
   {
   int     f;
   int     rc;
+  long    cray_enabled = FALSE;
 
   if (FailHost != NULL)
     FailHost[0] = '\0';
@@ -1081,8 +1081,11 @@ int svr_startjob(
     return(rc);
     }
 
+  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
+
   /* copy the server nppcu value to the job */
-  if (!(pjob->ji_wattr[JOB_ATR_nppcu].at_flags & ATR_VFLAG_SET))
+  if ((cray_enabled == TRUE) &&
+      (!(pjob->ji_wattr[JOB_ATR_nppcu].at_flags & ATR_VFLAG_SET)))
     {
     long svr_nppcu_value = 0;
     char buf[128];
@@ -1530,7 +1533,7 @@ void finish_sendmom(
             req_reject(PBSE_MOMREJECT, 0, preq, node_name, "connection to mom timed out");
           }
         
-        svr_evaljobstate(pjob, &newstate, &newsub, 1);
+        svr_evaljobstate(*pjob, newstate, newsub, 1);
         svr_setjobstate(pjob, newstate, newsub, FALSE);
         }
       else
@@ -1598,7 +1601,7 @@ void finish_sendmom(
           }
         else
           {
-          svr_evaljobstate(pjob, &newstate, &newsub, 1);
+          svr_evaljobstate(*pjob, newstate, newsub, 1);
           svr_setjobstate(pjob, newstate, newsub, FALSE);
           }
         }
@@ -1705,6 +1708,7 @@ job *chk_job_torun(
     }
   else if (pjob == NULL)
     {
+    job_mutex.set_unlock_on_exit(false);
     req_reject(PBSE_JOBNOTFOUND, 0, preq, NULL, "job vanished while trying to lock queue.");
     return(NULL);
     }
@@ -1840,7 +1844,7 @@ job *chk_job_torun(
 #endif /* TDEV */
     }    /* END if (setnn == 1) */
 
-  job_mutex.set_lock_on_exit(false);
+  job_mutex.set_unlock_on_exit(false);
 
   return(pjob);
   }  /* END chk_job_torun() */

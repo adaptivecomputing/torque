@@ -213,7 +213,7 @@ int is_ok_to_run_job(int pbs_sd, server_info *sinfo, queue_info *qinfo,
  */
 int check_server_max_user_run(server_info *sinfo, char *account)
   {
-  if (sinfo -> max_user_run == INFINITY ||
+  if (sinfo -> max_user_run == INFINITY_VAL ||
       count_by_user(sinfo -> running_jobs, account) < sinfo -> max_user_run)
     return 0;
 
@@ -235,7 +235,7 @@ int check_server_max_user_run(server_info *sinfo, char *account)
  */
 int check_queue_max_user_run(queue_info *qinfo, char *account)
   {
-  if (qinfo -> max_user_run == INFINITY ||
+  if (qinfo -> max_user_run == INFINITY_VAL ||
       count_by_user(qinfo -> running_jobs, account) < qinfo -> max_user_run)
     return 0;
 
@@ -257,7 +257,7 @@ int check_queue_max_user_run(queue_info *qinfo, char *account)
  */
 int check_queue_max_group_run(queue_info *qinfo, char *group)
   {
-  if (qinfo -> max_group_run == INFINITY ||
+  if (qinfo -> max_group_run == INFINITY_VAL ||
       count_by_group(qinfo -> running_jobs, group) < qinfo -> max_group_run)
     return 0;
 
@@ -279,7 +279,7 @@ int check_queue_max_group_run(queue_info *qinfo, char *group)
  */
 int check_server_max_group_run(server_info *sinfo, char *group)
   {
-  if (sinfo -> max_group_run == INFINITY ||
+  if (sinfo -> max_group_run == INFINITY_VAL ||
       count_by_group(sinfo -> running_jobs, group) < sinfo -> max_group_run)
     return 0;
 
@@ -329,7 +329,7 @@ int check_avail_resources(resource *reslist, job_info *jinfo)
       {
       avail = dynamic_avail(res);
 
-      if (avail != INFINITY && avail < resreq -> amount)
+      if (avail != INFINITY_VAL && avail < resreq -> amount)
         {
         /* An insuffient amount of a resource has been found. */
         done = 1;
@@ -360,8 +360,8 @@ int check_avail_resources(resource *reslist, job_info *jinfo)
 
 sch_resource_t dynamic_avail(resource *res)
   {
-  if (res -> max == INFINITY && res -> avail == UNSPECIFIED)
-    return INFINITY;
+  if (res -> max == INFINITY_VAL && res -> avail == UNSPECIFIED)
+    return INFINITY_VAL;
 
   if (res -> avail == UNSPECIFIED)
     return res -> max;
@@ -647,7 +647,7 @@ int check_ded_time_queue(queue_info *qinfo)
  */
 int check_queue_max_run(queue_info *qinfo)
   {
-  if (qinfo->max_run == INFINITY)
+  if (qinfo->max_run == INFINITY_VAL)
     return 0;
   else if (qinfo -> max_run > qinfo -> sc.running)
     return 0;
@@ -669,7 +669,7 @@ int check_queue_max_run(queue_info *qinfo)
  */
 int check_server_max_run(server_info *sinfo)
   {
-  if (sinfo -> max_run == INFINITY)
+  if (sinfo -> max_run == INFINITY_VAL)
     return 0;
   else if (sinfo -> max_run > sinfo -> sc.running)
     return 0;

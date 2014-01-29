@@ -4,37 +4,12 @@
 #include <ctype.h>
 
 #include "pbs_nodes.h"
-#include "resizable_array.h"
 
 int LOGLEVEL = 5;
 
 
 int lock_node(struct pbsnode *pnode, const char *caller, const char *msg, int level) {return(0);}
 int unlock_node(struct pbsnode *pnode, const char *caller, const char *msg, int level) {return(0);}
-
-void *next_thing(
-
-  resizable_array *ra,
-  int             *iter)
-
-  {
-  void *thing;
-  int   i = *iter;
-
-  if (i == -1)
-    {
-    /* initialize first */
-    i = ra->slots[ALWAYS_EMPTY_INDEX].next;
-    }
-
-  thing = ra->slots[i].item;
-  *iter = ra->slots[i].next;
-
-  return(thing);
-  } /* END next_thing() */
-
-
-
 
 int hasprop(
 
@@ -66,188 +41,6 @@ int hasprop(
 
   return(1);
   }  /* END hasprop() */
-
-
-resizable_array *initialize_resizable_array(
-
-  int               size)
-
-  {
-  resizable_array *ra = (resizable_array *)calloc(1, sizeof(resizable_array));
-  size_t           amount = sizeof(slot) * size;
-
-  ra->max       = size;
-  ra->num       = 0;
-  ra->next_slot = 1;
-  ra->last      = 0;
-
-  ra->slots = (slot *)calloc(1, amount);
-
-  return(ra);
-  } /* END initialize_resizable_array() */
-
-
-/*
- * checks if the array needs to be resized, and resizes if necessary
- *
- * @return PBSE_NONE or ENOMEM
- */
-int check_and_resize(
-
-  resizable_array *ra)
-
-  {
-  slot        *tmp;
-  size_t       remaining;
-  size_t       size;
-
-  if (ra->max == ra->num + 1)
-    {
-    /* double the size if we're out of space */
-    size = (ra->max * 2) * sizeof(slot);
-
-    if ((tmp = (slot *)realloc(ra->slots,size)) == NULL)
-      {
-      return(ENOMEM);
-      }
-
-    remaining = ra->max * sizeof(slot);
-
-    memset(tmp + ra->max, 0, remaining);
-
-    ra->slots = tmp;
-
-    ra->max = ra->max * 2;
-    }
-
-  return(PBSE_NONE);
-  } /* END check_and_resize() */
-
-
-
-
-/* 
- * updates the next slot pointer if needed \
- */
-void update_next_slot(
-
-  resizable_array *ra) /* M */
-
-  {
-  while ((ra->next_slot < ra->max) &&
-         (ra->slots[ra->next_slot].item != NULL))
-    ra->next_slot++;
-  } /* END update_next_slot() */
-
-
-
-
-int insert_thing(
-    
-  resizable_array *ra,
-  void             *thing)
-
-  {
-  int rc;
-  
-  /* check if the array must be resized */
-  if ((rc = check_and_resize(ra)) != PBSE_NONE)
-    {
-    return(-1);
-    }
-    
-  ra->slots[ra->next_slot].item = thing;
- 
-  /* save the insertion point */
-  rc = ra->next_slot;
-
-  /* handle the backwards pointer, next pointer is left at zero */
-  ra->slots[rc].prev = ra->last;
-
-  /* make sure the empty slot points to the next occupied slot */
-  if (ra->last == ALWAYS_EMPTY_INDEX)
-    {
-    ra->slots[ALWAYS_EMPTY_INDEX].next = rc;
-    }
-
-  /* update the last index */
-  ra->slots[ra->last].next = rc;
-  ra->last = rc;
-
-  /* update the new item's next index */
-  ra->slots[rc].next = ALWAYS_EMPTY_INDEX;
-
-  /* increase the count */
-  ra->num++;
-
-  update_next_slot(ra);
-
-  return(rc);
-  } /* END insert_thing() */
-
-
-
-
-int insert_thing_before(
-
-  resizable_array *ra,
-  void            *thing,
-  int              index)
-
-  {
-  int rc;
-  int prev;
-  
-  /* check if the array must be resized */
-  if ((rc = check_and_resize(ra)) != PBSE_NONE)
-    {
-    return(-1);
-    }
-
-  /* insert this element */
-  ra->slots[ra->next_slot].item = thing;
- 
-  /* save the insertion point */
-  rc = ra->next_slot;
-
-  /* move pointers around */
-  prev = ra->slots[index].prev;
-  ra->slots[rc].next = index;
-  ra->slots[rc].prev = prev;
-  ra->slots[index].prev = rc;
-  ra->slots[prev].next = rc;
-
-  /* increase the count */
-  ra->num++;
-
-  update_next_slot(ra);
-
-  return(rc);
-  } /* END insert_thing_before() */
-
-
-
-
-void *next_thing_from_back(
-
-  resizable_array *ra,
-  int             *iter)
-
-  {
-  void *thing;
-  int   i = *iter;
-
-  if (i == -1)
-    {
-    /* initialize first */
-    i = ra->last;
-    }
-
-  thing = ra->slots[i].item;
-  *iter = ra->slots[i].prev;
-
-  return(thing);
-  } /* END next_thing_from_back() */
 
 
 int number(
@@ -389,4 +182,3 @@ int proplist(char **str, struct prop **plist, int *node_req, int *gpu_req)
   return(PBSE_NONE);
   } /* END proplist() */
 
-void free_resizable_array(resizable_array *ra) {}

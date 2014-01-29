@@ -7,7 +7,6 @@
 
 #include "pbs_error.h"
 #include "pbs_ifl.h"
-#include "u_memmgr.h"
 
 extern int calloc_fail;
 
@@ -27,119 +26,104 @@ void callocVal(char **dest, const char *src)
 START_TEST(test_hash_add_item_new_count_clear)
   {
   int rc = FALSE;
-  job_data *the_map = NULL;
+  job_data_container *the_map = new job_data_container();
   char *name;
   char *value;
-  memmgr *mm = NULL;
   initVars();
-  memmgr_init(&mm, 0);
   callocVal(&name, "pos2");
   callocVal(&value, "val2");
-  hash_add_item(&mm, &the_map, name, value, ENV_DATA, SET);
+  hash_add_item(the_map, name, value, ENV_DATA, SET);
   rc = hash_count(the_map);
   fail_unless(rc == 1, "There should be exactly one element in the map. %d found", rc);
-  rc = hash_clear(&mm, &the_map);
+  rc = hash_clear(the_map);
   fail_if(rc < 0, "There was an error clearing the hashmap");
   fail_unless(rc == 1, "The map consisted of one element, but %d elements were removed");
-  memmgr_destroy(&mm);
+  delete the_map;
   }
 END_TEST
 
 START_TEST(test_hash_add_item_null)
   {
   int rc = 0;
-  job_data *the_map = NULL;
+  job_data_container the_map;
   job_data *tmp_item = NULL;
-  memmgr *mm = NULL;
   char *name;
   initVars();
-  memmgr_init(&mm, 0);
   callocVal(&name, "pos1");
-  rc = hash_add_item(&mm, &the_map, name, NULL, ENV_DATA, SET);
+  rc = hash_add_item(&the_map, name, NULL, ENV_DATA, SET);
   fail_unless(rc == TRUE, "The result should have been 0, but was %d", rc);
-  rc = hash_count(the_map);
+  rc = hash_count(&the_map);
   fail_unless(rc == 1, "The count in the map should be 1 but is %d", rc);
 
-  hash_find(the_map, "pos1", &tmp_item); 
-  fail_if(the_map == NULL, "The item was not found in the map");
-  fail_if(the_map->value == NULL, "The item should have been assigned an empty string as the value (was null)");
-  fail_unless(strlen(the_map->value) == 0, "The item should have been assigned an empty string as the value (was %s)", the_map->value);
+  hash_find(&the_map, "pos1", &tmp_item);
+  fail_if(tmp_item == NULL, "The item was not found in the map");
+  fail_unless(tmp_item->value.length() == 0, "The item should have been assigned an empty string as the value (was %s)", tmp_item->value.c_str());
   fail_unless(tmp_item->var_type == ENV_DATA, "var_type was invalid (%d != %d)", ENV_DATA, tmp_item->var_type);
   fail_unless(tmp_item->op_type == SET, "var_type was invalid (%d != %d)", SET, tmp_item->op_type);
-  rc = hash_clear(&mm, &the_map);
-  memmgr_destroy(&mm);
+  rc = hash_clear(&the_map);
   }
 END_TEST
 
 START_TEST(test_hash_add_item_add_find_add_find_del_cnt_del_find)
   {
   int rc = FALSE;
-  job_data *the_map = NULL;
+  job_data_container the_map;
   job_data *one_item = NULL;
-  memmgr *mm = NULL;
   char *name;
   char *value;
   initVars();
-  memmgr_init(&mm, 0);
   callocVal(&name, "pos1");
   callocVal(&value, "val1");
-  rc = hash_add_item(&mm, &the_map, name, value, ENV_DATA, SET);
+  rc = hash_add_item(&the_map, name, value, ENV_DATA, SET);
   fail_unless(rc == TRUE, "The result should have been 0, but was %d", rc);
-  rc = hash_count(the_map);
+  rc = hash_count(&the_map);
   fail_unless(rc == 1, "The count in the map should be 1 but is %d", rc);
 
-  rc = hash_find(the_map, "pos3", &one_item);
+  rc = hash_find(&the_map, "pos3", &one_item);
   fail_unless(one_item == NULL, "item found for non-existant key");
 
-  rc = hash_find(the_map, "pos1", &one_item);
+  rc = hash_find(&the_map, "pos1", &one_item);
   fail_if(one_item == NULL, "Item that was expected, not found in map");
-  fail_if(one_item->name == NULL, "Item->name is NULL");
-  fail_if(one_item->value == NULL, "Item->value is NULL");
-  fail_unless(strcmp(one_item->value, "val1") == 0, "invalid value in response item (val1 != %s)", one_item->value);
+  fail_unless(strcmp(one_item->value.c_str(), "val1") == 0, "invalid value in response item (val1 != %s)", one_item->value.c_str());
 
   callocVal(&name, "pos2");
   callocVal(&value, "val2");
-  rc = hash_add_item(&mm, &the_map, name, value, ENV_DATA, SET);
+  rc = hash_add_item(&the_map, name, value, ENV_DATA, SET);
   fail_unless(rc == TRUE, "The result should have been 0 but is %d", rc);
 
-  rc = hash_count(the_map);
+  rc = hash_count(&the_map);
   fail_unless(rc == 2, "The count in the map should be 2 but is %d", rc);
 
-  rc = hash_del_item(&mm, &the_map, "pos3");
+  rc = hash_del_item(&the_map, "pos3");
   fail_unless(rc == 0, "Nonexistant item found in hashmap");
 
-  rc = hash_del_item(&mm, &the_map, "pos1");
+  rc = hash_del_item(&the_map, "pos1");
   fail_unless(rc == 1, "Item that should be in the hashmap not found to delete");
-  rc = hash_count(the_map);
+  rc = hash_count(&the_map);
   fail_unless(rc == 1, "The count in the map should be 1 but is %d", rc);
 
-  rc = hash_del_item(&mm, &the_map, "pos2");
-  fail_unless(the_map == NULL, "Deleting the last item should result in a null hash_map (but didn't)");
+  rc = hash_del_item(&the_map, "pos2");
 
-  rc = hash_clear(&mm, &the_map);
-  memmgr_destroy(&mm);
+  rc = hash_clear(&the_map);
   }
 END_TEST
 
 START_TEST(test_hash_print)
   {
   int rc = FALSE;
-  job_data *the_map = NULL;
-  memmgr *mm = NULL;
+  job_data_container the_map;
   char *name;
   char *value;
   initVars();
-  memmgr_init(&mm, 0);
   callocVal(&name, "pos1");
   callocVal(&value, "val1");
-  rc = hash_add_item(&mm, &the_map, name, value, ENV_DATA, SET);
+  rc = hash_add_item(&the_map, name, value, ENV_DATA, SET);
   callocVal(&name, "pos2");
   callocVal(&value, "val2");
-  rc = hash_add_item(&mm, &the_map, name, value, ENV_DATA, SET);
-  rc = hash_print(the_map);
+  rc = hash_add_item(&the_map, name, value, ENV_DATA, SET);
+  rc = hash_print(&the_map);
   fail_unless(rc == 2, "There should be 2 elements in the hash %d found", rc);
-  rc = hash_clear(&mm, &the_map);
-  memmgr_destroy(&mm);
+  rc = hash_clear(&the_map);
   }
 END_TEST
 /* Testing this involves forcing this to exit - causing a failure. Don't test.
@@ -159,45 +143,42 @@ END_TEST */
 START_TEST(test_hash_add_hash)
   {
   int rc = FALSE;
-  job_data *map1 = NULL;
-  job_data *map2 = NULL;
+  job_data_container map1;
+  job_data_container map2;
   job_data *tmp_item = NULL;
-  memmgr *mm = NULL;
   char *name;
   char *value;
   initVars();
-  memmgr_init(&mm, 0);
   callocVal(&name, "name1");
   callocVal(&value, "value1");
-  hash_add_item(&mm, &map1, name, value, ENV_DATA, SET);
+  hash_add_item(&map1, name, value, ENV_DATA, SET);
   callocVal(&name, "name2");
   callocVal(&value, "value2");
-  hash_add_item(&mm, &map1, name, value, ENV_DATA, SET);
+  hash_add_item(&map1, name, value, ENV_DATA, SET);
 
   callocVal(&name, "name3");
   callocVal(&value, "value3");
-  hash_add_item(&mm, &map2, name, value, ENV_DATA, SET);
+  hash_add_item(&map2, name, value, ENV_DATA, SET);
   callocVal(&name, "name4");
   callocVal(&value, "value4");
-  hash_add_item(&mm, &map2, name, value, ENV_DATA, SET);
-  rc = hash_count(map1);
+  hash_add_item(&map2, name, value, ENV_DATA, SET);
+  rc = hash_count(&map1);
   fail_unless(rc == 2, "2 values should exist in map, but only %d does", rc);
-  rc = hash_count(map2);
+  rc = hash_count(&map2);
   fail_unless(rc == 2, "2 values should exist in map, but only %d does", rc);
 
-  rc = hash_add_hash(&mm, &map1, map2, 0);
+  rc = hash_add_hash(&map1, &map2, 0);
   fail_unless(rc == 2, "2 values should have been added, but only %d was", rc);
-  hash_clear(&mm, &map2);
+  hash_clear(&map2);
   callocVal(&name, "name4");
   callocVal(&value, "value6");
-  hash_add_item(&mm, &map2, name, value, ENV_DATA, SET);
-  rc = hash_add_hash(&mm, &map1, map2, 1);
+  hash_add_item(&map2, name, value, ENV_DATA, SET);
+  rc = hash_add_hash(&map1, &map2, 1);
   fail_unless(rc == 1, "1 value should have been added/updated, %d was", rc);
-  rc = hash_count(map1);
+  rc = hash_count(&map1);
   fail_unless(rc == 4, "4 items should exist in the hash_map, %d do", rc);
-  fail_unless(hash_find(map1, "name4", &tmp_item) == TRUE, "hash item name4 not found");
-  fail_unless(strcmp(tmp_item->value, "value6") == 0, "value for name4 should have been value6, but was %s", tmp_item->value);
-  memmgr_destroy(&mm);
+  fail_unless(hash_find(&map1, "name4", &tmp_item) == TRUE, "hash item name4 not found");
+  fail_unless(strcmp(tmp_item->value.c_str(), "value6") == 0, "value for name4 should have been value6, but was %s", tmp_item->value.c_str());
   }
 END_TEST
 

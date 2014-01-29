@@ -20,12 +20,12 @@ const char *path_jobs = "";
 pthread_mutex_t *setup_save_mutex = NULL;
 int LOGLEVEL=0;
 pthread_mutex_t job_log_mutex = PTHREAD_MUTEX_INITIALIZER;
-struct all_jobs array_summary;
+all_jobs array_summary;
 const char *msg_daemonname = "unset";
 char path_checkpoint[MAXPATHLEN + 1];
 user_info_holder users;
 char *job_log_file = NULL;
-struct all_jobs newjobs;
+all_jobs newjobs;
 const char *pbs_o_host = "PBS_O_HOST";
 pthread_mutex_t *scheduler_sock_jobct_mutex;
 int queue_rank = 0;
@@ -173,7 +173,7 @@ int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mut
   exit(1);
   }
 
-int svr_enquejob(job *pjob, int has_sv_qs_mutex, int prev_index, bool reservation)
+int svr_enquejob(job *pjob, int has_sv_qs_mutex, char *prev_id, bool reservation)
   {
   fprintf(stderr, "The call to svr_enquejob needs to be mocked!!\n");
   exit(1);
@@ -208,7 +208,7 @@ struct batch_request *setup_cpyfiles(struct batch_request *preq, job *pjob, char
 char *pbs_default(void) {return NULL;}
 pbs_net_t get_connectaddr(int sock, int mutex) {return -1;}
 void set_chkpt_deflt(job *pjob, pbs_queue *pque) {}
-int attr_to_str(std::string& ds, attribute_def *attr_def,struct pbs_attribute attr,int XML) {return -1;}
+int attr_to_str(std::string& ds, attribute_def *attr_def,struct pbs_attribute attr, int XML) {return -1;}
 void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
@@ -225,7 +225,7 @@ pbs_queue *get_dfltque(void) {return NULL;}
 int log_job_record(const char *buf){return 0;}
 int comp_size(struct pbs_attribute *attr, struct pbs_attribute *with) {return 0;}
 int comp_l(struct pbs_attribute *attr, struct pbs_attribute *with) {return 0;}
-void svr_evaljobstate(job *pjob, int *newstate, int *newsub, int forceeval) {}
+void svr_evaljobstate(job &pjob, int &newstate, int &newsub, int forceeval) {}
 int encode_unkn(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm) {return 0;}
 int set_unkn(struct pbs_attribute *old, struct pbs_attribute *new_attr, enum batch_op op) {return 0;}
 int decode_time(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm) {return 0;}
@@ -244,8 +244,8 @@ int unlock_node(struct pbsnode *the_node, const char *id, const char *msg, int l
 int svr_chkque(job *pjob, pbs_queue *pque, char *hostname, int mtype, char *EMsg) {return 0;}
 int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging) {return 0;}
 int setup_array_struct(job *pjob) {return 0;}
-int remove_job(struct all_jobs *aj, job *pjob) {return 0;}
-job *next_job(struct all_jobs *aj, int *iter) {return NULL;}
+int remove_job(all_jobs *aj, job *pjob) {return 0;}
+job *next_job(all_jobs *aj, all_jobs_iterator *iter) {return NULL;}
 int  can_queue_new_job(char *user_name, job *pjob) {return 0;}
 struct work_task *set_task(enum work_type type, long event_id, void (*func)(work_task *), void *parm, int get_lock) {return NULL;}
 void reply_ack(struct batch_request *preq) {}
@@ -257,11 +257,11 @@ int array_delete(job_array *pa) {return 0;}
 int csv_length(const char *csv_str) {return 0;}
 int array_save(job_array *pa) {return 0;}
 int reply_jobid(struct batch_request *preq, char *jobid, int which) {return 0;}
-void mutex_mgr::set_lock_on_exit(bool val) {}
+void mutex_mgr::set_unlock_on_exit(bool val) {}
 int client_to_svr(pbs_net_t hostaddr, unsigned int port, int local_port, char *EMsg) {return 0;}
 int issue_signal(job **pjob_ptr, const char *signame, void (*func)(struct batch_request *), void *extra, char *extend) {return 0;}
-int get_jobs_index(struct all_jobs *aj, job *pjob) {return(0);}
-int insert_job(struct all_jobs *aj, job *pjob) {return 0;}
+int get_jobs_index(all_jobs *aj, job *pjob) {return(0);}
+int insert_job(all_jobs *aj, job *pjob) {return 0;}
 int encode_time(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm) {return 0;}
 int svr_authorize_jobreq(struct batch_request *preq, job *pjob) {return 0;}
 int decode_ll(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm) {return(0);}

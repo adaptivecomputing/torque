@@ -2,11 +2,11 @@ include $(top_srcdir)/buildutils/config.mk
 
 include_HEADERS = libcmds.h license_pbs.h pbs_constants.h pbs_cmds.h pbs_error.h \
 									pbs_error_db.h pbs_ifl.h rm.h tm.h tm_.h u_hash_map_structs.h \
-									u_memmgr.h uthash.h tcp.h rpp.h log.h
+									uthash.h tcp.h rpp.h log.h pbs_job.h
 
 noinst_HEADERS = acct.h array.h assertions.h attribute.h		\
 		 batch_request.h cmds.h credential.h csv.h dis.h	\
-		 dis_init.h pbs_job.h libpbs.h list_link.h	\
+		 dis_init.h libpbs.h list_link.h 	\
 		 mcom.h md5.h mom_func.h mom_job_cleanup.h		\
 		 net_connect.h pbs_assert.h pbs_nodes.h pbs_proto.h	\
 		 portability.h qmgr.h qmgr_node_public.h		\
@@ -16,13 +16,13 @@ noinst_HEADERS = acct.h array.h assertions.h attribute.h		\
 		 sched_cmds.h server.h server_limits.h svrfunc.h	\
 		 tracking.h work_task.h port_forwarding.h pbs_cpa.h	\
 		 pbs_cpuset.h pbs_batchreqtype_db.h utils.h u_tree.h	\
-		 threadpool.h resizable_array.h hash_table.h		\
+		 threadpool.h                            		\
 		 mom_hierarchy.h dynamic_string.h mom_server.h		\
 		 alps_constants.h alps_functions.h login_nodes.h	\
 		 track_alps_reservations.h net_cache.h user_info.h	\
-		 hash_map.h exiting_jobs.h mom_update.h dis_internal.h  \
+		 exiting_jobs.h mom_update.h dis_internal.h             \
 		 mutex_mgr.hpp mom_memory.h execution_slot_tracker.hpp  \
-		 mom_config.h node_internals.hpp numa_node.hpp
+		 mom_config.h node_internals.hpp numa_node.hpp container.hpp
 
 BUILT_SOURCES = site_job_attr_def.h site_job_attr_enum.h \
 		site_qmgr_node_print.h site_qmgr_que_print.h \

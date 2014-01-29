@@ -59,7 +59,7 @@ int svr_enquejob(job *pjob, int has_sv_qs_mutex, int prev_index, bool reservatio
   exit(1);
   }
 
-int swap_jobs(struct all_jobs *aj, job *job1, job *job2)
+int swap_jobs(all_jobs *aj, job *job1, job *job2)
   {
   fprintf(stderr, "The call to swap_jobs to be mocked!!\n");
   exit(1);

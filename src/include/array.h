@@ -12,7 +12,7 @@
 #include "pbs_error.h"
 #include "batch_request.h"
 #include "pbs_job.h"
-#include "hash_map.h"
+#include "container.hpp"
 
 #ifndef TRUE
 #define TRUE 1
@@ -147,12 +147,8 @@ struct job_array
 
 typedef struct job_array job_array;
 
-struct all_arrays
-  {
-  hash_map        *hm;
-
-  pthread_mutex_t *allarrays_mutex;
-  };
+typedef container::item_container<job_array *>                all_arrays;
+typedef container::item_container<job_array *>::item_iterator all_arrays_iterator;
 
 #define ARRAY_TAG "array"
 #define ARRAY_STRUCT_VERSION_TAG "struct_version"
@@ -211,8 +207,7 @@ int num_array_jobs(const char *);
 
 int        insert_array(job_array *);
 int        remove_array(job_array *);
-job_array *next_array(int *);
-void       initialize_all_arrays_array();
+job_array *next_array(all_arrays_iterator **);
 
 job_array *get_jobs_array(job **);
 

@@ -12,6 +12,8 @@ int set_str(struct pbs_attribute *attr, struct pbs_attribute *newAttr, enum batc
 
 int comp_str(struct pbs_attribute *attr, struct pbs_attribute *with);
 
+int comp_nodestr(struct pbs_attribute *attr, struct pbs_attribute *with);
+
 void free_str(struct pbs_attribute *attr);
 
 void replace_attr_string(struct pbs_attribute *attr, char *newval);
