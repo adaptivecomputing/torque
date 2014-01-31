@@ -238,3 +238,9 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
 void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+
+batch_request *alloc_br (int type)
+  {  
+  fprintf(stderr,"%s is not mocked.\n",__func__);
+  exit(-1);
+  }

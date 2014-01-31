@@ -133,6 +133,9 @@ void translate_range_string_to_vector(
     else
       {
       indices.push_back(prev);
+
+      if ((*ptr == ',') ||
+         (is_whitespace(*ptr)))
       ptr++;
       }
     }
