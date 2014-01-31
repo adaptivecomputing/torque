@@ -34,6 +34,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - TRQ-2377. Jobs with future start dates were being placed in queued after being 
       deleted if they were deleted before their start date and keep_completed kept them
       around long enough. Fix this.
+  c - TRQ-2347. Fix a segfault around re-sending batch requests.
 
 4.2.6
   b - TRQ-2273. Job start time is hard coded to 5 minutes. If the prolog takes longer
