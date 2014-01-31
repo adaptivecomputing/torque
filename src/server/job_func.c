@@ -1195,7 +1195,7 @@ void *job_clone_wt(
         }
 
       mutex_mgr clone_mgr(pjobclone->ji_mutex, true);
-      svr_evaljobstate(pjobclone, &newstate, &newsub, 1);
+      svr_evaljobstate(*pjobclone, newstate, newsub, 1);
 
       /* do this so that  svr_setjobstate() doesn't alter sv_jobstates,
        * these are set later in svr_enquejob() */
@@ -1317,7 +1317,7 @@ void *job_clone_wt(
         }
       
       pjob->ji_modified = TRUE;
-      svr_evaljobstate(pjob, &newstate, &newsub, 1);
+      svr_evaljobstate(*pjob, newstate, newsub, 1);
       svr_setjobstate(pjob, newstate, newsub, FALSE);
 
        /*

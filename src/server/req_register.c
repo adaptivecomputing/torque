@@ -1933,7 +1933,7 @@ void set_depend_hold(
           "Clearing HOLD_s due to dependencies\n");
         }
 
-      svr_evaljobstate(pjob, &newstate, &newsubst, 0);
+      svr_evaljobstate(*pjob, newstate, newsubst, 0);
       svr_setjobstate(pjob, newstate, newsubst, FALSE);
       }
     }

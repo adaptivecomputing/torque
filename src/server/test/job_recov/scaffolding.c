@@ -225,7 +225,7 @@ pbs_queue *get_dfltque(void) {return NULL;}
 int log_job_record(const char *buf){return 0;}
 int comp_size(struct pbs_attribute *attr, struct pbs_attribute *with) {return 0;}
 int comp_l(struct pbs_attribute *attr, struct pbs_attribute *with) {return 0;}
-void svr_evaljobstate(job *pjob, int *newstate, int *newsub, int forceeval) {}
+void svr_evaljobstate(job &pjob, int &newstate, int &newsub, int forceeval) {}
 int encode_unkn(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm) {return 0;}
 int set_unkn(struct pbs_attribute *old, struct pbs_attribute *new_attr, enum batch_op op) {return 0;}
 int decode_time(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm) {return 0;}
