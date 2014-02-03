@@ -373,6 +373,10 @@ int recov_attr(
   svrattrl *pal = NULL;
   svrattrl  tempal;
   char     *endPal;
+#ifndef PBS_MOM
+  bool      exec_host_found = false;
+  char      job_state;
+#endif
 
   /* set all privileges (read and write) for decoding resources */
   /* This is a special (kludge) flag for the recovery case, see */
@@ -502,6 +506,19 @@ int recov_attr(
         }
       }    /* END if (index < 0) */
 
+#ifndef PBS_MOM
+    if (!strcmp(pal->al_name, ATTR_exechost))
+      {
+      exec_host_found = true;
+      }
+
+    if (!strcmp(pal->al_name, ATTR_state))
+      {
+      job_state = *pal->al_value;
+      }
+#endif
+
+
     (padef + index)->at_decode(
         pattr + index,
         pal->al_name,
@@ -516,6 +533,16 @@ int recov_attr(
 
     free(pal);
     }  /* END while (1) */
+
+
+#ifndef PBS_MOM
+  if ((exec_host_found == false) && 
+      ((job_state == 'R') ||
+       (job_state == 'E')))
+    {   
+    return(-1);
+    }
+#endif
 
   return(0);
   }  /* END recov_attr() */
