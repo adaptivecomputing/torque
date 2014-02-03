@@ -57,6 +57,7 @@
 #include "utils.h"
 #include "../rm_dep.h"
 #include "pbs_nodes.h"
+#include "node_frequency.hpp"
 #ifdef PENABLE_LINUX26_CPUSETS
 #include "pbs_cpuset.h"
 #endif
@@ -137,6 +138,7 @@ static const char *ncpus    (struct rm_attribute *);
 static const char *walltime (struct rm_attribute *);
 static const char *quota    (struct rm_attribute *);
 static const char *netload  (struct rm_attribute *);
+static const char *cpuclock (struct rm_attribute *);
 #ifdef NUMA_SUPPORT
 const char *cpuact   (struct rm_attribute *);
 #endif
@@ -192,6 +194,7 @@ struct config dependent_config[] =
     { "quota",    {quota}    },
     { "netload",  {netload}  },
     { "size",     {size}     },
+    { "cpuclock", {cpuclock} },
     { NULL,       {nullproc} }
   };
 
@@ -1744,6 +1747,10 @@ int mom_set_limits(
           return(error(pname, PBSE_BADATVAL));
           }
         }
+      }
+    else if (strcmp(pname, "cpuclock") == 0)   /* Set cpu frequency */
+      {
+      //Check the value and set the clock frequency.
       }
     else if (!strcmp(pname, "size"))
       {
@@ -4336,6 +4343,24 @@ const char *size(
 
   return(NULL);
   }  /* END size() */
+
+const char *cpuclock(
+
+  struct rm_attribute *attrib)
+
+  {
+  std::string str;
+  if(nd_frequency.get_frequency_string(str))
+    {
+    strcpy(ret_string,str.c_str());
+    }
+  else
+    {
+    strcpy(ret_string,"Fixed");
+    }
+  return ret_string;
+  }  /* END cpuclock() */
+
 
 
 /*

@@ -131,7 +131,10 @@ void write_node_state(void)
   exit(1);
   }
 
-struct pbsnode *next_host(all_nodes *an, int *iter, struct pbsnode *held)
+struct pbsnode *next_host(
+  all_nodes           *an,    /* I */
+  all_nodes_iterator **iter,  /* M */
+  struct pbsnode      *held)  /* I */
   {
   fprintf(stderr, "The call to next_host to be mocked!!\n");
   exit(1);
@@ -209,7 +212,7 @@ char *pbse_to_txt(int err)
   exit(1);
   }
 
-pbs_queue *next_queue(all_queues *aq, int *iter)
+pbs_queue *next_queue(all_queues *aq, all_queues_iterator *iter)
   {
   fprintf(stderr, "The call to next_queue to be mocked!!\n");
   exit(1);

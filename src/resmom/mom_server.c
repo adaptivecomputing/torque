@@ -936,6 +936,7 @@ stat_record stats[] = {
   {"jobs",        gen_gen},
   {"jobdata",     gen_jdata},
   {"varattr",     gen_gen},
+  {"cpuclock",    gen_gen},
   {NULL,          NULL}
   };
 
