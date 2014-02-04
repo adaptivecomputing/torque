@@ -82,8 +82,7 @@
 #ifndef QUEUE_H
 #define QUEUE_H
 
-#include "resizable_array.h"
-#include "hash_table.h" /* hash_table_t */
+#include "container.hpp"
 #include "pbs_ifl.h" /* PBS_MAXQUEUENAME */
 #include "server_limits.h" /* PBS_NUMJOBSTATE */
 #include "attribute.h" /* attribute_def, pbs_attribute */
@@ -191,8 +190,8 @@ typedef struct pbs_queue
   {
   int              q_being_recycled;
 #ifndef PBS_MOM
-  struct all_jobs *qu_jobs;  /* jobs in this queue */
-  struct all_jobs *qu_jobs_array_sum; /* jobs with job arrays summarized */
+  all_jobs *qu_jobs;  /* jobs in this queue */
+  all_jobs *qu_jobs_array_sum; /* jobs with job arrays summarized */
 #else
   tlist_head       qu_jobs;  /* jobs in this queue */
   tlist_head       qu_jobs_array_sum; /* jobs with job arrays summarized */
@@ -220,25 +219,37 @@ typedef struct pbs_queue
   } pbs_queue;
 
 
-int que_save(struct pbs_queue *pque);
+int que_save(pbs_queue *pque);
 
 
-typedef struct all_queues
+typedef container::item_container<pbs_queue *>                 all_queues;
+typedef container::item_container<pbs_queue *>::item_iterator  all_queues_iterator;
+
+class queue_recycler
   {
-  resizable_array *ra;
-  hash_table_t    *ht;
-
-  pthread_mutex_t *allques_mutex;
-  } all_queues;
-
-typedef struct queue_recycler
-  {
+  public:
   unsigned int     next_id;
   pthread_mutex_t *mutex;
   all_queues       queues;
-  int              iter;
+  all_queues_iterator *iter;
   unsigned int     max_id;
-  } queue_recycler;
+  queue_recycler():next_id(0),iter(NULL),max_id(10)
+    {
+    mutex = (pthread_mutex_t *)calloc(1,sizeof(pthread_mutex_t));
+    
+    pthread_mutexattr_t t_attr;
+    pthread_mutexattr_init(&t_attr);
+    pthread_mutexattr_settype(&t_attr, PTHREAD_MUTEX_NORMAL);
+    iter = queues.get_iterator();
+    pthread_mutex_init(mutex,&t_attr);
+    }
+
+  ~queue_recycler()
+    {
+    free(mutex);
+    delete iter;
+    }
+  };
 
 
 int insert_into_queue_recycler(pbs_queue *pq);
@@ -261,9 +272,8 @@ struct job;
 pbs_queue *lock_queue_with_job_held(pbs_queue *pque, struct job **pjob_ptr);
 int lock_queue(struct pbs_queue *the_queue, const char *method_name, const char *msg, int logging);
 int unlock_queue(struct pbs_queue *the_queue, const char *method_name, const char *msg, int logging);
-pbs_queue *next_queue(all_queues *,int *);
+pbs_queue *next_queue(all_queues *,all_queues_iterator *);
 int        insert_queue(all_queues *,pbs_queue *);
 int        remove_queue(all_queues *,pbs_queue *);
-void       initialize_allques_array(all_queues *);
 
 #endif /* QUEUE_H */

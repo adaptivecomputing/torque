@@ -1,4 +1,5 @@
 #include "license_pbs.h" /* See here for the software license */
+#include <pbs_config.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <netinet/in.h> /* sockaddr_in */
@@ -13,7 +14,6 @@
 #include "list_link.h" /* tlist_head */
 #include "resource.h" /* resource_def */
 #include "u_tree.h" /* AvlTree */
-#include "resizable_array.h" /* resizable_array */
 #include "pbs_job.h" /* job */
 #include "mom_func.h" /* radix_buf */
 #include "dis.h"
@@ -46,16 +46,6 @@ time_t          LastServerUpdateTime = 0;  /* NOTE: all servers updated together
 char log_buffer[LOG_BUF_SIZE];
 int log_event_counter;
 bool ms_val = true;
-
-/*
- *  * inserts an item, resizing the array if necessary
- *   *
- *    * @return the index in the array or -1 on failure
- *     */
-int insert_thing(resizable_array *ra, void *thing) 
-  {
-  return -1;
-  }
 
 #undef disrus
 unsigned short disrus(tcp_chan *c, int *retval)
@@ -131,12 +121,6 @@ void delete_link(struct list_link *old)
   return;
   }
 
-int add_hash(hash_table_t *ht, int value, void *key)
-  {
-  fprintf(stderr, "The call to add_hash needs to be mocked!!\n");
-  return(0);
-  }
-
 char *get_job_envvar(job *pjob, const char *variable)
   {
   fprintf(stderr, "The call to get_job_envvar needs to be mocked!!\n");
@@ -210,11 +194,6 @@ int kill_task(struct task *task, int sig, int pg)
   return(0);
   }
 
-int get_value_hash(hash_table_t *ht, const void *key)
-  {
-  return -1;
-  }
-
 int DIS_tcp_wflush(struct tcp_chan * chan)
   {
   fprintf(stderr, "The call to DIS_tcp_wflush needs to be mocked!!\n");
@@ -235,8 +214,12 @@ unsigned long getsize(resource *pres)
 
 void *get_next(list_link pl, char *file, int line)
   {
-  fprintf(stderr, "This mock get_next always returns NULL!!\n");
-  return(NULL);
+  if ((pl.ll_next == NULL) ||
+      ((pl.ll_next == &pl) && (pl.ll_struct != NULL)))
+    {
+    return NULL;
+    }
+  return(pl.ll_next->ll_struct);
   }
 
 int add_host_to_sister_list(char *hostname, unsigned short port, struct radix_buf *rb)

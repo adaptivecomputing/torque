@@ -121,7 +121,6 @@
 #include "queue_recov.h" /* que_recov_xml */
 #include "utils.h"
 #include "queue_recycler.h" /* queue_recycler */
-#include "svr_task.h" /* initialize_task_recycler */
 #include "svr_func.h" /* get_svr_attr_* */
 #include "login_nodes.h"
 #include "track_alps_reservations.h"
@@ -129,13 +128,13 @@
 #include "net_cache.h"
 #include "ji_mutex.h"
 #include "user_info.h"
-#include "hash_map.h"
 #include "mutex_mgr.hpp"
 #include "../lib/Libnet/lib_net.h"
 #include "alps_constants.h"
 #include <string>
 #include <vector>
 #include <boost/ptr_container/ptr_vector.hpp>
+#include "exiting_jobs.h"
 
 
 /*#ifndef SIGKILL*/
@@ -198,37 +197,37 @@ extern char *path_checkpoint;
 extern char *path_jobinfo_log;
 
 
-extern int              queue_rank;
-extern char             server_name[];
-extern tlist_head       svr_newnodes;
-extern all_tasks        task_list_timed;
-extern all_tasks        task_list_event;
-task_recycler           tr;
-extern struct all_jobs  alljobs;
-extern struct all_jobs  array_summary;
-extern struct all_jobs  newjobs;
-all_queues              svr_queues;
-job_recycler            recycler;
-queue_recycler          q_recycler;
-hash_map               *exiting_jobs_info;
+extern int                      queue_rank;
+extern char                     server_name[];
+extern tlist_head               svr_newnodes;
+extern std::list<timed_task>   *task_list_timed;
+extern pthread_mutex_t          task_list_timed_mutex;
+task_recycler                   tr;
+extern all_jobs                alljobs;
+extern all_jobs                array_summary;
+extern all_jobs                newjobs;
+all_queues                      svr_queues;
+job_recycler                    recycler;
+queue_recycler                  q_recycler;
+container::item_container<job_exiting_retry_info *>  exiting_jobs_info;
 
-boost::ptr_vector<std::string> hierarchy_holder;
-hello_container         hellos;
-hello_container         failures;
+boost::ptr_vector<std::string>  hierarchy_holder;
+hello_container                 hellos;
+hello_container                 failures;
 
-reservation_holder      alps_reservations;
-batch_request_holder    brh;
+reservation_holder              alps_reservations;
+batch_request_holder            brh;
 
-extern pthread_mutex_t *acctfile_mutex;
-pthread_mutex_t        *scheduler_sock_jobct_mutex;
-extern int              scheduler_sock;
-extern int              scheduler_jobct;
-extern pthread_mutex_t *svr_do_schedule_mutex;
-extern pthread_mutex_t *listener_command_mutex;
-extern pthread_mutex_t *node_state_mutex;
-extern pthread_mutex_t *check_tasks_mutex;
-extern pthread_mutex_t *reroute_job_mutex;
-extern mom_hierarchy_t *mh;
+extern pthread_mutex_t         *acctfile_mutex;
+pthread_mutex_t                *scheduler_sock_jobct_mutex;
+extern int                      scheduler_sock;
+extern int                      scheduler_jobct;
+extern pthread_mutex_t         *svr_do_schedule_mutex;
+extern pthread_mutex_t         *listener_command_mutex;
+extern pthread_mutex_t         *node_state_mutex;
+extern pthread_mutex_t         *check_tasks_mutex;
+extern pthread_mutex_t         *reroute_job_mutex;
+extern mom_hierarchy_t         *mh;
 
 extern int a_opt_init;
 
@@ -394,7 +393,7 @@ void  update_default_np()
   
   {
   struct pbsnode *pnode;
-  int             iter = -1;
+  all_nodes_iterator *iter = NULL;
   long            default_np = 0;
 
   get_svr_attr_l(SRV_ATR_NPDefault, &default_np);
@@ -408,6 +407,9 @@ void  update_default_np()
       
       unlock_node(pnode, __func__, NULL, LOGLEVEL);
       }
+
+    if (iter != NULL)
+      delete iter;
     }
 
   return;
@@ -469,7 +471,7 @@ void make_default_hierarchy(boost::ptr_vector<std::string>& hierarchy)
   {
   struct pbsnode *pnode;
   std::string      level_ds = "";
-  int             iter = -1;
+  all_nodes_iterator *iter = NULL;
   char            buf[MAXLINE];
 
 
@@ -495,6 +497,9 @@ void make_default_hierarchy(boost::ptr_vector<std::string>& hierarchy)
 
     unlock_node(pnode, __func__, NULL, LOGLEVEL);
     }
+
+  if (iter != NULL)
+    delete iter;
 
   hierarchy.push_back(new std::string(level_ds.c_str()));
   hierarchy.push_back(new std::string("</sl>"));
@@ -617,24 +622,24 @@ void check_if_in_nodes_file(
 /*
  * convert_level_to_send_format()
  *
- * @pre-cond: level must be a valid resizable array of node_comm_t
+ * @pre-cond: nodes must be a valid std::vector of node_comm_t
  * @post-cond: all nodes at this level are added to send format in the format for sending
  */
 void convert_level_to_send_format(
 
-  resizable_array                *level,
+  mom_nodes                      *nodes,
   int                             level_index,
   boost::ptr_vector<std::string> &send_format)
 
   {
   node_comm_t       *nc;
   std::stringstream  level_string;
-  int                node_iter = -1;
 
   send_format.push_back(new std::string("<sl>"));
 
-  while ((nc = (node_comm_t *)next_thing(level, &node_iter)) != NULL)
+  for(mom_nodes::iterator nodes_iter = nodes->begin();nodes_iter != nodes->end();nodes_iter++)
     {
+    nc = *nodes_iter;
     unsigned short rm_port = 0;
 
     if (level_string.str().size() != 0)
@@ -658,7 +663,7 @@ void convert_level_to_send_format(
  * convert_path_to_send_format()
  * iterates over each level in the path and adds in to send format appropriately.
  *
- * @pre-cond: path must be a valid resizable array of resizable arrays.
+ * @pre-cond: levels must be a valid std::vector of std::vectors.
  * @post-cond: this path is added to send_format in the correct format.
  */
 
@@ -666,22 +671,20 @@ void convert_level_to_send_format(
  * convert_path_to_send_format()
  * iterates over each level in the path and adds in to send format appropriately.
  *
- * @pre-cond: path must be a valid resizable array of resizable arrays.
+ * @pre-cond: levels must be a valid std::vector of std::vectors.
  * @post-cond: this path is added to send_format in the correct format.
  */
 void convert_path_to_send_format(
 
-  resizable_array                *path,
+  mom_levels                     *levels,
   boost::ptr_vector<std::string> &send_format)
 
   {
-  int              levels_iter = -1;
-  resizable_array *level;
-    
+  int level_index = 0;
   send_format.push_back(new std::string("<sp>"));
   
-  while ((level = (resizable_array *)next_thing(path, &levels_iter)) != NULL)
-    convert_level_to_send_format(level, levels_iter, send_format);
+  for(mom_levels::iterator levels_iter = levels->begin();levels_iter != levels->end();levels_iter++)
+    convert_level_to_send_format(*levels_iter, level_index++, send_format);
 
   send_format.push_back(new std::string("</sp>"));
   } /* END convert_path_to_send_format() */
@@ -701,7 +704,7 @@ void add_missing_nodes(
   {
   struct pbsnode *pnode;
   bool            found_missing_node = false;
-  int             iter = -1;
+  all_nodes_iterator *iter = NULL;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
   std::string     level_string = "";
 
@@ -734,6 +737,9 @@ void add_missing_nodes(
     unlock_node(pnode, __func__, NULL, LOGLEVEL);
     }
 
+  if (iter != NULL)
+    delete iter;
+
   if (found_missing_node == true)
     {
     send_format.push_back(new std::string("</sl>"));
@@ -755,11 +761,9 @@ void convert_mom_hierarchy_to_send_format(
   boost::ptr_vector<std::string> &send_format)
 
   {
-  resizable_array *path;
-  int              paths_iter = -1;
 
-  while ((path = (resizable_array *)next_thing(mh->paths, &paths_iter)) != NULL)
-    convert_path_to_send_format(path, send_format);
+  for(mom_paths::iterator paths_iter = mh->paths->begin();paths_iter != mh->paths->end();paths_iter++)
+    convert_path_to_send_format(*paths_iter, send_format);
     
   if (send_format.size() == 0)
     {
@@ -852,7 +856,7 @@ void add_all_nodes_to_hello_container()
 
   {
   struct pbsnode *pnode;
-  int             iter = -1;
+  all_nodes_iterator *iter = NULL;
   int             level_indices[MAX_LEVEL_DEPTH];
   int             insertion_index;
   char           *node_name_dup;
@@ -875,6 +879,9 @@ void add_all_nodes_to_hello_container()
 
     unlock_node(pnode, __func__, NULL, LOGLEVEL);
     }
+
+  if (iter != NULL)
+    delete iter;
 
   return;
   } /* END add_all_nodes_to_hello_container() */
@@ -1058,6 +1065,13 @@ int setup_signal_handling()
     return(2);
     }
 
+  if (sigaction(SIGCHLD, &act, &oact) != 0)
+    {
+    log_err(errno, __func__, "sigaction for SIGCHLD");
+
+    return(2);
+    }
+
   act.sa_handler = change_log_level;
 
   if (sigaction(SIGUSR1, &act, &oact) != 0)
@@ -1230,34 +1244,18 @@ int initialize_data_structures_and_mutexes()
    * they can be called by a signal handler */
 
   initialize_recycler();
-  initialize_batch_request_holder();
 
-  initialize_all_tasks_array(&task_list_timed);
-  initialize_all_tasks_array(&task_list_event);
+  task_list_timed = new std::list<timed_task>();
+  pthread_mutex_init(&task_list_timed_mutex, NULL);
 
-  initialize_all_jobs_array(&alljobs);
-  initialize_all_jobs_array(&array_summary);
-  initialize_all_jobs_array(&newjobs);
-  initialize_hello_container(&hellos);
-  initialize_hello_container(&failures);
   initialize_task_recycler();
-  initialize_queue_recycler();
-
-  initialize_user_info_holder(&users);
 
   CLEAR_HEAD(svr_newnodes);
-
-  initialize_all_arrays_array();
-
-  initialize_allques_array(&svr_queues);
-
-  exiting_jobs_info = get_hash_map(-1);
 
   get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
   if (cray_enabled == TRUE)
     {
     initialize_login_holder();
-    initialize_alps_reservations();
     }
   
   acctfile_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
@@ -1339,15 +1337,11 @@ int setup_server_attrs(
     }
   else
     {
-    if (rc == PBSE_NONE)
-      {
-      /* path_svrdb exists */
-      rm_files(path_priv);
+    rm_files(path_priv);
 
-      pthread_mutex_unlock(server.sv_attr_mutex);
-      svr_save(&server, SVR_SAVE_FULL);
-      pthread_mutex_lock(server.sv_attr_mutex);
-      }
+    pthread_mutex_unlock(server.sv_attr_mutex);
+    svr_save(&server, SVR_SAVE_FULL);
+    pthread_mutex_lock(server.sv_attr_mutex);
     }
 
   rc = PBSE_NONE;
@@ -1396,8 +1390,6 @@ int setup_server_attrs(
 int initialize_nodes()
 
   {
-  initialize_all_nodes_array(&allnodes);
-
   if (setup_nodes() == -1)
     {
     return(-1);
@@ -1622,7 +1614,7 @@ int handle_job_recovery(
   int               job_suf_len = strlen(job_suffix);
   char              basen[MAXPATHLEN+1];
   int               Index;
-  int               iter = -1;
+  all_jobs_iterator *iter = NULL;
   time_t            time_now = time(NULL);
 
   if (chdir(path_jobs) != 0)
@@ -1835,11 +1827,13 @@ int handle_job_recovery(
   /* If queue_rank has gone negative, renumber all jobs and reset rank */
   if (queue_rank < 0)
     {
-    iter = -1;
+    alljobs.lock();
+    iter = alljobs.get_iterator();
+    alljobs.unlock();
 
     queue_rank = 0;
 
-    while ((pjob = next_job(&alljobs, &iter)) != NULL)
+    while ((pjob = next_job(&alljobs, iter)) != NULL)
       {
       pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
       
@@ -1861,7 +1855,7 @@ int cleanup_recovered_arrays()
   job_array *pa;
   job       *pjob;
   char       arrayid[PBS_MAXSVRJOBID+1];
-  int        iter = -1;
+  all_arrays_iterator   *iter = NULL;
   int        rc = PBSE_NONE;
 
   while ((pa = next_array(&iter)) != NULL)
@@ -1941,6 +1935,9 @@ int cleanup_recovered_arrays()
 
     unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
     } /* END for each array */
+
+  if (iter != NULL)
+    delete iter;
 
   return(rc);
   } /* END cleanup_recovered_arrays() */
@@ -2564,7 +2561,7 @@ int pbsd_init_reque(
     {
     /* update the state, typically to some form of QUEUED */
 
-    svr_evaljobstate(pjob, &newstate, &newsubstate, 0);
+    svr_evaljobstate(*pjob, newstate, newsubstate, 0);
 
     svr_setjobstate(pjob, newstate, newsubstate, FALSE);
     }
@@ -2575,7 +2572,7 @@ int pbsd_init_reque(
 
   sprintf(log_buf, "%s:1", __func__);
   lock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
-  if ((rc = svr_enquejob(pjob, TRUE, -1, false)) == PBSE_NONE)
+  if ((rc = svr_enquejob(pjob, TRUE, NULL, false)) == PBSE_NONE)
     {
     int len;
     snprintf(log_buf, sizeof(log_buf), msg_init_substate,

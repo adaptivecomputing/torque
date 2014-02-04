@@ -17,6 +17,7 @@
 ### END INIT INFO
 
 PBS_DAEMON=@sbindir@/pbs_server
+PBS_BIN_DIR=@bindir@
 PBS_HOME=@PBS_HOME@
 PIDFILE=$PBS_HOME/server_priv/server.lock
 export PBS_DAEMON PBS_HOME PIDFILE
@@ -45,7 +46,7 @@ case "$1" in
 		;;
 	stop)
 		echo -n "Shutting down TORQUE Server: "
-		killproc -p $PIDFILE $PBS_DAEMON
+    $PBS_BIN_DIR/qterm
 		rc_status -v
 		;;
 	status)

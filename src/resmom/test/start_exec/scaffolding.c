@@ -1,4 +1,5 @@
 #include "license_pbs.h" /* See here for the software license */
+#include <pbs_config.h>
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 #include <time.h> /* time_t */
@@ -19,6 +20,10 @@
 #include "mom_mach.h" /* startjob_rtn */
 #include "mom_func.h" /* var_table */
 #include "pbs_nodes.h"
+#ifdef PENABLE_LINUX26_CPUSETS
+#include "pbs_cpuset.h"
+#include "node_internals.hpp"
+#endif
 
 int exec_with_exec;
 int is_login_node = 0;
@@ -67,6 +72,12 @@ nodeboard node_boards[MAX_NODE_BOARDS];
 int       num_node_boards = 10;
 #endif
 
+#ifdef PENABLE_LINUX26_CPUSETS
+node_internals internal_layout;
+#endif
+
+
+
 
 int diswcs (struct tcp_chan *chan, const char *value,size_t nchars) 
   { return 0; }
@@ -76,7 +87,7 @@ int move_to_job_cpuset(pid_t, job *) { return 0; }
 int diswsi(tcp_chan *chan, int i) { return 0; }
 int encode_DIS_svrattrl(tcp_chan *chan, svrattrl *s) { return 0; }
 int im_compose(tcp_chan *chan, char *arg2, char *a3, int a4, int a5, unsigned int a6) { return 0; }
-int create_alps_reservation(char *a1, char *a2, char *a3, char *a4, char *a5, long long a6, int a7, int a8, int a9, char **a10) { return 0; }
+int create_alps_reservation(char *a1, char *a2, char *a3, char *a4, char *a5, long long a6, int a7, int a8, int a9, char **a10,const char *a11) { return 0; }
 int mom_close_poll(void)
   {
   fprintf(stderr, "The call to mom_close_poll needs to be mocked!!\n");
@@ -526,3 +537,29 @@ bool am_i_mother_superior(const job &pjob)
   {
   return(false);
   }
+
+int ctnodes(char *epec)
+  {
+  fprintf(stderr, "The call to append_link needs to be mocked!!\n");
+  exit(1);
+  }
+
+#ifdef PENABLE_LINUX26_CPUSETS
+
+node_internals::node_internals(void){}
+
+void node_internals::reserve(int, unsigned long, char const*){}
+
+long long get_memory_requested_in_kb(job&)
+  {
+  return 0;
+  }
+
+int get_cpu_count_requested_on_this_node(job&)
+  {
+  return 0;
+  }
+
+void node_internals::recover_reservation(int cpus, unsigned long memory, char const* jobid) {}
+
+#endif

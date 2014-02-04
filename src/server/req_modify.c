@@ -112,7 +112,6 @@
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
 #include "threadpool.h"
-#include "svr_task.h"
 #include "mutex_mgr.hpp"
 #include <string>
 
@@ -295,7 +294,7 @@ void mom_cleanup_checkpoint_hold(
           log_err(rc, __func__, log_buf);
           }
         else
-          job_mutex.set_lock_on_exit(false);
+          job_mutex.set_unlock_on_exit(false);
 
         free_br(preq);
 
@@ -321,7 +320,7 @@ void mom_cleanup_checkpoint_hold(
     }
 
   if (pjob == NULL)
-    job_mutex.set_lock_on_exit(false);
+    job_mutex.set_unlock_on_exit(false);
   } /* END mom_cleanup_checkpoint_hold() */
 
 
@@ -572,7 +571,7 @@ int modify_job(
   /* if job is not running, may need to change its state */
   if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
     {
-    svr_evaljobstate(pjob, &newstate, &newsubstate, 0);
+    svr_evaljobstate(*pjob, newstate, newsubstate, 0);
     svr_setjobstate(pjob, newstate, newsubstate, FALSE);
     }
   else
@@ -631,7 +630,10 @@ int modify_job(
     return(PBSE_RELAYED_TO_MOM);
     }
   else
+    {
     reply_ack(preq);
+    preq = NULL;
+    }
 
   if (copy_checkpoint_files)
     {
@@ -650,9 +652,7 @@ int modify_job(
       if (rc != PBSE_NONE)
         {
         free_br(momreq);
-    
-        req_reject(rc, 0, preq, NULL, NULL);
-
+   
         if (pjob != NULL)
           {
           snprintf(log_buf,sizeof(log_buf),
@@ -727,7 +727,7 @@ int modify_whole_array(
       if (pa == NULL)
         {
         if (pjob == NULL)
-          job_mutex.set_lock_on_exit(false);
+          job_mutex.set_unlock_on_exit(false);
 
         return(PBSE_JOB_RECYCLED);
         }
@@ -735,7 +735,7 @@ int modify_whole_array(
       if (pjob == NULL)
         {
         pa->job_ids[i] = NULL;
-        job_mutex.set_lock_on_exit(false);
+        job_mutex.set_unlock_on_exit(false);
         continue;
         }
       }
@@ -952,6 +952,7 @@ void *req_modifyjob(
   {
   job       *pjob;
   svrattrl  *plist;
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
 
   pjob = chk_job_request(preq->rq_ind.rq_modify.rq_objname, preq);
 
@@ -978,12 +979,24 @@ void *req_modifyjob(
   /* If async modify, reply now; otherwise reply is handled later */
   if (preq->rq_type == PBS_BATCH_AsyModifyJob)
     {
+    /* reply_ack will free preq. We need to copy it before we call reply_ack */
+    batch_request *new_preq;
+
+    new_preq = duplicate_request(preq, -1);
+    if (new_preq == NULL)
+      {
+      sprintf(log_buf, "failed to duplicate batch request");
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+      return(NULL);
+      }
+
+    get_batch_request_id(new_preq);
     reply_ack(preq);
 
-    preq->rq_noreply = TRUE; /* set for no more replies */
+    new_preq->rq_noreply = TRUE; /* set for no more replies */
 
-    enqueue_threadpool_request((void *(*)(void *))modify_job_work, preq);
-    }
+    enqueue_threadpool_request((void *(*)(void *))modify_job_work, new_preq);
+    } 
   else
     modify_job_work(preq);
   

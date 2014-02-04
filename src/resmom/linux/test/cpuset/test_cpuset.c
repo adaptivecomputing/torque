@@ -22,79 +22,44 @@ extern const char *mems_template_string;
 extern char *global_cpus_string;
 extern char *global_mems_string;
 
-START_TEST(get_memory_requested_and_reserved_test)
+extern int init_torque_cpuset(void);
+
+bool cpuStringFound = false;
+bool memStringFound = false;
+bool check_event = false;
+void event_data(const char *d)
   {
-  long long      mem_requested;
-  long long      mem_reserved;
-  std::set<int>  current_mem_ids;
-  job            pjob;
-  hwloc_bitmap_t job_mems = hwloc_bitmap_alloc();
-  hwloc_bitmap_set(job_mems, 0);
-
-  /* test to see if this segfaults */
-  get_memory_requested_and_reserved(&mem_requested, NULL, current_mem_ids, &pjob, job_mems);
-
-  no_memory = true;
-  get_memory_requested_and_reserved(&mem_requested, &mem_reserved, current_mem_ids, &pjob, job_mems);
-  fail_unless(mem_requested == 0);
-  fail_unless(mem_reserved == 0);
-
-  no_memory = false;
-  get_memory_requested_and_reserved(&mem_requested, &mem_reserved, current_mem_ids, &pjob, job_mems);
-  fail_unless(mem_requested > mem_reserved);
+  if(!strcmp(d,"cpus = 0-4,9")) cpuStringFound = true;
+  if(!strcmp(d,"mems = 0-2,7,12-14")) memStringFound = true;
   }
-END_TEST
 
-START_TEST(add_extra_memory_nodes_if_needed_test)
-  {
-  long long      mem_requested;
-  long long      mem_reserved;
-  std::set<int>  current_mem_ids;
-  hwloc_bitmap_t job_mems = hwloc_bitmap_alloc();
-  hwloc_bitmap_t torque_root_mems = hwloc_bitmap_alloc();
-  char           buf[1024];
-  hwloc_bitmap_set(job_mems, 0);
-  current_mem_ids.insert(0);
-  hwloc_bitmap_set(torque_root_mems, 0);
-  hwloc_bitmap_set(torque_root_mems, 1);
-  mem_requested = 16 * 1024;
-  mem_requested *= 1024;
-  mem_requested *= 1024;
-  mem_reserved = 15 * 1024;
-  mem_reserved *= 1024;
-  mem_reserved *= 1024;
-
-  add_extra_memory_nodes_if_needed(mem_requested, mem_reserved, job_mems, torque_root_mems, current_mem_ids);
-  fail_unless(hwloc_bitmap_weight(job_mems) == 2);
-  
-  hwloc_bitmap_displaylist(buf, sizeof(buf), job_mems);
-  fail_unless(strchr(buf, '0') != NULL);
-  fail_unless(strchr(buf, '1') != NULL);
-  }
-END_TEST
 
 START_TEST(init_torque_cpuset_test)
   {
-  /* force read_cpuset to return 0 */
-  read_cpuset_rc = 0;
-
-  /*
-   * The code path being tested here is for when the torque cpuset
-   * has null cpus and mems (see TRQ-1785). In this case the cpuset
-   * functionality should remove (via rmdir) and reconstruct the torque
-   * cpuset with the cpus and mems from the root cpuset.
-   */
-
+  check_event = true;
+  system("mkdir ./dev");
+  system("mkdir ./dev/cpuset");
+  system("mkdir ./dev/cpuset/torque");
+  system("mkdir ./dev/cpuset/torque/dev");
+  system("mkdir ./dev/cpuset/torque/dev/cpuset");
+  system("mkdir ./dev/cpuset/torque/dev/cpuset/torque");
+  system("cp cpus ./dev/cpuset/torque/dev/cpuset/torque/");
+  system("cp mems ./dev/cpuset/torque/dev/cpuset/torque/");
   fail_unless(init_torque_cpuset() == 0);
+  fail_unless(cpuStringFound);
+  fail_unless(memStringFound);
+  system("rm -rf ./dev");
+  check_event = false;
   }
 END_TEST
+
+
+
 
 Suite *cpuset_suite(void)
   {
   Suite *s = suite_create("cpuset_suite methods");
   TCase *tc_core = tcase_create("memory_tests");
-  tcase_add_test(tc_core, get_memory_requested_and_reserved_test);
-  tcase_add_test(tc_core, add_extra_memory_nodes_if_needed_test);
   tcase_add_test(tc_core, init_torque_cpuset_test);
   suite_add_tcase(s, tc_core);
 

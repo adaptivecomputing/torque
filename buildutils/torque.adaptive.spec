@@ -366,7 +366,8 @@
     for i in `%{__grep} -H -r -l -I %{?4} "%{2}" "%{1}"`; \
     do \
        %{__sed} -i "s|%{2}|%{3}|g" $i; \
-    done
+    done; 
+
 # These allow the automatic back up to take place.
 
 %define pre_clear_back_up() \
@@ -524,6 +525,7 @@ CXXFLAGS="-g3 -O0"
             --disable-gcc-warnings \
             --disable-qsub-keep-override \
             --with-debug \
+            --without-tcl \
             %{ac_with_scp} %{ac_with_syslog} \
             %{ac_with_munge} %{ac_with_pam} \
             %{ac_with_blcr} %{ac_with_cpuset} %{ac_with_spool} %{?acflags}
@@ -594,9 +596,11 @@ touch %{buildroot}%{torque_sysconfdir}/server_priv/mom_hierarchy
 %{__install} -d %{buildroot}/etc/ld.so.conf.d
 echo '%{_libdir}' > %{buildroot}/etc/ld.so.conf.d/torque.conf
 
-%grep_safety_net "%{buildroot}" "%{buildroot}" ""
-%grep_safety_net "%{buildroot}" "${HOSTNAME}" "__AC_HOSTNAME_NOT_SET__"
-%grep_safety_net "%{buildroot}" "localhost" "__AC_HOSTNAME_NOT_SET__"
+%grep_safety_net %{buildroot} %{buildroot} %{nil}
+
+%grep_safety_net %{buildroot} ${HOSTNAME} __AC_HOSTNAME_NOT_SET__
+
+%grep_safety_net %{buildroot} localhost __AC_HOSTNAME_NOT_SET__
 
 %pre %{common_sub}
 TIMESTAMP="`date +%%Y.%%m.%%d_%%H.%%M.%%S`"
@@ -688,9 +692,10 @@ TIMESTAMP="`date +%%Y.%%m.%%d_%%H.%%M.%%S`"
 %{pre_zip_back_up %{server_sub}-${TIMESTAMP}}
 
 %post %{server_sub}
-%grep_safety_net "%{torque_home}" "__AC_HOSTNAME_NOT_SET__" "${HOSTNAME}"
+%grep_safety_net %{torque_home} __AC_HOSTNAME_NOT_SET__ ${HOSTNAME}
+
 # This is used in the server_priv/nodes file.
-%grep_safety_net "%{torque_home}" "__AC_PROCS_NOT_SET__" "${NUM_PROCS}"
+%grep_safety_net %{torque_home} __AC_PROCS_NOT_SET__ ${NUM_PROCS}
 
 if [ $1 -eq 1 ]
 then
@@ -820,7 +825,7 @@ TIMESTAMP="`date +%%Y.%%m.%%d_%%H.%%M.%%S`"
 %post %{mom_sub}
 echo "  Executing the '%{mom_pkg}' post-install script..."
 
-%grep_safety_net "%{torque_home}" "__AC_HOSTNAME_NOT_SET__" "${HOSTNAME}"
+%grep_safety_net %{torque_home} __AC_HOSTNAME_NOT_SET__ ${HOSTNAME}
 
 if [ $1 -eq 1 ]
 then

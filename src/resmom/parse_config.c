@@ -197,6 +197,7 @@ extern int          mom_server_count;
 extern tlist_head   svr_alljobs; /* all jobs under MOM's control */
 extern time_t       time_now;
 extern int          internal_state;
+extern int          MOMJobDirStickySet;
 #ifdef NUMA_SUPPORT
 extern int            numa_index;
 #endif
@@ -363,6 +364,7 @@ struct specials special[] = {
   { "max_join_job_wait_time", setmaxjoinjobwaittime},
   { "resend_join_job_wait_time", setresendjoinjobwaittime},
   { "mom_hierarchy_retry_time",  setmomhierarchyretrytime},
+  { "jobdirectory_sticky", setjobdirectorysticky},
   { NULL,                  NULL }
   };
 
@@ -1305,6 +1307,24 @@ unsigned long setremchkptdirlist(
 
 
 
+u_long setjobdirectorysticky(
+
+  const char *value)  /* I */
+
+  {
+  int enable;
+
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
+
+  if ((enable = setbool(value)) != -1)
+    MOMJobDirStickySet = enable;
+
+  return(1);
+  }  /* END setjobdirectorysticky() */
+
+
+
+
 u_long addclient(
 
   const char *name)  /* I */
@@ -1448,6 +1468,9 @@ u_long settmpdir(
   const char *Value)
 
   {
+  struct stat tmpdir_stat;
+  int rc;
+  
   log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, Value);
 
   if (*Value != '/')
@@ -1458,6 +1481,25 @@ u_long settmpdir(
     }
 
   snprintf(tmpdir_basename, sizeof(tmpdir_basename), "%s", Value);
+
+  /* Make sure the tmpdir exists */
+  rc = stat(tmpdir_basename, &tmpdir_stat);
+  if (rc < 0)
+    {
+    if ((errno == ENOENT) || (errno == ENOTDIR))
+      {
+      sprintf(log_buffer,  "$tmpdir option is set to %s in mom_priv/config file. This directory does not exist. \nPlease correct this problem and try starting pbs_mom again.", tmpdir_basename);
+      log_err(rc, __func__, log_buffer);
+      }
+    else
+      {
+      sprintf(log_buffer, "Failed to stat %s. %s\npbs_mom did not start.", tmpdir_basename, strerror(errno));
+      log_err(rc, __func__, log_buffer);
+      }
+
+    exit(rc);
+    }
+
 
   return(1);
   } /* END settmpdir() */
@@ -2255,11 +2297,6 @@ int read_config(
     {
     IgnConfig = 1;
 
-    sprintf(log_buffer, "fstat: %s",
-            file);
-
-    log_err(errno, __func__, log_buffer);
-
     if (config_file_specified != 0)
       {
       /* file specified and not there, return failure */
@@ -2275,11 +2312,9 @@ int read_config(
     else
       {
       /* "config" file not located, return success */
-
       if (LOGLEVEL >= 3)
         {
-        sprintf(log_buffer, "cannot open file '%s'",
-                file);
+        sprintf(log_buffer, "cannot open file '%s'", file);
 
         log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
         }

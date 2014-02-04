@@ -1,12 +1,16 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h>
+#include <netdb.h>
+#include <sys/socket.h>
 
 #include "dis.h"
 #include "tcp.h"
 
 int pbs_errno;
 const char *dis_emsg[10];
+
+#if 0
 
 int DIS_tcp_wflush(tcp_chan *chan)
   {
@@ -53,12 +57,30 @@ tcp_chan *DIS_tcp_setup(int sock)
 
 void DIS_tcp_cleanup(tcp_chan *chan) {}
 
+#endif
+
 extern "C"
 {
 unsigned int get_svrport(const char *service_name, const char *ptype, unsigned int pdefault)
   {
   fprintf(stderr, "The call to get_svrport needs to be mocked!!\n");
   exit(1);
+  }
+
+int socket(int ns,int style,int protocol) throw()
+  {
+  static int fd = 32;
+  return fd++;
+  }
+
+int bindresvport(int stream,struct sockaddr_in *addr) throw()
+  {
+  return 0;
+  }
+
+int connect(int sock,const sockaddr *addr,socklen_t addrLen)
+  {
+  return 0;
   }
 
 int get_max_num_descriptors()
@@ -82,5 +104,7 @@ char *pbs_strerror(int err)
 
 int pbs_getaddrinfo(const char *pNode,struct addrinfo *pHints,struct addrinfo **ppAddrInfoOut)
   {
+  *ppAddrInfoOut = (struct addrinfo *)calloc(1,sizeof(struct addrinfo));
+  (*ppAddrInfoOut)->ai_addr = (struct sockaddr *)calloc(1,sizeof(struct sockaddr_in));
   return(0);
   }

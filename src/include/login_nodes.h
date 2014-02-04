@@ -78,25 +78,30 @@
 */
 
 #include <pthread.h>
-#include "resizable_array.h"
+#include <boost/ptr_container/ptr_vector.hpp>
 #include "pbs_nodes.h"
 
 
 #define LOGIN_INITIAL_SIZE 20
 
 
-typedef struct login_node
+class login_node
   {
-  struct pbsnode *pnode;
+  public:
+
   unsigned int    times_used;
-  } login_node;
+  struct pbsnode *pnode;
+
+  login_node(struct pbsnode *pNode):times_used(0),pnode(pNode){}
+  login_node(struct pbsnode *pNode,unsigned int used):times_used(used),pnode(pNode){}
+  };
 
 
 typedef struct login_holder
   {
   unsigned int     next_node;
   unsigned int     iterate_backwards;
-  resizable_array *ra;
+  boost::ptr_vector<login_node> nodes;
   pthread_mutex_t *ln_mutex;
   } login_holder;
 

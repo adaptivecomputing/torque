@@ -5,12 +5,10 @@
 #include <netinet/in.h>
 
 
-#include "resizable_array.h" /* resizable_array */
 #include "pbs_nodes.h" /* all_nodes, pbsnode */
 #include "attribute.h" /* attribute_def, pbs_attribute, svrattrl */
 #include "server.h" /* server */
 #include "u_tree.h" /* AvlTree */
-#include "hash_table.h" /* hash_table_t */
 #include "list_link.h" /* list_link */
 #include "work_task.h" /* work_task, work_type */
 #include "tcp.h"
@@ -53,30 +51,15 @@ boost::ptr_vector<std::string> hierarchy_holder;
 extern int cray_enabled;
 
 
-int insert_thing(resizable_array *ra, void *thing)
-  {
-  return(0);
-  }
-
 svrattrl *attrlist_create(const char *aname, const char *rname, int vsize)
   {
   return(NULL);
-  }
-
-int remove_thing(resizable_array *ra, void *thing)
-  {
-  return(0);
   }
 
 AvlTree AVL_delete_node(u_long key, uint16_t port, AvlTree tree)
   {
   fprintf(stderr, "The call to AVL_delete_node needs to be mocked!!\n");
   exit(1);
-  }
-
-int add_hash(hash_table_t *ht, int value, void *key)
-  {
-  return(0);
   }
 
 struct work_task *set_task(enum work_type type, long event_id, void (*func)(work_task *), void *parm, int get_lock)
@@ -105,39 +88,9 @@ void free_prop_list(struct prop *prop)
     }
   }
 
-int get_value_hash(hash_table_t *ht, const void *key)
-  {
-  char *str = (char *)key;
-
-  if (str == NULL)
-    return(-1);
-  else if (!strcmp(str, "bob"))
-    return(1);
-  else if (!strcmp(str, "tom"))
-    return(2);
-  else
-    return(-1);
-  }
-
 void *get_next(list_link pl, char *file, int line)
   {
   return(NULL);
-  }
-
-resizable_array *initialize_resizable_array(int size)
-  {
-  resizable_array *ra = (resizable_array *)calloc(1, sizeof(resizable_array));
-  size_t           amount = sizeof(slot) * size;
-  size = 10;
-
-  ra->max       = size;
-  ra->num       = 0;
-  ra->next_slot = 1;
-  ra->last      = 0;
-
-  ra->slots = (slot *)calloc(1, amount);
-
-  return(ra);
   }
 
 struct pbsnode *AVL_find(u_long key, uint16_t port, AvlTree tree)
@@ -161,27 +114,10 @@ void free_attrlist(tlist_head *pattrlisthead)
   exit(1);
   }
 
-void *next_thing(resizable_array *ra, int *iter)
-  {
-  return(NULL);
-  }
-
 void append_link(tlist_head *head, list_link *new_link, void *pobj)
   {
   fprintf(stderr, "The call to append_link needs to be mocked!!\n");
   exit(1);
-  }
-
-hash_table_t *create_hash(int size)
-  {
-  hash_table_t *ht = (hash_table_t *)calloc(1, sizeof(hash_table_t));
-  size_t        amount = sizeof(bucket *) * size;
-
-  ht->size = size;
-  ht->num  = 0;
-  ht->buckets = (bucket **)calloc(1, amount);
-
-  return(ht);
   }
 
 char *pbs_strerror(int err)
@@ -204,19 +140,6 @@ int lock_node(struct pbsnode *the_node, const char *id, const char *msg, int log
   { 
   return(0); 
   }                           
-
-void *pop_thing(resizable_array *ra)
-
-  {
-  return(NULL);
-  }
-
-int is_present(resizable_array *ra, void *thing)
-  {
-  fprintf(stderr, "The call to is_present needs to be mocked!!\n");
-  exit(1);                    
-  }
-
 
 struct tcp_chan* DIS_tcp_setup(int sock)
   {
@@ -268,16 +191,6 @@ void close_conn(int sd, int has_mutex)
   }
 
 int get_svr_attr_str(int index, char **str)
-  {
-  return(0);
-  }
-
-int remove_thing_from_index(resizable_array *ra, int index)
-  {
-  return(0);
-  }
-
-int insert_thing_after(resizable_array *ra, void *thing, int index)
   {
   return(0);
   }

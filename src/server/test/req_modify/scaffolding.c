@@ -96,11 +96,7 @@ void req_reject(int code, int aux, struct batch_request *preq, const char *HostN
   exit(1);
   }
 
-char *prefix_std_file(job *pjob, dynamic_string *ds, int key)
-  {
-  fprintf(stderr, "The call to prefix_std_file to be mocked!!\n");
-  exit(1);
-  }
+const char *prefix_std_file(job *pjob, std::string& ds, int key) {return "prefix";}
 
 int attr_atomic_set(struct svrattrl *plist, pbs_attribute *old, pbs_attribute *new_attr, attribute_def *pdef, int limit, int unkn, int privil, int *badattr)
   {
@@ -192,11 +188,7 @@ void replace_attr_string(struct pbs_attribute *attr, char *newval)
   exit(1);
   }
 
-char *add_std_filename(job *pjob, char * path, int key, dynamic_string *ds)
-  {
-  fprintf(stderr, "The call to add_std_filename to be mocked!!\n");
-  exit(1);
-  }
+const char *add_std_filename(job *pjob, char *path, int key, std::string& ds) { return "stdfilename"; }
 
 int unlock_queue(struct pbs_queue *the_queue, const char *method_name, const char *msg, int logging)
   {
@@ -204,7 +196,7 @@ int unlock_queue(struct pbs_queue *the_queue, const char *method_name, const cha
   exit(1);
   }
 
-void svr_evaljobstate(job *pjob, int *newstate, int *newsub, int forceeval)
+void svr_evaljobstate(job &pjob, int &newstate, int &newsub, int forceeval)
   {
   fprintf(stderr, "The call to svr_evaljobstate to be mocked!!\n");
   exit(1);

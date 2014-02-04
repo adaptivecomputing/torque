@@ -100,7 +100,7 @@ START_TEST(test_socket_connect_unix)
 
   connect_success = false;
   rc = socket_connect_unix(sock, unix_sockname, &err_msg);
-  fail_unless(rc == PBSE_SOCKET_FAULT, "socket_connect_unix failed", rc);
+  fail_unless(rc == PBSE_DOMAIN_SOCKET_FAULT, "socket_connect_unix failed", rc);
 
   }
 END_TEST

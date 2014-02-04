@@ -1,6 +1,6 @@
-#include "test_catch_child.h"
 #include "catch_child.h"
 #include <stdlib.h>
+#include "test_catch_child.h"
 
 /* possible values for recover:
  * JOB_RECOV_RUNNING

@@ -1,6 +1,6 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "test_job_func.h"
 #include "job_func.h"
+#include "test_job_func.h"
 #include "server.h" /* server, NO_BUFFER_SPACE */
 #include <errno.h> /* ENOMEM */
 

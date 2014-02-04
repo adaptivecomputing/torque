@@ -381,3 +381,8 @@ bool am_i_mother_superior(const job &pjob)
   {
   return(false);
   }
+
+int put_env_var(const char *name, const char *value)
+  {
+  return(0);
+  }

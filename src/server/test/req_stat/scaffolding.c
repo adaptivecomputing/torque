@@ -19,11 +19,11 @@ all_nodes allnodes;
 pthread_mutex_t *netrates_mutex = NULL;
 all_queues svr_queues;
 char server_name[PBS_MAXSERVERNAME + 1];
-struct all_jobs alljobs;
+all_jobs alljobs;
 attribute_def que_attr_def[10];
 attribute_def node_attr_def[2];
 struct server server;
-struct all_jobs array_summary;
+all_jobs array_summary;
 attribute_def svr_attr_def[10];
 int svr_totnodes = 0;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
@@ -136,7 +136,7 @@ void req_reject(int code, int aux, struct batch_request *preq, const char *HostN
   exit(1);
   }
 
-job *next_job(struct all_jobs *aj, int *iter)
+job *next_job(all_jobs *aj, all_jobs_iterator *iter)
   {
   fprintf(stderr, "The call to next_job to be mocked!!\n");
   exit(1);

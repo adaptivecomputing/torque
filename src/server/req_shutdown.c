@@ -137,7 +137,7 @@ extern int   lockfds;
 extern struct server server;
 extern attribute_def svr_attr_def[];
 extern int    LOGLEVEL;
-extern struct all_jobs alljobs;
+extern all_jobs alljobs;
 
 
 
@@ -149,9 +149,13 @@ void save_queues()
 
   {
   struct pbs_queue *pque;
-  int               iter = -1;
+  all_queues_iterator *iter = NULL;
 
-  while ((pque = next_queue(&svr_queues, &iter)) != NULL)
+  svr_queues.lock();
+  iter = svr_queues.get_iterator();
+  svr_queues.unlock();
+
+  while ((pque = next_queue(&svr_queues, iter)) != NULL)
     {
     que_save(pque);
     unlock_queue(pque, __func__, NULL, LOGLEVEL);
@@ -173,7 +177,7 @@ void svr_shutdown(
   pbs_attribute *pattr;
   job           *pjob;
   long           state = SV_STATE_DOWN;
-  int            iter;
+  all_jobs_iterator *iter = NULL;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
 
   close(lockfds);
@@ -247,9 +251,11 @@ void svr_shutdown(
 
   svr_save(&server, SVR_SAVE_QUICK);
 
-  iter = -1;
+  alljobs.lock();
+  iter = alljobs.get_iterator();
+  alljobs.unlock();
 
-  while ((pjob = next_job(&alljobs,&iter)) != NULL)
+  while ((pjob = next_job(&alljobs,iter)) != NULL)
     {
     mutex_mgr job_mutex(pjob->ji_mutex, true);
 
@@ -269,7 +275,7 @@ void svr_shutdown(
         if (shutdown_checkpoint(&pjob) == 0)
           {
           if (pjob == NULL)
-            job_mutex.set_lock_on_exit(false);
+            job_mutex.set_unlock_on_exit(false);
 
           continue;
           }
@@ -282,7 +288,7 @@ void svr_shutdown(
       }
 
     if (pjob != NULL)
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
     }
 
   return;
@@ -488,7 +494,7 @@ void post_checkpoint(
         rerun_or_kill(&pjob, msg_on_shutdown);
 
         if (pjob == NULL)
-          job_mutex.set_lock_on_exit(false);
+          job_mutex.set_unlock_on_exit(false);
         }
       }
     }

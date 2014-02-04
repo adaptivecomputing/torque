@@ -69,8 +69,8 @@ extern void post_modify_arrayreq(batch_request *preq);
 /* list of job arrays */
 extern struct server   server;
 
-struct all_jobs          array_summary;
-static struct all_arrays allarrays;
+all_jobs          array_summary;
+static all_arrays allarrays;
 
 extern char *path_arrays;
 extern char *path_jobs;
@@ -85,7 +85,6 @@ int         array_request_token_count(const char *);
 int         array_request_parse_token(char *, int *, int *);
 int         parse_array_request(char *request, tlist_head *tl);
 job_array  *next_array_check(int *, job_array *);
-job_array  *get_array_from_hash(hash_map *hm, const char *id);
 
 #define     BUFSIZE 256
 
@@ -156,12 +155,12 @@ int is_array(
     return (FALSE);
     }
 
-  pthread_mutex_lock(allarrays.allarrays_mutex);
+  allarrays.lock();
 
-  if (get_array_from_hash(allarrays.hm, jobid) != NULL)
+  if (allarrays.find(jobid) != NULL)
     rc = TRUE;
 
-  pthread_mutex_unlock(allarrays.allarrays_mutex);
+  allarrays.unlock();
 
   return(rc);
   } /* END is_array() */
@@ -181,14 +180,14 @@ job_array *get_array(
 
   tmpjobid = get_correct_jobname(id);
 
-  pthread_mutex_lock(allarrays.allarrays_mutex);
+  allarrays.lock();
 
-  pa = (job_array *)get_from_hash_map(allarrays.hm, tmpjobid);
+  pa = allarrays.find(tmpjobid);
 
   if (pa != NULL)
     lock_ai_mutex(pa, __func__, NULL, LOGLEVEL);
 
-  pthread_mutex_unlock(allarrays.allarrays_mutex);
+  allarrays.unlock();
 
   if (tmpjobid != NULL)
     free(tmpjobid);
@@ -1233,7 +1232,8 @@ int setup_array_struct(
     
     array_delete(pa);
 
-    pa_mutex.set_lock_on_exit(false);
+    /* array_delete will delete pa and its mutex. Do not try to unlock */
+    pa_mutex.set_unlock_on_exit(false);
 
     return(INVALID_SLOT_LIMIT);
     }
@@ -1269,7 +1269,8 @@ int setup_array_struct(
     if (max_array_size < pa->ai_qs.num_jobs)
       {
       array_delete(pa);
-      pa_mutex.set_lock_on_exit(false);
+      /* array delete deletes pa and its mutex */
+      pa_mutex.set_unlock_on_exit(false);
 
       return(ARRAY_TOO_LARGE);
       }
@@ -1295,7 +1296,7 @@ int setup_array_struct(
   if (bad_token_count > 0)
     {
     array_delete(pa);
-    pa_mutex.set_lock_on_exit(false);
+    pa_mutex.set_unlock_on_exit(false);
     return 2;
     }
 
@@ -1657,7 +1658,7 @@ int delete_array_range(
         pthread_mutex_unlock(pa->ai_mutex);
         deleted = attempt_delete(pjob);
         /* we come out of attempt_delete unlocked */
-        pjob_mutex.set_lock_on_exit(false);
+        pjob_mutex.set_unlock_on_exit(false);
 
 
         if (deleted == FALSE)
@@ -1761,7 +1762,8 @@ int delete_whole_array(
 
       pthread_mutex_unlock(pa->ai_mutex);
       deleted = attempt_delete(pjob);
-      pjob_mutex.set_lock_on_exit(false);
+      /* we come out of attempt_delete unlocked */
+      pjob_mutex.set_unlock_on_exit(false);
 
       if (deleted == FALSE)
         {
@@ -1997,13 +1999,13 @@ int modify_array_range(
               {
               array_gone = TRUE;
               if (pjob == NULL)
-                pjob_mutex.set_lock_on_exit(false);
+                pjob_mutex.set_unlock_on_exit(false);
               break;
               }
             
             if (pjob == NULL)
               {
-              pjob_mutex.set_lock_on_exit(false);
+              pjob_mutex.set_unlock_on_exit(false);
               pa->job_ids[i] = NULL;
               }
             }
@@ -2123,7 +2125,7 @@ void update_array_values(
                   pj->ji_wattr[JOB_ATR_hold].at_flags &= ~ATR_VFLAG_SET;
                   }
                 
-                svr_evaljobstate(pj, &newstate, &newsub, 1);
+                svr_evaljobstate(*pj, newstate, newsub, 1);
                 svr_setjobstate(pj, newstate, newsub, FALSE);
                 job_save(pj, SAVEJOB_FULL, 0);
                 
@@ -2162,7 +2164,7 @@ void update_array_statuses()
   {
   job_array      *pa;
   job            *pjob;
-  int             iter = -1;
+  all_arrays_iterator *iter = NULL;
   unsigned int    running;
   unsigned int    queued;
   unsigned int    complete;
@@ -2204,6 +2206,8 @@ void update_array_statuses()
       }
     } /* END for each array */
 
+  if (iter != NULL)
+    delete iter;
   } /* END update_array_statuses() */
 
 
@@ -2266,24 +2270,6 @@ int num_array_jobs(
   } /* END num_array_jobs */
 
 
-
-
-/*
- * initializes the array to store all job_array pointers 
- */
-void initialize_all_arrays_array()
-
-  {
-  allarrays.hm = get_hash_map(INITIAL_HASH_MAP_SIZE);
-
-  allarrays.allarrays_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(allarrays.allarrays_mutex,NULL);
-  } /* END initialize_all_arrays_array() */
-
-
-
-
-
 /* 
  * insert pa into the global array 
  */
@@ -2292,16 +2278,17 @@ int insert_array(
   job_array *pa)
 
   {
-  int           rc;
+  int rc = PBSE_NONE;
 
-  pthread_mutex_lock(allarrays.allarrays_mutex);
+  allarrays.lock();
 
-  if ((rc = add_to_hash_map(allarrays.hm, pa, pa->ai_qs.parent_id)) == ENOMEM)
+  if (!allarrays.insert(pa, pa->ai_qs.parent_id))
     {
+    rc = ENOMEM;
     log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE\n");
     }
 
-  pthread_mutex_unlock(allarrays.allarrays_mutex);
+  allarrays.unlock();
 
   return(rc);
   } /* END insert_array() */
@@ -2315,17 +2302,17 @@ int remove_array(
   job_array *pa)
 
   {
-  int  rc;
+  int  rc = PBSE_NONE;
   char arrayid[PBS_MAXSVRJOBID+1];
 
-  if (pthread_mutex_trylock(allarrays.allarrays_mutex))
+  if (allarrays.trylock())
     {
     strcpy(arrayid, pa->ai_qs.parent_id);
 
     unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
-    pthread_mutex_lock(allarrays.allarrays_mutex);
+    allarrays.lock();
 
-    pa = get_array_from_hash(allarrays.hm, arrayid);
+    pa = allarrays.find(arrayid);
 
     if (pa != NULL)
       lock_ai_mutex(pa, __func__, "2", LOGLEVEL);
@@ -2334,9 +2321,10 @@ int remove_array(
   if (pa == NULL)
     rc = PBSE_NONE;
   else
-    rc = remove_from_hash_map(allarrays.hm, pa->ai_qs.parent_id);
+    if(!allarrays.remove(pa->ai_qs.parent_id))
+      rc = THING_NOT_FOUND;
 
-  pthread_mutex_unlock(allarrays.allarrays_mutex);
+  allarrays.unlock();
 
   return(rc);
   } /* END remove_array() */
@@ -2347,19 +2335,24 @@ int remove_array(
 
 job_array *next_array(
 
-  int *iter)
+    all_arrays_iterator **iter)
 
   {
   job_array *pa = NULL;
 
-  pthread_mutex_lock(allarrays.allarrays_mutex);
+  allarrays.lock();
 
-  pa = (job_array *)next_from_hash_map(allarrays.hm, iter);
+  if(*iter == NULL)
+    {
+    *iter = allarrays.get_iterator();
+    }
+
+  pa = (*iter)->get_next_item();
   
   if (pa != NULL)
     lock_ai_mutex(pa, __func__, NULL, LOGLEVEL);
 
-  pthread_mutex_unlock(allarrays.allarrays_mutex);
+  allarrays.unlock();
 
   return(pa);
   } /* END next_array() */
@@ -2369,45 +2362,28 @@ job_array *next_array(
 
 job_array *next_array_check(
 
-  int       *iter,
+  all_arrays_iterator **iter,
   job_array *owned)
 
   {
   job_array *pa = NULL;
 
-  pthread_mutex_lock(allarrays.allarrays_mutex);
-  pa = (job_array *)next_from_hash_map(allarrays.hm, iter);
+  allarrays.lock();
+  if(*iter == NULL)
+    {
+    *iter = allarrays.get_iterator();
+    }
+
+  pa = (*iter)->get_next_item();
 
   if ((pa != NULL) &&
       (pa != owned))
     lock_ai_mutex(pa, __func__, NULL, LOGLEVEL);
   
-  pthread_mutex_unlock(allarrays.allarrays_mutex);
+  allarrays.unlock();
 
   return(pa);
   } /* END next_array_check() */
-
-
-/* Search for the job array with and without the .<server> extension */
-job_array  *get_array_from_hash(hash_map *hm, const char *id)
-  {
-  char       jobid[PBS_MAXSVRJOBID];
-  char      *dot;
-  job_array  *pJa = NULL;
-
-  strcpy(jobid,id);
-  dot = strchr(jobid,'.');
-  pJa = (job_array *)get_from_hash_map(hm,jobid);
-  if(pJa != NULL) return pJa;
-  if(dot != NULL)
-    {
-    *dot = '\0';
-    pJa = (job_array *)get_from_hash_map(hm,jobid);
-    }
-  return pJa;
-  }
-
-
 
 /* END array_func.c */
 

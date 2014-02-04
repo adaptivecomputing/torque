@@ -101,12 +101,9 @@
 #include "pbs_ifl.h"
 #include "pbs_cmds.h"
 #include "u_hash_map_structs.h"
-#include "u_memmgr.h"
 
 int add_verify_resources(
-
-  memmgr        **mm,       /* M */
-  job_data      **res_attr, /* M */
+  job_data_container *res_attr, /* M */
   char           *resources, /* I */
   int             p_type)    /* I */
 
@@ -241,18 +238,18 @@ int add_verify_resources(
       /* + 6 = 1 for null terminator and 5 for 'gpus:' */
       vlen = (e - v) + 6; 
 
-      name = (char *)memmgr_calloc(mm, 1, len);
+      name = (char *)calloc(1, len);
       if (v)
-        value = (char *)memmgr_calloc(mm, 1, vlen);
+        value = (char *)calloc(1, vlen);
       }
     else
       {
       len++;
       vlen = (e - v) + 1;
 
-      name = (char *)memmgr_calloc(mm, 1, len);
+      name = (char *)calloc(1, len);
       if (v)
-        value = (char *)memmgr_calloc(mm, 1, vlen);
+        value = (char *)calloc(1, vlen);
       }
 
     if ((name) && ((v) && (value)))
@@ -280,10 +277,10 @@ int add_verify_resources(
         else
           snprintf(value, vlen, "%s", v);
 
-        hash_add_or_exit(mm, res_attr, name, value, p_type);
+        hash_add_or_exit(res_attr, name, value, p_type);
         }
       else
-        hash_add_or_exit(mm, res_attr, name, (char *)"\0", p_type);
+        hash_add_or_exit(res_attr, name, (char *)"\0", p_type);
       }
     else
       {

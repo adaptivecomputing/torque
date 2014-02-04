@@ -292,7 +292,7 @@ int socket_connect_unix(
     {
     snprintf(tmp_buf, sizeof(tmp_buf), "could not connect to unix socket %s: %d", sock_name, errno);
     *error_msg = strdup(tmp_buf);
-    rc = PBSE_SOCKET_FAULT;
+    rc = PBSE_DOMAIN_SOCKET_FAULT;
     }
 
   return(rc);
@@ -348,8 +348,8 @@ int socket_connect_addr(
   char  tmp_buf[LOCAL_LOG_BUF_SIZE+1];
   int   local_socket = *socket;
 
-  while (((rc = connect(local_socket, remote, remote_size)) != 0) &&
-         (cntr < RES_PORT_RETRY))
+  while ((cntr < RES_PORT_RETRY) &&
+         ((rc = connect(local_socket, remote, remote_size)) != 0))
     {
     cntr++;
     
@@ -955,10 +955,12 @@ int pbs_getaddrinfo(
     {
     return -1;
     }
+
   if ((*ppAddrInfoOut = get_cached_addrinfo_full(pNode)) != NULL)
     {
     return 0;
     }
+
   if (pHints == NULL)
     {
     memset(&hints,0,sizeof(hints));
@@ -968,25 +970,25 @@ int pbs_getaddrinfo(
 
   do
     {
-    if(addrFound)
+    if (addrFound)
       {
       rc = 0;
       }
     else
       {
-       rc = getaddrinfo(pNode,NULL,pHints,ppAddrInfoOut);
+      rc = getaddrinfo(pNode,NULL,pHints,ppAddrInfoOut);
       }
-    if(rc == 0)
+    if (rc == 0)
       {
       addrFound = TRUE;
       *ppAddrInfoOut = insert_addr_name_info(*ppAddrInfoOut,pNode);
-      if(*ppAddrInfoOut != NULL)
+      if (*ppAddrInfoOut != NULL)
         {
         return 0;
         }
       rc = EAI_AGAIN;
       }
-    if(rc != EAI_AGAIN)
+    if (rc != EAI_AGAIN)
       {
       return rc;
       }
@@ -997,14 +999,14 @@ int pbs_getaddrinfo(
 
 int connect_to_trqauthd(int *sock)
   {
-  int rc = PBSE_NONE;
-  int local_socket;
-  char     unix_sockname[MAXPATHLEN + 1];
-  char     *err_msg;
+  int   rc = PBSE_NONE;
+  int   local_socket;
+  char  unix_sockname[MAXPATHLEN + 1];
+  char *err_msg = NULL;
 
   snprintf(unix_sockname, sizeof(unix_sockname), "%s/%s", TRQAUTHD_SOCK_DIR, TRQAUTHD_SOCK_NAME);
   
-  if((local_socket = socket_get_unix()) <= 0)
+  if ((local_socket = socket_get_unix()) < 0)
     {
     cerr << "could not open unix domain socket\n";
     rc = PBSE_SOCKET_FAULT;
@@ -1019,6 +1021,9 @@ int connect_to_trqauthd(int *sock)
     {
     *sock = local_socket;
     }
+
+  if (err_msg != NULL)
+    free(err_msg);
 
   return(rc);
   }

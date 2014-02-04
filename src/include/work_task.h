@@ -96,7 +96,9 @@
 #define WORK_TASK_H 1
 
 #include <pthread.h>
-#include "resizable_array.h"
+#include <list>
+#include <vector>
+#include <stdlib.h>
 
 #define INITIAL_ALL_TASKS_SIZE 4
 
@@ -114,15 +116,38 @@ enum work_type
   };
 
 
+struct work_task *set_task(enum work_type type, long event_id, void (*func)(struct work_task *), void *parm, int get_lock);
+int dispatch_task(struct work_task *ptask);
+void delete_task(struct work_task *ptask);
+void clear_task(struct work_task *ptask);
 
 
-typedef struct all_tasks
+int task_is_in_threadpool(struct work_task *ptask);
+
+
+
+
+typedef struct timed_task
   {
-  resizable_array *ra;
+  work_task *wt;
+  long       task_time;
+  } timed_task;
 
+class all_tasks
+  {
+public:
+  std::vector<work_task *> tasks;
   pthread_mutex_t *alltasks_mutex;
-  } all_tasks;
-
+  all_tasks()
+    {
+    alltasks_mutex = (pthread_mutex_t *)calloc(1,sizeof(pthread_mutex_t));
+    pthread_mutex_init(alltasks_mutex,NULL);
+    }
+  ~all_tasks()
+    {
+    free(alltasks_mutex);
+    }
+  };
 
 
 
@@ -142,19 +167,14 @@ typedef struct work_task
   int                  wt_aux; /* optional info: e.g. child status */
   } work_task;
 
-void       initialize_all_tasks_array(all_tasks *);
 int        insert_task(all_tasks *, work_task *);
-int        insert_task_before(all_tasks *,work_task *before,work_task *after);
-int        insert_task_first(all_tasks *,work_task *);
 int        remove_task(all_tasks *,work_task *);
 int        has_task(all_tasks *);
-work_task *next_task(all_tasks *,int *);
+int        dispatch_timed_task(work_task *);
+work_task *pop_timed_task(time_t time_now);
+int        insert_timed_task(all_tasks *, time_t task_time, work_task *);
 
 
-
-extern void clear_task(struct work_task *ptask);
-extern int  dispatch_task(struct work_task *);
-extern void delete_task(struct work_task *ptask);
 
 
 #define TASKS_TO_REMOVE       1000
@@ -165,10 +185,15 @@ typedef struct task_recycler
   {
   unsigned int     next_id;
   all_tasks        tasks;
-  int              iter;
+  std::vector<work_task *>::iterator iter;
   unsigned int     max_id;
   pthread_mutex_t *mutex;
   } task_recycler;
+
+void initialize_task_recycler();
+work_task *next_task_from_recycler(all_tasks *at, std::vector<work_task *>::iterator& iter);
+void *remove_some_recycle_tasks(void *vp);
+int insert_task_into_recycler(struct work_task *ptask);
 
 
 #endif /* WORK_TASK_H */

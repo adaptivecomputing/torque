@@ -1,6 +1,6 @@
-#include "test_catch_child.h"
 #include "catch_child.h"
 #include <stdlib.h> /* malloc */
+#include "test_catch_child.h"
 
 extern int tc;
 extern int func_num;

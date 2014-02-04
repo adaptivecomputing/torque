@@ -16,18 +16,20 @@
 #include "pbs_config.h"
 #include "../Libnet/lib_net.h" /* get_hostaddr, socket_* */
 #include "../../include/log.h" /* log event types */
+#include "utils.h"
 #include <stdarg.h>
 #include <string.h>
+#include <string>
 
 #define MAX_RETRIES 5
-#define USER_PWD_RETRIES 3
 
 char         *trq_addr = NULL;
 int           trq_addr_len;
 char         *trq_server_name = NULL;
 int           debug_mode = 0;
 static char   active_pbs_server[PBS_MAXSERVERNAME + 1];
-bool   trqauthd_up = true;
+static int    active_pbs_server_port;
+bool          trqauthd_up = true;
 
 pbs_net_t  trq_server_addr;
 char       trq_hostname[PBS_MAXSERVERNAME + 1];
@@ -63,10 +65,13 @@ std::string string_format(const std::string fmt, ...)
 
 int set_active_pbs_server(
 
-  const char *new_active_server)
+  const char *new_active_server,
+  const int   new_active_port
+  )
 
   {
   strncpy(active_pbs_server, new_active_server, PBS_MAXSERVERNAME);
+  active_pbs_server_port = new_active_port;
   return(PBSE_NONE);
   }
 
@@ -103,7 +108,7 @@ int validate_active_pbs_server(
   char **active_server)
 
   {
-  char     *err_msg;
+  char     *err_msg = NULL;
   char      *current_server = NULL;
   char      unix_sockname[MAXPATHLEN + 1];
   char      write_buf[MAX_LINE];
@@ -114,7 +119,7 @@ int validate_active_pbs_server(
   int       rc;
   long long ret_code;
 
-  /* the format is TRQ command|destination port */
+  /* the format is TRQ command */
   sprintf(write_buf, "%d|", TRQ_VALIDATE_ACTIVE_SERVER);
 
   write_buf_len = strlen(write_buf);
@@ -129,24 +134,36 @@ int validate_active_pbs_server(
     }
 
   rc = socket_connect_unix(local_socket, unix_sockname, &err_msg);
+
+  if (err_msg != NULL)
+    free(err_msg);
+
   if (rc != PBSE_NONE)
     {
+    close(local_socket);
     fprintf(stderr, "socket_connect_unix failed: %d\n", rc);
-    return(PBSE_SYSTEM);
+    return(rc);
     }
 
   rc = socket_write(local_socket, write_buf, write_buf_len);
   if (rc <= 0 )
     {
+    close(local_socket);
     fprintf(stderr, "socket_write failed: %d\n", rc);
     return(PBSE_SYSTEM);
     }
 
   rc = socket_read_num(local_socket, &ret_code);
   if (rc != PBSE_NONE) 
+    {
+    close(local_socket);
     return(rc);
+    }
 
   rc = socket_read_str(local_socket, &read_buf, &read_buf_len);
+  
+  close(local_socket);
+  
   if (rc != PBSE_NONE) 
     return(rc);
 
@@ -163,7 +180,6 @@ int validate_active_pbs_server(
 
   strcpy(current_server, read_buf);
   
-  close(local_socket);
 
   *active_server = current_server;
 
@@ -180,10 +196,11 @@ int validate_active_pbs_server(
 
 int get_active_pbs_server(
     
-  char **active_server)
+  char **active_server,
+  int   *port)
 
   {
-  char     *err_msg;
+  char     *err_msg = NULL;
   char      *current_server = NULL;
   char      unix_sockname[MAXPATHLEN + 1];
   char      write_buf[MAX_LINE];
@@ -191,11 +208,9 @@ int get_active_pbs_server(
   char     *read_buf;
   long long read_buf_len = MAX_LINE;
   int       local_socket;
-  int       rc;
-  char     *timeout_ptr;
-  bool      retry = true;
-  int       retries = 0;
+  int       rc = PBSE_NONE;
   long long ret_code = PBSE_NONE;
+  char     *timeout_ptr;
 
   if ((timeout_ptr = getenv("PBSAPITIMEOUT")) != NULL)
     {
@@ -205,8 +220,6 @@ int get_active_pbs_server(
       {
       pbs_tcp_timeout = tmp_timeout;
 
-      if (tmp_timeout > 2)
-        retry = false;
       }
 
     }
@@ -222,46 +235,53 @@ int get_active_pbs_server(
     return(local_socket * -1); /* socket_get_unix returns a negative PBSE error on failure. make it positive */
 
   rc = socket_connect_unix(local_socket, unix_sockname, &err_msg);
+
+  if (err_msg != NULL)
+    free(err_msg);
+
   if (rc != PBSE_NONE)
     {
+    close(local_socket);
     fprintf(stderr, "socket_connect_unix failed: %d\n", rc);
-    return(PBSE_SYSTEM);
+    return(rc);
     }
 
   rc = socket_write(local_socket, write_buf, write_buf_len);
   if (rc <= 0 )
     {
+    close(local_socket);
     fprintf(stderr, "socket_write failed: %d\n", rc);
     return(PBSE_SYSTEM);
     }
 
-  do
+  /* get the server name */
+  if ((rc = socket_read_num(local_socket, &ret_code)) != PBSE_NONE)
     {
-    rc = socket_read_num(local_socket, &ret_code);
-    if (rc != PBSE_NONE)
-      break;
-
-    rc = socket_read_str(local_socket, &read_buf, &read_buf_len);
-    if (rc == PBSE_NONE) 
-      break;
-    } while ((retry == true) && (++retries <= 5));
-
-  if (rc != PBSE_NONE)
+    close(local_socket);
     return(rc);
+    }
+  else if ((rc = socket_read_str(local_socket, &read_buf, &read_buf_len)) != PBSE_NONE)
+    {
+    close(local_socket);
+    return(rc);
+    }
+  else if ((rc = socket_read_num(local_socket, (long long *)port)) != PBSE_NONE)
+    {
+    close(local_socket);
+    return(rc);
+    }
+  
+  close(local_socket);
 
   if (read_buf_len == 0)
     return(PBSE_SOCKET_READ);
 
-  rc = PBSE_NONE;
-
   current_server = strdup(read_buf);
-  
-  close(local_socket);
 
   *active_server = current_server;
 
   return(rc);
-  }
+  } /* END get_active_pbs_server() */
 
 int trq_simple_disconnect(
 
@@ -286,7 +306,7 @@ int trq_simple_disconnect(
 
 int trq_simple_connect(
     
-  const char *server_name,
+  const char *server_name, //Format is name[:port]
   int         batch_port,
   int        *sock_handle)
 
@@ -298,6 +318,7 @@ int trq_simple_connect(
   int                  rc;
   int                  sock;
   int                  optval = 1;
+  std::string          server(server_name);
 
   memset(&hints, 0, sizeof(hints));
   /* set the hints so we get a STREAM socket */
@@ -305,7 +326,7 @@ int trq_simple_connect(
   hints.ai_socktype = SOCK_STREAM; /* we want a tcp connection */
   hints.ai_flags = AI_PASSIVE;  /* fill in my IP for me */
   snprintf(port_string, 10, "%d", batch_port);
-  rc = getaddrinfo(server_name, port_string , &hints, &results);
+  rc = getaddrinfo(server.c_str(), port_string , &hints, &results);
   if (rc != PBSE_NONE)
     {
     fprintf(stderr, "cannot resolve server name %s\n", server_name);
@@ -362,30 +383,6 @@ int trq_simple_connect(
   return(rc);
   }
 
-/* ger_server_port_from_string scans current_name for a 
-   : and a port. If present t_server_port is set to the 
-   value after the :. otherwise t_server_port is set to
-   15001, the default pbs_server port */
-int get_server_port_from_string(
-    
-    char *current_name, 
-    int  *t_server_port)
-
-  {
-  char *ptr;
-
-  ptr = strchr(current_name, ':');
-  if (ptr != NULL)
-    {
-    ptr++;
-    *t_server_port = atoi(ptr);
-    }
-  else
-    *t_server_port = PBS_BATCH_SERVICE_PORT;
-  
-  return(PBSE_NONE);
-  }
-
 /* validate_server:
  * This function tries to find the currently active
  * pbs_server. If no server can be found the default 
@@ -420,6 +417,8 @@ int validate_server(
     {
     int list_len;
     int i;
+    unsigned int port;
+    char *tmp_server;
 
     snprintf(server_name_list, sizeof(server_name_list), "%s", pbs_get_server_list());
     list_len = csv_length(server_name_list);
@@ -436,21 +435,22 @@ int validate_server(
         memset(current_name, 0, sizeof(current_name));
         snprintf(current_name, sizeof(current_name), "%s", tp);
 
-        get_server_port_from_string(current_name, &t_server_port);
-
         if (getenv("PBSDEBUG"))
           {
           fprintf(stderr, "pbs_connect attempting connection to server \"%s\"\n",
                                                                     current_name);
           }
 
-        rc = trq_simple_connect(current_name, t_server_port, &sd);
+        tmp_server = PBS_get_server(current_name, &port);
+
+        rc = trq_simple_connect(tmp_server, port, &sd);
         if ( rc == PBSE_NONE)
           {
           trq_simple_disconnect(sd);
-          fprintf(stderr, "changing active server to %s\n", current_name);
-          strcpy(active_pbs_server, current_name); 
-          sprintf(log_buf, "Changing active server to %s\n", current_name);
+          fprintf(stderr, "changing active server to %s port %d\n", tmp_server, port);
+          strcpy(active_pbs_server, tmp_server); 
+          active_pbs_server_port = port;
+          sprintf(log_buf, "Changing active server to %s port %d\n", tmp_server, port);
           log_event(PBSEVENT_CLIENTAUTH | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD, __func__, log_buf);
           break;
           }
@@ -462,11 +462,11 @@ int validate_server(
 
   if (rc != PBSE_NONE) /* This only indicates no server is currently active. Go to default */
     {
-    fprintf(stderr, "Currently no servers active. Last active server is returned as the currently active server: %d\n", rc);
+    fprintf(stderr, "Currently no servers active. Default server will be listed as active server. Error % d\n", rc);
     rc = PBSE_NONE;
     }
 
-  fprintf(stderr, "Active server name: %s  pbs_server port is: %d\n", active_pbs_server, t_server_port);
+  fprintf(stderr, "Active server name: %s  pbs_server port is: %d\n", active_pbs_server, active_pbs_server_port);
 
   return(rc);
   } /* END validate_server() */
@@ -616,23 +616,27 @@ int build_active_server_response(
 
   if (len == 0)
     {
-    validate_server(NULL, PBS_BATCH_SERVICE_PORT, NULL, NULL);
+    validate_server(NULL, 0, NULL, NULL);
     len = strlen(active_pbs_server);
     }
 
-  message = string_format("%d|%d|%s|",0,len,active_pbs_server);
+  message = string_format("%d|%d|%s|%d|",0,len,active_pbs_server, active_pbs_server_port);
 
   return(rc);
   }
 
+
+
 int validate_user(
-    int sock,
-    const char *user_name, 
-    int user_pid,
-    char *msg)
+ 
+  int         sock,
+  const char *user_name, 
+  int         user_pid,
+  char       *msg)
+
   {
-  struct ucred cr;
-  socklen_t   cr_size;
+  struct ucred   cr;
+  socklen_t      cr_size;
   struct passwd *user_pwd;
 
   if (msg == NULL)
@@ -651,11 +655,7 @@ int validate_user(
     return(PBSE_SOCKET_FAULT);
     }
 
-  for (int i = 0; i < USER_PWD_RETRIES; i++)
-    {
-    if ((user_pwd = getpwuid(cr.uid)) != NULL)
-      break;
-    }
+  user_pwd = get_password_entry_by_uid(cr.uid);
    
   if (user_pwd == NULL)
     {
@@ -863,6 +863,7 @@ void *process_svr_conn(
         break;
         }
 
+      case TRQ_PING_SERVER:
       case TRQ_GET_ACTIVE_SERVER:
         {
         /* rc will get evaluated after the switch statement. */

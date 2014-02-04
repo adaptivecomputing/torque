@@ -1,10 +1,10 @@
 #include "license_pbs.h" /* See here for the software license */
 #include "lib_net.h"
-#include "test_conn_table.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <libpbs.h>
 #include <server_limits.h>
+#include "test_conn_table.h"
 
 
 #include "pbs_error.h"

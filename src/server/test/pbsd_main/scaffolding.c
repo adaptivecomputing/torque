@@ -25,7 +25,7 @@ const char *msg_startup2 = "Server Ready, pid = %d, loglevel=%d";
 char pbs_current_user[PBS_MAXUSER];
 const char *msg_svrdown = "Server shutdown completed";
 const char *msg_info_server = "Torque Server Version = %s, loglevel = %d";
-struct all_jobs alljobs;
+all_jobs alljobs;
 long *log_event_mask = NULL;
 const char *msg_startup3 = "%s %s: %s mode and %s exist, \ndo you wish to continue y/(n)?";
 pbs_net_t pbs_server_addr;
@@ -169,7 +169,7 @@ void shutdown_ack(void)
   exit(1);
   }
 
-job *next_job(struct all_jobs *aj, int *iter)
+job *next_job(all_jobs *aj, all_jobs_iterator *iter)
   {
   fprintf(stderr, "The call to next_job needs to be mocked!!\n");
   exit(1);
@@ -229,7 +229,7 @@ work_task *next_task(all_tasks *at, int *iter)
   exit(1);
   }
 
-pbs_queue *next_queue(all_queues *aq, int *iter)
+pbs_queue *next_queue(all_queues *aq, all_queues_iterator *iter)
   {
   fprintf(stderr, "The call to next_queue needs to be mocked!!\n");
   exit(1);
@@ -338,16 +338,6 @@ void destroy_request_pool(void)
   }
 
 
-void free_resizable_array(resizable_array *ra)
-  {
-  }
-
-resizable_array *initialize_resizable_array(int size)
-  {
-  fprintf(stderr, "The call to initialize_resizable_array needs to be mocked!!\n");
-  exit(1);
-  }
-
 hello_info *pop_hello(hello_container *hc)
   {
   fprintf(stderr, "The call to pop_hello needs to be mocked!!\n");
@@ -376,18 +366,6 @@ int send_hierarchy(char *nodename, unsigned short port)
 int add_hello(hello_container *hc, char *node_name)
   {
   fprintf(stderr, "The call to add_hello needs to be mocked!\n");
-  exit(1);
-  }
-
-void *pop_thing(resizable_array *ra)
-  {
-  fprintf(stderr, "The call to pop_thing needs to be mocked!\n");
-  exit(1);
-  }
-
-int insert_thing(resizable_array *ra, void *thing)
-  {
-  fprintf(stderr, "The call to insert_thing needs to be mocked!\n");
   exit(1);
   }
 
@@ -426,18 +404,6 @@ int get_svr_attr_str(int index, char **str)
 int get_svr_attr_arst(int index, struct array_strings **arst)
   {
   return(0);
-  }
-
-void memmgr_destroy(memmgr **mgr) {}
-
-int memmgr_init(memmgr **mgr, int mgr_size)
-  {
-  return(0);
-  }
-
-void *memmgr_calloc(memmgr **mgr, int qty, int size)
-  {
-  return(NULL);
   }
 
 int acl_check_my_array_string(struct array_strings *pas, char *name, int type)
@@ -524,3 +490,18 @@ void log_record(int eventtype, int objclass, const char *objname, const char *te
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_ext(int eventtype, const char *func_name, const char *msg, int level) {}
 
+int dispatch_timed_task(
+
+  work_task *ptask)
+  
+  {
+  return(0);
+  }
+
+work_task *pop_timed_task(
+
+  time_t  time_now)
+
+  {
+  return(NULL);
+  }

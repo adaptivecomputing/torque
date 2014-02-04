@@ -23,6 +23,7 @@ libtorque_la_SOURCES = ../Libcsv/csv.c ../Libdis/dis.c \
 		    ../Libdis/diswl_.c ../Libdis/diswsi.c ../Libdis/diswsl.c \
 		    ../Libdis/diswui_.c ../Libdis/diswui.c \
 		    ../Libdis/diswul.c \
+        ../Libutils/u_mutex_mgr.cpp \
 		    ../Libifl/dec_attrl.c ../Libifl/dec_attropl.c \
 		    ../Libifl/dec_Authen.c ../Libifl/dec_CpyFil.c \
 		    ../Libifl/dec_JobCred.c ../Libifl/dec_JobFile.c \
@@ -73,28 +74,27 @@ libtorque_la_SOURCES = ../Libcsv/csv.c ../Libdis/dis.c \
 		    ../Libifl/pbsD_termin.c ../Libifl/pbs_geterrmg.c \
 		    ../Libifl/pbs_statfree.c \
 		    ../Libifl/tcp_dis.c ../Libifl/tm.c ../Libifl/list_link.c \
-				../Libifl/trq_auth.c  ../Libifl/torquecfg.c \
+                    ../Libifl/trq_auth.c  ../Libifl/torquecfg.c \
 		    ../Libcmds/ck_job_name.c ../Libcmds/cnt2server.c \
 		    ../Libcmds/cvtdate.c ../Libcmds/get_server.c \
-        ../Libcmds/locate_job.c ../Libcmds/parse_at.c \
+                    ../Libcmds/locate_job.c ../Libcmds/parse_at.c \
 		    ../Libcmds/parse_depend.c ../Libcmds/parse_destid.c \
-        ../Libcmds/parse_equal.c ../Libcmds/parse_jobid.c \
+                    ../Libcmds/parse_equal.c ../Libcmds/parse_jobid.c \
 		    ../Libcmds/parse_stage.c \
-        ../Libcmds/prepare_path.c ../Libcmds/prt_job_err.c \
+                    ../Libcmds/prepare_path.c ../Libcmds/prt_job_err.c \
 		    ../Libcmds/set_attr.c ../Libcmds/set_resource.c \
-				../Libcmds/add_verify_resources.c \
+                    ../Libcmds/add_verify_resources.c \
 		    ../Liblog/chk_file_sec.c ../Liblog/log_event.c \
 		    ../Liblog/pbs_log.c ../Liblog/pbs_messages.c \
-        ../Liblog/setup_env.c ../Libnet/conn_table.c \
+                    ../Liblog/setup_env.c ../Libnet/conn_table.c \
 		    ../Libnet/get_hostaddr.c ../Libnet/get_hostname.c \
 		    ../Libnet/md5.c ../Libnet/net_common.c ../Libnet/net_client.c \
-        ../Libnet/net_server.c ../Libnet/net_set_clse.c \
-				../Libnet/server_core.c \
+                    ../Libnet/net_server.c ../Libnet/net_set_clse.c \
+                    ../Libnet/server_core.c \
 		    ../Libnet/rm.c ../Libnet/port_forwarding.c \
-				../Libnet/net_cache.c ../Libutils/u_lock_ctl.c \
-				../Libutils/u_hash_map_structs.c ../Libutils/u_memmgr.c \
-				../Libutils/u_hash_table.c ../Libutils/u_resizable_array.c \
-				../Libutils/u_threadpool.c
+                    ../Libnet/net_cache.c ../Libutils/u_lock_ctl.c \
+                    ../Libutils/u_hash_map_structs.c \
+                    ../Libutils/u_threadpool.c ../Libutils/u_users.c ../Libutils/u_wrapper.c
 
 
 

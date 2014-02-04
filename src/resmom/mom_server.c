@@ -243,7 +243,7 @@
 #include <string>
 #include <vector>
 #include <boost/ptr_container/ptr_vector.hpp>
-
+#include "container.hpp"
 
 #define MAX_RETRY_TIME_IN_SECS           (5 * 60)
 #define STARTING_RETRY_INTERVAL_IN_SECS   2
@@ -293,7 +293,7 @@ extern int                 UpdateFailCount;
 extern mom_hierarchy_t    *mh;
 extern char               *stat_string_aggregate;
 extern unsigned int        ssa_index;
-extern resizable_array    *received_statuses;
+extern container::item_container<received_node *> received_statuses;
 boost::ptr_vector<std::string> mom_status;
 
 extern struct config *rm_search(struct config *where, const char *what);
@@ -307,6 +307,9 @@ extern void send_update_soon();
 #ifdef NVIDIA_GPUS
 extern int  use_nvidia_gpu;
 #endif
+
+
+int num_stat_update_failures = 0;
 
 void check_state(int);
 void state_to_server(int, int);
@@ -1060,8 +1063,10 @@ int write_my_server_status(
       
       log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
       }
+
+    const char *str_to_write = i->c_str();
     
-    if ((ret = diswst(chan,i->c_str())) != DIS_SUCCESS)
+    if ((ret = diswst(chan, str_to_write)) != DIS_SUCCESS)
       {
       switch (mode)
         {
@@ -1103,14 +1108,14 @@ int write_cached_statuses(
  
   {
   int            ret = DIS_SUCCESS;
-  int            iter = -1;
+  container::item_container<received_node *>::item_iterator *iter = received_statuses.get_iterator();
   const char   *cp;
   received_node *rn;
   mom_server    *pms;
   node_comm_t   *nc;
   
   /* traverse the received_nodes array and send/clear the updates */
-  while ((rn = (received_node *)next_thing(received_statuses, &iter)) != NULL)
+  while ((rn = iter->get_next_item()) != NULL)
     {
     for(boost::ptr_vector<std::string>::iterator i = rn->statuses.begin();i != rn->statuses.end();i++)
       {
@@ -1154,6 +1159,8 @@ int write_cached_statuses(
     
     rn->statuses.clear();
     } /* END iterate over received statuses */
+
+  delete iter;
   
   if (ret == DIS_SUCCESS)
     updates_waiting_to_send = 0;
@@ -1417,6 +1424,88 @@ int send_update()
   } /* END send_update() */
 
 
+
+int send_update_to_a_server()
+
+  {
+  int rc = NO_SERVER_CONFIGURED;
+  char    log_buf[LOCAL_LOG_BUF_SIZE];
+
+  /* now, once we contact one server we stop attempting to report in */
+  for (int sindex = 0; sindex < PBS_MAXSERVER && rc != PBSE_NONE; sindex++)
+    {
+    int tmp_rc = mom_server_update_stat(&mom_servers[sindex], mom_status);
+
+    if (tmp_rc != NO_SERVER_CONFIGURED)
+      rc = tmp_rc;
+    }
+
+  if (rc == COULD_NOT_CONTACT_SERVER)
+    {
+    num_stat_update_failures++;
+    log_err(-1, __func__, "Could not contact any of the servers to send an update");
+    sprintf(log_buf, "Status not successfully updated for %d MOM status update intervals", num_stat_update_failures);
+    log_err(-1, __func__, log_buf);
+    }
+  else if (num_stat_update_failures != 0)
+    {
+    sprintf(log_buf, "Status update successfully sent after %d MOM status update intervals", num_stat_update_failures);
+    log_err(-1, __func__, log_buf);
+    }
+
+  return(rc);
+  } /* END send_update_to_a_server() */
+
+
+
+void update_mom_status()
+
+  {
+  mom_status.clear();
+
+  generate_server_status(mom_status);
+#ifdef NVIDIA_GPUS
+  add_gpu_status(mom_status);
+#endif /* NVIDIA_GPU */
+
+#ifdef MIC
+  add_mic_status(mom_status);
+#endif /* MIC */
+  } /* update_mom_status() */
+
+
+int send_status_through_hierarchy()
+
+  {
+  node_comm_t *nc = NULL;
+  int          rc = -1;
+
+  if ((nc = update_current_path(mh)) != NULL)
+    {
+    /* write to the socket */
+    while (nc != NULL)
+      {
+      if (write_status_strings(mom_status, nc) < 0)
+        {
+        nc->bad = TRUE;
+        nc->mtime = time_now;
+        nc = force_path_update(mh);
+        }
+      else 
+        {
+        rc = PBSE_NONE;
+  
+        close(nc->stream);
+        break;
+        }
+      }
+    }
+
+  return(rc);
+  } /* END send_status_through_hierarchy() */
+
+
+
 /**
  * mom_server_all_update_stat
  *
@@ -1428,12 +1517,15 @@ int send_update()
 void mom_server_all_update_stat(void)
  
   {
-  node_comm_t *nc = NULL;
-  int          sindex;
-  int          rc;
   pid_t        pid;
+  int          fd_pipe[2];
+  int          rc;
+  char         buf[LOCAL_LOG_BUF_SIZE];
+  size_t       len;
 
   time_now = time(NULL);
+
+  memset(buf, 0, LOCAL_LOG_BUF_SIZE);
 
   if (send_update() == FALSE)
     {
@@ -1456,100 +1548,88 @@ void mom_server_all_update_stat(void)
     log_record(PBSEVENT_SYSTEM, 0, __func__, "composing status update for server");
     }
 
-  /* It is possible that pbs_server may get busy and start queing incoming requests and not be able 
-     to process them right away. If pbs_mom is waiting for a reply to a statuys update that has 
-     been queued and at the same time the server makes a request to the mom we can get stuck
-     in a pseudo live-lock state. That is the server is waiting for a response from the mom and
-     the mom is waiting for a response from the server. neither of which will come until a request times out.
-     If we fork the status updates this alleviates the problem by making one less request from the
-     mom single threaded */
-  pid = fork();
-
-  if (pid < 0)
+  if (is_reporter_mom == TRUE)
     {
-    log_record(PBSEVENT_SYSTEM, 0, __func__, "Failed to fork stat update process");
-    return;
+    generate_alps_status(mom_status, apbasil_path, apbasil_protocol);
+
+    if (send_update_to_a_server() == PBSE_NONE)
+      LastServerUpdateTime = time_now;
     }
-
-  if (pid > 0)
+  else
     {
-    /* We are the parent clear out the status cache. */
-    int iter = -1;
-    received_node *rn = NULL;
-
-    LastServerUpdateTime = time_now;
-
-    while ((rn = (received_node *)next_thing(received_statuses, &iter)) != NULL)
+    /* It is possible that pbs_server may get busy and start queing incoming requests and not be able 
+       to process them right away. If pbs_mom is waiting for a reply to a statuys update that has 
+       been queued and at the same time the server makes a request to the mom we can get stuck
+       in a pseudo live-lock state. That is the server is waiting for a response from the mom and
+       the mom is waiting for a response from the server. neither of which will come until a request times out.
+       If we fork the status updates this alleviates the problem by making one less request from the
+       mom single threaded */
+    rc = pipe(fd_pipe);
+    if (rc != 0)
       {
-      rn->statuses.clear();
+      sprintf(buf, "pipe creation failed: %d", errno);
+      log_err(-1, __func__, buf);
       }
 
-    return;
-    }
- 
-#ifdef NUMA_SUPPORT
-  for (numa_index = 0; numa_index < num_node_boards; numa_index++)
-#endif /* NUMA_SUPPORT */
-    {
-    rc = NO_SERVER_CONFIGURED;
+    pid = fork();
 
-    mom_status.clear();
-
-    if (is_reporter_mom == FALSE)
+    if (pid < 0)
       {
-      generate_server_status(mom_status);
-#ifdef NVIDIA_GPUS
-      add_gpu_status(mom_status);
-#endif /* NVIDIA_GPU */
-
-#ifdef MIC
-      add_mic_status(mom_status);
-#endif /* MIC */
-
+      log_record(PBSEVENT_SYSTEM, 0, __func__, "Failed to fork stat update process");
+      return;
       }
-    else
-      generate_alps_status(mom_status, apbasil_path, apbasil_protocol);
- 
-    if ((nc = update_current_path(mh)) != NULL)
+
+    if (pid > 0)
       {
-      /* write to the socket */
-      while (nc != NULL)
-        {
-        if (write_status_strings(mom_status, nc) < 0)
-          {
-          nc->bad = TRUE;
-          nc->mtime = time_now;
-          nc = force_path_update(mh);
-          }
-        else 
-          {
-          LastServerUpdateTime = time_now;
-          UpdateFailCount = 0;
-
-          break;
-          }
-        }
-      }
+      // PARENT 
+      close(fd_pipe[1]);
+      LastServerUpdateTime = time_now;
+      UpdateFailCount = 0;
     
-    if (nc == NULL)
-      {
-      /* now, once we contact one server we stop attempting to report in */
-      for (sindex = 0; sindex < PBS_MAXSERVER && rc != PBSE_NONE; sindex++)
-        {
-        int tmp_rc = mom_server_update_stat(&mom_servers[sindex], mom_status);
+      received_node                                             *rn;
+      container::item_container<received_node *>::item_iterator *iter = received_statuses.get_iterator();
+      
+      // clear cached statuses from hierarchy
+      while ((rn = iter->get_next_item()) != NULL)
+        rn->statuses.clear();
 
-        if (tmp_rc != NO_SERVER_CONFIGURED)
-          rc = tmp_rc;
+      delete iter;
+
+      len = read(fd_pipe[0], buf, LOCAL_LOG_BUF_SIZE);
+      if (len <= 0)
+        {
+        log_err(-1, __func__, "read of pipe failed for status update");
+        return;
         }
 
-      if (rc == COULD_NOT_CONTACT_SERVER)
-        log_err(-1, __func__, "Could not contact any of the servers to send an update");
+      if (buf[0] != '0')
+          num_stat_update_failures++;
+      else
+          num_stat_update_failures = 0;
+
+      return;
       }
-    else
-      close(nc->stream);
+
+    // CHILD
+    close(fd_pipe[0]);
+
+#ifdef NUMA_SUPPORT
+    for (numa_index = 0; numa_index < num_node_boards; numa_index++)
+#endif /* NUMA_SUPPORT */
+      {
+      update_mom_status();
+  
+      if (send_status_through_hierarchy() != PBSE_NONE)
+        rc = send_update_to_a_server();
+      }
+
+    sprintf(buf, "%d", rc);
+    len = strlen(buf);
+    write(fd_pipe[1], buf, len);
+  
+    exit(0);
     }
  
-  exit(0);
   }  /* END mom_server_all_update_stat() */
 
 
@@ -2048,22 +2128,16 @@ int process_level_string(
 void sort_paths()
 
   {
-  resizable_array *path1;
-  resizable_array *path2;
-  int forwards_iter = -1;
-  int backwards_iter;
-
-  while ((path1 = (resizable_array *)next_thing(mh->paths, &forwards_iter)) != NULL)
+  for(int i = 0;i < (int)mh->paths->size();i++)
     {
-    backwards_iter = -1;
-
-    while (((path2 = (resizable_array *)next_thing_from_back(mh->paths, &backwards_iter)) != NULL) &&
-           (path2 != path1))
+    for(int j = (int)(mh->paths->size() -1);(j >= 0)&&(j != i);j--)
       {
-      if (path2->num < path1->num)
+      if(mh->paths->at(j)->size() < mh->paths->at(i)->size())
         {
         /* swap positions */
-        swap_things(mh->paths, path1, path2);
+        mom_levels *tmp = mh->paths->at(i);
+        mh->paths->at(i) = mh->paths->at(j);
+        mh->paths->at(j) = tmp;
         }
       }
     }
@@ -2116,7 +2190,7 @@ int read_cluster_addresses(
       if (path_complete == FALSE)
         {
         /* we were not in the last path, so delete it */
-        remove_last_thing(mh->paths);
+        mh->paths->pop_back();
         path_index--;
         hierarchy_file.clear();
         }

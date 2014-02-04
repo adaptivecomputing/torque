@@ -90,7 +90,7 @@ static void close_quejob(int sfds);
 /* END private prototypes */
 
 /* request processing prototypes */
-void req_quejob(struct batch_request *preq);
+void mom_req_quejob(struct batch_request *preq);
 void req_jobcredential(struct batch_request *preq);
 void req_jobscript(struct batch_request *preq);
 void req_rdytocommit(struct batch_request *preq);
@@ -328,7 +328,7 @@ void mom_dispatch_request(
 
       net_add_close_func(sfds, close_quejob);
 
-      req_quejob(request);
+      mom_req_quejob(request);
       
       break;
 

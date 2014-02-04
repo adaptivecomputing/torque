@@ -84,7 +84,6 @@
 #include "pbs_error.h"
 #include "dis.h"
 #include "u_hash_map_structs.h"
-#include "u_memmgr.h"
 
 
 
@@ -104,9 +103,8 @@ int encode_DIS_QueueJob_hash(
   struct tcp_chan *chan,
   char  *jobid,
   char  *destin,
-  memmgr **mm,
-  job_data *job_attr,
-  job_data *res_attr)
+  job_data_container *job_attr,
+  job_data_container *res_attr)
 
   {
   int   rc;
@@ -123,7 +121,7 @@ int encode_DIS_QueueJob_hash(
     return rc;
     }
 
-  return(encode_DIS_attropl_hash(chan, mm, job_attr, res_attr));
+  return(encode_DIS_attropl_hash(chan, job_attr, res_attr));
   }  /* END encode_DIS_QueueJob() */
 
 

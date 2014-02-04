@@ -7,6 +7,7 @@
 #include "tm_.h" /* tm_task_id, tm_node_id, tm_event_t */
 #include "tm.h" /* tm_roots */
 #include "tcp.h" /* tcp_chan */
+#include <string>
 
 /* trq_auth.c */
 #define AUTH_TYPE_IFF 1
@@ -16,6 +17,7 @@
 #define  TRQ_GET_ACTIVE_SERVER      2  /* Request the name of the currently active pbs_server from trqauthd */
 #define  TRQ_VALIDATE_ACTIVE_SERVER 3 /* Request trqauthd to validate which server is active */
 #define  TRQ_DOWN_TRQAUTHD          4 /* Terminate trqauthd */
+#define  TRQ_PING_SERVER            5 /* just request a response from the trqauthd server */
 
 
 int parse_request_client(int sock, char **server_name, int *server_port, int *auth_type, char **user, int *user_pid, int *user_sock);
@@ -25,11 +27,10 @@ int build_response_client(int code, char *msg, char **send_message);
 int get_trq_server_addr(char *server_name, char **server_addr, int *server_addr_len);
 void *process_svr_conn(void *sock);
 int validate_server(char *active_server_name, int t_server_port, char *ssh_key, char **sign_key);
-int set_active_pbs_server(const char *);
-int get_active_pbs_server(char **);
+int set_active_pbs_server(const char *, const int);
+int get_active_pbs_server(char **, int *);
 int validate_active_pbs_server(char **);
-int get_server_port_from_string(char *, int *);
-int trq_simple_connect(const char *server_name, int port, int *handle);
+int trq_simple_connect(const char *server_name, int batch_port, int *handle);
 int trq_simple_disconnect(int handle);
 void send_svr_disconnect(int, const char *);
 int set_trqauthd_addr(void);
@@ -71,7 +72,7 @@ int PBSD_commit(int connect, char *jobid);
 int PBSD_jscript(int c, char *script_file, char *jobid);
 int PBSD_jobfile(int c, int req_type, char *path, char *jobid, enum job_file which);
 char *PBSD_queuejob(int connect, int *, char *jobid, char *destin, struct attropl *attrib, char *extend);
-int PBSD_QueueJob_hash(int connect, char *jobid, char *destin, memmgr **mm, job_data *job_attr, job_data *res_attr, char *extend, char **job_id, char **msg);
+int PBSD_QueueJob_hash(int connect, char *jobid, char *destin, job_data *job_attr, job_data *res_attr, char *extend, char **job_id, char **msg);
 
 /* PBS_attr.c */
 int PBS_val_al(struct attrl *alp);
@@ -282,6 +283,7 @@ int pbs_original_connect(char *server);
 int pbs_disconnect_socket(int socket);
 int pbs_connect_with_retry(char *server_name_ptr, int retry_seconds); 
 void initialize_connections_table();
+int parse_daemon_response(long long code, long long len, char *buf);
 
 /* pbsD_deljob.c */
 int pbs_deljob_err(int c, char *jobid, char *extend, int *);

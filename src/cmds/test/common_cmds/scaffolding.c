@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "u_hash_map_structs.h"
-#include "u_memmgr.h"
 #include "dynamic_string.h"
 
 
@@ -12,7 +11,7 @@ int env_del_call = 0;
 int env_find_call = 0;
 int tc_num = 0;
 
-int hash_add_item(memmgr **mm, job_data **head, const char *name, const char *value, int var_type, int op_type)
+int hash_add_item(job_data_container *head, const char *name, const char *value, int var_type, int op_type)
   {
   if ((strcmp(name, "ONE_VAR") == 0)
       && (strcmp(value, "ONE_VAL") == 0)
@@ -47,7 +46,7 @@ int hash_add_item(memmgr **mm, job_data **head, const char *name, const char *va
   return 0;
   }
 
-int hash_del_item(memmgr **mm, job_data **head, const char *name)
+int hash_del_item(job_data_container *head, const char *name)
   {
   if (strcmp(name, "_") == 0)
     {
@@ -56,51 +55,29 @@ int hash_del_item(memmgr **mm, job_data **head, const char *name)
   return 0;
   }
 
-int hash_find(job_data *head, const char *name, job_data **env_var)
+int hash_find(job_data_container *head, const char *name, job_data **env_var)
   {
   if (tc_num == 1)
     {
     env_find_call++;
-    *env_var = (job_data *)calloc(sizeof(job_data), 1);
-    (*env_var)->name = (char *)calloc(1, 10);
-    (*env_var)->value = (char *)calloc(1, 10);
-    strcpy((*env_var)->name, "_");
-    strcpy((*env_var)->value, "CMD");
+    *env_var = new job_data(name,"CMD",0,0);
     }
   else if (tc_num == 2)
     {
-    *env_var = (job_data *)calloc(sizeof(job_data), 1);
-    (*env_var)->name = (char *)calloc(1, 10);
-    (*env_var)->value = (char *)calloc(1, 10);
-    strcpy((*env_var)->name, "me");
-    strcpy((*env_var)->value, "notme");
+    *env_var = new job_data("me","notme",0,0);
     }
   return 1;
   }
 
-void hash_add_or_exit(memmgr **mm, job_data **head, const char *name, const char *value, int var_type)
+void hash_add_or_exit(job_data_container *head, const char *name, const char *value, int var_type)
   {
   if (tc_num == 2)
     {
-    *head = (job_data *)calloc(sizeof(job_data), 1);
-    (*head)->name = (char *)calloc(1, 10);
-    (*head)->value = (char *)calloc(1, 10);
-    strcpy((*head)->name, "me");
-    strcpy((*head)->value, "notme");
+    head->insert(new job_data(name,value,var_type,0),name);
     }
   }
 
-void *memmgr_calloc(memmgr **mgr, int qty, int size)
-  {
-  void *the_mem = calloc(qty, size);
-  return the_mem;
-  }
-
-int memmgr_free(memmgr **mgr, void *ptr)
-  {
-  return 0;
-  }
-
+#if 0
 int append_dynamic_string(dynamic_string *ds, const char *str)
   {
   strcat(ds->str, str);
@@ -119,3 +96,4 @@ void free_dynamic_string(dynamic_string *ds)
   free(ds->str);
   free(ds);
   }
+#endif

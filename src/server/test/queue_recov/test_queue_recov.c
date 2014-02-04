@@ -1,12 +1,36 @@
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include "license_pbs.h" /* See here for the software license */
 #include "queue_recov.h"
 #include "test_queue_recov.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include "pbs_error.h"
+
+extern char *path_queues;
+
 START_TEST(test_one)
   {
+  pbs_queue q;
 
+  path_queues = (char *)"./";
+  memset(&q,0,sizeof(q));
+  strcpy(q.qu_qs.qu_name,"QueueSaveFile");
+  fail_unless(que_save(&q) == 0);
+
+  pbs_queue *pQ = que_recov_xml((char *)"QueueSaveFile");
+  fail_unless(pQ != NULL);
+
+  free(pQ);
+
+  struct stat b;
+
+  memset(&b,0,sizeof(b));
+  fail_unless(stat("./QueueSaveFile",&b) == 0);
+
+  unlink("./QueueSaveFile");
 
   }
 END_TEST

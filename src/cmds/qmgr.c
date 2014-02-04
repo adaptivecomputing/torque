@@ -1659,8 +1659,11 @@ freeattropl(struct attropl *attr)
  *
  */
 
-struct objname *
-      commalist2objname(char *names, int type)
+struct objname *commalist2objname(
+    
+  char *names,
+  int   type)
+
   {
   char *foreptr, *backptr;  /* front and back of words */
 
@@ -1670,13 +1673,12 @@ struct objname *
 
   struct objname *prev_obj = NULL; /* the previous name object */
   int len;    /* length of segment of string */
-  char error = 0;   /* error flag */
 
   if (names != NULL)
     {
     foreptr = backptr = names;
 
-    while (!EOL(*foreptr) && !error)
+    while (!EOL(*foreptr))
       {
       while (White(*foreptr)) foreptr++;
 
@@ -1757,12 +1759,6 @@ struct objname *
       }
     }
 
-  if (error)
-    {
-    free_objname_list(objs);
-    return NULL;
-    }
-
   return objs;
   }
 
@@ -1805,7 +1801,9 @@ int get_request(
   char *lp;                   /* Pointer into line */
   int eoc;                    /* End of command */
   char quote;                 /* Either ' or " */
+#ifdef HAVE_READLINE
   char *rlread = NULL;
+#endif
 
   /* Make sure something is in the stdin line */
 
@@ -2005,8 +2003,10 @@ int get_request(
   for (;i < MAX_LINE_LEN;i++)
     line[i] = '\0';
 
+#ifdef HAVE_READLINE
   if (rlread != NULL)
     free(rlread);
+#endif
 
   return(0);
   }  /* END get_request() */

@@ -15,7 +15,6 @@
 #include "pbs_job.h"
 #include "queue.h"
 #include "pbs_error.h"
-#include "svr_task.h"
 #include "acct.h"
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
@@ -27,8 +26,6 @@
 
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
-
-#include "svr_task.h"
 
 extern int LOGLEVEL;
 extern int  svr_authorize_req(struct batch_request *preq, char *owner, char *submit_host);
@@ -122,7 +119,7 @@ int attempt_delete(
         }
       }
     else
-      pjob_mutex.set_lock_on_exit(false);
+      pjob_mutex.set_unlock_on_exit(false);
     
     return(!skipped);
     }  /* END if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) */
@@ -130,7 +127,7 @@ int attempt_delete(
   delete_inactive_job(&pjob, NULL);
   
   if (pjob == NULL)
-    pjob_mutex.set_lock_on_exit(false);
+    pjob_mutex.set_unlock_on_exit(false);
 
   return(!skipped);
   } /* END attempt_delete() */
@@ -350,19 +347,19 @@ void array_delete_wt(
           /* job_abt() calls svr_job_purge which will try to lock the array again */
           array_mutex.unlock();
           job_abt(&pjob, NULL);
-          job_mutex.set_lock_on_exit(false);
+          job_mutex.set_unlock_on_exit(false);
           pa = get_array(preq->rq_ind.rq_delete.rq_objname);
           if (pa != NULL)
             array_mutex.mark_as_locked();
           }
         else
-          job_mutex.set_lock_on_exit(false);
+          job_mutex.set_unlock_on_exit(false);
         }
       else
         {
         /* job_abt() calls svr_job_purge which will try to lock the array again */
         array_mutex.unlock();
-        job_mutex.set_lock_on_exit(false);
+        job_mutex.set_unlock_on_exit(false);
 
         job_abt(&pjob, NULL);
         pa = get_array(preq->rq_ind.rq_delete.rq_objname);

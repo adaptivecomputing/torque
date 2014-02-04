@@ -1,13 +1,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "resizable_array.h"
-#include "hash_table.h"
 #include "pbs_job.h"
 
-struct all_jobs        array_summary;
+all_jobs        array_summary;
 char                   server_name[PBS_MAXSERVERNAME + 1]; /* host_name[:service|port] */
-struct all_jobs        alljobs;
+all_jobs        alljobs;
 int                    LOGLEVEL;
 
 void log_err(int errno, const char *ident, const char *msg) {}
@@ -29,37 +27,15 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   return(0);
   }
 
-int add_hash(hash_table_t *ht, int value, void *key)
-  {
-  return(0);
-  }
-  
 int is_svr_attr_set(int index)
   {
   return(0);
   }
 
-int get_value_hash(hash_table_t *ht, const void *key)
-  {
-  return(0);
-  }
-
-hash_table_t *create_hash(int size)
-  {
-  return(NULL);
-  }
-  
 int get_svr_attr_str(int index, char **str)
   {
   return(0);
   }
-
-int remove_hash(hash_table_t *ht, const char *key)
-  {
-  return(0);
-  }
-
-void change_value_hash(hash_table_t *ht, char *key, int new_value) {}
 
 job *job_alloc(void)
   {

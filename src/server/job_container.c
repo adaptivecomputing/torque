@@ -98,11 +98,9 @@
 #include <boost/ptr_container/ptr_vector.hpp>
 
 
-
-
-extern char            server_name[];
-extern struct all_jobs alljobs;
-extern struct all_jobs array_summary;
+extern char     server_name[];
+extern all_jobs alljobs;
+extern all_jobs array_summary;
 
 
 /*
@@ -318,13 +316,12 @@ char *get_correct_jobname(
 
 job *find_job_by_array(
     
-  struct all_jobs *aj,
-  char            *job_id,
-  int              get_subjob)
+  all_jobs *aj,
+  char    *job_id,
+  int     get_subjob)
 
   {
   job *pj = NULL;
-  int  i;
 
   if (aj == NULL)
     {
@@ -337,16 +334,13 @@ job *find_job_by_array(
     return(NULL);
     }
 
-  pthread_mutex_lock(aj->alljobs_mutex);
+  aj->lock();
   
-  i = get_value_hash(aj->ht, job_id);
-  
-  if (i >= 0)
-    pj = (job *)aj->ra->slots[i].item;
+  pj = aj->find(job_id);
   if (pj != NULL)
     lock_ji_mutex(pj, __func__, NULL, LOGLEVEL);
   
-  pthread_mutex_unlock(aj->alljobs_mutex);
+  aj->unlock();
   
   if (pj != NULL)
     {
@@ -493,30 +487,6 @@ job *svr_find_job(
   }   /* END svr_find_job() */
 
 
-
-
-/* initializes the all_jobs array */
-void initialize_all_jobs_array(
-    
-  struct all_jobs *aj)
-
-  {
-  if (aj == NULL)
-    {
-    log_err(PBSE_BAD_PARAMETER,__func__,"null input job array");
-    return;
-    }
-
-  aj->ra = initialize_resizable_array(INITIAL_JOB_SIZE);
-  aj->ht = create_hash(INITIAL_HASH_SIZE);
-
-  aj->alljobs_mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(aj->alljobs_mutex, NULL);
-  } /* END initialize_all_jobs_array() */
-
-
-
-
 /*
  * insert a new job into the array
  *
@@ -525,8 +495,8 @@ void initialize_all_jobs_array(
  */
 int insert_job(
     
-  struct all_jobs *aj, 
-  job             *pjob)
+  all_jobs *aj,
+  job      *pjob)
 
   {
   int rc = -1;
@@ -544,21 +514,19 @@ int insert_job(
     return(rc);
     }
 
-  pthread_mutex_lock(aj->alljobs_mutex);
+  aj->lock();
 
-  rc = insert_thing(aj->ra,pjob);
-  if (rc == -1)
+  if(!aj->insert(pjob,pjob->ji_qs.ji_jobid))
     {
     rc = ENOMEM;
     log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE\n");
     }
   else
     {
-    add_hash(aj->ht, rc, pjob->ji_qs.ji_jobid);
     rc = PBSE_NONE;
     }
 
-  pthread_mutex_unlock(aj->alljobs_mutex);
+  aj->unlock();
 
   return(rc);
   } /* END insert_job() */
@@ -576,13 +544,12 @@ int insert_job(
  */
 int insert_job_after(
 
-  struct all_jobs *aj,
-  job             *already_in,
-  job             *pjob)
+  all_jobs *aj,
+  job      *already_in,
+  job      *pjob)
 
   {
   int rc = -1;
-  int i = 0;
 
   if (aj == NULL)
     {
@@ -596,6 +563,7 @@ int insert_job_after(
     log_err(rc, __func__, "null job after input");
     return(rc);
     }
+
   if (pjob == NULL)
     {
     rc = PBSE_BAD_PARAMETER;
@@ -603,28 +571,29 @@ int insert_job_after(
     return(rc);
     }
 
-  pthread_mutex_lock(aj->alljobs_mutex);
+  aj->lock();
 
-  i = get_value_hash(aj->ht,already_in->ji_qs.ji_jobid);
-  
-  if (i < 0)
+  if(aj->find(already_in->ji_qs.ji_jobid) == NULL)
     rc = THING_NOT_FOUND;
   else
     {
-    rc = insert_thing_after(aj->ra,pjob,i);
-    if (rc == -1)
+    if(!strcmp(already_in->ji_qs.ji_jobid,pjob->ji_qs.ji_jobid))
+      {
+      aj->unlock();
+      return PBSE_NONE;
+      }
+    if(!aj->insert_after(already_in->ji_qs.ji_jobid,pjob,pjob->ji_qs.ji_jobid))
       {
       rc = ENOMEM;
       log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE");
       }
     else
       {
-      add_hash(aj->ht,rc,pjob->ji_qs.ji_jobid);
       rc = PBSE_NONE;
       }
     }
 
-  pthread_mutex_unlock(aj->alljobs_mutex);
+  aj->unlock();
 
   return(rc);
   } /* END insert_job_after() */
@@ -632,11 +601,11 @@ int insert_job_after(
 
 
 
-int insert_job_after_index(
+int insert_job_after(
 
-  struct all_jobs *aj,
-  int              index,
-  job             *pjob)
+  all_jobs  *aj,
+  char     *after_id,
+  job      *pjob)
 
   {
   int rc = -1;
@@ -653,25 +622,41 @@ int insert_job_after_index(
     log_err(rc, __func__, "null job input");
     return(rc);
     }
+  if (after_id == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc, __func__, "null job id");
+    return(rc);
+    }
 
-  pthread_mutex_lock(aj->alljobs_mutex);
+  aj->lock();
 
-  rc = insert_thing_after(aj->ra, pjob, index);
-  if (rc == -1)
+  bool jobExists = aj->find(after_id);
+
+  bool inserted = false;
+  if(jobExists)
+    {
+    inserted = aj->insert_after(after_id,pjob,pjob->ji_qs.ji_jobid);
+    }
+  else
+    {
+    inserted = aj->insert(pjob,pjob->ji_qs.ji_jobid);
+    }
+
+  if (!inserted)
     {
     rc = ENOMEM;
     log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE");
     }
   else
     {
-    add_hash(aj->ht, rc, pjob->ji_qs.ji_jobid);
     rc = PBSE_NONE;
     }
 
-  pthread_mutex_unlock(aj->alljobs_mutex);
+  aj->unlock();
 
   return(rc);
-  } /* END insert_job_after_index() */
+  } /* END insert_job_after() */
 
 
 
@@ -679,8 +664,8 @@ int insert_job_after_index(
 
 int insert_job_first(
 
-  struct all_jobs *aj,
-  job             *pjob)
+  all_jobs *aj,
+  job      *pjob)
 
   {
   int rc = -1;
@@ -698,73 +683,22 @@ int insert_job_first(
     return(rc);
     }
 
-  pthread_mutex_lock(aj->alljobs_mutex);
+  aj->lock();
 
-  rc = insert_thing_after(aj->ra,pjob,ALWAYS_EMPTY_INDEX);
-  if (rc == -1)
+  if(!aj->insert_first(pjob,pjob->ji_qs.ji_jobid))
     {
     rc = ENOMEM;
     log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE");
     }
   else
     {
-    add_hash(aj->ht,rc,pjob->ji_qs.ji_jobid);
     rc = PBSE_NONE;
     }
 
-  pthread_mutex_unlock(aj->alljobs_mutex);
+  aj->unlock();
 
   return(rc);
   } /* END insert_job_first () */
-
-
-
-
-/*
- * get the job's index in the array 
- */
-
-int get_jobs_index(
-
-  struct all_jobs *aj,
-  job             *pjob)
-
-  {
-  int index = -1;
-
-  if (aj == NULL)
-    {
-    log_err(PBSE_BAD_PARAMETER, __func__, "null job array input");
-    return(-1 * PBSE_BAD_PARAMETER);
-    }
-  if (pjob == NULL)
-    {
-    log_err(PBSE_BAD_PARAMETER, __func__, "null job input");
-    return(-1 * PBSE_BAD_PARAMETER);
-    }
-
-  if (pthread_mutex_trylock(aj->alljobs_mutex))
-    {
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-    pthread_mutex_lock(aj->alljobs_mutex);
-    lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
-
-    if (pjob->ji_being_recycled == TRUE)
-      {
-      pthread_mutex_unlock(aj->alljobs_mutex);
-      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
-      return(-1);
-      }
-    }
-
-  index = get_value_hash(aj->ht, pjob->ji_qs.ji_jobid);
-  pthread_mutex_unlock(aj->alljobs_mutex);
-
-  return(index);
-  } /* END get_jobs_index() */
-
-
-
 
 /*
  * check if an object is in the all_jobs object
@@ -772,8 +706,8 @@ int get_jobs_index(
 
 int has_job(
 
-  struct all_jobs *aj,
-  job             *pjob)
+  all_jobs *aj,
+  job      *pjob)
 
   {
   int  rc = -1;
@@ -794,27 +728,27 @@ int has_job(
 
   strcpy(jobid, pjob->ji_qs.ji_jobid);
 
-  if (pthread_mutex_trylock(aj->alljobs_mutex))
+  if (aj->trylock())
     {
     unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-    pthread_mutex_lock(aj->alljobs_mutex);
+    aj->lock();
     lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
     if (pjob->ji_being_recycled == TRUE)
       {
-      pthread_mutex_unlock(aj->alljobs_mutex);
+      aj->unlock();
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
       return(PBSE_JOB_RECYCLED);
       }
     }
 
-  if (get_value_hash(aj->ht, pjob->ji_qs.ji_jobid) < 0)
+  if (aj->find(pjob->ji_qs.ji_jobid) == NULL)
     rc = FALSE;
   else
     rc = TRUE;
 
-  pthread_mutex_unlock(aj->alljobs_mutex);
+  aj->unlock();
 
   return(rc);
   } /* END has_job() */
@@ -832,12 +766,11 @@ int has_job(
 
 int  remove_job(
    
-  struct all_jobs *aj, 
-  job             *pjob)
+  all_jobs *aj,
+  job      *pjob)
 
   {
   int rc = PBSE_NONE;
-  int index;
 
   if (pjob == NULL)
     {
@@ -854,29 +787,24 @@ int  remove_job(
 
   if (LOGLEVEL >= 10)
     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
-  if (pthread_mutex_trylock(aj->alljobs_mutex))
+  if (aj->trylock())
     {
     unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-    pthread_mutex_lock(aj->alljobs_mutex);
+    aj->lock();
     lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
     if (pjob->ji_being_recycled == TRUE)
       {
-      pthread_mutex_unlock(aj->alljobs_mutex);
+      aj->unlock();
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       return(PBSE_JOB_RECYCLED);
       }
     }
 
-  if ((index = get_value_hash(aj->ht,pjob->ji_qs.ji_jobid)) < 0)
+  if (!aj->remove(pjob->ji_qs.ji_jobid))
     rc = THING_NOT_FOUND;
-  else
-    {
-    remove_thing_from_index(aj->ra,index);
-    remove_hash(aj->ht,pjob->ji_qs.ji_jobid);
-    }
 
-  pthread_mutex_unlock(aj->alljobs_mutex);
+  aj->unlock();
 
   return(rc);
   } /* END remove_job() */
@@ -887,8 +815,8 @@ int  remove_job(
 
 job *next_job(
 
-  struct all_jobs *aj,
-  int             *iter)
+  all_jobs          *aj,
+  all_jobs_iterator *iter)
 
   {
   job *pjob;
@@ -904,11 +832,11 @@ job *next_job(
     return(NULL);
     }
 
-  pthread_mutex_lock(aj->alljobs_mutex);
+  aj->lock();
 
-  pjob = (job *)next_thing(aj->ra,iter);
+  pjob = iter->get_next_item();
 
-  pthread_mutex_unlock(aj->alljobs_mutex);
+  aj->unlock();
 
   if (pjob != NULL)
     {
@@ -926,63 +854,15 @@ job *next_job(
   } /* END next_job() */
 
 
-
-
-
-job *next_job_from_back(
-
-  struct all_jobs *aj,
-  int             *iter)
-
-  {
-  job *pjob;
-
-  if (aj == NULL)
-    {
-    log_err(PBSE_BAD_PARAMETER, __func__, "null input pointer to all_jobs struct");
-    return(NULL);
-    }
-  if (iter == NULL)
-    {
-    log_err(PBSE_BAD_PARAMETER, __func__, "null input iterator");
-    return(NULL);
-    }
-
-  pthread_mutex_lock(aj->alljobs_mutex);
-
-  pjob = (job *)next_thing_from_back(aj->ra,iter);
-  if (pjob != NULL)
-    lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
-
-  pthread_mutex_unlock(aj->alljobs_mutex);
-
-  if (pjob != NULL)
-    {
-    if (pjob->ji_being_recycled == TRUE)
-      {
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-
-      pjob = next_job_from_back(aj,iter);
-      }
-    }
-
-  return(pjob);
-  } /* END next_job_from_back() */
-
-
-
-
 /* currently this function can only be called for jobs in the alljobs array */
 int swap_jobs(
 
-  struct all_jobs *aj,
-  job             *job1,
-  job             *job2)
+  all_jobs *aj,
+  job      *job1,
+  job      *job2)
 
   {
   int rc = -1;
-  int new1;
-  int new2;
 
   if (job1 == NULL)
     {
@@ -1002,25 +882,18 @@ int swap_jobs(
     aj = &alljobs;
     }
 
-  pthread_mutex_lock(aj->alljobs_mutex);
-
-  new2 = get_value_hash(aj->ht,job1->ji_qs.ji_jobid);
-  new1 = get_value_hash(aj->ht,job2->ji_qs.ji_jobid);
-
-  if ((new1 == -1) ||
-      (new2 == -1))
+  aj->lock();
+  if(!aj->swap(job1->ji_qs.ji_jobid,job2->ji_qs.ji_jobid))
     {
     rc = THING_NOT_FOUND;
     }
   else
     {
-    rc = swap_things(aj->ra,job1,job2);
-    
-    change_value_hash(aj->ht,job1->ji_qs.ji_jobid,new1);
-    change_value_hash(aj->ht,job2->ji_qs.ji_jobid,new2);
+    rc = PBSE_NONE;
     }
 
-  pthread_mutex_unlock(aj->alljobs_mutex);
+
+  aj->unlock();
   
   return(rc);
   } /* END swap_jobs() */

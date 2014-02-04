@@ -1,4 +1,5 @@
 #include "license_pbs.h" /* See here for the software license */
+#include <pbs_config.h>
 #include "pbs_nodes.h"
 #include "mom_comm.h"
 #include "test_mom_comm.h"
@@ -15,6 +16,10 @@ extern int disrst_return_index;
 extern int disrsi_array[];
 extern char *disrst_array[];
 extern int log_event_counter;
+
+#define IM_DONE                     0
+#define IM_FAILURE                 -1
+
 
 int process_end_job_error_reply(job *pjob, hnodent *np, struct sockaddr_in *pSockAddr, int errcode);
 void create_contact_list(job &pjob, std::set<int> &sister_list, struct sockaddr_in *contacting_address);
@@ -62,6 +67,37 @@ START_TEST(handle_im_poll_job_response_test)
   fail_unless(pjob->ji_resources[3].nr_mem < pjob->ji_resources[3].nr_vmem);
   }
 END_TEST
+
+START_TEST(handle_im_obit_task_response_test)
+  {
+  job             *pjob = (job *)calloc(1, sizeof(job));
+  struct tcp_chan *chan = (struct tcp_chan *)calloc(1, sizeof(struct tcp_chan));
+  task             *ptask = (task *)calloc(1,sizeof(task));
+  pjob->ji_tasks.ll_next = &ptask->ti_jobtask;
+  pjob->ji_tasks.ll_prior = &ptask->ti_jobtask;
+  ptask->ti_jobtask.ll_struct = ptask;
+  ptask->ti_jobtask.ll_next = &pjob->ji_tasks;
+  ptask->ti_jobtask.ll_prior = &pjob->ji_tasks;
+  ptask->ti_qs.ti_task = TM_INIT;
+  ptask->ti_chan = chan;
+
+  disrsi_return_index = 500;
+  fail_unless(handle_im_obit_task_response(chan,pjob,TM_NULL_TASK,42) == IM_FAILURE);
+
+  disrsi_return_index = 0;
+  fail_unless(handle_im_obit_task_response(chan,pjob,TM_NULL_TASK,42) == IM_DONE);
+
+  disrsi_return_index = 0;
+  fail_unless(handle_im_obit_task_response(chan,pjob,TM_INIT,42) == IM_FAILURE);
+
+  chan->readbuf.tdis_bufsize = 5;
+  chan->writebuf.tdis_bufsize = 5;
+
+  disrsi_return_index = 0;
+  fail_unless(handle_im_obit_task_response(chan,pjob,TM_INIT,42) == IM_DONE);
+  }
+END_TEST
+
 
 START_TEST(create_contact_list_test)
   {
@@ -391,6 +427,10 @@ Suite *mom_comm_suite(void)
   tc_core = tcase_create("test_read_status_strings_loop");
   tcase_add_test(tc_core, test_read_status_strings_loop);
   tcase_add_test(tc_core, test_process_end_job_error_reply);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("handle_im_obit_task_response_test");
+  tcase_add_test(tc_core, handle_im_obit_task_response_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_get_received_node_entry");

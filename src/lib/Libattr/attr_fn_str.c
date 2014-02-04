@@ -122,6 +122,8 @@
  *  *patr members set
  */
 
+extern int ctnodes(char *spec);
+
 int decode_str(
 
   pbs_attribute *patr,   /* (I modified, allocated ) */
@@ -343,6 +345,27 @@ int comp_str(pbs_attribute *attr, pbs_attribute *with)
   }
 
 
+
+
+/*
+ * comp_nodestr - compare the two nodes attribute, they can be in
+ * the form of (2:ppn=1+1:ppn=4).
+ * Return: 0 if they're the same, -1 if attr < with, 1 if attr > with.
+ */
+int comp_nodestr(pbs_attribute *attr, pbs_attribute *with)
+  {
+  if (!attr || !attr->at_val.at_str)
+	 return -1;
+  if (!with || !with->at_val.at_str)
+	 return 1;
+  int attr_n = ctnodes((char *)attr->at_val.at_str);
+  int with_n = ctnodes((char *)with->at_val.at_str);
+  if (attr_n == with_n)
+    return 0;
+  else if (attr_n < with_n)
+	return -1;
+  return 1;
+  }
 
 
 /*

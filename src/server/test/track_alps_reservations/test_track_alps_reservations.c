@@ -1,6 +1,6 @@
-#include <check.h>
 #include "alps_constants.h"
 #include "track_alps_reservations.h"
+#include <check.h>
 
 
 char *eh1 = (char *)"napali+l11+tom";
@@ -21,11 +21,14 @@ START_TEST(add_node_names_test)
   alps_reservation ar;
   job              pjob;
 
+  pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = NULL;
+  fail_unless(add_node_names(&ar, &pjob) == -1, "add_node_names() should have returned -1");
+
   pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = eh1;
   fail_unless(add_node_names(&ar, &pjob) == 0, "failure in add_node_names()");
-  fail_unless(ar.ar_node_names->num == 3, "didn't get the right count of nodes");
+  fail_unless(ar.ar_node_names.size() == 3, "didn't get the right count of nodes");
 
-  free_resizable_array(ar.ar_node_names);
+  ar.ar_node_names.clear();
   pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = eh2;
   fail_unless(add_node_names(&ar, &pjob) == 0, "failure in add_node_names()");
   }
@@ -47,7 +50,7 @@ START_TEST(populate_ar_test)
   fail_unless(!strcmp(ar->job_id, jobids[0]), "job id created incorrectly");
   fail_unless(!strcmp(ar->rsv_id, rsvids[0]), "rsv id created incorrectly");
 
-  free_alps_reservation(ar);
+  delete ar;
 
   strcpy(pjob.ji_qs.ji_jobid, jobids[1]);
   pjob.ji_wattr[JOB_ATR_reservation_id].at_val.at_str = rsvids[1];
@@ -70,13 +73,13 @@ START_TEST(insert_create_inspect_test)
   pjob.ji_wattr[JOB_ATR_reservation_id].at_val.at_str = rsvids[0];
   pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = eh1;
 
-  initialize_alps_reservations();
+  alps_reservations.clear();
 
   fail_unless(track_alps_reservation(&pjob) == 0, "couldn't create the reservation");
-  fail_unless(alps_reservations.rh_alps_rsvs->num == 1, "incorrect count of reservations");
+  fail_unless(alps_reservations.count() == 1, "incorrect count of reservations");
   pjob.ji_wattr[JOB_ATR_reservation_id].at_val.at_str = NULL;
   fail_unless(track_alps_reservation(&pjob) == 0, "track_alps_reservation failed with empty job");
-  fail_unless(alps_reservations.rh_alps_rsvs->num == 1, "incorrect count after empty job");
+  fail_unless(alps_reservations.count() == 1, "incorrect count after empty job");
 
   strcpy(pjob.ji_qs.ji_jobid, jobids[0]);
   pjob.ji_wattr[JOB_ATR_reservation_id].at_val.at_str = rsvids[1];

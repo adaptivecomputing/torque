@@ -85,7 +85,6 @@
 #include "dis.h"
 #include "uthash.h"
 #include "u_hash_map_structs.h"
-#include "u_memmgr.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -116,94 +115,58 @@
 /* This whole method is a workaround until the server code is updated */
 int build_var_list(
 
-  memmgr   **mm,
-  char     **var_list,
-  job_data **attrs)
+  std::string&       var_list,
+  job_data_container *attrs)
 
   {
-  job_data *atr; 
-  job_data *tmp;
-  int       current_len = 0;
-  int       name_len = 0;
-  int       value_len = 0;
+  job_data *atr;
+  job_data_iterator *it = attrs->get_iterator();
   int       item_count = 0;
   int       preexisting_var_list = FALSE;
 
-  HASH_ITER(hh, *attrs, atr, tmp)
+  while ((atr = it->get_next_item()) != NULL)
     {
-    if ((strncmp(atr->name, "pbs_o", 5) == 0)
-        || (strncmp(atr->name, "PBS_O", 5) == 0))
+    if ((strncmp(atr->name.c_str(), "pbs_o", 5) == 0)
+        || (strncmp(atr->name.c_str(), "PBS_O", 5) == 0))
       {
-/*       if (*var_list != NULL) */
-/*         len = strlen(*var_list); */
-/*      new_len = len + 1; *//* Existing string, */
-      name_len = strlen(atr->name); /* name= */
-      value_len = strlen(atr->value); /* value\0 */
-      *var_list = (char *)memmgr_realloc(mm, *var_list,
-          current_len + 1 + name_len + 1 + value_len + 1);
-      if (current_len != 0)
+      if(var_list.length() != 0)
         {
-        (*var_list)[current_len] = ',';
-        current_len++;
+        var_list += ',';
         }
-      memcpy((*var_list) + current_len, atr->name, name_len);
-      current_len += name_len;
-
-      (*var_list)[current_len] = '=';
-      current_len++;
-
-      memcpy((*var_list) + current_len, atr->value, value_len);
-      current_len += value_len;
-
-      (*var_list)[current_len] = '\0';
-
+      var_list += atr->name;
+      var_list += '=';
+      var_list += atr->value;
       item_count++;
       }
-    else if (strncmp(atr->name, "pbs_var_", 8) == 0)
+    else if (strncmp(atr->name.c_str(), "pbs_var_", 8) == 0)
       {
-      name_len = strlen(atr->name)-8; /* name= */
-      value_len = strlen(atr->value); /* value\0 */
-      *var_list = (char *)memmgr_realloc(mm, *var_list,
-          current_len + 1 + name_len + 1 + value_len + 1);
-      if (current_len != 0)
+      if(var_list.length() != 0)
         {
-        (*var_list)[current_len] = ',';
-        current_len++;
+        var_list += ',';
         }
-      memcpy((*var_list) + current_len, (atr->name)+8, name_len);
-      current_len += name_len;
-      (*var_list)[current_len] = '=';
-      current_len++;
-      memcpy((*var_list) + current_len, atr->value, value_len);
-      current_len += value_len;
-      (*var_list)[current_len] = '\0';
-      hash_del_item(mm, attrs, atr->name);
+      var_list += atr->name;
+      var_list += '=';
+      var_list += atr->value;
+      hash_del_item(attrs, atr->name.c_str());
       }
-    else if (strcmp(atr->name, ATTR_v) == 0)
+    else if (strcmp(atr->name.c_str(), ATTR_v) == 0)
       {
-/*       if (*var_list != NULL) */
-/*         len = strlen(*var_list); */
-/*      new_len = len + 1; *//* Existing string, */
-      value_len = strlen(atr->value); /* value\0 */
-      *var_list = (char *)memmgr_realloc(mm, *var_list,
-          current_len + 1 + value_len + 1);
-      if (current_len != 0)
+      if(var_list.length() != 0)
         {
-        (*var_list)[current_len] = ',';
-        current_len++;
+        var_list += ',';
         }
-      memcpy((*var_list) + current_len, atr->value, value_len);
-      current_len += value_len;
-
-      (*var_list)[current_len] = '\0';
+      var_list += atr->value;
       preexisting_var_list = TRUE;
       /* In this case, do not add an item (this is taken care or OUTSIDE this call) */
       /* item_count++; */
       }
     }
+
+  delete it;
+
   if (preexisting_var_list == TRUE)
     {
-    hash_del_item(mm, attrs, (char *)ATTR_v);
+    hash_del_item(attrs, (char *)ATTR_v);
     }
 
   return(item_count);
@@ -215,35 +178,35 @@ int build_var_list(
 int encode_DIS_attropl_hash_single(
     
   struct tcp_chan *chan,
-  job_data *attrs,
+  job_data_container *attrs,
   int       is_res)
 
   {
-  int           rc = 0;
-  unsigned int  len;
-  unsigned int  attr_len = 0;
-  job_data     *atr;
-  job_data     *tmp;
+  int               rc = 0;
+  unsigned int     len;
+  unsigned int     attr_len = 0;
+  job_data          *atr;
+  job_data_iterator *it = attrs->get_iterator();
 
   if (is_res)
     attr_len = strlen(ATTR_l);
   /* An iterator requires access at a lower level that the wrapper
    * can provide */
-  HASH_ITER(hh, attrs, atr, tmp)
+  while((atr = it->get_next_item()) != NULL)
     {
     /* Data pattern:
      * len of (name)(0 OR 1resource)(value)(op) */
-    if ((strncmp(atr->name, "pbs_o", 5) == 0)
-        || (strncmp(atr->name, "PBS_O", 5) == 0))
+    if ((strncmp(atr->name.c_str(), "pbs_o", 5) == 0)
+        || (strncmp(atr->name.c_str(), "PBS_O", 5) == 0))
       continue;
     if (is_res)
       {
       len = attr_len + 1;
-      len += strlen(atr->name) + 1;
+      len += atr->name.length() + 1;
       }
     else
-      len = strlen(atr->name) + 1;
-    len += strlen(atr->value) + 1;
+      len = atr->name.length() + 1;
+    len += atr->value.length() + 1;
 /*     fprintf(stderr, "[%s]=[%s]\n", atr->name, atr->value); */
     if ((rc = diswui(chan, len)))             /* total length */
       break;
@@ -251,24 +214,27 @@ int encode_DIS_attropl_hash_single(
       {
       if ((rc = diswst(chan, ATTR_l)) ||      /* name */
           (rc = diswui(chan, 1))      ||      /* resource name exists */
-          (rc = diswst(chan, atr->name)))     /* resource name */
+          (rc = diswst(chan, atr->name.c_str())))     /* resource name */
       break;
       }
     else
       {
-      if ((rc = diswst(chan, atr->name)) || /* name */
+      if ((rc = diswst(chan, atr->name.c_str())) || /* name */
           (rc = diswui(chan, 0)))           /* no resource */
         break;
       }
 
     /* Value is always populated. "\0" == "" */
-    if ((rc = diswst(chan, atr->value)) ||               /* value */
+    if ((rc = diswst(chan, atr->value.c_str())) ||               /* value */
         (rc = diswui(chan, (unsigned int)atr->op_type))) /* op */
       break;
 
     }
+
+  delete it;
+
   return rc;
-  }
+  } /* END enode_DIS_attropl_hash_single() */
 
 
 
@@ -276,29 +242,22 @@ int encode_DIS_attropl_hash_single(
 int encode_DIS_attropl_hash(
 
   struct tcp_chan *chan,
-  memmgr **mm,
-  job_data *job_attr,
-  job_data *res_attr)
+  job_data_container *job_attr,
+  job_data_container *res_attr)
 
   {
   unsigned int  ct = 0;
   unsigned int  var_list_count = 0;
   unsigned int  len;
-  char         *var_list = NULL;
+  std::string     var_list = "";
   int           rc;
-  memmgr       *var_mm;
 
-  if ((rc = memmgr_init(&var_mm, 0)) == PBSE_NONE)
-    {
-    var_list_count = build_var_list(&var_mm, &var_list, &job_attr);
-    ct = hash_count(job_attr) - var_list_count;
-    ct += hash_count(res_attr);
-    ct++; /* var_list */
-    }
+  var_list_count = build_var_list(var_list, job_attr);
+  ct = hash_count(job_attr) - var_list_count;
+  ct += hash_count(res_attr);
+  ct++; /* var_list */
 
-  if (rc != PBSE_NONE)
-    {}
-  else if ((rc = diswui(chan, ct)))
+  if ((rc = diswui(chan, ct)))
     {}
   else if ((rc = encode_DIS_attropl_hash_single(chan, job_attr, 0)))
     {}
@@ -307,16 +266,14 @@ int encode_DIS_attropl_hash(
   else
     {
     len = strlen(ATTR_v) + 1;
-    len += strlen(var_list) + 1;
+    len += var_list.length() + 1;
     if ((rc = diswui(chan, len))               ||  /* attr length */
         (rc = diswst(chan, ATTR_v))            ||  /* attr name */
         (rc = diswui(chan, 0))                 ||  /* no resource */
-        (rc = diswst(chan, var_list))          ||  /* attr value */
+        (rc = diswst(chan, var_list.c_str()))          ||  /* attr value */
         (rc = diswui(chan, (unsigned int)SET)))    /* attr op type */
       {}
     }
-  memmgr_destroy(&var_mm);
-
   return(rc);
   }  /* END encode_DIS_attropl() */
 

@@ -814,19 +814,25 @@ int is_gpustat_get(
 
   {
   pbs_attribute  temp;
-  const char   *gpuid;
+  const char    *gpuid = NULL;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
   int            gpuidx = -1;
   char           gpuinfo[2048];
-  int            need_delimiter;
+  int            need_delimiter = FALSE;
   int            reportedgpucnt = 0;
   int            startgpucnt = 0;
-  int            drv_ver;
+  int            drv_ver = 0;
+
+  if (np == NULL)
+    {
+    sprintf(log_buf, "Invalid parameter for np  passed to is_gpustat_get");
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buf);
+    return(PBSE_BAD_PARAMETER);
+    }
 
   if (LOGLEVEL >= 7)
     {
-    sprintf(log_buf, "received gpu status from node %s",
-      (np != NULL) ? np->nd_name : "NULL");
+    sprintf(log_buf, "received gpu status from node %s", np->nd_name);
 
     log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
     }

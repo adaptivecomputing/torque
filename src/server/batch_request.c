@@ -92,6 +92,8 @@
  */
 
 
+int brh_index = 0;
+
 int get_batch_request_id(
 
   batch_request *preq)
@@ -100,9 +102,9 @@ int get_batch_request_id(
   int  id;
   char buf[MAXLINE];
 
-  pthread_mutex_lock(brh.brh_mutex);
-  id = brh.brh_index++;
-  pthread_mutex_unlock(brh.brh_mutex);
+  brh.lock();
+  id = brh_index++;
+  brh.unlock();
 
   snprintf(buf, sizeof(buf), "%d", id);
 
@@ -115,22 +117,6 @@ int get_batch_request_id(
   } /* END get_batch_request_id() */
 
 
-
-
-void initialize_batch_request_holder()
-
-  {
-  brh.brh_ra = initialize_resizable_array(INITIAL_REQUEST_HOLDER_SIZE);
-
-  brh.brh_mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(brh.brh_mutex, NULL);
-
-  brh.brh_ht = create_hash(INITIAL_HASH_SIZE);
-  } /* initialize_batch_request_holder() */
-
-
-
-
 int insert_batch_request(
 
   batch_request *preq)
@@ -138,21 +124,19 @@ int insert_batch_request(
   {
   int rc;
 
-  pthread_mutex_lock(brh.brh_mutex);
+  brh.lock();
 
-  if ((rc = insert_thing(brh.brh_ra, preq)) < 0)
+  if(!brh.insert(preq,preq->rq_id))
     {
     rc = ENOMEM;
     log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE\n");
     }
   else
     {
-    add_hash(brh.brh_ht, rc, preq->rq_id);
-
     rc = PBSE_NONE;
     }
 
-  pthread_mutex_unlock(brh.brh_mutex);
+  brh.unlock();
 
   return(rc);
   } /* END insert_batch_request() */
@@ -170,16 +154,10 @@ batch_request *get_batch_request(
 
   {
   batch_request *preq = NULL;
-  int            i;
 
-  pthread_mutex_lock(brh.brh_mutex);
-  
-  i = get_value_hash(brh.brh_ht, br_id);
-  
-  if (i >= 0)
-    preq = (batch_request *)brh.brh_ra->slots[i].item;
-  
-  pthread_mutex_unlock(brh.brh_mutex);
+  brh.lock();
+  preq = brh.find(br_id);
+  brh.unlock();
   
   return(preq);
   } /* END get_batch_request() */
@@ -199,20 +177,14 @@ batch_request *get_remove_batch_request(
 
   {
   batch_request *preq = NULL;
-  int            i;
 
-  pthread_mutex_lock(brh.brh_mutex);
-  
-  i = get_value_hash(brh.brh_ht, br_id);
-  
-  if (i >= 0)
+  brh.lock();
+  preq = brh.find(br_id);
+  if(preq != NULL)
     {
-    preq = (batch_request *)brh.brh_ra->slots[i].item;
-    remove_thing_from_index(brh.brh_ra, i);
-    remove_hash(brh.brh_ht, br_id);
+    brh.remove(br_id);
     }
-  
-  pthread_mutex_unlock(brh.brh_mutex);
+  brh.unlock();
   
   return(preq);
   } /* END get_remove_batch_request() */
@@ -225,20 +197,11 @@ int remove_batch_request(
   char *br_id)
 
   {
-  int i;
+  brh.lock();
+  bool found = brh.remove(br_id);
+  brh.unlock();
 
-  pthread_mutex_lock(brh.brh_mutex);
-
-  i = get_value_hash(brh.brh_ht, br_id);
-
-  if (i >= 0)
-    {
-    remove_thing_from_index(brh.brh_ra, i);
-    remove_hash(brh.brh_ht, br_id);
-    }
-  pthread_mutex_unlock(brh.brh_mutex);
-
-  if (i < 0)
+  if (!found)
     return(THING_NOT_FOUND);
   else
     return(PBSE_NONE);

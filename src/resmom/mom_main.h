@@ -129,4 +129,5 @@ int setup_nodeboards();
 
 int parse_mom_hierarchy_file(char *path, mom_hierarchy_t *nt);
 
+void get_mom_job_dir_sticky_config(char *file);
 #endif /* _MOM_MAIN_H */
