@@ -317,6 +317,7 @@ int insert_into_alljobs_by_rank(
         pjcur_mgr.set_unlock_on_exit(false);
         return(ALREADY_IN_LIST);
       }
+    pjcur_mgr.unlock();
     }
 
   if (pjcur != NULL)
