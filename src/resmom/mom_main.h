@@ -176,6 +176,8 @@ unsigned long jobstarter(const char *value);
 
 /* static unsigned long setremchkptdirlist(char *value); */
 
+/* static unsigned long setjobdirectorysticky(char *value); */
+
 void check_log(void);
 
 int read_config(char *file);
@@ -268,5 +270,7 @@ int setup_nodeboards();
 /* int main(int argc, char *argv[]); */
 
 int parse_mom_hierarchy_file(char *path, mom_hierarchy_t *nt);
+
+void get_mom_job_dir_sticky_config(char *file);
 
 #endif /* _MOM_MAIN_H */

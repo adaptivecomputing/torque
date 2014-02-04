@@ -180,7 +180,7 @@ short            memory_pressure_duration  = 0; /* 0: off, >0: check and kill */
 int              max_join_job_wait_time = MAX_JOIN_WAIT_TIME;
 int              resend_join_job_wait_time = RESEND_WAIT_TIME;
 int              mom_hierarchy_retry_time = NODE_COMM_RETRY_TIME;
-
+extern int       MOMJobDirStickySet;
 
 
 
@@ -284,6 +284,7 @@ unsigned long setjobexitwaittime(const char *);
 unsigned long setmaxjoinjobwaittime(const char *);
 unsigned long setresendjoinjobwaittime(const char *);
 unsigned long setmomhierarchyretrytime(const char *);
+unsigned long setjobdirectorysticky(const char *);
 
 struct specials special[] = {
   { "alloc_par_cmd",       setallocparcmd },
@@ -363,6 +364,7 @@ struct specials special[] = {
   { "max_join_job_wait_time", setmaxjoinjobwaittime},
   { "resend_join_job_wait_time", setresendjoinjobwaittime},
   { "mom_hierarchy_retry_time",  setmomhierarchyretrytime},
+  { "jobdirectory_sticky", setjobdirectorysticky},
   { NULL,                  NULL }
   };
 
@@ -1301,6 +1303,24 @@ unsigned long setremchkptdirlist(
 
   return (1);
   }  /* END setremchkptdirlist() */
+
+
+
+
+u_long setjobdirectorysticky(
+
+  const char *value)  /* I */
+
+  {
+  int enable;
+
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
+
+  if ((enable = setbool(value)) != -1)
+    MOMJobDirStickySet = enable;
+
+  return(1);
+  }  /* END setjobdirectorysticky() */
 
 
 
