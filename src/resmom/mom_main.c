@@ -130,6 +130,7 @@ char           Torque_Info_Version[] = PACKAGE_VERSION;
 char           Torque_Info_Version_Revision[] = GIT_HASH;
 char           Torque_Info_Component[] = "pbs_mom";
 char           Torque_Info_SysVersion[BUF_SIZE];
+int            MOMJobDirStickySet = FALSE;
 
 /* mom data items */
 #ifdef NUMA_SUPPORT
@@ -6794,6 +6795,46 @@ int add_to_resend_things(
   } /* END add_to_resend_things() */
 
 
+
+
+void get_mom_job_dir_sticky_config(
+
+  char *file)  /* I */
+
+  {
+  FILE  *conf;
+  char  line[256];
+  char  name[256];
+  char *str;
+  char *ptr;
+
+
+  if ((conf = fopen(file, "r")) == NULL)
+    return;
+
+  while (fgets(line, sizeof(line) - 1, conf))
+    {
+    if (line[0] != '#') /* comment */
+      {
+      if ((ptr = strchr(line, '#')) != NULL)
+        *ptr = '\0';
+
+      str = skipwhite(line);
+      if (*str == '$')
+        {
+        str = tokcpy(++str, name); /* resource name */
+        if (strcasecmp(name, "jobdirectory_sticky") == 0)
+          {
+          str = skipwhite(str);
+          rmnl(str);
+          setjobdirectorysticky(str);
+          break;
+          }
+        }
+        memset(line, 0, sizeof(line));
+       }
+    }
+  } /* END get_mom_job_dir_sticky_config */
 
 /* END mom_main.c */
 
