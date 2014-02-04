@@ -197,6 +197,8 @@ extern int          mom_server_count;
 extern tlist_head   svr_alljobs; /* all jobs under MOM's control */
 extern time_t       time_now;
 extern int          internal_state;
+extern int          MOMJobDirStickySet;
+
 #ifdef NUMA_SUPPORT
 extern int            numa_index;
 #endif
@@ -363,6 +365,7 @@ struct specials special[] = {
   { "max_join_job_wait_time", setmaxjoinjobwaittime},
   { "resend_join_job_wait_time", setresendjoinjobwaittime},
   { "mom_hierarchy_retry_time",  setmomhierarchyretrytime},
+  { "jobdirectory_sticky", setjobdirectorysticky},
   { NULL,                  NULL }
   };
 
@@ -1301,6 +1304,24 @@ unsigned long setremchkptdirlist(
 
   return (1);
   }  /* END setremchkptdirlist() */
+
+
+
+
+u_long setjobdirectorysticky(
+
+  const char *value)  /* I */
+
+  {
+  int enable;
+
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
+
+  if ((enable = setbool(value)) != -1)
+    MOMJobDirStickySet = enable;
+
+  return(1);
+  }  /* END setjobdirectorysticky() */
 
 
 
