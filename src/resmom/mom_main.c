@@ -10064,6 +10064,9 @@ void get_mom_job_dir_sticky_config(
         memset(line, 0, sizeof(line));
        }
     }
+
+  fclose(conf);
+
   } /* END get_mom_job_dir_sticky_config */
 
 
