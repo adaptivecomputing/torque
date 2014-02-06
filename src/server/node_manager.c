@@ -897,7 +897,18 @@ void *sync_node_jobs(
       std::string attributes = job_id.substr(pos);
       job_id.erase(pos);
 
+      // must unlock the node to lock the job in this sub-function
+      unlock_node(np, __func__, NULL, LOGLEVEL);
       process_job_attribute_information(job_id, attributes);
+
+      // re-lock the node
+      if ((np = find_nodebyname(node_id)) == NULL)
+        {
+        free(raw_input);
+        free(sji);
+
+        return(NULL);
+        }
       }
 
     job_work_str = strdup(job_id.c_str());
