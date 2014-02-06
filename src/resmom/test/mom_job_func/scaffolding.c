@@ -8,6 +8,7 @@
 #include "log.h" /* LOG_BUF_SIZE */
 #include "pbs_ifl.h" /* MAXPATHLEN */
 #include "net_connect.h" /* pbs_net_t */
+#include "resource.h" /* resource_def */
 #include "server_limits.h" /* pbs_net_t. Also defined in net_connect.h */
 #include "pbs_job.h" /* job_file_delete_info */
 
@@ -27,6 +28,9 @@ int pbs_rm_port; /* mom_main.c */
 tlist_head svr_alljobs; /* mom_main.c */
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */ /* mom_main.c/pbsd_main.c */
 char log_buffer[LOG_BUF_SIZE]; /* pbs_log.c */
+int svr_resc_size = 0; /* resc_def_all.c */
+resource_def *svr_resc_def = NULL; /* resc_def_all.c */
+
 
 
 void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
