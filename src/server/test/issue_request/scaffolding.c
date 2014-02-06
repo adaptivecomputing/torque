@@ -1,6 +1,8 @@
 #include "license_pbs.h" /* See here for the software license */
+#include <string>
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
+#include <pthread.h>
 
 #include "libpbs.h" /* connect_handle */
 #include "net_connect.h" /* connection */
@@ -20,6 +22,7 @@ unsigned int pbs_server_port_dis;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 all_tasks task_list_event;
 const char *msg_issuebad = "attempt to issue invalid request of type %d";
+std::string rq_id_str;
 
 char *parse_servername(char *name, unsigned int *service)
   {
@@ -80,11 +83,23 @@ int encode_DIS_ReturnFiles(struct tcp_chan *chan, struct batch_request *preq)
   exit(1);
   }
 
-struct work_task *set_task(enum work_type type, long event_id, void (*func)(struct work_task *), void *parm, int get_lock)
+struct work_task *set_task(
+
+  enum work_type   type,
+  long             event_id,  /* I - based on type can be time of event */
+  void           (*func)(struct work_task *),
+  void            *parm,
+  int              get_lock)
+
   {
-  fprintf(stderr, "The call to set_task needs to be mocked!!\n");
-  exit(1);
-  }
+  work_task *pnew = (work_task *)calloc(1, sizeof(work_task));
+  pnew->wt_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+
+  rq_id_str = (char *)parm;
+
+  return(pnew);
+  }  /* END set_task() */
+
 
 void DIS_tcp_setup(int fd)
   {
@@ -222,6 +237,7 @@ int get_batch_request_id(
   batch_request *preq)
 
   {
+  preq->rq_id = strdup("321");
   return(0);
   }
 
@@ -245,7 +261,128 @@ int ctnodes(char *spec)
   return(1);
   }
 
+struct batch_request *alloc_br(
+
+  int type)
+
+  {
+  struct batch_request *req = NULL;
+  
+  if ((req = (struct batch_request *)calloc(1, sizeof(struct batch_request))) == NULL)
+    {
+    fprintf(stderr, "failed to allocate batch request. alloc_br()\n");
+    }
+  else
+    {
+    
+    req->rq_type = type;
+    
+    req->rq_conn = -1;  /* indicate not connected */
+    req->rq_orgconn = -1;  /* indicate not connected */
+    req->rq_time = time(NULL);
+    req->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
+    req->rq_noreply = FALSE;  /* indicate reply is needed */
+    }
+  
+  return(req);
+  } /* END alloc_br() */
+
 batch_request *duplicate_request(batch_request *preq, int job_index)
   {
-  return(NULL);
+  batch_request *preq_tmp = alloc_br(preq->rq_type);
+  char          *ptr1;
+  char          *ptr2;
+  char           newjobname[PBS_MAXSVRJOBID+1];
+
+  if (preq_tmp == NULL)
+    return(NULL);
+
+  preq_tmp->rq_perm = preq->rq_perm;
+  preq_tmp->rq_fromsvr = preq->rq_fromsvr;
+  preq_tmp->rq_conn = preq->rq_conn;
+  preq_tmp->rq_time = preq->rq_time;
+  preq_tmp->rq_orgconn = preq->rq_orgconn;
+
+  memcpy(preq_tmp->rq_ind.rq_manager.rq_objname,
+  preq->rq_ind.rq_manager.rq_objname, PBS_MAXSVRJOBID + 1);
+
+  strcpy(preq_tmp->rq_user, preq->rq_user);
+  strcpy(preq_tmp->rq_host, preq->rq_host);
+
+  if (preq->rq_extend != NULL)
+    preq_tmp->rq_extend = strdup(preq->rq_extend);
+
+  switch (preq->rq_type)
+    {
+    /* This function was created for a modify array request (PBS_BATCH_ModifyJob)
+    the preq->rq_ind structure was allocated in dis_request_read. If other
+    BATCH types are needed refer to that function to see how the rq_ind structure
+    was allocated and then copy it here. */
+    case PBS_BATCH_DeleteJob:
+    case PBS_BATCH_HoldJob:
+    case PBS_BATCH_CheckpointJob:
+    case PBS_BATCH_ModifyJob:
+    case PBS_BATCH_AsyModifyJob:
+
+      /* based on how decode_DIS_Manage allocates data */
+      CLEAR_HEAD(preq_tmp->rq_ind.rq_manager.rq_attr);
+
+      preq_tmp->rq_ind.rq_manager.rq_cmd = preq->rq_ind.rq_manager.rq_cmd;
+      preq_tmp->rq_ind.rq_manager.rq_objtype = preq->rq_ind.rq_manager.rq_objtype;
+
+      if (job_index != -1)
+        {
+        /* If this is a job array it is possible we only have the array name
+        and not the individual job. We need to find out what we have and
+        modify the name if needed */
+        ptr1 = strstr(preq->rq_ind.rq_manager.rq_objname, "[]");
+        if (ptr1)
+          {
+          ptr1++;
+          strcpy(newjobname, preq->rq_ind.rq_manager.rq_objname);
+          ptr2 = strstr(newjobname, "[]");
+          ptr2++;
+          *ptr2 = 0;
+          sprintf(preq_tmp->rq_ind.rq_manager.rq_objname,"%s%d%s",
+                            newjobname, job_index, ptr1);
+          }
+        else
+          strcpy(preq_tmp->rq_ind.rq_manager.rq_objname, preq->rq_ind.rq_manager.rq_objname);
+        }
+    
+      /* copy the attribute list */
+     // if (copy_attribute_list(preq, preq_tmp) != PBSE_NONE)
+     //   return(NULL);
+    
+      break;
+    
+      case PBS_BATCH_SignalJob:
+    
+        strcpy(preq_tmp->rq_ind.rq_signal.rq_jid, preq->rq_ind.rq_signal.rq_jid);
+        strcpy(preq_tmp->rq_ind.rq_signal.rq_signame, preq->rq_ind.rq_signal.rq_signame);
+        preq_tmp->rq_extra = strdup((char *)preq->rq_extra);
+    
+        break;
+    
+      case PBS_BATCH_MessJob:
+    
+        strcpy(preq_tmp->rq_ind.rq_message.rq_jid, preq->rq_ind.rq_message.rq_jid);
+        preq_tmp->rq_ind.rq_message.rq_file = preq->rq_ind.rq_message.rq_file;
+        strcpy(preq_tmp->rq_ind.rq_message.rq_text, preq->rq_ind.rq_message.rq_text);
+    
+        break;
+    
+      case PBS_BATCH_RunJob:
+    
+        if (preq->rq_ind.rq_run.rq_destin)
+          preq_tmp->rq_ind.rq_run.rq_destin = strdup(preq->rq_ind.rq_run.rq_destin);
+    
+        break;
+    
+      default:
+    
+        break;
+      }
+  
+    return(preq_tmp);
   }
