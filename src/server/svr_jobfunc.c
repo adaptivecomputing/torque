@@ -318,6 +318,7 @@ int insert_into_alljobs_by_rank(
     if (strcmp(jobid, pjcur->ji_qs.ji_jobid) == 0)
       {
       delete iter;
+     
       return(ALREADY_IN_LIST);
       }
     }
