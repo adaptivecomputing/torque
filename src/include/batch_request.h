@@ -335,6 +335,7 @@ struct batch_request
   int                 rq_refcount;
   void               *rq_extra; /* optional ptr to extra info  */
   int                 rq_noreply; /* Set true if no reply is required */
+  int                 rq_failcode;
   char               *rq_extend; /* request "extension" data  */
   char               *rq_id;      /* the batch request's id */
   memmgr             *mm;         /* Memory manager for this batch_request */
@@ -418,6 +419,7 @@ extern void    reply_free (struct batch_reply *);
 extern int     authenticate_user (struct batch_request *, struct credential *, char **);
 extern void    free_br (struct batch_request *);
 extern int     isode_request_read (int, struct batch_request *);
+int            process_request(struct tcp_chan *chan);
 
 void           initialize_batch_request_holder();
 int            get_batch_request_id(batch_request *preq);

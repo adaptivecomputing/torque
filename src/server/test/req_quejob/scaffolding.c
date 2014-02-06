@@ -14,6 +14,7 @@
 #include "dynamic_string.h"
 #include "user_info.h"
 #include "mutex_mgr.hpp"
+#include "threadpool.h"
 
 const char *PJobSubState[10];
 char *path_jobs;
@@ -32,6 +33,7 @@ struct server server;
 const char *msg_daemonname = "unset";
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 user_info_holder users;
+threadpool_t *task_pool;
 
 
 int setup_array_struct(job *pjob)
@@ -292,7 +294,8 @@ dynamic_string *get_dynamic_string(int initial_size, const char *str)
 int enqueue_threadpool_request(
 
   void *(*func)(void *),
-  void *arg)
+  void *arg,
+  threadpool_t *tp)
 
   {
   return(0);

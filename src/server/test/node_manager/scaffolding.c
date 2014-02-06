@@ -1,4 +1,7 @@
 #include "license_pbs.h" /* See here for the software license */
+#include <vector>
+#include <string>
+#include <boost/ptr_container/ptr_vector.hpp>
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 #include <netinet/in.h> /* sockaddr_in */
@@ -14,9 +17,7 @@
 #include "net_connect.h" /* pbs_net_t */
 #include "pbs_nodes.h" /* pbsnode, all_nodes, node_iterator */
 #include "work_task.h" /* work_task, work_type */
-#include <vector>
-#include <string>
-#include <boost/ptr_container/ptr_vector.hpp>
+#include "threadpool.h"
 
 
 int str_to_attr_count;
@@ -41,6 +42,7 @@ struct pbsnode reporter;
 struct pbsnode *alps_reporter = &reporter;
 const char *alps_reporter_feature  = "alps_reporter";
 const char *alps_starter_feature   = "alps_login";
+threadpool_t    *task_pool;
 
 
 struct batch_request *alloc_br(int type)
@@ -95,7 +97,7 @@ void free_br(struct batch_request *preq)
   {
   }
 
-int enqueue_threadpool_request(void *(*func)(void *), void *arg)
+int enqueue_threadpool_request(void *(*func)(void *), void *arg, threadpool_t *tp)
   {
   return(0);
   }

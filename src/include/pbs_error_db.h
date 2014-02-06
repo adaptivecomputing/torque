@@ -258,7 +258,7 @@ PbsErrClient(PBSE_MUTEX_ALREADY_UNLOCKED, (char *)"The mutex has already been un
 PbsErrClient(PBSE_INVALID_SYNTAX, (char *)"Command syntax invalid")
 PbsErrClient(PBSE_NODE_DOWN, (char *)"A node is down. Check the MOM and host")
 PbsErrClient(PBSE_SERVER_NOT_FOUND, (char *)"Could not connect to batch server")
-PbsErrClient(PBSE_SERVER_BUSY, (char *)"Server busy. Currently no available threads")
+PbsErrClient(PBSE_SERVER_BUSY, (char *)"Pbs Server is currently too busy to service this request. Please retry this request.")
 PbsErrClient(PBSE_CLIENT_CONN_NOT_FOUND, (char *)"Client connection not found. trqauthd unable to authorize user. Possible transient failure. Please try again")
 PbsErrClient(PBSE_CANNOT_RESOLVE, (char *)"Could not resolve host name")
 PbsErrClient(PBSE_DOMAIN_SOCKET_FAULT, (char *)"could not connect to trqauthd")

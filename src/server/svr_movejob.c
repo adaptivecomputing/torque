@@ -1464,7 +1464,7 @@ int net_move(
     return(ENOMEM);
     }
 
-  return(enqueue_threadpool_request(send_job,args));
+  return(enqueue_threadpool_request(send_job, args, request_pool));
   }  /* END net_move() */
 
 

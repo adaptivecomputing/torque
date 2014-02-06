@@ -1930,7 +1930,7 @@ int cleanup_recovered_arrays()
         /* TODO Someone must have been naughty and did a kill -9 on pbs_server,
            we might need to validate that the last job was fully initialized
            before continuing the cloning process. */
-        enqueue_threadpool_request(job_clone_wt, strdup(pa->ai_qs.parent_id));
+        enqueue_threadpool_request(job_clone_wt, strdup(pa->ai_qs.parent_id), task_pool);
         }
 
       }
@@ -2055,8 +2055,14 @@ void setup_threadpool()
   get_svr_attr_l(SRV_ATR_minthreads, &min_threads);
   get_svr_attr_l(SRV_ATR_maxthreads, &max_threads);
   get_svr_attr_l(SRV_ATR_threadidleseconds, &thread_idle_time);
+
+  // give each pool an equal share of threads
+  min_threads /= 3;
+  max_threads /= 3;
   
   initialize_threadpool(&request_pool, min_threads, max_threads, thread_idle_time);
+  initialize_threadpool(&task_pool, min_threads, max_threads, thread_idle_time);
+  initialize_threadpool(&mom_pool, min_threads, max_threads, thread_idle_time);
   } /* END setup_threadpool() */
 
 
@@ -2159,7 +2165,9 @@ int pbsd_init(
       add_all_nodes_to_hello_container();
 
     /* allow the threadpool to start processing */
-    start_request_pool();
+    start_request_pool(request_pool);
+    start_request_pool(task_pool);
+    start_request_pool(mom_pool);
 
     /* SUCCESS */
     return(PBSE_NONE);

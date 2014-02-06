@@ -96,9 +96,7 @@ int insert_into_queue_recycler(
   pq->q_being_recycled = TRUE;
 
   if (q_recycler.queues.ra->num >= MAX_RECYCLE_QUEUES)
-    {
-    enqueue_threadpool_request(remove_some_recycle_queues,NULL);
-    }
+    enqueue_threadpool_request(remove_some_recycle_queues, NULL, task_pool);
 
   rc = insert_queue(&q_recycler.queues,pq);
 

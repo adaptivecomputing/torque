@@ -590,9 +590,12 @@ static void close_quejob(
 
 void free_br(
 
-  struct batch_request *preq)
+  batch_request *preq)
 
   {
+  if (preq == NULL)
+    return;
+
   delete_link(&preq->rq_link);
 
   reply_free(&preq->rq_reply);

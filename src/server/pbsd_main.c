@@ -142,6 +142,7 @@
 #include "ji_mutex.h"
 #include "job_route.h" /* queue_route */
 #include "exiting_jobs.h"
+#include "server_comm.h"
 
 #define TASK_CHECK_INTERVAL      10
 #define HELLO_WAIT_TIME          600
@@ -384,139 +385,6 @@ static void need_y_response(
 
   return;
   }  /* END need_y_response() */
-
-
-
-int process_pbs_server_port(
-     
-  int sock,
-  int is_scheduler_port,
-  long *args)
- 
-  {
-  int              proto_type;
-  int              rc = PBSE_NONE;
-  int              version;
-  char             log_buf[LOCAL_LOG_BUF_SIZE];
-  struct tcp_chan *chan = NULL;
-   
-  if ((chan = DIS_tcp_setup(sock)) == NULL)
-    {
-    return(PBSE_MEM_MALLOC);
-    }
-
-  proto_type = disrui_peek(chan,&rc);
-  
-  switch (proto_type)
-    {
-    case PBS_BATCH_PROT_TYPE:
-      
-      rc = process_request(chan);
-      
-      break;
-      
-    case IS_PROTOCOL:
-
-      version = disrsi(chan, &rc);
-      
-      if (rc != DIS_SUCCESS)
-        {
-        log_err(-1,  __func__, "Cannot read version - skipping this request.\n");
-        rc = PBSE_SOCKET_CLOSE; 
-        break;
-        }
-      
-      rc = svr_is_request(chan, version, args);
-      
-      break;
-
-    default:
-      {
-      struct sockaddr     s_addr;
-      struct sockaddr_in *addr;
-      socklen_t           len = sizeof(s_addr);
-
-      if (getpeername(sock, &s_addr, &len) == 0)
-        {
-        addr = (struct sockaddr_in *)&s_addr;
-        
-        if (proto_type == 0)
-          {
-          /* 
-           * Don't log error if close is on scheduler port.  Scheduler is
-           * responsible for closing the connection
-           */
-          if (!is_scheduler_port)
-            {
-            if (LOGLEVEL >= 8)
-              {
-              snprintf(log_buf, sizeof(log_buf),
-                "proto_type: %d: Socket (%d) close detected from %s", proto_type, sock, netaddr(addr));
-              log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
-              }
-            }
-
-          if (chan->IsTimeout)
-            {
-            chan->IsTimeout = 0;
-            rc = PBSE_TIMEOUT;
-            }
-          else
-	    rc = PBSE_SOCKET_CLOSE;
-          }
-        else
-          {
-          snprintf(log_buf,sizeof(log_buf),
-              "Socket (%d) Unknown protocol %d from %s", sock, proto_type, netaddr(addr));
-          log_err(-1, __func__, log_buf);
-          rc = PBSE_SOCKET_DATA;
-          }
-        }
-      else
-        rc = PBSE_SOCKET_CLOSE;
-
-      break;
-      }
-    }
-
-  if (chan != NULL)
-    DIS_tcp_cleanup(chan);
-
-  return(rc);
-  }  /* END process_pbs_server_port() */
-
-
-
-
-void *start_process_pbs_server_port(
-    
-  void *new_sock)
-
-  {
-  long *args = (long *)new_sock;
-  int sock;
-  int rc = PBSE_NONE;
- 
-  sock = (int)args[0];
-
-  while ((rc != PBSE_SOCKET_DATA) &&
-         (rc != PBSE_SOCKET_INFORMATION) &&
-         (rc != PBSE_INTERNAL) &&
-         (rc != PBSE_SYSTEM) &&
-         (rc != PBSE_MEM_MALLOC) &&
-         (rc != PBSE_SOCKET_CLOSE))
-    {
-    netcounter_incr();
-
-    rc = process_pbs_server_port(sock, FALSE, args);
-    }
-
-  free(new_sock);
-  close_conn(sock, FALSE);
-
-  /* Thread exit */
-  return(NULL);
-  }
  
 
 
@@ -1125,7 +993,7 @@ void send_any_hellos_needed()
 
   /* send hierarchy using threadpool */
   while ((hi = pop_hello(&hellos)) != NULL)
-    enqueue_threadpool_request(send_hierarchy_threadtask, hi);
+    enqueue_threadpool_request(send_hierarchy_threadtask, hi, task_pool);
 
   /* re-insert any failures */
   while ((hi = pop_hello(&failures)) != NULL)
@@ -1500,7 +1368,7 @@ void main_loop(void)
       }
 
     if (time_now - last_task_check_time > TASK_CHECK_INTERVAL)
-      enqueue_threadpool_request(check_tasks, NULL);
+      enqueue_threadpool_request(check_tasks, NULL, task_pool);
 
     if ((disable_timeout_check == FALSE) && (time_now > update_timeout))
       {
@@ -1538,7 +1406,7 @@ void main_loop(void)
 
         server.sv_next_schedule = time_now + sched_iteration;
 
-        enqueue_threadpool_request(handle_scheduler_contact, NULL);
+        enqueue_threadpool_request(handle_scheduler_contact, NULL, task_pool);
         }
       else
         {
@@ -1608,7 +1476,8 @@ void main_loop(void)
         set_svr_attr(SRV_ATR_State, &state);
 
         /* at this point kill the threadpool */
-        destroy_request_pool();
+        destroy_request_pool(request_pool);
+        destroy_request_pool(task_pool);
         }
       }
 

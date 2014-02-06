@@ -10,7 +10,9 @@
 #include "net_connect.h" /* pbs_net_t */
 #include "server_limits.h" /* pbs_net_t. Also defined in net_connect.h */
 #include "pbs_job.h" /* job_file_delete_info */
+#include "threadpool.h"
 
+threadpool_t *request_pool;
 int is_login_node = 0;
 char *apbasil_path = NULL;
 char *apbasil_protocol = NULL;
@@ -53,7 +55,7 @@ void log_record(int eventtype, int objclass, const char *objname, const char *te
   exit(1);
   }
 
-int enqueue_threadpool_request(void *(*func)(void *),void *arg)
+int enqueue_threadpool_request(void *(*func)(void *),void *arg, threadpool_t *tp)
   {
   fprintf(stderr, "The call to enqueue_threadpool_request needs to be mocked!!\n");
   exit(1);

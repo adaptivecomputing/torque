@@ -996,7 +996,7 @@ int handle_delete_all(
     {
     reply_ack(preq_tmp);
     preq->rq_noreply = TRUE; /* set for no more replies */
-    enqueue_threadpool_request(delete_all_work, preq);
+    enqueue_threadpool_request(delete_all_work, preq, request_pool);
     }
   else
     delete_all_work(preq);
@@ -1068,7 +1068,7 @@ int handle_single_delete(
       {
       reply_ack(preq_tmp);
       preq->rq_noreply = TRUE; /* set for no more replies */
-      enqueue_threadpool_request(single_delete_work, preq);
+      enqueue_threadpool_request(single_delete_work, preq, request_pool);
       }
     else
       single_delete_work(preq);

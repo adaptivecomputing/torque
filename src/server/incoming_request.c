@@ -76,167 +76,157 @@
 * This license will be governed by the laws of the Commonwealth of Virginia,
 * without reference to its choice of law rules.
 */
+/*
+ * The entry point function for pbs_daemon.
+ *
+ * Included public functions re:
+ *
+ * main initialization and main loop of pbs_daemon
+ */
 
-
-#include <stdlib.h>
-
-#include "pbs_job.h"
-#include "utils.h"
+#include <stdio.h>
+#include "server_comm.h"
+#include "dis.h"
 #include "threadpool.h"
-#include "ji_mutex.h"
+#include "pbs_error.h"
+#include "log.h"
+#include "libpbs.h"
+#include "net_connect.h"
+#include "batch_request.h"
 
-extern job_recycler recycler;
-extern int          LOGLEVEL;
+char *netaddr(struct sockaddr_in *ap);
+void netcounter_incr();
 
-
-void initialize_recycler()
-
+int process_pbs_server_port(
+     
+  int   sock,
+  int   is_scheduler_port,
+  long *args)
+ 
   {
-  recycler.rc_next_id = 0;
-  initialize_all_jobs_array(&recycler.rc_jobs);
-  recycler.rc_iter = -1;
-
-  recycler.rc_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(recycler.rc_mutex,NULL);
-  } /* END initialize_recycler() */
-
-
-
-
-job *next_job_from_recycler(
-
-  struct all_jobs *aj,
-  int             *iter)
-
-  {
-  job *pjob;
-
-  pthread_mutex_lock(aj->alljobs_mutex);
-  pjob = (job *)next_thing(aj->ra, iter);
-  pthread_mutex_unlock(aj->alljobs_mutex);
-
-  if (pjob != NULL)
-    lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
-
-  return(pjob);
-  } /* END next_job_from_recycler() */
-
-
-
-
-void *remove_some_recycle_jobs(
-    
-  void *vp)
-
-  {
-  int  i;
-  int  iter = -1;
-  job *pjob = NULL;
-
-  pthread_mutex_lock(recycler.rc_mutex);
-
-  for (i = 0; i < JOBS_TO_REMOVE; i++)
-    {
-    pjob = next_job_from_recycler(&recycler.rc_jobs,&iter);
-    
-    if (pjob == NULL)
-      break;
-
-    if (LOGLEVEL >= 10)
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
-
-    pjob->ji_being_recycled = FALSE; //Need to set the being_recycled flag to false or
-                                     //or remove_job won't remove it.
-    remove_job(&recycler.rc_jobs, pjob);
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-    free(pjob->ji_mutex);
-    memset(pjob, 255, sizeof(job));
-    free(pjob);
-    }
-
-  pthread_mutex_unlock(recycler.rc_mutex);
-
-  return(NULL);
-  } /* END remove_some_recycle_jobs() */
-
-
-
-
-int insert_into_recycler(
-
-  job *pjob)
-
-  {
-  int              rc;
-  pthread_mutex_t *tmp = pjob->ji_mutex;
+  int              proto_type;
+  int              rc = PBSE_NONE;
   char             log_buf[LOCAL_LOG_BUF_SIZE];
-
-  if (LOGLEVEL >= 7)
+  struct tcp_chan *chan = NULL;
+   
+  if ((chan = DIS_tcp_setup(sock)) == NULL)
     {
-    snprintf(log_buf, sizeof(log_buf),
-      "Adding job %s to the recycler", pjob->ji_qs.ji_jobid);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-    }
-  if(pjob->ji_being_recycled == TRUE)
-    {
-    return PBSE_NONE;
+    return(PBSE_MEM_MALLOC);
     }
 
+  proto_type = disrui_peek(chan,&rc);
+  
+  switch (proto_type)
+    {
+    case PBS_BATCH_PROT_TYPE:
+      
+      rc = process_request(chan);
+      
+      break;
+      
+    case IS_PROTOCOL:
 
-  memset(pjob, 0, sizeof(job));
-  pjob->ji_mutex = tmp;
+      {
+      // always close the socket for is requests 
+      rc = PBSE_SOCKET_CLOSE;
 
-  pthread_mutex_lock(recycler.rc_mutex);
+      is_request_info *isr = (is_request_info *)calloc(1, sizeof(is_request_info));
 
+      isr->chan = chan;
+      isr->args = args;
 
-  sprintf(pjob->ji_qs.ji_jobid,"%d",recycler.rc_next_id);
-  pjob->ji_being_recycled = TRUE;
+      // don't let this get cleaned up below
+      chan = NULL;
+      
+      enqueue_threadpool_request(svr_is_request, isr, mom_pool);
+      
+      break;
+      }
 
-  if (recycler.rc_jobs.ra->num >= MAX_RECYCLE_JOBS)
-    enqueue_threadpool_request(remove_some_recycle_jobs, NULL, task_pool);
-    
-  rc = insert_job(&recycler.rc_jobs, pjob);
-    
-  update_recycler_next_id();
+    default:
+      {
+      struct sockaddr     s_addr;
+      struct sockaddr_in *addr;
+      socklen_t           len = sizeof(s_addr);
 
-  pthread_mutex_unlock(recycler.rc_mutex);
+      if (getpeername(sock, &s_addr, &len) == 0)
+        {
+        addr = (struct sockaddr_in *)&s_addr;
+        
+        if (proto_type == 0)
+          {
+          /* 
+           * Don't log error if close is on scheduler port.  Scheduler is
+           * responsible for closing the connection
+           */
+          if (!is_scheduler_port)
+            {
+            if (LOGLEVEL >= 8)
+              {
+              snprintf(log_buf, sizeof(log_buf),
+                "proto_type: %d: Socket (%d) close detected from %s", proto_type, sock, netaddr(addr));
+              log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
+              }
+            }
+
+          if (chan->IsTimeout)
+            {
+            chan->IsTimeout = 0;
+            rc = PBSE_TIMEOUT;
+            }
+          else
+            rc = PBSE_SOCKET_CLOSE;
+          }
+        else
+          {
+          snprintf(log_buf,sizeof(log_buf),
+              "Socket (%d) Unknown protocol %d from %s", sock, proto_type, netaddr(addr));
+          log_err(-1, __func__, log_buf);
+          rc = PBSE_SOCKET_DATA;
+          }
+        }
+      else
+        rc = PBSE_SOCKET_CLOSE;
+
+      break;
+      }
+    }
+
+  if (chan != NULL)
+    DIS_tcp_cleanup(chan);
 
   return(rc);
-  } /* END insert_into_recycler() */
+  }  /* END process_pbs_server_port() */
 
 
 
 
-job *get_recycled_job()
-
-  {
-  job *pjob;
-
-  pthread_mutex_lock(recycler.rc_mutex);
-  pjob = next_job_from_recycler(&recycler.rc_jobs,&recycler.rc_iter);
-
-  if (pjob == NULL)
-    recycler.rc_iter = -1;
-  pthread_mutex_unlock(recycler.rc_mutex);
-
-  if (pjob != NULL)
-    pjob->ji_being_recycled = FALSE;
-
-  return(pjob);
-  } /* END get_recycled_job() */
-
-
-
-void update_recycler_next_id() 
+void *start_process_pbs_server_port(
+    
+  void *new_sock)
 
   {
-  recycler.rc_next_id++;
-  } /* END update_recycler_next_id() */
+  long *args = (long *)new_sock;
+  int sock;
+  int rc = PBSE_NONE;
+ 
+  sock = (int)args[0];
 
+  while ((rc != PBSE_SOCKET_DATA) &&
+         (rc != PBSE_SOCKET_INFORMATION) &&
+         (rc != PBSE_INTERNAL) &&
+         (rc != PBSE_SYSTEM) &&
+         (rc != PBSE_MEM_MALLOC) &&
+         (rc != PBSE_SOCKET_CLOSE))
+    {
+    netcounter_incr();
 
+    rc = process_pbs_server_port(sock, FALSE, args);
+    }
 
+  free(new_sock);
+  close_conn(sock, FALSE);
 
-
-
-/* END job_recycler.c */
-
+  /* Thread exit */
+  return(NULL);
+  }

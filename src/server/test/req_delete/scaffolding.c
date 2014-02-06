@@ -11,6 +11,7 @@
 #include "work_task.h" /* work_task, all_tasks */
 #include "queue.h" /* pbs_queue */
 #include "node_func.h" /* node_info */
+#include "threadpool.h"
 
 int check_and_resize(resizable_array *ra);
 void update_next_slot(resizable_array *ra);
@@ -19,6 +20,7 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging);
 
 #define MSG_LEN_LONG 160
 
+threadpool_t *request_pool;
 const char *msg_deletejob = "Job deleted";
 struct all_jobs alljobs;
 const char *msg_delrunjobsig = "Job sent signal %s on delete";
@@ -229,7 +231,7 @@ int unlock_ai_mutex(job_array *pa, const char *id, const char *msg, int logging)
 
 void on_job_exit_task(struct work_task *ptask) {}
 
-int enqueue_threadpool_request(void *(*func)(void *), void *arg)
+int enqueue_threadpool_request(void *(*func)(void *), void *arg, threadpool_t *tp)
   {
   return(0);
   }

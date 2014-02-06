@@ -754,7 +754,7 @@ int remove_jobs_that_have_disappeared(
       jobid, pnode->nd_name);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buf);  
 
-    enqueue_threadpool_request(finish_job, jobid);
+    enqueue_threadpool_request(finish_job, jobid, task_pool);
     }
 
   /* now replace the old resizable array with the ones currently reported */
@@ -1246,7 +1246,7 @@ void check_nodes(
   struct work_task *ptask)  /* I (modified) */
 
   {
-  int rc = enqueue_threadpool_request(check_nodes_work,ptask);
+  int rc = enqueue_threadpool_request(check_nodes_work, ptask, task_pool);
 
   if (rc)
     {
@@ -1345,7 +1345,7 @@ void *write_node_state_work(
 void write_node_state(void)
 
   {
-  int rc = enqueue_threadpool_request(write_node_state_work,NULL);
+  int rc = enqueue_threadpool_request(write_node_state_work, NULL, task_pool);
 
   if (rc)
     {
@@ -1491,7 +1491,7 @@ void node_unreserve(
   resource_t handle)
 
   {
-  int rc = enqueue_threadpool_request(node_unreserve_work,NULL);
+  int rc = enqueue_threadpool_request(node_unreserve_work, NULL, task_pool);
 
   if (rc)
     {

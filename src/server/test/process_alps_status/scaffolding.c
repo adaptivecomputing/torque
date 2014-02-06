@@ -8,6 +8,7 @@
 #include "attribute.h"
 #include "u_tree.h"
 #include "hash_table.h"
+#include "threadpool.h"
 
 
 #define rot(x,k) (((x)<<(k)) | ((x)>>(32-(k))))
@@ -33,6 +34,7 @@
   c ^= b; c -= rot(b,24); \
   }
 
+threadpool_t *mom_pool;
 char log_buffer[LOG_BUF_SIZE];
 int count;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
@@ -2033,7 +2035,8 @@ struct batch_request *alloc_br(
 int enqueue_threadpool_request(
 
   void *(*func)(void *),
-  void *arg)
+  void *arg,
+  threadpool_t *tp)
 
   {
   return(0);

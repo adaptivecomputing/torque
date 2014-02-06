@@ -2208,7 +2208,7 @@ int req_commit(
     {
     sprintf(log_buf, "threading job_clone_wt: job id %s", pj->ji_qs.ji_jobid);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-    enqueue_threadpool_request(job_clone_wt, strdup(pj->ji_qs.ji_jobid));
+    enqueue_threadpool_request(job_clone_wt, strdup(pj->ji_qs.ji_jobid), task_pool);
     }
     
   sprintf(log_buf, "job_id: %s", pj->ji_qs.ji_jobid);

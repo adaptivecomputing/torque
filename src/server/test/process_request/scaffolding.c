@@ -12,6 +12,7 @@
 #include "list_link.h" /* list_link, tlist_head */
 #include "pbs_nodes.h" /* pbsnode */
 #include "attribute.h" /* pbs_attribute */
+#include "threadpool.h"
 
 const char *msg_err_noqueue = "Unable to requeue job, queue is not defined";
 struct credential conn_credent[PBS_NET_MAX_CONNECTIONS];
@@ -22,8 +23,12 @@ const char *msg_request = "Type %s request received from %s@%s, sock=%d";
 struct server server;
 char *server_host;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
+threadpool_t *request_pool;
 
-
+bool threadpool_is_too_busy(threadpool *tp, int permissions)
+  {
+  return(false);
+  }
 
 int req_releasejob(batch_request *preq)
   {

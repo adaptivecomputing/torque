@@ -231,6 +231,8 @@ int mom_req_stat_job(
   return(0);
   }
 
+void mom_req_quejob(batch_request *preq) {}
+
 void req_delete_reservation(struct batch_request *request) {}
 
 void log_err(int errnum, const char *routine, const char *text) {}

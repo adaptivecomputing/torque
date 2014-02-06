@@ -849,7 +849,7 @@ void mom_job_purge(
   jfdi->uid = pjob->ji_qs.ji_un.ji_momt.ji_exuid;
 
   if (thread_unlink_calls == TRUE)
-    enqueue_threadpool_request(delete_job_files,jfdi);
+    enqueue_threadpool_request(delete_job_files, jfdi, request_pool);
   else
     delete_job_files(jfdi);
 

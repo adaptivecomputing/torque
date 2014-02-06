@@ -12,6 +12,7 @@
 #include "user_info.h"
 #include "server.h" /* server */
 #include "sched_cmds.h"
+#include "threadpool.h"
 
 const char *text_name              = "text";
 const char *PJobSubState[10];
@@ -37,6 +38,7 @@ int listener_command = SCH_SCHEDULE_NULL;
 char *path_jobinfo_log;
 pthread_mutex_t *svr_do_schedule_mutex;
 pthread_mutex_t *listener_command_mutex;
+threadpool_t    *task_pool;
 
 
 ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
@@ -148,10 +150,9 @@ ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   return(0);
   }
 
-int enqueue_threadpool_request(void *(*func)(void *),void *arg)
+int enqueue_threadpool_request(void *(*func)(void *),void *arg, threadpool_t *tp)
   {
-  fprintf(stderr, "The call to enqueue_threadpool_request to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 mutex_mgr::mutex_mgr(pthread_mutex_t *, bool a)

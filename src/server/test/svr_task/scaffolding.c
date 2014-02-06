@@ -14,6 +14,7 @@ all_tasks             task_list_event;
 task_recycler         tr;
 pthread_mutex_t       task_list_timed_mutex;
 
+threadpool_t         *task_pool;
 threadpool_t         *request_pool;
 
 sigset_t      fillset;
@@ -41,7 +42,7 @@ int remove_thing(resizable_array *ra, void *thing)
   exit(1);
   }
 
-int enqueue_threadpool_request(void *(*func)(void *),void *arg)
+int enqueue_threadpool_request(void *(*func)(void *),void *arg, threadpool_t *tp)
   {
   return 5;
   }
