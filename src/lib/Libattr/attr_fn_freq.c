@@ -328,7 +328,7 @@ int to_frequency(
               pVal++;
               if(*pVal == '\0')
                 {
-		hasMhz = TRUE;
+                hasMhz = TRUE;
                 break;
                 }
               }

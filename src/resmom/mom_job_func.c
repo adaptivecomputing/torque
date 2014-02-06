@@ -142,6 +142,8 @@
 #include "utils.h"
 #include "mom_config.h"
 #include "container.hpp"
+#include "node_frequency.hpp"
+
 
 #ifndef TRUE
 #define TRUE 1
@@ -868,6 +870,18 @@ void mom_job_purge(
   unload_sp_switch(pjob);
 
 #endif   /* IBM SP */
+
+  //We had a request to change the frequency for the job and now that the job is done
+  //we want to change the frequency back.
+  resource *presc = find_resc_entry(&pjob->ji_wattr[JOB_ATR_resource],
+            find_resc_def(svr_resc_def, "cpuclock", svr_resc_size));
+  if(presc != NULL)
+    {
+    nd_frequency.restore_frequency();
+    }
+
+
+
 
   mom_job_free(pjob);
 

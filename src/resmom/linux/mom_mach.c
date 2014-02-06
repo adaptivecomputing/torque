@@ -1748,9 +1748,30 @@ int mom_set_limits(
           }
         }
       }
-    else if (strcmp(pname, "cpuclock") == 0)   /* Set cpu frequency */
+    else if (!strcmp(pname, "cpuclock"))   /* Set cpu frequency */
       {
-      //Check the value and set the clock frequency.
+      if(set_mode == SET_LIMIT_SET)
+        {
+        if(!nd_frequency.set_frequency((cpu_frequency_type)pres->rs_value.at_val.at_frequency.frequency_type,
+            pres->rs_value.at_val.at_frequency.mhz,
+            pres->rs_value.at_val.at_frequency.mhz))
+          {
+          sprintf(log_buffer,"Set frequency failed: %s.\n",nd_frequency.get_last_error());
+          log_record(PBSEVENT_SYSTEM, 0, __func__, log_buffer);
+
+          log_buffer[0] = '\0';
+          }
+        else
+          {
+          std::string str;
+          nd_frequency.get_frequency_string(str);
+          sprintf(log_buffer,"Frequency set to %s.\n",str.c_str());
+          log_record(PBSEVENT_SYSTEM, 0, __func__, log_buffer);
+
+          log_buffer[0] = '\0';
+
+          }
+        }
       }
     else if (!strcmp(pname, "size"))
       {
