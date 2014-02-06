@@ -1,6 +1,8 @@
 #include "license_pbs.h" /* See here for the software license */
+#include <string>
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
+#include <pthread.h>
 
 #include "libpbs.h" /* connect_handle */
 #include "net_connect.h" /* connection */
@@ -26,6 +28,7 @@ unsigned int pbs_server_port_dis;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 all_tasks task_list_event;
 const char *msg_issuebad = "attempt to issue invalid request of type %d";
+std::string rq_id_str;
 
 int pthread_mutex_lock(pthread_mutex_t *mutex) throw()
   {
@@ -112,11 +115,6 @@ int insert_timed_task(
   return(PBSE_NONE);
   }
 
-/*
- * set_task - add the job entry to the task list
- *
- * Task time depends on the type of task.  The list is time ordered.
- */
 
 struct work_task *set_task(
 
@@ -127,39 +125,10 @@ struct work_task *set_task(
   int              get_lock)
 
   {
-  work_task *pnew;
+  work_task *pnew = (work_task *)calloc(1, sizeof(work_task));
+  pnew->wt_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
 
-  if ((pnew = (struct work_task *)calloc(1, sizeof(struct work_task))) == NULL)
-    {
-    return(NULL);
-    }
-
-  pnew->wt_event    = event_id;
-  pnew->wt_type     = type;
-  pnew->wt_func     = func;
-  pnew->wt_parm1    = parm;
-
-  if (type == WORK_Immed)
-    {
-    enqueue_threadpool_request((void *(*)(void *))func,pnew);
-    }
-  else
-    {
-    if ((pnew->wt_mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t))) == NULL)
-      {
-      free(pnew);
-      return(NULL);
-      }
-
-    pthread_mutex_init(pnew->wt_mutex,NULL);
-    pthread_mutex_lock(pnew->wt_mutex);
-
-    insert_timed_task(pnew);
-
-    /* only keep the lock if they want it */
-    if (get_lock == FALSE)
-      pthread_mutex_unlock(pnew->wt_mutex);
-    }
+  rq_id_str = (char *)parm;
 
   return(pnew);
   }  /* END set_task() */

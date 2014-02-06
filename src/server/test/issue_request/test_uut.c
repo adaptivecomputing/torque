@@ -1,8 +1,11 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "issue_request.h"
-#include "test_uut.h"
+
+#include <string>
 #include <stdlib.h>
 #include <stdio.h>
+
+#include "issue_request.h"
+#include "test_uut.h"
 #include "pbs_error.h"
 #include "attribute.h"
 
@@ -10,6 +13,23 @@ bool return_addr;
 bool local_connect;
 bool net_rc_retry;
 bool connect_error;
+
+extern std::string rq_id_str;
+void queue_a_retry_task(batch_request *preq, void (*replyfunc)(struct work_task *));
+
+START_TEST(queue_a_retry_task_test)
+  {
+  batch_request *preq = (batch_request *)calloc(1, sizeof(batch_request));
+  preq->rq_id = strdup("tom");
+
+  queue_a_retry_task(preq, NULL);
+  // rq_id_str is a sensing variable set in set_task()
+  // this tells us we made a deep copy because we acquired a new rq_id for the 
+  // request that we are reissuing.
+  fail_unless(rq_id_str != "tom");
+  }
+END_TEST
+
 
 START_TEST(test_one)
   {
@@ -301,6 +321,7 @@ Suite *issue_request_suite(void)
 
   tc_core = tcase_create("test_reissue_to_svr");
   tcase_add_test(tc_core, test_reissue_to_svr);
+  tcase_add_test(tc_core, queue_a_retry_task_test);
   suite_add_tcase(s, tc_core);
 
   return s;

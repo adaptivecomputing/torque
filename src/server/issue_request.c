@@ -274,7 +274,7 @@ void reissue_to_svr(
      }
 
    if (((time_now - preq->rq_time) > PBS_NET_RETRY_LIMIT) ||
-        (issue_to_svr(serverName, preq, pwt->wt_parmfunc) != PBSE_NONE))
+       (issue_to_svr(serverName, preq, pwt->wt_parmfunc) != PBSE_NONE))
       {
       /* either timed-out or got hard error, tell post-function  */
       
