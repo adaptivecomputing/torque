@@ -314,10 +314,8 @@ int insert_into_alljobs_by_rank(
     
     if (strcmp(jobid, pjcur->ji_qs.ji_jobid) == 0)
       {
-        pjcur_mgr.set_unlock_on_exit(false);
         return(ALREADY_IN_LIST);
       }
-    pjcur_mgr.unlock();
     }
 
   if (pjcur != NULL)
