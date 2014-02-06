@@ -2906,7 +2906,7 @@ int node_spec(
           
           free(spec);
           
-          return(-1);
+          return(PBSE_LOGIN_BUSY);
           }
         }
       }
@@ -4263,6 +4263,8 @@ int set_nodes(
 
     return(PBSE_RESCUNAV);
     }
+  else if (i == PBSE_LOGIN_BUSY)
+    return(i);
   else if (i < 0)
     {
     /* request failed, corrupt request */
