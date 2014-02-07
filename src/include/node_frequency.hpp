@@ -83,6 +83,7 @@
 #include "cpu_frequency.hpp"
 #include "attribute.h"
 #include <string>
+#include "pbs_error.h"
 
 class node_frequency
   {
@@ -96,7 +97,7 @@ private:
   unsigned long      minFrequency;
   }cpu_frequency_save;
 
-  std::string last_error;
+  int last_error;
   boost::ptr_vector<cpu_frequency> cpus;
   boost::ptr_vector<cpu_frequency_save> base_frequencies;
 
@@ -115,9 +116,13 @@ public:
     {
     cpus.clear();
     }
-  const char *get_last_error()
+  const char *get_last_error_string()
     {
-    return last_error.c_str();
+    return pbse_to_txt(last_error);
+    }
+  int get_last_error()
+    {
+    return last_error;
     }
   };
 

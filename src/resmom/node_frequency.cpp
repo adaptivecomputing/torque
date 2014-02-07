@@ -106,6 +106,7 @@ static const char *lowerFrequencyName = "lowerKHz";
 
 node_frequency::node_frequency()
   {
+  last_error = PBSE_NONE;
   int i = 0;
   cpu_frequency *cpu_freq;
   do
@@ -206,12 +207,14 @@ bool node_frequency::load_base_frequencies(std::string& path)
         (minFreqNode == NULL))
       {
       xmlFreeDoc(doc);
+      last_error = PBSE_INVALID_FREQUENCY_FILE;
       return false;
       }
     unsigned long cpu = boost::lexical_cast<int>(cpuNum);
     if((cpu >= cpus.size())||(cpu != i))
       {
       xmlFreeDoc(doc);
+      last_error = PBSE_INVALID_FREQUENCY_FILE;
       return false;
       }
     cpu_frequency_save *saver = new cpu_frequency_save();
@@ -226,6 +229,7 @@ bool node_frequency::load_base_frequencies(std::string& path)
   xmlFreeDoc(doc);
   if(base_frequencies.size() != cpus.size())
     {
+    last_error = PBSE_INVALID_FREQUENCY_FILE;
     return false;
     }
   return true;
@@ -237,11 +241,13 @@ bool node_frequency::save_base_frequencies(std::string& path)
   xmlNodePtr root = NULL;
   if((doc = xmlNewDoc((const xmlChar *)"1.0")) == NULL)
     {
+    last_error = PBSE_SYSTEM;
     return false;
     }
   if((root = xmlNewNode((xmlNsPtr)NULL,(const xmlChar *)rootFrequencyName)) == NULL)
     {
     xmlFreeDoc(doc);
+    last_error = PBSE_SYSTEM;
     return false;
     }
   base_frequencies.clear();
@@ -285,6 +291,7 @@ bool node_frequency::restore_frequency()
   {
   if((base_frequencies.size() == 0)||(base_frequencies.size() != cpus.size()))
     {
+    last_error = PBSE_INVALID_FREQUENCY_FILE;
     return false;
     }
   boost::ptr_vector<cpu_frequency>::iterator cpu = cpus.begin();
@@ -300,7 +307,7 @@ bool node_frequency::get_frequency(cpu_frequency_type& type,unsigned long& currM
   {
   if(cpus.size() == 0)
     {
-    last_error = "Node does not support managing cpu frequency.";
+    last_error = PBSE_NODE_CANT_MANAGE_FREQUENCY;
     return false;
     }
   if(!cpus.at(0).get_frequency(type,currMhz,maxMhz,minMhz))
@@ -345,7 +352,7 @@ bool node_frequency::set_frequency(cpu_frequency_type type,unsigned long maxMhz,
   {
   if(cpus.size() == 0)
     {
-    last_error = "Node does not support managing cpu frequency.";
+    last_error = PBSE_NODE_CANT_MANAGE_FREQUENCY;
     return false;
     }
   std::vector<unsigned long> actualMaxFrequencies;
@@ -443,14 +450,14 @@ bool node_frequency::set_frequency(cpu_frequency_type type,unsigned long maxMhz,
       actualType = Performance;
       break;
     default:
-      last_error = "Unrecognized or unsupported frequency governor.";
+      last_error = PBSE_NO_MATCHING_FREQUENCY;
       return false;
     }
   for(boost::ptr_vector<cpu_frequency>::iterator i = cpus.begin();i != cpus.end();i++)
     {
     if(!(*i).is_governor_available(actualType))
       {
-      last_error = "Requested frequency governor is not available on this node.";
+      last_error = PBSE_NO_MATCHING_FREQUENCY;
       return false;
       }
     }

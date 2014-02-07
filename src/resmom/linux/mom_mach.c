@@ -1756,7 +1756,7 @@ int mom_set_limits(
             pres->rs_value.at_val.at_frequency.mhz,
             pres->rs_value.at_val.at_frequency.mhz))
           {
-          sprintf(log_buffer,"Set frequency failed: %s.\n",nd_frequency.get_last_error());
+          sprintf(log_buffer,"Set frequency failed: %s.\n",nd_frequency.get_last_error_string());
           log_record(PBSEVENT_SYSTEM, 0, __func__, log_buffer);
 
           log_buffer[0] = '\0';

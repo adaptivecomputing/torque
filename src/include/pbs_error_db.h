@@ -263,6 +263,12 @@ PbsErrClient(PBSE_CLIENT_CONN_NOT_FOUND, (char *)"Client connection not found. t
 PbsErrClient(PBSE_CANNOT_RESOLVE, (char *)"Could not resolve host name")
 PbsErrClient(PBSE_DOMAIN_SOCKET_FAULT, (char *)"could not connect to trqauthd")
 PbsErrClient(PBSE_JOB_NOT_IN_QUEUE, (char *)"Job not found in queue.")
+PbsErrClient(PBSE_NODE_CANT_MANAGE_FREQUENCY, (char *)"The cpu frequency for this node can not be modified.")
+PbsErrClient(PBSE_FREQUENCY_NOT_AVAILABLE, (char *)"Requested governor or frequency is not available.")
+PbsErrClient(PBSE_UNEXPECTED_DATA_IN_FILE, (char *)"File contains unexpected data.")
+PbsErrClient(PBSE_CAN_NOT_READ_FILE, (char *)"Error reading file")
+PbsErrClient(PBSE_NO_MATCHING_FREQUENCY, (char *)"No matching frequency available.")
+PbsErrClient(PBSE_INVALID_FREQUENCY_FILE, (char *)"Unable to read base frequency file.")
 
 /* pbs client errors ceiling (max_client_err + 1) */
 PbsErrClient(PBSE_CEILING,           (char*)0)

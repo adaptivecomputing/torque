@@ -106,6 +106,7 @@ cpu_frequency::cpu_frequency(int cpu_number)
   path += cnv.str();
   path += "/cpufreq/";
 
+  last_error = PBSE_NODE_CANT_MANAGE_FREQUENCY;
   if(!get_number_from_file(path + "cpuinfo_min_freq",cpu_min_frequency))
     {
     valid = false;
@@ -149,6 +150,7 @@ cpu_frequency::cpu_frequency(int cpu_number)
     }
   std::sort(available_frequencies.begin(),available_frequencies.end(),descending);
   valid = true;
+  last_error = PBSE_NONE;
   }
 
 bool cpu_frequency::get_frequency(cpu_frequency_type& type,unsigned long& khz, unsigned long& khzUpper, unsigned long& khzLower)
@@ -177,6 +179,7 @@ bool cpu_frequency::get_frequency(cpu_frequency_type& type,unsigned long& khz, u
     return false;
     }
   type = t;
+  last_error = PBSE_NONE;
   return true;
   }
 
@@ -203,7 +206,7 @@ bool cpu_frequency::set_frequency(cpu_frequency_type type,unsigned long khz,unsi
     }
   if(!governorAvailable || !upperMatched || !lowerMatched || !freqMatched)
     {
-    last_error = "Requested governor or frequency is not available.";
+    last_error = PBSE_FREQUENCY_NOT_AVAILABLE;
     return false;
     }
   std::string govString;
@@ -309,7 +312,7 @@ bool cpu_frequency::get_number_from_file(std::string path, unsigned long& num)
   std::ifstream file(path.c_str(),std::ios::in);
   if(!file.is_open())
     {
-    last_error = "Unable to open " + path;
+    last_error = PBSE_CAN_NOT_OPEN_FILE;
     return false;
     }
   if(getline(file,line))
@@ -323,14 +326,14 @@ bool cpu_frequency::get_number_from_file(std::string path, unsigned long& num)
     }
     catch(...)
       {
-      last_error = "The file " + path + " does not contain an integer.";
+      last_error = PBSE_UNEXPECTED_DATA_IN_FILE;
       file.close();
       return false;
       }
     }
   else
     {
-    last_error = "Unable to read from " + path;
+    last_error = PBSE_CAN_NOT_READ_FILE;
     file.close();
     return false;
     }
@@ -347,7 +350,7 @@ bool cpu_frequency::get_numbers_from_file(std::string path, std::vector<unsigned
     }
   if(strs.size() == 0)
     {
-    last_error = "The file " + path + " was empty.";
+    last_error = PBSE_UNEXPECTED_DATA_IN_FILE;
     return false;
     }
   for(std::vector<std::string>::iterator i = strs.begin();i != strs.end();i++)
@@ -359,7 +362,7 @@ bool cpu_frequency::get_numbers_from_file(std::string path, std::vector<unsigned
     }
     catch(...)
       {
-      last_error = "The file " + path + " does not contain integers.";
+      last_error = PBSE_UNEXPECTED_DATA_IN_FILE;
       nums.clear();
       return false;
       }
@@ -373,7 +376,7 @@ bool cpu_frequency::set_number_in_file(std::string path,unsigned long num)
   std::ofstream file(path.c_str(),std::ios::out|std::ios::trunc);
   if(!file.is_open())
     {
-    last_error = "Unable to open " + path;
+    last_error = PBSE_CAN_NOT_OPEN_FILE;
     return false;
     }
   file << num;
@@ -387,7 +390,7 @@ bool cpu_frequency::get_string_from_file(std::string path,std::string& str)
   std::ifstream file(path.c_str(),std::ios::in);
   if(!file.is_open())
     {
-    last_error = "Unable to open " + path;
+    last_error = PBSE_CAN_NOT_OPEN_FILE;
     return false;
     }
   if(getline(file,line))
@@ -399,7 +402,7 @@ bool cpu_frequency::get_string_from_file(std::string path,std::string& str)
     }
   else
     {
-    last_error = "Unable to read from " + path;
+    last_error = PBSE_CAN_NOT_READ_FILE;
     file.close();
     return false;
     }
@@ -412,7 +415,7 @@ bool cpu_frequency::get_strings_from_file(std::string path,std::vector<std::stri
   std::ifstream file(path.c_str(),std::ios::in);
   if(!file.is_open())
     {
-    last_error = "Unable to open " + path;
+    last_error = PBSE_CAN_NOT_OPEN_FILE;
     return false;
     }
   while(getline(file,line))
@@ -427,7 +430,7 @@ bool cpu_frequency::get_strings_from_file(std::string path,std::vector<std::stri
   file.close();
   if(strs.size() == 0)
     {
-    last_error = "File " + path + " is empty.";
+    last_error = PBSE_UNEXPECTED_DATA_IN_FILE;
     return false;
     }
   return true;
@@ -439,7 +442,7 @@ bool cpu_frequency::set_string_in_file(std::string path,std::string str)
   std::ofstream file(path.c_str(),std::ios::out|std::ios::trunc);
   if(!file.is_open())
     {
-    last_error = "Unable to open " + path;
+    last_error = PBSE_CAN_NOT_OPEN_FILE;
     return false;
     }
   file << str;
@@ -452,7 +455,7 @@ bool cpu_frequency::get_pstate_frequency(cpu_frequency_type pstate,unsigned long
   if(!valid) return false;
   if(pstate > P15)
     {
-    last_error = "Invalid pstate.";
+    last_error = PBSE_BAD_PARAMETER;
     return false;
     }
   if(pstate >= (cpu_frequency_type)available_frequencies.size())
@@ -487,7 +490,7 @@ bool cpu_frequency::get_nearest_available_frequency(unsigned long reqKhz,unsigne
     }
   if(diff == -1)
     {
-    last_error = "Unable to find valid frequency.";
+    last_error = PBSE_NO_MATCHING_FREQUENCY;
     return false;
     }
   actualKhz = curKhz;

@@ -82,6 +82,7 @@
 #include <vector>
 #include <string>
 #include "attribute.h"
+#include "pbs_error.h"
 
 
 /* The reference for this file is
@@ -123,7 +124,7 @@ private:
   //                first set scaling_max_freq, then
   //                scaling_min_freq.
 
-  std::string last_error;
+   int last_error;
 
   cpu_frequency(){} //Can't instantiate without a cpu number.
 
@@ -148,9 +149,13 @@ public:
     {
     return valid;
     }
-  const char *get_last_error()
+  const char *get_last_error_string()
     {
-    return last_error.c_str();
+    return pbse_to_txt(last_error);
+    }
+  int get_last_error()
+    {
+    return last_error;
     }
   };
 
