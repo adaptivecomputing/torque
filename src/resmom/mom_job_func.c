@@ -877,7 +877,21 @@ void mom_job_purge(
             find_resc_def(svr_resc_def, "cpuclock", svr_resc_size));
   if(presc != NULL)
     {
-    nd_frequency.restore_frequency();
+    std::string beforeFreq;
+
+    nd_frequency.get_frequency_string(beforeFreq);
+    if(!nd_frequency.restore_frequency())
+      {
+      std::string msg = "Failed to restore frequency.";
+      log_ext(nd_frequency.get_last_error(),__func__,msg.c_str(),LOG_ERR);
+      }
+    else
+      {
+      std::string afterFreq;
+      nd_frequency.get_frequency_string(afterFreq);
+      std::string msg = "Restored frequency from " + beforeFreq + " to " + afterFreq;
+      log_ext(PBSE_CHANGED_CPU_FREQUENCY,__func__, msg.c_str(),LOG_NOTICE);
+      }
     }
 
 

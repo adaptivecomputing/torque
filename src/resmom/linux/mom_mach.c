@@ -1752,24 +1752,22 @@ int mom_set_limits(
       {
       if(set_mode == SET_LIMIT_SET)
         {
+        std::string beforeFreq;
+
+        nd_frequency.get_frequency_string(beforeFreq);
         if(!nd_frequency.set_frequency((cpu_frequency_type)pres->rs_value.at_val.at_frequency.frequency_type,
             pres->rs_value.at_val.at_frequency.mhz,
             pres->rs_value.at_val.at_frequency.mhz))
           {
-          sprintf(log_buffer,"Set frequency failed: %s.\n",nd_frequency.get_last_error_string());
-          log_record(PBSEVENT_SYSTEM, 0, __func__, log_buffer);
-
-          log_buffer[0] = '\0';
+          std::string msg = "Failed to change frequency.";
+          log_ext(nd_frequency.get_last_error(),__func__,msg.c_str(),LOG_ERR);
           }
         else
           {
-          std::string str;
-          nd_frequency.get_frequency_string(str);
-          sprintf(log_buffer,"Frequency set to %s.\n",str.c_str());
-          log_record(PBSEVENT_SYSTEM, 0, __func__, log_buffer);
-
-          log_buffer[0] = '\0';
-
+          std::string afterFreq;
+          nd_frequency.get_frequency_string(afterFreq);
+          std::string msg = "Changed frequency from " + beforeFreq + " to " + afterFreq;
+          log_ext(PBSE_CHANGED_CPU_FREQUENCY,__func__, msg.c_str(),LOG_NOTICE);
           }
         }
       }

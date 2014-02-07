@@ -269,6 +269,7 @@ PbsErrClient(PBSE_UNEXPECTED_DATA_IN_FILE, (char *)"File contains unexpected dat
 PbsErrClient(PBSE_CAN_NOT_READ_FILE, (char *)"Error reading file")
 PbsErrClient(PBSE_NO_MATCHING_FREQUENCY, (char *)"No matching frequency available.")
 PbsErrClient(PBSE_INVALID_FREQUENCY_FILE, (char *)"Unable to read base frequency file.")
+PbsErrClient(PBSE_CHANGED_CPU_FREQUENCY, (char *)"Changed cpu clock frequency.")
 
 /* pbs client errors ceiling (max_client_err + 1) */
 PbsErrClient(PBSE_CEILING,           (char*)0)
