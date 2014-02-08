@@ -294,7 +294,8 @@ int req_orderjob(
     if ((pque2 = get_jobs_queue(&pjob2)) == NULL)
       {
       rc = PBSE_BADSTATE;
-      job2_mutex.set_lock_on_exit(false);
+      if (pjob2 == NULL)
+        job2_mutex.set_unlock_on_exit(false);
       }
     else
       {
@@ -307,7 +308,8 @@ int req_orderjob(
         if ((pque1 = get_jobs_queue(&pjob1)) == NULL)
           {
           rc = PBSE_BADSTATE;
-          job1_mutex.set_lock_on_exit(false);
+          if (pjob1 == NULL)
+            job1_mutex.set_unlock_on_exit(false);
           }
         else if (pjob1 != NULL)
           {
@@ -349,13 +351,13 @@ int req_orderjob(
     if (svr_enquejob(pjob1, FALSE, NULL, reservation1) == PBSE_JOB_RECYCLED)
       {
       pjob1 = NULL;
-      job1_mutex.set_lock_on_exit(false);
+      job1_mutex.set_unlock_on_exit(false);
       }
 
     if (svr_enquejob(pjob2, FALSE, NULL, reservation2) == PBSE_JOB_RECYCLED)
       {
       pjob2 = NULL;
-      job2_mutex.set_lock_on_exit(false);
+      job2_mutex.set_unlock_on_exit(false);
       }
     }
   else
