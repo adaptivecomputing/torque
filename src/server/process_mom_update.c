@@ -79,6 +79,8 @@
 
 #include <stdio.h>
 #include <ctype.h>
+#include <string>
+#include <sstream>
 
 #include "pbs_config.h"
 #include "pbs_nodes.h"
@@ -815,16 +817,16 @@ int is_gpustat_get(
   char           **str_ptr) /* I (modified) */
 
   {
-  pbs_attribute  temp;
-  char          *gpuid = NULL;
-  char          *str = *str_ptr;
-  char           log_buf[LOCAL_LOG_BUF_SIZE];
-  int            gpuidx = -1;
-  char           gpuinfo[2048];
-  int            need_delimiter = FALSE;
-  int            reportedgpucnt = 0;
-  int            startgpucnt = 0;
-  int            drv_ver = 0;
+  pbs_attribute      temp;
+  char              *gpuid = NULL;
+  char              *str = *str_ptr;
+  char               log_buf[LOCAL_LOG_BUF_SIZE];
+  int                gpuidx = -1;
+  std::stringstream  gpuinfo;
+  int                need_delimiter = FALSE;
+  int                reportedgpucnt = 0;
+  int                startgpucnt = 0;
+  int                drv_ver = 0;
 
   if (np == NULL)
     {
@@ -850,7 +852,6 @@ int is_gpustat_get(
    */
 
   memset(&temp, 0, sizeof(temp));
-  memset(gpuinfo, 0, 2048);
 
   if (decode_arst(&temp, NULL, NULL, NULL, 0))
     {
@@ -904,9 +905,9 @@ int is_gpustat_get(
 
     if (!strncmp(str, "gpuid=", 6))
       {
-      if (strlen(gpuinfo) > 0)
+      if (gpuinfo.str().size() > 0)
         {
-        if (decode_arst(&temp, NULL, NULL, gpuinfo, 0))
+        if (decode_arst(&temp, NULL, NULL, gpuinfo.str().c_str(), 0))
           {
           DBPRT(("is_gpustat_get: cannot add attributes\n"));
 
@@ -915,7 +916,8 @@ int is_gpustat_get(
 
           return(DIS_NOCOMMIT);
           }
-        memset(gpuinfo, 0, 2048);
+
+        gpuinfo.str("");
         }
 
       gpuid = &str[6];
@@ -950,7 +952,7 @@ int is_gpustat_get(
         return(DIS_SUCCESS);
         }
 
-      sprintf(gpuinfo, "gpu[%d]=gpu_id=%s;", gpuidx, gpuid);
+      gpuinfo << "gpu[" << gpuidx << "]=gpu_id=" << gpuid << ";";
       need_delimiter = FALSE;
       reportedgpucnt++;
       np->nd_gpusn[gpuidx].driver_ver = drv_ver;
@@ -972,9 +974,10 @@ int is_gpustat_get(
       {
       if (need_delimiter)
         {
-        strcat(gpuinfo, ";");
+        gpuinfo << ";";
         }
-      strcat(gpuinfo, str);
+
+      gpuinfo << str;
       need_delimiter = TRUE;
       }
 
@@ -1047,31 +1050,38 @@ int is_gpustat_get(
 
       if (need_delimiter)
         {
-        strcat(gpuinfo, ";");
+        gpuinfo << ";";
         }
 
       switch (np->nd_gpusn[gpuidx].state)
         {
         case gpu_unallocated:
-          strcat (gpuinfo, "gpu_state=Unallocated");
+
+          gpuinfo << "gpu_state=Unallocated";
           break;
+
         case gpu_shared:
-          strcat (gpuinfo, "gpu_state=Shared");
+
+          gpuinfo << "gpu_state=Shared";
           break;
+
         case gpu_exclusive:
-          strcat (gpuinfo, "gpu_state=Exclusive");
+
+          gpuinfo << "gpu_state=Exclusive";
           break;
+
         case gpu_unavailable:
-          strcat (gpuinfo, "gpu_state=Unavailable");
+
+          gpuinfo << "gpu_state=Unavailable";
           break;
         }
       }
 
     } /* end of while disrst */
 
-  if (strlen(gpuinfo) > 0)
+  if (gpuinfo.str().size() > 0)
     {
-    if (decode_arst(&temp, NULL, NULL, gpuinfo, 0))
+    if (decode_arst(&temp, NULL, NULL, gpuinfo.str().c_str(), 0))
       {
       DBPRT(("is_gpustat_get: cannot add attributes\n"));
       

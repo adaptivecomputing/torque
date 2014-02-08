@@ -402,6 +402,8 @@ void array_delete_wt(
           pa = get_array(preq->rq_ind.rq_delete.rq_objname);
           if (pa != NULL)
             array_mutex.mark_as_locked();
+          else
+            break;
           }
         else
           job_mutex.set_unlock_on_exit(false);
