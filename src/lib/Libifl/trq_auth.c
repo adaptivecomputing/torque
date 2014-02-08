@@ -418,8 +418,10 @@ int validate_server(
 
   if ( rc != PBSE_NONE)
     {
-    int list_len;
-    int i;
+    int           list_len;
+    int           i;
+    unsigned int  port;
+    char         *tmp_server;
 
     snprintf(server_name_list, sizeof(server_name_list), "%s", pbs_get_server_list());
     list_len = csv_length(server_name_list);
@@ -440,17 +442,18 @@ int validate_server(
 
         if (getenv("PBSDEBUG"))
           {
-          fprintf(stderr, "pbs_connect attempting connection to server \"%s\"\n",
-                                                                    current_name);
+          fprintf(stderr, "pbs_connect attempting connection to server \"%s\"\n", current_name);
           }
+
+        tmp_server = PBS_get_server(current_name, &port);
 
         rc = trq_simple_connect(current_name, t_server_port, &sd);
         if ( rc == PBSE_NONE)
           {
           trq_simple_disconnect(sd);
-          fprintf(stderr, "changing active server to %s\n", current_name);
-          strcpy(active_pbs_server, current_name); 
-          sprintf(log_buf, "Changing active server to %s\n", current_name);
+          fprintf(stderr, "changing active server to %s port %d\n", tmp_server, port);
+          snprintf(active_pbs_server, sizeof(active_pbs_server), "%s", tmp_server);
+          sprintf(log_buf, "Changing active server to %s port %d\n", tmp_server, port);
           log_event(PBSEVENT_CLIENTAUTH | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD, __func__, log_buf);
           break;
           }

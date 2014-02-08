@@ -1012,7 +1012,7 @@ int main(
     {
     stdoutfd = build_listener(&stdoutport);
 
-    if ((*ioenv = (char *)calloc(50, sizeof(char *))) == NULL)
+    if ((*ioenv = (char *)calloc(50, sizeof(char))) == NULL)
       {
       /* FAILURE - cannot alloc memory */
 

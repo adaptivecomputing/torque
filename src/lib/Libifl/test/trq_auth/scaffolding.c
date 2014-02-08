@@ -566,3 +566,12 @@ pbs_net_t get_hostaddr(
 
   return(rval);
   }
+
+char *PBS_get_server(
+
+  const char         *server,  /* I (NULL|'\0' for not set,modified) */
+  unsigned int *port)    /* O */
+
+  {
+  return(NULL);
+  }

@@ -1455,6 +1455,9 @@ int chk_svr_resc_limit(
           {
           SvrNodeCt = svrc->rs_value.at_val.at_long;
           }
+
+        if (svrc == NULL)
+          break;
         }
       
       svrc = (resource *)GET_NEXT(svrc->rs_link);
