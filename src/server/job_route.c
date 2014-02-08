@@ -271,7 +271,10 @@ int default_router(
         }
       }
 
-    destination = dest_attr->as_string[jobp->ji_lastdest++];
+    if (dest_attr != NULL)
+      destination = dest_attr->as_string[jobp->ji_lastdest++];
+    else
+      continue;
 
     if (is_bad_dest(jobp, destination))
       continue;

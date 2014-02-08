@@ -448,7 +448,7 @@ int validate_server(
           {
           trq_simple_disconnect(sd);
           fprintf(stderr, "changing active server to %s port %d\n", tmp_server, port);
-          strcpy(active_pbs_server, tmp_server); 
+          snprintf(active_pbs_server, sizeof(active_pbs_server), "%s", tmp_server);
           active_pbs_server_port = port;
           sprintf(log_buf, "Changing active server to %s port %d\n", tmp_server, port);
           log_event(PBSEVENT_CLIENTAUTH | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD, __func__, log_buf);

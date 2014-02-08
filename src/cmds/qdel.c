@@ -60,7 +60,7 @@ int main(
           break;
           }
 
-        strcpy(extend, DELASYNC);
+        snprintf(extend, sizeof(extend), "%s", DELASYNC);
 
         break;
 
@@ -91,7 +91,7 @@ int main(
           break;
           }
 
-        strncpy(extend, optarg, sizeof(extend));
+        snprintf(extend, sizeof(extend), "%s", optarg);
 
         break;
 
@@ -104,9 +104,7 @@ int main(
           break;
           }
 
-        strcpy(extend, DELPURGE);
-
-        strcat(extend, "1");
+        snprintf(extend, sizeof(extend), "%s1", DELPURGE);
 
         break;
 
@@ -170,9 +168,7 @@ int main(
           pc++;
           }
 
-        strcpy(extend, DELDELAY);
-
-        strcat(extend, optarg);
+        snprintf(extend, sizeof(extend), "%s%s", DELDELAY, optarg);
 
         break;
 
