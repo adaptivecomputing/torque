@@ -103,11 +103,11 @@
 int encode_DIS_GpuCtrl(
     
   struct tcp_chan *chan,
-  char *node,
-  char *gpuid,
-  int gpumode,
-  int reset_perm,
-  int reset_vol)
+  char            *node,
+  char            *gpuid,
+  int              gpumode,
+  int              reset_perm,
+  int              reset_vol)
 
   {
   int   rc;

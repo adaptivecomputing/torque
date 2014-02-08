@@ -4812,7 +4812,7 @@ int remove_job_from_nodes_gpus(
   char           *gpu_str = NULL;
   int             i;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
-  char            tmp_str[PBS_MAXHOSTNAME + 10];
+  std::string     tmp_str;
   char            num_str[6];
  
   if (pjob->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET)
@@ -4828,10 +4828,10 @@ int remove_job_from_nodes_gpus(
       if (pnode->nd_gpus_real)
         {
         /* reset real gpu nodes */
-        strcpy (tmp_str, pnode->nd_name);
-        strcat (tmp_str, "-gpu/");
+        tmp_str = pnode->nd_name;
+        tmp_str += "-gpu/";
         sprintf (num_str, "%d", i);
-        strcat (tmp_str, num_str);
+        tmp_str += num_str;
         
         /* look thru the string and see if it has this host and gpuid.
          * exec_gpus string should be in format of 
@@ -4843,7 +4843,7 @@ int remove_job_from_nodes_gpus(
          * gpu status report from the moms.
          */
         
-        if (strstr(gpu_str, tmp_str) != NULL)
+        if (strstr(gpu_str, tmp_str.c_str()) != NULL)
           {
           gn->job_count--;
           

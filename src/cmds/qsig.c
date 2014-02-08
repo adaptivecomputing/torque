@@ -52,7 +52,9 @@ int main(
         break;
 
       case 's':
-        strcpy(sig_string, optarg);
+
+        snprintf(sig_string, sizeof(sig_string), "%s", optarg);
+
         break;
 
       default :

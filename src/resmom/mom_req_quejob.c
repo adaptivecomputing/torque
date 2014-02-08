@@ -1038,13 +1038,7 @@ void req_commit(
   /* For MOM - start up the job (blocks) */
 
   if (LOGLEVEL >= 6)
-    {
-    log_record(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
-      "req_commit:starting job execution");
-    }
+    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, "req_commit:starting job execution");
 
   rc = start_exec(pj);
 

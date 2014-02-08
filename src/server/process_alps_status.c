@@ -607,7 +607,9 @@ int process_alps_status(
         {
         snprintf(node_index_buf, sizeof(node_index_buf), "node_index=%d", node_index++);
         decode_arst(&temp, NULL, NULL, node_index_buf, 0);
-        save_node_status(current, &temp);
+        
+        if (current != NULL)
+          save_node_status(current, &temp);
         }
 
       if ((current = determine_node_from_str(str, parent, current)) == NULL)
@@ -616,7 +618,7 @@ int process_alps_status(
         continue;
       }
 
-    if(current == NULL)
+    if (current == NULL)
       continue;
 
     /* process the gpu status information separately */

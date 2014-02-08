@@ -1099,7 +1099,10 @@ void display(
 
         else if (attr->value != NULL)
           {
-          l = strlen(attr->name) + 8;
+          if (attr->name != NULL)
+            l = strlen(attr->name) + 8;
+          else
+            l = 8;
 
           if (attr->resource != NULL)
             l += strlen(attr->resource) + 1;
