@@ -304,6 +304,7 @@ int tcp_connect_sockaddr(
         {
         log_err(errno,__func__,err_msg);
         free(err_msg);
+        err_msg = NULL;
         }
       }
     else
