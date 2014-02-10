@@ -1635,6 +1635,9 @@ void mom_server_all_update_stat(void)
         }
 
       len = read(fd_pipe[0], buf, LOCAL_LOG_BUF_SIZE);
+
+      close(fd_pipe[0]);
+
       if (len <= 0)
         {
         log_err(-1, __func__, "read of pipe failed for status update");

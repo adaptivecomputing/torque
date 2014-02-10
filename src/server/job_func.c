@@ -1809,6 +1809,8 @@ int record_jobinfo(
  * will always exit unlocked.
  * The job is dequeued; the job control file, script file and any spooled
  * output files are unlinked, and the job structure is freed.
+ * @param pjob - the job that will be deleted and unlocked
+ * @param leaveSpoolFiles - 
  */
 
 int svr_job_purge(

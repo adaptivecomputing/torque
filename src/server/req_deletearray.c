@@ -185,10 +185,6 @@ int attempt_delete(
 
 
 
-
-
-
-
 int req_deletearray(
     
   struct batch_request *preq)
