@@ -385,7 +385,7 @@ int MXMLSetAttr(
   if (E->AVal[iindex] != NULL)
     free(E->AVal[iindex]);
 
-  E->AVal[iindex] = strdup((ptr != NULL) ? ptr : "");
+  E->AVal[iindex] = strdup(ptr);
 
   if (E->AVal[iindex] == NULL)
     {

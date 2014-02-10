@@ -253,7 +253,7 @@ int check_dependency_job(
     return(rc);
     }
 
-  job_mutex.set_lock_on_exit(false);
+  job_mutex.set_unlock_on_exit(false);
   *job_ptr = pjob;
 
   return(PBSE_NONE);

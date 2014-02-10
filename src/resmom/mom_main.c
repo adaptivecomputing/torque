@@ -235,6 +235,7 @@ mom_hierarchy_t  *mh;
 
 char    jobstarter_exe_name[MAXPATHLEN + 1];
 int     jobstarter_set = 0;
+int     MOMJobDirStickySet;
 
 #ifdef PENABLE_LINUX26_CPUSETS
 node_internals   internal_layout;
@@ -245,14 +246,14 @@ short    memory_pressure_duration  = 0; /* 0: off, >0: check and kill */
 int      MOMConfigUseSMT           = 1; /* 0: off, 1: on */
 #endif
 
-int      is_reporter_mom = FALSE;
-int      is_login_node   = FALSE;
+int      is_reporter_mom    = FALSE;
+int      is_login_node      = FALSE;
 
 /* externs */
 
 char *server_alias = NULL;
 extern unsigned int pe_alarm_time;
-extern long     MaxConnectTimeout;
+extern long         MaxConnectTimeout;
 
 extern resizable_array *received_statuses;
 extern hash_table_t    *received_table;
@@ -358,6 +359,7 @@ struct config_list
   struct config_list *c_link;
   };
 
+
 /* NOTE:  must adjust RM_NPARM in resmom.h to be larger than number of parameters
           specified below */
 
@@ -436,6 +438,7 @@ unsigned long        setjobexitwaittime(const char *);
 unsigned long setmaxjoinjobwaittime(const char *);
 unsigned long setresendjoinjobwaittime(const char *);
 unsigned long setmomhierarchyretrytime(const char *);
+unsigned long setjobdirectorysticky(const char *);
 
 static struct specials
   {
@@ -519,6 +522,7 @@ static struct specials
   { "max_join_job_wait_time", setmaxjoinjobwaittime},
   { "resend_join_job_wait_time", setresendjoinjobwaittime},
   { "mom_hierarchy_retry_time",  setmomhierarchyretrytime},
+  { "jobdirectory_sticky", setjobdirectorysticky},
   { NULL,                  NULL }
   };
 
@@ -3591,6 +3595,23 @@ static unsigned long setremchkptdirlist(
 
   return (1);
   }  /* END setremchkptdirlist() */
+
+
+
+u_long setjobdirectorysticky(
+
+  const char *value)  /* I */
+
+  {
+  int enable;
+
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
+
+  if ((enable = setbool(value)) != -1)
+    MOMJobDirStickySet = enable;
+
+  return(1);
+  }  /* END setjobdirectorysticky() */
 
 
 
@@ -7774,7 +7795,12 @@ int setup_program_environment(void)
 
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
 
-  c |= chk_file_sec(path_jobs,    1, 0, S_IWGRP | S_IWOTH, 1, NULL);
+  get_mom_job_dir_sticky_config(config_file);
+
+  if (!MOMJobDirStickySet)
+    c |= chk_file_sec(path_jobs,    1, 0, S_IWGRP | S_IWOTH, 1, NULL);
+  else
+    c |= chk_file_sec(path_jobs,    1, 1, S_IWGRP | S_IWOTH, 1, NULL);
 
   c |= chk_file_sec(path_aux,     1, 0, S_IWGRP | S_IWOTH, 1, NULL);
 
@@ -9343,7 +9369,7 @@ int read_layout_file()
           }
 
         /* Parse val into nodeset, abort if parsing fails */
-        if ((node_boards[i].num_nodes = hwloc_bitmap_list_sscanf(nodeset, val)) < 0)
+        if ((node_boards[i].num_nodes = hwloc_bitmap_parselist(val, nodeset)) < 0)
           {
           sprintf(log_buffer, "failed to parse mom.layout file token: nodes=%s", val);
           goto failure;
@@ -9408,7 +9434,7 @@ int read_layout_file()
 
         /* Show what we have */
         sprintf(log_buffer, "nodeboard %2d: %d NUMA nodes: ", i, node_boards[i].num_nodes);
-        hwloc_bitmap_list_snprintf(log_buffer + strlen(log_buffer),
+        hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer),
                                  sizeof(log_buffer) - strlen(log_buffer),
                                  node_boards[i].nodeset);
         log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
@@ -9564,13 +9590,13 @@ int setup_nodeboards()
       i,
       node_boards[i].num_cpus);
 
-    hwloc_bitmap_list_snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer),
+    hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer),
       node_boards[i].cpuset);
     snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer),
       "), %d mems (",
       node_boards[i].num_nodes);
 
-    hwloc_bitmap_list_snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer),
+    hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer),
       node_boards[i].nodeset);
     snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer),
       ")");
@@ -9998,6 +10024,50 @@ int add_to_resend_things(
   mc->resend_time = time(NULL);
   return(insert_thing(things_to_resend, mc));
   } /* END add_to_resend_things() */
+
+
+
+void get_mom_job_dir_sticky_config(
+
+  char *file)  /* I */
+
+  {
+  FILE  *conf;
+  char  line[256];
+  char  name[256];
+  char *str;
+  char *ptr;
+
+
+  if ((conf = fopen(file, "r")) == NULL)
+    return;
+
+  while (fgets(line, sizeof(line) - 1, conf))
+    {
+    if (line[0] != '#') /* comment */
+      {
+      if ((ptr = strchr(line, '#')) != NULL)
+        *ptr = '\0';
+
+      str = skipwhite(line);
+      if (*str == '$')
+        {
+        str = tokcpy(++str, name); /* resource name */
+        if (strcasecmp(name, "jobdirectory_sticky") == 0)
+          {
+          str = skipwhite(str);
+          rmnl(str);
+          setjobdirectorysticky(str);
+          break;
+          }
+        }
+        memset(line, 0, sizeof(line));
+       }
+    }
+
+  fclose(conf);
+
+  } /* END get_mom_job_dir_sticky_config */
 
 
 

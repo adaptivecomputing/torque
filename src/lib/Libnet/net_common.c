@@ -399,22 +399,21 @@ int socket_connect_addr(
           rc = PBSE_SOCKET_FAULT;
           /* 3 connect attempts are made to each socket */
           /* Fail on RES_PORT_RETRY */
-          if (cntr < RES_PORT_RETRY)
+          close(local_socket);
+
+          while (cntr < RES_PORT_RETRY)
             {
-            close(local_socket);
             if ((local_socket = socket_get_tcp_priv()) < 0)
-              rc = PBSE_SOCKET_FAULT;
+              cntr++;
             else
               {
               rc = PBSE_NONE;
-              continue;
+              break;
               }
             }
-          else
-            {
-            close(local_socket);
+
+          if (local_socket < 0)
             local_socket = TRANSIENT_SOCKET_FAIL;
-            }
           }
         break;
 

@@ -564,11 +564,9 @@ void scan_for_exiting(void)
 #ifndef NUMA_SUPPORT 
         else
           {
-          /*
-          ** Send a response over to MOM
-          ** whose child sent the request.
-          */
-          send_task_obit_response(pjob, pnode, cookie, pobit, ptask->ti_qs.ti_exitstat);
+          /* Send a response over to MOM whose child sent the request. */
+          if (pnode != NULL)
+            send_task_obit_response(pjob, pnode, cookie, pobit, ptask->ti_qs.ti_exitstat);
           }
 #endif /* ndef NUMA_SUPPORT */
 

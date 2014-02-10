@@ -728,7 +728,7 @@ void *finish_job(
     return(NULL);
     }
   mutex_mgr job_mgr(pjob->ji_mutex,true);
-  job_mgr.set_lock_on_exit(false);
+  job_mgr.set_unlock_on_exit(false);
 
   free(jobid);
 
@@ -737,6 +737,7 @@ void *finish_job(
   svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
 
   handle_complete_first_time(pjob);
+  /* pjob->ji_mutex is always returned unlocked from handle_complete_first_time */
 
   return(NULL);
   } /* END finish_job() */
@@ -2900,7 +2901,7 @@ int node_spec(
           
           free(spec);
           
-          return(-1);
+          return(PBSE_LOGIN_BUSY);
           }
         }
       }
@@ -4277,6 +4278,8 @@ int set_nodes(
 
     return(PBSE_RESCUNAV);
     }
+  else if (i == PBSE_LOGIN_BUSY)
+    return(i);
   else if (i < 0)
     {
     /* request failed, corrupt request */
@@ -4846,7 +4849,7 @@ int remove_job_from_nodes_gpus(
   char           *gpu_str = NULL;
   int             i;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
-  char            tmp_str[PBS_MAXHOSTNAME + 10];
+  std::string     tmp_str;
   char            num_str[6];
  
   if (pjob->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET)
@@ -4862,10 +4865,10 @@ int remove_job_from_nodes_gpus(
       if (pnode->nd_gpus_real)
         {
         /* reset real gpu nodes */
-        strcpy (tmp_str, pnode->nd_name);
-        strcat (tmp_str, "-gpu/");
+        tmp_str = pnode->nd_name;
+        tmp_str += "-gpu/";
         sprintf (num_str, "%d", i);
-        strcat (tmp_str, num_str);
+        tmp_str += num_str;
         
         /* look thru the string and see if it has this host and gpuid.
          * exec_gpus string should be in format of 
@@ -4877,7 +4880,7 @@ int remove_job_from_nodes_gpus(
          * gpu status report from the moms.
          */
         
-        if (strstr(gpu_str, tmp_str) != NULL)
+        if (strstr(gpu_str, tmp_str.c_str()) != NULL)
           {
           gn->job_count--;
           
