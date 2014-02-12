@@ -1650,7 +1650,6 @@ int handle_job_recovery(
   const char       *job_suffix = JOB_FILE_SUFFIX;
   int               job_suf_len = strlen(job_suffix);
   char              basen[MAXPATHLEN+1];
-  int               iter = -1;
   time_t            time_now = time(NULL);
 
   if (chdir(path_jobs) != 0)
@@ -1786,11 +1785,11 @@ int handle_job_recovery(
     closedir(dir);
 
     int Index = 0;
-    std::map<long, job *>::iterator iter;
+    std::map<long, job *>::iterator Array_iter;
     /*for (Index = 0; Index < Array.AppendIndex; Index++)*/
-    for (iter = Array.begin(); iter != Array.end(); iter++)
+    for (Array_iter = Array.begin(); Array_iter != Array.end(); Array_iter++)
       {
-      job *pjob = iter->second;
+      job *pjob = Array_iter->second;
 
       lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
@@ -1877,7 +1876,7 @@ int handle_job_recovery(
   /* If queue_rank has gone negative, renumber all jobs and reset rank */
   if (queue_rank < 0)
     {
-    iter = -1;
+    int  iter = -1;
 
     queue_rank = 0;
 
