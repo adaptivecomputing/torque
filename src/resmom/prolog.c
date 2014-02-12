@@ -1188,6 +1188,17 @@ int run_pelog(
       put_env_var("PBS_RESOURCE_GRES", r->rs_value.at_val.at_str);
       }
 
+    char *cpu_clock = arst_string("PBS_CPUCLOCK",&pjob->ji_wattr[JOB_ATR_variables]);
+    if(cpu_clock != NULL)
+      {
+      cpu_clock = strchr(cpu_clock,'=');
+      if(cpu_clock != NULL)
+        {
+        cpu_clock++;
+        put_env_var("PBS_CPUCLOCK",cpu_clock);
+        }
+      }
+
     if (TTmpDirName(pjob, buf, sizeof(buf)))
       {
       put_env_var("TMPDIR", buf);
