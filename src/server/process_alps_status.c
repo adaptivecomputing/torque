@@ -415,7 +415,7 @@ int process_gpu_status(
   {
   pbs_attribute   temp;
   int             gpu_count = 0;
-  int             rc;
+  int             rc = PBSE_NONE;
   char            buf[MAXLINE * 2];
   std::string     gpu_info = "";
 

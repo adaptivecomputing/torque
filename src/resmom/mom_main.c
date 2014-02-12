@@ -294,7 +294,6 @@ char           *path_log;
 
 
 
-
 int                     LOGLEVEL = 0;  /* valid values (0 - 10) */
 int                     DEBUGMODE = 0;
 int                     DOBACKGROUND = 1;
@@ -688,14 +687,12 @@ void memcheck(
     return;
     }
 
-  log_err(-1, "memcheck", "memory allocation failed");
+  log_err(-1, __func__, "memory allocation failed");
 
   die(0);
 
   return;
   }  /* END memcheck() */
-
-
 
 
 
@@ -775,6 +772,7 @@ void rmnl(
 
   return;
   }
+
 
 
 
@@ -1890,6 +1888,8 @@ void add_diag_jobs_session_ids(
       output << ptask->ti_qs.ti_sid;
     else
       output << "," << ptask->ti_qs.ti_sid;
+
+    first = false;
     }  /* END for (task) */
   }
 
@@ -3217,6 +3217,8 @@ void *tcp_request(
     case DIS_EOF:
 
       DBPRT(("Closing socket %d twice...\n", socket))
+
+      // Fall through to close the connection
 
     case PBSE_MEM_MALLOC:
     case DIS_EOD:
@@ -4587,7 +4589,12 @@ int setup_program_environment(void)
 
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
 
-  c |= chk_file_sec(path_jobs,    1, 0, S_IWGRP | S_IWOTH, 1, NULL);
+  get_mom_job_dir_sticky_config(config_file);
+
+  if (!MOMJobDirStickySet)
+    c |= chk_file_sec(path_jobs,    1, 0, S_IWGRP | S_IWOTH, 1, NULL);
+  else
+    c |= chk_file_sec(path_jobs,    1, 1, S_IWGRP | S_IWOTH, 1, NULL);
 
   c |= chk_file_sec(path_aux,     1, 0, S_IWGRP | S_IWOTH, 1, NULL);
 
@@ -4701,8 +4708,7 @@ int setup_program_environment(void)
 
   if (read_config(NULL))
     {
-    fprintf(stderr, "pbs_mom: cannot load config file '%s'\n",
-            config_file);
+    fprintf(stderr, "pbs_mom: cannot load config file '%s'\n", config_file);
 
     exit(1);
     }
@@ -6819,7 +6825,6 @@ int add_to_resend_things(
 
 
 
-
 void get_mom_job_dir_sticky_config(
 
   char *file)  /* I */
@@ -6861,6 +6866,9 @@ void get_mom_job_dir_sticky_config(
   fclose(conf);
 
   } /* END get_mom_job_dir_sticky_config */
+
+
+
 /* END mom_main.c */
 
 

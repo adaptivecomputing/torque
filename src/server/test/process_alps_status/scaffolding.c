@@ -2168,7 +2168,6 @@ int set_uacl(
   return(PBSE_NONE);
   }
 
-
 int decode_resc(
 
   pbs_attribute *patr,  /* Modified on Return */
@@ -2190,6 +2189,21 @@ int set_ll(
   {
   assert(attr && new_attr && (new_attr->at_flags & ATR_VFLAG_SET));
 
+  if (attr == NULL)
+    {
+    return(PBSE_BAD_PARAMETER);
+    }
+
+  if (new_attr == NULL)
+    {
+    return(PBSE_BAD_PARAMETER);
+    }
+
+  if ((new_attr->at_flags & ATR_VFLAG_SET) == 0)
+    {
+    return(PBSE_BAD_PARAMETER);
+    }
+  
   switch (op)
     {
 

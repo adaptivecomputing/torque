@@ -743,7 +743,7 @@ int im_compose(
   tm_task_id taskid)
 
   {
-  int ret;
+  int ret = PBSE_NONE;
 
   if (chan->sock < 0)
     {
@@ -5198,7 +5198,6 @@ int process_valid_response(
 
   return(ret);
   } /* END process_valid_response() */
-
 
 
 

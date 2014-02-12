@@ -939,8 +939,8 @@ void validate_basic_resourcing(
   } /* END validate_basic_rsourcing() */
 
 /*
- * Set up (or enforce) errpath or outpath when join option specified
- * so that qstat will diplay it properly.
+ * Set up errpath or outpath according to what MOM does when join 
+ * option specified so that qstat will diplay it properly.
  */
 void validate_join_options (
 
@@ -3099,7 +3099,6 @@ void process_opts(
             if (parse_at_list(valuewd, TRUE, FALSE))
               print_qsub_usage_exit("qsub: illegal -W value grouplist");
 
-
             if (hash_find(ji->client_attr, "validate_group", &tmp_job_info))
               {
               if (validate_group_list(valuewd) == FALSE)
@@ -3896,7 +3895,6 @@ void main_func(
 
   int               script_idx = 0;
   int               idx;
-  int               have_intr_cmd = FALSE;
   job_data         *tmp_job_info = NULL;
   /* Allocate Memmgr */
   int               debug = FALSE;
@@ -4115,7 +4113,7 @@ void main_func(
   if (hash_find(ji.job_attr, ATTR_inter, &tmp_job_info) &&
       ((isatty(0) == 0) || (isatty(1) == 0)))
     {
-    if (have_intr_cmd)
+    if (hash_find(ji.job_attr, ATTR_intcmd, &tmp_job_info))
       {
       have_terminal = FALSE;
       }

@@ -264,6 +264,10 @@ int issue_signal(
 
   newreq->rq_extra = extra;
   newreq->rq_extend = extend;
+  if (extend != NULL)
+    {
+    newreq->rq_extsz = strlen(extend);
+    }
 
   strcpy(newreq->rq_ind.rq_signal.rq_jid, pjob->ji_qs.ji_jobid);
 

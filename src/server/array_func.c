@@ -2295,7 +2295,7 @@ int insert_array(
   job_array *pa)
 
   {
-  int  rc = PBSE_NONE;
+  int rc = PBSE_NONE;
 
   pthread_mutex_lock(allarrays.allarrays_mutex);
 

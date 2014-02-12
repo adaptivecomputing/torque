@@ -709,13 +709,13 @@ int update_substate_if_needed(
 
     if (pjob != NULL)
       {
+      mutex_mgr job_mutex(pjob->ji_mutex, true);
       pjob->ji_qs.ji_substate = JOB_SUBSTATE_TRNOUT;
       job_save(pjob, SAVEJOB_QUICK, 0);
-      unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
       }
     else
       {
-      return(LOCUTION_FAIL);
+      return(PBSE_JOB_RECYCLED);
       }
     }
 

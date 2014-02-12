@@ -286,6 +286,7 @@ unsigned long setjobexitwaittime(const char *);
 unsigned long setmaxjoinjobwaittime(const char *);
 unsigned long setresendjoinjobwaittime(const char *);
 unsigned long setmomhierarchyretrytime(const char *);
+unsigned long setjobdirectorysticky(const char *);
 
 struct specials special[] = {
   { "alloc_par_cmd",       setallocparcmd },

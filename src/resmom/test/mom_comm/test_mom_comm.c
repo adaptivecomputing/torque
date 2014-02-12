@@ -2,7 +2,6 @@
 #include <pbs_config.h>
 #include "pbs_nodes.h"
 #include "mom_comm.h"
-#include "test_mom_comm.h"
 #include <set>
 #include <stdlib.h>
 #include <stdio.h>
@@ -10,12 +9,14 @@
 #include "dis.h"
 #include "pbs_error.h"
 #include "pbs_job.h"
+#include "test_mom_comm.h"
 
 extern int disrsi_return_index;
 extern int disrst_return_index;
 extern int disrsi_array[];
 extern char *disrst_array[];
 extern int log_event_counter;
+extern bool ms_val;
 
 #define IM_DONE                     0
 #define IM_FAILURE                 -1
@@ -61,8 +62,8 @@ START_TEST(handle_im_poll_job_response_test)
   np->hn_node = 4;
 
   fail_unless(handle_im_poll_job_response(chan, *pjob, 4, np) == -1);
+  pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HERE;
 
-  pjob->ji_qs.ji_svrflags = JOB_SVFLG_HERE;
   fail_unless(handle_im_poll_job_response(chan, *pjob, 4, np) == 0);
   fail_unless(pjob->ji_resources[3].nr_mem < pjob->ji_resources[3].nr_vmem);
   }
@@ -427,6 +428,14 @@ Suite *mom_comm_suite(void)
   tc_core = tcase_create("test_read_status_strings_loop");
   tcase_add_test(tc_core, test_read_status_strings_loop);
   tcase_add_test(tc_core, test_process_end_job_error_reply);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("handle_im_obit_task_response_test");
+  tcase_add_test(tc_core, handle_im_obit_task_response_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("handle_im_obit_task_response_test");
+  tcase_add_test(tc_core, handle_im_obit_task_response_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("handle_im_obit_task_response_test");

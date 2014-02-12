@@ -442,7 +442,7 @@ int main(
               {
               if (!strstr(nodeattrs->value, ND_down))
                 {
-                if (perform_communications_with_retry(pbstat->name, MOMPort, &FailCount) == PBSE_NONE)
+                if ((rc = perform_communications_with_retry(pbstat->name, MOMPort, &FailCount)) == PBSE_NONE)
                   HostCount++;
                 }
               else
@@ -472,7 +472,7 @@ int main(
       }
     else
       {
-      if (perform_communications_with_retry(HPtr, MOMPort, &FailCount) == PBSE_NONE)
+      if ((rc = perform_communications_with_retry(HPtr, MOMPort, &FailCount)) == PBSE_NONE)
         HostCount++;
       } /* END if (*HPtr == ':') */
 

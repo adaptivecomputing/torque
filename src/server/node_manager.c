@@ -97,7 +97,7 @@
 #if defined(NTOHL_NEEDS_ARPA_INET_H) && defined(HAVE_ARPA_INET_H)
 #include <arpa/inet.h>
 #endif
-
+#include <vector>
 
 #include "portability.h"
 #include "libpbs.h"
@@ -614,33 +614,39 @@ boost::ptr_vector<std::string> jobsKilled;
  * case it needs to be removed again.
  */
 
-void remove_job_from_already_killed_list(struct work_task *pwt)
+void remove_job_from_already_killed_list(
+    
+  struct work_task *pwt)
+
   {
   std::string *pJobID = (std::string *)pwt->wt_parm1;
 
   free(pwt->wt_mutex);
   free(pwt);
 
-  if(pJobID == NULL) return;
+  if (pJobID == NULL)
+    return;
 
   pthread_mutex_lock(&jobsKilledMutex);
 
-  for(boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();i != jobsKilled.end();i++)
+  for (boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();i != jobsKilled.end();i++)
     {
-    if(i->compare(*pJobID) == 0)
+    if (i->compare(*pJobID) == 0)
       {
       jobsKilled.erase(i);
-      if(i == jobsKilled.end())
+      if (i == jobsKilled.end())
         {
         break;
         }
       }
     }
+
   pthread_mutex_unlock(&jobsKilledMutex);
 
   delete pJobID;
+  } /* END remove_job_from_already_killed_list() */
 
-  }
+
 
 /*
  * If a job is not supposed to be on a node and we have
@@ -694,9 +700,11 @@ bool job_should_be_killed(
     //Job should not be on the node, see if we have already sent a kill for this job.
     pthread_mutex_lock(&jobsKilledMutex);
 
-    for(boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();(i != jobsKilled.end())&&(jobAlreadyKilled == false);i++)
+    for (boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();
+         (i != jobsKilled.end()) && (jobAlreadyKilled == false);
+         i++)
       {
-      if(i->compare(jobid) == 0)
+      if (i->compare(jobid) == 0)
         {
         jobAlreadyKilled = true;
         }
@@ -806,6 +814,93 @@ int remove_jobs_that_have_disappeared(
 
 
 
+/*
+ * is_jobid_in_mom()
+ * returns: true if jobid was found; false otherwise.
+ */
+bool is_jobid_in_mom(
+
+  const char *jobs,
+  const char *jobid)
+
+  {
+  char *joblist = strdup(jobs);
+  char *jobptr = joblist;
+  char *jobidstr = NULL;
+
+  jobidstr = threadsafe_tokenizer(&jobptr, (char *)" ");
+  while (jobidstr != NULL)
+    {
+    if (strcmp(jobid, jobidstr) == 0)
+      {
+      free(joblist);
+      return(true);
+      }
+
+    jobidstr = threadsafe_tokenizer(&jobptr, " ");
+    }
+
+  free(joblist);
+
+  return(false);
+  }
+
+
+
+/*
+ * sync_node_jobs_with_moms() - remove any jobs in the pbsnode (np) that was not
+ * reported by the mom that it's currently running in its status update.
+ */
+void sync_node_jobs_with_moms(
+
+  struct pbsnode *np,        /* I */
+  const char *jobs_in_mom)   /* I */
+
+  {
+  std::vector<std::string> jobsRemoveFromNode;
+  bool removealljobs = (strlen(jobs_in_mom) == 0);
+
+  for (int i = 0; i < (int)np->nd_job_usages.size(); i++)
+    {
+    bool removejob = false;
+    job_usage_info *jui = np->nd_job_usages[i];
+    char *jobid = jui->jobid;
+
+    if (!removealljobs)
+      {
+      char *p = strstr((char *)jobs_in_mom, jobid);
+      /* job is in the node but not in mom */
+      if (!p)
+        removejob = true;
+      else if (is_jobid_in_mom(jobs_in_mom, jobid) == false)
+        removejob = true;
+      }
+    if (removejob || removealljobs)
+      {
+      unlock_node(np, __func__, NULL, LOGLEVEL);
+      job *pjob = svr_find_job(jobid, TRUE);
+      lock_node(np, __func__, NULL, LOGLEVEL);
+      if (pjob)
+        unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+      else
+        jobsRemoveFromNode.push_back(std::string (jobid));
+      }
+    }
+
+  char log_buf[LOCAL_LOG_BUF_SIZE + 1];
+  for (std::vector<std::string>::iterator it = jobsRemoveFromNode.begin();
+             it != jobsRemoveFromNode.end(); it++)
+    {
+    snprintf(log_buf, sizeof(log_buf),
+      "Job %s was not reported in %s update status. Freeing job from node.", (*it).c_str(), np->nd_name);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    remove_job_from_node(np, (*it).c_str());
+    }
+  } /* end of sync_node_jobs_with_moms */
+
+
+
+
 
 
 /*
@@ -831,6 +926,7 @@ void *sync_node_jobs(
   char                 *jobstring_in;
   char                 *joblist;
   char                 *jobidstr;
+  char                 *jobs_in_mom;
   long                  job_sync_timeout = JOB_SYNC_TIMEOUT;
 
   if (vp == NULL)
@@ -864,6 +960,7 @@ void *sync_node_jobs(
     }
 
   /* FORMAT <JOBID>[ <JOBID>]... */
+  jobs_in_mom = strdup(jobstring_in);
   joblist = jobstring_in;
   jobidstr = threadsafe_tokenizer(&joblist, (char *)" ");
 
@@ -895,7 +992,13 @@ void *sync_node_jobs(
 
   free(sji);
 
+  if (jobs_in_mom)
+    sync_node_jobs_with_moms(np, jobs_in_mom);
+
   unlock_node(np, __func__, NULL, LOGLEVEL);
+
+  if (jobs_in_mom)
+    free(jobs_in_mom);
 
   return(NULL);
   }  /* END sync_node_jobs() */
@@ -1089,6 +1192,7 @@ void stream_eof(
 /*
  * wrapper task that check_nodes places in the thread pool's queue
  */
+
 void *check_nodes_work(
 
   void *vp)
@@ -1637,76 +1741,6 @@ int gpu_entry_by_id(
 
   return (-1);
   }  /* END gpu_entry_by_id() */
-
-
-
-
-/*
- * checks if a node is ok for to reshuffle
- *
- * All parameters are exactly the same as search
- * @param pnode - the node we're looking at
- *
- * @return TRUE if the node is reshuffleable for search's purposes
- */
-int can_reshuffle(
-
-  struct pbsnode *pnode,
-  struct prop    *glorf,
-  int             skip,
-  int             vpreq,
-  int             gpureq,
-  int             pass)
-
-  {
-  char log_buf[LOCAL_LOG_BUF_SIZE];
-
-  if (pnode->nd_ntype == NTYPE_CLUSTER)
-    {
-    if (pnode->nd_flag != thinking)
-      {
-      /* only shuffle nodes which have been selected above */
-
-      return(FALSE);
-      }
-
-    if (pnode->nd_state & pass)
-      return(FALSE);
-
-    if (LOGLEVEL >= 6)
-      {
-      sprintf(log_buf,
-        "search(2): starting eval gpus on node %s need %d(%d) mode %d has %d free %d skip %d",
-        pnode->nd_name,
-        gpureq,
-        pnode->nd_ngpus_needed,
-        gpu_mode_rqstd,
-        pnode->nd_ngpus,
-        gpu_count(pnode, TRUE),
-        skip);
-
-       log_ext(-1, __func__, log_buf, LOG_DEBUG);
-       }
-
-    if ((skip == SKIP_EXCLUSIVE) && 
-        (vpreq < pnode->nd_slots.get_number_free()) &&
-        (gpureq < gpu_count(pnode, TRUE)))
-      return(FALSE);
-
-    if ((skip == SKIP_ANYINUSE) &&
-        (vpreq < pnode->nd_slots.get_number_free()) &&
-        (gpureq < gpu_count(pnode, TRUE)))
-      return(FALSE);
-
-    if (!hasprop(pnode, glorf))
-      return(FALSE);
-    }
-  else
-    return(FALSE);
-
-  return(TRUE);
-  } /* can_reshuffle() */
-
 
 
 
@@ -2559,7 +2593,15 @@ int add_login_node_if_needed(
     {
     if (login_prop != NULL)
       {
-      proplist(&login_prop, &prop, &dummy1, &dummy2, &dummy3);
+      if (proplist(&login_prop, &prop, &dummy1, &dummy2, &dummy3) != PBSE_NONE)
+        {
+        if (LOGLEVEL >= 3)
+          {
+          char log_buf[LOCAL_LOG_BUF_SIZE];
+          snprintf(log_buf, sizeof(log_buf), "Malformed property list '%s', continuing.", login_prop);
+          log_err(-1, __func__, log_buf);
+          }
+        }
       }
 
     if ((login = get_next_login_node(prop)) == NULL)
@@ -4889,7 +4931,7 @@ int remove_job_from_nodes_gpus(
 int remove_job_from_node(
 
   struct pbsnode *pnode,
-  job            *pjob)
+  const char     *jobid)
 
   {
   char log_buf[LOCAL_LOG_BUF_SIZE];
@@ -4898,7 +4940,7 @@ int remove_job_from_node(
     {
     job_usage_info *jui = pnode->nd_job_usages[i];
 
-    if (!strcmp(jui->jobid, pjob->ji_qs.ji_jobid))
+    if (!strcmp(jui->jobid, jobid))
       {
       pnode->nd_slots.unreserve_execution_slots(jui->est);
       pnode->nd_job_usages.erase(pnode->nd_job_usages.begin() + i);
@@ -4970,7 +5012,7 @@ void free_nodes(
 
     if ((pnode = find_nodebyname(hostname)) != NULL)
       {
-      remove_job_from_node(pnode, pjob);
+      remove_job_from_node(pnode, pjob->ji_qs.ji_jobid);
       remove_job_from_nodes_gpus(pnode, pjob);
       remove_job_from_nodes_mics(pnode, pjob);
       unlock_node(pnode, __func__, NULL, LOGLEVEL);
@@ -4983,7 +5025,7 @@ void free_nodes(
     {
     if ((pnode = find_nodebyname(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str)) != NULL)
       {
-      remove_job_from_node(pnode, pjob);
+      remove_job_from_node(pnode, pjob->ji_qs.ji_jobid);
       unlock_node(pnode, __func__, NULL, LOGLEVEL);
       }
     }

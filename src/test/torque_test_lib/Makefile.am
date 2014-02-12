@@ -17,8 +17,6 @@ libtorque_test_la_SOURCES = ../../lib/Libifl/list_link.c \
                             ../../lib/Libattr/attr_fn_str.c \
                             ../../lib/Libattr/attr_fn_unkn.c \
                             ../../lib/Libattr/attr_fn_nppcu.c \
-						    ../../server/execution_slot_tracker.cpp \
-							../../server/job_usage_info.cpp \
 							../../server/execution_slot_tracker.cpp \
 							../../server/job_usage_info.cpp \
 							test_tcp_dis.cpp \

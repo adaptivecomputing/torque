@@ -997,7 +997,7 @@ void *req_modifyjob(
     new_preq->rq_noreply = TRUE; /* set for no more replies */
 
     enqueue_threadpool_request((void *(*)(void *))modify_job_work, new_preq);
-  }
+    } 
   else
     modify_job_work(preq);
   

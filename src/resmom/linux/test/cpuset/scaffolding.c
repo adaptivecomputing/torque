@@ -22,15 +22,6 @@ int              memory_pressure_threshold = 0; /* 0: off, >0: check and kill */
 short            memory_pressure_duration  = 0; /* 0: off, >0: check and kill */
 int              MOMConfigUseSMT           = 1; /* 0: off, 1: on */
 hwloc_topology_t topology;
-int              read_cpuset_rc;
-const char      *cpus_template_string = "0-5";
-const char      *mems_template_string = "0";
-
-char             global_cpus_string[MAXPATHLEN];
-char             global_mems_string[MAXPATHLEN];
-
-int hwloc_bitmap_parselist(const char *buf, hwloc_bitmap_t map);
-int hwloc_bitmap_displaylist(char *buf, size_t buflen, hwloc_bitmap_t map);
 node_internals   internal_layout;
 
 bool no_memory;
@@ -42,7 +33,8 @@ void log_err(int l, const char *func_name, const char *msg) {}
 void log_ext(int a, const char *b, const char *c, int d) {}
 void log_event(int a, int b, const char *c, const char *d)
   {
-  if(check_event) event_data(d);
+  if (check_event)
+    event_data(d);
   }
 
 job *mom_find_job(char *jobid) 

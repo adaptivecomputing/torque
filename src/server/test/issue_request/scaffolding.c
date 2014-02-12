@@ -12,6 +12,12 @@
 #include "net_connect.h" /* pbs_net_t */
 #include "list_link.h" /* tlist_head, list_link */
 #include "pbs_nodes.h"
+#include "log.h"
+
+bool return_addr = true;
+bool local_connect = true;
+bool net_rc_retry = false;
+bool connect_error = false;
 
 int pbs_errno = 0;
 const char *msg_daemonname = "unset";
@@ -24,46 +30,56 @@ all_tasks task_list_event;
 const char *msg_issuebad = "attempt to issue invalid request of type %d";
 std::string rq_id_str;
 
+int pthread_mutex_lock(pthread_mutex_t *mutex) throw()
+  {
+  return(0);
+  }
+
+int pthread_mutex_unlock(pthread_mutex_t *mutex) throw()
+  {
+  return(0);
+  }
+
 char *parse_servername(char *name, unsigned int *service)
   {
-  fprintf(stderr, "The call to parse_servername needs to be mocked!!\n");
   return(NULL);
   }
 
 int encode_DIS_Register(struct tcp_chan *chan, struct batch_request *preq)
   {
-  fprintf(stderr, "The call to encode_DIS_Register needs to be mocked!!\n");
-  return(1);
+  return(0);
   }
 
 int PBSD_gpu_put(int c, char *node, char *gpuid, int gpumode, int reset_perm, int reset_vol, char *extend)
   {
-  fprintf(stderr, "The call to PBSD_gpu_put needs to be mocked!!\n");
-  return(1);
+  return(0);
   }
 
 int PBSD_mgr_put(int c, int function, int command, int objtype, char *objname, struct attropl *aoplp, char *extend)
   {
-  fprintf(stderr, "The call to PBSD_mgr_put needs to be mocked!!\n");
-  return(1);
+  return(0);
   }
 
 int encode_DIS_JobId(struct tcp_chan *chan, char *jobid)
   {
-  fprintf(stderr, "The call to encode_DIS_JobId needs to be mocked!!\n");
-  return(1);
+  return(0);
   }
 
 pbs_net_t get_hostaddr(int *local_errno, char *hostname)
   {
-  fprintf(stderr, "The call to get_hostaddr needs to be mocked!!\n");
-  return(1);
+  if (return_addr == true)
+    {
+    *local_errno = 0;
+    return(123445);
+    }
+
+  *local_errno = PBS_NET_RC_RETRY;
+  return(0);
   }
 
 int DIS_reply_read(struct tcp_chan *chan, struct batch_reply *preply)
   {
-  fprintf(stderr, "The call to DIS_reply_read needs to be mocked!!\n");
-  return(1);
+  return(0);
   }
 
 char *netaddr_pbs_net_t(pbs_net_t ipadd)
@@ -73,15 +89,31 @@ char *netaddr_pbs_net_t(pbs_net_t ipadd)
 
 void free_br(struct batch_request *preq)
   {
-  fprintf(stderr, "The call to free_br needs to be mocked!!\n");
-  return;
   }
 
 int encode_DIS_ReturnFiles(struct tcp_chan *chan, struct batch_request *preq)
   {
-  fprintf(stderr, "The call to encode_DIS_ReturnFiles needs to be mocked!!\n");
-  return(1);
+  return(0);
   }
+
+int enqueue_threadpool_request(
+
+  void *(*func)(void *),
+  void *arg)
+  
+  {
+  return(PBSE_NONE);
+  }
+
+
+int insert_timed_task(
+
+    work_task *wt)
+
+  {
+  return(PBSE_NONE);
+  }
+
 
 struct work_task *set_task(
 
@@ -103,95 +135,90 @@ struct work_task *set_task(
 
 void DIS_tcp_setup(int fd)
   {
-  fprintf(stderr, "The call to DIS_tcp_setup needs to be mocked!!\n");
   return;
   }
 
 int encode_DIS_TrackJob(struct tcp_chan *chan, struct batch_request *br)
   {
-  fprintf(stderr, "The call to encode_DIS_TrackJob needs to be mocked!!\n");
-  return(1);
+  return(0);
   }
 
 void svr_disconnect(int handle)
   {
-  fprintf(stderr, "The call to svr_disconnect needs to be mocked!!\n");
   return;
   }
 
 int DIS_tcp_wflush(tcp_chan *chan)
   {
-  fprintf(stderr, "The call to DIS_tcp_wflush needs to be mocked!!\n");
-  return(1);
+  return(0);
   }
 
 void delete_task(struct work_task *ptask)
   {
-  fprintf(stderr, "The call to delete_task needs to be mocked!!\n");
   return;
   }
 
 void *get_next(list_link pl, char *file, int line)
   {
-  fprintf(stderr, "The call to get_next needs to be mocked!!\n");
   return(NULL);
   }
 
 int encode_DIS_CopyFiles(struct tcp_chan *chan, struct batch_request *preq)
   {
-  fprintf(stderr, "The call to encode_DIS_CopyFiles needs to be mocked!!\n");
-  return(1);
+  return(0);
   }
 
 int encode_DIS_ReqHdr(struct tcp_chan *chan, int reqt, char *user)
   {
-  fprintf(stderr, "The call to encode_DIS_ReqHdr needs to be mocked!!\n");
-  return(1);
+  return(0);
   }
 
 void attrl_fixlink(tlist_head *phead)
   {
-  fprintf(stderr, "The call to attrl_fixlink needs to be mocked!!\n");
   return;
   }
 
 int PBSD_status_put(int c, int function, char *id, struct attrl *attrib, char *extend)
   {
-  fprintf(stderr, "The call to PBSD_status_put needs to be mocked!!\n");
-  return(1);
+  return(0);
   }
 
 work_task *next_task(all_tasks *at, int *iter)
   {
-  fprintf(stderr, "The call to next_task needs to be mocked!!\n");
   return(NULL);
   }
 
 int svr_connect(pbs_net_t hostaddr, unsigned int port, int *my_err, struct pbsnode  *pnode, void *(*func)(void *))
   {
-  return PBS_LOCAL_CONNECTION;
+  if (local_connect == true)
+    return PBS_LOCAL_CONNECTION;
+
+  if (net_rc_retry == true)
+    return(PBS_NET_RC_RETRY);
+
+  if (connect_error == true)
+    return(-5);
+  
+  return(10);
   }
 
 int dispatch_task(struct work_task *ptask)
   {
-  fprintf(stderr, "The call to dispatch_task needs to be mocked!!\n");
-  return(1);
+  return(0);
   }
 
 int dispatch_request(int sfds, struct batch_request *request)
   {
-  return 0;
+  return(PBSE_NONE);
   }
 
 int PBSD_msg_put(int c, char *jobid, int fileopt, char *msg, char *extend)
   {
-  fprintf(stderr, "The call to PBSD_msg_put needs to be mocked!!\n");
-  return(1);
+  return(0);
   }
 
 void close_conn(int sd, int has_mutex)
   {
-  fprintf(stderr, "The call to close_conn needs to be mocked!!\n");
   return;
   }
 
@@ -205,14 +232,12 @@ struct pbsnode *tfind_addr(const u_long key, uint16_t port, char *job_momname)
 
 int encode_DIS_ReqExtend(struct tcp_chan *chan, char *extend)
   {
-  fprintf(stderr, "The call to encode_DIS_ReqExtend needs to be mocked!!\n");
-  return(1);
+  return(0);
   }
 
 int PBSD_sig_put(int c, char *jobid, char *signal, char *extend)
   {
-  fprintf(stderr, "The call to PBSD_sig_put needs to be mocked!!\n");
-  return(1);
+  return(0);
   }
 
 int unlock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
@@ -268,7 +293,13 @@ int get_batch_request_id(
   batch_request *preq)
 
   {
-  preq->rq_id = strdup("321");
+  char buf[MAXLINE];
+  int  id = 325;
+
+  sprintf(buf, "%d", id);
+
+  preq->rq_id = strdup(buf);
+
   return(0);
   }
 
@@ -288,9 +319,57 @@ void log_event(int eventtype, int objclass, const char *objname, const char *tex
 
 int ctnodes(char *spec)
   {
-  fprintf(stderr, "The call to append_link needs to be mocked!!\n");
-  return(1);
+  return(0);
   }
+
+int copy_attribute_list(
+
+  batch_request *preq,
+  batch_request *preq_tmp)
+
+  {
+  svrattrl             *pal = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
+  tlist_head           *phead = &preq_tmp->rq_ind.rq_manager.rq_attr;
+  svrattrl             *newpal = NULL;
+
+  while (pal != NULL)
+    {
+    newpal = (svrattrl *)calloc(1, pal->al_tsize + 1);
+    if (!newpal)
+      {
+      free_br(preq_tmp);
+      return(PBSE_SYSTEM);
+      }
+
+    CLEAR_LINK(newpal->al_link);
+
+    newpal->al_atopl.next = 0;
+    newpal->al_tsize = pal->al_tsize + 1;
+    newpal->al_nameln = pal->al_nameln;
+    newpal->al_flags  = pal->al_flags;
+    newpal->al_atopl.name = (char *)newpal + sizeof(svrattrl);
+    strcpy((char *)newpal->al_atopl.name, pal->al_atopl.name);
+    newpal->al_nameln = pal->al_nameln;
+    newpal->al_atopl.resource = newpal->al_atopl.name + newpal->al_nameln;
+
+    if (pal->al_atopl.resource != NULL)
+      strcpy((char *)newpal->al_atopl.resource, pal->al_atopl.resource);
+
+    newpal->al_rescln = pal->al_rescln;
+    newpal->al_atopl.value = newpal->al_atopl.name + newpal->al_nameln + newpal->al_rescln;
+    strcpy((char *)newpal->al_atopl.value, pal->al_atopl.value);
+    newpal->al_valln = pal->al_valln;
+    newpal->al_atopl.op = pal->al_atopl.op;
+
+    pal = (struct svrattrl *)GET_NEXT(pal->al_link);
+    }
+
+  if ((phead != NULL) &&
+       (newpal != NULL))
+    append_link(phead, &newpal->al_link, newpal);
+
+  return(PBSE_NONE);
+  } /* END copy_attribute_list() */
 
 batch_request *duplicate_request(batch_request *preq, int job_index)
   {
@@ -304,6 +383,7 @@ batch_request *duplicate_request(batch_request *preq, int job_index)
 
   preq_tmp->rq_perm = preq->rq_perm;
   preq_tmp->rq_fromsvr = preq->rq_fromsvr;
+  preq_tmp->rq_extsz = preq->rq_extsz;
   preq_tmp->rq_conn = preq->rq_conn;
   preq_tmp->rq_time = preq->rq_time;
   preq_tmp->rq_orgconn = preq->rq_orgconn;
@@ -356,8 +436,8 @@ batch_request *duplicate_request(batch_request *preq, int job_index)
         }
     
       /* copy the attribute list */
-     // if (copy_attribute_list(preq, preq_tmp) != PBSE_NONE)
-     //   return(NULL);
+      if (copy_attribute_list(preq, preq_tmp) != PBSE_NONE)
+        return(NULL);
     
       break;
     

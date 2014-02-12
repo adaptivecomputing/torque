@@ -348,8 +348,8 @@ int socket_connect_addr(
   char  tmp_buf[LOCAL_LOG_BUF_SIZE+1];
   int   local_socket = *socket;
 
-  while (((rc = connect(local_socket, remote, remote_size)) != 0) &&
-         (cntr < RES_PORT_RETRY))
+  while ((cntr < RES_PORT_RETRY) &&
+         ((rc = connect(local_socket, remote, remote_size)) != 0))
     {
     cntr++;
     
@@ -996,7 +996,10 @@ int pbs_getaddrinfo(
   }    
 
 
-int connect_to_trqauthd(int *sock)
+int connect_to_trqauthd(
+    
+  int *sock)
+
   {
   int   rc = PBSE_NONE;
   int   local_socket;

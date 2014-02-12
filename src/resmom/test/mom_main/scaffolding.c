@@ -39,6 +39,12 @@ short            memory_pressure_duration  = 0; /* 0: off, >0: check and kill */
 #endif
 
 
+#ifdef PENABLE_LINUX26_CPUSETS
+#include "pbs_cpuset.h"
+#include "node_internals.hpp"
+#endif
+
+
 extern mom_hierarchy_t *mh;
 
 mom_server     mom_servers[PBS_MAXSERVER];
@@ -845,7 +851,6 @@ int init_torque_cpuset(void)
   return 0;
   }
 
-
 node_internals::node_internals(void){}
 
 numa_node::numa_node(numa_node const&){}
@@ -854,13 +859,13 @@ allocation::allocation(allocation const&){}
 
 unsigned long setmempressthr(const char *)
   {
-  return 0;
+  return(0);
   }
 
 unsigned long setmempressdur(const char *)
-{
+  {
 return 0;
-}
+  }
 
 void recover_cpuset_reservation(job &pjob)
   {

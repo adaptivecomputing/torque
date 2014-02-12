@@ -29,6 +29,7 @@ START_TEST(test_read_mom_hierarchy)
   }
 END_TEST
 
+
 START_TEST(test_mom_job_dir_sticky_config)
   {
   char *tempfilename = tempnam("/tmp", "test");
@@ -78,7 +79,7 @@ END_TEST
 Suite *mom_main_suite(void)
   {
   Suite *s = suite_create("mom_main_suite methods");
-  TCase *tc_core = tcase_create("test_read_mom_hiearchy");
+  TCase *tc_core = tcase_create("test_read_mom_hierarchy");
   tcase_add_test(tc_core, test_read_mom_hierarchy);
   suite_add_tcase(s, tc_core);
 

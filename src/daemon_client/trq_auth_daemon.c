@@ -42,6 +42,7 @@ static char *active_pbs_server;
 pbs_net_t   trq_server_addr;
 char       trq_hostname[PBS_MAXSERVERNAME + 1];
 
+/* Get the name of the active pbs_server */
 int load_trqauthd_config(
 
   char **default_server_name,
@@ -55,7 +56,8 @@ int load_trqauthd_config(
 
   tmp_name = pbs_default();
 
-  if ((tmp_name == NULL) || (tmp_name[0] == '\0'))
+  if ((tmp_name == NULL) ||
+      (tmp_name[0] == '\0'))
     rc = PBSE_BADHOST;
   else
     {

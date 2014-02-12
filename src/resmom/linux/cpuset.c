@@ -924,6 +924,7 @@ bool is_physical_core(
   }
 
 
+
 void remove_logical_processor_if_requested(
 
   hwloc_bitmap_t *cpus)

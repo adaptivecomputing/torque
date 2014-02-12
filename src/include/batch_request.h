@@ -329,6 +329,7 @@ struct batch_request
   int                 rq_fromsvr; /* true if request from another server */
   int                 rq_conn; /* socket connection to client/server */
   int                 rq_orgconn; /* original socket if relayed to MOM */
+  int                 rq_extsz;  /* size of "extension" data */
   long                rq_time; /* time batch request created  */
   char                rq_user[PBS_MAXUSER+1];     /* user name request is from    */
   char                rq_host[PBS_MAXHOSTNAME+1]; /* name of host sending request */

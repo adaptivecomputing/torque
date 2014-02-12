@@ -166,8 +166,9 @@ void *next_thing(resizable_array *ra, int *iter)
   int i;
   void *thing;
 
-  if(ra == NULL) return NULL;
-
+  if (ra == NULL)
+    return NULL;
+  
   if (*iter == -1)
     i = 1;
   else

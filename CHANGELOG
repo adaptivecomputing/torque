@@ -12,21 +12,16 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 4.2.7
   b - TRQ-2329. Fix a problem where nodes could be allocated to array subjobs even
       after the job was deleted.
-
-4.2.6.1.h1
-  b - TRQ-2395. Fix a problem when running jobs on non-Cray nodes reporting to a pbs
-      server running in cray enabled mode.
-
-4.2.6.1
-
   b - TRQ-2351. Fix an issue where moms that are before 4.2.6 can't run jobs if the
       server is 4.2.6.
-  e - Made it so trqauthd cannot be loaded more than once. trqauthd opens a UNIX 
-      domain name file to do its communication with client commands. If the 
+  e - Made it so trqauthd cannot be loaded more than once. trqauthd opens a UNIX
+      domain name file to do its communication with client commands. If the
       UNIX domain name file exists trqauthd will not load. By default this file
       is /tmp/trqauthd-unix. It can be configured to point to a different directory.
       If trqauthd will not start and you know there are no other instances of trqauthd
       running you should delete the UNIX domain file and try again.
+  b - TRQ-2373. Fix login nodes restricting the number of jobs to the number specified
+      by np=X.
   b - TRQ-2354. Fix an issue with potential overflow in user job counts. Also fix a 
       user being considered different if from a different submit host.
   b - TRQ-2369. Fix a problem with pbs_mom recovering which cpu indices were in use for
@@ -38,10 +33,23 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - TRQ-2270. Fix some problems with TORQUE continuing to have nodes in a free state 
       when the host is down.
 
+4.2.6.1.h1
+  b - TRQ-2395. Fix a problem when running jobs on non-Cray nodes reporting to a pbs
+      server running in cray enabled mode.
+
+4.2.6.1
+
+  b - TRQ-2351. Fix an issue where moms that are before 4.2.6 can't run jobs if the
+      server is 4.2.6.
+  e - Made it so trqauthd cannot be loaded more than once. trqauthd opens a UNIX 
+      domain name file to do its communication with client commands. If the 
+
 4.2.6
   b - TRQ-2273. Job start time is hard coded to 5 minutes. If the prolog takes longer
       than that to run the job will be requeued without killing the prolog. This
-      change will now set the prolog timeout to less than 5 minutes.
+  b - TRQ-2395. Fix a problem when running jobs on non-Cray nodes reporting to a pbs
+      server running in cray enabled mode.
+  n - TRQ-2299. Make it so that the reporter mom doesn't fork to send its update.
   b - TRQ-2111. Fix a rare case of running jobs being deleted without having their
       resources freed.
   b - TRQ-2208. Stop having pbs_mom use trqauthd when it is checkpointing a job.
@@ -51,12 +59,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       vice versa from the sisters.
   b - TRQ-2280. Save properties added to cray compute nodes in the nodes file if the 
       file is overwritten by pbs_server.
-  b - TRQ-2377. Jobs with future start dates were being placed in queued after being 
-      deleted if they were deleted before their start date and keep_completed kept them
       around long enough. Fix this.
-  c - TRQ-2347. Fix a segfault around re-sending batch requests.
-  b - TRQ-2270. Fix some problems with TORQUE continuing to have nodes in a free state 
-      when the host is down.
   b - TRQ-2395. Fix a problem when running jobs on non-Cray nodes reporting to a pbs
       server running in cray enabled mode.
   n - TRQ-2299. Make it so that the reporter mom doesn't fork to send its update.
