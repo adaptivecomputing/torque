@@ -107,7 +107,7 @@ int hash_add_item(
   {
   job_data *item = new job_data(name,value,var_type,op_type);
 
-  return head->insert(item,name);
+  return head->insert(item,name,true);
   } /* END hash_add_item() */
 
 
