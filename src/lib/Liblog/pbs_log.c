@@ -433,7 +433,6 @@ int job_log_open(
 
   if (job_log_opened > 0)
     {
-    log_err(-1, __func__, "job log already open");
     return(1); /* already open */
     }
 
@@ -1509,7 +1508,7 @@ void log_format_trq_timestamp(
   snprintf(time_formatted_str, buflen, "%s%04d", buffer, milisec);
   } /* end of log_format_trq_timestamp */
 
-void log_set_hostname_sharelogging(const char *server_name, int server_port)
+void log_set_hostname_sharelogging(const char *server_name, const char *server_port)
   {
   char ip[64];
   char hostnm[1024];
@@ -1544,7 +1543,7 @@ void log_set_hostname_sharelogging(const char *server_name, int server_port)
     hostname = hostnm;
     }
 
-  snprintf(log_host_port, sizeof(log_host_port), "%s:%d (host: %s)", 
+  snprintf(log_host_port, sizeof(log_host_port), "%s:%s (host: %s)", 
     ip, server_port, hostname);
   }
 

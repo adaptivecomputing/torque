@@ -77,6 +77,7 @@
 * without reference to its choice of law rules.
 */
 
+#include <string>
 #include <stdio.h>
 #include <errno.h>
 #include "user_info.h"
@@ -101,10 +102,32 @@ void initialize_user_info_holder(
 
 
 
+/*
+ * remove_server_suffix()
+ *
+ * removes the @servername suffix from user_name
+ * @post-cond: user_name will have no @servername suffix
+ * @param user_name - the user name that should have a suffix removed
+ * if present.
+ * 
+ */
+void remove_server_suffix(
+
+  std::string &user_name)
+
+  {
+  size_t pos = user_name.find("@");
+
+  if (pos != std::string::npos)
+    user_name.erase(pos);
+  }
+
+
+
 unsigned int get_num_queued(
     
   user_info_holder *uih,
-  char             *user_name)
+  const char       *user_name)
 
   {
   unsigned int  num_queued = 0;
@@ -154,13 +177,16 @@ int  can_queue_new_job(
   int          can_queue_another = TRUE;
   unsigned int num_queued = 0;
   unsigned int num_to_add;
+  std::string  uname(user_name);
 
   get_svr_attr_l(SRV_ATR_MaxUserQueuable, &max_queuable);
+
+  remove_server_suffix(uname);
 
   if (max_queuable >= 0)
     {
     num_to_add = count_jobs_submitted(pjob);
-    num_queued = get_num_queued(&users, user_name);
+    num_queued = get_num_queued(&users, uname.c_str());
 
     if (num_queued + num_to_add > (unsigned int)max_queuable)
       can_queue_another = FALSE;
@@ -183,11 +209,14 @@ int  increment_queued_jobs(
   user_info    *ui;
   int           index;
   unsigned int  num_submitted = count_jobs_submitted(pjob);
+  std::string   uname(user_name);
+  
+  remove_server_suffix(uname);
 
   pthread_mutex_lock(uih->ui_mutex);
 
   /* get the user if there is one */
-  if ((index = get_value_hash(uih->ui_ht, user_name)) > 0)
+  if ((index = get_value_hash(uih->ui_ht, uname.c_str())) > 0)
     {
     ui = (user_info *)uih->ui_ra->slots[index].item;
     ui->num_jobs_queued += num_submitted;
@@ -196,7 +225,7 @@ int  increment_queued_jobs(
     {
     /* user doesn't exist, create a new one and insert */
     ui = (user_info *)calloc(1, sizeof(user_info));
-    ui->user_name = strdup(user_name);
+    ui->user_name = strdup(uname.c_str());
     ui->num_jobs_queued = num_submitted;
 
     if ((index = insert_thing(uih->ui_ra, ui)) == -1)
@@ -224,19 +253,26 @@ int  decrement_queued_jobs(
   char             *user_name)
 
   {
-  user_info *ui;
-  int        index;
-  int        rc = THING_NOT_FOUND;
-  char       log_buf[LOCAL_LOG_BUF_SIZE];
+  user_info   *ui;
+  int          index;
+  int          rc = THING_NOT_FOUND;
+  char         log_buf[LOCAL_LOG_BUF_SIZE];
+  std::string  uname(user_name);
+  
+  remove_server_suffix(uname);
 
   pthread_mutex_lock(uih->ui_mutex);
 
-  if ((index = get_value_hash(uih->ui_ht, user_name)) > 0)
+  if ((index = get_value_hash(uih->ui_ht, uname.c_str())) > 0)
     {
     ui = (user_info *)uih->ui_ra->slots[index].item;
-    if (ui->num_jobs_queued != 0)
+      
+    ui->num_jobs_queued -= 1;
+
+    if (ui->num_jobs_queued < 0)
       {
-      ui->num_jobs_queued -= 1;
+      ui->num_jobs_queued = 0;
+
       if (LOGLEVEL >= 6)
         {
         snprintf(log_buf, sizeof(log_buf), "decremented number of jobs queued when already at 0");

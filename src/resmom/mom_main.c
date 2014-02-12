@@ -130,6 +130,7 @@ char           Torque_Info_Version[] = PACKAGE_VERSION;
 char           Torque_Info_Version_Revision[] = GIT_HASH;
 char           Torque_Info_Component[] = "pbs_mom";
 char           Torque_Info_SysVersion[BUF_SIZE];
+int            MOMJobDirStickySet = FALSE;
 
 /* mom data items */
 #ifdef NUMA_SUPPORT
@@ -264,7 +265,7 @@ static void mom_lock(int fds, int op);
 int setup_nodeboards();
 #else
 #ifdef PENABLE_LINUX26_CPUSETS
-void create_cpuset_reservation_if_needed(job &pjob);
+void recover_cpuset_reservation(job &pjob);
 #endif
 #endif /* NUMA_SUPPORT */
 
@@ -290,7 +291,6 @@ static int recover_set = FALSE;
 
 static int      call_hup = 0;
 char           *path_log;
-
 
 
 
@@ -687,14 +687,12 @@ void memcheck(
     return;
     }
 
-  log_err(-1, "memcheck", "memory allocation failed");
+  log_err(-1, __func__, "memory allocation failed");
 
   die(0);
 
   return;
   }  /* END memcheck() */
-
-
 
 
 
@@ -774,6 +772,7 @@ void rmnl(
 
   return;
   }
+
 
 
 
@@ -1889,6 +1888,8 @@ void add_diag_jobs_session_ids(
       output << ptask->ti_qs.ti_sid;
     else
       output << "," << ptask->ti_qs.ti_sid;
+
+    first = false;
     }  /* END for (task) */
   }
 
@@ -3085,13 +3086,15 @@ int do_tcp(
 
       mom_is_request(chan,version,NULL);
 
-      svr_conn[chan->sock].cn_stay_open = FALSE;
       break;
 
     case IM_PROTOCOL:
 
       im_request(chan,version,pSockAddr);
-      svr_conn[chan->sock].cn_stay_open = FALSE;
+      if(chan->sock >= 0)
+        {
+        svr_conn[chan->sock].cn_stay_open = FALSE;
+        }
 
       break;
 
@@ -3123,7 +3126,9 @@ int do_tcp(
 
   /* don't close these connections -- the pointer is saved in 
    * the tasks for MPI jobs */
-  if ((chan != NULL) && (svr_conn[chan->sock].cn_stay_open == FALSE))
+  if ((chan != NULL) &&
+      (((chan->sock >= 0) && (svr_conn[chan->sock].cn_stay_open == FALSE)) ||
+      ((chan->sock == -1))))
     DIS_tcp_cleanup(chan);
   DBPRT(("%s:%d", __func__, proto));
 
@@ -3160,7 +3165,7 @@ void *tcp_request(
   if ((avail_bytes = socket_avail_bytes_on_descriptor(socket)) == 0)
     {
     close_conn(socket, FALSE);
-    return NULL;
+    return(NULL);
     }
 
   memset(&sockAddr,0,sizeof(sockAddr));
@@ -3188,9 +3193,9 @@ void *tcp_request(
   if (AVL_is_in_tree_no_port_compare(ipadd, 0, okclients) == 0)
     {
     sprintf(log_buffer, "bad connect from %s", address);
-    log_err(errno, __func__, log_buffer);
+    log_err(-1, __func__, log_buffer);
     close_conn(socket, FALSE);
-    return NULL;
+    return(NULL);
     }
 
   log_buffer[0] = '\0';
@@ -3212,6 +3217,8 @@ void *tcp_request(
     case DIS_EOF:
 
       DBPRT(("Closing socket %d twice...\n", socket))
+
+      // Fall through to close the connection
 
     case PBSE_MEM_MALLOC:
     case DIS_EOD:
@@ -4373,6 +4380,8 @@ void read_mom_hierarchy()
     // if we read something successfully, we have the cluster addresses and don't 
     // need to request them.
     received_cluster_addrs = verify_mom_hierarchy();
+
+    close(fds);
     }
   } /* END read_mom_hierarchy() */
 
@@ -4414,7 +4423,7 @@ void recover_internal_layout()
   // now, re-create the reservation for each job.
   for (std::list<job *>::iterator it = job_list.begin(); it != job_list.end(); it++)
     {
-    create_cpuset_reservation_if_needed(*(*it));
+    recover_cpuset_reservation(*(*it));
     }
 #endif
   }
@@ -4580,7 +4589,12 @@ int setup_program_environment(void)
 
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
 
-  c |= chk_file_sec(path_jobs,    1, 0, S_IWGRP | S_IWOTH, 1, NULL);
+  get_mom_job_dir_sticky_config(config_file);
+
+  if (!MOMJobDirStickySet)
+    c |= chk_file_sec(path_jobs,    1, 0, S_IWGRP | S_IWOTH, 1, NULL);
+  else
+    c |= chk_file_sec(path_jobs,    1, 1, S_IWGRP | S_IWOTH, 1, NULL);
 
   c |= chk_file_sec(path_aux,     1, 0, S_IWGRP | S_IWOTH, 1, NULL);
 
@@ -4694,8 +4708,7 @@ int setup_program_environment(void)
 
   if (read_config(NULL))
     {
-    fprintf(stderr, "pbs_mom: cannot load config file '%s'\n",
-            config_file);
+    fprintf(stderr, "pbs_mom: cannot load config file '%s'\n", config_file);
 
     exit(1);
     }
@@ -5031,8 +5044,6 @@ int setup_program_environment(void)
 
   if (gethostname(ret_string, ret_size) == 0)
     addclient(ret_string);
-
-  tmpdir_basename[0] = '\0';
 
   /* if no alias is specified, make mom_alias the same as mom_host */
   if (mom_alias[0] == '\0')
@@ -6153,7 +6164,7 @@ int read_layout_file()
           }
 
         /* Parse val into nodeset, abort if parsing fails */
-        if ((node_boards[i].num_nodes = hwloc_bitmap_parselist(val, nodeset)) < 0)
+        if ((node_boards[i].num_nodes = hwloc_bitmap_list_sscanf(nodeset, val)) < 0)
           {
           sprintf(log_buffer, "failed to parse mom.layout file token: nodes=%s", val);
           goto failure;
@@ -6218,7 +6229,7 @@ int read_layout_file()
 
         /* Show what we have */
         sprintf(log_buffer, "nodeboard %2d: %d NUMA nodes: ", i, node_boards[i].num_nodes);
-        hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer),
+        hwloc_bitmap_list_snprintf(log_buffer + strlen(log_buffer),
                                  sizeof(log_buffer) - strlen(log_buffer),
                                  node_boards[i].nodeset);
         log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
@@ -6374,13 +6385,13 @@ int setup_nodeboards()
       i,
       node_boards[i].num_cpus);
 
-    hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer),
+    hwloc_bitmap_list_snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer),
       node_boards[i].cpuset);
     snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer),
       "), %d mems (",
       node_boards[i].num_nodes);
 
-    hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer),
+    hwloc_bitmap_list_snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer),
       node_boards[i].nodeset);
     snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer),
       ")");
@@ -6811,6 +6822,50 @@ int add_to_resend_things(
   mc->resend_time = time(NULL);
   return(insert_thing(things_to_resend, mc));
   } /* END add_to_resend_things() */
+
+
+
+void get_mom_job_dir_sticky_config(
+
+  char *file)  /* I */
+
+  {
+  FILE  *conf;
+  char  line[256];
+  char  name[256];
+  char *str;
+  char *ptr;
+
+
+  if ((conf = fopen(file, "r")) == NULL)
+    return;
+
+  while (fgets(line, sizeof(line) - 1, conf))
+    {
+    if (line[0] != '#') /* comment */
+      {
+      if ((ptr = strchr(line, '#')) != NULL)
+        *ptr = '\0';
+
+      str = skipwhite(line);
+      if (*str == '$')
+        {
+        str = tokcpy(++str, name); /* resource name */
+        if (strcasecmp(name, "jobdirectory_sticky") == 0)
+          {
+          str = skipwhite(str);
+          rmnl(str);
+          setjobdirectorysticky(str);
+          break;
+          }
+        }
+        memset(line, 0, sizeof(line));
+       }
+    }
+
+  fclose(conf);
+
+  } /* END get_mom_job_dir_sticky_config */
 
 
 

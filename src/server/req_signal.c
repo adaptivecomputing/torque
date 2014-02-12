@@ -216,7 +216,7 @@ int req_signaljob(
     if (pjob != NULL)
       job_mutex.unlock();
     else
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
 
     if (rc != PBSE_NONE)
       {
@@ -241,11 +241,11 @@ int req_signaljob(
 
 int issue_signal(
 
-  job  **pjob_ptr,
+  job        **pjob_ptr,
   const char  *signame, /* name of the signal to send */
-  void  (*func)(struct batch_request *),
-  void  *extra, /* extra parameter to be stored in sig request */
-  char  *extend) /* Parameter to put in extended part of request */
+  void       (*func)(struct batch_request *),
+  void        *extra, /* extra parameter to be stored in sig request */
+  char        *extend) /* Parameter to put in extended part of request */
 
   {
   int                   rc;
@@ -264,6 +264,10 @@ int issue_signal(
 
   newreq->rq_extra = extra;
   newreq->rq_extend = extend;
+  if (extend != NULL)
+    {
+    newreq->rq_extsz = strlen(extend);
+    }
 
   strcpy(newreq->rq_ind.rq_signal.rq_jid, pjob->ji_qs.ji_jobid);
 

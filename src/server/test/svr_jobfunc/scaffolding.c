@@ -14,14 +14,14 @@
 #include "pbs_nodes.h"
 
 
-int svr_resc_size = 0;
+extern int svr_resc_size;
 all_queues svr_queues;
 const char *msg_daemonname = "unset";
 attribute_def job_attr_def[JOB_ATR_LAST];
 const char *msg_badwait = "Invalid time in work task for waiting, job = %s";
 struct all_jobs alljobs;
 const char *pbs_o_host = "PBS_O_HOST";
-resource_def *svr_resc_def;
+extern resource_def *svr_resc_def;
 int svr_clnodes = 0;
 int comp_resc_gt; 
 struct server server;
@@ -35,6 +35,18 @@ struct pbsnode *alps_reporter;
 user_info_holder users;
 int decrement_count;
 job napali_job;
+
+
+void remove_server_suffix(
+
+  std::string &user_name)
+
+  {
+  size_t pos = user_name.find("@");
+
+  if (pos != std::string::npos)
+    user_name.erase(pos);
+  }
 
 resource *add_resource_entry(pbs_attribute *pattr, resource_def *prdef)
   {
@@ -304,7 +316,7 @@ int lock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string)
   return(0);
   }
 
-unsigned int get_num_queued(user_info_holder *uih, char *user_name)
+unsigned int get_num_queued(user_info_holder *uih, const char *user_name)
   {
   return(0);
   }
@@ -355,3 +367,75 @@ int initialize_procct(job *pjob)
   }
 
 void free_nodes(job *pjob) {}
+
+int comp_size(struct pbs_attribute *attr, struct pbs_attribute *with)
+  {
+  fprintf(stderr, "The call to comp_size to be mocked!!\n");
+  exit(1);
+  }
+
+int decode_time(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm)
+  {
+  fprintf(stderr, "The call to decode_time to be mocked!!\n");
+  exit(1);
+  }
+
+int decode_size(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm)
+  {
+  fprintf(stderr, "The call to decode_size to be mocked!!\n");
+  exit(1);
+  }
+
+int set_size(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op)
+  {
+  fprintf(stderr, "The call to set_size to be mocked!!\n");
+  exit(1);
+  }
+
+int set_ll(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op)
+  {
+  fprintf(stderr, "The call to set_ll to be mocked!!\n");
+  exit(1);
+  }
+
+int encode_time(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm)
+  {
+  fprintf(stderr, "The call to encode_time to be mocked!!\n");
+  exit(1);
+  }
+
+int encode_ll(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm)
+  {
+  fprintf(stderr, "The call to encode_ll to be mocked!!\n");
+  exit(1);
+  }
+
+int decode_ll(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm)
+  {
+  fprintf(stderr, "The call to decode_ll to be mocked!!\n");
+  exit(1);
+  }
+
+int comp_ll(struct pbs_attribute *attr, struct pbs_attribute *with)
+  {
+  fprintf(stderr, "The call to comp_ll to be mocked!!\n");
+  exit(1);
+  }
+
+int decode_tokens(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm)
+  {
+  fprintf(stderr, "The call to decode_tokens to be mocked!!\n");
+  exit(1);
+  }
+
+int get_svr_attr_arst(int index, struct array_strings **arst)
+  {
+  return(0);
+  }
+
+int encode_size(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm)
+  {
+  fprintf(stderr, "The call to encode_size to be mocked!!\n");
+  exit(1);
+  }
+

@@ -703,7 +703,9 @@ int get_hash(
   if (key == NULL)
     return(-1);
 
-  len = strlen((char *)key);
+  const char *key_char = (const char *)key;
+
+  len = strlen(key_char);
   counter = ht->size >> 1;
 
 #ifdef HASH_LITTLE_ENDIAN

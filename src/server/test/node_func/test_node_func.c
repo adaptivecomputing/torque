@@ -1,5 +1,6 @@
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <sstream>
+#include <fstream>
 #include "license_pbs.h" /* See here for the software license */
 #include "node_func.h"
 #include "test_node_func.h"
@@ -10,10 +11,11 @@
 
 #include "pbs_nodes.h" /* pbs_nodes, node_check_info, node_iterator, all_nodes */
 #include "attribute.h" /* svrattrl, struct  */
-#include "svr_task.h"
+#include "work_task.h"
 
 #define HOST_NAME_MAX 255
 
+void write_compute_node_properties(struct pbsnode &reporter, FILE *nin);
 void add_to_property_list(std::stringstream &property_list, const char *token);
 int login_encode_jobs(struct pbsnode *pnode, tlist_head *phead);
 int cray_enabled;
@@ -22,12 +24,82 @@ void initialize_allnodes(all_nodes *an, struct pbsnode *n1, struct pbsnode *n2)
   {
   an->allnodes_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   an->ra = (resizable_array *)calloc(1, sizeof(resizable_array));
-  an->ra->slots = (slot *)calloc(3, sizeof(slot));
+  an->ra->slots = (slot *)calloc(4, sizeof(slot));
 
   an->ra->slots[0].item = NULL;
+  an->ra->slots[0].next = 1;
   an->ra->slots[1].item = n1;
+  an->ra->slots[1].next = 2;
   an->ra->slots[2].item = n2;
+  an->ra->slots[2].next = 0;
   }
+
+
+void add_prop(struct pbsnode &pnode, const char *prop_name)
+  {
+  struct prop *pp = (struct prop *)calloc(1, sizeof(struct prop));
+
+  pp->name = strdup(prop_name);
+
+  if (pnode.nd_first == NULL)
+    {
+    pnode.nd_first = pp;
+    }
+  else
+    {
+    struct prop *curr = pnode.nd_first;
+
+    while (curr->next != NULL)
+      curr = curr->next;
+
+    curr->next = pp;
+    }
+  }
+  
+
+START_TEST(write_compute_node_properties_test)
+  {
+  struct pbsnode  node1;
+  struct pbsnode  node2;
+  struct pbsnode  reporter;
+
+  alps_reporter = &reporter;
+
+  memset(&node1, 0, sizeof(node1));
+  memset(&node2, 0, sizeof(node2));
+  memset(&reporter, 0, sizeof(reporter));
+
+  node1.nd_name = strdup("bob");
+  node2.nd_name = strdup("tom");
+  initialize_allnodes(&(reporter.alps_subnodes), &node1, &node2);
+
+  add_prop(node1, "bob");
+  add_prop(node1, "cray_compute");
+  add_prop(node2, "tom");
+  add_prop(node2, "cray_compute");
+  add_prop(node2, "martin");
+
+  FILE *nin = fopen("nodes", "w");
+  write_compute_node_properties(reporter, nin);
+  fflush(nin);
+  fclose(nin);
+
+  std::ifstream myfile("nodes");
+  std::string   line;
+
+  getline(myfile, line);
+  fail_unless(strstr(line.c_str(), "martin") != NULL);
+  fail_unless(strstr(line.c_str(), "cray_compute") != NULL);
+  const char *ptr = strstr(line.c_str(), "tom");
+  fail_unless(ptr != NULL);
+  fail_unless(strstr(ptr + 1, "tom") == NULL);
+  // there should only be 1 line 
+  line.clear();
+  getline(myfile, line);
+  fail_unless(line.size() == 0);
+  }
+END_TEST
+
 
 START_TEST(add_to_property_list_test)
   {
@@ -47,14 +119,8 @@ START_TEST(PGetNodeFromAddr_test)
   pbs_net_t address = 0;
   struct pbsnode *result;
   /* alloc mutex, use, restore */
-  pthread_mutex_t *mutex = allnodes.allnodes_mutex;
-  allnodes.allnodes_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(allnodes.allnodes_mutex, NULL);
+  initialize_allnodes(&allnodes, NULL, NULL);
   result = PGetNodeFromAddr(address);
-
-
-  free((void*)allnodes.allnodes_mutex);
-  allnodes.allnodes_mutex = mutex;
 
   fail_unless(result == NULL, "null address input fail");
   }
@@ -691,16 +757,14 @@ END_TEST
 START_TEST(next_node_test)
   {
   struct pbsnode *result = NULL;
-  /*char name[] = "name";*/
   struct pbsnode node;
   struct node_iterator it;
-  pthread_mutex_t *mutex;
   initialize_pbsnode(&node, NULL, NULL, 0, FALSE);
   memset(&it, 0, sizeof(it));
+  it.node_index = -1;
 
   initialize_all_nodes_array(&allnodes);
   /* alloc mutex, use, restore */
-  mutex = allnodes.allnodes_mutex;
   allnodes.allnodes_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(allnodes.allnodes_mutex, NULL);
 
@@ -718,7 +782,6 @@ START_TEST(next_node_test)
   fail_unless(result == NULL, "next_node fail");
 
   free((void*)allnodes.allnodes_mutex);
-  allnodes.allnodes_mutex = mutex;
   }
 END_TEST
 
@@ -1085,6 +1148,7 @@ Suite *node_func_suite(void)
   tc_core = tcase_create("remove_hello_test");
   tcase_add_test(tc_core, remove_hello_test);
   tcase_add_test(tc_core, add_to_property_list_test);
+  tcase_add_test(tc_core, write_compute_node_properties_test);
   suite_add_tcase(s, tc_core);
 
 #if 0

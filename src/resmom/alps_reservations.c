@@ -92,7 +92,6 @@
 #include <vector>
 #include <string>
 
-
 extern char mom_alias[];
 
 
@@ -121,11 +120,54 @@ void free_host_req(
   free(hr);
   } /* END free_host_req() */
 
+/* 
+ * Sort the exec_hosts lists to match the nodes in mppnodes. 
+ *
+ */
 
+resizable_array *sort_exec_hosts(
+  resizable_array *exec_hosts,
+  const char      *mppnodes)
+  {
+  if(mppnodes == NULL)
+    {
+    return exec_hosts;
+    }
+
+  char *tmp = strdup(mppnodes);
+  char *tmp_str = tmp;
+  resizable_array *tmp_host_list = initialize_resizable_array(100);
+  char *tok;
+  int iter;
+  host_req *pHr;
+    
+  while((tok = threadsafe_tokenizer(&tmp_str,",")) != NULL)
+    {
+    iter = -1;
+    while((pHr = (host_req *)next_thing_from_back(exec_hosts,&iter)) != NULL)
+      {
+      if(strcmp(pHr->hostname,tok) == 0)
+        {
+        insert_thing(tmp_host_list,pHr);
+        remove_thing(exec_hosts,pHr);
+        break;
+        }
+      }
+    }
+  iter = -1;
+  while((pHr = (host_req *)next_thing_from_back(exec_hosts,&iter)) != NULL)
+    {
+    insert_thing(tmp_host_list,pHr);
+    }
+  free_resizable_array(exec_hosts);
+  free(tmp);
+  return tmp_host_list;
+  }
 
 resizable_array *parse_exec_hosts(
 
-  char *exec_hosts_param)
+  char *exec_hosts_param,
+  const char *mppnodes)
 
   {
   char            *slash;
@@ -162,8 +204,7 @@ resizable_array *parse_exec_hosts(
     }
 
   free(exec_hosts);
-
-  return(host_req_list);
+  return(sort_exec_hosts(host_req_list,mppnodes));
   } /* END parse_exec_hosts() */
 
 
@@ -740,7 +781,8 @@ int create_alps_reservation(
   int         use_nppn,
   int         nppcu,
   int         mppdepth,
-  char      **reservation_id)
+  char      **reservation_id,
+  const char *mppnodes)
 
   {
   resizable_array *host_req_list;
@@ -749,13 +791,13 @@ int create_alps_reservation(
   int              retry_count = 0;
   char            *user = strdup(username);
   char            *aroba;
-  
+
   if ((aroba = strchr(user, '@')) != NULL)
     *aroba = '\0';
 
   if (strchr(exec_hosts, '|') == NULL)
     {
-    host_req_list = parse_exec_hosts(exec_hosts);
+    host_req_list = parse_exec_hosts(exec_hosts,mppnodes);
     
     if (host_req_list->num == 0)
       {

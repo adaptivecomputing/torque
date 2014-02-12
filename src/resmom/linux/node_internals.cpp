@@ -171,6 +171,32 @@ void node_internals::reserve(
 
 
 
+void node_internals::recover_reservation(
+
+  int            num_cpus,
+  unsigned long  memory,
+  const char    *jobid)
+
+  {
+
+  for (unsigned int i = 0; i < this->numa_nodes.size(); i++)
+    {
+    allocation alloc;
+    this->numa_nodes[i].recover_reservation(num_cpus, memory, jobid, alloc);
+    num_cpus -= alloc.cpus;
+    memory -= alloc.memory;
+
+    if ((num_cpus <= 0) &&
+        (memory <= 0))
+      break;
+    }
+
+  if (memory > 0)
+    reserve(num_cpus, memory, jobid);
+  }
+
+
+
 void node_internals::remove_job(
 
   const char *jobid)

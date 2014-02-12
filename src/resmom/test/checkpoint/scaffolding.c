@@ -266,7 +266,8 @@ int create_alps_reservation(
   int         use_nppn,
   int         nppcu,
   int         mppdepth,
-  char      **reservation_id)
+  char      **reservation_id,
+  const char *mppnodes)
 
   {
   return(0);

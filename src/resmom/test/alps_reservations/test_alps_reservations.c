@@ -14,6 +14,7 @@ char *hostname = (char *)"napali";
 char *eh1 = (char *)"napali/0+napali/1+l11/0+l11/1";
 char *eh2 = (char *)"napali/0+napali/1+l11/0+l11/1+l11/2";
 char *eh3 = (char *)"napali/0+napali/1+l11/0+l11/1+lihue/0+lihue/1+lihue/2+waimea/0+waimea/1+waimea/2";
+char *mpp3 = (char *)"lihue,napali,l11,waimea";
 char  buf[4096];
 char *uname = (char *)"dbeer";
 char *jobids[] = {(char *)"0.napali", (char *)"1.napali"} ;
@@ -29,7 +30,7 @@ char *alps_rsv_outputs[] = {
     (char *)"<?xml version='1.0'?><BasilResponse protocol='1.0'> <ResponseData status='FAILURE' method='RESERVE'/></BasilResponse>",
     (char *)"tom"};
 
-resizable_array *parse_exec_hosts(char *exec_hosts);
+resizable_array *parse_exec_hosts(char *exec_hosts, const char *mppnodes);
 void             get_reservation_command(resizable_array *, char *, char *, char *, char *, char *, int, int,int, std::string&);
 int              parse_reservation_output(char *, char **);
 int              execute_reservation(const char *, char **);
@@ -80,7 +81,7 @@ END_TEST
 
 START_TEST(parse_exec_hosts_test)
   {
-  resizable_array *hrl = parse_exec_hosts(eh1);
+  resizable_array *hrl = parse_exec_hosts(eh1,NULL);
   int              iter = -1;
   int              host_count = 0;
   host_req        *hr;
@@ -97,7 +98,7 @@ START_TEST(parse_exec_hosts_test)
   fail_unless(host_count == 2, buf);
 
   free_resizable_array(hrl);
-  hrl = parse_exec_hosts(eh2);
+  hrl = parse_exec_hosts(eh2,NULL);
   iter = -1;
   host_count = 0;
 
@@ -128,7 +129,7 @@ START_TEST(parse_exec_hosts_test)
   fail_unless(host_count == 2, buf);
 
   free_resizable_array(hrl);
-  hrl = parse_exec_hosts(eh3);
+  hrl = parse_exec_hosts(eh3,NULL);
   iter = -1;
   host_count = 0;
 
@@ -153,6 +154,31 @@ START_TEST(parse_exec_hosts_test)
   fail_unless(host_count == 4, buf);
 
   free_resizable_array(hrl);
+
+  hrl = parse_exec_hosts(eh3,mpp3);
+  iter = -1;
+  host_count = 0;
+
+  while ((hr = (host_req *)next_thing(hrl, &iter)) != NULL)
+    {
+    if(host_count == 0)
+      fail_unless(strcmp(hr->hostname,"lihue") == 0);
+    if(host_count == 1)
+      fail_unless(strcmp(hr->hostname,"napali") == 0);
+    if(host_count == 2)
+      fail_unless(strcmp(hr->hostname,"l11") == 0);
+    if(host_count == 3)
+      fail_unless(strcmp(hr->hostname,"waimea") == 0);
+    free(hr->hostname);
+    host_count++;
+    }
+
+  snprintf(buf, sizeof(buf), "Should count 4 hosts but counted %d", host_count);
+  fail_unless(host_count == 4, buf);
+
+  free_resizable_array(hrl);
+
+
   }
 END_TEST
 
@@ -160,7 +186,7 @@ END_TEST
 
 START_TEST(get_reservation_command_test)
   {
-  resizable_array *hrl = parse_exec_hosts(eh1);
+  resizable_array *hrl = parse_exec_hosts(eh1, NULL);
   std::string      apbasil_command = "";
   const char     *reserve_param;
   const char     *reserve_param2;
@@ -182,7 +208,7 @@ START_TEST(get_reservation_command_test)
 
   free_resizable_array(hrl);
 
-  hrl = parse_exec_hosts(eh3);
+  hrl = parse_exec_hosts(eh3, NULL);
   apbasil_command.clear();
   get_reservation_command(hrl, uname, jobids[1], apbasil_path, apbasil_protocol, NULL, 1, 0, 0,apbasil_command);
 
@@ -200,7 +226,7 @@ START_TEST(get_reservation_command_test)
   free_resizable_array(hrl);
   apbasil_command.clear();
 
-  hrl = parse_exec_hosts(eh3);
+  hrl = parse_exec_hosts(eh3, NULL);
   get_reservation_command(hrl, uname, jobids[1], apbasil_path, apbasil_protocol_13, NULL, 1, 1, 0, apbasil_command);
 
   reserve_param = strstr(apbasil_command.c_str(), "ReserveParam ");

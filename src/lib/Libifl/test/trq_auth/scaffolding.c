@@ -15,6 +15,9 @@
 #include "lib_ifl.h"
 
 
+static char server_name[PBS_MAXSERVERNAME + 1];  /* definite conflicts */
+static unsigned int dflt_port = 0;
+
 time_t pbs_tcp_timeout;
 typedef unsigned int socklen_t;
 
@@ -553,10 +556,87 @@ int gethostname(char *name, size_t len) throw()
   return(0);
   }
 
+
+char *PBS_get_server(
+
+  const char         *server,  /* I (NULL|'\0' for not set,modified) */
+  unsigned int *port)    /* O */
+
+  {
+  int   i;
+  char *pc;
+
+  for (i = 0;i < PBS_MAXSERVERNAME + 1;i++)
+    {
+    /* clear global server_name */
+
+    server_name[i] = '\0';
+    }
+
+  if (dflt_port == 0)
+    {
+    dflt_port = get_svrport(
+    (char *)PBS_BATCH_SERVICE_NAME,
+    (char *)"tcp",
+    PBS_BATCH_SERVICE_PORT);
+    }
+
+  /* first, get the "net.address[:port]" into 'server_name' */
+
+  if ((server == (char *)NULL) || (*server == '\0'))
+    {
+    if (pbs_default() == NULL)
+      {
+      return(NULL);
+      }
+    }
+  else
+    {
+    snprintf(server_name, sizeof(server_name), "%s", server);
+    }
+
+  /* now parse out the parts from 'server_name' */
+
+  if ((pc = strchr(server_name, (int)':')))
+    {
+    /* got a port number */
+
+    *pc++ = '\0';
+
+    *port = atoi(pc);
+    }
+  else
+    {
+    *port = dflt_port;
+    }
+
+  return(server_name);
+  }  /* END PBS_get_server() */
+
+unsigned int get_svrport(
+
+    char *service_name,
+    char *ptype,
+    unsigned int pdefault) /* in host byte order */
+
+  {
+  pdefault = 15001;
+  return(pdefault);
+  }
+
+
+char * pbs_default(void)
+  {
+  static char server[PBS_MAXHOSTNAME];
+
+  strcpy(server, "george");
+  return(server);
+  }
+
 pbs_net_t get_hostaddr(
 
-    int *local_errno,
-    char *hostname)
+  int *local_errno,
+  char *hostname)
 
   {
   pbs_net_t rval = 10101010;
@@ -567,11 +647,8 @@ pbs_net_t get_hostaddr(
   return(rval);
   }
 
-char *PBS_get_server(
-
-  const char         *server,  /* I (NULL|'\0' for not set,modified) */
-  unsigned int *port)    /* O */
-
+struct passwd *get_password_entry_by_uid(uid_t uid)
   {
-  return(NULL);
+  return(getpwuid(uid));
   }
+

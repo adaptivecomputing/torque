@@ -834,8 +834,7 @@ int is_gpustat_get(
    
   if (LOGLEVEL >= 7)
     {
-    sprintf(log_buf, "received gpu status from node %s",
-      (np != NULL) ? np->nd_name : "NULL");
+    sprintf(log_buf, "received gpu status from node %s", np->nd_name);
 
     log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
     }

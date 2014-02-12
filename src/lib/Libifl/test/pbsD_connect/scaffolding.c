@@ -82,7 +82,7 @@ int socket_connect(int *local_socket, char *dest_addr, int dest_addr_len, int de
   exit(1);
   }
 
-int socket_write(int socket, char *data, int data_len)
+int socket_write(int socket, const char *data, int data_len)
   {
   fprintf(stderr, "The call to socket_write needs to be mocked!!\n");
   exit(1);

@@ -10,11 +10,11 @@
 #include <string.h>
 
 #define FALSE 0
-all_tasks task_list_timed;
-all_tasks task_list_event;
-task_recycler           tr;
+all_tasks             task_list_event;
+task_recycler         tr;
+pthread_mutex_t       task_list_timed_mutex;
 
-threadpool_t *request_pool;
+threadpool_t         *request_pool;
 
 sigset_t      fillset;
 

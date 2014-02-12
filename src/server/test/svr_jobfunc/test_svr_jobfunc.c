@@ -127,6 +127,13 @@ START_TEST(svr_setjobstate_test)
   fail_unless(svr_setjobstate(&test_job, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE) == PBSE_NONE);
   fail_unless(test_job.ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL);
 
+  test_job.ji_qs.ji_state = JOB_STATE_RUNNING;
+  test_job.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("lei/0");
+  test_job.ji_wattr[JOB_ATR_checkpoint].at_val.at_str = strdup("enabled");
+  test_job.ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
+  fail_unless(svr_setjobstate(&test_job, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE) == PBSE_NONE);
+  fail_unless(test_job.ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL, "exec_host list got removed when it shouldn't have...");
+
   decrement_count = 0;
   fail_unless(svr_setjobstate(&test_job, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE) == PBSE_NONE);
   fail_unless(decrement_count == 2);
@@ -181,7 +188,17 @@ START_TEST(svr_evaljobstate_test)
   fail_unless(old_state == state);
   fail_unless(old_substate == substate);
 
+  test_job.ji_qs.ji_state = JOB_STATE_EXITING;
+  test_job.ji_qs.ji_substate = JOB_SUBSTATE_RERUN3;
+  old_state = test_job.ji_qs.ji_state;
+  old_substate = test_job.ji_qs.ji_substate;
+  svr_evaljobstate(test_job, state, substate, 1);
+  fail_unless(state == JOB_STATE_QUEUED);
+  fail_unless(substate == JOB_SUBSTATE_QUEUED);
+
+
   test_job.ji_qs.ji_state = JOB_STATE_COMPLETE;
+  test_job.ji_qs.ji_substate = JOB_SUBSTATE_COMPLETE;
   old_state = test_job.ji_qs.ji_state;
   old_substate = test_job.ji_qs.ji_substate;
   svr_evaljobstate(test_job, state, substate, 1);
@@ -241,6 +258,43 @@ START_TEST(chk_resc_limits_test)
   result = chk_resc_limits(&test_attribute, &test_queue, message);
   fail_unless(result == PBSE_NONE, "chk_resc_limits fail");
 
+  }
+END_TEST
+
+START_TEST(chk_resc_min_limits_test)
+  {
+  struct pbs_attribute test_attribute;
+  struct pbs_queue test_queue;
+  char message[] = "message";
+  int result = -1;
+
+  /*initialize_globals*/
+  server.sv_qs_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  server.sv_attr_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  server.sv_jobstates_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  server.sv_attr[SRV_ATR_QCQLimits].at_val.at_long = 0;
+
+  pthread_mutex_init(server.sv_qs_mutex,NULL);
+  pthread_mutex_init(server.sv_attr_mutex,NULL);
+  pthread_mutex_init(server.sv_jobstates_mutex,NULL);
+
+  resource_def nodes_resource_def;
+  memcpy(&nodes_resource_def, &svr_resc_def_const[14], sizeof(resource_def));
+  fail_unless(strcmp("nodes", nodes_resource_def.rs_name) == 0);
+
+  memset(&test_attribute, 0, sizeof(test_attribute));
+  memset(&test_queue, 0, sizeof(test_queue));
+
+  add_resc_attribute(&test_queue.qu_attr[QA_ATR_ResourceMin], &nodes_resource_def, "3");
+  add_resc_attribute(&test_attribute, &nodes_resource_def, "2:ppn=1+1:ppn=4");
+
+  result = chk_resc_limits(&test_attribute, &test_queue, message);
+  fail_unless(result == PBSE_NONE, "Fail to approve queue minimum resource");
+
+  free(test_attribute.at_val.at_str);
+  test_attribute.at_val.at_str = strdup("2:ppn=1");
+  /* cant do the  real test because comp_resc2 is mocked for the other tests */
+  /* fail_unless(result != PBSE_NONE, "Fail to detect minim resource not met"); */
   }
 END_TEST
 
@@ -505,6 +559,10 @@ Suite *svr_jobfunc_suite(void)
 
   tc_core = tcase_create("chk_resc_limits_test");
   tcase_add_test(tc_core, chk_resc_limits_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("chk_resc_min_limits_test");
+  tcase_add_test(tc_core, chk_resc_min_limits_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("svr_chkque_test");

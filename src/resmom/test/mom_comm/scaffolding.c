@@ -1,4 +1,5 @@
 #include "license_pbs.h" /* See here for the software license */
+#include <pbs_config.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <netinet/in.h> /* sockaddr_in */
@@ -235,8 +236,12 @@ unsigned long getsize(resource *pres)
 
 void *get_next(list_link pl, char *file, int line)
   {
-  fprintf(stderr, "This mock get_next always returns NULL!!\n");
-  return(NULL);
+  if ((pl.ll_next == NULL) ||
+      ((pl.ll_next == &pl) && (pl.ll_struct != NULL)))
+    {
+    return NULL;
+    }
+  return(pl.ll_next->ll_struct);
   }
 
 int add_host_to_sister_list(char *hostname, unsigned short port, struct radix_buf *rb)
@@ -525,3 +530,6 @@ bool am_i_mother_superior(const job &pjob)
     
   return(mother_superior);
   }
+
+void create_cpuset_reservation_if_needed(job &pjob){}
+

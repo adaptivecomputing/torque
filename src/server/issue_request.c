@@ -114,7 +114,6 @@
 #include "svr_connect.h" /* svr_disconnect_sock */
 #include "node_manager.h" /* tfind_addr */
 #include "ji_mutex.h"
-#include "svr_task.h"
 
 
 /* Global Data Items: */
@@ -123,7 +122,6 @@ extern struct server server;
 extern char *server_name;
 extern struct connect_handle connection[];
 extern char     *msg_daemonname;
-extern all_tasks task_list_event;
 extern char *msg_daemonname;
 extern char *msg_issuebad;
 extern char     *msg_norelytomom;
@@ -253,30 +251,30 @@ void reissue_to_svr(
 
   {
   time_t         time_now = time(NULL);
-  char          *br_id = (char *)pwt->wt_parm1;
-  batch_request *preq = get_remove_batch_request(br_id);
+  char          *br_id;
+  batch_request *preq;
   char          *serverName = NULL;
-
+  
   if (pwt == NULL)
     return;
-
+  
   br_id = (char *)pwt->wt_parm1;
   preq = get_remove_batch_request(br_id);
   
   /* if not timed-out, retry send to remote server */
   if (preq != NULL)
     {
-    if (preq->rq_host != NULL)
+    if (preq->rq_host[0] != '\0')
       serverName = strdup(preq->rq_host);
-   else
-     {
-     free(pwt->wt_mutex);
-     free(pwt);
-     return;
-     }
-
-   if (((time_now - preq->rq_time) > PBS_NET_RETRY_LIMIT) ||
-       (issue_to_svr(serverName, preq, pwt->wt_parmfunc) != PBSE_NONE))
+    else
+      {
+      free(pwt->wt_mutex);
+      free(pwt);
+      return;
+      }
+    
+    if (((time_now - preq->rq_time) > PBS_NET_RETRY_LIMIT) ||
+        (issue_to_svr(serverName, preq, pwt->wt_parmfunc) != PBSE_NONE))
       {
       /* either timed-out or got hard error, tell post-function  */
       

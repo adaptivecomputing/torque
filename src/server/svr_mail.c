@@ -85,10 +85,13 @@
 
 #include "pbs_ifl.h"
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include "list_link.h"
 #include "attribute.h"
 #include "server_limits.h"
@@ -100,14 +103,21 @@
 #include "utils.h"
 #include "threadpool.h"
 #include "svrfunc.h" /* get_svr_attr_* */
+#include "work_task.h"
+#include <sys/wait.h>
+
+/* Unit tests should use the special unit test sendmail command */
+#ifdef UT_SENDMAIL_CMD
+#undef SENDMAIL_CMD
+#define SENDMAIL_CMD UT_SENDMAIL_CMD
+#endif
 
 /* External Functions Called */
 
-extern void net_close (int);
 extern void svr_format_job (FILE *, mail_info *, const char *);
+extern int  listening_socket;
 
 /* Global Data */
-
 extern struct server server;
 
 extern int LOGLEVEL;
@@ -174,43 +184,26 @@ void add_body_info(
   }
 
 
+/*
+ * write_email()
+ *
+ * In emailing, the mail body is written to a pipe connected to
+ * standard input for sendmail. This function supplies the body
+ * of the message.
+ *
+ */
+void write_email(
 
-
-void *send_the_mail(
-
-  void *vp)
+  FILE      *outmail_input,
+  mail_info *mi)
 
   {
-  mail_info *mi = (mail_info *)vp;
-
-  int         i;
-  int         cmdbuf_len;
-  const char *mailfrom = NULL;
-  const char *subjectfmt = NULL;
   char       *bodyfmt = NULL;
-  char       *cmdbuf = NULL;
-  char        bodyfmtbuf[MAXLINE];
-  FILE       *outmail;
-  
-  /* Who is mail from, if SRV_ATR_mailfrom not set use default */
-  get_svr_attr_str(SRV_ATR_mailfrom, (char **)&mailfrom);
-  if (mailfrom == NULL)
-    {
-    if (LOGLEVEL >= 5)
-      {
-      char tmpBuf[LOG_BUF_SIZE];
+  const char *subjectfmt = NULL;
+  char bodyfmtbuf[MAXLINE];
 
-      snprintf(tmpBuf,sizeof(tmpBuf),
-        "Updated mailto from user list: '%s'\n",
-        mi->mailto);
-      log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        mi->jobid,
-        tmpBuf);
-      }
-
-    mailfrom = PBS_DEFAULT_MAIL;
-    }
+  /* Pipe in mail headers: To: and Subject: */
+  fprintf(outmail_input, "To: %s\n", mi->mailto);
 
   /* mail subject line formating statement */
   get_svr_attr_str(SRV_ATR_MailSubjectFmt, (char **)&subjectfmt);
@@ -218,6 +211,13 @@ void *send_the_mail(
     {
     subjectfmt = "PBS JOB %i";
     }
+
+  fprintf(outmail_input, "Subject: ");
+  svr_format_job(outmail_input, mi, subjectfmt);
+  fprintf(outmail_input, "\n");
+
+  /* Set "Precedence: bulk" to avoid vacation messages, etc */
+  fprintf(outmail_input, "Precedence: bulk\n\n");
 
   /* mail body formating statement */
   get_svr_attr_str(SRV_ATR_MailBodyFmt, &bodyfmt);
@@ -227,96 +227,175 @@ void *send_the_mail(
     bodyfmt = bodyfmtbuf;
     }
 
-  /* setup sendmail command line with -f from_whom */
-  cmdbuf_len = strlen(SENDMAIL_CMD) + strlen(mailfrom) + strlen(mi->mailto) + 6;
-
-  if ((cmdbuf = (char *)calloc(1, cmdbuf_len)) == NULL)
-    {
-    char tmpBuf[LOG_BUF_SIZE];
-
-    snprintf(tmpBuf,sizeof(tmpBuf),
-      "Unable to popen() command '%s' for writing: '%s' (error %d)\n",
-      SENDMAIL_CMD,
-      strerror(errno),
-      errno);
-    log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      mi->jobid,
-      tmpBuf);
-  
-    free_mail_info(mi);
-
-    return(NULL);
-    }
-
-  snprintf(cmdbuf, cmdbuf_len, "%s -f %s %s",
-    SENDMAIL_CMD, mailfrom, mi->mailto);
-
-  outmail = popen(cmdbuf, "w");
-
-  if (outmail == NULL)
-    {
-    char tmpBuf[LOG_BUF_SIZE];
-
-    snprintf(tmpBuf,sizeof(tmpBuf),
-      "Unable to popen() command '%s' for writing: '%s' (error %d)\n",
-      cmdbuf,
-      strerror(errno),
-      errno);
-    log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      mi->jobid,
-      tmpBuf);
-
-    free_mail_info(mi);
-    free(cmdbuf);
-
-    return(NULL);
-    }
-
-  /* Pipe in mail headers: To: and Subject: */
-  fprintf(outmail, "To: %s\n", mi->mailto);
-
-  fprintf(outmail, "Subject: ");
-  svr_format_job(outmail, mi, subjectfmt);
-  fprintf(outmail, "\n");
-
-  /* Set "Precedence: bulk" to avoid vacation messages, etc */
-  fprintf(outmail, "Precedence: bulk\n\n");
-
   /* Now pipe in the email body */
-  svr_format_job(outmail, mi, bodyfmt);
+  svr_format_job(outmail_input, mi, bodyfmt);
 
-  errno = 0;
-  if ((i = pclose(outmail)) != 0)
+  } /* write_email() */
+
+
+/*
+ * send_the_mail()
+ *
+ * In emailing, we fork and exec sendmail providing the body of
+ * the message on standard in.
+ *
+ */
+void *send_the_mail(
+
+  void *vp)
+
+  {
+  mail_info  *mi = (mail_info *)vp;
+
+  int         status = 0;
+  int         numargs = 0;
+  int         pipes[2];
+  int         counter;
+  pid_t       pid;
+  char       *mailptr;
+  const char *mailfrom = NULL;
+  char        tmpBuf[LOG_BUF_SIZE];
+  // We call sendmail with cmd_name + 2 arguments + # of mailto addresses + 1 for null
+  char       *sendmail_args[100];
+  FILE       *stream;
+
+
+  /* Who is mail from, if SRV_ATR_mailfrom not set use default */
+  get_svr_attr_str(SRV_ATR_mailfrom, (char **)&mailfrom);
+  if (mailfrom == NULL)
     {
-    char tmpBuf[LOG_BUF_SIZE];
+    mailfrom = PBS_DEFAULT_MAIL;
+    if (LOGLEVEL >= 5)
+      {
+      char tmpBuf[LOG_BUF_SIZE];
 
-    snprintf(tmpBuf,sizeof(tmpBuf),
-      "Email '%c' to %s failed: Child process '%s' %s %d (errno %d:%s)\n",
-      mi->mail_point,
-      mi->mailto,
-      cmdbuf,
-      ((WIFEXITED(i)) ? ("returned") : ((WIFSIGNALED(i)) ? ("killed by signal") : ("croaked"))),
-      ((WIFEXITED(i)) ? (WEXITSTATUS(i)) : ((WIFSIGNALED(i)) ? (WTERMSIG(i)) : (i))),
-      errno,
-      strerror(errno));
+      snprintf(tmpBuf,sizeof(tmpBuf),
+        "Updated mailfrom to default: '%s'\n",
+        mailfrom);
+      log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        mi->jobid,
+        tmpBuf);
+      }
+    }
+
+  sendmail_args[numargs++] = (char *)SENDMAIL_CMD;
+  sendmail_args[numargs++] = (char *)"-f";
+  sendmail_args[numargs++] = (char *)mailfrom;
+
+  /* Add the e-mail addresses to the command line */
+  mailptr = strdup(mi->mailto);
+  sendmail_args[numargs++] = mailptr;
+  for (counter=0; counter < (int)strlen(mailptr); counter++)
+    {
+    if (mailptr[counter] == ',')
+      {
+      mailptr[counter] = '\0';
+      sendmail_args[numargs++] = mailptr + counter + 1;
+      if (numargs >= 99)
+        break;
+      }
+    }
+
+  sendmail_args[numargs] = NULL;
+
+  /* Create a pipe to talk to the sendmail process we are about to fork */
+  if (pipe(pipes) == -1)
+    {
+    snprintf(tmpBuf, sizeof(tmpBuf), "Unable to pipes for sending e-mail\n");
     log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
       mi->jobid,
       tmpBuf);
+
+    free_mail_info(mi);
+    free(mailptr);
+    return(NULL);
     }
-  else if (LOGLEVEL >= 4)
+
+  if ((pid=fork()) == -1)
     {
+    snprintf(tmpBuf, sizeof(tmpBuf), "Unable to fork for sending e-mail\n");
     log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
       mi->jobid,
-      "Email sent successfully\n");
-    }
+      tmpBuf);
 
-  free_mail_info(mi);
-  free(cmdbuf);
+    free_mail_info(mi);
+    free(mailptr);
+    close(pipes[0]);
+    close(pipes[1]);
+    return(NULL);
+    }
+  else if (pid == 0)
+    {
+    /* CHILD */
+
+    /* Make stdin the read end of the pipe */
+    dup2(pipes[0],STDIN_FILENO);
+
+    /* Close the rest of the open file descriptors */
+    int numfds = sysconf(_SC_OPEN_MAX);
+    while (--numfds > 0)
+      close(numfds);
+
+    execv(SENDMAIL_CMD, sendmail_args);
+    /* This never returns, but if the execv fails the child should exit */
+    exit(1);
+    }
+  else
+    {
+    /* This is the parent */
+
+    /* Close the read end of the pipe */
+    close(pipes[0]);
+
+    /* Write the body to the pipe */
+    stream = fdopen(pipes[1], "w");
+    write_email(stream, mi);
+
+    fflush(stream);
+
+    /* Close and wait for the command to finish */
+    if (fclose(stream) != 0)
+      {
+      snprintf(tmpBuf,sizeof(tmpBuf),
+        "Piping mail body to sendmail closed: errno %d:%s\n",
+        errno, strerror(errno));
+
+      log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        mi->jobid,
+        tmpBuf);
+      }
+
+    // we aren't going to block in order to find out whether or not sendmail worked 
+    if ((waitpid(pid, &status, WNOHANG) != 0) &&
+        (status != 0))
+      {
+      snprintf(tmpBuf,sizeof(tmpBuf),
+        "Sendmail command returned %d. Mail may not have been sent\n",
+        status);
+
+      log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        mi->jobid,
+        tmpBuf);
+      }
+
+    // don't leave zombies
+    while (waitpid(-1, &status, WNOHANG) != 0)
+      {
+      // zombie reaped, NO-OP
+      }
+      
+    free_mail_info(mi);
+    free(mailptr);
+    return(NULL);
+    }
     
+  /* NOT REACHED */
+
   return(NULL);
   } /* END send_the_mail() */
 
@@ -324,11 +403,11 @@ void *send_the_mail(
 
 int add_fileinfo(
 
-  const char       *attrVal,                  /* I */      
-        char      **filename,                 /* O */
-        mail_info  *mi,                       /* I/O */
-  const pbs_attribute job_attr[JOB_ATR_LAST], /* I */
-  const char       *memory_err)               /* I */
+  const char           *attrVal,                  /* I */      
+  char                **filename,                 /* O */
+  mail_info            *mi,                       /* I/O */
+  const pbs_attribute   job_attr[JOB_ATR_LAST], /* I */
+  const char           *memory_err)               /* I */
 
   {
   char *attributeValue = (char *)attrVal;
@@ -506,11 +585,14 @@ void svr_mailowner(
         {
         if ((strlen(mailto) + strlen(pas->as_string[i]) + 2) < sizeof(mailto))
           {
+          if (mailto[0] != '\0')
+            strcat(mailto, ",");
+
           strcat(mailto, pas->as_string[i]);
-          strcat(mailto, " ");
           }
         }
       }
+      mailto[strlen(mailto)] = '\0';
     }
   else
     {

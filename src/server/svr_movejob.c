@@ -118,6 +118,7 @@
 #include "req_runjob.h" /* finish_sendmom */
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
+#include "job_func.h"
 
 #if __STDC__ != 1
 #include <memory.h>
@@ -133,7 +134,6 @@
 extern void remove_stagein(job **);
 extern void remove_checkpoint(job **);
 extern int  job_route(job *);
-extern int svr_job_purge(job *);
 int PBSD_commit_get_sid(int ,long *,char *);
 int get_job_file_path(job *,enum job_file, char *, int);
 void add_dest(job *jobp);
@@ -709,13 +709,13 @@ int update_substate_if_needed(
 
     if (pjob != NULL)
       {
+      mutex_mgr job_mutex(pjob->ji_mutex, true);
       pjob->ji_qs.ji_substate = JOB_SUBSTATE_TRNOUT;
       job_save(pjob, SAVEJOB_QUICK, 0);
-      unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
       }
     else
       {
-      return(LOCUTION_FAIL);
+      return(PBSE_JOB_RECYCLED);
       }
     }
 
@@ -1244,7 +1244,7 @@ int send_job_work(
     ret = svr_dequejob(pjob, FALSE);
     if (ret)
       {
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
       return(ret);
       }
     }
@@ -1256,7 +1256,7 @@ int send_job_work(
   if (rc != PBSE_NONE)
     {
     if (rc == PBSE_JOB_RECYCLED)
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
 
     return(rc);
     }

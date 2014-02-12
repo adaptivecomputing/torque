@@ -1,5 +1,5 @@
 #include <vector>
-
+#include <stdio.h>
 #include <stdlib.h>
 #include <check.h>
 
@@ -8,6 +8,8 @@
 extern int  reserve_called;
 extern int  remove_called;
 extern int  get_job_indices_called;
+extern int  recover_mode;
+extern int  recover_called;
 extern bool does_it_fit;
 
 START_TEST(test_constructor)
@@ -31,6 +33,39 @@ START_TEST(test_constructor)
 END_TEST
 
 
+START_TEST(test_recover_reservation)
+  {
+  numa_node n0("../../../../test/test_files", 0);
+  numa_node n1("../../../../test/test_files", 1);
+  std::vector<numa_node> nodes;
+  nodes.push_back(n0);
+  nodes.push_back(n1);
+  node_internals ni(nodes);
+
+  recover_mode = 0;
+  recover_called = 0;
+  ni.recover_reservation(2, 2048, "1.napali");
+  fail_unless(recover_called == 1);
+
+  recover_called = 0;
+  reserve_called = 0;
+  recover_mode = 1;
+  ni.recover_reservation(2, 2048, "1.napali");
+  fail_unless(recover_called == 2);
+  
+  recover_called = 0;
+  reserve_called = 0;
+  recover_mode = 1;
+  char buf[1024];
+  fail_unless(reserve_called == 0);
+  ni.recover_reservation(3, 2049, "1.napali");
+  fail_unless(recover_called == 2);
+  snprintf(buf, sizeof(buf), "reserve has been called %d times", reserve_called);
+  fail_unless(reserve_called > 0, buf);
+  }
+END_TEST
+
+
 START_TEST(test_reserve)
   {
   numa_node n0("../../../../test/test_files", 0);
@@ -49,7 +84,6 @@ START_TEST(test_reserve)
   reserve_called = 0;
   ni.reserve(6, 100000, "1.napali");
   fail_unless(reserve_called == 1);
-
   }
 END_TEST
 
@@ -98,6 +132,7 @@ Suite *node_internals_suite(void)
   tcase_add_test(tc_core, test_reserve);
   tcase_add_test(tc_core, test_remove);
   tcase_add_test(tc_core, test_getting_indices);
+  tcase_add_test(tc_core, test_recover_reservation);
   suite_add_tcase(s, tc_core);
 
   return(s);

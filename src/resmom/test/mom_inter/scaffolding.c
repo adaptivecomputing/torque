@@ -36,3 +36,7 @@ int conn_qsub(char *hostname, long port, char *EMsg)
   exit(1);
   }
 
+int put_env_var(const char *name, const char *value)
+  {
+  return(0);
+  }

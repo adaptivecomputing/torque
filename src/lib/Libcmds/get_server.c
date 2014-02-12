@@ -122,9 +122,9 @@ int get_server(
   int         server_out_size) /* sizeof the out buffer */
 
   {
-  char *seq_number;
-  char *parent_server;
-  char *current_server;
+  char *seq_number = NULL;
+  char *parent_server = NULL;
+  char *current_server = NULL;
   char def_server[PBS_MAXSERVERNAME + 1];
   char host_server[PBS_MAXSERVERNAME + 1];
   char *c;
@@ -209,7 +209,7 @@ int get_server(
       
       c = def_server;
       
-      while ((*c != '\n') && (*c != '\0'))
+      while ((*c != '\n') && (*c != '\0') && (*c != ':'))
         c++;
       
       *c = '\0';

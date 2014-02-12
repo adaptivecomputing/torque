@@ -116,6 +116,7 @@
 #include <time.h>
 #include <ctype.h>
 #include <pthread.h>
+#include <string>
 
 #include "server_limits.h"
 #include "list_link.h"
@@ -140,11 +141,12 @@
 #include "ji_mutex.h"
 #include "user_info.h"
 #include "svr_jobfunc.h"
-#include "svr_task.h"
 #include "job_route.h" /*remove_procct */
 #include "mutex_mgr.hpp"
 #include <string>
 #include <vector>
+
+#include "user_info.h" /* remove_server_suffix() */
 
 #define MSG_LEN_LONG 160
 
@@ -152,9 +154,10 @@
 
 static void default_std(job *, int key, std::string& ds);
 static void eval_checkpoint(pbs_attribute *j, pbs_attribute *q);
-static int count_queued_jobs(pbs_queue *pque, char *user);
+static int count_queued_jobs(pbs_queue *pque, const char *user);
 
 /* Global Data Items: */
+
 
 extern struct server server;
 extern struct all_jobs alljobs;
@@ -310,13 +313,13 @@ int insert_into_alljobs_by_rank(
     mutex_mgr pjcur_mgr(pjcur->ji_mutex, true);
     if (job_qrank > pjcur->ji_wattr[JOB_ATR_qrank].at_val.at_long)
       {
-      pjcur_mgr.set_lock_on_exit(false);
+      pjcur_mgr.set_unlock_on_exit(false);
       break;
       }
     
     if (strcmp(jobid, pjcur->ji_qs.ji_jobid) == 0)
       {
-      return(ALREADY_IN_LIST);
+        return(ALREADY_IN_LIST);
       }
     }
 
@@ -349,7 +352,19 @@ int insert_into_alljobs_by_rank(
 
 /*
  * svr_enquejob() - enqueue job into specified queue
+ *
+ * @param pjob - the job that is being queued.
+ * @param has_sv_qs_mutex - indicates whether or not the caller holds the sv_qs_mutex
+ * @param prev_job_index - non -1 indicates the previous index of the last job inserted. 
+ * This is used for job arrays to tell svr_enquejob() at what point the job should be 
+ * placed to keep it with all of the other array subjobs.
+ * @param have_reservation - indicates whether or not this job already has spaced 
+ * reserved for it in the queue, used to help keep max queuable parameters enforced 
+ * correctly.
+ *
+ * @return PBSE_NONE - the job was correctly queued.
  */
+
 int svr_enquejob(
 
   job *pjob,            /* I */
@@ -439,7 +454,11 @@ int svr_enquejob(
 
   if ((pque->qu_attr[QA_ATR_MaxUserJobs].at_flags & ATR_VFLAG_SET))
     {
-    user_jobs = count_queued_jobs(pque, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+    std::string  uname(pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+
+    remove_server_suffix(uname);
+
+    user_jobs = count_queued_jobs(pque, uname.c_str());
     if ((user_jobs + pque->qu_reserved_jobs) >= pque->qu_attr[QA_ATR_MaxUserJobs].at_val.at_long)
       {
       return(PBSE_MAXUSERQUED);
@@ -471,7 +490,7 @@ int svr_enquejob(
       }
 
     server.sv_qs.sv_numjobs++;
-    
+
     if (has_sv_qs_mutex == FALSE)
       unlock_sv_qs_mutex(server.sv_qs_mutex, __func__);
 
@@ -598,14 +617,11 @@ int svr_enquejob(
         (pjob->ji_qs.ji_substate != JOB_SUBSTATE_COMPLETE) && 
         (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET))
       {
-      if ((rc = depend_on_que(&
-                              pjob->ji_wattr[JOB_ATR_depend],
-                              pjob,
-                              ATR_ACTION_NOOP)) != 0)
-        {
-        unlock_ji_mutex(pjob, __func__, "7", LOGLEVEL);
+      rc = depend_on_que(& pjob->ji_wattr[JOB_ATR_depend], pjob, ATR_ACTION_NOOP);
+      if (rc == PBSE_JOBNOTFOUND)
+        return(rc);
+      else if (rc != PBSE_NONE)
         return(PBSE_BADDEPEND);
-        }
       }
 
     /* set eligible time */
@@ -646,6 +662,7 @@ int svr_enquejob(
  * @pre-cond: pjob is currently queued
  * @pre-cond: pjob's mutex is held
  * @post-cond: pjob will have no queue when it successfully returns from this function
+ * @post-cond: pjob will continue to be locked unless the job 
  *
  * @return: PBSE_BAD_PARAMETER if pjob is NULL
  *          PBSE_BADSTATE if pjob is running
@@ -694,9 +711,8 @@ int svr_dequejob(
       }
     if (pque == NULL)
       {
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-      log_err(PBSE_JOBNOTFOUND, __func__, "Job has no queue");
-      return(PBSE_JOBNOTFOUND);
+      log_err(PBSE_JOB_NOT_IN_QUEUE, __func__, "Job has no queue");
+      return(PBSE_JOB_NOT_IN_QUEUE);
       }
     }
   else
@@ -851,12 +867,101 @@ void release_node_allocation(
   job &pjob)
 
   {
-  free_nodes(&pjob);
+  char log_buf[LOCAL_LOG_BUF_SIZE];
 
-  free(pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str);
-  pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = NULL;
-  pjob.ji_wattr[JOB_ATR_exec_host].at_flags &= ~ATR_VFLAG_SET;
-  }
+  free_nodes(&pjob);
+  
+  // we need to leave the exec host list intact even though the nodes are no longer allocated to that job
+  if ((pjob.ji_wattr[JOB_ATR_checkpoint].at_val.at_str != NULL) &&
+      (!strncmp(pjob.ji_wattr[JOB_ATR_checkpoint].at_val.at_str, "enabled", 7) &&
+       (pjob.ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE)))
+    {
+    if (LOGLEVEL >= 7)
+      {
+      sprintf(log_buf, "Job has checkpoint set; leaving exec_host list as is.");
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob.ji_qs.ji_jobid, log_buf);
+      }
+    }
+  else
+    {
+    free(pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+    pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = NULL;
+    pjob.ji_wattr[JOB_ATR_exec_host].at_flags &= ~ATR_VFLAG_SET;
+    }
+  } /* END release_node_allocation() */
+
+
+
+void release_node_allocation_if_needed(
+
+  job &pjob,
+  int  newstate)
+
+  {
+  if ((newstate == JOB_STATE_QUEUED) &&
+      (pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL))
+    release_node_allocation(pjob);
+  } /* END release_node_allocation_if_needed() */
+
+
+
+/*
+ * set_jobstate_basic()
+ *
+ * @post-cond: pjob's state and substate, with according markers, are updated to 
+ * match newstate and newsubstate
+ */
+void set_jobstate_basic(
+
+  job &pjob,
+  int  newstate,
+  int  newsubstate)
+
+  {
+  pjob.ji_qs.ji_state = newstate;
+  pjob.ji_qs.ji_substate = newsubstate;
+
+  pjob.ji_wattr[JOB_ATR_substate].at_val.at_long = newsubstate;
+
+  set_statechar(&pjob);
+  } /* END set_jobstate_basic() */
+
+
+
+/*
+ * set_subjob_state()
+ *
+ * and abbreviated version of svr_setjobstate() for subjobs. Most things
+ * done by svr_setjobstate() don't need to be done for subjobs.
+ */
+int set_subjob_state(
+
+  job *pjob,            /* M */
+  int  newstate,        /* I */
+  int  newsubstate,     /* I */
+  int  has_queue_mutex) /* I */
+
+  {
+  char  jobid[PBS_MAXSVRJOBID + 1];
+  job  *parent = pjob->ji_parent_job;
+
+  strcpy(jobid, pjob->ji_qs.ji_jobid);
+  unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+  lock_ji_mutex(parent, __func__, NULL, LOGLEVEL);
+
+  svr_setjobstate(parent, newstate, newsubstate, has_queue_mutex);
+  unlock_ji_mutex(parent, __func__, NULL, LOGLEVEL);
+    
+  if ((pjob = svr_find_job(jobid, TRUE)) != NULL)
+    {
+    release_node_allocation_if_needed(*pjob, newstate);
+    set_jobstate_basic(*pjob,  newstate,  newsubstate);
+
+    return(PBSE_NONE);
+    }
+  else
+    return(PBSE_JOB_RECYCLED);
+  } /* END set_subjob_state() */
 
 
 
@@ -891,6 +996,8 @@ int svr_setjobstate(
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL input job pointer");
     return(PBSE_BAD_PARAMETER);
     }
+  else if (pjob->ji_parent_job != NULL)
+    return(set_subjob_state(pjob, newstate, newsubstate, has_queue_mutex));
 
   if (LOGLEVEL >= 2)
     {
@@ -928,11 +1035,7 @@ int svr_setjobstate(
       changed = true;
 
       /* add a fail-safe for not having queued jobs with nodes assigned */
-      if ((newstate == JOB_STATE_QUEUED) &&
-          (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL))
-        {
-        release_node_allocation(*pjob);
-        }
+      release_node_allocation_if_needed(*pjob, newstate);
 
       /* the array job isn't actually a job so don't count it here */
       if (pjob->ji_is_array_template == FALSE)
@@ -946,11 +1049,11 @@ int svr_setjobstate(
       if (has_queue_mutex == FALSE)
         {
         pque = get_jobs_queue(&pjob);
-
-        if (pjob == NULL)
+        if (pque == NULL)
           {
-          log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 11");
-          return(PBSE_JOBNOTFOUND);
+          sprintf(log_buf, "queue not found for jobid %s", pjob->ji_qs.ji_jobid);
+          log_err(PBSE_UNKQUE, __func__, log_buf);
+          return(PBSE_UNKQUE);
           }
         }
       else
@@ -1042,16 +1145,9 @@ int svr_setjobstate(
       }
     }    /* END if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRANSICM) */
 
-  /* set the states accordingly */
-  pjob->ji_qs.ji_state = newstate;
-  pjob->ji_qs.ji_substate = newsubstate;
-
-  pjob->ji_wattr[JOB_ATR_substate].at_val.at_long = newsubstate;
-
-  set_statechar(pjob);
+  set_jobstate_basic(*pjob,  newstate,  newsubstate);
 
   /* update the job file */
-
   if (pjob->ji_modified)
     {
     return(job_save(pjob, SAVEJOB_FULL,0));
@@ -1084,8 +1180,13 @@ void svr_evaljobstate(
   int  forceeval)
 
   {
-  // this should be a NO-OP for jobs that are exiting or completed
-  if (pjob.ji_qs.ji_state >= JOB_STATE_EXITING)
+  // this should be a NO-OP for jobs that are exiting or completed unless
+  // the job is being rerun
+  if ((pjob.ji_qs.ji_state >= JOB_STATE_EXITING)&&
+      (pjob.ji_qs.ji_substate != JOB_SUBSTATE_RERUN)&&
+      (pjob.ji_qs.ji_substate != JOB_SUBSTATE_RERUN1)&&
+      (pjob.ji_qs.ji_substate != JOB_SUBSTATE_RERUN2)&&
+      (pjob.ji_qs.ji_substate != JOB_SUBSTATE_RERUN3))
     {
     newstate = pjob.ji_qs.ji_state; /* leave as is */
     newsub   = pjob.ji_qs.ji_substate;
@@ -1740,7 +1841,7 @@ int chk_svr_resc_limit(
 static int count_queued_jobs(
 
   pbs_queue *pque, /* I */
-  char      *user) /* I */
+  const char      *user) /* I */
 
   {
   int num_jobs = 0;
@@ -1847,15 +1948,16 @@ static int check_execution_uid_and_gid(
 
 static int check_queue_disallowed_types(
 
-    struct job       *const pjob,
-    struct pbs_queue *const pque,
-    char             *const EMsg)
+  struct job       *const pjob,
+  struct pbs_queue *const pque,
+  char             *const EMsg)
+
   {
   int return_code = PBSE_NONE; /* Optimistic assumption */
   int i = 0;
 
   if ((pque->qu_attr[QA_ATR_DisallowedTypes].at_flags & ATR_VFLAG_SET) &&
-        (pque->qu_attr[QA_ATR_DisallowedTypes].at_val.at_arst != NULL))
+      (pque->qu_attr[QA_ATR_DisallowedTypes].at_val.at_arst != NULL))
     {
     for (i = 0;
          i < (pque->qu_attr[QA_ATR_DisallowedTypes]).at_val.at_arst->as_usedptr;
@@ -2215,13 +2317,14 @@ static int check_queue_job_limit(
   if ((pque->qu_attr[QA_ATR_MaxUserJobs].at_flags & ATR_VFLAG_SET) &&
       (pque->qu_attr[QA_ATR_MaxUserJobs].at_val.at_long >= 0))
     {
+    std::string  uname(pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
     int user_jobs = 0;
 
+    remove_server_suffix(uname);
     /* count number of jobs user has in queue */
     unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
-    user_jobs = count_queued_jobs(pque,
-        pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+    user_jobs = count_queued_jobs(pque, uname.c_str());
 
     lock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     if (pjob->ji_being_recycled == TRUE)

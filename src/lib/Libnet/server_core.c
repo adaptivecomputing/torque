@@ -24,6 +24,7 @@ extern void *(*read_func[])(void *);
 extern char *msg_daemonname;
 
 extern bool trqauthd_up;
+int         listening_socket; // global record of the current listening socket
 
 /* Note, in extremely high load cases, the alloc value in /proc/net/sockstat can exceed the max value. This will substantially slow down throughput and generate connection failures (accept gets a EMFILE error). As the client is designed to run on each submit host, that issue shouldn't occur. The client must be restarted to clear out this issue. */
 int start_listener(
@@ -293,6 +294,7 @@ int start_domainsocket_listener(
   if (listen_socket != -1)
     close(listen_socket);
 
+  unlink(socket_name);
   log_close(1);
 
   return(rc);
@@ -368,6 +370,9 @@ int start_listener_addrinfo(
     }
   else
     {
+    // record this so it can be closed by children
+    listening_socket = listen_socket;
+
     int exit_loop = FALSE;
     int retry_tolerance = NUM_ACCEPT_RETRIES;
 
@@ -447,7 +452,6 @@ int start_listener_addrinfo(
             }
           else
             {
-
             /* add_conn is not protocol independent. We need to 
                do some IPv4 stuff here */
             add_conn(
@@ -457,8 +461,8 @@ int start_listener_addrinfo(
               (unsigned int)htons(in_addr->sin_port),
               PBS_SOCK_INET,
               NULL);
+
             enqueue_threadpool_request(process_meth, args);
-          /*pthread_create(&tid, &t_attr, process_meth, (void *)new_conn_port);*/
             }
           }
         }

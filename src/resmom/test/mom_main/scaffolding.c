@@ -1,4 +1,5 @@
-#include "license_pbs.h" 
+#include "license_pbs.h"
+#include <pbs_config.h>
 #include <iostream>
 #include <iomanip>
 #include <stdlib.h>
@@ -28,6 +29,19 @@
 
 extern mom_hierarchy_t *mh;
 
+#ifdef PENABLE_LINUX26_CPUSETS
+#include "pbs_cpuset.h"
+#include "node_internals.hpp"
+
+#endif
+
+
+#ifdef PENABLE_LINUX26_CPUSETS
+#include "pbs_cpuset.h"
+#include "node_internals.hpp"
+#endif
+
+
 extern mom_hierarchy_t *mh;
 
 mom_server     mom_servers[PBS_MAXSERVER];
@@ -40,7 +54,7 @@ extern char *server_alias;
 const char *dis_emsg[10];
 long *log_event_mask = NULL;
 int rpp_dbprt = 0;
-unsigned int pe_alarm_time = PBS_PROLOG_TIME;
+extern unsigned int pe_alarm_time;
 struct connection svr_conn[PBS_NET_MAX_CONNECTIONS];
 struct config standard_config[2];
 struct config dependent_config[2];
@@ -54,42 +68,42 @@ time_t wait_time = 10;
 boost::ptr_vector<std::string> mom_status;
 pthread_mutex_t log_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 char log_buffer[LOG_BUF_SIZE];
-int job_exit_wait_time;
-char             config_file[_POSIX_PATH_MAX] = "config";
-char             xauth_path[MAXPATHLEN];
-int              MOMConfigRReconfig        = 0;
-long             TJobStartBlockTime = 5; /* seconds to wait for job to launch before backgrounding */
-int              ServerStatUpdateInterval = 45;
-int              ignmem;
-int              igncput;
-int              PBSNodeCheckInterval = 1;
-int              hostname_specified = 0;
-char             rcp_path[MAXPATHLEN];
-char             tmpdir_basename[MAXPATHLEN];  /* for $TMPDIR */
-float            max_load_val = -1.0;
-int              MOMConfigDownOnError      = 0;
-int              mask_num = 0;
-char             PBSNodeMsgBuf[1024];
-int              MOMConfigRestart          = 0;
+extern int       job_exit_wait_time;
+extern char      config_file[];
+extern char      xauth_path[MAXPATHLEN];
+extern int       MOMConfigRReconfig;
+extern long      TJobStartBlockTime; /* seconds to wait for job to launch before backgrounding */
+extern int       ServerStatUpdateInterval;
+extern int       ignmem;
+extern int       igncput;
+extern int       PBSNodeCheckInterval;
+extern int       hostname_specified;
+extern char      rcp_path[MAXPATHLEN];
+extern char      tmpdir_basename[MAXPATHLEN];  /* for $TMPDIR */
+extern float     max_load_val;
+extern int       MOMConfigDownOnError;
+extern int       mask_num;
+extern char      PBSNodeMsgBuf[];
+extern int       MOMConfigRestart;
 attribute_def    job_attr_def[1];
-int              LOGKEEPDAYS;
-long             log_file_roll_depth = 1;
-char             extra_parm[] = "extra parameter(s)";
-struct config   *config_array = NULL;
-char           **maskclient = NULL; /* wildcard connections */
-char             PBSNodeCheckPath[1024];
-int              CheckPollTime            = 45;
-char             rcp_args[1024];
-long             log_file_max_size = 0;
-char             mom_host[PBS_MAXHOSTNAME + 1];
-int              rm_errno;
-int              config_file_specified = 0;
-char             MOMConfigVersion[64];
-struct config common_config[1];
+extern int       LOGKEEPDAYS;
+extern long      log_file_roll_depth;
+extern char      extra_parm[];
+extern struct config  *config_array;
+extern char    **maskclient; /* wildcard connections */
+extern char      PBSNodeCheckPath[];
+extern int       CheckPollTime;
+extern char      rcp_args[1024];
+extern long      log_file_max_size;
+extern char      mom_host[PBS_MAXHOSTNAME + 1];
+extern int       rm_errno;
+extern int       config_file_specified;
+extern char      MOMConfigVersion[];
+extern struct config common_config[];
 char           **ArgV;
 char            *OriginalPath;
-int              resend_join_job_wait_time = 45;
-int              max_join_job_wait_time = 90;
+extern int       resend_join_job_wait_time;
+extern int       max_join_job_wait_time;
 bool   parsing_hierarchy = false;
 extern bool received_cluster_addrs;
 
@@ -101,63 +115,13 @@ int log_remove_old(char *DirPath, unsigned long ExpireTime)
   exit(1);
   }
 
-char *tokcpy(char *str, char *tok)
-  {
-  return(NULL);
-  }
-
 void free_attrlist(list_link *l) {}
 
 void attrl_fixlink(list_link *l) {}
 
-unsigned long addclient(const char *name)
-  {
-  return(1);
-  }
-
-unsigned long jobstartblocktime(const char *value)
-  {
-  return(1);
-  }
-
-int read_config(char *path)
-  {
-  return(0);
-  }
-
 int send_join_job_to_a_sister(job *pjob, int stream, eventent *ep, tlist_head phead, int node_id)
   {
   return(0);
-  }
-
-unsigned long setcheckpolltime(const char *value)
-  {
-  return(1);
-  }
-
-unsigned long setdownonerror(const char *value)
-  {
-  return(1);
-  }
-
-unsigned long setstatusupdatetime(const char *value)
-  {
-  return(1);
-  }
-
-unsigned long setloglevel(const char *value)
-  {
-  return(1);
-  }
-
-unsigned long setenablemomrestart(const char *value)
-  {
-  return(1);
-  }
-
-unsigned long setrcpcmd(const char *value)
-  {
-  return(1);
   }
 
 unsigned long jostartblocktime(const char *value)
@@ -847,3 +811,53 @@ bool am_i_mother_superior(const job &pjob)
   {
   return(false);
   }
+
+#ifdef PENABLE_LINUX26_CPUSETS
+
+int hwloc_topology_init(hwloc_topology_t *)
+  {
+  return 0;
+  }
+
+int hwloc_topology_set_flags(hwloc_topology_t,unsigned long)
+  {
+  return 0;
+  }
+
+int hwloc_topology_load(hwloc_topology_t )
+  {
+  return 0;
+  }
+
+int hwloc_get_type_depth (hwloc_topology_t topology, hwloc_obj_type_t type)
+  {
+  return 0;
+  }
+
+unsigned hwloc_get_nbobjs_by_depth (hwloc_topology_t topology, unsigned depth)
+  {
+  return 0;
+  }
+
+void cleanup_torque_cpuset(void){}
+
+void create_cpuset_reservation_if_needed(job &pjob){}
+
+int init_torque_cpuset(void)
+  {
+  return 0;
+  }
+
+node_internals::node_internals(void){}
+
+numa_node::numa_node(numa_node const&){}
+
+allocation::allocation(allocation const&){}
+
+void recover_cpuset_reservation(job &pjob)
+  {
+  return;
+  }
+
+
+#endif

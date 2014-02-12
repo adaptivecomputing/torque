@@ -665,11 +665,15 @@ static void altdsp_statjob(
   char        elap_time_string[100];
   char        format_string[MAX_LINE_LEN];
 
+  const char *width;
+  const char *ppn;
+
   int   usecput;
   static char  pfs[SIZEL];
   static char  rqmem[SIZEL];
   static char  srfsbig[SIZEL];
   static char  srfsfast[SIZEL];
+  static char  tmpNodeCt[SIZEL];
   static const char *blank = " -- ";
 
   if (prtheader)
@@ -708,6 +712,8 @@ static void altdsp_statjob(
     eltimecpu = blank;
     jstate    = blank;
     comment   = blank;
+    width     = blank;
+    ppn       = blank;
 
     snprintf(elap_time_string, sizeof(elap_time_string), "%s", blank);
     snprintf(pfs, sizeof(pfs), "%s", blank);
@@ -718,6 +724,7 @@ static void altdsp_statjob(
     elap_time = 0;
     req_walltime = 0;
     rem_walltime = 0;
+    bool dummyProcVal = false;
 
     pat = pstat->attribs;
 
@@ -768,8 +775,24 @@ static void altdsp_statjob(
           else
             {
             tasks = pat->value;
+            dummyProcVal = true;
             }
 
+          }
+        else if (!strcmp(pat->resource, "procs"))
+          {
+          if ((strcmp(pat->value, "0"))&&((!strcmp(tasks,blank))||dummyProcVal))
+            tasks = pat->value;
+          }
+        else if (!strcmp(pat->resource, "mppwidth"))
+          {
+          if ((strcmp(pat->value, "0"))&&(!strcmp(width,blank)))
+            width = pat->value;
+          }
+        else if (!strcmp(pat->resource, "mppnppn"))
+          {
+          if ((strcmp(pat->value, "0"))&&(!strcmp(ppn,blank)))
+            ppn = pat->value;
           }
         else if (!strcmp(pat->resource, "ncpus"))
           {
@@ -852,6 +875,27 @@ static void altdsp_statjob(
         }
 
       pat = pat->next;
+      }
+
+    if(strcmp(width,blank))
+      {
+      tasks = width;
+      if(strcmp(ppn,blank))
+        {
+        int w = atoi(width);
+        int p = atoi(ppn);
+        int c;
+        if((p != 0)&&(w != 0))
+          {
+          c = w/p;
+          if(w%p != 0)
+            {
+            c++;
+            }
+          sprintf(tmpNodeCt,"%d",c);
+          nodect = tmpNodeCt;
+          }
+        }
       }
 
     if ((*jstate != 'Q') && (*jstate != 'C') && (*jstate != 'H'))
@@ -3221,15 +3265,21 @@ int main(
 
       case JOBS:      /* get status of batch jobs */
         any_failed = run_job_mode(have_args, operand, &located, server_out, server_old, queue_name_out, server_name_out, job_id_out);
+        if (any_failed != PBSE_NONE)
+          exit(any_failed);
         break;
 
       case QUEUES:        /* get status of batch queues */
         any_failed = run_queue_mode(have_args, operand, server_out, queue_name_out, server_name_out);
+        if (any_failed != PBSE_NONE)
+          exit(any_failed);
         break;
 
 
       case SERVERS:           /* get status of batch servers */
        any_failed = run_server_mode(have_args, operand, server_out);
+        if (any_failed != PBSE_NONE)
+          exit(any_failed);
        break;
 
       }    /* END switch (mode) */

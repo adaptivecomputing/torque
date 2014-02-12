@@ -105,7 +105,6 @@
 #include "svrfunc.h"
 #include "net_connect.h"
 #include "pbs_nodes.h"
-#include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
 #include "u_tree.h"
@@ -123,7 +122,7 @@
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
 #include "unistd.h"
-#include "svr_task.h"
+#include "log.h"
 
 /* Global Data Items: */
 
@@ -1070,13 +1069,13 @@ void stat_update(
       if (delta > JOB_REPORTED_ABORT_DELTA)
         {
         snprintf(log_buf, sizeof(log_buf),
-          "mother superior no longer recognizes %s as a valid job, aborting",
-          preq->rq_ind.rq_status.rq_id);
+          "mother superior no longer recognizes %s as a valid job, aborting. Last reported time was %ld",
+          preq->rq_ind.rq_status.rq_id, pjob->ji_last_reported_time);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
         
         svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_ABORT, FALSE);
         rel_resc(pjob);
-        job_mutex.set_lock_on_exit(false);
+        job_mutex.set_unlock_on_exit(false);
         job_abt(&pjob, "Job does not exist on node");
 
         /* TODO, if the job is rerunnable we should set its state back to queued */
@@ -1341,6 +1340,7 @@ static int status_que(
   {
   struct brp_status *pstat;
   svrattrl          *pal;
+  int                rc = PBSE_NONE;
   int                bad = 0;
 
   if ((preq->rq_perm & ATR_DFLAG_RDACC) == 0)
@@ -1382,7 +1382,7 @@ static int status_que(
 
   pal = (svrattrl *)GET_NEXT(preq->rq_ind.rq_status.rq_attr);
 
-  if (status_attrib(
+  if ((rc = status_attrib(
         pal,
         que_attr_def,
         pque->qu_attr,
@@ -1390,9 +1390,9 @@ static int status_que(
         preq->rq_perm,
         &pstat->brp_attr,
         &bad,
-        1) != 0)   /* IsOwner == TRUE */
+        1)) != PBSE_NONE)   /* IsOwner == TRUE */
     {
-    return(bad);
+    return(rc);
     }
 
   return(PBSE_NONE);

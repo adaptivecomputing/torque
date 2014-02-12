@@ -1,5 +1,6 @@
 #include <string>
 #include <boost/ptr_container/ptr_vector.hpp>
+#include <vector>
 #include "license_pbs.h" /* See here for the software license */
 #include "node_manager.h"
 #include "test_uut.h"
@@ -13,7 +14,7 @@ char  buf[4096];
 const char *napali = "napali";
 const char *l11 =    "l11";
 
-int   remove_job_from_node(struct pbsnode *pnode, job *pjob);
+int   remove_job_from_node(struct pbsnode *pnode, const char *jobid);
 int   node_in_exechostlist(char *, char *);
 char *get_next_exec_host(char **);
 int   job_should_be_killed(char *, struct pbsnode *);
@@ -41,7 +42,7 @@ START_TEST(remove_job_from_already_killed_list_test)
 
   remove_job_from_already_killed_list(pwt);
 
-  for(boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();i != jobsKilled.end();i++)
+  for (boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();i != jobsKilled.end();i++)
     {
     fail_unless(strcmp(i->c_str(),"Job 5") != 0);
     }
@@ -52,7 +53,7 @@ START_TEST(remove_job_from_already_killed_list_test)
 
   remove_job_from_already_killed_list(pwt);
 
-  for(boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();i != jobsKilled.end();i++)
+  for (boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();i != jobsKilled.end();i++)
     {
     fail_unless(strcmp(i->c_str(),"Job 6") != 0);
     }
@@ -77,9 +78,9 @@ START_TEST(remove_job_from_node_test)
 
   fail_unless(pnode->nd_slots.get_number_free() == 4);
 
-  remove_job_from_node(pnode, &pjob);
+  remove_job_from_node(pnode, (const char *)pjob.ji_qs.ji_jobid);
   fail_unless(pnode->nd_slots.get_number_free() == 10);
-  remove_job_from_node(pnode, &pjob);
+  remove_job_from_node(pnode, (const char *)pjob.ji_qs.ji_jobid);
   fail_unless(pnode->nd_slots.get_number_free() == 10);
   }
 END_TEST
@@ -127,6 +128,53 @@ START_TEST(get_next_exec_host_test)
   }
 END_TEST
 
+START_TEST(sync_node_jobs_with_moms_test)
+  {
+  struct pbsnode *pnode = (struct pbsnode *)calloc(1, sizeof(struct pbsnode));
+  for (int i = 0; i < 9; i++)
+    pnode->nd_slots.add_execution_slot();
+
+  /* Job #1 */
+  job_usage_info *jui = (job_usage_info *)calloc(1, sizeof(job_usage_info));
+  strcpy(jui->jobid, "1.lei.ac");
+  pnode->nd_slots.reserve_execution_slots(2, jui->est);
+  pnode->nd_job_usages.push_back(jui);
+
+  /* Job #2 */
+  jui = (job_usage_info *)calloc(1, sizeof(job_usage_info));
+  strcpy(jui->jobid, "2.lei.ac");
+  pnode->nd_slots.reserve_execution_slots(4, jui->est);
+  pnode->nd_job_usages.push_back(jui);
+  
+  jui = (job_usage_info *)calloc(1, sizeof(job_usage_info));
+  strcpy(jui->jobid, "3.lei.ac");
+  pnode->nd_slots.reserve_execution_slots(3, jui->est);
+  pnode->nd_job_usages.push_back(jui);
+
+  /* node is fully allocated for the 3 jobs above */
+  fail_unless(pnode->nd_slots.get_number_free() == 0);
+
+  /* No jobs to be cleaned from the node */
+  sync_node_jobs_with_moms(pnode, "1.lei.ac 2.lei.ac 3.lei.ac");
+  fail_unless(pnode->nd_slots.get_number_free() == 0);
+
+  /* Clean the 2nd job from the node */
+  sync_node_jobs_with_moms(pnode, "1.lei.ac 3.lei.ac");
+  fail_unless(pnode->nd_slots.get_number_free() == 4);
+
+  /* Clean all jobs from the node */
+  sync_node_jobs_with_moms(pnode, "");
+  fail_unless(pnode->nd_slots.get_number_free() == 9);
+
+  /* This job should not be clean as svr_find_job should find it */
+  jui = (job_usage_info *)calloc(1, sizeof(job_usage_info));
+  strcpy(jui->jobid, "4.noclean.ac");
+  pnode->nd_slots.reserve_execution_slots(3, jui->est);
+  pnode->nd_job_usages.push_back(jui);
+  sync_node_jobs_with_moms(pnode, "");
+  fail_unless(pnode->nd_slots.get_number_free() == 6);
+  }
+END_TEST
 
 
 
@@ -331,6 +379,10 @@ Suite *node_manager_suite(void)
 
   tc_core = tcase_create("check_node_order_test");
   tcase_add_test(tc_core, check_node_order_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("sync_node_jobs_with_moms_test");
+  tcase_add_test(tc_core, sync_node_jobs_with_moms_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("record_external_node_test");

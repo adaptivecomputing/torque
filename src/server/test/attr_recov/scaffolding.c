@@ -70,11 +70,29 @@ void free_dynamic_string(dynamic_string *ds)
 #endif
 
 
+
+extern char saveBuff[];
+extern int saveBuffRdPtr;
+extern int saveBuffEndPtr;
+
 ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   {
-  return 0;
+  int lenRead = 0;
+  int i;
+  char *buff = (char *)buf;
+  for(i=0;(i<count)&&(saveBuffRdPtr < saveBuffEndPtr);i++)
+    {
+    *buff++ = saveBuff[saveBuffRdPtr++];
+    lenRead++;
+    }
+  return (lenRead);
   }
 
 void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+int ctnodes(char *spec)
+  {
+  fprintf(stderr, "The call to append_link needs to be mocked!!\n");
+  exit(1);
+  }

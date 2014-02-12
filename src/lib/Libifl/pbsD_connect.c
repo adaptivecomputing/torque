@@ -130,7 +130,7 @@
 #define CNTRETRYDELAY 5
 #define MUNGE_SIZE 256 /* I do not know what the proper size of this should be. My 
                           testing with munge shows it creates a string of 128 bytes */
-#define MAX_RETRIES 5  /* maximum number of times to try and successfully connect in pbs_original_connect */
+#define MAX_RETRIES 3  /* maximum number of times to try and successfully connect in pbs_original_connect */
 
 
 /* NOTE:  globals, must not impose per connection constraints */
@@ -487,9 +487,6 @@ int PBSD_munge_authenticate(
 /*
  * PBS_authenticate - call pbs_iff(1) to authenticate use to the PBS server.
  */
-
-#ifndef MUNGE_AUTH
-
 int parse_daemon_response(long long code, long long len, char *buf)
   {
   int rc = PBSE_NONE;
@@ -503,6 +500,9 @@ int parse_daemon_response(long long code, long long len, char *buf)
     }
   return rc;
   }
+
+
+#ifndef MUNGE_AUTH
 
 
 
@@ -990,9 +990,11 @@ int pbs_original_connect(
                   strerror(errno));
           }
 
+          retries++;
+
         if (!retry || retries >= MAX_RETRIES)
           {
-          rc = PBSE_PROTOCOL * -1;
+          rc = PBSE_SYSTEM * -1;
           goto cleanup_conn;
           }
         else
@@ -1000,7 +1002,6 @@ int pbs_original_connect(
           connection[out].ch_inuse = FALSE;
           pthread_mutex_unlock(connection[out].ch_mutex);
 
-          retries++;
           usleep(1000);
           continue;
           }
@@ -1024,6 +1025,8 @@ int pbs_original_connect(
           if (if_name)
             free(if_name);
 
+          retries++;
+
           if (!retry || retries >= MAX_RETRIES)
             {
             rc = rc * -1;
@@ -1034,7 +1037,6 @@ int pbs_original_connect(
             connection[out].ch_inuse = FALSE;
             pthread_mutex_unlock(connection[out].ch_mutex);
 
-            retries++;
             usleep(1000);
             continue;
             }
@@ -1050,6 +1052,8 @@ int pbs_original_connect(
           if (if_name)
             free(if_name);
 
+          retries++;
+
           if (!retry || retries >= MAX_RETRIES)
             {
             rc = PBSE_SYSTEM * -1;
@@ -1060,7 +1064,6 @@ int pbs_original_connect(
             close(connection[out].ch_socket);
             connection[out].ch_inuse = FALSE;
 
-            retries++;
             usleep(1000);
             continue;
             }
@@ -1074,7 +1077,7 @@ int pbs_original_connect(
 
       server_addr.sin_family = AF_INET;
 
-      if (pbs_getaddrinfo(server, NULL, &addr_info) != 0)
+      if ((rc = pbs_getaddrinfo(server, NULL, &addr_info)) != 0)
         {
         if (getenv("PBSDEBUG"))
           {
@@ -1085,6 +1088,7 @@ int pbs_original_connect(
                   strerror(errno));
           }
 
+        retries++;
         if (!retry || retries >= MAX_RETRIES)
           {
           rc = PBSE_BADHOST * -1;
@@ -1095,7 +1099,6 @@ int pbs_original_connect(
           close(connection[out].ch_socket);
           connection[out].ch_inuse = FALSE;
 
-          retries++;
           usleep(1000);
           continue;
           }
@@ -1107,6 +1110,7 @@ int pbs_original_connect(
       /* Set the socket to non-blocking mode so we can timeout */
       if ((sockflags = fcntl(connection[out].ch_socket, F_GETFL, NULL)) < 0)
         {
+        retries++;
         if (!retry || retries >= MAX_RETRIES)
           {
           if (getenv("PBSDEBUG"))
@@ -1120,7 +1124,7 @@ int pbs_original_connect(
           close(connection[out].ch_socket);
           connection[out].ch_inuse = FALSE;
 
-          retries++;
+          rc = sockflags;
           usleep(1000);
           continue;
           }
@@ -1128,8 +1132,9 @@ int pbs_original_connect(
       
       sockflags |= O_NONBLOCK;
 
-      if (fcntl(connection[out].ch_socket, F_SETFL, sockflags) < 0)
+      if ((rc = fcntl(connection[out].ch_socket, F_SETFL, sockflags)) < 0)
         {
+        retries++;
         if (!retry || retries >= MAX_RETRIES)
           {
           if (getenv("PBSDEBUG"))
@@ -1143,7 +1148,6 @@ int pbs_original_connect(
           close(connection[out].ch_socket);
           connection[out].ch_inuse = FALSE;
 
-          retries++;
           usleep(1000);
           continue;
           }
@@ -1177,11 +1181,12 @@ int pbs_original_connect(
       /* Set the socket back to blocking so read()s actually work */
       sockflags &= (~O_NONBLOCK);
       
-      if (fcntl(connection[out].ch_socket, F_SETFL, sockflags) < 0)
+      if ((rc = fcntl(connection[out].ch_socket, F_SETFL, sockflags)) < 0)
         {
         if (getenv("PBSDEBUG"))
           fprintf(stderr, "ERROR: setting socket flags failed\n");
 
+        retries++;
         if (!retry || retries >= MAX_RETRIES)
           {
           rc = PBSE_SOCKET_FAULT * -1;
@@ -1192,7 +1197,6 @@ int pbs_original_connect(
           close(connection[out].ch_socket);
           connection[out].ch_inuse = FALSE;
           
-          retries++;
           usleep(1000);
           continue;
           }
@@ -1227,6 +1231,7 @@ int pbs_original_connect(
           }
         else
           {
+          retries++;
           if (!retry || retries >= MAX_RETRIES)
             {
             local_errno = PBSE_PERM;
@@ -1247,7 +1252,6 @@ int pbs_original_connect(
             close(connection[out].ch_socket);
             connection[out].ch_inuse = FALSE;
             
-            retries++;
             usleep(1000);
             continue;
             }
@@ -1281,7 +1285,7 @@ int pbs_original_connect(
           }
         }
 #endif /* ifdef MUNGE_AUTH */
-      } while ((rc != PBSE_NONE) && (retries <= MAX_RETRIES));
+      } while ((rc != PBSE_NONE) && (retries < MAX_RETRIES));
     if(rc != PBSE_NONE)
       {
       goto cleanup_conn;
@@ -1362,7 +1366,7 @@ int pbs_disconnect(
   int  sock;
 
   if ((connect < 0) ||
-      (connect > PBS_NET_MAX_CONNECTIONS))
+      (connect >= PBS_NET_MAX_CONNECTIONS))
     return(-1);
 
   pthread_mutex_lock(connection[connect].ch_mutex);
@@ -1373,7 +1377,10 @@ int pbs_disconnect(
   pbs_disconnect_socket(sock);
 
   if (connection[connect].ch_errtxt != (char *)NULL)
+    {
     free(connection[connect].ch_errtxt);
+    connection[connect].ch_errtxt = (char *)NULL;
+    }
 
   connection[connect].ch_errno = 0;
   connection[connect].ch_inuse = FALSE;

@@ -227,12 +227,17 @@ extern int exec_job_on_ms(job *pjob);
 u_long gettime(resource *);
 u_long getsize(resource *);
 
+int is_ptask_corrupt( struct tcp_chan *chan); 
+
 #ifdef NVIDIA_GPUS
-extern int  setup_gpus_for_job(job *pjob);
+int  setup_gpus_for_job(job *pjob);
 #endif  /* NVIDIA_GPUS */
 
 #ifdef PENABLE_LINUX26_CPUSETS
-extern int use_cpusets(job *);
+int  use_cpusets(job *);
+#ifndef NUMA_SUPPORT
+void create_cpuset_reservation_if_needed(job &pjob);
+#endif
 #endif /* PENABLE_LINUX26_CPUSETS */
 
 
@@ -738,7 +743,7 @@ int im_compose(
   tm_task_id taskid)
 
   {
-  int ret;
+  int ret = PBSE_NONE;
 
   if (chan->sock < 0)
     {
@@ -2554,6 +2559,8 @@ int im_join_job_as_sister(
     
     log_ext(-1, __func__, log_buffer, LOG_INFO);
 
+    create_cpuset_reservation_if_needed(*pjob);
+
     if (create_job_cpuset(pjob) == FAILURE)
       {
       sprintf(log_buffer, "Could not create cpuset for job %s.\n",
@@ -4243,6 +4250,9 @@ int handle_im_obit_task_response(
   
   if (ptask != NULL)
     {
+    if (is_ptask_corrupt(ptask->ti_chan))
+       return(IM_FAILURE);
+
     tm_reply(ptask->ti_chan, TM_OKAY, event);
     
     diswsi(ptask->ti_chan, exitval);
@@ -4923,8 +4933,8 @@ int process_error_reply(
 
   {
   int   errcode;
-  int   ret;
-  int   rc;
+  int   ret = PBSE_NONE;
+  int   rc = PBSE_NONE;
       
   errcode = disrsi(chan, &ret);
 
@@ -5047,7 +5057,7 @@ int process_valid_response(
   fwdevent             efwd)
 
   {
-  int ret;
+  int ret = PBSE_NONE;
 
   /* Sender is another MOM telling me that a request has completed successfully */
   svr_conn[chan->sock].cn_stay_open = FALSE;
@@ -5188,7 +5198,6 @@ int process_valid_response(
 
   return(ret);
   } /* END process_valid_response() */
-
 
 
 
@@ -5486,7 +5495,7 @@ int process_valid_intermediate_response(
   int                 command)
 
   {
-  int ret;
+  int ret = PBSE_NONE;
 
   if (((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) == 0) &&
       (am_i_mother_superior(*pjob) == false))
@@ -8820,6 +8829,34 @@ int read_status_strings(
   } /* END read_status_strings() */
 
 
+
+int is_ptask_corrupt(
+
+  struct tcp_chan *chan) /* Input */
+
+  {
+  char log_buf[LOCAL_LOG_BUF_SIZE];
+  struct tcpdisbuf *tp = &chan->writebuf;
+
+  if (tp->tdis_bufsize == 0)
+    {
+    snprintf(log_buf,sizeof(log_buf),
+      "write buffer's tdis_bufsize was unexpectely found with a value of 0");
+    log_err(-1, __func__, log_buf);
+    return 1;
+    }
+
+  tp = &chan->readbuf;
+  if (tp->tdis_bufsize == 0)
+    {
+    snprintf(log_buf,sizeof(log_buf),
+      "read buffer's tdis_bufsize was unexpectely found with a value of 0");
+    log_err(-1, __func__, log_buf);
+    return -1;
+    }
+
+  return 0;
+  }
 
 /* END mom_comm.c */
 

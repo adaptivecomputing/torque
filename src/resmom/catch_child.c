@@ -1107,7 +1107,7 @@ int post_epilogue(
   log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "obit sent to server");
 
   return(0);
-  }  /* END post_epilog() */
+  } /* END post_epilogue() */
 
 
 

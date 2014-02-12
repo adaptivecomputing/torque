@@ -4,13 +4,25 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
+#include "batch_request.h"
 #include "pbs_error.h"
 
-START_TEST(test_one)
+void mom_req_quejob(batch_request *preq);
+
+// sensing variables
+extern char prefix[];
+
+START_TEST(test_mom_req_quejob)
   {
+  batch_request preq;
 
+  memset(&preq, 0, sizeof(preq));
+  preq.rq_fromsvr = TRUE;
+  strcpy(preq.rq_ind.rq_queuejob.rq_jid, "1.napali");
+  CLEAR_HEAD(preq.rq_ind.rq_queuejob.rq_attr);
 
+  mom_req_quejob(&preq);
+  fail_unless(!strcmp("1.napali", prefix));
   }
 END_TEST
 
@@ -24,8 +36,8 @@ END_TEST
 Suite *mom_req_quejob_suite(void)
   {
   Suite *s = suite_create("mom_req_quejob_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_mom_req_quejob");
+  tcase_add_test(tc_core, test_mom_req_quejob);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");

@@ -415,7 +415,7 @@ int process_gpu_status(
   {
   pbs_attribute   temp;
   int             gpu_count = 0;
-  int             rc;
+  int             rc = PBSE_NONE;
   char            buf[MAXLINE * 2];
   std::string     gpu_info = "";
 
@@ -505,6 +505,19 @@ int record_reservation(
       mutex_mgr job_mutex(pjob->ji_mutex, true);
       pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str = strdup(rsv_id);
       pjob->ji_wattr[JOB_ATR_reservation_id].at_flags = ATR_VFLAG_SET;
+
+      /* add environment variable BATCH_PARTITION_ID */
+      char buf[1024];
+      snprintf(buf, sizeof(buf), "BATCH_PARTITION_ID=%s", rsv_id);
+      pbs_attribute  tempattr;
+      clear_attr(&tempattr, &job_attr_def[JOB_ATR_variables]);
+      job_attr_def[JOB_ATR_variables].at_decode(&tempattr,
+        NULL, NULL, buf, 0);
+
+      job_attr_def[JOB_ATR_variables].at_set(
+        &pjob->ji_wattr[JOB_ATR_variables], &tempattr, INCR);
+
+      job_attr_def[JOB_ATR_variables].at_free(&tempattr);
 
       track_alps_reservation(pjob);
       found_job = true;

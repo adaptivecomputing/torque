@@ -102,127 +102,6 @@ int manual_cpuset_init()
 
 
 
-/*
- * Parse ASCII decimal list representation in buf to hwloc_bitmap map.
- * Returns the number of bits set, may be 0.
- * Returns -1 on failure.
- * NOTES:
- * - There is also bitmask_parselist() in SGI libbitmask.
- * - Maybe future hwloc provides similar functionality,
- *   take care on name conflicts.
- *
- * @param buf - (I) - string
- * @param map - (O) - bitmap
- */
-
-int hwloc_bitmap_parselist(
-
-  const char     *buf, /* I */
-  hwloc_bitmap_t  map) /* O */
-
-  {
-  unsigned a;
-  unsigned b;
-  int      c = 0;
-
-  if (!map)
-    return(-1);
-
-  hwloc_bitmap_zero(map);
-
-  do
-    {
-    if (!isdigit(*buf))
-      return(-1);
-
-    b = a = strtoul(buf, (char **)&buf, 10);
-
-    if (*buf == '-')
-      {
-      buf++;
-      if (! isdigit(*buf))
-        return(-1);
-      b = strtoul(buf, (char **)&buf, 10);
-      }
-
-    if (a > b)
-      return(-1);
-
-    while (a <= b)
-      {
-      hwloc_bitmap_set(map, a++);
-      c++;
-      }
-
-    if (*buf == ',')
-      buf++;
-
-    } while(*buf != '\0' && *buf != '\n');
-
-  return(c);
-  } /* END hwloc_bitmap_parselist() */
-
-
-
-
-
-/*
- * Display ASCII decimal list representation of hwloc_bitmap map in buf.
- * Returns the number of characters written, excluding trailing '\0'.
- *
- * NOTES:
- * - There is also bitmask_displaylist() in SGI libbitmask.
- * - Maybe future hwloc provides similar functionality,
- *   take care on name conflicts.
- *
- * @param buf    - (O) - string
- * @param buflen - (I) - max chars to become written
- * @param map    - (I) - bitmap
- */
-
-int hwloc_bitmap_displaylist(
-
-  char           *buf,    /* O */
-  size_t          buflen, /* I */
-  hwloc_bitmap_t  map)    /* I */
-
-  {
-  int len = 0;
-  int fid;
-  int lid;
-  int id;
-
-  *buf = '\0';
-
-  fid = id = hwloc_bitmap_first(map);
-  while (id != -1)
-    {
-    lid = id;
-    id = hwloc_bitmap_next(map, id);
-    if ((id == -1) ||
-        (id > lid + 1))
-      {
-      if (len > 0)
-        len += snprintf(buf + len, buflen - len, ",");
-
-      if (fid == lid)
-        len += snprintf(buf + len, buflen - len, "%d", fid);
-      else if (lid > fid + 1)
-        len += snprintf(buf + len, buflen - len, "%d-%d", fid, lid);
-      else
-        len += snprintf(buf + len, buflen - len, "%d,%d", fid, lid);
-
-      fid = id;
-      }
-    } /* END while (id != -1) */
-
-  return(len);
-  } /* END hwloc_bitmap_displaylist() */
-
-
-
-
-#ifndef UNIT_TEST_INIT_TORQUE_CPUSET
 /**
  * Initializes cpuset usage.
  *
@@ -278,12 +157,10 @@ int init_cpusets(void)
   return(rc);
 #endif /* USELIBCPUSET */
   } /* END init_cpusets() */
-#endif /* UNIT_TEST_INIT_TORQUE_CPUSET */
 
 
 
 
-#ifndef UNIT_TEST_INIT_TORQUE_CPUSET
 /**
  * Creates/modifies a cpuset.
  *
@@ -522,7 +399,7 @@ int create_cpuset(
       return(-1);
       }
 
-    hwloc_bitmap_displaylist(cpuset_buf, sizeof(cpuset_buf), cpus);
+    hwloc_bitmap_list_snprintf(cpuset_buf, sizeof(cpuset_buf), cpus);
 
     if (fwrite(cpuset_buf, sizeof(char), strlen(cpuset_buf), fd) != strlen(cpuset_buf))
       {
@@ -545,7 +422,7 @@ int create_cpuset(
       return(-1);
       }
 
-    hwloc_bitmap_displaylist(cpuset_buf, sizeof(cpuset_buf), mems);
+    hwloc_bitmap_list_snprintf(cpuset_buf, sizeof(cpuset_buf), mems);
 
     if (fwrite(cpuset_buf, sizeof(char), strlen(cpuset_buf), fd) != strlen(cpuset_buf))
       {
@@ -566,12 +443,10 @@ int create_cpuset(
   return(PBSE_NONE);
 #endif
   } /* END create_cpuset() */
-#endif /* UNIT_TEST_INIT_TORQUE_CPUSET */
 
 
 
 
-#ifndef UNIT_TEST_INIT_TORQUE_CPUSET
 /**
  * Read cpus and mems of a cpuset into hwloc_bitmap structs.
  *
@@ -665,7 +540,7 @@ int read_cpuset(
       if (bitmask_weight(mask) > 0)
         {
         bitmask_displaylist(cpuset_buf, sizeof(cpuset_buf), mask);
-        hwloc_bitmap_parselist(cpuset_buf, cpus);
+        hwloc_bitmap_list_sscanf(cpus, cpuset_buf);
         }
 
       bitmask_free(mask);
@@ -692,7 +567,7 @@ int read_cpuset(
       if (bitmask_weight(mask) > 0)
         {
         bitmask_displaylist(cpuset_buf, sizeof(cpuset_buf), mask);
-        hwloc_bitmap_parselist(cpuset_buf, mems);
+        hwloc_bitmap_list_sscanf(mems, cpuset_buf);
         }
 
       bitmask_free(mask);
@@ -734,7 +609,7 @@ int read_cpuset(
 
       if (fscanf(fd, "%s", cpuset_buf) == 1)
         {
-        if (hwloc_bitmap_parselist(cpuset_buf, cpus) < 0)
+        if (hwloc_bitmap_list_sscanf(cpus, cpuset_buf) < 0)
           {
           sprintf(log_buffer, "(%s) failed to parse %s: %s", __func__, path, cpuset_buf);
           fclose(fd);
@@ -764,7 +639,7 @@ int read_cpuset(
 
       if (fscanf(fd, "%s", cpuset_buf) == 1)
         {
-        if (hwloc_bitmap_parselist(cpuset_buf, mems) < 0)
+        if (hwloc_bitmap_list_sscanf(mems, cpuset_buf) < 0)
           {
           sprintf(log_buffer, "(%s) failed to parse %s: %s", __func__, path, cpuset_buf);
           fclose(fd);
@@ -791,7 +666,6 @@ int read_cpuset(
   return(rc);
 #endif
   } /* END read_cpuset() */
-#endif /* UNIT_TEST_INIT_TORQUE_CPUSET */
 
 
 
@@ -1050,7 +924,7 @@ bool is_physical_core(
   }
 
 
-#ifndef UNIT_TEST_INIT_TORQUE_CPUSET
+
 void remove_logical_processor_if_requested(
 
   hwloc_bitmap_t *cpus)
@@ -1083,11 +957,46 @@ void remove_logical_processor_if_requested(
       }
     }
   }
-#endif /* UNIT_TEST_INIT_TORQUE_CPUSET */
 
 
 
+/*
+ * get_cpu_list()
+ *
+ * reads the cpu list for the job matching jobid and stores it in buf
+ *
+ * @param jobid - the id of the job we're getting a cpu list for
+ * @param buf - the buffer where we'll store the list
+ * @param bufsize - the size of the buffer where we can store the list
+ *
+ */
+void get_cpu_list(
 
+  const char *jobid,
+  char       *buf,
+  int         bufsize)
+
+  {
+  char  cpuset_path[MAXPATHLEN + 1];
+  FILE *cpu_file;
+  int   fd;
+
+  if (buf == NULL)
+    return;
+
+  memset(buf, 0, bufsize);
+
+  snprintf(cpuset_path, sizeof(cpuset_path), "%s/%s/%scpus",
+    TTORQUECPUSET_PATH, jobid, cpuset_prefix);
+
+  if ((cpu_file = fopen(cpuset_path, "r")) != NULL)
+    {
+    fd = fileno(cpu_file);
+
+    read(fd, buf, bufsize - 1);
+    }
+
+  } /* END get_cpu_list() */
 
 
 
@@ -1185,11 +1094,11 @@ int init_torque_cpuset(void)
     /* Exists with non-empty cpus and mems, adjust and tell what we have and return */
     remove_logical_processor_if_requested(&cpus);
     sprintf(log_buffer, "cpus = ");
-    hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), cpus);
+    hwloc_bitmap_list_snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), cpus);
     log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
 
     sprintf(log_buffer, "mems = ");
-    hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), mems);
+    hwloc_bitmap_list_snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), mems);
     log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
 
     rc = 0;
@@ -1242,11 +1151,11 @@ int init_torque_cpuset(void)
   else
     {
     sprintf(log_buffer, "subtracting cpus of boot cpuset: ");
-    hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), bootcpus);
+    hwloc_bitmap_list_snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), bootcpus);
     log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
 
     sprintf(log_buffer, "subtracting mems of boot cpuset: ");
-    hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), bootmems);
+    hwloc_bitmap_list_snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), bootmems);
     log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
 
     hwloc_bitmap_andnot(cpus, cpus, bootcpus);
@@ -1256,11 +1165,11 @@ int init_torque_cpuset(void)
 #endif
 
   sprintf(log_buffer, "setting cpus = ");
-  hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), cpus);
+  hwloc_bitmap_list_snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), cpus);
   log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
 
   sprintf(log_buffer, "setting mems = ");
-  hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), mems);
+  hwloc_bitmap_list_snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), mems);
   log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
 
 #ifdef USELIBCPUSET
@@ -1583,7 +1492,7 @@ int create_job_cpuset(
       pjob->ji_qs.ji_jobid,
       hwloc_bitmap_weight(cpus));
 
-  hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer),
+  hwloc_bitmap_list_snprintf(log_buffer + strlen(log_buffer),
       sizeof(log_buffer) - strlen(log_buffer),
       cpus);
 
@@ -1591,7 +1500,7 @@ int create_job_cpuset(
       "), %d mems (",
       hwloc_bitmap_weight(mems));
 
-  hwloc_bitmap_displaylist(log_buffer + strlen(log_buffer),
+  hwloc_bitmap_list_snprintf(log_buffer + strlen(log_buffer),
       sizeof(log_buffer) - strlen(log_buffer),
       mems);
 

@@ -15,6 +15,8 @@
 #include <syslog.h>
 #include <errno.h>
 #include <string.h>
+#include <libxml/parser.h>
+#include <libxml/tree.h>
 
 #include "portability.h"
 #include "list_link.h"
@@ -54,6 +56,7 @@
 #define PAM_EXTERN
 #endif
 
+int job_read_xml(const char *filename, job *pjob, char *log_buf, size_t buf_len);
 
 /* --- authentication management functions (only) --- */
 
@@ -77,6 +80,8 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
   char jobdirpath[PATH_MAX+1];
   int debug = 0;
 
+  char log_buf[LOCAL_LOG_BUF_SIZE];
+
   openlog(MODNAME, LOG_PID, LOG_USER);
   strcpy(jobdirpath, PBS_SERVER_HOME "/mom_priv/jobs");
 
@@ -86,8 +91,8 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     {
     if (!strcmp(*argv, "debug"))
       debug = 1;
-    else if (!strncmp(*argv, "jobdir=", 7))
-      strncpy(jobdirpath, (*argv)+7, PATH_MAX);
+    else if (!strncmp(*argv, "jobdir=", strlen("jobdir=")))
+      strncpy(jobdirpath, (*argv) + strlen("jobdir="), PATH_MAX);
     else
       syslog(LOG_ERR, "unknown option: %s", *argv);
     }
@@ -151,31 +156,44 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
 
       if (debug) syslog(LOG_INFO, "opening %s", jobpath);
 
-      fp = open(jobpath, O_RDONLY, 0);
-
-      if (fp < 0)
+      /* try to read the JB file in XML format first */
+      if (job_read_xml(jobpath, &xjob, log_buf, sizeof(log_buf)) != PBSE_NONE)
         {
-        syslog(LOG_ERR, "error opening job file");
-        continue;
-        }
+        /* XML read failed, try binary version read */
 
-      amt = read(fp, &xjob.ji_qs, sizeof(xjob.ji_qs));
+        if (debug)
+          {
+          syslog(LOG_INFO, "failed to read JB file in XML format: %s", log_buf);
+          syslog(LOG_INFO, "trying to read JB file in binary format");
+          }
 
-      if (amt != sizeof(xjob.ji_qs))
-        {
+        fp = open(jobpath, O_RDONLY, 0);
+  
+        if (fp < 0)
+  	  {
+  	  syslog(LOG_ERR, "error opening job file");
+  	  continue;
+  	  }
+  
+        amt = read(fp, &xjob.ji_qs, sizeof(xjob.ji_qs));
+  
+        if (amt != sizeof(xjob.ji_qs))
+  	  {
+  	  close(fp);
+  	  syslog(LOG_ERR, "short read of job file");
+  	  continue;
+  	  }
+  
+        if (xjob.ji_qs.ji_un_type != JOB_UNION_TYPE_MOM)
+  	  {
+  	  /* odd, this really should be JOB_UNION_TYPE_MOM */
+  	  close(fp);
+  	  syslog(LOG_ERR, "job file corrupt");
+  	  continue;
+  	  }
         close(fp);
-        syslog(LOG_ERR, "short read of job file");
-        continue;
         }
-
-      if (xjob.ji_qs.ji_un_type != JOB_UNION_TYPE_MOM)
-        {
-        /* odd, this really should be JOB_UNION_TYPE_MOM */
-        close(fp);
-        syslog(LOG_ERR, "job file corrupt");
-        continue;
-        }
-
+  
       if (debug) syslog(LOG_INFO, "state=%d, substate=%d", xjob.ji_qs.ji_state, xjob.ji_qs.ji_substate);
 
       if ((xjob.ji_qs.ji_un.ji_momt.ji_exuid == user_pwd->pw_uid) &&
@@ -184,7 +202,6 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
            (xjob.ji_qs.ji_substate == JOB_SUBSTATE_RUNNING)))
         {
         /* success! */
-        close(fp);
 
         if (debug) syslog(LOG_INFO, "allowed by %s", jdent->d_name);
 
@@ -193,7 +210,6 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
         break;
         }
 
-      close(fp);
       } /* END while (readdir(jobdir)) */
 
     if (jobdir)
@@ -244,4 +260,115 @@ struct pam_module _pam_pbssimpleauth_modstruct =
 
 #endif
 
+int job_read_xml(
+
+  const char *filename,  /* I */   /* pathname to job save file */
+  job  *pjob,     /* M */   /* pointer to a pointer of job structure to fill info */
+  char *log_buf,   /* O */   /* buffer to hold error message */
+  size_t buf_len)  /* I */   /* len of the error buffer */
+  {
+  xmlDoc *doc = NULL;
+  xmlNode *root_element = NULL;
+
+  xmlNode *cur_node = NULL;
+  xmlChar  *content;
+  bool     execution_uid_found = false;
+  bool     state_found = false;
+  bool     substate_found = false;
+
+  /*parse the file and get the DOM */
+  doc = xmlReadFile(filename, NULL, 0);
+
+  if (doc == NULL)
+    return(PBSE_INVALID_SYNTAX);
+
+  /*Get the root element node */
+  root_element = xmlDocGetRootElement(doc);
+  if (strcmp((const char *) root_element->name, "job"))
+    {
+    snprintf(log_buf, buf_len, "missing root tag job in xml");
+
+    /* set return code of -1 as we do have a JB xml but it did not have the right root elem. */
+    xmlFreeDoc(doc);
+    return(-1);
+    }
+
+  for (cur_node = root_element->children; cur_node != NULL; cur_node = cur_node->next)
+    {
+    /* skip text children, only process elements */
+    if (!strcmp((const char *)cur_node->name, "text"))
+      continue;
+
+    if (!(strcmp((const char*)cur_node->name, "execution_uid")))
+      {
+      content = xmlNodeGetContent(cur_node);
+      errno = 0;
+      pjob->ji_qs.ji_un.ji_momt.ji_exuid = (uid_t) strtoul((const char *) content, NULL, 10);
+
+      if (errno != 0)
+        {
+        snprintf(log_buf, buf_len, "invalid execution_uid");
+
+        xmlFreeDoc(doc);
+        return(-1);
+        }
+
+      execution_uid_found = true;
+      }
+    else if (!(strcmp((const char*)cur_node->name, "state")))
+      {
+      content = xmlNodeGetContent(cur_node);
+      errno = 0;
+      pjob->ji_qs.ji_state = (int) strtol((const char *) content, NULL, 10);
+
+      if (errno != 0)
+        {
+        snprintf(log_buf, buf_len, "invalid state");
+
+        xmlFreeDoc(doc);
+        return(-1);
+        }
+
+      state_found = true;
+      }
+    else if (!(strcmp((const char*)cur_node->name, "substate")))
+      {
+      content = xmlNodeGetContent(cur_node);
+      errno = 0;
+      pjob->ji_qs.ji_substate = (int) strtol((const char *) content, NULL, 10);
+
+      if (errno != 0)
+        {
+        snprintf(log_buf, buf_len, "invalid substate");
+
+        xmlFreeDoc(doc);
+        return(-1);
+        }
+
+      substate_found = true;
+      }
+    }
+
+  xmlFreeDoc(doc);
+
+  if (execution_uid_found == false)
+    {
+    snprintf(log_buf, buf_len, "%s", "Error: execution uid not found");
+    return(-1);
+    }
+
+  if (state_found == false)
+    {
+    snprintf(log_buf, buf_len, "%s", "Error: state not found");
+    return(-1);
+    }
+
+  if (substate_found == false)
+    {
+    snprintf(log_buf, buf_len, "%s", "Error: substate not found");
+    return(-1);
+    }
+
+  return(PBSE_NONE);
+  }
 /* end of module definition */

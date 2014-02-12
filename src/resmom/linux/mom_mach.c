@@ -447,6 +447,7 @@ proc_mem_t *get_proc_mem_from_path(
   if (fscanf(fp,"%30s",str) != 1)
     {
     fclose(fp);
+    free(mm);
 
     return(NULL);
     }
@@ -457,6 +458,7 @@ proc_mem_t *get_proc_mem_from_path(
     if (fscanf(fp,"%*[^\n]%*c") != 0)     /* remove text header */
       {
       fclose(fp);
+      free(mm);
 
       return(NULL);
       }
@@ -470,6 +472,7 @@ proc_mem_t *get_proc_mem_from_path(
                &casz) != 5)
       {
       fclose(fp);
+      free(mm);
 
       return(NULL);
       }
@@ -482,6 +485,7 @@ proc_mem_t *get_proc_mem_from_path(
                &mm->swap_free) != 3)
       {
       fclose(fp);
+      free(mm);
 
       return(NULL);
       }
@@ -497,6 +501,7 @@ proc_mem_t *get_proc_mem_from_path(
                    &mm->mem_total) != 1)
           {
           fclose(fp);
+          free(mm);
 
           return(NULL);
           }
@@ -509,6 +514,7 @@ proc_mem_t *get_proc_mem_from_path(
                    &mm->mem_free) != 1)
           {
           fclose(fp);
+          free(mm);
 
           return(NULL);
           }
@@ -521,6 +527,7 @@ proc_mem_t *get_proc_mem_from_path(
                    &bfsz) != 1)
           {
           fclose(fp);
+          free(mm);
 
           return(NULL);
           }
@@ -533,6 +540,7 @@ proc_mem_t *get_proc_mem_from_path(
                    &casz) != 1)
           {
           fclose(fp);
+          free(mm);
 
           return(NULL);
           }
@@ -545,6 +553,7 @@ proc_mem_t *get_proc_mem_from_path(
                    &fcasz) != 1)
           {
           fclose(fp);
+          free(mm);
 
           return(NULL);
           }
@@ -557,6 +566,7 @@ proc_mem_t *get_proc_mem_from_path(
                    &mm->swap_total) != 1)
           {
           fclose(fp);
+          free(mm);
           return(NULL);
           }
 
@@ -568,6 +578,7 @@ proc_mem_t *get_proc_mem_from_path(
                    &mm->swap_free) != 1)
           {
           fclose(fp);
+          free(mm);
           return(NULL);
           }
 
@@ -897,6 +908,13 @@ static int injob(
 
   {
   task *ptask;
+  pid_t  pid;
+#ifdef PENABLE_LINUX26_CPUSETS
+  struct pidl   *pids = NULL;
+  struct pidl   *pp;
+#else
+  proc_stat_t   *ps;
+#endif /* PENABLE_LINUX26_CPUSETS */
 
   for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
        ptask != NULL;
@@ -910,6 +928,62 @@ static int injob(
       return(TRUE);
       }
     }
+
+  /* processes with a different sessionid are not necessarily not part of the
+     job: the job can call setsid; need to check whether one of the parent
+     processes has a sessionid that is in the job */
+#ifdef PENABLE_LINUX26_CPUSETS
+
+  /* check whether the sid is in the job's cpuset */
+
+  pids = get_cpuset_pidlist(pjob->ji_qs.ji_jobid, pids);
+  pp   = pids;
+
+  while (pp != NULL)
+    {
+    pid = pp->pid;
+    pp  = pp->next;
+    if (pid == sid)
+      {
+      free_pidlist(pids);
+      return(TRUE);
+      }
+    }
+    free_pidlist(pids);
+#else
+
+  /* get the parent process id of the sid and check whether it is part of
+     the job; iterate */
+
+  pid = sid;
+  while (pid > 1)
+    {
+    if ((ps = get_proc_stat(pid)) == NULL)
+      {
+      if (errno != ENOENT)
+        {
+        sprintf(log_buffer, "%d: get_proc_stat", pid);
+
+        log_err(errno, __func__, log_buffer);
+        }
+      return(FALSE);
+      }
+    pid = getsid(ps->ppid);
+
+    for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
+         ptask != NULL;
+         ptask = (task *)GET_NEXT(ptask->ti_jobtask))
+      {
+      if (ptask->ti_qs.ti_sid <= 1)
+        continue;
+
+      if (ptask->ti_qs.ti_sid == pid)
+        {
+        return(TRUE);
+        }
+      }
+    }
+#endif /* PENABLE_LINUX26_CPUSETS */
 
   return(FALSE);
   }  /* END injob() */
@@ -2192,6 +2266,30 @@ int mom_over_limit(
 
 
 
+/*
+ * job_expected_resc_found: logs an error if an expected resource was not found
+ */
+int job_expected_resc_found(
+
+  const resource *pres,
+  const resource_def  *rd,
+  const char *jobid)
+
+  {
+  if (!pres)
+    {
+    char log_buf[2048];
+    snprintf(log_buf, sizeof(log_buf), "job %s missing expected resource %s for resource usage calculation",
+      jobid, rd->rs_name);
+    log_err(-1, __func__, log_buf);
+    return -1;
+    }
+  return PBSE_NONE;
+  }
+
+
+
+
 
 /*
  * Update the job attribute for resources used.
@@ -2293,7 +2391,8 @@ int mom_set_use(
 
   pres = find_resc_entry(at, rd);
 
-  assert(pres != NULL);
+  if (job_expected_resc_found(pres, rd, pjob->ji_qs.ji_jobid))
+	return -1;
 
   lp = (unsigned long *) & pres->rs_value.at_val.at_long;
 
@@ -2309,7 +2408,8 @@ int mom_set_use(
 
   pres = find_resc_entry(at, rd);
 
-  assert(pres != NULL);
+  if (job_expected_resc_found(pres, rd, pjob->ji_qs.ji_jobid))
+	return -1;
 
   lp = &pres->rs_value.at_val.at_size.atsv_num;
 
@@ -2325,7 +2425,8 @@ int mom_set_use(
 
   pres = find_resc_entry(at, rd);
 
-  assert(pres != NULL);
+  if (job_expected_resc_found(pres, rd, pjob->ji_qs.ji_jobid))
+	return -1;
 
   /* NOTE: starting jobs can come through here before stime is recorded */
   if (pjob->ji_qs.ji_stime == 0)
@@ -2342,7 +2443,8 @@ int mom_set_use(
 
   pres = find_resc_entry(at, rd);
 
-  assert(pres != NULL);
+  if (job_expected_resc_found(pres, rd, pjob->ji_qs.ji_jobid))
+	return -1;
 
   lp = &pres->rs_value.at_val.at_size.atsv_num;
 

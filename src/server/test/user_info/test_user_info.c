@@ -1,3 +1,4 @@
+#include <string>
 #include <stdio.h>
 #include <stdlib.h>
 #include <check.h>
@@ -5,7 +6,7 @@
 
 #include "user_info.h"
 
-unsigned int get_num_queued(user_info_holder *, char *);
+unsigned int get_num_queued(user_info_holder *, const char *);
 unsigned int count_jobs_submitted(job *);
 
 START_TEST(initialize_user_info_holder_test)
@@ -20,16 +21,33 @@ END_TEST
 
 
 
+START_TEST(remove_server_suffix_test)
+  {
+  std::string u1("dbeer@napali");
+  std::string u2("dbeer");
+  std::string u3("dbeer@waimea");
+
+  remove_server_suffix(u1);
+  remove_server_suffix(u2);
+  remove_server_suffix(u3);
+
+  fail_unless(!strcmp(u1.c_str(), "dbeer"));
+  fail_unless(!strcmp(u2.c_str(), "dbeer"));
+  fail_unless(!strcmp(u3.c_str(), "dbeer"));
+  }
+END_TEST
+
+
 
 START_TEST(get_num_queued_test)
   {
   unsigned int queued;
   initialize_user_info_holder(&users);
 
-  queued = get_num_queued(&users, (char *)"bob");
+  queued = get_num_queued(&users, "bob");
   fail_unless(queued == 0, "incorrect queued count for bob");
 
-  queued = get_num_queued(&users, (char *)"tom");
+  queued = get_num_queued(&users, "tom");
   fail_unless(queued == 1, "incorrect queued count for tom");
   }
 END_TEST
@@ -84,6 +102,11 @@ START_TEST(increment_queued_jobs_test)
   fail_unless(increment_queued_jobs(&users, (char *)"tom", &pjob) == 0, "can't increment queued jobs");
   fail_unless(increment_queued_jobs(&users, (char *)"bob", &pjob) == 0, "can't increment queued jobs");
   fail_unless(increment_queued_jobs(&users, (char *)"bob", &pjob) == ENOMEM, "didn't get failure");
+  // after 1 increment the count should be 2 because initialize_user_info() starts out with tom at 
+  // 1 instead of 0, as a normal program would start. Its done this way for the decrement code.
+  fail_unless(get_num_queued(&users, "tom") == 2, "didn't actually increment tom 1");
+  fail_unless(increment_queued_jobs(&users, strdup("tom@napali"), &pjob) == 0);
+  fail_unless(get_num_queued(&users, "tom") == 3, "didn't actually increment tom 2");
   }
 END_TEST
 
@@ -96,7 +119,10 @@ START_TEST(decrement_queued_jobs_test)
 
   fail_unless(decrement_queued_jobs(&users, (char *)"bob") == THING_NOT_FOUND, "decremented for non-existent user");
   fail_unless(decrement_queued_jobs(&users, (char *)"tom") == 0, "couldn't decrement for tom?");
-  fail_unless(get_num_queued(&users, (char *)"tom") == 0, "didn't actually decrement tom");
+  fail_unless(get_num_queued(&users, "tom") == 0, "didn't actually decrement tom");
+  
+  fail_unless(decrement_queued_jobs(&users, (char *)"tom") == 0, "couldn't decrement for tom?");
+  fail_unless(get_num_queued(&users, "tom") == 0, "didn't actually decrement tom");
 
   }
 END_TEST
@@ -129,6 +155,7 @@ Suite *user_info_suite(void)
 
   tc_core = tcase_create("decrement_queued_jobs_test");
   tcase_add_test(tc_core, decrement_queued_jobs_test);
+  tcase_add_test(tc_core, remove_server_suffix_test);
   suite_add_tcase(s, tc_core);
   
   return(s);

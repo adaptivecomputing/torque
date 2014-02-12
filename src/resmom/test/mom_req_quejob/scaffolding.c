@@ -3,6 +3,7 @@
 #include <stdio.h> /* fprintf */
 #include <pwd.h> /* struct password */
 
+#include "pbs_config.h"
 #include "attribute.h" /* attribute_def, pbs_attribute, svrattrl */
 #include "list_link.h" /* tlist_head */
 #include "resource.h" /* resource_def, resource */
@@ -10,8 +11,6 @@
 #include "pbs_job.h" /* job */
 #include "batch_request.h" /* batch_request */
 #include "libpbs.h" /* job_file */
-
-
 
 const char *PJobSubState[10];
 char *path_jobs;
@@ -32,6 +31,8 @@ int PBSNodeCheckProlog = 0;
 char log_buffer[LOG_BUF_SIZE];
 int reject_job_submit = 0;
 
+// sensing variables
+char prefix[PBS_JOBBASE+1];
 
 
 char *std_file_name(job *pjob, enum job_file which, int *keeping)
@@ -120,8 +121,7 @@ void mom_server_all_update_stat(void)
 
 void *get_next(list_link pl, char *file, int line)
   {
-  fprintf(stderr, "The call to get_next needs to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 void reply_free(struct batch_reply *prep)
@@ -150,8 +150,8 @@ struct passwd * getpwnam_ext(char * user_name)
 
 void append_link(tlist_head *head, list_link *new_link, void *pobj)
   {
-  fprintf(stderr, "The call to append_link needs to be mocked!!\n");
-  exit(1);
+  job *pjob = (job *)pobj;
+  strcpy(prefix, pjob->ji_qs.ji_fileprefix);
   }
 
 void check_state(int Force)
@@ -162,8 +162,7 @@ void check_state(int Force)
 
 int reply_jobid(struct batch_request *preq, char *jobid, int which)
   {
-  fprintf(stderr, "The call to reply_jobid needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void log_err(int errnum, const char *routine, const char *text)
@@ -186,14 +185,12 @@ resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
 
 job *mom_find_job(char *jobid)
   {
-  fprintf(stderr, "The call to find_job needs to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 job *job_alloc(void)
   {
-  fprintf(stderr, "The call to job_alloc needs to be mocked!!\n");
-  exit(1);
+  return((job *)calloc(1, sizeof(job)));
   }
 
 void reply_badattr(int code, int aux, svrattrl *pal, struct batch_request *preq)
@@ -210,8 +207,7 @@ void reply_text(struct batch_request *preq, int code, const char *text)
 
 pbs_net_t get_connectaddr(int sock, int mutex)
   {
-  fprintf(stderr, "The call to get_connectaddr needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)

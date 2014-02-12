@@ -97,7 +97,7 @@
 #if defined(NTOHL_NEEDS_ARPA_INET_H) && defined(HAVE_ARPA_INET_H)
 #include <arpa/inet.h>
 #endif
-
+#include <vector>
 
 #include "portability.h"
 #include "libpbs.h"
@@ -132,7 +132,6 @@
 #include "net_cache.h"
 #include "ji_mutex.h"
 #include "alps_constants.h"
-#include "svr_task.h"
 #include "mutex_mgr.hpp"
 
 #define IS_VALID_STR(STR)  (((STR) != NULL) && ((STR)[0] != '\0'))
@@ -615,33 +614,39 @@ boost::ptr_vector<std::string> jobsKilled;
  * case it needs to be removed again.
  */
 
-void remove_job_from_already_killed_list(struct work_task *pwt)
+void remove_job_from_already_killed_list(
+    
+  struct work_task *pwt)
+
   {
   std::string *pJobID = (std::string *)pwt->wt_parm1;
 
   free(pwt->wt_mutex);
   free(pwt);
 
-  if(pJobID == NULL) return;
+  if (pJobID == NULL)
+    return;
 
   pthread_mutex_lock(&jobsKilledMutex);
 
-  for(boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();i != jobsKilled.end();i++)
+  for (boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();i != jobsKilled.end();i++)
     {
-    if(i->compare(*pJobID) == 0)
+    if (i->compare(*pJobID) == 0)
       {
       jobsKilled.erase(i);
-      if(i == jobsKilled.end())
+      if (i == jobsKilled.end())
         {
         break;
         }
       }
     }
+
   pthread_mutex_unlock(&jobsKilledMutex);
 
   delete pJobID;
+  } /* END remove_job_from_already_killed_list() */
 
-  }
+
 
 /*
  * If a job is not supposed to be on a node and we have
@@ -695,9 +700,11 @@ bool job_should_be_killed(
     //Job should not be on the node, see if we have already sent a kill for this job.
     pthread_mutex_lock(&jobsKilledMutex);
 
-    for(boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();(i != jobsKilled.end())&&(jobAlreadyKilled == false);i++)
+    for (boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();
+         (i != jobsKilled.end()) && (jobAlreadyKilled == false);
+         i++)
       {
-      if(i->compare(jobid) == 0)
+      if (i->compare(jobid) == 0)
         {
         jobAlreadyKilled = true;
         }
@@ -730,7 +737,7 @@ void *finish_job(
     return(NULL);
     }
   mutex_mgr job_mgr(pjob->ji_mutex,true);
-  job_mgr.set_lock_on_exit(false);
+  job_mgr.set_unlock_on_exit(false);
 
   free(jobid);
 
@@ -739,6 +746,7 @@ void *finish_job(
   svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
 
   handle_complete_first_time(pjob);
+  /* pjob->ji_mutex is always returned unlocked from handle_complete_first_time */
 
   return(NULL);
   } /* END finish_job() */
@@ -807,6 +815,95 @@ int remove_jobs_that_have_disappeared(
 
 
 /*
+ * is_jobid_in_mom()
+ * returns: true if jobid was found; false otherwise.
+ */
+bool is_jobid_in_mom(
+
+  const char *jobs,
+  const char *jobid)
+
+  {
+  char *joblist = strdup(jobs);
+  char *jobptr = joblist;
+  char *jobidstr = NULL;
+
+  jobidstr = threadsafe_tokenizer(&jobptr, (char *)" ");
+  while (jobidstr != NULL)
+    {
+    if (strcmp(jobid, jobidstr) == 0)
+      {
+      free(joblist);
+      return(true);
+      }
+
+    jobidstr = threadsafe_tokenizer(&jobptr, " ");
+    }
+
+  free(joblist);
+
+  return(false);
+  }
+
+
+
+/*
+ * sync_node_jobs_with_moms() - remove any jobs in the pbsnode (np) that was not
+ * reported by the mom that it's currently running in its status update.
+ */
+void sync_node_jobs_with_moms(
+
+  struct pbsnode *np,        /* I */
+  const char *jobs_in_mom)   /* I */
+
+  {
+  std::vector<std::string> jobsRemoveFromNode;
+  bool removealljobs = (strlen(jobs_in_mom) == 0);
+
+  for (int i = 0; i < (int)np->nd_job_usages.size(); i++)
+    {
+    bool removejob = false;
+    job_usage_info *jui = np->nd_job_usages[i];
+    char *jobid = jui->jobid;
+
+    if (!removealljobs)
+      {
+      char *p = strstr((char *)jobs_in_mom, jobid);
+      /* job is in the node but not in mom */
+      if (!p)
+        removejob = true;
+      else if (is_jobid_in_mom(jobs_in_mom, jobid) == false)
+        removejob = true;
+      }
+    if (removejob || removealljobs)
+      {
+      unlock_node(np, __func__, NULL, LOGLEVEL);
+      job *pjob = svr_find_job(jobid, TRUE);
+      lock_node(np, __func__, NULL, LOGLEVEL);
+      if (pjob)
+        unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+      else
+        jobsRemoveFromNode.push_back(std::string (jobid));
+      }
+    }
+
+  char log_buf[LOCAL_LOG_BUF_SIZE + 1];
+  for (std::vector<std::string>::iterator it = jobsRemoveFromNode.begin();
+             it != jobsRemoveFromNode.end(); it++)
+    {
+    snprintf(log_buf, sizeof(log_buf),
+      "Job %s was not reported in %s update status. Freeing job from node.", (*it).c_str(), np->nd_name);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    remove_job_from_node(np, (*it).c_str());
+    }
+  } /* end of sync_node_jobs_with_moms */
+
+
+
+
+
+
+/*
  * sync_node_jobs() - determine if a MOM has a stale job and possibly delete it
  *
  * This function is called every time we get a node stat from the pbs_mom.
@@ -829,6 +926,7 @@ void *sync_node_jobs(
   char                 *jobstring_in;
   char                 *joblist;
   char                 *jobidstr;
+  char                 *jobs_in_mom;
   long                  job_sync_timeout = JOB_SYNC_TIMEOUT;
 
   if (vp == NULL)
@@ -862,6 +960,7 @@ void *sync_node_jobs(
     }
 
   /* FORMAT <JOBID>[ <JOBID>]... */
+  jobs_in_mom = strdup(jobstring_in);
   joblist = jobstring_in;
   jobidstr = threadsafe_tokenizer(&joblist, (char *)" ");
 
@@ -893,7 +992,13 @@ void *sync_node_jobs(
 
   free(sji);
 
+  if (jobs_in_mom)
+    sync_node_jobs_with_moms(np, jobs_in_mom);
+
   unlock_node(np, __func__, NULL, LOGLEVEL);
+
+  if (jobs_in_mom)
+    free(jobs_in_mom);
 
   return(NULL);
   }  /* END sync_node_jobs() */
@@ -1083,37 +1188,11 @@ void stream_eof(
   }  /* END stream_eof() */
 
 
-int contact_node(
-    
-  struct pbsnode *np)
-
-  {
-  int conn;
-  int my_err = 0;
-  char local_buf[LOCAL_LOG_BUF_SIZE];
-  pbs_net_t addr;
-
-  /* the node is locked coming in. */
-  addr = get_hostaddr(&my_err, np->nd_name);
-  conn = svr_connect(addr, np->nd_mom_port, &my_err, np, NULL);
-  if (conn < 0)
-    {
-    snprintf(local_buf, sizeof(local_buf), "node %s is unresponsive. Check both the node and MOM", np->nd_name);  
-    log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, __func__, local_buf);
-    return(PBSE_NODE_DOWN);
-    }
-  unlock_node(np, __func__, "1", LOGLEVEL);
-  svr_disconnect(conn);
-  lock_node(np, __func__, "1", LOGLEVEL);
-
-  return(PBSE_NONE);
-
-  }
-
 
 /*
  * wrapper task that check_nodes places in the thread pool's queue
  */
+
 void *check_nodes_work(
 
   void *vp)
@@ -1125,7 +1204,6 @@ void *check_nodes_work(
   long              chk_len = 300;
   char              log_buf[LOCAL_LOG_BUF_SIZE];
   time_t            time_now = time(NULL);
-  int               rc;
 
   node_iterator     iter;
   
@@ -1157,29 +1235,16 @@ void *check_nodes_work(
           log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
           }
           
-        rc = contact_node(np);
-        if (rc != PBSE_NONE)
+        if (LOGLEVEL >= 0)
           {
-          if (LOGLEVEL >= 0)
-            {
-            sprintf(log_buf, "node %s not detected in %ld seconds, marking node down",
-              np->nd_name,
-              (long int)(time_now - np->nd_lastupdate));
-            
-            log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
-            }
-          
-          update_node_state(np, (INUSE_DOWN));    
-          }
-        else
-          
-        if (LOGLEVEL >= 6)
-          {
-          sprintf(log_buf, "MOM on node %s has responded and is still up",
-          np->nd_name);
+          sprintf(log_buf, "node %s not detected in %ld seconds, marking node down",
+            np->nd_name,
+            (long int)(time_now - np->nd_lastupdate));
           
           log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
           }
+        
+        update_node_state(np, (INUSE_DOWN));    
           
         /* The node is up. Do not mark the node down, but schedule a check_nodes */
         }
@@ -1676,76 +1741,6 @@ int gpu_entry_by_id(
 
   return (-1);
   }  /* END gpu_entry_by_id() */
-
-
-
-
-/*
- * checks if a node is ok for to reshuffle
- *
- * All parameters are exactly the same as search
- * @param pnode - the node we're looking at
- *
- * @return TRUE if the node is reshuffleable for search's purposes
- */
-int can_reshuffle(
-
-  struct pbsnode *pnode,
-  struct prop    *glorf,
-  int             skip,
-  int             vpreq,
-  int             gpureq,
-  int             pass)
-
-  {
-  char log_buf[LOCAL_LOG_BUF_SIZE];
-
-  if (pnode->nd_ntype == NTYPE_CLUSTER)
-    {
-    if (pnode->nd_flag != thinking)
-      {
-      /* only shuffle nodes which have been selected above */
-
-      return(FALSE);
-      }
-
-    if (pnode->nd_state & pass)
-      return(FALSE);
-
-    if (LOGLEVEL >= 6)
-      {
-      sprintf(log_buf,
-        "search(2): starting eval gpus on node %s need %d(%d) mode %d has %d free %d skip %d",
-        pnode->nd_name,
-        gpureq,
-        pnode->nd_ngpus_needed,
-        gpu_mode_rqstd,
-        pnode->nd_ngpus,
-        gpu_count(pnode, TRUE),
-        skip);
-
-       log_ext(-1, __func__, log_buf, LOG_DEBUG);
-       }
-
-    if ((skip == SKIP_EXCLUSIVE) && 
-        (vpreq < pnode->nd_slots.get_number_free()) &&
-        (gpureq < gpu_count(pnode, TRUE)))
-      return(FALSE);
-
-    if ((skip == SKIP_ANYINUSE) &&
-        (vpreq < pnode->nd_slots.get_number_free()) &&
-        (gpureq < gpu_count(pnode, TRUE)))
-      return(FALSE);
-
-    if (!hasprop(pnode, glorf))
-      return(FALSE);
-    }
-  else
-    return(FALSE);
-
-  return(TRUE);
-  } /* can_reshuffle() */
-
 
 
 
@@ -2598,7 +2593,15 @@ int add_login_node_if_needed(
     {
     if (login_prop != NULL)
       {
-      proplist(&login_prop, &prop, &dummy1, &dummy2, &dummy3);
+      if (proplist(&login_prop, &prop, &dummy1, &dummy2, &dummy3) != PBSE_NONE)
+        {
+        if (LOGLEVEL >= 3)
+          {
+          char log_buf[LOCAL_LOG_BUF_SIZE];
+          snprintf(log_buf, sizeof(log_buf), "Malformed property list '%s', continuing.", login_prop);
+          log_err(-1, __func__, log_buf);
+          }
+        }
       }
 
     if ((login = get_next_login_node(prop)) == NULL)
@@ -2673,7 +2676,8 @@ int node_spec(
   char               *EMsg,       /* O (optional,minsize=1024) */
   char               *login_prop, /* I (optional) */
   alps_req_data     **ard_array,  /* O (optional) */
-  int                *num_reqs)   /* O (optional) */
+  int                *num_reqs,   /* O (optional) */
+  enum job_types     &job_type)
 
   {
   struct pbsnode      *pnode;
@@ -2693,7 +2697,6 @@ int node_spec(
   char                *spec;
   char                *plus;
   long                 cray_enabled = FALSE;
-  enum job_types       job_type = JOB_TYPE_normal;
   int                  num_alps_reqs = 0;
 
   if (EMsg != NULL)
@@ -2710,6 +2713,8 @@ int node_spec(
 
     DBPRT(("%s\n", log_buf));
     }
+  
+  job_type = JOB_TYPE_normal;
 
   set_first_node_name(spec_param, first_node_name);
   get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
@@ -4081,6 +4086,8 @@ int build_hostlist_procs_req(
           host_info.push_back(node_info);
           node_info->port = pnode->nd_mom_rm_port;
           }
+        else
+          free(node_info);
         }
       } /* END for each node */
     } /* if (procs > 0) */
@@ -4161,9 +4168,11 @@ int add_multi_reqs_to_job(
   return(PBSE_NONE);
   } /* END add_multi_reqs_to_job() */
 
+
+
 int free_hostinfo(
 
-    std::vector<job_reservation_info *>  &host_info) /* O */
+  std::vector<job_reservation_info *>  &host_info) /* O */
 
   {
   for (unsigned int i = 0; i < host_info.size(); i++)
@@ -4216,6 +4225,7 @@ int set_nodes(
   alps_req_data     *ard_array = NULL;
   int                num_reqs = 0;
   long               cray_enabled = FALSE; 
+  enum job_types     job_type;
 
   int gpu_flags = 0;
 
@@ -4245,7 +4255,17 @@ int set_nodes(
     login_prop = pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str;
 
   /* allocate nodes */
-  if ((i = node_spec(spec, 1, 1, ProcBMStr, FailHost, naji, EMsg, login_prop, &ard_array, &num_reqs)) == 0)
+  if ((i = node_spec(spec,
+                     1,
+                     1,
+                     ProcBMStr,
+                     FailHost,
+                     naji,
+                     EMsg,
+                     login_prop,
+                     &ard_array,
+                     &num_reqs,
+                     job_type)) == 0)
     {
     /* no resources located, request failed */
     if (EMsg != NULL)
@@ -4273,11 +4293,13 @@ int set_nodes(
     free_alps_req_data_array(ard_array, num_reqs);
     return(PBSE_UNKNODE);
     }
-  
+ 
   get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
   if (cray_enabled == TRUE)
     {
-    if (naji->next != NULL)
+    // JOB_TYPE_normal means no component from the Cray will be used
+    if ((job_type != JOB_TYPE_normal) && 
+        (naji->next != NULL))
       {
       pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str = strdup(naji->node_name);
       pjob->ji_wattr[JOB_ATR_login_node_id].at_flags = ATR_VFLAG_SET;
@@ -4331,12 +4353,7 @@ int set_nodes(
 
   pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HasNodes;  /* indicate has nodes */
 
-  /* add this job to ms's job list --not used right now, will be debugged later */
-  /*add_to_ms_list(hlist->name, pjob);*/
-
-
   /* build list of allocated nodes, gpus, and ports */
-/*  if ((rc = translate_howl_to_string(hlist, EMsg, &NCount, rtnlist, rtnportlist, TRUE)) != PBSE_NONE) */
   rc = translate_job_reservation_info_to_string(host_info, &NCount, exec_hosts, &exec_ports);
   if (rc != PBSE_NONE)
     {
@@ -4348,7 +4365,9 @@ int set_nodes(
   *rtnlist = strdup(exec_hosts.str().c_str());
   *rtnportlist = strdup(exec_ports.str().c_str());
 
-  if (cray_enabled == TRUE)
+  // JOB_TYPE_normal means no component from the Cray will be used
+  if ((cray_enabled == TRUE) &&
+      (job_type != JOB_TYPE_normal))
     {
     char *plus = strchr(*rtnlist, '+');
 
@@ -4584,9 +4603,10 @@ int node_avail_complex(
   int  *ndown)  /* O - number down      */
 
   {
-  int ret;
+  int            ret;
+  enum job_types job_type;
 
-  ret = node_spec(spec, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+  ret = node_spec(spec, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, job_type);
 
   *navail = ret;
   *nalloc = 0;
@@ -4745,6 +4765,7 @@ int node_reserve(
   node_iterator      iter;
   char               log_buf[LOCAL_LOG_BUF_SIZE];
   node_job_add_info  *naji = NULL;
+  enum job_types      job_type;
 
   DBPRT(("%s: entered\n", __func__))
 
@@ -4757,7 +4778,7 @@ int node_reserve(
 
   naji = (node_job_add_info *)calloc(1, sizeof(node_job_add_info));
 
-  if ((ret_val = node_spec(nspec, 0, 0, NULL, NULL, naji, NULL, NULL, NULL, NULL)) >= 0)
+  if ((ret_val = node_spec(nspec, 0, 0, NULL, NULL, naji, NULL, NULL, NULL, NULL, job_type)) >= 0)
     {
     /*
     ** Zero or more of the needed Nodes are available to be
@@ -4910,7 +4931,7 @@ int remove_job_from_nodes_gpus(
 int remove_job_from_node(
 
   struct pbsnode *pnode,
-  job            *pjob)
+  const char     *jobid)
 
   {
   char log_buf[LOCAL_LOG_BUF_SIZE];
@@ -4919,7 +4940,7 @@ int remove_job_from_node(
     {
     job_usage_info *jui = pnode->nd_job_usages[i];
 
-    if (!strcmp(jui->jobid, pjob->ji_qs.ji_jobid))
+    if (!strcmp(jui->jobid, jobid))
       {
       pnode->nd_slots.unreserve_execution_slots(jui->est);
       pnode->nd_job_usages.erase(pnode->nd_job_usages.begin() + i);
@@ -4991,7 +5012,7 @@ void free_nodes(
 
     if ((pnode = find_nodebyname(hostname)) != NULL)
       {
-      remove_job_from_node(pnode, pjob);
+      remove_job_from_node(pnode, pjob->ji_qs.ji_jobid);
       remove_job_from_nodes_gpus(pnode, pjob);
       remove_job_from_nodes_mics(pnode, pjob);
       unlock_node(pnode, __func__, NULL, LOGLEVEL);
@@ -5004,7 +5025,7 @@ void free_nodes(
     {
     if ((pnode = find_nodebyname(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str)) != NULL)
       {
-      remove_job_from_node(pnode, pjob);
+      remove_job_from_node(pnode, pjob->ji_qs.ji_jobid);
       unlock_node(pnode, __func__, NULL, LOGLEVEL);
       }
     }

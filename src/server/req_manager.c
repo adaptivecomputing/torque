@@ -136,7 +136,6 @@
 #include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
 #include "queue_func.h" /* find_queuebyname, que_alloc, que_free */
 #include "queue_recov.h" /* que_save */
-#include "svr_task.h"
 #include "mutex_mgr.hpp"
 
 
@@ -984,7 +983,7 @@ void mgr_queue_create(
     reply_badattr(rc, bad, plist, preq);
 
     que_free(pque, FALSE);
-    que_mgr.set_lock_on_exit(false);
+    que_mgr.set_unlock_on_exit(false);
     }
   else
     {
@@ -1059,7 +1058,7 @@ void mgr_queue_delete(
     req_reject(rc, 0, preq, NULL, NULL);
     return;
     }
-  pque_mutex.set_lock_on_exit(false);
+  pque_mutex.set_unlock_on_exit(false);
 
   svr_save(&server, SVR_SAVE_QUICK);
 

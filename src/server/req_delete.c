@@ -113,11 +113,10 @@
 #include "utils.h"
 #include "svr_func.h" /* get_svr_attr_* */
 #include "job_func.h" /* svr_job_purge */
-#include "svr_task.h"
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
 #include "threadpool.h"
-#include "svr_task.h"
+#include "req_delete.h"
 #include <string>
 
 #define PURGE_SUCCESS 1
@@ -131,6 +130,7 @@ extern char *msg_delrunjobsig;
 extern char *msg_manager;
 extern char *msg_permlog;
 extern char *msg_badstate;
+extern char server_host[];
 
 extern struct server server;
 extern int   LOGLEVEL;
@@ -145,12 +145,12 @@ void post_delete_mom1(batch_request *);
 void post_delete_mom2(struct work_task *);
 int forced_jobpurge(job *,struct batch_request *);
 void job_delete_nanny(struct work_task *);
+int apply_job_delete_nanny(job *pjob, int  delay);
 void post_job_delete_nanny(batch_request *);
 void purge_completed_jobs(struct batch_request *);
 
 /* Public Functions in this file */
 
-int  apply_job_delete_nanny(struct job *, int);
 void change_restart_comment_if_needed(struct job *);
 
 /* Private Data Items */
@@ -345,7 +345,20 @@ void force_purge_work(
   svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
   
   if (pjob != NULL)
-    svr_job_purge(pjob);
+    {
+    if (is_ms_on_server(pjob))
+      {
+      char  log_buf[LOCAL_LOG_BUF_SIZE];
+      if (LOGLEVEL >= 7)
+        {
+        snprintf(log_buf, sizeof(log_buf), "Mother Superior is on the server, not cleaning spool files in %s", __func__);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        }
+      svr_job_purge(pjob, 1);
+      }
+    else
+      svr_job_purge(pjob);
+    }
   } /* END force_purge_work() */
 
 
@@ -570,7 +583,7 @@ jump:
       log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
       }
     else
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
 
     return(-1);
     }  /* END if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) */
@@ -601,7 +614,7 @@ jump:
 
       if (pjob == NULL)
         {
-        job_mutex.set_lock_on_exit(false);
+        job_mutex.set_unlock_on_exit(false);
         return(-1);
         }
       std::string dup_job_id(pjob->ji_qs.ji_jobid);
@@ -660,7 +673,7 @@ jump:
 
   if (pjob == NULL)
     {
-    job_mutex.set_lock_on_exit(false);
+    job_mutex.set_unlock_on_exit(false);
     return -1;
     }
 
@@ -683,14 +696,19 @@ jump:
     }
   else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)
     {
-    job_mutex.set_lock_on_exit(false);
-    return -1;
+    /* job has staged-in file, should remove them */
+    remove_stagein(&pjob);
+
+    job_mutex.set_unlock_on_exit(false);
+
+    if (pjob != NULL)
+      job_abt(&pjob, Msg);
     }
 
   delete_inactive_job(&pjob, Msg);
 
   if (pjob == NULL)
-    job_mutex.set_lock_on_exit(false);
+    job_mutex.set_unlock_on_exit(false);
 
   return(PBSE_NONE);
   } /* END execute_job_delete() */
@@ -887,7 +905,7 @@ void *delete_all_work(
     if ((rc = forced_jobpurge(pjob, preq_dup)) == PURGE_SUCCESS)
       {
       // want to leave lock in place after exiting
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
 
       continue;
       }
@@ -913,7 +931,7 @@ void *delete_all_work(
       if ((rc = execute_job_delete(pjob, Msg, preq_dup)) == PBSE_NONE)
         {
         // execute_job_delete() handles mutex so don't unlock on exit
-        job_mutex.set_lock_on_exit(false);
+        job_mutex.set_unlock_on_exit(false);
         reply_ack(preq_dup);
         }
        
@@ -1004,7 +1022,9 @@ void *single_delete_work(
   job             *pjob;
   char            *Msg = preq->rq_extend;
 
-  pjob = svr_find_job(jobid, FALSE);
+  // TRUE is the same for non-heterogeneous jobs as FALSE. For heterogeneous
+  // jobs simply delete one to trigger the other being deleted as well.
+  pjob = svr_find_job(jobid, TRUE);
 
   if (pjob == NULL)
     {
@@ -1315,7 +1335,7 @@ void post_delete_mom1(
 
       set_resc_assigned(pjob, DECR);
 
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
 
       svr_job_purge(pjob);
 
@@ -1354,7 +1374,7 @@ void post_delete_mom1(
       }
     else if (pjob == NULL)
       {
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
       return;
       }
     }
@@ -1411,7 +1431,7 @@ void post_delete_mom2(
       }
     
     if (pjob == NULL)
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
     }
   }  /* END post_delete_mom2() */
 
@@ -1578,7 +1598,7 @@ void job_delete_nanny(
         if (pjob != NULL)
           apply_job_delete_nanny(pjob, time_now + 60);
         else
-          job_mutex.set_lock_on_exit(false);
+          job_mutex.set_unlock_on_exit(false);
         }
       }
     else
@@ -1657,7 +1677,7 @@ void post_job_delete_nanny(
   
     free_br(preq_sig);
 
-    job_mutex.set_lock_on_exit(false);
+    job_mutex.set_unlock_on_exit(false);
 
     svr_job_purge(pjob);
 
@@ -1746,6 +1766,38 @@ void purge_completed_jobs(
 
   return;
   } /* END purge_completed_jobs() */
+
+
+/*
+ * is_ms_on_server() determines whether the mother superior
+ * is on the pbs_server or not.
+ */
+int is_ms_on_server(const job *pjob)
+  {
+  char mom_fullhostname[PBS_MAXHOSTNAME + 1];
+  int ms_on_server = 0;
+
+  char *exec_hosts = pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str;
+  if (exec_hosts)
+    {
+    char *host_tok = threadsafe_tokenizer(&exec_hosts, "+");
+    if (host_tok)
+      {
+      char *slash;
+      if ((slash = strchr(host_tok, '/')) != NULL)
+        *slash = '\0';
+
+      snprintf(mom_fullhostname, sizeof(mom_fullhostname), "%s", host_tok);
+
+      if (strstr(server_host, "."))
+        if (strstr(host_tok, ".") == NULL)
+          get_fullhostname(host_tok, mom_fullhostname, sizeof(mom_fullhostname), NULL);
+
+      ms_on_server = strcmp(server_host, mom_fullhostname) == 0;
+      }
+    }
+  return ms_on_server;
+  } /* is_ms_on_server */
 
 /* END req_delete.c */
 

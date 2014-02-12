@@ -249,7 +249,7 @@ int req_holdjob(
       req_reject(rc, 0, preq, NULL, "relay to mom failed");
 
       if (pjob == NULL)
-        job_mutex.set_lock_on_exit(false);
+        job_mutex.set_unlock_on_exit(false);
       }
     else
       {
@@ -268,7 +268,7 @@ int req_holdjob(
         reply_ack(preq);
         }
       else
-        job_mutex.set_lock_on_exit(false);
+        job_mutex.set_unlock_on_exit(false);
 
       process_hold_reply(dup_req);
       }
@@ -358,7 +358,7 @@ void *req_checkpointjob(
       free_br(dup_req);
 
       if (pjob == NULL)
-        job_mutex.set_lock_on_exit(false);
+        job_mutex.set_unlock_on_exit(false);
       }
     else
       {
@@ -372,7 +372,7 @@ void *req_checkpointjob(
         pjob = NULL;
         }
       else
-        job_mutex.set_lock_on_exit(false);
+        job_mutex.set_unlock_on_exit(false);
 
       process_checkpoint_reply(dup_req);
       }
@@ -404,7 +404,7 @@ int release_job(
 
   {
   long           old_hold;
-  int            rc = 0;
+  int            rc = PBSE_NONE;
   int            newstate;
   int            newsub;
   char          *pset;
@@ -412,6 +412,10 @@ int release_job(
   char           log_buf[LOCAL_LOG_BUF_SIZE];
 
   pbs_attribute  temphold;
+
+  // this function is meaningless for jobs in exiting or completed
+  if (pjob->ji_qs.ji_state > JOB_STATE_RUNNING)
+    return(PBSE_NONE);
 
   /* cannot do anything until we decode the holds to be set */
 

@@ -74,7 +74,7 @@ int job_save(job *pjob, int updatetype, int mom_port)
   return(0);
   }
 
-int svr_job_purge(job *pjob)
+int svr_job_purge(job *pjob, int leaveSpoolFiles)
   {
   fprintf(stderr, "The call to job_purge to be mocked!!\n");
   exit(1);
@@ -382,4 +382,10 @@ int encode_exec_host(pbs_attribute *attr, tlist_head *phead, const char *atname,
 char *pbs_geterrmsg(int con)
   {
   return(strdup("err"));
+  }
+
+int ctnodes(char *spec)
+  {
+  fprintf(stderr, "The call to ctnodes needs to be mocked!!\n");
+  return(1);
   }
