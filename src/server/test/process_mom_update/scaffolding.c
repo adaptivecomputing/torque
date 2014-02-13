@@ -268,7 +268,7 @@ int gpu_has_job(
 int gpu_entry_by_id(
 
   struct pbsnode *pnode,  /* I */
-  const char     *gpuid,
+  char     *gpuid,
   int             get_empty)
 
   {

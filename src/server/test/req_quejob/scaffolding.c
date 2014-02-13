@@ -378,4 +378,15 @@ int decrement_queued_jobs(user_info_holder *uih, char *a)
   return(0);
   }
 
+char *add_std_filename(
 
+  job            *pjob,
+  char           *path,
+  int             key,
+  dynamic_string *ds)
+
+  {
+  return(strdup("stdfilename"));
+  }
+
+char *prefix_std_file(job *pjob, dynamic_string *ds, int key) {return (char *)"prefix";}

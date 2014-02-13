@@ -41,3 +41,8 @@ int start_listener(const char *server_ip, int server_port, void *(*process_meth)
   return(0);
   }
 
+int atexit (void (*__func) (void)) throw()
+  {
+  return 0;
+  }
+

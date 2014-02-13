@@ -46,3 +46,10 @@ int get_svr_attr_l(int index, long *l)
   {
   return(0);
   }
+
+void log_event(int eventtype, int objclass, const char *objname, const char *text)
+  {
+  fprintf(stderr, "The call to log_event needs to be mocked!!\n");
+  exit(1);
+  }
+

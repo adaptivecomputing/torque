@@ -46,7 +46,7 @@ int svr_connect(
 int gpu_entry_by_id(
 
   struct pbsnode *pnode,  /* I */
-  const char     *gpuid,
+  char     *gpuid,
   int             get_empty)
   
   {
@@ -83,3 +83,4 @@ struct pbsnode *find_nodebyname(const char *node_id)
 void log_err(int errno, const char *caller, const char *msg) {}
 
 unsigned int pbs_mom_port = 0;
+

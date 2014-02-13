@@ -97,7 +97,7 @@ void req_reject(int code, int aux, struct batch_request *preq, const char *HostN
   exit(1);
   }
 
-const char *prefix_std_file(job *pjob, std::string& ds, int key) {return "prefix";}
+char *prefix_std_file(job *pjob, dynamic_string *ds, int key) {return (char *)"prefix";}
 
 int attr_atomic_set(struct svrattrl *plist, pbs_attribute *old, pbs_attribute *new_attr, attribute_def *pdef, int limit, int unkn, int privil, int *badattr)
   {

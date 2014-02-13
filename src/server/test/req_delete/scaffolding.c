@@ -18,6 +18,7 @@ const char *msg_delrunjobsig = "Job sent signal %s on delete";
 struct server server;
 const char *msg_manager = "%s at request of %s@%s";
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
+char *server_host;
 
 
 struct batch_request *alloc_br(int type)
@@ -253,3 +254,15 @@ void traverse_all_jobs(void (*)(const char *, void*), void*)
 void removeAfterAnyDependency(const char *, void*)
 {
 }
+
+int get_fullhostname( char *shortname, char *namebuf, int bufsize, char *EMsg)
+  {
+  fprintf(stderr, "The call to get_fullhostname needs to be mocked!!\n");
+  exit(1);
+  }
+void removeBeforeAnyDependencies(const char *pJId)
+  {
+  fprintf(stderr, "The call to %s needs to be mocked!!\n",__func__);
+  exit(1);
+  }
+
