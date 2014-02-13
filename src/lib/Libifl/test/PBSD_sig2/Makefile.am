@@ -10,6 +10,7 @@ check_PROGRAMS = test_PBSD_sig2
 
 libPBSD_sig2_la_SOURCES = scaffolding.c ${PROG_ROOT}/PBSD_sig2.c
 libPBSD_sig2_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
+test_PBSD_sig2_LDADD = ../../../../test/torque_test_lib/libtorque_test.la ../../../../test/scaffold_fail/libscaffold_fail.la
 
 test_PBSD_sig2_SOURCES = test_PBSD_sig2.c
 

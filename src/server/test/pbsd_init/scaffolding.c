@@ -20,6 +20,8 @@
 #include "user_info.h"
 #include "hash_map.h"
 
+
+pthread_mutex_t       task_list_timed_mutex;
 int scheduler_sock=0;
 int scheduler_jobct = 0;
 bool auto_send_hierarchy = true;

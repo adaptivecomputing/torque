@@ -224,3 +224,9 @@ svrattrl *attrlist_create(const char *aname, const char *rname, int vsize)
   {
   return(NULL);
   }
+
+int comp_nodestr(pbs_attribute *attr, pbs_attribute *with)
+  {
+  fprintf(stderr, "The call to %s needs to be mocked!!\n",__func__);
+  exit(1);
+  }
