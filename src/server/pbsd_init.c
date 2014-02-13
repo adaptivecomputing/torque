@@ -1611,18 +1611,17 @@ int handle_array_recovery(
 
 /* jobid_to_long takes a character string with a job id.
    The format of the job id is expected to be <number>.<string>[.<string>...]
-   If a number is not found then -1 is returned.
+   If a format other than a TORQUE job id is passed in the results
+   are undefined.
 */
 long jobid_to_long(
     
-  const char *ji_jobid)
+  std::string jid)
 
   {
-  std::string  jid;
   std::size_t  jid_delim;
   long         value;
 
-  jid = ji_jobid;
   jid_delim = jid.find_first_of(".");
   if (jid_delim != std::string::npos)
     {
@@ -1630,10 +1629,56 @@ long jobid_to_long(
     value = atol(jid.c_str());
     }
   else
-    value = -1;
+    value = atol(jid.c_str());
 
   return(value);
   }
+
+bool is_array_job(std::string jid)
+  {
+  std::size_t jid_delim;
+
+  jid_delim = jid.find_first_of("[");
+  if (jid_delim == std::string::npos)
+    return(false);
+
+  return(true);
+  }
+
+struct sort_string_by_number
+  {
+  bool operator()(const std::string& a, const std::string& b) const
+    {
+    long value_a;
+    long value_b;
+
+    value_a = jobid_to_long(a);
+    value_b = jobid_to_long(b);
+
+    /* See if this is an array job */
+    if (is_array_job(a) == true)
+      {
+      /* is b from the same array */
+      if (value_a == value_b)
+        {
+        /* if string a is shorter than string b it is smaller numerically */
+        if (a.length() < b.length())
+          return(true);
+
+        /* if b is shorter than a then b is smaller numerically */
+        if (b.length() < a.length())
+          return(false);
+
+        /* If we are here the strings are the same length and we can
+           return the lexical order */
+        return a < b;
+        }
+      }
+
+    return value_a < value_b;
+    }
+  };
+
 
 
 int handle_job_recovery(
@@ -1696,7 +1741,7 @@ int handle_job_recovery(
     }
   else
     {
-    std::map<long, job *> Array;
+    std::map<std::string, job *, sort_string_by_number> Array;
     /* Now, for each job found ... */
 
     while ((pdirent = readdir(dir)) != NULL)
@@ -1719,20 +1764,10 @@ int handle_job_recovery(
           {
           if ((pjob = job_recov(pdirent->d_name)) != NULL)
             {
-            long  jobid;
             pjob->ji_is_array_template = TRUE;
 
 
-            jobid = jobid_to_long(pjob->ji_qs.ji_jobid);
-            if (jobid != -1)
-              Array[jobid] = pjob;
-            else
-              {
-              unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-              job_free(pjob, FALSE);
-              continue;
-              }
-
+            Array[pjob->ji_qs.ji_jobid] = pjob;
 
             if (type == RECOV_COLD)
               pjob->ji_cold_restart = TRUE;
@@ -1748,17 +1783,7 @@ int handle_job_recovery(
 
         if ((pjob = job_recov(pdirent->d_name)) != NULL)
           {
-          long  jobid;
-
-          jobid = jobid_to_long(pjob->ji_qs.ji_jobid);
-          if (jobid != -1)
-            Array[jobid] = pjob;
-          else
-            {
-            unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-            job_free(pjob, FALSE);
-            continue;
-            }
+          Array[pjob->ji_qs.ji_jobid] = pjob;
 
           if (type == RECOV_COLD)
             pjob->ji_cold_restart = TRUE;
@@ -1791,8 +1816,7 @@ int handle_job_recovery(
     closedir(dir);
 
     int Index = 0;
-    std::map<long, job *>::iterator iter;
-    /*for (Index = 0; Index < Array.AppendIndex; Index++)*/
+    std::map<std::string, job *>::iterator iter;
     for (iter = Array.begin(); iter != Array.end(); iter++)
       {
       job *pjob = iter->second;
