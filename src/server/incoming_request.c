@@ -138,7 +138,7 @@ int process_pbs_server_port(
       // don't let this get cleaned up below
       chan = NULL;
       
-      enqueue_threadpool_request(svr_is_request, isr, mom_pool);
+      svr_is_request(isr);
       
       break;
       }

@@ -2060,9 +2060,8 @@ void setup_threadpool()
   min_threads /= 3;
   max_threads /= 3;
   
-  initialize_threadpool(&request_pool, min_threads, max_threads, thread_idle_time);
+  initialize_threadpool(&request_pool, 2 * min_threads, 2 * max_threads, thread_idle_time);
   initialize_threadpool(&task_pool, min_threads, max_threads, thread_idle_time);
-  initialize_threadpool(&mom_pool, min_threads, max_threads, thread_idle_time);
   } /* END setup_threadpool() */
 
 
@@ -2167,7 +2166,6 @@ int pbsd_init(
     /* allow the threadpool to start processing */
     start_request_pool(request_pool);
     start_request_pool(task_pool);
-    start_request_pool(mom_pool);
 
     /* SUCCESS */
     return(PBSE_NONE);

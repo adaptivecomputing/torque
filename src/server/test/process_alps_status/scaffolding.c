@@ -34,7 +34,7 @@
   c ^= b; c -= rot(b,24); \
   }
 
-threadpool_t *mom_pool;
+threadpool_t *task_pool;
 char log_buffer[LOG_BUF_SIZE];
 int count;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */

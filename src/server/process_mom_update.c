@@ -748,7 +748,7 @@ int process_status_info(
         sji->timestamp = time(NULL);
 
         /* sji must be freed in sync_node_jobs */
-        enqueue_threadpool_request(sync_node_jobs, sji, mom_pool);
+        enqueue_threadpool_request(sync_node_jobs, sji, task_pool);
         }
       else
         {
