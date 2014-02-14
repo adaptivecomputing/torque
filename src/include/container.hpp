@@ -34,7 +34,8 @@ public:
 	item(const char *idString,T p):id(idString),ptr(p){}
     bool operator == (const item& rhs) const
     {
-    	return id == rhs.id;
+        if(&rhs == NULL) return false; //It is possible to get a reference to a null address.
+        return id == rhs.id;
     }
     std::string idString() const
     {
