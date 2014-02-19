@@ -3736,7 +3736,9 @@ void add_variable_list(
   int       pos = 0;
   char     *var_list = NULL;
   job_data *en;
+  src_hash->lock();
   job_data_iterator *it = ((src_hash == NULL)?NULL:src_hash->get_iterator());
+  src_hash->unlock();
   job_data *v_value = NULL;
 
   /* if -v was used then it needs to be included as well. */
@@ -3760,6 +3762,7 @@ void add_variable_list(
 
   if(it != NULL)
     {
+    src_hash->lock();
     while((en = it->get_next_item()) != NULL)
       {
       pos++;
@@ -3774,6 +3777,7 @@ void add_variable_list(
         strcat(var_list, ",");
         }
       }
+    src_hash->unlock();
     }
 
   hash_add_or_exit(ji->job_attr, var_name, var_list, CMDLINE_DATA);

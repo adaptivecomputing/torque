@@ -1693,10 +1693,18 @@ int chk_svr_resc_limit(
   get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
   /* If we restart pbs_server while the cray is down, pbs_server won't know about
    * the computes. Don't perform this check for this case. */
+  if(alps_reporter != NULL)
+    {
+    alps_reporter->alps_subnodes->lock();
+    }
   if ((cray_enabled != TRUE) || 
       (alps_reporter == NULL) ||
       (alps_reporter->alps_subnodes->count() != 0))
     {
+    if(alps_reporter != NULL)
+      {
+      alps_reporter->alps_subnodes->unlock();
+      }
     if (cray_enabled == TRUE)
       {
       if (mppnodect_resource != NULL)
@@ -1809,6 +1817,11 @@ int chk_svr_resc_limit(
       }
 #endif
     } /* END not cray or cray and reporter is up */
+  else if(alps_reporter != NULL)
+    {
+    alps_reporter->alps_subnodes->lock();
+    }
+
 
   if (MPPWidth > 0)
     {

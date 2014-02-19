@@ -82,10 +82,12 @@ int insert_into_queue_recycler(
   sprintf(pq->qu_qs.qu_name,"%d",q_recycler.next_id);
   pq->q_being_recycled = TRUE;
 
+  q_recycler.queues.lock();
   if (q_recycler.queues.count() >= MAX_RECYCLE_QUEUES)
     {
     enqueue_threadpool_request(remove_some_recycle_queues,NULL);
     }
+  q_recycler.queues.unlock();
 
   rc = insert_queue(&q_recycler.queues,pq);
 
