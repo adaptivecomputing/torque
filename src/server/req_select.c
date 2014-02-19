@@ -399,17 +399,36 @@ static void sel_step3(
     if (!strncmp(preq->rq_extend, EXECQUEONLY, strlen(EXECQUEONLY)))
       exec_only = 1;
 
-  if (cntl->sc_pque)
+  if(summarize_arrays)
     {
-    cntl->sc_pque->qu_jobs_array_sum->lock();
-    iter = cntl->sc_pque->qu_jobs_array_sum->get_iterator();
-    cntl->sc_pque->qu_jobs_array_sum->unlock();
+    if (cntl->sc_pque)
+      {
+      cntl->sc_pque->qu_jobs_array_sum->lock();
+      iter = cntl->sc_pque->qu_jobs_array_sum->get_iterator();
+      cntl->sc_pque->qu_jobs_array_sum->unlock();
+      }
+    else
+      {
+      array_summary.lock();
+      iter = array_summary.get_iterator();
+      array_summary.unlock();
+      }
     }
   else
     {
-    array_summary.lock();
-    iter = array_summary.get_iterator();
-    array_summary.unlock();
+    if (cntl->sc_pque)
+      {
+      cntl->sc_pque->qu_jobs->lock();
+      iter = cntl->sc_pque->qu_jobs->get_iterator();
+      cntl->sc_pque->qu_jobs->unlock();
+      }
+    else
+      {
+      alljobs.lock();
+      iter = alljobs.get_iterator();
+      alljobs.unlock();
+      }
+
     }
 
 
