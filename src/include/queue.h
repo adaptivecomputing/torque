@@ -240,7 +240,9 @@ class queue_recycler
     pthread_mutexattr_t t_attr;
     pthread_mutexattr_init(&t_attr);
     pthread_mutexattr_settype(&t_attr, PTHREAD_MUTEX_NORMAL);
+    queues.lock();
     iter = queues.get_iterator();
+    queues.unlock();
     pthread_mutex_init(mutex,&t_attr);
     }
 

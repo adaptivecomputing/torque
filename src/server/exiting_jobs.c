@@ -115,8 +115,13 @@ int record_job_as_exiting(
   strcpy(jeri->jobid, pjob->ji_qs.ji_jobid);
   jeri->last_attempt = time(NULL);
 
+  exiting_jobs_info.lock();
   if(!exiting_jobs_info.insert(jeri,jeri->jobid))
+    {
+    exiting_jobs_info.unlock();
     return ENOMEM;
+    }
+  exiting_jobs_info.unlock();
   return PBSE_NONE;
   } /* END record_job_as_exiting() */
 

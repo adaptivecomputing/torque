@@ -120,6 +120,7 @@ int build_var_list(
 
   {
   job_data *atr;
+  attrs->lock();
   job_data_iterator *it = attrs->get_iterator();
   int       item_count = 0;
   int       preexisting_var_list = FALSE;
@@ -147,7 +148,9 @@ int build_var_list(
       var_list += atr->name;
       var_list += '=';
       var_list += atr->value;
+      attrs->unlock();
       hash_del_item(attrs, atr->name.c_str());
+      attrs->lock();
       }
     else if (strcmp(atr->name.c_str(), ATTR_v) == 0)
       {
@@ -163,6 +166,7 @@ int build_var_list(
     }
 
   delete it;
+  attrs->unlock();
 
   if (preexisting_var_list == TRUE)
     {
@@ -186,6 +190,7 @@ int encode_DIS_attropl_hash_single(
   unsigned int     len;
   unsigned int     attr_len = 0;
   job_data          *atr;
+  attrs->lock();
   job_data_iterator *it = attrs->get_iterator();
 
   if (is_res)
@@ -232,6 +237,7 @@ int encode_DIS_attropl_hash_single(
     }
 
   delete it;
+  attrs->unlock();
 
   return rc;
   } /* END enode_DIS_attropl_hash_single() */

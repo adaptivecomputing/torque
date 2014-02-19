@@ -27,7 +27,9 @@ START_TEST(test_one)
 
   strcpy(j.ji_qs.ji_jobid,"SomeJob");
   strcpy(j.ji_qs.ji_fileprefix,"prefix");
+  newjobs.lock();
   newjobs.insert(&j,j.ji_qs.ji_jobid);
+  newjobs.unlock();
 
   fail_unless(req_jobcredential(&req) == PBSE_NONE);
 

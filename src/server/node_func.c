@@ -343,10 +343,12 @@ struct pbsnode *find_nodebyname(
         {
         lock_node(alps_reporter, __func__, NULL, LOGLEVEL);
         
+        alps_reporter->alps_subnodes->lock();
         if ((pnode = (struct pbsnode *)alps_reporter->alps_subnodes->find(nodename)) != NULL)
           {
           lock_node(pnode, __func__, NULL, LOGLEVEL);
           }
+        alps_reporter->alps_subnodes->unlock();
 
         unlock_node(alps_reporter, __func__, NULL, LOGLEVEL);
         }
@@ -3488,10 +3490,6 @@ struct pbsnode *next_host(
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL input iter pointer");
     return(NULL);
     }
-  if(*iter == NULL)
-    {
-    *iter = an->get_iterator();
-    }
 
   if (an->trylock())
     {
@@ -3501,6 +3499,10 @@ struct pbsnode *next_host(
       unlock_node(held, __func__, NULL, LOGLEVEL);
       }
     an->lock();
+    }
+  if(*iter == NULL)
+    {
+    *iter = an->get_iterator();
     }
 
   pnode = (*iter)->get_next_item();

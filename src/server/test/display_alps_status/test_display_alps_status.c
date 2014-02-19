@@ -25,7 +25,9 @@ START_TEST(get_status_test)
     char id[10];
     struct pbsnode *pNd = (struct pbsnode *)calloc(1,sizeof(struct pbsnode));
     sprintf(id,"node_%d",i);
+    pnode.alps_subnodes->lock();
     pnode.alps_subnodes->insert(pNd,id);
+    pnode.alps_subnodes->unlock();
     }
   rc = get_alps_statuses(&pnode, &preq, &bad, &pstat);
 

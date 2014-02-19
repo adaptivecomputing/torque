@@ -22,9 +22,11 @@ int cray_enabled;
 
 void initialize_allnodes(all_nodes *an, struct pbsnode *n1, struct pbsnode *n2)
   {
+  an->lock();
   an->clear();
   if(n1 != NULL) an->insert(n1,n1->nd_name);
   if(n2 != NULL) an->insert(n2,n2->nd_name);
+  an->unlock();
   }
 
 
@@ -219,7 +221,9 @@ START_TEST(find_nodebyname_test)
   pnode = find_nodebyname(strdup("bob/0"));
   fail_unless(pnode == &node1, "couldn't find bob with the exec_host format");
 
+  allnodes.lock();
   allnodes.clear();
+  allnodes.unlock();
 
   cray_enabled = TRUE;
 
@@ -384,7 +388,9 @@ START_TEST(effective_node_delete_test)
   {
   struct pbsnode *node = NULL;
 
+  allnodes.lock();
   allnodes.clear();
+  allnodes.unlock();
 
   /*accidental null pointer delete call*/
   effective_node_delete(NULL);
@@ -699,7 +705,9 @@ START_TEST(create_partial_pbs_node_test)
   int result = -1;
   char name[] = "name";
 
+  allnodes.lock();
   allnodes.clear();
+  allnodes.unlock();
 
   result = create_partial_pbs_node(NULL, 0, 0);
   fail_unless(result != PBSE_NONE, "NULL input name fail");
@@ -718,7 +726,9 @@ START_TEST(next_node_test)
   memset(&it, 0, sizeof(it));
   it.node_index = NULL;
 
+  allnodes.lock();
   allnodes.clear();
+  allnodes.unlock();
 
   result = next_node(NULL, &node, &it);
   fail_unless(result == NULL, "NULL input all_nodes fail");
@@ -741,7 +751,9 @@ START_TEST(insert_node_test)
   struct pbsnode node;
   int result = -1;
 
+  test_all_nodes.lock();
   test_all_nodes.clear();
+  test_all_nodes.unlock();
   initialize_pbsnode(&node, NULL, NULL, 0, FALSE);
 
   result = insert_node(NULL, &node);
@@ -842,7 +854,9 @@ START_TEST(add_hello_after_test)
   result = add_hello_after(&container, (char *)strdup(node_name), 0);
   fail_unless(result == PBSE_NONE, "add_hello_after fail");
 
+  container.lock();
   container.clear();
+  container.unlock();
   add_hello(&container,strdup("first"));
   add_hello(&container,strdup("second"));
   add_hello(&container,strdup("third"));

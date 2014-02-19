@@ -11,9 +11,12 @@ int num_nodes = 10;
 struct pbsnode *next_host(all_nodes *an, all_nodes_iterator **iter, struct pbsnode *held)
   {
 
+  an->lock();
   if (*iter == NULL)
     *iter = an->get_iterator();
-  return (*iter)->get_next_item();
+  struct pbsnode *ret =  (*iter)->get_next_item();
+  an->unlock();
+  return ret;
   }
 
 int unlock_node(struct pbsnode *the_node, const char *method_name, const char *msg, int logging)

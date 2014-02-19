@@ -103,6 +103,7 @@ class job_info
 private:
   void clear_attr(job_data_container *attr)
   {
+  attr->lock();
   job_data_iterator *it = attr->get_iterator();
   job_data *item;
   while((item = it->get_next_item()) != NULL)
@@ -110,6 +111,7 @@ private:
     delete item;
     }
   attr->clear();
+  attr->unlock();
   delete attr;
   delete it;
   }

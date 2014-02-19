@@ -31,13 +31,17 @@ END_TEST
 START_TEST(get_num_queued_test)
   {
   unsigned int queued;
+  users.lock();
   users.clear();
+  users.unlock();
   user_info ui;
 
   ui.user_name = (char *)"tom";
   ui.num_jobs_queued = 1;
 
+  users.lock();
   users.insert(&ui,ui.user_name);
+  users.unlock();
 
   queued = get_num_queued(&users, "bob");
   fail_unless(queued == 0, "incorrect queued count for bob");
@@ -56,7 +60,9 @@ START_TEST(count_jobs_submitted_test)
   job          pjob;
 
   memset(&pjob, 0, sizeof(pjob));
+  users.lock();
   users.clear();
+  users.unlock();
 
   submitted = count_jobs_submitted(&pjob);
   fail_unless(submitted == 1, "incorrect count for non-array job");
@@ -74,6 +80,7 @@ START_TEST(can_queue_new_job_test)
   job pjob;
 
   memset(&pjob, 0, sizeof(pjob));
+  users.lock();
   users.clear();
 
   user_info *ui = (user_info *)calloc(1,sizeof(user_info));
@@ -89,6 +96,7 @@ START_TEST(can_queue_new_job_test)
   ui->num_jobs_queued = 0;
 
   users.insert(ui,ui->user_name);
+  users.unlock();
 
 
   fail_unless(can_queue_new_job((char *)"bob", &pjob) == TRUE, "user without a job can't queue one?");
@@ -107,6 +115,7 @@ START_TEST(increment_queued_jobs_test)
   job pjob;
 
   memset(&pjob, 0, sizeof(pjob));
+  users.lock();
   users.clear();
 
   user_info *ui = (user_info *)calloc(1,sizeof(user_info));
@@ -122,6 +131,7 @@ START_TEST(increment_queued_jobs_test)
   ui->num_jobs_queued = 0;
 
   users.insert(ui,ui->user_name);
+  users.unlock();
 
   fail_unless(increment_queued_jobs(&users, (char *)"tom", &pjob) == 0, "can't increment queued jobs");
   fail_unless(increment_queued_jobs(&users, (char *)"bob", &pjob) == 0, "can't increment queued jobs");
@@ -138,6 +148,7 @@ END_TEST
 
 START_TEST(decrement_queued_jobs_test)
   {
+  users.lock();
   users.clear();
   user_info *ui = (user_info *)calloc(1,sizeof(user_info));
 
@@ -145,6 +156,7 @@ START_TEST(decrement_queued_jobs_test)
   ui->num_jobs_queued = 1;
 
   users.insert(ui,ui->user_name);
+  users.unlock();
 
   fail_unless(decrement_queued_jobs(&users, (char *)"bob") == THING_NOT_FOUND, "decremented for non-existent user");
   fail_unless(decrement_queued_jobs(&users, (char *)"tom") == 0, "couldn't decrement for tom?");

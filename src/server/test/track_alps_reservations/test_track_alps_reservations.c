@@ -73,13 +73,17 @@ START_TEST(insert_create_inspect_test)
   pjob.ji_wattr[JOB_ATR_reservation_id].at_val.at_str = rsvids[0];
   pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = eh1;
 
+  alps_reservations.lock();
   alps_reservations.clear();
+  alps_reservations.unlock();
 
   fail_unless(track_alps_reservation(&pjob) == 0, "couldn't create the reservation");
+  alps_reservations.lock();
   fail_unless(alps_reservations.count() == 1, "incorrect count of reservations");
   pjob.ji_wattr[JOB_ATR_reservation_id].at_val.at_str = NULL;
   fail_unless(track_alps_reservation(&pjob) == 0, "track_alps_reservation failed with empty job");
   fail_unless(alps_reservations.count() == 1, "incorrect count after empty job");
+  alps_reservations.unlock();
 
   strcpy(pjob.ji_qs.ji_jobid, jobids[0]);
   pjob.ji_wattr[JOB_ATR_reservation_id].at_val.at_str = rsvids[1];

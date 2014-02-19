@@ -300,6 +300,7 @@ int insert_into_alljobs_by_rank(
 
   {
   job  *pjcur;
+  aj->lock();
   all_jobs_iterator  *iter = aj->get_iterator(true);
   long  job_qrank = pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long;
   std::string curJobid = "";
@@ -318,7 +319,8 @@ int insert_into_alljobs_by_rank(
     if (strcmp(jobid, pjcur->ji_qs.ji_jobid) == 0)
       {
       delete iter;
-     
+
+      aj->unlock();
       return(ALREADY_IN_LIST);
       }
     }
@@ -334,12 +336,14 @@ int insert_into_alljobs_by_rank(
     unlock_ji_mutex(pjcur, __func__, "8", LOGLEVEL);
     pjcur = NULL;
     }
+  aj->unlock();
 
   if ((pjob = svr_find_job(jobid, FALSE)) == NULL)
     {
     return(PBSE_JOBNOTFOUND);
     }
-  
+
+  aj->lock();
   if (curJobid.length() == 0)
     {
     /* link first in list */
@@ -350,6 +354,7 @@ int insert_into_alljobs_by_rank(
     /* link after 'current' job in list */
     aj->insert_after(curJobid, pjob,pjob->ji_qs.ji_jobid);
     }
+  aj->unlock();
 
   return(PBSE_NONE);
   } /* END insert_into_alljobs_by_rank() */
@@ -472,10 +477,12 @@ int svr_enquejob(
 
   if (!pjob->ji_is_array_template)
     {
+    alljobs.lock();
     if (prev_job_id == NULL)
       alljobs.insert(pjob,pjob->ji_qs.ji_jobid);
     else
       alljobs.insert_after(prev_job_id,pjob,pjob->ji_qs.ji_jobid);
+    alljobs.unlock();
 
     if (has_sv_qs_mutex == FALSE)
       {

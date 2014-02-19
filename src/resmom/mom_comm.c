@@ -8677,7 +8677,9 @@ received_node *get_received_node_entry(
   hostname = str + strlen("node=");
 
   /* get the old node for this table if present. If not, create a new one */
+  received_statuses.lock();
   rn = received_statuses.find(hostname);
+  received_statuses.unlock();
   
   if (rn == NULL)
     {
@@ -8705,12 +8707,14 @@ received_node *get_received_node_entry(
       }
 
     /* add the new node to the received status list */
+    received_statuses.lock();
     if(!received_statuses.insert(rn,rn->hostname))
       log_err(ENOMEM, __func__, "No memory to resize the received_statuses array...SYSTEM FAILURE\n");
     else
       {
       send_update_soon();
       }
+    received_statuses.unlock();
     }
   else
     {
