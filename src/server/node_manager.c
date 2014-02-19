@@ -2784,10 +2784,18 @@ int node_spec(
 #ifndef CRAY_MOAB_PASSTHRU
   /* If we restart pbs_server while the cray is down, pbs_server won't know about
    * the computes. Don't perform this check for this case. */
+  if(alps_reporter != NULL)
+    {
+    alps_reporter->alps_subnodes->lock();
+    }
   if ((cray_enabled != TRUE) || 
       (alps_reporter == NULL) ||
       (alps_reporter->alps_subnodes->count() != 0))
     {
+    if(alps_reporter != NULL)
+      {
+      alps_reporter->alps_subnodes->unlock();
+      }
     if (num > svr_clnodes)
       {
       /* FAILURE */
@@ -2811,6 +2819,11 @@ int node_spec(
       return(-1);
       }
     }
+  else if(alps_reporter != NULL)
+    {
+    alps_reporter->alps_subnodes->unlock();
+    }
+
 #endif
 
   if (LOGLEVEL >= 6)
