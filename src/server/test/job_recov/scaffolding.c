@@ -209,7 +209,14 @@ struct batch_request *setup_cpyfiles(struct batch_request *preq, job *pjob, char
 char *pbs_default(void) {return NULL;}
 pbs_net_t get_connectaddr(int sock, int mutex) {return -1;}
 void set_chkpt_deflt(job *pjob, pbs_queue *pque) {}
-int attr_to_str(std::string& ds, attribute_def *attr_def,struct pbs_attribute attr, bool XML) {return -1;}
+
+int attr_to_str(std::string& ds, attribute_def *attr_def,struct pbs_attribute attr, bool XML)
+  {
+  if (attr_def->at_type == ATR_TYPE_STR)
+    ds = attr.at_val.at_str;
+  return(0);
+  }
+
 void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}

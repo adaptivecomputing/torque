@@ -18,6 +18,48 @@ int fill_resource_list(job **pj, xmlNodePtr resource_list_node, char *log_buf, s
 
 char  server_name[] = "lei.ac";
 
+int add_encoded_attributes(xmlNodePtr *attr_node, pbs_attribute *pattr);
+
+START_TEST(test_add_encoded_attributes)
+  {
+  xmlNodePtr attr_node = xmlNewNode(NULL, (xmlChar *)ATTRIB_TAG);
+  pbs_attribute attributes[JOB_ATR_LAST];
+
+  memset(&attributes, 0, sizeof(attributes));
+  attributes[JOB_ATR_job_owner].at_flags |= ATR_VFLAG_SET;
+  attributes[JOB_ATR_job_owner].at_val.at_str = strdup("dbeer@napali");
+
+  add_encoded_attributes(&attr_node, attributes);
+  xmlNode *child = attr_node->children;
+
+  fail_unless(child != NULL);
+  fail_unless(!strcmp((const char *)child->name, ATTR_owner));
+  fail_unless(!strcmp((const char *)child->children->name, "text"));
+  fail_unless(!strcmp((const char *)child->children->content, "dbeer@napali"));
+  
+/*  save for later
+  attributes[JOB_ATR_resc_used].at_flags |= ATR_VFLAG_SET;
+  CLEAR_HEAD(attributes[JOB_ATR_resc_used].at_val.at_list);
+  resource walltime;
+  resource_def prd;
+  memset(&walltime, 0, sizeof(walltime));
+  CLEAR_LINK(walltime.rs_link);
+  append_link(&attributes[JOB_ATR_resc_used].at_val.at_list, &walltime.rs_link, &walltime);
+  walltime.rs_defin = &prd;
+  walltime.rs_value.at_type = ATR_TYPE_LONG;
+  walltime.rs_value.at_flags = 0;
+  walltime.rs_value.at_val.at_long = 600;
+  prd.rs_name = "walltime";
+  attributes[JOB_ATR_job_owner].at_flags = 0;
+  xmlNodePtr attr_node = xmlNewNode(NULL, (xmlChar *)ATTRIB_TAG);
+  add_encoded_attributes(&attr_node, attributes);
+  xmlNode *child = attr_node->children;
+
+  fail_unless(child != NULL);
+  fail_unless(!strcmp((const char *)child->name, ATTR_used)); */
+  }
+END_TEST
+
 void add_attr_to_list(tlist_head *atrlist, const char *attrname, size_t len, const char *value)
   {
   svrattrl *pal = (svrattrl *)attrlist_create((char *)attrname, 0, len);
@@ -243,6 +285,7 @@ Suite *job_recov_suite(void)
   TCase *tc_core = tcase_create("test_job_recover");
   tcase_add_test(tc_core, test_job_recover);
   tcase_add_test(tc_core, fill_resource_list_test);
+  tcase_add_test(tc_core, test_add_encoded_attributes);
   suite_add_tcase(s, tc_core);
 
   return s;
