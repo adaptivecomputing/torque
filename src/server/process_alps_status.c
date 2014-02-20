@@ -617,9 +617,11 @@ int process_alps_status(
       {
       const char *just_rsv_id = str + strlen(reservation_id);
 
+      rsv_ht.lock();
       if (rsv_ht.find(just_rsv_id) == NULL)
         {
         rsv_ht.insert(just_rsv_id,just_rsv_id);
+        rsv_ht.unlock();
 
         /* sub-functions will attempt to lock a job, so we must unlock the
          * reporter node */
@@ -654,6 +656,10 @@ int process_alps_status(
 
         free(current_node_id);
         current_node_id = NULL;
+        }
+      else
+        {
+        rsv_ht.unlock();
         }
       }
     /* save this as is to the status strings */

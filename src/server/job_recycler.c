@@ -136,7 +136,9 @@ void *remove_some_recycle_jobs(
 
   pthread_mutex_lock(recycler.rc_mutex);
 
+  recycler.rc_jobs.lock();
   iter = recycler.rc_jobs.get_iterator();
+  recycler.rc_jobs.unlock();
   for (i = 0; i < JOBS_TO_REMOVE; i++)
     {
     pjob = next_job_from_recycler(&recycler.rc_jobs,iter);
