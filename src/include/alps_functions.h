@@ -98,4 +98,4 @@ int create_alps_reservation(char *exec_hosts, char *username, char *jobid, char 
 
 int find_error_type(xmlNode *node);
 
-struct pbsnode *create_alps_subnode(struct pbsnode *parent, char *node_id);
+struct pbsnode *create_alps_subnode(struct pbsnode *parent, const char *node_id);

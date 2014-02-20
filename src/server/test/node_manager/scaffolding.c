@@ -441,7 +441,7 @@ int add_execution_slot(struct pbsnode *pnode)
 struct pbsnode *create_alps_subnode(
 
   struct pbsnode *parent,
-  char           *node_id)
+  const char     *node_id)
 
   {
   return(NULL);

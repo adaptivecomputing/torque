@@ -10,7 +10,7 @@ int set_ncpus(struct pbsnode *,struct pbsnode *, int);
 int set_ngpus(struct pbsnode *, int);
 int set_state(struct pbsnode *, char *);
 char *finish_gpu_status(char *str);
-struct pbsnode *create_alps_subnode(struct pbsnode *parent, char *node_id);
+struct pbsnode *create_alps_subnode(struct pbsnode *parent, const char *node_id);
 struct pbsnode *find_alpsnode_by_name(struct pbsnode *parent, char *node_id);
 struct pbsnode *determine_node_from_str(char *str, struct pbsnode *parent, struct pbsnode *current);
 int check_if_orphaned(void *str);
@@ -199,6 +199,8 @@ START_TEST(create_alps_subnode_test)
   struct pbsnode  parent;
   char           *node_id = (char *)"tom";
   struct pbsnode *subnode;
+  extern int      svr_clnodes;
+  int             start_clnodes_value = svr_clnodes;;
 
   memset(&parent, 0, sizeof(struct pbsnode));
 
@@ -210,6 +212,7 @@ START_TEST(create_alps_subnode_test)
   /* scaffolding makes it fail the second time */
   subnode = create_alps_subnode(&parent, node_id);
   fail_unless(subnode == NULL, "subnode isn't NULL when it should be");
+  fail_unless(start_clnodes_value + 2 <= svr_clnodes);
   }
 END_TEST
 
