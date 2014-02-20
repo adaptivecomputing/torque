@@ -117,6 +117,7 @@
 #include "mutex_mgr.hpp"
 #include "threadpool.h"
 #include "req_delete.h"
+#include "delete_all_tracker.hpp"
 #include <string>
 
 #define PURGE_SUCCESS 1
@@ -124,6 +125,8 @@
 #define ROUTE_DELETE  3
 
 /* Global Data Items: */
+
+delete_all_tracker qdel_all_tracker;
 
 extern char *msg_deletejob;
 extern char *msg_delrunjobsig;
@@ -659,7 +662,7 @@ jump:
 
             unlock_ji_mutex(tmp, __func__, "6", LOGLEVEL);
             }
-          if((pjob = svr_find_job((char *)dup_job_id.c_str(),FALSE)) == NULL) //Job disappeared.
+          if ((pjob = svr_find_job((char *)dup_job_id.c_str(),FALSE)) == NULL) //Job disappeared.
             {
             break;
             }
@@ -883,6 +886,13 @@ void *delete_all_work(
 
   {
   batch_request *preq = (batch_request *)vp;
+
+  if (qdel_all_tracker.start_deleting_all_if_possible(preq->rq_user, preq->rq_perm) == false)
+    {
+    reply_ack(preq);
+    return(NULL);
+    }
+
   batch_request *preq_dup = duplicate_request(preq);
   job           *pjob;
   int            iter = -1;
@@ -951,6 +961,8 @@ void *delete_all_work(
         failed_deletes++;
       }
     }
+  
+  qdel_all_tracker.done_deleting_all(preq->rq_user, preq->rq_perm);
   
   if (failed_deletes == 0)
     {
