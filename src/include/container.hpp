@@ -141,13 +141,12 @@ public:
 				  return NULL;
 				}
 				iter--;
-				item<T> itm = *iter;
-				return itm.get();
+				return ((container::item<T>)(*iter)).get();
 			}
 			if(iter == end) return NULL;
-			item<T> itm = *iter;
+			T pT = ((container::item<T>)(*iter)).get();
 			iter++;
-			return itm.get();
+			return pT;
 		}
 		item_iterator(sequenced_index ind,
 #ifdef CHECK_LOCKING
@@ -230,8 +229,7 @@ public:
 		sequenced_iterator iter = ind.begin();
 		while(iter != ind.end())
 		{
-			item<T> itm = *iter;
-			if(itm.idString() == location_id)
+			if(iter->idString() == location_id)
 			{
 				break;
 			}
@@ -313,8 +311,7 @@ public:
 		sequenced_iterator iter = ind.begin();
 		while(iter != ind.end())
 		{
-			item<T> itm = *iter;
-			if(itm.idString() == location_id)
+			if(iter->idString() == location_id)
 			{
 				break;
 			}
@@ -350,8 +347,7 @@ public:
 #ifdef LOG_ACTIONS
         {
           char msg[50];
-          item<T> itm = *it;
-          sprintf(msg,"Erased %s\n",itm.idString().c_str());
+          sprintf(msg,"Erased %s\n",it->idString().c_str());
           log.logMsg(msg);
         }
 #endif
@@ -382,16 +378,16 @@ public:
 		sequenced_index ind = container.get<0>();
 		sequenced_iterator it = ind.begin();
 		if(it == ind.end()) return empty_val();
-		item<T> itm = *it;
-		ind.erase(it);
+		T pT = ((container::item<T>)(*it)).get();
 #ifdef LOG_ACTIONS
         {
           char msg[50];
-          sprintf(msg,"Erased %s\n",itm.idString().c_str());
+          sprintf(msg,"Erased %s\n",it->idString().c_str());
           log.logMsg(msg);
         }
 #endif
-		return itm.get();
+        ind.erase(it);
+		return pT;
 	}
 	T pop_back(void)
 	{
@@ -400,16 +396,16 @@ public:
 		sequenced_iterator it = ind.end();
 		if(ind.size() == 0) return empty_val();
 		it--;
-		item<T> itm = *it;
-		ind.erase(it);
+        T pT = ((container::item<T>)(*it)).get();
 #ifdef LOG_ACTIONS
 		{
 		  char msg[50];
-		  sprintf(msg,"Erased %s\n",itm.idString().c_str());
+		  sprintf(msg,"Erased %s\n",it->idString().c_str());
 		  log.logMsg(msg);
 		}
 #endif
-		return itm.get();
+        ind.erase(it);
+		return pT;
 	}
 
     bool swap(const char *id1,const char *id2)
@@ -425,8 +421,7 @@ public:
 		sequenced_iterator it1 = ind.begin();
 		while(it1 != ind.end())
 		{
-			item<T> itm = *it1;
-			if(itm.idString() == id1)
+			if(it1->idString() == id1)
 			{
 				break;
 			}
@@ -439,8 +434,7 @@ public:
 		sequenced_iterator it2 = ind.begin();
 		while(it2 != ind.end())
 		{
-			item<T> itm = *it2;
-			if(itm.idString() == id2)
+			if(it2->idString() == id2)
 			{
 				break;
 			}
