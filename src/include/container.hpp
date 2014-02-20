@@ -19,6 +19,12 @@
 #define THING_NOT_FOUND    -2
 #define ALREADY_IN_LIST     9
 
+#define LOG_ACTIONS
+
+#ifdef LOG_ACTIONS
+#include <stdio.h>
+#endif
+
 #define CHECK_LOCKING
 
 #ifdef CHECK_LOCKING
@@ -28,6 +34,46 @@
 #endif
 
 namespace container{ //Creating a scope to prevent my using from spilling past the include file.
+
+#ifdef LOG_ACTIONS
+
+#define ACTION_LOG_LEN 10240
+class actionLog
+  {
+  public:
+  actionLog()
+    {
+    memset(log,0,sizeof(log));
+    pEnd = log;
+    pMidPoint = NULL;
+    }
+  void logMsg(char *msg)
+    {
+    int len = strlen(msg);
+    if(len >= ACTION_LOG_LEN) return;
+    if((pEnd + len) >= (log + ACTION_LOG_LEN))
+      {
+      if(pMidPoint == NULL) return;
+      int moveLen = pEnd - pMidPoint;
+      memmove(log,pMidPoint,moveLen);
+      pEnd = log + moveLen;
+      pMidPoint = NULL;
+      if((pEnd + len) >= (log + ACTION_LOG_LEN)) return;
+      }
+    strcpy(pEnd,msg);
+    pEnd += len;
+    if((pEnd > (log + (ACTION_LOG_LEN/2)))&&(pMidPoint == NULL))
+      {
+      pMidPoint = pEnd;
+      }
+    }
+  private:
+  char log[ACTION_LOG_LEN];
+  char *pMidPoint;
+  char *pEnd;
+  };
+#endif
+
 
 using namespace ::boost::multi_index;
 using namespace ::boost::multi_index::detail;
@@ -153,8 +199,22 @@ public:
 		ret = container.get<1>().insert(item<T>(id,it));
 		if(!ret.second && replace)
 		  {
+#ifdef LOG_ACTIONS
+            {
+              char msg[50];
+              sprintf(msg,"Replace %s\n",id.c_str());
+              log.logMsg(msg);
+            }
+#endif
 		  return container.get<1>().replace(ret.first,item<T>(id,it));
 		  }
+#ifdef LOG_ACTIONS
+          {
+            char msg[50];
+            sprintf(msg,"Inserted %s\n",id.c_str());
+            log.logMsg(msg);
+          }
+#endif
 		return ret.second;
 	}
     bool insert_after(const char *location_id,T it,const char *id)
@@ -181,6 +241,13 @@ public:
 		iter++;
 		std::pair<sequenced_iterator,bool> ret;
 		ret = container.get<0>().insert(iter,item<T>(id,it));
+#ifdef LOG_ACTIONS
+        {
+          char msg[50];
+          sprintf(msg,"Inserted %s\n",id.c_str());
+          log.logMsg(msg);
+        }
+#endif
 		return ret.second;
 	}
     bool insert_at(int index,T it,const char *id)
@@ -201,6 +268,13 @@ public:
           }
         std::pair<sequenced_iterator,bool> ret;
         ret = container.get<0>().insert(iter,item<T>(id,it));
+#ifdef LOG_ACTIONS
+        {
+          char msg[50];
+          sprintf(msg,"Inserted %s\n",id.c_str());
+          log.logMsg(msg);
+        }
+#endif
         return ret.second;
     }
 
@@ -217,6 +291,13 @@ public:
         sequenced_iterator iter = ind.begin();
         std::pair<sequenced_iterator,bool> ret;
         ret = container.get<0>().insert(iter,item<T>(id,it));
+#ifdef LOG_ACTIONS
+        {
+          char msg[50];
+          sprintf(msg,"Inserted %s\n",id.c_str());
+          log.logMsg(msg);
+        }
+#endif
         return ret.second;
     }
     bool insert_before(const char *location_id,T it,const char *id)
@@ -242,6 +323,13 @@ public:
 		if(iter == ind.end()) return false;
 		std::pair<sequenced_iterator,bool> ret;
 		ret = container.get<0>().insert(iter,item<T>(id,it));
+#ifdef LOG_ACTIONS
+        {
+          char msg[50];
+          sprintf(msg,"Inserted %s\n",id.c_str());
+          log.logMsg(msg);
+        }
+#endif
 		return ret.second;
 	}
 	bool remove(const char *id)
@@ -259,6 +347,14 @@ public:
 		{
 			return false;
 		}
+#ifdef LOG_ACTIONS
+        {
+          char msg[50];
+          item<T> itm = *it;
+          sprintf(msg,"Erased %s\n",itm.idString().c_str());
+          log.logMsg(msg);
+        }
+#endif
 		hi.erase(it);
 		return true;
 	}
@@ -288,6 +384,13 @@ public:
 		if(it == ind.end()) return empty_val();
 		item<T> itm = *it;
 		ind.erase(it);
+#ifdef LOG_ACTIONS
+        {
+          char msg[50];
+          sprintf(msg,"Erased %s\n",itm.idString().c_str());
+          log.logMsg(msg);
+        }
+#endif
 		return itm.get();
 	}
 	T pop_back(void)
@@ -299,6 +402,13 @@ public:
 		it--;
 		item<T> itm = *it;
 		ind.erase(it);
+#ifdef LOG_ACTIONS
+		{
+		  char msg[50];
+		  sprintf(msg,"Erased %s\n",itm.idString().c_str());
+		  log.logMsg(msg);
+		}
+#endif
 		return itm.get();
 	}
 
@@ -401,6 +511,9 @@ private:
 	pthread_mutex_t mutex;
 #ifdef CHECK_LOCKING
 	bool locked;
+#endif
+#ifdef LOG_ACTIONS
+	actionLog log;
 #endif
 };
 
