@@ -202,6 +202,8 @@ START_TEST(create_alps_subnode_test)
   struct pbsnode  parent;
   const char     *node_id = "tom";
   struct pbsnode *subnode;
+  extern int      svr_clnodes;
+  int             start_clnodes_value = svr_clnodes;;
 
   memset(&parent, 0, sizeof(struct pbsnode));
 
@@ -213,6 +215,7 @@ START_TEST(create_alps_subnode_test)
   /* scaffolding makes it fail the second time */
   subnode = create_alps_subnode(&parent, node_id);
   fail_unless(subnode == NULL, "subnode isn't NULL when it should be");
+  fail_unless(start_clnodes_value + 2 <= svr_clnodes);
   }
 END_TEST
 
