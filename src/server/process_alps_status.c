@@ -139,11 +139,17 @@ struct pbsnode *find_alpsnode_by_name(
 
 
 
+/*
+ * create_alps_subnode()
+ *
+ * @param parent - the sdb node or parent of this compute node
+ * @param node_id - the name of the new alps compute node
+ */
 
 struct pbsnode *create_alps_subnode(
 
   struct pbsnode *parent,
-  const char    *node_id)
+  const char     *node_id)
 
   {
   struct pbsnode *subnode = (struct pbsnode *)calloc(1, sizeof(struct pbsnode));
@@ -158,7 +164,11 @@ struct pbsnode *create_alps_subnode(
     return(NULL);
     }
 
+  // all nodes have at least 1 core
   add_execution_slot(subnode);
+  
+  // we need to increment this count for accuracy  
+  svr_clnodes++;
 
   /* do we need to do something else here? */
   subnode->nd_addrs = parent->nd_addrs;
@@ -303,7 +313,8 @@ int set_ncpus(
 
   {
   int difference;
-  int i, orig_svr_clnodes;
+  int i;
+  int orig_svr_clnodes;
 
   if (current == NULL)
     return(PBSE_BAD_PARAMETER);
