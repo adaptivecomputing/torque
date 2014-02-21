@@ -2489,11 +2489,7 @@ int send_depend_req(
 
 
 
-struct dependnames
-  {
-  int   type;
-  const char *name;
-  } dependnames[] =
+struct dependnames dependnames[] =
 
   {
     {JOB_DEPEND_TYPE_AFTERSTART, "after" },
@@ -2834,7 +2830,6 @@ int encode_depend(
 
         if (*pdjb->dc_svr != '\0')
           {
-          /* WARNING: do we need to escape colons here (we used to) */
           fast_strcat(&BPtr,"@");
 
           cat_jobsvr(&BPtr,pdjb->dc_svr);

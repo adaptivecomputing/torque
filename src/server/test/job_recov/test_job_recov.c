@@ -19,6 +19,38 @@ int fill_resource_list(job **pj, xmlNodePtr resource_list_node, char *log_buf, s
 char  server_name[] = "lei.ac";
 
 int add_encoded_attributes(xmlNodePtr *attr_node, pbs_attribute *pattr);
+void translate_dependency_to_string(pbs_attribute *pattr, std::string &value);
+
+START_TEST(test_translate_dependency_to_string)
+  {
+  pbs_attribute dep_attr;
+  struct depend dep;
+  struct depend_job dj;
+
+  memset(&dj, 0, sizeof(dj));
+  CLEAR_LINK(dj.dc_link);
+  strcpy(dj.dc_child, "1.napali");
+  strcpy(dj.dc_svr, "napali");
+  
+  memset(&dep, 0, sizeof(dep));
+  dep.dp_type = JOB_DEPEND_TYPE_AFTEROK;
+  CLEAR_HEAD(dep.dp_jobs);
+  CLEAR_LINK(dep.dp_link);
+  append_link(&dep.dp_jobs, &dj.dc_link, &dj);
+
+  dep_attr.at_flags = ATR_VFLAG_SET;
+  CLEAR_HEAD(dep_attr.at_val.at_list);
+  append_link(&dep_attr.at_val.at_list, &dep.dp_link, &dep);
+
+  std::string value;
+
+  // make sure we don't segfault
+  translate_dependency_to_string(NULL, value);
+  translate_dependency_to_string(&dep_attr, value);
+  fail_unless(value == "afterok:1.napali@napali");
+  }
+END_TEST
+
 
 START_TEST(test_add_encoded_attributes)
   {
@@ -286,6 +318,7 @@ Suite *job_recov_suite(void)
   tcase_add_test(tc_core, test_job_recover);
   tcase_add_test(tc_core, fill_resource_list_test);
   tcase_add_test(tc_core, test_add_encoded_attributes);
+  tcase_add_test(tc_core, test_translate_dependency_to_string);
   suite_add_tcase(s, tc_core);
 
   return s;

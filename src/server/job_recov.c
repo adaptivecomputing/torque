@@ -833,6 +833,73 @@ xmlNodePtr add_resource_list_attribute(
   } /* END add_resource_list_attribute() */
 
 
+
+#ifndef PBS_MOM
+/*
+ * translate_dependency_to_string
+ *
+ * takes the dependency attribute and places it in a consumable string
+ *
+ * @param pattr - a pointer to the dependency attribute
+ * @param value - the string to populate with the information
+ */
+
+void translate_dependency_to_string(
+
+  pbs_attribute *pattr,
+  std::string   &value)
+
+  {
+  struct depend             *dep;
+  extern struct dependnames  dependnames[];
+  struct dependnames        *dp_name;
+
+  if (pattr == NULL)
+    return;
+
+  for (dep = (struct depend *)GET_NEXT(pattr->at_val.at_list);
+       dep != NULL;
+       dep = (struct depend *)GET_NEXT(dep->dp_link))
+    {
+    dp_name = dependnames + dep->dp_type;
+
+    if (value.size() != 0)
+      value += ",";
+
+    value += dp_name->name;
+
+    if ((dp_name->type == JOB_DEPEND_TYPE_SYNCCT) ||
+        (dp_name->type == JOB_DEPEND_TYPE_ON))
+      {
+      char buf[128];
+      snprintf(buf, sizeof(buf), ":%d", dep->dp_numexp);
+      value += buf;
+      }
+    else
+      {
+      struct depend_job *pdjob = (struct depend_job *)GET_NEXT(dep->dp_jobs);
+
+      while (pdjob != NULL)
+        {
+        value += ":";
+        value += pdjob->dc_child;
+
+        if (pdjob->dc_svr[0] != '\0')
+          {
+          value += "@";
+          value += pdjob->dc_svr;
+          }
+
+        pdjob = (struct depend_job *)GET_NEXT(pdjob->dc_link);
+        }
+      }
+    }
+
+  } /* END translate_dependency_to_string() */
+#endif
+
+
+
 /*
  * add_encoded_attributes () - add encoded job attributes xml nodes. 
  */
@@ -866,7 +933,16 @@ int add_encoded_attributes(
         {
         std::string value;
 
-        attr_to_str(value, job_attr_def + i, pattr[i], false);
+#ifndef PBS_MOM
+        if (i == JOB_ATR_depend)
+          translate_dependency_to_string(pattr + i, value);
+        else
+#endif
+          attr_to_str(value, job_attr_def + i, pattr[i], false);
+
+        if (value.size() == 0)
+          continue;
+
         pal_xmlNode = xmlNewChild(attributeNode,
                                   NULL,
                                   (xmlChar *)job_attr_def[i].at_name,

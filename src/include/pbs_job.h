@@ -174,6 +174,12 @@ struct array_depend_job
   int  dc_num;
   };
 
+struct dependnames
+  {
+  int         type;
+  const char *name;
+  };
+
 /*
  * Warning: the relation between the numbers assigned to after* and before*
  * is critical.
