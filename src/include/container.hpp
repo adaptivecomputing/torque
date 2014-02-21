@@ -19,7 +19,7 @@
 #define THING_NOT_FOUND    -2
 #define ALREADY_IN_LIST     9
 
-#define LOG_ACTIONS
+//#define LOG_ACTIONS
 
 #ifdef LOG_ACTIONS
 #include <stdio.h>
@@ -84,15 +84,34 @@ class item
 public:
 	item(std::string idString):id(idString){ptr = 0;}
 	item(std::string idString,T p):id(idString),ptr(p){}
-	item(const char *idString,T p):id(idString),ptr(p){}
+	item(const char *idString,T p):ptr(p)
+	{
+	  if(idString == NULL)
+	    {
+	    id = "";
+	    }
+	  else
+	    {
+	    id = idString;
+	    }
+	}
     bool operator == (const item& rhs) const
     {
         if(&rhs == NULL) return false; //It is possible to get a reference to a null address.
     	return id == rhs.id;
     }
-    std::string idString() const
+    bool operator == (const std::string& rhs) const
     {
-    	return id;
+      if(&rhs == NULL) return false;
+      return id == rhs;
+    }
+    const char * idString() const
+    {
+        return id.c_str();
+    }
+    const std::string getIdString() const
+    {
+        return id;
     }
     T get()
     {
@@ -229,7 +248,7 @@ public:
 		sequenced_iterator iter = ind.begin();
 		while(iter != ind.end())
 		{
-			if(iter->idString() == location_id)
+			if(*iter == location_id)
 			{
 				break;
 			}
@@ -311,7 +330,7 @@ public:
 		sequenced_iterator iter = ind.begin();
 		while(iter != ind.end())
 		{
-			if(iter->idString() == location_id)
+			if(*iter == location_id)
 			{
 				break;
 			}
@@ -347,7 +366,7 @@ public:
 #ifdef LOG_ACTIONS
         {
           char msg[50];
-          sprintf(msg,"Erased %s\n",it->idString().c_str());
+          sprintf(msg,"Erased %s\n",it->idString());
           log.logMsg(msg);
         }
 #endif
@@ -382,7 +401,7 @@ public:
 #ifdef LOG_ACTIONS
         {
           char msg[50];
-          sprintf(msg,"Erased %s\n",it->idString().c_str());
+          sprintf(msg,"Erased %s\n",it->idString());
           log.logMsg(msg);
         }
 #endif
@@ -400,7 +419,7 @@ public:
 #ifdef LOG_ACTIONS
 		{
 		  char msg[50];
-		  sprintf(msg,"Erased %s\n",it->idString().c_str());
+		  sprintf(msg,"Erased %s\n",it->idString());
 		  log.logMsg(msg);
 		}
 #endif
@@ -421,7 +440,7 @@ public:
 		sequenced_iterator it1 = ind.begin();
 		while(it1 != ind.end())
 		{
-			if(it1->idString() == id1)
+			if(*it1 == id1)
 			{
 				break;
 			}
@@ -434,7 +453,7 @@ public:
 		sequenced_iterator it2 = ind.begin();
 		while(it2 != ind.end())
 		{
-			if(it2->idString() == id2)
+			if(*it2 == id2)
 			{
 				break;
 			}
@@ -514,7 +533,7 @@ private:
 template <class T>
 inline size_t hash_value(const item<T>& rhs)
 {
-    return (boost::hash_value(rhs.idString()));
+    return (boost::hash_value(rhs.getIdString()));
 }
 
 } //End of namespace scope.
