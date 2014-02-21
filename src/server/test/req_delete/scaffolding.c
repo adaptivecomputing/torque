@@ -12,6 +12,7 @@
 #include "queue.h" /* pbs_queue */
 #include "node_func.h" /* node_info */
 #include "threadpool.h"
+#include "delete_all_tracker.hpp"
 
 int check_and_resize(resizable_array *ra);
 void update_next_slot(resizable_array *ra);
@@ -572,4 +573,22 @@ ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
 ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
   {
   return(0);
+  }
+
+delete_all_tracker::delete_all_tracker()
+  {
+  }
+
+delete_all_tracker::~delete_all_tracker()
+  {
+  }
+
+void delete_all_tracker::done_deleting_all(const char *user_name, int perm)
+  {
+  
+  }
+
+bool delete_all_tracker::start_deleting_all_if_possible(const char *username, int perm)
+  {
+  return(true);
   }
