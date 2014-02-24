@@ -2032,7 +2032,8 @@ int node_is_spec_acceptable(
   struct pbsnode   *pnode,
   single_spec_data *spec,
   char             *ProcBMStr,
-  int              *eligible_nodes)
+  int              *eligible_nodes,
+  bool              job_is_exclusive)
 
   {
   struct prop    *prop = spec->prop;
@@ -2083,6 +2084,14 @@ int node_is_spec_acceptable(
       (gpu_req > gpu_free) ||
       (mic_req > mic_free))
     return(FALSE);
+
+  if(job_is_exclusive)
+    {
+    if(pnode->nd_slots.get_number_free() != pnode->nd_slots.get_total_execution_slots())
+      {
+      return FALSE;
+      }
+    }
 
   return(TRUE);
   } /* END node_is_spec_acceptable() */
@@ -2615,7 +2624,8 @@ int node_spec(
   char               *login_prop, /* I (optional) */
   alps_req_data     **ard_array,  /* O (optional) */
   int                *num_reqs,   /* O (optional) */
-  enum job_types     &job_type)
+  enum job_types     &job_type,
+  bool                job_is_exclusive) /* I If true job requires must be only one on node. */
 
   {
   struct pbsnode      *pnode;
@@ -2880,7 +2890,7 @@ int node_spec(
 
       if (req->nodes > 0)
         {
-        if (node_is_spec_acceptable(pnode, req, ProcBMStr, &eligible_nodes) == TRUE)
+        if (node_is_spec_acceptable(pnode, req, ProcBMStr, &eligible_nodes,job_is_exclusive) == TRUE)
           {
           if (naji != NULL)
             {
@@ -4191,6 +4201,9 @@ int set_nodes(
 
   if (pjob->ji_wattr[JOB_ATR_login_prop].at_flags & ATR_VFLAG_SET)
     login_prop = pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str;
+  bool job_is_exclusive = false;
+  if(pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET)
+    job_is_exclusive = (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long != 0);
 
   /* allocate nodes */
   if ((i = node_spec(spec,
@@ -4203,7 +4216,8 @@ int set_nodes(
                      login_prop,
                      &ard_array,
                      &num_reqs,
-                     job_type)) == 0)
+                     job_type,
+                     job_is_exclusive)) == 0)
     {
     /* no resources located, request failed */
     if (EMsg != NULL)
@@ -4542,7 +4556,7 @@ int node_avail_complex(
   int            ret;
   enum job_types job_type;
 
-  ret = node_spec(spec, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, job_type);
+  ret = node_spec(spec, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, job_type,false);
 
   *navail = ret;
   *nalloc = 0;
@@ -4714,7 +4728,7 @@ int node_reserve(
 
   naji = (node_job_add_info *)calloc(1, sizeof(node_job_add_info));
 
-  if ((ret_val = node_spec(nspec, 0, 0, NULL, NULL, naji, NULL, NULL, NULL, NULL, job_type)) >= 0)
+  if ((ret_val = node_spec(nspec, 0, 0, NULL, NULL, naji, NULL, NULL, NULL, NULL, job_type,false)) >= 0)
     {
     /*
     ** Zero or more of the needed Nodes are available to be
