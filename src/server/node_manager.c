@@ -132,6 +132,7 @@
 #include "ji_mutex.h"
 #include "alps_constants.h"
 #include "mutex_mgr.hpp"
+#include "timer.hpp"
 
 #define IS_VALID_STR(STR)  (((STR) != NULL) && ((STR)[0] != '\0'))
 
@@ -2688,6 +2689,8 @@ int node_spec(
   char                *plus;
   long                 cray_enabled = FALSE;
   int                  num_alps_reqs = 0;
+
+  FUNCTION_TIMER
 
   if (EMsg != NULL)
     EMsg[0] = '\0';
