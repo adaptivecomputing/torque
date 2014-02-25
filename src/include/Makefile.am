@@ -23,7 +23,7 @@ noinst_HEADERS = acct.h array.h assertions.h attribute.h		\
 		 hash_map.h exiting_jobs.h mom_update.h dis_internal.h  \
 		 mutex_mgr.hpp mom_memory.h execution_slot_tracker.hpp  \
 		 mom_config.h node_internals.hpp numa_node.hpp server_comm.h \
-		 delete_all_tracker.hpp
+		 delete_all_tracker.hpp timer.hpp
 
 BUILT_SOURCES = site_job_attr_def.h site_job_attr_enum.h \
 		site_qmgr_node_print.h site_qmgr_que_print.h \

@@ -970,7 +970,7 @@ static int start_hot_jobs(void)
         PBSEVENT_SYSTEM,
         PBS_EVENTCLASS_JOB,
         pjob->ji_qs.ji_jobid,
-        (char *)"attempting to hot start job");
+        "attempting to hot start job");
 
       svr_startjob(pjob, NULL, NULL, NULL);
 
