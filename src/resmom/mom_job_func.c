@@ -230,11 +230,13 @@ void tasks_free(
       {
       char ptr[50];
       sprintf(ptr,"%p",(void *)tp->ti_chan);
+      freed_chans.lock();
       if(freed_chans.insert(tp->ti_chan,ptr))
         {
         close_conn(tp->ti_chan->sock, FALSE);
         DIS_tcp_cleanup(tp->ti_chan);
         }
+      freed_chans.unlock();
         
       tp->ti_chan = NULL;
       }

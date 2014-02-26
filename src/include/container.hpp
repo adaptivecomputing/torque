@@ -13,6 +13,7 @@
 #include <boost/multi_index/sequenced_index.hpp>
 #include <boost/multi_index/identity.hpp>
 #include <string>
+#include <vector>
 #include <pthread.h>
 #include <memory.h>
 
@@ -51,15 +52,15 @@ class item
       }
     }
   bool operator == (const item& rhs) const
-          {
+                {
     if(&rhs == NULL) return false; //It is possible to get a reference to a null address.
     return id == rhs.id;
-          }
+                }
   bool operator == (const std::string& rhs) const
-          {
+                {
     if(&rhs == NULL) return false;
     return id == rhs;
-          }
+                }
   const char * idString() const
     {
     return id.c_str();
@@ -100,48 +101,28 @@ class item_container
     T get_next_item()
       {
 #ifdef CHECK_LOCKING
-    if(!*pLocked)
-      {
-      char *p = NULL;
-      while(1)
+      if(!*pLocked)
         {
-        *p++ = (char)0xff;
+        char *p = NULL;
+        while(1)
+          {
+          *p++ = (char)0xff;
+          }
         }
-      }
 #endif
-    if(endHit) return NULL;
-    //If the item the iterator was pointing at was deleted
-    //It puts the interator in an undefined state and we just need to
-    //not use it any more.
-    if(nextId.length() != 0)
-      {
       hashed_index hi = pContainer->get<1>();
-      hashed_iterator it = hi.find(nextId);
-      if(it == hi.end())
+      while(snapshot_iter != snapshot.end())
         {
-        endHit = true;
-        return NULL;
+        hashed_iterator it = hi.find(*snapshot_iter);
+        snapshot_iter++;
+        if(it != hi.end())
+          {
+          return ((container::item<T>)(*it)).get();
+          }
         }
+      return NULL;
       }
-    if(reversed)
-      {
-      if(riter == pContainer->get<0>().rend()) return NULL;
-      T pT = ((container::item<T>)(*riter)).get();
-      riter++;
-      if(riter == pContainer->get<0>().rend()) endHit = true;
-      //Get the next id as it may be deleted before we get back here.
-      else nextId = ((container::item<T>)(*riter)).getIdString();
-      return pT;
-      }
-    if(iter == pContainer->get<0>().end()) return NULL;
-    T pT = ((container::item<T>)(*iter)).get();
-    iter++;
-    if(iter == pContainer->get<0>().end()) endHit = true;
-    //Get the next id as it may be deleted before we get back here.
-    else nextId = ((container::item<T>)(*iter)).getIdString();
-    return pT;
-      }
-    item_iterator(indexed_container *container,
+    item_iterator(indexed_container *pCtner,
 #ifdef CHECK_LOCKING
         bool *locked,
 #endif
@@ -150,26 +131,27 @@ class item_container
 #ifdef CHECK_LOCKING
       pLocked = locked;
 #endif
-      pContainer = container;
-      reversed = reverse;
-      endHit = false;
-      nextId = "";
+      pContainer = pCtner;
       if(reverse)
         {
-        riter = pContainer->get<0>().rbegin();
+        for(sequenced_reverse_iterator riter = pContainer->get<0>().rbegin();riter != pContainer->get<0>().rend();riter++)
+          {
+          snapshot.push_back(((container::item<T>)(*riter)).getIdString());
+          }
         }
       else
         {
-        iter = pContainer->get<0>().begin();
+        for(sequenced_iterator iter = pContainer->get<0>().begin();iter != pContainer->get<0>().end();iter++)
+          {
+          snapshot.push_back(((container::item<T>)(*iter)).getIdString());
+          }
         }
+      snapshot_iter = snapshot.begin();
       }
   private:
-    sequenced_iterator iter;
-    sequenced_reverse_iterator riter;
-    indexed_container  *pContainer;
-    bool reversed;
-    bool endHit;
-    std::string nextId;
+    std::vector<std::string> snapshot;
+    std::vector<std::string>::iterator snapshot_iter;
+    indexed_container *pContainer;
 #ifdef CHECK_LOCKING
     bool *pLocked;
 #endif
@@ -242,7 +224,7 @@ class item_container
       }
     std::pair<sequenced_iterator,bool> ret;
     ret = container.get<0>().insert(iter,item<T>(id,it));
-  return ret.second;
+    return ret.second;
     }
 
   bool insert_first(T it,const char *id)
