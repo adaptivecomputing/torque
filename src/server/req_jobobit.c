@@ -1342,11 +1342,13 @@ int handle_stageout(
  
 handle_stageout_cleanup:
 
-  if ((preq != NULL) &&
-      (preq->rq_extra != NULL))
+  if (preq != NULL)
     {
-    free(preq->rq_extra);
-    preq->rq_extra = NULL;
+    if(preq->rq_extra != NULL)
+      {
+      free(preq->rq_extra);
+      }
+    free_br(preq);
     }
   
   if (job_momname != NULL)
@@ -1531,7 +1533,10 @@ int handle_exited(
     strcpy(preq->rq_ind.rq_delete.rq_objname, job_id);
     
     if ((handle = mom_comm(pjob, on_job_exit_task)) < 0)
+      {
+      free_br(preq);
       return(PBSE_CONNECT);
+      }
     else
       {
       job_mutex.unlock();
@@ -1547,8 +1552,8 @@ int handle_exited(
             log_buf);
         }
 
-      free_br(preq);
       }
+    free_br(preq);
     }
   else
     job_mutex.unlock();
