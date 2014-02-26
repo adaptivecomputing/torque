@@ -50,17 +50,18 @@ class item
       {
       id = idString;
       }
+    pointer_check();
     }
   bool operator == (const item& rhs) const
-                {
+    {
     if(&rhs == NULL) return false; //It is possible to get a reference to a null address.
     return id == rhs.id;
-                }
+    }
   bool operator == (const std::string& rhs) const
-                {
+    {
     if(&rhs == NULL) return false;
     return id == rhs;
-                }
+    }
   const char * idString() const
     {
     return id.c_str();
@@ -77,6 +78,7 @@ class item
   item(){}
   std::string id;
   T ptr;
+  void pointer_check(void){}
   };
 
 template <class T>
@@ -101,26 +103,26 @@ class item_container
     T get_next_item()
       {
 #ifdef CHECK_LOCKING
-      if(!*pLocked)
+    if(!*pLocked)
+      {
+      char *p = NULL;
+      while(1)
         {
-        char *p = NULL;
-        while(1)
-          {
-          *p++ = (char)0xff;
-          }
+        *p++ = (char)0xff;
         }
+      }
 #endif
-      hashed_index hi = pContainer->get<1>();
-      while(snapshot_iter != snapshot.end())
+    hashed_index hi = pContainer->get<1>();
+    while(snapshot_iter != snapshot.end())
+      {
+      hashed_iterator it = hi.find(*snapshot_iter);
+      snapshot_iter++;
+      if(it != hi.end())
         {
-        hashed_iterator it = hi.find(*snapshot_iter);
-        snapshot_iter++;
-        if(it != hi.end())
-          {
-          return ((container::item<T>)(*it)).get();
-          }
+        return ((container::item<T>)(*it)).get();
         }
-      return NULL;
+      }
+    return NULL;
       }
     item_iterator(indexed_container *pCtner,
 #ifdef CHECK_LOCKING

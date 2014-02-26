@@ -89,6 +89,21 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <pbs_ifl.h>
+#include <pbs_job.h>
+
+namespace container
+{
+template<>
+void item<job *>::pointer_check(void)
+  {
+  if(ptr == NULL)
+    {
+    char *p = NULL;
+    while(1)
+      *p++ = (char)0xff;
+    }
+  }
+}
 
 /* Adds item to the hashmap indicated by **head
  * If *head is NULL, and new hashmap is created
