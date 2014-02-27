@@ -531,3 +531,10 @@ int decode_resc(
 
   return(0);
   }
+
+#ifdef CAN_TIME
+#include "timer.hpp"
+microsecond_timer::microsecond_timer(const char *file, const char *func, int line) {}
+
+microsecond_timer::~microsecond_timer() {}
+#endif

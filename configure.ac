@@ -435,6 +435,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/server/test/delete_all_tracker/Makefile
     src/server/test/dis_read/Makefile
     src/server/test/display_alps_status/Makefile
+    src/server/test/id_map/Makefile
     src/server/test/execution_slot_tracker/Makefile
     src/server/test/exiting_jobs/Makefile
     src/server/test/geteusernam/Makefile

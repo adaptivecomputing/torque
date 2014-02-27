@@ -290,7 +290,7 @@ struct pbsnode *get_numa_from_str(
 
 struct pbsnode *get_node_from_str(
 
-  const char    *str,     /* I */
+  const char     *str,     /* I */
   char           *orig_id, /* I */
   struct pbsnode *np)      /* M */
 
