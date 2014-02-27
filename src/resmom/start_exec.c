@@ -3072,6 +3072,13 @@ void handle_reservation(
       mppnodes = strdup(pres->rs_value.at_val.at_str);
       }
     
+    std::string cray_frequency = "";
+    resource *presc = find_resc_entry(&pjob->ji_wattr[JOB_ATR_resource],
+              find_resc_def(svr_resc_def, "cpuclock", svr_resc_size));
+    if(presc != NULL)
+      {
+      cray_frequency = get_frequency_request(&(presc->rs_value.at_val.at_frequency));
+      }
 
     j = create_alps_reservation(exec_str,
           pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
@@ -3083,7 +3090,8 @@ void handle_reservation(
           nppcu,
           mppdepth,
           &rsv_id,
-          mppnodes);
+          mppnodes,
+          cray_frequency);
 
     if(mppnodes != NULL) free(mppnodes);
     

@@ -1944,6 +1944,13 @@ int blcr_restart_job(
         mppnodes = strdup(pres->rs_value.at_val.at_str);
         }
 
+      std::string cray_frequency = "";
+      resource *presc = find_resc_entry(&pjob->ji_wattr[JOB_ATR_resource],
+                find_resc_def(svr_resc_def, "cpuclock", svr_resc_size));
+      if(presc != NULL)
+        {
+        cray_frequency = get_frequency_request(&(presc->rs_value.at_val.at_frequency));
+        }
 
       if (create_alps_reservation(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
             pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
@@ -1955,7 +1962,8 @@ int blcr_restart_job(
             nppcu,
             mppdepth,
             &rsv_id,
-            mppnodes) != PBSE_NONE)
+            mppnodes,
+            cray_frequency) != PBSE_NONE)
         {
         snprintf(log_buffer, sizeof(log_buffer),
           "Couldn't create the reservation for job %s",

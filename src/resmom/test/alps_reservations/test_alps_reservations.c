@@ -24,6 +24,7 @@ char *jobids[] = {(char *)"0.napali", (char *)"1.napali"} ;
 char *apbasil_path = (char *)"/usr/local/bin/apbasil";
 char *apbasil_protocol = (char *)"1.0";
 char *apbasil_protocol_13 = (char *)"1.3";
+char *apbasil_protocol_14 = (char *)"1.4";
 char *blank_cmd = (char *)"../../../test/test_scripts/blank_script.sh";
 
 char *alps_rsv_outputs[] = {
@@ -34,7 +35,7 @@ char *alps_rsv_outputs[] = {
     (char *)"tom"};
 
 host_req_list *parse_exec_hosts(char *exec_hosts,const char *mppnodes);
-void             get_reservation_command(host_req_list *, char *, char *, char *, char *, char *, int, int,int, std::string&);
+void             get_reservation_command(host_req_list *, char *, char *, char *, char *, char *, int, int,int, std::string&, std::string&);
 int              parse_reservation_output(char *, char **);
 int              execute_reservation(const char *, char **);
 int              confirm_reservation(char *, char *, long long, char *, char *,char *,int);
@@ -187,8 +188,12 @@ START_TEST(get_reservation_command_test)
   const char     *nppn;
   int              ppn;
   int              nppcu_value;
+  cpu_frequency_value freq;
+  freq.frequency_type = P1;
+  freq.mhz = 0;
+  std::string      frequency = get_frequency_request(&freq);
 
-  get_reservation_command(hrl, uname, jobids[0], NULL, apbasil_protocol, NULL, 0, 0, 0, apbasil_command);
+  get_reservation_command(hrl, uname, jobids[0], NULL, apbasil_protocol, NULL, 0, 0, 0, apbasil_command,frequency);
 
   snprintf(buf, sizeof(buf), "Username '%s' not found in command '%s'", uname, apbasil_command.c_str());
   fail_unless(strstr(apbasil_command.c_str(), uname) != NULL, buf);
@@ -204,7 +209,8 @@ START_TEST(get_reservation_command_test)
 
   hrl = parse_exec_hosts(eh3,NULL);
   apbasil_command.clear();
-  get_reservation_command(hrl, uname, jobids[1], apbasil_path, apbasil_protocol, NULL, 1, 0, 0,apbasil_command);
+  frequency = get_frequency_request(&freq);
+  get_reservation_command(hrl, uname, jobids[1], apbasil_path, apbasil_protocol, NULL, 1, 0, 0,apbasil_command,frequency);
 
   reserve_param = strstr(apbasil_command.c_str(), "ReserveParam ");
   reserve_param2 = strstr(reserve_param + 1, "ReserveParam ");
@@ -219,9 +225,10 @@ START_TEST(get_reservation_command_test)
 
   delete hrl;
   apbasil_command.clear();
+  frequency = get_frequency_request(&freq);
 
   hrl = parse_exec_hosts(eh3,NULL);
-  get_reservation_command(hrl, uname, jobids[1], apbasil_path, apbasil_protocol_13, NULL, 1, 1, 0, apbasil_command);
+  get_reservation_command(hrl, uname, jobids[1], apbasil_path, apbasil_protocol_13, NULL, 1, 1, 0, apbasil_command,frequency);
 
   reserve_param = strstr(apbasil_command.c_str(), "ReserveParam ");
   reserve_param2 = strstr(reserve_param + 1, "ReserveParam ");
@@ -233,6 +240,44 @@ START_TEST(get_reservation_command_test)
   nppcu_value = atoi(nppcu);
   snprintf(buf, sizeof(buf), "nppcu should be 1 but is %d", nppcu_value);
   fail_unless(nppcu_value == 1, buf);
+  const char *freq_request = strstr(apbasil_command.c_str()," p-state=");
+  fail_unless(freq_request == NULL,"Frequency added to request.");
+
+  delete hrl;
+  apbasil_command.clear();
+  frequency = get_frequency_request(&freq);
+
+  hrl = parse_exec_hosts(eh3,NULL);
+  get_reservation_command(hrl, uname, jobids[1], apbasil_path, apbasil_protocol_14, NULL, 1, 1, 0, apbasil_command,frequency);
+
+  freq_request = strstr(apbasil_command.c_str()," p-state='1'");
+  fail_unless(freq_request != NULL,"Frequency not added to request.");
+
+  delete hrl;
+  apbasil_command.clear();
+  freq.frequency_type = Performance;
+  frequency = get_frequency_request(&freq);
+
+  hrl = parse_exec_hosts(eh3,NULL);
+  get_reservation_command(hrl, uname, jobids[1], apbasil_path, apbasil_protocol_14, NULL, 1, 1, 0, apbasil_command,frequency);
+
+  freq_request = strstr(apbasil_command.c_str()," p-governor='performance'");
+  fail_unless(freq_request != NULL,"Frequency not added to request.");
+
+  delete hrl;
+  apbasil_command.clear();
+  freq.frequency_type = AbsoluteFrequency;
+  freq.mhz = 2200;
+  frequency = get_frequency_request(&freq);
+
+  hrl = parse_exec_hosts(eh3,NULL);
+  get_reservation_command(hrl, uname, jobids[1], apbasil_path, apbasil_protocol_14, NULL, 1, 1, 0, apbasil_command,frequency);
+
+  freq_request = strstr(apbasil_command.c_str()," p-state='2200000'");
+  fail_unless(freq_request != NULL,"Frequency not added to request.");
+
+
+
   }
 END_TEST
 
