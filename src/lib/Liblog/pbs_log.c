@@ -1033,9 +1033,9 @@ int log_remove_old(
   struct stat sbuf;
   unsigned long FMTime;
   unsigned long TTime;
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
  
   int IsDir = FALSE;
-  TTime = time((time_t *)NULL);
  
   /* check the input for an empty path */
   if ((DirPath == NULL) || (DirPath[0] == '\0'))
@@ -1089,13 +1089,16 @@ int log_remove_old(
       continue;
       }
 
+    TTime = time((time_t *)NULL);
     /* set FMTime's value */
     FMTime = (unsigned long)sbuf.st_mtime;
     
     if ((IsDir == FALSE) &&
-        (TTime - FMTime) > ExpireTime)
+        (FMTime + ExpireTime) < TTime)
       {
       /* file is too old - delete it */
+      snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Removing log %s - log age = %lu, Expire time = %lu", tmpPath, (TTime - FMTime), ExpireTime);
+      log_err(-1, __func__, log_buf);
 
       remove(tmpPath);
       }
