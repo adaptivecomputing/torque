@@ -23,7 +23,7 @@
 #define CHECK_LOCKING
 
 #ifdef CHECK_LOCKING
-#define CHECK_LOCK if(!locked){char *ptr = NULL;while(1) *ptr++ = (char)0xff;}
+#define CHECK_LOCK if(!locked){char *ptr = NULL;while(1) *ptr++ = (char)0xff;} integrity_check();
 #else
 #define CHECK_LOCK
 #endif
@@ -419,6 +419,7 @@ class item_container
     {
   return NULL;
     }
+  void integrity_check(void){}
   indexed_container container;
   pthread_mutex_t mutex;
 #ifdef CHECK_LOCKING

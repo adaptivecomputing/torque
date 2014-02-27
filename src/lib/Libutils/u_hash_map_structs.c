@@ -103,6 +103,22 @@ void item<job *>::pointer_check(void)
       *p++ = (char)0xff;
     }
   }
+template<>
+void item_container<job *>::integrity_check(void)
+  {
+  item_iterator *pIter = get_iterator(true);
+  job *pJob;
+  while((pJob = pIter->get_next_item()) != NULL)
+    {
+    job *pFoundJob = find(pJob->ji_qs.ji_jobid);
+    if(pFoundJob == NULL)
+      {
+      char *p = NULL;
+      while(1)
+        *p++ = (char)0xff;
+      }
+    }
+  }
 }
 
 /* Adds item to the hashmap indicated by **head
