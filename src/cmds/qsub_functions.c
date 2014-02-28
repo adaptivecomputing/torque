@@ -67,6 +67,7 @@
 
 #define MAXBUF 2048
 
+#define MAX_RETRIES  3
 /* START: These are needed for bailout purposes */
 int inter_sock = -1;
 int interactivechild = 0;
@@ -4190,7 +4191,11 @@ void main_func(
 
   /* Send submit request to the server. */
 
-  local_errno = pbs_submit_hash(
+  int retries = 0;
+
+  do
+    {
+    local_errno = pbs_submit_hash(
                   sock_num,
                   ji.job_attr,
                   ji.res_attr,
@@ -4199,6 +4204,15 @@ void main_func(
                   NULL,
                   &new_jobname,
                   &errmsg);
+    if (local_errno != PBSE_NONE)
+      sleep(1);
+
+    /* If we get a timeout the server is busy. Let the user 
+       know what is taking so long */
+    if (local_errno == PBSE_TIMEOUT)
+      fprintf(stdout, "Connection to server timed out. Trying again");
+
+    }while((++retries < MAX_RETRIES) && (local_errno != PBSE_NONE));
 
   if (local_errno != PBSE_NONE)
     {

@@ -3,12 +3,85 @@
 #include "test_pbs_log.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/types.h>
+#include <dirent.h>
 
+#include <string>
 
 #include "pbs_error.h"
 
+extern bool dot;
+extern bool double_dot;
+extern bool first_time;
+extern bool dir_is_null;
+extern bool time_expired;
+extern bool stat_fail;
+
 START_TEST(test_one)
   {
+  int rc;
+  char *null_path = NULL;
+  char path[20];
+
+  /* Validate input */
+  /* NULL path */
+  rc = log_remove_old(null_path, 100);
+  fail_unless(rc == -1);
+
+  /* Expire time of 0 */
+  strcpy(path, "some_dir");
+  rc = log_remove_old(path, 0);
+  fail_unless(rc == 0);
+
+  dir_is_null = true;
+  rc = log_remove_old(path, 10);
+  fail_unless(rc == -1);
+
+  /* get just a . for the directory entry */
+  stat_fail = false;
+  dir_is_null = false;
+  dot = true;
+  double_dot = false;
+  first_time = true;
+
+  rc = log_remove_old(path, 100);
+  fail_unless(rc == 0);
+
+  /* get just a .. for the directory entry */
+  dot = false;
+  double_dot = true;
+  first_time = true;
+
+  rc = log_remove_old(path, 100);
+  fail_unless(rc == 0);
+
+  /* Time not yet expired */
+  dot = false;
+  double_dot = false;
+  first_time = true;
+  time_expired = false;
+
+  rc = log_remove_old(path, 100);
+  fail_unless(rc == 0);
+
+   /* Time expired */
+  dot = false;
+  double_dot = false;
+  first_time = true;
+  time_expired = true;
+
+  rc = log_remove_old(path, 100);
+  fail_unless(rc == 0);
+
+   /* stat failure  */
+  stat_fail = true;
+  dot = false;
+  double_dot = false;
+  first_time = true;
+  time_expired = true;
+
+  rc = log_remove_old(path, 100);
+  fail_unless(rc == 0);
 
 
   }

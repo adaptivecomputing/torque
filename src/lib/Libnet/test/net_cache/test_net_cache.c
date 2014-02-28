@@ -13,17 +13,14 @@
 
 #include "pbs_error.h"
 
-#define NUMTHREADS 20
+#define NUM_THREADS 100
 
 extern const char *getRandomWord(unsigned int *);
 
 void *add_and_lookup_stuff(void *parm);
 
 bool everybody_started  = false;
-unsigned int seedp[NUMTHREADS];
-
-
-#define NUM_THREADS 20
+unsigned int seedp[NUM_THREADS];
 
 START_TEST(test_one)
   {
@@ -37,7 +34,7 @@ START_TEST(test_one)
         thread_ids[i] = num;
     }
 
-    sleep(1);
+    sleep(3);
     everybody_started = true;
 
     for(int i = 0; i < NUM_THREADS; i++)
