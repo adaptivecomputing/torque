@@ -375,7 +375,7 @@ int MXMLSetAttr(
       }  /* END if (aindex >= E->ASize) */
     }    /* END if (aindex >= E->ACount) */
 
-  if ((ptr == NULL) && (aindex >= E->ACount))
+  if (aindex >= E->ACount)
     {
     /* no action required for empty attribute */
 
