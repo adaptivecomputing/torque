@@ -3191,11 +3191,9 @@ void process_opts(
             char tmpLine[65536];
 
             //Append if there is already a value here.
-            if(hash_find(ji->job_attr,keyword,&pVal))
+            if (hash_find(ji->job_attr,keyword,&pVal))
               {
-              strcpy(tmpLine,pVal->value);
-              strcat(tmpLine,";");
-              strcat(tmpLine,valuewd);
+              snprintf(tmpLine, sizeof(tmpLine), "%s;%s", pVal->value, valuewd);
               valuewd = tmpLine;
               }
             hash_add_or_exit(&ji->mm, &ji->job_attr, keyword, valuewd, data_type);
