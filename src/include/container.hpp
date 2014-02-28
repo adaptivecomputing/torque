@@ -20,7 +20,7 @@
 #define THING_NOT_FOUND    -2
 #define ALREADY_IN_LIST     9
 
-#define CHECK_LOCKING
+//#define CHECK_LOCKING
 
 #ifdef CHECK_LOCKING
 #define CHECK_LOCK if(!locked){char *ptr = NULL;while(1) *ptr++ = (char)0xff;}
@@ -40,7 +40,6 @@ class item
   public:
   item(std::string idString,T p):id(idString),ptr(p)
     {
-    pointer_check();
     }
   item(const char *idString,T p):ptr(p)
     {
@@ -52,7 +51,6 @@ class item
       {
       id = idString;
       }
-    pointer_check();
     }
   bool operator == (const std::string& rhs) const
     {
@@ -67,7 +65,6 @@ class item
   private:
   item(){}
   T ptr;
-  void pointer_check(void){}
   };
 
 template <class T>
@@ -426,7 +423,6 @@ class item_container
   {
   return NULL;
   }
-  void integrity_check(void){}
   indexed_container container;
   pthread_mutex_t mutex;
   bool destroyed;

@@ -1819,7 +1819,7 @@ int chk_svr_resc_limit(
     } /* END not cray or cray and reporter is up */
   else if(alps_reporter != NULL)
     {
-    alps_reporter->alps_subnodes->lock();
+    alps_reporter->alps_subnodes->unlock();
     }
 
 
