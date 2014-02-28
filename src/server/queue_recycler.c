@@ -60,9 +60,6 @@ void *remove_some_recycle_queues(
   int        iter = -1;
   pbs_queue *pq;
 
-  q_recycler.queues.lock();
-  iter = q_recycler.queues.get_iterator();
-  q_recycler.queues.unlock();
   mutex_mgr q_recycler_mutex = mutex_mgr(q_recycler.mutex, false);
 
   pq = next_queue_from_recycler(&q_recycler.queues,&iter);
