@@ -151,19 +151,27 @@ class item_container
   item_container()
     {
     memset(&mutex,0,sizeof(mutex));
+    destroyed = false;
 #ifdef CHECK_LOCKING
     locked = false;
 #endif
     }
+  ~item_container()
+    {
+    lock();
+    destroyed = true;
+    unlock();
+    }
   bool insert(T it,const char *id,bool replace = false)
     {
     CHECK_LOCK
-    if(id == NULL) return false;
+    if(id == NULL || destroyed) return false;
     return insert(it,std::string(id),replace);
     }
   bool insert(T it,std::string id,bool replace = false)
     {
     CHECK_LOCK
+    if(destroyed) return false;
     std::pair<hashed_iterator,bool> ret;
     ret = container.get<1>().insert(item<T>(id,it));
     if(!ret.second && replace)
@@ -175,12 +183,13 @@ class item_container
   bool insert_after(const char *location_id,T it,const char *id)
     {
     CHECK_LOCK
-    if((id == NULL)||(location_id == NULL)) return false;
+    if((id == NULL)||(location_id == NULL) || destroyed) return false;
     return insert_after(std::string(location_id),it,std::string(id));
     }
   bool insert_after(std::string location_id,T it,std::string id)
     {
     CHECK_LOCK
+    if(destroyed) return false;
     sequenced_index ind = container.get<0>();
     sequenced_iterator iter = ind.begin();
     while(iter != ind.end())
@@ -200,12 +209,13 @@ class item_container
   bool insert_at(int index,T it,const char *id)
     {
     CHECK_LOCK
-    if(id == NULL) return false;
+    if(id == NULL || destroyed) return false;
     return insert_at(index,it,std::string(id));
     }
   bool insert_at(int index,T it,std::string id)
     {
     CHECK_LOCK
+    if(destroyed) return false;
     sequenced_index ind = container.get<0>();
     sequenced_iterator iter = ind.begin();
     while(index--)
@@ -221,12 +231,13 @@ class item_container
   bool insert_first(T it,const char *id)
     {
     CHECK_LOCK
-    if(id == NULL) return false;
+    if(id == NULL || destroyed) return false;
     return insert_first(it,std::string(id));
     }
   bool insert_first(T it,std::string id)
     {
     CHECK_LOCK
+    if(destroyed) return false;
     sequenced_index ind = container.get<0>();
     sequenced_iterator iter = ind.begin();
     std::pair<sequenced_iterator,bool> ret;
@@ -236,12 +247,13 @@ class item_container
   bool insert_before(const char *location_id,T it,const char *id)
     {
     CHECK_LOCK
-    if((id == NULL)||(location_id == NULL)) return false;
+    if((id == NULL)||(location_id == NULL) || destroyed) return false;
     return insert_before(std::string(location_id),it,std::string(id));
     }
   bool insert_before(std::string location_id,T it,std::string id)
     {
     CHECK_LOCK
+    if(destroyed) return false;
     sequenced_index ind = container.get<0>();
     sequenced_iterator iter = ind.begin();
     while(iter != ind.end())
@@ -260,12 +272,13 @@ class item_container
   bool remove(const char *id)
     {
     CHECK_LOCK
-    if(id == NULL) return false;
+    if(id == NULL || destroyed) return false;
     return remove(std::string(id));
     }
   bool remove(std::string id)
     {
     CHECK_LOCK
+    if(destroyed) return false;
     hashed_index hi = container.get<1>();
     hashed_iterator it = hi.find(id);
     if(it == hi.end())
@@ -278,12 +291,13 @@ class item_container
   T find(const char *id)
     {
     CHECK_LOCK
-    if(id == NULL) return empty_val();
+    if(id == NULL || destroyed) return empty_val();
     return find(std::string(id));
     }
   T find(std::string id)
     {
     CHECK_LOCK
+    if(destroyed) return  empty_val();
     hashed_index hi = container.get<1>();
     hashed_iterator it = hi.find(id);
     if(it == hi.end())
@@ -295,6 +309,7 @@ class item_container
   T pop(void)
     {
     CHECK_LOCK
+    if(destroyed) return  empty_val();
     sequenced_index ind = container.get<0>();
     sequenced_iterator it = ind.begin();
     if(it == ind.end()) return empty_val();
@@ -305,6 +320,7 @@ class item_container
   T pop_back(void)
     {
     CHECK_LOCK
+    if(destroyed) return  empty_val();
     sequenced_index ind = container.get<0>();
     sequenced_iterator it = ind.end();
     if(ind.size() == 0) return empty_val();
@@ -317,12 +333,13 @@ class item_container
   bool swap(const char *id1,const char *id2)
     {
     CHECK_LOCK
-    if((id1 == NULL)||(id2 == NULL)) return false;
+    if((id1 == NULL)||(id2 == NULL) || destroyed) return false;
     return swap(std::string(id1),std::string(id2));
     }
   bool swap(std::string id1,std::string id2)
     {
     CHECK_LOCK
+    if(destroyed) return false;
     sequenced_index ind = container.get<0>();
     sequenced_iterator it1 = ind.begin();
     while(it1 != ind.end())
@@ -368,11 +385,13 @@ class item_container
   void clear()
     {
     CHECK_LOCK
+    if(destroyed) return;
     container.get<0>().clear();
     }
   size_t count()
     {
     CHECK_LOCK
+    if(destroyed) return 0;
     return container.size();
     }
   void lock(void)
@@ -410,6 +429,7 @@ class item_container
   void integrity_check(void){}
   indexed_container container;
   pthread_mutex_t mutex;
+  bool destroyed;
 #ifdef CHECK_LOCKING
   bool locked;
 #endif
