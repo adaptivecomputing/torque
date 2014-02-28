@@ -43,7 +43,7 @@ START_TEST(test_parse_env_line_space)
   fail_unless(rc == PBSE_NONE,"Invalid return from parse_env_line2");
   fail_unless(name != NULL, "name should not be empty");
   fail_unless(val == NULL, "val should be empty");
-  fail_unless(strcmp("EMPTY_VAR", name) == 0, "[ONE_VAR] != [%s]", name);
+  fail_unless(strcmp("EMPTY_VAR", name) == 0, "[EMPTY_VAR] != [%s]", name);
   }
 END_TEST
 
