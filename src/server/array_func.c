@@ -59,6 +59,45 @@
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_ss, unlock_ss */
 #endif /* PBS_MOM */
 
+
+namespace container
+{
+template<>
+void item<job *>::pointer_check(void)
+  {
+  if(ptr == NULL)
+    {
+    char *p = NULL;
+    while(1)
+      *p++ = (char)0xff;
+    }
+  }
+#if 0
+template<>
+void item_container<job *>::integrity_check(void)
+  {
+  item_iterator *pIter = get_iterator(true);
+  job *pJob;
+  while((pJob = pIter->get_next_item()) != NULL)
+    {
+    job *pFoundJob = find(pJob->ji_qs.ji_jobid);
+    if(pFoundJob == NULL)
+      {
+      char *p = NULL;
+      while(1)
+        *p++ = (char)0xff;
+      }
+    }
+  delete pIter;
+  }
+#endif
+}
+
+
+
+
+
+
 extern int array_upgrade(job_array *, int, int, int *);
 extern char *get_correct_jobname(const char *jobid);
 extern int count_user_queued_jobs(pbs_queue *,char *);

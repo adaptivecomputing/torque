@@ -11,7 +11,7 @@
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/hashed_index.hpp>
 #include <boost/multi_index/sequenced_index.hpp>
-#include <boost/multi_index/identity.hpp>
+#include <boost/multi_index/member.hpp>
 #include <string>
 #include <vector>
 #include <pthread.h>
@@ -23,7 +23,7 @@
 #define CHECK_LOCKING
 
 #ifdef CHECK_LOCKING
-#define CHECK_LOCK if(!locked){char *ptr = NULL;while(1) *ptr++ = (char)0xff;} integrity_check();
+#define CHECK_LOCK if(!locked){char *ptr = NULL;while(1) *ptr++ = (char)0xff;}
 #else
 #define CHECK_LOCK
 #endif
@@ -38,8 +38,10 @@ template <class T>
 class item
   {
   public:
-  item(std::string idString):id(idString){ptr = 0;}
-  item(std::string idString,T p):id(idString),ptr(p){}
+  item(std::string idString,T p):id(idString),ptr(p)
+    {
+    pointer_check();
+    }
   item(const char *idString,T p):ptr(p)
     {
     if(idString == NULL)
@@ -52,31 +54,18 @@ class item
       }
     pointer_check();
     }
-  bool operator == (const item& rhs) const
-    {
-    if(&rhs == NULL) return false; //It is possible to get a reference to a null address.
-    return id == rhs.id;
-    }
   bool operator == (const std::string& rhs) const
     {
     if(&rhs == NULL) return false;
     return id == rhs;
     }
-  const char * idString() const
-    {
-    return id.c_str();
-    }
-  const std::string getIdString() const
-    {
-    return id;
-    }
-  T get()
+  T get() const
     {
     return ptr;
     }
+  std::string id;
   private:
   item(){}
-  std::string id;
   T ptr;
   void pointer_check(void){}
   };
@@ -89,7 +78,7 @@ class item_container
   typedef multi_index_container<item<T>,
       indexed_by<
       sequenced<>,
-      hashed_unique<identity<item<T> > > > > indexed_container;
+      hashed_unique<member<item<T>, std::string, &item<T>::id > > > > indexed_container;
 
   typedef typename indexed_container::template nth_index<0>::type& sequenced_index;
   typedef typename indexed_container::template nth_index<0>::type::iterator sequenced_iterator;
@@ -119,7 +108,7 @@ class item_container
       snapshot_iter++;
       if(it != hi.end())
         {
-        return ((container::item<T>)(*it)).get();
+        return it->get();
         }
       }
     return NULL;
@@ -138,14 +127,14 @@ class item_container
         {
         for(sequenced_reverse_iterator riter = pContainer->get<0>().rbegin();riter != pContainer->get<0>().rend();riter++)
           {
-          snapshot.push_back(((container::item<T>)(*riter)).getIdString());
+          snapshot.push_back(riter->id);
           }
         }
       else
         {
         for(sequenced_iterator iter = pContainer->get<0>().begin();iter != pContainer->get<0>().end();iter++)
           {
-          snapshot.push_back(((container::item<T>)(*iter)).getIdString());
+          snapshot.push_back(iter->id);
           }
         }
       snapshot_iter = snapshot.begin();
@@ -301,8 +290,7 @@ class item_container
       {
       return empty_val();
       }
-    item<T> ret = *it;
-    return ret.get();
+    return it->get();
     }
   T pop(void)
     {
@@ -310,7 +298,7 @@ class item_container
     sequenced_index ind = container.get<0>();
     sequenced_iterator it = ind.begin();
     if(it == ind.end()) return empty_val();
-    T pT = ((container::item<T>)(*it)).get();
+    T pT = it->get();
     ind.erase(it);
     return pT;
     }
@@ -321,7 +309,7 @@ class item_container
     sequenced_iterator it = ind.end();
     if(ind.size() == 0) return empty_val();
     it--;
-    T pT = ((container::item<T>)(*it)).get();
+    T pT = it->get();
     ind.erase(it);
     return pT;
     }
@@ -416,9 +404,9 @@ class item_container
     }
   private:
   T empty_val(void)
-    {
+  {
   return NULL;
-    }
+  }
   void integrity_check(void){}
   indexed_container container;
   pthread_mutex_t mutex;
@@ -426,12 +414,6 @@ class item_container
   bool locked;
 #endif
   };
-
-template <class T>
-inline size_t hash_value(const item<T>& rhs)
-  {
-  return (boost::hash_value(rhs.getIdString()));
-  }
 
 } //End of namespace scope.
 
