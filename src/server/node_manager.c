@@ -2671,6 +2671,8 @@ int node_spec(
   enum job_types     &job_type)
 
   {
+  FUNCTION_TIMER
+
   struct pbsnode      *pnode;
   char                 first_node_name[PBS_MAXHOSTNAME + 1];
   char                *first_name_ptr;
@@ -2689,8 +2691,6 @@ int node_spec(
   char                *plus;
   long                 cray_enabled = FALSE;
   int                  num_alps_reqs = 0;
-
-  FUNCTION_TIMER
 
   if (EMsg != NULL)
     EMsg[0] = '\0';
@@ -4201,6 +4201,7 @@ int set_nodes(
   char  *EMsg)        /* O (optional,minsize=1024) */
 
   {
+  FUNCTION_TIMER
   std::vector<job_reservation_info *> host_info;
   std::stringstream                   exec_hosts;
   std::stringstream                   exec_ports;
