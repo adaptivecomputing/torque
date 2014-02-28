@@ -4287,7 +4287,11 @@ int set_nodes(
     return(PBSE_RESCUNAV);
     }
   else if (i == PBSE_LOGIN_BUSY)
+    {
+    free_naji(naji);
+    free_alps_req_data_array(ard_array, num_reqs);
     return(i);
+    }
   else if (i < 0)
     {
     /* request failed, corrupt request */
