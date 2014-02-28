@@ -251,14 +251,14 @@ void send_sig_kill(
 
   if (job_id == NULL)
     return;
-  
-  char *extra = strdup(rerun);
 
   if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
     {
     free(job_id);
     return;
     }
+  
+  char *extra = strdup(rerun);
 
   free(job_id);
 
