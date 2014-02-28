@@ -182,7 +182,7 @@ int main(
 
   if (purge_completed)
     {
-    strcpy(server_out,pbs_default());
+    snprintf(server_out, sizeof(server_out), "%s", pbs_default());
     goto cnt;
     }
 
