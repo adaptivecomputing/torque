@@ -98,19 +98,37 @@ class item_container
         }
       }
 #endif
-    hashed_index hi = pContainer->get<1>();
-    while(snapshot_iter != snapshot.end())
+    if(endHit)
       {
-      hashed_iterator it = hi.find(*snapshot_iter);
-      snapshot_iter++;
-      if(it != hi.end())
+      return NULL;
+      }
+    if(*pUpdateCounter != lastUpdate)
+      {
+      //The container has been changed on us.
+      resetIterators();
+      }
+    if(reversed)
+      {
+      if(riter == pContainer->get<0>().rend())
         {
-        return it->get();
+        return NULL;
         }
+      T pT = riter->get();
+      riter++;
+      index++;
+      return pT;
       }
-    return NULL;
+    if(iter == pContainer->get<0>().end())
+      {
+      return NULL;
       }
+    T pT = iter->get();
+    iter++;
+    index++;
+    return pT;
+    }
     item_iterator(indexed_container *pCtner,
+        unsigned long *pUpdateCntr,
 #ifdef CHECK_LOCKING
         bool *locked,
 #endif
@@ -120,35 +138,57 @@ class item_container
       pLocked = locked;
 #endif
       pContainer = pCtner;
-      if(reverse)
+      pUpdateCounter = pUpdateCntr;
+      lastUpdate = *pUpdateCntr;
+      index = 0;
+      reversed = reverse;
+      endHit = false;
+      resetIterators();
+      }
+  private:
+    void resetIterators(void)
+      {
+      if(reversed)
         {
-        for(sequenced_reverse_iterator riter = pContainer->get<0>().rbegin();riter != pContainer->get<0>().rend();riter++)
+        riter = pContainer->get<0>().rbegin();
+        for(size_t i =0;i < index;i++)
           {
-          snapshot.push_back(riter->id);
+          if(riter == pContainer->get<0>().rend())
+            {
+            return;
+            }
+          riter++;
           }
         }
       else
         {
-        for(sequenced_iterator iter = pContainer->get<0>().begin();iter != pContainer->get<0>().end();iter++)
+        iter = pContainer->get<0>().begin();
+        for(size_t i =0;i < index;i++)
           {
-          snapshot.push_back(iter->id);
+          if(iter == pContainer->get<0>().end())
+            {
+            return;
+            }
+          iter++;
           }
         }
-      snapshot_iter = snapshot.begin();
       }
-  private:
-    std::vector<std::string> snapshot;
-    std::vector<std::string>::iterator snapshot_iter;
+    sequenced_iterator iter;
+    sequenced_reverse_iterator riter;
     indexed_container *pContainer;
+    unsigned long *pUpdateCounter;
+    unsigned long lastUpdate;
+    size_t index;
+    bool endHit;
+    bool reversed;
 #ifdef CHECK_LOCKING
     bool *pLocked;
 #endif
     };
 
-  item_container()
+  item_container():destroyed(false),updateCounter(0)
     {
     memset(&mutex,0,sizeof(mutex));
-    destroyed = false;
 #ifdef CHECK_LOCKING
     locked = false;
 #endif
@@ -169,6 +209,7 @@ class item_container
     {
     CHECK_LOCK
     if(destroyed) return false;
+    updateCounter++;
     std::pair<hashed_iterator,bool> ret;
     ret = container.get<1>().insert(item<T>(id,it));
     if(!ret.second && replace)
@@ -187,6 +228,7 @@ class item_container
     {
     CHECK_LOCK
     if(destroyed) return false;
+    updateCounter++;
     sequenced_index ind = container.get<0>();
     sequenced_iterator iter = ind.begin();
     while(iter != ind.end())
@@ -213,6 +255,7 @@ class item_container
     {
     CHECK_LOCK
     if(destroyed) return false;
+    updateCounter++;
     sequenced_index ind = container.get<0>();
     sequenced_iterator iter = ind.begin();
     while(index--)
@@ -235,6 +278,7 @@ class item_container
     {
     CHECK_LOCK
     if(destroyed) return false;
+    updateCounter++;
     sequenced_index ind = container.get<0>();
     sequenced_iterator iter = ind.begin();
     std::pair<sequenced_iterator,bool> ret;
@@ -251,6 +295,7 @@ class item_container
     {
     CHECK_LOCK
     if(destroyed) return false;
+    updateCounter++;
     sequenced_index ind = container.get<0>();
     sequenced_iterator iter = ind.begin();
     while(iter != ind.end())
@@ -276,6 +321,7 @@ class item_container
     {
     CHECK_LOCK
     if(destroyed) return false;
+    updateCounter++;
     hashed_index hi = container.get<1>();
     hashed_iterator it = hi.find(id);
     if(it == hi.end())
@@ -307,6 +353,7 @@ class item_container
     {
     CHECK_LOCK
     if(destroyed) return  empty_val();
+    updateCounter++;
     sequenced_index ind = container.get<0>();
     sequenced_iterator it = ind.begin();
     if(it == ind.end()) return empty_val();
@@ -318,6 +365,7 @@ class item_container
     {
     CHECK_LOCK
     if(destroyed) return  empty_val();
+    updateCounter++;
     sequenced_index ind = container.get<0>();
     sequenced_iterator it = ind.end();
     if(ind.size() == 0) return empty_val();
@@ -337,6 +385,7 @@ class item_container
     {
     CHECK_LOCK
     if(destroyed) return false;
+    updateCounter++;
     sequenced_index ind = container.get<0>();
     sequenced_iterator it1 = ind.begin();
     while(it1 != ind.end())
@@ -374,6 +423,7 @@ class item_container
     {
     CHECK_LOCK
     return new item_iterator(&container,
+        &updateCounter,
 #ifdef CHECK_LOCKING
         &locked,
 #endif
@@ -426,6 +476,7 @@ class item_container
   indexed_container container;
   pthread_mutex_t mutex;
   bool destroyed;
+  unsigned long updateCounter;
 #ifdef CHECK_LOCKING
   bool locked;
 #endif
