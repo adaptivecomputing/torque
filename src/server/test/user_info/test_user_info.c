@@ -152,14 +152,14 @@ START_TEST(decrement_queued_jobs_test)
   users.clear();
   user_info *ui = (user_info *)calloc(1,sizeof(user_info));
 
-  ui->user_name = strdup("tom"); put a server suffix here.
+  ui->user_name = strdup("tom"); 
   ui->num_jobs_queued = 1;
 
   users.insert(ui,ui->user_name);
   users.unlock();
 
   fail_unless(decrement_queued_jobs(&users, (char *)"bob") == THING_NOT_FOUND, "decremented for non-existent user");
-  fail_unless(decrement_queued_jobs(&users, (char *)"tom") == 0, "couldn't decrement for tom?");
+  fail_unless(decrement_queued_jobs(&users, (char *)"tom@neverland.com") == 0, "couldn't decrement for tom?");
   fail_unless(get_num_queued(&users, "tom") == 0, "didn't actually decrement tom");
   
   fail_unless(decrement_queued_jobs(&users, (char *)"tom") == 0, "couldn't decrement for tom?");
