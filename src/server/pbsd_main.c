@@ -1235,6 +1235,9 @@ void *handle_queue_routing_retries(
       unlock_queue(pque, __func__, NULL, LOGLEVEL);
       }
     sleep(route_retry_interval);
+    svr_queues.lock();
+    iter->reset(); //Start over again.
+    svr_queues.unlock();
     }
 
   pthread_attr_destroy(&routing_attr); /* we don't care if the succeeds or fails */

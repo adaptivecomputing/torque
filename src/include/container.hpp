@@ -111,6 +111,7 @@ class item_container
       {
       if(riter == pContainer->get<0>().rend())
         {
+        endHit = true;
         return NULL;
         }
       T pT = riter->get();
@@ -120,6 +121,7 @@ class item_container
       }
     if(iter == pContainer->get<0>().end())
       {
+      endHit = true;
       return NULL;
       }
     T pT = iter->get();
@@ -139,9 +141,24 @@ class item_container
 #endif
       pContainer = pCtner;
       pUpdateCounter = pUpdateCntr;
-      lastUpdate = *pUpdateCntr;
       index = 0;
       reversed = reverse;
+      endHit = false;
+      resetIterators();
+      }
+    void reset(void) //Reset the iterator;
+      {
+#ifdef CHECK_LOCKING
+    if(!*pLocked)
+      {
+      char *p = NULL;
+      while(1)
+        {
+        *p++ = (char)0xff;
+        }
+      }
+#endif
+      index = 0;
       endHit = false;
       resetIterators();
       }
@@ -172,6 +189,7 @@ class item_container
           iter++;
           }
         }
+      lastUpdate = *pUpdateCounter;
       }
     sequenced_iterator iter;
     sequenced_reverse_iterator riter;

@@ -152,7 +152,7 @@ START_TEST(decrement_queued_jobs_test)
   users.clear();
   user_info *ui = (user_info *)calloc(1,sizeof(user_info));
 
-  ui->user_name = strdup("tom");
+  ui->user_name = strdup("tom"); put a server suffix here.
   ui->num_jobs_queued = 1;
 
   users.insert(ui,ui->user_name);

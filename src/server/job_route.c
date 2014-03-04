@@ -591,6 +591,7 @@ void *queue_route(
         sprintf(log_buf, "Could not find queue %s", queue_name);
         log_err(-1, __func__, log_buf);
         free(queue_name);
+        delete iter;
         return(NULL);
         }
       que_mutex.mark_as_locked();
@@ -600,6 +601,7 @@ void *queue_route(
        We don't want it locked while we sleep */
     que_mutex.unlock();
     pthread_mutex_unlock(reroute_job_mutex);
+    delete iter;
     sleep(route_retry_interval);
     }
 

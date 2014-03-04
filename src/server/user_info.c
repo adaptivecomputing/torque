@@ -197,7 +197,7 @@ int  increment_queued_jobs(
   uih->lock();
 
   /* get the user if there is one */
-  if ((ui = uih->find(uname.c_str())) != NULL)
+  if ((ui = uih->find(uname)) != NULL)
     {
     ui->num_jobs_queued += num_submitted;
     }
@@ -238,17 +238,20 @@ int  decrement_queued_jobs(
 
   uih->lock();
 
-  if ((ui = uih->find(user_name)) != NULL)
+  if ((ui = uih->find(uname)) != NULL)
     {
-    if (ui->num_jobs_queued != 0)
+    if (ui->num_jobs_queued == 0)
       {
-      ui->num_jobs_queued = 0;
 
       if (LOGLEVEL >= 6)
         {
         snprintf(log_buf, sizeof(log_buf), "decremented number of jobs queued when already at 0");
         log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buf);
         }
+      }
+    else
+      {
+      ui->num_jobs_queued--;
       }
     rc = PBSE_NONE;
     }
