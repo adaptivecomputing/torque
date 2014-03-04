@@ -133,18 +133,18 @@ int id_map::get_id(
   }
 
 
-char *id_map::get_name(
+const char *id_map::get_name(
 
   int id)
 
   {
-  char *name = NULL;
+  const char *name = NULL;
 
   pthread_mutex_lock(&this->mutex);
   try
     {
-    std::string nname = this->int_map.at(id);
-    name = strdup(nname.c_str());
+    std::string const &nname = this->int_map.at(id);
+    name = nname.c_str();
     }
   catch (...)
     {

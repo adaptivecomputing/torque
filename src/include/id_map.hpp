@@ -94,7 +94,7 @@ class id_map
     id_map(const id_map &other);
     int get_new_id(const char *name);
     int get_id(const char *name);
-    char *get_name(int id);
+    const char *get_name(int id);
   };
 
 extern id_map node_mapper;
