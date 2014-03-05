@@ -363,10 +363,11 @@
     %{!?1:%grep_safety_net_error} \
     %{!?2:%grep_safety_net_error} \
     %{!?3:%grep_safety_net_error} \
-    for i in `%{__grep} -H -r -l -I %{?4} "%{2}" "%{1}"`; \
+    for i in `%{__grep} -H -r -l -I %{?4} "%{2}" "%{1}"` \
     do \
-       %{__sed} -i "s|%{2}|%{3}|g" $i; \
-    done; 
+       %{__sed} -i "s|%{2}|%{3}|g" $i \
+    done \
+
 
 # These allow the automatic back up to take place.
 
