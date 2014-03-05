@@ -326,7 +326,7 @@ int attr_to_str(
   {
   /* used to print numbers and chars as strings */
   char local_buf[MAXLINE];
-  int  rc;
+  int  rc = PBSE_NONE;
 
   if ((attr.at_flags & ATR_VFLAG_SET) == FALSE)
     return(NO_ATTR_DATA);
