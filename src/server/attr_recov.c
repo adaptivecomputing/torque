@@ -372,7 +372,7 @@ int recov_attr(
   char     *endPal;
 #ifndef PBS_MOM
   bool      exec_host_found = false;
-  char      job_state;
+  char      job_state = 'Z';
 #endif
 
   /* set all privileges (read and write) for decoding resources */
@@ -535,6 +535,7 @@ int recov_attr(
 #ifndef PBS_MOM
   if ((exec_host_found == false) && 
       ((job_state == 'R') ||
+       (job_state == 'Z') ||
        (job_state == 'E')))
     {   
     return(-1);
