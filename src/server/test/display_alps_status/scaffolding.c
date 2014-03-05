@@ -5,6 +5,7 @@
 #include "batch_request.h"
 #include "list_link.h"
 
+bool exit_called = false;
 int LOGLEVEL = 10;
 int num_nodes = 10;
 

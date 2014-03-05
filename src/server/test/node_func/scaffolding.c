@@ -22,6 +22,7 @@ hello_container failures;
 int svr_tsnodes = 0; 
 resource_t next_resource_tag;
 char server_name[PBS_MAXSERVERNAME + 1];
+bool exit_called = false;
 all_nodes allnodes;
 char *path_nodes;
 char *path_nodestate;

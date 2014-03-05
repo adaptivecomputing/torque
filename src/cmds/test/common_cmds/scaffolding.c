@@ -6,6 +6,7 @@
 #include "dynamic_string.h"
 
 
+bool exit_called = false;
 int env_add_call = 0;
 int env_del_call = 0;
 int env_find_call = 0;

@@ -17,6 +17,9 @@
 #include <pthread.h>
 #include <memory.h>
 
+extern bool exit_called;
+
+
 #define THING_NOT_FOUND    -2
 #define ALREADY_IN_LIST     9
 
@@ -98,7 +101,7 @@ class item_container
         }
       }
 #endif
-    if(endHit)
+    if(endHit || exit_called)
       {
       return NULL;
       }
@@ -158,6 +161,10 @@ class item_container
         }
       }
 #endif
+      if(exit_called)
+        {
+        return;
+        }
       index = 0;
       endHit = false;
       resetIterators();
@@ -204,7 +211,7 @@ class item_container
 #endif
     };
 
-  item_container():destroyed(false),updateCounter(0)
+  item_container():updateCounter(0)
     {
     memset(&mutex,0,sizeof(mutex));
 #ifdef CHECK_LOCKING
@@ -213,20 +220,22 @@ class item_container
     }
   ~item_container()
     {
-    lock();
-    destroyed = true;
-    unlock();
+    if(exit_called)
+      {
+      lock();
+      unlock();
+      }
     }
   bool insert(T it,const char *id,bool replace = false)
     {
     CHECK_LOCK
-    if(id == NULL || destroyed) return false;
+    if(id == NULL || exit_called) return false;
     return insert(it,std::string(id),replace);
     }
   bool insert(T it,std::string id,bool replace = false)
     {
     CHECK_LOCK
-    if(destroyed) return false;
+    if(exit_called) return false;
     updateCounter++;
     std::pair<hashed_iterator,bool> ret;
     ret = container.get<1>().insert(item<T>(id,it));
@@ -239,13 +248,13 @@ class item_container
   bool insert_after(const char *location_id,T it,const char *id)
     {
     CHECK_LOCK
-    if((id == NULL)||(location_id == NULL) || destroyed) return false;
+    if((id == NULL)||(location_id == NULL) || exit_called) return false;
     return insert_after(std::string(location_id),it,std::string(id));
     }
   bool insert_after(std::string location_id,T it,std::string id)
     {
     CHECK_LOCK
-    if(destroyed) return false;
+    if(exit_called) return false;
     updateCounter++;
     sequenced_index ind = container.get<0>();
     sequenced_iterator iter = ind.begin();
@@ -266,13 +275,13 @@ class item_container
   bool insert_at(int index,T it,const char *id)
     {
     CHECK_LOCK
-    if(id == NULL || destroyed) return false;
+    if(id == NULL || exit_called) return false;
     return insert_at(index,it,std::string(id));
     }
   bool insert_at(int index,T it,std::string id)
     {
     CHECK_LOCK
-    if(destroyed) return false;
+    if(exit_called) return false;
     updateCounter++;
     sequenced_index ind = container.get<0>();
     sequenced_iterator iter = ind.begin();
@@ -289,13 +298,13 @@ class item_container
   bool insert_first(T it,const char *id)
     {
     CHECK_LOCK
-    if(id == NULL || destroyed) return false;
+    if(id == NULL || exit_called) return false;
     return insert_first(it,std::string(id));
     }
   bool insert_first(T it,std::string id)
     {
     CHECK_LOCK
-    if(destroyed) return false;
+    if(exit_called) return false;
     updateCounter++;
     sequenced_index ind = container.get<0>();
     sequenced_iterator iter = ind.begin();
@@ -306,13 +315,13 @@ class item_container
   bool insert_before(const char *location_id,T it,const char *id)
     {
     CHECK_LOCK
-    if((id == NULL)||(location_id == NULL) || destroyed) return false;
+    if((id == NULL)||(location_id == NULL) || exit_called) return false;
     return insert_before(std::string(location_id),it,std::string(id));
     }
   bool insert_before(std::string location_id,T it,std::string id)
     {
     CHECK_LOCK
-    if(destroyed) return false;
+    if(exit_called) return false;
     updateCounter++;
     sequenced_index ind = container.get<0>();
     sequenced_iterator iter = ind.begin();
@@ -332,13 +341,13 @@ class item_container
   bool remove(const char *id)
     {
     CHECK_LOCK
-    if(id == NULL || destroyed) return false;
+    if(id == NULL || exit_called) return false;
     return remove(std::string(id));
     }
   bool remove(std::string id)
     {
     CHECK_LOCK
-    if(destroyed) return false;
+    if(exit_called) return false;
     updateCounter++;
     hashed_index hi = container.get<1>();
     hashed_iterator it = hi.find(id);
@@ -352,13 +361,13 @@ class item_container
   T find(const char *id)
     {
     CHECK_LOCK
-    if(id == NULL || destroyed) return empty_val();
+    if(id == NULL || exit_called) return empty_val();
     return find(std::string(id));
     }
   T find(std::string id)
     {
     CHECK_LOCK
-    if(destroyed) return  empty_val();
+    if(exit_called) return  empty_val();
     hashed_index hi = container.get<1>();
     hashed_iterator it = hi.find(id);
     if(it == hi.end())
@@ -370,7 +379,7 @@ class item_container
   T pop(void)
     {
     CHECK_LOCK
-    if(destroyed) return  empty_val();
+    if(exit_called) return  empty_val();
     updateCounter++;
     sequenced_index ind = container.get<0>();
     sequenced_iterator it = ind.begin();
@@ -382,7 +391,7 @@ class item_container
   T pop_back(void)
     {
     CHECK_LOCK
-    if(destroyed) return  empty_val();
+    if(exit_called) return  empty_val();
     updateCounter++;
     sequenced_index ind = container.get<0>();
     sequenced_iterator it = ind.end();
@@ -396,13 +405,13 @@ class item_container
   bool swap(const char *id1,const char *id2)
     {
     CHECK_LOCK
-    if((id1 == NULL)||(id2 == NULL) || destroyed) return false;
+    if((id1 == NULL)||(id2 == NULL) || exit_called) return false;
     return swap(std::string(id1),std::string(id2));
     }
   bool swap(std::string id1,std::string id2)
     {
     CHECK_LOCK
-    if(destroyed) return false;
+    if(exit_called) return false;
     updateCounter++;
     sequenced_index ind = container.get<0>();
     sequenced_iterator it1 = ind.begin();
@@ -450,13 +459,13 @@ class item_container
   void clear()
     {
     CHECK_LOCK
-    if(destroyed) return;
+    if(exit_called) return;
     container.get<0>().clear();
     }
   size_t count()
     {
     CHECK_LOCK
-    if(destroyed) return 0;
+    if(exit_called) return 0;
     return container.size();
     }
   void lock(void)
@@ -493,7 +502,6 @@ class item_container
   }
   indexed_container container;
   pthread_mutex_t mutex;
-  bool destroyed;
   unsigned long updateCounter;
 #ifdef CHECK_LOCKING
   bool locked;

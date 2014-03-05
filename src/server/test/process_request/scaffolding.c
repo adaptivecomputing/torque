@@ -13,6 +13,7 @@
 #include "pbs_nodes.h" /* pbsnode */
 #include "attribute.h" /* pbs_attribute */
 
+bool exit_called = false;
 const char *msg_err_noqueue = "Unable to requeue job, queue is not defined";
 struct credential conn_credent[PBS_NET_MAX_CONNECTIONS];
 char server_name[PBS_MAXSERVERNAME + 1];

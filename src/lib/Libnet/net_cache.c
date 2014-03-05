@@ -101,6 +101,8 @@
 
 static pthread_mutex_t cacheMutex = PTHREAD_MUTEX_INITIALIZER;
 static int cacheDestroyed = FALSE;
+bool exit_called = false;
+
 
 namespace container
 {

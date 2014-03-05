@@ -3,4 +3,5 @@
 #include "pbs_ifl.h"
 
 int calloc_fail;
+bool exit_called = false;
 

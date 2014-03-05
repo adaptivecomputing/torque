@@ -12,7 +12,7 @@
 
 const char *text_name              = "text";
 
-
+bool exit_called = false;
 
 char *path_arrays;
 const char *pbs_o_host = "PBS_O_HOST";

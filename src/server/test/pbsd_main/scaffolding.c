@@ -16,6 +16,7 @@
 #include "sched_cmds.h" /* SCH_SCHEDULE_NULL */
 #include "threadpool.h"
 
+bool exit_called = false;
 hello_container failures;
 pthread_mutex_t *job_log_mutex;
 pthread_mutex_t *log_mutex;

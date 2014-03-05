@@ -14,6 +14,7 @@
 #include "pbs_nodes.h"
 
 
+bool exit_called = false;
 extern int svr_resc_size;
 all_queues svr_queues;
 const char *msg_daemonname = "unset";

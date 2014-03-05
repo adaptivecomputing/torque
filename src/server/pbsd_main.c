@@ -258,6 +258,8 @@ unsigned int            pbs_server_port_dis;
 bool                    auto_send_hierarchy = true;
 mom_hierarchy_t        *mh;
 
+extern bool            exit_called;
+
 listener_connection     listener_conns[MAXLISTENERS];
 int                     queue_rank = 0;
 int                     a_opt_init = -1;
@@ -2114,6 +2116,7 @@ int main(
 
   /* cleans up memory allocated by the xml library */
   xmlCleanupParser(); /* must be called the latest possible */
+  exit_called = true;
   exit(0);
   }  /* END main() */
 

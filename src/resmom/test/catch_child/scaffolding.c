@@ -66,10 +66,11 @@ tlist_head mom_polljobs; /* mom_main.c */
 char        *path_epiloguserp; /* mom_main.c */
 char        *path_epilogp; /* mom_main.c */
 attribute_def job_attr_def[10]; /* src/server/job_attr_def.c */
+bool exit_called = false;
 
 int tc = 0; /* Used for test routining */
 int func_num = 0;
-int exit_called = 0;
+int test_exit_called = 0;
 int ran_one = 0;
 int the_sock = 0;
 job *lastpjob = NULL;
@@ -78,7 +79,7 @@ int is_login_node;
 
 void exit_test(int num)
   {
-  exit_called = num;
+  test_exit_called = num;
   }
 
 void log_record(int eventtype, int objclass, const char *objname, const char *text)
