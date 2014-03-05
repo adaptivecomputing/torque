@@ -198,7 +198,20 @@ int req_signaljob(
   /* send reply for asynchronous suspend */
   if (preq->rq_type == PBS_BATCH_AsySignalJob)
     {
-    reply_ack(preq);
+    /* reply_ack will free preq. We need to copy it before we call reply_ack */
+    batch_request *new_preq;
+
+    new_preq = duplicate_request(preq, -1);
+    if (new_preq == NULL)
+      {
+      sprintf(log_buf, "failed to duplicate batch request");
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+      return(PBSE_MEM_MALLOC);
+      }
+
+    get_batch_request_id(new_preq);
+
+    reply_ack(new_preq);
     preq->rq_noreply = TRUE;
     }
 
