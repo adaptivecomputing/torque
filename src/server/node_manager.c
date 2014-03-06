@@ -4560,6 +4560,8 @@ int procs_requested(
         if (proplist(&str, &prop, &num_procs, &num_gpus, &num_mics))
           {
           free(tmp_spec);
+          if (prop != NULL)
+            free_prop(prop);
           return(-1);
           }
         }
@@ -4572,6 +4574,8 @@ int procs_requested(
         {
         /* must be a prop list with no number in front */
         free(tmp_spec);
+        if (prop != NULL)
+          free_prop(prop);
 
         return(-1);
         }
