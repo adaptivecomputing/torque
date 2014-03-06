@@ -120,6 +120,10 @@ class item_container
       T pT = riter->get();
       riter++;
       index++;
+      if(riter == pContainer->get<0>().rend())
+        {
+        endHit = true;
+        }
       return pT;
       }
     if(iter == pContainer->get<0>().end())
@@ -130,8 +134,21 @@ class item_container
     T pT = iter->get();
     iter++;
     index++;
+    if(iter == pContainer->get<0>().end())
+      {
+      endHit = true;
+      }
     return pT;
     }
+    //One item was removed, don't reset the iterator unless something else has changed.
+    void item_was_removed(void)
+      {
+      lastUpdate++;
+      if(index > 0)
+        {
+        index--;
+        }
+      }
     item_iterator(indexed_container *pCtner,
         unsigned long *pUpdateCntr,
 #ifdef CHECK_LOCKING
@@ -236,12 +253,16 @@ class item_container
     {
     CHECK_LOCK
     if(exit_called) return false;
-    updateCounter++;
     std::pair<hashed_iterator,bool> ret;
     ret = container.get<1>().insert(item<T>(id,it));
     if(!ret.second && replace)
       {
+      updateCounter++;
       return container.get<1>().replace(ret.first,item<T>(id,it));
+      }
+    if(ret.second)
+      {
+      updateCounter++;
       }
     return ret.second;
     }
@@ -255,7 +276,6 @@ class item_container
     {
     CHECK_LOCK
     if(exit_called) return false;
-    updateCounter++;
     sequenced_index ind = container.get<0>();
     sequenced_iterator iter = ind.begin();
     while(iter != ind.end())
@@ -270,6 +290,10 @@ class item_container
     iter++;
     std::pair<sequenced_iterator,bool> ret;
     ret = container.get<0>().insert(iter,item<T>(id,it));
+    if(ret.second)
+      {
+      updateCounter++;
+      }
     return ret.second;
     }
   bool insert_at(int index,T it,const char *id)
@@ -282,7 +306,6 @@ class item_container
     {
     CHECK_LOCK
     if(exit_called) return false;
-    updateCounter++;
     sequenced_index ind = container.get<0>();
     sequenced_iterator iter = ind.begin();
     while(index--)
@@ -292,6 +315,10 @@ class item_container
       }
     std::pair<sequenced_iterator,bool> ret;
     ret = container.get<0>().insert(iter,item<T>(id,it));
+    if(ret.second)
+      {
+      updateCounter++;
+      }
     return ret.second;
     }
 
@@ -305,11 +332,14 @@ class item_container
     {
     CHECK_LOCK
     if(exit_called) return false;
-    updateCounter++;
     sequenced_index ind = container.get<0>();
     sequenced_iterator iter = ind.begin();
     std::pair<sequenced_iterator,bool> ret;
     ret = container.get<0>().insert(iter,item<T>(id,it));
+    if(ret.second)
+      {
+      updateCounter++;
+      }
     return ret.second;
     }
   bool insert_before(const char *location_id,T it,const char *id)
@@ -322,7 +352,6 @@ class item_container
     {
     CHECK_LOCK
     if(exit_called) return false;
-    updateCounter++;
     sequenced_index ind = container.get<0>();
     sequenced_iterator iter = ind.begin();
     while(iter != ind.end())
@@ -336,6 +365,10 @@ class item_container
     if(iter == ind.end()) return false;
     std::pair<sequenced_iterator,bool> ret;
     ret = container.get<0>().insert(iter,item<T>(id,it));
+    if(ret.second)
+      {
+      updateCounter++;
+      }
     return ret.second;
     }
   bool remove(const char *id)
@@ -348,13 +381,13 @@ class item_container
     {
     CHECK_LOCK
     if(exit_called) return false;
-    updateCounter++;
     hashed_index hi = container.get<1>();
     hashed_iterator it = hi.find(id);
     if(it == hi.end())
       {
       return false;
       }
+    updateCounter++;
     hi.erase(it);
     return true;
     }
@@ -380,25 +413,25 @@ class item_container
     {
     CHECK_LOCK
     if(exit_called) return  empty_val();
-    updateCounter++;
     sequenced_index ind = container.get<0>();
     sequenced_iterator it = ind.begin();
     if(it == ind.end()) return empty_val();
     T pT = it->get();
     ind.erase(it);
+    updateCounter++;
     return pT;
     }
   T pop_back(void)
     {
     CHECK_LOCK
     if(exit_called) return  empty_val();
-    updateCounter++;
     sequenced_index ind = container.get<0>();
     sequenced_iterator it = ind.end();
     if(ind.size() == 0) return empty_val();
     it--;
     T pT = it->get();
     ind.erase(it);
+    updateCounter++;
     return pT;
     }
 
@@ -412,7 +445,6 @@ class item_container
     {
     CHECK_LOCK
     if(exit_called) return false;
-    updateCounter++;
     sequenced_index ind = container.get<0>();
     sequenced_iterator it1 = ind.begin();
     while(it1 != ind.end())
