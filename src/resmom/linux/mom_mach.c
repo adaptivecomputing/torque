@@ -1753,6 +1753,9 @@ int mom_set_limits(
       if(set_mode == SET_LIMIT_SET)
         {
         std::string beforeFreq;
+        char requestedFreq[100];
+
+        from_frequency(&(pres->rs_value.at_val.at_frequency),requestedFreq);
 
         nd_frequency.get_frequency_string(beforeFreq);
         if(!nd_frequency.set_frequency((cpu_frequency_type)pres->rs_value.at_val.at_frequency.frequency_type,
@@ -1766,7 +1769,7 @@ int mom_set_limits(
           {
           std::string afterFreq;
           nd_frequency.get_frequency_string(afterFreq);
-          std::string msg = "Changed frequency from " + beforeFreq + " to " + afterFreq;
+          std::string msg = "Changed frequency from " + beforeFreq + " to " + afterFreq + " requested frequency was " + requestedFreq;
           log_ext(PBSE_CHANGED_CPU_FREQUENCY,__func__, msg.c_str(),LOG_NOTICE);
           }
         }

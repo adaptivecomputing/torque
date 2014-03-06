@@ -423,6 +423,8 @@ int encode_tv(pbs_attribute *attr, tlist_head *phead, const char *atname,
 							const char *rsname, int mode, int perm);
 int encode_frequency(pbs_attribute *attr, tlist_head *phead, const char *atname,
                             const char *rsname, int mode, int perm);
+void from_frequency(struct cpu_frequency_value *, char *);
+
 
 
 
