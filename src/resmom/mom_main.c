@@ -6776,6 +6776,11 @@ void resend_things()
       {
       things_to_resend.erase(iter);
       free(mc);
+      if(iter == things_to_resend.end())
+        {
+        //The last item in the list was erased so don't advance past the end of the list.
+        break;
+        }
       }
     else
       mc->resend_time = time_now;
