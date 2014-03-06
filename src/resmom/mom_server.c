@@ -594,9 +594,6 @@ void mom_server_stream_error(
 
   log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
 
-  if(stream >= 0)
-    close(stream);
-
   return;
   }  /* END mom_server_stream_error() */
 
