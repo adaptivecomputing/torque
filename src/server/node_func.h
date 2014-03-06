@@ -39,11 +39,7 @@ int chk_characteristic(struct pbsnode *pnode, struct node_check_info *nci, int *
 
 int status_nodeattrib(struct svrattrl *pal, struct attribute_def *padef, struct pbsnode *pnode, int limit, int priv, tlist_head *phead, int *bad);
 
-/* static void subnode_delete(struct pbssubn *psubn); */
-
 void effective_node_delete(struct pbsnode **pnode);
-
-/* static int process_host_name_part(char *objname, u_long **pul, char **pname, int *ntype); */
 
 int update_nodes_file(struct pbsnode *held);
 
@@ -55,21 +51,9 @@ int create_a_gpusubnode(struct pbsnode *pnode);
 
 int copy_properties(struct pbsnode *dest, struct pbsnode *src);
 
-/*static int read_val_and_advance(int *val, char **str);*/
-
-/*static int setup_node_boards(struct pbsnode *pnode, u_long *pul);*/
-
-/*static void recheck_for_node(struct work_task *ptask);*/
-
 int create_pbs_node(char *objname, struct svrattrl *plist, int perms, int *bad);
 
-/* static char *parse_node_token(char *start, int cok, int comma, int *err, char *term); */
-
 int setup_nodes(void);
-
-/* static void delete_a_subnode(struct pbsnode *pnode); */
-
-/* static void delete_a_gpusubnode(struct pbsnode *pnode); */
 
 int node_np_action(struct pbs_attribute *new_attr, void *pobj, int actmode);
 
@@ -87,11 +71,7 @@ int gpu_str_action(struct pbs_attribute *new_attr, void *pnode, int actmode);
 
 int create_partial_pbs_node(char *nodename, unsigned long addr, int perms);
 
-/*static node_iterator *get_node_iterator();*/
-
 void reinitialize_node_iterator(struct node_iterator *iter);
-
-/*static struct pbsnode *get_my_next_node_board(node_iterator *iter, struct pbsnode *np);*/
 
 struct pbsnode *next_node(struct all_nodes *an, struct pbsnode *current, struct node_iterator *iter);
 
@@ -111,14 +91,6 @@ struct hello_container* initialize_hello_container(struct hello_container *);
 
 int needs_hello(struct hello_container *hc, char *node_name);
 
-int add_hello(struct hello_container *hc, char *node_name);
-
-int add_hello_after(struct hello_container *hc, char *node_name, int index);
-
-int add_hello_info(struct hello_container *hc, struct hello_info *hi);
-
 struct hello_info *pop_hello(struct hello_container *hc);
-
-int remove_hello(struct hello_container *hc, char *node_name);
 
 #endif /* _NODE_FUNC_H */

@@ -99,9 +99,8 @@ int id_map::get_new_id(
     {
     id = this->counter++;
     std::pair<std::string, int> p1(nname, id);
-    std::pair<int, std::string> p2(id, nname);
     this->str_map.insert(p1);
-    this->int_map.insert(p2);
+    this->names.push_back(nname);
     }
   pthread_mutex_unlock(&this->mutex);
 
@@ -143,7 +142,7 @@ const char *id_map::get_name(
   pthread_mutex_lock(&this->mutex);
   try
     {
-    std::string const &nname = this->int_map.at(id);
+    std::string const &nname = this->names.at(id);
     name = nname.c_str();
     }
   catch (...)
@@ -164,7 +163,7 @@ id_map::id_map() : counter(0)
 
 
 
-id_map::id_map(const id_map &other) : counter(other.counter), int_map(other.int_map), str_map(other.str_map)
+id_map::id_map(const id_map &other) : counter(other.counter), names(other.names), str_map(other.str_map)
 
   {
   pthread_mutex_init(&mutex, NULL);

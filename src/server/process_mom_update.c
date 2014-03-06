@@ -692,7 +692,7 @@ int process_status_info(
     else if (!strcmp(str, "first_update=true"))
       {
       /* mom is requesting that we send the mom hierarchy file to her */
-      remove_hello(&hellos, current->nd_name);
+      remove_hello(&hellos, current->nd_id);
       send_hello = true;
       
       /* reset gpu data in case mom reconnects with changed gpus */

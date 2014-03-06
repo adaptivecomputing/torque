@@ -135,6 +135,7 @@
 #include <string>
 #include <vector>
 #include <boost/ptr_container/ptr_vector.hpp>
+#include "id_map.hpp"
 
 
 /*#ifndef SIGKILL*/
@@ -228,6 +229,7 @@ extern pthread_mutex_t         *node_state_mutex;
 extern pthread_mutex_t         *check_tasks_mutex;
 extern pthread_mutex_t         *reroute_job_mutex;
 extern mom_hierarchy_t         *mh;
+id_map                          node_mapper;
 
 extern int a_opt_init;
 
@@ -854,22 +856,20 @@ void add_all_nodes_to_hello_container()
   int             iter = -1;
   int             level_indices[MAX_LEVEL_DEPTH];
   int             insertion_index;
-  char           *node_name_dup;
 
   memset(level_indices, 0, sizeof(level_indices));
 
   while ((pnode = next_host(&allnodes, &iter, NULL)) != NULL)
     {
-    if ((node_name_dup = strdup(pnode->nd_name)) != NULL)
       {
       /* make sure to insert things in order */
       if (level_indices[pnode->nd_hierarchy_level] == 0)
         {
         insertion_index = get_insertion_point(pnode, level_indices);
-        level_indices[pnode->nd_hierarchy_level] = add_hello_after(&hellos, node_name_dup, insertion_index);
+        level_indices[pnode->nd_hierarchy_level] = add_hello_after(&hellos, pnode->nd_id, insertion_index);
         }
       else
-        add_hello_after(&hellos, node_name_dup, level_indices[pnode->nd_hierarchy_level]);
+        add_hello_after(&hellos, pnode->nd_id, level_indices[pnode->nd_hierarchy_level]);
       }
 
     unlock_node(pnode, __func__, NULL, LOGLEVEL);

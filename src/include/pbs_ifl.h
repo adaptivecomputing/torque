@@ -330,6 +330,7 @@
 #define ATTR_interactivejobscanroam  "interactive_jobs_can_roam" 
 #define ATTR_crayenabled             "cray_enabled"
 #define ATTR_nppcu                   "nppcu"
+#define ATTR_login_node_key          "login_node_key"
 #define ATTR_maxuserqueuable         "max_user_queuable"
 #define ATTR_automaticrequeueexitcode "automatic_requeue_exit_code"
 #define ATTR_jobsynctimeout           "job_sync_timeout"

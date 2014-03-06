@@ -77,6 +77,7 @@
 * without reference to its choice of law rules.
 */
 
+#include <vector>
 #include <map>
 #include <string>
 #include <pthread.h>
@@ -84,8 +85,7 @@
 class id_map
   {
     std::map<std::string, int> str_map;
-    std::map<int, std::string> int_map;
-    std::map<int, int>         index_map;
+    std::vector<std::string>   names;
     pthread_mutex_t            mutex;
     int                        counter;
 

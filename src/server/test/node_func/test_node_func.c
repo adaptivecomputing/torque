@@ -856,9 +856,9 @@ START_TEST(send_hierarchy_threadtask_test)
   {
   struct hello_info info;
   memset(&info, 0, sizeof(info));
+  initialize_allnodes(&allnodes, NULL, NULL);
 
   send_hierarchy_threadtask(NULL);
-  send_hierarchy_threadtask((void*)(&info));
   }
 END_TEST
 
@@ -897,18 +897,14 @@ END_TEST
 START_TEST(add_hello_after_test)
   {
   struct hello_container container;
-  const char* node_name = "node_name";
   int result = -1;
   memset(&container, 0, sizeof(container));
   initialize_hello_container(&container);
 
-  result = add_hello_after(NULL, (char *)node_name, 0);
+  result = add_hello_after(NULL, 1, 0);
   fail_unless(result != PBSE_NONE, "NULL input container pointer fail");
 
-  result = add_hello_after(&container, NULL, 0);
-  fail_unless(result == PBSE_NONE, "NULL input name pointer fail");
-
-  result = add_hello_after(&container, (char *)node_name, 0);
+  result = add_hello_after(&container, 1, 0);
   fail_unless(result == PBSE_NONE, "add_hello_after fail");
 
   }
@@ -953,18 +949,14 @@ END_TEST
 START_TEST(remove_hello_test)
   {
   struct hello_container container;
-  const char* node_name = "node_name";
   int result = -1;
   memset(&container, 0, sizeof(container));
   initialize_hello_container(&container);
 
-  result = remove_hello(NULL, (char *)node_name);
+  result = remove_hello(NULL, 1);
   fail_unless(result != PBSE_NONE, "NULL input container pointer fail");
 
-  result = remove_hello(&container, NULL);
-  fail_unless(result != PBSE_NONE, "NULL input name pointer fail");
-
-  result = remove_hello(&container, (char *)node_name);
+  result = remove_hello(&container, 1);
   fail_unless(result == PBSE_NONE, "add_hello_after fail");
 
   }

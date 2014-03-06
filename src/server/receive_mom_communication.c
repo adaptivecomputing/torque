@@ -501,22 +501,22 @@ void *svr_is_request(
 
       node = find_nodebyname(node_name);
 
-      if (ret == SEND_HELLO)
-        {
-        struct hello_info *hi = (struct hello_info *)calloc(1, sizeof(struct hello_info));
-        write_tcp_reply(chan, IS_PROTOCOL, IS_PROTOCOL_VER, IS_STATUS, DIS_SUCCESS);
-
-        hi->name = strdup(node_name);
-        enqueue_threadpool_request(send_hierarchy_threadtask, hi, task_pool);
-        ret = DIS_SUCCESS;
-        }
-      else
-        write_tcp_reply(chan,IS_PROTOCOL,IS_PROTOCOL_VER,IS_STATUS,ret);
-
-      if(node != NULL)
+      if (node != NULL)
         {
         node->nd_stream = -1;
         node_mutex.mark_as_locked();
+
+        if (ret == SEND_HELLO)
+          {
+          struct hello_info *hi = (struct hello_info *)calloc(1, sizeof(struct hello_info));
+          write_tcp_reply(chan, IS_PROTOCOL, IS_PROTOCOL_VER, IS_STATUS, DIS_SUCCESS);
+
+          hi->id = node->nd_id;
+          enqueue_threadpool_request(send_hierarchy_threadtask, hi, task_pool);
+          ret = DIS_SUCCESS;
+          }
+        else
+          write_tcp_reply(chan,IS_PROTOCOL,IS_PROTOCOL_VER,IS_STATUS,ret);
         }
 
       if (ret != DIS_SUCCESS)

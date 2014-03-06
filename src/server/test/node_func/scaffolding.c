@@ -18,6 +18,8 @@
 #include <string>
 #include <vector>
 #include <boost/ptr_container/ptr_vector.hpp>
+#include "id_map.hpp"
+
 
 
 hello_container failures;
@@ -384,3 +386,29 @@ struct pbsnode *create_alps_subnode(struct pbsnode *parent, const char *node_id)
   {
   return(NULL);
   }
+
+id_map::id_map() : counter(0) {}
+
+int id_map::get_id(char const *name)
+  {
+  if (name == NULL)
+    return(-1);
+  else if (!strcmp(name, "bob"))
+    return(1);
+  else if (!strcmp(name, "tom"))
+    return(2);
+  else
+    return(-1);
+  }
+
+const char *id_map::get_name(int id)
+  {
+  return(NULL);
+  }
+
+int id_map::get_new_id(char const *name)
+  {
+  return(-1);
+  }
+
+id_map node_mapper;

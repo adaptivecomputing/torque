@@ -18,6 +18,7 @@
 #include "pbs_nodes.h" /* pbsnode, all_nodes, node_iterator */
 #include "work_task.h" /* work_task, work_type */
 #include "threadpool.h"
+#include "id_map.hpp"
 
 
 int str_to_attr_count;
@@ -113,6 +114,18 @@ struct pbsnode *find_nodebyname(const char *nodename)
   else if (!strcmp(nodename, "2"))
     return(&bob);
   else if (!strcmp(nodename, "3"))
+    return(&bob);
+  else
+    return(NULL);
+  }
+
+struct pbsnode *find_nodebyid(int id)
+  {
+  static struct pbsnode bob;
+
+  memset(&bob, 0, sizeof(bob));
+
+  if (id == 1)
     return(&bob);
   else
     return(NULL);
@@ -531,6 +544,30 @@ int decode_resc(
 
   return(0);
   }
+
+
+id_map::id_map() : counter(0) {}
+
+int id_map::get_id(const char *name)
+  {
+  if (!strcmp(name, "bob"))
+    return(1);
+  else if (!strcmp(name, "2"))
+    return(1);
+  else if (!strcmp(name, "3"))
+    return(1);
+  else
+    return(-1);
+  }
+
+const char *id_map::get_name(int id)
+  {
+  char buf[100];
+  snprintf(buf, sizeof(buf), "napali%d", id);
+  return(strdup(buf));
+  }
+
+id_map node_mapper;
 
 #ifdef CAN_TIME
 #include "timer.hpp"

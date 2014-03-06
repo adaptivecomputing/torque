@@ -20,7 +20,7 @@ char *get_next_exec_host(char **);
 int   job_should_be_killed(char *, struct pbsnode *);
 int   check_for_node_type(complete_spec_data *, enum node_types);
 int   record_external_node(job *, struct pbsnode *);
-int save_node_for_adding(node_job_add_info *naji,struct pbsnode *pnode,single_spec_data *req,char *first_node_name,int is_external_node,int req_rank);
+int save_node_for_adding(node_job_add_info *naji, struct pbsnode *pnode, single_spec_data *req, int first_node_id, int is_external_node, int req_rank);
 void remove_job_from_already_killed_list(struct work_task *pwt);
 bool job_already_being_killed(const char *jobid);
 void process_job_attribute_information(std::string &job_id, std::string &attributes);
@@ -54,7 +54,7 @@ START_TEST(translate_job_reservation_info_to_stirng_test)
     jri[i].est.mark_as_used(2);
 
     jri[i].port = 15002;
-    snprintf(jri[i].node_name, sizeof(jri[i].node_name), "napali%d", i);
+    jri[i].node_id = i;
 
     host_info.push_back(jri + i);
     }
@@ -83,7 +83,7 @@ START_TEST(populate_range_string_from_job_reservation_info_test)
   jri.est.mark_as_used(3);
   jri.est.mark_as_used(4);
   jri.est.mark_as_used(5);
-  strcpy(jri.node_name, "napali");
+  jri.node_id = 0;
 
   populate_range_string_from_job_reservation_info(jri, range_str);
   fail_unless(range_str.str() == "0,3-5");
@@ -325,6 +325,7 @@ START_TEST(node_in_exechostlist_test)
   fail_unless(node_in_exechostlist(node5, eh1) == FALSE, "blah5");
   
   fail_unless(node_in_exechostlist(node1, eh2) == FALSE, "blah6");
+  fail_unless(node_in_exechostlist(node1, eh2) == FALSE, "blah6");
   fail_unless(node_in_exechostlist(node2, eh2) == FALSE, "blah7");
   fail_unless(node_in_exechostlist(node3, eh2) == TRUE, "blah8");
   fail_unless(node_in_exechostlist(node4, eh2) == TRUE, "blah9");
@@ -351,8 +352,7 @@ START_TEST(check_for_node_type_test)
 
   fail_unless(check_for_node_type(&all_reqs, nt) == FALSE, "empty prop should always return false");
   nt = ND_TYPE_EXTERNAL;
-  fail_unless(check_for_node_type(&all_reqs, nt) == FALSE, "empty prop should always return false");
-
+  
   p.name = (char *)"bob";
   req.prop = &p;
 
@@ -371,60 +371,61 @@ END_TEST
 START_TEST(check_node_order_test)
   {
   node_job_add_info *pBase = (node_job_add_info *)calloc(1,sizeof(node_job_add_info));
-  struct pbsnode    node;
+  struct pbsnode     node;
   single_spec_data   req;
 
   memset(&req,0,sizeof(single_spec_data));
+  pBase->node_id = -1;
 
   memset(&node,0,sizeof(struct pbsnode));
-  node.nd_name = (char *)"first";
-  fail_unless(save_node_for_adding(pBase,&node,&req,(char *)"Mother Superior",0,6) == PBSE_NONE);
+  node.nd_id = 0;
+  fail_unless(save_node_for_adding(pBase,&node,&req,4,0,6) == PBSE_NONE);
 
   memset(&node,0,sizeof(struct pbsnode));
-  node.nd_name = (char *)"second";
-  fail_unless(save_node_for_adding(pBase,&node,&req,(char *)"Mother Superior",0,3) == PBSE_NONE);
+  node.nd_id = 1;
+  fail_unless(save_node_for_adding(pBase,&node,&req,4,0,3) == PBSE_NONE);
 
   memset(&node,0,sizeof(struct pbsnode));
-  node.nd_name = (char *)"third";
-  fail_unless(save_node_for_adding(pBase,&node,&req,(char *)"Mother Superior",0,11) == PBSE_NONE);
+  node.nd_id = 2;
+  fail_unless(save_node_for_adding(pBase,&node,&req,4,0,11) == PBSE_NONE);
 
   memset(&node,0,sizeof(struct pbsnode));
-  node.nd_name = (char *)"fourth";
-  fail_unless(save_node_for_adding(pBase,&node,&req,(char *)"Mother Superior",0,1) == PBSE_NONE);
+  node.nd_id = 3;
+  fail_unless(save_node_for_adding(pBase,&node,&req,4,0,1) == PBSE_NONE);
 
   memset(&node,0,sizeof(struct pbsnode));
-  node.nd_name = (char *)"Mother Superior";
-  fail_unless(save_node_for_adding(pBase,&node,&req,(char *)"Mother Superior",0,15) == PBSE_NONE);
+  node.nd_id = 4;
+  fail_unless(save_node_for_adding(pBase,&node,&req,4,0,15) == PBSE_NONE);
 
   memset(&node,0,sizeof(struct pbsnode));
-  node.nd_name = (char *)"fifth";
-  fail_unless(save_node_for_adding(pBase,&node,&req,(char *)"Mother Superior",0,4) == PBSE_NONE);
+  node.nd_id = 5;
+  fail_unless(save_node_for_adding(pBase,&node,&req,4,0,4) == PBSE_NONE);
 
   memset(&node,0,sizeof(struct pbsnode));
-  node.nd_name = (char *)"sixth";
-  fail_unless(save_node_for_adding(pBase,&node,&req,(char *)"Mother Superior",0,10) == PBSE_NONE);
+  node.nd_id = 6;
+  fail_unless(save_node_for_adding(pBase,&node,&req,4,0,10) == PBSE_NONE);
 
   memset(&node,0,sizeof(struct pbsnode));
-  node.nd_name = (char *)"seventh";
-  fail_unless(save_node_for_adding(pBase,&node,&req,(char *)"Mother Superior",0,61) == PBSE_NONE);
+  node.nd_id = 7;
+  fail_unless(save_node_for_adding(pBase,&node,&req,4,0,61) == PBSE_NONE);
 
   node_job_add_info *index = pBase;
 
-  fail_unless(strcmp(index->node_name,"Mother Superior") == 0);
+  fail_unless(index->node_id == 4);
   index = index->next;
-  fail_unless(strcmp(index->node_name,"fourth") == 0);
+  fail_unless(index->node_id == 3);
   index = index->next;
-  fail_unless(strcmp(index->node_name,"second") == 0);
+  fail_unless(index->node_id == 1);
   index = index->next;
-  fail_unless(strcmp(index->node_name,"fifth") == 0);
+  fail_unless(index->node_id == 5);
   index = index->next;
-  fail_unless(strcmp(index->node_name,"first") == 0);
+  fail_unless(index->node_id == 0);
   index = index->next;
-  fail_unless(strcmp(index->node_name,"sixth") == 0);
+  fail_unless(index->node_id == 6);
   index = index->next;
-  fail_unless(strcmp(index->node_name,"third") == 0);
+  fail_unless(index->node_id == 2);
   index = index->next;
-  fail_unless(strcmp(index->node_name,"seventh") == 0);
+  fail_unless(index->node_id == 7);
   }
 END_TEST
 

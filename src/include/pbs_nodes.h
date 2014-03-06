@@ -178,7 +178,7 @@ class job_usage_info
 /* this struct is only used while the job is being created. */
 typedef struct job_reservation_info
   {
-  char                         node_name[PBS_MAXHOSTNAME];
+  int                          node_id;
   int                          port;
   execution_slot_tracker       est;
   } job_reservation_info;
@@ -219,7 +219,7 @@ typedef struct complete_spec_data
 
 typedef struct node_job_add_info
   {
-  char                      node_name[PBS_MAXNODENAME + 1];
+  int                       node_id;
   int                       ppn_needed;
   int                       gpu_needed;
   int                       mic_needed;
@@ -321,6 +321,7 @@ typedef struct all_nodes
 struct pbsnode
   {
   char                         *nd_name;             /* node's host name */
+  int                           nd_id;               /* node's id */
 
   struct prop                  *nd_first;            /* first and last property */
   struct prop                  *nd_last;
@@ -402,7 +403,7 @@ int             copy_properties(struct pbsnode *dest, struct pbsnode *src);
 
 typedef struct hello_info
   {
-  char   *name;
+  int     id;
   time_t  last_retry;
   int     num_retries;
   } hello_info;
@@ -418,11 +419,11 @@ typedef struct hello_container
 
 hello_container * initialize_hello_container(hello_container *);
 int         needs_hello(hello_container *, char *);
-int         add_hello(hello_container *, char *);
-int         add_hello_after(hello_container *, char *, int);
+int         add_hello(hello_container *, int);
+int         add_hello_after(hello_container *, int, int);
 int         add_hello_info(hello_container *, hello_info *);
 hello_info *pop_hello(hello_container *);
-int         remove_hello(hello_container *, char *);
+int         remove_hello(hello_container *, int);
 int         send_hierarchy(char *, unsigned short);
 void       *send_hierarchy_threadtask(void *);
 
@@ -592,6 +593,7 @@ extern int update_nodes_file(struct pbsnode *);
 extern void bad_node_warning(pbs_net_t, struct pbsnode *);
 
 struct pbsnode  *find_nodebyname(const char *);
+struct pbsnode  *find_nodebyid(int);
 struct pbsnode  *find_node_in_allnodes(all_nodes *an, char *nodename);
 int              create_partial_pbs_node(char *, unsigned long, int);
 int              add_execution_slot(struct pbsnode *pnode);

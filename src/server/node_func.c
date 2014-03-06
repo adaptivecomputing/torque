@@ -24,6 +24,9 @@
 #if defined(NTOHL_NEEDS_ARPA_INET_H) && defined(HAVE_ARPA_INET_H)
 #include <arpa/inet.h>
 #endif
+#include <string>
+#include <vector>
+#include <boost/ptr_container/ptr_vector.hpp>
 
 #include "pbs_ifl.h"
 #include "libpbs.h"
@@ -56,10 +59,8 @@
 #include "net_cache.h"
 #include "ji_mutex.h"
 #include "execution_slot_tracker.hpp"
-#include <string>
-#include <vector>
-#include <boost/ptr_container/ptr_vector.hpp>
 #include "alps_functions.h"
+#include "id_map.hpp"
 
 #if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
 /*extern int h_errno;*/
@@ -281,7 +282,7 @@ struct pbsnode *find_node_in_allnodes(
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL input nodename");
     return(NULL);
     }
-
+  
   pthread_mutex_lock(an->allnodes_mutex);
 
   index = get_value_hash(an->ht, nodename);
@@ -299,6 +300,20 @@ struct pbsnode *find_node_in_allnodes(
   return(pnode);
   } /* END find_node_in_allnodes() */
 
+
+
+struct pbsnode *find_nodebyid(
+
+  int node_id)
+
+  {
+  struct pbsnode *pnode = NULL;
+  const char     *name = node_mapper.get_name(node_id);
+
+  pnode = find_nodebyname(name);
+
+  return(pnode);
+  } /* END find_nodebyid() */
 
 
 
@@ -321,19 +336,18 @@ struct pbsnode *find_nodebyname(
   int             i;
   int             numa_index;
   long            cray_enabled = FALSE;
-  
+
   if (nodename == NULL)
     {
-    log_err(PBSE_BAD_PARAMETER, __func__, "allnodes is not initialized");
     return(NULL);
     }
 
-  if ((pslash = strchr((char *)nodename, (int)'/')) != NULL)
+  if ((pslash = strchr((char *)nodename, '/')) != NULL)
     *pslash = '\0';
 
   pthread_mutex_lock(allnodes.allnodes_mutex);
 
-  i = get_value_hash(allnodes.ht, (void *)nodename);
+  i = get_value_hash(allnodes.ht, nodename);
 
   if (i >= 0)
     {
@@ -359,7 +373,7 @@ struct pbsnode *find_nodebyname(
         {
         lock_node(alps_reporter, __func__, NULL, LOGLEVEL);
         
-        if ((i = get_value_hash(alps_reporter->alps_subnodes.ht, (void *)nodename)) >= 0)
+        if ((i = get_value_hash(alps_reporter->alps_subnodes.ht, nodename)) >= 0)
           {
           if ((pnode = (struct pbsnode *)alps_reporter->alps_subnodes.ra->slots[i].item) != NULL)
             {
@@ -384,8 +398,8 @@ struct pbsnode *find_nodebyname(
         {
         *dash = '\0';
         numa_index = atoi(dash + 1);
-        
-        if ((i = get_value_hash(allnodes.ht, (void *)nodename)) >= 0)
+
+        if ((i = get_value_hash(allnodes.ht, nodename)) >= 0)
           {
           if ((pnode = (struct pbsnode *)allnodes.ra->slots[i].item) != NULL)
             {
@@ -405,7 +419,6 @@ struct pbsnode *find_nodebyname(
         }
       }
     }
-
 
   pthread_mutex_unlock(allnodes.allnodes_mutex);
 
@@ -559,7 +572,6 @@ int login_encode_jobs(
 
   {
   job            *pjob;
-  char           *login_id;
   std::string     job_str = "";
   char            str_buf[MAXLINE*2];
   svrattrl       *pal;
@@ -580,21 +592,19 @@ int login_encode_jobs(
     job_usage_info *jui = pnode->nd_job_usages[i];
     int             jui_index;
     int             jui_iterator = -1;
-  
-    login_id = NULL;
+    int             login_id = -1;
 
     pjob = get_job_from_job_usage_info(jui, pnode);
     
     if (pjob != NULL)
       {
-      login_id = pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str;
+      login_id = pjob->ji_wattr[JOB_ATR_login_node_key].at_val.at_long;
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       }
     
     while ((jui_index = jui->est.get_next_occupied_index(jui_iterator)) != -1)
       {
-      if ((login_id == NULL) ||
-          (strncmp(pnode->nd_name, login_id, strlen(pnode->nd_name))))
+      if (pnode->nd_id == login_id)
         {
         if (job_str.length() != 0)
           snprintf(str_buf, sizeof(str_buf), ",%d/%s", jui_index, jui->jobid);
@@ -864,6 +874,7 @@ int initialize_pbsnode(
   memset(pnode, 0, sizeof(struct pbsnode));
 
   pnode->nd_name            = pname;
+  pnode->nd_id              = node_mapper.get_new_id(pnode->nd_name);
   pnode->nd_mom_port        = PBS_MOM_SERVICE_PORT;
   pnode->nd_mom_rm_port     = PBS_MANAGER_SERVICE_PORT;
   pnode->nd_addrs           = pul;       /* list of host byte order */
@@ -1951,12 +1962,10 @@ int create_pbs_node(
     return(PBSE_SYSTEM);
     }
 
-  if ((pnode = find_nodebyname(pname)) != NULL)
+  if (node_mapper.get_id(pname) != -1)
     {
     free(pname);
     free(pul);
-
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
 
     return(PBSE_NODEEXIST);
     }
@@ -3503,7 +3512,7 @@ struct pbsnode *next_host(
 
   {
   struct pbsnode *pnode;
-  char           *name = NULL;
+  int             id = -1;
 
   if (an == NULL)
     {
@@ -3520,7 +3529,7 @@ struct pbsnode *next_host(
     {
     if (held != NULL)
       {
-      name = strdup(held->nd_name);
+      id = held->nd_id;
       unlock_node(held, __func__, NULL, LOGLEVEL);
       }
     pthread_mutex_lock(an->allnodes_mutex);
@@ -3529,7 +3538,7 @@ struct pbsnode *next_host(
   pnode = (struct pbsnode *)next_thing(an->ra,iter);
   if ((pnode != NULL) &&
       ((pnode != held) && 
-       (name == NULL)))
+       (id == -1)))
     {
     lock_node(pnode, __func__, NULL, LOGLEVEL);
     }
@@ -3537,11 +3546,8 @@ struct pbsnode *next_host(
   pthread_mutex_unlock(an->allnodes_mutex);
 
   if ((held != pnode) &&
-      (name != NULL))
-    held = find_nodebyname(name);
-
-  if (name != NULL)
-    free(name);
+      (id != -1))
+    held = find_nodebyid(id);
 
   return(pnode);
   } /* END next_host() */
@@ -3558,25 +3564,23 @@ void *send_hierarchy_threadtask(
   struct pbsnode *pnode = NULL;
   char            log_buf[LOCAL_LOG_BUF_SIZE+1];
   unsigned short  port;
+  char            nodename[MAXLINE];
 
   if (hi == NULL)
     {
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL input pointer");
     return(NULL);
     }
-  if (hi->name == NULL)
-    {
-    log_err(PBSE_BAD_PARAMETER, __func__, "NULL hello_info->name pointer");
-    return(NULL);
-    }
-  pnode = find_nodebyname(hi->name);
+
+  pnode = find_nodebyid(hi->id);
+  snprintf(nodename, sizeof(nodename), "%s", pnode->nd_name);
 
   if (pnode != NULL)
     {
     port = pnode->nd_mom_rm_port;
     unlock_node(pnode, __func__, NULL, LOGLEVEL);
 
-    if (send_hierarchy(hi->name, port) != PBSE_NONE)
+    if (send_hierarchy(nodename, port) != PBSE_NONE)
       {
       if (hi->num_retries < 3) /*TODO: why 3? remove magic number*/
         {
@@ -3593,7 +3597,7 @@ void *send_hierarchy_threadtask(
       if (LOGLEVEL >= 3)
         {
         snprintf(log_buf, sizeof(log_buf),
-          "Successfully sent hierarchy to %s", hi->name);
+          "Successfully sent hierarchy to %s", nodename);
         log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buf);
         }
       }
@@ -3601,7 +3605,6 @@ void *send_hierarchy_threadtask(
 
   if (hi != NULL)
     {
-    free(hi->name);
     free(hi);
     }
 
@@ -3741,19 +3744,18 @@ int needs_hello(
 int add_hello(
 
   hello_container *hc,
-  char            *node_name)
+  int              node_id)
 
   {
   int         rc;
   hello_info *hi = (hello_info *)calloc(1, sizeof(hello_info));
-  hi->name = node_name;
+  hi->id = node_id;
 
   pthread_mutex_lock(hc->hello_mutex);
 
   if ((rc = insert_thing(hc->ra, hi)) == -1)
     {
     rc = ENOMEM;
-    free(hi->name);
     free(hi);
     }
 
@@ -3768,7 +3770,7 @@ int add_hello(
 int add_hello_after(
 
   hello_container *hc,
-  char            *node_name,
+  int              node_id,
   int              index)
 
   {
@@ -3782,14 +3784,13 @@ int add_hello_after(
     }
 
   hi = (hello_info *)calloc(1, sizeof(hello_info));
-  hi->name = node_name;
+  hi->id = node_id;
 
   pthread_mutex_lock(hc->hello_mutex);
 
   if ((rc = insert_thing_after(hc->ra, hi, index)) == -1)
     {
     rc = ENOMEM;
-    free(hi->name);
     free(hi);
     }
 
@@ -3859,7 +3860,7 @@ hello_info *pop_hello(
 int remove_hello(
 
   hello_container *hc,
-  char            *node_name)
+  int              node_id)
 
   {
   int         rc = PBSE_NONE;
@@ -3873,17 +3874,11 @@ int remove_hello(
     log_err(rc, __func__, "NULL input container pointer");
     return(rc);
     }
-  if (node_name == NULL)
-    {
-    rc = PBSE_BAD_PARAMETER;
-    log_err(rc, __func__, "NULL input name pointer");
-    return(rc);
-    }
 
   pthread_mutex_lock(hc->hello_mutex);
   while ((hi = (hello_info *)next_thing(hc->ra, &iter)) != NULL)
     {
-    if (!strcmp(hi->name, node_name))
+    if (hi->id == node_id)
       {
       if (prev_index == -1)
         prev_index = hc->ra->slots[ALWAYS_EMPTY_INDEX].next;
