@@ -2368,13 +2368,13 @@ void encode_used(
 
     if (list != NULL)
       {
+      if (first != true)
+        *list << ",";
+
       if (mem_val == true)
         *list << rd->rs_name << "=" << val.at_val.at_long << "kb";
       else
         *list << rd->rs_name << "=" << val.at_val.at_long; 
-
-      if (first != true)
-        *list << ",";
       }
 
     first = false;
