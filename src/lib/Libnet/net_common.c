@@ -400,6 +400,7 @@ int socket_connect_addr(
           /* 3 connect attempts are made to each socket */
           /* Fail on RES_PORT_RETRY */
           close(local_socket);
+          local_socket = TRANSIENT_SOCKET_FAIL;
 
           while (cntr < RES_PORT_RETRY)
             {
@@ -412,8 +413,6 @@ int socket_connect_addr(
               }
             }
 
-          if (local_socket < 0)
-            local_socket = TRANSIENT_SOCKET_FAIL;
           }
         break;
 
