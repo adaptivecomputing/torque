@@ -853,27 +853,31 @@ int  remove_job(
     }
 
   if (LOGLEVEL >= 10)
-    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
+
   if (pthread_mutex_trylock(aj->alljobs_mutex))
     {
+    char jobid[PBS_MAXSVRJOBID+1];
+    snprintf(jobid, sizeof(jobid), "%s", pjob->ji_qs.ji_jobid);
+
     unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     pthread_mutex_lock(aj->alljobs_mutex);
-    lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
-    if (pjob->ji_being_recycled == TRUE)
+    if ((pjob = svr_find_job(jobid, TRUE)) == NULL)
       {
-      pthread_mutex_unlock(aj->alljobs_mutex);
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-      return(PBSE_JOB_RECYCLED);
+      rc = PBSE_JOBNOTFOUND;
       }
     }
 
-  if ((index = get_value_hash(aj->ht,pjob->ji_qs.ji_jobid)) < 0)
-    rc = THING_NOT_FOUND;
-  else
+  if (rc == PBSE_NONE)
     {
-    remove_thing_from_index(aj->ra,index);
-    remove_hash(aj->ht,pjob->ji_qs.ji_jobid);
+    if ((index = get_value_hash(aj->ht,pjob->ji_qs.ji_jobid)) < 0)
+      rc = THING_NOT_FOUND;
+    else
+      {
+      remove_thing_from_index(aj->ra,index);
+      remove_hash(aj->ht,pjob->ji_qs.ji_jobid);
+      }
     }
 
   pthread_mutex_unlock(aj->alljobs_mutex);
