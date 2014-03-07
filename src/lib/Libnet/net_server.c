@@ -516,22 +516,26 @@ int ping_trqauthd(
     {
     /* If we are here we could not connect to trqauthd. That is ok though. That tells us trqauthd is not up.  */
     socket_close(local_socket);
+    local_socket = -1;
     return(rc);
     }
   else if ((rc = socket_write(local_socket, write_buf, write_buf_len)) != write_buf_len)
     {
     socket_close(local_socket);
+    local_socket = -1;
     rc = PBSE_SOCKET_WRITE;
     fprintf(stderr, "socket_write error\n");
     }
   else if ((rc = socket_read_num(local_socket, &ccode)) != PBSE_NONE)
     {
     socket_close(local_socket);
+    local_socket = -1;
     fprintf(stderr, "socket_read_num error\n");
     }
   else if ((rc = parse_daemon_response(ccode, read_buf_len, read_buf)) != PBSE_NONE)
     {
     socket_close(local_socket);
+    local_socket = -1;
     fprintf(stderr, "parse_daemon_response error %lld %s\n", ccode, pbse_to_txt(ccode));
     }
 
