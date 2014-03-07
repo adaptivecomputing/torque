@@ -257,13 +257,15 @@ class item_container
     ret = container.get<1>().insert(item<T>(id,it));
     if(!ret.second && replace)
       {
-      updateCounter++;
+      //updateCounter++;
       return container.get<1>().replace(ret.first,item<T>(id,it));
       }
+    /*
     if(ret.second)
       {
       updateCounter++;
       }
+      */
     return ret.second;
     }
   bool insert_after(const char *location_id,T it,const char *id)
@@ -290,10 +292,12 @@ class item_container
     iter++;
     std::pair<sequenced_iterator,bool> ret;
     ret = container.get<0>().insert(iter,item<T>(id,it));
+    /*
     if(ret.second)
       {
       updateCounter++;
       }
+      */
     return ret.second;
     }
   bool insert_at(int index,T it,const char *id)
@@ -315,10 +319,12 @@ class item_container
       }
     std::pair<sequenced_iterator,bool> ret;
     ret = container.get<0>().insert(iter,item<T>(id,it));
+    /*
     if(ret.second)
       {
       updateCounter++;
       }
+      */
     return ret.second;
     }
 
@@ -336,10 +342,12 @@ class item_container
     sequenced_iterator iter = ind.begin();
     std::pair<sequenced_iterator,bool> ret;
     ret = container.get<0>().insert(iter,item<T>(id,it));
+    /*
     if(ret.second)
       {
       updateCounter++;
       }
+      */
     return ret.second;
     }
   bool insert_before(const char *location_id,T it,const char *id)
@@ -365,10 +373,12 @@ class item_container
     if(iter == ind.end()) return false;
     std::pair<sequenced_iterator,bool> ret;
     ret = container.get<0>().insert(iter,item<T>(id,it));
+    /*
     if(ret.second)
       {
       updateCounter++;
       }
+      */
     return ret.second;
     }
   bool remove(const char *id)
