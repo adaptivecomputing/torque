@@ -172,6 +172,8 @@ job_array *get_array(
   char      *tmpjobid;
 
   tmpjobid = get_correct_jobname(id);
+  if (tmpjobid == NULL)
+    return(NULL);
   
   pthread_mutex_lock(allarrays.allarrays_mutex);
 
