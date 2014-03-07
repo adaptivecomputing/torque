@@ -1088,6 +1088,10 @@ void close_conn(int sd, int has_mutex)
   {
   }
 
+void clear_conn(int sd, int has_mutex)
+  {
+  }
+
 char *std_file_name(job *pjob, enum job_file which, int *keeping)
   {
   char *stuff = NULL;
