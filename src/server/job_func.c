@@ -1365,7 +1365,10 @@ void *job_clone_wt(
          }
        }
 
-      pjob->ji_commit_done = 1;
+      if(pjob != NULL) //The call to get_jobs_queue call set pjob to NULL.
+        {
+        pjob->ji_commit_done = 1;
+        }
       }
     }
   

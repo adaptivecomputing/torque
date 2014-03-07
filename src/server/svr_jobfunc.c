@@ -3220,8 +3220,11 @@ void set_resc_deflt(
     {
     log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 13");
     }
- 
-  remove_procct(pjob);
+
+  if(pjob != NULL) //Call to get_jobs_queue can leave pjob = NULL
+    {
+    remove_procct(pjob);
+    }
   return;
   }  /* END set_resc_deflt() */
 
