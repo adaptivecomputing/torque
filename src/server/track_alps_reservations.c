@@ -142,6 +142,9 @@ int add_node_names(
     prev_node = host_tok;
     }
 
+  if (exec_str != NULL)
+    free(exec_str);
+
   return(rc);
   } /* END add_node_names() */
 
