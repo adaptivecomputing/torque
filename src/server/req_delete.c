@@ -246,10 +246,15 @@ void force_purge_work(
   if ((pque = get_jobs_queue(&pjob)) != NULL)
     {
     mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
-    if (pjob->ji_qhdr->qu_qs.qu_type == QTYPE_Execution)
+    /* Race condition may have occurred, so make sure that
+       there's still a queue in the job structure */
+    if (pjob->ji_qhdr)
       {
-      pque_mutex.unlock();
-      set_resc_assigned(pjob, DECR);
+      if (pjob->ji_qhdr->qu_qs.qu_type == QTYPE_Execution)
+        {
+        pque_mutex.unlock();
+        set_resc_assigned(pjob, DECR);
+        }
       }
     }
 
