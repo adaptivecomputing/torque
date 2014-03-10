@@ -296,9 +296,6 @@ int save_attr_xml(
   snprintf(buf,sizeof(buf),"<attributes>\n");
   if ((rc = write_buffer(buf,strlen(buf),fds)) != 0)
     {
-    if (ds != NULL)
-      free(ds);
-
     return(rc);
     }
 

@@ -876,7 +876,7 @@ int array_recov_binary(
   pa->job_ids = (char **)calloc(pa->ai_qs.array_size, sizeof(char *));
   if(pa->job_ids == NULL)
     {
-    memset(&pa->ai_qs,0,sizeof(array_info));
+    free(pa);
     close(fd);
     return PBSE_SYSTEM;
     }

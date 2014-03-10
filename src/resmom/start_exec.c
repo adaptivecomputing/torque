@@ -1386,6 +1386,8 @@ void get_mic_indices(
       tok = strtok(NULL, "+");
       }
     }
+  if (mic_str != NULL)
+    free(mic_str);
   } /* END get_mic_indices() */
 
 
