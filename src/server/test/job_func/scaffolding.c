@@ -638,7 +638,8 @@ job *find_job_by_array(
 
   struct all_jobs *aj,
   char            *job_id,
-  int              get_subjob)
+  int              get_subjob,
+  bool             locked)
 
   {
   job *pj = NULL;
