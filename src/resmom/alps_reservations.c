@@ -350,9 +350,6 @@ int create_reserve_params_from_host_req_list(
   
   save_current_reserve_param(command, apbasil_protocol, node_list, width, nppn, nppcu, mppdepth);
 
-  if (node_list != NULL)
-    free(node_list);
-
   return(PBSE_NONE);
   } /* END create_reserve_params_from_host_req_list() */
 
@@ -396,9 +393,6 @@ int create_reserve_params_from_multi_req_list(
 
     save_current_reserve_param(command, apbasil_protocol, node_list, width, nppn, nppcu, mppdepth);
     }
-
-  if (node_list != NULL)
-    free(node_list);
 
   return(PBSE_NONE);
   } /* END create_reserve_params_from_multi_req_list() */

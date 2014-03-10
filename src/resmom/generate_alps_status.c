@@ -668,9 +668,6 @@ int generate_alps_status(
       inventory_command);
     log_err(errno, __func__, log_buffer);
 
-    if (alps_output != NULL)
-      free(alps_output);
-
     return(WRITING_PIPE_ERROR);
     }
 
