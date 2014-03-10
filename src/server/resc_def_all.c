@@ -831,6 +831,10 @@ int init_resc_defs(void)
 
   if (svr_resc_def == NULL)
      {
+#ifndef PBS_MOM
+     if (tmpresc != NULL)
+       free(tmpresc);
+#endif
      return(-1);
      }
 
