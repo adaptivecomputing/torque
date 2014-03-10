@@ -139,7 +139,7 @@ int que_save(pbs_queue *pque)
   return(0);
   }
 
-pbs_queue *next_queue(all_queues *aq, int        *iter)
+pbs_queue *next_queue(all_queues *aq, all_queues_iterator        *iter)
   {
   return(NULL);
   }

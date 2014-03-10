@@ -57,6 +57,7 @@
 #include "utils.h"
 #include "../rm_dep.h"
 #include "pbs_nodes.h"
+#include "node_frequency.hpp"
 #ifdef PENABLE_LINUX26_CPUSETS
 #include "pbs_cpuset.h"
 #endif
@@ -137,6 +138,7 @@ static const char *ncpus    (struct rm_attribute *);
 static const char *walltime (struct rm_attribute *);
 static const char *quota    (struct rm_attribute *);
 static const char *netload  (struct rm_attribute *);
+static const char *cpuclock (struct rm_attribute *);
 #ifdef NUMA_SUPPORT
 const char *cpuact   (struct rm_attribute *);
 #endif
@@ -192,6 +194,7 @@ struct config dependent_config[] =
     { "quota",    {quota}    },
     { "netload",  {netload}  },
     { "size",     {size}     },
+    { "cpuclock", {cpuclock} },
     { NULL,       {nullproc} }
   };
 
@@ -1742,6 +1745,32 @@ int mom_set_limits(
                   __func__);
 
           return(error(pname, PBSE_BADATVAL));
+          }
+        }
+      }
+    else if (!strcmp(pname, "cpuclock"))   /* Set cpu frequency */
+      {
+      if(set_mode == SET_LIMIT_SET)
+        {
+        std::string beforeFreq;
+        char requestedFreq[100];
+
+        from_frequency(&(pres->rs_value.at_val.at_frequency),requestedFreq);
+
+        nd_frequency.get_frequency_string(beforeFreq);
+        if(!nd_frequency.set_frequency((cpu_frequency_type)pres->rs_value.at_val.at_frequency.frequency_type,
+            pres->rs_value.at_val.at_frequency.mhz,
+            pres->rs_value.at_val.at_frequency.mhz))
+          {
+          std::string msg = "Failed to change frequency.";
+          log_ext(nd_frequency.get_last_error(),__func__,msg.c_str(),LOG_ERR);
+          }
+        else
+          {
+          std::string afterFreq;
+          nd_frequency.get_frequency_string(afterFreq);
+          std::string msg = "Changed frequency from " + beforeFreq + " to " + afterFreq + " requested frequency was " + requestedFreq;
+          log_ext(PBSE_CHANGED_CPU_FREQUENCY,__func__, msg.c_str(),LOG_NOTICE);
           }
         }
       }
@@ -4336,6 +4365,24 @@ const char *size(
 
   return(NULL);
   }  /* END size() */
+
+const char *cpuclock(
+
+  struct rm_attribute *attrib)
+
+  {
+  std::string str;
+  if(nd_frequency.get_frequency_string(str))
+    {
+    strcpy(ret_string,str.c_str());
+    }
+  else
+    {
+    strcpy(ret_string,"Fixed");
+    }
+  return ret_string;
+  }  /* END cpuclock() */
+
 
 
 /*

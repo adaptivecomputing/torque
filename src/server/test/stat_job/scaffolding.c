@@ -46,3 +46,7 @@ int get_svr_attr_l(int index, long *l)
   {
   return(0);
   }
+
+void log_event(int, int, char const*, char const*)
+{
+}

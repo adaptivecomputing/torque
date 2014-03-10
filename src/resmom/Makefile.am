@@ -20,7 +20,8 @@ AM_CPPFLAGS += -I$(top_srcdir)/src/resmom/@PBS_MACH@ -DPBS_MOM \
 	       -DDEMUX=\"$(program_prefix)$(DEMUX_PATH)$(program_suffix)\" \
 	       -DRCP_PATH=\"$(program_prefix)$(RCP_PATH)$(program_suffix)\" \
 	       -DRCP_ARGS=\"$(RCP_ARGS)\" \
-	       -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" -DPBS_ENVIRON=\"$(PBS_ENVIRON)\"
+	       -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" -DPBS_ENVIRON=\"$(PBS_ENVIRON)\" \
+	       `xml2-config --cflags`
 
 PBS_LIBS = ../lib/Libattr/libattr.a \
 	   ../lib/Libsite/libsite.a \
@@ -38,7 +39,7 @@ pbs_mom_SOURCES = catch_child.c mom_comm.c mom_inter.c mom_main.c	\
 		   mom_req_quejob.c mom_job_func.c			\
 		   mom_process_request.c alps_reservations.c		\
 		   release_reservation.c generate_alps_status.c	\
-			 parse_config.c \
+                   parse_config.c node_frequency.cpp \
 		   ../server/attr_recov.c ../server/dis_read.c		\
 		   ../server/job_attr_def.c ../server/job_recov.c	\
 		   ../server/reply_send.c ../server/resc_def_all.c	\

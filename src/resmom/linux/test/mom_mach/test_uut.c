@@ -1,10 +1,14 @@
 #include "license_pbs.h" /* See here for the software license */
 #include "mom_mach.h"
-#include "test_mom_mach.h"
+#include "test_uut.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include "node_frequency.hpp"
 
 #include "pbs_error.h"
+
+extern node_frequency nd_frequency;
+
 START_TEST(test_one)
   {
   }

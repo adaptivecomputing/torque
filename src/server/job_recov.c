@@ -469,7 +469,8 @@ int assign_job_field(
 void decode_attribute(
 
   svrattrl *pal,
-  job **pjob)
+  job **pjob,
+  bool freeExisting)
 
   {
   int index;
@@ -482,7 +483,10 @@ void decode_attribute(
   if (index < 0)
     index = JOB_ATR_UNKN;
 
-  job_attr_def[index].at_free(&pj->ji_wattr[index]);
+  if(freeExisting)
+    {
+    job_attr_def[index].at_free(&pj->ji_wattr[index]);
+    }
 
   job_attr_def[index].at_decode(
     &pj->ji_wattr[index],
@@ -510,6 +514,7 @@ int fill_resource_list(
   xmlNodePtr resNode = NULL;
   int        rc = PBSE_NONE;
   bool       element_found = false;
+  bool       freeExisting = true;
 
   for (resNode = resource_list_node->children; resNode != NULL; resNode = resNode->next)
     {
@@ -532,7 +537,8 @@ int fill_resource_list(
         xmlFree(attr_flags);
         pal->al_flags = flags;
         }
-      decode_attribute(pal, pj);
+      decode_attribute(pal,pj,freeExisting);
+      freeExisting = false;
       free(pal);
       }
     else
@@ -593,7 +599,7 @@ int parse_attributes(
           pal->al_flags = flags;
           }
           
-        decode_attribute(pal, pj);
+        decode_attribute(pal, pj,true);
 
         free(pal);
         }
