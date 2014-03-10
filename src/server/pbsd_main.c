@@ -2948,6 +2948,9 @@ static void lock_out_ha()
     PBS_EVENTCLASS_SERVER,
     __func__,
     (char *)"high availability file lock obtained");
+
+  if (MutexLockFD >= 0)
+    close(MutexLockFD);
   } /* END lock_out_ha() */
 
 
