@@ -232,6 +232,8 @@ int parse_variable_list(
 
     if (delim == s)
       {
+      if (job_env != NULL)
+        free(job_env);
       fprintf(stderr, "invalid -v syntax\n");
       return(3);
       }

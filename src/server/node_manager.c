@@ -1245,7 +1245,7 @@ void *check_nodes_work(
           log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
           }
         
-        update_node_state(np, (INUSE_DOWN));    
+          update_node_state(np, (INUSE_DOWN));    
           
         /* The node is up. Do not mark the node down, but schedule a check_nodes */
         }
