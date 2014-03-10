@@ -207,7 +207,7 @@ parse_at_list(char *list, int use_count, int abs_path)
   int comma = 0;
   char *user, *host;
 
-  struct hostlist *ph, *nh, *hostlist = (struct hostlist *)0;
+  struct hostlist *ph = NULL, *nh = NULL, *hostlist = (struct hostlist *)0;
 
   if (strlen(list) == 0) return (1);
 
