@@ -320,7 +320,8 @@ job *find_job_by_array(
     
   struct all_jobs *aj,
   char            *job_id,
-  int              get_subjob)
+  int              get_subjob,
+  bool             locked)
 
   {
   job *pj = NULL;
@@ -337,7 +338,8 @@ job *find_job_by_array(
     return(NULL);
     }
 
-  pthread_mutex_lock(aj->alljobs_mutex);
+  if (locked == false)
+    pthread_mutex_lock(aj->alljobs_mutex);
   
   i = get_value_hash(aj->ht, job_id);
   
@@ -345,8 +347,9 @@ job *find_job_by_array(
     pj = (job *)aj->ra->slots[i].item;
   if (pj != NULL)
     lock_ji_mutex(pj, __func__, NULL, LOGLEVEL);
-  
-  pthread_mutex_unlock(aj->alljobs_mutex);
+
+  if (locked == false)
+    pthread_mutex_unlock(aj->alljobs_mutex);
   
   if (pj != NULL)
     {
@@ -442,7 +445,7 @@ job *svr_find_job(
     /* if we're searching for the external we want find_job_by_array to 
      * return the parent, but if we're searching for the cray subjob then
      * we want find_job_by_array to return the sub job */
-    pj = find_job_by_array(&alljobs, comp, (dash != NULL) ? FALSE : get_subjob);
+    pj = find_job_by_array(&alljobs, comp, (dash != NULL) ? FALSE : get_subjob, false);
     }
 
   /* when remotely routing jobs, they are removed from the 
@@ -452,7 +455,7 @@ job *svr_find_job(
   if (pj == NULL)
     {
     /* see the comment on the above call to find_job_by_array() */
-    pj = find_job_by_array(&array_summary, comp, (dash != NULL) ? FALSE : get_subjob);
+    pj = find_job_by_array(&array_summary, comp, (dash != NULL) ? FALSE : get_subjob, false);
     }
 
   if (at)
@@ -863,7 +866,7 @@ int  remove_job(
     unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     pthread_mutex_lock(aj->alljobs_mutex);
 
-    if ((pjob = svr_find_job(jobid, TRUE)) == NULL)
+    if ((pjob = find_job_by_array(&alljobs, comp, TRUE, true)) == NULL)
       {
       rc = PBSE_JOBNOTFOUND;
       }
