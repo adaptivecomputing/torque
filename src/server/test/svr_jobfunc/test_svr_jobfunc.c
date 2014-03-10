@@ -182,7 +182,6 @@ START_TEST(svr_evaljobstate_test)
   int old_state;
   int old_substate;
   test_job.ji_qs.ji_state = JOB_STATE_EXITING;
-  test_job.ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
   old_state = test_job.ji_qs.ji_state;
   old_substate = test_job.ji_qs.ji_substate;
   svr_evaljobstate(test_job, state, substate, 1);

@@ -319,8 +319,10 @@ void log_event(int eventtype, int objclass, const char *objname, const char *tex
 
 int ctnodes(char *spec)
   {
-  return(0);
+  fprintf(stderr, "The call to append_link needs to be mocked!!\n");
+  return(1);
   }
+
 
 int copy_attribute_list(
 
@@ -370,6 +372,8 @@ int copy_attribute_list(
 
   return(PBSE_NONE);
   } /* END copy_attribute_list() */
+
+
 
 batch_request *duplicate_request(batch_request *preq, int job_index)
   {
