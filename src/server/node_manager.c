@@ -630,9 +630,9 @@ void remove_job_from_already_killed_list(
 
   pthread_mutex_lock(&jobsKilledMutex);
 
-  for(std::vector<std::string>::iterator i = jobsKilled.begin();i != jobsKilled.end();)
+  for(boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();i != jobsKilled.end();)
     {
-    if ((*i)->compare(*pJobID) == 0)
+    if (i->compare(*pJobID) == 0)
       {
       i = jobsKilled.erase(i);
       if(i == jobsKilled.end())
