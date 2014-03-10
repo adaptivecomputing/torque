@@ -866,7 +866,7 @@ int  remove_job(
     unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     pthread_mutex_lock(aj->alljobs_mutex);
 
-    if ((pjob = find_job_by_array(&alljobs, comp, TRUE, true)) == NULL)
+    if ((pjob = find_job_by_array(&alljobs, jobid, TRUE, true)) == NULL)
       {
       rc = PBSE_JOBNOTFOUND;
       }
