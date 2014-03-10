@@ -4097,6 +4097,9 @@ void parse_command_line(
 
       case 'l':
 
+        if (path_log != NULL)
+          free(path_log);
+
         path_log = strdup(optarg);
 
         break;
