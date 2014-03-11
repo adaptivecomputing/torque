@@ -168,6 +168,7 @@ extern char            *path_home;
 extern char            *path_nodes;
 extern char            *path_nodes_new;
 extern char            *path_nodestate;
+extern char            *path_nodepowerstate;
 extern char            *path_nodenote;
 extern char            *path_nodenote_new;
 extern char             server_name[];
@@ -1299,6 +1300,82 @@ void *write_node_state_work(
   } /* END write_node_state_work() */
 
 
+void *write_node_power_state_work(
+
+  void *vp)
+
+  {
+  struct pbsnode *np;
+  static char    *fmt = (char *)"%s %d\n";
+  static FILE    *nstatef = NULL;
+  all_nodes_iterator *iter = NULL;
+
+  pthread_mutex_lock(node_state_mutex);
+
+  if (LOGLEVEL >= 5)
+    {
+    DBPRT(("write_node_power_state_work: entered\n"))
+    }
+
+  /* don't store running state */
+
+  if (nstatef != NULL)
+    {
+    fseek(nstatef, 0L, SEEK_SET); /* rewind and clear */
+
+    if (ftruncate(fileno(nstatef), (off_t)0) != 0)
+      {
+      log_err(errno, __func__, "could not truncate file");
+
+      pthread_mutex_unlock(node_state_mutex);
+
+      return(NULL);
+      }
+    }
+  else
+    {
+    /* need to open for first time, temporary-move to pbsd_init */
+
+    if ((nstatef = fopen(path_nodepowerstate, "w+")) == NULL)
+      {
+      log_err(errno, __func__, "could not open file");
+
+      pthread_mutex_unlock(node_state_mutex);
+
+      return(NULL);
+      }
+    }
+
+  /*
+  ** The only state that carries forward is if the
+  ** node has been marked offline.
+  */
+
+  while ((np = next_host(&allnodes,&iter,NULL)) != NULL)
+    {
+    if (np->nd_power_state != POWER_STATE_RUNNING)
+      {
+      fprintf(nstatef, fmt, np->nd_name, np->nd_power_state);
+      }
+
+    unlock_node(np, __func__, NULL, LOGLEVEL);
+    } /* END for each node */
+
+  if (iter != NULL)
+    delete iter;
+
+  if (fflush(nstatef) != 0)
+    {
+    log_err(errno, __func__, "failed saving node state to disk");
+    }
+
+  fclose(nstatef);
+  nstatef = NULL;
+
+  pthread_mutex_unlock(node_state_mutex);
+
+  return(NULL);
+  } /* END write_node_power_state_work() */
 
 
 
@@ -1313,6 +1390,16 @@ void write_node_state(void)
     }
   }  /* END write_node_state() */
 
+void write_node_power_state(void)
+
+  {
+  int rc = enqueue_threadpool_request(write_node_power_state_work,NULL);
+
+  if (rc)
+    {
+    log_err(rc, __func__, "Unable to enqueue write_node_power_state_work task into the threadpool");
+    }
+  }  /* END write_node_power_state() */
 
 
 /* Create a new node_note file then overwrite the previous one.

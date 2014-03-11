@@ -144,6 +144,7 @@
 #define PBS_TRACKING        "tracking"
 #define NODE_DESCRIP        "nodes"
 #define NODE_STATUS         "node_status"
+#define NODE_POWER_STATE    "node_power_state"
 #define NODE_NOTE           "node_note"
 #define PBS_CREDENTIALDIR   "credentials"
 #define PBS_JOBINFOLOGDIR   "job_logs"

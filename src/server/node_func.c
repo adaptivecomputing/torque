@@ -75,6 +75,7 @@ extern int              svr_clnodes;
 extern char            *path_nodes_new;
 extern char            *path_nodes;
 extern char            *path_nodestate;
+extern char            *path_nodepowerstate;
 extern char            *path_nodenote;
 extern int              LOGLEVEL;
 extern attribute_def    node_attr_def[];   /* node attributes defs */
@@ -420,6 +421,7 @@ void save_characteristic(
     }
 
   nci->state        = pnode->nd_state;
+  nci->power_state  = pnode->nd_power_state;
   nci->ntype        = pnode->nd_ntype;
   nci->nprops       = pnode->nd_nprops;
   nci->nstatus      = pnode->nd_nstatus;
@@ -504,6 +506,8 @@ int chk_characteristic(
         }
       }
     }
+  if(pnode->nd_power_state != nci->power_state)
+    *pneed_todo |= WRITENODE_POWER_STATE;
 
   if (pnode->nd_ntype != nci->ntype)
     *pneed_todo |= WRITE_NEW_NODESFILE;
@@ -663,6 +667,8 @@ int status_nodeattrib(
     /*set up attributes using data from node*/
     if (i == ND_ATR_state)
       atemp[i].at_val.at_short = pnode->nd_state;
+    else if (i == ND_ATR_power_state)
+      atemp[i].at_val.at_short = pnode->nd_power_state;
     else if (i == ND_ATR_properties)
       atemp[i].at_val.at_arst = pnode->nd_prop;
     else if (i == ND_ATR_status)
@@ -2514,6 +2520,37 @@ int setup_nodes(void)
 
     fclose(nin);
     }
+
+  nin = fopen(path_nodepowerstate, "r");
+
+  if (nin != NULL)
+    {
+    while (fscanf(nin, "%s %d",
+                  line,
+                  &num) == 2)
+      {
+      all_nodes_iterator *iter = NULL;
+
+      while ((np = next_host(&allnodes,&iter,NULL)) != NULL)
+        {
+        if (strcmp(np->nd_name, line) == 0)
+          {
+          np->nd_power_state = num;
+
+          unlock_node(np, __func__, "match", LOGLEVEL);
+
+          break;
+          }
+
+        unlock_node(np, __func__, "no match", LOGLEVEL);
+        }
+
+      if (iter != NULL)
+        delete iter;
+      }
+
+    fclose(nin);
+  }
 
   /* initialize note attributes */
   nin = fopen(path_nodenote, "r");

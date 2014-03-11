@@ -193,6 +193,7 @@ extern char *path_nodes;
 extern char *path_mom_hierarchy;
 extern char *path_nodes_new;
 extern char *path_nodestate;
+extern char *path_nodepowerstate;
 extern char *path_nodenote;
 extern char *path_nodenote_new;
 extern char *path_checkpoint;
@@ -1128,6 +1129,7 @@ int initialize_paths()
   path_nodes         = build_path(path_priv, NODE_DESCRIP, NULL);
   path_nodes_new     = build_path(path_priv, NODE_DESCRIP, new_tag);
   path_nodestate     = build_path(path_priv, NODE_STATUS,  NULL);
+  path_nodepowerstate = build_path(path_priv, NODE_POWER_STATE,  NULL);
   path_nodenote      = build_path(path_priv, NODE_NOTE,    NULL);
   path_nodenote_new  = build_path(path_priv, NODE_NOTE, new_tag);
   path_mom_hierarchy = build_path(path_priv, PBS_MOM_HIERARCHY, NULL);

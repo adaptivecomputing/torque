@@ -490,20 +490,24 @@ extern int   attr_to_str(std::string& str, attribute_def *,struct pbs_attribute,
 extern int   str_to_attr(char *,char *,struct pbs_attribute *,struct attribute_def *);
 
 extern int      encode_state(pbs_attribute *, tlist_head *, const char *, const char *, int, int);
+extern int      encode_power_state(pbs_attribute *, tlist_head *, const char *, const char *, int, int);
 extern int      encode_props(pbs_attribute*, tlist_head*, const char*, const char*, int, int);
 extern int      encode_jobs(pbs_attribute*, tlist_head*, const char*, const char*, int, int);
 extern int      encode_ntype(pbs_attribute*, tlist_head*, const char*, const char*, int, int);
 extern int      decode_state(pbs_attribute*, const char*, const char*, const char*, int);
+extern int      decode_power_state(pbs_attribute*, const char*, const char*, const char*, int);
 extern int      decode_props(pbs_attribute*, const char*, const char*, const char*, int);
 extern int      decode_ntype(pbs_attribute*, const char*, const char*, const char*, int);
 extern int      decode_null(pbs_attribute*, const char*, const char*, const char*, int);
 extern int      comp_null(pbs_attribute*, pbs_attribute*);
 extern int      count_substrings(char*, int*);
 extern int      set_node_state(pbs_attribute*, pbs_attribute*, enum batch_op);
+extern int      set_power_state(pbs_attribute*, pbs_attribute*, enum batch_op);
 extern int      set_node_ntype(pbs_attribute*, pbs_attribute*, enum batch_op);
 extern int      set_node_props(pbs_attribute*, pbs_attribute*, enum batch_op);
 extern int      set_null(pbs_attribute*, pbs_attribute*, enum batch_op);
 extern int      node_state(pbs_attribute*, void*, int);
+extern int      node_power_state(pbs_attribute*, void*, int);
 extern int      node_np_action(pbs_attribute*, void*, int);
 extern int      node_mom_port_action(pbs_attribute*, void*, int);
 extern int      node_mom_rm_port_action(pbs_attribute*, void*, int);

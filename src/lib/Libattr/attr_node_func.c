@@ -114,18 +114,22 @@ extern int LOGLEVEL;
  *
  * global:
  * decode_state()  "functions for at_decode func pointer"
+ * decode_power_state()
  * decode_ntype()
  * decode_props()
  *
  * encode_state()  "functions for at_encode func pointer"
+ * encode_power_state()
  * encode_ntype()
  * encode_props()
  * encode_jobs()
  *
  * set_node_state()  "functions for at_set func pointer"
+ * set_power_state()
  * set_node_ntype()
  *
  * node_state()   "functions for at_action func pointer"
+ * power_state()
  * node_ntype()
  * node_prop_list()
  *
@@ -368,6 +372,91 @@ int encode_state(
 
   return(0);
   }  /* END encode_state */
+
+
+/*
+ * encode_power_state
+ * Once the node's power state field is converted to an pbs_attribute,
+ * the pbs_attribute can be passed to this function for encoding into
+ * an svrattrl structure
+ * Returns  <0       an error encountered; value is negative of an error code
+ *           0       ok, encode happened and svrattrl created and linked in,
+ *       or nothing to encode
+ */
+
+int encode_power_state(
+
+  pbs_attribute *pattr, /*struct pbs_attribute being encoded  */
+  tlist_head    *ph, /*head of a list of  "svrattrl" structs
+                       which are to be returned*/
+  const char   *aname, /*pbs_attribute's name    */
+  const char   *rname, /*resource's name (null if none)  */
+  int            mode, /*mode code, unused here   */
+  int            perm) /* only used for resources */
+
+  {
+  svrattrl *pal;
+
+  const char   *state_str = NULL;
+
+  if (!pattr)
+    {
+    return -(PBSE_INTERNAL);
+    }
+
+  if (!(pattr->at_flags & ATR_VFLAG_SET))
+    {
+    /* SUCCESS - pbs_attribute not set */
+
+    return(0);
+    }
+
+  switch(pattr->at_val.at_short)
+    {
+    case POWER_STATE_RUNNING:
+      state_str = ND_running;
+      break;
+    case POWER_STATE_STANDBY:
+      state_str = ND_standby;
+      break;
+    case POWER_STATE_SUSPEND:
+      state_str = ND_suspend;
+      break;
+    case POWER_STATE_SLEEP:
+      state_str = ND_sleep;
+      break;
+    case POWER_STATE_HIBERNATE:
+      state_str = ND_hibernate;
+      break;
+    case POWER_STATE_SHUTDOWN:
+      state_str = ND_shutdown;
+      break;
+    }
+
+  if(state_str == NULL)
+    {
+    return -(PBSE_SYSTEM);
+    }
+
+
+  pal = attrlist_create(aname, rname, (int)strlen(state_str) + 1);
+
+  if (pal == NULL)
+    {
+    return -(PBSE_SYSTEM);
+    }
+
+  strcpy(pal->al_value, state_str);
+
+  pal->al_flags = ATR_VFLAG_SET;
+
+  append_link(ph, &pal->al_link, pal);
+
+  /* SUCCESS */
+
+  return(0);
+  }  /* END encode_power_state */
+
 
 
 
@@ -622,6 +711,62 @@ int decode_state(
   }  /* END decode_state() */
 
 
+/*
+ * decode_power_state
+ * In this case, the two arguments that get  used are
+ * pattr-- it points to an pbs_attribute whose value is a short,
+ * and the argument "val".
+ */
+
+int decode_power_state(
+
+  pbs_attribute *pattr,   /* I (modified) */
+  const char   *name,    /* pbs_attribute name */
+  const char *rescn,   /* resource name, unused here */
+  const char    *val,     /* pbs_attribute value */
+  int            perm)    /* only used for resources */
+
+  {
+  int   flag = -1;
+
+  if (val == NULL)
+    {
+    return(PBSE_BADNDATVAL);
+    }
+
+  if(!strcasecmp(val,ND_running))
+    {
+    flag = POWER_STATE_RUNNING;
+    }
+  else if(!strcasecmp(val,ND_standby))
+    {
+    flag = POWER_STATE_STANDBY;
+    }
+  else if(!strcasecmp(val,ND_suspend))
+    {
+    flag = POWER_STATE_SUSPEND;
+    }
+  else if(!strcasecmp(val,ND_sleep))
+    {
+    flag = POWER_STATE_SLEEP;
+    }
+  else if(!strcasecmp(val,ND_hibernate))
+    {
+    flag = POWER_STATE_HIBERNATE;
+    }
+  else if(!strcasecmp(val,ND_shutdown))
+    {
+    flag = POWER_STATE_SHUTDOWN;
+    }
+  if(flag == -1)
+    {
+    return(PBSE_BADNDATVAL);
+    }
+  pattr->at_val.at_short = flag;
+  pattr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+
+  return(0);
+  }  /* END decode_state() */
 
 
 
@@ -755,6 +900,55 @@ int set_node_state(
 
   return rc;
   }
+
+/*
+ * set_node_state - the information in the "short" pbs_attribute, *new, is used to
+ *      update the information in the "short" pbs_attribute, *pattr.
+ *      the mode of the update is goverened by the argument "op"
+ *      (SET,INCR,DECR)
+ */
+
+int set_power_state(
+
+  pbs_attribute *pattr,  /*pbs_attribute gets modified    */
+  pbs_attribute *new_attr,  /*carries new, modifying info that
+                         got decoded into 'new"*/
+  enum           batch_op op)
+
+  {
+  int rc = 0;
+
+  assert((pattr != NULL) && (new_attr != NULL) && (new_attr->at_flags & ATR_VFLAG_SET));
+
+  switch (op)
+    {
+
+    case SET:
+
+      pattr->at_val.at_short = new_attr->at_val.at_short;
+
+      break;
+
+    case INCR:
+
+      rc = PBSE_BADNDATVAL; // Only valid operation is set.
+      break;
+
+    case DECR:
+
+      rc = PBSE_BADNDATVAL; // Only valid operation is set.
+      break;
+
+    default:
+      rc = PBSE_INTERNAL;
+    }
+
+  if (!rc)
+    pattr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+
+  return rc;
+  }
+
 
 
 /*
@@ -899,6 +1093,49 @@ int node_state(
   }
 
 
+/*
+ * node_state - Either derive a "power state" pbs_attribute from the node
+ *  or update node's "power state" field using the "state"
+ *  pbs_attribute.
+ */
+
+int node_power_state(
+
+  pbs_attribute *new_attr, /*derive state into this pbs_attribute*/
+  void     *pnode, /*pointer to a pbsnode struct    */
+  int      actmode) /*action mode; "NEW" or "ALTER"   */
+
+  {
+  int rc = 0;
+
+  struct pbsnode* np;
+
+  np = (struct pbsnode*)pnode; /*because of def of at_action  args*/
+
+  switch (actmode)
+    {
+
+    case ATR_ACTION_NEW:  /*derive pbs_attribute*/
+
+      new_attr->at_val.at_short = np->nd_power_state;
+
+      break;
+
+    case ATR_ACTION_ALTER:
+
+      np->nd_power_state = new_attr->at_val.at_short;
+
+      break;
+
+    default:
+
+      rc = PBSE_INTERNAL;
+
+      break;
+    }
+
+  return(rc);
+  }
 
 
 

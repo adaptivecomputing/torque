@@ -1822,6 +1822,14 @@ void mgr_node_set(
     need_todo &= ~(WRITENODE_STATE);
     }
 
+  if (need_todo & WRITENODE_POWER_STATE)
+    {
+    /*some nodes changed power state*/
+    write_node_power_state();
+
+    need_todo &= ~(WRITENODE_POWER_STATE);
+    }
+
   if (need_todo & WRITENODE_NOTE)
     {
     /*some nodes have new "note"s*/
@@ -1994,6 +2002,7 @@ static void mgr_node_delete(
 
   /* update the nodes file and node state since we deleted node(s) */
   write_node_state();
+  write_node_power_state();
   update_nodes_file(NULL);
 
   recompute_ntype_cnts();

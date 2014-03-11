@@ -355,6 +355,7 @@ struct pbsnode
   std::vector<std::string>       *nd_ms_jobs;          /* the jobs this node is mother superior for */
   container::item_container<struct pbsnode *> *alps_subnodes;       /* collection of alps subnodes */
   int                           max_subnode_nppn;    /* maximum ppn of an alps subnode */
+  unsigned short              nd_power_state;
 
   pthread_mutex_t              *nd_mutex;            /* semaphore for accessing this node's data */
   };
@@ -476,6 +477,16 @@ int tlist(tree *, char *, int);
 #define INUSE_UNKNOWN          0x100 /* Node has not been heard from yet */
 #define INUSE_SUBNODE_MASK     0xff /* bits both in nd_state and inuse */
 #define INUSE_COMMON_MASK  (INUSE_OFFLINE|INUSE_DOWN)
+
+/* Node power state defines */
+
+#define POWER_STATE_RUNNING    0
+#define POWER_STATE_STANDBY    1
+#define POWER_STATE_SUSPEND    2
+#define POWER_STATE_SLEEP      3
+#define POWER_STATE_HIBERNATE  4
+#define POWER_STATE_SHUTDOWN   5
+
 /* state bits that go from node to subn */
 
 /*
@@ -495,6 +506,7 @@ int tlist(tree *, char *, int);
 #define WRITENODE_STATE  0x1   /*associated w/ offline*/
 #define WRITE_NEW_NODESFILE 0x2 /*changed: deleted,ntype,or properties*/
 #define WRITENODE_NOTE   0x4   /*associated w/ note*/
+#define WRITENODE_POWER_STATE 0x8
 
 /*
  * Although at the present time a struct pbssnode doesn't have an array of
@@ -512,6 +524,7 @@ int tlist(tree *, char *, int);
 enum nodeattr
   {
   ND_ATR_state,
+  ND_ATR_power_state,
   ND_ATR_np,
   ND_ATR_properties,
   ND_ATR_ntype,
@@ -549,6 +562,7 @@ typedef struct node_check_info
   int          nprops;
   int          nstatus;
   char        *note;
+  short        power_state;
   } node_check_info;
 
 
