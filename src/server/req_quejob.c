@@ -555,17 +555,7 @@ int req_quejob(
   /* does job already exist, check both old and new jobs */
 
   if ((pj = svr_find_job(jid, FALSE)) == NULL)
-    {
-    int  iter = -1;
-
-    while ((pj = next_job(&newjobs,&iter)) != NULL)
-      {
-      if (!strcmp(pj->ji_qs.ji_jobid, jid))
-        break;
-      
-      unlock_ji_mutex(pj, __func__, "1", LOGLEVEL);
-      }
-    }
+    pj = find_job_by_array(&newjobs, jid, FALSE, false);
 
   if (pj != NULL)
     {
@@ -2280,18 +2270,9 @@ static job *locate_new_job(
     {
     return next_job(&newjobs,&iter);
     }
-  pthread_mutex_lock(newjobs.alljobs_mutex);
-  while((pJob = (job *)next_thing(newjobs.ra,&iter)) != NULL)
-    {
-    if(!strcmp(jobid,pJob->ji_qs.ji_jobid))
-      {
-      lock_ji_mutex(pJob,__func__,"1",LOGLEVEL);
-      pthread_mutex_unlock(newjobs.alljobs_mutex);
-      return pJob;
-      }
-    }
-  pthread_mutex_unlock(newjobs.alljobs_mutex);
-  return NULL;
+
+  pJob = find_job_by_array(&newjobs, jobid, FALSE, false);
+  return(pJob);
   }  /* END locate_new_job() */
 
 

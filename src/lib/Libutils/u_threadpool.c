@@ -367,7 +367,6 @@ int initialize_threadpool(
 
   pthread_attr_setstacksize(&(*pool)->tp_attr, stack_size);
 
-
   pthread_attr_setdetachstate(&(*pool)->tp_attr,PTHREAD_CREATE_DETACHED);
 
   /* if threads are static, create them all now */

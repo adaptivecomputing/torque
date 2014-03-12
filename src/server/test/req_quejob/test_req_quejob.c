@@ -41,7 +41,7 @@ START_TEST(test_one)
   strcat(path_jobs,"/");
   sprintf(cmd,"rm %s*.SC",path_jobs);
   system(cmd);
-  strcpy(req.rq_ind.rq_jobfile.rq_jobid,"SomeJob");
+  strcpy(req.rq_ind.rq_jobfile.rq_jobid,"1.napali");
   fail_unless(req_jobscript(&req) == PBSE_NONE);
   system(cmd);
   }

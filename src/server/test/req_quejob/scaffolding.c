@@ -397,7 +397,15 @@ const char *add_std_filename(
   return "stdfilename";
   }
 
+job *find_job_by_array(struct all_jobs *aj, char *jobid, int get_subjob, bool locked)
+  {
+  if (!strcmp(jobid, "1.napali"))
+    {
+    return((job *)calloc(1, sizeof(job)));
+    }
 
+  return(NULL);
+  }
 
 
 
