@@ -884,8 +884,8 @@ void parse_command_line(
 
 /* Globals to thread the accept port */
 pthread_t      accept_thread_id = -1;
-int            accept_thread_active = FALSE;
-int            route_thread_active = FALSE;
+bool           accept_thread_active = false;
+bool           route_thread_active = false;
 pthread_t      route_retry_thread_id = -1;
 
 
@@ -1009,7 +1009,7 @@ void route_listener_cleanup(
   void *vp)
 
   {
-  route_thread_active = FALSE;
+  route_thread_active = false;
   } /* END route_listener_cleanup() */
 
 
@@ -1027,7 +1027,7 @@ void *handle_queue_routing_retries(
   char       log_buf[LOCAL_LOG_BUF_SIZE];
   pthread_attr_t  routing_attr;
  
-  route_thread_active = TRUE;
+  route_thread_active = true;
   pthread_cleanup_push(route_listener_cleanup, vp);
 
   if (pthread_attr_init(&routing_attr) != 0)
@@ -1126,7 +1126,7 @@ void accept_listener_cleanup(
   void *vp)
 
   {
-  accept_thread_active = FALSE;
+  accept_thread_active = false;
   } /* END accept_listener_cleanup() */
 
 
@@ -1147,7 +1147,7 @@ void *start_accept_listener(
   else
     strncpy(server_name_trimmed, server_name, colon_pos - server_name);
 
-  accept_thread_active = TRUE;
+  accept_thread_active = true;
   pthread_cleanup_push(accept_listener_cleanup, vp);
 
   start_listener_addrinfo(server_name_trimmed, pbs_server_port_dis, start_process_pbs_server_port);
@@ -1164,7 +1164,6 @@ void start_accept_thread()
 
   {
   pthread_attr_t accept_attr;
-  accept_thread_id = -1;
   if ((pthread_attr_init(&accept_attr)) != 0)
     {
     perror("pthread_attr_init failed. Could not start accept thread");
@@ -1239,7 +1238,7 @@ void start_exiting_retry_thread()
 
 void monitor_accept_thread()
   {
-  if (accept_thread_active == FALSE)
+  if (accept_thread_active == false)
     start_accept_thread();
   } /* END monitor_accept_thread() */
 
@@ -1248,7 +1247,7 @@ void monitor_accept_thread()
 
 void monitor_route_retry_thread()
   {
-  if (route_thread_active == FALSE)
+  if (route_thread_active == false)
     start_routing_retry_thread();
   } /* END monitor_route_retry_thread() */
 
@@ -1486,10 +1485,9 @@ void main_loop(void)
     get_svr_attr_l(SRV_ATR_State, &state);
     }    /* END while (*state != SV_STATE_DOWN) */
 
-  if (accept_thread_id != (pthread_t)-1)
+  if (accept_thread_active == true)
     {
     pthread_cancel(accept_thread_id);
-    accept_thread_id = (pthread_t)-1;
     }
 
   svr_save(&server, SVR_SAVE_FULL); /* final recording of server */
