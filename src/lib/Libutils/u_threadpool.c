@@ -85,13 +85,13 @@
 #include "threadpool.h"
 #include "utils.h"
 #include "log.h"
-#include "../Liblog/pbs_log.h"
+#include "pbs_log.h"
 #include "../Liblog/log_event.h"
 
 
 
-#define MINIMUM_STACK_SIZE 8192 * 1024
-#define MAX_STACK_SIZE MINIMUM_STACK_SIZE * 4
+#define MINIMUM_STACK_SIZE 1024 * 1024 
+#define MAX_STACK_SIZE MINIMUM_STACK_SIZE * 8
 /*extern int    LOGLEVEL;*/
 sigset_t      fillset;
 
@@ -129,6 +129,8 @@ static void work_thread_cleanup(
 
   {
   --request_pool->tp_nthreads;
+  /*sprintf(log_buf, "Current allocated threads: %d", request_pool->tp_nthreads);
+  log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buf);*/
 
   if (request_pool->tp_flags & POOL_DESTROY)
     {
@@ -234,6 +236,8 @@ static void *work_thread(
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,NULL);
 
     request_pool->tp_idle_threads++;
+    /*sprintf(log_buf, "incrementing idle threads: %d", request_pool->tp_idle_threads);
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buf);*/
   
     /* stay asleep until the pool is started */
     while (request_pool->tp_started == FALSE)
@@ -266,6 +270,14 @@ static void *work_thread(
           break;
           }
         }
+      }
+
+    if ((rc == ETIMEDOUT) && 
+        (request_pool->tp_nthreads > request_pool->tp_min_threads) &&
+        (request_pool->tp_idle_threads > 2))
+      {
+      request_pool->tp_idle_threads--;
+      break;
       }
 
     request_pool->tp_idle_threads--;
@@ -312,7 +324,11 @@ static void *work_thread(
     }
 
   pthread_cleanup_pop(1); /* calls work_thread_cleanup(NULL) */
-  return(NULL);
+  /*sprintf(log_buf, "work_thread exiting. Current allocated threads: %d", request_pool->tp_nthreads);
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buf);
+  sprintf(log_buf, "work_thread exiting. Current idle threads: %d", request_pool->tp_idle_threads);
+  log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buf);*/
+  pthread_exit(0);
   } /* END work_thread() */
 
 
@@ -401,6 +417,7 @@ int enqueue_threadpool_request(
 
   {
   tp_work_t *work = NULL;
+/*  char              log_buf[LOCAL_LOG_BUF_SIZE];*/
 
   if ((work = (tp_work_t *)calloc(1, sizeof(tp_work_t))) == NULL)
     {
@@ -423,7 +440,11 @@ int enqueue_threadpool_request(
     pthread_cond_signal(&request_pool->tp_waiting_work);
   else if ((request_pool->tp_nthreads < request_pool->tp_max_threads) &&
            (create_work_thread() == 0))
+    {
     request_pool->tp_nthreads++;
+    /*sprintf(log_buf, "created new thread. thread count: %d", request_pool->tp_nthreads);
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buf);*/
+    }
 
   pthread_mutex_unlock(&request_pool->tp_mutex);
 
