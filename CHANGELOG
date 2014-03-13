@@ -3,6 +3,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 4.2.8
   b - TRQ-2501. Fix the total number of execution slots having a count that is off-by-one for
       every Cray compute node.
+  b - TRQ-2498. Fixed a memory leak when using qrun -a (asynchronous). Also fixed a write
+      after free error that could lead to memory corruption.
+  b - Fixed the thread pool manager so it would free idle nodes. Also changed the default
+      thread stack sizes to a maximum of 8 Mb and Minimum of 1 Mb.
 
 4.2.7
   b - TRQ-2329. Fix a problem where nodes could be allocated to array subjobs even
