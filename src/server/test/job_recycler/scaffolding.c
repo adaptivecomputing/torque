@@ -65,3 +65,5 @@ int unlock_alljobs_mutex(struct all_jobs *aj, const char *id, char *msg, int log
   }
 
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+
+void free_job_allocation() {}

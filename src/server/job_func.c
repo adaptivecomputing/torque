@@ -711,6 +711,47 @@ job *job_alloc(void)
 
 
 
+void free_job_allocation(
+
+  job *pjob)
+
+  {
+  if (pjob->ji_cray_clone != NULL)
+    {
+    lock_ji_mutex(pjob->ji_cray_clone, __func__, NULL, LOGLEVEL);
+    free_job_allocation(pjob->ji_cray_clone);
+    }
+
+  if (pjob->ji_external_clone != NULL)
+    {
+    lock_ji_mutex(pjob->ji_external_clone, __func__, NULL, LOGLEVEL);
+    free_job_allocation(pjob->ji_external_clone);
+    }
+
+  /* remove any calloc working pbs_attribute space */
+  for (int i = 0;i < JOB_ATR_LAST;i++)
+    {
+    job_attr_def[i].at_free(&pjob->ji_wattr[i]);
+    }
+
+  /* free any bad destination structs */
+  badplace *bp = (badplace *)GET_NEXT(pjob->ji_rejectdest);
+
+  while (bp != NULL)
+    {
+    delete_link(&bp->bp_link);
+
+    free(bp);
+
+    bp = (badplace *)GET_NEXT(pjob->ji_rejectdest);
+    }
+
+  pthread_mutex_destroy(pjob->ji_mutex);
+  memset(pjob, 254, sizeof(job)); /* TODO: remove magic number */
+  free(pjob);
+  } /* END free_job_allocation() */
+
+
 
 /*
  * job_free - free job structure and its various sub-structures
@@ -722,9 +763,6 @@ void job_free(
   int  use_recycle)  /* I (modified) */
 
   {
-  int               i;
-
-  badplace         *bp;
   char              log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (pj == NULL)
@@ -737,38 +775,6 @@ void job_free(
     sprintf(log_buf, "freeing job");
 
     log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pj->ji_qs.ji_jobid,log_buf);
-    }
-
-  if (pj->ji_cray_clone != NULL)
-    {
-    lock_ji_mutex(pj->ji_cray_clone, __func__, NULL, LOGLEVEL);
-    job_free(pj->ji_cray_clone, TRUE);
-    }
-
-  if (pj->ji_external_clone != NULL)
-    {
-    lock_ji_mutex(pj->ji_external_clone, __func__, NULL, LOGLEVEL);
-    job_free(pj->ji_external_clone, TRUE);
-    }
-
-  /* remove any calloc working pbs_attribute space */
-  for (i = 0;i < JOB_ATR_LAST;i++)
-    {
-    job_attr_def[i].at_free(&pj->ji_wattr[i]);
-    }
-
-  i = -1;
-
-  /* free any bad destination structs */
-  bp = (badplace *)GET_NEXT(pj->ji_rejectdest);
-
-  while (bp != NULL)
-    {
-    delete_link(&bp->bp_link);
-
-    free(bp);
-
-    bp = (badplace *)GET_NEXT(pj->ji_rejectdest);
     }
 
   /* move to the recycling structure - deleting right away can cause a race
@@ -789,9 +795,7 @@ void job_free(
     {
     sprintf(log_buf, "2: jobid = %s", pj->ji_qs.ji_jobid);
     unlock_ji_mutex(pj, __func__, log_buf, LOGLEVEL);
-    pthread_mutex_destroy(pj->ji_mutex);
-    memset(pj, 254, sizeof(job)); /* TODO: remove magic number */
-    free(pj);
+    free_job_allocation(pj);
     }
 
   return;

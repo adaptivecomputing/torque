@@ -7,6 +7,7 @@
 #include <netdb.h>
 #include <string.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include "pbs_error.h"
 #include "pbs_job.h"

@@ -3,6 +3,7 @@
 #include "test_job_recov.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include "pbs_error.h"
