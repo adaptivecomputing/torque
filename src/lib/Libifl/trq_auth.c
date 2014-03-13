@@ -415,10 +415,10 @@ int validate_server(
 
   if ( rc != PBSE_NONE)
     {
-    int list_len;
-    int i;
-    unsigned int port;
-    char *tmp_server;
+    int           list_len;
+    int           i;
+    unsigned int  port;
+    char         *tmp_server;
 
     snprintf(server_name_list, sizeof(server_name_list), "%s", pbs_get_server_list());
     list_len = csv_length(server_name_list);
@@ -437,8 +437,7 @@ int validate_server(
 
         if (getenv("PBSDEBUG"))
           {
-          fprintf(stderr, "pbs_connect attempting connection to server \"%s\"\n",
-                                                                    current_name);
+          fprintf(stderr, "pbs_connect attempting connection to server \"%s\"\n", current_name);
           }
 
         tmp_server = PBS_get_server(current_name, &port);
