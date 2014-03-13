@@ -86,6 +86,7 @@
 #include "utils.h"
 #include "log.h"
 #include "../Liblog/pbs_log.h"
+#include "../Liblog/log_event.h"
 
 
 
