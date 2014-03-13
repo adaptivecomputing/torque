@@ -401,7 +401,9 @@ job *find_job_by_array(struct all_jobs *aj, char *jobid, int get_subjob, bool lo
   {
   if (!strcmp(jobid, "1.napali"))
     {
-    return((job *)calloc(1, sizeof(job)));
+    job *pj = (job *)calloc(1, sizeof(job));
+    strcpy(pj->ji_qs.ji_fileprefix, "1.napali");
+    return(pj);
     }
 
   return(NULL);

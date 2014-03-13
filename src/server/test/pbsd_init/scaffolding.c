@@ -19,7 +19,9 @@
 #include "queue.h" /* all_queues, pbs_queue */
 #include "user_info.h"
 #include "hash_map.h"
+#include "id_map.hpp"
 
+threadpool_t *task_pool;
 int scheduler_sock=0;
 int scheduler_jobct = 0;
 bool auto_send_hierarchy = true;
@@ -83,6 +85,7 @@ struct all_jobs array_summary;
 attribute_def svr_attr_def[10];
 int a_opt_init = -1;
 all_tasks task_list_timed;
+pthread_mutex_t task_list_timed_mutex;
 char *path_jobinfo_log;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 pthread_mutex_t *svr_requests_mutex = NULL;
@@ -197,10 +200,8 @@ void job_clone_wt(void *cloned_id)
   exit(1);
   }
 
-void start_request_pool()
+void start_request_pool(threadpool_t *tp)
   {
-  fprintf(stderr, "The call to start_request_pool needs to be mocked!!\n");
-  exit(1);
   }
 
 char *pbs_get_server_list(void)
@@ -523,7 +524,7 @@ int array_save(job_array *pa)
   return(0);
   }
 
-int add_hello_after(hello_container *hc, char *node_name, int index)
+int add_hello_after(hello_container *hc, int node_id, int index)
   {
   fprintf(stderr, "The call to add_hello_after needs to be mocked!!\n");
   exit(1);
@@ -532,7 +533,8 @@ int add_hello_after(hello_container *hc, char *node_name, int index)
 int enqueue_threadpool_request(
 
   void *(*func)(void *),
-  void *arg)
+  void *arg,
+  threadpool_t *tp)
 
   {
   return(0);
@@ -683,3 +685,5 @@ void parse_mom_hierarchy(int fds)
   {
   mh->paths->num++;
   }
+
+id_map::id_map() {}

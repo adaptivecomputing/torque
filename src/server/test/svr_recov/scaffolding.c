@@ -135,3 +135,15 @@ void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_ext(int type, const char *func_name, const char *msg, int o) {}
+
+int str_to_attr(
+
+  const char           *name,   /* I */
+  char                 *val,    /* I */
+  pbs_attribute        *attr,   /* O */
+  struct attribute_def *padef,  /* I */
+  int                   limit)  /* I */
+
+  {
+  return(0);
+  }

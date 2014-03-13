@@ -3,11 +3,13 @@
 #include <stdio.h> /* fprintf */
 #include <netdb.h>
 
+#include "threadpool.h"
 #include "net_connect.h"
 #include "log.h"
 
 const char *msg_daemonname = "unset";
 bool trqauthd_up = true;
+threadpool_t *request_pool;
 
 void log_get_set_eventclass(int *objclass, SGetter action) {}
 
@@ -43,7 +45,8 @@ int add_conn(
 int enqueue_threadpool_request(
 
   void *(*func)(void *),
-  void *arg)
+  void *arg,
+  threadpool *tp)
 
   {
   return(0);

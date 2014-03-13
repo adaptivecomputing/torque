@@ -4,6 +4,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
+#include "threadpool.h"
 #include "attribute.h"
 #include "pbs_nodes.h"
 #include "pbs_job.h"
@@ -51,7 +52,7 @@ char *threadsafe_tokenizer(
 int remove_hello(
 
   hello_container *hc,
-  char            *node_name)
+  int              node_id)
 
   {
   return(0);
@@ -105,10 +106,13 @@ void *sync_node_jobs(
   return(NULL);
   }
 
+threadpool_t *task_pool;
+
 int enqueue_threadpool_request(
 
   void *(*func)(void *),
-  void *arg)
+  void *arg,
+  threadpool_t *tp)
 
   {
   return(0);
