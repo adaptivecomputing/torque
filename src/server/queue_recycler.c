@@ -9,6 +9,7 @@
 
 #include "utils.h"
 #include "threadpool.h"
+#include "mutex_mgr.hpp"
 
 extern queue_recycler q_recycler;
 extern int LOGLEVEL;
