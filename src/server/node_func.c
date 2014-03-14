@@ -604,7 +604,7 @@ int login_encode_jobs(
     
     while ((jui_index = jui->est.get_next_occupied_index(jui_iterator)) != -1)
       {
-      if (pnode->nd_id == login_id)
+      if (pnode->nd_id != login_id)
         {
         if (job_str.length() != 0)
           snprintf(str_buf, sizeof(str_buf), ",%d/%s", jui_index, jui->jobid);
