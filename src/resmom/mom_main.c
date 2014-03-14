@@ -291,7 +291,6 @@ char           *path_log;
 
 
 
-
 int                     LOGLEVEL = 0;  /* valid values (0 - 10) */
 int                     DEBUGMODE = 0;
 int                     DOBACKGROUND = 1;
@@ -685,14 +684,12 @@ void memcheck(
     return;
     }
 
-  log_err(-1, "memcheck", "memory allocation failed");
+  log_err(-1, __func__, "memory allocation failed");
 
   die(0);
 
   return;
   }  /* END memcheck() */
-
-
 
 
 
@@ -772,6 +769,7 @@ void rmnl(
 
   return;
   }
+
 
 
 
@@ -4096,6 +4094,9 @@ void parse_command_line(
 
       case 'l':
 
+        if (path_log != NULL)
+          free(path_log);
+
         path_log = strdup(optarg);
 
         break;
@@ -4584,7 +4585,12 @@ int setup_program_environment(void)
 
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
 
-  c |= chk_file_sec(path_jobs,    1, 0, S_IWGRP | S_IWOTH, 1, NULL);
+  get_mom_job_dir_sticky_config(config_file);
+
+  if (!MOMJobDirStickySet)
+    c |= chk_file_sec(path_jobs,    1, 0, S_IWGRP | S_IWOTH, 1, NULL);
+  else
+    c |= chk_file_sec(path_jobs,    1, 1, S_IWGRP | S_IWOTH, 1, NULL);
 
   c |= chk_file_sec(path_aux,     1, 0, S_IWGRP | S_IWOTH, 1, NULL);
 
@@ -4698,8 +4704,7 @@ int setup_program_environment(void)
 
   if (read_config(NULL))
     {
-    fprintf(stderr, "pbs_mom: cannot load config file '%s'\n",
-            config_file);
+    fprintf(stderr, "pbs_mom: cannot load config file '%s'\n", config_file);
 
     exit(1);
     }
@@ -6798,7 +6803,6 @@ int add_to_resend_things(
   things_to_resend.push_back(mc);
   return PBSE_NONE;
   } /* END add_to_resend_things() */
-
 
 
 

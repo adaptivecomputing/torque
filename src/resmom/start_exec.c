@@ -630,10 +630,16 @@ void exec_bail(
     exiting_tasks = 1;
 
     if (pjob->ji_stdout > 0)
+      {
       close(pjob->ji_stdout);
+      pjob->ji_stdout = -1;
+      }
 
     if (pjob->ji_stderr > 0)
+      {
       close(pjob->ji_stderr);
+      pjob->ji_stderr = -1;
+      }
     }
   else
     {
@@ -1380,6 +1386,8 @@ void get_mic_indices(
       tok = strtok(NULL, "+");
       }
     }
+  if (mic_str != NULL)
+    free(mic_str);
   } /* END get_mic_indices() */
 
 

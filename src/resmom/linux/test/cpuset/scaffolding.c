@@ -176,4 +176,18 @@ void log_record(int eventtype, int objclass, const char *objname, const char *te
   {
   }
 
+int is_whitespace(
+      char c)
+  {
+  if ((c == ' ')  ||
+      (c == '\n') ||
+      (c == '\t') ||
+      (c == '\r') ||
+      (c == '\f'))
+      return(TRUE);
+  else
+      return(FALSE);
+  }
+
+
 #endif

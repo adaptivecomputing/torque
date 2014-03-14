@@ -976,6 +976,7 @@ void *req_modifyjob(
 
   job_mutex.unlock();
 
+
   /* If async modify, reply now; otherwise reply is handled later */
   if (preq->rq_type == PBS_BATCH_AsyModifyJob)
     {

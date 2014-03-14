@@ -1443,7 +1443,12 @@ void *obit_reply(
 
   /* MUTSU - Should these two commands be moved to the top? */
   pbs_disconnect_socket(sock);
-  close_conn(sock, FALSE);
+  /* pbs_disconnect_socket has closed our socket but we have some connection table
+     cleanup to do. We can't call close_conn because our file descriptor is 
+     already closed */
+  /* Note that if we ever mult-thread the mom this will need to be done
+     with a lock on the svr_conn table */
+  clear_conn(sock, false);
 
   if (PBSNodeCheckEpilog)
     {

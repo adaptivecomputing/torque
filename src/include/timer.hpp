@@ -1,5 +1,6 @@
-#ifndef MUTEX_MGR_HPP
-#define MUTEX_MGR_HPP
+#ifdef CAN_TIME
+#ifndef TIMER_HPP
+#define TIMER_HPP
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
 *
@@ -79,37 +80,39 @@
 * without reference to its choice of law rules.
 */
 
-#include <pthread.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <unistd.h>
 
-/* mutex_mgr 
- * This class is used to manage pthread mutexes.
- * The private variable unlock_on_exit tells
- * the destructor whether or not to unlock the managed
- * mutex. 
- * here are three constructors all of which initialize 
- * unlock_on_exit to true. unlock_on_exit can be set
- * to true or false with the method set_unlock_on_exit.
- * The method detach() unlocks the managed mutex.
- * the method attach() locks the managed mutex.
+/*
+ * This class is made to be able to time different functions in TORQUE and log them to the output file.
+ * The constructor starts the timer and the destructor calculates the difference and logs it to the log.
+ *
+ * To enable timing, you must add CFLAGS='-DCAN_TIME' CXXFLAGS='-DCAN_TIME' to the make command.
+ * If this is not done, then none of this code is compiled and it has no effect on operation.
+ * Then, for the function you wish to time simply add FUNCTION_TIMER as the first line to the function.
+ * Finally, grep for the function name and the word 'microseconds' in the log file to see how long 
+ * the function is taking.
  */
-class mutex_mgr
+
+class microsecond_timer
   {
-  bool unlock_on_exit;
-  bool locked;
-  bool mutex_valid;
-  pthread_mutex_t *managed_mutex;
+  timeval     starttime; // start time
+  const char *file;  // file name
+  const char *func;  // function name
+  int         line;  // line number
 
   public:
-    mutex_mgr& operator= (const mutex_mgr &newMutexMgr);
-    mutex_mgr(const mutex_mgr& newMutexMgr);
-    mutex_mgr(pthread_mutex_t *mutex, bool is_locked = false);
-    ~mutex_mgr();
-    int unlock();
-    int lock();
-    void set_lock_state(bool val);
-    void set_unlock_on_exit(bool val);
-	  void mark_as_locked();
-    bool is_valid();
+    microsecond_timer(const char *file, const char *func, int line);
+    ~microsecond_timer();
+
+    void start();
+    void end();
   };
 
-#endif
+#define FUNCTION_TIMER microsecond_timer timer(__FILE__, __func__, __LINE__);
+
+#endif /* TIMER_HPP */
+#else
+#define FUNCTION_TIMER 
+#endif /* CAN_TIME */

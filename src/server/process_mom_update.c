@@ -972,6 +972,7 @@ int is_gpustat_get(
         {
         gpuinfo << ";";
         }
+
       gpuinfo << i->c_str();
       need_delimiter = TRUE;
       }

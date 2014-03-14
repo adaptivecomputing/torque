@@ -396,6 +396,8 @@ m4_ifdef([AM_SILENT_RULES],[
     src/lib/test/Makefile
     src/momctl/test/Makefile
     src/momctl/test/momctl/Makefile
+    src/pam/test/Makefile
+    src/pam/test/pam_pbssimpleauth/Makefile
     src/resmom/test/Makefile
     src/resmom/test/alps_reservations/Makefile
     src/resmom/test/catch_child/Makefile
@@ -1073,8 +1075,8 @@ then configuring again.
 ])])
     olibs=$LIBS
     LIBS="$LIBS $HWLOC_LIBS";
-    AC_CHECK_LIB([hwloc], [hwloc_bitmap_alloc],,
-      [AC_MSG_ERROR([libhwloc does not look like >= 1.1])])
+    AC_CHECK_LIB([hwloc], [hwloc_bitmap_list_snprintf],,
+      [AC_MSG_ERROR([libhwloc does not look like >= 1.2])])
     LIBS=$olibs
   fi
 fi 

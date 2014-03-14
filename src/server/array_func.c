@@ -180,6 +180,8 @@ job_array *get_array(
   char      *tmpjobid;
 
   tmpjobid = get_correct_jobname(id);
+  if (tmpjobid == NULL)
+    return(NULL);
 
   allarrays.lock();
 
@@ -874,7 +876,7 @@ int array_recov_binary(
   pa->job_ids = (char **)calloc(pa->ai_qs.array_size, sizeof(char *));
   if(pa->job_ids == NULL)
     {
-    memset(&pa->ai_qs,0,sizeof(array_info));
+    free(pa);
     close(fd);
     return PBSE_SYSTEM;
     }

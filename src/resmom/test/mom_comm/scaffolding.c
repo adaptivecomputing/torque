@@ -509,3 +509,6 @@ bool am_i_mother_superior(const job &pjob)
     
   return(mother_superior);
   }
+
+void create_cpuset_reservation_if_needed(job &pjob){}
+

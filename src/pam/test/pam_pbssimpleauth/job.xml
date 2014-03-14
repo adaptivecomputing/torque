@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+<job>
+  <version>131842</version>
+  <state>4</state>
+  <substate>42</substate>
+  <server_flags>33</server_flags>
+  <start_time>1386291666</start_time>
+  <jobid>13.cvizino-centos6-test</jobid>
+  <fileprefix>13.cvizino-centos6-test</fileprefix>
+  <queue></queue>
+  <destination_queue></destination_queue>
+  <record_type>3</record_type>
+  <svr_addr>167952434</svr_addr>
+  <exit_status>0</exit_status>
+  <execution_uid>500</execution_uid>
+  <execution_gid>500</execution_gid>
+  <attributes>
+    <Job_Name flags="1">STDIN</Job_Name>
+    <Job_Owner flags="1">adaptive@cvizino-centos6-test</Job_Owner>
+    <job_state flags="1">T</job_state>
+    <queue flags="1">batch</queue>
+    <server flags="1">cvizino-centos6-test</server>
+    <Checkpoint flags="1">u</Checkpoint>
+    <Error_Path flags="1">cvizino-centos6-test:/home/adaptive/STDIN.e13</Error_Path>
+    <exec_host flags="1">cvizino-centos6-test1/0</exec_host>
+    <exec_port flags="1">15003</exec_port>
+    <Join_Path flags="1">n</Join_Path>
+    <Keep_Files flags="1">n</Keep_Files>
+    <mtime flags="1">1386291666</mtime>
+    <Output_Path flags="1">cvizino-centos6-test:/home/adaptive/STDIN.o13</Output_Path>
+    <Resource_List>
+      <neednodes flags="3">1</neednodes>
+    </Resource_List>
+    <session_id flags="9">28001</session_id>
+    <Variable_List flags="1">PBS_O_QUEUE=batch
+PBS_O_HOME=/home/adaptive
+PBS_O_LOGNAME=adaptive
+PBS_O_PATH=/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/home/adaptive/bin:/opt/torque/bin
+PBS_O_MAIL=/var/spool/mail/adaptive
+PBS_O_SHELL=/bin/bash
+PBS_O_LANG=en_US.UTF-8
+PBS_O_WORKDIR=/home/adaptive
+PBS_O_HOST=cvizino-centos6-test
+PBS_O_SERVER=cvizino-centos6-test
+</Variable_List>
+    <euser flags="1">adaptive</euser>
+    <egroup flags="5">adaptive</egroup>
+    <hashname flags="1">13.cvizino-centos6-test</hashname>
+    <cookie flags="1">DB22C5AEF23615962A1988CD4A06C2E0</cookie>
+    <start_time flags="1">1386291666</start_time>
+    <fault_tolerant flags="1">False</fault_tolerant>
+    <job_radix flags="1">0</job_radix>
+    <system_start_time flags="1">1386291665</system_start_time>
+  </attributes>
+  <socket_stdout>-1</socket_stdout>
+  <socket_stderr>-1</socket_stderr>
+  <taskid>2</taskid>
+  <nodeid>0</nodeid>
+</job>

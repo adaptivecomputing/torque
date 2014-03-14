@@ -9,7 +9,7 @@
 #include "u_tree.h"
 #include "resource.h"
 
-
+#define ATR_DFLAG_SSET  (ATR_DFLAG_SvWR | ATR_DFLAG_SvRD)
 #define rot(x,k) (((x)<<(k)) | ((x)>>(32-(k))))
 
 #define mix(a,b,c) \
@@ -330,7 +330,10 @@ int decode_arst(pbs_attribute *patr, const char *name, const char *rescn, const 
   return(0);
   }  /* END decode_arst() */
 
-
+int encode_ll(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm)
+  {
+  return(PBSE_NONE);
+  }
 
 
 int attr_atomic_node_set(
@@ -1774,6 +1777,4 @@ resource_def svr_resc_def_const[] =
 int svr_resc_size = sizeof(svr_resc_def_const)/sizeof(resource_def);
 
 resource_def *svr_resc_def = svr_resc_def_const;
-
-
 

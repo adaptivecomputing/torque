@@ -4,6 +4,7 @@
 
 #include "queue.h" /* pbs_queue, all_queues */
 #include "queue_func.h"
+#include "mutex_mgr.hpp"
 
 
 #include "utils.h"

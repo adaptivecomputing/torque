@@ -1,5 +1,4 @@
-#ifndef MUTEX_MGR_HPP
-#define MUTEX_MGR_HPP
+#ifdef CAN_TIME
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
 *
@@ -79,37 +78,54 @@
 * without reference to its choice of law rules.
 */
 
-#include <pthread.h>
+#include <stdio.h>
 
-/* mutex_mgr 
- * This class is used to manage pthread mutexes.
- * The private variable unlock_on_exit tells
- * the destructor whether or not to unlock the managed
- * mutex. 
- * here are three constructors all of which initialize 
- * unlock_on_exit to true. unlock_on_exit can be set
- * to true or false with the method set_unlock_on_exit.
- * The method detach() unlocks the managed mutex.
- * the method attach() locks the managed mutex.
- */
-class mutex_mgr
+#include "timer.hpp"
+#include "log.h"
+
+microsecond_timer::microsecond_timer(
+
+  const char *file,
+  const char *func,
+  int         line)
+
   {
-  bool unlock_on_exit;
-  bool locked;
-  bool mutex_valid;
-  pthread_mutex_t *managed_mutex;
+  this->file = file;
+  this->func = func;
+  this->line = line;
+  start();
+  }
 
-  public:
-    mutex_mgr& operator= (const mutex_mgr &newMutexMgr);
-    mutex_mgr(const mutex_mgr& newMutexMgr);
-    mutex_mgr(pthread_mutex_t *mutex, bool is_locked = false);
-    ~mutex_mgr();
-    int unlock();
-    int lock();
-    void set_lock_state(bool val);
-    void set_unlock_on_exit(bool val);
-	  void mark_as_locked();
-    bool is_valid();
-  };
+
+
+microsecond_timer::~microsecond_timer()
+  {
+  end();
+  }
+
+
+
+void microsecond_timer::start()
+
+  {
+  gettimeofday(&this->starttime, NULL);
+  }
+
+
+
+void microsecond_timer::end()
+  {
+  timeval endtime;
+  char    buf[1024];
+  gettimeofday(&endtime, NULL);
+
+  time_t usec = ((time_t)endtime.tv_sec - (time_t)this->starttime.tv_sec) * 1e6;
+  usec += (time_t)endtime.tv_usec - (time_t)this->starttime.tv_usec;
+
+  snprintf(buf, sizeof(buf), "Function '%s' in file '%s' at line '%d' took %lu microseconds to complete.",
+    this->func, this->file, this->line, usec);
+  log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "", buf);
+  }
+
 
 #endif

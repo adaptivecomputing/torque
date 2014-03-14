@@ -227,6 +227,8 @@ extern int exec_job_on_ms(job *pjob);
 u_long gettime(resource *);
 u_long getsize(resource *);
 
+int is_ptask_corrupt( struct tcp_chan *chan); 
+
 #ifdef NVIDIA_GPUS
 int  setup_gpus_for_job(job *pjob);
 #endif  /* NVIDIA_GPUS */
@@ -741,7 +743,7 @@ int im_compose(
   tm_task_id taskid)
 
   {
-  int ret;
+  int ret = PBSE_NONE;
 
   if (chan->sock < 0)
     {
@@ -5196,7 +5198,6 @@ int process_valid_response(
 
   return(ret);
   } /* END process_valid_response() */
-
 
 
 

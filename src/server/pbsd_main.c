@@ -2881,7 +2881,10 @@ static void lock_out_ha()
 
       UseFLock = FALSE;
       if (MutexLockFD > 0)
+        {
         close(MutexLockFD);
+        MutexLockFD = -1;
+        }
       }
 
     NumChecks++;
@@ -2963,7 +2966,11 @@ static void lock_out_ha()
       }
 
     if (UseFLock == TRUE)
-      close(MutexLockFD); /* unlock file mutex */
+      if (MutexLockFD > 0)
+        {
+        close(MutexLockFD); /* unlock file mutex */
+        MutexLockFD = -1;
+        }
     } /* END while (!FilePossession) */
 
   /* we have the file lock--go ahead and log this fact */
@@ -2973,6 +2980,9 @@ static void lock_out_ha()
     PBS_EVENTCLASS_SERVER,
     __func__,
     (char *)"high availability file lock obtained");
+
+  if (MutexLockFD >= 0)
+    close(MutexLockFD);
   } /* END lock_out_ha() */
 
 
