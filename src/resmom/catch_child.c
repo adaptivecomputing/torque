@@ -1215,7 +1215,6 @@ void preobit_preparation(
  * @see post_epilogue() - registers obit_reply via add_conn()
  */
 
-
 void *obit_reply(
 
   void *new_sock)  /* I */
@@ -1233,6 +1232,7 @@ void *obit_reply(
   int                   sock = *(int *)new_sock;
   struct tcp_chan      *chan = NULL;
   int                   count = 0;
+  bool                  not_deleted = false;
 
   /* read and decode the reply */
 
@@ -1282,9 +1282,6 @@ void *obit_reply(
     if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_OBIT) &&
         (pjob->ji_momhandle == sock))
       {
-      /* Clear out destination so we know job is not on mom any more */
-
-      pjob->ji_qs.ji_destin[0] = '\0';
 
       switch (preq->rq_reply.brp_code)
         {
@@ -1357,6 +1354,13 @@ void *obit_reply(
           mom_deljob(pjob);
 
           break;
+          
+        case PBSE_SERVER_BUSY:
+
+          not_deleted = true;
+
+          break;
+
 
         case - 1:
 
@@ -1404,6 +1408,13 @@ void *obit_reply(
 
         break;
         }  /* END switch (preq->rq_reply.brp_code) */
+      
+      if (not_deleted == false)
+        {
+        /* Clear out destination so we know job is not on mom any more */
+  
+        pjob->ji_qs.ji_destin[0] = '\0';
+        }
 
       break;
       }    /* END if (...) */
@@ -1448,15 +1459,21 @@ void *obit_reply(
 
   free_br(preq);
 
-  /* MUTSU - Should these two commands be moved to the top? */
   pbs_disconnect_socket(sock);
   close_conn(sock, FALSE);
 
-  if (PBSNodeCheckEpilog)
+  if (not_deleted == true)
     {
-    check_state(1);
+    mark_for_resend(pjob);
+    }
+  else
+    {
+    if (PBSNodeCheckEpilog)
+      {
+      check_state(1);
 
-    mom_server_all_update_stat();
+      mom_server_all_update_stat();
+      }
     }
 
   return(NULL);
