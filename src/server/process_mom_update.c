@@ -221,6 +221,9 @@ int process_mic_status(
   
   node_micstatus_list(&temp, pnode, ATR_ACTION_ALTER);
 
+  if (single_mic_status != NULL)
+    free(single_mic_status);
+
   return(rc);
   } /* END process_mic_status() */
 

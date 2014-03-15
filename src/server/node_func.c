@@ -612,12 +612,14 @@ int login_encode_jobs(
   if ((job_str->str) == NULL)
     {
     log_err(PBSE_BAD_PARAMETER, __func__, "job_str value was not initialized");
+    free_dynamic_string(job_str);
     return(PBSE_BAD_PARAMETER);
     }
 
   if ((pal = attrlist_create((char *)ATTR_NODE_jobs, (char *)NULL, strlen(job_str->str) + 1)) == NULL)
     {
     log_err(ENOMEM, __func__, "");
+    free_dynamic_string(job_str);
     return(ENOMEM);
     }
 
