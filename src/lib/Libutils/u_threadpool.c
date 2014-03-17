@@ -205,7 +205,7 @@ static void *work_thread(
 
   {
 
-  int               rc;
+  int               rc = PBSE_NONE;
 
   void             *(*func)(void *);
   void             *arg;
