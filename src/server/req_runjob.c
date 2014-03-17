@@ -831,7 +831,22 @@ int svr_stagein(
      */
 
     if (*preq != NULL)
+      {
+      struct batch_request *request = *preq;
+      int free_preq = 0;
+      /* Under the following circumstances, reply_send_svr called eventually
+       * by reply_ack/reply_send will free preq under the following cirmcustances.
+       * There are 60+ occurrences of reply_send, so this is the easiest way.
+       */
+      if (((request->rq_type != PBS_BATCH_AsyModifyJob) &&
+           (request->rq_type != PBS_BATCH_AsyrunJob) &&
+           (request->rq_type != PBS_BATCH_AsySignalJob)) ||
+           (request->rq_noreply == TRUE))
+         free_preq = 1;
       reply_ack(*preq);
+      if (free_preq)
+    	  *preq = NULL;
+      }
     }
   else
     {
