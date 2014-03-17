@@ -130,27 +130,10 @@ int addr_ok(
   int           release_mutex = FALSE;
   time_t        time_now = time(NULL);
 
-  node_iterator iter;
-
   /* if a node wasn't passed in, then find the node */
   if (pnode == NULL)
     {
-    reinitialize_node_iterator(&iter);
-    
-    while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
-      {
-      /* NOTE:  should walk thru all nd_addrs for multi-homed hosts */
-      
-      /* NOTE:  deleted node may have already freed nd_addrs - check should be redundant */
-      if ((pnode->nd_addrs == NULL) || 
-          (pnode->nd_addrs[0] != addr))
-        {
-        continue;
-        }
-
-      /* node matches addr */
-      break;
-      }
+    pnode = tfind_addr(addr, PBS_MOM_SERVICE_PORT, NULL);
 
     if (pnode == NULL)
       return(status);

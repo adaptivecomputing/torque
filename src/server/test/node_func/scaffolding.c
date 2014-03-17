@@ -412,3 +412,13 @@ int id_map::get_new_id(char const *name)
   }
 
 id_map node_mapper;
+
+struct pbsnode *tfind_addr(
+
+  const u_long  key,
+  uint16_t      port,
+  char         *job_momname)
+
+  {
+  return(NULL);
+  }

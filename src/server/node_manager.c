@@ -237,7 +237,8 @@ struct pbsnode *tfind_addr(
 
   lock_node(pn, __func__, "pn", LOGLEVEL);
 
-  if (pn->num_node_boards == 0)
+  if ((pn->num_node_boards == 0) ||
+      (job_momname == NULL))
     return(pn);
   else
     {

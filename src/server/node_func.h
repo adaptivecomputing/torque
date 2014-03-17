@@ -69,8 +69,6 @@ int create_partial_pbs_node(char *nodename, unsigned long addr, int perms);
 
 void reinitialize_node_iterator(struct node_iterator *iter);
 
-struct pbsnode *next_node(struct all_nodes *an, struct pbsnode *current, struct node_iterator *iter);
-
 void initialize_all_nodes_array(struct all_nodes *an);
 
 int insert_node(struct all_nodes *an, struct pbsnode *pnode);
