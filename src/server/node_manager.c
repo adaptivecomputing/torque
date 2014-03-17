@@ -5383,21 +5383,29 @@ void set_one_old(
   job  *pjob)
 
   {
-  int             index;
+  int             first;
+  int             last;
 
   struct pbsnode *pnode;
   char           *pc;
+  char           *dash;
   long            cray_enabled = FALSE;
 
   if ((pc = strchr(name, (int)'/')))
     {
-    index = atoi(pc + 1);
+    first = strtol(pc + 1, &dash, 10);
 
     *pc = '\0';
+
+    if (*dash == '-')
+      last = strtol(dash + 1, NULL, 10);
+    else
+      last = first;
     }
   else
     {
-    index = 0;
+    first = 0;
+    last = first;
     }
 
   get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
@@ -5413,7 +5421,7 @@ void set_one_old(
       {
       if (pnode->parent == alps_reporter)
         {
-        while (index >= pnode->nd_slots.get_total_execution_slots())
+        while (last >= pnode->nd_slots.get_total_execution_slots())
           {
           add_execution_slot(pnode);
           }
@@ -5434,10 +5442,14 @@ void set_one_old(
         {
         found = true;
 
-        while (index >= jui->est.get_total_execution_slots())
+        while (last >= jui->est.get_total_execution_slots())
           jui->est.add_execution_slot();
-        jui->est.mark_as_used(index);
-        pnode->nd_slots.mark_as_used(index);
+
+        for (int index = first; index <= last; index++)
+          {
+          jui->est.mark_as_used(index);
+          pnode->nd_slots.mark_as_used(index);
+          }
         }
       }
 
@@ -5445,10 +5457,15 @@ void set_one_old(
       {
       job_usage_info *jui = new job_usage_info(pjob->ji_qs.ji_jobid);
         
-      while (index >= jui->est.get_total_execution_slots())
+      while (last >= jui->est.get_total_execution_slots())
         jui->est.add_execution_slot();
-      jui->est.mark_as_used(index);
-      pnode->nd_slots.mark_as_used(index);
+
+      for (int index = first; index <= last; index++)
+        {
+        jui->est.mark_as_used(index);
+        pnode->nd_slots.mark_as_used(index);
+        }
+
       pnode->nd_job_usages.push_back(jui);
       }
 
