@@ -456,7 +456,7 @@ bool threadpool_is_too_busy(
       {
       double pcnt_open = num_open;
       pcnt_open /= tp->tp_max_threads;
-      if (pcnt_open < 0.10)
+      if (pcnt_open < 0.05)
         busy = true;
       }
     }
