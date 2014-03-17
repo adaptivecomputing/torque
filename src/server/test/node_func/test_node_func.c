@@ -114,36 +114,6 @@ START_TEST(add_to_property_list_test)
 END_TEST
 
 
-START_TEST(PGetNodeFromAddr_test)
-  {
-  pbs_net_t address = 0;
-  struct pbsnode *result;
-  /* alloc mutex, use, restore */
-  initialize_allnodes(&allnodes, NULL, NULL);
-  result = PGetNodeFromAddr(address);
-
-  fail_unless(result == NULL, "null address input fail");
-  }
-END_TEST
-
-START_TEST(bad_node_warning_test)
-  {
-  pbs_net_t address = 0;
-  struct pbsnode node;
-  pthread_mutex_t *mutex = allnodes.allnodes_mutex;
-  initialize_pbsnode(&node, NULL, NULL, 0, FALSE);
-
-  /* alloc mutex, use, restore */
-  allnodes.allnodes_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(allnodes.allnodes_mutex, NULL);
-
-  bad_node_warning(address, NULL);
-  bad_node_warning(address, &node);
-
-  allnodes.allnodes_mutex = mutex;
-  }
-END_TEST
-
 START_TEST(addr_ok_test)
   {
   pbs_net_t address = 0;
@@ -986,15 +956,7 @@ END_TEST
 Suite *node_func_suite(void)
   {
   Suite *s = suite_create("node_func_suite methods");
-  TCase *tc_core = tcase_create("PGetNodeFromAddr_test");
-  tcase_add_test(tc_core, PGetNodeFromAddr_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("bad_node_warning_test");
-  tcase_add_test(tc_core, bad_node_warning_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("addr_ok_test");
+  TCase *tc_core = tcase_create("addr_ok_test");
   tcase_add_test(tc_core, addr_ok_test);
   suite_add_tcase(s, tc_core);
 

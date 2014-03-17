@@ -330,10 +330,9 @@ int authenticate_user(struct batch_request *preq, struct credential *pcred, char
   exit(1);
   }
 
-struct pbsnode *PGetNodeFromAddr(pbs_net_t addr)
+struct pbsnode *find_nodebyname(const char *node_name)
   {
-  fprintf(stderr, "The call to PGetNodeFromAddr needs to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 int req_manager(batch_request *preq)

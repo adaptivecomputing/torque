@@ -127,7 +127,6 @@ static int  put_4byte(int sock, unsigned int val);
 static void listener_close(int);
 
 
-extern void bad_node_warning(pbs_net_t, struct pbsnode *);
 extern ssize_t write_nonblocking_socket(int, const void *, ssize_t);
 
 extern void scheduler_close();
@@ -360,8 +359,6 @@ static int contact_listener(
   if (sock < 0)
     {
     /* FAILURE */
-
-    bad_node_warning(listener_conns[l_idx].address, NULL);
 
     sprintf(tmpLine, "%s %d - port %d %s",
             msg_listnr_nocall,

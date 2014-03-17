@@ -196,8 +196,6 @@ static void free_rescrq(struct rq_rescq *);
 /* END private prototypes */
 
 
-extern struct pbsnode *PGetNodeFromAddr(pbs_net_t);
-
 
 #ifdef ENABLE_UNIX_SOCKETS
 int get_creds(
@@ -315,7 +313,8 @@ bool request_passes_acl_check(
     struct pbsnode       *isanode;
 
     get_svr_attr_arst(SRV_ATR_acl_hosts, &pas);
-    isanode = PGetNodeFromAddr(conn_addr);
+
+    isanode = find_nodebyname(request->rq_host);
 
     if ((isanode == NULL) &&
         (strcmp(server_host, request->rq_host) != 0) &&

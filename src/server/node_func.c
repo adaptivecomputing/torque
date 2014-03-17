@@ -114,82 +114,6 @@ job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode);
 struct pbsnode *alps_reporter;
 
 
-/* use IP address to look up matchin node structure */
-
-struct pbsnode *PGetNodeFromAddr(
-
-  pbs_net_t addr)  /* I */
-
-  {
-  struct pbsnode *pnode;
-  int             iter = -1;
-  int             aindex;
-
-  while ((pnode = next_host(&allnodes,&iter,NULL)) != NULL)
-    {
-    for (aindex = 0; aindex < 10; aindex++)
-      {
-      if (pnode->nd_addrs[aindex] == 0)
-        break;
-
-      if (pnode->nd_addrs[aindex] == addr)
-        {
-        return(pnode);
-        }
-      }    /* END for (aindex) */
-
-    unlock_node(pnode, __func__, 0, LOGLEVEL);
-    } /* END for each node */
-
-  return(NULL);
-  }  /* END PGetNodeFromAddr() */
-
-
-
-
-void bad_node_warning(
-
-  pbs_net_t       addr,           /* I */
-  struct pbsnode *node_possessed) /* I */
-
-  {
-  time_t          now;
-  time_t          last;
-  char            log_buf[LOCAL_LOG_BUF_SIZE+1];
-
-  struct pbsnode *pnode = NULL;
-
-  if (node_possessed == NULL)
-    pnode = PGetNodeFromAddr(addr);
-  else
-    pnode = node_possessed;
-
-  if (pnode != NULL)
-    {
-    /* matching node located */
-    now = time(NULL);
-    
-    last = pnode->nd_warnbad;
-    
-    if (!last && (now - last >= 3600))
-      {
-      /* once per hour, log a warning that we can't reach the node */
-      snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-          "ALERT: unable to contact node %s", pnode->nd_name);
-      log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, "WARNING", log_buf);
-      
-      pnode->nd_warnbad = now;
-      }
-   
-    /* only release the mutex if we obtained it in this function */
-    if (node_possessed == NULL)
-      unlock_node(pnode, __func__, "attained in function", LOGLEVEL);
-    }
-
-  } /* END bad_node_warning() */
-
-
-
 
 /*
  * return 0 if addr is a MOM node and node is in bad state,
@@ -3542,7 +3466,7 @@ struct pbsnode *next_host(
     {
     lock_node(pnode, __func__, NULL, LOGLEVEL);
     }
-
+  
   pthread_mutex_unlock(an->allnodes_mutex);
 
   if ((held != pnode) &&

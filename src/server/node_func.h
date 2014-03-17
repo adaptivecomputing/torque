@@ -23,10 +23,6 @@ typedef struct _node_info_
   tlist_head atrlist;
   } node_info;
 
-struct pbsnode *PGetNodeFromAddr(pbs_net_t addr);
-
-void bad_node_warning(pbs_net_t addr, struct pbsnode *);
-
 int addr_ok(pbs_net_t addr, struct pbsnode *pnode);
 
 struct pbsnode *find_nodebyname(const char *nodename);

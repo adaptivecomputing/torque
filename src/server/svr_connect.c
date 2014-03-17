@@ -130,7 +130,6 @@ extern struct connection svr_conn[];
 extern pbs_net_t  pbs_server_addr;
 extern int               LOGLEVEL;
 
-extern void    bad_node_warning(pbs_net_t, struct pbsnode *);
 extern ssize_t read_blocking_socket(int, void *, ssize_t);
 extern int get_num_connections();
 
@@ -226,8 +225,6 @@ int svr_connect(
 
       log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
       }
-
-    bad_node_warning(hostaddr,pnode);
 
     *my_err = errno;
 

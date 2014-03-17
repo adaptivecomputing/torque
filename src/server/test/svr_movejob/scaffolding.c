@@ -385,3 +385,8 @@ char *pbs_geterrmsg(int con)
   {
   return(strdup("err"));
   }
+
+int get_svr_attr_l(int index, long *val)
+  {
+  return(0);
+  }
