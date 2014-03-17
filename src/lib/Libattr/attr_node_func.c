@@ -1123,6 +1123,13 @@ int node_power_state(
 
     case ATR_ACTION_ALTER:
 
+      if(np->nd_power_state != new_attr->at_val.at_short)
+        {
+        if((np->nd_power_state != POWER_STATE_RUNNING)&&(new_attr->at_val.at_short != POWER_STATE_RUNNING))
+          {
+          return PBSE_INVALID_POWER_STATE_TRANSISTION;
+          }
+        }
       np->nd_power_state = new_attr->at_val.at_short;
 
       break;

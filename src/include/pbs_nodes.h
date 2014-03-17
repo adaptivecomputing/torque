@@ -480,12 +480,12 @@ int tlist(tree *, char *, int);
 
 /* Node power state defines */
 
-#define POWER_STATE_RUNNING    0
-#define POWER_STATE_STANDBY    1
-#define POWER_STATE_SUSPEND    2
-#define POWER_STATE_SLEEP      3
-#define POWER_STATE_HIBERNATE  4
-#define POWER_STATE_SHUTDOWN   5
+#define POWER_STATE_RUNNING    0 //Up and running
+#define POWER_STATE_STANDBY    1 //Linux string "standby"
+#define POWER_STATE_SUSPEND    2 //Linux string "mem"
+#define POWER_STATE_SLEEP      3 //Linux not supported
+#define POWER_STATE_HIBERNATE  4 //Linux string "disk"
+#define POWER_STATE_SHUTDOWN   5 //Must be done via ACPI
 
 /* state bits that go from node to subn */
 

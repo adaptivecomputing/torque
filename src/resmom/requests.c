@@ -118,6 +118,7 @@
 #include "alps_functions.h"
 #include "tcp.h" /* tcp_chan */
 #include "mom_config.h"
+#include "power_state.hpp"
 
 #ifdef _CRAY
 #include <sys/category.h>
@@ -4112,6 +4113,36 @@ void req_delete_reservation(
   else
     req_reject(-1, 0, request, NULL, log_buffer);
   } /* END req_delete_reservation() */
+
+/*
+ * This call will put the machine into the low power state requested if
+ * the machine is set up to support that low power state. Otherwise it will
+ * reject the request. The function will do all checking and if the outcome is to
+ * put the machine into low power state it will send the ack and pause before executing
+ * the low power state command.
+ *
+ * For documentation on how to manage low power states for linux see this link:
+ *
+ * https://www.kernel.org/doc/Documentation/power/states.txt
+ */
+void req_change_power_state(struct batch_request *request)
+  {
+  power_state pstate;
+
+  if(!pstate.is_valid())
+    {
+    req_reject(-PBSE_POWER_STATE_UNSUPPORTED,0,request,NULL,pstate.get_last_error_string());
+    return;
+    }
+  if(!pstate.is_valid_power_state(request->rq_ind.rq_powerstate))
+    {
+    req_reject(-PBSE_POWER_STATE_UNAVAILABLE,0,request,NULL,pstate.get_last_error_string());
+    return;
+    }
+  reply_ack(request); //Reply first, won't be able to after.
+  pstate.set_power_state(request->rq_ind.rq_powerstate);
+  sleep(10);
+  }
 
 
 

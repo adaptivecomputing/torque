@@ -446,6 +446,12 @@ void mom_dispatch_request(
 
       break;
 
+    case PBS_BATCH_ChangePowerState:
+
+      req_change_power_state(request);
+
+      break;
+
     default:
 
       req_reject(PBSE_UNKREQ, 0, request, NULL, NULL);

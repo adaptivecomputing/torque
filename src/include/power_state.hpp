@@ -90,53 +90,21 @@
  *  https://www.kernel.org/doc/Documentation/cpu-freq/user-guide.txt
  */
 
-class cpu_frequency : public sys_file
+class power_state : public sys_file
   {
 private:
 
-  std::string path;                    //Path to cpufreq directory for this cpu.
+  std::string path;                    //Path to power state directory
 
   bool valid;                        //This is set to true if all values are loaded.
 
-  unsigned long cpu_min_frequency;  //cpuinfo_min_freq :       this file shows the minimum operating
-  //                         frequency the processor can run at(in kHz)
-  unsigned long cpu_max_frequency;  //cpuinfo_max_freq :        this file shows the maximum operating
-  //                           frequency the processor can run at(in kHz)
-  std::vector<cpu_frequency_type> available_governors;   //scaling_available_governors :    this file shows the CPUfreq governors
-  //                             available in this kernel. You can see the
-  //                             currently activated governor in
-  cpu_frequency_type governor;      //scaling_governor,     and by "echoing" the name of another
-  //                      governor you can change it. Please note
-  //                      that some governors won't load - they only
-  //                      work on some specific architectures or
-  //                      processors.
-
-  //cpuinfo_cur_freq :        Current frequency of the CPU as obtained from
-  //                the hardware, in KHz. This is the frequency
-  //                the CPU actually runs at.
-
-  std::vector<unsigned long> available_frequencies; //scaling_available_frequencies : List of available frequencies, in KHz.
-
-  //scaling_min_freq and
-  //scaling_max_freq        show the current "policy limits" (in
-  //                kHz). By echoing new values into these
-  //                files, you can change these limits.
-  //                NOTE: when setting a policy you need to
-  //                first set scaling_max_freq, then
-  //                scaling_min_freq.
-
-  cpu_frequency(){} //Can't instantiate without a cpu number.
+  std::vector<std::string> available_power_states; //List of available power states
 
 public:
 
-  cpu_frequency(int cpu_number);
-  bool set_frequency(cpu_frequency_type type,unsigned long khz,unsigned long khzUpper,unsigned long khzLower);
-  bool get_frequency(cpu_frequency_type& type,unsigned long& khz, unsigned long& khzUpper, unsigned long& khzLower);
-  bool get_pstate_frequency(cpu_frequency_type pstate,unsigned long& khz);
-  bool get_nearest_available_frequency(unsigned long reqKhz,unsigned long& actualKhz);
-  bool is_governor_available(cpu_frequency_type governor);
-  void get_governor_string(cpu_frequency_type type,std::string& str);
-  cpu_frequency_type get_governor_type(std::string &freq_type);
+  power_state();
+  bool is_valid_power_state(int power_state);
+  void set_power_state(int power_state);
   bool is_valid()
     {
     return valid;

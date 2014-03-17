@@ -26,6 +26,7 @@ bool exit_called = false;
 all_nodes allnodes;
 char *path_nodes;
 char *path_nodestate;
+char *path_nodepowerstate;
 char *path_nodenote;
 struct addrinfo hints;
 char *path_nodes_new;
@@ -284,3 +285,32 @@ struct pbsnode *create_alps_subnode(struct pbsnode *parent, const char *node_id)
   {
   return(NULL);
   }
+
+struct batch_request *alloc_br(int type)
+  {
+  fprintf(stderr,"%s needs to be mocked.\n",__func__);
+  exit(-1);
+  return NULL;
+  }
+
+int issue_Drequest(
+  int                    conn,
+  struct batch_request  *request)
+  {
+  fprintf(stderr,"%s needs to be mocked.\n",__func__);
+  exit(-1);
+  return 0;
+  }
+
+int svr_connect(
+  pbs_net_t        hostaddr,  /* host order */
+  unsigned int     port,   /* I */
+  int             *my_err,
+  struct pbsnode  *pnode,
+  void           *(*func)(void *))
+  {
+  fprintf(stderr,"%s needs to be mocked.\n",__func__);
+  exit(-1);
+  return 0;
+  }
+

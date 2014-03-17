@@ -1,5 +1,3 @@
-#ifndef CPU_FREQUENCY_HPP
-#define CPU_FREQUENCY_HPP
 /*
  *         OpenPBS (Portable Batch System) v2.3 Software License
  *
@@ -79,68 +77,172 @@
  * without reference to its choice of law rules.
  */
 
-#include <vector>
-#include <string>
-#include "attribute.h"
-#include "pbs_error.h"
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <iostream>
+#include <fstream>
+#include <boost/lexical_cast.hpp>
+#include <boost/algorithm/string.hpp>
+#include <sstream>
+#include <algorithm>
+
+
 #include "sys_file.hpp"
 
 
-/* The reference for this file is
- *  https://www.kernel.org/doc/Documentation/cpu-freq/user-guide.txt
- */
 
-class cpu_frequency : public sys_file
+bool sys_file::get_number_from_file(std::string path, unsigned long& num)
   {
-private:
-
-  std::string path;                    //Path to cpufreq directory for this cpu.
-
-  bool valid;                        //This is set to true if all values are loaded.
-
-  unsigned long cpu_min_frequency;  //cpuinfo_min_freq :       this file shows the minimum operating
-  //                         frequency the processor can run at(in kHz)
-  unsigned long cpu_max_frequency;  //cpuinfo_max_freq :        this file shows the maximum operating
-  //                           frequency the processor can run at(in kHz)
-  std::vector<cpu_frequency_type> available_governors;   //scaling_available_governors :    this file shows the CPUfreq governors
-  //                             available in this kernel. You can see the
-  //                             currently activated governor in
-  cpu_frequency_type governor;      //scaling_governor,     and by "echoing" the name of another
-  //                      governor you can change it. Please note
-  //                      that some governors won't load - they only
-  //                      work on some specific architectures or
-  //                      processors.
-
-  //cpuinfo_cur_freq :        Current frequency of the CPU as obtained from
-  //                the hardware, in KHz. This is the frequency
-  //                the CPU actually runs at.
-
-  std::vector<unsigned long> available_frequencies; //scaling_available_frequencies : List of available frequencies, in KHz.
-
-  //scaling_min_freq and
-  //scaling_max_freq        show the current "policy limits" (in
-  //                kHz). By echoing new values into these
-  //                files, you can change these limits.
-  //                NOTE: when setting a policy you need to
-  //                first set scaling_max_freq, then
-  //                scaling_min_freq.
-
-  cpu_frequency(){} //Can't instantiate without a cpu number.
-
-public:
-
-  cpu_frequency(int cpu_number);
-  bool set_frequency(cpu_frequency_type type,unsigned long khz,unsigned long khzUpper,unsigned long khzLower);
-  bool get_frequency(cpu_frequency_type& type,unsigned long& khz, unsigned long& khzUpper, unsigned long& khzLower);
-  bool get_pstate_frequency(cpu_frequency_type pstate,unsigned long& khz);
-  bool get_nearest_available_frequency(unsigned long reqKhz,unsigned long& actualKhz);
-  bool is_governor_available(cpu_frequency_type governor);
-  void get_governor_string(cpu_frequency_type type,std::string& str);
-  cpu_frequency_type get_governor_type(std::string &freq_type);
-  bool is_valid()
+  std::string line;
+  std::ifstream file(path.c_str(),std::ios::in);
+  if(!file.is_open())
     {
-    return valid;
+    last_error = PBSE_CAN_NOT_OPEN_FILE;
+    return false;
     }
-  };
+  if(getline(file,line))
+    {
+    try
+    {
+      unsigned long n = boost::lexical_cast<unsigned long>(line);
+      num = n;
+      file.close();
+      return true;
+    }
+    catch(...)
+      {
+      last_error = PBSE_UNEXPECTED_DATA_IN_FILE;
+      file.close();
+      return false;
+      }
+    }
+  else
+    {
+    last_error = PBSE_CAN_NOT_READ_FILE;
+    file.close();
+    return false;
+    }
+  }
 
-#endif /* CPU_FREQUENCY_HPP */
+bool sys_file::get_numbers_from_file(std::string path, std::vector<unsigned long>& nums)
+  {
+  std::vector<std::string> strs;
+  nums.clear();
+
+  if(!get_strings_from_file(path,strs))
+    {
+    return false;
+    }
+  if(strs.size() == 0)
+    {
+    last_error = PBSE_UNEXPECTED_DATA_IN_FILE;
+    return false;
+    }
+  for(std::vector<std::string>::iterator i = strs.begin();i != strs.end();i++)
+    {
+    try
+    {
+      unsigned long n = boost::lexical_cast<unsigned long>(*i);
+      nums.push_back(n);
+    }
+    catch(...)
+      {
+      last_error = PBSE_UNEXPECTED_DATA_IN_FILE;
+      nums.clear();
+      return false;
+      }
+    }
+  return true;
+  }
+
+bool sys_file::set_number_in_file(std::string path,unsigned long num)
+  {
+  std::string line;
+  std::ofstream file(path.c_str(),std::ios::out|std::ios::trunc);
+  if(!file.is_open())
+    {
+    last_error = PBSE_CAN_NOT_OPEN_FILE;
+    return false;
+    }
+  file << num;
+  file.close();
+  return true;
+  }
+
+bool sys_file::get_string_from_file(std::string path,std::string& str)
+  {
+  std::string line;
+  std::ifstream file(path.c_str(),std::ios::in);
+  if(!file.is_open())
+    {
+    last_error = PBSE_CAN_NOT_OPEN_FILE;
+    return false;
+    }
+  if(getline(file,line))
+    {
+    boost::algorithm::trim(line);
+    str = line;
+    file.close();
+    return true;
+    }
+  else
+    {
+    last_error = PBSE_CAN_NOT_READ_FILE;
+    file.close();
+    return false;
+    }
+  }
+
+bool sys_file::get_strings_from_file(std::string path,std::vector<std::string>& strs)
+  {
+  std::string line;
+  strs.clear();
+  std::ifstream file(path.c_str(),std::ios::in);
+  if(!file.is_open())
+    {
+    last_error = PBSE_CAN_NOT_OPEN_FILE;
+    return false;
+    }
+  while(getline(file,line))
+    {
+    std::stringstream ss(line);
+    std::string buf;
+    while(ss >> buf)
+      {
+      strs.push_back(buf);
+      }
+    }
+  file.close();
+  if(strs.size() == 0)
+    {
+    last_error = PBSE_UNEXPECTED_DATA_IN_FILE;
+    return false;
+    }
+  return true;
+  }
+
+bool sys_file::set_string_in_file(std::string path,std::string str)
+  {
+  std::string line;
+  std::ofstream file(path.c_str(),std::ios::out|std::ios::trunc);
+  if(!file.is_open())
+    {
+    last_error = PBSE_CAN_NOT_OPEN_FILE;
+    return false;
+    }
+  file << str;
+  file.close();
+  return true;
+  }
+
+const char *sys_file::get_last_error_string()
+  {
+  return pbse_to_txt(last_error);
+  }
+int sys_file::get_last_error()
+  {
+  return last_error;
+  }
+
+

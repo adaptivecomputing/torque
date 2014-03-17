@@ -271,6 +271,9 @@ PbsErrClient(PBSE_CAN_NOT_READ_FILE, (char *)"Error reading file")
 PbsErrClient(PBSE_NO_MATCHING_FREQUENCY, (char *)"No matching frequency available.")
 PbsErrClient(PBSE_INVALID_FREQUENCY_FILE, (char *)"Unable to read base frequency file.")
 PbsErrClient(PBSE_CHANGED_CPU_FREQUENCY, (char *)"Changed cpu clock frequency.")
+PbsErrClient(PBSE_INVALID_POWER_STATE_TRANSISTION, (char *)"Nodes can not be changed from one low power state directly to another.")
+PbsErrClient(PBSE_POWER_STATE_UNSUPPORTED, (char *)"The node does not support changing the power state.")
+PbsErrClient(PBSE_POWER_STATE_UNAVAILABLE, (char *)"The node does not support the requested power state.")
 
 /* pbs client errors ceiling (max_client_err + 1) */
 PbsErrClient(PBSE_CEILING,           (char*)0)

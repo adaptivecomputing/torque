@@ -22,6 +22,7 @@
 int SvrNodeCt = 0; 
 int svr_resc_size = 0;
 char *path_nodestate;
+char *path_nodepowerstate;
 int allow_any_mom = FALSE;
 unsigned int pbs_mom_port = 0;
 attribute_def job_attr_def[10];
