@@ -58,7 +58,7 @@ START_TEST(test_recover_reservation)
   recover_mode = 1;
   ni.recover_reservation(3, 2049, "1.napali");
   fail_unless(recover_called == 2);
-  fail_unless(reserve_called == 1);
+  fail_unless(reserve_called > 0);
   }
 END_TEST
 
