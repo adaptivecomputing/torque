@@ -4086,57 +4086,69 @@ int translate_howl_to_string(
 
 
 /*
- * populate_range_string_from_job_reservation_info()
+ * populate_range_string_from_slot_tracker()
  * 
  * @post-cond: range_str is populated with a string representing the range of
  * occupied execution slots on in the job reservation info object.
  * For example, if slots 0, 2, 3, 4, and 5 and occupied the string should be 0,2-5
  */
 
-void populate_range_string_from_job_reservation_info(
+void populate_range_string_from_slot_tracker(
 
-  job_reservation_info &jri,
-  std::stringstream    &range_str)
+  execution_slot_tracker &est,
+  std::string            &range_str)
 
   {
-  int               jri_index;
-  int               prev_jri_index = -1;
+  int               est_index;
+  int               prev_est_index = -1;
   bool              consecutive_indices = false;
-  int               jri_iterator = -1;
+  int               est_iterator = -1;
+  char              numbuf[10];
 
-  range_str.str("");
+  range_str.clear();
     
-  while ((jri_index = jri.est.get_next_occupied_index(jri_iterator)) != -1)
+  while ((est_index = est.get_next_occupied_index(est_iterator)) != -1)
     {
     if (consecutive_indices == false)
       {
-      if (range_str.str().size() == 0)
-        range_str << jri_index;
+      if (range_str.size() == 0)
+        {
+        snprintf(numbuf, sizeof(numbuf), "%d", est_index);
+        range_str += numbuf;
+        }
       else
         {
-        if (prev_jri_index == jri_index - 1)
+        if (prev_est_index == est_index - 1)
           consecutive_indices = true;
         else
-          range_str << "," << jri_index;
+          {
+          snprintf(numbuf, sizeof(numbuf), ",%d", est_index);
+          range_str += numbuf;
+          }
         }
       }
     else
       {
       // currently iterating over consecutive indices
-      if (prev_jri_index != jri_index - 1)
+      if (prev_est_index != est_index - 1)
         {
-        range_str << "-" << prev_jri_index;
+        snprintf(numbuf, sizeof(numbuf), "-%d", prev_est_index);
+        range_str += numbuf;
         consecutive_indices = false;
-        range_str << "," << jri_index;
+        snprintf(numbuf, sizeof(numbuf), ",%d", est_index);
+        range_str += numbuf;
         }
       }
       
-    prev_jri_index = jri_index;
+    prev_est_index = est_index;
     }
 
   if (consecutive_indices == true)
-    range_str << "-" << prev_jri_index;
-  } /* END populate_range_string_from_job_reservation_info() */
+    {
+    snprintf(numbuf, sizeof(numbuf), "-%d", prev_est_index);
+    range_str += numbuf;
+    }
+  } /* END populate_range_string_from_slot_tracker() */
 
 
 
@@ -4156,7 +4168,7 @@ int translate_job_reservation_info_to_string(
     
   std::vector<job_reservation_info *>  &host_info, 
   int                                  *NCount, 
-  std::stringstream                    &exec_host_output,
+  std::string                          &exec_host_output,
   std::stringstream                    *exec_port_output)
 
   {
@@ -4165,23 +4177,25 @@ int translate_job_reservation_info_to_string(
   for (int hi_index = 0; hi_index < (int)host_info.size(); hi_index++)
     {
     job_reservation_info *jri = host_info[hi_index];
-    std::stringstream     range_str;
+    std::string           range_str;
     
     (*NCount)++;
      
     if (first == false)
       {
-      exec_host_output << "+";
+      exec_host_output += "+";
 
       if (exec_port_output != NULL)
         *exec_port_output << "+";
       }
 
-    populate_range_string_from_job_reservation_info(*jri, range_str);
+    populate_range_string_from_slot_tracker(jri->est, range_str);
     
     const char *node_id = node_mapper.get_name(jri->node_id);
 
-    exec_host_output << node_id << "/" << range_str.str();
+    exec_host_output += node_id;
+    exec_host_output += "/";
+    exec_host_output  += range_str;
 
     if (exec_port_output != NULL)
       *exec_port_output << jri->port;
@@ -4520,7 +4534,7 @@ int set_nodes(
   {
   FUNCTION_TIMER
   std::vector<job_reservation_info *> host_info;
-  std::stringstream                   exec_hosts;
+  std::string                         exec_hosts;
   std::stringstream                   exec_ports;
   struct howl       *gpu_list = NULL;
   struct howl       *mic_list = NULL;
@@ -4677,7 +4691,7 @@ int set_nodes(
     return(rc);
     }
 
-  *rtnlist = strdup(exec_hosts.str().c_str());
+  *rtnlist = strdup(exec_hosts.c_str());
   *rtnportlist = strdup(exec_ports.str().c_str());
 
   // JOB_TYPE_normal means no component from the Cray will be used

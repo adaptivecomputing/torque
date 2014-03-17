@@ -26,8 +26,8 @@ bool job_already_being_killed(const char *jobid);
 void process_job_attribute_information(std::string &job_id, std::string &attributes);
 bool process_as_node_list(const char *spec, const node_job_add_info *naji);
 bool node_is_spec_acceptable(struct pbsnode *pnode, single_spec_data *spec, char *ProcBMStr, int *eligible_nodes);
-void populate_range_string_from_job_reservation_info(job_reservation_info &jri, std::stringstream &range_str);
-int  translate_job_reservation_info_to_string(std::vector<job_reservation_info *> &host_info, int *NCount, std::stringstream &exec_host_output, std::stringstream *exec_port_output);
+void populate_range_string_from_job_reservation_info(job_reservation_info &jri, std::string &range_str);
+int  translate_job_reservation_info_to_string(std::vector<job_reservation_info *> &host_info, int *NCount, std::string &exec_host_output, std::stringstream *exec_port_output);
 
 extern boost::ptr_vector<std::string> jobsKilled;
 
@@ -39,7 +39,7 @@ START_TEST(translate_job_reservation_info_to_stirng_test)
   {
   std::vector<job_reservation_info *> host_info;
   job_reservation_info jri[5];
-  std::stringstream    exec_host;
+  std::string          exec_host;
   std::stringstream    exec_port;
 
   memset(jri, 0, 5 * sizeof(job_reservation_info));
@@ -62,7 +62,7 @@ START_TEST(translate_job_reservation_info_to_stirng_test)
   int count = 0;
 
   translate_job_reservation_info_to_string(host_info, &count, exec_host, &exec_port);
-  fail_unless(exec_host.str() == "napali0/0-2+napali1/0-2+napali2/0-2+napali3/0-2+napali4/0-2", exec_host.str().c_str());
+  fail_unless(exec_host == "napali0/0-2+napali1/0-2+napali2/0-2+napali3/0-2+napali4/0-2", exec_host.c_str());
   fail_unless(exec_port.str() == "15002+15002+15002+15002+15002");
   fail_unless(count == 5);
   }
@@ -71,7 +71,7 @@ END_TEST
 
 START_TEST(populate_range_string_from_job_reservation_info_test)
   {
-  std::stringstream    range_str;
+  std::string          range_str;
   job_reservation_info jri;
 
   memset(&jri, 0, sizeof(jri));
@@ -86,24 +86,24 @@ START_TEST(populate_range_string_from_job_reservation_info_test)
   jri.node_id = 0;
 
   populate_range_string_from_job_reservation_info(jri, range_str);
-  fail_unless(range_str.str() == "0,3-5");
+  fail_unless(range_str == "0,3-5");
 
   jri.est.mark_as_free(0);
   populate_range_string_from_job_reservation_info(jri, range_str);
-  fail_unless(range_str.str() == "3-5", range_str.str().c_str());
+  fail_unless(range_str == "3-5", range_str.c_str());
 
   jri.est.mark_as_used(0);
   jri.est.mark_as_free(4);
   populate_range_string_from_job_reservation_info(jri, range_str);
-  fail_unless(range_str.str() == "0,3,5");
+  fail_unless(range_str == "0,3,5");
 
   jri.est.mark_as_used(1);
   populate_range_string_from_job_reservation_info(jri, range_str);
-  fail_unless(range_str.str() == "0-1,3,5", range_str.str().c_str());
+  fail_unless(range_str == "0-1,3,5", range_str.c_str());
  
   jri.est.mark_as_free(3);
   populate_range_string_from_job_reservation_info(jri, range_str);
-  fail_unless(range_str.str() == "0-1,5");
+  fail_unless(range_str == "0-1,5");
   }
 END_TEST
 

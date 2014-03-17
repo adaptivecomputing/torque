@@ -103,6 +103,7 @@
 #endif
 
 extern int LOGLEVEL;
+void populate_range_string_from_slot_tracker(execution_slot_tracker &est, std::string &range_str);
 
 
 /*
@@ -438,11 +439,6 @@ int encode_ntype(
  *       or nothing to encode
  */
 
-/* FORMAT for PCONST_ENCOVERHEAD -> '<TID>/<HOST>, ' ... */
-/*  overhead supports ',', ' ', '/', and TID <= 99999 */
-
-#define PCONST_ENCOVERHEAD  8
-
 int encode_jobs(
 
   pbs_attribute  *pattr, /*struct pbs_attribute being encoded  */
@@ -458,8 +454,8 @@ int encode_jobs(
 
   struct pbsnode    *pnode;
   bool               first = true;
-  std::stringstream  buf;
   std::string        job_str;
+  std::string        range_str;
 
   if (pattr == NULL)
     {
@@ -476,20 +472,18 @@ int encode_jobs(
   
   for (int i = 0; i < (int)pnode->nd_job_usages.size(); i++)
     {
-    int             jui_index;
-    int             jui_iterator = -1;
     job_usage_info *jui = pnode->nd_job_usages[i];
-    
-    while ((jui_index = jui->est.get_next_occupied_index(jui_iterator)) != -1)
-      {
-      if (first == false)
-        buf << ",";
 
-      first = false;
+    populate_range_string_from_slot_tracker(jui->est, range_str);
 
-      buf << jui_index << "/";
-      buf << jui->jobid;
-      }
+    if (first == false)
+      job_str += ",";
+
+    job_str += range_str;
+    job_str += "/";
+    job_str += jui->jobid;
+
+    first = false;
     }
 
   if (first == true)
@@ -498,8 +492,6 @@ int encode_jobs(
 
     return(0);
     }
-
-  job_str = buf.str();
 
   pal = attrlist_create(aname, rname, job_str.length() + 1);
 
