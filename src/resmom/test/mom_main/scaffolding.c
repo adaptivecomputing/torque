@@ -669,7 +669,7 @@ resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   exit(1);
   }
 
-job *mom_find_job(char *jobid)
+job *mom_find_job(const char *jobid)
   {
   fprintf(stderr, "The call to find_job needs to be mocked!!\n");
   exit(1);

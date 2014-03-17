@@ -46,6 +46,10 @@
 #include <sys/utsname.h>
 #include <dirent.h>
 #include <libxml/parser.h>
+#include <list>
+#include <string>
+#include <vector>
+#include <boost/ptr_container/ptr_vector.hpp>
 
 
 #include "libpbs.h"
@@ -91,9 +95,6 @@
 #include "mom_config.h"
 #include "mcom.h"
 #include "mom_server_lib.h" /* shutdown_to_server */
-#include <string>
-#include <vector>
-#include <boost/ptr_container/ptr_vector.hpp>
 
 #ifdef NOPOSIXMEMLOCK
 #undef _POSIX_MEMLOCK
@@ -191,7 +192,7 @@ extern struct var_table vtable; /* see start_exec.c */
 
 time_t          last_log_check;
 
-char            JobsToResend[MAX_RESEND_JOBS][PBS_MAXSVRJOBID+1];
+std::list<std::string> JobsToResend;
 
 resizable_array  *exiting_job_list;
 resizable_array  *things_to_resend;
@@ -3853,8 +3854,6 @@ void initialize_globals(void)
 
   MaxConnectTimeout = 10000;  /* in microseconds */
 
-  memset(JobsToResend,0,sizeof(JobsToResend));
-
   /* set the mom alias name to nothing */
   mom_alias[0] = '\0';
   lock_init();
@@ -5544,36 +5543,35 @@ void examine_all_running_jobs(void)
 void examine_all_jobs_to_resend(void)
 
   {
-  int  jindex;
   job *pjob;
+  std::vector<std::list<std::string>::iterator> to_erase;
 
-  for (jindex=0;jindex < MAX_RESEND_JOBS;jindex++)
+  for (std::list<std::string>::iterator it = JobsToResend.begin();
+       it != JobsToResend.end();
+       it++)
     {
-    /* no job ptrs are stored after a NULL value */
-    if (JobsToResend[jindex][0] == '\0')
-      break;
+    const std::string &jobname = *it;
+    const char        *job_id = jobname.c_str();
 
-    /* skip dummy job */
-    if (JobsToResend[jindex][0] == (char)DUMMY_JOB_PTR)
-      continue;
-
-    if ((pjob = mom_find_job(JobsToResend[jindex])) == NULL)
+    if ((pjob = mom_find_job(job_id)) == NULL)
       {
-      /* job no longer exists, remove from re-send array */
-      JobsToResend[jindex][0] = (char)DUMMY_JOB_PTR;
-      JobsToResend[jindex][1] = '\0';
+      to_erase.push_back(it);
       }
     else if (!post_epilogue(pjob, MOM_OBIT_RETRY))
       {
-
       if (LOGLEVEL >= 7)
         log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "job obit resent");
 
-      /* sent successfully, make this slot the dummy pointer */
-      JobsToResend[jindex][0] = (char)DUMMY_JOB_PTR;
-      JobsToResend[jindex][1] = '\0';
+      /* sent successfully */
+      to_erase.push_back(it);
       }
     }
+
+  for (unsigned int i = 0; i < to_erase.size(); i++)
+    {
+    JobsToResend.erase(to_erase[i]);
+    }
+
   }  /* END examine_all_jobs_to_resend() */
 
 
@@ -5798,7 +5796,6 @@ int mark_for_resend(
   job *pjob) /* I */
 
   {
-  int jindex;
   int rc = PBSE_NONE;
 
   if (pjob == NULL)
@@ -5807,26 +5804,15 @@ int mark_for_resend(
     return(rc);
     }
 
-  for (jindex = 0;jindex < MAX_RESEND_JOBS;jindex++)
+  JobsToResend.push_back(pjob->ji_qs.ji_jobid);
+
+  if (LOGLEVEL >= 7)
     {
-    if ((JobsToResend[jindex][0] == '\0') ||
-        (JobsToResend[jindex][0] == (char)DUMMY_JOB_PTR))
-      {
-      strcpy(JobsToResend[jindex], pjob->ji_qs.ji_jobid);
-
-      if (LOGLEVEL >= 7)
-        {
-        log_record(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          "marking job for resend");
-        }
-
-      rc = PBSE_NONE;
-
-      break;
-      }
+    log_record(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      "marking job for resend");
     }
 
   return(rc);
@@ -5953,11 +5939,11 @@ void main_loop(void)
           examine_all_running_jobs();
           
           examine_all_polled_jobs();
-          
-          examine_all_jobs_to_resend();
           }
         }
       }
+   
+    examine_all_jobs_to_resend();
 
 #ifdef USESAVEDRESOURCES
     check_dead = FALSE;

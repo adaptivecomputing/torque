@@ -353,7 +353,7 @@ resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   }
 
 job *mock_mom_find_job_return = NULL;
-job *mom_find_job(char *jobid)
+job *mom_find_job(const char *jobid)
   {
   if (strcmp("jobid", jobid) != 0)
     {

@@ -1121,7 +1121,7 @@ job         *job_clone(job *,struct job_array *, int);
 job         *svr_find_job(char *jobid, int get_subjob);
 job         *find_job_by_array(struct all_jobs *aj, char *job_id, int get_subjob, bool locked);
 #else
-extern job  *mom_find_job(char *);
+extern job  *mom_find_job(const char *);
 #endif
 extern job  *job_recov(char *);
 extern int   job_save(job *, int, int);

@@ -892,27 +892,27 @@ void mom_job_purge(
 
 job *mom_find_job(
 
-  char *jobid)
+  const char *jobid)
 
   {
+  char *jid = strdup(jobid);
   char *at;
   job  *pj;
 
-  if ((at = strchr(jobid, (int)'@')) != NULL)
+  if ((at = strchr(jid, (int)'@')) != NULL)
     * at = '\0'; /* strip off @server_name */
 
   pj = (job *)GET_NEXT(svr_alljobs);
 
   while (pj != NULL)
     {
-    if (!strcmp(jobid, pj->ji_qs.ji_jobid))
+    if (!strcmp(jid, pj->ji_qs.ji_jobid))
       break;
 
     pj = (job *)GET_NEXT(pj->ji_alljobs);
     }
 
-  if (at)
-    *at = '@'; /* restore @server_name */
+  free(jid);
 
   return(pj);  /* may be NULL */
   }   /* END mom_find_job() */
