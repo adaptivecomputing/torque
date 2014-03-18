@@ -47,7 +47,7 @@ struct all_jobs  alljobs;
 
 int set_pbs_server_name()
   {
-  struct addrinfo hints, *info, *p;
+  struct addrinfo hints, *info;
   int gai_result;
 
   char hostname[1024];
@@ -55,18 +55,14 @@ int set_pbs_server_name()
   gethostname(hostname, 1023);
 
   memset(&hints, 0, sizeof hints);
-  hints.ai_family = AF_UNSPEC; /*either IPV4 or IPV6*/
-  hints.ai_socktype = SOCK_STREAM;
   hints.ai_flags = AI_CANONNAME;
+  hints.ai_family = AF_INET;
+  hints.ai_socktype = SOCK_STREAM;
 
   if ((gai_result = getaddrinfo(hostname, "http", &hints, &info)) != 0)
     return -1;
 
-  for(p = info; p != NULL; p = p->ai_next)
-    {
-    snprintf(server_host, sizeof(server_host), "%s", p->ai_canonname);
-    break;
-    }
+  snprintf(server_host, sizeof(server_host), "%s", info->ai_canonname);
 
   freeaddrinfo(info);
   return 0;

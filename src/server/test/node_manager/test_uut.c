@@ -26,7 +26,7 @@ bool job_already_being_killed(const char *jobid);
 void process_job_attribute_information(std::string &job_id, std::string &attributes);
 bool process_as_node_list(const char *spec, const node_job_add_info *naji);
 bool node_is_spec_acceptable(struct pbsnode *pnode, single_spec_data *spec, char *ProcBMStr, int *eligible_nodes);
-void populate_range_string_from_job_reservation_info(job_reservation_info &jri, std::string &range_str);
+void populate_range_string_from_slot_tracker(execution_slot_tracker &est, std::string &range_str);
 int  translate_job_reservation_info_to_string(std::vector<job_reservation_info *> &host_info, int *NCount, std::string &exec_host_output, std::stringstream *exec_port_output);
 
 extern boost::ptr_vector<std::string> jobsKilled;
@@ -85,24 +85,24 @@ START_TEST(populate_range_string_from_job_reservation_info_test)
   jri.est.mark_as_used(5);
   jri.node_id = 0;
 
-  populate_range_string_from_job_reservation_info(jri, range_str);
+  populate_range_string_from_slot_tracker(jri.est, range_str);
   fail_unless(range_str == "0,3-5");
 
   jri.est.mark_as_free(0);
-  populate_range_string_from_job_reservation_info(jri, range_str);
+  populate_range_string_from_slot_tracker(jri.est, range_str);
   fail_unless(range_str == "3-5", range_str.c_str());
 
   jri.est.mark_as_used(0);
   jri.est.mark_as_free(4);
-  populate_range_string_from_job_reservation_info(jri, range_str);
+  populate_range_string_from_slot_tracker(jri.est, range_str);
   fail_unless(range_str == "0,3,5");
 
   jri.est.mark_as_used(1);
-  populate_range_string_from_job_reservation_info(jri, range_str);
+  populate_range_string_from_slot_tracker(jri.est, range_str);
   fail_unless(range_str == "0-1,3,5", range_str.c_str());
  
   jri.est.mark_as_free(3);
-  populate_range_string_from_job_reservation_info(jri, range_str);
+  populate_range_string_from_slot_tracker(jri.est, range_str);
   fail_unless(range_str == "0-1,5");
   }
 END_TEST

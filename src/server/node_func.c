@@ -572,22 +572,12 @@ int status_nodeattrib(
 
   pbs_attribute atemp[ND_ATR_LAST]; /*temporary array of attributes   */
 
-  if (padef == NULL)
+  if ((padef == NULL) ||
+      (pnode == NULL) ||
+      (bad == NULL) ||
+      (phead == NULL))
     {
     rc = PBSE_BAD_PARAMETER;
-    log_err(rc, __func__, "input defined node attributes pointer is NULL");
-    return(rc);
-    }
-  if (pnode == NULL)
-    {
-    rc = PBSE_BAD_PARAMETER;
-    log_err(rc, __func__, "input pbsnode pointer is NULL");
-    return(rc);
-    }
-  if (bad == NULL)
-    {
-    rc = PBSE_BAD_PARAMETER;
-    log_err(rc, __func__, "input result mask pointer is NULL");
     return(rc);
     }
 

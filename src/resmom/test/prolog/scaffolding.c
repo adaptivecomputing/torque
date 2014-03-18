@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 #include <pwd.h> /* gid_t, uid_t */
+#include <sstream>
 
 #include "resource.h" /* resource_def */
 #include "log.h" /* LOG_BUF_SIZE */
@@ -155,3 +156,5 @@ int put_env_var(const char *name, const char *value)
   {
   return(0);
   }
+
+void encode_used(job *pjob, int perm, std::stringstream *list, tlist_head *phead) {}

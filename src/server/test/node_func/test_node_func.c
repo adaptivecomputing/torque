@@ -355,16 +355,6 @@ START_TEST(status_nodeattrib_test)
                              &result_mask);
   /*FIXME: NOTE: this is probably a correct set of input parameters, but still returns -1*/
  /*   fail_unless(result != PBSE_NONE, "NULL input svrattrl pointer fail: %d" ,result); */
-
-  result = status_nodeattrib(&attributes,
-                             &node_attributes,
-                             &node,
-                             0,
-                             0,
-                             &list,
-                             &result_mask);
-  /*FIXME: NOTE: this is probably a correct set of input parameters, but still returns -1*/
-  fail_unless(result != PBSE_NONE, "status_nodeattrib fail: %d" ,result);
   }
 END_TEST
 
