@@ -193,6 +193,7 @@ extern struct var_table vtable; /* see start_exec.c */
 time_t          last_log_check;
 
 std::list<std::string> JobsToResend;
+time_t                 resend_obit_time;
 
 resizable_array  *exiting_job_list;
 resizable_array  *things_to_resend;
@@ -5546,6 +5547,11 @@ void examine_all_jobs_to_resend(void)
   job *pjob;
   std::vector<std::list<std::string>::iterator> to_erase;
 
+  time_now = time(NULL);
+
+  if (resend_obit_time > time_now)
+    return;
+
   for (std::list<std::string>::iterator it = JobsToResend.begin();
        it != JobsToResend.end();
        it++)
@@ -5564,6 +5570,8 @@ void examine_all_jobs_to_resend(void)
 
       /* sent successfully */
       to_erase.push_back(it);
+
+      resend_obit_time = time_now;
       }
     }
 
@@ -5797,6 +5805,14 @@ int mark_for_resend(
 
   {
   int rc = PBSE_NONE;
+
+  time_now = time(NULL);
+
+  // try to wait at least 15 seconds before sending the obit again
+  // most of the time it fails is due to server business, so let's not
+  // spam the server when its busiest.
+  if (resend_obit_time < time_now)
+    resend_obit_time = time_now + 15;
 
   if (pjob == NULL)
     {

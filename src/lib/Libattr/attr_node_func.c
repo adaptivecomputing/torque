@@ -98,6 +98,7 @@
 #include "pbs_nodes.h"
 #include "pbs_error.h"
 #include "log.h"
+#include "timer.hpp"
 #if SYSLOG
 #include <syslog.h>
 #endif
@@ -450,6 +451,7 @@ int encode_jobs(
   int             perm)  /* only used for resources */
 
   {
+  FUNCTION_TIMER
   svrattrl          *pal;
 
   struct pbsnode    *pnode;
