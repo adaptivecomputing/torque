@@ -2786,7 +2786,7 @@ int select_nodes_using_hostlist(
   struct pbsnode      *pnode;
   char                 log_buf[LOCAL_LOG_BUF_SIZE];
   int                  num = 0;
-    
+  
   for (int i = 0; i < all_reqs->num_reqs; i++)
     {
     single_spec_data *req = all_reqs->reqs + i;
@@ -4425,27 +4425,6 @@ int build_hostlist_procs_req(
 
   return(PBSE_NONE);
   } /* END build_hostlist_procs_req() */
-
-
-
-
-int add_to_ms_list(
-    
-  char *node_name,
-  job  *pjob)
-
-  {
-  struct pbsnode *pnode = find_nodebyname(node_name);
-
-  if (pnode != NULL)
-    {
-    insert_thing(pnode->nd_ms_jobs, strdup(pjob->ji_qs.ji_jobid));
-
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
-    }
-
-  return(PBSE_NONE);
-  } /* END add_to_ms_list() */
 
 
 

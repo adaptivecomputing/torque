@@ -25,8 +25,6 @@ typedef struct _node_info_
 
 int addr_ok(pbs_net_t addr, struct pbsnode *pnode);
 
-struct pbsnode *find_nodebyname(const char *nodename);
-
 struct pbssubn *find_subnodebyname(char *nodename);
 
 void save_characteristic(struct pbsnode *pnode, struct node_check_info *nci);

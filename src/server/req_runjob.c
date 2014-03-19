@@ -1265,6 +1265,7 @@ int send_job_to_mom(
 /*
  * kills the job on the mom and requeues the job
  */
+
 int requeue_job(
 
   job *pjob)
@@ -1286,6 +1287,8 @@ int requeue_job(
     rc = kill_job_on_mom(pjob->ji_qs.ji_jobid, pnode);
     retry++;
     }
+
+  unlock_node(pnode, __func__, NULL, LOGLEVEL);
 
   /* set the job's state to queued */
   svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE);
