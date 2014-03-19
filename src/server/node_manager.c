@@ -2816,6 +2816,7 @@ int select_nodes_using_hostlist(
       {
       snprintf(log_buf, sizeof(log_buf), "Requested node '%s' is not currently available", req->prop->name);
       log_err(-1, __func__, log_buf);
+      unlock_node(pnode, __func__, NULL, LOGLEVEL);
       break;
       }
     

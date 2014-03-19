@@ -10,8 +10,6 @@
 #include <vector>
 #include <boost/ptr_container/ptr_vector.hpp>
 
-struct pbsnode *tfind_addr(const u_long key, uint16_t port, char *job_momname);
-
 void update_node_state(struct pbsnode *np, int newstate);
 
 int check_node_for_job(struct pbsnode *pnode, char *jobid);

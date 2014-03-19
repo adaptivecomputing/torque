@@ -590,6 +590,7 @@ extern int    MultiMomMode; /* moms configured for multiple moms per machine */
 
 extern int update_nodes_file(struct pbsnode *);
 
+struct pbsnode  *tfind_addr(const u_long key, uint16_t port, char *job_momname);
 struct pbsnode  *find_nodebyname(const char *);
 struct pbsnode  *find_nodebyid(int);
 struct pbsnode  *find_node_in_allnodes(all_nodes *an, char *nodename);
