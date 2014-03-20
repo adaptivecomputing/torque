@@ -1487,6 +1487,7 @@ int send_update_to_a_server()
     {
     sprintf(log_buf, "Status update successfully sent after %d MOM status update intervals", num_stat_update_failures);
     log_err(-1, __func__, log_buf);
+    num_stat_update_failures = 0;
     }
 
   return(rc);
