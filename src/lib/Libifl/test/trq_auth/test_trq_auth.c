@@ -444,9 +444,11 @@ START_TEST(test_set_trqauthd_addr)
   rc = set_trqauthd_addr();
   fail_unless(rc == PBSE_NONE, "set_trqauthd_addr failed for success case");
 
-  gethostname_success = false;
-  rc = set_trqauthd_addr();
-  fail_unless(rc != PBSE_NONE, "set_trqauthd_addr failed for success case");
+  // this test doesn't work because we're trying to use a built-in function. Some linker
+  // magic would have to happen to use our built-in instead of the normal one
+  //gethostname_success = false;
+  //rc = set_trqauthd_addr();
+  //fail_unless(rc != PBSE_NONE, "set_trqauthd_addr failed for success case");
   
   gethostname_success = true;
   get_hostaddr_success = false;
@@ -466,11 +468,11 @@ START_TEST(test_validate_user)
   rc = validate_user(10, "eris", 1, msg);
   fail_unless(rc == PBSE_NONE);
 
-  /* send in a NULL name */
+  // send in a NULL name 
   rc = validate_user(10, NULL, 1, msg);
   fail_unless(rc != PBSE_NONE);
 
-  /* send a null msg pointer */
+  // send a null msg pointer 
   rc = validate_user(10, "eris", 1, NULL);
   fail_unless(rc != PBSE_NONE);
 
@@ -483,18 +485,17 @@ START_TEST(test_validate_user)
   rc = validate_user(10, "eris", 1, msg);
   fail_unless(rc != PBSE_NONE);
 
-  /* test the case where user names won't match */
+  // test the case where user names won't match 
   getpwuid_success = true;
   rc = validate_user(10, "fred", 1, msg);
   fail_unless(rc != PBSE_NONE);
 
-  /* test the case where user pids won't match */
+  // test the case where user pids won't match 
   rc = validate_user(10, "eris", 2, msg);
   fail_unless(rc != PBSE_NONE);
 
   }
 END_TEST
-
 
 Suite *trq_auth_suite(void)
   {
@@ -543,7 +544,6 @@ Suite *trq_auth_suite(void)
   tc_core = tcase_create("test_validate_user");
   tcase_add_test(tc_core, test_validate_user);
   suite_add_tcase(s, tc_core);
-
   return s;
   }
 
