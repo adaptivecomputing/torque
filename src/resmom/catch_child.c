@@ -148,6 +148,66 @@ hnodent *get_node(
   }  /* END get_node() */
 
 
+int terminate_sisters(
+
+  job *pjob,
+  int sig)
+
+  {
+  int mom_radix;
+  int NumSisters;
+
+  mom_radix = pjob->ji_wattr[JOB_ATR_job_radix].at_val.at_long;
+
+  if (mom_radix < 2)
+    {
+    NumSisters = send_sisters(pjob, IM_KILL_JOB, FALSE);
+
+    if (NumSisters > 0)
+      {
+      pjob->ji_qs.ji_substate = JOB_SUBSTATE_MOM_WAIT;
+      pjob->ji_kill_started = time(NULL);
+      }
+    }
+  else
+    {
+    NumSisters = 1; /* We use this for later */
+
+    if (pjob->ji_sampletim == 0)
+      {
+      pjob->ji_sampletim = time(NULL);
+
+      if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) == 0)
+        {
+        /* only call send_sisters with radix == TRUE if this
+         * is mother superior intermediate moms already called
+         * this in im_request IM_KILL_JOB_RADIX */
+        NumSisters = send_sisters(pjob, IM_KILL_JOB_RADIX, TRUE);
+        pjob->ji_outstanding = NumSisters;
+        }
+      }
+    else
+      {
+      time_t time_now;
+
+      time_now = time(NULL);
+      if (time_now - pjob->ji_sampletim > 5)
+        {
+
+        if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) == 0)
+          {
+          /* only call send_sisters with radix == TRUE if this is
+           * mother superior intermediate moms already called this
+           * in im_request IM_KILL_JOB_RADIX */
+          NumSisters = send_sisters(pjob, IM_KILL_JOB_RADIX, TRUE);
+          pjob->ji_outstanding = NumSisters;
+          }
+        }
+      }
+    }
+
+  return(PBSE_NONE);
+  }
 
 
 int send_task_obit_response(
