@@ -576,8 +576,9 @@ echo '__AC_HOSTNAME_NOT_SET__ np=__AC_PROCS_NOT_SET__' > \
 echo '$pbsserver __AC_HOSTNAME_NOT_SET__' > \
     %{buildroot}%{torque_sysconfdir}/mom_priv/config
 
-# Moab requires libtorque.so.0, but works with libtorque.so.2, so fudge it.
+# Moab requires libtorque.so, but works with libtorque.so.2, so fudge it
 %{__ln_s} libtorque.so.2 %{buildroot}%{_libdir}/libtorque.so.0
+%{__ln_s} libtorque.so.2 %{buildroot}%{_libdir}/libtorque.so
 
 # We do not package the FIFO scheduler with our suites.
 rm -rf %{buildroot}%{torque_spooldir}/sched_priv
