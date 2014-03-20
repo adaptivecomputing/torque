@@ -60,6 +60,8 @@
 #include <vector>
 #include <boost/ptr_container/ptr_vector.hpp>
 #include "alps_functions.h"
+#include <arpa/inet.h>
+
 
 #if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
 /*extern int h_errno;*/
@@ -3873,6 +3875,60 @@ int set_node_power_state(struct pbsnode *pNode,unsigned short newState)
   if(pNode->nd_addrs == NULL)
     {
     return PBSE_BAD_PARAMETER;
+    }
+  if(newState == POWER_STATE_RUNNING)
+    {
+    //It should not have any jobs on it, but we will try to bring it up regardless.
+    if((pNode->nd_state == POWER_STATE_HIBERNATE)||
+        (pNode->nd_state == POWER_STATE_SHUTDOWN))
+      {
+      return PBSE_CANT_WAKE_OFF_MACHINE;
+      }
+    int udpSocket;
+    struct sockaddr_in udpClient, udpServer;
+    int broadcast = 1;
+    unsigned char tosend[102];
+
+    /** first 6 bytes of 255 **/
+    for(int i = 0; i < 6; i++)
+      {
+      tosend[i] = 0xFF;
+      }
+    /** append it 16 times to packet **/
+    for(int i = 1; i <= 16; i++)
+      {
+      memcpy(&tosend[i * 6], pNode->nd_mac_addr, 6 * sizeof(unsigned char));
+      }
+
+    udpSocket = socket(AF_INET, SOCK_DGRAM, 0);
+
+    /** you need to set this so you can broadcast **/
+    if (setsockopt(udpSocket, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof broadcast) == -1)
+      {
+      return PBSE_SYSTEM;
+      }
+    udpClient.sin_family = AF_INET;
+    udpClient.sin_addr.s_addr = INADDR_ANY;
+    udpClient.sin_port = 0;
+
+    bind(udpSocket, (struct sockaddr*)&udpClient, sizeof(udpClient));
+
+    /** set server end point (the broadcast addres)**/
+    udpServer.sin_family = AF_INET;
+    udpServer.sin_addr.s_addr = inet_addr("192.168.1.255");
+    udpServer.sin_port = htons(9);
+
+    /** send the packet **/
+    if(sendto(udpSocket, &tosend, sizeof(unsigned char) * 102, 0, (struct sockaddr*)&udpServer, sizeof(udpServer)) == -1)
+      {
+      return PBSE_SYSTEM;
+      }
+    return PBSE_NONE;
+    }
+  if(pNode->nd_job_usages.size() != 0)
+    {
+    //Can't change the power state on a node with running jobs.
+    return PBSE_CANT_CHANGE_POWER_STATE_WITH_JOBS_RUNNING;
     }
   int handle = 0;
   int local_errno = 0;

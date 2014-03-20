@@ -563,6 +563,34 @@ int process_state_str(
   return(rc);
   } /* END process_state_str() */
 
+int update_node_mac_addr(
+    struct pbsnode *np,
+    const char    *str)
+  {
+  unsigned char macaddr[6];
+  for(int i = 0;i < 6;i++)
+    {
+    unsigned char upperNibble = 0;
+    if((*str >= 'A')&&(*str <= 'F')) upperNibble = (unsigned char)((*str - 'A' + 0x0a));
+    else if((*str >= 'a')&&(*str <= 'f')) upperNibble = (unsigned char)((*str - 'a' + 0x0a));
+    else if((*str >= '0')&&(*str <= '9')) upperNibble = (unsigned char)((*str - '0'));
+    else return -1;
+    str++;
+    unsigned char lowerNibble = 0;
+    if((*str >= 'A')&&(*str <= 'F')) lowerNibble = (unsigned char)((*str - 'A' + 0x0a));
+    else if((*str >= 'a')&&(*str <= 'f')) lowerNibble = (unsigned char)((*str - 'a' + 0x0a));
+    else if((*str >= '0')&&(*str <= '9')) lowerNibble = (unsigned char)((*str - '0'));
+    else return -1;
+    macaddr[i] = ((upperNibble << 4) + lowerNibble);
+    str++;
+    if((*str != ':')&&(*str != '\0')) return -1;
+    str++;
+    }
+  memcpy(np->nd_mac_addr,macaddr,6);
+  return 0;
+  }
+
+
 
 
 int save_node_status(
@@ -631,6 +659,12 @@ int process_status_info(
   if ((current = find_nodebyname(nd_name)) == NULL)
     return(PBSE_NONE);
 
+  //A node we put to sleep is up and running.
+  if(current->nd_power_state != POWER_STATE_RUNNING)
+    {
+    current->nd_power_state = POWER_STATE_RUNNING;
+    write_node_power_state();
+    }
   /* loop over each string */
   for (boost::ptr_vector<std::string>::iterator i = status_info.begin(); i != status_info.end(); i++)
     {
@@ -725,6 +759,10 @@ int process_status_info(
         update_node_state(current, INUSE_DOWN);
         dont_change_state = TRUE;
         }
+      }
+    else if (!strncmp(str,"macaddr=",8))
+      {
+      update_node_mac_addr(current,str + 8);
       }
     else if ((mom_job_sync == TRUE) &&
              (!strncmp(str, "jobdata=", 8)))

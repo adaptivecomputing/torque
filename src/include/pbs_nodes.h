@@ -356,6 +356,7 @@ struct pbsnode
   container::item_container<struct pbsnode *> *alps_subnodes;       /* collection of alps subnodes */
   int                           max_subnode_nppn;    /* maximum ppn of an alps subnode */
   unsigned short              nd_power_state;
+  unsigned char               nd_mac_addr[6];
 
   pthread_mutex_t              *nd_mutex;            /* semaphore for accessing this node's data */
   };

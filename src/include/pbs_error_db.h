@@ -274,6 +274,8 @@ PbsErrClient(PBSE_CHANGED_CPU_FREQUENCY, (char *)"Changed cpu clock frequency.")
 PbsErrClient(PBSE_INVALID_POWER_STATE_TRANSISTION, (char *)"Nodes can not be changed from one low power state directly to another.")
 PbsErrClient(PBSE_POWER_STATE_UNSUPPORTED, (char *)"The node does not support changing the power state.")
 PbsErrClient(PBSE_POWER_STATE_UNAVAILABLE, (char *)"The node does not support the requested power state.")
+PbsErrClient(PBSE_CANT_CHANGE_POWER_STATE_WITH_JOBS_RUNNING, (char *)"Can't change power state on a node which has running jobs.")
+PbsErrClient(PBSE_CANT_WAKE_OFF_MACHINE, (char *)"Unable to wake a node in hibernate or shutdown state.")
 
 /* pbs client errors ceiling (max_client_err + 1) */
 PbsErrClient(PBSE_CEILING,           (char*)0)
