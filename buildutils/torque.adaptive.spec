@@ -576,9 +576,8 @@ echo '__AC_HOSTNAME_NOT_SET__ np=__AC_PROCS_NOT_SET__' > \
 echo '$pbsserver __AC_HOSTNAME_NOT_SET__' > \
     %{buildroot}%{torque_sysconfdir}/mom_priv/config
 
-# Moab requires libtorque.so, but works with libtorque.so.2, so fudge it
+# Moab requires libtorque.so.0, but works with libtorque.so.2, so fudge it
 %{__ln_s} libtorque.so.2 %{buildroot}%{_libdir}/libtorque.so.0
-%{__ln_s} libtorque.so.2 %{buildroot}%{_libdir}/libtorque.so
 
 # We do not package the FIFO scheduler with our suites.
 rm -rf %{buildroot}%{torque_spooldir}/sched_priv
@@ -608,7 +607,7 @@ echo '%{_libdir}' > %{buildroot}/etc/ld.so.conf.d/torque.conf
 TIMESTAMP="`date +%%Y.%%m.%%d_%%H.%%M.%%S`"
 # This for loop enables globbing, which the macros do not support
 %{pre_clear_back_up %{common_sub}-${TIMESTAMP}}
-for file in %{_libdir}/lib%{project_name}.so.*
+for file in %{_libdir}/lib%{project_name}.so*
 do
     %{pre_add_back_up_file ${file} %{common_sub}-${TIMESTAMP}}
 done
@@ -882,7 +881,7 @@ ldconfig
 %files
 
 %files %{common_sub}
-%attr(-,root,root) %{_libdir}/lib%{project_name}.so.*
+%attr(-,root,root) %{_libdir}/lib%{project_name}.so*
 %attr(-,root,root) %config(noreplace) %{torque_sysconfdir}/pbs_environment
 %attr(-,root,root) %config(noreplace) /etc/ld.so.conf.d/torque.conf
 %attr(-,root,root) %doc INSTALL INSTALL.GNU CHANGELOG PBS_License.txt README.*
