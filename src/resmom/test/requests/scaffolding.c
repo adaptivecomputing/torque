@@ -298,7 +298,7 @@ void mom_deljob(job *pjob)
   exit(1);
   }
 
-job *mom_find_job(char *jobid)
+job *mom_find_job(char const *jobid)
   {
   fprintf(stderr, "The call to find_job needs to be mocked!!\n");
   exit(1);
