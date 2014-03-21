@@ -11,7 +11,7 @@ AM_LDFLAGS = @CHECK_LIBS@ $(lib_LTLIBRARIES) $(AM_LIBS)
 check_PROGRAMS = test_job_usage_info
 
 libtest_job_usage_info_la_SOURCES = scaffolding.c $(PROG_ROOT)/job_usage_info.cpp
-libtest_job_usage_info_la_LDFLAGS = @CHECK_LIBS@ $(AM_LIBS) -shared
+libtest_job_usage_info_la_LDFLAGS = @CHECK_LIBS@ $(AM_LIBS) -shared -lgcov
 
 test_job_usage_info_SOURCES = test_job_usage_info.c
 

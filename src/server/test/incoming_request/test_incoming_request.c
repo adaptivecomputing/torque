@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <check.h>
 
-
 START_TEST(test_one)
   {
   }
