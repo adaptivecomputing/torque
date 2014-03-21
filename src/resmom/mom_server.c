@@ -926,8 +926,6 @@ void gen_macaddr(
       {
       return;
       }
-    struct in_addr   saddr;
-    saddr = ((struct sockaddr_in *)pAddr->ai_addr)->sin_addr;
     freeaddrinfo(pAddr);
 
     FILE *pPipe = popen("ip addr","r");
@@ -959,12 +957,19 @@ void gen_macaddr(
           }
         in_addr_t in_addr = inet_addr(iaddr);
         free(iaddr);
-        if(in_addr == saddr.s_addr)
+        struct addrinfo *pAddrInd = pAddr;
+        while(pAddrInd != NULL)
           {
-          mac_addr = macAddr;
-          free(macAddr);
-          macAddr = NULL;
-          break;
+          struct in_addr   saddr;
+          saddr = ((struct sockaddr_in *)pAddrInd->ai_addr)->sin_addr;
+          if(in_addr == saddr.s_addr)
+            {
+            mac_addr = macAddr;
+            free(macAddr);
+            macAddr = NULL;
+            break;
+            }
+          pAddrInd = pAddrInd->ai_next;
           }
         }
       else
@@ -981,6 +986,7 @@ void gen_macaddr(
       {
       free(macAddr);
       }
+    freeaddrinfo(pAddr);
     }
   std::string *s = new std::string(name);
   *s += "=";
