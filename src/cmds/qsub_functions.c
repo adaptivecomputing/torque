@@ -3592,38 +3592,38 @@ void process_config_file(
   job_info *ji)
 
   {
-  char config_buf[MAX_LINE_LEN];      /* Buffer holds config file */
+  char torque_cfg_buf[MAX_LINE_LEN];      /* Buffer holds config file */
   char *param_val;
 
-  if (load_config(config_buf, sizeof(config_buf)) == 0)
+  if (load_config(torque_cfg_buf, sizeof(torque_cfg_buf)) == 0)
     {
     /* This config entry should most likely be removed in the future */
-    if ((param_val = get_param("QSUBSLEEP", config_buf)) != NULL)
+    if ((param_val = get_param("QSUBSLEEP", torque_cfg_buf)) != NULL)
       {
       sleep(atoi(param_val));
       }
 
-    if ((param_val = get_param("SUBMITFILTER", config_buf)) != NULL)
+    if ((param_val = get_param("SUBMITFILTER", torque_cfg_buf)) != NULL)
       {
       hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_pbs_o_submit_filter, param_val, CONFIG_DATA);
       }
 
-    if ((param_val = get_param("SERVERHOST", config_buf)) != NULL)
+    if ((param_val = get_param("SERVERHOST", torque_cfg_buf)) != NULL)
       {
       hash_add_or_exit(&ji->mm, &ji->client_attr, "serverhost", param_val, CONFIG_DATA);
       }
 
-    if ((param_val = get_param("QSUBHOST", config_buf)) != NULL)
+    if ((param_val = get_param("QSUBHOST", torque_cfg_buf)) != NULL)
       {
       hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_submit_host, param_val, CONFIG_DATA);
       }
 
-    if ((param_val = get_param("QSUBSENDUID", config_buf)) != NULL)
+    if ((param_val = get_param("QSUBSENDUID", torque_cfg_buf)) != NULL)
       {
       hash_add_or_exit(&ji->mm, &ji->client_attr, ATTR_pbs_o_uid, param_val, ENV_DATA);
       }
 
-    if (get_param("QSUBSENDGROUPLIST", config_buf) != NULL)
+    if (get_param("QSUBSENDGROUPLIST", torque_cfg_buf) != NULL)
       {
       gid_t group_id = getgid();
       struct group *gpent = getgrgid(group_id);
@@ -3635,18 +3635,18 @@ void process_config_file(
         }
       }
 
-    if ((param_val = get_param("XAUTHPATH", config_buf)) != NULL)
+    if ((param_val = get_param("XAUTHPATH", torque_cfg_buf)) != NULL)
       {
       hash_add_or_exit(&ji->mm, &ji->client_attr, "xauth_path", param_val, CONFIG_DATA);
       }
 
-    if ((param_val = get_param("CLIENTRETRY", config_buf)) != NULL)
+    if ((param_val = get_param("CLIENTRETRY", torque_cfg_buf)) != NULL)
       {
       /* The value of this will be verified later */
       hash_add_or_exit(&ji->mm, &ji->client_attr, "cnt2server_retry", param_val, CONFIG_DATA);
       }
 
-    if ((param_val = get_param("VALIDATEGROUP", config_buf)) != NULL)
+    if ((param_val = get_param("VALIDATEGROUP", torque_cfg_buf)) != NULL)
       {
       if (getgrgid(getgid()) == NULL)
         print_qsub_usage_exit("qsub: cannot validate submit group.");
@@ -3654,29 +3654,35 @@ void process_config_file(
       hash_add_or_exit(&ji->mm, &ji->client_attr, "validate_group", param_val, CONFIG_DATA);
       }
 
-    if ((param_val = get_param("DEFAULTCKPT", config_buf)) != NULL)
+    if ((param_val = get_param("DEFAULTCKPT", torque_cfg_buf)) != NULL)
       {
       hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_c, param_val, CONFIG_DATA);
       }
 
-    if ((param_val = get_param("VALIDATEPATH", config_buf)) != NULL)
+    if ((param_val = get_param("VALIDATEPATH", torque_cfg_buf)) != NULL)
       {
       if (!strcasecmp(param_val, "false"))
         hash_del_item(&ji->mm, &ji->client_attr, "validate_path");
       }
-    if ((param_val = get_param("RERUNNABLEBYDEFAULT", config_buf)) != NULL)
+    if ((param_val = get_param("RERUNNABLEBYDEFAULT", torque_cfg_buf)) != NULL)
       {
       if (!strcasecmp(param_val, "false"))
         hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_r, "FALSE", STATIC_DATA);
       }
-    if ((param_val = get_param("FAULT_TOLERANT_BY_DEFAULT", config_buf)) != NULL)
+    if ((param_val = get_param("FAULT_TOLERANT_BY_DEFAULT", torque_cfg_buf)) != NULL)
       {
       if (!strcasecmp(param_val, "true"))
         hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_r, "TRUE", STATIC_DATA);
       }
-    if ((param_val = get_param("HOST_NAME_SUFFIX", config_buf)) != NULL)
-      host_name_suffix = param_val;
-    }    /* END if (load_config(config_buf,sizeof(config_buf)) == 0) */
+    if ((param_val = get_param("HOST_NAME_SUFFIX", torque_cfg_buf)) != NULL)
+      {
+      if (param_val != NULL)
+        {
+        host_name_suffix = (char *)calloc(1, strlen(param_val));
+        strcpy(host_name_suffix, param_val);
+        }
+      }
+    }    /* END if (load_config(torque_cfg_buf,sizeof(torque_cfg_buf)) == 0) */
   }
 
 /**
