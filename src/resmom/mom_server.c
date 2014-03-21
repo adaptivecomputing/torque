@@ -927,7 +927,7 @@ void gen_macaddr(
       return;
       }
 
-    FILE *pPipe = popen("ip addr","r");
+    FILE *pPipe = popen("/sbin/ip addr","r");
 
     char *macAddr = NULL;
     while(fgets(buff,sizeof(buff),pPipe) != NULL)
