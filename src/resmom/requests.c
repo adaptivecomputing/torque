@@ -2398,7 +2398,6 @@ void encode_flagged_attrs(
   int             index;
   pbs_attribute  *at;
   attribute_def  *ad;
-  bool            first = true;
 
   for (index = 0;(int)index < JOB_ATR_LAST;++index)
     {
@@ -2427,12 +2426,12 @@ void encode_flagged_attrs(
         std::string attr;
         attr_to_str(attr, ad, *at, false);
 
-        *list << ad->at_name << "=" << attr;
-
-        if (first == false)
+        // add a comma if this isn't the first data in the string
+        // it will always have at least '(' already
+        if (list->str().size() > 1)
           *list << ",";
 
-        first = false;
+        *list << ad->at_name << "=" << attr;
         }
       }
     }
