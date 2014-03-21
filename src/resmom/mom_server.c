@@ -987,6 +987,10 @@ void gen_macaddr(
       }
     freeaddrinfo(pAddr);
     }
+  if(mac_addr.length()  == 0)
+    {
+    return;
+    }
   std::string *s = new std::string(name);
   *s += "=";
   *s += mac_addr;
