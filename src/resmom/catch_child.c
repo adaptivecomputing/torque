@@ -87,7 +87,6 @@ extern void job_nodes (job &);
 extern int task_recov (job *);
 extern void mom_server_all_update_stat(void);
 extern void check_state(int);
-extern int mark_for_resend (job *);
 extern void checkpoint_partial(job *pjob);
 extern void mom_checkpoint_recover(job *pjob);
 extern void clear_down_mom_servers();
@@ -1025,16 +1024,7 @@ int post_epilogue(
 
     if (sock < 0)
       {
-      /* We are trying to send obit, but failed - where is this retried?
-       * Answer: In the main_loop examine_all_jobs_to_resend() tries
-       * every so often to send the obit.  This would work for recovered
-       * jobs also.
-       */
-      if (ev != MOM_OBIT_RETRY)
-        {
-        mark_for_resend(pjob);
-        }
-
+      // jobs stuck in JOB_SUBSTATE_PREOBIT are retried
       return(1);
       }
     }
@@ -1462,11 +1452,7 @@ void *obit_reply(
   pbs_disconnect_socket(sock);
   close_conn(sock, FALSE);
 
-  if (not_deleted == true)
-    {
-    mark_for_resend(pjob);
-    }
-  else
+  if (not_deleted == false)
     {
     if (PBSNodeCheckEpilog)
       {

@@ -115,8 +115,6 @@ void examine_all_jobs_to_resend(void);
 
 void kill_all_running_jobs(void);
 
-int mark_for_resend(job *pjob);
-
 void prepare_child_tasks_for_delete();
 
 void main_loop(void);

@@ -192,9 +192,6 @@ extern struct var_table vtable; /* see start_exec.c */
 
 time_t          last_log_check;
 
-std::list<std::string> JobsToResend;
-time_t                 resend_obit_time;
-
 resizable_array  *exiting_job_list;
 resizable_array  *things_to_resend;
 
@@ -244,7 +241,6 @@ extern void     mom_server_all_diag(std::stringstream &output);
 extern void     mom_server_all_init(void);
 extern void     mom_server_all_update_stat(void);
 extern void     mom_server_all_update_gpustat(void);
-extern int      mark_for_resend(job *);
 extern int      post_epilogue(job *, int);
 extern int      mom_checkpoint_init(void);
 extern void     mom_checkpoint_check_periodic_timer(job *pjob);
@@ -5534,56 +5530,6 @@ void examine_all_running_jobs(void)
 
 
 
-
-
-/**
- * examine_all_jobs_to_resend
- *
- * tries to resend each of the jobs that hasn't been sent yet
- */
-void examine_all_jobs_to_resend(void)
-
-  {
-  job *pjob;
-  std::vector<std::list<std::string>::iterator> to_erase;
-
-  time_now = time(NULL);
-
-  if (resend_obit_time > time_now)
-    return;
-
-  for (std::list<std::string>::iterator it = JobsToResend.begin();
-       it != JobsToResend.end();
-       it++)
-    {
-    const std::string &jobname = *it;
-    const char        *job_id = jobname.c_str();
-
-    if ((pjob = mom_find_job(job_id)) == NULL)
-      {
-      to_erase.push_back(it);
-      }
-    else if (!post_epilogue(pjob, MOM_OBIT_RETRY))
-      {
-      if (LOGLEVEL >= 7)
-        log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "job obit resent");
-
-      /* sent successfully */
-      to_erase.push_back(it);
-
-      resend_obit_time = time_now;
-      }
-    }
-
-  for (unsigned int i = 0; i < to_erase.size(); i++)
-    {
-    JobsToResend.erase(to_erase[i]);
-    }
-
-  }  /* END examine_all_jobs_to_resend() */
-
-
-
 void resend_waiting_joins(
 
   job *pjob)
@@ -5670,6 +5616,27 @@ void check_jobs_awaiting_join_job_reply()
 
   } /* END check_jobs_awaiting_join_job_reply() */
 
+
+
+void check_jobs_in_obit()
+
+  {
+  job    *pjob;
+  time_now = time(NULL);
+
+  for (pjob = (job *)GET_NEXT(svr_alljobs);
+       pjob != NULL;
+       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+
+    {
+    if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_PREOBIT) &&
+        (am_i_mother_superior(*pjob) == true))
+      {
+      // retry sending the obit for this job
+      post_epilogue(pjob, MOM_OBIT_RETRY);
+      }
+    }
+  }
 
 
 
@@ -5788,52 +5755,6 @@ void kill_all_running_jobs(void)
 
   return;
   }  /* END kill_all_running_jobs() */
-
-
-
-/**
- * mark_for_resend
- *
- * used to keep track of jobs whose obits weren't sent correctly
- * marks them so they can be resent
- *
- * @param pjob - the job that should be resent
- */
-int mark_for_resend(
-
-  job *pjob) /* I */
-
-  {
-  int rc = PBSE_NONE;
-
-  time_now = time(NULL);
-
-  // try to wait at least 15 seconds before sending the obit again
-  // most of the time it fails is due to server business, so let's not
-  // spam the server when its busiest.
-  if (resend_obit_time < time_now)
-    resend_obit_time = time_now + 15;
-
-  if (pjob == NULL)
-    {
-    rc = PBSE_JOBNOTFOUND;
-    return(rc);
-    }
-
-  JobsToResend.push_back(pjob->ji_qs.ji_jobid);
-
-  if (LOGLEVEL >= 7)
-    {
-    log_record(
-      PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      "marking job for resend");
-    }
-
-  return(rc);
-  }
-
 
 
 
@@ -5958,8 +5879,6 @@ void main_loop(void)
           }
         }
       }
-   
-    examine_all_jobs_to_resend();
 
 #ifdef USESAVEDRESOURCES
     check_dead = FALSE;
@@ -5985,6 +5904,8 @@ void main_loop(void)
     check_jobs_awaiting_join_job_reply();
 
     check_jobs_in_mom_wait();
+
+    check_jobs_in_obit();
 
     if (exiting_tasks)
       scan_for_exiting();
