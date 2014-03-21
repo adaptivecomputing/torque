@@ -113,6 +113,7 @@
 #define DEFAULT_JOB_EXIT_WAIT_TIME 600
 #define MAX_JOIN_WAIT_TIME          600
 #define RESEND_WAIT_TIME            300
+#define OBIT_STATE_RETRY_TIME       30
 
 /* Global Data Items */
 
@@ -5687,7 +5688,7 @@ void check_exiting_jobs()
 
   while ((eji = (exiting_job_info *)pop_thing(exiting_job_list)) != NULL)
     {
-    if (time_now - eji->obit_sent < 300)
+    if (time_now - eji->obit_sent < OBIT_STATE_RETRY_TIME)
       {
       /* insert this back at the front */
       insert_thing_after(exiting_job_list, eji, ALWAYS_EMPTY_INDEX);

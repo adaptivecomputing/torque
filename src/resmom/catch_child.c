@@ -997,8 +997,6 @@ int post_epilogue(
     log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, __func__, log_buffer);
     }
 
-
-
   /* This is the child code */
   /* open new connection - register obit_reply as handler */
   sock = mom_open_socket_to_jobs_server(pjob, __func__, obit_reply);
