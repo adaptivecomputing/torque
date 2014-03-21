@@ -926,7 +926,6 @@ void gen_macaddr(
       {
       return;
       }
-    freeaddrinfo(pAddr);
 
     FILE *pPipe = popen("ip addr","r");
 
