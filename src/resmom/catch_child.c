@@ -1277,6 +1277,7 @@ void *obit_reply(
         case PBSE_NONE:
 
           /* normal ack, mark job as exited */
+          pjob->ji_qs.ji_destin[0] = '\0';
 
           pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
 
@@ -1311,6 +1312,8 @@ void *obit_reply(
               pjob->ji_qs.ji_jobid,
               "setting already exited job substate to EXITED");
             }
+          
+          pjob->ji_qs.ji_destin[0] = '\0';
 
           pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
 
@@ -1353,6 +1356,8 @@ void *obit_reply(
         case - 1:
 
           /* FIXME - causes epilogue to be run twice! */
+      
+          pjob->ji_qs.ji_destin[0] = '\0';
 
           pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
 
@@ -1396,13 +1401,6 @@ void *obit_reply(
 
         break;
         }  /* END switch (preq->rq_reply.brp_code) */
-      
-      if (not_deleted == false)
-        {
-        /* Clear out destination so we know job is not on mom any more */
-  
-        pjob->ji_qs.ji_destin[0] = '\0';
-        }
 
       break;
       }    /* END if (...) */
