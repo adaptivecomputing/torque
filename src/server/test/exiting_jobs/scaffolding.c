@@ -5,6 +5,7 @@
 #include "exiting_jobs.h"
 #include "batch_request.h"
 
+bool exit_called = false;
 int LOGLEVEL;
 
 container::item_container<job_exiting_retry_info *>  exiting_jobs_info;

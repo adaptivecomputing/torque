@@ -114,6 +114,7 @@ int parse_env_line(
   tmp_pos = pos_eq + 1;
 
   calloc_or_fail(name, len_name+1, "Allocating name for hash_map");
+  strncpy(*name, one_var, len_name);
   /* Remove preceeding spaces in an env var
    * This will NOT affect a env var that is all spaces
    */
@@ -140,7 +141,6 @@ int parse_env_line(
      * escaped to be preserved. */
 
     copy_env_value(one_var + tmp_pos, value);
-    strncpy(*name, one_var, len_name);
     }
 
   return(PBSE_NONE);

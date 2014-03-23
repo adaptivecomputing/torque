@@ -27,6 +27,7 @@ unsigned int pbs_mom_port = 0;
 attribute_def job_attr_def[10];
 char server_name[PBS_MAXSERVERNAME + 1];
 char *path_nodenote;
+bool exit_called = false;
 const char *dis_emsg[10];
 tlist_head svr_newnodes; 
 resource_def *svr_resc_def;

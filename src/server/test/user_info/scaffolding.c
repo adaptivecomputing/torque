@@ -4,6 +4,7 @@
 
 #include "user_info.h"
 
+bool exit_called = false;
 int LOGLEVEL = 10;
 
 void log_event(

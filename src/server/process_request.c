@@ -350,7 +350,6 @@ int process_request(
     snprintf(tmpLine, sizeof(tmpLine),
         "cannot allocate memory for request from %lu",
         conn_addr);
-    req_reject(PBSE_MEM_MALLOC, 0, request, NULL, tmpLine);
     free_request = FALSE;
     rc = PBSE_SYSTEM;
     goto process_request_cleanup;

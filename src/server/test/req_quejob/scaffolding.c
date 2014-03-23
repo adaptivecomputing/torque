@@ -15,6 +15,7 @@
 #include "user_info.h"
 #include "mutex_mgr.hpp"
 
+bool exit_called = false;
 const char *PJobSubState[10];
 char *path_jobs;
 const char *msg_script_write = "Unable to write script file";

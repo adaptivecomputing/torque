@@ -45,6 +45,7 @@ int    ServerStatUpdateInterval = DEFAULT_SERVER_STAT_UPDATES;
 time_t          LastServerUpdateTime = 0;  /* NOTE: all servers updated together */
 char log_buffer[LOG_BUF_SIZE];
 int log_event_counter;
+bool exit_called = false;
 bool ms_val = true;
 
 #undef disrus

@@ -7,6 +7,7 @@
 #include "pbs_nodes.h"
 #include "batch_request.h"
 
+bool exit_called = false;
 int LOGLEVEL;
 
 int unlock_node(struct pbsnode *the_node, const char *method_name, char *msg, int logging)

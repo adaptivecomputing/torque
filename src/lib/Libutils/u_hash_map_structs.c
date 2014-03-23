@@ -89,6 +89,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <pbs_ifl.h>
+#include <pbs_job.h>
 
 /* Adds item to the hashmap indicated by **head
  * If *head is NULL, and new hashmap is created
@@ -107,7 +108,10 @@ int hash_add_item(
   {
   job_data *item = new job_data(name,value,var_type,op_type);
 
-  return head->insert(item,name);
+  head->lock();
+  int ret =  head->insert(item,name,true);
+  head->unlock();
+  return ret;
   } /* END hash_add_item() */
 
 
@@ -136,10 +140,14 @@ int hash_del_item(
     job_data_container *head,          /* M - hashmap */
     const char        *name)               /* I - entry to delete */
   {
+  head->lock();
   job_data *item = head->find(name);
+  head->unlock();
   if(item != NULL)
     {
+    head->lock();
     head->remove(name);
+    head->unlock();
     delete item;
     return TRUE;
     }
@@ -150,6 +158,7 @@ int hash_del_item(
 int hash_clear(
     job_data_container *head)          /* M - hashmap */
   {
+  head->lock();
   job_data_iterator *it = head->get_iterator();
   job_data *item;
 
@@ -161,6 +170,7 @@ int hash_clear(
   delete it;
 
   head->clear();
+  head->unlock();
   return TRUE;
   }
 
@@ -181,7 +191,9 @@ int hash_find(
   *env_var = NULL;
   if (name != NULL)
     {
+    head->lock();
     *env_var = head->find(name);
+    head->unlock();
     }
   if (*env_var == NULL)
     rc = FALSE;
@@ -194,7 +206,10 @@ int hash_find(
 int hash_count(
     job_data_container *head)           /* I - hashmap */
   {
-  return head->count();
+  head->lock();
+  int ret = head->count();
+  head->unlock();
+  return ret;
   }
 
 /* Prints all of the contents to the screen (debugging) */
@@ -206,6 +221,7 @@ int hash_print(
   int cntr = 0;
   if (head != NULL)
     {
+    head->lock();
     job_data *en;
     job_data_iterator *it = head->get_iterator();
     while((en = it->get_next_item()) != NULL)
@@ -213,6 +229,7 @@ int hash_print(
       printf("%d - [%25s]-{%s}\n", cntr, en->name.c_str(), en->value.c_str());
       cntr++;
       }
+    head->unlock();
 
     delete it;
     }
@@ -233,13 +250,17 @@ int hash_add_hash(
   int cntr = 0;
   job_data *en;
   job_data *tmp;
+
+  src->lock();
   job_data_iterator *it = src->get_iterator();
 
   while ((en = it->get_next_item()) != NULL)
     {
     if (overwrite_existing)
       {
+      dest->lock();
       dest->insert(new job_data(en->name.c_str(),en->value.c_str(), en->var_type, en->op_type),en->name.c_str(),true);
+      dest->unlock();
       cntr++;
       }
     else if (hash_find(dest, en->name.c_str(), &tmp) != TRUE)
@@ -251,6 +272,9 @@ int hash_add_hash(
 
   delete it;
 
+  src->unlock();
+  dest->unlock();
+
   return cntr;
   }
 
@@ -261,6 +285,7 @@ int hash_strlen(
   {
   int len = 0;
   job_data *en;
+  src->lock();
   job_data_iterator *it = src->get_iterator();
   for (en=it->get_next_item(); en != NULL; en=it->get_next_item())
     {
@@ -269,6 +294,7 @@ int hash_strlen(
     }
 
   delete it;
+  src->unlock();
 
   return len;
   }

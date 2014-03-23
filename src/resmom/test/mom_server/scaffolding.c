@@ -55,6 +55,7 @@ int received_cluster_addrs;
 time_t       requested_cluster_addrs;
 time_t       first_update_time = 0;
 container::item_container<received_node *> received_statuses;
+bool exit_called = false;
 
 
 #ifdef NUMA_SUPPORT

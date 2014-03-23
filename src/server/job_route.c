@@ -271,7 +271,10 @@ int default_router(
         }
       }
 
-    destination = dest_attr->as_string[jobp->ji_lastdest++];
+    if (dest_attr != NULL)
+      destination = dest_attr->as_string[jobp->ji_lastdest++];
+    else
+      continue;
 
     if (is_bad_dest(jobp, destination))
       continue;
@@ -588,6 +591,7 @@ void *queue_route(
         sprintf(log_buf, "Could not find queue %s", queue_name);
         log_err(-1, __func__, log_buf);
         free(queue_name);
+        delete iter;
         return(NULL);
         }
       que_mutex.mark_as_locked();
@@ -597,6 +601,7 @@ void *queue_route(
        We don't want it locked while we sleep */
     que_mutex.unlock();
     pthread_mutex_unlock(reroute_job_mutex);
+    delete iter;
     sleep(route_retry_interval);
     }
 

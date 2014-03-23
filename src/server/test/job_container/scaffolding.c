@@ -3,6 +3,7 @@
 
 #include "pbs_job.h"
 
+bool exit_called = false;
 all_jobs        array_summary;
 char                   server_name[PBS_MAXSERVERNAME + 1]; /* host_name[:service|port] */
 all_jobs        alljobs;

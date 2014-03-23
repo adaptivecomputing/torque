@@ -67,6 +67,7 @@
 
 #define MAXBUF 2048
 
+#define MAX_RETRIES  3
 /* START: These are needed for bailout purposes */
 int inter_sock = -1;
 int interactivechild = 0;
@@ -112,10 +113,6 @@ char *x11_get_proto(
   proto[0]  = '\0';
   data[0]   = '\0';
   screen[0] = '\0';
-
-  /* This variable was never used, removing */
-/*  if (EMsg != NULL)
-    EMsg[0] = '\0'; */
 
   if ((tmp = getenv("DISPLAY")) == NULL)
     {
@@ -644,7 +641,7 @@ char *ispbsdir(
     return(it + l);
     }
 
-  return((char *)NULL);
+  return(NULL);
   }
 
 
@@ -691,8 +688,6 @@ int isWindowsFormat(
   return dosformat;
   }
 
-
-/* #define MMAX_VERIFY_BYTES 50 */
 
 int istext(
 
@@ -1033,7 +1028,7 @@ static int get_script(
   int   index;
 
   /* START WRAPPER */
-  char cfilter[MAXPATHLEN + 1024];
+  std::string cfilter;
 
   char tmp_name2[] = "/tmp/qsub.XXXXXX";
 
@@ -1075,23 +1070,21 @@ static int get_script(
 
     close(tmpfd);
 
-    strcpy(cfilter, tmp_job_info->value.c_str());
+    cfilter = tmp_job_info->value;
 
     for (index = 1;index < ArgC;index++)
       {
       if (ArgV[index] != NULL)
         {
-        strcat(cfilter, " ");
-
-        strcat(cfilter, ArgV[index]);
+        cfilter += " ";
+        cfilter += ArgV[index];
         }
       }    /* END for (index) */
 
-    strcat(cfilter, " >");
+    cfilter += " >";
+    cfilter += tmp_name2;
 
-    strcat(cfilter, tmp_name2);
-
-    if((filter_pipe = popen(cfilter, "w")) != NULL)
+    if ((filter_pipe = popen(cfilter.c_str(), "w")) != NULL)
       {
       while ((in = fgets(s, MAX_LINE_LEN, file)) != NULL)
         {
@@ -1454,12 +1447,6 @@ char *interactive_port(
 
   if (getsockname(*sock, (struct sockaddr *)&myaddr, &namelen) < 0)
     print_qsub_usage_exit("qsub: unable to get port number");
-/*    {
-    perror("qsub: unable to get port number");
-
-    exit(1);
-    }
-    */
 
   port = ntohs(myaddr.sin_port);
 
@@ -1468,12 +1455,6 @@ char *interactive_port(
 
   if (listen(*sock, 1) < 0)
     print_qsub_usage_exit("qsub: listen on interactive socket");
-/*    {
-    perror("qsub: listen on interactive socket");
-
-    exit(1);
-    }
-    */
 
   return(portstring);
   }  /* END interactive_port() */
@@ -1782,12 +1763,6 @@ void send_winsize(
 
   if (write_ac_socket(sock, buf, PBS_TERM_BUF_SZ) != PBS_TERM_BUF_SZ)
     print_qsub_usage_exit("qsub: sending winsize");
-/*    {
-    perror("sending winsize");
-
-    exit(2);
-    }
-    */
 
   return;
   }
@@ -1818,12 +1793,6 @@ void send_term(
 
   if (write_ac_socket(sock, buf, PBS_TERM_BUF_SZ) != PBS_TERM_BUF_SZ)
     print_qsub_usage_exit("qsub: sending term type");
-/*    {
-    perror("sending term type");
-
-    exit(2);
-    }
-    */
 
   cc_array[0] = oldtio.c_cc[VINTR];
 
@@ -1835,12 +1804,6 @@ void send_term(
 
   if (write_ac_socket(sock, cc_array, PBS_TERM_CCA) != PBS_TERM_CCA)
     print_qsub_usage_exit("qsub: sending term options");
-/*    {
-    perror("sending term options");
-
-    exit(2);
-    }
-    */
 
   return;
   }
@@ -2036,6 +1999,7 @@ void catchint(
 
 
 void x11handler(
+
   int      param_sock)
 
   {
@@ -2045,11 +2009,6 @@ void x11handler(
   char *display;
 
   calloc_or_fail((char **)&socks, sizeof(struct pfwdsock) * NUM_SOCKS, "x11handler");
-/*    {
-    perror("x11handler calloc: ");
-    exit(EXIT_FAILURE);
-    }
-    */
 
   for (n = 0;n < NUM_SOCKS;n++)
     (socks + n)->active = 0;
@@ -2115,34 +2074,16 @@ void interactive(
   if ((sigaction(SIGINT, &act, (struct sigaction *)0) < 0) ||
       (sigaction(SIGTERM, &act, (struct sigaction *)0) < 0))
     print_qsub_usage_exit("qsub: unable to catch signals");
-/*    {
-    perror("unable to catch signals");
-
-    exit(1);
-    }
-    */
 
   act.sa_handler = toolong;
 
   if ((sigaction(SIGALRM, &act, NULL) < 0))
     print_qsub_usage_exit("qsub: cannot catch alarm");
-/*    {
-    perror("cannot catch alarm");
-
-    exit(2);
-    }
-    */
 
   /* save the old terminal setting */
 
   if (have_terminal && tcgetattr(0, &oldtio) < 0)
     print_qsub_usage_exit("qsub: unable to get terminal settings");
-    /*{
-    perror("qsub: unable to get terminal settings");
-
-    exit(1);
-    }
-    */
 
   /* Get the current window size, to be sent to MOM later */
 
@@ -2185,12 +2126,6 @@ void interactive(
         }
       else
         print_qsub_usage_exit("qsub: select failed");
-/*        {
-        perror("qsub: select failed");
-
-        exit(1);
-        }
-        */
       }
 
     /* connect to server, status job to see if still there */
@@ -2210,12 +2145,6 @@ void interactive(
 
   if ((news = accept(inter_sock, (struct sockaddr *) & from, &fromlen)) < 0)
     print_qsub_usage_exit("qsub: accept error");
-/*    {
-    perror("qsub: accept error");
-
-    exit(1);
-    }
-    */
 
   /* When MOM connects, she will send the job id for us to verify */
 
@@ -2278,12 +2207,6 @@ void interactive(
       (sigaction(SIGALRM, &act, (struct sigaction *)0) < 0) ||
       (sigaction(SIGTSTP, &act, (struct sigaction *)0) < 0))
     print_qsub_usage_exit("unable to reset signals");
-/*    {
-    perror("unable to reset signals");
-
-    exit(1);
-    }
-    */
 
   fflush(NULL);
 
@@ -2355,12 +2278,6 @@ void interactive(
     }
   else
     print_qsub_usage_exit("qsub: unable to fork");
-/*    {
-    perror("qsub: unable to fork");
-
-    exit(1);
-    }
-    */
 
   return;
   }  /* END interactive() */
@@ -2469,6 +2386,7 @@ void process_opts(
   char tmp_name2[] = "/tmp/qsub.XXXXXX";
 
   char cline[4096];
+  std::string cline_out;
 
 
   char tmpResources[4096] = "";
@@ -2508,18 +2426,11 @@ void process_opts(
    * to count which iteration has been removed
    */
 
-/* #define if_cmd_line(x) if ((pass == 0) || (x != 1)) */
-
-/*  passet = pass + 1; */
-
-/*  if (pass > 0)
-    { */
 #ifdef linux
     optind = 0;  /* prime getopt's starting point */
 #else
     optind = 1;  /* prime getopt's starting point */
 #endif
-/*    } */
 
   while ((c = getopt(argc, argv, GETOPT_ARGS)) != EOF)
     {
@@ -3047,45 +2958,24 @@ void process_opts(
                   calloc_or_fail(&err_msg, alloc_len, " -W attribute");
                   snprintf(err_msg, alloc_len, "qsub: -W value exceeded max length (%d)", PBS_DEPEND_LEN);
                   print_qsub_usage_exit(err_msg);
-/*                  {
-                  fprintf(stderr,"qsub: -W value exceeded max length (%d)\n",
-                    PBS_DEPEND_LEN);
-                    }
-                  */
                   }
                 else
                   print_qsub_usage_exit("qsub: illegal -W value");
-/*                  {
-                  fprintf(stderr,"qsub: illegal -W value\n");
-                  }
-                  */
-
-/*                 errflg++; */
 
                 break;
                 }
 
               hash_add_or_exit(ji->job_attr, ATTR_depend, pdepend, data_type);
-/*               set_attr(&attrib, ATTR_depend, pdepend); */
-/*               } */
             }
           else if (!strcmp(keyword, ATTR_job_radix))
             {
             int radix_value;
             int len;
             
-/*            if_cmd_line(Jobradix_opt)
-              {
-              Jobradix_opt = passet;
-              */
               
               len = strlen(valuewd);
               if (len > MAX_RADIX_NUM_LEN)
                 print_qsub_usage_exit("qsub: illegal -W value for job_radix");
-/*                {
-                fprintf(stderr, "qsub: illegal -W value for job_radix\n");
-                }
-                */
               for (i = 0; i < len; i++)
                 {
                 if (!isdigit(valuewd[i])) /* verify the string is all digits */
@@ -3097,39 +2987,18 @@ void process_opts(
                 radix_value = atoi(valuewd);
                 if (radix_value < 2)
                   print_qsub_usage_exit("qsub: illegal -W. job_radix must be >= 2");
-/*                  {
-                  fprintf(stderr, "qsub: illegal -W. job_radix must be >= 2\n");
-                  exit(0);
-                  }
-                  */
                 else
                   hash_add_or_exit(ji->job_attr, ATTR_job_radix, valuewd, ENV_DATA);
-/*                  set_attr(&attrib, ATTR_job_radix, valuewd); */
                 }
               else
                 print_qsub_usage_exit("qsub: illegal -W value for job_radix");
-/*                 fprintf(stderr, "qsub: illegal -W value for job_radix\n"); */
-/*               } */
             }
           else if (!strcmp(keyword, ATTR_stagein))
             {
-/*            if_cmd_line(Stagein_opt)
-              {
-              Stagein_opt = passet;
-              */
 
               if (parse_stage_list(valuewd))
                 print_qsub_usage_exit("qsub: illegal -W value for stagein");
-                /* cannot parse 'stagein' value */
-/*                {
-
-                fprintf(stderr, "qsub: illegal -W value\n");
-
-                errflg++;
-
-                break;
-                }
-                */
+              
               if (hash_find(ji->job_attr, ATTR_stagein, &tmp_job_info))
                 {
                 /* 
@@ -3154,131 +3023,65 @@ void process_opts(
                 hash_add_or_exit(ji->job_attr, ATTR_stagein, valuewd, data_type);
                 }
 
-/*               set_attr(&attrib, ATTR_stagein, valuewd); */
-/*               } */
             }
           else if (!strcmp(keyword, ATTR_stageout))
-            {
-/*            if_cmd_line(Stageout_opt)
+            {            
+            if (parse_stage_list(valuewd))
+              print_qsub_usage_exit("qsub: illegal -W value for stageout");
+            
+            if (hash_find(ji->job_attr, ATTR_stageout, &tmp_job_info))
               {
-              Stageout_opt = passet;
-              */
-
-              if (parse_stage_list(valuewd))
-                print_qsub_usage_exit("qsub: illegal -W value for stageout");
-                /* cannot parse 'stageout' value */
-/*                {
-
-                fprintf(stderr, "qsub: illegal -W value\n");
-
-                errflg++;
-
-                break;
-                }
-                */
-              if (hash_find(ji->job_attr, ATTR_stageout, &tmp_job_info))
+              /* 
+               * if this attribute already exists, we need to append this
+               * value to it because multiples are allowed.
+               */
+              char *tmpBuf;
+              
+              if ((tmpBuf = (char *)malloc(strlen(valuewd) + tmp_job_info->value.length() + 2)) == (char *)0)
                 {
-                /* 
-                 * if this attribute already exists, we need to append this
-                 * value to it because multiples are allowed.
-                 */
-                char *tmpBuf;
-
-                if ((tmpBuf = (char *)malloc(strlen(valuewd) + tmp_job_info->value.length() + 2)) == (char *)0)
-                  {
-                  fprintf(stderr, "Out of memory.\n");
-                  exit(1);
-                  }
-                strcpy(tmpBuf, tmp_job_info->value.c_str());
-                strcat(tmpBuf, ",");
-                strcat(tmpBuf, valuewd);
-                hash_add_or_exit(ji->job_attr, ATTR_stageout, tmpBuf, data_type);
-                free(tmpBuf);
-                }
-              else
-                {
-                hash_add_or_exit(ji->job_attr, ATTR_stageout, valuewd, data_type);
+                fprintf(stderr, "Out of memory.\n");
+                exit(1);
                 }
 
-/*               set_attr(&attrib, ATTR_stageout, valuewd); */
-/*               } */
+              strcpy(tmpBuf, tmp_job_info->value.c_str());
+              strcat(tmpBuf, ",");
+              strcat(tmpBuf, valuewd);
+              hash_add_or_exit(ji->job_attr, ATTR_stageout, tmpBuf, data_type);
+              free(tmpBuf);
+              }
+            else
+              {
+              hash_add_or_exit(ji->job_attr, ATTR_stageout, valuewd, data_type);
+              }
             }
           else if (!strcmp(keyword, ATTR_t))
             {
             hash_add_or_exit(ji->job_attr, ATTR_t, valuewd, data_type);
-/*            if_cmd_line(t_opt)
-              {
-              t_opt = passet;
-
-              set_attr(&attrib, ATTR_t, valuewd);
-              }
-              */
             }
           else if (!strcmp(keyword, ATTR_g))
             {
-/*            if_cmd_line(Grouplist_opt)
+            if (parse_at_list(valuewd, TRUE, FALSE))
+              print_qsub_usage_exit("qsub: illegal -W value grouplist");
+
+            if (hash_find(ji->client_attr, "validate_group", &tmp_job_info))
               {
-              Grouplist_opt = passet;
-              */
-
-              if (parse_at_list(valuewd, TRUE, FALSE))
-                print_qsub_usage_exit("qsub: illegal -W value grouplist");
-                /* cannot parse 'grouplist' value */
-/*                {
-
-                fprintf(stderr, "qsub: illegal -W value\n");
-
-                errflg++;
-
-                break;
-                }
-                */
-
-              if (hash_find(ji->client_attr, "validate_group", &tmp_job_info))
-/*              if (validate_group == TRUE) */
+              if (validate_group_list(valuewd) == FALSE)
                 {
-                if (validate_group_list(valuewd) == FALSE)
-                  {
-                  alloc_len = 80 + strlen(valuewd);
-                  calloc_or_fail(&err_msg, alloc_len, "-W attribute");
-                  snprintf(err_msg, alloc_len, "qsub: User isn't a member of one or more groups in %s", valuewd);
-                  print_qsub_usage_exit(err_msg);
-/*                  {
-                  fprintf(stderr,"qsub: User isn't a member of one or more groups in %s\n",
-                    valuewd);
-                  errflg++;
-                  break;
-                  }
-                  */
-                  }
+                alloc_len = 80 + strlen(valuewd);
+                calloc_or_fail(&err_msg, alloc_len, "-W attribute");
+                snprintf(err_msg, alloc_len, "qsub: User isn't a member of one or more groups in %s", valuewd);
+                print_qsub_usage_exit(err_msg);
                 }
-              hash_add_or_exit(ji->job_attr, ATTR_g, valuewd, data_type);
-/*               set_attr(&attrib, ATTR_g, valuewd); */
-/*              } */
+              }
+            hash_add_or_exit(ji->job_attr, ATTR_g, valuewd, data_type);
             }
           else if (!strcmp(keyword, ATTR_inter))
             {
             /* specify interactive job */
+            if (strcmp(valuewd, "true") != 0)
+              print_qsub_usage_exit("qsub: illegal -W value");
 
-/*            if_cmd_line(Interact_opt)
-              {
-              Interact_opt = passet;
-              */
-
-              if (strcmp(valuewd, "true") != 0)
-                print_qsub_usage_exit("qsub: illegal -W value");
-/*                {
-                fprintf(stderr, "qsub: illegal -W value\n");
-
-                errflg++;
-
-                break;
-                }
-                */
-
-              hash_add_or_exit(ji->job_attr, ATTR_inter, interactive_port(&inter_sock), data_type);
-/*               set_attr(&attrib, ATTR_inter, interactive_port(&inter_sock)); */
-/*               } */
+            hash_add_or_exit(ji->job_attr, ATTR_inter, interactive_port(&inter_sock), data_type);
             }
           else if (!strcmp(keyword, ATTR_umask))
             {
@@ -3294,16 +3097,7 @@ void process_opts(
               snprintf(err_msg, alloc_len, "qsub: Invalid umask value, too many digits: %s", valuewd);
               print_qsub_usage_exit(err_msg);
               }
-/*              {
-              fprintf(stderr, "Invalid umask value, too many digits: %s\n", 
-                      valuewd); 
-              errflg++;
-             
-              break;
-              }
-              */
-
-/*             Umask_opt = passet; */
+            
             if (valuewd[0] == '0')
               {
               /* value is octal, convert to decimal */
@@ -3315,14 +3109,9 @@ void process_opts(
 
               /* value is octal, convert to decimal */
               hash_add_or_exit(ji->job_attr, ATTR_umask, buf, data_type);
-/*               set_attr(&attrib,ATTR_umask,buf);  */
               }
             else
               hash_add_or_exit(ji->job_attr, ATTR_umask, valuewd, data_type);
-/*              {
-              set_attr(&attrib,ATTR_umask,valuewd);
-              }
-              */
             }
           else if (!strcmp(keyword, ATTR_f))
             {
@@ -3335,9 +3124,9 @@ void process_opts(
               case 't':
               case 'Y':
               case 'y':
-/*                 f_opt = passet; */
+                
                 hash_add_or_exit(ji->job_attr, ATTR_f, "TRUE", data_type);
-/*                 set_attr(&attrib, ATTR_f, "TRUE"); */
+               
                 break;
                 
               case 0:
@@ -3345,9 +3134,8 @@ void process_opts(
               case 'f':
               case 'N':
               case 'n':
-/*                 f_opt = passet; */
+                
                 hash_add_or_exit(ji->job_attr, ATTR_f, "FALSE", data_type);
-/*                 set_attr(&attrib, ATTR_f, "FALSE"); */
                 break;
               
               default:
@@ -3356,8 +3144,6 @@ void process_opts(
                 snprintf(err_msg, alloc_len, "qsub: invalid %s value: %s", ATTR_f, valuewd);
                 print_qsub_usage_exit(err_msg);
 
-/*                 fprintf(stderr, "invalid %s value: %s\n", ATTR_f, valuewd); */
-/*                 errflg++; */
               }
             }
           else
@@ -3366,20 +3152,12 @@ void process_opts(
             char tmpLine[65536];
 
             //Append if there is already a value here.
-            if(hash_find(ji->job_attr,keyword,&pVal))
+            if (hash_find(ji->job_attr,keyword,&pVal))
               {
-              strcpy(tmpLine,pVal->value.c_str());
-              strcat(tmpLine,";");
-              strcat(tmpLine,valuewd);
+              snprintf(tmpLine, sizeof(tmpLine), "%s;%s", pVal->value.c_str(), valuewd);
               valuewd = tmpLine;
               }
             hash_add_or_exit(ji->job_attr, keyword, valuewd, data_type);
-            /* generic job attribute specified */
-/*            {
-
-            set_attr(&attrib, keyword, valuewd);
-            }
-            */
             }
 
           i = get_name_value(NULL, &keyword, &valuewd);
@@ -3387,12 +3165,6 @@ void process_opts(
 
         if (i == -1)
           print_qsub_usage_exit("qsub: illegal -W value");
-/*          {
-          fprintf(stderr, "qsub: illegal -W value\n");
-
-          errflg++;
-          }
-          */
 
         break;
 
@@ -3504,28 +3276,23 @@ void process_opts(
       close(tmpfd);
 
       /* run the specified resources through the submitfilter. */
-
-      strcpy(cline, tmp_job_info->value.c_str());
+      cline_out = tmp_job_info->value;
 
       for (index = 1;index < argc;index++)
         {
         if (argv[index] != NULL)
           {
-          strcat(cline, " ");
-
-          strcat(cline, argv[index]);
+          cline_out += " ";
+          cline_out += argv[index];
           }
         }    /* END for (index) */
 
-      strcat(cline, " <");
+      cline_out += " <";
+      cline_out += tmp_name;
+      cline_out += " >";
+      cline_out += tmp_name2;
 
-      strcat(cline, tmp_name);
-
-      strcat(cline, " >");
-
-      strcat(cline, tmp_name2);
-
-      rc = system(cline);
+      rc = system(cline_out.c_str());
 
       alloc_len = 0;
       if (rc == -1)
@@ -3533,35 +3300,18 @@ void process_opts(
         alloc_len = 80  + strlen(tmp_name2);
         calloc_or_fail(&err_msg, alloc_len, "qsub: error writing filter o/p");
         snprintf(err_msg, alloc_len, "qsub: error writing filter o/p, %s", tmp_name2);
-/*         fprintf(stderr, "qsub: error writing filter o/p, %s\n", */
-/*                 tmp_name2); */
-
-/*         exit(1); */
         }
       else if (WEXITSTATUS(rc) == (unsigned char)SUBMIT_FILTER_ADMIN_REJECT_CODE)
         {
         alloc_len = 160;
         calloc_or_fail(&err_msg, alloc_len, "qsub: administrative rejection");
         snprintf(err_msg, alloc_len, "qsub: Your job has been administratively rejected by the queueing system.\nqsub: There may be a more detailed explanation prior to this notice.");
-/*         fprintf(stderr, "qsub: Your job has been administratively rejected by the queueing system.\n"); */
-/*         fprintf(stderr, "qsub: There may be a more detailed explanation prior to this notice.\n"); */
-
-/*         unlink(tmp_name2); */
-/*         unlink(tmp_name); */
-
-/*         exit(1); */
         }
       else if (WEXITSTATUS(rc))
         {
         alloc_len = 80;
         calloc_or_fail(&err_msg, alloc_len, "qsub: filter error code");
         snprintf(err_msg, alloc_len, "qsub: submit filter returned an error code, aborting job submission.");
-/*         fprintf(stderr, "qsub: submit filter returned an error code, aborting job submission.\n"); */
-
-/*         unlink(tmp_name2); */
-/*         unlink(tmp_name); */
-
-/*         exit(1); */
         }
       else
         {
@@ -3633,11 +3383,6 @@ void process_opts(
 
           if (add_verify_resources(ji->res_attr, vptr, data_type))
             print_qsub_usage_exit("qsub: illegal -l value");
-/*            {
-            fprintf(stderr, "qsub: illegal -l value\n");
-            errflg++;
-            }
-            */
 
           break;
 
@@ -3655,13 +3400,8 @@ void process_opts(
           FlagString[2] = '\0';
 
           /* Duplicate code */
-/* #ifdef linux */
           aindex = 1;  /* prime getopt's starting point */
           tmpArgV[0] = (char *)"";
-/* #else */
-/*           aindex = 1;  prime getopt's starting point */
-/*           tmpArgV[0] = ""; */
-/* #endif */
 
           tmpArgV[aindex] = FlagString;
           tmpArgV[aindex + 1] = vptr;
@@ -3669,28 +3409,10 @@ void process_opts(
 
           tmpArgV[3] = NULL;
 
-          /*
-                    fprintf(stderr,"PLINE: '%s' '%s'  '%s'\n",
-                      tmpArgV[0],
-                      tmpArgV[1],
-                      cline);
-          */
-
           /* To prevent recursion, set a flag in the client_attr */
           hash_add_or_exit(ji->client_attr, "no_submit_filter", "1", LOGIC_DATA);
           process_opts(aindex + 2, tmpArgV, ji, FILTER_DATA);
           hash_del_item(ji->client_attr, "no_submit_filter");
-
-
-          /* set pass to 10 to allow submit filter to override user-specified
-           * values and to prevent recursive calling of submit filter processing
-           */
-/*          if (process_opts(aindex + 2, tmpArgV, 10) != 0)
-            {
-            fprintf(stderr, "submitfilter line '%s' ignored\n",
-                    cline);
-            }
-          */
           }
 
         break;
@@ -4013,7 +3735,9 @@ void add_variable_list(
   int       pos = 0;
   char     *var_list = NULL;
   job_data *en;
+  src_hash->lock();
   job_data_iterator *it = ((src_hash == NULL)?NULL:src_hash->get_iterator());
+  src_hash->unlock();
   job_data *v_value = NULL;
 
   /* if -v was used then it needs to be included as well. */
@@ -4037,6 +3761,7 @@ void add_variable_list(
 
   if(it != NULL)
     {
+    src_hash->lock();
     while((en = it->get_next_item()) != NULL)
       {
       pos++;
@@ -4051,6 +3776,7 @@ void add_variable_list(
         strcat(var_list, ",");
         }
       }
+    src_hash->unlock();
     }
 
   hash_add_or_exit(ji->job_attr, var_name, var_list, CMDLINE_DATA);
@@ -4169,14 +3895,14 @@ void main_func(
 
   /* check/set submit filter_path */
   if (validate_submit_filter(ji.job_attr) == -1)
-  {
+    {
      hash_find(ji.job_attr, ATTR_pbs_o_submit_filter, &tmp_job_info);
      fprintf(stderr,
              "qsub: invalid submit filter: \"%s\"\n",
              tmp_job_info->value.c_str());
 
      exit(1);
-  }
+    }
 
   /* NOTE:  load config before processing opts since config may modify how opts are handled */
 
@@ -4465,7 +4191,11 @@ void main_func(
 
   /* Send submit request to the server. */
 
-  local_errno = pbs_submit_hash(
+  int retries = 0;
+
+  do
+    {
+    local_errno = pbs_submit_hash(
                   sock_num,
                   ji.job_attr,
                   ji.res_attr,
@@ -4474,6 +4204,15 @@ void main_func(
                   NULL,
                   &new_jobname,
                   &errmsg);
+    if (local_errno != PBSE_NONE)
+      sleep(1);
+
+    /* If we get a timeout the server is busy. Let the user 
+       know what is taking so long */
+    if (local_errno == PBSE_TIMEOUT)
+      fprintf(stdout, "Connection to server timed out. Trying again");
+
+    }while((++retries < MAX_RETRIES) && (local_errno != PBSE_NONE));
 
   if (local_errno != PBSE_NONE)
     {

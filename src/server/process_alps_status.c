@@ -136,11 +136,17 @@ struct pbsnode *find_alpsnode_by_name(
 
 
 
+/*
+ * create_alps_subnode()
+ *
+ * @param parent - the sdb node or parent of this compute node
+ * @param node_id - the name of the new alps compute node
+ */
 
 struct pbsnode *create_alps_subnode(
 
   struct pbsnode *parent,
-  const char    *node_id)
+  const char     *node_id)
 
   {
   struct pbsnode *subnode = (struct pbsnode *)calloc(1, sizeof(struct pbsnode));
@@ -155,7 +161,11 @@ struct pbsnode *create_alps_subnode(
     return(NULL);
     }
 
+  // all nodes have at least 1 core
   add_execution_slot(subnode);
+  
+  // we need to increment this count for accuracy  
+  svr_clnodes++;
 
   /* do we need to do something else here? */
   subnode->nd_addrs = parent->nd_addrs;
@@ -300,7 +310,8 @@ int set_ncpus(
 
   {
   int difference;
-  int i, orig_svr_clnodes;
+  int i;
+  int orig_svr_clnodes;
 
   if (current == NULL)
     return(PBSE_BAD_PARAMETER);
@@ -593,7 +604,9 @@ int process_alps_status(
         {
         snprintf(node_index_buf, sizeof(node_index_buf), "node_index=%d", node_index++);
         decode_arst(&temp, NULL, NULL, node_index_buf, 0);
-        save_node_status(current, &temp);
+        
+        if (current != NULL)
+          save_node_status(current, &temp);
         }
 
       if ((current = determine_node_from_str(str, parent, current)) == NULL)
@@ -602,7 +615,7 @@ int process_alps_status(
         continue;
       }
 
-    if(current == NULL)
+    if (current == NULL)
       continue;
 
     /* process the gpu status information separately */
@@ -615,9 +628,11 @@ int process_alps_status(
       {
       const char *just_rsv_id = str + strlen(reservation_id);
 
+      rsv_ht.lock();
       if (rsv_ht.find(just_rsv_id) == NULL)
         {
         rsv_ht.insert(just_rsv_id,just_rsv_id);
+        rsv_ht.unlock();
 
         /* sub-functions will attempt to lock a job, so we must unlock the
          * reporter node */
@@ -652,6 +667,10 @@ int process_alps_status(
 
         free(current_node_id);
         current_node_id = NULL;
+        }
+      else
+        {
+        rsv_ht.unlock();
         }
       }
     /* save this as is to the status strings */

@@ -7,6 +7,7 @@
 #include "work_task.h"
 #include "attribute.h"
 #include "u_tree.h"
+#include "resource.h"
 
 
 #define rot(x,k) (((x)<<(k)) | ((x)>>(32-(k))))
@@ -32,6 +33,7 @@
   c ^= b; c -= rot(b,24); \
   }
 
+bool exit_called = false;
 char log_buffer[LOG_BUF_SIZE];
 int count;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
@@ -1707,4 +1709,71 @@ int get_svr_attr_l(int index, long *l)
   {
   return(0);
   }
+
+int decode_depend(pbs_attribute*, char const*, char const*, char const*, int)
+  {
+  fprintf(stderr,"The function %s needs to be mocked.\n",__func__);
+  return 0;
+  }
+
+int set_depend(pbs_attribute*, pbs_attribute*, batch_op)
+  {
+  fprintf(stderr,"The function %s needs to be mocked.\n",__func__);
+  return 0;
+  }
+
+int comp_depend(pbs_attribute*, pbs_attribute*)
+  {
+  fprintf(stderr,"The function %s needs to be mocked.\n",__func__);
+  return 0;
+  }
+
+int set_uacl(pbs_attribute*, pbs_attribute*, batch_op)
+  {
+  fprintf(stderr,"The function %s needs to be mocked.\n",__func__);
+  return 0;
+  }
+
+void free_depend(pbs_attribute*)
+  {
+  fprintf(stderr,"The function %s needs to be mocked.\n",__func__);
+  }
+
+int depend_on_que(pbs_attribute*, void*, int)
+  {
+  fprintf(stderr,"The function %s needs to be mocked.\n",__func__);
+  return 0;
+  }
+
+int comp_checkpoint(pbs_attribute*, pbs_attribute*)
+  {
+  fprintf(stderr,"The function %s needs to be mocked.\n",__func__);
+  return 0;
+  }
+
+int job_set_wait(pbs_attribute*, void*, int)
+  {
+  fprintf(stderr,"The function %s needs to be mocked.\n",__func__);
+  return 0;
+  }
+
+int encode_depend(pbs_attribute*, list_link*, char const*, char const*, int, int)
+  {
+  fprintf(stderr,"The function %s needs to be mocked.\n",__func__);
+  return 0;
+  }
+
+resource_def svr_resc_def_const[] =
+  {
+    { "string",decode_str,encode_str,set_str,comp_str,free_str,NULL_FUNC,READ_WRITE,ATR_TYPE_STR},
+    { "long",decode_l,encode_l,set_l,comp_l,free_null,NULL_FUNC,NO_USER_SET,ATR_TYPE_LONG},
+    { "bit",decode_b,encode_b,set_b,comp_b,free_null,NULL_FUNC,ATR_DFLAG_OPRD | ATR_DFLAG_MGRD | ATR_DFLAG_SvRD | ATR_DFLAG_SvWR | ATR_DFLAG_MOM,ATR_TYPE_LONG},
+    { "|unknown|", decode_unkn, encode_unkn, set_unkn, comp_unkn, free_unkn, NULL_FUNC, READ_WRITE, ATR_TYPE_LIST }
+  };
+
+int svr_resc_size = sizeof(svr_resc_def_const)/sizeof(resource_def);
+
+resource_def *svr_resc_def = svr_resc_def_const;
+
+
 

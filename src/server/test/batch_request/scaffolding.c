@@ -3,6 +3,7 @@
 
 #include "batch_request.h"
 
+bool exit_called = false;
 batch_request_holder    brh;
 
 

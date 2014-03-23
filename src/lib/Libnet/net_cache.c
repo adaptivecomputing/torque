@@ -101,6 +101,8 @@
 
 static pthread_mutex_t cacheMutex = PTHREAD_MUTEX_INITIALIZER;
 static int cacheDestroyed = FALSE;
+bool exit_called = false;
+
 
 namespace container
 {
@@ -131,6 +133,7 @@ class addrcache
 
     sprintf(key,"%d",pINetAddr->sin_addr.s_addr);
     pthread_mutex_lock(&cacheMutex);
+    addrToName.lock();
     try 
       {
       i = addrToName.find(key);
@@ -142,7 +145,7 @@ class addrcache
       addrToName.remove(key);
       i = -1;
       }
-
+    addrToName.unlock();
     pthread_mutex_unlock(&cacheMutex);
     if (i >= 0)
       {
@@ -181,8 +184,12 @@ class addrcache
       return(NULL);
       }
 
+    addrToName.lock();
+    nameToAddr.lock();
     addrToName.insert(index,key);
     nameToAddr.insert(index,priv_host);
+    nameToAddr.unlock();
+    addrToName.unlock();
 
     pthread_mutex_unlock(&cacheMutex);
     return pAddr;
@@ -200,8 +207,10 @@ class addrcache
     sprintf(key,"%d",addr);
 
     pthread_mutex_lock(&cacheMutex);
+    addrToName.lock();
     int index = addrToName.find(key);
     if(index >= 0) p = addrs.at(index);
+    addrToName.unlock();
     pthread_mutex_unlock(&cacheMutex);
     return p;
     }
@@ -214,8 +223,10 @@ class addrcache
         return NULL;
       }
     pthread_mutex_lock(&cacheMutex);
+    nameToAddr.lock();
     int index = nameToAddr.find(hostName);
     if(index >= 0) p = addrs.at(index);
+    nameToAddr.unlock();
     pthread_mutex_unlock(&cacheMutex);
     return p;
     }
@@ -234,9 +245,11 @@ class addrcache
     sprintf(key,"%d",addr);
     
     pthread_mutex_lock(&cacheMutex);
+    addrToName.lock();
     int index = addrToName.find(key);
     if (index >= 0)
       p = hosts.at(index);
+    addrToName.unlock();
     pthread_mutex_unlock(&cacheMutex);
     
     return(p);

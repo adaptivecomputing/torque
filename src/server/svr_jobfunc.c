@@ -300,6 +300,7 @@ int insert_into_alljobs_by_rank(
 
   {
   job  *pjcur;
+  aj->lock();
   all_jobs_iterator  *iter = aj->get_iterator(true);
   long  job_qrank = pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long;
   std::string curJobid = "";
@@ -318,6 +319,8 @@ int insert_into_alljobs_by_rank(
     if (strcmp(jobid, pjcur->ji_qs.ji_jobid) == 0)
       {
       delete iter;
+
+      aj->unlock();
       return(ALREADY_IN_LIST);
       }
     }
@@ -333,12 +336,14 @@ int insert_into_alljobs_by_rank(
     unlock_ji_mutex(pjcur, __func__, "8", LOGLEVEL);
     pjcur = NULL;
     }
+  aj->unlock();
 
   if ((pjob = svr_find_job(jobid, FALSE)) == NULL)
     {
     return(PBSE_JOBNOTFOUND);
     }
-  
+
+  aj->lock();
   if (curJobid.length() == 0)
     {
     /* link first in list */
@@ -349,6 +354,7 @@ int insert_into_alljobs_by_rank(
     /* link after 'current' job in list */
     aj->insert_after(curJobid, pjob,pjob->ji_qs.ji_jobid);
     }
+  aj->unlock();
 
   return(PBSE_NONE);
   } /* END insert_into_alljobs_by_rank() */
@@ -471,10 +477,12 @@ int svr_enquejob(
 
   if (!pjob->ji_is_array_template)
     {
+    alljobs.lock();
     if (prev_job_id == NULL)
       alljobs.insert(pjob,pjob->ji_qs.ji_jobid);
     else
       alljobs.insert_after(prev_job_id,pjob,pjob->ji_qs.ji_jobid);
+    alljobs.unlock();
 
     if (has_sv_qs_mutex == FALSE)
       {
@@ -1547,6 +1555,9 @@ int chk_svr_resc_limit(
           {
           SvrNodeCt = svrc->rs_value.at_val.at_long;
           }
+
+        if (svrc == NULL)
+          break;
         }
       
       svrc = (resource *)GET_NEXT(svrc->rs_link);
@@ -1682,10 +1693,18 @@ int chk_svr_resc_limit(
   get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
   /* If we restart pbs_server while the cray is down, pbs_server won't know about
    * the computes. Don't perform this check for this case. */
+  if(alps_reporter != NULL)
+    {
+    alps_reporter->alps_subnodes->lock();
+    }
   if ((cray_enabled != TRUE) || 
       (alps_reporter == NULL) ||
       (alps_reporter->alps_subnodes->count() != 0))
     {
+    if(alps_reporter != NULL)
+      {
+      alps_reporter->alps_subnodes->unlock();
+      }
     if (cray_enabled == TRUE)
       {
       if (mppnodect_resource != NULL)
@@ -1798,6 +1817,11 @@ int chk_svr_resc_limit(
       }
 #endif
     } /* END not cray or cray and reporter is up */
+  else if(alps_reporter != NULL)
+    {
+    alps_reporter->alps_subnodes->unlock();
+    }
+
 
   if (MPPWidth > 0)
     {
@@ -3196,8 +3220,11 @@ void set_resc_deflt(
     {
     log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 13");
     }
- 
-  remove_procct(pjob);
+
+  if(pjob != NULL) //Call to get_jobs_queue can leave pjob = NULL
+    {
+    remove_procct(pjob);
+    }
   return;
   }  /* END set_resc_deflt() */
 

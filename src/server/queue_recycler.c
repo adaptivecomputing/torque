@@ -8,6 +8,7 @@
 
 #include "utils.h"
 #include "threadpool.h"
+#include "mutex_mgr.hpp"
 
 extern queue_recycler q_recycler;
 extern int LOGLEVEL;
@@ -44,7 +45,7 @@ void *remove_some_recycle_queues(
   q_recycler.queues.lock();
   iter = q_recycler.queues.get_iterator();
   q_recycler.queues.unlock();
-  pthread_mutex_lock(q_recycler.mutex);
+  mutex_mgr q_recycler_mutex = mutex_mgr(q_recycler.mutex, false);
 
   pq = next_queue_from_recycler(&q_recycler.queues,iter);
 
@@ -60,8 +61,6 @@ void *remove_some_recycle_queues(
   delete pq->qu_jobs_array_sum;
   memset(pq, 254, sizeof(pbs_queue));
   free(pq);
-
-  pthread_mutex_unlock(q_recycler.mutex);
 
   return(NULL);
   } /* END remove_some_recycle_queues() */
@@ -82,10 +81,12 @@ int insert_into_queue_recycler(
   sprintf(pq->qu_qs.qu_name,"%d",q_recycler.next_id);
   pq->q_being_recycled = TRUE;
 
+  q_recycler.queues.lock();
   if (q_recycler.queues.count() >= MAX_RECYCLE_QUEUES)
     {
     enqueue_threadpool_request(remove_some_recycle_queues,NULL);
     }
+  q_recycler.queues.unlock();
 
   rc = insert_queue(&q_recycler.queues,pq);
 

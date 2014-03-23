@@ -833,9 +833,7 @@ resource *add_resource_entry(
   pattr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
 
   return(new_resource);
-  }
-
-
+  } /* END add_resource_entry() */
 
 
 

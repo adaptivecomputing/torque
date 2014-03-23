@@ -59,6 +59,7 @@
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_ss, unlock_ss */
 #endif /* PBS_MOM */
 
+
 extern int array_upgrade(job_array *, int, int, int *);
 extern char *get_correct_jobname(const char *jobid);
 extern int count_user_queued_jobs(pbs_queue *,char *);

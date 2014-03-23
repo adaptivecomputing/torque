@@ -22,6 +22,8 @@ int func_num = 0; /* Suite number being run */
 int tc = 0; /* Used for test routining */
 int iter_num = 0;
 
+bool exit_called = false;
+
 int valbuf_size = 0;
 /* end manip */
 

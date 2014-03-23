@@ -27,6 +27,7 @@ int pbs_rm_port; /* mom_main.c */
 tlist_head svr_alljobs; /* mom_main.c */
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */ /* mom_main.c/pbsd_main.c */
 char log_buffer[LOG_BUF_SIZE]; /* pbs_log.c */
+bool exit_called = false;
 
 
 void clear_attr(pbs_attribute *pattr, attribute_def *pdef)

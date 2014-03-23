@@ -93,7 +93,9 @@ void initialize_recycler()
 
   {
   recycler.rc_next_id = 0;
+  recycler.rc_jobs.lock();
   recycler.rc_iter = recycler.rc_jobs.get_iterator();
+  recycler.rc_jobs.unlock();
 
   recycler.rc_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(recycler.rc_mutex,NULL);
@@ -134,7 +136,9 @@ void *remove_some_recycle_jobs(
 
   pthread_mutex_lock(recycler.rc_mutex);
 
+  recycler.rc_jobs.lock();
   iter = recycler.rc_jobs.get_iterator();
+  recycler.rc_jobs.unlock();
   for (i = 0; i < JOBS_TO_REMOVE; i++)
     {
     pjob = next_job_from_recycler(&recycler.rc_jobs,iter);
@@ -195,10 +199,12 @@ int insert_into_recycler(
   sprintf(pjob->ji_qs.ji_jobid,"%d",recycler.rc_next_id);
   pjob->ji_being_recycled = TRUE;
 
+  recycler.rc_jobs.lock();
   if (recycler.rc_jobs.count() >= MAX_RECYCLE_JOBS)
     {
     enqueue_threadpool_request(remove_some_recycle_jobs,NULL);
     }
+  recycler.rc_jobs.unlock();
     
   rc = insert_job(&recycler.rc_jobs, pjob);
     
@@ -221,7 +227,11 @@ job *get_recycled_job()
   pjob = next_job_from_recycler(&recycler.rc_jobs,recycler.rc_iter);
 
   if (pjob == NULL)
+    {
+    recycler.rc_jobs.lock();
     recycler.rc_iter = recycler.rc_jobs.get_iterator();
+    recycler.rc_jobs.unlock();
+    }
   pthread_mutex_unlock(recycler.rc_mutex);
 
   if (pjob != NULL)

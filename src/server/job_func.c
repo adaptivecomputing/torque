@@ -1263,10 +1263,12 @@ void *job_clone_wt(
       
       if(prev_job_id != NULL) free(prev_job_id);
       prev_job_id = NULL;
+      alljobs.lock();
       if(alljobs.find(pjobclone->ji_qs.ji_jobid) != NULL)
         {
         prev_job_id = strdup(pjobclone->ji_qs.ji_jobid);
         }
+      alljobs.unlock();
       
       pa->ai_qs.num_cloned++;
       
@@ -1363,7 +1365,10 @@ void *job_clone_wt(
          }
        }
 
-      pjob->ji_commit_done = 1;
+      if(pjob != NULL) //The call to get_jobs_queue call set pjob to NULL.
+        {
+        pjob->ji_commit_done = 1;
+        }
       }
     }
   

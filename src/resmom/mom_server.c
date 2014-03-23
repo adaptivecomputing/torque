@@ -1108,6 +1108,7 @@ int write_cached_statuses(
  
   {
   int            ret = DIS_SUCCESS;
+  received_statuses.lock();
   container::item_container<received_node *>::item_iterator *iter = received_statuses.get_iterator();
   const char   *cp;
   received_node *rn;
@@ -1165,6 +1166,7 @@ int write_cached_statuses(
   if (ret == DIS_SUCCESS)
     updates_waiting_to_send = 0;
 
+  received_statuses.unlock();
   return(ret);
   } /* END write_cached_statuses() */
 
@@ -1587,6 +1589,7 @@ void mom_server_all_update_stat(void)
       UpdateFailCount = 0;
     
       received_node                                             *rn;
+      received_statuses.lock();
       container::item_container<received_node *>::item_iterator *iter = received_statuses.get_iterator();
       
       // clear cached statuses from hierarchy
@@ -1594,8 +1597,12 @@ void mom_server_all_update_stat(void)
         rn->statuses.clear();
 
       delete iter;
+      received_statuses.unlock();
 
       len = read(fd_pipe[0], buf, LOCAL_LOG_BUF_SIZE);
+
+      close(fd_pipe[0]);
+
       if (len <= 0)
         {
         log_err(-1, __func__, "read of pipe failed for status update");
