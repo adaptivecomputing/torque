@@ -86,6 +86,7 @@
 #include <boost/algorithm/string.hpp>
 #include <sstream>
 #include <algorithm>
+#include <sys/reboot.h>
 
 #include "power_state.hpp"
 #include "pbs_nodes.h"
@@ -168,12 +169,8 @@ void power_state::set_power_state(int power_state)
         return;
         }
     case  POWER_STATE_SHUTDOWN:
-      int pid = fork_me(-1);
-      if(pid > 0)
-        {
-        return;
-        }
-      execl("shutdown","now");
+      sync();
+      reboot(RB_POWER_OFF);
       return;
     }
   }
