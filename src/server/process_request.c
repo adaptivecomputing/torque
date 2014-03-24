@@ -303,7 +303,7 @@ bool request_passes_acl_check(
   unsigned long  conn_addr)
   
   {
-  long acl_enable;
+  long acl_enable = FALSE;
 
   get_svr_attr_l(SRV_ATR_acl_host_enable, &acl_enable);
   if (acl_enable)
