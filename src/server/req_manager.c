@@ -698,7 +698,7 @@ int mgr_set_node_attr(
   int              index;
   int              nstatus = 0;
   int              nprops = 0;
-  int              rc;
+  int              rc = PBSE_NONE;
   pbs_attribute   *new_attr;
   pbs_attribute   *unused = NULL;
   pbs_attribute   *pnew;
@@ -816,7 +816,7 @@ int mgr_set_node_attr(
     {
     if((rc = set_node_power_state(pnode,tnode.nd_power_state)) != PBSE_NONE)
       {
-      return rc;
+      tnode.nd_power_state = pnode->nd_power_state; //put the state back to what it was.
       }
     }
 
@@ -936,7 +936,7 @@ int mgr_set_node_attr(
 
   update_subnode(pnode);
 
-  return(0);
+  return(rc);
   }  /* END mgr_set_node_attr() */
 
 

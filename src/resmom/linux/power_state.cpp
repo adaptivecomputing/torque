@@ -89,6 +89,7 @@
 
 #include "power_state.hpp"
 #include "pbs_nodes.h"
+#include "mom_func.h"
 
 const char *base_power_path = "/sys/power/";
 
@@ -167,7 +168,12 @@ void power_state::set_power_state(int power_state)
         return;
         }
     case  POWER_STATE_SHUTDOWN:
-      system("shutdown now");
+      int pid = fork_me(-1);
+      if(pid > 0)
+        {
+        return;
+        }
+      execl("shutdown","now");
       return;
     }
   }

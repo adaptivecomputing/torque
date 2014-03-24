@@ -61,6 +61,7 @@
 #include <boost/ptr_container/ptr_vector.hpp>
 #include "alps_functions.h"
 #include <arpa/inet.h>
+#include "threadpool.h"
 
 
 #if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
@@ -3870,6 +3871,32 @@ int remove_hello(
   return(rc);
   } /* END remove_hello() */
 
+
+void * send_power_state_to_mom(void *arg)
+  {
+  struct batch_request  *pRequest = (struct batch_request *)arg;
+  struct pbsnode        *pNode = find_nodebyname(pRequest->rq_host);
+
+  if(pNode == NULL)
+    {
+    free_br(pRequest);
+    return NULL;
+    }
+
+  int handle = 0;
+  int local_errno = 0;
+  handle = svr_connect(pNode->nd_addrs[0],pNode->nd_mom_port,&local_errno,pNode,NULL);
+  if(handle < 0)
+    {
+    unlock_node(pNode, __func__, "Error connecting", LOGLEVEL);
+    return NULL;
+    }
+  unlock_node(pNode, __func__, "Done connecting", LOGLEVEL);
+  issue_Drequest(handle, pRequest);
+
+  return NULL;
+  }
+
 int set_node_power_state(struct pbsnode *pNode,unsigned short newState)
   {
   if(pNode->nd_addrs == NULL)
@@ -3930,24 +3957,14 @@ int set_node_power_state(struct pbsnode *pNode,unsigned short newState)
     //Can't change the power state on a node with running jobs.
     return PBSE_CANT_CHANGE_POWER_STATE_WITH_JOBS_RUNNING;
     }
-  int handle = 0;
-  int local_errno = 0;
-  handle = svr_connect(pNode->nd_addrs[0],pNode->nd_mom_port,&local_errno,pNode,NULL);
-  if(handle < 0)
-    {
-    return local_errno;
-    }
-
   struct batch_request *request = alloc_br(PBS_BATCH_ChangePowerState);
   if(request == NULL)
     {
     return PBSE_SYSTEM;
     }
   request->rq_ind.rq_powerstate = newState;
-
-  int rc;
-  rc = issue_Drequest(handle, request);
-
+  strncpy(request->rq_host,pNode->nd_name,sizeof(request->rq_host));
+  int rc = enqueue_threadpool_request(send_power_state_to_mom,(void *)request);
   return(rc);
   }
 
