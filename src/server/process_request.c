@@ -331,6 +331,7 @@ bool request_passes_acl_check(
   } /* END request_passes_acl_check() */
 
 
+
 batch_request *read_request_from_socket(
 
   tcp_chan *chan)

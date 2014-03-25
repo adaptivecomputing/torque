@@ -6,6 +6,12 @@
 #include "pbs_error.h"
 
 int process_request(struct tcp_chan *chan);
+bool request_passes_acl_check(batch_request *request, unsigned long  conn_addr);
+batch_request *alloc_br(int type);
+
+extern bool check_acl;
+extern bool find_node;
+extern int free_attrlist_called;
 
 START_TEST(test_process_request)
   {
@@ -20,10 +26,36 @@ START_TEST(test_process_request)
   }
 END_TEST
 
-START_TEST(test_two)
+START_TEST(test_request_passes_acl_check)
   {
+  check_acl = false;
+  batch_request preq;
+  strcpy(preq.rq_host, "napali");
 
+  fail_unless(request_passes_acl_check(&preq, 0) == true);
+  
+  find_node = true;
+  check_acl = true;
+  fail_unless(request_passes_acl_check(&preq, 0) == true);
 
+  find_node = false;
+  fail_unless(request_passes_acl_check(&preq, 0) == false);
+  }
+END_TEST
+
+START_TEST(test_alloc_br)
+  {
+  batch_request *preq = alloc_br(PBS_BATCH_QueueJob);
+
+  fail_unless(preq->rq_type == PBS_BATCH_QueueJob);
+  fail_unless(preq->rq_conn == -1);
+  fail_unless(preq->rq_orgconn == -1);
+  fail_unless(preq->rq_reply.brp_choice == BATCH_REPLY_CHOICE_NULL);
+  fail_unless(preq->rq_noreply == FALSE);
+  fail_unless(preq->rq_time > 0);
+
+  free_br(preq);
+  fail_unless(free_attrlist_called > 0);
   }
 END_TEST
 
@@ -34,8 +66,9 @@ Suite *process_request_suite(void)
   tcase_add_test(tc_core, test_process_request);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("test_two");
-  tcase_add_test(tc_core, test_two);
+  tc_core = tcase_create("test_request_passes_acl_check");
+  tcase_add_test(tc_core, test_request_passes_acl_check);
+  tcase_add_test(tc_core, test_alloc_br);
   suite_add_tcase(s, tc_core);
 
   return s;
