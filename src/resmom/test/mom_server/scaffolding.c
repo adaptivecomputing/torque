@@ -3,7 +3,6 @@
 #include <stdio.h> /* fprintf */
 #include <netinet/in.h> /* sockaddr_in, sockaddr */
 
-#include "resizable_array.h" /* resizable_array */
 #include "mom_hierarchy.h" /* mom_hierarchy_t, node_comm_t */
 #include "mom_server.h"
 #include "resmon.h" /* config, rm_attribute */
@@ -17,12 +16,12 @@
 #include "list_link.h" /* list_link, tlist_head */
 #include "pbs_nodes.h" /* pbsnode */
 #include "pbs_config.h"
+#include "container.hpp"
 
 char log_buffer[LOG_BUF_SIZE];
 char *apbasil_protocol = NULL;
 char *apbasil_path = NULL;
 int is_reporter_mom = 0;
-resizable_array *received_statuses;
 mom_hierarchy_t *mh;
 struct config *config_array = NULL;
 long system_ncpus = 0;
@@ -55,6 +54,9 @@ time_t LastServerUpdateTime;
 int received_cluster_addrs;
 time_t       requested_cluster_addrs;
 time_t       first_update_time = 0;
+container::item_container<received_node *> received_statuses;
+bool exit_called = false;
+
 
 #ifdef NUMA_SUPPORT
 int       num_node_boards;
@@ -207,12 +209,6 @@ uint16_t AVL_get_port_by_ipaddr(u_long key, AvlTree tree)
   exit(1);
   }
 
-void *next_thing(resizable_array *ra, int *iter)
-  {
-  fprintf(stderr, "The call to next_thing needs to be mocked!!\n");
-  exit(1);
-  }
-
 int rpp_close(int index)
   {
   fprintf(stderr, "The call to rpp_close needs to be mocked!!\n");
@@ -273,12 +269,6 @@ int add_network_entry(mom_hierarchy_t *mh, char *name, struct addrinfo *ai, unsi
   exit(1);
   }
 
-int swap_things(resizable_array *ra, void *obj1, void *obj2)
-  {
-  fprintf(stderr, "The call to swap_things needs to be mocked!!\n");
-  exit(1);
-  }
-
 char *disrst(tcp_chan *chan, int *ret)
   {
   fprintf(stderr, "The call to disrst needs to be mocked!!\n");
@@ -287,20 +277,13 @@ char *disrst(tcp_chan *chan, int *ret)
 
 mom_hierarchy_t *initialize_mom_hierarchy()
   {
-  fprintf(stderr, "The call to initialize_mom_hierarchy needs to be mocked!!\n");
-  exit(1);
-  }
+  mom_hierarchy_t *nt = (mom_hierarchy_t *)calloc(1, sizeof(mom_hierarchy_t));
+  nt->paths = new mom_paths();
+  nt->current_path  = -1;
+  nt->current_level = -1;
+  nt->current_node  = -1;
 
-int remove_last_thing(resizable_array *ra)
-  {
-  fprintf(stderr, "The call to remove_last_thing needs to be mocked!!\n");
-  exit(1);
-  }
-
-void *next_thing_from_back(resizable_array *ra, int *iter)
-  {
-  fprintf(stderr, "The call to next_thing_from_back needs to be mocked!!\n");
-  exit(1);
+  return(nt);
   }
 
 int append_dynamic_string(dynamic_string *ds, const char *to_append)

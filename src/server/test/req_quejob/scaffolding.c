@@ -16,6 +16,7 @@
 #include "mutex_mgr.hpp"
 #include "threadpool.h"
 
+bool exit_called = false;
 const char *PJobSubState[10];
 char *path_jobs;
 const char *msg_script_write = "Unable to write script file";
@@ -23,7 +24,7 @@ int svr_resc_size = 0;
 attribute_def job_attr_def[10];
 const char *msg_script_open = "Unable to open script file";
 const char *msg_jobnew = "Job Queued at request of %s@%s, owner = %s, job name = %s, queue = %s";
-struct all_jobs newjobs;
+all_jobs newjobs;
 char server_name[PBS_MAXSERVERNAME + 1];
 const char *pbs_o_host = "PBS_O_HOST";
 resource_def *svr_resc_def;
@@ -117,7 +118,7 @@ ssize_t write_nonblocking_socket(int fd, const void *buf, ssize_t count)
   exit(1);
   }
 
-int insert_job(struct all_jobs *aj, job *pjob)
+int insert_job(all_jobs *aj, job *pjob)
   {
   fprintf(stderr, "The call to insert_job to be mocked!!\n");
   exit(1);
@@ -139,9 +140,9 @@ void req_reject(int code, int aux, struct batch_request *preq, const char *HostN
   {
   }
 
-job *next_job(struct all_jobs *aj, int *iter)
+job *next_job(all_jobs *aj, all_jobs_iterator *iter)
   {
-  return((job *)next_thing(aj->ra,iter));
+  return(iter->get_next_item());
   }
 
 void *get_next(list_link pl, char *file, int line)
@@ -156,7 +157,7 @@ int job_route(job *jobp)
   exit(1);
   }
 
-int svr_enquejob(job *pjob, int has_sv_qs_mutex, int prev_index, bool reservation)
+int svr_enquejob(job *pjob, int has_sv_qs_mutex, char *prev_id, bool reservation)
   {
   fprintf(stderr, "The call to svr_enquejob to be mocked!!\n");
   exit(1);
@@ -180,7 +181,7 @@ int get_fullhostname(char *shortname, char *namebuf, int bufsize, char *EMsg)
   exit(1);
   }
 
-int remove_job(struct all_jobs *aj, job *pjob)
+int remove_job(all_jobs *aj, job *pjob)
   {
   fprintf(stderr, "The call to remove_job to be mocked!!\n");
   exit(1);
@@ -246,7 +247,7 @@ int unlock_queue(struct pbs_queue *the_queue, const char *method_name, const cha
   exit(1);
   }
 
-void svr_evaljobstate(job *pjob, int *newstate, int *newsub, int forceeval)
+void svr_evaljobstate(job &pjob, int &newstate, int &newsub, int forceeval)
   {
   fprintf(stderr, "The call to svr_evaljobstate to be mocked!!\n");
   exit(1);
@@ -397,7 +398,7 @@ const char *add_std_filename(
   return "stdfilename";
   }
 
-job *find_job_by_array(struct all_jobs *aj, char *jobid, int get_subjob, bool locked)
+job *find_job_by_array(all_jobs *aj, char *jobid, int get_subjob, bool locked)
   {
   if (!strcmp(jobid, "1.napali"))
     {

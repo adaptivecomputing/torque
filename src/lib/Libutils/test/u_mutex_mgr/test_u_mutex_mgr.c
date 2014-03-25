@@ -120,8 +120,8 @@ START_TEST(set_lock_exit)
   mutex_mgr my_mutex = mutex_mgr(&test_mutex);
   fail_unless(my_mutex.is_valid() == true, "Failed to initialize and lock mutex");
 
-  my_mutex.set_lock_on_exit(false);
-  my_mutex.set_lock_on_exit(true);
+  my_mutex.set_unlock_on_exit(false);
+  my_mutex.set_unlock_on_exit(true);
   }
 END_TEST
 

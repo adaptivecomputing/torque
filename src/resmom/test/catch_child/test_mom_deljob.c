@@ -1,6 +1,6 @@
-#include "test_catch_child.h"
 #include "catch_child.h"
 #include "pbs_job.h"
+#include "test_catch_child.h"
 
 START_TEST(test_mom_deljob_1)
   {

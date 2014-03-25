@@ -3,7 +3,6 @@
 #include <check.h>
 
 #include "delete_all_tracker.hpp"
-#include "attribute.h"
 
 START_TEST(test_basic_functionality)
   {
@@ -11,17 +10,17 @@ START_TEST(test_basic_functionality)
 
   // nobody should be deleting to start
   fail_unless(dat.currently_deleting_all("dbeer", 0) == false);
-  fail_unless(dat.currently_deleting_all("root", ATR_DFLAG_MGWR) == false);
+  fail_unless(dat.currently_deleting_all("root", 0x20) == false);
   fail_unless(dat.start_deleting_all_if_possible("dbeer", 0) == true);
-  fail_unless(dat.start_deleting_all_if_possible("root", ATR_DFLAG_MGWR) == true);
+  fail_unless(dat.start_deleting_all_if_possible("root", 0x20) == true);
   fail_unless(dat.start_deleting_all_if_possible("dbeer", 0) == false);
-  fail_unless(dat.start_deleting_all_if_possible("root", ATR_DFLAG_MGWR) == false);
+  fail_unless(dat.start_deleting_all_if_possible("root", 0x20) == false);
   fail_unless(dat.currently_deleting_all("dbeer", 0) == true);
-  fail_unless(dat.currently_deleting_all("root", ATR_DFLAG_MGWR) == true);
+  fail_unless(dat.currently_deleting_all("root", 0x20) == true);
   dat.done_deleting_all("dbeer", 0);
-  dat.done_deleting_all("root", ATR_DFLAG_MGWR);
+  dat.done_deleting_all("root", 0x20);
   fail_unless(dat.currently_deleting_all("dbeer", 0) == false);
-  fail_unless(dat.currently_deleting_all("root", ATR_DFLAG_MGWR) == false);
+  fail_unless(dat.currently_deleting_all("root", 0x20) == false);
   }
 END_TEST
 

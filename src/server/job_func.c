@@ -142,7 +142,6 @@
 #include "portability.h"
 #include "array.h"
 #include "pbs_job.h"
-#include "resizable_array.h"
 #include "svr_func.h" /* get_svr_attr_* */
 #include "issue_request.h" /* release_req */
 #include "ji_mutex.h"
@@ -176,8 +175,8 @@ int issue_signal(job **, const char *, void(*)(batch_request *), void *, char *)
 static void job_init_wattr(job *);
 
 /* Global Data items */
-struct all_jobs        alljobs;
-extern struct all_jobs array_summary;
+all_jobs        alljobs;
+extern all_jobs array_summary;
 
 int check_job_log_started = 0;
 
@@ -491,7 +490,7 @@ int job_abt(
           if (depend_on_term(pjob) == PBSE_JOBNOTFOUND)
             {
             pjob = NULL;
-            pjob_mutex.set_lock_on_exit(false);
+            pjob_mutex.set_unlock_on_exit(false);
             }
           }
         
@@ -552,7 +551,7 @@ int job_abt(
       if (depend_on_term(pjob) == PBSE_JOBNOTFOUND)
         {
         pjob = NULL;
-        pjob_mutex.set_lock_on_exit(false);
+        pjob_mutex.set_unlock_on_exit(false);
         }
       /* pjob_mutex managed mutex already points to pjob->ji_mutex. Nothing to do */
       }
@@ -587,7 +586,7 @@ int job_abt(
     }
 
   if (pjob == NULL)
-    pjob_mutex.set_lock_on_exit(false);
+    pjob_mutex.set_unlock_on_exit(false);
 
   return(rc);
   }  /* END job_abt() */
@@ -1122,7 +1121,7 @@ void *job_clone_wt(
   job                *pjobclone;
   char               *jobid;
   int                 i;
-  int                 prev_index = -1;
+  char                *prev_job_id = NULL;
   int                 actual_job_count = 0;
   int                 newstate;
   int                 newsub;
@@ -1199,7 +1198,8 @@ void *job_clone_wt(
         }
 
       mutex_mgr clone_mgr(pjobclone->ji_mutex, true);
-      svr_evaljobstate(pjobclone, &newstate, &newsub, 1);
+
+      svr_evaljobstate(*pjobclone, newstate, newsub, 1);
 
       /* do this so that  svr_setjobstate() doesn't alter sv_jobstates,
        * these are set later in svr_enquejob() */
@@ -1213,10 +1213,10 @@ void *job_clone_wt(
 
       array_mgr.unlock();
 
-      if ((rc = svr_enquejob(pjobclone, FALSE, prev_index, false)))
+      if ((rc = svr_enquejob(pjobclone, FALSE, prev_job_id, false)))
         {
         /* XXX need more robust error handling */
-        clone_mgr.set_lock_on_exit(false);
+        clone_mgr.set_unlock_on_exit(false);
 
         if (rc != PBSE_JOB_RECYCLED)
           {
@@ -1224,7 +1224,10 @@ void *job_clone_wt(
           }
 
         if ((pa = get_array(arrayid)) == NULL)
+          {
+          if(prev_job_id != NULL) free(prev_job_id);
           return(NULL);
+          }
 
         array_mgr.mark_as_locked();
 
@@ -1234,8 +1237,12 @@ void *job_clone_wt(
       if ((pa = get_jobs_array(&pjobclone)) == NULL)
         {
         if (pjobclone == NULL)
-          clone_mgr.set_lock_on_exit(false);
+          {
+          /* pjobclone has been released. No mutex left to unlock */
+          clone_mgr.set_unlock_on_exit(false);
+          }
 
+        if(prev_job_id != NULL) free(prev_job_id);
         return(NULL);
         }
       
@@ -1248,22 +1255,32 @@ void *job_clone_wt(
         svr_job_purge(pjobclone);
         
         if ((pa = get_array(arrayid)) == NULL)
+          {
+          if(prev_job_id != NULL) free(prev_job_id);
           return(NULL);
+          }
 
         array_mgr.mark_as_locked();
         
         continue;
         }
       
-      prev_index = get_jobs_index(&alljobs, pjobclone);
+      if(prev_job_id != NULL) free(prev_job_id);
+      prev_job_id = NULL;
+      alljobs.lock();
+      if(alljobs.find(pjobclone->ji_qs.ji_jobid) != NULL)
+        {
+        prev_job_id = strdup(pjobclone->ji_qs.ji_jobid);
+        }
+      alljobs.unlock();
       
       pa->ai_qs.num_cloned++;
       
       rn->start++;
       
       /* index below 0 means the job no longer exists */
-      if (prev_index < 0)
-        clone_mgr.set_lock_on_exit(false);
+      if (prev_job_id == NULL)
+        clone_mgr.set_unlock_on_exit(false);
       }  /* END for (i) */
 
     if (rn->start > rn->end)
@@ -1273,6 +1290,9 @@ void *job_clone_wt(
       }
     }    /* END while (loop) */
       
+  if(prev_job_id != NULL) free(prev_job_id);
+  prev_job_id = NULL;
+
   array_save(pa);
 
   /* scan over all the jobs in the array and unset the hold */
@@ -1318,7 +1338,7 @@ void *job_clone_wt(
         }
       
       pjob->ji_modified = TRUE;
-      svr_evaljobstate(pjob, &newstate, &newsub, 1);
+      svr_evaljobstate(*pjob, newstate, newsub, 1);
       svr_setjobstate(pjob, newstate, newsub, FALSE);
 
        /*
@@ -1349,7 +1369,10 @@ void *job_clone_wt(
          }
        }
 
-      pjob->ji_commit_done = 1;
+      if(pjob != NULL) //The call to get_jobs_queue call set pjob to NULL.
+        {
+        pjob->ji_commit_done = 1;
+        }
       }
     }
   
@@ -1858,8 +1881,8 @@ int svr_job_purge(
   if ((job_has_arraystruct == FALSE) || (job_is_array_template == TRUE))
     if (remove_job(&array_summary,pjob) == PBSE_JOB_RECYCLED)
       {
-      /* PBSE_JOB_RECYCLED means the job is gone */
-      pjob_mutex.set_lock_on_exit(false);
+      /* PBSE_JOB_RECYCLED means the job is gone. remove_job alreadly unlocked pjob->ji_mutex */
+      pjob_mutex.set_unlock_on_exit(false); 
       return(PBSE_NONE);
       }
 
@@ -1901,7 +1924,7 @@ int svr_job_purge(
       }
     else
       {
-      pjob_mutex.set_lock_on_exit(false);
+      pjob_mutex.set_unlock_on_exit(false);
       return(PBSE_JOBNOTFOUND);
       }
     }
@@ -1928,7 +1951,7 @@ int svr_job_purge(
       if (pjob->ji_being_recycled == FALSE)
         {
         job_free(pjob, TRUE);
-        pjob_mutex.set_lock_on_exit(false);
+        pjob_mutex.set_unlock_on_exit(false);  /* job_free will release lock */
         }
       else
         pjob_mutex.unlock();
@@ -1937,9 +1960,10 @@ int svr_job_purge(
   else
     {
     job_free(pjob, TRUE);
-    pjob_mutex.set_lock_on_exit(false);
+    pjob_mutex.set_unlock_on_exit(false); /* job_free will release lock */
     }
 
+  /* pjob->ji_mutex is unlocked at this point */
   /* delete the script file */
   if ((job_has_arraystruct == FALSE) || 
       (job_is_array_template == TRUE))
@@ -2084,7 +2108,7 @@ job_array *get_jobs_array(
     }
 
   mutex_mgr job_mutex(pjob->ji_mutex,true);
-  job_mutex.set_lock_on_exit(false);
+  job_mutex.set_unlock_on_exit(false);
 
   strcpy(jobid, pjob->ji_qs.ji_jobid);
 

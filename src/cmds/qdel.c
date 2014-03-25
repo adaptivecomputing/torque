@@ -60,7 +60,7 @@ int main(
           break;
           }
 
-        strcpy(extend, DELASYNC);
+        snprintf(extend, sizeof(extend), "%s", DELASYNC);
 
         break;
 
@@ -91,7 +91,7 @@ int main(
           break;
           }
 
-        strncpy(extend, optarg, sizeof(extend));
+        snprintf(extend, sizeof(extend), "%s", optarg);
 
         break;
 
@@ -104,9 +104,7 @@ int main(
           break;
           }
 
-        strcpy(extend, DELPURGE);
-
-        strcat(extend, "1");
+        snprintf(extend, sizeof(extend), "%s1", DELPURGE);
 
         break;
 
@@ -170,9 +168,7 @@ int main(
           pc++;
           }
 
-        strcpy(extend, DELDELAY);
-
-        strcat(extend, optarg);
+        snprintf(extend, sizeof(extend), "%s%s", DELDELAY, optarg);
 
         break;
 
@@ -186,7 +182,7 @@ int main(
 
   if (purge_completed)
     {
-    strcpy(server_out,pbs_default());
+    snprintf(server_out, sizeof(server_out), "%s", pbs_default());
     goto cnt;
     }
 
@@ -247,23 +243,21 @@ cnt:
     if (stat &&
         (any_failed != PBSE_UNKJOBID))
       {
-      prt_job_err((char *)"qdel", connect, job_id_out);
-      }
-    else if (stat && 
-             (any_failed != PBSE_UNKJOBID) &&
-             !located)
-      {
-      located = TRUE;
-
-      if (locate_job(job_id_out, server_out, rmt_server))
+      if (!located)
         {
-        pbs_disconnect(connect);
+        located = TRUE;
 
-        strcpy(server_out, rmt_server);
+        if (locate_job(job_id_out, server_out, rmt_server))
+          {
+          pbs_disconnect(connect);
 
-        goto cnt;
+          strcpy(server_out, rmt_server);
+
+          goto cnt;
+          }
+
         }
-
+        
       prt_job_err((char *)"qdel", connect, job_id_out);
       }
 

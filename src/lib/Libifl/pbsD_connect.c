@@ -181,10 +181,10 @@ char *pbs_get_server_list(void)
 
   {
   FILE *fd;
-  char *pn;
   char *server;
   char tmp[1024];
-  int len;
+  std::string local_server_list;
+  std::size_t pos;
 
   if (got_dflt != TRUE)
     {
@@ -212,20 +212,20 @@ char *pbs_get_server_list(void)
         return(server_list);
         }
 
-      strcpy(server_list, tmp);
-      if ((pn = strchr(server_list, (int)'\n')))
-        * pn = '\0';
+      local_server_list = tmp;
+      if ((pos = local_server_list.find("\n")) != std::string::npos)
+        local_server_list.erase(pos);
 
       while(fgets(tmp, sizeof(tmp), fd))
         {
-        strcat(server_list, ",");
-        strcat(server_list, tmp);
-        len = strlen(server_list);
-        if (server_list[len-1] == '\n')
-          {
-          server_list[len-1] = '\0';
-          }
+        local_server_list += ",";
+        local_server_list += tmp;
+      
+        if ((pos = local_server_list.find("\n")) != std::string::npos)
+          local_server_list.erase(pos);
         }
+
+      snprintf(server_list, sizeof(server_list), "%s", local_server_list.c_str());
 
       fclose(fd);
       }
@@ -276,8 +276,8 @@ char *pbs_default(void)
 
   if (cp)
     {
-    strcpy(dflt_server, cp);
-    strcpy(server_name, cp);
+    snprintf(dflt_server, sizeof(dflt_server), "%s", cp);
+    snprintf(server_name, sizeof(server_name), "%s", cp);
     }
 
   return(server_name);
@@ -310,8 +310,8 @@ char *pbs_fbserver(void)
 
   if (cp)
     {
-    strcpy(fb_server, cp);
-    strcpy(server_name, cp);
+    snprintf(fb_server, sizeof(fb_server), "%s", cp);
+    snprintf(server_name, sizeof(server_name), "%s", cp);
     }
 
   return(server_name);
@@ -1366,7 +1366,7 @@ int pbs_disconnect(
   int  sock;
 
   if ((connect < 0) ||
-      (connect > PBS_NET_MAX_CONNECTIONS))
+      (connect >= PBS_NET_MAX_CONNECTIONS))
     return(-1);
 
   pthread_mutex_lock(connection[connect].ch_mutex);
@@ -1377,7 +1377,10 @@ int pbs_disconnect(
   pbs_disconnect_socket(sock);
 
   if (connection[connect].ch_errtxt != (char *)NULL)
+    {
     free(connection[connect].ch_errtxt);
+    connection[connect].ch_errtxt = (char *)NULL;
+    }
 
   connection[connect].ch_errno = 0;
   connection[connect].ch_inuse = FALSE;

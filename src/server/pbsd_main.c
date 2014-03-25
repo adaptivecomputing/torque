@@ -189,8 +189,8 @@ static void lock_out_ha();
 extern hello_container failures;
 extern int             svr_chngNodesfile;
 extern int             svr_totnodes;
-extern struct all_jobs alljobs;
-extern int run_change_logs;
+extern all_jobs        alljobs;
+extern int             run_change_logs;
 
 /* External Functions */
 
@@ -254,6 +254,8 @@ unsigned int            pbs_server_port_dis;
 
 bool                    auto_send_hierarchy = true;
 mom_hierarchy_t        *mh;
+
+extern bool            exit_called;
 
 listener_connection     listener_conns[MAXLISTENERS];
 int                     queue_rank = 0;
@@ -958,9 +960,13 @@ static int start_hot_jobs(void)
   int  ct = 0;
   job *pjob;
 
-  int  iter = -1;
+  all_jobs_iterator  *iter = NULL;
 
-  while ((pjob = next_job(&alljobs,&iter)) != NULL)
+  alljobs.lock();
+  iter = alljobs.get_iterator();
+  alljobs.unlock();
+
+  while ((pjob = next_job(&alljobs,iter)) != NULL)
     {
 
     if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_QUEUED) &&
@@ -1022,7 +1028,7 @@ void *handle_queue_routing_retries(
   {
   pbs_queue *pque;
   char       *queuename = NULL;
-  int        iter = -1;
+  all_queues_iterator *iter = NULL;
   int        rc;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
   pthread_attr_t  routing_attr;
@@ -1044,9 +1050,13 @@ void *handle_queue_routing_retries(
     return(NULL);
     }
 
+  svr_queues.lock();
+  iter = svr_queues.get_iterator();
+  svr_queues.unlock();
+
   while(1)
     {
-    while ((pque = next_queue(&svr_queues, &iter)) != NULL)
+    while ((pque = next_queue(&svr_queues, iter)) != NULL)
       {
       if (pque->qu_qs.qu_type == QTYPE_RoutePush)
         {
@@ -1091,6 +1101,9 @@ void *handle_queue_routing_retries(
       unlock_queue(pque, __func__, NULL, LOGLEVEL);
       }
     sleep(route_retry_interval);
+    svr_queues.lock();
+    iter->reset(); //Start over again.
+    svr_queues.unlock();
     }
 
   pthread_attr_destroy(&routing_attr); /* we don't care if the succeeds or fails */
@@ -1261,7 +1274,7 @@ void main_loop(void)
   long          state = SV_STATE_DOWN;
   time_t        waittime = 5;
   job          *pjob;
-  int           iter;
+  all_jobs_iterator  *iter = NULL;
   long          when = 0;
   long          timeout = 0;
   long          log = 0;
@@ -1494,10 +1507,12 @@ void main_loop(void)
 
   track_save(NULL);                     /* save tracking data */
 
-  iter = -1;
+  alljobs.lock();
+  iter = alljobs.get_iterator();
+  alljobs.unlock();
 
   /* save any jobs that need saving */
-  while ((pjob = next_job(&alljobs, &iter)) != NULL)
+  while ((pjob = next_job(&alljobs, iter)) != NULL)
     {
     if (pjob->ji_modified)
       job_save(pjob, SAVEJOB_FULL, 0);
@@ -1616,7 +1631,6 @@ int main(
   int          i;
   int          local_errno = 0;
   char         lockfile[MAXPATHLEN + 1];
-  char        *pc = NULL;
   char         EMsg[MAX_LINE];
   char         tmpLine[MAX_LINE];
   char         log_buf[LOCAL_LOG_BUF_SIZE];
@@ -1792,7 +1806,7 @@ int main(
   if (HALockUpdateTime == 0)
     HALockUpdateTime = PBS_LOCKFILE_UPDATE_TIME;
 
-  if ((pc = getenv("PBSDEBUG")) != NULL)
+  if (getenv("PBSDEBUG") != NULL)
     {
     DEBUGMODE = 1;
     TDoBackground = 0;
@@ -1948,6 +1962,7 @@ int main(
 
   /* cleans up memory allocated by the xml library */
   xmlCleanupParser(); /* must be called the latest possible */
+  exit_called = true;
   exit(0);
   }  /* END main() */
 

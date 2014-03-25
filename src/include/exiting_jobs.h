@@ -84,20 +84,13 @@
 
 #include <stdlib.h>
 
-#include "hash_map.h"
 #include "pbs_job.h"
+#include "container.hpp"
 
 
 #define EXITING_RETRY_TIME         20
 #define EXITING_SLEEP_TIME         10
 #define MAX_EXITING_RETRY_ATTEMPTS 10
-
-
-
-extern hash_map *exiting_jobs_info;
-
-
-
 
 typedef struct job_exiting_retry_info
   {
@@ -106,6 +99,8 @@ typedef struct job_exiting_retry_info
   char            jobid[PBS_MAXSVRJOBID+1];
   } job_exiting_retry_info;
 
+  extern  container::item_container<job_exiting_retry_info *>                 exiting_jobs_info;
+  typedef container::item_container<job_exiting_retry_info *>::item_iterator  exiting_jobs_info_iterator;
 
 
 

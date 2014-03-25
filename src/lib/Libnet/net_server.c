@@ -476,13 +476,12 @@ int init_network(
   return(PBSE_NONE);
   }  /* END init_network() */
 
+/* ping_trqauthd - Send a "ping" request to trqauthd to see 
+   if it is up.
 
-
-/* 
- * ping_trqauthd 
- * Send a "ping" request to trqauthd to see if it is up.
- * @param unix_socket_name - the name to be passed to socket_connect_unix
- * @return 0 if trqauthd is up, PBSE_BADHOST if trqauthd is no responding
+RETURN:
+   0 if trqauthd is up
+   PBSE_BADHOST if trqauthd is no responding
  */
 
 int ping_trqauthd(
@@ -493,7 +492,7 @@ int ping_trqauthd(
   int   rc;
   int   local_socket;
   int   write_buf_len;
-  char  *err_msg;
+  char  *err_msg = NULL;
   char  write_buf[MAX_LINE];
   char  *read_buf = NULL;
   long long   ccode;
@@ -502,28 +501,37 @@ int ping_trqauthd(
   sprintf(write_buf, "%d|", TRQ_PING_SERVER);
   write_buf_len = strlen(write_buf);
 
-  if ((local_socket = socket_get_unix()) <= 0)
+  if ((local_socket = socket_get_unix()) < 0)
     {
     fprintf(stderr, "socket_get_unix error\n");
     return(PBSE_SOCKET_FAULT);
     }
+
   rc = socket_connect_unix(local_socket, unix_socket_name, &err_msg);
+
+  if (err_msg != NULL)
+    free(err_msg);
+
   if (rc != 0)
     {
     /* If we are here we could not connect to trqauthd. That is ok though. That tells us trqauthd is not up.  */
+    socket_close(local_socket);
     return(rc);
     }
   else if ((rc = socket_write(local_socket, write_buf, write_buf_len)) != write_buf_len)
     {
+    socket_close(local_socket);
     rc = PBSE_SOCKET_WRITE;
     fprintf(stderr, "socket_write error\n");
     }
   else if ((rc = socket_read_num(local_socket, &ccode)) != PBSE_NONE)
     {
+    socket_close(local_socket);
     fprintf(stderr, "socket_read_num error\n");
     }
   else if ((rc = parse_daemon_response(ccode, read_buf_len, read_buf)) != PBSE_NONE)
     {
+    socket_close(local_socket);
     fprintf(stderr, "parse_daemon_response error %lld %s\n", ccode, pbse_to_txt(ccode));
     }
 
@@ -531,9 +539,7 @@ int ping_trqauthd(
     socket_close(local_socket);
 
   return(rc);
-  } /* END ping_trqauthd() */
-
-
+  }
 
 /**
  * Check to see if the unix domain socket file exists for trqauthd. If

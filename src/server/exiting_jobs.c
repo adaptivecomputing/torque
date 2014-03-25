@@ -115,7 +115,14 @@ int record_job_as_exiting(
   strcpy(jeri->jobid, pjob->ji_qs.ji_jobid);
   jeri->last_attempt = time(NULL);
 
-  return(add_to_hash_map(exiting_jobs_info, jeri, jeri->jobid));
+  exiting_jobs_info.lock();
+  if(!exiting_jobs_info.insert(jeri,jeri->jobid))
+    {
+    exiting_jobs_info.unlock();
+    return ENOMEM;
+    }
+  exiting_jobs_info.unlock();
+  return PBSE_NONE;
   } /* END record_job_as_exiting() */
 
 
@@ -125,14 +132,17 @@ int remove_from_exiting_list_by_jobid(
   const char *jobid)
 
   {
-  pthread_mutex_lock(exiting_jobs_info->hm_mutex);
+  exiting_jobs_info.lock();
   
-  job_exiting_retry_info *jeri = (job_exiting_retry_info*)get_remove_from_hash_map(exiting_jobs_info, jobid, true);
+  job_exiting_retry_info *jeri = exiting_jobs_info.find(jobid);
 
   if (jeri != NULL)
+    {
+    exiting_jobs_info.remove(jobid);
     free(jeri);
+    }
   
-  pthread_mutex_unlock(exiting_jobs_info->hm_mutex);
+  exiting_jobs_info.unlock();
 
   return(PBSE_NONE);
   } /* END remove_from_exiting_list_by_jobid() */
@@ -174,7 +184,7 @@ int retry_job_exit(
 
 char *get_next_retryable_jobid(
 
-  int *iter)
+  exiting_jobs_info_iterator **iter)
 
   {
   job_exiting_retry_info *jeri;
@@ -182,33 +192,38 @@ char *get_next_retryable_jobid(
   time_t                  time_now = time(NULL);
   char                    log_buf[LOCAL_LOG_BUF_SIZE];
 
-  pthread_mutex_lock(exiting_jobs_info->hm_mutex);
-  mutex_mgr exit_mgr(exiting_jobs_info->hm_mutex, true);
-
-  while ((jeri = (job_exiting_retry_info *)next_from_hash_map(exiting_jobs_info, iter, true)) != NULL)
+  exiting_jobs_info.lock();
+  if(*iter == NULL)
     {
+    *iter = exiting_jobs_info.get_iterator();
+    }
+
+  while ((jeri = (*iter)->get_next_item()) != NULL)
+    { 
     if (time_now - jeri->last_attempt > EXITING_RETRY_TIME)
-      {
+      { 
       if (jeri->attempts >= MAX_EXITING_RETRY_ATTEMPTS)
         {
+        /* We will need to use the jobid after jeri is freed. Save the jobid */
         std::string jid(jeri->jobid);
-        remove_from_hash_map(exiting_jobs_info, jeri->jobid, true);
+        exiting_jobs_info.remove(jeri->jobid);
         free(jeri);
-        exit_mgr.unlock(); //Don't hold on to a mutex when trying to lock another.
+        exiting_jobs_info.unlock();
         if ((pjob = svr_find_job((char *)jid.c_str(), TRUE)) != NULL)
           {
           snprintf(log_buf, sizeof(log_buf), "Job %s has had its exiting re-tried %d times, purging.",
-            jeri->jobid, MAX_EXITING_RETRY_ATTEMPTS);
+          jid.c_str(), MAX_EXITING_RETRY_ATTEMPTS);
           log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
 
           force_purge_work(pjob);
           }
-        exit_mgr.lock();
+        exiting_jobs_info.lock();
         }
       else
         {
         jeri->attempts++;
         jeri->last_attempt = time_now;
+        exiting_jobs_info.unlock();
 
         char *jobid = strdup(jeri->jobid);
         return(jobid);
@@ -216,6 +231,7 @@ char *get_next_retryable_jobid(
       }
     }
 
+  exiting_jobs_info.unlock();
   return(NULL);
   } /* END get_next_retryable_jobid() */
 
@@ -230,7 +246,7 @@ char *get_next_retryable_jobid(
 int check_exiting_jobs()
 
   {
-  int                     iter = -1;
+  exiting_jobs_info_iterator  *iter = NULL;
   char                   *jobid;
   job                    *pjob;
   
@@ -259,6 +275,9 @@ int check_exiting_jobs()
         }
       }
     } /* END loop over exiting job information */
+
+  if (iter != NULL)
+    delete iter;
 
   return(PBSE_NONE);
   } /* END check_exiting_jobs() */

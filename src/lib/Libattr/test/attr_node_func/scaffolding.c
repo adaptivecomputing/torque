@@ -43,3 +43,10 @@ char *parse_comma_string(char *start, char **ptr)
   }
 
 void populate_range_string_from_slot_tracker(execution_slot_tracker &est, std::string &range) {}
+
+
+int ctnodes(char *spec)
+  {
+  fprintf(stderr, "The call to append_link needs to be mocked!!\n");
+  exit(1);
+  }

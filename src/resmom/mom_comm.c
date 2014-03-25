@@ -134,6 +134,7 @@
 #include "mom_config.h"
 #include <string>
 #include <vector>
+#include "container.hpp"
 
 
 #define IM_FINISHED                 1
@@ -162,8 +163,7 @@ extern int           multi_mom;
 char                *stat_string_aggregate = NULL;
 unsigned int         ssa_index;
 unsigned long        ssa_size;
-resizable_array     *received_statuses; /* holds information on node's whose statuses we've received */
-hash_table_t        *received_table;
+container::item_container<received_node *> received_statuses; /* holds information on node's whose statuses we've received */
 int                  updates_waiting_to_send = 0;
 extern time_t       LastServerUpdateTime;
 extern struct connection svr_conn[];
@@ -4248,6 +4248,9 @@ int handle_im_obit_task_response(
   
   if (ptask != NULL)
     {
+    if (is_ptask_corrupt(ptask->ti_chan))
+       return(IM_FAILURE);
+
     tm_reply(ptask->ti_chan, TM_OKAY, event);
     
     diswsi(ptask->ti_chan, exitval);
@@ -4928,8 +4931,8 @@ int process_error_reply(
 
   {
   int   errcode;
-  int   ret;
-  int   rc;
+  int   ret = PBSE_NONE;
+  int   rc = PBSE_NONE;
       
   errcode = disrsi(chan, &ret);
 
@@ -5052,7 +5055,7 @@ int process_valid_response(
   fwdevent             efwd)
 
   {
-  int ret;
+  int ret = PBSE_NONE;
 
   /* Sender is another MOM telling me that a request has completed successfully */
   svr_conn[chan->sock].cn_stay_open = FALSE;
@@ -5491,7 +5494,7 @@ int process_valid_intermediate_response(
   int                 command)
 
   {
-  int ret;
+  int ret = PBSE_NONE;
 
   if (((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) == 0) &&
       (am_i_mother_superior(*pjob) == false))
@@ -8666,7 +8669,6 @@ received_node *get_received_node_entry(
 
   {
   received_node  *rn;
-  int             index;
   char           *hostname;
 
   if (str == NULL)
@@ -8675,9 +8677,11 @@ received_node *get_received_node_entry(
   hostname = str + strlen("node=");
 
   /* get the old node for this table if present. If not, create a new one */
-  index = get_value_hash(received_table, hostname);
+  received_statuses.lock();
+  rn = received_statuses.find(hostname);
+  received_statuses.unlock();
   
-  if (index == -1)
+  if (rn == NULL)
     {
 
     rn = (received_node *)calloc(1, sizeof(received_node));
@@ -8703,21 +8707,17 @@ received_node *get_received_node_entry(
       }
 
     /* add the new node to the received status list */
-    index = insert_thing(received_statuses, rn);
-
-    if (index == -1)
+    received_statuses.lock();
+    if(!received_statuses.insert(rn,rn->hostname))
       log_err(ENOMEM, __func__, "No memory to resize the received_statuses array...SYSTEM FAILURE\n");
     else
       {
-      add_hash(received_table, index, rn->hostname);
-
       send_update_soon();
       }
+    received_statuses.unlock();
     }
   else
     {
-    rn = (received_node *)received_statuses->slots[index].item;
-    
     /* make sure we aren't hold 2 statuses for the same node */
     rn->statuses.clear();
 
@@ -8826,5 +8826,32 @@ int read_status_strings(
 
 
 
+int is_ptask_corrupt(
+
+  struct tcp_chan *chan) /* Input */
+
+  {
+  char log_buf[LOCAL_LOG_BUF_SIZE];
+  struct tcpdisbuf *tp = &chan->writebuf;
+
+  if (tp->tdis_bufsize == 0)
+    {
+    snprintf(log_buf,sizeof(log_buf),
+      "write buffer's tdis_bufsize was unexpectely found with a value of 0");
+    log_err(-1, __func__, log_buf);
+    return 1;
+    }
+
+  tp = &chan->readbuf;
+  if (tp->tdis_bufsize == 0)
+    {
+    snprintf(log_buf,sizeof(log_buf),
+      "read buffer's tdis_bufsize was unexpectely found with a value of 0");
+    log_err(-1, __func__, log_buf);
+    return -1;
+    }
+
+  return 0;
+  }
 /* END mom_comm.c */
 

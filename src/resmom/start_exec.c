@@ -3035,6 +3035,7 @@ void handle_reservation(
     {
     char *exec_str;
     int   mppdepth = 0;
+    char *mppnodes = NULL;
 
     if (pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str != NULL)
       exec_str = pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str;
@@ -3061,6 +3062,18 @@ void handle_reservation(
     if ((pjob->ji_wattr[JOB_ATR_nppcu].at_flags & ATR_VFLAG_SET))
       nppcu = pjob->ji_wattr[JOB_ATR_nppcu].at_val.at_long;
 
+    /* get the mppnodes if it exists */
+    pres = find_resc_entry(
+             &pjob->ji_wattr[JOB_ATR_resource],
+             find_resc_def(svr_resc_def, "mppnodes", svr_resc_size));
+
+    if ((pres != NULL) &&
+        (pres->rs_value.at_val.at_str != NULL))
+      {
+      mppnodes = strdup(pres->rs_value.at_val.at_str);
+      }
+    
+
     j = create_alps_reservation(exec_str,
           pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
           pjob->ji_qs.ji_jobid,
@@ -3070,7 +3083,10 @@ void handle_reservation(
           use_nppn,
           nppcu,
           mppdepth,
-          &rsv_id);
+          &rsv_id,
+          mppnodes);
+
+    if(mppnodes != NULL) free(mppnodes);
     
     if (rsv_id != NULL)
       {
@@ -6213,7 +6229,7 @@ void create_cpuset_reservation_if_needed(
 
     // make sure the memory is evenly set over the job.
     double    mem_pcnt = ((double)cpu_count) / pjob.ji_numvnod;
-    mem_requested = mem_requested * mem_pcnt;
+    mem_requested = mem_requested * (long long)mem_pcnt;
 
     internal_layout.reserve(cpu_count, mem_requested, pjob.ji_qs.ji_jobid);
     }
@@ -6826,10 +6842,10 @@ char *std_file_name(
 
   {
   static char  path[MAXPATHLEN + 1];
+  std::string  stack_path;
   char         key;
-  int          len;
   char        *pd;
-  const char        *suffix;
+  const char  *suffix;
   char        *jobpath = NULL;
 #ifdef QSUB_KEEP_NO_OVERRIDE
   char        *pt;
@@ -6950,7 +6966,7 @@ char *std_file_name(
 
     if (spoolasfinalname == FALSE)
       {
-      strcpy(path, pjob->ji_grpcache->gc_homedir);
+      stack_path = pjob->ji_grpcache->gc_homedir;
 
       pd = strrchr(pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str, '/');
 
@@ -6958,7 +6974,7 @@ char *std_file_name(
         {
         pd = pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str;
 
-        strcat(path, "/");
+        stack_path += "/";
         }
 
 
@@ -6986,29 +7002,26 @@ char *std_file_name(
 
           if (pt == NULL)
             {
-            strcpy(path, jobpath);
+            stack_path = jobpath;
             }
           else
             {
-            strcpy(path, pt + 1);
+            stack_path = pt + 1;
             }
           }
         }
 #endif
 
-      strcat(path, pd);             /* start with the job name */
-
-      len = strlen(path);
-
-      *(path + len++) = '.';          /* the dot        */
-      *(path + len++) = key;     /* the letter     */
+      stack_path += pd;             /* start with the job name */
+      stack_path += ".";
+      stack_path += key;
 
       pd = pjob->ji_qs.ji_jobid;      /* the seq_number */
 
       while (isdigit((int)*pd))
-        *(path + len++) = *pd++;
+        stack_path += *pd++;
 
-      *(path + len) = '\0';
+      snprintf(path, sizeof(path), "%s", stack_path.c_str());
       } /* END if (spoolasfinalname == FALSE) */
 
     *keeping = 1;
@@ -7028,7 +7041,7 @@ char *std_file_name(
 
       if (!strcmp(jobpath, "/dev/null"))
         {
-        strcpy(path, "/dev/null");
+        snprintf(path, sizeof(path), "/dev/null");
 
         *keeping = 1;
 
@@ -7061,7 +7074,7 @@ char *std_file_name(
       if ((rcstat == 0) && (S_ISDIR(myspooldir.st_mode)))
         snprintf(path, sizeof(path), "%s", path_alt);
       else
-        strncat(path, "/", sizeof(path) - 1);
+        snprintf(path + strlen(path), sizeof(path) - strlen(path), "/");
 
       *keeping = 1;
 
@@ -7132,7 +7145,7 @@ char *std_file_name(
         }
       else
         {
-        strncat(path, "/", sizeof(path) - strlen(path) - 1);
+        snprintf(path + strlen(path), sizeof(path) - strlen(path), "/");
         }
 
       } /* END if (spoolasfinalname == FALSE) */
@@ -7142,9 +7155,11 @@ char *std_file_name(
 #endif /* NO_SPOOL_OUTPUT */
     if (spoolasfinalname == FALSE)
       {
-      strncat(path, pjob->ji_qs.ji_fileprefix, (sizeof(path) - strlen(path) - 1));
+      stack_path = path;
+      stack_path += pjob->ji_qs.ji_fileprefix;
+      stack_path += suffix;
 
-      strncat(path, suffix, (sizeof(path) - strlen(path) - 1));
+      snprintf(path, sizeof(path), "%s", stack_path.c_str());
 
       if (LOGLEVEL >= 10)
         {

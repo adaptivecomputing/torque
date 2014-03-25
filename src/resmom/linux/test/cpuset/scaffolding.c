@@ -7,6 +7,7 @@
 #include "pbs_nodes.h"
 #include "pbs_job.h"
 #include "pbs_config.h"
+#include "node_internals.hpp"
 
 int LOGLEVEL;
 
@@ -17,7 +18,6 @@ nodeboard node_boards[MAX_NODE_BOARDS];
 int       numa_index;
 #endif
 
-#ifdef PENABLE_LINUX26_CPUSETS
 int              memory_pressure_threshold = 0; /* 0: off, >0: check and kill */
 short            memory_pressure_duration  = 0; /* 0: off, >0: check and kill */
 int              MOMConfigUseSMT           = 1; /* 0: off, 1: on */
@@ -31,13 +31,19 @@ char             global_mems_string[MAXPATHLEN];
 
 int hwloc_bitmap_parselist(const char *buf, hwloc_bitmap_t map);
 int hwloc_bitmap_displaylist(char *buf, size_t buflen, hwloc_bitmap_t map);
-#endif
+node_internals   internal_layout;
 
 bool no_memory;
 
+extern bool check_event;
+extern void event_data(const char *d);
+
 void log_err(int l, const char *func_name, const char *msg) {}
 void log_ext(int a, const char *b, const char *c, int d) {}
-void log_event(int a, int b, const char *c, const char *d) {}
+void log_event(int a, int b, const char *c, const char *d)
+  {
+  if(check_event) event_data(d);
+  }
 
 job *mom_find_job(char *jobid) 
   {
@@ -77,6 +83,8 @@ resource_def *find_resc_def(resource_def *svr_resc, char const * name, int max_i
   }
 
 #ifdef PENABLE_LINUX26_CPUSETS
+
+#if 0
 int init_cpusets(void)
   {
   return 0;
@@ -157,6 +165,7 @@ void remove_logical_processor_if_requested(
   {
   return;
   }
+#endif
 
 int rmdir(const char *path) throw ()
   {

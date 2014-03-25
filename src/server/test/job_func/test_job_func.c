@@ -14,7 +14,7 @@ int fix_cray_exec_hosts(job *);
 int fix_external_exec_hosts(job *);
 int change_external_job_name(job *);
 int split_job(job *);
-job *find_job_by_array(struct all_jobs *, char *jobid, int get_subjob, bool locked);
+job *find_job_by_array(all_jobs *, char *jobid, int get_subjob, bool locked);
 
 char buf[4096];
 
@@ -314,9 +314,8 @@ END_TEST
 
 START_TEST(find_job_by_array_test)
   {
-  struct all_jobs alljobs;
-  struct job* result = find_job_by_array(NULL,(char *)"",0,false);
-  initialize_all_jobs_array(&alljobs);
+  all_jobs alljobs;
+  struct job* result = find_job_by_array(NULL,(char *)"",0, false);
 
   result = find_job_by_array(NULL,(char *)"",0,false);
   fail_unless(result == NULL, "NULL all jobs input fail");

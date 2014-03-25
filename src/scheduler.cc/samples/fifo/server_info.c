@@ -451,11 +451,11 @@ server_info *new_server_info()
 
   sinfo -> num_nodes = 0;
 
-  sinfo -> max_run = INFINITY;
+  sinfo -> max_run = INFINITY_VAL;
 
-  sinfo -> max_user_run = INFINITY;
+  sinfo -> max_user_run = INFINITY_VAL;
 
-  sinfo -> max_group_run = INFINITY;
+  sinfo -> max_group_run = INFINITY_VAL;
 
   sinfo -> tokens = NULL;
 
@@ -480,7 +480,7 @@ resource *new_resource()
 
   resp -> next = NULL;
 
-  resp -> max = INFINITY;
+  resp -> max = INFINITY_VAL;
 
   resp -> assigned = UNSPECIFIED;
 

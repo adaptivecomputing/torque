@@ -32,8 +32,6 @@ int svr_job_purge(struct job *pjob, int keepSpoolFiles=0);
 
 struct job *svr_find_job(char *jobid, int get_subjob);
 
-int get_jobs_index(struct all_jobs *aj, struct job *pjob);
-
 struct job_array *get_jobs_array(struct job **pjob);
 
 struct pbs_queue *get_jobs_queue(struct job **pjob_ptr);

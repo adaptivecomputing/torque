@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
+#include <boost/ptr_container/ptr_vector.hpp>
 /* declarations/includes for Global Vars */
 #include "list_link.h" /* tlist_head, list_link */
 #include "net_connect.h"
@@ -17,10 +18,11 @@
 #include "batch_request.h" /* batch_request */
 #include "errno.h"
 #include "mom_func.h"
-#include "resizable_array.h"
+#include "mom_job_cleanup.h"
 
 int server_down;
-resizable_array *exiting_job_list;
+
+boost::ptr_vector<exiting_job_info> exiting_job_list;
 
 const char *PMOMCommand[] =
   {
@@ -65,10 +67,11 @@ tlist_head mom_polljobs; /* mom_main.c */
 char        *path_epiloguserp; /* mom_main.c */
 char        *path_epilogp; /* mom_main.c */
 attribute_def job_attr_def[10]; /* src/server/job_attr_def.c */
+bool exit_called = false;
 
 int tc = 0; /* Used for test routining */
 int func_num = 0;
-int exit_called = 0;
+int test_exit_called = 0;
 int ran_one = 0;
 int the_sock = 0;
 job *lastpjob = NULL;
@@ -77,7 +80,7 @@ int is_login_node;
 
 void exit_test(int num)
   {
-  exit_called = num;
+  test_exit_called = num;
   }
 
 void log_record(int eventtype, int objclass, const char *objname, const char *text)
@@ -1337,11 +1340,6 @@ int add_to_resend_things(resend_momcomm *mc)
 im_compose_info *create_compose_reply_info(char *jobid, char *cookie, hnodent *np, int command, tm_event_t event, tm_task_id taskid)
   {
   return(NULL);
-  }
-
-int insert_thing(resizable_array *ra, void *thing)
-  {
-  return(0);
   }
 
 int release_job_reservation(job *pjob)

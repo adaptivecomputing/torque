@@ -12,8 +12,9 @@
 #include "pbs_nodes.h" /* pbs_nodes, node_check_info, node_iterator, all_nodes */
 #include "attribute.h" /* svrattrl, struct  */
 #include "work_task.h"
+#include "id_map.hpp"
 
-#define HOST_NAME_MAX 255
+//#define HOST_NAME_MAX 255
 
 void write_compute_node_properties(struct pbsnode &reporter, FILE *nin);
 void add_to_property_list(std::stringstream &property_list, const char *token);
@@ -22,16 +23,11 @@ int cray_enabled;
 
 void initialize_allnodes(all_nodes *an, struct pbsnode *n1, struct pbsnode *n2)
   {
-  an->allnodes_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  an->ra = (resizable_array *)calloc(1, sizeof(resizable_array));
-  an->ra->slots = (slot *)calloc(4, sizeof(slot));
-
-  an->ra->slots[0].item = NULL;
-  an->ra->slots[0].next = 1;
-  an->ra->slots[1].item = n1;
-  an->ra->slots[1].next = 2;
-  an->ra->slots[2].item = n2;
-  an->ra->slots[2].next = 0;
+  an->lock();
+  an->clear();
+  if(n1 != NULL) an->insert(n1,n1->nd_name);
+  if(n2 != NULL) an->insert(n2,n2->nd_name);
+  an->unlock();
   }
 
 
@@ -71,7 +67,8 @@ START_TEST(write_compute_node_properties_test)
 
   node1.nd_name = strdup("bob");
   node2.nd_name = strdup("tom");
-  initialize_allnodes(&(reporter.alps_subnodes), &node1, &node2);
+  reporter.alps_subnodes = new all_nodes();
+  initialize_allnodes(reporter.alps_subnodes, &node1, &node2);
 
   add_prop(node1, "bob");
   add_prop(node1, "cray_compute");
@@ -97,6 +94,7 @@ START_TEST(write_compute_node_properties_test)
   line.clear();
   getline(myfile, line);
   fail_unless(line.size() == 0);
+  alps_reporter = NULL;
   }
 END_TEST
 
@@ -118,13 +116,8 @@ START_TEST(addr_ok_test)
   {
   pbs_net_t address = 0;
   struct pbsnode node;
-  pthread_mutex_t *mutex = allnodes.allnodes_mutex;
   int result;
   initialize_pbsnode(&node, NULL, NULL, 0, FALSE);
-
-  /* alloc mutex, use, restore */
-  allnodes.allnodes_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(allnodes.allnodes_mutex, NULL);
 
   result = addr_ok(address, NULL);
   fail_unless(result == 1, "NULL node input fail: %d", result);
@@ -132,33 +125,18 @@ START_TEST(addr_ok_test)
   result = addr_ok(address, &node);
   fail_unless(result == 1, "empty node input fail: %d", result);
 
-  free((void*)allnodes.allnodes_mutex);
-  allnodes.allnodes_mutex = mutex;
-  }
-END_TEST
-
-START_TEST(initialize_all_nodes_array_test)
-  {
-  struct all_nodes allnodes;
-  memset(&allnodes, 0, sizeof(allnodes));
-  initialize_all_nodes_array(&allnodes);
-  fail_unless(allnodes.ra != NULL, "all_nodes resizable_array was not initialized");
-  fail_unless(allnodes.ht != NULL, "all_nodes hash_table_t was not initialized");
-  fail_unless(allnodes.allnodes_mutex != NULL, "all_nodes pthread_mutex_t was not initialized");
   }
 END_TEST
 
 START_TEST(find_node_in_allnodes_test)
   {
   struct pbsnode *result = NULL;
-  struct all_nodes allnodes;
+  all_nodes allnodes;
   struct pbsnode test_node;
   const char *test_node_name = "test_node";
   test_node.nd_name = (char *)test_node_name;
 
   initialize_pbsnode(&test_node, NULL, NULL, 0, FALSE);
-  memset(&allnodes, 0, sizeof(allnodes));
-  initialize_all_nodes_array(&allnodes);
 
   result = find_node_in_allnodes(NULL, (char *)"nodename");
   fail_unless(result == NULL, "NULL input all_nodes struct pointer fail");
@@ -191,8 +169,9 @@ START_TEST(find_nodebyname_test)
 
   node1.nd_name = (char *)"bob";
   node2.nd_name = (char *)"tom";
+  alps_reporter->alps_subnodes = new all_nodes();
   initialize_allnodes(&allnodes, &node1, &node2);
-  initialize_allnodes(&alps_reporter->alps_subnodes, &node1, &node2);
+  initialize_allnodes(alps_reporter->alps_subnodes, &node1, &node2);
 
   cray_enabled = FALSE;
 
@@ -220,8 +199,9 @@ START_TEST(find_nodebyname_test)
   pnode = find_nodebyname(strdup("bob/0"));
   fail_unless(pnode == &node1, "couldn't find bob with the exec_host format");
 
-  allnodes.ra->slots[1].item = NULL;
-  allnodes.ra->slots[2].item = NULL;
+  allnodes.lock();
+  allnodes.clear();
+  allnodes.unlock();
 
   cray_enabled = TRUE;
 
@@ -237,6 +217,7 @@ START_TEST(find_nodebyname_test)
 
   pnode = find_nodebyname("george");
   fail_unless(pnode == NULL, "george found but doesn't exist");
+  alps_reporter = NULL;
 
   }
 END_TEST
@@ -374,13 +355,10 @@ END_TEST
 START_TEST(effective_node_delete_test)
   {
   struct pbsnode *node = NULL;
-  pthread_mutex_t *mutex;
 
-  initialize_all_nodes_array(&allnodes);
-  /* alloc mutex, use, restore */
-  mutex = allnodes.allnodes_mutex;
-  allnodes.allnodes_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(allnodes.allnodes_mutex, NULL);
+  allnodes.lock();
+  allnodes.clear();
+  allnodes.unlock();
 
   /*accidental null pointer delete call*/
   effective_node_delete(NULL);
@@ -393,8 +371,6 @@ START_TEST(effective_node_delete_test)
 
   fail_unless(node == NULL, "unsuccessfull node delition %d", node);
 
-  free((void*)allnodes.allnodes_mutex);
-  allnodes.allnodes_mutex = mutex;
   }
 END_TEST
 
@@ -696,21 +672,16 @@ START_TEST(create_partial_pbs_node_test)
   {
   int result = -1;
   char name[] = "name";
-  pthread_mutex_t *mutex;
-  initialize_all_nodes_array(&allnodes);
-  /* alloc mutex, use, restore */
-  mutex = allnodes.allnodes_mutex;
-  allnodes.allnodes_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(allnodes.allnodes_mutex, NULL);
+
+  allnodes.lock();
+  allnodes.clear();
+  allnodes.unlock();
 
   result = create_partial_pbs_node(NULL, 0, 0);
   fail_unless(result != PBSE_NONE, "NULL input name fail");
 
   result = create_partial_pbs_node(name, 0, 0);
   fail_unless(result == PBSE_NONE, "create_partial_pbs_node fail");
-
-  free((void*)allnodes.allnodes_mutex);
-  allnodes.allnodes_mutex = mutex;
   }
 END_TEST
 
@@ -721,12 +692,11 @@ START_TEST(next_node_test)
   struct node_iterator it;
   initialize_pbsnode(&node, NULL, NULL, 0, FALSE);
   memset(&it, 0, sizeof(it));
-  it.node_index = -1;
+  it.node_index = NULL;
 
-  initialize_all_nodes_array(&allnodes);
-  /* alloc mutex, use, restore */
-  allnodes.allnodes_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(allnodes.allnodes_mutex, NULL);
+  allnodes.lock();
+  allnodes.clear();
+  allnodes.unlock();
 
   result = next_node(NULL, &node, &it);
   fail_unless(result == NULL, "NULL input all_nodes fail");
@@ -740,18 +710,18 @@ START_TEST(next_node_test)
 
   result = next_node(&allnodes, &node, &it);
   fail_unless(result == NULL, "next_node fail");
-
-  free((void*)allnodes.allnodes_mutex);
   }
 END_TEST
 
 START_TEST(insert_node_test)
   {
-  struct all_nodes test_all_nodes;
+  all_nodes test_all_nodes;
   struct pbsnode node;
   int result = -1;
 
-  initialize_all_nodes_array(&test_all_nodes);
+  test_all_nodes.lock();
+  test_all_nodes.clear();
+  test_all_nodes.unlock();
   initialize_pbsnode(&node, NULL, NULL, 0, FALSE);
 
   result = insert_node(NULL, &node);
@@ -761,6 +731,11 @@ START_TEST(insert_node_test)
   fail_unless(result != PBSE_NONE, "NULL input pbsnode pointer fail");
 
   result = insert_node(&test_all_nodes, &node);
+  fail_unless(result != PBSE_NONE, "insert_node fail");
+
+  node.nd_name = (char *)"node_name";
+
+  result = insert_node(&test_all_nodes, &node);
   fail_unless(result == PBSE_NONE, "insert_node fail");
 
   }
@@ -768,11 +743,10 @@ END_TEST
 
 START_TEST(remove_node_test)
   {
-  struct all_nodes test_all_nodes;
+  all_nodes test_all_nodes;
   struct pbsnode node;
   int result = -1;
 
-  initialize_all_nodes_array(&test_all_nodes);
   initialize_pbsnode(&node, NULL, NULL, 0, FALSE);
 
   result = remove_node(NULL, &node);
@@ -789,12 +763,11 @@ END_TEST
 
 START_TEST(next_host_test)
   {
-  struct all_nodes test_all_nodes;
+  all_nodes test_all_nodes;
   struct pbsnode node;
-  int it = 0;
+  all_nodes_iterator *it = NULL;
   struct pbsnode *result = NULL;
 
-  initialize_all_nodes_array(&test_all_nodes);
   initialize_pbsnode(&node, NULL, NULL, 0, FALSE);
 
   result = next_host(NULL, &it, &node);
@@ -812,54 +785,20 @@ START_TEST(next_host_test)
   }
 END_TEST
 
-START_TEST(send_hierarchy_threadtask_test)
-  {
-  struct hello_info info;
-  memset(&info, 0, sizeof(info));
-  initialize_allnodes(&allnodes, NULL, NULL);
-
-  send_hierarchy_threadtask(NULL);
-  }
-END_TEST
-
 START_TEST(send_hierarchy_test)
   {
   int result = -1;
-  const char* name = "name";
 
   result = send_hierarchy(NULL, 0);
   fail_unless(result != PBSE_NONE, "NULL input name fail");
-
-  result = send_hierarchy((char *)name, 0);
-  fail_unless(result != PBSE_NONE, "send_hierarchy fail");
-  }
-END_TEST
-
-START_TEST(initialize_hello_container_test)
-  {
-  struct hello_container container;
-  struct hello_container* result = NULL;
-  memset(&container, 0, sizeof(container));
-
-  result = initialize_hello_container(NULL);
-  fail_unless(result == NULL, "NULL input fail");
-
-  result = initialize_hello_container(&container);
-  fail_unless(result == &container, "wrong returned pointer");
-  fail_unless(result->ra != NULL, "resizeble array was not initialized");
-
-  result = initialize_hello_container(result);
-  fail_unless(result->hello_mutex != NULL, "mutex was not initialized");
-
   }
 END_TEST
 
 START_TEST(add_hello_after_test)
   {
-  struct hello_container container;
+  hello_container container;
   int result = -1;
-  memset(&container, 0, sizeof(container));
-  initialize_hello_container(&container);
+  extern id_map node_mapper;
 
   result = add_hello_after(NULL, 1, 0);
   fail_unless(result != PBSE_NONE, "NULL input container pointer fail");
@@ -867,23 +806,46 @@ START_TEST(add_hello_after_test)
   result = add_hello_after(&container, 1, 0);
   fail_unless(result == PBSE_NONE, "add_hello_after fail");
 
+  node_mapper.get_new_id("one");
+  node_mapper.get_new_id("two");
+  node_mapper.get_new_id("three");
+  node_mapper.get_new_id("four");
+  node_mapper.get_new_id("five");
+
+  container.lock();
+  container.clear();
+  container.unlock();
+  add_hello(&container,0);
+  add_hello(&container,1);
+  add_hello(&container,2);
+  add_hello(&container,4);
+  add_hello_after(&container,3,2);
+
+  hello_info *pInfo = pop_hello(&container);
+  fail_unless((pInfo->id == 0),"Insert order fail.");
+  pInfo = pop_hello(&container);
+  fail_unless((pInfo->id == 1),"Insert order fail.");
+  pInfo = pop_hello(&container);
+  fail_unless((pInfo->id == 2),"Insert order fail.");
+  pInfo = pop_hello(&container);
+  fail_unless((pInfo->id == 3),"Insert order fail.");
+  pInfo = pop_hello(&container);
+  fail_unless((pInfo->id == 4),"Insert order fail.");
+
   }
 END_TEST
 
 START_TEST(add_hello_info_test)
   {
-  struct hello_container container;
-  struct hello_info info;
+  hello_container container;
+  hello_info info(1);
   int result = -1;
-  memset(&container, 0, sizeof(container));
-  memset(&info, 0, sizeof(info));
-  initialize_hello_container(&container);
 
   result = add_hello_info(NULL, &info);
   fail_unless(result != PBSE_NONE, "NULL input container pointer fail");
 
   result = add_hello_info(&container, NULL);
-  fail_unless(result == PBSE_NONE, "NULL input hello_info pointer fail");
+  fail_unless(result != PBSE_NONE, "NULL input hello_info pointer fail");
 
   result = add_hello_info(&container, &info);
   fail_unless(result == PBSE_NONE, "add_hello_info fail");
@@ -893,10 +855,8 @@ END_TEST
 
 START_TEST(pop_hello_test)
   {
-  struct hello_container container;
-  struct hello_info *result = NULL;
-  memset(&container, 0, sizeof(container));
-  initialize_hello_container(&container);
+  hello_container container;
+  hello_info *result = NULL;
 
   result = pop_hello(NULL);
   fail_unless(result == NULL, "NULL input container pointer fail");
@@ -908,50 +868,24 @@ END_TEST
 
 START_TEST(remove_hello_test)
   {
-  struct hello_container container;
+  hello_container container;
   int result = -1;
-  memset(&container, 0, sizeof(container));
-  initialize_hello_container(&container);
 
   result = remove_hello(NULL, 1);
   fail_unless(result != PBSE_NONE, "NULL input container pointer fail");
 
-  result = remove_hello(&container, 1);
-  fail_unless(result == PBSE_NONE, "add_hello_after fail");
+  result = remove_hello(&container, 2);
+  fail_unless(result == THING_NOT_FOUND, "add_hello_after fail");
 
   }
 END_TEST
 
-#if 0
-START_TEST(create_pbs_node_real_test)
-  {
-  char hostname[HOST_NAME_MAX+1];
-  int mask = 0;
-  fail_unless(gethostname(hostname, sizeof(hostname)) == 0, 
-    "failed calling gethostname api");
-
-  svrattrl *pal = (svrattrl *)attrlist_create((char *)ATTR_NODE_np, 0, 2);
-  fail_unless(pal != 0, "failed to allocate svrattrl in test_create_pbs_node");
-  strcpy((char *)pal->al_value, "6");
-  pal->al_flags = SET;
-  tlist_head      atrlist;
-  CLEAR_HEAD(atrlist);
-  append_link(&atrlist, &pal->al_link, pal);
-  fail_unless(create_pbs_node (hostname, pal, 48, &mask) == PBSE_NONE, "create_pbs_node should have succeeded");
-  free(pal);
-  }
-END_TEST
-#endif
 
 Suite *node_func_suite(void)
   {
   Suite *s = suite_create("node_func_suite methods");
   TCase *tc_core = tcase_create("addr_ok_test");
   tcase_add_test(tc_core, addr_ok_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("initialize_all_nodes_array_test");
-  tcase_add_test(tc_core, initialize_all_nodes_array_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("find_node_in_allnodes_test");
@@ -1066,16 +1000,8 @@ Suite *node_func_suite(void)
   tcase_add_test(tc_core, next_host_test);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("send_hierarchy_threadtask_test");
-  tcase_add_test(tc_core, send_hierarchy_threadtask_test);
-  suite_add_tcase(s, tc_core);
-
   tc_core = tcase_create("send_hierarchy_test");
   tcase_add_test(tc_core, send_hierarchy_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("initialize_hello_container_test");
-  tcase_add_test(tc_core, initialize_hello_container_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("add_hello_after_test");

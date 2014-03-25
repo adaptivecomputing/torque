@@ -59,7 +59,7 @@ int main(
     {
     if ((pn = pbs_default()))
       {
-      strcpy(svrtmp, pn);
+      snprintf(svrtmp, sizeof(svrtmp), "%s", pn);
       }
     else
       {
@@ -99,7 +99,7 @@ int main(
     {
     if ((pn = pbs_default()))
       {
-      strcpy(svrtmp, pn);
+      snprintf(svrtmp, sizeof(svrtmp), "%s", pn);
       }
     else
       {

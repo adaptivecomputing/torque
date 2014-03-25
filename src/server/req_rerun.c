@@ -135,21 +135,25 @@ void post_rerun(batch_request *preq);
  *
  */
 
-void delay_and_send_sig_kill(batch_request *preq_sig)
+void delay_and_send_sig_kill(
+    
+  batch_request *preq_sig)
+
   {
   int                   delay = 0;
   job                  *pjob;
 
   pbs_queue            *pque;
 
-    struct batch_request *preq_clt = NULL;  /* original client request */
+  batch_request        *preq_clt = NULL;  /* original client request */
   int                   rc;
   time_t                time_now = time(NULL);
+  char    log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (preq_sig == NULL)
     return;
 
-  rc          = preq_sig->rq_reply.brp_code;
+  rc = preq_sig->rq_reply.brp_code;
 
   if (preq_sig->rq_extend != NULL)
     {
@@ -163,11 +167,11 @@ void delay_and_send_sig_kill(batch_request *preq_sig)
 
   if ((pjob = chk_job_request(preq_clt->rq_ind.rq_rerun, preq_clt)) == NULL)
     {
-    /* job has gone away */
-    req_reject(PBSE_UNKJOBID, 0, preq_clt, NULL, NULL);
-
+    /* job has gone away, chk_job_request() calls req_reject() on failure */
     return;
     }
+
+  mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
 
   if (rc)
     {
@@ -196,7 +200,7 @@ void delay_and_send_sig_kill(batch_request *preq_sig)
       }
     else
       {
-      unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
+      pjob_mutex.unlock();
       req_reject(rc, 0, preq_clt, NULL, NULL);
       }
 
@@ -206,19 +210,21 @@ void delay_and_send_sig_kill(batch_request *preq_sig)
   if ((pque = get_jobs_queue(&pjob)) != NULL)
     {
     mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
-    pthread_mutex_lock(server.sv_attr_mutex);
+    mutex_mgr server_mutex = mutex_mgr(server.sv_attr_mutex, false);
+
     delay = attr_ifelse_long(&pque->qu_attr[QE_ATR_KillDelay],
                            &server.sv_attr[SRV_ATR_KillDelay],
                            0);
-    pthread_mutex_unlock(server.sv_attr_mutex);
     }
-  else if (pjob == NULL)
+  else
     {
-    unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
+    /* why is the pque null. Something went wrong */
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "jobid %s returned a null queue", pjob->ji_qs.ji_jobid);
+    req_reject(PBSE_UNKQUE, 0, preq_clt, NULL, log_buf);
     return;
     }
 
-  unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
+  pjob_mutex.unlock();
   reply_ack(preq_clt);
   set_task(WORK_Timed, delay + time_now, send_sig_kill, strdup(pjob->ji_qs.ji_jobid), FALSE);
   }
@@ -227,36 +233,45 @@ void delay_and_send_sig_kill(batch_request *preq_sig)
  * send_sig_kill
  *
  * The SIGTERM has been sent and we've waited for the kill_delay so now send the SIGKILL.
+ * @pre-cond: pwt must point to a valid task
+ * @pre-cond: pwt->wt_parm1 must point to a valid character string
  *
  */
-void send_sig_kill(struct work_task *pwt)
+void send_sig_kill(
+    
+  struct work_task *pwt)
+
   {
   job                  *pjob;
-
   char                 *job_id = (char *)pwt->wt_parm1;
-  static const char *rerun = "rerun";
-  char               *extra = strdup(rerun);
+  static const char    *rerun = "rerun";
 
   free(pwt->wt_mutex);
   free(pwt);
 
-  if(job_id == NULL) return;
+  if (job_id == NULL)
+    return;
 
   if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
     {
     free(job_id);
     return;
     }
+  
+  char *extra = strdup(rerun);
+
   free(job_id);
-  if(issue_signal(&pjob, "SIGKILL", post_rerun, extra,NULL) == 0)
+
+  if (issue_signal(&pjob, "SIGKILL", post_rerun, extra,NULL) == 0)
     {
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN;
     pjob->ji_qs.ji_svrflags = (pjob->ji_qs.ji_svrflags &
         ~(JOB_SVFLG_CHECKPOINT_FILE |JOB_SVFLG_CHECKPOINT_MIGRATEABLE |
           JOB_SVFLG_CHECKPOINT_COPIED)) | JOB_SVFLG_HASRUN;
     }
+
   unlock_ji_mutex(pjob, __func__, "6", LOGLEVEL);
-  }
+  } /* END send_sig_kill() */
 
 
 /*
@@ -289,7 +304,7 @@ void post_rerun(
       {
       mutex_mgr job_mutex(pjob->ji_mutex, true);
       
-      svr_evaljobstate(pjob, &newstate, &newsub, 1);
+      svr_evaljobstate(*pjob, newstate, newsub, 1);
       svr_setjobstate(pjob, newstate, newsub, FALSE);
       }
     }
@@ -336,6 +351,8 @@ int req_rerunjob(
     return rc; /* This needs to fixed to return an accurate error */
     }
 
+  mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
+
   /* the job must be running or completed */
 
   if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
@@ -360,7 +377,6 @@ int req_rerunjob(
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "job %s is in a bad state",
         preq->rq_ind.rq_rerun);
     req_reject(rc, 0, preq, NULL, log_buf);
-    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
     return rc;
     }
 
@@ -373,7 +389,6 @@ int req_rerunjob(
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
         "additional permissions required (ATR_DFLAG_MGWR | ATR_DFLAG_OPWR)");
     req_reject(rc, 0, preq, NULL, log_buf);
-    unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
     return rc;
     }
 
@@ -390,7 +405,6 @@ int req_rerunjob(
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "job %s not rerunnable",
         preq->rq_ind.rq_rerun);
     req_reject(rc, 0, preq, NULL, log_buf);
-    unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
     return rc;
     }
 
@@ -403,18 +417,20 @@ int req_rerunjob(
     if ((pque = get_jobs_queue(&pjob)) != NULL)
       {
       mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
-      pthread_mutex_lock(server.sv_attr_mutex);
+      mutex_mgr server_mutex = mutex_mgr(server.sv_attr_mutex, false);
+
       delay = attr_ifelse_long(&pque->qu_attr[QE_ATR_KillDelay],
                              &server.sv_attr[SRV_ATR_KillDelay],
                              0);
-      pthread_mutex_unlock(server.sv_attr_mutex);
       }
-    else if (pjob == NULL)
+    else
       {
-      rc = PBSE_NORERUN;
-      unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
-      return rc;
+      /* why is the pque null. Something went wrong */
+      snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "jobid %s returned a null queue", pjob->ji_qs.ji_jobid);
+      req_reject(PBSE_UNKQUE, 0, preq, NULL, log_buf);
+      return(PBSE_UNKQUE);
       }
+    
     if(delay != 0)
       {
       static const char *rerun = "rerun";
@@ -426,7 +442,6 @@ int req_rerunjob(
         /* cant send to MOM */
         req_reject(rc, 0, preq, NULL, NULL);
         }
-      unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
       return rc;
       }
     else
@@ -457,6 +472,9 @@ int req_rerunjob(
 
     rc = -1;
     }
+
+  /* finalize_rerunjob will return with pjob->ji_mutex unlocked */
+  pjob_mutex.set_unlock_on_exit(false);
   return finalize_rerunjob(preq,pjob,rc);
   }
 
@@ -468,10 +486,20 @@ int req_rerunjob(
  */
 
 
-int finalize_rerunjob(struct batch_request *preq,job *pjob,int rc)
+int finalize_rerunjob(
+    
+  batch_request *preq,
+  job           *pjob,
+  int            rc)
+
   {
-  int     Force;
-  char    log_buf[LOCAL_LOG_BUF_SIZE];
+  int       Force;
+  char      log_buf[LOCAL_LOG_BUF_SIZE];
+
+  if (pjob == NULL)
+    return(PBSE_BAD_PARAMETER);
+
+  mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
 
   if (preq->rq_extend && !strncasecmp(preq->rq_extend, RERUNFORCE, strlen(RERUNFORCE)))
     Force = 1;
@@ -492,8 +520,7 @@ int finalize_rerunjob(struct batch_request *preq,job *pjob,int rc)
 
       /* requeue request successful */
 
-      if (pjob != NULL)
-        pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN;
+      pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN;
 
       break;
 
@@ -501,8 +528,6 @@ int finalize_rerunjob(struct batch_request *preq,job *pjob,int rc)
       rc = PBSE_MEM_MALLOC;
       snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Can not allocate memory");
       req_reject(rc, 0, preq, NULL, log_buf);
-      if (pjob != NULL)
-        unlock_ji_mutex(pjob, __func__, "5", LOGLEVEL);
       return rc;
       break;
 
@@ -513,8 +538,6 @@ int finalize_rerunjob(struct batch_request *preq,job *pjob,int rc)
         rc = PBSE_MOMREJECT;
         snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Rejected by mom");
         req_reject(rc, 0, preq, NULL, log_buf);
-        if (pjob != NULL)
-          unlock_ji_mutex(pjob, __func__, "5", LOGLEVEL);
         return rc;
         }
       else
@@ -525,85 +548,73 @@ int finalize_rerunjob(struct batch_request *preq,job *pjob,int rc)
         char         *tmp;
         long          cray_enabled = FALSE;
        
-        if (pjob != NULL)
+        get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
+
+        if ((cray_enabled == TRUE) &&
+            (pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str != NULL))
+          tmp = parse_servername(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str, &dummy);
+        else
+          tmp = parse_servername(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, &dummy);
+
+        /* Cannot communicate with MOM, forcibly requeue job.
+           This is a relatively disgusting thing to do */
+
+        sprintf(log_buf, "rerun req to %s failed (rc=%d), forcibly requeueing job",
+          tmp, rc);
+
+        free(tmp);
+
+        log_event(
+          PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid,
+          log_buf);
+
+        log_err(-1, __func__, log_buf);
+
+        strcat(log_buf, ", previous output files may be lost");
+
+        svr_mailowner(pjob, MAIL_OTHER, MAIL_FORCE, log_buf);
+
+        svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_RERUN3, FALSE);
+
+        rel_resc(pjob); /* free resc assigned to job */
+
+        if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HOTSTART) == 0)
           {
-          get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
+          /* in case of server shutdown, don't clear exec_host */
+          /* will use it on hotstart when next comes up        */
+          
+          job_attr_def[JOB_ATR_exec_host].at_free(&pjob->ji_wattr[JOB_ATR_exec_host]);
 
-          if ((cray_enabled == TRUE) &&
-              (pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str != NULL))
-            tmp = parse_servername(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str, &dummy);
-          else
-            tmp = parse_servername(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, &dummy);
+          job_attr_def[JOB_ATR_session_id].at_free(&pjob->ji_wattr[JOB_ATR_session_id]);
           
-          /* Cannot communicate with MOM, forcibly requeue job.
-             This is a relatively disgusting thing to do */
-          
-          sprintf(log_buf, "rerun req to %s failed (rc=%d), forcibly requeueing job",
-            tmp, rc);
-
-          free(tmp);
-  
-          log_event(
-            PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
-            PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
-            log_buf);
-          
-          log_err(-1, __func__, log_buf);
-          
-          strcat(log_buf, ", previous output files may be lost");
-  
-          svr_mailowner(pjob, MAIL_OTHER, MAIL_FORCE, log_buf);
-  
-          svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_RERUN3, FALSE);
-  
-          rel_resc(pjob); /* free resc assigned to job */
-          
-          if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HOTSTART) == 0)
-            {
-            /* in case of server shutdown, don't clear exec_host */
-            /* will use it on hotstart when next comes up        */
-            
-            job_attr_def[JOB_ATR_exec_host].at_free(&pjob->ji_wattr[JOB_ATR_exec_host]);
-  
-            job_attr_def[JOB_ATR_session_id].at_free(&pjob->ji_wattr[JOB_ATR_session_id]);
-            
-            job_attr_def[JOB_ATR_exec_gpus].at_free(&pjob->ji_wattr[JOB_ATR_exec_gpus]);          
-            }
-          
-          pjob->ji_modified = 1;    /* force full job save */
-          
-          pjob->ji_momhandle = -1;
-          pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_StagedIn;
-          
-          svr_evaljobstate(pjob, &newstate, &newsubst, 0);
-          svr_setjobstate(pjob, newstate, newsubst, FALSE);
+          job_attr_def[JOB_ATR_exec_gpus].at_free(&pjob->ji_wattr[JOB_ATR_exec_gpus]);
           }
+
+        pjob->ji_modified = 1;    /* force full job save */
+
+        pjob->ji_momhandle = -1;
+        pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_StagedIn;
+
+        svr_evaljobstate(*pjob, newstate, newsubst, 0);
+        svr_setjobstate(pjob, newstate, newsubst, FALSE);
         }
 
       break;
     }  /* END switch (rc) */
 
-  /* So job has run and is to be rerun (not restarted) */
-  if (pjob == NULL)
-    {
-    rc = PBSE_JOB_RERUN;
-    }
-  else
-    {
-    pjob->ji_qs.ji_svrflags = (pjob->ji_qs.ji_svrflags &
-        ~(JOB_SVFLG_CHECKPOINT_FILE |JOB_SVFLG_CHECKPOINT_MIGRATEABLE |
-          JOB_SVFLG_CHECKPOINT_COPIED)) | JOB_SVFLG_HASRUN;
-    
-    sprintf(log_buf, msg_manager, msg_jobrerun, preq->rq_user, preq->rq_host);
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+  pjob->ji_qs.ji_svrflags = (pjob->ji_qs.ji_svrflags &
+      ~(JOB_SVFLG_CHECKPOINT_FILE |JOB_SVFLG_CHECKPOINT_MIGRATEABLE |
+        JOB_SVFLG_CHECKPOINT_COPIED)) | JOB_SVFLG_HASRUN;
 
-    reply_ack(preq);
-  
-    /* note in accounting file */
-    account_record(PBS_ACCT_RERUN, pjob, NULL);
-    unlock_ji_mutex(pjob, __func__, "6", LOGLEVEL);
-    }
+  sprintf(log_buf, msg_manager, msg_jobrerun, preq->rq_user, preq->rq_host);
+  log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+
+  reply_ack(preq);
+
+  /* note in accounting file */
+  account_record(PBS_ACCT_RERUN, pjob, NULL);
 
   return rc;
   }  /* END req_rerunjob() */

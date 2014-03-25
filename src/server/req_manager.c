@@ -983,7 +983,7 @@ void mgr_queue_create(
     reply_badattr(rc, bad, plist, preq);
 
     que_free(pque, FALSE);
-    que_mgr.set_lock_on_exit(false);
+    que_mgr.set_unlock_on_exit(false);
     }
   else
     {
@@ -1058,7 +1058,7 @@ void mgr_queue_delete(
     req_reject(rc, 0, preq, NULL, NULL);
     return;
     }
-  pque_mutex.set_lock_on_exit(false);
+  pque_mutex.set_unlock_on_exit(false);
 
   svr_save(&server, SVR_SAVE_QUICK);
 
@@ -1401,7 +1401,7 @@ void mgr_queue_set(
   pbs_queue *pque;
   const char      *qname;
   int        rc;
-  int        iter = -1;
+  all_queues_iterator  *iter = NULL;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (LOGLEVEL >= 7)
@@ -1410,12 +1410,16 @@ void mgr_queue_set(
     log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_QUEUE, __func__, log_buf);
     }
 
+  svr_queues.lock();
+  iter = svr_queues.get_iterator();
+  svr_queues.unlock();
+
   if ((*preq->rq_ind.rq_manager.rq_objname == '\0') ||
       (*preq->rq_ind.rq_manager.rq_objname == '@'))
     {
     qname   = all_quename;
     allques = TRUE;
-    pque = next_queue(&svr_queues,&iter);
+    pque = next_queue(&svr_queues,iter);
     }
   else
     {
@@ -1428,6 +1432,8 @@ void mgr_queue_set(
   if (pque == NULL)
     {
     req_reject(PBSE_UNKQUE, 0, preq, NULL, NULL);
+
+    delete iter;
 
     return;
     }
@@ -1457,6 +1463,9 @@ void mgr_queue_set(
         {
         que_mutex.unlock();
         reply_badattr(rc, bad, plist, preq);
+
+        delete iter;
+
         return;
         }
 
@@ -1469,14 +1478,19 @@ void mgr_queue_set(
 
       }
 
-    pque = next_queue(&svr_queues,&iter);
+    pque = next_queue(&svr_queues,iter);
     }  /* END while (pque != NULL) */
 
   /* check the appropriateness of the attributes based on queue type */
-  iter = -1;
+  svr_queues.lock();
+
+  delete iter;
+
+  iter = svr_queues.get_iterator();
+  svr_queues.unlock();
 
   if (allques == TRUE)
-    pque = next_queue(&svr_queues,&iter);
+    pque = next_queue(&svr_queues,iter);
 
   while (pque != NULL)
     {
@@ -1487,6 +1501,7 @@ void mgr_queue_set(
         sprintf(log_buf, msg_attrtype, pque->qu_qs.qu_name, badattr);
         que_mutex.unlock();
         reply_text(preq, PBSE_ATTRTYPE, log_buf);
+        delete iter;
         return;
         }
 
@@ -1494,8 +1509,11 @@ void mgr_queue_set(
         break;
 
       }
-    pque = next_queue(&svr_queues,&iter);
+    pque = next_queue(&svr_queues,iter);
     }  /* END while (pque != NULL) */
+
+  if (iter != NULL)
+    delete iter;
 
   reply_ack(preq);
 
@@ -1523,7 +1541,7 @@ void mgr_queue_unset(
   pbs_queue *pque;
   const char      *qname;
   int    rc;
-  int    iter = -1;
+  all_queues_iterator *iter = NULL;
   char   log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (LOGLEVEL >= 7)
@@ -1532,12 +1550,16 @@ void mgr_queue_unset(
     log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_QUEUE, __func__, log_buf);
     }
 
+  svr_queues.lock();
+  iter = svr_queues.get_iterator();
+  svr_queues.unlock();
+  
   if ((*preq->rq_ind.rq_manager.rq_objname == '\0') ||
       (*preq->rq_ind.rq_manager.rq_objname == '@'))
     {
     qname   = all_quename;
     allques = TRUE;
-    pque = next_queue(&svr_queues,&iter);
+    pque = next_queue(&svr_queues,iter);
     }
   else
     {
@@ -1550,6 +1572,7 @@ void mgr_queue_unset(
   if (pque == NULL)
     {
     req_reject(PBSE_UNKQUE, 0, preq, NULL, NULL);
+    delete iter;
 
     return;
     }
@@ -1570,6 +1593,7 @@ void mgr_queue_unset(
         {
         que_mutex.unlock();
         reply_badattr(rc, bad_attr, plist, preq);
+        delete iter;
         return;
         }
 
@@ -1583,8 +1607,10 @@ void mgr_queue_unset(
     if (allques == FALSE)
       break;
     
-    pque = next_queue(&svr_queues,&iter);
+    pque = next_queue(&svr_queues,iter);
     }
+
+  delete iter;
 
   reply_ack(preq);
 
@@ -1884,7 +1910,7 @@ static void mgr_node_delete(
 
   {
   int             check_all = 0;
-  int             iter;
+  all_nodes_iterator *iter = NULL;
 
   struct pbsnode *pnode;
   const char    *nodename = NULL;
@@ -1938,7 +1964,7 @@ static void mgr_node_delete(
   if (check_all)
     {
     /* handle all nodes */
-    iter = -1;
+    iter = NULL;
 
     while ((pnode = next_host(&allnodes,&iter,NULL)) != NULL)
       {
@@ -1948,6 +1974,9 @@ static void mgr_node_delete(
 
       mgr_log_attr(msg_man_set, plist, PBS_EVENTCLASS_NODE, log_buf);
       } /* end loop ( all nodes ) */
+
+    if (iter != NULL)
+      delete iter;
     }
   else
     {

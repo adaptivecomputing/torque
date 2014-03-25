@@ -103,9 +103,7 @@
 #include "attribute.h"
 #include "credential.h"
 #include "pbs_job.h"
-#include "u_memmgr.h" /* memmgr */
-#include "resizable_array.h"
-#include "hash_table.h"
+#include "container.hpp"
 #include "work_task.h"
 
 #define  INITIAL_REQUEST_HOLDER_SIZE 20
@@ -338,7 +336,6 @@ struct batch_request
   int                 rq_failcode;
   char               *rq_extend; /* request "extension" data  */
   char               *rq_id;      /* the batch request's id */
-  memmgr             *mm;         /* Memory manager for this batch_request */
 
   struct batch_reply  rq_reply;   /* the reply area for this request */
 
@@ -398,13 +395,8 @@ struct batch_request
 
 typedef struct batch_request batch_request;
  
-typedef struct batch_request_holder 
-  {
-  int              brh_index;
-  pthread_mutex_t *brh_mutex;
-  resizable_array *brh_ra;
-  hash_table_t    *brh_ht;
-  } batch_request_holder;
+typedef container::item_container<batch_request *>                  batch_request_holder;
+typedef container::item_container<batch_request *>::item_iterator   batch_request_holder_iterator;
 
 extern batch_request_holder brh;
 
@@ -421,7 +413,6 @@ extern void    free_br (struct batch_request *);
 extern int     isode_request_read (int, struct batch_request *);
 int            process_request(struct tcp_chan *chan);
 
-void           initialize_batch_request_holder();
 int            get_batch_request_id(batch_request *preq);
 int            insert_batch_request(batch_request *preq);
 batch_request *get_batch_request(char *br_id);

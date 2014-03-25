@@ -372,7 +372,7 @@ int local_move(
 
   pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
     
-  if ((*my_err = svr_enquejob(pjob, FALSE, -1, reservation)) == PBSE_JOB_RECYCLED)
+  if ((*my_err = svr_enquejob(pjob, FALSE, NULL, reservation)) == PBSE_JOB_RECYCLED)
     return(-1);
 
   if (*my_err != PBSE_NONE)
@@ -450,7 +450,7 @@ void finish_routing_processing(
 
       /* force re-eval of job state out of Transit */
 
-      svr_evaljobstate(pjob, &newstate, &newsub, 1);
+      svr_evaljobstate(*pjob, newstate, newsub, 1);
       svr_setjobstate(pjob, newstate, newsub, FALSE);
 
       if ((status = job_route(pjob)) == PBSE_ROUTEREJ)
@@ -527,7 +527,7 @@ void finish_moving_processing(
       if (pjob != NULL)
         {
         /* force re-eval of job state out of Transit */
-        svr_evaljobstate(pjob, &newstate, &newsub, 1);
+        svr_evaljobstate(*pjob, newstate, newsub, 1);
         svr_setjobstate(pjob, newstate, newsub, FALSE);
    
         unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
@@ -1243,7 +1243,7 @@ int send_job_work(
     ret = svr_dequejob(pjob, FALSE);
     if (ret)
       {
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
       return(ret);
       }
     }
@@ -1255,7 +1255,7 @@ int send_job_work(
   if (rc != PBSE_NONE)
     {
     if (rc == PBSE_JOB_RECYCLED)
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
 
     return(rc);
     }

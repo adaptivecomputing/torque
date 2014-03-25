@@ -79,14 +79,16 @@
 
 
 #include <time.h>
-
+#include <string>
+#include <boost/ptr_container/ptr_vector.hpp>
 #include "pbs_ifl.h"
-#include "resizable_array.h"
 
-typedef struct exiting_job_info
+class exiting_job_info
   {
-  char   jobid[PBS_MAXSVRJOBID+1];
+public:
+  std::string  jobid;
   time_t obit_sent;
-  } exiting_job_info;
+  exiting_job_info(const char *id):jobid(id),obit_sent(time(NULL)){}
+  };
 
-extern resizable_array *exiting_job_list;
+extern boost::ptr_vector<exiting_job_info> exiting_job_list;

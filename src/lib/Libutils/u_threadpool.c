@@ -116,7 +116,6 @@ int create_work_thread(
   sigset_t        oldset;
   pthread_t       wthread;
 
-
   if (tp == NULL)
     {
     initialize_threadpool(&tp, 5, 5, -1);

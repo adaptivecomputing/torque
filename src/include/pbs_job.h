@@ -95,8 +95,7 @@
 #include "list_link.h"
 #include "pbs_ifl.h"
 #include "attribute.h"
-#include "resizable_array.h"
-#include "hash_table.h"
+#include "container.hpp"
 #include "mom_hierarchy.h"
 #include "tcp.h" /* tcp_chan */
 #include "net_connect.h"
@@ -505,17 +504,6 @@ typedef struct
   } pjobexec_t;
 
 
-/* on the server this array will replace many of the doubly linked-lists */
-typedef struct all_jobs
-  {
-  resizable_array *ra;
-  hash_table_t    *ht;
-
-  pthread_mutex_t *alljobs_mutex;
-  }all_jobs;
-
-
-
 /*
  * fixed size internal data - maintained via "quick save"
  * some of the items are copies of attributes, if so this
@@ -723,7 +711,9 @@ struct job
 
 typedef struct job job;
 
-
+/* on the server this array will replace many of the doubly linked-lists */
+typedef container::item_container<job *> all_jobs;
+typedef container::item_container<job *>::item_iterator all_jobs_iterator;
 
 #ifndef PBS_MOM
 #define INITIAL_JOB_SIZE           5000
@@ -735,26 +725,23 @@ typedef struct job job;
 
 
 
-void initialize_all_jobs_array(struct all_jobs *);
-int  insert_job(struct all_jobs *, job *);
-int  insert_job_after(struct all_jobs *,job *before,job *after);
-int  insert_job_after_index(struct all_jobs *, int index, job *after);
-int  insert_job_first(struct all_jobs *,job *);
-int  get_jobs_index(struct all_jobs *, job *);
-int  remove_job(struct all_jobs *,job *);
-int  has_job(struct all_jobs *,job *);
-int  swap_jobs(struct all_jobs *,job *,job *);
+int  insert_job(all_jobs *, job *);
+int  insert_job_after(all_jobs *,job *before,job *after);
+int  insert_job_after(all_jobs *, char *after_id, job *after);
+int  insert_job_first(all_jobs *,job *);
+int  get_jobs_index(all_jobs *, job *);
+int  remove_job(all_jobs *,job *);
+int  has_job(all_jobs *,job *);
+int  swap_jobs(all_jobs *,job *,job *);
 struct pbs_queue *get_jobs_queue(job **);
 
-job *next_job(struct all_jobs *,int *);
-job *next_job_from_back(struct all_jobs *,int *);
-
+job *next_job(all_jobs *,all_jobs_iterator *);
 
 typedef struct job_recycler
   {
   unsigned int     rc_next_id;
-  struct all_jobs  rc_jobs;
-  int              rc_iter;
+  all_jobs          rc_jobs;
+  all_jobs_iterator *rc_iter;
   pthread_mutex_t *rc_mutex;
   } job_recycler;
 
@@ -1119,7 +1106,7 @@ extern int   job_unlink_file(job *pjob, const char *name);
 #ifndef PBS_MOM
 job         *job_clone(job *,struct job_array *, int);
 job         *svr_find_job(char *jobid, int get_subjob);
-job         *find_job_by_array(struct all_jobs *aj, char *job_id, int get_subjob, bool locked);
+job         *find_job_by_array(all_jobs *aj, char *job_id, int get_subjob, bool locked);
 #else
 extern job  *mom_find_job(const char *);
 #endif
@@ -1132,8 +1119,8 @@ extern int   set_jobexid(job *, pbs_attribute *, char *);
 extern int   site_check_user_map(job *, char *, char *, int);
 int  svr_dequejob(job *, int);
 int initialize_ruserok_mutex();
-extern int   svr_enquejob(job *, int, int, bool);
-extern void  svr_evaljobstate(job *, int *, int *, int);
+extern int   svr_enquejob(job *, int, char *, bool);
+void         svr_evaljobstate(job &, int &, int &, int);
 extern void  svr_mailowner(job *, int, int, const char *);
 extern void  svr_mailowner_with_message(job *, int, int, const char *, const char *);
 extern void  set_resc_deflt(job *, pbs_attribute *, int);

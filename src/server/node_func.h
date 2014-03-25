@@ -3,17 +3,15 @@
 #include "license_pbs.h" /* See here for the software license */
 #include "list_link.h" /* tlist_head */
 #include "net_connect.h"
+#include "pbs_nodes.h"
 
 /* Forward declarations. */
 struct pbsnode;
 struct node_check_info;
 struct node_iterator;
-struct all_nodes;
 struct svrattrl;
 struct pbs_attribute;
 struct attribute_def;
-struct hello_info;
-struct hello_container;
 
 typedef struct _node_info_
   {
@@ -67,22 +65,14 @@ int create_partial_pbs_node(char *nodename, unsigned long addr, int perms);
 
 void reinitialize_node_iterator(struct node_iterator *iter);
 
-void initialize_all_nodes_array(struct all_nodes *an);
+int remove_node(all_nodes *an, struct pbsnode *pnode);
 
-int insert_node(struct all_nodes *an, struct pbsnode *pnode);
-
-int remove_node(struct all_nodes *an, struct pbsnode *pnode);
-
-struct pbsnode *next_host(struct all_nodes *an, int *iter, struct pbsnode *held);
+struct pbsnode *next_host(all_nodes *an, all_nodes_iterator **iter, struct pbsnode *held);
 
 void *send_hierarchy_threadtask(void *vp);
 
 int send_hierarchy(char *name, unsigned short  port);
 
-struct hello_container* initialize_hello_container(struct hello_container *);
-
-int needs_hello(struct hello_container *hc, char *node_name);
-
-struct hello_info *pop_hello(struct hello_container *hc);
+int needs_hello(hello_container *hc, char *node_name);
 
 #endif /* _NODE_FUNC_H */

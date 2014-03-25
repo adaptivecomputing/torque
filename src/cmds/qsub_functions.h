@@ -89,7 +89,6 @@
 #include <termios.h>
 #include <sys/types.h>
 #include "u_hash_map_structs.h"
-#include "u_memmgr.h"
 #ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
 #endif /* HAVE_SYS_IOCTL_H */
@@ -99,14 +98,43 @@
 #define SUBMIT_FILTER_PATH "./submitFilter"
 #endif /* TEST_FUNCTION */
 
-typedef struct job_info
+class job_info
   {
-  memmgr *mm;
-  job_data *job_attr;
-  job_data *res_attr;
-  job_data *user_attr;
-  job_data *client_attr;
-  } job_info;
+private:
+  void clear_attr(job_data_container *attr)
+  {
+  attr->lock();
+  job_data_iterator *it = attr->get_iterator();
+  job_data *item;
+  while((item = it->get_next_item()) != NULL)
+    {
+    delete item;
+    }
+  attr->clear();
+  attr->unlock();
+  delete attr;
+  delete it;
+  }
+public:
+  job_data_container *job_attr;
+  job_data_container *res_attr;
+  job_data_container *user_attr;
+  job_data_container *client_attr;
+  job_info()
+    {
+    job_attr = new job_data_container();
+    res_attr = new job_data_container();
+    user_attr = new job_data_container();
+    client_attr = new job_data_container();
+    }
+  ~job_info()
+    {
+    clear_attr(job_attr);
+    clear_attr(res_attr);
+    clear_attr(user_attr);
+    clear_attr(client_attr);
+    }
+  };
 
 char *x11_get_proto(
     char *xauth_path, /* I */
@@ -139,10 +167,10 @@ int istext(
     FILE   *fd,           /* I */
     int    *IsText);      /* O (optional) */
 
-int validate_submit_filter(memmgr **mm, job_data **a_hash);
-void validate_pbs_o_workdir(memmgr **mm, job_data **job_attr);
-void validate_qsub_host_pbs_o_server(memmgr **mm, job_data **job_attr);
-void post_check_attributes(job_info *ji);
+int validate_submit_filter(job_data_container *a_hash);
+void validate_pbs_o_workdir(job_data_container *job_attr);
+void validate_qsub_host_pbs_o_server(job_data_container *job_attr);
+void post_check_attributes(job_info *ji,char *script_tmp);
 
 void make_argv(
     int  *argc,
@@ -198,11 +226,9 @@ void toolong(
 void catchint(
     int sig);
 
-void x11handler(
-    memmgr **mm,
-    int inter_sock);
+void x11handler(int inter_sock);
 
-void interactive(memmgr **mm, job_data *client_attr);
+void interactive(job_data_container *client_attr);
 
 int validate_group_list(
     char *glist);
@@ -224,8 +250,7 @@ char *get_param(
     const char *config_buf);            /* I */
 
 void set_client_attr_defaults(
-    memmgr **mm,                  /* M */
-    job_data **client_entry);     /* M */
+    job_data_container *client_entry);     /* M */
 
 void update_job_env_names(job_info *ji);
 
@@ -235,7 +260,7 @@ void process_config_file(
 void print_qsub_usage_exit(
     const char *error_msg);             /* I */
 
-void add_submit_args_to_job(memmgr **mm, job_data **job_attr, int argc, char **argv);
+void add_submit_args_to_job(job_data_container *job_attr, int argc, char **argv);
 
 void main_func(
     int    argc,                  /* I */

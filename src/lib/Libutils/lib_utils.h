@@ -5,9 +5,7 @@
 
 
 #include "mcom.h" /* mxml_t, MDataFormatEnum, mbool_t */
-#include "hash_table.h" /* hash_table_t, bucket, node_comm_t */
 #include "mom_hierarchy.h" /* mom_hierarchy_t */
-#include "resizable_array.h" /* resizable_array */
 #include "threadpool.h" /* threadpool_t */
 #include "u_tree.h" /* NodeEntry, AvlTree */
 
@@ -72,40 +70,6 @@ int MUSleep(long SleepDuration);
 int MUReadPipe(char *Command, char *Buffer, int BufSize);
 
 int write_buffer(char *buf, int len, int fds);
-
-int swap_things(resizable_array *ra, void *thing1, void *thing2);
-
-int check_and_resize(resizable_array *ra);
-
-void update_next_slot(resizable_array *ra);
-
-int insert_thing(resizable_array *ra, void *thing);
-
-int insert_thing_after(resizable_array *ra, void *thing, int index);
-
-int insert_thing_before(resizable_array *ra, void *thing, int index);
-
-int is_present(resizable_array *ra, void *thing);
-
-void unlink_slot(resizable_array *ra, int index);
-
-int remove_thing(resizable_array *ra, void *thing);
-
-void *pop_thing(resizable_array *ra);
-
-int remove_thing_from_index(resizable_array *ra, int index);
-
-resizable_array *initialize_resizable_array(int size);
-
-void *next_thing(resizable_array *ra, int *iter);
-
-void *next_thing_from_back(resizable_array *ra, int *iter);
-
-void initialize_ra_iterator(resizable_array *ra, int *iter);
-
-int get_index(resizable_array *ra, void *thing);
-
-void *get_thing_from_index(resizable_array *ra, int index);
 
 /* u_threadpool.c */
 int create_work_thread(void);

@@ -31,6 +31,7 @@ unsigned int pbs_mom_port = 0;
 attribute_def job_attr_def[10];
 char server_name[PBS_MAXSERVERNAME + 1];
 char *path_nodenote;
+bool exit_called = false;
 const char *dis_emsg[10];
 tlist_head svr_newnodes; 
 resource_def *svr_resc_def;
@@ -131,7 +132,7 @@ struct pbsnode *find_nodebyid(int id)
     return(NULL);
   }
 
-struct pbsnode *find_node_in_allnodes(struct all_nodes *an, char *nodename)
+struct pbsnode *find_node_in_allnodes(all_nodes *an, char *nodename)
   {
   static struct pbsnode cray;
 
@@ -161,7 +162,7 @@ void svr_disconnect(int handle)
   exit(1);
   }
 
-struct pbsnode *next_host(all_nodes *an, int *iter, struct pbsnode *held)
+struct pbsnode *next_host(all_nodes *an, all_nodes_iterator **iter, struct pbsnode *held)
   {
   fprintf(stderr, "The call to next_host needs to be mocked!!\n");
   exit(1);
@@ -285,8 +286,12 @@ job *svr_find_job(char *jobid, int get_subjob)
   strcpy(pjob.ji_qs.ji_jobid, jobid);
   pjob.ji_last_reported_time = old;
 
-  if ((!strcmp(jobid, "1")) ||
-      (!strcmp(jobid, "5")))
+  if (strstr(jobid, "lei.ac"))
+    {
+    return(NULL);
+    }
+  else if ((!strcmp(jobid, "1")) ||
+           (!strcmp(jobid, "5")))
     {
     pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("tom/0");
     }
@@ -435,29 +440,7 @@ int insert_addr_name_info(
   return(0);
   }
 
-void *next_thing(resizable_array *ra, int *iter)
-  {
-  return(NULL);
-  }
-
-resizable_array *initialize_resizable_array(int size)
-  {
-  return(NULL);
-  }
-
 int handle_complete_first_time(job *pjob)
-  {
-  return(0);
-  }
-
-void free_resizable_array(resizable_array *ra) {}
-
-void *remove_thing_memcmp(resizable_array *ra, void *thing, unsigned int size)
-  {
-  return(NULL);
-  }
-
-int insert_thing(resizable_array *ra, void *thing)
   {
   return(0);
   }
@@ -465,11 +448,6 @@ int insert_thing(resizable_array *ra, void *thing)
 int svr_setjobstate(job *pjob, int newstate, int newsubstate, int has_queue_mutex)
   {
   return(0);
-  }
-
-void *pop_thing(resizable_array *ra)
-  {
-  return(NULL);
   }
 
 int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
@@ -575,3 +553,9 @@ microsecond_timer::microsecond_timer(const char *file, const char *func, int lin
 
 microsecond_timer::~microsecond_timer() {}
 #endif
+
+ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
+  {
+  return(0);
+  }
+

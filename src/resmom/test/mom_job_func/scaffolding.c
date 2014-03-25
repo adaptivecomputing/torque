@@ -29,6 +29,7 @@ int pbs_rm_port; /* mom_main.c */
 tlist_head svr_alljobs; /* mom_main.c */
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */ /* mom_main.c/pbsd_main.c */
 char log_buffer[LOG_BUF_SIZE]; /* pbs_log.c */
+bool exit_called = false;
 
 
 void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
@@ -122,35 +123,12 @@ int destroy_alps_reservation(
   return(0);
   }
 
-void free_resizable_array(resizable_array *ra) {}
-
-resizable_array *initialize_resizable_array(
-
-  int               size)
-
-  {
-  return(NULL);
-  }
-
-int insert_thing(
-    
-  resizable_array *ra,
-  void             *thing)
-
-  {
-  return(0);
-  }
-
-int is_present(
-
-  resizable_array *ra,
-  void            *thing)
-
-  {
-  return(0);
-  }
-
 int setuid_ext(uid_t uid, int set_euid)
   {
   return(0);
+  }
+
+int delete_cpuset(const char *, bool)
+  {
+  return 0;
   }

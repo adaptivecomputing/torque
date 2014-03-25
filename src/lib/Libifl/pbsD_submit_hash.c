@@ -96,20 +96,17 @@
 #include "u_hash_map_structs.h"
 
 int pbs_submit_hash(
-
-  int             socket,
-  memmgr        **mm,
-  job_data       *job_attr,
-  job_data       *res_attr,
-  char           *script,
-  char           *destination,
-  char           *extend,  /* (optional) */
-  char          **return_jobid,
-  char          **msg)
+  int                socket,
+  job_data_container *job_attr,
+  job_data_container *res_attr,
+  char              *script,
+  char              *destination,
+  char              *extend,  /* (optional) */
+  char              **return_jobid,
+  char              **msg)
 
   {
   int rc = PBSE_NONE;
-  int tmp_size = 0;
 /*  struct attropl *pal; */
   /* first be sure that the script is readable if specified ... */
 
@@ -130,7 +127,7 @@ int pbs_submit_hash(
 
   /* Queue job with null string for job id */
 
-  rc = PBSD_QueueJob_hash(socket, (char *)"", destination, mm, job_attr, res_attr, extend, return_jobid, msg);
+  rc = PBSD_QueueJob_hash(socket, (char *)"", destination, job_attr, res_attr, extend, return_jobid, msg);
 
   if (rc != PBSE_NONE)
     {
@@ -146,7 +143,7 @@ int pbs_submit_hash(
       rc = PBSE_BADSCRIPT;
       if (connection[socket].ch_errtxt != NULL)
         {
-        *msg = memmgr_strdup(mm, connection[socket].ch_errtxt, &tmp_size);
+        *msg = strdup(connection[socket].ch_errtxt);
         }
 
       return rc;
@@ -162,7 +159,7 @@ int pbs_submit_hash(
     {
       if (connection[socket].ch_errtxt != NULL)
         {
-        *msg = memmgr_strdup(mm, connection[socket].ch_errtxt, &tmp_size);
+        *msg = strdup(connection[socket].ch_errtxt);
         }
     return rc;
     }
@@ -174,7 +171,7 @@ int pbs_submit_hash(
     {
       if (connection[socket].ch_errtxt != NULL)
         {
-        *msg = memmgr_strdup(mm, connection[socket].ch_errtxt, &tmp_size);
+        *msg = strdup(connection[socket].ch_errtxt);
         }
     return rc;
     }

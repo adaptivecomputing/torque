@@ -200,6 +200,7 @@ void write_email(
   {
   char       *bodyfmt = NULL;
   const char *subjectfmt = NULL;
+  char bodyfmtbuf[MAXLINE];
 
   /* Pipe in mail headers: To: and Subject: */
   fprintf(outmail_input, "To: %s\n", mi->mailto);
@@ -222,7 +223,6 @@ void write_email(
   get_svr_attr_str(SRV_ATR_MailBodyFmt, &bodyfmt);
   if (bodyfmt == NULL)
     {
-    char bodyfmtbuf[MAXLINE];
     add_body_info(bodyfmtbuf, mi);
     bodyfmt = bodyfmtbuf;
     }

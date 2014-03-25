@@ -89,6 +89,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <pbs_ifl.h>
+#include <pbs_job.h>
 
 /* Adds item to the hashmap indicated by **head
  * If *head is NULL, and new hashmap is created
@@ -98,78 +99,19 @@
  * Boolean return value
  */
 int hash_add_item(
-
-  memmgr   **mm,                /* M - memory manager */
-  job_data **head,            /* M - hashmap */
-  const char      *name,                 /* key for the item */
-  const char      *value,                /* value for the item */
-  int        var_type,               /* type of variable */
-  int        op_type)                /* operation of variable */
+  job_data_container *head,            /* M - hashmap */
+  const char        *name,                 /* key for the item */
+  const char        *value,                /* value for the item */
+  int                var_type,               /* type of variable */
+  int                op_type)                /* operation of variable */
 
   {
-  int rc = TRUE;
-  int name_len = 0;
-  int value_len = 0;
-  job_data *je = NULL;
-  job_data *item = (job_data *)memmgr_calloc(mm, 1, sizeof(job_data));
+  job_data *item = new job_data(name,value,var_type,op_type);
 
-  if (item == NULL)
-    rc = -1;
-  else
-    {
-    name_len = strlen(name);
-    item->name = (char *)memmgr_calloc(mm, 1, name_len+1);
-    if (item->name == NULL)
-      rc = -2;
-    else
-      {
-      if (value == NULL)
-        {
-        value_len = 0;
-        item->value = (char *)memmgr_calloc(mm, 1, 2);
-
-        if (item->value == NULL)
-          rc = -3;
-        else
-          item->value[0] = '\0';
-        }
-      else
-        {
-        value_len = strlen(value);
-        item->value = (char *)memmgr_calloc(mm, 1, value_len+1);
-        if (item->value == NULL)
-          rc = -4;
-        }
-      }
-    }
-
-  if (rc == TRUE)
-    {
-    item->var_type = var_type;
-    item->op_type = op_type;
-    strcpy(item->name, name);
-    if (value_len != 0)
-      strcpy(item->value, value);
-    /* As all memory is allocated in memmgr, and references will be removed
-     * when that is freed */
-    if (hash_find(*head, item->name, &je) == TRUE)
-      hash_del_item(mm, head, item->name);
-    HASH_ADD_KEYPTR(hh, *head, item->name, name_len, item);
-    }
-  else
-    {
-    if (item)
-      {
-      if (item->name)
-        memmgr_free(mm, item->name);
-      if (item->value)
-        memmgr_free(mm, item->value);
-      memmgr_free(mm, item);
-      }
-    rc = FALSE;
-    }
-
-  return rc;
+  head->lock();
+  int ret =  head->insert(item,name,true);
+  head->unlock();
+  return ret;
   } /* END hash_add_item() */
 
 
@@ -178,15 +120,13 @@ int hash_add_item(
 /* A wrapper for hash to accomodate for memory allocation errors
  */
 void hash_add_or_exit(
-
-  memmgr   **mm,              /* M - memory manager */
-  job_data **head,          /* M - hashmap */
-  const char      *name,               /* I - The item being added to the hashmap */
-  const char      *val,                /* I - Sets the value of variable */
-  int        var_type)             /* I - Sets the type of the variable */
+  job_data_container *head,          /* M - hashmap */
+  const char        *name,               /* I - The item being added to the hashmap */
+  const char        *val,                /* I - Sets the value of variable */
+  int                var_type)             /* I - Sets the type of the variable */
 
   {
-  if (hash_add_item(mm, head, name, val, var_type, SET) == FALSE)
+  if (hash_add_item(head, name, val, var_type, SET) == FALSE)
     {
     fprintf(stderr, "Error allocating memory for hash (%s)-(%s)\n", name, val);
     exit(1);
@@ -197,50 +137,41 @@ void hash_add_or_exit(
 /* Remove an entry from the hashmap
  * If the first element is removed, the *head is also changed */
 int hash_del_item(
-    memmgr **mm,              /* M - memory manager */
-    job_data **head,          /* M - hashmap */
-    const char *name)               /* I - entry to delete */
+    job_data_container *head,          /* M - hashmap */
+    const char        *name)               /* I - entry to delete */
   {
-  int rc = FALSE;
-  char *tmp_name = NULL;
-  job_data *je = NULL;
-  hash_find(*head, name, &je);
-  if (je != NULL)
+  head->lock();
+  job_data *item = head->find(name);
+  head->unlock();
+  if(item != NULL)
     {
-    tmp_name = je->name;
-    memmgr_free(mm, je->value);
-    HASH_DEL(*head, je);
-    memmgr_free(mm, tmp_name);
-    rc = TRUE;
-    if (hash_count(*head) == 0)
-      {
-      *head = NULL;
-      }
-    memmgr_free(mm, je);
+    head->lock();
+    head->remove(name);
+    head->unlock();
+    delete item;
+    return TRUE;
     }
-  return rc;
+  return FALSE;
   }
 
 /* Free's and clears the contents of a hashmap */
 int hash_clear(
-    memmgr **mm,               /* M - memory manager */
-    job_data **head)          /* M - hashmap */
+    job_data_container *head)          /* M - hashmap */
   {
-  int cntr = 0;
-  char *tmp_name = NULL;
-  job_data *en, *tmp;
-  HASH_ITER(hh, (*head), en, tmp)
+  head->lock();
+  job_data_iterator *it = head->get_iterator();
+  job_data *item;
+
+  while ((item = it->get_next_item()) != NULL)
     {
-    tmp_name = en->name;
-    memmgr_free(mm, en->value);
-    HASH_DEL(*head, en);
-    memmgr_free(mm, tmp_name);
-    memmgr_free(mm, en);
-    cntr++;
+    delete item;
     }
-  HASH_CLEAR(hh, *head);
-  *head = NULL;
-  return cntr;
+
+  delete it;
+
+  head->clear();
+  head->unlock();
+  return TRUE;
   }
 
 /* Finds an element in a hashmap
@@ -251,15 +182,19 @@ int hash_clear(
  */
 int hash_find(
     
-  job_data     *head,           /* I - hashmap */
-  const char  *name,               /* I - name to find */
-  job_data     **env_var)       /* O - return value when found */
+  job_data_container *head,           /* I - hashmap */
+  const char        *name,               /* I - name to find */
+  job_data           **env_var)       /* O - return value when found */
 
   {
   int rc = TRUE;
   *env_var = NULL;
   if (name != NULL)
-    HASH_FIND(hh, head, name, strlen(name), (*env_var));
+    {
+    head->lock();
+    *env_var = head->find(name);
+    head->unlock();
+    }
   if (*env_var == NULL)
     rc = FALSE;
   return rc;
@@ -269,24 +204,34 @@ int hash_find(
 
 /* Returns the quantity of elements in the hashmap */
 int hash_count(
-    job_data *head)           /* I - hashmap */
+    job_data_container *head)           /* I - hashmap */
   {
-  return HASH_COUNT(head);
+  head->lock();
+  int ret = head->count();
+  head->unlock();
+  return ret;
   }
 
 /* Prints all of the contents to the screen (debugging) */
 int hash_print(
-    job_data *head)           /* I - hashmap */
+   
+  job_data_container *head)           /* I - hashmap */
+
   {
   int cntr = 0;
   if (head != NULL)
     {
-    job_data *en, *tmp;
-    HASH_ITER(hh, head, en, tmp)
+    head->lock();
+    job_data *en;
+    job_data_iterator *it = head->get_iterator();
+    while((en = it->get_next_item()) != NULL)
       {
-      printf("%d - [%25s]-{%s}\n", cntr, en->name, en->value);
+      printf("%d - [%25s]-{%s}\n", cntr, en->name.c_str(), en->value.c_str());
       cntr++;
       }
+    head->unlock();
+
+    delete it;
     }
   return cntr;
   }
@@ -296,42 +241,60 @@ int hash_print(
  * This allocates memory for the new hash entries
  * returns qty of items added */
 int hash_add_hash(
-    memmgr **mm,
-    job_data **dest,
-    job_data *src,
-    int overwrite_existing)
+
+  job_data_container *dest,
+  job_data_container *src,
+  int                 overwrite_existing)
+
   {
   int cntr = 0;
-  job_data *en, *tmp;
-  for (en=src; en != NULL; en=(job_data *)en->hh.next)
+  job_data *en;
+  job_data *tmp;
+
+  src->lock();
+  job_data_iterator *it = src->get_iterator();
+
+  while ((en = it->get_next_item()) != NULL)
     {
     if (overwrite_existing)
       {
-      hash_add_item(mm, dest, en->name, en->value, en->var_type, en->op_type);
+      dest->lock();
+      dest->insert(new job_data(en->name.c_str(),en->value.c_str(), en->var_type, en->op_type),en->name.c_str(),true);
+      dest->unlock();
       cntr++;
       }
-    else
-      if (hash_find(*dest, en->name, &tmp) != TRUE)
-        {
-        hash_add_item(mm, dest, en->name, en->value, en->var_type, en->op_type);
-        cntr++;
-        }
+    else if (hash_find(dest, en->name.c_str(), &tmp) != TRUE)
+      {
+      hash_add_item(dest, en->name.c_str(), en->value.c_str(), en->var_type, en->op_type);
+      cntr++;
+      }
     }
+
+  delete it;
+
+  src->unlock();
+  dest->unlock();
+
   return cntr;
   }
 
 int hash_strlen(
-    job_data *src)
+
+  job_data_container *src)
+
   {
   int len = 0;
   job_data *en;
-  for (en=src; en != NULL; en=(job_data *)en->hh.next)
+  src->lock();
+  job_data_iterator *it = src->get_iterator();
+  for (en=it->get_next_item(); en != NULL; en=it->get_next_item())
     {
-    len += strlen(en->name);
-    if (en->value != NULL)
-      {
-      len += strlen(en->value);
-      }
+    len += en->name.length();
+    len += en->value.length();
     }
+
+  delete it;
+  src->unlock();
+
   return len;
   }

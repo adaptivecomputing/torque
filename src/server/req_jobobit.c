@@ -128,7 +128,7 @@
 
 /* External Global Data Items */
 
-extern struct all_jobs  alljobs;
+extern all_jobs           alljobs;
 extern unsigned int     pbs_mom_port;
 extern unsigned int     pbs_rm_port;
 extern char            *path_spool;
@@ -858,7 +858,7 @@ int handle_exiting_or_abort_substate(
     {
     if (depend_on_term(pjob) == PBSE_JOBNOTFOUND)
       {
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
       return(PBSE_JOBNOTFOUND);
       }
     }
@@ -937,7 +937,7 @@ int handle_returnstd(
       }
     else if (pjob == NULL)
       {
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
       rc = PBSE_JOBNOTFOUND;
       log_err(rc, __func__, "Job lost while acquiring queue 2");
       goto handle_returnstd_cleanup;
@@ -1344,11 +1344,13 @@ int handle_stageout(
  
 handle_stageout_cleanup:
 
-  if ((preq != NULL) &&
-      (preq->rq_extra != NULL))
+  if (preq != NULL)
     {
-    free(preq->rq_extra);
-    preq->rq_extra = NULL;
+    if(preq->rq_extra != NULL)
+      {
+      free(preq->rq_extra);
+      }
+    free_br(preq);
     }
   
   if (job_momname != NULL)
@@ -1532,7 +1534,10 @@ int handle_exited(
     strcpy(preq->rq_ind.rq_delete.rq_objname, job_id);
     
     if ((handle = mom_comm(pjob, on_job_exit_task)) < 0)
+      {
+      free_br(preq);
       return(PBSE_CONNECT);
+      }
     else
       {
       job_mutex.unlock();
@@ -1548,8 +1553,8 @@ int handle_exited(
             log_buf);
         }
 
-      free_br(preq);
       }
+    free_br(preq);
     }
   else
     job_mutex.unlock();
@@ -1848,7 +1853,7 @@ void handle_complete_second_time(
     else
       {
       svr_job_purge(pjob);
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
       }
     }
 
@@ -1915,7 +1920,7 @@ void on_job_exit(
     }
 
   mutex_mgr job_mutex(pjob->ji_mutex, true);
-  job_mutex.set_lock_on_exit(false);
+  job_mutex.set_unlock_on_exit(false);
     
   sprintf(log_buf, "%s valid pjob: %s (substate=%d)",
     __func__, job_id, pjob->ji_qs.ji_substate);
@@ -1931,6 +1936,7 @@ void on_job_exit(
     case JOB_SUBSTATE_ABORT:
 
       rc = handle_exiting_or_abort_substate(pjob);
+      /* pjob->ji_mutex is always unlocked when returning from handle_exiting_or_abort_substate */
       pjob = NULL;
 
       /* NO BREAK, fall into stage out processing */
@@ -2516,7 +2522,7 @@ void on_job_rerun(
       pjob->ji_momhandle = -1;
       pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_StagedIn;
 
-      svr_evaljobstate(pjob, &newstate, &newsubst, 0);
+      svr_evaljobstate(*pjob, newstate, newsubst, 0);
       svr_setjobstate(pjob, newstate, newsubst, FALSE);
 
       break;
@@ -2843,7 +2849,7 @@ int rerun_job(
     
     pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN;
     
-    svr_evaljobstate(pjob, &newstate, &newsubst, 1);
+    svr_evaljobstate(*pjob, newstate, newsubst, 1);
     svr_setjobstate(pjob, newstate, newsubst, FALSE);
 
     close_conn(pjob->ji_momhandle, FALSE);
@@ -3189,7 +3195,7 @@ int update_substate_from_exit_status(
 
         pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_FILE;
 
-        svr_evaljobstate(pjob, &newstate, &newsubst, 1);
+        svr_evaljobstate(*pjob, newstate, newsubst, 1);
         svr_setjobstate(pjob, newstate, newsubst, FALSE);
 
         close_conn(pjob->ji_momhandle, FALSE);
@@ -3267,7 +3273,7 @@ int req_jobobit(
   mom_addr = get_hostaddr(&local_errno, tmp);
 
   pjob = svr_find_job(job_id, TRUE);
-
+  
   if ((pjob == NULL) ||
       (pjob->ji_qs.ji_un.ji_exect.ji_momaddr != mom_addr))
     {
@@ -3503,7 +3509,8 @@ int req_jobobit(
       {
       rc = handle_rerunning_heterogeneous_jobs(pjob, pjob->ji_qs.ji_state, pjob->ji_qs.ji_substate, acctbuf);
 
-      job_mutex.set_lock_on_exit(false);
+      /* pjob->ji_mutex is always unlocked coming out of handle_rerunning_heterogeneous_jobs */
+      job_mutex.set_unlock_on_exit(false);
         
       return(rc);
       }
@@ -3511,7 +3518,7 @@ int req_jobobit(
       {
       if ((rc = rerun_job(pjob, pjob->ji_qs.ji_state, pjob->ji_qs.ji_substate, acctbuf)) != PBSE_NONE)
         {
-        job_mutex.set_lock_on_exit(false);
+        job_mutex.set_unlock_on_exit(false);
         return(rc);
         }
       }

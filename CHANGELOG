@@ -1,6 +1,6 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
-ascent
+5.0
   e - TRQ-2083. Remove job status polling from TORQUE. Have pbs_server only poll a
       mom for a job's information if the information hasn't been received for 5 
       minutes. Otherwise, this information is communicated with the mom's status
@@ -10,6 +10,14 @@ ascent
   e - TRQ-1539. Condense the exec_host list to have one entry per node instead of one
       entry per execution slot. The node entry contains a string specifying each
       execution slot index. Also no longer display the value of exec_port in qstat.
+  b - TRQ-2319. Replace two Torque functions with ones from the hwloc package.
+  n - Portable Hardware Locality (hwloc) package version 1.2 or higher must be
+      installed when using cpusets (--enable-cpuset). Previously at least version
+      1.1 was required.
+
+4.2.8
+  b - TRQ-2501. Fix the total number of execution slots having a count that is off-by-one for
+      every Cray compute node.
 
 4.2.7
   b - TRQ-2329. Fix a problem where nodes could be allocated to array subjobs even
@@ -36,6 +44,7 @@ ascent
       when the host is down.
   b - TRQ-2395. Fix a problem when running jobs on non-Cray nodes reporting to a pbs
       server running in cray enabled mode.
+  n - TRQ-2299. Make it so that the reporter mom doesn't fork to send its update.
 
 4.2.6
   b - TRQ-2273. Job start time is hard coded to 5 minutes. If the prolog takes longer

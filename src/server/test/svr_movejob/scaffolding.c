@@ -165,7 +165,7 @@ int job_route(job *jobp)
   exit(1);
   }
 
-int svr_enquejob(job *pjob, int has_sv_qs_mutex, int prev_index, bool have_reservation)
+int svr_enquejob(job *pjob, int has_sv_qs_mutex, char *prev_id, bool have_reservation)
   {
   fprintf(stderr, "The call to svr_enquejob to be mocked!!\n");
   exit(1);
@@ -239,7 +239,7 @@ int unlock_queue(struct pbs_queue *the_queue, const char *method_name, const cha
   exit(1);
   }
 
-void svr_evaljobstate(job *pjob, int *newstate, int *newsub, int forceeval)
+void svr_evaljobstate(job &pjob, int &newstate, int &newsub, int forceeval)
   {
   fprintf(stderr, "The call to svr_evaljobstate to be mocked!!\n");
   exit(1);
@@ -390,3 +390,28 @@ int get_svr_attr_l(int index, long *val)
   {
   return(0);
   }
+
+int ctnodes(char *spec)
+  {
+  int   ct = 0;
+  char *pc;
+
+  while (1)
+    {
+    while (isspace((int)*spec))
+      ++spec;
+
+    if (isdigit((int)*spec))
+      ct += atoi(spec);
+    else
+      ++ct;
+
+    if ((pc = strchr(spec, '+')) == NULL)
+      break;
+
+    spec = pc + 1;
+    }  /* END while (1) */
+
+  return(ct);
+  }  /* END ctnodes() */
+

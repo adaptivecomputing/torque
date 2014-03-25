@@ -141,6 +141,7 @@
 #endif
 #include "utils.h"
 #include "mom_config.h"
+#include "container.hpp"
 
 #ifndef TRUE
 #define TRUE 1
@@ -197,7 +198,7 @@ void tasks_free(
   task            *tp = (task *)GET_NEXT(pj->ji_tasks);
   obitent         *op;
   infoent         *ip;
-  resizable_array *freed_chans = initialize_resizable_array(30);
+  container::item_container<struct tcp_chan *> freed_chans;
 
   while (tp != NULL)
     {
@@ -227,12 +228,15 @@ void tasks_free(
 
     if (tp->ti_chan != NULL)
       {
-      if (is_present(freed_chans, tp->ti_chan) == FALSE)
+      char ptr[50];
+      sprintf(ptr,"%p",(void *)tp->ti_chan);
+      freed_chans.lock();
+      if(freed_chans.insert(tp->ti_chan,ptr))
         {
-        insert_thing(freed_chans, tp->ti_chan);
         close_conn(tp->ti_chan->sock, FALSE);
         DIS_tcp_cleanup(tp->ti_chan);
         }
+      freed_chans.unlock();
         
       tp->ti_chan = NULL;
       }
@@ -243,8 +247,6 @@ void tasks_free(
 
     tp = (task *)GET_NEXT(pj->ji_tasks);
     }  /* END while (tp != NULL) */
-
-  free_resizable_array(freed_chans);
 
   return;
   }  /* END tasks_free() */

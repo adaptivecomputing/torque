@@ -245,7 +245,7 @@ int send_job_work(char *job_id, char *node_name, int type, int *my_err, struct b
   exit(1);
   }
 
-void svr_evaljobstate(job *pjob, int *newstate, int *newsub, int forceeval)
+void svr_evaljobstate(job &pjob, int &newstate, int &newsub, int forceeval)
   {
   fprintf(stderr, "The call to svr_evaljobstate to be mocked!!\n");
   exit(1);

@@ -348,8 +348,8 @@ int socket_connect_addr(
   char  tmp_buf[LOCAL_LOG_BUF_SIZE+1];
   int   local_socket = *socket;
 
-  while (((rc = connect(local_socket, remote, remote_size)) != 0) &&
-         (cntr < RES_PORT_RETRY))
+  while ((cntr < RES_PORT_RETRY) &&
+         ((rc = connect(local_socket, remote, remote_size)) != 0))
     {
     cntr++;
     
@@ -399,22 +399,21 @@ int socket_connect_addr(
           rc = PBSE_SOCKET_FAULT;
           /* 3 connect attempts are made to each socket */
           /* Fail on RES_PORT_RETRY */
-          if (cntr < RES_PORT_RETRY)
+          close(local_socket);
+
+          while (cntr < RES_PORT_RETRY)
             {
-            close(local_socket);
             if ((local_socket = socket_get_tcp_priv()) < 0)
-              rc = PBSE_SOCKET_FAULT;
+              cntr++;
             else
               {
               rc = PBSE_NONE;
-              continue;
+              break;
               }
             }
-          else
-            {
-            close(local_socket);
+
+          if (local_socket < 0)
             local_socket = TRANSIENT_SOCKET_FAIL;
-            }
           }
         break;
 
@@ -999,14 +998,14 @@ int pbs_getaddrinfo(
 
 int connect_to_trqauthd(int *sock)
   {
-  int rc = PBSE_NONE;
-  int local_socket;
-  char     unix_sockname[MAXPATHLEN + 1];
-  char     *err_msg;
+  int   rc = PBSE_NONE;
+  int   local_socket;
+  char  unix_sockname[MAXPATHLEN + 1];
+  char *err_msg = NULL;
 
   snprintf(unix_sockname, sizeof(unix_sockname), "%s/%s", TRQAUTHD_SOCK_DIR, TRQAUTHD_SOCK_NAME);
   
-  if ((local_socket = socket_get_unix()) <= 0)
+  if ((local_socket = socket_get_unix()) < 0)
     {
     cerr << "could not open unix domain socket\n";
     rc = PBSE_SOCKET_FAULT;
@@ -1021,6 +1020,9 @@ int connect_to_trqauthd(int *sock)
     {
     *sock = local_socket;
     }
+
+  if (err_msg != NULL)
+    free(err_msg);
 
   return(rc);
   }

@@ -8,7 +8,7 @@
 
 void initialize_queue_recycler();
 
-pbs_queue *next_queue_from_recycler(struct all_queues *aj, int *iter);
+pbs_queue *next_queue_from_recycler(all_queues *aj, int *iter);
 
 void *remove_some_recycle_queues(void *vp);
 

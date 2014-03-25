@@ -104,7 +104,6 @@
 #include "pbs_ifl.h"
 #include "list_link.h"
 #include "pbs_error.h"
-#include "u_memmgr.h"
 #include "tcp.h" /* tcp_chan */
 
 
@@ -317,7 +316,7 @@ struct batch_status *PBSD_status(int c, int function, int *, char *id, struct at
 struct batch_status *PBSD_status_get(int *local_errno, int c);
 
 char *PBSD_queuejob (int c, int *, char *j, char *d, struct attropl *a, char *ex);
-int PBSD_QueueJob_hash(int c, char *j, char *d, memmgr **mm, job_data *ja, job_data *ra, char *ex, char **job_id, char **msg);
+int PBSD_QueueJob_hash(int c, char *j, char *d, job_data_container *ja, job_data_container *ra, char *ex, char **job_id, char **msg);
 
 
 extern int decode_DIS_JobId (struct tcp_chan *chan, char *jobid);
@@ -331,7 +330,7 @@ extern int encode_DIS_Manage (struct tcp_chan *chan, int cmd, int objt, char *, 
 extern int encode_DIS_MoveJob (struct tcp_chan *chan, char *jid, char *dest);
 extern int encode_DIS_MessageJob (struct tcp_chan *chan, char *jid, int fopt, char *m);
 extern int encode_DIS_QueueJob (struct tcp_chan *chan, char *jid, char *dest, struct attropl *);
-int encode_DIS_QueueJob_hash(struct tcp_chan *chan, char *jid, char *destin, memmgr **mm, job_data *job_attr, job_data *res_attr);
+int encode_DIS_QueueJob_hash(struct tcp_chan *chan, char *jid, char *destin, job_data_container *job_attr, job_data_container *res_attr);
 extern int encode_DIS_ReqExtend (struct tcp_chan *chan, char *extend);
 extern int encode_DIS_ReqHdr (struct tcp_chan *chan, int reqt, char *user);
 extern int encode_DIS_Rescq (struct tcp_chan *chan, char **rlist, int num);
@@ -341,7 +340,7 @@ extern int encode_DIS_SignalJob (struct tcp_chan *chan, char *jid, char *sig);
 extern int encode_DIS_Status (struct tcp_chan *chan, char *objid, struct attrl *);
 extern int encode_DIS_attrl (struct tcp_chan *chan, struct attrl *);
 extern int encode_DIS_attropl (struct tcp_chan *chan, struct attropl *);
-int encode_DIS_attropl_hash(struct tcp_chan *chan, memmgr **mm, job_data *job_attr, job_data *res_attr);
+int encode_DIS_attropl_hash(struct tcp_chan *chan, job_data_container *job_attr, job_data_container *res_attr);
 
 extern int DIS_reply_read (struct tcp_chan *chan, struct batch_reply *preply);
 #endif /* LIBPBS_H */

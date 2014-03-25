@@ -97,7 +97,8 @@
 
 #include <pthread.h>
 #include <list>
-#include "resizable_array.h"
+#include <vector>
+#include <stdlib.h>
 
 #define INITIAL_ALL_TASKS_SIZE 4
 
@@ -125,19 +126,28 @@ int task_is_in_threadpool(struct work_task *ptask);
 
 
 
-typedef struct all_tasks
-  {
-  resizable_array *ra;
-
-  pthread_mutex_t *alltasks_mutex;
-  } all_tasks;
-
 
 typedef struct timed_task
   {
   work_task *wt;
   long       task_time;
   } timed_task;
+
+class all_tasks
+  {
+public:
+  std::vector<work_task *> tasks;
+  pthread_mutex_t *alltasks_mutex;
+  all_tasks()
+    {
+    alltasks_mutex = (pthread_mutex_t *)calloc(1,sizeof(pthread_mutex_t));
+    pthread_mutex_init(alltasks_mutex,NULL);
+    }
+  ~all_tasks()
+    {
+    free(alltasks_mutex);
+    }
+  };
 
 
 
@@ -157,7 +167,6 @@ typedef struct work_task
   int                  wt_aux; /* optional info: e.g. child status */
   } work_task;
 
-void       initialize_all_tasks_array(all_tasks *);
 int        insert_task(all_tasks *, work_task *);
 int        remove_task(all_tasks *,work_task *);
 int        has_task(all_tasks *);
@@ -176,13 +185,13 @@ typedef struct task_recycler
   {
   unsigned int     next_id;
   all_tasks        tasks;
-  int              iter;
+  std::vector<work_task *>::iterator iter;
   unsigned int     max_id;
   pthread_mutex_t *mutex;
   } task_recycler;
 
 void initialize_task_recycler();
-work_task *next_task_from_recycler(all_tasks *at, int *iter);
+work_task *next_task_from_recycler(all_tasks *at, std::vector<work_task *>::iterator& iter);
 void *remove_some_recycle_tasks(void *vp);
 int insert_task_into_recycler(struct work_task *ptask);
 

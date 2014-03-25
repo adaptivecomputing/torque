@@ -70,7 +70,7 @@ void hold_job(
     
     pjob->ji_modified = 1;
 
-    svr_evaljobstate(pjob, &newstate, &newsub, 0);
+    svr_evaljobstate(*pjob, newstate, newsub, 0);
 
     svr_setjobstate(pjob, newstate, newsub, FALSE);
     }

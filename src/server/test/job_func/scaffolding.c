@@ -7,11 +7,9 @@
 #include "pbs_ifl.h" /* MAXPATHLEN, PBS_MAXSERVERNAME */
 #include "server.h" /* server, NO_BUFFER_SPACE */
 #include "pbs_job.h" /* all_jobs, job_array, job */
-#include "resizable_array.h" /* resizable_array */
 #include "attribute.h" /* pbs_attribute, attribute_def */
 #include "net_connect.h" /* pbs_net_t */
 #include "list_link.h" /* list_link */
-#include "hash_table.h" /* hash_table_t */
 #include "batch_request.h" /* batch_request */
 #include "work_task.h" /* all_tasks */
 #include "array.h" /* ArrayEventsEnum */
@@ -23,6 +21,8 @@
 int func_num = 0; /* Suite number being run */
 int tc = 0; /* Used for test routining */
 int iter_num = 0;
+
+bool exit_called = false;
 
 int valbuf_size = 0;
 /* end manip */
@@ -36,7 +36,7 @@ int queue_rank = 0;
 char *path_spool;
 const char *msg_err_purgejob = "Unlink of job file failed";
 struct server server;
-struct all_jobs array_summary;
+all_jobs array_summary;
 char *path_jobinfo_log;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 pthread_mutex_t job_log_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -65,11 +65,6 @@ int relay_to_mom(job **pjob_ptr, batch_request   *request, void (*func)(struct w
   return(0);
   }
 
-int insert_thing(resizable_array *ra, void *thing)
-  {
-  return 0;
-  }
-
 void account_record(int acctype, job *pjob, const char *text)
   {
   fprintf(stderr, "The call to account_record needs to be mocked!!\n");
@@ -90,12 +85,6 @@ int job_save(job *pjob, int updatetype, int mom_port)
 void svr_mailowner(job *pjob, int mailpoint, int force, const char *text)
   {
   fprintf(stderr, "The call to svr_mailowner needs to be mocked!!\n");
-  exit(1);
-  }
-
-int remove_thing_from_index(resizable_array *ra, int index)
-  {
-  fprintf(stderr, "The call to remove_thing_from_index needs to be mocked!!\n");
   exit(1);
   }
 
@@ -152,11 +141,6 @@ void delete_link(struct list_link *old)
   exit(1);
   }
 
-int add_hash(hash_table_t *ht, int value, void *key)
-  {
-  return 0;
-  }
-
 void free_br(struct batch_request *preq)
   {
   fprintf(stderr, "The call to free_br needs to be mocked!!\n");
@@ -199,11 +183,6 @@ job *get_recycled_job()
   exit(1);
   }
 
-int get_value_hash(hash_table_t *ht, void *key)
-  {
-  return(-1);
-  }
-
 void delete_task(struct work_task *ptask)
   {
   fprintf(stderr, "The call to delete_task needs to be mocked!!\n");
@@ -232,23 +211,7 @@ int issue_signal(job **pjob, const char *signame, void (*func)(batch_request *),
   exit(1);
   }
 
-resizable_array *initialize_resizable_array(int size)
-  {
-  resizable_array *ra = (resizable_array *)calloc(1, sizeof(resizable_array));
-  size_t           amount = sizeof(slot) * size;
-  size = 10;
-
-  ra->max       = size;
-  ra->num       = 0;
-  ra->next_slot = 1;
-  ra->last      = 0;
-
-  ra->slots = (slot *)calloc(1, amount);
-
-  return(ra);
-  }
-
-int svr_enquejob(job *pjob, int has_sv_qs_mutex, int prev_index, bool reservation)
+int svr_enquejob(job *pjob, int has_sv_qs_mutex, char *prev_jobid, bool reservation)
   {
   fprintf(stderr, "The call to svr_enquejob needs to be mocked!!\n");
   exit(1);
@@ -266,38 +229,16 @@ int array_delete(job_array *pa)
   exit(1);
   }
 
-void *next_thing(resizable_array *ra, int *iter)
-  {
-  fprintf(stderr, "The call to next_thing needs to be mocked!!\n");
-  exit(1);
-  }
-
 void release_req(struct work_task *pwt)
   {
   fprintf(stderr, "The call to release_req needs to be mocked!!\n");
   exit(1);
   }
 
-hash_table_t *create_hash(int size)
-  {
-  return(NULL);
-  }
-
 work_task *next_task(all_tasks *at, int *iter)
   {
   fprintf(stderr, "The call to next_task needs to be mocked!!\n");
   exit(1);
-  }
-
-int swap_things(resizable_array *ra, void *thing1, void *thing2)
-  {
-  fprintf(stderr, "The call to swap_things needs to be mocked!!\n");
-  exit(1);
-  }
-
-int insert_thing_after(resizable_array *ra, void *thing, int index)
-  {
-  return(0);
   }
 
 void issue_track(job *pjob)
@@ -355,27 +296,9 @@ void check_job_log(struct work_task *ptask)
   exit(1);
   }
 
-void svr_evaljobstate(job *pjob, int *newstate, int *newsub, int forceeval)
+void svr_evaljobstate(job &pjob, int &newstate, int &newsub, int forceeval)
   {
   fprintf(stderr, "The call to svr_evaljobstate needs to be mocked!!\n");
-  exit(1);
-  }
-
-int remove_hash(hash_table_t *ht, char *key)
-  {
-  fprintf(stderr, "The call to remove_hash needs to be mocked!!\n");
-  exit(1);
-  }
-
-void *next_thing_from_back(resizable_array *ra, int *iter)
-  {
-  fprintf(stderr, "The call to next_thing_from_back needs to be mocked!!\n");
-  exit(1);
-  }
-
-void change_value_hash(hash_table_t *ht, char *key, int new_value)
-  {
-  fprintf(stderr, "The call to change_value_hash needs to be mocked!!\n");
   exit(1);
   }
 
@@ -582,12 +505,12 @@ job *svr_find_job(char *jobid, int sub)
   return(NULL);
   }
 
-int remove_job(struct all_jobs *aj, job             *pjob)
+int remove_job(all_jobs *aj, job             *pjob)
   {
   return(0);
   }
 
-int get_jobs_index(struct all_jobs *aj, job             *pjob)
+int get_jobs_index(all_jobs *aj, job             *pjob)
   {
   return(0);
   }
@@ -619,35 +542,19 @@ void free_unkn(pbs_attribute *pattr) {}
 
 /* copied from job_container.c */
 
-void initialize_all_jobs_array(struct all_jobs *aj)
-  {
-  if (aj == NULL)
-    {
-    log_err(PBSE_BAD_PARAMETER,__func__,"null input job array");
-    return;
-    }
-
-  aj->ra = initialize_resizable_array(INITIAL_JOB_SIZE);
-  aj->ht = create_hash(INITIAL_HASH_SIZE);
-
-  aj->alljobs_mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(aj->alljobs_mutex, NULL);
-  }
-
 job *find_job_by_array(
 
-  struct all_jobs *aj,
+  all_jobs *aj,
   char            *job_id,
   int              get_subjob,
   bool             locked)
 
   {
   job *pj = NULL;
-  int  i;
 
   if (aj == NULL)
     {
-    log_err(PBSE_BAD_PARAMETER, __func__, "null struct all_jobs pointer fail");
+    log_err(PBSE_BAD_PARAMETER, __func__, "null all_jobs pointer fail");
     return(NULL);
     }
   if (job_id == NULL)
@@ -656,16 +563,12 @@ job *find_job_by_array(
     return(NULL);
     }
 
-  pthread_mutex_lock(aj->alljobs_mutex);
-
-  i = get_value_hash(aj->ht, job_id);
-
-  if (i >= 0)
-    pj = (job *)aj->ra->slots[i].item;
+  aj->lock();
+  pj = aj->find(job_id);
   if (pj != NULL)
     lock_ji_mutex(pj, __func__, NULL, LOGLEVEL);
 
-  pthread_mutex_unlock(aj->alljobs_mutex);
+  aj->unlock();
 
   if (pj != NULL)
     {

@@ -197,11 +197,10 @@ int timestring_to_int(
   int   minutes;
   int   seconds;
 
-  ptr_string = (char *)malloc(strlen(timestring)+1);
+  ptr_string = strdup(timestring);
   if (ptr_string == NULL)
     return(PBSE_MEM_MALLOC);
 
-  strcpy(ptr_string, timestring);
   number = ptr_string;
   ptr = strstr(ptr_string, ":");
   if (ptr == NULL)
@@ -666,11 +665,15 @@ static void altdsp_statjob(
   char        elap_time_string[100];
   char        format_string[MAX_LINE_LEN];
 
+  const char *width;
+  const char *ppn;
+
   int   usecput;
   static char  pfs[SIZEL];
   static char  rqmem[SIZEL];
   static char  srfsbig[SIZEL];
   static char  srfsfast[SIZEL];
+  static char  tmpNodeCt[SIZEL];
   static const char *blank = " -- ";
 
   if (prtheader)
@@ -709,7 +712,10 @@ static void altdsp_statjob(
     eltimecpu = blank;
     jstate    = blank;
     comment   = blank;
-    strcpy(elap_time_string, blank);
+    width     = blank;
+    ppn       = blank;
+
+    snprintf(elap_time_string, sizeof(elap_time_string), "%s", blank);
     snprintf(pfs, sizeof(pfs), "%s", blank);
     snprintf(rqmem, sizeof(rqmem), "%s", blank);
     snprintf(srfsbig, sizeof(srfsbig), "%s", blank);
@@ -718,6 +724,7 @@ static void altdsp_statjob(
     elap_time = 0;
     req_walltime = 0;
     rem_walltime = 0;
+    bool dummyProcVal = false;
 
     pat = pstat->attribs;
 
@@ -768,8 +775,24 @@ static void altdsp_statjob(
           else
             {
             tasks = pat->value;
+            dummyProcVal = true;
             }
 
+          }
+        else if (!strcmp(pat->resource, "procs"))
+          {
+          if ((strcmp(pat->value, "0"))&&((!strcmp(tasks,blank))||dummyProcVal))
+            tasks = pat->value;
+          }
+        else if (!strcmp(pat->resource, "mppwidth"))
+          {
+          if ((strcmp(pat->value, "0"))&&(!strcmp(width,blank)))
+            width = pat->value;
+          }
+        else if (!strcmp(pat->resource, "mppnppn"))
+          {
+          if ((strcmp(pat->value, "0"))&&(!strcmp(ppn,blank)))
+            ppn = pat->value;
           }
         else if (!strcmp(pat->resource, "ncpus"))
           {
@@ -852,6 +875,27 @@ static void altdsp_statjob(
         }
 
       pat = pat->next;
+      }
+
+    if(strcmp(width,blank))
+      {
+      tasks = width;
+      if(strcmp(ppn,blank))
+        {
+        int w = atoi(width);
+        int p = atoi(ppn);
+        int c;
+        if((p != 0)&&(w != 0))
+          {
+          c = w/p;
+          if(w%p != 0)
+            {
+            c++;
+            }
+          sprintf(tmpNodeCt,"%d",c);
+          nodect = tmpNodeCt;
+          }
+        }
       }
 
     if ((*jstate != 'Q') && (*jstate != 'C') && (*jstate != 'H'))
@@ -1680,15 +1724,15 @@ void display_statque(
     name = NULL;
     max = "0";
     tot = "0";
-    strcpy(ena, "no");
-    strcpy(str, "no");
-    strcpy(que, "0");
-    strcpy(run, "0");
-    strcpy(hld, "0");
-    strcpy(wat, "0");
-    strcpy(trn, "0");
-    strcpy(ext, "0");
-    strcpy(dne, "0");
+    snprintf(ena, sizeof(ena), "no");
+    snprintf(str, sizeof(str), "no");
+    snprintf(que, sizeof(que), "0");
+    snprintf(run, sizeof(run), "0");
+    snprintf(hld, sizeof(hld), "0");
+    snprintf(wat, sizeof(wat), "0");
+    snprintf(trn, sizeof(trn), "0");
+    snprintf(ext, sizeof(ext), "0");
+    snprintf(dne, sizeof(dne), "0");
     type = "not defined";
 
     if (full)
@@ -1762,16 +1806,16 @@ void display_statque(
           else if (strcmp(a->name, ATTR_enable) == 0)
             {
             if (istrue(a->value) == true)
-              strcpy(ena, "yes");
+              snprintf(ena, sizeof(ena), "yes");
             else
-              strcpy(ena, "no");
+              snprintf(ena, sizeof(ena), "no");
             }
           else if (strcmp(a->name, ATTR_start) == 0)
             {
             if (istrue(a->value) == true)
-              strcpy(str, "yes");
+              snprintf(str, sizeof(str), "yes");
             else
-              strcpy(str, "no");
+              snprintf(str, sizeof(str), "no");
             }
           else if (strcmp(a->name, ATTR_count) == 0)
             {
@@ -1873,13 +1917,13 @@ void display_statserver(
     name = NULL;
     max = "0";
     tot = "0";
-    strcpy(que, "0");
-    strcpy(run, "0");
-    strcpy(hld, "0");
-    strcpy(wat, "0");
-    strcpy(trn, "0");
-    strcpy(ext, "0");
-    strcpy(dne, "0");
+    snprintf(que, sizeof(que), "0");
+    snprintf(run, sizeof(run), "0");
+    snprintf(hld, sizeof(hld), "0");
+    snprintf(wat, sizeof(wat), "0");
+    snprintf(trn, sizeof(trn), "0");
+    snprintf(ext, sizeof(ext), "0");
+    snprintf(dne, sizeof(dne), "0");
     stats = "";
 
     if (full)
@@ -2057,7 +2101,7 @@ tcl_init(void)
 
   if (stat(script, &sb) == -1)
     {
-    strcpy(script, QSTATRC_PATH);
+    snprintf(script, sizeof(script), "%s", QSTATRC_PATH);
 
     if (stat(script, &sb) == -1)
       return;
@@ -3206,16 +3250,14 @@ int main(
   if (optind >= argc)
     {
     /* If no arguments, then set defaults */
-        server_out[0] = '@';
-        strcpy(&server_out[1], def_server);
-        tcl_addarg(ops, server_out);
-
-        job_id_out[0] = '\0';
-        server_out[0] = '\0';
-
-        queue_name_out = NULL;
-        have_args = false;
+    snprintf(server_out, sizeof(server_out), "@%s", def_server);
+    tcl_addarg(ops, server_out);
     
+    job_id_out[0] = '\0';
+    server_out[0] = '\0';
+    
+    queue_name_out = NULL;
+    have_args = false;   
     }    /* END if (optind >= argc) */
   else
     {

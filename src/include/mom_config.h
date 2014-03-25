@@ -170,6 +170,7 @@ extern short            memory_pressure_duration;
 extern int              max_join_job_wait_time;
 extern int              resend_join_job_wait_time;
 extern int              mom_hierarchy_retry_time;
+extern int              MOMJobDirStickySet;
 
 struct specials
   {
@@ -187,6 +188,8 @@ unsigned long setloglevel(const char *value);
 unsigned long setdownonerror(const char *value);
 unsigned long setenablemomrestart(const char *value);
 unsigned long setrcpcmd(const char *value);
+unsigned long setjobdirectorysticky(const char *value);
+
 #ifdef PENABLE_LINUX26_CPUSETS
 unsigned long setmempressthr(const char *);
 unsigned long setmempressdur(const char *);

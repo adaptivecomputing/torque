@@ -137,7 +137,7 @@ extern char server_host[];
 
 extern struct server server;
 extern int   LOGLEVEL;
-extern struct all_jobs alljobs;
+extern all_jobs alljobs;
 
 extern int issue_signal(job **, const char *, void (*)(batch_request *), void *, char *);
 
@@ -586,7 +586,7 @@ jump:
       log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
       }
     else
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
 
     return(-1);
     }  /* END if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) */
@@ -617,7 +617,7 @@ jump:
 
       if (pjob == NULL)
         {
-        job_mutex.set_lock_on_exit(false);
+        job_mutex.set_unlock_on_exit(false);
         return(-1);
         }
       std::string dup_job_id(pjob->ji_qs.ji_jobid);
@@ -649,7 +649,7 @@ jump:
                 tmp->ji_wattr[JOB_ATR_hold].at_flags &= ~ATR_VFLAG_SET;
                 }
 
-              svr_evaljobstate(tmp, &newstate, &newsub, 1);
+              svr_evaljobstate(*tmp, newstate, newsub, 1);
               svr_setjobstate(tmp, newstate, newsub, FALSE);
               job_save(tmp, SAVEJOB_FULL, 0);
 
@@ -676,7 +676,7 @@ jump:
 
   if (pjob == NULL)
     {
-    job_mutex.set_lock_on_exit(false);
+    job_mutex.set_unlock_on_exit(false);
     return -1;
     }
 
@@ -699,14 +699,14 @@ jump:
     }
   else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)
     {
-    job_mutex.set_lock_on_exit(false);
+    job_mutex.set_unlock_on_exit(false);
     return -1;
     }
 
   delete_inactive_job(&pjob, Msg);
 
   if (pjob == NULL)
-    job_mutex.set_lock_on_exit(false);
+    job_mutex.set_unlock_on_exit(false);
 
   return(PBSE_NONE);
   } /* END execute_job_delete() */
@@ -895,22 +895,26 @@ void *delete_all_work(
 
   batch_request *preq_dup = duplicate_request(preq);
   job           *pjob;
-  int            iter = -1;
+  all_jobs_iterator *iter = NULL;
   int            failed_deletes = 0;
   int            total_jobs = 0;
   int            rc = PBSE_NONE;
   char           tmpLine[MAXLINE];
   char          *Msg = preq->rq_extend;
   
-  while ((pjob = next_job(&alljobs, &iter)) != NULL)
+  alljobs.lock();
+  iter = alljobs.get_iterator();
+  alljobs.unlock();
+  while ((pjob = next_job(&alljobs, iter)) != NULL)
     {
     // use mutex manager to make sure job mutex locks are properly handled at exit
     mutex_mgr job_mutex(pjob->ji_mutex, true);
  
     if ((rc = forced_jobpurge(pjob, preq_dup)) == PURGE_SUCCESS)
       {
+      iter->item_was_removed(); //Tell the iterator that the item it was pointing at has been removed.
       // want to leave lock in place after exiting
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
 
       continue;
       }
@@ -936,7 +940,7 @@ void *delete_all_work(
       if ((rc = execute_job_delete(pjob, Msg, preq_dup)) == PBSE_NONE)
         {
         // execute_job_delete() handles mutex so don't unlock on exit
-        job_mutex.set_lock_on_exit(false);
+        job_mutex.set_unlock_on_exit(false);
         reply_ack(preq_dup);
         }
        
@@ -1342,7 +1346,7 @@ void post_delete_mom1(
 
       set_resc_assigned(pjob, DECR);
 
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
 
       svr_job_purge(pjob);
 
@@ -1381,7 +1385,7 @@ void post_delete_mom1(
       }
     else if (pjob == NULL)
       {
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
       return;
       }
     }
@@ -1438,7 +1442,7 @@ void post_delete_mom2(
       }
     
     if (pjob == NULL)
-      job_mutex.set_lock_on_exit(false);
+      job_mutex.set_unlock_on_exit(false);
     }
   }  /* END post_delete_mom2() */
 
@@ -1605,7 +1609,7 @@ void job_delete_nanny(
         if (pjob != NULL)
           apply_job_delete_nanny(pjob, time_now + 60);
         else
-          job_mutex.set_lock_on_exit(false);
+          job_mutex.set_unlock_on_exit(false);
         }
       }
     else
@@ -1684,7 +1688,7 @@ void post_job_delete_nanny(
   
     free_br(preq_sig);
 
-    job_mutex.set_lock_on_exit(false);
+    job_mutex.set_unlock_on_exit(false);
 
     svr_job_purge(pjob);
 
@@ -1713,7 +1717,7 @@ void purge_completed_jobs(
   job          *pjob;
   char         *time_str;
   time_t        purge_time = 0;
-  int           iter;
+  all_jobs_iterator   *iter = NULL;
   char          log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* get the time to purge the jobs that completed before */
@@ -1744,9 +1748,11 @@ void purge_completed_jobs(
     
   reply_ack(preq);
 
-  iter = -1;
+  alljobs.lock();
+  iter = alljobs.get_iterator();
+  alljobs.unlock();
 
-  while ((pjob = next_job(&alljobs,&iter)) != NULL) 
+  while ((pjob = next_job(&alljobs,iter)) != NULL)
     {
     if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_COMPLETE) &&
         (pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long <= purge_time) &&

@@ -156,7 +156,7 @@ int decode_tv(
 
   for(pc = workval; *pc; ++pc)
 		{
-		if (*pc == ':')
+		if (*pc == '.')
 			{
 			if (++ncolon > 1)
 				goto badval;

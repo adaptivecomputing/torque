@@ -19,7 +19,7 @@ const char *msg_leftrunning = "job running on at Server shutdown";
 const char *msg_shutdown_op = "Shutdown request from %s@%s ";
 const char *msg_job_abort = "Aborted by PBS Server ";
 attribute_def job_attr_def[10];
-struct all_jobs alljobs;
+all_jobs alljobs;
 struct server server;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
@@ -48,7 +48,7 @@ void req_reject(int code, int aux, struct batch_request *preq, const char *HostN
   exit(1);
   }
 
-job *next_job(struct all_jobs *aj, int *iter)
+job *next_job(all_jobs *aj, all_jobs_iterator *iter)
   {
   fprintf(stderr, "The call to next_job to be mocked!!\n");
   exit(1);

@@ -11,6 +11,7 @@ test_uut
 .deps
 .libs
 *.m4
+.settings
 autom4te.cache/
 buildutils/ar-lib
 buildutils/compile
@@ -45,6 +46,7 @@ contrib/init.d/suse.pbs_sched
 contrib/init.d/suse.pbs_server
 contrib/init.d/suse.trqauthd
 coverages.csv
+current_hash
 *.1
 *.3
 *.7
@@ -52,6 +54,7 @@ coverages.csv
 doc/soelim
 libtool
 pbs-config
+current_hash
 src/cmds/nqs2pbs
 src/cmds/pbs_track
 src/cmds/pbsdsh
@@ -345,11 +348,13 @@ src/lib/Libutils/test/u_mu/test_u_mu
 src/lib/Libutils/test/u_resizable_array/test_u_resizable_array
 src/lib/Libutils/test/u_threadpool/test_u_threadpool
 src/lib/Libutils/test/u_tree/test_u_tree
+src/lib/Libutils/test/u_misc/test_u_misc
 src/lib/Libutils/test/u_users/test_u_users
 src/lib/Libutils/test/u_xml/test_u_xml
 src/lib/Libutils/test/u_putenv/test_u_putenv
 src/momctl/test/momctl/test_momctl
 src/resmom/linux/test/cpuset/test_cpuset
+src/resmom/linux/test/cpuset/coverage_run.sh
 src/resmom/linux/test/numa_node/test_numa_node
 src/resmom/linux/test/node_internals/test_node_internals
 src/resmom/linux/test/mom_mach/test_mom_mach

@@ -122,8 +122,8 @@ extern int   svr_authorize_jobreq(struct batch_request *, job *);
 
 extern int LOGLEVEL;
 extern struct server server;
-extern struct all_jobs alljobs;
-extern struct all_jobs array_summary;
+extern all_jobs       alljobs;
+extern all_jobs       array_summary;
 
 /* Private Functions  */
 
@@ -132,7 +132,6 @@ static int  build_selist(svrattrl *, int perm, struct  select_list **,
 static void free_sellist(struct select_list *pslist);
 static int  sel_attr(pbs_attribute *, struct select_list *);
 static int  select_job(job *, struct select_list *);
-static void sel_step2(struct stat_cntl *);
 static void sel_step3(struct stat_cntl *);
 
 
@@ -274,12 +273,7 @@ static attribute_def state_sel =
  *
  * For Select, one pass through the job list suffices.
  *
- * For Sel_stat, the current status from MOM for running jobs is required
- * (just like for regular status requests).  Therefore, two passes are
- * made through the jobs:
- *  1. Determine if any job that qualifies is running and has
- *     stale data from MOM.   If so get update from MOM.
- *  2. Build the status reply for any job that qualifies.
+ * For Sel_stat, build the status reply for any job that qualifies.
  *
  * And just like regular status requests, if poll_job is enabled,
  * we skip over sending update requests to MOM.
@@ -290,7 +284,9 @@ static attribute_def state_sel =
  */
 
 int req_selectjobs(
-    struct batch_request *preq)
+
+  batch_request *preq)
+
   {
   int                   bad = 0;
 
@@ -298,7 +294,6 @@ int req_selectjobs(
   svrattrl             *plist;
   pbs_queue            *pque = NULL;
   int                   rc = PBSE_NONE;
-  long                  poll_jobs = 0;
   char log_buf[LOCAL_LOG_BUF_SIZE+1];
 
   struct select_list   *selistp;
@@ -341,163 +336,13 @@ int req_selectjobs(
 
   cntl->sc_select = selistp;  /* the select list */
 
-  get_svr_attr_l(SRV_ATR_PollJobs, &poll_jobs);
-
-  if (preq->rq_type == PBS_BATCH_SelectJobs)
-    {
-    sel_step3(cntl);
-    }
-  else if (poll_jobs)
-    {
-    sel_step3(cntl);
-    }
-  else
-    {
-    cntl->sc_post = sel_step2;
-
-    sel_step2(cntl);
-    }
+  sel_step3(cntl);
 
   if (pque != NULL)
     unlock_queue(pque, "req_selectjobs", (char *)NULL, LOGLEVEL);
 
   return PBSE_NONE;
   }  /* END req_selectjobs() */
-
-
-
-
-
-/**
- * @see rq_selectjobs() - parent
- */
-
-static void sel_step2(
-
-  struct stat_cntl *cntl)
-
-  {
-  job          *pjob = NULL;
-  int           rc;
-  int           exec_only = 0;
-  int           summarize_arrays = 0;
-  pbs_queue    *pque = NULL;
-  int           iter;
-  time_t        time_now = time(NULL);
-  long          query_others = 0;
-  char job_id[PBS_MAXSVRJOBID+1];
-  int job_substate = -1;
-  time_t job_momstattime = -1;
-
-  /* do first pass of finding jobs that match the selection criteria */
-  get_svr_attr_l(SRV_ATR_query_others, &query_others);
-
-  if (cntl->sc_origrq->rq_extend != NULL)
-    {
-    if (!strncmp(cntl->sc_origrq->rq_extend, EXECQUEONLY, strlen(EXECQUEONLY)))
-      exec_only = 1;
-    else if (!strncmp(cntl->sc_origrq->rq_extend, "summarize_arrays", strlen("summarize_arrays")))
-      summarize_arrays = 1;
-    }
-
-  iter = -1;
-
-  while (1)
-    {
-    /*
-     * Start with either first job in queue or server, or
-     * start with the job following the current one in the the
-     * list (queue or server).
-     */
-
-    if (summarize_arrays)
-      {
-      if (cntl->sc_pque)
-        pjob = next_job(cntl->sc_pque->qu_jobs_array_sum,&iter);
-      else
-        pjob = next_job(&array_summary,&iter);;
-      }
-    else
-      {
-      if (cntl->sc_pque)
-        pjob = next_job(cntl->sc_pque->qu_jobs_array_sum,&iter);
-      else
-        pjob = next_job(&alljobs,&iter);
-      }
-
-    if (pjob == NULL)
-      break;
-
-    if (exec_only)
-      {
-      if (cntl->sc_pque != NULL)
-        {
-        pque = cntl->sc_pque;
-        
-        if (pque->qu_qs.qu_type != QTYPE_Execution)
-          continue;
-        }
-      else
-        {
-        pque = find_queuebyname(pjob->ji_qs.ji_queue);
-        
-        mutex_mgr que_mgr(pque->qu_mutex, true);
-
-        if (pque->qu_qs.qu_type != QTYPE_Execution)
-          {
-          continue;
-          }
-        }
-      }
-
-    if (query_others ||
-        (svr_authorize_jobreq(cntl->sc_origrq, pjob) == 0))
-      {
-      /* have permission to look at job */
-      long job_stat_rate;
-
-      get_svr_attr_l(SRV_ATR_JobStatRate, &job_stat_rate);
-
-      if (select_job(pjob, cntl->sc_select))
-        {
-        strcpy(cntl->sc_jobid, pjob->ji_qs.ji_jobid);
-        strcpy(job_id, pjob->ji_qs.ji_jobid);
-        job_substate = pjob->ji_qs.ji_substate;
-        job_momstattime = pjob->ji_momstat;
-        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-
-        if ((job_substate == JOB_SUBSTATE_RUNNING) &&
-            ((time_now - job_momstattime) > job_stat_rate))
-          {
-
-          if ((rc = stat_to_mom(job_id, cntl)) == PBSE_MEM_MALLOC)
-            {
-            break;
-            }
-
-          if (rc == 0)
-            {
-            return;
-            }
-
-          rc = PBSE_NONE;
-          /* ignore this job */
-          continue;
-          }
-        }
-      else
-        unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
-      }
-    else
-      unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
-    }
-
-  sel_step3(cntl);
-
-  return;
-  }  /* END sel_step2() */
-
-
 
 
 
@@ -521,7 +366,7 @@ static void sel_step3(
   int        exec_only = 0;
   pbs_queue           *pque = NULL;
 
-  int         iter = -1;
+  all_jobs_iterator   *iter = NULL;
   long        query_others = 0;
   
   get_svr_attr_l(SRV_ATR_query_others, &query_others);
@@ -554,22 +399,55 @@ static void sel_step3(
     if (!strncmp(preq->rq_extend, EXECQUEONLY, strlen(EXECQUEONLY)))
       exec_only = 1;
 
-  /* now start checking for jobs that match the selection criteria */
-  if (summarize_arrays)
+  if(summarize_arrays)
     {
     if (cntl->sc_pque)
-      pjob = next_job(cntl->sc_pque->qu_jobs_array_sum,&iter);
+      {
+      cntl->sc_pque->qu_jobs_array_sum->lock();
+      iter = cntl->sc_pque->qu_jobs_array_sum->get_iterator();
+      cntl->sc_pque->qu_jobs_array_sum->unlock();
+      }
     else
       {
-      pjob = next_job(&array_summary,&iter);
+      array_summary.lock();
+      iter = array_summary.get_iterator();
+      array_summary.unlock();
       }
     }
   else
     {
     if (cntl->sc_pque)
-      pjob = next_job(cntl->sc_pque->qu_jobs,&iter);
+      {
+      cntl->sc_pque->qu_jobs->lock();
+      iter = cntl->sc_pque->qu_jobs->get_iterator();
+      cntl->sc_pque->qu_jobs->unlock();
+      }
     else
-      pjob = next_job(&alljobs,&iter);
+      {
+      alljobs.lock();
+      iter = alljobs.get_iterator();
+      alljobs.unlock();
+      }
+
+    }
+
+
+  /* now start checking for jobs that match the selection criteria */
+  if (summarize_arrays)
+    {
+    if (cntl->sc_pque)
+      pjob = next_job(cntl->sc_pque->qu_jobs_array_sum,iter);
+    else
+      {
+      pjob = next_job(&array_summary,iter);
+      }
+    }
+  else
+    {
+    if (cntl->sc_pque)
+      pjob = next_job(cntl->sc_pque->qu_jobs,iter);
+    else
+      pjob = next_job(&alljobs,iter);
     }
 
   while (pjob != NULL)
@@ -648,16 +526,16 @@ nextjob:
     if (summarize_arrays)
       {
       if (cntl->sc_pque)
-        next = next_job(cntl->sc_pque->qu_jobs_array_sum,&iter);
+        next = next_job(cntl->sc_pque->qu_jobs_array_sum,iter);
       else
-        next = next_job(&array_summary,&iter);
+        next = next_job(&array_summary,iter);
       }
     else
       {
       if (cntl->sc_pque)
-        next = next_job(cntl->sc_pque->qu_jobs,&iter);
+        next = next_job(cntl->sc_pque->qu_jobs,iter);
       else
-        next = next_job(&alljobs,&iter);
+        next = next_job(&alljobs,iter);
       }
 
     pjob = next;

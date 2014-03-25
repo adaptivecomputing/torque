@@ -255,11 +255,6 @@ int svr_recov(
 
 
 
-
-
-
-
-
 int svr_recov_xml(
 
   char *svrfile,  /* I */

@@ -107,7 +107,7 @@ class mutex_mgr
     int unlock();
     int lock();
     void set_lock_state(bool val);
-    void set_lock_on_exit(bool val);
+    void set_unlock_on_exit(bool val);
 	  void mark_as_locked();
     bool is_valid();
   };

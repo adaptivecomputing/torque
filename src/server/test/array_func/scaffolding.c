@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 
-#include "resizable_array.h" /* resizable_array */
 #include "pbs_job.h" /* job */
 #include "batch_request.h" /* batch_request */
 #include "attribute.h" /* pbs_attribute */
@@ -13,19 +12,13 @@
 
 const char *text_name              = "text";
 
-
+bool exit_called = false;
 
 char *path_arrays;
 const char *pbs_o_host = "PBS_O_HOST";
 struct server server;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 int array_259_upgrade = 0;
-
-int insert_thing(resizable_array *ra, void *thing)
-  {
-  fprintf(stderr, "The call to insert_thing needs to be mocked!!\n");
-  exit(1);
-  }
 
 int job_save(job *pjob, int updatetype, int mom_port)
   {
@@ -36,12 +29,6 @@ int job_save(job *pjob, int updatetype, int mom_port)
 ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
   {
   fprintf(stderr, "The call to read_nonblocking_socket needs to be mocked!!\n");
-  exit(1);
-  }
-
-int remove_thing(resizable_array *ra, void *thing)
-  {
-  fprintf(stderr, "The call to remove_thing needs to be mocked!!\n");
   exit(1);
   }
 
@@ -99,27 +86,15 @@ int modify_job(void **j, svrattrl *plist, struct batch_request *preq, int checkp
   exit(1);
   }
 
-job *next_job(struct all_jobs *aj, int *iter)
+job *next_job(all_jobs *aj, all_jobs_iterator *iter)
   {
   fprintf(stderr, "The call to next_job needs to be mocked!!\n");
-  exit(1);
-  }
-
-resizable_array *initialize_resizable_array(int size)
-  {
-  fprintf(stderr, "The call to initialize_resizable_array needs to be mocked!!\n");
   exit(1);
   }
 
 int attempt_delete(void *j)
   {
   fprintf(stderr, "The call to attempt_delete needs to be mocked!!\n");
-  exit(1);
-  }
-
-void *next_thing(resizable_array *ra, int *iter)
-  {
-  fprintf(stderr, "The call to next_thing needs to be mocked!!\n");
   exit(1);
   }
 
@@ -147,7 +122,7 @@ int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mut
   exit(1);
   }
 
-void svr_evaljobstate(job *pjob, int *newstate, int *newsub, int forceeval)
+void svr_evaljobstate(job &pjob, int &newstate, int &newsub, int forceeval)
   {
   fprintf(stderr, "The call to svr_evaljobstate needs to be mocked!!\n");
   exit(1);
@@ -282,53 +257,6 @@ int lock_ai_mutex(
 
   {
   return(0);
-  }
-
-int remove_from_hash_map(
-
-  hash_map   *hm,
-  const char *key,
-  bool        already_locked)
-
-  {
-  return(0);
-  }
-
-int add_to_hash_map(
-    
-  hash_map *hm,
-  void     *obj,
-  char     *key)
-
-  {
-  return(0);
-  }
-
-hash_map *get_hash_map(
-
-  int size_param)
-
-  {
-  return(NULL);
-  }
-
-void *get_from_hash_map(
-
-  hash_map   *hm,
-  const char *key)
-
-  {
-  return(NULL);
-  }
-
-void *next_from_hash_map(
-
-  hash_map *hm,
-  int      *iter,
-  bool      already_locked)
-
-  {
-  return(NULL);
   }
 
 ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)

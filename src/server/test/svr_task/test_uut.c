@@ -106,7 +106,7 @@ END_TEST
 START_TEST(test_one)
   {
   int rc;
-  initialize_all_tasks_array(&task_list_event);
+  task_list_event.tasks.clear();
   initialize_task_recycler();
 
   if (task_list_timed == NULL)
@@ -126,8 +126,8 @@ START_TEST(test_one)
   fail_unless(rc == PBSE_NONE, "dispatch_task failed", rc);
   delete_task(pWorkTask);
 
-  int iter = -1;
-  struct work_task *pRecycled = next_task_from_recycler(&tr.tasks,&iter);
+  std::vector<work_task *>::iterator iter = tr.tasks.tasks.end();
+  struct work_task *pRecycled = next_task_from_recycler(&tr.tasks,iter);
   fprintf(stderr,"%p %p\n",(void *)pWorkTask,(void *)pRecycled);
   fail_unless(pRecycled == pWorkTask);
   fail_unless(task_is_in_threadpool(pWorkTask2));

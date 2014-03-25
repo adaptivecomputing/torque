@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <time.h>
 #include "u_hash_map_structs.h"
-#include "u_memmgr.h"
 #include "port_forwarding.h"
 
 int pbs_errno = 0; 

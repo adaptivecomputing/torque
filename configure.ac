@@ -30,7 +30,7 @@ dnl added library functionality to testing
 dnl by John Rosenquist (jrosenquist@adaptivecomputing.com)
 
 AC_PREREQ(2.53)
-AC_INIT([torque], [4.5.0], [torqueusers@supercluster.org])
+AC_INIT([torque], [5.0], [torqueusers@supercluster.org])
 AC_REVISION($Revision$)
 AC_CONFIG_SRCDIR([src/cmds/qrun.c])
 AC_CONFIG_AUX_DIR([buildutils])
@@ -92,6 +92,7 @@ success=$?
 fi
 
 if test "X$success" == "X0" ; then
+  success=`echo $githash > current_hash`
   AC_DEFINE_UNQUOTED(GIT_HASH, ["$githash"], [repository svn version])
 else
   dnl current hash is a file checked in to the git repo in the base directory
@@ -381,17 +382,13 @@ m4_ifdef([AM_SILENT_RULES],[
     src/lib/Libutils/test/Makefile
     src/lib/Libutils/test/u_MXML/Makefile
     src/lib/Libutils/test/u_groups/Makefile
-    src/lib/Libutils/test/u_hash_map/Makefile
     src/lib/Libutils/test/u_hash_map_structs/Makefile
-    src/lib/Libutils/test/u_hash_table/Makefile
     src/lib/Libutils/test/u_lock_ctl/Makefile
-    src/lib/Libutils/test/u_memmgr/Makefile
     src/lib/Libutils/test/u_misc/Makefile
     src/lib/Libutils/test/u_mom_hierarchy/Makefile
     src/lib/Libutils/test/u_mu/Makefile
     src/lib/Libutils/test/u_mutex_mgr/Makefile
     src/lib/Libutils/test/u_putenv/Makefile
-    src/lib/Libutils/test/u_resizable_array/Makefile
     src/lib/Libutils/test/u_threadpool/Makefile
     src/lib/Libutils/test/u_tree/Makefile
     src/lib/Libutils/test/u_users/Makefile
@@ -1045,9 +1042,9 @@ dnl
 AC_ARG_WITH(hwloc-path, [
   --with-hwloc-path=PATH   
                        Specifies the path to the hwloc libraries and include files.
-                       Example: ./configure --with-hwloc-path=/usr/local/hwloc-1.1
-                       Will specify that the include files are in /usr/local/hwloc-1.1/include and
-                       the libraries are in /usr/local/hwloc-1.1/lib],
+                       Example: ./configure --with-hwloc-path=/usr/local/hwloc-1.2
+                       Will specify that the include files are in /usr/local/hwloc-1.2/include and
+                       the libraries are in /usr/local/hwloc-1.2/lib],
   [HWLOC_LIBS="-L${withval}/lib -lhwloc"; HWLOC_CFLAGS="-I${withval}/include"],
   [TOM="BOB"])
 
@@ -1056,10 +1053,10 @@ AC_ARG_WITH(hwloc-path, [
 dnl For Linux 2.6 cpusets, libhwloc is needed for pbs_mom.
 dnl We are using pkg-config to figure out libs and cflags.
 dnl The used m4 macro is found in buildutils/pkg.m4.
-dnl In addition, we check libhwloc for hwloc_bitmap_alloc (present since v1.1).
+dnl In addition, we check libhwloc for hwloc_bitmap_list_snprintf (present since v1.2).
 if test "${build_l26_cpuset}" = "yes" ; then
   if test "${build_mom}" = "yes" ; then
-    PKG_CHECK_MODULES([HWLOC], [hwloc >= 1.1],
+    PKG_CHECK_MODULES([HWLOC], [hwloc >= 1.2],
       [ MOMLIBS="$MOMLIBS $HWLOC_LIBS"; CFLAGS="$CFLAGS $HWLOC_CFLAGS" ],
       [ AC_MSG_ERROR([cpuset support requires the hwloc development package
 
@@ -1068,6 +1065,10 @@ $HWLOC_PKG_ERRORS
 This can be solved by configuring with --with-hwloc-path=<path>. This path
 should be the path to the directory containing the lib/ and include/ directories
 for your version of hwloc.
+
+hwloc can be loaded by running the hwloc_install.sh script in the
+contrib directory within this Torque distribution.
+
 Another option is adding the directory containing 'hwloc.pc'
 to the PKG_CONFIG_PATH environment variable.
 

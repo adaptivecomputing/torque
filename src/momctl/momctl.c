@@ -251,7 +251,7 @@ int main(
 
         /* connect to specified host */
 
-        strncpy(HostList,optarg,sizeof(HostList));
+        snprintf(HostList, sizeof(HostList), "%s", optarg);
 
         break;
 
@@ -380,7 +380,7 @@ int main(
     }
 
   if (HostList[0] == '\0')
-    strcpy(HostList, LocalHost);
+    snprintf(HostList, sizeof(HostList), "%s", LocalHost);
 
   HPtr = strtok(HostList, ", \t\n");
 
@@ -442,7 +442,7 @@ int main(
               {
               if (!strstr(nodeattrs->value, ND_down))
                 {
-                if (perform_communications_with_retry(pbstat->name, MOMPort, &FailCount) == PBSE_NONE)
+                if ((rc = perform_communications_with_retry(pbstat->name, MOMPort, &FailCount)) == PBSE_NONE)
                   HostCount++;
                 }
               else
@@ -472,7 +472,7 @@ int main(
       }
     else
       {
-      if (perform_communications_with_retry(HPtr, MOMPort, &FailCount) == PBSE_NONE)
+      if ((rc = perform_communications_with_retry(HPtr, MOMPort, &FailCount)) == PBSE_NONE)
         HostCount++;
       } /* END if (*HPtr == ':') */
 

@@ -2973,7 +2973,7 @@ void req_rerunjob(
     }
 
   /* make sure to call exit() and not return to avoid zombie process */
-  exit(0);
+  exit(EXIT_SUCCESS);
   }  /* END req_rerunjob() */
 
 
@@ -3536,56 +3536,47 @@ void req_cpyfile(
         if (havehomespool == 1)
           {
           /* only use spooldir if the job file exists */
-
-          strcpy(localname_alt, homespool);
-          strcat(localname_alt, "/");
-          strcat(localname_alt, pair->fp_local);
+          snprintf(localname_alt, sizeof(localname_alt), "%s/%s", homespool, pair->fp_local);
 
           rcstat = stat(localname_alt, &myspooldir);
 
           if ((rcstat == 0) && S_ISREG(myspooldir.st_mode))
             {
-            strcpy(localname, localname_alt);
+            snprintf(localname, sizeof(localname), "%s", localname_alt);
             }
           else
             {
             /* what should be done here??? */
-
-            strcpy(localname, localname_alt);
+            snprintf(localname, sizeof(localname), "%s", localname_alt);
             }
           }
         else
           {
-          /* stdout | stderr from MOM's spool area (ie, /var/spool/torque/spool ) */
-
-          strcpy(localname, path_spool);
-          strcat(localname, pair->fp_local); /* from location */
+          /* stdout | stderr from MOM's spool area (ie, /var/spool/torque/spool )
+           * pair->fp_local is the from location */
+          snprintf(localname, sizeof(localname), "%s%s", path_spool, pair->fp_local);
 
           from_spool = 1; /* flag as being in spool dir */
           }
 
 #else
-        strcpy(localname, pair->fp_local); /* from location */
+        snprintf(localname, sizeof(localname), "%s", pair->fp_local);
 
         if (havehomespool)
           {
           /* only use ~/.pbs_spool if the file actually exists */
-
-          strcpy(localname_alt, homespool);
-          strcat(localname_alt, "/");
-          strcat(localname_alt, pair->fp_local);
+          snprintf(localname_alt, sizeof(localname_alt), "%s/%s", homespool, pair->fp_local);
 
           rcstat = stat(localname_alt, &myspooldir);
 
           if ((rcstat == 0) && S_ISREG(myspooldir.st_mode))
             {
-            strcpy(localname, localname_alt);
+            snprintf(localname, sizeof(localname), "%s", localname_alt);
             }
           else
             {
             /* what should be done here??? */
-
-            strcpy(localname, localname_alt);
+            snprintf(localname, sizeof(localname), "%s", localname_alt);
             }
           }
 
@@ -3593,7 +3584,7 @@ void req_cpyfile(
         }  /* END if (pair->fp_flag == STDJOBFILE) */
       else if (pair->fp_flag == JOBCKPFILE)
         {
-        strncpy(localname, pair->fp_local, sizeof(localname) - 1);  /* from location */
+        snprintf(localname, sizeof(localname), "%s", pair->fp_local);
 
         replace_checkpoint_path(localname);
 
@@ -3610,7 +3601,7 @@ void req_cpyfile(
       else
         {
         /* user-supplied stage-out file */
-        strncpy(localname, pair->fp_local, sizeof(localname) - 1);  /* from location */
+        snprintf(localname, sizeof(localname), "%s", pair->fp_local);
         }
 
 #if SRFS
@@ -3618,11 +3609,9 @@ void req_cpyfile(
 
       if (!strncmp(localname, "/BIGDIR", 7))
         {
-        sprintf(tmpname, "%s/%s",
-                tmpdirname(var_value("BIGDIR", preq->rq_ind.rq_cpyfile.rq_jobid)),
-                &localname[7]);
-
-        strcpy(localname, tmpname);
+        snprintf(localname, sizeof(localname), "%s/%s",
+          tmpdirname(var_value("BIGDIR", preq->rq_ind.rq_cpyfile.rq_jobid)),
+          &localname[7]);
         }
       else if (!strncmp(localname, "/FASTDIR", 8))
         {
@@ -3852,9 +3841,10 @@ nextword:
 
       bad_files = 1;
 
-      sprintf(log_buffer, "Unable to copy file %s to %s",
+      sprintf(log_buffer, "Unable to copy file %s to %s, error %d",
         arg2,
-        arg3);
+        arg3,
+        rc);
 
       add_bad_list(&bad_list, log_buffer, 2);
 

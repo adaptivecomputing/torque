@@ -32,8 +32,6 @@ void strtolower(
  * and escapes nested characters if necessary.
  */
 int copy_env_value(
-
-  memmgr **mm,            /* memory manager */
   char    *cur_val,
   char   **value)
 
@@ -60,7 +58,7 @@ int copy_env_value(
     tmpPtr++;
     }
 
-  calloc_or_fail(mm, value, len_value + escape_count + 1, "Allocating value for hash_map");
+  calloc_or_fail(value, len_value + escape_count + 1, "Allocating value for hash_map");
 
   if (escape_count > 0)
     {
@@ -92,8 +90,6 @@ int copy_env_value(
  * name & value are both allocated inside the function
  */
 int parse_env_line(
-
-  memmgr **mm,            /* memory manager */
   char    *one_var,
   char   **name,
   char   **value)
@@ -117,7 +113,8 @@ int parse_env_line(
   len_name = pos_eq;
   tmp_pos = pos_eq + 1;
 
-  calloc_or_fail(mm, name, len_name+1, "Allocating name for hash_map");
+  calloc_or_fail(name, len_name+1, "Allocating name for hash_map");
+  strncpy(*name, one_var, len_name);
   /* Remove preceeding spaces in an env var
    * This will NOT affect a env var that is all spaces
    */
@@ -143,8 +140,7 @@ int parse_env_line(
     /* Env values can contain nested commas which must be 
      * escaped to be preserved. */
 
-    copy_env_value(mm, one_var + tmp_pos, value);
-    strncpy(*name, one_var, len_name);
+    copy_env_value(one_var + tmp_pos, value);
     }
 
   return(PBSE_NONE);
@@ -155,10 +151,8 @@ int parse_env_line(
  * a hashmap for use through out the execution of the command
  */
 void set_env_opts(
-
-  memmgr   **mm,            /* memory manager */
-  job_data **env_attr,
-  char     **envp)
+  job_data_container *env_attr,
+  char              **envp)
 
   {
   int   var_num = 0;
@@ -168,12 +162,12 @@ void set_env_opts(
 
   while (envp[var_num] != NULL)
     {
-    rc = parse_env_line(mm, envp[var_num], &name, &value);
+    rc = parse_env_line(envp[var_num], &name, &value);
     if (rc == PBSE_NONE) 
       {
-      hash_add_item(mm, env_attr, name, value, ENV_DATA, SET);
-      memmgr_free(mm, name); name = NULL;
-      memmgr_free(mm, value); value = NULL;
+      hash_add_item(env_attr, name, value, ENV_DATA, SET);
+      free(name); name = NULL;
+      free(value); value = NULL;
       }
 
     var_num++;
@@ -185,14 +179,12 @@ void set_env_opts(
  * return indicates success, failure will exit the run
  */
 void calloc_or_fail(
-
-  memmgr **mm,            /* memory manager */
   char   **dest,
   int      alloc_size,
   const char    *err_msg)
 
   {
-  *dest = (char *)memmgr_calloc(mm, 1, alloc_size);
+  *dest = (char *)calloc(1, alloc_size);
   if (*dest == NULL)
     {
     fprintf(stderr, "Allocation of %d bytes failed %s", alloc_size, err_msg);
@@ -208,13 +200,11 @@ void calloc_or_fail(
  */
 
 int parse_variable_list(
-
-  memmgr   **mm,        /* memory manager */
-  job_data **dest_hash, /* This is the dest hashmap for vars found */
-  job_data  *user_env,  /* This is the source hashmap */
-  int        var_type,  /* Type for vars not pulled from the source hash */
-  int        op_type,   /* Op for vars not pulled from the source hash */
-  char      *the_list)  /* name=value,name1=value1,etc to be parsed */
+  job_data_container *dest_hash, /* This is the dest hashmap for vars found */
+  job_data_container *user_env,  /* This is the source hashmap */
+  int                var_type,  /* Type for vars not pulled from the source hash */
+  int                op_type,   /* Op for vars not pulled from the source hash */
+  char               *the_list)  /* name=value,name1=value1,etc to be parsed */
 
   {
   int             alloc_size = 0;
@@ -311,7 +301,7 @@ int parse_variable_list(
       }
     }
 
-  hash_add_or_exit(mm, dest_hash, ATTR_v, job_env.c_str(), ENV_DATA);
+  hash_add_or_exit(dest_hash, ATTR_v, job_env.c_str(), ENV_DATA);
 
   return(PBSE_NONE);
   } /* END parse_variable_list() */ 

@@ -4,9 +4,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <string.h>
 #include "pbs_error.h"
 
-extern struct all_jobs newjobs;
+extern all_jobs newjobs;
 
 extern int req_jobcredential(struct batch_request *preq);
 
@@ -22,14 +23,14 @@ START_TEST(test_one)
 
   memset(&j,0,sizeof(j));
   memset(&req,0,sizeof(req));
-  newjobs.ra = initialize_resizable_array(10);
-  newjobs.alljobs_mutex = (pthread_mutex_t *)calloc(1,sizeof(pthread_mutex_t));
 
   fail_unless(req_jobcredential(&req) == PBSE_IVALREQ);
 
   strcpy(j.ji_qs.ji_jobid,"SomeJob");
   strcpy(j.ji_qs.ji_fileprefix,"prefix");
-  insert_thing(newjobs.ra,&j);
+  newjobs.lock();
+  newjobs.insert(&j,j.ji_qs.ji_jobid);
+  newjobs.unlock();
 
   fail_unless(req_jobcredential(&req) == PBSE_NONE);
 

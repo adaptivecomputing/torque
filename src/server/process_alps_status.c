@@ -104,6 +104,7 @@
 #include <string>
 #include <vector>
 #include <boost/ptr_container/ptr_vector.hpp>
+#include "container.hpp"
 
 /* Global Data */
 extern int LOGLEVEL;
@@ -120,16 +121,12 @@ struct pbsnode *find_alpsnode_by_name(
 
   {
   struct pbsnode *node = NULL;
-  int             index;
 
-  pthread_mutex_lock(parent->alps_subnodes.allnodes_mutex);
+  parent->alps_subnodes->lock();
 
-  index = get_value_hash(parent->alps_subnodes.ht, node_id);
+  node = parent->alps_subnodes->find(node_id);
 
-  if (index >= 0)
-    node = (struct pbsnode *)parent->alps_subnodes.ra->slots[index].item;
-
-  pthread_mutex_unlock(parent->alps_subnodes.allnodes_mutex);
+  parent->alps_subnodes->unlock();
 
   if (node != NULL)
     lock_node(node, __func__, NULL, LOGLEVEL);
@@ -139,11 +136,17 @@ struct pbsnode *find_alpsnode_by_name(
 
 
 
+/*
+ * create_alps_subnode()
+ *
+ * @param parent - the sdb node or parent of this compute node
+ * @param node_id - the name of the new alps compute node
+ */
 
 struct pbsnode *create_alps_subnode(
 
   struct pbsnode *parent,
-  const char    *node_id)
+  const char     *node_id)
 
   {
   struct pbsnode *subnode = (struct pbsnode *)calloc(1, sizeof(struct pbsnode));
@@ -158,7 +161,11 @@ struct pbsnode *create_alps_subnode(
     return(NULL);
     }
 
+  // all nodes have at least 1 core
   add_execution_slot(subnode);
+  
+  // we need to increment this count for accuracy  
+  svr_clnodes++;
 
   /* do we need to do something else here? */
   subnode->nd_addrs = parent->nd_addrs;
@@ -187,7 +194,7 @@ struct pbsnode *create_alps_subnode(
 
   lock_node(subnode, __func__, NULL, LOGLEVEL);
     
-  insert_node(&(parent->alps_subnodes), subnode);
+  insert_node(parent->alps_subnodes, subnode);
   
   return(subnode);
   } /* END create_alps_subnode() */
@@ -303,7 +310,8 @@ int set_ncpus(
 
   {
   int difference;
-  int i, orig_svr_clnodes;
+  int i;
+  int orig_svr_clnodes;
 
   if (current == NULL)
     return(PBSE_BAD_PARAMETER);
@@ -415,7 +423,7 @@ int process_gpu_status(
   {
   pbs_attribute   temp;
   int             gpu_count = 0;
-  int             rc;
+  int             rc = PBSE_NONE;
   char            buf[MAXLINE * 2];
   std::string     gpu_info = "";
 
@@ -448,14 +456,6 @@ int process_gpu_status(
       {
       gpu_info += i->c_str();
       gpu_info += ';';
-      }
-
-    if (rc != PBSE_NONE)
-      {
-
-      finish_gpu_status(i,end);
-
-      return(rc);
       }
     }
 
@@ -505,6 +505,19 @@ int record_reservation(
       mutex_mgr job_mutex(pjob->ji_mutex, true);
       pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str = strdup(rsv_id);
       pjob->ji_wattr[JOB_ATR_reservation_id].at_flags = ATR_VFLAG_SET;
+
+      /* add environment variable BATCH_PARTITION_ID */
+      char buf[1024];
+      snprintf(buf, sizeof(buf), "BATCH_PARTITION_ID=%s", rsv_id);
+      pbs_attribute  tempattr;
+      clear_attr(&tempattr, &job_attr_def[JOB_ATR_variables]);
+      job_attr_def[JOB_ATR_variables].at_decode(&tempattr,
+        NULL, NULL, buf, 0);
+
+      job_attr_def[JOB_ATR_variables].at_set(
+        &pjob->ji_wattr[JOB_ATR_variables], &tempattr, INCR);
+
+      job_attr_def[JOB_ATR_variables].at_free(&tempattr);
 
       track_alps_reservation(pjob);
       found_job = true;
@@ -566,7 +579,7 @@ int process_alps_status(
   struct pbsnode *current = NULL;
   int             rc;
   pbs_attribute   temp;
-  hash_table_t   *rsv_ht;
+  container::item_container<const char *> rsv_ht;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
 
   memset(&temp, 0, sizeof(temp));
@@ -581,9 +594,6 @@ int process_alps_status(
   if ((parent = find_nodebyname(nd_name)) == NULL)
     return(PBSE_NONE);
 
-  /* keep track of reservations so that they're only processed once per update */
-  rsv_ht = create_hash(INITIAL_RESERVATION_HOLDER_SIZE);
-
   /* loop over each string */
   for(boost::ptr_vector<std::string>::iterator i = status_info.begin();i != status_info.end();i++)
     {
@@ -594,7 +604,9 @@ int process_alps_status(
         {
         snprintf(node_index_buf, sizeof(node_index_buf), "node_index=%d", node_index++);
         decode_arst(&temp, NULL, NULL, node_index_buf, 0);
-        save_node_status(current, &temp);
+        
+        if (current != NULL)
+          save_node_status(current, &temp);
         }
 
       if ((current = determine_node_from_str(str, parent, current)) == NULL)
@@ -603,23 +615,24 @@ int process_alps_status(
         continue;
       }
 
-    if(current == NULL)
+    if (current == NULL)
       continue;
 
     /* process the gpu status information separately */
     if (!strcmp(CRAY_GPU_STATUS_START, str))
       {
       rc = process_gpu_status(current, i,status_info.end());
-      str = i->c_str();
       continue;
       }
     else if (!strncmp(reservation_id, str, strlen(reservation_id)))
       {
       const char *just_rsv_id = str + strlen(reservation_id);
 
-      if (get_value_hash(rsv_ht, just_rsv_id) == -1)
+      rsv_ht.lock();
+      if (rsv_ht.find(just_rsv_id) == NULL)
         {
-        add_hash(rsv_ht, 1, strdup(just_rsv_id));
+        rsv_ht.insert(just_rsv_id,just_rsv_id);
+        rsv_ht.unlock();
 
         /* sub-functions will attempt to lock a job, so we must unlock the
          * reporter node */
@@ -636,13 +649,11 @@ int process_alps_status(
           /* reporter node disappeared - this shouldn't be possible */
           log_err(PBSE_UNKNODE, __func__, "Alps reporter node disappeared while recording a reservation");
           free_arst(&temp);
-          free_all_keys(rsv_ht);
-          free_hash(rsv_ht);
           free(current_node_id);
           return(PBSE_NONE);
           }
 
-        if ((current = find_node_in_allnodes(&parent->alps_subnodes, current_node_id)) == NULL)
+        if ((current = find_node_in_allnodes(parent->alps_subnodes, current_node_id)) == NULL)
           {
           /* current node disappeared, this shouldn't be possible either */
           unlock_node(parent, __func__, NULL, LOGLEVEL);
@@ -650,8 +661,6 @@ int process_alps_status(
             current_node_id);
           log_err(PBSE_UNKNODE, __func__, log_buf);
           free_arst(&temp);
-          free_all_keys(rsv_ht);
-          free_hash(rsv_ht);
           free(current_node_id);
           return(PBSE_NONE);
           }
@@ -659,13 +668,15 @@ int process_alps_status(
         free(current_node_id);
         current_node_id = NULL;
         }
+      else
+        {
+        rsv_ht.unlock();
+        }
       }
     /* save this as is to the status strings */
     else if ((rc = decode_arst(&temp, NULL, NULL, str, 0)) != PBSE_NONE)
       {
       free_arst(&temp);
-      free_all_keys(rsv_ht);
-      free_hash(rsv_ht);
       return(rc);
       }
 
@@ -731,9 +742,6 @@ int process_alps_status(
     }
 
   unlock_node(parent, __func__, NULL, LOGLEVEL);
-
-  free_all_keys(rsv_ht);
-  free_hash(rsv_ht);
 
   return(PBSE_NONE);
   } /* END process_alps_status() */

@@ -1,4 +1,5 @@
 #include "license_pbs.h" /* See here for the software license */
+#include <pbs_config.h>
 #include <stdlib.h>
 #include <stdio.h> /* sprintf */
 #include <errno.h>
@@ -14,8 +15,6 @@
 #include "threadpool.h"
 #include "delete_all_tracker.hpp"
 
-int check_and_resize(resizable_array *ra);
-void update_next_slot(resizable_array *ra);
 int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging);
 int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging);
 
@@ -23,7 +22,7 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging);
 
 threadpool_t *request_pool;
 const char *msg_deletejob = "Job deleted";
-struct all_jobs alljobs;
+all_jobs alljobs;
 const char *msg_delrunjobsig = "Job sent signal %s on delete";
 struct server server;
 const char *msg_manager = "%s at request of %s@%s";
@@ -189,7 +188,7 @@ int unlock_queue(struct pbs_queue *the_queue, const char *id, const char *msg, i
   return(0);
   }
 
-void svr_evaljobstate(job *pjob, int *newstate, int *newsub, int forceeval)
+void svr_evaljobstate(job &pjob, int &newstate, int &newsub, int forceeval)
   {
   fprintf(stderr, "The call to svr_evaljobstate needs to be mocked!!\n");
   exit(1);
@@ -262,7 +261,7 @@ void removeBeforeAnyDependencies(const char *)
  */
 int insert_job(
 
-  struct all_jobs *aj,
+  all_jobs *aj,
   job             *pjob)
 
   {
@@ -281,150 +280,28 @@ int insert_job(
     return(rc);
     }
 
-  pthread_mutex_lock(aj->alljobs_mutex);
+  aj->lock();
 
-  rc = insert_thing(aj->ra,pjob);
-  if (rc == -1)
+  if(!aj->insert(pjob,pjob->ji_qs.ji_jobid))
     {
     rc = ENOMEM;
     log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE\n");
     }
   else
     {
-    add_hash(aj->ht, rc, pjob->ji_qs.ji_jobid);
     rc = PBSE_NONE;
     }
 
-  pthread_mutex_unlock(aj->alljobs_mutex);
+  aj->unlock();
 
   return(rc);
   } /* END insert_job() */
 
 
-/*
- * inserts an item, resizing the array if necessary
- *
- * @return the index in the array or -1 on failure
- */
-int insert_thing(
-
-  resizable_array *ra,
-  void             *thing)
-
-  {
-  int rc;
-
-  /* check if the array must be resized */
-  if ((rc = check_and_resize(ra)) != PBSE_NONE)
-    {
-    return(-1);
-    }
-
-  ra->slots[ra->next_slot].item = thing;
-
-  /* save the insertion point */
-  rc = ra->next_slot;
-
-  /* handle the backwards pointer, next pointer is left at zero */
-  ra->slots[rc].prev = ra->last;
-
-  /* make sure the empty slot points to the next occupied slot */
-  if (ra->last == ALWAYS_EMPTY_INDEX)
-    {
-    ra->slots[ALWAYS_EMPTY_INDEX].next = rc;
-    }
-
-  /* update the last index */
-  ra->slots[ra->last].next = rc;
-  ra->last = rc;
-
-  /* update the new item's next index */
-  ra->slots[rc].next = ALWAYS_EMPTY_INDEX;
-
-  /* increase the count */
-  ra->num++;
-
-  update_next_slot(ra);
-
-  return(rc);
-  } /* END insert_thing() */
-
-
-/* initializes the all_jobs array */
-void initialize_all_jobs_array(
-
-  struct all_jobs *aj)
-
-  {
-  if (aj == NULL)
-    {
-    log_err(PBSE_BAD_PARAMETER,__func__,"null input job array");
-    return;
-    }
-
-  aj->ra = initialize_resizable_array(INITIAL_JOB_SIZE);
-  aj->ht = create_hash(INITIAL_HASH_SIZE);
-
-  aj->alljobs_mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(aj->alljobs_mutex, NULL);
-  } /* END initialize_all_jobs_array() */
-
-
-/*
- * checks if the array needs to be resized, and resizes if necessary
- *
- * @return PBSE_NONE or ENOMEM
- */
-int check_and_resize(
-
-    resizable_array *ra)
-
-  {
-  slot        *tmp;
-  size_t       remaining;
-  size_t       size;
-
-  if (ra->max == ra->num + 1)
-    {
-    /* double the size if we're out of space */
-    size = (ra->max * 2) * sizeof(slot);
-
-    if ((tmp = (slot *)realloc(ra->slots,size)) == NULL)
-      {
-      return(ENOMEM);
-      }
-
-    remaining = ra->max * sizeof(slot);
-
-    memset(tmp + ra->max, 0, remaining);
-
-    ra->slots = tmp;
-
-    ra->max = ra->max * 2;
-    }
-
-  return(PBSE_NONE);
-  } /* END check_and_resize() */
-
-
-/* 
- * updates the next slot pointer if needed \
- */
-void update_next_slot(
-
-    resizable_array *ra) /* M */
-
-  {
-  while ((ra->next_slot < ra->max) &&
-      (ra->slots[ra->next_slot].item != NULL))
-    ra->next_slot++;
-  } /* END update_next_slot() */
-
-
 job *next_job(
 
-  struct all_jobs *aj,
-  int             *iter)
+  all_jobs *aj,
+  all_jobs_iterator             *iter)
 
   {
   job *pjob;
@@ -440,11 +317,11 @@ job *next_job(
     return(NULL);
     }
 
-  pthread_mutex_lock(aj->alljobs_mutex);
+  aj->lock();
 
-  pjob = (job *)next_thing(aj->ra,iter);
+  pjob = iter->get_next_item();
 
-  pthread_mutex_unlock(aj->alljobs_mutex);
+  aj->unlock();
 
   if (pjob != NULL)
     {

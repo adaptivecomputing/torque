@@ -1,9 +1,9 @@
 #include <vector>
 #include <stdlib.h>
-#include <check.h>
 #include <stdio.h>
 
 #include "numa_node.hpp"
+#include <check.h>
 
 extern char cpulist[];
 
@@ -33,6 +33,12 @@ START_TEST(test_translate_range_string_to_vector)
   translate_range_string_to_vector("1\n", indices);
   fail_unless(indices.size() == 1);
   fail_unless(indices[0] == 1);
+
+  indices.clear();
+  translate_range_string_to_vector("0-1\n", indices);
+  fail_unless(indices.size() == 2);
+  fail_unless(indices[0] == 0);
+  fail_unless(indices[1] == 1);
 
   indices.clear();
   translate_range_string_to_vector("1-4", indices);
@@ -76,20 +82,28 @@ START_TEST(test_recover_reservation)
   }
 END_TEST
 
+
 START_TEST(test_parse_cpu_string)
   {
   numa_node nn;
-
   std::string str("0-1,8-9");
   nn.parse_cpu_string(str);
   fail_unless(nn.get_total_cpus() == 4);
   fail_unless(nn.get_available_cpus() == 4);
-  
+
   std::string str2("0,8");
   numa_node n2;
   n2.parse_cpu_string(str2);
   fail_unless(n2.get_total_cpus() == 2);
   fail_unless(n2.get_available_cpus() == 2);
+
+  numa_node nn2("torque2", 0);
+  fail_unless(nn2.get_total_cpus() == 2);
+  fail_unless(nn2.get_available_cpus() == 2);
+
+  numa_node nn4("torque4", 0);
+  fail_unless(nn4.get_total_cpus() == 4);
+  fail_unless(nn4.get_available_cpus() == 4);
   }
 END_TEST
 

@@ -57,7 +57,6 @@
 #include "log.h"
 #include "port_forwarding.h"
 #include "common_cmds.h" 
-#include "u_memmgr.h" /* global memmgr for client */
 #include "utils.h"
 
 #if defined(PBS_NO_POSIX_VIOLATION)
@@ -68,6 +67,7 @@
 
 #define MAXBUF 2048
 
+#define MAX_RETRIES  3
 /* START: These are needed for bailout purposes */
 int inter_sock = -1;
 int interactivechild = 0;
@@ -113,10 +113,6 @@ char *x11_get_proto(
   proto[0]  = '\0';
   data[0]   = '\0';
   screen[0] = '\0';
-
-  /* This variable was never used, removing */
-/*  if (EMsg != NULL)
-    EMsg[0] = '\0'; */
 
   if ((tmp = getenv("DISPLAY")) == NULL)
     {
@@ -645,7 +641,7 @@ char *ispbsdir(
     return(it + l);
     }
 
-  return((char *)NULL);
+  return(NULL);
   }
 
 
@@ -692,8 +688,6 @@ int isWindowsFormat(
   return dosformat;
   }
 
-
-/* #define MMAX_VERIFY_BYTES 50 */
 
 int istext(
 
@@ -751,9 +745,7 @@ int istext(
  * /usr/local/sbin/torque_submitfilter   -- legacy
  */
 int validate_submit_filter(
-
-  memmgr   **mm,
-  job_data **a_hash)
+  job_data_container *a_hash)
 
   {
   int rc = 0;
@@ -761,10 +753,10 @@ int validate_submit_filter(
   struct stat  sfilter;
   const char *DefaultFilterPath = "/usr/local/sbin/torque_submitfilter";
 
-  hash_find(*a_hash, ATTR_pbs_o_submit_filter, &filter_info);
+  hash_find(a_hash, ATTR_pbs_o_submit_filter, &filter_info);
   if ((filter_info != NULL) && (filter_info->var_type == CONFIG_DATA))
     {
-    if (stat(filter_info->value, &sfilter) != -1)
+    if (stat(filter_info->value.c_str(), &sfilter) != -1)
       {
       rc = 1;
       }
@@ -773,16 +765,16 @@ int validate_submit_filter(
     }
   else if (stat(SUBMIT_FILTER_PATH, &sfilter) != -1)
     {
-    hash_add_or_exit(mm, a_hash, ATTR_pbs_o_submit_filter, SUBMIT_FILTER_PATH, STATIC_DATA);
+    hash_add_or_exit(a_hash, ATTR_pbs_o_submit_filter, SUBMIT_FILTER_PATH, STATIC_DATA);
     rc = 1;
     }
   else if (stat(DefaultFilterPath, &sfilter) != -1)
     {
-    hash_add_or_exit(mm, a_hash, ATTR_pbs_o_submit_filter, DefaultFilterPath, STATIC_DATA);
+    hash_add_or_exit(a_hash, ATTR_pbs_o_submit_filter, DefaultFilterPath, STATIC_DATA);
     rc = 1;
     }
   else
-    hash_del_item(mm, a_hash, ATTR_pbs_o_submit_filter);
+    hash_del_item(a_hash, ATTR_pbs_o_submit_filter);
   return rc;
   } /* validate_submit_filter() */
 
@@ -790,19 +782,17 @@ int validate_submit_filter(
 
 
 void validate_pbs_o_workdir(
-    
-  memmgr   **mm,
-  job_data **job_attr)
+  job_data_container *job_attr)
 
   {
-  job_data *tmp_job_info = NULL;
-  char     *the_val = NULL;
-  char      null_val[] = "\0";
+  job_data     *tmp_job_info = NULL;
+  const char *the_val = NULL;
+  char        null_val[] = "\0";
 
-  if (hash_find(*job_attr, ATTR_init_work_dir, &tmp_job_info) == FALSE)
+  if (hash_find(job_attr, ATTR_init_work_dir, &tmp_job_info) == FALSE)
     {
-    if (hash_find(*job_attr, "PWD",  &tmp_job_info))
-      the_val = tmp_job_info->value;
+    if (hash_find(job_attr, "PWD",  &tmp_job_info))
+      the_val = tmp_job_info->value.c_str();
     else
       {
       char tmp_dir[MAXPATHLEN] = {""};
@@ -814,9 +804,9 @@ void validate_pbs_o_workdir(
       }
     }
   else
-    the_val = tmp_job_info->value;
+    the_val = tmp_job_info->value.c_str();
 
-  hash_add_or_exit(mm, job_attr, ATTR_pbs_o_workdir, the_val, ENV_DATA);
+  hash_add_or_exit(job_attr, ATTR_pbs_o_workdir, the_val, ENV_DATA);
   } /* END validate_pbs_o_workdir() */
 
 
@@ -827,19 +817,17 @@ void validate_pbs_o_workdir(
  * validate pbs_host, if not valid assign qsub_host as pbs_host
  */
 void validate_qsub_host_pbs_o_server(
-
-  memmgr   **mm,
-  job_data **job_attr)
+  job_data_container *job_attr)
 
   {
-  job_data *tmp_job_info = NULL;
-  char *qsub_host = NULL;
-  char tmp_host_name[PBS_MAXHOSTNAME];
-  char tmp_host_name_with_suffix[PBS_MAXHOSTNAME];
+  job_data     *tmp_job_info = NULL;
+  const char  *qsub_host = NULL;
+  char         tmp_host_name[PBS_MAXHOSTNAME];
+  char         tmp_host_name_with_suffix[PBS_MAXHOSTNAME];
 
   /* check if QSUBHOST was entered in torque.cfg */
-  if (hash_find(*job_attr, ATTR_submit_host, &tmp_job_info))
-    qsub_host = tmp_job_info->value;
+  if (hash_find(job_attr, ATTR_submit_host, &tmp_job_info))
+    qsub_host = tmp_job_info->value.c_str();
   else if (gethostname(tmp_host_name, PBS_MAXHOSTNAME) == 0)
     qsub_host = tmp_host_name;
 
@@ -851,10 +839,10 @@ void validate_qsub_host_pbs_o_server(
 
   if (qsub_host)
     {
-    if (get_fullhostname(qsub_host, tmp_host_name, PBS_MAXHOSTNAME, NULL) == 0)
+    if (get_fullhostname((char *)qsub_host, tmp_host_name, PBS_MAXHOSTNAME, NULL) == 0)
       {
-      hash_add_or_exit(mm, job_attr, ATTR_submit_host, tmp_host_name, LOGIC_DATA);
-      hash_add_or_exit(mm, job_attr, ATTR_pbs_o_host, tmp_host_name, LOGIC_DATA);
+      hash_add_or_exit(job_attr, ATTR_submit_host, tmp_host_name, LOGIC_DATA);
+      hash_add_or_exit(job_attr, ATTR_pbs_o_host, tmp_host_name, LOGIC_DATA);
       qsub_host = tmp_host_name;
       }
     else
@@ -866,11 +854,11 @@ void validate_qsub_host_pbs_o_server(
     fprintf(stderr, "qsub: cannot get (full) local host name\n");
     exit(3);
     }
-  if (hash_find(*job_attr, ATTR_pbs_o_server, &tmp_job_info))
+  if (hash_find(job_attr, ATTR_pbs_o_server, &tmp_job_info))
     {
     char tmp_val[PBS_MAXHOSTNAME];
-    if (get_fullhostname(tmp_job_info->value, tmp_val, PBS_MAXHOSTNAME, NULL) == 0)
-      hash_add_or_exit(mm, job_attr, ATTR_pbs_o_server, tmp_val, LOGIC_DATA);
+    if (get_fullhostname((char *)tmp_job_info->value.c_str(), tmp_val, PBS_MAXHOSTNAME, NULL) == 0)
+      hash_add_or_exit(job_attr, ATTR_pbs_o_server, tmp_val, LOGIC_DATA);
     else
       {
       fprintf(stderr,"qsub: cannot get full server host name\n");
@@ -881,17 +869,17 @@ void validate_qsub_host_pbs_o_server(
     {
     char *tmp_host = pbs_default();
     if (tmp_host == '\0')
-      hash_add_or_exit(mm, job_attr, ATTR_pbs_o_server, qsub_host, LOGIC_DATA);
+      hash_add_or_exit(job_attr, ATTR_pbs_o_server, qsub_host, LOGIC_DATA);
     else
-      hash_add_or_exit(mm, job_attr, ATTR_pbs_o_server, tmp_host, LOGIC_DATA);
+      hash_add_or_exit(job_attr, ATTR_pbs_o_server, tmp_host, LOGIC_DATA);
     }
   } /* END validate_qsub_host_pbs_o_server() */
 
 
 int are_mpp_present(
 
-  job_data  *resources,
-  job_data **dummy)
+  job_data_container  *resources,
+  job_data            **dummy)
 
   {
   int mpp_present = hash_find(resources, "mppwidth", dummy);
@@ -907,11 +895,11 @@ void validate_basic_resourcing(
   job_info *ji)
 
   {
-  job_data *resources = ji->res_attr;
-  job_data *dummy;
-  int       nodes;
-  int       size;
-  int       mpp;
+  job_data_container *resources = ji->res_attr;
+  job_data           *dummy;
+  int                nodes;
+  int                size;
+  int                mpp;
 
   nodes = hash_find(resources, "nodes", &dummy);
   size  = hash_find(resources, "size", &dummy);
@@ -949,36 +937,34 @@ void validate_basic_resourcing(
  * so that qstat will diplay it properly.
  */
 void validate_join_options (
-
-  memmgr   **mm,
-  job_data **job_attr,
-  char     *script_tmp)
+  job_data_container *job_attr,
+  char               *script_tmp)
 
   {
 
   job_data         *tmp_job_info = NULL;
 
-  char             *j_attr_value = NULL;
-  char             *o_attr_value = NULL;
-  char             *e_attr_value = NULL;
+  const char      *j_attr_value = NULL;
+  const char      *o_attr_value = NULL;
+  const char      *e_attr_value = NULL;
 
   /* obtain j, e, and o option values if they exist for further processing */
-  if (hash_find(*job_attr, ATTR_j, &tmp_job_info))
+  if (hash_find(job_attr, ATTR_j, &tmp_job_info))
     {
-    j_attr_value = tmp_job_info->value;
+    j_attr_value = tmp_job_info->value.c_str();
     }
 
   /* check needed only if j option is specified */
   if (j_attr_value != NULL)
     {
-    if (hash_find(*job_attr, ATTR_o, &tmp_job_info))
+    if (hash_find(job_attr, ATTR_o, &tmp_job_info))
       {
-      o_attr_value = tmp_job_info->value;
+      o_attr_value = tmp_job_info->value.c_str();
       }
 
-    if (hash_find(*job_attr, ATTR_e, &tmp_job_info))
+    if (hash_find(job_attr, ATTR_e, &tmp_job_info))
       {
-      e_attr_value = tmp_job_info->value;
+      e_attr_value = tmp_job_info->value.c_str();
       }
 
     if (strcmp(j_attr_value, "oe") == 0)
@@ -986,7 +972,7 @@ void validate_join_options (
       /* copy request outpath to errpath so that qstat displays errpath correctly */
       if (o_attr_value != NULL)
         {
-        hash_add_or_exit(mm, job_attr, ATTR_e, o_attr_value, CMDLINE_DATA);
+        hash_add_or_exit(job_attr, ATTR_e, o_attr_value, CMDLINE_DATA);
         }
       }
     else if (strcmp(j_attr_value, "eo") == 0)
@@ -994,7 +980,7 @@ void validate_join_options (
       /* copy request errpath to outpath so that qstat displays outpath correctly */
       if (e_attr_value != NULL)
         {
-        hash_add_or_exit(mm, job_attr, ATTR_o, e_attr_value, CMDLINE_DATA);
+        hash_add_or_exit(job_attr, ATTR_o, e_attr_value, CMDLINE_DATA);
         }
       }
     }
@@ -1003,8 +989,8 @@ void validate_join_options (
 
 void post_check_attributes(job_info *ji, char *script_tmp)
   {
-  validate_pbs_o_workdir(&ji->mm, &ji->job_attr);
-  validate_qsub_host_pbs_o_server(&ji->mm, &ji->job_attr);
+  validate_pbs_o_workdir(ji->job_attr);
+  validate_qsub_host_pbs_o_server(ji->job_attr);
   validate_basic_resourcing(ji);
 
   /* Make sure -j and -e or -o options are compatible so qstat will properly
@@ -1013,7 +999,7 @@ void post_check_attributes(job_info *ji, char *script_tmp)
    * Fix for TRQ-1839 (job does not have matching output and errpath when
    * -j oe (or eo) specified.)
    */
-  validate_join_options(&ji->mm, &ji->job_attr, script_tmp);
+  validate_join_options(ji->job_attr, script_tmp);
   } /* END post_check_attributes() */
 
 
@@ -1042,7 +1028,7 @@ static int get_script(
   int   index;
 
   /* START WRAPPER */
-  char cfilter[MAXPATHLEN + 1024];
+  std::string cfilter;
 
   char tmp_name2[] = "/tmp/qsub.XXXXXX";
 
@@ -1084,23 +1070,21 @@ static int get_script(
 
     close(tmpfd);
 
-    strcpy(cfilter, tmp_job_info->value);
+    cfilter = tmp_job_info->value;
 
     for (index = 1;index < ArgC;index++)
       {
       if (ArgV[index] != NULL)
         {
-        strcat(cfilter, " ");
-
-        strcat(cfilter, ArgV[index]);
+        cfilter += " ";
+        cfilter += ArgV[index];
         }
       }    /* END for (index) */
 
-    strcat(cfilter, " >");
+    cfilter += " >";
+    cfilter += tmp_name2;
 
-    strcat(cfilter, tmp_name2);
-
-    if((filter_pipe = popen(cfilter, "w")) != NULL)
+    if ((filter_pipe = popen(cfilter.c_str(), "w")) != NULL)
       {
       while ((in = fgets(s, MAX_LINE_LEN, file)) != NULL)
         {
@@ -1206,7 +1190,7 @@ static int get_script(
       in[len - 1] = '\0';
       }
 
-    if (!exec && ((sopt = ispbsdir(s, tmp_job_info->value)) != NULL))
+    if (!exec && ((sopt = ispbsdir(s, (char *)tmp_job_info->value.c_str())) != NULL))
       {
       while ((*(cont = in + strlen(in) - 2) == '\\') && (*(cont + 1) == '\n'))
         {
@@ -1463,12 +1447,6 @@ char *interactive_port(
 
   if (getsockname(*sock, (struct sockaddr *)&myaddr, &namelen) < 0)
     print_qsub_usage_exit("qsub: unable to get port number");
-/*    {
-    perror("qsub: unable to get port number");
-
-    exit(1);
-    }
-    */
 
   port = ntohs(myaddr.sin_port);
 
@@ -1477,12 +1455,6 @@ char *interactive_port(
 
   if (listen(*sock, 1) < 0)
     print_qsub_usage_exit("qsub: listen on interactive socket");
-/*    {
-    perror("qsub: listen on interactive socket");
-
-    exit(1);
-    }
-    */
 
   return(portstring);
   }  /* END interactive_port() */
@@ -1791,12 +1763,6 @@ void send_winsize(
 
   if (write_ac_socket(sock, buf, PBS_TERM_BUF_SZ) != PBS_TERM_BUF_SZ)
     print_qsub_usage_exit("qsub: sending winsize");
-/*    {
-    perror("sending winsize");
-
-    exit(2);
-    }
-    */
 
   return;
   }
@@ -1827,12 +1793,6 @@ void send_term(
 
   if (write_ac_socket(sock, buf, PBS_TERM_BUF_SZ) != PBS_TERM_BUF_SZ)
     print_qsub_usage_exit("qsub: sending term type");
-/*    {
-    perror("sending term type");
-
-    exit(2);
-    }
-    */
 
   cc_array[0] = oldtio.c_cc[VINTR];
 
@@ -1844,12 +1804,6 @@ void send_term(
 
   if (write_ac_socket(sock, cc_array, PBS_TERM_CCA) != PBS_TERM_CCA)
     print_qsub_usage_exit("qsub: sending term options");
-/*    {
-    perror("sending term options");
-
-    exit(2);
-    }
-    */
 
   return;
   }
@@ -2046,7 +2000,6 @@ void catchint(
 
 void x11handler(
 
-  memmgr **mm,
   int      param_sock)
 
   {
@@ -2055,12 +2008,7 @@ void x11handler(
   int n;
   char *display;
 
-  calloc_or_fail(mm, (char **)&socks, sizeof(struct pfwdsock) * NUM_SOCKS, "x11handler");
-/*    {
-    perror("x11handler calloc: ");
-    exit(EXIT_FAILURE);
-    }
-    */
+  calloc_or_fail((char **)&socks, sizeof(struct pfwdsock) * NUM_SOCKS, "x11handler");
 
   for (n = 0;n < NUM_SOCKS;n++)
     (socks + n)->active = 0;
@@ -2094,9 +2042,7 @@ void x11handler(
  */
 
 void interactive(
-    
-  memmgr   **mm,
-  job_data  *client_attr)
+  job_data_container  *client_attr)
 
   {
   int  amt;
@@ -2128,34 +2074,16 @@ void interactive(
   if ((sigaction(SIGINT, &act, (struct sigaction *)0) < 0) ||
       (sigaction(SIGTERM, &act, (struct sigaction *)0) < 0))
     print_qsub_usage_exit("qsub: unable to catch signals");
-/*    {
-    perror("unable to catch signals");
-
-    exit(1);
-    }
-    */
 
   act.sa_handler = toolong;
 
   if ((sigaction(SIGALRM, &act, NULL) < 0))
     print_qsub_usage_exit("qsub: cannot catch alarm");
-/*    {
-    perror("cannot catch alarm");
-
-    exit(2);
-    }
-    */
 
   /* save the old terminal setting */
 
   if (have_terminal && tcgetattr(0, &oldtio) < 0)
     print_qsub_usage_exit("qsub: unable to get terminal settings");
-    /*{
-    perror("qsub: unable to get terminal settings");
-
-    exit(1);
-    }
-    */
 
   /* Get the current window size, to be sent to MOM later */
 
@@ -2198,12 +2126,6 @@ void interactive(
         }
       else
         print_qsub_usage_exit("qsub: select failed");
-/*        {
-        perror("qsub: select failed");
-
-        exit(1);
-        }
-        */
       }
 
     /* connect to server, status job to see if still there */
@@ -2223,12 +2145,6 @@ void interactive(
 
   if ((news = accept(inter_sock, (struct sockaddr *) & from, &fromlen)) < 0)
     print_qsub_usage_exit("qsub: accept error");
-/*    {
-    perror("qsub: accept error");
-
-    exit(1);
-    }
-    */
 
   /* When MOM connects, she will send the job id for us to verify */
 
@@ -2291,12 +2207,6 @@ void interactive(
       (sigaction(SIGALRM, &act, (struct sigaction *)0) < 0) ||
       (sigaction(SIGTSTP, &act, (struct sigaction *)0) < 0))
     print_qsub_usage_exit("unable to reset signals");
-/*    {
-    perror("unable to reset signals");
-
-    exit(1);
-    }
-    */
 
   fflush(NULL);
 
@@ -2343,7 +2253,7 @@ void interactive(
 
         sigaction(SIGTERM, &act, (struct sigaction *)0);
 
-        x11handler(mm, inter_sock);
+        x11handler(inter_sock);
         }
       }
 
@@ -2368,12 +2278,6 @@ void interactive(
     }
   else
     print_qsub_usage_exit("qsub: unable to fork");
-/*    {
-    perror("qsub: unable to fork");
-
-    exit(1);
-    }
-    */
 
   return;
   }  /* END interactive() */
@@ -2482,6 +2386,7 @@ void process_opts(
   char tmp_name2[] = "/tmp/qsub.XXXXXX";
 
   char cline[4096];
+  std::string cline_out;
 
 
   char tmpResources[4096] = "";
@@ -2521,18 +2426,11 @@ void process_opts(
    * to count which iteration has been removed
    */
 
-/* #define if_cmd_line(x) if ((pass == 0) || (x != 1)) */
-
-/*  passet = pass + 1; */
-
-/*  if (pass > 0)
-    { */
 #ifdef linux
     optind = 0;  /* prime getopt's starting point */
 #else
     optind = 1;  /* prime getopt's starting point */
 #endif
-/*    } */
 
   while ((c = getopt(argc, argv, GETOPT_ARGS)) != EOF)
     {
@@ -2554,19 +2452,19 @@ void process_opts(
             print_qsub_usage_exit("qsub: illegal -a value");
 
           sprintf(a_value, "%ld", (long)after);
-          hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_a, a_value, data_type);
+          hash_add_or_exit(ji->job_attr, ATTR_a, a_value, data_type);
 
         break;
 
       case 'A':
 
-        hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_A, optarg, data_type);
+        hash_add_or_exit(ji->job_attr, ATTR_A, optarg, data_type);
 
         break;
 
       case 'b':
 
-        hash_add_or_exit(&ji->mm, &ji->client_attr, "cnt2server_retry", optarg, data_type);
+        hash_add_or_exit(ji->client_attr, "cnt2server_retry", optarg, data_type);
 
         break;
 
@@ -2654,13 +2552,13 @@ void process_opts(
             }
 
 #endif
-          hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_c, optarg, data_type);
+          hash_add_or_exit(ji->job_attr, ATTR_c, optarg, data_type);
 
         break;
 
       case 'C':
 
-        hash_add_or_exit(&ji->mm, &ji->client_attr, "pbs_dprefix", optarg, data_type);
+        hash_add_or_exit(ji->client_attr, "pbs_dprefix", optarg, data_type);
 
         break;
 
@@ -2672,7 +2570,7 @@ void process_opts(
           {
           int alloc_len = 0;
           if (optarg[0] == '/')
-            hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_pbs_o_initdir, optarg, data_type);
+            hash_add_or_exit(ji->job_attr, ATTR_pbs_o_initdir, optarg, data_type);
           else
             {
             /* make '-d' relative to current directory, not $HOME */
@@ -2686,7 +2584,7 @@ void process_opts(
               {
               char *err_msg = NULL;
               alloc_len =  50 + 6 + strlen(strerror(errno)) + 1;
-              calloc_or_fail(&ji->mm, &err_msg, alloc_len, "-d attribute");
+              calloc_or_fail(&err_msg, alloc_len, "-d attribute");
               snprintf(err_msg, alloc_len, "qsub: unable to get cwd: %d (%s)",
                   errno, strerror(errno));
               print_qsub_usage_exit(err_msg);
@@ -2694,10 +2592,10 @@ void process_opts(
               }
             
             alloc_len =  strlen(mypwd)+1+strlen(optarg) + 1;
-            calloc_or_fail(&ji->mm, &idir, alloc_len, "-d attribute");
+            calloc_or_fail(&idir, alloc_len, "-d attribute");
             sprintf(idir, "%s/%s", mypwd, optarg);
-            hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_pbs_o_initdir, idir, data_type);
-            memmgr_free(&ji->mm, idir);
+            hash_add_or_exit(ji->job_attr, ATTR_pbs_o_initdir, idir, data_type);
+            free(idir);
             }  /* END if (optarg[0] != '/') */
 
           if (hash_find(ji->client_attr, "validate_path", &tmp_job_info))
@@ -2708,7 +2606,7 @@ void process_opts(
               {
               char *err_msg = NULL;
               alloc_len =  50+ strlen(optarg) +6+ strlen(strerror(errno)) + 1;
-              calloc_or_fail(&ji->mm, &err_msg, alloc_len, "-d attribute");
+              calloc_or_fail(&err_msg, alloc_len, "-d attribute");
               snprintf(err_msg, alloc_len, "qsub: cannot chdir to '%s' errno: %d (%s)", optarg, errno, strerror(errno));
               print_qsub_usage_exit(err_msg);
               }
@@ -2720,7 +2618,7 @@ void process_opts(
       case 'D':
 
         if (optarg != NULL)
-          hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_pbs_o_rootdir, optarg, data_type);
+          hash_add_or_exit(ji->job_attr, ATTR_pbs_o_rootdir, optarg, data_type);
         else
           print_qsub_usage_exit("qsub: illegal -D value");
 
@@ -2729,12 +2627,12 @@ void process_opts(
       case 'e':
 
           if (hash_find(ji->job_attr, ATTR_submit_host, &tmp_job_info))
-            rc = prepare_path(optarg,path_out,tmp_job_info->value);
+            rc = prepare_path(optarg,path_out,(char *)tmp_job_info->value.c_str());
           else
             rc = prepare_path(optarg,path_out,NULL);
 
           if ((rc == 0) || (rc == 3))
-            hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_e, path_out, data_type);
+            hash_add_or_exit(ji->job_attr, ATTR_e, path_out, data_type);
           else
             print_qsub_usage_exit("qsub: illegal -e value");
 
@@ -2742,29 +2640,29 @@ void process_opts(
 
       case 'E':
 
-        hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_node_exclusive, "TRUE", data_type);
+        hash_add_or_exit(ji->job_attr, ATTR_node_exclusive, "TRUE", data_type);
 
         break;
 
       case 'F':
 
-        hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_args, optarg, data_type);
+        hash_add_or_exit(ji->job_attr, ATTR_args, optarg, data_type);
         break;
 
 
       case 'f':
       
-        hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_f, "TRUE", data_type);
+        hash_add_or_exit(ji->job_attr, ATTR_f, "TRUE", data_type);
         break;
       
       case 'h':
 
-        hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_h, "u", data_type);
+        hash_add_or_exit(ji->job_attr, ATTR_h, "u", data_type);
         break;
 
       case 'I':
 
-        hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_inter, interactive_port(&inter_sock), data_type);
+        hash_add_or_exit(ji->job_attr, ATTR_inter, interactive_port(&inter_sock), data_type);
 
         break;
 
@@ -2776,13 +2674,13 @@ void process_opts(
               (strcmp(optarg, "eo") != 0) &&
               (strcmp(optarg, "n") != 0))
             print_qsub_usage_exit("qsub: illegal -j value");
-          hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_j, optarg, data_type);
+          hash_add_or_exit(ji->job_attr, ATTR_j, optarg, data_type);
 
         break;
 
       case 'J':
 
-        hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_J, optarg, data_type);
+        hash_add_or_exit(ji->job_attr, ATTR_J, optarg, data_type);
         J_opt = TRUE;
 
         break;
@@ -2798,7 +2696,7 @@ void process_opts(
               (strcmp(optarg, "n") != 0))
             print_qsub_usage_exit("qsub: illegal -k value");
 
-          hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_k, optarg, data_type);
+          hash_add_or_exit(ji->job_attr, ATTR_k, optarg, data_type);
 
         break;
 
@@ -2808,7 +2706,7 @@ void process_opts(
             (strstr(optarg, "nodes=") != NULL))
           print_qsub_usage_exit("qsub: illegal -l value");
 
-        if (add_verify_resources(&ji->mm, &ji->res_attr, optarg, data_type) != 0)
+        if (add_verify_resources(ji->res_attr, optarg, data_type) != 0)
           print_qsub_usage_exit("qsub: illegal -l value");
 
         break;
@@ -2833,7 +2731,7 @@ void process_opts(
               }
             }    /* END if (strcmp(optarg,"n") != 0) */
 
-          hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_m, optarg, data_type);
+          hash_add_or_exit(ji->job_attr, ATTR_m, optarg, data_type);
 
         break;
 
@@ -2841,12 +2739,12 @@ void process_opts(
 
           if (parse_at_list(optarg, FALSE, FALSE))
             print_qsub_usage_exit("qsub: illegal -M value");
-          hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_M, optarg, data_type);
+          hash_add_or_exit(ji->job_attr, ATTR_M, optarg, data_type);
         break;
 
       case 'n':
 
-        hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_node_exclusive, "TRUE", data_type);
+        hash_add_or_exit(ji->job_attr, ATTR_node_exclusive, "TRUE", data_type);
 
         break;
 
@@ -2854,19 +2752,19 @@ void process_opts(
           /* NOTE:  did enforce alpha start previously - relax this constraint
                     allowing numeric job names (CRI - 6/26/07) */
           if (check_job_name(optarg, 0) == 0)
-            hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_N, optarg, data_type);
+            hash_add_or_exit(ji->job_attr, ATTR_N, optarg, data_type);
           else
             print_qsub_usage_exit("qsub: illegal -N value");
         break;
 
       case 'o':
           if (hash_find(ji->job_attr, ATTR_submit_host, &tmp_job_info))
-            rc = prepare_path(optarg,path_out,tmp_job_info->value);
+            rc = prepare_path(optarg,path_out,(char *)tmp_job_info->value.c_str());
           else
             rc = prepare_path(optarg,path_out,NULL);
 
           if ((rc == 0) || (rc == 3))
-            hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_o, path_out, data_type);
+            hash_add_or_exit(ji->job_attr, ATTR_o, path_out, data_type);
           else
             print_qsub_usage_exit("qsub: illegal -o value");
         break;
@@ -2897,7 +2795,7 @@ void process_opts(
         if ((i < -1024) || (i > 1023))
           print_qsub_usage_exit("qsub: illegal -p value");
         
-        hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_p, optarg, data_type);
+        hash_add_or_exit(ji->job_attr, ATTR_p, optarg, data_type);
         
         break;
 
@@ -2920,10 +2818,10 @@ void process_opts(
             {
             group = colon+1;
             *colon = '\0';
-            hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_g, group, data_type);
+            hash_add_or_exit(ji->job_attr, ATTR_g, group, data_type);
             }
 
-          hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_P, user, data_type);
+          hash_add_or_exit(ji->job_attr, ATTR_P, user, data_type);
 
           P_opt = TRUE;
           }
@@ -2934,7 +2832,7 @@ void process_opts(
 
       case 'q':
 
-        hash_add_or_exit(&ji->mm, &ji->client_attr, "destination", optarg, data_type);
+        hash_add_or_exit(ji->client_attr, "destination", optarg, data_type);
 
         break;
 
@@ -2946,7 +2844,7 @@ void process_opts(
           if ((*optarg != 'y') && (*optarg != 'n'))
             print_qsub_usage_exit("qsub: illegal -r value (y/n)");
 
-          hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_r, optarg, data_type);
+          hash_add_or_exit(ji->job_attr, ATTR_r, optarg, data_type);
 
         break;
 
@@ -2955,13 +2853,13 @@ void process_opts(
           if (parse_at_list(optarg, TRUE, TRUE))
             print_qsub_usage_exit("qsub: illegal -S value");
 
-        hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_S, optarg, data_type);
+        hash_add_or_exit(ji->job_attr, ATTR_S, optarg, data_type);
 
         break;
 
       case 't':
 
-        hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_t, optarg, data_type);
+        hash_add_or_exit(ji->job_attr, ATTR_t, optarg, data_type);
 
         break;
 
@@ -2969,7 +2867,7 @@ void process_opts(
 
 
           /* validate before sending request to server? */
-          hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_jobtype, optarg, data_type);
+          hash_add_or_exit(ji->job_attr, ATTR_jobtype, optarg, data_type);
 
         break;
 
@@ -2978,13 +2876,13 @@ void process_opts(
           if (parse_at_list(optarg, TRUE, FALSE))
             print_qsub_usage_exit("qsub: illegal -u value");
 
-          hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_u, optarg, data_type);
+          hash_add_or_exit(ji->job_attr, ATTR_u, optarg, data_type);
 
         break;
 
       case 'v':
 
-        rc = parse_variable_list(&ji->mm, &ji->job_attr, ji->user_attr, CMDLINE_DATA, SET, optarg);
+        rc = parse_variable_list(ji->job_attr, ji->user_attr, CMDLINE_DATA, SET, optarg);
 
         if (rc != PBSE_NONE)
           exit(rc);
@@ -2993,7 +2891,7 @@ void process_opts(
 
       case 'V':
 
-        hash_add_or_exit(&ji->mm, &ji->client_attr, "user_attr", "1", LOGIC_DATA);
+        hash_add_or_exit(ji->client_attr, "user_attr", "1", LOGIC_DATA);
 
         break;
 
@@ -3002,7 +2900,7 @@ void process_opts(
         if (optarg == NULL)
           print_qsub_usage_exit("qsub: illegal -w value");
         else
-          hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_init_work_dir, optarg, data_type);
+          hash_add_or_exit(ji->job_attr, ATTR_init_work_dir, optarg, data_type);
 
         break;
 
@@ -3057,48 +2955,27 @@ void process_opts(
                   {
                   char *err_msg = NULL;
                   alloc_len =  80;
-                  calloc_or_fail(&ji->mm, &err_msg, alloc_len, " -W attribute");
+                  calloc_or_fail(&err_msg, alloc_len, " -W attribute");
                   snprintf(err_msg, alloc_len, "qsub: -W value exceeded max length (%d)", PBS_DEPEND_LEN);
                   print_qsub_usage_exit(err_msg);
-/*                  {
-                  fprintf(stderr,"qsub: -W value exceeded max length (%d)\n",
-                    PBS_DEPEND_LEN);
-                    }
-                  */
                   }
                 else
                   print_qsub_usage_exit("qsub: illegal -W value");
-/*                  {
-                  fprintf(stderr,"qsub: illegal -W value\n");
-                  }
-                  */
-
-/*                 errflg++; */
 
                 break;
                 }
 
-              hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_depend, pdepend, data_type);
-/*               set_attr(&attrib, ATTR_depend, pdepend); */
-/*               } */
+              hash_add_or_exit(ji->job_attr, ATTR_depend, pdepend, data_type);
             }
           else if (!strcmp(keyword, ATTR_job_radix))
             {
             int radix_value;
             int len;
             
-/*            if_cmd_line(Jobradix_opt)
-              {
-              Jobradix_opt = passet;
-              */
               
               len = strlen(valuewd);
               if (len > MAX_RADIX_NUM_LEN)
                 print_qsub_usage_exit("qsub: illegal -W value for job_radix");
-/*                {
-                fprintf(stderr, "qsub: illegal -W value for job_radix\n");
-                }
-                */
               for (i = 0; i < len; i++)
                 {
                 if (!isdigit(valuewd[i])) /* verify the string is all digits */
@@ -3110,39 +2987,18 @@ void process_opts(
                 radix_value = atoi(valuewd);
                 if (radix_value < 2)
                   print_qsub_usage_exit("qsub: illegal -W. job_radix must be >= 2");
-/*                  {
-                  fprintf(stderr, "qsub: illegal -W. job_radix must be >= 2\n");
-                  exit(0);
-                  }
-                  */
                 else
-                  hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_job_radix, valuewd, ENV_DATA);
-/*                  set_attr(&attrib, ATTR_job_radix, valuewd); */
+                  hash_add_or_exit(ji->job_attr, ATTR_job_radix, valuewd, ENV_DATA);
                 }
               else
                 print_qsub_usage_exit("qsub: illegal -W value for job_radix");
-/*                 fprintf(stderr, "qsub: illegal -W value for job_radix\n"); */
-/*               } */
             }
           else if (!strcmp(keyword, ATTR_stagein))
             {
-/*            if_cmd_line(Stagein_opt)
-              {
-              Stagein_opt = passet;
-              */
 
               if (parse_stage_list(valuewd))
                 print_qsub_usage_exit("qsub: illegal -W value for stagein");
-                /* cannot parse 'stagein' value */
-/*                {
-
-                fprintf(stderr, "qsub: illegal -W value\n");
-
-                errflg++;
-
-                break;
-                }
-                */
+              
               if (hash_find(ji->job_attr, ATTR_stagein, &tmp_job_info))
                 {
                 /* 
@@ -3151,147 +3007,81 @@ void process_opts(
                  */
                 char *tmpBuf;
 
-                if ((tmpBuf = (char *)malloc(strlen(valuewd) + strlen(tmp_job_info->value) + 2)) == (char *)0)
+                if ((tmpBuf = (char *)malloc(strlen(valuewd) + tmp_job_info->value.length() + 2)) == (char *)0)
                   {
                   fprintf(stderr, "Out of memory.\n");
                   exit(1);
                   }
-                strcpy(tmpBuf, tmp_job_info->value);
+                strcpy(tmpBuf, tmp_job_info->value.c_str());
                 strcat(tmpBuf, ",");
                 strcat(tmpBuf, valuewd);
-                hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_stagein, tmpBuf, data_type);
+                hash_add_or_exit(ji->job_attr, ATTR_stagein, tmpBuf, data_type);
                 free(tmpBuf);
                 }
               else
                 {
-                hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_stagein, valuewd, data_type);
+                hash_add_or_exit(ji->job_attr, ATTR_stagein, valuewd, data_type);
                 }
 
-/*               set_attr(&attrib, ATTR_stagein, valuewd); */
-/*               } */
             }
           else if (!strcmp(keyword, ATTR_stageout))
-            {
-/*            if_cmd_line(Stageout_opt)
+            {            
+            if (parse_stage_list(valuewd))
+              print_qsub_usage_exit("qsub: illegal -W value for stageout");
+            
+            if (hash_find(ji->job_attr, ATTR_stageout, &tmp_job_info))
               {
-              Stageout_opt = passet;
-              */
-
-              if (parse_stage_list(valuewd))
-                print_qsub_usage_exit("qsub: illegal -W value for stageout");
-                /* cannot parse 'stageout' value */
-/*                {
-
-                fprintf(stderr, "qsub: illegal -W value\n");
-
-                errflg++;
-
-                break;
-                }
-                */
-              if (hash_find(ji->job_attr, ATTR_stageout, &tmp_job_info))
+              /* 
+               * if this attribute already exists, we need to append this
+               * value to it because multiples are allowed.
+               */
+              char *tmpBuf;
+              
+              if ((tmpBuf = (char *)malloc(strlen(valuewd) + tmp_job_info->value.length() + 2)) == (char *)0)
                 {
-                /* 
-                 * if this attribute already exists, we need to append this
-                 * value to it because multiples are allowed.
-                 */
-                char *tmpBuf;
-
-                if ((tmpBuf = (char *)malloc(strlen(valuewd) + strlen(tmp_job_info->value) + 2)) == (char *)0)
-                  {
-                  fprintf(stderr, "Out of memory.\n");
-                  exit(1);
-                  }
-                strcpy(tmpBuf, tmp_job_info->value);
-                strcat(tmpBuf, ",");
-                strcat(tmpBuf, valuewd);
-                hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_stageout, tmpBuf, data_type);
-                free(tmpBuf);
-                }
-              else
-                {
-                hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_stageout, valuewd, data_type);
+                fprintf(stderr, "Out of memory.\n");
+                exit(1);
                 }
 
-/*               set_attr(&attrib, ATTR_stageout, valuewd); */
-/*               } */
+              strcpy(tmpBuf, tmp_job_info->value.c_str());
+              strcat(tmpBuf, ",");
+              strcat(tmpBuf, valuewd);
+              hash_add_or_exit(ji->job_attr, ATTR_stageout, tmpBuf, data_type);
+              free(tmpBuf);
+              }
+            else
+              {
+              hash_add_or_exit(ji->job_attr, ATTR_stageout, valuewd, data_type);
+              }
             }
           else if (!strcmp(keyword, ATTR_t))
             {
-            hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_t, valuewd, data_type);
-/*            if_cmd_line(t_opt)
-              {
-              t_opt = passet;
-
-              set_attr(&attrib, ATTR_t, valuewd);
-              }
-              */
+            hash_add_or_exit(ji->job_attr, ATTR_t, valuewd, data_type);
             }
           else if (!strcmp(keyword, ATTR_g))
             {
-/*            if_cmd_line(Grouplist_opt)
+            if (parse_at_list(valuewd, TRUE, FALSE))
+              print_qsub_usage_exit("qsub: illegal -W value grouplist");
+
+            if (hash_find(ji->client_attr, "validate_group", &tmp_job_info))
               {
-              Grouplist_opt = passet;
-              */
-
-              if (parse_at_list(valuewd, TRUE, FALSE))
-                print_qsub_usage_exit("qsub: illegal -W value grouplist");
-                /* cannot parse 'grouplist' value */
-/*                {
-
-                fprintf(stderr, "qsub: illegal -W value\n");
-
-                errflg++;
-
-                break;
-                }
-                */
-
-              if (hash_find(ji->client_attr, "validate_group", &tmp_job_info))
-/*              if (validate_group == TRUE) */
+              if (validate_group_list(valuewd) == FALSE)
                 {
-                if (validate_group_list(valuewd) == FALSE)
-                  {
-                  alloc_len = 80 + strlen(valuewd);
-                  calloc_or_fail(&ji->mm, &err_msg, alloc_len, "-W attribute");
-                  snprintf(err_msg, alloc_len, "qsub: User isn't a member of one or more groups in %s", valuewd);
-                  print_qsub_usage_exit(err_msg);
-/*                  {
-                  fprintf(stderr,"qsub: User isn't a member of one or more groups in %s\n",
-                    valuewd);
-                  errflg++;
-                  break;
-                  }
-                  */
-                  }
+                alloc_len = 80 + strlen(valuewd);
+                calloc_or_fail(&err_msg, alloc_len, "-W attribute");
+                snprintf(err_msg, alloc_len, "qsub: User isn't a member of one or more groups in %s", valuewd);
+                print_qsub_usage_exit(err_msg);
                 }
-              hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_g, valuewd, data_type);
-/*               set_attr(&attrib, ATTR_g, valuewd); */
-/*              } */
+              }
+            hash_add_or_exit(ji->job_attr, ATTR_g, valuewd, data_type);
             }
           else if (!strcmp(keyword, ATTR_inter))
             {
             /* specify interactive job */
+            if (strcmp(valuewd, "true") != 0)
+              print_qsub_usage_exit("qsub: illegal -W value");
 
-/*            if_cmd_line(Interact_opt)
-              {
-              Interact_opt = passet;
-              */
-
-              if (strcmp(valuewd, "true") != 0)
-                print_qsub_usage_exit("qsub: illegal -W value");
-/*                {
-                fprintf(stderr, "qsub: illegal -W value\n");
-
-                errflg++;
-
-                break;
-                }
-                */
-
-              hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_inter, interactive_port(&inter_sock), data_type);
-/*               set_attr(&attrib, ATTR_inter, interactive_port(&inter_sock)); */
-/*               } */
+            hash_add_or_exit(ji->job_attr, ATTR_inter, interactive_port(&inter_sock), data_type);
             }
           else if (!strcmp(keyword, ATTR_umask))
             {
@@ -3303,20 +3093,11 @@ void process_opts(
             if (len > 3)
               {
               alloc_len = 80 + strlen(valuewd);
-              calloc_or_fail(&ji->mm, &err_msg, alloc_len, "-W attribute");
+              calloc_or_fail(&err_msg, alloc_len, "-W attribute");
               snprintf(err_msg, alloc_len, "qsub: Invalid umask value, too many digits: %s", valuewd);
               print_qsub_usage_exit(err_msg);
               }
-/*              {
-              fprintf(stderr, "Invalid umask value, too many digits: %s\n", 
-                      valuewd); 
-              errflg++;
-             
-              break;
-              }
-              */
-
-/*             Umask_opt = passet; */
+            
             if (valuewd[0] == '0')
               {
               /* value is octal, convert to decimal */
@@ -3327,15 +3108,10 @@ void process_opts(
               snprintf(buf, 4, "%ld", mask); 
 
               /* value is octal, convert to decimal */
-              hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_umask, buf, data_type);
-/*               set_attr(&attrib,ATTR_umask,buf);  */
+              hash_add_or_exit(ji->job_attr, ATTR_umask, buf, data_type);
               }
             else
-              hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_umask, valuewd, data_type);
-/*              {
-              set_attr(&attrib,ATTR_umask,valuewd);
-              }
-              */
+              hash_add_or_exit(ji->job_attr, ATTR_umask, valuewd, data_type);
             }
           else if (!strcmp(keyword, ATTR_f))
             {
@@ -3348,9 +3124,9 @@ void process_opts(
               case 't':
               case 'Y':
               case 'y':
-/*                 f_opt = passet; */
-                hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_f, "TRUE", data_type);
-/*                 set_attr(&attrib, ATTR_f, "TRUE"); */
+                
+                hash_add_or_exit(ji->job_attr, ATTR_f, "TRUE", data_type);
+               
                 break;
                 
               case 0:
@@ -3358,19 +3134,16 @@ void process_opts(
               case 'f':
               case 'N':
               case 'n':
-/*                 f_opt = passet; */
-                hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_f, "FALSE", data_type);
-/*                 set_attr(&attrib, ATTR_f, "FALSE"); */
+                
+                hash_add_or_exit(ji->job_attr, ATTR_f, "FALSE", data_type);
                 break;
               
               default:
                 alloc_len = 80 + strlen(ATTR_f) + strlen(valuewd);
-                calloc_or_fail(&ji->mm, &err_msg, alloc_len, "-W attribute");
+                calloc_or_fail(&err_msg, alloc_len, "-W attribute");
                 snprintf(err_msg, alloc_len, "qsub: invalid %s value: %s", ATTR_f, valuewd);
                 print_qsub_usage_exit(err_msg);
 
-/*                 fprintf(stderr, "invalid %s value: %s\n", ATTR_f, valuewd); */
-/*                 errflg++; */
               }
             }
           else
@@ -3379,20 +3152,12 @@ void process_opts(
             char tmpLine[65536];
 
             //Append if there is already a value here.
-            if(hash_find(ji->job_attr,keyword,&pVal))
+            if (hash_find(ji->job_attr,keyword,&pVal))
               {
-              strcpy(tmpLine,pVal->value);
-              strcat(tmpLine,";");
-              strcat(tmpLine,valuewd);
+              snprintf(tmpLine, sizeof(tmpLine), "%s;%s", pVal->value.c_str(), valuewd);
               valuewd = tmpLine;
               }
-            hash_add_or_exit(&ji->mm, &ji->job_attr, keyword, valuewd, data_type);
-            /* generic job attribute specified */
-/*            {
-
-            set_attr(&attrib, keyword, valuewd);
-            }
-            */
+            hash_add_or_exit(ji->job_attr, keyword, valuewd, data_type);
             }
 
           i = get_name_value(NULL, &keyword, &valuewd);
@@ -3400,12 +3165,6 @@ void process_opts(
 
         if (i == -1)
           print_qsub_usage_exit("qsub: illegal -W value");
-/*          {
-          fprintf(stderr, "qsub: illegal -W value\n");
-
-          errflg++;
-          }
-          */
 
         break;
 
@@ -3414,7 +3173,7 @@ void process_opts(
       case 'X':
 
         if (hash_find(ji->user_attr, "DISPLAY", &tmp_job_info))
-          hash_add_or_exit(&ji->mm, &ji->client_attr, "DISPLAY", tmp_job_info->value, LOGIC_DATA);
+          hash_add_or_exit(ji->client_attr, "DISPLAY", tmp_job_info->value.c_str(), LOGIC_DATA);
         else
           print_qsub_usage_exit("qsub: DISPLAY not set");
 
@@ -3429,7 +3188,7 @@ void process_opts(
 
         if (hash_find(ji->client_attr, "cmdline_script", &tmp_job_info))
           {
-          hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_intcmd, tmp_job_info->value, CMDLINE_DATA);
+          hash_add_or_exit(ji->job_attr, ATTR_intcmd, tmp_job_info->value.c_str(), CMDLINE_DATA);
           }
         else
           {
@@ -3442,7 +3201,7 @@ void process_opts(
 
       case 'z':
 
-        hash_add_or_exit(&ji->mm, &ji->client_attr, "no_jobid_out", "1", data_type);
+        hash_add_or_exit(ji->client_attr, "no_jobid_out", "1", data_type);
 
         break;
 
@@ -3452,7 +3211,7 @@ void process_opts(
         if (optarg != NULL)
           {
           alloc_len = 80 + strlen(optarg);
-          calloc_or_fail(&ji->mm, &err_msg, alloc_len, "unknown attribute flag");
+          calloc_or_fail(&err_msg, alloc_len, "unknown attribute flag");
           snprintf(err_msg, alloc_len, "qsub: invalid attribute flag (%c) value: %s", c, optarg);
           print_qsub_usage_exit(err_msg);
           }
@@ -3492,7 +3251,7 @@ void process_opts(
     if (rc != 0)
       {
       alloc_len = 80 + strlen(tmp_name);
-      calloc_or_fail(&ji->mm, &err_msg, alloc_len, "tmp file error");
+      calloc_or_fail(&err_msg, alloc_len, "tmp file error");
       snprintf(err_msg, alloc_len, "qsub: %s tmp job file %s",
           rc<=2?"could not create":"unable to write to", tmp_name);
       if (rc >= 2)
@@ -3508,7 +3267,7 @@ void process_opts(
       if ((tmpfd = mkstemp(tmp_name2)) < 1)
         {
         alloc_len = 80  + strlen(tmp_name2);
-        calloc_or_fail(&ji->mm, &err_msg, alloc_len, "qsub: could not create tmp job file");
+        calloc_or_fail(&err_msg, alloc_len, "qsub: could not create tmp job file");
         snprintf(err_msg, alloc_len, "qsub: could not create tmp job file %s", tmp_name2);
         unlink(tmp_name);
         print_qsub_usage_exit(err_msg);
@@ -3517,64 +3276,42 @@ void process_opts(
       close(tmpfd);
 
       /* run the specified resources through the submitfilter. */
-
-      strcpy(cline, tmp_job_info->value);
+      cline_out = tmp_job_info->value;
 
       for (index = 1;index < argc;index++)
         {
         if (argv[index] != NULL)
           {
-          strcat(cline, " ");
-
-          strcat(cline, argv[index]);
+          cline_out += " ";
+          cline_out += argv[index];
           }
         }    /* END for (index) */
 
-      strcat(cline, " <");
+      cline_out += " <";
+      cline_out += tmp_name;
+      cline_out += " >";
+      cline_out += tmp_name2;
 
-      strcat(cline, tmp_name);
-
-      strcat(cline, " >");
-
-      strcat(cline, tmp_name2);
-
-      rc = system(cline);
+      rc = system(cline_out.c_str());
 
       alloc_len = 0;
       if (rc == -1)
         {
         alloc_len = 80  + strlen(tmp_name2);
-        calloc_or_fail(&ji->mm, &err_msg, alloc_len, "qsub: error writing filter o/p");
+        calloc_or_fail(&err_msg, alloc_len, "qsub: error writing filter o/p");
         snprintf(err_msg, alloc_len, "qsub: error writing filter o/p, %s", tmp_name2);
-/*         fprintf(stderr, "qsub: error writing filter o/p, %s\n", */
-/*                 tmp_name2); */
-
-/*         exit(1); */
         }
       else if (WEXITSTATUS(rc) == (unsigned char)SUBMIT_FILTER_ADMIN_REJECT_CODE)
         {
         alloc_len = 160;
-        calloc_or_fail(&ji->mm, &err_msg, alloc_len, "qsub: administrative rejection");
+        calloc_or_fail(&err_msg, alloc_len, "qsub: administrative rejection");
         snprintf(err_msg, alloc_len, "qsub: Your job has been administratively rejected by the queueing system.\nqsub: There may be a more detailed explanation prior to this notice.");
-/*         fprintf(stderr, "qsub: Your job has been administratively rejected by the queueing system.\n"); */
-/*         fprintf(stderr, "qsub: There may be a more detailed explanation prior to this notice.\n"); */
-
-/*         unlink(tmp_name2); */
-/*         unlink(tmp_name); */
-
-/*         exit(1); */
         }
       else if (WEXITSTATUS(rc))
         {
         alloc_len = 80;
-        calloc_or_fail(&ji->mm, &err_msg, alloc_len, "qsub: filter error code");
+        calloc_or_fail(&err_msg, alloc_len, "qsub: filter error code");
         snprintf(err_msg, alloc_len, "qsub: submit filter returned an error code, aborting job submission.");
-/*         fprintf(stderr, "qsub: submit filter returned an error code, aborting job submission.\n"); */
-
-/*         unlink(tmp_name2); */
-/*         unlink(tmp_name); */
-
-/*         exit(1); */
         }
       else
         {
@@ -3644,13 +3381,8 @@ void process_opts(
 
         case 'l':
 
-          if (add_verify_resources(&ji->mm, &ji->res_attr, vptr, data_type))
+          if (add_verify_resources(ji->res_attr, vptr, data_type))
             print_qsub_usage_exit("qsub: illegal -l value");
-/*            {
-            fprintf(stderr, "qsub: illegal -l value\n");
-            errflg++;
-            }
-            */
 
           break;
 
@@ -3668,13 +3400,8 @@ void process_opts(
           FlagString[2] = '\0';
 
           /* Duplicate code */
-/* #ifdef linux */
           aindex = 1;  /* prime getopt's starting point */
           tmpArgV[0] = (char *)"";
-/* #else */
-/*           aindex = 1;  prime getopt's starting point */
-/*           tmpArgV[0] = ""; */
-/* #endif */
 
           tmpArgV[aindex] = FlagString;
           tmpArgV[aindex + 1] = vptr;
@@ -3682,28 +3409,10 @@ void process_opts(
 
           tmpArgV[3] = NULL;
 
-          /*
-                    fprintf(stderr,"PLINE: '%s' '%s'  '%s'\n",
-                      tmpArgV[0],
-                      tmpArgV[1],
-                      cline);
-          */
-
           /* To prevent recursion, set a flag in the client_attr */
-          hash_add_or_exit(&ji->mm, &ji->client_attr, "no_submit_filter", "1", LOGIC_DATA);
+          hash_add_or_exit(ji->client_attr, "no_submit_filter", "1", LOGIC_DATA);
           process_opts(aindex + 2, tmpArgV, ji, FILTER_DATA);
-          hash_del_item(&ji->mm, &ji->client_attr, "no_submit_filter");
-
-
-          /* set pass to 10 to allow submit filter to override user-specified
-           * values and to prevent recursive calling of submit filter processing
-           */
-/*          if (process_opts(aindex + 2, tmpArgV, 10) != 0)
-            {
-            fprintf(stderr, "submitfilter line '%s' ignored\n",
-                    cline);
-            }
-          */
+          hash_del_item(ji->client_attr, "no_submit_filter");
           }
 
         break;
@@ -3736,26 +3445,26 @@ void set_job_defaults(
 
   {
   job_data *tmp_job_info = NULL;
-  hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_c, CHECKPOINT_UNSPECIFIED, STATIC_DATA);
+  hash_add_or_exit(ji->job_attr, ATTR_c, CHECKPOINT_UNSPECIFIED, STATIC_DATA);
 
-  hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_h, NO_HOLD, STATIC_DATA);
+  hash_add_or_exit(ji->job_attr, ATTR_h, NO_HOLD, STATIC_DATA);
 
-  hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_j, NO_JOIN, STATIC_DATA);
+  hash_add_or_exit(ji->job_attr, ATTR_j, NO_JOIN, STATIC_DATA);
 
-  hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_k, NO_KEEP, STATIC_DATA);
+  hash_add_or_exit(ji->job_attr, ATTR_k, NO_KEEP, STATIC_DATA);
 
-  hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_m, MAIL_AT_ABORT, STATIC_DATA);
+  hash_add_or_exit(ji->job_attr, ATTR_m, MAIL_AT_ABORT, STATIC_DATA);
 
-  hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_p, DEFAULT_PRIORITY, STATIC_DATA);
+  hash_add_or_exit(ji->job_attr, ATTR_p, DEFAULT_PRIORITY, STATIC_DATA);
 
   /* rerunnable_by_default = true, if this changes later, that value will override this one */
-  hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_r, "TRUE", STATIC_DATA);
-  hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_f, "FALSE", STATIC_DATA);
+  hash_add_or_exit(ji->job_attr, ATTR_r, "TRUE", STATIC_DATA);
+  hash_add_or_exit(ji->job_attr, ATTR_f, "FALSE", STATIC_DATA);
   
-  hash_add_or_exit(&ji->mm, &ji->client_attr, "pbs_dprefix", "#PBS", STATIC_DATA);
-  hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_job_radix, "0", STATIC_DATA);
+  hash_add_or_exit(ji->client_attr, "pbs_dprefix", "#PBS", STATIC_DATA);
+  hash_add_or_exit(ji->job_attr, ATTR_job_radix, "0", STATIC_DATA);
   if (hash_find(ji->user_attr, "pbs_clientretry", &tmp_job_info))
-    hash_add_or_exit(&ji->mm, &ji->client_attr, "cnt2server_retry", tmp_job_info->value, ENV_DATA);
+    hash_add_or_exit(ji->client_attr, "cnt2server_retry", tmp_job_info->value.c_str(), ENV_DATA);
   return;
   }  /* END set_job_defaults() */
 
@@ -3806,10 +3515,10 @@ char *get_param(
  * the call to the pbs_server. This information is thrown out at the end
  * of the call.
  */
-void set_client_attr_defaults(memmgr **mm, job_data **client_attr)
+void set_client_attr_defaults(job_data_container *client_attr)
   {
-  hash_add_or_exit(mm, client_attr, "xauth_path", XAUTH_PATH, STATIC_DATA);
-  hash_add_or_exit(mm, client_attr, "validate_path", "1", STATIC_DATA);
+  hash_add_or_exit(client_attr, "xauth_path", XAUTH_PATH, STATIC_DATA);
+  hash_add_or_exit(client_attr, "validate_path", "1", STATIC_DATA);
   }
 
 void update_job_env_names(job_info *ji)
@@ -3817,27 +3526,27 @@ void update_job_env_names(job_info *ji)
   job_data *tmp_job_info = NULL;
 
   if (hash_find(ji->user_attr, "HOME", &tmp_job_info))
-    hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_pbs_o_home, tmp_job_info->value, ENV_DATA);
+    hash_add_or_exit(ji->job_attr, ATTR_pbs_o_home, tmp_job_info->value.c_str(), ENV_DATA);
   else
-    hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_pbs_o_home, "/", ENV_DATA);
+    hash_add_or_exit(ji->job_attr, ATTR_pbs_o_home, "/", ENV_DATA);
 
   if (hash_find(ji->user_attr, "LOGNAME", &tmp_job_info))
-    hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_pbs_o_logname, tmp_job_info->value, ENV_DATA);
+    hash_add_or_exit(ji->job_attr, ATTR_pbs_o_logname, tmp_job_info->value.c_str(), ENV_DATA);
 
   if (hash_find(ji->user_attr, "PATH", &tmp_job_info))
-    hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_pbs_o_path, tmp_job_info->value, ENV_DATA);
+    hash_add_or_exit(ji->job_attr, ATTR_pbs_o_path, tmp_job_info->value.c_str(), ENV_DATA);
 
   if (hash_find(ji->user_attr, "MAIL", &tmp_job_info))
-    hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_pbs_o_mail, tmp_job_info->value, ENV_DATA);
+    hash_add_or_exit(ji->job_attr, ATTR_pbs_o_mail, tmp_job_info->value.c_str(), ENV_DATA);
 
   if (hash_find(ji->user_attr, "SHELL", &tmp_job_info))
-    hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_pbs_o_shell, tmp_job_info->value, ENV_DATA);
+    hash_add_or_exit(ji->job_attr, ATTR_pbs_o_shell, tmp_job_info->value.c_str(), ENV_DATA);
 
   if (hash_find(ji->user_attr, "TZ", &tmp_job_info))
-    hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_pbs_o_tz, tmp_job_info->value, ENV_DATA);
+    hash_add_or_exit(ji->job_attr, ATTR_pbs_o_tz, tmp_job_info->value.c_str(), ENV_DATA);
 
   if (hash_find(ji->user_attr, "LANG", &tmp_job_info))
-    hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_pbs_o_lang, tmp_job_info->value, ENV_DATA);
+    hash_add_or_exit(ji->job_attr, ATTR_pbs_o_lang, tmp_job_info->value.c_str(), ENV_DATA);
 
   }
 
@@ -3860,22 +3569,22 @@ void process_config_file(
 
     if ((param_val = get_param("SUBMITFILTER", config_buf)) != NULL)
       {
-      hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_pbs_o_submit_filter, param_val, CONFIG_DATA);
+      hash_add_or_exit(ji->job_attr, ATTR_pbs_o_submit_filter, param_val, CONFIG_DATA);
       }
 
     if ((param_val = get_param("SERVERHOST", config_buf)) != NULL)
       {
-      hash_add_or_exit(&ji->mm, &ji->client_attr, "serverhost", param_val, CONFIG_DATA);
+      hash_add_or_exit(ji->client_attr, "serverhost", param_val, CONFIG_DATA);
       }
 
     if ((param_val = get_param("QSUBHOST", config_buf)) != NULL)
       {
-      hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_submit_host, param_val, CONFIG_DATA);
+      hash_add_or_exit(ji->job_attr, ATTR_submit_host, param_val, CONFIG_DATA);
       }
 
     if ((param_val = get_param("QSUBSENDUID", config_buf)) != NULL)
       {
-      hash_add_or_exit(&ji->mm, &ji->client_attr, ATTR_pbs_o_uid, param_val, ENV_DATA);
+      hash_add_or_exit(ji->client_attr, ATTR_pbs_o_uid, param_val, ENV_DATA);
       }
 
     if (get_param("QSUBSENDGROUPLIST", config_buf) != NULL)
@@ -3885,20 +3594,20 @@ void process_config_file(
 
       if (gpent != NULL)
         {
-        hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_g, gpent->gr_name, ENV_DATA);
-        hash_add_or_exit(&ji->mm, &ji->client_attr, "qsubsendgrouplist", gpent->gr_name, CONFIG_DATA);
+        hash_add_or_exit(ji->job_attr, ATTR_g, gpent->gr_name, ENV_DATA);
+        hash_add_or_exit(ji->client_attr, "qsubsendgrouplist", gpent->gr_name, CONFIG_DATA);
         }
       }
 
     if ((param_val = get_param("XAUTHPATH", config_buf)) != NULL)
       {
-      hash_add_or_exit(&ji->mm, &ji->client_attr, "xauth_path", param_val, CONFIG_DATA);
+      hash_add_or_exit(ji->client_attr, "xauth_path", param_val, CONFIG_DATA);
       }
 
     if ((param_val = get_param("CLIENTRETRY", config_buf)) != NULL)
       {
       /* The value of this will be verified later */
-      hash_add_or_exit(&ji->mm, &ji->client_attr, "cnt2server_retry", param_val, CONFIG_DATA);
+      hash_add_or_exit(ji->client_attr, "cnt2server_retry", param_val, CONFIG_DATA);
       }
 
     if ((param_val = get_param("VALIDATEGROUP", config_buf)) != NULL)
@@ -3906,28 +3615,28 @@ void process_config_file(
       if (getgrgid(getgid()) == NULL)
         print_qsub_usage_exit("qsub: cannot validate submit group.");
 
-      hash_add_or_exit(&ji->mm, &ji->client_attr, "validate_group", param_val, CONFIG_DATA);
+      hash_add_or_exit(ji->client_attr, "validate_group", param_val, CONFIG_DATA);
       }
 
     if ((param_val = get_param("DEFAULTCKPT", config_buf)) != NULL)
       {
-      hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_c, param_val, CONFIG_DATA);
+      hash_add_or_exit(ji->job_attr, ATTR_c, param_val, CONFIG_DATA);
       }
 
     if ((param_val = get_param("VALIDATEPATH", config_buf)) != NULL)
       {
       if (!strcasecmp(param_val, "false"))
-        hash_del_item(&ji->mm, &ji->client_attr, "validate_path");
+        hash_del_item(ji->client_attr, "validate_path");
       }
     if ((param_val = get_param("RERUNNABLEBYDEFAULT", config_buf)) != NULL)
       {
       if (!strcasecmp(param_val, "false"))
-        hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_r, "FALSE", STATIC_DATA);
+        hash_add_or_exit(ji->job_attr, ATTR_r, "FALSE", STATIC_DATA);
       }
     if ((param_val = get_param("FAULT_TOLERANT_BY_DEFAULT", config_buf)) != NULL)
       {
       if (!strcasecmp(param_val, "true"))
-        hash_add_or_exit(&ji->mm, &ji->job_attr, ATTR_r, "TRUE", STATIC_DATA);
+        hash_add_or_exit(ji->job_attr, ATTR_r, "TRUE", STATIC_DATA);
       }
     if ((param_val = get_param("HOST_NAME_SUFFIX", config_buf)) != NULL)
       host_name_suffix = param_val;
@@ -3962,11 +3671,9 @@ void print_qsub_usage_exit(const char *error_msg)
   }
 
 void add_submit_args_to_job(
-    
-  memmgr   **mm,
-  job_data **job_attr,
-  int        argc,
-  char     **argv)
+  job_data_container *job_attr,
+  int                argc,
+  char               **argv)
 
   {
   int alloc_len = 1; /* Trailing \0 */
@@ -3979,7 +3686,7 @@ void add_submit_args_to_job(
 
   if (alloc_len > 0)
     {
-    calloc_or_fail(mm, &submit_args_str, alloc_len,
+    calloc_or_fail(&submit_args_str, alloc_len,
         "qsub:submit args out of memory");
 
     for (argi = 1;argi < argc;argi++)
@@ -3991,38 +3698,27 @@ void add_submit_args_to_job(
         strcat(submit_args_str, " ");
         }
       }
-    hash_add_or_exit(mm, job_attr, ATTR_submit_args, submit_args_str, CMDLINE_DATA);
-    memmgr_free(mm, submit_args_str);
+    hash_add_or_exit(job_attr, ATTR_submit_args, submit_args_str, CMDLINE_DATA);
     }
   }
 
 void set_minwclimit(
-    
-  memmgr   **mm,
-  job_data **res_attr)
+  job_data_container *res_attr)
 
   {
   job_data *tmp_job_info;
-  char *ptr;
-  char *tmp_val;
-  if (hash_find(*res_attr, "walltime", &tmp_job_info))
+  int dash_pos;
+  if (hash_find(res_attr, "walltime", &tmp_job_info))
     {
     /* if walltime range specified, break into minwclimit and walltime resources */
-    if ((ptr = strchr(tmp_job_info->value, '-')))
+    if((dash_pos = tmp_job_info->value.find('-') != std::string::npos))
       {
-
-      *ptr = '\0';
-
-      ptr++;
-
+      std::string minwclimit =  tmp_job_info->value.substr(dash_pos);
+      tmp_job_info->value = tmp_job_info->value.substr(dash_pos + 1);
       /* set minwclimit to min walltime range value */
-      calloc_or_fail(mm, &tmp_val, 11 + strlen(tmp_job_info->value) + 1, "minwclimit allocation");
-      sprintf(tmp_val, "minwclimit=%s", tmp_job_info->value);
-
-      hash_add_or_exit(mm, res_attr, "minwclimit", tmp_val, LOGIC_DATA);
-      memmgr_free(mm, tmp_val);
+      hash_add_or_exit(res_attr, "minwclimit", minwclimit.c_str(), LOGIC_DATA);
       /* Over write existing walltime value */
-      hash_add_or_exit(mm, res_attr, "walltime", ptr, LOGIC_DATA);
+      hash_add_or_exit(res_attr, "walltime", tmp_job_info->value.c_str(), LOGIC_DATA);
       }
     }
   }
@@ -4031,7 +3727,7 @@ void add_variable_list(
 
   job_info *ji,
   const char     *var_name,
-  job_data *src_hash)
+  job_data_container *src_hash)
 
   {
   int       total_len = 0;
@@ -4039,45 +3735,51 @@ void add_variable_list(
   int       pos = 0;
   char     *var_list = NULL;
   job_data *en;
+  src_hash->lock();
+  job_data_iterator *it = ((src_hash == NULL)?NULL:src_hash->get_iterator());
+  src_hash->unlock();
   job_data *v_value = NULL;
 
   /* if -v was used then it needs to be included as well. */
   if (hash_find(ji->job_attr, var_name, &v_value) != 0)
     {
     /* add the length of this + 1 for the comma */
-    total_len = v_value->value_len + 1;;
-    if ((v_value->value) && (!v_value->value_len))
-      total_len += strlen(v_value->value);
+    total_len = v_value->value.length() + 1;
     }
 
   total_len += hash_strlen(ji->user_attr);
   count = hash_count(ji->user_attr);
   total_len += count*2;
-  var_list = (char *)memmgr_calloc(&ji->mm, 1, total_len);
+  var_list = (char *)calloc(1, total_len);
 
   if (v_value != NULL)
     {
-    strcat(var_list, v_value->value);
+    strcpy(var_list, v_value->value.c_str());
     if (src_hash != NULL)
       strcat(var_list, ",");
     }
 
-  for (en=src_hash; en != NULL; en=(job_data *)en->hh.next)
+  if(it != NULL)
     {
-    pos++;
-    strcat(var_list, en->name);
-    strcat(var_list, "=");
-    if (en->value != NULL)
+    src_hash->lock();
+    while((en = it->get_next_item()) != NULL)
       {
-      strcat(var_list, en->value);
+      pos++;
+      strcat(var_list, en->name.c_str());
+      strcat(var_list, "=");
+      if (en->value.length() != 0)
+        {
+        strcat(var_list, en->value.c_str());
+        }
+      if (pos != count)
+        {
+        strcat(var_list, ",");
+        }
       }
-    if (pos != count)
-      {
-      strcat(var_list, ",");
-      }
+    src_hash->unlock();
     }
 
-  hash_add_or_exit(&ji->mm, &ji->job_attr, var_name, var_list, CMDLINE_DATA);
+  hash_add_or_exit(ji->job_attr, var_name, var_list, CMDLINE_DATA);
   }
 
 /**
@@ -4148,7 +3850,6 @@ void main_func(
 
   int               script_idx = 0;
   int               idx;
-  int               have_intr_cmd = FALSE;
   job_data         *tmp_job_info = NULL;
   /* Allocate Memmgr */
   int               debug = FALSE;
@@ -4161,14 +3862,6 @@ void main_func(
    */
   process_early_opts(argc, argv);
   
-  memset(&ji, 0, sizeof(job_info));
-  if (memmgr_init(&ji.mm, 8192) != PBSE_NONE)
-    {
-    printf("Error allocating memory for job submission\n");
-    exit(1);
-    }
-
-
   /* The order of precedence for processing options follows:
    * 1 - processing logic (includes submitfilter)
    * 2 - cmdline information
@@ -4184,32 +3877,32 @@ void main_func(
 
 
   /* (5) adds all env variables to a tmp hash */
-  set_env_opts(&ji.mm, &ji.user_attr, envp);
+  set_env_opts(ji.user_attr, envp);
   /* (6) set option default job values */
   set_job_defaults(&ji);
   /* (6) Adds client default options */
-  set_client_attr_defaults(&ji.mm, &ji.client_attr);
+  set_client_attr_defaults(ji.client_attr);
   /* The following call  also replaces the functionality of set_job_env
    * up to the v_opt and V_opt sections. Those are replaced below */
   /* The names currently used differ from the actual anvironment names,
    * this adds an expected set */
   update_job_env_names(&ji);
-  add_submit_args_to_job(&ji.mm, &ji.job_attr, argc, argv);
+  add_submit_args_to_job(ji.job_attr, argc, argv);
   debug = hash_find(ji.job_attr, "pbsdebug", &tmp_job_info); /* Set debug state */
 
   /* (4) process config file options */
   process_config_file(&ji);
 
   /* check/set submit filter_path */
-  if (validate_submit_filter(&ji.mm, &ji.job_attr) == -1)
-  {
+  if (validate_submit_filter(ji.job_attr) == -1)
+    {
      hash_find(ji.job_attr, ATTR_pbs_o_submit_filter, &tmp_job_info);
      fprintf(stderr,
              "qsub: invalid submit filter: \"%s\"\n",
-             tmp_job_info->value);
+             tmp_job_info->value.c_str());
 
      exit(1);
-  }
+    }
 
   /* NOTE:  load config before processing opts since config may modify how opts are handled */
 
@@ -4225,11 +3918,11 @@ void main_func(
     {
     snprintf(script, sizeof(script), "%s", argv[script_index]);
     /* store the script so it can be used later (e.g. '-x' option) */
-    hash_add_or_exit(&ji.mm, &ji.client_attr, "cmdline_script", script, CMDLINE_DATA);
+    hash_add_or_exit(ji.client_attr, "cmdline_script", script, CMDLINE_DATA);
     }
 
   if (prefix_index != -1)
-    hash_add_or_exit(&ji.mm, &ji.client_attr, "pbs_dprefix", argv[prefix_index], CMDLINE_DATA);
+    hash_add_or_exit(ji.client_attr, "pbs_dprefix", argv[prefix_index], CMDLINE_DATA);
 
   script_idx = argc - optind;
   if (hash_find(ji.job_attr, ATTR_inter, &tmp_job_info))
@@ -4245,7 +3938,7 @@ void main_func(
   if (!strcmp(script, "") || !strcmp(script, "-"))
     {
     if (hash_find(ji.job_attr, ATTR_N, &tmp_job_info) == FALSE)
-      hash_add_or_exit(&ji.mm, &ji.job_attr, ATTR_N, "STDIN", CMDLINE_DATA);
+      hash_add_or_exit(ji.job_attr, ATTR_N, "STDIN", CMDLINE_DATA);
 
     if (job_is_interactive == FALSE)
       {
@@ -4294,7 +3987,7 @@ void main_func(
           bnp = script;
 
         if (check_job_name(bnp, 0) == 0)
-          hash_add_or_exit(&ji.mm, &ji.job_attr, ATTR_N, bnp, CMDLINE_DATA);
+          hash_add_or_exit(ji.job_attr, ATTR_N, bnp, CMDLINE_DATA);
         else
           print_qsub_usage_exit("qsub: cannot form a valid job name from the script name");
         }
@@ -4336,13 +4029,13 @@ void main_func(
     if (debug)
       {
       fprintf(stderr, "xauth_path=%s\n",
-              tmp_job_info->value);
+              tmp_job_info->value.c_str());
       }
 
-    if ((x11authstr = x11_get_proto(tmp_job_info->value, debug)) != NULL)
+    if ((x11authstr = x11_get_proto((char *)tmp_job_info->value.c_str(), debug)) != NULL)
       {
       /* stuff this info into the job */
-      hash_add_or_exit(&ji.mm, &ji.job_attr, ATTR_forwardx11, x11authstr, ENV_DATA);
+      hash_add_or_exit(ji.job_attr, ATTR_forwardx11, x11authstr, ENV_DATA);
       
       if (debug)
         fprintf(stderr, "x11auth string: %s\n",
@@ -4367,7 +4060,7 @@ void main_func(
   if (hash_find(ji.job_attr, ATTR_inter, &tmp_job_info) &&
       ((isatty(0) == 0) || (isatty(1) == 0)))
     {
-    if (have_intr_cmd)
+    if (hash_find(ji.job_attr, ATTR_intcmd, &tmp_job_info))
       {
       have_terminal = FALSE;
       }
@@ -4390,16 +4083,16 @@ void main_func(
   if (hash_find(ji.client_attr, "destination", &tmp_job_info))
     {
     char *q_n_out;                      /* queue part of destination */
-    if (parse_destination_id(tmp_job_info->value, &q_n_out, &s_n_out))
+    if (parse_destination_id((char *)tmp_job_info->value.c_str(), &q_n_out, &s_n_out))
       {
       fprintf(stderr, "qsub: illegally formed destination: %s\n",
-        tmp_job_info->value);
+        tmp_job_info->value.c_str());
   
       unlink(script_tmp);
   
       exit(2);
       }
-    destination = tmp_job_info->value;
+    destination = (char *)tmp_job_info->value.c_str();
     if (notNULL(s_n_out))
       {
       strcpy(server_out, s_n_out);
@@ -4409,18 +4102,18 @@ void main_func(
     {
     /* Currently if the destination is null, it is replaced downstream
      * with the server_list */
-    calloc_or_fail(&ji.mm, &destination, 2, "destination");
+    calloc_or_fail(&destination, 2, "destination");
     destination[0] = '\0';
     }
 
   /* if walltime range specified, break into minwclimit and walltime */
-  set_minwclimit(&ji.mm, &ji.job_attr);
+  set_minwclimit(ji.job_attr);
 
   /* Root user submission not allowed */
   local_errno = PBSE_NONE;
   if (hash_find(ji.job_attr, ATTR_P, &tmp_job_info) == TRUE)
     {
-    if (strcmp("root", tmp_job_info->value) == 0)
+    if (strcmp("root", tmp_job_info->value.c_str()) == 0)
       {
       local_errno = PBSE_BADUSER;
       }
@@ -4433,7 +4126,6 @@ void main_func(
     {
     printf("qsub can not be run as root\n");
     unlink(script_tmp);
-    memmgr_destroy(&ji.mm);
     exit(1);
     }
 
@@ -4441,7 +4133,7 @@ void main_func(
 
   if (hash_find(ji.client_attr, "cnt2server_retry", &tmp_job_info))
     {
-    int tmpNum = atoi(tmp_job_info->value);
+    int tmpNum = atoi(tmp_job_info->value.c_str());
     if (tmpNum > 0)
       {
       cnt2server_conf(tmpNum); /* set number of seconds to retry */
@@ -4473,7 +4165,6 @@ void main_func(
       }
 
     unlink(script_tmp);
-    memmgr_destroy(&ji.mm);
     exit(local_errno);
     }
 
@@ -4495,15 +4186,17 @@ void main_func(
     {
     pbs_disconnect(sock_num);
     unlink(script_tmp);
-    memmgr_destroy(&ji.mm);
     print_qsub_usage_exit("unable to catch signals");
     }
 
   /* Send submit request to the server. */
 
-  local_errno = pbs_submit_hash(
+  int retries = 0;
+
+  do
+    {
+    local_errno = pbs_submit_hash(
                   sock_num,
-                  &ji.mm,
                   ji.job_attr,
                   ji.res_attr,
                   script_tmp,
@@ -4511,6 +4204,15 @@ void main_func(
                   NULL,
                   &new_jobname,
                   &errmsg);
+    if (local_errno != PBSE_NONE)
+      sleep(1);
+
+    /* If we get a timeout the server is busy. Let the user 
+       know what is taking so long */
+    if (local_errno == PBSE_TIMEOUT)
+      fprintf(stdout, "Connection to server timed out. Trying again");
+
+    }while((++retries < MAX_RETRIES) && (local_errno != PBSE_NONE));
 
   if (local_errno != PBSE_NONE)
     {
@@ -4528,7 +4230,6 @@ void main_func(
     pbs_disconnect(sock_num);
     unlink(script_tmp);
 
-    memmgr_destroy(&ji.mm);
     exit(local_errno);
     }
   else
@@ -4547,7 +4248,6 @@ void main_func(
   /* is this an interactive job ??? */
 
   if (hash_find(ji.job_attr, ATTR_inter, &tmp_job_info))
-    interactive(&ji.mm, ji.client_attr);
+    interactive(ji.client_attr);
 
-  memmgr_destroy(&ji.mm);
   }  /* END main_func() */

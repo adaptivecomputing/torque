@@ -164,7 +164,7 @@ void *req_messagejob(
 
   /* After MOM acts and replies to us, we pick up in post_message_req() */
   if (pjob == NULL)
-    job_mutex.set_lock_on_exit(false);
+    job_mutex.set_unlock_on_exit(false);
 
   return(NULL);
   } /* END req_messagejob() */

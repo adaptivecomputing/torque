@@ -1,4 +1,5 @@
 #include "license_pbs.h" /* See here for the software license */
+#include <pbs_config.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
@@ -43,7 +44,7 @@ extern const char *delpurgestr;
 char server_host[PBS_MAXHOSTNAME + 1];
 time_t pbs_tcp_timeout = 300;
 
-struct all_jobs  alljobs;
+extern all_jobs  alljobs;
 
 int set_pbs_server_name()
   {
@@ -82,7 +83,6 @@ START_TEST(test_handle_single_delete)
   strcpy(preq->rq_ind.rq_delete.rq_objname, "1.napali");
   fail_unless(handle_single_delete(preq, preq, NULL) == PBSE_NONE);
   fail_unless(preq->rq_noreply == TRUE);
-
   }
 END_TEST
 
@@ -117,7 +117,7 @@ START_TEST(test_duplicate_request)
   fail_unless(!strcmp(dup->rq_user, "dbeer"));
   fail_unless(!strcmp(dup->rq_host, "napali"));
   fail_unless(!strcmp(dup->rq_extend, "tom"));
-  fail_unless(!strcmp(dup->rq_ind.rq_run.rq_destin, "napali")); 
+  fail_unless(!strcmp(dup->rq_ind.rq_run.rq_destin, "napali"));
   }
 END_TEST 
 
@@ -176,7 +176,6 @@ START_TEST(test_delete_all_work)
   preq->rq_extend = strdup(delpurgestr);
   nanny = 0;
 
-  initialize_all_jobs_array(&alljobs);
   insert_job(&alljobs, pjob);
 
   /* no lock should remain on job after delete_all_work() */
@@ -242,7 +241,6 @@ START_TEST(test_job_delete_nanny)
   nanny = 1;
   job_delete_nanny(ptask);
   fail_unless(signal_issued == TRUE);
-
   }
 END_TEST
 
@@ -274,7 +272,7 @@ END_TEST
 
 START_TEST(test_delete_inactive_job)
   {
-  job *pjob = (job *)calloc(1, sizeof(pjob));
+  job *pjob = (job *)calloc(1, sizeof(job));
 
   fail_unless(delete_inactive_job((job **)NULL, NULL) == PBSE_BAD_PARAMETER);
   
@@ -282,25 +280,25 @@ START_TEST(test_delete_inactive_job)
   fail_unless(delete_inactive_job(&pjob, NULL) == PBSE_NONE);
   fail_unless(pjob->ji_qs.ji_state == JOB_STATE_COMPLETE);
 
-  pjob = (job *)calloc(1, sizeof(pjob));
+  pjob = (job *)calloc(1, sizeof(job));
   pjob->ji_qs.ji_state = JOB_STATE_QUEUED;
   bad_queue = 1;
   fail_unless(delete_inactive_job(&pjob, NULL) == PBSE_NONE);
   fail_unless(pjob->ji_qs.ji_state == JOB_STATE_COMPLETE);
   bad_queue = 0;
 
-  pjob = (job *)calloc(1, sizeof(pjob));
+  pjob = (job *)calloc(1, sizeof(job));
   pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
   fail_unless(delete_inactive_job(&pjob, NULL) == PBSE_NONE);
   fail_unless(pjob->ji_qs.ji_state == JOB_STATE_EXITING);
   fail_unless(pjob->ji_momhandle = -1);
 
-  pjob = (job *)calloc(1, sizeof(pjob));
+  pjob = (job *)calloc(1, sizeof(job));
   pjob->ji_qs.ji_svrflags = JOB_SVFLG_StagedIn;
   fail_unless(delete_inactive_job(&pjob, NULL) == PBSE_NONE);
   fail_unless(pjob == NULL);
 
-  pjob = (job *)calloc(1, sizeof(pjob));
+  pjob = (job *)calloc(1, sizeof(job));
   bad_relay = 1;
   pjob->ji_qs.ji_svrflags = JOB_SVFLG_StagedIn;
   fail_unless(delete_inactive_job(&pjob, NULL) == PBSE_NONE);

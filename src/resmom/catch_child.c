@@ -439,11 +439,9 @@ void process_tm_obits(
 #ifndef NUMA_SUPPORT 
     else
       {
-      /*
-      ** Send a response over to MOM
-      ** whose child sent the request.
-      */
-      send_task_obit_response(pjob, pnode, cookie, pobit, ptask->ti_qs.ti_exitstat);
+      /* Send a response over to MOM whose child sent the request. */
+      if (pnode != NULL)
+        send_task_obit_response(pjob, pnode, cookie, pobit, ptask->ti_qs.ti_exitstat);
       }
 #endif /* ndef NUMA_SUPPORT */
 
@@ -1126,7 +1124,6 @@ void preobit_preparation(
 
   {
   pid_t                 cpid;
-  exiting_job_info     *eji;
 
   log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, __func__, "top");
 
@@ -1149,10 +1146,7 @@ void preobit_preparation(
     /* parent - mark that job epilog subtask has been launched */
 
     /* NOTE:  pjob->ji_mompost will be executed in scan_for_terminated() */
-    eji = (exiting_job_info *)calloc(1, sizeof(exiting_job_info));
-    strcpy(eji->jobid, pjob->ji_qs.ji_jobid);
-    eji->obit_sent = time(NULL);
-    insert_thing(exiting_job_list, eji);
+    exiting_job_list.push_back(new exiting_job_info(pjob->ji_qs.ji_jobid));
 
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_OBIT;
     pjob->ji_momsubt = cpid;
