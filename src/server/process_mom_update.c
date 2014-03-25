@@ -662,8 +662,13 @@ int process_status_info(
   //A node we put to sleep is up and running.
   if(current->nd_power_state != POWER_STATE_RUNNING)
     {
-    current->nd_power_state = POWER_STATE_RUNNING;
-    write_node_power_state();
+    //Make sure we wait for a stray update that came after we changed the state to pass
+    //by.
+    if((current->nd_power_state_change_time + NODE_POWER_CHANGE_TIMEOUT) < time(NULL))
+      {
+      current->nd_power_state = POWER_STATE_RUNNING;
+      write_node_power_state();
+      }
     }
   /* loop over each string */
   for (boost::ptr_vector<std::string>::iterator i = status_info.begin(); i != status_info.end(); i++)

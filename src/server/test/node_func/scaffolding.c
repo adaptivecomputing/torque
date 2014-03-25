@@ -11,6 +11,7 @@
 #include "u_tree.h" /* AvlTree */
 #include "list_link.h" /* list_link */
 #include "work_task.h" /* work_task, work_type */
+#include "batch_request.h" /* batch_request */
 #include "tcp.h"
 #include "pbs_job.h"
 #include <string>
@@ -286,13 +287,6 @@ struct pbsnode *create_alps_subnode(struct pbsnode *parent, const char *node_id)
   return(NULL);
   }
 
-struct batch_request *alloc_br(int type)
-  {
-  fprintf(stderr,"%s needs to be mocked.\n",__func__);
-  exit(-1);
-  return NULL;
-  }
-
 int issue_Drequest(
   int                    conn,
   struct batch_request  *request)
@@ -313,4 +307,47 @@ int svr_connect(
   exit(-1);
   return 0;
   }
+
+int enqueue_threadpool_request(
+
+  void *(*func)(void *),
+  void *arg)
+
+  {
+  return(PBSE_NONE);
+  }
+
+struct batch_request *alloc_br(
+
+  int type)
+
+  {
+
+  struct batch_request *req = NULL;
+
+  if ((req = (struct batch_request *)calloc(1, sizeof(struct batch_request))) == NULL)
+    {
+    fprintf(stderr, "failed to allocate batch request. alloc_br()\n");
+    }
+  else
+    {
+
+    req->rq_type = type;
+
+    req->rq_conn = -1;  /* indicate not connected */
+    req->rq_orgconn = -1;  /* indicate not connected */
+    req->rq_time = time(NULL);
+    req->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
+    req->rq_noreply = FALSE;  /* indicate reply is needed */
+    }
+
+  return(req);
+  } /* END alloc_br() */
+
+void free_br(struct batch_request *preq)
+  {
+  return;
+  }
+
+
 

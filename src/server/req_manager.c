@@ -814,7 +814,7 @@ int mgr_set_node_attr(
 
   if(pnode->nd_power_state != tnode.nd_power_state)
     {
-    if((rc = set_node_power_state(pnode,tnode.nd_power_state)) != PBSE_NONE)
+    if((rc = set_node_power_state(pnode,&tnode)) != PBSE_NONE)
       {
       tnode.nd_power_state = pnode->nd_power_state; //put the state back to what it was.
       }

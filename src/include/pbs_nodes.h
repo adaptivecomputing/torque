@@ -127,6 +127,7 @@
 #define BM_ERROR -20
 #define MAX_LEVEL_DEPTH 100 /* maximum levels per path */
 
+#define NODE_POWER_CHANGE_TIMEOUT 30
 
 enum psit
   {
@@ -357,6 +358,7 @@ struct pbsnode
   int                           max_subnode_nppn;    /* maximum ppn of an alps subnode */
   unsigned short              nd_power_state;
   unsigned char               nd_mac_addr[6];
+  time_t                        nd_power_state_change_time; //
 
   pthread_mutex_t              *nd_mutex;            /* semaphore for accessing this node's data */
   };
