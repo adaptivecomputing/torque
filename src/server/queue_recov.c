@@ -262,6 +262,8 @@ pbs_queue *que_recov_xml(
     log_err(errno, __func__, log_buf);
     
     close(fds);
+    
+    que_free(pq, TRUE);
 
     return(NULL);
     }

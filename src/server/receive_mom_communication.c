@@ -508,10 +508,9 @@ void *svr_is_request(
 
         if (ret == SEND_HELLO)
           {
-          struct hello_info *hi = (struct hello_info *)calloc(1, sizeof(struct hello_info));
+          struct hello_info *hi = new hello_info(node->nd_id);
           write_tcp_reply(chan, IS_PROTOCOL, IS_PROTOCOL_VER, IS_STATUS, DIS_SUCCESS);
 
-          hi->id = node->nd_id;
           enqueue_threadpool_request(send_hierarchy_threadtask, hi, task_pool);
           ret = DIS_SUCCESS;
           }
