@@ -17,6 +17,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       thread stack sizes to a maximum of 8 Mb and Minimum of 1 Mb.
 
 4.2.7
+  b - TRQ-2423. Fix a bug where cpusets would incorrectly be reported on mpi jobs
   b - TRQ-2329. Fix a problem where nodes could be allocated to array subjobs even
       after the job was deleted.
   b - TRQ-2351. Fix an issue where moms that are before 4.2.6 can't run jobs if the
