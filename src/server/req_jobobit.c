@@ -122,6 +122,7 @@
 #include "../lib/Libutils/u_lock_ctl.h"
 #include "exiting_jobs.h"
 #include "track_alps_reservations.h"
+#include "id_map.hpp"
 
 #define RESC_USED_BUF 2048
 #define JOBMUSTREPORTDEFAULTKEEP 30
@@ -162,7 +163,7 @@ int         timeval_subtract(struct timeval *,struct timeval *,struct timeval *)
 extern void set_resc_assigned(job *, enum batch_op);
 extern void cleanup_restart_file(job *);
 void        on_job_exit(batch_request *preq, char *jobid);
-int         kill_job_on_mom(char *jobid, struct pbsnode *pnode);
+int         kill_job_on_mom(int internal_job_id, struct pbsnode *pnode);
 void        handle_complete_second_time(struct work_task *ptask);
 void       *on_job_exit_task(struct work_task *vp);
 
@@ -2754,7 +2755,7 @@ int handle_subjob_exit_status(
   int             exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
   int             rc = PBSE_NONE;
   char            jobid[PBS_MAXSVRJOBID + 1];
-  char            other_jobid[PBS_MAXSVRJOBID + 1];
+  int             other_internal_job_id = -1;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
   struct pbsnode *pnode = NULL;
   int             cray_exited_nonzero = FALSE;
@@ -2789,7 +2790,7 @@ int handle_subjob_exit_status(
 
       if (other_subjob->ji_qs.ji_state <= JOB_STATE_RUNNING)
         {
-        strcpy(other_jobid, other_subjob->ji_qs.ji_jobid);
+        other_internal_job_id = other_subjob->ji_internal_id;
         pnode = find_nodebyname(other_subjob->ji_qs.ji_destin);
         }
 
@@ -2797,12 +2798,13 @@ int handle_subjob_exit_status(
 
       if (pnode != NULL)
         {
+        const char *other_job_id = job_mapper.get_name(other_internal_job_id);
         snprintf(log_buf, sizeof(log_buf), 
           "Sub-job %s exited with a non-zero exit status, canceling job %s",
-          jobid, other_jobid);
-        log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, other_jobid, log_buf);
+          jobid, other_job_id);
+        log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, other_job_id, log_buf);
         
-        kill_job_on_mom(other_jobid, pnode);
+        kill_job_on_mom(other_internal_job_id, pnode);
         unlock_node(pnode, __func__, NULL, LOGLEVEL);
         }
       }

@@ -2656,6 +2656,8 @@ int pbsd_init_reque(
       PBS_EVENTCLASS_JOB,
       pjob->ji_qs.ji_jobid,
       log_buf);
+
+    pjob->ji_internal_id = job_mapper.get_new_id(pjob->ji_qs.ji_jobid);
     }
   else
     {
@@ -2904,7 +2906,7 @@ void resume_net_move(
 
   if (jobid != NULL)
     {
-    if((pjob = svr_find_job(jobid, FALSE)) == NULL)
+    if ((pjob = svr_find_job(jobid, FALSE)) == NULL)
       return;
 
     mutex_mgr job_mgr(pjob->ji_mutex,true);

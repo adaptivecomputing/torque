@@ -15,6 +15,7 @@
 #include "user_info.h"
 #include "mutex_mgr.hpp"
 #include "threadpool.h"
+#include "id_map.hpp"
 
 bool exit_called = false;
 const char *PJobSubState[10];
@@ -217,7 +218,7 @@ resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   exit(1);
   }
 
-job *svr_find_job(char *jobid, int get_subjob)
+job *svr_find_job(const char *jobid, int get_subjob)
   {
   fprintf(stderr, "The call to find_job to be mocked!!\n");
   exit(1);
@@ -410,4 +411,15 @@ job *find_job_by_array(all_jobs *aj, char *jobid, int get_subjob, bool locked)
   return(NULL);
   }
 
+id_map::id_map() {}
+
+id_map::~id_map() {}
+
+int id_map::get_new_id(const char *job_name)
+  {
+  static int i = 0;
+  return(i++);
+  }
+
+id_map job_mapper;
 

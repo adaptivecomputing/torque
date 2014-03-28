@@ -120,6 +120,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include <string>
 
 #include "pbs_ifl.h"
 #include "list_link.h"
@@ -148,7 +149,7 @@
 #include "user_info.h"
 #include "mutex_mgr.hpp"
 #include "job_route.h" /* job_route */
-#include <string>
+#include "id_map.hpp"
 
 #ifndef TRUE
 #define TRUE 1
@@ -1090,6 +1091,8 @@ job *job_clone(
 
   pa->job_ids[taskid] = strdup(pnewjob->ji_qs.ji_jobid);
   strcpy(pnewjob->ji_arraystructid, pa->ai_qs.parent_id);
+
+  pnewjob->ji_internal_id = job_mapper.get_new_id(pnewjob->ji_qs.ji_jobid);
 
   if (release_mutex == TRUE)
     {

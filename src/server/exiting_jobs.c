@@ -92,7 +92,7 @@
 #include "batch_request.h"
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
-
+#include "id_map.hpp"
 
 
 
@@ -112,11 +112,11 @@ int record_job_as_exiting(
   if (jeri == NULL)
     return(ENOMEM);
 
-  strcpy(jeri->jobid, pjob->ji_qs.ji_jobid);
+  jeri->internal_job_id = pjob->ji_internal_id;
   jeri->last_attempt = time(NULL);
 
   exiting_jobs_info.lock();
-  if(!exiting_jobs_info.insert(jeri,jeri->jobid))
+  if (!exiting_jobs_info.insert(jeri, strdup(pjob->ji_qs.ji_jobid)))
     {
     exiting_jobs_info.unlock();
     return ENOMEM;
@@ -129,16 +129,17 @@ int record_job_as_exiting(
 
 int remove_from_exiting_list_by_jobid(
 
-  const char *jobid)
+  int internal_job_id)
 
   {
+  const char *job_id = job_mapper.get_name(internal_job_id);
   exiting_jobs_info.lock();
   
-  job_exiting_retry_info *jeri = exiting_jobs_info.find(jobid);
+  job_exiting_retry_info *jeri = exiting_jobs_info.find(job_id);
 
   if (jeri != NULL)
     {
-    exiting_jobs_info.remove(jobid);
+    exiting_jobs_info.remove(job_id);
     free(jeri);
     }
   
@@ -154,35 +155,36 @@ int remove_job_from_exiting_list(
   job **pjob)
 
   {
-  std::string jobid((*pjob)->ji_qs.ji_jobid);
+  int internal_job_id = (*pjob)->ji_internal_id;
 
   unlock_ji_mutex(*pjob,__func__, NULL, LOGLEVEL);
-  int rc = remove_from_exiting_list_by_jobid(jobid.c_str());
-  *pjob = svr_find_job((char *)jobid.c_str(),FALSE);
+  int rc = remove_from_exiting_list_by_jobid(internal_job_id);
+  *pjob = svr_find_job_by_id(internal_job_id);
   return rc;
   } /* END remove_job_from_exiting_list() */
 
 
 int retry_job_exit(
 
-  char *jobid)
+  int internal_job_id)
 
   {
   char  log_buf[LOCAL_LOG_BUF_SIZE];
+  char *job_id = strdup(job_mapper.get_name(internal_job_id));
 
   snprintf(log_buf, sizeof(log_buf), "Retrying job exiting for job %s",
-    jobid);
+    job_id);
   log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
   
-  /* jobid will be freed in on_job_exit() */
-  on_job_exit(NULL, jobid);
+  /* job_id will be freed in on_job_exit() */
+  on_job_exit(NULL, job_id);
 
   return(PBSE_NONE);
   } /* END retry_job_exit() */
 
 
 
-char *get_next_retryable_jobid(
+int get_next_retryable_jobid(
 
   exiting_jobs_info_iterator **iter)
 
@@ -205,14 +207,16 @@ char *get_next_retryable_jobid(
       if (jeri->attempts >= MAX_EXITING_RETRY_ATTEMPTS)
         {
         /* We will need to use the jobid after jeri is freed. Save the jobid */
-        std::string jid(jeri->jobid);
-        exiting_jobs_info.remove(jeri->jobid);
+        int internal_job_id = jeri->internal_job_id;
+        exiting_jobs_info.remove(job_mapper.get_name(internal_job_id));
         free(jeri);
         exiting_jobs_info.unlock();
-        if ((pjob = svr_find_job((char *)jid.c_str(), TRUE)) != NULL)
+
+        if ((pjob = svr_find_job_by_id(internal_job_id)) != NULL)
           {
-          snprintf(log_buf, sizeof(log_buf), "Job %s has had its exiting re-tried %d times, purging.",
-          jid.c_str(), MAX_EXITING_RETRY_ATTEMPTS);
+          snprintf(log_buf, sizeof(log_buf),
+            "Job %s has had its exiting re-tried %d times, purging.",
+            job_mapper.get_name(jeri->internal_job_id), MAX_EXITING_RETRY_ATTEMPTS);
           log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
 
           force_purge_work(pjob);
@@ -225,14 +229,13 @@ char *get_next_retryable_jobid(
         jeri->last_attempt = time_now;
         exiting_jobs_info.unlock();
 
-        char *jobid = strdup(jeri->jobid);
-        return(jobid);
+        return(jeri->internal_job_id);
         }
       }
     }
 
   exiting_jobs_info.unlock();
-  return(NULL);
+  return(-1);
   } /* END get_next_retryable_jobid() */
 
 
@@ -247,15 +250,14 @@ int check_exiting_jobs()
 
   {
   exiting_jobs_info_iterator  *iter = NULL;
-  char                   *jobid;
-  job                    *pjob;
+  int                          internal_job_id;
+  job                         *pjob;
   
-  while ((jobid = get_next_retryable_jobid(&iter)) != NULL)
+  while ((internal_job_id = get_next_retryable_jobid(&iter)) != -1)
     {
-    if ((pjob = svr_find_job(jobid, TRUE)) == NULL)
+    if ((pjob = svr_find_job_by_id(internal_job_id)) == NULL)
       {
-      remove_from_exiting_list_by_jobid(jobid);
-      free(jobid);
+      remove_from_exiting_list_by_jobid(internal_job_id);
       }
     else
       {
@@ -263,15 +265,14 @@ int check_exiting_jobs()
 
       if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
         {
-        remove_from_exiting_list_by_jobid(jobid);
-        free(jobid);
+        remove_from_exiting_list_by_jobid(internal_job_id);
         }
       else
         {
         pjob_mutex.unlock();
 
         /* jobid is freed in on_job_exit() */
-        retry_job_exit(jobid);
+        retry_job_exit(internal_job_id);
         }
       }
     } /* END loop over exiting job information */

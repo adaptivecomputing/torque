@@ -1558,16 +1558,30 @@ int encode_arst( pbs_attribute *attr, tlist_head *phead, const char *atname, con
 
 void free_null(struct pbs_attribute *attr) {}
 
-int is_orphaned(
+bool is_orphaned(
 
   char *rsv_id,
   char *job_id)
 
   {
-  return(1);
+  return(true);
   }
 
 job *svr_find_job(char *jobid, int get_subjob)
+  {
+  static struct job pjob;
+  static int    i = 0;
+
+  if (i == 0)
+    {
+    pjob.ji_mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));
+    }
+  i++;
+
+  return(&pjob);
+  }
+
+job *svr_find_job_by_id(int id)
   {
   static struct job pjob;
   static int    i = 0;

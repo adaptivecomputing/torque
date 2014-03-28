@@ -13,6 +13,7 @@
 #include "server.h" /* server */
 #include "sched_cmds.h"
 #include "threadpool.h"
+#include "id_map.hpp"
 
 const char *text_name              = "text";
 const char *PJobSubState[10];
@@ -224,7 +225,7 @@ void log_event(int eventtype, int objclass, const char *objname, const char *tex
 void log_ext(int errnum, const char *routine, const char *text, int severity){}
 void account_record(int acctype, job *pjob, const char *text){}
 const char *prefix_std_file(job *pjob, std::string& ds, int key) {return "";}
-job *svr_find_job(char *jobid, int get_subjob) {return NULL;}
+job *svr_find_job(const char *jobid, int get_subjob) {return NULL;}
 const char *add_std_filename(job *pjob, char *path, int key, std::string& ds) { return ""; }
 int lock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string) {return(0);}
 struct pbs_queue *lock_queue_with_job_held(struct pbs_queue  *pque, job       **pjob_ptr){return(NULL);}
@@ -331,3 +332,17 @@ job *find_job_by_array(all_jobs *aj, char *job_id, int get_subjob, bool locked)
   return(NULL);
   }
 
+id_map::id_map() 
+  {
+  }
+
+id_map::~id_map() {}
+
+int id_map::get_new_id(const char *job_name)
+  {
+  static int id = 0;
+
+  return(id++);
+  }
+
+id_map job_mapper;

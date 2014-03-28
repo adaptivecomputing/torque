@@ -675,6 +675,7 @@ struct job
   struct job       *ji_cray_clone;     /* the sub-job on the cray nodes */
   struct job       *ji_parent_job;     /* parent job (only populated on the sub-jobs */
 
+  int               ji_internal_id;
   pthread_mutex_t  *ji_mutex;
   char              ji_being_recycled;
   time_t            ji_last_reported_time;
@@ -1105,7 +1106,8 @@ extern job  *job_alloc();
 extern int   job_unlink_file(job *pjob, const char *name);
 #ifndef PBS_MOM
 job         *job_clone(job *,struct job_array *, int);
-job         *svr_find_job(char *jobid, int get_subjob);
+job         *svr_find_job(const char *jobid, int get_subjob);
+job         *svr_find_job_by_id(int internal_job_id);
 job         *find_job_by_array(all_jobs *aj, char *job_id, int get_subjob, bool locked);
 #else
 extern job  *mom_find_job(const char *);

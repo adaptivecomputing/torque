@@ -96,6 +96,7 @@
 #include "ji_mutex.h"
 #include "../lib/Libutils/u_lock_ctl.h"
 #include "mutex_mgr.hpp"
+#include "id_map.hpp"
 
 
 extern attribute_def    node_attr_def[];   /* node attributes defs */
@@ -211,6 +212,9 @@ int process_mic_status(
       memcpy(tmp, pnode->nd_micjobs, sizeof(struct jobinfo) * pnode->nd_nmics_alloced);
       free(pnode->nd_micjobs);
       pnode->nd_micjobs = tmp;
+          
+      for (int i = pnode->nd_nmics_alloced; i < mic_count; i++)
+        pnode->nd_micjobs[i].internal_job_id = -1;
 
       pnode->nd_nmics_alloced = mic_count;
       }
@@ -420,7 +424,7 @@ void update_job_data(
     {
     if (strstr(jobidstr, server_name) != NULL)
       {
-      on_node = is_job_on_node(np, jobidstr);
+      on_node = is_job_on_node(np, job_mapper.get_id(jobidstr));
       pjob = svr_find_job(jobidstr, TRUE);
 
       if (pjob != NULL)

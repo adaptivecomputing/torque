@@ -30,13 +30,14 @@ int forced_jobpurge(job *pjob, batch_request *preq);
 void post_delete_mom2(struct work_task *pwt);
 int handle_delete_all(batch_request *preq, batch_request *preq_tmp, char *Msg);
 int handle_single_delete(batch_request *preq, batch_request *preq_tmp, char *Msg);
+bool exit_called;
 
 extern long keep_seconds;
 extern int bad_queue;
 extern int bad_relay;
 extern int signal_issued;
 extern int nanny;
-extern int br_freed;
+extern bool br_freed;
 extern int alloc_work;
 extern struct server server;
 extern const char *delpurgestr;
@@ -178,8 +179,8 @@ START_TEST(test_delete_all_work)
 
   insert_job(&alljobs, pjob);
 
-  /* no lock should remain on job after delete_all_work() */
-  /*  so test by making sure we can set lock */
+  // no lock should remain on job after delete_all_work() 
+  //  so test by making sure we can set lock 
   fail_unless(delete_all_work((void *) preq) == NULL && pthread_mutex_trylock(pjob->ji_mutex) == 0);
 
   nanny = 1;
@@ -258,7 +259,7 @@ START_TEST(test_apply_job_delete_nanny)
 
   fail_unless(apply_job_delete_nanny(pjob, 1) == PBSE_NONE);
   }
-END_TEST
+END_TEST 
 
 START_TEST(test_ensure_deleted)
   {
@@ -268,7 +269,7 @@ START_TEST(test_ensure_deleted)
 
   ensure_deleted(ptask);
   }
-END_TEST
+END_TEST 
 
 START_TEST(test_delete_inactive_job)
   {
@@ -305,7 +306,7 @@ START_TEST(test_delete_inactive_job)
   fail_unless(pjob == NULL);
   bad_relay = 0;
   }
-END_TEST
+END_TEST 
 
 START_TEST(test_force_purge_work)
   {
@@ -313,12 +314,12 @@ START_TEST(test_force_purge_work)
 
   pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("bob");
   force_purge_work(pjob);
-  /* normally pjob wouldn't be valid at this point, but I've made the functions 
-   * that free set these values in the scaffolding so we can test what happened */
+  // normally pjob wouldn't be valid at this point, but I've made the functions 
+  // that free set these values in the scaffolding so we can test what happened 
   fail_unless(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL);
   fail_unless(pjob->ji_qs.ji_state == JOB_STATE_COMPLETE);
   }
-END_TEST
+END_TEST 
 
 START_TEST(test_is_ms_on_server)
   {
@@ -349,7 +350,7 @@ START_TEST(test_is_ms_on_server)
   fail_unless(rc == 0, "failed to detect mother superior is not the same as the pbs_server");
   free(myjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str);
   }
-END_TEST
+END_TEST 
 
 Suite *req_delete_suite(void)
   {
@@ -360,8 +361,8 @@ Suite *req_delete_suite(void)
   tcase_add_test(tc_core, test_delete_all_work);
   tcase_add_test(tc_core, test_ensure_deleted);
   tcase_add_test(tc_core, test_apply_job_delete_nanny);
-  tcase_add_test(tc_core, test_job_delete_nanny);
   tcase_add_test(tc_core, test_post_job_delete_nanny);
+  tcase_add_test(tc_core, test_job_delete_nanny);
   tcase_add_test(tc_core, test_forced_jobpurge);
   tcase_add_test(tc_core, test_post_delete_mom2);
   tcase_add_test(tc_core, test_is_ms_on_server);

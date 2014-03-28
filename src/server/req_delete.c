@@ -622,7 +622,7 @@ jump:
         }
       std::string dup_job_id(pjob->ji_qs.ji_jobid);
 
-      if(pa != NULL)
+      if (pa != NULL)
         {
         for (i = 0; i < pa->ai_qs.array_size; i++)
           {

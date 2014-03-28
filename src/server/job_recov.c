@@ -154,10 +154,6 @@ extern int LOGLEVEL;
 
 /* data global only to this file */
 
-#ifndef PBS_MOM
-int add_to_ms_list(char *node_name, job *pjob);
-#endif
-
 
 int assign_tag_len_5(
 

@@ -6,7 +6,7 @@
 #include "log.h"
 #include <check.h>
 
-int retry_job_exit(char *jobid);
+int retry_job_exit(int internal_job_id);
 int check_exiting_jobs();
 
 START_TEST(record_job_as_exiting_test)
@@ -45,7 +45,7 @@ END_TEST
 
 START_TEST(retry_job_exit_test)
   {
-  fail_unless(retry_job_exit(strdup("1.napali")) == 0, "Didn't retry job");
+  fail_unless(retry_job_exit(1) == 0, "Didn't retry job");
   }
 END_TEST
 

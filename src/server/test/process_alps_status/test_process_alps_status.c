@@ -36,7 +36,7 @@ START_TEST(record_reservation_test)
   fail_unless(record_reservation(&pnode, "1") != PBSE_NONE);
 
   job_usage_info *jui = (job_usage_info *)calloc(1, sizeof(job_usage_info));
-  strcpy(jui->jobid, "1.napali");
+  jui->internal_job_id = 1;
   pnode.nd_job_usages.push_back(jui);
   fail_unless(record_reservation(&pnode, "1") == PBSE_NONE);
   }

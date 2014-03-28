@@ -156,7 +156,7 @@ int unlock_node(
   return(0);
   }
 
-job *svr_find_job(char *jobid, int subjob)
+job *svr_find_job(const char *jobid, int subjob)
   
   {
   return(NULL);

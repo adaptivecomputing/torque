@@ -3,6 +3,7 @@
 
 #include "pbs_job.h"
 #include "log.h"
+#include "id_map.hpp"
 
 bool exit_called = false;
 all_jobs        array_summary;
@@ -60,3 +61,15 @@ job *job_alloc(void)
   return(pj);
   }
 
+id_map::id_map() 
+  {
+  }
+
+id_map::~id_map() 
+  {
+  }
+
+const char *id_map::get_name(int id)
+  {
+  return(NULL);
+  }

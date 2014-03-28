@@ -79,6 +79,9 @@
 
 
 
+#include <string>
+#include <vector>
+#include <boost/ptr_container/ptr_vector.hpp>
 #include <errno.h>
 #include <pthread.h>
 #include <stdlib.h>
@@ -105,6 +108,7 @@
 #include <vector>
 #include <boost/ptr_container/ptr_vector.hpp>
 #include "container.hpp"
+#include "id_map.hpp"
 
 /* Global Data */
 extern int LOGLEVEL;
@@ -215,7 +219,7 @@ void *check_if_orphaned(
   struct pbsnode       *pnode;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
-  if (is_orphaned(rsv_id, job_id) == TRUE)
+  if (is_orphaned(rsv_id, job_id) == true)
     {
     if ((preq = alloc_br(PBS_BATCH_DeleteReservation)) == NULL)
       return NULL;
@@ -489,18 +493,17 @@ int record_reservation(
   {
   job            *pjob;
   bool            found_job = false;
-  char            jobid[PBS_MAXSVRJOBID + 1];
 
   for (unsigned int i = 0; i < pnode->nd_job_usages.size(); i++)
     {
     /* cray only allows one job per node, so any valid job will be the job that is 
      * reserving this node. */
     job_usage_info *jui = pnode->nd_job_usages[i];
-    strcpy(jobid, jui->jobid);
+    int internal_job_id = jui->internal_job_id;
 
     unlock_node(pnode, __func__, NULL, LOGLEVEL);
 
-    if ((pjob = svr_find_job(jobid, TRUE)) != NULL)
+    if ((pjob = svr_find_job_by_id(internal_job_id)) != NULL)
       {
       mutex_mgr job_mutex(pjob->ji_mutex, true);
       pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str = strdup(rsv_id);

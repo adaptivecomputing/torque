@@ -168,9 +168,9 @@ struct prop
 class job_usage_info
   {
   public:
-    char                    jobid[PBS_MAXSVRJOBID+1];
+    int                     internal_job_id;
     execution_slot_tracker  est;
-    job_usage_info(const char *id);
+    job_usage_info(int job_internal_id);
     bool operator ==(const job_usage_info &jui);
   };
 
@@ -184,7 +184,7 @@ typedef struct job_reservation_info
 
 struct jobinfo
   {
-  char            jobid[PBS_MAXSVRJOBID+1];
+  int internal_job_id;
 
   struct jobinfo *next;
   };
@@ -247,7 +247,7 @@ struct pbssubn
 
 struct gpusubn
   {
-  char            jobid[PBS_MAXSVRJOBID+1];   /* jobid on this gpu subnode */
+  int             job_internal_id; /* internal id of job on gpu */
   unsigned short  inuse;  /* 1 if this node is in use, 0 otherwise */
   enum gpstatit   state;  /* gpu state determined by server */
   enum gpmodeit   mode;   /* gpu mode from hardware */
@@ -620,7 +620,7 @@ struct prop     *init_prop(char *pname);
 int              initialize_pbsnode(struct pbsnode *, char *pname, u_long *pul, int ntype, bool isNUMANode);
 int              hasprop(struct pbsnode *pnode, struct prop *props);
 void             update_node_state(struct pbsnode *np, int newstate);
-int              is_job_on_node(struct pbsnode *np, char *jobid);
+int              is_job_on_node(struct pbsnode *np, int internal_job_id);
 void            *sync_node_jobs(void *vp);
 
 #endif /* PBS_NODES_H */ 

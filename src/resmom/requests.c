@@ -2388,6 +2388,7 @@ void encode_used(
   }  /* END encode_used() */
 
 
+
 void encode_flagged_attrs(
 
   job               *pjob,   /* I */

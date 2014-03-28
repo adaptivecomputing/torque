@@ -132,6 +132,7 @@
 #include "work_task.h"
 #include "req_runjob.h"
 #include "mutex_mgr.hpp"
+#include "id_map.hpp"
 
 
 /* External Functions Called: */
@@ -1380,11 +1381,12 @@ int req_quejob(
 
   pj->ji_qs.ji_un.ji_newt.ji_scriptsz = 0;
 
-  /* acknowledge the request with the job id */
+  pj->ji_internal_id = job_mapper.get_new_id(pj->ji_qs.ji_jobid);
 
   /* link job into server's new jobs list request  */
   insert_job(&newjobs,pj);
 
+  /* acknowledge the request with the job id */
   if (reply_jobid(preq, pj->ji_qs.ji_jobid, BATCH_REPLY_CHOICE_Queue) != 0)
     {
     /* reply failed, purge the job and close the connection */

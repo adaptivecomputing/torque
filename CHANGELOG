@@ -14,6 +14,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   n - Portable Hardware Locality (hwloc) package version 1.2 or higher must be
       installed when using cpusets (--enable-cpuset). Previously at least version
       1.1 was required.
+  e - TRQ-2044. Create a unique identifier for all jobs in TORQUE. This makes it
+      so that we're performing integer comparisons instead of string comparisons 
+      for finding jobs.
 
 4.2.8
   b - TRQ-2501. Fix the total number of execution slots having a count that is off-by-one for

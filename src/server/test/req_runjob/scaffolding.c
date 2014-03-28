@@ -227,7 +227,7 @@ resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   exit(1);
   }
 
-job *svr_find_job(char *jobid, int get_subjob)
+job *svr_find_job(const char *jobid, int get_subjob)
   {
   fprintf(stderr, "The call to find_job to be mocked!!\n");
   exit(1);
@@ -317,7 +317,7 @@ int split_job(job *pjob)
   return(0);
   }
 
-int kill_job_on_mom(char *jobid, struct pbsnode *pnode)
+int kill_job_on_mom(int internal_job_id, struct pbsnode *pnode)
   {
   return(0);
   }
