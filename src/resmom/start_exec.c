@@ -4654,7 +4654,10 @@ int TMomFinalizeJob3(
     log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "saving task (TMomFinalizeJob3)");
     }
 
-  if (task_save(ptask) == -1)
+  // double check that ptask points to pjob correctly
+  ptask->ti_job = pjob;
+
+  if (task_save(ptask) != PBSE_NONE)
     {
     /* FAILURE */
 

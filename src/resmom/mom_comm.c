@@ -277,8 +277,15 @@ int task_save(
 
   if (pjob == NULL)
     {
-    log_err(PBSE_BAD_PARAMETER, __func__, "NULL pointer to owning job");
-    return(PBSE_BAD_PARAMETER);
+    if ((pjob = mom_find_job(ptask->ti_qs.ti_parentjobid)) != NULL)
+      {
+      ptask->ti_job = pjob;
+      }
+    else
+      {
+      log_err(PBSE_BAD_PARAMETER, __func__, "NULL pointer to owning job");
+      return(PBSE_BAD_PARAMETER);
+      }
     }
 
   strncpy(namebuf, path_jobs, sizeof(namebuf) - 1);     /* job directory path */
@@ -380,7 +387,7 @@ int task_save(
 
   close(fds);
 
-  return(0);
+  return(PBSE_NONE);
   }  /* END task_save() */
 
 
