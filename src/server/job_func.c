@@ -803,7 +803,7 @@ void job_free(
 
 
 
-/*static*/ job *copy_job(
+job *copy_job(
 
   job       *parent)
 
@@ -2371,6 +2371,7 @@ int split_job(
     external = copy_job(pjob);
     fix_external_exec_hosts(external);
     change_external_job_name(external);
+    external->ji_internal_id = job_mapper.get_new_id(external->ji_qs.ji_jobid);
     external->ji_parent_job = pjob;
     pjob->ji_external_clone = external;
     unlock_ji_mutex(external, __func__, NULL, LOGLEVEL);

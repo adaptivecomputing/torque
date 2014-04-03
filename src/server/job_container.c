@@ -423,10 +423,13 @@ job *svr_find_job(
       jid_ptr = without_dash;
       }
     else
+      {
       dash = NULL;
+      jid_ptr = work_jobid;
+      }
     }
-
-  jid_ptr = work_jobid;
+  else
+    jid_ptr = work_jobid;
 
   if ((is_svr_attr_set(SRV_ATR_display_job_server_suffix)) ||
       (is_svr_attr_set(SRV_ATR_job_suffix_alias)))
