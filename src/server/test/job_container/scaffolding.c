@@ -4,6 +4,7 @@
 #include "pbs_job.h"
 #include "log.h"
 #include "id_map.hpp"
+#include "log.h"
 
 bool exit_called = false;
 all_jobs        array_summary;
