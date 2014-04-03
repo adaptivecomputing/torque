@@ -657,6 +657,8 @@ int generate_alps_status(
   char           *ptr;
   std::string     alps_output = "";
 
+  status.clear();
+
   snprintf(inventory_command, sizeof(inventory_command), APBASIL_QUERY,
     (apbasil_protocol != NULL) ? apbasil_protocol : DEFAULT_APBASIL_PROTOCOL,
     (apbasil_path != NULL) ? apbasil_path : DEFAULT_APBASIL_PATH);

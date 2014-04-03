@@ -65,3 +65,20 @@ int enqueue_threadpool_request(void *(*func)(void *), void *arg, threadpool_t *t
   {
   return(0);
   }
+
+bool threadpool_is_too_busy(threadpool_t *tp, int perm)
+  {
+  return(false);
+  }
+
+int write_tcp_reply(
+
+  struct tcp_chan *chan,
+  int protocol,
+  int version,
+  int command,
+  int exit_code)
+
+  {
+  return(0);
+  }
