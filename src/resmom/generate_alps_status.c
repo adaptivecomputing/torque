@@ -635,6 +635,8 @@ int generate_alps_status(
   char            input_buffer[MAXLINE];
   char           *ptr;
   dynamic_string *alps_output;
+  
+  clear_dynamic_string(status);
 
   if ((alps_output = get_dynamic_string(-1, NULL)) == NULL)
     return(ENOMEM);
