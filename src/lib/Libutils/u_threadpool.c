@@ -85,8 +85,8 @@
 #include "threadpool.h"
 #include "utils.h"
 #include "log.h"
-#include "pbs_log.h"
 #include "attribute.h"
+
 #define MINIMUM_STACK_SIZE 1024 * 1024 
 #define MAX_STACK_SIZE MINIMUM_STACK_SIZE * 8
 sigset_t      fillset;
