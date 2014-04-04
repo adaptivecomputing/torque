@@ -251,3 +251,5 @@ int find_error_type(
   {
   return(0);
   }
+
+void clear_dynamic_string(dynamic_string *ds) {}
