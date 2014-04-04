@@ -698,7 +698,7 @@ int mgr_set_node_attr(
   int              index;
   int              nstatus = 0;
   int              nprops = 0;
-  int              rc;
+  int              rc = PBSE_NONE;
   pbs_attribute   *new_attr;
   pbs_attribute   *unused = NULL;
   pbs_attribute   *pnew;
@@ -806,6 +806,21 @@ int mgr_set_node_attr(
    * if pnode has any calloc-ed storage that is being replaced
    * be sure to free the old.
    */
+
+  /*
+   * If we have changed the node power state we need to send that to the mom
+   * to actually put the node in that state.
+   */
+
+  if(pnode->nd_power_state != tnode.nd_power_state)
+    {
+    if((rc = set_node_power_state(pnode,&tnode)) != PBSE_NONE)
+      {
+      tnode.nd_power_state = pnode->nd_power_state; //put the state back to what it was.
+      }
+    }
+
+
 
   if (pnode->nd_prop && (pnode->nd_prop != tnode.nd_prop))
     {
@@ -921,7 +936,7 @@ int mgr_set_node_attr(
 
   update_subnode(pnode);
 
-  return(0);
+  return(rc);
   }  /* END mgr_set_node_attr() */
 
 
@@ -1822,6 +1837,14 @@ void mgr_node_set(
     need_todo &= ~(WRITENODE_STATE);
     }
 
+  if (need_todo & WRITENODE_POWER_STATE)
+    {
+    /*some nodes changed power state*/
+    write_node_power_state();
+
+    need_todo &= ~(WRITENODE_POWER_STATE);
+    }
+
   if (need_todo & WRITENODE_NOTE)
     {
     /*some nodes have new "note"s*/
@@ -1994,6 +2017,7 @@ static void mgr_node_delete(
 
   /* update the nodes file and node state since we deleted node(s) */
   write_node_state();
+  write_node_power_state();
   update_nodes_file(NULL);
 
   recompute_ntype_cnts();

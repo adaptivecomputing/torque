@@ -12,6 +12,8 @@
 #include "pbs_job.h" /* task */
 #include "pbs_nodes.h"
 #include "pbs_config.h"
+#include "node_frequency.hpp"
+
 
 char log_buffer[LOG_BUF_SIZE];
 int svr_resc_size = 0;

@@ -54,4 +54,6 @@ int mutex_mgr::unlock()
   return(0);
   }
 
+void mutex_mgr::mark_as_locked() {}
+
 mutex_mgr::~mutex_mgr() {}

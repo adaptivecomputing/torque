@@ -237,6 +237,7 @@ char                   *path_nodes;
 char                   *path_mom_hierarchy;
 char                   *path_nodes_new;
 char                   *path_nodestate;
+char                   *path_nodepowerstate;
 char                   *path_nodenote;
 char                   *path_nodenote_new;
 char                   *path_checkpoint;

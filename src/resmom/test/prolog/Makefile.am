@@ -10,6 +10,7 @@ check_PROGRAMS = test_prolog
 
 libprolog_la_SOURCES = scaffolding.c ${PROG_ROOT}/prolog.c
 libprolog_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
+test_prolog_LDADD = ../../../test/torque_test_lib/libtorque_test.la
 
 test_prolog_SOURCES = test_prolog.c
 

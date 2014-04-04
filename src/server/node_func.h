@@ -75,4 +75,16 @@ int send_hierarchy(char *name, unsigned short  port);
 
 int needs_hello(hello_container *hc, char *node_name);
 
+int add_hello(hello_container *hc, char *node_name);
+
+int add_hello_after(hello_container *hc, char *node_name, int index);
+
+int add_hello_info(hello_container *hc, hello_info *hi);
+
+hello_info *pop_hello(hello_container *hc);
+
+int remove_hello(hello_container *hc, char *node_name);
+
+int set_node_power_state(struct pbsnode *pNode,struct pbsnode *newNode);
+
 #endif /* _NODE_FUNC_H */

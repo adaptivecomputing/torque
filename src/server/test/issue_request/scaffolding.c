@@ -62,6 +62,11 @@ int encode_DIS_JobId(struct tcp_chan *chan, char *jobid)
   return(0);
   }
 
+int encode_DIS_PowerState(struct tcp_chan *chan, unsigned short powerState)
+  {
+  return(0);
+  }
+
 pbs_net_t get_hostaddr(int *local_errno, char *hostname)
   {
   if (return_addr == true)

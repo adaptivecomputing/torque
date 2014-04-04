@@ -126,6 +126,7 @@
 #define PURGE   6
 #define DIAG    7
 #define NOTE    8
+#define MODIFY  9
 
 enum note_flags {unused, set, list};
 
@@ -188,6 +189,53 @@ static int set_note(
   return(rc);
   }  /* END set_note() */
 
+/*
+ * set_node_power_state set the power state for a node
+ *
+ */
+
+static int set_node_power_state(
+
+  int    con,
+  char  *name,
+  char  *power_state)
+
+  {
+  char          *errmsg;
+
+  struct attropl  new_attr;
+  int             rc;
+  int             local_errno = 0;
+
+  new_attr.name     = (char *)ATTR_NODE_power_state;
+  new_attr.resource = NULL;
+  new_attr.value    = power_state;
+  new_attr.op       = SET;
+  new_attr.next     = NULL;
+
+  rc = pbs_manager_err(
+         con,
+         MGR_CMD_SET,
+         MGR_OBJ_NODE,
+         name,
+         &new_attr,
+         NULL,
+         &local_errno);
+
+  if (rc && !quiet)
+    {
+    fprintf(stderr, "Error setting node power state for %s - ",
+      name);
+
+    if ((errmsg = pbs_geterrmsg(con)) != NULL)
+      {
+      fprintf(stderr, "%s\n", errmsg);
+      free(errmsg);
+      }
+    }
+
+  return(rc);
+  }  /* END set_note() */
 
 
 static void prt_node_attr(
@@ -591,6 +639,7 @@ int main(
   struct batch_status  *pbstat;
   int                   flag = ALLI;
   char                 *note = NULL;
+  char                 *power_state = NULL;
   enum  note_flags      note_flag = unused;
   char                **nodeargs = NULL;
   int                   lindex;
@@ -601,7 +650,7 @@ int main(
 
   progname = strdup(argv[0]);
 
-  while ((i = getopt(argc, argv, "acdlopqrs:x-:N:n")) != EOF)
+  while ((i = getopt(argc, argv, "acdlm:opqrs:x-:N:n:")) != EOF)
     {
     switch (i)
       {
@@ -627,6 +676,18 @@ int main(
 
         flag = LIST;
 
+        break;
+
+      case 'm' :
+
+        flag = MODIFY;
+        power_state = strdup(optarg);
+        if (power_state == NULL)
+          {
+          perror("Error: strdup() returned NULL");
+
+          exit(1);
+          }
         break;
 
       case 'o':
@@ -755,7 +816,7 @@ int main(
     {
     if (!quiet)
       {
-      fprintf(stderr, "usage:\t%s [-{c|d|l|o|p|r}] [-s server] [-n] [-N \"note\"] [-q] node ...\n",
+      fprintf(stderr, "usage:\t%s [-{c|d|l|o|p|r}] [-s server] [-n] [-N \"note\"] [-q] [-m standby|suspend|sleep|hibernate|shutdown] node ...\n",
               progname);
 
       fprintf(stderr, "\t%s [-{a|x}] [-s server] [-q] [node]\n",
@@ -977,6 +1038,17 @@ int main(
         }
 
       break;
+
+    case MODIFY:
+
+      /* set power state for specified nodes */
+
+      for (pa = argv + optind;*pa;pa++)
+        {
+        set_node_power_state(con, *pa, power_state);
+        }
+      break;
+
     }  /* END switch (flag) */
 
   pbs_disconnect(con);

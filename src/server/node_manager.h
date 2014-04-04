@@ -38,6 +38,10 @@ void *write_node_state_work(void *vp);
 
 void write_node_state(void);
 
+void *write_node_power_state_work(void *vp);
+
+void write_node_power_state(void);
+
 int write_node_note(void);
 
 void *node_unreserve_work(void *vp);

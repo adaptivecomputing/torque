@@ -87,7 +87,7 @@ int move_to_job_cpuset(pid_t, job *) { return 0; }
 int diswsi(tcp_chan *chan, int i) { return 0; }
 int encode_DIS_svrattrl(tcp_chan *chan, svrattrl *s) { return 0; }
 int im_compose(tcp_chan *chan, char *arg2, char *a3, int a4, int a5, unsigned int a6) { return 0; }
-int create_alps_reservation(char *a1, char *a2, char *a3, char *a4, char *a5, long long a6, int a7, int a8, int a9, char **a10,const char *a11) { return 0; }
+int create_alps_reservation(char *a1, char *a2, char *a3, char *a4, char *a5, long long a6, int a7, int a8, int a9, char **a10,const char *a11, std::string& cray_frequency) { return 0; }
 int mom_close_poll(void)
   {
   fprintf(stderr, "The call to mom_close_poll needs to be mocked!!\n");
@@ -553,6 +553,14 @@ int ctnodes(char *epec)
   fprintf(stderr, "The call to append_link needs to be mocked!!\n");
   exit(1);
   }
+
+std::string get_frequency_request(struct cpu_frequency_value *pfreq)
+  {
+  std::string ret = "";
+  return ret;
+  }
+
+
 
 #ifdef PENABLE_LINUX26_CPUSETS
 

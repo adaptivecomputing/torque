@@ -403,6 +403,12 @@ int dis_request_read(
 
       break;
 
+    case PBS_BATCH_ChangePowerState:
+
+      rc = decode_DIS_PowerState(chan,request);
+
+      break;
+
 #endif /* PBS_MOM */
 
     default:

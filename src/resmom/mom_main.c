@@ -95,6 +95,10 @@
 #include "mom_config.h"
 #include "mcom.h"
 #include "mom_server_lib.h" /* shutdown_to_server */
+#include "node_frequency.hpp"
+#include <string>
+#include <vector>
+#include <boost/ptr_container/ptr_vector.hpp>
 
 #ifdef NOPOSIXMEMLOCK
 #undef _POSIX_MEMLOCK
@@ -4648,6 +4652,15 @@ int setup_program_environment(void)
     }
 
   mom_lock(lockfds, F_WRLCK); /* See if other MOMs are running */
+
+  if(multi_mom)
+    {
+	nd_frequency.invalidate(); //Do not mess with frequencies on multi-mom.
+    }
+  else
+    {
+	nd_frequency.get_base_frequencies(mom_home);
+    }
 
   /* initialize the network interface */
 

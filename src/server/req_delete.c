@@ -912,8 +912,6 @@ void *delete_all_work(
  
     if ((rc = forced_jobpurge(pjob, preq_dup)) == PURGE_SUCCESS)
       {
-      iter->item_was_removed(); //Tell the iterator that the item it was pointing at has been removed.
-      // want to leave lock in place after exiting
       job_mutex.set_unlock_on_exit(false);
 
       continue;

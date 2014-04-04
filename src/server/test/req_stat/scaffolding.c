@@ -124,7 +124,7 @@ void svr_disconnect(int handle)
   exit(1);
   }
 
-struct pbsnode *next_host(all_nodes *an, int *iter, struct pbsnode *held)
+struct pbsnode *next_host(all_nodes *an, all_nodes_iterator **iter, struct pbsnode *held)
   {
   fprintf(stderr, "The call to next_host to be mocked!!\n");
   exit(1);
@@ -214,7 +214,7 @@ void append_link(tlist_head *head, list_link *new_link, void *pobj)
   exit(1);
   }
 
-pbs_queue *next_queue(all_queues *aq, int *iter)
+pbs_queue *next_queue(all_queues *aq, all_queues_iterator *iter)
   {
   fprintf(stderr, "The call to next_queue to be mocked!!\n");
   exit(1);

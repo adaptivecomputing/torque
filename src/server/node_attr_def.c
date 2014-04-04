@@ -134,6 +134,19 @@ attribute_def node_attr_def[] =
     PARENT_TYPE_NODE,
     },
 
+    /* ND_ATR_power_state */
+    { (char *) ATTR_NODE_power_state, /* "power_state" */
+    decode_power_state,
+    encode_power_state,
+    set_power_state,
+    comp_null,
+    free_null,
+    node_power_state,
+    MGR_ONLY_SET,
+    ATR_TYPE_SHORT,
+    PARENT_TYPE_NODE,
+    },
+
 	/* ND_ATR_np */
 	{ (char *)ATTR_NODE_np,  /* "np" */
 	  decode_l,

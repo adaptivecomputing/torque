@@ -25,7 +25,7 @@ void remove_job_from_already_killed_list(struct work_task *pwt);
 bool job_already_being_killed(const char *jobid);
 void process_job_attribute_information(std::string &job_id, std::string &attributes);
 bool process_as_node_list(const char *spec, const node_job_add_info *naji);
-bool node_is_spec_acceptable(struct pbsnode *pnode, single_spec_data *spec, char *ProcBMStr, int *eligible_nodes);
+bool node_is_spec_acceptable(struct pbsnode *pnode, single_spec_data *spec, char *ProcBMStr, int *eligible_nodes,bool isExclusive);
 void populate_range_string_from_slot_tracker(execution_slot_tracker &est, std::string &range_str);
 int  translate_job_reservation_info_to_string(std::vector<job_reservation_info *> &host_info, int *NCount, std::string &exec_host_output, std::stringstream *exec_port_output);
 
@@ -119,7 +119,7 @@ START_TEST(node_is_spec_acceptable_test)
 
   spec.ppn = 10;
 
-  fail_unless(node_is_spec_acceptable(&pnode, &spec, NULL, &eligible_nodes) == false);
+  fail_unless(node_is_spec_acceptable(&pnode, &spec, NULL, &eligible_nodes,false) == false);
   fail_unless(eligible_nodes == 0);
 
   for (int i = 0; i < 10; i++)
@@ -127,18 +127,18 @@ START_TEST(node_is_spec_acceptable_test)
     
   pnode.nd_slots.mark_as_used(4);
 
-  fail_unless(node_is_spec_acceptable(&pnode, &spec, NULL, &eligible_nodes) == false);
+  fail_unless(node_is_spec_acceptable(&pnode, &spec, NULL, &eligible_nodes,false) == false);
   fail_unless(eligible_nodes == 1);
 
   eligible_nodes = 0;
   pnode.nd_slots.mark_as_free(4);
   pnode.nd_state |= INUSE_DOWN;  
-  fail_unless(node_is_spec_acceptable(&pnode, &spec, NULL, &eligible_nodes) == false);
+  fail_unless(node_is_spec_acceptable(&pnode, &spec, NULL, &eligible_nodes,false) == false);
   fail_unless(eligible_nodes == 1);
   
   eligible_nodes = 0;
   pnode.nd_state = INUSE_FREE;
-  fail_unless(node_is_spec_acceptable(&pnode, &spec, NULL, &eligible_nodes) == true);
+  fail_unless(node_is_spec_acceptable(&pnode, &spec, NULL, &eligible_nodes,false) == true);
   fail_unless(eligible_nodes == 1);
   }
 END_TEST

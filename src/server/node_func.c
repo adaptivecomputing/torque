@@ -61,6 +61,8 @@
 #include "execution_slot_tracker.hpp"
 #include "alps_functions.h"
 #include "id_map.hpp"
+#include <arpa/inet.h>
+#include "threadpool.h"
 
 #if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
 /*extern int h_errno;*/
@@ -76,6 +78,7 @@ extern int              svr_clnodes;
 extern char            *path_nodes_new;
 extern char            *path_nodes;
 extern char            *path_nodestate;
+extern char            *path_nodepowerstate;
 extern char            *path_nodenote;
 extern int              LOGLEVEL;
 extern attribute_def    node_attr_def[];   /* node attributes defs */
@@ -336,6 +339,7 @@ void save_characteristic(
     }
 
   nci->state        = pnode->nd_state;
+  nci->power_state  = pnode->nd_power_state;
   nci->ntype        = pnode->nd_ntype;
   nci->nprops       = pnode->nd_nprops;
   nci->nstatus      = pnode->nd_nstatus;
@@ -420,6 +424,8 @@ int chk_characteristic(
         }
       }
     }
+  if(pnode->nd_power_state != nci->power_state)
+    *pneed_todo |= WRITENODE_POWER_STATE;
 
   if (pnode->nd_ntype != nci->ntype)
     *pneed_todo |= WRITE_NEW_NODESFILE;
@@ -566,6 +572,8 @@ int status_nodeattrib(
     /*set up attributes using data from node*/
     if (i == ND_ATR_state)
       atemp[i].at_val.at_short = pnode->nd_state;
+    else if (i == ND_ATR_power_state)
+      atemp[i].at_val.at_short = pnode->nd_power_state;
     else if (i == ND_ATR_properties)
       atemp[i].at_val.at_arst = pnode->nd_prop;
     else if (i == ND_ATR_status)
@@ -2417,6 +2425,37 @@ int setup_nodes(void)
     fclose(nin);
     }
 
+  nin = fopen(path_nodepowerstate, "r");
+
+  if (nin != NULL)
+    {
+    while (fscanf(nin, "%s %d",
+                  line,
+                  &num) == 2)
+      {
+      all_nodes_iterator *iter = NULL;
+
+      while ((np = next_host(&allnodes,&iter,NULL)) != NULL)
+        {
+        if (strcmp(np->nd_name, line) == 0)
+          {
+          np->nd_power_state = num;
+
+          unlock_node(np, __func__, "match", LOGLEVEL);
+
+          break;
+          }
+
+        unlock_node(np, __func__, "no match", LOGLEVEL);
+        }
+
+      if (iter != NULL)
+        delete iter;
+      }
+
+    fclose(nin);
+  }
+
   /* initialize note attributes */
   nin = fopen(path_nodenote, "r");
 
@@ -3725,4 +3764,209 @@ int remove_hello(
 
   return(rc);
   } /* END remove_hello() */
+
+
+void * send_power_state_to_mom(void *arg)
+  {
+  struct batch_request  *pRequest = (struct batch_request *)arg;
+  struct pbsnode        *pNode = find_nodebyname(pRequest->rq_host);
+
+  if(pNode == NULL)
+    {
+    free_br(pRequest);
+    return NULL;
+    }
+
+  int handle = 0;
+  int local_errno = 0;
+  handle = svr_connect(pNode->nd_addrs[0],pNode->nd_mom_port,&local_errno,pNode,NULL);
+  if(handle < 0)
+    {
+    unlock_node(pNode, __func__, "Error connecting", LOGLEVEL);
+    return NULL;
+    }
+  unlock_node(pNode, __func__, "Done connecting", LOGLEVEL);
+  issue_Drequest(handle, pRequest);
+
+  return NULL;
+  }
+
+bool getMacAddr(std::string& interface,unsigned char *mac_addr)
+  {
+  char buff[1024];
+
+  if(gethostname(buff,sizeof(buff)))
+    {
+    return false;
+    }
+  struct addrinfo *pAddr = NULL;
+  if(getaddrinfo(buff,NULL,NULL,&pAddr))
+    {
+    return false;
+    }
+
+  FILE *pPipe = popen("/sbin/ip addr","r");
+  if(pPipe == NULL) return false;
+  char *iface = NULL;
+  char *macAddr = NULL;
+  while(fgets(buff,sizeof(buff),pPipe) != NULL)
+    {
+    char *tok = strtok(buff," ");
+    if(buff[0] != ' ')
+      {
+      tok = strtok(NULL," :");
+      if(strlen(tok) != 0)
+        {
+        if(iface != NULL) free(iface);
+        iface = strdup(tok);
+        }
+      }
+    else if(!strcmp(tok,"link/ether"))
+      {
+      tok = strtok(NULL," ");
+      if(strlen(tok) != 0)
+        {
+        if(macAddr != NULL) free(macAddr);
+        macAddr = strdup(tok);
+        }
+      }
+    else if(!strcmp(tok,"inet"))
+      {
+      tok = strtok(NULL," ");
+      char *iaddr = strdup(tok);
+      for(char *ind = iaddr;*ind;ind++)
+        {
+        if(*ind == '/')
+          {
+          *ind = '\0';
+          break;
+          }
+        }
+      in_addr_t in_addr = inet_addr(iaddr);
+      free(iaddr);
+      struct addrinfo *pAddrInd = pAddr;
+      while(pAddrInd != NULL)
+        {
+        struct in_addr   saddr;
+        saddr = ((struct sockaddr_in *)pAddrInd->ai_addr)->sin_addr;
+        if(in_addr == saddr.s_addr)
+          {
+          unsigned int sa[6];
+          int cnt = sscanf(macAddr,"%2x:%2x:%2x:%2x:%2x:%2x",
+                    &sa[0], &sa[1], &sa[2], &sa[3], &sa[4], &sa[5]);
+          free(macAddr);
+          macAddr = NULL;
+          if(cnt != 6)
+            {
+            free(iface);
+            iface = NULL;
+            break;
+            }
+          for(int i = 0;i < 6;i++)
+            {
+            *mac_addr++ = (unsigned char)sa[i];
+            }
+
+          interface = iface;
+          free(iface);
+          iface = NULL;
+          break;
+          }
+        pAddrInd = pAddrInd->ai_next;
+        }
+      }
+    else
+      {
+      if(iface != NULL)
+        {
+        free(iface);
+        iface = NULL;
+        }
+      if(macAddr != NULL)
+        {
+        free(macAddr);
+        macAddr = NULL;
+        }
+      }
+    }
+  pclose(pPipe);
+  return (interface.length() != 0);
+  }
+
+int set_node_power_state(struct pbsnode *pNode,struct pbsnode *newNode)
+  {
+  if(pNode->nd_addrs == NULL)
+    {
+    return PBSE_BAD_PARAMETER;
+    }
+  if(newNode->nd_power_state == POWER_STATE_RUNNING)
+    {
+    newNode->nd_power_state = pNode->nd_power_state; //Don't change the power state here.
+                                      //Let the mom update change the state
+                                      //back to running.
+    static std::string interface;
+    static unsigned char mac_addr[6];
+    if(interface.length() == 0)
+      {
+      if(!getMacAddr(interface,mac_addr))
+        {
+        return PBSE_SYSTEM;
+        }
+      }
+
+    int sock;
+    if((sock = socket(AF_INET,SOCK_PACKET,SOCK_PACKET)) < 0)
+    {
+      return PBSE_SYSTEM;
+    }
+
+    unsigned char outpack[1000];
+
+    memcpy(outpack+6,mac_addr,6);
+    memcpy(outpack,pNode->nd_mac_addr,6);
+    outpack[12] = 0x08;
+    outpack[13] = 0x42;
+    int offset = 14;
+    memset(outpack + offset,0xff,6);
+    offset += 6;
+    for(int i = 0;i < 16;i++)
+    {
+        memcpy(outpack + offset,pNode->nd_mac_addr,6);
+        offset += 6;
+    }
+
+    int one = 1;
+    if (setsockopt(sock, SOL_SOCKET, SO_BROADCAST, (char *)&one, sizeof(one)) < 0)
+    {
+      close(sock);
+      return PBSE_SYSTEM;
+    }
+
+    struct sockaddr whereto;
+    whereto.sa_family = 0;
+    strcpy(whereto.sa_data,interface.c_str());
+    if (sendto(sock, outpack, offset, 0, &whereto, sizeof(whereto)) < 0)
+    {
+      close(sock);
+      return PBSE_SYSTEM;
+    }
+    close(sock);
+    return PBSE_NONE;
+    }
+  if(pNode->nd_job_usages.size() != 0)
+    {
+    //Can't change the power state on a node with running jobs.
+    return PBSE_CANT_CHANGE_POWER_STATE_WITH_JOBS_RUNNING;
+    }
+  struct batch_request *request = alloc_br(PBS_BATCH_ChangePowerState);
+  if(request == NULL)
+    {
+    return PBSE_SYSTEM;
+    }
+  request->rq_ind.rq_powerstate = newNode->nd_power_state;
+  newNode->nd_power_state_change_time = time(NULL);
+  strncpy(request->rq_host,pNode->nd_name,sizeof(request->rq_host));
+  int rc = enqueue_threadpool_request(send_power_state_to_mom,(void *)request,task_pool);
+  return(rc);
+  }
 

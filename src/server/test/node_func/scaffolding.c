@@ -11,12 +11,14 @@
 #include "u_tree.h" /* AvlTree */
 #include "list_link.h" /* list_link */
 #include "work_task.h" /* work_task, work_type */
+#include "batch_request.h" /* batch_request */
 #include "tcp.h"
 #include "pbs_job.h"
 #include <string>
 #include <vector>
 #include <boost/ptr_container/ptr_vector.hpp>
 #include "id_map.hpp"
+#include "threadpool.h"
 
 
 
@@ -28,6 +30,7 @@ bool exit_called = false;
 all_nodes allnodes;
 char *path_nodes;
 char *path_nodestate;
+char *path_nodepowerstate;
 char *path_nodenote;
 struct addrinfo hints;
 char *path_nodes_new;
@@ -37,6 +40,7 @@ struct server server;
 AvlTree ipaddrs = NULL;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 int svr_totnodes = 0; 
+threadpool_t *task_pool = NULL;
 const char *dis_emsg[] = {"No error",
   "Input value too large to convert to this type",
   "Tried to write floating point infinity",
@@ -342,3 +346,66 @@ struct pbsnode *tfind_addr(
   {
   return(NULL);
   }
+int issue_Drequest(
+  int                    conn,
+  struct batch_request  *request)
+  {
+  fprintf(stderr,"%s needs to be mocked.\n",__func__);
+  exit(-1);
+  return 0;
+  }
+
+int svr_connect(
+  pbs_net_t        hostaddr,  /* host order */
+  unsigned int     port,   /* I */
+  int             *my_err,
+  struct pbsnode  *pnode,
+  void           *(*func)(void *))
+  {
+  fprintf(stderr,"%s needs to be mocked.\n",__func__);
+  exit(-1);
+  return 0;
+  }
+
+int enqueue_threadpool_request(
+
+  void *(*func)(void *),
+  void *arg,
+  threadpool_t *tp)
+
+  {
+  return(PBSE_NONE);
+  }
+
+struct batch_request *alloc_br(
+
+  int type)
+
+  {
+
+  struct batch_request *req = NULL;
+
+  if ((req = (struct batch_request *)calloc(1, sizeof(struct batch_request))) == NULL)
+    {
+    fprintf(stderr, "failed to allocate batch request. alloc_br()\n");
+    }
+  else
+    {
+
+    req->rq_type = type;
+
+    req->rq_conn = -1;  /* indicate not connected */
+    req->rq_orgconn = -1;  /* indicate not connected */
+    req->rq_time = time(NULL);
+    req->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
+    req->rq_noreply = FALSE;  /* indicate reply is needed */
+    }
+
+  return(req);
+  } /* END alloc_br() */
+
+void free_br(struct batch_request *preq)
+  {
+  return;
+  }
+
