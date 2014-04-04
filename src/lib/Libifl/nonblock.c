@@ -101,12 +101,6 @@ ssize_t read_ac_socket(
     {
     /* set no delay */
 
-#if defined(FNDELAY) && !defined(__hpux)
-    flags |= FNDELAY;
-#else
-    flags |= O_NONBLOCK;
-#endif
-
     /* NOTE:  the pbs scheduling API passes in a blocking socket which
               should be a non-blocking socket in pbs_disconnect.  Also,
               qsub passes in a blocking socket which must remain
@@ -116,6 +110,11 @@ ssize_t read_ac_socket(
        pbs_disconnect and removed from here (NYI) */
 
     /*
+#if defined(FNDELAY) && !defined(__hpux)
+    flags |= FNDELAY;
+#else
+    flags |= O_NONBLOCK;
+#endif
     if (fcntl(fd,F_SETFL,flags) == -1)
       {
       return(-1);
