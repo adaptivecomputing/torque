@@ -132,16 +132,16 @@ int process_pbs_server_port(
 
       is_request_info isr;
 
-      isr.chan = chan;
-      isr.args = args;
-
-      // don't let this get cleaned up below
-      chan = NULL;
+      isr->chan = chan;
+      isr->args = args;
   
       if (threadpool_is_too_busy(request_pool, ATR_DFLAG_MGRD) == false)
         svr_is_request(isr);
       else
         write_tcp_reply(chan, IS_PROTOCOL, IS_PROTOCOL_VER, IS_STATUS, PBSE_SERVER_BUSY);
+
+      // don't let this get cleaned up below
+      chan = NULL;
       
       break;
       }
