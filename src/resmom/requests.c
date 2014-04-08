@@ -126,6 +126,8 @@
 #ifdef HAVE_WORDEXP
 #include <wordexp.h>
 
+extern int terminate_sisters(job *, int);
+
 extern struct var_table vtable;      /* see start_exec.c */
 extern char           **environ;
 
@@ -2223,6 +2225,19 @@ void req_signaljob(
     }
   else
     {
+    int rc;
+
+    /* We are killing the job. If this is a multi-node job contact the sister nodes first so they
+     * are not hanging around after mother superior sends an obit indicating the job is already
+     * finished
+     */
+    rc = terminate_sisters(pjob, sig);
+    if (rc != PBSE_NONE)
+      {
+      sprintf(log_buffer, "%s - Could not terminate all sisters: %d", __func__, rc);
+      log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+      }
+
     /*
      * When kill_job is launched, processes are killed and waitpid() should harvest the process
      * and takes action to send an obit. If no matching process exists, then an obit may never be
