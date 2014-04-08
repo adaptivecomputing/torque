@@ -616,7 +616,7 @@ attribute_def job_attr_def[] =
     comp_str,
     free_str,
     NULL_FUNC,
-    ATR_DFLAG_MGRD | ATR_DFLAG_MOM,
+    READ_ONLY | ATR_DFLAG_MOM,
     ATR_TYPE_STR,
     PARENT_TYPE_JOB
   },
@@ -628,7 +628,7 @@ attribute_def job_attr_def[] =
     comp_str,
     free_str,
     NULL_FUNC,
-    ATR_DFLAG_MGRD | ATR_DFLAG_MOM,
+    READ_ONLY | ATR_DFLAG_MOM,
     ATR_TYPE_STR,
     PARENT_TYPE_JOB
   },
@@ -676,7 +676,7 @@ attribute_def job_attr_def[] =
     comp_c,
     free_null,
     NULL_FUNC,
-    ATR_DFLAG_MGRD | ATR_DFLAG_SELEQ,
+    READ_ONLY | ATR_DFLAG_SELEQ,
     ATR_TYPE_CHAR,
     PARENT_TYPE_JOB
   },
