@@ -3436,7 +3436,6 @@ void *send_hierarchy_threadtask(
   struct pbsnode *pnode = NULL;
   char            log_buf[LOCAL_LOG_BUF_SIZE+1];
   unsigned short  port;
-  char            nodename[MAXLINE];
 
   if (hi == NULL)
     {
@@ -3445,10 +3444,11 @@ void *send_hierarchy_threadtask(
     }
 
   pnode = find_nodebyid(hi->id);
-  snprintf(nodename, sizeof(nodename), "%s", pnode->nd_name);
 
   if (pnode != NULL)
     {
+    char nodename[MAXLINE];
+    snprintf(nodename, sizeof(nodename), "%s", pnode->nd_name);
     port = pnode->nd_mom_rm_port;
     unlock_node(pnode, __func__, NULL, LOGLEVEL);
 

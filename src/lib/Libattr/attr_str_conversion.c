@@ -192,7 +192,6 @@ int attr_to_str(
   bool              XML)    /* I */
 
   {
-  int  rc = PBSE_NONE;
   /* used to print numbers and chars as strings */
   char local_buf[MAXLINE];
 
@@ -337,9 +336,6 @@ int attr_to_str(
             break;
           }
 
-        if (rc != PBSE_NONE)
-          return(rc);
-
         current = (resource *)GET_NEXT(current->rs_link);
         ds += "\n";
         }
@@ -356,7 +352,7 @@ int attr_to_str(
       break;
     } /* END switch pbs_attribute type */
 
-  return(rc);
+  return(PBSE_NONE);
   } /* END attr_to_str */
 
 

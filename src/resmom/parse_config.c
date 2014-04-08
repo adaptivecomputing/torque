@@ -2809,8 +2809,10 @@ const char *getjoblist(
       }
     }  /* END for (pjob) */
 
+#ifdef NUMA_SUPPORT
   if (firstjob == true)
     list << " ";
+#endif
 
   return(strdup(list.str().c_str()));
   }  /* END getjoblist() */

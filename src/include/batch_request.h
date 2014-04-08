@@ -422,7 +422,7 @@ int            remove_batch_request(char *br_id);
 int req_gpuctrl_svr(struct batch_request *preq);
 
 #ifndef PBS_MOM
-extern void  req_connect (struct batch_request *req);
+int req_connect (struct batch_request *req);
 /* DIAGTODO: declr req_stat_diag() */
 extern void  req_trackjob (struct batch_request *req);
 extern void *req_gpuctrl (void *req);

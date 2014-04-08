@@ -191,9 +191,14 @@ host_req_list *parse_exec_hosts(
       {
       std::vector<int> indices;
 
-      translate_range_string_to_vector(slash + 1, indices);
+      if (slash != NULL)
+        {
+        translate_range_string_to_vector(slash + 1, indices);
+        hr = get_host_req(host_tok, indices.size());
+        }
+      else
+        hr = get_host_req(host_tok, 1);
 
-      hr = get_host_req(host_tok, indices.size());
       list->push_back(hr);
       }
     }

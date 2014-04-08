@@ -130,7 +130,7 @@ struct credential conn_credent[PBS_NET_MAX_CONNECTIONS];
  *  Almost does nothing.
  */
 
-void req_connect(
+int req_connect(
 
   struct batch_request *preq)
 
@@ -149,10 +149,10 @@ void req_connect(
   else
     {
     req_reject(PBSE_BADCRED, 0, preq, NULL, "Connection not authorized");
+    return(PBSE_BADCRED);
     }
 
-
-  return;
+  return(PBSE_NONE);
   }  /* END req_connect() */
 
 

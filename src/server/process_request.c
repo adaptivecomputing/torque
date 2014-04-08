@@ -492,7 +492,6 @@ int process_request(
   long                  state = SV_STATE_DOWN;
 
   time_t                time_now = time(NULL);
-  int                   free_request = TRUE;
   char                 *auth_err = NULL;
   unsigned short        conn_socktype;
   unsigned short        conn_authen;
@@ -565,14 +564,14 @@ int process_request(
 
     if (request->rq_type == PBS_BATCH_Connect)
       {
-      req_connect(request);
+      if ((rc = req_connect(request)) != PBSE_NONE)
+        return(rc);
 
       if (conn_socktype == PBS_SOCK_INET)
         {
         rc = PBSE_IVALREQ;
         req_reject(rc, 0, request, NULL, NULL);
-        free_request = FALSE;
-        goto process_request_cleanup;
+        return(rc);
         }
 
       }
@@ -592,8 +591,7 @@ int process_request(
       if (request->rq_type == PBS_BATCH_AltAuthenUser)
         {
         rc = req_altauthenuser(request);
-        free_request = FALSE;
-        goto process_request_cleanup;
+        return(rc);
         }
       else
         {
@@ -611,8 +609,8 @@ int process_request(
       req_reject(rc, 0, request, NULL, auth_err);
       if (auth_err != NULL)
         free(auth_err);
-      free_request = FALSE;
-      goto process_request_cleanup;
+
+      return(rc);
       }
 
     /*
@@ -702,13 +700,6 @@ int process_request(
    */
 
   rc = dispatch_request(sfds, request);
-
-  return(rc);
-
-process_request_cleanup:
-
-  if (free_request == TRUE)
-    free_br(request);
 
   return(rc);
   }  /* END process_request() */
