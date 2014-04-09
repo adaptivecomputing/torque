@@ -1158,6 +1158,8 @@ int req_stat_que(
         rc = 0;
         }
       }
+
+    delete iter;
     }
 
   if (rc != PBSE_NONE)

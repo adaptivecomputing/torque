@@ -2837,7 +2837,7 @@ static void default_std(
 const char *prefix_std_file(
 
   job            *pjob,
-  std::string&    ds,
+  std::string    &ds,
   int             key)
 
   {
@@ -2848,7 +2848,7 @@ const char *prefix_std_file(
   if (pjob == NULL)
     {
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL input job pointer");
-    return(NULL);
+    return("");
     }
 
   qsubhost = get_variable(pjob, pbs_o_host);
@@ -2901,7 +2901,6 @@ const char *prefix_std_file(
     default_std(pjob, key, ds);
     }
 
-  if(ds.length() == 0) return NULL;
   return(ds.c_str());
   } /* END prefix_std_file() */
 

@@ -2919,6 +2919,9 @@ int select_from_all_nodes(
       }
     } /* END for each node */
 
+  if (iter.node_index != NULL)
+    delete iter.node_index;
+
   return(num);
   } /* select_from_all_nodes() */
 
