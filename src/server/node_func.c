@@ -1350,6 +1350,12 @@ void recompute_ntype_cnts(void)
       }
 
     svr_clnodes = svr_loc_clnodes;
+
+    if (iter.node_index != NULL)
+      {
+      delete iter.node_index;
+      iter.node_index = NULL;
+      }
     }
   } /* END recompute_ntype_cnts() */
 
@@ -3215,7 +3221,9 @@ struct pbsnode *next_node(
     {
     an->lock();
 
-    if(iter->node_index == NULL) iter->node_index = an->get_iterator();
+    if (iter->node_index == NULL)
+      iter->node_index = an->get_iterator();
+
     /* the first call to next_node */
     next = iter->node_index->get_next_item();
     if (next != NULL)
