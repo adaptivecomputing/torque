@@ -1,17 +1,17 @@
  
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} -I$(PROG_ROOT)/../include --coverage `xml2-config --cflags`
-AM_LIBS=`xml2-config --libs`
+AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I$(PROG_ROOT)/../include --coverage
+AM_CXXFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I$(PROG_ROOT)/../include --coverage
 
 lib_LTLIBRARIES = libtest_execution_slot_tracker.la
 
-AM_LDFLAGS = @CHECK_LIBS@ $(lib_LTLIBRARIES) $(AM_LIBS)
+AM_LDFLAGS = @CHECK_LIBS@ $(lib_LTLIBRARIES)
 
 check_PROGRAMS = test_execution_slot_tracker
 
 libtest_execution_slot_tracker_la_SOURCES = scaffolding.c $(PROG_ROOT)/execution_slot_tracker.cpp
-libtest_execution_slot_tracker_la_LDFLAGS = @CHECK_LIBS@ $(AM_LIBS) -shared
+libtest_execution_slot_tracker_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_execution_slot_tracker_SOURCES = test_execution_slot_tracker.c
 

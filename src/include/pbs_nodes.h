@@ -97,6 +97,7 @@
 #include <vector>
 #include <string>
 #include "container.hpp"
+#include "job_usage_info.hpp"
 
 #ifdef NUMA_SUPPORT
 /* NOTE: cpuset support needs hwloc */
@@ -160,18 +161,6 @@ struct prop
   short mark;
 
   struct prop *next;
-  };
-
-/* Make a class to cover this in case we need special functionality such as being able 
- * to match this is stdlib containers. 
- * This class is stored on the node to keep track of jobs and what they're using on the node. */
-class job_usage_info
-  {
-  public:
-    int                     internal_job_id;
-    execution_slot_tracker  est;
-    job_usage_info(int job_internal_id);
-    bool operator ==(const job_usage_info &jui);
   };
 
 /* this struct is only used while the job is being created. */
