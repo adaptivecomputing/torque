@@ -216,7 +216,7 @@ int get_next_retryable_jobid(
           {
           snprintf(log_buf, sizeof(log_buf),
             "Job %s has had its exiting re-tried %d times, purging.",
-            job_mapper.get_name(jeri->internal_job_id), MAX_EXITING_RETRY_ATTEMPTS);
+            job_mapper.get_name(internal_job_id), MAX_EXITING_RETRY_ATTEMPTS);
           log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
 
           force_purge_work(pjob);
