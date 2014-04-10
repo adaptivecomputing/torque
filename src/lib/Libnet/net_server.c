@@ -516,22 +516,26 @@ int ping_trqauthd(
     {
     /* If we are here we could not connect to trqauthd. That is ok though. That tells us trqauthd is not up.  */
     socket_close(local_socket);
+    local_socket = -1;
     return(rc);
     }
   else if ((rc = socket_write(local_socket, write_buf, write_buf_len)) != write_buf_len)
     {
     socket_close(local_socket);
+    local_socket = -1;
     rc = PBSE_SOCKET_WRITE;
     fprintf(stderr, "socket_write error\n");
     }
   else if ((rc = socket_read_num(local_socket, &ccode)) != PBSE_NONE)
     {
     socket_close(local_socket);
+    local_socket = -1;
     fprintf(stderr, "socket_read_num error\n");
     }
   else if ((rc = parse_daemon_response(ccode, read_buf_len, read_buf)) != PBSE_NONE)
     {
     socket_close(local_socket);
+    local_socket = -1;
     fprintf(stderr, "parse_daemon_response error %lld %s\n", ccode, pbse_to_txt(ccode));
     }
 
@@ -1199,6 +1203,75 @@ void close_conn(
 
   return;
   }  /* END close_conn() */
+
+
+/*
+ * clear_conn is used to reset the connection table for 
+ * a socket that has been already closed by pbs_disconnect
+ * but the socket was added to the svr_conn table with add_conn
+ * or some other method. This is the case for the socket
+ * used in obit_reply
+ */
+
+void clear_conn(
+
+  int sd,        /* I */
+  int has_mutex) /* I */
+
+  {
+  char log_message[LOG_BUF_SIZE];
+
+  /* close conn shouldn't be called on local connections */
+  if (sd == PBS_LOCAL_CONNECTION)
+    return;
+  
+  if ((sd < 0) ||
+      (max_connection <= sd))
+    {
+    snprintf(log_message, sizeof(log_message), "sd is invalid %d!!!", sd);
+    log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,__func__,log_message);
+
+    return;
+    }
+
+  if (has_mutex == FALSE)
+    pthread_mutex_lock(svr_conn[sd].cn_mutex);
+
+  if (svr_conn[sd].cn_active == Idle)
+    {
+    if (has_mutex == FALSE)
+      pthread_mutex_unlock(svr_conn[sd].cn_mutex);
+
+    return;
+    }
+
+  /* 
+   * In the case of a -t cold start, this will be called prior to
+   * GlobalSocketReadSet being initialized
+   */
+
+  if (GlobalSocketReadSet != NULL)
+    {
+    globalset_del_sock(sd);
+    }
+
+  svr_conn[sd].cn_addr = 0;
+  svr_conn[sd].cn_handle = -1;
+  svr_conn[sd].cn_active = Idle;
+  svr_conn[sd].cn_func = (void *(*)(void *))0;
+  svr_conn[sd].cn_authen = 0;
+  svr_conn[sd].cn_stay_open = FALSE;
+    
+  if (has_mutex == FALSE)
+    pthread_mutex_unlock(svr_conn[sd].cn_mutex);
+
+  pthread_mutex_lock(num_connections_mutex);
+  num_connections--;
+  pthread_mutex_unlock(num_connections_mutex);
+
+  return;
+  }  /* END close_conn() */
+
 
 
 

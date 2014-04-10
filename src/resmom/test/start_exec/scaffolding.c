@@ -572,6 +572,17 @@ int get_cpu_count_requested_on_this_node(job&)
 
 void node_internals::recover_reservation(int cpus, unsigned long memory, char const* jobid) {}
 
+void numa_node::recover_reservation(
+
+  int            num_cpus,
+  unsigned long  memory,
+  const char    *jobid,
+  allocation    &alloc)
+
+  {
+  return;
+  }
+
 #endif
 
 void translate_range_string_to_vector(const char *range, std::vector<int> &indices)

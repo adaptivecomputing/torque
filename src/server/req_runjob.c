@@ -288,6 +288,9 @@ void *check_and_run_job(
       }
     }
 
+  if ((*rc_ptr == PBSE_NONE) && (preq != NULL))
+    free_br(preq);
+
   return(rc_ptr);
   } /* END check_and_run_job() */
 
@@ -352,7 +355,21 @@ int req_runjob(
 
   if (preq->rq_type == PBS_BATCH_AsyrunJob)
     {
-    reply_ack(preq);
+    /* reply_ack will free preq. We need to copy it before we call reply_ack */
+    batch_request *new_preq;
+
+    new_preq = duplicate_request(preq, -1);
+    if (new_preq == NULL)
+      {
+      sprintf(log_buf, "failed to duplicate batch request");
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+      free_br(preq);
+      return(PBSE_MEM_MALLOC);
+      }
+
+    get_batch_request_id(new_preq);
+
+    reply_ack(new_preq);
     preq->rq_noreply = TRUE;
     enqueue_threadpool_request(check_and_run_job, preq, request_pool);
     }
@@ -814,7 +831,24 @@ int svr_stagein(
      */
 
     if (*preq != NULL)
+      {
+      struct batch_request *request = *preq;
+      int free_preq = 0;
+      /* Under the following circumstances, reply_send_svr called eventually
+       * by reply_ack/reply_send will free preq under the following cirmcustances.
+       * There are 60+ occurrences of reply_send, so this is the easiest way.
+       */
+      if (((request->rq_type != PBS_BATCH_AsyModifyJob) &&
+           (request->rq_type != PBS_BATCH_AsyrunJob) &&
+           (request->rq_type != PBS_BATCH_AsySignalJob)) ||
+           (request->rq_noreply == TRUE))
+         free_preq = 1;
+
       reply_ack(*preq);
+
+      if (free_preq)
+    	  *preq = NULL;
+      }
     }
   else
     {

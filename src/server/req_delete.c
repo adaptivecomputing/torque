@@ -148,12 +148,12 @@ void post_delete_mom1(batch_request *);
 void post_delete_mom2(struct work_task *);
 int forced_jobpurge(job *,struct batch_request *);
 void job_delete_nanny(struct work_task *);
+int apply_job_delete_nanny(job *pjob, int  delay);
 void post_job_delete_nanny(batch_request *);
 void purge_completed_jobs(struct batch_request *);
 
 /* Public Functions in this file */
 
-int  apply_job_delete_nanny(struct job *, int);
 void change_restart_comment_if_needed(struct job *);
 
 /* Private Data Items */
@@ -699,8 +699,13 @@ jump:
     }
   else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)
     {
+    /* job has staged-in file, should remove them */
+    remove_stagein(&pjob);
+
     job_mutex.set_unlock_on_exit(false);
-    return -1;
+
+    if (pjob != NULL)
+      job_abt(&pjob, Msg);
     }
 
   delete_inactive_job(&pjob, Msg);

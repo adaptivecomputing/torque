@@ -108,6 +108,8 @@ void remove_server_suffix(
     user_name.erase(pos);
   }
 
+
+
 unsigned int get_num_queued(
     
   user_info_holder *uih,

@@ -963,6 +963,7 @@ int blcr_checkpoint_job(
       (pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str == NULL))
     exit(-1);
 
+  err_buf[0] = '\0';
   /*
   * Get jobs checkpoint directory.
   */

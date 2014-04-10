@@ -193,6 +193,7 @@ int insert_into_recycler(
     return PBSE_NONE;
     }
 
+  memset(pjob, 0, sizeof(job));
   pjob->ji_mutex = tmp;
 
   pthread_mutex_lock(recycler.rc_mutex);

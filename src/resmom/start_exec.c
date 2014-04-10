@@ -631,10 +631,16 @@ void exec_bail(
     exiting_tasks = 1;
 
     if (pjob->ji_stdout > 0)
+      {
       close(pjob->ji_stdout);
+      pjob->ji_stdout = -1;
+      }
 
     if (pjob->ji_stderr > 0)
+      {
       close(pjob->ji_stderr);
+      pjob->ji_stderr = -1;
+      }
     }
   else
     {
@@ -1381,6 +1387,8 @@ void get_mic_indices(
       tok = strtok(NULL, "+");
       }
     }
+  if (mic_str != NULL)
+    free(mic_str);
   } /* END get_mic_indices() */
 
 
@@ -6259,8 +6267,8 @@ void recover_cpuset_reservation(
     int       cpu_count = get_cpu_count_requested_on_this_node(pjob);
 
     // make sure the memory is evenly set over the job.
-    double    mem_pcnt = ((double)cpu_count) / pjob.ji_numvnod;
-    mem_requested = mem_requested * mem_pcnt;
+    if (pjob.ji_numvnod > 0)
+      mem_requested = (mem_requested * cpu_count) / pjob.ji_numvnod;
 
     internal_layout.recover_reservation(cpu_count, mem_requested, pjob.ji_qs.ji_jobid);
     }

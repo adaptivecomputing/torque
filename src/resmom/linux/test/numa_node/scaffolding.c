@@ -20,7 +20,7 @@ void get_cpu_list(const char *jobid, char *cpuset_buf, int bufsize)
   {
   snprintf(cpuset_buf, bufsize, "%s", cpulist);
   }
-
+  
 bool is_physical_core(unsigned int index)
   {
   return(true);
@@ -40,4 +40,3 @@ int is_whitespace(
   else
     return(FALSE);
   }
-

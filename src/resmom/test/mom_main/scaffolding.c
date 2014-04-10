@@ -803,6 +803,11 @@ unsigned long setmempressdur(const char *)
 return 0;
 }
 
+void recover_cpuset_reservation(job &pjob)
+  {
+  return;
+  }
+
 
 #endif
 

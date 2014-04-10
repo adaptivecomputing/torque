@@ -120,18 +120,29 @@ int add_node_names(
   char *host_tok;
   char *str_ptr = exec_str;
   char *slash;
+  int   rc = PBSE_NONE;
+  char *prev_node = NULL;
 
   while ((host_tok = threadsafe_tokenizer(&str_ptr, "+")) != NULL)
     {
     if ((slash = strchr(host_tok, '/')) != NULL)
       *slash = '\0';
 
-    ar->ar_node_names.push_back(std::string(host_tok));
+    if ((prev_node == NULL) ||
+        (strcmp(prev_node, host_tok)))
+      {
+      ar->ar_node_names.push_back(std::string(host_tok));
+      rc = PBSE_NONE;
+      }
+
+    prev_node = host_tok;
     }
 
-  return(PBSE_NONE);
-  } /* END add_node_names() */
+  if (exec_str != NULL)
+    free(exec_str);
 
+  return(rc);
+  } /* END add_node_names() */
 
 
 alps_reservation *populate_alps_reservation(

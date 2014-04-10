@@ -573,24 +573,27 @@ void remove_job_from_already_killed_list(
   free(pwt->wt_mutex);
   free(pwt);
 
-  if (pJobID == NULL) return;
-
+  if(pJobID == NULL) return;
+  
   pthread_mutex_lock(&jobsKilledMutex);
-
-  for (boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();i != jobsKilled.end();i++)
+  
+  for(boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();i != jobsKilled.end();)
     {
-    if (i->compare(*pJobID) == 0)
+    if((*i).compare(*pJobID) == 0)
       {
-      jobsKilled.erase(i);
-      if (i == jobsKilled.end())
+      i = jobsKilled.erase(i);
+      if(i == jobsKilled.end())
         {
         break;
         }
+      continue;
       }
+    i++;
     }
   pthread_mutex_unlock(&jobsKilledMutex);
-
+  
   delete pJobID;
+  
   } /* END remove_job_from_already_killed_list() */
 
 
@@ -669,11 +672,30 @@ bool job_should_be_killed(
       }
     }
 
-  if (!should_be_on_node)
-    should_kill_job = !job_already_being_killed(jobid);
+  if(!should_be_on_node)
+    {
+    bool jobAlreadyKilled = false;
+    //Job should not be on the node, see if we have already sent a kill for this job.
+    pthread_mutex_lock(&jobsKilledMutex);
+
+    for (boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();
+         (i != jobsKilled.end()) && (jobAlreadyKilled == false);
+         i++)
+      {
+      if (i->compare(jobid) == 0)
+        {
+        jobAlreadyKilled = true;
+        }
+      }
+    if(!jobAlreadyKilled)
+      {
+      should_kill_job = true;
+      }
+    pthread_mutex_unlock(&jobsKilledMutex);
+    }
 
   return(should_kill_job);
-  } /* END job_should_be_on_node() */
+  } /* END job_should_be_killed() */
 
 
 void *finish_job(
@@ -742,6 +764,7 @@ bool is_jobid_in_mom(
 
 
 
+
 /*
  * sync_node_jobs_with_moms() - remove any jobs in the pbsnode (np) that was not
  * reported by the mom that it's currently running in its status update.
@@ -792,6 +815,9 @@ void sync_node_jobs_with_moms(
     remove_job_from_node(np, (*it).c_str());
     }
   } /* end of sync_node_jobs_with_moms */
+
+
+
 
 
 
@@ -1171,6 +1197,7 @@ void stream_eof(
 /*
  * wrapper task that check_nodes places in the thread pool's queue
  */
+
 void *check_nodes_work(
 
   void *vp)
@@ -2948,6 +2975,8 @@ int node_spec(
   char                *plus;
   long                 cray_enabled = FALSE;
   int                  num_alps_reqs = 0;
+
+  FUNCTION_TIMER
 
   if (EMsg != NULL)
     EMsg[0] = '\0';
@@ -4845,6 +4874,8 @@ int procs_requested(
         if (proplist(&str, &prop, &num_procs, &num_gpus, &num_mics))
           {
           free(tmp_spec);
+          if (prop != NULL)
+            free_prop(prop);
           return(-1);
           }
         }
@@ -4857,6 +4888,8 @@ int procs_requested(
         {
         /* must be a prop list with no number in front */
         free(tmp_spec);
+        if (prop != NULL)
+          free_prop(prop);
 
         return(-1);
         }

@@ -10,16 +10,24 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - TRQ-1539. Condense the exec_host list to have one entry per node instead of one
       entry per execution slot. The node entry contains a string specifying each
       execution slot index. Also no longer display the value of exec_port in qstat.
+4.5.0
   b - TRQ-2319. Replace two Torque functions with ones from the hwloc package.
   n - Portable Hardware Locality (hwloc) package version 1.2 or higher must be
       installed when using cpusets (--enable-cpuset). Previously at least version
       1.1 was required.
+  b - TRQ-2373. Fix login nodes restricting the number of jobs to the number specified
+      by np=X.
 
 4.2.8
   b - TRQ-2501. Fix the total number of execution slots having a count that is off-by-one for
       every Cray compute node.
+  b - TRQ-2498. Fixed a memory leak when using qrun -a (asynchronous). Also fixed a write
+      after free error that could lead to memory corruption.
+  b - Fixed the thread pool manager so it would free idle nodes. Also changed the default
+      thread stack sizes to a maximum of 8 Mb and Minimum of 1 Mb.
 
 4.2.7
+  b - TRQ-2423. Fix a bug where cpusets would incorrectly be reported on mpi jobs
   b - TRQ-2329. Fix a problem where nodes could be allocated to array subjobs even
       after the job was deleted.
   b - TRQ-2351. Fix an issue where moms that are before 4.2.6 can't run jobs if the
@@ -30,6 +38,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       is /tmp/trqauthd-unix. It can be configured to point to a different directory.
       If trqauthd will not start and you know there are no other instances of trqauthd
       running you should delete the UNIX domain file and try again.
+  b - TRQ-2319. Replace two Torque functions with ones from the hwloc package.
+  n - Portable Hardware Locality (hwloc) package version 1.2 or higher must be
+      installed when using cpusets (--enable-cpuset). Previously at least version
+      1.1 was required.
   b - TRQ-2373. Fix login nodes restricting the number of jobs to the number specified
       by np=X.
   b - TRQ-2354. Fix an issue with potential overflow in user job counts. Also fix a 
@@ -46,10 +58,23 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       server running in cray enabled mode.
   n - TRQ-2299. Make it so that the reporter mom doesn't fork to send its update.
 
+4.2.6.1.h1
+  b - TRQ-2395. Fix a problem when running jobs on non-Cray nodes reporting to a pbs
+      server running in cray enabled mode.
+
+4.2.6.1
+
+  b - TRQ-2351. Fix an issue where moms that are before 4.2.6 can't run jobs if the
+      server is 4.2.6.
+  e - Made it so trqauthd cannot be loaded more than once. trqauthd opens a UNIX 
+      domain name file to do its communication with client commands. If the 
+
 4.2.6
   b - TRQ-2273. Job start time is hard coded to 5 minutes. If the prolog takes longer
       than that to run the job will be requeued without killing the prolog. This
-      change will now set the prolog timeout to less than 5 minutes.
+  b - TRQ-2395. Fix a problem when running jobs on non-Cray nodes reporting to a pbs
+      server running in cray enabled mode.
+  n - TRQ-2299. Make it so that the reporter mom doesn't fork to send its update.
   b - TRQ-2111. Fix a rare case of running jobs being deleted without having their
       resources freed.
   b - TRQ-2208. Stop having pbs_mom use trqauthd when it is checkpointing a job.
@@ -59,6 +84,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       vice versa from the sisters.
   b - TRQ-2280. Save properties added to cray compute nodes in the nodes file if the 
       file is overwritten by pbs_server.
+      around long enough. Fix this.
+  b - TRQ-2395. Fix a problem when running jobs on non-Cray nodes reporting to a pbs
+      server running in cray enabled mode.
+  n - TRQ-2299. Make it so that the reporter mom doesn't fork to send its update.
 
 4.2.5
   e - Remove the mom asking for a job status before sending an obit to pbs_server

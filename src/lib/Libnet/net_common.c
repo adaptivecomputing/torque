@@ -380,10 +380,7 @@ int socket_connect_addr(
         else if (rc == PERMANENT_SOCKET_FAIL)
           {
           close(local_socket);
-          local_socket = rc;
-
-          /* do not fall through here */
-          break;
+          return(rc);
           }
 
         /* essentially, only fall through for a transient failure */
@@ -400,6 +397,7 @@ int socket_connect_addr(
           /* 3 connect attempts are made to each socket */
           /* Fail on RES_PORT_RETRY */
           close(local_socket);
+          local_socket = TRANSIENT_SOCKET_FAIL;
 
           while (cntr < RES_PORT_RETRY)
             {
@@ -996,7 +994,10 @@ int pbs_getaddrinfo(
   }    
 
 
-int connect_to_trqauthd(int *sock)
+int connect_to_trqauthd(
+    
+  int *sock)
+
   {
   int   rc = PBSE_NONE;
   int   local_socket;

@@ -88,7 +88,7 @@
  * mutex. 
  * here are three constructors all of which initialize 
  * unlock_on_exit to true. unlock_on_exit can be set
- * to true or false with the method set_lock_on_exit.
+ * to true or false with the method set_unlock_on_exit.
  * The method detach() unlocks the managed mutex.
  * the method attach() locks the managed mutex.
  */

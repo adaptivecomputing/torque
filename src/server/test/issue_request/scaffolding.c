@@ -1,6 +1,8 @@
 #include "license_pbs.h" /* See here for the software license */
+#include <string>
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
+#include <pthread.h>
 
 #include "libpbs.h" /* connect_handle */
 #include "net_connect.h" /* connection */
@@ -26,6 +28,7 @@ unsigned int pbs_server_port_dis;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 all_tasks task_list_event;
 const char *msg_issuebad = "attempt to issue invalid request of type %d";
+std::string rq_id_str;
 
 int pthread_mutex_lock(pthread_mutex_t *mutex) throw()
   {
@@ -86,7 +89,6 @@ char *netaddr_pbs_net_t(pbs_net_t ipadd)
 
 void free_br(struct batch_request *preq)
   {
-  return;
   }
 
 int encode_DIS_ReturnFiles(struct tcp_chan *chan, struct batch_request *preq)
@@ -112,11 +114,6 @@ int insert_timed_task(
   return(PBSE_NONE);
   }
 
-/*
- * set_task - add the job entry to the task list
- *
- * Task time depends on the type of task.  The list is time ordered.
- */
 
 struct work_task *set_task(
 
@@ -403,6 +400,7 @@ int copy_attribute_list(
   return(PBSE_NONE);
   } /* END copy_attribute_list() */
 
+
 batch_request *duplicate_request(batch_request *preq, int job_index)
   {
   batch_request *preq_tmp = alloc_br(preq->rq_type);
@@ -415,6 +413,7 @@ batch_request *duplicate_request(batch_request *preq, int job_index)
 
   preq_tmp->rq_perm = preq->rq_perm;
   preq_tmp->rq_fromsvr = preq->rq_fromsvr;
+  preq_tmp->rq_extsz = preq->rq_extsz;
   preq_tmp->rq_conn = preq->rq_conn;
   preq_tmp->rq_time = preq->rq_time;
   preq_tmp->rq_orgconn = preq->rq_orgconn;

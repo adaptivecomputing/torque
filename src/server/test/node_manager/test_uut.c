@@ -1,6 +1,7 @@
 #include <string>
 #include <sstream>
 #include <boost/ptr_container/ptr_vector.hpp>
+#include <vector>
 #include "license_pbs.h" /* See here for the software license */
 #include "node_manager.h"
 #include "test_uut.h"
@@ -208,7 +209,7 @@ START_TEST(remove_job_from_already_killed_list_test)
 
   remove_job_from_already_killed_list(pwt);
 
-  for(boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();i != jobsKilled.end();i++)
+  for (boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();i != jobsKilled.end();i++)
     {
     fail_unless(strcmp(i->c_str(),"Job 5") != 0);
     }
@@ -219,7 +220,7 @@ START_TEST(remove_job_from_already_killed_list_test)
 
   remove_job_from_already_killed_list(pwt);
 
-  for(boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();i != jobsKilled.end();i++)
+  for (boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();i != jobsKilled.end();i++)
     {
     fail_unless(strcmp(i->c_str(),"Job 6") != 0);
     }
