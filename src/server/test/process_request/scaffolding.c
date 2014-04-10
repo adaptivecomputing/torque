@@ -23,11 +23,13 @@ struct connection svr_conn[PBS_NET_MAX_CONNECTIONS];
 const char *msg_request = "Type %s request received from %s@%s, sock=%d";
 struct server server;
 char *server_host;
-int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
+int LOGLEVEL = 10; /* force logging code to be exercised as tests run */
 threadpool_t *request_pool;
 bool check_acl;
 bool find_node;
+bool fail_get_connecthost = false;
 int free_attrlist_called;
+int dis_req_read_rc = PBSE_NONE;
 
 bool threadpool_is_too_busy(threadpool *tp, int permissions)
   {
@@ -84,8 +86,11 @@ void req_rescfree(struct batch_request *preq)
 
 int get_connecthost(int sock, char *namebuf, int size)
   {
-  fprintf(stderr, "The call to get_connecthost needs to be mocked!!\n");
-  exit(1);
+  if (fail_get_connecthost == true)
+    return(-1);
+
+  snprintf(namebuf, size, "napali");
+  return(0);
   }
 
 int req_holdjob(batch_request *preq)
@@ -138,8 +143,7 @@ int *req_stat_job(struct batch_request *preq)
 
 int dis_request_read(struct tcp_chan *chan, struct batch_request *request)
   {
-  fprintf(stderr, "The call to dis_request_read needs to be mocked!!\n");
-  exit(1);
+  return(dis_req_read_rc);
   }
 
 int req_stat_que(batch_request *preq)
@@ -179,8 +183,6 @@ void req_rdytocommit(struct batch_request *preq)
 
 void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
   {
-  fprintf(stderr, "The call to req_reject needs to be mocked!!\n");
-  exit(1);
   }
 
 job *next_job(all_jobs *aj, all_jobs_iterator *iter)
@@ -283,8 +285,7 @@ char * csv_find_string(const char *csv_str, const char *search_str)
 
 char *pbse_to_txt(int err)
   {
-  fprintf(stderr, "The call to pbse_to_txt needs to be mocked!!\n");
-  exit(1);
+  return(strdup("bob"));
   }
 
 int req_stagein(batch_request *preq)
@@ -377,8 +378,7 @@ job *svr_find_job(const char *jobid, int get_subjob)
 
 const char *reqtype_to_txt(int reqtype)
   {
-  fprintf(stderr, "The call to reqtype_to_txt needs to be mocked!!\n");
-  exit(1);
+  return("Queue Job");
   }
 
 int req_orderjob(batch_request *preq)
