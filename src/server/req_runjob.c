@@ -1548,7 +1548,7 @@ void finish_sendmom(
         if (preq != NULL)
           {
           if (mom_err != PBSE_NONE)
-            req_reject(mom_err, 0, preq, node_name, "job was aboted by mom");
+            req_reject(mom_err, 0, preq, node_name, "job was aborted by mom");
           else
             req_reject(PBSE_BADSTATE, 0, preq, node_name, "job was aborted by mom");
           }

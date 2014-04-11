@@ -163,6 +163,10 @@ int addr_ok(
         }
       }
     }
+  if(pnode->nd_power_state != POWER_STATE_RUNNING)
+    {
+    status = 0;
+    }
 
   if (release_mutex == TRUE)
     unlock_node(pnode, __func__, "release_mutex = TRUE", LOGLEVEL);

@@ -1692,7 +1692,8 @@ int gpu_count(
 
   if ((pnode->nd_state & INUSE_OFFLINE) ||
       (pnode->nd_state & INUSE_UNKNOWN) ||
-      (pnode->nd_state & INUSE_DOWN))
+      (pnode->nd_state & INUSE_DOWN)||
+      (pnode->nd_power_state != POWER_STATE_RUNNING))
     {
     if (LOGLEVEL >= 7)
       {
@@ -2184,7 +2185,7 @@ bool node_is_spec_acceptable(
 #ifdef GEOMETRY_REQUESTS
   if (IS_VALID_STR(ProcBMStr))
     {
-    if (pnode->nd_state != INUSE_FREE)
+    if ((pnode->nd_state != INUSE_FREE)||(pnode->nd_power_state != POWER_STATE_RUNNING))
       return(false);
 
     if (node_satisfies_request(pnode, ProcBMStr) == FALSE)
@@ -2206,7 +2207,7 @@ bool node_is_spec_acceptable(
 
   (*eligible_nodes)++;
 
-  if ((pnode->nd_state & (INUSE_OFFLINE | INUSE_DOWN | INUSE_RESERVE | INUSE_JOB)) != 0)
+  if (((pnode->nd_state & (INUSE_OFFLINE | INUSE_DOWN | INUSE_RESERVE | INUSE_JOB)) != 0)||(pnode->nd_power_state != POWER_STATE_RUNNING))
     return(false);
 
   gpu_free = gpu_count(pnode, TRUE) - pnode->nd_ngpus_to_be_used;
@@ -3464,7 +3465,7 @@ int node_satisfies_request(
     return(BM_ERROR);
 
   /* nodes are exclusive when we're using bitmaps */
-  if (pnode->nd_state != INUSE_FREE)
+  if ((pnode->nd_state != INUSE_FREE)||(pnode->nd_power_state != POWER_STATE_RUNNING))
     return(FALSE);
 
   BMLen = strlen(ProcBMStr);

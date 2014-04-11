@@ -189,7 +189,8 @@ int relay_to_mom(
   free(job_momname);
 
   if ((node != NULL) &&
-      (node->nd_state & INUSE_DOWN))
+      ((node->nd_state & INUSE_DOWN)||
+      (node->nd_power_state != POWER_STATE_RUNNING)))
     {
     unlock_node(node, __func__, "no rely mom", LOGLEVEL);
     return(PBSE_NORELYMOM);
