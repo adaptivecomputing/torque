@@ -6315,8 +6315,8 @@ void recover_cpuset_reservation(
     int       cpu_count = get_cpu_count_requested_on_this_node(pjob);
 
     // make sure the memory is evenly set over the job.
-    if (pjob.ji_numvnod > 0)
-      mem_requested = (mem_requested * cpu_count) / pjob.ji_numvnod;
+    double    mem_pcnt = ((double)cpu_count) / pjob.ji_numvnod;
+    mem_requested = mem_requested * (long long)mem_pcnt;
 
     internal_layout.recover_reservation(cpu_count, mem_requested, pjob.ji_qs.ji_jobid);
     }
