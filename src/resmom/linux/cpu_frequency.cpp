@@ -90,7 +90,7 @@
 
 #include "cpu_frequency.hpp"
 
-const char *base_path = "/sys/devices/system/cpu/";
+const char *base_cpu_path = "/sys/devices/system/cpu/";
 
 bool descending(unsigned long i,unsigned long j)
   {
@@ -99,7 +99,7 @@ bool descending(unsigned long i,unsigned long j)
 
 cpu_frequency::cpu_frequency(int cpu_number)
   {
-  path = base_path;
+  path = base_cpu_path;
   path += "cpu";
   std::stringstream cnv;
   cnv << cpu_number;
