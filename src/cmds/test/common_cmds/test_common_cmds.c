@@ -1,5 +1,6 @@
 #include "license_pbs.h" /* See here for the software license */
 #include "common_cmds.h"
+#include <string>
 #include <stdlib.h>
 #include <stdio.h>
 #include <pbs_ifl.h>
@@ -10,6 +11,33 @@ extern int env_add_call;
 extern int env_del_call;
 extern int env_find_call;
 extern int tc_num;
+
+void add_env_value_to_string(std::string &val, const char *env_val_to_add);
+
+START_TEST(test_add_env_value_to_string)
+  {
+  std::string bob = "bob=";
+  
+  add_env_value_to_string(bob, "tom,ray");
+  fail_unless(!strcmp(bob.c_str(), "bob=tom\\,ray"), bob.c_str());
+  
+  bob = "bob=";
+  add_env_value_to_string(bob, "tom\"ray");
+  fail_unless(!strcmp(bob.c_str(), "bob=tom\\\"ray"));
+  
+  bob = "bob=";
+  add_env_value_to_string(bob, "tom'ray");
+  fail_unless(!strcmp(bob.c_str(), "bob=tom\\'ray"), bob.c_str());
+  
+  bob = "bob=";
+  add_env_value_to_string(bob, "tom\\ray");
+  fail_unless(!strcmp(bob.c_str(), "bob=tom\\\\ray"), bob.c_str());
+  
+  bob = "bob=";
+  add_env_value_to_string(bob, "tom\nray");
+  fail_unless(!strcmp(bob.c_str(), "bob=tom\\\nray"), bob.c_str());
+  }
+END_TEST
 
 START_TEST(test_parse_env_line_nospace)
   {
@@ -140,6 +168,7 @@ Suite *common_cmds_suite(void)
   tcase_add_test(tc_core, test_parse_variable_list);
   tcase_add_test(tc_core, test_parse_variable_list_equalfirst);
   tcase_add_test(tc_core, test_parse_variable_list_noequal);
+  tcase_add_test(tc_core, test_add_env_value_to_string);
   suite_add_tcase(s, tc_core);
   return s;
   }

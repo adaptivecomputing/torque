@@ -28,6 +28,41 @@ void strtolower(
   } /* END strtolower() */
 
 
+
+void add_env_value_to_string(
+
+  std::string &val,
+  const char  *env_val_to_add)
+
+  {
+  const char *ptr = env_val_to_add;
+
+  while (*ptr != '\0')
+    {
+    switch (*ptr)
+      {
+      case '"':
+      case '\'':
+      case '\\':
+      case '\n':
+      case ',':
+
+        val += '\\';
+        // fall through
+
+      default:
+        
+        val += *ptr;
+
+        break;
+      }
+    
+    ptr++;
+    }
+
+  } /* END add_env_value_to_string() */
+
+
 /* Copies env variable into an allocated string 
  * and escapes nested characters if necessary.
  */
@@ -246,7 +281,8 @@ int parse_variable_list(
         {
         job_env += name;
         job_env += "=";
-        job_env += c;
+        add_env_value_to_string(job_env, c);
+
         if (delim == NULL)
           s = NULL;
         else
