@@ -31,11 +31,11 @@ void strtolower(
 
 void add_env_value_to_string(
 
-  std::string  val,
-  char        *env_val_to_add)
+  std::string &val,
+  const char  *env_val_to_add)
 
   {
-  char *ptr = env_val_to_add;
+  const char *ptr = env_val_to_add;
 
   while (*ptr != '\0')
     {
