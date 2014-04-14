@@ -212,7 +212,7 @@ static void *work_thread(
 
   {
   threadpool_t     *tp = (threadpool_t *)a;
-  int               rc;
+  int               rc = PBSE_NONE;
 
   void             *(*func)(void *);
   void             *arg;

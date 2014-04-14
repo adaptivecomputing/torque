@@ -498,8 +498,8 @@ int record_reservation(
     {
     /* cray only allows one job per node, so any valid job will be the job that is 
      * reserving this node. */
-    job_usage_info *jui = pnode->nd_job_usages[i];
-    int internal_job_id = jui->internal_job_id;
+    const job_usage_info &jui = pnode->nd_job_usages[i];
+    int                   internal_job_id = jui.internal_job_id;
 
     unlock_node(pnode, __func__, NULL, LOGLEVEL);
 

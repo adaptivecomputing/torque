@@ -208,9 +208,10 @@ int gpu_has_job(
   /* check each subnode for a job using a gpuid */
   for (unsigned int i = 0; i < pnode->nd_job_usages.size(); i++)
     {
-    job_usage_info *jui = pnode->nd_job_usages[i];
+    // make a copy because we're going to lose the lock below
+    job_usage_info jui = pnode->nd_job_usages[i];
     
-    if ((pjob = get_job_from_job_usage_info(jui, pnode)) != NULL)
+    if ((pjob = get_job_from_job_usage_info(&jui, pnode)) != NULL)
       {
       mutex_mgr job_mutex(pjob->ji_mutex, true);
 

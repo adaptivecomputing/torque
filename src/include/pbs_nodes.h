@@ -306,7 +306,7 @@ struct pbsnode
   short                         nd_nprops;           /* number of properties */
   short                         nd_nstatus;          /* number of status items */
   execution_slot_tracker        nd_slots;            /* bitmap of execution slots */
-  std::vector<job_usage_info *> nd_job_usages;       /* information about each job using this node */
+  std::vector<job_usage_info >  nd_job_usages;       /* information about each job using this node */
   short                         nd_needed;           /* number of VPs needed */
   short                         nd_np_to_be_used;    /* number of VPs marked for a job but not yet assigned */
   unsigned short                nd_state;            /* node state (see INUSE_* #defines below) */

@@ -397,9 +397,9 @@ int check_node_for_job(
   {
   for (int i = 0; i < (int)pnode->nd_job_usages.size(); i++)
     {
-    job_usage_info *jui = pnode->nd_job_usages[i];
+    const job_usage_info &jui = pnode->nd_job_usages[i];
 
-    if (internal_job_id == jui->internal_job_id)
+    if (internal_job_id == jui.internal_job_id)
       return(TRUE);
     }
 
@@ -745,10 +745,12 @@ void sync_node_jobs_with_moms(
 
   for (int i = 0; i < (int)np->nd_job_usages.size(); i++)
     {
-    bool removejob = false;
-    job_usage_info *jui = np->nd_job_usages[i];
-    const char *jobid = job_mapper.get_name(jui->internal_job_id);
-    int         internal_job_id = jui->internal_job_id;
+    bool            removejob = false;
+    // this one has to be a copy instead of a reference because we lose the mutex
+    // below which can make the pointer invalid
+    job_usage_info  jui = np->nd_job_usages[i];
+    const char     *jobid = job_mapper.get_name(jui.internal_job_id);
+    int             internal_job_id = jui.internal_job_id;
 
     if (!removealljobs)
       {
@@ -3535,9 +3537,9 @@ job_reservation_info *reserve_node(
     return(NULL);
     }
     
-  job_usage_info *jui = new job_usage_info(pjob->ji_internal_id);
+  job_usage_info jui(pjob->ji_internal_id);
     
-  jui->est = node_info->est;
+  jui.est = node_info->est;
   node_info->node_id = pnode->nd_id;
   node_info->port = pnode->nd_mom_rm_port;
   pnode->nd_job_usages.push_back(jui);
@@ -4025,8 +4027,8 @@ job_reservation_info *place_subnodes_in_hostlist(
 
     node_info->port = pnode->nd_mom_rm_port;
     
-    job_usage_info *jui = new job_usage_info(pjob->ji_internal_id);
-    jui->est = node_info->est;
+    job_usage_info jui(pjob->ji_internal_id);
+    jui.est = node_info->est;
     
     node_info->node_id = pnode->nd_id;
     pnode->nd_job_usages.push_back(jui);
@@ -4156,8 +4158,8 @@ int translate_howl_to_string(
 
 void populate_range_string_from_slot_tracker(
 
-  execution_slot_tracker &est,
-  std::string            &range_str)
+  const execution_slot_tracker &est,
+  std::string                  &range_str)
 
   {
   int               est_index;
@@ -5322,11 +5324,11 @@ int remove_job_from_node(
 
   for (int i = 0; i < (int)pnode->nd_job_usages.size(); i++)
     {
-    job_usage_info *jui = pnode->nd_job_usages[i];
+    const job_usage_info &jui = pnode->nd_job_usages[i];
 
-    if (jui->internal_job_id == internal_job_id)
+    if (jui.internal_job_id == internal_job_id)
       {
-      pnode->nd_slots.unreserve_execution_slots(jui->est);
+      pnode->nd_slots.unreserve_execution_slots(jui.est);
       pnode->nd_job_usages.erase(pnode->nd_job_usages.begin() + i);
 
       if (LOGLEVEL >= 6)
@@ -5339,7 +5341,6 @@ int remove_job_from_node(
         }
 
       pnode->nd_state &= ~INUSE_JOB;
-      delete jui;
 
       break;
       }
@@ -5506,18 +5507,19 @@ void set_one_old(
 
     for (int i = 0; i < (int)pnode->nd_job_usages.size(); i++)
       {
-      job_usage_info *jui = pnode->nd_job_usages[i];
+      // this can't be a const because we change it below
+      job_usage_info &jui = pnode->nd_job_usages[i];
 
-      if (jui->internal_job_id == pjob->ji_internal_id)
+      if (jui.internal_job_id == pjob->ji_internal_id)
         {
         found = true;
 
-        while (last >= jui->est.get_total_execution_slots())
-          jui->est.add_execution_slot();
+        while (last >= jui.est.get_total_execution_slots())
+          jui.est.add_execution_slot();
 
         for (int index = first; index <= last; index++)
           {
-          jui->est.mark_as_used(index);
+          jui.est.mark_as_used(index);
           pnode->nd_slots.mark_as_used(index);
           }
         }
@@ -5525,14 +5527,14 @@ void set_one_old(
 
     if (found == false)
       {
-      job_usage_info *jui = new job_usage_info(pjob->ji_internal_id);
+      job_usage_info jui(pjob->ji_internal_id);
         
-      while (last >= jui->est.get_total_execution_slots())
-        jui->est.add_execution_slot();
+      while (last >= jui.est.get_total_execution_slots())
+        jui.est.add_execution_slot();
 
       for (int index = first; index <= last; index++)
         {
-        jui->est.mark_as_used(index);
+        jui.est.mark_as_used(index);
         pnode->nd_slots.mark_as_used(index);
         }
 

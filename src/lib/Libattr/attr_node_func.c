@@ -105,7 +105,7 @@
 #include "id_map.hpp"
 
 extern int LOGLEVEL;
-void populate_range_string_from_slot_tracker(execution_slot_tracker &est, std::string &range_str);
+void populate_range_string_from_slot_tracker(const execution_slot_tracker &est, std::string &range_str);
 
 
 /*
@@ -564,16 +564,16 @@ int encode_jobs(
   
   for (int i = 0; i < (int)pnode->nd_job_usages.size(); i++)
     {
-    job_usage_info *jui = pnode->nd_job_usages[i];
+    const job_usage_info &jui = pnode->nd_job_usages[i];
 
-    populate_range_string_from_slot_tracker(jui->est, range_str);
+    populate_range_string_from_slot_tracker(jui.est, range_str);
 
     if (first == false)
       job_str += ",";
 
     job_str += range_str;
     job_str += "/";
-    job_str += job_mapper.get_name(jui->internal_job_id);
+    job_str += job_mapper.get_name(jui.internal_job_id);
 
     first = false;
     }

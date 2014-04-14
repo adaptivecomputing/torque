@@ -484,12 +484,15 @@ int login_encode_jobs(
 
   for (unsigned int i = 0; i < pnode->nd_job_usages.size(); i++)
     {
-    job_usage_info *jui = pnode->nd_job_usages[i];
+    // must be a copy and not a reference to avoid crashes: get_job_usage_info()
+    // potentially releases the node mutex meaning a reference could refer tp bad
+    // info.
+    job_usage_info  jui = pnode->nd_job_usages[i];
     int             jui_index;
     int             jui_iterator = -1;
     int             login_id = -1;
 
-    pjob = get_job_from_job_usage_info(jui, pnode);
+    pjob = get_job_from_job_usage_info(&jui, pnode);
     
     if (pjob != NULL)
       {
@@ -499,10 +502,10 @@ int login_encode_jobs(
 
     const char *job_id = NULL;
     
-    while ((jui_index = jui->est.get_next_occupied_index(jui_iterator)) != -1)
+    while ((jui_index = jui.est.get_next_occupied_index(jui_iterator)) != -1)
       {
       if (job_id == NULL)
-        job_id = job_mapper.get_name(jui->internal_job_id);
+        job_id = job_mapper.get_name(jui.internal_job_id);
 
       if (pnode->nd_id != login_id)
         {
