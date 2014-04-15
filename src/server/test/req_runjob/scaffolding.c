@@ -35,6 +35,7 @@ const char *msg_manager = "%s at request of %s@%s";
 int LOGLEVEL = 10; /* force logging code to be exercised as tests run */
 int svr_totnodes = 0;
 threadpool_t *request_pool;
+threadpool_t *task_pool;
 
 
 

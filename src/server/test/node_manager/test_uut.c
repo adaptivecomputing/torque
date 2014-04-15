@@ -25,8 +25,8 @@ void remove_job_from_already_killed_list(struct work_task *pwt);
 bool job_already_being_killed(int internal_job_id);
 void process_job_attribute_information(std::string &job_id, std::string &attributes);
 bool process_as_node_list(const char *spec, const node_job_add_info *naji);
-bool node_is_spec_acceptable(struct pbsnode *pnode, single_spec_data *spec, char *ProcBMStr, int *eligible_nodes,bool isExclusive);
-void populate_range_string_from_slot_tracker(execution_slot_tracker &est, std::string &range_str);
+bool node_is_spec_acceptable(struct pbsnode *pnode, single_spec_data *spec, char *ProcBMStr, int *eligible_nodes);
+void populate_range_string_from_slot_tracker(const execution_slot_tracker &est, std::string &range_str);
 int  translate_job_reservation_info_to_string(std::vector<job_reservation_info *> &host_info, int *NCount, std::string &exec_host_output, std::stringstream *exec_port_output);
 
 extern std::vector<int> jobsKilled;
@@ -227,14 +227,13 @@ END_TEST
 
 START_TEST(remove_job_from_node_test)
   {
-  job_usage_info *jui = (job_usage_info *)calloc(1, sizeof(job_usage_info));
-  jui->internal_job_id = 1;
+  job_usage_info jui(1);
   struct pbsnode *pnode = (struct pbsnode *)calloc(1, sizeof(struct pbsnode));
 
   for (int i = 0; i < 10; i++)
     pnode->nd_slots.add_execution_slot();
 
-  pnode->nd_slots.reserve_execution_slots(6, jui->est);
+  pnode->nd_slots.reserve_execution_slots(6, jui.est);
   pnode->nd_job_usages.push_back(jui);
 
   fail_unless(pnode->nd_slots.get_number_free() == 4);
@@ -288,21 +287,18 @@ START_TEST(sync_node_jobs_with_moms_test)
     pnode->nd_slots.add_execution_slot();
 
   /* Job #1 */
-  job_usage_info *jui = (job_usage_info *)calloc(1, sizeof(job_usage_info));
-  jui->internal_job_id = 1;
-  pnode->nd_slots.reserve_execution_slots(2, jui->est);
+  job_usage_info jui(1);
+  pnode->nd_slots.reserve_execution_slots(2, jui.est);
   pnode->nd_job_usages.push_back(jui);
 
   /* Job #2 */
-  jui = (job_usage_info *)calloc(1, sizeof(job_usage_info));
-  jui->internal_job_id = 2;
-  pnode->nd_slots.reserve_execution_slots(4, jui->est);
-  pnode->nd_job_usages.push_back(jui);
+  job_usage_info jui2(2);
+  pnode->nd_slots.reserve_execution_slots(4, jui2.est);
+  pnode->nd_job_usages.push_back(jui2);
   
-  jui = (job_usage_info *)calloc(1, sizeof(job_usage_info));
-  jui->internal_job_id = 3;
-  pnode->nd_slots.reserve_execution_slots(3, jui->est);
-  pnode->nd_job_usages.push_back(jui);
+  job_usage_info jui3(3);
+  pnode->nd_slots.reserve_execution_slots(3, jui3.est);
+  pnode->nd_job_usages.push_back(jui3);
 
   /* node is fully allocated for the 3 jobs above */
   fail_unless(pnode->nd_slots.get_number_free() == 0);
@@ -320,10 +316,9 @@ START_TEST(sync_node_jobs_with_moms_test)
   fail_unless(pnode->nd_slots.get_number_free() == 9);
 
   /* This job should not be clean as svr_find_job should find it */
-  jui = (job_usage_info *)calloc(1, sizeof(job_usage_info));
-  jui->internal_job_id = 4;
-  pnode->nd_slots.reserve_execution_slots(3, jui->est);
-  pnode->nd_job_usages.push_back(jui);
+  job_usage_info jui4(4);
+  pnode->nd_slots.reserve_execution_slots(3, jui4.est);
+  pnode->nd_job_usages.push_back(jui4);
   sync_node_jobs_with_moms(pnode, "");
   fail_unless(pnode->nd_slots.get_number_free() == 6);
   job_mode = false;

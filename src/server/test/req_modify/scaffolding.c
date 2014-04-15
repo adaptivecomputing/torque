@@ -257,6 +257,7 @@ job_array *get_jobs_array(job **pjob_ptr)
   }
 
 threadpool_t *request_pool;
+threadpool_t *task_pool;
 
 int enqueue_threadpool_request(void *(*func)(void *), void *arg, threadpool_t *tp)
 
