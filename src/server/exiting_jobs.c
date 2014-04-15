@@ -116,7 +116,7 @@ int record_job_as_exiting(
   jeri->last_attempt = time(NULL);
 
   exiting_jobs_info.lock();
-  if (!exiting_jobs_info.insert(jeri, strdup(pjob->ji_qs.ji_jobid)))
+  if (!exiting_jobs_info.insert(jeri, pjob->ji_qs.ji_jobid))
     {
     exiting_jobs_info.unlock();
     return ENOMEM;

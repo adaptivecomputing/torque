@@ -963,6 +963,8 @@ void *delete_all_work(
         failed_deletes++;
       }
     }
+
+  delete iter;
   
   qdel_all_tracker.done_deleting_all(preq->rq_user, preq->rq_perm);
   

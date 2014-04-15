@@ -1220,6 +1220,12 @@ void *check_nodes_work(
       }
     } /* END for each node */
 
+  if (iter.node_index != NULL)
+    delete iter.node_index;
+
+  if (iter.alps_index != NULL)
+    delete iter.alps_index;
+
   if (ptask->wt_parm1 == NULL)
     {
     set_task(WORK_Timed, time_now + chk_len, check_nodes, (char *)NULL,FALSE);
