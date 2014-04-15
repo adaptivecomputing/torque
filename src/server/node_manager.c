@@ -939,6 +939,9 @@ void *sync_node_jobs(
         free(raw_input);
         free(sji);
 
+        if (jobs_in_mom)
+          free(jobs_in_mom);
+
         return(NULL);
         }
       }

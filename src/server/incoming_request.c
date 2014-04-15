@@ -130,15 +130,15 @@ int process_pbs_server_port(
       // always close the socket for is requests 
       rc = PBSE_SOCKET_CLOSE;
 
-      is_request_info *isr = (is_request_info *)calloc(1, sizeof(is_request_info));
+      is_request_info isr;
 
-      isr->chan = chan;
-      isr->args = args;
+      isr.chan = chan;
+      isr.args = args;
 
       // don't let this get cleaned up below
       chan = NULL;
       
-      svr_is_request(isr);
+      svr_is_request(&isr);
       
       break;
       }

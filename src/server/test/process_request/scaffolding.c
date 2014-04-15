@@ -195,10 +195,9 @@ int req_releasearray(batch_request *preq)
   exit(1);
   }
 
-void req_connect(struct batch_request *preq)
+int req_connect(struct batch_request *preq)
   {
-  fprintf(stderr, "The call to req_connect needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 int job_abt(struct job **pjobp, const char *text)
