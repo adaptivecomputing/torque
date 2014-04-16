@@ -200,9 +200,9 @@ class item_container
     next_slot(1),
     last(0)
     {
-    memset(&mutex,0,sizeof(mutex));
-    slots = (slot<T> *)calloc(10,sizeof(slot<T>));
+    pthread_mutex_init(&mutex, NULL);
     max = 10;
+    slots = (slot<T> *)calloc(max, sizeof(slot<T>));
 #ifdef CHECK_LOCKING
     locked = false;
 #endif
@@ -213,6 +213,7 @@ class item_container
       {
       lock();
       unlock();
+      return;
       }
     if(slots != NULL) free(slots);
     }

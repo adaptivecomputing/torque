@@ -195,7 +195,7 @@ int get_next_retryable_jobid(
   char                    log_buf[LOCAL_LOG_BUF_SIZE];
 
   exiting_jobs_info.lock();
-  if(*iter == NULL)
+  if (*iter == NULL)
     {
     *iter = exiting_jobs_info.get_iterator();
     }
