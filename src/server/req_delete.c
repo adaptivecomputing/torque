@@ -1084,7 +1084,7 @@ int handle_single_delete(
       {
       reply_ack(preq_tmp);
       preq->rq_noreply = TRUE; /* set for no more replies */
-      enqueue_threadpool_request(single_delete_work, preq, task_pool);
+      enqueue_threadpool_request(single_delete_work, preq, async_pool);
       }
     else
       single_delete_work(preq);

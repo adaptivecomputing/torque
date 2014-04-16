@@ -883,7 +883,7 @@ void *req_modifyarray(
     preq->rq_noreply = TRUE; /* set for no more replies */
     reply_ack(preq);
 
-    enqueue_threadpool_request(modify_array_work, preq, task_pool);
+    enqueue_threadpool_request(modify_array_work, preq, async_pool);
     }
   else
     modify_array_work(preq);
@@ -995,7 +995,7 @@ void *req_modifyjob(
 
     new_preq->rq_noreply = TRUE; /* set for no more replies */
 
-    enqueue_threadpool_request((void *(*)(void *))modify_job_work, preq, task_pool);
+    enqueue_threadpool_request((void *(*)(void *))modify_job_work, preq, async_pool);
     }
   else
     modify_job_work(preq);

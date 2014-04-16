@@ -21,7 +21,7 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging);
 #define MSG_LEN_LONG 160
 
 threadpool_t *request_pool;
-threadpool_t *task_pool;
+threadpool_t *async_pool;
 const char *msg_deletejob = "Job deleted";
 all_jobs alljobs;
 const char *msg_delrunjobsig = "Job sent signal %s on delete";

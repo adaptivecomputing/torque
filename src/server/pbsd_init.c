@@ -2116,11 +2116,12 @@ void setup_threadpool()
   get_svr_attr_l(SRV_ATR_threadidleseconds, &thread_idle_time);
 
   // give each pool an equal share of threads
-  min_threads /= 4;
-  max_threads /= 4;
+  min_threads /= 5;
+  max_threads /= 5;
   
   initialize_threadpool(&request_pool, 3 * min_threads, 3 * max_threads, thread_idle_time);
   initialize_threadpool(&task_pool, min_threads, max_threads, thread_idle_time);
+  initialize_threadpool(&async_pool, min_threads, max_threads, thread_idle_time);
   } /* END setup_threadpool() */
 
 
@@ -2225,6 +2226,7 @@ int pbsd_init(
     /* allow the threadpool to start processing */
     start_request_pool(request_pool);
     start_request_pool(task_pool);
+    start_request_pool(async_pool);
 
     /* SUCCESS */
     return(PBSE_NONE);

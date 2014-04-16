@@ -93,6 +93,7 @@ sigset_t      fillset;
 
 threadpool_t *request_pool;
 threadpool_t *task_pool;
+threadpool_t *async_pool;
 
 static void *work_thread(void *);
 

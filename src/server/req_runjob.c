@@ -354,7 +354,7 @@ int req_runjob(
     {
     reply_ack(preq);
     preq->rq_noreply = TRUE;
-    enqueue_threadpool_request(check_and_run_job, preq, task_pool);
+    enqueue_threadpool_request(check_and_run_job, preq, async_pool);
     }
   else
     {
