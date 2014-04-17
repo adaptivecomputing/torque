@@ -163,7 +163,7 @@ int         timeval_subtract(struct timeval *,struct timeval *,struct timeval *)
 extern void set_resc_assigned(job *, enum batch_op);
 extern void cleanup_restart_file(job *);
 void        on_job_exit(batch_request *preq, char *jobid);
-int         kill_job_on_mom(int internal_job_id, struct pbsnode *pnode);
+int         kill_job_on_mom(const char *job_id, struct pbsnode *pnode);
 void        handle_complete_second_time(struct work_task *ptask);
 void       *on_job_exit_task(struct work_task *vp);
 
@@ -2804,7 +2804,7 @@ int handle_subjob_exit_status(
           jobid, other_job_id);
         log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, other_job_id, log_buf);
         
-        kill_job_on_mom(other_internal_job_id, pnode);
+        kill_job_on_mom(other_job_id, pnode);
         unlock_node(pnode, __func__, NULL, LOGLEVEL);
         }
       }

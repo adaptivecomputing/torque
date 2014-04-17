@@ -506,7 +506,7 @@ int node_in_exechostlist(
 
 int kill_job_on_mom(
 
-  int             internal_job_id,
+  const char     *job_id,
   struct pbsnode *pnode)
 
   {
@@ -515,7 +515,6 @@ int kill_job_on_mom(
   int            conn;
   int            local_errno = 0;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
-  const char    *job_id = job_mapper.get_name(internal_job_id);
 
   /* job is reported by mom but server has no record of job */
   sprintf(log_buf, "stray job %s found on %s", job_id, pnode->nd_name);
@@ -652,16 +651,17 @@ bool job_should_be_killed(
         {
         should_be_on_node = false;
         }
+
+      if (should_be_on_node == false)
+        should_kill_job = !job_already_being_killed(internal_job_id);
       }
     else
-      should_be_on_node = false;
+      // if the job doesn't exist to pbs_server force a kill
+      should_kill_job = true;
     }
 
-  if (!should_be_on_node)
-    should_kill_job = !job_already_being_killed(internal_job_id);
-
   return(should_kill_job);
-  } /* END job_should_be_on_node() */
+  } /* END job_should_be_killed() */
 
 
 void *finish_job(
@@ -940,7 +940,7 @@ void *sync_node_jobs(
 
     if (job_should_be_killed(internal_job_id, np))
       {
-      if (kill_job_on_mom(internal_job_id, np) == PBSE_NONE)
+      if (kill_job_on_mom(job_id.c_str(), np) == PBSE_NONE)
         {
         pthread_mutex_lock(&jobsKilledMutex);
         jobsKilled.push_back(internal_job_id);

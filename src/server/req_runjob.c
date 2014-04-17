@@ -174,7 +174,7 @@ char                   *DispatchNode[20];
 extern job  *chk_job_request(char *, struct batch_request *);
 extern struct batch_request *cpy_checkpoint(struct batch_request *, job *, enum job_atr, int);
 void poll_job_task(work_task *);
-int  kill_job_on_mom(int internal_job_id, struct pbsnode *pnode);
+int  kill_job_on_mom(const char *job_id, struct pbsnode *pnode);
 
 
 
@@ -1284,7 +1284,7 @@ int requeue_job(
   while ((rc != PBSE_NONE) &&
          (retry < 3))
     {
-    rc = kill_job_on_mom(pjob->ji_internal_id, pnode);
+    rc = kill_job_on_mom(pjob->ji_qs.ji_jobid, pnode);
     retry++;
     }
 

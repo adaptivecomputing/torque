@@ -281,7 +281,7 @@ struct pbsnode *find_nodebyname(
 
 int kill_job_on_mom(
 
-  int             internal_job_id,
+  const char     *job_id,
   struct pbsnode *pnode)
 
   {

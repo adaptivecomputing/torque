@@ -318,7 +318,7 @@ int split_job(job *pjob)
   return(0);
   }
 
-int kill_job_on_mom(int internal_job_id, struct pbsnode *pnode)
+int kill_job_on_mom(const char *job_id, struct pbsnode *pnode)
   {
   return(0);
   }
