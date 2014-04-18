@@ -118,6 +118,7 @@
 #include "req_stat.h" /* stat_mom_job */
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
+#include "../lib/Libnet/lib_net.h"
 
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
@@ -1276,7 +1277,8 @@ int send_job_to_mom(
 
     if (pjob != NULL)
       {
-      sprintf(tmpLine, "unable to run job, send to MOM '%lu' failed", job_momaddr);
+      char ipstr[80];
+      sprintf(tmpLine, "unable to run job, send to MOM '%s' failed", netaddr_long(job_momaddr, ipstr));
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, tmpLine);
       *pjob_ptr = pjob;
       pjob->ji_qs.ji_destin[0] = '\0';

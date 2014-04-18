@@ -347,9 +347,10 @@ int process_request(
 
   if ((request = alloc_br(0)) == NULL)
     {
+    char ipstr[80];
     snprintf(tmpLine, sizeof(tmpLine),
-        "cannot allocate memory for request from %lu",
-        conn_addr);
+        "cannot allocate memory for request from %s",
+         netaddr_long(conn_addr, ipstr));
     free_request = FALSE;
     rc = PBSE_SYSTEM;
     goto process_request_cleanup;
@@ -424,15 +425,17 @@ int process_request(
 
   if (get_connecthost(sfds, request->rq_host, PBS_MAXHOSTNAME) != 0)
     {
-    sprintf(log_buf, "%s: %lu",
+    char ipstr[80];
+    sprintf(log_buf, "%s: %s",
       pbse_to_txt(PBSE_BADHOST),
-      conn_addr);
+      netaddr_long(conn_addr, ipstr));
 
     log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, "", log_buf);
 
+    snprintf(log_buf, sizeof(log_buf), "%s", tmpLine);
     snprintf(tmpLine, sizeof(tmpLine),
-        "cannot determine hostname for connection from %lu",
-        conn_addr);
+        "cannot determine hostname for connection from %s",
+        log_buf);
 
     req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
     free_request = FALSE;
