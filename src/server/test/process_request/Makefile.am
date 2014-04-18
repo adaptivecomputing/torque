@@ -12,7 +12,7 @@ libprocess_request_la_SOURCES = scaffolding.c ${PROG_ROOT}/process_request.c
 libprocess_request_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_process_request_LDADD = ../../../test/torque_test_lib/libtorque_test.la ../../../test/scaffold_fail/libscaffold_fail.la
-test_process_request_SOURCES = test_process_request.c
+test_process_request_SOURCES = test_process_request.c ${PROG_ROOT}/../lib/Libnet/get_hostaddr.c
 
 check_SCRIPTS = ${PROG_ROOT}/../test/coverage_run.sh
 

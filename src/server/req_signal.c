@@ -103,6 +103,7 @@
 #include "svrfunc.h"
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
+#include "../lib/Libnet/lib_net.h"
 
 /* Private Function local to this file */
 
@@ -190,7 +191,9 @@ int req_signaljob(
 
   if (LOGLEVEL >= 6)
     {
-    sprintf(log_buf, "relaying signal request to mom %lu", pjob->ji_qs.ji_un.ji_exect.ji_momaddr);
+    char ipstr[128];
+
+    sprintf(log_buf, "relaying signal request to mom %s", netaddr_long(pjob->ji_qs.ji_un.ji_exect.ji_momaddr,ipstr));
 
     log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,"req_signaljob",log_buf);
     }

@@ -5,6 +5,9 @@
 #include <stdio.h>
 #include "pbs_error.h"
 
+extern char scaff_buffer[];
+extern struct connection svr_conn[];
+
 int process_request(struct tcp_chan *chan);
 bool request_passes_acl_check(batch_request *request, unsigned long  conn_addr);
 batch_request *alloc_br(int type);
@@ -59,6 +62,27 @@ START_TEST(test_alloc_br)
   }
 END_TEST
 
+START_TEST(test_process_request_bad_host_err)
+  {
+  struct tcp_chan chan;
+
+  memset(&chan, 0, sizeof(chan));
+  chan.sock = 999;
+  svr_conn[999].cn_addr = 167838724;
+  svr_conn[999].cn_active = FromClientDIS;
+  memset(scaff_buffer, 0, 1024);
+  process_request(&chan);
+  fail_unless(strcmp("Access from host not allowed, or unknown host: 10.1.4.4",
+    scaff_buffer) == 0, "Error message was not constructed as expected");
+
+  svr_conn[999].cn_addr = -1;
+  memset(scaff_buffer, 0, 1024);
+  process_request(&chan);
+  fail_unless(strcmp("Access from host not allowed, or unknown host: 255.255.255.255",
+    scaff_buffer) == 0, "Error message was not constructed as expected");
+  }
+END_TEST
+
 Suite *process_request_suite(void)
   {
   Suite *s = suite_create("process_request_suite methods");
@@ -69,6 +93,9 @@ Suite *process_request_suite(void)
   tc_core = tcase_create("test_request_passes_acl_check");
   tcase_add_test(tc_core, test_request_passes_acl_check);
   tcase_add_test(tc_core, test_alloc_br);
+
+  tc_core = tcase_create("test_process_request_bad_host_err");
+  tcase_add_test(tc_core, test_process_request_bad_host_err);
   suite_add_tcase(s, tc_core);
 
   return s;

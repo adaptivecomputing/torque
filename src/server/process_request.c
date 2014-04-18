@@ -425,15 +425,17 @@ batch_request *read_request_from_socket(
 
   if (get_connecthost(sfds, request->rq_host, PBS_MAXHOSTNAME) != 0)
     {
-    sprintf(log_buf, "%s: %lu",
+    char ipstr[80];
+    sprintf(log_buf, "%s: %s",
       pbse_to_txt(PBSE_BADHOST),
-      conn_addr);
+      netaddr_long(conn_addr, ipstr));
 
     log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, "", log_buf);
 
+    snprintf(log_buf, sizeof(log_buf), "%s", tmpLine);
     snprintf(tmpLine, sizeof(tmpLine),
-        "cannot determine hostname for connection from %lu",
-        conn_addr);
+        "cannot determine hostname for connection from %s",
+        log_buf);
 
     req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
     return(NULL);

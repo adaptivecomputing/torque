@@ -4,10 +4,21 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "pbs_error.h"
-START_TEST(test_one)
+extern char scaff_buffer[];
+
+START_TEST(test_req_signaljob_relaying_msg)
   {
-
-
+  struct batch_request request;
+  job myjob;
+  memset(&request, 0, sizeof(struct batch_request));
+  memset(&myjob, 0, sizeof(job));
+  myjob.ji_qs.ji_state = JOB_STATE_RUNNING;
+  myjob.ji_qs.ji_un.ji_exect.ji_momaddr = 167838724;
+  snprintf(request.rq_ind.rq_signal.rq_jid, PBS_MAXSVRJOBID, "%lu", (unsigned long)&myjob);
+  memset(scaff_buffer, 0, 1024);
+  req_signaljob(&request);
+  fail_unless(strcmp("relaying signal request to mom 10.1.4.4",
+    scaff_buffer) == 0, "Error message was not constructed as expected");
   }
 END_TEST
 
@@ -21,8 +32,8 @@ END_TEST
 Suite *req_signal_suite(void)
   {
   Suite *s = suite_create("req_signal_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_req_signaljob_relaying_msg");
+  tcase_add_test(tc_core, test_req_signaljob_relaying_msg);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");

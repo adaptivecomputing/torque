@@ -1,6 +1,7 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
+#include <arpa/inet.h>
 
 #include "server_limits.h" /* PBS_NET_MAX_CONNECTIONS */
 #include "credential.h" /* credential */
@@ -28,10 +29,21 @@ threadpool_t *request_pool;
 bool check_acl;
 bool find_node;
 int free_attrlist_called;
+char scaff_buffer[1024];
 
 bool threadpool_is_too_busy(threadpool *tp, int permissions)
   {
   return(false);
+  }
+
+int pthread_mutex_lock(pthread_mutex_t *mutex) throw()
+  {
+  return(0);
+  }
+
+int pthread_mutex_unlock(pthread_mutex_t *mutex) throw()
+  {
+  return(0);
   }
 
 int req_releasejob(batch_request *preq)
@@ -84,8 +96,10 @@ void req_rescfree(struct batch_request *preq)
 
 int get_connecthost(int sock, char *namebuf, int size)
   {
-  fprintf(stderr, "The call to get_connecthost needs to be mocked!!\n");
-  exit(1);
+  if (sock == 999)
+    return(-1);
+
+  return(0);
   }
 
 int req_holdjob(batch_request *preq)
@@ -138,8 +152,7 @@ int *req_stat_job(struct batch_request *preq)
 
 int dis_request_read(struct tcp_chan *chan, struct batch_request *request)
   {
-  fprintf(stderr, "The call to dis_request_read needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 int req_stat_que(batch_request *preq)
@@ -179,8 +192,6 @@ void req_rdytocommit(struct batch_request *preq)
 
 void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
   {
-  fprintf(stderr, "The call to req_reject needs to be mocked!!\n");
-  exit(1);
   }
 
 job *next_job(all_jobs *aj, all_jobs_iterator *iter)
@@ -283,8 +294,10 @@ char * csv_find_string(const char *csv_str, const char *search_str)
 
 char *pbse_to_txt(int err)
   {
-  fprintf(stderr, "The call to pbse_to_txt needs to be mocked!!\n");
-  exit(1);
+  if (err == PBSE_BADHOST)
+    return (char *)"Access from host not allowed, or unknown host";
+  else
+    return (char *)"";
   }
 
 int req_stagein(batch_request *preq)
@@ -473,6 +486,19 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   return(0);
   }
 
+int pbs_getaddrinfo(const char *hostname, struct addrinfo *in, struct addrinfo **out)
+  {
+  return(0);
+  }
+
+bool log_available(int eventtype)
+  {
+  return true;
+  }
+
 void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
-void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) 
+  {
+  snprintf(scaff_buffer, sizeof(scaff_buffer), "%s", text);
+  }
