@@ -8,7 +8,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 
 check_PROGRAMS = test_mom_process_request
 
-libmom_process_request_la_SOURCES = scaffolding.c ${PROG_ROOT}/mom_process_request.c
+libmom_process_request_la_SOURCES = scaffolding.c ${PROG_ROOT}/mom_process_request.c ${PROG_ROOT}/../lib/Libnet/get_hostaddr.c
 libmom_process_request_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_mom_process_request_SOURCES = test_mom_process_request.c

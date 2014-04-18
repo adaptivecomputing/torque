@@ -40,6 +40,7 @@
 #include "threadpool.h"
 #include "dis.h"
 #include "mom_job_func.h"
+#include "../lib/Libnet/lib_net.h"
 
 /*
  * mom_process_request - this function gets, checks, and invokes the proper
@@ -63,6 +64,7 @@ extern struct    credential conn_credent[PBS_NET_MAX_CONNECTIONS];
 
 extern struct server server;
 extern char      server_host[];
+extern char      log_buffer[];
 extern tlist_head svr_newjobs;
 
 extern time_t    time_now;
@@ -191,15 +193,16 @@ void *mom_process_request(
   if (get_connecthost(chan->sock, request->rq_host, PBS_MAXHOSTNAME) != 0)
     {
     char tmpLine[MAXLINE];
+    char ipstr[128];
 
-    sprintf(log_buffer, "%s: %lu",
+    sprintf(log_buffer, "%s: %s",
             pbse_to_txt(PBSE_BADHOST),
-            get_connectaddr(chan->sock,FALSE));
+            netaddr_long(get_connectaddr(chan->sock,FALSE), ipstr));
 
     log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, "", log_buffer);
 
-    snprintf(tmpLine, sizeof(tmpLine), "cannot determine hostname for connection from %lu",
-             get_connectaddr(chan->sock,FALSE));
+    snprintf(tmpLine, sizeof(tmpLine), "cannot determine hostname for connection from %s",
+             ipstr);
 
     req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
     mom_close_client(chan->sock);

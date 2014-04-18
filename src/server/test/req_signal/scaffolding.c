@@ -7,7 +7,7 @@
 #include "node_func.h" /* node_info */
 
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
-
+char scaff_buffer[1024];
 
 struct batch_request *alloc_br(int type)
   {
@@ -49,8 +49,6 @@ void svr_disconnect(int handle)
 
 void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
   {
-  fprintf(stderr, "The call to req_reject to be mocked!!\n");
-  exit(1);
   }
 
 char *pbse_to_txt(int err)
@@ -67,8 +65,8 @@ job *svr_find_job(char *jobid, int get_subjob)
 
 job *chk_job_request(char *jobid, struct batch_request *preq)
   {
-  fprintf(stderr, "The call to chk_job_request to be mocked!!\n");
-  exit(1);
+  //We're mocking so that the following field has the address of a job struct.
+  return (job *) atol(preq->rq_ind.rq_signal.rq_jid);
   }
 
 int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq, int type, int jobid)
@@ -100,8 +98,12 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   }
 
 void log_err(int errnum, const char *routine, const char *text) {}
-void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+
+void log_record(int eventtype, int objclass, const char *objname, const char *text)
+  {
+  snprintf(scaff_buffer, sizeof(scaff_buffer), "%s", text);
+  }
 
 int relay_to_mom(job **pjob_ptr, batch_request   *request, void (*func)(struct work_task *))
   {
@@ -111,5 +113,15 @@ int relay_to_mom(job **pjob_ptr, batch_request   *request, void (*func)(struct w
 batch_request *duplicate_request(batch_request *preq, int type) 
   {
   return(NULL);
+  }
+
+int pbs_getaddrinfo(const char *hostname, struct addrinfo *in, struct addrinfo **out)
+  {
+  return(0);
+  }
+
+bool log_available(int eventtype)
+  {
+  return true;
   }
 

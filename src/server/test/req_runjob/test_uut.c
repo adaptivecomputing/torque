@@ -5,11 +5,11 @@
 #include <stdio.h>
 #include "pbs_error.h"
 #include "pbs_job.h"
-
+extern char scaff_buffer[];
 
 
 int requeue_job(job *pjob);
-
+extern int send_job_to_mom(job **, batch_request *, job *);
 
 
 START_TEST(requeue_job_test)
@@ -35,8 +35,20 @@ END_TEST
 
 START_TEST(test_two)
   {
+  struct batch_request request;
+  job myjob;
+  memset(&request, 0, sizeof(struct batch_request));
+  memset(&myjob, 0, sizeof(job));
+  myjob.ji_qs.ji_state = JOB_STATE_RUNNING;
+  myjob.ji_qs.ji_un.ji_exect.ji_momaddr = 167838724;
+  //setting up so that my mock svr_find_job would return this job..
+  snprintf(myjob.ji_qs.ji_jobid, PBS_MAXSVRJOBID, "%lu", (unsigned long)&myjob);
+  memset(scaff_buffer, 0, 1024);
 
-
+  job *pjob = &myjob;
+  send_job_to_mom(&pjob, &request, NULL);
+  fail_unless(strcmp("unable to run job, send to MOM '10.1.4.4' failed",
+    scaff_buffer) == 0, "Error message was not constructed as expected");
   }
 END_TEST
 
