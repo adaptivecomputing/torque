@@ -141,6 +141,8 @@
 #endif
 #include "utils.h"
 #include "mom_config.h"
+#include "container.hpp"
+#include "mom_job_cleanup.h"
 
 #ifndef TRUE
 #define TRUE 1
@@ -807,6 +809,7 @@ void mom_job_purge(
   job *pjob)  /* I (modified) */
 
   {
+  exiting_job_info *eji;
   job_file_delete_info *jfdi;
 
   jfdi = (job_file_delete_info *)calloc(1, sizeof(job_file_delete_info));
@@ -856,6 +859,18 @@ void mom_job_purge(
   /* remove this job from the global queue */
   delete_link(&pjob->ji_jobque);
   delete_link(&pjob->ji_alljobs);
+
+  /* remove the job from the exiting_job_list */
+  while ((eji = (exiting_job_info *)pop_thing(exiting_job_list)) != NULL)
+    {
+    if (!strcmp(eji->jobid, pjob->ji_qs.ji_jobid))
+      {
+      free(eji);
+      break;
+      }
+
+    insert_thing_after(exiting_job_list, eji, ALWAYS_EMPTY_INDEX);
+    }
 
   if (LOGLEVEL >= 6)
     {
