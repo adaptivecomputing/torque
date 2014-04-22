@@ -971,6 +971,7 @@ int pbs_getaddrinfo(
       }
     else
       {
+      *ppAddrInfoOut = NULL;
       rc = getaddrinfo(pNode,NULL,pHints,ppAddrInfoOut);
       }
     if (rc == 0)
