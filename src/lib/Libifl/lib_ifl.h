@@ -303,6 +303,8 @@ char * pbs_locjob_err(int c, char *jobid, char *extend, int *);
 /* pbsD_manager.c */
 int pbs_manager_err(int c, int command, int objtype, char *objname, struct attropl *attrib, char *extend, int *);
 
+int pbs_modify_node_err(int c, int command, int objtype, char *objname, struct attropl *attrib, char *extend, int *);
+
 /* pbsD_movejob.c */
 int pbs_movejob_err(int c, char *jobid, char *destin, char *extend, int *); 
 

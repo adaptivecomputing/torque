@@ -213,7 +213,7 @@ static int set_node_power_state(
   new_attr.op       = SET;
   new_attr.next     = NULL;
 
-  rc = pbs_manager_err(
+  rc = pbs_modify_node_err(
          con,
          MGR_CMD_SET,
          MGR_OBJ_NODE,

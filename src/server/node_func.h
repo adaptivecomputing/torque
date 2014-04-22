@@ -85,6 +85,6 @@ hello_info *pop_hello(hello_container *hc);
 
 int remove_hello(hello_container *hc, char *node_name);
 
-int set_node_power_state(struct pbsnode *pNode,struct pbsnode *newNode);
+int set_node_power_state(struct pbsnode **pNode,unsigned short newState);
 
 #endif /* _NODE_FUNC_H */

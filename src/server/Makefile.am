@@ -42,7 +42,7 @@ pbs_server_SOURCES = accounting.c array_func.c array_upgrade.c attr_recov.c \
 				 batch_request.c user_info.c job_container.c exiting_jobs.c \
 				 receive_mom_communication.c process_mom_update.c execution_slot_tracker.cpp \
 				 job_usage_info.cpp incoming_request.c delete_all_tracker.cpp id_map.cpp \
-				 node_power_state.c
+				 node_power_state.c req_modify_node.c
 
 install-exec-hook:
 	$(PBS_MKDIRS) aux || :

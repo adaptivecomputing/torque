@@ -807,21 +807,6 @@ int mgr_set_node_attr(
    * be sure to free the old.
    */
 
-  /*
-   * If we have changed the node power state we need to send that to the mom
-   * to actually put the node in that state.
-   */
-
-  if(pnode->nd_power_state != tnode.nd_power_state)
-    {
-    if((rc = set_node_power_state(pnode,&tnode)) != PBSE_NONE)
-      {
-      tnode.nd_power_state = pnode->nd_power_state; //put the state back to what it was.
-      }
-    }
-
-
-
   if (pnode->nd_prop && (pnode->nd_prop != tnode.nd_prop))
     {
     if (pnode->nd_prop->as_buf)
