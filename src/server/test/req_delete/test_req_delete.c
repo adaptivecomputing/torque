@@ -32,6 +32,7 @@ int handle_delete_all(batch_request *preq, batch_request *preq_tmp, char *Msg);
 int handle_single_delete(batch_request *preq, batch_request *preq_tmp, char *Msg);
 bool exit_called;
 
+extern int  depend_term_called;
 extern long keep_seconds;
 extern int bad_queue;
 extern int bad_relay;
@@ -313,11 +314,13 @@ START_TEST(test_force_purge_work)
   job *pjob = (job *)calloc(1, sizeof(job));
 
   pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("bob");
+  depend_term_called = 0;
   force_purge_work(pjob);
   // normally pjob wouldn't be valid at this point, but I've made the functions 
   // that free set these values in the scaffolding so we can test what happened 
   fail_unless(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL);
   fail_unless(pjob->ji_qs.ji_state == JOB_STATE_COMPLETE);
+  fail_unless(depend_term_called > 0);
   }
 END_TEST 
 

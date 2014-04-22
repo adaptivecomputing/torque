@@ -187,7 +187,7 @@ extern void removeBeforeAnyDependencies(const char *pJobID);
 
 int delete_inactive_job(
 
-  job  **pjob_ptr,
+  job        **pjob_ptr,
   const char  *Msg)
 
   {
@@ -344,6 +344,8 @@ void force_purge_work(
       set_resc_assigned(pjob, DECR);
       }
     }
+
+  depend_on_term(pjob);
 
   svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
   
@@ -680,6 +682,7 @@ jump:
     return -1;
     }
 
+  depend_on_term(pjob);
 
   if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0)
     {

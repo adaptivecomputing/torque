@@ -35,6 +35,7 @@ int  signal_issued;
 int  nanny = 1;
 bool  br_freed;
 int  alloc_work = 1;
+int  depend_term_called;
 
 batch_request *alloc_br(int type)
   {
@@ -523,6 +524,15 @@ int get_fullhostname(
   char *EMsg)       /* O (optional,minsize=MAXLINE - 1024) */
 
   {
+  return(0);
+  }
+
+int depend_on_term(
+
+  job *pjob)
+
+  {
+  depend_term_called++;
   return(0);
   }
 
