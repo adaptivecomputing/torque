@@ -55,6 +55,7 @@ int bad_drequest;
 int usage;
 bool purged = false;
 bool completed = false;
+bool exited = false;
 
 
 struct batch_request *alloc_br(int type)
@@ -206,6 +207,9 @@ job *svr_find_job(const char *jobid, int get_subjob)
   
     if (reported)
       pjob->ji_wattr[JOB_ATR_reported].at_val.at_long = 1;
+
+    if (exited == true)
+      pjob->ji_qs.ji_state = JOB_STATE_EXITING;
 
     if (completed == true)
       pjob->ji_qs.ji_state = JOB_STATE_COMPLETE;

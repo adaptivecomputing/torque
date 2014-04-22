@@ -1342,6 +1342,8 @@ int handle_stageout(
     job_mutex.mark_as_locked();
     svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_STAGEDEL, FALSE);
     }
+  else
+    rc = PBSE_JOBNOTFOUND;
  
 handle_stageout_cleanup:
 
@@ -1678,7 +1680,7 @@ int handle_complete_first_time(
 
   remove_job_from_exiting_list(&pjob);
 
-  if(pjob == NULL)
+  if (pjob == NULL)
     {
     /* let the caller know the job is gone */
     log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while removing job from exiting list.");
@@ -1811,6 +1813,9 @@ void handle_complete_second_time(
     return;
 
   mutex_mgr job_mutex(pjob->ji_mutex, true);
+
+  if (pjob->ji_qs.ji_state == JOB_STATE_EXITING)
+    svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
 
   if (LOGLEVEL >= 10)
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
@@ -1966,7 +1971,7 @@ void on_job_exit(
           ((pjob = svr_find_job(job_id, TRUE)) == NULL))
         break;
 
-      if ((rc = handle_stageout(pjob, type, preq)) != PBSE_NONE)
+      if ((rc = handle_stageout(pjob, type, preq)) == PBSE_JOBNOTFOUND)
         {
         snprintf(log_buf, sizeof(log_buf), "handle_stageout failed: %d", rc);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
