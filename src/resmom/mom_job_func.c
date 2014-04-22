@@ -142,6 +142,7 @@
 #include "utils.h"
 #include "mom_config.h"
 #include "container.hpp"
+#include "mom_job_cleanup.h"
 
 #ifndef TRUE
 #define TRUE 1
@@ -858,6 +859,19 @@ void mom_job_purge(
   /* remove this job from the global queue */
   delete_link(&pjob->ji_jobque);
   delete_link(&pjob->ji_alljobs);
+
+  /* remove the job from the exiting_job_list */
+  while (exiting_job_list.size() != 0)
+    {
+    boost::ptr_vector<exiting_job_info>::auto_type eji = exiting_job_list.pop_back();
+
+    if (!strcmp(eji->jobid.c_str(), pjob->ji_qs.ji_jobid))
+      {
+      eji.release();
+      break;
+      }
+    exiting_job_list.insert(exiting_job_list.begin(),eji.release()); 
+    } 
 
   if (LOGLEVEL >= 6)
     {
