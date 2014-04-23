@@ -799,13 +799,25 @@ unsigned hwloc_get_nbobjs_by_depth (hwloc_topology_t topology, unsigned depth)
 
 void cleanup_torque_cpuset(void){}
 
-void create_cpuset_reservation_if_needed(job &pjob){}
 
 int init_torque_cpuset(void)
   {
   return 0;
   }
 
+void create_cpuset_reservation_if_needed(
+      job &pjob)
+  {
+  return;
+  }
+
+void recover_cpuset_reservation(
+
+      job &pjob)
+
+  {
+  return;
+  }
 
 node_internals::node_internals(void){}
 

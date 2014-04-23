@@ -152,7 +152,21 @@ struct passwd * getpwnam_ext(char * user_name)
 void append_link(tlist_head *head, list_link *new_link, void *pobj)
   {
   job *pjob = (job *)pobj;
-  strcpy(prefix, pjob->ji_qs.ji_fileprefix);
+  /* something weird is going on here. ji_jobid and ji_fileprefix 
+     both get 8 bytes of 0 prepended to the jobid when coming in here.
+     We will skip over the blank stuff */
+
+  char *ptr = pjob->ji_qs.ji_jobid;
+  for (int i = 0; i < PBS_MAXSVRJOBID; i++)
+    {
+    if (pjob->ji_qs.ji_jobid[i] != 0)
+      {
+      strcpy(prefix, ptr);
+      break;
+      }
+    ptr++;
+    continue;
+    }
   }
 
 void check_state(int Force)

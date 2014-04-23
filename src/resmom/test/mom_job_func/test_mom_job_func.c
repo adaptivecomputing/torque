@@ -5,8 +5,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
 #include "pbs_error.h"
+#include "resizable_array.h"
+
+resizable_array *exiting_job_list;
 
 bool am_i_mother_superior(const job &pjob);
 

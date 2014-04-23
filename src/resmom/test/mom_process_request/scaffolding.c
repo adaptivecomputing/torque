@@ -238,6 +238,21 @@ int mom_req_stat_job(
   return(0);
   }
 
+char * netaddr_long(long ap, char *out)
+  {
+  u_long  ipadd;
+
+  ipadd = ap;
+
+  sprintf(out, "%ld.%ld.%ld.%ld",
+           (ipadd & 0xff000000) >> 24,
+           (ipadd & 0x00ff0000) >> 16,
+           (ipadd & 0x0000ff00) >> 8,
+           (ipadd & 0x000000ff));
+
+  return out;
+  }
+
 int pbs_getaddrinfo(const char *hostname, struct addrinfo *in, struct addrinfo **out)
   {
   return(0);

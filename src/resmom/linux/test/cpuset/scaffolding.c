@@ -72,3 +72,17 @@ resource_def *find_resc_def(resource_def *svr_resc, char const * name, int max_i
   {
   return(NULL);
   }
+
+int is_whitespace(
+      char c)
+  {
+  if ((c == ' ')  ||
+      (c == '\n') ||
+      (c == '\t') ||
+      (c == '\r') ||
+      (c == '\f'))
+    return(TRUE);
+  else
+    return(FALSE);
+  } /* END is_whitespace */
+

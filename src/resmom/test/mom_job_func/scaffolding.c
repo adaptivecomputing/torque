@@ -1,6 +1,7 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 #include <pwd.h> /* gid_t, uid_t */
 
 #include "attribute.h" /* attribute_def, pbs_attribute */
@@ -119,6 +120,169 @@ int destroy_alps_reservation(
   {
   return(0);
   }
+
+
+/*
+ * checks if the array needs to be resized, and resizes if necessary
+ *
+ * @return PBSE_NONE or ENOMEM
+ */
+int check_and_resize(
+
+  resizable_array *ra)
+
+  {
+  slot        *tmp;
+  size_t       remaining;
+  size_t       size;
+
+  if (ra->max == ra->num + 1)
+    {
+    /* double the size if we're out of space */
+    size = (ra->max * 2) * sizeof(slot);
+
+    if ((tmp = (slot *)realloc(ra->slots,size)) == NULL)
+      {
+      log_err(ENOMEM,__func__,"No memory left to resize the array");
+      return(ENOMEM);
+      }
+
+    remaining = ra->max * sizeof(slot);
+
+    memset(tmp + ra->max, 0, remaining);
+
+    ra->slots = tmp;
+
+    ra->max = ra->max * 2;
+    }
+
+  return(PBSE_NONE);
+  } /* END check_and_resize() */
+
+/* 
+ * updates the next slot pointer if needed \
+ */
+void update_next_slot(
+
+  resizable_array *ra) /* M */
+
+  {
+  while ((ra->next_slot < ra->max) &&
+          (ra->slots[ra->next_slot].item != NULL))
+    ra->next_slot++;
+  } /* END update_next_slot() */
+
+
+
+/*
+ * fix the next pointer for the box pointing to this index 
+ *
+ * @param ra - the array we're fixing
+ * @param index - index of the slot we're unlinking
+ */
+void unlink_slot(
+  resizable_array *ra,
+  int              index)
+
+  {
+  int prev = ra->slots[index].prev;
+  int next = ra->slots[index].next;
+
+  ra->slots[index].prev = ALWAYS_EMPTY_INDEX;
+  ra->slots[index].next = ALWAYS_EMPTY_INDEX;
+  ra->slots[index].item = NULL;
+
+  ra->slots[prev].next = next;
+
+  /* update last if necessary, otherwise update prev's next index */
+  if (ra->last == index)
+    ra->last = prev;
+  else
+    ra->slots[next].prev = prev;
+  } /* END unlink_slot() */
+
+
+/*
+ * pop the first thing from the array
+ *
+ * @return the first thing in the array or NULL if empty
+ */
+
+void *pop_thing(
+      resizable_array *ra)
+  {
+  void *thing = NULL;
+  int   i = ra->slots[ALWAYS_EMPTY_INDEX].next;
+
+  if (i != ALWAYS_EMPTY_INDEX)
+    {
+    /* get the thing we're returning */
+    thing = ra->slots[i].item;
+
+    /* handle the deletion and removal */
+    unlink_slot(ra,i);
+
+    ra->num--;
+
+    /* reset the next slot index if necessary */
+    if (i < ra->next_slot)
+      {
+      ra->next_slot = i;
+      }
+    }
+
+  return(thing);
+  } /* END pop_thing() */
+
+
+/* 
+ * inserts a thing after the thing in index
+ * NOTE: index must represent a valid index
+ */
+int insert_thing_after(
+  resizable_array *ra,
+  void            *thing,
+  int              index)
+
+  {
+  int rc;
+  int next;
+
+  /* check if the array must be resized */
+  if ((rc = check_and_resize(ra)) != PBSE_NONE)
+    {
+    return(-1);
+    }
+
+  /* insert this element */
+  ra->slots[ra->next_slot].item = thing;
+
+  /* save the insertion point */
+  rc = ra->next_slot;
+
+  /* move pointers around */
+  ra->slots[rc].prev = index;
+  next = ra->slots[index].next;
+  ra->slots[rc].next = next;
+  ra->slots[index].next = rc;
+
+  if (next != 0)
+    {
+    ra->slots[next].prev = rc;
+    }
+
+  /* update the last index if needed */
+  if (ra->last == index)
+    ra->last = rc;
+
+  /* increase the count */
+  ra->num++;
+
+  update_next_slot(ra);
+
+  return(rc);
+  } /* END insert_thing_after() */
+
 
 void free_resizable_array(resizable_array *ra) {}
 

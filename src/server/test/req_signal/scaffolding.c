@@ -69,6 +69,19 @@ job *chk_job_request(char *jobid, struct batch_request *preq)
   return (job *) atol(preq->rq_ind.rq_signal.rq_jid);
   }
 
+char * netaddr_long(long ap, char *out)
+  {
+  u_long  ipadd;
+  ipadd = ap; 
+
+  sprintf(out, "%ld.%ld.%ld.%ld",
+           (ipadd & 0xff000000) >> 24,
+           (ipadd & 0x00ff0000) >> 16,
+           (ipadd & 0x0000ff00) >> 8,
+           (ipadd & 0x000000ff));
+  return(out);
+  }
+
 int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq, int type, int jobid)
   {
   return(0);
@@ -125,3 +138,4 @@ bool log_available(int eventtype)
   return true;
   }
 
+   
