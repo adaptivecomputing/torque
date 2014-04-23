@@ -84,8 +84,8 @@
 
 class id_map
   {
-    std::map<std::string, int> str_map;
-    std::vector<std::string>   names;
+    std::map<std::string, int> *str_map;
+    std::vector<std::string>   *names;
     pthread_mutex_t            mutex;
     int                        counter;
 

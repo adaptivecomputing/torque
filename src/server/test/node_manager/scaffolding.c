@@ -526,6 +526,7 @@ int decode_resc(
 
 
 id_map::id_map() : counter(0) {}
+id_map::~id_map(){}
 
 int id_map::get_id(const char *name)
   {

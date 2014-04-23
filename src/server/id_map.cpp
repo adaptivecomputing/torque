@@ -93,14 +93,14 @@ int id_map::get_new_id(
 
   try 
     {
-    id = this->str_map.at(nname);
+    id = this->str_map->at(nname);
     }
   catch (...)
     {
     id = this->counter++;
     std::pair<std::string, int> p1(nname, id);
-    this->str_map.insert(p1);
-    this->names.push_back(nname);
+    this->str_map->insert(p1);
+    this->names->push_back(nname);
     }
   pthread_mutex_unlock(&this->mutex);
 
@@ -121,7 +121,7 @@ int id_map::get_id(
   try 
     {
     std::string nname(name);
-    id = this->str_map.at(nname);
+    id = this->str_map->at(nname);
     }
   catch (...)
     {
@@ -142,7 +142,7 @@ const char *id_map::get_name(
   pthread_mutex_lock(&this->mutex);
   try
     {
-    std::string const &nname = this->names.at(id);
+    std::string const &nname = this->names->at(id);
     name = nname.c_str();
     }
   catch (...)
@@ -164,16 +164,18 @@ id_map::~id_map()
 
 
 id_map::id_map() : counter(0)
-
   {
+  str_map = new std::map<std::string,int>();
+  names = new std::vector<std::string>();
   pthread_mutex_init(&mutex, NULL);
   }
 
 
 
-id_map::id_map(const id_map &other) : counter(other.counter), names(other.names), str_map(other.str_map)
-
+id_map::id_map(const id_map &other) : counter(other.counter)
   {
+  str_map = new std::map<std::string,int>(*other.str_map);
+  names = new std::vector<std::string>(*other.names);
   pthread_mutex_init(&mutex, NULL);
   }
 
