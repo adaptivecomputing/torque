@@ -292,7 +292,6 @@ struct pbsnode *create_alps_subnode(struct pbsnode *parent, const char *node_id)
   }
 
 id_map::id_map() : counter(0) {}
-id_map::~id_map(){}
 
 int id_map::get_id(char const *name)
   {
