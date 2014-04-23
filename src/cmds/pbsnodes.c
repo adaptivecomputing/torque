@@ -643,6 +643,7 @@ int main(
   enum  note_flags      note_flag = unused;
   char                **nodeargs = NULL;
   int                   lindex;
+  int                   rc = 0;
 
   enum NStateEnum ListType = tnsNONE;
 
@@ -1045,7 +1046,7 @@ int main(
 
       for (pa = argv + optind;*pa;pa++)
         {
-        set_node_power_state(con, *pa, power_state);
+        rc = set_node_power_state(con, *pa, power_state);
         }
       break;
 
@@ -1053,7 +1054,7 @@ int main(
 
   pbs_disconnect(con);
 
-  return(0);
+  return(rc);
   }  /* END main() */
 
 /* END pbsnodes.c */
