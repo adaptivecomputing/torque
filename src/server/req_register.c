@@ -1358,7 +1358,7 @@ int depend_on_que(
   struct depend     *pdep;
 
   struct depend_job *pparent;
-  int                rc;
+  int                rc = PBSE_NONE;
   int                type;
   job               *pjob = (job *)pj;
   pbs_queue         *pque;
@@ -1421,6 +1421,10 @@ int depend_on_que(
       {
       pparent = (struct depend_job *)GET_NEXT(pdep->dp_jobs);
 
+      // initialize rc to PBSE_BADDEPEND to make sure that send_depend_req is called at least
+      // once
+      rc = PBSE_BADDEPEND;
+
       while (pparent)
         {
         if ((rc = send_depend_req(pjob, pparent, type, JOB_DEPEND_OP_REGISTER, SYNC_SCHED_HINT_NULL, post_doq,false)) != PBSE_NONE)
@@ -1435,7 +1439,7 @@ int depend_on_que(
     pdep = (struct depend *)GET_NEXT(pdep->dp_link);
     }
 
-  return(PBSE_NONE);
+  return(rc);
   }  /* END depend_on_que() */
 
 
