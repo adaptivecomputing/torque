@@ -91,6 +91,7 @@ class id_map
 
   public:
     id_map();
+    ~id_map();
     id_map(const id_map &other);
     int get_new_id(const char *name);
     int get_id(const char *name);
