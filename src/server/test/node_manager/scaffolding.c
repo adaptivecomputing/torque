@@ -546,6 +546,11 @@ const char *id_map::get_name(int id)
   return(strdup(buf));
   }
 
+id_map::~id_map() 
+  {
+  }
+
+
 id_map node_mapper;
 
 #ifdef CAN_TIME
