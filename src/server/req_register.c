@@ -1423,7 +1423,7 @@ int depend_on_que(
 
       // initialize rc to PBSE_BADDEPEND to make sure that send_depend_req is called at least
       // once if we are queuing a job
-      if (mode == ATR_ACTION_NEW)
+      if (mode != ATR_ACTION_ALTER)
         rc = PBSE_BADDEPEND;
 
       while (pparent)
