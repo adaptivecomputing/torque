@@ -1422,8 +1422,9 @@ int depend_on_que(
       pparent = (struct depend_job *)GET_NEXT(pdep->dp_jobs);
 
       // initialize rc to PBSE_BADDEPEND to make sure that send_depend_req is called at least
-      // once
-      rc = PBSE_BADDEPEND;
+      // once if we are queuing a job
+      if (mode == ATR_ACTION_NEW)
+        rc = PBSE_BADDEPEND;
 
       while (pparent)
         {
