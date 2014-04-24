@@ -1638,6 +1638,11 @@ int depend_on_term(
 
     switch (type)
       {
+      case JOB_DEPEND_TYPE_BEFORESTART:
+
+        op = JOB_DEPEND_OP_DELETE;
+
+        break;
 
       case JOB_DEPEND_TYPE_BEFOREOK:
 
