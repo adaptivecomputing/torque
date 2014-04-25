@@ -5,10 +5,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "mom_job_cleanup.h"
+
 
 #include "pbs_error.h"
 
 bool am_i_mother_superior(const job &pjob);
+void remove_from_exiting_list(job *pjob);
+
+std::vector<exiting_job_info> exiting_job_list;
 
 START_TEST(test_am_i_mother_superior)
   {
@@ -22,10 +27,24 @@ START_TEST(test_am_i_mother_superior)
   }
 END_TEST
 
-START_TEST(test_two)
+START_TEST(test_remove_from_exiting_list)
   {
+  job pjob;
 
+  exiting_job_list.push_back(exiting_job_info("0.napali"));
+  exiting_job_list.push_back(exiting_job_info("1.napali"));
 
+  // make sure there's no infinite loop if a job isn't in the list
+  strcpy(pjob.ji_qs.ji_jobid, "2.napali");
+  remove_from_exiting_list(&pjob);
+  
+  strcpy(pjob.ji_qs.ji_jobid, "1.napali");
+  remove_from_exiting_list(&pjob);
+  fail_unless(exiting_job_list.size() == 1);
+  
+  strcpy(pjob.ji_qs.ji_jobid, "0.napali");
+  remove_from_exiting_list(&pjob);
+  fail_unless(exiting_job_list.size() == 0);
   }
 END_TEST
 
@@ -36,8 +55,8 @@ Suite *mom_job_func_suite(void)
   tcase_add_test(tc_core, test_am_i_mother_superior);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("test_two");
-  tcase_add_test(tc_core, test_two);
+  tc_core = tcase_create("test_remove_from_exiting_list");
+  tcase_add_test(tc_core, test_remove_from_exiting_list);
   suite_add_tcase(s, tc_core);
 
   return s;

@@ -803,6 +803,22 @@ int release_job_reservation(
 
 
 
+void remove_from_exiting_list(
+
+  job *pjob)
+
+  {
+  /* remove the job from the exiting_job_list */
+  for (unsigned int i = 0; i < exiting_job_list.size(); i++)
+    {
+    if (exiting_job_list[i].jobid == pjob->ji_qs.ji_jobid)
+      {
+      exiting_job_list.erase(exiting_job_list.begin() + i);
+      break;
+      }
+    } 
+  } /* END remove_from_exiting_list() */
+
 
 
 void mom_job_purge(
@@ -860,18 +876,7 @@ void mom_job_purge(
   delete_link(&pjob->ji_jobque);
   delete_link(&pjob->ji_alljobs);
 
-  /* remove the job from the exiting_job_list */
-  while (exiting_job_list.size() != 0)
-    {
-    boost::ptr_vector<exiting_job_info>::auto_type eji = exiting_job_list.pop_back();
-
-    if (!strcmp(eji->jobid.c_str(), pjob->ji_qs.ji_jobid))
-      {
-      eji.release();
-      break;
-      }
-    exiting_job_list.insert(exiting_job_list.begin(),eji.release()); 
-    } 
+  remove_from_exiting_list(pjob);
 
   if (LOGLEVEL >= 6)
     {
