@@ -94,8 +94,42 @@
 #include "net_connect.h"
 #include "batch_request.h"
 
+const int SHORT_TIMEOUT = 5;
+
 char *netaddr(struct sockaddr_in *ap);
 void netcounter_incr();
+
+int get_protocol_type(
+
+  struct tcp_chan *chan,
+  int             &rc)
+
+  {
+  unsigned int timeout = SHORT_TIMEOUT;
+  int          protocol_type;
+  // we don't want to get all threads stuck polling for input, so make sure that
+  // we have a short timeout to start.
+  if (timeout > pbs_tcp_timeout)
+    timeout = pbs_tcp_timeout;
+
+  protocol_type = disrui_peek(chan, &rc, timeout);
+
+  if (chan->IsTimeout)
+    {
+    // If we aren't too busy try again. If we are too busy just move on so we
+    // don't completely jam ourselves.
+    if ((timeout < pbs_tcp_timeout) &&
+        (threadpool_is_too_busy(request_pool, ATR_DFLAG_MGRD) == false))
+      {
+      chan->IsTimeout = 0;
+      protocol_type = disrui_peek(chan, &rc, pbs_tcp_timeout - SHORT_TIMEOUT);
+      }
+    }
+
+  return(protocol_type);
+  } /* END get_protocol_type() */
+
+
 
 int process_pbs_server_port(
      
@@ -104,7 +138,7 @@ int process_pbs_server_port(
   long *args)
  
   {
-  int              proto_type;
+  int              protocol_type;
   int              rc = PBSE_NONE;
   char             log_buf[LOCAL_LOG_BUF_SIZE];
   struct tcp_chan *chan = NULL;
@@ -114,9 +148,9 @@ int process_pbs_server_port(
     return(PBSE_MEM_MALLOC);
     }
 
-  proto_type = disrui_peek(chan,&rc);
+  protocol_type = get_protocol_type(chan, rc);
   
-  switch (proto_type)
+  switch (protocol_type)
     {
     case PBS_BATCH_PROT_TYPE:
       
@@ -138,7 +172,10 @@ int process_pbs_server_port(
       if (threadpool_is_too_busy(request_pool, ATR_DFLAG_MGRD) == false)
         svr_is_request(&isr);
       else
+        {
         write_tcp_reply(chan, IS_PROTOCOL, IS_PROTOCOL_VER, IS_STATUS, PBSE_SERVER_BUSY);
+        DIS_tcp_cleanup(chan);
+        }
 
       // don't let this get cleaned up below
       chan = NULL;
@@ -156,7 +193,7 @@ int process_pbs_server_port(
         {
         addr = (struct sockaddr_in *)&s_addr;
         
-        if (proto_type == 0)
+        if (protocol_type == 0)
           {
           /* 
            * Don't log error if close is on scheduler port.  Scheduler is
@@ -167,7 +204,7 @@ int process_pbs_server_port(
             if (LOGLEVEL >= 8)
               {
               snprintf(log_buf, sizeof(log_buf),
-                "proto_type: %d: Socket (%d) close detected from %s", proto_type, sock, netaddr(addr));
+                "protocol_type: %d: Socket (%d) close detected from %s", protocol_type, sock, netaddr(addr));
               log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
               }
             }
@@ -183,7 +220,7 @@ int process_pbs_server_port(
         else
           {
           snprintf(log_buf,sizeof(log_buf),
-              "Socket (%d) Unknown protocol %d from %s", sock, proto_type, netaddr(addr));
+              "Socket (%d) Unknown protocol %d from %s", sock, protocol_type, netaddr(addr));
           log_err(-1, __func__, log_buf);
           rc = PBSE_SOCKET_DATA;
           }

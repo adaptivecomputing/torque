@@ -554,7 +554,7 @@ int socket_wait_for_xbytes(
   int avail_bytes = socket_avail_bytes_on_descriptor(socket);
   while (avail_bytes < len)
     {
-    if ((rc = socket_wait_for_read(socket)) == PBSE_NONE)
+    if ((rc = socket_wait_for_read(socket, pbs_tcp_timeout)) == PBSE_NONE)
       {
       avail_bytes = socket_avail_bytes_on_descriptor(socket);
       if (avail_bytes < len)
@@ -573,7 +573,8 @@ int socket_wait_for_xbytes(
 
 int socket_wait_for_read(
     
-  int socket)
+  int          socket,
+  unsigned int timeout)
 
   {
   int           rc = PBSE_NONE;
@@ -584,7 +585,7 @@ int socket_wait_for_read(
   pfd.events = POLLIN | POLLHUP; /* | POLLRDNORM; */
   pfd.revents = 0;
 
-  ret = poll(&pfd, 1, pbs_tcp_timeout * 1000); /* poll's timeout is in milliseconds */
+  ret = poll(&pfd, 1, timeout * 1000); /* poll's timeout is in milliseconds */
   if (ret > 0)
     {
     char buf[8];
@@ -727,9 +728,10 @@ int socket_read_force(
 
 int socket_read(
     
-  int         socket,
-  char      **the_str,
-  long long  *str_len)
+  int            socket,
+  char         **the_str,
+  long long     *str_len,
+  unsigned int   timeout)
 
   {
   int       rc = PBSE_NONE;
@@ -741,7 +743,7 @@ int socket_read(
 
   while (avail_bytes == 0)
     {
-    if ((rc = socket_wait_for_read(socket)) != PBSE_NONE)
+    if ((rc = socket_wait_for_read(socket, timeout)) != PBSE_NONE)
       break;
     avail_bytes = socket_avail_bytes_on_descriptor(socket);
     if (avail_bytes == 0)
@@ -776,30 +778,6 @@ int socket_read(
 
 
 
-
-int socket_read_one_byte(
-    
-  int   socket,
-  char *one_char)
-
-  {
-  int rc = PBSE_NONE;
-  int avail_bytes = socket_avail_bytes_on_descriptor(socket);
-  if (avail_bytes <= 0)
-    rc = socket_wait_for_read(socket);
-  if (rc == PBSE_NONE)
-    {
-    if (read_ac_socket(socket, one_char, 1) != 1)
-      rc = PBSE_SOCKET_READ;
-    else
-      rc = PBSE_NONE;
-    }
-  return rc;
-  } /* END socket_read_one_byte() */
-
-
-
-
 int socket_read_num(
     
   int        socket,
@@ -819,7 +797,7 @@ int socket_read_num(
     if (avail_bytes == 0)
       {
       /* Wait until there is activity on the socket .... */
-      if ((rc = socket_wait_for_read(socket)) != PBSE_NONE)
+      if ((rc = socket_wait_for_read(socket, pbs_tcp_timeout)) != PBSE_NONE)
         break;
       avail_bytes = socket_avail_bytes_on_descriptor(socket);
       if (avail_bytes == 0)

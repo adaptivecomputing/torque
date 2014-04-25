@@ -122,7 +122,7 @@ unsigned long disrul (struct tcp_chan *chan, int *retval);
 unsigned disrui (struct tcp_chan *chan,  int *retval);
 #endif
 
-unsigned disrui_peek (struct tcp_chan *chan, int *retval);
+unsigned disrui_peek (struct tcp_chan *chan, int *retval, unsigned int timeout);
 
 
 /*#if USHRT_MAX == UINT_MAX*/

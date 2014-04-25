@@ -10,6 +10,8 @@
 int pbs_errno;
 const char *dis_emsg[10];
 
+time_t pbs_tcp_timeout;
+
 #if 0
 
 int DIS_tcp_wflush(tcp_chan *chan)

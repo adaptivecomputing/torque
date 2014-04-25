@@ -177,7 +177,8 @@ int tcp_read(
 
   struct tcp_chan *chan,
   long long       *read_len,
-  long long       *avail_len)
+  long long       *avail_len,
+  unsigned int     timeout)
 
   {
   int               rc = PBSE_NONE;
@@ -210,7 +211,7 @@ int tcp_read(
    * deliver promptly
    */
 
-  if ((rc = socket_read(chan->sock, &new_data, read_len)) != PBSE_NONE)
+  if ((rc = socket_read(chan->sock, &new_data, read_len, timeout)) != PBSE_NONE)
     {
     switch (rc)
       {
@@ -438,7 +439,8 @@ int tcp_gets(
 
   struct tcp_chan *chan,
   char            *str,
-  size_t           ct)
+  size_t           ct,
+  unsigned int     timeout)
 
   {
   int               rc = 0;
@@ -453,7 +455,7 @@ int tcp_gets(
   while ((size_t)data_avail < ct)
     {
     /* not enough data, try to get more */
-    if ((rc = tcp_read(chan, &data_read, &data_avail)) != PBSE_NONE)
+    if ((rc = tcp_read(chan, &data_read, &data_avail, timeout)) != PBSE_NONE)
       {
       if (data_read == 0)
         rc = -2;
@@ -474,12 +476,13 @@ int tcp_gets(
 
 int tcp_getc(
 
-  struct tcp_chan *chan)
+  struct tcp_chan *chan,
+  unsigned int     timeout)
 
   {
   int rc = DIS_SUCCESS;
   char ret_val;
-  if ((rc = tcp_gets(chan, &ret_val, 1)) < 0)
+  if ((rc = tcp_gets(chan, &ret_val, 1, timeout)) < 0)
     return rc;
   return (int)ret_val;
   }  /* END tcp_getc() */

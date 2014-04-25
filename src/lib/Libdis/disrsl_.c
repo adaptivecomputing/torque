@@ -128,7 +128,7 @@ int disrsl_(
       disiui_();
     }
 
-  c = tcp_getc(chan);
+  c = tcp_getc(chan, pbs_tcp_timeout);
 
   /* FORMAT:  +2+1+0+0+64+2079+22+251175826.teva.westgrid.ubc2+362+21+8Job_Name+02+11run32_.2557+02+ ... */
 
@@ -141,7 +141,7 @@ int disrsl_(
 
       *negate = (c == '-');
 
-      if (tcp_gets(chan, scratch, count) != (int)count)
+      if (tcp_gets(chan, scratch, count, pbs_tcp_timeout) != (int)count)
         {
         return(DIS_EOD);
         }
@@ -208,7 +208,7 @@ int disrsl_(
 
       if (count > 1)
         {
-        if (tcp_gets(chan, scratch + 1, count - 1) != (int)count - 1)
+        if (tcp_gets(chan, scratch + 1, count - 1, pbs_tcp_timeout) != (int)count - 1)
           {
           /* FAILURE */
 
