@@ -1,14 +1,21 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <pbs_config.h>
-#include "mom_job_func.h"
-#include "test_mom_job_func.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include "mom_job_func.h"
+#include "test_mom_job_func.h"
+#include "resizable_array.h"
 
 
 #include "pbs_error.h"
 
 bool am_i_mother_superior(const job &pjob);
+void remove_from_exiting_list(job *pjob);
+
+resizable_array  *exiting_job_list;
+
+extern int popped;
+extern int removed;
 
 START_TEST(test_am_i_mother_superior)
   {
@@ -22,9 +29,30 @@ START_TEST(test_am_i_mother_superior)
   }
 END_TEST
 
-START_TEST(test_two)
+START_TEST(test_remove_from_exiting_list)
   {
+  job pjob;
 
+  strcpy(pjob.ji_qs.ji_jobid, "2.napali");
+
+  popped = 0;
+  removed = 0;
+
+  // make sure we don't have an infinite loop if we try to remove
+  // a job that isn't in the list
+  remove_from_exiting_list(&pjob);
+  fail_unless(popped == 0);
+  fail_unless(removed == 0);
+
+  strcpy(pjob.ji_qs.ji_jobid, "1.napali");
+  remove_from_exiting_list(&pjob);
+  fail_unless(popped == 0);
+  fail_unless(removed == 1);
+
+  strcpy(pjob.ji_qs.ji_jobid, "0.napali");
+  remove_from_exiting_list(&pjob);
+  fail_unless(popped == 1);
+  fail_unless(removed == 1);
 
   }
 END_TEST
@@ -36,8 +64,8 @@ Suite *mom_job_func_suite(void)
   tcase_add_test(tc_core, test_am_i_mother_superior);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("test_two");
-  tcase_add_test(tc_core, test_two);
+  tc_core = tcase_create("test_remove_from_exiting_list");
+  tcase_add_test(tc_core, test_remove_from_exiting_list);
   suite_add_tcase(s, tc_core);
 
   return s;

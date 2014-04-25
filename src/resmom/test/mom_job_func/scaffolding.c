@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <pwd.h> /* gid_t, uid_t */
+#include <errno.h>
 
 #include "attribute.h" /* attribute_def, pbs_attribute */
 #include "list_link.h" /* tlist_head, list_link */
@@ -10,6 +11,7 @@
 #include "net_connect.h" /* pbs_net_t */
 #include "server_limits.h" /* pbs_net_t. Also defined in net_connect.h */
 #include "pbs_job.h" /* job_file_delete_info */
+#include "mom_job_cleanup.h"
 
 int is_login_node = 0;
 char *apbasil_path = NULL;
@@ -27,6 +29,8 @@ int pbs_rm_port; /* mom_main.c */
 tlist_head svr_alljobs; /* mom_main.c */
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */ /* mom_main.c/pbsd_main.c */
 char log_buffer[LOG_BUF_SIZE]; /* pbs_log.c */
+int popped = 0;
+int removed = 0;
 
 
 void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
@@ -120,6 +124,185 @@ int destroy_alps_reservation(
   return(0);
   }
 
+
+/*
+ * checks if the array needs to be resized, and resizes if necessary
+ *
+ * @return PBSE_NONE or ENOMEM
+ */
+int check_and_resize(
+
+  resizable_array *ra)
+
+  {
+  slot        *tmp;
+  size_t       remaining;
+  size_t       size;
+
+  if (ra->max == ra->num + 1)
+    {
+    /* double the size if we're out of space */
+    size = (ra->max * 2) * sizeof(slot);
+
+    if ((tmp = (slot *)realloc(ra->slots,size)) == NULL)
+      {
+      log_err(ENOMEM,__func__,"No memory left to resize the array");
+      return(ENOMEM);
+      }
+
+    remaining = ra->max * sizeof(slot);
+
+    memset(tmp + ra->max, 0, remaining);
+
+    ra->slots = tmp;
+
+    ra->max = ra->max * 2;
+    }
+
+  return(PBSE_NONE);
+  } /* END check_and_resize() */
+
+/* 
+ * updates the next slot pointer if needed \
+ */
+void update_next_slot(
+
+  resizable_array *ra) /* M */
+
+  {
+  while ((ra->next_slot < ra->max) &&
+          (ra->slots[ra->next_slot].item != NULL))
+    ra->next_slot++;
+  } /* END update_next_slot() */
+
+
+
+/*
+ * fix the next pointer for the box pointing to this index 
+ *
+ * @param ra - the array we're fixing
+ * @param index - index of the slot we're unlinking
+ */
+void unlink_slot(
+  resizable_array *ra,
+  int              index)
+
+  {
+  int prev = ra->slots[index].prev;
+  int next = ra->slots[index].next;
+
+  ra->slots[index].prev = ALWAYS_EMPTY_INDEX;
+  ra->slots[index].next = ALWAYS_EMPTY_INDEX;
+  ra->slots[index].item = NULL;
+
+  ra->slots[prev].next = next;
+
+  /* update last if necessary, otherwise update prev's next index */
+  if (ra->last == index)
+    ra->last = prev;
+  else
+    ra->slots[next].prev = prev;
+  } /* END unlink_slot() */
+
+
+/*
+ * pop the first thing from the array
+ *
+ * @return the first thing in the array or NULL if empty
+ */
+extern resizable_array *exiting_job_list;
+
+void *pop_thing(
+    
+  resizable_array *ra)
+
+  {
+  popped++;
+
+  if (ra == exiting_job_list)
+    return(NULL);
+
+  void *thing = NULL;
+  int   i = ra->slots[ALWAYS_EMPTY_INDEX].next;
+
+  if (i != ALWAYS_EMPTY_INDEX)
+    {
+    /* get the thing we're returning */
+    thing = ra->slots[i].item;
+
+    /* handle the deletion and removal */
+    unlink_slot(ra,i);
+
+    ra->num--;
+
+    /* reset the next slot index if necessary */
+    if (i < ra->next_slot)
+      {
+      ra->next_slot = i;
+      }
+    }
+
+  return(thing);
+  } /* END pop_thing() */
+
+
+int remove_thing_from_index(resizable_array *ra, int index)
+
+  {
+  removed++;
+  return(0);
+  }
+
+
+/* 
+ * inserts a thing after the thing in index
+ * NOTE: index must represent a valid index
+ */
+int insert_thing_after(
+  resizable_array *ra,
+  void            *thing,
+  int              index)
+
+  {
+  int rc;
+  int next;
+
+  /* check if the array must be resized */
+  if ((rc = check_and_resize(ra)) != PBSE_NONE)
+    {
+    return(-1);
+    }
+
+  /* insert this element */
+  ra->slots[ra->next_slot].item = thing;
+
+  /* save the insertion point */
+  rc = ra->next_slot;
+
+  /* move pointers around */
+  ra->slots[rc].prev = index;
+  next = ra->slots[index].next;
+  ra->slots[rc].next = next;
+  ra->slots[index].next = rc;
+
+  if (next != 0)
+    {
+    ra->slots[next].prev = rc;
+    }
+
+  /* update the last index if needed */
+  if (ra->last == index)
+    ra->last = rc;
+
+  /* increase the count */
+  ra->num++;
+
+  update_next_slot(ra);
+
+  return(rc);
+  } /* END insert_thing_after() */
+
+
 void free_resizable_array(resizable_array *ra) {}
 
 resizable_array *initialize_resizable_array(
@@ -137,6 +320,21 @@ int insert_thing(
 
   {
   return(0);
+  }
+
+void *next_thing(resizable_array *ra, int *iter)
+  {
+  int old_val = *iter;
+  *iter = *iter + 1;
+
+  if (old_val < 1)
+    {
+    exiting_job_info *eji = (exiting_job_info *)calloc(1, sizeof(exiting_job_info));
+    snprintf(eji->jobid, sizeof(eji->jobid), "%d.napali", 1 + old_val);
+    return(eji);
+    }
+
+  return(NULL);
   }
 
 int is_present(
