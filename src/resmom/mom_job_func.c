@@ -805,6 +805,38 @@ int release_job_reservation(
   } /* END release_job_reservation() */
 
 
+/* 
+ * remove the job from the exiting_job_list if its there
+ *
+ * @param pjob - the job to remove from the exiting_job_list
+ *
+ */
+void remove_from_exiting_list(
+
+  job *pjob)
+
+  {
+  int               iter = -1;
+  int               prev_index = -1;
+  exiting_job_info *eji;
+
+  while ((eji = (exiting_job_info *)next_thing(exiting_job_list, &iter)) != NULL)
+    {
+    if (!strcmp(eji->jobid, pjob->ji_qs.ji_jobid))
+      {
+      if (prev_index == -1)
+        pop_thing(exiting_job_list);
+      else
+        remove_thing_from_index(exiting_job_list, prev_index);
+        
+      free(eji);
+      break;
+      }
+
+    prev_index = iter;
+    }
+
+  } /* END remove_from_exiting_list() */
 
 
 
@@ -813,7 +845,6 @@ void mom_job_purge(
   job *pjob)  /* I (modified) */
 
   {
-  exiting_job_info *eji;
   job_file_delete_info *jfdi;
 
   jfdi = (job_file_delete_info *)calloc(1, sizeof(job_file_delete_info));
@@ -864,17 +895,7 @@ void mom_job_purge(
   delete_link(&pjob->ji_jobque);
   delete_link(&pjob->ji_alljobs);
 
-  /* remove the job from the exiting_job_list */
-  while ((eji = (exiting_job_info *)pop_thing(exiting_job_list)) != NULL)
-    {
-    if (!strcmp(eji->jobid, pjob->ji_qs.ji_jobid))
-      {
-      free(eji);
-      break;
-      }
-
-    insert_thing_after(exiting_job_list, eji, ALWAYS_EMPTY_INDEX);
-    }
+  remove_from_exiting_list(pjob);
 
   if (LOGLEVEL >= 6)
     {

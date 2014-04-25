@@ -11,6 +11,7 @@
 #include "net_connect.h" /* pbs_net_t */
 #include "server_limits.h" /* pbs_net_t. Also defined in net_connect.h */
 #include "pbs_job.h" /* job_file_delete_info */
+#include "mom_job_cleanup.h"
 
 int is_login_node = 0;
 char *apbasil_path = NULL;
@@ -28,6 +29,8 @@ int pbs_rm_port; /* mom_main.c */
 tlist_head svr_alljobs; /* mom_main.c */
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */ /* mom_main.c/pbsd_main.c */
 char log_buffer[LOG_BUF_SIZE]; /* pbs_log.c */
+int popped = 0;
+int removed = 0;
 
 
 void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
@@ -207,10 +210,18 @@ void unlink_slot(
  *
  * @return the first thing in the array or NULL if empty
  */
+extern resizable_array *exiting_job_list;
 
 void *pop_thing(
-      resizable_array *ra)
+    
+  resizable_array *ra)
+
   {
+  popped++;
+
+  if (ra == exiting_job_list)
+    return(NULL);
+
   void *thing = NULL;
   int   i = ra->slots[ALWAYS_EMPTY_INDEX].next;
 
@@ -233,6 +244,14 @@ void *pop_thing(
 
   return(thing);
   } /* END pop_thing() */
+
+
+int remove_thing_from_index(resizable_array *ra, int index)
+
+  {
+  removed++;
+  return(0);
+  }
 
 
 /* 
@@ -301,6 +320,21 @@ int insert_thing(
 
   {
   return(0);
+  }
+
+void *next_thing(resizable_array *ra, int *iter)
+  {
+  int old_val = *iter;
+  *iter = *iter + 1;
+
+  if (old_val < 1)
+    {
+    exiting_job_info *eji = (exiting_job_info *)calloc(1, sizeof(exiting_job_info));
+    snprintf(eji->jobid, sizeof(eji->jobid), "%d.napali", 1 + old_val);
+    return(eji);
+    }
+
+  return(NULL);
   }
 
 int is_present(
