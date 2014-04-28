@@ -197,7 +197,9 @@ int get_next_retryable_jobid(
   exiting_jobs_info.lock();
   if (*iter == NULL)
     {
-    *iter = exiting_jobs_info.get_iterator();
+
+    if ((*iter = exiting_jobs_info.get_iterator()) == NULL)
+      return(-1);
     }
 
   while ((jeri = (*iter)->get_next_item()) != NULL)

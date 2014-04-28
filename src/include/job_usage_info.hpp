@@ -91,6 +91,7 @@ class job_usage_info
     execution_slot_tracker  est;
     job_usage_info(int job_internal_id);
     bool operator ==(const job_usage_info &jui);
+    job_usage_info &operator= (const job_usage_info &other_jui);
   };
 
 #endif

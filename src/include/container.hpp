@@ -385,6 +385,10 @@ class item_container
   item_iterator *get_iterator(bool reverse = false)
     {
     CHECK_LOCK
+
+    if (exit_called)
+      return(NULL);
+
     return new item_iterator(this,
 #ifdef CHECK_LOCKING
         &locked,
