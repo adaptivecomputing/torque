@@ -100,6 +100,7 @@
 #include <udb.h>
 #endif /* _CRAY */
 #include "svrfunc.h" /* get_svr_attr_* */
+#include <string>
 
 /* External Data */
 
@@ -116,10 +117,10 @@ extern int LOGLEVEL;
  * Returns pointer to the user name
  */
 
-static char *geteusernam(
-
+static bool geteusernam(
   job           *pjob,
-  pbs_attribute *pattr) /* pointer to User_List pbs_attribute */
+  pbs_attribute *pattr,
+  std::string&   ret_user) /* pointer to User_List pbs_attribute */
 
   {
   int  rule3 = 0;
@@ -130,7 +131,6 @@ static char *geteusernam(
   char *pn;
   char *ptr;
   char  username[PBS_MAXUSER + 1];
-  char *ret_user;
 
   /* search the user-list pbs_attribute */
 
@@ -182,10 +182,8 @@ static char *geteusernam(
       snprintf(username, sizeof(username), "%s", ptr);
     }
 
-  ret_user = (char *)calloc(1, strlen(username) + 1);
-  strcpy(ret_user,username);
-
-  return(ret_user);
+  ret_user = username;
+  return true;
   }  /* END geteusernam() */
 
 
@@ -203,10 +201,10 @@ static char *geteusernam(
  * Returns pointer to the group name or null
  */
 
-char *getegroup(
-
+bool getegroup(
   job           *pjob,  /* I */
-  pbs_attribute *pattr) /* I group_list pbs_attribute */
+  pbs_attribute *pattr,
+  std::string&   ret_group) /* I group_list pbs_attribute */
 
   {
   char *hit = 0;
@@ -216,7 +214,6 @@ char *getegroup(
   char *pn;
   char *ptr;
   char  groupname[PBS_MAXUSER + 1];
-  char *ret_group;
 
   /* search the group-list pbs_attribute */
 
@@ -250,7 +247,7 @@ char *getegroup(
 
   if (!hit)   /* nothing specified, return null */
     {
-    return(NULL);
+    return false;
     }
 
   /* copy group name into return buffer, strip off host name */
@@ -258,10 +255,9 @@ char *getegroup(
 
   get_jobowner(hit, groupname);
 
-  ret_group = (char *)calloc(1, strlen(groupname) + 1);
-  strcpy(ret_group,groupname);
+  ret_group = groupname;
 
-  return(ret_group);
+  return true;
   }  /* END getegroup() */
 
 
@@ -297,16 +293,14 @@ int set_jobexid(
   char          **pmem;
 
   struct group   *gpent;
-  int             free_puser = FALSE;
-  char           *puser = NULL;
+  std::string    puser = "";
   char           *at;
   char           *usr_at_host = NULL;
   int             len;
 
 
   struct passwd  *pwent = NULL;
-  char           *pgrpn;
-  int             free_pgrpn = TRUE;
+  std::string      pgrpn = "";
   char            gname[PBS_MAXGRPN + 1];
 #ifdef _CRAY
 
@@ -350,13 +344,13 @@ int set_jobexid(
         /* set the job's owner as the new user, appending @host if
          * the job's owner has that */
         at = strchr(pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,'@');
-        len = strlen(puser) + 1;
+        len = strlen(puser.c_str()) + 1;
         if (at != NULL)
           {
           len += strlen(at);
           usr_at_host = (char *)calloc(len, sizeof(char));
           snprintf(usr_at_host,len,"%s%s",
-            puser,
+            puser.c_str(),
             at);
           }
         else
@@ -364,13 +358,13 @@ int set_jobexid(
           usr_at_host = (char *)calloc(len, sizeof(char));
 
           snprintf(usr_at_host,len,"%s",
-            puser);
+            puser.c_str());
           }
 
         free(pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
         pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str = usr_at_host;
         }
-      else if ((puser = geteusernam(pjob, pattr)) == NULL)
+      else if (geteusernam(pjob, pattr,puser))
         {
         if (EMsg != NULL)
           snprintf(EMsg, 1024, "cannot locate user name in job");
@@ -378,9 +372,7 @@ int set_jobexid(
         return(PBSE_BADUSER);
         }
 
-      free_puser = TRUE;
-
-      sprintf(tmpLine, "%s", puser);
+      sprintf(tmpLine, "%s", puser.c_str());
 
       /* end of change to use userlist instead of owner 10/17/2007 */
       }
@@ -398,9 +390,7 @@ int set_jobexid(
     else
       pattr = &pjob->ji_wattr[JOB_ATR_userlst];
 
-    free_puser = TRUE;
-
-    if ((puser = geteusernam(pjob, pattr)) == NULL)
+    if (geteusernam(pjob, pattr,puser))
       {
       if (EMsg != NULL)
         snprintf(EMsg, 1024, "cannot locate user name in job");
@@ -408,22 +398,20 @@ int set_jobexid(
       return(PBSE_BADUSER);
       }
 
-    pwent = getpwnam_ext(puser);
+    pwent = getpwnam_ext((char *)puser.c_str());
 
-    perm = svr_get_privilege(puser,get_variable(pjob,(char *)"PBS_O_HOST"));
+    perm = svr_get_privilege((char *)puser.c_str(),get_variable(pjob,(char *)"PBS_O_HOST"));
 
     if (pwent == NULL)
       {
       snprintf(log_buf,sizeof(log_buf),
         "User %s does not exist in server password file\n",
-        puser);
+        puser.c_str());
 
       log_err(errno, __func__, log_buf);
 
       if (EMsg != NULL)
         snprintf(EMsg,1024,"%s",log_buf);
-
-      free(puser);
 
       return(PBSE_BADUSER);
       }
@@ -437,18 +425,15 @@ int set_jobexid(
       /* add check here for virtual user */
       if (pjob->ji_wattr[JOB_ATR_proxy_user].at_flags & ATR_VFLAG_SET)
         {
-        free(puser);
-        free_puser = FALSE;
-
         puser = pjob->ji_wattr[JOB_ATR_proxy_user].at_val.at_str;
 
-        pwent = getpwnam_ext(puser);
+        pwent = getpwnam_ext((char *)puser.c_str());
 
         if (pwent == NULL)
           {
           snprintf(log_buf,sizeof(log_buf),
             "User %s does not exist in server password file\n",
-            puser);
+            puser.c_str());
 
           log_err(errno, __func__, log_buf);
 
@@ -460,13 +445,13 @@ int set_jobexid(
 
         /* set the job's owner as the new user */
         at = strchr(pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,'@');
-        len = strlen(puser) + 1;
+        len = puser.length() + 1;
         if (at != NULL)
           {
           len += strlen(at);
           usr_at_host = (char *)calloc(len, sizeof(char));
           snprintf(usr_at_host,len,"%s%s",
-            puser,
+            puser.c_str(),
             at);
           }
         else
@@ -474,7 +459,7 @@ int set_jobexid(
           usr_at_host = (char *)calloc(len, sizeof(char));
 
           snprintf(usr_at_host,len,"%s",
-            puser);
+            puser.c_str());
           }
 
         free(pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
@@ -486,10 +471,7 @@ int set_jobexid(
           {
           if (EMsg != NULL)
             snprintf(EMsg, 1024, "root user %s fails ACL check",
-                     puser);
-
-          if (free_puser == TRUE)
-            free(puser);
+                     puser.c_str());
 
           return(PBSE_BADUSER); /* root not allowed */
           }
@@ -498,11 +480,8 @@ int set_jobexid(
         {
         if (EMsg != NULL)
           snprintf(EMsg, 1024, "root user %s not allowed",
-                   puser);
+                   puser.c_str());
           
-        if (free_puser == TRUE)
-          free(puser);
-
         return(PBSE_BADUSER); /* root not allowed */
         }
       }    /* END if (pwent->pw_uid == 0) */
@@ -513,31 +492,25 @@ int set_jobexid(
         {
         snprintf(EMsg, 1024,
           "User '%s' is attempting to submit a proxy job for user '%s' but is not a manager",
-          puser,
+          puser.c_str(),
           pjob->ji_wattr[JOB_ATR_proxy_user].at_val.at_str);
         }
 
       snprintf(log_buf, 1024,
         "User '%s' is attempting to submit a proxy job for user '%s' but is not a manager",
-        puser,
+        puser.c_str(),
         pjob->ji_wattr[JOB_ATR_proxy_user].at_val.at_str);
       log_err(PBSE_BADUSER, __func__, log_buf);
           
-      if (free_puser == TRUE)
-        free(puser);
-
       return(PBSE_BADUSER);
       }
 
-    if (site_check_user_map(pjob, puser, EMsg, LOGLEVEL) == -1)
+    if (site_check_user_map(pjob, (char *)puser.c_str(), EMsg, LOGLEVEL) == -1)
       {
-      if (free_puser == TRUE)
-        free(puser);
-
       return(PBSE_BADUSER);
       }
 
-    snprintf(tmpLine, sizeof(tmpLine), "%s", puser);
+    snprintf(tmpLine, sizeof(tmpLine), "%s", puser.c_str());
     }  /* END else (CheckID == 0) */
 
   pattr = attrry + JOB_ATR_euser;
@@ -550,7 +523,7 @@ int set_jobexid(
 
   /* on cray check UDB (user data base) for permission to batch it */
 
-  if ((pwent != NULL) && (puser != NULL))
+  if ((pwent != NULL) && (puser.length() != 0))
     {
     pudb = getudbuid(pwent->pw_uid);
 
@@ -560,19 +533,13 @@ int set_jobexid(
       {
       if (EMsg != NULL)
         snprintf(EMsg, 1024, "user %s not located in user data base",
-                 puser);
-
-      if (free_puser == TRUE)
-        free(puser);
+                 puser.c_str());
 
       return(PBSE_BADUSER);
       }
 
     if (pudb->ue_permbits & (PERMBITS_NOBATCH | PERMBITS_RESTRICTED))
       {
-      if (free_puser == TRUE)
-        free(puser);
-
       return(PBSE_QACESS);
       }
 
@@ -608,13 +575,9 @@ int set_jobexid(
 
   /* extract user-specified egroup if it exists */
 
-  pgrpn = getegroup(pjob, pattr);
-
-  if (pgrpn == NULL)
+  if(!getegroup(pjob, pattr,pgrpn))
     {
-    free_pgrpn = FALSE;
-
-    if ((pwent != NULL) || ((pwent = getpwnam_ext(puser)) != NULL))
+    if ((pwent != NULL) || ((pwent = getpwnam_ext((char *)puser.c_str())) != NULL))
       {
       /* egroup not specified - use user login group */
 
@@ -645,9 +608,6 @@ int set_jobexid(
       if (EMsg != NULL)
         snprintf(EMsg, 1024, "user does not exist in server password file");
 
-      if (free_puser == TRUE)
-        free(puser);
-
       return(PBSE_BADUSER);
       }
 
@@ -671,18 +631,13 @@ int set_jobexid(
     /* user specified a group, group must exist and either */
     /* must be user's primary group or the user must be in it */
 
-    gpent = getgrnam_ext(pgrpn);
+    gpent = getgrnam_ext((char *)pgrpn.c_str());
 
     if (gpent == NULL)
       {
       if (EMsg != NULL)
         snprintf(EMsg, 1024, "cannot locate group %s in server group file",
-          pgrpn);
-
-      if (free_puser == TRUE)
-        free(puser);
-
-      free(pgrpn);
+          pgrpn.c_str());
 
       return(PBSE_BADGRP);  /* no such group */
       }
@@ -695,7 +650,7 @@ int set_jobexid(
 
       while (*pmem != NULL)
         {
-        if (!strcmp(puser, *pmem))
+        if (!strcmp(puser.c_str(), *pmem))
           break;
 
         ++pmem;
@@ -706,18 +661,13 @@ int set_jobexid(
         /* requested group not allowed */
         snprintf(log_buf,sizeof(log_buf),
           "user %s is not a member of group %s in server password file",
-          puser,
-          pgrpn);
+          puser.c_str(),
+          pgrpn.c_str());
 
         log_err(-1, __func__, log_buf);
 
         if (EMsg != NULL)
           snprintf(EMsg, 1024, "%s",log_buf);
-
-        if (free_puser == TRUE)
-          free(puser);
-
-        free(pgrpn);
 
         return(PBSE_BADGRP); /* user not in group */
         }
@@ -730,17 +680,11 @@ int set_jobexid(
 
   job_attr_def[JOB_ATR_egroup].at_free(pattr);
 
-  job_attr_def[JOB_ATR_egroup].at_decode(pattr, NULL, NULL, pgrpn, 0);
+  job_attr_def[JOB_ATR_egroup].at_decode(pattr, NULL, NULL, pgrpn.c_str(), 0);
 
   pattr->at_flags |= addflags;
 
   /* SUCCESS */
-  if (free_puser == TRUE)
-    free(puser);
-
-  if (free_pgrpn == TRUE)
-    free(pgrpn);
-
   return(PBSE_NONE);
   }  /* END set_jobexid() */
 
