@@ -358,11 +358,6 @@ int req_selectjobs(
     sel_step2(cntl);
     }
 
-  if (cntl->sc_select)
-    free_sellist(cntl->sc_select);
-  if (cntl)
-    free(cntl);
-
   if (pque != NULL)
     unlock_queue(pque, "req_selectjobs", (char *)NULL, LOGLEVEL);
 
@@ -665,6 +660,9 @@ nextjob:
     pjob = next;
     }
 
+  free_sellist(cntl->sc_select);
+
+  free(cntl);
 
   if (rc)
     req_reject(rc, 0, preq, NULL, NULL);
@@ -810,6 +808,9 @@ static void free_sellist(
     pslist = next;
     }
   }
+
+
+
 
 
 /*
