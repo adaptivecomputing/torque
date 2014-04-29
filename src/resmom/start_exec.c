@@ -2028,8 +2028,8 @@ int TMomFinalizeJob1(
   memset(TJE, 0, sizeof(pjobexec_t));
   
   TJE->ptc = -1;
-  
-  TJE->pjob = (void *)pjob;
+ 
+  strcpy(TJE->jobid, pjob->ji_qs.ji_jobid);
   
   /* prepare job environment */
   
@@ -4496,8 +4496,7 @@ int TMomFinalizeJob3(
   unsigned int         momport = 0;
   proc_stat_t           *ps = NULL;
 
-
-  pjob = (job *)TJE->pjob;
+  pjob = mom_find_job(TJE->jobid);
   ptask = (task *)TJE->ptask;
 
   if (pjob == NULL)
@@ -4641,9 +4640,6 @@ int TMomFinalizeJob3(
     log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "saving task (TMomFinalizeJob3)");
     }
 
-  // double check that ptask points to pjob correctly
-  ptask->ti_job = pjob;
-
   if (task_save(ptask) != PBSE_NONE)
     {
     /* FAILURE */
@@ -4685,7 +4681,7 @@ int TMomFinalizeJob3(
   ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND;
 
   ps = get_proc_stat((int)sjr.sj_session);
-  if(ps != NULL)
+  if (ps != NULL)
     {
     pjob->ji_wattr[JOB_ATR_system_start_time].at_val.at_long = ps->start_time;
     pjob->ji_wattr[JOB_ATR_system_start_time].at_flags |= ATR_VFLAG_SET;
@@ -4724,7 +4720,7 @@ int TMomFinalizeJob3(
     momport = pbs_rm_port;
     }
 
-  job_save(pjob, SAVEJOB_FULL,momport);
+  job_save(pjob, SAVEJOB_FULL, momport);
 
   sprintf(log_buffer, "job %s started, pid = %ld",
     pjob->ji_qs.ji_jobid,
@@ -4754,7 +4750,7 @@ int start_process(
 
   {
   char         *idir;
-  job          *pjob = ptask->ti_job;
+  job          *pjob = mom_find_job(ptask->ti_qs.ti_parentjobid);
   pid_t         pid;
   int           pipes[2];
   int           kid_read;

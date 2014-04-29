@@ -259,7 +259,7 @@ int task_save(
   task *ptask)  /* I */
 
   {
-  job  *pjob;
+  job  *pjob = NULL;
   int   fds;
   int   i;
   int   TaskID = 0;
@@ -273,19 +273,10 @@ int task_save(
     return(PBSE_BAD_PARAMETER);
     }
 
-  pjob = ptask->ti_job;
-
-  if (pjob == NULL)
+  if ((pjob = mom_find_job(ptask->ti_qs.ti_parentjobid)) == NULL)
     {
-    if ((pjob = mom_find_job(ptask->ti_qs.ti_parentjobid)) != NULL)
-      {
-      ptask->ti_job = pjob;
-      }
-    else
-      {
-      log_err(PBSE_BAD_PARAMETER, __func__, "NULL pointer to owning job");
-      return(PBSE_BAD_PARAMETER);
-      }
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL pointer to owning job");
+    return(PBSE_BAD_PARAMETER);
     }
 
   strncpy(namebuf, path_jobs, sizeof(namebuf) - 1);     /* job directory path */
@@ -506,9 +497,6 @@ task *pbs_task_create(
     }
 
   /* initialize task */
-
-  ptask->ti_job = pjob;
-
   CLEAR_LINK(ptask->ti_jobtask);
   append_link(&pjob->ji_tasks, &ptask->ti_jobtask, ptask);
 
@@ -517,7 +505,7 @@ task *pbs_task_create(
   CLEAR_HEAD(ptask->ti_obits);
   CLEAR_HEAD(ptask->ti_info);
 
-  memset(ptask->ti_qs.ti_parentjobid, 0, sizeof(ptask->ti_qs.ti_parentjobid));
+  strcpy(ptask->ti_qs.ti_parentjobid, pjob->ji_qs.ji_jobid);
 
   ptask->ti_qs.ti_parentnode = TM_ERROR_NODE;
   ptask->ti_qs.ti_parenttask = TM_NULL_TASK;

@@ -630,3 +630,8 @@ int initgroups_ext(const char *username, gid_t gr_id)
 
   return(0);
   }
+
+job *mom_find_job(const char *jobid)
+  {
+  return(NULL);
+  }

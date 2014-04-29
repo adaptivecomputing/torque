@@ -2559,7 +2559,7 @@ int kill_task(
       ptask->ti_qs.ti_task,
       sesid);
 
-    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_job->ji_qs.ji_jobid, log_buffer);
+    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
     }
 
   if (sesid <= 1)
@@ -2569,7 +2569,7 @@ int kill_task(
       sprintf(log_buffer, "cannot send signal %d to task (no session id)",
         sig);
 
-      log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, ptask->ti_job->ji_qs.ji_jobid, log_buffer);
+      log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
       }
 
     /* FAILURE */
@@ -2629,7 +2629,7 @@ int kill_task(
         }
       
       if ((sesid == ps->session) ||
-          (ProcIsChild(procfs,pid,ptask->ti_job->ji_qs.ji_jobid) == TRUE))
+          (ProcIsChild(procfs,pid,ptask->ti_qs.ti_parentjobid) == TRUE))
         
         {
         NumProcessesFound++;
@@ -2646,7 +2646,7 @@ int kill_task(
           sprintf(log_buffer, "%s: not killing process (pid=%d/state=%c) with sig %d",
             __func__, ps->pid, ps->state, sig);
           
-          log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_job->ji_qs.ji_jobid, log_buffer);
+          log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
           }  /* END if ((ps->state == 'Z') || (ps->pid == 0)) */
         else
           {
@@ -2666,7 +2666,7 @@ int kill_task(
               {
               sprintf(log_buffer, "%s: not killing process %d. Avoid sending signal because child task still has MOM's session id", __func__, ps->pid);
               
-              log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_job->ji_qs.ji_jobid, log_buffer);
+              log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
               }
             
             if ((sig == SIGKILL) ||
@@ -2695,7 +2695,7 @@ int kill_task(
             sprintf(log_buffer, "%s: killing pid %d task %d gracefully with sig %d",
               __func__, ps->pid, ptask->ti_qs.ti_task, SIGTERM);
             
-            log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_job->ji_qs.ji_jobid,	log_buffer);
+            log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
             
             if (pg == 0)
               kill(ps->pid, SIGTERM);
@@ -2714,7 +2714,7 @@ int kill_task(
                 sprintf(log_buffer, "%s: process (pid=%d/state=%c) after sig %d",
                   __func__, ps->pid, ps->state, SIGTERM);
       
-                log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_job->ji_qs.ji_jobid, log_buffer);
+                log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
       
                 if (ps->state == 'Z')
                   break;
@@ -2751,7 +2751,7 @@ int kill_task(
                 sprintf(log_buffer, "%s: not killing process (pid=%d/state=%c) with sig %d",
                   __func__, ps->pid, ps->state, sig);
                 
-                log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,	ptask->ti_job->ji_qs.ji_jobid, log_buffer);
+                log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,	ptask->ti_qs.ti_parentjobid, log_buffer);
                 }  /* END if ((ps->state == 'Z') || (ps->pid == 0)) */
               else
                 {
@@ -2761,7 +2761,7 @@ int kill_task(
                 sprintf(log_buffer, "%s: killing pid %d task %d with sig %d",
                   __func__, ps->pid, ptask->ti_qs.ti_task, sig);
                 
-                log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_job->ji_qs.ji_jobid, log_buffer);
+                log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
                 
                 if (pg == 0)
                   kill(ps->pid, sig);
@@ -2813,11 +2813,11 @@ int kill_task(
     sprintf(log_buffer, 
       "%s: job %s adopted task %d was marked as terminated because task's PID was no longer found, sid=%d",
       __func__,
-      ptask->ti_job->ji_qs.ji_jobid,
+      ptask->ti_qs.ti_parentjobid,
       ptask->ti_qs.ti_task,
       ptask->ti_qs.ti_sid);
 
-    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, ptask->ti_job->ji_qs.ji_jobid, log_buffer);
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
     }
 
   if ((NumProcessesFound == 0) &&
@@ -2844,7 +2844,7 @@ int kill_task(
         ptask->ti_qs.ti_task,
         sesid);
 
-      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_job->ji_qs.ji_jobid, log_buffer);
+      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
       }
     }
 

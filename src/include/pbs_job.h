@@ -473,6 +473,7 @@ typedef struct noderes
 
 typedef struct
   {
+  char      jobid[PBS_MAXSVRJOBID+1];
   void     *pjob;
   void     *ptask;
 
@@ -781,13 +782,12 @@ typedef struct taskfix
 
 typedef struct task
   {
-  job  *ti_job; /* pointer to owning job */
-  list_link ti_jobtask; /* links to tasks for this job */
+  list_link        ti_jobtask; /* links to tasks for this job */
   struct tcp_chan *ti_chan;  /* DIS file descriptor to task */
-  int  ti_flags; /* task internal flags */
-  tm_event_t ti_register; /* event if task registers - never used*/
-  tlist_head ti_obits; /* list of obit events */
-  tlist_head ti_info; /* list of named info */
+  int              ti_flags; /* task internal flags */
+  tm_event_t       ti_register; /* event if task registers - never used*/
+  tlist_head       ti_obits; /* list of obit events */
+  tlist_head       ti_info; /* list of named info */
 
   taskfix ti_qs;
   } task;
