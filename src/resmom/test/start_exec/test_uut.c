@@ -3,6 +3,10 @@
 #include "start_exec.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <string>
+#include <set>
+#include <sys/types.h>
+#include <signal.h>
 
 #include "pbs_error.h"
 #include "pbs_nodes.h"
@@ -10,6 +14,7 @@
 
 void get_mic_indices(job *pjob, char *buf, int buf_size);
 void job_nodes(job &pjob);
+int  remove_leading_hostname(char **jobpath);
 
 #ifdef NUMA_SUPPORT
 extern nodeboard node_boards[];
@@ -20,6 +25,81 @@ extern nodeboard node_boards[];
 
 char *penv[MAX_TEST_ENVP]; /* max number of pointers bld_env_variables will create */
 char *envBuffer = NULL; /* points to the max block that bld_env_variables would ever need in this test suite */
+extern int  logged_event;
+extern int  num_contacted;
+extern int  send_sisters_called;
+extern int  send_ms_called;
+extern bool bad_pwd;
+extern bool fail_init_groups;
+extern bool fail_site_grp_check;
+extern bool am_ms;
+
+void create_command(std::string &cmd, char **argv);
+void no_hang(int sig);
+void exec_bail(job *pjob, int code, std::set<int> *sisters_contacted);
+
+
+START_TEST(remove_leading_hostname_test)
+  {
+  char *p1 = strdup("napali:/home/dbeer");
+  char *p2 = NULL;
+
+  fail_unless(remove_leading_hostname(NULL) == FAILURE);
+  fail_unless(remove_leading_hostname(&p2) == FAILURE);
+  fail_unless(remove_leading_hostname(&p1) == SUCCESS);
+  fail_unless(!strcmp(p1, "/home/dbeer"), p1);
+  // for some reason it returns failure if a ':' isn't present
+  fail_unless(remove_leading_hostname(&p1) == FAILURE);
+  // make sure it didn't change
+  fail_unless(!strcmp(p1, "/home/dbeer"), p1);
+  }
+END_TEST
+
+
+START_TEST(exec_bail_test)
+  {
+  job pjob;
+  memset(&pjob, 0, sizeof(pjob));
+  
+  am_ms = false;
+  send_ms_called = 0;
+  send_sisters_called = 0;
+  exec_bail(&pjob, 1, NULL);
+  // make sure we called send_ms() and not send_sisters()
+  fail_unless(send_ms_called > 0);
+  fail_unless(send_sisters_called == 0);
+
+  am_ms = true;
+  pjob.ji_stdout = 11;
+  pjob.ji_stderr = 12;
+  exec_bail(&pjob, 2, NULL);
+  fail_unless(pjob.ji_qs.ji_substate == JOB_SUBSTATE_EXITING);
+  fail_unless(pjob.ji_qs.ji_un.ji_momt.ji_exitstat == 2); // must match the code passed in
+  fail_unless(send_sisters_called > 0);
+
+  }
+END_TEST
+
+
+START_TEST(no_hang_test)
+  {
+  logged_event = 0;
+  no_hang(SIGUSR1);
+
+  fail_unless(logged_event > 0);
+  }
+END_TEST
+
+
+START_TEST(create_command_test)
+  {
+  char  *argv[] = {(char *)"ls", (char *)"-ltr", (char *)"/home/dbeer", (char *)"|", (char *)"grep", (char *)"bob", NULL};
+  std::string  cmd;
+
+  create_command(cmd, argv);
+  fail_unless(cmd == "ls -ltr /home/dbeer | grep bob", cmd.c_str());
+  }
+END_TEST
 
 
 START_TEST(job_nodes_test)
@@ -58,6 +138,10 @@ START_TEST(job_nodes_test)
     fail_unless(pjob->ji_vnods[i].vn_index == i % 10);
     fail_unless(pjob->ji_vnods[i].vn_host == &pjob->ji_hosts[i/10]);
     }
+
+  nodes_free(pjob);
+  fail_unless(pjob->ji_vnods == NULL);
+  fail_unless(pjob->ji_hosts == NULL);
   }
 END_TEST
 
@@ -264,8 +348,29 @@ START_TEST(test_check_pwd_euser)
   pwd = check_pwd(pjob);
   fail_unless(pwd == NULL, "check_pwd succeeded with an empty job");
 
-  decode_str(&pjob->ji_wattr[JOB_ATR_euser], "euser", NULL, "bogus", 0);
-  fail_unless(pwd == NULL, "check_pwd still succeeded with bogus user");
+  bad_pwd = true;
+  decode_str(&pjob->ji_wattr[JOB_ATR_euser], "euser", NULL, "dbeer", 0);
+  pwd = check_pwd(pjob);
+  fail_unless(pwd == NULL, "bad pwd fail");
+
+  bad_pwd = false;
+  fail_init_groups = true;
+  decode_str(&pjob->ji_wattr[JOB_ATR_euser], "euser", NULL, "dbeer", 0);
+  pwd = check_pwd(pjob);
+  fail_unless(pwd == NULL, "bad grp fail");
+
+  pjob->ji_grpcache = NULL;
+  fail_init_groups = false;
+  fail_site_grp_check = true;
+  decode_str(&pjob->ji_wattr[JOB_ATR_euser], "euser", NULL, "dbeer", 0);
+  pwd = check_pwd(pjob);
+  fail_unless(pwd == NULL, "bad site fail");
+  
+  pjob->ji_grpcache = NULL;
+  fail_site_grp_check = false;
+  decode_str(&pjob->ji_wattr[JOB_ATR_euser], "euser", NULL, "dbeer", 0);
+  pwd = check_pwd(pjob);
+  fail_unless(pwd != NULL);
   }
 END_TEST
 
@@ -325,6 +430,10 @@ Suite *start_exec_suite(void)
   tc_core = tcase_create("test_check_pwd_adaptive_user");
   tcase_add_test(tc_core, test_check_pwd_adaptive_user);
   tcase_add_test(tc_core, job_nodes_test);
+  tcase_add_test(tc_core, create_command_test);
+  tcase_add_test(tc_core, no_hang_test);
+  tcase_add_test(tc_core, exec_bail_test);
+  tcase_add_test(tc_core, remove_leading_hostname_test);
   suite_add_tcase(s, tc_core);
 
   return s;

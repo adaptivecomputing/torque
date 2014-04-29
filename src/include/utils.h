@@ -144,6 +144,7 @@ extern struct group *getgrnam_ext (char *);
 extern struct passwd *getpwnam_ext (char *);
 struct passwd *get_password_entry_by_uid(uid_t uid);
 int                   setuid_ext(uid_t uid, int set_euid);
+int                   initgroups_ext(const char *username, gid_t gr_id);
 
 /* tree functions in u_tree.c */
 extern void tinsert (const u_long, struct pbsnode *, tree **);

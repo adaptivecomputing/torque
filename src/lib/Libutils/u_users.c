@@ -3,6 +3,7 @@
 #include <pwd.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <grp.h>
 
 #include "utils.h"
 #include "errno.h"
@@ -145,4 +146,42 @@ int setuid_ext(
 
   return(rc);
   } /* END setuid_ext() */
+
+
+
+int initgroups_ext(
+
+  const char *username,
+  gid_t       gr_id)
+
+  {
+  int count = 0;
+  int rc = PBSE_NONE;
+
+  errno = 0;
+
+  while (count < LDAP_RETRIES)
+    {
+    if ((rc = initgroups(username, gr_id)) != 0)
+      {
+      switch (errno)
+        {
+        case EAGAIN:
+        case EINTR:
+
+          count++;
+          usleep(200);
+          break;
+
+        default:
+
+          count += LDAP_RETRIES;
+          break;
+
+        }
+      }
+    }
+
+  return(rc);
+  }
 

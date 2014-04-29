@@ -46,7 +46,7 @@ int check_job_name(char *name, int chk_alpha)
   exit(1);
   }
 
-int hash_add_hash(memmgr **mm, job_data **dest, job_data *src, int overwrite_existing)
+int hash_add_hash(job_data_container *dest, job_data_container *src, int overwrite_existing)
   {
   fprintf(stderr, "The call to hash_add_hash to be mocked!!\n");
   exit(1);
@@ -76,7 +76,7 @@ int prepare_path( char *path_in,  char *path_out,  char *host)
   exit(1);
   }
 
-int hash_del_item(memmgr **mm, job_data **head, const char *name)
+int hash_del_item(job_data_container *jdc, const char *name)
   {
   fprintf(stderr, "The call to hash_del_item to be mocked!!\n");
   exit(1);
@@ -112,7 +112,7 @@ int parse_stage_list(char *list)
   exit(1);
   }
 
-int add_verify_resources(memmgr **mm, job_data **res_attr, char *resources, int p_type)
+int add_verify_resources(job_data_container *res_attr, char *resources, int p_type)
   {
   fprintf(stderr, "The call to add_verify_resources to be mocked!!\n");
   exit(1);
@@ -142,7 +142,7 @@ int pbs_deljob_err( int c, char *jobid, char *extend, int *local_errno)
   exit(1);
   }
 
-void calloc_or_fail(memmgr ** mgr, char **dest, int alloc_size, const char *err_msg)
+void calloc_or_fail(char **dest, int alloc_size, const char *err_msg)
   {
   fprintf(stderr, "The call to calloc_or_fail to be mocked!!\n");
   exit(1);
@@ -154,7 +154,14 @@ int parse_depend_list( char *list, char *rtn_list,  int rtn_size )
   exit(1);
   }
 
-void parse_variable_list(memmgr **mgr, job_data **dest_hash, job_data *user_env, int var_type,  int op_type,  char *the_list)
+void parse_variable_list(
+
+  job_data_container *dest_hash, /* This is the dest hashmap for vars found */
+  job_data_container *user_env,  /* This is the source hashmap */
+  int                var_type,  /* Type for vars not pulled from the source hash */
+  int                op_type,   /* Op for vars not pulled from the source hash */
+  char               *the_list)  /* name=value,name1=value1,etc to be parsed */
+
   {
   fprintf(stderr, "The call to parse_variable_list to be mocked!!\n");
   exit(1);
@@ -172,13 +179,20 @@ char *pbs_strerror(int err)
   exit(1);
   }
 
-void hash_add_or_exit(memmgr **mm, job_data **head, const char *name, const char *value, int var_type)
+void hash_add_or_exit(
+
+  job_data_container *head,          /* M - hashmap */
+  const char         *name,               /* I - The item being added to the hashmap */
+  const char         *val,                /* I - Sets the value of variable */
+  int                 var_type)             /* I - Sets the type of the variable */
+
   {
   fprintf(stderr, "The call to hash_add_or_exit to be mocked!!\n");
   exit(1);
   }
 
-void set_env_opts(memmgr **mgr, job_data **env_attr, char **envp)
+void set_env_opts(job_data_container *env_attr, char **envp)
+
   {
   fprintf(stderr, "The call to set_env_opts to be mocked!!\n");
   exit(1);
@@ -192,7 +206,17 @@ char *pbs_default(void)
   exit(1);
   }
 
-int pbs_submit_hash(int c, memmgr **mm, job_data *job_attr, job_data *res_attr, char *script, char *destination, char *extend, char **job_id, char **msg)
+int pbs_submit_hash(
+
+  int                 socket,
+  job_data_container *job_attr,
+  job_data_container *res_attr,
+  char               *script,
+  char               *destination,
+  char               *extend,  /* (optional) */
+  char               **return_jobid,
+  char               **msg)
+
   {
   fprintf(stderr, "The call to pbs_submit_hash to be mocked!!\n");
   exit(1);
@@ -217,33 +241,9 @@ int cnt2server(const char *SpecServer)
   }
 }
 
-void memmgr_destroy(memmgr **mgr)
-  {
-  fprintf(stderr, "The call to memmgr_destroy to be mocked!!\n");
-  exit(1);
-  }
-
-int memmgr_free(memmgr **mgr, void *ptr)
-  {
-  fprintf(stderr, "The call to memmgr_free to be mocked!!\n");
-  exit(1);
-  }
-
-int memmgr_init(memmgr **mgr, int mgr_size)
-  {
-  fprintf(stderr, "The call to memmgr_init to be mocked!!\n");
-  exit(1);
-  }
-
 int hash_count(job_data *head)
   {
   fprintf(stderr, "The call to hash_count to be mocked!!\n");
-  exit(1);
-  }
-
-void *memmgr_calloc(memmgr **mgr, int qty, int size)
-  {
-  fprintf(stderr, "The call to memmgr_calloc to be mocked!!\n");
   exit(1);
   }
 

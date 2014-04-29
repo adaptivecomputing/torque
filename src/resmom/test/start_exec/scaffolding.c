@@ -25,6 +25,14 @@
 #include "node_internals.hpp"
 #endif
 
+int  send_ms_called;
+int  send_sisters_called;
+int  num_contacted;
+bool am_ms = false;
+bool bad_pwd = false;
+bool fail_init_groups = false;
+bool fail_site_grp_check = false;
+int logged_event;
 int exec_with_exec;
 int is_login_node = 0;
 char *apbasil_protocol = NULL;
@@ -120,8 +128,7 @@ char *arst_string(const char *str, pbs_attribute *pattr)
 
 int job_save(job *pjob, int updatetype, int mom_port)
   {
-  fprintf(stderr, "The call to job_save needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 int setwinsize(int pty)
@@ -308,7 +315,10 @@ void log_ext(int errnum, const char *routine, const char *text, int severity)
   {
   }
 
-void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) 
+  {
+  logged_event++;
+  }
 
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 
@@ -337,14 +347,14 @@ void *get_next(list_link pl, char *file, int line)
 
 int send_sisters(job *pjob, int com, int using_radix, std::set<int> *sisters_to_contact)
   {
-  fprintf(stderr, "The call to send_sisters needs to be mocked!!\n");
-  exit(1);
+  send_sisters_called++;
+  return(num_contacted);
   }
 
 int send_ms(job *pjob,int  com)
   {
-  fprintf(stderr, "The call to send_ms needs to be mocked!!\n");
-  exit(1);
+  send_ms_called++;
+  return(0);
   }
 
 
@@ -375,8 +385,10 @@ void attrl_fixlink(tlist_head *phead)
 
 int site_mom_chkuser(job *pjob)
   {
-  fprintf(stderr, "The call to site_mom_chkuser needs to be mocked!!\n");
-  exit(1);
+  if (fail_site_grp_check == true)
+    return(-1);
+
+  return(0);
   }
 
 resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
@@ -391,10 +403,25 @@ int mom_checkpoint_job_is_checkpointable(job *pjob)
   exit(1);
   }
 
-struct passwd * getpwnam_ext(char * user_name)
+struct passwd * getpwnam_ext(char *user_name)
   {
-  fprintf(stderr, "The call to getpwnam_ext needs to be mocked!!\n");
-  exit(1);
+  static int ct = 1;
+  static passwd pwd;
+
+  if (ct == 1)
+    {
+    pwd.pw_dir = strdup("/home/dbeer");
+    pwd.pw_gid = 6;
+    pwd.pw_name = strdup("dbeer");
+    }
+
+  if ((ct++ % 2 == 0) &&
+      (bad_pwd == false))
+    {
+    return(&pwd);
+    }
+
+  return(NULL);
   }
 
 int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size)
@@ -545,7 +572,7 @@ int pbs_getaddrinfo(const char *hostname, struct addrinfo *bob, struct addrinfo 
 
 bool am_i_mother_superior(const job &pjob)
   {
-  return(false);
+  return(am_ms);
   }
 
 int ctnodes(char *epec)
@@ -594,4 +621,12 @@ void translate_range_string_to_vector(const char *range, std::vector<int> &indic
   indices.push_back(7);
   indices.push_back(8);
   indices.push_back(9);
+  }
+
+int initgroups_ext(const char *username, gid_t gr_id)
+  {
+  if (fail_init_groups == true)
+    return(-1);
+
+  return(0);
   }

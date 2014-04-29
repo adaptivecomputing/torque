@@ -367,34 +367,21 @@ enum csa_chk_cmd
 #endif /* ENABLE_CSA */
 
 
-int create_command(
+void create_command(
 
-  char  *cmdbuf,
-  int    cmdbuf_size,
-  char **argv)
+  std::string  &cmd,
+  char        **argv)
 
   {
   int i;
-  
-  snprintf(cmdbuf, cmdbuf_size, "%s", argv[0]);
+
+  cmd = argv[0];
 
   for (i = 1; argv[i] != NULL; i++)
     {
-    if (cmdbuf_size - strlen(cmdbuf) > strlen(argv[i]) + 1)
-      {
-      strcat(cmdbuf, " ");
-      strcat(cmdbuf, argv[i]);
-      }
-    else
-      return(-1);
+    cmd += " ";
+    cmd += argv[i];
     }
-
-  if (cmdbuf_size - strlen(cmdbuf) > 1)
-    strcat(cmdbuf, ")");
-  else
-    return(-1);
-
-  return(PBSE_NONE);
   } /* END create_command() */
 
 
@@ -406,7 +393,7 @@ int create_command(
  * network is fouled up, mom cannot afford to wait forever.
  */
 
-static void no_hang(
+void no_hang(
 
   int sig)   /* I (not used) */
 
@@ -1747,10 +1734,10 @@ int mom_jobstarter_execute_job(
 
   if (LOGLEVEL >= 10)
     {
-    char cmd[MAXPATHLEN + 1];
-    create_command(cmd, sizeof(cmd), arg);
+    std::string cmd;
+    create_command(cmd, arg);
     
-    sprintf(log_buffer, "execing jobstarter command (%s)\n", cmd);
+    sprintf(log_buffer, "execing jobstarter command (%s)\n", cmd.c_str());
     log_ext(-1, __func__, log_buffer, LOG_DEBUG);
     }
   
@@ -3858,11 +3845,11 @@ void launch_the_job_normally(
   {
   if (LOGLEVEL >= 10)
     {
-    char cmd[MAXLINE];
+    std::string cmd;
    
-    create_command(cmd, sizeof(cmd), arg);
+    create_command(cmd, arg);
     
-    sprintf(log_buffer, "execing command (%s) args (%s)\n", shell, cmd);
+    sprintf(log_buffer, "execing command (%s) args (%s)\n", shell, cmd.c_str());
     log_ext(-1, __func__, log_buffer, LOG_DEBUG);
     }
   
@@ -7922,7 +7909,7 @@ int init_groups(
 
   n = 0;
 
-  if (initgroups(pwname, pwgrp) < 0)
+  if (initgroups_ext(pwname, pwgrp) < 0)
     {
     log_err(errno, __func__, "initgroups");
 
