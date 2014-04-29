@@ -109,22 +109,26 @@ int encode_exec_host(
   int             perm)    /* only used for resources */
 
   {
+  char *old_str;
+  char *export_str;
   char *pipe;
   int   rc;
-  pbs_attribute  tmp;
 
   if (attr->at_val.at_str == NULL)
     return(PBSE_NONE);
 
-  memcpy(&tmp,attr,sizeof(pbs_attribute));
-  if ((tmp.at_val.at_str = strdup(attr->at_val.at_str)) == NULL)
+  if ((export_str = strdup(attr->at_val.at_str)) == NULL)
     return(PBSE_SYSTEM);
 
-  while ((pipe = strchr(tmp.at_val.at_str, '|')) != NULL)
+  while ((pipe = strchr(export_str, '|')) != NULL)
     *pipe = '+';
 
-  rc = encode_str(&tmp, phead, atname, rsname, mode, perm);
-  free(tmp.at_val.at_str);
+  old_str = attr->at_val.at_str;
+  attr->at_val.at_str = export_str;
+
+  rc = encode_str(attr, phead, atname, rsname, mode, perm);
+  attr->at_val.at_str = old_str;
+  free(export_str);
 
   return(rc);
   } /* END encode_exec_host() */
