@@ -1102,6 +1102,12 @@ void stat_update(
   if (cntl->sc_post)
     cntl->sc_post(cntl); /* continue where we left off */
 
+  /* If sc_post has a value it is:
+   * req_stat_job_step2
+   * if so, it expects cntl to be free'd after the call
+   */
+  free(cntl); /* a bit of a kludge but its saves an extra func */
+
   return;
   }  /* END stat_update() */
 
@@ -1136,8 +1142,10 @@ void stat_mom_job(
   cntl->sc_post   = 0;  /* tell stat_update() to free cntl */
   cntl->sc_jobid[0] = '\0'; /* cause "start from beginning" */
 
-  stat_to_mom(job_id, cntl);
-  free(cntl);
+  if (stat_to_mom(job_id, cntl) != 0)
+    {
+    free(cntl);
+    }
 
   /* if not an error, cntl free'd in stat_update() */
 
