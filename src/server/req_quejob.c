@@ -1405,8 +1405,6 @@ int req_quejob(
     job_mutex.set_unlock_on_exit(false);
     return(rc);
     }
-  
-  job_save(pj, SAVEJOB_NEW, 0);
 
   *pjob_id = strdup(pj->ji_qs.ji_jobid);
 
@@ -1743,11 +1741,6 @@ int req_rdytocommit(
   {
   job  *pj;
 
-  int   OrigState;
-  int   OrigSState;
-  char  OrigSChar;
-  long  OrigFlags;
-
   char  namebuf[MAXPATHLEN+1];
   char  jobid[PBS_MAXSVRJOBID + 1];
   char  log_buf[LOCAL_LOG_BUF_SIZE];
@@ -1796,12 +1789,6 @@ int req_rdytocommit(
     return(rc);
     }
 
-  OrigState  = pj->ji_qs.ji_state;
-
-  OrigSState = pj->ji_qs.ji_substate;
-  OrigSChar  = pj->ji_wattr[JOB_ATR_state].at_val.at_char;
-  OrigFlags  = pj->ji_wattr[JOB_ATR_state].at_flags;
-
   pj->ji_qs.ji_state    = JOB_STATE_TRANSIT;
   pj->ji_qs.ji_substate = JOB_SUBSTATE_TRANSICM;
   pj->ji_wattr[JOB_ATR_state].at_val.at_char = 'T';
@@ -1819,28 +1806,6 @@ int req_rdytocommit(
 
     snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_jobs, pj->ji_qs.ji_fileprefix, JOB_FILE_SUFFIX);
     unlink(namebuf);
-    }
-
-  if (job_save(pj, SAVEJOB_FULL, 0) == -1)
-    {
-    rc = PBSE_CAN_NOT_WRITE_FILE;
-    snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-      "cannot save job - %s - (%d - %s)",
-      pj->ji_qs.ji_jobid,
-      errno,
-      strerror(errno));
-
-    log_err(rc, __func__, log_buf);
-
-    /* commit failed, backoff state changes */
-
-    pj->ji_qs.ji_state    = OrigState;
-    pj->ji_qs.ji_substate = OrigSState;
-    pj->ji_wattr[JOB_ATR_state].at_val.at_char = OrigSChar;
-    pj->ji_wattr[JOB_ATR_state].at_flags = OrigFlags;
-
-    req_reject(rc, 0, preq, NULL, log_buf);
-    return(rc);
     }
 
   /* acknowledge the request with the job id */
