@@ -474,7 +474,6 @@ typedef struct noderes
 typedef struct
   {
   char      jobid[PBS_MAXSVRJOBID+1];
-  void     *pjob;
   void     *ptask;
 
   char      sjr[2048];  /* provide buffer space for struct startjob_rtn */

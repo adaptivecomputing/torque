@@ -2414,7 +2414,7 @@ int TMomFinalizeJob2(
 
   job                  *pjob;
   
-  pjob  = (job *)TJE->pjob;
+  pjob  = mom_find_job(TJE->jobid);
   
   if (LOGLEVEL >= 4)
     {
@@ -4046,7 +4046,7 @@ int TMomFinalizeChild(
   struct passwd         *pwdp;
   proc_stat_t           *ps = NULL;
 
-  pjob  = (job *)TJE->pjob;
+  pjob  = mom_find_job(TJE->jobid);
   ptask = (task *)TJE->ptask;
 
   pwdp  = (struct passwd *)TJE->pwdp;
@@ -8159,7 +8159,7 @@ int TMomCheckJobChild(
     {
     log_record(PBSEVENT_ERROR,
       PBS_EVENTCLASS_JOB,
-      (TJE->pjob != NULL) ? ((job *)TJE->pjob)->ji_qs.ji_jobid : "???",
+      TJE->jobid,
       "task/session info loaded");
     }
 

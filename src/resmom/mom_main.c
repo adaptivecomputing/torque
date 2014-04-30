@@ -5157,7 +5157,15 @@ int TMOMJobGetStartInfo(
 
   for (index = 0;index < TMAX_JE;index++)
     {
-    if (TMOMStartInfo[index].pjob == pjob)
+    if ((pjob == NULL) &&
+        (TMOMStartInfo[index].jobid[0] == '\0'))
+      {
+      *TJEP = &TMOMStartInfo[index];
+
+      return(SUCCESS);
+      }
+    else if ((pjob != NULL) &&
+             (!strcmp(TMOMStartInfo[index].jobid, pjob->ji_qs.ji_jobid)))
       {
       *TJEP = &TMOMStartInfo[index];
 
