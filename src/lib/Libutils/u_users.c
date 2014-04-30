@@ -180,6 +180,8 @@ int initgroups_ext(
 
         }
       }
+    else
+      break;
     }
 
   return(rc);
