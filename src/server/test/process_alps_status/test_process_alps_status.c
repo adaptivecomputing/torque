@@ -11,12 +11,12 @@
 int set_ncpus(struct pbsnode *,struct pbsnode *, int);
 int set_ngpus(struct pbsnode *, int);
 int set_state(struct pbsnode *, const char *);
-void finish_gpu_status(boost::ptr_vector<std::string>::iterator& i,boost::ptr_vector<std::string>::iterator end);
+void finish_gpu_status(unsigned int &i, std::vector<std::string> &status_info);
 struct pbsnode *create_alps_subnode(struct pbsnode *parent, const char *node_id);
 struct pbsnode *find_alpsnode_by_name(struct pbsnode *parent, const char *node_id);
 struct pbsnode *determine_node_from_str(const char *str, struct pbsnode *parent, struct pbsnode *current);
 int check_if_orphaned(void *str);
-int process_alps_status(char *, boost::ptr_vector<std::string>&);
+int process_alps_status(char *, std::vector<std::string>&);
 int process_reservation_id(struct pbsnode *pnode, const char *rsv_id_str);
 int record_reservation(struct pbsnode *pnode, const char *rsv_id);
 
@@ -117,24 +117,23 @@ END_TEST
 
 START_TEST(finish_gpu_status_test)
   {
-  boost::ptr_vector<std::string> status;
-  boost::ptr_vector<std::string>::iterator end;
+  std::vector<std::string> status;
+  unsigned int             i = 0;
 
-  status.push_back(new std::string("o"));
-  status.push_back(new std::string("n"));
-  status.push_back(new std::string("</cray_gpu_status>"));
-  status.push_back(new std::string("tom"));
+  status.push_back("o");
+  status.push_back("n");
+  status.push_back("</cray_gpu_status>");
+  status.push_back("tom");
 
-  end = status.begin();
-  finish_gpu_status(end,status.end());
+  finish_gpu_status(i, status);
   snprintf(buf, sizeof(buf), "penultimate string isn't correct, should be '%s' but is '%s'",
-    CRAY_GPU_STATUS_END, end->c_str());
-  fail_unless(!strcmp(end->c_str(), CRAY_GPU_STATUS_END), buf);
+    CRAY_GPU_STATUS_END, status[i].c_str());
+  fail_unless(!strcmp(status[i].c_str(), CRAY_GPU_STATUS_END), buf);
 
-  end++;
+  i++;
   snprintf(buf, sizeof(buf), "last string isn't correct, should be 'tom' but is '%s'",
-    end->c_str());
-  fail_unless(!strcmp(end->c_str(), "tom"), buf);
+    status[i].c_str());
+  fail_unless(!strcmp(status[i].c_str(), "tom"), buf);
 
   }
 END_TEST
@@ -222,10 +221,10 @@ END_TEST
 
 START_TEST(whole_test)
   {
-  boost::ptr_vector<std::string> ds;
+  std::vector<std::string> ds;
   int             rc;
   
-  ds.push_back(new std::string(alps_status));
+  ds.push_back(alps_status);
  
   rc = process_alps_status((char *)"tom", ds);
   fail_unless(rc == 0, "didn't process alps status");

@@ -378,13 +378,13 @@ int set_state(
 
 void finish_gpu_status(
 
-    boost::ptr_vector<std::string>::iterator& i,
-    boost::ptr_vector<std::string>::iterator end)
+  unsigned int             &i,
+  std::vector<std::string> &status_info)
 
   {
-  while (i != end)
+  while (i < status_info.size())
     {
-    if (!strcmp(i->c_str(), CRAY_GPU_STATUS_END))
+    if (!strcmp(status_info[i].c_str(), CRAY_GPU_STATUS_END))
       break;
 
     i++;
@@ -420,9 +420,9 @@ int set_ngpus(
 
 int process_gpu_status(
 
-  struct pbsnode  *pnode,
-  boost::ptr_vector<std::string>::iterator& i,
-  boost::ptr_vector<std::string>::iterator end)
+  struct pbsnode           *pnode,
+  unsigned int             &i,
+  std::vector<std::string> &status_info)
 
   {
   pbs_attribute   temp;
@@ -437,7 +437,7 @@ int process_gpu_status(
     {
     log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, "cannot initialize attribute");
 
-    finish_gpu_status(i,end);
+    finish_gpu_status(i, status_info);
 
     return(rc);
     }
@@ -445,20 +445,20 @@ int process_gpu_status(
   /* move past the initial gpu status */
   i++;
   
-  for (; i != end; i++)
+  for (; i < status_info.size(); i++)
     {
-    if (!strcmp(i->c_str(), CRAY_GPU_STATUS_END))
+    if (!strcmp(status_info[i].c_str(), CRAY_GPU_STATUS_END))
       break;
 
-    if (!strncmp(i->c_str(), "gpu_id=", strlen("gpu_id=")))
+    if (!strncmp(status_info[i].c_str(), "gpu_id=", strlen("gpu_id=")))
       {
-      snprintf(buf, sizeof(buf), "gpu[%d]=%s;", gpu_count, i->c_str());
+      snprintf(buf, sizeof(buf), "gpu[%d]=%s;", gpu_count, status_info[i].c_str());
       gpu_info += buf;
       gpu_count++;
       }
     else
       {
-      gpu_info += i->c_str();
+      gpu_info += status_info[i].c_str();
       gpu_info += ';';
       }
     }
@@ -570,8 +570,8 @@ int process_reservation_id(
 
 int process_alps_status(
 
-  char           *nd_name,
-  boost::ptr_vector<std::string>& status_info)
+  char                     *nd_name,
+  std::vector<std::string> &status_info)
 
   {
   const char    *ccu_p = NULL;
@@ -598,12 +598,13 @@ int process_alps_status(
     return(PBSE_NONE);
 
   /* loop over each string */
-  for(boost::ptr_vector<std::string>::iterator i = status_info.begin();i != status_info.end();i++)
+  for(unsigned int i = 0; i < status_info.size(); i++)
     {
-    const char *str = i->c_str();
+    const char *str = status_info[i].c_str();
+
     if (!strncmp(str, "node=", strlen("node=")))
       {
-      if (i != status_info.begin())
+      if (i != 0)
         {
         snprintf(node_index_buf, sizeof(node_index_buf), "node_index=%d", node_index++);
         decode_arst(&temp, NULL, NULL, node_index_buf, 0);
@@ -624,7 +625,7 @@ int process_alps_status(
     /* process the gpu status information separately */
     if (!strcmp(CRAY_GPU_STATUS_START, str))
       {
-      rc = process_gpu_status(current, i,status_info.end());
+      rc = process_gpu_status(current, i, status_info);
       continue;
       }
     else if (!strncmp(reservation_id, str, strlen(reservation_id)))

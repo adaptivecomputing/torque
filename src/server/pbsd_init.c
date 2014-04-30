@@ -213,7 +213,7 @@ extern all_jobs                newjobs;
 all_queues                      svr_queues;
 job_recycler                    recycler;
 queue_recycler                  q_recycler;
-container::item_container<job_exiting_retry_info *>  exiting_jobs_info;
+pthread_mutex_t                *exiting_jobs_info_mutex;
 
 boost::ptr_vector<std::string>  hierarchy_holder;
 hello_container                 hellos;
@@ -1237,6 +1237,9 @@ int initialize_data_structures_and_mutexes()
 
   reroute_job_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(reroute_job_mutex, NULL);
+
+  exiting_jobs_info_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(exiting_jobs_info_mutex, NULL);
 
   pthread_mutex_lock(scheduler_sock_jobct_mutex);
   scheduler_sock = -1;

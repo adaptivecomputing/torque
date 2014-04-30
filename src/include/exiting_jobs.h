@@ -99,9 +99,6 @@ typedef struct job_exiting_retry_info
   int             internal_job_id;
   } job_exiting_retry_info;
 
-  extern  container::item_container<job_exiting_retry_info *>                 exiting_jobs_info;
-  typedef container::item_container<job_exiting_retry_info *>::item_iterator  exiting_jobs_info_iterator;
-
 
 
 int   remove_job_from_exiting_list(job **pjob);

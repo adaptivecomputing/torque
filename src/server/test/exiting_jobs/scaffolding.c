@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <pthread.h>
 
 #include "pbs_job.h"
 #include "exiting_jobs.h"
@@ -9,8 +10,7 @@
 bool exit_called = false;
 int LOGLEVEL;
 
-container::item_container<job_exiting_retry_info *>  exiting_jobs_info;
-
+pthread_mutex_t *exiting_jobs_info_mutex;
 
 job *svr_find_job(const char *jobid, int a)
   {
