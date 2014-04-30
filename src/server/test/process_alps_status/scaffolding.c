@@ -1320,6 +1320,8 @@ int initialize_pbsnode(
 
   pthread_mutex_init(pnode->nd_mutex,NULL);
 
+  pnode->nd_name = pname;
+
   return(PBSE_NONE);
   }  /* END initialize_pbsnode() */
 

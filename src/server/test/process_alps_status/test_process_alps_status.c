@@ -22,7 +22,7 @@ int record_reservation(struct pbsnode *pnode, const char *rsv_id);
 
 char buf[4096];
 
-char *alps_status = (char *)"node=1\0CPROC=12\0state=UP\0reservation_id=12\0<cray_gpu_status>\0gpu_id=0\0clock_mhz=2600\0gpu_id=1\0clock_mhz=2600\0</cray_gpu_status>\0\0";
+const char *alps_status[] = {"node=1", "CPROC=12", "state=UP", "reservation_id=12", "<cray_gpu_status>", "gpu_id=0", "clock_mhz=2600", "gpu_id=1", "clock_mhz=2600", "</cray_gpu_status>", NULL};
 /*node=2\0CPROC=12\0state=UP\0<cray_gpu_status>\0gpu_id=0\0clock_mhz=2600\0gpu_id=1\0clock_mhz=2600\0</cray_gpu_status>\0node=3\0CPROC=12\0state=UP\0<cray_gpu_status>\0gpu_id=0\0clock_mhz=2600\0gpu_id=1\0clock_mhz=2600\0</cray_gpu_status>\0\0";*/
 
 extern int count;
@@ -222,9 +222,11 @@ END_TEST
 START_TEST(whole_test)
   {
   std::vector<std::string> ds;
-  int             rc;
+  int                      rc;
+  int                      i = 0;
   
-  ds.push_back(alps_status);
+  while (alps_status[i] != NULL)
+    ds.push_back(alps_status[i++]);
  
   rc = process_alps_status((char *)"tom", ds);
   fail_unless(rc == 0, "didn't process alps status");
