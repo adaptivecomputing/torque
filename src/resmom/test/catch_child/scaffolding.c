@@ -19,6 +19,7 @@
 #include "resizable_array.h"
 
 int server_down;
+int job_exit_wait_time = 600;
 resizable_array *exiting_job_list;
 
 const char *PMOMCommand[] =

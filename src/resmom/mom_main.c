@@ -1484,6 +1484,59 @@ void cleanup_aux()
 
 
 
+/* clear_jobs - clear all jobs from the job job link list */
+void clear_jobs(
+
+  tlist_head job_queue,
+  std::stringstream &output)
+ 
+  {
+  std::string tmpLine;
+  job  *pjobnext = NULL;
+  job  *pjob = NULL;
+
+  if ((pjob = (job *)GET_NEXT(job_queue)) != NULL)
+    {
+    while (pjob != NULL)
+      {
+      tmpLine.append("clearing job ");
+      tmpLine.append(pjob->ji_qs.ji_jobid);
+
+      log_record(PBSEVENT_SYSTEM, 0, __func__, tmpLine.c_str());
+
+      pjobnext = (job *)GET_NEXT(pjob->ji_alljobs);
+
+      mom_job_purge(pjob);
+
+      pjob = pjobnext;
+      output << tmpLine << "\n";
+      }
+    }  
+  } /* clear_jobs */
+
+
+
+job *mom_find_newjobs(
+
+  char *jobid)
+
+  {
+  job *pj = NULL;
+ 
+  pj = (job *)GET_NEXT(svr_newjobs);
+  while (pj != NULL)
+    {
+    if (!strcmp(pj->ji_qs.ji_jobid, jobid))
+      break;
+    pj = (job *)GET_NEXT(pj->ji_alljobs);
+    }
+  return pj;
+  }   /* END mom_find_newjobs() */
+
+
+
+
+
 int process_clear_job_request(
 
   std::stringstream &output,
@@ -1493,7 +1546,6 @@ int process_clear_job_request(
   char *ptr = NULL;
 
   job  *pjob = NULL;
-  job  *pjobnext = NULL;
 
   if ((*curr == '=') && ((*curr) + 1 != '\0'))
     {
@@ -1507,41 +1559,29 @@ int process_clear_job_request(
     }
   else
     {
-    std::string tmpLine;
-
     if (!strcasecmp(ptr, "all"))
       {
-      if ((pjob = (job *)GET_NEXT(svr_alljobs)) != NULL)
-        {
-        while (pjob != NULL)
-          {
-          tmpLine.append("clearing job ");
-          tmpLine.append(pjob->ji_qs.ji_jobid);
-
-          log_record(PBSEVENT_SYSTEM, 0, __func__, tmpLine.c_str());
-
-          pjobnext = (job *)GET_NEXT(pjob->ji_alljobs);
-
-          mom_job_purge(pjob);
-
-          pjob = pjobnext;
-
-          output << tmpLine << "\n";
-          }
-        }
-
+      clear_jobs(svr_newjobs, output);
+      clear_jobs(svr_alljobs, output);
       output << "clear completed";
       }
-    else if ((pjob = mom_find_job(ptr)) != NULL)
+    else 
       {
-      output << "clearing job ";
-      output << pjob->ji_qs.ji_jobid;
+      std::string tmpLine;
+      pjob = mom_find_job(ptr);
+      if (!pjob)
+        pjob = mom_find_newjobs(ptr);
+      if (pjob)
+        {
+        output << "clearing job ";
+        output << pjob->ji_qs.ji_jobid;
 
-      log_record(PBSEVENT_SYSTEM, 0, __func__, tmpLine.c_str());
+        log_record(PBSEVENT_SYSTEM, 0, __func__, tmpLine.c_str());
 
-      mom_job_purge(pjob);
+        mom_job_purge(pjob);
 
-      output << tmpLine;
+        output << tmpLine;
+        }
       }
     }
 
