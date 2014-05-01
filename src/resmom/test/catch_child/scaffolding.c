@@ -19,6 +19,7 @@
 #include "mom_func.h"
 #include "resizable_array.h"
 
+int job_exit_wait_time = 600;
 resizable_array *exiting_job_list;
 
 const char *PMOMCommand[] =

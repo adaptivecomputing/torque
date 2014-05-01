@@ -1283,7 +1283,11 @@ int send_job_to_mom(
       *pjob_ptr = pjob;
       pjob->ji_qs.ji_destin[0] = '\0';
       
-      svr_setjobstate(pjob, old_state, old_subst, FALSE);
+      /* Do not restore the status to running again
+      ** since it's not able to run the job on the MOM
+      */
+      if (old_state != JOB_STATE_RUNNING)
+        svr_setjobstate(pjob, old_state, old_subst, FALSE);
       }
 
     if (mail_text != NULL)
