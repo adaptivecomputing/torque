@@ -22,7 +22,8 @@
 
 int server_down;
 
-boost::ptr_vector<exiting_job_info> exiting_job_list;
+//boost::ptr_vector<exiting_job_info> exiting_job_list;
+std::vector<exiting_job_info> exiting_job_list;
 
 const char *PMOMCommand[] =
   {
