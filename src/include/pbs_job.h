@@ -457,6 +457,7 @@ typedef struct noderes
 #define MOM_HAS_NODEFILE 4 /* Mom wrote job PBS_NODEFILE */
 #define MOM_NO_PROC  8 /* no procs found for job */
 #define MOM_HAS_TMPDIR  16 /* Mom made a tmpdir */
+#define MOM_EPILOGUE_RUN 64 /* The epilogue has been run for this job */
 
 #ifdef USESAVEDRESOURCES
 #define MOM_JOB_RECOVERY   32  /* recovering dead job on restart */

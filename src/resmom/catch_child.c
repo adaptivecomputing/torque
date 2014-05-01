@@ -71,6 +71,7 @@ extern int   pbs_rm_port;
 extern int   is_login_node;
 
 extern int   LOGLEVEL;
+extern int   job_exit_wait_time;
 
 extern char  *PJobSubState[];
 extern int   PBSNodeCheckProlog;
@@ -125,6 +126,29 @@ void catch_child(
 
 
 
+bool are_all_sisters_done(
+    
+    job *pjob)
+
+  {
+  bool done = true;
+
+  if (am_i_mother_superior(*pjob) == false)
+    {
+    return(false);
+    }
+
+  for (int i = 1; i < pjob->ji_numnodes; i++)
+    {
+    if (pjob->ji_hosts[i].hn_sister == SISTER_OKAY)
+      {
+      done = false;
+      break;
+      }
+    }
+
+  return(done);
+  }
 
 
 hnodent *get_node(
@@ -405,6 +429,8 @@ void scan_for_exiting(void)
    * been freed by the time that the loop comes around */
   for (pjob = (job *)GET_NEXT(svr_alljobs); pjob != NULL; pjob = nextjob)
     {
+    time_t time_now;
+
     nextjob = (job *)GET_NEXT(pjob->ji_alljobs);
 
     /*
@@ -531,7 +557,6 @@ void scan_for_exiting(void)
             }
           else
             {
-            time_t time_now;
 
             time_now = time(NULL);
             if (time_now - pjob->ji_sampletim > 5)
@@ -821,17 +846,40 @@ void scan_for_exiting(void)
         "calling mom_open_socket_to_jobs_server");
       }
 
+    /* Have all the sister nodes reported in? Don't run the epilogue until the sisters are done */
+    bool sisters_done = false;
+
+    /* See if our wait time has expired. We can't wait forever for all the sisters to report in */
+    time_now = time(NULL);
+    if (time_now - pjob->ji_kill_started > job_exit_wait_time)
+      {
+      sisters_done = true;
+      }
+    else
+      {
+      if (pjob->ji_numnodes > 1)
+        {
+        sisters_done = are_all_sisters_done(pjob);
+        }
+      else
+        sisters_done = true;
+      }
+
     /* epilogues are now run by preobit reply, which happens after the fork */
 
-    pjob->ji_qs.ji_substate = JOB_SUBSTATE_PREOBIT;
-
-    preobit_preparation(pjob);
-
-    if (found_one++ >= ObitsAllowed)
+    if ((sisters_done == true) && ((pjob->ji_flags & MOM_EPILOGUE_RUN) == 0))
       {
-      /* do not exceed max obits per iteration limit */
+      pjob->ji_qs.ji_substate = JOB_SUBSTATE_PREOBIT;
+      pjob->ji_flags |= MOM_EPILOGUE_RUN;
 
-      break;
+      preobit_preparation(pjob);
+
+      if (found_one++ >= ObitsAllowed)
+        {
+        /* do not exceed max obits per iteration limit */
+
+        break;
+        }
       }
     }  /* END for (pjob) */
 
