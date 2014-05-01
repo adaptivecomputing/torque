@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 #include <netinet/in.h> /* sockaddr_in, sockaddr */
+#include <vector>
 
 #include "mom_hierarchy.h" /* mom_hierarchy_t, node_comm_t */
 #include "mom_server.h"
@@ -326,9 +327,9 @@ void DIS_tcp_cleanup(struct tcp_chan *chan) {}
 
 int generate_alps_status(
 
-  boost::ptr_vector<std::string>& status,
-  const char     *apbasil_path,
-  const char     *apbasil_protocol)
+  std::vector<std::string> &status,
+  const char               *apbasil_path,
+  const char               *apbasil_protocol)
 
   {
   return(0);

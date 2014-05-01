@@ -82,7 +82,6 @@
 
 #include <string>
 #include <sstream>
-#include <boost/ptr_container/ptr_vector.hpp>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>

@@ -26,7 +26,6 @@
 #endif
 #include <string>
 #include <vector>
-#include <boost/ptr_container/ptr_vector.hpp>
 
 #include "pbs_ifl.h"
 #include "libpbs.h"
@@ -84,7 +83,7 @@ extern char            *path_nodenote;
 extern int              LOGLEVEL;
 extern attribute_def    node_attr_def[];   /* node attributes defs */
 extern AvlTree          ipaddrs;
-extern boost::ptr_vector<std::string> hierarchy_holder;
+extern std::vector<std::string> hierarchy_holder;
 
 job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode);
 
@@ -3601,9 +3600,9 @@ int send_hierarchy(
   /* write the protocol, version and command */
   else if ((ret = is_compose(chan, IS_CLUSTER_ADDRS)) == DIS_SUCCESS)
     {
-    for(boost::ptr_vector<std::string>::iterator i = hierarchy_holder.begin(); i != hierarchy_holder.end(); i++)
+    for (unsigned int i = 0; i < hierarchy_holder.size(); i++)
       {
-      string = i->c_str();
+      string = hierarchy_holder[i].c_str();
       if ((ret = diswst(chan, string)) != DIS_SUCCESS)
         {
         if (ret > 0)

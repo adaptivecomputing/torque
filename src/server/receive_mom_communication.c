@@ -84,7 +84,6 @@
 #include <errno.h>
 #include <vector>
 #include <string>
-#include <boost/ptr_container/ptr_vector.hpp>
 
 #include "pbs_nodes.h"
 #include "log.h"

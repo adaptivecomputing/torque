@@ -104,7 +104,7 @@ int add_to_login_holder(
 
   {
   pthread_mutex_lock(logins.ln_mutex);
-  logins.nodes.push_back(new login_node(pnode));
+  logins.nodes.push_back(login_node(pnode));
   logins.next_node = logins.nodes.size() - 1;
   pthread_mutex_unlock(logins.ln_mutex);
 
@@ -158,39 +158,39 @@ struct pbsnode *find_fitting_node(
   std::vector<login_node *> ordered;
 
   /* create a sorted list of the logins */
-  for(boost::ptr_vector<login_node>::iterator it = logins.nodes.begin();it != logins.nodes.end();it++)
+  for (unsigned int i = 0; i < logins.nodes.size(); i++)
     {
     /* if ordered is empty just insert without attempting to sort */
     if (ordered.size() == 0)
-      ordered.push_back(&(*it));
+      ordered.push_back(&logins.nodes[i]);
     else
       {
       bool inserted = false;
       for(std::vector<login_node *>::iterator oit = ordered.begin();oit != ordered.end();oit++)
         {
-        if (it->times_used <= (*oit)->times_used)
+        if (logins.nodes[i].times_used <= (*oit)->times_used)
           {
           inserted = true;
-          ordered.insert(oit,&(*it));
+          ordered.insert(oit, &logins.nodes[i]);
           break;
           }
         }
 
       /* insert if it hasn't been inserted yet */
       if (!inserted)
-        ordered.push_back(&(*it));
+        ordered.push_back(&logins.nodes[i]);
       }
     }
 
-  for(std::vector<login_node *>::iterator it = ordered.begin();it != ordered.end();it++)
+  for (std::vector<login_node *>::iterator it = ordered.begin();it != ordered.end();it++)
     {
-
     if ((pnode = check_node(*it, needed)) != NULL)
       {
       (*it)->times_used++;
       return(pnode);
       }
     }
+
   return(NULL);
   } /* END find_fitting_node() */
 
@@ -204,14 +204,15 @@ void update_next_node_index(
   {
   int         prev_index = 0;
 
-  for(boost::ptr_vector<login_node>::iterator it = logins.nodes.begin();it != logins.nodes.end();it++)
+  for (unsigned int i = 0; i < logins.nodes.size(); i++)
     {
-    if (it->times_used < to_beat)
+    if (logins.nodes[i].times_used < to_beat)
       {
       /* don't break - there may be one lower */
-      to_beat = it->times_used;
+      to_beat = logins.nodes[i].times_used;
       logins.next_node = prev_index;
       }
+
     prev_index++;
     }
 
@@ -227,44 +228,40 @@ struct pbsnode *get_next_login_node(
 
   {
   struct pbsnode *pnode = NULL;
-  login_node     *ln;
   int             node_fits = TRUE;
 
   pthread_mutex_lock(logins.ln_mutex);
-  ln = &logins.nodes[logins.next_node];
+  login_node &ln = logins.nodes[logins.next_node];
 
-  if (ln != NULL)
+  pnode = ln.pnode;
+  lock_node(pnode, __func__, NULL, LOGLEVEL);
+  
+  if (needed != NULL)
     {
-    pnode = ln->pnode;
-    lock_node(pnode, __func__, NULL, LOGLEVEL);
-    
-    if (needed != NULL)
-      {
-      if (hasprop(pnode, needed) == FALSE)
-        {
-        node_fits = FALSE;
-        }
-      }
-    
-    /* must have at least one execution slot available */
-    if ((pnode->nd_slots.get_total_execution_slots() - pnode->nd_np_to_be_used < 1) ||
-        ((pnode->nd_state & INUSE_DOWN) != 0) ||
-        ((pnode->nd_state & INUSE_OFFLINE) != 0) ||
-        (pnode->nd_power_state != POWER_STATE_RUNNING))
+    if (hasprop(pnode, needed) == FALSE)
       {
       node_fits = FALSE;
       }
-    
-    if (node_fits == FALSE)
-      {
-      unlock_node(pnode, __func__, NULL, LOGLEVEL);
-      pnode = find_fitting_node(needed);
-      }
-    else
-      {
-      ln->times_used++;
-      update_next_node_index(ln->times_used);
-      }
+    }
+  
+  /* must have at least one execution slot available */
+  if ((pnode->nd_slots.get_total_execution_slots() - pnode->nd_np_to_be_used < 1) ||
+      ((pnode->nd_state & INUSE_DOWN) != 0) ||
+      ((pnode->nd_state & INUSE_OFFLINE) != 0) ||
+      (pnode->nd_power_state != POWER_STATE_RUNNING))
+    {
+    node_fits = FALSE;
+    }
+  
+  if (node_fits == FALSE)
+    {
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+    pnode = find_fitting_node(needed);
+    }
+  else
+    {
+    ln.times_used++;
+    update_next_node_index(ln.times_used);
     }
 
   pthread_mutex_unlock(logins.ln_mutex);

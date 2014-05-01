@@ -8786,7 +8786,7 @@ int read_status_strings(
     /* place each string into the buffer */
     if (rn != NULL)
       {
-      rn->statuses.push_back(new std::string(str));
+      rn->statuses.push_back(str);
       }
 
     free(str);

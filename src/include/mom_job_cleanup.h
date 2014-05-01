@@ -80,7 +80,6 @@
 
 #include <time.h>
 #include <string>
-#include <boost/ptr_container/ptr_vector.hpp>
 #include "pbs_ifl.h"
 
 class exiting_job_info
@@ -88,7 +87,7 @@ class exiting_job_info
 public:
   std::string  jobid;
   time_t obit_sent;
-  exiting_job_info(const char *id):jobid(id),obit_sent(time(NULL)){}
+  exiting_job_info(const char *id) : jobid(id), obit_sent(time(NULL)) {}
   };
 
-extern boost::ptr_vector<exiting_job_info> exiting_job_list;
+extern std::vector<exiting_job_info> exiting_job_list;

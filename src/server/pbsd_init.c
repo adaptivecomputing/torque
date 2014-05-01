@@ -135,7 +135,6 @@
 #include "alps_constants.h"
 #include <string>
 #include <vector>
-#include <boost/ptr_container/ptr_vector.hpp>
 #include "id_map.hpp"
 #include "exiting_jobs.h"
 
@@ -215,7 +214,7 @@ job_recycler                    recycler;
 queue_recycler                  q_recycler;
 pthread_mutex_t                *exiting_jobs_info_mutex;
 
-boost::ptr_vector<std::string>  hierarchy_holder;
+std::vector<std::string>        hierarchy_holder;
 hello_container                 hellos;
 hello_container                 failures;
 
@@ -471,7 +470,7 @@ void add_server_names_to_acl_hosts(void)
 
 
 
-void make_default_hierarchy(boost::ptr_vector<std::string>& hierarchy)
+void make_default_hierarchy(std::vector<std::string>& hierarchy)
 
   {
   struct pbsnode *pnode;
@@ -482,8 +481,8 @@ void make_default_hierarchy(boost::ptr_vector<std::string>& hierarchy)
 
   hierarchy.clear();
 
-  hierarchy.push_back(new std::string("<sp>"));
-  hierarchy.push_back(new std::string("<sl>"));
+  hierarchy.push_back("<sp>");
+  hierarchy.push_back("<sl>");
 
   while ((pnode = next_host(&allnodes, &iter, NULL)) != NULL)
     {
@@ -506,9 +505,9 @@ void make_default_hierarchy(boost::ptr_vector<std::string>& hierarchy)
   if (iter != NULL)
     delete iter;
 
-  hierarchy.push_back(new std::string(level_ds.c_str()));
-  hierarchy.push_back(new std::string("</sl>"));
-  hierarchy.push_back(new std::string("</sp>"));
+  hierarchy.push_back(level_ds);
+  hierarchy.push_back("</sl>");
+  hierarchy.push_back("</sp>");
   } /* END make_default_hierarchy() */
 
 
@@ -632,15 +631,15 @@ void check_if_in_nodes_file(
  */
 void convert_level_to_send_format(
 
-  mom_nodes                      *nodes,
-  int                             level_index,
-  boost::ptr_vector<std::string> &send_format)
+  mom_nodes                *nodes,
+  int                       level_index,
+  std::vector<std::string> &send_format)
 
   {
   node_comm_t       *nc;
   std::stringstream  level_string;
 
-  send_format.push_back(new std::string("<sl>"));
+  send_format.push_back("<sl>");
 
   for(mom_nodes::iterator nodes_iter = nodes->begin();nodes_iter != nodes->end();nodes_iter++)
     {
@@ -660,8 +659,8 @@ void convert_level_to_send_format(
       }
     }
 
-  send_format.push_back(new std::string(level_string.str().c_str()));
-  send_format.push_back(new std::string("</sl>"));
+  send_format.push_back(level_string.str());
+  send_format.push_back("</sl>");
   } /* END convert_level_to_send_format() */
 
 /*
@@ -681,17 +680,17 @@ void convert_level_to_send_format(
  */
 void convert_path_to_send_format(
 
-  mom_levels                     *levels,
-  boost::ptr_vector<std::string> &send_format)
+  mom_levels               *levels,
+  std::vector<std::string> &send_format)
 
   {
   int level_index = 0;
-  send_format.push_back(new std::string("<sp>"));
+  send_format.push_back("<sp>");
   
   for(mom_levels::iterator levels_iter = levels->begin();levels_iter != levels->end();levels_iter++)
     convert_level_to_send_format(*levels_iter, level_index++, send_format);
 
-  send_format.push_back(new std::string("</sp>"));
+  send_format.push_back("</sp>");
   } /* END convert_path_to_send_format() */
 
 
@@ -704,7 +703,7 @@ void convert_path_to_send_format(
  */
 void add_missing_nodes(
 
-  boost::ptr_vector<std::string> &send_format)
+  std::vector<std::string> &send_format)
 
   {
   struct pbsnode *pnode;
@@ -720,15 +719,15 @@ void add_missing_nodes(
       {
       if (found_missing_node == false)
         {
-        send_format.push_back(new std::string("<sp>"));
-        send_format.push_back(new std::string("<sl>"));
+        send_format.push_back("<sp>");
+        send_format.push_back("<sl>");
         found_missing_node = true;
-        send_format.push_back(new std::string(pnode->nd_name));
+        send_format.push_back(pnode->nd_name);
         }
       else
         {
-        send_format.push_back(new std::string(","));
-        send_format.push_back(new std::string(pnode->nd_name));
+        send_format.push_back(",");
+        send_format.push_back(pnode->nd_name);
         }
 
       snprintf(log_buf, sizeof(log_buf),
@@ -747,8 +746,8 @@ void add_missing_nodes(
 
   if (found_missing_node == true)
     {
-    send_format.push_back(new std::string("</sl>"));
-    send_format.push_back(new std::string("</sp>"));
+    send_format.push_back("</sl>");
+    send_format.push_back("</sp>");
     }
   }
 
@@ -763,7 +762,7 @@ void add_missing_nodes(
 
 void convert_mom_hierarchy_to_send_format(
 
-  boost::ptr_vector<std::string> &send_format)
+  std::vector<std::string> &send_format)
 
   {
 
@@ -795,7 +794,7 @@ void convert_mom_hierarchy_to_send_format(
 
 void prepare_mom_hierarchy(
     
-  boost::ptr_vector<std::string> &send_format)
+  std::vector<std::string> &send_format)
 
   {
   char            log_buf[LOCAL_LOG_BUF_SIZE];

@@ -81,7 +81,6 @@
 #include <ctype.h>
 #include <string>
 #include <vector>
-#include <boost/ptr_container/ptr_vector.hpp>
 #include <sstream>
 
 #include "pbs_config.h"

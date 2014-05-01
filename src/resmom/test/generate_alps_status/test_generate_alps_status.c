@@ -2,14 +2,13 @@
 #include "alps_constants.h"
 #include <string>
 #include <vector>
-#include <boost/ptr_container/ptr_vector.hpp>
 #include <check.h>
 
 int log_event_called = 0;
 int LOGLEVEL = 7;
 
 
-int parse_alps_output(std::string& alps_output,boost::ptr_vector<std::string>& status);
+int parse_alps_output(std::string& alps_output, std::vector<std::string>& status);
 
 void log_event( int eventtype, int objclass, const char *objname, const char *text);
 
@@ -41,14 +40,14 @@ char *sample_start23 = (char *)"architecture='x86_64' clock_mhz='2100'/> <Proces
 char *sample_start24 = (char *)"<Label name='MOAB:FEATURE=regmem' type='SOFT' disposition='ATTRACT'/> </LabelArray> </Node> </NodeArray> <ReservationArray> <Reservation reservation_id='1772' user_name='pgarias' account_name='DEFAULT'/> <Reservation reservation_id='2549' user_name='daryal' account_name='DEFAULT'/> <Reservation reservation_id='2869' user_name='zachary' account_name='DEFAULT'/> </ReservationArray> </Inventory> </ResponseData> </BasilResponse> ";
 
 
-int search_dynamic_string_status(boost::ptr_vector<std::string>& status, char *str);
-int generate_alps_status(boost::ptr_vector<std::string>& status, const char *path, const char *protocol);
+int search_dynamic_string_status(std::vector<std::string> &status, char *str);
+int generate_alps_status(std::vector<std::string> &status, const char *path, const char *protocol);
 
 
 START_TEST(parse_alps_output_test)
   {
   std::string output = "";
-  boost::ptr_vector<std::string> status;
+  std::vector<std::string> status;
   int             rc;
 
   output += sample_start1;
@@ -95,7 +94,7 @@ START_TEST(parse_alps13_output_test)
   #define ALPS_13_INPUT_FILE "basil_13_short.xml"
 
   std::string output = "";
-  boost::ptr_vector<std::string> status;
+  std::vector<std::string> status;
   int             rc;
   FILE           *fp;
   char            linebuf[1024];
@@ -121,7 +120,7 @@ END_TEST
 
 START_TEST(full_generate_test)
   {
-  boost::ptr_vector<std::string> status;
+  std::vector<std::string> status;
   int             rc;
   char           *path = (char *)"../../../test/test_scripts/get_inventory.sh";
   char           *protocol = (char *)"1.0";
@@ -140,7 +139,7 @@ END_TEST
 
 START_TEST(label_generate_test)
   {
-  boost::ptr_vector<std::string> status;
+  std::vector<std::string> status;
   int             rc;
   char           *path = (char *)"../../../test/test_scripts/label_inventory.sh";
   char           *protocol = (char *)"1.0";

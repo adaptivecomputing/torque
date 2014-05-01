@@ -88,7 +88,6 @@
 #include "pbs_nodes.h"
 #include <vector>
 #include <string>
-#include <boost/ptr_container/ptr_vector.hpp>
 
 #define  MAX_ENGINES 32
 
@@ -101,8 +100,8 @@ extern nodeboard node_boards[];
 
 int add_isa(
 
-  boost::ptr_vector<std::string>& status,
-  struct COI_ENGINE_INFO *mic_stat)
+  std::vector<std::string> &status,
+  struct COI_ENGINE_INFO   *mic_stat)
 
   {
   char     status_buf[MAXLINE];
@@ -137,7 +136,7 @@ int add_isa(
     }
 
   if (rc == PBSE_NONE)
-    status.push_back(new std::string(status_buf));
+    status.push_back(status_buf);
 
   return(rc);
   } /* END add_isa() */
@@ -146,8 +145,8 @@ int add_isa(
 
 int calculate_and_add_load(
 
-  boost::ptr_vector<std::string>& status,
-  struct COI_ENGINE_INFO     *mic_stat)
+  std::vector<std::string> &status,
+  struct COI_ENGINE_INFO   *mic_stat)
 
   {
   double   load_normalized = 0.0;
@@ -164,10 +163,10 @@ int calculate_and_add_load(
   load_normalized = load / mic_stat->NumCores;
 
   snprintf(status_buf, sizeof(status_buf), "load=%f", (float)load);
-  status.push_back(new std::string(status_buf));
+  status.push_back(status_buf);
 
   snprintf(status_buf, sizeof(status_buf), "normalized_load=%f", (float)load_normalized);
-  status.push_back(new std::string(status_buf));
+  status.push_back(status_buf);
 
   return(PBSE_NONE);
   } /* END calculate_and_add_load() */
@@ -177,35 +176,35 @@ int calculate_and_add_load(
 
 int add_single_mic_info(
 
-  boost::ptr_vector<std::string>& status,
-  struct COI_ENGINE_INFO *mic_stat)
+  std::vector<std::string> &status,
+  struct COI_ENGINE_INFO   *mic_stat)
 
   {
   char     status_buf[MAXLINE * 2];
 
   snprintf(status_buf, sizeof(status_buf), "mic_id=%u", mic_stat->DeviceId);
-  status.push_back(new std::string(status_buf));
+  status.push_back(status_buf);
 
   snprintf(status_buf, sizeof(status_buf), "num_cores=%u", mic_stat->NumCores);
-  status.push_back(new std::string(status_buf));
+  status.push_back(status_buf);
 
   snprintf(status_buf, sizeof(status_buf), "num_threads=%u", mic_stat->NumThreads);
-  status.push_back(new std::string(status_buf));
+  status.push_back(status_buf);
 
   snprintf(status_buf, sizeof(status_buf), "physmem=%lu", mic_stat->PhysicalMemory);
-  status.push_back(new std::string(status_buf));
+  status.push_back(status_buf);
 
   snprintf(status_buf, sizeof(status_buf), "free_physmem=%lu", mic_stat->PhysicalMemoryFree);
-  status.push_back(new std::string(status_buf));
+  status.push_back(status_buf);
 
   snprintf(status_buf, sizeof(status_buf), "swap=%lu", mic_stat->SwapMemory);
-  status.push_back(new std::string(status_buf));
+  status.push_back(status_buf);
 
   snprintf(status_buf, sizeof(status_buf), "free_swap=%lu", mic_stat->SwapMemoryFree);
-  status.push_back(new std::string(status_buf));
+  status.push_back(status_buf);
 
   snprintf(status_buf, sizeof(status_buf), "max_frequency=%u", mic_stat->CoreMaxFrequency);
-  status.push_back(new std::string(status_buf));
+  status.push_back(status_buf);
 
   add_isa(status, mic_stat);
 
@@ -220,7 +219,7 @@ int add_single_mic_info(
 
 int add_mic_status(
 
-    boost::ptr_vector<std::string>& status)
+  std::vector<std::string> &status)
 
   {
   COIENGINE                engine[MAX_ENGINES];
@@ -241,7 +240,7 @@ int add_mic_status(
     return(PBSE_SYSTEM);
     }
 
-  status.push_back(new std::string(START_MIC_STATUS));
+  status.push_back(START_MIC_STATUS);
 
 #ifdef NUMA_SUPPORT
   if (num_engines < node_boards[numa_index].mic_end_index)
@@ -278,7 +277,7 @@ int add_mic_status(
     add_single_mic_info(status, &mic_stat[i]);
     }
 
-  status.push_back(new std::string(END_MIC_STATUS));
+  status.push_back(END_MIC_STATUS);
 
   return(PBSE_NONE);
   } /* END add_mic_status() */

@@ -89,7 +89,6 @@
 #include <string.h>
 #include <pthread.h>
 #include <errno.h>
-#include <boost/ptr_container/ptr_vector.hpp>
 
 #include "pbs_job.h"
 #include "log.h"

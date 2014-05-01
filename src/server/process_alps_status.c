@@ -81,7 +81,6 @@
 
 #include <string>
 #include <vector>
-#include <boost/ptr_container/ptr_vector.hpp>
 #include <errno.h>
 #include <pthread.h>
 #include <stdlib.h>
@@ -106,7 +105,6 @@
 #include "server.h"
 #include <string>
 #include <vector>
-#include <boost/ptr_container/ptr_vector.hpp>
 #include "container.hpp"
 #include "id_map.hpp"
 

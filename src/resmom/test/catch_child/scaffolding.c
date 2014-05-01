@@ -1,9 +1,9 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <sstream>
+#include <vector>
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
-#include <boost/ptr_container/ptr_vector.hpp>
 /* declarations/includes for Global Vars */
 #include "list_link.h" /* tlist_head, list_link */
 #include "net_connect.h"
@@ -22,7 +22,7 @@
 
 int server_down;
 
-boost::ptr_vector<exiting_job_info> exiting_job_list;
+std::vector<exiting_job_info> exiting_job_list;
 
 const char *PMOMCommand[] =
   {
