@@ -120,6 +120,30 @@ void catch_child(
   }  /* END catch_child() */
 
 
+bool are_all_sisters_done(
+    
+    job *pjob)
+
+  {
+  bool done = true;
+
+  if (am_i_mother_superior(*pjob) == false)
+    {
+    return(false);
+    }
+
+  for (int i = 1; i < pjob->ji_numnodes; i++)
+    {
+    if (pjob->ji_hosts[i].hn_sister == SISTER_OKAY)
+      {
+      done = false;
+      break;
+      }
+    }
+
+  return(done);
+  }
+
 
 
 
@@ -722,6 +746,7 @@ bool mother_superior_cleanup(
 
   {
   task *ptask;
+  time_t time_now;
 
   pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_Suspend;
 
@@ -785,19 +810,35 @@ bool mother_superior_cleanup(
       __func__,
       "calling mom_open_socket_to_jobs_server");
     }
+    /* Have all the sister nodes reported in? Don't run the epilogue until the sisters are done */
+    bool sisters_done = false;
 
-  /* epilogues are now run by preobit reply, which happens after the fork */
+    /* See if our wait time has expired. We can't wait forever for all the sisters to report in */
+    time_now = time(NULL);
+    if (time_now - pjob->ji_kill_started > job_exit_wait_time)
+      {
+      sisters_done = true;
+      }
+    else
+      {
+      if (pjob->ji_numnodes > 1)
+        {
+        sisters_done = are_all_sisters_done(pjob);
+        }
+      else
+        sisters_done = true;
+      }
 
-  pjob->ji_qs.ji_substate = JOB_SUBSTATE_PREOBIT;
+    /* epilogues are now run by preobit reply, which happens after the fork */
 
-  preobit_preparation(pjob);
+    if ((sisters_done == true) && ((pjob->ji_flags & MOM_EPILOGUE_RUN) == 0))
+      {
+      pjob->ji_qs.ji_substate = JOB_SUBSTATE_PREOBIT;
+      pjob->ji_flags |= MOM_EPILOGUE_RUN;
 
-  if (*found_one++ >= ObitsAllowed)
-    {
-    /* do not exceed max obits per iteration limit */
+      preobit_preparation(pjob);
 
-    return(true);
-    }
+      }
 
   return(false);
   } /* END mother_superior_cleanup() */
