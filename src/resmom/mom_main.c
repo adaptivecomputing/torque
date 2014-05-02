@@ -1930,6 +1930,8 @@ void add_diag_jobs_memory_info(
         resvalue = getsize(pres);
       else if (!(strcmp(resname, "cput")))
         resvalue = gettime(pres);
+      else if (!(strcmp(resname, "energy_used")))
+        resvalue = gettime(pres);
       else
         continue;
 

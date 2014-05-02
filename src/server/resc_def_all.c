@@ -768,6 +768,8 @@ resource_def svr_resc_def_const[] =
   { "vcores", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
   { "wcrequeue", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
   { "cpuclock", decode_frequency, encode_frequency, set_frequency, comp_frequency, free_null, NULL_FUNC, READ_WRITE | ATR_DFLAG_MOM , ATR_TYPE_FREQ},    /* cpu frequency to run  job at */
+  { "energy_used", decode_l, encode_l, set_l, comp_l, free_null, NULL_FUNC, NO_USER_SET | ATR_DFLAG_MOM, ATR_TYPE_LONG},
+
 
   /* the definition for the "unknown" resource MUST be last */
 

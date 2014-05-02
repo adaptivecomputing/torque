@@ -3731,6 +3731,9 @@ int im_poll_job_as_sister(
     else if ((ret = diswul(local_chan, resc_used(pjob, "vmem", getsize))) != DIS_SUCCESS)
       {
       }
+    else if ((ret = diswul(local_chan, resc_used(pjob, "energy_used", gettime))) != DIS_SUCCESS)
+      {
+      }
     else
       {
       DIS_tcp_wflush(local_chan);
