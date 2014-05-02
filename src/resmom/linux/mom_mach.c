@@ -1966,7 +1966,8 @@ int mom_do_poll(
         strcmp(pname, "pcput") == 0 ||
         strcmp(pname, "mem") == 0 ||
         strcmp(pname, "pvmem") == 0 ||
-        strcmp(pname, "vmem") == 0)
+        strcmp(pname, "vmem") == 0 ||
+        strcmp(pname, "energy_used") == 0)
       {
       return(TRUE);
       }
@@ -2449,6 +2450,15 @@ int mom_set_use(
     pres->rs_value.at_type = ATR_TYPE_SIZE;
     pres->rs_value.at_val.at_size.atsv_shift = 10; /* KB */
     pres->rs_value.at_val.at_size.atsv_units = ATR_SV_BYTESZ;
+
+    rd = find_resc_def(svr_resc_def, "energy_used", svr_resc_size);
+
+    assert(rd != NULL);
+
+    pres = add_resource_entry(at, rd);
+    pres->rs_value.at_flags |= ATR_VFLAG_SET;
+    pres->rs_value.at_type = ATR_TYPE_LONG;
+
     }  /* END if ((at->at_flags & ATR_VFLAG_SET) == 0) */
 
   /* get cputime */
@@ -2467,6 +2477,16 @@ int mom_set_use(
   lnum = cput_sum(pjob);
 
   *lp = MAX(*lp, lnum);
+
+  /* get joules */
+
+  rd = find_resc_def(svr_resc_def, "energy_used", svr_resc_size);
+
+  assert(rd != NULL);
+
+  pres = find_resc_entry(at, rd);
+
+  pres->rs_value.at_val.at_long += 3;
 
   /* get swap */
 
