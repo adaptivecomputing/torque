@@ -4234,7 +4234,7 @@ int TMomFinalizeChild(
   if (LOGLEVEL >= 6)
     {
     snprintf(log_buf, sizeof(log_buf),"setting system limits. job id %s", pjob->ji_qs.ji_jobid);
-    log_err(-1, __func__, log_buf);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,  __func__, log_buf);
     }
 
   log_buffer[0] = '\0';
@@ -4246,7 +4246,7 @@ int TMomFinalizeChild(
   if (LOGLEVEL >= 6)
     {
     snprintf(log_buf, sizeof(log_buf),"system limits set. job id %s", pjob->ji_qs.ji_jobid);
-    log_err(-1, __func__, log_buf);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,  __func__, log_buf);
     }
 
   if ((idir = get_job_envvar(pjob, "PBS_O_ROOTDIR")) != NULL)
@@ -4281,7 +4281,7 @@ int TMomFinalizeChild(
       pjob->ji_qs.ji_un.ji_momt.ji_exgid,
       pjob->ji_qs.ji_jobid);
 
-    log_err(-1, __func__, log_buf );
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,  __func__, log_buf);
     }
 
   /* NOTE: must set groups before setting the user because not all users can
@@ -4296,7 +4296,7 @@ int TMomFinalizeChild(
             pjob->ji_qs.ji_jobid,
             idir != NULL ? idir : pwdp->pw_dir);
 
-    log_err(-1, __func__, log_buf);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,  __func__, log_buf);
     }
 
   /* X11 forwarding init */
@@ -4309,7 +4309,7 @@ int TMomFinalizeChild(
   if (LOGLEVEL >= 6)
     {
     snprintf(log_buf, sizeof(log_buf), "forking child: job id %s", pjob->ji_qs.ji_jobid);
-    log_err(-1, __func__, log_buf);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,  __func__, log_buf);
     }
 
   starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_OK, &sjr);
