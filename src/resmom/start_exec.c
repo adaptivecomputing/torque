@@ -5815,7 +5815,7 @@ void sister_job_nodes(
 
   job *pjob,
   char *radix_hosts,
-  char *radix_ports )  /* I */
+  char *radix_ports)  /* I */
 
   {
   int      i;
@@ -5823,12 +5823,10 @@ void sister_job_nodes(
   int      nhosts;
   int      nodenum;
   int      portnum;
-  int      ix;
   char    *cp = NULL;
   char    *nodestr = NULL;
   char    *portstr = NULL;
   hnodent *hp = NULL;
-  vnodent *np = NULL;
 
   /*  nodes_free(pjob); We may need to do a sister_nodes_free later */
 
@@ -5842,7 +5840,7 @@ void sister_job_nodes(
 
   nodestr = radix_hosts;
   /* count the number of nodes */
-  for(cp = nodestr; *cp; cp++)
+  for (cp = nodestr; *cp; cp++)
     {
     if (*cp == '+')
       {
@@ -5854,7 +5852,7 @@ void sister_job_nodes(
   /* count the number of ports. It must be equal to
    * number of hosts */
   portnum = 1;
-  for(cp = portstr; *cp; cp++)
+  for (cp = portstr; *cp; cp++)
     {
     if (*cp == '+')
       {
@@ -5871,28 +5869,20 @@ void sister_job_nodes(
   if (pjob->ji_sisters == NULL)
     return;
 
-  pjob->ji_sister_vnods = (vnodent *)calloc(nodenum + 1, sizeof(vnodent));
-  if (pjob->ji_sister_vnods == NULL)
-    return;
-
   nhosts = 0;
 
-  np = pjob->ji_sister_vnods;
-
-  for (i = 0;i < nodenum;i++, np++)
+  for (i = 0;i < nodenum; i++)
     {
-    char *dp, nodename[MAXPATHLEN + 1];
-    char *portptr, portnumber[MAXPORTLEN + 1];
-    int portcount;
-
-    ix = 0;
+    char *dp;
+    char  nodename[MAXPATHLEN + 1];
+    char *portptr;
+    char  portnumber[MAXPORTLEN + 1];
+    int   portcount;
 
     for (cp = nodestr, dp = nodename;*cp;cp++, dp++)
       {
       if (*cp == '/')
         {
-        ix = atoi(cp + 1);
-
         while ((*cp != '\0') && (*cp != '+'))
           ++cp;
 
@@ -5925,7 +5915,7 @@ void sister_job_nodes(
       }
 
     /* Get the port number for this host */
-    for(cp = portstr, portptr = portnumber, portcount = 0;portcount < (MAXPORTLEN+1)&& *cp; cp++, portptr++, portcount++)
+    for (cp = portstr, portptr = portnumber, portcount = 0;portcount < (MAXPORTLEN+1)&& *cp; cp++, portptr++, portcount++)
       {
       if (*cp == '+')
         {
@@ -5954,23 +5944,7 @@ void sister_job_nodes(
       CLEAR_HEAD(hp->hn_events);
       }
 
-    np->vn_node  = i;  /* make up node id */
-
-    np->vn_host  = &pjob->ji_sisters[j];
-    np->vn_index = ix;
-
-    if (LOGLEVEL >= 4)
-      {
-      sprintf(log_buffer, "%d: %s/%d",
-        np->vn_node,
-        np->vn_host->hn_host,
-        np->vn_index);
-      
-      log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
-      }
     }   /* END for (i) */
-
-  np->vn_node = TM_ERROR_NODE;
 
   pjob->ji_sisters[nhosts].hn_node = TM_ERROR_NODE;
 

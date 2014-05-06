@@ -553,15 +553,8 @@ void mom_job_free(
     pj->ji_resources = NULL;
     }
 
-  if (pj->ji_sister_vnods)
-    {
-    free(pj->ji_sister_vnods);
-    pj->ji_sister_vnods = NULL;
-    }
-
   /* now free the main structure */
-
-  free((char *)pj);
+  free(pj);
 
   return;
   }  /* END mom_job_free() */
@@ -877,7 +870,7 @@ void mom_job_purge(
   //we want to change the frequency back.
   resource *presc = find_resc_entry(&pjob->ji_wattr[JOB_ATR_resource],
             find_resc_def(svr_resc_def, "cpuclock", svr_resc_size));
-  if(presc != NULL)
+  if (presc != NULL)
     {
     std::string beforeFreq;
 
@@ -895,9 +888,6 @@ void mom_job_purge(
       log_ext(PBSE_CHANGED_CPU_FREQUENCY,__func__, msg.c_str(),LOG_NOTICE);
       }
     }
-
-
-
 
   mom_job_free(pjob);
 
