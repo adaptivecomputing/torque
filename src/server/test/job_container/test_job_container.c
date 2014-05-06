@@ -7,6 +7,9 @@
 
 char *get_correct_jobname(const char *jobid);
 
+void log_err(int,const char *,const char *)
+{}
+
 
 START_TEST(get_correct_jobname_test)
   {
@@ -26,6 +29,8 @@ START_TEST(swap_jobs_test)
 
   test_job = job_alloc();
   second_test_job = job_alloc();
+  strcpy(test_job->ji_qs.ji_jobid,"test");
+  strcpy(second_test_job->ji_qs.ji_jobid,"second_test");
 
   result = swap_jobs(&alljobs,NULL,test_job);
   fail_unless(result != PBSE_NONE, "NULL first input job fail");

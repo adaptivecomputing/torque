@@ -750,6 +750,13 @@ bool am_i_mother_superior(const job &pjob)
   return(false);
   }
 
+char *pbse_to_txt(int err)
+  {
+  fprintf(stderr, "The call to pbse_to_txt needs to be mocked!!\n");
+  exit(1);
+  }
+
+
 #ifdef PENABLE_LINUX26_CPUSETS
 
 int hwloc_topology_init(hwloc_topology_t *)

@@ -69,6 +69,7 @@ char        *path_epiloguserp; /* mom_main.c */
 char        *path_epilogp; /* mom_main.c */
 attribute_def job_attr_def[10]; /* src/server/job_attr_def.c */
 bool exit_called = false;
+int  job_exit_wait_time = 600;
 
 int tc = 0; /* Used for test routining */
 int func_num = 0;

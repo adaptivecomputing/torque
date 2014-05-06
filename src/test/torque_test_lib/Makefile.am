@@ -16,7 +16,11 @@ libtorque_test_la_SOURCES = ../../lib/Libifl/list_link.c \
                             ../../lib/Libattr/attr_fn_str.c \
                             ../../lib/Libattr/attr_fn_unkn.c \
                             ../../lib/Libattr/attr_fn_nppcu.c \
-                            ../../lib/Libattr/attr_fn_resc.c \
+                            ../../lib/Libattr/attr_fn_freq.c \
+			    ../../lib/Libattr/attr_fn_resc.c \
+			    ../../resmom/node_frequency.cpp \
+			    ../../resmom/linux/cpu_frequency.cpp \
+			    ../../resmom/linux/sys_file.cpp \
 						    ../../server/execution_slot_tracker.cpp \
 							../../server/job_usage_info.cpp \
 							../../server/execution_slot_tracker.cpp \

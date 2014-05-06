@@ -8,20 +8,27 @@
 #ifndef CONTAINER_H
 #define CONTAINER_H
 
+/*
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/hashed_index.hpp>
 #include <boost/multi_index/sequenced_index.hpp>
 #include <boost/multi_index/member.hpp>
+*/
+#include <boost/unordered_map.hpp>
 #include <string>
 #include <vector>
 #include <pthread.h>
 #include <memory.h>
+#include <errno.h>
+#include "pbs_error.h"
 
 extern bool exit_called;
 
 
 #define THING_NOT_FOUND    -2
 #define ALREADY_IN_LIST     9
+#define ALWAYS_EMPTY_INDEX  0
+
 
 //#define CHECK_LOCKING
 
@@ -34,8 +41,8 @@ extern bool exit_called;
 namespace container{ //Creating a scope to prevent my using from spilling past the include file.
 
 
-using namespace ::boost::multi_index;
-using namespace ::boost::multi_index::detail;
+//using namespace ::boost::multi_index;
+//using namespace ::boost::multi_index::detail;
 
 template <class T>
 class item
@@ -70,11 +77,20 @@ class item
   T ptr;
   };
 
+template <class T> class slot
+  {
+  public:
+  item<T> *pItem;
+  int     next;
+  int     prev;
+  };
+
 template <class T>
 class item_container
   {
   public:
 
+#if 0
   typedef multi_index_container<item<T>,
       indexed_by<
       sequenced<>,
@@ -85,6 +101,7 @@ class item_container
   typedef typename indexed_container::template nth_index<0>::type::reverse_iterator sequenced_reverse_iterator;
   typedef typename indexed_container::template nth_index<1>::type& hashed_index;
   typedef typename indexed_container::template nth_index<1>::type::iterator hashed_iterator;
+#endif
 
   class item_iterator
     {
@@ -105,52 +122,37 @@ class item_container
       {
       return NULL;
       }
-    if(*pUpdateCounter != lastUpdate)
-      {
-      //The container has been changed on us.
-      resetIterators();
-      }
-    if(reversed)
-      {
-      if(riter == pContainer->get<0>().rend())
-        {
-        endHit = true;
-        return NULL;
-        }
-      T pT = riter->get();
-      riter++;
-      index++;
-      if(riter == pContainer->get<0>().rend())
-        {
-        endHit = true;
-        }
-      return pT;
-      }
-    if(iter == pContainer->get<0>().end())
+    if(iter == ALWAYS_EMPTY_INDEX)
       {
       endHit = true;
       return NULL;
       }
-    T pT = iter->get();
-    iter++;
-    index++;
-    if(iter == pContainer->get<0>().end())
+    item<T> *pItem;
+    if(reversed)
+      {
+      do
+        {
+        pItem = pContainer->next_thing_from_back(&iter);
+        }while((pItem == NULL)&&(iter != ALWAYS_EMPTY_INDEX));
+      if(pItem == NULL)
+        {
+        endHit = true;
+        return NULL;
+        }
+      return pItem->get();
+      }
+    do
+      {
+      pItem = pContainer->next_thing(&iter);
+      }while((pItem == NULL)&&(iter != ALWAYS_EMPTY_INDEX));
+    if(pItem == NULL)
       {
       endHit = true;
+      return NULL;
       }
-    return pT;
+    return pItem->get();
     }
-    //One item was removed, don't reset the iterator unless something else has changed.
-    void item_was_removed(void)
-      {
-      lastUpdate++;
-      if(index > 0)
-        {
-        index--;
-        }
-      }
-    item_iterator(indexed_container *pCtner,
-        unsigned long *pUpdateCntr,
+    item_iterator(item_container<T> *pCtner,
 #ifdef CHECK_LOCKING
         bool *locked,
 #endif
@@ -160,11 +162,10 @@ class item_container
       pLocked = locked;
 #endif
       pContainer = pCtner;
-      pUpdateCounter = pUpdateCntr;
-      index = 0;
+      iter = -1;
+      pContainer->initialize_ra_iterator(&iter);
       reversed = reverse;
       endHit = false;
-      resetIterators();
       }
     void reset(void) //Reset the iterator;
       {
@@ -178,49 +179,13 @@ class item_container
         }
       }
 #endif
-      if(exit_called)
-        {
-        return;
-        }
-      index = 0;
+      iter = -1;
+      pContainer->initialize_ra_iterator(&iter);
       endHit = false;
-      resetIterators();
       }
   private:
-    void resetIterators(void)
-      {
-      if(reversed)
-        {
-        riter = pContainer->get<0>().rbegin();
-        for(size_t i =0;i < index;i++)
-          {
-          if(riter == pContainer->get<0>().rend())
-            {
-            return;
-            }
-          riter++;
-          }
-        }
-      else
-        {
-        iter = pContainer->get<0>().begin();
-        for(size_t i =0;i < index;i++)
-          {
-          if(iter == pContainer->get<0>().end())
-            {
-            return;
-            }
-          iter++;
-          }
-        }
-      lastUpdate = *pUpdateCounter;
-      }
-    sequenced_iterator iter;
-    sequenced_reverse_iterator riter;
-    indexed_container *pContainer;
-    unsigned long *pUpdateCounter;
-    unsigned long lastUpdate;
-    size_t index;
+    item_container<T> *pContainer;
+    int iter;
     bool endHit;
     bool reversed;
 #ifdef CHECK_LOCKING
@@ -228,9 +193,16 @@ class item_container
 #endif
     };
 
-  item_container():updateCounter(0)
+  item_container():
+    updateCounter(0),
+    max(0),
+    num(0),
+    next_slot(1),
+    last(0)
     {
     memset(&mutex,0,sizeof(mutex));
+    slots = (slot<T> *)calloc(10,sizeof(slot<T>));
+    max = 10;
 #ifdef CHECK_LOCKING
     locked = false;
 #endif
@@ -242,6 +214,7 @@ class item_container
       lock();
       unlock();
       }
+    if(slots != NULL) free(slots);
     }
   bool insert(T it,const char *id,bool replace = false)
     {
@@ -253,20 +226,15 @@ class item_container
     {
     CHECK_LOCK
     if(exit_called) return false;
-    std::pair<hashed_iterator,bool> ret;
-    ret = container.get<1>().insert(item<T>(id,it));
-    if(!ret.second && replace)
+    int index = map[id];
+    if(index != ALWAYS_EMPTY_INDEX)
       {
-      //updateCounter++;
-      return container.get<1>().replace(ret.first,item<T>(id,it));
+      if(!replace) return false;
+      remove_thing_from_index(index);
       }
-    /*
-    if(ret.second)
-      {
-      updateCounter++;
-      }
-      */
-    return ret.second;
+    item<T> *pItem = new item<T>(id,it);
+    if(insert_thing(pItem) < 0) return false;
+    return true;
     }
   bool insert_after(const char *location_id,T it,const char *id)
     {
@@ -278,27 +246,11 @@ class item_container
     {
     CHECK_LOCK
     if(exit_called) return false;
-    sequenced_index ind = container.get<0>();
-    sequenced_iterator iter = ind.begin();
-    while(iter != ind.end())
-      {
-      if(*iter == location_id)
-        {
-        break;
-        }
-      iter++;
-      }
-    if(iter == ind.end()) return false;
-    iter++;
-    std::pair<sequenced_iterator,bool> ret;
-    ret = container.get<0>().insert(iter,item<T>(id,it));
-    /*
-    if(ret.second)
-      {
-      updateCounter++;
-      }
-      */
-    return ret.second;
+    int index = map[location_id];
+    if(index == ALWAYS_EMPTY_INDEX) return false;
+    item<T> *pItem = new item<T>(id,it);
+    if(insert_thing_after(pItem,index) < 0) return false;
+    return true;
     }
   bool insert_at(int index,T it,const char *id)
     {
@@ -310,45 +262,29 @@ class item_container
     {
     CHECK_LOCK
     if(exit_called) return false;
-    sequenced_index ind = container.get<0>();
-    sequenced_iterator iter = ind.begin();
+    int iter = -1;
+    initialize_ra_iterator(&iter);
     while(index--)
       {
-      if(iter == ind.end()) return false;
-      iter++;
+      item<T> *pItem = next_thing(&iter);
+      if(pItem == NULL) return false;
       }
-    std::pair<sequenced_iterator,bool> ret;
-    ret = container.get<0>().insert(iter,item<T>(id,it));
-    /*
-    if(ret.second)
-      {
-      updateCounter++;
-      }
-      */
-    return ret.second;
+    item<T> *pItem = new item<T>(id,it);
+    if(insert_thing_before(pItem,iter) < 0) return false;
+    return true;
     }
 
   bool insert_first(T it,const char *id)
     {
     CHECK_LOCK
     if(id == NULL || exit_called) return false;
-    return insert_first(it,std::string(id));
+    return insert_at(0,it,std::string(id));
     }
   bool insert_first(T it,std::string id)
     {
     CHECK_LOCK
     if(exit_called) return false;
-    sequenced_index ind = container.get<0>();
-    sequenced_iterator iter = ind.begin();
-    std::pair<sequenced_iterator,bool> ret;
-    ret = container.get<0>().insert(iter,item<T>(id,it));
-    /*
-    if(ret.second)
-      {
-      updateCounter++;
-      }
-      */
-    return ret.second;
+    return insert_at(0,it,id);
     }
   bool insert_before(const char *location_id,T it,const char *id)
     {
@@ -360,26 +296,11 @@ class item_container
     {
     CHECK_LOCK
     if(exit_called) return false;
-    sequenced_index ind = container.get<0>();
-    sequenced_iterator iter = ind.begin();
-    while(iter != ind.end())
-      {
-      if(*iter == location_id)
-        {
-        break;
-        }
-      iter++;
-      }
-    if(iter == ind.end()) return false;
-    std::pair<sequenced_iterator,bool> ret;
-    ret = container.get<0>().insert(iter,item<T>(id,it));
-    /*
-    if(ret.second)
-      {
-      updateCounter++;
-      }
-      */
-    return ret.second;
+    int index = map[location_id];
+    if(index == ALWAYS_EMPTY_INDEX) return false;
+    item<T> *pItem = new item<T>(id,it);
+    if(insert_thing_before(pItem,index) != PBSE_NONE) return false;
+    return true;
     }
   bool remove(const char *id)
     {
@@ -391,14 +312,9 @@ class item_container
     {
     CHECK_LOCK
     if(exit_called) return false;
-    hashed_index hi = container.get<1>();
-    hashed_iterator it = hi.find(id);
-    if(it == hi.end())
-      {
-      return false;
-      }
-    updateCounter++;
-    hi.erase(it);
+    int index = map[id];
+    if(index == ALWAYS_EMPTY_INDEX) return false;
+    if(remove_thing_from_index(index) != PBSE_NONE) return false;
     return true;
     }
   T find(const char *id)
@@ -411,37 +327,32 @@ class item_container
     {
     CHECK_LOCK
     if(exit_called) return  empty_val();
-    hashed_index hi = container.get<1>();
-    hashed_iterator it = hi.find(id);
-    if(it == hi.end())
+    int index = map[id];
+    if(index == ALWAYS_EMPTY_INDEX)
       {
       return empty_val();
       }
-    return it->get();
+    item<T> *pItem = slots[index].pItem;
+    if(pItem == NULL)
+      {
+      return empty_val();
+      }
+    return pItem->get();
     }
   T pop(void)
     {
     CHECK_LOCK
     if(exit_called) return  empty_val();
-    sequenced_index ind = container.get<0>();
-    sequenced_iterator it = ind.begin();
-    if(it == ind.end()) return empty_val();
-    T pT = it->get();
-    ind.erase(it);
-    updateCounter++;
+    T pT = pop_thing();
+    if(pT == NULL) return empty_val();
     return pT;
     }
   T pop_back(void)
     {
     CHECK_LOCK
     if(exit_called) return  empty_val();
-    sequenced_index ind = container.get<0>();
-    sequenced_iterator it = ind.end();
-    if(ind.size() == 0) return empty_val();
-    it--;
-    T pT = it->get();
-    ind.erase(it);
-    updateCounter++;
+    T pT = pop_back_thing();
+    if(pT == NULL) return empty_val();
     return pT;
     }
 
@@ -455,44 +366,25 @@ class item_container
     {
     CHECK_LOCK
     if(exit_called) return false;
-    sequenced_index ind = container.get<0>();
-    sequenced_iterator it1 = ind.begin();
-    while(it1 != ind.end())
-      {
-      if(*it1 == id1)
-        {
-        break;
-        }
-      it1++;
-      }
-    if(it1 == ind.end())
+    int ind1 = map[id1];
+    int ind2 = map[id2];
+    if((ind1 == ALWAYS_EMPTY_INDEX)||
+        (ind2 == ALWAYS_EMPTY_INDEX)||
+        (ind1 == ind2))
       {
       return false;
       }
-    sequenced_iterator it2 = ind.begin();
-    while(it2 != ind.end())
-      {
-      if(*it2 == id2)
-        {
-        break;
-        }
-      it2++;
-      }
-    if(it2 == ind.end())
-      {
-      return false;
-      }
-    sequenced_iterator tmp = it2;
-    tmp++;
-    ind.relocate(it1,it2);
-    ind.relocate(tmp,it1);
+    item<T> *pTmp = slots[ind1].pItem;
+    slots[ind1].pItem = slots[ind2].pItem;
+    slots[ind2].pItem = pTmp;
+    map[id1] = ind2;
+    map[id2] = ind1;
     return true;
     }
   item_iterator *get_iterator(bool reverse = false)
     {
     CHECK_LOCK
-    return new item_iterator(&container,
-        &updateCounter,
+    return new item_iterator(this,
 #ifdef CHECK_LOCKING
         &locked,
 #endif
@@ -502,13 +394,26 @@ class item_container
     {
     CHECK_LOCK
     if(exit_called) return;
-    container.get<0>().clear();
+    for(int i = 0; i<max;i++)
+      {
+      if(slots[i].pItem != NULL)
+        {
+        map.erase(slots[i].pItem->id);
+        delete slots[i].pItem;
+        slots[i].pItem = NULL;
+        }
+      slots[i].next = ALWAYS_EMPTY_INDEX;
+      slots[i].prev = ALWAYS_EMPTY_INDEX;
+      }
+    num = 0;
+    next_slot = 1;
+    last = 0;
     }
   size_t count()
     {
     CHECK_LOCK
     if(exit_called) return 0;
-    return container.size();
+    return num;
     }
   void lock(void)
     {
@@ -542,9 +447,499 @@ class item_container
   {
   return NULL;
   }
-  indexed_container container;
+  int swap_things(item<T> *thing1, item<T> *thing2)
+    {
+    int index1 = get_index(thing1);
+    int index2 = get_index(thing2);
+
+    if((index1 == THING_NOT_FOUND)||(index2 == THING_NOT_FOUND))
+      {
+      return THING_NOT_FOUND;
+      }
+    slots[index1].item = thing2;
+    slots[index2].item = thing1;
+
+    return(PBSE_NONE);
+    } /* END swap_things() */
+  int check_and_resize()
+    {
+    slot<T>        *tmp;
+    size_t       remaining;
+    size_t       size;
+
+    if (max == num + 1)
+      {
+      /* double the size if we're out of space */
+      size = (max * 2) * sizeof(slot<T>);
+
+      if ((tmp = (slot<T> *)realloc(slots,size)) == NULL)
+        {
+        //log_err(ENOMEM,__func__,"No memory left to resize the array");
+        return(ENOMEM);
+        }
+
+      remaining = max * sizeof(slot<T>);
+
+      memset(tmp + max, 0, remaining);
+
+      slots = tmp;
+
+      max = max * 2;
+      }
+
+    return(PBSE_NONE);
+    } /* END check_and_resize() */
+
+  void update_next_slot() /* M */
+
+    {
+    while ((next_slot < max) &&
+           (slots[next_slot].pItem != NULL))
+      next_slot++;
+    } /* END update_next_slot() */
+
+  /*
+   * inserts an item, resizing the array if necessary
+   *
+   * @return the index in the array or -1 on failure
+   */
+  int insert_thing(
+    item<T>  *thing)
+
+    {
+    int rc;
+
+    /* check if the array must be resized */
+    if ((rc = check_and_resize()) != PBSE_NONE)
+      {
+      return(-1);
+      }
+
+    slots[next_slot].pItem = thing;
+    map[thing->id] = next_slot;
+
+    /* save the insertion point */
+    rc = next_slot;
+
+    /* handle the backwards pointer, next pointer is left at zero */
+    slots[rc].prev = last;
+
+    /* make sure the empty slot points to the next occupied slot */
+    if (last == ALWAYS_EMPTY_INDEX)
+      {
+      slots[ALWAYS_EMPTY_INDEX].next = rc;
+      }
+
+    /* update the last index */
+    slots[last].next = rc;
+    last = rc;
+
+    /* update the new item's next index */
+    slots[rc].next = ALWAYS_EMPTY_INDEX;
+
+    /* increase the count */
+    num++;
+
+    update_next_slot();
+
+    return(rc);
+    } /* END insert_thing() */
+  /*
+   * inserts a thing after the thing in index
+   * NOTE: index must represent a valid index
+   */
+  int insert_thing_after(
+    item<T>         *thing,
+    int              index)
+
+    {
+    int rc;
+    int next;
+
+    /* check if the array must be resized */
+    if ((rc = check_and_resize()) != PBSE_NONE)
+      {
+      return(-1);
+      }
+
+    /* insert this element */
+    slots[next_slot].pItem = thing;
+    map[thing->id] = next_slot;
+
+    /* save the insertion point */
+    rc = next_slot;
+
+    /* move pointers around */
+    slots[rc].prev = index;
+    next = slots[index].next;
+    slots[rc].next = next;
+    slots[index].next = rc;
+
+    if (next != 0)
+      {
+      slots[next].prev = rc;
+      }
+
+    /* update the last index if needed */
+    if (last == index)
+      last = rc;
+
+    /* increase the count */
+    num++;
+
+    update_next_slot();
+
+    return(rc);
+    } /* END insert_thing_after() */
+
+  /*
+   * inserts a thing before the thing in index
+   * NOTE: index must represent a valid index
+   */
+  int insert_thing_before(
+    item<T>         *thing,
+    int              index)
+
+    {
+    int rc;
+    int prev;
+
+    /* check if the array must be resized */
+    if ((rc = check_and_resize()) != PBSE_NONE)
+      {
+      return(-1);
+      }
+
+    /* insert this element */
+    slots[next_slot].pItem = thing;
+    map[thing->id] = next_slot;
+
+    /* save the insertion point */
+    rc = next_slot;
+
+    /* move pointers around */
+    prev = slots[index].prev;
+    slots[rc].next = index;
+    slots[rc].prev = prev;
+    slots[index].prev = rc;
+    slots[prev].next = rc;
+
+    /* increase the count */
+    num++;
+
+    update_next_slot();
+
+    return(rc);
+    } /* END insert_thing_before() */
+
+
+  bool is_present(
+    item<T>      *thing)
+
+    {
+    int i = slots[ALWAYS_EMPTY_INDEX].next;
+
+    while (i != 0)
+      {
+      if (slots[i].pItem == thing)
+        return(true);
+
+      i = slots[i].next;
+      }
+
+    return(false);
+    } /* END is_present() */
+
+  /*
+   * fix the next pointer for the box pointing to this index
+   *
+   * @param ra - the array we're fixing
+   * @param index - index of the slot we're unlinking
+   */
+  void unlink_slot(
+    int              index)
+
+    {
+    int prev = slots[index].prev;
+    int next = slots[index].next;
+
+    map.erase(slots[index].pItem->id);
+    slots[index].prev = ALWAYS_EMPTY_INDEX;
+    slots[index].next = ALWAYS_EMPTY_INDEX;
+    delete slots[index].pItem;
+    slots[index].pItem = NULL;
+
+    slots[prev].next = next;
+
+    /* update last if necessary, otherwise update prev's next index */
+    if (last == index)
+      last = prev;
+    else
+      slots[next].prev = prev;
+    } /* END unlink_slot() */
+
+  /*
+   * remove a thing from the array
+   *
+   * @param thing - the thing to remove
+   * @return PBSE_NONE if the thing is removed
+   */
+
+  int remove_thing(
+    item<T>            *thing)
+
+    {
+    int i = slots[ALWAYS_EMPTY_INDEX].next;
+    bool found = false;
+
+    /* find the thing */
+    while (i != ALWAYS_EMPTY_INDEX)
+      {
+      if (slots[i].pItem == thing)
+        {
+        found = true;
+        break;
+        }
+
+      i = slots[i].next;
+      }
+
+    if (!found)
+      return(THING_NOT_FOUND);
+
+    unlink_slot(i);
+
+    num--;
+
+    /* reset the next_slot index if necessary */
+    if (i < next_slot)
+      {
+      next_slot = i;
+      }
+
+    return(PBSE_NONE);
+    } /* END remove_thing() */
+
+  item<T> *remove_thing_memcmp(
+    item<T>           *thing,
+    unsigned int     size)
+
+    {
+    int   i = slots[ALWAYS_EMPTY_INDEX].next;
+    void *item = NULL;
+
+    while (i != ALWAYS_EMPTY_INDEX)
+      {
+      /* check if equal */
+      if (!memcmp(slots[i].pItem, thing, size))
+        {
+        item = slots[i].pItem;
+
+        unlink_slot(i);
+
+        num--;
+
+        if (i < next_slot)
+          next_slot = i;
+
+        break;
+        }
+
+      i = slots[i].next;
+      }
+
+    return(item);
+    } /* END remove_thing_memcmp() */
+
+  /*
+   * pop the first thing from the array
+   *
+   * @return the first thing in the array or NULL if empty
+   */
+
+  T pop_thing()
+    {
+    item<T> *thing = NULL;
+    int   i = slots[ALWAYS_EMPTY_INDEX].next;
+    T pT = NULL;
+
+    if (i != ALWAYS_EMPTY_INDEX)
+      {
+      /* get the thing we're returning */
+      thing = slots[i].pItem;
+      pT = thing->get();
+
+      /* handle the deletion and removal */
+      unlink_slot(i);
+
+      num--;
+
+      /* reset the next slot index if necessary */
+      if (i < next_slot)
+        {
+        next_slot = i;
+        }
+      }
+
+    return(pT);
+    } /* END pop_thing() */
+
+  T pop_back_thing()
+    {
+    item<T> *thing = NULL;
+    int   i = slots[ALWAYS_EMPTY_INDEX].prev;
+    T pT = NULL;
+
+    if (i != ALWAYS_EMPTY_INDEX)
+      {
+      /* get the thing we're returning */
+      thing = slots[i].pItem;
+      pT = thing->get();
+
+      /* handle the deletion and removal */
+      unlink_slot(i);
+
+      num--;
+
+      /* reset the next slot index if necessary */
+      if (i < next_slot)
+        {
+        next_slot = i;
+        }
+      }
+
+    return(pT);
+    } /* END pop_thing() */
+
+
+  int remove_thing_from_index(
+    int              index)
+
+    {
+    int rc = PBSE_NONE;
+
+    if (slots[index].pItem == NULL)
+      rc = THING_NOT_FOUND;
+    else
+      {
+      /* FOUND */
+      unlink_slot(index);
+
+      num--;
+
+      if (index < next_slot)
+        next_slot = index;
+      }
+
+    return(rc);
+    } /* END remove_thing_from_index() */
+
+
+
+
+  int remove_last_thing()
+
+    {
+    return(remove_thing_from_index(last));
+    } /* END remove_last_thing() */
+
+  /*
+   * returns the next available item and increments *iter
+   */
+  item<T> *next_thing(
+    int             *iter)
+
+    {
+    item<T> *thing;
+    int   i = *iter;
+
+    if (i == -1)
+      {
+      /* initialize first */
+      i = slots[ALWAYS_EMPTY_INDEX].next;
+      }
+
+    thing = slots[i].pItem;
+    *iter = slots[i].next;
+
+    return(thing);
+    } /* END next_thing() */
+
+  /*
+   * returns the next available item from the back and decrements *iter
+   */
+  item<T> *next_thing_from_back(
+    int             *iter)
+
+    {
+    item<T> *thing;
+    int   i = *iter;
+
+    if (i == -1)
+      {
+      /* initialize first */
+      i = last;
+      }
+
+    thing = slots[i].pItem;
+    *iter = slots[i].prev;
+
+    return(thing);
+    } /* END next_thing_from_back() */
+
+  /*
+   * initialize the iterator for this array
+   */
+  void initialize_ra_iterator(
+    int             *iter)
+
+    {
+    *iter = slots[ALWAYS_EMPTY_INDEX].next;
+    } /* END initialize_ra_iterator() */
+
+  /*
+   * searches the array for thing, finding the index
+   *
+   * @param ra - the array to be searched
+   * @param thing - the thing we're looking for
+   * @return index if present, THING_NOT_FOUND otherwise
+   */
+  int get_index(
+    item<T>           *thing)
+    {
+    try
+    {
+      int i = map[thing->id];
+      return i;
+    }catch(...)
+      {
+      return(THING_NOT_FOUND);
+      }
+    } /* END get_index() */
+
+
+
+  item<T> *get_thing_from_index(
+    int              index)
+    {
+    if (index == -1)
+      index = slots[ALWAYS_EMPTY_INDEX].next;
+
+    if (index >= max)
+      return(NULL);
+    else
+      return(slots[index].pItem);
+    } /* END get_thing_from_index() */
+
+  //indexed_container container;
   pthread_mutex_t mutex;
   unsigned long updateCounter;
+  slot<T> *slots;
+  int max;
+  int num;
+  int next_slot;
+  int last;
+  boost::unordered_map<std::string, int> map;
 #ifdef CHECK_LOCKING
   bool locked;
 #endif

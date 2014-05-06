@@ -452,7 +452,14 @@ int req_quejob(
   int                   jobid_number;
   
   struct stat           stat_buf;
+  long                  passCpu = 1;
+  std::string           cpuClock = "";
   
+  if(get_svr_attr_l(SRV_ATR_pass_cpu_clock,&passCpu) != PBSE_NONE)
+    {
+    passCpu = 1; //Default is to pass the cpuclock to the moms.
+    }
+
   get_svr_attr_str(SRV_ATR_job_suffix_alias, &alias);
   /*
    * if the job id is supplied, the request had better be
@@ -697,8 +704,17 @@ int req_quejob(
         {
         pj->ji_have_nodes_request = 1;
         }
+      if(!passCpu)
+        {
+        if(strcmp(psatl->al_atopl.resource,"cpuclock")==0)
+          {
+          cpuClock = "PBS_CPUCLOCK=";
+          cpuClock += psatl->al_atopl.value;
+          psatl = (svrattrl *)GET_NEXT(psatl->al_link);
+          continue; //Don't add this to the resources for this job.
+          }
+        }
       }
-
     /* identify the pbs_attribute by name */
     attr_index = find_attr(job_attr_def, psatl->al_name, JOB_ATR_LAST);
 
@@ -953,6 +969,11 @@ int req_quejob(
 
     snprintf(buf, sizeof(buf), "%s%s", pbs_o_que, pque->qu_qs.qu_name);
 
+    if(cpuClock.length() != 0)
+      {
+      strcat(buf,",");
+      strcat(buf,cpuClock.c_str());
+      }
     if (get_variable(pj, pbs_o_host) == NULL)
       {
       strcat(buf, ",");

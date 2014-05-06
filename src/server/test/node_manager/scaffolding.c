@@ -26,6 +26,7 @@ int decode_resc_count;
 int SvrNodeCt = 0; 
 int svr_resc_size = 0;
 char *path_nodestate;
+char *path_nodepowerstate;
 int allow_any_mom = FALSE;
 unsigned int pbs_mom_port = 0;
 attribute_def job_attr_def[10];
@@ -544,6 +545,11 @@ const char *id_map::get_name(int id)
   snprintf(buf, sizeof(buf), "napali%d", id);
   return(strdup(buf));
   }
+
+id_map::~id_map() 
+  {
+  }
+
 
 id_map node_mapper;
 

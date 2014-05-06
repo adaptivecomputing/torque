@@ -189,7 +189,8 @@ int relay_to_mom(
   free(job_momname);
 
   if ((node != NULL) &&
-      (node->nd_state & INUSE_DOWN))
+      ((node->nd_state & INUSE_DOWN)||
+      (node->nd_power_state != POWER_STATE_RUNNING)))
     {
     unlock_node(node, __func__, "no rely mom", LOGLEVEL);
     return(PBSE_NORELYMOM);
@@ -711,6 +712,22 @@ int send_request_to_remote_server(
       rc = DIS_tcp_wflush(chan);
       
       break;
+
+    case PBS_BATCH_ChangePowerState:
+
+      if ((rc = encode_DIS_ReqHdr(chan, PBS_BATCH_ChangePowerState, msg_daemonname)))
+        break;
+
+      if ((rc = encode_DIS_PowerState(chan, request->rq_ind.rq_powerstate)))
+        break;
+
+      if ((rc = encode_DIS_ReqExtend(chan, request->rq_extend)))
+        break;
+
+      rc = DIS_tcp_wflush(chan);
+
+      break;
+
 
     default:
 

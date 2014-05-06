@@ -170,6 +170,7 @@ extern char            *path_home;
 extern char            *path_nodes;
 extern char            *path_nodes_new;
 extern char            *path_nodestate;
+extern char            *path_nodepowerstate;
 extern char            *path_nodenote;
 extern char            *path_nodenote_new;
 extern char             server_name[];
@@ -1378,6 +1379,82 @@ void *write_node_state_work(
   } /* END write_node_state_work() */
 
 
+void *write_node_power_state_work(
+
+  void *vp)
+
+  {
+  struct pbsnode *np;
+  static char    *fmt = (char *)"%s %d\n";
+  static FILE    *nstatef = NULL;
+  all_nodes_iterator *iter = NULL;
+
+  pthread_mutex_lock(node_state_mutex);
+
+  if (LOGLEVEL >= 5)
+    {
+    DBPRT(("write_node_power_state_work: entered\n"))
+    }
+
+  /* don't store running state */
+
+  if (nstatef != NULL)
+    {
+    fseek(nstatef, 0L, SEEK_SET); /* rewind and clear */
+
+    if (ftruncate(fileno(nstatef), (off_t)0) != 0)
+      {
+      log_err(errno, __func__, "could not truncate file");
+
+      pthread_mutex_unlock(node_state_mutex);
+
+      return(NULL);
+      }
+    }
+  else
+    {
+    /* need to open for first time, temporary-move to pbsd_init */
+
+    if ((nstatef = fopen(path_nodepowerstate, "w+")) == NULL)
+      {
+      log_err(errno, __func__, "could not open file");
+
+      pthread_mutex_unlock(node_state_mutex);
+
+      return(NULL);
+      }
+    }
+
+  /*
+  ** The only state that carries forward is if the
+  ** node has been marked offline.
+  */
+
+  while ((np = next_host(&allnodes,&iter,NULL)) != NULL)
+    {
+    if (np->nd_power_state != POWER_STATE_RUNNING)
+      {
+      fprintf(nstatef, fmt, np->nd_name, np->nd_power_state);
+      }
+
+    unlock_node(np, __func__, NULL, LOGLEVEL);
+    } /* END for each node */
+
+  if (iter != NULL)
+    delete iter;
+
+  if (fflush(nstatef) != 0)
+    {
+    log_err(errno, __func__, "failed saving node state to disk");
+    }
+
+  fclose(nstatef);
+  nstatef = NULL;
+
+  pthread_mutex_unlock(node_state_mutex);
+
+  return(NULL);
+  } /* END write_node_power_state_work() */
 
 
 
@@ -1392,6 +1469,16 @@ void write_node_state(void)
     }
   }  /* END write_node_state() */
 
+void write_node_power_state(void)
+
+  {
+  int rc = enqueue_threadpool_request(write_node_power_state_work,NULL,task_pool);
+
+  if (rc)
+    {
+    log_err(rc, __func__, "Unable to enqueue write_node_power_state_work task into the threadpool");
+    }
+  }  /* END write_node_power_state() */
 
 
 /* Create a new node_note file then overwrite the previous one.
@@ -1635,7 +1722,8 @@ int gpu_count(
 
   if ((pnode->nd_state & INUSE_OFFLINE) ||
       (pnode->nd_state & INUSE_UNKNOWN) ||
-      (pnode->nd_state & INUSE_DOWN))
+      (pnode->nd_state & INUSE_DOWN)||
+      (pnode->nd_power_state != POWER_STATE_RUNNING))
     {
     if (LOGLEVEL >= 7)
       {
@@ -2111,7 +2199,8 @@ bool node_is_spec_acceptable(
   struct pbsnode   *pnode,
   single_spec_data *spec,
   char             *ProcBMStr,
-  int              *eligible_nodes)
+  int              *eligible_nodes,
+  bool              job_is_exclusive)
 
   {
   struct prop    *prop = spec->prop;
@@ -2126,7 +2215,7 @@ bool node_is_spec_acceptable(
 #ifdef GEOMETRY_REQUESTS
   if (IS_VALID_STR(ProcBMStr))
     {
-    if (pnode->nd_state != INUSE_FREE)
+    if ((pnode->nd_state != INUSE_FREE)||(pnode->nd_power_state != POWER_STATE_RUNNING))
       return(false);
 
     if (node_satisfies_request(pnode, ProcBMStr) == FALSE)
@@ -2148,7 +2237,7 @@ bool node_is_spec_acceptable(
 
   (*eligible_nodes)++;
 
-  if ((pnode->nd_state & (INUSE_OFFLINE | INUSE_DOWN | INUSE_RESERVE | INUSE_JOB)) != 0)
+  if (((pnode->nd_state & (INUSE_OFFLINE | INUSE_DOWN | INUSE_RESERVE | INUSE_JOB)) != 0)||(pnode->nd_power_state != POWER_STATE_RUNNING))
     return(false);
 
   gpu_free = gpu_count(pnode, TRUE) - pnode->nd_ngpus_to_be_used;
@@ -2159,6 +2248,13 @@ bool node_is_spec_acceptable(
       (gpu_req > gpu_free) ||
       (mic_req > mic_free))
     return(false);
+  if(job_is_exclusive)
+    {
+    if(pnode->nd_slots.get_number_free() != pnode->nd_slots.get_total_execution_slots())
+      {
+      return false;
+      }
+    }
 
   return(true);
   } /* END node_is_spec_acceptable() */
@@ -2752,7 +2848,8 @@ int select_nodes_using_hostlist(
   int                 first_node_id,   /* I */
   int                 num_alps_reqs,   /* I */
   enum job_types      job_type,        /* I */
-  char               *ProcBMStr)       /* I (optional) */
+  char               *ProcBMStr,       /* I (optional) */
+  bool                job_is_exclusive)
 
   {
   struct pbsnode      *pnode;
@@ -2784,7 +2881,7 @@ int select_nodes_using_hostlist(
       return(-2);
       }
     
-    if (node_is_spec_acceptable(pnode, req, ProcBMStr, eligible_nodes) == false)
+    if (node_is_spec_acceptable(pnode, req, ProcBMStr, eligible_nodes,job_is_exclusive) == false)
       {
       snprintf(log_buf, sizeof(log_buf), "Requested node '%s' is not currently available", req->prop->name);
       log_err(-1, __func__, log_buf);
@@ -2822,7 +2919,8 @@ int select_from_all_nodes(
   int                 first_node_id,   /* I */
   int                 num_alps_reqs,   /* I */
   enum job_types      job_type,        /* I */
-  char               *ProcBMStr)       /* I (optional) */
+  char               *ProcBMStr,       /* I (optional) */
+  bool                job_is_exclusive)
 
   {
   node_iterator   iter;
@@ -2841,7 +2939,7 @@ int select_from_all_nodes(
 
       if (req->nodes > 0)
         {
-        if (node_is_spec_acceptable(pnode, req, ProcBMStr, eligible_nodes) == true)
+        if (node_is_spec_acceptable(pnode, req, ProcBMStr, eligible_nodes,job_is_exclusive) == true)
           {
           record_fitting_node(num, pnode, naji, req, first_node_id, i, num_alps_reqs, job_type, all_reqs, ard_array);
 
@@ -2955,7 +3053,8 @@ int node_spec(
   char               *login_prop, /* I (optional) */
   alps_req_data     **ard_array,  /* O (optional) */
   int                *num_reqs,   /* O (optional) */
-  enum job_types     &job_type)
+  enum job_types     &job_type,
+  bool                job_is_exclusive) /* I If true job requires must be only one on node. */
 
   {
   FUNCTION_TIMER
@@ -3222,10 +3321,10 @@ int node_spec(
 
   if (process_as_node_list(spec_param, naji) == true)
     {
-    select_nodes_using_hostlist(&all_reqs, naji, &eligible_nodes, spec, ard_array, first_node_id, num_alps_reqs, job_type, ProcBMStr);
+    select_nodes_using_hostlist(&all_reqs, naji, &eligible_nodes, spec, ard_array, first_node_id, num_alps_reqs, job_type, ProcBMStr,job_is_exclusive);
     }
   else
-    select_from_all_nodes(&all_reqs, naji, &eligible_nodes, ard_array, first_node_id, num_alps_reqs, job_type, ProcBMStr);
+    select_from_all_nodes(&all_reqs, naji, &eligible_nodes, ard_array, first_node_id, num_alps_reqs, job_type, ProcBMStr,job_is_exclusive);
 
   for (i = 0; i < all_reqs.num_reqs; i++)
     if (all_reqs.reqs[i].prop != NULL)
@@ -3398,7 +3497,7 @@ int node_satisfies_request(
     return(BM_ERROR);
 
   /* nodes are exclusive when we're using bitmaps */
-  if (pnode->nd_state != INUSE_FREE)
+  if ((pnode->nd_state != INUSE_FREE)||(pnode->nd_power_state != POWER_STATE_RUNNING))
     return(FALSE);
 
   BMLen = strlen(ProcBMStr);
@@ -4564,6 +4663,9 @@ int set_nodes(
 
   if (pjob->ji_wattr[JOB_ATR_login_prop].at_flags & ATR_VFLAG_SET)
     login_prop = pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str;
+  bool job_is_exclusive = false;
+  if(pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET)
+    job_is_exclusive = (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long != 0);
 
   /* allocate nodes */
   if ((i = node_spec(spec,
@@ -4576,7 +4678,8 @@ int set_nodes(
                      login_prop,
                      &ard_array,
                      &num_reqs,
-                     job_type)) == 0)
+                     job_type,
+                     job_is_exclusive)) == 0)
     {
     /* no resources located, request failed */
     if (EMsg != NULL)
@@ -4927,7 +5030,7 @@ int node_avail_complex(
   int            ret;
   enum job_types job_type;
 
-  ret = node_spec(spec, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, job_type);
+  ret = node_spec(spec, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, job_type,false);
 
   *navail = ret;
   *nalloc = 0;
@@ -5099,7 +5202,7 @@ int node_reserve(
 
   naji = (node_job_add_info *)calloc(1, sizeof(node_job_add_info));
 
-  if ((ret_val = node_spec(nspec, 0, 0, NULL, NULL, naji, NULL, NULL, NULL, NULL, job_type)) >= 0)
+  if ((ret_val = node_spec(nspec, 0, 0, NULL, NULL, naji, NULL, NULL, NULL, NULL, job_type,false)) >= 0)
     {
     /*
     ** Zero or more of the needed Nodes are available to be

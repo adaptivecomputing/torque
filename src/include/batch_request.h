@@ -378,6 +378,8 @@ struct batch_request
     tlist_head            rq_select; /* svrattrlist */
     int                   rq_shutdown;
 
+    int                   rq_powerstate;
+
     struct rq_signal      rq_signal;
 
     struct rq_status      rq_status;
@@ -432,6 +434,7 @@ extern void  req_cpyfile (struct batch_request *req);
 extern void  req_delfile (struct batch_request *req);
 extern void  req_returnfiles (struct batch_request *req);
 extern void  req_delete_reservation(struct batch_request *preq);
+extern void req_change_power_state(struct batch_request *request);
 #endif
 
 #ifdef SERVER_LIMITS_H
@@ -465,6 +468,7 @@ extern int decode_DIS_TrackJob (struct tcp_chan *chan, struct batch_request *);
 extern int decode_DIS_replySvr (struct tcp_chan *chan, struct batch_reply *);
 extern int decode_DIS_svrattrl (struct tcp_chan *chan, tlist_head *);
 extern int decode_DIS_GpuCtrl (struct tcp_chan *chan, struct batch_request *);
+extern int decode_DIS_PowerState (struct tcp_chan *chan, struct batch_request *);
 
 extern int encode_DIS_CopyFiles (struct tcp_chan *chan, struct batch_request *);
 extern int encode_DIS_JobObit (struct tcp_chan *chan, struct batch_request *);

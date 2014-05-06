@@ -21,7 +21,6 @@
 #include "queue.h" /* pbs_queue */
 
 
-
 const char *msg_momnoexec2 = "Job cannot be executed\nSee job standard error file";
 const char *msg_job_end_sig = "Terminated on signal %d";
 const char *msg_obitnojob  = "Job Obit notice received from %s has error %d";
@@ -325,3 +324,4 @@ void log_record(int eventtype, int objclass, const char *objname, const char *te
 void account_jobend(job *pjob, char *used) {}
 
 void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum event, char *job_id, long job_atr_hold, int job_exit_status) {}
+

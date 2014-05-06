@@ -89,6 +89,8 @@
 
 extern const char *alps_reporter_feature;
 
+std::string get_frequency_request(struct cpu_frequency_value *pfreq);
+
 int generate_alps_status(boost::ptr_vector<std::string>& status, const char *apbasil_path, const char *apbasil_protocol);
 
 int process_alps_status(char *nd_name, boost::ptr_vector<std::string>& status);
@@ -97,7 +99,7 @@ int get_alps_statuses(struct pbsnode *parent, struct batch_request *preq, int *b
 
 int destroy_alps_reservation(char *reservation_id, char *apbasil_path, char *apbasil_protocol, int retries);
 
-int create_alps_reservation(char *exec_hosts, char *username, char *jobid, char *apbasil_path, char *apbasil_protocol, long long pagg_id, int use_nppn, int nppcu, int mppdepth, char **reservation_id,const char *mppnodes);
+int create_alps_reservation(char *exec_hosts, char *username, char *jobid, char *apbasil_path, char *apbasil_protocol, long long pagg_id, int use_nppn, int nppcu, int mppdepth, char **reservation_id,const char *mppnodes,std::string& cray_frequency);
 
 int find_error_type(xmlNode *node);
 

@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include "pbs_job.h"
+#include "log.h"
 
 bool exit_called = false;
 all_jobs        array_summary;
@@ -9,9 +10,7 @@ char                   server_name[PBS_MAXSERVERNAME + 1]; /* host_name[:service
 all_jobs        alljobs;
 int                    LOGLEVEL;
 
-void log_err(int errno, const char *ident, const char *msg) {}
 void log_event(int type, int cls, const char *ident, const char *msg) {}
-
 
 int get_svr_attr_l(int index, long *l)
   {
@@ -60,3 +59,4 @@ job *job_alloc(void)
 
   return(pj);
   }
+

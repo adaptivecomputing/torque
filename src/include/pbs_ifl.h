@@ -333,9 +333,11 @@
 #define ATTR_maxuserqueuable         "max_user_queuable"
 #define ATTR_automaticrequeueexitcode "automatic_requeue_exit_code"
 #define ATTR_jobsynctimeout           "job_sync_timeout"
+#define ATTR_pass_cpu_clock           "pass_cpu_clock"
 /* additional node "attributes" names */
 
 #define ATTR_NODE_state            "state"
+#define ATTR_NODE_power_state      "power_state"
 #define ATTR_NODE_np               "np"
 #define ATTR_NODE_properties       "properties"
 #define ATTR_NODE_ntype            "ntype"
@@ -390,6 +392,15 @@
 #define ND_job_sharing   "job-sharing"
 #define ND_busy          "busy"
 #define ND_state_unknown "state-unknown"
+
+/* node power state values */
+
+#define ND_running       "Running"
+#define ND_standby       "Standby"
+#define ND_suspend       "Suspend"
+#define ND_sleep         "Sleep"
+#define ND_hibernate     "Hibernate"
+#define ND_shutdown      "Shutdown"
 
 /* these are not state values, they describe states and are used in pbsnodes */
 /* active = job-exclusive, job-sharing, or busy */

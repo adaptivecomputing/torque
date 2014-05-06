@@ -1107,17 +1107,18 @@ unsigned long setapbasilprotocol(
 
   if (value != NULL)
     {
-    /* only versions 1.0 to 1.3 are supported for now. update later */
+    /* only versions 1.0 to 1.4 are supported for now. update later */
     if ((strlen(value) != 3) ||
         (value[0] != '1') ||
         (value[1] != '.') ||
         ((value[2] != '0') &&
          (value[2] != '1') &&
          (value[2] != '2') &&
-         (value[2] != '3')))
+         (value[2] != '3') &&
+         (value[2] != '4')))
       {
       snprintf(log_buffer, sizeof(log_buffer), 
-        "Value must be 1.[0-3] but is %s", value);
+        "Value must be 1.[0-4] but is %s", value);
       log_err(-1, __func__, log_buffer);
       }
     else

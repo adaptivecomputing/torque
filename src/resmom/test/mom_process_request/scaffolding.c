@@ -247,6 +247,7 @@ bool log_available(int eventtype)
   }
 
 void req_delete_reservation(struct batch_request *request) {}
+void req_change_power_state(struct batch_request*){}
 
 void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
