@@ -223,7 +223,9 @@ int add_verify_resources(
       }    /* END if (*eq == '=') */
     else
       {
-      v = NULL;
+      /* no attr=value pair found */
+      fprintf(stderr, "Cannot find an attr=value pair in comma separated value '%s'\n", r);
+      exit(1);
       }
 
     /* This code in combination with the backend server code ends up with

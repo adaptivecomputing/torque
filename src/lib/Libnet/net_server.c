@@ -126,7 +126,6 @@
 char   local_host_name[PBS_MAXHOSTNAME + 1];
 size_t local_host_name_len = PBS_MAXHOSTNAME;
 
-extern int  LOGLEVEL;
 extern char local_host_name[];
 
 /* External Functions Called */
@@ -1168,8 +1167,9 @@ void close_conn(
 
   if (svr_conn[sd].cn_oncl != NULL)
     {
-    snprintf(log_message, LOG_BUF_SIZE, "Connection %d - func %lx",
-      sd, (unsigned long)svr_conn[sd].cn_oncl);
+    snprintf(log_message, sizeof(log_message),
+      "Closing connection %d and calling its accompanying function on close",
+      sd);
     log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_message);
 
     svr_conn[sd].cn_oncl(sd);
