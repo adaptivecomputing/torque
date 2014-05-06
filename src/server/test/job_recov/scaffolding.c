@@ -330,3 +330,4 @@ job *find_job_by_array(all_jobs *aj, char *job_id, int get_subjob, bool locked)
   {
   return(NULL);
   }
+
