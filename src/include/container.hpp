@@ -109,49 +109,52 @@ class item_container
     T get_next_item()
       {
 #ifdef CHECK_LOCKING
-    if(!*pLocked)
-      {
-      char *p = NULL;
-      while(1)
+      if (!*pLocked)
         {
-        *p++ = (char)0xff;
+        char *p = NULL;
+        while(1)
+          {
+          *p++ = (char)0xff;
+          }
         }
-      }
 #endif
-    if(endHit || exit_called)
-      {
-      return NULL;
-      }
-    if(iter == ALWAYS_EMPTY_INDEX)
-      {
-      endHit = true;
-      return NULL;
-      }
-    item<T> *pItem;
-    if(reversed)
-      {
-      do
+      if (exit_called)
         {
-        pItem = pContainer->next_thing_from_back(&iter);
-        }while((pItem == NULL)&&(iter != ALWAYS_EMPTY_INDEX));
-      if(pItem == NULL)
+        return(NULL);
+        }
+
+      if (endHit)
+        return(NULL);
+
+      if (iter == ALWAYS_EMPTY_INDEX)
         {
         endHit = true;
-        return NULL;
+        return(NULL);
         }
-      return pItem->get();
-      }
-    do
-      {
+      item<T> *pItem;
+      if (reversed)
+        {
+        pItem = pContainer->next_thing_from_back(&iter);
+        
+        if (pItem == NULL)
+          {
+          endHit = true;
+          return(NULL);
+          }
+        return pItem->get();
+        }
+      
       pItem = pContainer->next_thing(&iter);
-      }while((pItem == NULL)&&(iter != ALWAYS_EMPTY_INDEX));
-    if(pItem == NULL)
-      {
-      endHit = true;
-      return NULL;
+
+      if (pItem == NULL)
+        {
+        endHit = true;
+        return(NULL);
+        }
+
+      return(pItem->get());
       }
-    return pItem->get();
-    }
+
     item_iterator(item_container<T> *pCtner,
 #ifdef CHECK_LOCKING
         bool *locked,
@@ -639,6 +642,7 @@ class item_container
 
 
   bool is_present(
+
     item<T>      *thing)
 
     {
@@ -662,6 +666,7 @@ class item_container
    * @param index - index of the slot we're unlinking
    */
   void unlink_slot(
+
     int              index)
 
     {

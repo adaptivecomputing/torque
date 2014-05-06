@@ -1034,16 +1034,17 @@ int modify_job_attr(
     mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
     if (pque->qu_qs.qu_type != QTYPE_Execution)
       allow_unkn = JOB_ATR_UNKN;
+    }
 
-    }
-  else if (pjob->ji_parent_job != NULL)
-    {
-    allow_unkn = JOB_ATR_UNKN;
-    }
-  else
+  if (pjob == NULL)
     {
     log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 5");
     return(PBSE_JOBNOTFOUND);
+    }
+
+  if (pjob->ji_parent_job != NULL)
+    {
+    allow_unkn = JOB_ATR_UNKN;
     }
 
   pattr = pjob->ji_wattr;
