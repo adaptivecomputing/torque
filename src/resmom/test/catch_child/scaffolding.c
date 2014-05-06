@@ -78,6 +78,7 @@ int ran_one = 0;
 int the_sock = 0;
 job *lastpjob = NULL;
 int is_login_node;
+int job_exit_wait_time = 100;
 
 
 void exit_test(int num)
