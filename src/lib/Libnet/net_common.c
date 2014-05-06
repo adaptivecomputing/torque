@@ -22,9 +22,11 @@
 #include <sys/time.h> /* gettimeofday */
 #include <poll.h> /* poll functionality */
 #include <iostream>
+#include <pthread.h>
 #include "../lib/Liblog/pbs_log.h" /* log_err */
 #include "log.h" /* LOCAL_LOG_BUF_SIZE */
 #include "net_cache.h"
+#include "mutex_mgr.hpp"
 
 #include "pbs_error.h" /* torque error codes */
 
@@ -935,6 +937,7 @@ int socket_close(
   return rc;
   } /* END socket_close() */
 
+static pthread_mutex_t addrinfoMutex = PTHREAD_MUTEX_INITIALIZER;
 
 int pbs_getaddrinfo(
     
@@ -947,6 +950,8 @@ int pbs_getaddrinfo(
   struct addrinfo hints;
   int retryCount = 3;
   int addrFound = FALSE;
+  mutex_mgr mutex(&addrinfoMutex);
+  mutex.lock();
 
   if (ppAddrInfoOut == NULL)
     {
