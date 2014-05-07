@@ -74,7 +74,7 @@ static int mm_getsize(resource *pres, unsigned long *ret);
 
 static int mm_gettime(resource *pres, unsigned long *ret);
 
-static int injob(job *pjob, pid_t sid);
+static int injob(job *pjob, pid_t sid,struct pidl **pids);
 
 static unsigned long cput_sum(job *pjob);
 
