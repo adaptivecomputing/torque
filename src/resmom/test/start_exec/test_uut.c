@@ -8,8 +8,8 @@
 #include "pbs_nodes.h"
 #include "test_uut.h"
 
-void get_mic_indices(job *pjob, char *buf, int buf_size);
 void job_nodes(job &pjob);
+int get_indices_from_exec_str(const char *exec_str, char *buf, int buf_size);
 
 #ifdef NUMA_SUPPORT
 extern nodeboard node_boards[];
@@ -241,18 +241,17 @@ START_TEST(test_bld_env_variables_realloc_all)
   }
 END_TEST
 
-START_TEST(test_get_mic_indices)
+START_TEST(test_get_indices_from_exec_str)
   {
-  job  *pjob = (job *)calloc(1, sizeof(job));
   char  buf[1024];
 
-  pjob->ji_wattr[JOB_ATR_exec_mics].at_val.at_str = strdup("slesmic-0-mic/1+slesmic-0-mic/0");
+  fail_unless(get_indices_from_exec_str(NULL, NULL, 0) != PBSE_NONE);
 
-  get_mic_indices(pjob, NULL, 0);
-  get_mic_indices(pjob, buf, sizeof(buf));
-  fail_unless(strstr(buf, "1") != NULL);
-  fail_unless(strstr(buf, "0") != NULL);
-  fail_unless(strstr(buf, ",") != NULL);
+  fail_unless(get_indices_from_exec_str("slesmic-0-mic/1+slesmic-0-mic/0", buf, sizeof(buf)) == PBSE_NONE);
+  fail_unless(!strcmp(buf, "1,0"));
+
+  fail_unless(get_indices_from_exec_str("napali-gpu/1+napali-gpu/2+napali-gpu/3", buf, sizeof(buf)) == PBSE_NONE);
+  fail_unless(!strcmp(buf, "1,2,3"), buf);
   }
 END_TEST
 
@@ -310,8 +309,8 @@ Suite *start_exec_suite(void)
   tcase_add_test(tc_core, test_bld_env_variables_realloc_all);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("test_get_mic_indices");
-  tcase_add_test(tc_core, test_get_mic_indices);
+  tc_core = tcase_create("test_get_indices_from_exec_str");
+  tcase_add_test(tc_core, test_get_indices_from_exec_str);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_check_pwd_euser");
