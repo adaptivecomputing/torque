@@ -956,7 +956,7 @@ static int injob(
 
   if(*pids == NULL)
     {
-    *pids = get_cpuset_pidlist(pjob->ji_qs.ji_jobid, pids);
+    *pids = get_cpuset_pidlist(pjob->ji_qs.ji_jobid, *pids);
     pp   = *pids;
     }
   else
