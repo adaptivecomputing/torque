@@ -1549,10 +1549,12 @@ void initialize_globals(void)
   server.sv_qs_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   server.sv_attr_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   server.sv_jobstates_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  server.sv_track_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
 
   pthread_mutex_init(server.sv_qs_mutex,NULL);
   pthread_mutex_init(server.sv_attr_mutex,NULL);
   pthread_mutex_init(server.sv_jobstates_mutex,NULL);
+  pthread_mutex_init(server.sv_track_mutex,NULL);
   initialize_ruserok_mutex();
   lock_init();
   }
