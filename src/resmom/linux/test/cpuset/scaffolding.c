@@ -45,7 +45,7 @@ void log_event(int a, int b, const char *c, const char *d)
   if(check_event) event_data(d);
   }
 
-job *mom_find_job(char *jobid) 
+job *mom_find_job(const char *jobid) 
   {
   return(NULL);
   }
