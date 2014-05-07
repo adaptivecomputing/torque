@@ -106,6 +106,7 @@
 #include "../lib/Liblog/log_event.h"
 #include "reply_send.h" /* reply_send_svr */
 #include "ji_mutex.h"
+#include "mutex_mgr.hpp"
 
 /* Global Data Items: */
 
@@ -143,6 +144,7 @@ int req_locatejob(
     }
   else
     {
+    mutex_mgr track_mgr(server.sv_track_mutex, false);
     for (i = 0; i < server.sv_tracksize; i++)
       {
       if ((server.sv_track + i)->tk_mtime &&

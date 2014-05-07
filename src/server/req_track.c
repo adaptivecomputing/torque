@@ -105,6 +105,7 @@
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
 #include "../lib/Libifl/lib_ifl.h"
+#include "mutex_mgr.hpp"
 
 /* External functions */
 
@@ -150,6 +151,8 @@ int req_track(
   /* also remember first empty slot in case its needed */
 
   prqt = &preq->rq_ind.rq_track;
+
+  mutex_mgr track_mgr(server.sv_track_mutex, false);
 
   ptk = server.sv_track;
 
@@ -297,11 +300,15 @@ void track_save(
     return;
     }
 
+  mutex_mgr track_mgr(server.sv_track_mutex, false);
+
   if (write_ac_socket(fd, (char *)server.sv_track, server.sv_tracksize * sizeof(struct tracking)) !=
       (ssize_t)(server.sv_tracksize * sizeof(struct tracking)))
     {
     log_err(errno, myid, (char *)"failed to write to track file");
     }
+  
+  track_mgr.unlock();
 
   if (close(fd) < 0)
     {
