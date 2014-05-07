@@ -1542,7 +1542,7 @@ int copy_properties(
  * number in val and advances the string to the next number past the comma
  */
 
-static int read_val_and_advance(
+int read_val_and_advance(
 
   int   *val,
   char **str)
@@ -1594,11 +1594,11 @@ static int setup_node_boards(
   char            log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (pnode == NULL)
-  {
-  rc = PBSE_BAD_PARAMETER;
-  log_err(rc, __func__, "NULL input pbsnode poiner");
-  return(rc);
-  }
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc, __func__, "NULL input pbsnode poiner");
+    return(rc);
+    }
 
   pnode->parent = NULL;
 
@@ -1613,7 +1613,6 @@ static int setup_node_boards(
   if (pnode->numa_str != NULL)
     {
     np_ptr = pnode->numa_str;
-    read_val_and_advance(&np,&np_ptr);
     }
   else
     np = pnode->nd_slots.get_total_execution_slots() / pnode->num_node_boards;
