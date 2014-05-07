@@ -620,6 +620,13 @@ AC_MSG_RESULT($build_drmaa)
 AM_CONDITIONAL(INCLUDE_DRMAA, [test "x$build_drmaa" = "xyes"])
 AC_SUBST(build_drmaa)
 
+if test "x$build_drmaa" = "xyes";then
+  AC_PATH_PROG(GPERF, gperf)
+  if test -z "$GPERF";then
+    AC_MSG_ERROR([When building with drmaa, gperf must be installed. Please install gperf and then continue.])
+  fi
+fi
+
 
 dnl
 dnl  ######################################################################
