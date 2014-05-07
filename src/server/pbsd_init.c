@@ -2072,6 +2072,7 @@ int handle_tracking_records()
     return(-1);
     }
 
+  // the request pool hasn't started yet so we won't bother locking
   server.sv_tracksize = (statbuf.st_size + sizeof(struct tracking) - 1) / sizeof(struct tracking);
 
   if (server.sv_tracksize < PBS_TRACK_MINSIZE)
