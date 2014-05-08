@@ -412,54 +412,21 @@ void sum_select_mem_request(
   } /* END sum_select_mem_request() */
 
 
-/*
- * req_quejob - Queue Job Batch Request processing routine
- *  NOTE:  calls svr_chkque() to validate queue access
- *
- */
 
-int req_quejob(
+int get_job_id(
 
-  struct batch_request *preq,
-  char **pjob_id)
+  batch_request *preq,
+  int           &resc_access_perm,
+  int           &created_here,
+  std::string   &jobid)
 
   {
-  int                   created_here = 0;
-  int                   attr_index;
-  int                   sock = preq->rq_conn;
-  int                   rc = PBSE_NONE;
-  /* set basic (user) level access permission */
-  int                   resc_access_perm = ATR_DFLAG_USWR | ATR_DFLAG_Creat;
-  int                   i;
-  int                   fds;
-
-  char                 *jid;
-  char                 *pc;
-  char                 *qname;
-  char                  jidbuf[PBS_MAXSVRJOBID + 1];
-  char                  basename[PBS_JOBBASE + 1];
-  char                  namebuf[MAXPATHLEN + 1];
-  char                  buf[256];
-  char                  EMsg[MAXPATHLEN];
-  char                  log_buf[LOCAL_LOG_BUF_SIZE];
-  time_t                time_now = time(NULL);
-
-  job                  *pj;
-  attribute_def        *pdef;
-  svrattrl             *psatl;
-  pbs_queue            *pque;
-  pbs_attribute         tempattr;
-  char                 *alias = NULL;
-  int                   jobid_number;
-  
-  struct stat           stat_buf;
-  long                  passCpu = 1;
-  std::string           cpuClock = "";
-  
-  if(get_svr_attr_l(SRV_ATR_pass_cpu_clock,&passCpu) != PBSE_NONE)
-    {
-    passCpu = 1; //Default is to pass the cpuclock to the moms.
-    }
+  int   rc = PBSE_NONE;
+  char *alias = NULL;
+  int   jobid_number;
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
+  char  jidbuf[PBS_MAXSVRJOBID + 1];
+  char *svrnm = server_name;
 
   get_svr_attr_str(SRV_ATR_job_suffix_alias, &alias);
   /*
@@ -473,7 +440,7 @@ int req_quejob(
 
     resc_access_perm |= ATR_DFLAG_MGWR | ATR_DFLAG_SvWR;
 
-    jid = preq->rq_ind.rq_queuejob.rq_jid;
+    jobid = preq->rq_ind.rq_queuejob.rq_jid;
     }
   else if (preq->rq_ind.rq_queuejob.rq_jid[0] != '\0')
     {
@@ -483,17 +450,14 @@ int req_quejob(
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "job id not allowed from client");
     log_err(rc, __func__, log_buf);
     req_reject(PBSE_IVALREQ, 0, preq, NULL, log_buf);
-    return rc;
+    return(rc);
     }
   else
     {
     /* Create a job id */
-    char  host_server[PBS_MAXSERVERNAME + 1];
     long  server_suffix = TRUE;
 
     created_here = JOB_SVFLG_HERE;
-
-    memset(host_server, 0, sizeof(host_server));
 
     get_svr_attr_l(SRV_ATR_display_job_server_suffix, &server_suffix);
 
@@ -502,17 +466,6 @@ int req_quejob(
     if ((alias != NULL) &&
         (server_suffix == TRUE))
       {
-      char *svrnm;
-
-      if (get_fullhostname(pbs_default(), host_server, PBS_MAXSERVERNAME, NULL) == 0)
-        {
-        svrnm = host_server;
-        }
-      else
-        {
-        svrnm = server_name;
-        }
-
       snprintf(jidbuf,sizeof(jidbuf),"%d.%s.%s",
         server.sv_qs.sv_jobidnumber, svrnm, alias);
       }
@@ -522,17 +475,6 @@ int req_quejob(
       }
     else if (server_suffix == TRUE)
       {
-      char *svrnm;
-
-      if (get_fullhostname(pbs_default(), host_server, PBS_MAXSERVERNAME, NULL) == 0)
-        {
-        svrnm = host_server;
-        }
-      else
-        {
-        svrnm = server_name;
-        }
-
       snprintf(jidbuf, sizeof(jidbuf), "%d.%s", server.sv_qs.sv_jobidnumber, svrnm);
       }
     else
@@ -540,7 +482,7 @@ int req_quejob(
       snprintf(jidbuf, sizeof(jidbuf), "%d", server.sv_qs.sv_jobidnumber);
       }
 
-    jid = jidbuf;
+    jobid = jidbuf;
 
     /* having updated sv_jobidnumber, must save server struct */
 
@@ -560,27 +502,44 @@ int req_quejob(
     svr_save(&server, SVR_SAVE_QUICK);
     }
 
-  /* does job already exist, check both old and new jobs */
+  return(rc);
+  } /* END get_job_id() */
 
-  if ((pj = svr_find_job(jid, FALSE)) == NULL)
-    pj = find_job_by_array(&newjobs, jid, FALSE, false);
+
+
+bool job_exists(
+
+  const char *job_id)
+
+  {
+  bool  exists = false;
+  job  *pj;
+
+  if ((pj = svr_find_job(job_id, FALSE)) == NULL)
+    pj = find_job_by_array(&newjobs, job_id, FALSE, false);
 
   if (pj != NULL)
     {
     /* server will reject queue request if job already exists */
-
-    rc = PBSE_JOBEXIST;
-    log_err(rc, __func__, "cannot queue new job, job already exists");
-    req_reject(rc, 0, preq, NULL, NULL);
     unlock_ji_mutex(pj, __func__, "2", LOGLEVEL);
-    return rc;
+    exists = true;
     }
 
-  /* find requested queue, is it there? */
+  return(exists);
+  } /* END job_exists() */
 
-  qname = preq->rq_ind.rq_queuejob.rq_destin;
 
-  if ((*qname == '\0') || (*qname == '@'))
+
+pbs_queue *get_queue_for_job(
+    
+  char *queue_name,
+  int  &rc)
+
+  {
+  pbs_queue *pque;
+
+  if ((*queue_name == '\0') ||
+      (*queue_name == '@'))
     {
     /* use default queue */
     pque = get_dfltque();
@@ -590,36 +549,39 @@ int req_quejob(
   else
     {
     /* else find the named queue */
-    pque = find_queuebyname(qname);
+    pque = find_queuebyname(queue_name);
 
     rc   = PBSE_UNKQUE;
     }
 
-  if (pque == NULL)
-    {
-    /* FAILURE */
+  return(pque);
+  } /* END get_queue_for_job() */
 
-    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "requested queue not found");
-    log_err(-1, __func__, log_buf);
-    req_reject(rc, 0, preq, NULL, log_buf); /* not there   */
-    return rc;
-    }
 
-  mutex_mgr que_mgr(pque->qu_mutex, true);
 
-  /* unlock the queue. We validated that it was there, now let someone else
-     use it until we need it */
-  sprintf(log_buf, "Just validated queue");
+/*
+ * determine_job_file_name()
+ *
+ * @param preq - the batch request to queue this job
+ * @param jobid - the job's id
+ * @param filename - will be set to the job's filename on success
+ * @return PBSE_NONE on success, otherwise a return code indicating the failure
+ */
 
-  que_mgr.unlock();
+int determine_job_file_name(
 
-  /*
-   * make up job file name, it is based on the jobid, however the
-   * minimun acceptable file name limit is only 14 character in POSIX,
-   * so we may have to "hash" the name slightly
-   */
+  batch_request *preq,     /* I */
+  std::string   &jobid,    /* I */
+  std::string   &filename) /* O */
 
-  snprintf(basename, sizeof(basename), "%s", jid);
+  {
+  char basename[PBS_JOBBASE + 1];
+  char namebuf[MAXPATHLEN + 1];
+  char log_buf[LOCAL_LOG_BUF_SIZE];
+  int  fds;
+  int  rc = PBSE_NONE;
+
+  snprintf(basename, sizeof(basename), "%s", jobid.c_str());
 
   do
     {
@@ -630,6 +592,7 @@ int req_quejob(
       {
       if (errno == EEXIST)
         {
+        char *pc;
         pc = basename + strlen(basename) - 1;
 
         while (!isprint((int)*pc))
@@ -668,36 +631,65 @@ int req_quejob(
 
   close(fds);
 
-  /* create the job structure */
+  filename = basename;
+
+  return(rc);
+  } /* END determine_job_file_name() */
+
+
+
+job *create_and_initialize_job_structure(
+
+  int          created_here,
+  std::string &filename,
+  std::string &jobid)
+
+  {
+  job *pj;
   if ((pj = job_alloc()) == NULL)
     {
     /* FAILURE */
-    rc = PBSE_MEM_MALLOC;
-    snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-        "cannot alloc memory for new job %s - (%d - %s)",
-        namebuf, errno, strerror(errno));
-    log_err(rc, __func__, log_buf);
-    unlink(namebuf);
-    req_reject(PBSE_SYSTEM, 0, preq, NULL, log_buf);
-    return(rc);
+    log_err(PBSE_MEM_MALLOC, __func__, "no memory");
+    return(NULL);
     }
 
-  mutex_mgr job_mutex(pj->ji_mutex, true);
-
-  strcpy(pj->ji_qs.ji_jobid, jid);
-  strcpy(pj->ji_qs.ji_fileprefix, basename);
+  snprintf(pj->ji_qs.ji_jobid, sizeof(pj->ji_qs.ji_jobid), "%s", jobid.c_str());
+  snprintf(pj->ji_qs.ji_fileprefix, sizeof(pj->ji_qs.ji_fileprefix), "%s", filename.c_str());
 
   pj->ji_modified       = 1;
   pj->ji_qs.ji_svrflags = created_here;
   pj->ji_qs.ji_un_type  = JOB_UNION_TYPE_NEW;
-  pj->ji_wattr[JOB_ATR_mailpnts].at_val.at_str = 0;
+  pj->ji_wattr[JOB_ATR_mailpnts].at_val.at_str = NULL;
 
-  /* decode attributes from request into job structure */
+  return(pj);
+  } /* END create_and_initialize_job_structure() */
+
+
+
+int decode_attributes_into_job(
+    
+  job           *pj,
+  int            resc_access_perm,
+  batch_request *preq,
+  mutex_mgr     &job_mutex,
+  pbs_queue     *pque,
+  std::string   &cpuClock)
+
+  {
+  svrattrl    *psatl;
+  int          attr_index;
+  int          rc = PBSE_NONE;
+  // default is pass the cpu
+  long         passCpu = 1;
+  
+  get_svr_attr_l(SRV_ATR_pass_cpu_clock,&passCpu);
 
   psatl = (svrattrl *)GET_NEXT(preq->rq_ind.rq_queuejob.rq_attr);
 
   while (psatl != NULL)
     {
+    attribute_def *pdef;
+    char          *pc;
 
     if (psatl->al_atopl.resource)
       {
@@ -705,9 +697,9 @@ int req_quejob(
         {
         pj->ji_have_nodes_request = 1;
         }
-      if(!passCpu)
+      else if (!passCpu)
         {
-        if(strcmp(psatl->al_atopl.resource,"cpuclock")==0)
+        if (strcmp(psatl->al_atopl.resource,"cpuclock") == 0)
           {
           cpuClock = "PBS_CPUCLOCK=";
           cpuClock += psatl->al_atopl.value;
@@ -823,17 +815,22 @@ int req_quejob(
     psatl = (svrattrl *)GET_NEXT(psatl->al_link);
     } /* END while (psatl != NULL) */
 
-  rc = set_nodes_attr(pj);
-  if (rc)
-    {
-    /* just record that we could not set node count */
-    sprintf(log_buf, "Could not set default node count. Error not fatal. Will continue submitting job: %d",
-            rc);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-    }
+  return(rc);
+  } /* END decode_attributes_into_job() */
 
-  /* perform any at_action routine declared for the attributes */
-  for (i = 0; i < JOB_ATR_LAST; ++i)
+
+
+int perform_attribute_post_actions(
+
+  job *pj,
+  batch_request *preq,
+  mutex_mgr     &job_mutex)
+
+  {
+  attribute_def *pdef;
+  int            rc = PBSE_NONE;
+
+  for (int i = 0; i < JOB_ATR_LAST; ++i)
     {
     pdef = &job_attr_def[i];
 
@@ -852,22 +849,78 @@ int req_quejob(
       }
     }    /* END for (i) */
 
-  sum_select_mem_request(pj);
+  return(rc);
+  } /* END perform_attribute_post_actions() */
 
 
-  /*
-   * Now that the attributes have been decoded, we can setup some
-   * additional parameters and perform a few more checks.
-   *
-   * First, set some items based on who created the job...
-   */
 
-  if (created_here)
+int use_proxy_name_if_needed(
+
+  job           *pj,
+  batch_request *preq)
+
+  {
+  int  rc = PBSE_NONE;
+  char log_buf[LOCAL_LOG_BUF_SIZE];
+
+  /* check if a job id was supplied, and if so overwrite the job id */
+  if (pj->ji_wattr[JOB_ATR_job_id].at_flags & ATR_VFLAG_SET)
     {
-    /* created here */
+    char *dot = strchr(pj->ji_qs.ji_jobid,'.');
+    char  tmp_job_id[PBS_MAXSVRJOBID + 1];
 
+    if (dot != NULL)
+      {
+      snprintf(tmp_job_id, sizeof(tmp_job_id),
+        "%s%s", pj->ji_wattr[JOB_ATR_job_id].at_val.at_str, dot);
+      }
+    else
+      {
+      strcpy(tmp_job_id, pj->ji_wattr[JOB_ATR_job_id].at_val.at_str);
+      }
+
+    if (job_exists(tmp_job_id) == true)
+      {
+      /* not unique, reject job */
+      svr_job_purge(pj);
+     
+      rc = PBSE_JOBEXIST; 
+      snprintf(log_buf,sizeof(log_buf),
+        "Job with id %s already exists, cannot set job id\n",
+        tmp_job_id);
+      req_reject(rc,0,preq,NULL,log_buf);
+      }
+    else
+      {
+      /* now change the job id */
+      strcpy(pj->ji_qs.ji_jobid, tmp_job_id);
+      }
+    }
+
+  return(rc);
+  } /* END use_proxy_name_if_needed() */
+
+
+
+int check_attribute_settings(
+
+  job           *pj,
+  batch_request *preq,
+  int            resc_access_perm,
+  pbs_queue     *pque,
+  mutex_mgr     &que_mgr,
+  std::string   &cpuClock)
+
+  {
+  int            rc = PBSE_NONE;
+  char           buf[256];
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
+  pbs_attribute  tempattr;
+  struct stat    stat_buf;
+
+  if (pj->ji_qs.ji_svrflags & JOB_SVFLG_HERE)
+    {
     /* check that job has a jobname */
-
     if ((pj->ji_wattr[JOB_ATR_jobname].at_flags & ATR_VFLAG_SET) == 0)
       {
       job_attr_def[JOB_ATR_jobname].at_decode(
@@ -879,7 +932,6 @@ int req_quejob(
       }
 
     /* check value of priority */
-
     if (pj->ji_wattr[JOB_ATR_priority].at_flags & ATR_VFLAG_SET)
       {
       if ((pj->ji_wattr[JOB_ATR_priority].at_val.at_long < -1024) ||
@@ -887,54 +939,17 @@ int req_quejob(
         {
         rc = PBSE_BADATVAL;
         svr_job_purge(pj);
-        job_mutex.set_unlock_on_exit(false);
         req_reject(rc, 0, preq, NULL, "invalid job priority");
-        return rc;
+        return(rc);
         }
       }
 
-    /* check if a job id was supplied, and if so overwrite the job id */
-    if (pj->ji_wattr[JOB_ATR_job_id].at_flags & ATR_VFLAG_SET)
+    if ((rc = use_proxy_name_if_needed(pj, preq)) != PBSE_NONE)
       {
-      char *dot = strchr(pj->ji_qs.ji_jobid,'.');
-      char  tmp_job_id[PBS_MAXSVRJOBID + 1];
-      job  *tmpjob;
-
-      if (dot != NULL)
-        {
-        snprintf(tmp_job_id, sizeof(tmp_job_id),
-          "%s%s", pj->ji_wattr[JOB_ATR_job_id].at_val.at_str, dot);
-        }
-      else
-        {
-        strcpy(tmp_job_id, pj->ji_wattr[JOB_ATR_job_id].at_val.at_str);
-        }
-
-      /* make sure the job id doesn't already exist */
-      if ((tmpjob = svr_find_job(tmp_job_id, FALSE)) != NULL)
-        {
-        unlock_ji_mutex(tmpjob, __func__, "3", LOGLEVEL);
-
-        /* not unique, reject job */
-        svr_job_purge(pj);
-        job_mutex.set_unlock_on_exit(false);
-       
-        rc = PBSE_JOBEXIST; 
-        snprintf(log_buf,sizeof(log_buf),
-          "Job with id %s already exists, cannot set job id\n",
-          pj->ji_qs.ji_jobid);
-        req_reject(rc,0,preq,NULL,log_buf);
-        return rc;
-        }
-      else
-        {
-        /* now change the job id */
-        strcpy(pj->ji_qs.ji_jobid, tmp_job_id);
-        }
+      return(rc);
       }
 
     /* set job owner attribute to user@host */
-
     job_attr_def[JOB_ATR_job_owner].at_free(
       &pj->ji_wattr[JOB_ATR_job_owner]);
 
@@ -948,19 +963,14 @@ int req_quejob(
       resc_access_perm);
 
     /* set create time */
-
-    pj->ji_wattr[JOB_ATR_ctime].at_val.at_long = (long)time_now;
-
+    pj->ji_wattr[JOB_ATR_ctime].at_val.at_long = time(NULL);
     pj->ji_wattr[JOB_ATR_ctime].at_flags |= ATR_VFLAG_SET;
 
     /* set hop count = 1 */
-
     pj->ji_wattr[JOB_ATR_hopcount].at_val.at_long = 1;
-
     pj->ji_wattr[JOB_ATR_hopcount].at_flags |= ATR_VFLAG_SET;
 
     /* Interactive jobs are necessarily not rerunable */
-
     if ((pj->ji_wattr[JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
         pj->ji_wattr[JOB_ATR_interactive].at_val.at_long)
       {
@@ -970,11 +980,12 @@ int req_quejob(
 
     snprintf(buf, sizeof(buf), "%s%s", pbs_o_que, pque->qu_qs.qu_name);
 
-    if(cpuClock.length() != 0)
+    if (cpuClock.length() != 0)
       {
       strcat(buf,",");
       strcat(buf,cpuClock.c_str());
       }
+
     if (get_variable(pj, pbs_o_host) == NULL)
       {
       strcat(buf, ",");
@@ -1143,9 +1154,8 @@ int req_quejob(
       {
       rc = PBSE_NOATTR;
       svr_job_purge(pj);
-      job_mutex.set_unlock_on_exit(false);
       req_reject(rc, 0, preq, NULL, "no output/error file specified");
-      return rc;
+      return(rc);
       }
 
     /*
@@ -1221,9 +1231,8 @@ int req_quejob(
         {
         rc = PBSE_BADACCT;
         svr_job_purge(pj);
-        job_mutex.set_unlock_on_exit(false);
         req_reject(rc, 0, preq, NULL, "invalid account");
-        return rc;
+        return(rc);
         }
       }
     else
@@ -1242,9 +1251,8 @@ int req_quejob(
         /* no default found */
         rc = PBSE_BADACCT;
         svr_job_purge(pj);
-        job_mutex.set_unlock_on_exit(false);
         req_reject(rc, 0, preq, NULL, "no default account available");
-        return rc;
+        return(rc);
         }
       }
 
@@ -1259,12 +1267,11 @@ int req_quejob(
     if (!(pj->ji_wattr[JOB_ATR_job_owner].at_flags & ATR_VFLAG_SET))
       {
       rc = PBSE_IVALREQ;
-      snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "no job owner specified");
+      snprintf(log_buf, sizeof(log_buf), "no job owner specified");
       svr_job_purge(pj);
-      job_mutex.set_unlock_on_exit(false);
       log_err(rc, __func__, log_buf);
       req_reject(rc, 0, preq, NULL, log_buf);
-      return rc;
+      return(rc);
       }
 
     /* increment hop count */
@@ -1273,20 +1280,121 @@ int req_quejob(
       {
       rc = PBSE_HOPCOUNT;
       svr_job_purge(pj);
-      job_mutex.set_unlock_on_exit(false);
       req_reject(rc, 0, preq, NULL, "max job hop reached");
-      return rc;
+      return(rc);
       }
     }
 
   /* set up at_server pbs_attribute for status */
-
   job_attr_def[JOB_ATR_at_server].at_decode(
     &pj->ji_wattr[JOB_ATR_at_server],
     NULL,
     NULL,
     server_name,
     resc_access_perm);
+
+  return(rc);
+  } /* END check_attribute_settings() */
+
+
+
+/*
+ * req_quejob - Queue Job Batch Request processing routine
+ *  NOTE:  calls svr_chkque() to validate queue access
+ *
+ */
+
+int req_quejob(
+
+  struct batch_request *preq,
+  char **pjob_id)
+
+  {
+  int                   created_here = 0;
+  int                   sock = preq->rq_conn;
+  int                   rc = PBSE_NONE;
+  /* set basic (user) level access permission */
+  int                   resc_access_perm = ATR_DFLAG_USWR | ATR_DFLAG_Creat;
+
+  char                  EMsg[MAXPATHLEN];
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  time_t                time_now = time(NULL);
+
+  job                  *pj;
+  pbs_queue            *pque;
+  std::string           jobid;
+  std::string           filename;
+  
+
+  if ((rc = get_job_id(preq, resc_access_perm, created_here, jobid)) != PBSE_NONE)
+    return(rc);
+
+  if (job_exists(jobid.c_str()) == true)
+    {
+    log_err(PBSE_JOBEXIST, __func__, "cannot queue new job, job already exists");
+    req_reject(PBSE_JOBEXIST, 0, preq, NULL, NULL);
+    return(PBSE_JOBEXIST);
+    }
+
+  pque = get_queue_for_job(preq->rq_ind.rq_queuejob.rq_destin, rc);
+
+  if (pque == NULL)
+    {
+    /* FAILURE */
+
+    snprintf(log_buf, sizeof(log_buf), "requested queue not found");
+    log_err(-1, __func__, log_buf);
+    req_reject(rc, 0, preq, NULL, log_buf); /* not there   */
+    return rc;
+    }
+
+  mutex_mgr que_mgr(pque->qu_mutex, true);
+
+  /* unlock the queue. We validated that it was there, now let someone else
+     use it until we need it */
+  sprintf(log_buf, "Just validated queue");
+
+  que_mgr.unlock();
+
+  if ((rc = determine_job_file_name(preq, jobid, filename)) != PBSE_NONE)
+    {
+    return(rc);
+    }
+
+  if ((pj = create_and_initialize_job_structure(created_here, filename, jobid)) == NULL)
+    {
+    unlink(filename.c_str());
+    req_reject(PBSE_SYSTEM, 0, preq, NULL, "");
+    return(PBSE_MEM_MALLOC);
+    }
+
+  mutex_mgr job_mutex(pj->ji_mutex, true);
+  std::string  cpuClock = "";
+  decode_attributes_into_job(pj, resc_access_perm, preq, job_mutex, pque, cpuClock);
+
+  if (rc != PBSE_NONE)
+    return(rc);
+
+  rc = set_nodes_attr(pj);
+  if (rc)
+    {
+    /* just record that we could not set node count */
+    snprintf(log_buf, sizeof(log_buf),
+      "Could not set default node count. Error not fatal. Will continue submitting job: %d",
+      rc);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
+
+  perform_attribute_post_actions(pj, preq, job_mutex);
+
+  sum_select_mem_request(pj);
+
+  rc = check_attribute_settings(pj, preq, resc_access_perm, pque, que_mgr, cpuClock);
+  if (rc != PBSE_NONE)
+    {
+    job_mutex.set_unlock_on_exit(false);
+    return(rc);
+    }
 
   /* make sure its okay to submit this job */
   if (can_queue_new_job(pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj) == FALSE)

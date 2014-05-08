@@ -317,10 +317,10 @@ char *get_correct_jobname(
 
 job *find_job_by_array(
     
-  all_jobs *aj,
-  char     *job_id,
-  int       get_subjob,
-  bool      locked)
+  all_jobs   *aj,
+  const char *job_id,
+  int         get_subjob,
+  bool        locked)
 
   {
   job *pj = NULL;

@@ -327,7 +327,7 @@ int get_batch_request_id(batch_request *preq) {return 0;}
 int encode_inter(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm) {return 0;}
 
 
-job *find_job_by_array(all_jobs *aj, char *job_id, int get_subjob, bool locked)
+job *find_job_by_array(all_jobs *aj, const char *job_id, int get_subjob, bool locked)
   {
   return(NULL);
   }

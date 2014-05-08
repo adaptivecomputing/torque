@@ -1106,7 +1106,7 @@ extern int   job_unlink_file(job *pjob, const char *name);
 job         *job_clone(job *,struct job_array *, int);
 job         *svr_find_job(const char *jobid, int get_subjob);
 job         *svr_find_job_by_id(int internal_job_id);
-job         *find_job_by_array(all_jobs *aj, char *job_id, int get_subjob, bool locked);
+job         *find_job_by_array(all_jobs *aj, const char *job_id, int get_subjob, bool locked);
 #else
 extern job  *mom_find_job(const char *);
 #endif
