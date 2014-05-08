@@ -271,7 +271,7 @@ void parse_command_line(int argc, char **argv)
             exit(0);
             break;
           case 2:   /* version */
-            fprintf(stderr, "Version: %s Commit: %s\n", VERSION, GIT_HASH);
+            fprintf(stderr, "Version: %s \nCommit: %s\n", VERSION, GIT_HASH);
             exit(0);
             break;
           }
