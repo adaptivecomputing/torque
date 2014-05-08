@@ -2061,8 +2061,11 @@ void update_array_values(
 
       if (old_state != JOB_STATE_RUNNING)
         {
-        pa->ai_qs.jobs_running++;
-        pa->ai_qs.num_started++;
+        if (pa->ai_qs.jobs_running < pa->ai_qs.num_jobs)
+          {
+          pa->ai_qs.jobs_running++;
+          pa->ai_qs.num_started++;
+          }
         }
 
       break;
@@ -2169,7 +2172,7 @@ void update_array_statuses()
   job            *pjob;
   all_arrays_iterator *iter = NULL;
   unsigned int    running;
-  unsigned int    queued;
+  int             queued;
   unsigned int    complete;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
   char            jobid[PBS_MAXSVRJOBID+1];
@@ -2179,6 +2182,8 @@ void update_array_statuses()
     running  = pa->ai_qs.jobs_running;
     complete = pa->ai_qs.num_failed + pa->ai_qs.num_successful;
     queued   = pa->ai_qs.num_jobs - running - complete;
+    if (queued < 0)
+      queued = 0;
     
     if (LOGLEVEL >= 7)
       {
