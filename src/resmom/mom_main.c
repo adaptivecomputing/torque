@@ -186,6 +186,10 @@ char        *path_aux;
 char        *path_home = (char *)PBS_SERVER_HOME;
 char        *mom_home;
 
+#ifdef NVIDIA_GPUS
+extern dynamic_string *global_gpu_status;
+#endif
+
 extern dynamic_string *mom_status;
 extern int  multi_mom;
 char        *path_layout;
@@ -7817,6 +7821,20 @@ int setup_program_environment(void)
 
     return(1);
     }
+
+#ifdef NVIDIA_GPUS
+  /* initialize the global_gpu_status */
+  global_gpu_status = get_dynamic_string(16 * 1024, NULL);
+
+  if(global_gpu_status == NULL)
+    {
+    snprintf(log_buffer, sizeof(log_buffer),
+      "get_dynamic_string() failed initializeing global_gpu_status: %s\n",strerror(errno));
+    log_err(errno, __func__, log_buffer);
+
+    return(1);
+    }
+#endif
 
   init_resc_defs();
 

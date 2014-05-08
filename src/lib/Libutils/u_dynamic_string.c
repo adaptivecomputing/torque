@@ -481,3 +481,27 @@ int append_char_to_dynamic_string(
   } /* END append_char_to_dynamic_string() */
 
 
+/* concat_dynamic_string
+ * concatenate two dynamic strings together. 
+ * append the source to the end of the destination
+ */
+int concat_dynamic_strings(
+    
+    dynamic_string *source, 
+    dynamic_string *destination)
+
+  {
+  char *ptr;
+
+  ptr = source->str;
+
+  while (*ptr != '\0')
+    {
+    int len;
+
+    len = strlen(ptr);
+    copy_to_end_of_dynamic_string(destination, ptr);
+    ptr += len + 1;
+    }
+  return(PBSE_NONE);
+  }
