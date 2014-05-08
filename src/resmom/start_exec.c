@@ -261,6 +261,7 @@ enum TVarElseEnum
   tveWallTime,
   tveMicFile,
   tveOffloadDevices,
+  tveCudaVisibleDevices,
   tveLAST
   };
 
@@ -281,13 +282,14 @@ static const char *variables_else[] =   /* variables to add, value computed */
   "PBS_NNODES",      /* number of nodes specified by size */
   "TMPDIR",
   "PBS_VERSION",
-  "PBS_NUM_NODES",  /* number of nodes specified by nodes string */
-  "PBS_NUM_PPN",    /* ppn value specified by nodes string */
-  "PBS_GPUFILE",    /* file containing which GPUs to access */
-  "PBS_NP",         /* number of processors requested */
-  "PBS_WALLTIME",   /* requested or default walltime */
-  "PBS_MICFILE",    /* file containing which MICs to access */
-  "OFFLOAD_DEVICES",/* indices of MICs for the job */
+  "PBS_NUM_NODES",        /* number of nodes specified by nodes string */
+  "PBS_NUM_PPN",          /* ppn value specified by nodes string */
+  "PBS_GPUFILE",          /* file containing which GPUs to access */
+  "PBS_NP",               /* number of processors requested */
+  "PBS_WALLTIME",         /* requested or default walltime */
+  "PBS_MICFILE",          /* file containing which MICs to access */
+  "OFFLOAD_DEVICES",      /* indices of MICs for the job */
+  "CUDA_VISIBLE_DEVICES", /* indices of GPUs for the job */
   NULL
   };
 
@@ -1302,30 +1304,31 @@ int TMakeTmpDir(
 
 
 /*
- * get_mic_indices
+ * get_indices_from_exec_str
  *
- * parses the exec_mics string and places the absolute indices in a 
+ * parses an exec style string and places the absolute indices in a 
  * list in buf
  *
  * the exec_mics string in NUMA is in the format:
- * <hostname>-<nodeboard index>-mic/<nodeboard mic index>[+...]
+ * <hostname>-<nodeboard index>-<mic or gpu>/<nodeboard index>[+...]
  * e.g.: 'slesmic-0-mic/1+slesmic-0-mic/0'
  *
  * non-numa is in the format:
- * <hostname>-mic/<mic index>[+...]
+ * <hostname>-gpu/<index>[+...]
  *
- * @param pjob - the job whose exec_mic string we're parsing
+ * @param exec_str - the string we're parsing
  * @param buf - where the list of absolute mic indices goes
  * @param buf_size - maximum size that can be written into buf 
  */
-void get_mic_indices(
 
-  job  *pjob,
-  char *buf,
-  int   buf_size)
+int get_indices_from_exec_str(
+
+  const char *exec_str, /* I */
+  char       *buf,      /* O */
+  int         buf_size) /* I */
 
   {
-  char *mic_str;
+  char *work_str;
   char *tok;
   char *slash;
 #ifdef NUMA_SUPPORT
@@ -1334,20 +1337,19 @@ void get_mic_indices(
   int   numa_index = -1;
 #endif
   int   numa_offset = 0;
-  int   mic_index;
+  int   index;
 
-  if (buf == NULL)
-    return;
+  if ((buf == NULL) ||
+      (exec_str == NULL))
+    return(-1);
 
-  fprintf(stderr,"in %s val = %d\n",__func__,JOB_ATR_exec_mics);
+  work_str = strdup(exec_str);
 
-  mic_str = strdup(pjob->ji_wattr[JOB_ATR_exec_mics].at_val.at_str);
+  memset(buf, 0, buf_size);
 
-  buf[0] = '\0';
-
-  if (mic_str != NULL)
+  if (work_str != NULL)
     {
-    tok = strtok(mic_str, "+");
+    tok = strtok(work_str, "+");
 
     while (tok != NULL)
       {
@@ -1375,21 +1377,22 @@ void get_mic_indices(
 
       if ((slash = strchr(tok, '/')) != NULL)
         {
-        mic_index = strtol(slash+1, NULL, 10) + numa_offset;
+        index = strtol(slash+1, NULL, 10) + numa_offset;
 
         if (buf[0] != '\0')
-          snprintf(buf + strlen(buf), buf_size - strlen(buf), ",%d", mic_index);
+          snprintf(buf + strlen(buf), buf_size - strlen(buf), ",%d", index);
         else
-          snprintf(buf, buf_size, "%d", mic_index);
+          snprintf(buf, buf_size, "%d", index);
         }
 
       tok = strtok(NULL, "+");
       }
-    }
-  if (mic_str != NULL)
-    free(mic_str);
-  } /* END get_mic_indices() */
 
+    free(work_str);
+    }
+
+  return(PBSE_NONE);
+  } /* END get_indices_from_exec_str() */
 
 
 
@@ -1598,8 +1601,14 @@ int InitUserEnv(
 
   if (pjob->ji_wattr[JOB_ATR_exec_mics].at_val.at_str != NULL)
     {
-    get_mic_indices(pjob, buf, sizeof(buf));
+    get_indices_from_exec_str(pjob->ji_wattr[JOB_ATR_exec_mics].at_val.at_str, buf, sizeof(buf));
     bld_env_variables(&vtable, variables_else[tveOffloadDevices], buf);
+    }
+
+  if (pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str != NULL)
+    {
+    get_indices_from_exec_str(pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str, buf, sizeof(buf));
+    bld_env_variables(&vtable, variables_else[tveCudaVisibleDevices], buf);
     }
 
   /* PBS_WALLTIME */

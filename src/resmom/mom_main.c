@@ -4055,7 +4055,7 @@ void parse_command_line(
           }
         else if (!strcmp(optarg, "version"))
           {
-          printf("Version: %s\nRevision: %s\n",
+          printf("Version: %s\nCommit: %s\n",
             PACKAGE_VERSION, GIT_HASH);
 
           exit(0);
