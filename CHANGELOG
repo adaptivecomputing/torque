@@ -7,6 +7,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       after free error that could lead to memory corruption.
   b - Fixed the thread pool manager so it would free idle nodes. Also changed the default
       thread stack sizes to a maximum of 8 Mb and Minimum of 1 Mb.
+  b - TRQ-2647. Fixed a problem where the gpu status was displayed only at pbs_mom
+      startup.
 
 4.2.7
   b - TRQ-2329. Fix a problem where nodes could be allocated to array subjobs even
