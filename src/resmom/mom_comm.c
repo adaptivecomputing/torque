@@ -264,7 +264,6 @@ int task_save(
   int   i;
   int   TaskID = 0;
   char  namebuf[MAXPATHLEN + 1];
-  char  portname[MAXPATHLEN + 1];
   int   openflags;
 
   if (ptask == NULL)
@@ -279,25 +278,18 @@ int task_save(
     return(PBSE_BAD_PARAMETER);
     }
 
-  strncpy(namebuf, path_jobs, sizeof(namebuf) - 1);     /* job directory path */
-  strncat(namebuf, pjob->ji_qs.ji_fileprefix, sizeof(namebuf) - 1); /*TODO: think about stncats third arguments*/
-
   if (multi_mom)
-    {
-    sprintf(portname, "%d", pbs_rm_port);
-    /*TODO: do we have actually snprintf*/
-    /*snprintf(portname, sizeof(portname), "%d", pbs_rm_port);*/
-    strncat(namebuf, portname, sizeof(namebuf) - 1);
-    }
-
-  strncat(namebuf, JOB_TASKDIR_SUFFIX, sizeof(namebuf) - 1);
+    snprintf(namebuf, sizeof(namebuf), "%s%s%d%s",
+     path_jobs, pjob->ji_qs.ji_fileprefix, pbs_rm_port, JOB_TASKDIR_SUFFIX);
+  else
+    snprintf(namebuf, sizeof(namebuf), "%s%s%s",
+     path_jobs, pjob->ji_qs.ji_fileprefix, JOB_TASKDIR_SUFFIX);
 
   openflags = O_WRONLY | O_CREAT | O_Sync;
 
   if (LOGLEVEL >= 6)
     {
-    sprintf(log_buffer, "saving task in %s",
-            namebuf);
+    sprintf(log_buffer, "saving task in %s", namebuf);
 
     log_record(PBSEVENT_JOB, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
     }
