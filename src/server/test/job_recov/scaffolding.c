@@ -12,6 +12,7 @@
 #include "user_info.h"
 #include "server.h" /* server */
 #include "sched_cmds.h"
+#include "threadpool.h"
 
 const char *text_name              = "text";
 const char *PJobSubState[10];
@@ -38,6 +39,7 @@ int listener_command = SCH_SCHEDULE_NULL;
 char *path_jobinfo_log;
 pthread_mutex_t *svr_do_schedule_mutex;
 pthread_mutex_t *listener_command_mutex;
+threadpool_t    *task_pool;
 
 
 ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
@@ -149,10 +151,9 @@ ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   return(0);
   }
 
-int enqueue_threadpool_request(void *(*func)(void *),void *arg)
+int enqueue_threadpool_request(void *(*func)(void *),void *arg, threadpool_t *tp)
   {
-  fprintf(stderr, "The call to enqueue_threadpool_request to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 mutex_mgr::mutex_mgr(pthread_mutex_t *, bool a)
@@ -209,7 +210,14 @@ struct batch_request *setup_cpyfiles(struct batch_request *preq, job *pjob, char
 char *pbs_default(void) {return NULL;}
 pbs_net_t get_connectaddr(int sock, int mutex) {return -1;}
 void set_chkpt_deflt(job *pjob, pbs_queue *pque) {}
-int attr_to_str(std::string& ds, attribute_def *attr_def,struct pbs_attribute attr, int XML) {return -1;}
+
+int attr_to_str(std::string& ds, attribute_def *attr_def,struct pbs_attribute attr, bool XML)
+  {
+  if (attr_def->at_type == ATR_TYPE_STR)
+    ds = attr.at_val.at_str;
+  return(0);
+  }
+
 void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
@@ -318,4 +326,8 @@ int get_batch_request_id(batch_request *preq) {return 0;}
 int encode_inter(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm) {return 0;}
 
 
+job *find_job_by_array(all_jobs *aj, char *job_id, int get_subjob, bool locked)
+  {
+  return(NULL);
+  }
 

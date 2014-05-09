@@ -112,7 +112,6 @@
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
 #include "process_request.h" /* dispatch_request */
 #include "svr_connect.h" /* svr_disconnect_sock */
-#include "node_manager.h" /* tfind_addr */
 #include "ji_mutex.h"
 
 
@@ -190,7 +189,8 @@ int relay_to_mom(
   free(job_momname);
 
   if ((node != NULL) &&
-      (node->nd_state & INUSE_DOWN))
+      ((node->nd_state & INUSE_DOWN)||
+      (node->nd_power_state != POWER_STATE_RUNNING)))
     {
     unlock_node(node, __func__, "no rely mom", LOGLEVEL);
     return(PBSE_NORELYMOM);
@@ -211,13 +211,7 @@ int relay_to_mom(
   unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
   *pjob_ptr = NULL;
 
-  handle = svr_connect(
-           addr,
-           port,
-           &local_errno,
-           NULL,
-           NULL);
-    
+  handle = svr_connect(addr, port, &local_errno, NULL, NULL);
 
   if (handle < 0)
     {
@@ -225,7 +219,6 @@ int relay_to_mom(
 
     return(PBSE_NORELYMOM);
     }
-
 
   request->rq_orgconn = request->rq_conn; /* save client socket */
 
@@ -719,6 +712,22 @@ int send_request_to_remote_server(
       rc = DIS_tcp_wflush(chan);
       
       break;
+
+    case PBS_BATCH_ChangePowerState:
+
+      if ((rc = encode_DIS_ReqHdr(chan, PBS_BATCH_ChangePowerState, msg_daemonname)))
+        break;
+
+      if ((rc = encode_DIS_PowerState(chan, request->rq_ind.rq_powerstate)))
+        break;
+
+      if ((rc = encode_DIS_ReqExtend(chan, request->rq_extend)))
+        break;
+
+      rc = DIS_tcp_wflush(chan);
+
+      break;
+
 
     default:
 

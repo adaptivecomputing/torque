@@ -7,6 +7,7 @@
 #include "work_task.h"
 #include "attribute.h"
 #include "u_tree.h"
+#include "threadpool.h"
 #include "resource.h"
 
 
@@ -33,6 +34,7 @@
   c ^= b; c -= rot(b,24); \
   }
 
+threadpool_t *task_pool;
 bool exit_called = false;
 char log_buffer[LOG_BUF_SIZE];
 int count;
@@ -1658,7 +1660,8 @@ struct batch_request *alloc_br(
 int enqueue_threadpool_request(
 
   void *(*func)(void *),
-  void *arg)
+  void *arg,
+  threadpool_t *tp)
 
   {
   return(0);

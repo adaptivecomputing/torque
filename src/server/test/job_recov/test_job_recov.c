@@ -3,6 +3,7 @@
 #include "test_job_recov.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include "pbs_error.h"
@@ -17,6 +18,80 @@ extern void free_server_attrs(tlist_head *att_head);
 int fill_resource_list(job **pj, xmlNodePtr resource_list_node, char *log_buf, size_t buflen, const char *aname);
 
 char  server_name[] = "lei.ac";
+
+int add_encoded_attributes(xmlNodePtr *attr_node, pbs_attribute *pattr);
+void translate_dependency_to_string(pbs_attribute *pattr, std::string &value);
+
+START_TEST(test_translate_dependency_to_string)
+  {
+  pbs_attribute dep_attr;
+  struct depend dep;
+  struct depend_job dj;
+
+  memset(&dj, 0, sizeof(dj));
+  CLEAR_LINK(dj.dc_link);
+  strcpy(dj.dc_child, "1.napali");
+  strcpy(dj.dc_svr, "napali");
+  
+  memset(&dep, 0, sizeof(dep));
+  dep.dp_type = JOB_DEPEND_TYPE_AFTEROK;
+  CLEAR_HEAD(dep.dp_jobs);
+  CLEAR_LINK(dep.dp_link);
+  append_link(&dep.dp_jobs, &dj.dc_link, &dj);
+
+  dep_attr.at_flags = ATR_VFLAG_SET;
+  CLEAR_HEAD(dep_attr.at_val.at_list);
+  append_link(&dep_attr.at_val.at_list, &dep.dp_link, &dep);
+
+  std::string value;
+
+  // make sure we don't segfault
+  translate_dependency_to_string(NULL, value);
+  translate_dependency_to_string(&dep_attr, value);
+  fail_unless(value == "afterok:1.napali@napali");
+  }
+END_TEST
+
+
+START_TEST(test_add_encoded_attributes)
+  {
+  xmlNodePtr attr_node = xmlNewNode(NULL, (xmlChar *)ATTRIB_TAG);
+  pbs_attribute attributes[JOB_ATR_LAST];
+
+  memset(&attributes, 0, sizeof(attributes));
+  attributes[JOB_ATR_job_owner].at_flags |= ATR_VFLAG_SET;
+  attributes[JOB_ATR_job_owner].at_val.at_str = strdup("dbeer@napali");
+
+  add_encoded_attributes(&attr_node, attributes);
+  xmlNode *child = attr_node->children;
+
+  fail_unless(child != NULL);
+  fail_unless(!strcmp((const char *)child->name, ATTR_owner));
+  fail_unless(!strcmp((const char *)child->children->name, "text"));
+  fail_unless(!strcmp((const char *)child->children->content, "dbeer@napali"));
+  
+/*  save for later
+  attributes[JOB_ATR_resc_used].at_flags |= ATR_VFLAG_SET;
+  CLEAR_HEAD(attributes[JOB_ATR_resc_used].at_val.at_list);
+  resource walltime;
+  resource_def prd;
+  memset(&walltime, 0, sizeof(walltime));
+  CLEAR_LINK(walltime.rs_link);
+  append_link(&attributes[JOB_ATR_resc_used].at_val.at_list, &walltime.rs_link, &walltime);
+  walltime.rs_defin = &prd;
+  walltime.rs_value.at_type = ATR_TYPE_LONG;
+  walltime.rs_value.at_flags = 0;
+  walltime.rs_value.at_val.at_long = 600;
+  prd.rs_name = "walltime";
+  attributes[JOB_ATR_job_owner].at_flags = 0;
+  xmlNodePtr attr_node = xmlNewNode(NULL, (xmlChar *)ATTRIB_TAG);
+  add_encoded_attributes(&attr_node, attributes);
+  xmlNode *child = attr_node->children;
+
+  fail_unless(child != NULL);
+  fail_unless(!strcmp((const char *)child->name, ATTR_used)); */
+  }
+END_TEST
 
 void add_attr_to_list(tlist_head *atrlist, const char *attrname, size_t len, const char *value)
   {
@@ -243,6 +318,8 @@ Suite *job_recov_suite(void)
   TCase *tc_core = tcase_create("test_job_recover");
   tcase_add_test(tc_core, test_job_recover);
   tcase_add_test(tc_core, fill_resource_list_test);
+  tcase_add_test(tc_core, test_add_encoded_attributes);
+  tcase_add_test(tc_core, test_translate_dependency_to_string);
   suite_add_tcase(s, tc_core);
 
   return s;

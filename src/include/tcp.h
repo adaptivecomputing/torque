@@ -2,6 +2,8 @@
 #ifndef TCP_PBS_H
 #define TCP_PBS_H
 
+#include <stddef.h>
+
 struct tcpdisbuf
   {
   unsigned long tdis_bufsize;

@@ -203,7 +203,7 @@ struct work_task *set_task(
 
   if (type == WORK_Immed)
     {
-    enqueue_threadpool_request((void *(*)(void *))func,pnew);
+    enqueue_threadpool_request((void *(*)(void *))func, pnew, task_pool);
     }
   else
     {
@@ -293,7 +293,7 @@ int dispatch_task(
   pthread_mutex_unlock(ptask->wt_mutex);
 
   if (ptask->wt_func != NULL)
-    enqueue_threadpool_request((void *(*)(void *))ptask->wt_func, ptask);
+    enqueue_threadpool_request((void *(*)(void *))ptask->wt_func, ptask, task_pool);
 
   return(rc);
   }  /* END dispatch_task() */
@@ -318,7 +318,7 @@ int dispatch_timed_task(
     pthread_mutex_unlock(ptask->wt_mutex);
 
     if (ptask->wt_func != NULL)
-      enqueue_threadpool_request((void *(*)(void *))ptask->wt_func, ptask);
+      enqueue_threadpool_request((void *(*)(void *))ptask->wt_func, ptask, task_pool);
     }
 
   return(rc);
@@ -530,7 +530,7 @@ int insert_task_into_recycler(
   ptask->wt_being_recycled = TRUE;
 
   if (tr.tasks.tasks.size() >= MAX_TASKS_IN_RECYCLER)
-    enqueue_threadpool_request(remove_some_recycle_tasks, NULL);
+    enqueue_threadpool_request(remove_some_recycle_tasks, NULL, task_pool);
 
   rc = insert_task(&tr.tasks, ptask);
 

@@ -196,8 +196,6 @@ static void free_rescrq(struct rq_rescq *);
 /* END private prototypes */
 
 
-extern struct pbsnode *PGetNodeFromAddr(pbs_net_t);
-
 
 #ifdef ENABLE_UNIX_SOCKETS
 int get_creds(
@@ -299,6 +297,178 @@ int get_creds(
 #endif /* END ENABLE_UNIX_SOCKETS */
 
 
+bool request_passes_acl_check(
+
+  batch_request *request,
+  unsigned long  conn_addr)
+  
+  {
+  long acl_enable = FALSE;
+
+  get_svr_attr_l(SRV_ATR_acl_host_enable, &acl_enable);
+  if (acl_enable)
+    {
+    /* acl enabled, check it; always allow myself and nodes */
+    struct array_strings *pas = NULL;
+    struct pbsnode       *isanode;
+
+    get_svr_attr_arst(SRV_ATR_acl_hosts, &pas);
+
+    isanode = find_nodebyname(request->rq_host);
+
+    if ((isanode == NULL) &&
+        (strcmp(server_host, request->rq_host) != 0) &&
+        (acl_check_my_array_string(pas, request->rq_host, ACL_Host) == 0))
+      {
+      return(false);
+      }
+
+    if (isanode != NULL)
+      unlock_node(isanode, __func__, NULL, LOGLEVEL);
+    }
+  
+  return(true);
+  } /* END request_passes_acl_check() */
+
+
+
+batch_request *read_request_from_socket(
+
+  tcp_chan *chan)
+
+  {
+  int                   rc = PBSE_NONE;
+  struct batch_request *request = NULL;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
+
+  time_t                time_now = time(NULL);
+  char                  tmpLine[MAXLINE];
+  enum conn_type        conn_active;
+  unsigned short        conn_socktype;
+#ifdef ENABLE_UNIX_SOCKETS
+  unsigned short        conn_authen;
+#endif
+  unsigned long         conn_addr;
+  int                   sfds = chan->sock;
+
+  if ((sfds < 0) ||
+      (sfds >= PBS_NET_MAX_CONNECTIONS))
+    return(NULL);
+
+  pthread_mutex_lock(svr_conn[sfds].cn_mutex);
+  conn_active = svr_conn[sfds].cn_active;
+  conn_socktype = svr_conn[sfds].cn_socktype;
+#ifdef ENABLE_UNIX_SOCKETS
+  conn_authen = svr_conn[sfds].cn_authen;
+#endif
+  conn_addr = svr_conn[sfds].cn_addr;
+  svr_conn[sfds].cn_lasttime = time_now;
+  pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
+
+  if ((request = alloc_br(0)) == NULL)
+    return(NULL);
+
+  request->rq_conn = sfds;
+
+  /*
+   * Read in the request and decode it to the internal request structure.
+   */
+  if ((conn_active == FromClientDIS) ||
+      (conn_active == ToServerDIS))
+    {
+#ifdef ENABLE_UNIX_SOCKETS
+
+    if ((conn_socktype & PBS_SOCK_UNIX) &&
+        (conn_authen != PBS_NET_CONN_AUTHENTICATED))
+      {
+      /* get_creds interestingly always returns 0 */
+      get_creds(sfds, conn_credent[sfds].username, conn_credent[sfds].hostname);
+      }
+
+#endif /* END ENABLE_UNIX_SOCKETS */
+    rc = dis_request_read(chan, request);
+
+    if ((rc == PBSE_SYSTEM) || (rc == PBSE_INTERNAL) || (rc == PBSE_SOCKET_CLOSE))
+      {
+      /* read error, likely cannot send reply so just disconnect, indicate permanent
+       * failure by setting the type to PBS_BATCH_Disconnect */
+      request->rq_type = PBS_BATCH_Disconnect;
+      return(request);
+      }
+    else if (rc > 0)
+      {
+      /* FAILURE */
+
+      /*
+       * request didn't decode, either garbage or unknown
+       * request type, in either case, return reject-reply
+       */
+      request->rq_failcode = rc;
+      return(request);
+      }
+    }
+  else
+    {
+    char out[80];
+
+    snprintf(tmpLine, MAXLINE, "request on invalid type of connection: %d, sock type: %d, from address %s", 
+                conn_active,conn_socktype, netaddr_long(conn_addr, out));
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST,
+      "process_req", tmpLine);
+    snprintf(tmpLine, sizeof(tmpLine),
+        "request on invalid type of connection (%d) from %s",
+        conn_active,
+        netaddr_long(conn_addr, out));
+    req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
+    return(NULL);
+    }
+
+  if (get_connecthost(sfds, request->rq_host, PBS_MAXHOSTNAME) != 0)
+    {
+    sprintf(log_buf, "%s: %lu",
+      pbse_to_txt(PBSE_BADHOST),
+      conn_addr);
+
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, "", log_buf);
+
+    snprintf(tmpLine, sizeof(tmpLine),
+        "cannot determine hostname for connection from %lu",
+        conn_addr);
+
+    req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
+    return(NULL);
+    }
+
+  if (LOGLEVEL >= 8)
+    {
+    sprintf(log_buf,
+      msg_request,
+      reqtype_to_txt(request->rq_type),
+      request->rq_user,
+      request->rq_host,
+      sfds);
+
+    log_event(PBSEVENT_DEBUG2, PBS_EVENTCLASS_REQUEST, "", log_buf);
+    }
+
+  /* is the request from a host acceptable to the server */
+  if (conn_socktype & PBS_SOCK_UNIX)
+    strcpy(request->rq_host, server_name);
+
+  if (request_passes_acl_check(request, conn_addr) == false)
+    {
+    char tmpLine[MAXLINE];
+    snprintf(tmpLine, sizeof(tmpLine), "request not authorized from host %s",
+      request->rq_host);
+    req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
+    return(NULL);
+    }
+
+  return(request);
+  } /* END read_request_from_socket() */
+
+
+
 /*
  * process_request - process an request from the network:
  *
@@ -319,18 +489,12 @@ int process_request(
   {
   int                   rc = PBSE_NONE;
   struct batch_request *request = NULL;
-  char                  log_buf[LOCAL_LOG_BUF_SIZE];
-  long                  acl_enable = FALSE;
   long                  state = SV_STATE_DOWN;
 
   time_t                time_now = time(NULL);
-  int                   free_request = TRUE;
-  char                  tmpLine[MAXLINE];
   char                 *auth_err = NULL;
-  enum conn_type        conn_active;
   unsigned short        conn_socktype;
   unsigned short        conn_authen;
-  unsigned long         conn_addr;
   int                   sfds = chan->sock;
 
   if ((sfds < 0) ||
@@ -338,152 +502,24 @@ int process_request(
     return(PBSE_SOCKET_CLOSE);
 
   pthread_mutex_lock(svr_conn[sfds].cn_mutex);
-  conn_active = svr_conn[sfds].cn_active;
   conn_socktype = svr_conn[sfds].cn_socktype;
   conn_authen = svr_conn[sfds].cn_authen;
-  conn_addr = svr_conn[sfds].cn_addr;
   svr_conn[sfds].cn_lasttime = time_now;
   pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
 
-  if ((request = alloc_br(0)) == NULL)
-    {
-    snprintf(tmpLine, sizeof(tmpLine),
-        "cannot allocate memory for request from %lu",
-        conn_addr);
-    free_request = FALSE;
-    rc = PBSE_SYSTEM;
-    goto process_request_cleanup;
-    }
+  request = read_request_from_socket(chan);
 
-  request->rq_conn = sfds;
-
-  /*
-   * Read in the request and decode it to the internal request structure.
-   */
-  if (conn_active == FromClientDIS || conn_active == ToServerDIS)
-    {
-#ifdef ENABLE_UNIX_SOCKETS
-
-    if ((conn_socktype & PBS_SOCK_UNIX) &&
-        (conn_authen != PBS_NET_CONN_AUTHENTICATED))
-      {
-      /* get_creds interestingly always returns 0 */
-      get_creds(sfds, conn_credent[sfds].username, conn_credent[sfds].hostname);
-      }
-
-#endif /* END ENABLE_UNIX_SOCKETS */
-    rc = dis_request_read(chan, request);
-    }
+  if (request == NULL)
+    rc = -1;
+  else if (request->rq_type == PBS_BATCH_Disconnect)
+    rc = PBSE_SOCKET_CLOSE;
   else
+    rc = request->rq_failcode;
+
+  if (rc != PBSE_NONE)
     {
-    char out[80];
-
-    snprintf(tmpLine, MAXLINE, "request on invalid type of connection: %d, sock type: %d, from address %s", 
-                conn_active,conn_socktype, netaddr_long(conn_addr, out));
-    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST,
-      "process_req", tmpLine);
-    snprintf(tmpLine, sizeof(tmpLine),
-        "request on invalid type of connection (%d) from %s",
-        conn_active,
-        netaddr_long(conn_addr, out));
-    req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
-    free_request = FALSE;
-    rc = PBSE_BADHOST;
-    goto process_request_cleanup;
-    }
-
-  if (rc == -1)
-    {
-    /* FAILURE */
-    /* premature end of file */
-    rc = PBSE_PREMATURE_EOF;
-    goto process_request_cleanup;
-    }
-
-  if ((rc == PBSE_SYSTEM) || (rc == PBSE_INTERNAL) || (rc == PBSE_SOCKET_CLOSE))
-    {
-    /* FAILURE */
-    /* read error, likely cannot send reply so just disconnect */
-    /* ??? not sure about this ??? */
-    goto process_request_cleanup;
-    }
-
-  if (rc > 0)
-    {
-    /* FAILURE */
-
-    /*
-     * request didn't decode, either garbage or unknown
-     * request type, in either case, return reject-reply
-     */
-
-    req_reject(rc, 0, request, NULL, "cannot decode message");
-    free_request = FALSE;
-    goto process_request_cleanup;
-    }
-
-  if (get_connecthost(sfds, request->rq_host, PBS_MAXHOSTNAME) != 0)
-    {
-    sprintf(log_buf, "%s: %lu",
-      pbse_to_txt(PBSE_BADHOST),
-      conn_addr);
-
-    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, "", log_buf);
-
-    snprintf(tmpLine, sizeof(tmpLine),
-        "cannot determine hostname for connection from %lu",
-        conn_addr);
-
-    req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
-    free_request = FALSE;
-    rc = PBSE_BADHOST;
-    goto process_request_cleanup;
-    }
-
-  if (LOGLEVEL >= 8)
-    {
-    sprintf(log_buf,
-      msg_request,
-      reqtype_to_txt(request->rq_type),
-      request->rq_user,
-      request->rq_host,
-      sfds);
-
-    log_event(PBSEVENT_DEBUG2, PBS_EVENTCLASS_REQUEST, "", log_buf);
-    }
-
-  /* is the request from a host acceptable to the server */
-  if (conn_socktype & PBS_SOCK_UNIX)
-    {
-    strcpy(request->rq_host, server_name);
-    }
-
-  get_svr_attr_l(SRV_ATR_acl_host_enable, &acl_enable);
-  if (acl_enable)
-    {
-    /* acl enabled, check it; always allow myself and nodes */
-    struct array_strings *pas = NULL;
-    struct pbsnode       *isanode;
-
-    get_svr_attr_arst(SRV_ATR_acl_hosts, &pas);
-    isanode = PGetNodeFromAddr(conn_addr);
-
-    if ((isanode == NULL) &&
-        (strcmp(server_host, request->rq_host) != 0) &&
-        (acl_check_my_array_string(pas, request->rq_host, ACL_Host) == 0))
-      {
-      char tmpLine[MAXLINE];
-      snprintf(tmpLine, sizeof(tmpLine), "request not authorized from host %s",
-               request->rq_host);
-
-      req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
-      free_request = FALSE;
-      rc = PBSE_BADHOST;
-      goto process_request_cleanup;
-      }
-
-    if (isanode != NULL)
-      unlock_node(isanode, "process_request", NULL, LOGLEVEL);
+    free_br(request);
+    return(rc);
     }
 
   /*
@@ -528,14 +564,14 @@ int process_request(
 
     if (request->rq_type == PBS_BATCH_Connect)
       {
-      req_connect(request);
+      if ((rc = req_connect(request)) != PBSE_NONE)
+        return(rc);
 
       if (conn_socktype == PBS_SOCK_INET)
         {
         rc = PBSE_IVALREQ;
         req_reject(rc, 0, request, NULL, NULL);
-        free_request = FALSE;
-        goto process_request_cleanup;
+        return(rc);
         }
 
       }
@@ -555,8 +591,7 @@ int process_request(
       if (request->rq_type == PBS_BATCH_AltAuthenUser)
         {
         rc = req_altauthenuser(request);
-        free_request = FALSE;
-        goto process_request_cleanup;
+        return(rc);
         }
       else
         {
@@ -574,8 +609,8 @@ int process_request(
       req_reject(rc, 0, request, NULL, auth_err);
       if (auth_err != NULL)
         free(auth_err);
-      free_request = FALSE;
-      goto process_request_cleanup;
+
+      return(rc);
       }
 
     /*
@@ -631,6 +666,12 @@ int process_request(
       }
     }  /* END else (conn_authen == PBS_NET_CONN_FROM_PRIVIL) */
 
+  if (threadpool_is_too_busy(request_pool, request->rq_perm))
+    {
+    req_reject(PBSE_SERVER_BUSY, 0, request, NULL, NULL);
+    return(PBSE_SERVER_BUSY);
+    }
+
   /* if server shutting down, disallow new jobs and new running */
   get_svr_attr_l(SRV_ATR_State, &state);
 
@@ -647,12 +688,8 @@ int process_request(
       case PBS_BATCH_jobscript:
 
         req_reject(PBSE_SVRDOWN, 0, request, NULL, NULL);
-        rc = PBSE_SVRDOWN;
-        free_request = FALSE;
-        goto process_request_cleanup;
-        /*NOTREACHED*/
 
-        break;
+        return(PBSE_SVRDOWN);
       }
     }
 
@@ -663,13 +700,6 @@ int process_request(
    */
 
   rc = dispatch_request(sfds, request);
-
-  return(rc);
-
-process_request_cleanup:
-
-  if (free_request == TRUE)
-    free_br(request);
 
   return(rc);
   }  /* END process_request() */
@@ -1091,6 +1121,9 @@ void free_br(
   struct batch_request *preq)
 
   {
+  if (preq == NULL)
+    return;
+
   if (preq->rq_id != NULL)
     {
     remove_batch_request(preq->rq_id);

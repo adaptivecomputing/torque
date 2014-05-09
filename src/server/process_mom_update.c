@@ -112,8 +112,9 @@ int gpu_has_job(struct pbsnode *pnode, int gpuid);
 
 
 void move_past_mic_status(
-    boost::ptr_vector<std::string>::iterator& i,
-    boost::ptr_vector<std::string>::iterator end)
+
+  boost::ptr_vector<std::string>::iterator& i,
+  boost::ptr_vector<std::string>::iterator end)
 
   {
   while (i != end)
@@ -129,7 +130,7 @@ void move_past_mic_status(
 
 int save_single_mic_status(
 
-  std::string&    single_mic_status,
+  std::string    &single_mic_status,
   pbs_attribute  *temp)
 
   {
@@ -290,7 +291,7 @@ struct pbsnode *get_numa_from_str(
 
 struct pbsnode *get_node_from_str(
 
-  const char    *str,     /* I */
+  const char     *str,     /* I */
   char           *orig_id, /* I */
   struct pbsnode *np)      /* M */
 
@@ -563,6 +564,34 @@ int process_state_str(
   return(rc);
   } /* END process_state_str() */
 
+int update_node_mac_addr(
+    struct pbsnode *np,
+    const char    *str)
+  {
+  unsigned char macaddr[6];
+  for(int i = 0;i < 6;i++)
+    {
+    unsigned char upperNibble = 0;
+    if((*str >= 'A')&&(*str <= 'F')) upperNibble = (unsigned char)((*str - 'A' + 0x0a));
+    else if((*str >= 'a')&&(*str <= 'f')) upperNibble = (unsigned char)((*str - 'a' + 0x0a));
+    else if((*str >= '0')&&(*str <= '9')) upperNibble = (unsigned char)((*str - '0'));
+    else return -1;
+    str++;
+    unsigned char lowerNibble = 0;
+    if((*str >= 'A')&&(*str <= 'F')) lowerNibble = (unsigned char)((*str - 'A' + 0x0a));
+    else if((*str >= 'a')&&(*str <= 'f')) lowerNibble = (unsigned char)((*str - 'a' + 0x0a));
+    else if((*str >= '0')&&(*str <= '9')) lowerNibble = (unsigned char)((*str - '0'));
+    else return -1;
+    macaddr[i] = ((upperNibble << 4) + lowerNibble);
+    str++;
+    if((*str != ':')&&(*str != '\0')) return -1;
+    str++;
+    }
+  memcpy(np->nd_mac_addr,macaddr,6);
+  return 0;
+  }
+
+
 
 
 int save_node_status(
@@ -631,6 +660,17 @@ int process_status_info(
   if ((current = find_nodebyname(nd_name)) == NULL)
     return(PBSE_NONE);
 
+  //A node we put to sleep is up and running.
+  if(current->nd_power_state != POWER_STATE_RUNNING)
+    {
+    //Make sure we wait for a stray update that came after we changed the state to pass
+    //by.
+    if((current->nd_power_state_change_time + NODE_POWER_CHANGE_TIMEOUT) < time(NULL))
+      {
+      current->nd_power_state = POWER_STATE_RUNNING;
+      write_node_power_state();
+      }
+    }
   /* loop over each string */
   for (boost::ptr_vector<std::string>::iterator i = status_info.begin(); i != status_info.end(); i++)
     {
@@ -692,7 +732,7 @@ int process_status_info(
     else if (!strcmp(str, "first_update=true"))
       {
       /* mom is requesting that we send the mom hierarchy file to her */
-      remove_hello(&hellos, current->nd_name);
+      remove_hello(&hellos, current->nd_id);
       send_hello = true;
       
       /* reset gpu data in case mom reconnects with changed gpus */
@@ -726,6 +766,10 @@ int process_status_info(
         dont_change_state = TRUE;
         }
       }
+    else if (!strncmp(str,"macaddr=",8))
+      {
+      update_node_mac_addr(current,str + 8);
+      }
     else if ((mom_job_sync == TRUE) &&
              (!strncmp(str, "jobdata=", 8)))
       {
@@ -748,7 +792,7 @@ int process_status_info(
         sji->timestamp = time(NULL);
 
         /* sji must be freed in sync_node_jobs */
-        enqueue_threadpool_request(sync_node_jobs, sji);
+        enqueue_threadpool_request(sync_node_jobs, sji, task_pool);
         }
       else
         {

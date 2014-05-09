@@ -204,6 +204,7 @@ enum srv_atr
   SRV_ATR_AutomaticRequeueExitCode,
   SRV_ATR_nppcu,
   SRV_ATR_job_sync_timeout,
+  SRV_ATR_pass_cpu_clock,
 
 #include "site_svr_attr_enum.h"
   /* This must be last */
@@ -291,10 +292,6 @@ int unlock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string);
 #ifndef MAX
 #define MAX(a,b) (((a)>(b))?(a):(b))
 #endif /* END MAX */
-
-#ifndef JobStatRate
-#define JobStatRate MAX(PBS_JOBSTAT_MIN,server.sv_attr[SRV_ATR_JobStatRate].at_val.at_long)
-#endif
 
 
 typedef struct mail_info

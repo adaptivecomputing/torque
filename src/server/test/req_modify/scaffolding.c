@@ -12,6 +12,7 @@
 #include "queue.h" /* pbs_queue */
 #include "work_task.h" /* work_task */
 #include "dynamic_string.h"
+#include "threadpool.h"
 
 const char *PJobSubState[10];
 int svr_resc_size = 0;
@@ -255,7 +256,9 @@ job_array *get_jobs_array(job **pjob_ptr)
   return(NULL);
   }
 
-int enqueue_threadpool_request(void *(*func)(void *), void *arg)
+threadpool_t *request_pool;
+
+int enqueue_threadpool_request(void *(*func)(void *), void *arg, threadpool_t *tp)
 
   {
   return(0);

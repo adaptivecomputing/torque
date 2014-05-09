@@ -112,7 +112,7 @@
 #define PBS_NET_RETRY_TIME     30 /* retry time between re-sending requests  */
 #define PBS_NET_RETRY_LIMIT 14400 /* max retry time */
 #define PBS_SCHEDULE_CYCLE    600 /* re-schedule even if no change, 10 min   */
-#define PBS_RESTAT_JOB        45 /* ask mom for status only once in 45 sec  */
+#define PBS_RESTAT_JOB        300 /* ask mom for status only if we haven't received one for 5 minutes */
 #define PBS_STAGEFAIL_WAIT   1800 /* retry time after stage in failure */
 #define PBS_NORMAL_PING_RATE  300 /* how often to ping the nodes */
 #define PBS_TCPTIMEOUT        300 /* timeout for pbs-mom tcp connections */
@@ -144,6 +144,7 @@
 #define PBS_TRACKING        "tracking"
 #define NODE_DESCRIP        "nodes"
 #define NODE_STATUS         "node_status"
+#define NODE_POWER_STATE    "node_power_state"
 #define NODE_NOTE           "node_note"
 #define PBS_CREDENTIALDIR   "credentials"
 #define PBS_JOBINFOLOGDIR   "job_logs"

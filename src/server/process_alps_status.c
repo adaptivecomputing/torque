@@ -553,9 +553,9 @@ int process_reservation_id(
   rsv_id = strdup(rsv_id_str + strlen(reservation_id) + 1);
 
   if (already_recorded(rsv_id) == TRUE)
-    enqueue_threadpool_request(check_if_orphaned, rsv_id);
+    enqueue_threadpool_request(check_if_orphaned, rsv_id, task_pool);
   else if (record_reservation(pnode, rsv_id) != PBSE_NONE)
-    enqueue_threadpool_request(check_if_orphaned, rsv_id);
+    enqueue_threadpool_request(check_if_orphaned, rsv_id, task_pool);
   else
     free(rsv_id);
 

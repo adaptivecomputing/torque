@@ -244,6 +244,7 @@
 #include <vector>
 #include <boost/ptr_container/ptr_vector.hpp>
 #include "container.hpp"
+#include <arpa/inet.h>
 
 #define MAX_RETRY_TIME_IN_SECS           (5 * 60)
 #define STARTING_RETRY_INTERVAL_IN_SECS   2
@@ -907,6 +908,97 @@ void gen_gen(
   return;
   }   /* END gen_gen() */
 
+void gen_macaddr(
+    const char  *name,
+    boost::ptr_vector<std::string>& status)
+  {
+  static std::string mac_addr;
+
+  if(mac_addr.length() == 0)
+    {
+    char buff[500];
+    if(gethostname(buff,sizeof(buff)))
+      {
+      return;
+      }
+    struct addrinfo *pAddr = NULL;
+    if(getaddrinfo(buff,NULL,NULL,&pAddr))
+      {
+      return;
+      }
+
+    FILE *pPipe = popen("/sbin/ip addr","r");
+
+    char *macAddr = NULL;
+    while(fgets(buff,sizeof(buff),pPipe) != NULL)
+      {
+      char *tok = strtok(buff," ");
+      if(!strcmp(tok,"link/ether"))
+        {
+        tok = strtok(NULL," ");
+        if(strlen(tok) != 0)
+          {
+          if(macAddr != NULL) free(macAddr);
+          macAddr = strdup(tok);
+          }
+        }
+      else if(!strcmp(tok,"inet"))
+        {
+        tok = strtok(NULL," ");
+        char *iaddr = strdup(tok);
+        for(char *ind = iaddr;*ind;ind++)
+          {
+          if(*ind == '/')
+            {
+            *ind = '\0';
+            break;
+            }
+          }
+        in_addr_t in_addr = inet_addr(iaddr);
+        free(iaddr);
+        struct addrinfo *pAddrInd = pAddr;
+        while(pAddrInd != NULL)
+          {
+          struct in_addr   saddr;
+          saddr = ((struct sockaddr_in *)pAddrInd->ai_addr)->sin_addr;
+          if(in_addr == saddr.s_addr)
+            {
+            mac_addr = macAddr;
+            free(macAddr);
+            macAddr = NULL;
+            break;
+            }
+          pAddrInd = pAddrInd->ai_next;
+          }
+        }
+      else
+        {
+        if(macAddr != NULL)
+          {
+          free(macAddr);
+          macAddr = NULL;
+          }
+        }
+      }
+    pclose(pPipe);
+    if(macAddr != NULL)
+      {
+      free(macAddr);
+      }
+    freeaddrinfo(pAddr);
+    }
+  if(mac_addr.length()  == 0)
+    {
+    return;
+    }
+  std::string *s = new std::string(name);
+  *s += "=";
+  *s += mac_addr;
+  status.push_back(s);
+  }
+
+
+
 typedef void (*gen_func_ptr)(const char *, boost::ptr_vector<std::string>& );
 
 typedef struct stat_record
@@ -936,6 +1028,8 @@ stat_record stats[] = {
   {"jobs",        gen_gen},
   {"jobdata",     gen_jdata},
   {"varattr",     gen_gen},
+  {"cpuclock",    gen_gen},
+  {"macaddr",     gen_macaddr},
   {NULL,          NULL}
   };
 

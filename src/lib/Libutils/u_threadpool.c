@@ -86,39 +86,48 @@
 #include "utils.h"
 #include "log.h"
 #include "../Liblog/pbs_log.h"
-
+#include "attribute.h"
 
 
 #define MINIMUM_STACK_SIZE 8192 * 1024
 #define MAX_STACK_SIZE MINIMUM_STACK_SIZE * 4
-/*extern int    LOGLEVEL;*/
 sigset_t      fillset;
 
 threadpool_t *request_pool;
+threadpool_t *task_pool;
 
 static void *work_thread(void *);
 
-int create_work_thread(void)
+
+/*
+ * create_work_thread()
+ *
+ * NOTE: this function should only be called when the lock on tp is already held
+ * @param - tp the threadpool that should create a work thread
+ * @return the result of the call to pthread_create
+ */
+
+int create_work_thread(
+    
+  threadpool_t *tp)
 
   {
   int             rc;
   sigset_t        oldset;
   pthread_t       wthread;
 
-
-  if (request_pool == NULL)
+  if (tp == NULL)
     {
-    initialize_threadpool(&request_pool,5,5,-1);
+    initialize_threadpool(&tp, 5, 5, -1);
     }
 
   /* save old signal mask */
   pthread_sigmask(SIG_SETMASK,&fillset,&oldset);
-  rc = pthread_create(&wthread,&request_pool->tp_attr,work_thread, NULL);
+  rc = pthread_create(&wthread, &tp->tp_attr, work_thread, tp);
   pthread_sigmask(SIG_SETMASK,&oldset,NULL);
   
   return(rc);
   } /* END create_work_thread() */
-
 
 
 
@@ -127,27 +136,29 @@ static void work_thread_cleanup(
   void *a)
 
   {
-  --request_pool->tp_nthreads;
+  threadpool_t *tp = (threadpool_t *)a;
 
-  if (request_pool->tp_flags & POOL_DESTROY)
+  --tp->tp_nthreads;
+
+  if (tp->tp_flags & POOL_DESTROY)
     {
-    if (request_pool->tp_nthreads == 0)
-      pthread_cond_broadcast(&request_pool->tp_can_destroy);
+    if (tp->tp_nthreads == 0)
+      pthread_cond_broadcast(&tp->tp_can_destroy);
     }
-  else if (request_pool->tp_nthreads == 0)
+  else if (tp->tp_nthreads == 0)
     {
-    if (create_work_thread() == 0)
-      request_pool->tp_nthreads++;
+    if (create_work_thread(tp) == 0)
+      tp->tp_nthreads++;
     }
-  else if ((request_pool->tp_first != NULL) &&
-           (request_pool->tp_nthreads < request_pool->tp_min_threads) &&
-           (create_work_thread() == 0))
+  else if ((tp->tp_first != NULL) &&
+           (tp->tp_nthreads < tp->tp_min_threads) &&
+           (create_work_thread(tp) == 0))
     {
-    request_pool->tp_nthreads++;
+    tp->tp_nthreads++;
     }
 
-  pthread_mutex_unlock(&request_pool->tp_mutex);
-  }
+  pthread_mutex_unlock(&tp->tp_mutex);
+  } /* END work_thread_cleanup() */
 
 
 
@@ -157,14 +168,15 @@ void work_cleanup(
   void *a)
 
   {
+  threadpool_t *tp = (threadpool_t *)a;
   pthread_t   my_id = pthread_self();
   tp_working_t  *curr;
   tp_working_t  *prev = NULL;
 
-  pthread_mutex_lock(&request_pool->tp_mutex);
+  pthread_mutex_lock(&tp->tp_mutex);
 
   /* make sure the active process gets removed */
-  curr = request_pool->tp_active;
+  curr = tp->tp_active;
 
   while (curr != NULL)
     {
@@ -173,7 +185,7 @@ void work_cleanup(
       /* handle if it's first in the list */
       if (prev == NULL)
         {
-        request_pool->tp_active = curr->next;
+        tp->tp_active = curr->next;
         }
       /* anywhere after first position */
       else
@@ -201,7 +213,7 @@ static void *work_thread(
   void *a)
 
   {
-
+  threadpool_t     *tp = (threadpool_t *)a;
   int               rc;
 
   void             *(*func)(void *);
@@ -211,14 +223,14 @@ static void *work_thread(
 
   struct timespec   ts;
 
-  if (request_pool == NULL)
+  if (tp == NULL)
     {
     log_err(-1,__func__, "Pool doesn't exist, and thread is active??\nTerminating");
     return(NULL);
     }
 
-  pthread_mutex_lock(&request_pool->tp_mutex);
-  pthread_cleanup_push(work_thread_cleanup,a);
+  pthread_mutex_lock(&tp->tp_mutex);
+  pthread_cleanup_push(work_thread_cleanup, tp);
   working.working_id = pthread_self();
 
   /* this is the main work loop, which is only exited on timeout, if 
@@ -230,33 +242,33 @@ static void *work_thread(
     pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED,NULL);
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,NULL);
 
-    request_pool->tp_idle_threads++;
+    tp->tp_idle_threads++;
   
     /* stay asleep until the pool is started */
-    while (request_pool->tp_started == FALSE)
+    while (tp->tp_started == FALSE)
       {
-      pthread_mutex_unlock(&request_pool->tp_mutex);
+      pthread_mutex_unlock(&tp->tp_mutex);
       
       sleep(1);
       
-      pthread_mutex_lock(&request_pool->tp_mutex);
+      pthread_mutex_lock(&tp->tp_mutex);
       }
 
 
-    while ((request_pool->tp_first == NULL) &&
-           (!(request_pool->tp_flags & POOL_DESTROY)))
+    while ((tp->tp_first == NULL) &&
+           (!(tp->tp_flags & POOL_DESTROY)))
       {
-      if ((request_pool->tp_nthreads <= request_pool->tp_min_threads) ||
-          (request_pool->tp_max_idle_secs < 0))
+      if ((tp->tp_nthreads <= tp->tp_min_threads) ||
+          (tp->tp_max_idle_secs < 0))
         {
         /* wait until something is ready */ 
-        pthread_cond_wait(&request_pool->tp_waiting_work,&request_pool->tp_mutex);
+        pthread_cond_wait(&tp->tp_waiting_work, &tp->tp_mutex);
         }
       else
         {
         clock_gettime(CLOCK_REALTIME,&ts);
-        ts.tv_sec += request_pool->tp_max_idle_secs;
-        rc = pthread_cond_timedwait(&request_pool->tp_waiting_work,&request_pool->tp_mutex,&ts);
+        ts.tv_sec += tp->tp_max_idle_secs;
+        rc = pthread_cond_timedwait(&tp->tp_waiting_work, &tp->tp_mutex, &ts);
 
         if (rc == ETIMEDOUT)
           {
@@ -265,26 +277,26 @@ static void *work_thread(
         }
       }
 
-    request_pool->tp_idle_threads--;
+    tp->tp_idle_threads--;
 
     /* if we're shutting down, leave this loop */
-    if (request_pool->tp_flags & POOL_DESTROY)
+    if (tp->tp_flags & POOL_DESTROY)
       break;
 
-    if ((mywork = request_pool->tp_first) != NULL)
+    if ((mywork = tp->tp_first) != NULL)
       {
       func = mywork->work_func;
       arg  = mywork->work_arg;
 
-      request_pool->tp_first = mywork->next;
-      if (request_pool->tp_last == mywork)
-        request_pool->tp_last = NULL;
+      tp->tp_first = mywork->next;
+      if (tp->tp_last == mywork)
+        tp->tp_last = NULL;
 
-      working.next = request_pool->tp_active;
-      request_pool->tp_active = &working;
+      working.next = tp->tp_active;
+      tp->tp_active = &working;
 
-      pthread_mutex_unlock(&request_pool->tp_mutex);
-      pthread_cleanup_push(work_cleanup,NULL);
+      pthread_mutex_unlock(&tp->tp_mutex);
+      pthread_cleanup_push(work_cleanup,tp);
       free(mywork);
 
       /* do the work */
@@ -354,7 +366,6 @@ int initialize_threadpool(
 
   pthread_attr_setstacksize(&(*pool)->tp_attr, stack_size);
 
-
   pthread_attr_setdetachstate(&(*pool)->tp_attr,PTHREAD_CREATE_DETACHED);
 
   /* if threads are static, create them all now */
@@ -362,7 +373,7 @@ int initialize_threadpool(
     {
     for (i = 0; i < (*pool)->tp_min_threads; i++)
       {
-      if ((rc = create_work_thread()) != 0)
+      if ((rc = create_work_thread(*pool)) != 0)
         {
         return(rc);
         }
@@ -380,8 +391,9 @@ int initialize_threadpool(
 
 int enqueue_threadpool_request(
 
-  void *(*func)(void *),
-  void *arg)
+  void         *(*func)(void *),
+  void         *arg,
+  threadpool_t *tp)
 
   {
   tp_work_t *work = NULL;
@@ -395,43 +407,82 @@ int enqueue_threadpool_request(
   work->work_func = func;
   work->work_arg  = arg;
 
-  pthread_mutex_lock(&request_pool->tp_mutex);
+  pthread_mutex_lock(&tp->tp_mutex);
 
-  if (request_pool->tp_first == NULL)
-    request_pool->tp_first = work;
+  if (tp->tp_first == NULL)
+    tp->tp_first = work;
   else
-    request_pool->tp_last->next = work;
-  request_pool->tp_last = work;
+    tp->tp_last->next = work;
+  
+  tp->tp_last = work;
 
-  if (request_pool->tp_idle_threads > 0)
-    pthread_cond_signal(&request_pool->tp_waiting_work);
-  else if ((request_pool->tp_nthreads < request_pool->tp_max_threads) &&
-           (create_work_thread() == 0))
-    request_pool->tp_nthreads++;
+  if (tp->tp_idle_threads > 0)
+    pthread_cond_signal(&tp->tp_waiting_work);
+  else if ((tp->tp_nthreads < tp->tp_max_threads) &&
+           (create_work_thread(tp) == 0))
+    tp->tp_nthreads++;
 
-  pthread_mutex_unlock(&request_pool->tp_mutex);
+  pthread_mutex_unlock(&tp->tp_mutex);
 
   return(0);
   } /* END enqueue_threadpool_request() */
 
 
 
+bool threadpool_is_too_busy(
+
+  threadpool_t *tp,
+  int           permissions)
+
+  {
+  bool busy = false;
+  int  num_open;
+  bool manager = ((permissions & ATR_DFLAG_MGRD) != 0);
+
+  pthread_mutex_lock(&tp->tp_mutex);
+
+  num_open = tp->tp_max_threads - tp->tp_nthreads + tp->tp_idle_threads;
+
+  // fix this these are wrong 
+  if ((manager == true) &&
+      (num_open < 3))
+    busy = true;
+  else if (manager == false)
+    {
+    if (num_open < 6)
+      busy = true;
+    else
+      {
+      double pcnt_open = num_open;
+      pcnt_open /= tp->tp_max_threads;
+      if (pcnt_open < 0.05)
+        busy = true;
+      }
+    }
+  
+  pthread_mutex_unlock(&tp->tp_mutex);
+
+  return(busy);
+  } /* END threadpool_is_too_busy() */
 
 
-void destroy_request_pool(void)
+
+void destroy_request_pool(
+    
+  threadpool_t *tp)
 
   {
   tp_work_t    *work;
   tp_working_t *ptr;
 
-  pthread_mutex_lock(&request_pool->tp_mutex);
+  pthread_mutex_lock(&tp->tp_mutex);
 
   /* set the pool to be destroyed and notify all threads */
-  request_pool->tp_flags |= POOL_DESTROY;
-  pthread_cond_broadcast(&request_pool->tp_waiting_work);
+  tp->tp_flags |= POOL_DESTROY;
+  pthread_cond_broadcast(&tp->tp_waiting_work);
 
   /* cancel any active work */
-  ptr = request_pool->tp_active;
+  ptr = tp->tp_active;
   while (ptr != NULL)
     {
     pthread_cancel(ptr->working_id);
@@ -439,15 +490,15 @@ void destroy_request_pool(void)
     }
 
   /* wait to be awoken */
-  while (request_pool->tp_nthreads != 0)
-    pthread_cond_wait(&request_pool->tp_can_destroy,&request_pool->tp_mutex);
+  while (tp->tp_nthreads != 0)
+    pthread_cond_wait(&tp->tp_can_destroy, &tp->tp_mutex);
 
-  pthread_mutex_unlock(&request_pool->tp_mutex);
+  pthread_mutex_unlock(&tp->tp_mutex);
 
   /* free pending work */
-  while ((work = request_pool->tp_first) != NULL)
+  while ((work = tp->tp_first) != NULL)
     {
-    request_pool->tp_first = work->next;
+    tp->tp_first = work->next;
     free(work);
     }
   } /* END destroy_request_pool() */
@@ -455,14 +506,16 @@ void destroy_request_pool(void)
 
 
 
-void start_request_pool()
+void start_request_pool(
+
+  threadpool_t *tp)
 
   {
-  pthread_mutex_lock(&request_pool->tp_mutex);
+  pthread_mutex_lock(&tp->tp_mutex);
 
-  request_pool->tp_started = TRUE;
+  tp->tp_started = TRUE;
 
-  pthread_mutex_unlock(&request_pool->tp_mutex);
+  pthread_mutex_unlock(&tp->tp_mutex);
   } /* END start_request_pool() */
 
 

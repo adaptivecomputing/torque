@@ -87,7 +87,7 @@ int move_to_job_cpuset(pid_t, job *) { return 0; }
 int diswsi(tcp_chan *chan, int i) { return 0; }
 int encode_DIS_svrattrl(tcp_chan *chan, svrattrl *s) { return 0; }
 int im_compose(tcp_chan *chan, char *arg2, char *a3, int a4, int a5, unsigned int a6) { return 0; }
-int create_alps_reservation(char *a1, char *a2, char *a3, char *a4, char *a5, long long a6, int a7, int a8, int a9, char **a10,const char *a11) { return 0; }
+int create_alps_reservation(char *a1, char *a2, char *a3, char *a4, char *a5, long long a6, int a7, int a8, int a9, char **a10,const char *a11, std::string& cray_frequency) { return 0; }
 int mom_close_poll(void)
   {
   fprintf(stderr, "The call to mom_close_poll needs to be mocked!!\n");
@@ -322,9 +322,18 @@ void log_close(int msg)
 
 void *get_next(list_link pl, char *file, int line)
   {
-  fprintf(stderr, "The call to get_next needs to be mocked!!\n");
-  exit(1);
-  }
+  if ((pl.ll_next == NULL) ||
+      ((pl.ll_next == &pl) && (pl.ll_struct != NULL)))
+    {
+    fprintf(stderr, "Assertion failed, bad pointer in link: file \"%s\", line %d\n",
+            file,
+            line);
+
+    return NULL;
+    }
+
+  return(pl.ll_next->ll_struct);
+  }  /* END get_next() */
 
 int send_sisters(job *pjob, int com, int using_radix, std::set<int> *sisters_to_contact)
   {
@@ -528,7 +537,8 @@ int destroy_alps_reservation(char *reservation_id, char *apbasil_path, char *apb
   {
   return(0);
   }
-int pbs_getaddrinfo(const char *,struct addrinfo *,struct addrinfo **)
+
+int pbs_getaddrinfo(const char *hostname, struct addrinfo *bob, struct addrinfo **)
   {
   return -1;
   }
@@ -543,6 +553,14 @@ int ctnodes(char *epec)
   fprintf(stderr, "The call to append_link needs to be mocked!!\n");
   exit(1);
   }
+
+std::string get_frequency_request(struct cpu_frequency_value *pfreq)
+  {
+  std::string ret = "";
+  return ret;
+  }
+
+
 
 #ifdef PENABLE_LINUX26_CPUSETS
 
@@ -563,3 +581,17 @@ int get_cpu_count_requested_on_this_node(job&)
 void node_internals::recover_reservation(int cpus, unsigned long memory, char const* jobid) {}
 
 #endif
+
+void translate_range_string_to_vector(const char *range, std::vector<int> &indices)
+  {
+  indices.push_back(0);
+  indices.push_back(1);
+  indices.push_back(2);
+  indices.push_back(3);
+  indices.push_back(4);
+  indices.push_back(5);
+  indices.push_back(6);
+  indices.push_back(7);
+  indices.push_back(8);
+  indices.push_back(9);
+  }

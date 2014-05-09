@@ -5,6 +5,7 @@
 #include <sys/socket.h> /* sockaddr */
 #include <sys/types.h> /* pid_t */
 #include <pwd.h> /* gid_t, uid_t */
+#include <string>
 
 #include "attribute.h" /* attribute_def, pbs_attribute, svrattrl */
 #include "pbs_ifl.h" /* PBS_MAXUSER, MAXPATHLEN */
@@ -297,7 +298,7 @@ void mom_deljob(job *pjob)
   exit(1);
   }
 
-job *mom_find_job(char *jobid)
+job *mom_find_job(char const *jobid)
   {
   fprintf(stderr, "The call to find_job needs to be mocked!!\n");
   exit(1);
@@ -383,6 +384,11 @@ bool am_i_mother_superior(const job &pjob)
   }
 
 int put_env_var(const char *name, const char *value)
+  {
+  return(0);
+  }
+
+int attr_to_str(std::string &ds, attribute_def *at_def, pbs_attribute attr, bool XML)
   {
   return(0);
   }

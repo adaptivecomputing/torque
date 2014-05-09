@@ -409,6 +409,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/resmom/test/mom_server/Makefile
     src/resmom/test/mom_process_request/Makefile
     src/resmom/test/mom_req_quejob/Makefile
+    src/resmom/test/parse_config/Makefile
     src/resmom/test/pbs_demux/Makefile
     src/resmom/test/prolog/Makefile
     src/resmom/test/release_reservation/Makefile
@@ -418,6 +419,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/resmom/linux/test/Makefile
     src/resmom/linux/test/cpuset/Makefile
     src/resmom/linux/test/mom_mach/Makefile
+    src/resmom/linux/test/sys_file/Makefile
     src/resmom/linux/test/mom_start/Makefile
     src/resmom/linux/test/numa_node/Makefile
     src/resmom/linux/test/node_internals/Makefile
@@ -428,11 +430,14 @@ m4_ifdef([AM_SILENT_RULES],[
     src/server/test/array_upgrade/Makefile
     src/server/test/attr_recov/Makefile
     src/server/test/batch_request/Makefile
+    src/server/test/delete_all_tracker/Makefile
     src/server/test/dis_read/Makefile
     src/server/test/display_alps_status/Makefile
+    src/server/test/id_map/Makefile
     src/server/test/execution_slot_tracker/Makefile
     src/server/test/exiting_jobs/Makefile
     src/server/test/geteusernam/Makefile
+    src/server/test/incoming_request/Makefile
     src/server/test/issue_request/Makefile
     src/server/test/job_attr_def/Makefile
     src/server/test/job_container/Makefile

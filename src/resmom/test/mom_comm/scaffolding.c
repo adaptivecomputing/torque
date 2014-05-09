@@ -314,7 +314,7 @@ int TTmpDirName(job *pjob, char *tmpdir, int tmdir_size)
   return(0);
   }
 
-void job_nodes(job *pjob) {}
+void job_nodes(job &pjob) {}
 
 void close_conn(int sd, int has_mutex) {}
 
@@ -337,7 +337,7 @@ resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   }
 
 job *mock_mom_find_job_return = NULL;
-job *mom_find_job(char *jobid)
+job *mom_find_job(const char *jobid)
   {
   if (strcmp("jobid", jobid) != 0)
     {
@@ -509,3 +509,6 @@ bool am_i_mother_superior(const job &pjob)
     
   return(mother_superior);
   }
+
+void create_cpuset_reservation_if_needed(job &pjob){}
+

@@ -3,6 +3,7 @@
 #include <stdio.h> /* fprintf */
 #include <pthread.h>
 #include <errno.h>
+#include <string>
 
 #include "pbs_ifl.h" /* MAXPATHLEN, PBS_MAXSERVERNAME */
 #include "server.h" /* server, NO_BUFFER_SPACE */
@@ -13,7 +14,6 @@
 #include "batch_request.h" /* batch_request */
 #include "work_task.h" /* all_tasks */
 #include "array.h" /* ArrayEventsEnum */
-#include <string>
 
 /* This section is for manipulting function return values */
 #include "test_job_func.h" /* *_SUITE */
@@ -264,7 +264,7 @@ int insert_into_recycler(job *pjob)
   return 0;
   }
 
-int attr_to_str(std::string& ds, attribute_def *attr_def,struct pbs_attribute attr,int XML)
+int attr_to_str(std::string& ds, attribute_def *attr_def,struct pbs_attribute attr, bool XML)
   {
   int rc = 0;
   if ((func_num == RECORD_JOBINFO_SUITE) && (tc == 4))
@@ -546,7 +546,8 @@ job *find_job_by_array(
 
   all_jobs *aj,
   char            *job_id,
-  int              get_subjob)
+  int              get_subjob,
+  bool             locked)
 
   {
   job *pj = NULL;
@@ -590,3 +591,4 @@ job *find_job_by_array(
 
   return(pj);
   } /* END find_job_by_array() */
+

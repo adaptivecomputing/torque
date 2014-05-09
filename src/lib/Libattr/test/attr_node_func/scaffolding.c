@@ -1,7 +1,9 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h>
+#include <string>
 
+#include "execution_slot_tracker.hpp"
 #include "attribute.h" /* svrattrl */
 
 svrattrl *attrlist_create(const char *aname, const char *rname, int vsize)
@@ -39,6 +41,9 @@ char *parse_comma_string(char *start, char **ptr)
   fprintf(stderr, "The call to parse_comma_string needs to be mocked!!\n");
   exit(1);
   }
+
+void populate_range_string_from_slot_tracker(execution_slot_tracker &est, std::string &range) {}
+
 
 int ctnodes(char *spec)
   {

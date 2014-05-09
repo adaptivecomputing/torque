@@ -3,6 +3,7 @@
 #include "test_req_quejob.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <string.h>
 #include "pbs_error.h"
 
@@ -40,9 +41,9 @@ START_TEST(test_one)
 
   path_jobs = getcwd(path_to_jobs,sizeof(path_to_jobs));
   strcat(path_jobs,"/");
-  sprintf(cmd,"rm %s*.SC",path_jobs);
+  sprintf(cmd,"rm -f %s*.SC",path_jobs);
   system(cmd);
-  strcpy(req.rq_ind.rq_jobfile.rq_jobid,"SomeJob");
+  strcpy(req.rq_ind.rq_jobfile.rq_jobid,"1.napali");
   fail_unless(req_jobscript(&req) == PBSE_NONE);
   system(cmd);
   }

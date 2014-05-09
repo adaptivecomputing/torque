@@ -469,7 +469,8 @@ int assign_job_field(
 void decode_attribute(
 
   svrattrl *pal,
-  job **pjob)
+  job **pjob,
+  bool freeExisting)
 
   {
   int index;
@@ -482,7 +483,10 @@ void decode_attribute(
   if (index < 0)
     index = JOB_ATR_UNKN;
 
-  job_attr_def[index].at_free(&pj->ji_wattr[index]);
+  if(freeExisting)
+    {
+    job_attr_def[index].at_free(&pj->ji_wattr[index]);
+    }
 
   job_attr_def[index].at_decode(
     &pj->ji_wattr[index],
@@ -510,6 +514,7 @@ int fill_resource_list(
   xmlNodePtr resNode = NULL;
   int        rc = PBSE_NONE;
   bool       element_found = false;
+  bool       freeExisting = true;
 
   for (resNode = resource_list_node->children; resNode != NULL; resNode = resNode->next)
     {
@@ -532,7 +537,8 @@ int fill_resource_list(
         xmlFree(attr_flags);
         pal->al_flags = flags;
         }
-      decode_attribute(pal, pj);
+      decode_attribute(pal,pj,freeExisting);
+      freeExisting = false;
       free(pal);
       }
     else
@@ -593,7 +599,7 @@ int parse_attributes(
           pal->al_flags = flags;
           }
           
-        decode_attribute(pal, pj);
+        decode_attribute(pal, pj,true);
 
         free(pal);
         }
@@ -673,11 +679,11 @@ int check_fileprefix(
 
 int parse_job_dom(
 
-  const char *filename,    /* I */ /* filename */
-  job **pjob,              /* M */ /* pointer to a pointer of a job structure */
-  xmlNodePtr root_element, /* I */ /*Root element of the dom */
-  char *log_buf,           /* O */ /* buffer for error message */
-  size_t buf_len)          /* I */ /* Size of error message */
+  const char  *filename,     /* I */ /* filename */
+  job        **pjob,         /* M */ /* pointer to a pointer of a job structure */
+  xmlNodePtr   root_element, /* I */ /*Root element of the dom */
+  char        *log_buf,      /* O */ /* buffer for error message */
+  size_t       buf_len)      /* I */ /* Size of error message */
 
   {
   xmlNode *cur_node = NULL;
@@ -718,6 +724,8 @@ int parse_job_dom(
   return(rc);
   }  /* END parse_job_dom */
 
+
+
 /*
  * add_fix_fields() - add xml nodes (that correspond to some of the fields in ji_qs fields of the job structure) 
  *                    to the document. 
@@ -727,6 +735,7 @@ void add_fix_fields(
 
   xmlNodePtr *rnode, /* M root node */
   const job *pjob)   /* I pointer to job from which nodes will be created */
+
  {
  char buf[BUFSIZE];
  xmlNodePtr root_node = *rnode;
@@ -756,7 +765,8 @@ void add_fix_fields(
 void add_union_fields(
 
   xmlNodePtr *rnode,  /* M document's root node */
-  const job *pjob)    /* I job pointer */
+  const job  *pjob)    /* I job pointer */
+
  {
  char buf[BUFSIZE];
  xmlNodePtr root_node = *rnode;
@@ -803,11 +813,12 @@ void add_union_fields(
  } /* END add_union_fields */
 
 
-xmlNodePtr add_resouce_list_attribute(
-    const char *nodeTag,     /* I tag to use on the resouce head-node */
-    xmlNodePtr *attr_node,   /* M attribute head-node */ 
-    xmlNodePtr *res_node,    /* M Resource_List/resources_used head-node */ 
-    svrattrl   *pal)         /* I encoded attribute structure */
+xmlNodePtr add_resource_list_attribute(
+
+  const char *nodeTag,     /* I tag to use on the resouce head-node */
+  xmlNodePtr *attr_node,   /* M attribute head-node */ 
+  xmlNodePtr *res_node,    /* M Resource_List/resources_used head-node */ 
+  svrattrl   *pal)         /* I encoded attribute structure */
 
   {
   xmlNodePtr attributeHeadNode = *attr_node;
@@ -825,7 +836,74 @@ xmlNodePtr add_resouce_list_attribute(
     resourceNode = xmlNewChild(resourceHeadNode, NULL, (xmlChar *)pal->al_atopl.resource, (xmlChar *)pal->al_atopl.value);
 
   return resourceNode;
-  }
+  } /* END add_resource_list_attribute() */
+
+
+
+#ifndef PBS_MOM
+/*
+ * translate_dependency_to_string
+ *
+ * takes the dependency attribute and places it in a consumable string
+ *
+ * @param pattr - a pointer to the dependency attribute
+ * @param value - the string to populate with the information
+ */
+
+void translate_dependency_to_string(
+
+  pbs_attribute *pattr,
+  std::string   &value)
+
+  {
+  struct depend             *dep;
+  extern struct dependnames  dependnames[];
+  struct dependnames        *dp_name;
+
+  if (pattr == NULL)
+    return;
+
+  for (dep = (struct depend *)GET_NEXT(pattr->at_val.at_list);
+       dep != NULL;
+       dep = (struct depend *)GET_NEXT(dep->dp_link))
+    {
+    dp_name = dependnames + dep->dp_type;
+
+    if (value.size() != 0)
+      value += ",";
+
+    value += dp_name->name;
+
+    if ((dp_name->type == JOB_DEPEND_TYPE_SYNCCT) ||
+        (dp_name->type == JOB_DEPEND_TYPE_ON))
+      {
+      char buf[128];
+      snprintf(buf, sizeof(buf), ":%d", dep->dp_numexp);
+      value += buf;
+      }
+    else
+      {
+      struct depend_job *pdjob = (struct depend_job *)GET_NEXT(dep->dp_jobs);
+
+      while (pdjob != NULL)
+        {
+        value += ":";
+        value += pdjob->dc_child;
+
+        if (pdjob->dc_svr[0] != '\0')
+          {
+          value += "@";
+          value += pdjob->dc_svr;
+          }
+
+        pdjob = (struct depend_job *)GET_NEXT(pdjob->dc_link);
+        }
+      }
+    }
+
+  } /* END translate_dependency_to_string() */
+#endif
+
 
 
 /*
@@ -834,8 +912,8 @@ xmlNodePtr add_resouce_list_attribute(
 
 int add_encoded_attributes(
 
-  xmlNodePtr *attr_node,   /* M attribute node */ 
-  pbs_attribute  *pattr)   /* M ptr to pbs_attribute value array */
+  xmlNodePtr     *attr_node, /* M attribute node */ 
+  pbs_attribute  *pattr)     /* M ptr to pbs_attribute value array */
 
   {
   tlist_head  lhead;
@@ -853,29 +931,56 @@ int add_encoded_attributes(
 
   for (i = 0; ((i < JOB_ATR_LAST) && (rc >= 0)); i++)
     {
-    if (job_attr_def[i].at_type != ATR_TYPE_ACL)
-      if ((pattr + i)->at_flags & ATR_VFLAG_SET)
+    if ((job_attr_def[i].at_type != ATR_TYPE_ACL) &&
+        ((pattr + i)->at_flags & ATR_VFLAG_SET))
+      {
+      if ((i != JOB_ATR_resource) &&
+          (i != JOB_ATR_resc_used))
         {
-        rc = job_attr_def[i].at_encode(
-        pattr + i,
-        &lhead,
-        job_attr_def[i].at_name,
-        NULL,
-        ATR_ENCODE_SAVE,
-        resc_access_perm);
+        std::string value;
 
-        (pattr + i)->at_flags &= ~ATR_VFLAG_MODIFY;
+#ifndef PBS_MOM
+        if (i == JOB_ATR_depend)
+          translate_dependency_to_string(pattr + i, value);
+        else
+#endif
+          attr_to_str(value, job_attr_def + i, pattr[i], false);
+
+        if (value.size() == 0)
+          continue;
+
+        pal_xmlNode = xmlNewChild(attributeNode,
+                                  NULL,
+                                  (xmlChar *)job_attr_def[i].at_name,
+                                  (const xmlChar *)value.c_str());
+
+        if (pal_xmlNode)
+          {
+          snprintf(buf, sizeof(buf), "%u", (unsigned int)pattr[i].at_flags);
+          xmlSetProp(pal_xmlNode, (const xmlChar *)AL_FLAGS_ATTR, (const xmlChar *)buf);
+          (pattr + i)->at_flags &= ~ATR_VFLAG_MODIFY;
+          }
+        }
+      else
+        {
+        rc = job_attr_def[i].at_encode(pattr + i,
+            &lhead,
+            job_attr_def[i].at_name,
+            NULL,
+            ATR_ENCODE_SAVE,
+            resc_access_perm);
+        
         if (rc < 0)
           return -1;
 
+        (pattr + i)->at_flags &= ~ATR_VFLAG_MODIFY;
+
         while ((pal = (svrattrl *)GET_NEXT(lhead)) != NULL)
           {
-          if (!strcmp(ATTR_l, pal->al_atopl.name)) 
-            pal_xmlNode = add_resouce_list_attribute(ATTR_l, attr_node, &resource_list_head_node, pal);
-          else if (!strcmp(ATTR_used, pal->al_atopl.name)) 
-            pal_xmlNode = add_resouce_list_attribute(ATTR_used, attr_node, &resource_used_head_node, pal);
-          else 
-            pal_xmlNode = xmlNewChild(attributeNode, NULL, (xmlChar *)pal->al_atopl.name, (xmlChar *)pal->al_atopl.value);
+          if (i == JOB_ATR_resource) 
+            pal_xmlNode = add_resource_list_attribute(ATTR_l, attr_node, &resource_list_head_node, pal);
+          else
+            pal_xmlNode = add_resource_list_attribute(ATTR_used, attr_node, &resource_used_head_node, pal);
 
             if (pal_xmlNode)
               {
@@ -888,7 +993,9 @@ int add_encoded_attributes(
               rc = -1;
           }
         }
+      }
     }
+
   return (0);
   } /* END add_encoded_attributes */
 
@@ -900,33 +1007,31 @@ int add_encoded_attributes(
 int add_attributes(
 
   xmlNodePtr *rnode, /* M document root node */
-  job *pjob)   /* pointer to job */
- {
- xmlNodePtr attributeNode = NULL;
- int rc = PBSE_NONE;
- char  log_buf[LOCAL_LOG_BUF_SIZE];
- xmlNodePtr root_node = *rnode;
+  job        *pjob)  /* pointer to job */
 
- if ((attributeNode = xmlNewNode(NULL, (xmlChar *)ATTRIB_TAG)))
+  {
+  xmlNodePtr attributeNode = NULL;
+  int rc = PBSE_NONE;
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
+  xmlNodePtr root_node = *rnode;
+
+  if ((attributeNode = xmlNewNode(NULL, (xmlChar *)ATTRIB_TAG)))
    {
    xmlAddChild(root_node, attributeNode);
    rc = add_encoded_attributes(&attributeNode, pjob->ji_wattr);
    }
- else
+  else
    rc = -1;
 
- if(rc != PBSE_NONE)
+  if (rc != PBSE_NONE)
    {
    snprintf(log_buf, sizeof(log_buf), "could not add the job attributes to the XML doc");
-   log_event(
-     PBSEVENT_JOB,
-     PBS_EVENTCLASS_JOB,
-     pjob->ji_qs.ji_jobid,
-     log_buf);
+   log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
    rc = -1;     
    }
- return rc;
- } /* END add_attributes */
+  
+  return(rc);
+  } /* END add_attributes */
 
 
 #ifdef PBS_MOM
@@ -935,6 +1040,7 @@ int add_attributes(
  */
 
 void add_mom_fields(
+
   xmlNodePtr *rnode,
   const job *pjob)
 
@@ -950,7 +1056,7 @@ void add_mom_fields(
   xmlNewChild(root_node, NULL, (xmlChar *)TASKID_TAG, (xmlChar *)buf);
   snprintf(buf, sizeof(buf), "%d", pjob->ji_nodeid);
   xmlNewChild(root_node, NULL, (xmlChar *)NODEID_TAG, (xmlChar *)buf);
- }
+  }
 #endif /* PBS_MOM */
 
 /*

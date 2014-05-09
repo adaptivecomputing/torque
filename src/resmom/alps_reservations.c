@@ -94,17 +94,64 @@
 typedef std::vector<host_req *> host_req_list;
 
 extern char mom_alias[];
+void translate_range_string_to_vector(const char *range_str, std::vector<int> &indices);
+
+std::string get_frequency_request(struct cpu_frequency_value *pfreq)
+  {
+  std::string cray_frequency = "";
+  char bf[20];
+  switch(pfreq->frequency_type)
+    {
+    case P0:
+    case P1:
+    case P2:
+    case P3:
+    case P4:
+    case P5:
+    case P6:
+    case P7:
+    case P8:
+    case P9:
+    case P10:
+    case P11:
+    case P12:
+    case P13:
+    case P14:
+    case P15:
+      sprintf(bf," p-state='%u'",pfreq->frequency_type);
+      cray_frequency = bf;
+      break;
+    case Performance:
+      cray_frequency = " p-governor='performance'";
+      break;
+    case PowerSave:
+      cray_frequency = " p-governor='powersave'";
+      break;
+    case OnDemand:
+      cray_frequency = " p-governor='ondemand'";
+      break;
+    case Conservative:
+      cray_frequency = " p-governor='conservative'";
+      break;
+    case AbsoluteFrequency:
+      sprintf(bf," p-state='%lu000'",pfreq->mhz);
+      cray_frequency = bf;
+      break;
+    }
+  return cray_frequency;
+  }
 
 
 host_req *get_host_req(
 
-  char *hostname)
+  char         *hostname,
+  unsigned int  ppn)
 
   {
   host_req *hr = (host_req *)calloc(1, sizeof(host_req));
 
   hr->hostname = strdup(hostname);
-  hr->ppn = 1;
+  hr->ppn = ppn;
 
   return(hr);
   } /* END get_host_req() */
@@ -175,7 +222,6 @@ host_req_list *parse_exec_hosts(
   char            *exec_hosts = strdup(exec_hosts_param);
   char            *str_ptr = exec_hosts;
   const char     *delims = "+";
-  char            *prev_host_tok = NULL;
   host_req        *hr;
   host_req_list   *list = new host_req_list();
 
@@ -188,18 +234,17 @@ host_req_list *parse_exec_hosts(
     if ((strcmp(mom_host, host_tok)) &&
         (strcmp(mom_alias, host_tok)))
       {
-      if ((prev_host_tok != NULL) &&
-          (!strcmp(prev_host_tok, host_tok)))
+      std::vector<int> indices;
+
+      if (slash != NULL)
         {
-        hr = list->back();
-        hr->ppn += 1;
+        translate_range_string_to_vector(slash + 1, indices);
+        hr = get_host_req(host_tok, indices.size());
         }
       else
-        {
-        prev_host_tok = host_tok;
-        hr = get_host_req(host_tok);
-        list->push_back(hr);
-        }
+        hr = get_host_req(host_tok, 1);
+
+      list->push_back(hr);
       }
     }
 
@@ -225,7 +270,8 @@ int save_current_reserve_param(
   unsigned int    width,
   int             nppn,
   int             nppcu,
-  int             mppdepth)
+  int             mppdepth,
+  std::string&    cray_frequency)
 
   {
   char            buf[MAXLINE * 2];
@@ -236,6 +282,10 @@ int save_current_reserve_param(
   else
     sscanf(DEFAULT_APBASIL_PROTOCOL, "%f", &apbasil_protocol_float);
 
+  if(apbasil_protocol_float < APBASIL_PROTOCOL_v14)
+    {
+    cray_frequency = "";
+    }
   /* print out the current reservation param element */
   /* place everything up to the node list */
   if (nppn == -1)
@@ -243,14 +293,14 @@ int save_current_reserve_param(
     if (mppdepth == 0)
       {
       if (apbasil_protocol_float >= APBASIL_PROTOCOL_v13)
-        snprintf(buf, sizeof(buf), APBASIL_RESERVE_PARAM_BEGIN_SANS_NPPN_13, width, nppcu);
+        snprintf(buf, sizeof(buf), APBASIL_RESERVE_PARAM_BEGIN_SANS_NPPN_13, width, nppcu, cray_frequency.c_str());
       else
         snprintf(buf, sizeof(buf), APBASIL_RESERVE_PARAM_BEGIN_SANS_NPPN, width);
       }
     else
       {
       if (apbasil_protocol_float >= APBASIL_PROTOCOL_v13)
-        snprintf(buf, sizeof(buf), APBASIL_RESERVE_PARAM_BEGIN_DEPTH_SANS_NPPN_13, width, nppcu, mppdepth);
+        snprintf(buf, sizeof(buf), APBASIL_RESERVE_PARAM_BEGIN_DEPTH_SANS_NPPN_13, width, nppcu, mppdepth, cray_frequency.c_str());
       else
         snprintf(buf, sizeof(buf), APBASIL_RESERVE_PARAM_BEGIN_DEPTH_SANS_NPPN, width, mppdepth);
       }
@@ -260,14 +310,14 @@ int save_current_reserve_param(
     if (mppdepth == 0)
       {
       if (apbasil_protocol_float >= APBASIL_PROTOCOL_v13)
-        snprintf(buf, sizeof(buf), APBASIL_RESERVE_PARAM_BEGIN_13, width, nppcu, nppn);
+        snprintf(buf, sizeof(buf), APBASIL_RESERVE_PARAM_BEGIN_13, width, nppcu, nppn, cray_frequency.c_str());
       else
         snprintf(buf, sizeof(buf), APBASIL_RESERVE_PARAM_BEGIN, width, nppn);
       }
     else
       {
       if (apbasil_protocol_float >= APBASIL_PROTOCOL_v13)
-        snprintf(buf, sizeof(buf), APBASIL_RESERVE_PARAM_BEGIN_DEPTH_13, width, nppcu, nppn, mppdepth);
+        snprintf(buf, sizeof(buf), APBASIL_RESERVE_PARAM_BEGIN_DEPTH_13, width, nppcu, nppn, mppdepth, cray_frequency.c_str());
       else
         snprintf(buf, sizeof(buf), APBASIL_RESERVE_PARAM_BEGIN_DEPTH, width, nppn, mppdepth);
       }
@@ -321,7 +371,8 @@ int create_reserve_params_from_host_req_list(
   int              use_nppn,      /* I */
   int              nppcu,         /* I */
   int              mppdepth,      /* I */
-  std::string&     command)       /* O */
+  std::string&     command,       /* O */
+  std::string&     cray_frequency) /* I */
 
   {
   std::string    node_list = "";
@@ -348,7 +399,7 @@ int create_reserve_params_from_host_req_list(
 
   adjust_for_depth(width, nppn, mppdepth);
   
-  save_current_reserve_param(command, apbasil_protocol, node_list, width, nppn, nppcu, mppdepth);
+  save_current_reserve_param(command, apbasil_protocol, node_list, width, nppn, nppcu, mppdepth, cray_frequency);
 
   return(PBSE_NONE);
   } /* END create_reserve_params_from_host_req_list() */
@@ -362,7 +413,8 @@ int create_reserve_params_from_multi_req_list(
   char           *apbasil_protocol, /* I */
   int             nppcu,          /* I */
   int             mppdepth,       /* I */
-  std::string&    command)        /* O */
+  std::string&    command,        /* O */
+  std::string&    cray_frequency) /* I */
 
   {
   std::string     node_list = "";
@@ -391,7 +443,7 @@ int create_reserve_params_from_multi_req_list(
 
     adjust_for_depth(width, nppn, mppdepth);
 
-    save_current_reserve_param(command, apbasil_protocol, node_list, width, nppn, nppcu, mppdepth);
+    save_current_reserve_param(command, apbasil_protocol, node_list, width, nppn, nppcu, mppdepth, cray_frequency);
     }
 
   return(PBSE_NONE);
@@ -411,7 +463,8 @@ void get_reservation_command(
   int              use_nppn,
   int              nppcu,
   int              mppdepth,
-  std::string&     command)
+  std::string&     command,
+  std::string&     cray_frequency)
 
   {
   std::string      node_list = "";
@@ -429,12 +482,12 @@ void get_reservation_command(
 
   if (multi_req_list == NULL)
     {
-    create_reserve_params_from_host_req_list(list, apbasil_protocol, use_nppn, nppcu, mppdepth, command);
+    create_reserve_params_from_host_req_list(list, apbasil_protocol, use_nppn, nppcu, mppdepth, command, cray_frequency);
     }
   else
     {
     /* no need to account for use_nppn here, this path always should */
-    create_reserve_params_from_multi_req_list(multi_req_list, apbasil_protocol, nppcu, mppdepth, command);
+    create_reserve_params_from_multi_req_list(multi_req_list, apbasil_protocol, nppcu, mppdepth, command, cray_frequency);
     }
 
   /* pipe the output to apbasil */
@@ -782,7 +835,8 @@ int create_alps_reservation(
   int         nppcu,
   int         mppdepth,
   char      **reservation_id,
-  const char *mppnodes)
+  const char *mppnodes,
+  std::string& cray_frequency)
 
   {
   host_req_list    *list;
@@ -807,13 +861,13 @@ int create_alps_reservation(
       return(PBSE_NONE);
       }
   
-    get_reservation_command(list, user, jobid, apbasil_path, apbasil_protocol, NULL, use_nppn, nppcu, mppdepth,command);
+    get_reservation_command(list, user, jobid, apbasil_path, apbasil_protocol, NULL, use_nppn, nppcu, mppdepth,command,cray_frequency);
   
     delete list;
     }
   else
     {
-    get_reservation_command(NULL, user, jobid, apbasil_path, apbasil_protocol, exec_hosts, use_nppn, nppcu, mppdepth,command);
+    get_reservation_command(NULL, user, jobid, apbasil_path, apbasil_protocol, exec_hosts, use_nppn, nppcu, mppdepth,command,cray_frequency);
     }
 
   free(user);

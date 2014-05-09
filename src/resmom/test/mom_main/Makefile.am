@@ -10,6 +10,7 @@ check_PROGRAMS = test_mom_main
 
 libmom_main_la_SOURCES = scaffolding.c ${PROG_ROOT}/mom_main.c ${PROG_ROOT}/parse_config.c
 libmom_main_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
+test_mom_main_LDADD = ../../../test/torque_test_lib/libtorque_test.la
 
 
 test_mom_main_SOURCES = test_mom_main.c

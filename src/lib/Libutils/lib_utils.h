@@ -73,34 +73,14 @@ int write_buffer(char *buf, int len, int fds);
 
 /* u_threadpool.c */
 int create_work_thread(void);
-
-/* static void work_thread_cleanup(void *a); */
  
 void work_cleanup(void *a);
 
-/* static void *work_thread(void *a); */
-
 int initialize_threadpool(threadpool_t **pool, int min_threads, int max_threads, int max_idle_time);
-
-int enqueue_threadpool_request(void *(*func)(void *), void *arg);
 
 void destroy_request_pool(void);
 
 void start_request_pool();
-
-/* u_tree.c */
-/* static int height(NodeEntry node); */
-
-/* static int Max(int right_side, int left_side ); */
-
-
-/* static NodeEntry single_rotate_with_left(NodeEntry K2 ); */
-
-/* static NodeEntry single_rotate_with_right(NodeEntry K1 ); */
-
-/* static NodeEntry double_rotate_with_left(NodeEntry K3 ); */
-
-/* static NodeEntry double_rotate_with_right(NodeEntry K1 ); */
 
 AvlTree AVL_insert(u_long key, uint16_t port, struct pbsnode *node, AvlTree tree );
 

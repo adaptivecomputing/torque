@@ -154,10 +154,6 @@ void req_cpyfile(struct batch_request *preq)
   exit(1);
   }
  
-void mom_req_quejob(struct batch_request *preq)
-  {
-  }
-
 char *pbse_to_txt(int err)
   {
   fprintf(stderr, "The call to pbse_to_txt needs to be mocked!!\n");
@@ -229,7 +225,10 @@ int mom_req_stat_job(
   return(0);
   }
 
+void mom_req_quejob(batch_request *preq) {}
+
 void req_delete_reservation(struct batch_request *request) {}
+void req_change_power_state(struct batch_request*){}
 
 void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}

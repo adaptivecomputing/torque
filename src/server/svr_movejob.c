@@ -98,6 +98,7 @@
 #include "list_link.h"
 #include "attribute.h"
 #include "server_limits.h"
+#include "server.h"
 #include "work_task.h"
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
@@ -137,8 +138,6 @@ extern int  job_route(job *);
 int PBSD_commit_get_sid(int ,long *,char *);
 int get_job_file_path(job *,enum job_file, char *, int);
 void add_dest(job *jobp);
-
-extern struct pbsnode *PGetNodeFromAddr(pbs_net_t);
 
 
 
@@ -1332,6 +1331,41 @@ send_job_work_end:
 
 
 
+/*
+ * get_ms_name()
+ * determines the mother superior for pjob and returns the name of the mother
+ * superior
+ *
+ * @param pjob - the job who's mother superior name should be returned
+ * @return the hostname of the mother superior for pjob, or NULL if none can
+ * be determined. This string must be freed.
+ */
+
+char *get_ms_name(
+
+  job &pjob)
+
+  {
+  long          cray_enabled = 0;
+  char         *ms_name = NULL;
+  unsigned int  dummy;
+
+  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
+
+  if (cray_enabled == TRUE)
+    {
+    if (pjob.ji_wattr[JOB_ATR_login_node_id].at_val.at_str != NULL)
+      ms_name = strdup(pjob.ji_wattr[JOB_ATR_login_node_id].at_val.at_str);
+    }
+
+  if ((ms_name == NULL) &&
+      (pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL))
+  ms_name = parse_servername(pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str, &dummy);
+
+  return(ms_name);
+  } /* END get_ms_name() */
+
+
 
 /*
  * send_job - send a job over the network to some other server or MOM
@@ -1358,18 +1392,15 @@ void *send_job(
   int                   type = args->move_type; /* move, route, or execute */
   int                   local_errno = 0;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
-  unsigned long         job_momaddr;
 
   char                 *node_name = NULL;
 
   struct batch_request *preq = (struct batch_request *)args->data;
-  struct pbsnode       *np;
 
   pjob = svr_find_job(job_id, TRUE);
 
   if (pjob != NULL)
     {
-    job_momaddr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
     unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
     if (LOGLEVEL >= 6)
@@ -1378,15 +1409,12 @@ void *send_job(
       
       log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,job_id,log_buf);
       }
-    
-    if ((np = PGetNodeFromAddr(job_momaddr)) != NULL)
-      {
-      node_name = np->nd_name;
-      
-      unlock_node(np, "send_job", NULL, LOGLEVEL);
-      }
+
+    node_name = get_ms_name(*pjob);
     
     send_job_work(job_id,node_name,type,&local_errno,preq);
+
+    free(node_name);
     }
 
   free(vp);
@@ -1464,7 +1492,7 @@ int net_move(
     return(ENOMEM);
     }
 
-  return(enqueue_threadpool_request(send_job,args));
+  return(enqueue_threadpool_request(send_job, args, request_pool));
   }  /* END net_move() */
 
 

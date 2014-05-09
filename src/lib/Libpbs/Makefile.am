@@ -52,6 +52,7 @@ libtorque_la_SOURCES = ../Libcsv/csv.c ../Libdis/dis.c \
 		    ../Libifl/enc_Shut.c ../Libifl/enc_Sig.c \
 		    ../Libifl/enc_Status.c ../Libifl/enc_svrattrl.c \
 		    ../Libifl/enc_Track.c ../Libifl/get_svrport.c \
+             ../Libifl/enc_PowerState.c ../Libifl/dec_PowerState.c \
 		    ../Libifl/nonblock.c ../Libifl/PBS_attr.c \
 		    ../Libifl/pbsD_alterjo.c ../Libifl/pbsD_asyrun.c \
 		    ../Libifl/PBS_data.c ../Libifl/pbsD_connect.c \

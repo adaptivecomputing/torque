@@ -133,6 +133,8 @@
 #include "ji_mutex.h"
 #include "alps_constants.h"
 #include "mutex_mgr.hpp"
+#include "timer.hpp"
+#include "id_map.hpp"
 
 #define IS_VALID_STR(STR)  (((STR) != NULL) && ((STR)[0] != '\0'))
 
@@ -168,6 +170,7 @@ extern char            *path_home;
 extern char            *path_nodes;
 extern char            *path_nodes_new;
 extern char            *path_nodestate;
+extern char            *path_nodepowerstate;
 extern char            *path_nodenote;
 extern char            *path_nodenote_new;
 extern char             server_name[];
@@ -235,7 +238,8 @@ struct pbsnode *tfind_addr(
 
   lock_node(pn, __func__, "pn", LOGLEVEL);
 
-  if (pn->num_node_boards == 0)
+  if ((pn->num_node_boards == 0) ||
+      (job_momname == NULL))
     return(pn);
   else
     {
@@ -404,56 +408,6 @@ int check_node_for_job(
 
 
 
-/*
- * record_reported_time()
- *
- * @pre-cond: vp must be a character pointer to a job id
- * @post-cond: the job's last reported time is updated. This is used to safeguard against
- * deleting jobs pre-maturely
- *
- * @param vp - the jobid of the job
- *
- */
-void *record_reported_time(
-
-  void *vp)
-
-  {
-  char *job_and_node = (char *)vp;
-
-  if (job_and_node != NULL)
-    {
-    char *jobid = job_and_node;
-    char *node_id;
-    char *colon = strchr(job_and_node, ':');
-
-    if (colon != NULL)
-      {
-      *colon = '\0';
-      node_id = colon + 1;
-
-      job *pjob = svr_find_job(jobid, TRUE);
-
-      if (pjob != NULL)
-        {
-        mutex_mgr job_mutex(pjob->ji_mutex, true);
-
-        if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
-          {
-          if (!strncmp(node_id, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, strlen(node_id)))
-            pjob->ji_last_reported_time = time(NULL);
-          }
-        }
-      }
-
-    free(job_and_node);
-    }
-
-  return(NULL);
-  } /* END record_reported_time() */
-
-
-
 
 /*
  * is_job_on_node - return TRUE if this jobid is present on pnode
@@ -493,12 +447,6 @@ int is_job_on_node(
   else
     {
     present = check_node_for_job(pnode, jobid);
-    if (present == TRUE)
-      {
-      char *job_and_node = (char *)calloc(1, strlen(jobid) + 2 + strlen(pnode->nd_name));
-      sprintf(job_and_node, "%s:%s", jobid, pnode->nd_name);
-      enqueue_threadpool_request(record_reported_time, job_and_node);
-      }
     }
 
   if (at != NULL)
@@ -510,11 +458,13 @@ int is_job_on_node(
 
 
 
-/* If nodes have similiar names this will make sure the name is an exact match.
+/*
+ * If nodes have similiar names this will make sure the name is an exact match.
  * Not just found inside another name.
  * i.e. Machines by the name of gpu, gpuati, gpunvidia. If searching for gpu...
  * List format is similiar to: gpuati+gpu/1+gpunvidia/4+gpu/5
  */
+
 int node_in_exechostlist(
     
   char *node_name,
@@ -614,23 +564,26 @@ boost::ptr_vector<std::string> jobsKilled;
  * case it needs to be removed again.
  */
 
-void remove_job_from_already_killed_list(struct work_task *pwt)
+void remove_job_from_already_killed_list(
+    
+  struct work_task *pwt)
+
   {
   std::string *pJobID = (std::string *)pwt->wt_parm1;
 
   free(pwt->wt_mutex);
   free(pwt);
 
-  if(pJobID == NULL) return;
+  if (pJobID == NULL) return;
 
   pthread_mutex_lock(&jobsKilledMutex);
 
-  for(boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();i != jobsKilled.end();i++)
+  for (boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();i != jobsKilled.end();i++)
     {
-    if(i->compare(*pJobID) == 0)
+    if (i->compare(*pJobID) == 0)
       {
       jobsKilled.erase(i);
-      if(i == jobsKilled.end())
+      if (i == jobsKilled.end())
         {
         break;
         }
@@ -639,8 +592,37 @@ void remove_job_from_already_killed_list(struct work_task *pwt)
   pthread_mutex_unlock(&jobsKilledMutex);
 
   delete pJobID;
+  } /* END remove_job_from_already_killed_list() */
 
-  }
+
+
+bool job_already_being_killed(
+
+  const char *jobid)
+
+  {
+  bool jobAlreadyKilled = false;
+  // Job should not be on the node, see if we have already sent a kill for this job.
+  pthread_mutex_lock(&jobsKilledMutex);
+
+  for (boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();
+       (i != jobsKilled.end()) && (jobAlreadyKilled == false);
+       i++)
+    {
+    if (i->compare(jobid) == 0)
+      {
+      jobAlreadyKilled = true;
+      break;
+      }
+    }
+
+  pthread_mutex_unlock(&jobsKilledMutex);
+
+  return(jobAlreadyKilled);
+  } /* END job_already_being_killed() */
+
+
+
 
 /*
  * If a job is not supposed to be on a node and we have
@@ -656,7 +638,7 @@ bool job_should_be_killed(
   {
   bool  should_be_on_node = true;
   bool  should_kill_job = false;
-  job *pjob;
+  job  *pjob;
   
   if (strstr(jobid, server_name) != NULL)
     {
@@ -688,25 +670,8 @@ bool job_should_be_killed(
       }
     }
 
-  if(!should_be_on_node)
-    {
-    bool jobAlreadyKilled = false;
-    //Job should not be on the node, see if we have already sent a kill for this job.
-    pthread_mutex_lock(&jobsKilledMutex);
-
-    for(boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();(i != jobsKilled.end())&&(jobAlreadyKilled == false);i++)
-      {
-      if(i->compare(jobid) == 0)
-        {
-        jobAlreadyKilled = true;
-        }
-      }
-    if(!jobAlreadyKilled)
-      {
-      should_kill_job = true;
-      }
-    pthread_mutex_unlock(&jobsKilledMutex);
-    }
+  if (!should_be_on_node)
+    should_kill_job = !job_already_being_killed(jobid);
 
   return(should_kill_job);
   } /* END job_should_be_on_node() */
@@ -832,6 +797,64 @@ void sync_node_jobs_with_moms(
 
 
 /*
+ * process_job_attribute_information()
+ *
+ * @post-cond: the job with id job_id has its attribute values updated to match
+ * the values parsed from attributes
+ * @param attributes - a string object with job attributes and values in the 
+ * format (name1=val1[,name2=val2[...]])
+ * @param jobid - a string object containing the job's id
+ */
+void process_job_attribute_information(
+    
+  std::string &job_id,
+  std::string &attributes)
+
+  {
+  char *job_id_dup = strdup(job_id.c_str());
+  char *attr_dup = strdup(attributes.c_str());
+  // move past '(' at front
+  char *attr_work = attr_dup + 1;
+  job  *pjob;
+
+  // remove the ')' at the end
+  char *paren = strrchr(attr_work, ')');
+
+  if (paren != NULL)
+    *paren = '\0';
+
+  if ((pjob = svr_find_job(job_id_dup, TRUE)) != NULL)
+    {
+    mutex_mgr job_mutex(pjob->ji_mutex, true);
+    char *attr_val = threadsafe_tokenizer(&attr_work, ",");
+    
+    while (attr_val != NULL)
+      {
+      char *attr_name = threadsafe_tokenizer(&attr_val, "=");
+
+      if ((attr_name != NULL) &&
+          (attr_val != '\0'))
+        {
+        if (str_to_attr(attr_name, attr_val, pjob->ji_wattr, job_attr_def, JOB_ATR_LAST) == ATTR_NOT_FOUND)
+          {
+          // should be resources used if not found as attribute
+          decode_resc(&(pjob->ji_wattr[JOB_ATR_resc_used]), ATTR_used, attr_name, attr_val, ATR_DFLAG_ACCESS);
+          }
+        }
+
+      attr_val = threadsafe_tokenizer(&attr_work, ",");
+      }
+
+    pjob->ji_last_reported_time = time(NULL);
+    }
+
+  free(job_id_dup);
+  free(attr_dup);
+  } /* END process_job_attribute_information() */
+
+
+
+/*
  * sync_node_jobs() - determine if a MOM has a stale job and possibly delete it
  *
  * This function is called every time we get a node stat from the pbs_mom.
@@ -863,7 +886,7 @@ void *sync_node_jobs(
   raw_input = sji->input;
 
   /* raw_input's format is:
-   *   node name:<JOBID>[ <JOBID>]... */
+   *   node name:<JOBID>(resource_name=usage_val[,resource_name2=usage_val2...])[ <JOBID>]... */
   if ((jobstring_in = strchr(raw_input, ':')) != NULL)
     {
     node_id = raw_input;
@@ -890,27 +913,57 @@ void *sync_node_jobs(
   /* FORMAT <JOBID>[ <JOBID>]... */
   jobs_in_mom = strdup(jobstring_in);
   joblist = jobstring_in;
-  jobidstr = threadsafe_tokenizer(&joblist, (char *)" ");
+  jobidstr = threadsafe_tokenizer(&joblist, " ");
 
   get_svr_attr_l(SRV_ATR_job_sync_timeout, &job_sync_timeout);
 
   while ((jobidstr != NULL) && 
          (isdigit(*jobidstr)) != FALSE)
     {
-    if (job_should_be_killed(jobidstr, np))
+    std::string job_id(jobidstr);
+    size_t      pos;
+    char       *job_work_str;
+
+    if ((pos = job_id.find("(")) != std::string::npos)
       {
-      if (kill_job_on_mom(jobidstr, np) == PBSE_NONE)
+      std::string attributes = job_id.substr(pos);
+      job_id.erase(pos);
+
+      // must unlock the node to lock the job in this sub-function
+      unlock_node(np, __func__, NULL, LOGLEVEL);
+      process_job_attribute_information(job_id, attributes);
+
+      // re-lock the node
+      if ((np = find_nodebyname(node_id)) == NULL)
+        {
+        free(raw_input);
+        free(sji);
+
+        if (jobs_in_mom)
+          free(jobs_in_mom);
+
+        return(NULL);
+        }
+      }
+
+    job_work_str = strdup(job_id.c_str());
+
+    if (job_should_be_killed(job_work_str, np))
+      {
+      if (kill_job_on_mom(job_work_str, np) == PBSE_NONE)
         {
         pthread_mutex_lock(&jobsKilledMutex);
-        jobsKilled.push_back(new std::string(jobidstr));
+        jobsKilled.push_back(new std::string(job_id));
         pthread_mutex_unlock(&jobsKilledMutex);
         set_task(WORK_Timed, 
                  time(NULL) + job_sync_timeout,
                  remove_job_from_already_killed_list,
-                 (void *)new std::string(jobidstr),
+                 (void *)new std::string(job_id),
                  FALSE);
         }
       }
+
+    free(job_work_str);
     
     jobidstr = threadsafe_tokenizer(&joblist, " ");
     } /* END while ((jobidstr != NULL) && ...) */
@@ -1203,7 +1256,7 @@ void check_nodes(
   struct work_task *ptask)  /* I (modified) */
 
   {
-  int rc = enqueue_threadpool_request(check_nodes_work,ptask);
+  int rc = enqueue_threadpool_request(check_nodes_work, ptask, task_pool);
 
   if (rc)
     {
@@ -1299,13 +1352,89 @@ void *write_node_state_work(
   } /* END write_node_state_work() */
 
 
+void *write_node_power_state_work(
+
+  void *vp)
+
+  {
+  struct pbsnode *np;
+  static char    *fmt = (char *)"%s %d\n";
+  static FILE    *nstatef = NULL;
+  all_nodes_iterator *iter = NULL;
+
+  pthread_mutex_lock(node_state_mutex);
+
+  if (LOGLEVEL >= 5)
+    {
+    DBPRT(("write_node_power_state_work: entered\n"))
+    }
+
+  /* don't store running state */
+
+  if (nstatef != NULL)
+    {
+    fseek(nstatef, 0L, SEEK_SET); /* rewind and clear */
+
+    if (ftruncate(fileno(nstatef), (off_t)0) != 0)
+      {
+      log_err(errno, __func__, "could not truncate file");
+
+      pthread_mutex_unlock(node_state_mutex);
+
+      return(NULL);
+      }
+    }
+  else
+    {
+    /* need to open for first time, temporary-move to pbsd_init */
+
+    if ((nstatef = fopen(path_nodepowerstate, "w+")) == NULL)
+      {
+      log_err(errno, __func__, "could not open file");
+
+      pthread_mutex_unlock(node_state_mutex);
+
+      return(NULL);
+      }
+    }
+
+  /*
+  ** The only state that carries forward is if the
+  ** node has been marked offline.
+  */
+
+  while ((np = next_host(&allnodes,&iter,NULL)) != NULL)
+    {
+    if (np->nd_power_state != POWER_STATE_RUNNING)
+      {
+      fprintf(nstatef, fmt, np->nd_name, np->nd_power_state);
+      }
+
+    unlock_node(np, __func__, NULL, LOGLEVEL);
+    } /* END for each node */
+
+  if (iter != NULL)
+    delete iter;
+
+  if (fflush(nstatef) != 0)
+    {
+    log_err(errno, __func__, "failed saving node state to disk");
+    }
+
+  fclose(nstatef);
+  nstatef = NULL;
+
+  pthread_mutex_unlock(node_state_mutex);
+
+  return(NULL);
+  } /* END write_node_power_state_work() */
 
 
 
 void write_node_state(void)
 
   {
-  int rc = enqueue_threadpool_request(write_node_state_work,NULL);
+  int rc = enqueue_threadpool_request(write_node_state_work, NULL, task_pool);
 
   if (rc)
     {
@@ -1313,6 +1442,16 @@ void write_node_state(void)
     }
   }  /* END write_node_state() */
 
+void write_node_power_state(void)
+
+  {
+  int rc = enqueue_threadpool_request(write_node_power_state_work,NULL,task_pool);
+
+  if (rc)
+    {
+    log_err(rc, __func__, "Unable to enqueue write_node_power_state_work task into the threadpool");
+    }
+  }  /* END write_node_power_state() */
 
 
 /* Create a new node_note file then overwrite the previous one.
@@ -1457,7 +1596,7 @@ void node_unreserve(
   resource_t handle)
 
   {
-  int rc = enqueue_threadpool_request(node_unreserve_work,NULL);
+  int rc = enqueue_threadpool_request(node_unreserve_work, NULL, task_pool);
 
   if (rc)
     {
@@ -1481,7 +1620,7 @@ int hasprop(
   {
   struct  prop    *need;
 
-  for (need = props;need;need = need->next)
+  for (need = props; need != NULL; need = need->next)
     {
 
     struct prop *pp;
@@ -1545,10 +1684,10 @@ static int hasppn(
 /*
 ** Count how many gpus are available for use on this node
 */
-static int gpu_count(
+int gpu_count(
 
-  struct pbsnode *pnode,  /* I */
-  int    freeonly)        /* I */
+  struct pbsnode *pnode,    /* I */
+  int             freeonly) /* I */
 
   {
   int  count = 0;
@@ -1556,7 +1695,8 @@ static int gpu_count(
 
   if ((pnode->nd_state & INUSE_OFFLINE) ||
       (pnode->nd_state & INUSE_UNKNOWN) ||
-      (pnode->nd_state & INUSE_DOWN))
+      (pnode->nd_state & INUSE_DOWN)||
+      (pnode->nd_power_state != POWER_STATE_RUNNING))
     {
     if (LOGLEVEL >= 7)
       {
@@ -2027,12 +2167,13 @@ int procs_available(
 
 
 
-int node_is_spec_acceptable(
+bool node_is_spec_acceptable(
 
   struct pbsnode   *pnode,
   single_spec_data *spec,
   char             *ProcBMStr,
-  int              *eligible_nodes)
+  int              *eligible_nodes,
+  bool              job_is_exclusive)
 
   {
   struct prop    *prop = spec->prop;
@@ -2047,33 +2188,30 @@ int node_is_spec_acceptable(
 #ifdef GEOMETRY_REQUESTS
   if (IS_VALID_STR(ProcBMStr))
     {
-    if (pnode->nd_state != INUSE_FREE)
-      return(FALSE);
+    if ((pnode->nd_state != INUSE_FREE)||(pnode->nd_power_state != POWER_STATE_RUNNING))
+      return(false);
 
     if (node_satisfies_request(pnode, ProcBMStr) == FALSE)
-      return(FALSE);
+      return(false);
     }
 #endif
 
   /* NYI: check if these are necessary */
   pnode->nd_flag = okay;
 
-  if (pnode->nd_ntype != NTYPE_CLUSTER)
-    return(FALSE);
-
   /* make sure that the node has properties */
   if (hasprop(pnode, prop) == FALSE)
-    return(FALSE);
+    return(false);
 
   if ((hasppn(pnode, ppn_req, SKIP_NONE) == FALSE) ||
       (gpu_count(pnode, FALSE) < gpu_req) ||
       (pnode->nd_nmics < mic_req))
-    return(FALSE);
+    return(false);
 
   (*eligible_nodes)++;
 
-  if ((pnode->nd_state & (INUSE_OFFLINE | INUSE_DOWN | INUSE_RESERVE | INUSE_JOB)) != 0)
-    return(FALSE);
+  if (((pnode->nd_state & (INUSE_OFFLINE | INUSE_DOWN | INUSE_RESERVE | INUSE_JOB)) != 0)||(pnode->nd_power_state != POWER_STATE_RUNNING))
+    return(false);
 
   gpu_free = gpu_count(pnode, TRUE) - pnode->nd_ngpus_to_be_used;
   np_free  = pnode->nd_slots.get_number_free() - pnode->nd_np_to_be_used;
@@ -2082,9 +2220,16 @@ int node_is_spec_acceptable(
   if ((ppn_req > np_free) ||
       (gpu_req > gpu_free) ||
       (mic_req > mic_free))
-    return(FALSE);
+    return(false);
+  if(job_is_exclusive)
+    {
+    if(pnode->nd_slots.get_number_free() != pnode->nd_slots.get_total_execution_slots())
+      {
+      return false;
+      }
+    }
 
-  return(TRUE);
+  return(true);
   } /* END node_is_spec_acceptable() */
 
 
@@ -2159,7 +2304,7 @@ int save_node_for_adding(
   node_job_add_info *naji,
   struct pbsnode    *pnode,
   single_spec_data  *req,
-  char              *first_node_name,
+  int                first_node_id,
   int                is_external_node,
   int                req_rank)
 
@@ -2168,9 +2313,10 @@ int save_node_for_adding(
   node_job_add_info *old_next;
   node_job_add_info *cur_naji;
   bool               first = false;
+  int                pnode_id = pnode->nd_id;
 
-  if ((first_node_name[0] != '\0') &&
-      (!strcmp(first_node_name, pnode->nd_name)))
+  if ((first_node_id == pnode_id) ||
+      (first_node_id == -1))
     {
     pnode->nd_order = 0;
     first = true;
@@ -2179,10 +2325,10 @@ int save_node_for_adding(
   else
     pnode->nd_order = 1;
 
-  if (naji->node_name[0] == '\0')
+  if (naji->node_id == -1)
     {
     /* first */
-    snprintf(naji->node_name, sizeof(naji->node_name), "%s", pnode->nd_name);
+    naji->node_id = pnode_id;
     naji->ppn_needed = req->ppn;
     naji->gpu_needed = req->gpu;
     naji->mic_needed = req->mic;
@@ -2204,7 +2350,7 @@ int save_node_for_adding(
       /* move the first element here and place me first */
       memcpy(to_add, naji, sizeof(node_job_add_info));
 
-      snprintf(naji->node_name, sizeof(naji->node_name), "%s", pnode->nd_name);
+      naji->node_id = pnode_id;
       naji->ppn_needed = req->ppn;
       naji->gpu_needed = req->gpu;
       naji->mic_needed = req->mic;
@@ -2214,7 +2360,7 @@ int save_node_for_adding(
     else
       {
       /* initialize to_add */
-      snprintf(to_add->node_name, sizeof(to_add->node_name), "%s", pnode->nd_name);
+      to_add->node_id = pnode_id;
       to_add->ppn_needed = req->ppn;
       to_add->gpu_needed = req->gpu;
       to_add->mic_needed = req->mic;
@@ -2225,9 +2371,9 @@ int save_node_for_adding(
     /* fix pointers, NOTE: works even if old_next == NULL */
     cur_naji = naji;
     old_next = cur_naji->next;
-    while(old_next != NULL)
+    while (old_next != NULL)
       {
-      if(to_add->req_rank <= old_next->req_rank)
+      if (to_add->req_rank <= old_next->req_rank)
         {
         cur_naji->next = to_add;
         to_add->next = old_next;
@@ -2237,7 +2383,7 @@ int save_node_for_adding(
       cur_naji = old_next;
       old_next = cur_naji->next;
       }
-    if(to_add != NULL)
+    if (to_add != NULL)
       {
       cur_naji->next = to_add;
       to_add->next = NULL;
@@ -2376,13 +2522,14 @@ void release_node_allocation(
   current = naji;
   while (current != NULL) 
     {
-    if ((pnode = find_nodebyname(current->node_name)) != NULL)
+    if ((pnode = find_nodebyid(current->node_id)) != NULL)
       {
       pnode->nd_np_to_be_used    -= current->ppn_needed;
       pnode->nd_ngpus_to_be_used -= current->gpu_needed;
       pnode->nd_nmics_to_be_used -= current->mic_needed;
       unlock_node(pnode, __func__, NULL, LOGLEVEL);
       }
+
     current = current->next;
     }
   } /* END release_node_allocation() */
@@ -2502,14 +2649,13 @@ enum job_types find_job_type(
 
 int add_login_node_if_needed(
 
-  char              **first_node_name_ptr,
+  int                &first_node_id,
   char               *login_prop,
   node_job_add_info  *naji)
 
   {
-  char             *first_node_name = *first_node_name_ptr;
-  struct pbsnode   *login = find_nodebyname(first_node_name);
-  int               need_to_add_login = FALSE;
+  struct pbsnode   *login = find_nodebyid(first_node_id);
+  bool              need_to_add_login = false;
   int               rc = PBSE_NONE;
   int               dummy1;
   int               dummy2;
@@ -2518,16 +2664,16 @@ int add_login_node_if_needed(
   single_spec_data  req;
 
   if (login == NULL)
-    need_to_add_login = TRUE;
+    need_to_add_login = true;
   else
     {
     if (login->nd_is_alps_login == FALSE)
-      need_to_add_login = TRUE;
+      need_to_add_login = true;
 
     unlock_node(login, __func__, NULL, LOGLEVEL);
     }
 
-  if (need_to_add_login == TRUE)
+  if (need_to_add_login == true)
     {
     if (login_prop != NULL)
       {
@@ -2554,8 +2700,8 @@ int add_login_node_if_needed(
         req.gpu = 0;
         req.mic = 0;
         req.prop = NULL;
-        save_node_for_adding(naji, login, &req, login->nd_name, FALSE, -1);
-        strcpy(*first_node_name_ptr, login->nd_name);
+        save_node_for_adding(naji, login, &req, login->nd_id, FALSE, -1);
+        first_node_id = login->nd_id;
         }
       
       rc = PBSE_NONE;
@@ -2592,6 +2738,271 @@ int node_is_external(
 
 
 
+/*
+ * record_fitting_node()
+ * updates relevant structs to reflect that this node fits the specifications in req
+ *
+ * @pre-cond: pnode, req, and first_node_name must all be valid pointers to their types.
+ * naji and ard_array are optional parameters
+ * @post-cond: if naji is non-null then this node is added so it can be put in the exec_host
+ * list later.
+ * @post-cond: req's nodes required count is decremented
+ * @post-cond: if ard_array is non-null then the node information is added there as well
+ */
+
+void record_fitting_node(
+
+  int                 &num,
+  struct pbsnode      *pnode,
+  node_job_add_info   *naji,
+  single_spec_data    *req,
+  int                  first_node_id,
+  int                  i,
+  int                  num_alps_reqs,
+  enum job_types       job_type,
+  complete_spec_data  *all_reqs,
+  alps_req_data      **ard_array)      /* O (optional) */
+
+  {
+  // count the nodes that work
+  num++;
+
+  /* for heterogeneous jobs on the cray, record the external 
+   * nodes in a separate attribute */
+  if (naji != NULL)
+    {
+    if ((job_type == JOB_TYPE_heterogeneous) &&
+        (node_is_external(pnode) == TRUE))
+      save_node_for_adding(naji, pnode, req, first_node_id, TRUE, i+1);
+    else
+      save_node_for_adding(naji, pnode, req, first_node_id, FALSE, i+1);
+
+    if ((num_alps_reqs > 0) &&
+        (ard_array != NULL) &&
+        (*ard_array != NULL))
+      {
+      if ((*ard_array)[req->req_id].node_list.length() != 0)
+        (*ard_array)[req->req_id].node_list += ',';
+
+      (*ard_array)[req->req_id].node_list += pnode->nd_name;
+
+      if (req->ppn > (*ard_array)[req->req_id].ppn)
+        (*ard_array)[req->req_id].ppn = req->ppn;
+      }
+    }
+
+  all_reqs->total_nodes--;
+  req->nodes--;
+  } /* END record_fitting_node */
+
+
+
+/*
+ * select_nodes_using_hostlist()
+ *
+ * This function assumes that the spec for this job run request comes in the form
+ * host:ppn[+host2:ppn[...]] and simply finds each node in this list. This 
+ * becomes O(N) with respect to the number of nodes in the job, whereas the 
+ * traditional method is O(N) with respect to the number of nodes in the system.
+ * In most cases, using this method will beome much faster.
+ *
+ * @pre-cond: all_reqs, naji, eligible_nodes, spec, and first_node_name must all
+ * be valid pointers.
+ * @post-cond: the nodes in the list are saved in naji to be added for the job later
+ */
+
+int select_nodes_using_hostlist(
+    
+  complete_spec_data *all_reqs,        /* I */
+  node_job_add_info  *naji,            /* O */
+  int                *eligible_nodes,  /* O */
+  const char         *spec,            /* I */
+  alps_req_data     **ard_array,       /* O (optional) */
+  int                 first_node_id,   /* I */
+  int                 num_alps_reqs,   /* I */
+  enum job_types      job_type,        /* I */
+  char               *ProcBMStr,       /* I (optional) */
+  bool                job_is_exclusive)
+
+  {
+  struct pbsnode      *pnode;
+  char                 log_buf[LOCAL_LOG_BUF_SIZE];
+  int                  num = 0;
+  
+  for (int i = 0; i < all_reqs->num_reqs; i++)
+    {
+    single_spec_data *req = all_reqs->reqs + i;
+
+    // must have a property and name specified for each 
+    if ((req->prop == NULL) ||
+        (req->prop->name == NULL))
+      {
+      snprintf(log_buf, sizeof(log_buf), "Spec '%s' doesn't have a node name for all entries", spec);
+      log_err(-1, __func__, log_buf);
+
+      return(-1);
+      }
+
+    pnode = find_nodebyname(req->prop->name);
+
+    // couldn't find the specified node 
+    if (pnode == NULL)
+      {
+      snprintf(log_buf, sizeof(log_buf), "Node '%s' not found", req->prop->name);
+      log_err(-1, __func__, log_buf);
+
+      return(-2);
+      }
+    
+    if (node_is_spec_acceptable(pnode, req, ProcBMStr, eligible_nodes,job_is_exclusive) == false)
+      {
+      snprintf(log_buf, sizeof(log_buf), "Requested node '%s' is not currently available", req->prop->name);
+      log_err(-1, __func__, log_buf);
+      unlock_node(pnode, __func__, NULL, LOGLEVEL);
+      break;
+      }
+    
+    record_fitting_node(num, pnode, naji, req, first_node_id, i, num_alps_reqs, job_type, all_reqs, ard_array);
+
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+    }
+
+  return(num);
+  } /* END select_nodes_using_hostlist() */
+
+
+
+/*
+ * select_from_all_nodes()
+ *
+ * The traditional selecting algorithm. It iterates over every node that exists until finding the
+ * node(s) that we are searching for. This is O(N) with respect to the number of nodes in the system
+ * as each request is checked against each node at locking time.
+ *
+ * @pre-cond: all_reqs, eligible_nodes, and first_node_name must all be valid parameters
+ * @post-cond: the nodes in the list are saved in naji to be added for the job later
+ */
+
+int select_from_all_nodes(
+
+  complete_spec_data *all_reqs,        /* I */
+  node_job_add_info  *naji,            /* O (optional) */
+  int                *eligible_nodes,  /* O */
+  alps_req_data     **ard_array,       /* O (optional) */
+  int                 first_node_id,   /* I */
+  int                 num_alps_reqs,   /* I */
+  enum job_types      job_type,        /* I */
+  char               *ProcBMStr,       /* I (optional) */
+  bool                job_is_exclusive)
+
+  {
+  node_iterator   iter;
+  struct pbsnode *pnode = NULL;
+  int             num = 0;
+  
+  reinitialize_node_iterator(&iter);
+
+  /* iterate over all nodes */
+  while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
+    {
+    /* check each req against this node to see if it satisfies it */
+    for (int i = 0; i < all_reqs->num_reqs; i++)
+      {
+      single_spec_data *req = all_reqs->reqs + i;
+
+      if (req->nodes > 0)
+        {
+        if (node_is_spec_acceptable(pnode, req, ProcBMStr, eligible_nodes,job_is_exclusive) == true)
+          {
+          record_fitting_node(num, pnode, naji, req, first_node_id, i, num_alps_reqs, job_type, all_reqs, ard_array);
+
+          /* are all reqs satisfied? */
+          if (all_reqs->total_nodes == 0)
+            break;
+          }
+        }
+      }
+
+    /* are all reqs satisfied? */
+    if (all_reqs->total_nodes == 0)
+      {
+      unlock_node(pnode, __func__, NULL, LOGLEVEL);
+      break;
+      }
+    } /* END for each node */
+
+  return(num);
+  } /* select_from_all_nodes() */
+
+
+
+/*
+ * process_as_node_list()
+ * Decides whether or not a spec is a list of hosts (host:ppn+host2:ppn...) or
+ * a generic request (4:ppn=20). Returns true if it is a list of hosts, false otherwise.
+ * If naji is null - indicating we aren't running a job, simply return false.
+ *
+ * @pre-cond: spec must be a valid char *
+ * @return: true if naji is non-null and spec looks like a node list.
+ */
+
+bool process_as_node_list(
+
+  const char              *spec,
+  const node_job_add_info *naji)
+
+  {
+  if (naji == NULL)
+    return(false);
+
+  if (spec == NULL)
+    return(false);
+
+  std::string nodes(spec);
+  std::size_t pos = nodes.find("+");
+  std::string second_node;
+
+  if (pos != std::string::npos)
+    {
+    second_node = nodes.substr(pos + 1);
+    nodes.erase(pos);
+    }
+  else if (isalpha(spec[0]))
+    return(true);
+
+  pos = nodes.find(":");
+
+  if (pos != std::string::npos)
+    nodes.erase(pos);
+
+  struct pbsnode *pnode = find_nodebyname(nodes.c_str());
+
+  if (pnode != NULL)
+    {
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+
+    if (second_node.size() == 0)
+      return(true);
+
+    if ((pos = second_node.find("+")) != std::string::npos)
+      second_node.erase(pos);
+
+    if ((pos = second_node.find(":")) != std::string::npos)
+      second_node.erase(pos);
+
+    pnode = find_nodebyname(second_node.c_str());
+
+    if (pnode != NULL)
+      {
+      unlock_node(pnode, __func__, NULL, LOGLEVEL);
+      return(true);
+      }
+    }
+ 
+  return(false);
+  } /* process_as_node_list() */
+
+
 
 /*
  * Test a node specification.
@@ -2615,13 +3026,13 @@ int node_spec(
   char               *login_prop, /* I (optional) */
   alps_req_data     **ard_array,  /* O (optional) */
   int                *num_reqs,   /* O (optional) */
-  enum job_types     &job_type)
+  enum job_types     &job_type,
+  bool                job_is_exclusive) /* I If true job requires must be only one on node. */
 
   {
-  struct pbsnode      *pnode;
+  FUNCTION_TIMER
   char                 first_node_name[PBS_MAXHOSTNAME + 1];
-  char                *first_name_ptr;
-  node_iterator        iter;
+  int                  first_node_id;
   char                 log_buf[LOCAL_LOG_BUF_SIZE];
 
   char                *globs;
@@ -2655,6 +3066,7 @@ int node_spec(
   job_type = JOB_TYPE_normal;
 
   set_first_node_name(spec_param, first_node_name);
+  first_node_id = node_mapper.get_id(first_node_name);
   get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
 
   spec = strdup(spec_param);
@@ -2842,8 +3254,6 @@ int node_spec(
     {
     job_type = find_job_type(&all_reqs);
 
-    first_name_ptr = first_node_name;
-
     if ((job_type == JOB_TYPE_cray) ||
         (job_type == JOB_TYPE_heterogeneous))
       {
@@ -2851,7 +3261,7 @@ int node_spec(
        * we only need to assign the login when the job is run */
       if (naji != NULL)
         {
-        if (add_login_node_if_needed(&first_name_ptr, login_prop, naji) != PBSE_NONE)
+        if (add_login_node_if_needed(first_node_id, login_prop, naji) != PBSE_NONE)
           {
           snprintf(log_buf, sizeof(log_buf), 
             "Couldn't find an acceptable login node for spec '%s' with feature request '%s'",
@@ -2880,63 +3290,12 @@ int node_spec(
       }
     }
 
-  reinitialize_node_iterator(&iter);
-  pnode = NULL;
-
-  /* iterate over all nodes */
-  while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
+  if (process_as_node_list(spec_param, naji) == true)
     {
-    /* check each req against this node to see if it satisfies it */
-    for (i = 0; i < all_reqs.num_reqs; i++)
-      {
-      single_spec_data *req = all_reqs.reqs + i;
-
-      if (req->nodes > 0)
-        {
-        if (node_is_spec_acceptable(pnode, req, ProcBMStr, &eligible_nodes) == TRUE)
-          {
-          if (naji != NULL)
-            {
-            /* for heterogeneous jobs on the cray, record the external 
-             * nodes in a separate attribute */
-            if ((job_type == JOB_TYPE_heterogeneous) &&
-                (node_is_external(pnode) == TRUE))
-              save_node_for_adding(naji, pnode, req, first_node_name, TRUE, i+1);
-            else
-              save_node_for_adding(naji, pnode, req, first_node_name, FALSE, i+1);
-
-            if ((num_alps_reqs > 0) &&
-                (ard_array != NULL) &&
-                (*ard_array != NULL))
-              {
-              if ((*ard_array)[req->req_id].node_list.length() != 0)
-                (*ard_array)[req->req_id].node_list += ',';
-
-              (*ard_array)[req->req_id].node_list += pnode->nd_name;
-
-              if (req->ppn > (*ard_array)[req->req_id].ppn)
-                (*ard_array)[req->req_id].ppn = req->ppn;
-              }
-            }
-
-          /* decrement needed nodes */
-          all_reqs.total_nodes--;
-          req->nodes--;
-    
-          /* are all reqs satisfied? */
-          if (all_reqs.total_nodes == 0)
-            break;
-          }
-        }
-      }
-
-    /* are all reqs satisfied? */
-    if (all_reqs.total_nodes == 0)
-      {
-      unlock_node(pnode, __func__, NULL, LOGLEVEL);
-      break;
-      }
-    } /* END for each node */
+    select_nodes_using_hostlist(&all_reqs, naji, &eligible_nodes, spec, ard_array, first_node_id, num_alps_reqs, job_type, ProcBMStr,job_is_exclusive);
+    }
+  else
+    select_from_all_nodes(&all_reqs, naji, &eligible_nodes, ard_array, first_node_id, num_alps_reqs, job_type, ProcBMStr,job_is_exclusive);
 
   for (i = 0; i < all_reqs.num_reqs; i++)
     if (all_reqs.reqs[i].prop != NULL)
@@ -3109,7 +3468,7 @@ int node_satisfies_request(
     return(BM_ERROR);
 
   /* nodes are exclusive when we're using bitmaps */
-  if (pnode->nd_state != INUSE_FREE)
+  if ((pnode->nd_state != INUSE_FREE)||(pnode->nd_power_state != POWER_STATE_RUNNING))
     return(FALSE);
 
   BMLen = strlen(ProcBMStr);
@@ -3188,7 +3547,7 @@ job_reservation_info *reserve_node(
   job_usage_info *jui = new job_usage_info(pjob->ji_qs.ji_jobid);
     
   jui->est = node_info->est;
-  snprintf(node_info->node_name, sizeof(node_info->node_name), "%s", pnode->nd_name);
+  node_info->node_id = pnode->nd_id;
   node_info->port = pnode->nd_mom_rm_port;
   pnode->nd_job_usages.push_back(jui);
     
@@ -3678,7 +4037,7 @@ job_reservation_info *place_subnodes_in_hostlist(
     job_usage_info *jui = new job_usage_info(pjob->ji_qs.ji_jobid);
     jui->est = node_info->est;
     
-    snprintf(node_info->node_name, sizeof(node_info->node_name), "%s", pnode->nd_name);
+    node_info->node_id = pnode->nd_id;
     pnode->nd_job_usages.push_back(jui);
     
     if ((pnode->nd_slots.get_number_free() <= 0) ||
@@ -3796,11 +4155,90 @@ int translate_howl_to_string(
 
 
 
+/*
+ * populate_range_string_from_slot_tracker()
+ * 
+ * @post-cond: range_str is populated with a string representing the range of
+ * occupied execution slots on in the job reservation info object.
+ * For example, if slots 0, 2, 3, 4, and 5 and occupied the string should be 0,2-5
+ */
+
+void populate_range_string_from_slot_tracker(
+
+  execution_slot_tracker &est,
+  std::string            &range_str)
+
+  {
+  int               est_index;
+  int               prev_est_index = -1;
+  bool              consecutive_indices = false;
+  int               est_iterator = -1;
+  char              numbuf[10];
+
+  range_str.clear();
+    
+  while ((est_index = est.get_next_occupied_index(est_iterator)) != -1)
+    {
+    if (consecutive_indices == false)
+      {
+      if (range_str.size() == 0)
+        {
+        snprintf(numbuf, sizeof(numbuf), "%d", est_index);
+        range_str += numbuf;
+        }
+      else
+        {
+        if (prev_est_index == est_index - 1)
+          consecutive_indices = true;
+        else
+          {
+          snprintf(numbuf, sizeof(numbuf), ",%d", est_index);
+          range_str += numbuf;
+          }
+        }
+      }
+    else
+      {
+      // currently iterating over consecutive indices
+      if (prev_est_index != est_index - 1)
+        {
+        snprintf(numbuf, sizeof(numbuf), "-%d", prev_est_index);
+        range_str += numbuf;
+        consecutive_indices = false;
+        snprintf(numbuf, sizeof(numbuf), ",%d", est_index);
+        range_str += numbuf;
+        }
+      }
+      
+    prev_est_index = est_index;
+    }
+
+  if (consecutive_indices == true)
+    {
+    snprintf(numbuf, sizeof(numbuf), "-%d", prev_est_index);
+    range_str += numbuf;
+    }
+  } /* END populate_range_string_from_slot_tracker() */
+
+
+
+/*
+ * translate_job_reservation_info_to_string()
+ *
+ * takes a vector of job_reservation_info objects and turns them into an exec_host list.
+ * This list is in the format host1/range_str1[+host2/range_str2[+...]]
+ * range_str is in the format of digit1[-digit2][,digit3[-digit4]...
+ *
+ * @post-cond: exec_host_output is populated with the contents of this list
+ * @post-cond: exec_port_output is optionally populated with a corresponding port for each
+ * entry in the host list
+ */
+
 int translate_job_reservation_info_to_string(
     
   std::vector<job_reservation_info *>  &host_info, 
   int                                  *NCount, 
-  std::stringstream                    &exec_host_output,
+  std::string                          &exec_host_output,
   std::stringstream                    *exec_port_output)
 
   {
@@ -3809,29 +4247,31 @@ int translate_job_reservation_info_to_string(
   for (int hi_index = 0; hi_index < (int)host_info.size(); hi_index++)
     {
     job_reservation_info *jri = host_info[hi_index];
-    int                   jri_index;
-    int                   jri_iterator = -1;
+    std::string           range_str;
     
     (*NCount)++;
-
-    while ((jri_index = jri->est.get_next_occupied_index(jri_iterator)) != -1)
+     
+    if (first == false)
       {
-      if (first == false)
-        {
-        exec_host_output << "+";
-
-        if (exec_port_output != NULL)
-          *exec_port_output << "+";
-        }
-
-      first = false;
-
-      exec_host_output << jri->node_name << "/" << jri_index;
+      exec_host_output += "+";
 
       if (exec_port_output != NULL)
-        *exec_port_output << jri->port;
+        *exec_port_output << "+";
       }
-    }
+
+    populate_range_string_from_slot_tracker(jri->est, range_str);
+    
+    const char *node_id = node_mapper.get_name(jri->node_id);
+
+    exec_host_output += node_id;
+    exec_host_output += "/";
+    exec_host_output  += range_str;
+
+    if (exec_port_output != NULL)
+      *exec_port_output << jri->port;
+
+    first = false;
+    } /* END for each job_reservation_info * in the vector */
 
   return(PBSE_NONE);
   } /* END translate_job_reservation_info_to_string() */
@@ -3928,7 +4368,7 @@ int build_hostlist_nodes_req(
 
   while (current != NULL)
     {
-    if ((pnode = find_nodebyname(current->node_name)) != NULL)
+    if ((pnode = find_nodebyid(current->node_id)) != NULL)
       {
       if (failure == true)
         {
@@ -4060,28 +4500,6 @@ int build_hostlist_procs_req(
 
 
 
-
-int add_to_ms_list(
-    
-  char *node_name,
-  job  *pjob)
-
-  {
-  struct pbsnode *pnode = find_nodebyname(node_name);
-
-  if (pnode != NULL)
-    {
-    pnode->nd_ms_jobs->push_back(pjob->ji_qs.ji_jobid);
-
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
-    }
-
-  return(PBSE_NONE);
-  } /* END add_to_ms_list() */
-
-
-
-
 void free_alps_req_data_array(
     
   alps_req_data *ard_array,
@@ -4166,11 +4584,10 @@ int set_nodes(
   char  *EMsg)        /* O (optional,minsize=1024) */
 
   {
+  FUNCTION_TIMER
   std::vector<job_reservation_info *> host_info;
-  std::stringstream                   exec_hosts;
+  std::string                         exec_hosts;
   std::stringstream                   exec_ports;
-/*  job_reservation_info *gpu_info  = NULL;
-  job_reservation_info *mic_info  = NULL; */
   struct howl       *gpu_list = NULL;
   struct howl       *mic_list = NULL;
 
@@ -4213,9 +4630,13 @@ int set_nodes(
 #endif /* GEOMETRY_REQUESTS */
 
   naji = (node_job_add_info *)calloc(1, sizeof(node_job_add_info));
+  naji->node_id = -1;
 
   if (pjob->ji_wattr[JOB_ATR_login_prop].at_flags & ATR_VFLAG_SET)
     login_prop = pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str;
+  bool job_is_exclusive = false;
+  if(pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET)
+    job_is_exclusive = (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long != 0);
 
   /* allocate nodes */
   if ((i = node_spec(spec,
@@ -4228,7 +4649,8 @@ int set_nodes(
                      login_prop,
                      &ard_array,
                      &num_reqs,
-                     job_type)) == 0)
+                     job_type,
+                     job_is_exclusive)) == 0)
     {
     /* no resources located, request failed */
     if (EMsg != NULL)
@@ -4268,8 +4690,10 @@ int set_nodes(
     if ((job_type != JOB_TYPE_normal) && 
         (naji->next != NULL))
       {
-      pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str = strdup(naji->node_name);
+      pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str = strdup(node_mapper.get_name(naji->node_id));
       pjob->ji_wattr[JOB_ATR_login_node_id].at_flags = ATR_VFLAG_SET;
+      pjob->ji_wattr[JOB_ATR_login_node_key].at_val.at_long = naji->node_id;
+      pjob->ji_wattr[JOB_ATR_login_node_key].at_flags = ATR_VFLAG_SET;
       }
     }
 
@@ -4329,7 +4753,7 @@ int set_nodes(
     return(rc);
     }
 
-  *rtnlist = strdup(exec_hosts.str().c_str());
+  *rtnlist = strdup(exec_hosts.c_str());
   *rtnportlist = strdup(exec_ports.str().c_str());
 
   // JOB_TYPE_normal means no component from the Cray will be used
@@ -4573,7 +4997,7 @@ int node_avail_complex(
   int            ret;
   enum job_types job_type;
 
-  ret = node_spec(spec, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, job_type);
+  ret = node_spec(spec, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, job_type,false);
 
   *navail = ret;
   *nalloc = 0;
@@ -4745,7 +5169,7 @@ int node_reserve(
 
   naji = (node_job_add_info *)calloc(1, sizeof(node_job_add_info));
 
-  if ((ret_val = node_spec(nspec, 0, 0, NULL, NULL, naji, NULL, NULL, NULL, NULL, job_type)) >= 0)
+  if ((ret_val = node_spec(nspec, 0, 0, NULL, NULL, naji, NULL, NULL, NULL, NULL, job_type,false)) >= 0)
     {
     /*
     ** Zero or more of the needed Nodes are available to be
@@ -4949,7 +5373,6 @@ void free_nodes(
   char           *exec_hosts = NULL;
   char           *host_ptr = NULL;
   char           *hostname;
-  char           *previous_hostname = NULL;
 
   if (LOGLEVEL >= 3)
     {
@@ -4969,14 +5392,6 @@ void free_nodes(
 
   while ((hostname = get_next_exec_host(&host_ptr)) != NULL)
     {
-    if ((previous_hostname) != NULL)
-      {
-      if (!strcmp(hostname, previous_hostname))
-        continue;
-      }
-
-    previous_hostname = hostname;
-
     if ((pnode = find_nodebyname(hostname)) != NULL)
       {
       remove_job_from_node(pnode, pjob->ji_qs.ji_jobid);
@@ -5044,21 +5459,29 @@ void set_one_old(
   job  *pjob)
 
   {
-  int             index;
+  int             first;
+  int             last;
 
   struct pbsnode *pnode;
   char           *pc;
+  char           *dash;
   long            cray_enabled = FALSE;
 
   if ((pc = strchr(name, (int)'/')))
     {
-    index = atoi(pc + 1);
+    first = strtol(pc + 1, &dash, 10);
 
     *pc = '\0';
+
+    if (*dash == '-')
+      last = strtol(dash + 1, NULL, 10);
+    else
+      last = first;
     }
   else
     {
-    index = 0;
+    first = 0;
+    last = first;
     }
 
   get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
@@ -5074,7 +5497,7 @@ void set_one_old(
       {
       if (pnode->parent == alps_reporter)
         {
-        while (index >= pnode->nd_slots.get_total_execution_slots())
+        while (last >= pnode->nd_slots.get_total_execution_slots())
           {
           add_execution_slot(pnode);
           }
@@ -5095,10 +5518,14 @@ void set_one_old(
         {
         found = true;
 
-        while (index >= jui->est.get_total_execution_slots())
+        while (last >= jui->est.get_total_execution_slots())
           jui->est.add_execution_slot();
-        jui->est.mark_as_used(index);
-        pnode->nd_slots.mark_as_used(index);
+
+        for (int index = first; index <= last; index++)
+          {
+          jui->est.mark_as_used(index);
+          pnode->nd_slots.mark_as_used(index);
+          }
         }
       }
 
@@ -5106,10 +5533,15 @@ void set_one_old(
       {
       job_usage_info *jui = new job_usage_info(pjob->ji_qs.ji_jobid);
         
-      while (index >= jui->est.get_total_execution_slots())
+      while (last >= jui->est.get_total_execution_slots())
         jui->est.add_execution_slot();
-      jui->est.mark_as_used(index);
-      pnode->nd_slots.mark_as_used(index);
+
+      for (int index = first; index <= last; index++)
+        {
+        jui->est.mark_as_used(index);
+        pnode->nd_slots.mark_as_used(index);
+        }
+
       pnode->nd_job_usages.push_back(jui);
       }
 

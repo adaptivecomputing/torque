@@ -84,7 +84,7 @@ int insert_into_queue_recycler(
   q_recycler.queues.lock();
   if (q_recycler.queues.count() >= MAX_RECYCLE_QUEUES)
     {
-    enqueue_threadpool_request(remove_some_recycle_queues,NULL);
+    enqueue_threadpool_request(remove_some_recycle_queues, NULL, task_pool);
     }
   q_recycler.queues.unlock();
 

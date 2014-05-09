@@ -18,7 +18,9 @@
 #include "net_connect.h" /* pbs_net_t */
 #include "queue.h" /* all_queues, pbs_queue */
 #include "user_info.h"
+#include "id_map.hpp"
 
+threadpool_t *task_pool;
 int scheduler_sock=0;
 int scheduler_jobct = 0;
 bool auto_send_hierarchy = true;
@@ -197,10 +199,8 @@ void job_clone_wt(void *cloned_id)
   exit(1);
   }
 
-void start_request_pool()
+void start_request_pool(threadpool_t *tp)
   {
-  fprintf(stderr, "The call to start_request_pool needs to be mocked!!\n");
-  exit(1);
   }
 
 char *pbs_get_server_list(void)
@@ -517,7 +517,7 @@ int array_save(job_array *pa)
   return(0);
   }
 
-int add_hello_after(hello_container *hc, char *node_name, int index)
+int add_hello_after(hello_container *hc, int node_id, int index)
   {
   fprintf(stderr, "The call to add_hello_after needs to be mocked!!\n");
   exit(1);
@@ -526,7 +526,8 @@ int add_hello_after(hello_container *hc, char *node_name, int index)
 int enqueue_threadpool_request(
 
   void *(*func)(void *),
-  void *arg)
+  void *arg,
+  threadpool_t *tp)
 
   {
   return(0);
@@ -652,3 +653,5 @@ void parse_mom_hierarchy(int fds)
   {
   mh->paths->push_back(new mom_levels());
   }
+
+id_map::id_map() {}

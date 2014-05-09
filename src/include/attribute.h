@@ -156,6 +156,21 @@ typedef struct svrattrl svrattrl;
  * flag field of the definition.
  */
 
+enum cpu_frequency_type
+  {
+  P0 = 0,P1,P2,P3,P4,P5,P6,P7,P8,P9,P10,P11,P12,P13,P14,P15,
+  Performance,PowerSave,OnDemand,Conservative,UserSpace,
+  AbsoluteFrequency,
+  Invalid
+  };
+
+
+struct cpu_frequency_value
+  {
+  unsigned int frequency_type;
+  unsigned long mhz;
+  };
+
 struct size_value
   {
   unsigned long atsv_num; /* numeric part of a size value */
@@ -184,7 +199,8 @@ union attr_val    /* the attribute value */
 
   struct  pbsnode      *at_jinfo; /* ptr to node's job info  */
   short        at_short; /* short int; node's state */
-  struct timeval	at_timeval; 
+  struct timeval	at_timeval;
+  struct cpu_frequency_value at_frequency;
   };
 
 
@@ -245,6 +261,7 @@ typedef struct attribute_def attribute_def;
 #define ATR_TYPE_SHORT   10 /* short integer    */
 #define ATR_TYPE_JINFOP  13 /* struct jobinfo*  */
 #define ATR_TYPE_TV		 14 /* struct timeval */
+#define ATR_TYPE_FREQ   15 /* CPU frequency */
 
 /* Defines for  Flag field in attribute_def         */
 
@@ -373,6 +390,8 @@ int  decode_uacl(pbs_attribute *patr, const char *name, const char *rn, const ch
 int  decode_unkn(pbs_attribute *patr, const char *name, const char *rn, const char *val, int);
 int  decode_tv(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int);
 int  decode_nppcu(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int);
+int  decode_frequency(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm);
+
  
 int encode_b(pbs_attribute *attr, tlist_head *phead, const char *atname,
                            const char *rsname, int mode, int perm);
@@ -402,6 +421,11 @@ int encode_hold(pbs_attribute *attr, tlist_head *phead, const char *atname,
                              const char *rsname, int mode, int perm);
 int encode_tv(pbs_attribute *attr, tlist_head *phead, const char *atname,
 							const char *rsname, int mode, int perm);
+int encode_frequency(pbs_attribute *attr, tlist_head *phead, const char *atname,
+                            const char *rsname, int mode, int perm);
+void from_frequency(struct cpu_frequency_value *, char *);
+
+
 
 
 extern int set_b(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
@@ -417,6 +441,7 @@ extern int set_uacl(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op)
 extern int set_unkn(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
 extern int set_depend(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
 extern int set_tv(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op);
+extern int set_frequency(struct pbs_attribute *attr, struct pbs_attribute *newAttr, enum batch_op op);
 
 enum compare_types { LESS, EQUAL, GREATER, NOT_COMPARED };
 
@@ -433,7 +458,9 @@ extern int comp_resc2(pbs_attribute *, pbs_attribute *, int, char *, enum compar
 extern int comp_unkn(pbs_attribute *, pbs_attribute *);
 extern int comp_depend(pbs_attribute *, pbs_attribute *);
 extern int comp_hold(pbs_attribute *, pbs_attribute *);
-int comp_tv(struct pbs_attribute *attr, struct pbs_attribute *with);
+extern int comp_tv(struct pbs_attribute *attr, struct pbs_attribute *with);
+extern int comp_frequency(struct pbs_attribute *attr, struct pbs_attribute *with);
+
 
 extern int action_depend(pbs_attribute *, void *, int);
 
@@ -458,25 +485,26 @@ extern int   save_acl(pbs_attribute *, attribute_def *,  const char *, const cha
 extern int   save_attr(attribute_def *, pbs_attribute *, int, int, char *, size_t *, size_t);
 extern int   save_attr_xml(attribute_def *, pbs_attribute *, int, int);
 extern int   write_buffer(char *,int,int);
-extern int   size_to_str(struct size_value,char *,int);
-extern int   attr_to_str(std::string& str, attribute_def *,struct pbs_attribute,int);
-extern int   str_to_attr(char *,char *,struct pbs_attribute *,struct attribute_def *);
 
 extern int      encode_state(pbs_attribute *, tlist_head *, const char *, const char *, int, int);
+extern int      encode_power_state(pbs_attribute *, tlist_head *, const char *, const char *, int, int);
 extern int      encode_props(pbs_attribute*, tlist_head*, const char*, const char*, int, int);
 extern int      encode_jobs(pbs_attribute*, tlist_head*, const char*, const char*, int, int);
 extern int      encode_ntype(pbs_attribute*, tlist_head*, const char*, const char*, int, int);
 extern int      decode_state(pbs_attribute*, const char*, const char*, const char*, int);
+extern int      decode_power_state(pbs_attribute*, const char*, const char*, const char*, int);
 extern int      decode_props(pbs_attribute*, const char*, const char*, const char*, int);
 extern int      decode_ntype(pbs_attribute*, const char*, const char*, const char*, int);
 extern int      decode_null(pbs_attribute*, const char*, const char*, const char*, int);
 extern int      comp_null(pbs_attribute*, pbs_attribute*);
 extern int      count_substrings(char*, int*);
 extern int      set_node_state(pbs_attribute*, pbs_attribute*, enum batch_op);
+extern int      set_power_state(pbs_attribute*, pbs_attribute*, enum batch_op);
 extern int      set_node_ntype(pbs_attribute*, pbs_attribute*, enum batch_op);
 extern int      set_node_props(pbs_attribute*, pbs_attribute*, enum batch_op);
 extern int      set_null(pbs_attribute*, pbs_attribute*, enum batch_op);
 extern int      node_state(pbs_attribute*, void*, int);
+extern int      node_power_state(pbs_attribute*, void*, int);
 extern int      node_np_action(pbs_attribute*, void*, int);
 extern int      node_mom_port_action(pbs_attribute*, void*, int);
 extern int      node_mom_rm_port_action(pbs_attribute*, void*, int);
@@ -502,6 +530,10 @@ extern int 		job_radix_action (pbs_attribute *new_attr, void *pobj, int actmode)
 extern int  decode_tokens(pbs_attribute *, const char *, const char *, const char *, int);
 
 int timeval_subtract(struct timeval *result, struct timeval *x, struct timeval *y);
+
+int size_to_str(struct size_value szv, char *out, int space);
+int attr_to_str(std::string &ds, attribute_def *at_def, pbs_attribute attr, bool XML);
+int str_to_attr(const char *name, char *val, pbs_attribute *attr, struct attribute_def *padef, int limit);
 
 /* "type" to pass to acl_check() */
 #define ACL_Host      1

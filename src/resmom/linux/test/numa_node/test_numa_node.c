@@ -82,6 +82,7 @@ START_TEST(test_recover_reservation)
   }
 END_TEST
 
+
 START_TEST(test_parse_cpu_string)
   {
   numa_node nn;

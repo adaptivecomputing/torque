@@ -317,8 +317,9 @@ char *get_correct_jobname(
 job *find_job_by_array(
     
   all_jobs *aj,
-  char    *job_id,
-  int     get_subjob)
+  char     *job_id,
+  int       get_subjob,
+  bool      locked)
 
   {
   job *pj = NULL;
@@ -334,13 +335,15 @@ job *find_job_by_array(
     return(NULL);
     }
 
-  aj->lock();
+  if (locked == false)
+    aj->lock();
   
   pj = aj->find(job_id);
   if (pj != NULL)
     lock_ji_mutex(pj, __func__, NULL, LOGLEVEL);
-  
-  aj->unlock();
+
+  if (locked == false)
+    aj->unlock();
   
   if (pj != NULL)
     {
@@ -436,7 +439,7 @@ job *svr_find_job(
     /* if we're searching for the external we want find_job_by_array to 
      * return the parent, but if we're searching for the cray subjob then
      * we want find_job_by_array to return the sub job */
-    pj = find_job_by_array(&alljobs, comp, (dash != NULL) ? FALSE : get_subjob);
+    pj = find_job_by_array(&alljobs, comp, (dash != NULL) ? FALSE : get_subjob, false);
     }
 
   /* when remotely routing jobs, they are removed from the 
@@ -446,7 +449,7 @@ job *svr_find_job(
   if (pj == NULL)
     {
     /* see the comment on the above call to find_job_by_array() */
-    pj = find_job_by_array(&array_summary, comp, (dash != NULL) ? FALSE : get_subjob);
+    pj = find_job_by_array(&array_summary, comp, (dash != NULL) ? FALSE : get_subjob, false);
     }
 
   if (at)
@@ -786,23 +789,27 @@ int  remove_job(
     }
 
   if (LOGLEVEL >= 10)
-    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
+
   if (aj->trylock())
     {
+    char jobid[PBS_MAXSVRJOBID+1];
+    snprintf(jobid, sizeof(jobid), "%s", pjob->ji_qs.ji_jobid);
+
     unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     aj->lock();
-    lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
-    if (pjob->ji_being_recycled == TRUE)
+    if ((pjob = find_job_by_array(&alljobs, jobid, TRUE, true)) == NULL)
       {
-      aj->unlock();
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-      return(PBSE_JOB_RECYCLED);
+      rc = PBSE_JOBNOTFOUND;
       }
     }
 
-  if (!aj->remove(pjob->ji_qs.ji_jobid))
-    rc = THING_NOT_FOUND;
+  if (rc == PBSE_NONE)
+    {
+    if (!aj->remove(pjob->ji_qs.ji_jobid))
+      rc = THING_NOT_FOUND;
+    }
 
   aj->unlock();
 

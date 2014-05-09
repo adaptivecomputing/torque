@@ -14,6 +14,7 @@
 #include "dynamic_string.h"
 #include "user_info.h"
 #include "mutex_mgr.hpp"
+#include "threadpool.h"
 
 bool exit_called = false;
 const char *PJobSubState[10];
@@ -33,6 +34,7 @@ struct server server;
 const char *msg_daemonname = "unset";
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 user_info_holder users;
+threadpool_t *task_pool;
 
 
 int setup_array_struct(job *pjob)
@@ -293,7 +295,8 @@ dynamic_string *get_dynamic_string(int initial_size, const char *str)
 int enqueue_threadpool_request(
 
   void *(*func)(void *),
-  void *arg)
+  void *arg,
+  threadpool_t *tp)
 
   {
   return(0);
@@ -395,7 +398,16 @@ const char *add_std_filename(
   return "stdfilename";
   }
 
+job *find_job_by_array(all_jobs *aj, char *jobid, int get_subjob, bool locked)
+  {
+  if (!strcmp(jobid, "1.napali"))
+    {
+    job *pj = (job *)calloc(1, sizeof(job));
+    strcpy(pj->ji_qs.ji_fileprefix, "1.napali");
+    return(pj);
+    }
 
-
+  return(NULL);
+  }
 
 

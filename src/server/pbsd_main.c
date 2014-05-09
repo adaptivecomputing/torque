@@ -142,6 +142,7 @@
 #include "ji_mutex.h"
 #include "job_route.h" /* queue_route */
 #include "exiting_jobs.h"
+#include "server_comm.h"
 
 #define TASK_CHECK_INTERVAL      10
 #define HELLO_WAIT_TIME          600
@@ -157,7 +158,6 @@ extern void job_log_roll(int max_depth);
 extern int  pbsd_init(int);
 extern void shutdown_ack();
 extern void tcp_settimeout(long);
-extern void poll_job_task(struct work_task *);
 extern int  schedule_jobs(void);
 extern int  notify_listeners(void);
 extern void svr_shutdown(int);
@@ -191,9 +191,6 @@ extern int             svr_chngNodesfile;
 extern int             svr_totnodes;
 extern all_jobs        alljobs;
 extern int             run_change_logs;
-
-extern pthread_mutex_t *poll_job_task_mutex;
-extern int max_poll_job_tasks;
 
 /* External Functions */
 
@@ -240,6 +237,7 @@ char                   *path_nodes;
 char                   *path_mom_hierarchy;
 char                   *path_nodes_new;
 char                   *path_nodestate;
+char                   *path_nodepowerstate;
 char                   *path_nodenote;
 char                   *path_nodenote_new;
 char                   *path_checkpoint;
@@ -390,139 +388,6 @@ static void need_y_response(
 
   return;
   }  /* END need_y_response() */
-
-
-
-int process_pbs_server_port(
-     
-  int sock,
-  int is_scheduler_port,
-  long *args)
- 
-  {
-  int              proto_type;
-  int              rc = PBSE_NONE;
-  int              version;
-  char             log_buf[LOCAL_LOG_BUF_SIZE];
-  struct tcp_chan *chan = NULL;
-   
-  if ((chan = DIS_tcp_setup(sock)) == NULL)
-    {
-    return(PBSE_MEM_MALLOC);
-    }
-
-  proto_type = disrui_peek(chan,&rc);
-  
-  switch (proto_type)
-    {
-    case PBS_BATCH_PROT_TYPE:
-      
-      rc = process_request(chan);
-      
-      break;
-      
-    case IS_PROTOCOL:
-
-      version = disrsi(chan, &rc);
-      
-      if (rc != DIS_SUCCESS)
-        {
-        log_err(-1,  __func__, "Cannot read version - skipping this request.\n");
-        rc = PBSE_SOCKET_CLOSE; 
-        break;
-        }
-      
-      rc = svr_is_request(chan, version, args);
-      
-      break;
-
-    default:
-      {
-      struct sockaddr     s_addr;
-      struct sockaddr_in *addr;
-      socklen_t           len = sizeof(s_addr);
-
-      if (getpeername(sock, &s_addr, &len) == 0)
-        {
-        addr = (struct sockaddr_in *)&s_addr;
-        
-        if (proto_type == 0)
-          {
-          /* 
-           * Don't log error if close is on scheduler port.  Scheduler is
-           * responsible for closing the connection
-           */
-          if (!is_scheduler_port)
-            {
-            if (LOGLEVEL >= 8)
-              {
-              snprintf(log_buf, sizeof(log_buf),
-                "proto_type: %d: Socket (%d) close detected from %s", proto_type, sock, netaddr(addr));
-              log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
-              }
-            }
-
-          if (chan->IsTimeout)
-            {
-            chan->IsTimeout = 0;
-            rc = PBSE_TIMEOUT;
-            }
-          else
-	    rc = PBSE_SOCKET_CLOSE;
-          }
-        else
-          {
-          snprintf(log_buf,sizeof(log_buf),
-              "Socket (%d) Unknown protocol %d from %s", sock, proto_type, netaddr(addr));
-          log_err(-1, __func__, log_buf);
-          rc = PBSE_SOCKET_DATA;
-          }
-        }
-      else
-        rc = PBSE_SOCKET_CLOSE;
-
-      break;
-      }
-    }
-
-  if (chan != NULL)
-    DIS_tcp_cleanup(chan);
-
-  return(rc);
-  }  /* END process_pbs_server_port() */
-
-
-
-
-void *start_process_pbs_server_port(
-    
-  void *new_sock)
-
-  {
-  long *args = (long *)new_sock;
-  int sock;
-  int rc = PBSE_NONE;
- 
-  sock = (int)args[0];
-
-  while ((rc != PBSE_SOCKET_DATA) &&
-         (rc != PBSE_SOCKET_INFORMATION) &&
-         (rc != PBSE_INTERNAL) &&
-         (rc != PBSE_SYSTEM) &&
-         (rc != PBSE_MEM_MALLOC) &&
-         (rc != PBSE_SOCKET_CLOSE))
-    {
-    netcounter_incr();
-
-    rc = process_pbs_server_port(sock, FALSE, args);
-    }
-
-  free(new_sock);
-  close_conn(sock, FALSE);
-
-  /* Thread exit */
-  return(NULL);
-  }
  
 
 
@@ -1022,8 +887,8 @@ void parse_command_line(
 
 /* Globals to thread the accept port */
 pthread_t      accept_thread_id = -1;
-int            accept_thread_active = FALSE;
-int            route_thread_active = FALSE;
+bool           accept_thread_active = false;
+bool           route_thread_active = false;
 pthread_t      route_retry_thread_id = -1;
 
 
@@ -1112,7 +977,7 @@ static int start_hot_jobs(void)
         PBSEVENT_SYSTEM,
         PBS_EVENTCLASS_JOB,
         pjob->ji_qs.ji_jobid,
-        (char *)"attempting to hot start job");
+        "attempting to hot start job");
 
       svr_startjob(pjob, NULL, NULL, NULL);
 
@@ -1135,7 +1000,7 @@ void send_any_hellos_needed()
 
   /* send hierarchy using threadpool */
   while ((hi = pop_hello(&hellos)) != NULL)
-    enqueue_threadpool_request(send_hierarchy_threadtask, hi);
+    enqueue_threadpool_request(send_hierarchy_threadtask, hi, task_pool);
 
   /* re-insert any failures */
   while ((hi = pop_hello(&failures)) != NULL)
@@ -1151,7 +1016,7 @@ void route_listener_cleanup(
   void *vp)
 
   {
-  route_thread_active = FALSE;
+  route_thread_active = false;
   } /* END route_listener_cleanup() */
 
 
@@ -1169,7 +1034,7 @@ void *handle_queue_routing_retries(
   char       log_buf[LOCAL_LOG_BUF_SIZE];
   pthread_attr_t  routing_attr;
  
-  route_thread_active = TRUE;
+  route_thread_active = true;
   pthread_cleanup_push(route_listener_cleanup, vp);
 
   if (pthread_attr_init(&routing_attr) != 0)
@@ -1275,7 +1140,7 @@ void accept_listener_cleanup(
   void *vp)
 
   {
-  accept_thread_active = FALSE;
+  accept_thread_active = false;
   } /* END accept_listener_cleanup() */
 
 
@@ -1296,7 +1161,7 @@ void *start_accept_listener(
   else
     strncpy(server_name_trimmed, server_name, colon_pos - server_name);
 
-  accept_thread_active = TRUE;
+  accept_thread_active = true;
   pthread_cleanup_push(accept_listener_cleanup, vp);
 
   start_listener_addrinfo(server_name_trimmed, pbs_server_port_dis, start_process_pbs_server_port);
@@ -1313,7 +1178,6 @@ void start_accept_thread()
 
   {
   pthread_attr_t accept_attr;
-  accept_thread_id = -1;
   if ((pthread_attr_init(&accept_attr)) != 0)
     {
     perror("pthread_attr_init failed. Could not start accept thread");
@@ -1388,7 +1252,7 @@ void start_exiting_retry_thread()
 
 void monitor_accept_thread()
   {
-  if (accept_thread_active == FALSE)
+  if (accept_thread_active == false)
     start_accept_thread();
   } /* END monitor_accept_thread() */
 
@@ -1397,7 +1261,7 @@ void monitor_accept_thread()
 
 void monitor_route_retry_thread()
   {
-  if (route_thread_active == FALSE)
+  if (route_thread_active == false)
     start_routing_retry_thread();
   } /* END monitor_route_retry_thread() */
 
@@ -1517,7 +1381,7 @@ void main_loop(void)
       }
 
     if (time_now - last_task_check_time > TASK_CHECK_INTERVAL)
-      enqueue_threadpool_request(check_tasks, NULL);
+      enqueue_threadpool_request(check_tasks, NULL, task_pool);
 
     if ((disable_timeout_check == FALSE) && (time_now > update_timeout))
       {
@@ -1555,7 +1419,7 @@ void main_loop(void)
 
         server.sv_next_schedule = time_now + sched_iteration;
 
-        enqueue_threadpool_request(handle_scheduler_contact, NULL);
+        enqueue_threadpool_request(handle_scheduler_contact, NULL, task_pool);
         }
       else
         {
@@ -1625,7 +1489,8 @@ void main_loop(void)
         set_svr_attr(SRV_ATR_State, &state);
 
         /* at this point kill the threadpool */
-        destroy_request_pool();
+        destroy_request_pool(request_pool);
+        destroy_request_pool(task_pool);
         }
       }
 
@@ -1634,10 +1499,9 @@ void main_loop(void)
     get_svr_attr_l(SRV_ATR_State, &state);
     }    /* END while (*state != SV_STATE_DOWN) */
 
-  if (accept_thread_id != (pthread_t)-1)
+  if (accept_thread_active == true)
     {
     pthread_cancel(accept_thread_id);
-    accept_thread_id = (pthread_t)-1;
     }
 
   svr_save(&server, SVR_SAVE_FULL); /* final recording of server */
@@ -2063,23 +1927,6 @@ int main(
 
     exit(3);
     }
-
-  /* poll_job_task uses a mutex to protect a counter
-     that prevents the number of poll job tasks from
-     consuming all available threads */
-  poll_job_task_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  if (poll_job_task_mutex == NULL)
-    {
-    perror("pbs_server: failed to initialize poll_job_task_mutex");
-    log_err(-1, msg_daemonname, (char *)"pbs_server: failed to initialize poll_job_task_mutex");
-    exit(3);
-    }
-
-  pthread_mutex_init(poll_job_task_mutex, NULL);
-
-  max_poll_job_tasks = (int)(request_pool->tp_max_threads * 0.7) - 5;
-  if (max_poll_job_tasks <= 0)
-    max_poll_job_tasks = 1;
 
 #if (PLOCK_DAEMONS & 1)
   plock(PROCLOCK);

@@ -1,4 +1,5 @@
 #include <string>
+#include <sstream>
 #include <boost/ptr_container/ptr_vector.hpp>
 #include "license_pbs.h" /* See here for the software license */
 #include "node_manager.h"
@@ -19,11 +20,177 @@ char *get_next_exec_host(char **);
 int   job_should_be_killed(char *, struct pbsnode *);
 int   check_for_node_type(complete_spec_data *, enum node_types);
 int   record_external_node(job *, struct pbsnode *);
-void *record_reported_time(void *vp);
-int save_node_for_adding(node_job_add_info *naji,struct pbsnode *pnode,single_spec_data *req,char *first_node_name,int is_external_node,int req_rank);
+int save_node_for_adding(node_job_add_info *naji, struct pbsnode *pnode, single_spec_data *req, int first_node_id, int is_external_node, int req_rank);
 void remove_job_from_already_killed_list(struct work_task *pwt);
+bool job_already_being_killed(const char *jobid);
+void process_job_attribute_information(std::string &job_id, std::string &attributes);
+bool process_as_node_list(const char *spec, const node_job_add_info *naji);
+bool node_is_spec_acceptable(struct pbsnode *pnode, single_spec_data *spec, char *ProcBMStr, int *eligible_nodes,bool isExclusive);
+void populate_range_string_from_slot_tracker(execution_slot_tracker &est, std::string &range_str);
+int  translate_job_reservation_info_to_string(std::vector<job_reservation_info *> &host_info, int *NCount, std::string &exec_host_output, std::stringstream *exec_port_output);
 
 extern boost::ptr_vector<std::string> jobsKilled;
+
+extern int str_to_attr_count;
+extern int decode_resc_count;
+
+
+START_TEST(translate_job_reservation_info_to_stirng_test)
+  {
+  std::vector<job_reservation_info *> host_info;
+  job_reservation_info jri[5];
+  std::string          exec_host;
+  std::stringstream    exec_port;
+
+  memset(jri, 0, 5 * sizeof(job_reservation_info));
+
+  for (int i = 0; i < 5; i++)
+    {
+    for (int j = 0; j < 5; j++)
+      jri[i].est.add_execution_slot();
+    
+    jri[i].est.mark_as_used(0);
+    jri[i].est.mark_as_used(1);
+    jri[i].est.mark_as_used(2);
+
+    jri[i].port = 15002;
+    jri[i].node_id = i;
+
+    host_info.push_back(jri + i);
+    }
+
+  int count = 0;
+
+  translate_job_reservation_info_to_string(host_info, &count, exec_host, &exec_port);
+  fail_unless(exec_host == "napali0/0-2+napali1/0-2+napali2/0-2+napali3/0-2+napali4/0-2", exec_host.c_str());
+  fail_unless(exec_port.str() == "15002+15002+15002+15002+15002");
+  fail_unless(count == 5);
+  }
+END_TEST
+
+
+START_TEST(populate_range_string_from_job_reservation_info_test)
+  {
+  std::string          range_str;
+  job_reservation_info jri;
+
+  memset(&jri, 0, sizeof(jri));
+  
+  for (int i = 0; i < 8; i++)
+    jri.est.add_execution_slot();
+
+  jri.est.mark_as_used(0);
+  jri.est.mark_as_used(3);
+  jri.est.mark_as_used(4);
+  jri.est.mark_as_used(5);
+  jri.node_id = 0;
+
+  populate_range_string_from_slot_tracker(jri.est, range_str);
+  fail_unless(range_str == "0,3-5");
+
+  jri.est.mark_as_free(0);
+  populate_range_string_from_slot_tracker(jri.est, range_str);
+  fail_unless(range_str == "3-5", range_str.c_str());
+
+  jri.est.mark_as_used(0);
+  jri.est.mark_as_free(4);
+  populate_range_string_from_slot_tracker(jri.est, range_str);
+  fail_unless(range_str == "0,3,5");
+
+  jri.est.mark_as_used(1);
+  populate_range_string_from_slot_tracker(jri.est, range_str);
+  fail_unless(range_str == "0-1,3,5", range_str.c_str());
+ 
+  jri.est.mark_as_free(3);
+  populate_range_string_from_slot_tracker(jri.est, range_str);
+  fail_unless(range_str == "0-1,5");
+  }
+END_TEST
+
+
+START_TEST(node_is_spec_acceptable_test)
+  {
+  struct pbsnode   pnode;
+  single_spec_data spec;
+  int              eligible_nodes = 0;
+
+  memset(&pnode, 0, sizeof(pnode));
+  memset(&spec, 0, sizeof(spec));
+
+  spec.ppn = 10;
+
+  fail_unless(node_is_spec_acceptable(&pnode, &spec, NULL, &eligible_nodes,false) == false);
+  fail_unless(eligible_nodes == 0);
+
+  for (int i = 0; i < 10; i++)
+    pnode.nd_slots.add_execution_slot();
+    
+  pnode.nd_slots.mark_as_used(4);
+
+  fail_unless(node_is_spec_acceptable(&pnode, &spec, NULL, &eligible_nodes,false) == false);
+  fail_unless(eligible_nodes == 1);
+
+  eligible_nodes = 0;
+  pnode.nd_slots.mark_as_free(4);
+  pnode.nd_state |= INUSE_DOWN;  
+  fail_unless(node_is_spec_acceptable(&pnode, &spec, NULL, &eligible_nodes,false) == false);
+  fail_unless(eligible_nodes == 1);
+  
+  eligible_nodes = 0;
+  pnode.nd_state = INUSE_FREE;
+  fail_unless(node_is_spec_acceptable(&pnode, &spec, NULL, &eligible_nodes,false) == true);
+  fail_unless(eligible_nodes == 1);
+  }
+END_TEST
+
+
+START_TEST(process_as_node_list_test)
+  {
+  node_job_add_info naji;
+
+  fail_unless(process_as_node_list("", NULL) == false);
+  fail_unless(process_as_node_list(NULL, &naji) == false);
+
+  fail_unless(process_as_node_list("bob:ppn=10", &naji) == true);
+  fail_unless(process_as_node_list("bob:ppn=12", NULL) == false);
+
+  // cray can have numeric node names so it should attempt to find the node 2 
+  // and 10 in the following tests to know if they exist
+  fail_unless(process_as_node_list("2:ppn=10+3:ppn=10", &naji) == true);
+  fail_unless(process_as_node_list("2:ppn=10", &naji) == true);
+  fail_unless(process_as_node_list("10:ppn=10", &naji) == false);
+
+  // should now check the first two nodes so that it doesn't think things 
+  // like nodes=bob+10:ppn=10 are hostlists
+  fail_unless(process_as_node_list("bob:ppn=10+10:ppn=10", &naji) == false);
+  fail_unless(process_as_node_list("bob+10:ppn=10", &naji) == false);
+  fail_unless(process_as_node_list("bob+10", &naji) == false);
+  }
+END_TEST
+
+
+START_TEST(process_job_attribute_information_test)
+  {
+  std::string attr_str("(cput=100,vmem=100101,mem=100020)");
+  std::string jobid("2.napali");
+
+  str_to_attr_count = 0;
+  process_job_attribute_information(jobid, attr_str);
+  fail_unless(str_to_attr_count == 3);
+  fail_unless(decode_resc_count == 3);
+  }
+END_TEST
+
+
+START_TEST(job_already_being_killed_test)
+  {
+  jobsKilled.push_back(new std::string("10.napali"));
+
+  fail_unless(job_already_being_killed("1.napali") == false);
+  fail_unless(job_already_being_killed("10.napali") == true);
+  }
+END_TEST
+
 
 START_TEST(remove_job_from_already_killed_list_test)
   {
@@ -81,17 +248,6 @@ START_TEST(remove_job_from_node_test)
   fail_unless(pnode->nd_slots.get_number_free() == 10);
   remove_job_from_node(pnode, (const char *)pjob.ji_qs.ji_jobid);
   fail_unless(pnode->nd_slots.get_number_free() == 10);
-  }
-END_TEST
-
-START_TEST(record_reported_time_test)
-  {
-  job *pjob;
-
-  record_reported_time(strdup("1:tom"));
-  pjob = svr_find_job(strdup("1"), TRUE);
-
-  fail_unless(time(NULL) - pjob->ji_last_reported_time < 10);
   }
 END_TEST
 
@@ -216,6 +372,7 @@ START_TEST(node_in_exechostlist_test)
   fail_unless(node_in_exechostlist(node5, eh1) == FALSE, "blah5");
   
   fail_unless(node_in_exechostlist(node1, eh2) == FALSE, "blah6");
+  fail_unless(node_in_exechostlist(node1, eh2) == FALSE, "blah6");
   fail_unless(node_in_exechostlist(node2, eh2) == FALSE, "blah7");
   fail_unless(node_in_exechostlist(node3, eh2) == TRUE, "blah8");
   fail_unless(node_in_exechostlist(node4, eh2) == TRUE, "blah9");
@@ -242,8 +399,7 @@ START_TEST(check_for_node_type_test)
 
   fail_unless(check_for_node_type(&all_reqs, nt) == FALSE, "empty prop should always return false");
   nt = ND_TYPE_EXTERNAL;
-  fail_unless(check_for_node_type(&all_reqs, nt) == FALSE, "empty prop should always return false");
-
+  
   p.name = (char *)"bob";
   req.prop = &p;
 
@@ -262,60 +418,61 @@ END_TEST
 START_TEST(check_node_order_test)
   {
   node_job_add_info *pBase = (node_job_add_info *)calloc(1,sizeof(node_job_add_info));
-  struct pbsnode    node;
+  struct pbsnode     node;
   single_spec_data   req;
 
   memset(&req,0,sizeof(single_spec_data));
+  pBase->node_id = -1;
 
   memset(&node,0,sizeof(struct pbsnode));
-  node.nd_name = (char *)"first";
-  fail_unless(save_node_for_adding(pBase,&node,&req,(char *)"Mother Superior",0,6) == PBSE_NONE);
+  node.nd_id = 0;
+  fail_unless(save_node_for_adding(pBase,&node,&req,4,0,6) == PBSE_NONE);
 
   memset(&node,0,sizeof(struct pbsnode));
-  node.nd_name = (char *)"second";
-  fail_unless(save_node_for_adding(pBase,&node,&req,(char *)"Mother Superior",0,3) == PBSE_NONE);
+  node.nd_id = 1;
+  fail_unless(save_node_for_adding(pBase,&node,&req,4,0,3) == PBSE_NONE);
 
   memset(&node,0,sizeof(struct pbsnode));
-  node.nd_name = (char *)"third";
-  fail_unless(save_node_for_adding(pBase,&node,&req,(char *)"Mother Superior",0,11) == PBSE_NONE);
+  node.nd_id = 2;
+  fail_unless(save_node_for_adding(pBase,&node,&req,4,0,11) == PBSE_NONE);
 
   memset(&node,0,sizeof(struct pbsnode));
-  node.nd_name = (char *)"fourth";
-  fail_unless(save_node_for_adding(pBase,&node,&req,(char *)"Mother Superior",0,1) == PBSE_NONE);
+  node.nd_id = 3;
+  fail_unless(save_node_for_adding(pBase,&node,&req,4,0,1) == PBSE_NONE);
 
   memset(&node,0,sizeof(struct pbsnode));
-  node.nd_name = (char *)"Mother Superior";
-  fail_unless(save_node_for_adding(pBase,&node,&req,(char *)"Mother Superior",0,15) == PBSE_NONE);
+  node.nd_id = 4;
+  fail_unless(save_node_for_adding(pBase,&node,&req,4,0,15) == PBSE_NONE);
 
   memset(&node,0,sizeof(struct pbsnode));
-  node.nd_name = (char *)"fifth";
-  fail_unless(save_node_for_adding(pBase,&node,&req,(char *)"Mother Superior",0,4) == PBSE_NONE);
+  node.nd_id = 5;
+  fail_unless(save_node_for_adding(pBase,&node,&req,4,0,4) == PBSE_NONE);
 
   memset(&node,0,sizeof(struct pbsnode));
-  node.nd_name = (char *)"sixth";
-  fail_unless(save_node_for_adding(pBase,&node,&req,(char *)"Mother Superior",0,10) == PBSE_NONE);
+  node.nd_id = 6;
+  fail_unless(save_node_for_adding(pBase,&node,&req,4,0,10) == PBSE_NONE);
 
   memset(&node,0,sizeof(struct pbsnode));
-  node.nd_name = (char *)"seventh";
-  fail_unless(save_node_for_adding(pBase,&node,&req,(char *)"Mother Superior",0,61) == PBSE_NONE);
+  node.nd_id = 7;
+  fail_unless(save_node_for_adding(pBase,&node,&req,4,0,61) == PBSE_NONE);
 
   node_job_add_info *index = pBase;
 
-  fail_unless(strcmp(index->node_name,"Mother Superior") == 0);
+  fail_unless(index->node_id == 4);
   index = index->next;
-  fail_unless(strcmp(index->node_name,"fourth") == 0);
+  fail_unless(index->node_id == 3);
   index = index->next;
-  fail_unless(strcmp(index->node_name,"second") == 0);
+  fail_unless(index->node_id == 1);
   index = index->next;
-  fail_unless(strcmp(index->node_name,"fifth") == 0);
+  fail_unless(index->node_id == 5);
   index = index->next;
-  fail_unless(strcmp(index->node_name,"first") == 0);
+  fail_unless(index->node_id == 0);
   index = index->next;
-  fail_unless(strcmp(index->node_name,"sixth") == 0);
+  fail_unless(index->node_id == 6);
   index = index->next;
-  fail_unless(strcmp(index->node_name,"third") == 0);
+  fail_unless(index->node_id == 2);
   index = index->next;
-  fail_unless(strcmp(index->node_name,"seventh") == 0);
+  fail_unless(index->node_id == 7);
   }
 END_TEST
 
@@ -386,8 +543,13 @@ Suite *node_manager_suite(void)
 
   tc_core = tcase_create("record_external_node_test");
   tcase_add_test(tc_core, record_external_node_test);
-  tcase_add_test(tc_core, record_reported_time_test);
   tcase_add_test(tc_core, remove_job_from_node_test);
+  tcase_add_test(tc_core, job_already_being_killed_test);
+  tcase_add_test(tc_core, process_job_attribute_information_test);
+  tcase_add_test(tc_core, process_as_node_list_test);
+  tcase_add_test(tc_core, node_is_spec_acceptable_test);
+  tcase_add_test(tc_core, populate_range_string_from_job_reservation_info_test);
+  tcase_add_test(tc_core, translate_job_reservation_info_to_stirng_test);
   suite_add_tcase(s, tc_core);
 
   return(s);

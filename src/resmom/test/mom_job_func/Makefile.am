@@ -11,6 +11,7 @@ check_PROGRAMS = test_mom_job_func
 
 libmom_job_func_la_SOURCES = scaffolding.c ${PROG_ROOT}/mom_job_func.c
 libmom_job_func_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
+test_mom_job_func_LDADD = ../../../test/torque_test_lib/libtorque_test.la
 
 
 test_mom_job_func_SOURCES = test_mom_job_func.c

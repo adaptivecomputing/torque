@@ -46,6 +46,10 @@
 #include <sys/utsname.h>
 #include <dirent.h>
 #include <libxml/parser.h>
+#include <list>
+#include <string>
+#include <vector>
+#include <boost/ptr_container/ptr_vector.hpp>
 
 
 #include "libpbs.h"
@@ -91,6 +95,7 @@
 #include "mom_config.h"
 #include "mcom.h"
 #include "mom_server_lib.h" /* shutdown_to_server */
+#include "node_frequency.hpp"
 #include <string>
 #include <vector>
 #include <boost/ptr_container/ptr_vector.hpp>
@@ -112,6 +117,7 @@
 #define DEFAULT_JOB_EXIT_WAIT_TIME 600
 #define MAX_JOIN_WAIT_TIME          600
 #define RESEND_WAIT_TIME            300
+#define OBIT_STATE_RETRY_TIME       30
 
 /* Global Data Items */
 
@@ -192,8 +198,6 @@ extern struct var_table vtable; /* see start_exec.c */
 
 time_t          last_log_check;
 
-char            JobsToResend[MAX_RESEND_JOBS][PBS_MAXSVRJOBID+1];
-
 boost::ptr_vector<exiting_job_info> exiting_job_list;
 std::vector<resend_momcomm *> things_to_resend;
 
@@ -240,7 +244,6 @@ extern void     mom_server_all_diag(std::stringstream &output);
 extern void     mom_server_all_init(void);
 extern void     mom_server_all_update_stat(void);
 extern void     mom_server_all_update_gpustat(void);
-extern int      mark_for_resend(job *);
 extern int      post_epilogue(job *, int);
 extern int      mom_checkpoint_init(void);
 extern void     mom_checkpoint_check_periodic_timer(job *pjob);
@@ -3855,8 +3858,6 @@ void initialize_globals(void)
 
   MaxConnectTimeout = 10000;  /* in microseconds */
 
-  memset(JobsToResend,0,sizeof(JobsToResend));
-
   /* set the mom alias name to nothing */
   mom_alias[0] = '\0';
   lock_init();
@@ -4651,6 +4652,15 @@ int setup_program_environment(void)
     }
 
   mom_lock(lockfds, F_WRLCK); /* See if other MOMs are running */
+
+  if(multi_mom)
+    {
+	nd_frequency.invalidate(); //Do not mess with frequencies on multi-mom.
+    }
+  else
+    {
+	nd_frequency.get_base_frequencies(mom_home);
+    }
 
   /* initialize the network interface */
 
@@ -5518,50 +5528,6 @@ void examine_all_running_jobs(void)
 
 
 
-
-
-/**
- * examine_all_jobs_to_resend
- *
- * tries to resend each of the jobs that hasn't been sent yet
- */
-void examine_all_jobs_to_resend(void)
-
-  {
-  int  jindex;
-  job *pjob;
-
-  for (jindex=0;jindex < MAX_RESEND_JOBS;jindex++)
-    {
-    /* no job ptrs are stored after a NULL value */
-    if (JobsToResend[jindex][0] == '\0')
-      break;
-
-    /* skip dummy job */
-    if (JobsToResend[jindex][0] == (char)DUMMY_JOB_PTR)
-      continue;
-
-    if ((pjob = mom_find_job(JobsToResend[jindex])) == NULL)
-      {
-      /* job no longer exists, remove from re-send array */
-      JobsToResend[jindex][0] = (char)DUMMY_JOB_PTR;
-      JobsToResend[jindex][1] = '\0';
-      }
-    else if (!post_epilogue(pjob, MOM_OBIT_RETRY))
-      {
-
-      if (LOGLEVEL >= 7)
-        log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "job obit resent");
-
-      /* sent successfully, make this slot the dummy pointer */
-      JobsToResend[jindex][0] = (char)DUMMY_JOB_PTR;
-      JobsToResend[jindex][1] = '\0';
-      }
-    }
-  }  /* END examine_all_jobs_to_resend() */
-
-
-
 void resend_waiting_joins(
 
   job *pjob)
@@ -5650,6 +5616,27 @@ void check_jobs_awaiting_join_job_reply()
 
 
 
+void check_jobs_in_obit()
+
+  {
+  job    *pjob;
+  time_now = time(NULL);
+
+  for (pjob = (job *)GET_NEXT(svr_alljobs);
+       pjob != NULL;
+       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+
+    {
+    if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_PREOBIT) &&
+        (am_i_mother_superior(*pjob) == true))
+      {
+      // retry sending the obit for this job
+      post_epilogue(pjob, MOM_OBIT_RETRY);
+      }
+    }
+  }
+
+
 
 void check_jobs_in_mom_wait()
 
@@ -5698,7 +5685,7 @@ void check_exiting_jobs()
   while (exiting_job_list.size() != 0)
     {
     boost::ptr_vector<exiting_job_info>::auto_type eji = exiting_job_list.pop_back();
-    if (time_now - eji->obit_sent < 300)
+    if (time_now - eji->obit_sent < OBIT_STATE_RETRY_TIME)
       {
       /* insert this back at the front */
       exiting_job_list.insert(exiting_job_list.begin(),eji.release());
@@ -5761,56 +5748,6 @@ void kill_all_running_jobs(void)
 
   return;
   }  /* END kill_all_running_jobs() */
-
-
-
-/**
- * mark_for_resend
- *
- * used to keep track of jobs whose obits weren't sent correctly
- * marks them so they can be resent
- *
- * @param pjob - the job that should be resent
- */
-int mark_for_resend(
-
-  job *pjob) /* I */
-
-  {
-  int jindex;
-  int rc = PBSE_NONE;
-
-  if (pjob == NULL)
-    {
-    rc = PBSE_JOBNOTFOUND;
-    return(rc);
-    }
-
-  for (jindex = 0;jindex < MAX_RESEND_JOBS;jindex++)
-    {
-    if ((JobsToResend[jindex][0] == '\0') ||
-        (JobsToResend[jindex][0] == (char)DUMMY_JOB_PTR))
-      {
-      strcpy(JobsToResend[jindex], pjob->ji_qs.ji_jobid);
-
-      if (LOGLEVEL >= 7)
-        {
-        log_record(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          "marking job for resend");
-        }
-
-      rc = PBSE_NONE;
-
-      break;
-      }
-    }
-
-  return(rc);
-  }
-
 
 
 
@@ -5932,8 +5869,6 @@ void main_loop(void)
           examine_all_running_jobs();
           
           examine_all_polled_jobs();
-          
-          examine_all_jobs_to_resend();
           }
         }
       }
@@ -5962,6 +5897,8 @@ void main_loop(void)
     check_jobs_awaiting_join_job_reply();
 
     check_jobs_in_mom_wait();
+
+    check_jobs_in_obit();
 
     if (exiting_tasks)
       scan_for_exiting();

@@ -10,8 +10,6 @@
 #include <vector>
 #include <boost/ptr_container/ptr_vector.hpp>
 
-struct pbsnode *tfind_addr(const u_long key, uint16_t port, char *job_momname);
-
 void update_node_state(struct pbsnode *np, int newstate);
 
 int check_node_for_job(struct pbsnode *pnode, char *jobid);
@@ -39,6 +37,10 @@ int svr_is_request(struct tcp_chan *chan, int version, long *args);
 void *write_node_state_work(void *vp);
 
 void write_node_state(void);
+
+void *write_node_power_state_work(void *vp);
+
+void write_node_power_state(void);
 
 int write_node_note(void);
 

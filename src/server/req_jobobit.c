@@ -886,6 +886,7 @@ int handle_returnstd(
   char           log_buf[LOCAL_LOG_BUF_SIZE+1];
   pbs_queue     *pque;
   int            handle = -1;
+  unsigned int   dummy;
   char           job_id[PBS_MAXSVRJOBID+1];
   char           job_fileprefix[PBS_JOBBASE+1];
   unsigned long  job_momaddr;
@@ -905,7 +906,7 @@ int handle_returnstd(
     goto handle_returnstd_cleanup;
     }
     
-  job_momname = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+  job_momname = parse_servername(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, &dummy);
   if (job_momname == NULL)
     {
     rc = PBSE_MEM_MALLOC;
@@ -1104,17 +1105,18 @@ int handle_stageout(
   batch_request *preq)
 
   {
-  int        rc = PBSE_NONE;
-  int        IsFaked = 0;
-  int        spool_file_exists;
-  char       log_buf[LOCAL_LOG_BUF_SIZE+1];
-  char       namebuf[MAXPATHLEN + 1];
-  char      *namebuf2;
-  int        handle = -1;
-  char       job_id[PBS_MAXSVRJOBID+1];
-  char      *job_momname = NULL;
-  char       job_fileprefix[PBS_JOBBASE+1];
-  mutex_mgr  job_mutex(pjob->ji_mutex, true);
+  int           rc = PBSE_NONE;
+  int           IsFaked = 0;
+  int           spool_file_exists;
+  char          log_buf[LOCAL_LOG_BUF_SIZE+1];
+  char          namebuf[MAXPATHLEN + 1];
+  char         *namebuf2;
+  int           handle = -1;
+  unsigned int  dummy;
+  char          job_id[PBS_MAXSVRJOBID+1];
+  char         *job_momname = NULL;
+  char          job_fileprefix[PBS_JOBBASE+1];
+  mutex_mgr     job_mutex(pjob->ji_mutex, true);
 
   if (LOGLEVEL >= 10)
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
@@ -1123,7 +1125,7 @@ int handle_stageout(
   snprintf(job_fileprefix, sizeof(job_fileprefix), "%s", pjob->ji_qs.ji_fileprefix);
   
   if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
-    job_momname = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+    job_momname = parse_servername(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, &dummy);
 
   if (job_momname == NULL)
     {
@@ -1367,22 +1369,21 @@ int handle_stagedel(
   batch_request *preq)
 
   {
-  int        rc = PBSE_NONE;
-  int        IsFaked = 0;
-  char       log_buf[LOCAL_LOG_BUF_SIZE+1];
-  int        handle = -1;
-  char       job_id[PBS_MAXSVRJOBID+1];
-  char      *job_momname = NULL;
-  mutex_mgr  job_mutex(pjob->ji_mutex, true);
+  int           rc = PBSE_NONE;
+  int           IsFaked = 0;
+  char          log_buf[LOCAL_LOG_BUF_SIZE+1];
+  int           handle = -1;
+  unsigned int  dummy;
+  char          job_id[PBS_MAXSVRJOBID+1];
+  char         *job_momname = NULL;
+  mutex_mgr     job_mutex(pjob->ji_mutex, true);
 
   if (LOGLEVEL >= 10)
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
 
   strcpy(job_id, pjob->ji_qs.ji_jobid);
-  if(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
-    {
-    job_momname = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
-    }
+  if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
+    job_momname = parse_servername(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, &dummy);
 
   if (LOGLEVEL >= 4)
     {

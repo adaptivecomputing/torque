@@ -136,6 +136,7 @@
 #include <string>
 #include <vector>
 #include <boost/ptr_container/ptr_vector.hpp>
+#include "id_map.hpp"
 #include "exiting_jobs.h"
 
 
@@ -193,6 +194,7 @@ extern char *path_nodes;
 extern char *path_mom_hierarchy;
 extern char *path_nodes_new;
 extern char *path_nodestate;
+extern char *path_nodepowerstate;
 extern char *path_nodenote;
 extern char *path_nodenote_new;
 extern char *path_checkpoint;
@@ -230,6 +232,7 @@ extern pthread_mutex_t         *node_state_mutex;
 extern pthread_mutex_t         *check_tasks_mutex;
 extern pthread_mutex_t         *reroute_job_mutex;
 extern mom_hierarchy_t         *mh;
+id_map                          node_mapper;
 
 extern int a_opt_init;
 
@@ -861,22 +864,20 @@ void add_all_nodes_to_hello_container()
   all_nodes_iterator *iter = NULL;
   int             level_indices[MAX_LEVEL_DEPTH];
   int             insertion_index;
-  char           *node_name_dup;
 
   memset(level_indices, 0, sizeof(level_indices));
 
   while ((pnode = next_host(&allnodes, &iter, NULL)) != NULL)
     {
-    if ((node_name_dup = strdup(pnode->nd_name)) != NULL)
       {
       /* make sure to insert things in order */
       if (level_indices[pnode->nd_hierarchy_level] == 0)
         {
         insertion_index = get_insertion_point(pnode, level_indices);
-        level_indices[pnode->nd_hierarchy_level] = add_hello_after(&hellos, node_name_dup, insertion_index);
+        level_indices[pnode->nd_hierarchy_level] = add_hello_after(&hellos, pnode->nd_id, insertion_index);
         }
       else
-        add_hello_after(&hellos, node_name_dup, level_indices[pnode->nd_hierarchy_level]);
+        add_hello_after(&hellos, pnode->nd_id, level_indices[pnode->nd_hierarchy_level]);
       }
 
     unlock_node(pnode, __func__, NULL, LOGLEVEL);
@@ -1128,6 +1129,7 @@ int initialize_paths()
   path_nodes         = build_path(path_priv, NODE_DESCRIP, NULL);
   path_nodes_new     = build_path(path_priv, NODE_DESCRIP, new_tag);
   path_nodestate     = build_path(path_priv, NODE_STATUS,  NULL);
+  path_nodepowerstate = build_path(path_priv, NODE_POWER_STATE,  NULL);
   path_nodenote      = build_path(path_priv, NODE_NOTE,    NULL);
   path_nodenote_new  = build_path(path_priv, NODE_NOTE, new_tag);
   path_mom_hierarchy = build_path(path_priv, PBS_MOM_HIERARCHY, NULL);
@@ -1984,7 +1986,7 @@ int cleanup_recovered_arrays()
         /* TODO Someone must have been naughty and did a kill -9 on pbs_server,
            we might need to validate that the last job was fully initialized
            before continuing the cloning process. */
-        enqueue_threadpool_request(job_clone_wt, strdup(pa->ai_qs.parent_id));
+        enqueue_threadpool_request(job_clone_wt, strdup(pa->ai_qs.parent_id), task_pool);
         }
 
       }
@@ -2106,14 +2108,19 @@ void setup_threadpool()
   long              thread_idle_time = DEFAULT_THREAD_IDLE;
   
   min_threads = get_default_threads();
-  max_threads = min_threads * 10;
+  max_threads = min_threads * 20;
   
   /* setup the threadpool for use */
   get_svr_attr_l(SRV_ATR_minthreads, &min_threads);
   get_svr_attr_l(SRV_ATR_maxthreads, &max_threads);
   get_svr_attr_l(SRV_ATR_threadidleseconds, &thread_idle_time);
+
+  // give each pool an equal share of threads
+  min_threads /= 4;
+  max_threads /= 4;
   
-  initialize_threadpool(&request_pool, min_threads, max_threads, thread_idle_time);
+  initialize_threadpool(&request_pool, 3 * min_threads, 3 * max_threads, thread_idle_time);
+  initialize_threadpool(&task_pool, min_threads, max_threads, thread_idle_time);
   } /* END setup_threadpool() */
 
 
@@ -2216,7 +2223,8 @@ int pbsd_init(
       add_all_nodes_to_hello_container();
 
     /* allow the threadpool to start processing */
-    start_request_pool();
+    start_request_pool(request_pool);
+    start_request_pool(task_pool);
 
     /* SUCCESS */
     return(PBSE_NONE);

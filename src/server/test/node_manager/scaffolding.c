@@ -1,4 +1,7 @@
 #include "license_pbs.h" /* See here for the software license */
+#include <vector>
+#include <string>
+#include <boost/ptr_container/ptr_vector.hpp>
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 #include <netinet/in.h> /* sockaddr_in */
@@ -14,14 +17,16 @@
 #include "net_connect.h" /* pbs_net_t */
 #include "pbs_nodes.h" /* pbsnode, all_nodes, node_iterator */
 #include "work_task.h" /* work_task, work_type */
-#include <vector>
-#include <string>
-#include <boost/ptr_container/ptr_vector.hpp>
+#include "threadpool.h"
+#include "id_map.hpp"
 
 
+int str_to_attr_count;
+int decode_resc_count;
 int SvrNodeCt = 0; 
 int svr_resc_size = 0;
 char *path_nodestate;
+char *path_nodepowerstate;
 int allow_any_mom = FALSE;
 unsigned int pbs_mom_port = 0;
 attribute_def job_attr_def[10];
@@ -40,6 +45,7 @@ struct pbsnode reporter;
 struct pbsnode *alps_reporter = &reporter;
 const char *alps_reporter_feature  = "alps_reporter";
 const char *alps_starter_feature   = "alps_login";
+threadpool_t    *task_pool;
 
 
 struct batch_request *alloc_br(int type)
@@ -94,7 +100,7 @@ void free_br(struct batch_request *preq)
   {
   }
 
-int enqueue_threadpool_request(void *(*func)(void *), void *arg)
+int enqueue_threadpool_request(void *(*func)(void *), void *arg, threadpool_t *tp)
   {
   return(0);
   }
@@ -106,6 +112,22 @@ struct pbsnode *find_nodebyname(const char *nodename)
   memset(&bob, 0, sizeof(bob));
 
   if (!strcmp(nodename, "bob"))
+    return(&bob);
+  else if (!strcmp(nodename, "2"))
+    return(&bob);
+  else if (!strcmp(nodename, "3"))
+    return(&bob);
+  else
+    return(NULL);
+  }
+
+struct pbsnode *find_nodebyid(int id)
+  {
+  static struct pbsnode bob;
+
+  memset(&bob, 0, sizeof(bob));
+
+  if (id == 1)
     return(&bob);
   else
     return(NULL);
@@ -339,6 +361,46 @@ void *send_hierarchy_threadtask(void *vp)
   exit(1);                            
   }
 
+char *threadsafe_tokenizer(char **str, const char *delims)
+  {
+  char *current_char;
+  char *start;
+
+  if ((str == NULL) ||
+      (*str == NULL))
+    return(NULL);
+
+  /* save start position */
+  start = *str;
+
+  /* return NULL at the end of the string */
+  if (*start == '\0')
+    return(NULL);
+
+  /* begin at the start */
+  current_char = start;
+
+  /* advance to the end of the string or until you find a delimiter */
+  while ((*current_char != '\0') &&
+         (!strchr(delims, *current_char)))
+    current_char++;
+
+  /* advance str */
+  if (*current_char != '\0')
+    {
+    /* not at the end of the string */
+    *str = current_char + 1;
+    *current_char = '\0';
+    }
+  else
+    {
+    /* at the end of the string */
+    *str = current_char;
+    }
+
+  return(start);
+  }
+
 int get_svr_attr_l(int index, long *l)
   {
   return(0);
@@ -433,6 +495,70 @@ int node_gpustatus_list(pbs_attribute *attr, void *a, int b)
   {
   return(0);
   }
+
+int str_to_attr(
+
+  const char           *name,   /* I */
+  char                 *val,    /* I */
+  pbs_attribute        *attr,   /* O */
+  struct attribute_def *padef,  /* I */
+  int                   limit)  /* I */
+
+  {
+  str_to_attr_count++;
+
+  return(ATTR_NOT_FOUND);
+  }
+
+int decode_resc(
+
+  pbs_attribute *patr,  /* Modified on Return */
+  const char    *name,  /* pbs_attribute name */
+  const char    *rescn, /* I resource name - is used here */
+  const char    *val,   /* resource value */
+  int            perm)  /* access permissions */
+
+  {
+  decode_resc_count++;
+
+  return(0);
+  }
+
+
+id_map::id_map() : counter(0) {}
+
+int id_map::get_id(const char *name)
+  {
+  if (!strcmp(name, "bob"))
+    return(1);
+  else if (!strcmp(name, "2"))
+    return(1);
+  else if (!strcmp(name, "3"))
+    return(1);
+  else
+    return(-1);
+  }
+
+const char *id_map::get_name(int id)
+  {
+  char buf[100];
+  snprintf(buf, sizeof(buf), "napali%d", id);
+  return(strdup(buf));
+  }
+
+id_map::~id_map() 
+  {
+  }
+
+
+id_map node_mapper;
+
+#ifdef CAN_TIME
+#include "timer.hpp"
+microsecond_timer::microsecond_timer(const char *file, const char *func, int line) {}
+
+microsecond_timer::~microsecond_timer() {}
+#endif
 
 ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
   {

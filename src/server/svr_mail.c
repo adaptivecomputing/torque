@@ -709,7 +709,7 @@ void svr_mailowner(
     mi->text = NULL;
 
   /* have a thread do the work of sending the mail */
-  enqueue_threadpool_request(send_the_mail,mi);
+  enqueue_threadpool_request(send_the_mail, mi, task_pool);
 
   return;
   }  /* END svr_mailowner() */

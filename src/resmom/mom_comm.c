@@ -218,7 +218,7 @@ extern int TMomFinalizeJob2(pjobexec_t *, int *);
 extern int TMomFinalizeJob3(pjobexec_t *, int, int, int *);
 extern int TMOMJobGetStartInfo(job *, pjobexec_t **) ;
 extern int TMomCheckJobChild(pjobexec_t *, int, int *, int *);
-extern void job_nodes(job *);
+extern void job_nodes(job &);
 extern void sister_job_nodes( job *pjob, char *radix_hosts, char *radix_ports );
 extern int tlist(tree *, char *, int);
 extern int TMakeTmpDir(job *, char *);
@@ -2485,7 +2485,7 @@ int im_join_job_as_sister(
     return(IM_DONE);
     }
   
-  job_nodes(pjob);
+  job_nodes(*pjob);
   
   /* set remaining job structure elements */
   

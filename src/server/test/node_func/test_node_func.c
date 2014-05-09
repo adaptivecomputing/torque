@@ -12,6 +12,7 @@
 #include "pbs_nodes.h" /* pbs_nodes, node_check_info, node_iterator, all_nodes */
 #include "attribute.h" /* svrattrl, struct  */
 #include "work_task.h"
+#include "id_map.hpp"
 
 //#define HOST_NAME_MAX 255
 
@@ -110,29 +111,6 @@ START_TEST(add_to_property_list_test)
   }
 END_TEST
 
-
-START_TEST(PGetNodeFromAddr_test)
-  {
-  pbs_net_t address = 0;
-  struct pbsnode *result;
-  /* alloc mutex, use, restore */
-  initialize_allnodes(&allnodes, NULL, NULL);
-  result = PGetNodeFromAddr(address);
-
-  fail_unless(result == NULL, "null address input fail");
-  }
-END_TEST
-
-START_TEST(bad_node_warning_test)
-  {
-  pbs_net_t address = 0;
-  struct pbsnode node;
-  initialize_pbsnode(&node, NULL, NULL, 0, FALSE);
-
-  bad_node_warning(address, NULL);
-  bad_node_warning(address, &node);
-  }
-END_TEST
 
 START_TEST(addr_ok_test)
   {
@@ -358,16 +336,6 @@ START_TEST(status_nodeattrib_test)
                              &result_mask);
   /*FIXME: NOTE: this is probably a correct set of input parameters, but still returns -1*/
  /*   fail_unless(result != PBSE_NONE, "NULL input svrattrl pointer fail: %d" ,result); */
-
-  result = status_nodeattrib(&attributes,
-                             &node_attributes,
-                             &node,
-                             0,
-                             0,
-                             &list,
-                             &result_mask);
-  /*FIXME: NOTE: this is probably a correct set of input parameters, but still returns -1*/
-  fail_unless(result != PBSE_NONE, "status_nodeattrib fail: %d" ,result);
   }
 END_TEST
 
@@ -817,62 +785,52 @@ START_TEST(next_host_test)
   }
 END_TEST
 
-START_TEST(send_hierarchy_threadtask_test)
-  {
-  hello_info *info = new hello_info("fred");
-
-  send_hierarchy_threadtask(NULL);
-  send_hierarchy_threadtask((void*)(info));
-  }
-END_TEST
-
 START_TEST(send_hierarchy_test)
   {
   int result = -1;
-  const char* name = "name";
 
   result = send_hierarchy(NULL, 0);
   fail_unless(result != PBSE_NONE, "NULL input name fail");
-
-  result = send_hierarchy((char *)name, 0);
-  fail_unless(result != PBSE_NONE, "send_hierarchy fail");
   }
 END_TEST
 
 START_TEST(add_hello_after_test)
   {
   hello_container container;
-  const char* node_name = "node_name";
   int result = -1;
+  extern id_map node_mapper;
 
-  result = add_hello_after(NULL, (char *)strdup(node_name), 0);
+  result = add_hello_after(NULL, 1, 0);
   fail_unless(result != PBSE_NONE, "NULL input container pointer fail");
 
-  result = add_hello_after(&container, NULL, 0);
-  fail_unless(result != PBSE_NONE, "NULL input name pointer fail");
-
-  result = add_hello_after(&container, (char *)strdup(node_name), 0);
+  result = add_hello_after(&container, 1, 0);
   fail_unless(result == PBSE_NONE, "add_hello_after fail");
+
+  node_mapper.get_new_id("one");
+  node_mapper.get_new_id("two");
+  node_mapper.get_new_id("three");
+  node_mapper.get_new_id("four");
+  node_mapper.get_new_id("five");
 
   container.lock();
   container.clear();
   container.unlock();
-  add_hello(&container,strdup("first"));
-  add_hello(&container,strdup("second"));
-  add_hello(&container,strdup("third"));
-  add_hello(&container,strdup("fifth"));
-  add_hello_after(&container,strdup("fourth"),2);
+  add_hello(&container,0);
+  add_hello(&container,1);
+  add_hello(&container,2);
+  add_hello(&container,4);
+  add_hello_after(&container,3,2);
 
   hello_info *pInfo = pop_hello(&container);
-  fail_unless((strcmp(pInfo->name.c_str(),"first") == 0),"Insert order fail.");
+  fail_unless((pInfo->id == 0),"Insert order fail.");
   pInfo = pop_hello(&container);
-  fail_unless((strcmp(pInfo->name.c_str(),"second") == 0),"Insert order fail.");
+  fail_unless((pInfo->id == 1),"Insert order fail.");
   pInfo = pop_hello(&container);
-  fail_unless((strcmp(pInfo->name.c_str(),"third") == 0),"Insert order fail.");
+  fail_unless((pInfo->id == 2),"Insert order fail.");
   pInfo = pop_hello(&container);
-  fail_unless((strcmp(pInfo->name.c_str(),"fourth") == 0),"Insert order fail.");
+  fail_unless((pInfo->id == 3),"Insert order fail.");
   pInfo = pop_hello(&container);
-  fail_unless((strcmp(pInfo->name.c_str(),"fifth") == 0),"Insert order fail.");
+  fail_unless((pInfo->id == 4),"Insert order fail.");
 
   }
 END_TEST
@@ -880,7 +838,7 @@ END_TEST
 START_TEST(add_hello_info_test)
   {
   hello_container container;
-  hello_info info("Fred");
+  hello_info info(1);
   int result = -1;
 
   result = add_hello_info(NULL, &info);
@@ -911,16 +869,12 @@ END_TEST
 START_TEST(remove_hello_test)
   {
   hello_container container;
-  const char* node_name = "node_name";
   int result = -1;
 
-  result = remove_hello(NULL, (char *)node_name);
+  result = remove_hello(NULL, 1);
   fail_unless(result != PBSE_NONE, "NULL input container pointer fail");
 
-  result = remove_hello(&container, NULL);
-  fail_unless(result != PBSE_NONE, "NULL input name pointer fail");
-
-  result = remove_hello(&container, (char *)node_name);
+  result = remove_hello(&container, 2);
   fail_unless(result == THING_NOT_FOUND, "add_hello_after fail");
 
   }
@@ -930,15 +884,7 @@ END_TEST
 Suite *node_func_suite(void)
   {
   Suite *s = suite_create("node_func_suite methods");
-  TCase *tc_core = tcase_create("PGetNodeFromAddr_test");
-  tcase_add_test(tc_core, PGetNodeFromAddr_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("bad_node_warning_test");
-  tcase_add_test(tc_core, bad_node_warning_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("addr_ok_test");
+  TCase *tc_core = tcase_create("addr_ok_test");
   tcase_add_test(tc_core, addr_ok_test);
   suite_add_tcase(s, tc_core);
 
@@ -1052,10 +998,6 @@ Suite *node_func_suite(void)
 
   tc_core = tcase_create("next_host_test");
   tcase_add_test(tc_core, next_host_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("send_hierarchy_threadtask_test");
-  tcase_add_test(tc_core, send_hierarchy_threadtask_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("send_hierarchy_test");

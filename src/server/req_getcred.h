@@ -4,8 +4,6 @@
 
 #include "batch_request.h" /* batch_request */
 
-void req_connect(struct batch_request *preq);
-
 int get_encode_host(int s, char *munge_buf, struct batch_request *preq);
 
 int get_UID(int s, char *munge_buf, struct batch_request *preq);

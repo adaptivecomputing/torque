@@ -21,13 +21,7 @@ typedef struct _node_info_
   tlist_head atrlist;
   } node_info;
 
-struct pbsnode *PGetNodeFromAddr(pbs_net_t addr);
-
-void bad_node_warning(pbs_net_t addr, struct pbsnode *);
-
 int addr_ok(pbs_net_t addr, struct pbsnode *pnode);
-
-struct pbsnode *find_nodebyname(const char *nodename);
 
 struct pbssubn *find_subnodebyname(char *nodename);
 
@@ -37,11 +31,7 @@ int chk_characteristic(struct pbsnode *pnode, struct node_check_info *nci, int *
 
 int status_nodeattrib(struct svrattrl *pal, struct attribute_def *padef, struct pbsnode *pnode, int limit, int priv, tlist_head *phead, int *bad);
 
-/* static void subnode_delete(struct pbssubn *psubn); */
-
 void effective_node_delete(struct pbsnode **pnode);
-
-/* static int process_host_name_part(char *objname, u_long **pul, char **pname, int *ntype); */
 
 int update_nodes_file(struct pbsnode *held);
 
@@ -53,21 +43,9 @@ int create_a_gpusubnode(struct pbsnode *pnode);
 
 int copy_properties(struct pbsnode *dest, struct pbsnode *src);
 
-/*static int read_val_and_advance(int *val, char **str);*/
-
-/*static int setup_node_boards(struct pbsnode *pnode, u_long *pul);*/
-
-/*static void recheck_for_node(struct work_task *ptask);*/
-
 int create_pbs_node(char *objname, struct svrattrl *plist, int perms, int *bad);
 
-/* static char *parse_node_token(char *start, int cok, int comma, int *err, char *term); */
-
 int setup_nodes(void);
-
-/* static void delete_a_subnode(struct pbsnode *pnode); */
-
-/* static void delete_a_gpusubnode(struct pbsnode *pnode); */
 
 int node_np_action(struct pbs_attribute *new_attr, void *pobj, int actmode);
 
@@ -85,15 +63,7 @@ int gpu_str_action(struct pbs_attribute *new_attr, void *pnode, int actmode);
 
 int create_partial_pbs_node(char *nodename, unsigned long addr, int perms);
 
-/*static node_iterator *get_node_iterator();*/
-
 void reinitialize_node_iterator(struct node_iterator *iter);
-
-/*static struct pbsnode *get_my_next_node_board(node_iterator *iter, struct pbsnode *np);*/
-
-struct pbsnode *next_node(all_nodes *an, struct pbsnode *current, struct node_iterator *iter);
-
-int insert_node(all_nodes *an, struct pbsnode *pnode);
 
 int remove_node(all_nodes *an, struct pbsnode *pnode);
 
@@ -114,5 +84,7 @@ int add_hello_info(hello_container *hc, hello_info *hi);
 hello_info *pop_hello(hello_container *hc);
 
 int remove_hello(hello_container *hc, char *node_name);
+
+int set_node_power_state(struct pbsnode *pNode,struct pbsnode *newNode);
 
 #endif /* _NODE_FUNC_H */

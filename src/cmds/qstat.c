@@ -1323,6 +1323,12 @@ void display_statjob(
       a = p->attribs;
       while (a != NULL)
         {
+        if (!strcmp(a->name, ATTR_execport))
+          {
+          a = a->next;
+          continue;
+          }
+
         if (!strcmp(a->name, ATTR_state))
           {
           l = strlen(a->value);
@@ -1379,6 +1385,12 @@ void display_statjob(
         {
         if (a->name != NULL)
           {
+          if (!strcmp(a->name, ATTR_execport))
+            {
+            a = a->next;
+            continue;
+            }
+
           if (DisplayXML == TRUE)
             {
             /* lookup a->name -> XML attr name */

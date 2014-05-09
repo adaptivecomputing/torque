@@ -82,6 +82,9 @@
 
 #include <stdio.h>
 #include <errno.h>
+#include <vector>
+#include <string>
+#include <boost/ptr_container/ptr_vector.hpp>
 
 #include "pbs_nodes.h"
 #include "log.h"
@@ -95,9 +98,7 @@
 #include "../lib/Libnet/lib_net.h"
 #include "../lib/Libutils/u_lock_ctl.h"
 #include "mutex_mgr.hpp"
-#include <vector>
-#include <string>
-#include <boost/ptr_container/ptr_vector.hpp>
+#include "server_comm.h"
 
 
 
@@ -271,11 +272,9 @@ const char *PBSServerCmds2[] =
  *         code is iused it must terminate the while loop
  *         in start_process_pbs_server_port.
  *************************************************/
-int svr_is_request(
-    
-  struct tcp_chan *chan,
-  int              version,
-  long             *args)
+void *svr_is_request(
+  
+  void *v)  
 
   {
   int                 command = 0;
@@ -289,12 +288,32 @@ int svr_is_request(
   unsigned short      mom_port;
   unsigned short      rm_port;
   unsigned long       tmpaddr;
-  struct sockaddr_in addr;
+  struct sockaddr_in  addr;
   struct pbsnode     *node = NULL;
   char               *node_name = NULL;
   char                log_buf[LOCAL_LOG_BUF_SIZE+1];
   char                msg_buf[80];
   char                tmp[80];
+  int                 version;
+  struct tcp_chan    *chan;
+  long               *args;
+  is_request_info    *isr = (is_request_info *)v;
+
+  if (isr == NULL)
+    return(NULL);
+
+  chan = isr->chan;
+  args = isr->args;
+      
+  version = disrsi(chan, &ret);
+
+  if (ret != DIS_SUCCESS)
+    {
+    log_err(-1,  __func__, "Cannot read version - skipping this request.\n");
+    close_conn(chan->sock, FALSE);
+    DIS_tcp_cleanup(chan);
+    return(NULL);
+    }
 
   command = disrsi(chan, &ret);
 
@@ -303,7 +322,8 @@ int svr_is_request(
     snprintf(log_buf, sizeof(log_buf), "could not read command: %d", ret);
     log_err(-1, __func__, log_buf);
     close_conn(chan->sock, FALSE);
-    return(PBSE_SOCKET_DATA);
+    DIS_tcp_cleanup(chan);
+    return(NULL);
     }
 
   if (LOGLEVEL >= 4)
@@ -313,7 +333,7 @@ int svr_is_request(
         chan->sock,
         version);
 
-    log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,__func__,log_buf);
+    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
     }
 
   /* Just a note to let us know we only do IPv4 for now */
@@ -332,7 +352,8 @@ int svr_is_request(
 
     log_err(-1, __func__, log_buf);
     close_conn(chan->sock, FALSE);
-    return PBSE_SOCKET_DATA;
+    DIS_tcp_cleanup(chan);
+    return(NULL);
     }
 
   /* check that machine is known */
@@ -402,7 +423,8 @@ int svr_is_request(
       }
     
     close_conn(chan->sock, FALSE);
-    return PBSE_SOCKET_CLOSE;
+    DIS_tcp_cleanup(chan);
+    return(NULL);
     }
 
   if (LOGLEVEL >= 3)
@@ -479,21 +501,21 @@ int svr_is_request(
 
       node = find_nodebyname(node_name);
 
-      if (ret == SEND_HELLO)
-        {
-        hello_info *hi = new hello_info(node_name);
-        write_tcp_reply(chan, IS_PROTOCOL, IS_PROTOCOL_VER, IS_STATUS, DIS_SUCCESS);
-
-        enqueue_threadpool_request(send_hierarchy_threadtask, hi);
-        ret = DIS_SUCCESS;
-        }
-      else
-        write_tcp_reply(chan,IS_PROTOCOL,IS_PROTOCOL_VER,IS_STATUS,ret);
-
-      if(node != NULL)
+      if (node != NULL)
         {
         node->nd_stream = -1;
         node_mutex.mark_as_locked();
+
+        if (ret == SEND_HELLO)
+          {
+          struct hello_info *hi = new hello_info(node->nd_id);
+          write_tcp_reply(chan, IS_PROTOCOL, IS_PROTOCOL_VER, IS_STATUS, DIS_SUCCESS);
+
+          enqueue_threadpool_request(send_hierarchy_threadtask, hi, task_pool);
+          ret = DIS_SUCCESS;
+          }
+        else
+          write_tcp_reply(chan,IS_PROTOCOL,IS_PROTOCOL_VER,IS_STATUS,ret);
         }
 
       if (ret != DIS_SUCCESS)
@@ -529,9 +551,9 @@ int svr_is_request(
 
   /* must be closed because mom opens and closes this connection each time */
   close_conn(chan->sock, FALSE);
-
+  DIS_tcp_cleanup(chan);
   
-  return(PBSE_SOCKET_CLOSE);
+  return(NULL);
 
 err:
 
@@ -564,6 +586,7 @@ err:
   log_err(-1, __func__, log_buf);
     
   close_conn(chan->sock, FALSE);
+  DIS_tcp_cleanup(chan);
 
-  return(PBSE_INTERNAL);
+  return(NULL);
   } /* END svr_is_request */

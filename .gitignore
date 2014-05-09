@@ -384,6 +384,7 @@ src/resmom/test/mom_main/bob
 src/resmom/test/mom_process_request/test_mom_process_request
 src/resmom/test/mom_req_quejob/test_mom_req_quejob
 src/resmom/test/mom_server/test_mom_server
+src/resmom/test/parse_config/test_parse_config
 src/resmom/test/pbs_demux/test_pbs_demux
 src/resmom/test/prolog/test_prolog
 src/resmom/test/release_reservation/test_release_reservation
@@ -394,13 +395,15 @@ src/server/test/accounting/test_accounting
 src/server/test/array_func/test_array_func
 src/server/test/array_upgrade/test_array_upgrade
 src/server/test/attr_recov/test_attr_recov
-src/server/test/job_attr_def/test_job_attr_def
 src/server/test/batch_request/test_batch_request
+src/server/test/delete_all_tracker/test_delete_all_tracker
 src/server/test/dis_read/test_dis_read
 src/server/test/display_alps_status/test_display_alps_status
 src/server/test/execution_slot_tracker/test_execution_slot_tracker
 src/server/test/exiting_jobs/test_exiting_jobs
 src/server/test/geteusernam/test_geteusernam
+src/server/test/id_map/test_id_map
+src/server/test/incoming_request/test_incoming_request
 src/server/test/issue_request/test_issue_request
 src/server/test/job_attr_def/test_job_attr_def
 src/server/test/job_container/test_job_container
@@ -411,6 +414,7 @@ src/server/test/job_recov/test_job_recov
 src/server/test/job_recov/unit_test_job1.JB
 src/server/test/job_recycler/test_job_recycler
 src/server/test/job_route/test_job_route
+src/server/test/job_usage_info/test_job_usage_info
 src/server/test/login_nodes/test_login_nodes
 src/server/test/node_func/nodes
 src/server/test/node_func/test_node_func

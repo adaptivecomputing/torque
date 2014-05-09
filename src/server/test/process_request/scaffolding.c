@@ -12,6 +12,7 @@
 #include "list_link.h" /* list_link, tlist_head */
 #include "pbs_nodes.h" /* pbsnode */
 #include "attribute.h" /* pbs_attribute */
+#include "threadpool.h"
 
 bool exit_called = false;
 const char *msg_err_noqueue = "Unable to requeue job, queue is not defined";
@@ -23,8 +24,15 @@ const char *msg_request = "Type %s request received from %s@%s, sock=%d";
 struct server server;
 char *server_host;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
+threadpool_t *request_pool;
+bool check_acl;
+bool find_node;
+int free_attrlist_called;
 
-
+bool threadpool_is_too_busy(threadpool *tp, int permissions)
+  {
+  return(false);
+  }
 
 int req_releasejob(batch_request *preq)
   {
@@ -160,8 +168,7 @@ int req_movejob(batch_request *preq)
 
 int unlock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
   {
-  fprintf(stderr, "The call to unlock_node needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void req_rdytocommit(struct batch_request *preq)
@@ -188,10 +195,9 @@ int req_releasearray(batch_request *preq)
   exit(1);
   }
 
-void req_connect(struct batch_request *preq)
+int req_connect(struct batch_request *preq)
   {
-  fprintf(stderr, "The call to req_connect needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 int job_abt(struct job **pjobp, const char *text)
@@ -230,23 +236,14 @@ void req_commit(struct batch_request *preq)
   exit(1);
   }
 
-void reply_free(struct batch_reply *prep)
+void reply_free(struct batch_reply *prep) {}
+
+void free_attrlist(tlist_head *pattrlisthead) 
   {
-  fprintf(stderr, "The call to reply_free needs to be mocked!!\n");
-  exit(1);
+  free_attrlist_called++;
   }
 
-void free_attrlist(tlist_head *pattrlisthead)
-  {
-  fprintf(stderr, "The call to free_attrlist needs to be mocked!!\n");
-  exit(1);
-  }
-
-void req_signaljob(struct batch_request *preq)
-  {
-  fprintf(stderr, "The call to req_signaljob needs to be mocked!!\n");
-  exit(1);
-  }
+void req_signaljob(struct batch_request *preq)  {}
 
 int req_register(batch_request *preq)
   {
@@ -326,10 +323,14 @@ int authenticate_user(struct batch_request *preq, struct credential *pcred, char
   exit(1);
   }
 
-struct pbsnode *PGetNodeFromAddr(pbs_net_t addr)
+struct pbsnode *find_nodebyname(const char *node_name)
   {
-  fprintf(stderr, "The call to PGetNodeFromAddr needs to be mocked!!\n");
-  exit(1);
+  static pbsnode nd;
+
+  if (find_node == true)
+    return(&nd);
+
+  return(NULL);
   }
 
 int req_manager(batch_request *preq)
@@ -441,6 +442,9 @@ int get_svr_attr_arst(int index, struct array_strings **arst)
 
 int get_svr_attr_l(int index, long *l)
   {
+  if (check_acl == true)
+    *l = 1;
+
   return(0);
   }
 

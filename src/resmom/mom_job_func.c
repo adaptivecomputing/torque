@@ -142,6 +142,8 @@
 #include "utils.h"
 #include "mom_config.h"
 #include "container.hpp"
+#include "node_frequency.hpp"
+
 
 #ifndef TRUE
 #define TRUE 1
@@ -851,7 +853,7 @@ void mom_job_purge(
   jfdi->uid = pjob->ji_qs.ji_un.ji_momt.ji_exuid;
 
   if (thread_unlink_calls == TRUE)
-    enqueue_threadpool_request(delete_job_files,jfdi);
+    enqueue_threadpool_request(delete_job_files, jfdi, request_pool);
   else
     delete_job_files(jfdi);
 
@@ -870,6 +872,32 @@ void mom_job_purge(
   unload_sp_switch(pjob);
 
 #endif   /* IBM SP */
+
+  //We had a request to change the frequency for the job and now that the job is done
+  //we want to change the frequency back.
+  resource *presc = find_resc_entry(&pjob->ji_wattr[JOB_ATR_resource],
+            find_resc_def(svr_resc_def, "cpuclock", svr_resc_size));
+  if(presc != NULL)
+    {
+    std::string beforeFreq;
+
+    nd_frequency.get_frequency_string(beforeFreq);
+    if(!nd_frequency.restore_frequency())
+      {
+      std::string msg = "Failed to restore frequency.";
+      log_ext(nd_frequency.get_last_error(),__func__,msg.c_str(),LOG_ERR);
+      }
+    else
+      {
+      std::string afterFreq;
+      nd_frequency.get_frequency_string(afterFreq);
+      std::string msg = "Restored frequency from " + beforeFreq + " to " + afterFreq;
+      log_ext(PBSE_CHANGED_CPU_FREQUENCY,__func__, msg.c_str(),LOG_NOTICE);
+      }
+    }
+
+
+
 
   mom_job_free(pjob);
 
@@ -894,27 +922,27 @@ void mom_job_purge(
 
 job *mom_find_job(
 
-  char *jobid)
+  const char *jobid)
 
   {
+  char *jid = strdup(jobid);
   char *at;
   job  *pj;
 
-  if ((at = strchr(jobid, (int)'@')) != NULL)
+  if ((at = strchr(jid, (int)'@')) != NULL)
     * at = '\0'; /* strip off @server_name */
 
   pj = (job *)GET_NEXT(svr_alljobs);
 
   while (pj != NULL)
     {
-    if (!strcmp(jobid, pj->ji_qs.ji_jobid))
+    if (!strcmp(jid, pj->ji_qs.ji_jobid))
       break;
 
     pj = (job *)GET_NEXT(pj->ji_alljobs);
     }
 
-  if (at)
-    *at = '@'; /* restore @server_name */
+  free(jid);
 
   return(pj);  /* may be NULL */
   }   /* END mom_find_job() */

@@ -137,11 +137,13 @@ struct threadpool
 
 
 extern threadpool_t *request_pool;
+extern threadpool_t *task_pool;
 
-int  enqueue_threadpool_request(void *(*func)(void *),void *arg);
+int  enqueue_threadpool_request(void *(*func)(void *), void *arg, threadpool_t *tp);
 int  initialize_threadpool(threadpool_t **,int,int,int);
-void destroy_request_pool();
-void start_request_pool();
+void destroy_request_pool(threadpool_t *tp);
+void start_request_pool(threadpool_t *tp);
+bool threadpool_is_too_busy(threadpool_t *tp, int permissions);
 
 
 #endif /* ndef THREADPOOL_H */ 

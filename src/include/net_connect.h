@@ -193,6 +193,8 @@ enum conn_type
 
 /* functions available in libnet.a */
 
+void close_conn(int,int);
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -200,7 +202,6 @@ extern "C"
 int add_conn(int, enum conn_type, pbs_net_t, unsigned int, unsigned int, void *(*func)(void *));
 int add_scheduler_conn(int, enum conn_type, pbs_net_t, unsigned int, unsigned int, void *(*func)(void *));
 int  client_to_svr(pbs_net_t, unsigned int, int, char *);
-void close_conn(int,int);
 pbs_net_t get_connectaddr(int,int);
 int  get_connecthost(int sock, char *, int);
 void set_localhost_name(char *, size_t);

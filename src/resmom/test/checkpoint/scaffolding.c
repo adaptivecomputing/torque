@@ -267,7 +267,8 @@ int create_alps_reservation(
   int         nppcu,
   int         mppdepth,
   char      **reservation_id,
-  const char *mppnodes)
+  const char *mppnodes,
+  std::string& cray_frequency)
 
   {
   return(0);
@@ -300,4 +301,11 @@ int mom_open_socket_to_jobs_server(job *pjob, const char *caller, void *(*messag
   {
   return(0);
   }
+
+std::string get_frequency_request(struct cpu_frequency_value *pfreq)
+  {
+  std::string ret = "";
+  return ret;
+  }
+
 

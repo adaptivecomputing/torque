@@ -1,6 +1,15 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 5.0
+  e - TRQ-2083. Remove job status polling from TORQUE. Have pbs_server only poll a
+      mom for a job's information if the information hasn't been received for 5 
+      minutes. Otherwise, this information is communicated with the mom's status
+      information.
+  e - TRQ-2309. Have TORQUE recognize when a request to run a job specifies a node
+      list and directly access those nodes instead of searching linearly.
+  e - TRQ-1539. Condense the exec_host list to have one entry per node instead of one
+      entry per execution slot. The node entry contains a string specifying each
+      execution slot index. Also no longer display the value of exec_port in qstat.
   b - TRQ-2319. Replace two Torque functions with ones from the hwloc package.
   n - Portable Hardware Locality (hwloc) package version 1.2 or higher must be
       installed when using cpusets (--enable-cpuset). Previously at least version

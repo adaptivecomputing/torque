@@ -1,0 +1,301 @@
+#!/bin/bash
+
+if [ "$1" = "" ]
+then
+  echo "Usage: test_power_states <node name>"
+  exit 1
+fi
+
+pbsnodes $1
+if [ "$?" != "0" ]
+then
+  echo $1 not found.
+  exit 1
+fi
+
+out=`pbsnodes $1 | grep power_state`
+state=${out:19}
+if [ "$state" != "Running" ]
+then
+  echo Node is not in running state. Please put node in running state and run the test again.
+  exit 1
+fi
+
+
+jobid=`echo sleep 20 | qsub -l walltime=20,nodes=nuc2`
+qrun $jobid
+output="$(pbsnodes -m standby $1 2>&1 > /dev/null)"
+if [[ "${output:0:34}" != "Error setting node power state for" ]]
+then
+  echo Failure: You should not be able to change the power state of a node with a running job.
+  exit 1
+fi
+
+qdel -p all
+sleep 3
+
+
+echo Putting node in standby.
+
+pbsnodes -m standby $1
+
+if [ "$?" != "0" ]
+then
+  echo pbsnodes command failed.
+  exit 1
+fi
+
+sleep 5
+
+
+out=`pbsnodes $1 | grep power_state`
+state=${out:19}
+if [ "$state" != "Standby" ]
+then
+  echo Node is not in standby state.
+  exit 1
+fi
+
+echo Waking node up.
+
+
+pbsnodes -m running $1
+
+if [ "$?" != "0" ]
+then
+  echo pbsnodes command failed.
+  exit 1
+fi
+
+#Wait two minutes for node to go back to running state.
+for i in {1..12}
+do
+  out=`pbsnodes $1 | grep power_state`
+  state=${out:19}
+  if [ "$state" = "Running" ]
+  then
+    break
+  fi
+  sleep 10
+done
+
+if [ "$state" != "Running" ]
+then
+  echo Node did not come back to running state.
+  exit 1
+fi
+
+echo Putting node in sleep state.
+
+pbsnodes -m sleep $1
+
+if [ "$?" != "0" ]
+then
+  echo pbsnodes command failed.
+  exit 1
+fi
+
+sleep 5
+
+
+out=`pbsnodes $1 | grep power_state`
+state=${out:19}
+if [ "$state" != "Sleep" ]
+then
+  echo Node is not in sleep state.
+  exit 1
+fi
+
+sleep 20
+
+echo Waking node up.
+
+
+pbsnodes -m running $1
+
+if [ "$?" != "0" ]
+then
+  echo pbsnodes command failed.
+  exit 1
+fi
+
+#Wait two minutes for node to go back to running state.
+for i in {1..12}
+do
+  out=`pbsnodes $1 | grep power_state`
+  state=${out:19}
+  if [ "$state" = "Running" ]
+  then
+    break
+  fi
+  sleep 10
+done
+
+if [ "$state" != "Running" ]
+then
+  echo Node did not come back to running state.
+  exit 1
+fi
+
+
+echo Putting node in suspend state.
+
+pbsnodes -m suspend $1
+
+if [ "$?" != "0" ]
+then
+  echo pbsnodes command failed.
+  exit 1
+fi
+
+sleep 5
+
+
+out=`pbsnodes $1 | grep power_state`
+state=${out:19}
+if [ "$state" != "Suspend" ]
+then
+  echo Node is not in suspend state.
+  exit 1
+fi
+
+sleep 30
+
+echo Waking node up.
+
+
+pbsnodes -m running $1
+
+if [ "$?" != "0" ]
+then
+  echo pbsnodes command failed.
+  exit 1
+fi
+
+#Wait two minutes for node to go back to running state.
+for i in {1..12}
+do
+  out=`pbsnodes $1 | grep power_state`
+  state=${out:19}
+  if [ "$state" = "Running" ]
+  then
+    break
+  fi
+  sleep 10
+done
+
+if [ "$state" != "Running" ]
+then
+  echo Node did not come back to running state.
+  exit 1
+fi
+
+
+echo Putting node in hibernate state.
+
+pbsnodes -m hibernate $1
+
+if [ "$?" != "0" ]
+then
+  echo pbsnodes command failed.
+  exit 1
+fi
+
+sleep 5
+
+
+out=`pbsnodes $1 | grep power_state`
+state=${out:19}
+if [ "$state" != "Hibernate" ]
+then
+  echo Node is not in suspend state.
+  exit 1
+fi
+
+sleep 120
+
+echo Waking node up.
+
+
+pbsnodes -m running $1
+
+if [ "$?" != "0" ]
+then
+  echo pbsnodes command failed.
+  exit 1
+fi
+
+#Wait five minutes for node to go back to running state.
+for i in {1..30}
+do
+  out=`pbsnodes $1 | grep power_state`
+  state=${out:19}
+  if [ "$state" = "Running" ]
+  then
+    break
+  fi
+  sleep 10
+done
+
+if [ "$state" != "Running" ]
+then
+  echo Node did not come back to running state.
+  exit 1
+fi
+
+
+echo Putting node in shutdown state.
+
+pbsnodes -m shutdown $1
+
+if [ "$?" != "0" ]
+then
+  echo pbsnodes command failed.
+  exit 1
+fi
+
+sleep 5
+
+
+out=`pbsnodes $1 | grep power_state`
+state=${out:19}
+if [ "$state" != "Shutdown" ]
+then
+  echo Node is not in shutdown state.
+  exit 1
+fi
+
+sleep 120
+
+echo Waking node up.
+
+
+pbsnodes -m running $1
+
+echo You may need to manually run pbs_mom on the node.
+
+if [ "$?" != "0" ]
+then
+  echo pbsnodes command failed.
+  exit 1
+fi
+
+#Wait five minutes for node to go back to running state.
+for i in {1..30}
+do
+  out=`pbsnodes $1 | grep power_state`
+  state=${out:19}
+  if [ "$state" = "Running" ]
+  then
+    break
+  fi
+  sleep 10
+done
+
+if [ "$state" != "Running" ]
+then
+  echo Node did not come back to running state.
+  exit 1
+fi
+
+echo Test has passed

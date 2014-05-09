@@ -262,6 +262,8 @@ pbs_queue *que_recov_xml(
     log_err(errno, __func__, log_buf);
     
     close(fds);
+    
+    que_free(pq, TRUE);
 
     return(NULL);
     }
@@ -344,7 +346,7 @@ pbs_queue *que_recov_xml(
           return(NULL);
           }
 
-        if ((rc = str_to_attr(child_parent,child_attr,pq->qu_attr,que_attr_def)))
+        if ((rc = str_to_attr(child_parent,child_attr,pq->qu_attr,que_attr_def,QA_ATR_LAST)))
           {
           /* ERROR */
           snprintf(log_buf,sizeof(log_buf),

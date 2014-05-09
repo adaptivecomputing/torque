@@ -3,12 +3,14 @@
 #include <stdio.h> /* fprintf */
 
 #include "pbs_job.h" /* job_recycler, all_jobs, job */
+#include "threadpool.h"
 
+threadpool_t *task_pool;
 job_recycler recycler;
 int          LOGLEVEL;
 
 
-int enqueue_threadpool_request(void *(*func)(void *),void *arg)
+int enqueue_threadpool_request(void *(*func)(void *),void *arg, threadpool_t *tp)
   {
   fprintf(stderr, "The call to enqueue_threadpool_request to be mocked!!\n");
   exit(1);
@@ -53,3 +55,5 @@ int unlock_alljobs_mutex(all_jobs *aj, const char *id, char *msg, int logging)
   }
 
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+
+void free_job_allocation(job *pjob) {}

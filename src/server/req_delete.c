@@ -117,6 +117,7 @@
 #include "mutex_mgr.hpp"
 #include "threadpool.h"
 #include "req_delete.h"
+#include "delete_all_tracker.hpp"
 #include <string>
 
 #define PURGE_SUCCESS 1
@@ -124,6 +125,8 @@
 #define ROUTE_DELETE  3
 
 /* Global Data Items: */
+
+delete_all_tracker qdel_all_tracker;
 
 extern char *msg_deletejob;
 extern char *msg_delrunjobsig;
@@ -659,7 +662,7 @@ jump:
 
             unlock_ji_mutex(tmp, __func__, "6", LOGLEVEL);
             }
-          if((pjob = svr_find_job((char *)dup_job_id.c_str(),FALSE)) == NULL) //Job disappeared.
+          if ((pjob = svr_find_job((char *)dup_job_id.c_str(),FALSE)) == NULL) //Job disappeared.
             {
             break;
             }
@@ -883,6 +886,13 @@ void *delete_all_work(
 
   {
   batch_request *preq = (batch_request *)vp;
+
+  if (qdel_all_tracker.start_deleting_all_if_possible(preq->rq_user, preq->rq_perm) == false)
+    {
+    reply_ack(preq);
+    return(NULL);
+    }
+
   batch_request *preq_dup = duplicate_request(preq);
   job           *pjob;
   all_jobs_iterator *iter = NULL;
@@ -902,8 +912,6 @@ void *delete_all_work(
  
     if ((rc = forced_jobpurge(pjob, preq_dup)) == PURGE_SUCCESS)
       {
-      iter->item_was_removed(); //Tell the iterator that the item it was pointing at has been removed.
-      // want to leave lock in place after exiting
       job_mutex.set_unlock_on_exit(false);
 
       continue;
@@ -956,6 +964,8 @@ void *delete_all_work(
       }
     }
   
+  qdel_all_tracker.done_deleting_all(preq->rq_user, preq->rq_perm);
+  
   if (failed_deletes == 0)
     {
     reply_ack(preq);
@@ -1000,7 +1010,7 @@ int handle_delete_all(
     {
     reply_ack(preq_tmp);
     preq->rq_noreply = TRUE; /* set for no more replies */
-    enqueue_threadpool_request(delete_all_work, preq);
+    enqueue_threadpool_request(delete_all_work, preq, request_pool);
     }
   else
     delete_all_work(preq);
@@ -1072,7 +1082,7 @@ int handle_single_delete(
       {
       reply_ack(preq_tmp);
       preq->rq_noreply = TRUE; /* set for no more replies */
-      enqueue_threadpool_request(single_delete_work, preq);
+      enqueue_threadpool_request(single_delete_work, preq, request_pool);
       }
     else
       single_delete_work(preq);
@@ -1773,12 +1783,16 @@ void purge_completed_jobs(
  * is_ms_on_server() determines whether the mother superior
  * is on the pbs_server or not.
  */
-int is_ms_on_server(const job *pjob)
-  {
-  char mom_fullhostname[PBS_MAXHOSTNAME + 1];
-  int ms_on_server = 0;
 
+int is_ms_on_server(
+    
+  const job *pjob)
+
+  {
+  char  mom_fullhostname[PBS_MAXHOSTNAME + 1];
+  int   ms_on_server = 0;
   char *exec_hosts = pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str;
+
   if (exec_hosts)
     {
     char *host_tok = threadsafe_tokenizer(&exec_hosts, "+");
@@ -1797,7 +1811,8 @@ int is_ms_on_server(const job *pjob)
       ms_on_server = strcmp(server_host, mom_fullhostname) == 0;
       }
     }
-  return ms_on_server;
+
+  return(ms_on_server);
   } /* is_ms_on_server */
 
 /* END req_delete.c */

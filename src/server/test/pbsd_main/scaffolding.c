@@ -38,8 +38,14 @@ hello_container hellos;
 char pbs_server_name[1];
 pthread_mutex_t *poll_job_task_mutex;
 threadpool_t *request_pool;
+threadpool_t *task_pool;
 int              max_poll_job_tasks;
 char           **ArgV = NULL;
+
+void *start_process_pbs_server_port(void *new_sock)
+  {
+  return(NULL);
+  }
 
 int log_remove_old(char *DirPath, unsigned long ExpireTime)
   {
@@ -332,10 +338,8 @@ int unlock_queue(struct pbs_queue *the_queue, const char *method_name, const cha
   exit(1);
   }
 
-void destroy_request_pool(void)
+void destroy_request_pool(threadpool_t *tp)
   {
-  fprintf(stderr, "The call to destroy_request_pool needs to be mocked!!\n");
-  exit(1);
   }
 
 
@@ -382,7 +386,7 @@ void *send_hierarchy_threadtask(void *vp)
 
 void log_init(const char *suffix, const char *hostname) {}
 
-int enqueue_threadpool_request(void *(*func)(void *), void *arg)
+int enqueue_threadpool_request(void *(*func)(void *), void *arg, threadpool_t *tp)
   {
   return(0);
   }

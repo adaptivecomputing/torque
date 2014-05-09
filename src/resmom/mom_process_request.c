@@ -446,6 +446,12 @@ void mom_dispatch_request(
 
       break;
 
+    case PBS_BATCH_ChangePowerState:
+
+      req_change_power_state(request);
+
+      break;
+
     default:
 
       req_reject(PBSE_UNKREQ, 0, request, NULL, NULL);
@@ -590,9 +596,12 @@ static void close_quejob(
 
 void free_br(
 
-  struct batch_request *preq)
+  batch_request *preq)
 
   {
+  if (preq == NULL)
+    return;
+
   delete_link(&preq->rq_link);
 
   reply_free(&preq->rq_reply);

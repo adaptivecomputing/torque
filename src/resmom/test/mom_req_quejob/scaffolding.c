@@ -3,6 +3,7 @@
 #include <stdio.h> /* fprintf */
 #include <pwd.h> /* struct password */
 
+#include "pbs_config.h"
 #include "attribute.h" /* attribute_def, pbs_attribute, svrattrl */
 #include "list_link.h" /* tlist_head */
 #include "resource.h" /* resource_def, resource */
@@ -10,8 +11,6 @@
 #include "pbs_job.h" /* job */
 #include "batch_request.h" /* batch_request */
 #include "libpbs.h" /* job_file */
-
-
 
 const char *PJobSubState[10];
 char *path_jobs;
@@ -184,7 +183,7 @@ resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   exit(1);
   }
 
-job *mom_find_job(char *jobid)
+job *mom_find_job(const char *jobid)
   {
   return(NULL);
   }

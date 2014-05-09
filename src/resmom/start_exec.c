@@ -342,6 +342,7 @@ extern int  setup_gpus_for_job(job *pjob);
 extern int  use_nvidia_gpu;
 #endif  /* NVIDIA_GPUS */
 
+void translate_range_string_to_vector(const char *range_str, std::vector<int> &indices);
 int exec_job_on_ms(job *pjob);
 
 
@@ -3072,6 +3073,13 @@ void handle_reservation(
       mppnodes = strdup(pres->rs_value.at_val.at_str);
       }
     
+    std::string cray_frequency = "";
+    resource *presc = find_resc_entry(&pjob->ji_wattr[JOB_ATR_resource],
+              find_resc_def(svr_resc_def, "cpuclock", svr_resc_size));
+    if(presc != NULL)
+      {
+      cray_frequency = get_frequency_request(&(presc->rs_value.at_val.at_frequency));
+      }
 
     j = create_alps_reservation(exec_str,
           pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
@@ -3083,7 +3091,8 @@ void handle_reservation(
           nppcu,
           mppdepth,
           &rsv_id,
-          mppnodes);
+          mppnodes,
+          cray_frequency);
 
     if(mppnodes != NULL) free(mppnodes);
     
@@ -5657,190 +5666,141 @@ int add_host_to_sister_list(
 
 void job_nodes(
 
-  job *pjob)  /* I */
+  job &pjob)  /* I */
 
   {
-  int          i;
-  int          j;
-  int          nhosts;
-  int          nodenum;
-  int          ix;
+  int                  nhosts = 0;
+  int                  nodenum = 0;
 
-  char        *cp = NULL;
-  char        *nodestr = NULL;
-  char        *portstr = NULL;
-  hnodent     *hp = NULL;
-  vnodent     *np = NULL;
+  std::vector<hnodent> hosts;
+  std::vector<vnodent> slots;
 
-  nodes_free(pjob);
+  nodes_free(&pjob);
 
-  nodenum = 1;
-
-  if (pjob->ji_wattr[JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET)
-    {
-    nodestr = pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str;
-    portstr = pjob->ji_wattr[JOB_ATR_exec_port].at_val.at_str;
-
-    if (nodestr != NULL)
-      {
-      /* count how many nodes there are by counting the number of '+'
-       * characters in the string */
-      for (cp = nodestr;*cp;cp++)
-        {
-        if (*cp == '+')
-          nodenum++;
-        }
-      }
-    }
-  else
+  if (((pjob.ji_wattr[JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET) == 0) ||
+      (pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL))
     {
     log_err(-1, __func__, "Cannot parse the nodes for a job without exec hosts being set");
     return;
     }
 
-  pjob->ji_hosts = (hnodent *)calloc(nodenum + 1, sizeof(hnodent));
-  pjob->ji_vnods = (vnodent *)calloc(nodenum + 1, sizeof(vnodent));
+  std::string nodelist(pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+  std::string portlist(pjob.ji_wattr[JOB_ATR_exec_port].at_val.at_str);
+  std::size_t pos = 0;
+  std::size_t portpos = 0;
 
-  if ((pjob->ji_hosts == NULL) ||
-      (pjob->ji_vnods == NULL))
+  while (pos < nodelist.size())
+    {
+    std::size_t       plus = nodelist.find("+", pos);
+    std::string       host = nodelist.substr(pos, plus - pos);
+    std::size_t       slash = host.find("/");
+    std::string       range = host.substr(slash + 1);
+    hnodent           hp;
+
+    std::size_t       portplus = portlist.find("+", portpos);
+    std::string       port_str = portlist.substr(portpos, portplus - portpos);
+    struct addrinfo  *addr_info;
+    std::vector<int>  indices;
+
+    host.erase(slash);
+
+    memset(&hp, 0, sizeof(hp));
+
+    hp.hn_node = nhosts;
+    hp.hn_sister = SISTER_OKAY;
+    hp.hn_host = strdup(host.c_str());
+    hp.hn_port = strtol(port_str.c_str(), NULL, 10);
+
+    CLEAR_HEAD(hp.hn_events);
+
+    /* set up the socket address information */
+    if (pbs_getaddrinfo(hp.hn_host, NULL, &addr_info) == 0)
+      {
+      hp.sock_addr.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
+      hp.sock_addr.sin_family = AF_INET;
+      hp.sock_addr.sin_port = htons(hp.hn_port);
+      }
+
+    translate_range_string_to_vector(range.c_str(), indices);
+
+    for (unsigned int i = 0; i < indices.size(); i++)
+      {
+      vnodent vp;
+
+      memset(&vp, 0, sizeof(vp));
+      nodenum++;
+
+      vp.vn_node = nhosts;
+      vp.vn_index = indices[i];
+      slots.push_back(vp);
+      }
+
+    hosts.push_back(hp);
+
+    // update for the next iteration
+    if (plus != std::string::npos)
+      {
+      pos = plus + 1;
+      portpos = portplus + 1;
+      }
+    else
+      pos = plus;
+
+    nhosts++;
+    }
+  
+  pjob.ji_hosts = (hnodent *)calloc(nhosts + 1, sizeof(hnodent));
+  pjob.ji_vnods = (vnodent *)calloc(nodenum + 1, sizeof(vnodent));
+  
+  if ((pjob.ji_hosts == NULL) ||
+      (pjob.ji_vnods == NULL))
     {
     log_err(-1,__func__,"Out of memory, system failure!\n");
     return;
     }
 
-  pjob->ji_numvnod = nodenum;
-
-  nhosts = 0;
-
-  np = pjob->ji_vnods;
-
-  for (i = 0;i < nodenum;i++, np++)
+  for (unsigned int i = 0; i < hosts.size(); i++)
     {
-    char            *dp;
-    char             nodename[MAXPATHLEN + 1];
+    memcpy(pjob.ji_hosts + i, &hosts[i], sizeof(hnodent));
+    CLEAR_HEAD(pjob.ji_hosts[i].hn_events);
+    }
 
-    char            *portptr;
-    char             portnumber[MAXPORTLEN+1];
-    int              portcount;
-    struct addrinfo *addr_info;
+  for (unsigned int i = 0; i < slots.size(); i++)
+    {
+    memcpy(pjob.ji_vnods + i, &slots[i], sizeof(vnodent));
 
-    ix = 0;
-
-    for (cp = nodestr, dp = nodename;*cp;cp++, dp++)
-      {
-      if (*cp == '/')
-        {
-        ix = atoi(cp + 1);
-
-        while ((*cp != '\0') && (*cp != '+'))
-          ++cp;
-
-        if (*cp == '\0')
-          {
-          nodestr = cp;
-
-          break;
-          }
-        }
-
-      if (*cp == '+')
-        {
-        nodestr = cp + 1;
-
-        break;
-        }
-
-      *dp = *cp;
-      }
-
-    *dp = '\0';
-
-    /* see if we already have this host - we only need to check the
-     * last host as of 4.0.0 because each node can only be in the list
-     * a maximum of one time */
-    if ((nhosts > 0) &&
-        (strcmp(nodename, pjob->ji_hosts[nhosts - 1].hn_host) == 0))
-      j = nhosts - 1;
-    else
-      {
-      /* we need a new host */
-      j = nhosts;
-      }
-
-    /* Get the port number for this host */
-    for (cp = portstr, portptr = portnumber, portcount = 0; 
-         portcount < (MAXPORTLEN+1) && *cp; 
-         cp++, portptr++, portcount++)
-      {
-      if (*cp == '+')
-        {
-        portstr = cp + 1;
-
-        break;
-        }
-
-      *portptr = *cp;
-      }
-
-    *portptr = '\0';
-
-    hp = &pjob->ji_hosts[j];
-
-    if (j == nhosts)
-      {
-      /* need to add host to hn_host */
-
-      hp->hn_node = nhosts++;
-      hp->hn_sister = SISTER_OKAY;
-      hp->hn_host = strdup(nodename);
-      hp->hn_port = atoi(portnumber);
-
-      CLEAR_HEAD(hp->hn_events);
-
-      /* set up the socket address information */
-      if (pbs_getaddrinfo(nodename, NULL, &addr_info) == 0)
-        {
-        hp->sock_addr.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
-        hp->sock_addr.sin_family = AF_INET;
-        hp->sock_addr.sin_port = htons(hp->hn_port);
-        }
-      }
-
-    np->vn_node  = i;  /* make up node id */
-
-    np->vn_host  = &pjob->ji_hosts[j];
-    np->vn_index = ix;
-
+    // set pointer correctly
+    pjob.ji_vnods[i].vn_host = &pjob.ji_hosts[pjob.ji_vnods[i].vn_node];
+    pjob.ji_vnods[i].vn_node = i;
+      
     if (LOGLEVEL >= 4)
       {
       sprintf(log_buffer, "%d: %s/%d",
-        np->vn_node,
-        np->vn_host->hn_host,
-        np->vn_index);
-      
+        pjob.ji_vnods[i].vn_node,
+        pjob.ji_vnods[i].vn_host->hn_host,
+        pjob.ji_vnods[i].vn_index);
+    
       log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
       }
-    }   /* END for (i) */
+    }
 
-  np->vn_node = TM_ERROR_NODE;
-
-  pjob->ji_hosts[nhosts].hn_node = TM_ERROR_NODE;
+  pjob.ji_numvnod = nodenum;
+  pjob.ji_vnods[nodenum].vn_node = TM_ERROR_NODE;
+  pjob.ji_hosts[nhosts].hn_node = TM_ERROR_NODE;
 
 #ifdef NUMA_SUPPORT
-  pjob->ji_numnodes = 1;
+  pjob.ji_numnodes = 1;
 #else
   if (is_login_node == FALSE)
-    pjob->ji_numnodes = nhosts;
+    pjob.ji_numnodes = nhosts;
   else
-    pjob->ji_numnodes = 1;
+    pjob.ji_numnodes = 1;
 #endif /* NUMA_SUPPORT */
-
-  pjob->ji_numvnod  = nodenum;
 
   if (LOGLEVEL >= 2)
     {
     sprintf(log_buffer, "job: %s numnodes=%d numvnod=%d",
-      pjob->ji_qs.ji_jobid,
+      pjob.ji_qs.ji_jobid,
       nhosts,
       nodenum);
     
@@ -6374,7 +6334,7 @@ int start_exec(
 
   /* Step 2.0 Initialize Job */
   /* update nodes info w/in job based on exec_hosts pbs_attribute */
-  job_nodes(pjob);
+  job_nodes(*pjob);
 
   /* start_exec only executed on mother superior */
   pjob->ji_nodeid = 0; /* I'm MS */

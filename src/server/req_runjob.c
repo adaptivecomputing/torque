@@ -354,7 +354,7 @@ int req_runjob(
     {
     reply_ack(preq);
     preq->rq_noreply = TRUE;
-    enqueue_threadpool_request(check_and_run_job, preq);
+    enqueue_threadpool_request(check_and_run_job, preq, request_pool);
     }
   else
     {
@@ -1265,6 +1265,7 @@ int send_job_to_mom(
 /*
  * kills the job on the mom and requeues the job
  */
+
 int requeue_job(
 
   job *pjob)
@@ -1286,6 +1287,8 @@ int requeue_job(
     rc = kill_job_on_mom(pjob->ji_qs.ji_jobid, pnode);
     retry++;
     }
+
+  unlock_node(pnode, __func__, NULL, LOGLEVEL);
 
   /* set the job's state to queued */
   svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE);
@@ -1468,7 +1471,10 @@ void finish_sendmom(
     {
     case LOCUTION_SUCCESS:  /* send to MOM went ok */
 
+      long job_stat_rate;
+
       pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_HOTSTART;
+      get_svr_attr_l(SRV_ATR_JobStatRate, &job_stat_rate);
       
       if (preq != NULL)
         reply_ack(preq);
@@ -1505,7 +1511,8 @@ void finish_sendmom(
         depend_on_exec(pjob);
 
       /* set up the poll task */
-      set_task(WORK_Timed, time_now + JobStatRate, poll_job_task, strdup(job_id), FALSE);
+      pjob->ji_last_reported_time = time_now;
+      set_task(WORK_Timed, time_now + job_stat_rate, poll_job_task, strdup(job_id), FALSE);
 
       break;
 
@@ -1541,7 +1548,7 @@ void finish_sendmom(
         if (preq != NULL)
           {
           if (mom_err != PBSE_NONE)
-            req_reject(mom_err, 0, preq, node_name, "job was aboted by mom");
+            req_reject(mom_err, 0, preq, node_name, "job was aborted by mom");
           else
             req_reject(PBSE_BADSTATE, 0, preq, node_name, "job was aborted by mom");
           }
@@ -1733,7 +1740,7 @@ job *chk_job_torun(
         }
 
       if ((ptr = strchr(exec_host, '/')))
-        * ptr = 0; /* For some reason, node name has "/0" on the end (i.e. "node0001/0"). */
+        *ptr = 0;
 
       if (strcmp(prun->rq_destin, exec_host) != 0)
         {

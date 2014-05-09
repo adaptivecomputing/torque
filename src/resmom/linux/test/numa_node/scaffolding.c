@@ -26,7 +26,10 @@ bool is_physical_core(unsigned int index)
   return(true);
   }
 
-int is_whitespace(char c)
+int is_whitespace(
+    
+  char c)
+
   {
   if ((c == ' ')  ||
       (c == '\n') ||

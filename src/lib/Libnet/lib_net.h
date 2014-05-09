@@ -88,7 +88,6 @@ void globalset_add_sock(int sock);
 void globalset_del_sock(int sock);
 int add_conn(int, enum conn_type, pbs_net_t, unsigned int, unsigned int, void *(*func)(void *));
 int add_scheduler_conn(int, enum conn_type, pbs_net_t, unsigned int, unsigned int, void *(*func)(void *));
-void close_conn(int sd, int has_mutex);
 void net_close(int but);
 pbs_net_t get_connectaddr(int sock, int mutex);
 int get_connecthost(int sock, char *namebuf, int size);

@@ -20,7 +20,8 @@ CHECK_DIRS = accounting array_func array_upgrade attr_recov dis_read geteusernam
 					svr_chk_owner svr_connect svr_format_job svr_func svr_jobfunc svr_mail svr_movejob \
 					svr_recov svr_resccost svr_task display_alps_status process_alps_status login_nodes \
 					track_alps_reservations user_info exiting_jobs job_container receive_mom_communication \
-					process_mom_update batch_request job_attr_def
+					process_mom_update batch_request job_attr_def incoming_request id_map delete_all_tracker \
+					execution_slot_tracker job_usage_info
 
 $(CHECK_DIRS)::
 	$(MAKE) -C $@ $(MAKECMDGOALS)

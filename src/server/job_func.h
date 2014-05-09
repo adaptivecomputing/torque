@@ -30,20 +30,18 @@ int record_jobinfo(struct job *pjob);
 
 int svr_job_purge(struct job *pjob, int keepSpoolFiles=0);
 
-/*static*/ struct job *find_job_by_array(all_jobs *aj, char *job_id, int get_subjob);
-
 struct job *svr_find_job(char *jobid, int get_subjob);
 
 struct job_array *get_jobs_array(struct job **pjob);
 
 struct pbs_queue *get_jobs_queue(struct job **pjob_ptr);
 
-/*static*/ int hostname_in_externals(char *hostname, char *externals);
+int hostname_in_externals(char *hostname, char *externals);
 
-/*static*/ int fix_external_exec_hosts(struct job *pjob);
+int fix_external_exec_hosts(struct job *pjob);
 
-/*static*/ int fix_cray_exec_hosts(struct job *pjob);
+int fix_cray_exec_hosts(struct job *pjob);
 
-/*static*/ int change_external_job_name(struct job *pjob);
+int change_external_job_name(struct job *pjob);
 
 #endif /* _JOB_FUNC_H */

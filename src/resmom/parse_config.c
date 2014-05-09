@@ -90,6 +90,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <errno.h>
+#include <sstream>
 
 #include "log.h"
 #include "mom_config.h"
@@ -98,6 +99,8 @@
 #include "u_tree.h"
 #include "csv.h"
 
+void encode_used(job *pjob, int perm, std::stringstream *list, tlist_head *phead);
+void encode_flagged_attrs(job *pjob, int perm, std::stringstream *list, tlist_head *phead);
 
 /* these are the global variables we set or don't set as a result of the config file.
  * They should be externed in mom_config.h */
@@ -1102,17 +1105,18 @@ unsigned long setapbasilprotocol(
 
   if (value != NULL)
     {
-    /* only versions 1.0 to 1.3 are supported for now. update later */
+    /* only versions 1.0 to 1.4 are supported for now. update later */
     if ((strlen(value) != 3) ||
         (value[0] != '1') ||
         (value[1] != '.') ||
         ((value[2] != '0') &&
          (value[2] != '1') &&
          (value[2] != '2') &&
-         (value[2] != '3')))
+         (value[2] != '3') &&
+         (value[2] != '4')))
       {
       snprintf(log_buffer, sizeof(log_buffer), 
-        "Value must be 1.[0-3] but is %s", value);
+        "Value must be 1.[0-4] but is %s", value);
       log_err(-1, __func__, log_buffer);
       }
     else
@@ -2733,7 +2737,21 @@ const char *reqmsg(
 
   return(PBSNodeMsgBuf);
   }  /* END reqmsg() */
+  
 
+
+void add_job_status_information(
+
+  job               &pjob,
+  std::stringstream &list)
+
+  {
+  list << "(";
+  encode_used(&pjob, ATR_DFLAG_MGRD, &list, NULL); /* adds resources_used attr */
+
+  encode_flagged_attrs(&pjob, ATR_DFLAG_MGRD, &list, NULL); /* adds other flagged attrs */
+  list << ")";
+  } /* END add_job_status_information() */
 
 
 
@@ -2742,33 +2760,17 @@ const char *getjoblist(
   struct rm_attribute *attrib) /* I */
 
   {
-  static char *list = NULL;
-  static int listlen = 0;
-  job *pjob;
-  int firstjob = 1;
+  std::stringstream  list;
+  job               *pjob;
+  bool               firstjob = true;
 
 #ifdef NUMA_SUPPORT
   char  mom_check_name[PBS_MAXSERVERNAME];
   char *dot;
 #endif 
 
-  if (list == NULL)
-    {
-    if ((list = (char *)calloc(BUFSIZ + 50, sizeof(char)))==NULL)
-      {
-      /* FAILURE - cannot alloc memory */
-
-      fprintf(stderr,"ERROR: could not calloc!\n");
-
-      /* since memory cannot be allocated, report no jobs */
-
-      return (" ");
-      }
-
-    listlen = BUFSIZ;
-    }
-
-  *list = '\0'; /* reset the list */
+  // reset the job list
+  list.clear();
 
   if ((pjob = (job *)GET_NEXT(svr_alljobs)) == NULL)
     {
@@ -2794,46 +2796,26 @@ const char *getjoblist(
     if (strstr(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,mom_check_name) == NULL)
       continue;
 #endif
+
     if (!firstjob)
-      strcat(list, " ");
+      list << " ";
+    
+    firstjob = false;
 
-    strcat(list, pjob->ji_qs.ji_jobid);
+    list << pjob->ji_qs.ji_jobid;
 
-    if ((int)strlen(list) >= listlen)
+    if (am_i_mother_superior(*pjob) == true)
       {
-      int   new_list_len = listlen + BUFSIZ;
-      char *tmpList;
-
-      tmpList = (char *)realloc(list, new_list_len);
-
-      if (tmpList == NULL)
-        {
-        /* FAILURE - cannot alloc memory */
-
-        fprintf(stderr,"ERROR: could not realloc!\n");
-
-        /* since memory cannot be allocated, report no jobs */
-
-        return(" ");
-        }
-
-      memset(tmpList + listlen, 0, new_list_len - listlen);
-
-      list = tmpList;
-      listlen = new_list_len;
+      add_job_status_information(*pjob, list);
       }
-
-    firstjob = 0;
     }  /* END for (pjob) */
 
-  if (list[0] == '\0')
-    {
-    /* no jobs - return space character */
+#ifdef NUMA_SUPPORT
+  if (firstjob == true)
+    list << " ";
+#endif
 
-    strcat(list, " ");
-    }
-
-  return(list);
+  return(strdup(list.str().c_str()));
   }  /* END getjoblist() */
 
 

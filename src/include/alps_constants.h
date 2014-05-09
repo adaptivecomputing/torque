@@ -86,6 +86,7 @@
 #define DEFAULT_APBASIL_PATH        "/usr/bin/apbasil"
 #define DEFAULT_APBASIL_PROTOCOL    "1.0"
 #define APBASIL_PROTOCOL_v13        1.3f
+#define APBASIL_PROTOCOL_v14        1.4f
 #define APBASIL_DEFAULT_NPPCU_VALUE 1
 #define APBASIL_QUERY               "echo \"<?xml version='1.0'?><BasilRequest protocol='%s' method='QUERY' type='INVENTORY'></BasilRequest>\" | %s"
 
@@ -96,10 +97,10 @@
 #define APBASIL_RESERVE_PARAM_BEGIN_SANS_NPPN "<ReserveParam architecture='XT' width='%d'><NodeParamArray><NodeParam>"
 
 /* ALPS BASIL protocol >= 1.3 */
-#define APBASIL_RESERVE_PARAM_BEGIN_DEPTH_13 "<ReserveParam architecture='XT' width='%d' nppcu='%d' nppn='%d' depth='%d'><NodeParamArray><NodeParam>"
-#define APBASIL_RESERVE_PARAM_BEGIN_DEPTH_SANS_NPPN_13 "<ReserveParam architecture='XT' width='%d' nppcu='%d' depth='%d'><NodeParamArray><NodeParam>"
-#define APBASIL_RESERVE_PARAM_BEGIN_13 "<ReserveParam architecture='XT' width='%d' nppcu='%d' nppn='%d'><NodeParamArray><NodeParam>"
-#define APBASIL_RESERVE_PARAM_BEGIN_SANS_NPPN_13 "<ReserveParam architecture='XT' width='%d' nppcu='%d'><NodeParamArray><NodeParam>"
+#define APBASIL_RESERVE_PARAM_BEGIN_DEPTH_13 "<ReserveParam architecture='XT' width='%d' nppcu='%d' nppn='%d' depth='%d'%s><NodeParamArray><NodeParam>"
+#define APBASIL_RESERVE_PARAM_BEGIN_DEPTH_SANS_NPPN_13 "<ReserveParam architecture='XT' width='%d' nppcu='%d' depth='%d'%s><NodeParamArray><NodeParam>"
+#define APBASIL_RESERVE_PARAM_BEGIN_13 "<ReserveParam architecture='XT' width='%d' nppcu='%d' nppn='%d'%s><NodeParamArray><NodeParam>"
+#define APBASIL_RESERVE_PARAM_BEGIN_SANS_NPPN_13 "<ReserveParam architecture='XT' width='%d' nppcu='%d'%s><NodeParamArray><NodeParam>"
 
 #define APBASIL_RESERVE_PARAM_END   "</NodeParam></NodeParamArray></ReserveParam>"
 #define APBASIL_RESERVE_ARRAY       "<ReserveParamArray user_name='%s' batch_id='%s'>"
@@ -164,5 +165,6 @@ typedef struct host_req
   char            *hostname;
   } host_req;
 
-host_req *get_host_req(char *hostname);
+
+host_req *get_host_req(char *hostname, unsigned int ppn_count);
 void      free_host_req(host_req *hr);

@@ -127,6 +127,7 @@
 #define BM_ERROR -20
 #define MAX_LEVEL_DEPTH 100 /* maximum levels per path */
 
+#define NODE_POWER_CHANGE_TIMEOUT 30
 
 enum psit
   {
@@ -176,7 +177,7 @@ class job_usage_info
 /* this struct is only used while the job is being created. */
 typedef struct job_reservation_info
   {
-  char                         node_name[PBS_MAXHOSTNAME];
+  int                          node_id;
   int                          port;
   execution_slot_tracker       est;
   } job_reservation_info;
@@ -217,7 +218,7 @@ typedef struct complete_spec_data
 
 typedef struct node_job_add_info
   {
-  char                      node_name[PBS_MAXNODENAME + 1];
+  int                       node_id;
   int                       ppn_needed;
   int                       gpu_needed;
   int                       mic_needed;
@@ -295,6 +296,7 @@ typedef struct received_node
 struct pbsnode
   {
   char                         *nd_name;             /* node's host name */
+  int                           nd_id;               /* node's id */
 
   struct prop                  *nd_first;            /* first and last property */
   struct prop                  *nd_last;
@@ -355,6 +357,9 @@ struct pbsnode
   std::vector<std::string>       *nd_ms_jobs;          /* the jobs this node is mother superior for */
   container::item_container<struct pbsnode *> *alps_subnodes;       /* collection of alps subnodes */
   int                           max_subnode_nppn;    /* maximum ppn of an alps subnode */
+  unsigned short              nd_power_state;
+  unsigned char               nd_mac_addr[6];
+  time_t                        nd_power_state_change_time; //
 
   pthread_mutex_t              *nd_mutex;            /* semaphore for accessing this node's data */
   };
@@ -386,24 +391,24 @@ int             copy_properties(struct pbsnode *dest, struct pbsnode *src);
 
 class hello_info
   {
-public:
-  std::string name;
-  time_t      last_retry;
-  int         num_retries;
-  hello_info(const char *nm):name(nm),last_retry(0),num_retries(0){}
+  public:
+    int     id;
+    time_t  last_retry;
+    int     num_retries;
+  hello_info(int ident) : id(ident), last_retry(0), num_retries(0) {}
   };
 
 
 
-  typedef container::item_container<hello_info *>                 hello_container;
-  typedef container::item_container<hello_info *>::item_iterator  hello_container_iterator;
+typedef container::item_container<hello_info *>                 hello_container;
+typedef container::item_container<hello_info *>::item_iterator  hello_container_iterator;
 
 int         needs_hello(hello_container *, char *);
-int         add_hello(hello_container *, char *);
-int         add_hello_after(hello_container *, char *, int);
+int         add_hello(hello_container *, int);
+int         add_hello_after(hello_container *, int, int);
 int         add_hello_info(hello_container *, hello_info *);
 hello_info *pop_hello(hello_container *);
-int         remove_hello(hello_container *, char *);
+int         remove_hello(hello_container *, int);
 int         send_hierarchy(char *, unsigned short);
 void       *send_hierarchy_threadtask(void *);
 
@@ -476,6 +481,16 @@ int tlist(tree *, char *, int);
 #define INUSE_UNKNOWN          0x100 /* Node has not been heard from yet */
 #define INUSE_SUBNODE_MASK     0xff /* bits both in nd_state and inuse */
 #define INUSE_COMMON_MASK  (INUSE_OFFLINE|INUSE_DOWN)
+
+/* Node power state defines */
+
+#define POWER_STATE_RUNNING    0 //Up and running
+#define POWER_STATE_STANDBY    1 //Linux string "standby"
+#define POWER_STATE_SUSPEND    2 //Linux string "mem"
+#define POWER_STATE_SLEEP      3 //Linux not supported
+#define POWER_STATE_HIBERNATE  4 //Linux string "disk"
+#define POWER_STATE_SHUTDOWN   5 //Must be done via ACPI
+
 /* state bits that go from node to subn */
 
 /*
@@ -495,6 +510,7 @@ int tlist(tree *, char *, int);
 #define WRITENODE_STATE  0x1   /*associated w/ offline*/
 #define WRITE_NEW_NODESFILE 0x2 /*changed: deleted,ntype,or properties*/
 #define WRITENODE_NOTE   0x4   /*associated w/ note*/
+#define WRITENODE_POWER_STATE 0x8
 
 /*
  * Although at the present time a struct pbssnode doesn't have an array of
@@ -512,6 +528,7 @@ int tlist(tree *, char *, int);
 enum nodeattr
   {
   ND_ATR_state,
+  ND_ATR_power_state,
   ND_ATR_np,
   ND_ATR_properties,
   ND_ATR_ntype,
@@ -549,6 +566,7 @@ typedef struct node_check_info
   int          nprops;
   int          nstatus;
   char        *note;
+  short        power_state;
   } node_check_info;
 
 
@@ -570,9 +588,9 @@ extern int    MultiMomMode; /* moms configured for multiple moms per machine */
 
 extern int update_nodes_file(struct pbsnode *);
 
-extern void bad_node_warning(pbs_net_t, struct pbsnode *);
-
+struct pbsnode  *tfind_addr(const u_long key, uint16_t port, char *job_momname);
 struct pbsnode  *find_nodebyname(const char *);
+struct pbsnode  *find_nodebyid(int);
 struct pbsnode  *find_node_in_allnodes(all_nodes *an, char *nodename);
 int              create_partial_pbs_node(char *, unsigned long, int);
 int              add_execution_slot(struct pbsnode *pnode);

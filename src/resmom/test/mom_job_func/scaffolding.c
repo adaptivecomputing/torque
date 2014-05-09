@@ -8,9 +8,12 @@
 #include "log.h" /* LOG_BUF_SIZE */
 #include "pbs_ifl.h" /* MAXPATHLEN */
 #include "net_connect.h" /* pbs_net_t */
+#include "resource.h" /* resource_def */
 #include "server_limits.h" /* pbs_net_t. Also defined in net_connect.h */
 #include "pbs_job.h" /* job_file_delete_info */
+#include "threadpool.h"
 
+threadpool_t *request_pool;
 int is_login_node = 0;
 char *apbasil_path = NULL;
 char *apbasil_protocol = NULL;
@@ -28,6 +31,8 @@ tlist_head svr_alljobs; /* mom_main.c */
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */ /* mom_main.c/pbsd_main.c */
 char log_buffer[LOG_BUF_SIZE]; /* pbs_log.c */
 bool exit_called = false;
+int svr_resc_size = 0; /* resc_def_all.c */
+resource_def *svr_resc_def = NULL; /* resc_def_all.c */
 
 
 void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
@@ -54,7 +59,7 @@ void log_record(int eventtype, int objclass, const char *objname, const char *te
   exit(1);
   }
 
-int enqueue_threadpool_request(void *(*func)(void *),void *arg)
+int enqueue_threadpool_request(void *(*func)(void *),void *arg, threadpool_t *tp)
   {
   fprintf(stderr, "The call to enqueue_threadpool_request needs to be mocked!!\n");
   exit(1);
@@ -130,3 +135,10 @@ int delete_cpuset(const char *, bool)
   {
   return 0;
   }
+
+char *pbse_to_txt(int err)
+  {
+  fprintf(stderr, "The call to pbse_to_txt needs to be mocked!!\n");
+  exit(1);
+  }
+

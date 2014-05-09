@@ -119,7 +119,7 @@
 struct job_array;
 #endif
 
-#define JOB_REPORTED_ABORT_DELTA 180
+#define JOB_REPORTED_POLL_TIMEOUT 300
 
 /*
  * Dependent Job Structures
@@ -171,6 +171,12 @@ struct array_depend_job
   char dc_child[PBS_MAXSVRJOBID+1];
   char dc_svr[PBS_MAXSERVERNAME+1];
   int  dc_num;
+  };
+
+struct dependnames
+  {
+  int         type;
+  const char *name;
   };
 
 /*
@@ -384,6 +390,7 @@ enum job_atr
   JOB_ATR_exec_mics,
   JOB_ATR_system_start_time,
   JOB_ATR_nppcu, /* Hyper-Thread handling for ALPS (Cray) */
+  JOB_ATR_login_node_key,
 #include "site_job_attr_enum.h"
 
   JOB_ATR_UNKN,  /* the special "unknown" type    */
@@ -647,9 +654,9 @@ struct job
   int            ji_mempressure_cnt;   /* counts MOM cycles memory_pressure is over threshold */
 #endif
   int            ji_examined;
-  time_t         ji_kill_started;      /* time since we've begun killing the job - MS only */
-  time_t         ji_joins_sent;        /* time we sent out the join requests - MS only */
-  int            ji_joins_resent;      /* set to TRUE when rejoins have been sent */
+  time_t         ji_kill_started;       /* time since we've begun killing the job - MS only */
+  time_t         ji_joins_sent;         /* time we sent out the join requests - MS only */
+  int            ji_joins_resent;       /* set to TRUE when rejoins have been sent */
 
 #else     /* END MOM ONLY */
 
@@ -1099,8 +1106,9 @@ extern int   job_unlink_file(job *pjob, const char *name);
 #ifndef PBS_MOM
 job         *job_clone(job *,struct job_array *, int);
 job         *svr_find_job(char *jobid, int get_subjob);
+job         *find_job_by_array(all_jobs *aj, char *job_id, int get_subjob, bool locked);
 #else
-extern job  *mom_find_job(char *);
+extern job  *mom_find_job(const char *);
 #endif
 extern job  *job_recov(char *);
 extern int   job_save(job *, int, int);

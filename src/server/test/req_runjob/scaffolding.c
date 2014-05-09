@@ -17,6 +17,7 @@
 #include "work_task.h" /* work_task, work_type */
 #include "list_link.h" /* list_link  */
 #include "queue.h"
+#include "threadpool.h"
 
 pthread_mutex_t *scheduler_sock_jobct_mutex;
 const char *PJobSubState[10];
@@ -31,8 +32,9 @@ struct server server;
 int scheduler_sock = -1;
 pbs_net_t pbs_mom_addr;
 const char *msg_manager = "%s at request of %s@%s";
-int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
+int LOGLEVEL = 10; /* force logging code to be exercised as tests run */
 int svr_totnodes = 0;
+threadpool_t *request_pool;
 
 
 
@@ -132,14 +134,11 @@ int depend_on_exec(job *pjob)
 
 int unlock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
   {
-  fprintf(stderr, "The call to unlock_node to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
   {
-  fprintf(stderr, "The call to req_reject to be mocked!!\n");
-  exit(1);
   }
 
 int is_ts_node(char *nodestr)
@@ -338,7 +337,7 @@ int unlock_ai_mutex(job_array *pa, const char *id, const char *msg, int logging)
   return(0);
   }
 
-int enqueue_threadpool_request(void *(*func)(void *), void *arg)
+int enqueue_threadpool_request(void *(*func)(void *), void *arg, threadpool_t *tp)
 
   {
   return(0);

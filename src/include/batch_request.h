@@ -333,6 +333,7 @@ struct batch_request
   int                 rq_refcount;
   void               *rq_extra; /* optional ptr to extra info  */
   int                 rq_noreply; /* Set true if no reply is required */
+  int                 rq_failcode;
   char               *rq_extend; /* request "extension" data  */
   char               *rq_id;      /* the batch request's id */
 
@@ -376,6 +377,8 @@ struct batch_request
     tlist_head            rq_select; /* svrattrlist */
     int                   rq_shutdown;
 
+    int                   rq_powerstate;
+
     struct rq_signal      rq_signal;
 
     struct rq_status      rq_status;
@@ -410,6 +413,7 @@ extern void    reply_free (struct batch_reply *);
 extern int     authenticate_user (struct batch_request *, struct credential *, char **);
 extern void    free_br (struct batch_request *);
 extern int     isode_request_read (int, struct batch_request *);
+int            process_request(struct tcp_chan *chan);
 
 int            get_batch_request_id(batch_request *preq);
 int            insert_batch_request(batch_request *preq);
@@ -420,7 +424,7 @@ int            remove_batch_request(char *br_id);
 int req_gpuctrl_svr(struct batch_request *preq);
 
 #ifndef PBS_MOM
-extern void  req_connect (struct batch_request *req);
+int req_connect (struct batch_request *req);
 /* DIAGTODO: declr req_stat_diag() */
 extern void  req_trackjob (struct batch_request *req);
 extern void *req_gpuctrl (void *req);
@@ -429,6 +433,7 @@ extern void  req_cpyfile (struct batch_request *req);
 extern void  req_delfile (struct batch_request *req);
 extern void  req_returnfiles (struct batch_request *req);
 extern void  req_delete_reservation(struct batch_request *preq);
+extern void req_change_power_state(struct batch_request *request);
 #endif
 
 #ifdef SERVER_LIMITS_H
@@ -462,6 +467,7 @@ extern int decode_DIS_TrackJob (struct tcp_chan *chan, struct batch_request *);
 extern int decode_DIS_replySvr (struct tcp_chan *chan, struct batch_reply *);
 extern int decode_DIS_svrattrl (struct tcp_chan *chan, tlist_head *);
 extern int decode_DIS_GpuCtrl (struct tcp_chan *chan, struct batch_request *);
+extern int decode_DIS_PowerState (struct tcp_chan *chan, struct batch_request *);
 
 extern int encode_DIS_CopyFiles (struct tcp_chan *chan, struct batch_request *);
 extern int encode_DIS_JobObit (struct tcp_chan *chan, struct batch_request *);

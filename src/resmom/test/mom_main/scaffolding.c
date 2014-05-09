@@ -600,7 +600,7 @@ resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   exit(1);
   }
 
-job *mom_find_job(char *jobid)
+job *mom_find_job(const char *jobid)
   {
   fprintf(stderr, "The call to find_job needs to be mocked!!\n");
   exit(1);
@@ -750,6 +750,13 @@ bool am_i_mother_superior(const job &pjob)
   return(false);
   }
 
+char *pbse_to_txt(int err)
+  {
+  fprintf(stderr, "The call to pbse_to_txt needs to be mocked!!\n");
+  exit(1);
+  }
+
+
 #ifdef PENABLE_LINUX26_CPUSETS
 
 int hwloc_topology_init(hwloc_topology_t *)
@@ -805,3 +812,8 @@ return 0;
 
 
 #endif
+
+void encode_used(job *pjob, int perm, std::stringstream *list, tlist_head *phead) {}
+
+void encode_flagged_attrs(job *pjob, int perm, std::stringstream *list, tlist_head *phead) {}
+

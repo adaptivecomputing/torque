@@ -332,6 +332,7 @@ extern int encode_DIS_MessageJob (struct tcp_chan *chan, char *jid, int fopt, ch
 extern int encode_DIS_QueueJob (struct tcp_chan *chan, char *jid, char *dest, struct attropl *);
 int encode_DIS_QueueJob_hash(struct tcp_chan *chan, char *jid, char *destin, job_data_container *job_attr, job_data_container *res_attr);
 extern int encode_DIS_ReqExtend (struct tcp_chan *chan, char *extend);
+extern int encode_DIS_PowerState (struct tcp_chan *chan, unsigned short power_state);
 extern int encode_DIS_ReqHdr (struct tcp_chan *chan, int reqt, char *user);
 extern int encode_DIS_Rescq (struct tcp_chan *chan, char **rlist, int num);
 extern int encode_DIS_RunJob (struct tcp_chan *chan, char *jid, char *where, unsigned int resch);

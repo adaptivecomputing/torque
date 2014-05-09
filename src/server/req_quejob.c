@@ -452,7 +452,14 @@ int req_quejob(
   int                   jobid_number;
   
   struct stat           stat_buf;
+  long                  passCpu = 1;
+  std::string           cpuClock = "";
   
+  if(get_svr_attr_l(SRV_ATR_pass_cpu_clock,&passCpu) != PBSE_NONE)
+    {
+    passCpu = 1; //Default is to pass the cpuclock to the moms.
+    }
+
   get_svr_attr_str(SRV_ATR_job_suffix_alias, &alias);
   /*
    * if the job id is supplied, the request had better be
@@ -555,20 +562,7 @@ int req_quejob(
   /* does job already exist, check both old and new jobs */
 
   if ((pj = svr_find_job(jid, FALSE)) == NULL)
-    {
-    all_jobs_iterator  *iter = NULL;
-    newjobs.lock();
-    iter = newjobs.get_iterator();
-    newjobs.unlock();
-
-    while ((pj = next_job(&newjobs,iter)) != NULL)
-      {
-      if (!strcmp(pj->ji_qs.ji_jobid, jid))
-        break;
-      
-      unlock_ji_mutex(pj, __func__, "1", LOGLEVEL);
-      }
-    }
+    pj = find_job_by_array(&newjobs, jid, FALSE, false);
 
   if (pj != NULL)
     {
@@ -710,8 +704,17 @@ int req_quejob(
         {
         pj->ji_have_nodes_request = 1;
         }
+      if(!passCpu)
+        {
+        if(strcmp(psatl->al_atopl.resource,"cpuclock")==0)
+          {
+          cpuClock = "PBS_CPUCLOCK=";
+          cpuClock += psatl->al_atopl.value;
+          psatl = (svrattrl *)GET_NEXT(psatl->al_link);
+          continue; //Don't add this to the resources for this job.
+          }
+        }
       }
-
     /* identify the pbs_attribute by name */
     attr_index = find_attr(job_attr_def, psatl->al_name, JOB_ATR_LAST);
 
@@ -966,6 +969,11 @@ int req_quejob(
 
     snprintf(buf, sizeof(buf), "%s%s", pbs_o_que, pque->qu_qs.qu_name);
 
+    if(cpuClock.length() != 0)
+      {
+      strcat(buf,",");
+      strcat(buf,cpuClock.c_str());
+      }
     if (get_variable(pj, pbs_o_host) == NULL)
       {
       strcat(buf, ",");
@@ -2211,7 +2219,7 @@ int req_commit(
     {
     sprintf(log_buf, "threading job_clone_wt: job id %s", pj->ji_qs.ji_jobid);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-    enqueue_threadpool_request(job_clone_wt, strdup(pj->ji_qs.ji_jobid));
+    enqueue_threadpool_request(job_clone_wt, strdup(pj->ji_qs.ji_jobid), task_pool);
     }
     
   sprintf(log_buf, "job_id: %s", pj->ji_qs.ji_jobid);
@@ -2279,24 +2287,19 @@ static job *locate_new_job(
   {
   job   *pJob;
   //If the ID is NULL just return the first job in the list.
-  if((jobid == NULL)||(*jobid == '\0'))
+  if ((jobid == NULL) ||
+      (*jobid == '\0'))
     {
     newjobs.lock();
     all_jobs_iterator *iter = newjobs.get_iterator();
     pJob = iter->get_next_item();
     delete iter;
     newjobs.unlock();
-    return pJob;
+    return(pJob);
     }
-  newjobs.lock();
-  if((pJob = newjobs.find(jobid)) != NULL)
-    {
-    lock_ji_mutex(pJob,__func__,"1",LOGLEVEL);
-    newjobs.unlock();
-    return pJob;
-    }
-  newjobs.unlock();
-  return NULL;
+
+  pJob = find_job_by_array(&newjobs, jobid, FALSE, false);
+  return(pJob);
   }  /* END locate_new_job() */
 
 

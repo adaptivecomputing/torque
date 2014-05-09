@@ -56,6 +56,7 @@ START_TEST(test_recover_reservation)
   recover_called = 0;
   reserve_called = 0;
   recover_mode = 1;
+  
   char buf[1024];
   fail_unless(reserve_called == 0);
   ni.recover_reservation(3, 2049, "1.napali");

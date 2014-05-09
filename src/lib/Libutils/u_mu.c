@@ -128,7 +128,7 @@ int MUSNPrintF(
 
 char *threadsafe_tokenizer(
 
-  char **str,    /* M */
+  char       **str,    /* M */
   const char  *delims) /* I */
 
   {

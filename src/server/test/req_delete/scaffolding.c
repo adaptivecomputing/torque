@@ -12,12 +12,15 @@
 #include "work_task.h" /* work_task, all_tasks */
 #include "queue.h" /* pbs_queue */
 #include "node_func.h" /* node_info */
+#include "threadpool.h"
+#include "delete_all_tracker.hpp"
 
 int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging);
 int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging);
 
 #define MSG_LEN_LONG 160
 
+threadpool_t *request_pool;
 const char *msg_deletejob = "Job deleted";
 all_jobs alljobs;
 const char *msg_delrunjobsig = "Job sent signal %s on delete";
@@ -228,7 +231,7 @@ int unlock_ai_mutex(job_array *pa, const char *id, const char *msg, int logging)
 
 void on_job_exit_task(struct work_task *ptask) {}
 
-int enqueue_threadpool_request(void *(*func)(void *), void *arg)
+int enqueue_threadpool_request(void *(*func)(void *), void *arg, threadpool_t *tp)
   {
   return(0);
   }
@@ -447,4 +450,22 @@ ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
 ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
   {
   return(0);
+  }
+
+delete_all_tracker::delete_all_tracker()
+  {
+  }
+
+delete_all_tracker::~delete_all_tracker()
+  {
+  }
+
+void delete_all_tracker::done_deleting_all(const char *user_name, int perm)
+  {
+  
+  }
+
+bool delete_all_tracker::start_deleting_all_if_possible(const char *username, int perm)
+  {
+  return(true);
   }

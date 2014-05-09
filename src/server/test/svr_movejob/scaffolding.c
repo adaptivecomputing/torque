@@ -10,8 +10,10 @@
 #include "queue.h" /* pbs_queue */
 #include "pbs_nodes.h" /* pbsnode */
 #include "list_link.h" /* tlist_head, list_link */
+#include "threadpool.h"
 #include "array.h"
 
+threadpool_t *request_pool;
 char *path_jobs = strdup("/var/spool/torque/server_priv/jobs/");
 struct connect_handle connection[10];
 attribute_def job_attr_def[JOB_ATR_LAST];
@@ -118,7 +120,7 @@ char *get_variable(job *pjob, const char *variable)
   exit(1);
   }
 
-int enqueue_threadpool_request(void *(*func)(void *),void *arg)
+int enqueue_threadpool_request(void *(*func)(void *),void *arg, threadpool_t *tp)
   {
   fprintf(stderr, "The call to enqueue_threadpool_request to be mocked!!\n");
   exit(1);
@@ -382,6 +384,11 @@ int encode_exec_host(pbs_attribute *attr, tlist_head *phead, const char *atname,
 char *pbs_geterrmsg(int con)
   {
   return(strdup("err"));
+  }
+
+int get_svr_attr_l(int index, long *val)
+  {
+  return(0);
   }
 
 int ctnodes(char *spec)

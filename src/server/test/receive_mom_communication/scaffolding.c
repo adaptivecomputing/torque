@@ -9,6 +9,7 @@
 #include "tcp.h"
 #include "pbs_job.h"
 #include "mutex_mgr.hpp"
+#include "threadpool.h"
 
 int         allow_any_mom;
 AvlTree     ipaddrs = NULL;
@@ -29,6 +30,8 @@ const char *dis_emsg[] =
   "End of File",
   "Invalid condition in code"
   };
+
+threadpool_t *task_pool;
 
 
 char * netaddr(struct sockaddr_in *ap)
@@ -80,7 +83,8 @@ dynamic_string *get_dynamic_string(
 int enqueue_threadpool_request(
 
   void *(*func)(void *),
-  void *arg)
+  void *arg,
+  threadpool_t *tp)
 
   {
   return(0);
@@ -263,3 +267,5 @@ struct addrinfo * insert_addr_name_info(struct addrinfo *pAddrInfo,const char *h
   }
 
 mutex_mgr::~mutex_mgr() {}
+
+void DIS_tcp_cleanup(struct tcp_chan *chan) {}
