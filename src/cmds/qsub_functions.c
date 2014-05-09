@@ -3287,14 +3287,23 @@ void process_opts(
       /* run the specified resources through the submitfilter. */
       cline_out = tmp_job_info->value;
 
+      bool added_quote = false;
       for (index = 1;index < argc;index++)
         {
         if (argv[index] != NULL)
           {
           cline_out += " ";
+          if (!added_quote)
+            {
+            cline_out += "\"";
+            added_quote = true;
+            }
           cline_out += argv[index];
           }
         }    /* END for (index) */
+       
+      if (added_quote)
+        cline_out += "\"";
 
       cline_out += " <";
       cline_out += tmp_name;
