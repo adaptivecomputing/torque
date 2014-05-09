@@ -296,6 +296,7 @@ extern char               *stat_string_aggregate;
 extern unsigned int        ssa_index;
 extern container::item_container<received_node *> received_statuses;
 boost::ptr_vector<std::string> mom_status;
+boost::ptr_vector<std::string> global_gpu_status;
 
 extern struct config *rm_search(struct config *where, const char *what);
 
@@ -1517,6 +1518,12 @@ int send_update()
   } /* END send_update() */
 
 
+int append_gpu_status(boost::ptr_vector<std::string>& source, boost::ptr_vector<std::string>& destination)
+  {
+  destination.insert(destination.end(), source.begin(), source.end());
+
+  return(PBSE_NONE);
+  }
 
 int send_update_to_a_server()
 
@@ -1559,7 +1566,7 @@ void update_mom_status()
 
   generate_server_status(mom_status);
 #ifdef NVIDIA_GPUS
-  add_gpu_status(mom_status);
+  append_gpu_status(global_gpu_status, mom_status);
 #endif /* NVIDIA_GPU */
 
 #ifdef MIC
@@ -1651,6 +1658,12 @@ void mom_server_all_update_stat(void)
     }
   else
     {
+    /* The NVIDIA NVML library has a problem when we use it after the first fork. Let's get the gpu status first
+       and then fork */
+#ifdef NVIDIA_GPUS
+    global_gpu_status.clear();
+    add_gpu_status(global_gpu_status);
+#endif
     /* It is possible that pbs_server may get busy and start queing incoming requests and not be able 
        to process them right away. If pbs_mom is waiting for a reply to a statuys update that has 
        been queued and at the same time the server makes a request to the mom we can get stuck
