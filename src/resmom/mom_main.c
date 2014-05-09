@@ -171,6 +171,10 @@ char        *path_home = (char *)PBS_SERVER_HOME;
 char        *mom_home;
 
 extern boost::ptr_vector<std::string> mom_status;
+#ifdef NVIDIA_GPUS
+extern boost::ptr_vector<std::string> global_gpu_status;
+#endif
+
 extern int  multi_mom;
 char        *path_layout;
 extern char *msg_daemonname;          /* for logs     */

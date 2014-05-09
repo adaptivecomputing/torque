@@ -1979,7 +1979,7 @@ void req_gpuctrl_mom(
 
 int add_gpu_status(
 
-  boost::ptr_vector<std::string>& mom_status)
+  boost::ptr_vector<std::string>& gpu_status)
 
   {
 #ifdef NVIDIA_GPUS
@@ -1988,16 +1988,16 @@ int add_gpu_status(
   if (!use_nvidia_gpu)
     return(PBSE_NONE);
 
-  mom_status.push_back(new std::string(START_GPU_STATUS));
+  gpu_status.push_back(new std::string(START_GPU_STATUS));
 
 #ifdef NVML_API
-  generate_server_gpustatus_nvml(mom_status);
+  generate_server_gpustatus_nvml(gpu_status);
 #else
 
-  generate_server_gpustatus_smi(mom_status);
+  generate_server_gpustatus_smi(gpu_status);
 #endif /* NVML_API */
 
-  mom_status.push_back(new std::string(END_GPU_STATUS));
+  gpu_status.push_back(new std::string(END_GPU_STATUS));
 #endif /* NVIDIA_GPUS */
 
   return(PBSE_NONE);
