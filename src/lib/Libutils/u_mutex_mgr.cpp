@@ -112,7 +112,7 @@ using namespace std;
     int rc;
 
     unlock_on_exit = true;
-    locked = true;
+    locked = is_locked;
     mutex_valid = true;
 
     /* validate the mutex */
@@ -125,7 +125,7 @@ using namespace std;
     if (is_locked == false)
       {
       rc = lock();
-      if (rc != PBSE_NONE)
+      if ((rc != PBSE_NONE) && (rc != PBSE_MUTEX_ALREADY_LOCKED))
         {
         mutex_valid = false;
         unlock_on_exit = false;

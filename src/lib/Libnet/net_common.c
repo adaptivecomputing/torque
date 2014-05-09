@@ -949,7 +949,6 @@ int pbs_getaddrinfo(
   int retryCount = 3;
   int addrFound = FALSE;
   mutex_mgr mutex(&addrinfoMutex);
-  mutex.lock();
 
   if (ppAddrInfoOut == NULL)
     {
