@@ -126,13 +126,25 @@ bool are_all_sisters_done(
 
   {
   bool done = true;
+  int  num_nodes;
 
   if (am_i_mother_superior(*pjob) == false)
     {
     return(false);
     }
 
-  for (int i = 1; i < pjob->ji_numnodes; i++)
+  /* This this job using job_radix? if so only
+     count the immediate sisters */
+  if (pjob->ji_radix > 1)
+    {
+    num_nodes = pjob->ji_radix;
+    }
+  else
+    {
+    num_nodes= pjob->ji_numnodes;
+    }
+
+  for (int i = 1; i < num_nodes; i++)
     {
     if (pjob->ji_hosts[i].hn_sister == SISTER_OKAY)
       {
