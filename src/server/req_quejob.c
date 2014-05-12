@@ -820,6 +820,10 @@ int decode_attributes_into_job(
 
 
 
+/*
+ * perform_attribute_post_actions()
+ */
+
 int perform_attribute_post_actions(
 
   job *pj,
@@ -1293,7 +1297,7 @@ int check_attribute_settings(
     server_name,
     resc_access_perm);
 
-  return(rc);
+  return(PBSE_NONE);
   } /* END check_attribute_settings() */
 
 
@@ -1370,7 +1374,7 @@ int req_quejob(
 
   mutex_mgr job_mutex(pj->ji_mutex, true);
   std::string  cpuClock = "";
-  decode_attributes_into_job(pj, resc_access_perm, preq, job_mutex, pque, cpuClock);
+  rc = decode_attributes_into_job(pj, resc_access_perm, preq, job_mutex, pque, cpuClock);
 
   if (rc != PBSE_NONE)
     return(rc);
@@ -1385,7 +1389,11 @@ int req_quejob(
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
 
-  perform_attribute_post_actions(pj, preq, job_mutex);
+  if ((rc = perform_attribute_post_actions(pj, preq, job_mutex)) != PBSE_NONE)
+    {
+    job_mutex.set_unlock_on_exit(false);
+    return(rc);
+    }
 
   sum_select_mem_request(pj);
 
