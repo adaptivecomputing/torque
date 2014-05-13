@@ -299,12 +299,9 @@ void mom_req_quejob(
       }  /* END if (pj->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) */
     else
       {
-      /* reject the job. It is already working here. */
-      sprintf(log_buffer, "Job already exits. State: %d substate: %d", pj->ji_qs.ji_state, pj->ji_qs.ji_substate);
-      log_err(-1, __func__, log_buffer);
-      sprintf(log_buffer, "Job %s already on mom", pj->ji_qs.ji_jobid);
-      req_reject(PBSE_JOBEXIST, 0, preq, NULL, log_buffer);
-      return;
+      /* unlink job from svr_alljobs since it will be placed on newjobs */
+
+      delete_link(&pj->ji_alljobs);
       }
     }  /* END if (pj != NULL) */
   else

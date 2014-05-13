@@ -137,6 +137,25 @@ void readit(
 
   if ((amt = read_ac_socket(sock, buf, 256)) > 0)
     {
+    /* disable cookie search PW - mpiexec patch */
+
+    /*
+    if (prm->r_first == 1)
+      {
+      i = strlen(cookie);
+
+      if (strncmp(buf,cookie,i) != 0)
+        {
+        close(sock);
+
+        prm->r_where = invalid;
+
+        FD_CLR(sock,&readset);
+        }
+
+      prm->r_first = 0;
+      }
+    */
 
     for (pc = buf + i;pc < buf + amt;++pc)
       {
