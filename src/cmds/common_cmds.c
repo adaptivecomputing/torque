@@ -329,7 +329,6 @@ int parse_variable_list(
       delim = strchr(s, ',');
       if (delim == NULL)
         {
-        alloc_size = strlen(s);
         /* we are at the end */
         job_env += s;
         s = NULL;
