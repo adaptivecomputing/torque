@@ -152,7 +152,10 @@ int encode_DIS_attrl(
     if (rc != 0)
       break;
 
-    rc = diswst(chan, ps->name);
+    if (ps->name != NULL)
+      rc = diswst(chan, ps->name);
+    else
+      rc = diswst(chan, "");
 
     if (rc != 0)
       break;

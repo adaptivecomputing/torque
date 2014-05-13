@@ -274,14 +274,13 @@ int encode_time(
   int             perm)  /* only used for resources */
 
   {
-  size_t  ct;
-  char   cvnbuf[ENCODE_TIME_SIZE];
-  int    hr;
-  int   min;
-  long   n;
+  size_t    ct;
+  char      cvnbuf[ENCODE_TIME_SIZE];
+  int       hr;
+  int       min;
+  long      n;
   svrattrl *pal;
-  int   sec;
-  char  *pv;
+  int       sec;
 
   if ((attr == NULL)||(phead == NULL))
     {
@@ -306,10 +305,6 @@ int encode_time(
 
   sprintf(cvnbuf, "%02d:%02d:%02d",
           hr, min, sec);
-
-  pv = cvnbuf;
-
-  pv += strlen(pv);
 
   ct = strlen(cvnbuf);
 

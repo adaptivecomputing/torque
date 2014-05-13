@@ -74,53 +74,9 @@ ssize_t read_ac_socket(
   ssize_t count)
 
   {
-  int     flags;
   ssize_t i;
-  time_t  start, now;
-
-  /* verify socket is non-blocking */
-
-  /* NOTE:  under some circumstances, a blocking fd will be passed */
-
-  if ((flags = fcntl(fd, F_GETFL)) == -1)
-    {
-    return(-1);
-    }
-
-#if defined(FNDELAY) && !defined(__hpux)
-  if (flags & FNDELAY)
-#else
-  if (flags & O_NONBLOCK)
-#endif
-    {
-    /* flag already set */
-
-    /* NO-OP */
-    }
-  else
-    {
-    /* set no delay */
-
-    /* NOTE:  the pbs scheduling API passes in a blocking socket which
-              should be a non-blocking socket in pbs_disconnect.  Also,
-              qsub passes in a blocking socket which must remain
-              non-blocking */
-
-    /* the below non-blocking socket flag check should be rolled into
-       pbs_disconnect and removed from here (NYI) */
-
-    /*
-#if defined(FNDELAY) && !defined(__hpux)
-    flags |= FNDELAY;
-#else
-    flags |= O_NONBLOCK;
-#endif
-    if (fcntl(fd,F_SETFL,flags) == -1)
-      {
-      return(-1);
-      }
-    */
-    }    /* END else (flags & BLOCK) */
+  time_t  start;
+  time_t  now;
 
   /* Set a timer to prevent an infinite loop here. */
 
