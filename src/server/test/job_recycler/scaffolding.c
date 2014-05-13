@@ -17,8 +17,22 @@ int enqueue_threadpool_request(void *(*func)(void *),void *arg)
 
 int insert_job(struct all_jobs *aj, job *pjob)
   {
-  fprintf(stderr, "The call to insert_job to be mocked!!\n");
-  exit(1);
+  pthread_mutex_lock(aj->alljobs_mutex);
+
+  int rc = insert_thing(aj->ra,pjob);
+  if (rc == -1)
+    {
+    rc = -1;
+    }
+  else
+    {
+    add_hash(aj->ht, rc, pjob->ji_qs.ji_jobid);
+    rc = PBSE_NONE;
+    }
+
+  pthread_mutex_unlock(aj->alljobs_mutex);
+
+  return(rc);
   }
 
 job *next_job(struct all_jobs *aj, int *iter)
@@ -29,19 +43,17 @@ job *next_job(struct all_jobs *aj, int *iter)
 
 void initialize_all_jobs_array(struct all_jobs *aj)
   {
-  fprintf(stderr, "The call to initialize_all_jobs_array to be mocked!!\n");
-  exit(1);
+  aj->ra = initialize_resizable_array(INITIAL_JOB_SIZE);
+  aj->ht = create_hash(INITIAL_HASH_SIZE);
+
+  aj->alljobs_mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(aj->alljobs_mutex, NULL);
   }
 
 int remove_job(struct all_jobs *aj, job *pjob)
   {
   fprintf(stderr, "The call to remove_job to be mocked!!\n");
   exit(1);
-  }
-
-void *next_thing(resizable_array *ra, int *iter)
-  {
-  return(NULL);
   }
 
 int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
@@ -64,4 +76,30 @@ int unlock_alljobs_mutex(struct all_jobs *aj, const char *id, char *msg, int log
   return(0);
   }
 
+
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_err(int objclass, const char *objname, const char *text) {}
+
+job *job_alloc(void)
+  {
+  job *pj = (job *)calloc(1, sizeof(job));
+
+  if (pj == NULL)
+    {
+    return(NULL);
+    }
+
+  pj->ji_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(pj->ji_mutex,NULL);
+  lock_ji_mutex(pj, __func__, NULL, LOGLEVEL);
+
+  pj->ji_qs.qs_version = PBS_QS_VERSION;
+
+  CLEAR_HEAD(pj->ji_rejectdest);
+  pj->ji_is_array_template = FALSE;
+
+  pj->ji_momhandle = -1;
+
+  return(pj);
+  }
+

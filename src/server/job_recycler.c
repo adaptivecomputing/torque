@@ -92,7 +92,6 @@ extern int          LOGLEVEL;
 void initialize_recycler()
 
   {
-  recycler.rc_next_id = 0;
   initialize_all_jobs_array(&recycler.rc_jobs);
   recycler.rc_iter = -1;
 
@@ -189,17 +188,30 @@ int insert_into_recycler(
   pthread_mutex_lock(recycler.rc_mutex);
 
 
-  sprintf(pjob->ji_qs.ji_jobid,"%d",recycler.rc_next_id);
+  sprintf(pjob->ji_qs.ji_jobid,"%016lx",(long)pjob);
   pjob->ji_being_recycled = TRUE;
 
   if (recycler.rc_jobs.ra->num >= MAX_RECYCLE_JOBS)
     {
     enqueue_threadpool_request(remove_some_recycle_jobs,NULL);
     }
-    
-  rc = insert_job(&recycler.rc_jobs, pjob);
-    
-  update_recycler_next_id();
+
+  {
+  pthread_mutex_lock(recycler.rc_jobs.alljobs_mutex);
+
+  int i = get_value_hash(recycler.rc_jobs.ht, pjob->ji_qs.ji_jobid);
+  job *pj = NULL;
+
+  if (i >= 0)
+    {
+    pj = (job *)recycler.rc_jobs.ra->slots[i].item;
+    }
+  pthread_mutex_unlock(recycler.rc_jobs.alljobs_mutex);
+  if(pj == NULL)
+    {
+    rc = insert_job(&recycler.rc_jobs, pjob);
+    }
+  }
 
   pthread_mutex_unlock(recycler.rc_mutex);
 
@@ -226,16 +238,6 @@ job *get_recycled_job()
 
   return(pjob);
   } /* END get_recycled_job() */
-
-
-
-void update_recycler_next_id() 
-
-  {
-  recycler.rc_next_id++;
-  } /* END update_recycler_next_id() */
-
-
 
 
 
