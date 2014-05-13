@@ -94,11 +94,9 @@ extern int          LOGLEVEL;
 void initialize_recycler()
 
   {
-  recycler.rc_next_id = 0;
   recycler.rc_jobs.lock();
   recycler.rc_iter = recycler.rc_jobs.get_iterator();
   recycler.rc_jobs.unlock();
-
   recycler.rc_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(recycler.rc_mutex,NULL);
   } /* END initialize_recycler() */
@@ -198,7 +196,7 @@ int insert_into_recycler(
 
   pthread_mutex_lock(recycler.rc_mutex);
 
-  sprintf(pjob->ji_qs.ji_jobid,"%d",recycler.rc_next_id);
+  sprintf(pjob->ji_qs.ji_jobid,"%016lx",(long)pjob);
   pjob->ji_being_recycled = TRUE;
 
   recycler.rc_jobs.lock();
@@ -210,8 +208,6 @@ int insert_into_recycler(
     
   rc = insert_job(&recycler.rc_jobs, pjob);
     
-  update_recycler_next_id();
-
   pthread_mutex_unlock(recycler.rc_mutex);
 
   return(rc);
@@ -241,16 +237,6 @@ job *get_recycled_job()
 
   return(pjob);
   } /* END get_recycled_job() */
-
-
-
-void update_recycler_next_id() 
-
-  {
-  recycler.rc_next_id++;
-  } /* END update_recycler_next_id() */
-
-
 
 
 

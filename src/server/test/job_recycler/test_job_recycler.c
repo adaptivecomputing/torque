@@ -4,10 +4,27 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "pbs_error.h"
-START_TEST(test_one)
+
+job_recycler recycler;
+bool exit_called = false;
+
+START_TEST(test_insert_into_recycler)
   {
+  job *pj = job_alloc();
+  initialize_recycler();
 
+  fail_unless(insert_into_recycler(pj) == PBSE_NONE);
 
+  fail_unless(recycler.rc_jobs.count() == 1);
+
+  job *pj2 = job_alloc();
+  fail_unless(insert_into_recycler(pj2) == PBSE_NONE);
+
+  fail_unless(recycler.rc_jobs.count() == 2);
+
+  fail_unless(insert_into_recycler(pj) == PBSE_NONE);
+
+  fail_unless(recycler.rc_jobs.count() == 2);
   }
 END_TEST
 
@@ -21,8 +38,8 @@ END_TEST
 Suite *job_recycler_suite(void)
   {
   Suite *s = suite_create("job_recycler_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_insert_into_recycler");
+  tcase_add_test(tc_core, test_insert_into_recycler);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");

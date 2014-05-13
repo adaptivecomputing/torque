@@ -214,7 +214,11 @@ class item_container
       lock();
       unlock();
       }
-    if(slots != NULL) free(slots);
+    if(slots != NULL)
+      {
+      free(slots);
+      slots = NULL;
+      }
     }
   bool insert(T it,const char *id,bool replace = false)
     {
