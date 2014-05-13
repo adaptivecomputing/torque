@@ -298,7 +298,6 @@ int parse_variable_list(
       delim = strchr(s, ',');
       if (delim == NULL)
         {
-        alloc_size = strlen(s);
         /* we are at the end */
         append_dynamic_string(job_env, s);
         s = NULL;

@@ -113,7 +113,8 @@ int hash_add_item(
   job_data *je = NULL;
   job_data *item = (job_data *)memmgr_calloc(mm, 1, sizeof(job_data));
 
-  if (item == NULL)
+  if ((item == NULL) ||
+      (name == NULL))
     rc = -1;
   else
     {
