@@ -110,7 +110,7 @@
 int encode_DIS_svrattrl(
     
   struct tcp_chan *chan,
-  svrattrl *psattl)
+  svrattrl        *psattl)
 
   {
   unsigned int ct = 0;
@@ -143,7 +143,7 @@ int encode_DIS_svrattrl(
     if ((rc = diswst(chan, ps->al_atopl.name)))
       break;
 
-    if (ps->al_rescln)   /* has a resource name */
+    if (ps->al_atopl.resource)
       {
       if ((rc = diswui(chan, 1)))
         break;
