@@ -913,15 +913,16 @@ int req_quejob(
       if ((tmpjob = svr_find_job(tmp_job_id, FALSE)) != NULL)
         {
         unlock_ji_mutex(tmpjob, __func__, "3", LOGLEVEL);
+        // must capture the job id before deleting and putting the job in the recycler
+        snprintf(log_buf,sizeof(log_buf),
+          "Job with id %s already exists, cannot set job id\n",
+          pj->ji_qs.ji_jobid);
 
         /* not unique, reject job */
         svr_job_purge(pj);
         job_mutex.set_unlock_on_exit(false);
        
         rc = PBSE_JOBEXIST; 
-        snprintf(log_buf,sizeof(log_buf),
-          "Job with id %s already exists, cannot set job id\n",
-          pj->ji_qs.ji_jobid);
         req_reject(rc,0,preq,NULL,log_buf);
         return rc;
         }
