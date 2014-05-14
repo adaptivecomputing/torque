@@ -5347,7 +5347,7 @@ int remove_job_from_node(
 
       pnode->nd_state &= ~INUSE_JOB;
 
-      break;
+      i--; /* the array has shrunk by 1 so we need to reduce i by one */
       }
     }
   
