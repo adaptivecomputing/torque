@@ -85,7 +85,6 @@ static const int munge_on = 0;
 static void mom_close_client(int sfds);
 static void freebr_manage(struct rq_manage *);
 static void freebr_cpyfile(struct rq_cpyfile *);
-static void close_quejob(int sfds);
 
 /* END private prototypes */
 
@@ -326,8 +325,6 @@ void mom_dispatch_request(
     {
     case PBS_BATCH_QueueJob:
 
-      net_add_close_func(sfds, close_quejob);
-
       mom_req_quejob(request);
       
       break;
@@ -539,53 +536,6 @@ struct batch_request *alloc_br(
 
   return(req);
   }
-
-
-
-
-
-/*
- * close_quejob - locate and deal with the new job that was being recevied
- *    when the net connection closed.
- */
-
-static void close_quejob(
-
-  int sfds)
-
-  {
-  job *pjob;
-
-  job *npjob;
-
-  pjob = (job *)GET_NEXT(svr_newjobs);
-
-  while (pjob != NULL)
-    {
-    npjob = (job *)GET_NEXT(pjob->ji_alljobs);
-
-    if (pjob->ji_qs.ji_un.ji_newt.ji_fromsock == sfds)
-      {
-      if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRANSICM)
-        {
-        /* delete the job */
-        delete_link(&pjob->ji_alljobs);
-
-        mom_job_purge(pjob);
-
-        pjob = NULL;
-        }
-      
-      break;
-      }  /* END if (..) */
-
-    pjob = npjob;
-    }
-
-  return;
-  }  /* END close_quejob() */
-
-
 
 
 

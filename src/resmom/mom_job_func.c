@@ -152,8 +152,6 @@
 
 int conn_qsub(char *, long, char *);
 
-void mom_job_purge(job *);
-
 /* External functions */
 extern void mom_checkpoint_delete_files(job_file_delete_info *);
 
