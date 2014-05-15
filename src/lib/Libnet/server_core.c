@@ -329,7 +329,9 @@ int start_listener_addrinfo(
   if (ret != 0)
     {
     /* hostname didn't resolve */
-    sprintf(err_msg,"Error with getaddrinfo on host name %s. Error code = %d.\n",host_name,ret);
+    snprintf(err_msg, sizeof(err_msg),
+      "Error with getaddrinfo on host name %s. Error code = %d, '%s'.\n",
+      host_name, ret, gai_strerror(ret));
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, err_msg);
     rc = PBSE_SOCKET_FAULT;
     return rc;
