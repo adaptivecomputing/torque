@@ -111,7 +111,6 @@
 #include "array.h"
 #include "queue.h"
 #include "node_func.h" /* find_nodebyname */
-#include "issue_request.h" /* issue_Drequest */
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
 #include "svr_connect.h" /* svr_connect */
 #include "queue_func.h" /* find_queuebyname */
@@ -840,7 +839,7 @@ int stat_to_mom(
 
   if (handle >= 0)
     {
-    if ((rc = issue_Drequest(handle, newrq)) == PBSE_NONE)
+    if ((rc = issue_Drequest(handle, newrq, true)) == PBSE_NONE)
       {
       stat_update(newrq, cntl);
       }

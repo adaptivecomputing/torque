@@ -5747,7 +5747,7 @@ void check_exiting_jobs()
       post_epilogue(pjob, 0);
       eji.obit_sent = time_now;
       }
-    else
+    else if (pjob->ji_job_is_being_rerun == FALSE)
       {
       // mark for removal
       to_remove.push_back(eji.jobid);

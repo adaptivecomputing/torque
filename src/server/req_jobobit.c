@@ -1012,7 +1012,7 @@ int handle_returnstd(
         {
         job_mutex.unlock();
 
-        if ((rc = issue_Drequest(handle, preq)) != PBSE_NONE)
+        if ((rc = issue_Drequest(handle, preq, true)) != PBSE_NONE)
           {
           /* set up as if mom returned error, if we fall through to
            * here then we want to hit the error processing below
@@ -1173,7 +1173,7 @@ int handle_stageout(
         {
         job_mutex.unlock();
 
-        if ((rc = issue_Drequest(handle, preq)) != PBSE_NONE)
+        if ((rc = issue_Drequest(handle, preq, true)) != PBSE_NONE)
           {
           /* FAILURE */      
           if (LOGLEVEL >= 1)
@@ -1417,7 +1417,7 @@ int handle_stagedel(
         {
         job_mutex.unlock();
 
-        if (issue_Drequest(handle, preq) != PBSE_NONE)
+        if (issue_Drequest(handle, preq, true) != PBSE_NONE)
           {
           if (LOGLEVEL >= 2)
             {
@@ -1542,7 +1542,7 @@ int handle_exited(
       {
       job_mutex.unlock();
 
-      if ((rc = issue_Drequest(handle, preq)) != PBSE_NONE)
+      if ((rc = issue_Drequest(handle, preq, true)) != PBSE_NONE)
         {
         snprintf(log_buf, sizeof(log_buf), "DeleteJob issue_Drequest failure, rc = %d", rc);
 
@@ -2225,7 +2225,7 @@ void on_job_rerun(
           job_id = strdup(pjob->ji_qs.ji_jobid); 
           job_mutex.unlock();
           
-          if (issue_Drequest(handle, preq) != PBSE_NONE)
+          if (issue_Drequest(handle, preq, false) != PBSE_NONE)
             {
             /* cannot issue request to mom, set up as if mom returned error */
             IsFaked = 1;
@@ -2311,7 +2311,7 @@ void on_job_rerun(
 
           preq->rq_extra = strdup(pjob->ji_qs.ji_jobid);
 
-          if (issue_Drequest(handle, preq) != PBSE_NONE)
+          if (issue_Drequest(handle, preq, false) != PBSE_NONE)
             {
             /* set up as if mom returned error */
             IsFaked = 1;
@@ -2399,7 +2399,7 @@ void on_job_rerun(
 
           preq->rq_extra = strdup(pjob->ji_qs.ji_jobid);
 
-          if (issue_Drequest(handle, preq) != PBSE_NONE)
+          if (issue_Drequest(handle, preq, false) != PBSE_NONE)
             {
             /* error on sending request */          
             IsFaked = 1;
@@ -2466,7 +2466,7 @@ void on_job_rerun(
         job_id = strdup(pjob->ji_qs.ji_jobid); 
         job_mutex.unlock();
 
-        rc = issue_Drequest(handle, preq);
+        rc = issue_Drequest(handle, preq, true);
 
         free_br(preq);
 
