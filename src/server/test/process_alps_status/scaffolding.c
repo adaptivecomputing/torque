@@ -2132,7 +2132,8 @@ void free_br(struct batch_request *preq) {}
 int issue_Drequest(
 
   int                    conn,
-  struct batch_request  *request)
+  struct batch_request  *request,
+  bool                   close_handle)
 
   {
   return(0);

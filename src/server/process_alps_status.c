@@ -252,7 +252,7 @@ void *check_if_orphaned(
       unlock_node(pnode, __func__, NULL, LOGLEVEL);
       
       if (handle >= 0)
-        issue_Drequest(handle, preq);
+        issue_Drequest(handle, preq, true);
         
       free_br(preq);
       }

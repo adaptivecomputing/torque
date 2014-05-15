@@ -9002,7 +9002,7 @@ void check_exiting_jobs()
       {
       free(eji);
       }
-    else
+    else if (pjob->ji_job_is_being_rerun == FALSE)
       {
       post_epilogue(pjob, 0);
       eji->obit_sent = time_now;
