@@ -38,7 +38,7 @@ void * send_power_state_to_mom(void *arg)
     return NULL;
     }
   unlock_node(pNode, __func__, "Done connecting", LOGLEVEL);
-  issue_Drequest(handle, pRequest);
+  issue_Drequest(handle, pRequest, true);
 
   return NULL;
   }

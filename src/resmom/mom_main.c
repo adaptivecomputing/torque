@@ -5703,7 +5703,8 @@ void check_exiting_jobs()
 
     pjob = mom_find_job(eji.jobid.c_str());
 
-    if (pjob != NULL)
+    if ((pjob != NULL) &&
+        (pjob->ji_job_is_being_rerun == FALSE))
       {
       post_epilogue(pjob, 0);
       eji.obit_sent = time_now;

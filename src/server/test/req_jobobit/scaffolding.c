@@ -145,7 +145,7 @@ int depend_on_term(job *pjob)
   return(0);
   }
 
-int issue_Drequest(int conn, batch_request *request)
+int issue_Drequest(int conn, batch_request *request, bool close_handle)
   {
   if (bad_drequest)
     return(-1);

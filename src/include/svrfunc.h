@@ -60,7 +60,7 @@ extern int   svr_connect(pbs_net_t, unsigned int, int *, struct pbsnode *, void 
 extern void  release_req(struct work_task *);
 #endif /* WORK_TASK_H */
 
-extern int   issue_Drequest(int, struct batch_request *);
+extern int   issue_Drequest(int, struct batch_request *, bool close_handle);
 
 
 /* The following is used in req_stat.c and req_select.c */
