@@ -2961,9 +2961,28 @@ void req_rerunjob(
       }
     }
 
+  if (pjob->ji_qs.ji_svrflags && JOB_SVFLG_CHECKPOINT_FILE)
+    {
+    rc = return_file(pjob, Checkpoint, sock, TRUE);
+    if (rc != PBSE_NONE)
+      {
+       /* FAILURE - cannot report file to server */
+
+      log_event(
+        PBSEVENT_ERROR,
+        PBS_EVENTCLASS_REQUEST,
+        __func__,
+        (char *)"cannot move output files to server. checkpoint file not found");
+
+      req_reject(rc, 0, preq, NULL, NULL);
+    
+      close(sock);
+      exit(EXIT_SUCCESS);
+      }
+    }
+
   if (((rc = return_file(pjob, StdOut, sock, TRUE)) != 0) ||
-      ((rc = return_file(pjob, StdErr, sock, TRUE)) != 0) ||
-      ((rc = return_file(pjob, Checkpoint, sock, TRUE)) != 0))
+      ((rc = return_file(pjob, StdErr, sock, TRUE)) != 0))
     {
     /* FAILURE - cannot report file to server */
 
