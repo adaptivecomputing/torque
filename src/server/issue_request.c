@@ -229,7 +229,7 @@ int relay_to_mom(
 
   request->rq_orgconn = request->rq_conn; /* save client socket */
 
-  rc = issue_Drequest(handle, request);
+  rc = issue_Drequest(handle, request, true);
 
   *pjob_ptr = svr_find_job(jobid, TRUE);
 
@@ -368,7 +368,7 @@ int issue_to_svr(
 
     if (handle >= 0)
       {
-      if (((rc = issue_Drequest(handle, preq)) == PBSE_NONE) &&
+      if (((rc = issue_Drequest(handle, preq, true)) == PBSE_NONE) &&
           (handle != PBS_LOCAL_CONNECTION))
         {
         /* preq is already freed if handle == PBS_LOCAL_CONNECTION - a reply 
@@ -478,7 +478,8 @@ int handle_local_request(
 int send_request_to_remote_server(
     
   int            conn,
-  batch_request *request)
+  batch_request *request,
+  bool           close_handle)
 
   {
   struct attropl   *patrl;
@@ -741,7 +742,9 @@ int send_request_to_remote_server(
     }
 
   DIS_tcp_cleanup(chan);
-  svr_disconnect(conn);
+
+  if (close_handle == true)
+    svr_disconnect(conn);
 
   return(rc);
   } /* END send_request_to_remote_server() */
@@ -785,7 +788,8 @@ int send_request_to_remote_server(
 int issue_Drequest(
 
   int                    conn,
-  struct batch_request  *request)
+  struct batch_request  *request,
+  bool                   close_handle)
 
   {
   int rc;
@@ -793,7 +797,7 @@ int issue_Drequest(
   if (conn == PBS_LOCAL_CONNECTION)
     rc = handle_local_request(conn, request);
   else
-    rc = send_request_to_remote_server(conn, request);
+    rc = send_request_to_remote_server(conn, request, close_handle);
   
   return(rc);
   }  /* END issue_Drequest() */

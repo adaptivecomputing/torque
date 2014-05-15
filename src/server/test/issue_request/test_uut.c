@@ -16,6 +16,9 @@ bool connect_error;
 
 extern std::string rq_id_str;
 void queue_a_retry_task(batch_request *preq, void (*replyfunc)(struct work_task *));
+int send_request_to_remote_server(int conn, batch_request *request, bool close_handle);
+int issue_Drequest(int conn, batch_request *request, bool close_handle);
+
 
 START_TEST(queue_a_retry_task_test)
   {
@@ -67,7 +70,7 @@ START_TEST(test_send_request_to_remote_server)
   preq->rq_fromsvr = 1;
   preq->rq_perm = ATR_DFLAG_MGRD | ATR_DFLAG_MGWR | ATR_DFLAG_SvWR;
   
-  rc = send_request_to_remote_server(10, preq);
+  rc = send_request_to_remote_server(10, preq, true);
   fail_unless(rc == PBSE_NONE);
 
   free(preq);
@@ -75,14 +78,14 @@ START_TEST(test_send_request_to_remote_server)
   preq = alloc_br(PBS_BATCH_DeleteJob);
   fail_unless(preq != NULL);
   strcpy(preq->rq_ind.rq_track.rq_jid, "1234");
-  rc = send_request_to_remote_server(10, preq);
+  rc = send_request_to_remote_server(10, preq, true);
   fail_unless(rc == PBSE_NONE);
   
   free(preq);
   preq = alloc_br(PBS_BATCH_CheckpointJob);
   fail_unless(preq != NULL);
   strcpy(preq->rq_ind.rq_hold.rq_orig.rq_objname, "some_object");
-  rc = send_request_to_remote_server(10, preq);
+  rc = send_request_to_remote_server(10, preq, true);
 
   free(preq);
   preq = alloc_br(PBS_BATCH_GpuCtrl);
@@ -93,7 +96,7 @@ START_TEST(test_send_request_to_remote_server)
   preq->rq_ind.rq_gpuctrl.rq_reset_perm = 1;
   preq->rq_ind.rq_gpuctrl.rq_reset_vol = 1;
 
-  rc = send_request_to_remote_server(10, preq);
+  rc = send_request_to_remote_server(10, preq, true);
   fail_unless(rc == PBSE_NONE);
 
   free(preq);
@@ -103,7 +106,7 @@ START_TEST(test_send_request_to_remote_server)
   preq->rq_ind.rq_message.rq_file = 1;
   preq->rq_ind.rq_message.rq_text = NULL;
 
-  rc = send_request_to_remote_server(10, preq);
+  rc = send_request_to_remote_server(10, preq, true);
   fail_unless(rc == PBSE_NONE);
 
 
@@ -112,7 +115,7 @@ START_TEST(test_send_request_to_remote_server)
   fail_unless(preq != NULL);
   strcpy(preq->rq_ind.rq_rerun, "1234");
 
-  rc = send_request_to_remote_server(10, preq);
+  rc = send_request_to_remote_server(10, preq, true);
   fail_unless(rc == PBSE_NONE);
 
   free(preq);
@@ -120,7 +123,7 @@ START_TEST(test_send_request_to_remote_server)
   fail_unless(preq != NULL);
   strcpy(preq->rq_ind.rq_rerun, "1234");
 
-  rc = send_request_to_remote_server(10, preq);
+  rc = send_request_to_remote_server(10, preq, true);
   fail_unless(rc == PBSE_NONE);
 
   free(preq);
@@ -130,7 +133,7 @@ START_TEST(test_send_request_to_remote_server)
   strcpy(preq->rq_ind.rq_signal.rq_signame, "SIGKILL");
   preq->rq_extra = NULL;
 
-  rc = send_request_to_remote_server(10, preq);
+  rc = send_request_to_remote_server(10, preq, true);
   fail_unless(rc == PBSE_NONE);
 
   free(preq);
@@ -140,7 +143,7 @@ START_TEST(test_send_request_to_remote_server)
   strcpy(preq->rq_ind.rq_signal.rq_signame, "SIGKILL");
   preq->rq_extra = NULL;
 
-  rc = send_request_to_remote_server(10, preq);
+  rc = send_request_to_remote_server(10, preq, true);
   fail_unless(rc == PBSE_NONE);
 
   free(preq);
@@ -148,7 +151,7 @@ START_TEST(test_send_request_to_remote_server)
   fail_unless(preq != NULL);
   strcpy(preq->rq_ind.rq_status.rq_id, "1234");
 
-  rc = send_request_to_remote_server(10, preq);
+  rc = send_request_to_remote_server(10, preq, true);
   fail_unless(rc == PBSE_NONE);
 
   free(preq);
@@ -156,7 +159,7 @@ START_TEST(test_send_request_to_remote_server)
   fail_unless(preq != NULL);
   strcpy(preq->rq_ind.rq_status.rq_id, "1234");
 
-  rc = send_request_to_remote_server(10, preq);
+  rc = send_request_to_remote_server(10, preq, true);
   fail_unless(rc == PBSE_NONE);
 
   free(preq);
@@ -164,7 +167,7 @@ START_TEST(test_send_request_to_remote_server)
   fail_unless(preq != NULL);
   strcpy(preq->rq_ind.rq_status.rq_id, "1234");
 
-  rc = send_request_to_remote_server(10, preq);
+  rc = send_request_to_remote_server(10, preq, true);
   fail_unless(rc == PBSE_NONE);
 
   free(preq);
@@ -172,7 +175,7 @@ START_TEST(test_send_request_to_remote_server)
   fail_unless(preq != NULL);
   strcpy(preq->rq_ind.rq_status.rq_id, "1234");
 
-  rc = send_request_to_remote_server(10, preq);
+  rc = send_request_to_remote_server(10, preq, true);
   fail_unless(rc == PBSE_NONE);
 
   free(preq);
@@ -180,7 +183,7 @@ START_TEST(test_send_request_to_remote_server)
   fail_unless(preq != NULL);
   strcpy(preq->rq_ind.rq_status.rq_id, "1234");
 
-  rc = send_request_to_remote_server(10, preq);
+  rc = send_request_to_remote_server(10, preq, true);
   fail_unless(rc == PBSE_NONE);
 
   free(preq);
@@ -188,7 +191,7 @@ START_TEST(test_send_request_to_remote_server)
   fail_unless(preq != NULL);
   strcpy(preq->rq_ind.rq_status.rq_id, "1234");
 
-  rc = send_request_to_remote_server(10, preq);
+  rc = send_request_to_remote_server(10, preq, true);
   fail_unless(rc != PBSE_NONE);
 
 
@@ -221,7 +224,7 @@ START_TEST(test_issue_Drequest)
   fail_unless(preq != NULL);
   strcpy(preq->rq_ind.rq_status.rq_id, "1234");
 
-  rc = issue_Drequest(10, preq);
+  rc = issue_Drequest(10, preq, true);
   fail_unless(rc == PBSE_NONE);
 
 
