@@ -172,7 +172,7 @@ int write_tcp_reply(struct tcp_chan *chan, int protocol, int version, int comman
   exit(1);
   }
 
-int issue_Drequest(int conn, batch_request *br)
+int issue_Drequest(int conn, batch_request *br, bool close_handle)
   {
   fprintf(stderr, "The call to issue_Drequest needs to be mocked!!\n");
   exit(1);

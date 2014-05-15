@@ -67,7 +67,8 @@ int unlock_node(
 int issue_Drequest(
 
   int                    conn,
-  struct batch_request  *request)
+  struct batch_request  *request,
+  bool                   close_handle)
   
   {
   return(0);

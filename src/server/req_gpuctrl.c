@@ -100,7 +100,6 @@
 #include "../lib/Liblog/pbs_log.h"
 #include "pbs_nodes.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
-#include "issue_request.h" /* issue_Drequest */
 #include "svr_connect.h" /* svr_connect, svr_disconnect_sock */
 
 /* External Functions */
@@ -244,7 +243,7 @@ int req_gpuctrl_svr(
 
   if (conn >= 0)
     {
-    if ((rc = issue_Drequest(conn, preq)) != PBSE_NONE)
+    if ((rc = issue_Drequest(conn, preq, true)) != PBSE_NONE)
       req_reject(rc, 0, preq, NULL, NULL);
     else
       process_gpu_request_reply(preq);
