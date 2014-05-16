@@ -133,6 +133,8 @@ extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_a
 void                         stream_eof(int, u_long, uint16_t, int);
 extern int                   job_set_wait(pbs_attribute *, void *, int);
 
+extern char *PJobState[]; 
+
 extern int LOGLEVEL;
 
 /* Public Functions in this file */
@@ -1720,6 +1722,14 @@ job *chk_job_torun(
       }
     }
 
+  if (pjob->ji_qs.ji_state != JOB_STATE_QUEUED)
+    {
+    sprintf(EMsg, "job %s state %s", pjob->ji_qs.ji_jobid, PJobState[pjob->ji_qs.ji_state]);
+    req_reject(PBSE_BADSTATE, 0, preq, NULL, EMsg);
+    return(NULL);
+    }
+
+  /* make sure we are in a valid state. queued */
   if ((preq->rq_perm & (ATR_DFLAG_MGWR | ATR_DFLAG_OPWR)) == 0)
     {
     /* FAILURE - run request not authorized */
