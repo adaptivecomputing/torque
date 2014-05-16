@@ -723,14 +723,28 @@ void DIS_tcp_cleanup(
   }
 
 void DIS_tcp_close(
-    
   struct tcp_chan *chan)
+{
+  int      rc;
+  int      sock;
+  char     log_buf[LOCAL_LOG_BUF_SIZE];
 
-  {
-  int sock = chan->sock;
+  rc   = 0;
+  sock = chan->sock;
+
   DIS_tcp_cleanup(chan);
-  if (sock != -1)
-    close(sock);
+
+  if (sock != -1) {
+    if ( close(sock) ) {
+      snprintf(log_buf, sizeof(log_buf), "close() -  %s", strerror(errno));
+      log_err(PBSE_NONE, __func__, log_buf);
+    }
   }
+  else {
+      snprintf(log_buf, sizeof(log_buf), "Warning: chan->sock = -1");
+      log_err(0, __func__, log_buf);
+  }
+  return;
+}
 
 /* END tcp_dis.c */

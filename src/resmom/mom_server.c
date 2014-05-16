@@ -1269,9 +1269,7 @@ int mom_server_update_stat(
       }
 
     if (chan != NULL)
-      DIS_tcp_cleanup(chan);
-      
-    close(stream);
+      DIS_tcp_close(chan);
   
     if (ret != DIS_SUCCESS)
       {
