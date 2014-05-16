@@ -441,7 +441,7 @@ struct passwd *check_pwd(
     if (pwdp != NULL)
       break;
 
-    sleep(1);
+    sleep(.5);
     }
 
   if (pwdp == NULL)

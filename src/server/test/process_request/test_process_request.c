@@ -60,6 +60,7 @@ START_TEST(test_read_request_from_socket)
   strcpy(server_name, "napali");
   set_connection_type(chan.sock, ToServerDIS);
   find_node = false;
+  check_acl = true;
   fail_unless(read_request_from_socket(&chan) == NULL, "Node not found should fail");
 
   find_node = true;
