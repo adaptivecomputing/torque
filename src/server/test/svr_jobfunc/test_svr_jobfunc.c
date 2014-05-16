@@ -419,10 +419,12 @@ START_TEST(prefix_std_file_test)
   memset(&test_job, 0, sizeof(test_job));
 
   result = prefix_std_file(NULL, test_string, 0);
-  fail_unless(result == NULL, "NULL input job pointer fail");
+  fail_unless(result != NULL, "NULL input job pointer fail");
+  fail_unless(strlen(result) == 0);
 
   result = prefix_std_file(&test_job, test_string, 0);
-  fail_unless(result == NULL, "prefix_std_file fail");
+  fail_unless(result != NULL, "prefix_std_file fail");
+  fail_unless(strlen(result) == 0);
 
   }
 END_TEST

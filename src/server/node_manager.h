@@ -8,7 +8,6 @@
 #include "pbs_nodes.h" /* howl, gpusubn */
 #include <string>
 #include <vector>
-#include <boost/ptr_container/ptr_vector.hpp>
 
 void update_node_state(struct pbsnode *np, int newstate);
 
@@ -21,8 +20,6 @@ void update_job_data(struct pbsnode *np, char *jobstring_in);
 void setup_notification(char *pname);
 
 int is_stat_get(char *node_name, struct tcp_chan *chan);
-
-int is_gpustat_get(struct pbsnode *np, boost::ptr_vector<std::string>::iterator& i, boost::ptr_vector<std::string>::iterator end);
 
 int is_compose(struct tcp_chan *chan, int command);
 
@@ -83,8 +80,6 @@ int node_reserve(char *nspec, resource_t tag);
 void free_nodes(job *pjob);
 
 void set_old_nodes(job *pjob);
-
-int remove_job_from_node(struct pbsnode *pnode, const char *jobid);
 
 void sync_node_jobs_with_moms(struct pbsnode *np, const char *jobs_in_mom);
 

@@ -759,16 +759,6 @@ dnl skip the first two chars because its -l<libname>
 AC_CHECK_LIB(${xmlLib}, xmlGetProp,
   [],
   [AC_MSG_ERROR([TORQUE needs libxml2-devel in order to build]) ])
-  
-  
- dnl
- dnl Check for boost headers
- dnl
- 
- AC_CHECK_HEADERS([boost/ptr_container/ptr_vector.hpp],
-                  [],
-                  [AC_MSG_ERROR(Boost ptr_vector.hpp header not found. Install boost-devel package.)],
-                  [])
 
 
 dnl ###########################################
@@ -2205,7 +2195,7 @@ drmaadocdir=$datadir/doc/$PACKAGE-drmaa
 AC_SUBST(drmaadocdir)
     
 if test "x$gccwarnings" = "xyes" ;then
-  AX_CFLAGS_GCC_OPTION([-W -Wall -Wno-unused-parameter -Wno-long-long -pedantic -Werror])
+  AX_CFLAGS_GCC_OPTION([-W -Wall -Wextra -Wno-unused-parameter -Wno-long-long -pedantic -Werror])
 fi
 
 

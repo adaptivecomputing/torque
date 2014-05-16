@@ -8,11 +8,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 
 check_PROGRAMS = test_req_delete
 
-libreq_delete_la_SOURCES = scaffolding.c ${PROG_ROOT}/req_delete.c \
-	${PROG_ROOT}/../lib/Libnet/get_hostname.c \
-	${PROG_ROOT}/../lib/Libnet/net_cache.c \
-	${PROG_ROOT}/../lib/Libnet/net_common.c \
-	${PROG_ROOT}/../lib/Libutils/u_mu.c
+libreq_delete_la_SOURCES = scaffolding.c ${PROG_ROOT}/req_delete.c
 	
 libreq_delete_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 

@@ -96,11 +96,8 @@ typedef struct job_exiting_retry_info
   {
   time_t          last_attempt;
   int             attempts;
-  char            jobid[PBS_MAXSVRJOBID+1];
+  int             internal_job_id;
   } job_exiting_retry_info;
-
-  extern  container::item_container<job_exiting_retry_info *>                 exiting_jobs_info;
-  typedef container::item_container<job_exiting_retry_info *>::item_iterator  exiting_jobs_info_iterator;
 
 
 

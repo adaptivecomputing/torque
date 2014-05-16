@@ -42,12 +42,11 @@ int socket_connect(int *local_socket, char *dest_addr, int dest_addr_len, int de
 int socket_connect_addr(int *local_socket, struct sockaddr *remote, size_t remote_size, int is_privileged, char **err_msg);
 int socket_wait_for_write(int socket);
 int socket_wait_for_xbytes(int socket, int len);
-int socket_wait_for_read(int socket);
+int socket_wait_for_read(int socket, unsigned int timeout);
 void socket_read_flush(int socket);
 int socket_write(int socket, const char *data, int data_len);
 int socket_read_force(int socket, char *the_str, long long avail_bytes, long long *byte_count);
-int socket_read(int socket, char **the_str, long long *str_len);
-int socket_read_one_byte(int socket, char *one_char);
+int socket_read(int socket, char **the_str, long long *str_len, unsigned int timeout);
 int socket_read_num(int socket, long long *the_num);
 int socket_read_str(int socket, char **the_str, long long *str_len);
 int socket_close(int socket);

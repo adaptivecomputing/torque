@@ -19,6 +19,7 @@
 #include "array.h" /* ArrayEventsEnum */
 #include "pbs_nodes.h" /* pbsnode */
 #include "queue.h" /* pbs_queue */
+#include "id_map.hpp"
 
 
 const char *msg_momnoexec2 = "Job cannot be executed\nSee job standard error file";
@@ -54,6 +55,7 @@ int bad_drequest;
 int usage;
 bool purged = false;
 bool completed = false;
+bool exited = false;
 
 
 struct batch_request *alloc_br(int type)
@@ -193,7 +195,7 @@ int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mut
   return(0);
   }
 
-job *svr_find_job(char *jobid, int get_subjob)
+job *svr_find_job(const char *jobid, int get_subjob)
   {
   job *pjob = NULL;
 
@@ -205,6 +207,9 @@ job *svr_find_job(char *jobid, int get_subjob)
   
     if (reported)
       pjob->ji_wattr[JOB_ATR_reported].at_val.at_long = 1;
+
+    if (exited == true)
+      pjob->ji_qs.ji_state = JOB_STATE_EXITING;
 
     if (completed == true)
       pjob->ji_qs.ji_state = JOB_STATE_COMPLETE;
@@ -280,7 +285,7 @@ struct pbsnode *find_nodebyname(
 
 int kill_job_on_mom(
 
-  char           *jobid,
+  const char     *job_id,
   struct pbsnode *pnode)
 
   {
@@ -325,3 +330,13 @@ void account_jobend(job *pjob, char *used) {}
 
 void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum event, char *job_id, long job_atr_hold, int job_exit_status) {}
 
+id_map::id_map() {}
+
+id_map::~id_map() {}
+
+const char *id_map::get_name(int id)
+  {
+  return(NULL);
+  }
+
+id_map job_mapper;

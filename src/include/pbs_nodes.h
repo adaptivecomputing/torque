@@ -86,7 +86,6 @@
 #include <pthread.h>
 #include <netinet/in.h> /* sockaddr_in */
 #include <set>
-#include <boost/ptr_container/ptr_vector.hpp>
 
 #include "execution_slot_tracker.hpp"
 #include "net_connect.h" /* pbs_net_t */
@@ -97,6 +96,7 @@
 #include <vector>
 #include <string>
 #include "container.hpp"
+#include "job_usage_info.hpp"
 
 #ifdef NUMA_SUPPORT
 /* NOTE: cpuset support needs hwloc */
@@ -162,18 +162,6 @@ struct prop
   struct prop *next;
   };
 
-/* Make a class to cover this in case we need special functionality such as being able 
- * to match this is stdlib containers. 
- * This class is stored on the node to keep track of jobs and what they're using on the node. */
-class job_usage_info
-  {
-  public:
-    char                    jobid[PBS_MAXSVRJOBID+1];
-    execution_slot_tracker  est;
-    job_usage_info(const char *id);
-    bool operator ==(const job_usage_info &jui);
-  };
-
 /* this struct is only used while the job is being created. */
 typedef struct job_reservation_info
   {
@@ -184,7 +172,7 @@ typedef struct job_reservation_info
 
 struct jobinfo
   {
-  char            jobid[PBS_MAXSVRJOBID+1];
+  int internal_job_id;
 
   struct jobinfo *next;
   };
@@ -247,7 +235,7 @@ struct pbssubn
 
 struct gpusubn
   {
-  char            jobid[PBS_MAXSVRJOBID+1];   /* jobid on this gpu subnode */
+  int             job_internal_id; /* internal id of job on gpu */
   unsigned short  inuse;  /* 1 if this node is in use, 0 otherwise */
   enum gpstatit   state;  /* gpu state determined by server */
   enum gpmodeit   mode;   /* gpu mode from hardware */
@@ -288,8 +276,8 @@ typedef struct nodeboard_t
 typedef struct received_node
   {
   char            hostname[PBS_MAXNODENAME];
-  boost::ptr_vector<std::string> statuses;
-  int             hellos_sent;
+  std::vector<std::string> statuses;
+  int                      hellos_sent;
   } received_node;
 
 
@@ -317,7 +305,7 @@ struct pbsnode
   short                         nd_nprops;           /* number of properties */
   short                         nd_nstatus;          /* number of status items */
   execution_slot_tracker        nd_slots;            /* bitmap of execution slots */
-  std::vector<job_usage_info *> nd_job_usages;       /* information about each job using this node */
+  std::vector<job_usage_info >  nd_job_usages;       /* information about each job using this node */
   short                         nd_needed;           /* number of VPs needed */
   short                         nd_np_to_be_used;    /* number of VPs marked for a job but not yet assigned */
   unsigned short                nd_state;            /* node state (see INUSE_* #defines below) */
@@ -620,7 +608,7 @@ struct prop     *init_prop(char *pname);
 int              initialize_pbsnode(struct pbsnode *, char *pname, u_long *pul, int ntype, bool isNUMANode);
 int              hasprop(struct pbsnode *pnode, struct prop *props);
 void             update_node_state(struct pbsnode *np, int newstate);
-int              is_job_on_node(struct pbsnode *np, char *jobid);
+int              is_job_on_node(struct pbsnode *np, int internal_job_id);
 void            *sync_node_jobs(void *vp);
 
 #endif /* PBS_NODES_H */ 

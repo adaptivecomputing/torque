@@ -1,17 +1,84 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "process_request.h"
-#include "test_process_request.h"
 #include <stdlib.h>
+#include <pthread.h>
 #include <stdio.h>
 #include "pbs_error.h"
+#include "process_request.h"
+#include "test_process_request.h"
+#include "net_connect.h"
 
 int process_request(struct tcp_chan *chan);
 bool request_passes_acl_check(batch_request *request, unsigned long  conn_addr);
 batch_request *alloc_br(int type);
+batch_request *read_request_from_socket(tcp_chan *chan);
 
 extern bool check_acl;
 extern bool find_node;
+extern bool fail_get_connecthost;
+extern struct connection svr_conn[];
+extern char server_name[];
 extern int free_attrlist_called;
+extern int dis_req_read_rc;
+
+void initialize_svr_conn(
+
+  int i)
+
+  {
+  svr_conn[i].cn_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(svr_conn[i].cn_mutex, NULL);
+  svr_conn[i].cn_socktype = PBS_SOCK_UNIX;
+  svr_conn[i].cn_addr = 5;
+  }
+
+void set_connection_type(
+
+  int i,
+  enum conn_type ct)
+
+  {
+  svr_conn[i].cn_active = ct;
+  }
+
+START_TEST(test_read_request_from_socket)
+  {
+  tcp_chan chan;
+
+  memset(&chan, 0, sizeof(chan));
+
+  chan.sock = -1;
+  fail_unless(read_request_from_socket(&chan) == NULL, "invalid socket (-1) should return NULL");
+
+  chan.sock = PBS_NET_MAX_CONNECTIONS;
+  fail_unless(read_request_from_socket(&chan) == NULL, "invalid socket (PBS_NET_MAX_CONNECTIONS) should return NULL");
+
+  chan.sock = 1;
+  initialize_svr_conn(chan.sock);
+  set_connection_type(chan.sock, Idle);
+  fail_unless(read_request_from_socket(&chan) == NULL, "Idle connection type should fail");
+
+  strcpy(server_name, "napali");
+  set_connection_type(chan.sock, ToServerDIS);
+  find_node = false;
+  fail_unless(read_request_from_socket(&chan) == NULL, "Node not found should fail");
+
+  find_node = true;
+  check_acl = false;
+  fail_unless(read_request_from_socket(&chan) != NULL, "should pass");
+
+  fail_get_connecthost = true;
+  fail_unless(read_request_from_socket(&chan) == NULL, "fail if can't get connect host");
+
+  dis_req_read_rc = PBSE_SYSTEM;
+  batch_request *preq;
+  fail_unless((preq = read_request_from_socket(&chan)) != NULL, "should get bad request");
+  fail_unless(preq->rq_type == PBS_BATCH_Disconnect);
+
+  dis_req_read_rc = 5;
+  fail_unless((preq = read_request_from_socket(&chan)) != NULL, "should get bad request");
+  fail_unless(preq->rq_failcode == dis_req_read_rc);
+  }
+END_TEST
 
 START_TEST(test_process_request)
   {
@@ -69,6 +136,7 @@ Suite *process_request_suite(void)
   tc_core = tcase_create("test_request_passes_acl_check");
   tcase_add_test(tc_core, test_request_passes_acl_check);
   tcase_add_test(tc_core, test_alloc_br);
+  tcase_add_test(tc_core ,test_read_request_from_socket);
   suite_add_tcase(s, tc_core);
 
   return s;

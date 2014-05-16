@@ -242,7 +242,6 @@
 #include "mom_config.h"
 #include <string>
 #include <vector>
-#include <boost/ptr_container/ptr_vector.hpp>
 #include "container.hpp"
 #include <arpa/inet.h>
 
@@ -295,7 +294,7 @@ extern mom_hierarchy_t    *mh;
 extern char               *stat_string_aggregate;
 extern unsigned int        ssa_index;
 extern container::item_container<received_node *> received_statuses;
-boost::ptr_vector<std::string> mom_status;
+std::vector<std::string>   mom_status;
 
 extern struct config *rm_search(struct config *where, const char *what);
 
@@ -315,8 +314,8 @@ int num_stat_update_failures = 0;
 void check_state(int);
 void state_to_server(int, int);
 void node_comm_error(node_comm_t *, const char *);
-int  add_mic_status(boost::ptr_vector<std::string>& status);
-int  add_gpu_status(boost::ptr_vector<std::string>& status);
+int  add_mic_status(std::vector<std::string>& status);
+int  add_gpu_status(std::vector<std::string>& status);
 
 /* clear servers */
 void clear_servers()
@@ -726,8 +725,8 @@ int is_compose(
 
 void gen_size(
 
-  const char  *name,
-  boost::ptr_vector<std::string>& status)
+  const char               *name,
+  std::vector<std::string> &status)
 
   {
   struct config  *ap;
@@ -747,10 +746,9 @@ void gen_size(
 
       if (value && *value)
         {
-        std::string *s;
-        s = new std::string(name);
-        *s += "=";
-        *s += value;
+        std::string s(name);
+        s += "=";
+        s += value;
         status.push_back(s);
         }
       }
@@ -765,8 +763,8 @@ void gen_size(
 
 void gen_arch(
 
-  const char  *name,
-  boost::ptr_vector<std::string>& status)
+  const char               *name,
+  std::vector<std::string> &status)
 
   {
   struct config  *ap;
@@ -775,10 +773,9 @@ void gen_arch(
 
   if (ap != NULL)
     {
-    std::string *s;
-    s = new std::string(name);
-    *s += "=";
-    *s += ap->c_u.c_value;
+    std::string s(name);
+    s += "=";
+    s += ap->c_u.c_value;
     status.push_back(s);
     }
 
@@ -791,8 +788,8 @@ void gen_arch(
 
 void gen_opsys(
 
-  const char  *name,
-  boost::ptr_vector<std::string>& status)
+  const char               *name,
+  std::vector<std::string> &status)
 
   {
   struct config  *ap;
@@ -801,10 +798,9 @@ void gen_opsys(
 
   if (ap != NULL)
     {
-    std::string *s;
-    s = new std::string(name);
-    *s += "=";
-    *s += ap->c_u.c_value;
+    std::string s(name);
+    s += "=";
+    s += ap->c_u.c_value;
     status.push_back(s);
     }
 
@@ -817,37 +813,35 @@ void gen_opsys(
 
 void gen_jdata(
 
-  const char  *name,
-  boost::ptr_vector<std::string>& status)
+  const char               *name,
+  std::vector<std::string> &status)
 
   {
   if (TORQUE_JData[0] != '\0')
     {
-    std::string *s;
-    s = new std::string(name);
-    *s += "=";
-    *s += TORQUE_JData;
+    std::string s(name);
+    s += "=";
+    s += TORQUE_JData;
     status.push_back(s);
     }
-  return;
+
   }
 
 void gen_gres(
 
   const char  *name,
-  boost::ptr_vector<std::string>& status)
-  {
+  std::vector<std::string> &status)
 
+  {
   char  *value;
 
   value = reqgres(NULL);
 
   if (value != NULL)
     {
-    std::string *s;
-    s = new std::string(name);
-    *s += "=";
-    *s += value;
+    std::string s(name);
+    s += "=";
+    s += value;
     status.push_back(s);
     }
 
@@ -857,7 +851,8 @@ void gen_gres(
 void gen_gen(
 
   const char  *name,
-  boost::ptr_vector<std::string>& status)
+  std::vector<std::string> &status)
+
   {
   struct config  *ap;
   char  *value;
@@ -871,10 +866,9 @@ void gen_gen(
 
     if (ptr && *ptr)
       {
-      std::string *s;
-      s = new std::string(name);
-      *s += "=";
-      *s += ptr;
+      std::string s(name);
+      s += "=";
+      s += ptr;
       status.push_back(s);
       }
     }
@@ -885,10 +879,9 @@ void gen_gen(
     if (value == NULL)
       {
       /* value not set (attribute required) */
-      std::string *s;
-      s = new std::string(name);
-      *s += "=";
-      *s += rm_errno;
+      std::string s(name);
+      s += "=";
+      s += rm_errno;
       status.push_back(s);
       }
     else if (value[0] == '\0')
@@ -897,10 +890,9 @@ void gen_gen(
       }
     else
       {
-      std::string *s;
-      s = new std::string(name);
-      *s += "=";
-      *s += value;
+      std::string s(name);
+      s += "=";
+      s += value;
       status.push_back(s);
       }
     } /* else if (ap) */
@@ -909,8 +901,10 @@ void gen_gen(
   }   /* END gen_gen() */
 
 void gen_macaddr(
-    const char  *name,
-    boost::ptr_vector<std::string>& status)
+
+  const char               *name,
+  std::vector<std::string> &status)
+
   {
   static std::string mac_addr;
 
@@ -991,15 +985,15 @@ void gen_macaddr(
     {
     return;
     }
-  std::string *s = new std::string(name);
-  *s += "=";
-  *s += mac_addr;
+  std::string s(name);
+  s += "=";
+  s += mac_addr;
   status.push_back(s);
   }
 
 
 
-typedef void (*gen_func_ptr)(const char *, boost::ptr_vector<std::string>& );
+typedef void (*gen_func_ptr)(const char *, std::vector<std::string> &);
 
 typedef struct stat_record
   {
@@ -1041,7 +1035,10 @@ stat_record stats[] = {
  *
  */
 
-void generate_server_status(boost::ptr_vector<std::string>& status)
+void generate_server_status(
+    
+  std::vector<std::string> &status)
+
   {
   int   i;
   std::stringstream ss;
@@ -1050,8 +1047,7 @@ void generate_server_status(boost::ptr_vector<std::string>& status)
 #ifdef NUMA_SUPPORT
   ss << NUMA_KEYWORD;
   ss << numa_index;
-  std::string *s = new std::string(ss.str());
-  status.push_back(s);
+  status.push_back(ss.str());
 #endif /* NUMA_SUPPORT */
 
   for (i = 0;stats[i].name != NULL;i++)
@@ -1134,11 +1130,11 @@ int write_update_header(
 
 int write_my_server_status(
  
-  struct tcp_chan *chan,
-  const char *id,
-  boost::ptr_vector<std::string>& strings,
-  void       *dest,
-  int         mode)
+  struct tcp_chan          *chan,
+  const char               *id,
+  std::vector<std::string> &strings,
+  void                     *dest,
+  int                       mode)
  
   {
   int          ret = DIS_SUCCESS;
@@ -1147,18 +1143,18 @@ int write_my_server_status(
   node_comm_t *nc;
  
   /* put each string into the message. */
-  for(boost::ptr_vector<std::string>::iterator i = strings.begin();i != strings.end();i++)
+  for (unsigned int i = 0; i < strings.size(); i++)
     {
     if (LOGLEVEL >= 7)
       {
       sprintf(log_buffer,"%s: sending to server \"%s\"",
         id,
-        i->c_str());
+        strings[i].c_str());
       
       log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
       }
 
-    const char *str_to_write = i->c_str();
+    const char *str_to_write = strings[i].c_str();
     
     if ((ret = diswst(chan, str_to_write)) != DIS_SUCCESS)
       {
@@ -1212,9 +1208,9 @@ int write_cached_statuses(
   /* traverse the received_nodes array and send/clear the updates */
   while ((rn = iter->get_next_item()) != NULL)
     {
-    for(boost::ptr_vector<std::string>::iterator i = rn->statuses.begin();i != rn->statuses.end();i++)
+    for(unsigned int i = 0; i < rn->statuses.size(); i++)
       {
-      cp = i->c_str();
+      cp = rn->statuses[i].c_str();
       if (LOGLEVEL >= 7)
         {
         sprintf(log_buffer,"%s: sending to server \"%s\"",
@@ -1281,8 +1277,8 @@ int write_cached_statuses(
  
 int mom_server_update_stat(
  
-  mom_server *pms,
-  boost::ptr_vector<std::string>& strings)
+  mom_server               *pms,
+  std::vector<std::string> &strings)
  
   {
   int              stream;
@@ -1416,8 +1412,8 @@ void node_comm_error(
 
 int write_status_strings(
  
-  boost::ptr_vector<std::string>& strings,
-  node_comm_t *nc)
+  std::vector<std::string> &strings,
+  node_comm_t              *nc)
  
   {
   int            fds = nc->stream;
@@ -1438,7 +1434,7 @@ int write_status_strings(
   else if ((rc = write_update_header(chan,__func__,nc->name)) != DIS_SUCCESS)
     {
     }
-  else if ((rc = write_my_server_status(chan,__func__,strings,nc,UPDATE_TO_SERVER)) != DIS_SUCCESS)
+  else if ((rc = write_my_server_status(chan,__func__, strings, nc, UPDATE_TO_SERVER)) != DIS_SUCCESS)
     {
     }
   else if ((rc = write_cached_statuses(chan,__func__,nc,UPDATE_TO_SERVER)) != DIS_SUCCESS)

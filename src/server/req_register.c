@@ -1358,7 +1358,7 @@ int depend_on_que(
   struct depend     *pdep;
 
   struct depend_job *pparent;
-  int                rc;
+  int                rc = PBSE_NONE;
   int                type;
   job               *pjob = (job *)pj;
   pbs_queue         *pque;
@@ -1421,6 +1421,11 @@ int depend_on_que(
       {
       pparent = (struct depend_job *)GET_NEXT(pdep->dp_jobs);
 
+      // initialize rc to PBSE_BADDEPEND to make sure that send_depend_req is called at least
+      // once if we are queuing a job
+      if (mode != ATR_ACTION_ALTER)
+        rc = PBSE_BADDEPEND;
+
       while (pparent)
         {
         if ((rc = send_depend_req(pjob, pparent, type, JOB_DEPEND_OP_REGISTER, SYNC_SCHED_HINT_NULL, post_doq,false)) != PBSE_NONE)
@@ -1435,7 +1440,7 @@ int depend_on_que(
     pdep = (struct depend *)GET_NEXT(pdep->dp_link);
     }
 
-  return(PBSE_NONE);
+  return(rc);
   }  /* END depend_on_que() */
 
 
@@ -1633,6 +1638,11 @@ int depend_on_term(
 
     switch (type)
       {
+      case JOB_DEPEND_TYPE_BEFORESTART:
+
+        op = JOB_DEPEND_OP_DELETE;
+
+        break;
 
       case JOB_DEPEND_TYPE_BEFOREOK:
 
@@ -1858,18 +1868,18 @@ void set_depend_hold(
           long displayServerName = 1;
           char *svrName = NULL;
 
-          if(!get_svr_attr_l(SRV_ATR_display_job_server_suffix, &displayServerName) &&
-            !displayServerName &&
-            (pjob->ji_wattr[JOB_ATR_at_server].at_flags&ATR_VFLAG_SET) &&
-            (svrName = pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str) != NULL &&
-            !strcmp(svrName,djob->dc_svr) &&
-            !strncmp(djob->dc_child,pjob->ji_qs.ji_jobid,strlen(pjob->ji_qs.ji_jobid)))
+          if ((!get_svr_attr_l(SRV_ATR_display_job_server_suffix, &displayServerName)) &&
+              (!displayServerName) &&
+              (pjob->ji_wattr[JOB_ATR_at_server].at_flags&ATR_VFLAG_SET) &&
+              (svrName = pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str) != NULL &&
+              (!strcmp(svrName,djob->dc_svr)) &&
+              (!strncmp(djob->dc_child,pjob->ji_qs.ji_jobid,strlen(pjob->ji_qs.ji_jobid))))
             {
             jobids_match = 1;
             }
           /* if dc_child is the same job id as pjob don't
              lock the job. It is already locked */
-          if(!jobids_match)
+          if (!jobids_match)
             {
             if (strcmp(djob->dc_child, pjob->ji_qs.ji_jobid))
               djp = svr_find_job(djob->dc_child, TRUE);
@@ -3311,20 +3321,30 @@ void del_depend_job(
  * If pJob has an AFTERANY dependency on targetJob, remove it.
  * pJob is passed in with the ji_mutex locked.
  */
-void removeAfterAnyDependency(const char *pJId,const char *targetJobID)
+void removeAfterAnyDependency(
+    
+  const char *pJId,
+  const char *targetJobID)
+
   {
   char *pTargetJobID = (char *)targetJobID;
 
-  if(!strcmp((char *)pJId,pTargetJobID)) return;
+  if (!strcmp((char *)pJId,pTargetJobID))
+    return;
+
   job *pLockedJob = svr_find_job((char *)pJId,FALSE);
-  if(pLockedJob == NULL) return;
+  
+  if (pLockedJob == NULL)
+    return;
+  
   mutex_mgr job_mutex(pLockedJob->ji_mutex,true);
   pbs_attribute *pattr = &pLockedJob->ji_wattr[JOB_ATR_depend];
   struct depend *pDep = find_depend(JOB_DEPEND_TYPE_AFTERANY,pattr);
-  if(pDep != NULL)
+  
+  if (pDep != NULL)
     {
     struct depend_job *pDepJob = find_dependjob(pDep,pTargetJobID);
-    if(pDepJob != NULL)
+    if (pDepJob != NULL)
       {
       del_depend_job(pDepJob);
       job_mutex.unlock();

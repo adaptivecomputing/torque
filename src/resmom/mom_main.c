@@ -49,7 +49,6 @@
 #include <list>
 #include <string>
 #include <vector>
-#include <boost/ptr_container/ptr_vector.hpp>
 
 
 #include "libpbs.h"
@@ -176,7 +175,7 @@ char        *path_aux;
 char        *path_home = (char *)PBS_SERVER_HOME;
 char        *mom_home;
 
-extern boost::ptr_vector<std::string> mom_status;
+extern std::vector<std::string> mom_status;
 extern int  multi_mom;
 char        *path_layout;
 extern char *msg_daemonname;          /* for logs     */
@@ -198,7 +197,7 @@ extern struct var_table vtable; /* see start_exec.c */
 
 time_t          last_log_check;
 
-boost::ptr_vector<exiting_job_info> exiting_job_list;
+std::vector<exiting_job_info> exiting_job_list;
 std::vector<resend_momcomm *> things_to_resend;
 
 mom_hierarchy_t  *mh;
@@ -5157,7 +5156,15 @@ int TMOMJobGetStartInfo(
 
   for (index = 0;index < TMAX_JE;index++)
     {
-    if (TMOMStartInfo[index].pjob == pjob)
+    if ((pjob == NULL) &&
+        (TMOMStartInfo[index].jobid[0] == '\0'))
+      {
+      *TJEP = &TMOMStartInfo[index];
+
+      return(SUCCESS);
+      }
+    else if ((pjob != NULL) &&
+             (!strcmp(TMOMStartInfo[index].jobid, pjob->ji_qs.ji_jobid)))
       {
       *TJEP = &TMOMStartInfo[index];
 
@@ -5684,21 +5691,23 @@ void check_exiting_jobs()
 
   while (exiting_job_list.size() != 0)
     {
-    boost::ptr_vector<exiting_job_info>::auto_type eji = exiting_job_list.pop_back();
-    if (time_now - eji->obit_sent < OBIT_STATE_RETRY_TIME)
+    exiting_job_info eji = exiting_job_list.back();
+    exiting_job_list.pop_back();
+
+    if (time_now - eji.obit_sent < OBIT_STATE_RETRY_TIME)
       {
       /* insert this back at the front */
-      exiting_job_list.insert(exiting_job_list.begin(),eji.release());
+      exiting_job_list.insert(exiting_job_list.begin(), eji);
       break;
       }
 
-    pjob = mom_find_job((char *)eji->jobid.c_str());
+    pjob = mom_find_job(eji.jobid.c_str());
 
     if (pjob != NULL)
       {
       post_epilogue(pjob, 0);
-      eji->obit_sent = time_now;
-      exiting_job_list.push_back(eji.release());
+      eji.obit_sent = time_now;
+      exiting_job_list.push_back(eji);
       }
     }
   } /* END check_exiting_jobs() */

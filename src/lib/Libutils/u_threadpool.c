@@ -85,16 +85,15 @@
 #include "threadpool.h"
 #include "utils.h"
 #include "log.h"
-#include "../Liblog/pbs_log.h"
 #include "attribute.h"
 
-
-#define MINIMUM_STACK_SIZE 8192 * 1024
-#define MAX_STACK_SIZE MINIMUM_STACK_SIZE * 4
+#define MINIMUM_STACK_SIZE 1024 * 1024 
+#define MAX_STACK_SIZE MINIMUM_STACK_SIZE * 8
 sigset_t      fillset;
 
 threadpool_t *request_pool;
 threadpool_t *task_pool;
+threadpool_t *async_pool;
 
 static void *work_thread(void *);
 
@@ -214,7 +213,7 @@ static void *work_thread(
 
   {
   threadpool_t     *tp = (threadpool_t *)a;
-  int               rc;
+  int               rc = PBSE_NONE;
 
   void             *(*func)(void *);
   void             *arg;
@@ -277,6 +276,14 @@ static void *work_thread(
         }
       }
 
+    if ((rc == ETIMEDOUT) && 
+        (request_pool->tp_nthreads > request_pool->tp_min_threads) &&
+        (request_pool->tp_idle_threads > 2))
+      {
+      request_pool->tp_idle_threads--;
+      break;
+      }
+
     tp->tp_idle_threads--;
 
     /* if we're shutting down, leave this loop */
@@ -308,7 +315,11 @@ static void *work_thread(
     }
 
   pthread_cleanup_pop(1); /* calls work_thread_cleanup(NULL) */
-  return(NULL);
+  /*sprintf(log_buf, "work_thread exiting. Current allocated threads: %d", request_pool->tp_nthreads);
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buf);
+  sprintf(log_buf, "work_thread exiting. Current idle threads: %d", request_pool->tp_idle_threads);
+  log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buf);*/
+  pthread_exit(0);
   } /* END work_thread() */
 
 
@@ -397,6 +408,7 @@ int enqueue_threadpool_request(
 
   {
   tp_work_t *work = NULL;
+/*  char              log_buf[LOCAL_LOG_BUF_SIZE];*/
 
   if ((work = (tp_work_t *)calloc(1, sizeof(tp_work_t))) == NULL)
     {

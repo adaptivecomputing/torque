@@ -259,12 +259,11 @@ int task_save(
   task *ptask)  /* I */
 
   {
-  job  *pjob;
+  job  *pjob = NULL;
   int   fds;
   int   i;
   int   TaskID = 0;
   char  namebuf[MAXPATHLEN + 1];
-  char  portname[MAXPATHLEN + 1];
   int   openflags;
 
   if (ptask == NULL)
@@ -273,33 +272,24 @@ int task_save(
     return(PBSE_BAD_PARAMETER);
     }
 
-  pjob = ptask->ti_job;
-
-  if (pjob == NULL)
+  if ((pjob = mom_find_job(ptask->ti_qs.ti_parentjobid)) == NULL)
     {
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL pointer to owning job");
     return(PBSE_BAD_PARAMETER);
     }
 
-  strncpy(namebuf, path_jobs, sizeof(namebuf) - 1);     /* job directory path */
-  strncat(namebuf, pjob->ji_qs.ji_fileprefix, sizeof(namebuf) - 1); /*TODO: think about stncats third arguments*/
-
   if (multi_mom)
-    {
-    sprintf(portname, "%d", pbs_rm_port);
-    /*TODO: do we have actually snprintf*/
-    /*snprintf(portname, sizeof(portname), "%d", pbs_rm_port);*/
-    strncat(namebuf, portname, sizeof(namebuf) - 1);
-    }
-
-  strncat(namebuf, JOB_TASKDIR_SUFFIX, sizeof(namebuf) - 1);
+    snprintf(namebuf, sizeof(namebuf), "%s%s%d%s",
+     path_jobs, pjob->ji_qs.ji_fileprefix, pbs_rm_port, JOB_TASKDIR_SUFFIX);
+  else
+    snprintf(namebuf, sizeof(namebuf), "%s%s%s",
+     path_jobs, pjob->ji_qs.ji_fileprefix, JOB_TASKDIR_SUFFIX);
 
   openflags = O_WRONLY | O_CREAT | O_Sync;
 
   if (LOGLEVEL >= 6)
     {
-    sprintf(log_buffer, "saving task in %s",
-            namebuf);
+    sprintf(log_buffer, "saving task in %s", namebuf);
 
     log_record(PBSEVENT_JOB, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
     }
@@ -380,7 +370,7 @@ int task_save(
 
   close(fds);
 
-  return(0);
+  return(PBSE_NONE);
   }  /* END task_save() */
 
 
@@ -499,9 +489,6 @@ task *pbs_task_create(
     }
 
   /* initialize task */
-
-  ptask->ti_job = pjob;
-
   CLEAR_LINK(ptask->ti_jobtask);
   append_link(&pjob->ji_tasks, &ptask->ti_jobtask, ptask);
 
@@ -510,7 +497,7 @@ task *pbs_task_create(
   CLEAR_HEAD(ptask->ti_obits);
   CLEAR_HEAD(ptask->ti_info);
 
-  memset(ptask->ti_qs.ti_parentjobid, 0, sizeof(ptask->ti_qs.ti_parentjobid));
+  strcpy(ptask->ti_qs.ti_parentjobid, pjob->ji_qs.ji_jobid);
 
   ptask->ti_qs.ti_parentnode = TM_ERROR_NODE;
   ptask->ti_qs.ti_parenttask = TM_NULL_TASK;
@@ -8791,7 +8778,7 @@ int read_status_strings(
     /* place each string into the buffer */
     if (rn != NULL)
       {
-      rn->statuses.push_back(new std::string(str));
+      rn->statuses.push_back(str);
       }
 
     free(str);

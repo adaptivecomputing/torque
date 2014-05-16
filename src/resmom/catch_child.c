@@ -1146,7 +1146,7 @@ void preobit_preparation(
     /* parent - mark that job epilog subtask has been launched */
 
     /* NOTE:  pjob->ji_mompost will be executed in scan_for_terminated() */
-    exiting_job_list.push_back(new exiting_job_info(pjob->ji_qs.ji_jobid));
+    exiting_job_list.push_back(exiting_job_info(pjob->ji_qs.ji_jobid));
 
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_OBIT;
     pjob->ji_momsubt = cpid;

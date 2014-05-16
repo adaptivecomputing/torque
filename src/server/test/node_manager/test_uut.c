@@ -1,6 +1,6 @@
 #include <string>
 #include <sstream>
-#include <boost/ptr_container/ptr_vector.hpp>
+#include <vector>
 #include "license_pbs.h" /* See here for the software license */
 #include "node_manager.h"
 #include "test_uut.h"
@@ -14,22 +14,22 @@ char  buf[4096];
 const char *napali = "napali";
 const char *l11 =    "l11";
 
-int   remove_job_from_node(struct pbsnode *pnode, const char *jobid);
+int   remove_job_from_node(struct pbsnode *pnode, int internal_job_id);
 int   node_in_exechostlist(char *, char *);
 char *get_next_exec_host(char **);
-int   job_should_be_killed(char *, struct pbsnode *);
+int   job_should_be_killed(int, struct pbsnode *);
 int   check_for_node_type(complete_spec_data *, enum node_types);
 int   record_external_node(job *, struct pbsnode *);
 int save_node_for_adding(node_job_add_info *naji, struct pbsnode *pnode, single_spec_data *req, int first_node_id, int is_external_node, int req_rank);
 void remove_job_from_already_killed_list(struct work_task *pwt);
-bool job_already_being_killed(const char *jobid);
+bool job_already_being_killed(int internal_job_id);
 void process_job_attribute_information(std::string &job_id, std::string &attributes);
 bool process_as_node_list(const char *spec, const node_job_add_info *naji);
-bool node_is_spec_acceptable(struct pbsnode *pnode, single_spec_data *spec, char *ProcBMStr, int *eligible_nodes,bool isExclusive);
-void populate_range_string_from_slot_tracker(execution_slot_tracker &est, std::string &range_str);
+bool node_is_spec_acceptable(struct pbsnode *pnode, single_spec_data *spec, char *ProcBMStr, int *eligible_nodes, bool job_is_exclusive);
+void populate_range_string_from_slot_tracker(const execution_slot_tracker &est, std::string &range_str);
 int  translate_job_reservation_info_to_string(std::vector<job_reservation_info *> &host_info, int *NCount, std::string &exec_host_output, std::stringstream *exec_port_output);
 
-extern boost::ptr_vector<std::string> jobsKilled;
+extern std::vector<int> jobsKilled;
 
 extern int str_to_attr_count;
 extern int decode_resc_count;
@@ -119,7 +119,7 @@ START_TEST(node_is_spec_acceptable_test)
 
   spec.ppn = 10;
 
-  fail_unless(node_is_spec_acceptable(&pnode, &spec, NULL, &eligible_nodes,false) == false);
+  fail_unless(node_is_spec_acceptable(&pnode, &spec, NULL, &eligible_nodes, false) == false);
   fail_unless(eligible_nodes == 0);
 
   for (int i = 0; i < 10; i++)
@@ -184,10 +184,11 @@ END_TEST
 
 START_TEST(job_already_being_killed_test)
   {
-  jobsKilled.push_back(new std::string("10.napali"));
+  jobsKilled.clear();
+  jobsKilled.push_back(10);
 
-  fail_unless(job_already_being_killed("1.napali") == false);
-  fail_unless(job_already_being_killed("10.napali") == true);
+  fail_unless(job_already_being_killed(1) == false);
+  fail_unless(job_already_being_killed(10) == true);
   }
 END_TEST
 
@@ -195,58 +196,51 @@ END_TEST
 START_TEST(remove_job_from_already_killed_list_test)
   {
   struct work_task *pwt;
+  jobsKilled.clear();
 
   pwt = (struct work_task *)calloc(1,sizeof(struct work_task));
   pwt->wt_mutex = (pthread_mutex_t *)calloc(1,sizeof(pthread_mutex_t));
-  pwt->wt_parm1 = (void *)new std::string("Job 5");
-  jobsKilled.push_back(new std::string("Job 1"));
-  jobsKilled.push_back(new std::string("Job 2"));
-  jobsKilled.push_back(new std::string("Job 3"));
-  jobsKilled.push_back(new std::string("Job 4"));
-  jobsKilled.push_back(new std::string("Job 5"));
-  jobsKilled.push_back(new std::string("Job 6"));
+  pwt->wt_parm1 = new int(5);
+  jobsKilled.push_back(1);
+  jobsKilled.push_back(2);
+  jobsKilled.push_back(3);
+  jobsKilled.push_back(4);
+  jobsKilled.push_back(5);
+  jobsKilled.push_back(6);
 
   remove_job_from_already_killed_list(pwt);
 
-  for(boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();i != jobsKilled.end();i++)
-    {
-    fail_unless(strcmp(i->c_str(),"Job 5") != 0);
-    }
+  for (unsigned int i = 0; i < jobsKilled.size(); i++)
+    fail_unless(jobsKilled[i] != 5);
 
   pwt = (struct work_task *)calloc(1,sizeof(struct work_task));
   pwt->wt_mutex = (pthread_mutex_t *)calloc(1,sizeof(pthread_mutex_t));
-  pwt->wt_parm1 = (void *)new std::string("Job 6");
+  pwt->wt_parm1 = new int(6);
 
   remove_job_from_already_killed_list(pwt);
 
-  for(boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();i != jobsKilled.end();i++)
-    {
-    fail_unless(strcmp(i->c_str(),"Job 6") != 0);
-    }
+  for (unsigned int i = 0; i < jobsKilled.size(); i++)
+    fail_unless(jobsKilled[i] != 6);
 
   }
 END_TEST
 
 START_TEST(remove_job_from_node_test)
   {
-  job pjob;
-
-  strcpy(pjob.ji_qs.ji_jobid, "1.napali");
-  job_usage_info *jui = (job_usage_info *)calloc(1, sizeof(job_usage_info));
-  strcpy(jui->jobid, "1.napali");
+  job_usage_info jui(1);
   struct pbsnode *pnode = (struct pbsnode *)calloc(1, sizeof(struct pbsnode));
 
   for (int i = 0; i < 10; i++)
     pnode->nd_slots.add_execution_slot();
 
-  pnode->nd_slots.reserve_execution_slots(6, jui->est);
+  pnode->nd_slots.reserve_execution_slots(6, jui.est);
   pnode->nd_job_usages.push_back(jui);
 
   fail_unless(pnode->nd_slots.get_number_free() == 4);
 
-  remove_job_from_node(pnode, (const char *)pjob.ji_qs.ji_jobid);
+  remove_job_from_node(pnode, 1);
   fail_unless(pnode->nd_slots.get_number_free() == 10);
-  remove_job_from_node(pnode, (const char *)pjob.ji_qs.ji_jobid);
+  remove_job_from_node(pnode, 1);
   fail_unless(pnode->nd_slots.get_number_free() == 10);
   }
 END_TEST
@@ -286,25 +280,25 @@ END_TEST
 START_TEST(sync_node_jobs_with_moms_test)
   {
   struct pbsnode *pnode = (struct pbsnode *)calloc(1, sizeof(struct pbsnode));
+  extern bool     job_mode;
+
+  job_mode = true;
   for (int i = 0; i < 9; i++)
     pnode->nd_slots.add_execution_slot();
 
   /* Job #1 */
-  job_usage_info *jui = (job_usage_info *)calloc(1, sizeof(job_usage_info));
-  strcpy(jui->jobid, "1.lei.ac");
-  pnode->nd_slots.reserve_execution_slots(2, jui->est);
+  job_usage_info jui(1);
+  pnode->nd_slots.reserve_execution_slots(2, jui.est);
   pnode->nd_job_usages.push_back(jui);
 
   /* Job #2 */
-  jui = (job_usage_info *)calloc(1, sizeof(job_usage_info));
-  strcpy(jui->jobid, "2.lei.ac");
-  pnode->nd_slots.reserve_execution_slots(4, jui->est);
-  pnode->nd_job_usages.push_back(jui);
+  job_usage_info jui2(2);
+  pnode->nd_slots.reserve_execution_slots(4, jui2.est);
+  pnode->nd_job_usages.push_back(jui2);
   
-  jui = (job_usage_info *)calloc(1, sizeof(job_usage_info));
-  strcpy(jui->jobid, "3.lei.ac");
-  pnode->nd_slots.reserve_execution_slots(3, jui->est);
-  pnode->nd_job_usages.push_back(jui);
+  job_usage_info jui3(3);
+  pnode->nd_slots.reserve_execution_slots(3, jui3.est);
+  pnode->nd_job_usages.push_back(jui3);
 
   /* node is fully allocated for the 3 jobs above */
   fail_unless(pnode->nd_slots.get_number_free() == 0);
@@ -322,12 +316,12 @@ START_TEST(sync_node_jobs_with_moms_test)
   fail_unless(pnode->nd_slots.get_number_free() == 9);
 
   /* This job should not be clean as svr_find_job should find it */
-  jui = (job_usage_info *)calloc(1, sizeof(job_usage_info));
-  strcpy(jui->jobid, "4.noclean.ac");
-  pnode->nd_slots.reserve_execution_slots(3, jui->est);
-  pnode->nd_job_usages.push_back(jui);
+  job_usage_info jui4(4);
+  pnode->nd_slots.reserve_execution_slots(3, jui4.est);
+  pnode->nd_job_usages.push_back(jui4);
   sync_node_jobs_with_moms(pnode, "");
   fail_unless(pnode->nd_slots.get_number_free() == 6);
+  job_mode = false;
   }
 END_TEST
 
@@ -342,13 +336,13 @@ START_TEST(job_should_be_killed_test)
   memset(&jinfo, 0, sizeof(jinfo));
 
   pnode.nd_name = (char *)"tom";
-  strcpy(jinfo.jobid, "1");
+  jinfo.internal_job_id = 1;
 
-  fail_unless(job_should_be_killed((char *)"2", &pnode) == true, "non-existent job shouldn't be on node");
-  fail_unless(job_should_be_killed((char *)"3", &pnode) == true, "non-existent job shouldn't be on node");
-  fail_unless(job_should_be_killed((char *)"4", &pnode) == true, "non-existent job shouldn't be on node");
-  fail_unless(job_should_be_killed((char *)"1", &pnode) == false, "false positive");
-  fail_unless(job_should_be_killed((char *)"5", &pnode) == false, "false positive");
+  fail_unless(job_should_be_killed(2, &pnode) == true, "non-existent job shouldn't be on node");
+  fail_unless(job_should_be_killed(3, &pnode) == true, "non-existent job shouldn't be on node");
+  fail_unless(job_should_be_killed(4, &pnode) == true, "non-existent job shouldn't be on node");
+  fail_unless(job_should_be_killed(1, &pnode) == false, "false positive");
+  fail_unless(job_should_be_killed(5, &pnode) == false, "false positive");
   }
 END_TEST
 

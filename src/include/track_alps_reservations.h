@@ -93,17 +93,21 @@ class alps_reservation
 public:
   char            *rsv_id;         /* the reservation id */
   std::vector<std::string> ar_node_names;/* the node ids associated with this reservation */
-  char            *job_id;         /* the job id associated with this reservation */
-  alps_reservation():rsv_id(NULL),job_id(NULL){}
-  alps_reservation(const char *new_jid,const char *new_rsvid)
+  int              internal_job_id; /* the job id associated with this reservation */
+
+  alps_reservation() : rsv_id(NULL), internal_job_id(-1)
     {
-    job_id = strdup(new_jid);
+    }
+
+  alps_reservation(int job_int_id, const char *new_rsvid) : internal_job_id(job_int_id)
+    {
     rsv_id = strdup(new_rsvid);
     }
+
   ~alps_reservation()
     {
-    if(rsv_id != NULL) free(rsv_id);
-    if(job_id != NULL) free(job_id);
+    if (rsv_id != NULL)
+      free(rsv_id);
     }
   };
 
@@ -118,7 +122,7 @@ void initialize_alps_reservations();
 
 int track_alps_reservation(job *pjob);
 int remove_alps_reservation(char *rsv_id);
-int is_orphaned(char *rsv_id, char *job_id);
+bool is_orphaned(char *rsv_id, char *job_id);
 int already_recorded(char *rsv_id);
 int insert_alps_reservation(alps_reservation *ar);
 

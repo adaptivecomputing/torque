@@ -3,6 +3,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <vector>
+#include <string>
 
 #include "threadpool.h"
 #include "attribute.h"
@@ -156,7 +158,7 @@ int unlock_node(
   return(0);
   }
 
-job *svr_find_job(char *jobid, int subjob)
+job *svr_find_job(const char *jobid, int subjob)
   
   {
   return(NULL);
@@ -279,4 +281,3 @@ int node_gpustatus_list(
   }
 
 void clear_nvidia_gpus(struct pbsnode *np) {}
-

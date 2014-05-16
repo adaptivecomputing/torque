@@ -188,7 +188,7 @@ int svr_setjobstate(job *pjob, int newstate, int newsubstate, int has_queue_mute
 
 job *pGlobalJob = NULL;
 
-job *svr_find_job(char *jobid, int get_subjob)
+job *svr_find_job(const char *jobid, int get_subjob)
   {
   job *pjob = (job *)calloc(1, sizeof(job));
   strcpy(pjob->ji_qs.ji_jobid, jobid);
