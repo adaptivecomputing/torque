@@ -301,7 +301,9 @@ int tcp_connect_sockaddr(
   char *tmp_ip = NULL;
   int  retryCount = 5;
 
-  while(retryCount-- >= 0)
+  errno = 0;
+
+  while (retryCount-- >= 0)
     {
     if ((stream = socket_get_tcp_priv()) < 0)
       {
