@@ -20,6 +20,17 @@
 
 pthread_mutex_t *scheduler_sock_jobct_mutex;
 const char *PJobSubState[10];
+const char *PJobState[] =
+  {
+  "TRANSIT",
+  "QUEUED",
+  "HELD",
+  "WAITING",
+  "RUNNING",
+  "EXITING",
+  "COMPLETE",
+  NULL
+  };
 int svr_tsnodes = 0;
 int svr_resc_size = 0;
 attribute_def job_attr_def[10];
