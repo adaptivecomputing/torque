@@ -937,6 +937,8 @@ int socket_close(
 
 static pthread_mutex_t addrinfoMutex = PTHREAD_MUTEX_INITIALIZER;
 
+
+
 int pbs_getaddrinfo(
     
   const char       *pNode,
@@ -967,7 +969,7 @@ int pbs_getaddrinfo(
 
   do
     {
-    if(addrFound)
+    if (addrFound)
       {
       rc = 0;
       }
@@ -976,21 +978,24 @@ int pbs_getaddrinfo(
       *ppAddrInfoOut = NULL;
       rc = getaddrinfo(pNode,NULL,pHints,ppAddrInfoOut);
       }
-    if(rc == 0)
+
+    if (rc == 0)
       {
       addrFound = TRUE;
       *ppAddrInfoOut = insert_addr_name_info(*ppAddrInfoOut,pNode);
-      if(*ppAddrInfoOut != NULL)
+      if (*ppAddrInfoOut != NULL)
         {
         return 0;
         }
       rc = EAI_AGAIN;
       }
-    if(rc != EAI_AGAIN)
+
+    if (rc != EAI_AGAIN)
       {
       return rc;
       }
-    }while(retryCount-- >= 0);
+    } while(retryCount-- >= 0);
+
   return EAI_FAIL;
   }    
 
