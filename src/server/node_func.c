@@ -3633,7 +3633,7 @@ int send_hierarchy(
   char               *string;
   int                 ret = PBSE_NONE;
   int                 sock;
-  struct addrinfo    *pAddrInfo;
+  struct addrinfo    *pAddrInfo = NULL;
   struct sockaddr_in  sa;
   struct tcp_chan    *chan = NULL;
 
