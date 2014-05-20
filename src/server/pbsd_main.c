@@ -1273,12 +1273,11 @@ void *start_accept_listener(
   char server_name_trimmed[PBS_MAXSERVERNAME + 1];
   char *colon_pos = NULL;
 
-  colon_pos = strchr(server_name, ':');
+  strcpy(server_name_trimmed, server_name);
+  colon_pos = strchr(server_name_trimmed, ':');
 
-  if (colon_pos == NULL)
-    strcpy(server_name_trimmed, server_name);
-  else
-    strncpy(server_name_trimmed, server_name, colon_pos - server_name);
+  if (colon_pos != NULL)
+    *colon_pos = '\0';
 
   accept_thread_active = true;
   pthread_cleanup_push(accept_listener_cleanup, vp);
