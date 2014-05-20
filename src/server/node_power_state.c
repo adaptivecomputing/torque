@@ -18,6 +18,31 @@
 #include "threadpool.h"
 
 
+void * send_power_state_to_mom(void *arg)
+  {
+  struct batch_request  *pRequest = (struct batch_request *)arg;
+  struct pbsnode        *pNode = find_nodebyname(pRequest->rq_host);
+
+  if(pNode == NULL)
+    {
+    free_br(pRequest);
+    return NULL;
+    }
+
+  int handle = 0;
+  int local_errno = 0;
+  handle = svr_connect(pNode->nd_addrs[0],pNode->nd_mom_port,&local_errno,pNode,NULL);
+  if(handle < 0)
+    {
+    unlock_node(pNode, __func__, "Error connecting", LOGLEVEL);
+    return NULL;
+    }
+  unlock_node(pNode, __func__, "Done connecting", LOGLEVEL);
+  issue_Drequest(handle, pRequest, true);
+
+  return NULL;
+  }
+
 bool getMacAddr(std::string& interface,unsigned char *mac_addr)
   {
   char buff[1024];
@@ -205,7 +230,7 @@ int set_node_power_state(struct pbsnode **ppNode,unsigned short newState)
       }
     unlock_node(pNode, __func__, "Done connecting", LOGLEVEL);
     *ppNode = NULL;
-    rc = issue_Drequest(handle, request);
+    rc = issue_Drequest(handle, request,true);
     if(rc == PBSE_NONE)
       {
       rc = request->rq_reply.brp_code;

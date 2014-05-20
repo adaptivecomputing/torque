@@ -172,7 +172,7 @@ void *get_next(list_link pl, char *file, int line)
   exit(1);
   }
 
-int issue_Drequest(int conn, struct batch_request *request)
+int issue_Drequest(int conn, struct batch_request *request, bool close_handle)
   {
   fprintf(stderr, "The call to issue_Drequest to be mocked!!\n");
   exit(1);

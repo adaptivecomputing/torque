@@ -535,7 +535,7 @@ int kill_job_on_mom(
       preq->rq_extra = strdup(SYNC_KILL);
       
       unlock_node(pnode, __func__, NULL, LOGLEVEL);
-      rc = issue_Drequest(conn, preq);
+      rc = issue_Drequest(conn, preq, true);
       free_br(preq);
       lock_node(pnode, __func__, NULL, LOGLEVEL);
       }
@@ -5347,7 +5347,7 @@ int remove_job_from_node(
 
       pnode->nd_state &= ~INUSE_JOB;
 
-      break;
+      i--; /* the array has shrunk by 1 so we need to reduce i by one */
       }
     }
   
