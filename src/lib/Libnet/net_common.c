@@ -511,7 +511,7 @@ int socket_wait_for_write(
   {
   int            rc = PBSE_NONE;
   int            write_soc = 0;
-  int            sock_errno;
+  int            sock_errno = 0;
   socklen_t      len = sizeof(int);
   fd_set         wfd;
   struct timeval timeout;
