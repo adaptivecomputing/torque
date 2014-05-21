@@ -519,10 +519,11 @@ void mom_req_quejob(
   if (reply_jobid(preq, pj->ji_qs.ji_jobid, BATCH_REPLY_CHOICE_Queue) != 0)
     {
     /* reply failed, purge the job and close the connection */
+    // call mom_job_purge first so that double-frees don't happen 
+    // when the on_close function is called
+    mom_job_purge(pj);
 
     close_conn(sock, FALSE);
-
-    mom_job_purge(pj);
 
     return;
     }
@@ -918,12 +919,13 @@ void req_rdytocommit(
     sprintf(log_buffer, "cannot report jobid - errno=%d - %s",
       errno,
       strerror(errno));
-
     log_err(errno, "req_rdytocommit", log_buffer);
 
-    close_conn(sock, FALSE);
-
+    // call mom_job_purge first so that double-frees don't happen 
+    // when the on_close function is called
     mom_job_purge(pj);
+
+    close_conn(sock, FALSE);
 
     return;
     }

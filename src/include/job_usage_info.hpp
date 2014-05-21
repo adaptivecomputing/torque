@@ -1,3 +1,5 @@
+#ifndef JOB_USAGE_INFO_HPP
+#define JOB_USAGE_INFO_HPP
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
 *
@@ -77,18 +79,19 @@
 * without reference to its choice of law rules.
 */
 
+#include "execution_slot_tracker.hpp"
 
-#include <time.h>
-#include <string>
-#include <vector>
-#include "pbs_ifl.h"
-
-class exiting_job_info
+/* Make a class to cover this in case we need special functionality such as being able 
+ * to match this is stdlib containers. 
+ * This class is stored on the node to keep track of jobs and what they're using on the node. */
+class job_usage_info
   {
-public:
-  std::string  jobid;
-  time_t obit_sent;
-  exiting_job_info(const char *id) : jobid(id), obit_sent(time(NULL)) {}
+  public:
+    int                     internal_job_id;
+    execution_slot_tracker  est;
+    job_usage_info(int job_internal_id);
+    bool operator ==(const job_usage_info &jui);
+    job_usage_info &operator= (const job_usage_info &other_jui);
   };
 
-extern std::vector<exiting_job_info> exiting_job_list;
+#endif

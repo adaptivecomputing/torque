@@ -49,7 +49,6 @@
 #include <list>
 #include <string>
 #include <vector>
-#include <boost/ptr_container/ptr_vector.hpp>
 
 
 #include "libpbs.h"
@@ -176,11 +175,10 @@ char        *path_aux;
 char        *path_home = (char *)PBS_SERVER_HOME;
 char        *mom_home;
 
-extern boost::ptr_vector<std::string> mom_status;
+extern std::vector<std::string> mom_status;
 #ifdef NVIDIA_GPUS
-extern boost::ptr_vector<std::string> global_gpu_status;
+extern std::vector<std::string> global_gpu_status;
 #endif
-
 extern int  multi_mom;
 char        *path_layout;
 extern char *msg_daemonname;          /* for logs     */
@@ -5206,7 +5204,15 @@ int TMOMJobGetStartInfo(
 
   for (index = 0;index < TMAX_JE;index++)
     {
-    if (TMOMStartInfo[index].pjob == pjob)
+    if ((pjob == NULL) &&
+        (TMOMStartInfo[index].jobid[0] == '\0'))
+      {
+      *TJEP = &TMOMStartInfo[index];
+
+      return(SUCCESS);
+      }
+    else if ((pjob != NULL) &&
+             (!strcmp(TMOMStartInfo[index].jobid, pjob->ji_qs.ji_jobid)))
       {
       *TJEP = &TMOMStartInfo[index];
 
@@ -5734,35 +5740,24 @@ void check_exiting_jobs()
 
   for (unsigned int i = 0; i < exiting_job_list.size(); i++)
     {
-    exiting_job_info &eji = exiting_job_list[i];
+    exiting_job_info eji = exiting_job_list.back();
+    exiting_job_list.pop_back();
+
     if (time_now - eji.obit_sent < OBIT_STATE_RETRY_TIME)
       {
-      continue;
+      /* insert this back at the front */
+      exiting_job_list.insert(exiting_job_list.begin(), eji);
+      break;
       }
 
     pjob = mom_find_job(eji.jobid.c_str());
 
-    if (pjob != NULL)
+    if ((pjob != NULL) &&
+        (pjob->ji_job_is_being_rerun == FALSE))
       {
       post_epilogue(pjob, 0);
       eji.obit_sent = time_now;
-      }
-    else if (pjob->ji_job_is_being_rerun == FALSE)
-      {
-      // mark for removal
-      to_remove.push_back(eji.jobid);
-      }
-    }
-
-  for (unsigned int i = 0; i < to_remove.size(); i++)
-    {
-    for (unsigned int j = 0; j < exiting_job_list.size(); j++)
-      {
-      if (to_remove[i] == exiting_job_list[j].jobid)
-        {
-        exiting_job_list.erase(exiting_job_list.begin() + j);
-        break;
-        }
+      exiting_job_list.push_back(eji);
       }
     }
   } /* END check_exiting_jobs() */

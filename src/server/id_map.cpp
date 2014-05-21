@@ -157,8 +157,9 @@ const char *id_map::get_name(
 id_map::~id_map() 
   {
   // leave the destructor blank. C++ destroys globally constructed
-  // objects when the main thread exits, and this class is only destroyed
-  // at shutdown, so we don't care about the memory usage at that point.
+  // objects when the main thread exits, causing crashes for other threads.
+  // This class is only destroyed at shutdown, and since we don't care about
+  // memory usage at shutdown we'll just have the destructor do nothing.
   }
 
 

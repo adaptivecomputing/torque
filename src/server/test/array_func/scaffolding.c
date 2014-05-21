@@ -214,7 +214,7 @@ int is_svr_attr_set(int attr_index)
   return(0);
   }
 
-job *svr_find_job(char *name, int get_subjob)
+job *svr_find_job(const char *name, int get_subjob)
   {
   return(NULL);
   }

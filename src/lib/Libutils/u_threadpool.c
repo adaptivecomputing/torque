@@ -85,16 +85,15 @@
 #include "threadpool.h"
 #include "utils.h"
 #include "log.h"
-#include "../Liblog/pbs_log.h"
 #include "attribute.h"
 
-
-#define MINIMUM_STACK_SIZE 8192 * 1024
-#define MAX_STACK_SIZE MINIMUM_STACK_SIZE * 4
+#define MINIMUM_STACK_SIZE 1024 * 1024 
+#define MAX_STACK_SIZE MINIMUM_STACK_SIZE * 8
 sigset_t      fillset;
 
 threadpool_t *request_pool;
 threadpool_t *task_pool;
+threadpool_t *async_pool;
 
 static void *work_thread(void *);
 

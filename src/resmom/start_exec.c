@@ -369,34 +369,21 @@ enum csa_chk_cmd
 #endif /* ENABLE_CSA */
 
 
-int create_command(
+void create_command(
 
-  char  *cmdbuf,
-  int    cmdbuf_size,
-  char **argv)
+  std::string  &cmd,
+  char        **argv)
 
   {
   int i;
-  
-  snprintf(cmdbuf, cmdbuf_size, "%s", argv[0]);
+
+  cmd = argv[0];
 
   for (i = 1; argv[i] != NULL; i++)
     {
-    if (cmdbuf_size - strlen(cmdbuf) > strlen(argv[i]) + 1)
-      {
-      strcat(cmdbuf, " ");
-      strcat(cmdbuf, argv[i]);
-      }
-    else
-      return(-1);
+    cmd += " ";
+    cmd += argv[i];
     }
-
-  if (cmdbuf_size - strlen(cmdbuf) > 1)
-    strcat(cmdbuf, ")");
-  else
-    return(-1);
-
-  return(PBSE_NONE);
   } /* END create_command() */
 
 
@@ -408,7 +395,7 @@ int create_command(
  * network is fouled up, mom cannot afford to wait forever.
  */
 
-static void no_hang(
+void no_hang(
 
   int sig)   /* I (not used) */
 
@@ -456,7 +443,7 @@ struct passwd *check_pwd(
     if (pwdp != NULL)
       break;
 
-    sleep(1);
+    sleep(.5);
     }
 
   if (pwdp == NULL)
@@ -1764,10 +1751,10 @@ int mom_jobstarter_execute_job(
 
   if (LOGLEVEL >= 10)
     {
-    char cmd[MAXPATHLEN + 1];
-    create_command(cmd, sizeof(cmd), arg);
+    std::string cmd;
+    create_command(cmd, arg);
     
-    sprintf(log_buffer, "execing jobstarter command (%s)\n", cmd);
+    sprintf(log_buffer, "execing jobstarter command (%s)\n", cmd.c_str());
     log_ext(-1, __func__, log_buffer, LOG_DEBUG);
     }
   
@@ -2058,8 +2045,8 @@ int TMomFinalizeJob1(
   memset(TJE, 0, sizeof(pjobexec_t));
   
   TJE->ptc = -1;
-  
-  TJE->pjob = (void *)pjob;
+ 
+  strcpy(TJE->jobid, pjob->ji_qs.ji_jobid);
   
   /* prepare job environment */
   
@@ -2444,7 +2431,7 @@ int TMomFinalizeJob2(
 
   job                  *pjob;
   
-  pjob  = (job *)TJE->pjob;
+  pjob  = mom_find_job(TJE->jobid);
   
   if (LOGLEVEL >= 4)
     {
@@ -3875,11 +3862,11 @@ void launch_the_job_normally(
   {
   if (LOGLEVEL >= 10)
     {
-    char cmd[MAXLINE];
+    std::string cmd;
    
-    create_command(cmd, sizeof(cmd), arg);
+    create_command(cmd, arg);
     
-    sprintf(log_buffer, "execing command (%s) args (%s)\n", shell, cmd);
+    sprintf(log_buffer, "execing command (%s) args (%s)\n", shell, cmd.c_str());
     log_ext(-1, __func__, log_buffer, LOG_DEBUG);
     }
   
@@ -4076,7 +4063,7 @@ int TMomFinalizeChild(
   struct passwd         *pwdp;
   proc_stat_t           *ps = NULL;
 
-  pjob  = (job *)TJE->pjob;
+  pjob  = mom_find_job(TJE->jobid);
   ptask = (task *)TJE->ptask;
 
   pwdp  = (struct passwd *)TJE->pwdp;
@@ -4526,8 +4513,7 @@ int TMomFinalizeJob3(
   unsigned int         momport = 0;
   proc_stat_t           *ps = NULL;
 
-
-  pjob = (job *)TJE->pjob;
+  pjob = mom_find_job(TJE->jobid);
   ptask = (task *)TJE->ptask;
 
   if (pjob == NULL)
@@ -4671,7 +4657,7 @@ int TMomFinalizeJob3(
     log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "saving task (TMomFinalizeJob3)");
     }
 
-  if (task_save(ptask) == -1)
+  if (task_save(ptask) != PBSE_NONE)
     {
     /* FAILURE */
 
@@ -4712,7 +4698,7 @@ int TMomFinalizeJob3(
   ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND;
 
   ps = get_proc_stat((int)sjr.sj_session);
-  if(ps != NULL)
+  if (ps != NULL)
     {
     pjob->ji_wattr[JOB_ATR_system_start_time].at_val.at_long = ps->start_time;
     pjob->ji_wattr[JOB_ATR_system_start_time].at_flags |= ATR_VFLAG_SET;
@@ -4751,7 +4737,7 @@ int TMomFinalizeJob3(
     momport = pbs_rm_port;
     }
 
-  job_save(pjob, SAVEJOB_FULL,momport);
+  job_save(pjob, SAVEJOB_FULL, momport);
 
   sprintf(log_buffer, "job %s started, pid = %ld",
     pjob->ji_qs.ji_jobid,
@@ -4781,7 +4767,7 @@ int start_process(
 
   {
   char         *idir;
-  job          *pjob = ptask->ti_job;
+  job          *pjob = mom_find_job(ptask->ti_qs.ti_parentjobid);
   pid_t         pid;
   int           pipes[2];
   int           kid_read;
@@ -5846,7 +5832,7 @@ void sister_job_nodes(
 
   job *pjob,
   char *radix_hosts,
-  char *radix_ports )  /* I */
+  char *radix_ports)  /* I */
 
   {
   int      i;
@@ -5854,12 +5840,10 @@ void sister_job_nodes(
   int      nhosts;
   int      nodenum;
   int      portnum;
-  int      ix;
   char    *cp = NULL;
   char    *nodestr = NULL;
   char    *portstr = NULL;
   hnodent *hp = NULL;
-  vnodent *np = NULL;
 
   /*  nodes_free(pjob); We may need to do a sister_nodes_free later */
 
@@ -5873,7 +5857,7 @@ void sister_job_nodes(
 
   nodestr = radix_hosts;
   /* count the number of nodes */
-  for(cp = nodestr; *cp; cp++)
+  for (cp = nodestr; *cp; cp++)
     {
     if (*cp == '+')
       {
@@ -5885,7 +5869,7 @@ void sister_job_nodes(
   /* count the number of ports. It must be equal to
    * number of hosts */
   portnum = 1;
-  for(cp = portstr; *cp; cp++)
+  for (cp = portstr; *cp; cp++)
     {
     if (*cp == '+')
       {
@@ -5902,28 +5886,20 @@ void sister_job_nodes(
   if (pjob->ji_sisters == NULL)
     return;
 
-  pjob->ji_sister_vnods = (vnodent *)calloc(nodenum + 1, sizeof(vnodent));
-  if (pjob->ji_sister_vnods == NULL)
-    return;
-
   nhosts = 0;
 
-  np = pjob->ji_sister_vnods;
-
-  for (i = 0;i < nodenum;i++, np++)
+  for (i = 0;i < nodenum; i++)
     {
-    char *dp, nodename[MAXPATHLEN + 1];
-    char *portptr, portnumber[MAXPORTLEN + 1];
-    int portcount;
-
-    ix = 0;
+    char *dp;
+    char  nodename[MAXPATHLEN + 1];
+    char *portptr;
+    char  portnumber[MAXPORTLEN + 1];
+    int   portcount;
 
     for (cp = nodestr, dp = nodename;*cp;cp++, dp++)
       {
       if (*cp == '/')
         {
-        ix = atoi(cp + 1);
-
         while ((*cp != '\0') && (*cp != '+'))
           ++cp;
 
@@ -5956,7 +5932,7 @@ void sister_job_nodes(
       }
 
     /* Get the port number for this host */
-    for(cp = portstr, portptr = portnumber, portcount = 0;portcount < (MAXPORTLEN+1)&& *cp; cp++, portptr++, portcount++)
+    for (cp = portstr, portptr = portnumber, portcount = 0;portcount < (MAXPORTLEN+1)&& *cp; cp++, portptr++, portcount++)
       {
       if (*cp == '+')
         {
@@ -5985,23 +5961,7 @@ void sister_job_nodes(
       CLEAR_HEAD(hp->hn_events);
       }
 
-    np->vn_node  = i;  /* make up node id */
-
-    np->vn_host  = &pjob->ji_sisters[j];
-    np->vn_index = ix;
-
-    if (LOGLEVEL >= 4)
-      {
-      sprintf(log_buffer, "%d: %s/%d",
-        np->vn_node,
-        np->vn_host->hn_host,
-        np->vn_index);
-      
-      log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
-      }
     }   /* END for (i) */
-
-  np->vn_node = TM_ERROR_NODE;
 
   pjob->ji_sisters[nhosts].hn_node = TM_ERROR_NODE;
 
@@ -7936,7 +7896,7 @@ int init_groups(
 
   n = 0;
 
-  if (initgroups(pwname, pwgrp) < 0)
+  if (initgroups_ext(pwname, pwgrp) < 0)
     {
     log_err(errno, __func__, "initgroups");
 
@@ -8190,7 +8150,7 @@ int TMomCheckJobChild(
     {
     log_record(PBSEVENT_ERROR,
       PBS_EVENTCLASS_JOB,
-      (TJE->pjob != NULL) ? ((job *)TJE->pjob)->ji_qs.ji_jobid : "???",
+      TJE->jobid,
       "task/session info loaded");
     }
 

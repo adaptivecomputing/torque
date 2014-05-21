@@ -395,7 +395,8 @@ int tcp_gets(
 
   struct tcp_chan *chan,
   char            *str,
-  size_t           ct)
+  size_t           ct,
+  unsigned int     timeout)
 
   {
   int               rc = 0;
@@ -431,12 +432,13 @@ int tcp_gets(
 
 int tcp_getc(
 
-  struct tcp_chan *chan)
+  struct tcp_chan *chan,
+  unsigned int     timeout)
 
   {
   int rc = DIS_SUCCESS;
   char ret_val;
-  if ((rc = tcp_gets(chan, &ret_val, 1)) < 0)
+  if ((rc = tcp_gets(chan, &ret_val, 1, timeout)) < 0)
     return rc;
   return (int)ret_val;
   }  /* END tcp_getc() */

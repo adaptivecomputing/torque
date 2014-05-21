@@ -124,7 +124,6 @@
 #include "../lib/Libifl/lib_ifl.h" /* pbs_disconnect_socket */
 #include "alps_functions.h"
 #include "mom_config.h"
-#include <boost/ptr_container/ptr_vector.hpp>
 
 #define MAX_GPUS  32
 
@@ -1097,7 +1096,7 @@ int setup_gpus_for_job(
 
 void generate_server_gpustatus_nvml(
 
-  boost::ptr_vector<std::string>& gpu_status)
+  std::vector<std::string> &gpu_status)
 
   {
   nvmlReturn_t        rc;
@@ -1125,14 +1124,14 @@ void generate_server_gpustatus_nvml(
 
   memset(&tmpbuf, 0, sizeof(tmpbuf));
 
-  gpu_status.push_back(new std::string(tmpbuf));
+  gpu_status.push_back(tmpbuf);
 
   /* get the driver version to report */
   rc = nvmlSystemGetDriverVersion(tmpbuf, 1024);
   if (rc == NVML_SUCCESS)
     {
-    std::string *s = new std::string("driver_ver=");
-    *s += tmpbuf;
+    std::string s("driver_ver=");
+    s += tmpbuf;
     gpu_status.push_back(s);
     }
   else
@@ -1165,17 +1164,17 @@ void generate_server_gpustatus_nvml(
 
     if (rc == NVML_SUCCESS)
       {
-      std::string *s = new std::string("gpuid=");
-      *s += pci_info.busId;
+      std::string s("gpuid=");
+      s += pci_info.busId;
       gpu_status.push_back(s);
 
-      s = new std::string("gpu_pci_device_id=");
+      s = "gpu_pci_device_id=";
       snprintf(tmpbuf, 100, "%d", pci_info.pciDeviceId);
-      *s += tmpbuf;
+      s += tmpbuf;
       gpu_status.push_back(s);
 
-      s = new std::string("gpu_pci_location_id=");
-      *s += pci_info.busId;
+      s = "gpu_pci_location_id=";
+      s += pci_info.busId;
       gpu_status.push_back(s);
       }
     else
@@ -1188,8 +1187,8 @@ void generate_server_gpustatus_nvml(
 
     if (rc == NVML_SUCCESS)
       {
-      std::string *s = new std::string("gpu_product_name=");
-      *s += tmpbuf;
+      std::string s("gpu_product_name=");
+      s += tmpbuf;
       gpu_status.push_back(s);
       }
     else
@@ -1202,11 +1201,11 @@ void generate_server_gpustatus_nvml(
 
     if (rc == NVML_SUCCESS)
       {
-      gpu_status.push_back(new std::string("gpu_display=Enabled"));
+      gpu_status.push_back("gpu_display=Enabled");
       }
     else if (rc == NVML_ERROR_INVALID_ARGUMENT)
       {
-      gpu_status.push_back(new std::string("gpu_display=Disabled"));
+      gpu_status.push_back("gpu_display=Disabled");
       }
     else
       {
@@ -1219,7 +1218,7 @@ void generate_server_gpustatus_nvml(
     if (rc == NVML_SUCCESS)
       {
       snprintf(tmpbuf, 20, "gpu_fan_speed=%d%%", tmpint);
-      gpu_status.push_back(new std::string(tmpbuf));
+      gpu_status.push_back(tmpbuf);
       }
     else
       {
@@ -1232,10 +1231,10 @@ void generate_server_gpustatus_nvml(
     if (rc == NVML_SUCCESS)
       {
       snprintf(tmpbuf, 50, "gpu_memory_total=%lld MB", (mem_info.total/(1024*1024)));
-      gpu_status.push_back(new std::string(tmpbuf));
+      gpu_status.push_back(tmpbuf);
 
       snprintf(tmpbuf, 50, "gpu_memory_used=%lld MB", (mem_info.used/(1024*1024)));
-      gpu_status.push_back(new std::string(tmpbuf));
+      gpu_status.push_back(tmpbuf);
       }
     else
       {
@@ -1248,36 +1247,36 @@ void generate_server_gpustatus_nvml(
 
     if (rc == NVML_SUCCESS)
       {
-      std::string *s = new std::string("gpu_mode=");
+      std::string s("gpu_mode=");
       switch (comp_mode)
         {
         case NVML_COMPUTEMODE_DEFAULT:
 
-          *s += "Default";
+          s += "Default";
           nvidia_gpu_modes[idx] = gpu_normal;
           break;
           
         case NVML_COMPUTEMODE_EXCLUSIVE_THREAD:
 
-          *s += "Exclusive_Thread";
+          s += "Exclusive_Thread";
           nvidia_gpu_modes[idx] = gpu_exclusive_thread;
           break;
           
         case NVML_COMPUTEMODE_PROHIBITED:
 
-          *s += "Prohibited";
+          s += "Prohibited";
           nvidia_gpu_modes[idx] = gpu_prohibited;
           break;
 
         case NVML_COMPUTEMODE_EXCLUSIVE_PROCESS:
 
-          *s += "Exclusive_Process";
+          s += "Exclusive_Process";
           nvidia_gpu_modes[idx] = gpu_exclusive_process;
           break;
           
         default:
 
-          *s += "Unknown";
+          s += "Unknown";
           nvidia_gpu_modes[idx] = -1;
           break;
         }
@@ -1295,10 +1294,10 @@ void generate_server_gpustatus_nvml(
     if (rc == NVML_SUCCESS)
       {
       snprintf(tmpbuf, 100, "gpu_utilization=%d%%", util_info.gpu);
-      gpu_status.push_back(new std::string(tmpbuf));
+      gpu_status.push_back(tmpbuf);
 
       snprintf(tmpbuf, 100, "gpu_memory_utilization=%d%%", util_info.memory);
-      gpu_status.push_back(new std::string(tmpbuf));
+      gpu_status.push_back(tmpbuf);
       }
     else
       {
@@ -1313,7 +1312,7 @@ void generate_server_gpustatus_nvml(
       {
       snprintf(tmpbuf, 50, "gpu_ecc_mode=%s",
         (ecc_mode == NVML_FEATURE_ENABLED) ? "Enabled" : "Disabled");
-      gpu_status.push_back(new std::string(tmpbuf));
+      gpu_status.push_back(tmpbuf);
       }
     else
       {
@@ -1328,7 +1327,7 @@ void generate_server_gpustatus_nvml(
     if (rc == NVML_SUCCESS)
       {
       snprintf(tmpbuf, 100, "gpu_single_bit_ecc_errors=%lld", ecc_counts);
-      gpu_status.push_back(new std::string(tmpbuf));
+      gpu_status.push_back(tmpbuf);
       }
     else
       {
@@ -1343,7 +1342,7 @@ void generate_server_gpustatus_nvml(
     if (rc == NVML_SUCCESS)
       {
       snprintf(tmpbuf, 100, "gpu_double_bit_ecc_errors=%lld", ecc_counts);
-      gpu_status.push_back(new std::string(tmpbuf));
+      gpu_status.push_back(tmpbuf);
       }
     else
       {
@@ -1357,7 +1356,7 @@ void generate_server_gpustatus_nvml(
     if (rc == NVML_SUCCESS)
       {
       snprintf(tmpbuf, 25, "gpu_temperature=%d C", tmpint);
-      gpu_status.push_back(new std::string(tmpbuf));
+      gpu_status.push_back(tmpbuf);
       }
     else
       {
@@ -1377,7 +1376,8 @@ void generate_server_gpustatus_nvml(
  */
 
 void generate_server_gpustatus_smi(
-    boost::ptr_vector<std::string>& gpu_status)
+
+  std::vector<std::string> &gpu_status)
 
   {
   char   *dataptr;
@@ -1406,9 +1406,9 @@ void generate_server_gpustatus_smi(
   /* move past the php code*/
   if ((dataptr = strstr(gpu_string, "<timestamp>")) != NULL)
     {
-    std::string *s = new std::string("timestamp=");
+    std::string s("timestamp=");
     MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
-    *s += EP->Val;
+    s += EP->Val;
     gpu_status.push_back(s);
     MXMLDestroyE(&EP);
     }
@@ -1419,16 +1419,16 @@ void generate_server_gpustatus_smi(
 
   if ((dataptr = strstr(gpu_string, "<driver_version>")) != NULL)
     {
-    std::string *s = new std::string("driver_ver=");
+    std::string s("driver_ver=");
     MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
-    *s += EP->Val;
+    s += EP->Val;
     gpu_status.push_back(s);
     MXMLDestroyE(&EP);
     }
   else
     {
     /* cannot determine driver version */
-    gpu_status.push_back(new std::string("driver_ver=UNKNOWN"));
+    gpu_status.push_back("driver_ver=UNKNOWN");
     return;
     }
 
@@ -1436,9 +1436,9 @@ void generate_server_gpustatus_smi(
     {
     if (dataptr)
       {
-      std::string *s = new std::string("gpuid=");
+      std::string s("gpuid=");
       MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
-      *s += EP->AVal[0];
+      s += EP->AVal[0];
       if (MOMNvidiaDriverVersion == 260)
         {
         gpuid = atoi(EP->AVal[0]);
@@ -1453,7 +1453,7 @@ void generate_server_gpustatus_smi(
       if (MOMNvidiaDriverVersion == 260)
         {
         /* Get and add mode rules information for driver 260 */
-        std::string *s = new std::string("gpu_mode=");
+        std::string s("gpu_mode=");
         
         if (!have_modes)
           {
@@ -1464,28 +1464,28 @@ void generate_server_gpustatus_smi(
           {
           case 0:
 
-            *s += "Normal";
+            s += "Normal";
             nvidia_gpu_modes[gpuid] = gpu_normal;
 
             break;
 
           case 1:
 
-            *s += "Exclusive";
+            s += "Exclusive";
             nvidia_gpu_modes[gpuid] = gpu_exclusive_thread;
 
             break;
 
           case 2:
 
-            *s += "Prohibited";
+            s += "Prohibited";
             nvidia_gpu_modes[gpuid] = gpu_prohibited;
 
             break;
 
           default:
 
-            *s += "None";
+            s += "None";
             nvidia_gpu_modes[gpuid] = -1;
 
             break;
@@ -1495,9 +1495,9 @@ void generate_server_gpustatus_smi(
         savptr = dataptr;
         if ((dataptr = strstr(dataptr, "<prod_name>")) != NULL)
           {
-          std::string *s = new std::string("gpu_product_name=");
+          std::string s("gpu_product_name=");
           MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
-          *s += EP->Val;
+          s += EP->Val;
           gpu_status.push_back(s);
           MXMLDestroyE(&EP);
           }
@@ -1509,9 +1509,9 @@ void generate_server_gpustatus_smi(
         savptr = dataptr;
         if ((dataptr = strstr(dataptr, "<pci_device_id>")) != NULL)
           {
-          std::string *s = new std::string("gpu_pci_device_id=");
+          std::string s("gpu_pci_device_id=");
           MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
-          *s += EP->Val;
+          s += EP->Val;
           gpu_status.push_back(s);
           MXMLDestroyE(&EP);
           }
@@ -1523,9 +1523,9 @@ void generate_server_gpustatus_smi(
         savptr = dataptr;
         if ((dataptr = strstr(dataptr, "<pci_location_id>")) != NULL)
           {
-          std::string *s = new std::string("gpu_pci_location_id=");
+          std::string s("gpu_pci_location_id=");
           MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
-          *s += EP->Val;
+          s += EP->Val;
           gpu_status.push_back(s);
           MXMLDestroyE(&EP);
           }
@@ -1537,9 +1537,9 @@ void generate_server_gpustatus_smi(
         savptr = dataptr;
         if ((dataptr = strstr(dataptr, "<display>")) != NULL)
           {
-          std::string *s = new std::string("gpu_display=");
+          std::string s("gpu_display=");
           MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
-          *s += EP->Val;
+          s += EP->Val;
           gpu_status.push_back(s);
           MXMLDestroyE(&EP);
           }
@@ -1551,9 +1551,9 @@ void generate_server_gpustatus_smi(
         savptr = dataptr;
         if ((dataptr = strstr(dataptr, "<temp>")) != NULL)
           {
-          std::string *s = new std::string("gpu_temperature=");
+          std::string s("gpu_temperature=");
           MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
-          *s += EP->Val;
+          s += EP->Val;
           gpu_status.push_back(s);
           MXMLDestroyE(&EP);
           }
@@ -1565,9 +1565,9 @@ void generate_server_gpustatus_smi(
         savptr = dataptr;
         if ((dataptr = strstr(dataptr, "<fan_speed>")) != NULL)
           {
-          std::string *s = new std::string("gpu_fan_speed=");
+          std::string s("gpu_fan_speed=");
           MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
-          *s += EP->Val;
+          s += EP->Val;
           gpu_status.push_back(s);
           MXMLDestroyE(&EP);
           }
@@ -1579,9 +1579,9 @@ void generate_server_gpustatus_smi(
         savptr = dataptr;
         if ((dataptr = strstr(dataptr, "<gpu_util>")) != NULL)
           {
-          std::string *s = new std::string("gpu_utilization=");
+          std::string s("gpu_utilization=");
           MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
-          *s += EP->Val;
+          s += EP->Val;
           gpu_status.push_back(s);
           MXMLDestroyE(&EP);
           }
@@ -1592,9 +1592,9 @@ void generate_server_gpustatus_smi(
         
         if ((dataptr = strstr(dataptr, "<memory_util>")) != NULL)
           {
-          std::string *s = new std::string("gpu_memory_utilization=");
+          std::string s("gpu_memory_utilization=");
           MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
-          *s += EP->Val;
+          s += EP->Val;
           gpu_status.push_back(s);
           MXMLDestroyE(&EP);
           }
@@ -1607,20 +1607,20 @@ void generate_server_gpustatus_smi(
           {
           if ((tmpptr1 = strstr(dataptr, "<single_bit>")) != NULL)
             {
-            std::string *s = new std::string("gpu_single_bit_ecc_errors=");
+            std::string s("gpu_single_bit_ecc_errors=");
             tmpptr1 = strstr(tmpptr1, "<total>");
             MXMLFromString(&EP, tmpptr1, &Tail, Emsg, sizeof(Emsg));
-            *s += EP->Val;
+            s += EP->Val;
             gpu_status.push_back(s);
             MXMLDestroyE(&EP);
             }
           
           if ((tmpptr1 = strstr(dataptr, "<double_bit>")) != NULL)
             {
-            std::string *s = new std::string("gpu_double_bit_ecc_errors=");
+            std::string s("gpu_double_bit_ecc_errors=");
             tmpptr1 = strstr(tmpptr1, "<total>");
             MXMLFromString(&EP, tmpptr1, &Tail, Emsg, sizeof(Emsg));
-            *s += EP->Val;
+            s += EP->Val;
             gpu_status.push_back(s);
             MXMLDestroyE(&EP);
             }
@@ -1637,9 +1637,9 @@ void generate_server_gpustatus_smi(
         savptr = dataptr;
         if ((dataptr = strstr(dataptr, "<product_name>")) != NULL)
           {
-          std::string *s = new std::string("gpu_product_name=");
+          std::string s("gpu_product_name=");
           MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
-          *s += EP->Val;
+          s += EP->Val;
           gpu_status.push_back(s);
           MXMLDestroyE(&EP);
           }
@@ -1651,9 +1651,9 @@ void generate_server_gpustatus_smi(
         savptr = dataptr;
         if ((dataptr = strstr(dataptr, "<display_mode>")) != NULL)
           {
-          std::string *s = new std::string("gpu_display=");
+          std::string s("gpu_display=");
           MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
-          *s += EP->Val;
+          s += EP->Val;
           gpu_status.push_back(s);
           MXMLDestroyE(&EP);
           }
@@ -1665,9 +1665,9 @@ void generate_server_gpustatus_smi(
         savptr = dataptr;
         if ((dataptr = strstr(dataptr, "<pci_device_id>")) != NULL)
           {
-          std::string *s = new std::string("gpu_pci_device_id=");
+          std::string s("gpu_pci_device_id=");
           MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
-          *s += EP->Val;
+          s += EP->Val;
           gpu_status.push_back(s);
           MXMLDestroyE(&EP);
           }
@@ -1679,9 +1679,9 @@ void generate_server_gpustatus_smi(
         savptr = dataptr;
         if ((dataptr = strstr(dataptr, "<pci_bus_id>")) != NULL)
           {
-          std::string *s = new std::string("gpu_pci_location_id=");
+          std::string s("gpu_pci_location_id=");
           MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
-          *s += EP->Val;
+          s += EP->Val;
           gpu_status.push_back(s);
           MXMLDestroyE(&EP);
           }
@@ -1693,9 +1693,9 @@ void generate_server_gpustatus_smi(
         savptr = dataptr;
         if ((dataptr = strstr(dataptr, "<fan_speed>")) != NULL)
           {
-          std::string *s = new std::string("gpu_fan_speed=");
+          std::string s("gpu_fan_speed=");
           MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
-          *s += EP->Val;
+          s += EP->Val;
           gpu_status.push_back(s);
           MXMLDestroyE(&EP);
           }
@@ -1708,18 +1708,18 @@ void generate_server_gpustatus_smi(
           {
           if ((tmpptr1 = strstr(dataptr, "<total>")) != NULL)
             {
-            std::string *s = new std::string("gpu_memory_total=");
+            std::string s("gpu_memory_total=");
             MXMLFromString(&EP, tmpptr1, &Tail, Emsg, sizeof(Emsg));
-            *s += EP->Val;
+            s += EP->Val;
             gpu_status.push_back(s);
             MXMLDestroyE(&EP);
             }
           
           if ((tmpptr1 = strstr(dataptr, "<used>")) != NULL)
             {
-            std::string *s = new std::string("gpu_memory_used=");
+            std::string s("gpu_memory_used=");
             MXMLFromString(&EP, tmpptr1, &Tail, Emsg, sizeof(Emsg));
-            *s += EP->Val;
+            s += EP->Val;
             gpu_status.push_back(s);
             MXMLDestroyE(&EP);
             }
@@ -1732,9 +1732,9 @@ void generate_server_gpustatus_smi(
         savptr = dataptr;
         if ((dataptr = strstr(dataptr, "<compute_mode>")) != NULL)
           {
-          std::string *s = new std::string("gpu_mode=");
+          std::string s("gpu_mode=");
           MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
-          *s += EP->Val;
+          s += EP->Val;
           gpu_status.push_back(s);
           if (EP->Val[0] == 'D') /* Default */
             {
@@ -1768,18 +1768,18 @@ void generate_server_gpustatus_smi(
           {
           if ((tmpptr1 = strstr(dataptr, "<gpu_util>")) != NULL)
             {
-            std::string *s = new std::string("gpu_utilization=");
+            std::string s("gpu_utilization=");
             MXMLFromString(&EP, tmpptr1, &Tail, Emsg, sizeof(Emsg));
-            *s += EP->Val;
+            s += EP->Val;
             gpu_status.push_back(s);
             MXMLDestroyE(&EP);
             }
           
           if ((tmpptr1 = strstr(dataptr, "<memory_util>")) != NULL)
             {
-            std::string *s = new std::string("gpu_memory_utilization=");
+            std::string s("gpu_memory_utilization=");
             MXMLFromString(&EP, tmpptr1, &Tail, Emsg, sizeof(Emsg));
-            *s += EP->Val;
+            s += EP->Val;
             gpu_status.push_back(s);
             MXMLDestroyE(&EP);
             }
@@ -1793,9 +1793,9 @@ void generate_server_gpustatus_smi(
           {
           if ((tmpptr1 = strstr(dataptr, "<current_ecc>")) != NULL)
             {
-            std::string *s = new std::string("gpu_ecc_mode=");
+            std::string s("gpu_ecc_mode=");
             MXMLFromString(&EP, tmpptr1, &Tail, Emsg, sizeof(Emsg));
-            *s += EP->Val;
+            s += EP->Val;
             gpu_status.push_back(s);
             MXMLDestroyE(&EP);
             }
@@ -1811,20 +1811,20 @@ void generate_server_gpustatus_smi(
             {
             if ((tmpptr2 = strstr(tmpptr1, "<single_bit>")) != NULL)
               {
-              std::string *s = new std::string("gpu_single_bit_ecc_errors=");
+              std::string s("gpu_single_bit_ecc_errors=");
               tmpptr2 = strstr(tmpptr1, "<total>");
               MXMLFromString(&EP, tmpptr2, &Tail, Emsg, sizeof(Emsg));
-              *s += EP->Val;
+              s += EP->Val;
               gpu_status.push_back(s);
               MXMLDestroyE(&EP);
               }
             
             if ((tmpptr2 = strstr(tmpptr1, "<double_bit>")) != NULL)
               {
-              std::string *s = new std::string("gpu_double_bit_ecc_errors=");
+              std::string s("gpu_double_bit_ecc_errors=");
               tmpptr2 = strstr(tmpptr1, "<total>");
               MXMLFromString(&EP, tmpptr2, &Tail, Emsg, sizeof(Emsg));
-              *s += EP->Val;
+              s += EP->Val;
               gpu_status.push_back(s);
               MXMLDestroyE(&EP);
               }
@@ -1840,9 +1840,9 @@ void generate_server_gpustatus_smi(
           {
           if ((tmpptr1 = strstr(dataptr, "<gpu_temp>")) != NULL)
             {
-            std::string *s = new std::string("gpu_temperature=");
+            std::string s("gpu_temperature=");
             MXMLFromString(&EP, tmpptr1, &Tail, Emsg, sizeof(Emsg));
-            *s += EP->Val;
+            s += EP->Val;
             gpu_status.push_back(s);
             MXMLDestroyE(&EP);
             }
@@ -1979,7 +1979,7 @@ void req_gpuctrl_mom(
 
 int add_gpu_status(
 
-  boost::ptr_vector<std::string>& gpu_status)
+  std::vector<std::string> &mom_status)
 
   {
 #ifdef NVIDIA_GPUS
@@ -1988,7 +1988,7 @@ int add_gpu_status(
   if (!use_nvidia_gpu)
     return(PBSE_NONE);
 
-  gpu_status.push_back(new std::string(START_GPU_STATUS));
+  mom_status.push_back(START_GPU_STATUS);
 
 #ifdef NVML_API
   generate_server_gpustatus_nvml(gpu_status);
@@ -1997,7 +1997,7 @@ int add_gpu_status(
   generate_server_gpustatus_smi(gpu_status);
 #endif /* NVML_API */
 
-  gpu_status.push_back(new std::string(END_GPU_STATUS));
+  mom_status.push_back(END_GPU_STATUS);
 #endif /* NVIDIA_GPUS */
 
   return(PBSE_NONE);

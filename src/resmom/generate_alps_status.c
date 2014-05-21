@@ -87,7 +87,6 @@
 #include "alps_constants.h"
 #include <string>
 #include <vector>
-#include <boost/ptr_container/ptr_vector.hpp>
 
 #include "../lib/Libifl/lib_ifl.h"
 
@@ -97,8 +96,8 @@
  */
 int process_reservations(
 
-  boost::ptr_vector<std::string>& status,
-  xmlNode        *node)
+  std::vector<std::string> &status,
+  xmlNode                  *node)
 
   {
   return(PBSE_NONE);
@@ -257,8 +256,8 @@ int process_label_array(
 
 int process_accelerator_array(
 
-  boost::ptr_vector<std::string>& status,
-  xmlNode        *node)
+  std::vector<std::string> &status,
+  xmlNode                  *node)
 
   {
   xmlNode       *child;
@@ -266,56 +265,51 @@ int process_accelerator_array(
   char          *attr_value2;
   char           buf[MAXLINE];
 
-  status.push_back(new std::string(CRAY_GPU_STATUS_START));
+  status.push_back(CRAY_GPU_STATUS_START);
 
   for (child = node->children; child != NULL; child = child->next)
     {
     if (!strcmp((const char *)child->name, accelerator))
       {
-      std::string *str = NULL;
+      std::string str;
       /* write the gpu id */
       attr_value = (char *)xmlGetProp(child, (const xmlChar *)type);
       attr_value2 = (char *)xmlGetProp(child, (const xmlChar *)ordinal);
       snprintf(buf, sizeof(buf), "%s-%d", attr_value, atoi(attr_value2));
-      str = new std::string("gpu_id=");
-      *str += buf;
+      str = "gpu_id=";
+      str += buf;
       status.push_back(str);
-      str = NULL;
       free(attr_value);
       free(attr_value2);
 
       attr_value = (char *)xmlGetProp(child, (const xmlChar *)state);
-      str = new std::string("state=");
-      *str += attr_value;
+      str = "state=";
+      str += attr_value;
       status.push_back(str);
-      str = NULL;
       free(attr_value);
 
       attr_value = (char *)xmlGetProp(child, (const xmlChar *)family);
-      str = new std::string("family=");
-      *str += attr_value;
+      str = "family=";
+      str += attr_value;
       status.push_back(str);
-      str = NULL;
       free(attr_value);
 
       attr_value = (char *)xmlGetProp(child, (const xmlChar *)memory_mb);
-      str = new std::string("memory=");
-      *str += attr_value;
-      *str += "mb";
+      str = "memory=";
+      str += attr_value;
+      str += "mb";
       status.push_back(str);
-      str = NULL;
       free(attr_value);
 
       attr_value = (char *)xmlGetProp(child, (const xmlChar *)clock_mhz);
-      str = new std::string("clock_mhz=");
-      *str += attr_value;
+      str = "clock_mhz=";
+      str += attr_value;
       status.push_back(str);
-      str = NULL;
       free(attr_value);
       }
     }
   
-  status.push_back(new std::string(CRAY_GPU_STATUS_END));
+  status.push_back(CRAY_GPU_STATUS_END);
 
   return(PBSE_NONE);
   } /* END process_accelerator_array() */
@@ -325,8 +319,8 @@ int process_accelerator_array(
 
 int process_node(
 
-  boost::ptr_vector<std::string>& status,
-  xmlNode        *node)
+  std::vector<std::string> &status,
+  xmlNode                  *node)
 
   {
   char               *attr_value;
@@ -348,9 +342,9 @@ int process_node(
   char               *rsv_id        = NULL;
 
     {
-    std::string *str = new std::string("node=");
+    std::string str("node=");
     attr_value = (char *)xmlGetProp(node, (const xmlChar *)node_id);
-    *str += attr_value;
+    str += attr_value;
     status.push_back(str);
     free(attr_value);
     }
@@ -359,17 +353,17 @@ int process_node(
   role_value = (char *)xmlGetProp(node, (const xmlChar *)role);
 
     {
-    std::string *str = new std::string("ARCH=");
+    std::string str("ARCH=");
     attr_value = (char *)xmlGetProp(node, (const xmlChar *)architecture);
-    *str += attr_value;
+    str += attr_value;
     status.push_back(str);
     free(attr_value);
     }
 
     {
-    std::string *str = new std::string("name=");
+    std::string str("name=");
     attr_value = (char *)xmlGetProp(node, (const xmlChar *)name);
-    *str += attr_value;
+    str += attr_value;
     status.push_back(str);
     free(attr_value);
     }
@@ -459,24 +453,24 @@ int process_node(
 
   /* note that CCU should come before CPROC */
   snprintf(buf, sizeof(buf), "CCU=%d", num_compute_units);
-  status.push_back(new std::string(buf));
+  status.push_back(buf);
 
   snprintf(buf, sizeof(buf), "CPROC=%d", num_procs);
-  status.push_back(new std::string(buf));
+  status.push_back(buf);
 
   snprintf(buf, sizeof(buf), "APROC=%d", avail_procs);
-  status.push_back(new std::string(buf));
+  status.push_back(buf);
 
   snprintf(buf, sizeof(buf), "CMEMORY=%lu", memory);
-  status.push_back(new std::string(buf));
+  status.push_back(buf);
 
   mem_kb = memory * 1024;
 
   snprintf(buf, sizeof(buf), "totmem=%llukb", mem_kb);
-  status.push_back(new std::string(buf));
+  status.push_back(buf);
 
   snprintf(buf, sizeof(buf), "physmem=%llukb", mem_kb);
-  status.push_back(new std::string(buf));
+  status.push_back(buf);
 
   if (rsv_id != NULL)
     {
@@ -484,41 +478,41 @@ int process_node(
     if ((role_value == NULL) ||
         (strcmp(role_value, interactive_caps)))
       {
-      std::string *str = new std::string("reservation_id=");
-      *str += rsv_id;
+      std::string str("reservation_id=");
+      str += rsv_id;
       status.push_back(str);
       }
 
     free(rsv_id);
 
     /* if there's a reservation on this node, the state is busy */
-    status.push_back(new std::string("state=BUSY"));
+    status.push_back("state=BUSY");
     
     snprintf(buf, sizeof(buf), "availmem=0kb");
-    status.push_back(new std::string("availmem=0kb"));
+    status.push_back("availmem=0kb");
     }
   else
     {
     /* no reservation, evaluate the state normally */
-    std::string *str = new std::string("state=");
+    std::string str("state=");
     attr_value = (char *)xmlGetProp(node, (const xmlChar *)state);
     
     if ((role_value != NULL) &&
         (!strcmp(role_value, interactive_caps)))
       {
-      *str += "DOWN";
+      str += "DOWN";
       status.push_back(str);
       
       snprintf(buf, sizeof(buf), "availmem=0kb");
-      status.push_back(new std::string(buf));
+      status.push_back(buf);
       }
     else
       {
-      *str += attr_value;
+      str += attr_value;
       status.push_back(str);
      
       snprintf(buf, sizeof(buf), "availmem=%llukb", mem_kb);
-      status.push_back(new std::string(buf));
+      status.push_back(buf);
       }
 
     free(attr_value);
@@ -529,8 +523,8 @@ int process_node(
 
   if (features.length() > 0)
     {
-    std::string *str = new std::string("feature_list=");
-    *str += features.c_str();
+    std::string str("feature_list=");
+    str += features.c_str();
     status.push_back(str);
     }
 
@@ -543,8 +537,8 @@ int process_node(
 
 int process_nodes(
 
-  boost::ptr_vector<std::string>& status,
-  xmlNode        *node)
+  std::vector<std::string> &status,
+  xmlNode                  *node)
 
   {
   xmlNode *current;
@@ -564,8 +558,8 @@ int process_nodes(
 
 int process_element(
 
-  boost::ptr_vector<std::string>& status,
-  xmlNode        *node)
+  std::vector<std::string> &status,
+  xmlNode                  *node)
 
   {
   char *str;
@@ -614,8 +608,8 @@ int process_element(
 
 int parse_alps_output(
 
-  std::string& alps_output,
-  boost::ptr_vector<std::string>& status)
+  std::string              &alps_output,
+  std::vector<std::string> &status)
 
   {
   xmlDocPtr  doc;
@@ -642,9 +636,9 @@ int parse_alps_output(
 
 int generate_alps_status(
 
-  boost::ptr_vector<std::string>& status,
-  const char     *apbasil_path,
-  const char     *apbasil_protocol)
+  std::vector<std::string> &status,
+  const char               *apbasil_path,
+  const char               *apbasil_protocol)
 
   {
   FILE           *alps_pipe;

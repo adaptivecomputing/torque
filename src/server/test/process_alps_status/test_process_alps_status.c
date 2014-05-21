@@ -11,18 +11,18 @@
 int set_ncpus(struct pbsnode *,struct pbsnode *, int);
 int set_ngpus(struct pbsnode *, int);
 int set_state(struct pbsnode *, const char *);
-void finish_gpu_status(boost::ptr_vector<std::string>::iterator& i,boost::ptr_vector<std::string>::iterator end);
+void finish_gpu_status(unsigned int &i, std::vector<std::string> &status_info);
 struct pbsnode *create_alps_subnode(struct pbsnode *parent, const char *node_id);
 struct pbsnode *find_alpsnode_by_name(struct pbsnode *parent, const char *node_id);
 struct pbsnode *determine_node_from_str(const char *str, struct pbsnode *parent, struct pbsnode *current);
 int check_if_orphaned(void *str);
-int process_alps_status(char *, boost::ptr_vector<std::string>&);
+int process_alps_status(char *, std::vector<std::string>&);
 int process_reservation_id(struct pbsnode *pnode, const char *rsv_id_str);
 int record_reservation(struct pbsnode *pnode, const char *rsv_id);
 
 char buf[4096];
 
-char *alps_status = (char *)"node=1\0CPROC=12\0state=UP\0reservation_id=12\0<cray_gpu_status>\0gpu_id=0\0clock_mhz=2600\0gpu_id=1\0clock_mhz=2600\0</cray_gpu_status>\0\0";
+const char *alps_status[] = {"node=1", "CPROC=12", "state=UP", "reservation_id=12", "<cray_gpu_status>", "gpu_id=0", "clock_mhz=2600", "gpu_id=1", "clock_mhz=2600", "</cray_gpu_status>", NULL};
 /*node=2\0CPROC=12\0state=UP\0<cray_gpu_status>\0gpu_id=0\0clock_mhz=2600\0gpu_id=1\0clock_mhz=2600\0</cray_gpu_status>\0node=3\0CPROC=12\0state=UP\0<cray_gpu_status>\0gpu_id=0\0clock_mhz=2600\0gpu_id=1\0clock_mhz=2600\0</cray_gpu_status>\0\0";*/
 
 extern int count;
@@ -35,8 +35,7 @@ START_TEST(record_reservation_test)
 
   fail_unless(record_reservation(&pnode, "1") != PBSE_NONE);
 
-  job_usage_info *jui = (job_usage_info *)calloc(1, sizeof(job_usage_info));
-  strcpy(jui->jobid, "1.napali");
+  job_usage_info jui(1);
   pnode.nd_job_usages.push_back(jui);
   fail_unless(record_reservation(&pnode, "1") == PBSE_NONE);
   }
@@ -118,24 +117,23 @@ END_TEST
 
 START_TEST(finish_gpu_status_test)
   {
-  boost::ptr_vector<std::string> status;
-  boost::ptr_vector<std::string>::iterator end;
+  std::vector<std::string> status;
+  unsigned int             i = 0;
 
-  status.push_back(new std::string("o"));
-  status.push_back(new std::string("n"));
-  status.push_back(new std::string("</cray_gpu_status>"));
-  status.push_back(new std::string("tom"));
+  status.push_back("o");
+  status.push_back("n");
+  status.push_back("</cray_gpu_status>");
+  status.push_back("tom");
 
-  end = status.begin();
-  finish_gpu_status(end,status.end());
+  finish_gpu_status(i, status);
   snprintf(buf, sizeof(buf), "penultimate string isn't correct, should be '%s' but is '%s'",
-    CRAY_GPU_STATUS_END, end->c_str());
-  fail_unless(!strcmp(end->c_str(), CRAY_GPU_STATUS_END), buf);
+    CRAY_GPU_STATUS_END, status[i].c_str());
+  fail_unless(!strcmp(status[i].c_str(), CRAY_GPU_STATUS_END), buf);
 
-  end++;
+  i++;
   snprintf(buf, sizeof(buf), "last string isn't correct, should be 'tom' but is '%s'",
-    end->c_str());
-  fail_unless(!strcmp(end->c_str(), "tom"), buf);
+    status[i].c_str());
+  fail_unless(!strcmp(status[i].c_str(), "tom"), buf);
 
   }
 END_TEST
@@ -223,10 +221,12 @@ END_TEST
 
 START_TEST(whole_test)
   {
-  boost::ptr_vector<std::string> ds;
-  int             rc;
+  std::vector<std::string> ds;
+  int                      rc;
+  int                      i = 0;
   
-  ds.push_back(new std::string(alps_status));
+  while (alps_status[i] != NULL)
+    ds.push_back(alps_status[i++]);
  
   rc = process_alps_status((char *)"tom", ds);
   fail_unless(rc == 0, "didn't process alps status");

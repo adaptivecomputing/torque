@@ -95,12 +95,13 @@
 #include "server.h"
 #include "svrfunc.h"
 #include "ji_mutex.h"
-#include <boost/ptr_container/ptr_vector.hpp>
+#include "id_map.hpp"
 
 
 extern char     server_name[];
 extern all_jobs alljobs;
 extern all_jobs array_summary;
+id_map          job_mapper;
 
 
 /*
@@ -316,10 +317,10 @@ char *get_correct_jobname(
 
 job *find_job_by_array(
     
-  all_jobs *aj,
-  char     *job_id,
-  int       get_subjob,
-  bool      locked)
+  all_jobs   *aj,
+  const char *job_id,
+  int         get_subjob,
+  bool        locked)
 
   {
   job *pj = NULL;
@@ -382,8 +383,8 @@ job *find_job_by_array(
 
 job *svr_find_job(
 
-  char *jobid,      /* I */
-  int   get_subjob) /* I */
+  const char *jobid,      /* I */
+  int         get_subjob) /* I */
 
   {
   char *at;
@@ -392,13 +393,17 @@ job *svr_find_job(
   char *dash = NULL;
   char *dot = NULL;
   char  without_dash[PBS_MAXSVRJOBID + 1];
+  char  work_jobid[PBS_MAXSVRJOBID + 1];
+  char *jid_ptr = NULL;
 
   job  *pj = NULL;
 
   if (LOGLEVEL >= 10)
     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, jobid);
 
-  if ((at = strchr(jobid, '@')) != NULL)
+  snprintf(work_jobid, sizeof(work_jobid), "%s", jobid);
+
+  if ((at = strchr(work_jobid, '@')) != NULL)
     *at = '\0'; /* strip off @server_name */
 
   /* jobid-0.server indicates the external sub-job of a heterogeneous
@@ -406,24 +411,29 @@ job *svr_find_job(
    * the get the external sub-job */
   if (get_subjob == TRUE)
     {
-    dot = strchr(jobid, '.');
+    dot = strchr(work_jobid, '.');
 
-    if (((dash = strchr(jobid, '-')) != NULL) &&
+    if (((dash = strchr(work_jobid, '-')) != NULL) &&
         (dot != NULL) &&
         (dash < dot))
       {
       *dash = '\0';
-      snprintf(without_dash, sizeof(without_dash), "%s%s", jobid, dash + 2);
-      jobid = without_dash;
+      snprintf(without_dash, sizeof(without_dash), "%s%s", work_jobid, dash + 2);
+      jid_ptr = without_dash;
       }
     else
+      {
       dash = NULL;
+      jid_ptr = work_jobid;
+      }
     }
+  else
+    jid_ptr = work_jobid;
 
   if ((is_svr_attr_set(SRV_ATR_display_job_server_suffix)) ||
       (is_svr_attr_set(SRV_ATR_job_suffix_alias)))
     {
-    comp = get_correct_jobname(jobid);
+    comp = get_correct_jobname(jid_ptr);
     different = TRUE;
 
     if (comp == NULL)
@@ -431,10 +441,10 @@ job *svr_find_job(
     }
   else
     {
-    comp = jobid;
+    comp = jid_ptr;
     }
 
-  if (strstr(jobid,"[]") == NULL)
+  if (strstr(jid_ptr,"[]") == NULL)
     {
     /* if we're searching for the external we want find_job_by_array to 
      * return the parent, but if we're searching for the cray subjob then
@@ -488,6 +498,18 @@ job *svr_find_job(
 
   return(pj);  /* may be NULL */
   }   /* END svr_find_job() */
+
+job *svr_find_job_by_id(
+
+  int internal_job_id)
+
+  {
+  const char *job_id = job_mapper.get_name(internal_job_id);
+
+  return(svr_find_job(job_id, TRUE));
+  }
+
+
 
 
 /*

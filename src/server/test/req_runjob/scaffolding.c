@@ -21,6 +21,17 @@
 
 pthread_mutex_t *scheduler_sock_jobct_mutex;
 const char *PJobSubState[10];
+const char *PJobState[] =
+  {
+  "TRANSIT",
+  "QUEUED",
+  "HELD",
+  "WAITING",
+  "RUNNING",
+  "EXITING",
+  "COMPLETE",
+  NULL
+  };
 int svr_tsnodes = 0;
 int svr_resc_size = 0;
 attribute_def job_attr_def[10];
@@ -36,6 +47,9 @@ int LOGLEVEL = 10; /* force logging code to be exercised as tests run */
 int svr_totnodes = 0;
 threadpool_t *request_pool;
 char scaff_buffer[1024];
+threadpool_t *async_pool;
+
+
 
 job_array *get_jobs_array(job **pjob)
   {
@@ -226,7 +240,7 @@ resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   exit(1);
   }
 
-job *svr_find_job(char *jobid, int get_subjob)
+job *svr_find_job(const char *jobid, int get_subjob)
   {
   return (job *) atol(jobid);
   }
@@ -313,7 +327,7 @@ int split_job(job *pjob)
   return(0);
   }
 
-int kill_job_on_mom(char *jobid, struct pbsnode *pnode)
+int kill_job_on_mom(const char *job_id, struct pbsnode *pnode)
   {
   return(0);
   }

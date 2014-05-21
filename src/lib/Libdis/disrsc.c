@@ -128,7 +128,7 @@ signed char disrsc(
 
   value = 0;
 
-  switch (locret = disrsi_(chan, &negate, &uvalue, 1))
+  switch (locret = disrsi_(chan, &negate, &uvalue, 1, pbs_tcp_timeout))
     {
 
     case DIS_SUCCESS:

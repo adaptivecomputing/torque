@@ -187,7 +187,7 @@ extern void removeBeforeAnyDependencies(const char *pJobID);
 
 int delete_inactive_job(
 
-  job  **pjob_ptr,
+  job        **pjob_ptr,
   const char  *Msg)
 
   {
@@ -344,6 +344,8 @@ void force_purge_work(
       set_resc_assigned(pjob, DECR);
       }
     }
+
+  depend_on_term(pjob);
 
   svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
   
@@ -622,7 +624,7 @@ jump:
         }
       std::string dup_job_id(pjob->ji_qs.ji_jobid);
 
-      if(pa != NULL)
+      if (pa != NULL)
         {
         for (i = 0; i < pa->ai_qs.array_size; i++)
           {
@@ -694,6 +696,7 @@ jump:
     return -1;
     }
 
+  depend_on_term(pjob);
 
   if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0)
     {
@@ -982,6 +985,8 @@ void *delete_all_work(
         failed_deletes++;
       }
     }
+
+  delete iter;
   
   qdel_all_tracker.done_deleting_all(preq->rq_user, preq->rq_perm);
   
@@ -1101,7 +1106,7 @@ int handle_single_delete(
       {
       reply_ack(preq_tmp);
       preq->rq_noreply = TRUE; /* set for no more replies */
-      enqueue_threadpool_request(single_delete_work, preq, request_pool);
+      enqueue_threadpool_request(single_delete_work, preq, async_pool);
       }
     else
       single_delete_work(preq);

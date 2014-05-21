@@ -10,6 +10,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - TRQ-1539. Condense the exec_host list to have one entry per node instead of one
       entry per execution slot. The node entry contains a string specifying each
       execution slot index. Also no longer display the value of exec_port in qstat.
+
 4.5.0
   b - TRQ-2319. Replace two Torque functions with ones from the hwloc package.
   n - Portable Hardware Locality (hwloc) package version 1.2 or higher must be
@@ -17,6 +18,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       1.1 was required.
   b - TRQ-2373. Fix login nodes restricting the number of jobs to the number specified
       by np=X.
+  e - TRQ-2044. Create a unique identifier for all jobs in TORQUE. This makes it
+      so that we're performing integer comparisons instead of string comparisons 
+      for finding jobs.
 
 4.2.8
   b - TRQ-2501. Fix the total number of execution slots having a count that is off-by-one for

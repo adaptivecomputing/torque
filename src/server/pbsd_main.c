@@ -1520,6 +1520,8 @@ void main_loop(void)
     unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     }
 
+  delete iter;
+
   if (svr_chngNodesfile)
     {
     /*nodes created/deleted, or props changed and*/

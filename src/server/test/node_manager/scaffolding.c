@@ -46,6 +46,7 @@ struct pbsnode *alps_reporter = &reporter;
 const char *alps_reporter_feature  = "alps_reporter";
 const char *alps_starter_feature   = "alps_login";
 threadpool_t    *task_pool;
+bool             job_mode = false;
 
 
 struct batch_request *alloc_br(int type)
@@ -277,7 +278,7 @@ resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   exit(1);
   }
 
-job *svr_find_job(char *jobid, int get_subjob)
+job *svr_find_job(const char *jobid, int get_subjob)
   {
   static job pjob;
 
@@ -308,6 +309,36 @@ job *svr_find_job(char *jobid, int get_subjob)
     pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = NULL;
 
   return(&pjob);
+  }
+
+job *svr_find_job_by_id(int id)
+  {
+  static job pjob;
+
+  time_t old = pjob.ji_last_reported_time;
+  memset(&pjob, 0, sizeof(pjob));
+  pjob.ji_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  sprintf(pjob.ji_qs.ji_jobid, "%d.napali", id);
+  pjob.ji_last_reported_time = old;
+
+  if ((id == 1) ||
+      (id == 5))
+    {
+    pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("tom/0");
+    }
+  else if (id == 4)
+    {
+    return(NULL);
+    }
+  else if (id == 2)
+    {
+    pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("bob/5");
+    }
+  else
+    pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = NULL;
+
+  return(&pjob);
+
   }
 
 int update_nodes_file(struct pbsnode *held)
@@ -542,8 +573,34 @@ int id_map::get_id(const char *name)
 const char *id_map::get_name(int id)
   {
   char buf[100];
-  snprintf(buf, sizeof(buf), "napali%d", id);
-  return(strdup(buf));
+
+  if (job_mode == true)
+    {
+    switch (id)
+      {
+      case 1:
+      case 2:
+      case 3:
+
+        snprintf(buf, sizeof(buf), "%d.lei.ac", id);
+        return(strdup(buf));
+      
+      case 4:
+
+        snprintf(buf, sizeof(buf), "%d.napali", id);
+        return(strdup(buf));
+
+      default:
+
+        return(NULL);
+
+      }
+    }
+  else
+    {
+    snprintf(buf, sizeof(buf), "napali%d", id);
+    return(strdup(buf));
+    }
   }
 
 id_map::~id_map() 
@@ -552,6 +609,11 @@ id_map::~id_map()
 
 
 id_map node_mapper;
+id_map job_mapper;
+
+job_usage_info::job_usage_info(int id) : internal_job_id(id)
+  {
+  }
 
 #ifdef CAN_TIME
 #include "timer.hpp"

@@ -24,12 +24,14 @@ struct connection svr_conn[PBS_NET_MAX_CONNECTIONS];
 const char *msg_request = "Type %s request received from %s@%s, sock=%d";
 struct server server;
 char *server_host;
-int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
+int LOGLEVEL = 10; /* force logging code to be exercised as tests run */
 threadpool_t *request_pool;
 bool check_acl;
 bool find_node;
+bool fail_get_connecthost = false;
 int free_attrlist_called;
 char scaff_buffer[1024];
+int dis_req_read_rc = PBSE_NONE;
 
 bool threadpool_is_too_busy(threadpool *tp, int permissions)
   {
@@ -99,6 +101,10 @@ int get_connecthost(int sock, char *namebuf, int size)
   if (sock == 999)
     return(-1);
 
+  if (fail_get_connecthost == true)
+    return(-1);
+
+  snprintf(namebuf, size, "napali");
   return(0);
   }
 
@@ -152,7 +158,7 @@ int *req_stat_job(struct batch_request *preq)
 
 int dis_request_read(struct tcp_chan *chan, struct batch_request *request)
   {
-  return(0);
+  return(dis_req_read_rc);
   }
 
 int req_stat_que(batch_request *preq)
@@ -296,8 +302,8 @@ char *pbse_to_txt(int err)
   {
   if (err == PBSE_BADHOST)
     return (char *)"Access from host not allowed, or unknown host";
-  else
-    return (char *)"";
+  
+  return(strdup("bob"));
   }
 
 int req_stagein(batch_request *preq)
@@ -382,7 +388,7 @@ void close_conn(int sd, int has_mutex)
   exit(1);
   }
 
-job *svr_find_job(char *jobid, int get_subjob)
+job *svr_find_job(const char *jobid, int get_subjob)
   {
   fprintf(stderr, "The call to find_job needs to be mocked!!\n");
   exit(1);
@@ -390,8 +396,7 @@ job *svr_find_job(char *jobid, int get_subjob)
 
 const char *reqtype_to_txt(int reqtype)
   {
-  fprintf(stderr, "The call to reqtype_to_txt needs to be mocked!!\n");
-  exit(1);
+  return("Queue Job");
   }
 
 int req_orderjob(batch_request *preq)

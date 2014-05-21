@@ -6,6 +6,7 @@
 #include "utils.h"
 #include "pbs_nodes.h"
 #include "batch_request.h"
+#include "id_map.hpp"
 
 bool exit_called = false;
 int LOGLEVEL;
@@ -19,7 +20,7 @@ void log_err(int errnum, const char *routine, const char *text) {}
 
 job *svr_find_job(
 
-  char *job_id, int get_subjob)
+  const char *job_id, int get_subjob)
 
   {
   static int  count = 0;
@@ -96,3 +97,36 @@ void log_event(int eventtype, int objclass, const char *objname, const char *tex
   {
   }
 
+job *svr_find_job_by_id(int id)
+  {
+  static int  count = 0;
+  job        *pjob;
+
+  if (count++ == 0)
+    return(NULL);
+  else if (count <= 3)
+    {
+    pjob = (job *)calloc(1, sizeof(job));
+    pjob->ji_qs.ji_state = JOB_STATE_RUNNING;
+    pjob->ji_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+    return(pjob);
+    }
+  else
+    {
+    pjob = (job *)calloc(1, sizeof(job));
+    pjob->ji_qs.ji_state = JOB_STATE_COMPLETE;
+    pjob->ji_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+    return(pjob);
+    }
+  }
+
+id_map::id_map() {}
+
+id_map::~id_map() {}
+
+const char *id_map::get_name(int id)
+  {
+  return(NULL);
+  }
+
+id_map job_mapper;

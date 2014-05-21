@@ -99,3 +99,4 @@ class id_map
   };
 
 extern id_map node_mapper;
+extern id_map job_mapper;

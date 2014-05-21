@@ -104,7 +104,7 @@ int disrl_(struct tcp_chan *chan, dis_long_double_t *ldval, unsigned *ndigs,
     unsigned *nskips, unsigned sigd, unsigned count);
 /* signed char disrsc(struct tcp_chan *chan, int *retval); */
 /* int disrsi(struct tcp_chan *chan, int *retval); */
-int disrsi_(struct tcp_chan *chan, int *negate, unsigned *value, unsigned count);
+int disrsi_(struct tcp_chan *chan, int *negate, unsigned *value, unsigned count, unsigned int timeout);
 long disrsl(struct tcp_chan *chan, int *retval);
 int disrsl_(struct tcp_chan *chan, int *negate, unsigned long *value,
     unsigned long count);

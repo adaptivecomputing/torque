@@ -172,7 +172,7 @@ int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mut
   exit(1);
   }
 
-job *svr_find_job(char *jobid, int get_subjob)
+job *svr_find_job(const char *jobid, int get_subjob)
   {
   fprintf(stderr, "The call to find_job to be mocked!!\n");
   exit(1);
@@ -258,6 +258,7 @@ job_array *get_jobs_array(job **pjob_ptr)
   }
 
 threadpool_t *request_pool;
+threadpool_t *async_pool;
 
 int enqueue_threadpool_request(void *(*func)(void *), void *arg, threadpool_t *tp)
 

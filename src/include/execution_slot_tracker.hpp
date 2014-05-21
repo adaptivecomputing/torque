@@ -91,9 +91,7 @@ class execution_slot_tracker
     execution_slot_tracker(const execution_slot_tracker& est);
     execution_slot_tracker();
     execution_slot_tracker(const int size);
-
-	execution_slot_tracker& operator= (const execution_slot_tracker& est);
-
+	  execution_slot_tracker& operator= (const execution_slot_tracker& est);
 
   int get_number_free() const;
   int get_total_execution_slots() const;

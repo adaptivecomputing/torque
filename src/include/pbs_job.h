@@ -474,7 +474,7 @@ typedef struct noderes
 
 typedef struct
   {
-  void     *pjob;
+  char      jobid[PBS_MAXSVRJOBID+1];
   void     *ptask;
 
   char      sjr[2048];  /* provide buffer space for struct startjob_rtn */
@@ -635,7 +635,6 @@ struct job
   hnodent        *ji_hosts; /* ptr to job host management stuff */
   hnodent        *ji_sisters; /* ptr to job host management stuff for intermediate moms */
   vnodent        *ji_vnods; /* ptr to job vnode management stuff */
-  vnodent        *ji_sister_vnods; /* ptr to job vnode management stuff for job_radix requests*/
   noderes        *ji_resources; /* ptr to array of node resources */
   tlist_head     ji_tasks; /* list of task structs */
   tm_node_id     ji_nodekill; /* set to nodeid requesting job die */
@@ -676,6 +675,7 @@ struct job
   struct job       *ji_cray_clone;     /* the sub-job on the cray nodes */
   struct job       *ji_parent_job;     /* parent job (only populated on the sub-jobs */
 
+  int               ji_internal_id;
   pthread_mutex_t  *ji_mutex;
   char              ji_being_recycled;
   time_t            ji_last_reported_time;
@@ -781,13 +781,12 @@ typedef struct taskfix
 
 typedef struct task
   {
-  job  *ti_job; /* pointer to owning job */
-  list_link ti_jobtask; /* links to tasks for this job */
+  list_link        ti_jobtask; /* links to tasks for this job */
   struct tcp_chan *ti_chan;  /* DIS file descriptor to task */
-  int  ti_flags; /* task internal flags */
-  tm_event_t ti_register; /* event if task registers - never used*/
-  tlist_head ti_obits; /* list of obit events */
-  tlist_head ti_info; /* list of named info */
+  int              ti_flags; /* task internal flags */
+  tm_event_t       ti_register; /* event if task registers - never used*/
+  tlist_head       ti_obits; /* list of obit events */
+  tlist_head       ti_info; /* list of named info */
 
   taskfix ti_qs;
   } task;
@@ -1106,8 +1105,9 @@ extern job  *job_alloc();
 extern int   job_unlink_file(job *pjob, const char *name);
 #ifndef PBS_MOM
 job         *job_clone(job *,struct job_array *, int);
-job         *svr_find_job(char *jobid, int get_subjob);
-job         *find_job_by_array(all_jobs *aj, char *job_id, int get_subjob, bool locked);
+job         *svr_find_job(const char *jobid, int get_subjob);
+job         *svr_find_job_by_id(int internal_job_id);
+job         *find_job_by_array(all_jobs *aj, const char *job_id, int get_subjob, bool locked);
 #else
 extern job  *mom_find_job(const char *);
 #endif
