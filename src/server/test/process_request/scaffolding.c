@@ -340,6 +340,13 @@ int req_manager(batch_request *preq)
   exit(1);
   }
 
+int req_modify_node(struct batch_request *preq)
+  {
+  fprintf(stderr, "The call to req_modify_node needs to be mocked!!\n");
+  exit(1);
+  }
+
+
 int is_array(char *id)
   {
   fprintf(stderr, "The call to is_array needs to be mocked!!\n");

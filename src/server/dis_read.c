@@ -282,6 +282,8 @@ int dis_request_read(
 
       break;
 
+    case PBS_BATCH_ModifyNode:
+
     case PBS_BATCH_Manager:
 
     case PBS_BATCH_ReleaseJob:
