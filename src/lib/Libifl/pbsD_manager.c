@@ -105,9 +105,19 @@ int pbs_manager_err(
   return(PBSD_manager(c, PBS_BATCH_Manager, command, objtype, objname, attrib, extend, local_errno));
   }  /* END pbs_manager_err() */
 
+int pbs_modify_node_err(
 
+  int             c,
+  int             command,
+  int             objtype,
+  char           *objname,
+  struct attropl *attrib,
+  char           *extend,
+  int            *local_errno)
 
-
+  {
+  return(PBSD_manager(c, PBS_BATCH_ModifyNode, command, objtype, objname, attrib, extend, local_errno));
+  }  /* END pbs_manager_err() */
 
 int pbs_manager(
 

@@ -214,6 +214,7 @@ class item_container
     {
     if(exit_called)
       {
+      //If exit is called, don't free the slots.
       lock();
       unlock();
       return;

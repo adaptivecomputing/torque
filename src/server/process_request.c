@@ -143,6 +143,7 @@
 #include "req_rerun.h" /* req_rerunjob */
 #include "req_select.h" /* req_selectjobs */
 #include "req_register.h" /* req_register, req_registerarray */
+#include "req_modify_node.h" /* req_modify_node */
 #include "job_func.h" /* svr_job_purge */
 #include "tcp.h" /* tcp_chan */
 #include "ji_mutex.h"
@@ -817,6 +818,12 @@ int dispatch_request(
 
       break;
 
+    case PBS_BATCH_ModifyNode:
+
+      rc = req_modify_node(request);
+
+      break;
+
     case PBS_BATCH_Manager:
 
       rc = req_manager(request);
@@ -1226,6 +1233,8 @@ void free_br(
       freebr_cpyfile(&preq->rq_ind.rq_cpyfile);
 
       break;
+
+    case PBS_BATCH_ModifyNode:
 
     case PBS_BATCH_Manager:
 

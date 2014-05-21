@@ -82,5 +82,6 @@ PbsBatchReqType(PBS_BATCH_GpuCtrl,              "GPUControl")
 PbsBatchReqType(PBS_BATCH_DeleteReservation,    "DeleteAlpsReservation")
 PbsBatchReqType(PBS_BATCH_SelStatAttr,          "SelStatAttr")
 PbsBatchReqType(PBS_BATCH_ChangePowerState,     "ChangePowerState")
+PbsBatchReqType(PBS_BATCH_ModifyNode,           "ModifyNode")
 #endif
 #endif /* _PBS_BATCHREQTYPE_DB_H */
