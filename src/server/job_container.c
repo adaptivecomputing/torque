@@ -389,7 +389,7 @@ job *svr_find_job(
 
   {
   char *at;
-  char *comp;
+  char *comp = NULL;
   int   different = FALSE;
   char *dash = NULL;
   char *dot = NULL;

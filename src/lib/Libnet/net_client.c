@@ -317,11 +317,16 @@ retry:  /* retry goto added (rentec) */
 
   if (sock < 0)
     {
+    char err_buf[1024];
+
+    if (strerror_r(errno, err_buf, sizeof(err_buf)))
+      err_buf[0] = '\0';
+
     if (EMsg != NULL)
       sprintf(EMsg, "cannot create socket in %s - errno: %d %s",
               id,
               errno,
-              strerror(errno));
+              err_buf);
 
     return(PBS_NET_RC_FATAL);
     }
@@ -385,12 +390,17 @@ retry:  /* retry goto added (rentec) */
 
     if (errorsock != 0)
       {
+      char err_buf[1024];
+
+      if (strerror_r(errno, err_buf, sizeof(err_buf)))
+        err_buf[0] = '\0';
+
       /* bindresvport could not get a privileged port */
       if (EMsg != NULL)
         sprintf(EMsg, "cannot bind to reserved port in %s - errno: %d %s",
           id,
           errno,
-          strerror(errno));
+          err_buf);
 
       close(sock);
       return(PBS_NET_RC_FATAL);
@@ -432,10 +442,15 @@ jump_to_check:
   if (errorsock < 0)
     {
 #ifdef NDEBUG2
+    char err_buf[1024];
+
+    if (strerror_r(errno, err_buf, sizeof(err_buf)))
+      err_buf[0] = '\0';
+
     fprintf(stderr, "INFO:  cannot bind to port %d, errno: %d - %s\n",
       tryport,
       errno,
-      strerror(errno));
+      err_buf);
 #endif /* NDEBUG2 */
     
     /* Terminate on errors, except "address already in use" */
@@ -446,10 +461,17 @@ jump_to_check:
       }
     
     if (EMsg != NULL)
+      {
+      char err_buf[1024];
+
+      if (strerror_r(errno, err_buf, sizeof(err_buf)))
+        err_buf[0] = '\0';
+
       sprintf(EMsg, "cannot bind to reserved port in %s - errno: %d %s",
         id,
         errno,
-        strerror(errno));
+        err_buf);
+      }
     
     close(sock);
     
@@ -486,10 +508,15 @@ jump_to_check:
       }
   
 #ifdef NDEBUG2
+  char err_buf[1024];
+
+  if (strerror_r(errno, err_buf, sizeof(err_buf)))
+    err_buf[0] = '\0';
+
   fprintf(stderr, "INFO:  cannot connect to port %d, errno=%d - %s\n",
     tryport,
     errno,
-    strerror(errno));
+    err_buf);
 #endif /* NDEBUG2 */
 
   switch (errno)
@@ -552,11 +579,18 @@ jump_to_check:
         else if (trycount > TCP_RETRY_LIMIT)
           {       
           if (EMsg != NULL)
+            {
+            char err_buf[1024];
+
+            if (strerror_r(errno, err_buf, sizeof(err_buf)))
+              err_buf[0] = '\0';
+
             sprintf(EMsg, "cannot connect to port %d in %s - errno:%d %s",
               tryport,
               id,
               errno,
-              strerror(errno));
+              err_buf);
+            }
           
           close(sock);
           
@@ -575,12 +609,16 @@ jump_to_check:
       
     default:
       
+      char err_buf[1024];
+      if (strerror_r(errno, err_buf, sizeof(err_buf)))
+        err_buf[0] = '\0';
+
       if (EMsg != NULL)
         sprintf(EMsg, "cannot connect to port %d in %s - errno:%d %s",
           tryport,
           id,
           errno,
-          strerror(errno));
+          err_buf);
       
       close(sock);
       
