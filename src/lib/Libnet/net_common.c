@@ -937,8 +937,6 @@ int socket_close(
   return rc;
   } /* END socket_close() */
 
-static pthread_mutex_t addrinfoMutex = PTHREAD_MUTEX_INITIALIZER;
-
 
 
 int pbs_getaddrinfo(
@@ -948,12 +946,10 @@ int pbs_getaddrinfo(
   struct addrinfo **ppAddrInfoOut)
 
   {
-  int rc;
+  int             rc;
   struct addrinfo hints;
-  int retryCount = 3;
-  int addrFound = FALSE;
-  mutex_mgr mutex(&addrinfoMutex);
-  mutex.lock();
+  int             retryCount = 3;
+  int             addrFound = FALSE;
 
   if (ppAddrInfoOut == NULL)
     {
@@ -998,10 +994,11 @@ int pbs_getaddrinfo(
       {
       return rc;
       }
+
     } while(retryCount-- >= 0);
 
   return EAI_FAIL;
-  }    
+  } /* END pbs_getaddrinfo() */
 
 
 int connect_to_trqauthd(

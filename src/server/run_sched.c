@@ -171,6 +171,7 @@ void *contact_sched(
   char  log_buf[LOCAL_LOG_BUF_SIZE];
   int cmd = *(int *)new_cmd;
 
+  memset(&EMsg, 0, sizeof(EMsg));
   free(new_cmd);
 
   if (LOGLEVEL >= 10)
