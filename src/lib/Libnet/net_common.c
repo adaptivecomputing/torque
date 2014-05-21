@@ -382,7 +382,10 @@ int socket_connect_addr(
         else if (rc == PERMANENT_SOCKET_FAIL)
           {
           close(local_socket);
-          return(rc);
+          local_socket = rc;
+
+          /* do not fall through here */
+          break;
           }
 
         /* essentially, only fall through for a transient failure */
