@@ -1357,3 +1357,6 @@ bool am_i_mother_superior(const job &pjob)
   {
   return(false);
   }
+
+void get_energy_used(job *pjob)
+  {}
