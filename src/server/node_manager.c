@@ -562,25 +562,22 @@ void remove_job_from_already_killed_list(
   struct work_task *pwt)
 
   {
-  int job_internal_id = *(int *)pwt->wt_parm1;
+  int *to_free = (int *)pwt->wt_parm1;
+  int  job_internal_id = *to_free;
 
+  free(to_free);
   free(pwt->wt_mutex);
   free(pwt);
 
   pthread_mutex_lock(&jobsKilledMutex);
 
-  for (std::vector<int>::iterator i = jobsKilled.begin(); i != jobsKilled.end(); i++)
+  for (unsigned int i = 0; i < jobsKilled.size(); i++)
     {
-    if (*i == job_internal_id)
+    if (jobsKilled[i] == job_internal_id)
       {
-      i = jobsKilled.erase(i);
-      if (i == jobsKilled.end())
-        {
-        break;
-        }
-      continue;
+      i = jobsKilled.erase(jobsKilled.begin() + i);
+      break;
       }
-    i++;
     }
 
   pthread_mutex_unlock(&jobsKilledMutex);
