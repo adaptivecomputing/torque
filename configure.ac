@@ -401,6 +401,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/resmom/test/catch_child/Makefile
     src/resmom/test/checkpoint/Makefile
     src/resmom/test/cray_cpa/Makefile
+    src/resmom/test/cray_energy/Makefile
     src/resmom/test/generate_alps_status/Makefile
     src/resmom/test/mom_job_func/Makefile
     src/resmom/test/mom_comm/Makefile
