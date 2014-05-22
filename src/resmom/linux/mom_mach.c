@@ -1966,8 +1966,7 @@ int mom_do_poll(
         strcmp(pname, "pcput") == 0 ||
         strcmp(pname, "mem") == 0 ||
         strcmp(pname, "pvmem") == 0 ||
-        strcmp(pname, "vmem") == 0 ||
-        strcmp(pname, "energy_used") == 0)
+        strcmp(pname, "vmem") == 0)
       {
       return(TRUE);
       }
