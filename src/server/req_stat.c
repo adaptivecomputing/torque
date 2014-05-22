@@ -111,7 +111,6 @@
 #include "array.h"
 #include "queue.h"
 #include "node_func.h" /* find_nodebyname */
-#include "issue_request.h" /* issue_Drequest */
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
 #include "svr_connect.h" /* svr_connect */
 #include "queue_func.h" /* find_queuebyname */
@@ -840,7 +839,7 @@ int stat_to_mom(
 
   if (handle >= 0)
     {
-    if ((rc = issue_Drequest(handle, newrq)) == PBSE_NONE)
+    if ((rc = issue_Drequest(handle, newrq, true)) == PBSE_NONE)
       {
       stat_update(newrq, cntl);
       }
@@ -1055,20 +1054,23 @@ void poll_job_task(
 
       job_state = pjob->ji_qs.ji_state;
 
-      job_mutex.unlock();
-
-      get_svr_attr_l(SRV_ATR_JobStatRate, &job_stat_rate);
-
-      if (time(NULL) - pjob->ji_last_reported_time > job_stat_rate)
+      // only do things for running jobs
+      if (job_state == JOB_STATE_RUNNING)
         {
-        get_svr_attr_l(SRV_ATR_PollJobs, &poll_jobs);
-        if ((poll_jobs) &&
-            (job_state == JOB_STATE_RUNNING))
-          stat_mom_job(job_id);
-        }
+        job_mutex.unlock();
 
-      /* add another task */
-      set_task(WORK_Timed, time_now + (job_stat_rate / 3), poll_job_task, strdup(job_id), FALSE);
+        get_svr_attr_l(SRV_ATR_JobStatRate, &job_stat_rate);
+
+        if (time(NULL) - pjob->ji_last_reported_time > job_stat_rate)
+          {
+          get_svr_attr_l(SRV_ATR_PollJobs, &poll_jobs);
+          if (poll_jobs)
+            stat_mom_job(job_id);
+          }
+
+        /* add another task */
+        set_task(WORK_Timed, time_now + (job_stat_rate / 3), poll_job_task, strdup(job_id), FALSE);
+        }
       }
       
     free(job_id);
@@ -1158,6 +1160,8 @@ int req_stat_que(
         rc = 0;
         }
       }
+
+    delete iter;
     }
 
   if (rc != PBSE_NONE)

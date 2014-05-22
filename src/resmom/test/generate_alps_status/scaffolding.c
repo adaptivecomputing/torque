@@ -2,12 +2,11 @@
 #include <stdio.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
-
+#include <vector>
 
 #include "utils.h"
 #include <string>
 #include <vector>
-#include <boost/ptr_container/ptr_vector.hpp>
 
 extern int log_event_called;
 
@@ -37,15 +36,15 @@ void log_event(
 
 int search_dynamic_string_status(
 
-    boost::ptr_vector<std::string>& status,
+  std::vector<std::string>& status,
   char           *str)
 
   {
   char         first_char = str[0];
 
-  for (boost::ptr_vector<std::string>::iterator i = status.begin(); i != status.end(); i++)
+  for (unsigned int i = 0; i < status.size(); i++)
     {
-    const char *ptr = i->c_str();
+    const char *ptr = status[i].c_str();
     while(*ptr != '\0')
       {
       if (*ptr == first_char)

@@ -141,8 +141,8 @@ int unlock_node(
 
 int process_alps_status(
 
-  char           *nd_name,
-  boost::ptr_vector<std::string>& status_info)
+  char                     *nd_name,
+  std::vector<std::string> &status_info)
 
   {
   return(0);
@@ -207,8 +207,8 @@ int copy_to_end_of_dynamic_string(dynamic_string *ds, const char *to_copy)
 
 int process_status_info(
 
-  char                           *nd_name,
-  boost::ptr_vector<std::string> &status_info)
+  char                     *nd_name,
+  std::vector<std::string> &status_info)
 
   {
   return(0);

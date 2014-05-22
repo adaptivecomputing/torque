@@ -84,7 +84,6 @@
 #include <errno.h>
 #include <vector>
 #include <string>
-#include <boost/ptr_container/ptr_vector.hpp>
 
 #include "pbs_nodes.h"
 #include "log.h"
@@ -117,8 +116,8 @@ int  unlock_ji_mutex(job *, const char *, const char *, int);
 
 void get_status_info(
 
-  struct tcp_chan *chan,
-  boost::ptr_vector<std::string>& status)
+  struct tcp_chan          *chan,
+  std::vector<std::string> &status)
 
   {
   char           *ret_info;
@@ -133,7 +132,7 @@ void get_status_info(
       break;
       }
 
-    status.push_back(new std::string(ret_info));
+    status.push_back(ret_info);
     free(ret_info);
     }
   } /* END get_status_info() */
@@ -167,9 +166,9 @@ int is_stat_get(
   struct tcp_chan *chan)
 
   {
-  int             rc;
-  char            log_buf[LOCAL_LOG_BUF_SIZE];
-  boost::ptr_vector<std::string> status_info;
+  int                      rc;
+  char                     log_buf[LOCAL_LOG_BUF_SIZE];
+  std::vector<std::string> status_info;
 
   if (LOGLEVEL >= 3)
     {
@@ -177,7 +176,7 @@ int is_stat_get(
     log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
     }
 
-  get_status_info(chan,status_info);
+  get_status_info(chan, status_info);
  
   if (is_reporter_node(node_name))
     rc = process_alps_status(node_name, status_info);
@@ -208,9 +207,10 @@ int gpu_has_job(
   /* check each subnode for a job using a gpuid */
   for (unsigned int i = 0; i < pnode->nd_job_usages.size(); i++)
     {
-    job_usage_info *jui = pnode->nd_job_usages[i];
+    // make a copy because we're going to lose the lock below
+    job_usage_info jui = pnode->nd_job_usages[i];
     
-    if ((pjob = get_job_from_job_usage_info(jui, pnode)) != NULL)
+    if ((pjob = get_job_from_job_usage_info(&jui, pnode)) != NULL)
       {
       mutex_mgr job_mutex(pjob->ji_mutex, true);
 

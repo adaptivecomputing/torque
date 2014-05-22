@@ -5,6 +5,7 @@
 
 char *eh1 = (char *)"napali+l11+tom";
 char *eh2 = (char *)"napali/0+napali/1+l11/0+l11/1";
+int   internal_job_ids[] = { 1, 2, 3, 4 };
 char *jobids[] = { (char *)"1.napali", (char *)"2.napali", (char *)"3.napali", (char *)"4.napali" };
 char *rsvids[] = {(char *)"1234", (char *)"1235", (char *)"1236", (char *)"1237" };
 
@@ -43,21 +44,23 @@ START_TEST(populate_ar_test)
   job               pjob;
 
   strcpy(pjob.ji_qs.ji_jobid, jobids[0]);
+  pjob.ji_internal_id = internal_job_ids[0];
   pjob.ji_wattr[JOB_ATR_reservation_id].at_val.at_str = rsvids[0];
   pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = eh1;
 
   fail_unless((ar = populate_alps_reservation(&pjob)) != NULL, "couldn't create an alps reservation");
-  fail_unless(!strcmp(ar->job_id, jobids[0]), "job id created incorrectly");
+  fail_unless(ar->internal_job_id == internal_job_ids[0], "job id created incorrectly");
   fail_unless(!strcmp(ar->rsv_id, rsvids[0]), "rsv id created incorrectly");
 
   delete ar;
 
   strcpy(pjob.ji_qs.ji_jobid, jobids[1]);
+  pjob.ji_internal_id = internal_job_ids[1];
   pjob.ji_wattr[JOB_ATR_reservation_id].at_val.at_str = rsvids[1];
   pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = eh2;
   
   fail_unless((ar = populate_alps_reservation(&pjob)) != NULL, "couldn't create an alps reservation");
-  fail_unless(!strcmp(ar->job_id, jobids[1]), "job id created incorrectly");
+  fail_unless(ar->internal_job_id == internal_job_ids[1], "job id created incorrectly");
   fail_unless(!strcmp(ar->rsv_id, rsvids[1]), "rsv id created incorrectly");
   }
 END_TEST
@@ -107,10 +110,10 @@ START_TEST(insert_create_inspect_test)
   fail_unless(already_recorded((char *)"tom") == 0,     "missing rsv_id somehow found");
   fail_unless(already_recorded((char *)"tommy") == 0,   "missing rsv_id somehow found");
 
-  fail_unless(is_orphaned(rsvids[0], job_id) == 1, "no job but not orphaned?");
-  fail_unless(is_orphaned(rsvids[1], job_id) == 0, "job 1 returned but orphaned?");
-  fail_unless(is_orphaned(rsvids[2], job_id) == 0, "job 2 returned but orphaned?");
-  fail_unless(is_orphaned(rsvids[3], job_id) == 1, "completed job but not orphaned?");
+  fail_unless(is_orphaned(rsvids[0], job_id) == true, "no job but not orphaned?");
+  fail_unless(is_orphaned(rsvids[1], job_id) == false, "job 1 returned but orphaned?");
+  fail_unless(is_orphaned(rsvids[2], job_id) == false, "job 2 returned but orphaned?");
+  fail_unless(is_orphaned(rsvids[3], job_id) == true, "completed job but not orphaned?");
 
   fail_unless(remove_alps_reservation((char *)"00") == THING_NOT_FOUND, "found something that doesn't exist");
   fail_unless(remove_alps_reservation(rsvids[0]) == 0, "couldn't remove reservation 1");

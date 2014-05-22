@@ -3,6 +3,7 @@
 #define TCP_PBS_H
 
 #include <stddef.h>
+#include <time.h>
 
 struct tcpdisbuf
   {
@@ -27,12 +28,14 @@ struct tcp_chan
   };
 
 
-int tcp_getc(struct tcp_chan *chan);
-int tcp_gets(struct tcp_chan *chan, char *, size_t);
+int tcp_getc(struct tcp_chan *chan, unsigned int timeout);
+int tcp_gets(struct tcp_chan *chan, char *, size_t, unsigned int timeout);
 int tcp_puts(struct tcp_chan *chan, const char *, size_t);
 int tcp_rcommit(struct tcp_chan *chan, int);
 int tcp_wcommit(struct tcp_chan *chan, int);
 int tcp_rskip(struct tcp_chan *chan,size_t);
 int tcp_chan_has_data(struct tcp_chan *chan);
+
+extern time_t pbs_tcp_timeout;
 
 #endif /* TCP_PBS_H */

@@ -14,9 +14,9 @@ struct job *job_alloc(void);
 
 void job_free(struct job *pj, int use_recycle);
 
-/*static */ struct job *copy_job(struct job *parent);
+struct job *copy_job(struct job *parent);
 
-/*static*/ struct job *job_clone(struct job *template_job, struct job_array *pa, int taskid);
+struct job *job_clone(struct job *template_job, struct job_array *pa, int taskid);
 
 void *job_clone_wt(void *vp);
 
@@ -29,8 +29,6 @@ void cleanup_restart_file(struct job *pjob);
 int record_jobinfo(struct job *pjob);
 
 int svr_job_purge(struct job *pjob, int keepSpoolFiles=0);
-
-struct job *svr_find_job(char *jobid, int get_subjob);
 
 struct job_array *get_jobs_array(struct job **pjob);
 

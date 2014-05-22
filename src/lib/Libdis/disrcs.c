@@ -121,7 +121,7 @@ char *disrcs(
   assert(nchars != NULL);
   assert(retval != NULL);
 
-  locret = disrsi_(chan, &negate, &count, 1);
+  locret = disrsi_(chan, &negate, &count, 1, pbs_tcp_timeout);
   locret = negate ? DIS_BADSIGN : locret;
 
   if (locret == DIS_SUCCESS)
@@ -133,7 +133,7 @@ char *disrcs(
     else
       {
       if (tcp_gets(chan, value,
-                      (size_t)count) != (int)count)
+                      (size_t)count, pbs_tcp_timeout) != (int)count)
         locret = DIS_PROTO;
       else
         value[count] = '\0';

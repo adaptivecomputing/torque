@@ -20,6 +20,7 @@ pthread_mutex_t *reroute_job_mutex;
 int                     route_retry_interval = 5; /* time in seconds to check routing queues */
 int pbs_errno;
 char log_buffer[LOG_BUF_SIZE];
+bool exit_called;
 
 
 #ifndef NDEBUG

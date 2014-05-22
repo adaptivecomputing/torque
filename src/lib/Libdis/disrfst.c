@@ -121,7 +121,7 @@ int disrfst(
 
   assert(value != NULL);
   
-  locret = disrsi_(chan, &negate, &count, 1);
+  locret = disrsi_(chan, &negate, &count, 1, pbs_tcp_timeout);
 
   if (locret == DIS_SUCCESS)
     {
@@ -129,7 +129,7 @@ int disrfst(
       locret = DIS_BADSIGN;
     else if (count > achars)
       locret = DIS_OVERFLOW;
-    else if (tcp_gets(chan, value, (size_t)count) != (int)count)
+    else if (tcp_gets(chan, value, (size_t)count, pbs_tcp_timeout) != (int)count)
       locret = DIS_PROTO;
 
 #ifndef NDEBUG

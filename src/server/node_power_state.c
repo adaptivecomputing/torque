@@ -38,7 +38,7 @@ void * send_power_state_to_mom(void *arg)
     return NULL;
     }
   unlock_node(pNode, __func__, "Done connecting", LOGLEVEL);
-  issue_Drequest(handle, pRequest);
+  issue_Drequest(handle, pRequest, true);
 
   return NULL;
   }
@@ -145,17 +145,15 @@ bool getMacAddr(std::string& interface,unsigned char *mac_addr)
   return (interface.length() != 0);
   }
 
-int set_node_power_state(struct pbsnode *pNode,struct pbsnode *newNode)
+int set_node_power_state(struct pbsnode **ppNode,unsigned short newState)
   {
+  struct pbsnode *pNode = *ppNode;
   if(pNode->nd_addrs == NULL)
     {
     return PBSE_BAD_PARAMETER;
     }
-  if(newNode->nd_power_state == POWER_STATE_RUNNING)
+  if(newState == POWER_STATE_RUNNING)
     {
-    newNode->nd_power_state = pNode->nd_power_state; //Don't change the power state here.
-                                      //Let the mom update change the state
-                                      //back to running.
     static std::string interface;
     static unsigned char mac_addr[6];
     if(interface.length() == 0)
@@ -215,10 +213,36 @@ int set_node_power_state(struct pbsnode *pNode,struct pbsnode *newNode)
     {
     return PBSE_SYSTEM;
     }
-  request->rq_ind.rq_powerstate = newNode->nd_power_state;
-  newNode->nd_power_state_change_time = time(NULL);
+  request->rq_ind.rq_powerstate = newState;
+  pNode->nd_power_state_change_time = time(NULL);
   strncpy(request->rq_host,pNode->nd_name,sizeof(request->rq_host));
-  int rc = enqueue_threadpool_request(send_power_state_to_mom,(void *)request,task_pool);
+  std::string hostname(request->rq_host);
+  int rc = PBSE_NONE;
+  {
+    int handle = 0;
+    int local_errno = 0;
+    handle = svr_connect(pNode->nd_addrs[0],pNode->nd_mom_port,&local_errno,pNode,NULL);
+    if(handle < 0)
+      {
+      unlock_node(pNode, __func__, "Error connecting", LOGLEVEL);
+      *ppNode = NULL;
+      return local_errno;
+      }
+    unlock_node(pNode, __func__, "Done connecting", LOGLEVEL);
+    *ppNode = NULL;
+    rc = issue_Drequest(handle, request,true);
+    if(rc == PBSE_NONE)
+      {
+      rc = request->rq_reply.brp_code;
+      if(rc < 0) rc = -rc;
+      }
+  }
+  pNode = find_nodebyname(hostname.c_str());
+  *ppNode = pNode;
+  if((rc == PBSE_NONE)&&(pNode != NULL))
+    {
+    pNode->nd_power_state = newState;
+    }
   return(rc);
   }
 

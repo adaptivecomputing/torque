@@ -82,7 +82,6 @@
 
 #include <string>
 #include <sstream>
-#include <boost/ptr_container/ptr_vector.hpp>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -203,6 +202,7 @@ int procs_available(int proc_ct);
 void check_nodes(struct work_task *);
 int gpu_entry_by_id(struct pbsnode *,char *, int);
 job *get_job_from_jobinfo(struct jobinfo *,struct pbsnode *);
+int remove_job_from_node(struct pbsnode *pnode, int internal_job_id);
 
 /* marks a stream as finished being serviced */
 pthread_mutex_t        *node_state_mutex = NULL;
@@ -391,14 +391,14 @@ void update_node_state(
 int check_node_for_job(
 
   struct pbsnode *pnode,
-  char           *jobid)
+  int             internal_job_id)
 
   {
   for (int i = 0; i < (int)pnode->nd_job_usages.size(); i++)
     {
-    job_usage_info *jui = pnode->nd_job_usages[i];
+    const job_usage_info &jui = pnode->nd_job_usages[i];
 
-    if (!strcmp(jobid, jui->jobid))
+    if (internal_job_id == jui.internal_job_id)
       return(TRUE);
     }
 
@@ -410,23 +410,19 @@ int check_node_for_job(
 
 
 /*
- * is_job_on_node - return TRUE if this jobid is present on pnode
+ * is_job_on_node - return TRUE if this internal job id is present on pnode
  */
 
 int is_job_on_node(
 
-  struct pbsnode *pnode, /* I */
-  char           *jobid) /* I */
+  struct pbsnode *pnode,           /* I */
+  int             internal_job_id) /* I */
 
   {
   struct pbsnode *numa;
 
   int             present = FALSE;
-  char           *at;
   int             i;
-
-  if ((at = strchr(jobid, (int)'@')) != NULL)
-    *at = '\0'; /* strip off @server_name */
 
   if (pnode->num_node_boards > 0)
     {
@@ -436,7 +432,7 @@ int is_job_on_node(
       numa = AVL_find(i,pnode->nd_mom_port,pnode->node_boards);
 
       lock_node(numa, __func__, "before check_node_for_job numa", LOGLEVEL);
-      present = check_node_for_job(pnode,jobid);
+      present = check_node_for_job(pnode, internal_job_id);
       unlock_node(numa, __func__, "after check_node_for_job numa", LOGLEVEL);
 
       /* leave loop if we found the job */
@@ -446,11 +442,8 @@ int is_job_on_node(
     }
   else
     {
-    present = check_node_for_job(pnode, jobid);
+    present = check_node_for_job(pnode, internal_job_id);
     }
-
-  if (at != NULL)
-    *at = '@';  /* restore @server_name */
 
   return(present);
   }  /* END is_job_on_node() */
@@ -512,7 +505,7 @@ int node_in_exechostlist(
 
 int kill_job_on_mom(
 
-  char           *jobid,
+  const char     *job_id,
   struct pbsnode *pnode)
 
   {
@@ -523,7 +516,7 @@ int kill_job_on_mom(
   char           log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* job is reported by mom but server has no record of job */
-  sprintf(log_buf, "stray job %s found on %s", jobid, pnode->nd_name);
+  sprintf(log_buf, "stray job %s found on %s", job_id, pnode->nd_name);
   log_err(-1, __func__, log_buf);
   
   conn = svr_connect(pnode->nd_addrs[0], pnode->nd_mom_port, &local_errno, pnode, NULL);
@@ -537,12 +530,12 @@ int kill_job_on_mom(
       }
     else
       {
-      snprintf(preq->rq_ind.rq_signal.rq_jid, sizeof(preq->rq_ind.rq_signal.rq_jid), "%s", jobid);
+      snprintf(preq->rq_ind.rq_signal.rq_jid, sizeof(preq->rq_ind.rq_signal.rq_jid), "%s", job_id);
       snprintf(preq->rq_ind.rq_signal.rq_signame, sizeof(preq->rq_ind.rq_signal.rq_signame), "SIGKILL");
       preq->rq_extra = strdup(SYNC_KILL);
       
       unlock_node(pnode, __func__, NULL, LOGLEVEL);
-      rc = issue_Drequest(conn, preq);
+      rc = issue_Drequest(conn, preq, true);
       free_br(preq);
       lock_node(pnode, __func__, NULL, LOGLEVEL);
       }
@@ -554,7 +547,7 @@ int kill_job_on_mom(
 
 
 pthread_mutex_t jobsKilledMutex = PTHREAD_MUTEX_INITIALIZER;
-boost::ptr_vector<std::string> jobsKilled;
+std::vector<int> jobsKilled;
 #define JOB_SYNC_TIMEOUT 60 //Once a kill job has been sent to a MOM, don't send another for five minutes.
 
 
@@ -569,18 +562,16 @@ void remove_job_from_already_killed_list(
   struct work_task *pwt)
 
   {
-  std::string *pJobID = (std::string *)pwt->wt_parm1;
+  int job_internal_id = *(int *)pwt->wt_parm1;
 
   free(pwt->wt_mutex);
   free(pwt);
 
-  if (pJobID == NULL) return;
-
   pthread_mutex_lock(&jobsKilledMutex);
 
-  for (boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();i != jobsKilled.end();i++)
+  for (std::vector<int>::iterator i = jobsKilled.begin(); i != jobsKilled.end(); i++)
     {
-    if (i->compare(*pJobID) == 0)
+    if (*i == job_internal_id)
       {
       jobsKilled.erase(i);
       if (i == jobsKilled.end())
@@ -589,27 +580,24 @@ void remove_job_from_already_killed_list(
         }
       }
     }
-  pthread_mutex_unlock(&jobsKilledMutex);
 
-  delete pJobID;
+  pthread_mutex_unlock(&jobsKilledMutex);
   } /* END remove_job_from_already_killed_list() */
 
 
 
 bool job_already_being_killed(
 
-  const char *jobid)
+  int job_internal_id)
 
   {
   bool jobAlreadyKilled = false;
   // Job should not be on the node, see if we have already sent a kill for this job.
   pthread_mutex_lock(&jobsKilledMutex);
 
-  for (boost::ptr_vector<std::string>::iterator i = jobsKilled.begin();
-       (i != jobsKilled.end()) && (jobAlreadyKilled == false);
-       i++)
+  for (unsigned int i = 0; i < jobsKilled.size(); i++)
     {
-    if (i->compare(jobid) == 0)
+    if (jobsKilled[i] == job_internal_id)
       {
       jobAlreadyKilled = true;
       break;
@@ -632,7 +620,7 @@ bool job_already_being_killed(
 
 bool job_should_be_killed(
     
-  char           *jobid,
+  int             internal_job_id,
   struct pbsnode *pnode)
 
   {
@@ -640,41 +628,39 @@ bool job_should_be_killed(
   bool  should_kill_job = false;
   job  *pjob;
   
-  if (strstr(jobid, server_name) != NULL)
+  if ((is_job_on_node(pnode, internal_job_id)) == FALSE)
     {
-    if ((is_job_on_node(pnode, jobid)) == FALSE)
+    /* must lock the job before the node */
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+    pjob = svr_find_job_by_id(internal_job_id);
+    lock_node(pnode, __func__, NULL, LOGLEVEL);
+    
+    if (pjob != NULL)
       {
-      /* must lock the job before the node */
-      unlock_node(pnode, __func__, NULL, LOGLEVEL);
-      pjob = svr_find_job(jobid, TRUE);
-      lock_node(pnode, __func__, NULL, LOGLEVEL);
-      
-      if (pjob != NULL)
+      /* job exists, but doesn't currently have resources assigned
+       * to this node double check the job struct because we
+       * could be in the middle of moving the job around because
+       * of data staging, suspend, or rerun */            
+      mutex_mgr job_mgr(pjob->ji_mutex,true);
+      if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL)
         {
-        /* job exists, but doesn't currently have resources assigned
-         * to this node double check the job struct because we
-         * could be in the middle of moving the job around because
-         * of data staging, suspend, or rerun */            
-        mutex_mgr job_mgr(pjob->ji_mutex,true);
-        if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL)
-          {
-          should_be_on_node = false;
-          }
-        else if (node_in_exechostlist(pnode->nd_name, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str) == FALSE)
-          {
-          should_be_on_node = false;
-          }
-        }
-      else
         should_be_on_node = false;
+        }
+      else if (node_in_exechostlist(pnode->nd_name, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str) == FALSE)
+        {
+        should_be_on_node = false;
+        }
+
+      if (should_be_on_node == false)
+        should_kill_job = !job_already_being_killed(internal_job_id);
       }
+    else
+      // if the job doesn't exist to pbs_server force a kill
+      should_kill_job = true;
     }
 
-  if (!should_be_on_node)
-    should_kill_job = !job_already_being_killed(jobid);
-
   return(should_kill_job);
-  } /* END job_should_be_on_node() */
+  } /* END job_should_be_killed() */
 
 
 void *finish_job(
@@ -753,14 +739,17 @@ void sync_node_jobs_with_moms(
   const char *jobs_in_mom)   /* I */
 
   {
-  std::vector<std::string> jobsRemoveFromNode;
+  std::vector<int> jobsRemoveFromNode;
   bool removealljobs = (strlen(jobs_in_mom) == 0);
 
   for (int i = 0; i < (int)np->nd_job_usages.size(); i++)
     {
-    bool removejob = false;
-    job_usage_info *jui = np->nd_job_usages[i];
-    char *jobid = jui->jobid;
+    bool            removejob = false;
+    // this one has to be a copy instead of a reference because we lose the mutex
+    // below which can make the pointer invalid
+    job_usage_info  jui = np->nd_job_usages[i];
+    const char     *jobid = job_mapper.get_name(jui.internal_job_id);
+    int             internal_job_id = jui.internal_job_id;
 
     if (!removealljobs)
       {
@@ -779,18 +768,18 @@ void sync_node_jobs_with_moms(
       if (pjob)
         unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
       else
-        jobsRemoveFromNode.push_back(std::string (jobid));
+        jobsRemoveFromNode.push_back(internal_job_id);
       }
     }
 
   char log_buf[LOCAL_LOG_BUF_SIZE + 1];
-  for (std::vector<std::string>::iterator it = jobsRemoveFromNode.begin();
-             it != jobsRemoveFromNode.end(); it++)
+  for (unsigned int i = 0; i < jobsRemoveFromNode.size(); i++)
     {
     snprintf(log_buf, sizeof(log_buf),
-      "Job %s was not reported in %s update status. Freeing job from node.", (*it).c_str(), np->nd_name);
+      "Job %s was not reported in %s update status. Freeing job from node.",
+      job_mapper.get_name(jobsRemoveFromNode[i]), np->nd_name);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-    remove_job_from_node(np, (*it).c_str());
+    remove_job_from_node(np, jobsRemoveFromNode[i]);
     }
   } /* end of sync_node_jobs_with_moms */
 
@@ -922,7 +911,7 @@ void *sync_node_jobs(
     {
     std::string job_id(jobidstr);
     size_t      pos;
-    char       *job_work_str;
+    int         internal_job_id;
 
     if ((pos = job_id.find("(")) != std::string::npos)
       {
@@ -946,24 +935,24 @@ void *sync_node_jobs(
         }
       }
 
-    job_work_str = strdup(job_id.c_str());
+    internal_job_id = job_mapper.get_id(job_id.c_str());
 
-    if (job_should_be_killed(job_work_str, np))
+    if (job_should_be_killed(internal_job_id, np))
       {
-      if (kill_job_on_mom(job_work_str, np) == PBSE_NONE)
+      if (kill_job_on_mom(job_id.c_str(), np) == PBSE_NONE)
         {
         pthread_mutex_lock(&jobsKilledMutex);
-        jobsKilled.push_back(new std::string(job_id));
+        jobsKilled.push_back(internal_job_id);
         pthread_mutex_unlock(&jobsKilledMutex);
+
+        int *dup_id = new int(internal_job_id);
         set_task(WORK_Timed, 
                  time(NULL) + job_sync_timeout,
                  remove_job_from_already_killed_list,
-                 (void *)new std::string(job_id),
+                 dup_id,
                  FALSE);
         }
       }
-
-    free(job_work_str);
     
     jobidstr = threadsafe_tokenizer(&joblist, " ");
     } /* END while ((jobidstr != NULL) && ...) */
@@ -1229,6 +1218,12 @@ void *check_nodes_work(
         }
       }
     } /* END for each node */
+
+  if (iter.node_index != NULL)
+    delete iter.node_index;
+
+  if (iter.alps_index != NULL)
+    delete iter.alps_index;
 
   if (ptask->wt_parm1 == NULL)
     {
@@ -2931,6 +2926,9 @@ int select_from_all_nodes(
       }
     } /* END for each node */
 
+  if (iter.node_index != NULL)
+    delete iter.node_index;
+
   return(num);
   } /* select_from_all_nodes() */
 
@@ -3544,9 +3542,9 @@ job_reservation_info *reserve_node(
     return(NULL);
     }
     
-  job_usage_info *jui = new job_usage_info(pjob->ji_qs.ji_jobid);
+  job_usage_info jui(pjob->ji_internal_id);
     
-  jui->est = node_info->est;
+  jui.est = node_info->est;
   node_info->node_id = pnode->nd_id;
   node_info->port = pnode->nd_mom_rm_port;
   pnode->nd_job_usages.push_back(jui);
@@ -3599,7 +3597,7 @@ int add_job_to_node(
 
   for (jp = snp->jobs;jp != NULL;jp = jp->next)
     {
-    if (!(strcmp(jp->jobid, pjob->ji_qs.ji_jobid)))
+    if (jp->internal_job_id == pjob->ji_internal_id)
       break;
     }
 
@@ -3610,7 +3608,7 @@ int add_job_to_node(
 
     jp->next = snp->jobs;
     snp->jobs = jp;
-    strcpy(jp->jobid, pjob->ji_qs.ji_jobid);
+    jp->internal_job_id = pjob->ji_internal_id;
 
     /* if no free VPs, set node state */
     if ((pnode->nd_slots.get_number_free() <= 0) ||
@@ -3642,7 +3640,7 @@ int add_job_to_gpu_subnode(
   if (!pnode->nd_gpus_real)
     {
     /* update the gpu subnode */
-    strcpy(gn->jobid, pjob->ji_qs.ji_jobid);
+    gn->job_internal_id = pjob->ji_internal_id;
     gn->inuse = TRUE;
 
     /* update the main node */
@@ -3667,9 +3665,9 @@ int add_job_to_mic(
   {
   int rc = -1;
 
-  if (pnode->nd_micjobs[index].jobid[0] == '\0')
+  if (pnode->nd_micjobs[index].internal_job_id == -1)
     {
-    strcpy(pnode->nd_micjobs[index].jobid, pjob->ji_qs.ji_jobid);
+    pnode->nd_micjobs[index].internal_job_id = pjob->ji_internal_id;
     pnode->nd_nmics_free--;
     pnode->nd_nmics_to_be_used--;
     rc = PBSE_NONE;
@@ -3691,8 +3689,8 @@ int remove_job_from_nodes_mics(
 
   for (i = 0; i < pnode->nd_nmics; i++)
     {
-    if (!strcmp(pnode->nd_micjobs[i].jobid, pjob->ji_qs.ji_jobid))
-      pnode->nd_micjobs[i].jobid[0] = '\0';
+    if (pnode->nd_micjobs[i].internal_job_id == pjob->ji_internal_id)
+      pnode->nd_micjobs[i].internal_job_id = -1;
     }
 
   return(PBSE_NONE);
@@ -4034,8 +4032,8 @@ job_reservation_info *place_subnodes_in_hostlist(
 
     node_info->port = pnode->nd_mom_rm_port;
     
-    job_usage_info *jui = new job_usage_info(pjob->ji_qs.ji_jobid);
-    jui->est = node_info->est;
+    job_usage_info jui(pjob->ji_internal_id);
+    jui.est = node_info->est;
     
     node_info->node_id = pnode->nd_id;
     pnode->nd_job_usages.push_back(jui);
@@ -4165,8 +4163,8 @@ int translate_howl_to_string(
 
 void populate_range_string_from_slot_tracker(
 
-  execution_slot_tracker &est,
-  std::string            &range_str)
+  const execution_slot_tracker &est,
+  std::string                  &range_str)
 
   {
   int               est_index;
@@ -5212,6 +5210,7 @@ char *get_next_exec_host(
   char **current)
 
   {
+  FUNCTION_TIMER
   char *name_ptr = *current;
   char *plus;
   char *slash;
@@ -5302,10 +5301,10 @@ int remove_job_from_nodes_gpus(
         }
       else
         {
-        if (!strcmp(gn->jobid, pjob->ji_qs.ji_jobid))
+        if (gn->job_internal_id == pjob->ji_internal_id)
           {
           gn->inuse = FALSE;
-          memset(gn->jobid, 0, sizeof(gn->jobid));
+          gn->job_internal_id = -1;
           
           pnode->nd_ngpus_free++;
           }
@@ -5322,18 +5321,19 @@ int remove_job_from_nodes_gpus(
 int remove_job_from_node(
 
   struct pbsnode *pnode,
-  const char     *jobid)
+  int             internal_job_id)
 
   {
+  FUNCTION_TIMER
   char log_buf[LOCAL_LOG_BUF_SIZE];
 
   for (int i = 0; i < (int)pnode->nd_job_usages.size(); i++)
     {
-    job_usage_info *jui = pnode->nd_job_usages[i];
+    const job_usage_info &jui = pnode->nd_job_usages[i];
 
-    if (!strcmp(jui->jobid, jobid))
+    if (jui.internal_job_id == internal_job_id)
       {
-      pnode->nd_slots.unreserve_execution_slots(jui->est);
+      pnode->nd_slots.unreserve_execution_slots(jui.est);
       pnode->nd_job_usages.erase(pnode->nd_job_usages.begin() + i);
 
       if (LOGLEVEL >= 6)
@@ -5346,9 +5346,8 @@ int remove_job_from_node(
         }
 
       pnode->nd_state &= ~INUSE_JOB;
-      delete jui;
 
-      break;
+      i--; /* the array has shrunk by 1 so we need to reduce i by one */
       }
     }
   
@@ -5367,6 +5366,7 @@ void free_nodes(
   job *pjob)  /* I (modified) */
 
   {
+  FUNCTION_TIMER
   struct pbsnode *pnode;
 
   char            log_buf[LOCAL_LOG_BUF_SIZE];
@@ -5394,7 +5394,7 @@ void free_nodes(
     {
     if ((pnode = find_nodebyname(hostname)) != NULL)
       {
-      remove_job_from_node(pnode, pjob->ji_qs.ji_jobid);
+      remove_job_from_node(pnode, pjob->ji_internal_id);
       remove_job_from_nodes_gpus(pnode, pjob);
       remove_job_from_nodes_mics(pnode, pjob);
       unlock_node(pnode, __func__, NULL, LOGLEVEL);
@@ -5407,7 +5407,7 @@ void free_nodes(
     {
     if ((pnode = find_nodebyname(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str)) != NULL)
       {
-      remove_job_from_node(pnode, pjob->ji_qs.ji_jobid);
+      remove_job_from_node(pnode, pjob->ji_internal_id);
       unlock_node(pnode, __func__, NULL, LOGLEVEL);
       }
     }
@@ -5512,18 +5512,19 @@ void set_one_old(
 
     for (int i = 0; i < (int)pnode->nd_job_usages.size(); i++)
       {
-      job_usage_info *jui = pnode->nd_job_usages[i];
+      // this can't be a const because we change it below
+      job_usage_info &jui = pnode->nd_job_usages[i];
 
-      if (!strcmp(jui->jobid, pjob->ji_qs.ji_jobid))
+      if (jui.internal_job_id == pjob->ji_internal_id)
         {
         found = true;
 
-        while (last >= jui->est.get_total_execution_slots())
-          jui->est.add_execution_slot();
+        while (last >= jui.est.get_total_execution_slots())
+          jui.est.add_execution_slot();
 
         for (int index = first; index <= last; index++)
           {
-          jui->est.mark_as_used(index);
+          jui.est.mark_as_used(index);
           pnode->nd_slots.mark_as_used(index);
           }
         }
@@ -5531,14 +5532,14 @@ void set_one_old(
 
     if (found == false)
       {
-      job_usage_info *jui = new job_usage_info(pjob->ji_qs.ji_jobid);
+      job_usage_info jui(pjob->ji_internal_id);
         
-      while (last >= jui->est.get_total_execution_slots())
-        jui->est.add_execution_slot();
+      while (last >= jui.est.get_total_execution_slots())
+        jui.est.add_execution_slot();
 
       for (int index = first; index <= last; index++)
         {
-        jui->est.mark_as_used(index);
+        jui.est.mark_as_used(index);
         pnode->nd_slots.mark_as_used(index);
         }
 
@@ -5617,7 +5618,7 @@ job *get_job_from_job_usage_info(
   job *pjob;
 
   unlock_node(pnode, __func__, NULL, LOGLEVEL);
-  pjob = svr_find_job(jui->jobid, TRUE);
+  pjob = svr_find_job_by_id(jui->internal_job_id);
   lock_node(pnode, __func__, NULL, LOGLEVEL);
 
   return(pjob);
@@ -5634,7 +5635,7 @@ job *get_job_from_jobinfo(
   job *pjob;
 
   unlock_node(pnode, __func__, NULL, LOGLEVEL);
-  pjob = svr_find_job(jp->jobid, TRUE);
+  pjob = svr_find_job_by_id(jp->internal_job_id);
   lock_node(pnode, __func__, NULL, LOGLEVEL);
 
   return(pjob);

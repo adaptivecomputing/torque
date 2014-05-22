@@ -121,7 +121,7 @@ unsigned disrui(
   int       negate;
   unsigned  value;
 
-  locret = disrsi_(chan, &negate, &value, 1);
+  locret = disrsi_(chan, &negate, &value, 1, pbs_tcp_timeout);
 
   if (locret != DIS_SUCCESS)
     {
@@ -146,15 +146,16 @@ unsigned disrui(
 
 unsigned disrui_peek(
     
-  struct tcp_chan *chan,  /* I */
-  int *retval)  /* O */
+  struct tcp_chan *chan,    /* I */
+  int             *retval,  /* O */
+  unsigned int     timeout) /* I */
 
   {
   int       locret;
   int       negate;
   unsigned  value;
   
-  locret = disrsi_(chan, &negate, &value, 1);
+  locret = disrsi_(chan, &negate, &value, 1, timeout);
   
   *retval = locret;
   

@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include "tcp.h"
 
+time_t pbs_tcp_timeout;
+
 char *dis_umax = NULL;
 unsigned dis_umaxd = 0;
 
@@ -32,7 +34,7 @@ double disp10d_(int expon)
   exit(1);
   }
 
-int disrsi_(tcp_chan *chan, int *negate, unsigned *value, unsigned count)
+int disrsi_(tcp_chan *chan, int *negate, unsigned *value, unsigned count, unsigned int timeout)
   {
   fprintf(stderr, "The call to disrsi_ needs to be mocked!!\n");
   exit(1);

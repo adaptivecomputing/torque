@@ -78,7 +78,6 @@
 */
 
 #include <pthread.h>
-#include <boost/ptr_container/ptr_vector.hpp>
 #include "pbs_nodes.h"
 
 
@@ -92,17 +91,17 @@ class login_node
   unsigned int    times_used;
   struct pbsnode *pnode;
 
-  login_node(struct pbsnode *pNode):times_used(0),pnode(pNode){}
-  login_node(struct pbsnode *pNode,unsigned int used):times_used(used),pnode(pNode){}
+  login_node(struct pbsnode *pNode) : times_used(0), pnode(pNode) {}
+  login_node(struct pbsnode *pNode, unsigned int used) : times_used(used), pnode(pNode) {}
   };
 
 
 typedef struct login_holder
   {
-  unsigned int     next_node;
-  unsigned int     iterate_backwards;
-  boost::ptr_vector<login_node> nodes;
-  pthread_mutex_t *ln_mutex;
+  unsigned int             next_node;
+  unsigned int             iterate_backwards;
+  std::vector<login_node>  nodes;
+  pthread_mutex_t         *ln_mutex;
   } login_holder;
 
 

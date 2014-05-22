@@ -79,6 +79,8 @@
 
 
 
+#include <string>
+#include <vector>
 #include <errno.h>
 #include <pthread.h>
 #include <stdlib.h>
@@ -103,8 +105,8 @@
 #include "server.h"
 #include <string>
 #include <vector>
-#include <boost/ptr_container/ptr_vector.hpp>
 #include "container.hpp"
+#include "id_map.hpp"
 
 /* Global Data */
 extern int LOGLEVEL;
@@ -215,7 +217,7 @@ void *check_if_orphaned(
   struct pbsnode       *pnode;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
-  if (is_orphaned(rsv_id, job_id) == TRUE)
+  if (is_orphaned(rsv_id, job_id) == true)
     {
     if ((preq = alloc_br(PBS_BATCH_DeleteReservation)) == NULL)
       return NULL;
@@ -251,7 +253,7 @@ void *check_if_orphaned(
       unlock_node(pnode, __func__, NULL, LOGLEVEL);
       
       if (handle >= 0)
-        issue_Drequest(handle, preq);
+        issue_Drequest(handle, preq, true);
         
       free_br(preq);
       }
@@ -374,13 +376,13 @@ int set_state(
 
 void finish_gpu_status(
 
-    boost::ptr_vector<std::string>::iterator& i,
-    boost::ptr_vector<std::string>::iterator end)
+  unsigned int             &i,
+  std::vector<std::string> &status_info)
 
   {
-  while (i != end)
+  while (i < status_info.size())
     {
-    if (!strcmp(i->c_str(), CRAY_GPU_STATUS_END))
+    if (!strcmp(status_info[i].c_str(), CRAY_GPU_STATUS_END))
       break;
 
     i++;
@@ -416,9 +418,9 @@ int set_ngpus(
 
 int process_gpu_status(
 
-  struct pbsnode  *pnode,
-  boost::ptr_vector<std::string>::iterator& i,
-  boost::ptr_vector<std::string>::iterator end)
+  struct pbsnode           *pnode,
+  unsigned int             &i,
+  std::vector<std::string> &status_info)
 
   {
   pbs_attribute   temp;
@@ -433,7 +435,7 @@ int process_gpu_status(
     {
     log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, "cannot initialize attribute");
 
-    finish_gpu_status(i,end);
+    finish_gpu_status(i, status_info);
 
     return(rc);
     }
@@ -441,20 +443,20 @@ int process_gpu_status(
   /* move past the initial gpu status */
   i++;
   
-  for (; i != end; i++)
+  for (; i < status_info.size(); i++)
     {
-    if (!strcmp(i->c_str(), CRAY_GPU_STATUS_END))
+    if (!strcmp(status_info[i].c_str(), CRAY_GPU_STATUS_END))
       break;
 
-    if (!strncmp(i->c_str(), "gpu_id=", strlen("gpu_id=")))
+    if (!strncmp(status_info[i].c_str(), "gpu_id=", strlen("gpu_id=")))
       {
-      snprintf(buf, sizeof(buf), "gpu[%d]=%s;", gpu_count, i->c_str());
+      snprintf(buf, sizeof(buf), "gpu[%d]=%s;", gpu_count, status_info[i].c_str());
       gpu_info += buf;
       gpu_count++;
       }
     else
       {
-      gpu_info += i->c_str();
+      gpu_info += status_info[i].c_str();
       gpu_info += ';';
       }
     }
@@ -489,18 +491,17 @@ int record_reservation(
   {
   job            *pjob;
   bool            found_job = false;
-  char            jobid[PBS_MAXSVRJOBID + 1];
 
   for (unsigned int i = 0; i < pnode->nd_job_usages.size(); i++)
     {
     /* cray only allows one job per node, so any valid job will be the job that is 
      * reserving this node. */
-    job_usage_info *jui = pnode->nd_job_usages[i];
-    strcpy(jobid, jui->jobid);
+    const job_usage_info &jui = pnode->nd_job_usages[i];
+    int                   internal_job_id = jui.internal_job_id;
 
     unlock_node(pnode, __func__, NULL, LOGLEVEL);
 
-    if ((pjob = svr_find_job(jobid, TRUE)) != NULL)
+    if ((pjob = svr_find_job_by_id(internal_job_id)) != NULL)
       {
       mutex_mgr job_mutex(pjob->ji_mutex, true);
       pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str = strdup(rsv_id);
@@ -567,8 +568,8 @@ int process_reservation_id(
 
 int process_alps_status(
 
-  char           *nd_name,
-  boost::ptr_vector<std::string>& status_info)
+  char                     *nd_name,
+  std::vector<std::string> &status_info)
 
   {
   const char    *ccu_p = NULL;
@@ -595,12 +596,13 @@ int process_alps_status(
     return(PBSE_NONE);
 
   /* loop over each string */
-  for(boost::ptr_vector<std::string>::iterator i = status_info.begin();i != status_info.end();i++)
+  for(unsigned int i = 0; i < status_info.size(); i++)
     {
-    const char *str = i->c_str();
+    const char *str = status_info[i].c_str();
+
     if (!strncmp(str, "node=", strlen("node=")))
       {
-      if (i != status_info.begin())
+      if (i != 0)
         {
         snprintf(node_index_buf, sizeof(node_index_buf), "node_index=%d", node_index++);
         decode_arst(&temp, NULL, NULL, node_index_buf, 0);
@@ -621,7 +623,7 @@ int process_alps_status(
     /* process the gpu status information separately */
     if (!strcmp(CRAY_GPU_STATUS_START, str))
       {
-      rc = process_gpu_status(current, i,status_info.end());
+      rc = process_gpu_status(current, i, status_info);
       continue;
       }
     else if (!strncmp(reservation_id, str, strlen(reservation_id)))

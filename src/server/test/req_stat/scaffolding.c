@@ -172,7 +172,7 @@ void *get_next(list_link pl, char *file, int line)
   exit(1);
   }
 
-int issue_Drequest(int conn, struct batch_request *request)
+int issue_Drequest(int conn, struct batch_request *request, bool close_handle)
   {
   fprintf(stderr, "The call to issue_Drequest to be mocked!!\n");
   exit(1);
@@ -250,7 +250,7 @@ int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mut
   exit(1);
   }
 
-job *svr_find_job(char *jobid, int get_subjob)
+job *svr_find_job(const char *jobid, int get_subjob)
   {
   fprintf(stderr, "The call to find_job to be mocked!!\n");
   exit(1);

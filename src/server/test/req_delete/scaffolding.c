@@ -21,6 +21,7 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging);
 #define MSG_LEN_LONG 160
 
 threadpool_t *request_pool;
+threadpool_t *async_pool;
 const char *msg_deletejob = "Job deleted";
 all_jobs alljobs;
 const char *msg_delrunjobsig = "Job sent signal %s on delete";
@@ -32,8 +33,9 @@ int  bad_queue;
 int  bad_relay;
 int  signal_issued;
 int  nanny = 1;
-int  br_freed;
+bool  br_freed;
 int  alloc_work = 1;
+int  depend_term_called;
 
 batch_request *alloc_br(int type)
   {
@@ -111,7 +113,7 @@ void free_nodes(job *pjob)
 
 void free_br(struct batch_request *preq)
   {
-  br_freed = TRUE;
+  br_freed = true;
   }
 
 struct work_task *set_task(enum work_type type, long event_id, void (*func)(struct work_task *), void *parm, int get_lock)
@@ -170,7 +172,7 @@ int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mut
   return(0);
   }
 
-job *svr_find_job(char *jobid, int get_subjob)
+job *svr_find_job(const char *jobid, int get_subjob)
   {
   if (strcmp(jobid, "1.napali") == 0)
     {
@@ -442,6 +444,50 @@ void log_record(
   return;
   }
 
+char *threadsafe_tokenizer(
+
+  char       **str,    /* M */
+  const char  *delims) /* I */
+
+  {
+  char *current_char;
+  char *start;
+
+  if ((str == NULL) ||
+      (*str == NULL))
+    return(NULL);
+
+  /* save start position */
+  start = *str;
+
+  /* return NULL at the end of the string */
+  if (*start == '\0')
+    return(NULL);
+
+  /* begin at the start */
+  current_char = start;
+
+  /* advance to the end of the string or until you find a delimiter */
+  while ((*current_char != '\0') &&
+         (!strchr(delims, *current_char)))
+    current_char++;
+
+  /* advance str */
+  if (*current_char != '\0')
+    {
+    /* not at the end of the string */
+    *str = current_char + 1;
+    *current_char = '\0';
+    }
+  else
+    {
+    /* at the end of the string */
+    *str = current_char;
+    }
+
+  return(start);
+  } /* END threadsafe_tokenizer() */
+
 ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   {
   return(0);
@@ -469,3 +515,24 @@ bool delete_all_tracker::start_deleting_all_if_possible(const char *username, in
   {
   return(true);
   }
+
+int get_fullhostname(
+
+  char *shortname,  /* I */
+  char *namebuf,    /* O */
+  int   bufsize,    /* I */
+  char *EMsg)       /* O (optional,minsize=MAXLINE - 1024) */
+
+  {
+  return(0);
+  }
+
+int depend_on_term(
+
+  job *pjob)
+
+  {
+  depend_term_called++;
+  return(0);
+  }
+

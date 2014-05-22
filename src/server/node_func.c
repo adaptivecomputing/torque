@@ -26,7 +26,6 @@
 #endif
 #include <string>
 #include <vector>
-#include <boost/ptr_container/ptr_vector.hpp>
 
 #include "pbs_ifl.h"
 #include "libpbs.h"
@@ -63,6 +62,7 @@
 #include "id_map.hpp"
 #include <arpa/inet.h>
 #include "threadpool.h"
+#include "timer.hpp"
 
 #if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
 /*extern int h_errno;*/
@@ -83,7 +83,7 @@ extern char            *path_nodenote;
 extern int              LOGLEVEL;
 extern attribute_def    node_attr_def[];   /* node attributes defs */
 extern AvlTree          ipaddrs;
-extern boost::ptr_vector<std::string> hierarchy_holder;
+extern std::vector<std::string> hierarchy_holder;
 
 job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode);
 
@@ -232,6 +232,7 @@ struct pbsnode *find_nodebyname(
   const char *nodename) /* I */
 
   {
+  FUNCTION_TIMER
   char           *pslash;
   char           *dash = NULL;
   char           *tmp;
@@ -482,27 +483,35 @@ int login_encode_jobs(
 
   for (unsigned int i = 0; i < pnode->nd_job_usages.size(); i++)
     {
-    job_usage_info *jui = pnode->nd_job_usages[i];
+    // must be a copy and not a reference to avoid crashes: get_job_usage_info()
+    // potentially releases the node mutex meaning a reference could refer tp bad
+    // info.
+    job_usage_info  jui = pnode->nd_job_usages[i];
     int             jui_index;
     int             jui_iterator = -1;
     int             login_id = -1;
 
-    pjob = get_job_from_job_usage_info(jui, pnode);
+    pjob = get_job_from_job_usage_info(&jui, pnode);
     
     if (pjob != NULL)
       {
       login_id = pjob->ji_wattr[JOB_ATR_login_node_key].at_val.at_long;
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       }
+
+    const char *job_id = NULL;
     
-    while ((jui_index = jui->est.get_next_occupied_index(jui_iterator)) != -1)
+    while ((jui_index = jui.est.get_next_occupied_index(jui_iterator)) != -1)
       {
+      if (job_id == NULL)
+        job_id = job_mapper.get_name(jui.internal_job_id);
+
       if (pnode->nd_id != login_id)
         {
         if (job_str.length() != 0)
-          snprintf(str_buf, sizeof(str_buf), ",%d/%s", jui_index, jui->jobid);
+          snprintf(str_buf, sizeof(str_buf), ",%d/%s", jui_index, job_id);
         else
-          snprintf(str_buf, sizeof(str_buf), "%d/%s", jui_index, jui->jobid);
+          snprintf(str_buf, sizeof(str_buf), "%d/%s", jui_index, job_id);
 
         job_str += str_buf;
         }
@@ -1343,6 +1352,12 @@ void recompute_ntype_cnts(void)
       }
 
     svr_clnodes = svr_loc_clnodes;
+
+    if (iter.node_index != NULL)
+      {
+      delete iter.node_index;
+      iter.node_index = NULL;
+      }
     }
   } /* END recompute_ntype_cnts() */
 
@@ -1439,6 +1454,7 @@ int create_a_gpusubnode(
   /* initialize the node */
   pnode->nd_gpus_real = FALSE;
   pnode->nd_gpusn[pnode->nd_ngpus].inuse = FALSE;
+  pnode->nd_gpusn[pnode->nd_ngpus].job_internal_id = -1;
   pnode->nd_gpusn[pnode->nd_ngpus].mode = gpu_normal;
   pnode->nd_gpusn[pnode->nd_ngpus].state = gpu_unallocated;
   pnode->nd_gpusn[pnode->nd_ngpus].flag = okay;
@@ -2835,6 +2851,10 @@ int node_mics_action(
           free(np->nd_micjobs);
           np->nd_micjobs = tmp;
 
+          
+          for (int i = np->nd_nmics_alloced; i < new_mics; i++)
+            np->nd_micjobs[i].internal_job_id = -1;
+
           np->nd_nmics_alloced = new_mics;
           }
         }
@@ -3203,7 +3223,9 @@ struct pbsnode *next_node(
     {
     an->lock();
 
-    if(iter->node_index == NULL) iter->node_index = an->get_iterator();
+    if (iter->node_index == NULL)
+      iter->node_index = an->get_iterator();
+
     /* the first call to next_node */
     next = iter->node_index->get_next_item();
     if (next != NULL)
@@ -3578,9 +3600,9 @@ int send_hierarchy(
   /* write the protocol, version and command */
   else if ((ret = is_compose(chan, IS_CLUSTER_ADDRS)) == DIS_SUCCESS)
     {
-    for(boost::ptr_vector<std::string>::iterator i = hierarchy_holder.begin(); i != hierarchy_holder.end(); i++)
+    for (unsigned int i = 0; i < hierarchy_holder.size(); i++)
       {
-      string = i->c_str();
+      string = hierarchy_holder[i].c_str();
       if ((ret = diswst(chan, string)) != DIS_SUCCESS)
         {
         if (ret > 0)

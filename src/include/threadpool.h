@@ -138,6 +138,7 @@ struct threadpool
 
 extern threadpool_t *request_pool;
 extern threadpool_t *task_pool;
+extern threadpool_t *async_pool;
 
 int  enqueue_threadpool_request(void *(*func)(void *), void *arg, threadpool_t *tp);
 int  initialize_threadpool(threadpool_t **,int,int,int);

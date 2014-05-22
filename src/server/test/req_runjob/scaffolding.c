@@ -35,6 +35,7 @@ const char *msg_manager = "%s at request of %s@%s";
 int LOGLEVEL = 10; /* force logging code to be exercised as tests run */
 int svr_totnodes = 0;
 threadpool_t *request_pool;
+threadpool_t *async_pool;
 
 
 
@@ -227,7 +228,7 @@ resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   exit(1);
   }
 
-job *svr_find_job(char *jobid, int get_subjob)
+job *svr_find_job(const char *jobid, int get_subjob)
   {
   fprintf(stderr, "The call to find_job to be mocked!!\n");
   exit(1);
@@ -317,7 +318,7 @@ int split_job(job *pjob)
   return(0);
   }
 
-int kill_job_on_mom(char *jobid, struct pbsnode *pnode)
+int kill_job_on_mom(const char *job_id, struct pbsnode *pnode)
   {
   return(0);
   }
