@@ -1991,10 +1991,10 @@ int add_gpu_status(
   mom_status.push_back(START_GPU_STATUS);
 
 #ifdef NVML_API
-  generate_server_gpustatus_nvml(gpu_status);
+  generate_server_gpustatus_nvml(mom_status);
 #else
 
-  generate_server_gpustatus_smi(gpu_status);
+  generate_server_gpustatus_smi(mom_status);
 #endif /* NVML_API */
 
   mom_status.push_back(END_GPU_STATUS);
