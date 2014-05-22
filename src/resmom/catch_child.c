@@ -39,6 +39,7 @@
 #include "../server/svr_connect.h" /* svr_disconnect_sock */
 #include "mom_job_func.h" /* mom_job_purge */
 #include "mom_job_cleanup.h"
+#include "cray_energy.h"
 #ifdef ENABLE_CPA
 #include "pbs_cpa.h"
 #endif
@@ -1167,6 +1168,8 @@ int post_epilogue(
   CLEAR_HEAD(preq->rq_ind.rq_jobobit.rq_attr);
 
   resc_access_perm = ATR_DFLAG_RDACC;
+
+  get_energy_used(pjob);
 
   encode_used(pjob, resc_access_perm, NULL, &preq->rq_ind.rq_jobobit.rq_attr);
 
