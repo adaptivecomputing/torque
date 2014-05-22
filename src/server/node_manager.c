@@ -575,7 +575,7 @@ void remove_job_from_already_killed_list(
     {
     if (jobsKilled[i] == job_internal_id)
       {
-      i = jobsKilled.erase(jobsKilled.begin() + i);
+      jobsKilled.erase(jobsKilled.begin() + i);
       break;
       }
     }
