@@ -429,6 +429,7 @@ int req_connect (struct batch_request *req);
 /* DIAGTODO: declr req_stat_diag() */
 extern void  req_trackjob (struct batch_request *req);
 extern void *req_gpuctrl (void *req);
+int          req_holdarray(batch_request *preq);
 #else
 extern void  req_cpyfile (struct batch_request *req);
 extern void  req_delfile (struct batch_request *req);

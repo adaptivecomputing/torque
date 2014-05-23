@@ -7,6 +7,4 @@
 
 void hold_job(pbs_attribute *temphold, void *j);
 
-int req_holdarray(struct batch_request *preq);
-
 #endif /* _REQ_HOLDARRAY_H */

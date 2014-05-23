@@ -125,7 +125,6 @@
 #include "req_getcred.h" /* req_altauthenuer */ 
 #include "req_quejob.h" /* req_quejob, req_jobcredential, req_mvjobfile */ 
 #include "req_holdjob.h" /* req_holdjob, req_checkpointjob */ 
-#include "req_holdarray.h" /* req_holdarray */ 
 #include "req_stat.h" /* req_stat_node */ 
 #include "req_jobobit.h" /* req_jobobit */ 
 #include "req_runjob.h" /* req_runjob, req_stagein */ 
