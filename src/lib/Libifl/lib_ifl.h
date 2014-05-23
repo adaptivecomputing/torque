@@ -8,6 +8,7 @@
 #include "tm.h" /* tm_roots */
 #include "tcp.h" /* tcp_chan */
 #include <string>
+#include "u_hash_map_structs.h"
 
 /* trq_auth.c */
 #define AUTH_TYPE_IFF 1
@@ -68,6 +69,15 @@ int PBSD_status_put(int c, int function, char *id, struct attrl *attrib, char *e
 int PBSD_rdytocmt(int connect, char *jobid);
 int PBSD_commit_get_sid(int connect, long *sid, char *jobid); 
 int PBSD_commit(int connect, char *jobid); 
+int pbs_submit_hash(
+  int                socket,
+  job_data_container *job_attr,
+  job_data_container *res_attr,
+  char              *script,
+  char              *destination,
+  char              *extend,  /* (optional) */
+  char              **return_jobid,
+  char              **msg);
 /* static int PBSD_scbuf(int c, int reqtype, int seq, char *buf, int len, char *jobid, enum job_file which);  */
 int PBSD_jscript(int c, char *script_file, char *jobid);
 int PBSD_jobfile(int c, int req_type, char *path, char *jobid, enum job_file which);

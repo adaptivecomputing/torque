@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include "pbs_ifl.h"
+#include "pbs_error.h"
 
 #define TCONST_CFGFILE "torque.cfg"
 

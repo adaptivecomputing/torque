@@ -59,6 +59,7 @@
 #include <string.h>
 #include <netdb.h>
 #include "pbs_ifl.h"
+#include "pbs_error.h"
 #include "net_connect.h"
 
 #define notNULL(x) (((x)!=NULL) && (strlen(x)>(size_t)0))

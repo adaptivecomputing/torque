@@ -1,6 +1,7 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <time.h> /* time_t */
 #include "pbs_ifl.h" /* attrl */
+#include "u_hash_map_structs.h"
 
 
 

@@ -102,6 +102,7 @@
 #include <pthread.h>
 
 #include "pbs_ifl.h"
+#include "u_hash_map_structs.h"
 #include "list_link.h"
 #include "pbs_error.h"
 #include "tcp.h" /* tcp_chan */
