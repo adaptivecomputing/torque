@@ -86,6 +86,7 @@
 #include "utils.h"
 #include "batch_request.h"
 #include "ji_mutex.h"
+#include "id_map.hpp"
 
 /* Global Data declarations */
 extern int LOGLEVEL;
@@ -139,7 +140,8 @@ alps_reservation *populate_alps_reservation(
   job *pjob)
 
   {
-  alps_reservation *ar = new alps_reservation(pjob->ji_qs.ji_jobid,pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str);
+  alps_reservation *ar = new alps_reservation(pjob->ji_internal_id,
+                                              pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str);
   
   if (ar != NULL)
     {
@@ -218,13 +220,23 @@ int already_recorded(
 
 
 
-int is_orphaned(
+/*
+ * is_orphaned()
+ *
+ * @param rsv_id - the id of the reservation
+ * @param job_id - here we'll print the id of the job this reservation was attached to, 
+ * if we find one
+ *
+ * @return true if the reservation is now an orphan, false otherwise.
+ */
+
+bool is_orphaned(
 
   char *rsv_id,
   char *job_id)
 
   {
-  int               orphaned = FALSE;
+  bool              orphaned = false;
   job              *pjob;
   alps_reservation *ar = NULL;
 
@@ -235,23 +247,23 @@ int is_orphaned(
   if (ar != NULL)
     {
     if (job_id != NULL)
-      strncpy(job_id, ar->job_id, PBS_MAXSVRJOBID);
+      snprintf(job_id, PBS_MAXSVRJOBID, "%s", job_mapper.get_name(ar->internal_job_id));
 
-    if ((pjob = svr_find_job(ar->job_id, TRUE)) != NULL)
+    if ((pjob = svr_find_job_by_id(ar->internal_job_id)) != NULL)
       {
       if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
-        orphaned = TRUE;
+        orphaned = true;
 
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       }
     else
-      orphaned = TRUE;
+      orphaned = true;
     }
   else
     {
     if (job_id != NULL)
       snprintf(job_id, PBS_MAXSVRJOBID, "unknown");
-    orphaned = TRUE;
+    orphaned = true;
     }
 
   return(orphaned);

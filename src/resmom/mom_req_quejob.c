@@ -299,9 +299,12 @@ void mom_req_quejob(
       }  /* END if (pj->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) */
     else
       {
-      /* unlink job from svr_alljobs since it will be placed on newjobs */
-
-      delete_link(&pj->ji_alljobs);
+      /* reject the job. It is already working here. */
+      sprintf(log_buffer, "Job already exits. State: %d substate: %d", pj->ji_qs.ji_state, pj->ji_qs.ji_substate);
+      log_err(-1, __func__, log_buffer);
+      sprintf(log_buffer, "Job %s already on mom", pj->ji_qs.ji_jobid);
+      req_reject(PBSE_JOBEXIST, 0, preq, NULL, log_buffer);
+      return;
       }
     }  /* END if (pj != NULL) */
   else
@@ -516,10 +519,11 @@ void mom_req_quejob(
   if (reply_jobid(preq, pj->ji_qs.ji_jobid, BATCH_REPLY_CHOICE_Queue) != 0)
     {
     /* reply failed, purge the job and close the connection */
+    // call mom_job_purge first so that double-frees don't happen 
+    // when the on_close function is called
+    mom_job_purge(pj);
 
     close_conn(sock, FALSE);
-
-    mom_job_purge(pj);
 
     return;
     }
@@ -915,12 +919,13 @@ void req_rdytocommit(
     sprintf(log_buffer, "cannot report jobid - errno=%d - %s",
       errno,
       strerror(errno));
-
     log_err(errno, "req_rdytocommit", log_buffer);
 
-    close_conn(sock, FALSE);
-
+    // call mom_job_purge first so that double-frees don't happen 
+    // when the on_close function is called
     mom_job_purge(pj);
+
+    close_conn(sock, FALSE);
 
     return;
     }

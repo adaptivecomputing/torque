@@ -1206,13 +1206,7 @@ int setup_array_struct(
     /* Does job array need to be removed? */
 
     if (LOGLEVEL >= 6)
-      {
-      log_record(
-        PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        (char *)"cannot save job");
-      }
+      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "cannot save job");
 
     svr_job_purge(pjob);
     free(pa);

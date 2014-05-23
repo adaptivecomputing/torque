@@ -360,6 +360,7 @@ int insert_into_alljobs_by_rank(
   } /* END insert_into_alljobs_by_rank() */
 
 
+
 /*
  * svr_enquejob() - enqueue job into specified queue
  */
@@ -1021,6 +1022,7 @@ int svr_setjobstate(
   if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRANSICM)
     {
     /* Not a new job, update the counts and save if needed */
+    std::string jid(pjob->ji_qs.ji_jobid);
 
     if (pjob->ji_qs.ji_substate != newsubstate)
       changed = true;
@@ -1050,7 +1052,7 @@ int svr_setjobstate(
         pque = get_jobs_queue(&pjob);
         if (pque == NULL)
           {
-          sprintf(log_buf, "queue not found for jobid %s", pjob->ji_qs.ji_jobid);
+          sprintf(log_buf, "queue not found for jobid %s", jid.c_str());
           log_err(PBSE_UNKQUE, __func__, log_buf);
           return(PBSE_UNKQUE);
           }
@@ -1075,7 +1077,7 @@ int svr_setjobstate(
           {
           if (LOGLEVEL >= 6)
             {
-            sprintf(log_buf, "jobs queued job id %s for users", pjob->ji_qs.ji_jobid);
+            sprintf(log_buf, "jobs queued job id %s for users", jid.c_str());
             log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
             }
 
@@ -1097,7 +1099,7 @@ int svr_setjobstate(
               {
               if (LOGLEVEL >= 6)
                 {
-                sprintf(log_buf, "jobs queued job id %s for queue %s", pjob->ji_qs.ji_jobid, pque->qu_qs.qu_name);
+                sprintf(log_buf, "jobs queued job id %s for queue %s", jid.c_str(), pque->qu_qs.qu_name);
                 log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
                 }
               decrement_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
@@ -2836,7 +2838,7 @@ static void default_std(
 const char *prefix_std_file(
 
   job            *pjob,
-  std::string&    ds,
+  std::string    &ds,
   int             key)
 
   {
@@ -2847,7 +2849,7 @@ const char *prefix_std_file(
   if (pjob == NULL)
     {
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL input job pointer");
-    return(NULL);
+    return("");
     }
 
   qsubhost = get_variable(pjob, pbs_o_host);
@@ -2900,7 +2902,6 @@ const char *prefix_std_file(
     default_std(pjob, key, ds);
     }
 
-  if(ds.length() == 0) return NULL;
   return(ds.c_str());
   } /* END prefix_std_file() */
 

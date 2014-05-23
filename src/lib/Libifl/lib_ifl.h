@@ -303,6 +303,8 @@ char * pbs_locjob_err(int c, char *jobid, char *extend, int *);
 /* pbsD_manager.c */
 int pbs_manager_err(int c, int command, int objtype, char *objname, struct attropl *attrib, char *extend, int *);
 
+int pbs_modify_node_err(int c, int command, int objtype, char *objname, struct attropl *attrib, char *extend, int *);
+
 /* pbsD_movejob.c */
 int pbs_movejob_err(int c, char *jobid, char *destin, char *extend, int *); 
 
@@ -405,7 +407,7 @@ int rpp_get_stream_state(int index);
 /* tcp_dis.c */
 void DIS_tcp_settimeout(long timeout); 
 /* static void tcp_pack_buff(struct tcpdisbuf *tp); */
-int tcp_read(struct tcp_chan *chan, long long *read_len, long long *avail_len);
+int tcp_read(struct tcp_chan *chan, long long *read_len, long long *avail_len, unsigned int timeout);
 int DIS_tcp_wflush(struct tcp_chan *chan); 
 /* static void DIS_tcp_clear(struct tcpdisbuf *tp); */
 void DIS_tcp_reset(struct tcp_chan *chan, int i);

@@ -108,7 +108,7 @@ int disrl_(
   if (dis_umaxd == 0)
     disiui_();
 
-  switch (c = tcp_getc(chan))
+  switch (c = tcp_getc(chan, pbs_tcp_timeout))
     {
 
     case '-':
@@ -127,7 +127,7 @@ int disrl_(
 
       do
         {
-        if (((c = tcp_getc(chan)) < '0') || (c > '9'))
+        if (((c = tcp_getc(chan, pbs_tcp_timeout)) < '0') || (c > '9'))
           {
           if (c < 0)
             {
@@ -149,7 +149,7 @@ int disrl_(
         {
         count--;
 
-        switch (tcp_getc(chan))
+        switch (tcp_getc(chan, pbs_tcp_timeout))
           {
 
           case '5':
@@ -237,7 +237,7 @@ int disrl_(
 
       if (count > 1)
         {
-        if (tcp_gets(chan, scratch + 1, count - 1) != (int)count - 1)
+        if (tcp_gets(chan, scratch + 1, count - 1, pbs_tcp_timeout) != (int)count - 1)
           {
           /* cannot read all requested characters from chan */
 

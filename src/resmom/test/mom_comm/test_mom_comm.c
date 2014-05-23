@@ -179,11 +179,14 @@ START_TEST(task_save_test)
   result = task_save(&test_task);
   fail_unless(result == PBSE_BAD_PARAMETER, "NULL pointer to owning job fail");
 
-  test_task.ti_job = &test_job;
   strncpy(test_job.ji_qs.ji_fileprefix,
           file_prefix,
           sizeof(test_job.ji_qs.ji_fileprefix) - 1);
+
+  strcpy(test_task.ti_qs.ti_parentjobid, "jobid");
   
+  extern job *mock_mom_find_job_return;
+  mock_mom_find_job_return = NULL;
   result = task_save(&test_task);
   fail_unless(result == -1, "task_save fail");
   }

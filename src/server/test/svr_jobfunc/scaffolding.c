@@ -235,7 +235,7 @@ resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   return(0);
   }
 
-job *svr_find_job(char *jobid, int get_subjob)
+job *svr_find_job(const char *jobid, int get_subjob)
   {
   const char *job_id = "job_id";
 

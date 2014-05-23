@@ -49,6 +49,7 @@ extern int reported;
 extern int bad_drequest;
 extern int usage;
 extern bool completed;
+extern bool exited;
 extern bool purged;
 
 
@@ -342,6 +343,14 @@ START_TEST(handle_complete_second_time_test)
   handle_complete_second_time(ptask);
   fail_unless(purged == true);
   completed = false;
+
+  completed = false;
+  exited = true;
+  ptask = (work_task *)calloc(1, sizeof(*ptask));
+  ptask->wt_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  ptask->wt_parm1 = strdup("1.napali");
+  handle_complete_second_time(ptask);
+  fail_unless(purged == true);
   }
 END_TEST
 

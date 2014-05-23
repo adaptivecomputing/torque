@@ -15,6 +15,7 @@
 #include "user_info.h"
 #include "mutex_mgr.hpp"
 #include "threadpool.h"
+#include "id_map.hpp"
 
 bool exit_called = false;
 const char *PJobSubState[10];
@@ -35,6 +36,10 @@ const char *msg_daemonname = "unset";
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 user_info_holder users;
 threadpool_t *task_pool;
+char str_to_set[1024];
+long long_to_set = -1;
+bool default_queue = false;
+bool mem_fail = false;
 
 
 int setup_array_struct(job *pjob)
@@ -45,8 +50,10 @@ int setup_array_struct(job *pjob)
 
 pbs_queue *find_queuebyname(const char *quename)
   {
-  fprintf(stderr, "The call to find_queuebyname to be mocked!!\n");
-  exit(1);
+  if (!strcmp(quename, "batch"))
+    return((pbs_queue *)calloc(1, sizeof(pbs_queue)));
+
+  return(NULL);
   }
 
 int job_save(job *pjob, int updatetype, int mom_port)
@@ -217,16 +224,14 @@ resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   exit(1);
   }
 
-job *svr_find_job(char *jobid, int get_subjob)
+job *svr_find_job(const char *jobid, int get_subjob)
   {
-  fprintf(stderr, "The call to find_job to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 int svr_save(struct server *ps, int mode)
   {
-  fprintf(stderr, "The call to svr_save to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void replace_attr_string(struct pbs_attribute *attr, char *newval)
@@ -237,14 +242,15 @@ void replace_attr_string(struct pbs_attribute *attr, char *newval)
 
 job *job_alloc(void)
   {
-  fprintf(stderr, "The call to job_alloc to be mocked!!\n");
-  exit(1);
+  if (mem_fail == true)
+    return(NULL);
+  else
+    return((job *)calloc(1, sizeof(job)));
   }
 
 int unlock_queue(struct pbs_queue *the_queue, const char *method_name, const char *msg, int logging)
   {
-  fprintf(stderr, "The call to unlock_queue to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void svr_evaljobstate(job &pjob, int &newstate, int &newsub, int forceeval)
@@ -255,8 +261,12 @@ void svr_evaljobstate(job &pjob, int &newstate, int &newsub, int forceeval)
 
 pbs_queue *get_dfltque(void)
   {
-  fprintf(stderr, "The call to get_dfltque to be mocked!!\n");
-  exit(1);
+  static pbs_queue pque;
+
+  if (default_queue == true)
+    return(&pque);
+
+  return(NULL);
   }
 
 void reply_badattr(int code, int aux, svrattrl *pal, struct batch_request *preq)
@@ -279,11 +289,17 @@ pbs_net_t get_connectaddr(int sock, int mutex)
 
 int get_svr_attr_l(int index, long *l)
   {
+  if (long_to_set != -1)
+    *l = long_to_set;
+
   return(0);
   }
 
 int get_svr_attr_str(int index, char **str)
   {
+  if (str_to_set[0] != '\0')
+    *str = str_to_set;
+
   return(0);
   }
 
@@ -398,7 +414,7 @@ const char *add_std_filename(
   return "stdfilename";
   }
 
-job *find_job_by_array(all_jobs *aj, char *jobid, int get_subjob, bool locked)
+job *find_job_by_array(all_jobs *aj, const char *jobid, int get_subjob, bool locked)
   {
   if (!strcmp(jobid, "1.napali"))
     {
@@ -410,4 +426,15 @@ job *find_job_by_array(all_jobs *aj, char *jobid, int get_subjob, bool locked)
   return(NULL);
   }
 
+id_map::id_map() {}
+
+id_map::~id_map() {}
+
+int id_map::get_new_id(const char *job_name)
+  {
+  static int i = 0;
+  return(i++);
+  }
+
+id_map job_mapper;
 

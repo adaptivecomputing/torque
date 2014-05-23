@@ -16,7 +16,8 @@ int disrsi_(
   struct tcp_chan *chan,
   int             *negate,
   unsigned        *value,
-  unsigned         count)
+  unsigned         count,
+  unsigned int     timeout)
 
   {
   int       c;
@@ -40,7 +41,7 @@ int disrsi_(
   if (count > sizeof(scratch) - 1)
     return DIS_INVALID;
 
-  switch (c = tcp_getc(chan))
+  switch (c = tcp_getc(chan, timeout))
     {
 
     case '-':
@@ -48,7 +49,7 @@ int disrsi_(
 
       *negate = c == '-';
 
-      if (tcp_gets(chan, scratch, count) != (int)count)
+      if (tcp_gets(chan, scratch, count, timeout) != (int)count)
         {
         return(DIS_EOD);
         }
@@ -96,7 +97,7 @@ int disrsi_(
 
       if (count > 1)
         {
-        if (tcp_gets(chan, scratch + 1, count - 1) != (int)count - 1)
+        if (tcp_gets(chan, scratch + 1, count - 1, timeout) != (int)count - 1)
           {
           return(DIS_EOD);
           }
@@ -125,7 +126,7 @@ int disrsi_(
           }
         }    /* END if (count > 1) */
 
-      return(disrsi_(chan, negate, value, ndigs));
+      return(disrsi_(chan, negate, value, ndigs, timeout));
       break;
 
     case -1:

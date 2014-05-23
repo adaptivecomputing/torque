@@ -116,15 +116,25 @@ bool power_state::is_valid_power_state(int power_state)
     case  POWER_STATE_RUNNING:
       return true;
     case  POWER_STATE_STANDBY:
-    case  POWER_STATE_SUSPEND:
+      if(std::find(available_power_states.begin(),available_power_states.end(),"standby") != available_power_states.end())
+        {
+        return true;
+        }
+      return false;
     case  POWER_STATE_SLEEP:
-      if((std::find(available_power_states.begin(),available_power_states.end(),"standby") != available_power_states.end()) ||
-          (std::find(available_power_states.begin(),available_power_states.end(),"mem") != available_power_states.end()))
+      return false;
+    case  POWER_STATE_SUSPEND:
+      if(std::find(available_power_states.begin(),available_power_states.end(),"mem") != available_power_states.end())
         {
         return true;
         }
       return false;
     case  POWER_STATE_HIBERNATE:
+      if(std::find(available_power_states.begin(),available_power_states.end(),"disk") != available_power_states.end())
+        {
+        return true;
+        }
+      return false;
     case  POWER_STATE_SHUTDOWN:
       return true;
     }
@@ -143,24 +153,15 @@ void power_state::set_power_state(int power_state)
         set_string_in_file(path,"standby");
         return;
         }
+      return;
+    case  POWER_STATE_SUSPEND:
       if(std::find(available_power_states.begin(),available_power_states.end(),"mem") != available_power_states.end())
         {
         set_string_in_file(path,"mem");
         return;
         }
       return;
-    case  POWER_STATE_SUSPEND:
     case  POWER_STATE_SLEEP:
-      if(std::find(available_power_states.begin(),available_power_states.end(),"mem") != available_power_states.end())
-        {
-        set_string_in_file(path,"mem");
-        return;
-        }
-      if(std::find(available_power_states.begin(),available_power_states.end(),"standby") != available_power_states.end())
-        {
-        set_string_in_file(path,"standby");
-        return;
-        }
       return;
     case  POWER_STATE_HIBERNATE:
       if(std::find(available_power_states.begin(),available_power_states.end(),"disk") != available_power_states.end())
@@ -168,6 +169,7 @@ void power_state::set_power_state(int power_state)
         set_string_in_file(path,"disk");
         return;
         }
+      return;
     case  POWER_STATE_SHUTDOWN:
       sync();
       reboot(RB_POWER_OFF);

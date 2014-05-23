@@ -508,10 +508,10 @@ int write_tcp_reply(
 int read_tcp_reply(
 
   struct tcp_chan *chan,
-  int  protocol,
-  int  version,
-  int  command,
-  int *exit_status)
+  int              protocol,
+  int              version,
+  int              command,
+  int             *exit_status)
 
   {
   char log_buf[LOCAL_LOG_BUF_SIZE];
@@ -520,7 +520,7 @@ int read_tcp_reply(
 
   *exit_status = UNREAD_STATUS;
 
-  if(LOGLEVEL >= 6)
+  if (LOGLEVEL >= 6)
     {
     sprintf(log_buf, "protocol: %d  version: %d  command:%d  sock:%d", protocol, version, command, chan->sock);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,__func__, log_buf);
@@ -565,8 +565,6 @@ int read_tcp_reply(
     {
     /* read the exit code */
     *exit_status = disrsi(chan,&ret);
-    
-/*    DIS_tcp_reset(chan,0); */
     }
 
   if (ret != DIS_SUCCESS)

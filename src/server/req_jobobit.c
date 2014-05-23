@@ -122,6 +122,7 @@
 #include "../lib/Libutils/u_lock_ctl.h"
 #include "exiting_jobs.h"
 #include "track_alps_reservations.h"
+#include "id_map.hpp"
 
 #define RESC_USED_BUF 2048
 #define JOBMUSTREPORTDEFAULTKEEP 30
@@ -162,7 +163,7 @@ int         timeval_subtract(struct timeval *,struct timeval *,struct timeval *)
 extern void set_resc_assigned(job *, enum batch_op);
 extern void cleanup_restart_file(job *);
 void        on_job_exit(batch_request *preq, char *jobid);
-int         kill_job_on_mom(char *jobid, struct pbsnode *pnode);
+int         kill_job_on_mom(const char *job_id, struct pbsnode *pnode);
 void        handle_complete_second_time(struct work_task *ptask);
 void       *on_job_exit_task(struct work_task *vp);
 
@@ -1012,7 +1013,7 @@ int handle_returnstd(
         {
         job_mutex.unlock();
 
-        if ((rc = issue_Drequest(handle, preq)) != PBSE_NONE)
+        if ((rc = issue_Drequest(handle, preq, true)) != PBSE_NONE)
           {
           /* set up as if mom returned error, if we fall through to
            * here then we want to hit the error processing below
@@ -1173,7 +1174,7 @@ int handle_stageout(
         {
         job_mutex.unlock();
 
-        if ((rc = issue_Drequest(handle, preq)) != PBSE_NONE)
+        if ((rc = issue_Drequest(handle, preq, true)) != PBSE_NONE)
           {
           /* FAILURE */      
           if (LOGLEVEL >= 1)
@@ -1341,6 +1342,8 @@ int handle_stageout(
     job_mutex.mark_as_locked();
     svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_STAGEDEL, FALSE);
     }
+  else
+    rc = PBSE_JOBNOTFOUND;
  
 handle_stageout_cleanup:
 
@@ -1417,7 +1420,7 @@ int handle_stagedel(
         {
         job_mutex.unlock();
 
-        if (issue_Drequest(handle, preq) != PBSE_NONE)
+        if (issue_Drequest(handle, preq, true) != PBSE_NONE)
           {
           if (LOGLEVEL >= 2)
             {
@@ -1542,7 +1545,7 @@ int handle_exited(
       {
       job_mutex.unlock();
 
-      if ((rc = issue_Drequest(handle, preq)) != PBSE_NONE)
+      if ((rc = issue_Drequest(handle, preq, true)) != PBSE_NONE)
         {
         snprintf(log_buf, sizeof(log_buf), "DeleteJob issue_Drequest failure, rc = %d", rc);
 
@@ -1677,7 +1680,7 @@ int handle_complete_first_time(
 
   remove_job_from_exiting_list(&pjob);
 
-  if(pjob == NULL)
+  if (pjob == NULL)
     {
     /* let the caller know the job is gone */
     log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while removing job from exiting list.");
@@ -1810,6 +1813,9 @@ void handle_complete_second_time(
     return;
 
   mutex_mgr job_mutex(pjob->ji_mutex, true);
+
+  if (pjob->ji_qs.ji_state == JOB_STATE_EXITING)
+    svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
 
   if (LOGLEVEL >= 10)
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
@@ -1965,7 +1971,7 @@ void on_job_exit(
           ((pjob = svr_find_job(job_id, TRUE)) == NULL))
         break;
 
-      if ((rc = handle_stageout(pjob, type, preq)) != PBSE_NONE)
+      if ((rc = handle_stageout(pjob, type, preq)) == PBSE_JOBNOTFOUND)
         {
         snprintf(log_buf, sizeof(log_buf), "handle_stageout failed: %d", rc);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
@@ -2225,7 +2231,7 @@ void on_job_rerun(
           job_id = strdup(pjob->ji_qs.ji_jobid); 
           job_mutex.unlock();
           
-          if (issue_Drequest(handle, preq) != PBSE_NONE)
+          if (issue_Drequest(handle, preq, false) != PBSE_NONE)
             {
             /* cannot issue request to mom, set up as if mom returned error */
             IsFaked = 1;
@@ -2311,7 +2317,7 @@ void on_job_rerun(
 
           preq->rq_extra = strdup(pjob->ji_qs.ji_jobid);
 
-          if (issue_Drequest(handle, preq) != PBSE_NONE)
+          if (issue_Drequest(handle, preq, false) != PBSE_NONE)
             {
             /* set up as if mom returned error */
             IsFaked = 1;
@@ -2399,7 +2405,7 @@ void on_job_rerun(
 
           preq->rq_extra = strdup(pjob->ji_qs.ji_jobid);
 
-          if (issue_Drequest(handle, preq) != PBSE_NONE)
+          if (issue_Drequest(handle, preq, false) != PBSE_NONE)
             {
             /* error on sending request */          
             IsFaked = 1;
@@ -2466,7 +2472,7 @@ void on_job_rerun(
         job_id = strdup(pjob->ji_qs.ji_jobid); 
         job_mutex.unlock();
 
-        rc = issue_Drequest(handle, preq);
+        rc = issue_Drequest(handle, preq, true);
 
         free_br(preq);
 
@@ -2754,7 +2760,7 @@ int handle_subjob_exit_status(
   int             exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
   int             rc = PBSE_NONE;
   char            jobid[PBS_MAXSVRJOBID + 1];
-  char            other_jobid[PBS_MAXSVRJOBID + 1];
+  int             other_internal_job_id = -1;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
   struct pbsnode *pnode = NULL;
   int             cray_exited_nonzero = FALSE;
@@ -2789,7 +2795,7 @@ int handle_subjob_exit_status(
 
       if (other_subjob->ji_qs.ji_state <= JOB_STATE_RUNNING)
         {
-        strcpy(other_jobid, other_subjob->ji_qs.ji_jobid);
+        other_internal_job_id = other_subjob->ji_internal_id;
         pnode = find_nodebyname(other_subjob->ji_qs.ji_destin);
         }
 
@@ -2797,12 +2803,13 @@ int handle_subjob_exit_status(
 
       if (pnode != NULL)
         {
+        const char *other_job_id = job_mapper.get_name(other_internal_job_id);
         snprintf(log_buf, sizeof(log_buf), 
           "Sub-job %s exited with a non-zero exit status, canceling job %s",
-          jobid, other_jobid);
-        log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, other_jobid, log_buf);
+          jobid, other_job_id);
+        log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, other_job_id, log_buf);
         
-        kill_job_on_mom(other_jobid, pnode);
+        kill_job_on_mom(other_job_id, pnode);
         unlock_node(pnode, __func__, NULL, LOGLEVEL);
         }
       }

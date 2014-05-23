@@ -154,10 +154,6 @@ extern int LOGLEVEL;
 
 /* data global only to this file */
 
-#ifndef PBS_MOM
-int add_to_ms_list(char *node_name, job *pjob);
-#endif
-
 
 int assign_tag_len_5(
 
@@ -1221,6 +1217,8 @@ int job_save(
     }
   return(PBSE_NONE);
   }  /* END job_save() */
+
+
 
 int set_array_job_ids(
 

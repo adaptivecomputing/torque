@@ -62,11 +62,33 @@ pbs_net_t get_connectaddr(int sock, int mutex)
   exit(1);
   }
 
-void delete_link(struct list_link *old)
+ /*
+ * delete_link - delete an entry from the list
+ *
+ * Checks to be sure links exist before breaking them
+ * Note: the old entry is unchanged other than the list links
+ * are cleared.
+ */
+
+void delete_link(
+
+  struct list_link *old) /* ptr to link to delete */
+
   {
-  fprintf(stderr, "The call to delete_link needs to be mocked!!\n");
-  exit(1);
+
+  if ((old->ll_prior != (list_link *)0) &&
+      (old->ll_prior != old) && (old->ll_prior->ll_next == old))
+    (old->ll_prior)->ll_next = old->ll_next;
+
+  if ((old->ll_next != (list_link *)0) &&
+      (old->ll_next != old) && (old->ll_next->ll_prior == old))
+    (old->ll_next)->ll_prior = old->ll_prior;
+
+  old->ll_next  = old;
+
+  old->ll_prior = old;
   }
+
 
 void req_jobscript(struct batch_request *preq)
   {
@@ -126,8 +148,7 @@ void req_commit(struct batch_request *preq)
 
 void reply_free(struct batch_reply *prep)
   {
-  fprintf(stderr, "The call to reply_free needs to be mocked!!\n");
-  exit(1);
+  return;
   }
 
 void free_attrlist(tlist_head *pattrlisthead)

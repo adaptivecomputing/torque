@@ -14,7 +14,6 @@ int fix_cray_exec_hosts(job *);
 int fix_external_exec_hosts(job *);
 int change_external_job_name(job *);
 int split_job(job *);
-job *find_job_by_array(all_jobs *, char *jobid, int get_subjob, bool locked);
 
 char buf[4096];
 
@@ -312,22 +311,6 @@ START_TEST(svr_job_purge_test)
   }
 END_TEST
 
-START_TEST(find_job_by_array_test)
-  {
-  all_jobs alljobs;
-  struct job* result = find_job_by_array(NULL,(char *)"",0, false);
-
-  result = find_job_by_array(NULL,(char *)"",0,false);
-  fail_unless(result == NULL, "NULL all jobs input fail");
-
-  result = find_job_by_array(&alljobs,NULL,0,false);
-  fail_unless(result == NULL, "NULL job id input fail");
-
-  result = find_job_by_array(&alljobs,(char *)"",0,false);
-  fail_unless(result == NULL, "empty job id input fail");
-  }
-END_TEST
-
 START_TEST(svr_find_job_test)
   {
   struct job* result = svr_find_job(NULL,0);
@@ -439,10 +422,6 @@ Suite *job_func_suite(void)
 
   tc_core = tcase_create("svr_job_purge_test");
   tcase_add_test(tc_core, svr_job_purge_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("find_job_by_array_test");
-  tcase_add_test(tc_core, find_job_by_array_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("svr_find_job_test");

@@ -116,7 +116,7 @@ int disrfcs(
   assert(nchars != NULL);
   assert(value != NULL);
 
-  locret = disrsi_(chan, &negate, &count, 1);
+  locret = disrsi_(chan, &negate, &count, 1, pbs_tcp_timeout);
 
   if (locret == DIS_SUCCESS)
     {
@@ -124,7 +124,7 @@ int disrfcs(
       locret = DIS_BADSIGN;
     else if ((*nchars = count) > achars)
       locret = DIS_OVERFLOW;
-    else if (tcp_gets(chan, value, *nchars) != (int)*nchars)
+    else if (tcp_gets(chan, value, *nchars, pbs_tcp_timeout) != (int)*nchars)
       locret = DIS_PROTO;
     }
 

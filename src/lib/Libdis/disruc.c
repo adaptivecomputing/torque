@@ -126,7 +126,7 @@ unsigned char disruc(
 
   assert(retval != NULL);
 
-  locret = disrsi_(chan, &negate, &value, 1);
+  locret = disrsi_(chan, &negate, &value, 1, pbs_tcp_timeout);
 
   if (locret != DIS_SUCCESS)
     {

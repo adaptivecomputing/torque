@@ -174,7 +174,7 @@ char                   *DispatchNode[20];
 extern job  *chk_job_request(char *, struct batch_request *);
 extern struct batch_request *cpy_checkpoint(struct batch_request *, job *, enum job_atr, int);
 void poll_job_task(work_task *);
-int  kill_job_on_mom(char *jobid, struct pbsnode *pnode);
+int  kill_job_on_mom(const char *job_id, struct pbsnode *pnode);
 
 
 
@@ -354,7 +354,7 @@ int req_runjob(
     {
     reply_ack(preq);
     preq->rq_noreply = TRUE;
-    enqueue_threadpool_request(check_and_run_job, preq, request_pool);
+    enqueue_threadpool_request(check_and_run_job, preq, async_pool);
     }
   else
     {

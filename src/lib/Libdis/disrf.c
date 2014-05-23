@@ -126,7 +126,7 @@ static int disrd_(
 
   memset(scratch, 0, sizeof(scratch));
 
-  c = tcp_getc(chan);
+  c = tcp_getc(chan, pbs_tcp_timeout);
 
   switch (c)
     {
@@ -149,7 +149,7 @@ static int disrd_(
 
       do
         {
-        c = tcp_getc(chan);
+        c = tcp_getc(chan, pbs_tcp_timeout);
 
         if ((c < '0') || (c > '9'))
           {
@@ -171,7 +171,7 @@ static int disrd_(
         {
         count--;
 
-        switch (tcp_getc(chan))
+        switch (tcp_getc(chan, pbs_tcp_timeout))
           {
 
           case '5':
@@ -257,7 +257,7 @@ static int disrd_(
 
       if (count > 1)
         {
-        if (tcp_gets(chan, scratch + 1, count - 1) != (int)count - 1)
+        if (tcp_gets(chan, scratch + 1, count - 1, pbs_tcp_timeout) != (int)count - 1)
           {
           return(DIS_EOD);
           }
@@ -344,7 +344,7 @@ float disrf(
 
   if ((locret = disrd_(chan, 1)) == DIS_SUCCESS)
     {
-    locret = disrsi_(chan, &negate, &uexpon, 1);
+    locret = disrsi_(chan, &negate, &uexpon, 1, pbs_tcp_timeout);
 
     if (locret == DIS_SUCCESS)
       {
