@@ -356,7 +356,7 @@ int handle_requeue_all(
   job               *pjob;
   all_jobs_iterator *iter;
 
-  if ((preq->rq_perm & (ATR_DFLAG_MGWR | ATR_DFLAG_OPWR)) == 0)
+  if ((preq->rq_perm & (ATR_DFLAG_MGWR)) == 0)
     {
     rc = PBSE_PERM;
     req_reject(rc, 0, preq, NULL, "You must be a manager to requeue all jobs");

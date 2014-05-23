@@ -40,7 +40,7 @@ START_TEST(test_handle_requeue_all)
   // fail due to lack of permissions
   fail_unless(handle_requeue_all(&preq) == PBSE_PERM);
 
-  preq.rq_perm |= ATR_DFLAG_MGWR | ATR_DFLAG_OPWR;
+  preq.rq_perm |= ATR_DFLAG_MGWR;
   fail_unless(handle_requeue_all(&preq) == PBSE_NONE);
   }
 END_TEST
