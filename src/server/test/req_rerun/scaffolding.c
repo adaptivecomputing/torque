@@ -8,10 +8,12 @@
 #include "work_task.h" /* work_task, all_tasks */
 #include "server.h"
 
-const char *msg_jobrerun = "Job Rerun";
-attribute_def job_attr_def[10];
-const char *msg_manager = "%s at request of %s@%s";
-int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
+const char    *msg_jobrerun = "Job Rerun";
+attribute_def  job_attr_def[10];
+const char    *msg_manager = "%s at request of %s@%s";
+int            LOGLEVEL     = 7; /* force logging code to be exercised as tests run */
+bool           exit_called = false;
+all_jobs       alljobs;
 
 
 void account_record(int acctype, job *pjob, const char *text)
@@ -28,38 +30,26 @@ char *parse_servername(char *name, unsigned int *service)
 
 void svr_mailowner(job *pjob, int mailpoint, int force, const char *text)
   {
-  fprintf(stderr, "The call to svr_mailowner to be mocked!!\n");
-  exit(1);
   }
 
 void set_statechar(job *pjob)
   {
-  fprintf(stderr, "The call to set_statechar to be mocked!!\n");
-  exit(1);
   }
 
 void reply_ack(struct batch_request *preq)
   {
-  fprintf(stderr, "The call to reply_ack to be mocked!!\n");
-  exit(1);
   }
 
 void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
   {
-  fprintf(stderr, "The call to req_reject to be mocked!!\n");
-  exit(1);
   }
 
 void rel_resc( job *pjob)  
   {
-  fprintf(stderr, "The call to rel_resc to be mocked!!\n");
-  exit(1);
   }
 
 void delete_task(struct work_task *ptask)
   {
-  fprintf(stderr, "The call to delete_task to be mocked!!\n");
-  exit(1);
   }
 
 int issue_signal(job **pjob_ptr, const char *signame, void (*func)(batch_request *), void *extra, char *extend)
@@ -70,8 +60,6 @@ int issue_signal(job **pjob_ptr, const char *signame, void (*func)(batch_request
 
 void release_req(struct work_task *pwt)
   {
-  fprintf(stderr, "The call to release_req to be mocked!!\n");
-  exit(1);
   }
 
 work_task *next_task(all_tasks *at, int *iter)
@@ -82,8 +70,9 @@ work_task *next_task(all_tasks *at, int *iter)
 
 int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mute)
   {
-  fprintf(stderr, "The call to svr_setjobstate to be mocked!!\n");
-  exit(1);
+  pjob->ji_qs.ji_state = newstate;
+  pjob->ji_qs.ji_substate = newsubstate;
+  return(0);
   }
 
 job *svr_find_job(const char *jobid, int get_subjob)
@@ -159,3 +148,19 @@ struct work_task *set_task(
 
 
 struct server server;
+
+job *next_job(
+
+  all_jobs          *aj,
+  all_jobs_iterator *iter)
+
+  {
+  static int i = 0;
+
+  if (++i % 3 == 0)
+    return(NULL);
+
+  job *pjob = (job *)calloc(1, sizeof(job));
+  pjob->ji_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  return(pjob);
+  }

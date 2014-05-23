@@ -10,6 +10,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - TRQ-1539. Condense the exec_host list to have one entry per node instead of one
       entry per execution slot. The node entry contains a string specifying each
       execution slot index. Also no longer display the value of exec_port in qstat.
+  f - TRQ-2363. Make it so that if you execute qrerun all - which previously
+      returned an error - it will ask for confirmation, and then place all running
+      jobs in a queued state without contacting the moms. This is meant to be used
+      only when the entire cluster has gone down and can't be contacted.
 
 4.5.0
   b - TRQ-2319. Replace two Torque functions with ones from the hwloc package.

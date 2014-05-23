@@ -115,6 +115,22 @@ int main(
 
     snprintf(job_id, sizeof(job_id), "%s", argv[optind]);
 
+    if (!strcasecmp(job_id, "all"))
+      {
+      std::string confirmation;
+      std::cout << "This will requeue all jobs without contact moms. Continue? (y/n)" << std::endl;
+      std::cin >> confirmation;
+      if ((confirmation.size() > 0) &&
+          ((confirmation.c_str()[0] == 'y') ||
+           (confirmation.c_str()[0] == 'Y')))
+        std::cout << "Operation confirmed, continuing." << std::endl;
+      else
+        {
+        std::cout << "Operation cancelled." << std::endl;
+        continue;
+        }
+      }
+
     if (get_server(job_id, job_id_out, sizeof(job_id_out), server_out, sizeof(server_out)))
       {
       fprintf(stderr, "qrerun: illegally formed job identifier: %s\n",

@@ -737,6 +737,7 @@ int  swap_jobs(all_jobs *,job *,job *);
 struct pbs_queue *get_jobs_queue(job **);
 
 job *next_job(all_jobs *,all_jobs_iterator *);
+extern all_jobs alljobs;
 
 typedef struct job_recycler
   {
