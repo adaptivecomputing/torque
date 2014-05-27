@@ -565,7 +565,7 @@ void remove_job_from_already_killed_list(
   int *to_free = (int *)pwt->wt_parm1;
   int  job_internal_id = *to_free;
 
-  free(to_free);
+  delete to_free;
   free(pwt->wt_mutex);
   free(pwt);
 
