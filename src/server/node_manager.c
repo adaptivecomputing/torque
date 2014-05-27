@@ -5464,7 +5464,7 @@ struct pbsnode *get_compute_node(
  * set_one_old - set a named node as allocated to a job
  */
 
-void set_one_old(
+int set_one_old(
 
   char *name,
   job  *pjob)
@@ -5472,6 +5472,7 @@ void set_one_old(
   {
   int             first;
   int             last;
+  int             rc = PBSE_NONE;
 
   struct pbsnode *pnode;
   char           *pc;
@@ -5562,8 +5563,10 @@ void set_one_old(
 
     unlock_node(pnode, __func__, NULL, LOGLEVEL);
     }
+  else
+    rc = PBSE_UNKNODE;
 
-  return;
+  return(rc);
   }  /* END set_one_old() */
 
 
@@ -5575,7 +5578,7 @@ void set_one_old(
  * when recovering a job in the running state.
  */
 
-void set_old_nodes(
+int set_old_nodes(
 
   job *pjob)  /* I (modified) */
 
@@ -5583,6 +5586,7 @@ void set_old_nodes(
   char     *old;
   char     *po;
   long      cray_enabled = FALSE;
+  int       rc = PBSE_NONE;
 
   if (pjob->ji_wattr[JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET)
     {
@@ -5592,19 +5596,25 @@ void set_old_nodes(
       {
       /* FAILURE - cannot alloc memory */
 
-      return;
+      return(PBSE_SYSTEM);
       }
 
     while ((po = strrchr(old, (int)'+')) != NULL)
       {
       *po++ = '\0';
 
-      set_one_old(po, pjob);
+      if ((rc = set_one_old(po, pjob)) != PBSE_NONE)
+        {
+        free(old);
+        return(rc);
+        }
       }
 
-    set_one_old(old, pjob);
-
+    rc = set_one_old(old, pjob);
     free(old);
+
+    if (rc != PBSE_NONE)
+      return(rc);
     } /* END if pjobs exec host is set */
 
   /* record the job on the alps_login if cray_enabled */
@@ -5612,10 +5622,10 @@ void set_old_nodes(
   if ((cray_enabled == TRUE) &&
       (pjob->ji_wattr[JOB_ATR_login_node_id].at_flags & ATR_VFLAG_SET))
     {
-    set_one_old(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str, pjob);
+    rc = set_one_old(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str, pjob);
     }
 
-  return;
+  return(rc);
   }  /* END set_old_nodes() */
 
     

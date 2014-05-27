@@ -244,10 +244,11 @@ extern struct server server;
 
 /* External Functions Called */
 
+void          rel_resc(job *pjob);
 void          poll_job_task(work_task *);
 extern void   on_job_rerun_task(struct work_task *);
 extern void   set_resc_assigned(job *, enum batch_op);
-extern void   set_old_nodes(job *);
+extern int    set_old_nodes(job *);
 extern void   acct_close(void);
 
 extern struct work_task *apply_job_delete_nanny(struct job *, int);
@@ -1813,13 +1814,16 @@ int handle_job_recovery(
 
       if (job_rc != PBSE_NONE)
         {
-        log_event(
-          PBSEVENT_ERROR | PBSEVENT_SYSTEM | PBSEVENT_ADMIN | PBSEVENT_JOB | PBSEVENT_FORCE,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          msg_script_open);
+        if (job_rc != PBSE_UNKNODE)
+          {
+          log_event(
+            PBSEVENT_ERROR | PBSEVENT_SYSTEM | PBSEVENT_ADMIN | PBSEVENT_JOB | PBSEVENT_FORCE,
+            PBS_EVENTCLASS_JOB,
+            pjob->ji_qs.ji_jobid,
+            msg_script_open);
 
-        unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
+          unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
+          }
 
         continue;
         }
@@ -2472,7 +2476,18 @@ int pbsd_init_job(
         
         if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend) == 0)
           {
-          set_old_nodes(pjob);
+          rc = set_old_nodes(pjob);
+          if (rc != PBSE_NONE)
+            {
+            snprintf(log_buf, sizeof(log_buf), "Job %s has an invalid exec host list: '%s'",
+              pjob->ji_qs.ji_jobid,
+              pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+            log_err(rc, __func__, log_buf);
+
+            rel_resc(pjob);
+            init_abt_job(pjob);
+            return(rc);
+            }
           }
         
         if (type == RECOV_HOT)

@@ -111,10 +111,9 @@ job_array *get_jobs_array(job **pjob)
   exit(1);
   }
 
-void set_old_nodes(job *pjob)
+int set_old_nodes(job *pjob)
   {
-  fprintf(stderr, "The call to set_old_nodes needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 char *parse_servername(char *name, unsigned int *service)
@@ -655,3 +654,5 @@ void parse_mom_hierarchy(int fds)
   }
 
 id_map::id_map() {}
+
+void rel_resc(job *pjob);

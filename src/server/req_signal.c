@@ -113,7 +113,7 @@ static void post_signal_req (batch_request *preq);
 
 extern int   LOGLEVEL;
 
-extern void   set_old_nodes (job *);
+extern int   set_old_nodes (job *);
 
 extern job  *chk_job_request(char *, struct batch_request *);
 
