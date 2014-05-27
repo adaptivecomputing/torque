@@ -2644,19 +2644,6 @@ int pbsd_init_reque(
 
   /* re-enqueue the job into the queue it was in */
 
-  if (change_state)
-    {
-    /* update the state, typically to some form of QUEUED */
-
-    svr_evaljobstate(*pjob, newstate, newsubstate, 0);
-
-    svr_setjobstate(pjob, newstate, newsubstate, FALSE);
-    }
-  else
-    {
-    set_statechar(pjob);
-    }
-
   sprintf(log_buf, "%s:1", __func__);
   lock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
   if ((rc = svr_enquejob(pjob, TRUE, NULL, false)) == PBSE_NONE)
@@ -2675,6 +2662,18 @@ int pbsd_init_reque(
       log_buf);
 
     pjob->ji_internal_id = job_mapper.get_new_id(pjob->ji_qs.ji_jobid);
+
+    // svr_setjobstate() doesn't work for jobs that aren't queued
+    if (change_state)
+      {
+      /* update the state, typically to some form of QUEUED */
+      svr_evaljobstate(*pjob, newstate, newsubstate, 0);
+      svr_setjobstate(pjob, newstate, newsubstate, FALSE);
+      }
+    else
+      {
+      set_statechar(pjob);
+      }
     }
   else
     {
