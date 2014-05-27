@@ -541,7 +541,7 @@ int insert_job(
 
   aj->lock();
 
-  if(!aj->insert(pjob,pjob->ji_qs.ji_jobid))
+  if (!aj->insert(pjob,pjob->ji_qs.ji_jobid))
     {
     rc = ENOMEM;
     log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE\n");
@@ -598,16 +598,16 @@ int insert_job_after(
 
   aj->lock();
 
-  if(aj->find(already_in->ji_qs.ji_jobid) == NULL)
+  if (aj->find(already_in->ji_qs.ji_jobid) == NULL)
     rc = THING_NOT_FOUND;
   else
     {
-    if(!strcmp(already_in->ji_qs.ji_jobid,pjob->ji_qs.ji_jobid))
+    if (!strcmp(already_in->ji_qs.ji_jobid,pjob->ji_qs.ji_jobid))
       {
       aj->unlock();
       return PBSE_NONE;
       }
-    if(!aj->insert_after(already_in->ji_qs.ji_jobid,pjob,pjob->ji_qs.ji_jobid))
+    if (!aj->insert_after(already_in->ji_qs.ji_jobid,pjob,pjob->ji_qs.ji_jobid))
       {
       rc = ENOMEM;
       log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE");
@@ -659,7 +659,7 @@ int insert_job_after(
   bool jobExists = aj->find(after_id);
 
   bool inserted = false;
-  if(jobExists)
+  if (jobExists)
     {
     inserted = aj->insert_after(after_id,pjob,pjob->ji_qs.ji_jobid);
     }
@@ -710,7 +710,7 @@ int insert_job_first(
 
   aj->lock();
 
-  if(!aj->insert_first(pjob,pjob->ji_qs.ji_jobid))
+  if (!aj->insert_first(pjob,pjob->ji_qs.ji_jobid))
     {
     rc = ENOMEM;
     log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE");
@@ -912,7 +912,7 @@ int swap_jobs(
     }
 
   aj->lock();
-  if(!aj->swap(job1->ji_qs.ji_jobid,job2->ji_qs.ji_jobid))
+  if (!aj->swap(job1->ji_qs.ji_jobid,job2->ji_qs.ji_jobid))
     {
     rc = THING_NOT_FOUND;
     }
