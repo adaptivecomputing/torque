@@ -1137,7 +1137,7 @@ retryread:
 
     sprintf(ret_string, "? %d", RM_ERR_SYSTEM);
 
-    fclose(child);
+    pclose(child);
 
     goto done;
     }

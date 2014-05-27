@@ -782,12 +782,14 @@ int validate_submit_filter(
 
 
 void validate_pbs_o_workdir(
+
   job_data_container *job_attr)
 
   {
   job_data     *tmp_job_info = NULL;
   const char *the_val = NULL;
   char        null_val[] = "\0";
+  char        tmp_dir[MAXPATHLEN] = {""};
 
   if (hash_find(job_attr, ATTR_init_work_dir, &tmp_job_info) == FALSE)
     {
@@ -795,7 +797,6 @@ void validate_pbs_o_workdir(
       the_val = tmp_job_info->value.c_str();
     else
       {
-      char tmp_dir[MAXPATHLEN] = {""};
       char *the_dir = NULL;
       if ((the_dir = getcwd(tmp_dir, MAXPATHLEN)) != NULL)
         the_val = the_dir;
@@ -1092,7 +1093,7 @@ static int get_script(
           {
           fprintf(stderr, "qsub: error writing to filter stdin\n");
 
-          fclose(filter_pipe);
+          pclose(filter_pipe);
           unlink(tmp_name2);
 
           return(3);
@@ -3783,7 +3784,7 @@ void add_variable_list(
       strcat(var_list, ",");
     }
 
-  if(it != NULL)
+  if (it != NULL)
     {
     src_hash->lock();
     while((en = it->get_next_item()) != NULL)
@@ -3801,6 +3802,8 @@ void add_variable_list(
         }
       }
     src_hash->unlock();
+
+    delete it;
     }
 
   hash_add_or_exit(ji->job_attr, var_name, var_list, CMDLINE_DATA);

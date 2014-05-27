@@ -1202,11 +1202,13 @@ int write_cached_statuses(
   received_node *rn;
   mom_server    *pms;
   node_comm_t   *nc;
+  bool           error = false;
   
   /* traverse the received_nodes array and send/clear the updates */
-  while ((rn = iter->get_next_item()) != NULL)
+  while (((rn = iter->get_next_item()) != NULL) &&
+         (error == false))
     {
-    for(unsigned int i = 0; i < rn->statuses.size(); i++)
+    for (unsigned int i = 0; i < rn->statuses.size(); i++)
       {
       cp = rn->statuses[i].c_str();
       if (LOGLEVEL >= 7)
@@ -1220,6 +1222,8 @@ int write_cached_statuses(
       
       if ((ret = diswst(chan,cp)) != DIS_SUCCESS)
         {
+        error = true;
+
         /* FAILURE */
         switch (mode)
           {

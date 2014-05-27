@@ -514,24 +514,29 @@ int replace_checkpoint_path(
   ptr1 = strstr(path, MOM_DEFAULT_CHECKPOINT_DIR);
   ptr2 = strstr(tmppath, MOM_DEFAULT_CHECKPOINT_DIR);
 
-  if (ptr1 != NULL)
+  if ((ptr1 != NULL) &&
+      (ptr2 != NULL))
     {
     ptr1++;
     ptr1 = strchr(ptr1,'$');
-    ptr1++;
-    len = strlen(path_checkpoint);
-    memcpy(ptr2, path_checkpoint, len);
-    ptr2 += len;
-    if ((path_checkpoint[strlen(path_checkpoint) - 1] == '/') && (ptr1[0] == '/'))
+
+    if (ptr1 != NULL)
       {
       ptr1++;
+      len = strlen(path_checkpoint);
+      memcpy(ptr2, path_checkpoint, len);
+      ptr2 += len;
+      if ((path_checkpoint[strlen(path_checkpoint) - 1] == '/') && (ptr1[0] == '/'))
+        {
+        ptr1++;
+        }
+      strcpy(ptr2, ptr1);
+      strcpy(path, tmppath);
+      sprintf(log_buffer,"Converted filename is (%s)\n",
+          path);
+      log_ext(-1, __func__, log_buffer, LOG_DEBUG);
+      rtnval = 1;
       }
-    strcpy(ptr2, ptr1);
-    strcpy(path, tmppath);
-    sprintf(log_buffer,"Converted filename is (%s)\n",
-        path);
-    log_ext(-1, __func__, log_buffer, LOG_DEBUG);
-    rtnval = 1;
     }
 
   return (rtnval);

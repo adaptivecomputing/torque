@@ -800,8 +800,6 @@ void prepare_mom_hierarchy(
 
   mh = initialize_mom_hierarchy();
 
-  mh = initialize_mom_hierarchy();
-
   if ((fds = open(path_mom_hierarchy, O_RDONLY, 0)) < 0)
     {
     if (errno == ENOENT)

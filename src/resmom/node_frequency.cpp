@@ -121,7 +121,7 @@ node_frequency::node_frequency()
       i++;
       }
     else
-      is_valid = false;;
+      is_valid = false;
     }
   }
 

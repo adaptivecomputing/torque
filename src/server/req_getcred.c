@@ -223,22 +223,26 @@ int get_UID(
 		return(-1);
 		}
 
-	ptr = strchr(ptr, ':');
-	ptr++;
-	while (*ptr == SPACE)
-	  {
-	  ptr++;
-	  }
-
 	memset(user_name, 0, sizeof(user_name));
 
-	while ((*ptr != SPACE) && 
-         (!isspace(*ptr)) &&
-         (i < (int)sizeof(user_name)))
-	  {
-	  user_name[i++] = *ptr;
-	  ptr++;
-	  }
+	ptr = strchr(ptr, ':');
+
+  if (ptr != NULL)
+    {
+    ptr++;
+    while (*ptr == SPACE)
+      {
+      ptr++;
+      }
+
+    while ((*ptr != SPACE) && 
+           (!isspace(*ptr)) &&
+           (i < (int)sizeof(user_name)))
+      {
+      user_name[i++] = *ptr;
+      ptr++;
+      }
+    }
 
 	strncpy(conn_credent[s].username, user_name, sizeof(conn_credent[s].username) - 1);
         conn_credent[s].username[sizeof(conn_credent[s].username) - 1] = 0;

@@ -853,9 +853,13 @@ batch_request *duplicate_request(
           {
           ptr1++;
           strcpy(newjobname, preq->rq_ind.rq_manager.rq_objname);
-          ptr2 = strstr(newjobname, "[]");
-          ptr2++;
-          *ptr2 = 0;
+
+          if ((ptr2 = strstr(newjobname, "[]")) != NULL)
+            {
+            ptr2++;
+            *ptr2 = 0;
+            }
+
           sprintf(preq_tmp->rq_ind.rq_manager.rq_objname,"%s%d%s", 
             newjobname, job_index, ptr1);
           }

@@ -4068,6 +4068,15 @@ int TMomFinalizeChild(
 
   pwdp  = (struct passwd *)TJE->pwdp;
 
+  if (pjob == NULL)
+    {
+    snprintf(log_buf, sizeof(log_buf), "Couldn't find a job with id '%s'", TJE->jobid);
+    log_err(-1, __func__, log_buf);
+    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, &sjr);
+
+    exit(-254);
+    }
+
   if (pwdp == NULL)
     {
     snprintf(log_buf, sizeof(log_buf), "TMomFinalizeChild - Running job with no password entry? job id %s", pjob->ji_qs.ji_jobid);
@@ -4787,6 +4796,9 @@ int start_process(
     {
     0, 0, 0, 0
     };
+
+  if (pjob == NULL)
+    return(-1);
 
   if (pipe(pipes) == -1)
     {

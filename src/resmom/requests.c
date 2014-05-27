@@ -4181,6 +4181,8 @@ void req_delete_reservation(
     req_reject(-1, 0, request, NULL, log_buffer);
   } /* END req_delete_reservation() */
 
+
+
 /*
  * This call will put the machine into the low power state requested if
  * the machine is set up to support that low power state. Otherwise it will
@@ -4192,22 +4194,28 @@ void req_delete_reservation(
  *
  * https://www.kernel.org/doc/Documentation/power/states.txt
  */
-void req_change_power_state(struct batch_request *request)
+void req_change_power_state(
+    
+  batch_request *request)
+
   {
   power_state pstate;
+  int         requested_power_state = request->rq_ind.rq_powerstate;
 
-  if(!pstate.is_valid())
+  if (!pstate.is_valid())
     {
     req_reject(-PBSE_POWER_STATE_UNSUPPORTED,0,request,NULL,pstate.get_last_error_string());
     return;
     }
-  if(!pstate.is_valid_power_state(request->rq_ind.rq_powerstate))
+
+  if (!pstate.is_valid_power_state(requested_power_state))
     {
     req_reject(-PBSE_POWER_STATE_UNAVAILABLE,0,request,NULL,pstate.get_last_error_string());
     return;
     }
+
   reply_ack(request); //Reply first, won't be able to after.
-  pstate.set_power_state(request->rq_ind.rq_powerstate);
+  pstate.set_power_state(requested_power_state);
   sleep(10);
   }
 

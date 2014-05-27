@@ -254,35 +254,32 @@ int add_verify_resources(
         value = (char *)calloc(1, vlen);
       }
 
-    if ((name) && ((v) && (value)))
+    if ((name) &&
+        ((v) &&
+         (value)))
       {
       if (gpugres)
         snprintf(name, len, "gres");
       else
         snprintf(name, len, "%s", r);
 
-      if (v)
+      if (gpugres)
         {
-        if (gpugres)
+        char *gpu_eq = strchr(r, '=');
+
+        if(gpu_eq == NULL)
           {
-          char *gpu_eq = strchr(r, '=');
-
-          if(gpu_eq == NULL)
-            {
-            fprintf(stderr,"Error with resource strings.\n");
-            exit(1);
-            }
-          *gpu_eq = ':';
-          snprintf(value, vlen, "%s", r);
-          *gpu_eq = '=';
+          fprintf(stderr,"Error with resource strings.\n");
+          exit(1);
           }
-        else
-          snprintf(value, vlen, "%s", v);
-
-        hash_add_or_exit(res_attr, name, value, p_type);
+        *gpu_eq = ':';
+        snprintf(value, vlen, "%s", r);
+        *gpu_eq = '=';
         }
       else
-        hash_add_or_exit(res_attr, name, (char *)"\0", p_type);
+        snprintf(value, vlen, "%s", v);
+
+      hash_add_or_exit(res_attr, name, value, p_type);
       }
     else
       {
