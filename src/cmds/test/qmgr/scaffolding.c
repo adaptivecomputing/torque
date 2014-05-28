@@ -74,12 +74,18 @@ int pbs_manager_err(int c, int command, int objtype, char *objname, struct attro
   fprintf(stderr, "The call to pbs_manager_err needs to be mocked!!\n");
   exit(1);
   }
-
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 char *pbs_strerror(int err)
   { 
   fprintf(stderr, "The call to pbs_strerror needs to be mocked!!\n");
   exit(1);
   }
+#ifdef __cplusplus
+}
+#endif
 
 struct batch_status *pbs_statque(int c, char *id, struct attrl *attrib, char *extend)
   { 

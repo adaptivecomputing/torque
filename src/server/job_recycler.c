@@ -114,10 +114,9 @@ job *next_job_from_recycler(
 
   aj->lock();
   pjob = iter->get_next_item();
-  aj->unlock();
-
   if (pjob != NULL)
     lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+  aj->unlock();
 
   return(pjob);
   } /* END next_job_from_recycler() */
@@ -151,9 +150,11 @@ void *remove_some_recycle_jobs(
 
     pjob->ji_being_recycled = FALSE; //Need to set the being_recycled flag to false or
                                      //or remove_job won't remove it.
-    remove_job(&recycler.rc_jobs, pjob);
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-    free_job_allocation(pjob);
+    if(remove_job(&recycler.rc_jobs, pjob) == PBSE_NONE)
+      {
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+      free_job_allocation(pjob);
+      }
     }
 
   pthread_mutex_unlock(recycler.rc_mutex);
