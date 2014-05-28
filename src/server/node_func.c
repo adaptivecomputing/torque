@@ -835,6 +835,11 @@ void effective_node_delete(
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL node pointer delete call");
     return;
     }
+  if(pnode->nd_name == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL node pointer to name delete call");
+    return;
+    }
 
   remove_node(&allnodes,pnode);
   unlock_node(pnode, __func__, NULL, LOGLEVEL);
@@ -3363,6 +3368,12 @@ int insert_node(
     log_err(rc, __func__, "NULL input node pointer");
     return(rc);
     }
+  if(pnode->nd_name == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc, __func__, "NULL input node name pointer");
+    return(rc);
+    }
 
   an->lock();
 
@@ -3409,6 +3420,12 @@ int remove_node(
     {
     rc = PBSE_BAD_PARAMETER;
     log_err(rc, __func__, "NULL input node pointer");
+    return(rc);
+    }
+  if (pnode->nd_name == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc, __func__, "NULL input node name pointer");
     return(rc);
     }
 

@@ -388,6 +388,8 @@ START_TEST(effective_node_delete_test)
   node = (struct pbsnode *)malloc(sizeof(struct pbsnode));
   initialize_pbsnode(node, NULL, NULL, 0, FALSE);
   effective_node_delete(&node);
+  node->nd_name = strdup("nodename");
+  effective_node_delete(&node);
 
   fail_unless(node == NULL, "unsuccessfull node delition %d", node);
 
@@ -776,7 +778,11 @@ START_TEST(remove_node_test)
   fail_unless(result != PBSE_NONE, "NULL input pbsnode pointer fail");
 
   result = remove_node(&test_all_nodes, &node);
-  fail_unless(result == PBSE_NONE, "insert_node fail");
+  fail_unless(result != PBSE_NONE, "remove_node fail");
+
+  node.nd_name = (char *)"nodeName";
+  result = remove_node(&test_all_nodes, &node);
+  fail_unless(result == PBSE_NONE, "remove_node fail");
 
   }
 END_TEST
