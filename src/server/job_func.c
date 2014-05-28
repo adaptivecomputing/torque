@@ -1692,7 +1692,7 @@ int record_jobinfo(
   append_dynamic_string(buffer, "<Jobinfo>\n");
   append_dynamic_string(buffer, "\t<Job_Id>");
   append_dynamic_string(buffer, pjob->ji_qs.ji_jobid);
-  append_dynamic_string(buffer, "</JobId>\n");
+  append_dynamic_string(buffer, "</Job_Id>\n");
 
  #if 0
   if ((rc = log_job_record(buffer->str)) != PBSE_NONE)
