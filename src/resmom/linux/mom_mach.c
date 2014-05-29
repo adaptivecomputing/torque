@@ -1033,15 +1033,6 @@ static unsigned long cput_sum(
     {
     ps = &proc_array[i];
 
-    if ((LOGLEVEL >= 6) && (ps == NULL))
-      {
-      sprintf(log_buffer, "proc_array loop end - nproc=%d, i=%d, ps is null",
-              nproc,
-              i);
-
-      log_record(PBSEVENT_DEBUG, 0, __func__, log_buffer);
-      }
-
     if (!injob(pjob, ps->session,&pids))
       continue;
 
@@ -1062,10 +1053,11 @@ static unsigned long cput_sum(
       }
     }    /* END for (i) */
 #ifdef PENABLE_LINUX26_CPUSETS
-    if(pids != NULL)
-      {
-      free_pidlist(pids);
-      }
+
+  if (pids != NULL)
+    {
+    free_pidlist(pids);
+    }
 #endif
 
   if (nps == 0)

@@ -129,12 +129,17 @@ void get_status_info(
     if (!strcmp(ret_info, IS_EOL_MESSAGE))
       {
       free(ret_info);
+      ret_info = NULL;
       break;
       }
 
     status.push_back(ret_info);
     free(ret_info);
+    ret_info = NULL;
     }
+
+  if (ret_info != NULL)
+    free(ret_info);
   } /* END get_status_info() */
 
 

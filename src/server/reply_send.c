@@ -71,7 +71,7 @@ static void set_err_msg(
     {
     msg = pbse_to_txt(code);
     }
-  else
+  else if (code > 0)
     {
     msg = strerror(code);
     }

@@ -1078,6 +1078,8 @@ static int process_host_name_part(
         free(phostname);
         phostname = NULL;
         }
+
+      return(PBSE_SYSTEM);
       }
 
     *pul = tmp;
