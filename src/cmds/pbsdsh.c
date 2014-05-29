@@ -612,6 +612,26 @@ int findtargethost(char *allnodes, char *targethost)
 
       vnode--;
       }
+    else
+      {
+      /* Sometimes the allnodes will return the FQDN of the host
+       and the PBS_NODEFILE will have the short name of the host.
+       See if the shortname mataches */
+      std::string targetname(targethost);
+      std::string the_host(allnodes + (i*PBS_MAXNODENAME));
+      std::size_t dot = the_host.find_first_of(".");
+      if(dot != std::string::npos)
+        {
+        the_host[dot] = '\0';
+        std::string shortname(the_host.c_str());
+        if (shortname.compare(targetname) == 0)
+          {
+          if (vnode == 0)
+            return(i);
+          vnode--;
+          }
+        }
+      } 
     }
 
   if (i == numnodes)
