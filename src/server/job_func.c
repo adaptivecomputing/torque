@@ -1712,7 +1712,7 @@ int record_jobinfo(
   bf += "<Jobinfo>\n";
   bf += "\t<Job_Id>";
   bf += pjob->ji_qs.ji_jobid;
-  bf += "</JobId>\n";
+  bf += "</Job_Id>\n";
 
  #if 0
   if ((rc = log_job_record(buffer->str)) != PBSE_NONE)
