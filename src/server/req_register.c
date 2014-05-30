@@ -2539,8 +2539,8 @@ struct dependnames
 int decode_depend(
 
   pbs_attribute *patr,
-  const char   *name,  /* attribute name */
-  const char *rescn, /* resource name, unused here */
+  const char    *name,  /* attribute name */
+  const char    *rescn, /* resource name, unused here */
   const char    *val,   /* attribute value */
   int            perm)  /* only used for resources */
 
@@ -2548,6 +2548,7 @@ int decode_depend(
   int  rc;
   char *valwd;
   char *ptr = NULL;
+  char *work_val;
 
   if ((val == NULL) || (*val == '\0'))
     {
@@ -2558,18 +2559,22 @@ int decode_depend(
     return(PBSE_NONE);
     }
 
+  work_val = strdup(val);
+
   /*
    * for each sub-string (terminated by comma or new-line),
    * add a depend or depend_child structure.
    */
 
-  valwd = parse_comma_string((char *)val,&ptr);
+  valwd = parse_comma_string(work_val,&ptr);
 
   while (valwd != NULL)
     {
     if ((rc = build_depend(patr, valwd)) != 0)
       {
       free_depend(patr);
+
+      free(work_val);
 
       return(rc);
       }
@@ -2578,6 +2583,8 @@ int decode_depend(
     }
 
   patr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+      
+  free(work_val);
 
   return(PBSE_NONE);
   }  /* END decode_depend() */
@@ -3021,6 +3028,7 @@ int build_depend(
   char               *valwd;
   char               *nxwrd;
   int                 type;
+  char               *work_val = strdup(value);
 
   /*
    * Map first subword into dependency type.  If there is just the type
@@ -3028,17 +3036,18 @@ int build_depend(
    * struct;  set_depend will "remove" any of that kind.
    */
 
-  if ((nxwrd = strchr((char *)value, (int)':')) != NULL)
+  if ((nxwrd = strchr((char *)work_val, (int)':')) != NULL)
     *nxwrd++ = '\0';
 
   for (pname = dependnames; pname->type != -1; pname++)
     {
-    if (!strcmp(value, pname->name))
+    if (!strcmp(work_val, pname->name))
       break;
     }
 
   if (pname->type == -1)
     {
+    free(work_val);
     return(PBSE_BADATVAL);
     }
 
@@ -3070,6 +3079,7 @@ int build_depend(
           have[JOB_DEPEND_TYPE_AFTERANY]   ||
           have[JOB_DEPEND_TYPE_ON])
         {
+        free(work_val);
         return(PBSE_BADATVAL);
         }
 
@@ -3080,6 +3090,7 @@ int build_depend(
       if (have[JOB_DEPEND_TYPE_SYNCWITH] ||
           have[JOB_DEPEND_TYPE_SYNCCT])
         {
+        free(work_val);
         return(PBSE_BADATVAL);
         }
 
@@ -3097,6 +3108,7 @@ int build_depend(
 
       if (have[JOB_DEPEND_TYPE_SYNCWITH])
         {
+        free(work_val);
         return(PBSE_BADATVAL);
         }
 
@@ -3110,7 +3122,10 @@ int build_depend(
           {
           /* do not mix array dependencies with other deps */
           if (have[i])
+            {
+            free(work_val);
             return(PBSE_BADATVAL);
+            }
           }
         }
     }
@@ -3121,6 +3136,7 @@ int build_depend(
 
     if (pd == NULL)
       {
+      free(work_val);
       return(PBSE_SYSTEM);
       }
     }
@@ -3154,11 +3170,13 @@ int build_depend(
         if ((pd->dp_numexp < 1) ||
             (pwhere && (*pwhere != '\0')))
           {
+          free(work_val);
           return(PBSE_BADATVAL);
           }
         }
       else
         {
+        free(work_val);
         return(PBSE_BADATVAL);
         }
 
@@ -3211,6 +3229,7 @@ int build_depend(
           else
             {
             free(pdjb);
+            free(work_val);
             return(PBSE_BADATVAL);
             }
           }
@@ -3219,12 +3238,14 @@ int build_depend(
         }
       else
         {
+        free(work_val);
         return(PBSE_SYSTEM);
         }
 
       }
     }
 
+  free(work_val);
   /* SUCCESS */
 
   return(PBSE_NONE);
