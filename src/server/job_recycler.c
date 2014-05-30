@@ -123,15 +123,15 @@ job *next_job_from_recycler(
 
 
 
-
 void *remove_some_recycle_jobs(
     
   void *vp)
 
   {
-  int  i;
-  all_jobs_iterator  *iter = NULL;
-  job *pjob = NULL;
+  int                i;
+  all_jobs_iterator *iter = NULL;
+  job               *pjob = NULL;
+  time_t             time_now = time(NULL);
 
   pthread_mutex_lock(recycler.rc_mutex);
 
@@ -144,6 +144,12 @@ void *remove_some_recycle_jobs(
     
     if (pjob == NULL)
       break;
+
+    if (time_now - pjob->ji_momstat < MINIMUM_RECYCLE_TIME)
+      {
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+      break;
+      }
 
     if (LOGLEVEL >= 10)
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
@@ -167,7 +173,6 @@ void *remove_some_recycle_jobs(
 
 
 
-
 int insert_into_recycler(
 
   job *pjob)
@@ -186,11 +191,6 @@ int insert_into_recycler(
       "Adding job %s to the recycler", pjob->ji_qs.ji_jobid);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
-  
-  if (pjob->ji_being_recycled == TRUE)
-    {
-    return PBSE_NONE;
-    }
 
   memset(pjob, 0, sizeof(job));
   pjob->ji_mutex = tmp;
@@ -199,6 +199,10 @@ int insert_into_recycler(
 
   sprintf(pjob->ji_qs.ji_jobid,"%016lx",(long)pjob);
   pjob->ji_being_recycled = TRUE;
+    
+  rc = insert_job(&recycler.rc_jobs, pjob);
+  pjob->ji_momstat = time(NULL);
+    
 
   recycler.rc_jobs.lock();
   if (recycler.rc_jobs.count() >= MAX_RECYCLE_JOBS)
@@ -206,8 +210,6 @@ int insert_into_recycler(
     enqueue_threadpool_request(remove_some_recycle_jobs, NULL, task_pool);
     }
   recycler.rc_jobs.unlock();
-    
-  rc = insert_job(&recycler.rc_jobs, pjob);
     
   pthread_mutex_unlock(recycler.rc_mutex);
 
