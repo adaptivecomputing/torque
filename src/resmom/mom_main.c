@@ -4120,7 +4120,9 @@ void parse_command_line(
         break;
 
       case 'C':
+
         mom_checkpoint_set_directory_path(optarg);
+
         break;
 
       case 'd': /* directory */

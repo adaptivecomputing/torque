@@ -32,6 +32,8 @@ int load_config(
     return(1);
     }
 
+  memset(config_buf, 0, BufSize);
+
   snprintf(home_dir, sizeof(home_dir), "%s/%s",
     PBS_SERVER_HOME, TCONST_CFGFILE);
 
@@ -48,8 +50,6 @@ int load_config(
     fclose(config_stream);
     return(1);
     }
-
-  config_buf[BufSize - 1] = '\0';
 
   ptr = config_buf;
 

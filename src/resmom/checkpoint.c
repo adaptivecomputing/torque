@@ -298,12 +298,15 @@ void mom_checkpoint_set_directory_path(
   const char *str)
 
   {
-  int   len = strlen(str);
+  if (str != NULL)
+    {
+    int   len = strlen(str);
 
-  if (str[len - 1] == '/')
-    snprintf(path_checkpoint, sizeof(path_checkpoint), "%s", str);
-  else
-    snprintf(path_checkpoint, sizeof(path_checkpoint), "%s/", str);
+    if (str[len - 1] == '/')
+      snprintf(path_checkpoint, sizeof(path_checkpoint), "%s", str);
+    else
+      snprintf(path_checkpoint, sizeof(path_checkpoint), "%s/", str);
+    }
   }
 
 
