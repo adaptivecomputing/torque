@@ -2569,7 +2569,8 @@ int decode_depend(
 
   valwd = parse_comma_string(work_val,&ptr);
 
-  while (valwd != NULL)
+  while ((valwd != NULL) &&
+         (*valwd != '\0'))
     {
     if ((rc = build_depend(patr, valwd)) != 0)
       {
@@ -3028,7 +3029,13 @@ int build_depend(
   char               *valwd;
   char               *nxwrd;
   int                 type;
-  char               *work_val = strdup(value);
+  char               *work_val;
+
+  if ((value == NULL) ||
+      (*value == '\0'))
+    return(PBSE_BADATVAL);
+ 
+  work_val = strdup(value);
 
   /*
    * Map first subword into dependency type.  If there is just the type
@@ -3038,6 +3045,11 @@ int build_depend(
 
   if ((nxwrd = strchr((char *)work_val, (int)':')) != NULL)
     *nxwrd++ = '\0';
+  else
+    {
+    free(work_val);
+    return(PBSE_BADATVAL);
+    }
 
   for (pname = dependnames; pname->type != -1; pname++)
     {

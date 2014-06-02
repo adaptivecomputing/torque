@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include "pbs_error_db.h"
+#include <pbs_constants.h>
 #include <string>
 
 #define  JOB_ENV_START_SIZE 2048

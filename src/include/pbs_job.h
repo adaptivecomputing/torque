@@ -719,7 +719,8 @@ typedef container::item_container<job *>::item_iterator all_jobs_iterator;
 #ifndef PBS_MOM
 #define INITIAL_JOB_SIZE           5000
 #define JOB_NOT_FOUND             -1
-#define MAX_RECYCLE_JOBS           5000
+#define MAX_RECYCLE_JOBS           8000
+#define MINIMUM_RECYCLE_TIME       300
 #define TOO_MANY_JOBS_IN_RECYCLER -1
 #define JOBS_TO_REMOVE             1000
 

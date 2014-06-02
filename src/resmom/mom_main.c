@@ -2582,6 +2582,12 @@ int process_rm_cmd_request(
       sprintf(log_buffer, "problem with request line: %s",
               dis_emsg[ret]);
 
+      if (cp != NULL)
+        {
+        free(cp);
+        cp = NULL;
+        }
+
       return(ret);
       }
 
@@ -2674,7 +2680,7 @@ int process_rm_cmd_request(
       {
       sprintf(log_buffer, "write string failed %s",
         dis_emsg[ret]);
-
+      
       return(ret);
       }
 
@@ -4120,7 +4126,9 @@ void parse_command_line(
         break;
 
       case 'C':
+
         mom_checkpoint_set_directory_path(optarg);
+
         break;
 
       case 'd': /* directory */

@@ -278,9 +278,15 @@ int save_current_reserve_param(
   float           apbasil_protocol_float;
 
   if (apbasil_protocol != NULL)
-    sscanf(apbasil_protocol, "%f", &apbasil_protocol_float);
+    {
+    if (sscanf(apbasil_protocol, "%f", &apbasil_protocol_float) != 1)
+      apbasil_protocol_float = 1.0;
+    }
   else
-    sscanf(DEFAULT_APBASIL_PROTOCOL, "%f", &apbasil_protocol_float);
+    {
+    if (sscanf(DEFAULT_APBASIL_PROTOCOL, "%f", &apbasil_protocol_float) != 1)
+      apbasil_protocol_float = 1.0;
+    }
 
   if(apbasil_protocol_float < APBASIL_PROTOCOL_v14)
     {
