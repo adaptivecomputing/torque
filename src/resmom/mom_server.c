@@ -953,7 +953,7 @@ void gen_macaddr(
         in_addr_t in_addr = inet_addr(iaddr);
         free(iaddr);
         struct addrinfo *pAddrInd = pAddr;
-        while(pAddrInd != NULL)
+        while((pAddrInd != NULL)&&(macAddr != NULL))
           {
           struct in_addr   saddr;
           saddr = ((struct sockaddr_in *)pAddrInd->ai_addr)->sin_addr;
