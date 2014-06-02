@@ -2794,7 +2794,7 @@ int im_spawn_task(
   struct tcp_chan     *local_chan = NULL;
   tm_node_id           nodeid;
   char                *globid = NULL;
-  char                *cp;
+  char                *cp = NULL;
   char                *jobid = pjob->ji_qs.ji_jobid;
   char               **argv;
   char               **envp;
@@ -2874,6 +2874,7 @@ int im_spawn_task(
     if (*cp == '\0')
       {
       free(cp);
+      cp = NULL;
       
       break;
       }
@@ -2903,6 +2904,8 @@ int im_spawn_task(
   if (ret != DIS_SUCCESS)
     {
     arrayfree(argv);
+    if(cp != NULL)
+      free(cp);
     
     return(IM_FAILURE);
     }
@@ -2924,6 +2927,7 @@ int im_spawn_task(
     if (*cp == '\0')
       {
       free(cp);
+      cp = NULL;
       
       break;
       }
@@ -2953,6 +2957,9 @@ int im_spawn_task(
     
     envp[i] = cp;
     }  /* END for (i) */
+
+  if (cp != NULL)
+    free(cp);
 
   envp[i] = NULL;
   

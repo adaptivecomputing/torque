@@ -920,6 +920,10 @@ void gen_macaddr(
       }
 
     FILE *pPipe = popen("/sbin/ip addr","r");
+    if (pPipe == NULL)
+      {
+      return;
+      }
 
     char *macAddr = NULL;
     while(fgets(buff,sizeof(buff),pPipe) != NULL)
