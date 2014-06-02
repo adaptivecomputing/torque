@@ -6,6 +6,8 @@
 #include <pbs_ifl.h>
 #include "u_hash_map_structs.h"
 #include "test_common_cmds.h"
+#include <pbs_constants.h>
+
 
 extern int env_add_call;
 extern int env_del_call;
