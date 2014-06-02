@@ -1159,7 +1159,7 @@ hnodent *find_node(
   hnodent            *hp;
   socklen_t           len = sizeof(s_addr);
 
-  if (getpeername(stream,&connecting_stack_addr,&len) != 0)
+  if (getpeername(stream, &connecting_stack_addr, &len) != 0)
     {
     log_err(errno, __func__, "Couldn't find connecting information for this stream");
     return(NULL);
@@ -4509,7 +4509,7 @@ int handle_im_get_tid_response(
   
   if (pjob->ji_nodeid != efwd->fe_node)
     {
-    np = find_node(pjob, -1, efwd->fe_node);
+    np = find_node(pjob, chan->sock, efwd->fe_node);
     
     if (np == NULL)
       return(IM_DONE);

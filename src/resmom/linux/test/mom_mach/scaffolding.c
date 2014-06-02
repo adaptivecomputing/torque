@@ -143,3 +143,12 @@ bool am_i_mother_superior(const job &pjob)
   {
   return(false);
   }
+
+char *threadsafe_tokenizer(
+
+  char       **str,    /* M */
+  const char  *delims) /* I */
+
+  {
+  return(NULL);
+  }

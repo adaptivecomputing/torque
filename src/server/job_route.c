@@ -555,6 +555,7 @@ void *queue_route(
       sprintf(log_buf, "Could not find queue %s", queue_name);
       log_err(-1, __func__, log_buf);
       free(queue_name);
+      pthread_mutex_unlock(reroute_job_mutex);
       return(NULL);
       }
 

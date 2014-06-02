@@ -566,16 +566,7 @@ int process_request(
 
     if (request->rq_type == PBS_BATCH_Connect)
       {
-      if ((rc = req_connect(request)) != PBSE_NONE)
-        return(rc);
-
-      if (conn_socktype == PBS_SOCK_INET)
-        {
-        rc = PBSE_IVALREQ;
-        req_reject(rc, 0, request, NULL, NULL);
-        return(rc);
-        }
-
+      return(req_connect(request));
       }
 
     if (conn_socktype & PBS_SOCK_UNIX)

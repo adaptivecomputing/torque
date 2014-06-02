@@ -328,7 +328,7 @@ void sum_select_mem_request(
              (isdigit(*current)))
         current++;
 
-      if (current == '\0')
+      if (*current == '\0')
         {
         /* no units, assume kb */
         mem_total += tmp;

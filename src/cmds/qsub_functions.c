@@ -3269,6 +3269,7 @@ void process_opts(
       print_qsub_usage_exit(err_msg);
       }
     fclose(fP);
+    fP = NULL;
 
     if (hash_find(ji->job_attr, ATTR_pbs_o_submit_filter, &tmp_job_info))
       {
@@ -3319,7 +3320,7 @@ void process_opts(
         alloc_len = 80  + strlen(tmp_name2);
         calloc_or_fail(&err_msg, alloc_len, "qsub: error writing filter o/p");
         snprintf(err_msg, alloc_len, "qsub: error writing filter o/p, %s", tmp_name2);
-        }
+       }
       else if (WEXITSTATUS(rc) == (unsigned char)SUBMIT_FILTER_ADMIN_REJECT_CODE)
         {
         alloc_len = 160;
@@ -3360,89 +3361,91 @@ void process_opts(
      * If a string can be parsed instead it would speed up the whole process
      *  by not having another disk write/read access.
      */
-    while (fgets(cline, sizeof(cline), fP) != NULL)
+    if (fP != NULL)
       {
-      if (strlen(cline) < 5)
-        break;
-
-      for (cP = cline;cP < cline + strlen(cline);cP++)
+      while (fgets(cline, sizeof(cline), fP) != NULL)
         {
-        if (*cP == '\n')
-          {
-          *cP = '\0';
-          }
-        }
-
-      /* NOTE:  allow for job attributes other than '-l' */
-
-      /* FORMAT:  '#PBS -<FLAG> <VAL>' */
-
-      if (strncasecmp(cline, "#pbs -", strlen("#pbs -")))
-        {
-        /* invalid line specified */
-
-        continue;
-        }
-
-      /* NOTE:  a better design would be to process the submitfilter
-       * outside of process_opts(),
-       * add valid args to ArgC/ArgV, and call process_opts() once. (NYI)
-       */
-
-      /* NOTE:  can we utilize 'process_opts' to process submit filter lines? (NYI) */
-
-      flag = cline[strlen("#pbs -")];
-
-      vptr = cline + strlen("#pbs -x ");
-
-      switch (flag)
-        {
-
-        case 'l':
-
-          if (add_verify_resources(ji->res_attr, vptr, data_type))
-            print_qsub_usage_exit("qsub: illegal -l value");
-
+        if (strlen(cline) < 5)
           break;
 
-        default:
-
+        for (cP = cline;cP < cline + strlen(cline);cP++)
           {
-          char FlagString[3];
-
-          char *tmpArgV[4];
-
-          int   aindex;
-
-          FlagString[0] = '-';
-          FlagString[1] = flag;
-          FlagString[2] = '\0';
-
-          /* Duplicate code */
-          aindex = 1;  /* prime getopt's starting point */
-          tmpArgV[0] = (char *)"";
-
-          tmpArgV[aindex] = FlagString;
-          tmpArgV[aindex + 1] = vptr;
-          tmpArgV[aindex + 2] = NULL;
-
-          tmpArgV[3] = NULL;
-
-          /* To prevent recursion, set a flag in the client_attr */
-          hash_add_or_exit(ji->client_attr, "no_submit_filter", "1", LOGIC_DATA);
-          process_opts(aindex + 2, tmpArgV, ji, FILTER_DATA);
-          hash_del_item(ji->client_attr, "no_submit_filter");
+          if (*cP == '\n')
+            {
+            *cP = '\0';
+            }
           }
 
-        break;
-        }  /* END switch (cptr[0]) */
-      }    /* END while (fgets(cline,sizeof(cline),fP) != NULL) */
+        /* NOTE:  allow for job attributes other than '-l' */
+
+        /* FORMAT:  '#PBS -<FLAG> <VAL>' */
+
+        if (strncasecmp(cline, "#pbs -", strlen("#pbs -")))
+          {
+          /* invalid line specified */
+
+          continue;
+          }
+
+        /* NOTE:  a better design would be to process the submitfilter
+         * outside of process_opts(),
+         * add valid args to ArgC/ArgV, and call process_opts() once. (NYI)
+         */
+
+        /* NOTE:  can we utilize 'process_opts' to process submit filter lines? (NYI) */
+
+        flag = cline[strlen("#pbs -")];
+
+        vptr = cline + strlen("#pbs -x ");
+
+        switch (flag)
+          {
+
+          case 'l':
+
+            if (add_verify_resources(ji->res_attr, vptr, data_type))
+              print_qsub_usage_exit("qsub: illegal -l value");
+
+            break;
+
+          default:
+
+            {
+            char FlagString[3];
+
+            char *tmpArgV[4];
+
+            int   aindex;
+
+            FlagString[0] = '-';
+            FlagString[1] = flag;
+            FlagString[2] = '\0';
+
+            /* Duplicate code */
+            aindex = 1;  /* prime getopt's starting point */
+            tmpArgV[0] = (char *)"";
+
+            tmpArgV[aindex] = FlagString;
+            tmpArgV[aindex + 1] = vptr;
+            tmpArgV[aindex + 2] = NULL;
+
+            tmpArgV[3] = NULL;
+
+            /* To prevent recursion, set a flag in the client_attr */
+            hash_add_or_exit(ji->client_attr, "no_submit_filter", "1", LOGIC_DATA);
+            process_opts(aindex + 2, tmpArgV, ji, FILTER_DATA);
+            hash_del_item(ji->client_attr, "no_submit_filter");
+            }
+
+          break;
+          }  /* END switch (cptr[0]) */
+        }    /* END while (fgets(cline,sizeof(cline),fP) != NULL) */
+      
+      fclose(fP);
+      }
 
     /* restore optind */
-
     optind = original_optind;
-
-    fclose(fP);
     }    /* END if (Interact_opt == 1) */
 
   /* END ORNL WRAPPER */
@@ -3750,19 +3753,25 @@ void set_minwclimit(
 
 void add_variable_list(
 
-  job_info *ji,
-  const char     *var_name,
+  job_info           *ji,
+  const char         *var_name,
   job_data_container *src_hash)
 
   {
-  int       total_len = 0;
-  int       count = 0;
-  int       pos = 0;
-  char     *var_list = NULL;
-  job_data *en;
-  src_hash->lock();
-  job_data_iterator *it = ((src_hash == NULL)?NULL:src_hash->get_iterator());
-  src_hash->unlock();
+  int                total_len = 0;
+  int                count = 0;
+  int                pos = 0;
+  char              *var_list = NULL;
+  job_data          *en;
+  job_data_iterator *it = NULL;
+
+  if (src_hash != NULL)
+    {
+    src_hash->lock();
+    it = src_hash->get_iterator();
+    src_hash->unlock();
+    }
+
   job_data *v_value = NULL;
 
   /* if -v was used then it needs to be included as well. */
@@ -3807,7 +3816,9 @@ void add_variable_list(
     }
 
   hash_add_or_exit(ji->job_attr, var_name, var_list, CMDLINE_DATA);
-  }
+  } /* END add_variable_list() */
+
+
 
 /**
  * Handle --about and --version, and any other options that would cause

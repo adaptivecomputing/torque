@@ -81,7 +81,7 @@ int main(
           break;
           }
 
-        strncpy(extend, optarg, sizeof(extend));
+        snprintf(extend, sizeof(extend), "%s", optarg);
 
         break;
 

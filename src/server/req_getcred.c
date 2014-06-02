@@ -135,7 +135,7 @@ int req_connect(
   struct batch_request *preq)
 
   {
-  int  sock = preq->rq_conn;
+  int            sock = preq->rq_conn;
   unsigned short conn_authen;
 
   /* Called from one location inside a lock */

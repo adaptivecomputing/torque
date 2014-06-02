@@ -361,8 +361,11 @@ void array_delete_wt(
 
         job_abt(&pjob, NULL);
         pa = get_array(preq->rq_ind.rq_delete.rq_objname);
+
         if (pa != NULL)
           array_mutex.mark_as_locked();
+        else
+          break;
         }
       } /* END if (ji_substate == JOB_SUBSTATE_PRERUN) */
     } /* END for each job in array */

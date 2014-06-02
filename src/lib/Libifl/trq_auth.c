@@ -109,11 +109,10 @@ int validate_active_pbs_server(
 
   {
   char     *err_msg = NULL;
-  char      *current_server = NULL;
   char      unix_sockname[MAXPATHLEN + 1];
   char      write_buf[MAX_LINE];
   int       write_buf_len;
-  char     *read_buf;
+  char     *read_buf = NULL;
   long long read_buf_len = MAX_LINE;
   int       local_socket;
   int       rc;
@@ -164,24 +163,22 @@ int validate_active_pbs_server(
   
   close(local_socket);
   
-  if (rc != PBSE_NONE) 
-    return(rc);
-
-  if (read_buf_len == 0)
-    return(PBSE_SOCKET_READ);
-
-  rc = PBSE_NONE;
-
-  current_server = (char *)calloc(1, strlen(read_buf));
-  if (current_server == NULL)
+  if ((rc == PBSE_NONE) &&
+      (read_buf_len != 0))
     {
-    return(PBSE_MEM_MALLOC);
+    *active_server = read_buf;
     }
-
-  strcpy(current_server, read_buf);
+  else
+    {
+    if (read_buf != NULL)
+      free(read_buf);
   
-
-  *active_server = current_server;
+    if (rc != PBSE_NONE)
+      return(rc);
+  
+    if (read_buf_len == 0)
+      return(PBSE_SOCKET_READ);
+    }
 
   return(rc);
   } /* END validate_active_pbs_server() */

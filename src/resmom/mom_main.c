@@ -6716,9 +6716,10 @@ void resend_things()
   spawn_task_info    *st;
   time_t              time_now = time(NULL);
 
-  for(std::vector<resend_momcomm *>::iterator iter = things_to_resend.begin();iter != things_to_resend.end();iter++)
+  for (unsigned int i = 0; i < things_to_resend.size(); i++)
     {
-    mc = *iter;
+    mc = things_to_resend[i];
+
     if (time_now - mc->resend_time < RESEND_INTERVAL)
       continue;
 
@@ -6770,13 +6771,11 @@ void resend_things()
     if ((ret == DIS_SUCCESS) ||
         (mc->resend_attempts > 3))
       {
-      things_to_resend.erase(iter);
+      things_to_resend.erase(things_to_resend.begin() + i);
       free(mc);
-      if(iter == things_to_resend.end())
-        {
-        //The last item in the list was erased so don't advance past the end of the list.
-        break;
-        }
+
+      // decrement i to not go past the array and not skip one
+      i--;
       }
     else
       mc->resend_time = time_now;
