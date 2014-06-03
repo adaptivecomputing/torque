@@ -382,7 +382,10 @@ int socket_connect_addr(
         else if (rc == PERMANENT_SOCKET_FAIL)
           {
           close(local_socket);
-          return(rc);
+          local_socket = rc;
+
+          /* do not fall through here */
+          break;
           }
 
         /* essentially, only fall through for a transient failure */
@@ -511,7 +514,7 @@ int socket_wait_for_write(
   {
   int            rc = PBSE_NONE;
   int            write_soc = 0;
-  int            sock_errno;
+  int            sock_errno = 0;
   socklen_t      len = sizeof(int);
   fd_set         wfd;
   struct timeval timeout;
@@ -935,7 +938,7 @@ int socket_close(
   return rc;
   } /* END socket_close() */
 
-static pthread_mutex_t addrinfoMutex = PTHREAD_MUTEX_INITIALIZER;
+
 
 int pbs_getaddrinfo(
     
@@ -944,20 +947,21 @@ int pbs_getaddrinfo(
   struct addrinfo **ppAddrInfoOut)
 
   {
-  int rc;
+  int             rc;
   struct addrinfo hints;
-  int retryCount = 3;
-  int addrFound = FALSE;
-  mutex_mgr mutex(&addrinfoMutex);
+  int             retryCount = 3;
+  int             addrFound = FALSE;
 
   if (ppAddrInfoOut == NULL)
     {
     return -1;
     }
+
   if ((*ppAddrInfoOut = get_cached_addrinfo_full(pNode)) != NULL)
     {
     return 0;
     }
+
   if (pHints == NULL)
     {
     memset(&hints,0,sizeof(hints));
@@ -967,7 +971,7 @@ int pbs_getaddrinfo(
 
   do
     {
-    if(addrFound)
+    if (addrFound)
       {
       rc = 0;
       }
@@ -976,23 +980,27 @@ int pbs_getaddrinfo(
       *ppAddrInfoOut = NULL;
       rc = getaddrinfo(pNode,NULL,pHints,ppAddrInfoOut);
       }
-    if(rc == 0)
+
+    if (rc == 0)
       {
       addrFound = TRUE;
       *ppAddrInfoOut = insert_addr_name_info(*ppAddrInfoOut,pNode);
-      if(*ppAddrInfoOut != NULL)
+      if (*ppAddrInfoOut != NULL)
         {
         return 0;
         }
       rc = EAI_AGAIN;
       }
-    if(rc != EAI_AGAIN)
+
+    if (rc != EAI_AGAIN)
       {
       return rc;
       }
-    }while(retryCount-- >= 0);
+
+    } while(retryCount-- >= 0);
+
   return EAI_FAIL;
-  }    
+  } /* END pbs_getaddrinfo() */
 
 
 int connect_to_trqauthd(

@@ -301,7 +301,9 @@ int tcp_connect_sockaddr(
   char *tmp_ip = NULL;
   int  retryCount = 5;
 
-  while(retryCount-- >= 0)
+  errno = 0;
+
+  while (retryCount-- >= 0)
     {
     if ((stream = socket_get_tcp_priv()) < 0)
       {
@@ -321,10 +323,10 @@ int tcp_connect_sockaddr(
         }
       tmp_ip = inet_ntoa(((struct sockaddr_in *)sa)->sin_addr);
       snprintf(local_err_buf, LOCAL_LOG_BUF, "Failed when trying to open tcp connection - connect() failed [rc = %d] [addr = %s:%d]", rc, tmp_ip, htons(((struct sockaddr_in *)sa)->sin_port));
-      log_err(errno,__func__,local_err_buf);
+      log_err(-1,__func__,local_err_buf);
       if (err_msg != NULL)
         {
-        log_err(errno,__func__,err_msg);
+        log_err(-1,__func__,err_msg);
         free(err_msg);
         err_msg = NULL;
         }

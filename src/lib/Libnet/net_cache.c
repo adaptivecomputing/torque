@@ -118,7 +118,7 @@ class addrcache
     struct sockaddr_in *pINetAddr = (struct sockaddr_in *)pAddr->ai_addr;
     struct addrinfo    *pTmpAddr = NULL;
     char                key[65];
-    int                 i;
+    int                 i = -1;
 
     sprintf(key,"%d",pINetAddr->sin_addr.s_addr);
     pthread_mutex_lock(&cacheMutex);
@@ -143,6 +143,7 @@ class addrcache
       return(pTmpAddr);
       }
     pthread_mutex_lock(&cacheMutex);
+
     int index = addrs.size();
     char *priv_host = NULL;
 
@@ -335,7 +336,7 @@ struct addrinfo *get_cached_addrinfo_full(const char *hostname)
   ***************************************************************************/
 struct addrinfo * insert_addr_name_info(struct addrinfo *pAddrInfo,const char *host)
   {
-  if(pAddrInfo == NULL)
+  if (pAddrInfo == NULL)
     {
     struct addrinfo hints;
 
@@ -344,7 +345,7 @@ struct addrinfo * insert_addr_name_info(struct addrinfo *pAddrInfo,const char *h
     hints.ai_family = AF_INET;
     hints.ai_flags = AI_CANONNAME;
 
-    if(getaddrinfo(host,NULL,&hints,&pAddrInfo) != 0)
+    if (getaddrinfo(host,NULL,&hints,&pAddrInfo) != 0)
       {
       return NULL;
       }

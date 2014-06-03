@@ -987,12 +987,12 @@ void *sync_node_jobs(
   free(sji);
 
   if (jobs_in_mom)
+    {
     sync_node_jobs_with_moms(np, jobs_in_mom);
+    free(jobs_in_mom);
+    }
 
   unlock_node(np, __func__, NULL, LOGLEVEL);
-
-  if (jobs_in_mom)
-    free(jobs_in_mom);
 
   return(NULL);
   }  /* END sync_node_jobs() */

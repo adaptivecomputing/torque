@@ -1077,11 +1077,6 @@ static int process_host_name_part(
     return(PBSE_SYSTEM);
     }
 
-  addr_info = insert_addr_name_info(addr_info,phostname);
-  if (addr_info == NULL)
-    {
-    return(PBSE_SYSTEM);
-    }
   snprintf(hname, sizeof(hname), "%s", addr_info->ai_canonname);
   
   totalipcount = 0;
@@ -3633,7 +3628,7 @@ int send_hierarchy(
   char               *string;
   int                 ret = PBSE_NONE;
   int                 sock;
-  struct addrinfo    *pAddrInfo;
+  struct addrinfo    *pAddrInfo = NULL;
   struct sockaddr_in  sa;
   struct tcp_chan    *chan = NULL;
 

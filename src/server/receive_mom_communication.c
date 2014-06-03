@@ -185,7 +185,8 @@ int is_stat_get(
   else
     rc = process_status_info(node_name, status_info);
 
-  free_dynamic_string(status_info);
+  if (status_info != NULL)
+    free_dynamic_string(status_info);
 
   return(rc);
   }  /* END is_stat_get() */
