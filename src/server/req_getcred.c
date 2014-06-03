@@ -472,7 +472,8 @@ int req_authenuser(
 #endif
       pthread_mutex_unlock(svr_conn[s].cn_mutex);
   
-      if (preq->rq_ind.rq_authen.rq_port != conn_port)
+      if (preq->rq_ind.rq_authen.rq_port != conn_port || 
+	  svr_conn[preq->rq_conn].cn_addr != conn_addr)
         continue;
 
       if (conn_addr != incoming_conn_addr)
@@ -543,6 +544,7 @@ int req_altauthenuser(
   int s;
   int rc = PBSE_NONE;
   unsigned short        conn_port;
+  unsigned long         conn_addr;
   
   /*
    * find the socket whose client side is bound to the port named
@@ -553,9 +555,11 @@ int req_altauthenuser(
     {
     pthread_mutex_lock(svr_conn[s].cn_mutex);
     conn_port = svr_conn[s].cn_port;
+    conn_addr = get_connectaddr(s, FALSE);
     pthread_mutex_unlock(svr_conn[s].cn_mutex);
 
-    if (preq->rq_ind.rq_authen.rq_port != conn_port)
+    if (preq->rq_ind.rq_authen.rq_port != conn_port || 
+	svr_conn[preq->rq_conn].cn_addr != conn_addr)
       {
       continue;
       }

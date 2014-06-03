@@ -267,14 +267,33 @@ const char *PBSServerCmds2[] =
 
 
 /*************************************************
- * svr_is_request
+ * * svr_is_request
  *
  * Return: svr_is_request always returns a non-zero value
- *         and it must call close_conn to close the connection
- *         before returning. PBSE_SOCKET_CLOSE is the code
- *         for a successful return. But which ever retun 
- *         code is iused it must terminate the while loop
- *         in start_process_pbs_server_port.
+ *         and it must not call close_conn() to close the 
+ *         connection before returning. Instead, the 
+ *         connection is closed in start_process_pbs_server_port()
+ *         when the loop is terminated.  
+ *
+ *         PBSE_SOCKET_CLOSE is the code for a successful return. 
+ *         But which ever return code is used it should terminate 
+ *         the while loop in start_process_pbs_server_port() at
+ *         which point the close_conn() will be called to close
+ *         the connection.  
+ *
+ *         Note that it is a bug to call close_conn() both here 
+ *         *and* it the end of start_process_pbs_server_port()
+ *         because on a busy server, the file descriptor will 
+ *         quickly be re-assigned via accept() in another thread
+ *         and the close_conn() call in start_process_pbs_server_port()
+ *         will end up closing a socket that is in use by another
+ *         thread.
+ *
+ *         args assigned as:
+ *         -----------------
+ *         args[0] = new_conn_socket;
+ *         args[1] = ntohl(in_addr->sin_addr.s_addr);
+ *         args[2] = htons(in_addr->sin_port);
  *************************************************/
 int svr_is_request(
     
@@ -307,7 +326,6 @@ int svr_is_request(
     {
     snprintf(log_buf, sizeof(log_buf), "could not read command: %d", ret);
     log_err(-1, __func__, log_buf);
-    close_conn(chan->sock, FALSE);
     return(PBSE_SOCKET_DATA);
     }
 
@@ -336,7 +354,6 @@ int svr_is_request(
       msg_buf);
 
     log_err(-1, __func__, log_buf);
-    close_conn(chan->sock, FALSE);
     return PBSE_SOCKET_DATA;
     }
 
@@ -405,8 +422,6 @@ int svr_is_request(
       {
       log_err(-1, __func__, log_buf);
       }
-    
-    close_conn(chan->sock, FALSE);
     return PBSE_SOCKET_CLOSE;
     }
 
@@ -533,10 +548,6 @@ int svr_is_request(
       break;
     }  /* END switch (command) */
 
-  /* must be closed because mom opens and closes this connection each time */
-  close_conn(chan->sock, FALSE);
-
-  
   return(PBSE_SOCKET_CLOSE);
 
 err:
@@ -569,7 +580,5 @@ err:
     
   log_err(-1, __func__, log_buf);
     
-  close_conn(chan->sock, FALSE);
-
   return(PBSE_INTERNAL);
   } /* END svr_is_request */
