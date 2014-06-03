@@ -131,7 +131,7 @@
 #include "nvml.h"
 #endif  /* NVML_API */
 
-extern int find_file(char *, char *);
+extern int    find_file(const char *, const char *);
 extern int    MOMNvidiaDriverVersion;
 extern int    use_nvidia_gpu;
 extern time_t time_now;
