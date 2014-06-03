@@ -1924,8 +1924,6 @@ void bailout(void)
 
 
 
-
-
 void toolong(
 
   int sig)
@@ -1939,8 +1937,6 @@ void toolong(
 
   exit(0);
   }
-
-
 
 
 
@@ -1997,17 +1993,14 @@ void catchint(
 
 
 
-
-
 void x11handler(
 
   int      param_sock)
 
   {
-
   struct pfwdsock *socks;
-  int n;
-  char *display;
+  int              n;
+  char            *display;
 
   calloc_or_fail((char **)&socks, sizeof(struct pfwdsock) * NUM_SOCKS, "x11handler");
 
@@ -2033,8 +2026,6 @@ void x11handler(
 
   exit(EXIT_FAILURE);
   }
-
-
 
 
 
@@ -3005,33 +2996,32 @@ void process_opts(
             }
           else if (!strcmp(keyword, ATTR_stagein))
             {
+            if (parse_stage_list(valuewd))
+              print_qsub_usage_exit("qsub: illegal -W value for stagein");
+            
+            if (hash_find(ji->job_attr, ATTR_stagein, &tmp_job_info))
+              {
+              /* 
+               * if this attribute already exists, we need to append this
+               * value to it because multiples are allowed.
+               */
+              char *tmpBuf;
 
-              if (parse_stage_list(valuewd))
-                print_qsub_usage_exit("qsub: illegal -W value for stagein");
-              
-              if (hash_find(ji->job_attr, ATTR_stagein, &tmp_job_info))
+              if ((tmpBuf = (char *)malloc(strlen(valuewd) + tmp_job_info->value.length() + 2)) == (char *)0)
                 {
-                /* 
-                 * if this attribute already exists, we need to append this
-                 * value to it because multiples are allowed.
-                 */
-                char *tmpBuf;
-
-                if ((tmpBuf = (char *)malloc(strlen(valuewd) + tmp_job_info->value.length() + 2)) == (char *)0)
-                  {
-                  fprintf(stderr, "Out of memory.\n");
-                  exit(1);
-                  }
-                strcpy(tmpBuf, tmp_job_info->value.c_str());
-                strcat(tmpBuf, ",");
-                strcat(tmpBuf, valuewd);
-                hash_add_or_exit(ji->job_attr, ATTR_stagein, tmpBuf, data_type);
-                free(tmpBuf);
+                fprintf(stderr, "Out of memory.\n");
+                exit(1);
                 }
-              else
-                {
-                hash_add_or_exit(ji->job_attr, ATTR_stagein, valuewd, data_type);
-                }
+              strcpy(tmpBuf, tmp_job_info->value.c_str());
+              strcat(tmpBuf, ",");
+              strcat(tmpBuf, valuewd);
+              hash_add_or_exit(ji->job_attr, ATTR_stagein, tmpBuf, data_type);
+              free(tmpBuf);
+              }
+            else
+              {
+              hash_add_or_exit(ji->job_attr, ATTR_stagein, valuewd, data_type);
+              }
 
             }
           else if (!strcmp(keyword, ATTR_stageout))
@@ -3155,6 +3145,19 @@ void process_opts(
                 print_qsub_usage_exit(err_msg);
 
               }
+            }
+          else if ((!strcmp(keyword, "x")) &&
+                   (!strncmp(valuewd, "mppnodes=", strlen("mppnodes="))))
+            {
+            // add this as a resource
+            char *to_process = strdup(valuewd);
+            if (add_verify_resources(ji->res_attr, to_process, data_type) != 0)
+              {
+              free(to_process);
+              print_qsub_usage_exit("qsub: illegal -l value (mppnodes is processed as a -l value)");
+              }
+
+            free(to_process);
             }
           else
             {
