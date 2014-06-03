@@ -359,10 +359,12 @@ START_TEST(build_depend_test)
   
   initialize_depend_attr(&pattr);
 
-  // value must be in the format dependency_type:job_id[:job_id2...]
+  // value must be in the format dependency_type[:job_id][:job_id2...]
   fail_unless(build_depend(&pattr, "") == PBSE_BADATVAL);
   fail_unless(build_depend(&pattr, NULL) == PBSE_BADATVAL);
-  fail_unless(build_depend(&pattr, "bob") == PBSE_BADATVAL);
+
+  // should accept empty dependencies for dependency removal
+  fail_unless(build_depend(&pattr, "afterok") != PBSE_BADATVAL);
 
   fail_unless(build_depend(&pattr, strdup("afterok:1.napali")) == 0, "didn't build");
   fail_unless(build_depend(&pattr, strdup("bob:1.napali")) == PBSE_BADATVAL, "bad dependency didn't fail");

@@ -3045,11 +3045,6 @@ int build_depend(
 
   if ((nxwrd = strchr((char *)work_val, (int)':')) != NULL)
     *nxwrd++ = '\0';
-  else
-    {
-    free(work_val);
-    return(PBSE_BADATVAL);
-    }
 
   for (pname = dependnames; pname->type != -1; pname++)
     {
