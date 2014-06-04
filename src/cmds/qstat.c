@@ -2507,7 +2507,7 @@ int process_commandline_opts(
 #if (TCL_QSTAT == 0)
         pc = optarg;
 
-        while (*pc)
+        while ((pc != NULL)&&(*pc))
           {
           switch (*pc)
             {

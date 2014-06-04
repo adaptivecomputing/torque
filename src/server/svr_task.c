@@ -500,7 +500,7 @@ void *remove_some_recycle_tasks(
     if (ptask == NULL)
       break;
 
-    tr.tasks.tasks.erase(iter);
+    iter = tr.tasks.tasks.erase(iter);
     pthread_mutex_unlock(ptask->wt_mutex);
     free(ptask->wt_mutex);
     free(ptask);

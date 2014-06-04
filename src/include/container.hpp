@@ -49,13 +49,9 @@ class item
   {
   public:
 
-
-
   item(std::string const &idString, T p): id(idString), ptr(p)
     {
     }
-
-
 
   bool operator == (
       
@@ -229,6 +225,7 @@ class item_container
 
     if (slots != NULL)
       {
+      clear();
       free(slots);
       slots = NULL;
       }
