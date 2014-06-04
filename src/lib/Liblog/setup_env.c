@@ -186,28 +186,30 @@ int setup_env(
       }    /* END while (fgets(buf,255,efile)) */
 
     /* copy local environment */
-
-    if ((pval = getenv("PBSDEBUG")) != NULL)
+    if (envbuf != NULL)
       {
-      snprintf(envbuf, evbufsize, "PBSDEBUG=%s",
-              pval);
-
-      len = strlen(envbuf);
-
-      envp[nstr++] = envbuf;
-
-      if (nstr == PBS_ENVP_STR)
+      if ((pval = getenv("PBSDEBUG")) != NULL)
         {
-        fclose(efile);
+        snprintf(envbuf, evbufsize, "PBSDEBUG=%s",
+                pval);
 
-        goto err;
+        len = strlen(envbuf);
+
+        envp[nstr++] = envbuf;
+
+        if (nstr == PBS_ENVP_STR)
+          {
+          fclose(efile);
+
+          goto err;
+          }
+
+        envp[nstr] = NULL;
+
+        envbuf += len;
+
+        evbufsize -= len;
         }
-
-      envp[nstr] = NULL;
-
-      envbuf += len;
-
-      evbufsize -= len;
       }
 
     fclose(efile);

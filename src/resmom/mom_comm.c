@@ -4604,6 +4604,8 @@ int handle_im_get_tid_response(
     if (task_save(ptask) != -1)
       ret = start_process(ptask, argv, envp);
     }
+  else
+    return(PBSE_SYSTEM);
 
   arrayfree(argv);
   

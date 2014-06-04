@@ -1327,6 +1327,7 @@ int setup_server_attrs(
     if ((rc != PBSE_NONE) || ((rc = svr_recov_xml(path_svrdb, FALSE)) == -1)) 
       {
       log_err(rc, __func__, msg_init_baddb);
+      pthread_mutex_unlock(server.sv_attr_mutex);
 
       return(-1);
       }
