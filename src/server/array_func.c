@@ -1036,7 +1036,6 @@ int array_delete(
   char                     log_buf[LOCAL_LOG_BUF_SIZE];
   array_request_node      *rn;
   struct array_depend     *pdep;
-  struct array_depend_job *pdj;
 
   /* first thing to do is take this out of the servers list of all arrays */
   remove_array(pa);
@@ -1080,12 +1079,9 @@ int array_delete(
     {
     delete_link(&pdep->dp_link);
 
-    for (pdj = (struct array_depend_job *)GET_NEXT(pdep->dp_jobs);
-         pdj != NULL;
-         pdj = (struct array_depend_job *)GET_NEXT(pdep->dp_jobs))
+    for (unsigned int i = 0; pdep->dp_jobs.size(); i++)
       {
-      delete_link(&pdj->dc_link);
-      free(pdj);
+      free(pdep->dp_jobs[i]);
       }
 
     free(pdep);

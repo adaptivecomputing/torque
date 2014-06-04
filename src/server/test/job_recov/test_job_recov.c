@@ -35,9 +35,8 @@ START_TEST(test_translate_dependency_to_string)
   
   memset(&dep, 0, sizeof(dep));
   dep.dp_type = JOB_DEPEND_TYPE_AFTEROK;
-  CLEAR_HEAD(dep.dp_jobs);
   CLEAR_LINK(dep.dp_link);
-  append_link(&dep.dp_jobs, &dj.dc_link, &dj);
+  dep.dp_jobs.push_back(&dj);
 
   dep_attr.at_flags = ATR_VFLAG_SET;
   CLEAR_HEAD(dep_attr.at_val.at_list);

@@ -326,9 +326,9 @@ void free_depend(
 
   while ((pdp = (struct depend *)GET_NEXT(attr->at_val.at_list)))
     {
-    while ((pdjb = (struct depend_job *)GET_NEXT(pdp->dp_jobs)))
+    for (unsigned int i = 0; i < pdp->dp_jobs.size(); i++)
       {
-      delete_link(&pdjb->dc_link);
+      pdjb = pdp->dp_jobs[i];
 
       free(pdjb);
       }
