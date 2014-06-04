@@ -6417,9 +6417,19 @@ int main(
 
   parse_command_line(argc, argv); /* Calls exit on command line error */
 
-  if ((rc = setup_program_environment()) != 0)
+  try
+    {   
+    if ((rc = setup_program_environment()) != 0)
+      {
+      return(rc);
+      }
+    }
+  catch (boost::exception &e)
     {
-    return(rc);
+    snprintf(log_buffer, sizeof(log_buffer),
+      "unexpected boost exception caught");
+    log_err(-1, __func__, log_buffer);
+    return -1;
     }
 
 #ifdef NVIDIA_GPUS

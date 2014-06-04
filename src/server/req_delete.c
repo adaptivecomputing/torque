@@ -666,7 +666,8 @@ jump:
             }
           if ((pjob = svr_find_job((char *)dup_job_id.c_str(),FALSE)) == NULL) //Job disappeared.
             {
-            break;
+            job_mutex.set_unlock_on_exit(false);
+            return -1;
             }
           job_mutex.set_lock_state(true);
           }
