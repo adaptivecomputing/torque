@@ -100,6 +100,7 @@
 #include "tcp.h" /* tcp_chan */
 #include "net_connect.h"
 #include <string>
+#include <vector>
 
 #define SAVEJOB_BUF_SIZE 8192
 
@@ -122,6 +123,20 @@ struct job_array;
 #define JOB_REPORTED_POLL_TIMEOUT 300
 
 /*
+ * The depend_job structure is used to record the name and location
+ * of each job which is involved with the dependency
+ */
+
+typedef struct depend_job
+  {
+  list_link dc_link;
+  short dc_state; /* released / ready to run (syncct)  */
+  long dc_cost; /* cost of this child (syncct)   */
+  char dc_child[PBS_MAXSVRJOBID+1]; /* child (dependent) job  */
+  char dc_svr[PBS_MAXSERVERNAME+1]; /* server owning job  */
+  } depend_job;
+
+/*
  * Dependent Job Structures
  *
  * This set of structures are used by the server to track job
@@ -140,37 +155,23 @@ struct depend
   short   dp_numexp; /* num jobs expected (on or syncct only) */
   short   dp_numreg; /* num jobs registered (syncct only)     */
   short   dp_released; /* This job released to run (syncwith)   */
-  tlist_head dp_jobs; /* list of related jobs  (all)           */
+  std::vector<depend_job *> dp_jobs;
   };
 
-/*
- * The depend_job structure is used to record the name and location
- * of each job which is involved with the dependency
- */
-
-struct depend_job
-  {
-  list_link dc_link;
-  short dc_state; /* released / ready to run (syncct)  */
-  long dc_cost; /* cost of this child (syncct)   */
-  char dc_child[PBS_MAXSVRJOBID+1]; /* child (dependent) job  */
-  char dc_svr[PBS_MAXSERVERNAME+1]; /* server owning job  */
-  };
-
-struct array_depend
-  {
-  list_link  dp_link;
-  short      dp_type;
-  tlist_head dp_jobs;
-  };
-
-struct array_depend_job
+typedef struct array_depend_job
   {
   list_link dc_link;
   /* in this case, the child is the job depending on the array */
   char dc_child[PBS_MAXSVRJOBID+1];
   char dc_svr[PBS_MAXSERVERNAME+1];
   int  dc_num;
+  } array_depend_job;
+
+struct array_depend
+  {
+  list_link  dp_link;
+  short      dp_type;
+  std::vector<array_depend_job *> dp_jobs;
   };
 
 struct dependnames

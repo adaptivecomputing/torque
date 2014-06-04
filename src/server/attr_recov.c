@@ -511,7 +511,7 @@ int recov_attr(
       exec_host_found = true;
       }
 
-    if (!strcmp(pal->al_name, ATTR_state))
+    if ((!strcmp(pal->al_name, ATTR_state))&&(pal->al_value != NULL))
       {
       job_state = *pal->al_value;
       }

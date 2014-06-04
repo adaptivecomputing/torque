@@ -300,7 +300,7 @@ int terminate_trqauthd()
   int rc = PBSE_NONE;
   int sock = -1;
   char write_buf[MAX_LINE];
-  char *read_buf;
+  char *read_buf = NULL;
   char log_buf[MAX_BUF];
   long long read_buf_len = MAX_LINE;
   long long ret_code;
@@ -354,6 +354,11 @@ int terminate_trqauthd()
 
   if (sock != -1)
     close(sock);
+
+  if (read_buf != NULL)
+    {
+    free(read_buf);
+    }
 
   return(rc);
   }

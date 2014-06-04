@@ -75,6 +75,7 @@ START_TEST(remove_array_dependency_from_job_test)
   }
 END_TEST
 
+
 START_TEST(set_array_depend_holds_test)
   {
   batch_request *preq = (batch_request *)calloc(1, sizeof(batch_request));
@@ -164,7 +165,6 @@ START_TEST(clear_depend_test)
   
   i = 1;
   memset(&pd, 0, sizeof(pd));
-  CLEAR_HEAD(pd.dp_jobs);
 
   make_dependjob(&pd, job1, host);
   make_dependjob(&pd, job2, host);
@@ -206,7 +206,6 @@ START_TEST(find_dependjob_test)
   struct depend_job *d2;
 
   memset(&pdep, 0, sizeof(pdep));
-  CLEAR_HEAD(pdep.dp_jobs);
 
   fail_unless((d1 = make_dependjob(&pdep, job1, host)) != NULL, "didn't create dep 1");
   fail_unless((d2 = make_dependjob(&pdep, job2, host)) != NULL, "didn't create dep 2");
@@ -214,7 +213,7 @@ START_TEST(find_dependjob_test)
   fail_unless(d2 == find_dependjob(&pdep, job2), "didn't find job2");
   fail_unless(find_dependjob(&pdep, (char *)"bob") == NULL, "found bob?");
 
-  svr = 10; /* will make display server suffix false, see scaffolding */
+  svr = 10; // will make display server suffix false, see scaffolding 
   fail_unless(d1 == find_dependjob(&pdep, (char *)"1"), "didn't find job1 without suffix");
   fail_unless(d2 == find_dependjob(&pdep, (char *)"2"), "didn't find job2 without suffix");
   }
@@ -230,7 +229,6 @@ START_TEST(make_dependjob_test)
   struct depend_job *d2;
 
   memset(&pdep, 0, sizeof(pdep));
-  CLEAR_HEAD(pdep.dp_jobs);
 
   fail_unless((d1 = make_dependjob(&pdep, job1, host)) != NULL, "didn't create dep 1");
   fail_unless((d2 = make_dependjob(&pdep, job2, host)) != NULL, "didn't create dep 2");
@@ -249,7 +247,6 @@ START_TEST(register_sync_test)
   struct depend  pdep;
 
   memset(&pdep, 0, sizeof(pdep));
-  CLEAR_HEAD(pdep.dp_jobs);
 
   fail_unless(register_sync(&pdep, job1, host, 1) == PBSE_NONE, "didn't register");
   fail_unless(register_sync(&pdep, job1, host, 1) == PBSE_NONE, "second register");
@@ -312,7 +309,6 @@ START_TEST(del_depend_test)
   {
   struct depend    *pdep = (depend *)calloc(1, sizeof(struct depend));
 
-  CLEAR_HEAD(pdep->dp_jobs);
   CLEAR_HEAD(pdep->dp_link);
 
   make_dependjob(pdep, job1, host);
@@ -391,13 +387,12 @@ START_TEST(dup_depend_test)
 
   initialize_depend_attr(&pattr);
   memset(&pdep, 0, sizeof(pdep));
-  CLEAR_HEAD(pdep.dp_jobs);
 
   make_dependjob(&pdep, job1, host);
   make_dependjob(&pdep, job2, host);
   fail_unless(dup_depend(&pattr, &pdep) == PBSE_NONE, "didn't work");
   }
-END_TEST
+END_TEST 
 
 
 
@@ -434,6 +429,30 @@ START_TEST(cat_jobsvr_test)
 END_TEST
 
 
+START_TEST(req_register_test)
+  {
+  batch_request *preq = (batch_request *)calloc(1, sizeof(batch_request));
+
+  strcpy(preq->rq_ind.rq_register.rq_parent, job1);
+  preq->rq_fromsvr = 1;
+  preq->rq_ind.rq_register.rq_dependtype = JOB_DEPEND_TYPE_AFTEROK;
+
+  preq->rq_ind.rq_register.rq_op = -10;
+  fail_unless(req_register(preq) == PBSE_IVALREQ);
+
+  preq->rq_ind.rq_register.rq_op = JOB_DEPEND_OP_REGISTER;
+  fail_unless(req_register(preq) == PBSE_NONE);
+  
+  preq->rq_ind.rq_register.rq_op = JOB_DEPEND_OP_RELEASE;
+  fail_unless(req_register(preq) == PBSE_NONE);
+  
+  preq->rq_ind.rq_register.rq_op = JOB_DEPEND_OP_DELETE;
+  fail_unless(req_register(preq) == PBSE_NONE);
+  
+  preq->rq_ind.rq_register.rq_op = JOB_DEPEND_OP_UNREG;
+  fail_unless(req_register(preq) == PBSE_NONE);
+  }
+END_TEST
 
 
 START_TEST(decode_depend_test)
@@ -448,8 +467,6 @@ START_TEST(decode_depend_test)
   fail_unless(decode_depend(&pattr, NULL, NULL, strdup("bart"), 0) != PBSE_NONE, "bad worked?");
   }
 END_TEST
-
-
 
 
 START_TEST(encode_depend_test)
@@ -474,8 +491,6 @@ START_TEST(encode_depend_test)
 END_TEST
 
 
-
-
 START_TEST(set_depend_test)
   {
   pbs_attribute  pattr;
@@ -496,7 +511,6 @@ START_TEST(set_depend_test)
   fail_unless(set_depend(&pa2, &pattr, SET) == PBSE_NONE, "fail set?");
   }
 END_TEST
-
 
 
 /*
@@ -521,8 +535,6 @@ START_TEST(unregister_sync_test)
 END_TEST*/
 
 
-
-
 START_TEST(depend_clrrdy_test)
   {
   pbs_attribute *pattr;
@@ -537,8 +549,6 @@ START_TEST(depend_clrrdy_test)
   depend_clrrdy(&pjob);
   }
 END_TEST
-
-
 
 
 START_TEST(register_before_dep_test)
@@ -574,8 +584,6 @@ START_TEST(register_before_dep_test)
 END_TEST
 
 
-
-
 START_TEST(register_dependency_test)
   {
   batch_request  preq;
@@ -600,8 +608,6 @@ START_TEST(register_dependency_test)
   fail_unless(register_dependency(&preq, &pjob, JOB_DEPEND_TYPE_AFTERSTART) == PBSE_NONE);
   }
 END_TEST
-
-
 
 
 START_TEST(release_before_dependency_test)
@@ -630,8 +636,6 @@ START_TEST(release_before_dependency_test)
 END_TEST
 
 
-
-
 START_TEST(release_syncwith_dependency_test)
   {
   pbs_attribute *pattr;
@@ -653,8 +657,6 @@ START_TEST(release_syncwith_dependency_test)
   fail_unless(release_syncwith_dependency(&preq, &pjob) == PBSE_NONE);
   }
 END_TEST
-
-
 
 
 START_TEST(set_depend_hold_test)
@@ -688,8 +690,6 @@ START_TEST(set_depend_hold_test)
 END_TEST
 
 
-
-
 START_TEST(delete_dependency_job_test)
   {
   job           *pjob;
@@ -706,33 +706,6 @@ START_TEST(delete_dependency_job_test)
   }
 END_TEST
 
-
-
-
-START_TEST(req_register_test)
-  {
-  batch_request *preq = (batch_request *)calloc(1, sizeof(batch_request));
-
-  strcpy(preq->rq_ind.rq_register.rq_parent, job1);
-  preq->rq_fromsvr = 1;
-  preq->rq_ind.rq_register.rq_dependtype = JOB_DEPEND_TYPE_AFTEROK;
-
-  preq->rq_ind.rq_register.rq_op = -10;
-  fail_unless(req_register(preq) == PBSE_IVALREQ);
-
-  preq->rq_ind.rq_register.rq_op = JOB_DEPEND_OP_REGISTER;
-  fail_unless(req_register(preq) == PBSE_NONE);
-  
-  preq->rq_ind.rq_register.rq_op = JOB_DEPEND_OP_RELEASE;
-  fail_unless(req_register(preq) == PBSE_NONE);
-  
-  preq->rq_ind.rq_register.rq_op = JOB_DEPEND_OP_DELETE;
-  fail_unless(req_register(preq) == PBSE_NONE);
-  
-  preq->rq_ind.rq_register.rq_op = JOB_DEPEND_OP_UNREG;
-  fail_unless(req_register(preq) == PBSE_NONE);
-  }
-END_TEST
 
 extern job *pGlobalJob;
 
@@ -795,128 +768,57 @@ END_TEST
 
 
 
-
 Suite *req_register_suite(void)
   {
   Suite *s = suite_create("req_register_suite methods");
   TCase *tc_core = tcase_create("check_dependency_job_test");
   tcase_add_test(tc_core, check_dependency_job_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("find_depend_test");
   tcase_add_test(tc_core, find_depend_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("clear_depend_test");
   tcase_add_test(tc_core, clear_depend_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("make_depend_test");
   tcase_add_test(tc_core, make_depend_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("register_sync_test");
   tcase_add_test(tc_core, register_sync_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("find_dependjob_test");
   tcase_add_test(tc_core, find_dependjob_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("make_dependjob_test");
   tcase_add_test(tc_core, make_dependjob_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("register_dep_test");
   tcase_add_test(tc_core, register_dep_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("unregister_dep_test");
   tcase_add_test(tc_core, unregister_dep_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("del_depend_test");
   tcase_add_test(tc_core, del_depend_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("comp_depend_test");
   tcase_add_test(tc_core, comp_depend_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("free_depend_test");
   tcase_add_test(tc_core, free_depend_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("build_depend_test");
   tcase_add_test(tc_core, build_depend_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("dup_depend_test");
   tcase_add_test(tc_core, dup_depend_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("fast_strcat_test");
-  tcase_add_test(tc_core, fast_strcat_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("cat_jobsvr_test");
   tcase_add_test(tc_core, cat_jobsvr_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("decode_depend_test");
-  tcase_add_test(tc_core, decode_depend_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("encode_depend_test");
-  tcase_add_test(tc_core, encode_depend_test);
-  suite_add_tcase(s, tc_core);
+  tcase_add_test(tc_core, fast_strcat_test);
 
   tc_core = tcase_create("set_depend_test");
   tcase_add_test(tc_core, set_depend_test);
+  tcase_add_test(tc_core, encode_depend_test);
+  tcase_add_test(tc_core, decode_depend_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("depend_clrrdy_test");
+  tcase_add_test(tc_core, depend_clrrdy_test);
+  tcase_add_test(tc_core, register_before_dep_test);
+  tcase_add_test(tc_core, register_dependency_test);
+  tcase_add_test(tc_core, release_before_dependency_test);
+  tcase_add_test(tc_core, release_syncwith_dependency_test);
+  tcase_add_test(tc_core, set_depend_hold_test);
+  tcase_add_test(tc_core, delete_dependency_job_test);
+  tcase_add_test(tc_core, remove_after_any_test);
+  tcase_add_test(tc_core, req_register_test);
+  tcase_add_test(tc_core, set_array_depend_holds_test);
+  tcase_add_test(tc_core, remove_array_dependency_from_job_test);
   suite_add_tcase(s, tc_core);
 
 /*  tc_core = tcase_create("unregister_sync_test");
   tcase_add_test(tc_core, unregister_sync_test);
   suite_add_tcase(s, tc_core);
 */
-
-  tc_core = tcase_create("depend_clrrdy_test");
-  tcase_add_test(tc_core, depend_clrrdy_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("register_before_dep_test");
-  tcase_add_test(tc_core, register_before_dep_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("register_dependency_test");
-  tcase_add_test(tc_core, register_dependency_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("release_before_dependency_test");
-  tcase_add_test(tc_core, release_before_dependency_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("release_syncwith_dependency_test");
-  tcase_add_test(tc_core, release_syncwith_dependency_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("set_depend_hold_test");
-  tcase_add_test(tc_core, set_depend_hold_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("delete_dependency_job_test");
-  tcase_add_test(tc_core, delete_dependency_job_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("remove_after_any_test");
-  tcase_add_test(tc_core, remove_after_any_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("req_register_test");
-  tcase_add_test(tc_core, req_register_test);
-  tcase_add_test(tc_core, set_array_depend_holds_test);
-  tcase_add_test(tc_core, remove_array_dependency_from_job_test);
-  suite_add_tcase(s, tc_core);
 
   return s;
   }
