@@ -98,6 +98,7 @@
 #include <string>
 #include <vector>
 #include <boost/ptr_container/ptr_vector.hpp>
+#include <boost/exception/exception.hpp>
 
 #ifdef NOPOSIXMEMLOCK
 #undef _POSIX_MEMLOCK
