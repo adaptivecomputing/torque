@@ -1011,14 +1011,15 @@ typedef struct send_job_request
 #define JOB_SUBSTATE_TRNOUT 02 /* transiting job outbound */
 #define JOB_SUBSTATE_TRNOUTCM 03 /* transiting outbound, rdy to commit */
 
-#define JOB_SUBSTATE_QUEUED 10 /* job queued and ready for selection */
+#define JOB_SUBSTATE_QUEUED 10     /* job queued and ready for selection */
 #define JOB_SUBSTATE_PRESTAGEIN 11 /* job queued, has files to stage in */
-#define JOB_SUBSTATE_SYNCRES 13 /* job waiting on sync start ready */
-#define JOB_SUBSTATE_STAGEIN 14 /* job staging in files then wait */
-#define JOB_SUBSTATE_STAGEGO 15 /* job staging in files and then run */
-#define JOB_SUBSTATE_STAGECMP 16 /* job stage in complete */
-#define JOB_SUBSTATE_CHKPTGO 17 /* job copy checkpoint file and then run */
-#define JOB_SUBSTATE_CHKPTCMP 18 /* job copy checkpoint file complete */
+#define JOB_SUBSTATE_SYNCRES 13    /* job waiting on sync start ready */
+#define JOB_SUBSTATE_STAGEIN 14    /* job staging in files then wait */
+#define JOB_SUBSTATE_STAGEGO 15    /* job staging in files and then run */
+#define JOB_SUBSTATE_STAGECMP 16   /* job stage in complete */
+#define JOB_SUBSTATE_CHKPTGO 17    /* job copy checkpoint file and then run */
+#define JOB_SUBSTATE_CHKPTCMP 18   /* job copy checkpoint file complete */
+#define JOB_SUBSTATE_ASYNCING 19   /* job has asynchronous run request and hasn't run yet */
 
 #define JOB_SUBSTATE_HELD 20 /* job held - user or operator */
 #define JOB_SUBSTATE_SYNCHOLD 21 /* job held - waiting on sync regist */

@@ -352,6 +352,9 @@ int req_runjob(
 
   log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
+  if (preq->rq_type == PBS_BATCH_AsyrunJob)
+    svr_setjobstate(pjob, pjob->ji_qs.ji_state, JOB_SUBSTATE_ASYNCING, FALSE);
+
   /* If async run, reply now; otherwise reply is handled in */
   /* post_sendmom or post_stagein */
   unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
