@@ -1351,6 +1351,7 @@ int depend_on_que(
   long               cost;
 
   struct depend     *pdep;
+  struct depend     *next;
 
   struct depend_job *pparent;
   int                rc = PBSE_NONE;
@@ -1399,6 +1400,8 @@ int depend_on_que(
 
   while (pdep != NULL)
     {
+    // pdep can be freed during the loop so we need to get the next value now
+    next = (struct depend *)GET_NEXT(pdep->dp_link);
     type = pdep->dp_type;
 
     if (type == JOB_DEPEND_TYPE_SYNCCT)
@@ -1431,7 +1434,7 @@ int depend_on_que(
         }
       }
 
-    pdep = (struct depend *)GET_NEXT(pdep->dp_link);
+    pdep = next;
     }
 
   return(rc);
