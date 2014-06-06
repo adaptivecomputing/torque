@@ -4078,6 +4078,7 @@ int find_file(
     }
 
   work_str = strdup(path);
+  char *malloc_str = work_str; //tokenizer can change work_str;
 
   while ((token = threadsafe_tokenizer(&work_str, ":")) != NULL)
     {
@@ -4088,12 +4089,12 @@ int find_file(
     rc = stat(buf.c_str(), &statBuf);
     if (rc == 0)
       {
-      free(work_str);
+      free(malloc_str);
       return(TRUE);
       }
     }
       
-  free(work_str);
+  free(malloc_str);
 
   return(FALSE);
   } /* END find_file() */
