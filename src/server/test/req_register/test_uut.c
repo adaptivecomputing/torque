@@ -39,11 +39,13 @@ int delete_dependency_job(batch_request *preq, job **pjob_ptr);
 int req_register(batch_request *preq);
 bool remove_array_dependency_job_from_job(struct array_depend *pdep, job *pjob, char *job_array_id);
 void removeAfterAnyDependency(const char *pJobID, const char *targetJob);
+bool job_ids_match(const char *parent, const char *child);
 
 
 extern char server_name[];
 extern int i;
 extern int svr;
+extern int is_attr_set;
 
 char          *job1 = (char *)"1.napali";
 char          *job2 = (char *)"2.napali";
@@ -58,6 +60,18 @@ void initialize_depend_attr(
   memset(pattr, 0, sizeof(pbs_attribute));
   CLEAR_HEAD(pattr->at_val.at_list);
   } /* END initialize_depend_attr() */
+
+
+START_TEST(test_job_ids_match)
+  {
+  is_attr_set = 1;
+  fail_unless(job_ids_match("0", "0.napali") == true);
+  is_attr_set = 0;
+  fail_unless(job_ids_match("1.napali", "1.napali") == true);
+  fail_unless(job_ids_match("11.napali", "1.napali") == false);
+  }
+END_TEST
+
 
 START_TEST(remove_array_dependency_from_job_test)
   {
@@ -813,6 +827,7 @@ Suite *req_register_suite(void)
   tcase_add_test(tc_core, req_register_test);
   tcase_add_test(tc_core, set_array_depend_holds_test);
   tcase_add_test(tc_core, remove_array_dependency_from_job_test);
+  tcase_add_test(tc_core, test_job_ids_match);
   suite_add_tcase(s, tc_core);
 
 /*  tc_core = tcase_create("unregister_sync_test");

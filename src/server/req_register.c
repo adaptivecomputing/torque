@@ -122,6 +122,7 @@
 extern int issue_to_svr(char *svr, struct batch_request *, void (*func)(struct work_task *));
 extern int que_to_local_svr(struct batch_request *preq);
 extern long calc_job_cost(job *);
+char *get_correct_jobname(const char *jobid);
 
 
 /* Local Private Functions */
@@ -372,6 +373,33 @@ int register_before_dep(
 
 
 
+bool job_ids_match(
+
+  const char *parent,
+  const char *child)
+
+  {
+  bool match;
+
+  if ((is_svr_attr_set(SRV_ATR_display_job_server_suffix)) ||
+      (is_svr_attr_set(SRV_ATR_job_suffix_alias)))
+    {
+    char *correct_parent = get_correct_jobname(parent);
+    char *correct_child = get_correct_jobname(child);
+
+    match = strcmp(correct_parent, correct_child) == 0;
+
+    free(correct_parent);
+    free(correct_child);
+    }
+  else
+    match = strcmp(parent, child) == 0;
+
+  return(match);
+  } /* END job_ids_match() */
+
+
+
 /*
  * register_dependency()
  * handles the registering of a dependency on a job
@@ -388,7 +416,7 @@ int register_dependency(
   int rc = PBSE_NONE;
   int made = FALSE;
 
-  if (!strcmp(preq->rq_ind.rq_register.rq_parent, preq->rq_ind.rq_register.rq_child))
+  if (job_ids_match(preq->rq_ind.rq_register.rq_parent, preq->rq_ind.rq_register.rq_child))
     return(PBSE_IVALREQ);
 
   switch (type)
