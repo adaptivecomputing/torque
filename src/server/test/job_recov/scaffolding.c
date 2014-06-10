@@ -346,3 +346,8 @@ int id_map::get_new_id(const char *job_name)
   }
 
 id_map job_mapper;
+
+char *get_correct_jobname(const char *id)
+  {
+  return(strdup(id));
+  }
