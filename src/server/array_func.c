@@ -1079,7 +1079,8 @@ int array_delete(
     {
     delete_link(&pdep->dp_link);
 
-    for (unsigned int i = 0; i < pdep->dp_jobs.size(); i++)
+    unsigned int dp_jobs_size = pdep->dp_jobs.size();
+    for (unsigned int i = 0; i < dp_jobs_size; i++)
       {
       free(pdep->dp_jobs[i]);
       }

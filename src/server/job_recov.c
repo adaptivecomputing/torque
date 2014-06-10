@@ -880,7 +880,8 @@ void translate_dependency_to_string(
     else
       {
 
-      for (unsigned int i = 0; i < dep->dp_jobs.size(); i++)
+      unsigned int dp_jobs_size = dep->dp_jobs.size();
+      for (unsigned int i = 0; i < dp_jobs_size; i++)
         {
         struct depend_job *pdjob = dep->dp_jobs[i];
         value += ":";

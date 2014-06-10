@@ -609,7 +609,8 @@ int ready_dependency(
     {
     /* mark sender as running */
     
-    for (unsigned int i = 0; i < pdep->dp_jobs.size(); i++)
+    unsigned int dp_jobs_size = pdep->dp_jobs.size();
+    for (unsigned int i = 0; i < dp_jobs_size; i++)
       {
       pdj = pdep->dp_jobs[i];
       
@@ -1007,7 +1008,8 @@ int register_array_depend(
 
   /* now we have the dependency, add the job to it */
   /* verify the job isn't already there */
-  for (unsigned int i = 0; i < pdep->dp_jobs.size(); i++)
+  unsigned int dp_jobs_size = pdep->dp_jobs.size();
+  for (unsigned int i = 0; i < dp_jobs_size; i++)
     {
     pdj = pdep->dp_jobs[i];
 
@@ -1177,7 +1179,8 @@ bool set_array_depend_holds(
 
     /* update each job with that dependency type */
 
-    for (unsigned int i = 0; i < pdep->dp_jobs.size(); i++)
+    unsigned int dp_jobs_size = pdep->dp_jobs.size();
+    for (unsigned int i = 0; i < dp_jobs_size; i++)
       {
       pdj = pdep->dp_jobs[i];
       pjob = svr_find_job(pdj->dc_child, TRUE);
@@ -1339,7 +1342,8 @@ int alter_unreg(
       {
       pnewd = find_depend(type, new_attr);
 
-      for (unsigned int i = 0; i < poldd->dp_jobs.size(); i++)
+      unsigned int dp_jobs_size = poldd->dp_jobs.size();
+      for (unsigned int i = 0; i < dp_jobs_size; i++)
         {
         oldjd = poldd->dp_jobs[i];
 
@@ -1451,7 +1455,8 @@ int depend_on_que(
       if (mode != ATR_ACTION_ALTER)
         rc = PBSE_BADDEPEND;
 
-      for (unsigned int i = 0; i < pdep->dp_jobs.size(); i++)
+      unsigned int pdep_size = pdep->dp_jobs.size();
+      for (unsigned int i = 0; i < pdep_size; i++)
         {
         pparent = pdep->dp_jobs[i];
 
@@ -1549,7 +1554,8 @@ int depend_on_exec(
   if (pdep != NULL)
     {
 
-    for (unsigned int i = 0; i < pdep->dp_jobs.size(); i++)
+    unsigned int dp_jobs_size = pdep->dp_jobs.size();
+    for (unsigned int i = 0; i < dp_jobs_size; i++)
       {
       pdj = pdep->dp_jobs[i];
     
@@ -1713,7 +1719,8 @@ int depend_on_term(
         if (shouldkill)
           {
 
-          for (unsigned int i = 1; i < pdep->dp_jobs.size(); i++)
+          unsigned int dp_jobs_size = pdep->dp_jobs.size();
+          for (unsigned int i = 1; i < dp_jobs_size; i++)
             {
             pparent = pdep->dp_jobs[i];
 
@@ -1733,7 +1740,8 @@ int depend_on_term(
 
     if (op != -1)
       {
-      for (unsigned int i = 0; i < pdep->dp_jobs.size(); i++)
+      unsigned int dp_jobs_size = pdep->dp_jobs.size();
+      for (unsigned int i = 0; i < dp_jobs_size; i++)
         {
         pparent = pdep->dp_jobs[i];
 
@@ -2278,7 +2286,8 @@ struct depend_job *find_dependjob(
 
   get_svr_attr_l(SRV_ATR_display_job_server_suffix, &display_server_suffix);
 
-  for (unsigned int i = 0; i < pdep->dp_jobs.size(); i++)
+  unsigned int dp_jobs_size = pdep->dp_jobs.size();
+  for (unsigned int i = 0; i < dp_jobs_size; i++)
     {
     pdj = pdep->dp_jobs[i];
     
@@ -2726,7 +2735,8 @@ int dup_depend(
   pnwd->dp_numreg   = pd->dp_numreg;
   pnwd->dp_released = pd->dp_released;
 
-  for (unsigned int i = 0; i < pd->dp_jobs.size(); i++)
+  unsigned int dp_jobs_size = pd->dp_jobs.size();
+  for (unsigned int i = 0; i < dp_jobs_size; i++)
     {
     poldj = pd->dp_jobs[i];
 
@@ -2838,7 +2848,8 @@ int encode_depend(
       }
     else
       {
-      for (unsigned int i = 0; i < nxdp->dp_jobs.size(); i++)
+      unsigned int dp_jobs_size = nxdp->dp_jobs.size();
+      for (unsigned int i = 0; i < dp_jobs_size; i++)
         {
         pdjb = nxdp->dp_jobs[i];
 
@@ -2979,7 +2990,8 @@ void free_depend(
 
   while ((pdp = (struct depend *)GET_NEXT(attr->at_val.at_list)))
     {
-    for (unsigned int i = 0; i < pdp->dp_jobs.size(); i++)
+    unsigned int dp_jobs_size = pdp->dp_jobs.size();
+    for (unsigned int i = 0; i < dp_jobs_size; i++)
       {
       pdjb = pdp->dp_jobs[i];
       free(pdjb);
@@ -3272,7 +3284,8 @@ void clear_depend(
   {
   if (exist)
     {
-    for (unsigned int i = 0; i < pd->dp_jobs.size(); i++)
+    unsigned int dp_jobs_size = pd->dp_jobs.size();
+    for (unsigned int i = 0; i < dp_jobs_size; i++)
       {
       free(pd->dp_jobs[i]);
       }
@@ -3307,7 +3320,8 @@ void del_depend(
   struct depend *pd)
 
   {
-  for (unsigned int i = 0; i < pd->dp_jobs.size(); i++)
+  unsigned int dp_jobs_size = pd->dp_jobs.size();
+  for (unsigned int i = 0; i < dp_jobs_size; i++)
     {
     free(pd->dp_jobs[i]);
     }
@@ -3333,7 +3347,8 @@ void del_depend_job(
 
   {
   // erase pdj from my list
-  for (unsigned int i = 0; i < pdep->dp_jobs.size(); i++)
+  unsigned int dp_jobs_size = pdep->dp_jobs.size();
+  for (unsigned int i = 0; i < dp_jobs_size; i++)
     {
     if (pdj == pdep->dp_jobs[i])
       {
@@ -3396,7 +3411,8 @@ void removeBeforeAnyDependencies(const char *pJId)
   if(pDep != NULL)
     {
 
-    for (unsigned int i = 0; i < pDep->dp_jobs.size(); i++)
+    unsigned int dp_jobs_size = pDep->dp_jobs.size();
+    for (unsigned int i = 0; i < dp_jobs_size; i++)
       {
       struct depend_job *pDepJob = pDep->dp_jobs[i];
       std::string depID(pDepJob->dc_child);
