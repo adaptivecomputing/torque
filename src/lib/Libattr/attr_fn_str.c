@@ -196,8 +196,7 @@ int encode_str(
   svrattrl *pal;
   int len = 0;
 
-  if ((attr == NULL) ||
-      (attr->at_val.at_str == NULL))
+  if (attr == NULL)
     {
     return(-1);
     }
