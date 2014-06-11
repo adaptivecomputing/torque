@@ -7,6 +7,11 @@
 
 job_recycler recycler;
 bool exit_called = false;
+extern pthread_t     open_threads[];
+extern int           open_thread_count;
+
+job *pop_job_from_recycler(all_jobs *aj);
+
 
 START_TEST(test_insert_into_recycler)
   {
@@ -22,18 +27,76 @@ START_TEST(test_insert_into_recycler)
 
   fail_unless(recycler.rc_jobs.count() == 2);
 
+  // make sure we can't insert the job again with or without the flag set
+  pj->ji_being_recycled = 0;
+  fail_unless(insert_into_recycler(pj) != PBSE_NONE);
+  fail_unless(recycler.rc_jobs.count() == 2);
+
   fail_unless(insert_into_recycler(pj) == PBSE_NONE);
 
   fail_unless(recycler.rc_jobs.count() == 2);
   }
 END_TEST
 
-START_TEST(test_two)
-  {
 
+START_TEST(test_remove_some_recycle_jobs)
+  {
+  job *pjobs[1000];
+
+  for (int i = 0; i < 1000; i++)
+    {
+    pjobs[i] = job_alloc();
+    fail_unless(insert_into_recycler(pjobs[i]) == PBSE_NONE);
+
+    // make the first 700 get removed 
+    if (i < 700)
+      pjobs[i]->ji_momstat = 0;
+    }
+
+  pthread_t t1;
+  pthread_t t2;
+  pthread_t t3;
+
+  pthread_create(&t1, NULL, remove_some_recycle_jobs, NULL);
+  pthread_create(&t2, NULL, remove_some_recycle_jobs, NULL);
+  pthread_create(&t3, NULL, remove_some_recycle_jobs, NULL);
+
+  pthread_join(t1, NULL);
+  pthread_join(t2, NULL);
+  pthread_join(t3, NULL);
+
+  // 300 should be left
+  fail_unless(recycler.rc_jobs.count() == 300);
+  }
+END_TEST
+
+
+START_TEST(test_pop_job_from_recycler)
+  {
+  job *pjobs[10];
+
+  while (recycler.rc_jobs.count() > 0)
+    pop_job_from_recycler(&recycler.rc_jobs);
+
+  for (int i = 0; i < 10; i++)
+    {
+    pjobs[i] = job_alloc();
+    fail_unless(insert_into_recycler(pjobs[i]) == PBSE_NONE);
+    }
+
+  for (unsigned int i = 0; i < 10; i++)
+    {
+    job *pjob = pop_job_from_recycler(&recycler.rc_jobs);
+    fail_unless(pjob == pjobs[i]);
+    fail_unless(recycler.rc_jobs.count() == 9 - i);
+    }
+
+  for (int i = 0; i < 3; i++)
+    fail_unless(pop_job_from_recycler(&recycler.rc_jobs) == NULL);
 
   }
 END_TEST
+
 
 Suite *job_recycler_suite(void)
   {
@@ -42,8 +105,9 @@ Suite *job_recycler_suite(void)
   tcase_add_test(tc_core, test_insert_into_recycler);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("test_two");
-  tcase_add_test(tc_core, test_two);
+  tc_core = tcase_create("test_pop_job_from_recycler");
+  tcase_add_test(tc_core, test_pop_job_from_recycler);
+  tcase_add_test(tc_core, test_remove_some_recycle_jobs);
   suite_add_tcase(s, tc_core);
 
   return s;

@@ -751,10 +751,10 @@ typedef struct job_recycler
 
 
 int   insert_into_recycler(job *);
-job  *get_recycled_job();
 void  update_recycler_next_id();
 void  initialize_recycler();
 void  garbage_collect_recycling();
+void *remove_extra_recycle_jobs(void *);
 
 #endif
 

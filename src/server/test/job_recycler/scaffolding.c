@@ -7,13 +7,18 @@
 
 threadpool_t *task_pool;
 job_recycler recycler;
-int          LOGLEVEL;
+int          LOGLEVEL = 10;
+pthread_t     open_threads[10];
+int           open_thread_count;
 
 
 int enqueue_threadpool_request(void *(*func)(void *),void *arg, threadpool_t *tp)
   {
-  fprintf(stderr, "The call to enqueue_threadpool_request to be mocked!!\n");
-  exit(1);
+  pthread_t t;
+  pthread_create(&t, NULL, func, NULL);
+  open_threads[open_thread_count++] = t;
+
+  return(0);
   }
 
 int insert_job(all_jobs *aj, job *pjob)
