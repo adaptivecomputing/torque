@@ -42,6 +42,7 @@ END_TEST
 START_TEST(test_remove_some_recycle_jobs)
   {
   job *pjobs[1000];
+  initialize_recycler();
 
   for (int i = 0; i < 1000; i++)
     {
@@ -74,6 +75,7 @@ END_TEST
 START_TEST(test_pop_job_from_recycler)
   {
   job *pjobs[10];
+  initialize_recycler();
 
   while (recycler.rc_jobs.count() > 0)
     pop_job_from_recycler(&recycler.rc_jobs);
