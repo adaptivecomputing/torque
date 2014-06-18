@@ -443,7 +443,8 @@ struct passwd *check_pwd(
     if (pwdp != NULL)
       break;
 
-    sleep(.5);
+    /* sleep half a second  and try again */
+    usleep(500000);
     }
 
   if (pwdp == NULL)

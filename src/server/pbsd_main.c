@@ -1172,6 +1172,38 @@ void *start_accept_listener(
 
 
 
+void start_generic_thread(
+    
+  pthread_t *tid,
+  void      *(*func)(void *))
+
+  {
+  pthread_attr_t attr;
+  pthread_t      t;
+
+  if (tid == NULL)
+    tid = &t;
+
+  if (pthread_attr_init(&attr) != 0)
+    {
+    perror("pthread_attr_init failed. Could not start thread");
+    log_err(-1, msg_daemonname, "pthread_attr_init failed. Could not start thread");
+    }
+  else if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) != 0)
+    {
+    perror("pthread_attr_setdetatchedstate failed. Could not start thread");
+    log_err(-1, msg_daemonname, "pthread_attr_setdetachedstate failed. Could not start thread");
+    }
+  else if ((pthread_create(tid, &attr, func, NULL)) != 0)
+    {
+    perror("could not start thread");
+    log_err(-1, msg_daemonname, "Failed to start thread");
+    }
+
+  }
+
+
+
 
 void start_accept_thread()
 
@@ -1361,6 +1393,7 @@ void main_loop(void)
   start_accept_thread();
   start_routing_retry_thread();
   start_exiting_retry_thread();
+  start_generic_thread(NULL, remove_extra_recycle_jobs);
 
   while (state != SV_STATE_DOWN)
     {

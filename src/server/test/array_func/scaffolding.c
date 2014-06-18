@@ -58,8 +58,10 @@ void post_modify_arrayreq(batch_request *br)
 
 void delete_link(struct list_link *old)
   {
-  fprintf(stderr, "The call to delete_link needs to be mocked!!\n");
-  exit(1);
+  if(old->ll_prior == NULL) return;
+  old->ll_prior->ll_next = old->ll_next;
+  if(old->ll_next == NULL) return;
+  old->ll_next->ll_prior = old->ll_prior;
   }
 
 char *get_variable(job *pjob, const char *variable)
@@ -148,8 +150,7 @@ void insert_link(struct list_link *old, struct list_link *new_link, void *pobj, 
 
 void *get_next(list_link pl, char *file, int line)
   {
-  fprintf(stderr, "The call to get_next needs to be mocked!!\n");
-  exit(1);
+  return(pl.ll_next);
   }
 
 char *threadsafe_tokenizer(char **str, const char *delims)

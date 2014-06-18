@@ -4110,6 +4110,7 @@ static const char *physmem(
   {
   char tmpBuf[PMEMBUF_SIZE];
 
+  char *tmp_ptr;
   char *BPtr;
   int   BSpace;
 
@@ -4169,9 +4170,9 @@ static const char *physmem(
 
     /* FORMAT:  '...\nMemTotal:   XXX kB\n' */
 
-    if ((BPtr = strstr(tmpBuf, "MemTotal:")) != NULL)
+    if ((tmp_ptr = strstr(tmpBuf, "MemTotal:")) != NULL)
       {
-      BPtr += strlen("MemTotal:");
+      BPtr = tmp_ptr + strlen("MemTotal:");
 
       if (sscanf(BPtr, "%llu",
                  &mem) != 1)
@@ -4202,9 +4203,7 @@ static const char *physmem(
     mem_total += mem;
     }
 
-  sprintf(ret_string, "%llukb",
-
-          mem_total);
+  sprintf(ret_string, "%llukb", mem_total);
 
   return(ret_string);
   }  /* END physmem() */

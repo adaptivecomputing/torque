@@ -662,6 +662,11 @@ int set_arst(
         }
       else
         {
+        if (!pas->as_buf) //coverity CID-752758
+          {
+          pas->as_bufsize = 0;
+          return(PBSE_SYSTEM);
+          }
         /* str fits, clear buf */
 
         memset(pas->as_buf,0,pas->as_bufsize);
