@@ -95,8 +95,10 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <ctype.h>
 #include <pthread.h>
+
 #include "libpbs.h"
 #include "server_limits.h"
 #include "list_link.h"
@@ -356,6 +358,7 @@ int pipe_and_read_unmunge(
     snprintf(log_buf, sizeof(log_buf), "cannot get file status flags for unmunge of %s", 
 	     mungeFileName);
     log_err(errno, __func__, log_buf);
+    pclose(munge_pipe);
     return(PBSE_SYSTEM);
     }
 
@@ -380,6 +383,7 @@ int pipe_and_read_unmunge(
       snprintf(log_buf, sizeof(log_buf), "cannot set file status flags to %d for unmunge of %s", 
 	       flags, mungeFileName);
       log_err(errno, __func__, log_buf);
+      pclose(munge_pipe);
       return(PBSE_SYSTEM);
       }
     }
@@ -450,7 +454,11 @@ int unmunge_request(
 
   /* create a unique temporary file for the credential data */
   snprintf(mungeFileName, sizeof(mungeFileName), "%smunge-XXXXXX", path_credentials);
+
+  // set the mask for the temporary file
+  umask(S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
   fd = mkstemp(mungeFileName);
+
   if (fd == -1)
     {
     snprintf(log_buf, sizeof(log_buf), "could not create temporary munge file %s", 
