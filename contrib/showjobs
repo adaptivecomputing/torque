@@ -3,7 +3,8 @@
 #
 # showjobs - list historical job information
 #
-#   Copyright (C) 2010 by Adaptive Computing Enterprises, Inc. All Rights Reserved.
+#   Copyright (C) 2010-2014 by Adaptive Computing Enterprises, Inc.
+#   All Rights Reserved.
 #
 # To enable job logging set the TORQUE server parameter record_job_info to TRUE
 # Edit this file to set $torqueHomeDir to the Torque home directory
@@ -544,6 +545,6 @@ Adaptive Computing, Inc., E<lt>http://www.adaptivecomputing.com/E<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2010 by Adaptive Computing Enterprises, Inc. All Rights Reserved.
+Copyright (C) 2010-2014 by Adaptive Computing Enterprises, Inc. All Rights Reserved.
 
 =cut

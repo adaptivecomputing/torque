@@ -167,11 +167,18 @@ int insert_into_recycler(
 
   {
   int              rc;
-  pthread_mutex_t *tmp = pjob->ji_mutex;
+  pthread_mutex_t *tmp;
   char             log_buf[LOCAL_LOG_BUF_SIZE];
 
+  pthread_mutex_lock(recycler.rc_mutex);
+
+  tmp = pjob->ji_mutex;
+
   if (pjob->ji_being_recycled == TRUE)
+    {
+    pthread_mutex_unlock(recycler.rc_mutex);
     return(PBSE_NONE);
+    }
   
   if (LOGLEVEL >= 7)
     {
@@ -179,8 +186,6 @@ int insert_into_recycler(
       "Adding job %s to the recycler", pjob->ji_qs.ji_jobid);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
-
-  pthread_mutex_lock(recycler.rc_mutex);
 
   memset(pjob, 0, sizeof(job));
   pjob->ji_mutex = tmp;

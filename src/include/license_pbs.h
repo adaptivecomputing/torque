@@ -3,7 +3,7 @@
 
 /*                     TORQUE v2.5+ Software License v1.1 
  *
- * Copyright (c) 2010-2013 Adaptive Computing Enterprises, Inc. All rights reserved. 
+ * Copyright (c) 2010-2014 Adaptive Computing Enterprises, Inc. All rights reserved. 
  *
  * Use this license to use or redistribute the TORQUE software v2.5+ and later versions. 
  * 

@@ -570,8 +570,9 @@ static void req_stat_job_step2(
 
       while ((pjob = next_job(pque->qu_jobs,jobiter)) != NULL)
         {
-        if ((qjcounter >= qmaxreport) &&
-            (pjob->ji_qs.ji_state == JOB_STATE_QUEUED))
+        if (((qjcounter >= qmaxreport) &&
+            (pjob->ji_qs.ji_state == JOB_STATE_QUEUED))||
+            (pjob->ji_being_recycled == true)) //Skip a job being recycled.
           {
           /* max_report of queued jobs reached for queue */
           unlock_ji_mutex(pjob, __func__, "6", LOGLEVEL);
@@ -631,6 +632,10 @@ static void req_stat_job_step2(
     {
     /* go ahead and build the status reply for this job */
 
+    if(pjob->ji_being_recycled == true)
+      {
+      goto nextjob;
+      }
     if (exec_only)
       {
       if (cntl->sc_pque != NULL)
