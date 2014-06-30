@@ -248,7 +248,7 @@ void scan_for_terminated(void) /* linux */
 
     while (pjob != NULL)
       {
-      if (pjob->ji_stats_done == true || pjob->ji_qs.ji_state <= JOB_STATE_RUNNING)                                                          
+      if (pjob->ji_stats_done == true || pjob->ji_qs.ji_state < JOB_STATE_RUNNING)
         {                                                                                                                                    
         pjob = (job *)GET_PRIOR(pjob->ji_alljobs);                                                                                           
         continue;                                                                                                                            
