@@ -251,7 +251,11 @@ void scan_for_terminated(void) /* linux */
 
     while (pjob != NULL)
       {
-
+      if (pjob->ji_stats_done == true || pjob->ji_qs.ji_state <= JOB_STATE_RUNNING)                                                          
+        {                                                                                                                                    
+        pjob = (job *)GET_PRIOR(pjob->ji_alljobs);                                                                                           
+        continue;                                                                                                                            
+        }  
 #ifdef USESAVEDRESOURCES
       ptask = (task *)GET_NEXT(pjob->ji_tasks);
 
@@ -367,6 +371,7 @@ void scan_for_terminated(void) /* linux */
       if (ptask != NULL)
         {
         /* pid match located - break out of job loop */
+        pjob->ji_stats_done = true;
 
         break;
         }

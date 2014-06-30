@@ -499,6 +499,7 @@ job *job_alloc(void)
   pj->ji_taskid = TM_NULL_TASK + 1;
   pj->ji_obit = TM_NULL_EVENT;
   pj->ji_nodekill = TM_ERROR_NODE;
+  pj->ji_stats_done = false;
 
   pj->ji_momhandle = -1;  /* mark mom connection invalid */
 
