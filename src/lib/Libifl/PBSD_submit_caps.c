@@ -634,7 +634,7 @@ int PBSD_QueueJob_hash(
     
     if (connection[connect].ch_errtxt == NULL)
       {
-      *msg = memmgr_strdup(mm, connection[connect].ch_errtxt, &tmp_size);
+      *msg = NULL;
       }
     }
   else if (reply->brp_choice == BATCH_REPLY_CHOICE_Text)
