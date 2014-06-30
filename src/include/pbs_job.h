@@ -655,9 +655,10 @@ struct job
   int            ji_mempressure_cnt;   /* counts MOM cycles memory_pressure is over threshold */
 #endif
   int            ji_examined;
-  time_t         ji_kill_started;       /* time since we've begun killing the job - MS only */
-  time_t         ji_joins_sent;         /* time we sent out the join requests - MS only */
-  int            ji_joins_resent;       /* set to TRUE when rejoins have been sent */
+  time_t         ji_kill_started;      /* time since we've begun killing the job - MS only */
+  time_t         ji_joins_sent;        /* time we sent out the join requests - MS only */
+  int            ji_joins_resent;      /* set to TRUE when rejoins have been sent */
+  bool           ji_stats_done;      /* Job has terminated and stats have been collected */
 
 #else     /* END MOM ONLY */
 
