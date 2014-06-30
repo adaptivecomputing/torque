@@ -535,7 +535,7 @@ jump:
         }
       std::string dup_job_id(pjob->ji_qs.ji_jobid);
 
-      if(pa != NULL)
+      if (pa != NULL)
         {
         for (i = 0; i < pa->ai_qs.array_size; i++)
           {
@@ -546,6 +546,7 @@ jump:
             continue;
 
           job_mutex.unlock();
+          
           if ((tmp = svr_find_job(pa->job_ids[i], FALSE)) == NULL)
             {
             free(pa->job_ids[i]);
@@ -575,25 +576,30 @@ jump:
 
             unlock_ji_mutex(tmp, __func__, "6", LOGLEVEL);
             }
-          if((pjob = svr_find_job((char *)dup_job_id.c_str(),FALSE)) == NULL) //Job disappeared.
+
+          if ((pjob = svr_find_job((char *)dup_job_id.c_str(),FALSE)) == NULL) //Job disappeared.
             {
             break;
             }
+
           job_mutex.set_lock_state(true);
           }
 
-        if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
+        if (pjob != NULL)
           {
-          long job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
-          int job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
-          int job_state = pjob->ji_qs.ji_state;
+          if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
+            {
+            long job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
+            int job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
+            int job_state = pjob->ji_qs.ji_state;
 
-          job_mutex.unlock();
-          update_array_values(pa,job_state,aeTerminate,
-            (char*)dup_job_id.c_str(), job_atr_hold, job_exit_status);
+            job_mutex.unlock();
+            update_array_values(pa,job_state,aeTerminate,
+              (char*)dup_job_id.c_str(), job_atr_hold, job_exit_status);
 
-          if((pjob = svr_find_job((char *)dup_job_id.c_str(),FALSE)) != NULL)
-            job_mutex.mark_as_locked();
+            if ((pjob = svr_find_job((char *)dup_job_id.c_str(),FALSE)) != NULL)
+              job_mutex.mark_as_locked();
+            }
           }
 
         unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
@@ -606,7 +612,6 @@ jump:
     job_mutex.set_unlock_on_exit(false);
     return -1;
     }
-
 
   if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0)
     {
@@ -629,10 +634,16 @@ jump:
     /* job has staged-in file, should remove them */
     remove_stagein(&pjob);
 
-    job_mutex.set_unlock_on_exit(false);
 
     if (pjob != NULL)
+      {
       job_abt(&pjob, Msg);
+
+      if (pjob == NULL)
+        job_mutex.set_unlock_on_exit(false);
+      }
+    else
+      job_mutex.set_unlock_on_exit(false);
     }
   else
     {
