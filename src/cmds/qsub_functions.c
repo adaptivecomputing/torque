@@ -2344,18 +2344,32 @@ int validate_group_list(
   }
 
 
-bool came_from_moab(const char *src, std::string &escaped_semicolon)
+bool its_an_xoption(const char *src, std::string &escaped_semicolon)
   {
   char *p;
-  if ((p = strstr((char *)src, "x=SID:Moab;")))
+  if ((p = strstr((char *)src, "x=")))
     {  
+    if (p != src) /* must start x= */
+      return false;
+
     char buf[1024], *s;
+    bool escaped = false;
     for (s=buf; *p; p++, s++)
       {
-      if (*p == ';')
+      if (*p == '\\')
+        escaped = true;
+      else
         {
-        *s = '\\';
-        s++;
+        /* all ; must be escaped as it's a delimiter of statements in shell */
+        if (*p == ';')
+          {
+          if (!escaped)
+            {
+            *s = '\\';
+            s++;
+            }
+          }
+          escaped = false;
         }
       *s = *p;
       }
@@ -3321,7 +3335,7 @@ void process_opts(
         if (argv[index] != NULL)
           {
           cline_out += " ";
-          if (came_from_moab(argv[index], escaped_semicolon))
+          if (its_an_xoption(argv[index], escaped_semicolon))
             cline_out += escaped_semicolon;
           else
             cline_out += argv[index];
