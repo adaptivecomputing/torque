@@ -2369,43 +2369,6 @@ int validate_group_list(
   }
 
 
-bool its_an_xoption(const char *src, std::string &escaped_semicolon)
-  {
-  char *p;
-  if ((p = strstr((char *)src, "x=")))
-    {  
-    if (p != src) /* must start x= */
-      return false;
-
-    char buf[1024], *s;
-    bool escaped = false;
-    for (s=buf; *p; p++, s++)
-      {
-      if (*p == '\\')
-        escaped = true;
-      else
-        {
-        /* all ; must be escaped as it's a delimiter of statements in shell */
-        if (*p == ';')
-          {
-          if (!escaped)
-            {
-            *s = '\\';
-            s++;
-            }
-          }
-          escaped = false;
-        }
-      *s = *p;
-      }
-    *s = '\0';
-    escaped_semicolon = std::string(buf);
-    return true;
-    }
-  else
-    return false;
-  }
-
 /** 
  * Process command line options.
  *
@@ -3352,15 +3315,13 @@ void process_opts(
 
       for (index = 1;index < argc;index++)
         {
-        std::string escaped_semicolon;
         if (argv[index] != NULL)
           {
           cline_out += " ";
-          if (its_an_xoption(argv[index], escaped_semicolon))
-            cline_out += escaped_semicolon;
-          else
-            cline_out += argv[index];
-          }
+          cline_out += "\"";
+          cline_out += argv[index];
+          cline_out += "\"";
+         }
         }    /* END for (index) */
        
       cline_out += " <";
