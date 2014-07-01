@@ -368,7 +368,9 @@ void scan_for_terminated(void) /* linux */
         tcount++;
         }  /* END while (ptask) */
 
-      if (ptask != NULL)
+      // make sure the task is the top level task for the job to mark the job done
+      if ((ptask != NULL) &&
+          (ptask->ti_qs.ti_parenttask == TM_NULL_TASK))
         {
         /* pid match located - break out of job loop */
         pjob->ji_stats_done = true;
