@@ -274,6 +274,8 @@ typedef struct nodeboard_t
   unsigned long long pstat_idle;
   int                mic_start_index; /* index of first mic for this board */
   int                mic_end_index;   /* index of last mic for this board */
+  int                gpu_start_index; /* index of first gpu for this board */
+  int                gpu_end_index;   /* index of last gpu for this board */
   float              cpuact;
   } nodeboard;
 #endif /* NUMA_SUPPORT */

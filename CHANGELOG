@@ -1,5 +1,10 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
+4.2.9
+  b - TRQ-2730. Make nvml and numa-support configurations work together. The admin must
+      now specify which gpus are on which node board the same way it is done with mic
+      co-processors, adding gpu=X[-Y] to the mom.layout line for that node board.
+
 4.2.8
   b - TRQ-2501. Fix the total number of execution slots having a count that is off-by-one for
       every Cray compute node.
