@@ -246,7 +246,6 @@ void          poll_job_task(work_task *);
 extern void   on_job_rerun_task(struct work_task *);
 extern void   set_resc_assigned(job *, enum batch_op);
 extern void   set_old_nodes(job *);
-extern void   acct_close(void);
 
 extern struct work_task *apply_job_delete_nanny(struct job *, int);
 extern int     net_move(job *, struct batch_request *);
@@ -1361,7 +1360,7 @@ int setup_server_attrs(
     0);
 
   /* open accounting file and job log file if logging is set */
-  if (acct_open(acct_file) != 0)
+  if (acct_open(acct_file, false) != 0)
     {
     pthread_mutex_unlock(server.sv_attr_mutex);
     return(-1);
@@ -2752,13 +2751,13 @@ void change_logs()
   long record_job_info = FALSE;
 
   run_change_logs = FALSE;
-  acct_close();
+  acct_close(false);
   pthread_mutex_lock(&log_mutex);
   log_close(1);
   log_open(log_file, path_log);
   pthread_mutex_unlock(&log_mutex);
 
-  acct_open(acct_file);
+  acct_open(acct_file, false);
 
   get_svr_attr_l(SRV_ATR_RecordJobInfo, &record_job_info);
   if (record_job_info)
