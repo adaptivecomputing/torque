@@ -122,6 +122,7 @@ pthread_mutex_t     *acctfile_mutex;
 
 extern attribute_def job_attr_def[];
 extern char     *path_acct;
+extern char     *acct_file;
 extern int       LOGLEVEL;
 
 
@@ -319,7 +320,8 @@ int acct_job(
 
 int acct_open(
 
-  char *filename)  /* abs pathname or NULL */
+  char *filename,  /* abs pathname or NULL */
+  bool  acct_mutex_locked)
 
   {
   char  filen[_POSIX_PATH_MAX];
@@ -372,14 +374,18 @@ int acct_open(
 
   setbuf(newacct, NULL);        /* set no buffering */
 
-  pthread_mutex_lock(acctfile_mutex);
+  if (acct_mutex_locked == false)
+    pthread_mutex_lock(acctfile_mutex);
+
   if (acct_opened > 0)          /* if acct was open, close it */
     fclose(acctfile);
 
   acctfile = newacct;
-  pthread_mutex_unlock(acctfile_mutex);
-
+  
   acct_opened = 1;  /* note that file is open */
+
+  if (acct_mutex_locked == false)
+    pthread_mutex_unlock(acctfile_mutex);
 
   sprintf(logmsg, "Account file %s opened",
           filename);
@@ -397,17 +403,23 @@ int acct_open(
  * acct_close - close the current open log file
  */
 
-void acct_close(void)
+void acct_close(
+    
+  bool acct_mutex_locked)
 
   {
-  pthread_mutex_lock(acctfile_mutex);
+  if (acct_mutex_locked == false)
+    pthread_mutex_lock(acctfile_mutex);
+
   if (acct_opened == 1)
     {
     fclose(acctfile);
 
     acct_opened = 0;
     }
-  pthread_mutex_unlock(acctfile_mutex);
+
+  if (acct_mutex_locked == false)
+    pthread_mutex_unlock(acctfile_mutex);
 
   return;
   }  /* END acct_close() */
@@ -422,8 +434,8 @@ void acct_close(void)
 
 void account_record(
 
-  int   acctype, /* accounting record type */
-  job  *pjob,
+  int         acctype, /* accounting record type */
+  job        *pjob,
   const char *text)  /* text to log, may be null */
 
   {
@@ -431,28 +443,27 @@ void account_record(
   struct tm *ptm;
   struct tm  tmpPtm;
 
+  pthread_mutex_lock(acctfile_mutex);
   if (acct_opened == 0)
     {
-    /* file not open, don't bother */
-
-    return;
+    acct_open(acct_file, true);
     }
 
   ptm = localtime_r(&time_now,&tmpPtm);
 
   /* Do we need to switch files */
 
-  if ((acct_auto_switch != 0) && (acct_opened_day != ptm->tm_yday))
+  if ((acct_auto_switch != 0) &&
+      (acct_opened_day != ptm->tm_yday))
     {
-    acct_close();
+    acct_close(true);
 
-    acct_open(NULL);
+    acct_open(NULL, true);
     }
 
   if (text == NULL)
     text = (char *)"";
 
-  pthread_mutex_lock(acctfile_mutex);
   fprintf(acctfile, "%02d/%02d/%04d %02d:%02d:%02d;%c;%s;%s\n",
           ptm->tm_mon + 1,
           ptm->tm_mday,
