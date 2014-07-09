@@ -161,7 +161,6 @@ extern void tcp_settimeout(long);
 extern int  schedule_jobs(void);
 extern int  notify_listeners(void);
 extern void svr_shutdown(int);
-extern void acct_close(void);
 extern int  svr_startjob(job *, struct batch_request **, char *, char *);
 extern int RPPConfigure(int, int);
 extern void acct_cleanup(long);
@@ -1987,7 +1986,7 @@ int main(
     msg_daemonname,
     msg_svrdown);
 
-  acct_close();
+  acct_close(false);
 
   pthread_mutex_lock(&log_mutex);
   log_close(1);
