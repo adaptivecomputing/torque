@@ -1876,8 +1876,10 @@ int create_pbs_node(
     return(PBSE_SYSTEM);
     }
 
-  if (node_mapper.get_id(pname) != -1)
+  if ((pnode = find_nodebyname(pname)) != NULL)
     {
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+
     free(pname);
     free(pul);
 
