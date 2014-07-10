@@ -893,10 +893,10 @@ void effective_node_delete(
 
 static int process_host_name_part(
 
-  char   *objname, /* node to be's name */
+  char    *objname, /* node to be's name */
   u_long **pul,  /* 0 terminated host addrs array */
-  char  **pname, /* node name w/o any :ts         */
-  int   *ntype) /* node type; time-shared, not   */
+  char   **pname, /* node name w/o any :ts         */
+  int     *ntype) /* node type; time-shared, not   */
 
   {
   char                log_buf[LOCAL_LOG_BUF_SIZE];
@@ -945,7 +945,7 @@ static int process_host_name_part(
 
   *pul = NULL;
 
-  if (pbs_getaddrinfo(phostname, &hints, &addr_info) != 0)
+  if (overwrite_cache(phostname, &addr_info) == false)
     {
     snprintf(log_buf, sizeof(log_buf), "host %s not found", objname);
 
