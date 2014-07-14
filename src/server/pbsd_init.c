@@ -154,6 +154,8 @@
 
 /* global Data Items */
 
+bool all_nodes_added = false;
+
 struct addrinfo hints;
 extern char *msg_daemonname;
 extern char *msg_init_abt;
@@ -215,6 +217,7 @@ queue_recycler                  q_recycler;
 pthread_mutex_t                *exiting_jobs_info_mutex;
 
 std::vector<std::string>        hierarchy_holder;
+std::vector<std::string>        deleted_nodes_holder;
 hello_container                 hellos;
 hello_container                 failures;
 
@@ -223,6 +226,7 @@ batch_request_holder            brh;
 
 extern pthread_mutex_t         *acctfile_mutex;
 pthread_mutex_t                *scheduler_sock_jobct_mutex;
+pthread_mutex_t                *deleted_nodes_mutex;
 extern int                      scheduler_sock;
 extern int                      scheduler_jobct;
 extern pthread_mutex_t         *svr_do_schedule_mutex;
@@ -860,6 +864,10 @@ void add_all_nodes_to_hello_container()
   int             level_indices[MAX_LEVEL_DEPTH];
   int             insertion_index;
 
+  /* We have already added everyone. Don't do it again */
+  if (all_nodes_added == true)
+    return;
+
   memset(level_indices, 0, sizeof(level_indices));
 
   while ((pnode = next_host(&allnodes, &iter, NULL)) != NULL)
@@ -880,6 +888,8 @@ void add_all_nodes_to_hello_container()
 
   if (iter != NULL)
     delete iter;
+
+  all_nodes_added = true;
 
   return;
   } /* END add_all_nodes_to_hello_container() */
@@ -1240,6 +1250,9 @@ int initialize_data_structures_and_mutexes()
   scheduler_sock = -1;
   scheduler_jobct = 0;
   pthread_mutex_unlock(scheduler_sock_jobct_mutex);
+
+  deleted_nodes_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(deleted_nodes_mutex, NULL);
 
 
   /* make the task list child and events mutexes recursive because 

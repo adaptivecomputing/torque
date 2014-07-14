@@ -129,6 +129,7 @@ typedef unsigned long pbs_net_t;        /* for holding host addresses */
 #define IS_UPDATE         3
 #define IS_STATUS         4
 #define IS_GPU_STATUS     5
+#define IS_DELETE_ADDRS   6
 
 
 /* tell pbs_mom the direction of the hello */
