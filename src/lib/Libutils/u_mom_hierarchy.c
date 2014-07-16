@@ -696,6 +696,7 @@ void parse_mom_hierarchy(
   current = buffer;
 
   while (get_parent_and_child(current, &parent, &child, &current) == PBSE_NONE)
+
     {
     if (!strncmp(parent,"path",strlen("path")))
       handle_path(child, path_index);

@@ -154,8 +154,6 @@
 
 /* global Data Items */
 
-bool all_nodes_added = false;
-
 struct addrinfo hints;
 extern char *msg_daemonname;
 extern char *msg_init_abt;
@@ -864,10 +862,6 @@ void add_all_nodes_to_hello_container()
   int             level_indices[MAX_LEVEL_DEPTH];
   int             insertion_index;
 
-  /* We have already added everyone. Don't do it again */
-  if (all_nodes_added == true)
-    return;
-
   memset(level_indices, 0, sizeof(level_indices));
 
   while ((pnode = next_host(&allnodes, &iter, NULL)) != NULL)
@@ -888,8 +882,6 @@ void add_all_nodes_to_hello_container()
 
   if (iter != NULL)
     delete iter;
-
-  all_nodes_added = true;
 
   return;
   } /* END add_all_nodes_to_hello_container() */

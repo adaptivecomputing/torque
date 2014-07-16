@@ -144,7 +144,6 @@
 
 /* Global Data Items: */
 
-extern bool           all_nodes_added;
 extern int            LOGLEVEL;
 extern struct server  server;
 extern attribute_def  que_attr_def[];
@@ -170,6 +169,8 @@ extern int PNodeStateToString(int, char *, int);
 extern pthread_mutex_t *deleted_nodes_mutex;
 
 extern void add_all_nodes_to_hello_container();
+void        prepare_mom_hierarchy(std::vector<std::string> &hierarchy_holder);
+extern      std::vector<std::string> hierarchy_holder;
 
 /* private data */
 
@@ -2131,6 +2132,7 @@ void mgr_node_create(
 
   reply_ack(preq);     /* create request successful */
 
+  prepare_mom_hierarchy(hierarchy_holder);
   add_all_nodes_to_hello_container();
 
   return;

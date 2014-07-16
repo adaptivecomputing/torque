@@ -171,7 +171,6 @@ void stream_eof(int, u_long, uint16_t, int);
 extern void scheduler_close();
 extern std::vector<std::string> deleted_nodes_holder;
 extern pthread_mutex_t *deleted_nodes_mutex;
-extern bool all_nodes_added;
 
 #ifndef MAX_PATH_LEN
 #define MAX_PATH_LEN 256
@@ -1137,8 +1136,6 @@ void send_any_hellos_needed()
   /* re-insert any failures */
   while ((hi = pop_hello(&failures)) != NULL)
     add_hello_info(&hellos, hi);
-
-  all_nodes_added = false;
 
   } /* END send_any_hellos_needed() */
 

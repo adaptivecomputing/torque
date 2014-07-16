@@ -2331,7 +2331,7 @@ int read_delete_addresses(
 int read_cluster_addresses(
 
   struct tcp_chan *chan,
-  int version)
+  int              version)
 
   {
   int             rc;
