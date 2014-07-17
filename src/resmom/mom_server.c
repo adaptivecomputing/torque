@@ -293,6 +293,7 @@ extern int                 UpdateFailCount;
 extern mom_hierarchy_t    *mh;
 extern char               *stat_string_aggregate;
 extern unsigned int        ssa_index;
+extern u_long              localaddr;
 extern container::item_container<received_node *> received_statuses;
 std::vector<std::string>   global_gpu_status;
 std::vector<std::string>   mom_status;
@@ -2255,21 +2256,64 @@ int process_level_string(
 void sort_paths()
 
   {
-  for(int i = 0;i < (int)mh->paths->size();i++)
+  for (unsigned int i = 0;i < mh->paths.size();i++)
     {
-    for(int j = (int)(mh->paths->size() -1);(j >= 0)&&(j != i);j--)
+    for (int j = (int)mh->paths.size() -1; (j >= 0) && (j != (int)i); j--)
       {
-      if(mh->paths->at(j)->size() < mh->paths->at(i)->size())
+      if (mh->paths.at(j).size() < mh->paths.at(i).size())
         {
         /* swap positions */
-        mom_levels *tmp = mh->paths->at(i);
-        mh->paths->at(i) = mh->paths->at(j);
-        mh->paths->at(j) = tmp;
+        mom_levels tmp = mh->paths.at(i);
+        mh->paths.at(i) = mh->paths.at(j);
+        mh->paths.at(j) = tmp;
         }
       }
     }
   } /* END sort_paths() */
 
+
+
+
+void reset_okclients()
+
+  {
+  okclients = AVL_clear_tree(okclients);
+
+  // re-add each server
+  for (int sindex = 0;sindex < PBS_MAXSERVER;sindex++)
+    {
+    mom_server *pms = &mom_servers[sindex];
+
+    if (pms->pbs_servername[0] != '\0')
+      {
+      struct in_addr   saddr;
+      u_long           ipaddr;
+      struct addrinfo *addr_info;
+
+      if (pbs_getaddrinfo(pms->pbs_servername, NULL, &addr_info) != 0)
+        {
+        sprintf(log_buffer, "host %s not found", pms->pbs_servername);
+
+        log_err(-1, __func__, log_buffer);
+        }
+      else
+        {
+        saddr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
+
+        ipaddr = ntohl(saddr.s_addr);
+
+        if (ipaddr != 0)
+          {
+          okclients = AVL_insert(ipaddr, 0, NULL, okclients);
+          }
+        }
+      }
+    }
+
+  // add localhost
+  okclients = AVL_insert(localaddr, 0, NULL, okclients);
+
+  }
 
 
 
@@ -2294,6 +2338,7 @@ int read_cluster_addresses(
     free_mom_hierarchy(mh);
 
   mh = initialize_mom_hierarchy();
+  reset_okclients();
 
   while (((str = disrst(chan, &rc)) != NULL) &&
          (rc == DIS_SUCCESS))
@@ -2317,7 +2362,7 @@ int read_cluster_addresses(
       if (path_complete == FALSE)
         {
         /* we were not in the last path, so delete it */
-        mh->paths->pop_back();
+        mh->paths.pop_back();
         path_index--;
         hierarchy_file.clear();
         }

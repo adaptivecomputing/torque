@@ -629,17 +629,17 @@ void check_if_in_nodes_file(
  */
 void convert_level_to_send_format(
 
-  mom_nodes                *nodes,
+  mom_nodes                &nodes,
   int                       level_index,
   std::vector<std::string> &send_format)
 
   {
-  node_comm_t       *nc;
-  std::stringstream  level_string;
+  node_comm_t       nc;
+  std::stringstream level_string;
 
   send_format.push_back("<sl>");
 
-  for(mom_nodes::iterator nodes_iter = nodes->begin();nodes_iter != nodes->end();nodes_iter++)
+  for (mom_nodes::iterator nodes_iter = nodes.begin(); nodes_iter != nodes.end(); nodes_iter++)
     {
     nc = *nodes_iter;
     unsigned short rm_port = 0;
@@ -647,8 +647,8 @@ void convert_level_to_send_format(
     if (level_string.str().size() != 0)
       level_string << ",";
   
-    check_if_in_nodes_file(nc->name, level_index, rm_port);
-    level_string << nc->name;
+    check_if_in_nodes_file(nc.name, level_index, rm_port);
+    level_string << nc.name;
 
     if (rm_port != PBS_MANAGER_SERVICE_PORT)
       {
@@ -678,15 +678,15 @@ void convert_level_to_send_format(
  */
 void convert_path_to_send_format(
 
-  mom_levels               *levels,
+  mom_levels               &levels,
   std::vector<std::string> &send_format)
 
   {
   int level_index = 0;
   send_format.push_back("<sp>");
-  
-  for(mom_levels::iterator levels_iter = levels->begin();levels_iter != levels->end();levels_iter++)
-    convert_level_to_send_format(*levels_iter, level_index++, send_format);
+
+  for (unsigned int i = 0; i < levels.size(); i++)  
+    convert_level_to_send_format(levels[i], level_index++, send_format);
 
   send_format.push_back("</sp>");
   } /* END convert_path_to_send_format() */
@@ -764,8 +764,8 @@ void convert_mom_hierarchy_to_send_format(
 
   {
 
-  for(mom_paths::iterator paths_iter = mh->paths->begin();paths_iter != mh->paths->end();paths_iter++)
-    convert_path_to_send_format(*paths_iter, send_format);
+  for (unsigned int i = 0; i < mh->paths.size(); i++)
+    convert_path_to_send_format(mh->paths[i], send_format);
     
   if (send_format.size() == 0)
     {
