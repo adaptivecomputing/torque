@@ -158,7 +158,7 @@ extern char          *msg_man_del;
 extern char          *msg_man_set;
 extern char          *msg_man_uns;
 extern int            disable_timeout_check;
-extern std::vector<std::string>        deleted_nodes_holder;
+
 
 extern int que_purge(pbs_queue *);
 extern void save_characteristic(struct pbsnode *, node_check_info *);
@@ -166,7 +166,6 @@ extern int chk_characteristic(struct pbsnode *, node_check_info *, int *);
 extern int hasprop(struct pbsnode *, struct prop *);
 extern int PNodeStateToString(int, char *, int);
 
-extern pthread_mutex_t *deleted_nodes_mutex;
 
 extern void add_all_nodes_to_hello_container();
 void        prepare_mom_hierarchy(std::vector<std::string> &hierarchy_holder);
@@ -1977,18 +1976,11 @@ static void mgr_node_delete(
     {
     /* handle all nodes */
     iter = NULL;
-    mutex_mgr del_nodes_mutex(deleted_nodes_mutex, false);
 
     while ((pnode = next_host(&allnodes,&iter,NULL)) != NULL)
       {
-      char deleted_info[MAX_LINE];
-
       snprintf(log_buf,sizeof(log_buf),"%s",pnode->nd_name);
 
-      /* Add the deleted node to the list of nodes
-         to delete from the moms trusted addr list */
-      sprintf(deleted_info, "%lu,%u", *pnode->nd_addrs, pnode->nd_mom_rm_port);
-      deleted_nodes_holder.push_back(deleted_info);
       effective_node_delete(&pnode);
 
       mgr_log_attr(msg_man_set, plist, PBS_EVENTCLASS_NODE, log_buf);
@@ -1999,20 +1991,13 @@ static void mgr_node_delete(
     }
   else
     {
-    char deleted_info[MAX_LINE];
-    mutex_mgr del_nodes_mutex(deleted_nodes_mutex, false);
     /* handle single nodes */
     snprintf(log_buf,sizeof(log_buf),"%s",pnode->nd_name);
 
-    /* Add the deleted node to the list of nodes
-       to delete from the moms trusted addr list */
-    sprintf(deleted_info, "%lu,%u", *pnode->nd_addrs, pnode->nd_mom_rm_port);
-    deleted_nodes_holder.push_back(deleted_info);
     effective_node_delete(&pnode);
 
     mgr_log_attr(msg_man_set, plist, PBS_EVENTCLASS_NODE, log_buf);
     }
-
 
   /*set "deleted" bit in node's (nodes, check_all == 1) "inuse" field*/
   /*remove entire prop list, including the node name, from the node */
@@ -2026,6 +2011,9 @@ static void mgr_node_delete(
   recompute_ntype_cnts();
 
   reply_ack(preq);  /*request completely successful*/
+  
+  prepare_mom_hierarchy(hierarchy_holder);
+  add_all_nodes_to_hello_container();
 
   return;
   }  /* END mgr_node_delete() */
@@ -2049,13 +2037,9 @@ void mgr_node_create(
   {
   int   bad;
   svrattrl *plist;
-  std::string new_nodename;
-  struct pbsnode *pnode;
   int   rc;
 
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
-
-  new_nodename = preq->rq_ind.rq_manager.rq_objname;
 
   rc = create_pbs_node(
          preq->rq_ind.rq_manager.rq_objname,
@@ -2097,18 +2081,6 @@ void mgr_node_create(
 
     return;
     }
-
-  /* We just created this node. We won't need to worry about 
-     the mom hierarchy */
-  pnode = find_nodebyname(new_nodename.c_str());
-  if (pnode == NULL)
-    {
-    log_err(-1, __func__, "node unexpectedly abscent");
-    }
-
-  pnode->nd_hierarchy_level = 0;
-
-  unlock_node(pnode, __func__, "new node", LOGLEVEL);
 
   mgr_log_attr(
     msg_man_set,

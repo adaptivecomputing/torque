@@ -2271,61 +2271,6 @@ void sort_paths()
   } /* END sort_paths() */
 
 
-/* read_delete_addresses parses a comma separated
-   string where the format is addr,port,addr,port,...
-   It grabs the addr/port value and then deletes 
-   that from the okclients AVL tree */
-int read_delete_addresses(
-
-  struct tcp_chan *chan,
-  int    version)
-
-  {
-  int           rc = PBSE_NONE;
-  char          *str;
-  std::string   deleted_list;
-  std::string delimiter = ",";
-  size_t pos = 0;
-
-  str = disrst(chan, &rc);
-  if (rc != DIS_SUCCESS)
-    {
-    return(PBSE_SYSTEM);
-    }
-
-  if (!strcmp(str, IS_EOL_MESSAGE))
-    {
-    free(str);
-    return(PBSE_NONE);
-    }
-
-  deleted_list = str;
-  std::string token;
-  bool is_addr = true;
-  u_long addr;
-  unsigned short port;
-  while ((pos = deleted_list.find(delimiter)) != std::string::npos)
-    {
-
-    token = deleted_list.substr(0, pos);
-    if (is_addr == true)
-      {
-      addr = strtoul(token.c_str(), NULL, 0);
-      is_addr = false;
-      }
-    else
-      {
-      port = strtoul(token.c_str(), NULL, 0);
-      AVL_delete_node(addr, port, okclients);
-      is_addr = true;
-      }
-      
-    deleted_list.erase(0, pos+delimiter.length());
-    }
-
-  return (rc);
-  }
-
 
 
 int read_cluster_addresses(
@@ -2596,11 +2541,6 @@ void mom_is_request(
       if (read_status_strings(chan,version) < 0)
         ret = -1;
   
-      break;
-
-    case IS_DELETE_ADDRS:
-
-      ret = read_delete_addresses(chan, version);
       break;
 
     default:

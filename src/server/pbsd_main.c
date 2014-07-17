@@ -143,8 +143,6 @@
 #include "job_route.h" /* queue_route */
 #include "exiting_jobs.h"
 #include "server_comm.h"
-#include "node_func.h" /* reinitialize_node_iterator */
-#include "mutex_mgr.hpp"
 
 #define TASK_CHECK_INTERVAL      10
 #define HELLO_WAIT_TIME          600
@@ -169,8 +167,6 @@ extern int RPPConfigure(int, int);
 extern void acct_cleanup(long);
 void stream_eof(int, u_long, uint16_t, int);
 extern void scheduler_close();
-extern std::vector<std::string> deleted_nodes_holder;
-extern pthread_mutex_t *deleted_nodes_mutex;
 
 #ifndef MAX_PATH_LEN
 #define MAX_PATH_LEN 256
@@ -994,134 +990,7 @@ static int start_hot_jobs(void)
   return(ct);
   }  /* END start_hot_jobs() */
 
-/* Get a connection to a MOM and return the socket handle */
-int connect_to_mom(const char *node_name, unsigned short port)
-  {
-  struct addrinfo *pAddrInfo = NULL;
-  struct sockaddr_in sa;
-  int    ret;
-  int    sock;
-  char   log_buf[LOCAL_LOG_BUF_SIZE];
 
-  ret = pbs_getaddrinfo(node_name, NULL, &pAddrInfo);
-  if (ret != PBSE_NONE)
-    return(-1);
-
-  memcpy(&sa, pAddrInfo->ai_addr, sizeof(sa));
-  sa.sin_port = htons(port);
-
-  /* get a connection to the MOM */
-  sock = tcp_connect_sockaddr((struct sockaddr *)&sa, sizeof(sa));
-
-  if (sock < 0)
-    {
-    sprintf(log_buf, "Could not connect to host %s:%d", node_name, port);
-    log_err(-1, __func__, log_buf);
-    return(sock);
-    }
-
-  ret = add_conn(sock, ToServerDIS, ntohl(sa.sin_addr.s_addr), sa.sin_port, PBS_SOCK_INET, NULL);
-  if (ret != PBSE_NONE)
-    {
-    return(-1);
-    }
-
-  return(sock);
-
-  }
-
-void send_deleted_nodes_to_all(std::string deleted_nodes)
-  {
-  int ret;
-  struct pbsnode *np;
-  node_iterator iter;
-  int           sock;
-  char   log_buf[LOCAL_LOG_BUF_SIZE];
-  struct tcp_chan  *chan = NULL;
-
-  reinitialize_node_iterator(&iter);
-
-  while ((np = next_node(&allnodes, np, &iter)) != NULL)
-    {
-    sock = connect_to_mom(np->nd_name, np->nd_mom_rm_port);
-    if (sock < 0)
-      {
-      sprintf(log_buf, "Could not connect to %s:%d", np->nd_name, np->nd_mom_port);
-      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buf);
-      continue;
-      }
-
-    chan = DIS_tcp_setup(sock);
-    if (chan == NULL)
-      {
-      sprintf(log_buf, "Failed to open a channel for node %s:%d", np->nd_name, np->nd_mom_port);
-      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buf);
-      close_conn(sock, FALSE);
-      continue;
-      }
-    
-    ret = is_compose(chan, IS_DELETE_ADDRS);
-    if (ret != DIS_SUCCESS)
-      {
-      sprintf(log_buf, "Faild to compose IS_DELETE_ADDRS. %s:%d", np->nd_name, np->nd_mom_port);
-      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buf);
-      close_conn(sock, FALSE);
-      DIS_tcp_cleanup(chan);
-      continue;
-      }
-
-    ret = diswst(chan, deleted_nodes.c_str());
-    if (ret != DIS_SUCCESS)
-      {
-      sprintf(log_buf, "Error composing message. %s:%d", np->nd_name, np->nd_mom_port);
-      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buf);
-      close_conn(sock, FALSE);
-      DIS_tcp_cleanup(chan);
-      continue;
-      }
-
-    ret = diswst(chan, IS_EOL_MESSAGE);
-    if (ret != DIS_SUCCESS)
-      {
-      sprintf(log_buf, "Error composing IS_EOL_MESSAGE. %s:%d", np->nd_name, np->nd_mom_port);
-      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buf);
-      close_conn(sock, FALSE);
-      DIS_tcp_cleanup(chan);
-      continue;
-      }
-
-    DIS_tcp_wflush(chan);
-    close_conn(sock, FALSE);
-    DIS_tcp_cleanup(chan);
-    }
-
-  return;
-  }
-
-void send_any_deleted_nodes()
-  {
-  std::string deleted_nodes;
-  mutex_mgr del_nodes_mutex(deleted_nodes_mutex, false);
-
-
-  if (deleted_nodes_holder.size() == 0)
-    {
-    return;
-    }
-
-  /* Create a , delimited string of all the nodes
-     that need to be deleted */
-  for (std::vector<std::string>::iterator iter = deleted_nodes_holder.begin(); iter != deleted_nodes_holder.end(); iter++)
-    {
-    deleted_nodes += *iter;
-    deleted_nodes += ",";
-    }
-  
-  send_deleted_nodes_to_all(deleted_nodes);
-  deleted_nodes_holder.clear();
-  return;
-
-  }
 
 
 void send_any_hellos_needed()
@@ -1540,7 +1409,6 @@ void main_loop(void)
     if (try_hellos <= time_now)
       {
       try_hellos = time_now + HELLO_INTERVAL;
-      send_any_deleted_nodes();
       send_any_hellos_needed();
       }
 
