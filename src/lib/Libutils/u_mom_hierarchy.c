@@ -147,7 +147,7 @@ int add_network_entry(
   memset(&nc, 0, sizeof(nc));
 
   /* check if the path is already in the array */
-  if (nt->paths.size() <= (size_t)path)
+  while (nt->paths.size() <= (size_t)path)
     {
     /* insert a new path */
     mom_levels nl;
@@ -158,7 +158,7 @@ int add_network_entry(
   mom_levels &levels = nt->paths.at(path);
 
   /* check if the level is in the array already */
-  if (levels.size() <= (size_t)level)
+  while (levels.size() <= (size_t)level)
     {
     /* insert a new level */
     mom_nodes nce;
