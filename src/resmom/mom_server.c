@@ -2362,8 +2362,11 @@ int read_cluster_addresses(
       if (path_complete == FALSE)
         {
         /* we were not in the last path, so delete it */
-        mh->paths.pop_back();
-        path_index--;
+        if (mh->paths.size() > 0)
+          {
+          mh->paths.pop_back();
+          path_index--;
+          }
         hierarchy_file.clear();
         }
       else if (something_added == FALSE)
