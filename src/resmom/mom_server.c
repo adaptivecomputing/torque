@@ -2313,6 +2313,8 @@ void reset_okclients()
   // add localhost
   okclients = AVL_insert(localaddr, 0, NULL, okclients);
 
+  // BMD: add the node's ip address
+
   }
 
 
