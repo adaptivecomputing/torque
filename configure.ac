@@ -51,8 +51,8 @@ if test "x$MAKE" = "xerror" ;then
 fi
 
 m4_ifdef([HAVE_CHECK],
-  [AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.9.6 color-tests])],
-  [AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.9.6])])
+  [AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.9.6 color-tests subdir-objects])],
+  [AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.9.6 subdir-objects])])
 
 AM_PROG_CC_C_O
 CC="$CXX"
