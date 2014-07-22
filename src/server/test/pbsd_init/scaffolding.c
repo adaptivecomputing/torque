@@ -632,14 +632,6 @@ mom_hierarchy_t *initialize_mom_hierarchy()
 
   {
   mom_hierarchy_t *nt = (mom_hierarchy_t *)calloc(1, sizeof(mom_hierarchy_t));
-  nt->paths = new mom_paths();
-
-  if (nt->paths == NULL)
-    {
-    free(nt);
-    nt = NULL;
-    return(nt);
-    }
 
   nt->current_path  = -1;
   nt->current_level = -1;
@@ -650,7 +642,8 @@ mom_hierarchy_t *initialize_mom_hierarchy()
 
 void parse_mom_hierarchy(int fds)
   {
-  mh->paths->push_back(new mom_levels());
+  mom_levels lv;
+  mh->paths.push_back(lv);
   }
 
 id_map::id_map() {}

@@ -280,6 +280,15 @@ int pbs_getaddrinfo(const char *,struct addrinfo *,struct addrinfo **ai)
   return 0;
   }
 
+bool overwrite_cache(const char *,struct addrinfo **ai)
+  {
+  memset(&dummyAddrInfo,0,sizeof(struct addrinfo));
+  memset(&dummySockAddr,0,sizeof(struct sockaddr));
+  dummyAddrInfo.ai_addr = &dummySockAddr;
+  *ai = &dummyAddrInfo;
+  return true;
+  }
+
 job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode)
   {
   fprintf(stderr, "The call to get_job_from_job_usage_info needs to be mocked!!\n");
