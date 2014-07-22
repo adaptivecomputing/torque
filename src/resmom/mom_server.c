@@ -239,6 +239,7 @@
 #include "../lib/Libifl/lib_ifl.h" /* pbs_disconnect_socket */
 #include "alps_functions.h"
 #include "../lib/Libnet/lib_net.h" /* netaddr */
+#include "net_cache.h"
 #include "mom_config.h"
 #include <string>
 #include <vector>
@@ -551,7 +552,7 @@ int mom_server_add(
 
     /* FIXME: must be able to retry failed lookups later */
 
-    if (pbs_getaddrinfo(pms->pbs_servername, NULL, &addr_info) != 0)
+    if (!overwrite_cache(pms->pbs_servername, &addr_info))
       {
       sprintf(log_buffer, "host %s not found", pms->pbs_servername);
 
@@ -2095,7 +2096,7 @@ mom_server *mom_server_valid_message_source(
           struct in_addr   saddr;
           u_long           server_ip;
 
-          if (pbs_getaddrinfo(pms->pbs_servername, NULL, &addr_info) == 0)
+          if (overwrite_cache(pms->pbs_servername, &addr_info))
             {
             saddr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
 
@@ -2151,7 +2152,7 @@ int process_host_name(
     rm_port = (unsigned short)atoi(colon+1);
     }
   
-  if (pbs_getaddrinfo(hostname, NULL, &addr_info) == 0)
+  if (overwrite_cache(hostname, &addr_info))
     {
     sa.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
     ipaddr      = ntohl(sa.sin_addr.s_addr);
@@ -2290,7 +2291,7 @@ void reset_okclients()
       u_long           ipaddr;
       struct addrinfo *addr_info;
 
-      if (pbs_getaddrinfo(pms->pbs_servername, NULL, &addr_info) != 0)
+      if (!overwrite_cache(pms->pbs_servername, &addr_info))
         {
         sprintf(log_buffer, "host %s not found", pms->pbs_servername);
 
