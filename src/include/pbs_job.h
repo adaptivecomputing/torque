@@ -387,6 +387,7 @@ enum job_atr
   JOB_ATR_nppcu, /* Hyper-Thread handling for ALPS (Cray) */
 #include "site_job_attr_enum.h"
 
+  JOB_ATR_copystd_on_rerun, /* copy std files to user's specified on reurn */
   JOB_ATR_UNKN,  /* the special "unknown" type    */
   JOB_ATR_LAST  /* This MUST be LAST */
   };
@@ -957,6 +958,7 @@ typedef struct send_job_request
 #define JOB_SVFLG_RescAssn 0x2000 /* job resources accumulated in server/que */
 #define JOB_SVFLG_CHECKPOINT_COPIED 0x4000 /* job checkpoint file that has been copied */
 #define JOB_SVFLG_INTERMEDIATE_MOM  0x8000 /* This is for job_radix. I am an intermediate mom */
+
 
 /*
  * Related defines
