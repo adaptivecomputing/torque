@@ -2303,7 +2303,8 @@ void on_job_rerun(
         {
         /* this is the very first call, have mom copy files */
         /* are there any stage-out files to process?  */
-        if (cpy_stdout_err_on_rerun)
+        if ((pjob->ji_wattr[JOB_ATR_copystd_on_rerun].at_flags & ATR_VFLAG_SET) 
+          && (pjob->ji_wattr[JOB_ATR_copystd_on_rerun].at_val.at_long == 1))
           {
           preq = cpy_stdfile(preq, pjob, JOB_ATR_outpath);
           preq = cpy_stdfile(preq, pjob, JOB_ATR_errpath);
