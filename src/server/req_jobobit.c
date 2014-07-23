@@ -156,6 +156,7 @@ extern int              listener_command;
 extern int              LOGLEVEL;
 
 extern const char      *PJobState[];
+extern bool cpy_stdout_err_on_rerun;
 
 /* External Functions called */
 
@@ -2308,17 +2309,32 @@ void on_job_rerun(
         {
         /* this is the very first call, have mom copy files */
         /* are there any stage-out files to process?  */
-
+        if (cpy_stdout_err_on_rerun)
+          {
+          preq = cpy_stdfile(preq, pjob, JOB_ATR_outpath);
+          preq = cpy_stdfile(preq, pjob, JOB_ATR_errpath);
+          }
         preq = cpy_stage(preq, pjob, JOB_ATR_stageout, STAGE_DIR_OUT);
-
         if (preq != NULL)
           {
           /* have files to copy */
+          if (LOGLEVEL >= 4)
+            {
+            log_event(
+              PBSEVENT_JOB,
+              PBS_EVENTCLASS_JOB,
+              job_id,
+              "about to copy stdout/stderr/stageout files");
+            }
 
           preq->rq_extra = strdup(pjob->ji_qs.ji_jobid);
 
           if (issue_Drequest(handle, preq, false) != PBSE_NONE)
             {
+            /* FAILURE */
+            if (LOGLEVEL >= 1)
+              log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, "copy request failed");
+              
             /* set up as if mom returned error */
             IsFaked = 1;
             

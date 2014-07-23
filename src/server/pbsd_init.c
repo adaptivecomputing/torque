@@ -220,6 +220,7 @@ hello_container                 failures;
 
 reservation_holder              alps_reservations;
 batch_request_holder            brh;
+bool cpy_stdout_err_on_rerun = false;
 
 extern pthread_mutex_t         *acctfile_mutex;
 pthread_mutex_t                *scheduler_sock_jobct_mutex;
@@ -1335,6 +1336,12 @@ int setup_server_attrs(
       {
       svr_attr_def[SRV_ATR_resource_assn].at_free(
         &server.sv_attr[SRV_ATR_resource_assn]);
+      }
+   
+    if ((server.sv_attr[SRV_ATR_CopyOnRerun].at_flags & ATR_VFLAG_SET) &&
+        (server.sv_attr[SRV_ATR_CopyOnRerun].at_val.at_long))
+      {
+      cpy_stdout_err_on_rerun = true;
       }
     }
   else
