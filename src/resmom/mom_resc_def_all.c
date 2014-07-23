@@ -785,51 +785,12 @@ int init_resc_defs(void)
   int                   dindex = 0;
   int                   unkindex = 0;
 
-  resource_def         *tmpresc = NULL;
-  struct array_strings *resc_arst = NULL;
-  char                 *extra_resc;
-  int                   resc_num = 0;
-
   svr_resc_size = sizeof(svr_resc_def_const) / sizeof(resource_def);
-
-  /* build up a temporary list of string resources */
-
-  if (get_svr_attr_arst(SRV_ATR_ExtraResc, &resc_arst) == PBSE_NONE)
-    {
-
-    tmpresc = (resource_def *)calloc(resc_arst->as_usedptr + 1, sizeof(resource_def));
-
-    if (tmpresc == NULL)
-      {
-      return(-1);
-      }
-
-    for (resc_num = 0;resc_num < resc_arst->as_usedptr;resc_num++)
-      {
-      extra_resc = resc_arst->as_string[resc_num];
-
-      (tmpresc + resc_num)->rs_name = strdup(extra_resc);
-      (tmpresc + resc_num)->rs_decode = decode_str;
-      (tmpresc + resc_num)->rs_encode = encode_str;
-      (tmpresc + resc_num)->rs_set = set_str;
-      (tmpresc + resc_num)->rs_comp = comp_str;
-      (tmpresc + resc_num)->rs_free = free_str;
-      (tmpresc + resc_num)->rs_action = NULL_FUNC;
-      (tmpresc + resc_num)->rs_flags = READ_WRITE;
-      (tmpresc + resc_num)->rs_type = ATR_TYPE_STR;
-
-      dindex++;
-
-      }
-    }
 
   svr_resc_def = (resource_def *)calloc(svr_resc_size + dindex, sizeof(resource_def));
 
   if (svr_resc_def == NULL)
      {
-     if (tmpresc != NULL)
-       free(tmpresc);
-     
      return(-1);
      }
 
@@ -840,21 +801,6 @@ int init_resc_defs(void)
     }
 
   unkindex = rindex;
-
-  /* copy our dynamic resources */
-  if (tmpresc)
-    {
-    for (dindex = 0; (tmpresc + dindex)->rs_decode; dindex++)
-      {
-      if (find_resc_def(svr_resc_def, (tmpresc + dindex)->rs_name, rindex) == NULL)
-        {
-        memcpy(svr_resc_def + rindex, tmpresc + dindex, sizeof(resource_def));
-        rindex++;
-        }
-      }
-
-    free(tmpresc);
-    }
 
   /* copy the last "unknown" resource */
   memcpy(svr_resc_def + rindex, svr_resc_def_const + unkindex, sizeof(resource_def));

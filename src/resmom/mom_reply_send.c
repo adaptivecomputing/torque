@@ -146,49 +146,35 @@ int reply_send(
   struct batch_request *request)  /* I (freed) */
 
   {
-  return(reply_send_svr(request));
+  return(reply_send_mom(request));
   }
 
-int reply_send_svr(
-  
-  struct batch_request *request)  /* I (conditionally freed) */
+
+
+int reply_send_mom(
+
+  struct batch_request *request)  /* I (freed) */
 
   {
-  int   rc = 0;
-  char  log_buf[LOCAL_LOG_BUF_SIZE];
-  int   sfds = request->rq_conn;  /* socket */
+  int      rc = 0;
+  int      sfds = request->rq_conn;  /* socket */
 
-  /* Handle remote replies - local batch requests no longer create work tasks */
-  if ((sfds >= 0) &&
-      (sfds != PBS_LOCAL_CONNECTION))
+  /* determine where the reply should go, remote or local */
+
+  if (sfds == PBS_LOCAL_CONNECTION)
+    {
+    rc = PBSE_SYSTEM;
+    }
+  else if (sfds >= 0)
     {
     /* Otherwise, the reply is to be sent to a remote client */
-
-    if (request->rq_noreply != TRUE)
-      {
-      rc = dis_reply_write(sfds, &request->rq_reply);
-
-      if (LOGLEVEL >= 7)
-        {
-        sprintf(log_buf, "Reply sent for request type %s on socket %d",
-          reqtype_to_txt(request->rq_type),
-          sfds);
-
-        log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-        }
-      }
+    rc = dis_reply_write(sfds, &request->rq_reply);
     }
-
-  if (((request->rq_type != PBS_BATCH_AsyModifyJob) && 
-       (request->rq_type != PBS_BATCH_AsyrunJob) &&
-       (request->rq_type != PBS_BATCH_AsySignalJob)) ||
-      (request->rq_noreply == TRUE))
-    {
-    free_br(request);
-    }
-
+  free_br(request);
   return(rc);
-  }  /* END reply_send_svr() */
+  }  /* END reply_send_mom() */
+
+
 
 
 

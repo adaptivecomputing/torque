@@ -277,71 +277,6 @@ int save_attr(
 
 
 
-int save_attr_xml(
-
-  struct attribute_def *padef,   /* pbs_attribute definition array */
-  pbs_attribute        *pattr,   /* ptr to pbs_attribute value array */
-  int                   numattr, /* number of attributes in array */
-  int                   fds)     /* file descriptor where attributes are written */
-
-  {
-  int             i;
-  int             rc;
-  char            buf[MAXLINE<<8];
-  char            log_buf[LOCAL_LOG_BUF_SIZE];
-  std::string      ds = "";
-
-  /* write the opening tag for attributes */
-  snprintf(buf,sizeof(buf),"<attributes>\n");
-  if ((rc = write_buffer(buf,strlen(buf),fds)) != 0)
-    {
-    return(rc);
-    }
-
-  for (i = 0; i < numattr; i++)
-    {
-    if (pattr[i].at_flags & ATR_VFLAG_SET)
-      {
-      buf[0] = '\0';
-      ds.clear();
-
-      if ((rc = attr_to_str(ds, padef+i, pattr[i], true)) != 0)
-        {
-        if (rc != NO_ATTR_DATA)
-          {
-          /* ERROR */
-          snprintf(log_buf,sizeof(log_buf),
-              "Not enough space to print pbs_attribute %s",
-              padef[i].at_name);
-
-          return(rc);
-          }
-        }
-      else
-        {
-        snprintf(buf,sizeof(buf),"<%s>%s</%s>\n",
-            padef[i].at_name,
-            ds.c_str(),
-            padef[i].at_name);
-
-        if ((rc = write_buffer(buf,strlen(buf),fds)) != 0)
-          {
-          return(rc);
-          }
-        }
-      }
-    } /* END for each pbs_attribute */
-
-  /* close the attributes */
-  snprintf(buf,sizeof(buf),"</attributes>\n");
-  rc = write_buffer(buf,strlen(buf),fds);
-
-  /* we can just return this since its the last write */
-  return(rc);
-  } /* END save_attr_xml() */
-
-
-
 /*
  * recov_attr() - read attributes from disk file
  *
@@ -370,8 +305,6 @@ int recov_attr(
   svrattrl *pal = NULL;
   svrattrl  tempal;
   char     *endPal;
-  bool      exec_host_found = false;
-  char      job_state = 0;
 
   /* set all privileges (read and write) for decoding resources */
   /* This is a special (kludge) flag for the recovery case, see */
@@ -501,16 +434,6 @@ int recov_attr(
         }
       }    /* END if (index < 0) */
 
-    if (!strcmp(pal->al_name, ATTR_exechost))
-      {
-      exec_host_found = true;
-      }
-
-    if ((!strcmp(pal->al_name, ATTR_state))&&(pal->al_value != NULL))
-      {
-      job_state = *pal->al_value;
-      }
-
     (padef + index)->at_decode(
         pattr + index,
         pal->al_name,
@@ -526,12 +449,6 @@ int recov_attr(
     free(pal);
     }  /* END while (1) */
 
-  if ((exec_host_found == false) && 
-      ((job_state == 'R') ||
-       (job_state == 'E')))
-    {   
-    return(-1);
-    }
 
   return(0);
   }  /* END recov_attr() */

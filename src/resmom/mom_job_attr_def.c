@@ -243,13 +243,9 @@ attribute_def job_attr_def[] =
     decode_str,
     encode_str,
     set_str,
-    comp_checkpoint,
+    comp_str,
     free_str,
-#if 0
-    ck_checkpoint,
-#else
-    0,
-#endif
+    NULL_FUNC,
     READ_WRITE | ATR_DFLAG_MOM | ATR_DFLAG_ALTRUN,
     ATR_TYPE_STR,
     PARENT_TYPE_JOB
@@ -268,12 +264,12 @@ attribute_def job_attr_def[] =
   },
   /* JOB_ATR_depend */
   { (char *)ATTR_depend,   /* "depend" */
-    decode_depend,
-    encode_depend,
-    set_depend,
-    comp_depend,
-    free_depend,
-    depend_on_que,
+    decode_str,
+    encode_str,
+    set_str,
+    comp_str,
+    free_str,
+    NULL_FUNC,
     READ_WRITE,
     ATR_TYPE_LIST,
     PARENT_TYPE_JOB
@@ -336,7 +332,7 @@ attribute_def job_attr_def[] =
     set_l,
     comp_l,
     free_null,
-    job_set_wait,
+    NULL_FUNC,
     READ_WRITE | ATR_DFLAG_ALTRUN,
     ATR_TYPE_LONG,
     PARENT_TYPE_JOB
@@ -561,7 +557,7 @@ attribute_def job_attr_def[] =
   { (char *)ATTR_u,   /* "User_List" */
     decode_arst,
     encode_arst,
-    set_uacl,
+    set_arst,
     comp_arst,
     free_arst,
     NULL_FUNC,
