@@ -2948,8 +2948,18 @@ void req_rerunjob(
       }
    }
 
-  rc = return_file(pjob, StdOut, sock, TRUE);
-  int rc2 = return_file(pjob, StdErr, sock, TRUE);
+  int remove_file = 1;
+
+  /* check to see if OU, ER files need to be copied back to user's dir.
+   * If so, do not remove files as the pbs_server will be sending a
+   * copy files request.
+  */
+  if ((pjob->ji_wattr[JOB_ATR_copystd_on_rerun].at_flags & ATR_VFLAG_SET) 
+    && (pjob->ji_wattr[JOB_ATR_copystd_on_rerun].at_val.at_long == 1))
+      remove_file = 0;
+
+  rc = return_file(pjob, StdOut, sock, remove_file);
+  int rc2 = return_file(pjob, StdErr, sock, remove_file);
 
   if (rc != 0 || rc2 != 0 || (!checkfile_sent_ok))
     {
