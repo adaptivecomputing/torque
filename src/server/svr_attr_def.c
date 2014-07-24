@@ -1380,7 +1380,7 @@ attribute_def svr_attr_def[] =
    PARENT_TYPE_SERVER},
 
   /* SRV_ATR_job_full_report_time */
-  {ATTR_job_full_report_time,
+  {ATTR_job_full_report_time, /* "job_full_report_time" */
    decode_l,
    encode_l,
    set_l,
