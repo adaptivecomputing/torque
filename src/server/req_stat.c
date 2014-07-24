@@ -230,7 +230,8 @@ int req_stat_job(
       {
       type = tjstSummarizeArraysServer;
       }
-    else if (!strcmp(preq->rq_extend, "C"))
+
+    if (preq->rq_extend[strlen(preq->rq_extend) - 1] == 'C')
       {
       condensed = true;
       }

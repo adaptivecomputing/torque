@@ -85,8 +85,9 @@ int                  B_opt;
 int                  Q_opt;
 int                  t_opt;
 int                  E_opt;
- 
-const char          *ExtendOpt = NULL;
+
+std::string          ExtendOpt;
+bool                 condensed = false;
 struct attropl      *p_atropl = 0;
 struct attrl        *attrib = NULL;
 char                 user[MAXPATHLEN];
@@ -2318,7 +2319,7 @@ int process_commandline_opts(
 
       case 'C':
 
-        ExtendOpt = "C";
+        condensed = true;
 
         break;
 
@@ -2808,7 +2809,7 @@ int run_job_mode(
                    connect,
                    job_id_out,
                    attrib,
-                   exec_only ? (char *)EXECQUEONLY : (char *)ExtendOpt,
+                   exec_only ? (char *)EXECQUEONLY : (char *)ExtendOpt.c_str(),
                    &any_failed);
       }
     else
@@ -3224,6 +3225,9 @@ int main(
     {
     ExtendOpt = summarize_arrays_extend_opt;
     }
+
+  if (condensed == true)
+    ExtendOpt += "C";
 
   def_server = pbs_default();
 
