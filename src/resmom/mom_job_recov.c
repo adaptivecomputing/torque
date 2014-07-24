@@ -117,10 +117,8 @@
 #if __STDC__ != 1
 #include <memory.h>
 #endif
-#include "../resmom/mom_job_func.h" /* mom_job_free */
-#include "array.h"
-#include "ji_mutex.h"
-#include "job_recov.h"
+#include "mom_job_func.h" /* mom_job_free */
+#include "job_recovery.h"
 
 #ifndef TRUE
 #define TRUE 1
