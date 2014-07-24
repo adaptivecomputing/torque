@@ -4790,8 +4790,10 @@ int setup_program_environment(void)
     return(-1);
     }
 
-  sprintf(log_buffer, "machine topology contains %d memory nodes, %d cpus",
+  sprintf(log_buffer, "machine topology contains %d sockets %d memory nodes, %d cores %d cpus",
+    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_SOCKET),
     hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_NODE),
+    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_CORE),
     hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_PU));
   log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
   
