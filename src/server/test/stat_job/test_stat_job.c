@@ -3,11 +3,38 @@
 #include "test_stat_job.h"
 #include <stdlib.h>
 #include <stdio.h>
+
 #include "pbs_error.h"
-START_TEST(test_one)
+#include "pbs_job.h"
+
+bool include_in_status(int index);
+
+
+START_TEST(test_include_in_status)
   {
+  for (int i = 0; i < JOB_ATR_LAST; i++)
+    {
+    bool result = include_in_status(i);
 
+    switch (i)
+      {
+      case JOB_ATR_jobname:
+      case JOB_ATR_job_owner:
+      case JOB_ATR_state:
+      case JOB_ATR_resc_used:
+      case JOB_ATR_in_queue:
 
+        fail_unless(result == true);
+
+        break;
+
+      default:
+
+        fail_unless(result == false);
+
+        break;
+      }
+    }
   }
 END_TEST
 
@@ -21,8 +48,8 @@ END_TEST
 Suite *stat_job_suite(void)
   {
   Suite *s = suite_create("stat_job_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_include_in_status");
+  tcase_add_test(tc_core, test_include_in_status);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");
