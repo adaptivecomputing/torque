@@ -2530,6 +2530,13 @@ void mom_is_request(
         return;
         }
       }
+    else
+      {
+      log_err(errno, __func__, "Calling getpeername() gave error. Closing socket.");
+      close_conn(chan->sock, FALSE);
+      chan->sock = -1;
+      return;
+      }
     }
 
   if (err_msg)
