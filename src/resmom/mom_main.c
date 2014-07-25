@@ -3135,7 +3135,7 @@ int do_tcp(
 
     case IS_PROTOCOL:
 
-      mom_is_request(chan,version,NULL);
+      mom_is_request(chan,version,NULL,pSockAddr);
 
       break;
 

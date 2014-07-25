@@ -2037,11 +2037,10 @@ AvlTree okclients = NULL;
 mom_server *mom_server_valid_message_source(
 
   struct tcp_chan  *chan,
-  char            **err_msg)
+  char            **err_msg,
+  struct sockaddr_in *pAddr)
 
   {
-  struct sockaddr  addr;
-  unsigned int     len = sizeof(addr);
   u_long           ipaddr;
   mom_server      *pms;
 
@@ -2051,10 +2050,7 @@ mom_server *mom_server_valid_message_source(
    * message came from.
    */
 
-  if (getpeername(chan->sock,&addr,&len) != 0)
-    return(NULL);
- 
-  ipaddr = ntohl(((struct sockaddr_in *)&addr)->sin_addr.s_addr);  /* Extract IP address of source of the message. */
+  ipaddr = ntohl(pAddr->sin_addr.s_addr);  /* Extract IP address of source of the message. */
 
   /* So the stream number did not match any server but maybe
    * the server has another stream connection open to the IP address.
@@ -2119,7 +2115,7 @@ mom_server *mom_server_valid_message_source(
       {
       *err_msg = (char *)calloc(1,240);
       snprintf(*err_msg, 240, "bad connect from %s - unauthorized server. Will check if its a valid mom",
-        netaddr(((struct sockaddr_in *)&addr)));
+        netaddr(pAddr));
       }
     }
 
@@ -2467,16 +2463,14 @@ void mom_is_request(
 
   struct tcp_chan *chan,
   int              version,  /* I */
-  int             *cmdp)     /* O (optional) */
+  int             *cmdp,     /* O (optional) */
+  struct sockaddr_in *pAddr) /* Filled in internet address for this socket */
 
   {
   int                 command = 0;
   int                 ret = DIS_SUCCESS;
  
   char               *err_msg = NULL;
-  struct sockaddr     s_addr;
-  unsigned int        len = sizeof(s_addr);
-  struct sockaddr_in *addr = NULL;
   u_long              ipaddr;
   extern char        *PBSServerCmds[];
 
@@ -2506,33 +2500,22 @@ void mom_is_request(
     }
 
   /* check that machine is okay to be a server */
-  if (mom_server_valid_message_source(chan, &err_msg) == NULL)
+  if (mom_server_valid_message_source(chan, &err_msg,pAddr) == NULL)
     {
-    if (getpeername(chan->sock, &s_addr, &len) == 0)
+    ipaddr = ntohl(pAddr->sin_addr.s_addr);
+
+    if (AVL_is_in_tree_no_port_compare(ipaddr, 0, okclients) == 0)
       {
-      addr = (struct sockaddr_in *)&s_addr;
-      ipaddr = ntohl(addr->sin_addr.s_addr);
-  
-      if (AVL_is_in_tree_no_port_compare(ipaddr, 0, okclients) == 0)
+      if (err_msg)
         {
-        if (err_msg)
-          {
-          log_ext(-1,"mom_server_valid_message_source", err_msg, LOG_ALERT);
-          free(err_msg);
-          }
-        else
-          log_ext(-1, __func__, "Invalid source for IS_REQUEST", LOG_ALERT);
-        
-        sprintf(TMOMRejectConn, "%s  %s", netaddr(((struct sockaddr_in *)&addr)), "(server not authorized)");
-        
-        close_conn(chan->sock, FALSE);
-        chan->sock = -1;
-        return;
+        log_ext(-1,"mom_server_valid_message_source", err_msg, LOG_ALERT);
+        free(err_msg);
         }
-      }
-    else
-      {
-      log_err(errno, __func__, "Calling getpeername() gave error. Closing socket.");
+      else
+        log_ext(-1, __func__, "Invalid source for IS_REQUEST", LOG_ALERT);
+
+      sprintf(TMOMRejectConn, "%s  %s", netaddr(pAddr), "(server not authorized)");
+
       close_conn(chan->sock, FALSE);
       chan->sock = -1;
       return;
@@ -2619,7 +2602,7 @@ void mom_is_request(
       {
       sprintf(log_buffer, "%s from %s",
         dis_emsg[ret],
-        (addr != NULL) ? netaddr(addr) : "???");
+        (pAddr != NULL) ? netaddr(pAddr) : "???");
       
       log_ext(-1,__func__,log_buffer,LOG_ALERT);
       }
