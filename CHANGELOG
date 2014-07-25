@@ -1,4 +1,10 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
+4.2.8.h4
+  e - TRQ-2785. Added new qmgr option: set server copy_on_rerun=[True|False].
+      When set to True, Torque will copy the OU, ER files over to the user specified
+      directory when the qrerun command is executed (i.e a job preemption).
+      This setting requires a pbs_server restart for the new value to take in effect.
+
 4.2.8.h3
   b - TRQ-2732. Fix bug where OU files are being left in spool when job is
       preempted or requeued.
