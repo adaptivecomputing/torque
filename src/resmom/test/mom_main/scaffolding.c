@@ -423,7 +423,7 @@ void check_busy(double mla)
   exit(1);
   }
 
-void mom_is_request(struct tcp_chan *chan, int version, int *cmdp)
+void mom_is_request(struct tcp_chan *chan, int version, int *cmdp,struct sockaddr_in *pSockAddr)
   {
   fprintf(stderr, "The call to mom_is_request needs to be mocked!!\n");
   exit(1);
