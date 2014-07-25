@@ -9,7 +9,23 @@
 
 START_TEST(test_one)
   {
+  pbs_attribute pa;
 
+  memset(&pa,0,sizeof(pa));
+  int rc = decode_utc(&pa,"TTL",NULL,"2014-02-07T12:00:00Z",0);
+  fail_unless(rc == 0);
+  memset(&pa,0,sizeof(pa));
+  rc = decode_utc(&pa,"TTL",NULL,"2014-02-07T12:00:00Z",0);
+  fail_unless(rc == 0);
+  memset(&pa,0,sizeof(pa));
+  rc = decode_utc(&pa,"TTL",NULL,"2020-02-07T12:00:00+07:00:00",0);
+  fail_unless(rc == 0);
+  memset(&pa,0,sizeof(pa));
+  rc = decode_utc(&pa,"TTL",NULL,"2121-02-07T12:00:00-07:00:00",0);
+  fail_unless(rc == 0);
+  memset(&pa,0,sizeof(pa));
+  rc = decode_utc(&pa,"TTL",NULL,"0",0);
+  fail_unless(rc == 0);
 
   }
 END_TEST

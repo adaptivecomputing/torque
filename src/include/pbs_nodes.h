@@ -348,6 +348,7 @@ struct pbsnode
   unsigned short              nd_power_state;
   unsigned char               nd_mac_addr[6];
   time_t                        nd_power_state_change_time; //
+  unsigned char               nd_ttl[32];
 
   pthread_mutex_t              *nd_mutex;            /* semaphore for accessing this node's data */
   };
@@ -532,6 +533,7 @@ enum nodeattr
   ND_ATR_gpustatus,
   ND_ATR_mics,
   ND_ATR_micstatus,
+  ND_ATR_ttl,
   ND_ATR_LAST
   }; /* WARNING: Must be the highest valued enum */
 
@@ -555,6 +557,7 @@ typedef struct node_check_info
   int          nstatus;
   char        *note;
   short        power_state;
+  unsigned char ttl[32];
   } node_check_info;
 
 

@@ -350,6 +350,7 @@ void save_characteristic(
   nci->nstatus      = pnode->nd_nstatus;
   nci->first        = pnode->nd_first;
   nci->first_status = pnode->nd_f_st;
+  strcpy((char *)nci->ttl,(char *)pnode->nd_ttl);
   
   if (pnode->nd_note != NULL)
     nci->note = strdup(pnode->nd_note);
@@ -436,7 +437,8 @@ int chk_characteristic(
     *pneed_todo |= WRITE_NEW_NODESFILE;
 
   if ((nci->nprops != pnode->nd_nprops) || 
-      (nci->first != pnode->nd_first))
+      (nci->first != pnode->nd_first) ||
+      strcmp((char *)nci->ttl,(char *)pnode->nd_ttl) )
     *pneed_todo |= WRITE_NEW_NODESFILE;
 
   if (pnode->nd_note != nci->note)    /* not both NULL or with the same address */
@@ -593,6 +595,8 @@ int status_nodeattrib(
       atemp[i].at_val.at_arst = pnode->nd_status;
     else if (i == ND_ATR_ntype)
       atemp[i].at_val.at_short = pnode->nd_ntype;
+    else if (i == ND_ATR_ttl)
+      atemp[i].at_val.at_str = (char *)pnode->nd_ttl;
     else if (i == ND_ATR_jobs)
       atemp[i].at_val.at_jinfo = pnode;
     else if (i == ND_ATR_np)
@@ -1250,6 +1254,9 @@ int update_nodes_file(
     if ((np->gpu_str != NULL) &&
         (np->gpu_str[0] != '\0'))
       fprintf(nin, " %s=%s", ATTR_NODE_gpus_str, np->gpu_str);
+
+    if(np->nd_ttl[0] != '\0')
+      fprintf(nin, " %s=%s",ATTR_NODE_ttl,np->nd_ttl);
 
     /* write out properties */
     for (j = 0;j < np->nd_nprops - 1;++j)
@@ -2198,7 +2205,14 @@ int setup_nodes(void)
       if (xchar == '=')
         {
         /* have new style pbs_attribute, keyword=value */
-        val = parse_node_token(NULL, 0, 1, &err, &xchar);
+        if(!strcmp(token,"TTL"))
+          {
+          val = parse_node_token(NULL, 1, 1, &err, &xchar);
+          }
+        else
+          {
+          val = parse_node_token(NULL, 0, 1, &err, &xchar);
+          }
 
         if ((val == NULL) || (err != 0) || (xchar == '='))
           goto errtoken1;

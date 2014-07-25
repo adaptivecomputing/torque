@@ -234,6 +234,12 @@ int mgr_modify_node(
           rc = set_node_power_state(ppnode,pnew->at_val.at_short);
           }
           break;
+        case ND_ATR_ttl:
+          {
+          strcpy((char *)((*ppnode)->nd_ttl),pnew->at_val.at_str);
+          rc = PBSE_NONE;
+          }
+          break;
         case ND_ATR_state:
         case ND_ATR_np:
         case ND_ATR_properties:

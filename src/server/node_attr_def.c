@@ -330,6 +330,20 @@ attribute_def node_attr_def[] =
    MGR_ONLY_SET,
    ATR_TYPE_ARST,
    PARENT_TYPE_NODE,
-  }
+  },
+
+  /* ND_ATR_ttl */
+  { (char *)ATTR_NODE_ttl, /* "TTL" */
+    decode_utc,
+    encode_str,
+    set_str,
+    comp_str,
+    free_str,
+    node_ttl,
+    MGR_ONLY_SET,
+    ATR_TYPE_STR,
+    PARENT_TYPE_NODE,
+  },
+
 
   };

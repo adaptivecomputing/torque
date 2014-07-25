@@ -82,6 +82,7 @@
 #include <algorithm>
 #include <string>
 #include <sstream>
+#include <vector>
 #include <sys/types.h>
 #include <ctype.h>
 #include <memory.h>
@@ -763,7 +764,102 @@ int decode_power_state(
   return(0);
   }  /* END decode_state() */
 
+/* Decode a universal time code */
+int decode_utc(
+    pbs_attribute *pattr,   /* I (modified) */
+    const char   *name,    /* pbs_attribute name */
+    const char *rescn,   /* resource name, unused here */
+    const char    *val,     /* pbs_attribute value */
+    int            perm)    /* only used for resources */
 
+  {
+  const char utcTemplate[] = "dddd-dd-ddTdd:dd:ddZ";
+  const char tzTemplate[] = "sdd:dd:dd";
+
+  const char *pTemplate = utcTemplate;
+  const char *pVal = val;
+  int iVal = 0;
+  std::vector<int> vals;
+
+  if(!strcmp(val,"0"))
+    {
+    return decode_str(pattr,name,rescn,"",perm);
+    }
+
+  while(*pTemplate != '\0')
+    {
+    if(*pVal == '\0')
+      {
+      return PBSE_BAD_UTC_FORMAT;
+      }
+    switch(*pTemplate)
+      {
+      case 'd':
+        {
+        char c = *pVal;
+        if((c < '0')||(c > '9'))
+          {
+          return PBSE_BAD_UTC_FORMAT;
+          }
+        iVal = (iVal * 10) + ((int)c - (int)'0');
+        }
+        break;
+      case 'Z':
+        if((*pVal == 'Z')||(*pVal == 'z'))
+          {
+          break;
+          }
+        pTemplate = tzTemplate;
+        if((*pVal != '+')&&(*pVal != '-'))
+          {
+          return PBSE_BAD_UTC_FORMAT;
+          }
+        vals.push_back(iVal);
+        iVal = 0;
+        break;
+      case 's':
+        vals.push_back(iVal);
+        iVal = 0;
+        if((*pVal != '+')&&(*pVal != '-'))
+          {
+          return PBSE_BAD_UTC_FORMAT;
+          }
+        break;
+      default:
+        vals.push_back(iVal);
+        iVal = 0;
+        if(*pVal != *pTemplate)
+          {
+          return PBSE_BAD_UTC_FORMAT;
+          }
+        break;
+      }
+    pTemplate++;
+    pVal++;
+    if(*pTemplate == '\0')
+      {
+      vals.push_back(iVal);
+      iVal = 0;
+      if(*pVal != '\0')
+        {
+        return PBSE_BAD_UTC_FORMAT;
+        }
+      }
+    }
+  if(vals.at(0) < 2014) return PBSE_BAD_UTC_RANGE;
+  if((vals.at(1) < 1)||(vals.at(1) > 12)) return PBSE_BAD_UTC_RANGE;
+  if((vals.at(2) < 1)||(vals.at(2) > 31)) return PBSE_BAD_UTC_RANGE;
+  if((vals.at(3) < 0)||(vals.at(3) > 24)) return PBSE_BAD_UTC_RANGE;
+  if((vals.at(4) < 0)||(vals.at(4) > 60)) return PBSE_BAD_UTC_RANGE;
+  if((vals.at(5) < 0)||(vals.at(5) > 60)) return PBSE_BAD_UTC_RANGE;
+  if(vals.size() > 6)
+    {
+    if((vals.at(6) < 0)||(vals.at(6) > 23)) return PBSE_BAD_UTC_RANGE;
+    if((vals.at(7) < 0)||(vals.at(7) > 60)) return PBSE_BAD_UTC_RANGE;
+    if((vals.at(8) < 0)||(vals.at(8) > 6012)) return PBSE_BAD_UTC_RANGE;
+    }
+  return decode_str(pattr,name,rescn,val,perm);
+  }
 
 /*
  * decode_ntype
@@ -1138,6 +1234,66 @@ int node_power_state(
 
   return(rc);
   }
+
+/* change the time to live */
+
+int node_ttl(
+
+  pbs_attribute *new_attr, /*derive state into this pbs_attribute*/
+  void     *pnode, /*pointer to a pbsnode struct    */
+  int      actmode) /*action mode; "NEW" or "ALTER"   */
+
+  {
+  int rc = 0;
+
+  struct pbsnode* np;
+  pbs_attribute    temp;
+
+  np = (struct pbsnode*)pnode; /*because of def of at_action  args*/
+
+  switch (actmode)
+    {
+    case ATR_ACTION_NEW:
+
+      if(np->nd_ttl[0] != '\0')
+        {
+        temp.at_val.at_str = (char *)np->nd_ttl;
+        temp.at_flags = ATR_VFLAG_SET;
+        temp.at_type  = ATR_TYPE_STR;
+
+        rc = set_str(new_attr, &temp, SET);
+        }
+      else
+        {
+        new_attr->at_val.at_str  = NULL;
+        new_attr->at_flags       = 0;
+        new_attr->at_type        = ATR_TYPE_STR;
+        }
+      break;
+
+    case ATR_ACTION_ALTER:
+
+      if(new_attr->at_val.at_str != NULL)
+        {
+        strcpy((char *)np->nd_ttl,new_attr->at_val.at_str);
+        }
+      else
+        {
+        np->nd_ttl[0] = '\0';
+        }
+
+      break;
+
+    default:
+
+      rc = PBSE_INTERNAL;
+
+      break;
+    }
+
+  return(rc);
+  }
+
 
 
 

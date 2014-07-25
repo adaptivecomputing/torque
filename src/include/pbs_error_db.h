@@ -276,6 +276,8 @@ PbsErrClient(PBSE_POWER_STATE_UNSUPPORTED, (char *)"The node does not support ch
 PbsErrClient(PBSE_POWER_STATE_UNAVAILABLE, (char *)"The node does not support the requested power state.")
 PbsErrClient(PBSE_CANT_CHANGE_POWER_STATE_WITH_JOBS_RUNNING, (char *)"Can't change power state on a node which has running jobs.")
 PbsErrClient(PBSE_CANT_WAKE_OFF_MACHINE, (char *)"Unable to wake a node in hibernate or shutdown state.")
+PbsErrClient(PBSE_BAD_UTC_FORMAT, (char *)"Bad UTC format, must be in the form yyyy-mm-ddThh:mm:ssZ or yyyy-mm-ddThh:mm:ss+hh:mm:ss or yyyy-mm-ddThh:mm:ss-hh:mm:ss or 0 to remove it.")
+PbsErrClient(PBSE_BAD_UTC_RANGE, (char *)"One of the numbers in the UTC string is out of range.")
 
 /* pbs client errors ceiling (max_client_err + 1) */
 PbsErrClient(PBSE_CEILING,           (char*)0)
