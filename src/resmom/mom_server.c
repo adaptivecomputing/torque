@@ -1755,6 +1755,8 @@ void mom_server_all_update_stat(void)
     sprintf(buf, "%d", rc);
     len = strlen(buf);
     write(fd_pipe[1], buf, len);
+
+    exit_called = true;
   
     exit(0);
     }
