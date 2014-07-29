@@ -346,7 +346,7 @@ node_comm_t *force_path_update(
     }
   else
     {
-    mom_levels levels = nt->paths.at(nt->paths.size()-1);
+    mom_levels &levels = nt->paths.at(nt->paths.size()-1);
 
     for (level = levels.size() - 1; level >= 0 && updated == FALSE; level--)
       {
