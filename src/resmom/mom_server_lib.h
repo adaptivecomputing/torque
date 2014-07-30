@@ -99,7 +99,7 @@ void mom_server_diag(mom_server *pms, int sindex, char **BPtr, int *BSpace);
 
 void mom_server_all_diag(char **BPtr, int *BSpace);
 
-void mom_server_update_receive_time(int stream, char *command_name);
+void mom_server_update_receive_time(int stream, char *command_name, struct sockaddr_in *pAddr);
 
 void mom_server_update_receive_time_by_ip(u_long ipaddr, const char *command_name);
 

@@ -1950,29 +1950,21 @@ void mom_server_all_diag(
 void mom_server_update_receive_time(
     
   int stream,
-  char *command_name)
+  char *command_name,
+  struct sockaddr_in *pAddr)
 
   {
   mom_server      *pms;
   unsigned long    ipaddr;
-  struct sockaddr  addr;
-  unsigned int     len = sizeof(addr);
 
   time_now = time(NULL);
 
-  if (getpeername(stream,&addr,&len) != 0)
+  ipaddr = ntohl(pAddr->sin_addr.s_addr);
+
+  if ((pms = mom_server_find_by_ip(ipaddr)) != NULL)
     {
-    log_err(errno, __func__, "Calling getpeername() gave error.");
-    }
-  else
-    {
-    ipaddr = ntohl(((struct sockaddr_in *)&addr)->sin_addr.s_addr);
-   
-    if ((pms = mom_server_find_by_ip(ipaddr)) != NULL)
-      {
-      pms->MOMLastRecvFromServerTime = time_now;
-      snprintf(pms->MOMLastRecvFromServerCmd, sizeof(pms->MOMLastRecvFromServerCmd), "%s", command_name);
-      }
+    pms->MOMLastRecvFromServerTime = time_now;
+    snprintf(pms->MOMLastRecvFromServerCmd, sizeof(pms->MOMLastRecvFromServerCmd), "%s", command_name);
     }
   } /* END mom_server_update_receive_time() */
 
@@ -2549,7 +2541,7 @@ void mom_is_request(
         log_buffer);
       }
     
-    mom_server_update_receive_time(chan->sock, PBSServerCmds[command]);
+    mom_server_update_receive_time(chan->sock, PBSServerCmds[command],pAddr);
     }
 
   switch (command)
