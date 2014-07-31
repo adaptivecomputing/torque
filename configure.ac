@@ -719,6 +719,12 @@ if test "$DEBUG_SYMBOLS" = 'yes'; then
       else
         CFLAGS="-g $CFLAGS"
       fi
+
+      if test "$CXXFLAGS" = ''; then
+        CXXFLAGS="-g"
+      else
+        CXXFLAGS="-g $CXXFLAGS"
+      fi
       ;;
   esac
   AC_MSG_RESULT([after tweak CFLAGS=$CFLAGS])
