@@ -507,10 +507,14 @@ int job_abt(
             job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
             job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
             pjob_mutex.unlock();
-            update_array_values(pa,old_state,aeTerminate,
-                job_id, job_atr_hold, job_exit_status);
+             
+            if (pa)
+              {
+              update_array_values(pa,old_state,aeTerminate,
+                  job_id, job_atr_hold, job_exit_status);
             
-            unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+              unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+              }
             pjob = svr_find_job(job_id, TRUE);
             }
           }
