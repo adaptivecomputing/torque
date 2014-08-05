@@ -349,6 +349,8 @@ struct pbsnode
   unsigned char               nd_mac_addr[6];
   time_t                        nd_power_state_change_time; //
   unsigned char               nd_ttl[32];
+  struct array_strings         *nd_acl;
+  std::string                  *nd_requestid;
 
   pthread_mutex_t              *nd_mutex;            /* semaphore for accessing this node's data */
   };
@@ -534,6 +536,8 @@ enum nodeattr
   ND_ATR_mics,
   ND_ATR_micstatus,
   ND_ATR_ttl,
+  ND_ATR_acl,
+  ND_ATR_requestid,
   ND_ATR_LAST
   }; /* WARNING: Must be the highest valued enum */
 
@@ -547,8 +551,9 @@ enum node_types
   };
 
 
-typedef struct node_check_info
+class node_check_info
   {
+public:
   struct prop *first;
   struct prop *first_status;
   short        state;
@@ -558,7 +563,9 @@ typedef struct node_check_info
   char        *note;
   short        power_state;
   unsigned char ttl[32];
-  } node_check_info;
+  int          acl_size;
+  std::string  rqid;
+  };
 
 
 typedef struct sync_job_info

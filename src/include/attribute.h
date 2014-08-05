@@ -507,6 +507,8 @@ extern int      set_null(pbs_attribute*, pbs_attribute*, enum batch_op);
 extern int      node_state(pbs_attribute*, void*, int);
 extern int      node_power_state(pbs_attribute*, void*, int);
 extern int      node_ttl(pbs_attribute*, void*, int);
+extern int      node_acl(pbs_attribute*, void*, int);
+extern int      node_requestid(pbs_attribute*, void*, int);
 extern int      node_np_action(pbs_attribute*, void*, int);
 extern int      node_mom_port_action(pbs_attribute*, void*, int);
 extern int      node_mom_rm_port_action(pbs_attribute*, void*, int);

@@ -1294,7 +1294,125 @@ int node_ttl(
   return(rc);
   }
 
+/* change a string property on a node */
 
+int node_requestid(
+
+  pbs_attribute *new_attr, /*derive state into this pbs_attribute*/
+  void     *pnode, /*pointer to a pbsnode struct    */
+  int            actmode) /*action mode; "NEW" or "ALTER"   */
+
+  {
+  int rc = 0;
+
+  struct pbsnode *np = (struct pbsnode*)pnode; /*because of def of at_action  args*/
+
+  pbs_attribute    temp;
+
+  switch (actmode)
+    {
+    case ATR_ACTION_NEW:
+
+      if(np->nd_requestid->size() != 0)
+        {
+        temp.at_val.at_str = (char *)np->nd_requestid->c_str();
+        temp.at_flags = ATR_VFLAG_SET;
+        temp.at_type  = ATR_TYPE_STR;
+
+        rc = set_str(new_attr, &temp, SET);
+        }
+      else
+        {
+        new_attr->at_val.at_str  = NULL;
+        new_attr->at_flags       = 0;
+        new_attr->at_type        = ATR_TYPE_STR;
+        }
+      break;
+
+    case ATR_ACTION_ALTER:
+
+      if(new_attr->at_val.at_str != NULL)
+        {
+        *np->nd_requestid = new_attr->at_val.at_str;
+        }
+      else
+        {
+        np->nd_requestid->clear();
+        }
+
+      break;
+
+    default:
+
+      rc = PBSE_INTERNAL;
+
+      break;
+    }
+
+  return(rc);
+  }
+
+
+int node_acl(
+  pbs_attribute *new_attr,     /*derive props into this pbs_attribute*/
+  void          *pnode,   /*pointer to a pbsnode struct     */
+  int            actmode) /*action mode; "NEW" or "ALTER"   */
+
+  {
+  int   rc = 0;
+
+  struct pbsnode  *np;
+  pbs_attribute    temp;
+
+  np = (struct pbsnode*)pnode; /*because of at_action arg type*/
+
+  switch (actmode)
+    {
+
+    case ATR_ACTION_NEW:
+
+      /* if node has a property list, then copy array_strings    */
+      /* into temp to use to setup a copy, otherwise setup empty */
+
+      if (np->nd_acl != NULL)
+        {
+        /* setup temporary pbs_attribute with the array_strings */
+        /* from the node        */
+
+        temp.at_val.at_arst = np->nd_acl;
+        temp.at_flags = ATR_VFLAG_SET;
+        temp.at_type  = ATR_TYPE_ARST;
+
+        rc = set_arst(new_attr, &temp, SET);
+        }
+      else
+        {
+        /* Node has no properties, setup empty pbs_attribute */
+
+        new_attr->at_val.at_arst = 0;
+        new_attr->at_flags       = 0;
+        new_attr->at_type        = ATR_TYPE_ARST;
+        }
+
+      break;
+
+    case ATR_ACTION_ALTER:
+
+      /* update node with new attr_strings */
+
+      np->nd_acl = new_attr->at_val.at_arst;
+
+      break;
+
+    default:
+
+      rc = PBSE_INTERNAL;
+
+      break;
+    }  /* END switch(actmode) */
+
+  return(rc);
+  }  /* END node_prop_list() */
 
 
 /*

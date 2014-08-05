@@ -240,6 +240,18 @@ int mgr_modify_node(
           rc = PBSE_NONE;
           }
           break;
+        case ND_ATR_acl:
+          {
+          (*ppnode)->nd_acl = pnew->at_val.at_arst;
+          rc = PBSE_NONE;
+          }
+          break;
+        case ND_ATR_requestid:
+          {
+          *(*ppnode)->nd_requestid = pnew->at_val.at_str;
+          rc = PBSE_NONE;
+          }
+          break;
         case ND_ATR_state:
         case ND_ATR_np:
         case ND_ATR_properties:

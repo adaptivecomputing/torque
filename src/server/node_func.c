@@ -351,6 +351,8 @@ void save_characteristic(
   nci->first        = pnode->nd_first;
   nci->first_status = pnode->nd_f_st;
   strcpy((char *)nci->ttl,(char *)pnode->nd_ttl);
+  nci->acl_size = (pnode->nd_acl == NULL)?0:pnode->nd_acl->as_usedptr;
+  nci->rqid = *pnode->nd_requestid;
   
   if (pnode->nd_note != NULL)
     nci->note = strdup(pnode->nd_note);
@@ -438,7 +440,9 @@ int chk_characteristic(
 
   if ((nci->nprops != pnode->nd_nprops) || 
       (nci->first != pnode->nd_first) ||
-      strcmp((char *)nci->ttl,(char *)pnode->nd_ttl) )
+      strcmp((char *)nci->ttl,(char *)pnode->nd_ttl) ||
+      nci->acl_size != ((pnode->nd_acl == NULL)?0:pnode->nd_acl->as_usedptr) ||
+      nci->rqid.compare(*pnode->nd_requestid))
     *pneed_todo |= WRITE_NEW_NODESFILE;
 
   if (pnode->nd_note != nci->note)    /* not both NULL or with the same address */
@@ -597,6 +601,10 @@ int status_nodeattrib(
       atemp[i].at_val.at_short = pnode->nd_ntype;
     else if (i == ND_ATR_ttl)
       atemp[i].at_val.at_str = (char *)pnode->nd_ttl;
+    else if (i == ND_ATR_acl)
+      atemp[i].at_val.at_arst = pnode->nd_acl;
+    else if (i == ND_ATR_requestid)
+      atemp[i].at_val.at_str = (char *)pnode->nd_requestid->c_str();
     else if (i == ND_ATR_jobs)
       atemp[i].at_val.at_jinfo = pnode;
     else if (i == ND_ATR_np)
@@ -795,6 +803,8 @@ int initialize_pbsnode(
   pnode->nd_gpustatus       = NULL;
   pnode->nd_ngpustatus      = 0;
   pnode->nd_ms_jobs         = new std::vector<std::string>();
+  pnode->nd_acl             = NULL;
+  pnode->nd_requestid       = new std::string();
 
   if (!isNUMANode) //NUMA nodes don't have their own address and their name is not in DNS.
     {
@@ -879,6 +889,15 @@ void effective_node_delete(
   if(pnode->alps_subnodes != NULL) delete pnode->alps_subnodes;
 
   if(pnode->nd_ms_jobs != NULL) delete pnode->nd_ms_jobs;
+  if(pnode->nd_acl != NULL)
+    {
+    if(pnode->nd_acl->as_buf != NULL)
+      {
+      free(pnode->nd_acl->as_buf);
+      }
+    free(pnode->nd_acl);
+    }
+  if(pnode->nd_requestid != NULL) delete pnode->nd_requestid;
 
   free(pnode);
   *ppnode = NULL;
@@ -1257,6 +1276,20 @@ int update_nodes_file(
 
     if(np->nd_ttl[0] != '\0')
       fprintf(nin, " %s=%s",ATTR_NODE_ttl,np->nd_ttl);
+
+    if((np->nd_acl != NULL)&&(np->nd_acl->as_usedptr != 0))
+      {
+      fprintf(nin, " %s=",ATTR_NODE_acl);
+      for(j=0;j < np->nd_acl->as_usedptr;j++)
+        {
+        fprintf(nin, "%s",np->nd_acl->as_string[j]);
+        if((j + 1) != np->nd_acl->as_usedptr)
+          fprintf(nin, ",");
+        }
+      }
+
+    if(np->nd_requestid->length() != 0)
+      fprintf(nin, " %s=%s",ATTR_NODE_requestid,np->nd_requestid->c_str());
 
     /* write out properties */
     for (j = 0;j < np->nd_nprops - 1;++j)

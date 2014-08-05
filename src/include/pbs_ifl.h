@@ -352,6 +352,8 @@
 #define ATTR_NODE_mics             "mics"
 #define ATTR_NODE_micstatus        "mic_status"
 #define ATTR_NODE_ttl              "TTL"
+#define ATTR_NODE_acl              "acl"
+#define ATTR_NODE_requestid        "requestid"
 
 /* notification email formating */
 #define ATTR_mailsubjectfmt "mail_subject_fmt"
