@@ -1002,7 +1002,7 @@ AC_ARG_WITH(mic-path, [
                      specify that the include files are in /opt/intel/mic/coi/include
                      and the libraries are in /opt/intel/mic/coi/host-linux-release/lib],
   [MICLIBS="-L${withval}/host-linux-release/lib"; MICCFLAGS="-I${withval}/include"],
-  [MICLIBS="-L/opt/intel/mic/coi/host-linux-release/lib"; MICCFLAGS="-I/opt/intel/mic/coi/include"])
+  [MICLIBS="-L/usr/lib64"; MICCFLAGS="-I/usr/include/intel-coi"])
 
 
 dnl
