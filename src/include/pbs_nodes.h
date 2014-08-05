@@ -350,7 +350,18 @@ struct pbsnode
   time_t                        nd_power_state_change_time; //
 
   pthread_mutex_t              *nd_mutex;            /* semaphore for accessing this node's data */
-  };
+
+  /* numa hardware configuration information */
+  int nd_available_sockets;
+  int nd_available_chips;
+  int nd_available_cores;
+  int nd_available_threads;
+  int nd_total_sockets;
+  int nd_total_chips;
+  int nd_total_cores;
+  int nd_total_threads;
+
+ };
 
 typedef container::item_container<struct pbsnode *>                all_nodes;
 typedef container::item_container<struct pbsnode *>::item_iterator all_nodes_iterator;
@@ -532,6 +543,16 @@ enum nodeattr
   ND_ATR_gpustatus,
   ND_ATR_mics,
   ND_ATR_micstatus,
+#ifdef PENABLE_LINUX26_CPUSETS
+  ND_ATR_total_sockets,
+  ND_ATR_total_chips,
+  ND_ATR_total_cores,
+  ND_ATR_total_threads,
+  ND_ATR_available_sockets,
+  ND_ATR_available_chips,
+  ND_ATR_available_cores,
+  ND_ATR_available_threads,
+#endif
   ND_ATR_LAST
   }; /* WARNING: Must be the highest valued enum */
 

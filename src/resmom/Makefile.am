@@ -38,6 +38,7 @@ pbs_mom_SOURCES = catch_child.c mom_comm.c mom_inter.c mom_main.c	\
 		   start_exec.h checkpoint.c tmsock_recov.c		\
 		   mom_req_quejob.c mom_job_func.c			\
 		   mom_process_request.c alps_reservations.c		\
+       machine.cpp numa_socket.cpp numa_chip.cpp numa_core.cpp \
 		   release_reservation.c generate_alps_status.c	\
                    parse_config.c node_frequency.cpp \
 		   ../server/attr_recov.c ../server/dis_read.c		\

@@ -83,6 +83,7 @@
 #ifdef PENABLE_LINUX26_CPUSETS
 #include "pbs_cpuset.h"
 #include "node_internals.hpp"
+#include "machine.hpp"
 #endif
 #include "threadpool.h"
 #include "mom_hierarchy.h"
@@ -207,6 +208,7 @@ std::vector<resend_momcomm *> things_to_resend;
 mom_hierarchy_t  *mh;
 
 #ifdef PENABLE_LINUX26_CPUSETS
+Machine          this_node;
 node_internals   internal_layout;
 hwloc_topology_t topology = NULL;       /* system topology */
 #endif
@@ -4434,7 +4436,7 @@ void read_mom_hierarchy()
   } /* END read_mom_hierarchy() */
 
 
-#if PENABLE_LINUX26_CPUSETS
+#ifdef PENABLE_LINUX26_CPUSETS
 void recover_internal_layout()
 
   {
@@ -4799,6 +4801,8 @@ int setup_program_environment(void)
   
   internal_layout = node_internals();
 
+  this_node.initializeMachine(topology);
+
 #endif
 
 #ifdef NUMA_SUPPORT
@@ -5136,7 +5140,7 @@ int setup_program_environment(void)
 
   init_abort_jobs(recover);
 
-#if PENABLE_LINUX26_CPUSETS
+#ifdef PENABLE_LINUX26_CPUSETS
   /* Nuke cpusets that do not correspond to existing jobs */
   cleanup_torque_cpuset();
 

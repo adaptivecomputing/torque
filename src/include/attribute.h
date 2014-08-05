@@ -523,7 +523,16 @@ extern int      node_alt_name(pbs_attribute*, void*, int);
 extern int      set_note_str(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
 extern int      set_alt_name_str(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
 extern void     replace_attr_string(pbs_attribute*, char*);
-extern int 		job_radix_action (pbs_attribute *new_attr, void *pobj, int actmode);
+extern int 		  job_radix_action (pbs_attribute *new_attr, void *pobj, int actmode);
+int             node_total_socket_action(pbs_attribute *new_attr, void *pobj, int actmode);
+int             node_total_chip_action(pbs_attribute *new_attr, void *pobj, int actmode);
+int             node_total_core_action(pbs_attribute *new_attr, void *pobj, int actmode);
+int             node_total_thread_action(pbs_attribute *new_attr, void *pobj, int actmode);
+int             node_available_socket_action(pbs_attribute *new_attr, void *pobj, int actmode);
+int             node_available_chip_action(pbs_attribute *new_attr, void *pobj, int actmode);
+int             node_available_core_action(pbs_attribute *new_attr, void *pobj, int actmode);
+int             node_available_thread_action(pbs_attribute *new_attr, void *pobj, int actmode);
+
 
 /* Token manipulation functions */
 

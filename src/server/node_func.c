@@ -612,6 +612,24 @@ int status_nodeattrib(
       continue;
     else if (i == ND_ATR_gpustatus)
       atemp[i].at_val.at_arst = pnode->nd_gpustatus;
+#ifdef PENABLE_LINUX26_CPUSETS
+    else if (i == ND_ATR_total_sockets)
+      atemp[i].at_val.at_long = pnode->nd_total_sockets;
+    else if (i == ND_ATR_total_chips)
+      atemp[i].at_val.at_long = pnode->nd_total_chips;
+    else if (i == ND_ATR_total_cores)
+      atemp[i].at_val.at_long = pnode->nd_total_cores;
+    else if (i == ND_ATR_total_threads)
+      atemp[i].at_val.at_long = pnode->nd_total_threads;
+     else if (i == ND_ATR_available_sockets)
+      atemp[i].at_val.at_long = pnode->nd_available_sockets;
+    else if (i == ND_ATR_available_chips)
+      atemp[i].at_val.at_long = pnode->nd_available_chips;
+    else if (i == ND_ATR_available_cores)
+      atemp[i].at_val.at_long = pnode->nd_available_cores;
+    else if (i == ND_ATR_available_threads)
+      atemp[i].at_val.at_long = pnode->nd_available_threads;
+#endif
     else if (i == ND_ATR_gpus)
       {
       if (pnode->nd_ngpus == 0)
@@ -2737,6 +2755,391 @@ int node_mom_rm_port_action(
 
   return rc;
   }
+
+/*
+ * node_total_socket_action - action routine for node's hardware
+ * locality socket device pbs_attribute
+ */
+
+int node_total_socket_action(
+
+  pbs_attribute *new_attr,     /* derive props into this pbs_attribute*/
+  void          *pobj,    /* pointer to a pbsnode struct     */
+  int            actmode) /* action mode; "NEW" or "ALTER"   */
+
+  {
+  struct pbsnode *pnode = (struct pbsnode *)pobj;
+  int rc = 0;
+
+  if (new_attr == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc,__func__, "NULL input attributes");
+    return(rc);
+    }
+
+  if (pobj == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc,__func__, "NULL input node");
+    return(rc);
+    }
+
+  switch (actmode)
+    {
+
+    case ATR_ACTION_NEW:
+      new_attr->at_val.at_long = pnode->nd_total_sockets;
+      break;
+
+    case ATR_ACTION_ALTER:
+      pnode->nd_total_sockets = new_attr->at_val.at_long;
+      break;
+
+    default:
+
+      rc = PBSE_INTERNAL;
+    }
+
+  return rc;
+  }
+
+/*
+ * node_total_chip_action - action routine for node's hardware
+ * locality chip device pbs_attribute
+ */
+
+int node_total_chip_action(
+
+  pbs_attribute *new_attr,     /* derive props into this pbs_attribute*/
+  void          *pobj,    /* pointer to a pbsnode struct     */
+  int            actmode) /* action mode; "NEW" or "ALTER"   */
+
+  {
+  struct pbsnode *pnode = (struct pbsnode *)pobj;
+  int rc = 0;
+
+  if (new_attr == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc,__func__, "NULL input attributes");
+    return(rc);
+    }
+
+  if (pobj == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc,__func__, "NULL input node");
+    return(rc);
+    }
+
+  switch (actmode)
+    {
+
+    case ATR_ACTION_NEW:
+      new_attr->at_val.at_long = pnode->nd_total_chips;
+      break;
+
+    case ATR_ACTION_ALTER:
+      pnode->nd_total_chips = new_attr->at_val.at_long;
+      break;
+
+    default:
+
+      rc = PBSE_INTERNAL;
+    }
+
+  return rc;
+  }
+
+/*
+ * node_total_core_action - action routine for node's hardware
+ * locality chip device pbs_attribute
+ */
+
+int node_total_core_action(
+
+  pbs_attribute *new_attr,     /* derive props into this pbs_attribute*/
+  void          *pobj,    /* pointer to a pbsnode struct     */
+  int            actmode) /* action mode; "NEW" or "ALTER"   */
+
+  {
+  struct pbsnode *pnode = (struct pbsnode *)pobj;
+  int rc = 0;
+
+  if (new_attr == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc,__func__, "NULL input attributes");
+    return(rc);
+    }
+
+  if (pobj == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc,__func__, "NULL input node");
+    return(rc);
+    }
+
+  switch (actmode)
+    {
+
+    case ATR_ACTION_NEW:
+      new_attr->at_val.at_long = pnode->nd_total_cores;
+      break;
+
+    case ATR_ACTION_ALTER:
+      pnode->nd_total_cores = new_attr->at_val.at_long;
+      break;
+
+    default:
+
+      rc = PBSE_INTERNAL;
+    }
+
+  return rc;
+  }
+
+/*
+ * node_total_thread_action - action routine for node's hardware
+ * locality chip device pbs_attribute
+ */
+
+int node_total_thread_action(
+
+  pbs_attribute *new_attr,     /* derive props into this pbs_attribute*/
+  void          *pobj,    /* pointer to a pbsnode struct     */
+  int            actmode) /* action mode; "NEW" or "ALTER"   */
+
+  {
+  struct pbsnode *pnode = (struct pbsnode *)pobj;
+  int rc = 0;
+
+  if (new_attr == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc,__func__, "NULL input attributes");
+    return(rc);
+    }
+
+  if (pobj == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc,__func__, "NULL input node");
+    return(rc);
+    }
+
+  switch (actmode)
+    {
+
+    case ATR_ACTION_NEW:
+      new_attr->at_val.at_long = pnode->nd_total_threads;
+      break;
+
+    case ATR_ACTION_ALTER:
+      pnode->nd_total_threads = new_attr->at_val.at_long;
+      break;
+
+    default:
+
+      rc = PBSE_INTERNAL;
+    }
+
+  return rc;
+  }
+
+/*
+ * node_available_socket_action - action routine for node's hardware
+ * locality socket device pbs_attribute
+ */
+
+int node_available_socket_action(
+
+  pbs_attribute *new_attr,     /* derive props into this pbs_attribute*/
+  void          *pobj,    /* pointer to a pbsnode struct     */
+  int            actmode) /* action mode; "NEW" or "ALTER"   */
+
+  {
+  struct pbsnode *pnode = (struct pbsnode *)pobj;
+  int rc = 0;
+
+  if (new_attr == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc,__func__, "NULL input attributes");
+    return(rc);
+    }
+
+  if (pobj == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc,__func__, "NULL input node");
+    return(rc);
+    }
+
+  switch (actmode)
+    {
+
+    case ATR_ACTION_NEW:
+      new_attr->at_val.at_long = pnode->nd_available_sockets;
+      break;
+
+    case ATR_ACTION_ALTER:
+      pnode->nd_available_sockets = new_attr->at_val.at_long;
+      break;
+
+    default:
+
+      rc = PBSE_INTERNAL;
+    }
+
+  return rc;
+  }
+
+/*
+ * node_available_chip_action - action routine for node's hardware
+ * locality chip device pbs_attribute
+ */
+
+int node_available_chip_action(
+
+  pbs_attribute *new_attr,     /* derive props into this pbs_attribute*/
+  void          *pobj,    /* pointer to a pbsnode struct     */
+  int            actmode) /* action mode; "NEW" or "ALTER"   */
+
+  {
+  struct pbsnode *pnode = (struct pbsnode *)pobj;
+  int rc = 0;
+
+  if (new_attr == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc,__func__, "NULL input attributes");
+    return(rc);
+    }
+
+  if (pobj == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc,__func__, "NULL input node");
+    return(rc);
+    }
+
+  switch (actmode)
+    {
+
+    case ATR_ACTION_NEW:
+      new_attr->at_val.at_long = pnode->nd_available_chips;
+      break;
+
+    case ATR_ACTION_ALTER:
+      pnode->nd_available_chips = new_attr->at_val.at_long;
+      break;
+
+    default:
+
+      rc = PBSE_INTERNAL;
+    }
+
+  return rc;
+  }
+
+/*
+ * node_available_core_action - action routine for node's hardware
+ * locality chip device pbs_attribute
+ */
+
+int node_available_core_action(
+
+  pbs_attribute *new_attr,     /* derive props into this pbs_attribute*/
+  void          *pobj,    /* pointer to a pbsnode struct     */
+  int            actmode) /* action mode; "NEW" or "ALTER"   */
+
+  {
+  struct pbsnode *pnode = (struct pbsnode *)pobj;
+  int rc = 0;
+
+  if (new_attr == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc,__func__, "NULL input attributes");
+    return(rc);
+    }
+
+  if (pobj == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc,__func__, "NULL input node");
+    return(rc);
+    }
+
+  switch (actmode)
+    {
+
+    case ATR_ACTION_NEW:
+      new_attr->at_val.at_long = pnode->nd_available_cores;
+      break;
+
+    case ATR_ACTION_ALTER:
+      pnode->nd_available_cores = new_attr->at_val.at_long;
+      break;
+
+    default:
+
+      rc = PBSE_INTERNAL;
+    }
+
+  return rc;
+  }
+
+/*
+ * node_available_thread_action - action routine for node's hardware
+ * locality chip device pbs_attribute
+ */
+
+int node_available_thread_action(
+
+  pbs_attribute *new_attr,     /* derive props into this pbs_attribute*/
+  void          *pobj,    /* pointer to a pbsnode struct     */
+  int            actmode) /* action mode; "NEW" or "ALTER"   */
+
+  {
+  struct pbsnode *pnode = (struct pbsnode *)pobj;
+  int rc = 0;
+
+  if (new_attr == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc,__func__, "NULL input attributes");
+    return(rc);
+    }
+
+  if (pobj == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc,__func__, "NULL input node");
+    return(rc);
+    }
+
+  switch (actmode)
+    {
+
+    case ATR_ACTION_NEW:
+      new_attr->at_val.at_long = pnode->nd_available_threads;
+      break;
+
+    case ATR_ACTION_ALTER:
+      pnode->nd_available_threads = new_attr->at_val.at_long;
+      break;
+
+    default:
+
+      rc = PBSE_INTERNAL;
+    }
+
+  return rc;
+  }
+
 
 
 

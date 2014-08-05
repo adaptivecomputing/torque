@@ -85,6 +85,7 @@
 #include <vector>
 #include <string>
 
+#include "pbs_config.h"
 #include "pbs_nodes.h"
 #include "log.h"
 #include "dis.h"
@@ -500,6 +501,23 @@ void *svr_is_request(
 
       if ((node_name = strdup(node->nd_name)) == NULL)
         goto err;
+
+
+#ifdef PENABLE_LINUX26_CPUSETS
+      int available_sockets, available_chips, available_cores, available_threads;
+      int total_sockets, total_chips, total_cores, total_threads;
+
+      available_sockets = disrsi(chan, &ret);
+      available_chips = disrsi(chan, &ret);
+      available_cores = disrsi(chan, &ret);
+      available_threads = disrsi(chan, &ret);
+      total_sockets = disrsi(chan, &ret);
+      total_chips = disrsi(chan, &ret);
+      total_cores = disrsi(chan, &ret);
+      total_threads = disrsi(chan, &ret);
+
+#endif
+
       node_mutex.unlock();
 
       ret = is_stat_get(node_name, chan);
@@ -510,6 +528,17 @@ void *svr_is_request(
         {
         node->nd_stream = -1;
         node_mutex.mark_as_locked();
+
+#ifdef PENABLE_LINUX26_CPUSETS
+        node->nd_available_sockets = available_sockets;
+        node->nd_available_chips = available_chips;
+        node->nd_available_cores = available_cores;
+        node->nd_available_threads = available_threads;
+        node->nd_total_sockets = total_sockets;
+        node->nd_total_chips = total_chips;
+        node->nd_total_cores = total_cores;
+        node->nd_total_threads = total_threads;
+#endif
 
         if (ret == SEND_HELLO)
           {

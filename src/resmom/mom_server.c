@@ -244,7 +244,9 @@
 #include <vector>
 #include "container.hpp"
 #include <arpa/inet.h>
-
+#ifdef PENABLE_LINUX26_CPUSETS
+#include "machine.hpp"
+#endif
 #define MAX_RETRY_TIME_IN_SECS           (5 * 60)
 #define STARTING_RETRY_INTERVAL_IN_SECS   2
 #define UPDATE_TO_SERVER                  0
@@ -263,6 +265,10 @@ extern void collect_cpuact(void);
 mom_server     mom_servers[PBS_MAXSERVER];
 int            mom_server_count = 0;
 pbs_net_t      down_svraddrs[PBS_MAXSERVER];
+
+#ifdef PENABLE_LINUX26_CPUSETS
+extern Machine this_node;
+#endif
 
 extern unsigned int        default_server_port;
 extern char               *path_jobs;
@@ -1085,9 +1091,56 @@ int should_request_cluster_addrs()
   return(should);
   } /* END should_request_cluster_addrs() */
 
+int write_numa_info( 
+
+  struct tcp_chan *chan)
+
+  {
+  int ret = PBSE_NONE;
+
+#ifdef PENABLE_LINUX26_CPUSETS
+  /* This is the numa configuration for this node */
+  if ((ret = diswsi(chan, this_node.getAvailableSockets())) == DIS_SUCCESS)
+    {
+    if ((ret = diswsi(chan, this_node.getAvailableChips())) == DIS_SUCCESS)
+      {
+      if ((ret = diswsi(chan, this_node.getAvailableCores())) == DIS_SUCCESS)
+        {
+        if ((ret = diswsi(chan, this_node.getAvailableThreads())) == DIS_SUCCESS)
+          {
+          if ((ret = diswsi(chan, this_node.getNumberOfSockets())) == DIS_SUCCESS)
+            {
+            if ((ret = diswsi(chan, this_node.getTotalChips())) == DIS_SUCCESS)
+              {
+              if ((ret = diswsi(chan, this_node.getTotalCores())) == DIS_SUCCESS)
+                {
+                if ((ret = diswsi(chan, this_node.getTotalThreads())) == DIS_SUCCESS)
+                  {
+                  return(ret);
+                  }
+                }
+              }
+            }
+          } 
+        }
+      }
+    }
+  return(ret);
+#else
+  /* If we are not doing cpusets don't do anything */
+  return(ret);
+#endif
+  }
 
 /* 
  * writes the header for a server status update
+ *
+ *  Header format
+ *
+ *   Protocol | Version | Command (IS_STATUS) | mom service port | mom manager port 
+ *   The following two lines are added to the header if cpuset is enabled.
+ *   | available sockets | available numa_chips | available cores | available threads
+ *   | total sockets     | total numa_chips     | total cores     | total threads
  */
 int write_update_header(
     
@@ -1105,19 +1158,22 @@ int write_update_header(
       {
       if ((ret = diswus(chan, pbs_rm_port)) == DIS_SUCCESS)
         {
-        if (is_reporter_mom == FALSE)
+        if ((ret = write_numa_info(chan)) == DIS_SUCCESS)
           {
-          /* write this node's name first - alps handles this separately */
-          snprintf(buf,sizeof(buf),"node=%s",mom_alias);
-          
-          if ((ret = diswst(chan, buf)) != DIS_SUCCESS)
-            mom_server_stream_error(chan->sock, name, id, "writing status string");
-          else if (should_request_cluster_addrs() == TRUE)
+          if (is_reporter_mom == FALSE)
             {
-            if ((ret = diswst(chan, "first_update=true")) != DIS_SUCCESS)
+            /* write this node's name first - alps handles this separately */
+            snprintf(buf,sizeof(buf),"node=%s",mom_alias);
+            
+            if ((ret = diswst(chan, buf)) != DIS_SUCCESS)
               mom_server_stream_error(chan->sock, name, id, "writing status string");
-            else
-              requested_cluster_addrs = time_now;
+            else if (should_request_cluster_addrs() == TRUE)
+              {
+              if ((ret = diswst(chan, "first_update=true")) != DIS_SUCCESS)
+                mom_server_stream_error(chan->sock, name, id, "writing status string");
+              else
+                requested_cluster_addrs = time_now;
+              }
             }
           }
         }

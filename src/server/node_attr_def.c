@@ -330,6 +330,105 @@ attribute_def node_attr_def[] =
    MGR_ONLY_SET,
    ATR_TYPE_ARST,
    PARENT_TYPE_NODE,
+#ifndef PENABLE_LINUX26_CPUSETS
   }
-
+#else
+  },
+	/* ND_ATR_total_sockets */
+	{ (char *)ATTR_NODE_total_sockets,  /* "total_sockets" */
+	  decode_l,
+	  encode_l,
+	  set_l,
+	  comp_null,
+	  free_null,
+	  node_total_socket_action,
+	  NO_USER_SET,
+	  ATR_TYPE_LONG,
+	  PARENT_TYPE_NODE,
+	},
+ 	/* ND_ATR_total_chips */
+	{ (char *)ATTR_NODE_total_chips,  /* "total_chips" */
+	  decode_l,
+	  encode_l,
+	  set_l,
+	  comp_null,
+	  free_null,
+	  node_total_chip_action,
+	  NO_USER_SET,
+	  ATR_TYPE_LONG,
+	  PARENT_TYPE_NODE,
+	},
+ 	/* ND_ATR_total_cores */
+	{ (char *)ATTR_NODE_total_cores,  /* "total_cores" */
+	  decode_l,
+	  encode_l,
+	  set_l,
+	  comp_null,
+	  free_null,
+	  node_total_core_action,
+	  NO_USER_SET,
+	  ATR_TYPE_LONG,
+	  PARENT_TYPE_NODE,
+	},
+ 	/* ND_ATR_total_threads */
+	{ (char *)ATTR_NODE_total_threads,  /* "total_threads" */
+	  decode_l,
+	  encode_l,
+	  set_l,
+	  comp_null,
+	  free_null,
+	  node_total_thread_action,
+	  NO_USER_SET,
+	  ATR_TYPE_LONG,
+	  PARENT_TYPE_NODE,
+	},
+ 	/* ND_ATR_available_sockets */
+	{ (char *)ATTR_NODE_available_sockets,  /* "available_sockets" */
+	  decode_l,
+	  encode_l,
+	  set_l,
+	  comp_null,
+	  free_null,
+	  node_available_socket_action,
+	  NO_USER_SET,
+	  ATR_TYPE_LONG,
+	  PARENT_TYPE_NODE,
+	},
+ 	/* ND_ATR_available_chips */
+	{ (char *)ATTR_NODE_available_chips,  /* "available_chips" */
+	  decode_l,
+	  encode_l,
+	  set_l,
+	  comp_null,
+	  free_null,
+	  node_available_chip_action,
+	  NO_USER_SET,
+	  ATR_TYPE_LONG,
+	  PARENT_TYPE_NODE,
+	},
+ 	/* ND_ATR_available_cores */
+	{ (char *)ATTR_NODE_available_cores,  /* "available_cores" */
+	  decode_l,
+	  encode_l,
+	  set_l,
+	  comp_null,
+	  free_null,
+	  node_available_core_action,
+	  NO_USER_SET,
+	  ATR_TYPE_LONG,
+	  PARENT_TYPE_NODE,
+	},
+ 	/* ND_ATR_available_threads */
+	{ (char *)ATTR_NODE_available_threads,  /* "available_threads" */
+	  decode_l,
+	  encode_l,
+	  set_l,
+	  comp_null,
+	  free_null,
+	  node_available_thread_action,
+	  NO_USER_SET,
+	  ATR_TYPE_LONG,
+	  PARENT_TYPE_NODE,
+	}
+#endif
   };
