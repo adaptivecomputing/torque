@@ -9,6 +9,7 @@ int is_num(const char *);
 int array_request_token_count(const char *);
 int array_request_parse_token(char *, int *, int *);
 int num_array_jobs(const char *str);
+int array_recov(char *path, job_array **new_pa);
 
 
 START_TEST(set_slot_limit_test)
@@ -139,6 +140,21 @@ END_TEST
 
 
 
+START_TEST(array_recov_test)
+  {
+  job_array *pa;
+
+  /* missing file */
+  fail_unless(array_recov((char *)"", &pa) == PBSE_SYSTEM, "failed array_recov");
+
+  /* zero length file */
+  fail_unless(array_recov((char *)"file_zero", &pa) == PBSE_SYSTEM, "failed array_recov");
+  }
+END_TEST
+
+
+
+
 Suite *array_func_suite(void)
   {
   Suite *s = suite_create("array_func_suite methods");
@@ -164,6 +180,10 @@ Suite *array_func_suite(void)
 
   tc_core = tcase_create("first_job_index_test");
   tcase_add_test(tc_core, first_job_index_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("array_recov_test");
+  tcase_add_test(tc_core, array_recov_test);
   suite_add_tcase(s, tc_core);
 
   return s;
