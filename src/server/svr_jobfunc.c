@@ -718,7 +718,7 @@ int svr_dequejob(
 
   if (pque != NULL)
     {
-    if (pque->qu_qs.qu_type == QTYPE_RoutePush)
+    if ((pque->qu_qs.qu_type == QTYPE_RoutePush) || (pjob->ji_qs.ji_state != JOB_STATE_COMPLETE))
       {
       rc = decrement_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
       if (rc != PBSE_NONE)
