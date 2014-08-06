@@ -11,6 +11,7 @@ extern char *path_mom_hierarchy;
 extern int  MOMJobDirStickySet;
 
 void read_mom_hierarchy();
+int  parse_integer_range(const char *range_str, int &start, int &end);
 
 #include "pbs_error.h"
 
@@ -26,6 +27,28 @@ START_TEST(test_read_mom_hierarchy)
 //  read_mom_hierarchy();
 //  fail_unless(received_cluster_addrs == true);
 //  parsing_hierarchy = false;
+  }
+END_TEST
+
+
+START_TEST(test_parse_integer_range)
+  {
+  int start;
+  int end;
+
+  fail_unless(parse_integer_range("0", start, end) == PBSE_NONE);
+  fail_unless(start == end);
+  fail_unless(start == 0);
+
+  fail_unless(parse_integer_range("0-2", start, end) == PBSE_NONE);
+  fail_unless(end == 2);
+  fail_unless(start == 0);
+
+  fail_unless(parse_integer_range("2-4", start, end) == PBSE_NONE);
+  fail_unless(end == 4);
+  fail_unless(start == 2);
+
+  fail_unless(parse_integer_range("4-2", start, end) != PBSE_NONE);
   }
 END_TEST
 
@@ -85,6 +108,7 @@ Suite *mom_main_suite(void)
 
   tc_core = tcase_create("test_mom_job_dir_sticky_config");
   tcase_add_test(tc_core, test_mom_job_dir_sticky_config);
+  tcase_add_test(tc_core, test_parse_integer_range);
   suite_add_tcase(s, tc_core);
 
   return s;

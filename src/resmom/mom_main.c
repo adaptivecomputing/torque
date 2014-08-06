@@ -9362,6 +9362,50 @@ void restart_mom(
 
 
 
+/*
+ * parse_integer_range()
+ *
+ * accepts a string in the format int1[-int2] and populates start
+ * with int1 and end with int2 if specified or int1 if not.
+ */
+int parse_integer_range(
+
+  const char *range_str,
+  int        &start,
+  int        &end)
+
+  {
+  if (range_str != NULL)
+    {
+    char *val     = strdup(range_str);
+    char *val_ptr = val;
+    char *begin   = threadsafe_tokenizer(&val_ptr, "-");
+    char *end_str = threadsafe_tokenizer(&val_ptr, "-");
+        
+    start = strtol(begin, NULL, 10);
+
+    if (end_str != NULL)
+      {
+      end = strtol(end_str, NULL, 10);
+
+      if (end < start)
+        {
+        snprintf(log_buffer, sizeof(log_buffer),
+          "Illegal range string '%s': end parsed as '%d' which is less than start '%d'",
+          range_str, end, start);
+        return(-1);
+        }
+      }
+    else
+      end = start;
+
+    free(val);
+    }
+
+  return(PBSE_NONE);
+  } /* END parse_integer_range() */
+
+
 
 #ifdef NUMA_SUPPORT
 /*
@@ -9402,6 +9446,7 @@ int read_layout_file()
      * so that add_mic_status() skips over the nodeboard if not 
      * configured */
     node_boards[i].mic_end_index = -1;
+    node_boards[i].gpu_end_index = -1;
 
     /* Strip off comments */
     if ((tok = strchr(line, '#')) != NULL)
@@ -9447,16 +9492,15 @@ int read_layout_file()
         {
         /* read the mics specified for this node board. This is in the form
          * index1[-index2] specifying a range*/
-        char *micval = strdup(val);
-        char *start  = strtok(micval, "-");
-        char *end    = strtok(NULL, "-");
-        node_boards[i].mic_start_index = strtol(start, NULL, 10);
-        node_boards[i].mic_end_index = node_boards[i].mic_start_index;
-
-        if (end != NULL)
-          node_boards[i].mic_end_index = strtol(end, NULL, 10);
-
-        free(micval);
+        if (parse_integer_range(val,
+              node_boards[i].mic_start_index, node_boards[i].mic_end_index) != PBSE_NONE)
+          goto failure;
+        }
+      else if (strcmp(tok, "gpu") == 0)
+        {
+        if (parse_integer_range(val,
+              node_boards[i].gpu_start_index, node_boards[i].gpu_end_index) != PBSE_NONE)
+          goto failure;
         }
       else if (strcmp(tok,"memsize") == 0)
         {

@@ -1137,7 +1137,7 @@ void close_conn(
   int has_mutex) /* I */
 
   {
-  char log_message[LOG_BUF_SIZE];
+  char log_message[LOCAL_LOG_BUF_SIZE];
 
   /* close conn shouldn't be called on local connections */
   if (sd == PBS_LOCAL_CONNECTION)
@@ -1185,7 +1185,10 @@ void close_conn(
     globalset_del_sock(sd);
     }
 
-  close(sd);
+  if (close(sd))
+    {
+    snprintf(log_message, sizeof(log_message), "close() - %s", strerror(errno));    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE | PBS_EVENTCLASS_SERVER, __func__, log_message); 
+    }
 
   svr_conn[sd].cn_addr = 0;
   svr_conn[sd].cn_handle = -1;

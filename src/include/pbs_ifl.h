@@ -351,6 +351,7 @@
 #define ATTR_NODE_gpus_str         "numa_gpu_node_str"
 #define ATTR_NODE_mics             "mics"
 #define ATTR_NODE_micstatus        "mic_status"
+#define ATTR_copy_on_rerun         "copy_on_rerun"
 
 /* notification email formating */
 #define ATTR_mailsubjectfmt "mail_subject_fmt"

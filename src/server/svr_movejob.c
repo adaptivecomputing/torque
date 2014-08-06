@@ -168,6 +168,7 @@ extern pbs_net_t         pbs_server_addr;
 extern unsigned int      pbs_server_port_dis;
 extern time_t            pbs_tcp_timeout;
 extern int               LOGLEVEL;
+extern bool              cpy_stdout_err_on_rerun;
 
 int net_move(job *, struct batch_request *);
 
@@ -734,6 +735,16 @@ int send_job_work(
     }
 
   pattr = pjob->ji_wattr;
+  if (cpy_stdout_err_on_rerun)
+    {
+    pjob->ji_wattr[JOB_ATR_copystd_on_rerun].at_val.at_long = 1;
+    pjob->ji_wattr[JOB_ATR_copystd_on_rerun].at_flags = ATR_VFLAG_SET;
+    } 
+  else
+    {
+    pjob->ji_wattr[JOB_ATR_copystd_on_rerun].at_val.at_long = 0;
+    pjob->ji_wattr[JOB_ATR_copystd_on_rerun].at_flags = 0;
+    } 
 
   for (i = 0;i < JOB_ATR_LAST;i++)
     {
