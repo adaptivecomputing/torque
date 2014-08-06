@@ -651,7 +651,7 @@ int main(
 
   progname = strdup(argv[0]);
 
-  while ((i = getopt(argc, argv, "acdlm:opqrs:x-:N:n:")) != EOF)
+  while ((i = getopt(argc, argv, "acdlm:opqrs:x-:N:n")) != EOF)
     {
     switch (i)
       {
