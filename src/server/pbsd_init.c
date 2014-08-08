@@ -815,6 +815,7 @@ void prepare_mom_hierarchy(
     }
   else
     {
+    mh->file_present = true;
     parse_mom_hierarchy(fds);
 
     convert_mom_hierarchy_to_send_format(send_format);

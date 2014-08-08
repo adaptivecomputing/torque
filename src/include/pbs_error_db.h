@@ -278,6 +278,7 @@ PbsErrClient(PBSE_CANT_CHANGE_POWER_STATE_WITH_JOBS_RUNNING, (char *)"Can't chan
 PbsErrClient(PBSE_CANT_WAKE_OFF_MACHINE, (char *)"Unable to wake a node in hibernate or shutdown state.")
 PbsErrClient(PBSE_BAD_UTC_FORMAT, (char *)"Bad UTC format, must be in the form yyyy-mm-ddThh:mm:ssZ or yyyy-mm-ddThh:mm:ss+hh:mm:ss or yyyy-mm-ddThh:mm:ss-hh:mm:ss or 0 to remove it.")
 PbsErrClient(PBSE_BAD_UTC_RANGE, (char *)"One of the numbers in the UTC string is out of range.")
+PbsErrClient(PBSE_CREATE_NOT_ALLOWED_WITH_MOM_HIERARCHY, (char *)"Nodes may not be dynamically created or deleted if there is a mom_hierarchy file.")
 
 /* pbs client errors ceiling (max_client_err + 1) */
 PbsErrClient(PBSE_CEILING,           (char*)0)

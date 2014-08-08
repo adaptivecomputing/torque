@@ -137,6 +137,7 @@
 #include "queue_func.h" /* find_queuebyname, que_alloc, que_free */
 #include "queue_recov.h" /* que_save */
 #include "mutex_mgr.hpp"
+#include "mom_hierarchy.h"
 
 
 #define PERM_MANAGER (ATR_DFLAG_MGWR | ATR_DFLAG_MGRD)
@@ -158,6 +159,7 @@ extern char          *msg_man_del;
 extern char          *msg_man_set;
 extern char          *msg_man_uns;
 extern int            disable_timeout_check;
+extern mom_hierarchy_t *mh;
 
 
 extern int que_purge(pbs_queue *);
@@ -2157,6 +2159,15 @@ int req_manager(
           break;
 
         case MGR_OBJ_NODE:
+
+          if((mh != NULL)&&(mh->file_present))
+            {
+            rc = PBSE_CREATE_NOT_ALLOWED_WITH_MOM_HIERARCHY;
+            snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+                (preq->rq_ind.rq_manager.rq_cmd == MGR_CMD_DELETE)?"Can not delete node.":"Can not create node" );
+            req_reject(rc, 0, preq, NULL, log_buf);
+            return rc;
+            }
 
           if (preq->rq_ind.rq_manager.rq_cmd == MGR_CMD_CREATE)
             mgr_node_create(preq);
