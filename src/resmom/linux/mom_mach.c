@@ -407,34 +407,34 @@ int populate_stats_from_the_buffer(
   skip_space_delimited_values(4, &curr_ptr);
 
   // read the utime - cycles that the process has been in user mode
-  ps.utime = strtol(curr_ptr, &curr_ptr, 10);
+  ps.utime = strtoll(curr_ptr, &curr_ptr, 10);
   curr_ptr++;
   
   // read the stime - cycles that the process has been in system mode
-  ps.stime = strtol(curr_ptr, &curr_ptr, 10);
+  ps.stime = strtoll(curr_ptr, &curr_ptr, 10);
   curr_ptr++;
 
   // read the cutime - cycles that the process' children have been in user mode
-  ps.cutime = strtol(curr_ptr, &curr_ptr, 10);
+  ps.cutime = strtoll(curr_ptr, &curr_ptr, 10);
   curr_ptr++;
 
   // read the cstime - cycles that the process' children have been in system mode
-  ps.cstime = strtol(curr_ptr, &curr_ptr, 10);
+  ps.cstime = strtoll(curr_ptr, &curr_ptr, 10);
   curr_ptr++;
 
   // skip the next 4 values
   skip_space_delimited_values(4, &curr_ptr);
 
   // read the start time
-  jstarttime = strtol(curr_ptr, &curr_ptr, 10);
+  jstarttime = strtoll(curr_ptr, &curr_ptr, 10);
   curr_ptr++;
 
   // read the virtual memory size
-  ps.vsize = strtol(curr_ptr, &curr_ptr, 10);
+  ps.vsize = strtoll(curr_ptr, &curr_ptr, 10);
   curr_ptr++;
 
   // read the stack size
-  ps.rss = strtol(curr_ptr, &curr_ptr, 10);
+  ps.rss = strtoll(curr_ptr, &curr_ptr, 10);
   
   ps.start_time = linux_time + JTOS(jstarttime);
   ps.name = path;
