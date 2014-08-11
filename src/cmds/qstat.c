@@ -3154,6 +3154,7 @@ int main(
   int                  errflg = 0;
   int                  exec_only = 0;
   int                  any_failed = 0;
+  int                  ret_code = 0;
   int                  located = FALSE;
 
   char                 job_id_out[PBS_MAXCLTJOBID];
@@ -3271,27 +3272,25 @@ int main(
 
       case JOBS:      /* get status of batch jobs */
         any_failed = run_job_mode(have_args, operand, &located, server_out, server_old, queue_name_out, server_name_out, job_id_out);
-        if (any_failed != PBSE_NONE)
-          exit(any_failed);
         break;
 
       case QUEUES:        /* get status of batch queues */
         any_failed = run_queue_mode(have_args, operand, server_out, queue_name_out, server_name_out);
-        if (any_failed != PBSE_NONE)
-          exit(any_failed);
         break;
 
 
       case SERVERS:           /* get status of batch servers */
        any_failed = run_server_mode(have_args, operand, server_out);
-        if (any_failed != PBSE_NONE)
-          exit(any_failed);
        break;
 
       }    /* END switch (mode) */
+    if (any_failed != PBSE_NONE)
+      {
+        ret_code = any_failed;
+      }
     }      /* END for () */
 
   tcl_run(f_opt);
 
-  exit(any_failed);
+  exit(ret_code);
   }  /* END main() */
