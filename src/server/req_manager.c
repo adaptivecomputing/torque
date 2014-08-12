@@ -138,7 +138,9 @@
 #include "queue_recov.h" /* que_save */
 #include "mutex_mgr.hpp"
 #include "mom_hierarchy.h"
-
+#include "ji_mutex.h"
+#include "req_rerun.h"
+#include "req_delete.h"
 
 #define PERM_MANAGER (ATR_DFLAG_MGWR | ATR_DFLAG_MGRD)
 #define PERM_OPorMGR (ATR_DFLAG_MGWR | ATR_DFLAG_MGRD | ATR_DFLAG_OPRD | ATR_DFLAG_OPWR)
@@ -167,6 +169,7 @@ extern void save_characteristic(struct pbsnode *, node_check_info *);
 extern int chk_characteristic(struct pbsnode *, node_check_info *, int *);
 extern int hasprop(struct pbsnode *, struct prop *);
 extern int PNodeStateToString(int, char *, int);
+extern job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode);
 
 
 extern void add_all_nodes_to_hello_container();
@@ -1906,7 +1909,43 @@ void mgr_node_set(
 
 
 
-
+static void requeue_or_delete_jobs(struct pbsnode *pnode,batch_request *preq)
+  {
+  for(std::vector<job_usage_info>::iterator i = pnode->nd_job_usages.begin();i != pnode->nd_job_usages.end();i++)
+    {
+    job *pjob = get_job_from_job_usage_info(&(*i), pnode);
+    if(pjob != NULL)
+      {
+      batch_request *brRerun = alloc_br(PBS_BATCH_Rerun);
+      batch_request *brDelete = alloc_br(PBS_BATCH_DeleteJob);
+      if((brRerun == NULL)||(brDelete == NULL))
+        {
+        free_br(brRerun);
+        free_br(brDelete);
+        req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
+        return;
+        }
+      strcpy(brRerun->rq_ind.rq_rerun,pjob->ji_qs.ji_jobid);
+      strcpy(brDelete->rq_ind.rq_rerun,pjob->ji_qs.ji_jobid);
+      brRerun->rq_conn = PBS_LOCAL_CONNECTION;
+      brDelete->rq_conn = PBS_LOCAL_CONNECTION;
+      brRerun->rq_perm = preq->rq_perm;
+      brDelete->rq_perm = preq->rq_perm;
+      unlock_ji_mutex(pjob,__func__,NULL,LOGLEVEL);
+      unlock_node(pnode, __func__, NULL, LOGLEVEL);
+      int rc = req_rerunjob(brRerun);
+      if(rc != PBSE_NONE)
+        {
+        rc = req_deletejob(brDelete);
+        }
+      else
+        {
+        free_br(brDelete);
+        }
+      lock_node(pnode, __func__, NULL, LOGLEVEL);
+      }
+    }
+  }
 
 /*
  * mgr_node_delete - mark a node (or all nodes) in the server's node list
@@ -1963,6 +2002,26 @@ static void mgr_node_delete(
     req_reject(PBSE_UNKNODE, 0, preq, NULL, NULL);
 
     return;
+    }
+  //Requeue any jobs running on nodes that are about to be deleted.
+
+  if(check_all)
+    {
+    iter = NULL;
+
+    while ((pnode = next_host(&allnodes,&iter,NULL)) != NULL)
+      {
+      requeue_or_delete_jobs(pnode,preq);
+      }
+    if(iter != NULL)
+      {
+      delete iter;
+      iter = NULL;
+      }
+    }
+  else
+    {
+    requeue_or_delete_jobs(pnode,preq);
     }
 
   sprintf(log_buf, msg_manager, msg_man_del, preq->rq_user, preq->rq_host);
