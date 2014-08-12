@@ -682,7 +682,12 @@ void encode_attributes(
     {
     pjob->ji_wattr[JOB_ATR_copystd_on_rerun].at_val.at_long = 1;
     pjob->ji_wattr[JOB_ATR_copystd_on_rerun].at_flags = ATR_VFLAG_SET;
-    }  
+    } 
+  else
+    {
+    pjob->ji_wattr[JOB_ATR_copystd_on_rerun].at_val.at_long = 0;
+    pjob->ji_wattr[JOB_ATR_copystd_on_rerun].at_flags = 0;
+    } 
 
   for (int i = 0; i < JOB_ATR_LAST; i++)
     {
