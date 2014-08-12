@@ -3278,7 +3278,7 @@ int main(
        break;
 
       }    /* END switch (mode) */
-    if (any_failed != PBSE_NONE)
+    if ((ret_code == PBSE_NONE) && (any_failed != PBSE_NONE))
       {
         ret_code = any_failed;
       }
