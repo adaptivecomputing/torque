@@ -2324,7 +2324,7 @@ void on_job_rerun(
             log_event(
               PBSEVENT_JOB,
               PBS_EVENTCLASS_JOB,
-              job_id,
+              pjob->ji_qs.ji_jobid,
               "about to copy stdout/stderr/stageout files");
             }
 
@@ -2334,7 +2334,7 @@ void on_job_rerun(
             {
             /* FAILURE */
             if (LOGLEVEL >= 1)
-              log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, "copy request failed");
+              log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "copy request failed");
               
             /* set up as if mom returned error */
             IsFaked = 1;
