@@ -5,6 +5,7 @@
 #include "server.h" /* server */
 #include "batch_request.h" /* batch_request */
 #include "pbs_job.h" /* job */
+#include "mutex_mgr.hpp"
 
 char server_name[PBS_MAXSERVERNAME + 1];
 struct server server;
@@ -35,3 +36,9 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   }
 
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+
+mutex_mgr::mutex_mgr(pthread_mutex_t *, bool a)
+  {
+  }
+
+mutex_mgr::~mutex_mgr() {}
