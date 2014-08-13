@@ -4,6 +4,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "pbs_error.h"
+
+char *acct_file = NULL;
+
 START_TEST(test_one)
   {
 
