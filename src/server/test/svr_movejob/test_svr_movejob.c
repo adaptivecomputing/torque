@@ -4,6 +4,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "pbs_error.h"
+
+bool cpy_stdout_err_on_rerun = false;
+
 START_TEST(test_one)
   {
 
