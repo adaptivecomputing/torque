@@ -19,6 +19,7 @@ void add_to_property_list(std::stringstream &property_list, const char *token);
 int login_encode_jobs(struct pbsnode *pnode, tlist_head *phead);
 int cray_enabled;
 int read_val_and_advance(int *val, char **str);
+bool job_exclusive_onuse = false;
 
 void initialize_allnodes(all_nodes *an, struct pbsnode *n1, struct pbsnode *n2)
   {
