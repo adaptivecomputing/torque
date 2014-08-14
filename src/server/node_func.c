@@ -83,7 +83,8 @@ extern char            *path_nodenote;
 extern int              LOGLEVEL;
 extern attribute_def    node_attr_def[];   /* node attributes defs */
 extern AvlTree          ipaddrs;
-extern std::vector<std::string> hierarchy_holder;
+extern boost::ptr_vector<std::string> hierarchy_holder;
+extern bool job_exclusive_onuse;
 
 job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode);
 
@@ -1409,7 +1410,8 @@ int add_execution_slot(
   
   pnode->nd_slots.add_execution_slot();
 
-  if ((pnode->nd_state & INUSE_JOB) != 0)
+  if (((pnode->nd_state & INUSE_JOB) != 0) &&
+       (!job_exclusive_onuse))
     pnode->nd_state &= ~INUSE_JOB;
 
   return(PBSE_NONE);

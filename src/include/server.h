@@ -209,6 +209,8 @@ enum srv_atr
 #include "site_svr_attr_enum.h"
   
   SRV_ATR_CopyOnRerun,
+  SRV_ATR_JobExclusiveOnUse,
+
   /* This must be last */
   SRV_ATR_LAST
   };
