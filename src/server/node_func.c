@@ -83,7 +83,7 @@ extern char            *path_nodenote;
 extern int              LOGLEVEL;
 extern attribute_def    node_attr_def[];   /* node attributes defs */
 extern AvlTree          ipaddrs;
-extern boost::ptr_vector<std::string> hierarchy_holder;
+extern std::vector<std::string> hierarchy_holder; 
 extern bool job_exclusive_onuse;
 
 job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode);

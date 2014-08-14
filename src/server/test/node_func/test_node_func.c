@@ -14,6 +14,8 @@
 #include "work_task.h"
 #include "id_map.hpp"
 
+bool job_exclusive_onuse = false;
+
 //#define HOST_NAME_MAX 255
 
 void write_compute_node_properties(struct pbsnode &reporter, FILE *nin);
