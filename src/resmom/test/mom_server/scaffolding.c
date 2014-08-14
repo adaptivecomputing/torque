@@ -367,3 +367,12 @@ int pbs_getaddrinfo(
   {
   return(0);
   }
+
+int concat_dynamic_strings(
+
+    dynamic_string *source,
+    dynamic_string *destination)
+  {
+  fprintf(stderr, "The call to concat_dynamic_strings needs to be mocked!!\n");
+  exit(1);
+  }
