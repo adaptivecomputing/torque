@@ -101,6 +101,7 @@ const char          *conflict_msg = "qstat: conflicting options.\n";
 
 static const char *summarize_arrays_extend_opt = "summarize_arrays";
 
+static bool print_header = true;
 /* END globals */
 
 
@@ -108,8 +109,6 @@ static const char *summarize_arrays_extend_opt = "summarize_arrays";
 
 int   tasksize = DEFTASKSIZE;
 int   alias_opt = FALSE;
-
-
 
 bool isjobid(
 
@@ -2670,7 +2669,6 @@ int run_job_mode(
   int    job_id_out_size = PBS_MAXCLTJOBID;
   int    server_out_size = MAXSERVERNAME;
   int    server_old_size = MAXSERVERNAME;
-  bool   p_header = true;
   int    retry_count = 0;
   char   destination[PBS_MAXDEST + 1];
   char   job_id[PBS_MAXCLTJOBID];
@@ -2869,10 +2867,10 @@ int run_job_mode(
       else if ((f_opt == 0) ||
                (condition)) 
         {
-        display_statjob(p_status, p_header, f_opt, user);
+        display_statjob(p_status, print_header, f_opt, user);
         }
 
-      p_header = false;
+      print_header = false;
 
       pbs_statfree(p_status);
       }
@@ -2897,7 +2895,6 @@ int run_queue_mode(
   int    any_failed = PBSE_NONE;
   int    connect;
   int    server_out_size = MAXSERVERNAME;
-  bool    p_header = true;
   int    retry_count = 0;
   char   destination[PBS_MAXDEST + 1];
   char   *errmsg;
@@ -2999,10 +2996,10 @@ int run_queue_mode(
         }
       else if (condition)
         {
-        display_statque(p_status, p_header, f_opt);
+        display_statque(p_status, print_header, f_opt);
         }
 
-      p_header = false;
+      print_header = false;
 
       pbs_statfree(p_status);
       }
@@ -3024,7 +3021,6 @@ int run_server_mode(
   int    connect;
   int    any_failed = PBSE_NONE;
   int    server_out_size = MAXSERVERNAME;
-  bool   p_header = true;
   int    retry_count = 0;
   char   *errmsg = NULL;
   struct batch_status *p_status;
@@ -3104,9 +3100,9 @@ int run_server_mode(
       condition = tcl_stat("server", p_status, f_opt);
 #endif
       if (condition)
-        display_statserver(p_status, p_header, f_opt);
+        display_statserver(p_status, print_header, f_opt);
 
-      p_header = false;
+      print_header = false;
 
       pbs_statfree(p_status);
       }
