@@ -137,6 +137,7 @@
 #define IS_VALID_STR(STR)  (((STR) != NULL) && ((STR)[0] != '\0'))
 
 extern int              LOGLEVEL;
+extern bool             job_exclusive_onuse;
 
 
 #if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
@@ -3714,7 +3715,8 @@ job_reservation_info *place_subnodes_in_hostlist(
     pnode->nd_job_usages.push_back(jui);
     
     if ((pnode->nd_slots.get_number_free() <= 0) ||
-        (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long == TRUE))
+        (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long == TRUE) ||
+        (job_exclusive_onuse))
       pnode->nd_state |= INUSE_JOB;
     }
   else
