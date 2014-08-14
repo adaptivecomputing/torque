@@ -6,6 +6,8 @@
 
 #include "pbs_error.h"
 
+char checkpoint_run_exe_name[1024];
+
 START_TEST(test_one)
   {
 
