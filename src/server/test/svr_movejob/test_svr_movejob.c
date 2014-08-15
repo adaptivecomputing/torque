@@ -24,6 +24,8 @@ int commit_job_on_mom(int con, char *job_id, bool &timeout,int *mom_err);
 int send_job_over_network(char *job_id, int con, char *job_destin, tlist_head &attrl, bool &attempt_to_queue_job, bool &change_substate_on_attempt_to_queue, bool &timeout, const char *script_name, bool need_to_send_job_script, bool job_has_run, unsigned long job_momaddr, char *stdout_path, char *stderr_path, char *chkpt_path, int type, int *my_err,int *mom_err);
 int send_job_over_network_with_retries(char *job_id, char *job_destin, tlist_head &attrl, bool &attempt_to_queue_job, bool &change_subtate_on_attempt_to_queue, bool &timeout, const char *script_name, bool need_to_send_job_script, bool job_has_run, unsigned long momaddr, unsigned short momport, char *stdout_path, char *stderr_path, char *chkpt_path, int type, int *my_err, int *mom_err);
 
+bool cpy_stdout_err_on_rerun = false;
+
 extern bool get_jobs_array_recycled;
 extern bool get_jobs_array_fail;
 extern bool job_exist;
