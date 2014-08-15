@@ -2928,7 +2928,6 @@ int run_queue_mode(
   int    server_out_size = MAXSERVERNAME;
   int    retry_count = 0;
   char   destination[PBS_MAXDEST + 1];
-//  char   *errmsg;
  
   struct batch_status *p_status;
 
