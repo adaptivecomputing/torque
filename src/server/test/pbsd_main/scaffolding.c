@@ -283,7 +283,7 @@ void *queue_route(void *vp)
   exit(1);
   }
 
-void acct_close(void)
+void acct_close(bool b)
   {
   fprintf(stderr, "The call to acct_close needs to be mocked!!\n");
   exit(1);

@@ -10,7 +10,7 @@ extern char scaff_buffer[];
 
 int requeue_job(job *pjob);
 extern int send_job_to_mom(job **, batch_request *, job *);
-
+const char *PJobState[] = {"hi", "hello"};
 
 START_TEST(requeue_job_test)
   {

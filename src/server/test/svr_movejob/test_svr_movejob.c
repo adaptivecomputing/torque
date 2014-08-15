@@ -36,6 +36,7 @@ extern bool rdycommit_fail;
 extern attribute_def job_attr_def[];
 extern int  retry;
 extern bool connect_fail;
+bool cpy_stdout_err_on_rerun = false;
 
 START_TEST(send_job_over_network_with_retries_test)
   {
