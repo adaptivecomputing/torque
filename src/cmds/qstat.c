@@ -19,6 +19,7 @@
 #include <pwd.h>
 #include <limits.h>
 #include <string.h>
+#include <vector>
 
 #if TCL_QSTAT
 #include <sys/stat.h>
@@ -34,6 +35,8 @@
 #include "libcmds.h" /* TShowAbout_exit */
 #include "net_cache.h"
 #include "../lib/Libifl/lib_ifl.h"
+
+using namespace std;
 
 bool    do_not_display_complete = false;
 
@@ -109,6 +112,30 @@ static bool print_header = true;
 
 int   tasksize = DEFTASKSIZE;
 int   alias_opt = FALSE;
+
+string get_err_msg(
+  int   any_failed,
+  const char *mode,
+  int   connect,
+  char *id)
+  {
+  char* errmsg = pbs_geterrmsg(connect);
+  string msg;
+  if (errmsg != NULL)
+    {
+    msg = string("qstat: ") + string(errmsg) + " ";
+    free(errmsg);
+    }
+  else
+    {
+    msg = string("qstat: Error (%d - ",any_failed)
+      + string(pbs_strerror(any_failed))
+      + string("getting status of ")
+      + string(mode);
+    }
+  msg.append(id);
+  return msg;
+  }
 
 bool isjobid(
 
@@ -2666,15 +2693,18 @@ int run_job_mode(
     char *server_old,
     char *queue_name_out,
     char *server_name_out,
-    char *job_id_out)
+    char *job_id_out,
+    string &errmsg)
 
   {
   int    any_failed = PBSE_NONE;
   int    stat_single_job = 0;
   int    connect;
+
   int    job_id_out_size = PBS_MAXCLTJOBID;
   int    server_out_size = MAXSERVERNAME;
   int    server_old_size = MAXSERVERNAME;
+
   int    retry_count = 0;
   char   destination[PBS_MAXDEST + 1];
   char   job_id[PBS_MAXCLTJOBID];
@@ -2838,14 +2868,14 @@ int run_job_mode(
 
         tcl_stat("job", NULL, f_opt);
 
-        prt_job_err((char *)"qstat", connect, job_id_out);
+        errmsg = get_err_msg(any_failed,"job", connect, job_id_out);
         break;
         }
       else
         {
         if ((any_failed != PBSE_NONE) && (++retry_count >= MAX_RETRIES))
           {
-          prt_job_err((char *)"qstat", connect, job_id_out);
+          errmsg = get_err_msg(any_failed,"job", connect, job_id_out);
           break;
           }
         
@@ -2895,7 +2925,8 @@ int run_queue_mode(
     const char *operand,
     char *server_out,
     char *queue_name_out,
-    char *server_name_out)
+    char *server_name_out,
+    string &errmsg)
 
   {
   int    any_failed = PBSE_NONE;
@@ -2903,7 +2934,7 @@ int run_queue_mode(
   int    server_out_size = MAXSERVERNAME;
   int    retry_count = 0;
   char   destination[PBS_MAXDEST + 1];
-  char   *errmsg;
+//  char   *errmsg;
  
   struct batch_status *p_status;
 
@@ -2974,19 +3005,7 @@ int run_queue_mode(
 
       if (any_failed)
         {
-        errmsg = pbs_geterrmsg(connect);
-
-        if (errmsg != NULL)
-          {
-          fprintf(stderr, "qstat: %s ", errmsg);
-          free(errmsg);
-          }
-        else
-          fprintf(stderr, "qstat: Error (%d - %s) getting status of queue ",
-                  any_failed, pbs_strerror(any_failed));
-
-        fprintf(stderr, "%s\n", queue_name_out);
-
+        errmsg = get_err_msg(any_failed,"queue", connect, queue_name_out);
         tcl_stat(error, NULL, f_opt);
         }
       }
@@ -3021,14 +3040,14 @@ int run_queue_mode(
 int run_server_mode(
     bool    have_args,
     const char *operand,
-    char    *server_out)
+    char    *server_out,
+    string &errmsg)
 
   {
   int    connect;
   int    any_failed = PBSE_NONE;
   int    server_out_size = MAXSERVERNAME;
   int    retry_count = 0;
-  char   *errmsg = NULL;
   struct batch_status *p_status;
 
   if (have_args == true)
@@ -3083,19 +3102,7 @@ int run_server_mode(
 
       if (any_failed)
         {
-        errmsg = pbs_geterrmsg(connect);
-
-        if (errmsg != NULL)
-          {
-          fprintf(stderr, "qstat: %s ", errmsg);
-          free(errmsg);
-          }
-        else
-          fprintf(stderr, "qstat: Error (%d - %s) getting status of server ",
-                  any_failed, pbs_strerror(any_failed));
-
-        fprintf(stderr, "%s\n", server_out);
-
+        errmsg = get_err_msg(any_failed,"server", connect, server_out);
         tcl_stat(error, NULL, f_opt);
         }
       }
@@ -3162,8 +3169,8 @@ int main(
   char                 operand[PBS_MAXCLTJOBID + 1];
 
   bool                 have_args = false;
-  
-
+  vector<string>       errmsg_list;
+  string errmsg;
 #ifndef mbool
 #define mbool char
 #endif /* !mbool */
@@ -3267,19 +3274,24 @@ int main(
       {
 
       case JOBS:      /* get status of batch jobs */
-        any_failed = run_job_mode(have_args, operand, &located, server_out, server_old, queue_name_out, server_name_out, job_id_out);
+        any_failed = run_job_mode(have_args, operand, &located, server_out, server_old,
+         queue_name_out, server_name_out, job_id_out, errmsg);
         break;
 
       case QUEUES:        /* get status of batch queues */
-        any_failed = run_queue_mode(have_args, operand, server_out, queue_name_out, server_name_out);
+        any_failed = run_queue_mode(have_args, operand, server_out, queue_name_out, server_name_out, errmsg);
         break;
 
 
       case SERVERS:           /* get status of batch servers */
-       any_failed = run_server_mode(have_args, operand, server_out);
+        any_failed = run_server_mode(have_args, operand, server_out, errmsg);
        break;
 
       }    /* END switch (mode) */
+    if (any_failed)
+      {
+      errmsg_list.push_back(errmsg);
+      }
     if ((ret_code == PBSE_NONE) && (any_failed != PBSE_NONE))
       {
         ret_code = any_failed;
@@ -3287,5 +3299,9 @@ int main(
     }      /* END for () */
 
   tcl_run(f_opt);
+  for(vector<string>::iterator it = errmsg_list.begin(); it != errmsg_list.end(); it++)
+  {
+    fprintf(stderr, "%s\n",it->c_str());
+  }
   exit(ret_code);
   }  /* END main() */
