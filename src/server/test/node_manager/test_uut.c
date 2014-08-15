@@ -7,12 +7,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "pbs_error.h"
-
+#include "server.h" /* server */
 
 const char *exec_hosts = "napali/0+napali/1+napali/2+napali/50+napali/4+l11/0+l11/1+l11/2+l11/3";
 char  buf[4096];
 const char *napali = "napali";
 const char *l11 =    "l11";
+struct server server;
 
 int   remove_job_from_node(struct pbsnode *pnode, const char *jobid);
 int   node_in_exechostlist(char *, char *);
@@ -23,7 +24,6 @@ int   record_external_node(job *, struct pbsnode *);
 void *record_reported_time(void *vp);
 int save_node_for_adding(node_job_add_info *naji,struct pbsnode *pnode,single_spec_data *req,char *first_node_name,int is_external_node,int req_rank);
 void remove_job_from_already_killed_list(struct work_task *pwt);
-bool job_exclusive_onuse = false; /* in real code, job_exclusive_onuse is set by setting of qmgr, global definition defined in pbsd_init.c */
 extern job_reservation_info *place_subnodes_in_hostlist(job *pjob, struct pbsnode *pnode, node_job_add_info *naji, char *ProcBMStr);
 
 
@@ -357,10 +357,8 @@ START_TEST(record_external_node_test)
   }
 END_TEST
 
-START_TEST(place_subnodes_in_hostlist_job_exclusive_on_test)
+START_TEST(place_subnodes_in_hostlist_job_exclusive_test)
   {
-  job_exclusive_onuse = true;
-
   job pjob;
   memset(&pjob, 0, sizeof(job));
   strcpy(pjob.ji_qs.ji_jobid, "1.lei");
@@ -384,44 +382,32 @@ START_TEST(place_subnodes_in_hostlist_job_exclusive_on_test)
   char buf[10];
   buf[0] = '\0';
 
-  job_reservation_info *jri = place_subnodes_in_hostlist(&pjob, pnode, naji, buf);
-
-  fail_unless((jri != NULL), "Call to place_subnodes_in_hostlit failed");
-  fail_unless(pnode->nd_state == INUSE_JOB, "Call to place_subnodes_in_hostlit failed");
-  }
-END_TEST
-
-START_TEST(place_subnodes_in_hostlist_job_exclusive_off_test)
-  {
-  job_exclusive_onuse = false;
-
-  job pjob;
-  memset(&pjob, 0, sizeof(job));
-  strcpy(pjob.ji_qs.ji_jobid, "1.lei");
-
-  struct pbsnode *pnode = (struct pbsnode *)calloc(1, sizeof(struct pbsnode));
-  for (int i = 0; i < 9; i++)
-    pnode->nd_slots.add_execution_slot();
-
-  job_usage_info *jui = (job_usage_info *)calloc(1, sizeof(job_usage_info));
-  strcpy(jui->jobid, "1.lei.ac");
-
-  pnode->nd_slots.reserve_execution_slots(1, jui->est);
-  pnode->nd_job_usages.push_back(jui);
-
-  fail_unless(pnode->nd_state == 0, "Node state has garbage");
-
-  node_job_add_info *naji = (node_job_add_info *)calloc(1,sizeof(node_job_add_info));
-  strcpy(naji->node_name, "lei");
-  naji->req_rank = 1;
-
-  char buf[10];
-  buf[0] = '\0';
+  /* set job_exclusive_onuse true */
+  server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_flags=ATR_VFLAG_SET;
+  server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_val.at_long = 1;
 
   job_reservation_info *jri = place_subnodes_in_hostlist(&pjob, pnode, naji, buf);
 
   fail_unless((jri != NULL), "Call to place_subnodes_in_hostlit failed");
-  fail_unless(pnode->nd_state != INUSE_JOB, "Call to place_subnodes_in_hostlit was set unexpectely to job exclusive state");
+  fail_unless(pnode->nd_state == INUSE_JOB, "Call to place_subnodes_in_hostlit was not set to job exclusive state");
+
+  /* turn job_exclusive_onuse off and reset the node state */
+  server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_flags=ATR_VFLAG_SET;
+  server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_val.at_long = 0;
+  pnode->nd_state = 0;
+
+  jri = place_subnodes_in_hostlist(&pjob, pnode, naji, buf);
+  fail_unless((jri != NULL), "2nd call to place_subnodes_in_hostlit failed");
+  fail_unless(pnode->nd_state != INUSE_JOB, "2nd call to place_subnodes_in_hostlit was not set to job exclusive state");
+
+  /* test case when the attribute SVR_ATR_JobExclusiveOnUse was never set */
+  server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_flags=0;
+  server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_val.at_long = 0;
+  pnode->nd_state = 0;
+
+  jri = place_subnodes_in_hostlist(&pjob, pnode, naji, buf);
+  fail_unless((jri != NULL), "3rd call to place_subnodes_in_hostlit failed");
+  fail_unless(pnode->nd_state != INUSE_JOB, "3rd call to place_subnodes_in_hostlit was not set to job exclusive state");
   }
 END_TEST
 
@@ -453,12 +439,8 @@ Suite *node_manager_suite(void)
   tcase_add_test(tc_core, sync_node_jobs_with_moms_test);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("place_subnodes_in_hostlist_job_exclusive_on_test");
-  tcase_add_test(tc_core, place_subnodes_in_hostlist_job_exclusive_on_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("place_subnodes_in_hostlist_job_exclusive_off_test");
-  tcase_add_test(tc_core, place_subnodes_in_hostlist_job_exclusive_off_test);
+  tc_core = tcase_create("place_subnodes_in_hostlist_job_exclusive_test");
+  tcase_add_test(tc_core, place_subnodes_in_hostlist_job_exclusive_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("record_external_node_test");
