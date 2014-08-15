@@ -516,15 +516,15 @@ START_TEST(place_subnodes_in_hostlist_job_exclusive_test)
     pnode->nd_slots.add_execution_slot();
 
   job_usage_info *jui = (job_usage_info *)calloc(1, sizeof(job_usage_info));
-  strcpy(jui->jobid, "1.lei.ac");
+  jui->internal_job_id = 1;
 
   pnode->nd_slots.reserve_execution_slots(1, jui->est);
-  pnode->nd_job_usages.push_back(jui);
+  pnode->nd_job_usages.push_back(*jui);
 
   fail_unless(pnode->nd_state == 0, "Node state has garbage");
 
   node_job_add_info *naji = (node_job_add_info *)calloc(1,sizeof(node_job_add_info));
-  strcpy(naji->node_name, "lei");
+  naji->node_id = 1;
   naji->req_rank = 1;
 
   char buf[10];
