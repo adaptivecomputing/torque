@@ -2019,16 +2019,25 @@ int create_pbs_node(
  * On following call, with argument "start" as null pointer, then
  * resume where left off.
  *
- * If "cok" is true, then this is first token (node name) and ':' is
+ * If "cok" is true, then this is first token ( node name) and ':' is
  * allowed and '=' is not.   For following tokens, allow '=' as separator
  * between "keyword" and "value".  Will get value as next token.
  */
 
+#define COLON_OK  0x01
+#define COMMA_OK  0x02
+#define PLUS_OK   0x04
+#define OPAQUE    0x08
+
 static char *parse_node_token(
 
   char *start, /* if null, restart where left off */
-  int   cok, /* flag - non-zero if colon ":" allowed in token */
-  int   comma, /* flag - non-zero if comma ',' allowed in token */
+  int   flags, /*OR'ed together values of:
+                  COLON_OK    The colon ':' is allowed
+                  COMMA_OK    The comma ',' is allowed
+                  PLUS_OK     The plus  '+' is allowed
+                  OPAQUE      The string is accepted up to the next white space.
+               */
   int  *err, /* RETURN: non-zero if error */
   char *term) /* RETURN: character terminating token */
 
@@ -2055,19 +2064,28 @@ static char *parse_node_token(
 
   for (;pt[0] != '\0';pt++)
     {
+    if(flags&OPAQUE)
+      {
+      if ((isspace((int)*pt))||(*pt == '\0'))
+        break;
+      continue;
+      }
     if (isalnum((int)*pt) || strchr("-._[]", *pt) || (*pt == '\0'))
       continue;
 
     if (isspace((int)*pt))
       break;
 
-    if (cok && (*pt == ':'))
+    if ((flags&COLON_OK) && (*pt == ':'))
       continue;
 
-    if (comma && (*pt == ','))
+    if ((flags&COMMA_OK) && (*pt == ','))
       continue;
 
-    if (!cok && (*pt == '='))
+    if ((flags&PLUS_OK) && (*pt == '+'))
+      continue;
+
+    if (!(flags&COLON_OK) && (*pt == '='))
       break;
 
     *err = 1;
@@ -2193,7 +2211,7 @@ int setup_nodes(void)
 
     /* first token is the node name, may have ":ts" appended */
 
-    token = parse_node_token(line, 1, 0, &err, &xchar);
+    token = parse_node_token(line, COLON_OK, &err, &xchar);
 
     if (token == NULL)
       {
@@ -2227,7 +2245,7 @@ int setup_nodes(void)
     /* attributes (keyword=value) or old style properties        */
     while (1)
       {
-      token = parse_node_token(NULL, 0, 0, &err, &xchar);
+      token = parse_node_token(NULL, 0,&err, &xchar);
 
       if (err != 0)
         goto errtoken1;
@@ -2240,11 +2258,15 @@ int setup_nodes(void)
         /* have new style pbs_attribute, keyword=value */
         if(!strcmp(token,"TTL"))
           {
-          val = parse_node_token(NULL, 1, 1, &err, &xchar);
+          val = parse_node_token(NULL, COLON_OK|COMMA_OK|PLUS_OK, &err, &xchar);
+          }
+        else if(!strcmp(token,"acl"))
+          {
+          val = parse_node_token(NULL, OPAQUE, &err, &xchar);
           }
         else
           {
-          val = parse_node_token(NULL, 0, 1, &err, &xchar);
+          val = parse_node_token(NULL, COMMA_OK, &err, &xchar);
           }
 
         if ((val == NULL) || (err != 0) || (xchar == '='))

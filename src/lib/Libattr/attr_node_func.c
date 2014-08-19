@@ -774,14 +774,15 @@ int decode_utc(
 
   {
   const char utcTemplate[] = "dddd-dd-ddTdd:dd:ddZ";
-  const char tzTemplate[] = "sdd:dd:dd";
+  const char tzTemplateH[] = "shh";
+  const char tzTemplateM[] = "xdd";
 
   const char *pTemplate = utcTemplate;
   const char *pVal = val;
   int iVal = 0;
   std::vector<int> vals;
 
-  if(!strcmp(val,"0"))
+  if(!strcmp(val,"0") || (*val == '\0'))
     {
     return decode_str(pattr,name,rescn,"",perm);
     }
@@ -794,6 +795,22 @@ int decode_utc(
       }
     switch(*pTemplate)
       {
+      case 'h':
+        {
+        char c = *pVal;
+        if((c < '0')||(c > '9'))
+          {
+          return PBSE_BAD_UTC_FORMAT;
+          }
+        iVal = (iVal * 10) + ((int)c - (int)'0');
+        if((*(pTemplate + 1) == '\0') &&(*(pVal + 1) != '\0'))
+          {
+          vals.push_back(iVal);
+          iVal = 0;
+          pTemplate = tzTemplateM;
+          }
+        }
+        break;
       case 'd':
         {
         char c = *pVal;
@@ -809,7 +826,7 @@ int decode_utc(
           {
           break;
           }
-        pTemplate = tzTemplate;
+        pTemplate = tzTemplateH;
         if((*pVal != '+')&&(*pVal != '-'))
           {
           return PBSE_BAD_UTC_FORMAT;
@@ -855,9 +872,12 @@ int decode_utc(
   if(vals.size() > 6)
     {
     if((vals.at(6) < 0)||(vals.at(6) > 23)) return PBSE_BAD_UTC_RANGE;
-    if((vals.at(7) < 0)||(vals.at(7) > 60)) return PBSE_BAD_UTC_RANGE;
-    if((vals.at(8) < 0)||(vals.at(8) > 6012)) return PBSE_BAD_UTC_RANGE;
     }
+  if(vals.size() > 7)
+    {
+    if((vals.at(7) < 0)||(vals.at(7) > 60)) return PBSE_BAD_UTC_RANGE;
+    }
+  if(vals.size() > 8) return PBSE_BAD_UTC_FORMAT;
   return decode_str(pattr,name,rescn,val,perm);
   }
 

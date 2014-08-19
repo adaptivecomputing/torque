@@ -18,14 +18,24 @@ START_TEST(test_one)
   rc = decode_utc(&pa,"TTL",NULL,"2014-02-07T12:00:00Z",0);
   fail_unless(rc == 0);
   memset(&pa,0,sizeof(pa));
-  rc = decode_utc(&pa,"TTL",NULL,"2020-02-07T12:00:00+07:00:00",0);
+  rc = decode_utc(&pa,"TTL",NULL,"2020-02-07T12:00:00+0700",0);
   fail_unless(rc == 0);
   memset(&pa,0,sizeof(pa));
-  rc = decode_utc(&pa,"TTL",NULL,"2121-02-07T12:00:00-07:00:00",0);
+  rc = decode_utc(&pa,"TTL",NULL,"2121-02-07T12:00:00-07",0);
+  fail_unless(rc == 0);
+  memset(&pa,0,sizeof(pa));
+  rc = decode_utc(&pa,"TTL",NULL,"2121-02-07T12:00:00-0730",0);
   fail_unless(rc == 0);
   memset(&pa,0,sizeof(pa));
   rc = decode_utc(&pa,"TTL",NULL,"0",0);
   fail_unless(rc == 0);
+  memset(&pa,0,sizeof(pa));
+  rc = decode_utc(&pa,"TTL",NULL,"",0);
+  fail_unless(rc == 0);
+
+  memset(&pa,0,sizeof(pa));
+  rc = decode_utc(&pa,"TTL",NULL,"2121-02-07T12:00:00-07:00",0);
+  fail_unless(rc != 0);
 
   }
 END_TEST
