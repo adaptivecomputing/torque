@@ -324,6 +324,7 @@ u_long   localaddr = 0;
 int   cphosts_num = 0;
 
 
+char                    PBSNodeMsgBuf[MAXLINE];
 static time_t           MOMExeTime = 0;
 
 
