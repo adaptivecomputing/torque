@@ -603,8 +603,8 @@ struct cphosts         *pcphosts = NULL;
 static int  config_file_specified = 0;
 static char  config_file[_POSIX_PATH_MAX] = "config";
 
-char                    PBSNodeMsgBuf[1024];
-char                    PBSNodeCheckPath[1024];
+char                    PBSNodeMsgBuf[MAXLINE];
+char                    PBSNodeCheckPath[MAXLINE];
 int                     PBSNodeCheckInterval = 1;
 int                     PBSNodeCheckProlog = 0;
 int                     PBSNodeCheckEpilog = 0;

@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 #include <netinet/in.h> /* sockaddr_in, sockaddr */
+#include <errno.h>
+#include <sys/statfs.h>
 
 #include "resizable_array.h" /* resizable_array */
 #include "mom_hierarchy.h" /* mom_hierarchy_t, node_comm_t */
@@ -39,7 +41,6 @@ char TMOMRejectConn[MAXLINE];
 int PBSNodeCheckInterval;
 int UpdateFailCount = 0;
 char *auto_ideal_load = NULL;
-char *path_spool;
 char *auto_max_load = NULL;
 unsigned int pbs_rm_port = 0;
 char PBSNodeCheckPath[1024];
@@ -56,6 +57,12 @@ int received_cluster_addrs;
 time_t       requested_cluster_addrs;
 time_t       first_update_time = 0;
 
+char  ret_string[MAXLINE];
+char  path_spool[] = "/var/spool";
+
+bool no_error = true;
+bool no_event = true;
+
 #ifdef NUMA_SUPPORT
 int       num_node_boards;
 nodeboard node_boards[MAX_NODE_BOARDS]; 
@@ -69,10 +76,28 @@ int              MOMConfigUseSMT           = 1; /* 0: off, 1: on */
 //hwloc_topology_t topology;
 #endif
 
+
 int MUReadPipe(char *Command, char *Buffer, int BufSize)
   {
-  fprintf(stderr, "The call to MUReadPipe needs to be mocked!!\n");
-  exit(1);
+  if ((no_error == true) && (no_event == true))
+    {
+    memset(Buffer, 0, BufSize);
+    return(0);
+    }
+
+  if (no_error == false)
+    {
+    strcpy(Buffer, "ERROR");
+    return(0);
+    }
+
+  if (no_event == false)
+    {
+    strcpy(Buffer, "EVENT:");
+    return(0);
+    }
+
+  return(0);
   }
 
 node_comm_t *update_current_path(mom_hierarchy_t *nt)
@@ -227,8 +252,39 @@ int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size)
 
 char *size_fs(char *param)
   {
-  fprintf(stderr, "The call to size_fs needs to be mocked!!\n");
-  exit(1);
+  struct statfs fsbuf;
+  
+
+  /* We need to make up our own parameter */
+  
+  if (path_spool[0] != '/')
+    {
+    sprintf(log_buffer, "%s: not full path filesystem name: %s", __func__, path_spool);
+    log_err(-1, __func__, log_buffer);
+
+    rm_errno = RM_ERR_BADPARAM;
+
+    return(NULL);
+    }
+      
+    if (statfs(path_spool, &fsbuf) == -1)
+      {
+      log_err(errno, __func__, "statfs");
+      rm_errno = RM_ERR_BADPARAM;
+      return(NULL);
+      }
+
+#ifdef RPT_BAVAIL
+#define RPT_STATFS_MEMBER f_bavail
+#else
+#define RPT_STATFS_MEMBER f_bfree
+#endif
+
+  sprintf(ret_string, "%lukb:%lukb",
+                      (ulong)(((double)fsbuf.f_bsize * (double)fsbuf.RPT_STATFS_MEMBER) / 1024.0),
+                      (ulong)(((double)fsbuf.f_bsize * (double)fsbuf.f_blocks) / 1024.0)); /* KB */
+
+  return(ret_string);
   }
 
 void close_conn(int sd, int has_mutex)

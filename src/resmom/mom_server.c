@@ -272,10 +272,10 @@ extern unsigned int        pbs_rm_port;
 extern unsigned int        pbs_tm_port;
 extern int                 internal_state;
 extern int                 LOGLEVEL;
-extern char                PBSNodeCheckPath[1024];
+extern char                PBSNodeCheckPath[MAXLINE];
 extern int                 PBSNodeCheckInterval;
 char                       TORQUE_JData[MMAX_LINE];
-extern char                PBSNodeMsgBuf[1024];
+extern char                PBSNodeMsgBuf[MAXLINE];
 extern int                 received_hello_count[];
 extern char                TMOMRejectConn[];
 extern time_t              LastServerUpdateTime;
@@ -2749,7 +2749,7 @@ void check_state(
   {
   static int ICount = 0;
 
-  static char tmpPBSNodeMsgBuf[1024];
+  char tmpPBSNodeMsgBuf[MAXLINE];
 
   const char *id = "check_state";
 
@@ -2757,6 +2757,8 @@ void check_state(
     {
     ICount = 0;
     }
+
+  memset(tmpPBSNodeMsgBuf, 0, MAXLINE);
 
   /* conditions:  external state should be down if
      - inadequate file handles available (for period X)
@@ -2788,6 +2790,11 @@ void check_state(
       /* NOTE:  adjusting internal state may not be proper behavior, see note below */
 
       internal_state |= INUSE_DOWN;
+      ICount++;
+
+      ICount %= MAX(1, PBSNodeCheckInterval);
+
+      return;
       }
     }    /* END BLOCK */
 
@@ -2795,8 +2802,6 @@ void check_state(
 
   if (PBSNodeCheckPath[0] != '\0')
     {
-    int IsError = 0;
-
     if (ICount == 0)
       {
       /* only do this when running the check script, otherwise down nodes are 
@@ -2814,19 +2819,39 @@ void check_state(
         {
         if (!strncasecmp(tmpPBSNodeMsgBuf, "ERROR", strlen("ERROR")))
           {
-          IsError = 1;
+          internal_state |= INUSE_DOWN;
+
+          if (LOGLEVEL >= 1)
+            {
+            snprintf(log_buffer,sizeof(log_buffer),
+            "Setting node to down. The node health script output the following message:\n%s\n",
+            tmpPBSNodeMsgBuf);
+            log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,id,log_buffer);
+            }
           }
         else if (!strncasecmp(tmpPBSNodeMsgBuf, "EVENT:", strlen("EVENT:")))
           {
           /* pass event directly to scheduler for processing */
-
-          /* NO-OP */
+          /* EVENT: is a keyword for Moab */
+          if (LOGLEVEL >= 3)
+            {
+            snprintf(log_buffer,sizeof(log_buffer),
+              "Node health script ran and says the node is healthy with this message:\n%s\n",
+              tmpPBSNodeMsgBuf);
+            log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,id,log_buffer);
+            }
           }
         else
           {
-          /* ignore non-error messages */
-
+          /* We are not going to post this message */
           tmpPBSNodeMsgBuf[0] = '\0';
+
+          if (LOGLEVEL >= 6)
+            {
+            snprintf(log_buffer,sizeof(log_buffer),
+              "Node health script ran and says the node is healthy");
+            log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,id,log_buffer);
+            }
           }
         }
       }    /* END if (ICount == 0) */
@@ -2837,30 +2862,10 @@ void check_state(
       snprintf(PBSNodeMsgBuf, sizeof(PBSNodeMsgBuf), "%s", tmpPBSNodeMsgBuf);
 
       PBSNodeMsgBuf[sizeof(PBSNodeMsgBuf) - 1] = '\0';
-
-      /* NOTE:  not certain this is the correct behavior, scheduler should probably make this decision as
-                proper action may be context sensitive */
-
-      if (IsError == 1)
-        {
-        internal_state |= INUSE_DOWN;
-
-        snprintf(log_buffer,sizeof(log_buffer),
-          "Setting node to down. The node health script output the following message:\n%s\n",
-          tmpPBSNodeMsgBuf);
-        log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,id,log_buffer);
-        }
-      else
-        {
-        snprintf(log_buffer,sizeof(log_buffer),
-          "Node health script ran and says the node is healthy with this message:\n%s\n",
-          tmpPBSNodeMsgBuf);
-        log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,id,log_buffer);
-        }
       }
     }      /* END if (PBSNodeCheckPath[0] != '\0') */
 
-  ICount ++;
+  ICount++;
 
   ICount %= MAX(1, PBSNodeCheckInterval);
 
