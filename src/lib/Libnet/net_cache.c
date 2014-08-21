@@ -247,8 +247,7 @@ public:
     if (old_addr == NULL)
       {
       // not currently in the cache
-      *new_addr_out = new_addr;
-      addToCache(new_addr, hostname);
+      *new_addr_out = addToCache(new_addr, hostname);
       }
     else if (((struct sockaddr_in *)new_addr->ai_addr)->sin_addr.s_addr ==
              ((struct sockaddr_in *)old_addr->ai_addr)->sin_addr.s_addr)
