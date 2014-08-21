@@ -348,6 +348,7 @@ char* remove_csv_item(
       }
     item = strtok_r(NULL, " ,", &saveptr);
     }
+  free(cpy_val);
   return (result.size())? strdup(result.c_str()) : NULL;
   }
 
