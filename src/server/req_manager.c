@@ -1908,12 +1908,36 @@ void mgr_node_set(
   }  /* END void mgr_node_set() */
 
 
+static void wait_for_job_state(int jobid,int newState,int timeout)
+  {
+  time_t end = time(NULL) + timeout;
+  while(end > time(NULL))
+    {
+    job *pjob = svr_find_job_by_id(jobid);
+    if(pjob == NULL) return; //the job is gone.
+    int jobState = pjob->ji_qs.ji_state;
+    unlock_ji_mutex(pjob,__func__,NULL,LOGLEVEL);
+    if(jobState == newState) return; //The job has been deleted from the MOM
+    sleep(2);
+    }
+  }
+
+#define TIMEOUT_FOR_JOB_DELETE 120
+#define TIMEOUT_FOR_JOB_REQUEUE 120
 
 static void requeue_or_delete_jobs(struct pbsnode *pnode,batch_request *preq)
   {
+  std::vector<int> jids;
+
   for(std::vector<job_usage_info>::iterator i = pnode->nd_job_usages.begin();i != pnode->nd_job_usages.end();i++)
     {
-    job *pjob = get_job_from_job_usage_info(&(*i), pnode);
+    jids.push_back(i->internal_job_id);
+    }
+  for(std::vector<int>::iterator jid = jids.begin();jid != jids.end();jid++)
+    {
+    unlock_node(pnode,__func__,NULL,LOGLEVEL);
+    job *pjob = svr_find_job_by_id(*jid);
+    lock_node(pnode,__func__,NULL,LOGLEVEL);
     if(pjob != NULL)
       {
       batch_request *brRerun = alloc_br(PBS_BATCH_Rerun);
@@ -1926,21 +1950,28 @@ static void requeue_or_delete_jobs(struct pbsnode *pnode,batch_request *preq)
         return;
         }
       strcpy(brRerun->rq_ind.rq_rerun,pjob->ji_qs.ji_jobid);
-      strcpy(brDelete->rq_ind.rq_rerun,pjob->ji_qs.ji_jobid);
+      strcpy(brDelete->rq_ind.rq_delete.rq_objname,pjob->ji_qs.ji_jobid);
       brRerun->rq_conn = PBS_LOCAL_CONNECTION;
       brDelete->rq_conn = PBS_LOCAL_CONNECTION;
       brRerun->rq_perm = preq->rq_perm;
       brDelete->rq_perm = preq->rq_perm;
+      brDelete->rq_ind.rq_delete.rq_objtype = MGR_OBJ_JOB;
+      brDelete->rq_ind.rq_delete.rq_cmd = MGR_CMD_DELETE;
       unlock_ji_mutex(pjob,__func__,NULL,LOGLEVEL);
       unlock_node(pnode, __func__, NULL, LOGLEVEL);
       int rc = req_rerunjob(brRerun);
       if(rc != PBSE_NONE)
         {
         rc = req_deletejob(brDelete);
+        if(rc == PBSE_NONE)
+          {
+          wait_for_job_state(*jid,JOB_STATE_COMPLETE,TIMEOUT_FOR_JOB_DELETE);
+          }
         }
       else
         {
         free_br(brDelete);
+        wait_for_job_state(*jid,JOB_STATE_QUEUED,TIMEOUT_FOR_JOB_REQUEUE);
         }
       lock_node(pnode, __func__, NULL, LOGLEVEL);
       }
