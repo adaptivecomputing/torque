@@ -90,7 +90,9 @@
 #include "list_link.h"
 #include "attribute.h"
 #include "pbs_error.h"
+#include "csv.h"
 
+using namespace std;
 /*
  * This file contains functions for manipulating attributes of type string
  *
@@ -241,7 +243,7 @@ int encode_str(
  */
 
 int set_str(
-    
+
   pbs_attribute *attr,
   pbs_attribute *new_attr,
   enum batch_op  op)
@@ -327,7 +329,108 @@ int set_str(
   return (0);
   }
 
+char* remove_csv_item(
+  /* removes value 'pattern' from source CSV line, function allocate
+   * buffer for new CSV line (line without pattern)*/
+  char* src, /* (I) source line with CSV */
+  char* pattern /* (I) search pattern*/)
+  {
+  char* cpy_val = strdup(src);
+  char* saveptr;
+  char* item = strtok_r(cpy_val, " ,", &saveptr);
+  string result;
+  while(item)
+    {
+    if (strcmp(item, pattern) !=0)
+      {
+      const char* comma = (result.size()) ? "," : "";
+      result += string(comma) + string(item);
+      }
+    item = strtok_r(NULL, " ,", &saveptr);
+    }
+  return (result.size())? strdup(result.c_str()) : NULL;
+  }
 
+int set_str_csv(
+
+  pbs_attribute *attr,
+  pbs_attribute *new_attr,
+  enum batch_op  op)
+
+  {
+  char *new_value;
+  size_t nsize;
+
+  assert(attr && new_attr && new_attr->at_val.at_str && (new_attr->at_flags & ATR_VFLAG_SET));
+  nsize = strlen(new_attr->at_val.at_str) + 1; /* length of new string */
+
+  if ((op == INCR) && (attr->at_val.at_str == NULL))
+    op = SET; /* no current string, change INCR to SET */
+
+  switch (op)
+    {
+
+    case SET: /* set is replace old string with new */
+
+      if ((new_value =(char *)calloc(1, nsize)) == NULL)
+        return (PBSE_SYSTEM);
+
+      if (attr->at_val.at_str)
+        (void)free(attr->at_val.at_str);
+      attr->at_val.at_str = new_value;
+
+      (void)strcpy(attr->at_val.at_str, new_attr->at_val.at_str);
+
+      break;
+
+    case INCR_OLD: /* support setup from qmgr */
+    case INCR: /* INCR is concatenate new to old string */
+
+      nsize += strlen(attr->at_val.at_str);
+      new_value = (char *)calloc(1, nsize + 1);
+
+      if (new_value == NULL)
+        return (PBSE_SYSTEM);
+
+      if (csv_find_string(attr->at_val.at_str, new_attr->at_val.at_str))
+        return (PBSE_DUPLIST);
+
+      strcat(new_value, attr->at_val.at_str);
+      strcat(new_value, ",");
+      strcat(new_value, new_attr->at_val.at_str);
+
+      free(attr->at_val.at_str);
+      attr->at_val.at_str = new_value;
+
+      break;
+
+    case DECR: /* DECR is remove substring if match, start at end */
+
+      if (attr->at_val.at_str == NULL)
+        break;
+
+      if (--nsize == 0)
+        break;
+
+      if (!csv_find_string(attr->at_val.at_str, new_attr->at_val.at_str))
+        break;
+      new_value = remove_csv_item(attr->at_val.at_str, new_attr->at_val.at_str);
+      free(attr->at_val.at_str);
+      attr->at_val.at_str = new_value;
+
+      break;
+
+    default:
+      return (PBSE_INTERNAL);
+    }
+
+  if ((attr->at_val.at_str != (char *)0) && (*attr->at_val.at_str != '\0'))
+    attr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+  else
+    attr->at_flags &= ~ATR_VFLAG_SET;
+
+  return (0);
+  }
 
 
 /*
