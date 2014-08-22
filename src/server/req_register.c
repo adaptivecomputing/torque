@@ -144,7 +144,7 @@ int    build_depend(pbs_attribute *, const char *);
 void   clear_depend(struct depend *, int type, int exists);
 void   del_depend(struct depend *);
 int    release_cheapest(job *, struct depend *);
-int    send_depend_req(job *, struct depend_job *pparent, int, int, int, void (*postfunc)(batch_request *),bool bAsyncOk);
+int    send_depend_req(job *, const char *child,const char *server, int, int, int, void (*postfunc)(batch_request *),bool bAsyncOk);
 
 /* External Global Data Items */
 
@@ -1322,7 +1322,7 @@ int alter_unreg(
         if ((pnewd == 0) || 
             (find_dependjob(pnewd, oldjd->dc_child) == 0))
           {
-          int rc = send_depend_req(pjob, oldjd, type, JOB_DEPEND_OP_UNREG, SYNC_SCHED_HINT_NULL, free_br,false);
+          int rc = send_depend_req(pjob, oldjd->dc_child,oldjd->dc_svr, type, JOB_DEPEND_OP_UNREG, SYNC_SCHED_HINT_NULL, free_br,false);
 
           if (rc == PBSE_JOBNOTFOUND)
             return(rc);
@@ -1428,7 +1428,7 @@ int depend_on_que(
 
       while (pparent)
         {
-        if ((rc = send_depend_req(pjob, pparent, type, JOB_DEPEND_OP_REGISTER, SYNC_SCHED_HINT_NULL, post_doq,false)) != PBSE_NONE)
+        if ((rc = send_depend_req(pjob, pparent->dc_child,pparent->dc_svr, type, JOB_DEPEND_OP_REGISTER, SYNC_SCHED_HINT_NULL, post_doq,false)) != PBSE_NONE)
           {
           return(rc);
           }
@@ -1528,7 +1528,8 @@ int depend_on_exec(
     while (pdj != NULL)
       {
       if (send_depend_req(pjob,
-            pdj,
+          pdj->dc_child,
+          pdj->dc_svr,
             pdep->dp_type,
             JOB_DEPEND_OP_RELEASE,
             SYNC_SCHED_HINT_NULL,
@@ -1555,7 +1556,8 @@ int depend_on_exec(
     if (pdj != NULL)
       {
       if (send_depend_req(pjob,
-            pdj,
+            pdj->dc_child,
+            pdj->dc_svr,
             pdep->dp_type,
             JOB_DEPEND_OP_READY,
             SYNC_SCHED_HINT_NULL,
@@ -1696,7 +1698,7 @@ int depend_on_term(
             
             while (pparent)
               {
-              rc = send_depend_req(pjob, pparent, type, JOB_DEPEND_OP_DELETE, SYNC_SCHED_HINT_NULL, free_br,true);
+              rc = send_depend_req(pjob, pparent->dc_child,pparent->dc_svr, type, JOB_DEPEND_OP_DELETE, SYNC_SCHED_HINT_NULL, free_br,true);
               
               if (rc == PBSE_JOBNOTFOUND)
                 {
@@ -1716,16 +1718,33 @@ int depend_on_term(
       {
       pparent = (struct depend_job *)GET_NEXT(pdep->dp_jobs);
 
+      std::vector<std::string> child;
+      std::vector<std::string> server;
+
+      //Make a copy of the child and server names because
+      //send_depend_req unlocks the job and leaves it wide open the
+      //link list being changed.
       while (pparent)
         {
+        child.push_back(pparent->dc_child);
+        server.push_back(pparent->dc_svr);
+        pparent = (struct depend_job *)GET_NEXT(pparent->dc_link);
+        }
+
+      std::vector<std::string>::iterator child_i = child.begin();
+      std::vector<std::string>::iterator server_i = server.begin();
+      while (child_i != child.end())
+        {
         /* "release" the job to execute */
-        if ((rc = send_depend_req(pjob, pparent, type, op, SYNC_SCHED_HINT_NULL, free_br,true)) != PBSE_NONE)
+        if ((rc = send_depend_req(pjob, child_i->c_str(), server_i->c_str(), type, op, SYNC_SCHED_HINT_NULL, free_br,true)) != PBSE_NONE)
           {
           return(rc);
           }
-
-        pparent = (struct depend_job *)GET_NEXT(pparent->dc_link);
+        child_i++;
+        server_i++;
         }
+
+
       }
 
     pdep = (struct depend *)GET_NEXT(pdep->dp_link);
@@ -1782,7 +1801,7 @@ int release_cheapest(
     if (nreleased == 0)
       hint = SYNC_SCHED_HINT_FIRST;
 
-    if ((rc = send_depend_req(pjob, cheapest, JOB_DEPEND_TYPE_SYNCWITH,
+    if ((rc = send_depend_req(pjob, cheapest->dc_child,cheapest->dc_svr, JOB_DEPEND_TYPE_SYNCWITH,
           JOB_DEPEND_OP_RELEASE, hint, free_br,false)) == PBSE_NONE)
       {
       cheapest->dc_state = JOB_DEPEND_OP_RELEASE;
@@ -2331,7 +2350,8 @@ struct depend_job *make_dependjob(
 int send_depend_req(
 
   job                *pjob,
-  struct depend_job  *pparent,
+  const char        *child,
+  const char        *server,
   int                 type,
   int                 op,
   int                 schedhint,
@@ -2375,7 +2395,7 @@ int send_depend_req(
 
   preq->rq_ind.rq_register.rq_owner[i] = '\0';
 
-  strcpy(preq->rq_ind.rq_register.rq_parent, pparent->dc_child);
+  strcpy(preq->rq_ind.rq_register.rq_parent, child);
   strcpy(preq->rq_ind.rq_register.rq_child, pjob->ji_qs.ji_jobid);
 
   /* kludge for server:port follows */
@@ -2389,7 +2409,7 @@ int send_depend_req(
   preq->rq_ind.rq_register.rq_dependtype = type;
 
   preq->rq_ind.rq_register.rq_op = op;
-  strcpy(preq->rq_host, pparent->dc_svr);  /* for issue_to_svr() */
+  strcpy(preq->rq_host, server);  /* for issue_to_svr() */
 
   /* if registering sync, include job cost for scheduling */
 
@@ -2418,16 +2438,16 @@ int send_depend_req(
   snprintf(br_id, sizeof(br_id), "%s", preq->rq_id);
 
   svraddr1 = get_hostaddr(&my_err, server_name);
-  svraddr2 = get_hostaddr(&my_err, pparent->dc_svr);
+  svraddr2 = get_hostaddr(&my_err, (char *)server);
 
   if((svraddr1 == svraddr2)&&(bAsyncOk))
     {
-    snprintf(preq->rq_host,sizeof(preq->rq_host),"%s",pparent->dc_svr);
+    snprintf(preq->rq_host,sizeof(preq->rq_host),"%s",server);
     rc = que_to_local_svr(preq);
     }
   else
     {
-    rc = issue_to_svr(pparent->dc_svr, preq, NULL);
+    rc = issue_to_svr((char *)server, preq, NULL);
     }
 
   if (rc != PBSE_NONE)
@@ -2439,7 +2459,7 @@ int send_depend_req(
       free_br(preq);
       }
 
-    sprintf(log_buf, "Unable to perform dependency with job %s\n", pparent->dc_child);
+    sprintf(log_buf, "Unable to perform dependency with job %s\n", child);
     log_err(rc, __func__, log_buf);
 
     if ((preq = get_remove_batch_request(br_id)) != NULL)
