@@ -329,26 +329,34 @@ int set_str(
   return (0);
   }
 
-char* remove_csv_item(
-  /* removes value 'pattern' from source CSV line, function allocate
-   * buffer for new CSV line (line without pattern)*/
-  char* src, /* (I) source line with CSV */
-  char* pattern /* (I) search pattern*/)
+char* remove_from_csv(
+  /* returs buffer = model_pattern - src,
+   buffer contains values each of which is contained in the 'src' and
+   does not contained included intoin the 'mode_pattern'*/
+  char* src, /* I - line with csv values*/
+  char* model_pattern, /* I - pattern with models*/
+  bool free_src /* I - true means free memory on src*/)
   {
-  char* cpy_val = strdup(src);
-  char* saveptr;
-  char* item = strtok_r(cpy_val, " ,", &saveptr);
   string result;
-  while(item)
+  int len = csv_length(src);
+  for (int index = 0; index < len; index++)
     {
-    if (strcmp(item, pattern) !=0)
+    char* item = csv_nth(src, index);
+    if (item)
       {
-      const char* comma = (result.size()) ? "," : "";
-      result += string(comma) + string(item);
+      while (isspace(*item))
+        item++;
+      if ((item) && (strlen(item)!=0) && !(bool)csv_find_string(model_pattern, item))
+        {
+        const char* comma = (result.size()) ? "," : "";
+        result += string(comma) + string(item);
+        }
       }
-    item = strtok_r(NULL, " ,", &saveptr);
     }
-  free(cpy_val);
+  if (free_src)
+    {
+    free(src);
+    }
   return (result.size())? strdup(result.c_str()) : NULL;
   }
 
@@ -363,7 +371,6 @@ int set_str_csv(
   size_t nsize;
 
   assert(attr && new_attr && new_attr->at_val.at_str && (new_attr->at_flags & ATR_VFLAG_SET));
-  nsize = strlen(new_attr->at_val.at_str) + 1; /* length of new string */
 
   if ((op == INCR) && (attr->at_val.at_str == NULL))
     op = SET; /* no current string, change INCR to SET */
@@ -373,6 +380,7 @@ int set_str_csv(
 
     case SET: /* set is replace old string with new */
 
+      nsize = strlen(new_attr->at_val.at_str) + 1; /* length of new string */
       if ((new_value =(char *)calloc(1, nsize)) == NULL)
         return (PBSE_SYSTEM);
 
@@ -387,48 +395,54 @@ int set_str_csv(
     case INCR_OLD: /* support setup from qmgr */
     case INCR: /* INCR is concatenate new to old string */
 
-      nsize += strlen(attr->at_val.at_str);
+      new_attr->at_val.at_str = remove_from_csv(new_attr->at_val.at_str, attr->at_val.at_str, true);
+      if (new_attr->at_val.at_str)
+        {
+        nsize = strlen(new_attr->at_val.at_str) + 1; /* length of new string */
+        }
+      else
+        {
+        return 0; /* new line is empty*/
+        }
+
+      if (attr->at_val.at_str)
+        {
+        nsize += strlen(attr->at_val.at_str);
+        }
+
       new_value = (char *)calloc(1, nsize + 1);
 
       if (new_value == NULL)
         return (PBSE_SYSTEM);
 
-      if (csv_find_string(attr->at_val.at_str, new_attr->at_val.at_str))
-        return (PBSE_DUPLIST);
-
-      strcat(new_value, attr->at_val.at_str);
-      strcat(new_value, ",");
+      if (attr->at_val.at_str)
+        {
+        strcat(new_value, attr->at_val.at_str);
+        strcat(new_value, ",");
+        }
       strcat(new_value, new_attr->at_val.at_str);
 
-      free(attr->at_val.at_str);
+      if (attr->at_val.at_str)
+        {
+        free(attr->at_val.at_str);
+        }
       attr->at_val.at_str = new_value;
 
       break;
 
     case DECR: /* DECR is remove substring if match, start at end */
 
-      if (attr->at_val.at_str == NULL)
-        break;
+      if ((attr->at_val.at_str == NULL) || (strlen(new_attr->at_val.at_str) == 0))
+        return 0;
 
-      if (--nsize == 0)
-        break;
-
-      if (!csv_find_string(attr->at_val.at_str, new_attr->at_val.at_str))
-        break;
-      new_value = remove_csv_item(attr->at_val.at_str, new_attr->at_val.at_str);
-      free(attr->at_val.at_str);
-      attr->at_val.at_str = new_value;
+      attr->at_val.at_str = remove_from_csv(attr->at_val.at_str, new_attr->at_val.at_str, true);
 
       break;
 
     default:
       return (PBSE_INTERNAL);
     }
-
-  if ((attr->at_val.at_str != (char *)0) && (*attr->at_val.at_str != '\0'))
-    attr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
-  else
-    attr->at_flags &= ~ATR_VFLAG_SET;
+  attr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
 
   return (0);
   }
