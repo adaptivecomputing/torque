@@ -3,6 +3,7 @@
 #include <stdio.h> /* fprintf */
 #include <time.h> /* timeval */
 #include <pthread.h> /* pthread_mutex_t */
+#include <string>
 
 #include "attribute.h" /* attribute_def, svrattrl, pbs_attribute */
 #include "net_connect.h" /* pbs_net_t, conn_type */
@@ -322,6 +323,6 @@ void log_err(int error, const char *func_id, const char *msg) {}
 
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 
-void account_jobend(job *pjob, char *used) {}
+void account_jobend(job *pjob, std::string &used) {}
 
 void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum event, char *job_id, long job_atr_hold, int job_exit_status) {}
