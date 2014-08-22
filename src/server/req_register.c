@@ -1342,8 +1342,7 @@ int alter_unreg(
       {
       pnewd = find_depend(type, new_attr);
 
-      unsigned int dp_jobs_size = poldd->dp_jobs.size();
-      for (unsigned int i = 0; i < dp_jobs_size; i++)
+      for (unsigned int i = 0; i < poldd->dp_jobs.size(); i++)
         {
         oldjd = poldd->dp_jobs[i];
 
@@ -1455,8 +1454,7 @@ int depend_on_que(
       if (mode != ATR_ACTION_ALTER)
         rc = PBSE_BADDEPEND;
 
-      unsigned int pdep_size = pdep->dp_jobs.size();
-      for (unsigned int i = 0; i < pdep_size; i++)
+      for (unsigned int i = 0; i < pdep->dp_jobs.size(); i++)
         {
         pparent = pdep->dp_jobs[i];
 
@@ -1554,8 +1552,7 @@ int depend_on_exec(
   if (pdep != NULL)
     {
 
-    unsigned int dp_jobs_size = pdep->dp_jobs.size();
-    for (unsigned int i = 0; i < dp_jobs_size; i++)
+    for (unsigned int i = 0; i < pdep->dp_jobs.size(); i++)
       {
       pdj = pdep->dp_jobs[i];
     
@@ -1719,8 +1716,7 @@ int depend_on_term(
         if (shouldkill)
           {
 
-          unsigned int dp_jobs_size = pdep->dp_jobs.size();
-          for (unsigned int i = 1; i < dp_jobs_size; i++)
+          for (unsigned int i = 1; i < pdep->dp_jobs.size(); i++)
             {
             pparent = pdep->dp_jobs[i];
 
@@ -1740,8 +1736,7 @@ int depend_on_term(
 
     if (op != -1)
       {
-      unsigned int dp_jobs_size = pdep->dp_jobs.size();
-      for (unsigned int i = 0; i < dp_jobs_size; i++)
+      for (unsigned int i = 0; i < pdep->dp_jobs.size(); i++)
         {
         pparent = pdep->dp_jobs[i];
 
