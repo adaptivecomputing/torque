@@ -226,8 +226,6 @@ int acct_job(
     pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
   ds += local_buf;
  
-  /* For large clusters strings can get pretty long. We need to see if there
-     is a need to allocate a bigger buffer */
   /* execution host name */
   if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
     {
@@ -274,15 +272,12 @@ int acct_job(
     }  /* END while (pal != NULL) */
 
 #ifdef ATTR_X_ACCT
-
   /* x attributes */
   if (pjob->ji_wattr[JOB_SITE_ATR_x].at_flags & ATR_VFLAG_SET)
     {
-    sprintf(local_buf, "x=%s ",
-            pjob->ji_wattr[JOB_SITE_ATR_x].at_val.at_str);
+    sprintf(local_buf, "x=%s ", pjob->ji_wattr[JOB_SITE_ATR_x].at_val.at_str);
     ds += local_buf;
     }
-
 #endif
 
   /* SUCCESS */
@@ -479,17 +474,72 @@ void account_jobstr(
   job *pjob)
 
   {
-  std::string ds = "";
+  std::string job_acct;
 
-  acct_job(pjob, ds);
+  /* pack in general information about the job */
+  acct_job(pjob, job_acct);
 
-  account_record(PBS_ACCT_RUN, pjob, ds.c_str());
+  account_record(PBS_ACCT_RUN, pjob, job_acct.c_str());
 
   return;
   }  /* END account_jobstr() */
 
 
 
+/*
+ * add_procs_and_nodes_used
+ *
+ * Adds a string specifying how many procs and nodes the job used
+ * To count these values we parse the exec host list, which is in
+ * the format of host/<index>[+host2/index2[+host3/index3[...]]]
+ *
+ * @param pjob (I) - the job whose procs we're measuring
+ * @param acct_data (O) - the string we're adding to
+ */
+
+void add_procs_and_nodes_used(
+
+  job         &pjob,
+  std::string &acct_data)
+
+  {
+  if (pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
+    {
+    char        resc_buf[1024];
+    std::string nodelist(pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+    std::size_t pos = 0;
+    std::string last_host;
+    int         hosts = 0;
+    int         total_execution_slots = 0;
+
+    while (pos < nodelist.size())
+      {
+      std::size_t plus = nodelist.find("+", pos);
+      std::string host(nodelist.substr(pos, plus - pos));
+
+      // remove the /<index>
+      host.erase(host.find("/"));
+      total_execution_slots++;
+
+      if (last_host != host)
+        {
+        last_host = host;
+        hosts++;
+        }
+
+      if (plus != std::string::npos)
+        pos = plus + 1;
+      else
+        break;
+      }
+
+    snprintf(resc_buf, sizeof(resc_buf), "total_execution_slots=%d unique_node_count=%d ",
+      total_execution_slots, hosts);
+
+    acct_data += resc_buf;
+    }
+
+  } // END add_procs_and_nodes_used()
 
 
 
@@ -499,11 +549,11 @@ void account_jobstr(
 
 void account_jobend(
 
-  job  *pjob,
-  char *used) /* job usage information, see req_jobobit() */
+  job         *pjob,
+  std::string &acct_data) /* job usage information, see req_jobobit() */
 
   {
-  std::string ds = "";
+  std::string         full_job_accounting;
   char                local_buf[MAXLINE * 4];
 #ifdef USESAVEDRESOURCES
   pbs_attribute      *pattr;
@@ -512,7 +562,8 @@ void account_jobend(
   time_t              time_now = time(NULL);
 #endif
 
-  if ((acct_job(pjob, ds)) != PBSE_NONE)
+  /* pack in general information about the job */
+  if ((acct_job(pjob, full_job_accounting)) != PBSE_NONE)
     {
     return;
     }
@@ -521,7 +572,7 @@ void account_jobend(
   sprintf(local_buf, "session=%ld ",
     pjob->ji_wattr[JOB_ATR_session_id].at_val.at_long);
 
-  ds += local_buf;
+  full_job_accounting += local_buf;
 
   /* Alternate id if present */
   if (pjob->ji_wattr[JOB_ATR_altid].at_flags & ATR_VFLAG_SET)
@@ -529,8 +580,11 @@ void account_jobend(
     sprintf(local_buf, "alt_id=%s ",
       pjob->ji_wattr[JOB_ATR_altid].at_val.at_str);
 
-    ds += local_buf;
+    full_job_accounting += local_buf;
     }
+
+  // additional resource consumption
+  add_procs_and_nodes_used(*pjob, full_job_accounting);
 
   /* add the execution end time */
 #ifdef USESAVEDRESOURCES
@@ -561,15 +615,16 @@ void account_jobend(
   sprintf(local_buf, "end=%ld ", (long)time_now);
 #endif /* USESAVEDRESOURCES */
 
-  ds += local_buf;
+  full_job_accounting += local_buf;
 
-  /* finally add on resources used from req_jobobit() */
-  ds += used;
+  full_job_accounting += acct_data;
 
-  account_record(PBS_ACCT_END, pjob, ds.c_str());
+  account_record(PBS_ACCT_END, pjob, full_job_accounting.c_str());
 
   return;
   }  /* END account_jobend() */
+
+
 
 /*
  * acct_cleanup - remove the old accounting files
