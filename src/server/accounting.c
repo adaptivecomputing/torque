@@ -138,11 +138,10 @@ extern int       LOGLEVEL;
 
 int acct_job(
 
-  job            *pjob, /* I */
-  dynamic_string *ds)   /* O */
+  job         *pjob, /* I */
+  std::string &acct_info)   /* O */
 
   {
-  int         rc;
   long        cray_enabled = FALSE;
   int         resc_access_perm = READ_ONLY;
   char        local_buf[MAXLINE*4];
@@ -167,29 +166,25 @@ int acct_job(
 	 	 PBS_ACCT_MAX_RCD + 1 in size. */
   sprintf(local_buf, "user=%s ",
     pjob->ji_wattr[JOB_ATR_euser].at_val.at_str);
-  if ((rc = append_dynamic_string(ds, local_buf)) != PBSE_NONE)
-    return(rc);
+  acct_info += local_buf;
 
   /* group */
   sprintf(local_buf, "group=%s ",
     pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str);
-  if ((rc = append_dynamic_string(ds, local_buf)) != PBSE_NONE)
-    return(rc);
+  acct_info += local_buf;
 
   /* account */
   if (pjob->ji_wattr[JOB_ATR_account].at_flags & ATR_VFLAG_SET)
     {
     sprintf(local_buf, "account=%s ",
       pjob->ji_wattr[JOB_ATR_account].at_val.at_str);
-    if ((rc = append_dynamic_string(ds, local_buf)) != PBSE_NONE)
-      return(rc);
+    acct_info += local_buf;
     }
 
   /* job name */
   sprintf(local_buf, "jobname=%s ",
     pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str);
-  if ((rc = append_dynamic_string(ds, local_buf)) != PBSE_NONE)
-    return(rc);
+  acct_info += local_buf;
 
   if ((pque = get_jobs_queue(&pjob)) != NULL)
     {
@@ -197,8 +192,7 @@ int acct_job(
     sprintf(local_buf, "queue=%s ", pque->qu_qs.qu_name);
     unlock_queue(pque, __func__, NULL, LOGLEVEL);
 
-    if ((rc = append_dynamic_string(ds, local_buf)) != PBSE_NONE)
-      return(rc);
+    acct_info += local_buf;
     }
   else if (pjob == NULL)
     {
@@ -209,52 +203,43 @@ int acct_job(
   /* create time */
   sprintf(local_buf, "ctime=%ld ",
     pjob->ji_wattr[JOB_ATR_ctime].at_val.at_long);
-  if ((rc = append_dynamic_string(ds, local_buf)) != PBSE_NONE)
-    return(rc);
+  acct_info += local_buf;
 
   /* queued time */
   sprintf(local_buf, "qtime=%ld ",
     pjob->ji_wattr[JOB_ATR_qtime].at_val.at_long);
-  if ((rc = append_dynamic_string(ds, local_buf)) != PBSE_NONE)
-    return(rc);
+  acct_info += local_buf;
 
   /* eligible time, how long ready to run */
   sprintf(local_buf, "etime=%ld ",
     pjob->ji_wattr[JOB_ATR_etime].at_val.at_long);
-  if ((rc = append_dynamic_string(ds, local_buf)) != PBSE_NONE)
-    return(rc);
+  acct_info += local_buf;
 
   /* execution start time */
   sprintf(local_buf, "start=%ld ",
     (long)pjob->ji_qs.ji_stime);
-  if ((rc = append_dynamic_string(ds, local_buf)) != PBSE_NONE)
-    return(rc);
+  acct_info += local_buf;
 
   /* user */
   sprintf(local_buf, "owner=%s ",
     pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
-  if ((rc = append_dynamic_string(ds, local_buf)) != PBSE_NONE)
-    return(rc);
+  acct_info += local_buf;
  
-  /* For large clusters strings can get pretty long. We need to see if there
-     is a need to allocate a bigger buffer */
   /* execution host name */
   if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
     {
-    append_dynamic_string(ds, "exec_host=");
-    append_dynamic_string(ds, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
-    if ((rc = append_dynamic_string(ds, " ")) != PBSE_NONE)
-      return(rc);
+    acct_info += "exec_host=";
+    acct_info += pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str;
+    acct_info += " ";
     }
 
   get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
   if ((cray_enabled == TRUE) &&
       (pjob->ji_wattr[JOB_ATR_login_node_id].at_flags & ATR_VFLAG_SET))
     {
-    append_dynamic_string(ds, "login_node=");
-    append_dynamic_string(ds, pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str);
-    if ((rc = append_dynamic_string(ds, " ")) != PBSE_NONE)
-      return(rc);
+    acct_info += "login_node=";
+    acct_info += pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str;
+    acct_info += " ";
     }
 
   /* now encode the job's resource_list pbs_attribute */
@@ -269,34 +254,29 @@ int acct_job(
   while ((pal = (svrattrl *)GET_NEXT(attrlist)) != NULL)
     {
 		/* exec_host can use a lot of buffer space. Use a dynamic string */
-    append_dynamic_string(ds, pal->al_name);
+    acct_info += pal->al_name;
 
     if (pal->al_resc != NULL)
       {
-      append_dynamic_string(ds, ".");
-      append_dynamic_string(ds, pal->al_resc);
+      acct_info += ".";
+      acct_info += pal->al_resc;
       }
 
-    append_dynamic_string(ds, "=");
-    append_dynamic_string(ds, pal->al_value);
-    if ((rc = append_dynamic_string(ds, " ")) != PBSE_NONE)
-      return(rc);
+    acct_info += "=";
+    acct_info += pal->al_value;
+    acct_info += " ";
 
     delete_link(&pal->al_link);
     free(pal);
     }  /* END while (pal != NULL) */
 
 #ifdef ATTR_X_ACCT
-
   /* x attributes */
   if (pjob->ji_wattr[JOB_SITE_ATR_x].at_flags & ATR_VFLAG_SET)
     {
-    sprintf(local_buf, "x=%s ",
-            pjob->ji_wattr[JOB_SITE_ATR_x].at_val.at_str);
-    if ((rc = append_dynamic_string(ds, local_buf)) != PBSE_NONE)
-      return(rc);
+    sprintf(local_buf, "x=%s ", pjob->ji_wattr[JOB_SITE_ATR_x].at_val.at_str);
+    acct_info += local_buf;
     }
-
 #endif
 
   /* SUCCESS */
@@ -493,23 +473,72 @@ void account_jobstr(
   job *pjob)
 
   {
-  dynamic_string *ds;
+  std::string job_acct;
 
   /* pack in general information about the job */
-  if ((ds = get_dynamic_string(-1, NULL)) == NULL)
-    return;
+  acct_job(pjob, job_acct);
 
-  acct_job(pjob, ds);
-
-  account_record(PBS_ACCT_RUN, pjob, ds->str);
-
-  free_dynamic_string(ds);
+  account_record(PBS_ACCT_RUN, pjob, job_acct.c_str());
 
   return;
   }  /* END account_jobstr() */
 
 
 
+/*
+ * add_procs_and_nodes_used
+ *
+ * Adds a string specifying how many procs and nodes the job used
+ * To count these values we parse the exec host list, which is in
+ * the format of host/<index>[+host2/index2[+host3/index3[...]]]
+ *
+ * @param pjob (I) - the job whose procs we're measuring
+ * @param acct_data (O) - the string we're adding to
+ */
+
+void add_procs_and_nodes_used(
+
+  job         &pjob,
+  std::string &acct_data)
+
+  {
+  if (pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
+    {
+    char        resc_buf[1024];
+    std::string nodelist(pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+    std::size_t pos = 0;
+    std::string last_host;
+    int         hosts = 0;
+    int         total_execution_slots = 0;
+
+    while (pos < nodelist.size())
+      {
+      std::size_t plus = nodelist.find("+", pos);
+      std::string host(nodelist.substr(pos, plus - pos));
+
+      // remove the /<index>
+      host.erase(host.find("/"));
+      total_execution_slots++;
+
+      if (last_host != host)
+        {
+        last_host = host;
+        hosts++;
+        }
+
+      if (plus != std::string::npos)
+        pos = plus + 1;
+      else
+        break;
+      }
+
+    snprintf(resc_buf, sizeof(resc_buf), "total_execution_slots=%d unique_node_count=%d ",
+      total_execution_slots, hosts);
+
+    acct_data += resc_buf;
+    }
+
+  } // END add_procs_and_nodes_used()
 
 
 
@@ -519,11 +548,11 @@ void account_jobstr(
 
 void account_jobend(
 
-  job  *pjob,
-  char *used) /* job usage information, see req_jobobit() */
+  job         *pjob,
+  std::string &acct_data) /* job usage information, see req_jobobit() */
 
   {
-  dynamic_string     *ds;
+  std::string         full_job_accounting;
   char                local_buf[MAXLINE * 4];
 #ifdef USESAVEDRESOURCES
   pbs_attribute      *pattr;
@@ -533,12 +562,8 @@ void account_jobend(
 #endif
 
   /* pack in general information about the job */
-  if ((ds = get_dynamic_string(-1, NULL)) == NULL)
-    return;
-
-  if ((acct_job(pjob, ds)) != PBSE_NONE)
+  if ((acct_job(pjob, full_job_accounting)) != PBSE_NONE)
     {
-    free_dynamic_string(ds);
     return;
     }
 
@@ -546,11 +571,7 @@ void account_jobend(
   sprintf(local_buf, "session=%ld ",
     pjob->ji_wattr[JOB_ATR_session_id].at_val.at_long);
 
-  if (append_dynamic_string(ds, local_buf) != PBSE_NONE)
-    {
-    free_dynamic_string(ds);
-    return;
-    }
+  full_job_accounting += local_buf;
 
   /* Alternate id if present */
   if (pjob->ji_wattr[JOB_ATR_altid].at_flags & ATR_VFLAG_SET)
@@ -558,12 +579,11 @@ void account_jobend(
     sprintf(local_buf, "alt_id=%s ",
       pjob->ji_wattr[JOB_ATR_altid].at_val.at_str);
 
-    if (append_dynamic_string(ds, local_buf) != PBSE_NONE)
-      {
-      free_dynamic_string(ds);
-      return;
-      }
+    full_job_accounting += local_buf;
     }
+
+  // additional resource consumption
+  add_procs_and_nodes_used(*pjob, full_job_accounting);
 
   /* add the execution end time */
 #ifdef USESAVEDRESOURCES
@@ -594,24 +614,16 @@ void account_jobend(
   sprintf(local_buf, "end=%ld ", (long)time_now);
 #endif /* USESAVEDRESOURCES */
 
-  if (append_dynamic_string(ds, local_buf) != PBSE_NONE)
-    {
-    free_dynamic_string(ds);
-    return;
-    }
+  full_job_accounting += local_buf;
 
-  /* finally add on resources used from req_jobobit() */
-  if (append_dynamic_string(ds, used) != PBSE_NONE)
-    {
-    free_dynamic_string(ds);
-    return;
-    }
+  full_job_accounting += acct_data;
 
-  account_record(PBS_ACCT_END, pjob, ds->str);
+  account_record(PBS_ACCT_END, pjob, full_job_accounting.c_str());
 
-  free_dynamic_string(ds);
   return;
   }  /* END account_jobend() */
+
+
 
 /*
  * acct_cleanup - remove the old accounting files
