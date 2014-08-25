@@ -8644,29 +8644,28 @@ void send_update_soon()
   {
   int sindex;
   int amount_of_time = ServerStatUpdateInterval / 3;
-  
+  time_t target_timestamp = time_now - ServerStatUpdateInterval;
+
   /* force an update reasonably soon */
-  if (time_now - LastServerUpdateTime > amount_of_time)
+
+  /* If it less than 1/3 of upd interval passed from last update
+     force update after 1/3 of interval from now to prevent flood to server.
+     Otherwise force immediate update. */
+  if (time_now - LastServerUpdateTime <= amount_of_time)
     {
-    LastServerUpdateTime = 0;
-    
+    temp += amount_of_time;
+    }
+
+
+  /* Prevent delaying the next update instead of forcing. This keeps it untouched
+     if LastServerUpdateTime is 0 */
+  if (temp < LastServerUpdateTime)
+    {
+    LastServerUpdateTime = temp;
+
     for (sindex = 0; sindex < PBS_MAXSERVER; sindex++)
       {
-      mom_servers[sindex].MOMLastSendToServerTime = 0;
-      }
-    }
-  else
-    {
-    time_t temp = time_now - ServerStatUpdateInterval + amount_of_time;
-    
-    if (temp < LastServerUpdateTime)
-      {
-      LastServerUpdateTime = temp;
-      
-      for (sindex = 0; sindex < PBS_MAXSERVER; sindex++)
-        {
-        mom_servers[sindex].MOMLastSendToServerTime = temp;
-        }
+      mom_servers[sindex].MOMLastSendToServerTime = temp;
       }
     }
   } /* END send_update_soon() */
