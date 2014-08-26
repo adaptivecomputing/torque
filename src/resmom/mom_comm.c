@@ -8644,8 +8644,7 @@ void send_update_soon()
     }
 
 
-  /* Prevent delaying the next update instead of forcing. This keeps it untouched
-     if LastServerUpdateTime is 0 */
+  /* Don't move timestamp to the future */
   if (target_timestamp < LastServerUpdateTime)
     {
     LastServerUpdateTime = target_timestamp;
