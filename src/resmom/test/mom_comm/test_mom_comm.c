@@ -10,6 +10,8 @@
 #include "pbs_error.h"
 #include "pbs_job.h"
 #include "test_mom_comm.h"
+#include "resmon.h"
+#include "mom_server.h"
 
 extern int disrsi_return_index;
 extern int disrst_return_index;
@@ -17,6 +19,10 @@ extern int disrsi_array[];
 extern char *disrst_array[];
 extern int log_event_counter;
 extern bool ms_val;
+extern mom_server mom_servers[PBS_MAXSERVER];
+extern int ServerStatUpdateInterval;
+extern time_t LastServerUpdateTime;
+extern time_t time_now;
 
 #define IM_DONE                     0
 #define IM_FAILURE                 -1
@@ -446,6 +452,92 @@ START_TEST(pbs_task_create_test)
   }
 END_TEST
 
+/*
+ * void send_update_soon(void) - force the next status update sending by updating the last status
+ * update sent timestamps.
+ *
+ * Input:
+ *    (G) int ServerStatUpdateInterval - status update interval in seconds. > 0, default = 45
+ *    (G) time_t time_now - current timestamp.
+ *    (G) time_t LastServerUpdateTime - global last update timestamp. >= 0
+ * Output:
+ *    (G) time_t LastServerUpdateTime - global last update timestamp
+ *    (G) time_t mom_servers[*].MOMLastSendToServerTime - per server last update timestamp
+ */
+void set_mom_last_send_to_server_time(time_t target) {
+  for (int sindex = 0; sindex < PBS_MAXSERVER; sindex++)
+    {
+    mom_servers[sindex].MOMLastSendToServerTime = target;
+    }
+}
+
+void check_mom_last_send_to_server_time(time_t expected) {
+  for (int sindex = 0; sindex < PBS_MAXSERVER; sindex++)
+    {
+    fail_unless(mom_servers[sindex].MOMLastSendToServerTime == expected);
+    }
+}
+
+START_TEST(send_update_soon_test)
+  {
+  ServerStatUpdateInterval = 45;
+
+  /* now == last
+     expect target: now - 2/3 * i */
+  LastServerUpdateTime = 100;
+  set_mom_last_send_to_server_time(-1);
+  time_now = 100;
+  send_update_soon();
+  fail_unless(LastServerUpdateTime == 70);
+  check_mom_last_send_to_server_time(70);
+
+  /* now == last + 1/3 * i
+     expect target: now - 2/3 * i */
+  LastServerUpdateTime = 100;
+  set_mom_last_send_to_server_time(-1);
+  time_now = 115;
+  send_update_soon();
+  fail_unless(LastServerUpdateTime == 85);
+  check_mom_last_send_to_server_time(85);
+
+  /* now == last + 1/3 * i + 1
+     expect target: now - i */
+  LastServerUpdateTime = 100;
+  set_mom_last_send_to_server_time(-1);
+  time_now = 116;
+  send_update_soon();
+  fail_unless(LastServerUpdateTime == 71);
+  check_mom_last_send_to_server_time(71);
+
+  /* now == last + i - 1
+     expect target: now - i */
+  LastServerUpdateTime = 100;
+  set_mom_last_send_to_server_time(-1);
+  time_now = 144;
+  send_update_soon();
+  fail_unless(LastServerUpdateTime == 99);
+  check_mom_last_send_to_server_time(99);
+
+  /* now == last + i
+     expect target: last (untouched) */
+  LastServerUpdateTime = 100;
+  set_mom_last_send_to_server_time(-1);
+  time_now = 145;
+  send_update_soon();
+  fail_unless(LastServerUpdateTime == 100);
+  check_mom_last_send_to_server_time(-1);
+
+  /* now == last + >i
+     expect target: last (untouched) */
+  LastServerUpdateTime = 100;
+  set_mom_last_send_to_server_time(-1);
+  time_now = 200;
+  send_update_soon();
+  fail_unless(LastServerUpdateTime == 100);
+  check_mom_last_send_to_server_time(-1);
+  }
+END_TEST
+
 Suite *mom_comm_suite(void)
   {
   Suite *s = suite_create("mom_comm_suite methods");
@@ -489,6 +581,10 @@ Suite *mom_comm_suite(void)
 
   tc_core = tcase_create("pbs_task_create_test");
   tcase_add_test(tc_core, pbs_task_create_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("send_update_soon_test");
+  tcase_add_test(tc_core, send_update_soon_test);
   suite_add_tcase(s, tc_core);
 
   return(s);
