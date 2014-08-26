@@ -8651,19 +8651,19 @@ void send_update_soon()
      Otherwise force immediate update. */
   if (time_now - LastServerUpdateTime <= amount_of_time)
     {
-    temp += amount_of_time;
+    target_timestamp += amount_of_time;
     }
 
 
   /* Prevent delaying the next update instead of forcing. This keeps it untouched
      if LastServerUpdateTime is 0 */
-  if (temp < LastServerUpdateTime)
+  if (target_timestamp < LastServerUpdateTime)
     {
-    LastServerUpdateTime = temp;
+    LastServerUpdateTime = target_timestamp;
 
     for (sindex = 0; sindex < PBS_MAXSERVER; sindex++)
       {
-      mom_servers[sindex].MOMLastSendToServerTime = temp;
+      mom_servers[sindex].MOMLastSendToServerTime = target_timestamp;
       }
     }
   } /* END send_update_soon() */
