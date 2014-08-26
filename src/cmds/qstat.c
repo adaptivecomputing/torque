@@ -121,6 +121,7 @@ string get_err_msg(
   {
   char* errmsg = pbs_geterrmsg(connect);
   string msg;
+  char any_failed_str[16];
   if (errmsg != NULL)
     {
     msg = string("qstat: ") + string(errmsg) + " ";
@@ -128,10 +129,11 @@ string get_err_msg(
     }
   else
     {
-    msg = string("qstat: Error (%d - ",any_failed)
-      + string(pbs_strerror(any_failed))
+    sprintf(any_failed_str, "%d", any_failed);
+    msg = string("qstat: Error (") + string(any_failed_str) + string(" - ")
+      + string(pbs_strerror(any_failed)) + string(") ")
       + string("getting status of ")
-      + string(mode);
+      + string(mode) + string(" ");
     }
   msg.append(id);
   return msg;
