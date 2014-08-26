@@ -73,13 +73,13 @@ int load_config(
 
 char *get_trq_param(
 
-  char *param,      /* I */
-  char *config_buf) /* I */
+  const char *param,      /* I */
+  const char *config_buf) /* I */
 
   {
   char tmpLine[1024];
 
-  char *param_val;
+  const char *param_val;
   char *new_val = NULL;
 
   /* FORMAT:  <PARAM> <WS> <VALUE> \n */

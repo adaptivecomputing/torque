@@ -3491,44 +3491,6 @@ void set_job_defaults(
 
 
 
-char *get_param(
-
-  const char *param,      /* I */
-  const char *config_buf) /* I */
-
-  {
-  char tmpLine[1024];
-
-  char *param_val;
-  char *new_val = NULL;
-
-  /* FORMAT:  <PARAM> <WS> <VALUE> \n */
-
-  /* NOTE:  does not support comments */
-
-  /* if (strcasestr() == NULL) */
-
-  /* NOTE: currently case-sensitive (FIXME) */
-
-  if ((param_val = strstr((char *)config_buf, param)) == NULL)
-    {
-    return(NULL);
-    }
-
-  snprintf(tmpLine, sizeof(tmpLine), "%s", param_val);
-
-  strtok(tmpLine, " \t\n");
-
-  if ((new_val = (char *)strtok(NULL, "\t \n")) == NULL)
-    {
-    return(NULL);
-    }
-
-  return(new_val);
-  }  /* END get_param() */
-
-
-
 /* This is used to set options for the client to be used as part of making
  * the call to the pbs_server. This information is thrown out at the end
  * of the call.
@@ -3580,32 +3542,32 @@ void process_config_file(
   if (load_config(torque_cfg_buf, sizeof(torque_cfg_buf)) == 0)
     {
     /* This config entry should most likely be removed in the future */
-    if ((param_val = get_param("QSUBSLEEP", torque_cfg_buf)) != NULL)
+    if ((param_val = get_trq_param("QSUBSLEEP", torque_cfg_buf)) != NULL)
       {
       sleep(atoi(param_val));
       }
 
-    if ((param_val = get_param("SUBMITFILTER", torque_cfg_buf)) != NULL)
+    if ((param_val = get_trq_param("SUBMITFILTER", torque_cfg_buf)) != NULL)
       {
       hash_add_or_exit(ji->job_attr, ATTR_pbs_o_submit_filter, param_val, CONFIG_DATA);
       }
 
-    if ((param_val = get_param("SERVERHOST", torque_cfg_buf)) != NULL)
+    if ((param_val = get_trq_param("SERVERHOST", torque_cfg_buf)) != NULL)
       {
       hash_add_or_exit(ji->client_attr, "serverhost", param_val, CONFIG_DATA);
       }
 
-    if ((param_val = get_param("QSUBHOST", torque_cfg_buf)) != NULL)
+    if ((param_val = get_trq_param("QSUBHOST", torque_cfg_buf)) != NULL)
       {
       hash_add_or_exit(ji->job_attr, ATTR_submit_host, param_val, CONFIG_DATA);
       }
 
-    if ((param_val = get_param("QSUBSENDUID", torque_cfg_buf)) != NULL)
+    if ((param_val = get_trq_param("QSUBSENDUID", torque_cfg_buf)) != NULL)
       {
       hash_add_or_exit(ji->client_attr, ATTR_pbs_o_uid, param_val, ENV_DATA);
       }
 
-    if (get_param("QSUBSENDGROUPLIST", torque_cfg_buf) != NULL)
+    if (get_trq_param("QSUBSENDGROUPLIST", torque_cfg_buf) != NULL)
       {
       gid_t group_id = getgid();
       struct group *gpent = getgrgid(group_id);
@@ -3617,18 +3579,18 @@ void process_config_file(
         }
       }
 
-    if ((param_val = get_param("XAUTHPATH", torque_cfg_buf)) != NULL)
+    if ((param_val = get_trq_param("XAUTHPATH", torque_cfg_buf)) != NULL)
       {
       hash_add_or_exit(ji->client_attr, "xauth_path", param_val, CONFIG_DATA);
       }
 
-    if ((param_val = get_param("CLIENTRETRY", torque_cfg_buf)) != NULL)
+    if ((param_val = get_trq_param("CLIENTRETRY", torque_cfg_buf)) != NULL)
       {
       /* The value of this will be verified later */
       hash_add_or_exit(ji->client_attr, "cnt2server_retry", param_val, CONFIG_DATA);
       }
 
-    if ((param_val = get_param("VALIDATEGROUP", torque_cfg_buf)) != NULL)
+    if ((param_val = get_trq_param("VALIDATEGROUP", torque_cfg_buf)) != NULL)
       {
       if (getgrgid(getgid()) == NULL)
         print_qsub_usage_exit("qsub: cannot validate submit group.");
@@ -3636,27 +3598,27 @@ void process_config_file(
       hash_add_or_exit(ji->client_attr, "validate_group", param_val, CONFIG_DATA);
       }
 
-    if ((param_val = get_param("DEFAULTCKPT", torque_cfg_buf)) != NULL)
+    if ((param_val = get_trq_param("DEFAULTCKPT", torque_cfg_buf)) != NULL)
       {
       hash_add_or_exit(ji->job_attr, ATTR_c, param_val, CONFIG_DATA);
       }
 
-    if ((param_val = get_param("VALIDATEPATH", torque_cfg_buf)) != NULL)
+    if ((param_val = get_trq_param("VALIDATEPATH", torque_cfg_buf)) != NULL)
       {
       if (!strcasecmp(param_val, "false"))
         hash_del_item(ji->client_attr, "validate_path");
       }
-    if ((param_val = get_param("RERUNNABLEBYDEFAULT", torque_cfg_buf)) != NULL)
+    if ((param_val = get_trq_param("RERUNNABLEBYDEFAULT", torque_cfg_buf)) != NULL)
       {
       if (!strcasecmp(param_val, "false"))
         hash_add_or_exit(ji->job_attr, ATTR_r, "FALSE", STATIC_DATA);
       }
-    if ((param_val = get_param("FAULT_TOLERANT_BY_DEFAULT", torque_cfg_buf)) != NULL)
+    if ((param_val = get_trq_param("FAULT_TOLERANT_BY_DEFAULT", torque_cfg_buf)) != NULL)
       {
       if (!strcasecmp(param_val, "true"))
         hash_add_or_exit(ji->job_attr, ATTR_r, "TRUE", STATIC_DATA);
       }
-    if ((param_val = get_param("HOST_NAME_SUFFIX", torque_cfg_buf)) != NULL)
+    if ((param_val = get_trq_param("HOST_NAME_SUFFIX", torque_cfg_buf)) != NULL)
       {
       if (param_val != NULL)
         {

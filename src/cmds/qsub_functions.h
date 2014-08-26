@@ -245,7 +245,7 @@ int load_config(
   char *config_buf,               /* O */
   int   BufSize);                 /* I */
 
-char *get_param(
+char *get_trq_param(
     const char *param,                  /* I */
     const char *config_buf);            /* I */
 
