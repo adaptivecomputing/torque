@@ -30,6 +30,27 @@ int process_end_job_error_reply(job *pjob, hnodent *np, struct sockaddr_in *pSoc
 void create_contact_list(job &pjob, std::set<int> &sister_list, struct sockaddr_in *contacting_address);
 int handle_im_poll_job_response(struct tcp_chan *chan, job &pjob, int nodeidx, hnodent *np);
 received_node *get_received_node_entry(char *str);
+bool is_nodeid_on_this_host(job *pjob, tm_node_id nodeid);
+
+
+START_TEST(is_nodeid_on_this_host_test)
+  {
+  job pjob;
+
+  pjob.ji_vnods = (vnodent *)calloc(2, sizeof(vnodent));
+  pjob.ji_vnods[0].vn_host = (hnodent *)0x0011;
+  pjob.ji_vnods[1].vn_host = (hnodent *)0x0022;
+  pjob.ji_nodeid = 0;
+
+  fail_unless(is_nodeid_on_this_host(&pjob, 0) == true);
+  fail_unless(is_nodeid_on_this_host(&pjob, 1) == false);
+
+  pjob.ji_nodeid = 1;
+  fail_unless(is_nodeid_on_this_host(&pjob, 0) == false);
+  fail_unless(is_nodeid_on_this_host(&pjob, 1) == true);
+  }
+END_TEST
+
 
 START_TEST(test_process_end_job_error_reply)
   {
@@ -394,6 +415,8 @@ START_TEST(tm_spawn_request_test)
   memset(&test_job, 0, sizeof(test_job));
   memset(&test_hnodent, 0, sizeof(test_hnodent));
 
+  test_job.ji_vnods = (vnodent *)calloc(3, sizeof(vnodent));
+
   result = tm_spawn_request(&test_chan,
                             &test_job,
                             0,
@@ -461,6 +484,7 @@ Suite *mom_comm_suite(void)
 
   tc_core = tcase_create("tm_spawn_request_test");
   tcase_add_test(tc_core, tm_spawn_request_test);
+  tcase_add_test(tc_core, is_nodeid_on_this_host_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("pbs_task_create_test");
