@@ -251,6 +251,19 @@ void *im_demux_thread(void *threadArg);
 void fork_demux(job *pjob);
 
 
+
+bool is_nodeid_on_this_host(
+
+  job        *pjob,
+  tm_node_id  nodeid)
+
+  {
+  tm_node_id my_nodeid = pjob->ji_nodeid;
+
+  return(pjob->ji_vnods[nodeid].vn_host == pjob->ji_vnods[my_nodeid].vn_host);
+  } // END is_nodeid_on_this_host() */
+
+
 /*
 ** Save the critical information associated with a task to disk.
 */
@@ -4523,8 +4536,8 @@ int handle_im_get_tid_response(
     
     log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
     }
-  
-  if (pjob->ji_nodeid != efwd->fe_node)
+ 
+  if (is_nodeid_on_this_host(pjob, efwd->fe_node) == false)
     {
     np = find_node(pjob, -1, efwd->fe_node);
     
@@ -4593,7 +4606,7 @@ int handle_im_get_tid_response(
     arrayfree(envp);
     
     return(IM_DONE);
-    }  /* END if (pjob->ji_nodeid != efwd->fe_node) */
+    }  /* END if (not on this host) */
 
   /* It's me, do the spawn */
   
@@ -6481,7 +6494,7 @@ int tm_spawn_request(
    */
 #ifndef NUMA_SUPPORT
   if ((pjob->ji_nodeid == 0) && 
-      (pjob->ji_nodeid == nodeid))
+      is_nodeid_on_this_host(pjob, nodeid) == true)
 #endif /* ndef NUMA_SUPPORT */
     {
     /* XXX */
@@ -6526,7 +6539,7 @@ int tm_spawn_request(
     *ret = diswsi(chan, ((i == TM_ERROR) ?  TM_ESYSTEM : ptask->ti_qs.ti_task));
     
     return(TM_DONE);
-    }  /* END if ((pjob->ji_nodeid == 0) && (pjob->ji_nodeid == nodeid)) */
+    }  /* END if I'm MS and task is on me */
   
   /*
    * If I'm a regular mom and the destination is not
@@ -6571,7 +6584,7 @@ int tm_spawn_request(
       DIS_tcp_cleanup(local_chan);
 
     return(TM_DONE);
-    }  /* END else if ((pjob->ji_nodeid != 0) && ...) */
+    }  /* END else if (I'm not MS and task isn't on MS) */
 
   /*
    * If I am MS, generate the TID now, otherwise
@@ -6720,7 +6733,7 @@ int tm_tasks_request(
   
 #ifndef NUMA_SUPPORT
   /* for numa, this is always the correct mom */
-  if (pjob->ji_nodeid != nodeid)
+  if (is_nodeid_on_this_host(pjob, nodeid) == false)
     {
     /* not me */
     event_alloc(IM_GET_TASKS, phost, event, fromtask);
@@ -6747,7 +6760,7 @@ int tm_tasks_request(
       DIS_tcp_cleanup(local_chan);
     
     return(TM_DONE);
-    }  /* END if (pjob->ji_nodeid != nodeid) */
+    }  /* END if (not on this host) */
 #endif /* ndef NUMA_SUPPORT */
   
   *ret = tm_reply(chan, TM_OKAY, event);
@@ -6837,7 +6850,7 @@ int tm_signal_request(
     return(TM_DONE);
  
 #ifndef NUMA_SUPPORT
-  if (pjob->ji_nodeid != nodeid)
+  if (is_nodeid_on_this_host(pjob, nodeid) == false)
     {
     /* not me XXX */
     event_alloc(IM_SIGNAL_TASK, phost, event, fromtask);
@@ -6871,7 +6884,7 @@ int tm_signal_request(
       DIS_tcp_cleanup(local_chan);
     
     return(TM_DONE);
-    }  /* END if (pjob->ji_nodeid != nodeid) */
+    }  /* END if (not on this host) */
 #endif /* ndef NUMA_SUPPORT */
   
   /* Task should be here... look for it. */
@@ -6957,7 +6970,7 @@ int tm_obit_request(
     return(TM_DONE);
   
 #ifndef NUMA_SUPPORT
-  if (pjob->ji_nodeid != nodeid)
+  if (is_nodeid_on_this_host(pjob, nodeid) == false)
     {
     /* not me */
     event_alloc(IM_OBIT_TASK, phost, event, fromtask);
@@ -7114,7 +7127,7 @@ int tm_getinfo_request(
     }
   
 #ifndef NUMA_SUPPORT
-  if (pjob->ji_nodeid != nodeid)
+  if (is_nodeid_on_this_host(pjob, nodeid) == false)
     {
     /* not me */
     event_alloc(IM_GET_INFO,phost,event,fromtask);
@@ -7150,7 +7163,7 @@ int tm_getinfo_request(
     free(name);
  
     return(TM_DONE);
-    }  /* END if (pjob->ji_nodeid != nodeid) */
+    }  /* END if (not on this host) */
 #endif /* ndef NUMA_SUPPORT */
   
   /* Task should be here... look for it. */
@@ -7227,7 +7240,7 @@ int tm_resources_request(
     return(TM_DONE);
  
 #ifndef NUMA_SUPPORT
-  if (pjob->ji_nodeid != nodeid)
+  if (is_nodeid_on_this_host(pjob, nodeid) == false)
     {
     /* not me XXX */
     event_alloc(IM_GET_RESC, phost, event, fromtask);
@@ -7255,7 +7268,7 @@ int tm_resources_request(
       DIS_tcp_cleanup(local_chan);
     
     return(TM_DONE);
-    }  /* END if (pjob->ji_nodeid != nodeid) */
+    }  /* END if (not the same host) */
 #endif /* ndef NUMA_SUPPORT */
   
   info = resc_string(pjob);

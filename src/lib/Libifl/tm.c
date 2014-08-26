@@ -881,8 +881,8 @@ int tm_spawn(
 tm_spawn_cleanup:
   if (chan != NULL)
     DIS_tcp_cleanup(chan);
-  return rc;
 
+  return(rc);
   }  /* END tm_spawn() */
 
 

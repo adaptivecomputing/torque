@@ -159,8 +159,7 @@ int obit_submit(
  * spawned and initial OBIT requests have been made.
  */
 
-void
-mom_reconnect(void)
+void mom_reconnect(void)
 
   {
   int c, rc;
@@ -330,7 +329,7 @@ getstdout(void)
 
 int wait_for_task(
 
-  int *nspawned) /* number of tasks spawned */
+  int &nspawned) /* number of tasks spawned */
 
   {
   int     c;
@@ -339,7 +338,7 @@ int wait_for_task(
   int     rc;
   int     tm_errno;
 
-  while (*nspawned || nobits)
+  while (nspawned || nobits)
     {
     if (grabstdio)
       getstdout();
@@ -402,11 +401,11 @@ int wait_for_task(
           fprintf(stderr, "%s: spawn event returned: %d (%d spawns and %d obits outstanding)\n",
                   id,
                   c,
-                  *nspawned,
+                  nspawned,
                   nobits);
           }
 
-        (*nspawned)--;
+        nspawned--;
 
         if (tm_errno)
           {
@@ -462,7 +461,7 @@ int wait_for_task(
           fprintf(stderr, "%s: obit event returned: %d (%d spawns and %d obits outstanding)\n",
                   id,
                   c,
-                  *nspawned,
+                  nspawned,
                   nobits);
           }
 
@@ -483,7 +482,7 @@ int wait_for_task(
       }
     }
 
-  return PBSE_NONE;
+  return(PBSE_NONE);
   }  /* END wait_for_task() */
 
 
@@ -1075,12 +1074,12 @@ int main(
       ++nspawned;
 
       if (sync)
-        rc = wait_for_task(&nspawned); /* one at a time */
+        rc = wait_for_task(nspawned); /* one at a time */
       }
     }    /* END for (c) */
 
   if (sync == 0)
-    rc = wait_for_task(&nspawned); /* wait for all to finish */
+    rc = wait_for_task(nspawned); /* wait for all to finish */
   if (rc != 0)
     return rc;
 
