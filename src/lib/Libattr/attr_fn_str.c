@@ -329,13 +329,22 @@ int set_str(
   return (0);
   }
 
+/*
+ * remove_from_csv - allocate memory for buffer data where all data
+ * included in src and not included in model_pattern
+ *
+ * function returs buffer with items where all items are:
+ * - included in src line
+ * - not included in model_pattern line
+ *
+ * Returns: NULL if all items from src included into model_pattern
+ *  otherwise returns buffer with items
+ */
+
 char* remove_from_csv(
-  /* returs buffer = model_pattern - src,
-   buffer contains values each of which is contained in the 'src' and
-   does not contained included intoin the 'mode_pattern'*/
-  char* src, /* I - line with csv values*/
-  char* model_pattern, /* I - pattern with models*/
-  bool free_src /* I - true means free memory on src*/)
+
+  char* src,            /* I - line with csv values*/
+  char* model_pattern   /* I - pattern with models*/)
   {
   string result;
   int len = csv_length(src);
@@ -353,12 +362,20 @@ char* remove_from_csv(
         }
       }
     }
-  if (free_src)
-    {
-    free(src);
-    }
   return (result.size())? strdup(result.c_str()) : NULL;
   }
+
+/*
+ * set_str_csv - set pbs_attribute value based upon another. attribute
+ * values should be based on csv values
+ *
+ * A+B --> B is concatenated to end of A
+ * A=B --> A is replaced with B
+ * A-B --> If B is a substring at the end of A, it is stripped off
+ *
+ * Returns: 0 if ok
+ *  >0 if error
+ */
 
 int set_str_csv(
 
@@ -382,20 +399,27 @@ int set_str_csv(
 
       nsize = strlen(new_attr->at_val.at_str) + 1; /* length of new string */
       if ((new_value =(char *)calloc(1, nsize)) == NULL)
+        {
         return (PBSE_SYSTEM);
+        }
 
       if (attr->at_val.at_str)
-        (void)free(attr->at_val.at_str);
+        {
+        free(attr->at_val.at_str);
+        }
       attr->at_val.at_str = new_value;
 
-      (void)strcpy(attr->at_val.at_str, new_attr->at_val.at_str);
+      strcpy(attr->at_val.at_str, new_attr->at_val.at_str);
 
       break;
 
     case INCR_OLD: /* support setup from qmgr */
     case INCR: /* INCR is concatenate new to old string */
+      {
+      char* new_data = remove_from_csv(new_attr->at_val.at_str, attr->at_val.at_str);
 
-      new_attr->at_val.at_str = remove_from_csv(new_attr->at_val.at_str, attr->at_val.at_str, true);
+      free(new_attr->at_val.at_str);
+      new_attr->at_val.at_str = new_data;
       if (new_attr->at_val.at_str)
         {
         nsize = strlen(new_attr->at_val.at_str) + 1; /* length of new string */
@@ -413,7 +437,9 @@ int set_str_csv(
       new_value = (char *)calloc(1, nsize + 1);
 
       if (new_value == NULL)
+        {
         return (PBSE_SYSTEM);
+        }
 
       if (attr->at_val.at_str)
         {
@@ -427,18 +453,22 @@ int set_str_csv(
         free(attr->at_val.at_str);
         }
       attr->at_val.at_str = new_value;
-
+      }
       break;
 
     case DECR: /* DECR is remove substring if match, start at end */
-
+      {
+      char* new_data = NULL;
       if ((attr->at_val.at_str == NULL) || (strlen(new_attr->at_val.at_str) == 0))
+        {
         return 0;
+        }
 
-      attr->at_val.at_str = remove_from_csv(attr->at_val.at_str, new_attr->at_val.at_str, true);
-
+      new_data = remove_from_csv(attr->at_val.at_str, new_attr->at_val.at_str);
+      free(attr->at_val.at_str);
+      attr->at_val.at_str = new_data;
       break;
-
+      }
     default:
       return (PBSE_INTERNAL);
     }
