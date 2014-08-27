@@ -165,8 +165,8 @@ unsigned int         ssa_index;
 unsigned long        ssa_size;
 container::item_container<received_node *> received_statuses; /* holds information on node's whose statuses we've received */
 int                  updates_waiting_to_send = 0;
-extern time_t       LastServerUpdateTime;
 extern struct connection svr_conn[];
+extern bool          ForceServerUpdate;
 
 const char *PMOMCommand[] =
   {
@@ -8624,38 +8624,18 @@ void fork_demux(
   } /* END fork_demux() */
 
 
+time_t get_stat_update_interval()
+
+  {
+  return ForceServerUpdate ? ServerStatUpdateInterval / 3 : ServerStatUpdateInterval;
+  } /* END get_next_update_time() */
 
 
 void send_update_soon()
 
   {
-  int sindex;
-  int amount_of_time = ServerStatUpdateInterval / 3;
-  time_t target_timestamp = time_now - ServerStatUpdateInterval;
-
-  /* force an update reasonably soon */
-
-  /* If it less than 1/3 of upd interval passed from last update
-     force update after 1/3 of interval from now to prevent flood to server.
-     Otherwise force immediate update. */
-  if (time_now - LastServerUpdateTime <= amount_of_time)
-    {
-    target_timestamp += amount_of_time;
-    }
-
-
-  /* Don't move timestamp to the future */
-  if (target_timestamp < LastServerUpdateTime)
-    {
-    LastServerUpdateTime = target_timestamp;
-
-    for (sindex = 0; sindex < PBS_MAXSERVER; sindex++)
-      {
-      mom_servers[sindex].MOMLastSendToServerTime = target_timestamp;
-      }
-    }
+  ForceServerUpdate = true;
   } /* END send_update_soon() */
-
 
 
 received_node *get_received_node_entry(
