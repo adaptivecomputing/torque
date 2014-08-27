@@ -146,9 +146,14 @@ int reply_send(
   struct batch_request *request)  /* I (freed) */
 
   {
+#ifdef PBS_MOM
+  return(reply_send_mom(request));
+#else
   return(reply_send_svr(request));
+#endif
   }
 
+#ifndef PBS_MOM
 int reply_send_svr(
   
   struct batch_request *request)  /* I (conditionally freed) */
@@ -189,6 +194,35 @@ int reply_send_svr(
 
   return(rc);
   }  /* END reply_send_svr() */
+#endif /* PBS_MOM */
+
+
+
+
+int reply_send_mom(
+
+  struct batch_request *request)  /* I (freed) */
+
+  {
+  int      rc = 0;
+  int      sfds = request->rq_conn;  /* socket */
+
+  /* determine where the reply should go, remote or local */
+
+  if (sfds == PBS_LOCAL_CONNECTION)
+    {
+    rc = PBSE_SYSTEM;
+    }
+  else if (sfds >= 0)
+    {
+    /* Otherwise, the reply is to be sent to a remote client */
+    rc = dis_reply_write(sfds, &request->rq_reply);
+    }
+  free_br(request);
+  return(rc);
+  }  /* END reply_send_mom() */
+
+
 
 
 

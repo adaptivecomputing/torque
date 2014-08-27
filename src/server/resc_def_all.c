@@ -784,14 +784,17 @@ int init_resc_defs(void)
   int                   rindex = 0;
   int                   dindex = 0;
   int                   unkindex = 0;
+#ifndef PBS_MOM
 
   resource_def         *tmpresc = NULL;
   struct array_strings *resc_arst = NULL;
   char                 *extra_resc;
   int                   resc_num = 0;
+#endif
 
   svr_resc_size = sizeof(svr_resc_def_const) / sizeof(resource_def);
 
+#ifndef PBS_MOM
   /* build up a temporary list of string resources */
 
   if (get_svr_attr_arst(SRV_ATR_ExtraResc, &resc_arst) == PBSE_NONE)
@@ -823,13 +826,16 @@ int init_resc_defs(void)
       }
     }
 
+#endif
+
   svr_resc_def = (resource_def *)calloc(svr_resc_size + dindex, sizeof(resource_def));
 
   if (svr_resc_def == NULL)
      {
+#ifndef PBS_MOM
      if (tmpresc != NULL)
        free(tmpresc);
-     
+#endif
      return(-1);
      }
 
@@ -841,6 +847,7 @@ int init_resc_defs(void)
 
   unkindex = rindex;
 
+#ifndef PBS_MOM
   /* copy our dynamic resources */
   if (tmpresc)
     {
@@ -855,6 +862,7 @@ int init_resc_defs(void)
 
     free(tmpresc);
     }
+#endif
 
   /* copy the last "unknown" resource */
   memcpy(svr_resc_def + rindex, svr_resc_def_const + unkindex, sizeof(resource_def));

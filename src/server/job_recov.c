@@ -117,9 +117,13 @@
 #if __STDC__ != 1
 #include <memory.h>
 #endif
+#ifndef PBS_MOM
 #include "array.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_ss, unlock_ss */
 #include "job_func.h" /* job_free */
+#else
+#include "../resmom/mom_job_func.h" /* mom_job_free */
+#endif
 #include "array.h"
 #include "ji_mutex.h"
 #include "job_recov.h"
@@ -132,6 +136,13 @@
 #define JOBBUFSIZE 2048
 #define MAX_SAVE_TRIES 3
 #define BUFSIZE 1024
+
+#ifdef PBS_MOM
+int recov_tmsock(int, job *);
+extern unsigned int pbs_mom_port;
+extern unsigned int pbs_rm_port;
+extern int           multi_mom;
+#endif
 
 extern int job_qs_upgrade(job *, int, char *, int);
 
@@ -173,6 +184,17 @@ int assign_tag_len_6(
 
   {
   int rc = PBSE_NONE;
+
+#ifdef PBS_MOM
+  job *pjob = *pj;
+  
+  if (!(strncmp((const char *)tag, TASKID_TAG, 6)))
+    pjob->ji_taskid = atoi((const char*)content);
+  else if(!(strncmp((const char *)tag, NODEID_TAG, 6)))
+    pjob->ji_nodeid = atoi((const char*)content);
+  else
+    rc = -1;
+#endif /* PBS_MOM */
 
   return rc;
   }
@@ -347,6 +369,12 @@ int assign_tag_len_13(
     pjob->ji_qs.ji_un.ji_momt.ji_exuid = (unsigned int) atoi((const char*)content);
   else if(!(strncmp((const char *)tag, EXEC_GID_TAG, 13)))
     pjob->ji_qs.ji_un.ji_momt.ji_exgid = atoi((const char*)content);
+#ifdef PBS_MOM
+  else if(!(strncmp((const char *)tag, STDOUT_TAG, 13)))
+    pjob->ji_stdout = atoi((const char*)content);
+  else if(!(strncmp((const char *)tag, STDERR_TAG, 13)))
+    pjob->ji_stderr = atoi((const char*)content);
+#endif /* PBS_MOM */
   else
     rc = -1;
 
@@ -606,6 +634,10 @@ int check_fileprefix(
   job *pj = *pjob;
   int   rc = PBSE_NONE;
 
+#ifdef PBS_MOM
+  char  fileid[MAXPATHLEN];
+#endif
+
   /* Does file name match the internal name? */
   /* This detects ghost files */
   pn = strrchr((char *)filename, (int)'/');
@@ -614,7 +646,19 @@ int check_fileprefix(
   else
     pn = (char *)filename;
 
+#ifndef PBS_MOM
   if (strncmp(pn, pj->ji_qs.ji_fileprefix, strlen(pj->ji_qs.ji_fileprefix)) != 0)
+#else
+  if(multi_mom != 0)
+    {
+    sprintf(fileid,"%s%d",pj->ji_qs.ji_fileprefix,pbs_rm_port);
+    }
+  else
+    {
+    strcpy(fileid,pj->ji_qs.ji_fileprefix);
+    }
+  if (strncmp(pn, fileid, strlen(fileid)) != 0)
+#endif
     {
     /* mismatch, discard job */
 
@@ -792,6 +836,7 @@ xmlNodePtr add_resource_list_attribute(
 
 
 
+#ifndef PBS_MOM
 /*
  * translate_dependency_to_string
  *
@@ -853,6 +898,7 @@ void translate_dependency_to_string(
     }
 
   } /* END translate_dependency_to_string() */
+#endif
 
 
 
@@ -889,9 +935,11 @@ int add_encoded_attributes(
         {
         std::string value;
 
+#ifndef PBS_MOM
         if (i == JOB_ATR_depend)
           translate_dependency_to_string(pattr + i, value);
         else
+#endif
           attr_to_str(value, job_attr_def + i, pattr[i], false);
 
         if (value.size() == 0)
@@ -982,6 +1030,30 @@ int add_attributes(
   } /* END add_attributes */
 
 
+#ifdef PBS_MOM
+/*
+ * add_mom_fields() - add tm sockets xml nodes to the document
+ */
+
+void add_mom_fields(
+
+  xmlNodePtr *rnode,
+  const job *pjob)
+
+  {
+  char buf[BUFSIZE];
+  xmlNodePtr root_node = *rnode;
+
+  snprintf(buf, sizeof(buf), "%d", pjob->ji_stdout);
+  xmlNewChild(root_node, NULL, (xmlChar *)STDOUT_TAG, (xmlChar *)buf);
+  snprintf(buf, sizeof(buf), "%d", pjob->ji_stderr);
+  xmlNewChild(root_node, NULL, (xmlChar *)STDERR_TAG, (xmlChar *)buf);
+  snprintf(buf, sizeof(buf), "%d", pjob->ji_taskid);
+  xmlNewChild(root_node, NULL, (xmlChar *)TASKID_TAG, (xmlChar *)buf);
+  snprintf(buf, sizeof(buf), "%d", pjob->ji_nodeid);
+  xmlNewChild(root_node, NULL, (xmlChar *)NODEID_TAG, (xmlChar *)buf);
+  }
+#endif /* PBS_MOM */
 
 /*
  * saveJobToXML() - save job to disk in xml format
@@ -1007,11 +1079,19 @@ int saveJobToXML(
     if (add_attributes(&root_node, pjob))
       return -1;
 
+#ifdef PBS_MOM
+    add_mom_fields(&root_node, (const job*)pjob);
+#endif /* PBS_MOM */
+
+#ifndef PBS_MOM
     lock_ss();
+#endif /* !defined PBS_MOM */
 
     lenwritten = xmlSaveFormatFileEnc(filename, doc, NULL, 1);
 
+#ifndef PBS_MOM
     unlock_ss();
+#endif /* !defined PBS_MOM */
 
     xmlFreeDoc(doc);
     }
@@ -1078,10 +1158,14 @@ int job_save(
   time_t  time_now = time(NULL);
 
 
+#ifdef PBS_MOM
+  tmp_ptr = JOB_FILE_SUFFIX;
+#else
   if (pjob->ji_is_array_template == TRUE)
     tmp_ptr = (char *)JOB_FILE_TMP_SUFFIX;
   else
     tmp_ptr = (char *)JOB_FILE_SUFFIX;
+#endif
 
   if (mom_port)
     {
@@ -1143,8 +1227,9 @@ int set_array_job_ids(
   size_t buflen)     /* error buffer length */
 
   {
-  int        rc = PBSE_NONE;
-  job       *pj = *pjob;
+  int rc = PBSE_NONE;
+#ifndef PBS_MOM
+  job *pj = *pjob;
   job_array *pa;
   char       parent_id[PBS_MAXSVRJOBID + 1];
 
@@ -1192,8 +1277,8 @@ int set_array_job_ids(
       unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
       }
     }
-  
-  return(rc);
+#endif /* !PBS_MOM */
+  return rc;
   }
 
 
@@ -1262,6 +1347,10 @@ int job_recov_binary(
   job  *pj = *pjob;
   char *pn;
 
+#ifdef PBS_MOM
+  char fileid[MAXPATHLEN];
+#endif
+
   fds = open(filename, O_RDONLY, 0);
 
   if (fds < 0)
@@ -1302,7 +1391,19 @@ int job_recov_binary(
 
   pn = strrchr(filename, (int)'/') + 1;
 
+#ifndef PBS_MOM
   if (strncmp(pn, pj->ji_qs.ji_fileprefix, strlen(pj->ji_qs.ji_fileprefix)) != 0)
+#else
+  if(multi_mom != 0)
+    {
+    sprintf(fileid,"%s%d",pj->ji_qs.ji_fileprefix,pbs_rm_port);
+    }
+  else
+    {
+    strcpy(fileid,pj->ji_qs.ji_fileprefix);
+    }
+  if (strncmp(pn, fileid, strlen(fileid)) != 0)
+#endif
     {
     /* mismatch, discard job */
 
@@ -1329,6 +1430,19 @@ int job_recov_binary(
     close(fds);
     return -1;
     }
+
+#ifdef PBS_MOM
+  /* read in tm sockets and ips */
+
+  if (recov_tmsock(fds, pj) != 0)
+    {
+    snprintf(log_buf, buf_len,
+        "warning: tmsockets not recovered from %s (written by an older pbs_mom?)",
+        filename);
+
+    log_err(-1, __func__, log_buf);
+    }
+#endif /* PBS_MOM */
 
   close(fds);
 
@@ -1386,8 +1500,10 @@ job *job_recov(
       {
       log_err(errno, __func__, log_buf);
 
+#ifndef PBS_MOM
       unlock_ji_mutex(pj, __func__, "1", LOGLEVEL);
       free(pj->ji_mutex);
+#endif
       free((char *)pj);
       } /* sometime pjob is freed by abt_job() */
     return(NULL);
@@ -1397,7 +1513,12 @@ job *job_recov(
   pj->ji_commit_done = 1;
 
   /* all done recovering the job */
+
+#ifdef PBS_MOM
+  job_save(pj, SAVEJOB_FULL, (multi_mom == 0)?0:pbs_rm_port);
+#else
   job_save(pj, SAVEJOB_FULL, 0);
+#endif
 
   return(pj);
   }  /* END job_recov() */

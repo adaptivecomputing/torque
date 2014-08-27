@@ -44,9 +44,9 @@ pbs_mom_SOURCES = catch_child.c mom_comm.c mom_inter.c mom_main.c	\
 		   mom_process_request.c alps_reservations.c		\
 		   release_reservation.c generate_alps_status.c	\
                    parse_config.c node_frequency.cpp \
-		   mom_attr_recov.c mom_dis_read.c \
-		   mom_job_attr_def.c mom_job_recov.c	\
-		   mom_reply_send.c mom_resc_def_all.c	\
+		   ../server/attr_recov.c ../server/dis_read.c		\
+		   ../server/job_attr_def.c ../server/job_recov.c	\
+		   ../server/reply_send.c ../server/resc_def_all.c	\
 		   ../server/job_qs_upgrade.c
 if BUILDCPA
 pbs_mom_SOURCES += cray_cpa.c

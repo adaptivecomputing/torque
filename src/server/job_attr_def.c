@@ -243,13 +243,21 @@ attribute_def job_attr_def[] =
     decode_str,
     encode_str,
     set_str,
+#ifdef PBS_MOM
+    comp_str,
+#else /* PBS_MOM - server side */
     comp_checkpoint,
+#endif /* PBS_MOM */
     free_str,
+#ifdef PBS_MOM
+    NULL_FUNC,
+#else /* PBS_MOM - server side */
 #if 0
     ck_checkpoint,
 #else
     0,
 #endif
+#endif /* PBS_MOM */
     READ_WRITE | ATR_DFLAG_MOM | ATR_DFLAG_ALTRUN,
     ATR_TYPE_STR,
     PARENT_TYPE_JOB
@@ -268,12 +276,21 @@ attribute_def job_attr_def[] =
   },
   /* JOB_ATR_depend */
   { (char *)ATTR_depend,   /* "depend" */
+#ifndef PBS_MOM
     decode_depend,
     encode_depend,
     set_depend,
     comp_depend,
     free_depend,
     depend_on_que,
+#else
+    decode_str,
+    encode_str,
+    set_str,
+    comp_str,
+    free_str,
+    NULL_FUNC,
+#endif /* PBS_MOM */
     READ_WRITE,
     ATR_TYPE_LIST,
     PARENT_TYPE_JOB
@@ -336,7 +353,11 @@ attribute_def job_attr_def[] =
     set_l,
     comp_l,
     free_null,
+#ifndef PBS_MOM
     job_set_wait,
+#else
+    NULL_FUNC,
+#endif
     READ_WRITE | ATR_DFLAG_ALTRUN,
     ATR_TYPE_LONG,
     PARENT_TYPE_JOB
@@ -561,7 +582,11 @@ attribute_def job_attr_def[] =
   { (char *)ATTR_u,   /* "User_List" */
     decode_arst,
     encode_arst,
+#ifndef PBS_MOM
     set_uacl,
+#else
+    set_arst,
+#endif
     comp_arst,
     free_arst,
     NULL_FUNC,
