@@ -115,7 +115,6 @@ int    MOMIsLocked = 0;
 int    MOMIsPLocked = 0;
 int    ServerStatUpdateInterval = DEFAULT_SERVER_STAT_UPDATES;
 int    CheckPollTime            = CHECK_POLL_TIME;
-int    ForceServerUpdate = 0;
 
 int    verbositylevel = 0;
 double cputfactor = 1.00;
@@ -270,6 +269,7 @@ char            rcp_args[MAXPATHLEN];
 char            xauth_path[MAXPATHLEN];
 
 time_t          LastServerUpdateTime = 0;  /* NOTE: all servers updated together */
+bool            ForceServerUpdate = false;
 int             UpdateFailCount = 0;
 
 time_t          MOMStartTime         = 0;
@@ -9161,7 +9161,7 @@ time_t calculate_select_timeout() {
   time_t tmpTime;
   extern time_t wait_time;
 
-  tmpTime = MIN(wait_time, (LastServerUpdateTime + ServerStatUpdateInterval) - time_now);
+  tmpTime = MIN(wait_time, (LastServerUpdateTime + get_stat_update_interval()) - time_now);
 
   tmpTime = MIN(tmpTime, (last_poll_time + CheckPollTime) - time_now);
 

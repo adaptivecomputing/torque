@@ -43,6 +43,7 @@ int LOGLEVEL = 7; /* force logging code to be exercised as tests run */ /* mom_m
 int maxupdatesbeforesending = 0;
 int    ServerStatUpdateInterval = DEFAULT_SERVER_STAT_UPDATES;
 time_t          LastServerUpdateTime = 0;  /* NOTE: all servers updated together */
+bool            ForceServerUpdate = false;
 char log_buffer[LOG_BUF_SIZE];
 bool ms_val = true;
 

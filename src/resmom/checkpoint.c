@@ -89,7 +89,6 @@
 extern int exiting_tasks;
 extern int LOGLEVEL;
 extern     int             lockfds;
-extern int ForceServerUpdate;
 extern char TORQUE_JData[];
 
 extern int task_recov(job *pjob);
