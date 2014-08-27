@@ -117,7 +117,6 @@
 
 int    MOMIsLocked = 0;
 int    MOMIsPLocked = 0;
-int    ForceServerUpdate = 0;
 
 int    verbositylevel = 0;
 unsigned int default_server_port = 0;
@@ -219,6 +218,7 @@ extern hash_table_t    *received_table;
 time_t          pbs_tcp_timeout = PMOMTCPTIMEOUT;
 
 time_t          LastServerUpdateTime = 0;  /* NOTE: all servers updated together */
+bool            ForceServerUpdate = false;
 int             UpdateFailCount = 0;
 
 time_t          MOMStartTime         = 0;
@@ -5943,7 +5943,7 @@ time_t calculate_select_timeout() {
   time_t tmpTime;
   extern time_t wait_time;
 
-  tmpTime = MIN(wait_time, (LastServerUpdateTime + ServerStatUpdateInterval) - time_now);
+  tmpTime = MIN(wait_time, (LastServerUpdateTime + get_stat_update_interval()) - time_now);
 
   tmpTime = MIN(tmpTime, (last_poll_time + CheckPollTime) - time_now);
 

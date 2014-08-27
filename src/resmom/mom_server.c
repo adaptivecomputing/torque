@@ -276,6 +276,7 @@ char                       TORQUE_JData[MMAX_LINE];
 extern int                 received_hello_count[];
 extern char                TMOMRejectConn[];
 extern time_t              LastServerUpdateTime;
+extern bool                ForceServerUpdate;
 extern long                system_ncpus;
 extern int                 alarm_time; /* time before alarm */
 extern time_t              time_now;
@@ -1191,7 +1192,7 @@ int mom_server_update_stat(
   struct tcp_chan *chan = NULL;
 
   if ((pms->pbs_servername[0] == '\0') ||
-      (time_now < (pms->MOMLastSendToServerTime + ServerStatUpdateInterval)))
+      (time_now < (pms->MOMLastSendToServerTime + get_stat_update_interval())))
     {
     /* No server is defined for this slot */
     
@@ -1279,6 +1280,7 @@ int mom_server_update_stat(
       if (numa_index + 1 >= num_node_boards)
         pms->MOMLastSendToServerTime = time_now;
 #endif
+      ForceServerUpdate = false;
       LastServerUpdateTime = time_now;
       
       UpdateFailCount = 0;
@@ -1384,38 +1386,32 @@ int send_update()
   if (first_update_time > time_now)
     return(FALSE);
   
-  if (time_now < (LastServerUpdateTime + ServerStatUpdateInterval))
+  if (time_now < (LastServerUpdateTime + get_stat_update_interval()))
     return(FALSE);
   
-  /* this is the minimum condition for updating */
-  if (time_now >= (LastServerUpdateTime + ServerStatUpdateInterval))
-    {
-    long attempt_diff;
+  long attempt_diff;
 
-    if (UpdateFailCount == 0)
+  if (UpdateFailCount == 0)
+    return(TRUE);
+
+  /* the following conditions are to continually back off if we're experiencing
+   * several failures in a row */
+  attempt_diff = time_now - LastUpdateAttempt;
+
+  /* never send updates in a rapid-fire fashion */
+  if (attempt_diff > MIN_SERVER_UDPATE_SPACING)
+    {
+    /* cap the longest time between updates */
+    if ((LastServerUpdateTime == 0) ||
+      (attempt_diff > MAX_SERVER_UPDATE_SPACING))
       return(TRUE);
-    
-    /* the following conditions are to continually back off if we're experiencing
-     * several failures in a row */
-    attempt_diff = time_now - LastUpdateAttempt;
- 
-    /* never send updates in a rapid-fire fashion */
-    if (attempt_diff > MIN_SERVER_UDPATE_SPACING)
-      {
-      /* cap the longest time between updates */
-      if ((LastServerUpdateTime == 0) ||
-          (attempt_diff > MAX_SERVER_UPDATE_SPACING))
-        return(TRUE);
-      
-      /* make sending more likely the longer we've waited */
-      mod_value = MAX(2, ServerStatUpdateInterval - attempt_diff);
-      
-      if (rand() % mod_value == 0)
-        return(TRUE);
-      }
+
+    /* make sending more likely the longer we've waited */
+    mod_value = MAX(2, ServerStatUpdateInterval - attempt_diff);
+
+    if (rand() % mod_value == 0)
+      return(TRUE);
     }
-  
-  /* conditions not met, no update is needed */ 
   return(FALSE);
   } /* END send_update() */
 
@@ -1556,6 +1552,7 @@ void mom_server_all_update_stat(void)
     generate_alps_status(mom_status, apbasil_path, apbasil_protocol);
 
     if (send_update_to_a_server() == PBSE_NONE)
+      ForceServerUpdate = false;
       LastServerUpdateTime = time_now;
     }
   else
@@ -1595,6 +1592,7 @@ void mom_server_all_update_stat(void)
       received_node *rn = NULL;
 
       close(fd_pipe[1]);
+      ForceServerUpdate = false;
       LastServerUpdateTime = time_now;
       UpdateFailCount = 0;
 
