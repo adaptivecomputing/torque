@@ -381,6 +381,7 @@ int  decode_size(pbs_attribute *patr, const char *name, const char *rn, const ch
 int  decode_str(pbs_attribute *patr, const char *name, const char *rn, const char *val, int);
 int  decode_time(pbs_attribute *patr, const char *name, const char *rn, const char *val, int);
 int  decode_arst(pbs_attribute *patr, const char *name, const char *rn, const char *val, int);
+int  decode_acl_arst(pbs_attribute *patr, const char *name, const char *rn, const char *val, int);
 int  decode_arst_direct(pbs_attribute *patr, const char *val);
 int  decode_arst_merge(pbs_attribute *,const char *,const char *,const char *);
 int  decode_resc(pbs_attribute *patr, const char *name, const char *rn, const char *val, int);
@@ -435,6 +436,7 @@ extern int set_ll(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
 extern int set_size(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
 extern int set_str(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
 extern int set_arst(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+extern int set_acl_arst(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
 extern int set_resc(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
 extern int set_hostacl(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
 extern int set_uacl(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);

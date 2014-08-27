@@ -277,7 +277,10 @@ public:
       *new_addr_out = new_addr;
       }
 
-
+    if(*new_addr_out == NULL)
+      {
+      return false;
+      }
     return(true);
     }
 

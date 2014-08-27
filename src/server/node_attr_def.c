@@ -347,9 +347,9 @@ attribute_def node_attr_def[] =
 
   /* ND_ATR_acl */
   { (char *)ATTR_NODE_acl, /* "acl" */
-    decode_arst,
+    decode_acl_arst,
     encode_arst,
-    set_arst,
+    set_acl_arst,
     comp_arst,
     free_arst,
     node_acl,
