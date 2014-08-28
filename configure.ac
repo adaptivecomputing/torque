@@ -404,6 +404,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/resmom/test/checkpoint/Makefile
     src/resmom/test/cray_cpa/Makefile
     src/resmom/test/generate_alps_status/Makefile
+    src/resmom/test/machine/Makefile
     src/resmom/test/mom_job_func/Makefile
     src/resmom/test/mom_comm/Makefile
     src/resmom/test/mom_inter/Makefile
@@ -411,6 +412,9 @@ m4_ifdef([AM_SILENT_RULES],[
     src/resmom/test/mom_server/Makefile
     src/resmom/test/mom_process_request/Makefile
     src/resmom/test/mom_req_quejob/Makefile
+    src/resmom/test/numa_core/Makefile
+    src/resmom/test/numa_chip/Makefile
+    src/resmom/test/numa_socket/Makefile
     src/resmom/test/parse_config/Makefile
     src/resmom/test/pbs_demux/Makefile
     src/resmom/test/prolog/Makefile

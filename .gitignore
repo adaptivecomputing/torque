@@ -376,6 +376,7 @@ src/resmom/test/catch_child/test_preobit_reply
 src/resmom/test/catch_child/test_scan_for_exiting
 src/resmom/test/checkpoint/test_checkpoint
 src/resmom/test/generate_alps_status/test_generate_alps_status
+src/resmom/test/machine/test_machine
 src/resmom/test/mom_comm/test_mom_comm
 src/resmom/test/mom_inter/test_mom_inter
 src/resmom/test/mom_job_func/test_mom_job_func
@@ -384,6 +385,9 @@ src/resmom/test/mom_main/bob
 src/resmom/test/mom_process_request/test_mom_process_request
 src/resmom/test/mom_req_quejob/test_mom_req_quejob
 src/resmom/test/mom_server/test_mom_server
+src/resmom/test/numa_chip/test_numa_chip
+src/resmom/test/numa_core/test_numa_core
+src/resmom/test/numa_socket/test_numa_socket
 src/resmom/test/parse_config/test_parse_config
 src/resmom/test/pbs_demux/test_pbs_demux
 src/resmom/test/prolog/test_prolog
