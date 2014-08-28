@@ -773,111 +773,59 @@ int decode_utc(
     int            perm)    /* only used for resources */
 
   {
-  const char utcTemplate[] = "dddd-dd-ddTdd:dd:ddZ";
-  const char tzTemplateH[] = "shh";
-  const char tzTemplateM[] = "xdd";
-
-  const char *pTemplate = utcTemplate;
-  const char *pVal = val;
-  int iVal = 0;
-  std::vector<int> vals;
-
   if(!strcmp(val,"0") || (*val == '\0'))
     {
     return decode_str(pattr,name,rescn,"",perm);
     }
-
-  while(*pTemplate != '\0')
+  struct tm tm;
+  bool offsetGiven = true;
+  memset(&tm,0,sizeof(struct tm));
+  tm.tm_isdst = -1; //This tells mktime to calculate the GMT offset and
+                    //take daylight savings time into account.
+  //Look for the format yyyy-mm-ddThh:mm:ss-hh or
+  //                    yyyy-mm-ddThh:mm:ss-hhmm
+  char *end = strptime(val,"%Y-%m-%dT%H:%M:%S%z",&tm);
+  if ((end == NULL) || (*end != '\0'))
     {
-    if(*pVal == '\0')
+    if (end == NULL)
       {
-      return PBSE_BAD_UTC_FORMAT;
-      }
-    switch(*pTemplate)
-      {
-      case 'h':
+      memset(&tm,0,sizeof(struct tm));
+      tm.tm_isdst = -1;
+      offsetGiven = false;
+      //Look for the format yyyy-mm-ddThh:mm:ssZ
+      end = strptime(val,"%Y-%m-%dT%H:%M:%SZ",&tm);
+      if ((end == NULL) || (*end != '\0'))
         {
-        char c = *pVal;
-        if((c < '0')||(c > '9'))
-          {
-          return PBSE_BAD_UTC_FORMAT;
-          }
-        iVal = (iVal * 10) + ((int)c - (int)'0');
-        if((*(pTemplate + 1) == '\0') &&(*(pVal + 1) != '\0'))
-          {
-          vals.push_back(iVal);
-          iVal = 0;
-          pTemplate = tzTemplateM;
-          }
-        }
-        break;
-      case 'd':
-        {
-        char c = *pVal;
-        if((c < '0')||(c > '9'))
-          {
-          return PBSE_BAD_UTC_FORMAT;
-          }
-        iVal = (iVal * 10) + ((int)c - (int)'0');
-        }
-        break;
-      case 'Z':
-        if((*pVal == 'Z')||(*pVal == 'z'))
-          {
-          break;
-          }
-        pTemplate = tzTemplateH;
-        if((*pVal != '+')&&(*pVal != '-'))
-          {
-          return PBSE_BAD_UTC_FORMAT;
-          }
-        vals.push_back(iVal);
-        iVal = 0;
-        break;
-      case 's':
-        vals.push_back(iVal);
-        iVal = 0;
-        if((*pVal != '+')&&(*pVal != '-'))
-          {
-          return PBSE_BAD_UTC_FORMAT;
-          }
-        break;
-      default:
-        vals.push_back(iVal);
-        iVal = 0;
-        if(*pVal != *pTemplate)
-          {
-          return PBSE_BAD_UTC_FORMAT;
-          }
-        break;
-      }
-    pTemplate++;
-    pVal++;
-    if(*pTemplate == '\0')
-      {
-      vals.push_back(iVal);
-      iVal = 0;
-      if(*pVal != '\0')
-        {
-        return PBSE_BAD_UTC_FORMAT;
+        return(PBSE_BAD_UTC_FORMAT);
         }
       }
+    else
+      {
+      return(PBSE_BAD_UTC_FORMAT);
+      }
     }
-  if(vals.at(0) < 2014) return PBSE_BAD_UTC_RANGE;
-  if((vals.at(1) < 1)||(vals.at(1) > 12)) return PBSE_BAD_UTC_RANGE;
-  if((vals.at(2) < 1)||(vals.at(2) > 31)) return PBSE_BAD_UTC_RANGE;
-  if((vals.at(3) < 0)||(vals.at(3) > 24)) return PBSE_BAD_UTC_RANGE;
-  if((vals.at(4) < 0)||(vals.at(4) > 60)) return PBSE_BAD_UTC_RANGE;
-  if((vals.at(5) < 0)||(vals.at(5) > 60)) return PBSE_BAD_UTC_RANGE;
-  if(vals.size() > 6)
+  long offset = 0;
+  if (offsetGiven)
     {
-    if((vals.at(6) < 0)||(vals.at(6) > 23)) return PBSE_BAD_UTC_RANGE;
+    offset = tm.tm_gmtoff; //Save the offset, mktime puts in its own.
     }
-  if(vals.size() > 7)
+  time_t givenEpoch = mktime(&tm);
+  if (offsetGiven)
     {
-    if((vals.at(7) < 0)||(vals.at(7) > 60)) return PBSE_BAD_UTC_RANGE;
+    /* This is to take care of the case where the time may be entered in one time zone but the machine running
+       Moab may be running in another. If someone enters the time on the east coast with a -04 offset, but the
+       Moab machine is running on the west coast we need to adjust the epoch time to reflect what will happen
+       on the west coast. Example:
+       Time entered 2014-08-20T00:00:00-04
+       Machine on west coast will see that as 2014-08-19T20:00:00-08
+       */
+    givenEpoch += tm.tm_gmtoff; //Take away the calculated offset.
+    givenEpoch -= offset;       //Add in the passed in offset.
     }
-  if(vals.size() > 8) return PBSE_BAD_UTC_FORMAT;
+  if(givenEpoch <= time(NULL))
+    {
+    return(PBSE_BAD_UTC_RANGE);
+    }
   return decode_str(pattr,name,rescn,val,perm);
   }
 

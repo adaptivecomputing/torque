@@ -10,33 +10,43 @@
 START_TEST(test_one)
   {
   pbs_attribute pa;
+  struct tm tm;
+  time_t now = time(NULL) + 200;
+  localtime_r(&now,&tm);
+  char str[30];
+
 
   memset(&pa,0,sizeof(pa));
-  int rc = decode_utc(&pa,"TTL",NULL,"2014-02-07T12:00:00Z",0);
+  sprintf(str,"%04d-%02d-%02dT%02d:%02d:%02dZ",tm.tm_year+1900,tm.tm_mon+1,tm.tm_mday,tm.tm_hour,tm.tm_min,tm.tm_sec);
+  int rc = decode_utc(&pa,"TTL",NULL,str,0);
   fail_unless(rc == 0);
   memset(&pa,0,sizeof(pa));
-  rc = decode_utc(&pa,"TTL",NULL,"2014-02-07T12:00:00Z",0);
+  sprintf(str,"%04d-%02d-%02dT%02d:%02d:%02d%c%02d",tm.tm_year+1900,tm.tm_mon+1,tm.tm_mday,tm.tm_hour,tm.tm_min,tm.tm_sec,tm.tm_gmtoff < 0 ? '-':'+',abs(tm.tm_gmtoff)/3600);
+  rc = decode_utc(&pa,"TTL",NULL,str,0);
   fail_unless(rc == 0);
   memset(&pa,0,sizeof(pa));
-  rc = decode_utc(&pa,"TTL",NULL,"2020-02-07T12:00:00+0700",0);
+  sprintf(str,"%04d-%02d-%02dT%02d:%02d:%02d%c%02d%02d",tm.tm_year+1900,tm.tm_mon+1,tm.tm_mday,tm.tm_hour,tm.tm_min,tm.tm_sec,tm.tm_gmtoff < 0 ? '-':'+',abs(tm.tm_gmtoff)/3600,(abs(tm.tm_gmtoff)/60)%60);
+  rc = decode_utc(&pa,"TTL",NULL,str,0);
   fail_unless(rc == 0);
   memset(&pa,0,sizeof(pa));
-  rc = decode_utc(&pa,"TTL",NULL,"2121-02-07T12:00:00-07",0);
+  tm.tm_gmtoff -= 1800;
+  sprintf(str,"%04d-%02d-%02dT%02d:%02d:%02d%c%02d%02d",tm.tm_year+1900,tm.tm_mon+1,tm.tm_mday,tm.tm_hour,tm.tm_min,tm.tm_sec,tm.tm_gmtoff < 0 ? '-':'+',abs(tm.tm_gmtoff)/3600,(abs(tm.tm_gmtoff)/60)%60);
+  rc = decode_utc(&pa,"TTL",NULL,str,0);
   fail_unless(rc == 0);
+  now -= 3000;
+  localtime_r(&now,&tm);
   memset(&pa,0,sizeof(pa));
-  rc = decode_utc(&pa,"TTL",NULL,"2121-02-07T12:00:00-0730",0);
-  fail_unless(rc == 0);
+  sprintf(str,"%04d-%02d-%02dT%02d:%02d:%02dZ",tm.tm_year+1900,tm.tm_mon+1,tm.tm_mday,tm.tm_hour,tm.tm_min,tm.tm_sec);
+  rc = decode_utc(&pa,"TTL",NULL,str,0);
+  fail_unless(rc == PBSE_BAD_UTC_RANGE);
   memset(&pa,0,sizeof(pa));
-  rc = decode_utc(&pa,"TTL",NULL,"0",0);
-  fail_unless(rc == 0);
+  sprintf(str,"%04d-%02d-%02dT%02d:%02d:%02d%c%02d",tm.tm_year+1900,tm.tm_mon+1,tm.tm_mday,tm.tm_hour,tm.tm_min,tm.tm_sec,tm.tm_gmtoff < 0 ? '-':'+',abs(tm.tm_gmtoff)/3600);
+  rc = decode_utc(&pa,"TTL",NULL,str,0);
+  fail_unless(rc == PBSE_BAD_UTC_RANGE);
   memset(&pa,0,sizeof(pa));
-  rc = decode_utc(&pa,"TTL",NULL,"",0);
-  fail_unless(rc == 0);
-
-  memset(&pa,0,sizeof(pa));
-  rc = decode_utc(&pa,"TTL",NULL,"2121-02-07T12:00:00-07:00",0);
-  fail_unless(rc != 0);
-
+  sprintf(str,"%04d-%02d-%02dT%02d:%02d:%02d%c%02d%02d",tm.tm_year+1900,tm.tm_mon+1,tm.tm_mday,tm.tm_hour,tm.tm_min,tm.tm_sec,tm.tm_gmtoff < 0 ? '-':'+',abs(tm.tm_gmtoff)/3600,(abs(tm.tm_gmtoff)/60)%60);
+  rc = decode_utc(&pa,"TTL",NULL,str,0);
+  fail_unless(rc == PBSE_BAD_UTC_RANGE);
   }
 END_TEST
 
