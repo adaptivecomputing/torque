@@ -23,6 +23,7 @@ extern mom_server mom_servers[PBS_MAXSERVER];
 extern int ServerStatUpdateInterval;
 extern time_t LastServerUpdateTime;
 extern time_t time_now;
+extern bool ForceServerUpdate;
 
 #define IM_DONE                     0
 #define IM_FAILURE                 -1
@@ -480,61 +481,29 @@ void check_mom_last_send_to_server_time(time_t expected) {
 
 START_TEST(send_update_soon_test)
   {
+  ForceServerUpdate = false;
+  send_update_soon();
+  fail_unless(ForceServerUpdate);
+
+  ForceServerUpdate = true;
+  send_update_soon();
+  fail_unless(ForceServerUpdate);
+  }
+END_TEST
+
+START_TEST(get_stat_update_interval_test)
+  {
+  int interval;
+
   ServerStatUpdateInterval = 45;
 
-  /* now == last
-     expect target: now - 2/3 * i */
-  LastServerUpdateTime = 100;
-  set_mom_last_send_to_server_time(-1);
-  time_now = 100;
-  send_update_soon();
-  fail_unless(LastServerUpdateTime == 70);
-  check_mom_last_send_to_server_time(70);
+  ForceServerUpdate = false;
+  interval = get_stat_update_interval();
+  fail_unless(interval == 45);
 
-  /* now == last + 1/3 * i
-     expect target: now - 2/3 * i */
-  LastServerUpdateTime = 100;
-  set_mom_last_send_to_server_time(-1);
-  time_now = 115;
-  send_update_soon();
-  fail_unless(LastServerUpdateTime == 85);
-  check_mom_last_send_to_server_time(85);
-
-  /* now == last + 1/3 * i + 1
-     expect target: now - i */
-  LastServerUpdateTime = 100;
-  set_mom_last_send_to_server_time(-1);
-  time_now = 116;
-  send_update_soon();
-  fail_unless(LastServerUpdateTime == 71);
-  check_mom_last_send_to_server_time(71);
-
-  /* now == last + i - 1
-     expect target: now - i */
-  LastServerUpdateTime = 100;
-  set_mom_last_send_to_server_time(-1);
-  time_now = 144;
-  send_update_soon();
-  fail_unless(LastServerUpdateTime == 99);
-  check_mom_last_send_to_server_time(99);
-
-  /* now == last + i
-     expect target: last (untouched) */
-  LastServerUpdateTime = 100;
-  set_mom_last_send_to_server_time(-1);
-  time_now = 145;
-  send_update_soon();
-  fail_unless(LastServerUpdateTime == 100);
-  check_mom_last_send_to_server_time(-1);
-
-  /* now == last + >i
-     expect target: last (untouched) */
-  LastServerUpdateTime = 100;
-  set_mom_last_send_to_server_time(-1);
-  time_now = 200;
-  send_update_soon();
-  fail_unless(LastServerUpdateTime == 100);
-  check_mom_last_send_to_server_time(-1);
+  ForceServerUpdate = true;
+  interval = get_stat_update_interval();
+  fail_unless(interval == 15);
   }
 END_TEST
 
@@ -585,6 +554,10 @@ Suite *mom_comm_suite(void)
 
   tc_core = tcase_create("send_update_soon_test");
   tcase_add_test(tc_core, send_update_soon_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("get_stat_update_interval_test");
+  tcase_add_test(tc_core, get_stat_update_interval_test);
   suite_add_tcase(s, tc_core);
 
   return(s);

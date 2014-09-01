@@ -5,13 +5,17 @@
 #include <stdio.h>
 
 #include "pbs_error.h"
+#include "mom_server.h"
+#include "resmon.h"
 
 #define MAXLINE 1024
+#define NO_SERVER_CONFIGURED -1
 
 extern mom_hierarchy_t *mh;
 
 extern void sort_paths();
 
+int mom_server_update_stat(mom_server *pms, std::vector<std::string> &strings);
 
 char PBSNodeMsgBuf[MAXLINE];
 char PBSNodeCheckPath[MAXLINE];
@@ -19,7 +23,14 @@ int  PBSNodeCheckInterval = 2;
 
 extern bool no_error;
 extern bool no_event;
-
+extern int    ServerStatUpdateInterval;
+extern time_t time_now;
+extern bool   ForceServerUpdate;
+extern time_t first_update_time;
+extern int    UpdateFailCount;
+extern time_t LastServerUpdateTime;
+extern int    is_reporter_mom;
+extern mom_server mom_servers[PBS_MAXSERVER];
 
 
 START_TEST(test_sort_paths)
@@ -112,6 +123,102 @@ START_TEST(test_check_state)
 END_TEST
 
 
+START_TEST(test_mom_server_update_stat_clear_force)
+  {
+  ServerStatUpdateInterval = 45;
+  std::vector<std::string> status(4, "Think of a status line");
+  mom_server pms;
+  strncpy(pms.pbs_servername, "test", PBS_MAXSERVERNAME);
+
+  /* Force send status update */
+  time_now = time(NULL);
+  pms.MOMLastSendToServerTime = time_now - 20;
+  ForceServerUpdate = true;
+
+  fail_unless(mom_server_update_stat(&pms, status) == PBSE_NONE);
+  fail_unless(ForceServerUpdate == false);
+  fail_unless(pms.MOMLastSendToServerTime == time_now);
+
+  /* Usual send status update */
+  time_now = time(NULL);
+  pms.MOMLastSendToServerTime = time_now - 100;
+  ForceServerUpdate = false;
+
+  fail_unless(mom_server_update_stat(&pms, status) == PBSE_NONE);
+  fail_unless(ForceServerUpdate == false);
+  fail_unless(pms.MOMLastSendToServerTime == time_now);
+
+  /* It's too early to update even if force enabled */
+  time_now = time(NULL);
+  pms.MOMLastSendToServerTime = time_now - 5;
+  time_t check_val = pms.MOMLastSendToServerTime;
+  ForceServerUpdate = true;
+
+  fail_unless(mom_server_update_stat(&pms, status) == NO_SERVER_CONFIGURED);
+  fail_unless(ForceServerUpdate == true);
+  fail_unless(pms.MOMLastSendToServerTime == check_val);
+  }
+END_TEST
+
+
+START_TEST(test_send_update_force_flag)
+  {
+  first_update_time = 0;
+  UpdateFailCount = 0;
+  ServerStatUpdateInterval = 45;
+  LastServerUpdateTime = 100;
+
+  ForceServerUpdate = false;
+  time_now = 100;
+  fail_unless(!send_update());
+  time_now = 144;
+  fail_unless(!send_update());
+  time_now = 145;
+  fail_unless(send_update());
+
+  ForceServerUpdate = true;
+  time_now = 100;
+  fail_unless(!send_update());
+  time_now = 114;
+  fail_unless(!send_update());
+  time_now = 115;
+  fail_unless(send_update());
+  }
+END_TEST
+
+
+START_TEST(test_mom_server_all_update_stat_clear_force)
+  {
+  ServerStatUpdateInterval = 45;
+  strncpy(mom_servers[0].pbs_servername, "test", PBS_MAXSERVERNAME);
+
+  is_reporter_mom = true;
+
+  LastServerUpdateTime = time(NULL) - 100;
+  ForceServerUpdate = true;
+  mom_server_all_update_stat();
+  fail_unless(!ForceServerUpdate);
+
+  LastServerUpdateTime = time(NULL) - 100;
+  ForceServerUpdate = false;
+  mom_server_all_update_stat();
+  fail_unless(!ForceServerUpdate);
+
+  is_reporter_mom = false;
+
+  LastServerUpdateTime = time(NULL) - 100;
+  ForceServerUpdate = true;
+  mom_server_all_update_stat();
+  fail_unless(!ForceServerUpdate);
+
+  LastServerUpdateTime = time(NULL) - 100;
+  ForceServerUpdate = true;
+  mom_server_all_update_stat();
+  fail_unless(!ForceServerUpdate);
+  }
+END_TEST
+
+
 Suite *mom_server_suite(void)
   {
   Suite *s = suite_create("mom_server_suite methods");
@@ -121,6 +228,18 @@ Suite *mom_server_suite(void)
 
   tc_core = tcase_create("test_check_state");
   tcase_add_test(tc_core, test_check_state);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_mom_server_update_stat_clear_force");
+  tcase_add_test(tc_core, test_mom_server_update_stat_clear_force);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_send_update_force_flag");
+  tcase_add_test(tc_core, test_send_update_force_flag);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_mom_server_all_update_stat_clear_force");
+  tcase_add_test(tc_core, test_mom_server_all_update_stat_clear_force);
   suite_add_tcase(s, tc_core);
 
   return s;

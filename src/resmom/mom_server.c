@@ -1665,8 +1665,10 @@ void mom_server_all_update_stat(void)
     generate_alps_status(mom_status, apbasil_path, apbasil_protocol);
 
     if (send_update_to_a_server() == PBSE_NONE)
+      {
       ForceServerUpdate = false;
       LastServerUpdateTime = time_now;
+      }
     }
   else
     {
