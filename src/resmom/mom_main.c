@@ -5939,6 +5939,23 @@ void prepare_child_tasks_for_delete()
 
 
 
+time_t calculate_select_timeout() {
+  time_t tmpTime;
+  extern time_t wait_time;
+
+  tmpTime = MIN(wait_time, (LastServerUpdateTime + ServerStatUpdateInterval) - time_now);
+
+  tmpTime = MIN(tmpTime, (last_poll_time + CheckPollTime) - time_now);
+
+  tmpTime = MAX(1, tmpTime);
+
+  if (LastServerUpdateTime == 0)
+    tmpTime = 1;
+
+  return tmpTime;
+}
+
+
 
 /**
  * main_loop
@@ -5949,7 +5966,6 @@ void prepare_child_tasks_for_delete()
 void main_loop(void)
 
   {
-  extern time_t wait_time;
   double        myla;
   time_t        tmpTime;
 #ifdef USESAVEDRESOURCES
@@ -6061,14 +6077,7 @@ void main_loop(void)
 
     time_now = time((time_t *)0);
 
-    tmpTime = MIN(wait_time, time_now - (LastServerUpdateTime + ServerStatUpdateInterval));
-
-    tmpTime = MIN(tmpTime, time_now - (last_poll_time + CheckPollTime));
-
-    tmpTime = MAX(1, tmpTime);
-
-    if (LastServerUpdateTime == 0)
-      tmpTime = 1;
+    tmpTime = calculate_select_timeout();
 
     resend_things();
 
