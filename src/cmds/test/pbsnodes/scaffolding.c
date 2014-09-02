@@ -46,6 +46,12 @@ int cnt2server(const char *SpecServer)
   fprintf(stderr, "The call to cnt2server needs to be mocked!!\n");
   exit(1);
   }
+
+char *pbs_strerror(int err)
+  { 
+  fprintf(stderr, "The call to pbs_strerror needs to be mocked!!\n");
+  exit(1);
+  }
 }
 
 struct batch_status *pbs_statnode(int c, char *id, struct attrl *attrib, char *extend)
@@ -96,14 +102,15 @@ int MXMLCreateE(mxml_t **E, const char *Name)
   exit(1);
   }
 
-char *pbs_strerror(int err)
-  { 
-  fprintf(stderr, "The call to pbs_strerror needs to be mocked!!\n");
-  exit(1);
-  }
-
 char *pbs_default(void)
   { 
   fprintf(stderr, "The call to pbs_default needs to be mocked!!\n");
+  exit(1);
+  }
+
+int pbs_modify_node_err(int c, int command, int objtype, char *objname, struct attropl *attrib,
+  char *extend, int *local_errno)
+  {
+  fprintf(stderr, "The call to pbs_modify_node_err needs to be mocked!!\n");
   exit(1);
   }

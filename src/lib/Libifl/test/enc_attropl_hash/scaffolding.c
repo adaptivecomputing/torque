@@ -4,6 +4,8 @@
 #include "tcp.h"
 #include "u_hash_map_structs.h" /* job_data */
 
+bool exit_called = false;
+
 int diswcs(tcp_chan *chan, const char *value, size_t nchars)
  {
  fprintf(stderr, "The call to diswcs needs to be mocked!!\n");

@@ -32,6 +32,12 @@ int cnt2server(const char *SpecServer)
   fprintf(stderr, "The call to cnt2server needs to be mocked!!\n");
   exit(1);
   }
+
+char *pbs_strerror(int err)
+  {
+  fprintf(stderr, "The call to pbs_strerror needs to be mocked!!\n");
+  exit(1);
+  }
 }
 
 time_t cvtdate(char *datestr)
@@ -55,12 +61,6 @@ char **pbs_selectjob_err(int c, struct attropl *attrib, char *extend, int *any_f
 int parse_at_list(char *list, int use_count, int abs_path)
   {
   fprintf(stderr, "The call to parse_at_list needs to be mocked!!\n");
-  exit(1);
-  }
-
-char *pbs_strerror(int err)
-  {
-  fprintf(stderr, "The call to pbs_strerror needs to be mocked!!\n");
   exit(1);
   }
 

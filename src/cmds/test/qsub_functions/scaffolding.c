@@ -173,12 +173,6 @@ int cnt2server_conf(long retry)
   exit(1);
   }
 
-char *pbs_strerror(int err)
-  {
-  fprintf(stderr, "The call to pbs_strerror to be mocked!!\n");
-  exit(1);
-  }
-
 void hash_add_or_exit(
 
   job_data_container *head,          /* M - hashmap */
@@ -200,6 +194,12 @@ void set_env_opts(job_data_container *env_attr, char **envp)
 
 extern "C"
 {
+char *pbs_strerror(int err)
+  {
+  fprintf(stderr, "The call to pbs_strerror to be mocked!!\n");
+  exit(1);
+  }
+
 char *pbs_default(void)
   {
   fprintf(stderr, "The call to pbs_default to be mocked!!\n");
