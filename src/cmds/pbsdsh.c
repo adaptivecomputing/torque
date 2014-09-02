@@ -871,7 +871,7 @@ int main(
 
   if (grabstdio && sync)
     {
-    fprintf(stderr, "Warning: options -s and -o should not be used together.\n");
+    fprintf(stderr, "Warning: options -s and -o should not be used together;\n");
     fprintf(stderr, "  otherwise, only the output from the 1st host will be shown.\n\n");
     }
 
