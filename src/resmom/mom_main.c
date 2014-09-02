@@ -4484,7 +4484,6 @@ void recover_internal_layout()
 /**
  * setup_program_environment
  */
-
 int setup_program_environment(void)
 
   {
@@ -4802,6 +4801,10 @@ int setup_program_environment(void)
   internal_layout = node_internals();
 
   this_node.initializeMachine(topology);
+
+#ifdef MIC
+  this_node.initialize_mics(topology);
+#endif
 
 #endif
 
