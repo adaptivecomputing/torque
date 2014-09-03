@@ -31,7 +31,7 @@ PBS_LIBS = ../lib/Libattr/libattr.a \
 EXTRA_DIST = rm_dep.h
 sbin_PROGRAMS = pbs_mom pbs_demux
 
-LDADD = @PBS_MACH@/libmommach.a $(MOMLIBS) $(PBS_LIBS) $(ALPS_LIBS)
+LDADD = @PBS_MACH@/libmommach.a $(MOMLIBS) $(PBS_LIBS) $(ALPS_LIBS) $(HWLOC_LIBS)
 
 pbs_mom_SOURCES = catch_child.c mom_comm.c mom_inter.c mom_main.c	\
 		   mom_server.c prolog.c requests.c start_exec.c	\
