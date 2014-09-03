@@ -6,7 +6,7 @@
 #include <hwloc.h>
 
 #include "pbs_error.h"
-#include "pbs_log.h"
+#include "log.h"
 
 using namespace std;
 
