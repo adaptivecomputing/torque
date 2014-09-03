@@ -17,6 +17,8 @@ extern time_t last_poll_time;
 void read_mom_hierarchy();
 int  parse_integer_range(const char *range_str, int &start, int &end);
 time_t calculate_select_timeout();
+int    ServerStatUpdateInterval = 0;
+int    CheckPollTime = 0;
 
 #include "pbs_error.h"
 
