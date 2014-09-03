@@ -3712,14 +3712,14 @@ job_reservation_info *place_subnodes_in_hostlist(
     snprintf(node_info->node_name, sizeof(node_info->node_name), "%s", pnode->nd_name);
     pnode->nd_job_usages.push_back(jui);
 
-    bool job_exclusive_onuse = false;
+    bool job_exclusive_on_use = false;
     if ((server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_flags & ATR_VFLAG_SET) &&
         (server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_val.at_long != 0))
-      job_exclusive_onuse = true;
+      job_exclusive_on_use = true;
     
     if ((pnode->nd_slots.get_number_free() <= 0) ||
         (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long == TRUE) ||
-        (job_exclusive_onuse))
+        (job_exclusive_on_use))
       pnode->nd_state |= INUSE_JOB;
     }
   else

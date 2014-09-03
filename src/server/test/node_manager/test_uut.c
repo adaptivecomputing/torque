@@ -387,7 +387,7 @@ START_TEST(place_subnodes_in_hostlist_job_exclusive_test)
   char buf[10];
   buf[0] = '\0';
 
-  /* set job_exclusive_onuse true */
+  /* set job_exclusive_on_use true */
   server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_flags=ATR_VFLAG_SET;
   server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_val.at_long = 1;
 
@@ -396,7 +396,7 @@ START_TEST(place_subnodes_in_hostlist_job_exclusive_test)
   fail_unless((jri != NULL), "Call to place_subnodes_in_hostlit failed");
   fail_unless(pnode->nd_state == INUSE_JOB, "Call to place_subnodes_in_hostlit was not set to job exclusive state");
 
-  /* turn job_exclusive_onuse off and reset the node state */
+  /* turn job_exclusive_on_use off and reset the node state */
   server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_flags=ATR_VFLAG_SET;
   server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_val.at_long = 0;
   pnode->nd_state = 0;
