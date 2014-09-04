@@ -4,6 +4,9 @@
 #include "machine.hpp"
 #include <errno.h>
 #include <hwloc.h>
+#include "pbs_config.h"
+
+#ifdef PENABLE_LINUX26_CPUSETS
 
 #include "pbs_error.h"
 #include "log.h"
@@ -48,3 +51,4 @@ using namespace std;
     }
 
 
+#endif /* PENABLE_LINUX26_CPUSETS */  

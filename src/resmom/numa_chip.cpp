@@ -3,6 +3,9 @@
 #include <vector>
 #include <errno.h>
 #include <hwloc.h>
+#include "pbs_config.h"
+
+#ifdef PENABLE_LINUX26_CPUSETS
 
 #ifdef MIC
 #include <hwloc/intel-mic.h>
@@ -272,4 +275,4 @@ using namespace std;
 
     }
 
-
+#endif /* PENABLE_LINUX26_CPUSETS */  

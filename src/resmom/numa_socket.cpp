@@ -4,11 +4,13 @@
 #include "machine.hpp"
 #include <errno.h>
 #include <hwloc.h>
+#include "pbs_config.h"
 #include "pbs_error.h"
 #include "log.h"
 
 using namespace std;
 
+#ifdef PENABLE_LINUX26_CPUSETS
 
   Socket::Socket()
     {
@@ -177,3 +179,5 @@ using namespace std;
     {
     return(this->availableThreads);
     }
+
+#endif /* PENABLE_LINUX26_CPUSETS */  
