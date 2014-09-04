@@ -19,6 +19,10 @@ extern int pbs_errno;
 extern char* default_err_msg;
 
 int time_to_string(char *time_string, int total_seconds);
+int read_int_token(const char **ptr);
+int read_int_prop(const char **prop, const char *prefix);
+int read_node_spec(const char **nodespec);
+int get_tasks_from_nodes_resc(const char * nodes);
 
 START_TEST(time_to_string_test)
   {
@@ -542,6 +546,96 @@ START_TEST(test_err_msg)
   }
 END_TEST
 
+START_TEST(test_read_int_token)
+  {
+  const char * tok = "";
+  fail_unless(read_int_token(&tok) == 1);
+  fail_unless(tok == NULL);
+  tok = "-1";
+  fail_unless(read_int_token(&tok) == 1);
+  fail_unless(tok == NULL);
+  tok = "0";
+  fail_unless(read_int_token(&tok) == 1);
+  fail_unless(tok == NULL);
+  tok = "10";
+  fail_unless(read_int_token(&tok) == 10);
+  fail_unless(tok == NULL);
+  tok = "99999999999999999"; /* int overflow */
+  fail_unless(read_int_token(&tok) == 1);
+  fail_unless(tok == NULL);
+  tok = "12asf";
+  fail_unless(read_int_token(&tok) == 1);
+  fail_unless(tok == NULL);
+  tok = "a12";
+  fail_unless(read_int_token(&tok) == 1);
+  fail_unless(tok == NULL);
+  tok = "2:3";
+  fail_unless(read_int_token(&tok) == 2);
+  fail_unless(tok != NULL);
+  fail_unless(*tok == ':');
+  tok = "2+3";
+  fail_unless(read_int_token(&tok) == 2);
+  fail_unless(tok != NULL);
+  fail_unless(*tok == '+');
+  }
+END_TEST
+
+START_TEST(test_read_int_prop)
+  {
+  const char * prop = "prop=22";
+  fail_unless(read_int_prop(&prop, "prop=") == 22);
+  fail_unless(prop == NULL);
+  prop = "prop=";
+  fail_unless(read_int_prop(&prop, "prop=") == 1);
+  fail_unless(prop == NULL);
+  prop = "prop=asdf";
+  fail_unless(read_int_prop(&prop, "prop=") == 1);
+  fail_unless(prop == NULL);
+  prop = "a=2:b=3";
+  fail_unless(read_int_prop(&prop, "prop=") == 0);
+  fail_unless(prop != NULL);
+  fail_unless(*prop == ':');
+  prop = "a=2+b=3";
+  fail_unless(read_int_prop(&prop, "prop=") == 0);
+  fail_unless(prop != NULL);
+  fail_unless(*prop == '+');
+  prop = "prop=2+b=3";
+  fail_unless(read_int_prop(&prop, "prop=") == 2);
+  fail_unless(prop != NULL);
+  fail_unless(*prop == '+');
+  prop = "";
+  fail_unless(read_int_prop(&prop, "prop=") == 0);
+  fail_unless(prop == NULL);
+  }
+END_TEST
+
+START_TEST(test_read_node_spec)
+  {
+  const char * spec = "n01:ppn=10";
+  fail_unless(read_node_spec(&spec) == 10);
+  fail_unless(spec == NULL);
+  spec = "2:ppn=10";
+  fail_unless(read_node_spec(&spec) == 20);
+  fail_unless(spec == NULL);
+  spec = "2";
+  fail_unless(read_node_spec(&spec) == 2);
+  fail_unless(spec == NULL);
+  spec = "2:prop=val:pr:ppn=10:prop=val";
+  fail_unless(read_node_spec(&spec) == 20);
+  fail_unless(spec == NULL);
+  }
+END_TEST
+
+START_TEST(test_get_tasks_from_nodes_resc)
+  {
+  const char * spec = "n01+n02+n03";
+  fail_unless(get_tasks_from_nodes_resc(spec) == 3);
+  spec = "n01+2+n03";
+  fail_unless(get_tasks_from_nodes_resc(spec) == 4);
+  spec = "n01:prop=val+5:prop=val+1+n02:prop=val:ppn=5+n03+n04:ppn=10";
+  fail_unless(get_tasks_from_nodes_resc(spec) == 23);
+  }
+END_TEST
 
 Suite *qstat_suite(void)
   {
@@ -584,6 +678,22 @@ Suite *qstat_suite(void)
 
   tc_core = tcase_create("test_err_msg");
   tcase_add_test(tc_core, test_err_msg);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_read_int_token");
+  tcase_add_test(tc_core, test_read_int_token);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_read_int_prop");
+  tcase_add_test(tc_core, test_read_int_prop);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_read_node_spec");
+  tcase_add_test(tc_core, test_read_node_spec);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_get_tasks_from_nodes_resc");
+  tcase_add_test(tc_core, test_get_tasks_from_nodes_resc);
   suite_add_tcase(s, tc_core);
 
   return s;
