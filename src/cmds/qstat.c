@@ -657,6 +657,92 @@ static char *cnv_size(
 
 
 
+int read_int_token(
+  const char **ptr) /* (M) a pointer to the beginning of a token */
+  {
+  long cnt;
+  char *tmp;
+  /* Try to decode a decimal integer */
+  cnt = strtol(*ptr, &tmp, 10);
+  if (tmp == *ptr                                   /* no digit found */
+    || (*tmp != ':' && *tmp != '+' && *tmp != '\0') /* the token isn't a decimal integer number */
+    || cnt >= (long)INT_MAX || cnt <= 0)            /* huge or negative value */
+    {
+    cnt = 1; /* use default */
+    }
+  *ptr = strpbrk(tmp, "+:"); /* move to the next token */
+
+  return (int)cnt;
+  }
+
+
+
+int read_int_prop(
+  const char **prop,        /* (M) a pointer to a node property specification */
+  const char *prefix) /* (I) property prefix ("<prop_name>=") */
+  {
+  size_t len = strlen(prefix);
+  if (strncmp(*prop, prefix, len) == 0) /* equal */
+    {
+    *prop += len;
+    return read_int_token(prop);
+    }
+  *prop = strpbrk(*prop, "+:"); /* move to the next token */
+  return 0;
+  }
+
+
+
+int read_node_spec(
+  const char **nodespec) /* (M) a pointer to the beginning of a node specification */
+  {
+  int nodes;
+  int procs = 0;
+  long long res;
+  nodes = read_int_token(nodespec);
+  while (*nodespec && **nodespec == ':' && procs == 0)
+    {
+    ++*nodespec;
+    procs = read_int_prop(nodespec, "ppn=");
+    }
+  if (procs == 0)
+    {
+    procs = 1;
+    }
+  if (*nodespec)
+    {
+    *nodespec = strchr(*nodespec, '+');
+    }
+  res = (long long) nodes * procs;
+  if (res > INT_MAX)
+    {
+    return 1;
+    }
+  return (int)res;
+  }
+
+
+
+int get_tasks_from_nodes_resc(const char * nodes)
+  {
+  int ret = 0;
+  while (nodes && *nodes)
+    {
+    int sum;
+    sum = read_node_spec(&nodes);
+    ret += sum;
+    if (ret < sum)
+      {
+      return 0;
+      }
+    if (nodes && *nodes)
+      {
+      ++nodes;
+      }
+    }
+  return ret;
+  }
+
 
 
 /*
@@ -789,23 +875,13 @@ static void altdsp_statjob(
           }
         else if (!strcmp(pat->resource, "nodes"))
           {
-          char *tmp = pat->value;
-          char *eq = strchr(tmp,'=');
-          
-          if (eq != NULL)
-            {
-            int nodes = atoi(pat->value);
-            int procs = atoi(eq+1);
+          int tsk = get_tasks_from_nodes_resc(pat->value);
 
-            sprintf(calcTasks,"%d",nodes*procs);
+          if (tsk != 0)
+            {
+            sprintf(calcTasks,"%d",tsk);
             tasks = calcTasks;
             }
-          else
-            {
-            tasks = pat->value;
-            dummyProcVal = true;
-            }
-
           }
         else if (!strcmp(pat->resource, "procs"))
           {
