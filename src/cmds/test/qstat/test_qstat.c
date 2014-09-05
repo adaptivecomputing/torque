@@ -634,6 +634,8 @@ START_TEST(test_get_tasks_from_nodes_resc)
   fail_unless(get_tasks_from_nodes_resc(spec) == 4);
   spec = "n01:prop=val+5:prop=val+1+n02:prop=val:ppn=5+n03+n04:ppn=10";
   fail_unless(get_tasks_from_nodes_resc(spec) == 23);
+  spec = "napali:gpus=2:ppn=20";
+  fail_unless(get_tasks_from_nodes_resc(spec) == 20);
   }
 END_TEST
 
