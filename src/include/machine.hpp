@@ -1,5 +1,5 @@
-#include <iostream>
 #include <string>
+#include <vector>
 #include <hwloc.h>
 
 
@@ -7,6 +7,10 @@
  * to display cpuset ranges and memory ranges */
 #define MAX_CPUSET_SIZE 128
 #define MAX_NODESET_SIZE 128
+
+#define INTEL    1
+#define AMD      2
+#define NON_NUMA 3
 
 using namespace std;
 

@@ -32,8 +32,6 @@ using namespace std;
 
   int Core::initializeCore(hwloc_obj_t core_obj, hwloc_topology_t topology)
     {
-    hwloc_obj_t pu_obj;
-
     /* We now need to find all of the processing units associated with this core */
     this->id = core_obj->logical_index;
     this->core_cpuset = core_obj->allowed_cpuset;

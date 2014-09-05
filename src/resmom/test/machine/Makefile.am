@@ -7,12 +7,12 @@ AM_LIBS=`xml2-config --libs`
 
 lib_LTLIBRARIES = libtest_machine.la
 
-AM_LDFLAGS = @CHECK_LIBS@ $(lib_LTLIBRARIES) $(AM_LIBS)
+AM_LDFLAGS = @CHECK_LIBS@ $(lib_LTLIBRARIES) $(AM_LIBS) $(HWLOC_LIBS)
 
 check_PROGRAMS = test_machine
 
 libtest_machine_la_SOURCES = scaffolding.c $(PROG_ROOT)/machine.cpp
-libtest_machine_la_LDFLAGS = @CHECK_LIBS@ $(AM_LIBS) -shared -lgcov
+libtest_machine_la_LDFLAGS = @CHECK_LIBS@ $(AM_LIBS) -shared -lgcov 
 
 test_machine_SOURCES = test_machine.c
 

@@ -7,7 +7,7 @@ AM_LIBS=`xml2-config --libs`
 
 lib_LTLIBRARIES = libtest_numa_core.la
 
-AM_LDFLAGS = @CHECK_LIBS@ $(lib_LTLIBRARIES) $(AM_LIBS)
+AM_LDFLAGS = @CHECK_LIBS@ $(lib_LTLIBRARIES) $(AM_LIBS) $(HWLOC_LIBS)
 
 check_PROGRAMS = test_numa_core
 

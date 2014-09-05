@@ -1,10 +1,32 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <check.h>
+#include "log.h"
+#include "machine.hpp"
+#include "hwloc.h"
+#include "pbs_error.h"
 
 
-START_TEST(test_one)
+
+START_TEST(test_initializeCore)
   {
+  int rc = -1;
+  Core new_core;
+  hwloc_topology_t topology = NULL;
+  hwloc_obj_t core_obj;
+  hwloc_obj_t prev = NULL;
+
+  
+  hwloc_topology_init(&topology);
+  hwloc_topology_set_flags(topology, HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM);
+  hwloc_topology_load(topology);
+
+  core_obj = hwloc_get_next_obj_by_type(topology, HWLOC_OBJ_SOCKET, prev);
+  rc = new_core.initializeCore(core_obj, topology);
+  fail_unless(rc == PBSE_NONE, "Failed to initialize cores");
+
+  rc = new_core.getNumberOfProcessingUnits();
+  fail_unless(rc != 0, "Failed to get number of processing units in core");
   }
 END_TEST
 
@@ -22,8 +44,8 @@ END_TEST
 Suite *numa_core_suite(void)
   {
   Suite *s = suite_create("numa_core test suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_initializeCore");
+  tcase_add_test(tc_core, test_initializeCore);
   suite_add_tcase(s, tc_core);
   
   tc_core = tcase_create("test_two");

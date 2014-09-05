@@ -39,8 +39,6 @@ using namespace std;
  * future changes in hardware configurations.
  */
 
-#define INTEL 1
-#define AMD   2
 
 int get_hardware_style(hwloc_topology_t topology)
   {
@@ -52,8 +50,7 @@ int get_hardware_style(hwloc_topology_t topology)
   node_obj = hwloc_get_next_obj_by_type(topology, HWLOC_OBJ_NODE, NULL); 
   if (node_obj == NULL)
     {
-    log_err(-1, __func__, "failed to get node object");
-    return(PBSE_SYSTEM);
+    return(NON_NUMA);
     }
   node_depth = node_obj->depth;
 
