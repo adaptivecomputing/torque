@@ -33,14 +33,14 @@ START_TEST(test_process_request_bad_host_err)
   svr_conn[999].cn_active = FromClientDIS;
   memset(scaff_buffer, 0, 1024);
   process_request(&chan);
-  fail_unless(strcmp("Access from host not allowed, or unknown host: 10.1.4.4",
-    scaff_buffer) == 0, "Error message was not constructed as expected");
+  fail_unless(strncmp("Access from host not allowed, or unknown host:",
+    scaff_buffer, strlen("Access from host not allowed, or unknown host:")) == 0, scaff_buffer);
 
   svr_conn[999].cn_addr = -1;
   memset(scaff_buffer, 0, 1024);
   process_request(&chan);
-  fail_unless(strcmp("Access from host not allowed, or unknown host: 255.255.255.255",
-    scaff_buffer) == 0, "Error message was not constructed as expected");
+  fail_unless(strncmp("Access from host not allowed, or unknown host:",
+    scaff_buffer, strlen("Access from host not allowed, or unknown host:")) == 0, scaff_buffer);
   }
 END_TEST
 
