@@ -4120,7 +4120,7 @@ void main_func(
     }
   if (local_errno != PBSE_NONE)
     {
-    printf("qsub can not be run as root\n");
+    fprintf(stderr, "qsub can not be run as root\n");
     unlink(script_tmp);
     exit(1);
     }
