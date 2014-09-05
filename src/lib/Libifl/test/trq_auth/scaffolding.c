@@ -545,7 +545,7 @@ int connect(
 int gethostname(char *name, size_t len) throw()
   {
 
-  if(gethostname_success == false)
+  if (gethostname_success == false)
     return(-1);
 
   name = test_trq_hostname;
