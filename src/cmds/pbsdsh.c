@@ -499,7 +499,8 @@ int wait_for_task(
 int gethostnames_from_nodefile(char **allnodes, char *nodefile)
   {
   FILE *fp;
-  char  hostname[PBS_MAXNODENAME+2];
+  /* space for hostname + trailing newline from fgets */
+  char  hostname[PBS_MAXNODENAME+1];
   int   i = 0;
 
   /* initialize the allnodes character array */
@@ -513,7 +514,7 @@ int gethostnames_from_nodefile(char **allnodes, char *nodefile)
     }
 
   /* read hostnames from $PBS_NODEFILE (one hostname per line) */
-  while ((fgets(hostname, PBS_MAXNODENAME + 2, fp) != NULL) && (i < numnodes))
+  while ((fgets(hostname, sizeof(hostname), fp) != NULL) && (i < numnodes))
     {
     char *p;
 
