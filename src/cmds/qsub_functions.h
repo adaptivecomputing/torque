@@ -175,7 +175,7 @@ void post_check_attributes(job_info *ji,char *script_tmp);
 void make_argv(
     int  *argc,
     char *argv[],
-    char *line);
+    char const *line);
 
 void do_dir(
     char *opts,

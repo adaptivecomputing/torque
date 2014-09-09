@@ -1265,16 +1265,25 @@ static int get_script(
 
 
 
-
-
+/**
+ * Parse given character string in shell format to arc/argv format adding "qsub" as a first argument
+ * making it look like qsub was called from command line.
+ *
+ * This function handles quotes and escape symbols as shell does:
+ *  - arguments are splitted by any number of space characters as defined by isspace()
+ *  - unescaped quotes enclose a single argument or its part. Quotes are dropped.
+ *  - escaped characters treated as is: escaped quote and spaces are treated as a character without
+ *    any special meaning
+ */
 void make_argv(
 
-  int  *argc,
-  char *argv[],
-  char *line)
+  int        *argc,   /* O - result argc value */
+  char       *argv[], /* O - result argv value */
+  char const *line)   /* I - input cmdline shell string */
 
   {
-  char *l, *b, *c, *buffer;
+  char const *l, *c;
+  char *b, *buffer;
   int len;
   char quote;
 
@@ -1304,8 +1313,8 @@ void make_argv(
     if ((*c == '"') || (*c == '\''))
       {
       quote = *c;
-      /* we need to include the quotes in what is passed on */
-      *b++ = *c++;
+      /* don't include the quotes */
+      c++;
 
       while ((*c != quote) && *c)
         *b++ = *c++;
@@ -1318,7 +1327,8 @@ void make_argv(
         exit(1);
         }
 
-      *b++ = *c++;
+      /* don't include the quotes */
+      c++;
       }
     else if (*c == '\\')
       {
@@ -1400,9 +1410,10 @@ void do_dir(
   {
   int argc = 0;
 
-  static char *vect[MAX_ARGV_LEN + 1];
-
-  memset(&vect, 0, MAX_ARGV_LEN + 1);
+  /* initialize all vect pointers with NULLs.
+   * make_argv() frees an item if it's non-NULL and then allocates memory for a new one.
+   */
+  static char *vect[MAX_ARGV_LEN + 1] = {};
 
   make_argv(&argc, vect, opts);
 

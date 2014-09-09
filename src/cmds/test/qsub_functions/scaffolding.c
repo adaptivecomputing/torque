@@ -8,6 +8,7 @@
 
 int pbs_errno = 0; 
 char *pbs_server = NULL;
+bool exit_called = false;
 
 
 char *pbs_geterrmsg(int connect)
@@ -16,7 +17,7 @@ char *pbs_geterrmsg(int connect)
   exit(1);
   }
 
-int hash_find(job_data *head, const char *name, job_data **env_var)
+int hash_find(job_data_container *head, const char *name, job_data **env_var)
   {
   fprintf(stderr, "The call to hash_find to be mocked!!\n");
   exit(1);
@@ -206,22 +207,6 @@ char *pbs_default(void)
   exit(1);
   }
 
-int pbs_submit_hash(
-
-  int                 socket,
-  job_data_container *job_attr,
-  job_data_container *res_attr,
-  char               *script,
-  char               *destination,
-  char               *extend,  /* (optional) */
-  char               **return_jobid,
-  char               **msg)
-
-  {
-  fprintf(stderr, "The call to pbs_submit_hash to be mocked!!\n");
-  exit(1);
-  }
-
 int get_fullhostname( char *shortname,  char *namebuf,  int bufsize,  char *EMsg) 
   {
   fprintf(stderr, "The call to get_fullhostname to be mocked!!\n");
@@ -241,13 +226,29 @@ int cnt2server(const char *SpecServer)
   }
 }
 
-int hash_count(job_data *head)
+int pbs_submit_hash(
+
+  int                 socket,
+  job_data_container *job_attr,
+  job_data_container *res_attr,
+  char               *script,
+  char               *destination,
+  char               *extend,  /* (optional) */
+  char               **return_jobid,
+  char               **msg)
+
+  {
+  fprintf(stderr, "The call to pbs_submit_hash to be mocked!!\n");
+  exit(1);
+  }
+
+int hash_count(job_data_container *head)
   {
   fprintf(stderr, "The call to hash_count to be mocked!!\n");
   exit(1);
   }
 
-int hash_strlen(job_data *src)
+int hash_strlen(job_data_container *src)
   {
   fprintf(stderr, "The call to hash_strlen to be mocked!!\n");
   exit(1);
@@ -276,4 +277,10 @@ ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
 ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   {
   return(0);
+  }
+
+char *get_trq_param(const char *param, const char *config_buf)
+  {
+  fprintf(stderr, "The call to get_trq_param to be mocked!!\n");
+  exit(1);
   }
