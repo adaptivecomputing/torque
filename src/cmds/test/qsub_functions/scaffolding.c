@@ -9,6 +9,7 @@
 
 int pbs_errno = 0; 
 char *pbs_server = NULL;
+bool exit_called = false;
 
 
 char *pbs_geterrmsg(int connect)
@@ -277,4 +278,10 @@ ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
 ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   {
   return(0);
+  }
+
+char *get_trq_param(const char *param, const char *config_buf)
+  {
+  fprintf(stderr, "The call to get_trq_param to be mocked!!\n");
+  exit(1);
   }
