@@ -543,6 +543,12 @@ START_TEST(test_err_msg)
   fail_unless(errmsg.size() != 0, "empty error value");
   fail_unless(strlen(errmsg.c_str()) == strlen(original_err.c_str()), "incorrect size of error message");
   fail_unless(errmsg.compare(original_err) == 0, "incorrect err message");
+
+  pbs_errno  = 1; /* set none-zero value*/
+  original_err = string("qstat: ") + string(default_err_msg) + " " +string(id);
+  errmsg = get_err_msg(PBSE_NONE, (char*)mode, 1, NULL);
+  fail_unless(errmsg.size() != 0, "empty error value");
+  fail_unless(strlen(errmsg.c_str()) == (strlen(original_err.c_str())-strlen(id)), "incorrect size of error message");
   }
 END_TEST
 
