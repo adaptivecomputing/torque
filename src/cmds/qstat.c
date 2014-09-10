@@ -135,7 +135,10 @@ string get_err_msg(
       + string("getting status of ")
       + string(mode) + string(" ");
     }
-  msg.append(id);
+  if (id != NULL)
+    {
+    msg.append(id);
+    }
   return msg;
   }
 
@@ -3082,7 +3085,7 @@ int run_queue_mode(
 
       if (any_failed)
         {
-        errmsg = get_err_msg(any_failed,"queue", connect, queue_name_out);
+        errmsg = get_err_msg(any_failed,"queue", connect, NULL);
         tcl_stat(error, NULL, f_opt);
         }
       }
