@@ -103,6 +103,12 @@
 #include "u_hash_map_structs.h"
 #include "u_memmgr.h"
 
+/*template: paramname=["]VAL[num-num,num],paramname=["]*/
+/* input:*/
+/* hostlist=name[1,2],mppnodes=name[1-2],param=\"val1,val2[3-5]\"*/
+/* result:*/
+/* hostlist=name1+name2,mppnodes=name1+name2,param=val1+val23+val24+val25*/
+
 int add_verify_resources(
 
   memmgr        **mm,       /* M */
@@ -124,7 +130,7 @@ int add_verify_resources(
   int   vlen;
 
   char *qptr = NULL;
-
+  int braces = 0;
   r = resources;
 
   while (*r != '\0')
@@ -197,7 +203,14 @@ int add_verify_resources(
 
         /* NOTE    already tokenized by getopt() which will support
                    quoted whitespace, do not fail on spaces */
-
+        if (*e=='[' && qptr == NULL)
+          {
+          braces = 1;
+          }
+        if (braces && (*e == ']'))
+          {
+          braces=0;
+          }
         if (qptr != NULL)
           {
           /* value contains quote - only terminate with quote */
@@ -207,7 +220,7 @@ int add_verify_resources(
           }
         else
           {
-          if (*e == ',')
+          if (*e == ',' && braces==0)
             break;
           }
 
@@ -323,5 +336,4 @@ int add_verify_resources(
 
   return(0);
   }  /* END add_verify_resources() */
-
 

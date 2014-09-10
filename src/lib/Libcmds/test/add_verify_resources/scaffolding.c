@@ -7,12 +7,10 @@
 
 void *memmgr_calloc(memmgr **mgr, int qty, int size)
   {
-  fprintf(stderr, "The call to memmgr_calloc needs to be mocked!!\n");
-  exit(1);
+  return(calloc(qty, size));
   }
+
 
 void hash_add_or_exit(memmgr **mm, job_data **head, const char *name, const char *value, int var_type)
   {
-  fprintf(stderr, "The call to hash_add_or_exit needs to be mocked!!\n");
-  exit(1);
   }
