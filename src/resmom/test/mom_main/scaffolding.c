@@ -852,3 +852,8 @@ char *threadsafe_tokenizer(
 
   return(start);
   } /* END threadsafe_tokenizer() */
+
+time_t get_stat_update_interval()
+  {
+  return 45;
+  }
