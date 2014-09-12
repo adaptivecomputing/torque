@@ -30,6 +30,7 @@
 
 
 extern mom_hierarchy_t *mh;
+extern int ServerStatUpdateInterval;
 
 mom_server     mom_servers[PBS_MAXSERVER];
 resizable_array *received_statuses;
@@ -870,3 +871,8 @@ char *threadsafe_tokenizer(
 
   return(start);
   } /* END threadsafe_tokenizer() */
+
+time_t get_stat_update_interval()
+  {
+  return ServerStatUpdateInterval;
+  }
