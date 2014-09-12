@@ -13,6 +13,7 @@ extern time_t time_now;
 extern time_t wait_time;
 extern time_t LastServerUpdateTime;
 extern time_t last_poll_time;
+extern bool ForceServerUpdate;
 
 void read_mom_hierarchy();
 int  parse_integer_range(const char *range_str, int &start, int &end);
@@ -118,6 +119,8 @@ END_TEST
  */
 START_TEST(calculate_select_timeout_test)
   {
+  ForceServerUpdate = false;
+
   /* wait time is minimum */
   time_now = 110;
   wait_time = 9;
