@@ -113,6 +113,11 @@
 #include "req_getcred.h" /* req_altauthenuser */
 #include "net_cache.h"
 
+#if defined(MUNGE_AUTH_LIB)
+#include <munge.h> 
+#include <pwd.h>
+#endif
+
 #define SPACE 32 /* ASCII space character */
 
 /* External Global Data Items Referenced */
@@ -159,6 +164,12 @@ int req_connect(
 
 
 
+#if defined(MUNGE_AUTH_EXEC)
+
+/* 
+ * MUNGE Authentication helper function - non-library version
+ * get_encode_host -
+ */ 
 
 int get_encode_host(
   
@@ -251,9 +262,6 @@ int get_UID(
 	
   return(PBSE_NONE);
   } /* END get_UID() */
-
-
-
 
 int write_munge_temp_file(
 
@@ -504,6 +512,168 @@ int unmunge_request(
 
 
 
+#elif defined(MUNGE_AUTH_LIB) /* MUNGE library support */
+
+/*
+ * MUNGE Authentication helper function - library enabled version
+ * get_encode_host
+ *
+ */
+
+int get_encode_host(
+    
+  int            s,
+  munge_ctx_t    mctx,
+  batch_request *preq)
+
+  {
+  struct in_addr      addr;
+  struct sockaddr_in  s_addr;
+  char               *hostname;
+  munge_err_t         mret = EMUNGE_SNAFU;
+
+  mret = munge_ctx_get(mctx, MUNGE_OPT_ADDR4, &addr);
+  if (mret != EMUNGE_SUCCESS)
+    {
+    req_reject(PBSE_BADCRED, 0, preq, NULL, "Unable to read IP address from message");
+    return (-1);
+    }
+
+  memset(&s_addr, 0, sizeof(s_addr));
+  s_addr.sin_family = AF_INET;
+  memcpy(&s_addr.sin_addr, &addr, sizeof(addr));
+
+  if ((hostname = get_cached_nameinfo(&s_addr)) == NULL)
+    {
+    req_reject(PBSE_SYSTEM, 0, preq, NULL, "Unable to resolve IP address");
+    return (-1);
+    }
+
+  snprintf(conn_credent[s].hostname, sizeof(conn_credent[s].hostname), "%s", hostname);
+  return(0);
+  } // END get_encode_host() 
+
+
+
+/* 
+ * MUNGE Authentication helper function - library enabled version
+ * get_UID
+ *
+ */
+
+int get_UID(
+    
+  int            s,
+  uid_t          uid,
+  batch_request *preq)
+
+  {
+	struct passwd *passwd_ptr = NULL;
+  
+  /* 
+   * By default we allow users unknown to pbs_server to do queries 
+   * this is for compatibility with --enable-munge-auth in >= 2.5.10
+   * 
+   * To force more restrictive mode set PBS_MUNGE_STRICT_UID_CHECK 
+   *  environment variable in /var/torque/pbs_environment
+   * 
+   */
+  if ((passwd_ptr = getpwuid(uid)) == NULL && getenv("PBS_MUNGE_STRICT_UID_CHECK") != NULL )
+    {
+    req_reject(PBSE_BADCRED, 0, preq, NULL, "unknown user");
+    return (-1);
+    }
+
+  /* try to simulate unmunge command behavior */
+  strncpy(conn_credent[s].username, (passwd_ptr ? passwd_ptr->pw_name : "???"), PBS_MAXUSER - 1);
+  conn_credent[s].username[PBS_MAXUSER - 1] = '\0';
+
+	return(PBSE_NONE);
+  } // END get_UID() 
+
+
+
+/* 
+ * MUNGE authentication - library enabled function
+ * 
+ * unmunge_request - process and verify MUNGE credentials for a given request 
+ */
+
+int unmunge_request(
+    
+  int            s,
+  batch_request *preq)
+
+  {
+  int             rc = -1;
+  munge_ctx_t mctx = NULL;
+  munge_err_t mret = EMUNGE_SNAFU;
+  uid_t uid;
+  gid_t gid;
+
+  if ((mctx = munge_ctx_create()) == NULL)
+    {
+    req_reject(PBSE_SYSTEM, 0, preq, NULL, "couldn't create munge ctxt");
+    return (-1);
+    }
+
+  mret = munge_decode (preq->rq_ind.rq_authen.rq_cred, mctx, NULL, NULL, &uid, &gid);
+
+  switch (mret)
+    {
+    case EMUNGE_SUCCESS:
+      break;
+      
+    case EMUNGE_CRED_EXPIRED:
+
+      req_reject(PBSE_BADCRED, 0, preq, NULL, "Expired credentials");
+      munge_ctx_destroy(mctx);
+      return (-1);
+
+    case EMUNGE_CRED_REWOUND:
+
+      req_reject(PBSE_BADCRED, 0, preq, NULL, "Credentials from future");
+      munge_ctx_destroy(mctx);
+      return (-1);
+
+    case EMUNGE_CRED_REPLAYED:
+
+      req_reject(PBSE_BADCRED, 0, preq, NULL, "Credentials replayed");
+      munge_ctx_destroy(mctx);
+      return (-1);
+
+    default:
+      {
+      const char *msg = NULL;
+  
+      if (!(msg = munge_ctx_strerror(mctx)))
+        msg = munge_strerror (mret);
+  
+      req_reject(PBSE_SYSTEM, 0, preq, NULL, (char*)msg); /* it's safe cast req_reject has wrong signature */
+      munge_ctx_destroy(mctx);
+  
+      return (-1);
+      }
+    }
+  
+  if ((rc = get_encode_host(s, mctx, preq)) != PBSE_NONE)
+    {
+    munge_ctx_destroy(mctx);
+    return (-1);
+    }
+
+  if ((rc = get_UID(s, uid, preq)) != PBSE_NONE)
+    {
+    munge_ctx_destroy(mctx);
+    return (-1);
+    }
+  
+  munge_ctx_destroy(mctx);
+  
+  return(PBSE_NONE);
+  } /* END unmunge_request() */
+
+#endif /* END MUNGE library enabled functions */
 
 /*
  * req_authenuser - Authenticate a user connection based on the (new)
@@ -626,6 +796,7 @@ int req_authenuser(
  * utility 
  * 
 */
+#ifdef MUNGE_AUTH
 int req_altauthenuser(
 
   struct batch_request *preq)  /* I */
@@ -682,7 +853,7 @@ int req_altauthenuser(
   
   return(PBSE_NONE);
   }  /* END req_altauthenuser() */
-
+#endif /* MUNGE_AUTH */
 
 /* END req_getcred.c */
 
