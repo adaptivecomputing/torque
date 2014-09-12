@@ -173,9 +173,9 @@ int req_connect(
 
 int get_encode_host(
   
-  int s, 
-  char *munge_buf, 
-  struct batch_request *preq)
+  int          s, 
+  char        *munge_buf,
+  std::string &error)
   
   {
   char *ptr;
@@ -186,16 +186,18 @@ int get_encode_host(
   ptr = strstr(munge_buf, "ENCODE_HOST:");
   if (!ptr)
     {
-    log_err(PBSE_SYSTEM, __func__, "could not read unmunge data host");
+    error = "Could not read unmunge host data";
+    log_err(PBSE_SYSTEM, __func__, error.c_str());
     return(PBSE_SYSTEM);
     }
 
   /* Move us to the end of the ENCODE_HOST keyword. There are spaces
    	 between the : and the first letter of the host name */
   ptr = strchr(ptr, ':');
-  if(ptr == NULL)
+  if (ptr == NULL)
     {
-    log_err(PBSE_SYSTEM, __func__, "ENCODE_HOST malformed");
+    error = "ENCODE_HOST malformed in munge data";
+    log_err(PBSE_SYSTEM, __func__, error.c_str());
     return(PBSE_SYSTEM);
     }
   ptr++;
@@ -218,11 +220,12 @@ int get_encode_host(
   } /* END get_encode_host() */
 
 
+
 int get_UID(
     
-  int                   s, 
-  char                 *munge_buf, 
-  struct batch_request *preq)
+  int          s, 
+  char        *munge_buf,
+  std::string &error)
   
   {
   char *ptr;
@@ -232,7 +235,8 @@ int get_UID(
   ptr = strstr(munge_buf, "UID:");
 	if (!ptr)
 	  {
-	  log_err(PBSE_SYSTEM, __func__, "could not read UID from munge buffer");
+    error = "Could not read UID from munge buffer";
+	  log_err(PBSE_SYSTEM, __func__, error.c_str());
 	  return(PBSE_SYSTEM);
 	  }
 
@@ -257,11 +261,12 @@ int get_UID(
       }
     }
 
-	strncpy(conn_credent[s].username, user_name, sizeof(conn_credent[s].username) - 1);
-        conn_credent[s].username[sizeof(conn_credent[s].username) - 1] = 0;
+  snprintf(conn_credent[s].username, sizeof(conn_credent[s].username), "%s", user_name);
 	
   return(PBSE_NONE);
   } /* END get_UID() */
+
+
 
 int write_munge_temp_file(
 
@@ -336,6 +341,7 @@ int pipe_and_read_unmunge(
   int   rc;
   int   errno_save = 0;
   int   flags = 0;
+  std::string error;
 
   snprintf(munge_command, sizeof(munge_command), "unmunge --input=%s",
 	   mungeFileName);
@@ -427,9 +433,9 @@ int pipe_and_read_unmunge(
     log_err(errno_save, __func__, log_buf);
     rc = PBSE_BADCRED;
     }
-  else if ((rc = get_encode_host(sock, munge_buf, preq)) == PBSE_NONE)
+  else if ((rc = get_encode_host(sock, munge_buf, error)) == PBSE_NONE)
     {
-    rc = get_UID(sock, munge_buf, preq);
+    rc = get_UID(sock, munge_buf, error);
     if (rc != PBSE_NONE)
       {
       snprintf(log_buf, sizeof(log_buf), "get_UID returned %d", rc);
@@ -451,8 +457,9 @@ int pipe_and_read_unmunge(
 
 int unmunge_request(
     
-  int                   sock, /* I */
-  struct batch_request *preq) /* M */
+  int            sock,  /* I */
+  std::string    error, /* O */
+  batch_request *preq)  /* M */
  
   {
   char            mungeFileName[MAXPATHLEN + MAXNAMLEN+1];
@@ -471,6 +478,7 @@ int unmunge_request(
     {
     snprintf(log_buf, sizeof(log_buf), "could not create temporary munge file %s", 
 	     mungeFileName);
+    error = log_buf;
     log_err(errno, __func__, log_buf);
     return(PBSE_SYSTEM);
     }
@@ -480,6 +488,7 @@ int unmunge_request(
     {
     snprintf(log_buf, sizeof(log_buf), "could not close temporary munge file %s", 
 	     mungeFileName);
+    error = log_buf;
     log_err(errno, __func__, log_buf);
     return(PBSE_SYSTEM);
     }
@@ -494,13 +503,15 @@ int unmunge_request(
       snprintf(log_buf, sizeof(log_buf), "Error reading munge temp file %s, rc=%d", 
 	       mungeFileName, rc);
       log_err(PBSE_SYSTEM, __func__, log_buf);
+      error = log_buf;
       }
     }
   else
     {
-      snprintf(log_buf, sizeof(log_buf), "Error writing munge temp file %s, rc=%d", 
-	       mungeFileName, rc);
-      log_err(PBSE_SYSTEM, __func__, log_buf);
+    snprintf(log_buf, sizeof(log_buf), "Error writing munge temp file %s, rc=%d", 
+       mungeFileName, rc);
+    log_err(PBSE_SYSTEM, __func__, log_buf);
+    error = log_buf;
     }
 
   /* delete the old file unless we had a problem */
@@ -524,7 +535,7 @@ int get_encode_host(
     
   int            s,
   munge_ctx_t    mctx,
-  batch_request *preq)
+  std::string    error)
 
   {
   struct in_addr      addr;
@@ -535,8 +546,8 @@ int get_encode_host(
   mret = munge_ctx_get(mctx, MUNGE_OPT_ADDR4, &addr);
   if (mret != EMUNGE_SUCCESS)
     {
-    req_reject(PBSE_BADCRED, 0, preq, NULL, "Unable to read IP address from message");
-    return (-1);
+    error = "Unable to read IP address from message";
+    return(PBSE_BADCRED);
     }
 
   memset(&s_addr, 0, sizeof(s_addr));
@@ -545,8 +556,8 @@ int get_encode_host(
 
   if ((hostname = get_cached_nameinfo(&s_addr)) == NULL)
     {
-    req_reject(PBSE_SYSTEM, 0, preq, NULL, "Unable to resolve IP address");
-    return (-1);
+    error = "Unable to resolve IP address";
+    return(PBSE_SYSTEM);
     }
 
   snprintf(conn_credent[s].hostname, sizeof(conn_credent[s].hostname), "%s", hostname);
@@ -563,9 +574,9 @@ int get_encode_host(
 
 int get_UID(
     
-  int            s,
-  uid_t          uid,
-  batch_request *preq)
+  int          s,
+  uid_t        uid,
+  std::string &error)
 
   {
 	struct passwd *passwd_ptr = NULL;
@@ -578,10 +589,11 @@ int get_UID(
    *  environment variable in /var/torque/pbs_environment
    * 
    */
-  if ((passwd_ptr = getpwuid(uid)) == NULL && getenv("PBS_MUNGE_STRICT_UID_CHECK") != NULL )
+  if (((passwd_ptr = getpwuid(uid)) == NULL) &&
+      (getenv("PBS_MUNGE_STRICT_UID_CHECK") != NULL ))
     {
-    req_reject(PBSE_BADCRED, 0, preq, NULL, "unknown user");
-    return (-1);
+    error = "Unknown user";
+    return(PBSE_BADCRED);
     }
 
   /* try to simulate unmunge command behavior */
@@ -602,22 +614,23 @@ int get_UID(
 int unmunge_request(
     
   int            s,
+  std::string   &error,
   batch_request *preq)
 
   {
-  int             rc = -1;
+  int         rc = -1;
   munge_ctx_t mctx = NULL;
   munge_err_t mret = EMUNGE_SNAFU;
-  uid_t uid;
-  gid_t gid;
+  uid_t       uid;
+  gid_t       gid;
 
   if ((mctx = munge_ctx_create()) == NULL)
     {
-    req_reject(PBSE_SYSTEM, 0, preq, NULL, "couldn't create munge ctxt");
-    return (-1);
+    error = "couldn't create munge context";
+    return (PBSE_SYSTEM);
     }
 
-  mret = munge_decode (preq->rq_ind.rq_authen.rq_cred, mctx, NULL, NULL, &uid, &gid);
+  mret = munge_decode(preq->rq_ind.rq_authen.rq_cred, mctx, NULL, NULL, &uid, &gid);
 
   switch (mret)
     {
@@ -626,21 +639,21 @@ int unmunge_request(
       
     case EMUNGE_CRED_EXPIRED:
 
-      req_reject(PBSE_BADCRED, 0, preq, NULL, "Expired credentials");
+      error = "Expired credentials";
       munge_ctx_destroy(mctx);
-      return (-1);
+      return(PBSE_BADCRED);
 
     case EMUNGE_CRED_REWOUND:
 
-      req_reject(PBSE_BADCRED, 0, preq, NULL, "Credentials from future");
+      error = "Credentials from future";
       munge_ctx_destroy(mctx);
-      return (-1);
+      return(PBSE_BADCRED);
 
     case EMUNGE_CRED_REPLAYED:
 
-      req_reject(PBSE_BADCRED, 0, preq, NULL, "Credentials replayed");
+      error = "Credentials replayed";
       munge_ctx_destroy(mctx);
-      return (-1);
+      return(PBSE_BADCRED);
 
     default:
       {
@@ -648,30 +661,32 @@ int unmunge_request(
   
       if (!(msg = munge_ctx_strerror(mctx)))
         msg = munge_strerror (mret);
-  
-      req_reject(PBSE_SYSTEM, 0, preq, NULL, (char*)msg); /* it's safe cast req_reject has wrong signature */
+
+      error = msg; 
       munge_ctx_destroy(mctx);
   
-      return (-1);
+      return(PBSE_SYSTEM);
       }
     }
   
-  if ((rc = get_encode_host(s, mctx, preq)) != PBSE_NONE)
+  if ((rc = get_encode_host(s, mctx, error)) != PBSE_NONE)
     {
     munge_ctx_destroy(mctx);
-    return (-1);
+    return(rc);
     }
 
-  if ((rc = get_UID(s, uid, preq)) != PBSE_NONE)
+  if ((rc = get_UID(s, uid, error)) != PBSE_NONE)
     {
     munge_ctx_destroy(mctx);
-    return (-1);
+    return(rc);
     }
   
   munge_ctx_destroy(mctx);
   
   return(PBSE_NONE);
   } /* END unmunge_request() */
+
+
 
 #endif /* END MUNGE library enabled functions */
 
@@ -802,9 +817,10 @@ int req_altauthenuser(
   struct batch_request *preq)  /* I */
 
   {
-  int s;
-  int rc = PBSE_NONE;
-  unsigned short        conn_port;
+  int             s;
+  int             rc = PBSE_NONE;
+  unsigned short  conn_port;
+  std::string     error;
   
   /*
    * find the socket whose client side is bound to the port named
@@ -831,12 +847,16 @@ int req_altauthenuser(
     return(PBSE_BADCRED);
     }
 
-  rc = unmunge_request(s, preq);
+  rc = unmunge_request(s, error, preq);
   if (rc != PBSE_NONE)
     {
     /* FAILED */
-    req_reject(PBSE_BADCRED, 0, preq, NULL, "cannot authenticate user. Failed to unmunge request");
-    return(PBSE_BADCRED);
+    if (error.size() == 0)
+      req_reject(rc, 0, preq, NULL, "cannot authenticate user. Failed to unmunge request");
+    else
+      req_reject(rc, 0, preq, NULL, error.c_str());
+
+    return(rc);
     }
 
   /* SUCCESS */
