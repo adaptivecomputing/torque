@@ -359,6 +359,7 @@ START_TEST(status_nodeattrib_test)
   }
 END_TEST
 
+
 START_TEST(initialize_pbsnode_test)
   {
   struct pbsnode node;
@@ -371,6 +372,7 @@ START_TEST(initialize_pbsnode_test)
   fail_unless(result == PBSE_NONE, "initialization fail");
   }
 END_TEST
+
 
 START_TEST(effective_node_delete_test)
   {
@@ -395,6 +397,7 @@ START_TEST(effective_node_delete_test)
 
   }
 END_TEST
+
 
 START_TEST(update_nodes_file_test)
   {
