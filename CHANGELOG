@@ -1,9 +1,53 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 4.2.9
+  f - A new qmgr option: set server copy_on_rerun=[True|False] is available.
+      When set to True, Torque will copy the OU, ER files over to the user-specified
+      directory when the qrerun command is executed (i.e a job preemption).
+      This setting requires a pbs_server restart for the new value to take in effect.
+      Note that the MOMs and the pbs_server must be updated to this version before
+      setting copy_on_rerun=True will behave as expected.
+  f - A new qmgr option: job_exclusive_on_use=[True|False] is available. When set
+      to True, pbsnodes will report job-exclusive anytime 1 or more processors are
+      in use. This resolves discrepancies between Moab and TORQUE node reports in
+      cases where Moab is configured with a SINGLEJOB policy. 
+  e - Improved performance by moving scan_for_terminated to its own thread.
+  e - Two new fields were added to the accounting file for completed jobs:
+      total_execution_slots and unique_node_count. total_execution_slots should be 20
+      for a job that requests nodes=2:ppn=10. unique_node_count should be the number
+      of unique hosts the job occupied.
+  b - TRQ-2410. Improved qstat behavior in cases where bad job IDs were referenced
+      in the command.
+  b - TRQ-2632. pbsdsh required FQDN even if other elements didn't. pbsdsh no longer
+      requires FQDN.
+  b - TRQ-2692. Corrected mismatched <Job_Id> XML tags in the job log.
+  b - TRQ-2367. Fixed bug related to some jobs missing accounting records on large systems.
+  b - TRQ-2732. Fixed bug where OU files were being left in spool when job was
+      preempted or requeued.
+  b - TRQ-2828. Fixed bug where `momctl -q clearmsg` didn't properly clear error messages.
+  b - TRQ-2795. Fixed bug where jobs rejected due to max_user_queuable limit reached, yet
+      no jobs in the queue.
+  b - TRQ-2646. Fixed bug where qsub did not process args correctly when using a submit filter.
+  b - TRQ-2759. Fixed bug where reported cput was incorrect.
+  b - TRQ-2707. Fixed bug with submit filter arguments not being parsed during interactive jobs.
+  b - TRQ-2653. Build bug reported with MIC libraries. Fixed build bug related to newer
+      Intel MIC libraries installing in different locations.
   b - TRQ-2730. Make nvml and numa-support configurations work together. The admin must
       now specify which gpus are on which node board the same way it is done with mic
       co-processors, adding gpu=X[-Y] to the mom.layout line for that node board.
+      A sample mom.layout file might look like:
+        nodes=0 gpu=0
+        nodes=1 gpu=1
+      This only works if you use nvml. The nvidia-smi command is not supported.
+  b - TRQ-2411. Fixed output format bug in cases where multiple job IDs are passed into qstat.
+  c - TRQ-2787. Crash on start up when reading empty array file. Fixed start up bug related
+      to empty job array (.AR) files.
+  n - Some limitations exist in the way that pbsdsh can be used. Please note the following
+      situations are not currently supported:
+      * Running multiple instances of pbsdsh concurrently within a single job. (TRQ-2851)
+      * Using the -o and -s options concurrently; although requesting these options together
+        is permitted, only the output from the first node is displayed rather than output
+        from every node in the chain. (TRQ-2690)
 
 4.2.8
   b - TRQ-2501. Fix the total number of execution slots having a count that is off-by-one for
