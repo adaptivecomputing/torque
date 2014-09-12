@@ -240,7 +240,9 @@ char *pbs_get_server_list(void)
   return(server_list);
   } /* END pbs_get_server_list() */
 
-
+#if defined(MUNGE_AUTH_LIB)
+#include <munge.h>
+#endif
 
 void get_port_from_server_name_file(unsigned int *server_name_file_port)
   {
@@ -380,7 +382,7 @@ char *PBS_get_server(
  * PBSD_munge_authenticate - This function will use munge to authenticate 
  * a user connection with the server. 
  */
-#ifdef MUNGE_AUTH
+#if defined(MUNGE_AUTH) && defined(MUNGE_AUTH_EXEC)
 int PBSD_munge_authenticate(
 
   int psock,  /* I */
@@ -481,7 +483,134 @@ int PBSD_munge_authenticate(
     DIS_tcp_cleanup(chan);
   return rc;
   } /* END PBSD_munge_authenticate() */
-#endif /* ifdef MUNGE_AUTH */
+#endif /* if defined(MUNGE_AUTH) && defined(MUNGE_AUTH_EXEC) */
+
+
+
+/* MUNGE library supported authentication
+ * PBSD_munge_authenticate - This function will use munge to authenticate 
+ * a user connection with the server. 
+ */
+#if defined(MUNGE_AUTH) && defined(MUNGE_AUTH_LIB)
+int PBSD_munge_cred_destroy(
+
+	char **cred) /* I */
+
+  {
+  char *ptr = NULL;
+
+  if ((cred == NULL) || 
+      (*cred == NULL))
+    return (-1);
+
+  ptr = *cred;
+
+  while (*ptr != '\0')
+    {
+    *ptr++ = 0; /* Munge memburn replacement */
+    }
+
+  free(*cred);
+  *cred = NULL;
+
+  return 0;
+  }
+
+
+/*
+ * PBSD_munge_authenticate()
+ *
+ * Authenticates a client connection for pbs_server by munging the information and sending
+ * it across.
+ */
+
+int PBSD_munge_authenticate(
+
+  int psock,  /* I */
+  int handle) /* I */
+
+  {
+  int                 rc;
+
+  munge_ctx_t         mctx = NULL;
+  munge_err_t         mret = EMUNGE_SNAFU;
+  char               *mcred = NULL;
+
+  /* user id and name stuff */
+  struct passwd      *pwent;
+  uid_t               myrealuid;
+  struct batch_reply *reply;
+  unsigned short      user_port = 0;
+  struct sockaddr_in  sockname;
+  socklen_t           socknamelen = sizeof(sockname);
+  struct tcp_chan    *chan;
+
+  if ((mctx = munge_ctx_create()) == NULL)
+    {
+    return(-1);
+    }
+
+  if ((mret = munge_encode (&mcred, mctx, NULL, 0)) != EMUNGE_SUCCESS)
+    {
+    const char *merrmsg = NULL;
+    if (!(merrmsg = munge_ctx_strerror(mctx)))
+      {
+      merrmsg = munge_strerror(mret);
+      }
+
+    fprintf(stderr, "munge_encode failed: %s (%d)\n", merrmsg, mret);
+    munge_ctx_destroy(mctx);
+    return(PBSE_MUNGE_NOT_FOUND); /*TODO more fine-grained error codes? */
+    }
+  
+  munge_ctx_destroy(mctx);
+
+  /* We got the certificate. Now make the PBS_BATCH_AltAuthenUser request */
+  myrealuid = getuid();
+  pwent = getpwuid(myrealuid);
+  
+  rc = getsockname(psock, (struct sockaddr *)&sockname, &socknamelen);
+  
+  if (rc == -1)
+    {
+    fprintf(stderr, "getsockname failed: %d\n", errno);
+    return(-1);
+    }
+  
+  user_port = ntohs(sockname.sin_port);
+  
+  if ((chan = DIS_tcp_setup(psock)) == NULL)
+    {
+    }
+  else if ((rc = encode_DIS_ReqHdr(chan, PBS_BATCH_AltAuthenUser, pwent->pw_name)) ||
+           (rc = diswui(chan, user_port)) ||
+           (rc = diswst(chan, mcred)) ||
+           (rc = encode_DIS_ReqExtend(chan, NULL)) ||
+           (rc = DIS_tcp_wflush(chan)))
+    {
+    PBSD_munge_cred_destroy(&mcred);
+    /* ERROR */
+    return(rc);
+    }
+  else
+    {
+    int local_err = PBSE_NONE;
+    PBSD_munge_cred_destroy(&mcred);
+    /* read the reply */
+    if ((reply = PBSD_rdrpy(&local_err, handle)) != NULL)
+      free(reply);
+    
+    return(PBSE_NONE);
+    }
+
+  return(-1);
+  }
+#endif /* if defined(MUNGE_AUTH) && defined(MUNGE_AUTH_LIB) */
+
+
+
+
+
 
 
 /*
