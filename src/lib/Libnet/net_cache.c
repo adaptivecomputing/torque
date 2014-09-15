@@ -88,6 +88,7 @@
 
 #include "net_cache.h"
 #include "pbs_error.h"
+#include "utils.h"
 #include "container.hpp"
 
 
@@ -294,7 +295,25 @@ addrcache cache;
   *****************************************************/
 char *get_cached_nameinfo(const struct sockaddr_in  *sai)
   {
-  return cache.getHostName(sai->sin_addr.s_addr);
+  char *hostname = cache.getHostName(sai->sin_addr.s_addr);
+
+  // Look up the hostname if it isn't currently in the cache
+  if (hostname == NULL)
+    {
+    struct sockaddr_in addr;
+    char               host_buf[MAXLINE];
+
+    memset(&addr, 0, sizeof(addr));
+    memset(&host_buf, 0, sizeof(host_buf));
+
+    if (getnameinfo((struct sockaddr *)&addr, sizeof(addr), host_buf, sizeof(host_buf), NULL, 0, 0) == 0)
+      {
+      insert_addr_name_info(NULL, host_buf);
+      hostname = cache.getHostName(sai->sin_addr.s_addr);
+      }
+    }
+
+  return(hostname);
   } /* END get_cached_nameinfo() */
 
 /*******************************************************
