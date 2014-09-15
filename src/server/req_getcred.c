@@ -561,7 +561,7 @@ int get_encode_host(
     }
 
   snprintf(conn_credent[s].hostname, sizeof(conn_credent[s].hostname), "%s", hostname);
-  return(0);
+  return(PBSE_NONE);
   } // END get_encode_host() 
 
 
