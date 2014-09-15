@@ -2,9 +2,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string>
+#include "id_map.hpp"
 
 #include "execution_slot_tracker.hpp"
 #include "attribute.h" /* svrattrl */
+
+id_map    job_mapper;
 
 svrattrl *attrlist_create(const char *aname, const char *rname, int vsize)
  {
@@ -42,7 +45,7 @@ char *parse_comma_string(char *start, char **ptr)
   exit(1);
   }
 
-void populate_range_string_from_slot_tracker(execution_slot_tracker &est, std::string &range) {}
+void populate_range_string_from_slot_tracker(const execution_slot_tracker &est, std::string &range_str){}
 
 
 int ctnodes(char *spec)
@@ -50,3 +53,63 @@ int ctnodes(char *spec)
   fprintf(stderr, "The call to append_link needs to be mocked!!\n");
   exit(1);
   }
+
+int id_map::get_new_id(
+
+  const char *name)
+
+  {
+  fprintf(stderr, "The call to %s needs to be mocked!!\n",__func__);
+  exit(1);
+  }
+
+
+
+int id_map::get_id(
+
+  const char *name)
+
+  {
+  fprintf(stderr, "The call to %s needs to be mocked!!\n",__func__);
+  exit(1);
+  }
+
+
+
+const char *id_map::get_name(
+
+  int id)
+
+  {
+  fprintf(stderr, "The call to %s needs to be mocked!!\n",__func__);
+  exit(1);
+  }
+
+
+id_map::~id_map()
+  {
+  // leave the destructor blank. C++ destroys globally constructed
+  // objects when the main thread exits, causing crashes for other threads.
+  // This class is only destroyed at shutdown, and since we don't care about
+  // memory usage at shutdown we'll just have the destructor do nothing.
+  }
+
+
+
+id_map::id_map() : counter(0)
+  {
+  str_map = new std::map<std::string,int>();
+  names = new std::vector<std::string>();
+  pthread_mutex_init(&mutex, NULL);
+  }
+
+
+
+id_map::id_map(const id_map &other) : counter(other.counter)
+  {
+  str_map = new std::map<std::string,int>(*other.str_map);
+  names = new std::vector<std::string>(*other.names);
+  pthread_mutex_init(&mutex, NULL);
+  }
+
+

@@ -350,6 +350,9 @@ void save_characteristic(
   nci->nstatus      = pnode->nd_nstatus;
   nci->first        = pnode->nd_first;
   nci->first_status = pnode->nd_f_st;
+  strcpy((char *)nci->ttl,(char *)pnode->nd_ttl);
+  nci->acl_size = (pnode->nd_acl == NULL)?0:pnode->nd_acl->as_usedptr;
+  nci->rqid = *pnode->nd_requestid;
   
   if (pnode->nd_note != NULL)
     nci->note = strdup(pnode->nd_note);
@@ -436,7 +439,10 @@ int chk_characteristic(
     *pneed_todo |= WRITE_NEW_NODESFILE;
 
   if ((nci->nprops != pnode->nd_nprops) || 
-      (nci->first != pnode->nd_first))
+      (nci->first != pnode->nd_first) ||
+      strcmp((char *)nci->ttl,(char *)pnode->nd_ttl) ||
+      nci->acl_size != ((pnode->nd_acl == NULL)?0:pnode->nd_acl->as_usedptr) ||
+      nci->rqid.compare(*pnode->nd_requestid))
     *pneed_todo |= WRITE_NEW_NODESFILE;
 
   if (pnode->nd_note != nci->note)    /* not both NULL or with the same address */
@@ -593,6 +599,12 @@ int status_nodeattrib(
       atemp[i].at_val.at_arst = pnode->nd_status;
     else if (i == ND_ATR_ntype)
       atemp[i].at_val.at_short = pnode->nd_ntype;
+    else if (i == ND_ATR_ttl)
+      atemp[i].at_val.at_str = (char *)pnode->nd_ttl;
+    else if (i == ND_ATR_acl)
+      atemp[i].at_val.at_arst = pnode->nd_acl;
+    else if (i == ND_ATR_requestid)
+      atemp[i].at_val.at_str = (char *)pnode->nd_requestid->c_str();
     else if (i == ND_ATR_jobs)
       atemp[i].at_val.at_jinfo = pnode;
     else if (i == ND_ATR_np)
@@ -791,6 +803,8 @@ int initialize_pbsnode(
   pnode->nd_gpustatus       = NULL;
   pnode->nd_ngpustatus      = 0;
   pnode->nd_ms_jobs         = new std::vector<std::string>();
+  pnode->nd_acl             = NULL;
+  pnode->nd_requestid       = new std::string();
 
   if (!isNUMANode) //NUMA nodes don't have their own address and their name is not in DNS.
     {
@@ -875,6 +889,15 @@ void effective_node_delete(
   if(pnode->alps_subnodes != NULL) delete pnode->alps_subnodes;
 
   if(pnode->nd_ms_jobs != NULL) delete pnode->nd_ms_jobs;
+  if(pnode->nd_acl != NULL)
+    {
+    if(pnode->nd_acl->as_buf != NULL)
+      {
+      free(pnode->nd_acl->as_buf);
+      }
+    free(pnode->nd_acl);
+    }
+  if(pnode->nd_requestid != NULL) delete pnode->nd_requestid;
 
   free(pnode);
   *ppnode = NULL;
@@ -893,10 +916,10 @@ void effective_node_delete(
 
 static int process_host_name_part(
 
-  char   *objname, /* node to be's name */
+  char    *objname, /* node to be's name */
   u_long **pul,  /* 0 terminated host addrs array */
-  char  **pname, /* node name w/o any :ts         */
-  int   *ntype) /* node type; time-shared, not   */
+  char   **pname, /* node name w/o any :ts         */
+  int     *ntype) /* node type; time-shared, not   */
 
   {
   char                log_buf[LOCAL_LOG_BUF_SIZE];
@@ -945,7 +968,7 @@ static int process_host_name_part(
 
   *pul = NULL;
 
-  if (pbs_getaddrinfo(phostname, &hints, &addr_info) != 0)
+  if (overwrite_cache(phostname, &addr_info) == false)
     {
     snprintf(log_buf, sizeof(log_buf), "host %s not found", objname);
 
@@ -1250,6 +1273,23 @@ int update_nodes_file(
     if ((np->gpu_str != NULL) &&
         (np->gpu_str[0] != '\0'))
       fprintf(nin, " %s=%s", ATTR_NODE_gpus_str, np->gpu_str);
+
+    if(np->nd_ttl[0] != '\0')
+      fprintf(nin, " %s=%s",ATTR_NODE_ttl,np->nd_ttl);
+
+    if((np->nd_acl != NULL)&&(np->nd_acl->as_usedptr != 0))
+      {
+      fprintf(nin, " %s=",ATTR_NODE_acl);
+      for(j=0;j < np->nd_acl->as_usedptr;j++)
+        {
+        fprintf(nin, "%s",np->nd_acl->as_string[j]);
+        if((j + 1) != np->nd_acl->as_usedptr)
+          fprintf(nin, ",");
+        }
+      }
+
+    if(np->nd_requestid->length() != 0)
+      fprintf(nin, " %s=%s",ATTR_NODE_requestid,np->nd_requestid->c_str());
 
     /* write out properties */
     for (j = 0;j < np->nd_nprops - 1;++j)
@@ -1876,8 +1916,10 @@ int create_pbs_node(
     return(PBSE_SYSTEM);
     }
 
-  if (node_mapper.get_id(pname) != -1)
+  if ((pnode = find_nodebyname(pname)) != NULL)
     {
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+
     free(pname);
     free(pul);
 
@@ -1977,16 +2019,25 @@ int create_pbs_node(
  * On following call, with argument "start" as null pointer, then
  * resume where left off.
  *
- * If "cok" is true, then this is first token (node name) and ':' is
+ * If "cok" is true, then this is first token ( node name) and ':' is
  * allowed and '=' is not.   For following tokens, allow '=' as separator
  * between "keyword" and "value".  Will get value as next token.
  */
 
+#define COLON_OK  0x01
+#define COMMA_OK  0x02
+#define PLUS_OK   0x04
+#define OPAQUE    0x08
+
 static char *parse_node_token(
 
   char *start, /* if null, restart where left off */
-  int   cok, /* flag - non-zero if colon ":" allowed in token */
-  int   comma, /* flag - non-zero if comma ',' allowed in token */
+  int   flags, /*OR'ed together values of:
+                  COLON_OK    The colon ':' is allowed
+                  COMMA_OK    The comma ',' is allowed
+                  PLUS_OK     The plus  '+' is allowed
+                  OPAQUE      The string is accepted up to the next white space.
+               */
   int  *err, /* RETURN: non-zero if error */
   char *term) /* RETURN: character terminating token */
 
@@ -2013,19 +2064,28 @@ static char *parse_node_token(
 
   for (;pt[0] != '\0';pt++)
     {
+    if(flags&OPAQUE)
+      {
+      if ((isspace((int)*pt))||(*pt == '\0'))
+        break;
+      continue;
+      }
     if (isalnum((int)*pt) || strchr("-._[]", *pt) || (*pt == '\0'))
       continue;
 
     if (isspace((int)*pt))
       break;
 
-    if (cok && (*pt == ':'))
+    if ((flags&COLON_OK) && (*pt == ':'))
       continue;
 
-    if (comma && (*pt == ','))
+    if ((flags&COMMA_OK) && (*pt == ','))
       continue;
 
-    if (!cok && (*pt == '='))
+    if ((flags&PLUS_OK) && (*pt == '+'))
+      continue;
+
+    if (!(flags&COLON_OK) && (*pt == '='))
       break;
 
     *err = 1;
@@ -2151,7 +2211,7 @@ int setup_nodes(void)
 
     /* first token is the node name, may have ":ts" appended */
 
-    token = parse_node_token(line, 1, 0, &err, &xchar);
+    token = parse_node_token(line, COLON_OK, &err, &xchar);
 
     if (token == NULL)
       {
@@ -2185,7 +2245,7 @@ int setup_nodes(void)
     /* attributes (keyword=value) or old style properties        */
     while (1)
       {
-      token = parse_node_token(NULL, 0, 0, &err, &xchar);
+      token = parse_node_token(NULL, 0,&err, &xchar);
 
       if (err != 0)
         goto errtoken1;
@@ -2196,7 +2256,18 @@ int setup_nodes(void)
       if (xchar == '=')
         {
         /* have new style pbs_attribute, keyword=value */
-        val = parse_node_token(NULL, 0, 1, &err, &xchar);
+        if(!strcmp(token,"TTL"))
+          {
+          val = parse_node_token(NULL, COLON_OK|COMMA_OK|PLUS_OK, &err, &xchar);
+          }
+        else if(!strcmp(token,"acl"))
+          {
+          val = parse_node_token(NULL, OPAQUE, &err, &xchar);
+          }
+        else
+          {
+          val = parse_node_token(NULL, COMMA_OK, &err, &xchar);
+          }
 
         if ((val == NULL) || (err != 0) || (xchar == '='))
           goto errtoken1;

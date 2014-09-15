@@ -423,7 +423,7 @@ void check_busy(double mla)
   exit(1);
   }
 
-void mom_is_request(struct tcp_chan *chan, int version, int *cmdp)
+void mom_is_request(struct tcp_chan *chan, int version, int *cmdp,struct sockaddr_in *pSockAddr)
   {
   fprintf(stderr, "The call to mom_is_request needs to be mocked!!\n");
   exit(1);
@@ -612,7 +612,6 @@ void DIS_tcp_settimeout(long timeout)
 mom_hierarchy_t *initialize_mom_hierarchy(void)
   {
   mom_hierarchy_t *nt = (mom_hierarchy_t *)calloc(1, sizeof(mom_hierarchy_t));
-  nt->paths = new mom_paths();
   return(nt);
   }
 
@@ -720,7 +719,8 @@ void log_ext(int type, const char *func_name, const char *msg, int o) {}
 
 void parse_mom_hierarchy(int fds)
   {
-  mh->paths->push_back(new mom_levels());
+  mom_levels lv;
+  mh->paths.push_back(lv);
   }
 
 int put_env_var(const char *name, const char *value)
