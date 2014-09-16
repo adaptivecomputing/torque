@@ -51,8 +51,8 @@ if test "x$MAKE" = "xerror" ;then
 fi
 
 m4_ifdef([HAVE_CHECK],
-  [AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.9.6 color-tests])],
-  [AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.9.6])])
+  [AM_INIT_AUTOMAKE([-Wall foreign 1.9.6 color-tests])],
+  [AM_INIT_AUTOMAKE([-Wall foreign 1.9.6])])
 
 AM_PROG_CC_C_O
 CC="$CXX"
@@ -1048,7 +1048,12 @@ AC_ARG_WITH(boost-path, [
  [CPPFLAGS="$CPPFLAGS -I${withval}"])
 
 AC_MSG_CHECKING([whether boost is installed])
-AC_PREPROC_IFELSE([#include <boost/version.hpp>], [AC_MSG_RESULT([yes])], [AC_MSG_ERROR([Torque needs Boost, but it was not found on your system
+
+dnl
+dnl Automake 1.14 requires AC_LANG_SOURCE as part of this IFELSE
+dnl
+
+AC_PREPROC_IFELSE([AC_LANG_SOURCE[[#include <boost/version.hpp>], [AC_MSG_RESULT([yes])], [AC_MSG_ERROR([Torque needs Boost, but it was not found on your system
 
 This can be solved by one of the two following methods:
 
@@ -1057,7 +1062,7 @@ This can be solved by one of the two following methods:
 2) Run configure with --with-boost-path=<path>. This path
 should be the path to the directory containing the boost/ directory
 for your version of boost.
-])])
+])]])])
 
 AC_MSG_CHECKING([for minimum boost version (>=1.36.0)])
 AC_RUN_IFELSE([AC_LANG_PROGRAM(
