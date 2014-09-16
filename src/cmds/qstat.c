@@ -3372,11 +3372,11 @@ int main(
       }    /* END switch (mode) */
     if (any_failed)
       {
-        if (errmsg.size() == 0)
+      if (errmsg.size() == 0)
         {
         errmsg = get_err_msg(any_failed,NULL,-1,NULL);
         }
-        errmsg_list.push_back(errmsg);
+      errmsg_list.push_back(errmsg);
       }
     if ((ret_code == PBSE_NONE) && (any_failed != PBSE_NONE))
       {
