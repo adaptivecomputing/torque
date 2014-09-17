@@ -51,8 +51,8 @@ if test "x$MAKE" = "xerror" ;then
 fi
 
 m4_ifdef([HAVE_CHECK],
-  [AM_INIT_AUTOMAKE([-Wall foreign 1.9.6 color-tests])],
-  [AM_INIT_AUTOMAKE([-Wall foreign 1.9.6])])
+  [AM_INIT_AUTOMAKE([-Wall -Wno-unsupported -Werror foreign 1.9.6 color-tests])],
+  [AM_INIT_AUTOMAKE([-Wall -Wno-unsupported -Werror foreign 1.9.6])])
 
 AM_PROG_CC_C_O
 CC="$CXX"
