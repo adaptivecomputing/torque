@@ -269,3 +269,10 @@ struct addrinfo * insert_addr_name_info(struct addrinfo *pAddrInfo,const char *h
 mutex_mgr::~mutex_mgr() {}
 
 void DIS_tcp_cleanup(struct tcp_chan *chan) {}
+
+execution_slot_tracker::execution_slot_tracker(const execution_slot_tracker& est)
+  {
+  this->slots = est.slots;
+  this->open_count = est.open_count;
+  } /* END copy constructor */
+

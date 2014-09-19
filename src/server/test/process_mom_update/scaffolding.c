@@ -11,6 +11,7 @@
 #include "pbs_nodes.h"
 #include "pbs_job.h"
 #include "u_tree.h"
+#include "id_map.hpp"
 
 char        server_name[PBS_MAXSERVERNAME + 1]; /* host_name[:service|port] */
 int         allow_any_mom;
@@ -33,6 +34,9 @@ const char *dis_emsg[] =
   };
 
 attribute_def node_attr_def[1];
+id_map job_mapper;
+
+bool exit_called = false;
 
 
 
@@ -281,3 +285,21 @@ int node_gpustatus_list(
   }
 
 void clear_nvidia_gpus(struct pbsnode *np) {}
+
+int id_map::get_id(char const*)
+  {
+  fprintf(stderr,"Error: function %s needs to be mocked.\n",__func__);
+  exit(1);
+  }
+
+void write_node_power_state(){}
+
+id_map::id_map(){}
+
+id_map::~id_map(){}
+
+int is_job_on_node(pbsnode*, int)
+  {
+  fprintf(stderr,"Error: function %s needs to be mocked.\n",__func__);
+  exit(1);
+  }

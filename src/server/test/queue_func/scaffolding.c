@@ -9,6 +9,7 @@
 #include "user_info.h"
 
 const char *msg_err_unlink = "Unlink of %s file %s failed";
+bool exit_called = false;
 all_queues svr_queues;
 attribute_def que_attr_def[10];
 struct server server;

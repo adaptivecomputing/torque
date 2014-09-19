@@ -46,6 +46,20 @@ void pbs_statfree(struct batch_status *bsp)
   exit(1);
   }
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+char *pbs_strerror(int err)
+  {
+  fprintf(stderr, "The call to pbs_strerror needs to be mocked!!\n");
+  exit(1);
+  }
+#ifdef __cplusplus
+}
+#endif
+
 struct tcp_chan *DIS_tcp_setup(int fd)
   {
   fprintf(stderr, "The call to DIS_tcp_setup needs to be mocked!!\n");
@@ -79,12 +93,6 @@ char *disrst(struct tcp_chan *chan, int *retval)
 long disrsl(struct tcp_chan *chan, int *retval)
   {
   fprintf(stderr, "The call to disrsl needs to be mocked!!\n");
-  exit(1);
-  }
-
-char *pbs_strerror(int err)
-  {
-  fprintf(stderr, "The call to pbs_strerror needs to be mocked!!\n");
   exit(1);
   }
 

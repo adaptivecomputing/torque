@@ -45,10 +45,13 @@ int pbs_manager_err(int c, int command, int objtype, char *objname, struct attro
   exit(1);
   }
 
+extern "C" 
+{
 char *pbs_strerror(int err)
   { 
   fprintf(stderr, "The call to pbs_strerror needs to be mocked!!\n");
   exit(1);
   }
+}
 
 void initialize_network_info() {}

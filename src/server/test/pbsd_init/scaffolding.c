@@ -21,6 +21,8 @@
 #include "id_map.hpp"
 
 threadpool_t *task_pool;
+threadpool_t *async_pool;
+char *path_nodepowerstate;
 int scheduler_sock=0;
 int scheduler_jobct = 0;
 bool auto_send_hierarchy = true;
@@ -97,7 +99,9 @@ pthread_mutex_t *svr_do_schedule_mutex;
 pthread_mutex_t *listener_command_mutex;
 pthread_mutex_t *retry_routing_mutex;
 user_info_holder users;
+bool exit_called = false;
 
+id_map job_mapper;
 
 void on_job_rerun_task(struct work_task *ptask)
   {
@@ -654,5 +658,13 @@ void parse_mom_hierarchy(int fds)
   }
 
 id_map::id_map() {}
+id_map::~id_map() {}
+int id_map::get_new_id(const char *name)
+{
 
-void rel_resc(job *pjob);
+  fprintf(stderr, "The call to get_new_id needs to be mocked!!\n");
+  exit(1);
+}
+
+void rel_resc(job *pjob)
+{}

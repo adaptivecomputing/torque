@@ -2,9 +2,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string>
+#include "id_map.hpp"
 
 #include "execution_slot_tracker.hpp"
 #include "attribute.h" /* svrattrl */
+
+id_map job_mapper;
 
 svrattrl *attrlist_create(const char *aname, const char *rname, int vsize)
  {
@@ -50,3 +53,24 @@ int ctnodes(char *spec)
   fprintf(stderr, "The call to append_link needs to be mocked!!\n");
   exit(1);
   }
+
+const char *id_map::get_name(
+
+  int id)
+  {
+  fprintf(stderr, "The call to id_map::get_name needs to be mocked!!\n");
+  exit(1);
+  }
+
+id_map::id_map()
+{}
+
+id_map::~id_map()
+{}
+
+void populate_range_string_from_slot_tracker(const execution_slot_tracker &est, std::string &range_str)
+  {
+  fprintf(stderr, "The call to populate_range_string_from_slot_tracker needs to be mocked!!\n");
+  exit(1);
+  }
+

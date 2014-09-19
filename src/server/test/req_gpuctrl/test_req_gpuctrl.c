@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "pbs_error.h"
+
+void log_err (int, const char *, const char *){}
+
 START_TEST(test_one)
   {
 

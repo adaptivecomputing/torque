@@ -17,6 +17,8 @@
 #include "pbs_ifl.h" /* job_file */
 #include "tm_.h" /* tm_event_t */
 #include "list_link.h" /* list_link, tlist_head */
+#include "power_state.hpp"
+#include "sys_file.hpp"
 
 char *apbasil_protocol;
 char *apbasil_path;
@@ -392,3 +394,30 @@ int attr_to_str(std::string &ds, attribute_def *at_def, pbs_attribute attr, bool
   {
   return(0);
   }
+
+void power_state::set_power_state(int power_state)
+  {
+  fprintf(stderr, "The call to %s needs to be mocked!!\n",__func__);
+  exit(1);
+  }
+
+const char *sys_file::get_last_error_string()
+  {
+  fprintf(stderr, "The call to %s needs to be mocked!!\n",__func__);
+  exit(1);
+  }
+
+power_state::power_state(){}
+
+bool power_state::is_valid_power_state(int)
+  {
+  fprintf(stderr, "The call to %s needs to be mocked!!\n",__func__);
+  exit(1);
+  }
+
+int terminate_sisters(job*, int)
+  {
+  fprintf(stderr, "The call to %s needs to be mocked!!\n",__func__);
+  exit(1);
+  }
+

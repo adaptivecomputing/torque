@@ -33,6 +33,7 @@ attribute_def svr_attr_def[10];
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 int svr_chngNodesfile = 0;
 int svr_totnodes = 0;
+bool exit_called = false;
 
 
 int write_node_note(void)
@@ -321,6 +322,11 @@ int lock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string)
   return(0);
   }
 
+void  write_node_power_state(void)
+  {
+  fprintf(stderr, "The call to write_node_power_state io be mocked!!\n");
+  exit(1);
+  }
 void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}

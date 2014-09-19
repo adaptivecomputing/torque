@@ -96,14 +96,36 @@ int MXMLCreateE(mxml_t **E, const char *Name)
   exit(1);
   }
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 char *pbs_strerror(int err)
   { 
   fprintf(stderr, "The call to pbs_strerror needs to be mocked!!\n");
   exit(1);
   }
+#ifdef __cplusplus
+}
+#endif
 
 char *pbs_default(void)
   { 
   fprintf(stderr, "The call to pbs_default needs to be mocked!!\n");
   exit(1);
   }
+
+int pbs_modify_node_err(
+
+  int             c,
+  int             command,
+  int             objtype,
+  char           *objname,
+  struct attropl *attrib,
+  char           *extend,
+  int            *local_errno)
+
+  {
+  fprintf(stderr, "The call to pbs_manager_err needs to be mocked!!\n");
+  exit(1);
+  } 

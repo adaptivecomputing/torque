@@ -19,6 +19,7 @@ resource_def *svr_resc_def;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 struct server server;
 all_jobs array_summary;
+bool exit_called = false;
 
 
 pbs_queue *find_queuebyname(const char *quename)
