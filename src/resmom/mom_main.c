@@ -98,6 +98,7 @@
 #include "node_frequency.hpp"
 #include <string>
 #include <vector>
+#include "trq_cgroups.h"
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/exception/exception.hpp>
 
@@ -2935,6 +2936,7 @@ int rm_request(
       shut_nvidia_nvml();
 #endif  /* NVIDIA_GPUS and NVML_API */
 
+      cleanup_torque_cgroups();
       log_close(1);
 
       exit(0);
@@ -4549,6 +4551,16 @@ int setup_program_environment(void)
     return(1);
     }
 
+#ifdef PENABLE_LINUX_CGROUPS
+  int rc;
+  rc = trq_cg_initialize_hierarchy();
+  if (rc != PBSE_NONE)
+    {
+    fprintf(stderr, "cgroups not initialized\n");
+    return(1);
+    }
+#endif
+
 #ifndef DEBUG
 #ifdef _CRAY
 
@@ -4772,6 +4784,7 @@ int setup_program_environment(void)
     }
 
 #ifdef PENABLE_LINUX26_CPUSETS
+#ifdef PENABLE_LINUX_CGROUPS
   /* load system topology */
   if ((hwloc_topology_init(&topology) == -1))
     {
@@ -4798,14 +4811,19 @@ int setup_program_environment(void)
     hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_PU));
   log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
   
+#ifdef PENABLE_LINUX26_CPUSETS
   internal_layout = node_internals();
+#endif
 
+#ifdef PENABLE_LINUX_CGROUPS
   this_node.initializeMachine(topology);
+#endif
 
 #ifdef MIC
   this_node.initialize_mics(topology);
 #endif
 
+#endif
 #endif
 
 #ifdef NUMA_SUPPORT

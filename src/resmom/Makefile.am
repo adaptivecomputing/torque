@@ -36,7 +36,7 @@ LDADD = @PBS_MACH@/libmommach.a $(MOMLIBS) $(PBS_LIBS) $(ALPS_LIBS) $(HWLOC_LIBS
 pbs_mom_SOURCES = catch_child.c mom_comm.c mom_inter.c mom_main.c	\
 		   mom_server.c prolog.c requests.c start_exec.c	\
 		   start_exec.h checkpoint.c tmsock_recov.c		\
-		   mom_req_quejob.c mom_job_func.c			\
+		   mom_req_quejob.c mom_job_func.c trq_cgroups.c			\
 		   mom_process_request.c alps_reservations.c		\
        machine.cpp numa_socket.cpp numa_chip.cpp numa_core.cpp numa_pci_device.cpp \
 		   release_reservation.c generate_alps_status.c	\

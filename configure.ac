@@ -24,6 +24,9 @@ dnl Added --enable-memacct to enable pbs_mom to get rss values that are more rel
 dnl Added requirement for libhwloc when --enable-cpuset or --enable-numa-support
 dnl   Bernd Kallies (kallies@zib.de)
 dnl
+dnl Added --enable-cgroups. If cgroups are enabled cpusets will be disabled.
+dnl    Ken Nielson (knielson@adaptivecomputing.com)
+dnl
 dnl Expanded to allow unit testing via Check
 dnl Updated to use m4
 dnl added library functionality to testing
@@ -919,6 +922,18 @@ if test "x$enable_maxint_jobids" = "xyes" ; then
 else
   AC_MSG_RESULT([no])
 fi
+
+AC_ARG_ENABLE(cgroups, [  --enable-cgroups       enable Linux control groups])
+build_linux_cgroups=no
+AC_MSG_CHECKING([whether to enable cgroups])
+if test "x$enable_cgroups" = "xyes"; then
+  AC_MSG_RESULT([yes])
+  build_linux_cgroups=yes
+  AC_DEFINE(PENABLE_LINUX_CGROUPS, 1, [Define to enable Linux cgroups])
+else
+  AC_MSG_RESULT([no])
+fi
+AM_CONDITIONAL([BUILD_LINUX_CGROUPS], test "$build_linux_cgroups" = yes)
 
 AC_ARG_ENABLE(cpuset,[  --enable-cpuset         enable Linux 2.6 kernel cpusets])
 build_l26_cpuset=no
