@@ -544,13 +544,18 @@ int ping_trqauthd(
   return(rc);
   }
 
+
+
 /**
  * Check to see if the unix domain socket file exists for trqauthd. If
  * it exists then trqauthd is running. Return an error. Otherwise
  * trqauthd is not running. Return PBSE_NONE
  */
 
-int check_trqauthd_unix_domain_port(const char *unix_socket_name)
+int check_trqauthd_unix_domain_port(
+    
+  const char *unix_socket_name)
+
   {
   struct stat statbuf;
   int rc = PBSE_NONE;
@@ -637,8 +642,6 @@ int check_network_port(
 
   return(0);
   }  /* END check_network_port() */
-
-
 
 
 
