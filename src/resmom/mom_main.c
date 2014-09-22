@@ -4552,9 +4552,9 @@ int setup_program_environment(void)
     }
 
 #ifdef PENABLE_LINUX_CGROUPS
-  int rc;
-  rc = trq_cg_initialize_hierarchy();
-  if (rc != PBSE_NONE)
+  int ret;
+  ret = trq_cg_initialize_hierarchy();
+  if (ret != PBSE_NONE)
     {
     fprintf(stderr, "cgroups not initialized\n");
     return(1);

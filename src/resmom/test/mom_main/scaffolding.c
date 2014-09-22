@@ -31,6 +31,7 @@ extern mom_hierarchy_t *mh;
 #ifdef PENABLE_LINUX26_CPUSETS
 #include "pbs_cpuset.h"
 #include "node_internals.hpp"
+#include "machine.hpp"
 
 #endif
 
@@ -790,12 +791,40 @@ int init_torque_cpuset(void)
   return 0;
   }
 
+int trq_cg_initialize_hierarchy()
+  {
+  return(0);
+  }
+
+int cleanup_torque_cgroups()
+  {
+  return(0);
+  }
+
 
 node_internals::node_internals(void){}
 
 numa_node::numa_node(numa_node const&){}
 
 allocation::allocation(allocation const&){}
+
+int Machine::initializeMachine(hwloc_topology_t topology)
+  {
+  return(0);
+  }
+
+Machine::Machine(){}
+Machine::~Machine(){}
+Socket::Socket(){}
+Socket::~Socket(){}
+Chip::Chip(){}
+Chip::~Chip(){}
+Core::Core(){}
+Core::~Core(){}
+PCI_Device::PCI_Device(){}
+PCI_Device::~PCI_Device(){}
+
+
 
 void recover_cpuset_reservation(job &pjob)
   {

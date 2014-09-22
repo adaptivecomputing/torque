@@ -18,6 +18,7 @@
 #include "pbs_nodes.h" /* pbsnode */
 #include "pbs_config.h"
 #include "container.hpp"
+#include "machine.hpp"
 
 char log_buffer[LOG_BUF_SIZE];
 char *apbasil_protocol = NULL;
@@ -69,6 +70,7 @@ int       numa_index;
 int              memory_pressure_threshold = 0; /* 0: off, >0: check and kill */
 short            memory_pressure_duration  = 0; /* 0: off, >0: check and kill */
 int              MOMConfigUseSMT           = 1; /* 0: off, 1: on */
+Machine this_node;
 //hwloc_topology_t topology;
 #endif
 
@@ -351,3 +353,70 @@ int pbs_getaddrinfo(
   {
   return(0);
   }
+
+Machine::Machine()
+  {
+  }
+
+Machine::~Machine()
+  {
+  }
+
+Socket::Socket()
+  {
+  }
+
+Socket::~Socket()
+  {
+  }
+
+Chip::Chip(){}
+Chip::~Chip(){}
+
+Core::Core(){}
+Core::~Core(){}
+
+PCI_Device::PCI_Device(){}
+PCI_Device::~PCI_Device(){}
+
+
+int Machine::getNumberOfSockets()
+  {
+  return(0);
+  }
+
+int Machine::getAvailableSockets()
+  {
+  return(0);
+  }
+
+int Machine::getTotalThreads()
+  {
+  return(0);
+  }
+
+int Machine::getAvailableChips()
+  {
+  return(0);
+  }
+
+int Machine::getTotalCores()
+  {
+  return(0);
+  }
+
+int Machine::getAvailableCores()
+  {
+  return(0);
+  }
+
+int Machine::getAvailableThreads()
+  {
+  return(0);
+  }
+
+int Machine::getTotalChips()
+  {
+  return(0);
+  }
+
