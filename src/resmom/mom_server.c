@@ -1301,7 +1301,7 @@ int mom_server_update_stat(
     return(NO_SERVER_CONFIGURED);
     }
 
-  stream = tcp_connect_sockaddr((struct sockaddr *)&pms->sock_addr, sizeof(pms->sock_addr));
+  stream = tcp_connect_sockaddr((struct sockaddr *)&pms->sock_addr, sizeof(pms->sock_addr), false);
  
   if (IS_VALID_STREAM(stream))
     {

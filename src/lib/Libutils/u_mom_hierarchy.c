@@ -269,7 +269,8 @@ int rm_establish_connection(
 int tcp_connect_sockaddr(
 
   struct sockaddr *sa,      /* I */
-  size_t           sa_size) /* I */
+  size_t           sa_size, /* I */
+  bool             use_log) /* I */
 
   {
   int rc = PBSE_NONE;
@@ -286,7 +287,8 @@ int tcp_connect_sockaddr(
     if ((stream = socket_get_tcp_priv()) < 0)
       {
       /* FAILED */
-      log_err(errno,__func__,"Failed when trying to get privileged port - socket_get_tcp_priv() failed");
+      if (use_log == true)
+        log_err(errno,__func__,"Failed when trying to get privileged port - socket_get_tcp_priv() failed");
       }
     else if ((rc = socket_connect_addr(&stream, sa, sa_size, 1, &err_msg)) != PBSE_NONE)
       {
@@ -299,12 +301,19 @@ int tcp_connect_sockaddr(
         {
         usleep(10000); //Catch a breath on a retryable error.
         }
-      tmp_ip = inet_ntoa(((struct sockaddr_in *)sa)->sin_addr);
-      snprintf(local_err_buf, LOCAL_LOG_BUF, "Failed when trying to open tcp connection - connect() failed [rc = %d] [addr = %s:%d]", rc, tmp_ip, htons(((struct sockaddr_in *)sa)->sin_port));
-      log_err(-1,__func__,local_err_buf);
+      
+      if (use_log == true)
+        {
+        tmp_ip = inet_ntoa(((struct sockaddr_in *)sa)->sin_addr);
+        snprintf(local_err_buf, LOCAL_LOG_BUF, "Failed when trying to open tcp connection - connect() failed [rc = %d] [addr = %s:%d]", rc, tmp_ip, htons(((struct sockaddr_in *)sa)->sin_port));
+        log_err(-1,__func__,local_err_buf);
+        }
+
       if (err_msg != NULL)
         {
-        log_err(-1,__func__,err_msg);
+        if (use_log == true)
+          log_err(-1,__func__,err_msg);
+
         free(err_msg);
         err_msg = NULL;
         }
