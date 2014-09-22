@@ -296,7 +296,7 @@ struct radix_buf **allocate_sister_list(int radix)
   return(0);
   }
 
-int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size)
+int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size, bool use_log)
   {
   fprintf(stderr, "This mock tcp_connect_sockaddr always returns 0!!\n");
   return(10);
