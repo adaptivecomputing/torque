@@ -949,12 +949,7 @@ int main(
       // current_note if not set, use null terminated string of length zero
       if ( current_note == NULL )
         {
-        current_note = strdup("");
-        if (current_note == NULL)
-          {
-          perror("Error: strdup() returned NULL");
-          exit(1);
-          }
+        current_note = "";
         }
 
       // Allocate memory for new note, +1 for the last character being \0
@@ -980,8 +975,6 @@ int main(
 
     // Cleanup note related allocations
     free(note);
-    if (curent_note)
-      free(current_note);
     if (new_note)
       free(new_note);
     note_to = NULL;
