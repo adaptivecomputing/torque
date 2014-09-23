@@ -131,9 +131,11 @@ string get_err_msg(
     {
     sprintf(any_failed_str, "%d", any_failed);
     msg = string("qstat: Error (") + string(any_failed_str) + string(" - ")
-      + string(pbs_strerror(any_failed)) + string(") ")
-      + string("getting status of ")
-      + string(mode) + string(" ");
+      + string(pbs_strerror(any_failed)) + string(") ");
+    if (mode)
+      {
+      msg.append(string("getting status of ") + string(mode) + string(" "));
+      }
     }
   if (id != NULL)
     {
@@ -3370,6 +3372,10 @@ int main(
       }    /* END switch (mode) */
     if (any_failed)
       {
+      if (errmsg.size() == 0)
+        {
+        errmsg = get_err_msg(any_failed,NULL,-1,NULL);
+        }
       errmsg_list.push_back(errmsg);
       }
     if ((ret_code == PBSE_NONE) && (any_failed != PBSE_NONE))
