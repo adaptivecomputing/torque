@@ -1,3 +1,7 @@
+
+#ifndef _REQ_HPP
+#define _REQ_HPP
+
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
 *
@@ -77,120 +81,75 @@
 * without reference to its choice of law rules.
 */
 
-#ifndef UTILS_H
-#define UTILS_H
+#include <string>
+#include <vector>
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <signal.h>
-#include <string.h>
-#include <ctype.h>
-#include <errno.h>
-#include <time.h>
-#include <limits.h>
-#include <sys/types.h>
-#include <sys/param.h>
-#include <sys/select.h>
+extern const int USE_CORES;
+extern const int USE_THREADS;
+extern const int ALLOW_THREADS;
+extern const int USE_FAST_CORES;
 
-#include "portability.h"
-#include "server_limits.h"
-#include "list_link.h"
-#include "pbs_nodes.h"
-#include "libpbs.h"
-#include "pbs_ifl.h"
-#include "pbs_error.h"
-#include "log.h"
-#include "mcom.h"
+extern const int PLACE_NO_PREFERENCE;
+extern const int PLACE_NODE;
+extern const int PLACE_SOCKET;
+extern const int PLACE_NUMA_CHIP;
 
-#define FDMOVE(fd) if (fd < 3) { \
-      int hold = fcntl(fd,F_DUPFD,3); \
-      close(fd); \
-      fd = hold; \
-      }
+extern const int ALL_EXECUTION_SLOTS;
 
+// This class is to hold all of the information for a single req from a job
+// The concept of req(s) is only available under the new syntax
+class req
+  {
+    int               execution_slots;
+    unsigned long     mem;
+    unsigned long     swap;
+    unsigned long     disk;
+    int               socket;
+    int               numa_chip;
+    int               thread_usage_policy;
+    std::string       thread_usage_str;
+    int               gpus;
+    int               mics;
+    std::string       gres;
+    std::string       os;
+    std::string       arch;
+    std::string       node_access_policy;
+    std::string       features;
+    std::string       placement_str;
+    int               placement_type;
+    int               task_count;
+    bool              pack;
+    bool              single_job_access;
+    // these are not set by user request
+    int               index;
+    std::string       hostlist;   // set when the job is run
 
-#define MAXLINE 1024
-#ifndef NULL
-#define NULL 0
-#endif
-#ifndef TRUE
-#define TRUE 1
-#define FALSE 0
-#endif
+  public:
+    req();
+    req(const req &other);
+    req(const std::string &resource_request);
+    req &operator =(const req &other);
 
-#define BUFFER_OVERFLOW -5
-#define LT_ESCAPED       "&lt;"
-#define LT_ESCAPED_LEN   4
-#define GT_ESCAPED       "&gt;"
-#define GT_ESCAPED_LEN   4
-#define AMP_ESCAPED      "&amp;"
-#define AMP_ESCAPED_LEN  5
-#define QUOT_ESCAPED     "&quot;"
-#define QUOT_ESCAPED_LEN 6
-#define APOS_ESCAPED     "&apos;"
-#define APOS_ESCAPED_LEN 6
+    int           set_place_value(const char *value);
+    int           set_value_from_string(char *str);
+    int           set_attribute(const char *str);
+    int           set_name_value_pair(const char *name, const char *value);
+    void          set_from_string(const std::string &req_str);
+    int           set_from_submission_string(char *submission_str, std::string &error);
+    void          toString(std::string &str) const;
+    int           getExecutionSlots() const;
+    unsigned long getMemory() const;
+    unsigned long getSwap() const;
+    unsigned long getDisk() const;
+    std::string   getGres() const;
+    std::string   getOS() const;
+    std::string   getNodeAccessPolicy() const;
+    std::string   getPlacementType() const;
+    int           getPlacementTypeInt() const;
+    int           getTaskCount() const;
+    std::string   getHostlist() const;
+    std::string   getFeatures() const;
+    std::string   getThreadUsageString() const;
+  };
 
-extern char **ArgV;
-extern int ArgC;
-extern char *OriginalPath;
-
-/* Function declarations */
-
-/* group functions in u_groups.c */
-extern struct group *getgrnam_ext (char *);
-
-/* user functions in u_users.c */
-extern struct passwd *getpwnam_ext (char *);
-struct passwd *get_password_entry_by_uid(uid_t uid);
-int                   setuid_ext(uid_t uid, int set_euid);
-int                   initgroups_ext(const char *username, gid_t gr_id);
-
-/* tree functions in u_tree.c */
-extern void tinsert (const u_long, struct pbsnode *, tree **);
-extern void *tdelete (const u_long, tree **);
-extern struct pbsnode *tfind (const u_long, tree **);
-extern int tlist (tree *, char *, int);
-extern void tfree (tree **);
-extern int is_whitespace (char);
-void       move_past_whitespace(char **);
-extern int write_buffer (char *,int,int);
-
-/* misc functions */
-extern void save_args(int, char **);
-extern char *find_command(char *, char *);
-
-/* utility functions in u_mu.c */
-int           MUSNPrintF (char **, int *, const char *, ...);
-int           MUStrNCat (char **, int *, const char *);
-int           MUSleep (long);
-int           MUReadPipe (char *, char *, int);
-int           is_whitespace (char);
-char         *trim(char *);
-char         *threadsafe_tokenizer(char **str, const char  *delims);
-int           safe_strncat(char *, const char *, size_t);
-unsigned int  get_random_number();
-
-/* MXML functions from u_MXML.c */
-extern int MXMLGetChild (mxml_t *, char *, int *, mxml_t **);
-extern int MXMLAddE (mxml_t *, mxml_t *);
-extern int MXMLGetAttrF (mxml_t *, char *, int *, void *, enum MDataFormatEnum, int);
-extern int MXMLGetAttr (mxml_t *, char *, int *, char *, int);
-extern int MXMLToString (mxml_t *, char *, int, char **, mbool_t);
-int        MXMLFromString(mxml_t **EP, char *XMLString, char **Tail, char *EMsg, int emsg_size);
-
-/* functions from u_xml.c */
-int get_parent_and_child(char *,char **,char **,char **);
-int escape_xml(char *,char *,int);
-int unescape_xml(char *,char *,int);
-
-/* functions from u_xml.c */
-int get_parent_and_child(char *,char **,char **,char **);
-int escape_xml(char *,char *,int);
-int unescape_xml(char *,char *,int);
-
-/* functions from u_putenv.c */
-int put_env_var(const char *, const char *);
-
-#endif /* END #ifndef UTILS_H */
- 
+#endif /* _REQ_HPP */

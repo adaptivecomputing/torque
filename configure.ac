@@ -205,6 +205,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/lib/Libattr/test/attr_fn_unkn/Makefile
     src/lib/Libattr/test/attr_func/Makefile
     src/lib/Libattr/test/attr_node_func/Makefile
+    src/lib/Libattr/test/req/Makefile
     src/lib/Libcmds/test/Makefile
     src/lib/Libcmds/test/add_verify_resources/Makefile
     src/lib/Libcmds/test/ck_job_name/Makefile
