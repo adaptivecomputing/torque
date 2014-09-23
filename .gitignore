@@ -502,3 +502,4 @@ torque-package-mom-linux-x86_64.sh
 torque-package-server-linux-x86_64.sh
 tpackages/
 src/mom_rcp/pbs_rcp
+.c9/
