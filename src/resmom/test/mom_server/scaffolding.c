@@ -23,6 +23,7 @@
 
 #define MAXLINE 1024
 
+bool            ForceServerUpdate = false;
 char log_buffer[LOG_BUF_SIZE];
 char *apbasil_protocol = NULL;
 char *apbasil_path = NULL;
@@ -409,3 +410,9 @@ int pbs_getaddrinfo(
   {
   return(0);
   }
+
+time_t get_stat_update_interval()
+
+  {
+  return ForceServerUpdate ? ServerStatUpdateInterval / 3 : ServerStatUpdateInterval;
+  } /* END get_next_update_time() */
