@@ -208,8 +208,11 @@ std::vector<resend_momcomm *> things_to_resend;
 
 mom_hierarchy_t  *mh;
 
-#ifdef PENABLE_LINUX26_CPUSETS
+#ifdef PENABLE_LINUX_CGROUPS
 Machine          this_node;
+#endif
+
+#ifdef PENABLE_LINUX26_CPUSETS
 node_internals   internal_layout;
 hwloc_topology_t topology = NULL;       /* system topology */
 #endif
@@ -2936,7 +2939,10 @@ int rm_request(
       shut_nvidia_nvml();
 #endif  /* NVIDIA_GPUS and NVML_API */
 
+#ifdef PENABLE_LINUX_CGROUPS
       cleanup_torque_cgroups();
+#endif
+
       log_close(1);
 
       exit(0);

@@ -10,7 +10,7 @@
 
 using namespace std;
 
-#ifdef PENABLE_LINUX26_CPUSETS
+#ifdef PENABLE_LINUX_CGROUPS
 
   Socket::Socket()
     {
