@@ -415,3 +415,21 @@ int ctnodes(char *spec)
   return(ct);
   }  /* END ctnodes() */
 
+int csv_length(const char *str)
+  {
+  return(0);
+  } 
+
+char *csv_nth(const char *csv_str, int n)
+  {
+  return(NULL);
+  }
+
+char *csv_find_string(
+    
+  const char *csv_str,
+  const char *search_str)
+
+  {
+  return(NULL);
+  }
