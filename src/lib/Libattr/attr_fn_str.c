@@ -81,6 +81,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <memory.h>
+#include <string>
 #ifndef NDEBUG
 #include <stdio.h>
 #endif
@@ -92,7 +93,6 @@
 #include "pbs_error.h"
 #include "csv.h"
 
-using namespace std;
 /*
  * This file contains functions for manipulating attributes of type string
  *
@@ -344,9 +344,10 @@ int set_str(
 char* remove_from_csv(
 
   char* src,            /* I - line with csv values*/
-  char* model_pattern   /* I - pattern with models*/)
+  char* model_pattern)   /* I - pattern with models*/
+
   {
-  string result;
+  std::string result;
   int len = csv_length(src);
   for (int index = 0; index < len; index++)
     {
@@ -358,12 +359,14 @@ char* remove_from_csv(
       if ((item) && (strlen(item)!=0) && !(bool)csv_find_string(model_pattern, item))
         {
         const char* comma = (result.size()) ? "," : "";
-        result += string(comma) + string(item);
+        result += std::string(comma) + std::string(item);
         }
       }
     }
   return (result.size())? strdup(result.c_str()) : NULL;
   }
+
+
 
 /*
  * set_str_csv - set pbs_attribute value based upon another. attribute
