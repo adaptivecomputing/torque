@@ -20,6 +20,7 @@
 #include "pbs_nodes.h" /* pbsnode */
 #include "pbs_config.h"
 
+bool            ForceServerUpdate = false;
 char log_buffer[LOG_BUF_SIZE];
 char *apbasil_protocol = NULL;
 char *apbasil_path = NULL;
@@ -432,3 +433,9 @@ int concat_dynamic_strings(
   fprintf(stderr, "The call to concat_dynamic_strings needs to be mocked!!\n");
   exit(1);
   }
+
+time_t get_stat_update_interval()
+
+  {
+  return ForceServerUpdate ? ServerStatUpdateInterval / 3 : ServerStatUpdateInterval;
+  } /* END get_next_update_time() */
