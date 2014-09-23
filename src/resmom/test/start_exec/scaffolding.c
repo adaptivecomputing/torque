@@ -577,3 +577,23 @@ int get_cpu_count_requested_on_this_node(job&)
 void node_internals::recover_reservation(int cpus, unsigned long memory, char const* jobid) {}
 
 #endif
+
+int csv_length(const char *str)
+  {
+  return(0);
+  }
+
+char *csv_nth(const char *csv_str, int n)
+  {
+  return(NULL);
+  }
+
+char *csv_find_string(
+    
+  const char *csv_str,
+  const char *search_str)
+
+  {
+  return(NULL);
+  }
+

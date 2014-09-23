@@ -93,3 +93,22 @@ int ctnodes(char *spec)
   fprintf(stderr, "The call to append_link needs to be mocked!!\n");
   exit(1);
   }
+
+int csv_length(const char *csv_str)
+  {
+  return(0);
+  }
+
+char *csv_nth(const char *csv_str, int n)
+  {
+  return(NULL);
+  }
+
+char *csv_find_string(
+    
+  const char *csv_str,
+  const char *search_str)
+  
+  {
+  return(NULL);
+  }

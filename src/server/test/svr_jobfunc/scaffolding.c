@@ -450,3 +450,14 @@ int encode_size(pbs_attribute *attr, tlist_head *phead, const char *atname, cons
   exit(1);
   }
 
+
+int csv_length(const char *csv_str)
+  {
+  return(0);
+  }
+
+char *csv_nth(const char *csv_str, int n)
+  {
+  return(NULL);
+  }
+
