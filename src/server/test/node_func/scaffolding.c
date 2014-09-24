@@ -55,6 +55,7 @@ const char *dis_emsg[] = {"No error",
   "End of File"
 };
 boost::ptr_vector<std::string> hierarchy_holder;
+pthread_mutex_t                 hierarchy_holder_Mutex = PTHREAD_MUTEX_INITIALIZER;
 extern int cray_enabled;
 
 
