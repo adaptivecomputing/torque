@@ -215,6 +215,7 @@ queue_recycler                  q_recycler;
 pthread_mutex_t                *exiting_jobs_info_mutex;
 
 std::vector<std::string>        hierarchy_holder;
+pthread_mutex_t                 hierarchy_holder_Mutex = PTHREAD_MUTEX_INITIALIZER;
 hello_container                 hellos;
 hello_container                 failures;
 
@@ -2216,12 +2217,15 @@ int pbsd_init(
     handle_tracking_records();
 
     /* read the hierarchy file */
+    pthread_mutex_lock(&hierarchy_holder_Mutex);
     prepare_mom_hierarchy(hierarchy_holder);
     if (hierarchy_holder.size() == 0)
       {
+      pthread_mutex_unlock(&hierarchy_holder_Mutex);
       /* hierarchy file exists but we couldn't open it */
       return(-1);
       }
+    pthread_mutex_unlock(&hierarchy_holder_Mutex);
 
     /* mark all nodes as needing a hello */
     if (auto_send_hierarchy == true)

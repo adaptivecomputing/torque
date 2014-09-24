@@ -175,6 +175,7 @@ extern job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pno
 extern void add_all_nodes_to_hello_container();
 void        prepare_mom_hierarchy(std::vector<std::string> &hierarchy_holder);
 extern      std::vector<std::string> hierarchy_holder;
+extern       pthread_mutex_t         hierarchy_holder_Mutex;
 
 /* private data */
 
@@ -2104,7 +2105,9 @@ static void mgr_node_delete(
 
   reply_ack(preq);  /*request completely successful*/
   
+  pthread_mutex_lock(&hierarchy_holder_Mutex);
   prepare_mom_hierarchy(hierarchy_holder);
+  pthread_mutex_unlock(&hierarchy_holder_Mutex);
   add_all_nodes_to_hello_container();
 
   return;
@@ -2196,7 +2199,9 @@ void mgr_node_create(
 
   reply_ack(preq);     /* create request successful */
 
+  pthread_mutex_lock(&hierarchy_holder_Mutex);
   prepare_mom_hierarchy(hierarchy_holder);
+  pthread_mutex_unlock(&hierarchy_holder_Mutex);
   add_all_nodes_to_hello_container();
 
   return;
