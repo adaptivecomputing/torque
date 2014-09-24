@@ -83,6 +83,8 @@
 #ifdef PENABLE_LINUX26_CPUSETS
 #include "pbs_cpuset.h"
 #include "node_internals.hpp"
+#endif
+#ifdef PENABLE_LINUX_CGROUPS
 #include "machine.hpp"
 #endif
 #include "threadpool.h"
@@ -215,6 +217,12 @@ Machine          this_node;
 #ifdef PENABLE_LINUX26_CPUSETS
 node_internals   internal_layout;
 hwloc_topology_t topology = NULL;       /* system topology */
+#endif
+
+#ifdef PENABLE_LINUX_CGROUPS
+#ifndef PENABLE_LINUX26_CPUSETS
+hwloc_topology_t topology = NULL;       /* system topology */
+#endif
 #endif
 
 
@@ -4488,7 +4496,37 @@ void recover_internal_layout()
 #endif
 
 
+int initialize_hwloc_topology()
+  {
+  /* load system topology */
+  if ((hwloc_topology_init(&topology) == -1))
+    {
+    log_err(-1, msg_daemonname, "Unable to init machine topology");
+    return(-1);
+    }
 
+  if ((hwloc_topology_set_flags(topology, HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM) != 0))
+    {
+    log_err(-1, msg_daemonname, "Unable to configure machine topology");
+    return(-1);
+    }
+
+  if ((hwloc_topology_load(topology) == -1))
+    {
+    log_err(-1, msg_daemonname, "Unable to load machine topology");
+    return(-1);
+    }
+
+  sprintf(log_buffer, "machine topology contains %d sockets %d memory nodes, %d cores %d cpus",
+    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_SOCKET),
+    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_NODE),
+    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_CORE),
+    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_PU));
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
+
+  return(PBSE_NONE);
+  }
+ 
 /**
  * setup_program_environment
  */
@@ -4790,47 +4828,32 @@ int setup_program_environment(void)
     }
 
 #ifdef PENABLE_LINUX26_CPUSETS
-#ifdef PENABLE_LINUX_CGROUPS
-  /* load system topology */
-  if ((hwloc_topology_init(&topology) == -1))
-    {
-    log_err(-1, msg_daemonname, "Unable to init machine topology");
-    return(-1);
-    }
+  rc = initialize_hwloc_topology();
+  if (rc != PBSE_NONE)
+    exit(rc);
 
-  if ((hwloc_topology_set_flags(topology, HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM) != 0))
-    {
-    log_err(-1, msg_daemonname, "Unable to configure machine topology");
-    return(-1);
-    }
-
-  if ((hwloc_topology_load(topology) == -1))
-    {
-    log_err(-1, msg_daemonname, "Unable to load machine topology");
-    return(-1);
-    }
-
-  sprintf(log_buffer, "machine topology contains %d sockets %d memory nodes, %d cores %d cpus",
-    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_SOCKET),
-    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_NODE),
-    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_CORE),
-    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_PU));
-  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
-  
-#ifdef PENABLE_LINUX26_CPUSETS
   internal_layout = node_internals();
+
 #endif
 
 #ifdef PENABLE_LINUX_CGROUPS
+#ifndef PENABLE_LINUX26_CPUSETS
+  /* If enable-cpuset was not configured then we need to initialize the 
+     hwloc topology */
+  ret = initialize_hwloc_topology();
+  if (ret != PBSE_NONE)
+    exit(ret);
+#endif /* PENABLE_LINUX26_CPUSETS */
+
   this_node.initializeMachine(topology);
-#endif
 
 #ifdef MIC
   this_node.initialize_mics(topology);
 #endif
 
-#endif
-#endif
+#endif /* PENABLE_LINUX_CGROUPS */
+
+
 
 #ifdef NUMA_SUPPORT
   if ((rc = setup_nodeboards()) != 0)
