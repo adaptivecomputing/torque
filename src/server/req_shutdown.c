@@ -113,8 +113,6 @@ int          issue_signal(job **, const char *, void(*)(batch_request *), void *
 
 /* Private Fuctions Local to this File */
 
-void  rerun_or_kill(job **, char *text);
-
 /* Private Data Items */
 
 static struct batch_request *pshutdown_request = 0;
@@ -295,71 +293,4 @@ void req_shutdown(
 
   return;
   }  /* END req_shutdown() */
-
-
-
-/* NOTE:  pjob may be free with dangling pointer */
-
-void rerun_or_kill(
-
-  job  **pjob_ptr, /* I (modified/freed) */
-  char  *text)     /* I */
-
-  {
-  long       server_state = SV_STATE_DOWN;
-  char       log_buf[LOCAL_LOG_BUF_SIZE];
-  pbs_queue *pque;
-  job       *pjob = *pjob_ptr;
-
-  get_svr_attr_l(SRV_ATR_State, &server_state);
-  if (pjob->ji_wattr[JOB_ATR_rerunable].at_val.at_long)
-    {
-    /* job is rerunable, mark it to be requeued */
-
-    issue_signal(&pjob, "SIGKILL", free_br, NULL, NULL);
-
-    if (pjob != NULL)
-      {
-      pjob->ji_qs.ji_substate  = JOB_SUBSTATE_RERUN;
-      if ((pque = get_jobs_queue(&pjob)) != NULL)
-        {
-        mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
-        snprintf(log_buf, sizeof(log_buf), "%s%s%s", msg_init_queued, pque->qu_qs.qu_name, text);
-        }
-      }
-    }
-  else if (server_state != SV_STATE_SHUTDEL)
-    {
-    /* job not rerunable, immediate shutdown - kill it off */
-    snprintf(log_buf, sizeof(log_buf), "%s%s", msg_job_abort, text);
-
-    /* need to record log message before purging job */
-
-    log_event(
-      PBSEVENT_SYSTEM | PBSEVENT_JOB | PBSEVENT_DEBUG,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      log_buf);
-
-    job_abt(pjob_ptr, log_buf);
-
-    return;
-    }
-  else
-    {
-    /* delayed shutdown, leave job running */
-    snprintf(log_buf, sizeof(log_buf), "%s%s", msg_leftrunning, text);
-    }
-
-  if (pjob != NULL)
-    {
-    log_event(
-      PBSEVENT_SYSTEM | PBSEVENT_JOB | PBSEVENT_DEBUG,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      log_buf);
-    }
-
-  return;
-  }  /* END rerun_or_kill() */
 
