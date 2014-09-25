@@ -447,8 +447,6 @@
 #define MSG_ERR 2
 
 #define SHUT_SIG -1
-#define SHUT_IMMEDIATE 0
-#define SHUT_DELAY 1
 #define SHUT_QUICK 2
 
 #define SIG_RESUME "resume"
