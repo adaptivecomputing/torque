@@ -1555,8 +1555,7 @@ int handle_array_recovery(
       {
       /* if not create or clean recovery, recover arrays */
 
-      if ((type != RECOV_CREATE) && 
-          (type != RECOV_COLD))
+      if (type != RECOV_CREATE)
         {
         /* skip files without the proper suffix */
         baselen = strlen(pdirent->d_name) - array_suf_len;
@@ -1716,7 +1715,7 @@ int handle_job_recovery(
 
   if (dir == NULL)
     {
-    if ((type != RECOV_CREATE) && (type != RECOV_COLD))
+    if (type != RECOV_CREATE)
       {
       if (had == 0)
         {
@@ -1759,10 +1758,7 @@ int handle_job_recovery(
 
 
             Array[pjob->ji_qs.ji_jobid] = pjob;
-
-            if (type == RECOV_COLD)
-              pjob->ji_cold_restart = TRUE;
-            
+ 
             unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
             }
 
@@ -1775,9 +1771,6 @@ int handle_job_recovery(
         if ((pjob = job_recov(pdirent->d_name)) != NULL)
           {
           Array[pjob->ji_qs.ji_jobid] = pjob;
-
-          if (type == RECOV_COLD)
-            pjob->ji_cold_restart = TRUE;
 
           unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
           }
@@ -1834,8 +1827,7 @@ int handle_job_recovery(
         }
 
 
-      if ((type != RECOV_COLD) &&
-          (type != RECOV_CREATE) &&
+      if ((type != RECOV_CREATE) &&
           (pjob->ji_arraystructid[0] == '\0') &&
           (pjob->ji_qs.ji_svrflags & JOB_SVFLG_SCRIPT))
         {
@@ -1882,8 +1874,7 @@ int handle_job_recovery(
     lock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
 
     if ((had != server.sv_qs.sv_numjobs) &&
-        (type != RECOV_CREATE) &&
-        (type != RECOV_COLD))
+        (type != RECOV_CREATE))
       {
       logtype = PBSEVENT_ERROR | PBSEVENT_SYSTEM;
       }
@@ -2347,15 +2338,12 @@ int pbsd_init_job(
 
   /* now based on the initialization type */
 
-  if ((type == RECOV_COLD) || (type == RECOV_CREATE))
+  if (type == RECOV_CREATE)
     {
     init_abt_job(pjob);
 
     return(PBSE_BAD_PARAMETER);
     }
-
-  if (type != RECOV_HOT)
-    pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_HOTSTART;
 
   switch (pjob->ji_qs.ji_substate)
     {
@@ -2494,9 +2482,6 @@ int pbsd_init_job(
             return(rc);
             }
           }
-        
-        if (type == RECOV_HOT)
-          pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HOTSTART;
         }
 
       break;

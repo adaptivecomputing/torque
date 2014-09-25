@@ -261,7 +261,7 @@ void svr_shutdown(
 
     if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
       {
-      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HOTSTART | JOB_SVFLG_HASRUN;
+      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN;
 
       pattr = &pjob->ji_wattr[JOB_ATR_checkpoint];
 
