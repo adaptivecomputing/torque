@@ -83,6 +83,8 @@
 #ifdef PENABLE_LINUX26_CPUSETS
 #include "pbs_cpuset.h"
 #include "node_internals.hpp"
+#else
+#include <hwloc.h>
 #endif
 #ifdef PENABLE_LINUX_CGROUPS
 #include "machine.hpp"
@@ -216,14 +218,9 @@ Machine          this_node;
 
 #ifdef PENABLE_LINUX26_CPUSETS
 node_internals   internal_layout;
-hwloc_topology_t topology = NULL;       /* system topology */
 #endif
 
-#ifdef PENABLE_LINUX_CGROUPS
-#ifndef PENABLE_LINUX26_CPUSETS
 hwloc_topology_t topology = NULL;       /* system topology */
-#endif
-#endif
 
 
 /* externs */
