@@ -23,6 +23,7 @@ const char *msg_regrej = "Dependency request for job rejected by ";
 const char *msg_registerrel = "Dependency on job %s released.";
 int   i = 2;
 int   svr = 2;
+int   is_attr_set;
 
 
 struct batch_request *alloc_br(int type)
@@ -361,5 +362,23 @@ job *job_alloc(void)
   pj->ji_momhandle = -1;
 
   return(pj);
+  }
+
+char *get_correct_jobname(const char *jobid)
+
+  {
+  char *rv = strdup(jobid);
+  char *dot;
+
+  if ((dot = strchr(rv, '.')) != NULL)
+    *dot = '\0';
+
+  return(rv);
+  }
+
+int is_svr_attr_set(int index)
+
+  {
+  return(is_attr_set);
   }
 

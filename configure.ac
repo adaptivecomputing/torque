@@ -396,6 +396,8 @@ m4_ifdef([AM_SILENT_RULES],[
     src/lib/test/Makefile
     src/momctl/test/Makefile
     src/momctl/test/momctl/Makefile
+    src/pam/test/Makefile
+    src/pam/test/pam_pbssimpleauth/Makefile
     src/resmom/test/Makefile
     src/resmom/test/alps_reservations/Makefile
     src/resmom/test/catch_child/Makefile
@@ -620,6 +622,13 @@ AC_MSG_RESULT($build_drmaa)
 AM_CONDITIONAL(INCLUDE_DRMAA, [test "x$build_drmaa" = "xyes"])
 AC_SUBST(build_drmaa)
 
+if test "x$build_drmaa" = "xyes";then
+  AC_PATH_PROG(GPERF, gperf)
+  if test -z "$GPERF";then
+    AC_MSG_ERROR([When building with drmaa, gperf must be installed. Please install gperf and then continue.])
+  fi
+fi
+
 
 dnl
 dnl  ######################################################################
@@ -760,6 +769,8 @@ dnl skip the first two chars because its -l<libname>
 AC_CHECK_LIB(${xmlLib}, xmlGetProp,
   [],
   [AC_MSG_ERROR([TORQUE needs libxml2-devel in order to build]) ])
+
+
 
 
 dnl ###########################################
@@ -1027,7 +1038,49 @@ fi
 
 
 
+dnl add an option to specify a path where TORQUE should look for boost 
+dnl include files
 dnl
+AC_ARG_WITH(boost-path, [
+  --with-boost-path=PATH   
+                       Specifies the path to the boost include files.
+                       Example: ./configure --with-boost-path=/usr/local/packages/boost_1_36_0
+                       Will specify that the include files are in /usr/local/packages/boost_1_36_0],
+ [CPPFLAGS="$CPPFLAGS -I${withval}"])
+
+AC_MSG_CHECKING([whether boost is installed])
+AC_PREPROC_IFELSE([#include <boost/version.hpp>], [AC_MSG_RESULT([yes])], [AC_MSG_ERROR([Torque needs Boost, but it was not found on your system
+
+This can be solved by one of the two following methods:
+
+1) Install the boost-devel package for your OS distribution. Note that it must be at least version 1.36.0.
+
+2) Run configure with --with-boost-path=<path>. This path
+should be the path to the directory containing the boost/ directory
+for your version of boost.
+])])
+
+AC_MSG_CHECKING([for minimum boost version (>=1.36.0)])
+AC_RUN_IFELSE([AC_LANG_PROGRAM(
+[[#include <boost/version.hpp>
+#ifdef BOOST_VERSION
+#if (BOOST_VERSION < 103600)
+  error: incorrect boost version
+#endif
+#else
+  error: no boost found
+#endif
+  ]])], [AC_MSG_RESULT([yes])], [AC_MSG_ERROR([Torque requires at least version 1.36.0 of Boost
+
+This can be solved by configuring with --with-boost-path=<path>. This path
+should be the path to the directory containing the boost/ directory
+for your version of boost.
+])])
+
+
+
+
+
 dnl add an option to specify a different path where TORQUE should look for HWLOC 
 dnl lib and include files
 dnl
@@ -1069,8 +1122,8 @@ then configuring again.
 ])])
     olibs=$LIBS
     LIBS="$LIBS $HWLOC_LIBS";
-    AC_CHECK_LIB([hwloc], [hwloc_bitmap_alloc],,
-      [AC_MSG_ERROR([libhwloc does not look like >= 1.1])])
+    AC_CHECK_LIB([hwloc], [hwloc_bitmap_list_snprintf],,
+      [AC_MSG_ERROR([libhwloc does not look like >= 1.2])])
     LIBS=$olibs
   fi
 fi 

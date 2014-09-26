@@ -227,6 +227,8 @@ extern int exec_job_on_ms(job *pjob);
 u_long gettime(resource *);
 u_long getsize(resource *);
 
+int is_ptask_corrupt( struct tcp_chan *chan); 
+
 #ifdef NVIDIA_GPUS
 int  setup_gpus_for_job(job *pjob);
 #endif  /* NVIDIA_GPUS */
@@ -728,7 +730,7 @@ int im_compose(
   tm_task_id taskid)
 
   {
-  int ret;
+  int ret = PBSE_NONE;
 
   if (chan->sock < 0)
     {
@@ -1157,7 +1159,7 @@ hnodent *find_node(
   hnodent            *hp;
   socklen_t           len = sizeof(s_addr);
 
-  if (getpeername(stream,&connecting_stack_addr,&len) != 0)
+  if (getpeername(stream, &connecting_stack_addr, &len) != 0)
     {
     log_err(errno, __func__, "Couldn't find connecting information for this stream");
     return(NULL);
@@ -2792,7 +2794,7 @@ int im_spawn_task(
   struct tcp_chan     *local_chan = NULL;
   tm_node_id           nodeid;
   char                *globid = NULL;
-  char                *cp;
+  char                *cp = NULL;
   char                *jobid = pjob->ji_qs.ji_jobid;
   char               **argv;
   char               **envp;
@@ -2872,6 +2874,7 @@ int im_spawn_task(
     if (*cp == '\0')
       {
       free(cp);
+      cp = NULL;
       
       break;
       }
@@ -2901,6 +2904,8 @@ int im_spawn_task(
   if (ret != DIS_SUCCESS)
     {
     arrayfree(argv);
+    if(cp != NULL)
+      free(cp);
     
     return(IM_FAILURE);
     }
@@ -2922,6 +2927,7 @@ int im_spawn_task(
     if (*cp == '\0')
       {
       free(cp);
+      cp = NULL;
       
       break;
       }
@@ -2951,6 +2957,9 @@ int im_spawn_task(
     
     envp[i] = cp;
     }  /* END for (i) */
+
+  if (cp != NULL)
+    free(cp);
 
   envp[i] = NULL;
   
@@ -4510,7 +4519,7 @@ int handle_im_get_tid_response(
   
   if (pjob->ji_nodeid != efwd->fe_node)
     {
-    np = find_node(pjob, -1, efwd->fe_node);
+    np = find_node(pjob, chan->sock, efwd->fe_node);
     
     if (np == NULL)
       return(IM_DONE);
@@ -4598,6 +4607,8 @@ int handle_im_get_tid_response(
     if (task_save(ptask) != -1)
       ret = start_process(ptask, argv, envp);
     }
+  else
+    return(PBSE_SYSTEM);
 
   arrayfree(argv);
   
@@ -5186,7 +5197,6 @@ int process_valid_response(
 
   return(ret);
   } /* END process_valid_response() */
-
 
 
 

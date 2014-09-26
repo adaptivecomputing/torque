@@ -32,9 +32,6 @@ extern mom_hierarchy_t *mh;
 #include "pbs_cpuset.h"
 #include "node_internals.hpp"
 
-int              memory_pressure_threshold = 0; /* 0: off, >0: check and kill */
-short            memory_pressure_duration  = 0; /* 0: off, >0: check and kill */
-
 #endif
 
 
@@ -800,15 +797,10 @@ numa_node::numa_node(numa_node const&){}
 
 allocation::allocation(allocation const&){}
 
-unsigned long setmempressthr(const char *)
+void recover_cpuset_reservation(job &pjob)
   {
-  return 0;
+  return;
   }
-
-unsigned long setmempressdur(const char *)
-{
-return 0;
-}
 
 
 #endif

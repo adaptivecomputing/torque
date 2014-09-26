@@ -19,10 +19,13 @@ START_TEST(test_mom_process_request)
   }
 END_TEST
 
-START_TEST(test_two)
+START_TEST(test_mom_process_request_bad_host_err)
   {
+  int sock = 999;
 
-
+  mom_process_request(&sock);
+  fail_unless(strcmp(log_buffer, "Access from host not allowed, or unknown host: 10.1.4.4") == 0,
+          "Error message was not constructed as expected");
   }
 END_TEST
 
@@ -33,8 +36,8 @@ Suite *mom_process_request_suite(void)
   tcase_add_test(tc_core, test_mom_process_request);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("test_two");
-  tcase_add_test(tc_core, test_two);
+  tc_core = tcase_create("test_mom_process_request_bad_host_err");
+  tcase_add_test(tc_core, test_mom_process_request_bad_host_err);
   suite_add_tcase(s, tc_core);
 
   return s;

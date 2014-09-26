@@ -186,8 +186,8 @@ int time_to_string(
 
 int timestring_to_int(
     
-    const char *timestring,
-    int  *req_walltime)
+  const char *timestring,
+  int        *req_walltime)
 
   {
   char *ptr_string;
@@ -228,19 +228,13 @@ int timestring_to_int(
   minutes = minutes * 60;
   number = ptr;
 
-  if (number == NULL)
-    {
-    free(ptr_string);
-    return(PBSE_BAD_PARAMETER);
-    }
-
   seconds = atoi(number);
   
   *req_walltime = hours + minutes + seconds;
 
   free(ptr_string);
   return(PBSE_NONE);
-  }
+  } /* END timestring_to_int() */
 
 
 
@@ -2513,7 +2507,7 @@ int process_commandline_opts(
 #if (TCL_QSTAT == 0)
         pc = optarg;
 
-        while (*pc)
+        while ((pc != NULL)&&(*pc))
           {
           switch (*pc)
             {

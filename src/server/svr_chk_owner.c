@@ -468,14 +468,12 @@ int authenticate_user(
         (pbs_getaddrinfo(preq->rq_host, NULL, &addr_info1) == PBSE_NONE))
       {
       sai1 = (struct sockaddr_in *)addr_info1->ai_addr;
-      insert_addr_name_info(addr_info1,preq->rq_host);
       }
 
     if ((sai2 == NULL) &&
         (pbs_getaddrinfo(pcred->hostname, NULL, &addr_info2) == PBSE_NONE))
       {
       sai2 = (struct sockaddr_in *)addr_info2->ai_addr;
-      insert_addr_name_info(addr_info2,pcred->hostname);
       }
 
     if ((sai1 == NULL) ||

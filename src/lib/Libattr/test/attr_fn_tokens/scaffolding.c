@@ -1,8 +1,10 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "attribute.h" /* pbs_attribute */
+#include "pbs_error.h"
 
 int decode_str(
 

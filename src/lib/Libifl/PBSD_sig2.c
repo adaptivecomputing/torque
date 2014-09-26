@@ -151,6 +151,7 @@ int PBSD_async_sig_put(
   sock = connection[c].ch_socket;
   if ((chan = DIS_tcp_setup(sock)) == NULL)
     {
+    pthread_mutex_unlock(connection[c].ch_mutex);
     rc = PBSE_PROTOCOL;
     return rc;
     }

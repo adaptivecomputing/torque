@@ -85,7 +85,6 @@
  * POSIX Batch Extensions Working group is 1003.15
  */
 #ifndef PBSE_
-#include <pbs_constants.h>
 
 #define FALSE 0
 #define TRUE 1

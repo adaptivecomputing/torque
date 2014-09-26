@@ -42,6 +42,7 @@ static char *active_pbs_server;
 pbs_net_t   trq_server_addr;
 char       trq_hostname[PBS_MAXSERVERNAME + 1];
 
+/* Get the name of the active pbs_server */
 int load_trqauthd_config(
 
   char **default_server_name,
@@ -55,7 +56,8 @@ int load_trqauthd_config(
 
   tmp_name = pbs_default();
 
-  if ((tmp_name == NULL) || (tmp_name[0] == '\0'))
+  if ((tmp_name == NULL) ||
+      (tmp_name[0] == '\0'))
     rc = PBSE_BADHOST;
   else
     {
@@ -271,7 +273,7 @@ void parse_command_line(int argc, char **argv)
             exit(0);
             break;
           case 2:   /* version */
-            fprintf(stderr, "Version: %s Commit: %s\n", VERSION, GIT_HASH);
+            fprintf(stderr, "Version: %s \nCommit: %s\n", VERSION, GIT_HASH);
             exit(0);
             break;
           }
@@ -298,7 +300,7 @@ int terminate_trqauthd()
   int rc = PBSE_NONE;
   int sock = -1;
   char write_buf[MAX_LINE];
-  char *read_buf;
+  char *read_buf = NULL;
   char log_buf[MAX_BUF];
   long long read_buf_len = MAX_LINE;
   long long ret_code;
@@ -352,6 +354,11 @@ int terminate_trqauthd()
 
   if (sock != -1)
     close(sock);
+
+  if (read_buf != NULL)
+    {
+    free(read_buf);
+    }
 
   return(rc);
   }

@@ -32,6 +32,12 @@ START_TEST(test_one)
 
   free(str);
 
+  char *dep_str = strdup("afterok:0[].napali");
+  ret = parse_comma_string(dep_str, &ptr);
+  fail_unless(!strcmp(ret, "afterok:0[].napali"));
+  fail_unless(parse_comma_string(NULL, &ptr) == NULL);
+  fail_unless(parse_comma_string(NULL, &ptr) == NULL);
+
   str = strdup(s2);
   rc = count_substrings(str,&ocnt);
   fail_unless(rc == 0);

@@ -125,7 +125,6 @@
 #include "req_getcred.h" /* req_altauthenuer */ 
 #include "req_quejob.h" /* req_quejob, req_jobcredential, req_mvjobfile */ 
 #include "req_holdjob.h" /* req_holdjob, req_checkpointjob */ 
-#include "req_holdarray.h" /* req_holdarray */ 
 #include "req_stat.h" /* req_stat_node */ 
 #include "req_jobobit.h" /* req_jobobit */ 
 #include "req_runjob.h" /* req_runjob, req_stagein */ 
@@ -426,15 +425,17 @@ batch_request *read_request_from_socket(
 
   if (get_connecthost(sfds, request->rq_host, PBS_MAXHOSTNAME) != 0)
     {
-    sprintf(log_buf, "%s: %lu",
+    char ipstr[80];
+    sprintf(log_buf, "%s: %s",
       pbse_to_txt(PBSE_BADHOST),
-      conn_addr);
+      netaddr_long(conn_addr, ipstr));
 
     log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, "", log_buf);
 
+    snprintf(log_buf, sizeof(log_buf), "%s", tmpLine);
     snprintf(tmpLine, sizeof(tmpLine),
-        "cannot determine hostname for connection from %lu",
-        conn_addr);
+        "cannot determine hostname for connection from %s",
+        log_buf);
 
     req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
     return(NULL);
@@ -565,16 +566,7 @@ int process_request(
 
     if (request->rq_type == PBS_BATCH_Connect)
       {
-      if ((rc = req_connect(request)) != PBSE_NONE)
-        return(rc);
-
-      if (conn_socktype == PBS_SOCK_INET)
-        {
-        rc = PBSE_IVALREQ;
-        req_reject(rc, 0, request, NULL, NULL);
-        return(rc);
-        }
-
+      return(req_connect(request));
       }
 
     if (conn_socktype & PBS_SOCK_UNIX)

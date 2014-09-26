@@ -835,6 +835,11 @@ void effective_node_delete(
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL node pointer delete call");
     return;
     }
+  if(pnode->nd_name == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL node pointer to name delete call");
+    return;
+    }
 
   remove_node(&allnodes,pnode);
   unlock_node(pnode, __func__, NULL, LOGLEVEL);
@@ -974,11 +979,6 @@ static int process_host_name_part(
     return(PBSE_SYSTEM);
     }
 
-  addr_info = insert_addr_name_info(addr_info,phostname);
-  if (addr_info == NULL)
-    {
-    return(PBSE_SYSTEM);
-    }
   snprintf(hname, sizeof(hname), "%s", addr_info->ai_canonname);
   
   totalipcount = 0;
@@ -1078,6 +1078,8 @@ static int process_host_name_part(
         free(phostname);
         phostname = NULL;
         }
+
+      return(PBSE_SYSTEM);
       }
 
     *pul = tmp;
@@ -1558,7 +1560,7 @@ int copy_properties(
  * number in val and advances the string to the next number past the comma
  */
 
-static int read_val_and_advance(
+int read_val_and_advance(
 
   int   *val,
   char **str)
@@ -1610,11 +1612,11 @@ static int setup_node_boards(
   char            log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (pnode == NULL)
-  {
-  rc = PBSE_BAD_PARAMETER;
-  log_err(rc, __func__, "NULL input pbsnode poiner");
-  return(rc);
-  }
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc, __func__, "NULL input pbsnode poiner");
+    return(rc);
+    }
 
   pnode->parent = NULL;
 
@@ -1629,7 +1631,6 @@ static int setup_node_boards(
   if (pnode->numa_str != NULL)
     {
     np_ptr = pnode->numa_str;
-    read_val_and_advance(&np,&np_ptr);
     }
   else
     np = pnode->nd_slots.get_total_execution_slots() / pnode->num_node_boards;
@@ -3369,6 +3370,12 @@ int insert_node(
     log_err(rc, __func__, "NULL input node pointer");
     return(rc);
     }
+  if(pnode->nd_name == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc, __func__, "NULL input node name pointer");
+    return(rc);
+    }
 
   an->lock();
 
@@ -3415,6 +3422,12 @@ int remove_node(
     {
     rc = PBSE_BAD_PARAMETER;
     log_err(rc, __func__, "NULL input node pointer");
+    return(rc);
+    }
+  if (pnode->nd_name == NULL)
+    {
+    rc = PBSE_BAD_PARAMETER;
+    log_err(rc, __func__, "NULL input node name pointer");
     return(rc);
     }
 
@@ -3561,7 +3574,7 @@ int send_hierarchy(
   const char        *string;
   int                 ret = PBSE_NONE;
   int                 sock;
-  struct addrinfo    *pAddrInfo;
+  struct addrinfo    *pAddrInfo = NULL;
   struct sockaddr_in  sa;
   struct tcp_chan    *chan = NULL;
 

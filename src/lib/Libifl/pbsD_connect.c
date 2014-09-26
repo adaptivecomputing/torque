@@ -1266,8 +1266,14 @@ int pbs_original_connect(
           {
           if (getenv("PBSDEBUG"))
             {
-            fprintf(stderr, "ERROR:  cannot authenticate connection to server \"%s\", errno=%d (%s)\n",
-                    server, rc, pbs_strerror(rc));
+            const char *err_msg = "";
+
+            if (rc > 0)
+              err_msg = pbs_strerror(rc);
+
+            fprintf(stderr, 
+              "ERROR:  cannot authenticate connection to server \"%s\", errno=%d (%s)\n",
+              server, rc, err_msg);
             }
 
           local_errno = PBSE_SOCKET_FAULT;
@@ -1411,10 +1417,13 @@ void print_server_port_to_stderr(
     }
   else  
     {
+    const char *err_msg = "";
+
+    if (rc > 0)
+      err_msg = pbs_strerror(rc);
+
     fprintf(stderr, "Can not resolve name for server %s. (rc = %d - %s)\n",
-        s_name,
-        rc,  
-        pbs_strerror(rc));
+        s_name, rc, err_msg);
     }
 
   if (s_addr != NULL)

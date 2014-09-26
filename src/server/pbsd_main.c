@@ -1154,12 +1154,11 @@ void *start_accept_listener(
   char server_name_trimmed[PBS_MAXSERVERNAME + 1];
   char *colon_pos = NULL;
 
-  colon_pos = strchr(server_name, ':');
+  strcpy(server_name_trimmed, server_name);
+  colon_pos = strchr(server_name_trimmed, ':');
 
-  if (colon_pos == NULL)
-    strcpy(server_name_trimmed, server_name);
-  else
-    strncpy(server_name_trimmed, server_name, colon_pos - server_name);
+  if (colon_pos != NULL)
+    *colon_pos = '\0';
 
   accept_thread_active = true;
   pthread_cleanup_push(accept_listener_cleanup, vp);
@@ -1170,6 +1169,38 @@ void *start_accept_listener(
 
   return(NULL);
   } /* END start_accept_listener() */
+
+
+
+void start_generic_thread(
+    
+  pthread_t *tid,
+  void      *(*func)(void *))
+
+  {
+  pthread_attr_t attr;
+  pthread_t      t;
+
+  if (tid == NULL)
+    tid = &t;
+
+  if (pthread_attr_init(&attr) != 0)
+    {
+    perror("pthread_attr_init failed. Could not start thread");
+    log_err(-1, msg_daemonname, "pthread_attr_init failed. Could not start thread");
+    }
+  else if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) != 0)
+    {
+    perror("pthread_attr_setdetatchedstate failed. Could not start thread");
+    log_err(-1, msg_daemonname, "pthread_attr_setdetachedstate failed. Could not start thread");
+    }
+  else if ((pthread_create(tid, &attr, func, NULL)) != 0)
+    {
+    perror("could not start thread");
+    log_err(-1, msg_daemonname, "Failed to start thread");
+    }
+
+  }
 
 
 
@@ -1362,6 +1393,7 @@ void main_loop(void)
   start_accept_thread();
   start_routing_retry_thread();
   start_exiting_retry_thread();
+  start_generic_thread(NULL, remove_extra_recycle_jobs);
 
   while (state != SV_STATE_DOWN)
     {
@@ -1551,10 +1583,12 @@ void initialize_globals(void)
   server.sv_qs_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   server.sv_attr_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   server.sv_jobstates_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  server.sv_track_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
 
   pthread_mutex_init(server.sv_qs_mutex,NULL);
   pthread_mutex_init(server.sv_attr_mutex,NULL);
   pthread_mutex_init(server.sv_jobstates_mutex,NULL);
+  pthread_mutex_init(server.sv_track_mutex,NULL);
   initialize_ruserok_mutex();
   lock_init();
   }
@@ -2730,7 +2764,10 @@ static void lock_out_ha()
 
       UseFLock = FALSE;
       if (MutexLockFD > 0)
+        {
         close(MutexLockFD);
+        MutexLockFD = -1;
+        }
       }
 
     NumChecks++;
@@ -2812,7 +2849,11 @@ static void lock_out_ha()
       }
 
     if (UseFLock == TRUE)
-      close(MutexLockFD); /* unlock file mutex */
+      if (MutexLockFD > 0)
+        {
+        close(MutexLockFD); /* unlock file mutex */
+        MutexLockFD = -1;
+        }
     } /* END while (!FilePossession) */
 
   /* we have the file lock--go ahead and log this fact */
@@ -2822,6 +2863,9 @@ static void lock_out_ha()
     PBS_EVENTCLASS_SERVER,
     __func__,
     (char *)"high availability file lock obtained");
+
+  if (MutexLockFD >= 0)
+    close(MutexLockFD);
   } /* END lock_out_ha() */
 
 

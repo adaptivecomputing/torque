@@ -97,7 +97,7 @@ bool descending(unsigned long i,unsigned long j)
   return i>j;
   }
 
-cpu_frequency::cpu_frequency(int cpu_number)
+cpu_frequency::cpu_frequency(int cpu_number):governor(Invalid)
   {
   path = base_cpu_path;
   path += "cpu";

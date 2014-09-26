@@ -277,10 +277,10 @@ static void *work_thread(
       }
 
     if ((rc == ETIMEDOUT) && 
-        (request_pool->tp_nthreads > request_pool->tp_min_threads) &&
-        (request_pool->tp_idle_threads > 2))
+        (tp->tp_nthreads > tp->tp_min_threads) &&
+        (tp->tp_idle_threads > 2))
       {
-      request_pool->tp_idle_threads--;
+      tp->tp_idle_threads--;
       break;
       }
 

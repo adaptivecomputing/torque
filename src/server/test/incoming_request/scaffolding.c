@@ -55,11 +55,10 @@ void DIS_tcp_cleanup(tcp_chan *chan)
 
 void netcounter_incr() {}
 
-void close_conn(int sd, int has_mutex) 
-  {
-  fprintf(stderr, "The call to close_conn needs to be mocked!!\n");
-  exit(1);
-  }
+extern "C" 
+{
+void close_conn(int sd, int has_mutex)  { }
+}
 
 int enqueue_threadpool_request(void *(*func)(void *), void *arg, threadpool_t *tp)
   {

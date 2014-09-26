@@ -142,8 +142,8 @@
 #include "utils.h"
 #include "mom_config.h"
 #include "container.hpp"
+#include "mom_job_cleanup.h"
 #include "node_frequency.hpp"
-
 
 #ifndef TRUE
 #define TRUE 1
@@ -495,6 +495,7 @@ job *job_alloc(void)
   pj->ji_taskid = TM_NULL_TASK + 1;
   pj->ji_obit = TM_NULL_EVENT;
   pj->ji_nodekill = TM_ERROR_NODE;
+  pj->ji_stats_done = false;
 
   pj->ji_momhandle = -1;  /* mark mom connection invalid */
 
@@ -795,6 +796,22 @@ int release_job_reservation(
 
 
 
+void remove_from_exiting_list(
+
+  job *pjob)
+
+  {
+  /* remove the job from the exiting_job_list */
+  for (unsigned int i = 0; i < exiting_job_list.size(); i++)
+    {
+    if (exiting_job_list[i].jobid == pjob->ji_qs.ji_jobid)
+      {
+      exiting_job_list.erase(exiting_job_list.begin() + i);
+      break;
+      }
+    } 
+  } /* END remove_from_exiting_list() */
+
 
 
 void mom_job_purge(
@@ -851,6 +868,8 @@ void mom_job_purge(
   /* remove this job from the global queue */
   delete_link(&pjob->ji_jobque);
   delete_link(&pjob->ji_alljobs);
+
+  remove_from_exiting_list(pjob);
 
   if (LOGLEVEL >= 6)
     {

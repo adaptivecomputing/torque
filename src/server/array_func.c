@@ -180,6 +180,8 @@ job_array *get_array(
   char      *tmpjobid;
 
   tmpjobid = get_correct_jobname(id);
+  if (tmpjobid == NULL)
+    return(NULL);
 
   allarrays.lock();
 
@@ -874,7 +876,7 @@ int array_recov_binary(
   pa->job_ids = (char **)calloc(pa->ai_qs.array_size, sizeof(char *));
   if(pa->job_ids == NULL)
     {
-    memset(&pa->ai_qs,0,sizeof(array_info));
+    free(pa);
     close(fd);
     return PBSE_SYSTEM;
     }
@@ -1034,7 +1036,6 @@ int array_delete(
   char                     log_buf[LOCAL_LOG_BUF_SIZE];
   array_request_node      *rn;
   struct array_depend     *pdep;
-  struct array_depend_job *pdj;
 
   /* first thing to do is take this out of the servers list of all arrays */
   remove_array(pa);
@@ -1078,12 +1079,9 @@ int array_delete(
     {
     delete_link(&pdep->dp_link);
 
-    for (pdj = (struct array_depend_job *)GET_NEXT(pdep->dp_jobs);
-         pdj != NULL;
-         pdj = (struct array_depend_job *)GET_NEXT(pdep->dp_jobs))
+    for (unsigned int i = 0; i < pdep->dp_jobs.size(); i++)
       {
-      delete_link(&pdj->dc_link);
-      free(pdj);
+      free(pdep->dp_jobs[i]);
       }
 
     free(pdep);
@@ -2053,8 +2051,11 @@ void update_array_values(
 
       if (old_state != JOB_STATE_RUNNING)
         {
-        pa->ai_qs.jobs_running++;
-        pa->ai_qs.num_started++;
+        if (pa->ai_qs.jobs_running < pa->ai_qs.num_jobs)
+          {
+          pa->ai_qs.jobs_running++;
+          pa->ai_qs.num_started++;
+          }
         }
 
       break;
@@ -2161,7 +2162,7 @@ void update_array_statuses()
   job            *pjob;
   all_arrays_iterator *iter = NULL;
   unsigned int    running;
-  unsigned int    queued;
+  int             queued;
   unsigned int    complete;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
   char            jobid[PBS_MAXSVRJOBID+1];
@@ -2171,6 +2172,8 @@ void update_array_statuses()
     running  = pa->ai_qs.jobs_running;
     complete = pa->ai_qs.num_failed + pa->ai_qs.num_successful;
     queued   = pa->ai_qs.num_jobs - running - complete;
+    if (queued < 0)
+      queued = 0;
     
     if (LOGLEVEL >= 7)
       {

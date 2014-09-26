@@ -146,6 +146,8 @@
 #include <string>
 #include <vector>
 
+#include "user_info.h" /* remove_server_suffix() */
+
 #define MSG_LEN_LONG 160
 
 /* Private Functions */
@@ -363,7 +365,19 @@ int insert_into_alljobs_by_rank(
 
 /*
  * svr_enquejob() - enqueue job into specified queue
+ *
+ * @param pjob - the job that is being queued.
+ * @param has_sv_qs_mutex - indicates whether or not the caller holds the sv_qs_mutex
+ * @param prev_job_index - non -1 indicates the previous index of the last job inserted. 
+ * This is used for job arrays to tell svr_enquejob() at what point the job should be 
+ * placed to keep it with all of the other array subjobs.
+ * @param have_reservation - indicates whether or not this job already has spaced 
+ * reserved for it in the queue, used to help keep max queuable parameters enforced 
+ * correctly.
+ *
+ * @return PBSE_NONE - the job was correctly queued.
  */
+
 int svr_enquejob(
 
   job *pjob,            /* I */
@@ -663,6 +677,7 @@ int svr_enquejob(
  * @pre-cond: pjob is currently queued
  * @pre-cond: pjob's mutex is held
  * @post-cond: pjob will have no queue when it successfully returns from this function
+ * @post-cond: pjob will continue to be locked unless the job 
  *
  * @return: PBSE_BAD_PARAMETER if pjob is NULL
  *          PBSE_BADSTATE if pjob is running

@@ -201,6 +201,7 @@ extern tlist_head   svr_alljobs; /* all jobs under MOM's control */
 extern time_t       time_now;
 extern int          internal_state;
 extern int          MOMJobDirStickySet;
+
 #ifdef NUMA_SUPPORT
 extern int            numa_index;
 #endif
@@ -288,6 +289,7 @@ unsigned long setjobexitwaittime(const char *);
 unsigned long setmaxjoinjobwaittime(const char *);
 unsigned long setresendjoinjobwaittime(const char *);
 unsigned long setmomhierarchyretrytime(const char *);
+unsigned long setjobdirectorysticky(const char *);
 
 struct specials special[] = {
   { "alloc_par_cmd",       setallocparcmd },
@@ -1264,7 +1266,6 @@ unsigned long jobstarter(const char *value)  /* I */
 
 
 
-
 unsigned long setremchkptdirlist(
 
   const char *value)  /* I */
@@ -1276,7 +1277,8 @@ unsigned long setremchkptdirlist(
   int   index = 0;
   char  tmpLine[1024];
 
-  while ((TRemChkptDirList[index] != NULL) && (index < TMAX_RCDCOUNT))
+  while ((index < TMAX_RCDCOUNT) &&
+         (TRemChkptDirList[index] != NULL))
     {
     index++;
     }

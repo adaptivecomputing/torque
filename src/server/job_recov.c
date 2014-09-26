@@ -879,10 +879,11 @@ void translate_dependency_to_string(
       }
     else
       {
-      struct depend_job *pdjob = (struct depend_job *)GET_NEXT(dep->dp_jobs);
 
-      while (pdjob != NULL)
+      unsigned int dp_jobs_size = dep->dp_jobs.size();
+      for (unsigned int i = 0; i < dp_jobs_size; i++)
         {
+        struct depend_job *pdjob = dep->dp_jobs[i];
         value += ":";
         value += pdjob->dc_child;
 
@@ -892,7 +893,6 @@ void translate_dependency_to_string(
           value += pdjob->dc_svr;
           }
 
-        pdjob = (struct depend_job *)GET_NEXT(pdjob->dc_link);
         }
       }
     }

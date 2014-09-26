@@ -324,11 +324,11 @@ void sum_select_mem_request(
       tmp = atoi(current);
       
       /* advance past the digits to the units */
-      while ((current != NULL) &&
+      while ((current != '\0') &&
              (isdigit(*current)))
         current++;
 
-      if (current == NULL)
+      if (*current == '\0')
         {
         /* no units, assume kb */
         mem_total += tmp;
@@ -880,7 +880,8 @@ int use_proxy_name_if_needed(
       }
     else
       {
-      strcpy(tmp_job_id, pj->ji_wattr[JOB_ATR_job_id].at_val.at_str);
+      snprintf(tmp_job_id, sizeof(tmp_job_id), "%s",
+        pj->ji_wattr[JOB_ATR_job_id].at_val.at_str);
       }
 
     if (job_exists(tmp_job_id) == true)
@@ -917,7 +918,7 @@ int check_attribute_settings(
 
   {
   int            rc = PBSE_NONE;
-  char           buf[256];
+  std::string    buf;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
   pbs_attribute  tempattr;
   struct stat    stat_buf;
@@ -957,13 +958,15 @@ int check_attribute_settings(
     job_attr_def[JOB_ATR_job_owner].at_free(
       &pj->ji_wattr[JOB_ATR_job_owner]);
 
-    snprintf(buf, sizeof(buf), "%s@%s", preq->rq_user, preq->rq_host);
+    buf = preq->rq_user;
+    buf += "@";
+    buf += preq->rq_host;
 
     job_attr_def[JOB_ATR_job_owner].at_decode(
       &pj->ji_wattr[JOB_ATR_job_owner],
       NULL,
       NULL,
-      buf,
+      buf.c_str(),
       resc_access_perm);
 
     /* set create time */
@@ -982,20 +985,21 @@ int check_attribute_settings(
       pj->ji_wattr[JOB_ATR_rerunable].at_flags |= ATR_VFLAG_SET;
       }
 
-    snprintf(buf, sizeof(buf), "%s%s", pbs_o_que, pque->qu_qs.qu_name);
+    buf = pbs_o_que;
+    buf += pque->qu_qs.qu_name;
 
     if (cpuClock.length() != 0)
       {
-      strcat(buf,",");
-      strcat(buf,cpuClock.c_str());
+      buf += ",";
+      buf += cpuClock.c_str();
       }
 
     if (get_variable(pj, pbs_o_host) == NULL)
       {
-      strcat(buf, ",");
-      strcat(buf, pbs_o_host);
-      strcat(buf, "=");
-      strcat(buf, preq->rq_host);
+      buf += ",";
+      buf += pbs_o_host;
+      buf += "=";
+      buf += preq->rq_host;
 
       /* The user did not send the PBS_O_HOST name with the job.
          We need to adde it here from the information we gathered
@@ -1035,7 +1039,7 @@ int check_attribute_settings(
         &tempattr,
         NULL,
         NULL,
-        buf,
+        buf.c_str(),
         resc_access_perm);
 
     job_attr_def[JOB_ATR_variables].at_set(
@@ -1446,11 +1450,6 @@ int req_quejob(
        this causes arrays to show up as id[].host in qstat output, and 
        actions applied to id[] are applied to the entire array */
     oldid = strdup(pj->ji_qs.ji_jobid);
-
-    if (oldid == NULL)
-      {
-      /* TODO, return with error if unable to alocate memory! */
-      }
 
     hostname = index(oldid, '.');
 
@@ -2009,6 +2008,8 @@ int set_interactive_job_roaming_policy(
           log_err(PBSE_UNKNODE, __func__, log_buf);
           rc = -1;
           }
+
+        free(submit_node_id);
         }
       }
     }

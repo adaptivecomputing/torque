@@ -79,8 +79,6 @@ int node_reserve(char *nspec, resource_t tag);
 
 void free_nodes(job *pjob);
 
-void set_old_nodes(job *pjob);
-
 void sync_node_jobs_with_moms(struct pbsnode *np, const char *jobs_in_mom);
 
 #endif /* _NODE_MANAGER_H */

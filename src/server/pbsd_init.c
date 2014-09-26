@@ -244,10 +244,11 @@ extern struct server server;
 
 /* External Functions Called */
 
+void          rel_resc(job *pjob);
 void          poll_job_task(work_task *);
 extern void   on_job_rerun_task(struct work_task *);
 extern void   set_resc_assigned(job *, enum batch_op);
-extern void   set_old_nodes(job *);
+extern int    set_old_nodes(job *);
 extern void   acct_close(void);
 
 extern struct work_task *apply_job_delete_nanny(struct job *, int);
@@ -531,7 +532,6 @@ int can_resolve_hostname(
   else if (pbs_getaddrinfo(hostname, NULL, &addr_info) == 0)
     {
     can_resolve = TRUE;
-    insert_addr_name_info(addr_info,hostname);
     }
 
   if (colon != NULL)
@@ -585,8 +585,6 @@ void check_if_in_nodes_file(
         {
         sai = (struct sockaddr_in *)addr_info->ai_addr;
         ipaddr = ntohl(sai->sin_addr.s_addr);
-
-        insert_addr_name_info(addr_info, hostname);
         }
       else
         {
@@ -799,8 +797,6 @@ void prepare_mom_hierarchy(
   {
   char            log_buf[LOCAL_LOG_BUF_SIZE];
   int             fds;
-
-  mh = initialize_mom_hierarchy();
 
   mh = initialize_mom_hierarchy();
 
@@ -1331,6 +1327,7 @@ int setup_server_attrs(
     if ((rc != PBSE_NONE) || ((rc = svr_recov_xml(path_svrdb, FALSE)) == -1)) 
       {
       log_err(rc, __func__, msg_init_baddb);
+      pthread_mutex_unlock(server.sv_attr_mutex);
 
       return(-1);
       }
@@ -1816,13 +1813,16 @@ int handle_job_recovery(
 
       if (job_rc != PBSE_NONE)
         {
-        log_event(
-          PBSEVENT_ERROR | PBSEVENT_SYSTEM | PBSEVENT_ADMIN | PBSEVENT_JOB | PBSEVENT_FORCE,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          msg_script_open);
+        if (job_rc != PBSE_UNKNODE)
+          {
+          log_event(
+            PBSEVENT_ERROR | PBSEVENT_SYSTEM | PBSEVENT_ADMIN | PBSEVENT_JOB | PBSEVENT_FORCE,
+            PBS_EVENTCLASS_JOB,
+            pjob->ji_qs.ji_jobid,
+            msg_script_open);
 
-        unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
+          unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
+          }
 
         continue;
         }
@@ -2066,6 +2066,7 @@ int handle_tracking_records()
     return(-1);
     }
 
+  // the request pool hasn't started yet so we won't bother locking
   server.sv_tracksize = (statbuf.st_size + sizeof(struct tracking) - 1) / sizeof(struct tracking);
 
   if (server.sv_tracksize < PBS_TRACK_MINSIZE)
@@ -2474,7 +2475,18 @@ int pbsd_init_job(
         
         if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend) == 0)
           {
-          set_old_nodes(pjob);
+          rc = set_old_nodes(pjob);
+          if (rc != PBSE_NONE)
+            {
+            snprintf(log_buf, sizeof(log_buf), "Job %s has an invalid exec host list: '%s'",
+              pjob->ji_qs.ji_jobid,
+              pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+            log_err(rc, __func__, log_buf);
+
+            rel_resc(pjob);
+            init_abt_job(pjob);
+            return(rc);
+            }
           }
         
         if (type == RECOV_HOT)
@@ -2631,19 +2643,6 @@ int pbsd_init_reque(
 
   /* re-enqueue the job into the queue it was in */
 
-  if (change_state)
-    {
-    /* update the state, typically to some form of QUEUED */
-
-    svr_evaljobstate(*pjob, newstate, newsubstate, 0);
-
-    svr_setjobstate(pjob, newstate, newsubstate, FALSE);
-    }
-  else
-    {
-    set_statechar(pjob);
-    }
-
   sprintf(log_buf, "%s:1", __func__);
   lock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
   if ((rc = svr_enquejob(pjob, TRUE, NULL, false)) == PBSE_NONE)
@@ -2662,6 +2661,18 @@ int pbsd_init_reque(
       log_buf);
 
     pjob->ji_internal_id = job_mapper.get_new_id(pjob->ji_qs.ji_jobid);
+
+    // svr_setjobstate() doesn't work for jobs that aren't queued
+    if (change_state)
+      {
+      /* update the state, typically to some form of QUEUED */
+      svr_evaljobstate(*pjob, newstate, newsubstate, 0);
+      svr_setjobstate(pjob, newstate, newsubstate, FALSE);
+      }
+    else
+      {
+      set_statechar(pjob);
+      }
     }
   else
     {

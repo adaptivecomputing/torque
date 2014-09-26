@@ -1712,7 +1712,7 @@ int record_jobinfo(
   bf += "<Jobinfo>\n";
   bf += "\t<Job_Id>";
   bf += pjob->ji_qs.ji_jobid;
-  bf += "</JobId>\n";
+  bf += "</Job_Id>\n";
 
  #if 0
   if ((rc = log_job_record(buffer->str)) != PBSE_NONE)
@@ -1823,6 +1823,8 @@ int record_jobinfo(
  * will always exit unlocked.
  * The job is dequeued; the job control file, script file and any spooled
  * output files are unlinked, and the job structure is freed.
+ * @param pjob - the job that will be deleted and unlocked
+ * @param leaveSpoolFiles - 
  */
 
 int svr_job_purge(
@@ -2004,7 +2006,7 @@ int svr_job_purge(
       log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, job_id, log_buf);
       }
 
-    /* delete any spooled stderr */
+    /* delete any spooled stderr ($TRQ_HOME/spool) */
     snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_spool, job_fileprefix, JOB_STDERR_SUFFIX);
 
     if (unlink(namebuf) < 0)

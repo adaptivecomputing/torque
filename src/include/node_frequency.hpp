@@ -79,10 +79,10 @@
  * without reference to its choice of law rules.
  */
 
-#include <boost/ptr_container/ptr_vector.hpp>
+#include <string>
+#include <vector>
 #include "cpu_frequency.hpp"
 #include "attribute.h"
-#include <string>
 #include "pbs_error.h"
 
 class node_frequency
@@ -90,16 +90,16 @@ class node_frequency
 private:
 
   typedef struct
-  {
-  cpu_frequency_type type;
-  unsigned long      currFrequency;
-  unsigned long      maxFrequency;
-  unsigned long      minFrequency;
-  }cpu_frequency_save;
+    {
+    cpu_frequency_type type;
+    unsigned long      currFrequency;
+    unsigned long      maxFrequency;
+    unsigned long      minFrequency;
+    } cpu_frequency_save;
 
   int last_error;
-  boost::ptr_vector<cpu_frequency> cpus;
-  boost::ptr_vector<cpu_frequency_save> base_frequencies;
+  std::vector<cpu_frequency> cpus;
+  std::vector<cpu_frequency_save> base_frequencies;
 
   bool save_base_frequencies(std::string& path);
   bool load_base_frequencies(std::string& path);
@@ -107,6 +107,7 @@ private:
 public:
 
   node_frequency();
+  ~node_frequency();
   bool get_frequency(cpu_frequency_type& type,unsigned long& currMhz,unsigned long& maxMhz,unsigned long& minMhz);
   bool set_frequency(cpu_frequency_type type,unsigned long maxMhz,unsigned long minMhz);
   bool get_frequency_string(std::string& str,bool full=false);

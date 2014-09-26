@@ -106,8 +106,8 @@ main(int argc, char *argv[], char *env[])
 
   struct hostent *hosta;
 
-  struct in_addr *ina;
-  int  naddr;
+  struct in_addr *ina = NULL;
+  int  naddr = 0;
   int  vflag = 0;
   void prt_herrno();
   extern int optind;
@@ -192,6 +192,9 @@ main(int argc, char *argv[], char *env[])
       ++naddr;
       }
 
+    if (naddr == 0)
+      naddr = 1;
+
     ina = (struct in_addr *)malloc(sizeof(struct in_addr) * naddr);
 
     if (ina == NULL)
@@ -240,6 +243,9 @@ main(int argc, char *argv[], char *env[])
     printf("no name entry found for %s\n", argv[optind]);
     prt_herrno();
     }
+
+  if (ina != NULL)
+    free(ina);
 
   return 0;
   }

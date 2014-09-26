@@ -1,12 +1,12 @@
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <stdio.h>
 #include <stdlib.h>
-#include <check.h>
 
 #include <string>
 #include <vector>
 #include "pbs_nodes.h"
 #include "alps_constants.h"
+#include <check.h>
 
 int set_ncpus(struct pbsnode *,struct pbsnode *, int);
 int set_ngpus(struct pbsnode *, int);

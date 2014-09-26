@@ -299,6 +299,7 @@ start:
           break;
 
         case PBSE_SOCKET_FAULT:
+            
             {
             /* primary server may be down. See if secondary is up */
             /* We are getting this error because trqauthd could not
@@ -313,6 +314,9 @@ start:
             if ((rc) ||
                 (!strcmp(new_server_name, Server)))
               {
+              if (rc == PBSE_NONE)
+                free(new_server_name);
+
               if (cnt2server_retry != 0)
                 {
                 goto retry;
@@ -331,9 +335,10 @@ start:
               {
               fprintf(stderr, "New active server is %s\n", new_server_name);
               }
-              
-
-          break;
+ 
+            free(new_server_name);
+  
+            break;
             }
 
 

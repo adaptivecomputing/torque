@@ -7,6 +7,8 @@
 
 #include "pbs_error.h"
 #include "pbs_ifl.h"
+#include <pbs_constants.h>
+
 
 extern int calloc_fail;
 

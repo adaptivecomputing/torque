@@ -888,21 +888,27 @@ int do_mom(
   rc = diswsi(chan, RM_PROTOCOL);
 
   if (rc != DIS_SUCCESS)
-    return(rc);
+    goto do_mom_fail;
 
   rc = diswsi(chan, RM_PROTOCOL_VER);
 
   if (rc != DIS_SUCCESS)
-    return(rc);
+    goto do_mom_fail;
 
   rc = diswsi(chan, 1);
 
   if (rc != DIS_SUCCESS)
-    return(rc);
+    goto do_mom_fail;
 
+  /* send_command will free chan */
   send_command(chan,RM_CMD_CLOSE);
 
   return(0);
+
+do_mom_fail:
+  DIS_tcp_close(chan);
+  return(rc);
+
   } /* END do_mom() */
 
 

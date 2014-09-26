@@ -98,6 +98,7 @@
 #include <string>
 #include <vector>
 #include <boost/ptr_container/ptr_vector.hpp>
+#include <boost/exception/exception.hpp>
 
 #ifdef NOPOSIXMEMLOCK
 #undef _POSIX_MEMLOCK
@@ -176,6 +177,9 @@ char        *path_home = (char *)PBS_SERVER_HOME;
 char        *mom_home;
 
 extern std::vector<std::string> mom_status;
+#ifdef NVIDIA_GPUS
+extern std::vector<std::string> global_gpu_status;
+#endif
 extern int  multi_mom;
 char        *path_layout;
 extern char *msg_daemonname;          /* for logs     */
@@ -290,7 +294,6 @@ static int recover_set = FALSE;
 
 static int      call_hup = 0;
 char           *path_log;
-
 
 
 
@@ -687,14 +690,12 @@ void memcheck(
     return;
     }
 
-  log_err(-1, "memcheck", "memory allocation failed");
+  log_err(-1, __func__, "memory allocation failed");
 
   die(0);
 
   return;
   }  /* END memcheck() */
-
-
 
 
 
@@ -774,6 +775,7 @@ void rmnl(
 
   return;
   }
+
 
 
 
@@ -1136,7 +1138,7 @@ retryread:
 
     sprintf(ret_string, "? %d", RM_ERR_SYSTEM);
 
-    fclose(child);
+    pclose(child);
 
     goto done;
     }
@@ -1485,6 +1487,59 @@ void cleanup_aux()
 
 
 
+/* clear_jobs - clear all jobs from the job job link list */
+void clear_jobs(
+
+  tlist_head job_queue,
+  std::stringstream &output)
+ 
+  {
+  std::string tmpLine;
+  job  *pjobnext = NULL;
+  job  *pjob = NULL;
+
+  if ((pjob = (job *)GET_NEXT(job_queue)) != NULL)
+    {
+    while (pjob != NULL)
+      {
+      tmpLine.append("clearing job ");
+      tmpLine.append(pjob->ji_qs.ji_jobid);
+
+      log_record(PBSEVENT_SYSTEM, 0, __func__, tmpLine.c_str());
+
+      pjobnext = (job *)GET_NEXT(pjob->ji_alljobs);
+
+      mom_job_purge(pjob);
+
+      pjob = pjobnext;
+      output << tmpLine << "\n";
+      }
+    }  
+  } /* clear_jobs */
+
+
+
+job *mom_find_newjobs(
+
+  char *jobid)
+
+  {
+  job *pj = NULL;
+ 
+  pj = (job *)GET_NEXT(svr_newjobs);
+  while (pj != NULL)
+    {
+    if (!strcmp(pj->ji_qs.ji_jobid, jobid))
+      break;
+    pj = (job *)GET_NEXT(pj->ji_alljobs);
+    }
+  return pj;
+  }   /* END mom_find_newjobs() */
+
+
+
+
+
 int process_clear_job_request(
 
   std::stringstream &output,
@@ -1494,7 +1549,6 @@ int process_clear_job_request(
   char *ptr = NULL;
 
   job  *pjob = NULL;
-  job  *pjobnext = NULL;
 
   if ((*curr == '=') && ((*curr) + 1 != '\0'))
     {
@@ -1508,41 +1562,29 @@ int process_clear_job_request(
     }
   else
     {
-    std::string tmpLine;
-
     if (!strcasecmp(ptr, "all"))
       {
-      if ((pjob = (job *)GET_NEXT(svr_alljobs)) != NULL)
-        {
-        while (pjob != NULL)
-          {
-          tmpLine.append("clearing job ");
-          tmpLine.append(pjob->ji_qs.ji_jobid);
-
-          log_record(PBSEVENT_SYSTEM, 0, __func__, tmpLine.c_str());
-
-          pjobnext = (job *)GET_NEXT(pjob->ji_alljobs);
-
-          mom_job_purge(pjob);
-
-          pjob = pjobnext;
-
-          output << tmpLine << "\n";
-          }
-        }
-
+      clear_jobs(svr_newjobs, output);
+      clear_jobs(svr_alljobs, output);
       output << "clear completed";
       }
-    else if ((pjob = mom_find_job(ptr)) != NULL)
+    else 
       {
-      output << "clearing job ";
-      output << pjob->ji_qs.ji_jobid;
+      std::string tmpLine;
+      pjob = mom_find_job(ptr);
+      if (!pjob)
+        pjob = mom_find_newjobs(ptr);
+      if (pjob)
+        {
+        output << "clearing job ";
+        output << pjob->ji_qs.ji_jobid;
 
-      log_record(PBSEVENT_SYSTEM, 0, __func__, tmpLine.c_str());
+        log_record(PBSEVENT_SYSTEM, 0, __func__, tmpLine.c_str());
 
-      mom_job_purge(pjob);
+        mom_job_purge(pjob);
 
-      output << tmpLine;
+        output << tmpLine;
+        }
       }
     }
 
@@ -2543,6 +2585,12 @@ int process_rm_cmd_request(
       sprintf(log_buffer, "problem with request line: %s",
               dis_emsg[ret]);
 
+      if (cp != NULL)
+        {
+        free(cp);
+        cp = NULL;
+        }
+
       return(ret);
       }
 
@@ -2635,7 +2683,7 @@ int process_rm_cmd_request(
       {
       sprintf(log_buffer, "write string failed %s",
         dis_emsg[ret]);
-
+      
       return(ret);
       }
 
@@ -4016,7 +4064,7 @@ void parse_command_line(
           }
         else if (!strcmp(optarg, "version"))
           {
-          printf("Version: %s\nRevision: %s\n",
+          printf("Version: %s\nCommit: %s\n",
             PACKAGE_VERSION, GIT_HASH);
 
           exit(0);
@@ -4081,7 +4129,9 @@ void parse_command_line(
         break;
 
       case 'C':
+
         mom_checkpoint_set_directory_path(optarg);
+
         break;
 
       case 'd': /* directory */
@@ -4097,6 +4147,9 @@ void parse_command_line(
         break;
 
       case 'l':
+
+        if (path_log != NULL)
+          free(path_log);
 
         path_log = strdup(optarg);
 
@@ -4586,7 +4639,12 @@ int setup_program_environment(void)
 
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
 
-  c |= chk_file_sec(path_jobs,    1, 0, S_IWGRP | S_IWOTH, 1, NULL);
+  get_mom_job_dir_sticky_config(config_file);
+
+  if (!MOMJobDirStickySet)
+    c |= chk_file_sec(path_jobs,    1, 0, S_IWGRP | S_IWOTH, 1, NULL);
+  else
+    c |= chk_file_sec(path_jobs,    1, 1, S_IWGRP | S_IWOTH, 1, NULL);
 
   c |= chk_file_sec(path_aux,     1, 0, S_IWGRP | S_IWOTH, 1, NULL);
 
@@ -4709,8 +4767,7 @@ int setup_program_environment(void)
 
   if (read_config(NULL))
     {
-    fprintf(stderr, "pbs_mom: cannot load config file '%s'\n",
-            config_file);
+    fprintf(stderr, "pbs_mom: cannot load config file '%s'\n", config_file);
 
     exit(1);
     }
@@ -5688,10 +5745,11 @@ void check_jobs_in_mom_wait()
 void check_exiting_jobs()
 
   {
-  job              *pjob;
-  time_t            time_now = time(NULL);
+  job                      *pjob;
+  time_t                    time_now = time(NULL);
+  std::vector<std::string>  to_remove;
 
-  while (exiting_job_list.size() != 0)
+  for (unsigned int i = 0; i < exiting_job_list.size(); i++)
     {
     exiting_job_info eji = exiting_job_list.back();
     exiting_job_list.pop_back();
@@ -6362,9 +6420,19 @@ int main(
 
   parse_command_line(argc, argv); /* Calls exit on command line error */
 
-  if ((rc = setup_program_environment()) != 0)
+  try
+    {   
+    if ((rc = setup_program_environment()) != 0)
+      {
+      return(rc);
+      }
+    }
+  catch (boost::exception &e)
     {
-    return(rc);
+    snprintf(log_buffer, sizeof(log_buffer),
+      "unexpected boost exception caught");
+    log_err(-1, __func__, log_buffer);
+    return -1;
     }
 
 #ifdef NVIDIA_GPUS
@@ -6669,9 +6737,10 @@ void resend_things()
   spawn_task_info    *st;
   time_t              time_now = time(NULL);
 
-  for(std::vector<resend_momcomm *>::iterator iter = things_to_resend.begin();iter != things_to_resend.end();iter++)
+  for (unsigned int i = 0; i < things_to_resend.size(); i++)
     {
-    mc = *iter;
+    mc = things_to_resend[i];
+
     if (time_now - mc->resend_time < RESEND_INTERVAL)
       continue;
 
@@ -6723,13 +6792,11 @@ void resend_things()
     if ((ret == DIS_SUCCESS) ||
         (mc->resend_attempts > 3))
       {
-      things_to_resend.erase(iter);
+      things_to_resend.erase(things_to_resend.begin() + i);
       free(mc);
-      if(iter == things_to_resend.end())
-        {
-        //The last item in the list was erased so don't advance past the end of the list.
-        break;
-        }
+
+      // decrement i to not go past the array and not skip one
+      i--;
       }
     else
       mc->resend_time = time_now;
@@ -6747,7 +6814,6 @@ int add_to_resend_things(
   things_to_resend.push_back(mc);
   return PBSE_NONE;
   } /* END add_to_resend_things() */
-
 
 
 

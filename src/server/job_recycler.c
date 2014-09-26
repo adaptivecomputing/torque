@@ -94,36 +94,32 @@ extern int          LOGLEVEL;
 void initialize_recycler()
 
   {
-  recycler.rc_next_id = 0;
   recycler.rc_jobs.lock();
   recycler.rc_iter = recycler.rc_jobs.get_iterator();
   recycler.rc_jobs.unlock();
-
   recycler.rc_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(recycler.rc_mutex,NULL);
   } /* END initialize_recycler() */
 
 
 
+job *pop_job_from_recycler(
 
-job *next_job_from_recycler(
-
-    all_jobs          *aj,
-    all_jobs_iterator *iter)
+  all_jobs *aj)
 
   {
   job *pjob;
 
   aj->lock();
-  pjob = iter->get_next_item();
-  aj->unlock();
+  pjob = aj->pop();
 
   if (pjob != NULL)
     lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
-  return(pjob);
-  } /* END next_job_from_recycler() */
+  aj->unlock();
 
+  return(pjob);
+  } /* END pop_job_from_recycler() */
 
 
 
@@ -132,40 +128,36 @@ void *remove_some_recycle_jobs(
   void *vp)
 
   {
-  int  i;
-  all_jobs_iterator  *iter = NULL;
-  job *pjob = NULL;
+  job    *pjob = NULL;
+  time_t  time_now = time(NULL);
 
   pthread_mutex_lock(recycler.rc_mutex);
 
-  recycler.rc_jobs.lock();
-  iter = recycler.rc_jobs.get_iterator();
-  recycler.rc_jobs.unlock();
-  for (i = 0; i < JOBS_TO_REMOVE; i++)
+  for (int i = 0; i < JOBS_TO_REMOVE; i++)
     {
-    pjob = next_job_from_recycler(&recycler.rc_jobs,iter);
+    pjob = pop_job_from_recycler(&recycler.rc_jobs);
     
     if (pjob == NULL)
       break;
 
+    if (time_now - pjob->ji_momstat < MINIMUM_RECYCLE_TIME)
+      {
+      insert_job(&recycler.rc_jobs, pjob);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+      break;
+      }
+
     if (LOGLEVEL >= 10)
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
 
-    pjob->ji_being_recycled = FALSE; //Need to set the being_recycled flag to false or
-                                     //or remove_job won't remove it.
-    remove_job(&recycler.rc_jobs, pjob);
     unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     free_job_allocation(pjob);
     }
 
   pthread_mutex_unlock(recycler.rc_mutex);
 
-  if (iter != NULL)
-   delete iter; 
-
   return(NULL);
   } /* END remove_some_recycle_jobs() */
-
 
 
 
@@ -175,11 +167,18 @@ int insert_into_recycler(
 
   {
   int              rc;
-  pthread_mutex_t *tmp = pjob->ji_mutex;
+  pthread_mutex_t *tmp;
   char             log_buf[LOCAL_LOG_BUF_SIZE];
 
+  pthread_mutex_lock(recycler.rc_mutex);
+
+  tmp = pjob->ji_mutex;
+
   if (pjob->ji_being_recycled == TRUE)
+    {
+    pthread_mutex_unlock(recycler.rc_mutex);
     return(PBSE_NONE);
+    }
   
   if (LOGLEVEL >= 7)
     {
@@ -187,30 +186,16 @@ int insert_into_recycler(
       "Adding job %s to the recycler", pjob->ji_qs.ji_jobid);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
-  
-  if (pjob->ji_being_recycled == TRUE)
-    {
-    return PBSE_NONE;
-    }
 
+  memset(pjob, 0, sizeof(job));
   pjob->ji_mutex = tmp;
 
-  pthread_mutex_lock(recycler.rc_mutex);
-
-  sprintf(pjob->ji_qs.ji_jobid,"%d",recycler.rc_next_id);
+  sprintf(pjob->ji_qs.ji_jobid,"%016lx",(long)pjob);
   pjob->ji_being_recycled = TRUE;
-
-  recycler.rc_jobs.lock();
-  if (recycler.rc_jobs.count() >= MAX_RECYCLE_JOBS)
-    {
-    enqueue_threadpool_request(remove_some_recycle_jobs, NULL, task_pool);
-    }
-  recycler.rc_jobs.unlock();
     
   rc = insert_job(&recycler.rc_jobs, pjob);
+  pjob->ji_momstat = time(NULL);
     
-  update_recycler_next_id();
-
   pthread_mutex_unlock(recycler.rc_mutex);
 
   return(rc);
@@ -218,39 +203,27 @@ int insert_into_recycler(
 
 
 
+void *remove_extra_recycle_jobs(
 
-job *get_recycled_job()
+  void *vp)
 
   {
-  job *pjob;
-
-  pthread_mutex_lock(recycler.rc_mutex);
-  pjob = next_job_from_recycler(&recycler.rc_jobs,recycler.rc_iter);
-
-  if (pjob == NULL)
+  while (1)
     {
+    bool remove = false;
     recycler.rc_jobs.lock();
-    recycler.rc_iter = recycler.rc_jobs.get_iterator();
+    if (recycler.rc_jobs.count() >= MAX_RECYCLE_JOBS)
+      remove = true;
     recycler.rc_jobs.unlock();
+
+    if (remove == true)
+      remove_some_recycle_jobs(NULL);
+
+    sleep(100);
     }
-  pthread_mutex_unlock(recycler.rc_mutex);
 
-  if (pjob != NULL)
-    pjob->ji_being_recycled = FALSE;
-
-  return(pjob);
-  } /* END get_recycled_job() */
-
-
-
-void update_recycler_next_id() 
-
-  {
-  recycler.rc_next_id++;
-  } /* END update_recycler_next_id() */
-
-
-
+  return(NULL);
+  } /* END remove_extra_recycle_jobs() */
 
 
 

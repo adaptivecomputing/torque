@@ -1,6 +1,7 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
+#include <arpa/inet.h>
 
 #include "server_limits.h" /* PBS_NET_MAX_CONNECTIONS */
 #include "credential.h" /* credential */
@@ -29,11 +30,22 @@ bool check_acl;
 bool find_node;
 bool fail_get_connecthost = false;
 int free_attrlist_called;
+char scaff_buffer[1024];
 int dis_req_read_rc = PBSE_NONE;
 
 bool threadpool_is_too_busy(threadpool *tp, int permissions)
   {
   return(false);
+  }
+
+int pthread_mutex_lock(pthread_mutex_t *mutex) throw()
+  {
+  return(0);
+  }
+
+int pthread_mutex_unlock(pthread_mutex_t *mutex) throw()
+  {
+  return(0);
   }
 
 int req_releasejob(batch_request *preq)
@@ -86,6 +98,9 @@ void req_rescfree(struct batch_request *preq)
 
 int get_connecthost(int sock, char *namebuf, int size)
   {
+  if (sock == 999)
+    return(-1);
+
   if (fail_get_connecthost == true)
     return(-1);
 
@@ -285,6 +300,9 @@ char * csv_find_string(const char *csv_str, const char *search_str)
 
 char *pbse_to_txt(int err)
   {
+  if (err == PBSE_BADHOST)
+    return (char *)"Access from host not allowed, or unknown host";
+  
   return(strdup("bob"));
   }
 
@@ -480,6 +498,19 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   return(0);
   }
 
+int pbs_getaddrinfo(const char *hostname, struct addrinfo *in, struct addrinfo **out)
+  {
+  return(0);
+  }
+
+bool log_available(int eventtype)
+  {
+  return true;
+  }
+
 void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
-void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) 
+  {
+  snprintf(scaff_buffer, sizeof(scaff_buffer), "%s", text);
+  }

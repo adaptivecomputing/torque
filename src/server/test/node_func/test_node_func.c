@@ -20,6 +20,7 @@ void write_compute_node_properties(struct pbsnode &reporter, FILE *nin);
 void add_to_property_list(std::stringstream &property_list, const char *token);
 int login_encode_jobs(struct pbsnode *pnode, tlist_head *phead);
 int cray_enabled;
+int read_val_and_advance(int *val, char **str);
 
 void initialize_allnodes(all_nodes *an, struct pbsnode *n1, struct pbsnode *n2)
   {
@@ -51,6 +52,25 @@ void add_prop(struct pbsnode &pnode, const char *prop_name)
     curr->next = pp;
     }
   }
+
+
+START_TEST(read_val_and_advance_test)
+  {
+  int   val;
+  char *str = NULL;
+
+  fail_unless(read_val_and_advance(NULL, &str) == PBSE_BAD_PARAMETER);
+  fail_unless(read_val_and_advance(&val, &str) == PBSE_BAD_PARAMETER);
+
+  str = strdup("64,16,16");
+  fail_unless(read_val_and_advance(&val, &str) == PBSE_NONE);
+  fail_unless(val == 64);
+  fail_unless(read_val_and_advance(&val, &str) == PBSE_NONE);
+  fail_unless(val == 16);
+  fail_unless(read_val_and_advance(&val, &str) == PBSE_NONE);
+  fail_unless(val == 16);
+  }
+END_TEST
   
 
 START_TEST(write_compute_node_properties_test)
@@ -367,6 +387,8 @@ START_TEST(effective_node_delete_test)
   /* pthread_mutex_init(allnodes.allnodes_mutex, NULL); */
   node = (struct pbsnode *)malloc(sizeof(struct pbsnode));
   initialize_pbsnode(node, NULL, NULL, 0, FALSE);
+  effective_node_delete(&node);
+  node->nd_name = strdup("nodename");
   effective_node_delete(&node);
 
   fail_unless(node == NULL, "unsuccessfull node delition %d", node);
@@ -756,7 +778,11 @@ START_TEST(remove_node_test)
   fail_unless(result != PBSE_NONE, "NULL input pbsnode pointer fail");
 
   result = remove_node(&test_all_nodes, &node);
-  fail_unless(result == PBSE_NONE, "insert_node fail");
+  fail_unless(result != PBSE_NONE, "remove_node fail");
+
+  node.nd_name = (char *)"nodeName";
+  result = remove_node(&test_all_nodes, &node);
+  fail_unless(result == PBSE_NONE, "remove_node fail");
 
   }
 END_TEST
@@ -1019,6 +1045,7 @@ Suite *node_func_suite(void)
   tcase_add_test(tc_core, remove_hello_test);
   tcase_add_test(tc_core, add_to_property_list_test);
   tcase_add_test(tc_core, write_compute_node_properties_test);
+  tcase_add_test(tc_core, read_val_and_advance_test);
   suite_add_tcase(s, tc_core);
 
 #if 0

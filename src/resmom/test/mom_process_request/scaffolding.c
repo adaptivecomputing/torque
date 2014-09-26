@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 #include <time.h> /* time_t */
+#include <arpa/inet.h>
 
 #include "server_limits.h" /* PBS_NET_MAX_CONNECTIONS, pbs_net_t */
 #include "net_connect.h" /* connection */
@@ -19,7 +20,6 @@ const char *msg_request = "Type %s request received from %s@%s, sock=%d";
 AvlTree okclients = NULL;
 int LOGLEVEL = 1;
 char log_buffer[LOG_BUF_SIZE];
-
 
 void req_rerunjob(batch_request *preq)
   {
@@ -53,13 +53,18 @@ void req_modifyjob(struct batch_request *preq)
 
 int get_connecthost(int sock, char *namebuf, int size)
   {
+  if (sock == 999)
+    return(-1);
+
   return(0);
   }
 
 pbs_net_t get_connectaddr(int sock, int mutex)
   {
-  fprintf(stderr, "The call to get_connectaddr needs to be mocked!!\n");
-  exit(1);
+  if (sock == 999)
+    return(167838724);
+  else
+    return(0);
   }
 
  /*
@@ -110,6 +115,8 @@ int dis_request_read(struct tcp_chan *chan, struct batch_request *request)
 struct tcp_chan *DIS_tcp_setup(int fd)
   {
   static struct tcp_chan chan;
+  if (fd == 999)
+    chan.sock = fd;
   return(&chan);
   }
 
@@ -177,8 +184,10 @@ void req_cpyfile(struct batch_request *preq)
  
 char *pbse_to_txt(int err)
   {
-  fprintf(stderr, "The call to pbse_to_txt needs to be mocked!!\n");
-  exit(1);
+  if (err == PBSE_BADHOST)
+    return (char *)"Access from host not allowed, or unknown host";
+  else
+    return (char *)"";
   }
 
 void append_link(tlist_head *head, list_link *new_link, void *pobj)
@@ -247,6 +256,16 @@ int mom_req_stat_job(
   }
 
 void mom_req_quejob(batch_request *preq) {}
+
+int pbs_getaddrinfo(const char *hostname, struct addrinfo *in, struct addrinfo **out)
+  {
+  return(0);
+  }
+
+bool log_available(int eventtype)
+  {
+  return true;
+  }
 
 void req_delete_reservation(struct batch_request *request) {}
 void req_change_power_state(struct batch_request*){}

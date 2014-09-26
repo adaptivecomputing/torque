@@ -295,7 +295,9 @@ int save_attr_xml(
   /* write the opening tag for attributes */
   snprintf(buf,sizeof(buf),"<attributes>\n");
   if ((rc = write_buffer(buf,strlen(buf),fds)) != 0)
+    {
     return(rc);
+    }
 
   for (i = 0; i < numattr; i++)
     {
@@ -372,7 +374,7 @@ int recov_attr(
   char     *endPal;
 #ifndef PBS_MOM
   bool      exec_host_found = false;
-  char      job_state;
+  char      job_state = 0;
 #endif
 
   /* set all privileges (read and write) for decoding resources */
@@ -509,7 +511,7 @@ int recov_attr(
       exec_host_found = true;
       }
 
-    if (!strcmp(pal->al_name, ATTR_state))
+    if ((!strcmp(pal->al_name, ATTR_state))&&(pal->al_value != NULL))
       {
       job_state = *pal->al_value;
       }

@@ -510,3 +510,9 @@ work_task *pop_timed_task(
   {
   return(NULL);
   }
+
+void *remove_extra_recycle_jobs(void *)
+  {
+  return(NULL);
+  }
+  

@@ -80,6 +80,7 @@
 
 #include <time.h>
 #include <string>
+#include <vector>
 #include "pbs_ifl.h"
 
 class exiting_job_info

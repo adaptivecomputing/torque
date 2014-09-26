@@ -131,7 +131,7 @@
 #include "nvml.h"
 #endif  /* NVML_API */
 
-extern int find_file(char *, char *);
+extern int    find_file(const char *, const char *);
 extern int    MOMNvidiaDriverVersion;
 extern int    use_nvidia_gpu;
 extern time_t time_now;
@@ -1119,10 +1119,10 @@ void generate_server_gpustatus_nvml(
     return;
     }
 
+  memset(&tmpbuf, 0, sizeof(tmpbuf));
+
   /* get timestamp to report */
   snprintf(tmpbuf, 100, "timestamp=%s", ctime(&time_now));
-
-  memset(&tmpbuf, 0, sizeof(tmpbuf));
 
   gpu_status.push_back(tmpbuf);
 

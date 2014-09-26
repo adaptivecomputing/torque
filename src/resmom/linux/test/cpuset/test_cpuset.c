@@ -33,7 +33,6 @@ void event_data(const char *d)
   if(!strcmp(d,"mems = 0-2,7,12-14")) memStringFound = true;
   }
 
-
 START_TEST(init_torque_cpuset_test)
   {
   check_event = true;

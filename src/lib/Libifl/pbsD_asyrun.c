@@ -121,6 +121,7 @@ int pbs_asyrunjob_err(
   if ((chan = DIS_tcp_setup(sock)) == NULL)
     {
     rc = PBSE_PROTOCOL;
+    pthread_mutex_unlock(connection[c].ch_mutex);
     return rc;
     }
   else if ((rc = encode_DIS_ReqHdr(chan, PBS_BATCH_AsyrunJob, pbs_current_user))

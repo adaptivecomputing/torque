@@ -25,7 +25,7 @@ START_TEST(test_addreq)
   fail_unless(addreq_err(sock,&err,(char *)"all") == 0);
   fail_unless(addreq_err(sock,&err,(char *)"the") == 0);
   fail_unless(addreq_err(sock,&err,(char *)"boys") == 0);
-  fail_unless(addreq(sock,(char *)"and girls") == 0);
+  fail_unless(addreq_err(sock,&err,(char *)"and girls") == 0);
   flushreq();
   char *bf = NULL;
   long long len = 0;

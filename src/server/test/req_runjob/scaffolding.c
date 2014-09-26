@@ -21,6 +21,17 @@
 
 pthread_mutex_t *scheduler_sock_jobct_mutex;
 const char *PJobSubState[10];
+const char *PJobState[] =
+  {
+  "TRANSIT",
+  "QUEUED",
+  "HELD",
+  "WAITING",
+  "RUNNING",
+  "EXITING",
+  "COMPLETE",
+  NULL
+  };
 int svr_tsnodes = 0;
 int svr_resc_size = 0;
 attribute_def job_attr_def[10];
@@ -35,6 +46,7 @@ const char *msg_manager = "%s at request of %s@%s";
 int LOGLEVEL = 10; /* force logging code to be exercised as tests run */
 int svr_totnodes = 0;
 threadpool_t *request_pool;
+char scaff_buffer[1024];
 threadpool_t *async_pool;
 
 
@@ -230,20 +242,17 @@ resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
 
 job *svr_find_job(const char *jobid, int get_subjob)
   {
-  fprintf(stderr, "The call to find_job to be mocked!!\n");
-  exit(1);
+  return (job *) atol(jobid);
   }
 
 void DIS_tcp_settimeout(long timeout)
   {
-  fprintf(stderr, "The call to DIS_tcp_settimeout to be mocked!!\n");
-  exit(1);
   }
 
 int send_job_work(char *job_id, char *node_name, int type, int *my_err, struct batch_request *preq)
   {
-  fprintf(stderr, "The call to send_job_work to be mocked!!\n");
-  exit(1);
+  //returning failure
+  return -1;
   }
 
 void svr_evaljobstate(job &pjob, int &newstate, int &newsub, int forceeval)
@@ -346,7 +355,11 @@ int enqueue_threadpool_request(void *(*func)(void *), void *arg, threadpool_t *t
 
 void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
-void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+
+void log_event(int eventtype, int objclass, const char *objname, const char *text)
+  {
+  snprintf(scaff_buffer, sizeof(scaff_buffer), "%s", text);
+  }
 
 int relay_to_mom(job **pjob_ptr, batch_request   *request, void (*func)(struct work_task *))
   {
@@ -357,3 +370,14 @@ batch_request *duplicate_request(batch_request *preq, int job_index)
   {
   return NULL;
   }
+
+int pbs_getaddrinfo(const char *hostname, struct addrinfo *in, struct addrinfo **out)
+  {
+  return(0);
+  }
+
+bool log_available(int eventtype)
+  {
+  return true;
+  }
+

@@ -128,6 +128,8 @@
 #ifdef HAVE_WORDEXP
 #include <wordexp.h>
 
+extern int terminate_sisters(job *, int);
+
 extern struct var_table vtable;      /* see start_exec.c */
 extern char           **environ;
 
@@ -2225,6 +2227,19 @@ void req_signaljob(
     }
   else
     {
+    int rc;
+
+    /* We are killing the job. If this is a multi-node job contact the sister nodes first so they
+     * are not hanging around after mother superior sends an obit indicating the job is already
+     * finished
+     */
+    rc = terminate_sisters(pjob, sig);
+    if (rc != PBSE_NONE)
+      {
+      sprintf(log_buffer, "%s - Could not terminate all sisters: %d", __func__, rc);
+      log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+      }
+
     /*
      * When kill_job is launched, processes are killed and waitpid() should harvest the process
      * and takes action to send an obit. If no matching process exists, then an obit may never be
@@ -2947,9 +2962,28 @@ void req_rerunjob(
       }
     }
 
+  if (pjob->ji_qs.ji_svrflags && JOB_SVFLG_CHECKPOINT_FILE)
+    {
+    rc = return_file(pjob, Checkpoint, sock, TRUE);
+    if (rc != PBSE_NONE)
+      {
+       /* FAILURE - cannot report file to server */
+
+      log_event(
+        PBSEVENT_ERROR,
+        PBS_EVENTCLASS_REQUEST,
+        __func__,
+        (char *)"cannot move output files to server. checkpoint file not found");
+
+      req_reject(rc, 0, preq, NULL, NULL);
+    
+      close(sock);
+      exit(EXIT_SUCCESS);
+      }
+    }
+
   if (((rc = return_file(pjob, StdOut, sock, TRUE)) != 0) ||
-      ((rc = return_file(pjob, StdErr, sock, TRUE)) != 0) ||
-      ((rc = return_file(pjob, Checkpoint, sock, TRUE)) != 0))
+      ((rc = return_file(pjob, StdErr, sock, TRUE)) != 0))
     {
     /* FAILURE - cannot report file to server */
 
@@ -4147,6 +4181,8 @@ void req_delete_reservation(
     req_reject(-1, 0, request, NULL, log_buffer);
   } /* END req_delete_reservation() */
 
+
+
 /*
  * This call will put the machine into the low power state requested if
  * the machine is set up to support that low power state. Otherwise it will
@@ -4158,22 +4194,28 @@ void req_delete_reservation(
  *
  * https://www.kernel.org/doc/Documentation/power/states.txt
  */
-void req_change_power_state(struct batch_request *request)
+void req_change_power_state(
+    
+  batch_request *request)
+
   {
   power_state pstate;
+  int         requested_power_state = request->rq_ind.rq_powerstate;
 
-  if(!pstate.is_valid())
+  if (!pstate.is_valid())
     {
     req_reject(-PBSE_POWER_STATE_UNSUPPORTED,0,request,NULL,pstate.get_last_error_string());
     return;
     }
-  if(!pstate.is_valid_power_state(request->rq_ind.rq_powerstate))
+
+  if (!pstate.is_valid_power_state(requested_power_state))
     {
     req_reject(-PBSE_POWER_STATE_UNAVAILABLE,0,request,NULL,pstate.get_last_error_string());
     return;
     }
+
   reply_ack(request); //Reply first, won't be able to after.
-  pstate.set_power_state(request->rq_ind.rq_powerstate);
+  pstate.set_power_state(requested_power_state);
   sleep(10);
   }
 

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "pbs_ifl.h"
+#include "csv.h"
 
 int pbs_errno = 0;
 

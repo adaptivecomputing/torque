@@ -316,6 +316,68 @@ void post_rerun(
 
 
 
+/*
+ * requeue_job_without_contacting_mom()
+ *
+ */
+void requeue_job_without_contacting_mom(
+
+  job &pjob)
+
+  {
+  if (pjob.ji_qs.ji_state == JOB_STATE_RUNNING)
+    {
+    rel_resc(&pjob);
+    svr_setjobstate(&pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE);
+    pjob.ji_wattr[JOB_ATR_exec_host].at_flags &= ~ATR_VFLAG_SET;
+
+    if (pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
+      {
+      free(pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+      pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = NULL;
+      }
+    }
+  } /* END requeue_job_without_contacting_mom() */
+
+
+
+/*
+ * handle_requeue_all
+ *
+ * requeues all jobs without contacting the moms that the jobs should be using
+ */
+
+int handle_requeue_all(
+
+  batch_request *preq)
+
+  {
+  int                rc;
+  job               *pjob;
+  all_jobs_iterator *iter;
+
+  if ((preq->rq_perm & (ATR_DFLAG_MGWR)) == 0)
+    {
+    rc = PBSE_PERM;
+    req_reject(rc, 0, preq, NULL, "You must be a manager to requeue all jobs");
+    return(rc);
+    }
+
+  alljobs.lock();
+  iter = alljobs.get_iterator();
+  alljobs.unlock();
+
+  while ((pjob = next_job(&alljobs, iter)) != NULL)
+    {
+    mutex_mgr job_mutex(pjob->ji_mutex, true);
+    requeue_job_without_contacting_mom(*pjob);
+    }
+
+  reply_ack(preq);
+
+  return(PBSE_NONE);
+  } /* END handle_requeue_all() */
+
 
 
 /**
@@ -330,7 +392,7 @@ void post_rerun(
 
 int req_rerunjob(
    
-  struct batch_request *preq)
+  batch_request *preq)
 
   {
   int     rc = PBSE_NONE;
@@ -340,7 +402,11 @@ int req_rerunjob(
   char    log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* check if requestor is admin, job owner, etc */
-
+  if (!strcasecmp(preq->rq_ind.rq_rerun, "all"))
+    {
+    return(handle_requeue_all(preq));
+    }
+  
   if ((pjob = chk_job_request(preq->rq_ind.rq_rerun, preq)) == 0)
     {
     /* FAILURE */

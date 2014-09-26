@@ -184,6 +184,10 @@ int decode_arst_direct(
 
   memset(pbuf, 0, ssize);
 
+  // make it so that ns - 1 is always >= 0 for the bksize calculation
+  if (ns < 1)
+    ns = 1;
+
   bksize = (ns - 1) * sizeof(char *) + sizeof(struct array_strings);
 
   if ((stp = (struct array_strings *)calloc(1, bksize)) == NULL)
@@ -658,6 +662,11 @@ int set_arst(
         }
       else
         {
+        if (!pas->as_buf) //coverity CID-752758
+          {
+          pas->as_bufsize = 0;
+          return(PBSE_SYSTEM);
+          }
         /* str fits, clear buf */
 
         memset(pas->as_buf,0,pas->as_bufsize);

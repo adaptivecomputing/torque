@@ -103,6 +103,7 @@
 #include "svrfunc.h"
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
+#include "../lib/Libnet/lib_net.h"
 
 /* Private Function local to this file */
 
@@ -112,7 +113,7 @@ static void post_signal_req (batch_request *preq);
 
 extern int   LOGLEVEL;
 
-extern void   set_old_nodes (job *);
+extern int   set_old_nodes (job *);
 
 extern job  *chk_job_request(char *, struct batch_request *);
 
@@ -190,7 +191,9 @@ int req_signaljob(
 
   if (LOGLEVEL >= 6)
     {
-    sprintf(log_buf, "relaying signal request to mom %lu", pjob->ji_qs.ji_un.ji_exect.ji_momaddr);
+    char ipstr[128];
+
+    sprintf(log_buf, "relaying signal request to mom %s", netaddr_long(pjob->ji_qs.ji_un.ji_exect.ji_momaddr,ipstr));
 
     log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,"req_signaljob",log_buf);
     }
@@ -198,8 +201,21 @@ int req_signaljob(
   /* send reply for asynchronous suspend */
   if (preq->rq_type == PBS_BATCH_AsySignalJob)
     {
-    reply_ack(preq);
-    return(PBSE_NONE);
+    /* reply_ack will free preq. We need to copy it before we call reply_ack */
+    batch_request *new_preq;
+
+    new_preq = duplicate_request(preq, -1);
+    if (new_preq == NULL)
+      {
+      sprintf(log_buf, "failed to duplicate batch request");
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+      return(PBSE_MEM_MALLOC);
+      }
+
+    get_batch_request_id(new_preq);
+
+    reply_ack(new_preq);
+    preq->rq_noreply = TRUE;
     }
 
   /* pass the request on to MOM */
@@ -264,6 +280,10 @@ int issue_signal(
 
   newreq->rq_extra = extra;
   newreq->rq_extend = extend;
+  if (extend != NULL)
+    {
+    newreq->rq_extsz = strlen(extend);
+    }
 
   strcpy(newreq->rq_ind.rq_signal.rq_jid, pjob->ji_qs.ji_jobid);
 

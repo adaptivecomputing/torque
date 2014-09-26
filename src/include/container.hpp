@@ -48,29 +48,27 @@ template <class T>
 class item
   {
   public:
-  item(std::string idString,T p):id(idString),ptr(p)
+
+  item(std::string const &idString, T p): id(idString), ptr(p)
     {
     }
-  item(const char *idString,T p):ptr(p)
+
+  bool operator == (
+      
+    const std::string &rhs) const
+
     {
-    if(idString == NULL)
-      {
-      id = "";
-      }
-    else
-      {
-      id = idString;
-      }
-    }
-  bool operator == (const std::string& rhs) const
-    {
-    if(&rhs == NULL) return false;
+    if (&rhs == NULL)
+      return false;
+
     return id == rhs;
     }
+
   T get() const
     {
     return ptr;
     }
+
   std::string id;
   private:
   item(){}
@@ -197,11 +195,13 @@ class item_container
     };
 
   item_container():
+
     updateCounter(0),
     max(0),
     num(0),
     next_slot(1),
     last(0)
+
     {
     pthread_mutex_init(&mutex, NULL);
     max = 10;
@@ -210,183 +210,261 @@ class item_container
     locked = false;
 #endif
     }
+
+
+
   ~item_container()
     {
-    if(exit_called)
+    if (exit_called)
       {
       //If exit is called, don't free the slots.
       lock();
       unlock();
       return;
       }
-    if(slots != NULL) free(slots);
-    }
-  bool insert(T it,const char *id,bool replace = false)
-    {
-    CHECK_LOCK
-    if(id == NULL || exit_called) return false;
-    return insert(it,std::string(id),replace);
-    }
-  bool insert(T it,std::string id,bool replace = false)
-    {
-    CHECK_LOCK
-    if(exit_called) return false;
-    int index = map[id];
-    if(index != ALWAYS_EMPTY_INDEX)
+
+    if (slots != NULL)
       {
-      if(!replace) return false;
+      clear();
+      free(slots);
+      slots = NULL;
+      }
+    }
+
+
+
+  bool insert(
+      
+    T                  it,
+    std::string const &id,
+    bool               replace = false)
+
+    {
+    CHECK_LOCK
+    if (exit_called)
+      return false;
+
+    int index = map[id];
+    if (index != ALWAYS_EMPTY_INDEX)
+      {
+      if (!replace) return false;
       remove_thing_from_index(index);
       }
+
     item<T> *pItem = new item<T>(id,it);
-    if(insert_thing(pItem) < 0) return false;
+    if (insert_thing(pItem) < 0)
+      return false;
     return true;
     }
-  bool insert_after(const char *location_id,T it,const char *id)
+
+
+
+  bool insert_after(
+      
+    std::string const &location_id,
+    T                  it,
+    std::string const &id)
+
     {
     CHECK_LOCK
-    if((id == NULL)||(location_id == NULL) || exit_called) return false;
-    return insert_after(std::string(location_id),it,std::string(id));
-    }
-  bool insert_after(std::string location_id,T it,std::string id)
-    {
-    CHECK_LOCK
-    if(exit_called) return false;
+    if (exit_called)
+      return false;
+
     int index = map[location_id];
-    if(index == ALWAYS_EMPTY_INDEX) return false;
+    if (index == ALWAYS_EMPTY_INDEX)
+      return false;
+    
     item<T> *pItem = new item<T>(id,it);
-    if(insert_thing_after(pItem,index) < 0) return false;
+
+    if (insert_thing_after(pItem,index) < 0)
+      return false;
+
     return true;
     }
-  bool insert_at(int index,T it,const char *id)
+
+
+
+  bool insert_at(
+      
+    int                index,
+    T                  it,
+    std::string const &id)
+
     {
     CHECK_LOCK
-    if(id == NULL || exit_called) return false;
-    return insert_at(index,it,std::string(id));
-    }
-  bool insert_at(int index,T it,std::string id)
-    {
-    CHECK_LOCK
-    if(exit_called) return false;
+    if (exit_called)
+      return false;
+
     int iter = -1;
     initialize_ra_iterator(&iter);
     while(index--)
       {
       item<T> *pItem = next_thing(&iter);
-      if(pItem == NULL) return false;
+      if (pItem == NULL)
+        return false;
       }
+
     item<T> *pItem = new item<T>(id,it);
-    if(insert_thing_before(pItem,iter) < 0) return false;
+
+    if (insert_thing_before(pItem,iter) < 0)
+      return false;
+
     return true;
     }
 
-  bool insert_first(T it,const char *id)
+
+
+  bool insert_first(
+      
+    T                  it,
+    std::string const &id)
+
     {
     CHECK_LOCK
-    if(id == NULL || exit_called) return false;
-    return insert_at(0,it,std::string(id));
-    }
-  bool insert_first(T it,std::string id)
-    {
-    CHECK_LOCK
-    if(exit_called) return false;
+    if (exit_called)
+      return false;
+
     return insert_at(0,it,id);
     }
-  bool insert_before(const char *location_id,T it,const char *id)
+
+
+
+  bool insert_before(
+      
+    std::string const &location_id,
+    T                  it,
+    std::string const &id)
+
     {
     CHECK_LOCK
-    if((id == NULL)||(location_id == NULL) || exit_called) return false;
-    return insert_before(std::string(location_id),it,std::string(id));
-    }
-  bool insert_before(std::string location_id,T it,std::string id)
-    {
-    CHECK_LOCK
-    if(exit_called) return false;
+    if (exit_called)
+      return false;
+
     int index = map[location_id];
-    if(index == ALWAYS_EMPTY_INDEX) return false;
+    if (index == ALWAYS_EMPTY_INDEX)
+      return false;
+
     item<T> *pItem = new item<T>(id,it);
-    if(insert_thing_before(pItem,index) != PBSE_NONE) return false;
+    if (insert_thing_before(pItem,index) != PBSE_NONE)
+      return false;
+
     return true;
     }
-  bool remove(const char *id)
+
+
+
+  bool remove(
+      
+    std::string const &id)
+
     {
     CHECK_LOCK
-    if(id == NULL || exit_called) return false;
-    return remove(std::string(id));
-    }
-  bool remove(std::string id)
-    {
-    CHECK_LOCK
-    if(exit_called) return false;
+    if (exit_called)
+      return false;
+
     int index = map[id];
-    if(index == ALWAYS_EMPTY_INDEX) return false;
-    if(remove_thing_from_index(index) != PBSE_NONE) return false;
+    if (index == ALWAYS_EMPTY_INDEX)
+      return false;
+    
+    if (remove_thing_from_index(index) != PBSE_NONE)
+      return false;
+
     return true;
     }
-  T find(const char *id)
+
+
+
+  T find(
+      
+    std::string const &id)
+
     {
     CHECK_LOCK
-    if(id == NULL || exit_called) return empty_val();
-    return find(std::string(id));
-    }
-  T find(std::string id)
-    {
-    CHECK_LOCK
-    if(exit_called) return  empty_val();
+    if (exit_called)
+      return  empty_val();
+
     int index = map[id];
-    if(index == ALWAYS_EMPTY_INDEX)
+    if (index == ALWAYS_EMPTY_INDEX)
       {
       return empty_val();
       }
     item<T> *pItem = slots[index].pItem;
-    if(pItem == NULL)
+    if (pItem == NULL)
       {
       return empty_val();
       }
     return pItem->get();
     }
+
+
+
   T pop(void)
     {
     CHECK_LOCK
-    if(exit_called) return  empty_val();
+    if (exit_called)
+      return  empty_val();
+    
     T pT = pop_thing();
-    if(pT == NULL) return empty_val();
-    return pT;
-    }
-  T pop_back(void)
-    {
-    CHECK_LOCK
-    if(exit_called) return  empty_val();
-    T pT = pop_back_thing();
-    if(pT == NULL) return empty_val();
+    
+    if (pT == NULL)
+      return empty_val();
+
     return pT;
     }
 
-  bool swap(const char *id1,const char *id2)
+
+
+  T pop_back(void)
     {
     CHECK_LOCK
-    if((id1 == NULL)||(id2 == NULL) || exit_called) return false;
-    return swap(std::string(id1),std::string(id2));
+    if (exit_called)
+      return  empty_val();
+
+    T pT = pop_back_thing();
+
+    if (pT == NULL)
+      return empty_val();
+
+    return pT;
     }
-  bool swap(std::string id1,std::string id2)
+
+
+
+  bool swap(
+      
+    std::string const &id1,
+    std::string const &id2)
+
     {
     CHECK_LOCK
-    if(exit_called) return false;
+    if (exit_called)
+      return false;
+
     int ind1 = map[id1];
     int ind2 = map[id2];
-    if((ind1 == ALWAYS_EMPTY_INDEX)||
+
+    if ((ind1 == ALWAYS_EMPTY_INDEX)||
         (ind2 == ALWAYS_EMPTY_INDEX)||
         (ind1 == ind2))
       {
       return false;
       }
+
     item<T> *pTmp = slots[ind1].pItem;
     slots[ind1].pItem = slots[ind2].pItem;
     slots[ind2].pItem = pTmp;
     map[id1] = ind2;
     map[id2] = ind1;
+
     return true;
     }
-  item_iterator *get_iterator(bool reverse = false)
+
+
+
+  item_iterator *get_iterator(
+      
+    bool reverse = false)
+
     {
     CHECK_LOCK
 
@@ -399,31 +477,45 @@ class item_container
 #endif
         reverse);
     }
+
+
+
   void clear()
     {
     CHECK_LOCK
-    if(exit_called) return;
-    for(int i = 0; i<max;i++)
+    if (exit_called)
+      return;
+
+    for (int i = 0; i < max; i++)
       {
-      if(slots[i].pItem != NULL)
+      if (slots[i].pItem != NULL)
         {
         map.erase(slots[i].pItem->id);
         delete slots[i].pItem;
         slots[i].pItem = NULL;
         }
+
       slots[i].next = ALWAYS_EMPTY_INDEX;
       slots[i].prev = ALWAYS_EMPTY_INDEX;
       }
+
     num = 0;
     next_slot = 1;
     last = 0;
     }
+
+
+
   size_t count()
     {
     CHECK_LOCK
-    if(exit_called) return 0;
+    if (exit_called)
+      return 0;
     return num;
     }
+
+
+
   void lock(void)
     {
     pthread_mutex_lock(&mutex);
@@ -431,6 +523,9 @@ class item_container
     locked = true;
 #endif
     }
+
+
+
   void unlock(void)
     {
 #ifdef CHECK_LOCKING
@@ -438,11 +533,14 @@ class item_container
 #endif
     pthread_mutex_unlock(&mutex);
     }
+
+
+
   int trylock(void)
     {
 #ifdef CHECK_LOCKING
     int ret = pthread_mutex_trylock(&mutex);
-    if(!ret)
+    if (!ret)
       {
       locked = true;
       }
@@ -451,26 +549,41 @@ class item_container
     return pthread_mutex_trylock(&mutex);
 #endif
     }
+
+
+
   private:
   T empty_val(void)
-  {
-  return NULL;
-  }
-  int swap_things(item<T> *thing1, item<T> *thing2)
+    {
+    return NULL;
+    }
+
+
+  int swap_things(
+      
+    item<T> *thing1,
+    item<T> *thing2)
+
     {
     int index1 = get_index(thing1);
     int index2 = get_index(thing2);
 
-    if((index1 == THING_NOT_FOUND)||(index2 == THING_NOT_FOUND))
+    if ((index1 == THING_NOT_FOUND) ||
+        (index2 == THING_NOT_FOUND))
       {
       return THING_NOT_FOUND;
       }
+
     slots[index1].item = thing2;
     slots[index2].item = thing1;
 
     return(PBSE_NONE);
     } /* END swap_things() */
+
+
+
   int check_and_resize()
+
     {
     slot<T>        *tmp;
     size_t       remaining;
@@ -499,6 +612,8 @@ class item_container
     return(PBSE_NONE);
     } /* END check_and_resize() */
 
+
+
   void update_next_slot() /* M */
 
     {
@@ -507,12 +622,16 @@ class item_container
       next_slot++;
     } /* END update_next_slot() */
 
+
+
   /*
    * inserts an item, resizing the array if necessary
    *
    * @return the index in the array or -1 on failure
    */
+
   int insert_thing(
+
     item<T>  *thing)
 
     {
@@ -553,11 +672,16 @@ class item_container
 
     return(rc);
     } /* END insert_thing() */
+
+
+
   /*
    * inserts a thing after the thing in index
    * NOTE: index must represent a valid index
    */
+
   int insert_thing_after(
+
     item<T>         *thing,
     int              index)
 
@@ -601,11 +725,14 @@ class item_container
     return(rc);
     } /* END insert_thing_after() */
 
+
+
   /*
    * inserts a thing before the thing in index
    * NOTE: index must represent a valid index
    */
   int insert_thing_before(
+
     item<T>         *thing,
     int              index)
 
@@ -660,6 +787,8 @@ class item_container
     return(false);
     } /* END is_present() */
 
+
+
   /*
    * fix the next pointer for the box pointing to this index
    *
@@ -689,6 +818,8 @@ class item_container
       slots[next].prev = prev;
     } /* END unlink_slot() */
 
+
+
   /*
    * remove a thing from the array
    *
@@ -697,6 +828,7 @@ class item_container
    */
 
   int remove_thing(
+
     item<T>            *thing)
 
     {
@@ -731,7 +863,10 @@ class item_container
     return(PBSE_NONE);
     } /* END remove_thing() */
 
+
+
   item<T> *remove_thing_memcmp(
+
     item<T>           *thing,
     unsigned int     size)
 
@@ -769,6 +904,7 @@ class item_container
    */
 
   T pop_thing()
+
     {
     item<T> *thing = NULL;
     int   i = slots[ALWAYS_EMPTY_INDEX].next;
@@ -795,7 +931,10 @@ class item_container
     return(pT);
     } /* END pop_thing() */
 
+
+
   T pop_back_thing()
+
     {
     item<T> *thing = NULL;
     int   i = slots[ALWAYS_EMPTY_INDEX].prev;
@@ -823,8 +962,10 @@ class item_container
     } /* END pop_thing() */
 
 
+
   int remove_thing_from_index(
-    int              index)
+
+    int index)
 
     {
     int rc = PBSE_NONE;
@@ -846,18 +987,19 @@ class item_container
     } /* END remove_thing_from_index() */
 
 
-
-
   int remove_last_thing()
 
     {
     return(remove_thing_from_index(last));
     } /* END remove_last_thing() */
 
+
+
   /*
    * returns the next available item and increments *iter
    */
   item<T> *next_thing(
+
     int             *iter)
 
     {
@@ -876,10 +1018,13 @@ class item_container
     return(thing);
     } /* END next_thing() */
 
+
+
   /*
    * returns the next available item from the back and decrements *iter
    */
   item<T> *next_thing_from_back(
+
     int             *iter)
 
     {
@@ -902,11 +1047,14 @@ class item_container
    * initialize the iterator for this array
    */
   void initialize_ra_iterator(
-    int             *iter)
+
+    int *iter)
 
     {
     *iter = slots[ALWAYS_EMPTY_INDEX].next;
     } /* END initialize_ra_iterator() */
+
+
 
   /*
    * searches the array for thing, finding the index
@@ -915,8 +1063,11 @@ class item_container
    * @param thing - the thing we're looking for
    * @return index if present, THING_NOT_FOUND otherwise
    */
+
   int get_index(
-    item<T>           *thing)
+
+    item<T> *thing)
+
     {
     try
     {
@@ -931,7 +1082,9 @@ class item_container
 
 
   item<T> *get_thing_from_index(
-    int              index)
+
+    int index)
+
     {
     if (index == -1)
       index = slots[ALWAYS_EMPTY_INDEX].next;

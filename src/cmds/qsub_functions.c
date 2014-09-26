@@ -782,12 +782,14 @@ int validate_submit_filter(
 
 
 void validate_pbs_o_workdir(
+
   job_data_container *job_attr)
 
   {
   job_data     *tmp_job_info = NULL;
   const char *the_val = NULL;
   char        null_val[] = "\0";
+  char        tmp_dir[MAXPATHLEN] = {""};
 
   if (hash_find(job_attr, ATTR_init_work_dir, &tmp_job_info) == FALSE)
     {
@@ -795,7 +797,6 @@ void validate_pbs_o_workdir(
       the_val = tmp_job_info->value.c_str();
     else
       {
-      char tmp_dir[MAXPATHLEN] = {""};
       char *the_dir = NULL;
       if ((the_dir = getcwd(tmp_dir, MAXPATHLEN)) != NULL)
         the_val = the_dir;
@@ -1092,7 +1093,7 @@ static int get_script(
           {
           fprintf(stderr, "qsub: error writing to filter stdin\n");
 
-          fclose(filter_pipe);
+          pclose(filter_pipe);
           unlink(tmp_name2);
 
           return(3);
@@ -1923,8 +1924,6 @@ void bailout(void)
 
 
 
-
-
 void toolong(
 
   int sig)
@@ -1938,8 +1937,6 @@ void toolong(
 
   exit(0);
   }
-
-
 
 
 
@@ -1996,17 +1993,14 @@ void catchint(
 
 
 
-
-
 void x11handler(
 
   int      param_sock)
 
   {
-
   struct pfwdsock *socks;
-  int n;
-  char *display;
+  int              n;
+  char            *display;
 
   calloc_or_fail((char **)&socks, sizeof(struct pfwdsock) * NUM_SOCKS, "x11handler");
 
@@ -2032,8 +2026,6 @@ void x11handler(
 
   exit(EXIT_FAILURE);
   }
-
-
 
 
 
@@ -2351,6 +2343,29 @@ int validate_group_list(
   return(TRUE);
   }
 
+
+bool came_from_moab(const char *src, std::string &escaped_semicolon)
+  {
+  char *p;
+  if ((p = strstr((char *)src, "x=SID:Moab;")))
+    {  
+    char buf[1024], *s;
+    for (s=buf; *p; p++, s++)
+      {
+      if (*p == ';')
+        {
+        *s = '\\';
+        s++;
+        }
+      *s = *p;
+      }
+    *s = '\0';
+    escaped_semicolon = std::string(buf);
+    return true;
+    }
+  else
+    return false;
+  }
 
 /** 
  * Process command line options.
@@ -3004,33 +3019,32 @@ void process_opts(
             }
           else if (!strcmp(keyword, ATTR_stagein))
             {
+            if (parse_stage_list(valuewd))
+              print_qsub_usage_exit("qsub: illegal -W value for stagein");
+            
+            if (hash_find(ji->job_attr, ATTR_stagein, &tmp_job_info))
+              {
+              /* 
+               * if this attribute already exists, we need to append this
+               * value to it because multiples are allowed.
+               */
+              char *tmpBuf;
 
-              if (parse_stage_list(valuewd))
-                print_qsub_usage_exit("qsub: illegal -W value for stagein");
-              
-              if (hash_find(ji->job_attr, ATTR_stagein, &tmp_job_info))
+              if ((tmpBuf = (char *)malloc(strlen(valuewd) + tmp_job_info->value.length() + 2)) == (char *)0)
                 {
-                /* 
-                 * if this attribute already exists, we need to append this
-                 * value to it because multiples are allowed.
-                 */
-                char *tmpBuf;
-
-                if ((tmpBuf = (char *)malloc(strlen(valuewd) + tmp_job_info->value.length() + 2)) == (char *)0)
-                  {
-                  fprintf(stderr, "Out of memory.\n");
-                  exit(1);
-                  }
-                strcpy(tmpBuf, tmp_job_info->value.c_str());
-                strcat(tmpBuf, ",");
-                strcat(tmpBuf, valuewd);
-                hash_add_or_exit(ji->job_attr, ATTR_stagein, tmpBuf, data_type);
-                free(tmpBuf);
+                fprintf(stderr, "Out of memory.\n");
+                exit(1);
                 }
-              else
-                {
-                hash_add_or_exit(ji->job_attr, ATTR_stagein, valuewd, data_type);
-                }
+              strcpy(tmpBuf, tmp_job_info->value.c_str());
+              strcat(tmpBuf, ",");
+              strcat(tmpBuf, valuewd);
+              hash_add_or_exit(ji->job_attr, ATTR_stagein, tmpBuf, data_type);
+              free(tmpBuf);
+              }
+            else
+              {
+              hash_add_or_exit(ji->job_attr, ATTR_stagein, valuewd, data_type);
+              }
 
             }
           else if (!strcmp(keyword, ATTR_stageout))
@@ -3155,6 +3169,19 @@ void process_opts(
 
               }
             }
+          else if ((!strcmp(keyword, "x")) &&
+                   (!strncmp(valuewd, "mppnodes=", strlen("mppnodes="))))
+            {
+            // add this as a resource
+            char *to_process = strdup(valuewd);
+            if (add_verify_resources(ji->res_attr, to_process, data_type) != 0)
+              {
+              free(to_process);
+              print_qsub_usage_exit("qsub: illegal -l value (mppnodes is processed as a -l value)");
+              }
+
+            free(to_process);
+            }
           else
             {
             job_data *pVal;
@@ -3268,6 +3295,7 @@ void process_opts(
       print_qsub_usage_exit(err_msg);
       }
     fclose(fP);
+    fP = NULL;
 
     if (hash_find(ji->job_attr, ATTR_pbs_o_submit_filter, &tmp_job_info))
       {
@@ -3289,13 +3317,17 @@ void process_opts(
 
       for (index = 1;index < argc;index++)
         {
+        std::string escaped_semicolon;
         if (argv[index] != NULL)
           {
           cline_out += " ";
-          cline_out += argv[index];
+          if (came_from_moab(argv[index], escaped_semicolon))
+            cline_out += escaped_semicolon;
+          else
+            cline_out += argv[index];
           }
         }    /* END for (index) */
-
+       
       cline_out += " <";
       cline_out += tmp_name;
       cline_out += " >";
@@ -3309,7 +3341,7 @@ void process_opts(
         alloc_len = 80  + strlen(tmp_name2);
         calloc_or_fail(&err_msg, alloc_len, "qsub: error writing filter o/p");
         snprintf(err_msg, alloc_len, "qsub: error writing filter o/p, %s", tmp_name2);
-        }
+       }
       else if (WEXITSTATUS(rc) == (unsigned char)SUBMIT_FILTER_ADMIN_REJECT_CODE)
         {
         alloc_len = 160;
@@ -3350,89 +3382,91 @@ void process_opts(
      * If a string can be parsed instead it would speed up the whole process
      *  by not having another disk write/read access.
      */
-    while (fgets(cline, sizeof(cline), fP) != NULL)
+    if (fP != NULL)
       {
-      if (strlen(cline) < 5)
-        break;
-
-      for (cP = cline;cP < cline + strlen(cline);cP++)
+      while (fgets(cline, sizeof(cline), fP) != NULL)
         {
-        if (*cP == '\n')
-          {
-          *cP = '\0';
-          }
-        }
-
-      /* NOTE:  allow for job attributes other than '-l' */
-
-      /* FORMAT:  '#PBS -<FLAG> <VAL>' */
-
-      if (strncasecmp(cline, "#pbs -", strlen("#pbs -")))
-        {
-        /* invalid line specified */
-
-        continue;
-        }
-
-      /* NOTE:  a better design would be to process the submitfilter
-       * outside of process_opts(),
-       * add valid args to ArgC/ArgV, and call process_opts() once. (NYI)
-       */
-
-      /* NOTE:  can we utilize 'process_opts' to process submit filter lines? (NYI) */
-
-      flag = cline[strlen("#pbs -")];
-
-      vptr = cline + strlen("#pbs -x ");
-
-      switch (flag)
-        {
-
-        case 'l':
-
-          if (add_verify_resources(ji->res_attr, vptr, data_type))
-            print_qsub_usage_exit("qsub: illegal -l value");
-
+        if (strlen(cline) < 5)
           break;
 
-        default:
-
+        for (cP = cline;cP < cline + strlen(cline);cP++)
           {
-          char FlagString[3];
-
-          char *tmpArgV[4];
-
-          int   aindex;
-
-          FlagString[0] = '-';
-          FlagString[1] = flag;
-          FlagString[2] = '\0';
-
-          /* Duplicate code */
-          aindex = 1;  /* prime getopt's starting point */
-          tmpArgV[0] = (char *)"";
-
-          tmpArgV[aindex] = FlagString;
-          tmpArgV[aindex + 1] = vptr;
-          tmpArgV[aindex + 2] = NULL;
-
-          tmpArgV[3] = NULL;
-
-          /* To prevent recursion, set a flag in the client_attr */
-          hash_add_or_exit(ji->client_attr, "no_submit_filter", "1", LOGIC_DATA);
-          process_opts(aindex + 2, tmpArgV, ji, FILTER_DATA);
-          hash_del_item(ji->client_attr, "no_submit_filter");
+          if (*cP == '\n')
+            {
+            *cP = '\0';
+            }
           }
 
-        break;
-        }  /* END switch (cptr[0]) */
-      }    /* END while (fgets(cline,sizeof(cline),fP) != NULL) */
+        /* NOTE:  allow for job attributes other than '-l' */
+
+        /* FORMAT:  '#PBS -<FLAG> <VAL>' */
+
+        if (strncasecmp(cline, "#pbs -", strlen("#pbs -")))
+          {
+          /* invalid line specified */
+
+          continue;
+          }
+
+        /* NOTE:  a better design would be to process the submitfilter
+         * outside of process_opts(),
+         * add valid args to ArgC/ArgV, and call process_opts() once. (NYI)
+         */
+
+        /* NOTE:  can we utilize 'process_opts' to process submit filter lines? (NYI) */
+
+        flag = cline[strlen("#pbs -")];
+
+        vptr = cline + strlen("#pbs -x ");
+
+        switch (flag)
+          {
+
+          case 'l':
+
+            if (add_verify_resources(ji->res_attr, vptr, data_type))
+              print_qsub_usage_exit("qsub: illegal -l value");
+
+            break;
+
+          default:
+
+            {
+            char FlagString[3];
+
+            char *tmpArgV[4];
+
+            int   aindex;
+
+            FlagString[0] = '-';
+            FlagString[1] = flag;
+            FlagString[2] = '\0';
+
+            /* Duplicate code */
+            aindex = 1;  /* prime getopt's starting point */
+            tmpArgV[0] = (char *)"";
+
+            tmpArgV[aindex] = FlagString;
+            tmpArgV[aindex + 1] = vptr;
+            tmpArgV[aindex + 2] = NULL;
+
+            tmpArgV[3] = NULL;
+
+            /* To prevent recursion, set a flag in the client_attr */
+            hash_add_or_exit(ji->client_attr, "no_submit_filter", "1", LOGIC_DATA);
+            process_opts(aindex + 2, tmpArgV, ji, FILTER_DATA);
+            hash_del_item(ji->client_attr, "no_submit_filter");
+            }
+
+          break;
+          }  /* END switch (cptr[0]) */
+        }    /* END while (fgets(cline,sizeof(cline),fP) != NULL) */
+      
+      fclose(fP);
+      }
 
     /* restore optind */
-
     optind = original_optind;
-
-    fclose(fP);
     }    /* END if (Interact_opt == 1) */
 
   /* END ORNL WRAPPER */
@@ -3565,38 +3599,38 @@ void process_config_file(
   job_info *ji)
 
   {
-  char config_buf[MAX_LINE_LEN];      /* Buffer holds config file */
+  char torque_cfg_buf[MAX_LINE_LEN];      /* Buffer holds config file */
   char *param_val;
 
-  if (load_config(config_buf, sizeof(config_buf)) == 0)
+  if (load_config(torque_cfg_buf, sizeof(torque_cfg_buf)) == 0)
     {
     /* This config entry should most likely be removed in the future */
-    if ((param_val = get_param("QSUBSLEEP", config_buf)) != NULL)
+    if ((param_val = get_param("QSUBSLEEP", torque_cfg_buf)) != NULL)
       {
       sleep(atoi(param_val));
       }
 
-    if ((param_val = get_param("SUBMITFILTER", config_buf)) != NULL)
+    if ((param_val = get_param("SUBMITFILTER", torque_cfg_buf)) != NULL)
       {
       hash_add_or_exit(ji->job_attr, ATTR_pbs_o_submit_filter, param_val, CONFIG_DATA);
       }
 
-    if ((param_val = get_param("SERVERHOST", config_buf)) != NULL)
+    if ((param_val = get_param("SERVERHOST", torque_cfg_buf)) != NULL)
       {
       hash_add_or_exit(ji->client_attr, "serverhost", param_val, CONFIG_DATA);
       }
 
-    if ((param_val = get_param("QSUBHOST", config_buf)) != NULL)
+    if ((param_val = get_param("QSUBHOST", torque_cfg_buf)) != NULL)
       {
       hash_add_or_exit(ji->job_attr, ATTR_submit_host, param_val, CONFIG_DATA);
       }
 
-    if ((param_val = get_param("QSUBSENDUID", config_buf)) != NULL)
+    if ((param_val = get_param("QSUBSENDUID", torque_cfg_buf)) != NULL)
       {
       hash_add_or_exit(ji->client_attr, ATTR_pbs_o_uid, param_val, ENV_DATA);
       }
 
-    if (get_param("QSUBSENDGROUPLIST", config_buf) != NULL)
+    if (get_param("QSUBSENDGROUPLIST", torque_cfg_buf) != NULL)
       {
       gid_t group_id = getgid();
       struct group *gpent = getgrgid(group_id);
@@ -3608,18 +3642,18 @@ void process_config_file(
         }
       }
 
-    if ((param_val = get_param("XAUTHPATH", config_buf)) != NULL)
+    if ((param_val = get_param("XAUTHPATH", torque_cfg_buf)) != NULL)
       {
       hash_add_or_exit(ji->client_attr, "xauth_path", param_val, CONFIG_DATA);
       }
 
-    if ((param_val = get_param("CLIENTRETRY", config_buf)) != NULL)
+    if ((param_val = get_param("CLIENTRETRY", torque_cfg_buf)) != NULL)
       {
       /* The value of this will be verified later */
       hash_add_or_exit(ji->client_attr, "cnt2server_retry", param_val, CONFIG_DATA);
       }
 
-    if ((param_val = get_param("VALIDATEGROUP", config_buf)) != NULL)
+    if ((param_val = get_param("VALIDATEGROUP", torque_cfg_buf)) != NULL)
       {
       if (getgrgid(getgid()) == NULL)
         print_qsub_usage_exit("qsub: cannot validate submit group.");
@@ -3627,29 +3661,35 @@ void process_config_file(
       hash_add_or_exit(ji->client_attr, "validate_group", param_val, CONFIG_DATA);
       }
 
-    if ((param_val = get_param("DEFAULTCKPT", config_buf)) != NULL)
+    if ((param_val = get_param("DEFAULTCKPT", torque_cfg_buf)) != NULL)
       {
       hash_add_or_exit(ji->job_attr, ATTR_c, param_val, CONFIG_DATA);
       }
 
-    if ((param_val = get_param("VALIDATEPATH", config_buf)) != NULL)
+    if ((param_val = get_param("VALIDATEPATH", torque_cfg_buf)) != NULL)
       {
       if (!strcasecmp(param_val, "false"))
         hash_del_item(ji->client_attr, "validate_path");
       }
-    if ((param_val = get_param("RERUNNABLEBYDEFAULT", config_buf)) != NULL)
+    if ((param_val = get_param("RERUNNABLEBYDEFAULT", torque_cfg_buf)) != NULL)
       {
       if (!strcasecmp(param_val, "false"))
         hash_add_or_exit(ji->job_attr, ATTR_r, "FALSE", STATIC_DATA);
       }
-    if ((param_val = get_param("FAULT_TOLERANT_BY_DEFAULT", config_buf)) != NULL)
+    if ((param_val = get_param("FAULT_TOLERANT_BY_DEFAULT", torque_cfg_buf)) != NULL)
       {
       if (!strcasecmp(param_val, "true"))
         hash_add_or_exit(ji->job_attr, ATTR_r, "TRUE", STATIC_DATA);
       }
-    if ((param_val = get_param("HOST_NAME_SUFFIX", config_buf)) != NULL)
-      host_name_suffix = param_val;
-    }    /* END if (load_config(config_buf,sizeof(config_buf)) == 0) */
+    if ((param_val = get_param("HOST_NAME_SUFFIX", torque_cfg_buf)) != NULL)
+      {
+      if (param_val != NULL)
+        {
+        host_name_suffix = (char *)calloc(1, strlen(param_val));
+        strcpy(host_name_suffix, param_val);
+        }
+      }
+    }    /* END if (load_config(torque_cfg_buf,sizeof(torque_cfg_buf)) == 0) */
   }
 
 /**
@@ -3734,19 +3774,25 @@ void set_minwclimit(
 
 void add_variable_list(
 
-  job_info *ji,
-  const char     *var_name,
+  job_info           *ji,
+  const char         *var_name,
   job_data_container *src_hash)
 
   {
-  int       total_len = 0;
-  int       count = 0;
-  int       pos = 0;
-  char     *var_list = NULL;
-  job_data *en;
-  src_hash->lock();
-  job_data_iterator *it = ((src_hash == NULL)?NULL:src_hash->get_iterator());
-  src_hash->unlock();
+  int                total_len = 0;
+  int                count = 0;
+  int                pos = 0;
+  char              *var_list = NULL;
+  job_data          *en;
+  job_data_iterator *it = NULL;
+
+  if (src_hash != NULL)
+    {
+    src_hash->lock();
+    it = src_hash->get_iterator();
+    src_hash->unlock();
+    }
+
   job_data *v_value = NULL;
 
   /* if -v was used then it needs to be included as well. */
@@ -3768,7 +3814,7 @@ void add_variable_list(
       strcat(var_list, ",");
     }
 
-  if(it != NULL)
+  if (it != NULL)
     {
     src_hash->lock();
     while((en = it->get_next_item()) != NULL)
@@ -3786,10 +3832,14 @@ void add_variable_list(
         }
       }
     src_hash->unlock();
+
+    delete it;
     }
 
   hash_add_or_exit(ji->job_attr, var_name, var_list, CMDLINE_DATA);
-  }
+  } /* END add_variable_list() */
+
+
 
 /**
  * Handle --about and --version, and any other options that would cause

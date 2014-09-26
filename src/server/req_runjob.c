@@ -118,6 +118,7 @@
 #include "req_stat.h" /* stat_mom_job */
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
+#include "../lib/Libnet/lib_net.h"
 
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
@@ -131,6 +132,8 @@ extern void  set_resc_assigned(job *, enum batch_op);
 extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_atr, int);
 void                         stream_eof(int, u_long, uint16_t, int);
 extern int                   job_set_wait(pbs_attribute *, void *, int);
+
+extern char *PJobState[]; 
 
 extern int LOGLEVEL;
 
@@ -288,6 +291,9 @@ void *check_and_run_job(
       }
     }
 
+  if ((*rc_ptr == PBSE_NONE) && (preq != NULL))
+    free_br(preq);
+
   return(rc_ptr);
   } /* END check_and_run_job() */
 
@@ -346,13 +352,30 @@ int req_runjob(
 
   log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
+  if (preq->rq_type == PBS_BATCH_AsyrunJob)
+    svr_setjobstate(pjob, pjob->ji_qs.ji_state, JOB_SUBSTATE_ASYNCING, FALSE);
+
   /* If async run, reply now; otherwise reply is handled in */
   /* post_sendmom or post_stagein */
   unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
 
   if (preq->rq_type == PBS_BATCH_AsyrunJob)
     {
-    reply_ack(preq);
+    /* reply_ack will free preq. We need to copy it before we call reply_ack */
+    batch_request *new_preq;
+
+    new_preq = duplicate_request(preq, -1);
+    if (new_preq == NULL)
+      {
+      sprintf(log_buf, "failed to duplicate batch request");
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+      free_br(preq);
+      return(PBSE_MEM_MALLOC);
+      }
+
+    get_batch_request_id(new_preq);
+
+    reply_ack(new_preq);
     preq->rq_noreply = TRUE;
     enqueue_threadpool_request(check_and_run_job, preq, async_pool);
     }
@@ -814,7 +837,24 @@ int svr_stagein(
      */
 
     if (*preq != NULL)
+      {
+      struct batch_request *request = *preq;
+      int free_preq = 0;
+      /* Under the following circumstances, reply_send_svr called eventually
+       * by reply_ack/reply_send will free preq under the following cirmcustances.
+       * There are 60+ occurrences of reply_send, so this is the easiest way.
+       */
+      if (((request->rq_type != PBS_BATCH_AsyModifyJob) &&
+           (request->rq_type != PBS_BATCH_AsyrunJob) &&
+           (request->rq_type != PBS_BATCH_AsySignalJob)) ||
+           (request->rq_noreply == TRUE))
+         free_preq = 1;
+
       reply_ack(*preq);
+
+      if (free_preq)
+    	  *preq = NULL;
+      }
     }
   else
     {
@@ -1244,12 +1284,17 @@ int send_job_to_mom(
 
     if (pjob != NULL)
       {
-      sprintf(tmpLine, "unable to run job, send to MOM '%lu' failed", job_momaddr);
+      char ipstr[80];
+      sprintf(tmpLine, "unable to run job, send to MOM '%s' failed", netaddr_long(job_momaddr, ipstr));
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, tmpLine);
       *pjob_ptr = pjob;
       pjob->ji_qs.ji_destin[0] = '\0';
       
-      svr_setjobstate(pjob, old_state, old_subst, FALSE);
+      /* Do not restore the status to running again
+      ** since it's not able to run the job on the MOM
+      */
+      if (old_state != JOB_STATE_RUNNING)
+        svr_setjobstate(pjob, old_state, old_subst, FALSE);
       }
 
     if (mail_text != NULL)
@@ -1687,6 +1732,14 @@ job *chk_job_torun(
       }
     }
 
+  if ((pjob->ji_qs.ji_state != JOB_STATE_QUEUED) && (pjob->ji_qs.ji_state != JOB_STATE_HELD))
+    {
+    sprintf(EMsg, "job %s state %s", pjob->ji_qs.ji_jobid, PJobState[pjob->ji_qs.ji_state]);
+    req_reject(PBSE_BADSTATE, 0, preq, NULL, EMsg);
+    return(NULL);
+    }
+
+  /* make sure we are in a valid state. queued */
   if ((preq->rq_perm & (ATR_DFLAG_MGWR | ATR_DFLAG_OPWR)) == 0)
     {
     /* FAILURE - run request not authorized */

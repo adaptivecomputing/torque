@@ -100,6 +100,7 @@
 #include "tcp.h" /* tcp_chan */
 #include "net_connect.h"
 #include <string>
+#include <vector>
 
 #define SAVEJOB_BUF_SIZE 8192
 
@@ -122,6 +123,20 @@ struct job_array;
 #define JOB_REPORTED_POLL_TIMEOUT 300
 
 /*
+ * The depend_job structure is used to record the name and location
+ * of each job which is involved with the dependency
+ */
+
+typedef struct depend_job
+  {
+  list_link dc_link;
+  short dc_state; /* released / ready to run (syncct)  */
+  long dc_cost; /* cost of this child (syncct)   */
+  char dc_child[PBS_MAXSVRJOBID+1]; /* child (dependent) job  */
+  char dc_svr[PBS_MAXSERVERNAME+1]; /* server owning job  */
+  } depend_job;
+
+/*
  * Dependent Job Structures
  *
  * This set of structures are used by the server to track job
@@ -140,37 +155,23 @@ struct depend
   short   dp_numexp; /* num jobs expected (on or syncct only) */
   short   dp_numreg; /* num jobs registered (syncct only)     */
   short   dp_released; /* This job released to run (syncwith)   */
-  tlist_head dp_jobs; /* list of related jobs  (all)           */
+  std::vector<depend_job *> dp_jobs;
   };
 
-/*
- * The depend_job structure is used to record the name and location
- * of each job which is involved with the dependency
- */
-
-struct depend_job
-  {
-  list_link dc_link;
-  short dc_state; /* released / ready to run (syncct)  */
-  long dc_cost; /* cost of this child (syncct)   */
-  char dc_child[PBS_MAXSVRJOBID+1]; /* child (dependent) job  */
-  char dc_svr[PBS_MAXSERVERNAME+1]; /* server owning job  */
-  };
-
-struct array_depend
-  {
-  list_link  dp_link;
-  short      dp_type;
-  tlist_head dp_jobs;
-  };
-
-struct array_depend_job
+typedef struct array_depend_job
   {
   list_link dc_link;
   /* in this case, the child is the job depending on the array */
   char dc_child[PBS_MAXSVRJOBID+1];
   char dc_svr[PBS_MAXSERVERNAME+1];
   int  dc_num;
+  } array_depend_job;
+
+struct array_depend
+  {
+  list_link  dp_link;
+  short      dp_type;
+  std::vector<array_depend_job *> dp_jobs;
   };
 
 struct dependnames
@@ -463,6 +464,7 @@ typedef struct noderes
 #define MOM_HAS_NODEFILE              0x00000004 /* Mom wrote job PBS_NODEFILE */
 #define MOM_NO_PROC                   0x00000008 /* no procs found for job */
 #define MOM_HAS_TMPDIR                0x00000010 /* Mom made a tmpdir */
+#define MOM_EPILOGUE_RUN 64 /* The epilogue has been run for this job */ 
 
 #ifdef USESAVEDRESOURCES
 #define MOM_JOB_RECOVERY              0x000000020  /* recovering dead job on restart */
@@ -653,9 +655,10 @@ struct job
   int            ji_mempressure_cnt;   /* counts MOM cycles memory_pressure is over threshold */
 #endif
   int            ji_examined;
-  time_t         ji_kill_started;       /* time since we've begun killing the job - MS only */
-  time_t         ji_joins_sent;         /* time we sent out the join requests - MS only */
-  int            ji_joins_resent;       /* set to TRUE when rejoins have been sent */
+  time_t         ji_kill_started;      /* time since we've begun killing the job - MS only */
+  time_t         ji_joins_sent;        /* time we sent out the join requests - MS only */
+  int            ji_joins_resent;      /* set to TRUE when rejoins have been sent */
+  bool           ji_stats_done;      /* Job has terminated and stats have been collected */
 
 #else     /* END MOM ONLY */
 
@@ -718,7 +721,8 @@ typedef container::item_container<job *>::item_iterator all_jobs_iterator;
 #ifndef PBS_MOM
 #define INITIAL_JOB_SIZE           5000
 #define JOB_NOT_FOUND             -1
-#define MAX_RECYCLE_JOBS           5000
+#define MAX_RECYCLE_JOBS           8000
+#define MINIMUM_RECYCLE_TIME       300
 #define TOO_MANY_JOBS_IN_RECYCLER -1
 #define JOBS_TO_REMOVE             1000
 
@@ -736,6 +740,7 @@ int  swap_jobs(all_jobs *,job *,job *);
 struct pbs_queue *get_jobs_queue(job **);
 
 job *next_job(all_jobs *,all_jobs_iterator *);
+extern all_jobs alljobs;
 
 typedef struct job_recycler
   {
@@ -747,10 +752,10 @@ typedef struct job_recycler
 
 
 int   insert_into_recycler(job *);
-job  *get_recycled_job();
 void  update_recycler_next_id();
 void  initialize_recycler();
 void  garbage_collect_recycling();
+void *remove_extra_recycle_jobs(void *);
 
 #endif
 
@@ -1007,14 +1012,15 @@ typedef struct send_job_request
 #define JOB_SUBSTATE_TRNOUT 02 /* transiting job outbound */
 #define JOB_SUBSTATE_TRNOUTCM 03 /* transiting outbound, rdy to commit */
 
-#define JOB_SUBSTATE_QUEUED 10 /* job queued and ready for selection */
+#define JOB_SUBSTATE_QUEUED 10     /* job queued and ready for selection */
 #define JOB_SUBSTATE_PRESTAGEIN 11 /* job queued, has files to stage in */
-#define JOB_SUBSTATE_SYNCRES 13 /* job waiting on sync start ready */
-#define JOB_SUBSTATE_STAGEIN 14 /* job staging in files then wait */
-#define JOB_SUBSTATE_STAGEGO 15 /* job staging in files and then run */
-#define JOB_SUBSTATE_STAGECMP 16 /* job stage in complete */
-#define JOB_SUBSTATE_CHKPTGO 17 /* job copy checkpoint file and then run */
-#define JOB_SUBSTATE_CHKPTCMP 18 /* job copy checkpoint file complete */
+#define JOB_SUBSTATE_SYNCRES 13    /* job waiting on sync start ready */
+#define JOB_SUBSTATE_STAGEIN 14    /* job staging in files then wait */
+#define JOB_SUBSTATE_STAGEGO 15    /* job staging in files and then run */
+#define JOB_SUBSTATE_STAGECMP 16   /* job stage in complete */
+#define JOB_SUBSTATE_CHKPTGO 17    /* job copy checkpoint file and then run */
+#define JOB_SUBSTATE_CHKPTCMP 18   /* job copy checkpoint file complete */
+#define JOB_SUBSTATE_ASYNCING 19   /* job has asynchronous run request and hasn't run yet */
 
 #define JOB_SUBSTATE_HELD 20 /* job held - user or operator */
 #define JOB_SUBSTATE_SYNCHOLD 21 /* job held - waiting on sync regist */

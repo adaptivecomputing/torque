@@ -179,5 +179,20 @@ int pbs_submit_hash(
   return rc;
   }  /* END pbs_submit() */
 
+int pbs_submit_hash_ext(
+  int                socket,
+  void               *job_attr,
+  void              *res_attr,
+  char              *script,
+  char              *destination,
+  char              *extend,  /* (optional) */
+  char              **return_jobid,
+  char              **msg)
+  {
+  return pbs_submit_hash(socket,
+      (job_data_container *)job_attr,
+      (job_data_container *)res_attr,
+      script,destination,extend,return_jobid,msg);
+  }
 
 /* END pbsD_submit.c */

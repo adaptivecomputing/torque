@@ -570,8 +570,9 @@ static void req_stat_job_step2(
 
       while ((pjob = next_job(pque->qu_jobs,jobiter)) != NULL)
         {
-        if ((qjcounter >= qmaxreport) &&
-            (pjob->ji_qs.ji_state == JOB_STATE_QUEUED))
+        if (((qjcounter >= qmaxreport) &&
+            (pjob->ji_qs.ji_state == JOB_STATE_QUEUED))||
+            (pjob->ji_being_recycled == true)) //Skip a job being recycled.
           {
           /* max_report of queued jobs reached for queue */
           unlock_ji_mutex(pjob, __func__, "6", LOGLEVEL);
@@ -631,6 +632,10 @@ static void req_stat_job_step2(
     {
     /* go ahead and build the status reply for this job */
 
+    if(pjob->ji_being_recycled == true)
+      {
+      goto nextjob;
+      }
     if (exec_only)
       {
       if (cntl->sc_pque != NULL)
@@ -971,12 +976,6 @@ void stat_update(
   if (cntl->sc_post)
     cntl->sc_post(cntl); /* continue where we left off */
 
-  /* If sc_post has a value it is:
-   * req_stat_job_step2
-   * if so, it expects cntl to be free'd after the call
-   */
-  free(cntl); /* a bit of a kludge but its saves an extra func */
-
   return;
   }  /* END stat_update() */
 
@@ -1011,10 +1010,8 @@ void stat_mom_job(
   cntl->sc_post   = 0;  /* tell stat_update() to free cntl */
   cntl->sc_jobid[0] = '\0'; /* cause "start from beginning" */
 
-  if (stat_to_mom(job_id, cntl) != 0)
-    {
-    free(cntl);
-    }
+  stat_to_mom(job_id, cntl);
+  free(cntl);
 
   /* if not an error, cntl free'd in stat_update() */
 

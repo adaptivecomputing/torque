@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include "pbs_ifl.h"
+#include "pbs_error.h"
 
 #define TCONST_CFGFILE "torque.cfg"
 
@@ -31,6 +32,8 @@ int load_config(
     return(1);
     }
 
+  memset(config_buf, 0, BufSize);
+
   snprintf(home_dir, sizeof(home_dir), "%s/%s",
     PBS_SERVER_HOME, TCONST_CFGFILE);
 
@@ -40,15 +43,13 @@ int load_config(
     return(1);
     }
 
-  if ((fread(config_buf, BufSize - 1, 1, config_stream) <= 0) && 
+  if ((fread(config_buf, BufSize - 1, 1, config_stream) <= 0) &&
       (ferror(config_stream) != 0))
     {
     /* FAILURE */
     fclose(config_stream);
     return(1);
     }
-
-  config_buf[BufSize - 1] = '\0';
 
   ptr = config_buf;
 

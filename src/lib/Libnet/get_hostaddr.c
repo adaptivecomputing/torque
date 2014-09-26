@@ -167,7 +167,7 @@ pbs_net_t get_hostaddr(
   char           *tmp_addr = NULL;
   struct in_addr  hostaddr;
   int             tmp_addr_len = 0;
-  unsigned short  af_family;
+  unsigned short  af_family = AF_INET;
 
   rc = get_hostaddr_hostent_af(local_errno, hostname, &af_family, &tmp_addr, &tmp_addr_len);
   if (rc == PBSE_NONE)

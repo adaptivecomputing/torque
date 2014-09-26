@@ -10,6 +10,7 @@
 extern bool parsing_hierarchy;
 extern bool received_cluster_addrs;
 extern char *path_mom_hierarchy;
+extern int  MOMJobDirStickySet;
 
 void read_mom_hierarchy();
 
@@ -80,7 +81,7 @@ END_TEST
 Suite *mom_main_suite(void)
   {
   Suite *s = suite_create("mom_main_suite methods");
-  TCase *tc_core = tcase_create("test_read_mom_hiearchy");
+  TCase *tc_core = tcase_create("test_read_mom_hierarchy");
   tcase_add_test(tc_core, test_read_mom_hierarchy);
   suite_add_tcase(s, tc_core);
 

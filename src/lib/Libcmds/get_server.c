@@ -59,6 +59,7 @@
 #include <string.h>
 #include <netdb.h>
 #include "pbs_ifl.h"
+#include "pbs_error.h"
 #include "net_connect.h"
 
 #define notNULL(x) (((x)!=NULL) && (strlen(x)>(size_t)0))
@@ -122,9 +123,9 @@ int get_server(
   int         server_out_size) /* sizeof the out buffer */
 
   {
-  char *seq_number;
-  char *parent_server;
-  char *current_server;
+  char *seq_number = NULL;
+  char *parent_server = NULL;
+  char *current_server = NULL;
   char def_server[PBS_MAXSERVERNAME + 1];
   char host_server[PBS_MAXSERVERNAME + 1];
   char *c;

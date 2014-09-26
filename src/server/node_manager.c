@@ -562,22 +562,21 @@ void remove_job_from_already_killed_list(
   struct work_task *pwt)
 
   {
-  int job_internal_id = *(int *)pwt->wt_parm1;
+  int *to_free = (int *)pwt->wt_parm1;
+  int  job_internal_id = *to_free;
 
+  delete to_free;
   free(pwt->wt_mutex);
   free(pwt);
 
   pthread_mutex_lock(&jobsKilledMutex);
 
-  for (std::vector<int>::iterator i = jobsKilled.begin(); i != jobsKilled.end(); i++)
+  for (unsigned int i = 0; i < jobsKilled.size(); i++)
     {
-    if (*i == job_internal_id)
+    if (jobsKilled[i] == job_internal_id)
       {
-      jobsKilled.erase(i);
-      if (i == jobsKilled.end())
-        {
-        break;
-        }
+      jobsKilled.erase(jobsKilled.begin() + i);
+      break;
       }
     }
 
@@ -659,6 +658,7 @@ bool job_should_be_killed(
       should_kill_job = true;
     }
 
+
   return(should_kill_job);
   } /* END job_should_be_killed() */
 
@@ -710,7 +710,7 @@ bool is_jobid_in_mom(
   char *jobptr = joblist;
   char *jobidstr = NULL;
 
-  jobidstr = threadsafe_tokenizer(&jobptr, (char *)" ");
+  jobidstr = threadsafe_tokenizer(&jobptr, " ");
   while (jobidstr != NULL)
     {
     if (strcmp(jobid, jobidstr) == 0)
@@ -726,6 +726,7 @@ bool is_jobid_in_mom(
 
   return(false);
   } /* END is_jobid_in_mom() */
+
 
 
 
@@ -782,6 +783,9 @@ void sync_node_jobs_with_moms(
     remove_job_from_node(np, jobsRemoveFromNode[i]);
     }
   } /* end of sync_node_jobs_with_moms */
+
+
+
 
 
 
@@ -963,12 +967,12 @@ void *sync_node_jobs(
   free(sji);
 
   if (jobs_in_mom)
+    {
     sync_node_jobs_with_moms(np, jobs_in_mom);
+    free(jobs_in_mom);
+    }
 
   unlock_node(np, __func__, NULL, LOGLEVEL);
-
-  if (jobs_in_mom)
-    free(jobs_in_mom);
 
   return(NULL);
   }  /* END sync_node_jobs() */
@@ -1161,6 +1165,7 @@ void stream_eof(
 /*
  * wrapper task that check_nodes places in the thread pool's queue
  */
+
 void *check_nodes_work(
 
   void *vp)
@@ -3045,6 +3050,8 @@ int node_spec(
   char                *plus;
   long                 cray_enabled = FALSE;
   int                  num_alps_reqs = 0;
+
+  FUNCTION_TIMER
 
   if (EMsg != NULL)
     EMsg[0] = '\0';
@@ -4946,6 +4953,8 @@ int procs_requested(
         if (proplist(&str, &prop, &num_procs, &num_gpus, &num_mics))
           {
           free(tmp_spec);
+          if (prop != NULL)
+            free_prop(prop);
           return(-1);
           }
         }
@@ -4958,6 +4967,8 @@ int procs_requested(
         {
         /* must be a prop list with no number in front */
         free(tmp_spec);
+        if (prop != NULL)
+          free_prop(prop);
 
         return(-1);
         }
@@ -5453,7 +5464,7 @@ struct pbsnode *get_compute_node(
  * set_one_old - set a named node as allocated to a job
  */
 
-void set_one_old(
+int set_one_old(
 
   char *name,
   job  *pjob)
@@ -5461,6 +5472,7 @@ void set_one_old(
   {
   int             first;
   int             last;
+  int             rc = PBSE_NONE;
 
   struct pbsnode *pnode;
   char           *pc;
@@ -5551,8 +5563,10 @@ void set_one_old(
 
     unlock_node(pnode, __func__, NULL, LOGLEVEL);
     }
+  else
+    rc = PBSE_UNKNODE;
 
-  return;
+  return(rc);
   }  /* END set_one_old() */
 
 
@@ -5564,7 +5578,7 @@ void set_one_old(
  * when recovering a job in the running state.
  */
 
-void set_old_nodes(
+int set_old_nodes(
 
   job *pjob)  /* I (modified) */
 
@@ -5572,6 +5586,7 @@ void set_old_nodes(
   char     *old;
   char     *po;
   long      cray_enabled = FALSE;
+  int       rc = PBSE_NONE;
 
   if (pjob->ji_wattr[JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET)
     {
@@ -5581,19 +5596,25 @@ void set_old_nodes(
       {
       /* FAILURE - cannot alloc memory */
 
-      return;
+      return(PBSE_SYSTEM);
       }
 
     while ((po = strrchr(old, (int)'+')) != NULL)
       {
       *po++ = '\0';
 
-      set_one_old(po, pjob);
+      if ((rc = set_one_old(po, pjob)) != PBSE_NONE)
+        {
+        free(old);
+        return(rc);
+        }
       }
 
-    set_one_old(old, pjob);
-
+    rc = set_one_old(old, pjob);
     free(old);
+
+    if (rc != PBSE_NONE)
+      return(rc);
     } /* END if pjobs exec host is set */
 
   /* record the job on the alps_login if cray_enabled */
@@ -5601,10 +5622,10 @@ void set_old_nodes(
   if ((cray_enabled == TRUE) &&
       (pjob->ji_wattr[JOB_ATR_login_node_id].at_flags & ATR_VFLAG_SET))
     {
-    set_one_old(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str, pjob);
+    rc = set_one_old(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str, pjob);
     }
 
-  return;
+  return(rc);
   }  /* END set_old_nodes() */
 
     

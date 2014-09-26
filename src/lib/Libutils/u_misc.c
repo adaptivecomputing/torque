@@ -193,6 +193,7 @@ char *find_command(
 void save_args(int argc, char **argv)
   {
   int i;
+  char *env_ptr = NULL;
 
   ArgC = argc;
   if (!(ArgV = (char **) malloc(sizeof(char *) * (ArgC + 1))))
@@ -208,8 +209,14 @@ void save_args(int argc, char **argv)
 
   /* save the path before we go into the background.  If we don't do this
    * we can't restart the server because the path will change */
-  if (!(OriginalPath = strdup(getenv("PATH"))))
-    fail_nomem();
+  env_ptr = getenv("PATH");
+  if (env_ptr != NULL)
+    {
+    if (!(OriginalPath = strdup(env_ptr)))
+      fail_nomem();
+    }
+  else
+    OriginalPath = NULL;
 
   OriginalCommand = ArgV[0];
   ArgV[0] = find_command(ArgV[0], OriginalPath);

@@ -1015,7 +1015,7 @@ int run_pelog(
 
         if (dupeStdFiles)
           {
-          if (dup(fds1) >= 0)
+          if ((fds1 >= 0)&&(dup(fds1) >= 0))
             close(fds1);
           }
         }
@@ -1026,7 +1026,7 @@ int run_pelog(
 
         if (dupeStdFiles)
           {
-          if (dup(fds2) >= 0)
+          if ((fds2 >= 0)&&(dup(fds2) >= 0))
             close(fds2);
           }
         }

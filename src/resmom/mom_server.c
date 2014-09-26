@@ -294,6 +294,7 @@ extern mom_hierarchy_t    *mh;
 extern char               *stat_string_aggregate;
 extern unsigned int        ssa_index;
 extern container::item_container<received_node *> received_statuses;
+std::vector<std::string>   global_gpu_status;
 std::vector<std::string>   mom_status;
 
 extern struct config *rm_search(struct config *where, const char *what);
@@ -587,9 +588,6 @@ void mom_server_stream_error(
   sprintf(log_buffer, "error %s to server %s", message, name);
 
   log_record(PBSEVENT_SYSTEM, 0, id, log_buffer);
-
-  if(stream >= 0)
-    close(stream);
 
   return;
   }  /* END mom_server_stream_error() */
@@ -922,6 +920,10 @@ void gen_macaddr(
       }
 
     FILE *pPipe = popen("/sbin/ip addr","r");
+    if (pPipe == NULL)
+      {
+      return;
+      }
 
     char *macAddr = NULL;
     while(fgets(buff,sizeof(buff),pPipe) != NULL)
@@ -951,7 +953,7 @@ void gen_macaddr(
         in_addr_t in_addr = inet_addr(iaddr);
         free(iaddr);
         struct addrinfo *pAddrInd = pAddr;
-        while(pAddrInd != NULL)
+        while((pAddrInd != NULL)&&(macAddr != NULL))
           {
           struct in_addr   saddr;
           saddr = ((struct sockaddr_in *)pAddrInd->ai_addr)->sin_addr;
@@ -1204,11 +1206,13 @@ int write_cached_statuses(
   received_node *rn;
   mom_server    *pms;
   node_comm_t   *nc;
+  bool           error = false;
   
   /* traverse the received_nodes array and send/clear the updates */
-  while ((rn = iter->get_next_item()) != NULL)
+  while (((rn = iter->get_next_item()) != NULL) &&
+         (error == false))
     {
-    for(unsigned int i = 0; i < rn->statuses.size(); i++)
+    for (unsigned int i = 0; i < rn->statuses.size(); i++)
       {
       cp = rn->statuses[i].c_str();
       if (LOGLEVEL >= 7)
@@ -1222,6 +1226,8 @@ int write_cached_statuses(
       
       if ((ret = diswst(chan,cp)) != DIS_SUCCESS)
         {
+        error = true;
+
         /* FAILURE */
         switch (mode)
           {
@@ -1517,6 +1523,23 @@ int send_update()
 
 
 
+/*
+ * places the gpu status on the end of the other status information
+ */
+
+int append_gpu_status(
+    
+  std::vector<std::string> &source,
+  std::vector<std::string> &destination)
+
+  {
+  destination.insert(destination.end(), source.begin(), source.end());
+
+  return(PBSE_NONE);
+  }
+
+
+
 int send_update_to_a_server()
 
   {
@@ -1543,6 +1566,7 @@ int send_update_to_a_server()
     {
     sprintf(log_buf, "Status update successfully sent after %d MOM status update intervals", num_stat_update_failures);
     log_err(-1, __func__, log_buf);
+    num_stat_update_failures = 0;
     }
 
   return(rc);
@@ -1557,7 +1581,7 @@ void update_mom_status()
 
   generate_server_status(mom_status);
 #ifdef NVIDIA_GPUS
-  add_gpu_status(mom_status);
+  append_gpu_status(global_gpu_status, mom_status);
 #endif /* NVIDIA_GPU */
 
 #ifdef MIC
@@ -1649,6 +1673,12 @@ void mom_server_all_update_stat(void)
     }
   else
     {
+    /* The NVIDIA NVML library has a problem when we use it after the first fork. Let's get the gpu status first
+       and then fork */
+#ifdef NVIDIA_GPUS
+    global_gpu_status.clear();
+    add_gpu_status(global_gpu_status);
+#endif
     /* It is possible that pbs_server may get busy and start queing incoming requests and not be able 
        to process them right away. If pbs_mom is waiting for a reply to a statuys update that has 
        been queued and at the same time the server makes a request to the mom we can get stuck

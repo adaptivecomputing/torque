@@ -148,12 +148,12 @@ void post_delete_mom1(batch_request *);
 void post_delete_mom2(struct work_task *);
 int forced_jobpurge(job *,struct batch_request *);
 void job_delete_nanny(struct work_task *);
+int apply_job_delete_nanny(job *pjob, int  delay);
 void post_job_delete_nanny(batch_request *);
 void purge_completed_jobs(struct batch_request *);
 
 /* Public Functions in this file */
 
-int  apply_job_delete_nanny(struct job *, int);
 void change_restart_comment_if_needed(struct job *);
 
 /* Private Data Items */
@@ -666,9 +666,24 @@ jump:
             }
           if ((pjob = svr_find_job((char *)dup_job_id.c_str(),FALSE)) == NULL) //Job disappeared.
             {
-            break;
+            job_mutex.set_unlock_on_exit(false);
+            return -1;
             }
           job_mutex.set_lock_state(true);
+          }
+
+        if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
+          {
+          long job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
+          int job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
+          int job_state = pjob->ji_qs.ji_state;
+
+          job_mutex.unlock();
+          update_array_values(pa,job_state,aeTerminate,
+            (char*)dup_job_id.c_str(), job_atr_hold, job_exit_status);
+
+          if((pjob = svr_find_job((char *)dup_job_id.c_str(),FALSE)) != NULL)
+            job_mutex.mark_as_locked();
           }
 
         unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
@@ -702,8 +717,13 @@ jump:
     }
   else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)
     {
+    /* job has staged-in file, should remove them */
+    remove_stagein(&pjob);
+
     job_mutex.set_unlock_on_exit(false);
-    return -1;
+
+    if (pjob != NULL)
+      job_abt(&pjob, Msg);
     }
 
   delete_inactive_job(&pjob, Msg);
@@ -834,9 +854,13 @@ batch_request *duplicate_request(
           {
           ptr1++;
           strcpy(newjobname, preq->rq_ind.rq_manager.rq_objname);
-          ptr2 = strstr(newjobname, "[]");
-          ptr2++;
-          *ptr2 = 0;
+
+          if ((ptr2 = strstr(newjobname, "[]")) != NULL)
+            {
+            ptr2++;
+            *ptr2 = 0;
+            }
+
           sprintf(preq_tmp->rq_ind.rq_manager.rq_objname,"%s%d%s", 
             newjobname, job_index, ptr1);
           }

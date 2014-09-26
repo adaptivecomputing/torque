@@ -105,29 +105,42 @@ static const char *lowerFrequencyName = "lowerKHz";
 
 
 node_frequency::node_frequency()
+
   {
   last_error = PBSE_NONE;
   int i = 0;
-  cpu_frequency *cpu_freq;
-  do
+  bool is_valid = true;
+
+  while (is_valid)
     {
-    cpu_freq = new cpu_frequency(i);
-    if(cpu_freq->is_valid())
+    cpu_frequency cpu_freq(i);
+
+    if (cpu_freq.is_valid())
       {
       cpus.push_back(cpu_freq);
+      i++;
       }
     else
-      {
-      delete cpu_freq;
-      }
-    i++;
-    }while(cpu_freq->is_valid());
+      is_valid = false;
+    }
   }
+
+
+
+node_frequency::~node_frequency() 
+  {
+  // make this empty so that if the desctructor is called nothing happens
+  }
+
+
 
 //Save the current cpu frequency to an xml file in the mom_priv directory.
 //If the file is already there don't overwrite it.
 
-bool node_frequency::get_base_frequencies(const char *dir)
+bool node_frequency::get_base_frequencies(
+    
+  const char *dir)
+
   {
   struct stat bf;
   std::string path = dir;
@@ -149,7 +162,12 @@ bool node_frequency::get_base_frequencies(const char *dir)
   return save_base_frequencies(path);
   }
 
-bool node_frequency::load_base_frequencies(std::string& path)
+
+
+bool node_frequency::load_base_frequencies(
+    
+  std::string &path)
+
   {
   xmlDoc *doc = xmlReadFile(path.c_str(),NULL,0);
   if(doc == NULL)
@@ -217,12 +235,12 @@ bool node_frequency::load_base_frequencies(std::string& path)
       last_error = PBSE_INVALID_FREQUENCY_FILE;
       return false;
       }
-    cpu_frequency_save *saver = new cpu_frequency_save();
+    cpu_frequency_save saver;
     std::string typeStr = (const char *)typeNode->children->content;
-    saver->type = cpus.at(cpu).get_governor_type(typeStr);
-    saver->currFrequency = boost::lexical_cast<unsigned int>(freqNode->children->content);
-    saver->maxFrequency = boost::lexical_cast<unsigned int>(maxFreqNode->children->content);
-    saver->minFrequency = boost::lexical_cast<unsigned int>(minFreqNode->children->content);
+    saver.type = cpus.at(cpu).get_governor_type(typeStr);
+    saver.currFrequency = boost::lexical_cast<unsigned int>(freqNode->children->content);
+    saver.maxFrequency = boost::lexical_cast<unsigned int>(maxFreqNode->children->content);
+    saver.minFrequency = boost::lexical_cast<unsigned int>(minFreqNode->children->content);
     base_frequencies.push_back(saver);
     i++;
     }
@@ -235,7 +253,12 @@ bool node_frequency::load_base_frequencies(std::string& path)
   return true;
   }
 
-bool node_frequency::save_base_frequencies(std::string& path)
+
+
+bool node_frequency::save_base_frequencies(
+    
+  std::string &path)
+
   {
   xmlDocPtr doc = NULL;
   xmlNodePtr root = NULL;
@@ -244,7 +267,7 @@ bool node_frequency::save_base_frequencies(std::string& path)
     last_error = PBSE_SYSTEM;
     return false;
     }
-  if((root = xmlNewNode((xmlNsPtr)NULL,(const xmlChar *)rootFrequencyName)) == NULL)
+  if ((root = xmlNewNode((xmlNsPtr)NULL,(const xmlChar *)rootFrequencyName)) == NULL)
     {
     xmlFreeDoc(doc);
     last_error = PBSE_SYSTEM;
@@ -253,7 +276,8 @@ bool node_frequency::save_base_frequencies(std::string& path)
   base_frequencies.clear();
   xmlDocSetRootElement(doc,root);
   int index = 0;
-  for(boost::ptr_vector<cpu_frequency>::iterator i = cpus.begin();i != cpus.end();i++,index++)
+
+  for (unsigned int i = 0; i < cpus.size(); i++)
     {
     xmlNodePtr child = xmlNewChild(root,(xmlNsPtr)NULL,(const xmlChar *)cpuNodeName,(const xmlChar *)NULL);
     std::string n;
@@ -264,9 +288,11 @@ bool node_frequency::save_base_frequencies(std::string& path)
     unsigned long freq;
     unsigned long upperFreq;
     unsigned long lowerFreq;
-    (*i).get_frequency(type,freq,upperFreq,lowerFreq);
+
+    cpus[i].get_frequency(type,freq,upperFreq,lowerFreq);
     std::string typeStr;
-    (*i).get_governor_string(type,typeStr);
+
+    cpus[i].get_governor_string(type,typeStr);
     xmlNewChild(child,(xmlNsPtr)NULL,(const xmlChar *)frequencyTypeName,(const xmlChar *)typeStr.c_str());
     n = boost::lexical_cast<std::string>(freq);
     xmlNewChild(child,(xmlNsPtr)NULL,(const xmlChar *)frequencyName,(const xmlChar *)n.c_str());
@@ -275,11 +301,11 @@ bool node_frequency::save_base_frequencies(std::string& path)
     n = boost::lexical_cast<std::string>(lowerFreq);
     xmlNewChild(child,(xmlNsPtr)NULL,(const xmlChar *)lowerFrequencyName,(const xmlChar *)n.c_str());
 
-    cpu_frequency_save *saver = new cpu_frequency_save();
-    saver->type = type;
-    saver->currFrequency = freq;
-    saver->maxFrequency = upperFreq;
-    saver->minFrequency = lowerFreq;
+    cpu_frequency_save saver;
+    saver.type = type;
+    saver.currFrequency = freq;
+    saver.maxFrequency = upperFreq;
+    saver.minFrequency = lowerFreq;
     base_frequencies.push_back(saver);
     }
   xmlSaveFormatFileEnc(path.c_str(),doc,NULL,1);
@@ -287,30 +313,43 @@ bool node_frequency::save_base_frequencies(std::string& path)
   return true;
   }
 
+
+
 bool node_frequency::restore_frequency()
   {
-  if((base_frequencies.size() == 0)||(base_frequencies.size() != cpus.size()))
+  if ((base_frequencies.size() == 0)||(base_frequencies.size() != cpus.size()))
     {
     last_error = PBSE_INVALID_FREQUENCY_FILE;
     return false;
     }
-  boost::ptr_vector<cpu_frequency>::iterator cpu = cpus.begin();
-  boost::ptr_vector<cpu_frequency_save>::iterator save = base_frequencies.begin();
-  for(boost::ptr_vector<cpu_frequency>::iterator cpu = cpus.begin();cpu != cpus.end();cpu++,save++)
+
+  unsigned int frequency_index = 0;
+  for (unsigned int cpu_index = 0; cpu_index != cpus.size(); cpu_index++, frequency_index++)
     {
-    cpu->set_frequency(save->type,save->currFrequency,save->maxFrequency,save->minFrequency);
+    cpu_frequency_save &cfs = base_frequencies[frequency_index];
+
+    cpus[cpu_index].set_frequency(cfs.type, cfs.currFrequency, cfs.maxFrequency, cfs.minFrequency);
     }
   return true;
   }
 
-bool node_frequency::get_frequency(cpu_frequency_type& type,unsigned long& currMhz,unsigned long& maxMhz,unsigned long& minMhz)
+
+
+bool node_frequency::get_frequency(
+    
+  cpu_frequency_type &type,
+  unsigned long      &currMhz,
+  unsigned long      &maxMhz,
+  unsigned long      &minMhz)
+
   {
-  if(cpus.size() == 0)
+  if (cpus.size() == 0)
     {
     last_error = PBSE_NODE_CANT_MANAGE_FREQUENCY;
     return false;
     }
-  if(!cpus.at(0).get_frequency(type,currMhz,maxMhz,minMhz))
+
+  if (!cpus.at(0).get_frequency(type,currMhz,maxMhz,minMhz))
     {
     last_error = cpus.at(0).get_last_error();
     return false;
@@ -320,6 +359,8 @@ bool node_frequency::get_frequency(cpu_frequency_type& type,unsigned long& currM
   minMhz /= 1000;
   return true;
   }
+
+
 
 bool node_frequency::get_frequency_string(std::string& str,bool full)
   {
@@ -348,17 +389,26 @@ bool node_frequency::get_frequency_string(std::string& str,bool full)
   return true;
   }
 
-bool node_frequency::set_frequency(cpu_frequency_type type,unsigned long maxMhz,unsigned long minMhz)
+
+
+bool node_frequency::set_frequency(
+    
+  cpu_frequency_type type,
+  unsigned long      maxMhz,
+  unsigned long      minMhz)
+
   {
-  if(cpus.size() == 0)
+  if (cpus.size() == 0)
     {
     last_error = PBSE_NODE_CANT_MANAGE_FREQUENCY;
     return false;
     }
+
   std::vector<unsigned long> actualMaxFrequencies;
   std::vector<unsigned long> actualMinFrequencies;
   cpu_frequency_type actualType;
-  switch(type)
+
+  switch (type)
     {
     case P0:
     case P1:
@@ -376,100 +426,117 @@ bool node_frequency::set_frequency(cpu_frequency_type type,unsigned long maxMhz,
     case P13:
     case P14:
     case P15:
-      for(boost::ptr_vector<cpu_frequency>::iterator i = cpus.begin();i != cpus.end();i++)
+
+      for (unsigned int i = 0; i < cpus.size(); i++)
         {
         unsigned long freq;
-        if(!(*i).get_pstate_frequency(type,freq))
+        if (!cpus[i].get_pstate_frequency(type,freq))
           {
-          last_error = (*i).get_last_error();
+          last_error = cpus[i].get_last_error();
           return false;
           }
+
         actualMaxFrequencies.push_back(freq);
         actualMinFrequencies.push_back(freq);
         }
+
       actualType = Performance;
       break;
+
     case Performance:
     case PowerSave:
     case OnDemand:
     case Conservative:
-      if(maxMhz == 0) //Special case. Leave the frequencies unchanged and just change the governor.
+
+      if (maxMhz == 0) //Special case. Leave the frequencies unchanged and just change the governor.
         {
-        for(boost::ptr_vector<cpu_frequency>::iterator i = cpus.begin();i != cpus.end();i++)
+        for (unsigned int i = 0; i < cpus.size(); i++)
           {
           unsigned long freq,max,min;
           cpu_frequency_type t;
-          if(!i->get_frequency(t,freq,max,min))
+
+          if (!cpus[i].get_frequency(t,freq,max,min))
             {
-            last_error = (*i).get_last_error();
+            last_error = cpus[i].get_last_error();
             return false;
             }
+
           actualMaxFrequencies.push_back(max);
           actualMinFrequencies.push_back(min);
           }
         }
       else
         {
-        for(boost::ptr_vector<cpu_frequency>::iterator i = cpus.begin();i != cpus.end();i++)
+        for (unsigned int i = 0; i < cpus.size(); i++)
           {
           unsigned long freq;
-          if(!(*i).get_nearest_available_frequency(maxMhz*1000,freq))
+
+          if (!cpus[i].get_nearest_available_frequency(maxMhz*1000,freq))
             {
-            last_error = (*i).get_last_error();
+            last_error = cpus[i].get_last_error();
             return false;
             }
+
           actualMaxFrequencies.push_back(freq);
-          if(!(*i).get_nearest_available_frequency(minMhz*1000,freq))
+          if (!cpus[i].get_nearest_available_frequency(minMhz*1000,freq))
             {
-            last_error = (*i).get_last_error();
+            last_error = cpus[i].get_last_error();
             return false;
             }
           actualMinFrequencies.push_back(freq);
           }
         }
       actualType = type;
+
       break;
+
       //case UserSpace:
     case AbsoluteFrequency:
-      for(boost::ptr_vector<cpu_frequency>::iterator i = cpus.begin();i != cpus.end();i++)
+
+      for (unsigned int i = 0; i < cpus.size(); i++)
         {
         unsigned long freq;
-        if(!(*i).get_nearest_available_frequency(maxMhz*1000,freq))
+
+        if (!cpus[i].get_nearest_available_frequency(maxMhz*1000,freq))
           {
-          last_error = (*i).get_last_error();
+          last_error = cpus[i].get_last_error();
           return false;
           }
+
         actualMaxFrequencies.push_back(freq);
-        if(!(*i).get_nearest_available_frequency(minMhz*1000,freq))
+        if (!cpus[i].get_nearest_available_frequency(minMhz*1000,freq))
           {
-          last_error = (*i).get_last_error();
+          last_error = cpus[i].get_last_error();
           return false;
           }
+
         actualMinFrequencies.push_back(freq);
         }
       actualType = Performance;
       break;
+
     default:
       last_error = PBSE_NO_MATCHING_FREQUENCY;
       return false;
     }
-  for(boost::ptr_vector<cpu_frequency>::iterator i = cpus.begin();i != cpus.end();i++)
+
+  for (unsigned int i = 0; i != cpus.size(); i++)
     {
-    if(!(*i).is_governor_available(actualType))
+    if (!cpus[i].is_governor_available(actualType))
       {
       last_error = PBSE_NO_MATCHING_FREQUENCY;
       return false;
       }
     }
+  
   std::vector<unsigned long>::iterator iMins = actualMinFrequencies.begin();
   std::vector<unsigned long>::iterator iMaxs = actualMaxFrequencies.begin();
-  for(boost::ptr_vector<cpu_frequency>::iterator i = cpus.begin();
-      i != cpus.end();
-      i++,iMins++,iMaxs++)
+
+  for (unsigned int i = 0; i < cpus.size(); i++, iMins++, iMaxs++)
     {
-    if(!(*i).set_frequency(actualType,*iMaxs,*iMaxs,*iMins))
+    if (!cpus[i].set_frequency(actualType,*iMaxs,*iMaxs,*iMins))
       {
-      last_error = (*i).get_last_error();
+      last_error = cpus[i].get_last_error();
       return false;
       }
     }

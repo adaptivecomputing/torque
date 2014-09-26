@@ -70,9 +70,22 @@ void free_dynamic_string(dynamic_string *ds)
 #endif
 
 
+
+extern char saveBuff[];
+extern int saveBuffRdPtr;
+extern int saveBuffEndPtr;
+
 ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   {
-  return 0;
+  int lenRead = 0;
+  int i;
+  char *buff = (char *)buf;
+  for(i=0;(i<count)&&(saveBuffRdPtr < saveBuffEndPtr);i++)
+    {
+    *buff++ = saveBuff[saveBuffRdPtr++];
+    lenRead++;
+    }
+  return (lenRead);
   }
 
 void log_err(int errnum, const char *routine, const char *text) {}

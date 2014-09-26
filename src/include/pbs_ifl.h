@@ -87,8 +87,6 @@
 #define _PBS_IFL_DEF
 #include <sys/socket.h>
 
-#include "u_hash_map_structs.h"
-
 /* Attribute Names used by user commands */
 
 #define ATTR_a "Execution_Time"
@@ -664,7 +662,7 @@ struct batch_status *pbs_statnode(int connect, char *id, struct attrl *attrib, c
 
 char *pbs_submit(int connect, struct attropl *attrib, char *script, char *destination, char *extend);
 
-int pbs_submit_hash(int connect, job_data_container *job_attr, job_data_container *res_attr, char *script, char *destination, char *extend, char **job_id, char **msg);
+int pbs_submit_hash_ext(int connect, void *job_attr, void *res_attr, char *script, char *destination, char *extend, char **job_id, char **msg);
 
 int pbs_terminate(int connect, int manner, char *extend);
 

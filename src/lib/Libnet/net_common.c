@@ -22,9 +22,11 @@
 #include <sys/time.h> /* gettimeofday */
 #include <poll.h> /* poll functionality */
 #include <iostream>
+#include <pthread.h>
 #include "../lib/Liblog/pbs_log.h" /* log_err */
 #include "log.h" /* LOCAL_LOG_BUF_SIZE */
 #include "net_cache.h"
+#include "mutex_mgr.hpp"
 
 #include "pbs_error.h" /* torque error codes */
 
@@ -400,6 +402,7 @@ int socket_connect_addr(
           /* 3 connect attempts are made to each socket */
           /* Fail on RES_PORT_RETRY */
           close(local_socket);
+          local_socket = TRANSIENT_SOCKET_FAIL;
 
           while (cntr < RES_PORT_RETRY)
             {
@@ -513,7 +516,7 @@ int socket_wait_for_write(
   {
   int            rc = PBSE_NONE;
   int            write_soc = 0;
-  int            sock_errno;
+  int            sock_errno = 0;
   socklen_t      len = sizeof(int);
   fd_set         wfd;
   struct timeval timeout;
@@ -916,6 +919,7 @@ int socket_close(
   } /* END socket_close() */
 
 
+
 int pbs_getaddrinfo(
     
   const char       *pNode,
@@ -923,10 +927,10 @@ int pbs_getaddrinfo(
   struct addrinfo **ppAddrInfoOut)
 
   {
-  int rc;
+  int             rc;
   struct addrinfo hints;
-  int retryCount = 3;
-  int addrFound = FALSE;
+  int             retryCount = 3;
+  int             addrFound = FALSE;
 
   if (ppAddrInfoOut == NULL)
     {
@@ -955,6 +959,7 @@ int pbs_getaddrinfo(
       {
       rc = getaddrinfo(pNode,NULL,pHints,ppAddrInfoOut);
       }
+
     if (rc == 0)
       {
       addrFound = TRUE;
@@ -965,16 +970,22 @@ int pbs_getaddrinfo(
         }
       rc = EAI_AGAIN;
       }
+
     if (rc != EAI_AGAIN)
       {
       return rc;
       }
-    }while(retryCount-- >= 0);
+
+    } while(retryCount-- >= 0);
+
   return EAI_FAIL;
-  }    
+  } /* END pbs_getaddrinfo() */
 
 
-int connect_to_trqauthd(int *sock)
+int connect_to_trqauthd(
+    
+  int *sock)
+
   {
   int   rc = PBSE_NONE;
   int   local_socket;

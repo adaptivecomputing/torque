@@ -14,6 +14,8 @@ int num_array_jobs(const char *str);
 int parse_array_dom(job_array **pa, xmlNodePtr root_element, char *log_buf, size_t buflen);
 
 const char *array_sample = "<array>\n</array>";
+extern char *path_arrays;
+
 
 START_TEST(parse_array_dom_test)
   {
@@ -137,8 +139,6 @@ START_TEST(first_job_index_test)
 END_TEST
 
 
-
-
 START_TEST(num_array_jobs_test)
   {
   fail_unless(num_array_jobs(NULL) == -1, "null fail");
@@ -152,7 +152,41 @@ START_TEST(num_array_jobs_test)
   }
 END_TEST
 
+START_TEST(array_delete_test)
+  {
+  job_array *pa;
 
+  pa = (job_array *)calloc(1,sizeof(job_array));
+  pa->job_ids = (char **)calloc(10, sizeof(char *));
+  pa->ai_qs.array_size = 10;
+
+  //Set up the save path
+
+  path_arrays = (char *)"./";
+  strcpy(pa->ai_qs.fileprefix,"tempFile");
+  char path[256];
+  snprintf(path, sizeof(path), "%s%s%s",
+    path_arrays, pa->ai_qs.fileprefix, ARRAY_FILE_SUFFIX);
+  FILE *fp = fopen(path,"w");
+  fprintf(fp,"I'm a very temporary file.\n");
+  fclose(fp);
+
+
+
+  struct array_depend *pdep = (struct array_depend *)calloc(1,sizeof(struct array_depend));
+  pa->ai_qs.deps.ll_next = &pdep->dp_link;
+  pdep->dp_link.ll_prior = (list_link *)&pa->ai_qs.deps;
+  pdep->dp_link.ll_struct = (void *)pdep;
+  pdep->dp_jobs.push_back((array_depend_job *)calloc(1,sizeof(array_depend_job)));
+  pdep->dp_jobs.push_back((array_depend_job *)calloc(1,sizeof(array_depend_job)));
+  pdep->dp_jobs.push_back((array_depend_job *)calloc(1,sizeof(array_depend_job)));
+  pdep->dp_jobs.push_back((array_depend_job *)calloc(1,sizeof(array_depend_job)));
+  pdep->dp_jobs.push_back((array_depend_job *)calloc(1,sizeof(array_depend_job)));
+
+  array_delete(pa);
+
+  }
+END_TEST
 
 
 Suite *array_func_suite(void)
@@ -182,6 +216,10 @@ Suite *array_func_suite(void)
   tcase_add_test(tc_core, first_job_index_test);
   tcase_add_test(tc_core, parse_array_dom_test);
   suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("array_delete_test");
+  tcase_add_test(tc_core,array_delete_test);
+  suite_add_tcase(s,tc_core);
 
   return s;
   }

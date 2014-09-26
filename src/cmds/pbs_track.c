@@ -62,17 +62,7 @@ int main(
 
       case 'j':
 
-        strncpy(tmpJobID, optarg, sizeof(tmpJobID));
-
-        if (tmpJobID[PBS_MAXCLTJOBID-1] != '\0')
-          {
-          /* truncation occurred! */
-
-          fprintf(stderr, "pbs_track: given job ID too large (> %d)\n",
-                  PBS_MAXCLTJOBID);
-
-          exit(-1);
-          }
+        snprintf(tmpJobID, sizeof(tmpJobID), "%s", optarg);
 
         break;
 
