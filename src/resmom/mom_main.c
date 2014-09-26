@@ -4868,9 +4868,12 @@ int setup_program_environment(void)
 #endif
 
 #ifdef PENABLE_LINUX_CGROUPS
+#ifndef PENABLE_LINUX26_CPUSETS
+  /* If cpusets are enabled initialization has already been done */
   ret = cg_initialize_hwloc_topology();
   if (ret != PBSE_NONE)
     exit(ret);
+#endif
 
   this_node.initializeMachine(topology);
 
