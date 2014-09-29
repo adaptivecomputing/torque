@@ -352,7 +352,7 @@ struct pbsnode
   pthread_mutex_t              *nd_mutex;            /* semaphore for accessing this node's data */
 
   /* numa hardware configuration information */
-#ifdef PENABLE_CGROUPS
+#ifdef PENABLE_LINUX_CGROUPS
   int nd_available_sockets;
   int nd_available_chips;
   int nd_available_cores;
