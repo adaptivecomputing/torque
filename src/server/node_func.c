@@ -612,7 +612,7 @@ int status_nodeattrib(
       continue;
     else if (i == ND_ATR_gpustatus)
       atemp[i].at_val.at_arst = pnode->nd_gpustatus;
-#ifdef PENABLE_LINUX26_CPUSETS
+#ifdef PENABLE_LINUX_CGROUPS
     else if (i == ND_ATR_total_sockets)
       atemp[i].at_val.at_long = pnode->nd_total_sockets;
     else if (i == ND_ATR_total_chips)
@@ -2756,6 +2756,8 @@ int node_mom_rm_port_action(
   return rc;
   }
 
+
+#ifdef PENABLE_LINUX_CGROUPS
 /*
  * node_total_socket_action - action routine for node's hardware
  * locality socket device pbs_attribute
@@ -3140,7 +3142,7 @@ int node_available_thread_action(
   return rc;
   }
 
-
+#endif /* PENABLE_LINUX_CGROUPS */
 
 
 int node_gpus_action(

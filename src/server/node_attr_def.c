@@ -330,7 +330,7 @@ attribute_def node_attr_def[] =
    MGR_ONLY_SET,
    ATR_TYPE_ARST,
    PARENT_TYPE_NODE,
-#ifndef PENABLE_LINUX26_CPUSETS
+#ifndef PENABLE_LINUX_CGROUPS
   }
 #else
   },

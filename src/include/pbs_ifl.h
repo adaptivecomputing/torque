@@ -351,6 +351,7 @@
 #define ATTR_NODE_gpus_str          "numa_gpu_node_str"
 #define ATTR_NODE_mics              "mics"
 #define ATTR_NODE_micstatus         "mic_status"
+#ifdef PENABLE_LINUX_CGROUPS
 #define ATTR_NODE_total_sockets     "total_sockets"
 #define ATTR_NODE_total_chips       "total_numa_chips"
 #define ATTR_NODE_total_cores       "total_cores"
@@ -359,6 +360,7 @@
 #define ATTR_NODE_available_chips   "available_numa_chips"
 #define ATTR_NODE_available_cores   "available_cores"
 #define ATTR_NODE_available_threads "available_threads"
+#endif
 
 
 /* notification email formating */

@@ -352,6 +352,7 @@ struct pbsnode
   pthread_mutex_t              *nd_mutex;            /* semaphore for accessing this node's data */
 
   /* numa hardware configuration information */
+#ifdef PENABLE_CGROUPS
   int nd_available_sockets;
   int nd_available_chips;
   int nd_available_cores;
@@ -360,6 +361,7 @@ struct pbsnode
   int nd_total_chips;
   int nd_total_cores;
   int nd_total_threads;
+#endif
 
  };
 
@@ -543,7 +545,7 @@ enum nodeattr
   ND_ATR_gpustatus,
   ND_ATR_mics,
   ND_ATR_micstatus,
-#ifdef PENABLE_LINUX26_CPUSETS
+#ifdef PENABLE_LINUX_CGROUPS
   ND_ATR_total_sockets,
   ND_ATR_total_chips,
   ND_ATR_total_cores,
