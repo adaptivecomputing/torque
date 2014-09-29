@@ -940,20 +940,29 @@ void *sync_node_jobs(
 
     internal_job_id = job_mapper.get_id(job_id.c_str());
 
-    if (job_should_be_killed(internal_job_id, np))
+    if (internal_job_id == -1)
       {
-      if (kill_job_on_mom(job_id.c_str(), np) == PBSE_NONE)
+      char log_buf[LOCAL_LOG_BUF_SIZE];
+      sprintf(log_buf, "jobid: %s not found in job_mapper", job_id.c_str());
+      log_err(-1, __func__, log_buf);
+      }
+    else
+      {
+      if (job_should_be_killed(internal_job_id, np))
         {
-        pthread_mutex_lock(&jobsKilledMutex);
-        jobsKilled.push_back(internal_job_id);
-        pthread_mutex_unlock(&jobsKilledMutex);
+        if (kill_job_on_mom(job_id.c_str(), np) == PBSE_NONE)
+          {
+          pthread_mutex_lock(&jobsKilledMutex);
+          jobsKilled.push_back(internal_job_id);
+          pthread_mutex_unlock(&jobsKilledMutex);
 
-        int *dup_id = new int(internal_job_id);
-        set_task(WORK_Timed, 
-                 time(NULL) + job_sync_timeout,
-                 remove_job_from_already_killed_list,
-                 dup_id,
-                 FALSE);
+          int *dup_id = new int(internal_job_id);
+          set_task(WORK_Timed, 
+                   time(NULL) + job_sync_timeout,
+                   remove_job_from_already_killed_list,
+                   dup_id,
+                   FALSE);
+          }
         }
       }
     
