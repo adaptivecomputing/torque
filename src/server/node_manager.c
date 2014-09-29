@@ -942,9 +942,15 @@ void *sync_node_jobs(
 
     if (internal_job_id == -1)
       {
-      char log_buf[LOCAL_LOG_BUF_SIZE];
-      sprintf(log_buf, "jobid: %s not found in job_mapper", job_id.c_str());
-      log_err(-1, __func__, log_buf);
+      /* log a message if it's a loglevel 7, but most importantly, don't 
+      ** do the things in the else block.
+      */
+      if (LOGLEVEL >= 7)
+        {
+        char log_buf[LOCAL_LOG_BUF_SIZE];
+        sprintf(log_buf, "jobid: %s not found in job_mapper", job_id.c_str());
+        log_ext(-1, __func__, log_buf, LOG_WARNING);
+        }
       }
     else
       {

@@ -1078,7 +1078,7 @@ int close_quejob_by_jobid(
       return(rc);
       }
     
-    if (rc == THING_NOT_FOUND)
+    if (rc == THING_NOT_FOUND && (LOGLEVEL >= 8))
       {
       char  log_buf[LOCAL_LOG_BUF_SIZE];
       snprintf(log_buf,sizeof(log_buf),
@@ -1099,7 +1099,7 @@ int close_quejob_by_jobid(
       return(rc);
       }
 
-    if (rc == THING_NOT_FOUND)
+    if (rc == THING_NOT_FOUND && (LOGLEVEL >= 8))
       {
       char  log_buf[LOCAL_LOG_BUF_SIZE];
       snprintf(log_buf,sizeof(log_buf),

@@ -790,20 +790,23 @@ void job_free(
   
   if (rc == PBSE_JOBNOTFOUND)
     {
-    snprintf(log_buf,sizeof(log_buf),
-      "Job %s was not found from alljobs to recycle\n",
+    if (LOGLEVEL >= 8)
+      {
+      snprintf(log_buf,sizeof(log_buf),
+        "Job %s was not found from alljobs to recycle\n",
             pj->ji_qs.ji_jobid);
-      log_err(-1, __func__, log_buf);
+        log_ext(-1, __func__, log_buf, LOG_WARNING);
+      }
     if (use_recycle)
       return;
     }
 
-  if (rc == THING_NOT_FOUND)
+  if (rc == THING_NOT_FOUND && (LOGLEVEL >= 8))
     {
     snprintf(log_buf,sizeof(log_buf),
       "Could not remove job %s from alljobs\n",
-            pj->ji_qs.ji_jobid);
-      log_err(-1, __func__, log_buf);
+          pj->ji_qs.ji_jobid);
+    log_ext(-1, __func__, log_buf, LOG_WARNING);
     }
 
   std::string jobid = pj->ji_qs.ji_jobid;
@@ -826,10 +829,13 @@ void job_free(
   job *pjob = alljobs.find(jobid);
   if (pjob != NULL)
     {
-    snprintf(log_buf, sizeof(log_buf),
-      "Job %s was found in the alljobs again in state: %s\n", 
+    if (LOGLEVEL >= 8)
+      {
+      snprintf(log_buf, sizeof(log_buf),
+        "Job %s was found in the alljobs again in state: %s\n", 
       jobid.c_str(), statestr.c_str());
-    log_err(-1, __func__, log_buf);
+      log_ext(-1, __func__, log_buf, LOG_WARNING);
+      }
     }
 
   return;
@@ -1926,12 +1932,12 @@ int svr_job_purge(
       pjob_mutex.set_unlock_on_exit(false); 
       return(PBSE_NONE);
       }
-    else if (rc2 == THING_NOT_FOUND)
+    else if (rc2 == THING_NOT_FOUND && (LOGLEVEL >= 7))
       {
       snprintf(log_buf,sizeof(log_buf),
-            "Could not remove job %s from array_summary\n",
-            pjob->ji_qs.ji_jobid);
-      log_err(-1, __func__, log_buf);
+          "Could not remove job %s from array_summary\n",
+          pjob->ji_qs.ji_jobid);
+      log_ext(-1, __func__, log_buf, LOG_WARNING);
       }
     }
 
