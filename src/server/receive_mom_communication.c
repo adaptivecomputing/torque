@@ -503,7 +503,7 @@ void *svr_is_request(
         goto err;
 
 
-#ifdef PENABLE_LINUX26_CPUSETS
+#ifdef PENABLE_LINUX_CGROUPS
       int available_sockets, available_chips, available_cores, available_threads;
       int total_sockets, total_chips, total_cores, total_threads;
 
@@ -529,7 +529,7 @@ void *svr_is_request(
         node->nd_stream = -1;
         node_mutex.mark_as_locked();
 
-#ifdef PENABLE_LINUX26_CPUSETS
+#ifdef PENABLE_LINUX_CGROUPS
         node->nd_available_sockets = available_sockets;
         node->nd_available_chips = available_chips;
         node->nd_available_cores = available_cores;
