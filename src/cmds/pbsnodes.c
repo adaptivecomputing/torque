@@ -949,13 +949,13 @@ int main(
       // current_note if not set, use null terminated string of length zero
       if ( current_note == NULL )
         {
-        current_note = "";
+        current_note = (char *)"";
         }
 
       // Allocate memory for new note, +1 for the last character being \0
       new_note_len = strlen(note) + strlen(current_note) + 1;
       new_note = (char*)malloc(new_note_len);
-      memset(new_note, NULL, new_note_len);
+      memset(new_note, 0, new_note_len);
 
       // Concatinate the current note with the new note
       note_to = new_note;
