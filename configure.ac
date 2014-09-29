@@ -206,6 +206,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/lib/Libattr/test/attr_func/Makefile
     src/lib/Libattr/test/attr_node_func/Makefile
     src/lib/Libattr/test/req/Makefile
+    src/lib/Libattr/test/complete_req/Makefile
     src/lib/Libcmds/test/Makefile
     src/lib/Libcmds/test/add_verify_resources/Makefile
     src/lib/Libcmds/test/ck_job_name/Makefile
@@ -731,6 +732,22 @@ if test "$DEBUG_SYMBOLS" = 'yes'; then
       ;;
   esac
   AC_MSG_RESULT([after tweak CFLAGS=$CFLAGS])
+  
+  AC_MSG_RESULT([before tweak CXXFLAGS=$CXXFLAGS])
+  CXXFLAGS=`echo $CXXFLAGS | sed 's/ \?-O[[^ ]]*//g'`
+  AC_MSG_RESULT([mid tweak CXXFLAGS=$CXXFLAGS])
+  case $CXXFLAGS in
+    *-g*)
+      ;;
+    *)
+      if test "$CXXFLAGS" = ''; then
+        CXXFLAGS="-g"
+      else
+        CXXFLAGS="-g $CXXFLAGS"
+      fi
+      ;;
+  esac
+  AC_MSG_RESULT([after tweak CXXFLAGS=$CXXFLAGS])
 fi
 
 dnl if using gcc, we can be very strict
