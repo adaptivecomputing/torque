@@ -323,7 +323,7 @@ START_TEST(test_process_svr_conn)
   socket_success = true;
   request_type = TRQ_AUTH_CONNECTION;
   (*process_svr_conn)((void *)sock);
-  //fail_unless(process_svr_conn_rc == PBSE_NONE, "TRQ_AUTH_CONNECTION failed");
+  fail_unless(process_svr_conn_rc == PBSE_NONE, "TRQ_AUTH_CONNECTION failed");
   
   // Test when validate_user fails
   socket_read_success = true;
