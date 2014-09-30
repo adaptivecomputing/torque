@@ -22,6 +22,7 @@
 #include "container.hpp"
 
 #define MAXLINE 1024
+#define DIS_SUCCESS 0
 
 bool            ForceServerUpdate = false;
 char log_buffer[LOG_BUF_SIZE];
@@ -138,8 +139,8 @@ const char *reqgres(struct rm_attribute *attrib)
 
 int read_tcp_reply(struct tcp_chan *chan, int protocol, int version, int command, int *exit_status)
   {
-  fprintf(stderr, "The call to read_tcp_reply needs to be mocked!!\n");
-  exit(1);
+  *exit_status = DIS_SUCCESS;
+  return *exit_status; 
   }
 
 char *conf_res(char *resline, struct rm_attribute *attr)
