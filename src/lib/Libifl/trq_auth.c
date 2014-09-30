@@ -1046,6 +1046,7 @@ void *process_svr_conn(
       case TRQ_AUTH_CONNECTION:
         {
         rc = authorize_socket(local_socket, message, msg_buf, error_string);
+        break;
         }
       default:
         rc = PBSE_IVALREQ;
