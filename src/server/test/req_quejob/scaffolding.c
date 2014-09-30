@@ -415,7 +415,7 @@ const char *add_std_filename(
   }
 
 job *find_job_by_array(all_jobs *aj, const char *jobid, int get_subjob, bool locked)
-  {
+{
   if (!strcmp(jobid, "1.napali"))
     {
     job *pj = (job *)calloc(1, sizeof(job));
@@ -437,4 +437,8 @@ int id_map::get_new_id(const char *job_name)
   }
 
 id_map job_mapper;
+
+void log_ext(int i, char const* s, char const* s2, int i2)
+  {
+  }
 

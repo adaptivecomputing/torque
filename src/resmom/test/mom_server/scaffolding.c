@@ -138,8 +138,8 @@ const char *reqgres(struct rm_attribute *attrib)
 
 int read_tcp_reply(struct tcp_chan *chan, int protocol, int version, int command, int *exit_status)
   {
-  exit_status = DIS_SUCCESS;
-  return DIS_SUCCESS;
+  *exit_status = DIS_SUCCESS;
+  return *exit_status; 
   }
 
 char *conf_res(char *resline, struct rm_attribute *attr)

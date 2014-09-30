@@ -435,3 +435,19 @@ int encode_size(pbs_attribute *attr, tlist_head *phead, const char *atname, cons
   exit(1);
   }
 
+void log_ext(int i, char const* s, char const* s2, int i2)
+  {
+  }
+
+int csv_length(const char *csv_str)
+  {
+  fprintf(stderr, "The call to decode_tokens to be mocked!!\n");
+  exit(1);
+  }
+
+char *csv_nth(const char *csv_str, int n)
+  {
+  fprintf(stderr, "The call to decode_tokens to be mocked!!\n");
+  exit(1);
+  }
+
