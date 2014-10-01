@@ -1,6 +1,6 @@
 
-#ifndef _REQ_HPP
-#define _REQ_HPP
+#ifndef _COMPLETE_REQ_HPP
+#define _COMPLETE_REQ_HPP
 
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
@@ -81,75 +81,28 @@
 * without reference to its choice of law rules.
 */
 
+#include <vector>
 #include <string>
 
-extern const int USE_CORES;
-extern const int USE_THREADS;
-extern const int ALLOW_THREADS;
-extern const int USE_FAST_CORES;
+#include "req.hpp"
 
-extern const int PLACE_NO_PREFERENCE;
-extern const int PLACE_NODE;
-extern const int PLACE_SOCKET;
-extern const int PLACE_NUMA_CHIP;
 
-extern const int ALL_EXECUTION_SLOTS;
-
-// This class is to hold all of the information for a single req from a job
-// The concept of req(s) is only available under the new syntax
-class req
+class complete_req
   {
-    int               execution_slots;
-    unsigned long     mem;
-    unsigned long     swap;
-    unsigned long     disk;
-    int               socket;
-    int               numa_chip;
-    int               thread_usage_policy;
-    std::string       thread_usage_str;
-    int               gpus;
-    int               mics;
-    std::string       gres;
-    std::string       os;
-    std::string       arch;
-    std::string       node_access_policy;
-    std::string       features;
-    std::string       placement_str;
-    int               placement_type;
-    int               task_count;
-    bool              pack;
-    bool              single_job_access;
-    // these are not set by user request
-    int               index;
-    std::string       hostlist;   // set when the job is run
+    std::vector<req> reqs;
 
   public:
-    req();
-    req(const req &other);
-    req(const std::string &resource_request);
-    req &operator =(const req &other);
 
-    int           set_place_value(const char *value);
-    int           set_value_from_string(char *str);
-    int           set_attribute(const char *str);
-    int           set_name_value_pair(const char *name, const char *value);
-    void          set_from_string(const std::string &req_str);
-    int           set_from_submission_string(char *submission_str, std::string &error);
-    void          set_index(int index);
-    void          toString(std::string &str) const;
-    int           getExecutionSlots() const;
-    unsigned long getMemory() const;
-    unsigned long getSwap() const;
-    unsigned long getDisk() const;
-    std::string   getGres() const;
-    std::string   getOS() const;
-    std::string   getNodeAccessPolicy() const;
-    std::string   getPlacementType() const;
-    int           getPlacementTypeInt() const;
-    int           getTaskCount() const;
-    std::string   getHostlist() const;
-    std::string   getFeatures() const;
-    std::string   getThreadUsageString() const;
+    complete_req();
+    complete_req(const complete_req &other);
+    complete_req &operator =(const complete_req &other);
+
+    void add_req(req &r);
+    void set_from_string(const std::string &obj_string);
+    void toString(std::string &output) const;
+    int  req_count() const;
   };
 
-#endif /* _REQ_HPP */
+#endif
+
+

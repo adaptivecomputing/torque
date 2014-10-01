@@ -23,7 +23,7 @@ const int ALL_EXECUTION_SLOTS = -1;
 req::req() : execution_slots(1), mem(0), swap(0), disk(0),
              placement_type(PLACE_NO_PREFERENCE), task_count(1), socket(0), numa_chip(0),
              thread_usage_policy(ALLOW_THREADS), gpus(0), mics(0),
-             pack(true), index(-1), thread_usage_str("allow threads")
+             pack(true), index(0), thread_usage_str("allow threads"), single_job_access(false)
 
   {
   }
@@ -37,7 +37,7 @@ req::req(
                       numa_chip(other.numa_chip), thread_usage_policy(other.thread_usage_policy),
                       gpus(other.gpus), mics(other.mics), pack(other.pack), index(other.index),
                       thread_usage_str(other.thread_usage_str), placement_str(other.placement_str),
-                      features(other.features)
+                      features(other.features), single_job_access(other.single_job_access)
 
   {
   }
@@ -396,19 +396,27 @@ req &req::operator =(
   this->mem = other.mem;
   this->swap = other.swap;
   this->disk = other.disk;
-  this->placement_type = other.placement_type;
-  this->task_count = other.task_count;
   this->socket = other.socket;
   this->numa_chip = other.numa_chip;
   this->thread_usage_policy = other.thread_usage_policy;
   this->thread_usage_str = other.thread_usage_str;
   this->gpus = other.gpus;
   this->mics = other.mics;
+  this->gres = other.gres;
+  this->os = other.os;
+  this->arch = other.arch;
+  this->node_access_policy = other.node_access_policy;
+  this->features = other.features;
+  this->placement_str = other.placement_str;
+  this->placement_type = other.placement_type;
+  this->task_count = other.task_count;
   this->pack = other.pack;
+  this->single_job_access = other.single_job_access;
   this->index = other.index;
+  this->hostlist = other.hostlist;
 
   return(*this);
-  }
+  } // END operator =
 
 
 
@@ -438,7 +446,7 @@ void req::toString(
       str += "      lprocs: all\n";
     else
       {
-      snprintf(buf, sizeof(buf), "     lprocs: %d\n", this->execution_slots);
+      snprintf(buf, sizeof(buf), "      lprocs: %d\n", this->execution_slots);
       str += buf;
       }
     }
@@ -881,3 +889,10 @@ std::string req::getThreadUsageString() const
   return(this->thread_usage_str);
   }
 
+void req::set_index(
+
+  int index)
+
+  {
+  this->index = index;
+  }
