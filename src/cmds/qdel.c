@@ -14,7 +14,6 @@
  *      University of California
  */
 
-#include "qdel.h"
 #include "cmds.h"
 #include "common_cmds.h"
 #include "net_cache.h"
@@ -22,6 +21,15 @@
 #include "../lib/Libifl/lib_ifl.h"
 
 #define MAX_RETRIES  3
+
+int load_config(
+  char *config_buf,               /* O */
+  int   BufSize);                 /* I */
+
+char *get_trq_param(
+
+  const char *param,      /* I */
+  const char *config_buf); /* I */
 
 void process_config_file(
 
@@ -38,6 +46,7 @@ void process_config_file(
       }
     }
   } /* END process_config_file */
+
 
 /* qdel */
 
