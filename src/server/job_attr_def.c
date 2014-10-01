@@ -1234,6 +1234,17 @@ attribute_def job_attr_def[] =
 /* Site defined attributes if any, see site_job_attr_*.h  */
 #include "site_job_attr_def.h"
 
+  {ATTR_req_information, /* "req_information" */
+   decode_complete_req,
+   encode_complete_req,
+   set_complete_req,
+   comp_complete_req,
+   free_complete_req,
+   NULL_FUNC,
+   READ_WRITE | ATR_DFLAG_MOM,
+   ATR_TYPE_REQ,
+   PARENT_TYPE_JOB},
+
   /* JOB_ATR_UNKN - THIS MUST BE THE LAST ENTRY */
   { (char *)"_other_",
     decode_unkn,

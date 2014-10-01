@@ -191,6 +191,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/lib/Libattr/test/attr_fn_arst/Makefile
     src/lib/Libattr/test/attr_fn_b/Makefile
     src/lib/Libattr/test/attr_fn_c/Makefile
+    src/lib/Libattr/test/attr_fn_complete_req/Makefile
     src/lib/Libattr/test/attr_fn_hold/Makefile
     src/lib/Libattr/test/attr_fn_intr/Makefile
     src/lib/Libattr/test/attr_fn_l/Makefile

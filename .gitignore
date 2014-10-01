@@ -152,6 +152,7 @@ src/lib/Libattr/test/attr_fn_acl/test_attr_fn_acl
 src/lib/Libattr/test/attr_fn_arst/test_attr_fn_arst
 src/lib/Libattr/test/attr_fn_b/test_attr_fn_b
 src/lib/Libattr/test/attr_fn_c/test_attr_fn_c
+src/lib/Libattr/test/attr_fn_complete_req/test_attr_fn_complete_req
 src/lib/Libattr/test/attr_fn_hold/test_attr_fn_hold
 src/lib/Libattr/test/attr_fn_intr/test_attr_fn_intr
 src/lib/Libattr/test/attr_fn_l/test_attr_fn_l

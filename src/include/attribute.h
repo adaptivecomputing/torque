@@ -165,11 +165,11 @@ enum cpu_frequency_type
   };
 
 
-struct cpu_frequency_value
+typedef struct cpu_frequency_value
   {
   unsigned int frequency_type;
   unsigned long mhz;
-  };
+  } cpu_frequency_value;
 
 struct size_value
   {
@@ -187,20 +187,21 @@ unsigned int  atsv_units:
 
 union attr_val    /* the attribute value */
   {
-  long at_long;  /* long integer */
-  Long at_ll;   /* largest long integer */
-  char    at_char;  /* single character */
-  char   *at_str;   /* char string (alloc) */
+  long                  at_long;      /* long integer */
+  Long                  at_ll;        /* largest long integer */
+  char                  at_char;      /* single character */
+  char                 *at_str;       /* char string (alloc) */
 
-  struct array_strings *at_arst; /* array of strings (alloc) */
+  struct array_strings *at_arst;      /* array of strings (alloc) */
 
-  struct size_value     at_size; /* size value */
-  tlist_head       at_list; /* list of resources,  ... (alloc) */
+  struct size_value     at_size;      /* size value */
+  tlist_head            at_list;      /* list of resources,  ... (alloc) */
 
-  struct  pbsnode      *at_jinfo; /* ptr to node's job info  */
-  short        at_short; /* short int; node's state */
-  struct timeval	at_timeval;
-  struct cpu_frequency_value at_frequency;
+  struct  pbsnode      *at_jinfo;     /* ptr to node's job info  */
+  short                 at_short;     /* short int; node's state */
+  struct timeval        at_timeval;
+  cpu_frequency_value   at_frequency;
+  void                 *at_ptr;
   };
 
 
@@ -260,8 +261,9 @@ typedef struct attribute_def attribute_def;
 #define ATR_TYPE_LL      9 /* Long (64 bit) integer */
 #define ATR_TYPE_SHORT   10 /* short integer    */
 #define ATR_TYPE_JINFOP  13 /* struct jobinfo*  */
-#define ATR_TYPE_TV		 14 /* struct timeval */
-#define ATR_TYPE_FREQ   15 /* CPU frequency */
+#define ATR_TYPE_TV      14 /* struct timeval */
+#define ATR_TYPE_FREQ    15 /* CPU frequency */
+#define ATR_TYPE_REQ     16 /* job req information */
 
 /* Defines for  Flag field in attribute_def         */
 
@@ -355,23 +357,23 @@ struct array_strings
  * specific attribute value function prototypes
  */
 
-extern void clear_attr(pbs_attribute *pattr, attribute_def *pdef);
-extern int  find_attr(attribute_def *attrdef, const char *name, int limit);
-extern int  recov_attr(int fd, void *parent, attribute_def *padef,
-			   pbs_attribute *pattr, int limit, int unknown, int do_actions);
-extern long attr_ifelse_long(pbs_attribute *, pbs_attribute *, long);
-extern void free_null(pbs_attribute *attr);
-extern void free_noop(pbs_attribute *attr);
-extern svrattrl *attrlist_alloc(int szname, int szresc, int szval);
-extern svrattrl *attrlist_create(const char *aname, const char *rname, int szval);
-extern void free_attrlist(tlist_head *attrhead);
-extern int  attr_atomic_set(svrattrl *plist, pbs_attribute *old,
-                                  pbs_attribute *new_attr, attribute_def *pdef, int limit,
-                                  int unkn, int privil, int *badattr);
-extern int  attr_atomic_node_set(svrattrl *plist, pbs_attribute *old,
-                                       pbs_attribute *new_attr, attribute_def *pdef, int limit,
-                                       int unkn, int privil, int *badattr);
-extern void attr_atomic_kill(pbs_attribute *temp, attribute_def *pdef, int);
+void clear_attr(pbs_attribute *pattr, attribute_def *pdef);
+int  find_attr(attribute_def *attrdef, const char *name, int limit);
+int  recov_attr(int fd, void *parent, attribute_def *padef,
+                pbs_attribute *pattr, int limit, int unknown, int do_actions);
+long attr_ifelse_long(pbs_attribute *, pbs_attribute *, long);
+void free_null(pbs_attribute *attr);
+void free_noop(pbs_attribute *attr);
+svrattrl *attrlist_alloc(int szname, int szresc, int szval);
+svrattrl *attrlist_create(const char *aname, const char *rname, int szval);
+void free_attrlist(tlist_head *attrhead);
+int  attr_atomic_set(svrattrl *plist, pbs_attribute *old,
+                           pbs_attribute *new_attr, attribute_def *pdef, int limit,
+                           int unkn, int privil, int *badattr);
+int  attr_atomic_node_set(svrattrl *plist, pbs_attribute *old,
+                                pbs_attribute *new_attr, attribute_def *pdef, int limit,
+                                int unkn, int privil, int *badattr);
+void attr_atomic_kill(pbs_attribute *temp, attribute_def *pdef, int);
 
 int  decode_b(pbs_attribute *patr, const char *name, const char *rn, const char *val, int);
 int  decode_c(pbs_attribute *patr, const char *name, const char *rn, const char *val, int);
@@ -391,6 +393,7 @@ int  decode_unkn(pbs_attribute *patr, const char *name, const char *rn, const ch
 int  decode_tv(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int);
 int  decode_nppcu(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int);
 int  decode_frequency(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm);
+int  decode_complete_req(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm);
 
  
 int encode_b(pbs_attribute *attr, tlist_head *phead, const char *atname,
@@ -420,123 +423,128 @@ int encode_depend(pbs_attribute *attr, tlist_head *phead, const char *atname,
 int encode_hold(pbs_attribute *attr, tlist_head *phead, const char *atname,
                              const char *rsname, int mode, int perm);
 int encode_tv(pbs_attribute *attr, tlist_head *phead, const char *atname,
-							const char *rsname, int mode, int perm);
+                             const char *rsname, int mode, int perm);
 int encode_frequency(pbs_attribute *attr, tlist_head *phead, const char *atname,
                             const char *rsname, int mode, int perm);
 void from_frequency(struct cpu_frequency_value *, char *);
+int encode_complete_req(pbs_attribute *attr, tlist_head *phead, const char *atname,
+                            const char *rsname, int mode, int perm);
 
 
 
 
-extern int set_b(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
-extern int set_c(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
-extern int set_l(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
-extern int set_ll(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
-extern int set_size(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
-extern int set_str(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
-extern int set_arst(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
-extern int set_resc(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
-extern int set_hostacl(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
-extern int set_uacl(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
-extern int set_unkn(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
-extern int set_depend(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
-extern int set_tv(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op);
-extern int set_frequency(struct pbs_attribute *attr, struct pbs_attribute *newAttr, enum batch_op op);
+int set_b(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+int set_c(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+int set_l(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+int set_ll(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+int set_size(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+int set_str(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+int set_arst(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+int set_resc(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+int set_hostacl(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+int set_uacl(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+int set_unkn(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+int set_depend(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+int set_tv(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op);
+int set_frequency(struct pbs_attribute *attr, struct pbs_attribute *newAttr, enum batch_op op);
+int set_complete_req(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op op);
 
 enum compare_types { LESS, EQUAL, GREATER, NOT_COMPARED };
 
-extern int comp_b(pbs_attribute *, pbs_attribute *);
-extern int comp_c(pbs_attribute *, pbs_attribute *);
-extern int comp_l(pbs_attribute *, pbs_attribute *);
-extern int comp_ll(pbs_attribute *, pbs_attribute *);
-extern int comp_size(pbs_attribute *, pbs_attribute *);
-extern int comp_str(pbs_attribute *, pbs_attribute *);
-extern int comp_nodestr(pbs_attribute *, pbs_attribute *);
-extern int comp_arst(pbs_attribute *, pbs_attribute *);
-extern int comp_resc(pbs_attribute *, pbs_attribute *);
-extern int comp_resc2(pbs_attribute *, pbs_attribute *, int, char *, enum compare_types);
-extern int comp_unkn(pbs_attribute *, pbs_attribute *);
-extern int comp_depend(pbs_attribute *, pbs_attribute *);
-extern int comp_hold(pbs_attribute *, pbs_attribute *);
-extern int comp_tv(struct pbs_attribute *attr, struct pbs_attribute *with);
-extern int comp_frequency(struct pbs_attribute *attr, struct pbs_attribute *with);
+int comp_b(pbs_attribute *, pbs_attribute *);
+int comp_c(pbs_attribute *, pbs_attribute *);
+int comp_l(pbs_attribute *, pbs_attribute *);
+int comp_ll(pbs_attribute *, pbs_attribute *);
+int comp_size(pbs_attribute *, pbs_attribute *);
+int comp_str(pbs_attribute *, pbs_attribute *);
+int comp_nodestr(pbs_attribute *, pbs_attribute *);
+int comp_arst(pbs_attribute *, pbs_attribute *);
+int comp_resc(pbs_attribute *, pbs_attribute *);
+int comp_resc2(pbs_attribute *, pbs_attribute *, int, char *, enum compare_types);
+int comp_unkn(pbs_attribute *, pbs_attribute *);
+int comp_depend(pbs_attribute *, pbs_attribute *);
+int comp_hold(pbs_attribute *, pbs_attribute *);
+int comp_tv(struct pbs_attribute *attr, struct pbs_attribute *with);
+int comp_frequency(struct pbs_attribute *attr, struct pbs_attribute *with);
+int comp_complete_req(pbs_attribute *attr, pbs_attribute *with);
 
 
-extern int action_depend(pbs_attribute *, void *, int);
+int action_depend(pbs_attribute *, void *, int);
 
-extern void free_str(pbs_attribute *);
-extern void free_arst(pbs_attribute *);
-extern void free_resc(pbs_attribute *);
-extern void free_depend(pbs_attribute *);
-extern void free_unkn(pbs_attribute *);
-extern int   parse_equal_string(char *, char **, char **);
-extern char *parse_comma_string(char *,char **);
+void free_str(pbs_attribute *);
+void free_arst(pbs_attribute *);
+void free_resc(pbs_attribute *);
+void free_depend(pbs_attribute *);
+void free_unkn(pbs_attribute *);
+void free_complete_req(pbs_attribute *);
+int   parse_equal_string(char *, char **, char **);
+char *parse_comma_string(char *,char **);
 
 #define NULL_FUNC '\0'
 
 /* other associated funtions */
 
-extern int   acl_check(pbs_attribute *, char *canidate, int type);
-int          acl_check_my_array_string(struct array_strings *, char *, int);
-extern char *arst_string(const char *str, pbs_attribute *pattr);
-extern void  attrl_fixlink(tlist_head *svrattrl);
-extern void  recov_acl(pbs_attribute *, attribute_def *, const char *, const char *);
-extern int   save_acl(pbs_attribute *, attribute_def *,  const char *, const char *);
-extern int   save_attr(attribute_def *, pbs_attribute *, int, int, char *, size_t *, size_t);
-extern int   save_attr_xml(attribute_def *, pbs_attribute *, int, int);
-extern int   write_buffer(char *,int,int);
+int   acl_check(pbs_attribute *, char *canidate, int type);
+int   acl_check_my_array_string(struct array_strings *, char *, int);
+char *arst_string(const char *str, pbs_attribute *pattr);
+void  attrl_fixlink(tlist_head *svrattrl);
+void  recov_acl(pbs_attribute *, attribute_def *, const char *, const char *);
+int   save_acl(pbs_attribute *, attribute_def *,  const char *, const char *);
+int   save_attr(attribute_def *, pbs_attribute *, int, int, char *, size_t *, size_t);
+int   save_attr_xml(attribute_def *, pbs_attribute *, int, int);
+int   write_buffer(char *,int,int);
 
-extern int      encode_state(pbs_attribute *, tlist_head *, const char *, const char *, int, int);
-extern int      encode_power_state(pbs_attribute *, tlist_head *, const char *, const char *, int, int);
-extern int      encode_props(pbs_attribute*, tlist_head*, const char*, const char*, int, int);
-extern int      encode_jobs(pbs_attribute*, tlist_head*, const char*, const char*, int, int);
-extern int      encode_ntype(pbs_attribute*, tlist_head*, const char*, const char*, int, int);
-extern int      decode_state(pbs_attribute*, const char*, const char*, const char*, int);
-extern int      decode_power_state(pbs_attribute*, const char*, const char*, const char*, int);
-extern int      decode_props(pbs_attribute*, const char*, const char*, const char*, int);
-extern int      decode_ntype(pbs_attribute*, const char*, const char*, const char*, int);
-extern int      decode_null(pbs_attribute*, const char*, const char*, const char*, int);
-extern int      comp_null(pbs_attribute*, pbs_attribute*);
-extern int      count_substrings(char*, int*);
-extern int      set_node_state(pbs_attribute*, pbs_attribute*, enum batch_op);
-extern int      set_power_state(pbs_attribute*, pbs_attribute*, enum batch_op);
-extern int      set_node_ntype(pbs_attribute*, pbs_attribute*, enum batch_op);
-extern int      set_node_props(pbs_attribute*, pbs_attribute*, enum batch_op);
-extern int      set_null(pbs_attribute*, pbs_attribute*, enum batch_op);
-extern int      node_state(pbs_attribute*, void*, int);
-extern int      node_power_state(pbs_attribute*, void*, int);
-extern int      node_np_action(pbs_attribute*, void*, int);
-extern int      node_mom_port_action(pbs_attribute*, void*, int);
-extern int      node_mom_rm_port_action(pbs_attribute*, void*, int);
-extern int      node_numa_action(pbs_attribute*, void*, int);
-extern int      node_gpus_action(pbs_attribute*, void*, int);
-int             node_mics_action(pbs_attribute*, void*, int);
-extern int      gpu_str_action(pbs_attribute*, void*, int);
-extern int      numa_str_action(pbs_attribute *, void *,int);
-extern int      node_ntype(pbs_attribute*, void*, int);
-extern int      node_prop_list(pbs_attribute*, void*, int);
-extern int      node_status_list(pbs_attribute*, void*, int);
-extern int      node_gpustatus_list(pbs_attribute*, void*, int);
-int             node_micstatus_list(pbs_attribute *, void *, int);
-extern int      node_note(pbs_attribute*, void*, int);
-extern int      node_alt_name(pbs_attribute*, void*, int);
-extern int      set_note_str(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
-extern int      set_alt_name_str(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
-extern void     replace_attr_string(pbs_attribute*, char*);
-extern int 		  job_radix_action (pbs_attribute *new_attr, void *pobj, int actmode);
-int             node_total_socket_action(pbs_attribute *new_attr, void *pobj, int actmode);
-int             node_total_chip_action(pbs_attribute *new_attr, void *pobj, int actmode);
-int             node_total_core_action(pbs_attribute *new_attr, void *pobj, int actmode);
-int             node_total_thread_action(pbs_attribute *new_attr, void *pobj, int actmode);
-int             node_available_socket_action(pbs_attribute *new_attr, void *pobj, int actmode);
-int             node_available_chip_action(pbs_attribute *new_attr, void *pobj, int actmode);
-int             node_available_core_action(pbs_attribute *new_attr, void *pobj, int actmode);
-int             node_available_thread_action(pbs_attribute *new_attr, void *pobj, int actmode);
+int      encode_state(pbs_attribute *, tlist_head *, const char *, const char *, int, int);
+int      encode_power_state(pbs_attribute *, tlist_head *, const char *, const char *, int, int);
+int      encode_props(pbs_attribute*, tlist_head*, const char*, const char*, int, int);
+int      encode_jobs(pbs_attribute*, tlist_head*, const char*, const char*, int, int);
+int      encode_ntype(pbs_attribute*, tlist_head*, const char*, const char*, int, int);
+int      decode_state(pbs_attribute*, const char*, const char*, const char*, int);
+int      decode_power_state(pbs_attribute*, const char*, const char*, const char*, int);
+int      decode_props(pbs_attribute*, const char*, const char*, const char*, int);
+int      decode_ntype(pbs_attribute*, const char*, const char*, const char*, int);
+int      decode_null(pbs_attribute*, const char*, const char*, const char*, int);
+int      comp_null(pbs_attribute*, pbs_attribute*);
+int      count_substrings(char*, int*);
+int      set_node_state(pbs_attribute*, pbs_attribute*, enum batch_op);
+int      set_power_state(pbs_attribute*, pbs_attribute*, enum batch_op);
+int      set_node_ntype(pbs_attribute*, pbs_attribute*, enum batch_op);
+int      set_node_props(pbs_attribute*, pbs_attribute*, enum batch_op);
+int      set_null(pbs_attribute*, pbs_attribute*, enum batch_op);
+int      node_state(pbs_attribute*, void*, int);
+int      node_power_state(pbs_attribute*, void*, int);
+int      node_np_action(pbs_attribute*, void*, int);
+int      node_mom_port_action(pbs_attribute*, void*, int);
+int      node_mom_rm_port_action(pbs_attribute*, void*, int);
+int      node_numa_action(pbs_attribute*, void*, int);
+int      node_gpus_action(pbs_attribute*, void*, int);
+int      node_mics_action(pbs_attribute*, void*, int);
+int      gpu_str_action(pbs_attribute*, void*, int);
+int      numa_str_action(pbs_attribute *, void *,int);
+int      node_ntype(pbs_attribute*, void*, int);
+int      node_prop_list(pbs_attribute*, void*, int);
+int      node_status_list(pbs_attribute*, void*, int);
+int      node_gpustatus_list(pbs_attribute*, void*, int);
+int      node_micstatus_list(pbs_attribute *, void *, int);
+int      node_note(pbs_attribute*, void*, int);
+int      node_alt_name(pbs_attribute*, void*, int);
+int      set_note_str(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+int      set_alt_name_str(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+void     replace_attr_string(pbs_attribute*, char*);
+int      job_radix_action (pbs_attribute *new_attr, void *pobj, int actmode);
+int      node_total_socket_action(pbs_attribute *new_attr, void *pobj, int actmode);
+int      node_total_chip_action(pbs_attribute *new_attr, void *pobj, int actmode);
+int      node_total_core_action(pbs_attribute *new_attr, void *pobj, int actmode);
+int      node_total_thread_action(pbs_attribute *new_attr, void *pobj, int actmode);
+int      node_available_socket_action(pbs_attribute *new_attr, void *pobj, int actmode);
+int      node_available_chip_action(pbs_attribute *new_attr, void *pobj, int actmode);
+int      node_available_core_action(pbs_attribute *new_attr, void *pobj, int actmode);
+int      node_available_thread_action(pbs_attribute *new_attr, void *pobj, int actmode);
 
 
 /* Token manipulation functions */
 
-extern int  decode_tokens(pbs_attribute *, const char *, const char *, const char *, int);
+int  decode_tokens(pbs_attribute *, const char *, const char *, const char *, int);
 
 int timeval_subtract(struct timeval *result, struct timeval *x, struct timeval *y);
 
@@ -547,8 +555,8 @@ int str_to_attr(const char *name, char *val, pbs_attribute *attr, struct attribu
 /* "type" to pass to acl_check() */
 #define ACL_Host      1
 #define ACL_User      2
-#define ACL_Group 	  3
-#define ACL_Gid   	  4
+#define ACL_Group     3
+#define ACL_Gid       4
 #define ACL_User_Host 5
 
 #endif  /* ATTRIBUTE_H */
