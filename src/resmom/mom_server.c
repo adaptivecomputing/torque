@@ -1098,7 +1098,7 @@ int write_numa_info(
   {
   int ret = PBSE_NONE;
 
-#ifdef PENABLE_LINUX26_CGROUPS
+#ifdef PENABLE_LINUX_CGROUPS
   /* This is the numa configuration for this node */
   if ((ret = diswsi(chan, this_node.getAvailableSockets())) == DIS_SUCCESS)
     {
