@@ -447,11 +447,21 @@ void log_close(int msg)
   exit(1);
   }
 
-void *get_next(list_link pl, char *file, int line)
+void *get_next(
+
+  list_link  pl,   /* I */
+  char     *file, /* I */
+  int      line) /* I */
+
   {
-  fprintf(stderr, "The call to get_next needs to be mocked!!\n");
-  exit(1);
-  }
+  if ((pl.ll_next == NULL) ||
+      ((pl.ll_next == &pl) && (pl.ll_struct != NULL)))
+    {
+    return NULL;
+    }
+
+  return(pl.ll_next->ll_struct);
+  }  /* END get_next() */
 
 int log_open(char *filename, char *directory)
   {
