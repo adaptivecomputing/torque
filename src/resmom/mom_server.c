@@ -244,7 +244,7 @@
 #include <vector>
 #include "container.hpp"
 #include <arpa/inet.h>
-#ifdef PENABLE_LINUX26_CPUSETS
+#ifdef PENABLE_LINUX_CGROUPS
 #include "machine.hpp"
 #endif
 #define MAX_RETRY_TIME_IN_SECS           (5 * 60)
@@ -266,7 +266,7 @@ mom_server     mom_servers[PBS_MAXSERVER];
 int            mom_server_count = 0;
 pbs_net_t      down_svraddrs[PBS_MAXSERVER];
 
-#ifdef PENABLE_LINUX26_CPUSETS
+#ifdef PENABLE_LINUX_CGROUPS
 extern Machine this_node;
 #endif
 
