@@ -65,9 +65,11 @@ using namespace std;
 
       newCore.initializeCore(core_obj, topology);
       this->cores.push_back(newCore);
+      this->totalThreads += newCore.getNumberOfProcessingUnits();
       prev = core_obj;
       }
 
+    this->totalCores = this->cores.size();
     this->availableCores = this->totalCores;
     this->availableThreads = this->totalThreads;
     this->chip_cpuset = hwloc_topology_get_allowed_cpuset(topology);

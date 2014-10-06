@@ -37,7 +37,7 @@ using namespace std;
     this->core_cpuset = core_obj->allowed_cpuset;
     this->core_nodeset = core_obj->allowed_nodeset;
     hwloc_bitmap_list_snprintf(this->core_cpuset_string, MAX_CPUSET_SIZE, this->core_cpuset);
-    hwloc_bitmap_list_snprintf(this->core_nodeset_string, MAX_NODESET_SIZE, this->core_nodeset);return(0);
+    hwloc_bitmap_list_snprintf(this->core_nodeset_string, MAX_NODESET_SIZE, this->core_nodeset);
     this->totalThreads = hwloc_get_nbobjs_inside_cpuset_by_type(topology, this->core_cpuset, HWLOC_OBJ_PU);
     return(PBSE_NONE);
     }
