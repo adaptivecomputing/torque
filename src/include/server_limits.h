@@ -194,10 +194,7 @@
 /*
  * server initialization modes
  */
-#define RECOV_HOT    0  /* restart prior running jobs   */
 #define RECOV_WARM   1  /* requeue/reschedule  all jobs */
-#define RECOV_COLD   2   /* discard all jobs  */
 #define RECOV_CREATE 4  /* discard all info  */
-#define RECOV_Invalid 5
 
 #endif /* SERVER_LIMITS_H */

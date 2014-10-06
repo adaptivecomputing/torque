@@ -8,14 +8,43 @@
 
 void parse_command_line(int argc, char *argv[]);
 extern bool auto_send_hierarchy;
+extern int server_init_type;
 
-START_TEST(test_parse_command_line)
+START_TEST(test_parse_command_line_case1)
   {
   char *argv[] = {strdup("pbs_server"), strdup("-n")};
 
   fail_unless(auto_send_hierarchy == true);
   parse_command_line(2, argv);
   fail_unless(auto_send_hierarchy == false);
+  }
+END_TEST
+
+START_TEST(test_parse_command_line_case2)
+  {
+  char *argv[] = {strdup("pbs_server"), strdup("-tcreate")};
+
+  fail_unless(server_init_type == 1);
+  parse_command_line(2, argv);
+  fail_unless(server_init_type == 4);
+  }
+END_TEST
+
+START_TEST(test_parse_command_line_case3)
+  {
+  char *argv[] = {strdup("pbs_server")};
+
+  fail_unless(server_init_type == 1);
+  parse_command_line(1, argv);
+  fail_unless(server_init_type == 1);
+  }
+END_TEST
+
+START_TEST(test_parse_command_line_case4)
+  {
+  char *argv[] = {strdup("pbs_server"), strdup("-tlala")};
+
+  parse_command_line(2, argv);
   }
 END_TEST
 
@@ -29,8 +58,20 @@ END_TEST
 Suite *pbsd_main_suite(void)
   {
   Suite *s = suite_create("pbsd_main_suite methods");
-  TCase *tc_core = tcase_create("test_parse_command_line");
-  tcase_add_test(tc_core, test_parse_command_line);
+  TCase *tc_core = tcase_create("test_parse_command_line_case1");
+  tcase_add_test(tc_core, test_parse_command_line_case1);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_parse_command_line_case2");
+  tcase_add_exit_test(tc_core, test_parse_command_line_case2, 0);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_parse_command_line_case3");
+  tcase_add_exit_test(tc_core, test_parse_command_line_case3, 0);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_parse_command_line_case4");
+  tcase_add_exit_test(tc_core, test_parse_command_line_case4, 1);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");

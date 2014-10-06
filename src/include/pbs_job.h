@@ -671,7 +671,6 @@ struct job
   char              ji_arraystructid[PBS_MAXSVRJOBID + 1]; /* id of job array for this job */
   int               ji_is_array_template;    /* set to TRUE if this is a "template job" for a job array*/
   int               ji_have_nodes_request; /* set to TRUE if node spec uses keyword nodes */
-  int               ji_cold_restart; /* set to TRUE if this job has been loaded through a cold restart */
 
   /* these three are only used for heterogeneous jobs */
   struct job       *ji_external_clone; /* the sub-job on the external (to the cray) nodes */
@@ -944,7 +943,6 @@ typedef struct send_job_request
 /* MOM: set for Mother Superior */
 #define JOB_SVFLG_HASWAIT  0x02 /* job has timed task entry for wait time */
 #define JOB_SVFLG_HASRUN   0x04 /* job has been run before (being rerun */
-#define JOB_SVFLG_HOTSTART 0x08 /* job was running, if hot init, restart */
 #define JOB_SVFLG_CHECKPOINT_FILE    0x10 /* job has checkpoint file for restart */
 #define JOB_SVFLG_SCRIPT   0x20 /* job has a Script file */
 #define JOB_SVFLG_OVERLMT1 0x40 /* job over limit first time, MOM only */
