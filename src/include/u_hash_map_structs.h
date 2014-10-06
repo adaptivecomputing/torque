@@ -78,6 +78,7 @@
 */
 #ifndef _U_HASH_MAP_STRUCTS_H
 #define _U_HASH_MAP_STRUCTS_H
+
 #include "pbs_error.h"
 #include "container.hpp"
 

@@ -392,6 +392,7 @@ enum job_atr
   JOB_ATR_system_start_time,
   JOB_ATR_nppcu, /* Hyper-Thread handling for ALPS (Cray) */
   JOB_ATR_login_node_key,
+  JOB_ATR_req_information,
 #include "site_job_attr_enum.h"
 
   JOB_ATR_UNKN,  /* the special "unknown" type    */
