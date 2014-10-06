@@ -58,11 +58,12 @@
 #include "port_forwarding.h"
 #include "common_cmds.h" 
 #include "utils.h"
+#include "complete_req.hpp"
 
 #if defined(PBS_NO_POSIX_VIOLATION)
 #define GETOPT_ARGS "a:A:c:C:e:EF:hj:k:l:m:M:nN:o:p:q:r:S:u:v:VW:z"
 #else
-#define GETOPT_ARGS "a:A:b:c:C:d:D:e:EfF:hIj:J:k:l:m:M:nN:o:p:P:q:r:S:t:T:u:v:Vw:W:Xxz-:"
+#define GETOPT_ARGS "a:A:b:c:C:d:D:e:EfF:hIj:J:k:l:L:m:M:nN:o:p:P:q:r:S:t:T:u:v:Vw:W:Xxz-:"
 #endif /* PBS_NO_POSIX_VIOLATION */
 
 #define MAXBUF 2048
@@ -86,7 +87,8 @@ char *host_name_suffix = NULL;
 int    J_opt = FALSE;
 int    P_opt = FALSE;
 
-const char *checkpoint_strings = "n,c,s,u,none,shutdown,periodic,enabled,interval,depth,dir";
+const char   *checkpoint_strings = "n,c,s,u,none,shutdown,periodic,enabled,interval,depth,dir";
+complete_req  cr;
 
 /* adapted from openssh */
 /* The parameter was EMsg, but was never used.
@@ -780,7 +782,6 @@ int validate_submit_filter(
 
 
 
-
 void validate_pbs_o_workdir(
 
   job_data_container *job_attr)
@@ -898,27 +899,27 @@ void validate_basic_resourcing(
   {
   job_data_container *resources = ji->res_attr;
   job_data           *dummy;
-  int                nodes;
-  int                size;
-  int                mpp;
+  bool               nodes = false;
+  bool               size = false;
+  bool               mpp = false;
 
   nodes = hash_find(resources, "nodes", &dummy);
   size  = hash_find(resources, "size", &dummy);
 
-  if ((nodes == TRUE) &&
-      (size == TRUE))
+  if ((nodes == true) &&
+      (size == true))
     {
     fprintf(stderr, "qsub: Specifying -l nodes is incompatible with specifying -l size\n");
     exit(4);
     }
-  else if ((nodes == TRUE) ||
-           (size == TRUE))
+  else if ((nodes == true) ||
+           (size == true))
     {
     mpp = are_mpp_present(resources, &dummy);
 
-    if (mpp == TRUE)
+    if (mpp == true)
       {
-      if (nodes == TRUE)
+      if (nodes == true)
         {
         fprintf(stderr, "qsub: Specifying -l nodes is incompatible with specifying -l mppwidth\n");
         exit(4);
@@ -931,7 +932,19 @@ void validate_basic_resourcing(
       }
     }
 
-  } /* END validate_basic_rsourcing() */
+  // If req_count is > 0 that means -L was requested
+  if (cr.req_count() > 0)
+    {
+    if ((nodes == true) ||
+        (size == true) ||
+        (mpp == true))
+      {
+      fprintf(stderr, "qsub: resource requests cannot combine -L with -l nodes, size, or mppwidth\n");
+      exit(4);
+      }
+    }
+
+  } /* END validate_basic_resourcing() */
 
 /*
  * Set up (or enforce) errpath or outpath when join option specified
@@ -1002,6 +1015,27 @@ void post_check_attributes(job_info *ji, char *script_tmp)
    */
   validate_join_options(ji->job_attr, script_tmp);
   } /* END post_check_attributes() */
+
+
+
+/*
+ * add_new_request_if_present()
+ *
+ * adds the -L request if it exists
+ */
+
+void add_new_request_if_present(
+
+  job_info *ji)
+
+  {
+  if (cr.req_count() > 0)
+    {
+    std::string req_str;
+    cr.toString(req_str);
+    hash_add_or_exit(ji->job_attr, ATTR_req_information, req_str.c_str(), CMDLINE_DATA);
+    }
+  } // END add_new_request_if_present() 
 
 
 
@@ -2344,12 +2378,18 @@ int validate_group_list(
   }
 
 
-bool came_from_moab(const char *src, std::string &escaped_semicolon)
+bool came_from_moab(
+    
+  const char  *src,
+  std::string &escaped_semicolon)
+
   {
   char *p;
   if ((p = strstr((char *)src, "x=SID:Moab;")))
     {  
-    char buf[1024], *s;
+    char  buf[1024];
+    char *s;
+
     for (s=buf; *p; p++, s++)
       {
       if (*p == ';')
@@ -2359,13 +2399,47 @@ bool came_from_moab(const char *src, std::string &escaped_semicolon)
         }
       *s = *p;
       }
+
     *s = '\0';
+
     escaped_semicolon = std::string(buf);
     return true;
     }
   else
     return false;
   }
+
+
+
+void process_opt_L(
+
+  job_info   *ji,
+  const char *cmd_arg)
+
+  {
+  char        err_buf[MAXLINE*2];
+
+  if (strncmp(cmd_arg, "tasks=", 6))
+    {
+    snprintf(err_buf, sizeof(err_buf), "qsub: illegal -L value: '%s'", cmd_arg);
+    print_qsub_usage_exit(err_buf);
+    }
+
+  // check for errors
+  char        *req_begin = strdup(cmd_arg + 6); // skip the 'tasks=' portion
+  req          r;
+  std::string  err;
+
+  if (r.set_from_submission_string(req_begin, err) != PBSE_NONE)
+    {
+    snprintf(err_buf, sizeof(err_buf), "qsub: malformed piece of -L value: '%s'", err.c_str());
+    print_qsub_usage_exit(err_buf);
+    }
+
+  cr.add_req(r);
+  } // END process_opt_L()
+
+
 
 /** 
  * Process command line options.
@@ -2384,44 +2458,44 @@ void process_opts(
   int        data_type)
 
   {
-  int i;
-  int c;
-  int rc = 0;
-  int errflg = 0;
-  time_t after;
-  char a_value[80];
-  char *keyword;
-  char *valuewd;
-  char *pc;
-  char *pdepend;
+  int          i;
+  int          c;
+  int          rc = 0;
+  int          errflg = 0;
+  time_t       after;
+  char         a_value[80];
+  char        *keyword;
+  char        *valuewd;
+  char        *pc;
+  char        *pdepend;
 
-  FILE *fP = NULL;
+  FILE        *fP = NULL;
 
-  char tmp_name[] = "/tmp/qsub.XXXXXX";
-  char tmp_name2[] = "/tmp/qsub.XXXXXX";
+  char         tmp_name[] = "/tmp/qsub.XXXXXX";
+  char         tmp_name2[] = "/tmp/qsub.XXXXXX";
 
-  char cline[4096];
-  std::string cline_out;
+  char         cline[4096];
+  std::string  cline_out;
 
 
-  char tmpResources[4096] = "";
-  char *cP;
-  char *ptr;
-  char *idir = NULL;
-  char  flag;  /* submitfilter flag character */
-  char *vptr;  /* submitfilter flag value */
+  char         tmpResources[4096] = "";
+  char        *cP;
+  char        *ptr;
+  char        *idir = NULL;
+  char         flag;  /* submitfilter flag character */
+  char        *vptr;  /* submitfilter flag value */
 
 
 /*   struct stat sfilter; */
 
-  int tmpfd;
-  int nitems;
-  char search_string[256];
-  job_data *tmp_job_info = NULL;
-  int alloc_len = 0;
-  char *err_msg = NULL;
+  int          tmpfd;
+  int          nitems;
+  char         search_string[256];
+  job_data    *tmp_job_info = NULL;
+  int          alloc_len = 0;
+  char        *err_msg = NULL;
   /* Moved from global to local */
-  char path_out[MAXPATHLEN + 1];
+  char         path_out[MAXPATHLEN + 1];
   
   /* Note:
    * All other #ifdef's for PBS_NO_POSIX_VIOLATION are being removed because
@@ -2727,11 +2801,17 @@ void process_opts(
           //If cpuclock gets set we need to set the node exclusive flag
           {
           job_data *pData = NULL;
-          if(hash_find(ji->res_attr,"cpuclock",&pData))
+          if (hash_find(ji->res_attr,"cpuclock",&pData))
             {
             hash_add_or_exit(ji->job_attr, ATTR_node_exclusive, "TRUE", data_type);
             }
           }
+
+        break;
+
+      case 'L':
+
+        process_opt_L(ji, optarg);
 
         break;
 
@@ -4080,6 +4160,8 @@ void main_func(
   
   post_check_attributes(&ji, script_tmp);
 
+  add_new_request_if_present(&ji);
+
   if (hash_find(ji.client_attr, "DISPLAY", &tmp_job_info))
     {
     char *x11authstr;
@@ -4263,6 +4345,7 @@ void main_func(
                   NULL,
                   &new_jobname,
                   &errmsg);
+
     if (local_errno != PBSE_NONE)
       sleep(1);
 
@@ -4271,7 +4354,7 @@ void main_func(
     if (local_errno == PBSE_TIMEOUT)
       fprintf(stdout, "Connection to server timed out. Trying again");
 
-    }while((++retries < MAX_RETRIES) && (local_errno != PBSE_NONE));
+    } while((++retries < MAX_RETRIES) && (local_errno != PBSE_NONE));
 
   if (local_errno != PBSE_NONE)
     {

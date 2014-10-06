@@ -1230,10 +1230,7 @@ attribute_def job_attr_def[] =
    ATR_TYPE_LONG,
    PARENT_TYPE_JOB},
 
-
-/* Site defined attributes if any, see site_job_attr_*.h  */
-#include "site_job_attr_def.h"
-
+  /* JOB_ATR_req_information */
   {ATTR_req_information, /* "req_information" */
    decode_complete_req,
    encode_complete_req,
@@ -1244,6 +1241,9 @@ attribute_def job_attr_def[] =
    READ_WRITE | ATR_DFLAG_MOM,
    ATR_TYPE_REQ,
    PARENT_TYPE_JOB},
+
+/* Site defined attributes if any, see site_job_attr_*.h  */
+#include "site_job_attr_def.h"
 
   /* JOB_ATR_UNKN - THIS MUST BE THE LAST ENTRY */
   { (char *)"_other_",
