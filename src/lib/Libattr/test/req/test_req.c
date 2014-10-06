@@ -59,7 +59,7 @@ START_TEST(test_constructors)
   req r5("5:lprocs=4:memory=12gb:place=core=4:mics=1:feature=fast");
   fail_unless(r5.getThreadUsageString() == "use cores", "thread usage '%s'", r5.getThreadUsageString().c_str());
 
-  req r6("5:lprocs=4:place=threads=4");
+  req r6("5:lprocs=4:place=thread=4");
   fail_unless(r6.getThreadUsageString() == "use threads", "thread usage '%s'", r6.getThreadUsageString().c_str());
 
   // make sure miss-spellings are caught

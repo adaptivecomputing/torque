@@ -103,7 +103,7 @@ int req::set_place_value(
     if (numeric_value != NULL)
       this->execution_slots = strtol(numeric_value, NULL, 10);
     }
-  else if (!strcmp(work_str, "threads"))
+  else if (!strcmp(work_str, "thread"))
     {
     this->thread_usage_policy = USE_THREADS;
     this->thread_usage_str = "use threads";
