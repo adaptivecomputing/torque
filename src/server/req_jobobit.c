@@ -2525,21 +2525,6 @@ void on_job_rerun(
 
       /* Now re-queue the job */
 
-      if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HOTSTART) == 0)
-        {
-        /* in case of server shutdown, don't clear exec_host */
-        /* or session_id will use it on hotstart when next comes up */
-
-        job_attr_def[JOB_ATR_exec_host].at_free(
-          &pjob->ji_wattr[JOB_ATR_exec_host]);
-
-        job_attr_def[JOB_ATR_session_id].at_free(
-          &pjob->ji_wattr[JOB_ATR_session_id]);
-
-        job_attr_def[JOB_ATR_exec_gpus].at_free(
-          &pjob->ji_wattr[JOB_ATR_exec_gpus]);
-        }
-
       pjob->ji_modified = 1; /* force full job save */
 
       pjob->ji_momhandle = -1;
@@ -3274,8 +3259,7 @@ int req_jobobit(
     {
     /* not found or from wrong node */
 
-    if ((server_init_type == RECOV_COLD) ||
-        (server_init_type == RECOV_CREATE))
+    if (server_init_type == RECOV_CREATE)
       {
       /* tell MOM the job was blown away */
 

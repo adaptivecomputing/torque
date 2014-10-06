@@ -120,7 +120,6 @@ static const char *svr_state_names[] =
   {
   "",   /* SV_STATE_DOWN */
   "",   /* SV_STATE_INIT */
-  "Hot_Start",  /* SV_STATE_HOT  */
   "Active",  /* SV_STATE_RUN  */
   "Terminating_Delay", /* SV_STATE_SHUTDEL */
   "Terminating",  /* SV_STATE_SHUTIMM */
