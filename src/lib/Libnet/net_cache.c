@@ -155,6 +155,28 @@ private:
 
 public:
 
+  void dumpCache()
+    {
+    pthread_mutex_lock(&cacheMutex);
+
+    for(unsigned int i = 0;i < hosts.size();i++)
+      {
+      char *pName = hosts.at(i);
+      struct addrinfo *pAddr = addrs.at(i);
+
+      if((pName == NULL)||(pAddr == NULL))
+        {
+        fprintf(stderr,"NULL Pointer: name = %p, addr = %p\n",(void *)pName,(void *)pAddr);
+        }
+      else
+        {
+        fprintf(stderr,"%d.%d.%d.%d   %s\n",pAddr->ai_addr->sa_data[2]&0xff,pAddr->ai_addr->sa_data[3]&0xff,pAddr->ai_addr->sa_data[4]&0xff,pAddr->ai_addr->sa_data[5]&0xff,pName);
+        }
+      }
+
+    pthread_mutex_unlock(&cacheMutex);
+    }
+
   struct addrinfo *addToCache(
       
     struct addrinfo *pAddr,
@@ -382,6 +404,11 @@ public:
   };
 
 addrcache cache;
+
+void dumpAddrCache()
+  {
+  cache.dumpCache();
+  }
 
 /*******************************************************
   * Get the host name associated with an address.

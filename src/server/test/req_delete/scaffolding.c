@@ -518,6 +518,36 @@ int get_fullhostname(
   char *EMsg)       /* O (optional,minsize=MAXLINE - 1024) */
 
   {
+  extern char      server_host[];
+  struct addrinfo  hints;
+  struct addrinfo *info;
+  int              gai_result;
+
+  char             hostname[1024];
+
+  if (strncmp(shortname, server_host, strlen(shortname)))
+    return(0);
+
+  memset(&hostname, 0, sizeof(hostname));
+  gethostname(hostname, sizeof(hostname));
+
+  memset(&hints, 0, sizeof hints);
+  hints.ai_flags = AI_CANONNAME;
+  hints.ai_family = AF_INET;
+  hints.ai_socktype = SOCK_STREAM;
+
+  if ((gai_result = getaddrinfo(hostname, "http", &hints, &info)) != 0)
+    {
+    perror("couldn't getaddrinfo");
+    perror(hostname);
+    fprintf(stderr, "%s\n", gai_strerror(gai_result));
+    return(-1);
+    }
+
+  snprintf(namebuf, bufsize, "%s", info->ai_canonname);
+
+  freeaddrinfo(info);
+
   return(0);
   }
 

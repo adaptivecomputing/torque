@@ -84,6 +84,8 @@ extern int              LOGLEVEL;
 extern attribute_def    node_attr_def[];   /* node attributes defs */
 extern AvlTree          ipaddrs;
 extern std::vector<std::string> hierarchy_holder;
+extern pthread_mutex_t  hierarchy_holder_Mutex;
+
 
 job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode);
 
@@ -3350,14 +3352,18 @@ struct pbsnode *next_node(
           
           an->lock();
           next = iter->node_index->get_next_item();
-          an->unlock();
           
           if (next != NULL)
             {
             lock_node(next, __func__, NULL, LOGLEVEL);
+            an->unlock();
             
             if (next->nd_is_alps_reporter)
               next = get_my_next_alps_node(iter, next);
+            }
+          else
+            {
+            an->unlock();
             }
           }
         }
@@ -3368,14 +3374,18 @@ struct pbsnode *next_node(
         
         an->lock();
         next = iter->node_index->get_next_item();
-        an->unlock();
         
         if (next != NULL)
           {
           lock_node(next, __func__, NULL, LOGLEVEL);
+          an->unlock();
           
           if (next->nd_is_alps_reporter)
             next = get_my_next_alps_node(iter, next);
+          }
+        else
+          {
+          an->unlock();
           }
         }
       }
@@ -3390,16 +3400,20 @@ struct pbsnode *next_node(
 
       next = iter->node_index->get_next_item();
 
-      an->unlock();
 
       if (next != NULL)
         {
         lock_node(next, __func__, "next != NULL && numa_index+1", LOGLEVEL);
+        an->unlock();
 
         if (next->num_node_boards > 0)
           {
           next = get_my_next_node_board(iter, next);
           }
+        }
+      else
+        {
+        an->unlock();
         }
       }
     else
@@ -3684,9 +3698,18 @@ int send_hierarchy(
   /* write the protocol, version and command */
   else if ((ret = is_compose(chan, IS_CLUSTER_ADDRS)) == DIS_SUCCESS)
     {
+    std::vector<std::string> tmpHolder;
+
+    pthread_mutex_lock(&hierarchy_holder_Mutex);
     for (unsigned int i = 0; i < hierarchy_holder.size(); i++)
       {
-      string = hierarchy_holder[i].c_str();
+      tmpHolder.push_back(hierarchy_holder[i]);
+      }
+    pthread_mutex_unlock(&hierarchy_holder_Mutex);
+
+    for (unsigned int i = 0; i < tmpHolder.size(); i++)
+      {
+      string = tmpHolder[i].c_str();
       if ((ret = diswst(chan, string)) != DIS_SUCCESS)
         {
         if (ret > 0)

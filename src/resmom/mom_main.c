@@ -5740,7 +5740,23 @@ void check_jobs_in_mom_wait()
   } /* END check_jobs_in_mom_wait() */
 
 
+//If we have a job that's exiting we should call scan for exiting.
+bool call_scan_for_exiting()
+  {
+  if(exiting_tasks) return true;
 
+  job          *nextjob;
+  job          *pjob;
+
+  //NOTE: May want to put some kind of timeout so we only call this once in a while.
+  for (pjob = (job *)GET_NEXT(svr_alljobs); pjob != NULL; pjob = nextjob)
+    {
+    nextjob = (job *)GET_NEXT(pjob->ji_alljobs);
+    //if (is_job_state_exiting(pjob) == false) Not using this call because it has some side effects. This function is just checking.
+    if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXITING) return true;
+    }
+  return false;
+  }
 
 void check_exiting_jobs()
 
@@ -5970,7 +5986,8 @@ void main_loop(void)
 
     check_jobs_in_obit();
 
-    if (exiting_tasks)
+
+    if (call_scan_for_exiting())
       scan_for_exiting();
 
     check_exiting_jobs();
