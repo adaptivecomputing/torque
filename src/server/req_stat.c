@@ -1082,26 +1082,26 @@ void stat_update(
         }
       else
         {
-        if (preply->brp_choice == BATCH_REPLY_CHOICE_Queue)
-          {
-          snprintf(log_buf, sizeof(log_buf), "Unexpected reply: reply was on queue");
-          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-          }
-        else
-          {
-          snprintf(log_buf, sizeof(log_buf),
-            "Unknown job message from mother superior appears to be in error, reported %d seconds ago",
-            (int)delta);
-          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-          }
+        snprintf(log_buf, sizeof(log_buf),
+          "Unknown job message from mother superior appears to be in error, reported %d seconds ago",
+          (int)delta);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
         }
       }
     }
   else
     {
-    snprintf(log_buf, sizeof(log_buf),
-      "Poll job request failed for job %s", preq->rq_ind.rq_status.rq_id);
-    log_err(preply->brp_code, __func__, log_buf);
+    if (preply->brp_choice == BATCH_REPLY_CHOICE_Queue)
+      {
+      snprintf(log_buf, sizeof(log_buf), "Unexpected reply: reply was on queue");
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+      }
+    else
+      {
+      snprintf(log_buf, sizeof(log_buf),
+        "Poll job request failed for job %s", preq->rq_ind.rq_status.rq_id);
+      log_err(preply->brp_code, __func__, log_buf);
+      }
     }
   
   cntl->sc_conn = -1;
