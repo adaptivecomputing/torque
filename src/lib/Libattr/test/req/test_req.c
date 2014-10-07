@@ -84,7 +84,7 @@ START_TEST(test_equals_operator)
   r.set_name_value_pair("disk", "4mb");
   r.set_name_value_pair("opsys", "ubuntu");
   r.set_name_value_pair("gpus", "2");
-  r.set_name_value_pair("mode", "exclusive_thread");
+  r.set_attribute("exclusive_thread");
   r.set_name_value_pair("reqattr", "matlab>=7");
   r2 = r;
 

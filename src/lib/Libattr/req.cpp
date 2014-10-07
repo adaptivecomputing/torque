@@ -204,8 +204,6 @@ int req::set_name_value_pair(
     this->disk = read_mem_value(value);
   else if (!strcmp(name, "opsys"))
     this->os = value;
-  else if (!strcmp(name, "mode"))
-    this->gpu_mode = value;
   else if (!strcmp(name, "reqattr"))
     this->req_attr = value;
   else
@@ -222,7 +220,7 @@ int req::set_name_value_pair(
  * Sets an attribute that doesn't require a value. It has to be
  * in this format:
  * 
- * [:{usecores|usethreads|allowthreads|usefastcores}][:pack]
+ * [:{usecores|usethreads|allowthreads|usefastcores}][:pack][:{shared|exclusive_thread|prohibited|exclusive_process|exclusive|default|reseterr}]
  *
  * @param str - the value in the format specified above.
  * @return PBSE_NONE if correct, PBSE_BAD_PARAMETER otherwise.
@@ -256,6 +254,14 @@ int req::set_attribute(
     {
     this->pack = true;
     }
+  else if ((!strcasecmp(str, "shared")) ||
+           (!strcasecmp(str, "exclusive_thread")) ||
+           (!strcasecmp(str, "prohibited")) ||
+           (!strcasecmp(str, "exclusive_process")) ||
+           (!strcasecmp(str, "exclusive")) ||
+           (!strcasecmp(str, "default")) ||
+           (!strcasecmp(str, "reseterr")))
+    this->gpu_mode = str;
   else
     return(PBSE_BAD_PARAMETER);
 
