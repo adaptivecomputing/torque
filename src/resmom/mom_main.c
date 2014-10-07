@@ -123,7 +123,6 @@
 
 int    MOMIsLocked = 0;
 int    MOMIsPLocked = 0;
-int    ForceServerUpdate = 0;
 
 int    verbositylevel = 0;
 unsigned int default_server_port = 0;
@@ -219,6 +218,7 @@ extern long     MaxConnectTimeout;
 time_t          pbs_tcp_timeout = PMOMTCPTIMEOUT;
 
 time_t          LastServerUpdateTime = 0;  /* NOTE: all servers updated together */
+bool            ForceServerUpdate = false;
 int             UpdateFailCount = 0;
 
 time_t          MOMStartTime         = 0;
@@ -323,6 +323,7 @@ u_long   localaddr = 0;
 int   cphosts_num = 0;
 
 
+char                    PBSNodeMsgBuf[MAXLINE];
 static time_t           MOMExeTime = 0;
 
 
@@ -5860,6 +5861,23 @@ void prepare_child_tasks_for_delete()
 
 
 
+time_t calculate_select_timeout() {
+  time_t tmpTime;
+  extern time_t wait_time;
+
+  tmpTime = MIN(wait_time, (LastServerUpdateTime + get_stat_update_interval()) - time_now);
+
+  tmpTime = MIN(tmpTime, (last_poll_time + CheckPollTime) - time_now);
+
+  tmpTime = MAX(1, tmpTime);
+
+  if (LastServerUpdateTime == 0)
+    tmpTime = 1;
+
+  return tmpTime;
+}
+
+
 
 /**
  * main_loop
@@ -5870,7 +5888,6 @@ void prepare_child_tasks_for_delete()
 void main_loop(void)
 
   {
-  extern time_t wait_time;
   double        myla;
   time_t        tmpTime;
 #ifdef USESAVEDRESOURCES
@@ -5982,14 +5999,7 @@ void main_loop(void)
 
     time_now = time((time_t *)0);
 
-    tmpTime = MIN(wait_time, time_now - (LastServerUpdateTime + ServerStatUpdateInterval));
-
-    tmpTime = MIN(tmpTime, time_now - (last_poll_time + CheckPollTime));
-
-    tmpTime = MAX(1, tmpTime);
-
-    if (LastServerUpdateTime == 0)
-      tmpTime = 1;
+    tmpTime = calculate_select_timeout();
 
     resend_things();
 

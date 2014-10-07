@@ -747,6 +747,7 @@ int svr_dequejob(
         }
       }
 
+    std::string jobid = pjob->ji_qs.ji_jobid;
     if ((rc = remove_job(pque->qu_jobs, pjob)) == PBSE_NONE)
       {
       if (--pque->qu_numjobs < 0)
@@ -767,9 +768,24 @@ int svr_dequejob(
       return(PBSE_JOBNOTFOUND);
       }
 
+    if (rc == THING_NOT_FOUND && (LOGLEVEL >= 8))
+      {
+      snprintf(log_buf,sizeof(log_buf),
+         "Could not remove job %s from queue->qu_jobs\n", jobid.c_str());
+      log_ext(-1, __func__, log_buf, LOG_WARNING);
+      }
+
     /* the only reason to care about the error is if the job is gone */
-    if (remove_job(pque->qu_jobs_array_sum, pjob) == PBSE_JOB_RECYCLED)
+    int rc2;
+    if ((rc2=remove_job(pque->qu_jobs_array_sum, pjob)) == PBSE_JOB_RECYCLED)
       return(PBSE_JOBNOTFOUND);
+
+    if (rc2 == THING_NOT_FOUND && (LOGLEVEL >= 8))
+      {
+      snprintf(log_buf,sizeof(log_buf),
+         "Could not remove job %s from qu_jobs_array_sum\n", jobid.c_str());
+      log_ext(-1, __func__, log_buf, LOG_WARNING);
+      }
 
     pjob->ji_qhdr = NULL;
 
@@ -863,6 +879,13 @@ int svr_dequejob(
     {
     /* calling functions know this return code means the job is gone */
     return(PBSE_JOBNOTFOUND);
+    }
+
+  if (rc == THING_NOT_FOUND && (LOGLEVEL >= 8))
+    {
+    snprintf(log_buf,sizeof(log_buf),
+      "Could not remove job %s from alljobs\n", pjob->ji_qs.ji_jobid); 
+    log_ext(-1, __func__, log_buf, LOG_WARNING);
     }
 
   /* notify scheduler a job has been removed */

@@ -415,3 +415,20 @@ int ctnodes(char *spec)
   return(ct);
   }  /* END ctnodes() */
 
+char * csv_find_string(const char *csv_str, const char *search_str)
+  {
+  fprintf(stderr, "The call to csv_find_string to be mocked!!\n");
+  exit(1);
+  }
+
+char *csv_nth(const char *csv_str, int n)
+  {
+  fprintf(stderr, "The call to csv_nth to be mocked!!\n");
+  exit(1);
+  }
+
+int csv_length(const char *csv_str)
+  {
+  fprintf(stderr, "The call to csv_length to be mocked!!\n");
+  exit(1);
+  }

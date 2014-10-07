@@ -262,6 +262,7 @@ enum TVarElseEnum
   tveMicFile,
   tveOffloadDevices,
   tveCudaVisibleDevices,
+  tveHostname,
   tveLAST
   };
 
@@ -290,6 +291,7 @@ static const char *variables_else[] =   /* variables to add, value computed */
   "PBS_MICFILE",          /* file containing which MICs to access */
   "OFFLOAD_DEVICES",      /* indices of MICs for the job */
   "CUDA_VISIBLE_DEVICES", /* indices of GPUs for the job */
+  "HOSTNAME",             /* the host we're executing on */
   NULL
   };
 
@@ -1599,6 +1601,9 @@ int InitUserEnv(
     get_indices_from_exec_str(pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str, buf, sizeof(buf));
     bld_env_variables(&vtable, variables_else[tveCudaVisibleDevices], buf);
     }
+
+  // add the hostname to the environment
+  bld_env_variables(&vtable, variables_else[tveHostname], mom_host);
 
   /* PBS_WALLTIME */
 

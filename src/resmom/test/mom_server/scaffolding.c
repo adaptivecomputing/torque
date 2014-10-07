@@ -3,6 +3,8 @@
 #include <stdio.h> /* fprintf */
 #include <netinet/in.h> /* sockaddr_in, sockaddr */
 #include <vector>
+#include <errno.h>
+#include <sys/statfs.h>
 
 #include "mom_hierarchy.h" /* mom_hierarchy_t, node_comm_t */
 #include "mom_server.h"
@@ -19,6 +21,10 @@
 #include "pbs_config.h"
 #include "container.hpp"
 
+#define MAXLINE 1024
+#define DIS_SUCCESS 0
+
+bool            ForceServerUpdate = false;
 char log_buffer[LOG_BUF_SIZE];
 char *apbasil_protocol = NULL;
 char *apbasil_path = NULL;
@@ -39,12 +45,11 @@ char TMOMRejectConn[MAXLINE];
 int PBSNodeCheckInterval;
 int UpdateFailCount = 0;
 char *auto_ideal_load = NULL;
-char *path_spool;
 char *auto_max_load = NULL;
 unsigned int pbs_rm_port = 0;
-char PBSNodeCheckPath[1024];
+char PBSNodeCheckPath[MAXLINE];
 int internal_state = 0;
-char PBSNodeMsgBuf[1024];
+char PBSNodeMsgBuf[MAXLINE];
 int alarm_time;
 tlist_head svr_alljobs;
 char mom_alias[PBS_MAXHOSTNAME + 1];
@@ -59,6 +64,12 @@ container::item_container<received_node *> received_statuses;
 bool exit_called = false;
 
 
+char  ret_string[MAXLINE];
+char  path_spool[] = "/var/spool";
+
+bool no_error = true;
+bool no_event = true;
+
 #ifdef NUMA_SUPPORT
 int       num_node_boards;
 nodeboard node_boards[MAX_NODE_BOARDS]; 
@@ -72,10 +83,28 @@ int              MOMConfigUseSMT           = 1; /* 0: off, 1: on */
 //hwloc_topology_t topology;
 #endif
 
+
 int MUReadPipe(char *Command, char *Buffer, int BufSize)
   {
-  fprintf(stderr, "The call to MUReadPipe needs to be mocked!!\n");
-  exit(1);
+  if ((no_error == true) && (no_event == true))
+    {
+    memset(Buffer, 0, BufSize);
+    return(0);
+    }
+
+  if (no_error == false)
+    {
+    strcpy(Buffer, "ERROR");
+    return(0);
+    }
+
+  if (no_event == false)
+    {
+    strcpy(Buffer, "EVENT:");
+    return(0);
+    }
+
+  return(0);
   }
 
 node_comm_t *update_current_path(mom_hierarchy_t *nt)
@@ -110,8 +139,8 @@ const char *reqgres(struct rm_attribute *attrib)
 
 int read_tcp_reply(struct tcp_chan *chan, int protocol, int version, int command, int *exit_status)
   {
-  fprintf(stderr, "The call to read_tcp_reply needs to be mocked!!\n");
-  exit(1);
+  *exit_status = DIS_SUCCESS;
+  return *exit_status; 
   }
 
 char *conf_res(char *resline, struct rm_attribute *attr)
@@ -216,7 +245,7 @@ int rpp_close(int index)
   exit(1);
   }
 
-int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size)
+int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size, bool use_log)
   {
   fprintf(stderr, "The call to tcp_connect_sockaddr needs to be mocked!!\n");
   exit(1);
@@ -224,8 +253,39 @@ int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size)
 
 char *size_fs(char *param)
   {
-  fprintf(stderr, "The call to size_fs needs to be mocked!!\n");
-  exit(1);
+  struct statfs fsbuf;
+  
+
+  /* We need to make up our own parameter */
+  
+  if (path_spool[0] != '/')
+    {
+    sprintf(log_buffer, "%s: not full path filesystem name: %s", __func__, path_spool);
+    log_err(-1, __func__, log_buffer);
+
+    rm_errno = RM_ERR_BADPARAM;
+
+    return(NULL);
+    }
+      
+    if (statfs(path_spool, &fsbuf) == -1)
+      {
+      log_err(errno, __func__, "statfs");
+      rm_errno = RM_ERR_BADPARAM;
+      return(NULL);
+      }
+
+#ifdef RPT_BAVAIL
+#define RPT_STATFS_MEMBER f_bavail
+#else
+#define RPT_STATFS_MEMBER f_bfree
+#endif
+
+  sprintf(ret_string, "%lukb:%lukb",
+                      (ulong)(((double)fsbuf.f_bsize * (double)fsbuf.RPT_STATFS_MEMBER) / 1024.0),
+                      (ulong)(((double)fsbuf.f_bsize * (double)fsbuf.f_blocks) / 1024.0)); /* KB */
+
+  return(ret_string);
   }
 
 void close_conn(int sd, int has_mutex)
@@ -351,3 +411,9 @@ int pbs_getaddrinfo(
   {
   return(0);
   }
+
+time_t get_stat_update_interval()
+
+  {
+  return ForceServerUpdate ? ServerStatUpdateInterval / 3 : ServerStatUpdateInterval;
+  } /* END get_next_update_time() */

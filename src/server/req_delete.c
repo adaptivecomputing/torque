@@ -1849,7 +1849,7 @@ int is_ms_on_server(
         if (strstr(host_tok, ".") == NULL)
           get_fullhostname(host_tok, mom_fullhostname, sizeof(mom_fullhostname), NULL);
 
-      ms_on_server = strcmp(server_host, mom_fullhostname) == 0;
+      ms_on_server = (strcmp(server_host, mom_fullhostname) == 0);
       }
     }
 

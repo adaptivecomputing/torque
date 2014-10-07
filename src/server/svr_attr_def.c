@@ -1396,7 +1396,7 @@ attribute_def svr_attr_def[] =
     PARENT_TYPE_SERVER},
 
    /* SRV_ATR_JobExclusiveOnUse */
-  {(char *)ATTR_job_exclusive_onuse, /* "job_exclusive_onuse" */
+  {(char *)ATTR_job_exclusive_on_use, /* "job_exclusive_on_use" */
     decode_b,
     encode_b,
     set_b,

@@ -348,18 +348,9 @@ START_TEST(status_nodeattrib_test)
                              &list,
                              NULL);
   fail_unless(result != PBSE_NONE, "NULL input result_mask pointer fail: %d" ,result);
-
-  result = status_nodeattrib(NULL,
-                             &node_attributes,
-                             &node,
-                             0,
-                             0,
-                             &list,
-                             &result_mask);
-  /*FIXME: NOTE: this is probably a correct set of input parameters, but still returns -1*/
- /*   fail_unless(result != PBSE_NONE, "NULL input svrattrl pointer fail: %d" ,result); */
   }
 END_TEST
+
 
 START_TEST(initialize_pbsnode_test)
   {
@@ -373,6 +364,7 @@ START_TEST(initialize_pbsnode_test)
   fail_unless(result == PBSE_NONE, "initialization fail");
   }
 END_TEST
+
 
 START_TEST(effective_node_delete_test)
   {
@@ -397,6 +389,7 @@ START_TEST(effective_node_delete_test)
 
   }
 END_TEST
+
 
 START_TEST(update_nodes_file_test)
   {

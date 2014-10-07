@@ -21,23 +21,27 @@ START_TEST(test_isWindowsFormat)
   fail_unless((tempfilename != NULL), "Failed to create a temporary filename");
   FILE *fp = fopen(tempfilename, "w");
   fail_unless(fp != NULL, "Failed to create a file to test on Windows text format");
-  fprintf(fp, "line 1, blah blah blah\n");
-  fprintf(fp, "line 2, blah blah blah\n");
-  fprintf(fp, "line 3, blah blah blah\n");
+
+  //write in dos format
+  fprintf(fp, "line 1, blah blah blah\r\n");
+  fprintf(fp, "line 2, blah blah blah\r\n");
+  fprintf(fp, "line 3, blah blah blah\r\n");
   int s = fclose(fp);
-  fail_unless(s == 0, "Failed to close test file");
-  char command[1024];
-  snprintf(command, sizeof(command), "/usr/bin/unix2dos %s > /dev/null", tempfilename);
-  s = system(command);
-  fail_unless((s != -1), "Failed to execute %s", command);
   fp = fopen(tempfilename, "r");
   fail_unless(fp != NULL, "Failed to open file %s for read", tempfilename);
   s = isWindowsFormat(fp);
   fail_unless(s==1, "Failed to detect Windows format text file");
   fclose(fp);
-  snprintf(command, sizeof(command), "/usr/bin/dos2unix %s > /dev/null", tempfilename);
-  s = system(command);
-  fail_unless((s != -1), "Failed to execute %s", command);
+
+  fopen(tempfilename, "w");
+  fail_unless(fp != NULL, "Failed to create a file to test on Windows text format");
+  
+  //write in unix format
+  fprintf(fp, "line 1, blah blah blah\n");
+  fprintf(fp, "line 2, blah blah blah\n");
+  fprintf(fp, "line 3, blah blah blah\n");
+  s = fclose(fp);
+
   fp = fopen(tempfilename, "r");
   fail_unless(fp != NULL, "Failed to open file %s for read", tempfilename);
   s = isWindowsFormat(fp);

@@ -1514,7 +1514,17 @@ int req_quejob(
     {
     /* reply failed, purge the job and close the connection */
     rc = PBSE_SOCKET_WRITE; /* Re-write reply_jobid to return the error */
-    remove_job(&newjobs,pj);
+    if (remove_job(&newjobs,pj) == THING_NOT_FOUND)
+      {
+      if (LOGLEVEL >= 8)
+        {
+        char  log_buf[LOCAL_LOG_BUF_SIZE];
+        snprintf(log_buf,sizeof(log_buf),
+            "Could not remove job %s from newjobs\n",
+            pj->ji_qs.ji_jobid);
+        log_ext(-1, __func__, log_buf, LOG_WARNING);
+        }
+      }
     decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
     svr_job_purge(pj);
     job_mutex.set_unlock_on_exit(false);
@@ -2140,7 +2150,17 @@ int req_commit(
     }
 
   /* remove job from the server new job list, set state, and enqueue it */
-  remove_job(&newjobs,pj);
+  if (remove_job(&newjobs,pj) == THING_NOT_FOUND)
+    {
+    if (LOGLEVEL >= 8)
+      {
+      char  log_buf[LOCAL_LOG_BUF_SIZE];
+      snprintf(log_buf,sizeof(log_buf),
+            "WARNING:  could not remove job %s from newjobs container\n",
+            pj->ji_qs.ji_jobid);
+      log_ext(-1, __func__, log_buf, LOG_WARNING);
+      }
+    }
   
   /* job array, setup the array task
      *** job array under development */

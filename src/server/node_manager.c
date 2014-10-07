@@ -940,20 +940,35 @@ void *sync_node_jobs(
 
     internal_job_id = job_mapper.get_id(job_id.c_str());
 
-    if (job_should_be_killed(internal_job_id, np))
+    if (internal_job_id == -1)
       {
-      if (kill_job_on_mom(job_id.c_str(), np) == PBSE_NONE)
+      /* log a message if it's a loglevel 7, but most importantly, don't 
+      ** do the things in the else block.
+      */
+      if (LOGLEVEL >= 7)
         {
-        pthread_mutex_lock(&jobsKilledMutex);
-        jobsKilled.push_back(internal_job_id);
-        pthread_mutex_unlock(&jobsKilledMutex);
+        char log_buf[LOCAL_LOG_BUF_SIZE];
+        sprintf(log_buf, "jobid: %s not found in job_mapper", job_id.c_str());
+        log_ext(-1, __func__, log_buf, LOG_WARNING);
+        }
+      }
+    else
+      {
+      if (job_should_be_killed(internal_job_id, np))
+        {
+        if (kill_job_on_mom(job_id.c_str(), np) == PBSE_NONE)
+          {
+          pthread_mutex_lock(&jobsKilledMutex);
+          jobsKilled.push_back(internal_job_id);
+          pthread_mutex_unlock(&jobsKilledMutex);
 
-        int *dup_id = new int(internal_job_id);
-        set_task(WORK_Timed, 
-                 time(NULL) + job_sync_timeout,
-                 remove_job_from_already_killed_list,
-                 dup_id,
-                 FALSE);
+          int *dup_id = new int(internal_job_id);
+          set_task(WORK_Timed, 
+                   time(NULL) + job_sync_timeout,
+                   remove_job_from_already_killed_list,
+                   dup_id,
+                   FALSE);
+          }
         }
       }
     
@@ -4044,14 +4059,14 @@ job_reservation_info *place_subnodes_in_hostlist(
     node_info->node_id = pnode->nd_id;
     pnode->nd_job_usages.push_back(jui);
 
-    bool job_exclusive_onuse = false;
+    bool job_exclusive_on_use = false;
     if ((server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_flags & ATR_VFLAG_SET) &&
         (server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_val.at_long != 0))
-      job_exclusive_onuse = true;
+      job_exclusive_on_use = true;
     
     if ((pnode->nd_slots.get_number_free() <= 0) ||
         (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long == TRUE) ||
-        (job_exclusive_onuse))
+        (job_exclusive_on_use))
       pnode->nd_state |= INUSE_JOB;
     }
   else
