@@ -164,6 +164,12 @@ int main(
 
         break;
 
+      case TM_EPERM:
+
+        fprintf(stderr, "pbs_track: permission denied: %s (%d)\n",
+                pbse_to_txt(rc),
+                rc);
+
       default:
 
         /* Unexpected error occurred */

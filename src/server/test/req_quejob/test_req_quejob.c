@@ -3,6 +3,7 @@
 #include "test_req_quejob.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include "pbs_error.h"
 
 extern struct all_jobs newjobs;
