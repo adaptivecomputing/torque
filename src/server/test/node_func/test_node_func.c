@@ -245,9 +245,8 @@ END_TEST
 START_TEST(save_characteristic_test)
   {
   struct pbsnode node;
-  struct node_check_info node_info;
+  node_check_info node_info;
   initialize_pbsnode(&node, NULL, NULL, 0, FALSE);
-  memset(&node_info, 0, sizeof(node_info));
   save_characteristic(NULL, &node_info);
   save_characteristic(&node, NULL);
   save_characteristic(&node, &node_info);
@@ -257,11 +256,10 @@ END_TEST
 START_TEST(chk_characteristic_test)
   {
   struct pbsnode node;
-  struct node_check_info node_info;
+  node_check_info node_info;
   int result = 0;
   int mask = 0;
   initialize_pbsnode(&node, NULL, NULL, 0, FALSE);
-  memset(&node_info, 0, sizeof(node_info));
 
   result = chk_characteristic(NULL, &node_info, &mask);
   fail_unless(result != PBSE_NONE, "NULL input node pointer fail");

@@ -55,6 +55,7 @@ const char *dis_emsg[] = {"No error",
   "End of File"
 };
 boost::ptr_vector<std::string> hierarchy_holder;
+pthread_mutex_t                 hierarchy_holder_Mutex = PTHREAD_MUTEX_INITIALIZER;
 extern int cray_enabled;
 
 
@@ -278,6 +279,15 @@ int pbs_getaddrinfo(const char *,struct addrinfo *,struct addrinfo **ai)
   dummyAddrInfo.ai_addr = &dummySockAddr;
   *ai = &dummyAddrInfo;
   return 0;
+  }
+
+bool overwrite_cache(const char *,struct addrinfo **ai)
+  {
+  memset(&dummyAddrInfo,0,sizeof(struct addrinfo));
+  memset(&dummySockAddr,0,sizeof(struct sockaddr));
+  dummyAddrInfo.ai_addr = &dummySockAddr;
+  *ai = &dummyAddrInfo;
+  return true;
   }
 
 job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode)
