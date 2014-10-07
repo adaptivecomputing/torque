@@ -718,6 +718,7 @@ int svr_dequejob(
 
   if (pque != NULL)
     {
+    /* At this point unless the job is in state of JOB_STATE_COMPLETE we need to decrement the queue count */
     if ((pque->qu_qs.qu_type == QTYPE_RoutePush) || (pjob->ji_qs.ji_state != JOB_STATE_COMPLETE))
       {
       rc = decrement_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
