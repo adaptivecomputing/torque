@@ -24,7 +24,7 @@ START_TEST(test_constructors)
   fail_unless(r.getMemory() == 0);
   fail_unless(r.getExecutionSlots() == 1, "slots: %d", r.getExecutionSlots());
 
-  req r2("5:lprocs=4:memory=12gb:place=socket=2:usecores:pack:gpus=2:mics=1:gres=matlab=1:features=fast");
+  req r2("5:lprocs=4:memory=12gb:place=socket=2:usecores:pack:gpus=2:mics=1:gres=matlab=1:feature=fast");
   fail_unless(r2.getTaskCount() == 5);
   fail_unless(r2.getPlacementTypeInt() == PLACE_SOCKET, "placement type int %d", r2.getPlacementTypeInt());
   fail_unless(r2.getPlacementType() == "place socket", "value %s", r2.getPlacementType().c_str());
@@ -53,7 +53,7 @@ START_TEST(test_constructors)
   req r3("5:lprocs=4:memory=12gb:place=node:mics=1:feature=fast");
   fail_unless(r3.getPlacementType() == "place node");
 
-  req r4("5:lprocs=4:memory=12gb:place=numa=1:mics=1:feature=fast");
+  req r4("5:lprocs=4:memory=12gb:place=numachip=1:mics=1:feature=fast");
   fail_unless(r4.getPlacementType() == "place numa", r3.getPlacementType().c_str());
   
   req r5("5:lprocs=4:memory=12gb:place=core=4:mics=1:feature=fast");
@@ -80,10 +80,26 @@ START_TEST(test_equals_operator)
 
   r.set_name_value_pair("lprocs", "all");
   r.set_name_value_pair("memory", "1tb");
+  r.set_name_value_pair("maxtpn", "4");
+  r.set_name_value_pair("disk", "4mb");
+  r.set_name_value_pair("opsys", "ubuntu");
+  r.set_name_value_pair("gpus", "2");
+  r.set_name_value_pair("mode", "exclusive_thread");
+  r.set_name_value_pair("reqattr", "matlab>=7");
   r2 = r;
 
   fail_unless(r2.getExecutionSlots() == ALL_EXECUTION_SLOTS);
   fail_unless(r2.getMemory() == 1024 * 1024 * 1024);
+  fail_unless(r2.getMaxtpn() == 4);
+  fail_unless(r2.getGpuMode() == "exclusive_thread");
+  fail_unless(r2.getReqAttr() == "matlab>=7", "reqattr: '%s'", r2.getReqAttr().c_str());
+
+  // make sure this doesn't segfault
+  r = r;
+  fail_unless(r.getExecutionSlots() == ALL_EXECUTION_SLOTS);
+
+  // make sure set_attribute fails when bad values are sent
+  fail_unless(r2.set_attribute("bob") == PBSE_BAD_PARAMETER);
   }
 END_TEST
 
@@ -112,13 +128,17 @@ START_TEST(test_set_from_string)
   fail_unless(out.find("thread usage policy: use fast cores") != std::string::npos);
   fail_unless(out.find("placement type: place node") != std::string::npos);
 
-  r.set_from_string("req[2]\ntask count: 1\nlprocs: 1\n thread usage policy: allow threads\nplacement type: place node");
+  r.set_from_string("req[2]\ntask count: 1\nlprocs: 1\n gpus: 2\n gpu mode: exclusive thread\n max tpn: 2\n thread usage policy: allow threads\nplacement type: place node \nreqattr: matlab>=5");
   r.toString(out);
 
   fail_unless(out.find("task count: 1") != std::string::npos);
   fail_unless(out.find("lprocs: 1") != std::string::npos);
-  fail_unless(out.find("thread usage policy: allow threads") != std::string::npos);
+  fail_unless(out.find("thread usage policy: allow threads") != std::string::npos, r.getThreadUsageString().c_str());
   fail_unless(out.find("placement type: place node") != std::string::npos);
+  fail_unless(out.find("gpu mode: exclusive thread") != std::string::npos);
+  fail_unless(out.find("gpus: 2") != std::string::npos);
+  fail_unless(out.find("max tpn: 2") != std::string::npos);
+  fail_unless(out.find("reqattr: matlab>=5") != std::string::npos);
 
   r.set_from_string("req[0]\ntask count: 10\nlprocs: all\nmem: 10000kb\nswap: 1024kb\ndisk: 10000000kb\nsockets: 1\nnuma chips: 2\ngpus: 1\nmics: 1\nthread usage policy: use cores\nplacement type: place socket\ngres: matlab=1\nos: ubuntu\narch: 64\nhostlist: napali/0-31\nfeatures: fast\nsingle job access\npack");
 
@@ -172,6 +192,9 @@ START_TEST(test_set_attribute)
 
   r.set_attribute("usefastcores");
   fail_unless(r.getThreadUsageString() == "use fast cores", "thread usage '%s'", r.getThreadUsageString().c_str());
+
+  r.set_index(5);
+  fail_unless(r.getIndex() == 5);
   }
 END_TEST
 
