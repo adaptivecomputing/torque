@@ -458,6 +458,31 @@ bool req::submission_string_has_duplicates(
   
   return(false);
   } // END submission_string_has_duplicates()
+
+
+
+/*
+ * has_conflicting_values()
+ *
+ * Checks for conflicting values in the req and returns true if they exist
+ *
+ * @param error - the string to populate with an error message if one exists
+ */
+
+bool req::has_conflicting_values(
+
+  std::string &error)
+
+  {
+  if ((this->execution_slots == ALL_EXECUTION_SLOTS) &&
+      (this->placement_type != PLACE_NODE))
+    {
+    error = "-lprocs=all may only be used in conjunction with place=node";
+    return(true);
+    }
+
+  return(false);
+  } // END has_conflicting_values()
     
 
 
@@ -529,6 +554,9 @@ int req::set_from_submission_string(
     else
       current = ++ptr;
     }
+
+  if (has_conflicting_values(error) == true)
+    return(PBSE_BAD_PARAMETER);
 
   return(rc);
   } // END set_from_submission_string() 

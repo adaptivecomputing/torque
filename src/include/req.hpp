@@ -140,6 +140,7 @@ class req
     int           set_from_submission_string(char *submission_str, std::string &error);
     void          set_index(int index);
     bool          submission_string_has_duplicates(char *str, std::string &error);
+    bool          has_conflicting_values(std::string &error);
     void          toString(std::string &str) const;
     int           getExecutionSlots() const;
     unsigned long getMemory() const;
