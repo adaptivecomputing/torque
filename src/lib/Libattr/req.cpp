@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <vector>
 
 #include "req.hpp"
 #include "pbs_error.h"
@@ -220,7 +221,8 @@ int req::set_name_value_pair(
  * Sets an attribute that doesn't require a value. It has to be
  * in this format:
  * 
- * [:{usecores|usethreads|allowthreads|usefastcores}][:pack][:{shared|exclusive_thread|prohibited|exclusive_process|exclusive|default|reseterr}]
+ * [:{usecores|usethreads|allowthreads|usefastcores}][:pack]
+ * [:{shared|exclusive_thread|prohibited|exclusive_process|exclusive|default|reseterr}]
  *
  * @param str - the value in the format specified above.
  * @return PBSE_NONE if correct, PBSE_BAD_PARAMETER otherwise.
@@ -300,7 +302,162 @@ int req::set_value_from_string(
   else
     return(set_attribute(str));
 
-  } // END set_value_from_string() 
+  } // END set_value_from_string()
+
+
+
+/*
+ * are_conflicting_values_present()
+ *
+ * Checks if any of the strings in conflicting values are duplicated
+ * or if multiples are present and returns true if these conditions are
+ * detected
+ *
+ * @param str - the c string to check against
+ * @param conflicting_params - a list of values that cannot co-exit or be duplicated
+ * @param error - the string to populate with more detailed information about the error 
+ * if an error exists
+ * @return - true if anything in conflicting_params is duplicated or if multiple values
+ * from conflicting_params are present
+ */
+
+bool are_conflicting_params_present(
+
+  char                     *str,
+  std::vector<std::string> &conflicting_params,
+  std::string              &error)
+
+  {
+  std::string first_found;
+
+  for (unsigned int i = 0; i < conflicting_params.size(); i++)
+    {
+    char *found = strstr(str, conflicting_params[i].c_str());
+    if (found != NULL)
+      {
+      // Two of the conflicting values were found 
+      if (first_found.size() != 0)
+        {
+        error = "The parameter ";
+        error += first_found;
+        error += " should not be specified with the parameter ";
+        error += conflicting_params[i];
+        error += ".";
+        return(true);
+        }
+      else
+        {
+        // record the first value found in conflicting values
+        first_found = conflicting_params[i];
+
+        if (strstr(found + first_found.size(), conflicting_params[i].c_str()) != NULL)
+          {
+          // The value was repeated
+          error = "The parameter ";
+          error += first_found;
+          error += " should not be duplicated.";
+          return(true);
+          }
+        }
+      }
+    }
+  
+  return(false);
+  } // END are_conflicting_params_present()
+
+
+
+/*
+ * is_present_twice()
+ *
+ * Checks str to see if check_for_me is in there twice and 
+ * returns true if the string is duplicated
+ */
+
+bool is_present_twice(
+
+  char              *str,
+  const std::string &check_for_me,
+  std::string       &error)
+
+  {
+  const char *check = check_for_me.c_str();
+  const char *found = strstr(str, check);
+
+  if (found != NULL)
+    {
+    if (strstr(found + check_for_me.size(), check) != NULL)
+      {
+      error = "The parameter ";
+      error += found;
+      error += " should not be duplicated.";
+      return(true);
+      }
+    }
+
+  return(false);
+  } // END is_present_twice
+
+
+
+/*
+ * submission_string_has_duplicates()
+ *
+ * Discovers if the submission string has duplicate entries, which
+ * is not allowed
+ * tasks=#[:lprocs=#|all][:memory=#][:place={node|socket|numachip|core|thread}[=#]]
+ * [:{usecores|usethreads|allowthreads|usefastcores}][:pack][:maxtpn=#]
+ * [:gpus=#][:mics=#][:gres=xxx[=#]][:feature=xxx]
+ *
+ * @param str - the submission c string
+ * @param error - the string to populate if an error is found
+ * @return true if duplicate entries are found in the string, else false
+ */
+
+bool req::submission_string_has_duplicates(
+
+  char        *str,
+  std::string &error)
+
+  {
+  if ((is_present_twice(str, "lprocs", error)) ||
+      (is_present_twice(str, "memory", error)) ||
+      (is_present_twice(str, "disk", error)) ||
+      (is_present_twice(str, "place", error)) ||
+      (is_present_twice(str, "pack", error)) ||
+      (is_present_twice(str, "maxtpn", error)) ||
+      (is_present_twice(str, "gpus", error)) ||
+      (is_present_twice(str, "mics", error)) ||
+      (is_present_twice(str, "gres", error)) ||
+      (is_present_twice(str, "feature", error)))
+    {
+    return(true);
+    }
+
+  std::vector<std::string> thread_use_values;
+  std::vector<std::string> gpu_mode_values;
+
+  thread_use_values.push_back("usecores");
+  thread_use_values.push_back("usethreads");
+  thread_use_values.push_back("allowthreads");
+  thread_use_values.push_back("usefastcores");
+
+  gpu_mode_values.push_back("shared");
+  gpu_mode_values.push_back("exclusive_thread");
+  gpu_mode_values.push_back("prohibited");
+  gpu_mode_values.push_back("exclusive_process");
+  gpu_mode_values.push_back("exclusive");
+  gpu_mode_values.push_back("default");
+  gpu_mode_values.push_back("reseterr");
+
+  if ((are_conflicting_params_present(str, thread_use_values, error)) ||
+      (are_conflicting_params_present(str, gpu_mode_values, error)))
+    {
+    return(true);
+    }
+  
+  return(false);
+  } // END submission_string_has_duplicates()
     
 
 
@@ -309,9 +466,9 @@ int req::set_value_from_string(
  *
  * initializes req from a string in the format:
  *
- * tasks=#[:lprocs=#|all][:memory=#][:place={node|socket|numachip|core|thread}[=#]]
+ * tasks=#[:lprocs=#|all][:memory=#][:disk=#][:place={node|socket|numachip|core|thread}[=#]]
  * [:{usecores|usethreads|allowthreads|usefastcores}][:pack][:maxtpn=#]
- * [:gpus=#][:mics=#][:gres=xxx[=#]][:feature=xxx]
+ * [:gpus=#][:mics=#][:gres=xxx[=#]][:feature=xxx][reqattr=<reqattr_val>]
  *
  * We will get only the part after tasks=
  *
@@ -329,6 +486,9 @@ int req::set_from_submission_string(
   {
   char       *current;
   int         rc;
+
+  if (submission_string_has_duplicates(submission_str, error))
+    return(PBSE_BAD_PARAMETER);
 
   this->task_count = strtol(submission_str, &current, 10);
 

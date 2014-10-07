@@ -8,6 +8,25 @@
 
 extern bool good_err;
 
+
+START_TEST(test_submission_string_has_duplicates)
+  {
+  char *str = strdup("5:lprocs=4:memory=12gb:place=socket=2:usecores:pack:gpus=2:mics=1:gres=matlab=1:feature=fast");
+  char *err_str1 = strdup("4:lprocs=2:lprocs=all");
+  char *err_str2 = strdup("3:usecores:usefastcores");
+  char *err_str3 = strdup("2:shared:shared");
+
+  std::string error;
+  req         r;
+
+  fail_unless(r.submission_string_has_duplicates(str, error) == false);
+  fail_unless(r.submission_string_has_duplicates(err_str1, error) == true);
+  fail_unless(r.submission_string_has_duplicates(err_str2, error) == true);
+  fail_unless(r.submission_string_has_duplicates(err_str3, error) == true);
+  }
+END_TEST
+
+
 START_TEST(test_constructors)
   {
   req r;
@@ -210,6 +229,7 @@ Suite *req_suite(void)
   tc_core = tcase_create("test_set_from_string");
   tcase_add_test(tc_core, test_set_from_string);
   tcase_add_test(tc_core, test_set_attribute);
+  tcase_add_test(tc_core, test_submission_string_has_duplicates);
   suite_add_tcase(s, tc_core);
   
   return(s);
