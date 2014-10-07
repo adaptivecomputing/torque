@@ -17,6 +17,7 @@
 #include "pbs_ifl.h" /* job_file */
 #include "tm_.h" /* tm_event_t */
 #include "list_link.h" /* list_link, tlist_head */
+#include "power_state.hpp"
 
 char *apbasil_protocol;
 char *apbasil_path;
@@ -45,6 +46,7 @@ const char *msg_manager = "%s at request of %s@%s";
 int multi_mom = 1;
 char MOMUNameMissing[64];
 char log_buffer[LOG_BUF_SIZE];
+char checkpoint_run_exe_name[MAXPATHLEN + 1];
 
 
 int become_the_user(job *pjob)
@@ -250,7 +252,7 @@ int init_groups(char *pwname, int pwgrp, int groupsize, int *groups)
   exit(1);
   }
 
-int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size)
+int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size, bool use_log)
   {
   fprintf(stderr, "The call to tcp_connect_sockaddr needs to be mocked!!\n");
   exit(1);
@@ -391,4 +393,21 @@ int put_env_var(const char *name, const char *value)
 int attr_to_str(std::string &ds, attribute_def *at_def, pbs_attribute attr, bool XML)
   {
   return(0);
+  }
+
+power_state::power_state() {}
+void power_state::set_power_state(int power_state) {}
+bool power_state::is_valid_power_state(int power_state)
+  {
+  return false;
+  }
+
+const char *sys_file::get_last_error_string()
+  {
+  return NULL;
+  }
+
+int terminate_sisters(job *pjob, int sig)
+  {
+  return 0;
   }

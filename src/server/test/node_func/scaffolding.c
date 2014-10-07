@@ -169,7 +169,7 @@ int diswcs (tcp_chan* c, char const* a, unsigned long l)
   }
 
 
-int tcp_connect_sockaddr(struct sockaddr *sa, size_t s)
+int tcp_connect_sockaddr(struct sockaddr *sa, size_t s, bool use_log)
   {
   return(0);
   }

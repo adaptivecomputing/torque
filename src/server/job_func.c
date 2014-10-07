@@ -790,19 +790,56 @@ void job_free(
    * the job is freed, causing segfaults. We use the recycler and the 
    * ji_being_recycled flag to solve this problem --dbeer */
 
-  remove_job(&alljobs,pj); //Remove this from the alljobs array.
+  int rc = remove_job(&alljobs,pj); //Remove this from the alljobs array.
+  
+  if (rc == PBSE_JOBNOTFOUND)
+    {
+    if (LOGLEVEL >= 8)
+      {
+      snprintf(log_buf,sizeof(log_buf),
+        "Job %s was not found from alljobs to recycle\n",
+            pj->ji_qs.ji_jobid);
+        log_ext(-1, __func__, log_buf, LOG_WARNING);
+      }
+    if (use_recycle)
+      return;
+    }
 
+  if (rc == THING_NOT_FOUND && (LOGLEVEL >= 8))
+    {
+    snprintf(log_buf,sizeof(log_buf),
+      "Could not remove job %s from alljobs\n",
+          pj->ji_qs.ji_jobid);
+    log_ext(-1, __func__, log_buf, LOG_WARNING);
+    }
+
+  std::string jobid = pj->ji_qs.ji_jobid;
+  std::string statestr;
   if (use_recycle)
     {
     insert_into_recycler(pj);
     sprintf(log_buf, "1: jobid = %s", pj->ji_qs.ji_jobid);
     unlock_ji_mutex(pj, __func__, log_buf, LOGLEVEL);
+    statestr = "insert_into_recycler";
     }
   else
     {
     sprintf(log_buf, "2: jobid = %s", pj->ji_qs.ji_jobid);
     unlock_ji_mutex(pj, __func__, log_buf, LOGLEVEL);
     free_job_allocation(pj);
+    statestr = "free_job_allocation";
+    }
+
+  job *pjob = alljobs.find(jobid);
+  if (pjob != NULL)
+    {
+    if (LOGLEVEL >= 8)
+      {
+      snprintf(log_buf, sizeof(log_buf),
+        "Job %s was found in the alljobs again in state: %s\n", 
+      jobid.c_str(), statestr.c_str());
+      log_ext(-1, __func__, log_buf, LOG_WARNING);
+      }
     }
 
   return;
@@ -1891,12 +1928,22 @@ int svr_job_purge(
     }
 
   if ((job_has_arraystruct == FALSE) || (job_is_array_template == TRUE))
-    if (remove_job(&array_summary,pjob) == PBSE_JOB_RECYCLED)
+    {
+    int rc2 = 0;
+    if ((rc2=remove_job(&array_summary,pjob)) == PBSE_JOB_RECYCLED)
       {
       /* PBSE_JOB_RECYCLED means the job is gone. remove_job alreadly unlocked pjob->ji_mutex */
       pjob_mutex.set_unlock_on_exit(false); 
       return(PBSE_NONE);
       }
+    else if (rc2 == THING_NOT_FOUND && (LOGLEVEL >= 7))
+      {
+      snprintf(log_buf,sizeof(log_buf),
+          "Could not remove job %s from array_summary\n",
+          pjob->ji_qs.ji_jobid);
+      log_ext(-1, __func__, log_buf, LOG_WARNING);
+      }
+    }
 
   /* if part of job array then remove from array's job list */
   if ((job_has_arraystruct == TRUE) &&
@@ -1945,17 +1992,6 @@ int svr_job_purge(
   if ((job_substate != JOB_SUBSTATE_TRANSIN) &&
       (job_substate != JOB_SUBSTATE_TRANSICM))
     {
-    int need_deque = !pjob->ji_cold_restart;
-
-    /* jobs that are being deleted after a cold restart
-     * haven't been queued */
-    if (need_deque == TRUE)
-      {
-      /* set the state to complete so that svr_dequejob() will function properly */
-      pjob->ji_qs.ji_state = JOB_STATE_COMPLETE;
-      rc = svr_dequejob(pjob, FALSE);
-      }
-
     if (rc != PBSE_JOBNOTFOUND)
       {
       /* we came out of svr_dequejob with pjob locked. Our pointer is still good */

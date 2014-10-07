@@ -5,6 +5,8 @@
 #include "pbs_job.h" /* job_recycler, all_jobs, job */
 #include "threadpool.h"
 
+#define LOCAL_LOG_BUF_SIZE 5096
+
 threadpool_t *task_pool;
 job_recycler recycler;
 int          LOGLEVEL = 10;
@@ -100,4 +102,3 @@ job *job_alloc(void)
 
   return(pj);
   }
-

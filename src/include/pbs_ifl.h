@@ -353,7 +353,7 @@
 #define ATTR_NODE_micstatus        "mic_status"
 
 #define ATTR_copy_on_rerun         "copy_on_rerun"
-#define ATTR_job_exclusive_onuse   "job_exclusive_onuse"
+#define ATTR_job_exclusive_on_use   "job_exclusive_on_use"
 
 /* notification email formating */
 #define ATTR_mailsubjectfmt "mail_subject_fmt"
@@ -447,8 +447,6 @@
 #define MSG_ERR 2
 
 #define SHUT_SIG -1
-#define SHUT_IMMEDIATE 0
-#define SHUT_DELAY 1
 #define SHUT_QUICK 2
 
 #define SIG_RESUME "resume"

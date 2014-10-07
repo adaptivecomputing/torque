@@ -106,6 +106,8 @@ extern char *ret_string;
 
 extern time_t   time_now;
 
+extern  int     LOGLEVEL;
+
 #define TBL_INC 200            /* initial proc table */
 #define PMEMBUF_SIZE  2048
 

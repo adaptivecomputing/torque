@@ -6,6 +6,12 @@
 
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
+void log_err(int errnum, char const* routing, char const* txt)
+  {
+  fprintf(stderr, "The call to log_err to be mocked!!\n");
+  exit(1);
+  }
+
 void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
   {
   fprintf(stderr, "The call to log_ext to be mocked!!\n");
@@ -79,7 +85,5 @@ struct pbsnode *find_nodebyname(const char *node_id)
   {
   return(NULL);
   }
-
-void log_err(int errno, const char *caller, const char *msg) {}
 
 unsigned int pbs_mom_port = 0;

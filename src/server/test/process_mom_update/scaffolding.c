@@ -12,6 +12,8 @@
 #include "pbs_job.h"
 #include "u_tree.h"
 
+#include "id_map.hpp"
+
 char        server_name[PBS_MAXSERVERNAME + 1]; /* host_name[:service|port] */
 int         allow_any_mom;
 int         LOGLEVEL;
@@ -31,6 +33,8 @@ const char *dis_emsg[] =
   "End of File",
   "Invalid condition in code"
   };
+id_map job_mapper;
+bool exit_called = false;
 
 attribute_def node_attr_def[1];
 
@@ -281,3 +285,18 @@ int node_gpustatus_list(
   }
 
 void clear_nvidia_gpus(struct pbsnode *np) {}
+
+id_map::id_map() {}
+id_map::~id_map()
+  {
+  }
+int id_map::get_id(const char *name) {
+  return 0;
+}
+
+void write_node_power_state(void) {}
+
+int is_job_on_node(struct pbsnode *pnode, int internal_job_id)
+  {
+  return 0;
+  }

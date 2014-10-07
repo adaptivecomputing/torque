@@ -45,6 +45,12 @@ void set_attr(struct attrl **attrib, const char *attrib_name, const char *attrib
   fprintf(stderr, "The call to set_attr needs to be mocked!!\n");
   exit(1);
   }
+ 
+char *pbs_strerror(int err)
+  { 
+  fprintf(stderr, "The call to pbs_strerror needs to be mocked!!\n");
+  exit(1);
+  }
 }
 
 int pbs_alterjob(int c, char *jobid, struct attrl *attrib, char *extend)
@@ -92,12 +98,6 @@ int parse_depend_list(char *list, char *rtn_list, int rtn_size)
 void prt_job_err(const char *cmd, int connect, const char *id)
   { 
   fprintf(stderr, "The call to prt_job_err needs to be mocked!!\n");
-  exit(1);
-  }
-
-char *pbs_strerror(int err)
-  { 
-  fprintf(stderr, "The call to pbs_strerror needs to be mocked!!\n");
   exit(1);
   }
 

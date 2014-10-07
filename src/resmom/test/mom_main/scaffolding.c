@@ -658,7 +658,7 @@ char *netaddr(struct sockaddr_in *sai)
   exit(1);
   }
 
-int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size)
+int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size, bool use_log)
   {
   fprintf(stderr, "The call to tcp_connect_sockaddr needs to be mocked!!\n");
   exit(1);
@@ -852,3 +852,8 @@ char *threadsafe_tokenizer(
 
   return(start);
   } /* END threadsafe_tokenizer() */
+
+time_t get_stat_update_interval()
+  {
+  return ServerStatUpdateInterval;
+  }

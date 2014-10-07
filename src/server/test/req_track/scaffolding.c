@@ -7,6 +7,8 @@
 #include "work_task.h" /* work_task, work_type */
 #include "batch_request.h" /* batch_request */
 
+#include "mutex_mgr.hpp"
+
 char *path_track;
 char server_name[PBS_MAXSERVERNAME + 1];
 struct server server;
@@ -65,3 +67,8 @@ ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
 void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+
+mutex_mgr::mutex_mgr(pthread_mutex_t *mutex, bool is_locked) {}
+mutex_mgr::~mutex_mgr() {}
+int mutex_mgr::unlock() {return 0;}
+

@@ -1327,7 +1327,7 @@ unsigned long getsize(resource *pres)
   exit(1);
   }
 
-int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size)
+int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size, bool use_log)
   {
   return 1;
   }

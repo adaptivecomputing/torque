@@ -290,10 +290,9 @@ void *queue_route(void *vp)
   exit(1);
   }
 
-void acct_close(bool)
+void acct_close(bool acct_mutex_locked)
   {
-  fprintf(stderr, "The call to acct_close needs to be mocked!!\n");
-  exit(1);
+  return;
   }
 
 int svr_save(struct server *ps, int mode)

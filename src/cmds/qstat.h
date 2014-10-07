@@ -1,6 +1,7 @@
 #include "license_pbs.h" /* See here for the software license */
 
 #include "pbs_ifl.h" /* batch_status */
+#include <string>
 
 int isjobid(const char *string);
 
@@ -12,11 +13,11 @@ int process_commandline_opts(int, char **, int *, int *);
 
 void get_ct(const char *, int *, int *);
  
-int run_job_mode(bool, const char *, int *, char *, char *, char *, char *, char *);
+int run_job_mode(bool, const char *, int *, char *, char *, char *, char *, char *, std::string&);
 
-int run_queue_mode(bool, const char *, char *, char *, char *);
+int run_queue_mode(bool, const char *, char *, char *, char *, std::string&);
 
-int run_server_mode(bool, const char *, char *);
+int run_server_mode(bool, const char *, char *, std::string&);
 
 /* static void states(char *string, char *q, char *r, char *h, char *w, char *t, char *e, int len); */
 
@@ -52,4 +53,9 @@ int tcl_stat(char *type, struct batch_status *bs, int f_opt);
 
 void tcl_run(int f_opt);
 
+std::string get_err_msg(
+  int   any_failed,
+  const char *mode,
+  int   connect,
+  char *id);
 /* main */

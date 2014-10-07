@@ -96,6 +96,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string>
 #include "list_link.h"
 #include "attribute.h"
 #include "server_limits.h"
@@ -109,7 +110,7 @@
 #endif
 #include "svrfunc.h"
 #include "server.h"
-#include <string>
+#include "utils.h"
 
 /* Local Data */
 
@@ -487,9 +488,68 @@ void account_jobstr(
 
   return;
   }  /* END account_jobstr() */
+ 
+ 
+ 
+/*
+ * add_procs_and_nodes_used
+ *
+ * Adds a string specifying how many procs and nodes the job used
+ * To count these values we parse the exec host list, which is in
+ * the format of host/<index>[+host2/index2[+host3/index3[...]]]
+ *
+ * @param pjob (I) - the job whose procs we're measuring
+ * @param acct_data (O) - the string we're adding to
+ */
 
+void add_procs_and_nodes_used(
 
+  job         &pjob,
+  std::string &acct_data)
 
+  {
+  if (pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
+    {
+    char        resc_buf[1024];
+    std::string nodelist(pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+    std::size_t pos = 0;
+    std::string last_host;
+    int         hosts = 0;
+    int         total_execution_slots = 0;
+
+    while (pos < nodelist.size())
+      {
+      std::size_t      plus = nodelist.find("+", pos);
+      std::string      host(nodelist.substr(pos, plus - pos));
+      std::size_t      slash = host.find("/");
+      std::string      range(host.substr(slash + 1));
+      std::vector<int> indices;
+
+      // remove the /<index>
+      host.erase(slash);
+
+      translate_range_string_to_vector(range.c_str(), indices);
+      total_execution_slots += indices.size();
+
+      if (last_host != host)
+        {
+        last_host = host;
+        hosts++;
+        }
+
+      if (plus != std::string::npos)
+        pos = plus + 1;
+      else
+        break;
+      }
+
+    snprintf(resc_buf, sizeof(resc_buf), "total_execution_slots=%d unique_node_count=%d ",
+      total_execution_slots, hosts);
+
+    acct_data += resc_buf;
+    }
+
+  } // END add_procs_and_nodes_used()
 
 
 
@@ -499,8 +559,8 @@ void account_jobstr(
 
 void account_jobend(
 
-  job  *pjob,
-  char *used) /* job usage information, see req_jobobit() */
+  job         *pjob,
+  std::string &used) /* job usage information, see req_jobobit() */
 
   {
   std::string ds = "";
@@ -531,6 +591,8 @@ void account_jobend(
 
     ds += local_buf;
     }
+
+  add_procs_and_nodes_used(*pjob, ds);
 
   /* add the execution end time */
 #ifdef USESAVEDRESOURCES

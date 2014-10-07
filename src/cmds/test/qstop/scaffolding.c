@@ -37,6 +37,12 @@ int cnt2server(const char *SpecServer)
   fprintf(stderr, "The call to cnt2server needs to be mocked!!\n");
   exit(1);
   }
+
+char *pbs_strerror(int err)
+  {
+  fprintf(stderr, "The call to pbs_strerror needs to be mocked!!\n");
+  exit(1);
+  }
 }
 
 int pbs_manager(int c, int command, int objtype, char *objname, struct attropl *attrib, char *extend)
@@ -48,12 +54,6 @@ int pbs_manager(int c, int command, int objtype, char *objname, struct attropl *
 int pbs_manager_err(int c, int command, int objtype, char *objname, struct attropl *attrib, char *extend, int *local_errno)
   {
   fprintf(stderr, "The call to pbs_manager_err needs to be mocked!!\n");
-  exit(1);
-  }
-
-char *pbs_strerror(int err)
-  {
-  fprintf(stderr, "The call to pbs_strerror needs to be mocked!!\n");
   exit(1);
   }
 
