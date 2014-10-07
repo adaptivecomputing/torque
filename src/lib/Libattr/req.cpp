@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <vector>
 
 #include "req.hpp"
 #include "pbs_error.h"
@@ -37,7 +38,8 @@ req::req(
                       numa_chip(other.numa_chip), thread_usage_policy(other.thread_usage_policy),
                       gpus(other.gpus), mics(other.mics), pack(other.pack), index(other.index),
                       thread_usage_str(other.thread_usage_str), placement_str(other.placement_str),
-                      features(other.features), single_job_access(other.single_job_access)
+                      features(other.features), single_job_access(other.single_job_access),
+                      maxtpn(other.maxtpn), gpu_mode(other.gpu_mode), req_attr(other.req_attr)
 
   {
   }
@@ -49,7 +51,7 @@ req::req(
  *
  * parses the place value and updates req values appropriately.
  * the place value is in the format:
- * place={node|socket|numa|core|thread}[=#]
+ * place={node|socket|numachip|core|thread}[=#]
  *
  * @param value - the string in the above format
  * @return PBSE_NONE as long as value is in the proper format,
@@ -87,7 +89,7 @@ int req::set_place_value(
     this->placement_type = PLACE_SOCKET;
     this->placement_str = "place socket";
     }
-  else if (!strcmp(work_str, "numa"))
+  else if (!strcmp(work_str, "numachip"))
     {
     if (numeric_value != NULL)
       this->numa_chip = strtol(numeric_value, NULL, 10);
@@ -103,7 +105,7 @@ int req::set_place_value(
     if (numeric_value != NULL)
       this->execution_slots = strtol(numeric_value, NULL, 10);
     }
-  else if (!strcmp(work_str, "threads"))
+  else if (!strcmp(work_str, "thread"))
     {
     this->thread_usage_policy = USE_THREADS;
     this->thread_usage_str = "use threads";
@@ -122,10 +124,49 @@ int req::set_place_value(
 
 
 /*
+ * read_mem_value()
+ *
+ * Determines a memory value from a string in the format
+ * <number><units> and returns the value in kb. For example: 12 gb
+ */
+
+long long read_mem_value(
+
+  const char *value)
+
+  {
+  char      *suffix;
+  long long  memval = strtoll((char *)value, &suffix, 10);
+  
+  switch (*suffix)
+    {
+    case 't':
+
+      memval *= 1024;
+      // fall through
+
+    case 'g':
+
+      memval *= 1024;
+      // fall through
+
+    case 'm':
+
+      memval *= 1024;
+
+      break;
+    }
+
+  return(memval);
+  } // END read_mem_value()
+
+
+
+/*
  * set_name_value_pair()
  *
  * Sets lprocs, memory, gpus, mics, place, maxtpn (ignored), gres,
- * or features for this req. 
+ * features, disk, opsys, mode, or reqattr for this req. 
  *
  * @param name - the name of the value we're setting
  * @param value - the string to parse for the value
@@ -147,30 +188,7 @@ int req::set_name_value_pair(
       this->execution_slots = strtol(value, NULL, 10);
     }
   else if (!strcmp(name, "memory"))
-    {
-    char *suffix;
-    this->mem = strtoll((char *)value, &suffix, 10);
-    
-    switch (*suffix)
-      {
-      case 't':
-
-        this->mem *= 1024;
-        // fall through
-
-      case 'g':
-
-        this->mem *= 1024;
-        // fall through
-
-      case 'm':
-
-        this->mem *= 1024;
-
-        break;
-      }
-
-    }
+    this->mem = read_mem_value(value);
   else if (!strcmp(name, "gpus"))
     this->gpus = strtol(value, NULL, 10);
   else if (!strcmp(name, "mics"))
@@ -178,13 +196,17 @@ int req::set_name_value_pair(
   else if (!strcmp(name, "place"))
     return(set_place_value(value));
   else if (!strcmp(name, "maxtpn"))
-    {
-    // NO-OP: ignore this value
-    }
+    this->maxtpn = strtol(value, NULL, 10);
   else if (!strcmp(name, "gres"))
     this->gres = value;
-  else if (!strcmp(name, "features"))
+  else if (!strcmp(name, "feature"))
     this->features = value;
+  else if (!strcmp(name, "disk"))
+    this->disk = read_mem_value(value);
+  else if (!strcmp(name, "opsys"))
+    this->os = value;
+  else if (!strcmp(name, "reqattr"))
+    this->req_attr = value;
   else
     return(PBSE_BAD_PARAMETER);
 
@@ -200,6 +222,7 @@ int req::set_name_value_pair(
  * in this format:
  * 
  * [:{usecores|usethreads|allowthreads|usefastcores}][:pack]
+ * [:{shared|exclusive_thread|prohibited|exclusive_process|exclusive|default|reseterr}]
  *
  * @param str - the value in the format specified above.
  * @return PBSE_NONE if correct, PBSE_BAD_PARAMETER otherwise.
@@ -233,6 +256,14 @@ int req::set_attribute(
     {
     this->pack = true;
     }
+  else if ((!strcasecmp(str, "shared")) ||
+           (!strcasecmp(str, "exclusive_thread")) ||
+           (!strcasecmp(str, "prohibited")) ||
+           (!strcasecmp(str, "exclusive_process")) ||
+           (!strcasecmp(str, "exclusive")) ||
+           (!strcasecmp(str, "default")) ||
+           (!strcasecmp(str, "reseterr")))
+    this->gpu_mode = str;
   else
     return(PBSE_BAD_PARAMETER);
 
@@ -271,7 +302,187 @@ int req::set_value_from_string(
   else
     return(set_attribute(str));
 
-  } // END set_value_from_string() 
+  } // END set_value_from_string()
+
+
+
+/*
+ * are_conflicting_values_present()
+ *
+ * Checks if any of the strings in conflicting values are duplicated
+ * or if multiples are present and returns true if these conditions are
+ * detected
+ *
+ * @param str - the c string to check against
+ * @param conflicting_params - a list of values that cannot co-exit or be duplicated
+ * @param error - the string to populate with more detailed information about the error 
+ * if an error exists
+ * @return - true if anything in conflicting_params is duplicated or if multiple values
+ * from conflicting_params are present
+ */
+
+bool are_conflicting_params_present(
+
+  char                     *str,
+  std::vector<std::string> &conflicting_params,
+  std::string              &error)
+
+  {
+  std::string first_found;
+
+  for (unsigned int i = 0; i < conflicting_params.size(); i++)
+    {
+    char *found = strstr(str, conflicting_params[i].c_str());
+    if (found != NULL)
+      {
+      // Two of the conflicting values were found 
+      if (first_found.size() != 0)
+        {
+        error = "The parameter ";
+        error += first_found;
+        error += " should not be specified with the parameter ";
+        error += conflicting_params[i];
+        error += ".";
+        return(true);
+        }
+      else
+        {
+        // record the first value found in conflicting values
+        first_found = conflicting_params[i];
+
+        if (strstr(found + first_found.size(), conflicting_params[i].c_str()) != NULL)
+          {
+          // The value was repeated
+          error = "The parameter ";
+          error += first_found;
+          error += " should not be duplicated.";
+          return(true);
+          }
+        }
+      }
+    }
+  
+  return(false);
+  } // END are_conflicting_params_present()
+
+
+
+/*
+ * is_present_twice()
+ *
+ * Checks str to see if check_for_me is in there twice and 
+ * returns true if the string is duplicated
+ */
+
+bool is_present_twice(
+
+  char              *str,
+  const std::string &check_for_me,
+  std::string       &error)
+
+  {
+  const char *check = check_for_me.c_str();
+  const char *found = strstr(str, check);
+
+  if (found != NULL)
+    {
+    if (strstr(found + check_for_me.size(), check) != NULL)
+      {
+      error = "The parameter ";
+      error += found;
+      error += " should not be duplicated.";
+      return(true);
+      }
+    }
+
+  return(false);
+  } // END is_present_twice
+
+
+
+/*
+ * submission_string_has_duplicates()
+ *
+ * Discovers if the submission string has duplicate entries, which
+ * is not allowed
+ * tasks=#[:lprocs=#|all][:memory=#][:place={node|socket|numachip|core|thread}[=#]]
+ * [:{usecores|usethreads|allowthreads|usefastcores}][:pack][:maxtpn=#]
+ * [:gpus=#][:mics=#][:gres=xxx[=#]][:feature=xxx]
+ *
+ * @param str - the submission c string
+ * @param error - the string to populate if an error is found
+ * @return true if duplicate entries are found in the string, else false
+ */
+
+bool req::submission_string_has_duplicates(
+
+  char        *str,
+  std::string &error)
+
+  {
+  if ((is_present_twice(str, "lprocs", error)) ||
+      (is_present_twice(str, "memory", error)) ||
+      (is_present_twice(str, "disk", error)) ||
+      (is_present_twice(str, "place", error)) ||
+      (is_present_twice(str, "pack", error)) ||
+      (is_present_twice(str, "maxtpn", error)) ||
+      (is_present_twice(str, "gpus", error)) ||
+      (is_present_twice(str, "mics", error)) ||
+      (is_present_twice(str, "gres", error)) ||
+      (is_present_twice(str, "feature", error)))
+    {
+    return(true);
+    }
+
+  std::vector<std::string> thread_use_values;
+  std::vector<std::string> gpu_mode_values;
+
+  thread_use_values.push_back("usecores");
+  thread_use_values.push_back("usethreads");
+  thread_use_values.push_back("allowthreads");
+  thread_use_values.push_back("usefastcores");
+
+  gpu_mode_values.push_back("shared");
+  gpu_mode_values.push_back("exclusive_thread");
+  gpu_mode_values.push_back("prohibited");
+  gpu_mode_values.push_back("exclusive_process");
+  gpu_mode_values.push_back("exclusive");
+  gpu_mode_values.push_back("default");
+  gpu_mode_values.push_back("reseterr");
+
+  if ((are_conflicting_params_present(str, thread_use_values, error)) ||
+      (are_conflicting_params_present(str, gpu_mode_values, error)))
+    {
+    return(true);
+    }
+  
+  return(false);
+  } // END submission_string_has_duplicates()
+
+
+
+/*
+ * has_conflicting_values()
+ *
+ * Checks for conflicting values in the req and returns true if they exist
+ *
+ * @param error - the string to populate with an error message if one exists
+ */
+
+bool req::has_conflicting_values(
+
+  std::string &error)
+
+  {
+  if ((this->execution_slots == ALL_EXECUTION_SLOTS) &&
+      (this->placement_type != PLACE_NODE))
+    {
+    error = "-lprocs=all may only be used in conjunction with place=node";
+    return(true);
+    }
+
+  return(false);
+  } // END has_conflicting_values()
     
 
 
@@ -280,9 +491,9 @@ int req::set_value_from_string(
  *
  * initializes req from a string in the format:
  *
- * tasks=#[:lprocs=#|all][:memory=#][:place={node|socket|numa|core|thread}[=#]]
+ * tasks=#[:lprocs=#|all][:memory=#][:disk=#][:place={node|socket|numachip|core|thread}[=#]]
  * [:{usecores|usethreads|allowthreads|usefastcores}][:pack][:maxtpn=#]
- * [:gpus=#][:mics=#][:gres=xxx[=#]][:features=xxx]
+ * [:gpus=#][:mics=#][:gres=xxx[=#]][:feature=xxx][reqattr=<reqattr_val>]
  *
  * We will get only the part after tasks=
  *
@@ -300,6 +511,9 @@ int req::set_from_submission_string(
   {
   char       *current;
   int         rc;
+
+  if (submission_string_has_duplicates(submission_str, error))
+    return(PBSE_BAD_PARAMETER);
 
   this->task_count = strtol(submission_str, &current, 10);
 
@@ -341,6 +555,9 @@ int req::set_from_submission_string(
       current = ++ptr;
     }
 
+  if (has_conflicting_values(error) == true)
+    return(PBSE_BAD_PARAMETER);
+
   return(rc);
   } // END set_from_submission_string() 
 
@@ -351,9 +568,9 @@ int req::set_from_submission_string(
  *
  * The qsub request comes in the format:
  *
- * tasks=#[:lprocs=#|all][:memory=#][:place={node|socket|numa|core|thread}[=#]]
+ * tasks=#[:lprocs=#|all][:memory=#][:place={node|socket|numachip|core|thread}[=#]]
  * [:{usecores|usethreads|allowthreads|usefastcores}][:pack][:maxtpn=#]
- * [:gpus=#][:mics=#][:gres=xxx[=#]][:features=xxx]
+ * [:gpus=#][:mics=#][:gres=xxx[=#]][:feature=xxx]
  *
  * We will get only the part after tasks=
  *
@@ -401,7 +618,9 @@ req &req::operator =(
   this->thread_usage_policy = other.thread_usage_policy;
   this->thread_usage_str = other.thread_usage_str;
   this->gpus = other.gpus;
+  this->gpu_mode = other.gpu_mode;
   this->mics = other.mics;
+  this->maxtpn = other.maxtpn;
   this->gres = other.gres;
   this->os = other.os;
   this->arch = other.arch;
@@ -409,6 +628,7 @@ req &req::operator =(
   this->features = other.features;
   this->placement_str = other.placement_str;
   this->placement_type = other.placement_type;
+  this->req_attr = other.req_attr;
   this->task_count = other.task_count;
   this->pack = other.pack;
   this->single_job_access = other.single_job_access;
@@ -485,11 +705,24 @@ void req::toString(
     {
     snprintf(buf, sizeof(buf), "      gpus: %d\n", this->gpus);
     str += buf;
+
+    if (this->gpu_mode.size() != 0)
+      {
+      str += "      gpu mode: ";
+      str += this->gpu_mode;
+      str += '\n';
+      }
     }
 
   if (this->mics != 0)
     {
     snprintf(buf, sizeof(buf), "      mics: %d\n", this->mics);
+    str += buf;
+    }
+
+  if (this->maxtpn != 0)
+    {
+    snprintf(buf, sizeof(buf), "      max tpn: %d\n", this->maxtpn);
     str += buf;
     }
 
@@ -501,6 +734,13 @@ void req::toString(
     {
     str += "      placement type: ";
     str += this->placement_str;
+    str += '\n';
+    }
+
+  if (this->req_attr.size() != 0)
+    {
+    str += "      reqattr: ";
+    str += this->req_attr;
     str += '\n';
     }
 
@@ -548,6 +788,28 @@ void req::toString(
 
 
 
+char *capture_until_newline_and_advance(
+
+  char **current_ptr)
+
+  {
+  char *retval = *current_ptr;
+  char *current = *current_ptr;
+  current = strchr(current, '\n');
+
+  if (current != NULL)
+    {
+    *current = '\0';
+    current++;
+    move_past_whitespace(&current);
+    }
+
+  *current_ptr = current;
+  return(retval);
+  } // END capture_until_newline_and_advance()
+
+
+
 /*
  * set_from_string()
  *
@@ -563,10 +825,12 @@ void req::toString(
  * [disk: <swap>kb]
  * [sockets: <sockets>]
  * [numa chips: <numa chips>]
- * [gpus: <gpus>]
+ * [gpus: <gpus> [gpu mode: <gpu mode>]]
  * [mics: <mics>]
+ * [max tpn: <maxtpn>]
  * thread usage policy: <thread usage policy>
  * placement type: <placement type>
+ * [reqattr: <reqattr>]
  * [gres: <gres info>]
  * [os: <os info>]
  * [arch: <arch info>]
@@ -667,6 +931,12 @@ void req::set_from_string(
     this->gpus = strtol(current, &current, 10);
 
     move_past_whitespace(&current);
+
+    if (!strncmp(current, "gpu mode", 8))
+      {
+      current += 10; // move past 'gpu mode: '
+      this->gpu_mode = capture_until_newline_and_advance(&current);
+      }
     }
 
   if (!strncmp(current, "mics", 4))
@@ -677,15 +947,19 @@ void req::set_from_string(
     move_past_whitespace(&current);
     }
 
+  if (!strncmp(current, "max tpn", 7))
+    {
+    current += 9; // move past 'max tpn: '
+    this->maxtpn = strtol(current, &current, 10);
+    
+    move_past_whitespace(&current);
+    }
+
   if (!strncmp(current, "thread usage policy", 19))
     {
     current += 21; // move past 'thread usage policy: '
 
-    char *tmp = current;
-    current = strchr(current, '\n');
-    *current = '\0';
-    current++;
-    this->thread_usage_str = tmp;
+    this->thread_usage_str = capture_until_newline_and_advance(&current);
 
     if (this->thread_usage_str == "use cores")
       this->thread_usage_policy = USE_CORES;
@@ -695,25 +969,14 @@ void req::set_from_string(
       this->thread_usage_policy = ALLOW_THREADS;
     else
       this->thread_usage_policy = USE_FAST_CORES;
-
-    move_past_whitespace(&current);
     }
 
   if (!strncmp(current, "placement type", 14))
     {
     current += 16; // move past 'placement type: '
     
-    char *tmp = current;
-    current = strchr(current, '\n');
+    this->placement_str = capture_until_newline_and_advance(&current);
 
-    if (current != NULL)
-      {
-      *current = '\0';
-      current++;
-      move_past_whitespace(&current);
-      }
-
-    this->placement_str = tmp;
     if (this->placement_str == "place socket")
       this->placement_type = PLACE_SOCKET;
     else if (this->placement_str == "place numa")
@@ -728,7 +991,15 @@ void req::set_from_string(
       }
     }
 
-  if (!strncmp(current, "gres", 4))
+  if ((current != NULL) &&
+      (!strncmp(current, "reqattr", 7)))
+    {
+    current += 9; // move past 'reqattr: '
+    this->req_attr = capture_until_newline_and_advance(&current);
+    }
+
+  if ((current != NULL) &&
+      (!strncmp(current, "gres", 4)))
     {
     current += 6; // move past 'gres: '
 
@@ -741,7 +1012,8 @@ void req::set_from_string(
     move_past_whitespace(&current);
     }
 
-  if (!strncmp(current, "os", 2))
+  if ((current != NULL) &&
+      (!strncmp(current, "os", 2)))
     {
     current += 4; // move past 'os: '
 
@@ -754,7 +1026,8 @@ void req::set_from_string(
     move_past_whitespace(&current);
     }
 
-  if (!strncmp(current, "arch", 4))
+  if ((current != NULL) &&
+      (!strncmp(current, "arch", 4)))
     {
     current += 6; // move past 'arch: '
 
@@ -767,7 +1040,8 @@ void req::set_from_string(
     move_past_whitespace(&current);
     }
 
-  if (!strncmp(current, "hostlist", 8))
+  if ((current != NULL) &&
+      (!strncmp(current, "hostlist", 8)))
     {
     current += 10; // move past 'hostlist: '
 
@@ -780,7 +1054,8 @@ void req::set_from_string(
     move_past_whitespace(&current);
     }
 
-  if (!strncmp(current, "features", 8))
+  if ((current != NULL) &&
+      (!strncmp(current, "features", 8)))
     {
     current += 10; // move past 'features: '
 
@@ -793,7 +1068,8 @@ void req::set_from_string(
     move_past_whitespace(&current);
     }
 
-  if (!strncmp(current, "single job access", 17))
+  if ((current != NULL) &&
+      (!strncmp(current, "single job access", 17)))
     {
     current += 17;
     this->single_job_access = true;
@@ -801,7 +1077,8 @@ void req::set_from_string(
     move_past_whitespace(&current);
     }
 
-  if (!strncmp(current, "pack", 4))
+  if ((current != NULL) &&
+      (!strncmp(current, "pack", 4)))
     {
     this->pack = true;
     }
@@ -895,4 +1172,28 @@ void req::set_index(
 
   {
   this->index = index;
+  }
+    
+int req::getMaxtpn() const
+
+  {
+  return(this->maxtpn);
+  }
+
+std::string req::getGpuMode() const
+
+  {
+  return(this->gpu_mode);
+  }
+
+std::string req::getReqAttr() const
+
+  {
+  return(this->req_attr);
+  }
+
+int req::getIndex() const
+
+  {
+  return(this->index);
   }
