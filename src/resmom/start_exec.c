@@ -132,6 +132,10 @@ extern "C"
 #include "mom_memory.h"
 #include "node_internals.hpp"
 
+#ifdef PENABLE_LINUX_CGROUPS
+#include "trq_cgroups.h"
+#endif
+
 #ifdef ENABLE_CPA
   #include "pbs_cpa.h"
 #endif
@@ -146,6 +150,7 @@ extern "C"
 #ifndef CSAFAKE
 #include "csa_api.h"
 #include "csaacct.h"
+
 
 #else
 
@@ -2492,7 +2497,8 @@ int TMomFinalizeJob2(
         pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1)
     {
     }
-  
+
+  pjob->ji_job_pid = cpid;
 #if SHELL_USE_ARGV == 0
   #if SHELL_INVOKE == 1
   
@@ -4147,6 +4153,7 @@ int TMomFinalizeChild(
 
   handle_cpuset_creation(pjob, &sjr, TJE);
 
+
 #ifdef ENABLE_CPA
   /* Cray CPA setup */
 
@@ -4226,6 +4233,18 @@ int TMomFinalizeChild(
     }
 
 #endif  /* (PENABLE_LINUX26_CPUSETS) */
+
+#ifdef PENABLE_LINUX_CGROUPS
+  /* Add this process to the cpuacct and memory subsystems */
+  int rc;
+
+ rc = trq_cg_add_process_to_cgroup_accts(getpid());
+  if (rc != PBSE_NONE)
+    {
+    sprintf(log_buffer, "Could not add job %s to cgroups.", pjob->ji_qs.ji_jobid);
+    log_ext(-1, __func__, log_buffer, LOG_ERR);
+    }
+#endif
 
   if (site_job_setup(pjob) != 0)
     {
@@ -5246,6 +5265,30 @@ int start_process(
       }
     }
 #endif  /* (PENABLE_LINUX26_CPUSETS) */
+
+#ifdef PENABLE_LINUX_CGROUPS
+  int rc;
+
+  rc = trq_cg_add_process_to_cgroup(cpuacct_path, pjob->ji_job_pid, getpid());
+  if (rc != PBSE_NONE)
+    {
+    sprintf(log_buffer, "Could not add process to cgroup. Job id %s", pjob->ji_qs.ji_jobid);
+    log_err(rc, __func__, log_buffer);
+
+    starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
+    exit(1);
+    }
+
+  rc = trq_cg_add_process_to_cgroup(memory_path, pjob->ji_job_pid, getpid());
+  if (rc != PBSE_NONE)
+    {
+    sprintf(log_buffer, "Could not add process to cgroup. Job id %s", pjob->ji_qs.ji_jobid);
+    log_err(rc, __func__, log_buffer);
+
+    starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
+    exit(1);
+    }
+#endif
 
   if (pjob->ji_numnodes > 1)
     {

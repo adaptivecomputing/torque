@@ -1138,7 +1138,7 @@ int write_numa_info(
  *  Header format
  *
  *   Protocol | Version | Command (IS_STATUS) | mom service port | mom manager port 
- *   The following two lines are added to the header if cpuset is enabled.
+ *   The following two lines are added to the header if cgroups are enabled.
  *   | available sockets | available numa_chips | available cores | available threads
  *   | total sockets     | total numa_chips     | total cores     | total threads
  */
@@ -1179,7 +1179,7 @@ int write_update_header(
         }
       }
     }
-  
+
   return(ret);
   } /* END write_update_header() */
 

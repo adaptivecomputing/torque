@@ -5,11 +5,15 @@
 #include <string.h>
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <boost/foreach.hpp>
 #include <boost/tokenizer.hpp>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include "log.h"
 
 using namespace std;
 using namespace boost;
@@ -345,3 +349,112 @@ int trq_cg_initialize_hierarchy()
 
   return(PBSE_NONE);
   }
+
+int trq_cg_add_process_to_cgroup(string& cgroup_path, pid_t job_pid, pid_t new_pid)
+  {
+  int rc;
+  char log_buf[LOCAL_LOG_BUF_SIZE];
+  int cgroup_fd;
+  char cgroup_name[256];
+  char new_task_pid[256];
+  string full_cgroup_path;
+  string cgroup_task_path;
+
+  sprintf(new_task_pid, "%d", new_pid);
+  sprintf(cgroup_name, "%d", job_pid);
+  full_cgroup_path = cgroup_path + "/torque/" + cgroup_name + "/tasks";
+
+  cgroup_fd = open(full_cgroup_path.c_str(), O_WRONLY);
+  if (cgroup_fd < 0)
+    {
+    sprintf(log_buf, "failed to open %s for writing: %s", full_cgroup_path.c_str(), strerror(errno));
+    log_err(-1, __func__, log_buf);
+    return(PBSE_SYSTEM); 
+    }
+
+  rc = write(cgroup_fd, new_task_pid, strlen(new_task_pid));
+  if (rc <= 0)
+    {
+    sprintf(log_buf, "failed to add porcess %s to cgroup %s", cgroup_name, full_cgroup_path.c_str());
+    log_err(-1, __func__, log_buf);
+    return(PBSE_SYSTEM); 
+    }
+
+  close(cgroup_fd);
+
+  return(PBSE_NONE);
+  }
+
+int trq_cg_create_cgroup(string& cgroup_path, pid_t job_pid)
+  {
+  int rc;
+  char log_buf[LOCAL_LOG_BUF_SIZE];
+  int cgroup_fd;
+  char cgroup_name[256];
+  string full_cgroup_path;
+  string cgroup_task_path;
+
+  sprintf(cgroup_name, "%d", job_pid);
+  full_cgroup_path = cgroup_path + "/torque/" + cgroup_name;
+
+  /* create a cgroup with the pid as the directory name under the cpuacct subsystem */
+  rc = mkdir(full_cgroup_path.c_str(), 0x644);
+  if (rc != 0)
+    {
+    sprintf(log_buf, "failed to make directory %s for cgroup: %s", full_cgroup_path.c_str(), strerror(errno));
+    log_err(-1, __func__, log_buf);
+    return(PBSE_SYSTEM); 
+    }
+
+  rc = chmod(full_cgroup_path.c_str(), 0x666);
+  if (rc != 0)
+    {
+    sprintf(log_buf, "failed to change mode for  %s for cgroup: %s", full_cgroup_path.c_str(), strerror(errno));
+    log_err(-1, __func__, log_buf);
+    return(PBSE_SYSTEM); 
+    }
+
+
+  cgroup_task_path = full_cgroup_path + "/tasks";
+  cgroup_fd = open(cgroup_task_path.c_str(), O_WRONLY);
+  if (cgroup_fd < 0)
+    {
+    sprintf(log_buf, "failed to open %s for writing: %s", cgroup_task_path.c_str(), strerror(errno));
+    log_err(-1, __func__, log_buf);
+    return(PBSE_SYSTEM); 
+    }
+
+  rc = write(cgroup_fd, cgroup_name, strlen(cgroup_name));
+  if (rc <= 0)
+    {
+    sprintf(log_buf, "failed to add porcess %s to cgroup", cgroup_name);
+    log_err(-1, __func__, log_buf);
+    return(PBSE_SYSTEM); 
+    }
+
+  close(cgroup_fd);
+
+  return(PBSE_NONE);
+
+  }
+
+/* Add a process to the cpuacct and memory subsystems 
+ */
+int trq_cg_add_process_to_cgroup_accts(pid_t job_pid)
+  {
+  int rc;
+
+  /* create a directory for this process in the cpuacct/torque hierarchy */
+  rc = trq_cg_create_cgroup(cpuacct_path, job_pid);
+  if (rc != PBSE_NONE)
+    return(rc);
+
+
+  /* create a directory for this process in the memory/torque hierarchy */
+  rc = trq_cg_create_cgroup(memory_path, job_pid);
+  if (rc != PBSE_NONE)
+    return(rc);
+
+  return(PBSE_NONE);
+  }
+

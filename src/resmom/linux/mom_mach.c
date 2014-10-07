@@ -2406,7 +2406,9 @@ int mom_set_use(
 
   if ((at->at_flags & ATR_VFLAG_SET) == 0)
     {
-    /* initialize usage structures */
+    /* This is the first time mom_set_use 
+     * has been called for this job.
+     * initialize usage structures */
 
     at->at_flags |= ATR_VFLAG_SET;
 
@@ -2458,7 +2460,7 @@ int mom_set_use(
   pres = find_resc_entry(at, rd);
 
   if (job_expected_resc_found(pres, rd, pjob->ji_qs.ji_jobid))
-	return -1;
+    return -1;
 
   lp = (unsigned long *) & pres->rs_value.at_val.at_long;
 
@@ -2475,7 +2477,7 @@ int mom_set_use(
   pres = find_resc_entry(at, rd);
 
   if (job_expected_resc_found(pres, rd, pjob->ji_qs.ji_jobid))
-	return -1;
+    return -1;
 
   lp = &pres->rs_value.at_val.at_size.atsv_num;
 
@@ -2492,7 +2494,7 @@ int mom_set_use(
   pres = find_resc_entry(at, rd);
 
   if (job_expected_resc_found(pres, rd, pjob->ji_qs.ji_jobid))
-	return -1;
+    return -1;
 
   /* NOTE: starting jobs can come through here before stime is recorded */
   if (pjob->ji_qs.ji_stime == 0)
@@ -2510,7 +2512,7 @@ int mom_set_use(
   pres = find_resc_entry(at, rd);
 
   if (job_expected_resc_found(pres, rd, pjob->ji_qs.ji_jobid))
-	return -1;
+    return -1;
 
   lp = &pres->rs_value.at_val.at_size.atsv_num;
 

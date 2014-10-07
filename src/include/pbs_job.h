@@ -660,6 +660,9 @@ struct job
   time_t         ji_joins_sent;        /* time we sent out the join requests - MS only */
   int            ji_joins_resent;      /* set to TRUE when rejoins have been sent */
   bool           ji_stats_done;      /* Job has terminated and stats have been collected */
+  pid_t          ji_job_pid;           /* Set in TMomFinalizeJob2. It is the pid of the process
+                                          forked to run TMomFinalizeChild. This is the directory
+                                          name of the cgroup for the job */
 
 #else     /* END MOM ONLY */
 

@@ -4626,16 +4626,6 @@ int setup_program_environment(void)
     return(1);
     }
 
-#ifdef PENABLE_LINUX_CGROUPS
-  int ret;
-  ret = trq_cg_initialize_hierarchy();
-  if (ret != PBSE_NONE)
-    {
-    fprintf(stderr, "cgroups not initialized\n");
-    return(1);
-    }
-#endif
-
 #ifndef DEBUG
 #ifdef _CRAY
 
@@ -4869,6 +4859,7 @@ int setup_program_environment(void)
 
 #ifdef PENABLE_LINUX_CGROUPS
 #ifndef PENABLE_LINUX26_CPUSETS
+  int ret;
   /* If cpusets are enabled initialization has already been done */
   ret = cg_initialize_hwloc_topology();
   if (ret != PBSE_NONE)
@@ -4876,6 +4867,13 @@ int setup_program_environment(void)
 #endif
 
   this_node.initializeMachine(topology);
+  ret = trq_cg_initialize_hierarchy();
+  if (ret != PBSE_NONE)
+    {
+    fprintf(stderr, "cgroups not initialized\n");
+    return(1);
+    }
+
 
 #ifdef MIC
   this_node.initialize_mics(topology);

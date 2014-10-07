@@ -755,7 +755,7 @@ char *pbse_to_txt(int err)
   }
 
 
-#ifdef PENABLE_LINUX_CGROUPS
+#ifdef PENABLE_LINUX_CGROUPS 
 
 int hwloc_topology_init(hwloc_topology_t *)
   {
