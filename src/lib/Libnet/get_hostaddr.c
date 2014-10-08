@@ -105,8 +105,8 @@ extern const char *hstrerror(int);
 #endif
 
 /*
-   ** Put a human readable representation of a network addres passed
-   ** in as a long and return a staticly allocated string.
+   ** Put a human readable representation of a network address passed
+   ** in as a long in host byte order and return pointer to out.
    */
 char * netaddr_long(long ap, char *out)
   {
