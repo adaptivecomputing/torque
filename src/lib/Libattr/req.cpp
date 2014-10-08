@@ -422,6 +422,12 @@ bool are_conflicting_params_present(
       // Two of the conflicting values were found 
       if (first_found.size() != 0)
         {
+        // reseterr may be used in conjunction with exclusive_process and exclusive_thread
+        if ((conflicting_params[i] == "reseterr") &&
+            ((first_found == "exclusive_process") ||
+             (first_found == "exclusive_thread")))
+          continue;
+
         error = "The parameter ";
         error += first_found;
         error += " should not be specified with the parameter ";
