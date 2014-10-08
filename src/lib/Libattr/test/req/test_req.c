@@ -12,6 +12,7 @@ extern bool good_err;
 START_TEST(test_submission_string_has_duplicates)
   {
   char *str = strdup("5:lprocs=4:memory=12gb:place=socket=2:usecores:pack:gpus=2:mics=1:gres=matlab=1:feature=fast");
+  char *str2 = strdup("5:feature=featureA");
   char *err_str1 = strdup("4:lprocs=2:lprocs=all");
   char *err_str2 = strdup("3:usecores:usefastcores");
   char *err_str3 = strdup("2:shared:shared");
@@ -20,6 +21,7 @@ START_TEST(test_submission_string_has_duplicates)
   req         r;
 
   fail_unless(r.submission_string_has_duplicates(str, error) == false);
+  fail_unless(r.submission_string_has_duplicates(str2, error) == false);
   fail_unless(r.submission_string_has_duplicates(err_str1, error) == true);
   fail_unless(r.submission_string_has_duplicates(err_str2, error) == true);
   fail_unless(r.submission_string_has_duplicates(err_str3, error) == true);
@@ -91,6 +93,9 @@ START_TEST(test_constructors)
 
   fail_unless(str_set.set_from_submission_string(strdup("4:lprocs=all"), error) != PBSE_NONE);
   fail_unless(str_set.set_from_submission_string(strdup("4:memory=12gb:memory=1024mb"), error) != PBSE_NONE);
+  fail_unless(str_set.set_from_submission_string(strdup("-1:lprocs=4"), error) != PBSE_NONE);
+  fail_unless(str_set.set_from_submission_string(strdup("1:lprocs=-4"), error) != PBSE_NONE);
+  fail_unless(str_set.set_from_submission_string(strdup("1:lprocs=4:memory=0"), error) != PBSE_NONE);
   }
 END_TEST
 

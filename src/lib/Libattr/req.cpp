@@ -47,6 +47,31 @@ req::req(
 
 
 /*
+ * parse_positive_integer()
+ *
+ * Parses an integer from str and verifies it is positive
+ *
+ * @param str - the c string we're reading an integer from
+ * @param parsed - where we're storing the integer
+ */
+
+int parse_positive_integer(
+
+  const char *str,
+  int        &parsed)
+
+  {
+  parsed = strtol(str, NULL, 10);
+
+  if (parsed < 1)
+    return(PBSE_BAD_PARAMETER);
+
+  return(PBSE_NONE);
+  } // END parse_positive_integer()
+
+
+
+/*
  * set_place_value()
  *
  * parses the place value and updates req values appropriately.
@@ -83,7 +108,7 @@ int req::set_place_value(
     {
     if (numeric_value != NULL)
       {
-      this->socket = strtol(numeric_value, NULL, 10);
+      rc = parse_positive_integer(numeric_value, this->socket);
       }
       
     this->placement_type = PLACE_SOCKET;
@@ -92,7 +117,7 @@ int req::set_place_value(
   else if (!strcmp(work_str, "numachip"))
     {
     if (numeric_value != NULL)
-      this->numa_chip = strtol(numeric_value, NULL, 10);
+      rc = parse_positive_integer(numeric_value, this->numa_chip);
       
     this->placement_type = PLACE_NUMA_CHIP;
     this->placement_str = "place numa";
@@ -103,7 +128,7 @@ int req::set_place_value(
     this->thread_usage_str = "use cores";
 
     if (numeric_value != NULL)
-      this->execution_slots = strtol(numeric_value, NULL, 10);
+      rc = parse_positive_integer(numeric_value, this->execution_slots);
     }
   else if (!strcmp(work_str, "thread"))
     {
@@ -111,7 +136,7 @@ int req::set_place_value(
     this->thread_usage_str = "use threads";
     
     if (numeric_value != NULL)
-      this->execution_slots = strtol(numeric_value, NULL, 10);
+      rc = parse_positive_integer(numeric_value, this->execution_slots);
     }
   else
     rc = PBSE_BAD_PARAMETER;
@@ -130,13 +155,17 @@ int req::set_place_value(
  * <number><units> and returns the value in kb. For example: 12 gb
  */
 
-long long read_mem_value(
+int read_mem_value(
 
-  const char *value)
+  const char    *value,
+  unsigned long &parsed)
 
   {
   char      *suffix;
   long long  memval = strtoll((char *)value, &suffix, 10);
+
+  if (memval < 1)
+    return(PBSE_BAD_PARAMETER);
   
   switch (*suffix)
     {
@@ -157,7 +186,9 @@ long long read_mem_value(
       break;
     }
 
-  return(memval);
+  parsed = memval;
+
+  return(PBSE_NONE);
   } // END read_mem_value()
 
 
@@ -180,29 +211,30 @@ int req::set_name_value_pair(
   const char *value)
 
   {
+  int rc = PBSE_NONE;
   if (!strcmp(name, "lprocs"))
     {
     if (value[0] == 'a')
       this->execution_slots = ALL_EXECUTION_SLOTS;
     else
-      this->execution_slots = strtol(value, NULL, 10);
+      rc = parse_positive_integer(value, this->execution_slots);
     }
   else if (!strcmp(name, "memory"))
-    this->mem = read_mem_value(value);
+    rc = read_mem_value(value, this->mem);
   else if (!strcmp(name, "gpus"))
-    this->gpus = strtol(value, NULL, 10);
+    rc = parse_positive_integer(value, this->gpus);
   else if (!strcmp(name, "mics"))
-    this->mics = strtol(value, NULL, 10);
+    rc = parse_positive_integer(value, this->mics);
   else if (!strcmp(name, "place"))
     return(set_place_value(value));
   else if (!strcmp(name, "maxtpn"))
-    this->maxtpn = strtol(value, NULL, 10);
+    rc = parse_positive_integer(value, this->maxtpn);
   else if (!strcmp(name, "gres"))
     this->gres = value;
   else if (!strcmp(name, "feature"))
     this->features = value;
   else if (!strcmp(name, "disk"))
-    this->disk = read_mem_value(value);
+    rc = read_mem_value(value, this->disk);
   else if (!strcmp(name, "opsys"))
     this->os = value;
   else if (!strcmp(name, "reqattr"))
@@ -210,7 +242,7 @@ int req::set_name_value_pair(
   else
     return(PBSE_BAD_PARAMETER);
 
-  return(PBSE_NONE);
+  return(rc);
   } // END set_name_value_pair() 
 
 
@@ -307,6 +339,56 @@ int req::set_value_from_string(
 
 
 /*
+ * check_for_parameter()
+ *
+ * Checks str for the presence of param and returns a pointer
+ * to param if it is present, or NULL if absent
+ *
+ * @param str - the c string to check
+ * @param param - the c string to look for
+ * @param len - the length of the c string we're looking for
+ * @return a pointer to the string matching param or NULL if not present
+ */
+
+char *check_for_parameter(
+
+  char       *str,
+  const char *param,
+  int         len)
+
+  {
+  char *begin = strstr(str, param);
+  bool  found = false;
+
+  if (begin != NULL)
+    {
+    if ((begin == str) ||
+        (*(begin - 1) == ':'))
+      {
+      char *end = begin + len;
+
+      switch (*end)
+        {
+        case '=':
+        case ':':
+        case '\0':
+
+          found = true;
+
+          break;
+        }
+      }
+    }
+
+  if (found == false)
+    return(NULL);
+  else
+    return(begin);
+  } // END check_for_parameter()
+
+
+
+/*
  * are_conflicting_values_present()
  *
  * Checks if any of the strings in conflicting values are duplicated
@@ -332,7 +414,9 @@ bool are_conflicting_params_present(
 
   for (unsigned int i = 0; i < conflicting_params.size(); i++)
     {
-    char *found = strstr(str, conflicting_params[i].c_str());
+    char *found = check_for_parameter(str, conflicting_params[i].c_str(),
+                                      conflicting_params[i].size());
+
     if (found != NULL)
       {
       // Two of the conflicting values were found 
@@ -350,7 +434,9 @@ bool are_conflicting_params_present(
         // record the first value found in conflicting values
         first_found = conflicting_params[i];
 
-        if (strstr(found + first_found.size(), conflicting_params[i].c_str()) != NULL)
+        if (check_for_parameter(found + first_found.size(),
+                                conflicting_params[i].c_str(),
+                                conflicting_params[i].size()) != NULL)
           {
           // The value was repeated
           error = "The parameter ";
@@ -382,11 +468,11 @@ bool is_present_twice(
 
   {
   const char *check = check_for_me.c_str();
-  const char *found = strstr(str, check);
+  char       *found = check_for_parameter(str, check, check_for_me.size());
 
   if (found != NULL)
     {
-    if (strstr(found + check_for_me.size(), check) != NULL)
+    if (check_for_parameter(found + check_for_me.size(), check, check_for_me.size()) != NULL)
       {
       error = "The parameter ";
       error += found;
@@ -516,6 +602,9 @@ int req::set_from_submission_string(
     return(PBSE_BAD_PARAMETER);
 
   this->task_count = strtol(submission_str, &current, 10);
+
+  if (this->task_count < 1)
+    return(PBSE_BAD_PARAMETER);
 
   if (*current == ':')
     current++;
