@@ -17,6 +17,8 @@ const int PLACE_NO_PREFERENCE = -1;
 const int PLACE_NODE = 0;
 const int PLACE_SOCKET = 1;
 const int PLACE_NUMA_CHIP = 2;
+const int PLACE_CORES = 2;
+const int PLACE_THREADS = 2;
 
 const int ALL_EXECUTION_SLOTS = -1;
 
@@ -126,17 +128,15 @@ int req::set_place_value(
     {
     this->thread_usage_policy = USE_CORES;
     this->thread_usage_str = "use cores";
-
-    if (numeric_value != NULL)
-      rc = parse_positive_integer(numeric_value, this->execution_slots);
+    this->placement_type = PLACE_CORES;
+    this->placement_str = "place cores";
     }
   else if (!strcmp(work_str, "thread"))
     {
     this->thread_usage_policy = USE_THREADS;
     this->thread_usage_str = "use threads";
-    
-    if (numeric_value != NULL)
-      rc = parse_positive_integer(numeric_value, this->execution_slots);
+    this->placement_type = PLACE_THREADS;
+    this->placement_str = "place threads";
     }
   else
     rc = PBSE_BAD_PARAMETER;
@@ -389,7 +389,7 @@ char *check_for_parameter(
 
 
 /*
- * are_conflicting_values_present()
+ * are_conflicting_params_present()
  *
  * Checks if any of the strings in conflicting values are duplicated
  * or if multiples are present and returns true if these conditions are
