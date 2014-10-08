@@ -80,6 +80,8 @@ struct pbsnode *find_nodebyname(const char *node_id)
   return(NULL);
   }
 
-void log_err(int errno, const char *caller, const char *msg) {}
+
+void log_err(int errnum, const char *routine, const char *text) {}
+
 
 unsigned int pbs_mom_port = 0;
