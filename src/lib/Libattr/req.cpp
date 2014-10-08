@@ -515,7 +515,9 @@ bool req::submission_string_has_duplicates(
       (is_present_twice(str, "gpus", error)) ||
       (is_present_twice(str, "mics", error)) ||
       (is_present_twice(str, "gres", error)) ||
-      (is_present_twice(str, "feature", error)))
+      (is_present_twice(str, "feature", error)) ||
+      (is_present_twice(str, "opsys", error)) ||
+      (is_present_twice(str, "reqattr", error)))
     {
     return(true);
     }
