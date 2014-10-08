@@ -671,7 +671,6 @@ int wait_request(
 
 
   char            tmpLine[1024];
-  char            ipaddrStr[INET_ADDRSTRLEN];
   struct timeval  timeout;
   long            OrigState = 0;
 
@@ -848,11 +847,14 @@ int wait_request(
 
     /* NOTE:  add info about node associated with connection - NYI */
 
-    inet_ntop(AF_INET, &(cp->cn_addr), ipaddrStr, INET_ADDRSTRLEN);
+    {
+    char buf[80];
+
     snprintf(tmpLine, sizeof(tmpLine), "connection %d to host %s has timed out after %d seconds - closing stale connection\n",
       i,
-      ipaddrStr,
+      netaddr_long(cp->cn_addr, buf),
       PBS_NET_MAXCONNECTIDLE);
+    }
     
     log_err(-1, __func__, tmpLine);
 
