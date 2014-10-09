@@ -11,6 +11,7 @@
 #include "pbs_nodes.h"
 #include "pbs_job.h"
 #include "u_tree.h"
+#include "id_map.hpp"
 
 char        server_name[PBS_MAXSERVERNAME + 1]; /* host_name[:service|port] */
 int         allow_any_mom;
@@ -41,6 +42,8 @@ void log_event(int eventtype, int objclass, const char *objname, const char *tex
 void log_err(int errnum, const char *routine, const char *text) {}
 void close_conn(int sd, int has_mutex) {}
 hello_container         hellos;
+id_map job_mapper;
+bool exit_called = false;
 
 char *threadsafe_tokenizer(
 
@@ -175,7 +178,7 @@ struct prop *init_prop(
 int is_job_on_node(
 
   struct pbsnode *pnode, /* I */
-  char           *jobid) /* I */
+  int             jobid) /* I */
 
   {
   return(0);
@@ -281,3 +284,24 @@ int node_gpustatus_list(
   }
 
 void clear_nvidia_gpus(struct pbsnode *np) {}
+
+int id_map::get_id(
+
+  const char *name)
+
+  {
+  fprintf(stderr, "The call to %s needs to be mocked!!\n",__func__);
+  exit(1);
+  }
+
+void write_node_power_state(void)
+  {
+  fprintf(stderr, "The call to %s needs to be mocked!!\n",__func__);
+  exit(1);
+  }
+
+
+id_map::id_map(){}
+
+id_map::~id_map(){}
+

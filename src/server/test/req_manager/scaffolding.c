@@ -11,6 +11,10 @@
 #include "batch_request.h" /* batch_request */
 #include "list_link.h" /* list_link */
 #include "work_task.h" /* work_type */
+#include <string>
+#include <vector>
+#include <boost/ptr_container/ptr_vector.hpp>
+
 
 all_nodes allnodes;
 int svr_resc_size = 0;
@@ -33,7 +37,10 @@ attribute_def svr_attr_def[10];
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 int svr_chngNodesfile = 0;
 int svr_totnodes = 0;
-
+mom_hierarchy_t *mh;
+boost::ptr_vector<std::string> hierarchy_holder;
+pthread_mutex_t                 hierarchy_holder_Mutex = PTHREAD_MUTEX_INITIALIZER;
+bool exit_called = false;
 
 int write_node_note(void)
   {
@@ -324,3 +331,67 @@ int lock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string)
 void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+
+int req_runjob(batch_request *preq)
+  {
+  fprintf(stderr, "The call to req_runjob needs to be mocked!!\n");
+  exit(1);
+  }
+
+struct batch_request *alloc_br(int type)
+  {
+  fprintf(stderr, "The call to alloc_br needs to be mocked!!\n");
+  exit(1);
+  }
+
+void req_deletejob(struct batch_request *preq)
+  {
+  fprintf(stderr, "The call to req_deletejob needs to be mocked!!\n");
+  exit(1);
+  }
+void add_all_nodes_to_hello_container()
+  {
+  fprintf(stderr, "The call to %s needs to be mocked!!\n",__func__);
+  exit(1);
+  }
+
+void write_node_power_state(void)
+  {
+  fprintf(stderr, "The call to %s needs to be mocked!!\n",__func__);
+  exit(1);
+  }
+
+job *svr_find_job_by_id(int id)
+  {
+  fprintf(stderr, "The call to %s needs to be mocked!!\n",__func__);
+  exit(1);
+  }
+
+int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
+  {
+  return(0);
+  }
+
+int lock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
+  {
+  return(0);
+  }
+
+void free_br(struct batch_request *preq)
+  {
+  }
+
+void prepare_mom_hierarchy(
+
+  std::vector<std::string> &send_format)
+  {
+  fprintf(stderr, "The call to %s needs to be mocked!!\n",__func__);
+  exit(1);
+  }
+
+int req_rerunjob(batch_request *preq)
+  {
+  fprintf(stderr, "The call to %s needs to be mocked!!\n",__func__);
+  exit(1);
+  }
+

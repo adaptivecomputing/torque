@@ -82,11 +82,14 @@ long disrsl(struct tcp_chan *chan, int *retval)
   exit(1);
   }
 
+extern "C"
+{
 char *pbs_strerror(int err)
   {
   fprintf(stderr, "The call to pbs_strerror needs to be mocked!!\n");
   exit(1);
   }
+}
 
 char *pbs_default(void)
   {
