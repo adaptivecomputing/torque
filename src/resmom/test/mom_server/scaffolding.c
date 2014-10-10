@@ -64,6 +64,7 @@ char  path_spool[] = "/var/spool";
 
 bool no_error = true;
 bool no_event = true;
+bool ForceServerUpdate = false;
 
 #ifdef NUMA_SUPPORT
 int       num_node_boards;
@@ -425,3 +426,9 @@ int pbs_getaddrinfo(
   {
   return(0);
   }
+
+time_t get_stat_update_interval()
+  {
+  return ServerStatUpdateInterval;
+  }
+

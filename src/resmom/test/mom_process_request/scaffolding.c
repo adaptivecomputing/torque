@@ -275,18 +275,3 @@ void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_ext(int type, const char *func_name, const char *msg, int o) {}
-
-char * netaddr_long(long ap, char *out)
-  {
-  u_long  ipadd;
-
-  ipadd = ap;
-
-  sprintf(out, "%ld.%ld.%ld.%ld",
-           (ipadd & 0xff000000) >> 24,
-           (ipadd & 0x00ff0000) >> 16,
-           (ipadd & 0x0000ff00) >> 8,
-           (ipadd & 0x000000ff));
-
-  return out;
-  }
