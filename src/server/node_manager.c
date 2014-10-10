@@ -3051,8 +3051,6 @@ int node_spec(
   long                 cray_enabled = FALSE;
   int                  num_alps_reqs = 0;
 
-  FUNCTION_TIMER
-
   if (EMsg != NULL)
     EMsg[0] = '\0';
 

@@ -95,11 +95,14 @@ void prt_job_err(const char *cmd, int connect, const char *id)
   exit(1);
   }
 
+extern "C"
+{
 char *pbs_strerror(int err)
   { 
   fprintf(stderr, "The call to pbs_strerror needs to be mocked!!\n");
   exit(1);
   }
+}
 
 int pbs_alterjob_async(int c, char *jobid, struct attrl *attrib, char *extend)
   { 

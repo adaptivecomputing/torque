@@ -97,7 +97,10 @@ pthread_mutex_t *svr_do_schedule_mutex;
 pthread_mutex_t *listener_command_mutex;
 pthread_mutex_t *retry_routing_mutex;
 user_info_holder users;
-
+id_map job_mapper;
+threadpool_t *async_pool;
+bool exit_called = false;
+char *path_nodepowerstate;
 
 void on_job_rerun_task(struct work_task *ptask)
   {
@@ -632,14 +635,6 @@ mom_hierarchy_t *initialize_mom_hierarchy()
 
   {
   mom_hierarchy_t *nt = (mom_hierarchy_t *)calloc(1, sizeof(mom_hierarchy_t));
-  nt->paths = new mom_paths();
-
-  if (nt->paths == NULL)
-    {
-    free(nt);
-    nt = NULL;
-    return(nt);
-    }
 
   nt->current_path  = -1;
   nt->current_level = -1;
@@ -650,9 +645,23 @@ mom_hierarchy_t *initialize_mom_hierarchy()
 
 void parse_mom_hierarchy(int fds)
   {
-  mh->paths->push_back(new mom_levels());
+  mom_levels lv;
+  mh->paths.push_back(lv);
   }
 
 id_map::id_map() {}
 
-void rel_resc(job *pjob);
+id_map::~id_map(){}
+
+int id_map::get_new_id(
+
+  const char *name)
+
+  {
+  fprintf(stderr, "The call to %s needs to be mocked!!\n",__func__);
+  exit(1);
+  }
+
+
+void rel_resc(job *pjob)
+{}

@@ -19,29 +19,29 @@ START_TEST(test_sort_paths)
   mh = initialize_mom_hierarchy();
   for(int paths = 0;paths < 5;paths++)
     {
-    mom_levels *lvl = new  mom_levels();
-    mh->paths->push_back(lvl);
+    mom_levels lvl;
     for(int levels = 0;levels < (15 - paths);levels++)
       {
-      mom_nodes *nd = new mom_nodes();
-      lvl->push_back(nd);
+      mom_nodes nd;
+      lvl.push_back(nd);
       }
+    mh->paths.push_back(lvl);
     }
   before[0] = '\0';
-  for(size_t i = 0;i < mh->paths->size();i++)
+  for(size_t i = 0;i < mh->paths.size();i++)
     {
     char num[10];
-    sprintf(num,"%d ",(int)mh->paths->at(i)->size());
+    sprintf(num,"%d ",(int)mh->paths.at(i).size());
     strcat(before,num);
     }
 
   sort_paths();
 
   after[0] = '\0';
-  for(size_t i = 0;i < mh->paths->size();i++)
+  for(size_t i = 0;i < mh->paths.size();i++)
     {
     char num[10];
-    sprintf(num,"%d ",(int)mh->paths->at(i)->size());
+    sprintf(num,"%d ",(int)mh->paths.at(i).size());
     strcat(after,num);
     }
   fail_unless(strcmp(before,"15 14 13 12 11 ") == 0);

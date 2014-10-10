@@ -14,6 +14,7 @@ attribute_def que_attr_def[10];
 struct server server;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 char *path_queues;
+bool exit_called = false;
 
 void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
   {

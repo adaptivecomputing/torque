@@ -7,10 +7,12 @@
 int decode_arst_direct( struct pbs_attribute *patr, const char *val);
 
 int decode_arst( struct pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm);
+int decode_acl_arst( struct pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm);
 
 int encode_arst( pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm);
 
 int set_arst( struct pbs_attribute *attr, struct pbs_attribute *newAttr, enum batch_op op); 
+int set_acl_arst( struct pbs_attribute *attr, struct pbs_attribute *newAttr, enum batch_op op);
 
 int comp_arst( struct pbs_attribute *attr, struct pbs_attribute *with);
 
