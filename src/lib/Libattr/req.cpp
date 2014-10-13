@@ -63,6 +63,9 @@ int parse_positive_integer(
   int        &parsed)
 
   {
+  if (strchr(str, '.') != NULL)
+    return(PBSE_BAD_PARAMETER);
+
   parsed = strtol(str, NULL, 10);
 
   if (parsed < 1)
@@ -105,6 +108,9 @@ int req::set_place_value(
     {
     this->placement_type = PLACE_NODE;
     this->placement_str = "place node";
+
+    if (numeric_value != NULL)
+      return(PBSE_BAD_PARAMETER);
     }
   else if (!strcmp(work_str, "socket"))
     {
@@ -126,6 +132,19 @@ int req::set_place_value(
     }
   else if (!strcmp(work_str, "core"))
     {
+    if (numeric_value != NULL)
+      {
+      if (this->execution_slots == ALL_EXECUTION_SLOTS)
+        {
+        return(PBSE_BAD_PARAMETER);
+        }
+
+      int count;
+      rc = parse_positive_integer(numeric_value, count);
+      if (count > this->execution_slots)
+        this->execution_slots = count;
+      }
+      
     this->thread_usage_policy = USE_CORES;
     this->thread_usage_str = "use cores";
     this->placement_type = PLACE_CORES;
@@ -133,6 +152,19 @@ int req::set_place_value(
     }
   else if (!strcmp(work_str, "thread"))
     {
+    if (numeric_value != NULL)
+      {
+      if (this->execution_slots == ALL_EXECUTION_SLOTS)
+        {
+        return(PBSE_BAD_PARAMETER);
+        }
+
+      int count;
+      rc = parse_positive_integer(numeric_value, count);
+      if (count > this->execution_slots)
+        this->execution_slots = count;
+      }
+      
     this->thread_usage_policy = USE_THREADS;
     this->thread_usage_str = "use threads";
     this->placement_type = PLACE_THREADS;

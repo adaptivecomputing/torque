@@ -942,6 +942,22 @@ void validate_basic_resourcing(
       fprintf(stderr, "qsub: resource requests cannot combine -L with -l nodes, size, or mppwidth\n");
       exit(4);
       }
+
+    if ((hash_find(resources, "mem", &dummy)) ||
+        (hash_find(resources, "hostlist", &dummy)) ||
+        (hash_find(resources, "ncpus", &dummy)) ||
+        (hash_find(resources, "procs", &dummy)) ||
+        (hash_find(resources, "pvmem", &dummy)) ||
+        (hash_find(resources, "pmem", &dummy)) ||
+        (hash_find(resources, "vmem", &dummy)) ||
+        (hash_find(resources, "reqattr", &dummy)) ||
+        (hash_find(resources, "software", &dummy)) ||
+        (hash_find(resources, "tpn", &dummy)) ||
+        (hash_find(resources, "trl", &dummy)))
+      {
+      fprintf(stderr, "qsub: resource requests cannot combine -L with -l memory, gres, reqattr, or proc count requests\n");
+      exit(4);
+      }
     }
 
   } /* END validate_basic_resourcing() */
