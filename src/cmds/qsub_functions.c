@@ -952,10 +952,12 @@ void validate_basic_resourcing(
         (hash_find(resources, "vmem", &dummy)) ||
         (hash_find(resources, "reqattr", &dummy)) ||
         (hash_find(resources, "software", &dummy)) ||
+        (hash_find(resources, "geometry", &dummy)) ||
+        (hash_find(resources, "opsys", &dummy)) ||
         (hash_find(resources, "tpn", &dummy)) ||
         (hash_find(resources, "trl", &dummy)))
       {
-      fprintf(stderr, "qsub: resource requests cannot combine -L with -l memory, gres, reqattr, or proc count requests\n");
+      fprintf(stderr, "qsub: resource requests cannot combine -L with -l memory, gres, geometry, opsys, reqattr, hostlist, or proc count requests\n");
       exit(4);
       }
     }

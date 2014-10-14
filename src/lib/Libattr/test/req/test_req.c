@@ -46,7 +46,7 @@ START_TEST(test_constructors)
   fail_unless(r.getExecutionSlots() == 1, "slots: %d", r.getExecutionSlots());
 
   req r2("5:lprocs=4:memory=12gb:place=socket=2:usecores:pack:gpus=2:mics=1:gres=matlab=1:feature=fast");
-  fail_unless(r2.getTaskCount() == 5);
+  fail_unless(r2.getTaskCount() == 5, "task count is %d", r2.getTaskCount());
   fail_unless(r2.getPlacementTypeInt() == PLACE_SOCKET, "placement type int %d", r2.getPlacementTypeInt());
   fail_unless(r2.getPlacementType() == "place socket", "value %s", r2.getPlacementType().c_str());
   fail_unless(r2.getNodeAccessPolicy().size() == 0);

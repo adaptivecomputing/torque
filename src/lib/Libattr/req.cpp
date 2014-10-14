@@ -609,6 +609,26 @@ bool req::has_conflicting_values(
 
   return(false);
   } // END has_conflicting_values()
+
+
+
+int req::submission_string_precheck(
+
+  char        *submission_str,
+  std::string &error)
+
+  {
+  if (strchr(submission_str, '+') != NULL)
+    {
+    error = "Multi-req syntax should use multiple -L parameters and not the '+' delimiter.";
+    return(PBSE_BAD_PARAMETER);
+    }
+
+  if (submission_string_has_duplicates(submission_str, error))
+    return(PBSE_BAD_PARAMETER);
+
+  return(PBSE_NONE);
+  } // END submission_string_precheck() 
     
 
 
@@ -638,7 +658,7 @@ int req::set_from_submission_string(
   char       *current;
   int         rc;
 
-  if (submission_string_has_duplicates(submission_str, error))
+  if (submission_string_precheck(submission_str, error))
     return(PBSE_BAD_PARAMETER);
 
   this->task_count = strtol(submission_str, &current, 10);
@@ -648,6 +668,11 @@ int req::set_from_submission_string(
 
   if (*current == ':')
     current++;
+  else if (current != '\0')
+    {
+    error = "Invalid task specification";
+    return(PBSE_BAD_PARAMETER);
+    }
 
   while ((current != NULL) && 
          (*current != '\0'))
@@ -684,8 +709,11 @@ int req::set_from_submission_string(
       current = ++ptr;
     }
 
-  if (has_conflicting_values(error) == true)
-    return(PBSE_BAD_PARAMETER);
+  if (rc == PBSE_NONE)
+    {
+    if (has_conflicting_values(error) == true)
+      return(PBSE_BAD_PARAMETER);
+    }
 
   return(rc);
   } // END set_from_submission_string() 
