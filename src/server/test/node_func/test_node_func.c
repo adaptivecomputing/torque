@@ -13,8 +13,6 @@
 #include "attribute.h" /* svrattrl, struct  */
 #include "work_task.h"
 
-#define HOST_NAME_MAX 255
-
 void write_compute_node_properties(struct pbsnode &reporter, FILE *nin);
 void add_to_property_list(std::stringstream &property_list, const char *token);
 int login_encode_jobs(struct pbsnode *pnode, tlist_head *phead);
