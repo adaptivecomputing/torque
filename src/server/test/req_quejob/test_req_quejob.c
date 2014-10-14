@@ -50,6 +50,7 @@ START_TEST(test_create_and_initialize_job_structure)
   fail_unless(pjob->ji_qs.ji_svrflags == 1);
   fail_unless(pjob->ji_qs.ji_un_type == JOB_UNION_TYPE_NEW);
   fail_unless(pjob->ji_wattr[JOB_ATR_mailpnts].at_val.at_str == NULL);
+  fail_unless(pjob->ji_mod_time > 0);
   }
 END_TEST
 

@@ -63,6 +63,7 @@
 #include "pbs_cpuset.h"
 #endif
 #include "mom_config.h"
+#include "timer.hpp"
 
 
 /*
@@ -247,15 +248,46 @@ void proc_get_btime(void)
   return;
   }  /* END proc_get_btime() */
 
-/* NOTE:  see 'man 5 proc' for /proc/pid/stat format and description */
 
-/* NOTE:  leading '*' indicates that field should be ignored */
 
-/* FORMAT: <PID> <COMM> <STATE> <PPID> <PGRP> <SESSION> [<TTY_NR>] [<TPGID>] <FLAGS> [<MINFLT>] [<CMINFLT>] [<MAJFLT>] [<CMAJFLT>] <UTIME> <STIME> <CUTIME> <CSTIME> [<PRIORITY>] [<NICE>] [<0>] [<ITREALVALUE>] <STARTTIME> <VSIZE> <RSS> [<RLIM>] [<STARTCODE>] ... */
+/*
+ * skip_space_delimited_values()
+ *
+ * skips number_to_skip space delimited values from str_to_advance and advances the
+ * pointer appropriately
+ *
+ * @param number_to_skip - the number of space delimited values to skip
+ * @param str_to_advance - the string we're advancing
+ */
 
-static char stat_str[] = " %c %d %d %d %*d %*d %u %*u \
-                         %*u %*u %*u %lu %lu %lu %lu %*ld %*ld %*u %*ld %lu %llu %lld %*lu %*lu \
-                         %*lu %*lu %*lu %*lu %*lu %*lu %*lu %*lu %*lu %*lu %*lu";
+void skip_space_delimited_values(
+
+  int    number_to_skip,
+  char **str_to_advance)
+
+  {
+  if ((str_to_advance == NULL) ||
+      (*str_to_advance == NULL))
+    return;
+
+  int   spaces_found = 0;
+  char *curr_ptr = *str_to_advance;
+
+  while (spaces_found < number_to_skip)
+    {
+    curr_ptr = strchr(curr_ptr, ' ');
+
+    if (curr_ptr == NULL)
+      break;
+    
+    spaces_found++;
+    curr_ptr++;
+    }
+
+  *str_to_advance = curr_ptr;
+  } /* END skip_space_delimited_values() */
+
+
 
 /*
  * Convert jiffies to seconds.
@@ -264,6 +296,163 @@ static char stat_str[] = " %c %d %d %d %*d %*d %u %*u \
 */
 
 #define JTOS(x)  (x) / Hertz;
+
+
+
+/*
+ * populate_stats_from_the_buffer
+ *
+ * reads a buffer in /proc/pid/stat format which is:
+ * '%d (%s) %c %d %d %d %*d %*d %u %*u %*u %*u %*u %lu %lu %lu ' +
+ * '%lu %*ld %*ld %*u %*ld %lu %llu %lld' these values correspond to:
+ * <pid> (<command>) <state> <ppid> <pgrp> <session> <tty_nr>* <tpgid>*
+ * <flags> <minflt>* <cminflt>* <majflt>* <cmajflt> <utime> <stime>
+ * <cutime> <cstime> <priority>* <nice>* <0>* <itrealvalue>* <starttime>
+ * <vsize> <rss> ...
+ * and populates the relevant values into ps. Values marked with * are 
+ * ignored.
+ *
+ * @param buffer - the buffer containing this information. I
+ * @param ps - the process statistics information struct. O
+ * @param path - the buffer where we're saving the command name. O
+ * @param path_size - the size of the buffer for the command. O
+ * @return - PBSE_NONE on success, -1 on failure
+ */
+
+int populate_stats_from_the_buffer(
+
+  char          *buffer,
+  proc_stat_t   &ps,
+  char          *path,
+  int            path_size)
+
+  {
+  char          *lastbracket = strrchr(buffer, ')');
+  char          *curr_ptr;
+  char          *ptr;
+  unsigned long  jstarttime;
+  
+  static int Hertz  = 0;
+  static int Hertz_errored = 0;
+
+  if (Hertz <= 0)
+    {
+    Hertz = sysconf(_SC_CLK_TCK);  /* returns 0 on error */
+
+    if (Hertz <= 0)
+      {
+      /* FAILURE */
+
+      if (!Hertz_errored)
+        log_err(errno, "get_proc_stat", "sysconf(_SC_CLK_TCK) failed, unable to monitor processes");
+
+      Hertz_errored = 1;
+
+      return(-1);
+      }
+    }
+
+  Hertz_errored = 0;
+
+
+  if (lastbracket == NULL)
+    return(-1);
+
+  *lastbracket = '\0'; /* We basically split the string here, overwriting the ')'. */
+
+  lastbracket++;
+
+  ps.pid = strtol(buffer, &curr_ptr, 10);
+
+  ptr = strchr(curr_ptr, '(');
+
+  if (ptr == NULL)
+    return(-1);
+
+  snprintf(path, path_size, "%s", ptr + 1);
+
+  curr_ptr = lastbracket;
+  
+  // last bracket is currently in the format
+  //  '%c %d %d %d %*d %*d %u %*u %*u %*u %*u %lu %lu %lu' +
+  //  ' %lu %*ld %*ld %*u %*ld %lu %llu %lld'
+
+  // skip the ' ' and read the state
+  curr_ptr++;
+  ps.state = *curr_ptr;
+  
+  // move past this value and the next space
+  curr_ptr += 2;
+
+  // read the ppid and skip a space
+  ps.ppid = strtol(curr_ptr, &curr_ptr, 10);
+  curr_ptr++;
+
+  // read the pgrp and skip a space
+  ps.pgrp = strtol(curr_ptr, &curr_ptr, 10);
+  curr_ptr++;
+
+  // read the session and skip a space
+  ps.session = strtol(curr_ptr, &curr_ptr, 10);
+  curr_ptr++;
+
+  // skip the next two values
+  skip_space_delimited_values(2, &curr_ptr);
+
+  // get the flags and skip a space
+  ps.flags = strtol(curr_ptr, &curr_ptr, 10);
+  curr_ptr++;
+
+  // skip the next 4 values
+  skip_space_delimited_values(4, &curr_ptr);
+
+  // read the utime - cycles that the process has been in user mode
+  ps.utime = strtoll(curr_ptr, &curr_ptr, 10);
+  curr_ptr++;
+  
+  // read the stime - cycles that the process has been in system mode
+  ps.stime = strtoll(curr_ptr, &curr_ptr, 10);
+  curr_ptr++;
+
+  // read the cutime - cycles that the process' children have been in user mode
+  ps.cutime = strtoll(curr_ptr, &curr_ptr, 10);
+  curr_ptr++;
+
+  // read the cstime - cycles that the process' children have been in system mode
+  ps.cstime = strtoll(curr_ptr, &curr_ptr, 10);
+  curr_ptr++;
+
+  // skip the next 4 values
+  skip_space_delimited_values(4, &curr_ptr);
+
+  // read the start time
+  jstarttime = strtoll(curr_ptr, &curr_ptr, 10);
+  curr_ptr++;
+
+  // read the virtual memory size
+  ps.vsize = strtoll(curr_ptr, &curr_ptr, 10);
+  curr_ptr++;
+
+  // read the stack size
+  ps.rss = strtoll(curr_ptr, &curr_ptr, 10);
+  
+  ps.start_time = linux_time + JTOS(jstarttime);
+  ps.name = path;
+
+  ps.utime = JTOS(ps.utime);
+  ps.stime = JTOS(ps.stime);
+  ps.cutime = JTOS(ps.cutime);
+  ps.cstime = JTOS(ps.cstime);
+
+  return(PBSE_NONE);
+  } /* END populate_stats_from_the_buffer() */
+
+
+
+/* NOTE:  see 'man 5 proc' for /proc/pid/stat format and description */
+
+
+/* FORMAT: <PID> <COMM> <STATE> <PPID> <PGRP> <SESSION> [<TTY_NR>] [<TPGID>] <FLAGS> [<MINFLT>] [<CMINFLT>] [<MAJFLT>] [<CMAJFLT>] <UTIME> <STIME> <CUTIME> <CSTIME> [<PRIORITY>] [<NICE>] [<0>] [<ITREALVALUE>] <STARTTIME> <VSIZE> <RSS> [<RLIM>] [<STARTCODE>] ... */
 
 /*
  * Linux /proc status routine.
@@ -279,36 +468,13 @@ proc_stat_t *get_proc_stat(
   int pid)  /* I */
 
   {
-  static proc_stat_t ps;
-  static char  path[MAXLINE];
-  static char  readbuf[MAXLINE << 2];
-  static char          *lastbracket;
-  FILE                 *fd;
-  unsigned long         jstarttime;  /* number of jiffies since OS start time when process started */
+  FUNCTION_TIMER
+  static proc_stat_t  ps;
+  static char         path[MAXLINE];
+  static char         readbuf[MAXLINE << 2];
+  FILE               *fd;
 
-  struct stat  sb;
-
-  static int Hertz  = 0;
-  int Hertz_errored = 0;
-
-  if (Hertz <= 0)
-    {
-    Hertz = sysconf(_SC_CLK_TCK);  /* returns 0 on error */
-
-    if (Hertz <= 0)
-      {
-      /* FAILURE */
-
-      if (!Hertz_errored)
-        log_err(errno, "get_proc_stat", "sysconf(_SC_CLK_TCK) failed, unable to monitor processes");
-
-      Hertz_errored = 1;
-
-      return(NULL);
-      }
-    }
-
-  Hertz_errored = 0;
+  struct stat         sb;
 
   sprintf(path, "/proc/%d/stat",
           pid);
@@ -329,48 +495,9 @@ proc_stat_t *get_proc_stat(
     return(NULL);
     }
 
-  lastbracket = strrchr(readbuf, ')');
-
-  if (lastbracket == NULL)
+  if (populate_stats_from_the_buffer(readbuf, ps, path, sizeof(path)) != PBSE_NONE)
     {
     fclose(fd);
-
-    return(NULL);
-    }
-
-  *lastbracket = '\0'; /* We basically split the string here, overwriting the ')'. */
-
-  lastbracket++;
-
-  if (sscanf(readbuf,"%d (%[^\n]",&ps.pid,path) != 2)
-    {
-    /* FAILURE */
-
-    fclose(fd);
-
-    return(NULL);
-    }
-
-  /* see stat_str[] value for mapping 'stat' format */
-
-  if (sscanf(lastbracket,stat_str,
-        &ps.state,     /* state (one of RSDZTW) */
-        &ps.ppid,      /* ppid */
-        &ps.pgrp,      /* pgrp */
-        &ps.session,   /* session id */
-        &ps.flags,     /* flags - kernel flags of the process, see the PF_* in <linux/sched.h> */
-        &ps.utime,     /* utime - jiffies that this process has been scheduled in user mode */
-        &ps.stime,     /* stime - jiffies that this process has been scheduled in kernel mode */
-        &ps.cutime,    /* cutime - jiffies that this process’s waited-for children have been scheduled in user mode */
-        &ps.cstime,    /* cstime - jiffies that this process’s waited-for children have been scheduled in kernel mode */
-        &jstarttime,   /* starttime */
-        &ps.vsize,     /* vsize */
-        &ps.rss) != 12)   /* rss */
-    {
-    /* FAILURE */
-
-    fclose(fd);
-
     return(NULL);
     }
 
@@ -384,14 +511,6 @@ proc_stat_t *get_proc_stat(
     }
 
   ps.uid = sb.st_uid;
-
-  ps.start_time = linux_time + JTOS(jstarttime);
-  ps.name = path;
-
-  ps.utime = JTOS(ps.utime);
-  ps.stime = JTOS(ps.stime);
-  ps.cutime = JTOS(ps.cutime);
-  ps.cstime = JTOS(ps.cstime);
 
   /* SUCCESS */
 
