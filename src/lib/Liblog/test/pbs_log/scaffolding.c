@@ -81,24 +81,6 @@ struct dirent *readdir(DIR *dirp)
 
 }
 
-int stat(const char *path, struct stat *buf) throw()
-  {
-
-  if (stat_fail == true)
-    return(-1);
-
-  if (time_expired == false)
-    {
-    buf->st_mtime  = time((time_t *)NULL);
-
-    return(0);
-    }
-
-  buf->st_mtime = 10;
- 
-
-  return (0);
-  }
 
 int remove(const char *path) throw()
   {
