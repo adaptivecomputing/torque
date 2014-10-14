@@ -23,3 +23,5 @@ check:
 cleancheck:
 	cd $(CHECK_DIR) && $(MAKE) cleancheck
 endif
+
+CLEANFILES = *.gcda *.gcno *.gcov

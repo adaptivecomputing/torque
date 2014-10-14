@@ -107,7 +107,7 @@
 #include "log.h"
 
 extern int     svr_authorize_jobreq(struct batch_request *, job *);
-int status_attrib(svrattrl *, attribute_def *, pbs_attribute *, int, int, tlist_head *, int *, int);
+int status_attrib(svrattrl *, attribute_def *, pbs_attribute *, int, int, tlist_head *, bool, int *, int);
 
 /* Global Data Items: */
 
@@ -128,16 +128,18 @@ extern struct server server;
 
 int status_job(
 
-  job      *pjob, /* ptr to job to status */
-  struct batch_request *preq,
-  svrattrl   *pal, /* specific attributes to status */
-  tlist_head *pstathd, /* RETURN: head of list to append status to */
-  int        *bad) /* RETURN: index of first bad pbs_attribute */
+  job           *pjob, /* ptr to job to status */
+  batch_request *preq,
+  svrattrl      *pal, /* specific attributes to status */
+  tlist_head    *pstathd, /* RETURN: head of list to append status to */
+  bool           condensed,
+  int           *bad) /* RETURN: index of first bad pbs_attribute */
 
   {
   struct brp_status *pstat;
   int                IsOwner = 0;
   long               query_others = 0;
+  long               condensed_timeout = JOB_CONDENSED_TIMEOUT;
 
   /* see if the client is authorized to status this job */
   if (svr_authorize_jobreq(preq, pjob) == 0)
@@ -151,6 +153,13 @@ int status_job(
       return(PBSE_PERM);
       }
     }
+  
+  get_svr_attr_l(SRV_ATR_job_full_report_time, &condensed_timeout);
+
+  // if the job has been modified within the timeout, send the full output
+  if ((condensed == true) &&
+      (time(NULL) < pjob->ji_mod_time + condensed_timeout))
+    condensed = false;
 
   /* allocate reply structure and fill in header portion */
   if ((pstat = (struct brp_status *)calloc(1, sizeof(struct brp_status))) == NULL)
@@ -179,6 +188,7 @@ int status_job(
         JOB_ATR_LAST,
         preq->rq_perm,
         &pstat->brp_attr,
+        condensed,
         bad,
         IsOwner))
     {
@@ -263,6 +273,111 @@ int add_walltime_remaining(
   } /* END add_walltime_remaining() */
 
 
+/*
+ * include_in_status()
+ *
+ * Tells which attributes should be included in condensed output
+ *
+ * @param index -  the index of the attribute
+ * @return - true if the attribute should be included in condensed output, false otherwise
+ */
+bool include_in_status(
+
+  int index)
+
+  {
+  switch (index)
+    {
+    case JOB_ATR_jobname:
+    case JOB_ATR_job_owner:
+    case JOB_ATR_state:
+    case JOB_ATR_resc_used:
+    case JOB_ATR_in_queue:
+
+      return(true);
+
+    default:
+
+      return(false);
+    }
+
+  return(true);
+  } /* END include_in_status() */
+
+
+
+/*
+ * get_specific_attributes_status()
+ *
+ * Returns the specific attributes specified in pal instead of looping over 
+ * all attributes.
+ *
+ * @param pal - the list of attributes to enode
+ * @param padef - the attribute definition to work from
+ * @param pattr - the attribute list we are encoding from
+ * @param phead - the list we're encoding onto
+ * @param priv - the privileges of the encoder
+ * @param limit - the number of attributes in padef
+ * @param bad - the attribute index that is bad. Output
+ * @param IsOwner - TRUE if the encoder is an owner of this object, FALSE otherwise
+ * @return - PBSE_NONE if successful, otherwise the appropriate pbs error code
+ */
+int get_specific_attributes_status(
+
+  svrattrl      *pal,      /* I */
+  attribute_def *padef,
+  pbs_attribute *pattr,
+  tlist_head    *phead,
+  int            priv,
+  int            limit,
+  int           *bad,
+  int            IsOwner)
+
+  {
+  int    nth = 0;
+  char   log_buf[LOCAL_LOG_BUF_SIZE + 1];
+  int    resc_access_perm;
+
+  priv &= ATR_DFLAG_RDACC;  /* user-client privilege  */
+  resc_access_perm = priv; 
+
+  while (pal != NULL)
+    {
+    ++nth;
+
+    int index = find_attr(padef, pal->al_name, limit);
+
+    if (index < 0)
+      {
+      *bad = nth;
+
+      snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Attribute %s not found. nth = %d", pal->al_name, nth);
+      LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_QUEUE, __func__, log_buf);
+
+      /* FAILURE */
+      return(PBSE_NOATTR);
+      }
+
+    if ((padef + index)->at_flags & priv)
+      {
+      if (!(((padef + index)->at_flags & ATR_DFLAG_PRIVR) && (IsOwner == 0)))
+        {
+        (padef + index)->at_encode(
+          pattr + index,
+          phead,
+          (padef + index)->at_name,
+          NULL,
+          ATR_ENCODE_CLIENT,
+          resc_access_perm);
+        }
+      }
+
+    pal = (svrattrl *)GET_NEXT(pal->al_link);
+    }
+
+  /* SUCCESS */
+  return(PBSE_NONE);
+  } // END get_specific_attributes_values() 
 
 
 
@@ -285,15 +400,13 @@ int status_attrib(
   int            limit,
   int            priv,
   tlist_head    *phead,
+  bool           condensed,
   int           *bad,
   int            IsOwner)  /* 0 == FALSE, 1 == TRUE */
 
   {
   int    index;
-  int    nth = 0;
   int    resc_access_perm;
-  char   log_buf[LOCAL_LOG_BUF_SIZE + 1];
-
   
   priv &= ATR_DFLAG_RDACC;  /* user-client privilege  */
   resc_access_perm = priv; 
@@ -303,56 +416,17 @@ int status_attrib(
   if (pal != NULL)
     {
     /* client specified certain attributes */
-
-    while (pal != NULL)
-      {
-      ++nth;
-
-      index = find_attr(padef, pal->al_name, limit);
-
-      if (index < 0)
-        {
-        *bad = nth;
-
-        snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Attribute %s not found. nth = %d", pal->al_name, nth);
-        LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_QUEUE, __func__, log_buf);
-
-        /* FAILURE */
-        return(PBSE_NOATTR);
-        }
-
-      if ((padef + index)->at_flags & priv)
-        {
-        if (!(((padef + index)->at_flags & ATR_DFLAG_PRIVR) && (IsOwner == 0)))
-          {
-          (padef + index)->at_encode(
-            pattr + index,
-            phead,
-            (padef + index)->at_name,
-            NULL,
-            ATR_ENCODE_CLIENT,
-            resc_access_perm);
-          }
-        }
-
-      pal = (svrattrl *)GET_NEXT(pal->al_link);
-      }
-
-    if (padef == job_attr_def)
-      {
-      /* We want to return walltime remaining for all running jobs */
-      if ((pattr + JOB_ATR_start_time)->at_flags & ATR_VFLAG_SET)
-        add_walltime_remaining(JOB_ATR_start_time, pattr, phead);
-      }
-
-    /* SUCCESS */
-    return(PBSE_NONE);
+    return(get_specific_attributes_status(pal, padef, pattr, phead, priv, limit, bad, IsOwner));
     }    /* END if (pal != NULL) */
 
   /* attrlist not specified, return all readable attributes */
 
-  for (index = 0;index < limit;index++)
+  for (index = 0; index < limit; index++)
     {
+    if ((condensed == true) &&
+        (include_in_status(index) == false))
+      continue;
+
     if (((padef + index)->at_flags & priv) &&
         !((padef + index)->at_flags & ATR_DFLAG_NOSTAT))
       {

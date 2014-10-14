@@ -30,7 +30,7 @@ dnl added library functionality to testing
 dnl by John Rosenquist (jrosenquist@adaptivecomputing.com)
 
 AC_PREREQ(2.53)
-AC_INIT([torque], [5.0], [torqueusers@supercluster.org])
+AC_INIT([torque], [5.1.0], [torqueusers@supercluster.org])
 AC_REVISION($Revision$)
 AC_CONFIG_SRCDIR([src/cmds/qrun.c])
 AC_CONFIG_AUX_DIR([buildutils])
@@ -718,6 +718,12 @@ if test "$DEBUG_SYMBOLS" = 'yes'; then
         CFLAGS="-g"
       else
         CFLAGS="-g $CFLAGS"
+      fi
+
+      if test "$CXXFLAGS" = ''; then
+        CXXFLAGS="-g"
+      else
+        CXXFLAGS="-g $CXXFLAGS"
       fi
       ;;
   esac
