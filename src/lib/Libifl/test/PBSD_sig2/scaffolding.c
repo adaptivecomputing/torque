@@ -4,6 +4,7 @@
 
 #include "libpbs.h" /* connect_handle */
 #include "pbs_ifl.h" /* PBS_MAXUSER */
+#include "mutex_mgr.hpp"
 
 struct connect_handle connection[10];
 char pbs_current_user[PBS_MAXUSER];
@@ -44,4 +45,16 @@ void DIS_tcp_cleanup(struct tcp_chan *chan)
   {
   }
 
+mutex_mgr::mutex_mgr(pthread_mutex_t *, bool a)
+  {
+  }
+
+int mutex_mgr::unlock()
+  {
+  return(0);
+  }
+
+mutex_mgr::~mutex_mgr()
+  {
+  }
 

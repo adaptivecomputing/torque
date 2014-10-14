@@ -20,6 +20,7 @@
 #include "user_info.h"
 #include "hash_map.h"
 
+pthread_mutex_t       task_list_timed_mutex;
 int scheduler_sock=0;
 int scheduler_jobct = 0;
 bool auto_send_hierarchy = true;
@@ -449,7 +450,7 @@ int svr_save(struct server *ps, int mode)
   exit(1);
   }
 
-int acct_open(char *filename)
+int acct_open(char *filename, bool b)
   {
   fprintf(stderr, "The call to acct_open needs to be mocked!!\n");
   exit(1);

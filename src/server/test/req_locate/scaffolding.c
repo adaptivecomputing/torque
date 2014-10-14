@@ -1,6 +1,7 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
+#include "mutex_mgr.hpp"
 
 #include "server.h" /* server */
 #include "batch_request.h" /* batch_request */
@@ -35,3 +36,13 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   }
 
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+
+mutex_mgr::mutex_mgr(pthread_mutex_t *mutex, bool locked) {}
+
+int mutex_mgr::unlock()
+  {
+  return(0);
+  }
+
+mutex_mgr::~mutex_mgr() {}
+

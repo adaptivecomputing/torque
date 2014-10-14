@@ -5,6 +5,15 @@
 #include <stdio.h>
 #include "pbs_error.h"
 
+struct attribute_def test_def[] =
+{
+    {"A String",decode_str,encode_str,set_str,comp_str,free_str,NULL_FUNC,READ_WRITE,ATR_TYPE_STR,PARENT_TYPE_JOB},
+    {"A Long",decode_l,encode_l,set_l,comp_l,free_null,NULL_FUNC,READ_WRITE,ATR_TYPE_LONG,PARENT_TYPE_JOB}
+};
+
+char saveBuff[1024];
+int saveBuffRdPtr = 0;
+int saveBuffEndPtr = 0;
 
 START_TEST(test_one)
   {

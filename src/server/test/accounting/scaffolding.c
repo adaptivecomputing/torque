@@ -12,6 +12,7 @@
 char path_acct[_POSIX_PATH_MAX];
 attribute_def job_attr_def[10];
 int LOGLEVEL=0;
+char *acct_file = NULL;
 
 int log_remove_old(char *DirPath, unsigned long ExpireTime) 
   {

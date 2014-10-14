@@ -386,3 +386,14 @@ int put_env_var(const char *name, const char *value)
   {
   return(0);
   }
+
+int terminate_sisters(
+
+  job *pjob,
+  int sig)
+
+  {
+  fprintf(stderr, "The call to terminate_sisters needs to be mocked!!\n");
+  exit(1);
+  }
+
