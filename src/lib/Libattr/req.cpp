@@ -663,8 +663,14 @@ int req::set_from_submission_string(
 
   this->task_count = strtol(submission_str, &current, 10);
 
-  if (this->task_count < 1)
+  if ((this->task_count < 1) ||
+      (current == submission_str))
+    {
+    error = "Bad tasks value: '";
+    error += submission_str;
+    error += "'";
     return(PBSE_BAD_PARAMETER);
+    }
 
   if (*current == ':')
     current++;
