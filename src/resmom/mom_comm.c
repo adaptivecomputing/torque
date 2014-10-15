@@ -167,6 +167,7 @@ extern time_t       LastServerUpdateTime;
 extern int         ServerStatUpdateInterval;
 extern struct connection svr_conn[];
 extern bool          ForceServerUpdate;
+extern int         use_nvidia_gpu;
 
 const char *PMOMCommand[] =
   {
@@ -2472,6 +2473,16 @@ int im_join_job_as_sister(
       break;
     }  /* END for (psatl) */
   
+#ifdef NVIDIA_GPUS
+  if ((use_nvidia_gpu) && setup_gpus_for_job(pjob) == -1)
+    {
+    sprintf(log_buffer, "%s: Could not set gpus mode for the job",
+      __func__);
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+    rc = -1;
+    }
+#endif  /* NVIDIA_GPUS */
+
   free_attrlist(&lhead);
   
   if (rc != 0)
