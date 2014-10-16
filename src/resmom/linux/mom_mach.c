@@ -2475,6 +2475,7 @@ int mom_set_use(
 
   *lp = MAX(*lp, lnum);
 
+#if 0
   /* get joules */
 
   rd = find_resc_def(svr_resc_def, "energy_used", svr_resc_size);
@@ -2484,6 +2485,7 @@ int mom_set_use(
   pres = find_resc_entry(at, rd);
 
   pres->rs_value.at_val.at_long += 3;
+#endif
 
   /* get swap */
 

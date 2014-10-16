@@ -514,7 +514,8 @@ u_long get_energy_from_cray_file(const char *path,job *pjob)
     rur_log_entry entry;
     if(entry.parse_line(buff))
       {
-      if(entry.jobid_matches(pjob->ji_globid))
+      //if(entry.jobid_matches(pjob->ji_globid))
+      if(entry.jobid_matches(pjob->ji_qs.ji_jobid))
         {
         joules += entry.get_joules();
         }
