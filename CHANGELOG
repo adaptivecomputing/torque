@@ -1,4 +1,6 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
+5.0.0.h2
+  f - TRQ-2916. Gather and report Cray energy consumption information.
 
 5.0
   e - TRQ-2083. Remove job status polling from TORQUE. Have pbs_server only poll a
