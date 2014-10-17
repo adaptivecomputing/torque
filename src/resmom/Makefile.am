@@ -11,7 +11,7 @@ CLEANFILES = *.gcda *.gcno *.gcov
 CLEANFILES += @PBS_MACH@/*.gcda @PBS_MACH@/*.gcno @PBS_MACH@/*.gcov
 
 include_HEADERS = catch_child.h checkpoint.h mom_comm.h mom_main.h mom_process_request.h \
-									mom_server_lib.h mom_job_func.h
+                  mom_server_lib.h mom_job_func.h cray_energy.h
 
 AM_CFLAGS = `xml2-config --cflags`
 AM_LIBS   = `xml2-config --libs`
