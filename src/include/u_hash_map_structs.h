@@ -78,7 +78,8 @@
 */
 #ifndef _U_HASH_MAP_STRUCTS_H
 #define _U_HASH_MAP_STRUCTS_H
-#include "uthash.h"
+#include <uthash.h>
+
 #include "pbs_error.h"
 #include "u_memmgr.h"
 
