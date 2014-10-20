@@ -3201,7 +3201,7 @@ int node_spec(
 #ifndef CRAY_MOAB_PASSTHRU
   /* If we restart pbs_server while the cray is down, pbs_server won't know about
    * the computes. Don't perform this check for this case. */
-  if(alps_reporter != NULL)
+  if (alps_reporter != NULL)
     {
     alps_reporter->alps_subnodes->lock();
     }

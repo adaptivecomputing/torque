@@ -31,49 +31,47 @@ END_TEST
 START_TEST(test_decode_encode_complete_req)
   {
   pbs_attribute  pattr;
-  const char    *val = "   req[0]\ntask count: 6\nlprocs: all\n thread usage policy: use threads\nplacement type: place numa\n   req[1]\ntask count: 8\nlprocs: 4\n thread usage policy: use cores\nplacement type: place socket";
-  const char    *val2 = "   req[0]\ntask count: 2\nlprocs: all\n thread usage policy: use threads\nplacement type: place numa\n";
+  const char    *resc_names[] = {"lprocs:0", "memory:0"};
+  const char    *values[] = { "5", "1000000kb"};
 
   memset(&pattr, 0, sizeof(pattr));
 
   // null should fail
   fail_unless(decode_complete_req(&pattr, NULL, NULL, NULL, 1) == PBSE_BAD_PARAMETER);
-  // not a toString() output should fail
+  // null resource name should fail
   fail_unless(decode_complete_req(&pattr, NULL, NULL, "bob", 1) == PBSE_BAD_PARAMETER);
+  // random words should fail
+  fail_unless(decode_complete_req(&pattr, NULL, "hippo", "bob", 1) == PBSE_BAD_PARAMETER);
 
   // should still be NULL
   fail_unless(pattr.at_val.at_ptr == NULL);
 
   // these should work
-  fail_unless(decode_complete_req(&pattr, NULL, NULL, val, 1) == PBSE_NONE);
+  fail_unless(decode_complete_req(&pattr, NULL, resc_names[0], values[0], 1) == PBSE_NONE);
   fail_unless((pattr.at_flags & ATR_VFLAG_SET) != 0);
 
   complete_req *cr = (complete_req *)pattr.at_val.at_ptr;
   fail_unless(cr != NULL);
 
-  std::string debug;
-  cr->toString(debug);
-
-  fail_unless(cr->req_count() == 2, "count: %d\n%s", cr->req_count(), debug.c_str());
-  fail_unless(decode_complete_req(&pattr, NULL, NULL, val2, 1) == PBSE_NONE);
+  fail_unless(cr->req_count() == 1, "count: %d\n%s", cr->req_count());
+  fail_unless(decode_complete_req(&pattr, NULL, resc_names[1], values[1], 1) == PBSE_NONE);
 
   cr = (complete_req *)pattr.at_val.at_ptr;
   fail_unless(cr != NULL);
 
-  // make sure we correctly overwrote the value of the pointer
   fail_unless(cr->req_count() == 1);
 
   fail_unless(encode_complete_req(NULL, NULL, NULL, NULL, 0, 0) == PBSE_NONE);
+  extern int called_encode;
+  called_encode = 0;
   fail_unless(encode_complete_req(&pattr, NULL, NULL, NULL, 0, 0) == PBSE_NONE);
 
-  extern std::string encoded;
-  std::string out;
-  cr->toString(out);
-  fail_unless(out == encoded);
+  // we set 2 attributes + there are 2 that should go by default
+  fail_unless(called_encode == 4, "encoded %d", called_encode);
   pattr.at_val.at_ptr = NULL;
-  encoded.clear();
   fail_unless(encode_complete_req(&pattr, NULL, NULL, NULL, 0, 0) == PBSE_NONE);
-  fail_unless(encoded.size() == 0);
+  // make sure we didn't encode anything new
+  fail_unless(called_encode == 4);
   }
 END_TEST
 
@@ -82,12 +80,10 @@ START_TEST(test_set_complete_req)
   {
   pbs_attribute  pattr;
   pbs_attribute  pattr2;
-  const char    *val = "   req[0]\ntask count: 6\nlprocs: all\n thread usage policy: use threads\nplacement type: place numa\n   req[1]\ntask count: 8\nlprocs: 4\n thread usage policy: use cores\nplacement type: place socket";
-  const char    *val2 = "   req[0]\ntask count: 2\nlprocs: all\n thread usage policy: use threads\nplacement type: place numa\n";
 
   memset(&pattr, 0, sizeof(pattr));
   memset(&pattr2, 0, sizeof(pattr2));
-  fail_unless(decode_complete_req(&pattr, NULL, NULL, val, 1) == PBSE_NONE);
+  fail_unless(decode_complete_req(&pattr, NULL, "lprocs:0", "4", 1) == PBSE_NONE);
 
   // DECR is unsupported
   fail_unless(set_complete_req(&pattr2, &pattr, DECR) == PBSE_INTERNAL);
@@ -102,7 +98,7 @@ START_TEST(test_set_complete_req)
   complete_req *cr1 = (complete_req *)pattr.at_val.at_ptr;
 
   fail_unless(cr2->req_count() == cr1->req_count());
-  fail_unless(decode_complete_req(&pattr2, NULL, NULL, val2, 1) == PBSE_NONE);
+  fail_unless(decode_complete_req(&pattr2, NULL, "lprocs:1", "5", 1) == PBSE_NONE);
 
   // make sure they're different now
   cr2 = (complete_req *)pattr2.at_val.at_ptr;

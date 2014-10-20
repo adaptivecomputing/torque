@@ -6,7 +6,7 @@
 
 
 
-complete_req::complete_req()
+complete_req::complete_req() : reqs()
   {
   }
 
@@ -117,3 +117,61 @@ int complete_req::req_count() const
   {
   return(this->reqs.size());
   } // END req_count()
+
+
+
+/*
+ * set_value()
+ *
+ * Sets a value for the req at the specified index, creating the index
+ * if it doesn't already exist
+ *
+ * @param index - the index of the req to set this particular value
+ * @param name - the name of the value to be set
+ * @param value - the value to be set
+ * @return PBSE_NONE if the name is valid and the index is >= 0, PBSE_BAD_PARAMETER otherwise
+ *
+ */
+
+int complete_req::set_value(
+
+  int         index,
+  const char *name,
+  const char *value)
+
+  {
+  if (index < 0)
+    return(PBSE_BAD_PARAMETER);
+
+  int rc;
+
+  while (this->reqs.size() <= index)
+    {
+    req r;
+    r.set_index(this->reqs.size());
+    this->reqs.push_back(r);
+    }
+
+  return(this->reqs[index].set_value(name, value));
+  } // END set_value()
+
+
+
+/*
+ * get_values()
+ *
+ * Gets the name and value of each attribute set for each req held
+ *
+ * @param names - the vector where each name is stored
+ * @param values - the vector where each value is stored
+ */
+
+void complete_req::get_values(
+
+  std::vector<std::string> &names,
+  std::vector<std::string> &values) const
+
+  {
+  for (unsigned int i = 0; i < this->reqs.size(); i++)
+    this->reqs[i].get_values(names, values);
+  } // END get_values()

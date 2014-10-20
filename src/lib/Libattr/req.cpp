@@ -24,9 +24,10 @@ const int ALL_EXECUTION_SLOTS = -1;
 
 
 req::req() : execution_slots(1), mem(0), swap(0), disk(0),
-             placement_type(PLACE_NO_PREFERENCE), task_count(1), socket(0), numa_chip(0),
+             task_count(1), socket(0), numa_chip(0),
              thread_usage_policy(ALLOW_THREADS), gpus(0), mics(0),
-             pack(true), index(0), thread_usage_str("allow threads"), single_job_access(false)
+             pack(false), index(0), thread_usage_str("allow threads"), single_job_access(false),
+             maxtpn(0), placement_str()
 
   {
   }
@@ -35,7 +36,7 @@ req::req(
     
   const req &other) : execution_slots(other.execution_slots), mem(other.mem), swap(other.swap),
                       disk(other.disk), gres(other.gres), os(other.os), arch(other.arch),
-                      node_access_policy(other.node_access_policy), placement_type(other.placement_type),
+                      node_access_policy(other.node_access_policy), 
                       task_count(other.task_count), hostlist(other.hostlist), socket(other.socket),
                       numa_chip(other.numa_chip), thread_usage_policy(other.thread_usage_policy),
                       gpus(other.gpus), mics(other.mics), pack(other.pack), index(other.index),
@@ -106,7 +107,6 @@ int req::set_place_value(
 
   if (!strcmp(work_str, "node"))
     {
-    this->placement_type = PLACE_NODE;
     this->placement_str = "place node";
 
     if (numeric_value != NULL)
@@ -119,7 +119,6 @@ int req::set_place_value(
       rc = parse_positive_integer(numeric_value, this->socket);
       }
       
-    this->placement_type = PLACE_SOCKET;
     this->placement_str = "place socket";
     }
   else if (!strcmp(work_str, "numachip"))
@@ -127,7 +126,6 @@ int req::set_place_value(
     if (numeric_value != NULL)
       rc = parse_positive_integer(numeric_value, this->numa_chip);
       
-    this->placement_type = PLACE_NUMA_CHIP;
     this->placement_str = "place numa";
     }
   else if (!strcmp(work_str, "core"))
@@ -147,7 +145,6 @@ int req::set_place_value(
       
     this->thread_usage_policy = USE_CORES;
     this->thread_usage_str = "use cores";
-    this->placement_type = PLACE_CORES;
     this->placement_str = "place cores";
     }
   else if (!strcmp(work_str, "thread"))
@@ -167,7 +164,6 @@ int req::set_place_value(
       
     this->thread_usage_policy = USE_THREADS;
     this->thread_usage_str = "use threads";
-    this->placement_type = PLACE_THREADS;
     this->placement_str = "place threads";
     }
   else
@@ -601,7 +597,7 @@ bool req::has_conflicting_values(
 
   {
   if ((this->execution_slots == ALL_EXECUTION_SLOTS) &&
-      (this->placement_type != PLACE_NODE))
+      (this->placement_str != "place node"))
     {
     error = "-lprocs=all may only be used in conjunction with place=node";
     return(true);
@@ -744,7 +740,7 @@ int req::set_from_submission_string(
 req::req(
     
   const std::string &resource_request) : execution_slots(1), mem(0), swap(0),
-                                         disk(0), placement_type(PLACE_NO_PREFERENCE),
+                                         disk(0), placement_str(),
                                          task_count(1), socket(0), numa_chip(0),
                                          thread_usage_policy(ALLOW_THREADS), gpus(0), mics(0),
                                          index(-1)
@@ -790,7 +786,6 @@ req &req::operator =(
   this->node_access_policy = other.node_access_policy;
   this->features = other.features;
   this->placement_str = other.placement_str;
-  this->placement_type = other.placement_type;
   this->req_attr = other.req_attr;
   this->task_count = other.task_count;
   this->pack = other.pack;
@@ -893,7 +888,7 @@ void req::toString(
   str += this->thread_usage_str;
   str += '\n';
 
-  if (this->placement_type != PLACE_NO_PREFERENCE)
+  if (this->placement_str.size() != 0)
     {
     str += "      placement type: ";
     str += this->placement_str;
@@ -948,6 +943,187 @@ void req::toString(
   if (this->pack == true)
     str += "      pack\n";
   } // END toString() 
+
+
+
+/*
+ * get_values()
+ *
+ * Gets the name and value of each part of this class that is set
+ *
+ * For each value that is set:
+ * name=<name of field>:index value=<value of field
+ * i.e. name=lprocs[index] value=10
+ *
+ * @param names - the vector where each name is stored
+ * @param values - the vector where each value is stored
+ *
+ */
+
+void req::get_values(
+    
+  std::vector<std::string> &names,
+  std::vector<std::string> &values) const
+
+  {
+  char buf[100];
+
+  snprintf(buf, sizeof(buf), "task_count:%d", this->index);
+  names.push_back(buf);
+  snprintf(buf, sizeof(buf), "%d", this->task_count);
+  values.push_back(buf);
+  
+  if (this->execution_slots != 0)
+    {
+    snprintf(buf, sizeof(buf), "lprocs:%d", this->index);
+    names.push_back(buf);
+    if (this->execution_slots == ALL_EXECUTION_SLOTS)
+      values.push_back("all");
+    else
+      {
+      snprintf(buf, sizeof(buf), "%d", this->execution_slots);
+      values.push_back(buf);
+      }
+    }
+
+  if (this->mem != 0)
+    {
+    snprintf(buf, sizeof(buf), "memory:%d", this->index);
+    names.push_back(buf);
+    snprintf(buf, sizeof(buf), "%lukb", this->mem);
+    values.push_back(buf);
+    }
+
+  if (this->swap != 0)
+    {
+    snprintf(buf, sizeof(buf), "swap:%d", this->index);
+    names.push_back(buf);
+    snprintf(buf, sizeof(buf), "%lukb", this->swap);
+    values.push_back(buf);
+    }
+
+  if (this->disk != 0)
+    {
+    snprintf(buf, sizeof(buf), "disk:%d", this->index);
+    names.push_back(buf);
+    snprintf(buf, sizeof(buf), "%lukb", this->disk);
+    values.push_back(buf);
+    }
+
+  if (this->socket != 0)
+    {
+    snprintf(buf, sizeof(buf), "sockets:%d", this->index);
+    names.push_back(buf);
+    snprintf(buf, sizeof(buf), "%d", this->socket);
+    values.push_back(buf);
+    }
+
+  if (this->numa_chip != 0)
+    {
+    snprintf(buf, sizeof(buf), "numa_chips:%d", this->index);
+    names.push_back(buf);
+    snprintf(buf, sizeof(buf), "%d", this->numa_chip);
+    values.push_back(buf);
+    }
+
+  if (this->gpus != 0)
+    {
+    snprintf(buf, sizeof(buf), "gpus:%d", this->index);
+    names.push_back(buf);
+    snprintf(buf, sizeof(buf), "%d", this->gpus);
+    values.push_back(buf);
+
+    if (this->gpu_mode.size() != 0)
+      {
+      snprintf(buf, sizeof(buf), "gpu_mode:%d", this->index);
+      names.push_back(buf);
+      values.push_back(this->gpu_mode);
+      }
+    }
+
+  if (this->mics != 0)
+    {
+    snprintf(buf, sizeof(buf), "mics:%d", this->index);
+    names.push_back(buf);
+    snprintf(buf, sizeof(buf), "%d", this->mics);
+    values.push_back(buf);
+    }
+
+  if (this->maxtpn != 0)
+    {
+    snprintf(buf, sizeof(buf), "maxtpn:%d", this->index);
+    names.push_back(buf);
+    snprintf(buf, sizeof(buf), "%d", this->maxtpn);
+    values.push_back(buf);
+    }
+
+  snprintf(buf, sizeof(buf), "thread_usage_policy:%d", this->index);
+  names.push_back(buf);
+  values.push_back(this->thread_usage_str);
+
+  if (this->placement_str.size() != 0)
+    {
+    snprintf(buf, sizeof(buf), "placement_type:%d", this->index);
+    names.push_back(buf);
+    values.push_back(this->placement_str);
+    }
+
+  if (this->req_attr.size() != 0)
+    {
+    snprintf(buf, sizeof(buf), "reqattr:%d", this->index);
+    names.push_back(buf);
+    values.push_back(this->req_attr);
+    }
+
+  if (this->gres.size() != 0)
+    {
+    snprintf(buf, sizeof(buf), "gres:%d", this->index);
+    names.push_back(buf);
+    values.push_back(this->gres);
+    }
+
+  if (this->os.size() != 0)
+    {
+    snprintf(buf, sizeof(buf), "opsys:%d", this->index);
+    names.push_back(buf);
+    values.push_back(this->os);
+    }
+
+  if (this->arch.size() != 0)
+    {
+    snprintf(buf, sizeof(buf), "arch:%d", this->index);
+    names.push_back(buf);
+    values.push_back(this->arch);
+    }
+
+  if (this->features.size() != 0)
+    {
+    snprintf(buf, sizeof(buf), "features:%d", this->index);
+    names.push_back(buf);
+    values.push_back(this->features);
+    }
+
+  if (this->single_job_access == true)
+    {
+    snprintf(buf, sizeof(buf), "single_job_access:%d", this->index);
+    names.push_back(buf);
+    values.push_back("true");
+    }
+
+  if (this->pack == true)
+    {
+    snprintf(buf, sizeof(buf), "pack:%d", this->index);
+    names.push_back(buf);
+    values.push_back("true");
+    }
+
+  if (this->hostlist.size() != 0)
+    {
+    snprintf(buf, sizeof(buf), "hostlist:%d", this->index);
+    names.push_back(buf);
+    values.push_back(this->hostlist);
+    }
+  } // END get_values() 
 
 
 
@@ -1140,13 +1316,6 @@ void req::set_from_string(
     
     this->placement_str = capture_until_newline_and_advance(&current);
 
-    if (this->placement_str == "place socket")
-      this->placement_type = PLACE_SOCKET;
-    else if (this->placement_str == "place numa")
-      this->placement_type = PLACE_NUMA_CHIP;
-    else
-      this->placement_type = PLACE_NODE;
-
     if (current == NULL)
       {
       free(req);
@@ -1251,6 +1420,78 @@ void req::set_from_string(
 
 
 
+/*
+ * set_value()
+ *
+ * Sets a value on this class identified by name
+ * @param name - the name of the value to be set
+ * @param value - the value
+ * @return PBSE_NONE if the name is valid or PBSE_BAD_PARAMETER for an invalid name
+ */
+
+int req::set_value(
+
+  const char *name,
+  const char *value)
+
+  {
+  if (!strncmp(name, "index", 5))
+    this->index = strtol(value, NULL, 10);
+  else if (!strncmp(name, "task_count", 10))
+    this->task_count = strtol(value, NULL, 10);
+  else if (!strncmp(name, "lprocs", 6))
+    {
+    if (value[0] == 'a')
+      this->execution_slots = ALL_EXECUTION_SLOTS;
+    else
+      this->execution_slots = strtol(value, NULL, 10);
+    }
+  else if (!strncmp(name, "memory", 6))
+    this->mem = strtoll(value, NULL, 10);
+  else if (!strncmp(name, "swap", 4))
+    this->swap = strtoll(value, NULL, 10);
+  else if (!strncmp(name, "disk", 4))
+    this->disk = strtoll(value, NULL, 10);
+  else if (!strncmp(name, "sockets", 7))
+    this->socket = strtol(value, NULL, 10);
+  else if (!strncmp(name, "numa_chips", 10))
+    this->numa_chip = strtol(value, NULL, 10);
+  else if (!strncmp(name, "gpus", 4))
+    this->gpus = strtol(value, NULL, 10);
+  else if (!strncmp(name, "gpu_mode", 8))
+    this->gpu_mode = value;
+  else if (!strncmp(name, "mics", 4))
+    this->mics = strtol(value, NULL, 10);
+  else if (!strncmp(name, "maxtpn", 6))
+    this->maxtpn = strtol(value, NULL, 10);
+  else if (!strncmp(name, "thread_usage_policy", 19))
+    this->thread_usage_str = value;
+  else if (!strncmp(name, "placement_type", 14))
+    this->placement_str = value;
+  else if (!strncmp(name, "reqattr", 7))
+    this->req_attr = value;
+  else if (!strncmp(name, "gres", 4))
+    this->gres = value;
+  else if (!strncmp(name, "opsys", 5))
+    this->os = value;
+  else if (!strncmp(name, "arch", 4))
+    this->arch = value;
+  else if (!strncmp(name, "features", 8))
+    this->features = value;
+  else if (!strncmp(name, "single_job_access", 17))
+    this->single_job_access = true;
+  else if (!strncmp(name, "pack", 4))
+    this->pack = true;
+  else if (!strncmp(name, "hostlist", 8))
+    this->hostlist = value;
+  else
+    return(PBSE_BAD_PARAMETER);
+
+  return(PBSE_NONE);
+  } // END set_value()
+
+
+
 int req::getExecutionSlots() const
 
   {
@@ -1297,12 +1538,6 @@ std::string req::getPlacementType() const
 
   {
   return(this->placement_str);
-  }
-
-int req::getPlacementTypeInt() const
-
-  {
-  return(this->placement_type);
   }
 
 int req::getTaskCount() const

@@ -163,7 +163,8 @@ int addr_ok(
         }
       }
     }
-  if(pnode->nd_power_state != POWER_STATE_RUNNING)
+
+  if (pnode->nd_power_state != POWER_STATE_RUNNING)
     {
     status = 0;
     }

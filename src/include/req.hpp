@@ -82,6 +82,9 @@
 */
 
 #include <string>
+#include <vector>
+
+#include "list_link.h"
 
 extern const int USE_CORES;
 extern const int USE_THREADS;
@@ -139,9 +142,11 @@ class req
     void          set_from_string(const std::string &req_str);
     int           set_from_submission_string(char *submission_str, std::string &error);
     void          set_index(int index);
+    int           set_value(const char *name, const char *value);
     int           submission_string_precheck(char *str, std::string &error);
     bool          submission_string_has_duplicates(char *str, std::string &error);
     bool          has_conflicting_values(std::string &error);
+    void          get_values(std::vector<std::string> &names, std::vector<std::string> &values) const;
     void          toString(std::string &str) const;
     int           getExecutionSlots() const;
     unsigned long getMemory() const;
@@ -154,7 +159,6 @@ class req
     std::string   getNodeAccessPolicy() const;
     std::string   getPlacementType() const;
     std::string   getReqAttr() const;
-    int           getPlacementTypeInt() const;
     int           getTaskCount() const;
     int           getIndex() const;
     std::string   getHostlist() const;

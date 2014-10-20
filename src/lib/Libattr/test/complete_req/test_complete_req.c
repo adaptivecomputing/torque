@@ -3,6 +3,34 @@
 #include <check.h>
 
 #include "complete_req.hpp"
+#include "pbs_error.h"
+
+
+START_TEST(test_set_get_value)
+  {
+  complete_req c;
+
+  fail_unless(c.set_value(1, "task_count", "5") == PBSE_NONE);
+  fail_unless(c.set_value(0, "task_count", "4") == PBSE_NONE);
+  fail_unless(c.set_value(0, "lprocs", "4") == PBSE_NONE);
+  fail_unless(c.set_value(1, "gpus", "2") == PBSE_NONE);
+  fail_unless(c.set_value(-1, "blah", "blah") == PBSE_BAD_PARAMETER);
+  fail_unless(c.req_count() == 2);
+
+  std::vector<std::string> names;
+  std::vector<std::string> values;
+
+  c.get_values(names, values);
+
+  fail_unless(names[0] == "task_count:0");
+  fail_unless(names[1] == "lprocs:0");
+  fail_unless(names[2] == "thread_usage_policy:0");
+  fail_unless(names[3] == "task_count:1", names[3].c_str());
+  fail_unless(names[4] == "lprocs:1", names[4].c_str());
+  fail_unless(names[5] == "gpus:1", names[4].c_str());
+  fail_unless(names[6] == "thread_usage_policy:1");
+  }
+END_TEST
 
 
 START_TEST(test_constructor)
@@ -95,6 +123,7 @@ Suite *complete_req_suite(void)
   
   tc_core = tcase_create("test_to_string");
   tcase_add_test(tc_core, test_to_string);
+  tcase_add_test(tc_core, test_set_get_value);
   suite_add_tcase(s, tc_core);
   
   return(s);

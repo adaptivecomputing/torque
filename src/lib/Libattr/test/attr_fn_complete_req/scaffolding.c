@@ -5,7 +5,7 @@
 #include "utils.h"
 #include "attribute.h"
 
-std::string encoded;
+int         called_encode;
 
 int is_whitespace(
 
@@ -61,6 +61,6 @@ int encode_str(
   int            perm)
 
   {
-  encoded = pattr->at_val.at_str;
+  called_encode++;
   return(PBSE_NONE);
   }

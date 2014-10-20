@@ -183,8 +183,8 @@ int encode_str(
 
   pbs_attribute  *attr,    /* ptr to pbs_attribute */
   tlist_head     *phead,   /* head of attrlist */
-  const char    *atname,  /* name of pbs_attribute */
-  const char    *rsname,  /* resource name or null */
+  const char     *atname,  /* name of pbs_attribute */
+  const char     *rsname,  /* resource name or null */
   int             mode,    /* encode mode, unused here */
   int             perm)    /* only used for resources */
 
