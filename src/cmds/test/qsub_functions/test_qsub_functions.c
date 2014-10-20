@@ -19,6 +19,18 @@ extern bool         find_nodes;
 extern bool         find_mpp;
 extern bool         find_size;
 
+bool are_we_forking()
+
+  {
+  char *forking = getenv("CK_FORK");
+
+  if ((forking != NULL) &&
+      (!strcasecmp(forking, "no")))
+    return(false);
+  
+  return(true);
+  }
+
 START_TEST(test_process_opt_L)
   {
   job_info    ji;
@@ -30,7 +42,6 @@ START_TEST(test_process_opt_L)
   }
 END_TEST
 
-/*
 START_TEST(test_process_opt_L_fail1)
   {
   job_info    ji;
@@ -48,7 +59,7 @@ START_TEST(test_process_opt_L_fail2)
   submission_string_fail = true;
   process_opt_L(&ji, arg);
   }
-END_TEST*/
+END_TEST
 
 
 START_TEST(test_add_new_request_if_present)
@@ -151,11 +162,17 @@ Suite *qsub_functions_suite(void)
   tc_core = tcase_create("test isWindowsFormat");
   tcase_add_test(tc_core, test_isWindowsFormat);
   tcase_add_test(tc_core, test_process_opt_L);
-//  tcase_add_exit_test(tc_core, test_process_opt_L_fail1, 2);
-//  tcase_add_exit_test(tc_core, test_process_opt_L_fail2, 2);
   tcase_add_test(tc_core, test_add_new_request_if_present);
   tcase_add_test(tc_core, test_validate_basic_resourcing);
   suite_add_tcase(s, tc_core);
+  
+  if (are_we_forking() == true)
+    {
+    tc_core = tcase_create("test_failures");
+    tcase_add_exit_test(tc_core, test_process_opt_L_fail1, 2);
+    tcase_add_exit_test(tc_core, test_process_opt_L_fail2, 2);
+    suite_add_tcase(s, tc_core);
+    }
 
   return s;
   }
