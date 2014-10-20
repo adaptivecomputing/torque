@@ -144,3 +144,8 @@ char *get_cached_nameinfo(const struct sockaddr_in *sai)
   {
   return(NULL);
   }
+
+char * netaddr_long(long ap, char *out)
+  {
+  return(NULL);
+  }
