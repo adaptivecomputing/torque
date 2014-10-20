@@ -144,10 +144,31 @@ bool are_all_sisters_done(
     num_nodes= pjob->ji_numnodes;
     }
 
+  if (LOGLEVEL >= 7)
+    {
+    char bf[40];
+    sprintf(bf,"num_nodes = %d",num_nodes);
+    log_record(
+      PBSEVENT_DEBUG,
+      PBS_EVENTCLASS_SERVER,
+      __func__,
+      bf);
+    }
+
   for (int i = 1; i < num_nodes; i++)
     {
     if (pjob->ji_hosts[i].hn_sister == SISTER_OKAY)
       {
+      if (LOGLEVEL >= 7)
+        {
+        char bf[400];
+        sprintf(bf,"nodes = %s is not done",pjob->ji_hosts[i].hn_host);
+        log_record(
+          PBSEVENT_DEBUG,
+          PBS_EVENTCLASS_SERVER,
+          __func__,
+          bf);
+        }
       done = false;
       break;
       }

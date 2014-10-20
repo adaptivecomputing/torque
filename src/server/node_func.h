@@ -4,6 +4,10 @@
 #include "list_link.h" /* tlist_head */
 #include "net_connect.h"
 #include "pbs_nodes.h"
+#include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
+#include "utils.h"
+#include <vector>
+#include <string>
 
 /* Forward declarations. */
 struct pbsnode;
@@ -73,18 +77,19 @@ void *send_hierarchy_threadtask(void *vp);
 
 int send_hierarchy(char *name, unsigned short  port);
 
-int needs_hello(hello_container *hc, char *node_name);
+//int needs_hello(hello_container *hc, char *node_name);
 
-int add_hello(hello_container *hc, char *node_name);
+//int add_hello(hello_container *hc, char *node_name);
 
-int add_hello_after(hello_container *hc, char *node_name, int index);
+//int add_hello_after(hello_container *hc, char *node_name, int index);
 
-int add_hello_info(hello_container *hc, hello_info *hi);
+//int add_hello_info(hello_container *hc, hello_info *hi);
 
-hello_info *pop_hello(hello_container *hc);
+//hello_info *pop_hello(hello_container *hc);
 
-int remove_hello(hello_container *hc, char *node_name);
+//int remove_hello(hello_container *hc, char *node_name);
 
 int set_node_power_state(struct pbsnode **pNode,unsigned short newState);
+
 
 #endif /* _NODE_FUNC_H */

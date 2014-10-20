@@ -6067,6 +6067,12 @@ int send_join_job_to_sisters(
   
   errno = 0;
     
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buffer,"Sending join job to %d sisters.",unsent_count);
+    log_err(errno, __func__,log_buffer);
+    }
+
   memset(send_failed, -1, send_failed_size);
   for (i = 1; i < nodenum; i++)
     send_failed[i] = i;
@@ -6082,6 +6088,13 @@ int send_join_job_to_sisters(
         continue;
 
       np = &pjob->ji_hosts[i];
+
+      if (LOGLEVEL >= 7)
+        {
+        sprintf(log_buffer,"Sending join job to %s.",pjob->ji_hosts[i].hn_host);
+        log_err(errno, __func__,log_buffer);
+        }
+
       log_buffer[0] = '\0';
 
       ret = -1;
@@ -6106,7 +6119,16 @@ int send_join_job_to_sisters(
         sisters_contacted.insert(i);
         send_failed[i] = DIS_SUCCESS;
         unsent_count--;
-        } 
+        }
+      else
+        {
+        if (LOGLEVEL >= 7)
+          {
+          sprintf(log_buffer,"Sending join job to %s failed with error code %d.",pjob->ji_hosts[i].hn_host,ret);
+          log_err(errno, __func__,log_buffer);
+          }
+        log_buffer[0] = '\0';
+        }
       } /* END for each node */
     } /* END for 5 retries */
 

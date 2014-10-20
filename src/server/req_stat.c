@@ -821,7 +821,7 @@ int stat_to_mom(
 
   if (node == NULL)
     return PBSE_UNKNODE;
-  if ((node->nd_state & INUSE_DOWN)||(node->nd_power_state != POWER_STATE_RUNNING))
+  if ((node->nd_state & INUSE_NOT_READY)||(node->nd_power_state != POWER_STATE_RUNNING))
     {
     if (LOGLEVEL >= 6)
       {

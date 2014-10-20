@@ -163,12 +163,13 @@ static struct node_state
   } ns[] =
 
   {
-    {INUSE_UNKNOWN, ND_state_unknown},
-    {INUSE_DOWN,    ND_down},
-    {INUSE_OFFLINE, ND_offline},
-    {INUSE_RESERVE, ND_reserve},
-    {INUSE_JOB,     ND_job_exclusive},
-    {INUSE_BUSY,    ND_busy},
+    {INUSE_UNKNOWN,     ND_state_unknown},
+    {INUSE_DOWN,        ND_down},
+    {INUSE_OFFLINE,     ND_offline},
+    {INUSE_RESERVE,     ND_reserve},
+    {INUSE_JOB,         ND_job_exclusive},
+    {INUSE_BUSY,        ND_busy},
+    {INUSE_NOHIERARCHY, ND_nohierarchy},
     {0,             NULL}
   };
 
@@ -251,6 +252,23 @@ int PNodeStateToString(
       BufSize -= len;
       }
     }
+
+  if (SBM & (INUSE_NOHIERARCHY))
+    {
+    len = strlen(ND_nohierarchy) + 1;
+
+    if (len < BufSize)
+      {
+      if (Buf[0] != '\0')
+        strcat(Buf, ",");
+      else
+        len--;
+
+      strcat(Buf, ND_nohierarchy);
+      BufSize -= len;
+      }
+    }
+
 
   if (SBM & (INUSE_RESERVE))
     {
@@ -1092,7 +1110,16 @@ static int set_nodeflag(
     }
 
   if (!strcmp(str, ND_free))
-    *pflag = 0;
+    {
+    if(*pflag & INUSE_NOHIERARCHY)
+      {
+      rc = PBSE_HIERARCHY_NOT_SENT;
+      }
+    else
+      {
+      *pflag = 0;
+      }
+    }
   else if (!strcmp(str, ND_offline))
     *pflag = *pflag | INUSE_OFFLINE;
   else if (!strcmp(str, ND_down))

@@ -480,22 +480,12 @@ int get_parent_and_child(char *start, char **parent, char **child, char **end)
   return(0);
   }
 
-int add_hello(hello_container *hc, char *node_name)
-  {
-  return(0);
-  }
-
 int create_partial_pbs_node(char *nodename, unsigned long addr, int perms)
   {
   return(0);
   }
 
 struct pbsnode *find_nodebyname(const char *name)
-  {
-  return(NULL);
-  }
-
-hello_container *initialize_hello_container(hello_container *hc)
   {
   return(NULL);
   }
@@ -517,12 +507,6 @@ char *trim(char *str)
 int array_save(job_array *pa)
   {
   return(0);
-  }
-
-int add_hello_after(hello_container *hc, int node_id, int index)
-  {
-  fprintf(stderr, "The call to add_hello_after needs to be mocked!!\n");
-  exit(1);
   }
 
 int enqueue_threadpool_request(

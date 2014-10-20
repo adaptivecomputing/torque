@@ -63,6 +63,7 @@
 #include <arpa/inet.h>
 #include "threadpool.h"
 #include "timer.hpp"
+#include "mom_hierarchy_handler.h"
 
 #if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
 /*extern int h_errno;*/
@@ -71,7 +72,7 @@
 #define NULLSTR static_cast <const char *>(0);
 /* Global Data */
 
-extern hello_container  failures;
+//extern hello_container  failures;
 extern struct addrinfo  hints;
 extern int              svr_totnodes;
 extern int              svr_clnodes;
@@ -83,9 +84,6 @@ extern char            *path_nodenote;
 extern int              LOGLEVEL;
 extern attribute_def    node_attr_def[];   /* node attributes defs */
 extern AvlTree          ipaddrs;
-extern std::vector<std::string> hierarchy_holder;
-extern pthread_mutex_t  hierarchy_holder_Mutex;
-
 
 job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode);
 
@@ -119,7 +117,6 @@ job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode);
 struct pbsnode *alps_reporter;
 
 
-
 /*
  * return 0 if addr is a MOM node and node is in bad state,
  * return 1 otherwise (it is not a MOM node, or it's state is OK)
@@ -151,7 +148,7 @@ int addr_ok(
     /* definitely not ok */
     status = 0;
     }
-  else if (pnode->nd_state & INUSE_DOWN)
+  else if (pnode->nd_state & INUSE_NOT_READY)
     {
     /* the node is ok if it is still talking to us */
     long chk_len = 300; 
@@ -807,6 +804,13 @@ int initialize_pbsnode(
   pnode->nd_ms_jobs         = new std::vector<std::string>();
   pnode->nd_acl             = NULL;
   pnode->nd_requestid       = new std::string();
+
+  if(hierarchy_handler.isHiearchyLoaded())
+    {
+    pnode->nd_state |= INUSE_NOHIERARCHY; //This is a dynamic add so don't allow
+                                          //the node to be used until an updated node
+                                          //list has been send to all nodes.
+    }
 
   if (!isNUMANode) //NUMA nodes don't have their own address and their name is not in DNS.
     {
@@ -3588,314 +3592,5 @@ struct pbsnode *next_host(
   } /* END next_host() */
 
 
-
-
-void *send_hierarchy_threadtask(
-
-  void *vp)
-
-  {
-  hello_info     *hi = (hello_info *)vp;
-  struct pbsnode *pnode = NULL;
-  char            log_buf[LOCAL_LOG_BUF_SIZE+1];
-  unsigned short  port;
-
-  if (hi == NULL)
-    {
-    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input pointer");
-    return(NULL);
-    }
-
-  pnode = find_nodebyid(hi->id);
-
-  if (pnode != NULL)
-    {
-    char nodename[MAXLINE];
-    snprintf(nodename, sizeof(nodename), "%s", pnode->nd_name);
-    port = pnode->nd_mom_rm_port;
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
-
-    if (send_hierarchy(nodename, port) != PBSE_NONE)
-      {
-      if (hi->num_retries < 3) /*TODO: why 3? remove magic number*/
-        {
-        hi->num_retries++;
-        hi->last_retry = time(NULL);
-        add_hello_info(&failures, hi);
-
-        /* don't let hi get free'd */
-        hi = NULL;
-        }
-      }
-    else
-      {
-      if (LOGLEVEL >= 3)
-        {
-        snprintf(log_buf, sizeof(log_buf),
-          "Successfully sent hierarchy to %s", nodename);
-        log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buf);
-        }
-      }
-    }
-
-  if (hi != NULL)
-    {
-    delete hi;
-    }
-
-  return(NULL);
-  } /* END send_hierarchy_threadtask() */
-
-
-
-
-int send_hierarchy(
-
-  char           *name,
-  unsigned short  port)
-
-  {
-  char                log_buf[LOCAL_LOG_BUF_SIZE];
-  const char        *string;
-  int                 ret = PBSE_NONE;
-  int                 sock;
-  struct addrinfo    *pAddrInfo = NULL;
-  struct sockaddr_in  sa;
-  struct tcp_chan    *chan = NULL;
-
-  if (name == NULL)
-    return(-1);
-
-  if ((ret = pbs_getaddrinfo(name,NULL,&pAddrInfo)) != PBSE_NONE)
-    {
-    return ret;
-    }
-  memcpy(&sa,pAddrInfo->ai_addr,sizeof(sa));
-
-  sa.sin_port = htons(port);
-
-  /* for now we'll only try once as this is going to be tried once each time in the loop */
-  sock = tcp_connect_sockaddr((struct sockaddr *)&sa, sizeof(sa));
-
-  if (sock < 0)
-    {
-    /* could not connect */
-    /* - quiting after 5 retries",*/
-    snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-      "Could not send mom hierarchy to host %s:%d",
-      name, port);
-    log_err(-1, __func__, log_buf);
-
-    return(-1);
-    }
-
-  add_conn(sock, ToServerDIS, ntohl(sa.sin_addr.s_addr), sa.sin_port, PBS_SOCK_INET, NULL);
-
-  if ((chan = DIS_tcp_setup(sock)) == NULL)
-    {
-    ret = PBSE_MEM_MALLOC;
-    }
-  /* write the protocol, version and command */
-  else if ((ret = is_compose(chan, IS_CLUSTER_ADDRS)) == DIS_SUCCESS)
-    {
-    std::vector<std::string> tmpHolder;
-
-    pthread_mutex_lock(&hierarchy_holder_Mutex);
-    for (unsigned int i = 0; i < hierarchy_holder.size(); i++)
-      {
-      tmpHolder.push_back(hierarchy_holder[i]);
-      }
-    pthread_mutex_unlock(&hierarchy_holder_Mutex);
-
-    for (unsigned int i = 0; i < tmpHolder.size(); i++)
-      {
-      string = tmpHolder[i].c_str();
-      if ((ret = diswst(chan, string)) != DIS_SUCCESS)
-        {
-        if (ret > 0)
-          {
-          snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-            "Could not send mom hierarchy to host %s - %s",
-            name, dis_emsg[ret]);
-          }
-        else
-          {
-          snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-            "Unknown error when sending mom hierarchy to host %s",
-            name);
-          }
-        
-        log_err(-1, __func__, log_buf);
-        
-        break;
-        }
-      }
-
-    ret = diswst(chan, IS_EOL_MESSAGE);
-
-    DIS_tcp_wflush(chan);
-    }
-
-  close_conn(sock, FALSE);
-  if (chan != NULL)
-    {
-    DIS_tcp_cleanup(chan);
-    }
-
-  return(ret);
-  } /* END send_hierarchy() */
-
-
-int needs_hello(
-  hello_container *hc,
-  char            *node_name)
-
-  {
-  int needs;
-
-  hc->lock();
-  needs = (hc->find(node_name) != NULL);
-  hc->unlock();
-
-  return(needs);
-  } /* END needs_hello */
-
-
-
-
-int add_hello(
-
-  hello_container *hc,
-  int              node_id)
-
-  {
-  int         rc = PBSE_NONE;
-  hello_info *hi = new hello_info(node_id);
-
-  hc->lock();
-
-  if (!hc->insert(hi, node_mapper.get_name(hi->id)))
-    {
-    rc = ENOMEM;
-    delete hi;
-    }
-
-  hc->unlock();
-
-  return(rc);
-  } /* END add_hello() */
-
-
-
-
-int add_hello_after(
-
-  hello_container *hc,
-  int              node_id,
-  int              index)
-
-  {
-  int         rc = PBSE_NONE;
-
-  if (hc == NULL)
-    {
-    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input container pointer");
-    return(PBSE_BAD_PARAMETER);
-    }
-
-  hello_info *hi = new hello_info(node_id);
-  hc->lock();
-
-  index++;
-  if (index > (int)hc->count())
-    index = (int)hc->count();
-
-  if (!hc->insert_at(index, hi, node_mapper.get_name(hi->id)))
-    {
-    rc = ENOMEM;
-    delete hi;
-    }
-
-  hc->unlock();
-
-  return(rc);
-  } /* END insert_thing_after() */
-
-
-
-
-int add_hello_info(
-
-  hello_container *hc,
-  hello_info      *hi)
-
-  {
-  int rc = PBSE_NONE;
-  if (hc == NULL)
-    {
-    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input container pointer");
-    return(PBSE_BAD_PARAMETER);
-    }
-  if (hi == NULL)
-    {
-    log_err(PBSE_BAD_PARAMETER, __func__, "NULL hello info pointer");
-    return(PBSE_BAD_PARAMETER);
-    }
-
-  hc->lock();
-  if (!hc->insert(hi, node_mapper.get_name(hi->id)))
-    rc = ENOMEM;
-  hc->unlock();
-
-  return(rc);
-  } /* END add_hello_info() */
-
-
-
-
-hello_info *pop_hello(
-
-  hello_container *hc)
-
-  {
-  hello_info *hi = NULL;
-  if (hc == NULL)
-    {
-    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input container pointer");
-    return(NULL);
-    }
-
-  hc->lock();
-  hi = hc->pop();
-  hc->unlock();
-
-  return(hi);
-  } /* END pop_hello() */
-
-
-
-
-int remove_hello(
-
-  hello_container *hc,
-  int              node_id)
-
-  {
-  int         rc = PBSE_NONE;
-
-  if (hc == NULL)
-    {
-    rc = PBSE_BAD_PARAMETER;
-    log_err(rc, __func__, "NULL input container pointer");
-    return(rc);
-    }
-
-  hc->lock();
-  if (!hc->remove(node_mapper.get_name(node_id)))
-    rc = THING_NOT_FOUND;
-  hc->unlock();
-
-  return(rc);
-  } /* END remove_hello() */
 
 
