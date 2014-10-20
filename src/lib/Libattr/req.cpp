@@ -27,7 +27,7 @@ req::req() : execution_slots(1), mem(0), swap(0), disk(0),
              task_count(1), socket(0), numa_chip(0),
              thread_usage_policy(ALLOW_THREADS), gpus(0), mics(0),
              pack(false), index(0), thread_usage_str("allow threads"), single_job_access(false),
-             maxtpn(0), placement_str()
+             maxtpn(0), placement_str(), nodes(0)
 
   {
   }
@@ -42,7 +42,8 @@ req::req(
                       gpus(other.gpus), mics(other.mics), pack(other.pack), index(other.index),
                       thread_usage_str(other.thread_usage_str), placement_str(other.placement_str),
                       features(other.features), single_job_access(other.single_job_access),
-                      maxtpn(other.maxtpn), gpu_mode(other.gpu_mode), req_attr(other.req_attr)
+                      maxtpn(other.maxtpn), gpu_mode(other.gpu_mode), req_attr(other.req_attr),
+                      nodes(other.nodes)
 
   {
   }
@@ -110,14 +111,12 @@ int req::set_place_value(
     this->placement_str = "place node";
 
     if (numeric_value != NULL)
-      return(PBSE_BAD_PARAMETER);
+      rc = parse_positive_integer(numeric_value, this->nodes);
     }
   else if (!strcmp(work_str, "socket"))
     {
     if (numeric_value != NULL)
-      {
       rc = parse_positive_integer(numeric_value, this->socket);
-      }
       
     this->placement_str = "place socket";
     }
@@ -132,14 +131,10 @@ int req::set_place_value(
     {
     if (numeric_value != NULL)
       {
-      if (this->execution_slots == ALL_EXECUTION_SLOTS)
-        {
-        return(PBSE_BAD_PARAMETER);
-        }
-
       int count;
       rc = parse_positive_integer(numeric_value, count);
-      if (count > this->execution_slots)
+      if ((this->execution_slots != ALL_EXECUTION_SLOTS) &&
+          (count > this->execution_slots))
         this->execution_slots = count;
       }
       
@@ -151,14 +146,10 @@ int req::set_place_value(
     {
     if (numeric_value != NULL)
       {
-      if (this->execution_slots == ALL_EXECUTION_SLOTS)
-        {
-        return(PBSE_BAD_PARAMETER);
-        }
-
       int count;
       rc = parse_positive_integer(numeric_value, count);
-      if (count > this->execution_slots)
+      if ((this->execution_slots != ALL_EXECUTION_SLOTS) &&
+          (count > this->execution_slots))
         this->execution_slots = count;
       }
       
@@ -772,6 +763,7 @@ req &req::operator =(
   this->mem = other.mem;
   this->swap = other.swap;
   this->disk = other.disk;
+  this->nodes = other.nodes;
   this->socket = other.socket;
   this->numa_chip = other.numa_chip;
   this->thread_usage_policy = other.thread_usage_policy;
@@ -844,6 +836,12 @@ void req::toString(
   if (this->disk != 0)
     {
     snprintf(buf, sizeof(buf), "      disk: %lukb\n", this->disk);
+    str += buf;
+    }
+
+  if (this->nodes != 0)
+    {
+    snprintf(buf, sizeof(buf), "      nodes: %d\n", this->nodes);
     str += buf;
     }
 
@@ -1007,6 +1005,14 @@ void req::get_values(
     snprintf(buf, sizeof(buf), "disk:%d", this->index);
     names.push_back(buf);
     snprintf(buf, sizeof(buf), "%lukb", this->disk);
+    values.push_back(buf);
+    }
+
+  if (this->nodes != 0)
+    {
+    snprintf(buf, sizeof(buf), "nodes:%d", this->index);
+    names.push_back(buf);
+    snprintf(buf, sizeof(buf), "%d", this->nodes);
     values.push_back(buf);
     }
 
@@ -1452,6 +1458,8 @@ int req::set_value(
     this->swap = strtoll(value, NULL, 10);
   else if (!strncmp(name, "disk", 4))
     this->disk = strtoll(value, NULL, 10);
+  else if (!strncmp(name, "nodes", 5))
+    this->nodes = strtol(value, NULL, 10);
   else if (!strncmp(name, "sockets", 7))
     this->socket = strtol(value, NULL, 10);
   else if (!strncmp(name, "numa_chips", 10))

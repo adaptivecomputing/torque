@@ -106,6 +106,25 @@ START_TEST(test_get_set_values)
 
   int i;
   fail_unless(parse_positive_integer("1.0", i) != PBSE_NONE);
+
+  req r3;
+  r3.set_value("task_count", "1");
+  r3.set_value("placement_type", "place node");
+  r3.set_value("nodes", "2");
+  r3.set_value("lprocs", "all");
+
+  names.clear();
+  values.clear();
+
+  r3.get_values(names, values);
+  fail_unless(names[0] == "task_count:0");
+  fail_unless(names[1] == "lprocs:0");
+  fail_unless(names[2] == "nodes:0");
+  fail_unless(names[4] == "placement_type:0", names[3].c_str());
+  fail_unless(values[0] == "1");
+  fail_unless(values[1] == "all");
+  fail_unless(values[2] == "2");
+  fail_unless(values[4] == "place node");
   }
 END_TEST
 

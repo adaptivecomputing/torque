@@ -106,6 +106,7 @@ class req
     unsigned long     mem;
     unsigned long     swap;
     unsigned long     disk;
+    int               nodes;
     int               socket;
     int               numa_chip;
     int               thread_usage_policy;
