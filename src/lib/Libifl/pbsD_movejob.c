@@ -101,8 +101,13 @@ int pbs_movejob_err(
   int                 sock;
   struct tcp_chan *chan = NULL;
 
-  if ((jobid == (char *)0) || (*jobid == '\0'))
-    return (PBSE_IVALREQ);
+  if ((c < 0) ||
+      (c >= PBS_NET_MAX_CONNECTIONS))
+    return(PBSE_IVALREQ);
+
+  if ((jobid == (char *)0) ||
+      (*jobid == '\0'))
+    return(PBSE_IVALREQ);
 
   if (destin == (char *)0)
     destin = (char *)"";
