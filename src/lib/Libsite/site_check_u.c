@@ -277,7 +277,7 @@ int site_check_user_map(
         {
         *dptr = '.';
         comparisonRc = strcasecmp(testhost, orighost);
-        /* no need to restore dptr b/c it'll be done below */
+        *dptr = '\0';
         }
       if (!comparisonRc)
         {
