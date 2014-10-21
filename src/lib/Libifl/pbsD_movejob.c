@@ -85,6 +85,7 @@
 #include "libpbs.h"
 #include "dis.h"
 #include "tcp.h" /* tcp_chan */
+#include "server_limits.h"
 
 int pbs_movejob_err(
     
