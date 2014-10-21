@@ -745,8 +745,7 @@ void parse_command_line(
           }
         else
           {
-          fprintf(stderr, "%s -t bad recovery type\n",
-                  argv[0]);
+          fprintf(stderr, "%s -t bad recovery type: '%s'\n", argv[0], optarg);
 
           exit(1);
           }
