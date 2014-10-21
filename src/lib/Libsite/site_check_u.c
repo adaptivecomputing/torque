@@ -272,7 +272,14 @@ int site_check_user_map(
       {
       testhost = submithosts->as_string[hostnum];
 
-      if (!strcasecmp(testhost, orighost))
+      int comparisonRc = strcasecmp(testhost, orighost);
+      if (comparisonRc && (dptr != NULL))
+        {
+        *dptr = '.';
+        comparisonRc = strcasecmp(testhost, orighost);
+        /* no need to restore dptr b/c it'll be done below */
+        }
+      if (!comparisonRc)
         {
         /* job submitted from host found in trusted submit host list, access allowed */
 
