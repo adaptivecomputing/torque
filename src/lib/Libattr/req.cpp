@@ -100,6 +100,8 @@ int req::set_place_value(
   char *numeric_value = NULL;
   int   rc = PBSE_NONE;
 
+  this->placement_str = value;
+
   if (equals != NULL)
     {
     *equals = '\0';
@@ -108,8 +110,6 @@ int req::set_place_value(
 
   if (!strcmp(work_str, "node"))
     {
-    this->placement_str = "place node";
-
     if (numeric_value != NULL)
       rc = parse_positive_integer(numeric_value, this->nodes);
     }
@@ -117,15 +117,11 @@ int req::set_place_value(
     {
     if (numeric_value != NULL)
       rc = parse_positive_integer(numeric_value, this->socket);
-      
-    this->placement_str = "place socket";
     }
   else if (!strcmp(work_str, "numachip"))
     {
     if (numeric_value != NULL)
       rc = parse_positive_integer(numeric_value, this->numa_chip);
-      
-    this->placement_str = "place numa";
     }
   else if (!strcmp(work_str, "core"))
     {
@@ -140,7 +136,6 @@ int req::set_place_value(
       
     this->thread_usage_policy = USE_CORES;
     this->thread_usage_str = "use cores";
-    this->placement_str = "place cores";
     }
   else if (!strcmp(work_str, "thread"))
     {
@@ -155,7 +150,6 @@ int req::set_place_value(
       
     this->thread_usage_policy = USE_THREADS;
     this->thread_usage_str = "use threads";
-    this->placement_str = "place threads";
     }
   else
     rc = PBSE_BAD_PARAMETER;
@@ -966,14 +960,14 @@ void req::get_values(
   {
   char buf[100];
 
-  snprintf(buf, sizeof(buf), "task_count:%d", this->index);
+  snprintf(buf, sizeof(buf), "task_count.%d", this->index);
   names.push_back(buf);
   snprintf(buf, sizeof(buf), "%d", this->task_count);
   values.push_back(buf);
   
   if (this->execution_slots != 0)
     {
-    snprintf(buf, sizeof(buf), "lprocs:%d", this->index);
+    snprintf(buf, sizeof(buf), "lprocs.%d", this->index);
     names.push_back(buf);
     if (this->execution_slots == ALL_EXECUTION_SLOTS)
       values.push_back("all");
@@ -986,7 +980,7 @@ void req::get_values(
 
   if (this->mem != 0)
     {
-    snprintf(buf, sizeof(buf), "memory:%d", this->index);
+    snprintf(buf, sizeof(buf), "memory.%d", this->index);
     names.push_back(buf);
     snprintf(buf, sizeof(buf), "%lukb", this->mem);
     values.push_back(buf);
@@ -994,7 +988,7 @@ void req::get_values(
 
   if (this->swap != 0)
     {
-    snprintf(buf, sizeof(buf), "swap:%d", this->index);
+    snprintf(buf, sizeof(buf), "swap.%d", this->index);
     names.push_back(buf);
     snprintf(buf, sizeof(buf), "%lukb", this->swap);
     values.push_back(buf);
@@ -1002,7 +996,7 @@ void req::get_values(
 
   if (this->disk != 0)
     {
-    snprintf(buf, sizeof(buf), "disk:%d", this->index);
+    snprintf(buf, sizeof(buf), "disk.%d", this->index);
     names.push_back(buf);
     snprintf(buf, sizeof(buf), "%lukb", this->disk);
     values.push_back(buf);
@@ -1010,7 +1004,7 @@ void req::get_values(
 
   if (this->nodes != 0)
     {
-    snprintf(buf, sizeof(buf), "nodes:%d", this->index);
+    snprintf(buf, sizeof(buf), "nodes.%d", this->index);
     names.push_back(buf);
     snprintf(buf, sizeof(buf), "%d", this->nodes);
     values.push_back(buf);
@@ -1018,7 +1012,7 @@ void req::get_values(
 
   if (this->socket != 0)
     {
-    snprintf(buf, sizeof(buf), "sockets:%d", this->index);
+    snprintf(buf, sizeof(buf), "sockets.%d", this->index);
     names.push_back(buf);
     snprintf(buf, sizeof(buf), "%d", this->socket);
     values.push_back(buf);
@@ -1026,7 +1020,7 @@ void req::get_values(
 
   if (this->numa_chip != 0)
     {
-    snprintf(buf, sizeof(buf), "numa_chips:%d", this->index);
+    snprintf(buf, sizeof(buf), "numa_chips.%d", this->index);
     names.push_back(buf);
     snprintf(buf, sizeof(buf), "%d", this->numa_chip);
     values.push_back(buf);
@@ -1034,14 +1028,14 @@ void req::get_values(
 
   if (this->gpus != 0)
     {
-    snprintf(buf, sizeof(buf), "gpus:%d", this->index);
+    snprintf(buf, sizeof(buf), "gpus.%d", this->index);
     names.push_back(buf);
     snprintf(buf, sizeof(buf), "%d", this->gpus);
     values.push_back(buf);
 
     if (this->gpu_mode.size() != 0)
       {
-      snprintf(buf, sizeof(buf), "gpu_mode:%d", this->index);
+      snprintf(buf, sizeof(buf), "gpu_mode.%d", this->index);
       names.push_back(buf);
       values.push_back(this->gpu_mode);
       }
@@ -1049,7 +1043,7 @@ void req::get_values(
 
   if (this->mics != 0)
     {
-    snprintf(buf, sizeof(buf), "mics:%d", this->index);
+    snprintf(buf, sizeof(buf), "mics.%d", this->index);
     names.push_back(buf);
     snprintf(buf, sizeof(buf), "%d", this->mics);
     values.push_back(buf);
@@ -1057,75 +1051,75 @@ void req::get_values(
 
   if (this->maxtpn != 0)
     {
-    snprintf(buf, sizeof(buf), "maxtpn:%d", this->index);
+    snprintf(buf, sizeof(buf), "maxtpn.%d", this->index);
     names.push_back(buf);
     snprintf(buf, sizeof(buf), "%d", this->maxtpn);
     values.push_back(buf);
     }
 
-  snprintf(buf, sizeof(buf), "thread_usage_policy:%d", this->index);
+  snprintf(buf, sizeof(buf), "thread_usage_policy.%d", this->index);
   names.push_back(buf);
   values.push_back(this->thread_usage_str);
 
   if (this->placement_str.size() != 0)
     {
-    snprintf(buf, sizeof(buf), "placement_type:%d", this->index);
+    snprintf(buf, sizeof(buf), "placement_type.%d", this->index);
     names.push_back(buf);
     values.push_back(this->placement_str);
     }
 
   if (this->req_attr.size() != 0)
     {
-    snprintf(buf, sizeof(buf), "reqattr:%d", this->index);
+    snprintf(buf, sizeof(buf), "reqattr.%d", this->index);
     names.push_back(buf);
     values.push_back(this->req_attr);
     }
 
   if (this->gres.size() != 0)
     {
-    snprintf(buf, sizeof(buf), "gres:%d", this->index);
+    snprintf(buf, sizeof(buf), "gres.%d", this->index);
     names.push_back(buf);
     values.push_back(this->gres);
     }
 
   if (this->os.size() != 0)
     {
-    snprintf(buf, sizeof(buf), "opsys:%d", this->index);
+    snprintf(buf, sizeof(buf), "opsys.%d", this->index);
     names.push_back(buf);
     values.push_back(this->os);
     }
 
   if (this->arch.size() != 0)
     {
-    snprintf(buf, sizeof(buf), "arch:%d", this->index);
+    snprintf(buf, sizeof(buf), "arch.%d", this->index);
     names.push_back(buf);
     values.push_back(this->arch);
     }
 
   if (this->features.size() != 0)
     {
-    snprintf(buf, sizeof(buf), "features:%d", this->index);
+    snprintf(buf, sizeof(buf), "features.%d", this->index);
     names.push_back(buf);
     values.push_back(this->features);
     }
 
   if (this->single_job_access == true)
     {
-    snprintf(buf, sizeof(buf), "single_job_access:%d", this->index);
+    snprintf(buf, sizeof(buf), "single_job_access.%d", this->index);
     names.push_back(buf);
     values.push_back("true");
     }
 
   if (this->pack == true)
     {
-    snprintf(buf, sizeof(buf), "pack:%d", this->index);
+    snprintf(buf, sizeof(buf), "pack.%d", this->index);
     names.push_back(buf);
     values.push_back("true");
     }
 
   if (this->hostlist.size() != 0)
     {
-    snprintf(buf, sizeof(buf), "hostlist:%d", this->index);
+    snprintf(buf, sizeof(buf), "hostlist.%d", this->index);
     names.push_back(buf);
     values.push_back(this->hostlist);
     }
