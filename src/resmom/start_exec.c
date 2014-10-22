@@ -6395,14 +6395,16 @@ int start_exec(
       ((mom_radix + 1) <= nodenum) &&
       (is_login_node == FALSE))
     {
-    pjob->ji_resources = (noderes *)calloc(nodenum, sizeof(noderes));
+    noderes *pNodeRes = (noderes *)calloc(nodenum, sizeof(noderes));
     
-    assert(pjob->ji_resources != NULL);
+    assert(pNodeRes);
     
-    pjob->ji_resources[0].nr_cput = 0;
-    pjob->ji_resources[0].nr_mem = 0;
-    pjob->ji_resources[0].nr_vmem = 0;
+    pNodeRes[0].nr_cput = 0;
+    pNodeRes[0].nr_mem = 0;
+    pNodeRes[0].nr_vmem = 0;
     
+    pjob->ji_resources = pNodeRes;
+
     pjob->ji_joins_sent = time(NULL);
     
     if ((ret = allocate_demux_sockets(pjob, MOTHER_SUPERIOR)) != PBSE_NONE)
