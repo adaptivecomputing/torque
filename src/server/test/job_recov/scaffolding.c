@@ -9,13 +9,230 @@
 #include "array.h" /* job_array */
 #include "mutex_mgr.hpp"
 #include "user_info.h"
+#include "qmgr.h"
 
 const char *PJobSubState[10];
 char *path_jobs;
 pthread_mutex_t *setup_save_mutex = NULL;
 int LOGLEVEL=0;
+char                   *path_jobinfo_log;
+int listener_command;
+int scheduler_sock;
+pthread_mutex_t job_log_mutex;
+pthread_mutex_t              *scheduler_sock_jobct_mutex;
+user_info_holder users;
+pthread_mutex_t        *svr_do_schedule_mutex;
+struct server server;
+pthread_mutex_t        *listener_command_mutex;
+char *path_spool;
+char *msg_daemonname = (char *)"unset";
+const char             *pbs_o_host = "PBS_O_HOST";
 
 
+
+void clear_dynamic_string(
+
+  dynamic_string *ds) /* M */
+
+  {
+  }
+
+int enqueue_threadpool_request(
+
+  void *(*func)(void *),
+  void *arg)
+
+  {
+  return(0);
+  }
+
+struct batch_request *setup_cpyfiles(
+
+  struct batch_request *preq,
+  job                  *pjob,
+  char                 *from,  /* local (to mom) name */
+  char                 *to,  /* remote (destination) name */
+  int                   direction, /* copy direction */
+  int                   tflag)  /* 1 if stdout or stderr , 2 if stage out or in*/
+  
+  {
+  return(NULL);
+  }
+
+int                     queue_rank = 0;
+
+void free_dynamic_string(
+    
+  dynamic_string *ds) /* M */
+
+  {
+  }
+
+int svr_setjobstate(
+
+  job *pjob,            /* I (modified) */
+  int  newstate,        /* I */
+  int  newsubstate,     /* I */
+  int  has_queue_mutex) /* I */
+
+  {
+  return(0);
+  }
+
+int                     svr_do_schedule;
+
+int attr_to_str(
+
+  dynamic_string   *ds,     /* O */
+  attribute_def    *at_def, /* I */
+  pbs_attribute     attr,   /* I */
+  int               XML)    /* I */
+
+  {
+  return(0);
+  }
+
+const char *PJobState[] =
+  {
+  "TRANSIT",
+  "QUEUED",
+  "HELD",
+  "WAITING",
+  "RUNNING",
+  "EXITING",
+  "COMPLETE",
+  NULL
+  };
+
+char *get_variable(
+
+  job           *pjob,     /* I */
+  const char   *variable) /* I */
+
+  {
+  return(NULL);
+  }
+
+char *prefix_std_file(
+
+  job            *pjob,
+  dynamic_string *ds,
+  int             key)
+  
+  {
+  return(NULL);
+  }
+
+
+int svr_enquejob(
+
+  job *pjob,            /* I */
+  int  has_sv_qs_mutex, /* I */
+  int  prev_job_index,  /* I */
+  bool have_reservation)
+
+  {
+  return(0);
+  }
+
+
+dynamic_string *get_dynamic_string(
+    
+  int         initial_size, /* I (-1 means default) */
+  const char *str)          /* I (optional) */
+
+  {
+  return(NULL);
+  }
+
+void set_chkpt_deflt(
+
+  job       *pjob,     /* I (modified) */
+  pbs_queue *pque)     /* Input */
+
+  {
+  }
+
+
+int safe_strncat(
+
+  char   *str,
+  const char   *to_append,
+  size_t  space_remaining)
+
+  {
+  return(0);
+  }
+
+
+char                    server_name[PBS_MAXSERVERNAME + 1]; /* host_name[:service|port] */
+
+job *svr_find_job(
+
+  char *jobid,      /* I */
+  int   get_subjob) /* I */
+  
+  {
+  return(NULL);
+  }
+
+
+char    path_checkpoint[MAXPATHLEN + 1];
+
+
+struct all_jobs          array_summary;
+struct all_jobs newjobs;
+char                   *job_log_file = NULL;
+
+
+pbs_net_t get_connectaddr(
+
+  int sock,   /* I */
+  int mutex)  /* I */
+
+  {
+  return(0);
+  }
+
+
+int append_dynamic_string(
+    
+  dynamic_string *ds,        /* M */
+  const char     *to_append) /* I */
+
+  {
+  return(0);
+  }
+
+
+extern "C"
+{
+char *pbs_default(void)
+  {
+  return(NULL);
+  }
+}
+
+job *next_job(
+
+  struct all_jobs *aj,
+  int             *iter)
+
+  {
+  return(NULL);
+  }
+
+
+char *add_std_filename(
+
+  job            *pjob,
+  char           *path,
+  int             key,
+  dynamic_string *ds)
+
+  {
+  return(NULL);
+  }
 
 ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
   {

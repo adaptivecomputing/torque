@@ -21,6 +21,7 @@ libjob_recov_la_SOURCES = scaffolding.c ${PROG_ROOT}/job_recov.c ${PROG_ROOT}/jo
 libjob_recov_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_job_recov_SOURCES = test_job_recov.c
+test_job_recov_LDADD = ../../../test/torque_test_lib/libtorque_test.la ../../../test/scaffold_fail/libscaffold_fail.la
 
 check_SCRIPTS = ${PROG_ROOT}/../test/coverage_run.sh
 
