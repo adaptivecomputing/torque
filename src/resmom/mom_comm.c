@@ -5423,7 +5423,7 @@ int handle_im_kill_job_radix_response(
   else 
     np = &pjob->ji_sisters[nodeid+1]; /* yes this is klugey but the sisters are off by one on the index */
     
-  if (pjob->ji_resources != NULL)
+  if ((pjob->ji_resources != NULL)&&(nodeid > 0))
     {
     pjob->ji_resources[nodeid - 1].nr_cput = cput;
     pjob->ji_resources[nodeid - 1].nr_mem = mem;
