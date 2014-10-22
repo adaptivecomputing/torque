@@ -6395,7 +6395,7 @@ int start_exec(
       ((mom_radix + 1) <= nodenum) &&
       (is_login_node == FALSE))
     {
-    pjob->ji_resources = (noderes *)calloc(nodenum - 1, sizeof(noderes));
+    pjob->ji_resources = (noderes *)calloc(nodenum, sizeof(noderes));
     
     assert(pjob->ji_resources != NULL);
     
