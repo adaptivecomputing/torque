@@ -582,7 +582,7 @@ bool req::has_conflicting_values(
 
   {
   if ((this->execution_slots == ALL_EXECUTION_SLOTS) &&
-      (this->placement_str != "place node"))
+      (strncmp(this->placement_str.c_str(), "node", 4)))
     {
     error = "-lprocs=all may only be used in conjunction with place=node";
     return(true);
