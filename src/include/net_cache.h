@@ -91,5 +91,6 @@ struct addrinfo    *get_cached_addrinfo_full(const char *hostname);
 char               *get_cached_fullhostname(const char *shortname, const struct sockaddr_in *sai);
 void                get_cached_fullhostname(unsigned long address, std::string &fullhostname);
 struct addrinfo    *insert_addr_name_info(struct addrinfo *pAddrInfo, const char *hostName);
+bool                overwrite_cache(const char *hostname, struct addrinfo **addr);
 
 

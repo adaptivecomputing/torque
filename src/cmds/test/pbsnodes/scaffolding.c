@@ -102,15 +102,17 @@ int MXMLCreateE(mxml_t **E, const char *Name)
   exit(1);
   }
 
+int pbs_modify_node_err(int c, int command, int objtype, char *objname, struct attropl *attrib,
+  char *extend, int *local_errno)
+  {
+  return(0);
+  }
+
 char *pbs_default(void)
   { 
   fprintf(stderr, "The call to pbs_default needs to be mocked!!\n");
   exit(1);
   }
 
-int pbs_modify_node_err(int c, int command, int objtype, char *objname, struct attropl *attrib,
-  char *extend, int *local_errno)
-  {
-  fprintf(stderr, "The call to pbs_modify_node_err needs to be mocked!!\n");
-  exit(1);
-  }
+
+

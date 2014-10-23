@@ -205,6 +205,7 @@ enum srv_atr
   SRV_ATR_nppcu,
   SRV_ATR_job_sync_timeout,
   SRV_ATR_pass_cpu_clock,
+  SRV_ATR_job_full_report_time,
 
 #include "site_svr_attr_enum.h"
   

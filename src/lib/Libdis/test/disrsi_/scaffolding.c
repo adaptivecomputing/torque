@@ -4,6 +4,7 @@
 
 char *dis_umax = NULL;
 unsigned dis_umaxd = 0;
+time_t pbs_tcp_timeout;
 
 void disiui_() {}
 

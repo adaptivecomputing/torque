@@ -9,6 +9,7 @@ test_uut
 *.gcda
 *_suite.log
 .deps
+.dirstamp
 .libs
 *.m4
 .settings
@@ -28,6 +29,7 @@ buildutils/self-extract-head-sh
 buildutils/ylwrap
 buildutils/ar-lib
 buildutils/compile
+buildutils/test-driver
 config.log
 config.status
 configure

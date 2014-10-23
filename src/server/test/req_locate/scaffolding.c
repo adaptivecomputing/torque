@@ -37,5 +37,9 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
 
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 
-mutex_mgr::mutex_mgr(pthread_mutex_t *mutex, bool is_locked) {}
+mutex_mgr::mutex_mgr(pthread_mutex_t *m, bool lock)
+  {
+  }
+
 mutex_mgr::~mutex_mgr() {}
+

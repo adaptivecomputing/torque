@@ -109,9 +109,9 @@ typedef struct node_comm_t
   } node_comm_t;
 
 
- typedef std::vector<node_comm_t *> mom_nodes;
- typedef std::vector<mom_nodes *> mom_levels;
- typedef std::vector<mom_levels *> mom_paths;
+typedef std::vector<node_comm_t> mom_nodes;
+typedef std::vector<mom_nodes> mom_levels;
+typedef std::vector<mom_levels> mom_paths;
 
 /* mom_hierarchy_t holder */
 typedef struct mom_hierarchy
@@ -119,7 +119,8 @@ typedef struct mom_hierarchy
   int              current_path;  /* index of the active path */
   int              current_level; /* index of the active level of the active path */
   int              current_node;  /* index of the active node from that path */
-  mom_paths        *paths;         /* the paths we currently have, a 3D array of std::vectors */
+  int              file_present;  /* On the server this is true if the mom_hierarchy file is present */
+  mom_paths        paths;         /* the paths we currently have, a 3D array of std::vectors */
   } mom_hierarchy_t;
 
 

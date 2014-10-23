@@ -18,6 +18,7 @@
 #include "tm_.h" /* tm_event_t */
 #include "list_link.h" /* list_link, tlist_head */
 #include "power_state.hpp"
+#include "sys_file.hpp"
 
 char *apbasil_protocol;
 char *apbasil_path;
@@ -395,8 +396,16 @@ int attr_to_str(std::string &ds, attribute_def *at_def, pbs_attribute attr, bool
   return(0);
   }
 
-power_state::power_state() {}
-void power_state::set_power_state(int power_state) {}
+void power_state::set_power_state(int power_state)
+
+  {
+  }
+
+power_state::power_state()
+
+  {
+  }
+
 bool power_state::is_valid_power_state(int power_state)
   {
   return false;

@@ -71,6 +71,10 @@ void free_dynamic_string(dynamic_string *ds)
 
 
 
+char saveBuff[1024];
+int saveBuffRdPtr = 0;
+int saveBuffEndPtr = sizeof(saveBuff);
+
 ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   {
   fprintf(stderr, "The call to read_ac_socket needs to be mocked!!\n");

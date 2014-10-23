@@ -24,7 +24,6 @@ struct server server;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 bool exit_called = false;
 
-
 struct batch_request *alloc_br(int type)
   {
   fprintf(stderr, "The call to alloc_br to be mocked!!\n");

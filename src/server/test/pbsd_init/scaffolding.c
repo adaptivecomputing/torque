@@ -102,7 +102,6 @@ threadpool_t *async_pool;
 bool exit_called = false;
 char *path_nodepowerstate;
 
-
 void on_job_rerun_task(struct work_task *ptask)
   {
   }
@@ -636,14 +635,6 @@ mom_hierarchy_t *initialize_mom_hierarchy()
 
   {
   mom_hierarchy_t *nt = (mom_hierarchy_t *)calloc(1, sizeof(mom_hierarchy_t));
-  nt->paths = new mom_paths();
-
-  if (nt->paths == NULL)
-    {
-    free(nt);
-    nt = NULL;
-    return(nt);
-    }
 
   nt->current_path  = -1;
   nt->current_level = -1;
@@ -654,7 +645,8 @@ mom_hierarchy_t *initialize_mom_hierarchy()
 
 void parse_mom_hierarchy(int fds)
   {
-  mh->paths->push_back(new mom_levels());
+  mom_levels lv;
+  mh->paths.push_back(lv);
   }
 
 id_map::id_map() {}
@@ -665,3 +657,4 @@ int id_map::get_new_id(const char *name)
   }
 
 void rel_resc(job *pjob) {}
+

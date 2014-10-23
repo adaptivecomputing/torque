@@ -88,8 +88,9 @@ int                  B_opt;
 int                  Q_opt;
 int                  t_opt;
 int                  E_opt;
- 
-const char          *ExtendOpt = NULL;
+
+std::string          ExtendOpt;
+bool                 condensed = false;
 struct attropl      *p_atropl = 0;
 struct attrl        *attrib = NULL;
 char                 user[MAXPATHLEN];
@@ -2379,7 +2380,7 @@ int process_commandline_opts(
   int rc = PBSE_NONE;
 
 #if !defined(PBS_NO_POSIX_VIOLATION)
-#define GETOPT_ARGS "aceE:filn1qrstu:xGMQRBW:-:"
+#define GETOPT_ARGS "acCeE:filn1qrstu:xGMQRBW:-:"
 #else
 #define GETOPT_ARGS "flQBW:"
 #endif /* PBS_NO_POSIX_VIOLATION */
@@ -2423,6 +2424,12 @@ int process_commandline_opts(
       case 'c':
 
         do_not_display_complete = true;
+        break;
+
+      case 'C':
+
+        condensed = true;
+
         break;
 
       case 'e':
@@ -2913,7 +2920,7 @@ int run_job_mode(
                    connect,
                    job_id_out,
                    attrib,
-                   exec_only ? (char *)EXECQUEONLY : (char *)ExtendOpt,
+                   exec_only ? (char *)EXECQUEONLY : (char *)ExtendOpt.c_str(),
                    &any_failed);
       }
     else
@@ -3304,6 +3311,9 @@ int main(
     {
     ExtendOpt = summarize_arrays_extend_opt;
     }
+
+  if (condensed == true)
+    ExtendOpt += "C";
 
   def_server = pbs_default();
 

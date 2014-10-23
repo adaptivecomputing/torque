@@ -3055,6 +3055,8 @@ int tcp_read_proto_version(
 
   }
 
+
+
 int do_tcp(
     
   int                 socket,
@@ -3134,7 +3136,7 @@ int do_tcp(
 
     case IS_PROTOCOL:
 
-      mom_is_request(chan,version,NULL);
+      mom_is_request(chan,version,NULL,pSockAddr);
 
       break;
 
@@ -4334,26 +4336,26 @@ bool verify_mom_hierarchy()
   int              path_index = 0;
   bool             legitimate_hierarchy = false;
 
-  for(mom_paths::iterator paths_iter = mh->paths->begin();paths_iter != mh->paths->end();paths_iter++)
+  for (unsigned int i = 0; i < mh->paths.size(); i++)
     {
-    mom_levels      *levels = *paths_iter;
+    mom_levels      &levels = mh->paths[i];
     int              level_index = 0;
     bool             continue_on_path = true;
     bool             legitimate_path = false;
 
-    for(mom_levels::iterator levels_iter = levels->begin();levels_iter != levels->end();levels_iter++)
+    for (unsigned int j = 0; j < levels.size(); j++)
       {
-      mom_nodes       *nodes = *levels_iter;
+      mom_nodes       &nodes = levels[j];
 
-      for(mom_nodes::iterator nodes_iter = nodes->begin();nodes_iter != nodes->end();nodes_iter++)
+      for (unsigned int k = 0; k < nodes.size(); k++)
         {
-        node_comm_t *nc = *nodes_iter;
-        if (!strcmp(nc->name, mom_alias))
+        node_comm_t &nc = nodes[k];
+        if (!strcmp(nc.name, mom_alias))
           continue_on_path = false;
         else
           {
-          unsigned short rm_port = ntohs(nc->sock_addr.sin_port);
-          unsigned long  ipaddr = ntohl(nc->sock_addr.sin_addr.s_addr);
+          unsigned short rm_port = ntohs(nc.sock_addr.sin_port);
+          unsigned long  ipaddr = ntohl(nc.sock_addr.sin_addr.s_addr);
           okclients = AVL_insert(ipaddr, rm_port, NULL, okclients);
           }
             
@@ -4362,16 +4364,16 @@ bool verify_mom_hierarchy()
       
       if (continue_on_path == true)
         {
-        for(mom_nodes::iterator nodes_iter = nodes->begin();nodes_iter != nodes->end();nodes_iter++)
+        for (unsigned int k = 0; k < nodes.size(); k++)
           {
-          node_comm_t *nc = *nodes_iter;
+          node_comm_t &nc = nodes[k];
           struct addrinfo *addr_info;
-          if (pbs_getaddrinfo(nc->name, NULL, &addr_info) == 0)
+          if (pbs_getaddrinfo(nc.name, NULL, &addr_info) == 0)
             {
             add_network_entry(tmp_hierarchy,
-                              nc->name,
+                              nc.name,
                               addr_info,
-                              ntohs(nc->sock_addr.sin_port),
+                              ntohs(nc.sock_addr.sin_port),
                               path_index,
                               level_index);
 
@@ -5739,7 +5741,23 @@ void check_jobs_in_mom_wait()
   } /* END check_jobs_in_mom_wait() */
 
 
+//If we have a job that's exiting we should call scan for exiting.
+bool call_scan_for_exiting()
+  {
+  if(exiting_tasks) return true;
 
+  job          *nextjob;
+  job          *pjob;
+
+  //NOTE: May want to put some kind of timeout so we only call this once in a while.
+  for (pjob = (job *)GET_NEXT(svr_alljobs); pjob != NULL; pjob = nextjob)
+    {
+    nextjob = (job *)GET_NEXT(pjob->ji_alljobs);
+    //if (is_job_state_exiting(pjob) == false) Not using this call because it has some side effects. This function is just checking.
+    if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXITING) return true;
+    }
+  return false;
+  }
 
 void check_exiting_jobs()
 
@@ -5985,7 +6003,8 @@ void main_loop(void)
 
     check_jobs_in_obit();
 
-    if (exiting_tasks)
+
+    if (call_scan_for_exiting())
       scan_for_exiting();
 
     check_exiting_jobs();

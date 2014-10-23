@@ -1185,7 +1185,10 @@ int svr_setjobstate(
       }
     }    /* END if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRANSICM) */
 
-  set_jobstate_basic(*pjob,  newstate,  newsubstate);
+  set_jobstate_basic(*pjob, newstate, newsubstate);
+
+  if (changed == true)
+    pjob->ji_mod_time = time_now;
 
   /* update the job file */
   if (pjob->ji_modified)

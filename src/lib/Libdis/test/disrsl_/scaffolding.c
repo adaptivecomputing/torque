@@ -15,7 +15,7 @@ int tcp_gets(tcp_chan *chan, char *str, size_t ct, unsigned int timeout)
   }
 
 int tcp_getc(tcp_chan *chan, unsigned int timeout)
-  {
+  { 
   fprintf(stderr, "The call to tcp_getc needs to be mocked!!\n");
   exit(1);
   }

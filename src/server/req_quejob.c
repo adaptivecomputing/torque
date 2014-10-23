@@ -660,6 +660,8 @@ job *create_and_initialize_job_structure(
   pj->ji_qs.ji_svrflags = created_here;
   pj->ji_qs.ji_un_type  = JOB_UNION_TYPE_NEW;
   pj->ji_wattr[JOB_ATR_mailpnts].at_val.at_str = NULL;
+  // flag this new job as recently modified
+  pj->ji_mod_time = time(NULL);
 
   return(pj);
   } /* END create_and_initialize_job_structure() */

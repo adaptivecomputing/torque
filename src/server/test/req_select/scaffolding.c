@@ -21,7 +21,6 @@ struct server server;
 all_jobs array_summary;
 bool exit_called = false;
 
-
 pbs_queue *find_queuebyname(const char *quename)
   {
   fprintf(stderr, "The call to find_queuebyname to be mocked!!\n");

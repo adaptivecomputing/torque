@@ -21,6 +21,10 @@ void read_mom_hierarchy();
 int  parse_integer_range(const char *range_str, int &start, int &end);
 time_t calculate_select_timeout();
 
+extern int  exiting_tasks;
+
+bool call_scan_for_exiting();
+extern tlist_head svr_alljobs;
 
 START_TEST(test_read_mom_hierarchy)
   {
@@ -37,6 +41,44 @@ START_TEST(test_read_mom_hierarchy)
   }
 END_TEST
 
+START_TEST(test_call_scan_for_exiting)
+  {
+  exiting_tasks = true;
+
+  fail_unless(call_scan_for_exiting() == true);
+
+  exiting_tasks = false;
+
+  job job1;
+  job job2;
+  job job3;
+
+  memset(&job1,0,sizeof(job1));
+  memset(&job2,0,sizeof(job2));
+  memset(&job3,0,sizeof(job3));
+  svr_alljobs.ll_prior = &job3.ji_alljobs;
+  svr_alljobs.ll_next = &job1.ji_alljobs;
+  svr_alljobs.ll_struct = NULL;
+
+  job1.ji_alljobs.ll_prior = &svr_alljobs;
+  job1.ji_alljobs.ll_next = &job2.ji_alljobs;
+  job1.ji_alljobs.ll_struct = &job1;
+
+  job2.ji_alljobs.ll_prior = &job1.ji_alljobs;
+  job2.ji_alljobs.ll_next = &job3.ji_alljobs;
+  job2.ji_alljobs.ll_struct = &job2;
+
+  job3.ji_alljobs.ll_prior = &job2.ji_alljobs;
+  job3.ji_alljobs.ll_next = &svr_alljobs;
+  job3.ji_alljobs.ll_struct = &job3;
+
+  fail_unless(call_scan_for_exiting() == false);
+
+  job2.ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+
+  fail_unless(call_scan_for_exiting() == true);
+  }
+END_TEST
 
 START_TEST(test_parse_integer_range)
   {
@@ -192,6 +234,10 @@ Suite *mom_main_suite(void)
 
   tc_core = tcase_create("calculate_select_timeout_test");
   tcase_add_test(tc_core, calculate_select_timeout_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_call_scan_for_exiting");
+  tcase_add_test(tc_core, test_call_scan_for_exiting);
   suite_add_tcase(s, tc_core);
 
   return s;

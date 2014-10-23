@@ -11,6 +11,7 @@
 #include "pbs_nodes.h"
 #include "pbs_job.h"
 #include "u_tree.h"
+#include "id_map.hpp"
 
 #include "id_map.hpp"
 
@@ -33,8 +34,6 @@ const char *dis_emsg[] =
   "End of File",
   "Invalid condition in code"
   };
-id_map job_mapper;
-bool exit_called = false;
 
 attribute_def node_attr_def[1];
 
@@ -45,6 +44,8 @@ void log_event(int eventtype, int objclass, const char *objname, const char *tex
 void log_err(int errnum, const char *routine, const char *text) {}
 void close_conn(int sd, int has_mutex) {}
 hello_container         hellos;
+id_map job_mapper;
+bool exit_called = false;
 
 char *threadsafe_tokenizer(
 
@@ -179,7 +180,7 @@ struct prop *init_prop(
 int is_job_on_node(
 
   struct pbsnode *pnode, /* I */
-  char           *jobid) /* I */
+  int             jobid) /* I */
 
   {
   return(0);
@@ -286,17 +287,20 @@ int node_gpustatus_list(
 
 void clear_nvidia_gpus(struct pbsnode *np) {}
 
-id_map::id_map() {}
-id_map::~id_map()
+int id_map::get_id(
+
+  const char *name)
+
+  {
+  return(0);
+  }
+
+void write_node_power_state(void)
   {
   }
-int id_map::get_id(const char *name) {
-  return 0;
-}
 
-void write_node_power_state(void) {}
 
-int is_job_on_node(struct pbsnode *pnode, int internal_job_id)
-  {
-  return 0;
-  }
+id_map::id_map(){}
+
+id_map::~id_map(){}
+
