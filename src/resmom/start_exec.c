@@ -6430,6 +6430,14 @@ int start_exec(
     if ((ret = allocate_demux_sockets(pjob, MOTHER_SUPERIOR)) != PBSE_NONE)
       return(ret);
 
+    if (LOGLEVEL >= 7)
+      {
+      sprintf(log_buffer, "allocate_demux_sockets succeeded at line %d\n",
+          __LINE__);
+
+      log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+      }
+
     CLEAR_HEAD(phead);
     
     pattr = pjob->ji_wattr;
@@ -6543,6 +6551,13 @@ int start_exec(
       /* can't gather stdout/err for the job - FAIL */
       return(ret);
       }
+    if (LOGLEVEL >= 7)
+      {
+      sprintf(log_buffer, "allocate_demux_sockets succeeded at line %d\n",
+          __LINE__);
+
+      log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+      }
     
     CLEAR_HEAD(phead);
     
@@ -6561,6 +6576,13 @@ int start_exec(
     
     attrl_fixlink(&phead);
     
+    if (LOGLEVEL >= 7)
+      {
+      sprintf(log_buffer, "Sending join job to sisters succeeded at line %d\n",
+          __LINE__);
+
+      log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+      }
     if ((ret = send_join_job_to_sisters(pjob, nodenum, phead)) != DIS_SUCCESS)
       {
       /* couldn't contact all of the sisters, we've already bailed */
