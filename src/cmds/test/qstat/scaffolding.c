@@ -382,9 +382,8 @@ void set_attr(
   }
 
 char *pbs_strerror(int err)
-  { 
-  fprintf(stderr, "The call to pbs_strerror needs to be mocked!!\n");
-  return(PBSE_NONE);
+  {
+  return (char *)"This is a mocked error message.";
   }
 #ifdef __cplusplus
 }

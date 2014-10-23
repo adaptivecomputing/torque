@@ -363,6 +363,12 @@
 #define ATTR_NODE_available_threads "available_threads"
 #endif
 
+#define ATTR_job_full_report_time     "job_full_report_time"
+/* additional node "attributes" names */
+
+#define ATTR_NODE_ttl              "TTL"
+#define ATTR_NODE_acl              "acl"
+#define ATTR_NODE_requestid        "requestid"
 
 /* notification email formating */
 #define ATTR_mailsubjectfmt "mail_subject_fmt"

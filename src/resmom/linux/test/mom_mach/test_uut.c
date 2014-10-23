@@ -9,8 +9,26 @@
 
 extern node_frequency nd_frequency;
 
-START_TEST(test_one)
+void skip_space_delimited_values(int number_to_skip, char **str_to_advance);
+
+START_TEST(test_skip_space_delimited_values)
   {
+  char *str = strdup("a b c d e f g h i j k l");
+
+  skip_space_delimited_values(1, &str);
+  fail_unless(*str == 'b');
+
+  skip_space_delimited_values(1, &str);
+  fail_unless(*str == 'c');
+
+  skip_space_delimited_values(1, &str);
+  fail_unless(*str == 'd');
+
+  skip_space_delimited_values(5, &str);
+  fail_unless(*str == 'i');
+
+  skip_space_delimited_values(5, &str);
+  fail_unless(str == NULL);
   }
 END_TEST
 
@@ -22,8 +40,8 @@ END_TEST
 Suite *mom_mach_suite(void)
   {
   Suite *s = suite_create("mom_mach_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_skip_space_delimited_values");
+  tcase_add_test(tc_core, test_skip_space_delimited_values);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");

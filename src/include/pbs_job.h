@@ -121,6 +121,7 @@ struct job_array;
 #endif
 
 #define JOB_REPORTED_POLL_TIMEOUT 300
+#define JOB_CONDENSED_TIMEOUT     45
 
 /*
  * The depend_job structure is used to record the name and location
@@ -685,6 +686,7 @@ struct job
   pthread_mutex_t  *ji_mutex;
   char              ji_being_recycled;
   time_t            ji_last_reported_time;
+  time_t            ji_mod_time;       // the timestamp of when the state last changed
 #endif/* PBS_MOM */   /* END SERVER ONLY */
   int               ji_commit_done;   /* req_commit has completed. If in routing queue job can now be routed */
 

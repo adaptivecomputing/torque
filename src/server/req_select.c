@@ -114,7 +114,7 @@
 
 /* Extenal functions called */
 
-extern int   status_job(job *, struct batch_request *, svrattrl *, tlist_head *, int *);
+extern int   status_job(job *, struct batch_request *, svrattrl *, tlist_head *, bool, int *);
 extern int   svr_authorize_jobreq(struct batch_request *, job *);
 
 
@@ -512,7 +512,7 @@ static void sel_step3(
           {
           /* Select-Status */
 
-          rc = status_job(pjob, preq, pal, &preply->brp_un.brp_status, &bad);
+          rc = status_job(pjob, preq, pal, &preply->brp_un.brp_status, false, &bad);
 
           if (rc && (rc != PBSE_PERM))
             {

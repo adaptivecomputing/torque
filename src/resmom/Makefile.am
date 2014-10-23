@@ -8,12 +8,16 @@ DIST_SUBDIRS = aix4 aix5 cygwin darwin digitalunix freebsd freebsd5 fujitsu \
 	unicos8 unicosmk2
 
 CLEANFILES = *.gcda *.gcno *.gcov
-CLEANFILES += @PBS_MACH@/*.gcda @PBS_MACH@/*.gcno @PBS_MACH@/*.gcov
 
 include_HEADERS = catch_child.h checkpoint.h mom_comm.h mom_main.h mom_process_request.h \
 									mom_server_lib.h mom_job_func.h 
 
-AM_CFLAGS = `xml2-config --cflags`
+AM_CFLAGS = -I$(top_srcdir)/src/resmom/@PBS_MACH@ -DPBS_MOM \
+	       -DDEMUX=\"$(program_prefix)$(DEMUX_PATH)$(program_suffix)\" \
+	       -DRCP_PATH=\"$(program_prefix)$(RCP_PATH)$(program_suffix)\" \
+	       -DRCP_ARGS=\"$(RCP_ARGS)\" \
+	       -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" -DPBS_ENVIRON=\"$(PBS_ENVIRON)\" \
+	       `xml2-config --cflags`
 AM_LIBS   = `xml2-config --libs`
 
 AM_CPPFLAGS += -I$(top_srcdir)/src/resmom/@PBS_MACH@ -DPBS_MOM \

@@ -383,6 +383,7 @@ int  decode_size(pbs_attribute *patr, const char *name, const char *rn, const ch
 int  decode_str(pbs_attribute *patr, const char *name, const char *rn, const char *val, int);
 int  decode_time(pbs_attribute *patr, const char *name, const char *rn, const char *val, int);
 int  decode_arst(pbs_attribute *patr, const char *name, const char *rn, const char *val, int);
+int  decode_acl_arst(pbs_attribute *patr, const char *name, const char *rn, const char *val, int);
 int  decode_arst_direct(pbs_attribute *patr, const char *val);
 int  decode_arst_merge(pbs_attribute *,const char *,const char *,const char *);
 int  decode_resc(pbs_attribute *patr, const char *name, const char *rn, const char *val, int);
@@ -440,6 +441,7 @@ int set_ll(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
 int set_size(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
 int set_str(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
 int set_arst(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+int set_acl_arst(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
 int set_resc(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
 int set_hostacl(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
 int set_uacl(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
@@ -501,6 +503,7 @@ int      encode_jobs(pbs_attribute*, tlist_head*, const char*, const char*, int,
 int      encode_ntype(pbs_attribute*, tlist_head*, const char*, const char*, int, int);
 int      decode_state(pbs_attribute*, const char*, const char*, const char*, int);
 int      decode_power_state(pbs_attribute*, const char*, const char*, const char*, int);
+int      decode_utc(pbs_attribute*, const char*, const char*, const char*, int);
 int      decode_props(pbs_attribute*, const char*, const char*, const char*, int);
 int      decode_ntype(pbs_attribute*, const char*, const char*, const char*, int);
 int      decode_null(pbs_attribute*, const char*, const char*, const char*, int);
@@ -513,6 +516,9 @@ int      set_node_props(pbs_attribute*, pbs_attribute*, enum batch_op);
 int      set_null(pbs_attribute*, pbs_attribute*, enum batch_op);
 int      node_state(pbs_attribute*, void*, int);
 int      node_power_state(pbs_attribute*, void*, int);
+int      node_ttl(pbs_attribute*, void*, int);
+int      node_acl(pbs_attribute*, void*, int);
+int      node_requestid(pbs_attribute*, void*, int);
 int      node_np_action(pbs_attribute*, void*, int);
 int      node_mom_port_action(pbs_attribute*, void*, int);
 int      node_mom_rm_port_action(pbs_attribute*, void*, int);
@@ -540,7 +546,6 @@ int      node_available_socket_action(pbs_attribute *new_attr, void *pobj, int a
 int      node_available_chip_action(pbs_attribute *new_attr, void *pobj, int actmode);
 int      node_available_core_action(pbs_attribute *new_attr, void *pobj, int actmode);
 int      node_available_thread_action(pbs_attribute *new_attr, void *pobj, int actmode);
-
 
 /* Token manipulation functions */
 

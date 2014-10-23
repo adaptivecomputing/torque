@@ -317,6 +317,25 @@ int decode_arst(
   }  /* END decode_arst() */
 
 
+int decode_acl_arst(
+
+    pbs_attribute *patr,    /* O (modified) */
+    const char   *name,    /* I pbs_attribute name (notused) */
+    const char *rescn,   /* I resource name (notused) */
+    const char    *val,     /* I pbs_attribute value */
+    int            perm) /* only used for resources */
+
+  {
+  if ((val == NULL) || (strlen(val) == 0))
+    {
+    free_arst(patr);
+
+    patr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+
+    return(0);
+    }
+  return decode_arst(patr,name,rescn,val,perm);
+  }
 
 
 
@@ -916,9 +935,44 @@ int set_arst(
   return(0);
   }  /* END set_arst() */
 
+//Allow for empty arst on input and output.
 
+int set_acl_arst(
 
+  pbs_attribute *attr,  /* I/O */
+  pbs_attribute *new_attr,   /* I */
+  enum batch_op     op)    /* I */
 
+  {
+
+  struct array_strings *newpas = NULL;
+
+  assert(attr && new_attr && (new_attr->at_flags & ATR_VFLAG_SET));
+
+  newpas = new_attr->at_val.at_arst;
+
+  //Empty input so empty the output.
+  if (newpas == NULL)
+    {
+    if(op == SET)
+      {
+      free_arst(attr);
+      attr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+      }
+    return(PBSE_NONE);
+    }
+  int rc = set_arst(attr,new_attr,op);
+  if(rc != PBSE_NONE)
+    {
+    return(rc);
+    }
+  if(attr->at_val.at_arst->as_usedptr == 0)
+    {
+    free_arst(attr);
+    attr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+    }
+  return(PBSE_NONE);
+  }
 
 /*
  * comp_arst - compare two attributes of type ATR_TYPE_ARST
