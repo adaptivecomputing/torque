@@ -1,4 +1,7 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
+5.0.0.h3
+  c - TRQ-2928. Fixed crash.
+
 5.0.0.h2
   f - TRQ-2916. Gather and report Cray energy consumption information.
   b - TRQ-2918. Fixed problem with remote client job submission during ruserok() calls.
