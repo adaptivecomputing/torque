@@ -179,8 +179,8 @@ struct jobinfo
 
 typedef struct alps_req_data
   {
-  std::string     node_list;
-  int             ppn;
+  std::string *node_list;
+  int          ppn;
   } alps_req_data;
 
 typedef struct single_spec_data
