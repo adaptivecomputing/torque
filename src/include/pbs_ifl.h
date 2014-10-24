@@ -332,6 +332,7 @@
 #define ATTR_automaticrequeueexitcode "automatic_requeue_exit_code"
 #define ATTR_jobsynctimeout           "job_sync_timeout"
 #define ATTR_pass_cpu_clock           "pass_cpu_clock"
+#define ATTR_job_full_report_time     "job_full_report_time"
 /* additional node "attributes" names */
 
 #define ATTR_NODE_state            "state"
