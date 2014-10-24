@@ -10,7 +10,7 @@ DIST_SUBDIRS = aix4 aix5 cygwin darwin digitalunix freebsd freebsd5 fujitsu \
 CLEANFILES = *.gcda *.gcno *.gcov
 
 include_HEADERS = catch_child.h checkpoint.h mom_comm.h mom_main.h mom_process_request.h \
-									mom_server_lib.h mom_job_func.h
+		mom_server_lib.h mom_job_func.h cray_energy.h
 
 AM_CFLAGS = -I$(top_srcdir)/src/resmom/@PBS_MACH@ -DPBS_MOM \
 	       -DDEMUX=\"$(program_prefix)$(DEMUX_PATH)$(program_suffix)\" \
