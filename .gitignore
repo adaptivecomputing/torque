@@ -377,6 +377,7 @@ src/resmom/test/catch_child/test_post_epilogue
 src/resmom/test/catch_child/test_preobit_reply
 src/resmom/test/catch_child/test_scan_for_exiting
 src/resmom/test/checkpoint/test_checkpoint
+src/resmom/test/cray_energy/test_cray_energy
 src/resmom/test/generate_alps_status/test_generate_alps_status
 src/resmom/test/mom_comm/test_mom_comm
 src/resmom/test/mom_inter/test_mom_inter
