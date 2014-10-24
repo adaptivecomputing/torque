@@ -1168,6 +1168,10 @@ int node_state(
 
     case ATR_ACTION_ALTER:
 
+      if(np->nd_state & INUSE_NOHIERARCHY) //Can't change the state until the hierarchy is sent.
+        {
+        return PBSE_HIERARCHY_NOT_SENT;
+        }
       np->nd_state = new_attr->at_val.at_short;
 
       break;
