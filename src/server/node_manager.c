@@ -2754,7 +2754,7 @@ void record_fitting_node(
 
   int                 &num,
   struct pbsnode      *pnode,
-  node_job_add_info   *naji,
+  node_job_add_info   *naji,           /* O (optional) */
   single_spec_data    *req,
   int                  first_node_id,
   int                  i,
@@ -2781,10 +2781,10 @@ void record_fitting_node(
         (ard_array != NULL) &&
         (*ard_array != NULL))
       {
-      if ((*ard_array)[req->req_id].node_list.length() != 0)
-        (*ard_array)[req->req_id].node_list += ',';
+      if ((*ard_array)[req->req_id].node_list->length() != 0)
+        (*ard_array)[req->req_id].node_list->append(",");
 
-      (*ard_array)[req->req_id].node_list += pnode->nd_name;
+      (*ard_array)[req->req_id].node_list->append(pnode->nd_name);
 
       if (req->ppn > (*ard_array)[req->req_id].ppn)
         (*ard_array)[req->req_id].ppn = req->ppn;
@@ -3004,6 +3004,23 @@ bool process_as_node_list(
  
   return(false);
   } /* process_as_node_list() */
+
+
+int initialize_alps_req_data(
+
+  alps_req_data **ard_array,
+  int             num_reqs)
+
+  {
+  alps_req_data *ard = (alps_req_data *)calloc(num_reqs, sizeof(alps_req_data));
+  
+  for (int i = 0; i < num_reqs; i++)
+    ard[i].node_list = new std::string();
+
+  *ard_array = ard;
+
+  return(PBSE_NONE);
+  } // initialize_alps_req_data()
 
 
 
@@ -3286,12 +3303,8 @@ int node_spec(
         (ard_array != NULL) &&
         (job_type == JOB_TYPE_cray))
       {
-      *ard_array = (alps_req_data *)calloc(num_alps_reqs + 1, sizeof(alps_req_data));
-      
-      for (i = 0; i <= num_alps_reqs; i++)
-        (*ard_array)[i].node_list = "";
-
       *num_reqs = num_alps_reqs + 1;
+      initialize_alps_req_data(ard_array, *num_reqs);
       }
     }
 
@@ -4511,11 +4524,23 @@ void free_alps_req_data_array(
   int            num_reqs)
 
   {
+  for (int i = 0; i < num_reqs; i++)
+    delete ard_array[i].node_list;
+
   free(ard_array);
   } /* END free_alps_req_data_array() */
 
 
 
+/*
+ * add_multi_reqs_to_job() -- for Cray
+ *
+ * Looks at ard_array and adds the multi-req information to the job.
+ * @param pjob - the job we should add the multi-req information to.
+ * @param num_reqs - the number of multi-reqs
+ * @param ard_array - the array holding the alps req data
+ * @return PBSE_NONE if there is no data or it is added correctly
+ */
 
 int add_multi_reqs_to_job(
     
@@ -4524,31 +4549,30 @@ int add_multi_reqs_to_job(
   alps_req_data *ard_array)
 
   {
-  int             i;
-  std::string     *attr_str;
+  std::string     attr_str;
   char            buf[MAXLINE];
 
   if (ard_array == NULL)
     return(PBSE_NONE);
 
-  attr_str = &ard_array[0].node_list;
+  attr_str = *ard_array[0].node_list;
 
-  for (i = 0; i < num_reqs; i++)
+  for (int i = 0; i < num_reqs; i++)
     {
     if (i != 0)
       {
-      *attr_str += '|';
-      *attr_str += ard_array[i].node_list.c_str();
+      attr_str += '|';
+      attr_str += ard_array[i].node_list->c_str();
       }
 
     snprintf(buf, sizeof(buf), "*%d", ard_array[i].ppn);
-    *attr_str += buf;
+    attr_str += buf;
     }
 
   if (pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str != NULL)
     free(pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str);
 
-  pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str = strdup(attr_str->c_str());
+  pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str = strdup(attr_str.c_str());
   pjob->ji_wattr[JOB_ATR_multi_req_alps].at_flags |= ATR_VFLAG_SET;
 
   return(PBSE_NONE);
