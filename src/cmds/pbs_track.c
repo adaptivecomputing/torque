@@ -160,6 +160,8 @@ int main(
                 pbse_to_txt(rc),
                 rc);
 
+        break;
+
       default:
 
         /* Unexpected error occurred */

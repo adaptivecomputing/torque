@@ -811,6 +811,13 @@ void send_svr_disconnect(int sock, const char *user_name)
   }
 
 
+
+/*
+ * authorize_socket()
+ *
+ *
+ */
+
 int authorize_socket(
 
   int          local_socket,
@@ -851,6 +858,12 @@ int authorize_socket(
 
   if ((rc = parse_request_client(local_socket, &server_name, &server_port, &auth_type, &user_name, &user_pid, &user_sock)) != PBSE_NONE)
     {
+    if (server_name != NULL)
+      free(server_name);
+
+    if (user_name != NULL)
+      free(user_name);
+
     return(rc);
     }
   else
@@ -1090,7 +1103,7 @@ void *process_svr_conn(
       snprintf(msg_buf, sizeof(msg_buf),
         "User %s at IP:port %s:%d login attempt failed --no message", 
           (user_name) ? user_name : "null",
-          (server_name) ? server_name : "null", server_port);
+          server_name, server_port);
       }
     else
       {

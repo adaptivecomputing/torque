@@ -1901,8 +1901,6 @@ void mgr_node_set(
 
 
 
-
-
 /*
  * mgr_node_delete - mark a node (or all nodes) in the server's node list
  *                   as being "deleted".  It (they) will no longer get

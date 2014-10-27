@@ -129,8 +129,6 @@ static const char *svr_state_names[] =
 
 
 
-
-
 /*
  * encode_svrstate - encode the current server state from the internal
  * integer to a state name string.

@@ -916,7 +916,7 @@ int main(
         }
       else
         {
-        nodeargs = (char **)calloc(2, sizeof(char **));
+        nodeargs = (char **)calloc(2, sizeof(char *));
         nodeargs[0] = strdup("");
         nodeargs[1] = '\0';
         }

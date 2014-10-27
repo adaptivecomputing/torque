@@ -907,15 +907,12 @@ void gen_macaddr(
   {
   static std::string mac_addr;
 
-  if(mac_addr.length() == 0)
+  if (mac_addr.length() == 0)
     {
-    char buff[500];
-    if(gethostname(buff,sizeof(buff)))
-      {
-      return;
-      }
+    char             buff[500];
     struct addrinfo *pAddr = NULL;
-    if(getaddrinfo(buff,NULL,NULL,&pAddr))
+
+    if (pbs_getaddrinfo(mom_host, NULL,&pAddr) != 0)
       {
       return;
       }
@@ -927,25 +924,25 @@ void gen_macaddr(
       }
 
     char *macAddr = NULL;
-    while(fgets(buff,sizeof(buff),pPipe) != NULL)
+    while (fgets(buff,sizeof(buff),pPipe) != NULL)
       {
       char *tok = strtok(buff," ");
-      if(!strcmp(tok,"link/ether"))
+      if (!strcmp(tok,"link/ether"))
         {
         tok = strtok(NULL," ");
-        if(strlen(tok) != 0)
+        if (strlen(tok) != 0)
           {
-          if(macAddr != NULL) free(macAddr);
+          if (macAddr != NULL) free(macAddr);
           macAddr = strdup(tok);
           }
         }
-      else if(!strcmp(tok,"inet"))
+      else if (!strcmp(tok,"inet"))
         {
         tok = strtok(NULL," ");
         char *iaddr = strdup(tok);
-        for(char *ind = iaddr;*ind;ind++)
+        for (char *ind = iaddr;*ind;ind++)
           {
-          if(*ind == '/')
+          if (*ind == '/')
             {
             *ind = '\0';
             break;
@@ -954,7 +951,7 @@ void gen_macaddr(
         in_addr_t in_addr = inet_addr(iaddr);
         free(iaddr);
         struct addrinfo *pAddrInd = pAddr;
-        while((pAddrInd != NULL)&&(macAddr != NULL))
+        while ((pAddrInd != NULL)&&(macAddr != NULL))
           {
           struct in_addr   saddr;
           saddr = ((struct sockaddr_in *)pAddrInd->ai_addr)->sin_addr;
@@ -2225,6 +2222,9 @@ int process_level_string(
   char *host_tok;
   int   rc = PBSE_NONE;
   int   temp_rc;
+
+  if (path < 0)
+    return(path);
 
   if (am_i_on_this_level(str) == TRUE)
     *path_complete = TRUE;

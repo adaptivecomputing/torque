@@ -8377,7 +8377,7 @@ void fork_demux(
   close(pjob->ji_im_stdout);
 
   im_mom_stderr = dup(pjob->ji_im_stderr);
-  if (im_mom_stdout == -1)
+  if (im_mom_stderr == -1)
     {
     fprintf(stderr, "could not dup stdout in fork_demux");
     free(routem);
