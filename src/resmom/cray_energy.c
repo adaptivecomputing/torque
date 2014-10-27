@@ -554,6 +554,7 @@ std::string get_path_to_rur_log(const char *configPath)
         start += 4;
         start = trimInPlace(start);
         path = start;
+        fclose(pConfig);
         return path;
         }
       }
@@ -565,6 +566,7 @@ std::string get_path_to_rur_log(const char *configPath)
         }
       }
     }
+  fclose(pConfig);
   return path;
   }
 
