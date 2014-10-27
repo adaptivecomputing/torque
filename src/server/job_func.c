@@ -1729,12 +1729,12 @@ int record_jobinfo(
   pbs_attribute          *pattr;
   int                     i;
   int                     rc;
-  std::string              bf = "";
+  std::string             bf("");
   char                    job_script_buf[(MAXPATHLEN << 4) + 1];
   char                    namebuf[MAXPATHLEN + 1];
   int                     fd;
   size_t                  bytes_read = 0;
-  extern pthread_mutex_t job_log_mutex;
+  extern pthread_mutex_t  job_log_mutex;
   long                    record_job_script = FALSE;
   
   if (pjob == NULL)
@@ -1758,19 +1758,8 @@ int record_jobinfo(
   bf += pjob->ji_qs.ji_jobid;
   bf += "</Job_Id>\n";
 
- #if 0
-  if ((rc = log_job_record(buffer->str)) != PBSE_NONE)
-    {
-    log_err(rc, __func__, "log_job_record failed");
-    return(rc);
-    }
-#endif
-
   for (i = 0; i < JOB_ATR_LAST; i++)
     {
-#if 0
-    bf.clear();
-#endif
     pattr = &(pjob->ji_wattr[i]);
 
     if (pattr->at_flags & ATR_VFLAG_SET)
@@ -1789,7 +1778,7 @@ int record_jobinfo(
       if (pattr->at_type == ATR_TYPE_RESC)
         bf += "\n";
 
-      rc = attr_to_str(bf, job_attr_def+i, pjob->ji_wattr[i], true);
+      attr_to_str(bf, job_attr_def+i, pjob->ji_wattr[i], true);
       
       if (pattr->at_type == ATR_TYPE_RESC)
         bf += "\t";
@@ -1797,14 +1786,6 @@ int record_jobinfo(
       bf += "</";
       bf += job_attr_def[i].at_name;
       bf += ">\n";
-
-#if 0
-      if ((rc = log_job_record(buffer->str)) != PBSE_NONE)
-        {
-        log_err(rc, __func__, "log_job_record failed recording attributes");
-        return(rc);
-        }
-#endif
       }
     }
   
@@ -1837,19 +1818,7 @@ int record_jobinfo(
       }
    
     bf += "\t</job_script>\n";
-    
-#if 0
-    if ((rc = log_job_record(buffer->str)) != PBSE_NONE)
-      {
-      log_err(rc, __func__, "log_job_record failed");
-      return(rc);
-      }
-#endif
     }
- 
-#if 0
-  bf.clear();
-#endif
 
   bf += "</Jobinfo>\n";
 

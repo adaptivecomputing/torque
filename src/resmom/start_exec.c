@@ -2170,7 +2170,10 @@ int TMomFinalizeJob1(
         strcat(buf, pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
         }
 
-      stat(buf, &sb);
+      if (stat(buf, &sb))
+        {
+        return(FAILURE);
+        }
 
       if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend) == 0)
         {

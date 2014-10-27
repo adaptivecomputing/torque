@@ -1700,22 +1700,6 @@ int mom_set_limits(
           return(error(pname, retval));
           }
 
-        if (value > ULONG_MAX)
-          {
-          if (LOGLEVEL >= 0)
-            {
-            sprintf(log_buffer, "cannot set file limit to %ld for job %s (value too large)",
-                    (long int)reslim.rlim_cur,
-                    pjob->ji_qs.ji_jobid);
-
-            log_err(-1, __func__, log_buffer);
-
-            log_buffer[0] = '\0';
-            }
-
-          return(error(pname, PBSE_BADATVAL));
-          }
-
         reslim.rlim_cur = reslim.rlim_max = value;
 
         if (setrlimit(RLIMIT_FSIZE, &reslim) < 0)
@@ -1767,16 +1751,6 @@ int mom_set_limits(
               __func__);
 
             return(error(pname, retval));
-            }
-
-          if (value > ULONG_MAX)
-            {
-            log_buffer[0] = '\0';
-
-            sprintf(log_buffer, "invalid value returned by mm_getsize() for pvmem in %s",
-              __func__);
-
-            return(error(pname, PBSE_BADATVAL));
             }
 
           if ((vmem_limit == 0) || (value < vmem_limit))
@@ -2032,8 +2006,6 @@ int mom_set_limits(
 
   return(PBSE_NONE);
   }  /* END mom_set_limits() */
-
-
 
 
 

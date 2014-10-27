@@ -536,20 +536,32 @@ char *trimInPlace(char *buff)
   return start;
   }
 
-std::string get_path_to_rur_log(const char *configPath)
+std::string get_path_to_rur_log(
+    
+  const char *configPath)
+
   {
-  FILE *pConfig = fopen(configPath,"r");
-  std::string path = "";
-  if(pConfig == NULL) return path;
+  FILE        *pConfig = fopen(configPath,"r");
+  std::string  path = "";
+
+  if (pConfig == NULL)
+    return path;
+
   char buff[20140];
   bool inFileSection = false;
-  while(fgets(buff,sizeof(buff),pConfig) != NULL)
+
+  while (fgets(buff,sizeof(buff),pConfig) != NULL)
     {
     char *start = trimInPlace(buff);
-    if(inFileSection)
+    if (inFileSection)
       {
-      if(*start == '[') return path;
-      if(!strncmp(start,"arg:",4))
+      if (*start == '[')
+        {
+        fclose(pConfig);
+        return path;
+        }
+
+      if (!strncmp(start,"arg:",4))
         {
         start += 4;
         start = trimInPlace(start);
@@ -560,17 +572,23 @@ std::string get_path_to_rur_log(const char *configPath)
       }
     else
       {
-      if(!strcmp(start,"[file]"))
+      if (!strcmp(start,"[file]"))
         {
         inFileSection = true;
         }
       }
     }
-  fclose(pConfig);
-  return path;
-  }
 
-void get_energy_used(job *pjob)
+  fclose(pConfig);
+  return(path);
+  } // END get_path_to_rur_log()
+
+
+
+void get_energy_used(
+    
+  job *pjob)
+
   {
   pbs_attribute *resc_used = &pjob->ji_wattr[JOB_ATR_resc_used];
   resource_def  *resc_def = NULL;

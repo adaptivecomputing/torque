@@ -350,7 +350,7 @@ struct pbsnode
   unsigned short              nd_power_state;
   unsigned char               nd_mac_addr[6];
   time_t                        nd_power_state_change_time; //
-  unsigned char               nd_ttl[32];
+  char                          nd_ttl[32];
   struct array_strings         *nd_acl;
   std::string                  *nd_requestid;
 

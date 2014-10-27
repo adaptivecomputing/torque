@@ -1926,7 +1926,11 @@ static void wait_for_job_state(int jobid,int newState,int timeout)
 #define TIMEOUT_FOR_JOB_DELETE 120
 #define TIMEOUT_FOR_JOB_REQUEUE 120
 
-static void requeue_or_delete_jobs(struct pbsnode *pnode,batch_request *preq)
+static void requeue_or_delete_jobs(
+    
+  struct pbsnode *pnode,
+  batch_request  *preq)
+
   {
   std::vector<int> jids;
 
@@ -1947,7 +1951,6 @@ static void requeue_or_delete_jobs(struct pbsnode *pnode,batch_request *preq)
         {
         free_br(brRerun);
         free_br(brDelete);
-        req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
         return;
         }
       strcpy(brRerun->rq_ind.rq_rerun,pjob->ji_qs.ji_jobid);
@@ -2035,9 +2038,9 @@ static void mgr_node_delete(
 
     return;
     }
-  //Requeue any jobs running on nodes that are about to be deleted.
 
-  if(check_all)
+  //Requeue any jobs running on nodes that are about to be deleted.
+  if (check_all)
     {
     iter = NULL;
 

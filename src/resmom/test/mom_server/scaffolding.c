@@ -53,6 +53,7 @@ char PBSNodeMsgBuf[MAXLINE];
 int alarm_time;
 tlist_head svr_alljobs;
 char mom_alias[PBS_MAXHOSTNAME + 1];
+char mom_host[PBS_MAXHOSTNAME + 1];
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 int rm_errno;
 int needs_cluster_addrs;

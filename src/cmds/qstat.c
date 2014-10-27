@@ -2442,7 +2442,7 @@ int process_commandline_opts(
 
         if (optarg != NULL)
           {
-          ExtendOpt = strdup(optarg);
+          ExtendOpt = optarg;
           E_opt = TRUE;
           }
         break;

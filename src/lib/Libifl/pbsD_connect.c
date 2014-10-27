@@ -1217,7 +1217,7 @@ int pbs_original_connect(
           {
           if (!retry || retries >= MAX_RETRIES)
             fprintf(stderr, "ERROR:  cannot get servername (%s) errno=%d (%s)\n",
-                  (server != NULL) ? server : "NULL",
+                  server,
                   errno,
                   strerror(errno));
           }

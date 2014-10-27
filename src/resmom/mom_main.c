@@ -6115,7 +6115,13 @@ int parse_integer_range(
     char *val_ptr = val;
     char *begin   = threadsafe_tokenizer(&val_ptr, "-");
     char *end_str = threadsafe_tokenizer(&val_ptr, "-");
-        
+
+    if (begin == NULL)
+      {
+      snprintf(log_buffer, sizeof(log_buffer), "Illegal range string '%s'", range_str);
+      return(-1);
+      }
+
     start = strtol(begin, NULL, 10);
 
     if (end_str != NULL)

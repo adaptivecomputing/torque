@@ -254,8 +254,7 @@ int add_verify_resources(
       vlen = (e - v) + 6; 
 
       name = (char *)calloc(1, len);
-      if (v)
-        value = (char *)calloc(1, vlen);
+      value = (char *)calloc(1, vlen);
       }
     else
       {
@@ -263,13 +262,11 @@ int add_verify_resources(
       vlen = (e - v) + 1;
 
       name = (char *)calloc(1, len);
-      if (v)
-        value = (char *)calloc(1, vlen);
+      value = (char *)calloc(1, vlen);
       }
 
-    if ((name) &&
-        ((v) &&
-         (value)))
+    if ((name != NULL) &&
+        (value != NULL))
       {
       if (gpugres)
         snprintf(name, len, "gres");

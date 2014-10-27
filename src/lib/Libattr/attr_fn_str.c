@@ -350,20 +350,26 @@ char* remove_from_csv(
   int len = csv_length(src);
   for (int index = 0; index < len; index++)
     {
-    char* item = csv_nth(src, index);
-    if (item)
+    char *item = csv_nth(src, index);
+
+    if (item != NULL)
       {
       while (isspace(*item))
         item++;
-      if ((item) && (strlen(item)!=0) && !(bool)csv_find_string(model_pattern, item))
+
+      if ((strlen(item) != 0) &&
+          !(bool)csv_find_string(model_pattern, item))
         {
         const char* comma = (result.size()) ? "," : "";
         result += string(comma) + string(item);
         }
       }
     }
+
   return (result.size())? strdup(result.c_str()) : NULL;
-  }
+  } // END remove_from_csv()
+
+
 
 /*
  * set_str_csv - set pbs_attribute value based upon another. attribute
