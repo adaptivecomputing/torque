@@ -24,4 +24,6 @@ void purge_completed_jobs(struct batch_request *preq);
 
 int is_ms_on_server(const job *pjob);
 
+void setup_apply_job_delete_nanny(job *pjob, time_t  time_now);
+
 #endif /* _REQ_DELETE_H */
