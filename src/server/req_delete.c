@@ -230,7 +230,7 @@ int delete_inactive_job(
      * is not running, so put in into a complete state.
      */
     struct pbs_queue *pque;
-    int               KeepSeconds = 0;
+    int    KeepSeconds = 0;
 
     svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
 
@@ -393,6 +393,23 @@ void ensure_deleted(
   free(ptask);
   } /* END ensure_deleted() */
 
+
+
+
+void setup_apply_job_delete_nanny(
+
+  job    *pjob,           /* I */
+  time_t  time_now)       /* I */
+
+  {
+  long KeepSeconds = 0;  
+  int rc = get_svr_attr_l(SRV_ATR_KeepCompleted, &KeepSeconds);
+
+  if ((rc != PBSE_NONE) || (KeepSeconds <= 0))
+    apply_job_delete_nanny(pjob, time_now + 60);
+  else
+    apply_job_delete_nanny(pjob, time_now + KeepSeconds);
+  } /* END of setup_apply_job_delete_nanny */
 
 
 
@@ -566,7 +583,7 @@ jump:
       return(-1);
       }
 
-    apply_job_delete_nanny(pjob, time_now + 60);
+    setup_apply_job_delete_nanny(pjob, time_now);
 
     /*
      * Send signal request to MOM.  The server will automagically
