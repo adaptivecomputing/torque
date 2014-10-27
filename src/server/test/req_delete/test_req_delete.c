@@ -275,7 +275,7 @@ END_TEST
 
 START_TEST(test_delete_inactive_job)
   {
-  job *pjob = (job *)calloc(1, sizeof(pjob));
+  job *pjob = (job *)calloc(1, sizeof(job));
 
   fail_unless(delete_inactive_job((job **)NULL, NULL) == PBSE_BAD_PARAMETER);
   
@@ -283,25 +283,25 @@ START_TEST(test_delete_inactive_job)
   fail_unless(delete_inactive_job(&pjob, NULL) == PBSE_NONE);
   fail_unless(pjob->ji_qs.ji_state == JOB_STATE_COMPLETE);
 
-  pjob = (job *)calloc(1, sizeof(pjob));
+  pjob = (job *)calloc(1, sizeof(job));
   pjob->ji_qs.ji_state = JOB_STATE_QUEUED;
   bad_queue = 1;
   fail_unless(delete_inactive_job(&pjob, NULL) == PBSE_NONE);
   fail_unless(pjob->ji_qs.ji_state == JOB_STATE_COMPLETE);
   bad_queue = 0;
 
-  pjob = (job *)calloc(1, sizeof(pjob));
+  pjob = (job *)calloc(1, sizeof(job));
   pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
   fail_unless(delete_inactive_job(&pjob, NULL) == PBSE_NONE);
   fail_unless(pjob->ji_qs.ji_state == JOB_STATE_EXITING);
   fail_unless(pjob->ji_momhandle = -1);
 
-  pjob = (job *)calloc(1, sizeof(pjob));
+  pjob = (job *)calloc(1, sizeof(job));
   pjob->ji_qs.ji_svrflags = JOB_SVFLG_StagedIn;
   fail_unless(delete_inactive_job(&pjob, NULL) == PBSE_NONE);
   fail_unless(pjob == NULL);
 
-  pjob = (job *)calloc(1, sizeof(pjob));
+  pjob = (job *)calloc(1, sizeof(job));
   bad_relay = 1;
   pjob->ji_qs.ji_svrflags = JOB_SVFLG_StagedIn;
   fail_unless(delete_inactive_job(&pjob, NULL) == PBSE_NONE);

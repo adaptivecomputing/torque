@@ -22,8 +22,8 @@ def process_file(file, report):
         root = os.path.dirname(os.path.abspath(file))
         try:
             input = open(file, 'r', 1)
-        except IOError as (errno, strerror):
-            print "'{0}' I/O error({1}): {2}".format(file,errno, strerror)
+        except IOError, error:
+            print "'%s' I/O error(%s): %s" % (file, error.errno, error.strerror)
             return
         except:
             print "Unexpected error:", sys.exc_info()[0]
