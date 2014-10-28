@@ -2622,7 +2622,7 @@ int get_used(
       need += strlen(patlist->al_resc) + 3;
       }
 
-    acct_data += " ";
+    acct_data += "\n";
     acct_data += patlist->al_name;
 
     if (patlist->al_resc)
