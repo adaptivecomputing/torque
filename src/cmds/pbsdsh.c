@@ -901,7 +901,7 @@ int main(
     if ((hostname_count = gethostnames_from_nodefile(&allnodes, nodefilename)) != numnodes)
       {
       fprintf(stderr, "number of hostnames (%d) read from %s does not match number of nodes (%d) in job\n",
-        filename_count, nodefilename, numnodes);
+        hostname_count, nodefilename, numnodes);
 
       return(1);
       }
