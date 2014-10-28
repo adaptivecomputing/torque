@@ -1125,6 +1125,8 @@ void generate_server_gpustatus_nvml(
     return;
     }
 
+  memset(&tmpbuf, 0, sizeof(tmpbuf));
+
 #ifdef NUMA_SUPPORT
   // does this node have gpus configured?
   if (node_boards[numa_index].gpu_end_index < 0)
@@ -1133,9 +1135,6 @@ void generate_server_gpustatus_nvml(
 
   /* get timestamp to report */
   snprintf(tmpbuf, 100, "timestamp=%s", ctime(&time_now));
-
-  memset(&tmpbuf, 0, sizeof(tmpbuf));
-
   gpu_status.push_back(new std::string(tmpbuf));
 
   /* get the driver version to report */
