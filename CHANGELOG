@@ -1,7 +1,9 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 4.2.9.h1
-  e - TRQ-2890, TRQ-2940. Improved pbsdsh to better handle simultaneous
-      use of -o and -s options. Also fixed a related crash.
+  e - TRQ-2890. Improved pbsdsh to better handle simultaneous use of -o and -s
+      options. Also fixed some problems where -o output was sometimes getting
+      truncated.
+  f - TRQ-2890. Added stderr capturing when using -o option.
 
 4.2.9
   f - A new qmgr option: set server copy_on_rerun=[True|False] is available.
