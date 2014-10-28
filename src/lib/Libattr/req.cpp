@@ -27,7 +27,7 @@ req::req() : execution_slots(1), mem(0), swap(0), disk(0),
              task_count(1), socket(0), numa_chip(0),
              thread_usage_policy(ALLOW_THREADS), gpus(0), mics(0),
              pack(false), index(0), thread_usage_str("allow threads"), single_job_access(false),
-             maxtpn(0), placement_str(), nodes(0)
+             maxtpn(0), placement_str(), nodes(0), gpu_mode()
 
   {
   }
@@ -308,7 +308,15 @@ int req::set_attribute(
            (!strcasecmp(str, "exclusive")) ||
            (!strcasecmp(str, "default")) ||
            (!strcasecmp(str, "reseterr")))
-    this->gpu_mode = str;
+    {
+    if (this->gpu_mode.size() > 0)
+      {
+      this->gpu_mode += ":";
+      this->gpu_mode += str;
+      }
+    else
+      this->gpu_mode = str;
+    }
   else
     return(PBSE_BAD_PARAMETER);
 
@@ -1461,7 +1469,7 @@ int req::set_value(
   else if (!strncmp(name, "gpus", 4))
     this->gpus = strtol(value, NULL, 10);
   else if (!strncmp(name, "gpu_mode", 8))
-    this->gpu_mode = value;
+    this->gpu_mode += value;
   else if (!strncmp(name, "mics", 4))
     this->mics = strtol(value, NULL, 10);
   else if (!strncmp(name, "maxtpn", 6))

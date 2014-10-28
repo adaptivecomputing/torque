@@ -22,13 +22,13 @@ START_TEST(test_set_get_value)
 
   c.get_values(names, values);
 
-  fail_unless(names[0] == "task_count:0");
-  fail_unless(names[1] == "lprocs:0");
-  fail_unless(names[2] == "thread_usage_policy:0");
-  fail_unless(names[3] == "task_count:1", names[3].c_str());
-  fail_unless(names[4] == "lprocs:1", names[4].c_str());
-  fail_unless(names[5] == "gpus:1", names[4].c_str());
-  fail_unless(names[6] == "thread_usage_policy:1");
+  fail_unless(names[0] == "task_count.0");
+  fail_unless(names[1] == "lprocs.0");
+  fail_unless(names[2] == "thread_usage_policy.0");
+  fail_unless(names[3] == "task_count.1", names[3].c_str());
+  fail_unless(names[4] == "lprocs.1", names[4].c_str());
+  fail_unless(names[5] == "gpus.1", names[4].c_str());
+  fail_unless(names[6] == "thread_usage_policy.1");
   }
 END_TEST
 
