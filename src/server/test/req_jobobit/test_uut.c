@@ -27,7 +27,7 @@ int handle_complete_second_time(struct work_task *ptask);
 int handle_complete_subjob(job *pjob);
 int handle_exited(job *pjob);
 int add_comment_to_parent(job *parent_job, int cray_subjob_exited_nonzero, int exit_status);
-int end_of_job_accounting(job *pjob, std::string &acct_info);
+int end_of_job_accounting(job *pjob, std::string &acct_info, size_t accttail);
 int handle_terminating_array_subjob(job *pjob);
 int handle_terminating_job(job *pjob, int alreadymailed, const char *mailbuf);
 int update_substate_from_exit_status(job *pjob, int *alreadymailed, const char *text);
@@ -438,10 +438,10 @@ START_TEST(end_of_job_accounting_test)
   std::string acct_info("bob tom");
   job  *pjob = (job *)calloc(1, sizeof(job));
   strcpy(pjob->ji_qs.ji_jobid, "1.napali");
-
-  fail_unless(end_of_job_accounting(pjob, acct_info) == PBSE_NONE);
+  size_t accttail = acct_info.length();
+  fail_unless(end_of_job_accounting(pjob, acct_info, accttail) == PBSE_NONE);
   usage = 1;
-  fail_unless(end_of_job_accounting(pjob, acct_info) == PBSE_NONE);
+  fail_unless(end_of_job_accounting(pjob, acct_info, accttail) == PBSE_NONE);
   usage = 0;
   }
 END_TEST
