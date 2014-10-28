@@ -53,7 +53,6 @@ struct tm_errcode
   { TM_EBADENVIRONMENT, "TM_EBADENVIRONMENT" },
   { TM_ENOTFOUND,       "TM_ENOTFOUND" },
   { TM_BADINIT,         "TM_BADINIT" },
-  { TM_EPERM,           "TM_EPERM" },
   { 0,                  "?" }
   };
 
