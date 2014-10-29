@@ -2429,9 +2429,16 @@ bool came_from_moab(
 
 
 
+/*
+ * process_opt_L()
+ *
+ * Verifies and adds the argument passed to -L
+ * @param cmd_arg - the command line argument passed to qsub
+ * @return PBSE_NONE if good, -1 otherwise
+ */
+
 void process_opt_L(
 
-  job_info   *ji,
   const char *cmd_arg)
 
   {
@@ -2456,6 +2463,239 @@ void process_opt_L(
 
   cr.add_req(r);
   } // END process_opt_L()
+
+
+
+/*
+ * process_opt_d()
+ *
+ * Verifies and adds the argument passed to -d
+ * @param ji - where we store the job information
+ * @param cmd_arg - the command line argument passed to qsub
+ * @param data_type - the source of this argument 
+ * @param tmp_job_info - the source for information parsed from torque.cfg
+ * @return PBSE_NONE if good, -1 otherwise
+ */
+
+int process_opt_d(
+
+  job_info   *ji,
+  const char *cmd_arg,
+  int         data_type,
+  job_data   *tmp_job_info)
+
+  {
+  if (cmd_arg == NULL)
+    return(-1);
+  else
+    {
+    if (cmd_arg[0] == '/')
+      hash_add_or_exit(ji->job_attr, ATTR_pbs_o_initdir, cmd_arg, data_type);
+    else
+      {
+      /* make '-d' relative to current directory, not $HOME */
+      char tmpPWD[1024];
+      char *mypwd;
+
+      mypwd = getcwd(tmpPWD, sizeof(tmpPWD));
+
+      if (mypwd == NULL)
+        {
+        char  err_buf[MAXLINE*2];
+        snprintf(err_buf, sizeof(err_buf), "qsub: unable to get cwd: %d (%s)",
+            errno, strerror(errno));
+        print_qsub_usage_exit(err_buf);
+        }
+      
+      std::string idir(mypwd);
+      idir += "/";
+      idir += cmd_arg;
+      hash_add_or_exit(ji->job_attr, ATTR_pbs_o_initdir, idir.c_str(), data_type);
+      }  /* END if (cmd_arg[0] != '/') */
+
+    if (hash_find(ji->client_attr, "validate_path", &tmp_job_info))
+      {
+      /* validate local existence of '-d' working directory */
+
+      if (chdir(cmd_arg) == -1)
+        {
+        char  err_buf[MAXLINE*2];
+        snprintf(err_buf, sizeof(err_buf),
+          "qsub: cannot chdir to '%s' errno: %d (%s)", cmd_arg, errno, strerror(errno));
+        return(-1);
+        }
+      }
+    }    /* END if (cmd_arg != NULL) */
+
+  return(PBSE_NONE);
+  } // END process_opt_d() 
+
+
+
+/*
+ * process_opt_j()
+ *
+ * Verifies and adds the argument passed to -j
+ * @param ji - where we store the job information
+ * @param cmd_arg - the command line argument passed to qsub
+ * @param data_type - the source of this argument 
+ * @return PBSE_NONE if good, -1 otherwise
+ */
+
+int process_opt_j(
+  
+  job_info   *ji,
+  const char *cmd_arg,
+  int         data_type)
+
+  {
+  if (cmd_arg == NULL)
+    return(-1);
+
+  if ((strcmp(cmd_arg, "oe") != 0) &&
+      (strcmp(cmd_arg, "eo") != 0) &&
+      (strcmp(cmd_arg, "n") != 0))
+    return(-1);
+
+  hash_add_or_exit(ji->job_attr, ATTR_j, cmd_arg, data_type);
+
+  return(PBSE_NONE);
+  } // END process_opt_j() 
+
+
+
+/*
+ * process_opt_k()
+ *
+ * Verifies and adds the argument passed to -k
+ * @param ji - where we store the job information
+ * @param cmd_arg - the command line argument passed to qsub
+ * @param data_type - the source of this argument 
+ * @return PBSE_NONE if good, -1 otherwise
+ */
+
+int process_opt_k(
+
+  job_info   *ji,
+  const char *cmd_arg,
+  int         data_type)
+
+  {
+  if (cmd_arg == NULL)
+    return(-1);
+
+  if ((strcmp(cmd_arg, "o") != 0) &&
+      (strcmp(cmd_arg, "e") != 0) &&
+      (strcmp(cmd_arg, "oe") != 0) &&
+      (strcmp(cmd_arg, "eo") != 0) &&
+      (strcmp(cmd_arg, "n") != 0))
+    return(-1);
+  
+  hash_add_or_exit(ji->job_attr, ATTR_k, cmd_arg, data_type);
+  
+  return(PBSE_NONE);
+  } // END process_opt_k()
+
+
+
+/*
+ * process_opt_m()
+ *
+ * Verifies and adds the argument passed to -m
+ * @param ji - where we store the job information
+ * @param cmd_arg - the command line argument passed to qsub
+ * @param data_type - the source of this argument 
+ * @return PBSE_NONE if good, -1 otherwise
+ */
+
+int process_opt_m(
+  
+  job_info   *ji,
+  const char *cmd_arg,
+  int         data_type)
+
+  {
+  if (cmd_arg == NULL)
+    return(-1);
+
+  while (isspace((int)*cmd_arg))
+    cmd_arg++;
+  
+  if (strlen(cmd_arg) == 0)
+    return(-1);
+  
+  if (strcmp(cmd_arg, "n") != 0)
+    {
+    const char *pc = cmd_arg;
+    
+    while (*pc)
+      {
+      if ((*pc != 'a') &&
+          (*pc != 'b') &&
+          (*pc != 'e'))
+        return(-1);
+
+      pc++;
+      }
+    } /* END if (strcmp(cmd_arg,"n") != 0) */
+          
+  hash_add_or_exit(ji->job_attr, ATTR_m, cmd_arg, data_type);
+
+  return(PBSE_NONE);
+  } // END process_opt_m()
+
+
+
+/*
+ * process_opt_p()
+ *
+ * Verifies and adds the argument passed to -p
+ * @param ji - where we store the job information
+ * @param cmd_arg - the command line argument passed to qsub
+ * @param data_type - the source of this argument 
+ * @return PBSE_NONE if good, -1 otherwise
+ */
+
+int process_opt_p(
+  
+  job_info   *ji,
+  const char *cmd_arg,
+  int         data_type)
+
+  {
+  if (cmd_arg == NULL)
+    return(-1);
+
+  while (isspace((int)*cmd_arg))
+    cmd_arg++;
+  
+  const char *pc = cmd_arg;
+  
+  if ((*pc == '-') ||
+      (*pc == '+'))
+    pc++;
+  
+  if (strlen(pc) == 0)
+    return(-1);
+  
+  while (*pc != '\0')
+    {
+    if (!isdigit(*pc))
+      return(-1);
+    
+    pc++;
+    }
+  
+  int priority = strtol(cmd_arg, NULL, 10);
+  
+  if ((priority < -1024) ||
+      (priority > 1023))
+    return(-1);
+  
+  hash_add_or_exit(ji->job_attr, ATTR_p, cmd_arg, data_type);
+
+  return(PBSE_NONE);
+  } // END process_opt_p()
 
 
 
@@ -2484,7 +2724,6 @@ void process_opts(
   char         a_value[80];
   char        *keyword;
   char        *valuewd;
-  char        *pc;
   char        *pdepend;
 
   FILE        *fP = NULL;
@@ -2499,7 +2738,6 @@ void process_opts(
   char         tmpResources[4096] = "";
   char        *cP;
   char        *ptr;
-  char        *idir = NULL;
   char         flag;  /* submitfilter flag character */
   char        *vptr;  /* submitfilter flag value */
 
@@ -2583,59 +2821,10 @@ void process_opts(
           if (strlen(optarg) == 0)
             print_qsub_usage_exit("qsub: illegal -c value");
 
-          pc = optarg;
-
           /* OLD FORMAT:  -c { n | s | c | c=X }
            * New format: -c [ { <old format items> | <new items> } ',' ]
            * new items: none | shutdown | checkpoint | name=xyz | dir=xyz | interval=X
            */
-          /* CODE_CLEANING_LOCATION */
-#if 0
-
-          if (strlen(optarg) == 1)
-            {
-            if ((*pc != 'n') && (*pc != 's') && (*pc != 'c'))
-              {
-              fprintf(stderr, "qsub: illegal -c value\n");
-              errflg++;
-
-              break;
-              }
-            }
-          else
-            {
-            if (strncmp(optarg, "c=", 2) != 0)
-              {
-              fprintf(stderr, "qsub: illegal -c value\n");
-              errflg++;
-
-              break;
-              }
-
-            pc += 2;
-
-            if (*pc == '\0')
-              {
-              fprintf(stderr, "qsub: illegal -c value\n");
-
-              errflg++;
-
-              break;
-              }
-
-            while (isdigit(*pc))
-              pc++;
-
-            if (*pc != '\0')
-              {
-              fprintf(stderr, "qsub: illegal -c value\n");
-              errflg++;
-
-              break;
-              }
-            }
-
-#else
           nitems = csv_length(optarg);
 
           for (i = 0; i < nitems; i++)
@@ -2658,7 +2847,6 @@ void process_opts(
               }
             }
 
-#endif
           hash_add_or_exit(ji->job_attr, ATTR_c, optarg, data_type);
 
         break;
@@ -2671,54 +2859,8 @@ void process_opts(
 
       case 'd':
 
-        if (optarg == NULL)
+        if (process_opt_d(ji, optarg, data_type, tmp_job_info) != PBSE_NONE)
           print_qsub_usage_exit("qsub: illegal -d value");
-        else
-          {
-          int alloc_len = 0;
-          if (optarg[0] == '/')
-            hash_add_or_exit(ji->job_attr, ATTR_pbs_o_initdir, optarg, data_type);
-          else
-            {
-            /* make '-d' relative to current directory, not $HOME */
-
-            char tmpPWD[1024];
-            char *mypwd;
-
-            mypwd = getcwd(tmpPWD, sizeof(tmpPWD));
-
-            if (mypwd == NULL)
-              {
-              char *err_msg = NULL;
-              alloc_len =  50 + 6 + strlen(strerror(errno)) + 1;
-              calloc_or_fail(&err_msg, alloc_len, "-d attribute");
-              snprintf(err_msg, alloc_len, "qsub: unable to get cwd: %d (%s)",
-                  errno, strerror(errno));
-              print_qsub_usage_exit(err_msg);
-
-              }
-            
-            alloc_len =  strlen(mypwd)+1+strlen(optarg) + 1;
-            calloc_or_fail(&idir, alloc_len, "-d attribute");
-            sprintf(idir, "%s/%s", mypwd, optarg);
-            hash_add_or_exit(ji->job_attr, ATTR_pbs_o_initdir, idir, data_type);
-            free(idir);
-            }  /* END if (optarg[0] != '/') */
-
-          if (hash_find(ji->client_attr, "validate_path", &tmp_job_info))
-            {
-            /* validate local existence of '-d' working directory */
-
-            if (chdir(optarg) == -1)
-              {
-              char *err_msg = NULL;
-              alloc_len =  50+ strlen(optarg) +6+ strlen(strerror(errno)) + 1;
-              calloc_or_fail(&err_msg, alloc_len, "-d attribute");
-              snprintf(err_msg, alloc_len, "qsub: cannot chdir to '%s' errno: %d (%s)", optarg, errno, strerror(errno));
-              print_qsub_usage_exit(err_msg);
-              }
-            }
-          }    /* END if (optarg != NULL) */
 
         break;
 
@@ -2777,11 +2919,8 @@ void process_opts(
 
         /* FORMAT:  {oe|eo|n} */
 
-          if ((strcmp(optarg, "oe") != 0) &&
-              (strcmp(optarg, "eo") != 0) &&
-              (strcmp(optarg, "n") != 0))
-            print_qsub_usage_exit("qsub: illegal -j value");
-          hash_add_or_exit(ji->job_attr, ATTR_j, optarg, data_type);
+        if (process_opt_j(ji, optarg, data_type) != PBSE_NONE)
+          print_qsub_usage_exit("qsub: illegal -j value");
 
         break;
 
@@ -2795,15 +2934,8 @@ void process_opts(
       case 'k':
 
         /* FORMAT:  {o|e} */
-
-          if ((strcmp(optarg, "o") != 0) &&
-              (strcmp(optarg, "e") != 0) &&
-              (strcmp(optarg, "oe") != 0) &&
-              (strcmp(optarg, "eo") != 0) &&
-              (strcmp(optarg, "n") != 0))
-            print_qsub_usage_exit("qsub: illegal -k value");
-
-          hash_add_or_exit(ji->job_attr, ATTR_k, optarg, data_type);
+        if (process_opt_k(ji, optarg, data_type) != PBSE_NONE)
+          print_qsub_usage_exit("qsub: illegal -k value");
 
         break;
 
@@ -2829,31 +2961,14 @@ void process_opts(
 
       case 'L':
 
-        process_opt_L(ji, optarg);
+        process_opt_L(optarg);
 
         break;
 
       case 'm':
 
-          while (isspace((int)*optarg))
-            optarg++;
-
-          if (strlen(optarg) == 0)
-            print_qsub_usage_exit("qsub: illegal -m value");
-
-          if (strcmp(optarg, "n") != 0)
-            {
-            pc = optarg;
-
-            while (*pc)
-              {
-              if ((*pc != 'a') && (*pc != 'b') && (*pc != 'e'))
-                print_qsub_usage_exit("qsub: illegal -m value");
-              pc++;
-              }
-            }    /* END if (strcmp(optarg,"n") != 0) */
-
-          hash_add_or_exit(ji->job_attr, ATTR_m, optarg, data_type);
+        if (process_opt_m(ji, optarg, data_type) != PBSE_NONE)
+          print_qsub_usage_exit("qsub: illegal -m value");
 
         break;
 
@@ -2893,31 +3008,8 @@ void process_opts(
 
       case 'p':
         
-        while (isspace((int)*optarg))
-          optarg++;
-        
-        pc = optarg;
-        
-        if ((*pc == '-') || (*pc == '+'))
-          pc++;
-        
-        if (strlen(pc) == 0)
+        if (process_opt_p(ji, optarg, data_type) != PBSE_NONE)
           print_qsub_usage_exit("qsub: illegal -p value");
-        
-        while (*pc != '\0')
-          {
-          if (!isdigit(*pc))
-            print_qsub_usage_exit("qsub: illegal -p value");
-          
-          pc++;
-          }
-        
-        i = atoi(optarg);
-        
-        if ((i < -1024) || (i > 1023))
-          print_qsub_usage_exit("qsub: illegal -p value");
-        
-        hash_add_or_exit(ji->job_attr, ATTR_p, optarg, data_type);
         
         break;
 
@@ -3973,6 +4065,62 @@ void process_early_opts(
 
 
 
+/*
+ * retry_submit_error()
+ *
+ * Returns true if the error from pbs_submit_hash() is one that may change
+ * if retried, false if its a permanent error
+ *
+ * @param error - the error code returned from pbs_submit_hash()
+ * @return true if the error is transient, false otherwise
+ */
+
+bool retry_submit_error(
+
+  int error)
+
+  {
+
+  switch (error)
+
+    {
+    case PBSE_NONE:
+    case PBSE_NOATTR:
+    case PBSE_ATTRRO:
+    case PBSE_IVALREQ:
+    case PBSE_UNKREQ:
+    case PBSE_PERM:
+    case PBSE_BADHOST:
+    case PBSE_JOBEXIST:
+    case PBSE_UNKQUE:
+    case PBSE_QUNOENB:
+    case PBSE_QACESS:
+    case PBSE_BADUSER:
+    case PBSE_ATTRTYPE:
+    case PBSE_UNKRESC:
+    case PBSE_QUENODFLT:
+    case PBSE_ROUTEREJ:
+    case PBSE_BADSCRIPT:
+    case PBSE_BADGRP:
+    case PBSE_MAXQUED:
+    case PBSE_EXLIMIT:
+    case PBSE_BADACCT:
+    case PBSE_SVRDOWN:
+    case PBSE_JOBTYPE:
+    case PBSE_MAXUSERQUED:
+    case PBSE_NORERUNABLE:
+    case PBSE_NONONRERUNABLE:
+    case PBSE_BAD_ARRAY_REQ:
+    case PBSE_NOFAULTTOLERANT:
+    case PBSE_NOFAULTINTOLERANT:
+
+      return(false);
+    }
+
+  return(true);
+  } // END retry_submit_error() 
+
+
 
 /** 
  * qsub main 
@@ -4364,13 +4512,18 @@ void main_func(
                   &new_jobname,
                   &errmsg);
 
-    if (local_errno != PBSE_NONE)
-      sleep(1);
+    if (retry_submit_error(local_errno))
+      {
+      if (local_errno != PBSE_NONE)
+        sleep(1);
 
-    /* If we get a timeout the server is busy. Let the user 
-       know what is taking so long */
-    if (local_errno == PBSE_TIMEOUT)
-      fprintf(stdout, "Connection to server timed out. Trying again");
+      /* If we get a timeout the server is busy. Let the user 
+         know what is taking so long */
+      if (local_errno == PBSE_TIMEOUT)
+        fprintf(stdout, "Connection to server timed out. Trying again");
+      }
+    else
+      break;
 
     } while((++retries < MAX_RETRIES) && (local_errno != PBSE_NONE));
 

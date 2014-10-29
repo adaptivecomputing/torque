@@ -18,7 +18,11 @@ bool  stored_complete_req = false;
 bool  find_mpp = false;
 bool  find_nodes = false;
 bool  find_size = false;
+bool  validate_path = false;
 int   req_val = 0;
+
+std::string added_value;
+std::string added_name;
 
 
 char *pbs_geterrmsg(int connect)
@@ -36,6 +40,9 @@ int hash_find(job_data_container *head, const char *name, job_data **env_var)
     return(1);
   else if ((find_size == true) &&
            (!strcmp(name, "size")))
+    return(1);
+  else if ((validate_path == true) &&
+           (!strcmp(name, "validate_path")))
     return(1);
   else
     return(0);
@@ -208,6 +215,12 @@ void hash_add_or_exit(
   {
   if (!strcmp(name, ATTR_req_information))
     stored_complete_req = true;
+
+  if (val != NULL)
+    added_value = val;
+
+  if (name != NULL)
+    added_name = name;
   }
 
 void set_env_opts(job_data_container *env_attr, char **envp)
