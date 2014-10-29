@@ -1054,8 +1054,8 @@ AC_ARG_WITH(uthash-path, [
     [], [with_uthash_path=no])
 
 AS_IF([test "x$with_uthash_path" != "xno"],
-    [CFLAGS="$CFLAGS -I${with_uthash_path}/include"],
-    [incdir='-I$(top_srcdir)/src/include/3rdparty/uthash' CFLAGS="$CFLAGS $incdir"])
+    [CFLAGS="$CFLAGS -I${with_uthash_path}/include" CXXFLAGS="$CXXFLAGS -I${with_uthash_path}/include"],
+    [incdir='-I$(top_srcdir)/src/include/3rdparty/uthash' CFLAGS="$CFLAGS $incdir" CXXFLAGS="$CXXFLAGS $incdir"])
 
 AM_CONDITIONAL([INTERNAL_UTHASH], [test "x$with_uthash_path" = "xno"])
 
