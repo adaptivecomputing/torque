@@ -439,6 +439,12 @@ job *svr_find_job(
 
   job  *pj = NULL;
 
+  if (NULL == jobid)
+    {
+    log_err(-1,__func__,"jobid is null");
+    return NULL;
+    }
+
   if (LOGLEVEL >= 10)
     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, jobid);
 
@@ -546,9 +552,6 @@ job *svr_find_job_by_id(
 
   {
   const char *job_id = job_mapper.get_name(internal_job_id);
-
-  if (!job_id)
-    return NULL;
 
   return(svr_find_job(job_id, TRUE));
   }
