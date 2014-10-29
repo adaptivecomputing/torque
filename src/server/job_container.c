@@ -547,6 +547,9 @@ job *svr_find_job_by_id(
   {
   const char *job_id = job_mapper.get_name(internal_job_id);
 
+  if (!job_id)
+    return NULL;
+
   return(svr_find_job(job_id, TRUE));
   }
 
