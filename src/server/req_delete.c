@@ -1540,6 +1540,8 @@ int forced_jobpurge(
         /* FAILURE */
         req_reject(PBSE_PERM, 0, preq, NULL, NULL);
 
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+
         return(-1);
         }
       }
