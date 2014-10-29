@@ -99,15 +99,15 @@ void mom_server_diag(mom_server *pms, int sindex, char **BPtr, int *BSpace);
 
 void mom_server_all_diag(char **BPtr, int *BSpace);
 
-void mom_server_update_receive_time(int stream, char *command_name);
+void mom_server_update_receive_time(int stream, char *command_name, struct sockaddr_in *pAddr);
 
 void mom_server_update_receive_time_by_ip(u_long ipaddr, const char *command_name);
 
-mom_server *mom_server_valid_message_source(struct tcp_chan *chan, char **err_msg);
+mom_server *mom_server_valid_message_source(struct tcp_chan *chan, char **err_msg,struct sockaddr_in *pAddr);
 
 void pass_along_hellos(int hello_count);
 
-void mom_is_request(struct tcp_chan *chan, int version, int *cmdp);
+void mom_is_request(struct tcp_chan *chan, int version, int *cmdp,struct sockaddr_in *pAddr);
 
 float compute_load_threshold(char *config, int numvnodes, float threshold);
 

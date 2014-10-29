@@ -71,9 +71,9 @@ void free_dynamic_string(dynamic_string *ds)
 
 
 
-extern char saveBuff[];
-extern int saveBuffRdPtr;
-extern int saveBuffEndPtr;
+char saveBuff[1024];
+int saveBuffRdPtr = 0;
+int saveBuffEndPtr = sizeof(saveBuff);
 
 ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   {

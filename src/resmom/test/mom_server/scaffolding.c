@@ -24,6 +24,7 @@ char *apbasil_protocol = NULL;
 char *apbasil_path = NULL;
 int is_reporter_mom = 0;
 mom_hierarchy_t *mh;
+u_long              localaddr = 0;
 struct config *config_array = NULL;
 long system_ncpus = 0;
 time_t time_now;
@@ -240,6 +241,12 @@ AvlTree AVL_insert(u_long key, uint16_t port, struct pbsnode *node, AvlTree tree
   exit(1);
   }
 
+AvlTree AVL_clear_tree(AvlTree a)
+  {
+  fprintf(stderr, "The call to AVL_clear_tree needs to be mocked!!\n");
+  exit(1);
+  }
+
 struct config *rm_search(struct config *where, const char *what)
   {
   fprintf(stderr, "The call to rm_search needs to be mocked!!\n");
@@ -279,7 +286,6 @@ char *disrst(tcp_chan *chan, int *ret)
 mom_hierarchy_t *initialize_mom_hierarchy()
   {
   mom_hierarchy_t *nt = (mom_hierarchy_t *)calloc(1, sizeof(mom_hierarchy_t));
-  nt->paths = new mom_paths();
   nt->current_path  = -1;
   nt->current_level = -1;
   nt->current_node  = -1;
@@ -350,4 +356,13 @@ int pbs_getaddrinfo(
 
   {
   return(0);
+  }
+
+bool overwrite_cache(
+
+  const char       *pNode,
+  struct addrinfo **ppAddrInfoOut)
+
+  {
+  return(true);
   }

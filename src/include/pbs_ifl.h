@@ -332,6 +332,7 @@
 #define ATTR_automaticrequeueexitcode "automatic_requeue_exit_code"
 #define ATTR_jobsynctimeout           "job_sync_timeout"
 #define ATTR_pass_cpu_clock           "pass_cpu_clock"
+#define ATTR_job_full_report_time     "job_full_report_time"
 /* additional node "attributes" names */
 
 #define ATTR_NODE_state            "state"
@@ -351,6 +352,9 @@
 #define ATTR_NODE_gpus_str         "numa_gpu_node_str"
 #define ATTR_NODE_mics             "mics"
 #define ATTR_NODE_micstatus        "mic_status"
+#define ATTR_NODE_ttl              "TTL"
+#define ATTR_NODE_acl              "acl"
+#define ATTR_NODE_requestid        "requestid"
 
 /* notification email formating */
 #define ATTR_mailsubjectfmt "mail_subject_fmt"

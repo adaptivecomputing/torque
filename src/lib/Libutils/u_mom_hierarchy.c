@@ -111,26 +111,6 @@ void free_mom_hierarchy(
   mom_hierarchy_t *mh)
 
   {
-
-  for(mom_paths::iterator paths_iter = mh->paths->begin();paths_iter != mh->paths->end();paths_iter++)
-    {
-    mom_levels *levels = *paths_iter;
-    /* free each level */
-    for(mom_levels::iterator levels_iter = levels->begin();levels_iter != levels->end();levels_iter++)
-      {
-      mom_nodes *nodes = *levels_iter;
-
-      /* free each node_comm_t */
-      for(mom_nodes::iterator nodes_iter = nodes->begin();nodes_iter != nodes->end();nodes_iter++)
-        {
-        free(*nodes_iter);
-        }
-      delete nodes;
-      }
-
-    delete levels;
-    }
-  delete mh->paths;
   free(mh);
   } /* END free_mom_hierarchy() */
 
@@ -141,14 +121,6 @@ mom_hierarchy_t *initialize_mom_hierarchy()
 
   {
   mom_hierarchy_t *nt = (mom_hierarchy_t *)calloc(1, sizeof(mom_hierarchy_t));
-  nt->paths = new mom_paths();
-
-  if (nt->paths == NULL)
-    {
-    free(nt);
-    nt = NULL;
-    return(nt);
-    }
 
   nt->current_path  = -1;
   nt->current_level = -1;
@@ -170,59 +142,49 @@ int add_network_entry(
   int                 level)
 
   {
-  node_comm_t     *nc = (node_comm_t *)calloc(1, sizeof(node_comm_t));
-  mom_levels      *levels;
-  mom_nodes       *node_comm_entries;
+  node_comm_t      nc;
+
+  memset(&nc, 0, sizeof(nc));
 
   /* check if the path is already in the array */
-  if (nt->paths->size() > (size_t)path)
-    levels = nt->paths->at(path);
-  else
+  while (nt->paths.size() <= (size_t)path)
     {
     /* insert a new path */
-    levels = new mom_levels();
+    mom_levels nl;
 
-    if (levels == NULL)
-      {
-      free(nc);
-
-      return(-1);
-      }
-
-    nt->paths->push_back(levels);
+    nt->paths.push_back(nl);
     }
+
+  mom_levels &levels = nt->paths.at(path);
 
   /* check if the level is in the array already */
-  if (levels->size() > (size_t)level)
-    node_comm_entries = levels->at(level);
-  else
+  while (levels.size() <= (size_t)level)
     {
     /* insert a new level */
-    node_comm_entries = new mom_nodes();
+    mom_nodes nce;
 
-    if (node_comm_entries == NULL)
-      return(-1);
-
-    levels->push_back(node_comm_entries);
+    levels.push_back(nce);
     }
+  
+  mom_nodes &node_comm_entries = levels.at(level);
 
   /* finally, insert the entry into the node_comm_entries */
   /* initialize the node comm entry */
-  nc->sock_addr.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
-  nc->sock_addr.sin_family = AF_INET;
-  nc->sock_addr.sin_port = htons(rm_port);
-  nc->stream = -1;
+  nc.sock_addr.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
+  nc.sock_addr.sin_family = AF_INET;
+  nc.sock_addr.sin_port = htons(rm_port);
+  nc.stream = -1;
 
-  if ((nc->name = (char *)calloc(1, strlen(name) + 1)) == NULL)
+  if ((nc.name = (char *)calloc(1, strlen(name) + 1)) == NULL)
     {
-    free(nc);
     return(ENOMEM);
     }
   else
-    strcpy(nc->name,name);
+    strcpy(nc.name,name);
 
-  node_comm_entries->push_back(nc);
-    return(PBSE_NONE);
+  node_comm_entries.push_back(nc);
+  
+  return(PBSE_NONE);
   } /* END add_network_entry() */
 
 
@@ -238,15 +200,15 @@ int add_network_entry(
 
 int rm_establish_connection(
 
-  node_comm_t *nc)
+  node_comm_t &nc)
     
   {
-  nc->stream = tcp_connect_sockaddr((struct sockaddr *)&nc->sock_addr,sizeof(nc->sock_addr));
+  nc.stream = tcp_connect_sockaddr((struct sockaddr *)&nc.sock_addr,sizeof(nc.sock_addr));
 
-  if (nc->stream < 0)
+  if (nc.stream < 0)
     {
-    nc->mtime = time(NULL);
-    nc->bad = TRUE;
+    nc.mtime = time(NULL);
+    nc.bad = TRUE;
     return(-1);
     }
   else
@@ -337,43 +299,38 @@ node_comm_t *force_path_update(
   mom_hierarchy_t *nt)
 
   {
-  int                 path;
-  int                 level;
-  int                 node;
-  int                 attempts = 0;
-  int                 updated  = FALSE;
-  time_t              time_now = time(NULL);
+  int    path;
+  int    level;
+  int    node;
+  int    attempts = 0;
+  int    updated  = FALSE;
+  time_t time_now = time(NULL);
  
-  mom_levels          *levels;
-  mom_nodes           *node_comm_entries;
-  node_comm_t         *nc;
-
-
-  if (nt->paths->size() > 1)
+  if (nt->paths.size() > 1)
     {
-    path = nt->paths->size() - 1;
+    path = nt->paths.size() - 1;
 
     while ((path >= 0) &&
            (updated == FALSE))
       {
-      levels = nt->paths->at(nt->paths->size() - 1);
+      mom_levels &levels = nt->paths.at(nt->paths.size() - 1);
      
-      for (level = levels->size() - 1; level >= 0 && updated == FALSE; level--)
+      for (level = levels.size() - 1; level >= 0 && updated == FALSE; level--)
         {
-        node_comm_entries = levels->at(level);
+        mom_nodes &node_comm_entries = levels.at(level);
         
-        for (node = 0; node < (int)node_comm_entries->size(); node++)
+        for (node = 0; node < (int)node_comm_entries.size(); node++)
           {
-          nc = node_comm_entries->at(node);
+          node_comm_t &nc = node_comm_entries.at(node);
 
-          if ((nc->bad == TRUE) &&
-              (time_now - nc->mtime <= mom_hierarchy_retry_time))
+          if ((nc.bad == TRUE) &&
+              (time_now - nc.mtime <= mom_hierarchy_retry_time))
             continue;
 
           if (rm_establish_connection(nc) == PBSE_NONE)
             {
             /* SUCCESS, return the new node */
-            return(nc);
+            return(&nc);
             }
           else
             attempts++;
@@ -389,24 +346,24 @@ node_comm_t *force_path_update(
     }
   else
     {
-    levels = nt->paths->at(nt->paths->size()-1);
+    mom_levels &levels = nt->paths.at(nt->paths.size()-1);
 
-    for (level = levels->size() - 1; level >= 0 && updated == FALSE; level--)
+    for (level = levels.size() - 1; level >= 0 && updated == FALSE; level--)
       {
-      node_comm_entries = levels->at(level);
+      mom_nodes &node_comm_entries = levels.at(level);
 
-      for (node = 0; node < (int)node_comm_entries->size(); node++)
+      for (node = 0; node < (int)node_comm_entries.size(); node++)
         {
-        nc = node_comm_entries->at(node);
+        node_comm_t &nc = node_comm_entries.at(node);
 
-        if ((nc->bad == TRUE) &&
-            (time_now - nc->mtime <= mom_hierarchy_retry_time))
+        if ((nc.bad == TRUE) &&
+            (time_now - nc.mtime <= mom_hierarchy_retry_time))
           continue;
 
         if (rm_establish_connection(nc) == PBSE_NONE)
           {
           /* SUCCESS, return the new node */
-          return(nc);
+          return(&nc);
           }
         } /* END for each node comm point */
       } /* END for each level */
@@ -427,12 +384,8 @@ node_comm_t *update_current_path(
   mom_hierarchy_t *nt)
 
   {
-  mom_levels      *levels;
-  mom_nodes       *node_comm_entries;
-  node_comm_t     *nc;
-
   /* check to make sure we're initialized */
-  if (nt->paths->size() == 0)
+  if (nt->paths.size() == 0)
     return(NULL);
 
   /* if we haven't picked a path, update */
@@ -441,24 +394,24 @@ node_comm_t *update_current_path(
       (nt->current_node  < 0))
     return(force_path_update(nt));
 
-  levels = nt->paths->at(nt->current_path);
-  node_comm_entries = levels->at(nt->current_level);
-  nc = node_comm_entries->at(nt->current_node);
+  mom_levels  &levels = nt->paths.at(nt->current_path);
+  mom_nodes   &node_comm_entries = levels.at(nt->current_level);
+  node_comm_t &nc = node_comm_entries.at(nt->current_node);
 
-  if (nc->stream < 0)
+  if (nc.stream < 0)
     return(force_path_update(nt));
   else if ((nt->current_path  != 0) ||
            (nt->current_level != 0) ||
            (nt->current_node  != 0))
     {
-    if ((time(NULL) - nc->mtime) > mom_hierarchy_retry_time)
+    if ((time(NULL) - nc.mtime) > mom_hierarchy_retry_time)
       {
-      close(nc->stream);
+      close(nc.stream);
       return(force_path_update(nt));
       }
     }
 
-  return(nc);
+  return(&nc);
   } /* END update_current_path() */
 
 
@@ -696,6 +649,7 @@ void parse_mom_hierarchy(
   current = buffer;
 
   while (get_parent_and_child(current, &parent, &child, &current) == PBSE_NONE)
+
     {
     if (!strncmp(parent,"path",strlen("path")))
       handle_path(child, path_index);

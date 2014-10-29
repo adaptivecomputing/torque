@@ -58,10 +58,12 @@ int parse_at_list(char *list, int use_count, int abs_path)
   exit(1);
   }
 
+extern "C"
+{
 char *pbs_strerror(int err)
   {
   fprintf(stderr, "The call to pbs_strerror needs to be mocked!!\n");
   exit(1);
   }
-
+}
 void initialize_network_info() {}

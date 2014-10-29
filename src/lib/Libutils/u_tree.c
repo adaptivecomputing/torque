@@ -367,7 +367,7 @@ AvlTree AVL_delete_node(
       }
     }
   return(tree);
-  } /*  End delete_node */
+  } /*  End AVL_delete_node */
 
 
 int AVL_list_add_item(
@@ -465,4 +465,18 @@ int AVL_list( AvlTree tree, char **Buf, long *current_len, long *max_len )
 
 	return PBSE_NONE;
   } /* end AVL_list */
+
+
+AvlTree AVL_clear_tree(
+    
+  AvlTree tree)
+
+  {
+  while (tree != NULL)
+    {
+    tree = AVL_delete_node(tree->key, tree->port, tree);
+    }
+
+  return(NULL);
+  } /* AVL_clear_tree() */
 
