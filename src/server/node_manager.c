@@ -942,8 +942,7 @@ void *sync_node_jobs(
 
     if (internal_job_id == -1)
       {
-      /* log a message if it's a loglevel 7, but most importantly, don't 
-      ** do the things in the else block.
+      /* log a message if it's at loglevel 7 and proceed to kill the job.
       */
       if (LOGLEVEL >= 7)
         {
@@ -952,23 +951,20 @@ void *sync_node_jobs(
         log_ext(-1, __func__, log_buf, LOG_WARNING);
         }
       }
-    else
+    if (job_should_be_killed(internal_job_id, np))
       {
-      if (job_should_be_killed(internal_job_id, np))
+      if (kill_job_on_mom(job_id.c_str(), np) == PBSE_NONE)
         {
-        if (kill_job_on_mom(job_id.c_str(), np) == PBSE_NONE)
-          {
-          pthread_mutex_lock(&jobsKilledMutex);
-          jobsKilled.push_back(internal_job_id);
-          pthread_mutex_unlock(&jobsKilledMutex);
+        pthread_mutex_lock(&jobsKilledMutex);
+        jobsKilled.push_back(internal_job_id);
+        pthread_mutex_unlock(&jobsKilledMutex);
 
-          int *dup_id = new int(internal_job_id);
-          set_task(WORK_Timed, 
-                   time(NULL) + job_sync_timeout,
-                   remove_job_from_already_killed_list,
-                   dup_id,
-                   FALSE);
-          }
+        int *dup_id = new int(internal_job_id);
+        set_task(WORK_Timed, 
+                 time(NULL) + job_sync_timeout,
+                 remove_job_from_already_killed_list,
+                 dup_id,
+                 FALSE);
         }
       }
     
