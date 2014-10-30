@@ -486,107 +486,53 @@ int wait_for_task(
   }  /* END wait_for_task() */
 
 
+/*
+ * gethostnames_from_nodefile
+ *
+ * Populates allnodes which is a character array of hostnames (basically numnodes * PBS_MAXHOSTNAME)
+ *
+ * @param allnodes - the list to populate with each hostname
+ * @param nodefile - the path to the $PBS_NODEFILE
+ * @return i - the total number of hosts read from $PBS_NODEFILE
+ */
 
-
-/* ask TM for all node resc descriptions and parse the output
- * for hostnames */
-
-char *gethostnames(
-
-  tm_node_id *nodelist)
-
+int gethostnames_from_nodefile(char **allnodes, char *nodefile)
   {
-  char *allnodes;
-  char *rescinfo;
-  tm_event_t *rescevent;
-  tm_event_t resultevent;
-  char *hoststart;
-  int rc, tm_errno, i, j;
+  FILE *fp;
+  char  hostname[PBS_MAXNODENAME+2];
+  int   i = 0;
 
-  allnodes = (char *)calloc(numnodes, PBS_MAXNODENAME + 1 + sizeof(char));
-  rescinfo = (char *)calloc(numnodes, RESCSTRLEN + 1 + sizeof(char));
-  rescevent = (tm_event_t*)calloc(numnodes, sizeof(tm_event_t));
+  /* initialize the allnodes character array */
+  *allnodes = (char *)calloc(numnodes, PBS_MAXNODENAME + 1 + sizeof(char));
 
-  if (!allnodes || !rescinfo || !rescevent)
+  if ((fp = fopen(nodefile, "r")) == NULL)
     {
-    fprintf(stderr, "%s: calloc failed!\n",
-      id);
-    tm_finalize();
+    fprintf(stderr, "failed to open %s\n", nodefile);
 
     exit(1);
     }
 
-  /* submit resource requests */
-
-  for (i = 0;i < numnodes;i++)
+  /* read hostnames from $PBS_NODEFILE (one hostname per line) */
+  while ((fgets(hostname, PBS_MAXNODENAME + 2, fp) != NULL) && (i < numnodes))
     {
-    if (tm_rescinfo(
-          nodelist[i],
-          rescinfo + (i*RESCSTRLEN),
-          RESCSTRLEN - 1,
-          rescevent + i) != TM_SUCCESS)
-      {
-      fprintf(stderr, "%s: error from tm_rescinfo()\n", id);
+    char *p;
 
-      tm_finalize();
+    /* drop the trailing newline */
+    if ((p = strchr(hostname, '\n')) != NULL)
+      *p = '\0';
 
-      exit(1);
-      }
+    /* copy onto the character array */
+    strncpy(*allnodes + (i * PBS_MAXNODENAME), hostname, PBS_MAXNODENAME);
+
+    i++;
     }
 
-  /* read back resource requests */
+  fclose(fp);
 
-  for (j = 0, i = 0; i < numnodes; i++)
-    {
-    rc = tm_poll(TM_NULL_EVENT, &resultevent, 1, &tm_errno);
-
-    if ((rc != TM_SUCCESS) || (tm_errno != TM_SUCCESS))
-      {
-      fprintf(stderr, "%s: error from tm_poll() %d\n",
-        id,
-        rc);
-
-      tm_finalize();
-
-      exit(1);
-      }
-
-    for (j = 0; j < numnodes; j++)
-      {
-      if (*(rescevent + j) == resultevent)
-        break;
-      }
-
-    if (j == numnodes)
-      {
-      fprintf(stderr, "%s: unknown resource result\n", id);
-      tm_finalize();
-      exit(1);
-      }
-
-    if (verbose)
-      fprintf(stderr, "%s: rescinfo from %d: %s\n", id, j, rescinfo + (j*RESCSTRLEN));
-
-    strtok(rescinfo + (j*RESCSTRLEN), " ");
-
-    hoststart = strtok(NULL, " ");
-
-    if (hoststart == NULL)
-      {
-      fprintf(stderr, "%s: can't find a hostname in resource result\n", id);
-      tm_finalize();
-      exit(1);
-      }
-
-    strcpy(allnodes + (j*PBS_MAXNODENAME), hoststart);
-    }
-
-  free(rescinfo);
-
-  free(rescevent);
-
-  return(allnodes);
+  /* return count of hostnames read */
+  return(i);
   }
+
 
 /* return a vnode number matching targethost */
 int findtargethost(char *allnodes, char *targethost)
@@ -615,7 +561,7 @@ int findtargethost(char *allnodes, char *targethost)
       {
       /* Sometimes the allnodes will return the FQDN of the host
        and the PBS_NODEFILE will have the short name of the host.
-       See if the shortname mataches */
+       See if the shortname matches */
       std::string targetname(targethost);
       std::string the_host(allnodes + (i*PBS_MAXNODENAME));
       std::size_t dot = the_host.find_first_of(".");
@@ -939,7 +885,25 @@ int main(
   /* nifty unique/hostname code */
   if (pernode || targethost)
     {
-    allnodes = gethostnames(nodelist);
+    char *nodefilename;
+    int   hostname_count;
+
+    /* get node filename from PBS_NODEFILE environment variable */
+    if ((nodefilename = getenv("PBS_NODEFILE")) == NULL)
+      {
+      fprintf(stderr, "PBS_NODEFILE environment variable not set\n");
+
+      return(1);
+      }
+
+    /* load allnodes with the hostnames in nodefilename */
+    if ((hostname_count = gethostnames_from_nodefile(&allnodes, nodefilename)) != numnodes)
+      {
+      fprintf(stderr, "number of hostnames (%d) read from %s does not match number of nodes (%d) in job\n",
+        hostname_count, nodefilename, numnodes);
+
+      return(1);
+      }
 
     if (targethost)
       {
