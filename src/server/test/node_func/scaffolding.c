@@ -428,3 +428,6 @@ void free_br(struct batch_request *preq)
   return;
   }
 
+void mom_hierarchy_handler::reloadHierarchy()
+{
+}
