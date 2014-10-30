@@ -6070,7 +6070,7 @@ int send_join_job_to_sisters(
   if (LOGLEVEL >= 7)
     {
     sprintf(log_buffer,"Sending join job to %d sisters.",unsent_count);
-    log_err(errno, __func__,log_buffer);
+    log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
     }
 
   memset(send_failed, -1, send_failed_size);
@@ -6092,7 +6092,7 @@ int send_join_job_to_sisters(
       if (LOGLEVEL >= 7)
         {
         sprintf(log_buffer,"Sending join job to %s.",pjob->ji_hosts[i].hn_host);
-        log_err(errno, __func__,log_buffer);
+        log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
         }
 
       log_buffer[0] = '\0';

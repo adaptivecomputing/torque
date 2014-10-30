@@ -2153,6 +2153,10 @@ void mgr_node_create(
 
   if (rc != 0)
     {
+    if(LOGLEVEL >= 7)
+      {
+      log_err(rc,__func__,"Error creating a node.");
+      }
     switch (rc)
       {
 
@@ -2185,6 +2189,12 @@ void mgr_node_create(
 
     return;
     }
+
+  if(LOGLEVEL >= 7)
+    {
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, "Created a node.");
+    }
+
 
   mgr_log_attr(
     msg_man_set,

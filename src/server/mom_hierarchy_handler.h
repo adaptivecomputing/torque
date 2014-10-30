@@ -13,11 +13,13 @@
 #include <vector>
 #include <string>
 #include "mom_hierarchy.h"
+#include "node_manager.h"
 
 
 #define MOM_SEND_HIERARCHY_STARTUP_DELAY  600
 #define MOM_CHECK_SEND_INTERVAL           600
 #define SEND_DELAY_AFTER_RELOAD           10
+#define RELOAD_TIME_PADDING               3
 
 class mom_hierarchy_handler
   {
@@ -46,6 +48,7 @@ private:
   int sendHierarchyToNode(char             *name,
                              unsigned short  port);
   void loadHierarchy(void);
+  pbsnode *nextNode(all_nodes_iterator **iter);
 
 public:
 

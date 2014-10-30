@@ -1806,6 +1806,11 @@ static void recheck_for_node(
 
     free(host_info);
     }
+  else
+    {
+    //The node has been created so load reload the heirarchy.
+    hierarchy_handler.reloadHierarchy();
+    }
 
   free(ptask->wt_mutex);
   free(ptask);
@@ -1843,6 +1848,12 @@ int create_pbs_node(
   if ((rc = process_host_name_part(objname, &pul, &pname, &ntype)) != 0)
     {
     svrattrl *pal, *pattrl;
+
+    if(LOGLEVEL >= 7)
+      {
+      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, "Node does not resolve, putting in delayed create.");
+      }
+
 
     /* the host name in the nodes file did not resolve.
        We will set up a process to check periodically
@@ -1899,6 +1910,11 @@ int create_pbs_node(
         }
 
       strcpy(host_info->nodename, objname);
+      }
+
+    if(LOGLEVEL >= 7)
+      {
+      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, "Delayed create for node set up.");
       }
 
     set_task(WORK_Timed, time_now + 30, recheck_for_node, host_info, FALSE);

@@ -99,6 +99,26 @@ public:
     }
   };
 
+//This method keeps the allnodes array locked until all nodes have been traversed.
+// DO NOT use this if you are doing anything with the node that will take an undetermined
+// amount of time.
+pbsnode *mom_hierarchy_handler::nextNode(all_nodes_iterator **iter)
+  {
+  if(iter == NULL) return NULL;
+  if(*iter == NULL)
+    {
+    allnodes.lock();
+    *iter = allnodes.get_iterator();
+    }
+  pbsnode *pNode = (*iter)->get_next_item();
+  if(pNode == NULL)
+    {
+    delete *iter;
+    *iter = NULL;
+    allnodes.unlock();
+    }
+  return pNode;
+  }
 
 void mom_hierarchy_handler::make_default_hierarchy()
 
@@ -107,6 +127,7 @@ void mom_hierarchy_handler::make_default_hierarchy()
   std::string         level_ds = "";
   all_nodes_iterator  *iter = NULL;
   char                buf[MAXLINE];
+  char                log_buf[LOCAL_LOG_BUF_SIZE];
 
 
   hierarchy_xml.clear();
@@ -114,7 +135,14 @@ void mom_hierarchy_handler::make_default_hierarchy()
   hierarchy_xml.push_back("<sp>");
   hierarchy_xml.push_back("<sl>");
 
-  while ((pnode = next_host(&allnodes, &iter, NULL)) != NULL)
+  if(LOGLEVEL >= 7)
+    {
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, "Creating default hierarchy.");
+    }
+
+
+
+  while ((pnode = nextNode(&iter)) != NULL)
     {
     if (level_ds.length() > 0)
       level_ds += ",";
@@ -132,8 +160,13 @@ void mom_hierarchy_handler::make_default_hierarchy()
     unlock_node(pnode, __func__, NULL, LOGLEVEL);
     }
 
-  if (iter != NULL)
-    delete iter;
+  if (LOGLEVEL >= 5)
+    {
+    snprintf(log_buf, sizeof(log_buf),
+      "Built default hierarchy %s", level_ds.c_str());
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buf);
+    }
+
 
   hierarchy_xml.push_back(level_ds);
   hierarchy_xml.push_back("</sl>");
@@ -293,7 +326,7 @@ void mom_hierarchy_handler::add_missing_nodes(void)
   std::string     level_string = "";
 
   /* check if there are nodes that weren't in the hierarchy file that are in the nodes file */
-  while ((pnode = next_host(&allnodes, &iter, NULL)) != NULL)
+  while ((pnode = nextNode(&iter)) != NULL)
     {
     if (pnode->nd_in_hierarchy == FALSE)
       {
@@ -317,12 +350,8 @@ void mom_hierarchy_handler::add_missing_nodes(void)
       pnode->nd_hierarchy_level = 0;
       log_err( -1, __func__, log_buf);
       }
-
     unlock_node(pnode, __func__, NULL, LOGLEVEL);
     }
-
-  if (iter != NULL)
-    delete iter;
 
   if (found_missing_node == true)
     {
@@ -380,13 +409,18 @@ void mom_hierarchy_handler::loadHierarchy(void)
     }
   mh = initialize_mom_hierarchy();
 
+  if(LOGLEVEL >= 7)
+    {
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, "Loading hierarchy.");
+    }
+
   if ((fds = open(path_mom_hierarchy, O_RDONLY, 0)) < 0)
     {
     if (errno == ENOENT)
       {
       /* Each node is a top level node */
       make_default_hierarchy();
-      lastReloadTime = time(NULL);
+      lastReloadTime = time(NULL) + RELOAD_TIME_PADDING; //Just in case the last hierarchy was sent in the same second.
       return;
       }
 
@@ -404,7 +438,7 @@ void mom_hierarchy_handler::loadHierarchy(void)
 
   if (fds >= 0)
     close(fds);
-  lastReloadTime = time(NULL);
+  lastReloadTime = time(NULL) + RELOAD_TIME_PADDING; //Just in case the last hierarchy was sent in the same second.
   } /* END loadHierarchy() */
 
 //This is called any time a node is dynamically added or deleted.
@@ -428,7 +462,7 @@ void mom_hierarchy_handler::initialLoadHierarchy(void)
 
   all_nodes_iterator *iter = NULL;
   struct pbsnode    *pnode;
-  while ((pnode = next_host(&allnodes, &iter, NULL)) != NULL)
+  while ((pnode = nextNode(&iter)) != NULL)
     {
     if(sendOnDemand)
       {
@@ -442,8 +476,6 @@ void mom_hierarchy_handler::initialLoadHierarchy(void)
       }
     unlock_node(pnode, __func__, NULL, LOGLEVEL);
     }
-  if(iter != NULL) delete iter;
-
   pthread_mutex_unlock(&hierarchy_mutex);
   }
 
@@ -475,12 +507,13 @@ void *mom_hierarchy_handler::sendHierarchyThreadTask(void *vp)
     port = pnode->nd_mom_rm_port;
     unlock_node(pnode, __func__, NULL, LOGLEVEL);
 
+    time_t timeSent = time(NULL); //Record the time now to avoid a race condition.
     if (sendHierarchyToNode(nodename, port) == PBSE_NONE)
       {
       pnode = find_nodebyid(pNodeHolder->id);
       if (pnode != NULL)
         {
-        pnode->nd_lastHierarchySent = time(NULL);
+        pnode->nd_lastHierarchySent = timeSent;
         unlock_node(pnode, __func__, NULL, LOGLEVEL);
         }
       if (LOGLEVEL >= 3)
@@ -630,7 +663,7 @@ void mom_hierarchy_handler::checkAndSendHierarchy(void)
   all_nodes_iterator *iter = NULL;
   struct pbsnode    *pnode;
   bool hierarchyNotSentFlagSet = false;
-  while ((pnode = next_host(&allnodes, &iter, NULL)) != NULL)
+  while ((pnode = nextNode(&iter)) != NULL)
     {
     if(pnode->nd_lastHierarchySent < lastReloadTime)
       {
@@ -642,8 +675,6 @@ void mom_hierarchy_handler::checkAndSendHierarchy(void)
       }
     unlock_node(pnode, __func__, NULL, LOGLEVEL);
     }
-  if(iter != NULL) delete iter;
-  iter = NULL;
   if(nodesToSend.size() != 0)
     {
     std::sort(nodesToSend.begin(),nodesToSend.end(),sortFunc);
@@ -665,12 +696,11 @@ void mom_hierarchy_handler::checkAndSendHierarchy(void)
       if(hierarchyNotSentFlagSet)
       {
       //If we are here then all nodes have an up to date and correct hierarchy so clear all flags.
-      while ((pnode = next_host(&allnodes, &iter, NULL)) != NULL)
+      while ((pnode = nextNode(&iter)) != NULL)
         {
         pnode->nd_state &= ~INUSE_NOHIERARCHY;
         unlock_node(pnode, __func__, NULL, LOGLEVEL);
         }
-      if(iter != NULL) delete iter;
       }
       pthread_mutex_lock(&hierarchy_mutex);
       nextSendTime = time(NULL) + MOM_CHECK_SEND_INTERVAL;
