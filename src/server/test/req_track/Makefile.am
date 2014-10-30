@@ -12,6 +12,7 @@ libreq_track_la_SOURCES = scaffolding.c ${PROG_ROOT}/req_track.c
 libreq_track_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_req_track_SOURCES = test_req_track.c
+test_req_track_LDADD = ../../../test/torque_test_lib/libtorque_test.la ../../../test/scaffold_fail/libscaffold_fail.la
 
 check_SCRIPTS = ${PROG_ROOT}/../test/coverage_run.sh
 

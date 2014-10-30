@@ -196,3 +196,10 @@ int delete_inactive_job(job **, const char *)
   {
   return(0);
   }
+
+void setup_apply_job_delete_nanny(
+
+  job    *pjob,           /* I */
+  time_t  time_now)       /* I */
+
+{}

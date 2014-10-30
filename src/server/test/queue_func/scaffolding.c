@@ -8,6 +8,8 @@
 #include "pbs_job.h" /* job */
 #include "user_info.h"
 
+bool exit_called = false;
+
 const char *msg_err_unlink = "Unlink of %s file %s failed";
 all_queues svr_queues;
 attribute_def que_attr_def[10];

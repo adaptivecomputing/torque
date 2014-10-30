@@ -22,6 +22,7 @@ attribute_def job_attr_def[10];
 all_jobs alljobs;
 struct server server;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
+bool exit_called;
 
 
 struct batch_request *alloc_br(int type)

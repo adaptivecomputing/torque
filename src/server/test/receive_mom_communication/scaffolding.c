@@ -10,6 +10,7 @@
 #include "pbs_job.h"
 #include "mutex_mgr.hpp"
 #include "threadpool.h"
+#include "execution_slot_tracker.hpp"
 
 int         allow_any_mom;
 AvlTree     ipaddrs = NULL;
@@ -267,5 +268,12 @@ struct addrinfo * insert_addr_name_info(struct addrinfo *pAddrInfo,const char *h
   }
 
 mutex_mgr::~mutex_mgr() {}
+
+execution_slot_tracker::execution_slot_tracker(
+
+  const execution_slot_tracker &other)
+
+  {
+  }
 
 void DIS_tcp_cleanup(struct tcp_chan *chan) {}

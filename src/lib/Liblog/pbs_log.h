@@ -10,8 +10,6 @@ int log_open(char *filename, char *directory);
 
 int job_log_open(char *filename, char *directory); 
 
-void log_err(int errnum, const char *routine, const char *text); 
-
 void log_ext(int errnum, const char *routine, const char *text, int severity); 
 
 int log_job_record(const char *buf);

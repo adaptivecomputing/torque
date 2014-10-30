@@ -479,7 +479,7 @@ void decode_attribute(
   if (index < 0)
     index = JOB_ATR_UNKN;
 
-  if(freeExisting)
+  if (freeExisting)
     {
     job_attr_def[index].at_free(&pj->ji_wattr[index]);
     }

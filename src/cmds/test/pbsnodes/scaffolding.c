@@ -5,6 +5,8 @@
 #include "mcom.h" /* mxml_ti, MDataFormatEnumi, mbool_t */
 #include "pbs_ifl.h" /* batch_status, attrl */
 
+#include "pbs_error.h"
+
 
 int pbs_errno = 0;
 
@@ -105,5 +107,20 @@ char *pbs_strerror(int err)
 char *pbs_default(void)
   { 
   fprintf(stderr, "The call to pbs_default needs to be mocked!!\n");
+  exit(1);
+  }
+
+int pbs_modify_node_err(
+
+  int             c,
+  int             command,
+  int             objtype,
+  char           *objname,
+  struct attropl *attrib,
+  char           *extend,
+  int            *local_errno)
+
+  {
+  fprintf(stderr, "The call to pbs_modify_node_err needs to be mocked!!\n");
   exit(1);
   }

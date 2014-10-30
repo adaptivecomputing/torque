@@ -20,7 +20,10 @@
 #include "user_info.h"
 #include "id_map.hpp"
 
+bool exit_called = false;
+char *path_nodepowerstate;
 threadpool_t *task_pool;
+threadpool_t *async_pool;
 int scheduler_sock=0;
 int scheduler_jobct = 0;
 bool auto_send_hierarchy = true;
@@ -424,7 +427,7 @@ void track_save(struct work_task *pwt)
   exit(1);
   }
 
-void acct_close(void)
+void acct_close(bool acct_mutex_locked)
   {
   fprintf(stderr, "The call to acct_close needs to be mocked!!\n");
   exit(1);
@@ -442,7 +445,11 @@ int svr_save(struct server *ps, int mode)
   exit(1);
   }
 
-int acct_open(char *filename)
+int acct_open(
+
+  char *filename,  /* abs pathname or NULL */
+  bool  acct_mutex_locked)
+
   {
   fprintf(stderr, "The call to acct_open needs to be mocked!!\n");
   exit(1);
@@ -654,5 +661,15 @@ void parse_mom_hierarchy(int fds)
   }
 
 id_map::id_map() {}
+id_map::~id_map() {}
 
-void rel_resc(job *pjob);
+id_map job_mapper;
+
+void rel_resc(job *pjob)
+  {
+  }
+
+int id_map::get_new_id(const char *id)
+  {
+  return(-1);
+  }

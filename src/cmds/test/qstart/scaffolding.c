@@ -3,6 +3,7 @@
 #include <stdio.h> /* fprintf */ 
 
 #include "pbs_ifl.h" /* attropl */
+#include "pbs_error.h"
 
 int pbs_errno = 0;
 char *pbs_server = NULL;

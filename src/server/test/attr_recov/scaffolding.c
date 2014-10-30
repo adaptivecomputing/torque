@@ -206,9 +206,10 @@ char *csv_find_string(
 
   return(NULL);
   }
-extern char saveBuff[];
-extern int saveBuffRdPtr;
-extern int saveBuffEndPtr;
+
+char saveBuff[4096];
+int saveBuffRdPtr;
+int saveBuffEndPtr;
 
 ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   {
