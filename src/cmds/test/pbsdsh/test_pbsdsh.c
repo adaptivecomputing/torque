@@ -7,10 +7,17 @@
 
 #include "pbs_error.h"
 
-START_TEST(test_one)
+int numnodes = 5;
+
+int gethostnames_from_nodefile(char **, char *);
+
+START_TEST(test_gethostnames_from_nodefile)
   {
+  int count;
+  char *allnodes;
 
-
+  count = gethostnames_from_nodefile(&allnodes, strdup("pbs_nodefile"));
+  fail_unless(count == numnodes);
   }
 END_TEST
 
@@ -24,8 +31,8 @@ END_TEST
 Suite *pbsdsh_suite(void)
   {
   Suite *s = suite_create("pbsdsh_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_gethostnames_from_nodefile");
+  tcase_add_test(tc_core, test_gethostnames_from_nodefile);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");
