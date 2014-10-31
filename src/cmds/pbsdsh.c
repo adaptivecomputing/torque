@@ -640,12 +640,18 @@ int build_listener(
   torque_socklen_t len = sizeof(addr);
 
   // create the socket
-  if ((s = socket(AF_INET, SOCK_STREAM|SOCK_NONBLOCK, 0)) < 0)
+  if ((s = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
     return(-1);
     }
   else
     {
+    int flags;
+
+    flags = fcntl(s, F_GETFL);
+    flags |= O_NONBLOCK;
+    fcntl(s, F_SETFL, flags);
+
     if (listen(s, 1024) < 0)
       {
       close(s);
