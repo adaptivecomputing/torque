@@ -2090,33 +2090,30 @@ int send_job_obit_to_ms(
             {
             if ((rc = diswul(chan, vmem)) == DIS_SUCCESS)
               {
-              if((rc = diswul(chan, joules)) == DIS_SUCCESS)
+              if (mom_radix >= 2)
+                rc = diswsi(chan, pjob->ji_nodeid);
+              if (rc == DIS_SUCCESS)
+                rc = diswul(chan, joules);
+
+              if (rc == DIS_SUCCESS)
+                rc = DIS_tcp_wflush(chan);
+
+              if (rc == DIS_SUCCESS)
                 {
-                if (mom_radix >= 2)
+                /* Don't wait for a reply from Mother Superior since this could lead to a
+                   live lock. That is Mother Superior is waiting for a read from us and
+                   we are waiting on this read */
+                /* SUCCESS - no more retries needed */
+                if (LOGLEVEL >= 6)
                   {
-                  rc = diswsi(chan, pjob->ji_nodeid);
+                  sprintf(log_buffer, "%s: all tasks complete - purging job as sister: %d",  __func__, rc);
+                  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
                   }
 
-                if (rc == DIS_SUCCESS)
-                  rc = DIS_tcp_wflush(chan);
+                close(chan->sock);
+                DIS_tcp_cleanup(chan);
 
-                if (rc == DIS_SUCCESS)
-                  {
-                  /* Don't wait for a reply from Mother Superior since this could lead to a
-                     live lock. That is Mother Superior is waiting for a read from us and
-                     we are waiting on this read */
-                  /* SUCCESS - no more retries needed */
-                  if (LOGLEVEL >= 6)
-                    {
-                    sprintf(log_buffer, "%s: all tasks complete - purging job as sister: %d",  __func__, rc);
-                    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
-                    }
-
-                  close(chan->sock);
-                  DIS_tcp_cleanup(chan);
-
-                  break;
-                  }
+                break;
                 }
               }
             }
