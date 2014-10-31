@@ -1819,7 +1819,143 @@ static void recheck_for_node(
 
 
 
+/* This is only called if we have resolved the node name and have a valid ip address for it. */
 
+static int finalize_create_pbs_node(char     *pname, /* node name w/o any :ts       */
+                                        u_long    *pul,  /* 0 terminated host adrs array*/
+                                        int       ntype, /* node type; time-shared, not */
+                                        svrattrl  *plist,
+                                        int       perms,
+                                        int       *bad)
+  {
+  int        rc = PBSE_NONE;
+  pbsnode    *pnode = NULL;
+  u_long     addr;
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
+
+  if ((pnode = find_nodebyname(pname)) != NULL)
+    {
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+
+    free(pname);
+    free(pul);
+
+    return(PBSE_NODEEXIST);
+    }
+
+  if ((pnode = (struct pbsnode *)calloc(1, sizeof(struct pbsnode))) == NULL)
+    {
+    free(pul);
+    free(pname);
+
+    return(PBSE_SYSTEM);
+    }
+
+  if ((rc = initialize_pbsnode(pnode, pname, pul, ntype, FALSE)) != PBSE_NONE)
+    {
+    free(pul);
+    free(pname);
+    free(pnode);
+
+    return(rc);
+    }
+
+  try
+    {
+    /* All nodes have at least one execution slot */
+    add_execution_slot(pnode);
+
+    rc = mgr_set_node_attr(
+           pnode,
+           node_attr_def,
+           ND_ATR_LAST,
+           plist,
+           perms,
+           bad,
+           (void *)pnode,
+           ATR_ACTION_ALTER);
+
+    if (rc != 0)
+      {
+      effective_node_delete(&pnode);
+
+      return(rc);
+      }
+    }
+  catch(...)
+    {
+    free(pul);
+    free(pname);
+    free(pnode);
+    return(-1);
+    }
+
+  int i;
+  for (i = 0; pul[i]; i++)
+    {
+    if (LOGLEVEL >= 6)
+      {
+      snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+          "node '%s' allows trust for ipaddr %ld.%ld.%ld.%ld\n",
+        pnode->nd_name,
+        (pul[i] & 0xff000000) >> 24,
+        (pul[i] & 0x00ff0000) >> 16,
+        (pul[i] & 0x0000ff00) >> 8,
+        (pul[i] & 0x000000ff));
+
+      log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,__func__,log_buf);
+      }
+
+    addr = pul[i];
+    ipaddrs = AVL_insert(addr, pnode->nd_mom_port, pnode, ipaddrs);
+    }  /* END for (i) */
+
+  if ((rc = setup_node_boards(pnode,pul)) != PBSE_NONE)
+    {
+    return(rc);
+    }
+
+  insert_node(&allnodes,pnode);
+
+  svr_totnodes++;
+
+  recompute_ntype_cnts();
+
+  /* SUCCESS */
+  return(PBSE_NONE);
+  } /* End finalize_create_pbs_node() */
+
+
+/*
+ * create_pbs_dynamic_node - create pbs node structure, i.e. add a node
+ */
+
+int create_pbs_dynamic_node(
+  char     *objname,
+  svrattrl *plist,
+  int       perms,
+  int      *bad)
+
+  {
+  int              ntype; /* node type; time-shared, not */
+  char            *pname = NULL; /* node name w/o any :ts       */
+  u_long          *pul = NULL;  /* 0 terminated host adrs array*/
+  int              rc;
+
+  if ((rc = process_host_name_part(objname, &pul, &pname, &ntype)) != 0)
+    {
+    if(pul != NULL)
+      {
+      free(pul);
+      }
+    if(pname != NULL)
+      {
+      free(pname);
+      }
+    return rc;
+    }
+  return finalize_create_pbs_node(pname,pul,ntype,plist,perms,bad);
+  }/* End create_pbs_dynamic_node() */
 
 /*
  * create_pbs_node - create pbs node structure, i.e. add a node
@@ -1833,7 +1969,6 @@ int create_pbs_node(
   int      *bad)
 
   {
-  struct pbsnode  *pnode = NULL;
   char             log_buf[LOCAL_LOG_BUF_SIZE];
 
   int              ntype; /* node type; time-shared, not */
@@ -1841,8 +1976,6 @@ int create_pbs_node(
   u_long          *pul = NULL;  /* 0 terminated host adrs array*/
   int              rc;
   node_info        *host_info;
-  int              i;
-  u_long           addr;
   time_t           time_now = time(NULL);
 
   if ((rc = process_host_name_part(objname, &pul, &pname, &ntype)) != 0)
@@ -1938,99 +2071,8 @@ int create_pbs_node(
     return(PBSE_SYSTEM);
     }
 
-  if ((pnode = find_nodebyname(pname)) != NULL)
-    {
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
-
-    free(pname);
-    free(pul);
-
-    return(PBSE_NODEEXIST);
-    }
-    
-  if ((pnode = (struct pbsnode *)calloc(1, sizeof(struct pbsnode))) == NULL)
-    {
-    free(pul);
-    free(pname);
-    
-    return(PBSE_SYSTEM);
-    }
-
-  if ((rc = initialize_pbsnode(pnode, pname, pul, ntype, FALSE)) != PBSE_NONE)
-    {
-    free(pul);
-    free(pname);
-    free(pnode);
-
-    return(rc);
-    }
-
-  try
-    {
-    /* All nodes have at least one execution slot */
-    add_execution_slot(pnode);
-
-    rc = mgr_set_node_attr(
-           pnode,
-           node_attr_def,
-           ND_ATR_LAST,
-           plist,
-           perms,
-           bad,
-           (void *)pnode,
-           ATR_ACTION_ALTER);
-
-    if (rc != 0)
-      {
-      effective_node_delete(&pnode);
-      
-      return(rc);
-      }
-    }
-  catch(...)
-    {
-    free(pul);
-    free(pname);
-    free(pnode);
-    return(-1);
-    }
-
-  for (i = 0; pul[i]; i++)
-    {
-    if (LOGLEVEL >= 6)
-      {
-      snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-          "node '%s' allows trust for ipaddr %ld.%ld.%ld.%ld\n",
-        pnode->nd_name,
-        (pul[i] & 0xff000000) >> 24,
-        (pul[i] & 0x00ff0000) >> 16,
-        (pul[i] & 0x0000ff00) >> 8,
-        (pul[i] & 0x000000ff));
-
-      log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,__func__,log_buf);
-      }
-    
-    addr = pul[i];
-    ipaddrs = AVL_insert(addr, pnode->nd_mom_port, pnode, ipaddrs);
-    }  /* END for (i) */
-
-  if ((rc = setup_node_boards(pnode,pul)) != PBSE_NONE)
-    {
-    return(rc);
-    }
-
-  insert_node(&allnodes,pnode);
-
-  svr_totnodes++;
-
-  recompute_ntype_cnts();
-
-  /* SUCCESS */
-  return(PBSE_NONE);
+  return finalize_create_pbs_node(pname,pul,ntype,plist,perms,bad);
   } /* End create_pbs_node() */
-
-
-
 
 
 /*

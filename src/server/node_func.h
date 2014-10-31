@@ -49,6 +49,8 @@ int copy_properties(struct pbsnode *dest, struct pbsnode *src);
 
 int create_pbs_node(char *objname, struct svrattrl *plist, int perms, int *bad);
 
+int create_pbs_dynamic_node(char *objname, struct svrattrl *plist, int perms, int *bad);
+
 int setup_nodes(void);
 
 int node_np_action(struct pbs_attribute *new_attr, void *pobj, int actmode);

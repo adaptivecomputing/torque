@@ -698,7 +698,12 @@ void mom_hierarchy_handler::checkAndSendHierarchy(void)
       //If we are here then all nodes have an up to date and correct hierarchy so clear all flags.
       while ((pnode = nextNode(&iter)) != NULL)
         {
-        pnode->nd_state &= ~INUSE_NOHIERARCHY;
+        if(pnode->nd_state&INUSE_NOHIERARCHY)
+          {
+          pnode->nd_state = INUSE_FREE; //This was created as a dynamic node and
+                                        //it now has a good ok host list so mark
+                                        //it ready for use.
+          }
         unlock_node(pnode, __func__, NULL, LOGLEVEL);
         }
       }

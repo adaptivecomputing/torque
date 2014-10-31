@@ -613,6 +613,7 @@ void             free_prop_list(struct prop*);
 void             free_prop_attr(pbs_attribute*);
 void             recompute_ntype_cnts();
 int              create_pbs_node(char *, svrattrl *, int, int *);
+int              create_pbs_dynamic_node(char *, svrattrl *, int, int *);
 int              mgr_set_node_attr(struct pbsnode *, attribute_def *, int, svrattrl *, int, int *, void *, int);
 void            *send_hierarchy_file(void *);
 

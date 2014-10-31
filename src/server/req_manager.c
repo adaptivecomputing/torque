@@ -131,7 +131,7 @@
 #include "work_task.h"
 #include "mcom.h"
 #include "../lib/Libattr/attr_node_func.h" /* free_prop_list */
-#include "node_func.h" /* init_prop, find_nodebyname, reinitialize_node_iterator, recompute_ntype_cnts, effective_node_delete, create_pbs_node */
+#include "node_func.h" /* init_prop, find_nodebyname, reinitialize_node_iterator, recompute_ntype_cnts, effective_node_delete, create_pbs_dynamic_node */
 #include "node_manager.h" /* setup_notification */
 #include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
 #include "queue_func.h" /* find_queuebyname, que_alloc, que_free */
@@ -2145,7 +2145,7 @@ void mgr_node_create(
 
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
 
-  rc = create_pbs_node(
+  rc = create_pbs_dynamic_node(
          preq->rq_ind.rq_manager.rq_objname,
          plist,
          preq->rq_perm,
