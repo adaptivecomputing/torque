@@ -1,6 +1,14 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
+#include <string.h>
+#include <unistd.h>
+#include <netdb.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include "pbs_config.h"
 
 #include "tm_.h" /* tm_node_id, tm_task_id, tm_event_t */
 #include "tm.h" /* tm_roots */
@@ -59,4 +67,14 @@ int tm_kill(tm_task_id tid, int sig, tm_event_t *event)
   { 
   fprintf(stderr, "The call to tm_kill needs to be mocked!!\n");
   exit(1);
+  }
+
+ssize_t read_blocking_socket(
+
+  int      fd,
+  void    *buf,
+  ssize_t  count)
+
+  {
+    return(read(fd, buf, count));
   }
