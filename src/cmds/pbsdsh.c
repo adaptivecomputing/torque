@@ -650,7 +650,11 @@ int build_listener(
 
     flags = fcntl(s, F_GETFL);
     flags |= O_NONBLOCK;
-    fcntl(s, F_SETFL, flags);
+    if (fcntl(s, F_SETFL, flags) < 0)
+      {
+      close(s);
+      return(-1);
+      }
 
     if (listen(s, 1024) < 0)
       {
