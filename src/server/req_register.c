@@ -2566,6 +2566,8 @@ int decode_depend(
 
     return(PBSE_NONE);
     }
+    
+  free_depend(patr);
 
   work_val = strdup(val);
 
@@ -2974,6 +2976,8 @@ int comp_depend(
   {
   return (-1);
   }
+
+
 
 void free_depend(
 
