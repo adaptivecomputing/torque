@@ -455,7 +455,6 @@ int get_job_id(
   else
     {
     /* Create a job id */
-    char  host_server[PBS_MAXSERVERNAME + 1]; 
     long  server_suffix = TRUE;
 
     created_here = JOB_SVFLG_HERE;
@@ -467,18 +466,6 @@ int get_job_id(
     if ((alias != NULL) &&
         (server_suffix == TRUE))
       {
-      /* get_fullhostname needs to be called because if HOST_NAME_SUFFIX has been
-         added to the torque.cfg file the server name will be different than
-         server_name. */
-      if (get_fullhostname(pbs_default(), host_server, PBS_MAXSERVERNAME, NULL) == 0)
-        {
-        svrnm = host_server;
-        }
-      else
-        {
-        svrnm = server_name;
-        }
-
       snprintf(jidbuf,sizeof(jidbuf),"%d.%s.%s",
         server.sv_qs.sv_jobidnumber, svrnm, alias);
       }
@@ -488,18 +475,6 @@ int get_job_id(
       }
     else if (server_suffix == TRUE)
       {
-      /* get_fullhostname needs to be called because if HOST_NAME_SUFFIX has been
-         added to the torque.cfg file the server name will be different than
-         server_name. */
-      if (get_fullhostname(pbs_default(), host_server, PBS_MAXSERVERNAME, NULL) == 0)
-        {
-        svrnm = host_server;
-        }
-      else
-        {
-        svrnm = server_name;
-        }
-
       snprintf(jidbuf, sizeof(jidbuf), "%d.%s", server.sv_qs.sv_jobidnumber, svrnm);
       }
     else
