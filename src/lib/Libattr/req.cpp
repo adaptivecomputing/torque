@@ -37,7 +37,7 @@ req::req() : execution_slots(1), mem(0), swap(0), disk(0),
              task_count(1), socket(0), numa_chip(0),
              thread_usage_policy(ALLOW_THREADS), gpus(0), mics(0),
              pack(false), index(0), thread_usage_str(use_cores), single_job_access(false),
-             maxtpn(0), placement_str("node"), nodes(0), gpu_mode()
+             maxtpn(0), placement_str("node"), nodes(0), gpu_mode(), gres()
 
   {
   }
@@ -253,7 +253,12 @@ int req::set_name_value_pair(
   else if (!strcmp(name, "maxtpn"))
     rc = parse_positive_integer(value, this->maxtpn);
   else if (!strcmp(name, "gres"))
-    this->gres = value;
+    {
+    if (this->gres.size() > 0)
+      this->gres += ":";
+
+    this->gres += value;
+    }
   else if (!strcmp(name, "feature"))
     this->features = value;
   else if (!strcmp(name, "disk"))
