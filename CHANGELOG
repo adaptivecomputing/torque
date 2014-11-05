@@ -59,6 +59,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - TRQ-2919. Fixed deadlock issue when running 'qdel -p' as non-root user.
   b - TRQ-2937. Fixed bug in qsub -m when TORQUE is configured --with-sendmail.
       Some missing newlines were added.
+  b - TRQ-2956. Fixed bug where HOST_NAME_SUFFIX was no longer adding suffix to job names.
   c - TRQ-2928, TRQ-2921, TRQ-2855, TRQ-2854, TRQ-2853, TRQ-2835. Fixed various crashes.
 
 5.0.0
