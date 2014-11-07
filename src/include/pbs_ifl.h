@@ -393,6 +393,7 @@
 #define ND_job_exclusive "job-exclusive"
 #define ND_job_sharing   "job-sharing"
 #define ND_busy          "busy"
+#define ND_nohierarchy   "MOM-list-not-sent"
 #define ND_state_unknown "state-unknown"
 
 /* node power state values */
