@@ -41,7 +41,6 @@ void log_record(int eventtype, int objclass, const char *objname, const char *te
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_err(int errnum, const char *routine, const char *text) {}
 void close_conn(int sd, int has_mutex) {}
-hello_container         hellos;
 id_map job_mapper;
 bool exit_called = false;
 
@@ -52,15 +51,6 @@ char *threadsafe_tokenizer(
 
   {
   return(NULL);
-  }
-
-int remove_hello(
-
-  hello_container *hc,
-  int              node_id)
-
-  {
-  return(0);
   }
 
 int get_svr_attr_l(
