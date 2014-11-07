@@ -49,13 +49,14 @@ START_TEST(test_get_set_values)
   fail_unless(names[7] == "gpu_mode.0");
   fail_unless(names[8] == "mics.0");
   fail_unless(names[9] == "thread_usage_policy.0", names[9].c_str());
-  fail_unless(names[10] == "reqattr.0");
-  fail_unless(names[11] == "gres.0");
-  fail_unless(names[12] == "opsys.0");
-  fail_unless(names[13] == "arch.0");
-  fail_unless(names[14] == "features.0", names[14].c_str());
-  fail_unless(names[15] == "single_job_access.0");
-  fail_unless(names[16] == "hostlist.0", names[16].c_str());
+  fail_unless(names[10] == "placement_type.0", names[10].c_str());
+  fail_unless(names[11] == "reqattr.0");
+  fail_unless(names[12] == "gres.0");
+  fail_unless(names[13] == "opsys.0");
+  fail_unless(names[14] == "arch.0");
+  fail_unless(names[15] == "features.0", names[14].c_str());
+  fail_unless(names[16] == "single_job_access.0");
+  fail_unless(names[17] == "hostlist.0", names[16].c_str());
 
   fail_unless(values[0] == "5");
   fail_unless(values[1] == "all");
@@ -67,13 +68,14 @@ START_TEST(test_get_set_values)
   fail_unless(values[7] == "exclusive_thread");
   fail_unless(values[8] == "1");
   fail_unless(values[9] == "use threads");
-  fail_unless(values[10] == "matlab>7");
-  fail_unless(values[11] == "gresA");
-  fail_unless(values[12] == "ubuntu");
-  fail_unless(values[13] == "64bit");
-  fail_unless(values[14] == "fast");
-  fail_unless(values[15] == "true");
-  fail_unless(values[16] == "napali/0-31");
+  fail_unless(values[10] == "node");
+  fail_unless(values[11] == "matlab>7");
+  fail_unless(values[12] == "gresA");
+  fail_unless(values[13] == "ubuntu");
+  fail_unless(values[14] == "64bit");
+  fail_unless(values[15] == "fast");
+  fail_unless(values[16] == "true");
+  fail_unless(values[17] == "napali/0-31");
 
   req r2;
   r2.set_value("lprocs", "2");
@@ -98,7 +100,7 @@ START_TEST(test_get_set_values)
   fail_unless(values[1] == "2");
   fail_unless(values[2] == "1");
   fail_unless(values[3] == "1");
-  fail_unless(values[4] == "allow threads");
+  fail_unless(values[4] == "usecores", values[4].c_str());
   fail_unless(values[5] == "core");
   fail_unless(values[6] == "true");
 
@@ -157,7 +159,7 @@ START_TEST(test_constructors)
 
   fail_unless(r.getHostlist().size() == 0);
   fail_unless(r.getTaskCount() == 1);
-  fail_unless(r.getPlacementType().size() == 0);
+  fail_unless(r.getPlacementType() == "node");
   fail_unless(r.getNodeAccessPolicy().size() == 0, r.getNodeAccessPolicy().c_str());
   fail_unless(r.getOS().size() == 0);
   fail_unless(r.getGres().size() == 0);
@@ -197,10 +199,10 @@ START_TEST(test_constructors)
   fail_unless(r4.getPlacementType() == "numachip=1", r4.getPlacementType().c_str());
   
   req r5("5:lprocs=4:memory=12gb:place=core=4:mics=1:feature=fast");
-  fail_unless(r5.getThreadUsageString() == "use cores", "thread usage '%s'", r5.getThreadUsageString().c_str());
+  fail_unless(r5.getThreadUsageString() == "usecores", "thread usage '%s'", r5.getThreadUsageString().c_str());
 
   req r6("5:lprocs=4:place=thread=4");
-  fail_unless(r6.getThreadUsageString() == "use threads", "thread usage '%s'", r6.getThreadUsageString().c_str());
+  fail_unless(r6.getThreadUsageString() == "usethreads", "thread usage '%s'", r6.getThreadUsageString().c_str());
 
   // make sure miss-spellings are caught
   std::string error;
@@ -334,13 +336,13 @@ START_TEST(test_set_attribute)
   req r;
 
   r.set_attribute("usethreads");
-  fail_unless(r.getThreadUsageString() == "use threads", "thread usage '%s'", r.getThreadUsageString().c_str());
+  fail_unless(r.getThreadUsageString() == "usethreads", "thread usage '%s'", r.getThreadUsageString().c_str());
 
   r.set_attribute("allowthreads");
-  fail_unless(r.getThreadUsageString() == "allow threads", "thread usage '%s'", r.getThreadUsageString().c_str());
+  fail_unless(r.getThreadUsageString() == "allowthreads", "thread usage '%s'", r.getThreadUsageString().c_str());
 
   r.set_attribute("usefastcores");
-  fail_unless(r.getThreadUsageString() == "use fast cores", "thread usage '%s'", r.getThreadUsageString().c_str());
+  fail_unless(r.getThreadUsageString() == "usefastcores", "thread usage '%s'", r.getThreadUsageString().c_str());
 
   r.set_index(5);
   fail_unless(r.getIndex() == 5);

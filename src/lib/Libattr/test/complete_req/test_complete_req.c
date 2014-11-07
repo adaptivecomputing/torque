@@ -25,10 +25,18 @@ START_TEST(test_set_get_value)
   fail_unless(names[0] == "task_count.0");
   fail_unless(names[1] == "lprocs.0");
   fail_unless(names[2] == "thread_usage_policy.0");
-  fail_unless(names[3] == "task_count.1", names[3].c_str());
-  fail_unless(names[4] == "lprocs.1", names[4].c_str());
-  fail_unless(names[5] == "gpus.1", names[4].c_str());
-  fail_unless(names[6] == "thread_usage_policy.1");
+  fail_unless(names[3] == "placement_type.0", names[3].c_str());
+  fail_unless(names[4] == "task_count.1", names[3].c_str());
+  fail_unless(names[5] == "lprocs.1", names[4].c_str());
+  fail_unless(names[6] == "gpus.1", names[4].c_str());
+  fail_unless(names[7] == "thread_usage_policy.1");
+
+  fail_unless(values[0] == "4");
+  fail_unless(values[1] == "4");
+  fail_unless(values[3] == "node");
+  fail_unless(values[4] == "5");
+  fail_unless(values[5] == "1");
+  fail_unless(values[6] == "2");
   }
 END_TEST
 

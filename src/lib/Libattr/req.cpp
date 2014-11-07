@@ -22,12 +22,22 @@ const int PLACE_THREADS = 2;
 
 const int ALL_EXECUTION_SLOTS = -1;
 
+const char *use_cores = "usecores";
+const char *use_threads = "usethreads";
+const char *allow_threads = "allowthreads";
+const char *use_fast_cores = "usefastcores";
+const char *place_node = "node";
+const char *place_socket = "socket";
+const char *place_numa = "numachip";
+const char *place_core = "core";
+const char *place_thread = "thread";
+
 
 req::req() : execution_slots(1), mem(0), swap(0), disk(0),
              task_count(1), socket(0), numa_chip(0),
              thread_usage_policy(ALLOW_THREADS), gpus(0), mics(0),
-             pack(false), index(0), thread_usage_str("allow threads"), single_job_access(false),
-             maxtpn(0), placement_str(), nodes(0), gpu_mode()
+             pack(false), index(0), thread_usage_str(use_cores), single_job_access(false),
+             maxtpn(0), placement_str("node"), nodes(0), gpu_mode(), gres()
 
   {
   }
@@ -108,22 +118,22 @@ int req::set_place_value(
     numeric_value = equals + 1;
     }
 
-  if (!strcmp(work_str, "node"))
+  if (!strcmp(work_str, place_node))
     {
     if (numeric_value != NULL)
       rc = parse_positive_integer(numeric_value, this->nodes);
     }
-  else if (!strcmp(work_str, "socket"))
+  else if (!strcmp(work_str, place_socket))
     {
     if (numeric_value != NULL)
       rc = parse_positive_integer(numeric_value, this->socket);
     }
-  else if (!strcmp(work_str, "numachip"))
+  else if (!strcmp(work_str, place_numa))
     {
     if (numeric_value != NULL)
       rc = parse_positive_integer(numeric_value, this->numa_chip);
     }
-  else if (!strcmp(work_str, "core"))
+  else if (!strcmp(work_str, place_core))
     {
     if (numeric_value != NULL)
       {
@@ -135,9 +145,9 @@ int req::set_place_value(
       }
       
     this->thread_usage_policy = USE_CORES;
-    this->thread_usage_str = "use cores";
+    this->thread_usage_str = use_cores;
     }
-  else if (!strcmp(work_str, "thread"))
+  else if (!strcmp(work_str, place_thread))
     {
     if (numeric_value != NULL)
       {
@@ -149,7 +159,7 @@ int req::set_place_value(
       }
       
     this->thread_usage_policy = USE_THREADS;
-    this->thread_usage_str = "use threads";
+    this->thread_usage_str = use_threads;
     }
   else
     rc = PBSE_BAD_PARAMETER;
@@ -243,7 +253,12 @@ int req::set_name_value_pair(
   else if (!strcmp(name, "maxtpn"))
     rc = parse_positive_integer(value, this->maxtpn);
   else if (!strcmp(name, "gres"))
-    this->gres = value;
+    {
+    if (this->gres.size() > 0)
+      this->gres += ":";
+
+    this->gres += value;
+    }
   else if (!strcmp(name, "feature"))
     this->features = value;
   else if (!strcmp(name, "disk"))
@@ -277,25 +292,25 @@ int req::set_attribute(
   const char *str)
 
   {
-  if (!strcmp(str, "usecores"))
+  if (!strcmp(str, use_cores))
     {
     this->thread_usage_policy = USE_CORES;
-    this->thread_usage_str = "use cores";
+    this->thread_usage_str = str;
     }
-  else if (!strcmp(str, "usethreads"))
+  else if (!strcmp(str, use_threads))
     {
     this->thread_usage_policy = USE_THREADS;
-    this->thread_usage_str = "use threads";
+    this->thread_usage_str = str;
     }
-  else if (!strcmp(str, "allowthreads"))
+  else if (!strcmp(str, allow_threads))
     {
     this->thread_usage_policy = ALLOW_THREADS;
-    this->thread_usage_str = "allow threads";
+    this->thread_usage_str = str;
     }
-  else if (!strcmp(str, "usefastcores"))
+  else if (!strcmp(str, use_fast_cores))
     {
     this->thread_usage_policy = USE_FAST_CORES;
-    this->thread_usage_str = "use fast cores";
+    this->thread_usage_str = str;
     }
   else if (!strcmp(str, "pack"))
     {
@@ -552,10 +567,10 @@ bool req::submission_string_has_duplicates(
   std::vector<std::string> thread_use_values;
   std::vector<std::string> gpu_mode_values;
 
-  thread_use_values.push_back("usecores");
-  thread_use_values.push_back("usethreads");
-  thread_use_values.push_back("allowthreads");
-  thread_use_values.push_back("usefastcores");
+  thread_use_values.push_back(use_cores);
+  thread_use_values.push_back(use_threads);
+  thread_use_values.push_back(allow_threads);
+  thread_use_values.push_back(use_fast_cores);
 
   gpu_mode_values.push_back("shared");
   gpu_mode_values.push_back("exclusive_thread");
@@ -1308,11 +1323,11 @@ void req::set_from_string(
 
     this->thread_usage_str = capture_until_newline_and_advance(&current);
 
-    if (this->thread_usage_str == "use cores")
+    if (this->thread_usage_str == use_cores)
       this->thread_usage_policy = USE_CORES;
-    else if (this->thread_usage_str == "use threads")
+    else if (this->thread_usage_str == use_threads)
       this->thread_usage_policy = USE_THREADS;
-    else if (this->thread_usage_str == "allow threads")
+    else if (this->thread_usage_str == allow_threads)
       this->thread_usage_policy = ALLOW_THREADS;
     else
       this->thread_usage_policy = USE_FAST_CORES;
