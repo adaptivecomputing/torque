@@ -303,6 +303,12 @@ void scan_for_terminated(void) /* linux */
     {
     pjob = (job *)GET_PRIOR(svr_alljobs);
 
+    if (LOGLEVEL >= 8)
+      {
+      sprintf(log_buffer, "pid terminated: %d", pid);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+      }
+
     while (pjob != NULL)
       {
       /*
@@ -371,6 +377,7 @@ void scan_for_terminated(void) /* linux */
         {
         /* pid match located - break out of job loop */
         pjob->ji_stats_done = true;
+        pjob->ji_job_procs->clear();
 
         break;
         }

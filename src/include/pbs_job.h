@@ -1,4 +1,4 @@
-/*
+to
 *         OpenPBS (Portable Batch System) v2.3 Software License
 *
 * Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
@@ -101,6 +101,7 @@
 #include "net_connect.h"
 #include <string>
 #include <vector>
+#include <set>
 
 #define SAVEJOB_BUF_SIZE 8192
 
@@ -664,6 +665,7 @@ struct job
   pid_t          ji_job_pid;           /* Set in TMomFinalizeJob2. It is the pid of the process
                                           forked to run TMomFinalizeChild. This is the directory
                                           name of the cgroup for the job */
+  std::set<pid_t> *ji_job_procs;    /* a vector of all processes in this job */
 
 #else     /* END MOM ONLY */
 

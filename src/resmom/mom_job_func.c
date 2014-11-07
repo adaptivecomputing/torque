@@ -145,6 +145,10 @@
 #include "mom_job_cleanup.h"
 #include "node_frequency.hpp"
 
+#ifdef PENABLE_LINUX_CGROUPS
+#include "trq_cgroups.h"
+#endif
+
 #ifndef TRUE
 #define TRUE 1
 #define FALSE 0
@@ -498,6 +502,8 @@ job *job_alloc(void)
   pj->ji_stats_done = false;
 
   pj->ji_momhandle = -1;  /* mark mom connection invalid */
+
+  pj->ji_job_procs = new(std::set<pid_t>);
 
   /* set the working attributes to "unspecified" */
   job_init_wattr(pj);
@@ -883,6 +889,11 @@ void mom_job_purge(
 
 #endif   /* IBM SP */
 
+#ifdef PENABLE_LINUX_CGROUPS
+  /* We need to remove the cgroup hierarchy for this job */
+  trq_cg_remove_process_from_accts(pjob);
+#endif
+
   //We had a request to change the frequency for the job and now that the job is done
   //we want to change the frequency back.
   resource *presc = find_resc_entry(&pjob->ji_wattr[JOB_ATR_resource],
@@ -906,6 +917,7 @@ void mom_job_purge(
       }
     }
 
+  delete pjob->ji_job_procs;
   mom_job_free(pjob);
 
   /* if no jobs are left, check if MOM should be restarted */

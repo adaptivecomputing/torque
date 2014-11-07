@@ -6,6 +6,7 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <set>
 #include <boost/foreach.hpp>
 #include <boost/tokenizer.hpp>
 #include <sys/types.h>
@@ -14,6 +15,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include "log.h"
+#include "pbs_job.h"
 
 using namespace std;
 using namespace boost;
@@ -21,6 +23,8 @@ using namespace boost;
 #define PBSE_NONE 0
 #define PBSE_CGROUPS_NOT_ENABLED 1
 #define PBSE_SYSTEM 3
+
+#define PS_CMD "ps -eo pid,ppid,sess | grep "
 
 enum cgroup_system
   {
@@ -32,11 +36,11 @@ enum cgroup_system
   cg_subsys_count
   };
 
-string cpu_path;
-string cpuset_path;
-string cpuacct_path;
-string memory_path;
-string devices_path;
+string cg_cpu_path;
+string cg_cpuset_path;
+string cg_cpuacct_path;
+string cg_memory_path;
+string cg_devices_path;
 
 /* This array tracks if all of the hierarchies are mounted we need 
    to run our control groups */
@@ -61,7 +65,7 @@ int cleanup_torque_cgroups()
   string torque_path;
   int rc = PBSE_NONE;
 
-  torque_path = cpu_path + "/torque";
+  torque_path = cg_cpu_path;
   rc = stat(torque_path.c_str(), &buf);
   if (rc == 0)
     {
@@ -74,7 +78,7 @@ int cleanup_torque_cgroups()
       }
     }
 
-  torque_path = cpuacct_path + "/torque";
+  torque_path = cg_cpuacct_path;
   rc = stat(torque_path.c_str(), &buf);
   if (rc == 0)
     {
@@ -87,7 +91,7 @@ int cleanup_torque_cgroups()
       }
     }
 
-  torque_path = cpuset_path + "/torque";
+  torque_path = cg_cpuset_path;
   rc = stat(torque_path.c_str(), &buf);
   if (rc == 0)
     {
@@ -100,7 +104,7 @@ int cleanup_torque_cgroups()
       }
     }
 
-  torque_path = memory_path + "/torque";
+  torque_path = cg_memory_path;
   rc = stat(torque_path.c_str(), &buf);
   if (rc == 0)
     {
@@ -113,7 +117,7 @@ int cleanup_torque_cgroups()
       }
     }
 
-  torque_path = devices_path + "/torque";
+  torque_path = cg_devices_path;
   rc = stat(torque_path.c_str(), &buf);
   if (rc == 0)
     {
@@ -138,51 +142,51 @@ int init_torque_cgroups()
   string torque_path;
   int rc;
 
-  torque_path = cpu_path + "/torque";
+  torque_path = cg_cpu_path;
   rc = stat(torque_path.c_str(), &buf);
   if (rc != 0)
     {
-    /* create the torque directory under cpu_path */
+    /* create the torque directory under cg_cpu_path */
     rc = mkdir( torque_path.c_str(), S_IRWXU | S_IRWXG | S_IROTH);
     if (rc != 0)
       return(rc);
     } 
 
-  torque_path = cpuacct_path + "/torque";
+  torque_path = cg_cpuacct_path;
   rc = stat(torque_path.c_str(), &buf);
   if (rc != 0)
     {
-    /* create the torque directory under cpu_path */
+    /* create the torque directory under cg_cpu_path */
     rc = mkdir( torque_path.c_str(), S_IRWXU | S_IRWXG | S_IROTH);
     if (rc != 0)
       return(rc);
     } 
 
-  torque_path = cpuset_path + "/torque";
+  torque_path = cg_cpuset_path;
   rc = stat(torque_path.c_str(), &buf);
   if (rc != 0)
     {
-    /* create the torque directory under cpu_path */
+    /* create the torque directory under cg_cpu_path */
     rc = mkdir( torque_path.c_str(), S_IRWXU | S_IRWXG | S_IROTH);
     if (rc != 0)
       return(rc);
     } 
 
-  torque_path = memory_path + "/torque";
+  torque_path = cg_memory_path;
   rc = stat(torque_path.c_str(), &buf);
   if (rc != 0)
     {
-    /* create the torque directory under cpu_path */
+    /* create the torque directory under cg_cpu_path */
     rc = mkdir( torque_path.c_str(), S_IRWXU | S_IRWXG | S_IROTH);
     if (rc != 0)
       return(rc);
     } 
 
-  torque_path = devices_path + "/torque";
+  torque_path = cg_devices_path;
   rc = stat(torque_path.c_str(), &buf);
   if (rc != 0)
     {
-    /* create the torque directory under cpu_path */
+    /* create the torque directory under cg_cpu_path */
     rc = mkdir( torque_path.c_str(), S_IRWXU | S_IRWXG | S_IROTH);
     if (rc != 0)
       return(rc);
@@ -232,27 +236,27 @@ int init_subsystems(string& sub_token, string& mount_point)
 
   if (sub_token.compare("cpu") == 0)
     {
-    cpu_path = mount_point;
+    cg_cpu_path = mount_point + "/torque/";
     subsys_online[cg_cpu] = true;
     }
   else if (sub_token.compare("cpuacct") == 0)
     {
-    cpuacct_path = mount_point;
+    cg_cpuacct_path = mount_point + "/torque/";
     subsys_online[cg_cpuacct] = true;
     }
   else if (sub_token.compare("cpuset") == 0)
     {
-    cpuset_path = mount_point;
+    cg_cpuset_path = mount_point + "/torque/";
     subsys_online[cg_cpuset] = true;
     }
   else if (sub_token.compare("memory") == 0)
     {
-    memory_path = mount_point;
+    cg_memory_path = mount_point + "/torque/";
     subsys_online[cg_memory] = true;
     }
   else if (sub_token.compare("devices") == 0)
     {
-    devices_path = mount_point;
+    cg_devices_path = mount_point + "/torque/";
     subsys_online[cg_devices] = true;
     }
   return(0);
@@ -362,7 +366,7 @@ int trq_cg_add_process_to_cgroup(string& cgroup_path, pid_t job_pid, pid_t new_p
 
   sprintf(new_task_pid, "%d", new_pid);
   sprintf(cgroup_name, "%d", job_pid);
-  full_cgroup_path = cgroup_path + "/torque/" + cgroup_name + "/tasks";
+  full_cgroup_path = cgroup_path + cgroup_name + "/tasks";
 
   cgroup_fd = open(full_cgroup_path.c_str(), O_WRONLY);
   if (cgroup_fd < 0)
@@ -395,7 +399,7 @@ int trq_cg_create_cgroup(string& cgroup_path, pid_t job_pid)
   string cgroup_task_path;
 
   sprintf(cgroup_name, "%d", job_pid);
-  full_cgroup_path = cgroup_path + "/torque/" + cgroup_name;
+  full_cgroup_path = cgroup_path  + cgroup_name;
 
   /* create a cgroup with the pid as the directory name under the cpuacct subsystem */
   rc = mkdir(full_cgroup_path.c_str(), 0x644);
@@ -445,16 +449,158 @@ int trq_cg_add_process_to_cgroup_accts(pid_t job_pid)
   int rc;
 
   /* create a directory for this process in the cpuacct/torque hierarchy */
-  rc = trq_cg_create_cgroup(cpuacct_path, job_pid);
+  rc = trq_cg_create_cgroup(cg_cpuacct_path, job_pid);
   if (rc != PBSE_NONE)
     return(rc);
 
 
   /* create a directory for this process in the memory/torque hierarchy */
-  rc = trq_cg_create_cgroup(memory_path, job_pid);
+  rc = trq_cg_create_cgroup(cg_memory_path, job_pid);
   if (rc != PBSE_NONE)
     return(rc);
 
   return(PBSE_NONE);
   }
+
+
+/* trq_cg_remove_process_from_cgroup
+ * Remove the cgroup of the job_pid from the
+ * cgroup_path given.
+ */
+int trq_cg_remove_process_from_cgroup(string cgroup_path, pid_t job_pid)
+  {
+  int rc;
+  char log_buf[LOCAL_LOG_BUF_SIZE];
+  char cgroup_name[256];
+  string cgroup_path_name;
+
+  sprintf(cgroup_name, "%d", job_pid);
+  cgroup_path_name = cgroup_path + cgroup_name;
+
+  rc = rmdir(cgroup_path_name.c_str());
+
+  if (rc < 0)
+    {
+    sprintf(log_buf, "failed to remove %s from cgroups ", cgroup_path_name.c_str());
+    log_err(-1, __func__, log_buf);
+    }
+  else
+    rc = PBSE_NONE;
+
+  return(rc);
+
+
+  }
+
+/* trq_cg_remove_process_from_accts: Remove the hierarchies for
+   this jobs process from the cgroups directory. That is remove
+   this job from its accounting cgroups */
+int trq_cg_remove_process_from_accts(job *pjob)
+  {
+  int rc;
+  char log_buf[LOCAL_LOG_BUF_SIZE];
+
+  /* remove job from the cpuacct cgroup */
+  rc = trq_cg_remove_process_from_cgroup(cg_cpuacct_path, pjob->ji_job_pid);
+  if (rc != PBSE_NONE)
+    {
+    sprintf(log_buf, "Failed to remove pjob %s from cgroup cpuacct: process %d", pjob->ji_qs.ji_jobid, pjob->ji_job_pid);
+    log_err(-1, __func__, log_buf);
+    }
+
+  /* remove job from the cpumemory cgroup */
+  rc = trq_cg_remove_process_from_cgroup(cg_memory_path, pjob->ji_job_pid);
+  if (rc != PBSE_NONE)
+    {
+    sprintf(log_buf, "Failed to remove pjob %s from cgroup memory: process %d", pjob->ji_qs.ji_jobid, pjob->ji_job_pid);
+    log_err(-1, __func__, log_buf);
+    }
+
+
+  return(PBSE_NONE);
+  }
+
+#define GETLINE_SIZE 512
+
+/* trq_cg_find_job_processes
+ *
+ * This function takes the current_pid and then finds all child processes
+ * for this pid including processes where the session id has been changed
+ */
+int trq_cg_find_job_processes(job *pjob, pid_t current_pid)
+  {
+  int   rc = PBSE_NONE;
+  FILE *fp = NULL;
+  char cmd[256];
+  char *line;
+  size_t len = GETLINE_SIZE;
+  char  current_pid_string[256];
+  string new_line;
+  vector<string> line_pids;
+  set<pid_t>::iterator it;
+
+  it = pjob->ji_job_procs->find(current_pid);
+
+  if (it == pjob->ji_job_procs->end())
+    {
+    pjob->ji_job_procs->insert(current_pid);
+    }
+
+  /* make the command */
+  sprintf(cmd, "%s%d", PS_CMD, current_pid);
+
+  fp = popen(cmd, "r");
+  if (fp == NULL)
+    {
+    printf("Failed to execute command %s\n", cmd);
+    return(-1);
+    }
+
+  line = (char *)malloc(GETLINE_SIZE);
+  if (line == NULL)
+    {
+    pclose(fp);
+    return(PBSE_SYSTEM);
+    }
+
+
+  sprintf(current_pid_string, "%d", current_pid);
+  len = GETLINE_SIZE;
+  while(getline(&line, &len, fp) > 0)
+    {
+    /* The BOOST_FOREACH likes to work with string types not char types */
+    new_line = line;
+    char_separator<char> sep(" ");
+    tokenizer< char_separator<char> > tokens(new_line, sep);
+    BOOST_FOREACH(const string& t, tokens)
+      {
+      line_pids.push_back(t);
+      }
+    /* if the first element is the same pid we started with go on to the next line */
+    if (line_pids[0].compare(current_pid_string) == 0)
+      {
+      line_pids.clear();
+      new_line.clear();
+      len = GETLINE_SIZE;
+      continue;
+      }
+
+    rc = trq_cg_find_job_processes(pjob, atoi(line_pids[0].c_str()));
+    if (rc != 0)
+      {
+      pclose(fp);
+      return(rc);
+      }
+
+    line_pids.clear();
+    new_line.clear();
+    len = GETLINE_SIZE;
+    }
+
+  pclose(fp);
+  free(line);
+  rc = PBSE_NONE;
+  return(rc);
+  }
+
 

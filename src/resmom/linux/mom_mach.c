@@ -3,6 +3,7 @@
 #include "lib_mom.h" /* header */
 
 #include <string>
+#include <vector>
 #include <assert.h>
 #include <limits.h>
 #include <stdio.h>
@@ -64,6 +65,10 @@
 #endif
 #include "mom_config.h"
 #include "timer.hpp"
+
+#ifdef PENABLE_LINUX_CGROUPS
+#include "trq_cgroups.h"
+#endif
 
 
 /*
@@ -1128,6 +1133,7 @@ static int injob(
  * adjusted by cputfactor.
  */
 
+#ifndef PENABLE_LINUX_CGROUPS
 static unsigned long cput_sum(
 
   job *pjob)  /* I */
@@ -1188,6 +1194,65 @@ static unsigned long cput_sum(
   return((unsigned long)((double)cputime * cputfactor));
   }  /* END cput_sum() */
 
+#else
+#define LOCAL_BUF_SIZE 256
+#define NANO_SECONDS 1000000000
+
+static unsigned long cput_sum(
+
+    job *pjob)
+
+  {
+  ulong        cputime; 
+  std::string  full_cgroup_path;
+  int          fd;
+  int          rc;
+  char         buf[LOCAL_BUF_SIZE];
+  unsigned long long nano_seconds;
+
+  sprintf(buf, "%d", pjob->ji_job_pid);
+  full_cgroup_path = cg_cpuacct_path + buf + "/cpuacct.usage";
+
+  fd = open(full_cgroup_path.c_str(), O_RDONLY);
+  if (fd <= 0)
+    {
+    sprintf(buf, "failed to open %s: %s", full_cgroup_path.c_str(), strerror(errno));
+    log_err(-1, __func__, buf);
+    return(0);
+    }
+
+  rc = read(fd, buf, LOCAL_BUF_SIZE);
+  if (rc == 0)
+    {
+    /* Something is not right. We should not have 0 bytes returned */
+    cputime = 0;
+    }
+  else if (rc == -1)
+    {
+    sprintf(buf, "failed to read %s: %s", full_cgroup_path.c_str(), strerror(errno));
+    log_err(-1, __func__, buf);
+    close(fd);
+    return(0);
+    }
+  else
+    {
+    /* successful read. Should be a number in nano-seconds */
+
+    nano_seconds = atol(buf);
+    }
+
+  /* convert the nano seconds to seconds */
+  cputime = nano_seconds/NANO_SECONDS;
+
+  pjob->ji_flags &= ~MOM_NO_PROC;
+
+  close(fd);
+
+  return(cputime);
+  
+  }
+
+#endif /* #ifndes PENABLE_LINUX_CGROUPS */
 
 
 
@@ -2129,6 +2194,157 @@ int mom_open_poll(void)
   }  /* END mom_open_poll() */
 
 
+#ifdef PENABLE_LINUX_CGROUPS
+/*
+ * Declare start of polling loop.
+ *
+ * This function caches information about all of processes
+ * on the compute node (pbs_mom calls this function). Each process
+ * in /proc/ is queried by looking at the 'stat' file. Statistics like
+ * CPU usage time, memory consumption, etc. are gathered in the proc_array
+ * list. This list is then used throughout the pbs_mom to get information
+ * about tasks it is monitoring.
+ *
+ * This function is called from the main MOM loop once every "check_poll_interval"
+ * seconds.
+ *
+ * @see get_proc_stat() - child
+ * @see mom_set_use() - Aggregates data collected here
+ *
+ * NOTE:  populates global 'proc_array[]' variable.
+ * NOTE:  reallocs proc_array[] as needed to accomodate processes.
+ *
+ * @see mom_open_poll() - allocs proc_array table.
+ * @see mom_close_poll() - frees procs_array.
+ * @see setup_program_environment() - parent - called at pbs_mom start
+ * @see main_loop() - parent - called once per iteration
+ * @see mom_set_use() - populate job structure with usage data for local use or to send to mother superior
+ */
+
+#define MAX_PID_SIZE 128
+int mom_get_sample(void)
+
+  {
+  proc_stat_t           *pi;
+  proc_stat_t           *ps;
+  pid_t                  pid;
+  job                   *pjob;
+
+  int                    rc;
+
+
+  if (proc_array == NULL)
+    mom_open_poll();
+
+  nproc = 0;
+
+  pi = proc_array;
+
+  if (LOGLEVEL >= 6)
+    {
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, __func__, "proc_array load started");
+    }
+
+/******************************************************************************************************/
+  pjob = (job *)GET_NEXT(svr_alljobs);
+  while (pjob != NULL)
+    {
+    if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_RUNNING) ||
+        (pjob->ji_job_pid == 0))
+      {
+      /* If the job state is not running we don't care.
+         If the ji_job_pid is 0 then we are probably restarting the 
+         mom and we don't care */
+      pjob = (job *)GET_NEXT(pjob->ji_alljobs);
+      continue;
+      }
+
+
+    rc = trq_cg_find_job_processes(pjob, pjob->ji_job_pid);
+    if (rc != PBSE_NONE)
+      {
+      pjob = (job *)GET_NEXT(pjob->ji_alljobs);
+      continue;
+      }
+
+    if (LOGLEVEL >= 8)
+      {
+      sprintf(log_buffer, "job id: %s - pid %d: job state: %d  job substate %d", pjob->ji_qs.ji_jobid, pjob->ji_job_pid, pjob->ji_qs.ji_state, pjob->ji_qs.ji_substate);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+      }
+
+    for (std::set<pid_t>::iterator iter = pjob->ji_job_procs->begin(); iter != pjob->ji_job_procs->end(); iter++)
+      {
+      pid  = *iter;
+
+      if (LOGLEVEL >= 8)
+        {
+        sprintf(log_buffer, "in iter loop: job id: %s - pid %d", pjob->ji_qs.ji_jobid, pid);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+        }
+
+      if ((ps = get_proc_stat(pid)) == NULL)
+        {
+        if (errno != ENOENT)
+          {
+          sprintf(log_buffer, "%d: get_proc_stat", pid);
+
+          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+          log_err(errno, __func__, log_buffer);
+          }
+
+        continue;
+        }
+
+      /* nproc++; -- we need to increment AFTER assigning this ps to
+       the proc_array--otherwise we could skip it in for loops */
+
+      if ((nproc + 1) >= max_proc)
+        {
+        proc_stat_t *hold;
+
+        if (LOGLEVEL >= 9)
+          {
+          log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, __func__, "alloc more proc_array");
+          }
+
+        max_proc *= 2;
+
+        hold = (proc_stat_t *)calloc(1, max_proc * sizeof(proc_stat_t));
+
+        if (hold == NULL)
+          {
+          log_err(errno, __func__, "unable to realloc space for proc_array sample");
+
+          return(PBSE_SYSTEM);
+          }
+
+        memcpy(hold, proc_array, sizeof(proc_stat_t) * max_proc / 2);
+        free(proc_array);
+
+        proc_array = hold;
+        }  /* END if ((nproc+1) == max_proc) */
+
+        pi = &proc_array[nproc++];
+
+        memcpy(pi, ps, sizeof(proc_stat_t));
+      }
+      pjob = (job *)GET_NEXT(pjob->ji_alljobs);
+    }  /* end while loop */
+/********************************************************************************************************/
+
+  if (LOGLEVEL >= 6)
+    {
+    sprintf(log_buffer, "proc_array loaded - nproc=%d",
+            nproc);
+
+    log_record(PBSEVENT_DEBUG, 0, __func__, log_buffer);
+    }
+
+  return(PBSE_NONE);
+  }  /* END mom_get_sample() */
+
+#else
 
 
 /*
@@ -2276,7 +2492,7 @@ int mom_get_sample(void)
   return(PBSE_NONE);
   }  /* END mom_get_sample() */
 
-
+#endif /* PENABLE_LINUX_CGROUPS */
 
 
 
