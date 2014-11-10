@@ -64,6 +64,14 @@ using namespace std;
     hwloc_bitmap_list_snprintf(cpuset_string, MAX_CPUSET_SIZE, nearest_cpuset);
 #endif
 
+    /* TODO: We need to add a #ifdef NVIDIA_GPU followed by an ifdef NVML_API 
+       here and then run the initiaztion code for the NVIDIA GPU hardware
+       location code */
+#ifdef NVIDIA_GPU                                                                                                                                   
+  #ifdef NVML_API
+  #endif
+#endif
+
     return(PBSE_NONE);
     }
  
