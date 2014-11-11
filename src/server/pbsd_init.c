@@ -137,6 +137,7 @@
 #include <vector>
 #include "id_map.hpp"
 #include "exiting_jobs.h"
+#include "mom_hierarchy_handler.h"
 
 
 /*#ifndef SIGKILL*/
@@ -214,11 +215,6 @@ job_recycler                    recycler;
 queue_recycler                  q_recycler;
 pthread_mutex_t                *exiting_jobs_info_mutex;
 
-std::vector<std::string>        hierarchy_holder;
-pthread_mutex_t                 hierarchy_holder_Mutex = PTHREAD_MUTEX_INITIALIZER;
-hello_container                 hellos;
-hello_container                 failures;
-
 reservation_holder              alps_reservations;
 batch_request_holder            brh;
 
@@ -231,14 +227,13 @@ extern pthread_mutex_t         *listener_command_mutex;
 extern pthread_mutex_t         *node_state_mutex;
 extern pthread_mutex_t         *check_tasks_mutex;
 extern pthread_mutex_t         *reroute_job_mutex;
-extern mom_hierarchy_t         *mh;
+//extern mom_hierarchy_t         *mh;
 id_map                          node_mapper;
 
 extern int a_opt_init;
 
 extern int LOGLEVEL;
 extern char *plogenv;
-extern bool  auto_send_hierarchy;
 
 extern struct server server;
 
@@ -468,424 +463,6 @@ void add_server_names_to_acl_hosts(void)
 
   return;
   }
-
-
-
-
-void make_default_hierarchy(std::vector<std::string>& hierarchy)
-
-  {
-  struct pbsnode *pnode;
-  std::string      level_ds = "";
-  all_nodes_iterator *iter = NULL;
-  char            buf[MAXLINE];
-
-
-  hierarchy.clear();
-
-  hierarchy.push_back("<sp>");
-  hierarchy.push_back("<sl>");
-
-  while ((pnode = next_host(&allnodes, &iter, NULL)) != NULL)
-    {
-    if (level_ds.length() > 0)
-      level_ds += ",";
-
-    level_ds += pnode->nd_name;
-
-    if (PBS_MANAGER_SERVICE_PORT != pnode->nd_mom_rm_port)
-      {
-      snprintf(buf, sizeof(buf), ":%d", (int)pnode->nd_mom_rm_port);
-      level_ds += buf;
-      }
-
-    pnode->nd_hierarchy_level = 0;
-
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
-    }
-
-  if (iter != NULL)
-    delete iter;
-
-  hierarchy.push_back(level_ds);
-  hierarchy.push_back("</sl>");
-  hierarchy.push_back("</sp>");
-  } /* END make_default_hierarchy() */
-
-
-
-
-
-int can_resolve_hostname(
-
-  char *hostname)
-
-  {
-  char            *colon;
-  struct addrinfo *addr_info;
-  int              can_resolve = FALSE;
-
-  if ((colon = strchr(hostname, ':')) != NULL)
-    *colon = '\0';
-
-  if (get_cached_addrinfo(hostname) != NULL)
-    can_resolve = TRUE;
-  else if (pbs_getaddrinfo(hostname, NULL, &addr_info) == 0)
-    {
-    can_resolve = TRUE;
-    }
-
-  if (colon != NULL)
-    *colon = ':';
-
-  return(can_resolve);
-  } /* END can_resolve_hostname() */
-
-
-
-/*
- * check_if_in_nodes_file()
- * When parsing the mom_hierarchy file, make sure that the nodes found there
- * are also present in the nodes file, and create the nodes if they don't exist already.
- * Also, mark nodes as having been found in the hierarchy file so that they the hierarchy
- * can be checked for completeness later.
- *
- * @pre-cond: hostname must be a valid char pointer
- * @pre-cond: the nodes file must be parsed before the mom hierarchy
- * @post-cond: any nodes in the hierarchy file that aren't in the nodes file are created
- * @post-cond: rm_port has the mom's rm port stored in it
- */
-
-void check_if_in_nodes_file(
-
-  char           *hostname,
-  int             level_index,
-  unsigned short &rm_port)
-
-  {
-  char                log_buf[LOCAL_LOG_BUF_SIZE];
-  struct pbsnode     *pnode;
-  char               *colon;
-  struct addrinfo    *addr_info;
-  struct sockaddr_in *sai;
-  unsigned long       ipaddr;
-
-  if ((colon = strchr(hostname, ':')) != NULL)
-    *colon = '\0';
-  
-  if ((pnode = find_nodebyname(hostname)) == NULL)
-    {
-    snprintf(log_buf, sizeof(log_buf), 
-      "Node %s found in mom_hierarchy but not found in nodes file. Adding",
-      hostname);
-    log_err(-1, __func__, log_buf);
-
-    if ((sai = get_cached_addrinfo(hostname)) == NULL)
-      {
-      if (pbs_getaddrinfo(hostname, NULL, &addr_info) == 0)
-        {
-        sai = (struct sockaddr_in *)addr_info->ai_addr;
-        ipaddr = ntohl(sai->sin_addr.s_addr);
-        }
-      else
-        {
-        log_err(errno, __func__, "getaddrinfo failed");
-        return;
-        }
-      }
-    else
-      ipaddr = ntohl(sai->sin_addr.s_addr);
-
-    create_partial_pbs_node(hostname, ipaddr, ATR_DFLAG_MGRD | ATR_DFLAG_MGWR);
-    pnode = find_nodebyname(hostname);
-    if (pnode == NULL)
-      {
-      snprintf(log_buf, sizeof(log_buf),
-        "Failed to add node %s to nodes file.",
-        hostname);
-      log_err(-1, __func__, log_buf);
-      return;
-      }
-    }
-
-  rm_port = pnode->nd_mom_rm_port;
-    
-  pnode->nd_in_hierarchy = TRUE;
-
-  if (pnode->nd_hierarchy_level > level_index)
-    pnode->nd_hierarchy_level = level_index;
-
-  unlock_node(pnode, __func__, NULL, LOGLEVEL);
-
-  if (colon != NULL)
-    *colon = ':';
-  } /* END check_if_in_nodes_file() */
-
-
-/*
- * convert_level_to_send_format()
- *
- * @pre-cond: nodes must be a valid std::vector of node_comm_t
- * @post-cond: all nodes at this level are added to send format in the format for sending
- */
-void convert_level_to_send_format(
-
-  mom_nodes                &nodes,
-  int                       level_index,
-  std::vector<std::string> &send_format)
-
-  {
-  node_comm_t       nc;
-  std::stringstream level_string;
-
-  send_format.push_back("<sl>");
-
-  for (mom_nodes::iterator nodes_iter = nodes.begin(); nodes_iter != nodes.end(); nodes_iter++)
-    {
-    nc = *nodes_iter;
-    unsigned short rm_port = 0;
-
-    if (level_string.str().size() != 0)
-      level_string << ",";
-  
-    check_if_in_nodes_file(nc.name, level_index, rm_port);
-    level_string << nc.name;
-
-    if (rm_port != PBS_MANAGER_SERVICE_PORT)
-      {
-      level_string << ":";
-      level_string << rm_port;
-      }
-    }
-
-  send_format.push_back(level_string.str());
-  send_format.push_back("</sl>");
-  } /* END convert_level_to_send_format() */
-
-/*
- * convert_path_to_send_format()
- * iterates over each level in the path and adds in to send format appropriately.
- *
- * @pre-cond: levels must be a valid std::vector of std::vectors.
- * @post-cond: this path is added to send_format in the correct format.
- */
-
-/*
- * convert_path_to_send_format()
- * iterates over each level in the path and adds in to send format appropriately.
- *
- * @pre-cond: levels must be a valid std::vector of std::vectors.
- * @post-cond: this path is added to send_format in the correct format.
- */
-void convert_path_to_send_format(
-
-  mom_levels               &levels,
-  std::vector<std::string> &send_format)
-
-  {
-  int level_index = 0;
-  send_format.push_back("<sp>");
-
-  for (unsigned int i = 0; i < levels.size(); i++)  
-    convert_level_to_send_format(levels[i], level_index++, send_format);
-
-  send_format.push_back("</sp>");
-  } /* END convert_path_to_send_format() */
-
-
-/*
- * add_missing_nodes()
- *
- * @pre-cond: nodes have been marked if they are in the hierarchy or not 
- * (i.e.: check_if_in_nodes_file() has been called for all nodes in the hierarchy)
- * @post-cond: any nodes not in the hierarchy are added in a new path, all at level 1
- */
-void add_missing_nodes(
-
-  std::vector<std::string> &send_format)
-
-  {
-  struct pbsnode *pnode;
-  bool            found_missing_node = false;
-  all_nodes_iterator *iter = NULL;
-  char            log_buf[LOCAL_LOG_BUF_SIZE];
-  std::string     level_string = "";
-
-  /* check if there are nodes that weren't in the hierarchy file that are in the nodes file */
-  while ((pnode = next_host(&allnodes, &iter, NULL)) != NULL)
-    {
-    if (pnode->nd_in_hierarchy == FALSE)
-      {
-      if (found_missing_node == false)
-        {
-        send_format.push_back("<sp>");
-        send_format.push_back("<sl>");
-        found_missing_node = true;
-        send_format.push_back(pnode->nd_name);
-        }
-      else
-        {
-        send_format.push_back(",");
-        send_format.push_back(pnode->nd_name);
-        }
-
-      snprintf(log_buf, sizeof(log_buf),
-        "Node %s found in the nodes file but not in the mom_hierarchy file. Making it a level 1 node",
-        pnode->nd_name);
-
-      pnode->nd_hierarchy_level = 0;
-      log_err( -1, __func__, log_buf);
-      }
-
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
-    }
-
-  if (iter != NULL)
-    delete iter;
-
-  if (found_missing_node == true)
-    {
-    send_format.push_back("</sl>");
-    send_format.push_back("</sp>");
-    }
-  }
-
-
-
-/*
- * convert_mom_hierarchy_to_send_format()
- * iterates over the mom_hierarchy struct and adds each node to send_format 
- * in the format for sending.
- *
- */
-
-void convert_mom_hierarchy_to_send_format(
-
-  std::vector<std::string> &send_format)
-
-  {
-
-  for (unsigned int i = 0; i < mh->paths.size(); i++)
-    convert_path_to_send_format(mh->paths[i], send_format);
-    
-  if (send_format.size() == 0)
-    {
-    /* if there's an error, make a default hierarchy */
-    make_default_hierarchy(send_format);
-    }
-  else
-    {
-    add_missing_nodes(send_format);
-    }
-  }
-
-
-/*
- * prepare_mom_hierarchy()
- * opens the mom hierarchy file, creates a mom hierarchy, and places it into a format
- * to be sent to the mom nodes.
- * if no hierarchy file exists or if it cannot be parsed, all of the nodes are placed
- * into a default hierarchy with all nodes at level 1.
- *
- * @pre-cond: nodes file has been parsed.
- * @post-cond: send_format is populated so that the hierarchy can be sent.
- */
-
-void prepare_mom_hierarchy(
-    
-  std::vector<std::string> &send_format)
-
-  {
-  char            log_buf[LOCAL_LOG_BUF_SIZE];
-  int             fds;
-
-  mh = initialize_mom_hierarchy();
-
-  if ((fds = open(path_mom_hierarchy, O_RDONLY, 0)) < 0)
-    {
-    if (errno == ENOENT)
-      {
-      /* Each node is a top level node */
-      make_default_hierarchy(send_format);
-      return;
-      }
-
-    snprintf(log_buf, sizeof(log_buf),
-      "Unable to open %s", path_mom_hierarchy);
-    log_err(errno, __func__, log_buf);
-    }
-  else
-    {
-    mh->file_present = true;
-    parse_mom_hierarchy(fds);
-
-    convert_mom_hierarchy_to_send_format(send_format);
-    }
-
-  if (fds >= 0)
-    close(fds);
-  } /* END prepare_mom_hierarchy() */
-
-
-
-
-int get_insertion_point(
-
-  struct pbsnode *pnode,
-  int            *indices)
-
-  {
-  int i;
-  int level = pnode->nd_hierarchy_level;
-  int insertion_point = 0;
-
-  for (i = level - 1; i >= 0; i--)
-    {
-    if (indices[i] != 0)
-      {
-      insertion_point = indices[i];
-      break;
-      }
-    }
-
-  return(insertion_point);
-  } /* END get_insertion_point() */
-
-
-
-
-void add_all_nodes_to_hello_container()
-
-  {
-  struct pbsnode *pnode;
-  all_nodes_iterator *iter = NULL;
-  int             level_indices[MAX_LEVEL_DEPTH];
-  int             insertion_index;
-
-  memset(level_indices, 0, sizeof(level_indices));
-
-  while ((pnode = next_host(&allnodes, &iter, NULL)) != NULL)
-    {
-      {
-      /* make sure to insert things in order */
-      if (level_indices[pnode->nd_hierarchy_level] == 0)
-        {
-        insertion_index = get_insertion_point(pnode, level_indices);
-        level_indices[pnode->nd_hierarchy_level] = add_hello_after(&hellos, pnode->nd_id, insertion_index);
-        }
-      else
-        add_hello_after(&hellos, pnode->nd_id, level_indices[pnode->nd_hierarchy_level]);
-      }
-
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
-    }
-
-  if (iter != NULL)
-    delete iter;
-
-  return;
-  } /* END add_all_nodes_to_hello_container() */
-
 
 
 
@@ -2217,19 +1794,14 @@ int pbsd_init(
     handle_tracking_records();
 
     /* read the hierarchy file */
-    pthread_mutex_lock(&hierarchy_holder_Mutex);
-    prepare_mom_hierarchy(hierarchy_holder);
-    if (hierarchy_holder.size() == 0)
-      {
-      pthread_mutex_unlock(&hierarchy_holder_Mutex);
-      /* hierarchy file exists but we couldn't open it */
-      return(-1);
-      }
-    pthread_mutex_unlock(&hierarchy_holder_Mutex);
+    hierarchy_handler.initialLoadHierarchy();
 
+#if 0
     /* mark all nodes as needing a hello */
     if (auto_send_hierarchy == true)
       add_all_nodes_to_hello_container();
+#endif
+
 
     /* allow the threadpool to start processing */
     start_request_pool(request_pool);

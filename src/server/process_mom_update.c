@@ -532,6 +532,14 @@ int process_state_str(
   char            log_buf[LOCAL_LOG_BUF_SIZE];
   int             rc = PBSE_NONE;
 
+  if(np->nd_state & INUSE_NOHIERARCHY)
+    {
+    sprintf(log_buf, "node %s has not received its hiearachy yet.",
+      (np->nd_name != NULL) ? np->nd_name : "NULL");
+
+    log_err(-1, __func__, log_buf);
+    return PBSE_HIERARCHY_NOT_SENT;
+    }
   if (!strncmp(str, "state=down", 10))
     {
     update_node_state(np, INUSE_DOWN);
@@ -735,7 +743,7 @@ int process_status_info(
     else if (!strcmp(str, "first_update=true"))
       {
       /* mom is requesting that we send the mom hierarchy file to her */
-      remove_hello(&hellos, current->nd_id);
+      //remove_hello(&hellos, current->nd_id);
       send_hello = true;
       
       /* reset gpu data in case mom reconnects with changed gpus */
