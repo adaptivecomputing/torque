@@ -1,5 +1,7 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
+4.5.1
+
 
 4.5.0
   b - TRQ-2319. Replace two Torque functions with ones from the hwloc package.
