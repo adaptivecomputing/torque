@@ -36,8 +36,8 @@ const char *place_thread = "thread";
 req::req() : execution_slots(1), mem(0), swap(0), disk(0),
              task_count(1), socket(0), numa_chip(0),
              thread_usage_policy(ALLOW_THREADS), gpus(0), mics(0),
-             pack(false), index(0), thread_usage_str(use_cores), single_job_access(false),
-             maxtpn(0), placement_str("node"), nodes(0), gpu_mode(), gres(), cores(0),
+             pack(false), index(0), thread_usage_str(allow_threads), single_job_access(false),
+             maxtpn(0), placement_str(), nodes(0), gpu_mode(), gres(), cores(0),
              threads(0)
 
   {
@@ -827,7 +827,8 @@ req::req(
   const std::string &resource_request) : execution_slots(1), mem(0), swap(0),
                                          disk(0), placement_str(),
                                          task_count(1), socket(0), numa_chip(0),
-                                         thread_usage_policy(ALLOW_THREADS), gpus(0), mics(0),
+                                         thread_usage_policy(ALLOW_THREADS),
+                                         thread_usage_str(allow_threads), gpus(0), mics(0),
                                          index(-1)
 
   {

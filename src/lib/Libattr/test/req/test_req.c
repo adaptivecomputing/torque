@@ -112,7 +112,7 @@ START_TEST(test_get_set_values)
   fail_unless(values[1] == "2");
   fail_unless(values[2] == "1");
   fail_unless(values[3] == "1");
-  fail_unless(values[4] == "usecores", values[4].c_str());
+  fail_unless(values[4] == "allowthreads", values[4].c_str());
   fail_unless(values[5] == "true");
 
   fail_unless(r2.set_value("bob", "tom") != PBSE_NONE);
@@ -168,7 +168,7 @@ START_TEST(test_constructors)
 
   fail_unless(r.getHostlist().size() == 0);
   fail_unless(r.getTaskCount() == 1);
-  fail_unless(r.getPlacementType() == "node");
+  fail_unless(r.getPlacementType() == "");
   fail_unless(r.getNodeAccessPolicy().size() == 0, r.getNodeAccessPolicy().c_str());
   fail_unless(r.getOS().size() == 0);
   fail_unless(r.getGres().size() == 0);
