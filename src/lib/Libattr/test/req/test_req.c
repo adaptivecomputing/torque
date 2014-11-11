@@ -11,6 +11,21 @@ extern bool good_err;
 int parse_positive_integer(const char *str, int &parsed);
 
 
+START_TEST(test_append_gres)
+  {
+  req r;
+
+  r.set_value("gres", "A=3");
+
+  fail_unless(r.append_gres("B=2") == PBSE_NONE);
+  fail_unless(r.append_gres("B=2") == PBSE_NONE);
+  fail_unless(r.append_gres("A=2") == PBSE_NONE);
+
+  fail_unless(r.getGres() == "A=2:B=2", r.getGres().c_str());
+  }
+END_TEST
+
+
 START_TEST(test_get_set_values)
   {
   req r;
@@ -44,19 +59,18 @@ START_TEST(test_get_set_values)
   fail_unless(names[2] == "memory.0");
   fail_unless(names[3] == "swap.0");
   fail_unless(names[4] == "disk.0");
-  fail_unless(names[5] == "sockets.0");
+  fail_unless(names[5] == "socket.0");
   fail_unless(names[6] == "gpus.0");
   fail_unless(names[7] == "gpu_mode.0");
   fail_unless(names[8] == "mics.0");
   fail_unless(names[9] == "thread_usage_policy.0", names[9].c_str());
-  fail_unless(names[10] == "placement_type.0", names[10].c_str());
-  fail_unless(names[11] == "reqattr.0");
-  fail_unless(names[12] == "gres.0");
-  fail_unless(names[13] == "opsys.0");
-  fail_unless(names[14] == "arch.0");
-  fail_unless(names[15] == "features.0", names[14].c_str());
-  fail_unless(names[16] == "single_job_access.0");
-  fail_unless(names[17] == "hostlist.0", names[16].c_str());
+  fail_unless(names[10] == "reqattr.0");
+  fail_unless(names[11] == "gres.0");
+  fail_unless(names[12] == "opsys.0");
+  fail_unless(names[13] == "arch.0");
+  fail_unless(names[14] == "features.0", names[14].c_str());
+  fail_unless(names[15] == "single_job_access.0");
+  fail_unless(names[16] == "hostlist.0", names[17].c_str());
 
   fail_unless(values[0] == "5");
   fail_unless(values[1] == "all");
@@ -68,14 +82,13 @@ START_TEST(test_get_set_values)
   fail_unless(values[7] == "exclusive_thread");
   fail_unless(values[8] == "1");
   fail_unless(values[9] == "use threads");
-  fail_unless(values[10] == "node");
-  fail_unless(values[11] == "matlab>7");
-  fail_unless(values[12] == "gresA");
-  fail_unless(values[13] == "ubuntu");
-  fail_unless(values[14] == "64bit");
-  fail_unless(values[15] == "fast");
-  fail_unless(values[16] == "true");
-  fail_unless(values[17] == "napali/0-31");
+  fail_unless(values[10] == "matlab>7");
+  fail_unless(values[11] == "gresA");
+  fail_unless(values[12] == "ubuntu");
+  fail_unless(values[13] == "64bit");
+  fail_unless(values[14] == "fast");
+  fail_unless(values[15] == "true");
+  fail_unless(values[16] == "napali/0-31");
 
   req r2;
   r2.set_value("lprocs", "2");
@@ -91,18 +104,16 @@ START_TEST(test_get_set_values)
 
   fail_unless(names[0] == "task_count.0");
   fail_unless(names[1] == "lprocs.0");
-  fail_unless(names[2] == "numa_chips.0");
+  fail_unless(names[2] == "numachip.0");
   fail_unless(names[3] == "maxtpn.0");
   fail_unless(names[4] == "thread_usage_policy.0");
-  fail_unless(names[5] == "placement_type.0", names[5].c_str());
-  fail_unless(names[6] == "pack.0");
+  fail_unless(names[5] == "pack.0");
   fail_unless(values[0] == "1");
   fail_unless(values[1] == "2");
   fail_unless(values[2] == "1");
   fail_unless(values[3] == "1");
   fail_unless(values[4] == "usecores", values[4].c_str());
-  fail_unless(values[5] == "core");
-  fail_unless(values[6] == "true");
+  fail_unless(values[5] == "true");
 
   fail_unless(r2.set_value("bob", "tom") != PBSE_NONE);
 
@@ -121,12 +132,10 @@ START_TEST(test_get_set_values)
   r3.get_values(names, values);
   fail_unless(names[0] == "task_count.0");
   fail_unless(names[1] == "lprocs.0");
-  fail_unless(names[2] == "nodes.0");
-  fail_unless(names[4] == "placement_type.0", names[3].c_str());
+  fail_unless(names[2] == "node.0");
   fail_unless(values[0] == "1");
   fail_unless(values[1] == "all");
   fail_unless(values[2] == "2");
-  fail_unless(values[4] == "place node");
   }
 END_TEST
 
@@ -356,6 +365,7 @@ Suite *req_suite(void)
   TCase *tc_core = tcase_create("test_constructors");
   tcase_add_test(tc_core, test_constructors);
   tcase_add_test(tc_core, test_equals_operator);
+  tcase_add_test(tc_core, test_append_gres);
   suite_add_tcase(s, tc_core);
   
   tc_core = tcase_create("test_set_from_string");

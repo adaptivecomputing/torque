@@ -37,7 +37,8 @@ req::req() : execution_slots(1), mem(0), swap(0), disk(0),
              task_count(1), socket(0), numa_chip(0),
              thread_usage_policy(ALLOW_THREADS), gpus(0), mics(0),
              pack(false), index(0), thread_usage_str(use_cores), single_job_access(false),
-             maxtpn(0), placement_str("node"), nodes(0), gpu_mode(), gres()
+             maxtpn(0), placement_str("node"), nodes(0), gpu_mode(), gres(), cores(0),
+             threads(0)
 
   {
   }
@@ -53,7 +54,7 @@ req::req(
                       thread_usage_str(other.thread_usage_str), placement_str(other.placement_str),
                       features(other.features), single_job_access(other.single_job_access),
                       maxtpn(other.maxtpn), gpu_mode(other.gpu_mode), req_attr(other.req_attr),
-                      nodes(other.nodes)
+                      nodes(other.nodes), cores(other.cores), threads(other.threads)
 
   {
   }
@@ -139,6 +140,7 @@ int req::set_place_value(
       {
       int count;
       rc = parse_positive_integer(numeric_value, count);
+      this->cores = count;
       if ((this->execution_slots != ALL_EXECUTION_SLOTS) &&
           (count > this->execution_slots))
         this->execution_slots = count;
@@ -153,6 +155,7 @@ int req::set_place_value(
       {
       int count;
       rc = parse_positive_integer(numeric_value, count);
+      this->threads = count;
       if ((this->execution_slots != ALL_EXECUTION_SLOTS) &&
           (count > this->execution_slots))
         this->execution_slots = count;
@@ -216,6 +219,80 @@ int read_mem_value(
 
 
 
+int req::append_gres(
+
+  const char *gres_value)
+
+  {
+  char *work_str = strdup(gres_value);
+  char *gres_name = work_str;
+  char *equals = strchr(gres_name, '=');
+  int   value = 0;
+
+  if (equals != NULL)
+    {
+    *equals = '\0';
+    value = strtol(equals + 1, NULL, 10);
+
+    if (value < 1)
+      {
+      free(work_str);
+      return(-1);
+      }
+    }
+
+  char       *current_gres = strdup(this->gres.c_str());
+  char       *current = current_gres;
+  char       *ptr;
+  const char *delim = ":";
+  char        buf[MAXLINE];
+  bool        found = false;
+
+  this->gres.clear();
+
+  while ((ptr = threadsafe_tokenizer(&current, delim)) != NULL)
+    {
+    if (this->gres.size() > 0)
+      this->gres += ":";
+
+    int len = strlen(gres_name);
+
+    if (!strncmp(ptr, gres_name, len))
+      {
+      if ((ptr[len] == '\0') ||
+          (ptr[len] == '='))
+        {
+        this->gres += gres_name;
+
+        if (value != 0)
+          {
+          sprintf(buf, "=%d", value);
+          this->gres += buf;
+          }
+
+        found = true;
+        }
+      else
+        this->gres += ptr;
+      }
+    else
+      this->gres += ptr;
+    }
+
+  if (found == false)
+    {
+    this->gres += ":";
+    this->gres += gres_value;
+    }
+
+  free(work_str);
+  free(current_gres);
+  
+  return(PBSE_NONE);
+  } // END append_gres()
+
+
+
 /*
  * set_name_value_pair()
  *
@@ -255,9 +332,9 @@ int req::set_name_value_pair(
   else if (!strcmp(name, "gres"))
     {
     if (this->gres.size() > 0)
-      this->gres += ":";
-
-    this->gres += value;
+      append_gres(value);
+    else
+      this->gres = value;
     }
   else if (!strcmp(name, "feature"))
     this->features = value;
@@ -801,6 +878,8 @@ req &req::operator =(
   this->single_job_access = other.single_job_access;
   this->index = other.index;
   this->hostlist = other.hostlist;
+  this->cores = other.cores;
+  this->threads = other.threads;
 
   return(*this);
   } // END operator =
@@ -1027,7 +1106,7 @@ void req::get_values(
 
   if (this->nodes != 0)
     {
-    snprintf(buf, sizeof(buf), "nodes.%d", this->index);
+    snprintf(buf, sizeof(buf), "node.%d", this->index);
     names.push_back(buf);
     snprintf(buf, sizeof(buf), "%d", this->nodes);
     values.push_back(buf);
@@ -1035,7 +1114,7 @@ void req::get_values(
 
   if (this->socket != 0)
     {
-    snprintf(buf, sizeof(buf), "sockets.%d", this->index);
+    snprintf(buf, sizeof(buf), "socket.%d", this->index);
     names.push_back(buf);
     snprintf(buf, sizeof(buf), "%d", this->socket);
     values.push_back(buf);
@@ -1043,9 +1122,25 @@ void req::get_values(
 
   if (this->numa_chip != 0)
     {
-    snprintf(buf, sizeof(buf), "numa_chips.%d", this->index);
+    snprintf(buf, sizeof(buf), "numachip.%d", this->index);
     names.push_back(buf);
     snprintf(buf, sizeof(buf), "%d", this->numa_chip);
+    values.push_back(buf);
+    }
+
+  if (this->cores != 0)
+    {
+    snprintf(buf, sizeof(buf), "core.%d", this->index);
+    names.push_back(buf);
+    snprintf(buf, sizeof(buf), "%d", this->cores);
+    values.push_back(buf);
+    }
+
+  if (this->threads != 0)
+    {
+    snprintf(buf, sizeof(buf), "thread.%d", this->index);
+    names.push_back(buf);
+    snprintf(buf, sizeof(buf), "%d", this->threads);
     values.push_back(buf);
     }
 
@@ -1083,13 +1178,6 @@ void req::get_values(
   snprintf(buf, sizeof(buf), "thread_usage_policy.%d", this->index);
   names.push_back(buf);
   values.push_back(this->thread_usage_str);
-
-  if (this->placement_str.size() != 0)
-    {
-    snprintf(buf, sizeof(buf), "placement_type.%d", this->index);
-    names.push_back(buf);
-    values.push_back(this->placement_str);
-    }
 
   if (this->req_attr.size() != 0)
     {

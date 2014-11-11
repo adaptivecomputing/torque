@@ -64,3 +64,12 @@ int encode_str(
   called_encode++;
   return(PBSE_NONE);
   }
+
+char *threadsafe_tokenizer(
+
+  char       **str,    /* M */
+  const char  *delims) /* I */
+
+  {
+  return(NULL);
+  }

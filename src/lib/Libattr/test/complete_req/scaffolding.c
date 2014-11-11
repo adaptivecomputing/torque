@@ -46,3 +46,12 @@ char *pbse_to_txt(
   return(NULL);
   }
 }
+
+char *threadsafe_tokenizer(
+
+  char       **str,    /* M */
+  const char  *delims) /* I */
+
+  {
+  return(NULL);
+  }

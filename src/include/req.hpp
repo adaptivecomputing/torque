@@ -109,6 +109,8 @@ class req
     int               nodes;
     int               socket;
     int               numa_chip;
+    int               cores;
+    int               threads;
     int               thread_usage_policy;
     std::string       thread_usage_str;
     int               gpus;
@@ -147,6 +149,7 @@ class req
     int           submission_string_precheck(char *str, std::string &error);
     bool          submission_string_has_duplicates(char *str, std::string &error);
     bool          has_conflicting_values(std::string &error);
+    int           append_gres(const char *val);
     void          get_values(std::vector<std::string> &names, std::vector<std::string> &values) const;
     void          toString(std::string &str) const;
     int           getExecutionSlots() const;
