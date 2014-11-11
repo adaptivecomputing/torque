@@ -993,9 +993,9 @@ int main(
 
       /* clear  OFFLINE from specified nodes */
 
-      for (pa = argv + optind;*pa;pa++)
+      for (pa = argv + optind;*pa && (rc == 0);pa++)
         {
-        marknode(con, *pa, ND_offline, DECR, NULL, DECR);
+        rc = marknode(con, *pa, ND_offline, DECR, NULL, DECR);
         }
 
       break;

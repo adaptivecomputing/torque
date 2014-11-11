@@ -439,10 +439,10 @@ START_TEST(end_of_job_accounting_test)
   std::string acct_data(str);
   job  *pjob = (job *)calloc(1, sizeof(job));
   strcpy(pjob->ji_qs.ji_jobid, "1.napali");
-  size_t accttail = acct_info.length();
-  fail_unless(end_of_job_accounting(pjob, acct_info, accttail) == PBSE_NONE);
+  size_t accttail = acct_data.length();
+  fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
   usage = 1;
-  fail_unless(end_of_job_accounting(pjob, acct_info, accttail) == PBSE_NONE);
+  fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
   usage = 0;
   }
 END_TEST

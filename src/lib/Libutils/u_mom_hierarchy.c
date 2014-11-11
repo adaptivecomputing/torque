@@ -111,6 +111,7 @@ void free_mom_hierarchy(
   mom_hierarchy_t *mh)
 
   {
+  mh->paths.clear();
   free(mh);
   } /* END free_mom_hierarchy() */
 

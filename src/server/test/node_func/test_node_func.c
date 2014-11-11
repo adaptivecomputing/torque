@@ -805,102 +805,6 @@ START_TEST(next_host_test)
   }
 END_TEST
 
-START_TEST(send_hierarchy_test)
-  {
-  int result = -1;
-
-  result = send_hierarchy(NULL, 0);
-  fail_unless(result != PBSE_NONE, "NULL input name fail");
-  }
-END_TEST
-
-START_TEST(add_hello_after_test)
-  {
-  hello_container container;
-  int result = -1;
-  extern id_map node_mapper;
-
-  result = add_hello_after(NULL, 1, 0);
-  fail_unless(result != PBSE_NONE, "NULL input container pointer fail");
-
-  result = add_hello_after(&container, 1, 0);
-  fail_unless(result == PBSE_NONE, "add_hello_after fail");
-
-  node_mapper.get_new_id("one");
-  node_mapper.get_new_id("two");
-  node_mapper.get_new_id("three");
-  node_mapper.get_new_id("four");
-  node_mapper.get_new_id("five");
-
-  container.lock();
-  container.clear();
-  container.unlock();
-  add_hello(&container,0);
-  add_hello(&container,1);
-  add_hello(&container,2);
-  add_hello(&container,4);
-  add_hello_after(&container,3,2);
-
-  hello_info *pInfo = pop_hello(&container);
-  fail_unless((pInfo->id == 0),"Insert order fail.");
-  pInfo = pop_hello(&container);
-  fail_unless((pInfo->id == 1),"Insert order fail.");
-  pInfo = pop_hello(&container);
-  fail_unless((pInfo->id == 2),"Insert order fail.");
-  pInfo = pop_hello(&container);
-  fail_unless((pInfo->id == 3),"Insert order fail.");
-  pInfo = pop_hello(&container);
-  fail_unless((pInfo->id == 4),"Insert order fail.");
-
-  }
-END_TEST
-
-START_TEST(add_hello_info_test)
-  {
-  hello_container container;
-  hello_info info(1);
-  int result = -1;
-
-  result = add_hello_info(NULL, &info);
-  fail_unless(result != PBSE_NONE, "NULL input container pointer fail");
-
-  result = add_hello_info(&container, NULL);
-  fail_unless(result != PBSE_NONE, "NULL input hello_info pointer fail");
-
-  result = add_hello_info(&container, &info);
-  fail_unless(result == PBSE_NONE, "add_hello_info fail");
-
-  }
-END_TEST
-
-START_TEST(pop_hello_test)
-  {
-  hello_container container;
-  hello_info *result = NULL;
-
-  result = pop_hello(NULL);
-  fail_unless(result == NULL, "NULL input container pointer fail");
-
-  result = pop_hello(&container);
-  fail_unless(result == NULL, "pop_hello fail");
-  }
-END_TEST
-
-START_TEST(remove_hello_test)
-  {
-  hello_container container;
-  int result = -1;
-
-  result = remove_hello(NULL, 1);
-  fail_unless(result != PBSE_NONE, "NULL input container pointer fail");
-
-  result = remove_hello(&container, 2);
-  fail_unless(result == THING_NOT_FOUND, "add_hello_after fail");
-
-  }
-END_TEST
-
-
 Suite *node_func_suite(void)
   {
   Suite *s = suite_create("node_func_suite methods");
@@ -1020,25 +924,15 @@ Suite *node_func_suite(void)
   tcase_add_test(tc_core, next_host_test);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("send_hierarchy_test");
-  tcase_add_test(tc_core, send_hierarchy_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("add_hello_after_test");
-  tcase_add_test(tc_core, add_hello_after_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("add_hello_info_test");
-  tcase_add_test(tc_core, add_hello_info_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("pop_hello_test");
-  tcase_add_test(tc_core, pop_hello_test);
-  suite_add_tcase(s, tc_core);
-  tc_core = tcase_create("remove_hello_test");
-  tcase_add_test(tc_core, remove_hello_test);
+  tc_core = tcase_create("add_to_property_list_test");
   tcase_add_test(tc_core, add_to_property_list_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("write_compute_node_properties_test");
   tcase_add_test(tc_core, write_compute_node_properties_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("read_val_and_advance_test");
   tcase_add_test(tc_core, read_val_and_advance_test);
   suite_add_tcase(s, tc_core);
 

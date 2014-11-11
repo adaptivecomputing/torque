@@ -119,7 +119,6 @@ typedef struct mom_hierarchy
   int              current_path;  /* index of the active path */
   int              current_level; /* index of the active level of the active path */
   int              current_node;  /* index of the active node from that path */
-  int              file_present;  /* On the server this is true if the mom_hierarchy file is present */
   mom_paths        paths;         /* the paths we currently have, a 3D array of std::vectors */
   } mom_hierarchy_t;
 
@@ -136,4 +135,4 @@ int handle_level(char *level_iter, int path_index, int &level_index);
 int handle_path(char *path_iter, int &path_index);
 void parse_mom_hierarchy(int fds);
 
-#endif /* ndef MOM_HIERARCHY_H */
+#endif /* ifndef MOM_HIERARCHY_H */

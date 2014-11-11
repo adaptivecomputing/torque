@@ -321,6 +321,14 @@ void update_node_state(
 
   log_buf[0] = '\0';
 
+  //Node state can't change until the hierarchy has been sent.
+  if(np->nd_state & INUSE_NOHIERARCHY)
+    {
+    sprintf(log_buf, "node %s has not received its list of nodes yet.",
+      (np->nd_name != NULL) ? np->nd_name : "NULL");
+
+    }
+
   if (newstate & INUSE_DOWN)
     {
     if (!(np->nd_state & INUSE_DOWN))
@@ -1205,7 +1213,7 @@ void *check_nodes_work(
 
   while ((np = next_node(&allnodes,np,&iter)) != NULL)
     {
-    if (!(np->nd_state & INUSE_DOWN))
+    if (!(np->nd_state & INUSE_NOT_READY))
       {
       if (np->nd_lastupdate < (time_now - chk_len)) 
         {
@@ -1705,7 +1713,7 @@ int gpu_count(
 
   if ((pnode->nd_state & INUSE_OFFLINE) ||
       (pnode->nd_state & INUSE_UNKNOWN) ||
-      (pnode->nd_state & INUSE_DOWN)||
+      (pnode->nd_state & INUSE_NOT_READY)||
       (pnode->nd_power_state != POWER_STATE_RUNNING))
     {
     if (LOGLEVEL >= 7)
@@ -2220,7 +2228,7 @@ bool node_is_spec_acceptable(
 
   (*eligible_nodes)++;
 
-  if (((pnode->nd_state & (INUSE_OFFLINE | INUSE_DOWN | INUSE_RESERVE | INUSE_JOB)) != 0)||(pnode->nd_power_state != POWER_STATE_RUNNING))
+  if (((pnode->nd_state & (INUSE_OFFLINE | INUSE_NOT_READY | INUSE_RESERVE | INUSE_JOB)) != 0)||(pnode->nd_power_state != POWER_STATE_RUNNING))
     return(false);
 
   gpu_free = gpu_count(pnode, TRUE) - pnode->nd_ngpus_to_be_used;
@@ -5134,7 +5142,7 @@ int node_avail(
       {
       if ((pn->nd_ntype == NTYPE_CLUSTER) && hasprop(pn, prop))
         {
-        if (pn->nd_state & (INUSE_OFFLINE | INUSE_DOWN))
+        if (pn->nd_state & (INUSE_OFFLINE | INUSE_NOT_READY))
           ++xdown;
         else if (hasppn(pn, node_req, SKIP_ANYINUSE))
           ++xavail;

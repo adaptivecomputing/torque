@@ -143,6 +143,9 @@
 #include "job_route.h" /* queue_route */
 #include "exiting_jobs.h"
 #include "server_comm.h"
+#include "node_func.h"
+#include "mom_hierarchy_handler.h"
+
 
 #define TASK_CHECK_INTERVAL      10
 #define HELLO_WAIT_TIME          600
@@ -185,7 +188,7 @@ static void lock_out_ha();
 
 /* external data items */
 
-extern hello_container failures;
+//extern hello_container failures;
 extern int             svr_chngNodesfile;
 extern int             svr_totnodes;
 extern all_jobs        alljobs;
@@ -252,16 +255,16 @@ unsigned int            pbs_scheduler_port;
 extern pbs_net_t        pbs_server_addr;
 unsigned int            pbs_server_port_dis;
 
-bool                    auto_send_hierarchy = true;
-mom_hierarchy_t        *mh;
+bool                    auto_send_hierarchy = true; //If false this directs pbs_server to not send the hierarchy to all the MOMs on startup.
+                                                     //Instead, the hierarchy is only sent if a MOM requests it.
+                                                     //This flag works only in conjunction with the local MOM hierarchy feature.
+//mom_hierarchy_t        *mh;
 
 extern bool            exit_called;
 
 listener_connection     listener_conns[MAXLISTENERS];
 int                     queue_rank = 0;
 int                     a_opt_init = -1;
-int                     wait_for_moms_hierarchy = FALSE;
-
 int                     route_retry_interval = 10; /* time in seconds to check routing queues */
 
 /* info useful when analyzing core file */
@@ -290,8 +293,8 @@ pthread_mutex_t        *svr_do_schedule_mutex;
 pthread_mutex_t        *check_tasks_mutex;
 pthread_mutex_t        *reroute_job_mutex;
 extern int              listener_command;
-extern hello_container  hellos;
-extern hello_container  failures;
+//extern hello_container  hellos;
+//extern hello_container  failures;
 pthread_mutex_t        *listener_command_mutex;
 tlist_head              svr_newnodes;          /* list of newly created nodes      */
 pthread_mutex_t         task_list_timed_mutex;
@@ -579,7 +582,9 @@ void parse_command_line(
 
       case 'c':
 
-        wait_for_moms_hierarchy = TRUE;
+        hierarchy_handler.dontSendOnStartup(); //This directs pbs_server to send the MOM hierarchy only to MOMs that request it for the first 10 minutes.
+                                        //After 10 minutes, it attempts to send the MOM hierarchy to MOMs that haven't requested it already.
+                                        //This greatly reduces traffic on start up.
 
         break;
 
@@ -793,7 +798,10 @@ void parse_command_line(
 
       case 'n':
 
-        auto_send_hierarchy = false;
+        hierarchy_handler.onlySendOnDemand();
+        auto_send_hierarchy = false; //If false, this directs pbs_server to not send the hierarchy to all the MOMs on startup.
+                                      //Instead, the hierarchy is only sent if a MOM requests it.
+                                      //This flag works only in conjunction with the local MOM hierarchy feature.
 
         break;
 
@@ -923,6 +931,10 @@ void *check_tasks(void *notUsed)
   }  /* END check_tasks() */
 
 
+
+#if 0
+
+
 void send_any_hellos_needed()
 
   {
@@ -937,6 +949,8 @@ void send_any_hellos_needed()
     add_hello_info(&hellos, hi);
 
   } /* END send_any_hellos_needed() */
+
+#endif
 
 
 
@@ -1242,7 +1256,7 @@ void main_loop(void)
   long          scheduling = FALSE;
   long          sched_iteration = 0;
   time_t        time_now = time(NULL);
-  time_t        try_hellos = 0;
+//  time_t        try_hellos = 0;
   time_t        update_timeout = 0;
   time_t        update_loglevel = 0;
 
@@ -1313,9 +1327,6 @@ void main_loop(void)
 #endif
 
   time_now = time(NULL);
-  if (wait_for_moms_hierarchy == TRUE)
-    try_hellos = time_now + HELLO_WAIT_TIME;
-
   start_accept_thread();
   start_routing_retry_thread();
   start_exiting_retry_thread();
@@ -1332,11 +1343,15 @@ void main_loop(void)
     if (run_change_logs == TRUE)
       change_logs();
 
+#if 0
     if (try_hellos <= time_now)
       {
       try_hellos = time_now + HELLO_INTERVAL;
       send_any_hellos_needed();
       }
+#endif
+
+    hierarchy_handler.checkAndSendHierarchy();
 
     if (time_now - last_task_check_time > TASK_CHECK_INTERVAL)
       enqueue_threadpool_request(check_tasks, NULL, task_pool);

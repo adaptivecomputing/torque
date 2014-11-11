@@ -6075,6 +6075,12 @@ int send_join_job_to_sisters(
   
   errno = 0;
     
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buffer,"Sending join job to %d sisters.",unsent_count);
+    log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+    }
+
   memset(send_failed, -1, send_failed_size);
   for (i = 1; i < nodenum; i++)
     send_failed[i] = i;
@@ -6090,6 +6096,13 @@ int send_join_job_to_sisters(
         continue;
 
       np = &pjob->ji_hosts[i];
+
+      if (LOGLEVEL >= 7)
+        {
+        sprintf(log_buffer,"Sending join job to %s.",pjob->ji_hosts[i].hn_host);
+        log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+        }
+
       log_buffer[0] = '\0';
 
       ret = -1;
@@ -6114,7 +6127,16 @@ int send_join_job_to_sisters(
         sisters_contacted.insert(i);
         send_failed[i] = DIS_SUCCESS;
         unsent_count--;
-        } 
+        }
+      else
+        {
+        if (LOGLEVEL >= 7)
+          {
+          sprintf(log_buffer,"Sending join job to %s failed with error code %d.",pjob->ji_hosts[i].hn_host,ret);
+          log_err(errno, __func__,log_buffer);
+          }
+        log_buffer[0] = '\0';
+        }
       } /* END for each node */
     } /* END for 5 retries */
 
@@ -6418,6 +6440,14 @@ int start_exec(
     if ((ret = allocate_demux_sockets(pjob, MOTHER_SUPERIOR)) != PBSE_NONE)
       return(ret);
 
+    if (LOGLEVEL >= 7)
+      {
+      sprintf(log_buffer, "allocate_demux_sockets succeeded at line %d\n",
+          __LINE__);
+
+      log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+      }
+
     CLEAR_HEAD(phead);
     
     pattr = pjob->ji_wattr;
@@ -6531,6 +6561,13 @@ int start_exec(
       /* can't gather stdout/err for the job - FAIL */
       return(ret);
       }
+    if (LOGLEVEL >= 7)
+      {
+      sprintf(log_buffer, "allocate_demux_sockets succeeded at line %d\n",
+          __LINE__);
+
+      log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+      }
     
     CLEAR_HEAD(phead);
     
@@ -6549,6 +6586,13 @@ int start_exec(
     
     attrl_fixlink(&phead);
     
+    if (LOGLEVEL >= 7)
+      {
+      sprintf(log_buffer, "Sending join job to sisters succeeded at line %d\n",
+          __LINE__);
+
+      log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+      }
     if ((ret = send_join_job_to_sisters(pjob, nodenum, phead)) != DIS_SUCCESS)
       {
       /* couldn't contact all of the sisters, we've already bailed */

@@ -419,6 +419,7 @@ src/server/test/job_recycler/test_job_recycler
 src/server/test/job_route/test_job_route
 src/server/test/job_usage_info/test_job_usage_info
 src/server/test/login_nodes/test_login_nodes
+src/server/test/mom_hierarchy_handler/test_mom_hierarchy_handler
 src/server/test/node_func/nodes
 src/server/test/node_func/test_node_func
 src/server/test/node_manager/test_node_manager

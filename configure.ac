@@ -451,6 +451,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/server/test/job_route/Makefile
     src/server/test/job_usage_info/Makefile
     src/server/test/login_nodes/Makefile
+    src/server/test/mom_hierarchy_handler/Makefile
     src/server/test/node_func/Makefile
     src/server/test/node_manager/Makefile
     src/server/test/pbsd_init/Makefile
