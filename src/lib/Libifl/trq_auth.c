@@ -273,7 +273,8 @@ int get_active_pbs_server(
   if (read_buf_len == 0)
     return(PBSE_SOCKET_READ);
 
-  current_server = strdup(read_buf);
+  // read_buf has been allocated in socket_read_str()
+  current_server = read_buf;
 
   *active_server = current_server;
 
@@ -973,6 +974,9 @@ int authorize_socket(
     send_svr_disconnect(svr_sock, user_name);
     socket_close(svr_sock);
     }
+
+  if (user_name != NULL)
+    free(user_name);
 
   if (error_msg != NULL)
     {

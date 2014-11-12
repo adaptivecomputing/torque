@@ -6119,6 +6119,7 @@ int parse_integer_range(
     if (begin == NULL)
       {
       snprintf(log_buffer, sizeof(log_buffer), "Illegal range string '%s'", range_str);
+      free(val);
       return(-1);
       }
 
@@ -6133,6 +6134,7 @@ int parse_integer_range(
         snprintf(log_buffer, sizeof(log_buffer),
           "Illegal range string '%s': end parsed as '%d' which is less than start '%d'",
           range_str, end, start);
+        free(val);
         return(-1);
         }
       }

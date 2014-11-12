@@ -8403,6 +8403,8 @@ void fork_demux(
     {
     fprintf(stderr, "could not dup stdout in fork_demux");
     free(routem);
+
+    close(im_mom_stdout);
     return;
     }
 

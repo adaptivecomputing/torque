@@ -60,7 +60,7 @@ int load_config(
       {
       *ptr = ' ';
       }
-    }   /* END while ((ptr = strchr(ptr,'#')) != NULL) */
+    } /* END while ((ptr = strchr(ptr,'#')) != NULL) */
 
   /* SUCCESS */
   fclose(config_stream);
