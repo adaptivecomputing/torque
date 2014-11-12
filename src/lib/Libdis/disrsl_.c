@@ -128,6 +128,15 @@ int disrsl_(
       disiui_();
     }
 
+  if (count >= ulmaxdigs)
+    {
+    if (count > ulmaxdigs)
+      goto overflow;
+
+    if (memcmp(scratch, ulmax, ulmaxdigs) > 0)
+      goto overflow;
+    }
+
   c = tcp_getc(chan, pbs_tcp_timeout);
 
   /* FORMAT:  +2+1+0+0+64+2079+22+251175826.teva.westgrid.ubc2+362+21+8Job_Name+02+11run32_.2557+02+ ... */
