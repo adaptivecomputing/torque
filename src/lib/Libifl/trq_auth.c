@@ -202,7 +202,7 @@ int get_active_pbs_server(
   char      unix_sockname[MAXPATHLEN + 1];
   char      write_buf[MAX_LINE];
   int       write_buf_len;
-  char     *read_buf;
+  char     *read_buf = NULL;
   long long read_buf_len = MAX_LINE;
   int       local_socket;
   int       rc = PBSE_NONE;
@@ -271,7 +271,12 @@ int get_active_pbs_server(
   close(local_socket);
 
   if (read_buf_len == 0)
+    {
+    if (read_buf != NULL)
+      free(read_buf);
+
     return(PBSE_SOCKET_READ);
+    }
 
   // read_buf has been allocated in socket_read_str()
   current_server = read_buf;
