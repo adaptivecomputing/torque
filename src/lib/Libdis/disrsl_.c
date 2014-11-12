@@ -89,7 +89,7 @@
 #include "tcp.h"
 
 static char *ulmax;
-static unsigned ulmaxdigs = 0;
+unsigned ulmaxdigs = 0;
 
 int disrsl_(
 

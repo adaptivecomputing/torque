@@ -1,16 +1,34 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "dis_internal.h"
 #include "test_disrl_.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <stddef.h>
+#include <pbs_config.h>
 
-
+#include "dis.h"
+#include "dis_internal.h"
+#include "tcp.h"
 #include "pbs_error.h"
+
 
 START_TEST(test_one)
   {
+  struct tcp_chan   chan;
+  long double       ldval;
+  dis_long_double_t *ptr = &ldval;
+  unsigned          ndigs;
+  unsigned          nskips;
 
+  memset(&chan, 0, sizeof(chan));
+  fail_unless(disrl_(&chan, ptr, &ndigs, &nskips, 0, dis_umaxd + 1) != PBSE_NONE);
+/*int disrl_(
 
+  struct tcp_chan   *chan,
+  dis_long_double_t *ldval,
+  unsigned          *ndigs,
+  unsigned          *nskips,
+  unsigned           sigd,
+  unsigned           count) */
   }
 END_TEST
 
