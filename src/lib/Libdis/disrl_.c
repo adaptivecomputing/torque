@@ -110,6 +110,17 @@ int disrl_(
   if (dis_umaxd == 0)
     disiui_();
 
+  if (count >= dis_umaxd)
+    {
+    if (count > dis_umaxd)
+      goto overflow;
+
+    *cp = c;
+
+    if (memcmp(scratch, dis_umax, dis_umaxd) > 0)
+      goto overflow;
+    }
+
   switch (c = (*dis_getc)(stream))
     {
 
@@ -307,6 +318,7 @@ int disrl_(
       break;
     }  /* END switch (c = (*dis_getc)(stream)) */
 
+overflow:
   *ldval = HUGE_VAL;
 
   return(DIS_OVERFLOW);
