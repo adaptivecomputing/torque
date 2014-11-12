@@ -540,11 +540,10 @@ int kill_job_on_mom(
       snprintf(preq->rq_ind.rq_signal.rq_jid, sizeof(preq->rq_ind.rq_signal.rq_jid), "%s", job_id);
       snprintf(preq->rq_ind.rq_signal.rq_signame, sizeof(preq->rq_ind.rq_signal.rq_signame), "SIGKILL");
       preq->rq_extra = strdup(SYNC_KILL);
-      
-      unlock_node(pnode, __func__, NULL, LOGLEVEL);
+      tmp_unlock_node(pnode, __func__, NULL, LOGLEVEL);
       rc = issue_Drequest(conn, preq, true);
       free_br(preq);
-      lock_node(pnode, __func__, NULL, LOGLEVEL);
+      tmp_lock_node(pnode, __func__, NULL, LOGLEVEL);
       }
     }
 
@@ -637,9 +636,10 @@ bool job_should_be_killed(
   if ((is_job_on_node(pnode, internal_job_id)) == FALSE)
     {
     /* must lock the job before the node */
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+
+    tmp_unlock_node(pnode, __func__, NULL, LOGLEVEL);
     pjob = svr_find_job_by_id(internal_job_id);
-    lock_node(pnode, __func__, NULL, LOGLEVEL);
+    tmp_lock_node(pnode, __func__, NULL, LOGLEVEL);
     
     if (pjob != NULL)
       {
@@ -770,9 +770,9 @@ void sync_node_jobs_with_moms(
       }
     if (removejob || removealljobs)
       {
-      unlock_node(np, __func__, NULL, LOGLEVEL);
+      tmp_unlock_node(np, __func__, NULL, LOGLEVEL);
       job *pjob = svr_find_job(jobid, TRUE);
-      lock_node(np, __func__, NULL, LOGLEVEL);
+      tmp_lock_node(np, __func__, NULL, LOGLEVEL);
       if (pjob)
         unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
       else
@@ -5686,9 +5686,9 @@ job *get_job_from_job_usage_info(
   {
   job *pjob;
 
-  unlock_node(pnode, __func__, NULL, LOGLEVEL);
+  tmp_unlock_node(pnode, __func__, NULL, LOGLEVEL);
   pjob = svr_find_job_by_id(jui->internal_job_id);
-  lock_node(pnode, __func__, NULL, LOGLEVEL);
+  tmp_lock_node(pnode, __func__, NULL, LOGLEVEL);
 
   return(pjob);
   }
@@ -5703,9 +5703,9 @@ job *get_job_from_jobinfo(
   {
   job *pjob;
 
-  unlock_node(pnode, __func__, NULL, LOGLEVEL);
+  tmp_unlock_node(pnode, __func__, NULL, LOGLEVEL);
   pjob = svr_find_job_by_id(jp->internal_job_id);
-  lock_node(pnode, __func__, NULL, LOGLEVEL);
+  tmp_lock_node(pnode, __func__, NULL, LOGLEVEL);
 
   return(pjob);
   } /* END get_job_from_jobinfo() */

@@ -374,6 +374,17 @@ int lock_node(pbsnode *the_node, const char *id,const char *msg, int logging)
   return(0);
   }        
 
+int tmp_unlock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
+  {
+  return(0);
+  }
+
+int tmp_lock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
+  {
+  return(0);
+  }
+
+
 void socket_read_flush(int socket) {}        
 
 void close_conn(int sock,int has_mut) {}

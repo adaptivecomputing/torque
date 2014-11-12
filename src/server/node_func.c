@@ -863,6 +863,19 @@ void effective_node_delete(
 
   remove_node(&allnodes,pnode);
   unlock_node(pnode, __func__, NULL, LOGLEVEL);
+
+  //The node has been removed from the allnodes array.
+  //Give some time for other threads to be done with the node
+  //Before wiping it out.
+  unsigned char tmp_unlock_count = 0;
+  do
+    {
+    sleep(2);
+    lock_node(pnode,__func__,NULL,LOGLEVEL);
+    tmp_unlock_count = pnode->nd_tmp_unlock_count;
+    unlock_node(pnode,__func__,NULL,LOGLEVEL);
+    }while(tmp_unlock_count != 0);
+
   free(pnode->nd_mutex);
 
   pnode->nd_last->next = NULL;      /* just in case */
@@ -3587,9 +3600,9 @@ int remove_node(
 
   if (an->trylock())
     {
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+    tmp_unlock_node(pnode, __func__, NULL, LOGLEVEL);
     an->lock();
-    lock_node(pnode, __func__, NULL, LOGLEVEL);
+    tmp_lock_node(pnode, __func__, NULL, LOGLEVEL);
     }
 
   //Don't care if it was in there or not.

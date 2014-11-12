@@ -354,6 +354,11 @@ struct pbsnode
   char                          nd_ttl[32];
   struct array_strings         *nd_acl;
   std::string                  *nd_requestid;
+  unsigned char               nd_tmp_unlock_count;    /*Nodes will get temporarily unlocked so that
+                                                       further processing can happen, but the function
+                                                       doing the unlock intends to lock it again
+                                                       so we need a flag here to prevent a node from being
+                                                       deleted while it is temporarily locked. */
 
   pthread_mutex_t              *nd_mutex;            /* semaphore for accessing this node's data */
   };

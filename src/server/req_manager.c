@@ -1952,9 +1952,9 @@ static void requeue_or_delete_jobs(
     }
   for(std::vector<int>::iterator jid = jids.begin();jid != jids.end();jid++)
     {
-    unlock_node(pnode,__func__,NULL,LOGLEVEL);
+    tmp_unlock_node(pnode,__func__,NULL,LOGLEVEL);
     job *pjob = svr_find_job_by_id(*jid);
-    lock_node(pnode,__func__,NULL,LOGLEVEL);
+    tmp_lock_node(pnode,__func__,NULL,LOGLEVEL);
     if(pjob != NULL)
       {
       batch_request *brRerun = alloc_br(PBS_BATCH_Rerun);
@@ -1974,7 +1974,7 @@ static void requeue_or_delete_jobs(
       brDelete->rq_ind.rq_delete.rq_objtype = MGR_OBJ_JOB;
       brDelete->rq_ind.rq_delete.rq_cmd = MGR_CMD_DELETE;
       unlock_ji_mutex(pjob,__func__,NULL,LOGLEVEL);
-      unlock_node(pnode, __func__, NULL, LOGLEVEL);
+      tmp_unlock_node(pnode, __func__, NULL, LOGLEVEL);
       int rc = req_rerunjob(brRerun);
       if(rc != PBSE_NONE)
         {
@@ -1989,7 +1989,7 @@ static void requeue_or_delete_jobs(
         free_br(brDelete);
         wait_for_job_state(*jid,JOB_STATE_QUEUED,TIMEOUT_FOR_JOB_REQUEUE);
         }
-      lock_node(pnode, __func__, NULL, LOGLEVEL);
+      tmp_lock_node(pnode, __func__, NULL, LOGLEVEL);
       }
     }
   }

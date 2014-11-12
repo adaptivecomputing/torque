@@ -152,6 +152,16 @@ int lock_node(struct pbsnode *the_node, const char *id, const char *msg, int log
   return(0); 
   }                           
 
+int tmp_unlock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
+  {
+  return(0);
+  }                           
+
+int tmp_lock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
+  { 
+  return(0); 
+  }
+
 struct tcp_chan* DIS_tcp_setup(int sock)
   {
   return(NULL);
