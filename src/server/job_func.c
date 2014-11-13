@@ -174,6 +174,7 @@ int issue_signal(job **, const char *, void(*)(batch_request *), void *, char *)
 /* Local Private Functions */
 
 static void job_init_wattr(job *);
+void free_all_of_job(job *pjob);
 
 /* Global Data items */
 all_jobs        alljobs;
@@ -726,13 +727,13 @@ void free_job_allocation(
   if (pjob->ji_cray_clone != NULL)
     {
     lock_ji_mutex(pjob->ji_cray_clone, __func__, NULL, LOGLEVEL);
-    free_job_allocation(pjob->ji_cray_clone);
+    free_all_of_job(pjob->ji_cray_clone);
     }
 
   if (pjob->ji_external_clone != NULL)
     {
     lock_ji_mutex(pjob->ji_external_clone, __func__, NULL, LOGLEVEL);
-    free_job_allocation(pjob->ji_external_clone);
+    free_all_of_job(pjob->ji_external_clone);
     }
 
   /* remove any calloc working pbs_attribute space */
@@ -753,12 +754,15 @@ void free_job_allocation(
     bp = (badplace *)GET_NEXT(pjob->ji_rejectdest);
     }
 
+  } /* END free_job_allocation() */
+
+void free_all_of_job(job *pjob)
+  {
+  free_job_allocation(pjob);
   pthread_mutex_destroy(pjob->ji_mutex);
   memset(pjob, 254, sizeof(job)); /* TODO: remove magic number */
   free(pjob);
-  } /* END free_job_allocation() */
-
-
+  } /* END free_all_of_job() */
 
 /*
  * job_free - free job structure and its various sub-structures
@@ -817,6 +821,7 @@ void job_free(
   std::string statestr;
   if (use_recycle)
     {
+    free_job_allocation(pj);
     insert_into_recycler(pj);
     sprintf(log_buf, "1: jobid = %s", pj->ji_qs.ji_jobid);
     unlock_ji_mutex(pj, __func__, log_buf, LOGLEVEL);
@@ -826,7 +831,7 @@ void job_free(
     {
     sprintf(log_buf, "2: jobid = %s", pj->ji_qs.ji_jobid);
     unlock_ji_mutex(pj, __func__, log_buf, LOGLEVEL);
-    free_job_allocation(pj);
+    free_all_of_job(pj);
     statestr = "free_job_allocation";
     }
 
