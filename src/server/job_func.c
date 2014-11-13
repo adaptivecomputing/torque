@@ -830,7 +830,9 @@ void job_free(
     statestr = "free_job_allocation";
     }
 
+  alljobs.lock();
   job *pjob = alljobs.find(jobid);
+  alljobs.unlock();
   if (pjob != NULL)
     {
     if (LOGLEVEL >= 8)
