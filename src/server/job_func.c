@@ -1965,7 +1965,23 @@ int svr_job_purge(
       {
       /* set the state to complete so that svr_dequejob() will function properly */
       pjob->ji_qs.ji_state = JOB_STATE_COMPLETE;
-      rc = svr_dequejob(pjob, FALSE);
+      if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_DEQUEJOB) == 0)
+        {
+        pjob->ji_qs.ji_svrflags |= JOB_SVFLG_DEQUEJOB;
+        rc = svr_dequejob(pjob, FALSE);
+        pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_DEQUEJOB;
+        }
+      else
+        {
+        /* The job is being dequeued by another thread so do nothing,
+        ** let the other thread finish the dequeueing and the remainder
+        ** things below */
+        strcpy(log_buf, "job is being dequeued by another thread");
+        log_event(PBSEVENT_DEBUG2, PBS_EVENTCLASS_JOB, 
+          pjob->ji_qs.ji_jobid, log_buf);
+        pjob_mutex.unlock();
+        return(PBSE_NONE);
+        }
       }
 
     if (rc != PBSE_JOBNOTFOUND)
