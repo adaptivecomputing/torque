@@ -229,6 +229,35 @@ START_TEST(test_constructors)
   fail_unless(str_set.set_from_submission_string(strdup("3:gpus=2:reseterr:exclusive_thread:opsys=cent6"), error) == PBSE_NONE);
   fail_unless(str_set.set_from_submission_string(strdup("1:lprocs=all:place=core"), error) != PBSE_NONE);
   fail_unless(str_set.set_from_submission_string(strdup("1:lprocs=all:place=thread=2"), error) != PBSE_NONE);
+
+  req r7("2:place=numachip");
+  r7.set_index(0);
+
+  std::vector<std::string> names;
+  std::vector<std::string> values;
+  r7.get_values(names, values);
+
+  fail_unless(names[0] == "task_count.0", names[0].c_str());
+  fail_unless(names[1] == "lprocs.0", names[1].c_str());
+  fail_unless(names[2] == "numachip.0", names[2].c_str());
+  fail_unless(values[0] == "2");
+  fail_unless(values[1] == "1");
+  fail_unless(values[2] == "1");
+
+  req r8("2:place=core");
+  r8.set_index(0);
+
+  names.clear();
+  values.clear();
+  r8.get_values(names, values);
+
+  fail_unless(names[0] == "task_count.0", names[0].c_str());
+  fail_unless(names[1] == "lprocs.0", names[1].c_str());
+  fail_unless(names[2] == "core.0", names[2].c_str());
+  fail_unless(values[0] == "2");
+  fail_unless(values[1] == "1");
+  fail_unless(values[2] == "1");
+ 
   }
 END_TEST
 
@@ -270,39 +299,39 @@ START_TEST(test_set_from_string)
 
   std::string out;
 
-  r.set_from_string("req[1]\ntask count: 1\nlprocs: 1\n thread usage policy: use threads\nplacement type: place numa");
+  r.set_from_string("req[1]\ntask count: 1\nlprocs: 1\n thread usage policy: usethreads\nplacement type: place numa");
 
   r.toString(out);
 
   fail_unless(out.find("task count: 1") != std::string::npos);
   fail_unless(out.find("lprocs: 1") != std::string::npos);
-  fail_unless(out.find("thread usage policy: use threads") != std::string::npos);
+  fail_unless(out.find("thread usage policy: usethreads") != std::string::npos, out.c_str());
   fail_unless(out.find("placement type: place numa") != std::string::npos);
 
   out.clear();
-  r.set_from_string("req[2]\ntask count: 1\nlprocs: 1\n thread usage policy: use fast cores\nplacement type: place node");
+  r.set_from_string("req[2]\ntask count: 1\nlprocs: 1\n thread usage policy: usefastcores\nplacement type: place node");
   r.toString(out);
 
   fail_unless(out.find("task count: 1") != std::string::npos);
   fail_unless(out.find("lprocs: 1") != std::string::npos);
-  fail_unless(out.find("thread usage policy: use fast cores") != std::string::npos);
+  fail_unless(out.find("thread usage policy: usefastcores") != std::string::npos);
   fail_unless(out.find("placement type: place node") != std::string::npos);
 
-  r.set_from_string("req[2]\ntask count: 1\nlprocs: 1\n gpus: 2\n gpu mode: exclusive thread\n max tpn: 2\n thread usage policy: allow threads\nplacement type: place node \nreqattr: matlab>=5");
+  r.set_from_string("req[2]\ntask count: 1\nlprocs: 1\n gpus: 2\n gpu mode: exclusive thread\n max tpn: 2\n thread usage policy: allowthreads\nplacement type: place node \nreqattr: matlab>=5");
   r.toString(out);
 
   fail_unless(out.find("task count: 1") != std::string::npos);
   fail_unless(out.find("lprocs: 1") != std::string::npos);
-  fail_unless(out.find("thread usage policy: allow threads") != std::string::npos, r.getThreadUsageString().c_str());
+  fail_unless(out.find("thread usage policy: allowthreads") != std::string::npos, r.getThreadUsageString().c_str());
   fail_unless(out.find("placement type: place node") != std::string::npos);
   fail_unless(out.find("gpu mode: exclusive thread") != std::string::npos);
   fail_unless(out.find("gpus: 2") != std::string::npos);
   fail_unless(out.find("max tpn: 2") != std::string::npos);
   fail_unless(out.find("reqattr: matlab>=5") != std::string::npos);
 
-  r.set_from_string("req[0]\ntask count: 10\nlprocs: all\nmem: 10000kb\nswap: 1024kb\ndisk: 10000000kb\nsockets: 1\nnuma chips: 2\ngpus: 1\nmics: 1\nthread usage policy: use cores\nplacement type: place socket\ngres: matlab=1\nos: ubuntu\narch: 64\nhostlist: napali/0-31\nfeatures: fast\nsingle job access\npack");
+  r.set_from_string("req[0]\ntask count: 10\nlprocs: all\nmem: 10000kb\nswap: 1024kb\ndisk: 10000000kb\nsocket: 1\nnumachip: 2\ngpus: 1\nmics: 1\nthread usage policy: usecores\nplacement type: place socket\ngres: matlab=1\nos: ubuntu\narch: 64\nhostlist: napali/0-31\nfeatures: fast\nsingle job access\npack");
 
-  fail_unless(r.getThreadUsageString() == "use cores");
+  fail_unless(r.getThreadUsageString() == "usecores", r.getThreadUsageString().c_str());
   fail_unless(r.getFeatures() == "fast");
   fail_unless(r.getExecutionSlots() == ALL_EXECUTION_SLOTS);
   fail_unless(r.getMemory() == 10000);
@@ -322,11 +351,11 @@ START_TEST(test_set_from_string)
   fail_unless(out.find("mem: 10000kb") != std::string::npos);
   fail_unless(out.find("swap: 1024kb") != std::string::npos);
   fail_unless(out.find("disk: 10000000kb") != std::string::npos);
-  fail_unless(out.find("sockets: 1") != std::string::npos);
-  fail_unless(out.find("numa chips: 2") != std::string::npos);
+  fail_unless(out.find("socket: 1") != std::string::npos);
+  fail_unless(out.find("numachip: 2") != std::string::npos);
   fail_unless(out.find("gpus: 1") != std::string::npos);
   fail_unless(out.find("mics: 1") != std::string::npos);
-  fail_unless(out.find("thread usage policy: use cores") != std::string::npos);
+  fail_unless(out.find("thread usage policy: usecores") != std::string::npos);
   fail_unless(out.find("placement type: place socket") != std::string::npos, out.c_str());
   fail_unless(out.find("gres: matlab=1") != std::string::npos);
   fail_unless(out.find("os: ubuntu") != std::string::npos);

@@ -123,16 +123,22 @@ int req::set_place_value(
     {
     if (numeric_value != NULL)
       rc = parse_positive_integer(numeric_value, this->nodes);
+    else
+      this->nodes = 1;
     }
   else if (!strcmp(work_str, place_socket))
     {
     if (numeric_value != NULL)
       rc = parse_positive_integer(numeric_value, this->socket);
+    else
+      this->socket = 1;
     }
   else if (!strcmp(work_str, place_numa))
     {
     if (numeric_value != NULL)
       rc = parse_positive_integer(numeric_value, this->numa_chip);
+    else
+      this->numa_chip = 1;
     }
   else if (!strcmp(work_str, place_core))
     {
@@ -145,6 +151,8 @@ int req::set_place_value(
           (count > this->execution_slots))
         this->execution_slots = count;
       }
+    else
+      this->cores = 1;
       
     this->thread_usage_policy = USE_CORES;
     this->thread_usage_str = use_cores;
@@ -160,6 +168,8 @@ int req::set_place_value(
           (count > this->execution_slots))
         this->execution_slots = count;
       }
+    else
+      this->threads = 1;
       
     this->thread_usage_policy = USE_THREADS;
     this->thread_usage_str = use_threads;
@@ -824,12 +834,11 @@ int req::set_from_submission_string(
 
 req::req(
     
-  const std::string &resource_request) : execution_slots(1), mem(0), swap(0),
-                                         disk(0), placement_str(),
-                                         task_count(1), socket(0), numa_chip(0),
-                                         thread_usage_policy(ALLOW_THREADS),
-                                         thread_usage_str(allow_threads), gpus(0), mics(0),
-                                         index(-1)
+  const std::string &resource_request) : execution_slots(1), mem(0), swap(0), disk(0),
+                                         task_count(1), nodes(0), socket(0), numa_chip(0),
+                                         cores(0), threads(0), thread_usage_str(allow_threads),
+                                         single_job_access(false), maxtpn(0), placement_str(),
+                                         gpu_mode(), gres()
 
   {
   char       *work_str = strdup(resource_request.c_str());
@@ -938,19 +947,31 @@ void req::toString(
 
   if (this->nodes != 0)
     {
-    snprintf(buf, sizeof(buf), "      nodes: %d\n", this->nodes);
+    snprintf(buf, sizeof(buf), "      node: %d\n", this->nodes);
     str += buf;
     }
 
   if (this->socket != 0)
     {
-    snprintf(buf, sizeof(buf), "      sockets: %d\n", this->socket);
+    snprintf(buf, sizeof(buf), "      socket: %d\n", this->socket);
     str += buf;
     }
 
   if (this->numa_chip != 0)
     {
-    snprintf(buf, sizeof(buf), "      numa chips: %d\n", this->numa_chip);
+    snprintf(buf, sizeof(buf), "      numachip: %d\n", this->numa_chip);
+    str += buf;
+    }
+
+  if (this->cores != 0)
+    {
+    snprintf(buf, sizeof(buf), "      core: %d\n", this->cores);
+    str += buf;
+    }
+
+  if (this->threads != 0)
+    {
+    snprintf(buf, sizeof(buf), "      thread: %d\n", this->threads);
     str += buf;
     }
 
@@ -1360,18 +1381,43 @@ void req::set_from_string(
     move_past_whitespace(&current);
     }
 
-  if (!strncmp(current, "sockets", 7))
+  if (!strncmp(current, "node", 4))
     {
-    current += 9; // move past 'sockets: '
+    current += 6; // move past 'node: '
+    this->nodes = strtol(current, &current, 10);
+
+    move_past_whitespace(&current);
+    }
+
+  if (!strncmp(current, "socket", 6))
+    {
+    current += 8; // move past 'socket: '
     this->socket = strtol(current, &current, 10);
     
     move_past_whitespace(&current);
     }
 
-  if (!strncmp(current, "numa chips", 10))
+  if (!strncmp(current, "numachip", 8))
     {
-    current += 12; // move past 'numa chips: '
+    current += 10; // move past 'numachip: '
     this->numa_chip = strtol(current, &current, 10);
+
+    move_past_whitespace(&current);
+    }
+
+  if (!strncmp(current, "core", 4))
+    {
+    current += 6; // move past 'core: '
+    this->cores = strtol(current, &current, 10);
+
+    move_past_whitespace(&current);
+    }
+
+  if ((!strncmp(current, "thread", 6)) &&
+      (strncmp(current, "thread usage policy", 19)))
+    {
+    current += 8; // move past 'thread: '
+    this->threads = strtol(current, &current, 10);
 
     move_past_whitespace(&current);
     }
