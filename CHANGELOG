@@ -1,5 +1,75 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
+4.5.1
+  n - TRQ-2944. **Known Issue**: TORQUE is no longer accepting afterstartarray job
+      dependencies. For example, 'qsub -W depend=afterstartarray:<array_job_id>'
+      is currently rejected with an error message: "submit error (Invalid Job Dependency)".
+      The ticket is currently being evaluated for future maintenance releases.
+
+  n - TRQ-1954. Removed autogen.sh (intended for TORQUE developers only) from distribution
+      packaging.
+  f - TRQ-2313. Added jobdirectory_sticky parameter to the pbs_mom command configuration
+      file to allow setting sticky bit on MOM's job directory.
+  f - TRQ-2594. TORQUE now uses the Munge API rather than forking when configured with the
+      --enable-munge-auth option.
+  e - TRQ-2322. Added check to configure to make configuring with --enable-drmaa fail if gperf
+      isn't installed.
+  e - TRQ-2404. Improved pbs_mom to stop getting PID list on every iteration. Now it gets PIDs
+      just once and reuses them.
+  e - TRQ-2408. Improved performance by moving scan_for_terminated to its own thread.
+  e - TRQ-2410. Improved qstat behavior in cases where bad job IDs were referenced in the command.
+  e - TRQ-2598. Improved IP address formatting in log files.
+  e - TRQ-2890. Added stderr capturing when using -o option.
+  b - TRQ-2025. Fixed bug where giving a bad queue name to qstat -Q resulted in duplicate output.
+  b - TRQ-2292. Some tasks were incorrectly listed as 0 in qstat -a when requesting specific
+      nodes. This has been fixed.
+  b - TRQ-2354. Fixed bug with max_user_queuable and users not being able to submit from a
+      different host.
+  b - TRQ-2367. Fixed bug related to accounting records on large systems.
+  b - TRQ-2411. Fixed output format bug in cases where multiple job IDs are passed into qstat.
+  b - TRQ-2434. Added code to the scan_for_exiting portion of the code to wait for all sister
+      nodes to report in that they had received a job termination from the Mother Superior.
+      This alleviates the problem of sister nodes not clearing before the Mother Superior sends
+      its obit to the server.
+  b - TRQ-2469. Fixed possible OOM violation because of reporter MOM fork.
+  b - TRQ-2472. Fixed bug related to deletion of large array jobs.
+  b - TRQ-2474. Fixed bug where Moab was running jobs that were removed using qdel.
+  b - TRQ-2477. Fixed bug where array job with unknown jobid errors were unexpectedly requeued.
+  b - TRQ-2484. Fixed bug where TORQUE was not honoring environmnet variables that didn't
+      have a value.
+  b - TRQ-2487. Fixed bug with TORQUE enforcing resources_min.nodes incorrectly.
+  b - TRQ-2491. Fixed bug where mppnodes hostlist was being re-ordered.
+  b - TRQ-2501. For Cray, svr_clnodes - the count of total execution slots in the system - was
+      off by one for each Cray node. This was because the initial proc given wasn't being counted.
+      The problem is now fixed.
+  b - TRQ-2607. Fixed bug where reporter MOM was not clearing ALPS status buffer.
+  b - TRQ-2617. Fixed bug where jobs were getting stuck in 'new' state on the MOMs.
+  b - TRQ-2646. Fixed bug where qsub did not process args correctly when using a submit filter.
+  b - TRQ-2647. Fixed bug with --with-nvml-lib option during configure.
+  b - TRQ-2653. Fixed build bug related to newer Intel MIC libraries installing in different
+      locations.
+  b - TRQ-2662. Fixed bug when job radix and pbsdsh were used together.
+  b - TRQ-2692. Corrected mismatched <Job_Id> XML tags in the job log.
+  b - TRQ-2730. Fixed problem where GPUs were not split between NUMA nodes. You now need to
+      specify which gpus belong to each node board in the mom.layout file. A sample mom.layout
+      file might look like:
+
+        nodes=0 gpu=0
+        nodes=1 gpu=1
+
+      Also please note that this only works if you use nvml. The nvidia-smi command is
+      not supported.
+  b - TRQ-2732. Fixed bug where OU files were being left in spool when job was preempted or requeued.
+  b - TRQ-2759. Fixed bug where reported cput was incorrect.
+  b - TRQ-2795. Fixed bug where jobs rejected due to max_user_queuable limit reached, yet no
+      jobs in the queue.
+  b - TRQ-2828. Fixed bug where 'momctl -q clearmsg' didn't clear error messages properly.
+  b - TRQ-2837. Fixed bug where GPU modes were not passed to sister nodes.
+  b - TRQ-2885. Fixed issue around unauthorized termination of processes (CVE-2014-3684).
+  b - TRQ-2890. Improved pbsdsh to better handle simultaneous use of -o and -s options.
+      Also fixed some problems where -o output was sometimes getting truncated.
+  b - TRQ-2919. Fixed deadlock issue when running 'qdel -p' as non-root user.
+  c - TRQ-2436, TRQ-2556. Fixed various crashes.
 
 4.5.0
   b - TRQ-2319. Replace two Torque functions with ones from the hwloc package.
