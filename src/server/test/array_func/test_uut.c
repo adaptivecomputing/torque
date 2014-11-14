@@ -11,6 +11,7 @@ int is_num(const char *);
 int array_request_token_count(const char *);
 int array_request_parse_token(char *, int *, int *);
 int num_array_jobs(const char *str);
+int array_recov_binary(char *path, job_array **new_pa, char *log_buf, size_t buflen);
 int parse_array_dom(job_array **pa, xmlNodePtr root_element, char *log_buf, size_t buflen);
 
 const char *array_sample = "<array>\n</array>";
@@ -189,6 +190,22 @@ START_TEST(array_delete_test)
 END_TEST
 
 
+START_TEST(array_recov_binary_test)
+  {
+  job_array *pa;
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
+
+  /* missing file */
+  fail_unless(array_recov_binary((char *)"", &pa, log_buf, sizeof(log_buf)) == PBSE_SYSTEM, "failed array_recov");
+
+  /* zero length file */
+  fail_unless(array_recov_binary((char *)"file_zero", &pa, log_buf, sizeof(log_buf)) == PBSE_SYSTEM, "failed array_recov");
+  }
+END_TEST
+
+
+
+
 Suite *array_func_suite(void)
   {
   Suite *s = suite_create("array_func_suite methods");
@@ -220,6 +237,10 @@ Suite *array_func_suite(void)
   tc_core = tcase_create("array_delete_test");
   tcase_add_test(tc_core,array_delete_test);
   suite_add_tcase(s,tc_core);
+
+  tc_core = tcase_create("array_recov_binary_test");
+  tcase_add_test(tc_core, array_recov_binary_test);
+  suite_add_tcase(s, tc_core);
 
   return s;
   }
