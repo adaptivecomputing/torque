@@ -64,11 +64,15 @@ public:
     }
   void dontSendOnStartup(void)
     {
+    pthread_mutex_lock(&hierarchy_mutex);
     nextSendTime = time(NULL) + MOM_SEND_HIERARCHY_STARTUP_DELAY;
+    pthread_mutex_unlock(&hierarchy_mutex);
     }
   void onlySendOnDemand(void)
     {
+    pthread_mutex_lock(&hierarchy_mutex);
     sendOnDemand = true;
+    pthread_mutex_unlock(&hierarchy_mutex);
     }
 
   void initialLoadHierarchy(void); //Called only at startup.
