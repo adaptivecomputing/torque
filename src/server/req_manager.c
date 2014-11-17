@@ -131,16 +131,17 @@
 #include "work_task.h"
 #include "mcom.h"
 #include "../lib/Libattr/attr_node_func.h" /* free_prop_list */
-#include "node_func.h" /* init_prop, find_nodebyname, reinitialize_node_iterator, recompute_ntype_cnts, effective_node_delete, create_pbs_node */
+#include "node_func.h" /* init_prop, find_nodebyname, reinitialize_node_iterator, recompute_ntype_cnts, effective_node_delete, create_pbs_dynamic_node */
 #include "node_manager.h" /* setup_notification */
 #include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
 #include "queue_func.h" /* find_queuebyname, que_alloc, que_free */
 #include "queue_recov.h" /* que_save */
 #include "mutex_mgr.hpp"
-#include "mom_hierarchy.h"
 #include "ji_mutex.h"
 #include "req_rerun.h"
 #include "req_delete.h"
+#include "mom_hierarchy_handler.h"
+
 
 #define PERM_MANAGER (ATR_DFLAG_MGWR | ATR_DFLAG_MGRD)
 #define PERM_OPorMGR (ATR_DFLAG_MGWR | ATR_DFLAG_MGRD | ATR_DFLAG_OPRD | ATR_DFLAG_OPWR)
@@ -161,7 +162,7 @@ extern char          *msg_man_del;
 extern char          *msg_man_set;
 extern char          *msg_man_uns;
 extern int            disable_timeout_check;
-extern mom_hierarchy_t *mh;
+//extern mom_hierarchy_t *mh;
 
 
 extern int que_purge(pbs_queue *);
@@ -172,10 +173,10 @@ extern int PNodeStateToString(int, char *, int);
 extern job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode);
 
 
-extern void add_all_nodes_to_hello_container();
-void        prepare_mom_hierarchy(std::vector<std::string> &hierarchy_holder);
-extern      std::vector<std::string> hierarchy_holder;
-extern       pthread_mutex_t         hierarchy_holder_Mutex;
+//extern void add_all_nodes_to_hello_container();
+//void        prepare_mom_hierarchy(std::vector<std::string> &hierarchy_holder);
+//extern      std::vector<std::string> hierarchy_holder;
+//extern       pthread_mutex_t         hierarchy_holder_Mutex;
 
 /* private data */
 
@@ -833,19 +834,30 @@ int mgr_set_node_attr(
     char OrigState[1024];
     char FinalState[1024];
 
-    /* changing node state */
+    if(pnode->nd_state&INUSE_NOHIERARCHY)
+      {
+      tnode.nd_state = pnode->nd_state;
+      sprintf(log_buf,"Node state can not be changed until node list has been sent to all nodes.");
+      log_err(PBSE_HIERARCHY_NOT_SENT,"State change not allowed.",log_buf);
+      rc = PBSE_HIERARCHY_NOT_SENT;
+      }
+    else
+      {
 
-    /* log change */
+      /* changing node state */
 
-    PNodeStateToString(pnode->nd_state, OrigState, sizeof(OrigState));
-    PNodeStateToString(tnode.nd_state, FinalState, sizeof(FinalState));
+      /* log change */
 
-    sprintf(log_buf, "node %s state changed from %s to %s",
-      pnode->nd_name,
-      OrigState,
-      FinalState);
+      PNodeStateToString(pnode->nd_state, OrigState, sizeof(OrigState));
+      PNodeStateToString(tnode.nd_state, FinalState, sizeof(FinalState));
 
-    log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_NODE,pnode->nd_name,log_buf);
+      sprintf(log_buf, "node %s state changed from %s to %s",
+        pnode->nd_name,
+        OrigState,
+        FinalState);
+
+      log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_NODE,pnode->nd_name,log_buf);
+      }
     }
 
   /* NOTE:  nd_status properly freed during pbs_attribute alter */
@@ -2104,11 +2116,8 @@ static void mgr_node_delete(
   recompute_ntype_cnts();
 
   reply_ack(preq);  /*request completely successful*/
-  
-  pthread_mutex_lock(&hierarchy_holder_Mutex);
-  prepare_mom_hierarchy(hierarchy_holder);
-  pthread_mutex_unlock(&hierarchy_holder_Mutex);
-  add_all_nodes_to_hello_container();
+
+  hierarchy_handler.reloadHierarchy();
 
   return;
   }  /* END mgr_node_delete() */
@@ -2136,7 +2145,7 @@ void mgr_node_create(
 
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
 
-  rc = create_pbs_node(
+  rc = create_pbs_dynamic_node(
          preq->rq_ind.rq_manager.rq_objname,
          plist,
          preq->rq_perm,
@@ -2144,6 +2153,10 @@ void mgr_node_create(
 
   if (rc != 0)
     {
+    if(LOGLEVEL >= 7)
+      {
+      log_err(rc,__func__,"Error creating a node.");
+      }
     switch (rc)
       {
 
@@ -2177,6 +2190,12 @@ void mgr_node_create(
     return;
     }
 
+  if(LOGLEVEL >= 7)
+    {
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, "Created a node.");
+    }
+
+
   mgr_log_attr(
     msg_man_set,
     plist,
@@ -2196,13 +2215,8 @@ void mgr_node_create(
     {
     svr_chngNodesfile = 0;
     }
-
+  hierarchy_handler.reloadHierarchy();
   reply_ack(preq);     /* create request successful */
-
-  pthread_mutex_lock(&hierarchy_holder_Mutex);
-  prepare_mom_hierarchy(hierarchy_holder);
-  pthread_mutex_unlock(&hierarchy_holder_Mutex);
-  add_all_nodes_to_hello_container();
 
   return;
   }
@@ -2255,7 +2269,7 @@ int req_manager(
 
         case MGR_OBJ_NODE:
 
-          if((mh != NULL)&&(mh->file_present))
+          if(hierarchy_handler.isMomHierarchyFilePresent())
             {
             rc = PBSE_CREATE_NOT_ALLOWED_WITH_MOM_HIERARCHY;
             snprintf(log_buf, LOCAL_LOG_BUF_SIZE,

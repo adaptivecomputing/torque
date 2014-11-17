@@ -98,7 +98,7 @@
 #include "../lib/Libutils/u_lock_ctl.h"
 #include "mutex_mgr.hpp"
 #include "server_comm.h"
-
+#include "mom_hierarchy_handler.h"
 
 
 extern int              allow_any_mom;
@@ -513,10 +513,10 @@ void *svr_is_request(
 
         if (ret == SEND_HELLO)
           {
-          struct hello_info *hi = new hello_info(node->nd_id);
+          //struct hello_info *hi = new hello_info(node->nd_id);
           write_tcp_reply(chan, IS_PROTOCOL, IS_PROTOCOL_VER, IS_STATUS, DIS_SUCCESS);
 
-          enqueue_threadpool_request(send_hierarchy_threadtask, hi, task_pool);
+          hierarchy_handler.sendHierarchyToANode(node);
           ret = DIS_SUCCESS;
           }
         else

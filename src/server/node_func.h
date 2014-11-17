@@ -4,6 +4,10 @@
 #include "list_link.h" /* tlist_head */
 #include "net_connect.h"
 #include "pbs_nodes.h"
+#include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
+#include "utils.h"
+#include <vector>
+#include <string>
 
 /* Forward declarations. */
 struct pbsnode;
@@ -45,6 +49,8 @@ int copy_properties(struct pbsnode *dest, struct pbsnode *src);
 
 int create_pbs_node(char *objname, struct svrattrl *plist, int perms, int *bad);
 
+int create_pbs_dynamic_node(char *objname, struct svrattrl *plist, int perms, int *bad);
+
 int setup_nodes(void);
 
 int node_np_action(struct pbs_attribute *new_attr, void *pobj, int actmode);
@@ -73,18 +79,19 @@ void *send_hierarchy_threadtask(void *vp);
 
 int send_hierarchy(char *name, unsigned short  port);
 
-int needs_hello(hello_container *hc, char *node_name);
+//int needs_hello(hello_container *hc, char *node_name);
 
-int add_hello(hello_container *hc, char *node_name);
+//int add_hello(hello_container *hc, char *node_name);
 
-int add_hello_after(hello_container *hc, char *node_name, int index);
+//int add_hello_after(hello_container *hc, char *node_name, int index);
 
-int add_hello_info(hello_container *hc, hello_info *hi);
+//int add_hello_info(hello_container *hc, hello_info *hi);
 
-hello_info *pop_hello(hello_container *hc);
+//hello_info *pop_hello(hello_container *hc);
 
-int remove_hello(hello_container *hc, char *node_name);
+//int remove_hello(hello_container *hc, char *node_name);
 
 int set_node_power_state(struct pbsnode **pNode,unsigned short newState);
+
 
 #endif /* _NODE_FUNC_H */

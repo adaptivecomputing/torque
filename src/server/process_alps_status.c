@@ -190,6 +190,7 @@ struct pbsnode *create_alps_subnode(
 
   subnode->nd_ntype = NTYPE_CLUSTER;
   subnode->parent = parent;
+  subnode->nd_state &= ~INUSE_NOHIERARCHY;
 
   /* add any properties to the subnodes */
   copy_properties(subnode, parent);
