@@ -264,6 +264,9 @@ int get_active_pbs_server(
     }
   else if ((rc = socket_read_num(local_socket, (long long *)port)) != PBSE_NONE)
     {
+    if (read_buf != NULL)
+      free(read_buf);
+
     close(local_socket);
     return(rc);
     }
