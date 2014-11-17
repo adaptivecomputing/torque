@@ -269,6 +269,7 @@ class item_container
       {
       //If exit is called, don't free the slots.
       lock();
+      map.clear();
       unlock();
       return;
       }
