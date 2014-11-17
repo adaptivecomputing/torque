@@ -85,7 +85,7 @@
 #include "threadpool.h"
 #include "ji_mutex.h"
 
-void free_job_allocation(job *pjob);
+void free_all_of_job(job *pjob);
 
 extern job_recycler recycler;
 extern int          LOGLEVEL;
@@ -186,7 +186,7 @@ void *remove_some_recycle_jobs(
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
 
     unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-    free_job_allocation(pjob);
+    free_all_of_job(pjob);
     }
 
   pthread_mutex_unlock(recycler.rc_mutex);
