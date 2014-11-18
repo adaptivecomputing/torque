@@ -79,6 +79,7 @@ void log_event(int eventtype, int objclass, const char *objname, const char *tex
 
 void free_job_allocation(job *pjob) {}
 void log_err(int objclass, const char *objname, const char *text) {}
+void free_all_of_job(job *pjob) {}
 
 job *job_alloc(void)
   {
