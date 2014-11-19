@@ -1945,38 +1945,6 @@ static int finalize_create_pbs_node(char     *pname, /* node name w/o any :ts   
   return(PBSE_NONE);
   } /* End finalize_create_pbs_node() */
 
-
-/*
- * create_pbs_dynamic_node - create pbs node structure, i.e. add a node
- */
-
-int create_pbs_dynamic_node(
-  char     *objname,
-  svrattrl *plist,
-  int       perms,
-  int      *bad)
-
-  {
-  int              ntype; /* node type; time-shared, not */
-  char            *pname = NULL; /* node name w/o any :ts       */
-  u_long          *pul = NULL;  /* 0 terminated host adrs array*/
-  int              rc;
-
-  if ((rc = process_host_name_part(objname, &pul, &pname, &ntype)) != 0)
-    {
-    if(pul != NULL)
-      {
-      free(pul);
-      }
-    if(pname != NULL)
-      {
-      free(pname);
-      }
-    return rc;
-    }
-  return finalize_create_pbs_node(pname,pul,ntype,plist,perms,bad);
-  }/* End create_pbs_dynamic_node() */
-
 /*
  * create_pbs_node - create pbs node structure, i.e. add a node
  */
@@ -2185,6 +2153,48 @@ static char *parse_node_token(
   return(ts);
   }  /* END parse_node_token() */
 
+
+/*
+ * create_pbs_dynamic_node - create pbs node structure, i.e. add a node
+ */
+
+int create_pbs_dynamic_node(
+  char     *objname,
+  svrattrl *plist,
+  int       perms,
+  int      *bad)
+
+  {
+  int              ntype; /* node type; time-shared, not */
+  char            *pname = NULL; /* node name w/o any :ts       */
+  u_long          *pul = NULL;  /* 0 terminated host adrs array*/
+  int              rc;
+  int              err = 0;
+  char             xchar;
+
+  //Call parse_node_token to ensure that the node name doesn't have any 
+  //invalid characters. Thi is the same function used when reading th
+  //nodes file on startup.
+  char *token = parse_node_token(objname, COLON_OK, &err, &xchar);
+  if((token == NULL)||(err != 0 ))
+    {
+    return PBSE_UNKNODE;
+    }
+
+  if ((rc = process_host_name_part(objname, &pul, &pname, &ntype)) != 0)
+    {
+    if(pul != NULL)
+      {
+      free(pul);
+      }
+    if(pname != NULL)
+      {
+      free(pname);
+      }
+    return rc;
+    }
+  return finalize_create_pbs_node(pname,pul,ntype,plist,perms,bad);
+  }/* End create_pbs_dynamic_node() */
 
 /*
  * add_to_property_list()
