@@ -594,6 +594,7 @@ extern all_nodes allnodes;
 extern struct pbsnode *alps_reporter;
 
 extern int    svr_totnodes;  /* number of nodes (hosts) */
+extern int   svr_unresolvednodes;
 extern int    svr_clnodes;  /* number of cluster nodes */
 
 extern int    MultiMomMode; /* moms configured for multiple moms per machine */

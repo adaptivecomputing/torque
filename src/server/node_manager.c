@@ -145,6 +145,7 @@ extern int              LOGLEVEL;
   
 
 int                     svr_totnodes = 0; /* total number nodes defined       */
+int                     svr_unresolvednodes = 0; /* number of nodes from the nodes file that failed to resolve. */
 int                     svr_clnodes  = 0; /* number of cluster nodes     */
 int                     svr_chngNodesfile = 0; /* 1 signals want nodes file update */
 int                     gpu_mode_rqstd = -1;  /* default gpu mode requested */

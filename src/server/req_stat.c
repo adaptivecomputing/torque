@@ -1363,7 +1363,10 @@ int req_stat_node(
   if (svr_totnodes <= 0)
     {
     rc = PBSE_NONODES;
-    req_reject(rc, 0, preq, NULL, "node list is empty - check 'server_priv/nodes' file");
+
+    req_reject(rc, 0, preq, NULL, (svr_unresolvednodes == 0)?
+        "node list is empty - check 'server_priv/nodes' file":
+        "none of the nodes in the 'server_priv/nodes' file resolves to a valid address");
 
     return rc;
     }

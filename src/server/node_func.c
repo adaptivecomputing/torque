@@ -1970,6 +1970,8 @@ int create_pbs_node(
     {
     svrattrl *pal, *pattrl;
 
+    svr_unresolvednodes++;
+
     if(LOGLEVEL >= 7)
       {
       log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, "Node does not resolve, putting in delayed create.");
