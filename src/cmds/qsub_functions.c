@@ -3492,7 +3492,7 @@ void set_job_defaults(
   
   hash_add_or_exit(ji->client_attr, "pbs_dprefix", "#PBS", STATIC_DATA);
   hash_add_or_exit(ji->job_attr, ATTR_job_radix, "0", STATIC_DATA);
-  if (hash_find(ji->user_attr, "pbs_clientretry", &tmp_job_info))
+  if (hash_find(ji->user_attr, "PBS_CLIENTRETRY", &tmp_job_info))
     hash_add_or_exit(ji->client_attr, "cnt2server_retry", tmp_job_info->value.c_str(), ENV_DATA);
   return;
   }  /* END set_job_defaults() */
