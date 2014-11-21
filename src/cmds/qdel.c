@@ -42,7 +42,7 @@ void process_config_file(
     {
     if ((param_val = get_trq_param("CLIENTRETRY", torque_cfg_buf)) != NULL)
       {
-      hash_add_or_exit(attr, "pbs_clientretry", param_val, CONFIG_DATA);
+      hash_add_or_exit(attr, "PBS_CLIENTRETRY", param_val, CONFIG_DATA);
       }
     }
   } /* END process_config_file */
@@ -81,7 +81,7 @@ int qdel_main(
   set_env_opts(&attr, envp);
   process_config_file(&attr);
 
-  if (hash_find(&attr, "pbs_clientretry", &tmp_data))
+  if (hash_find(&attr, "PBS_CLIENTRETRY", &tmp_data))
     {
     client_retry = atoi(tmp_data->value.c_str());
     }
