@@ -348,3 +348,8 @@ char *get_correct_jobname(const char *id)
   {
   return(strdup(id));
   }
+
+void handle_complete_second_time(struct work_task *ptask)
+  {
+  }
+
