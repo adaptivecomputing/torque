@@ -170,7 +170,7 @@ extern int job_log_open(char *, char *);
 extern int log_job_record(const char *buf);
 extern void check_job_log(struct work_task *ptask);
 int issue_signal(job **, const char *, void(*)(batch_request *), void *, char *);
-
+void handle_complete_second_time(struct work_task *ptask);
 /* Local Private Functions */
 
 static void job_init_wattr(job *);
@@ -381,6 +381,59 @@ static int remtree(
 
 
 
+/*
+** handle_aborted_job determines whether to purge the job right away or
+** respect the KeepCompleted time.
+*/
+void handle_aborted_job(
+
+  job **job_ptr, /* M */
+  bool  dependentjob, /* I */
+  long KeepSeconds, /* I */
+  const char *text) /* I */
+
+  {
+  job *pjob = *job_ptr;
+   
+  if ((!dependentjob) || (!KeepSeconds))
+    {
+    svr_job_purge(pjob);
+    pjob = NULL;
+    }
+  else
+    {
+    /* Add a comment to say the reason it was aborted */
+    if (text != NULL)
+      {
+      char *comment=NULL;
+      if ((pjob->ji_wattr[JOB_ATR_Comment].at_flags & ATR_VFLAG_SET) &&
+          (pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str))
+        {
+        size_t len = strlen(pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str);
+        len += strlen(text) + 3; /* added extra characters for ". " */
+        comment = (char *)calloc(len, sizeof(char));
+        snprintf(comment, len, "%s. %s", 
+          pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str, text);
+        free(pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str);
+        pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str = comment;
+        }
+      else
+        {
+        pjob->ji_wattr[JOB_ATR_Comment].at_flags |= ATR_VFLAG_SET;
+        pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str = strdup(text);
+        }
+      }
+    svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_ABORT, FALSE);
+    pjob->ji_wattr[JOB_ATR_exitstat].at_val.at_long = 271;
+    pjob->ji_wattr[JOB_ATR_exitstat].at_flags |= ATR_VFLAG_SET;
+    set_task(WORK_Timed, time(NULL) + KeepSeconds, handle_complete_second_time, strdup(pjob->ji_qs.ji_jobid), FALSE);
+    *job_ptr = pjob;
+    }
+  } /* handle_aborted_job */
+
+
+
+
 
 /*
  * job_abt - abort a job
@@ -409,7 +462,8 @@ static int remtree(
 int job_abt(
 
   struct job **pjobp, /* I (modified/freed) */
-  const char  *text)  /* I (optional) */
+  const char  *text,  /* I (optional) */
+        bool   dependentjob) /* I */
 
   {
   char  log_buf[LOCAL_LOG_BUF_SIZE];
@@ -438,6 +492,12 @@ int job_abt(
     }
 
   mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
+
+  long KeepSeconds = 0;
+  int rc2 = get_svr_attr_l(SRV_ATR_KeepCompleted, &KeepSeconds);
+  if ((rc2 != PBSE_NONE) || (KeepSeconds < 0))
+    KeepSeconds = 0;
+
   strcpy(job_id, pjob->ji_qs.ji_jobid);
 
   /* save old state and update state to Exiting */
@@ -517,11 +577,10 @@ int job_abt(
       
         if (pjob != NULL)
           {
-          svr_job_purge(pjob);
-          pjob = NULL;
+          handle_aborted_job(&pjob, dependentjob, KeepSeconds, text);
           }
-
-        *pjobp = NULL;
+        if ((!dependentjob) || (!KeepSeconds) || (!pjob))
+          *pjobp = NULL;
         }
       }
     }
@@ -582,11 +641,12 @@ int job_abt(
 
     if (pjob != NULL)
       {
-      svr_job_purge(pjob);
-      pjob = NULL;
+      handle_aborted_job(&pjob, dependentjob, KeepSeconds, text);
       }
 
-    *pjobp = NULL;
+    if ((!dependentjob) || (!KeepSeconds) || (!pjob))
+      *pjobp = NULL;
+
     }
 
   if (pjob == NULL)

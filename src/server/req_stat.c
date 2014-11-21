@@ -122,6 +122,7 @@
 #include "mutex_mgr.hpp"
 #include "unistd.h"
 #include "log.h"
+#include "job_func.h"
 
 /* Global Data Items: */
 
