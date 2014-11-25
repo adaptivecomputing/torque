@@ -1385,7 +1385,6 @@ int depend_on_que(
   struct depend     *pdep;
   struct depend     *next;
 
-  struct depend_job *pparent;
   int                rc = PBSE_NONE;
   int                type;
   job               *pjob = (job *)pj;
@@ -1454,12 +1453,17 @@ int depend_on_que(
       // once if we are queuing a job
       if (mode != ATR_ACTION_ALTER)
         rc = PBSE_BADDEPEND;
-
+      //send_depend_req could end up deleting the dependency
+      //so make a copy first so we don't try to walk an array that's
+      //being deleted.
+      std::vector<depend_job *> pparent;
       for (unsigned int i = 0; i < pdep->dp_jobs.size(); i++)
         {
-        pparent = pdep->dp_jobs[i];
-
-        if ((rc = send_depend_req(pjob, pparent, type, JOB_DEPEND_OP_REGISTER, SYNC_SCHED_HINT_NULL, post_doq,false)) != PBSE_NONE)
+        pparent.push_back(pdep->dp_jobs[i]);
+        }
+      for (unsigned int i = 0; i < pparent.size(); i++)
+        {
+        if ((rc = send_depend_req(pjob, pparent[i], type, JOB_DEPEND_OP_REGISTER, SYNC_SCHED_HINT_NULL, post_doq,false)) != PBSE_NONE)
           {
           return(rc);
           }
