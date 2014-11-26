@@ -856,6 +856,7 @@ void translate_dependency_to_string(
   extern struct dependnames  dependnames[];
   struct dependnames        *dp_name;
 
+
   if (pattr == NULL)
     return;
 
@@ -863,7 +864,17 @@ void translate_dependency_to_string(
        dep != NULL;
        dep = (struct depend *)GET_NEXT(dep->dp_link))
     {
+    if((dep->dp_type >= JOB_DEPEND_NUMBER_TYPES)||(dep->dp_type < 0))
+      {
+      return; //We have a messed up dependency so get outta here.
+      }
+
     dp_name = dependnames + dep->dp_type;
+
+    if(dp_name->name == NULL)
+      {
+      return;
+      }
 
     if (value.size() != 0)
       value += ",";
