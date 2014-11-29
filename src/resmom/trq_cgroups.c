@@ -522,12 +522,19 @@ int trq_cg_remove_process_from_accts(job *pjob)
 
 #define GETLINE_SIZE 512
 
-/* trq_cg_find_job_processes
+/* trq_cg_find_job_processes2
  *
  * This function takes the current_pid and then finds all child processes
- * for this pid including processes where the session id has been changed
+ * for this pid including processes where the session id has been changed.
+ * The popen command is "ps -eo pid,ppid,sess | grep <current_pid>.
+ * This will return all occurances of the current_pid including any parent
+ * or session ids revealing any child tasks created by the job where the 
+ * session id was changed in the parent.
+ *
+ * This function is called recursively when a child is found with a new session
+ * id.
  */
-int trq_cg_find_job_processes(job *pjob, pid_t current_pid)
+int trq_cg_find_job_processes2(job *pjob, pid_t current_pid)
   {
   int   rc = PBSE_NONE;
   FILE *fp = NULL;
@@ -570,7 +577,7 @@ int trq_cg_find_job_processes(job *pjob, pid_t current_pid)
     {
     /* The BOOST_FOREACH likes to work with string types not char types */
     new_line = line;
-    char_separator<char> sep(" ");
+    char_separator<char> sep("\n ");
     tokenizer< char_separator<char> > tokens(new_line, sep);
     BOOST_FOREACH(const string& t, tokens)
       {
@@ -585,7 +592,19 @@ int trq_cg_find_job_processes(job *pjob, pid_t current_pid)
       continue;
       }
 
-    rc = trq_cg_find_job_processes(pjob, atoi(line_pids[0].c_str()));
+    /* The third element in the line_pids is the session id. If it is
+       the same as the current_pid we are done with it. Insert it into
+       the pid into the set and go on to the next line */
+    if (line_pids[2].compare(current_pid_string) == 0)
+      {
+      pjob->ji_job_procs->insert(atoi(line_pids[0].c_str()));
+      line_pids.clear();
+      /*new_line.clear();*/
+      len = GETLINE_SIZE;
+      continue;
+      }
+
+    rc = trq_cg_find_job_processes2(pjob, atoi(line_pids[0].c_str()));
     if (rc != 0)
       {
       pclose(fp);
@@ -604,3 +623,68 @@ int trq_cg_find_job_processes(job *pjob, pid_t current_pid)
   }
 
 
+/* trq_cg_find_job_processes
+ *
+ * The tasks file for a cgroup contains all of the pids that
+ * are part of this job. This function opens the 
+ * cpuacct/torque/<job pid>/tasks file and reads all of the 
+ * tasks in the file and adds them to the ji_job_procs set.
+ * If the tasks file is empty that means the job is done and
+ * trq_cg_find_job_processes2 is called and we search the 
+ * process ids using ps -eo to make sure we have all of the
+ * processes.
+ */
+int trq_cg_find_job_processes(job *pjob, pid_t current_pid)
+  {
+  int     rc;
+  string  full_cgroup_path;
+  char    current_pid_string[256];
+  int     fd;
+  int     bytes_read;
+  size_t  len = GETLINE_SIZE;
+  char    line[GETLINE_SIZE];
+  char    log_buf[LOCAL_LOG_BUF_SIZE];
+
+
+  /* Open the tasks file from the cpuacct cgroup directory 
+     to get all of the sub tasks for this job */
+  sprintf(current_pid_string, "%d", current_pid);
+  full_cgroup_path = cg_cpuacct_path + current_pid_string + "/tasks";  
+  
+  fd = open(full_cgroup_path.c_str(), O_RDONLY);
+  if (fd < 0 )
+    {
+    sprintf(log_buf, "fopen failed: %d", errno);
+    log_err(-1, __func__, log_buf);
+    return(PBSE_SYSTEM);
+    }
+
+  bytes_read = read(fd, line, len);
+  if (bytes_read == 0)
+    {
+    rc = trq_cg_find_job_processes2(pjob, current_pid);
+    if (rc != PBSE_NONE)
+      {
+      sprintf(log_buf, "tasks file is empty");
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+      return(rc);
+      }
+    }
+
+  char *pid, *tk_ptr;
+    
+  pid = line;
+  tk_ptr = strchr(pid, '\n');
+  while (tk_ptr != NULL)
+    {
+    pid_t  new_pid;
+    *tk_ptr = 0;
+
+    new_pid = atoi(pid);
+    pjob->ji_job_procs->insert(new_pid);
+    pid = tk_ptr+1;
+    tk_ptr = strchr(pid, '\n');
+    }
+
+  return(PBSE_NONE);
+  }

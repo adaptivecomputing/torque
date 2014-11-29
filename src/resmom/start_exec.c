@@ -8886,6 +8886,11 @@ int exec_job_on_ms(
     return(SC);
     }
 
+  /* Short running jobs may be tough to track all of the pids.
+   * Get them now while the job is running */
+  trq_cg_find_job_processes(pjob, pjob->ji_job_pid);
+
+
   /* SUCCESS:  MOM returns */
 
   memset(TJE, 0, sizeof(pjobexec_t));

@@ -2230,6 +2230,8 @@ int mom_get_sample(void)
   pid_t                  pid;
   job                   *pjob;
 
+  struct timeval         start_time, end_time, results;
+
   int                    rc;
 
 
@@ -2260,12 +2262,25 @@ int mom_get_sample(void)
       }
 
 
+    if (LOGLEVEL >= 8)
+      {
+      gettimeofday(&start_time, NULL);
+      }
     rc = trq_cg_find_job_processes(pjob, pjob->ji_job_pid);
     if (rc != PBSE_NONE)
       {
       pjob = (job *)GET_NEXT(pjob->ji_alljobs);
       continue;
       }
+
+    if (LOGLEVEL >= 8)
+      {
+      gettimeofday(&end_time, NULL);
+      timeval_subtract(&results, &end_time, &start_time);
+      sprintf(log_buffer, "trq_cg_tind_job_processes time: %ld seocnds %ld microseconds", results.tv_sec, results.tv_usec);
+      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+      }
+
 
     if (LOGLEVEL >= 8)
       {
