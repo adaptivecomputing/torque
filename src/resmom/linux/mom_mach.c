@@ -1026,9 +1026,34 @@ static int mm_gettime(
 
 
 
+/* injob: Returns TRUE of the sid is part of the job or false of sid is not in the job
+ * Starting with the Marconi release the ji_job_procs element was added to the
+ * job structure. When mom_get_sample is called processes which are part of the job
+ * are found they are added to the set of pids in the job. This function has been
+ * greatly simplified from the original version to take advantage of the fact that the 
+ * job now knows what processes were in its job and which ones were not.
+ */
+static int injob(
+
+  job   *pjob,
+  pid_t  sid,
+  struct pidl **pids)
+
+  {
+  std::set<pid_t>::iterator it;
+
+  it = pjob->ji_job_procs->find(sid);
+  if (it != pjob->ji_job_procs->end())
+    {
+    return(TRUE);
+    }
+
+  return(FALSE);
+  }  /* END injob() */
 
 
 
+/*
 static int injob(
 
   job   *pjob,
@@ -1042,9 +1067,9 @@ static int injob(
   struct pidl   *pp;
 #else
   proc_stat_t   *ps;
-#endif /* PENABLE_LINUX26_CPUSETS */
+#endif*/ /* PENABLE_LINUX26_CPUSETS */
 
-  for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
+/*  for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
        ptask != NULL;
        ptask = (task *)GET_NEXT(ptask->ti_jobtask))
     {
@@ -1055,16 +1080,16 @@ static int injob(
       {
       return(TRUE);
       }
-    }
+    }*/
 
   /* processes with a different sessionid are not necessarily not part of the
      job: the job can call setsid; need to check whether one of the parent
      processes has a sessionid that is in the job */
-#ifdef PENABLE_LINUX26_CPUSETS
+/*#ifdef PENABLE_LINUX26_CPUSETS*/
 
   /* check whether the sid is in the job's cpuset */
 
-  if(*pids == NULL)
+/*  if(*pids == NULL)
     {
     *pids = get_cpuset_pidlist(pjob->ji_qs.ji_jobid, *pids);
     pp   = *pids;
@@ -1084,11 +1109,11 @@ static int injob(
       }
     }
 #else
-
+*/
   /* get the parent process id of the sid and check whether it is part of
      the job; iterate */
 
-  pid = sid;
+/*  pid = sid;
   while (pid > 1)
     {
     if ((ps = get_proc_stat(pid)) == NULL)
@@ -1116,10 +1141,10 @@ static int injob(
         }
       }
     }
-#endif /* PENABLE_LINUX26_CPUSETS */
+#endif*/ /* PENABLE_LINUX26_CPUSETS */
 
-  return(FALSE);
-  }  /* END injob() */
+/*  return(FALSE);
+  }*/  /* END injob() */
 
 
 
