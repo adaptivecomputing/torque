@@ -177,7 +177,7 @@ int req_gpuctrl_svr(
 
   /* validate that the node is up */
 
-  if ((pnode->nd_state & (INUSE_DOWN | INUSE_OFFLINE | INUSE_UNKNOWN))||(pnode->nd_power_state != POWER_STATE_RUNNING))
+  if ((pnode->nd_state & (INUSE_NOT_READY | INUSE_OFFLINE | INUSE_UNKNOWN))||(pnode->nd_power_state != POWER_STATE_RUNNING))
     {
     rc = PBSE_UNKREQ;
     sprintf(log_buf,"Node %s is not available",pnode->nd_name);
