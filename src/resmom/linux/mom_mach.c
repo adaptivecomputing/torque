@@ -1437,7 +1437,58 @@ static unsigned long long mem_sum(
   }  /* END mem_sum() */
 
 
+#ifdef PENABLE_LINUX_CGROUPS
+static unsigned long resi_sum(
 
+    job *pjob)
+
+  {
+  unsigned long long  resisize;
+  std::string  full_cgroup_path;
+  int          fd;
+  int          rc;
+  char         buf[LOCAL_BUF_SIZE];
+
+  sprintf(buf, "%d", pjob->ji_job_pid);
+  full_cgroup_path = cg_memory_path + buf + "/memory.memsw.max_usage_in_bytes";
+
+  fd = open(full_cgroup_path.c_str(), O_RDONLY);
+  if (fd <= 0)
+    {
+    sprintf(buf, "failed to open %s: %s", full_cgroup_path.c_str(), strerror(errno));
+    log_err(-1, __func__, buf);
+    return(0);
+    }
+
+  rc = read(fd, buf, LOCAL_BUF_SIZE);
+  if (rc == 0)
+    {
+    /* Something is not right. We should not have 0 bytes returned */
+    resisize = 0;
+    }
+  else if (rc == -1)
+    {
+    sprintf(buf, "failed to read %s: %s", full_cgroup_path.c_str(), strerror(errno));
+    log_err(-1, __func__, buf);
+    close(fd);
+    return(0);
+    }
+  else
+    {
+    /* successful read. Should be a number in nano-seconds */
+
+    resisize = atol(buf);
+    }
+
+  pjob->ji_flags &= ~MOM_NO_PROC;
+
+  close(fd);
+
+  return(resisize);
+  
+  }
+
+#else
 
 /*
  * Internal session memory usage function.
@@ -1527,7 +1578,7 @@ static unsigned long long resi_sum(
   return(resisize);
   }  /* END resi_sum() */
 
-
+#endif
 
 
 /*
