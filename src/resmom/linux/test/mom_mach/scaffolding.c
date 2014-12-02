@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 #include <pwd.h> /* struct passwd */
+#include <string>
 
 #include "../../../mom_main.h" /* MAX_LINE */
 #include "resource.h" /* resource_def, resource */
@@ -15,6 +16,7 @@
 #include "node_frequency.hpp"
 
 
+std::string cg_cpuacct_path;
 char log_buffer[LOG_BUF_SIZE];
 int svr_resc_size = 0;
 char path_meminfo[MAX_LINE];
@@ -151,4 +153,9 @@ char *threadsafe_tokenizer(
 
   {
   return(NULL);
+  }
+
+int trq_cg_find_job_processes(job *pjob, pid_t current_pid) 
+  {
+  return(PBSE_NONE);
   }

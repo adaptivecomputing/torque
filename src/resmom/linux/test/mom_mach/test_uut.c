@@ -3,9 +3,14 @@
 #include "test_uut.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <set>
 #include "node_frequency.hpp"
 
 #include "pbs_error.h"
+
+using namespace std;
+
+bool injob(job *, pid_t, struct pidl **);
 
 extern node_frequency nd_frequency;
 
@@ -32,6 +37,29 @@ START_TEST(test_skip_space_delimited_values)
   }
 END_TEST
 
+START_TEST(test_injob)
+  {
+  job myjob;
+  pid_t job_pid;
+  pid_t bad_job_pid;
+  bool rc;
+
+
+  myjob.ji_job_procs = new(std::set<pid_t>);
+
+  job_pid = 1234;
+  bad_job_pid = 5678;
+  myjob.ji_job_procs->insert(job_pid);
+  rc = injob(&myjob, job_pid, NULL);
+  fail_unless(rc != true, "failed to find pid in job");
+
+  rc = injob(&myjob, bad_job_pid, NULL);
+  fail_unless(rc != false, "failed to detect pid not in job");
+
+  }
+END_TEST
+
+
 START_TEST(test_two)
   {
   }
@@ -44,9 +72,14 @@ Suite *mom_mach_suite(void)
   tcase_add_test(tc_core, test_skip_space_delimited_values);
   suite_add_tcase(s, tc_core);
 
+  tc_core = tcase_create("test_injob");
+  tcase_add_test(tc_core, test_injob);
+  suite_add_tcase(s, tc_core);
+
   tc_core = tcase_create("test_two");
   tcase_add_test(tc_core, test_two);
   suite_add_tcase(s, tc_core);
+
 
   return s;
   }

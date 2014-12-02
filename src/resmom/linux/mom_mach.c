@@ -1033,7 +1033,7 @@ static int mm_gettime(
  * greatly simplified from the original version to take advantage of the fact that the 
  * job now knows what processes were in its job and which ones were not.
  */
-static int injob(
+bool injob(
 
   job   *pjob,
   pid_t  sid,
@@ -1045,10 +1045,10 @@ static int injob(
   it = pjob->ji_job_procs->find(sid);
   if (it != pjob->ji_job_procs->end())
     {
-    return(TRUE);
+    return(true);
     }
 
-  return(FALSE);
+  return(false);
   }  /* END injob() */
 
 
