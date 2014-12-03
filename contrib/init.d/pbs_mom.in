@@ -84,7 +84,7 @@ case "$1" in
 		daemon $PBS_DAEMON -r
 		RET=$?
 		[ $RET -eq 0 ] &&  touch $SUBSYS_LOCK
-   		echo
+		echo
 		;;
 	stop)
 		echo -n "Shutting down TORQUE Mom: "
