@@ -135,6 +135,44 @@ extern int get_num_connections();
 
 
 
+/*
+ * Opens the connection but releases pnode's mutex
+ * if there is a node being held.
+ */
+
+int connect_while_handling_mutex(
+
+  pbs_net_t        hostaddr,
+  unsigned int     port,
+  char            *EMsg,
+  struct pbsnode **pnode)
+
+  {
+  char nodename[MAXLINE];
+  int  sock;
+
+  /* don't keep the node locked through the connecting */
+  if ((pnode != NULL) &&
+      (*pnode != NULL))
+    {
+    snprintf(nodename, sizeof(nodename), "%s", (*pnode)->nd_name);
+    unlock_node(*pnode, __func__, NULL, LOGLEVEL);
+    }
+
+  /* establish socket connection to specified host */
+  sock = client_to_svr(hostaddr, port, 1, EMsg);
+ 
+  // Don't use the pointer. A pointer without a lock isn't safe because the object 
+  // may have been freed
+  if ((pnode != NULL) &&
+      (*pnode != NULL))
+    *pnode = find_nodebyname(nodename);
+
+  return(sock);
+  } // END connect_while_handling_mutex()
+
+
+
 int svr_connect(
 
   pbs_net_t        hostaddr,  /* host order */
@@ -144,7 +182,7 @@ int svr_connect(
   void           *(*func)(void *))
 
   {
-  char         EMsg[1024];
+  char         EMsg[MAXLINE];
   int          handle;
   int          sock;
   time_t       STime;
@@ -191,17 +229,8 @@ int svr_connect(
     return(PBS_NET_RC_RETRY);
     }
 
-  /* don't keep the node locked through the connecting */
-  if (pnode != NULL)
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+  sock = connect_while_handling_mutex(hostaddr, port, EMsg, &pnode);
 
-  /* establish socket connection to specified host */
-  sock = client_to_svr(hostaddr, port, 1, EMsg);
- 
-  /* re-lock the node after connecting */
-  if (pnode != NULL)
-    lock_node(pnode, __func__, NULL, LOGLEVEL);
- 
   time(&ETime);
 
   if (LOGLEVEL >= 2)
@@ -296,7 +325,9 @@ static void localalm(
 
 
 void connection_clear(
-   int con_pos)
+
+  int con_pos)
+
   {
   pthread_mutex_lock(connection[con_pos].ch_mutex);
   connection[con_pos].ch_errtxt = 0;
