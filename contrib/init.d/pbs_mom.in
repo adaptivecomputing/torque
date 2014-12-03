@@ -32,14 +32,14 @@ pidof_pbs_mom() {
 	if [ $? -eq 0 ]; then
 		echo $pid
 	else
-		echo 0
+		echo "-1"
 	fi
 }
 
 kill_pbs_mom() {
 	pid=`pidof_pbs_mom`
 
-	if [ $pid -le 1 ];then
+	if [ $pid -eq -1 ];then
 		return 1;
 	fi
 
@@ -62,8 +62,15 @@ case "$1" in
 
 		pid=`pidof_pbs_mom`
 
-		[ $pid -ne 0 -a $lock_present -eq 0 ] && echo -n "pbs_mom already running (pid $pid)" && success && echo && exit 0
-		[ $pid -ne 0 -a $lock_present -ne 0 ] && touch $SUBSYS_LOCK && echo -n "pbs_mom running (pid $pid)" && success && echo && exit 0
+		if [ $pid -ne -1 ]; then
+			if [ $lock_present -eq 0 ]; then
+			   echo -n "pbs_mom already running (pid $pid)"
+			else
+			   touch $SUBSYS_LOCK && echo -n "pbs_mom running (pid $pid)"
+			fi
+			RET=$?
+			[ $RET -eq 0 ] && success && echo && exit 0
+		fi
 
 		# ulimit -c unlimited  # Uncomment this to preserve core files
 		daemon $PBS_DAEMON $args -d $PBS_HOME
@@ -83,7 +90,7 @@ case "$1" in
 		echo -n "Shutting down TORQUE Mom: "
 		# check if pbs_mom is running
 		pid=`pidof_pbs_mom`
-		[ $pid -eq 0 ] && echo -n "pbs_mom already stopped" && success && echo && exit 0
+		[ $pid -eq -1 ] && echo -n "pbs_mom already stopped" && success && echo && exit 0
 
 		kill_pbs_mom
 		RET=$?
@@ -97,10 +104,10 @@ case "$1" in
 
 		pid=`pidof_pbs_mom`
 
-		[ $pid -eq 0 -a $lock_present -eq 0 ] && echo -n "pbs_mom dead but subsys locked" && failure && echo && exit 1
-		[ $pid -eq 0 ] && echo -n "pbs_mom already stopped" && success && echo && exit 0
-		[ $pid -ne 0 -a $lock_present -eq 0 ] && echo -n "pbs_mom already running" && success && echo && exit 0
-		[ $pid -ne 0 ] && echo -n "pbs_mom running but subsys not locked" && failure && echo && exit 1
+		[ $pid -eq -1 -a $lock_present -eq 0 ] && echo -n "pbs_mom dead but subsys locked" && failure && echo && exit 1
+		[ $pid -eq -1 ] && echo -n "pbs_mom already stopped" && success && echo && exit 0
+		[ $pid -ne -1 -a $lock_present -eq 0 ] && echo -n "pbs_mom already running" && success && echo && exit 0
+		[ $pid -ne -1 ] && echo -n "pbs_mom running but subsys not locked" && failure && echo && exit 1
 		;;
 	restart)
 		$0 stop
