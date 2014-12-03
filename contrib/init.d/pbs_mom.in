@@ -116,9 +116,14 @@ case "$1" in
 		;;
 	reload)
 		echo -n "Re-reading TORQUE Mom config file: "
-		kill -HUP `pidof_pbs_mom`
-		RET=$?
-		[ $RET -eq 0 ] && success "HUP" || failure "HUP"
+		pid=`pidof_pbs_mom`
+		if [ $pid -ne -1 ]; then
+			kill -HUP `pidof_pbs_mom`
+			RET=$?
+			[ $RET -eq 0 ] && success "HUP" || failure "HUP"
+		else
+			failure "HUP"
+		fi
 		echo
 		;;
 	*)
