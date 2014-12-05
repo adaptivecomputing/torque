@@ -135,7 +135,7 @@ struct pbsnode *check_node(
 
   if ((hasprop(pnode, needed) == TRUE) &&
       (pnode->nd_slots.get_number_free() - pnode->nd_np_to_be_used >= 1) &&
-      ((pnode->nd_state & INUSE_DOWN) == 0) &&
+      ((pnode->nd_state & INUSE_NOT_READY) == 0) &&
       ((pnode->nd_state & INUSE_OFFLINE) == 0) &&
       (pnode->nd_power_state == POWER_STATE_RUNNING))
     return(pnode);
@@ -246,7 +246,7 @@ struct pbsnode *get_next_login_node(
   
   /* must have at least one execution slot available */
   if ((pnode->nd_slots.get_total_execution_slots() - pnode->nd_np_to_be_used < 1) ||
-      ((pnode->nd_state & INUSE_DOWN) != 0) ||
+      ((pnode->nd_state & INUSE_NOT_READY) != 0) ||
       ((pnode->nd_state & INUSE_OFFLINE) != 0) ||
       (pnode->nd_power_state != POWER_STATE_RUNNING))
     {
