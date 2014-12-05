@@ -206,6 +206,12 @@ START_TEST(handle_aborted_job_test)
   if (pjob.ji_wattr[JOB_ATR_Comment].at_val.at_str)
     comparison = strcmp(pjob.ji_wattr[JOB_ATR_Comment].at_val.at_str, text);
   fail_unless(comparison == 0, "comment added to job did not match to text");
+
+  handle_aborted_job(&job_ptr, true, KeepSeconds, "Appended");
+  fail_unless(!strcmp(pjob.ji_wattr[JOB_ATR_Comment].at_val.at_str, "Job deleted as result of dependency on job 0.lei. Appended"));
+
+  handle_aborted_job(&job_ptr, true, 0, text);
+  fail_unless(job_ptr == NULL);
   }
 END_TEST /* handle_aborted_job_test */
 
