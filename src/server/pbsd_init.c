@@ -2081,7 +2081,6 @@ int pbsd_init_job(
 
     case JOB_SUBSTATE_EXITED:
 
-    case JOB_SUBSTATE_ABORT:
 
       /* This is delayed because it is highly likely MS is "state-unknown"
        * at this time, and there's no real hurry anyways. */
@@ -2093,6 +2092,18 @@ int pbsd_init_job(
       rc = pbsd_init_reque(pjob, KEEP_STATE);
 
       break;
+
+    case JOB_SUBSTATE_ABORT:
+      if (pjob->ji_qs.ji_state != JOB_STATE_COMPLETE)
+        {
+        apply_job_delete_nanny(pjob, time_now + 60);
+        set_task(WORK_Immed, 0, on_job_exit_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
+        rc = pbsd_init_reque(pjob, KEEP_STATE);
+        break;
+        }
+
+      svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
+
 
     case JOB_SUBSTATE_COMPLETE:
 
