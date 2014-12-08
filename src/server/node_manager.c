@@ -2412,6 +2412,7 @@ int save_node_for_adding(
   /* count off the number we have reserved */
   pnode->nd_np_to_be_used    += req->ppn;
   pnode->nd_ngpus_to_be_used += req->gpu;
+  pnode->nd_nmics_to_be_used -= req->mic;
 
   return(PBSE_NONE);
   } /* END save_node_for_adding */
@@ -3729,7 +3730,10 @@ int remove_job_from_nodes_mics(
   for (i = 0; i < pnode->nd_nmics; i++)
     {
     if (pnode->nd_micjobs[i].internal_job_id == pjob->ji_internal_id)
+      {
+      pnode->nd_nmics_free++;
       pnode->nd_micjobs[i].internal_job_id = -1;
+      }
     }
 
   return(PBSE_NONE);
