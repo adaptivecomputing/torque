@@ -199,15 +199,6 @@ START_TEST(next_job_test)
   fail_unless(jobcount == 5, "Expected job counts to be 5, but it was %d",
     jobcount);
 
-  /* The following 3 statements simulates free_job_allocation on test_job2 and test_job3 */
-  free(test_job2->ji_mutex);
-  memset(test_job2, 254, sizeof(job));
-  free(test_job2);
-
-  free(test_job3->ji_mutex);
-  memset(test_job3, 254, sizeof(job));
-  free(test_job3);
-
   all_jobs_iterator *iter2;
   alljobs.lock();
   iter2 = alljobs.get_iterator();
@@ -230,7 +221,7 @@ START_TEST(next_job_test)
     pjob = next_job(&alljobs,iter2);
     }
 
-  fail_unless(jobcount == 4, "Expected job counts to be 4, but it was %d",
+  fail_unless(jobcount == 6, "Expected job counts to be 6, but it was %d",
     jobcount);
   }
 END_TEST
@@ -259,13 +250,6 @@ START_TEST(find_job_by_array_with_removed_record_test)
   strcpy(test_job4->ji_qs.ji_jobid, "test_job4");
   result = insert_job(&alljobs,test_job4);
   fail_unless(result == PBSE_NONE, "job insert fail4");
-
-  /* The following 3 statements simulates free_job_allocation on test_job3 */
-  free(test_job3->ji_mutex);
-  memset(test_job3, 254, sizeof(job));
-  free(test_job3);
-  struct job *pjob = find_job_by_array(&alljobs, "test_job3", 0, false);
-  fail_unless(pjob == NULL, "fail in find_job_buf_array");
 
   struct job *test_job5 = job_alloc();
   strcpy(test_job5->ji_qs.ji_jobid, "test_job5");
