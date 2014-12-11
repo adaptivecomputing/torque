@@ -2132,12 +2132,12 @@ int req_commit(
   if ((pque = get_jobs_queue(&pj)) != NULL)
     {
     mutex_mgr pque_mutex(pque->qu_mutex,true);
+    std::string queue_name(pque->qu_qs.qu_name);
+
     if ((preq->rq_fromsvr == 0) &&
         (pque->qu_qs.qu_type == QTYPE_RoutePush) &&
         (pque->qu_attr[QA_ATR_Started].at_val.at_long != 0))
       {
-      std::string queue_name(pque->qu_qs.qu_name);
-
       /* job_route expects the queue to be unlocked */
       pque_mutex.unlock();
       if ((rc = job_route(pj)))
