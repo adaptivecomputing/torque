@@ -760,6 +760,7 @@ void free_job_allocation(
 
 void free_all_of_job(job *pjob)
   {
+  free_job_allocation(pjob);
   pthread_mutex_destroy(pjob->ji_mutex);
   free(pjob->ji_mutex);
   memset(pjob, 254, sizeof(job)); /* TODO: remove magic number */
@@ -799,7 +800,6 @@ void job_free(
    * ji_being_recycled flag to solve this problem --dbeer */
   if (use_recycle)
     {
-    free_job_allocation(pj);
     insert_into_recycler(pj);
     unlock_ji_mutex(pj, __func__, log_buf, LOGLEVEL);
     }
