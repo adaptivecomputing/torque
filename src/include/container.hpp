@@ -151,56 +151,8 @@ class item_container
         }
 
       return(pItem->get());
-      }
+      } // END get_next_item()
 
-    item<T> *get_next_item2()
-      {
-#ifdef CHECK_LOCKING
-      if (!*pLocked)
-        {
-        char *p = NULL;
-        while(1)
-          {
-          *p++ = (char)0xff;
-          }
-        }
-#endif
-      if (exit_called)
-        {
-        return(NULL);
-        }
-
-      if (endHit)
-        return(NULL);
-
-      if (iter == ALWAYS_EMPTY_INDEX)
-        {
-        endHit = true;
-        return(NULL);
-        }
-      item<T> *pItem;
-      if (reversed)
-        {
-        pItem = pContainer->next_thing_from_back(&iter);
-
-        if (pItem == NULL)
-          {
-          endHit = true;
-          return(NULL);
-          }
-        return pItem;
-        }
-
-      pItem = pContainer->next_thing(&iter);
-
-      if (pItem == NULL)
-        {
-        endHit = true;
-        return(NULL);
-        }
-
-      return(pItem);
-      }
 
 
     item_iterator(item_container<T> *pCtner,

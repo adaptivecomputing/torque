@@ -15,6 +15,7 @@ int fix_external_exec_hosts(job *);
 int change_external_job_name(job *);
 int split_job(job *);
 bool set_task_called = false;
+void job_free(job *pj, int  use_recycle);
 //bool svr_job_purge_called = false;
 
 char buf[4096];
