@@ -74,11 +74,11 @@ static int mm_getsize(resource *pres, unsigned long *ret);
 
 static int mm_gettime(resource *pres, unsigned long *ret);
 
-static int injob(job *pjob, pid_t sid,struct pidl **pids);
+int injob(job *pjob, pid_t pid);
 
-static unsigned long cput_sum(job *pjob);
+unsigned long cput_sum(job *pjob);
 
-static int overcpu_proc(job *pjob, unsigned long limit);
+int overcpu_proc(job *pjob, unsigned long limit);
 
 /* mom_start.c */
 int set_job(job *pjob, struct startjob_rtn *sjr);

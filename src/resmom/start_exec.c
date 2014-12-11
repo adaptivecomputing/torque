@@ -98,6 +98,7 @@ extern "C"
 #if IBM_SP2==2 /* IBM SP with PSSP 3.1 */
   #include <st_client.h>
 #endif /* IBM SP */
+#include <map>
 
 #include "libpbs.h"
 #include "portability.h"
@@ -316,6 +317,8 @@ static const char *variables_else[] =   /* variables to add, value computed */
   };
 
 static int num_var_else = tveLAST;
+
+job_sid_set_t    job_sid_set; /* This contains the session id of each job */
 
 /* prototypes */
 
@@ -2525,7 +2528,13 @@ int TMomFinalizeJob2(
         pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1)
     {
     }
-  
+
+  /* put the new pid in the job_sid_set set */
+  job_sid_set.insert(cpid);
+
+  /* put the job pid in the job structure */
+  pjob->ji_job_pid = cpid;
+ 
 #if SHELL_USE_ARGV == 0
   #if SHELL_INVOKE == 1
   
