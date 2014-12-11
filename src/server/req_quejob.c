@@ -2267,11 +2267,13 @@ int req_commit(
 
   if ((pque = get_jobs_queue(&pj)) != NULL)
     {
-    mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex,true);
+    mutex_mgr pque_mutex(pque->qu_mutex,true);
     if ((preq->rq_fromsvr == 0) &&
         (pque->qu_qs.qu_type == QTYPE_RoutePush) &&
         (pque->qu_attr[QA_ATR_Started].at_val.at_long != 0))
       {
+      std::string queue_name(pque->qu_qs.qu_name);
+
       /* job_route expects the queue to be unlocked */
       pque_mutex.unlock();
       if ((rc = job_route(pj)))
@@ -2289,7 +2291,6 @@ int req_commit(
         req_reject(rc, 0, preq, NULL, log_buf);
         return(rc);
         }
-      pque_mutex.lock();
       }
 
     if (job_save(pj, SAVEJOB_FULL, 0) != 0)
@@ -2304,7 +2305,6 @@ int req_commit(
         }
       
       decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
-      pque_mutex.unlock();
       svr_job_purge(pj);
       req_reject(rc, 0, preq, NULL, log_buf);
       return(rc);
@@ -2314,14 +2314,14 @@ int req_commit(
        is done routing the job with this flag */
     pj->ji_commit_done = 1;
 
-    /* need to format message first, before request goes away - moved here because we have the mutex */
+    /* need to format message first, before request goes away - 
+     * moved here because we have the queue name */
     snprintf(log_buf, sizeof(log_buf),
       msg_jobnew,
       preq->rq_user, preq->rq_host,
       pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
       pj->ji_wattr[JOB_ATR_jobname].at_val.at_str,
-      pque->qu_qs.qu_name);
-
+      queue_name.c_str());
     }
 
 #ifdef AUTORUN_JOBS
