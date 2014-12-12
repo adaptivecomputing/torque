@@ -247,7 +247,7 @@ PbsErrClient(PBSE_CONNECT, (char *)"Can not establish connection")
 PbsErrClient(PBSE_JOBWORKDELAY, (char *)"Job function must be temporarily delayed")
 PbsErrClient(PBSE_BAD_PARAMETER, (char *)"Parameter of function was invalid")
 PbsErrClient(PBSE_CONTINUE, (char *)"Continue processing on job. (Not an error)")
-PbsErrClient(PBSE_JOBSUBSTATE, (char *)"Current sub state does not allow trasaction.")
+PbsErrClient(PBSE_JOBSUBSTATE, (char *)"Current sub state does not allow transaction.")
 PbsErrClient(PBSE_CAN_NOT_MOVE_FILE, (char *)"Error moving file")
 PbsErrClient(PBSE_JOB_RECYCLED,      (char *)"Job is being recycled")
 PbsErrClient(PBSE_JOB_ALREADY_IN_QUEUE, (char *)"Job is already in destination queue.")
@@ -276,6 +276,7 @@ PbsErrClient(PBSE_POWER_STATE_UNSUPPORTED, (char *)"The node does not support ch
 PbsErrClient(PBSE_POWER_STATE_UNAVAILABLE, (char *)"The node does not support the requested power state.")
 PbsErrClient(PBSE_CANT_CHANGE_POWER_STATE_WITH_JOBS_RUNNING, (char *)"Can't change power state on a node which has running jobs.")
 PbsErrClient(PBSE_CANT_WAKE_OFF_MACHINE, (char *)"Unable to wake a node in hibernate or shutdown state.")
+PbsErrClient(PBSE_BAD_JOB_STATE_TRANSITION, (char *)"The requested state or substate can't be set from the job's current state.")
 
 /* pbs client errors ceiling (max_client_err + 1) */
 PbsErrClient(PBSE_CEILING,           (char*)0)
