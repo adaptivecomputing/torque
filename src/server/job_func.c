@@ -402,10 +402,17 @@ void handle_aborted_job(
 
   {
   job *pjob = *job_ptr;
+  int  rc = svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_ABORT, FALSE);
     
-  if (svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_ABORT, FALSE) == PBSE_UNKQUE)
+  if (rc == PBSE_UNKQUE)
     {
     *job_ptr = NULL;
+    return;
+    }
+  else if (rc == PBSE_BAD_JOB_STATE_TRANSITION)
+    {
+    // This is likely because something else is also cleaning up the job. Just
+    // stop and let the other thread do it.
     return;
     }
    
@@ -421,7 +428,7 @@ void handle_aborted_job(
     if (text != NULL)
       {
       if ((pjob->ji_wattr[JOB_ATR_Comment].at_flags & ATR_VFLAG_SET) &&
-          (pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str))
+          (pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str != NULL))
         {
         std::string new_comment(pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str);
         new_comment += ". ";
@@ -473,7 +480,7 @@ int job_abt(
 
   struct job **pjobp, /* I (modified/freed) */
   const char  *text,  /* I (optional) */
-        bool   dependentjob) /* I */
+  bool         dependentjob) /* I */
 
   {
   char  log_buf[LOCAL_LOG_BUF_SIZE];

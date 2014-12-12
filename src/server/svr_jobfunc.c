@@ -263,11 +263,11 @@ const char *PJobSubState[] =
   "SUBSTATE48",
   "SUBSTATE49",
   "EXITING",                /* start of job exiting processing */
+  "EXIT_WAIT",              /* waiting for response from other moms or server*/
   "STAGEOUT",               /* job staging out (other) files   */
   "STAGEDEL",               /* job deleting staged out files  */
   "EXITED",                 /* job exit processing completed   */
   "ABORT",                  /* job is being aborted by server  */
-  "SUBSTATE55",
   "SUBSTATE56",
   "SUBSTATE57",
   "OBIT",                   /* (MOM) job obit notice sent */
@@ -1005,12 +1005,70 @@ int set_subjob_state(
 
 
 /*
+ * is_valid_state_transition
+ *
+ * Compares the current state and substate to the new state and
+ * substate and returns false if the transition isn't valid.
+ *
+ * NYI: So far I am only handling one case. There are others so please
+ * add if the definition in the return description is met.
+ *
+ * @param pjob - the job whose state transition we're checking
+ * @param newstate - the requested state
+ * @param newsubstate - the requested substate
+ * @return false if the transition is never legitimate, true otherwise
+ */
+
+bool is_valid_state_transition(
+
+    job &pjob,
+    int  newstate,
+    int  newsubstate)
+
+  {
+  switch (pjob.ji_qs.ji_state)
+    {
+    case JOB_STATE_COMPLETE:
+
+      switch (newstate)
+        {
+        case JOB_STATE_EXITING:
+
+          return(false);
+
+        }
+
+      break;
+    }
+
+  switch(pjob.ji_qs.ji_substate)
+    {
+    case JOB_SUBSTATE_COMPLETE:
+
+      switch (newsubstate)
+        {
+        case JOB_SUBSTATE_ABORT:
+
+          return(false);
+        }
+
+      break;
+    }
+
+
+  return(true);
+  } /* END is_valid_state_transition() */
+
+
+
+/*
  * svr_setjobstate
  *
  * @pre-cond: pjob must be a valid job pointer
  * @post-cond: pjob will have state newstate and substate newsubstate, and relevant
  * counts/events will be updated.
  * @return: PBSE_BAD_PARAMETER if pjob is NULL
+ *          PBSE_BAD_JOB_STATE_TRANSITION if the requested state or substate change isn't valid.
  *          PBSE_JOBNOTFOUND if the job disappears mid-execution
  *          return value from job_save if job_save is called (on modification)
  *          PBSE_NONE on success
@@ -1035,7 +1093,11 @@ int svr_setjobstate(
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL input job pointer");
     return(PBSE_BAD_PARAMETER);
     }
-  else if (pjob->ji_parent_job != NULL)
+
+  if (is_valid_state_transition(*pjob, newstate, newsubstate) == false)
+    return(PBSE_BAD_JOB_STATE_TRANSITION);
+
+  if (pjob->ji_parent_job != NULL)
     return(set_subjob_state(pjob, newstate, newsubstate, has_queue_mutex));
 
   if (LOGLEVEL >= 2)
