@@ -772,7 +772,7 @@ job *job_alloc(void)
 
   pj->ji_qs.qs_version = PBS_QS_VERSION;
 
-  CLEAR_HEAD(pj->ji_rejectdest);
+  pj->ji_rejectdest = new std::vector<std::string>();
   pj->ji_is_array_template = FALSE;
 
   pj->ji_momhandle = -1;  /* mark mom connection invalid */
@@ -804,22 +804,14 @@ void free_job_allocation(
 
   /* remove any calloc working pbs_attribute space */
   for (int i = 0;i < JOB_ATR_LAST;i++)
-    {
     job_attr_def[i].at_free(&pjob->ji_wattr[i]);
-    }
 
   /* free any bad destination structs */
-  badplace *bp = (badplace *)GET_NEXT(pjob->ji_rejectdest);
-
-  while (bp != NULL)
+  if (pjob->ji_rejectdest != NULL)
     {
-    delete_link(&bp->bp_link);
-
-    free(bp);
-
-    bp = (badplace *)GET_NEXT(pjob->ji_rejectdest);
+    delete pjob->ji_rejectdest;
+    pjob->ji_rejectdest = NULL;
     }
-
   } /* END free_job_allocation() */
 
 
@@ -907,7 +899,6 @@ job *copy_job(
 
   /* new job structure is allocated,
      now we need to copy the old job, but modify based on taskid */
-  CLEAR_HEAD(pnewjob->ji_rejectdest);
   pnewjob->ji_modified = 1;   /* struct changed, needs to be saved */
 
   /* copy the fixed size quick save information */
@@ -991,7 +982,6 @@ job *job_clone(
 
   /* new job structure is allocated,
      now we need to copy the old job, but modify based on taskid */
-  CLEAR_HEAD(pnewjob->ji_rejectdest);
   pnewjob->ji_modified = 1;   /* struct changed, needs to be saved */
 
   /* copy the fixed size quick save information */

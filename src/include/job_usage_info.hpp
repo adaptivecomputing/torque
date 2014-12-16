@@ -94,4 +94,17 @@ class job_usage_info
     job_usage_info &operator= (const job_usage_info &other_jui);
   };
 
+// class used while running a job
+class job_reservation_info
+  {
+  public:
+    int                    node_id;
+    int                    port;
+    execution_slot_tracker est;
+
+    job_reservation_info(const job_reservation_info &other);
+    job_reservation_info();
+    job_reservation_info &operator =(const job_reservation_info &other);
+  };
+
 #endif
